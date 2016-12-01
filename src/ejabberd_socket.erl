@@ -31,6 +31,7 @@
 -export([start/4,
 	 connect/3,
 	 connect/4,
+	 connect/5,
 	 starttls/2,
 	 starttls/3,
 	 compress/1,
@@ -41,6 +42,7 @@
 	 change_shaper/2,
 	 monitor/1,
 	 get_sockmod/1,
+	 get_transport/1,
 	 get_peer_certificate/1,
 	 get_verify_result/1,
 	 close/1,
@@ -48,15 +50,16 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("jlib.hrl").
 
 -type sockmod() :: ejabberd_http_bind |
+		   ejabberd_bosh |
                    ejabberd_http_ws |
                    gen_tcp | fast_tls | ezlib.
 -type receiver() :: pid () | atom().
 -type socket() :: pid() | inet:socket() |
                   fast_tls:tls_socket() |
-                  ezlib:zlib_socket() |
+		  ezlib:zlib_socket() |
+		  ejabberd_bosh:bind_socket() |
                   ejabberd_http_bind:bind_socket().
 
 -record(socket_state, {sockmod = gen_tcp :: sockmod(),
@@ -65,7 +68,7 @@
 
 -type socket_state() :: #socket_state{}.
 
--export_type([socket_state/0, sockmod/0]).
+-export_type([socket/0, socket_state/0, sockmod/0]).
 
 
 %%====================================================================
@@ -125,19 +128,21 @@ start(Module, SockMod, Socket, Opts) ->
     end.
 
 connect(Addr, Port, Opts) ->
-    connect(Addr, Port, Opts, infinity).
+    connect(Addr, Port, Opts, infinity, self()).
 
 connect(Addr, Port, Opts, Timeout) ->
+    connect(Addr, Port, Opts, Timeout, self()).
+
+connect(Addr, Port, Opts, Timeout, Owner) ->
     case gen_tcp:connect(Addr, Port, Opts, Timeout) of
       {ok, Socket} ->
 	  Receiver = ejabberd_receiver:start(Socket, gen_tcp,
 					     none),
 	  SocketData = #socket_state{sockmod = gen_tcp,
 				     socket = Socket, receiver = Receiver},
-	  Pid = self(),
 	  case gen_tcp:controlling_process(Socket, Receiver) of
 	    ok ->
-		ejabberd_receiver:become_controller(Receiver, Pid),
+		ejabberd_receiver:become_controller(Receiver, Owner),
 		{ok, SocketData};
 	    {error, _Reason} = Error -> gen_tcp:close(Socket), Error
 	  end;
@@ -188,7 +193,7 @@ send(SocketData, Data) ->
 %% Can only be called when in c2s StateData#state.xml_socket is true
 %% This function is used for HTTP bind
 %% sockmod=ejabberd_http_ws|ejabberd_http_bind or any custom module
--spec send_xml(socket_state(), xmlel()) -> any().
+-spec send_xml(socket_state(), fxml:xmlel()) -> any().
 
 send_xml(SocketData, Data) ->
     catch
@@ -215,6 +220,21 @@ monitor(SocketData)
 get_sockmod(SocketData) ->
     SocketData#socket_state.sockmod.
 
+get_transport(#socket_state{sockmod = SockMod,
+			    socket = Socket}) ->
+    case SockMod of
+	gen_tcp -> tcp;
+	fast_tls -> tls;
+	ezlib ->
+	    case ezlib:get_sockmod(Socket) of
+		tcp -> tcp_zlib;
+		tls -> tls_zlib
+	    end;
+	ejabberd_bosh -> http_bind;
+	ejabberd_http_bind -> http_bind;
+	ejabberd_http_ws -> websocket
+    end.
+
 get_peer_certificate(SocketData) ->
     fast_tls:get_peer_certificate(SocketData#socket_state.socket).
 
@@ -237,4 +257,3 @@ peername(#socket_state{sockmod = SockMod,
       gen_tcp -> inet:peername(Socket);
       _ -> SockMod:peername(Socket)
     end.
-

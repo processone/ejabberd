@@ -12,7 +12,7 @@
 -compile([{parse_transform, ejabberd_sql_pt}]).
 
 %% API
--export([init/2, caps_read/2, caps_write/3, export/1]).
+-export([init/2, caps_read/2, caps_write/3, export/1, import/3]).
 
 -include("mod_caps.hrl").
 -include("ejabberd_sql_pt.hrl").
@@ -29,7 +29,7 @@ caps_read(LServer, {Node, SubNode}) ->
            ?SQL("select @(feature)s from caps_features where"
                 " node=%(Node)s and subnode=%(SubNode)s")) of
         {selected, [{H}|_] = Fs} ->
-            case catch jlib:binary_to_integer(H) of
+            case catch binary_to_integer(H) of
                 Int when is_integer(Int), Int>=0 ->
                     {ok, Int};
                 _ ->
@@ -53,12 +53,15 @@ export(_Server) ->
               []
       end}].
 
+import(_, _, _) ->
+    ok.
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 sql_write_features_t({Node, SubNode}, Features) ->
     NewFeatures = if is_integer(Features) ->
-                          [jlib:integer_to_binary(Features)];
+                          [integer_to_binary(Features)];
                      true ->
                           Features
                   end,

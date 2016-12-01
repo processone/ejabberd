@@ -13,15 +13,15 @@
 -export([start/2, stop/1]).
 
 -export([update_presence/3, vcard_set/3, export/1,
-	 import/1, import/3, mod_opt_type/1, depends/2]).
+	 import_info/0, import/5, import_start/2,
+	 mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("mod_vcard_xupdate.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -callback init(binary(), gen_mod:opts()) -> any().
--callback import(binary(), #vcard_xupdate{}) -> ok | pass.
+-callback import(binary(), binary(), [binary()]) -> ok.
 -callback add_xupdate(binary(), binary(), binary()) -> {atomic, any()}.
 -callback get_xupdate(binary(), binary()) -> binary() | undefined.
 -callback remove_xupdate(binary(), binary()) -> {atomic, any()}.
@@ -52,15 +52,12 @@ depends(_Host, _Opts) ->
 %%====================================================================
 %% Hooks
 %%====================================================================
-
-update_presence(#xmlel{name = <<"presence">>, attrs = Attrs} = Packet,
-  User, Host) ->
-    case fxml:get_attr_s(<<"type">>, Attrs) of
-      <<>> -> presence_with_xupdate(Packet, User, Host);
-      _ -> Packet
-    end;
+-spec update_presence(presence(), binary(), binary()) -> presence().
+update_presence(#presence{type = available} = Packet, User, Host) ->
+    presence_with_xupdate(Packet, User, Host);
 update_presence(Packet, _User, _Host) -> Packet.
 
+-spec vcard_set(binary(), binary(), xmlel()) -> ok.
 vcard_set(LUser, LServer, VCARD) ->
     US = {LUser, LServer},
     case fxml:get_path_s(VCARD,
@@ -93,48 +90,25 @@ remove_xupdate(LUser, LServer) ->
 %%% Presence stanza rebuilding
 %%%----------------------------------------------------------------------
 
-presence_with_xupdate(#xmlel{name = <<"presence">>,
-			     attrs = Attrs, children = Els},
-		      User, Host) ->
-    XPhotoEl = build_xphotoel(User, Host),
-    Els2 = presence_with_xupdate2(Els, [], XPhotoEl),
-    #xmlel{name = <<"presence">>, attrs = Attrs,
-	   children = Els2}.
-
-presence_with_xupdate2([], Els2, XPhotoEl) ->
-    lists:reverse([XPhotoEl | Els2]);
-%% This clause assumes that the x element contains only the XMLNS attribute:
-presence_with_xupdate2([#xmlel{name = <<"x">>,
-			       attrs = [{<<"xmlns">>, ?NS_VCARD_UPDATE}]}
-			| Els],
-		       Els2, XPhotoEl) ->
-    presence_with_xupdate2(Els, Els2, XPhotoEl);
-presence_with_xupdate2([El | Els], Els2, XPhotoEl) ->
-    presence_with_xupdate2(Els, [El | Els2], XPhotoEl).
-
-build_xphotoel(User, Host) ->
+presence_with_xupdate(Presence, User, Host) ->
     Hash = get_xupdate(User, Host),
-    PhotoSubEls = case Hash of
-		    Hash when is_binary(Hash) -> [{xmlcdata, Hash}];
-		    _ -> []
-		  end,
-    PhotoEl = [#xmlel{name = <<"photo">>, attrs = [],
-		      children = PhotoSubEls}],
-    #xmlel{name = <<"x">>,
-	   attrs = [{<<"xmlns">>, ?NS_VCARD_UPDATE}],
-	   children = PhotoEl}.
+    Presence1 = xmpp:remove_subtag(Presence, #vcard_xupdate{}),
+    xmpp:set_subtag(Presence1, #vcard_xupdate{hash = Hash}).
+
+import_info() ->
+    [{<<"vcard_xupdate">>, 3}].
+
+import_start(LServer, DBType) ->
+    Mod = gen_mod:db_mod(DBType, ?MODULE),
+    Mod:init(LServer, []).
+
+import(LServer, {sql, _}, DBType, Tab, [LUser, Hash, TimeStamp]) ->
+    Mod = gen_mod:db_mod(DBType, ?MODULE),
+    Mod:import(LServer, Tab, [LUser, Hash, TimeStamp]).
 
 export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:export(LServer).
-
-import(LServer) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:import(LServer).
-
-import(LServer, DBType, LA) ->
-    Mod = gen_mod:db_mod(DBType, ?MODULE),
-    Mod:import(LServer, LA).
 
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(_) -> [db_type].

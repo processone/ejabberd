@@ -1,363 +1,375 @@
-%%%--------------------------------------------------------------------------------------
+%%%-------------------------------------------------------------------
 %%% File    : mod_privilege.erl
 %%% Author  : Anna Mukharram <amuhar3@gmail.com>
-%%% Purpose : This module is an implementation for XEP-0356: Privileged Entity
-%%%--------------------------------------------------------------------------------------
-
+%%% Purpose : XEP-0356: Privileged Entity
+%%%
+%%%
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
+%%%
+%%% This program is free software; you can redistribute it and/or
+%%% modify it under the terms of the GNU General Public License as
+%%% published by the Free Software Foundation; either version 2 of the
+%%% License, or (at your option) any later version.
+%%%
+%%% This program is distributed in the hope that it will be useful,
+%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%%% General Public License for more details.
+%%%
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+%%%
+%%%-------------------------------------------------------------------
 -module(mod_privilege).
 
 -author('amuhar3@gmail.com').
 
 -protocol({xep, 0356, '0.2.1'}).
 
--export([advertise_permissions/1, initial_presences/1, process_presence/1, 
-         process_roster_presence/1, compare_presences/2,
-         process_message/4, process_iq/4]).
+-behaviour(gen_server).
+-behaviour(gen_mod).
 
--include("ejabberd_service.hrl").
+%% API
+-export([start_link/2]).
+-export([start/2, stop/1, mod_opt_type/1, depends/2]).
+%% gen_server callbacks
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+	 terminate/2, code_change/3]).
+-export([component_connected/1, component_disconnected/2,
+	 roster_access/2, process_message/3,
+	 process_presence_out/4, process_presence_in/5]).
 
--include("mod_privacy.hrl").
+-include("ejabberd.hrl").
+-include("logger.hrl").
+-include("xmpp.hrl").
 
-%%%--------------------------------------------------------------------------------------
-%%% Functions to advertise services of allowed permission
-%%%--------------------------------------------------------------------------------------
+-record(state, {server_host = <<"">> :: binary(),
+		permissions = dict:new() :: ?TDICT}).
 
--spec permissions(binary(), binary(), list()) -> xmlel().
+%%%===================================================================
+%%% API
+%%%===================================================================
+start_link(Host, Opts) ->
+    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
 
-permissions(From, To, PrivAccess) ->
-    Perms = lists:map(fun({Access, Type}) ->
-                          ?DEBUG("Advertise service ~s of allowed permission: ~s = ~s~n",
-                                 [To, Access, Type]),
-                          #xmlel{name = <<"perm">>, 
-                                 attrs = [{<<"access">>, 
-                                           atom_to_binary(Access,latin1)},
-                                          {<<"type">>, Type}]}
-                      end, PrivAccess),
-    Stanza = #xmlel{name = <<"privilege">>, 
-                    attrs = [{<<"xmlns">> ,?NS_PRIVILEGE}],
-                    children = Perms},
-    Id = randoms:get_string(),
-    #xmlel{name = <<"message">>, 
-           attrs = [{<<"id">>, Id}, {<<"from">>, From}, {<<"to">>, To}],
-           children = [Stanza]}.
+start(Host, Opts) ->
+    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    PingSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
+                transient, 2000, worker, [?MODULE]},
+    supervisor:start_child(ejabberd_sup, PingSpec).
 
-advertise_permissions(#state{privilege_access = []}) -> ok;
-advertise_permissions(StateData) ->
-    Stanza =
-      permissions(?MYNAME, StateData#state.host, StateData#state.privilege_access),
-    ejabberd_service:send_element(StateData, Stanza).
+stop(Host) ->
+    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    gen_server:call(Proc, stop),
+    supervisor:delete_child(ejabberd_sup, Proc).
 
-%%%--------------------------------------------------------------------------------------
-%%%  Process presences
-%%%--------------------------------------------------------------------------------------
+mod_opt_type(roster) -> v_roster();
+mod_opt_type(message) -> v_message();
+mod_opt_type(presence) -> v_presence();
+mod_opt_type(_) ->
+    [roster, message, presence].
 
-initial_presences(StateData) ->
-    Pids = ejabberd_sm:get_all_pids(),
+depends(_, _) ->
+    [].
+
+-spec component_connected(binary()) -> ok.
+component_connected(Host) ->
     lists:foreach(
-      fun(Pid) ->
-          {User, Server, Resource, PresenceLast} = ejabberd_c2s:get_last_presence(Pid),
-          From = #jid{user = User, server = Server, resource = Resource},
-          To = jid:from_string(StateData#state.host),
-          PacketNew = jlib:replace_from_to(From, To, PresenceLast),
-          ejabberd_service:send_element(StateData, PacketNew)
-      end, Pids).
+      fun(ServerHost) ->
+	      Proc = gen_mod:get_module_proc(ServerHost, ?MODULE),
+	      gen_server:cast(Proc, {component_connected, Host})
+      end, ?MYHOSTS).
 
-%% hook user_send_packet(Packet, C2SState, From, To) -> Packet
-%% for Managed Entity Presence
-process_presence(Pid) ->
-    fun(#xmlel{name = <<"presence">>} = Packet, _C2SState, From, _To) ->
-          case fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs) of
-            T when (T == <<"">>) or (T == <<"unavailable">>) ->
-              Pid ! {user_presence, Packet, From};   
-            _ -> ok
-          end,
-          Packet;
-       (Packet, _C2SState, _From, _To) ->
-          Packet
-    end.
-%% s2s_receive_packet(From, To, Packet) -> ok
-%% for Roster Presence
-%% From subscription "from" or "both"
-process_roster_presence(Pid) ->  
-    fun(From, To, #xmlel{name = <<"presence">>} = Packet) ->
-          case fxml:get_attr_s(<<"type">>, Packet#xmlel.attrs) of
-            T when (T == <<"">>) or (T == <<"unavailable">>) ->
-              Server = To#jid.server,
-              User = To#jid.user,
-              PrivList = ejabberd_hooks:run_fold(privacy_get_user_list,
-                                                 Server, #userlist{}, [User, Server]),
-              case privacy_check_packet(Server, User, PrivList, From, To, Packet, in) of
-                allow ->
-                  Pid ! {roster_presence, Packet, From};
-                _ -> ok
-              end,
-              ok;
-            _ -> ok
-          end;
-       (_From, _To, _Packet) -> ok
-    end.
+-spec component_disconnected(binary(), binary()) -> ok.
+component_disconnected(Host, _Reason) ->
+    lists:foreach(
+      fun(ServerHost) ->
+	      Proc = gen_mod:get_module_proc(ServerHost, ?MODULE),
+	      gen_server:cast(Proc, {component_disconnected, Host})
+      end, ?MYHOSTS).
 
-%%%--------------------------------------------------------------------------------------
-%%%  Manage Roster
-%%%--------------------------------------------------------------------------------------
+-spec process_message(jid(), jid(), stanza()) -> stop | ok.
+process_message(#jid{luser = <<"">>, lresource = <<"">>} = From,
+		#jid{lresource = <<"">>} = To,
+		#message{lang = Lang, type = T} = Msg) when T /= error ->
+    Host = From#jid.lserver,
+    ServerHost = To#jid.lserver,
+    Permissions = get_permissions(ServerHost),
+    case dict:find(Host, Permissions) of
+	{ok, Access} ->
+	    case proplists:get_value(message, Access, none) of
+		outgoing ->
+		    forward_message(From, To, Msg);
+		none ->
+		    Txt = <<"Insufficient privilege">>,
+		    Err = xmpp:err_forbidden(Txt, Lang),
+		    ejabberd_router:route_error(To, From, Msg, Err)
+	    end,
+	    stop;
+	error ->
+	    %% Component is disconnected
+	    ok
+    end;
+process_message(_From, _To, _Stanza) ->
+    ok.
 
-process_iq(StateData, FromJID, ToJID, Packet) ->
-    IQ = jlib:iq_query_or_response_info(Packet),
-    case IQ of
-      #iq{xmlns = ?NS_ROSTER} -> 
-        case (ToJID#jid.luser /= <<"">>) and
-             (FromJID#jid.luser == <<"">>) and
-             lists:member(ToJID#jid.lserver, ?MYHOSTS) of
-          true ->
-            AccessType = 
-              proplists:get_value(roster, StateData#state.privilege_access, none),
-            case IQ#iq.type of
-              get when (AccessType == <<"both">>) or (AccessType == <<"get">>) -> 
-                RosterIQ = roster_management(ToJID, FromJID, IQ),
-                ejabberd_service:send_element(StateData, RosterIQ);
-              set when (AccessType == <<"both">>) or (AccessType == <<"set">>) ->
-                %% check if user ToJID  exist
-                #jid{lserver = Server, luser = User} = ToJID,
-                case ejabberd_auth:is_user_exists(User,Server) of
-                  true ->
-                    ResIQ = roster_management(ToJID, FromJID, IQ),
-                    ejabberd_service:send_element(StateData, ResIQ);
-                  _ -> ok
-                end;
-              _ ->
-                Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN), 
-                ejabberd_service:send_element(StateData, Err)
-            end;
-          _ ->
-            ejabberd_router:route(FromJID, ToJID, Packet)
-        end;
-      #iq{type = Type, id = Id} when (Type == error) or (Type == result) -> % for XEP-0355
-        Hook = {iq, Type, Id},
-        Host = ToJID#jid.lserver,
-        case (ToJID#jid.luser == <<"">>) and
-             (FromJID#jid.luser == <<"">>) and
-             lists:member(ToJID#jid.lserver, ?MYHOSTS) of
-          true ->
-            case ets:lookup(hooks_tmp, {Hook, Host}) of
-              [{_, Function, _Timestamp}] -> 
-                catch apply(Function, [Packet]);
-              [] -> 
-                ejabberd_router:route(FromJID, ToJID, Packet)
-            end;
-          _ ->
-            ejabberd_router:route(FromJID, ToJID, Packet)
-        end;
-      _ ->
-        ejabberd_router:route(FromJID, ToJID, Packet)
+-spec roster_access(boolean(), iq()) -> boolean().
+roster_access(true, _) ->
+    true;
+roster_access(false, #iq{from = From, to = To, type = Type}) ->
+    Host = From#jid.lserver,
+    ServerHost = To#jid.lserver,
+    Permissions = get_permissions(ServerHost),
+    case dict:find(Host, Permissions) of
+	{ok, Access} ->
+	    Permission = proplists:get_value(roster, Access, none),
+	    (Permission == both)
+		orelse (Permission == get andalso Type == get)
+		orelse (Permission == set andalso Type == set);
+	error ->
+	    %% Component is disconnected
+	    false
     end.
 
-roster_management(FromJID, ToJID, IQ) ->
-    ResIQ = mod_roster:process_iq(FromJID, FromJID, IQ),
-    ResXml = jlib:iq_to_xml(ResIQ),
-    jlib:replace_from_to(FromJID, ToJID, ResXml).
+-spec process_presence_out(stanza(), ejabberd_c2s:state(), jid(), jid()) -> stanza().
+process_presence_out(#presence{type = Type} = Pres, _C2SState,
+		     #jid{luser = LUser, lserver = LServer} = From,
+		     #jid{luser = LUser, lserver = LServer, lresource = <<"">>})
+  when Type == available; Type == unavailable ->
+    %% Self-presence processing
+    Permissions = get_permissions(LServer),
+    lists:foreach(
+      fun({Host, Access}) ->
+	      Permission = proplists:get_value(presence, Access, none),
+	      if Permission == roster; Permission == managed_entity ->
+		      To = jid:make(Host),
+		      ejabberd_router:route(
+			From, To, xmpp:set_from_to(Pres, From, To));
+		 true ->
+		      ok
+	      end
+      end, dict:to_list(Permissions)),
+    Pres;
+process_presence_out(Acc, _, _, _) ->
+    Acc.
 
-%%%--------------------------------------------------------------------------------------
-%%%  Message permission
-%%%--------------------------------------------------------------------------------------
+-spec process_presence_in(stanza(), ejabberd_c2s:state(),
+			  jid(), jid(), jid()) -> stanza().
+process_presence_in(#presence{type = Type} = Pres, _C2SState, _,
+		    #jid{luser = U, lserver = S} = From,
+		    #jid{luser = LUser, lserver = LServer})
+  when {U, S} /= {LUser, LServer} andalso
+       (Type == available orelse Type == unavailable) ->
+    Permissions = get_permissions(LServer),
+    lists:foreach(
+      fun({Host, Access}) ->
+	      case proplists:get_value(presence, Access, none) of
+		  roster ->
+		      Permission = proplists:get_value(roster, Access, none),
+		      if Permission == both; Permission == get ->
+			      To = jid:make(Host),
+			      ejabberd_router:route(
+				From, To, xmpp:set_from_to(Pres, From, To));
+			 true ->
+			      ok
+		      end;
+		 true ->
+		      ok
+	      end
+      end, dict:to_list(Permissions)),
+    Pres;
+process_presence_in(Acc, _, _, _, _) ->
+    Acc.
 
-process_message(StateData, FromJID, ToJID, #xmlel{children = Children} = Packet) ->
-    %% if presence was send from service to server,
-    case lists:member(ToJID#jid.lserver, ?MYHOSTS) and
-         (ToJID#jid.luser == <<"">>) and
-         (FromJID#jid.luser == <<"">>) of %% service
-      true -> 
-        %% if stanza contains privilege element
-        case Children of
-          [#xmlel{name = <<"privilege">>, 
-                  attrs = [{<<"xmlns">>, ?NS_PRIVILEGE}],
-                  children = [#xmlel{name = <<"forwarded">>,
-                                     attrs = [{<<"xmlns">>, ?NS_FORWARD}],
-                                     children = Children2}]}] ->
-              %% 1 case : privilege service send subscription message
-              %% on behalf of the client
-              %% 2 case : privilege service send message on behalf
-              %% of the client
-              case Children2 of
-                %% it isn't case of 0356 extension
-                [#xmlel{name = <<"presence">>} = Child] ->
-                    forward_subscribe(StateData, Child, Packet);
-                [#xmlel{name = <<"message">>} = Child] -> %% xep-0356
-                    forward_message(StateData, Child, Packet);
-                _ -> 
-                    Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
-                    Txt = <<"invalid forwarded element">>,
-                    Err = jlib:make_error_reply(Packet, ?ERRT_BAD_REQUEST(Lang, Txt)),
-                    ejabberd_service:send_element(StateData, Err)
-              end;
-          _ ->
-              ejabberd_router:route(FromJID, ToJID, Packet)
-        end;
+%%%===================================================================
+%%% gen_server callbacks
+%%%===================================================================
+init([Host, _Opts]) ->
+    ejabberd_hooks:add(component_connected, ?MODULE,
+                       component_connected, 50),
+    ejabberd_hooks:add(component_disconnected, ?MODULE,
+                       component_disconnected, 50),
+    ejabberd_hooks:add(local_send_to_resource_hook, Host, ?MODULE,
+		       process_message, 50),
+    ejabberd_hooks:add(roster_remote_access, Host, ?MODULE,
+		       roster_access, 50),
+    ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
+		       process_presence_out, 50),
+    ejabberd_hooks:add(user_receive_packet, Host, ?MODULE,
+		       process_presence_in, 50),
+    {ok, #state{server_host = Host}}.
 
-      _ ->
-        ejabberd_router:route(FromJID, ToJID, Packet)
+handle_call(get_permissions, _From, State) ->
+    {reply, {ok, State#state.permissions}, State};
+handle_call(_Request, _From, State) ->
+    Reply = ok,
+    {reply, Reply, State}.
+
+handle_cast({component_connected, Host}, State) ->
+    ServerHost = State#state.server_host,
+    From = jid:make(ServerHost),
+    To = jid:make(Host),
+    RosterPerm = get_roster_permission(ServerHost, Host),
+    PresencePerm = get_presence_permission(ServerHost, Host),
+    MessagePerm = get_message_permission(ServerHost, Host),
+    if RosterPerm /= none, PresencePerm /= none, MessagePerm /= none ->
+	    Priv = #privilege{perms = [#privilege_perm{access = message,
+						       type = MessagePerm},
+				       #privilege_perm{access = roster,
+						       type = RosterPerm},
+				       #privilege_perm{access = presence,
+						       type = PresencePerm}]},
+	    ?INFO_MSG("Granting permissions to external "
+		      "component '~s': roster = ~s, presence = ~s, "
+		      "message = ~s",
+		      [Host, RosterPerm, PresencePerm, MessagePerm]),
+	    Msg = #message{from = From, to = To,  sub_els = [Priv]},
+	    ejabberd_router:route(From, To, Msg),
+	    Permissions = dict:store(Host, [{roster, RosterPerm},
+					    {presence, PresencePerm},
+					    {message, MessagePerm}],
+				     State#state.permissions),
+	    {noreply, State#state{permissions = Permissions}};
+       true ->
+	    ?INFO_MSG("Granting no permissions to external component '~s'",
+		      [Host]),
+	    {noreply, State}
+    end;
+handle_cast({component_disconnected, Host}, State) ->
+    Permissions = dict:erase(Host, State#state.permissions),
+    {noreply, State#state{permissions = Permissions}};
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+handle_info(_Info, State) ->
+    {noreply, State}.
+
+terminate(_Reason, State) ->
+    %% Note: we don't remove component_* hooks because they are global
+    %% and might be registered within a module on another virtual host
+    Host = State#state.server_host,
+    ejabberd_hooks:delete(local_send_to_resource_hook, Host, ?MODULE,
+			  process_message, 50),
+    ejabberd_hooks:delete(roster_remote_access, Host, ?MODULE,
+			  roster_access, 50),
+    ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
+			  process_presence_out, 50),
+    ejabberd_hooks:delete(user_receive_packet, Host, ?MODULE,
+			  process_presence_in, 50).
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
+
+%%%===================================================================
+%%% Internal functions
+%%%===================================================================
+get_permissions(ServerHost) ->
+    Proc = gen_mod:get_module_proc(ServerHost, ?MODULE),
+    try gen_server:call(Proc, get_permissions) of
+	{ok, Permissions} ->
+	    Permissions
+    catch exit:{noproc, _} ->
+	    %% No module is loaded for this virtual host
+	    dict:new()
     end.
 
-forward_subscribe(StateData, Presence, Packet) ->
-    PrivAccess = StateData#state.privilege_access,
-    T = proplists:get_value(roster, PrivAccess, none),
-    Type = fxml:get_attr_s(<<"type">>, Presence#xmlel.attrs),
-    if
-      ((T == <<"both">>) or (T == <<"set">>)) and (Type == <<"subscribe">>) ->
-        From = fxml:get_attr_s(<<"from">>, Presence#xmlel.attrs),
-        FromJ = jid:from_string(From),
-        To = fxml:get_attr_s(<<"to">>, Presence#xmlel.attrs),
-        ToJ = case To of 
-                <<"">> -> error;
-                _ -> jid:from_string(To)
-              end,
-        if  
-          (ToJ /= error) and (FromJ /= error) ->
-            Server = FromJ#jid.lserver,
-            User = FromJ#jid.luser,
-            case (FromJ#jid.lresource == <<"">>) and 
-                  lists:member(Server, ?MYHOSTS) of
-              true ->
-                if  
-                  (Server /= ToJ#jid.lserver) or
-                  (User /= ToJ#jid.luser) ->
-                    %% 0356 server MUST NOT allow the privileged entity
-                    %% to do anything that the managed entity could not do
-                    try_roster_subscribe(Server,User, FromJ, ToJ, Presence);   
-                  true -> %% we don't want presence sent to self
-                    ok
-                end;
-              _ ->
-                Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
-                ejabberd_service:send_element(StateData, Err)
-            end;
-          true ->
-            Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
-            Txt = <<"Incorrect stanza from/to JID">>,
-            Err = jlib:make_error_reply(Packet, ?ERRT_BAD_REQUEST(Lang, Txt)),
-            ejabberd_service:send_element(StateData, Err)
-            end;
-      true ->
-        Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
-        ejabberd_service:send_element(StateData, Err)
+forward_message(From, To, Msg) ->
+    ServerHost = To#jid.lserver,
+    Lang = xmpp:get_lang(Msg),
+    case xmpp:get_subtag(Msg, #privilege{}) of
+	#privilege{forwarded = #forwarded{xml_els = [SubEl]}} ->
+	    try xmpp:decode(SubEl, ?NS_CLIENT, [ignore_els]) of
+		#message{} = NewMsg ->
+		    case NewMsg#message.from of
+			#jid{lresource = <<"">>, lserver = ServerHost} ->
+			    ejabberd_router:route(
+			      xmpp:get_from(NewMsg), xmpp:get_to(NewMsg), NewMsg);
+			_ ->
+			    Lang = xmpp:get_lang(Msg),
+			    Txt = <<"Invalid 'from' attribute in forwarded message">>,
+			    Err = xmpp:err_forbidden(Txt, Lang),
+			    ejabberd_router:route_error(To, From, Msg, Err)
+		    end;
+		_ ->
+		    Txt = <<"Message not found in forwarded payload">>,
+		    Err = xmpp:err_bad_request(Txt, Lang),
+		    ejabberd_router:route_error(To, From, Msg, Err)
+	    catch _:{xmpp_codec, Why} ->
+		    Txt = xmpp:format_error(Why),
+		    Err = xmpp:err_bad_request(Txt, Lang),
+		    ejabberd_router:route_error(To, From, Msg, Err)
+	    end;
+	_ ->
+	    Txt = <<"Invalid <forwarded/> element">>,
+	    Err = xmpp:err_bad_request(Txt, Lang),
+	    ejabberd_router:route_error(To, From, Msg, Err)
     end.
 
-forward_message(StateData, Message, Packet) ->
-    PrivAccess = StateData#state.privilege_access,
-    T = proplists:get_value(message, PrivAccess, none),
-    if  
-      (T == <<"outgoing">>) ->            
-        From = fxml:get_attr_s(<<"from">>, Message#xmlel.attrs),
-        FromJ = jid:from_string(From),
-        To = fxml:get_attr_s(<<"to">>, Message#xmlel.attrs),
-        ToJ = case To of 
-                <<"">> -> FromJ;
-                _ -> jid:from_string(To)
-              end,
-        if  
-          (ToJ /= error) and (FromJ /= error) ->
-            Server = FromJ#jid.server,
-            User = FromJ#jid.user,
-            case (FromJ#jid.lresource == <<"">>) and 
-                 lists:member(Server, ?MYHOSTS) of
-              true ->
-                %% there are no restriction on to attribute
-                PrivList = ejabberd_hooks:run_fold(privacy_get_user_list,
-                                                   Server, #userlist{},
-                                                   [User, Server]),
-                check_privacy_route(Server, User, PrivList,
-                                                  FromJ, ToJ, Message);
-              _ ->
-                Err = jlib:make_error_reply(Packet, ?ERR_FORBIDDEN),
-                ejabberd_service:send_element(StateData, Err)
-            end;
-          true ->
-            Lang = fxml:get_tag_attr_s(<<"xml:lang">>, Packet),
-            Txt = <<"Incorrect stanza from/to JID">>,
-            Err = jlib:make_error_reply(Packet, ?ERRT_BAD_REQUEST(Lang, Txt)),
-            ejabberd_service:send_element(StateData, Err)
-        end;
-      true ->
-        Err = jlib:make_error_reply(Packet,?ERR_FORBIDDEN),
-        ejabberd_service:send_element(StateData, Err)
+get_roster_permission(ServerHost, Host) ->
+    Perms = gen_mod:get_module_opt(ServerHost, ?MODULE, roster,
+				   v_roster(), []),
+    case match_rule(ServerHost, Host, Perms, both) of
+	allow ->
+	    both;
+	deny ->
+	    Get = match_rule(ServerHost, Host, Perms, get),
+	    Set = match_rule(ServerHost, Host, Perms, set),
+	    if Get == allow, Set == allow -> both;
+	       Get == allow -> get;
+	       Set == allow -> set;
+	       true -> none
+	    end
     end.
 
-%%%--------------------------------------------------------------------------------------
-%%%  helper functions
-%%%--------------------------------------------------------------------------------------
-
-compare_presences(undefined, _Presence) -> false;                       
-compare_presences(#xmlel{attrs = Attrs, children = Child},
-                  #xmlel{attrs = Attrs2, children = Child2}) ->
-    Id1 = fxml:get_attr_s(<<"id">>, Attrs),
-    Id2 = fxml:get_attr_s(<<"id">>, Attrs2),
-    if
-      (Id1 /= Id2) ->
-        false;
-      (Id1 /= <<"">>) and (Id1 == Id2) -> 
-        true;
-      true -> 
-        case not compare_attrs(Attrs, Attrs2) of
-          true -> false;
-          _ -> 
-            compare_elements(Child, Child2)
-        end
+get_message_permission(ServerHost, Host) ->
+    Perms = gen_mod:get_module_opt(ServerHost, ?MODULE, message,
+				   v_message(), []),
+    case match_rule(ServerHost, Host, Perms, outgoing) of
+	allow -> outgoing;
+	deny -> none
     end.
 
-
-compare_elements([],[]) -> true;
-compare_elements(Tags1, Tags2) when length(Tags1) == length(Tags2) ->
-    compare_tags(Tags1,Tags2);
-compare_elements(_Tags1, _Tags2) -> false.
-
-compare_tags([],[]) -> true;
-compare_tags([{xmlcdata, CData}|Tags1], [{xmlcdata, CData}|Tags2]) ->
-    compare_tags(Tags1, Tags2);
-compare_tags([{xmlcdata, _CData1}|_Tags1], [{xmlcdata, _CData2}|_Tags2]) ->
-    false;
-compare_tags([#xmlel{} = Stanza1|Tags1], [#xmlel{} = Stanza2|Tags2]) ->
-    case (Stanza1#xmlel.name == Stanza2#xmlel.name) and
-         compare_attrs(Stanza1#xmlel.attrs, Stanza2#xmlel.attrs) and
-         compare_tags(Stanza1#xmlel.children, Stanza2#xmlel.children) of
-      true -> 
-        compare_tags(Tags1,Tags2);
-      false ->
-        false
+get_presence_permission(ServerHost, Host) ->
+    Perms = gen_mod:get_module_opt(ServerHost, ?MODULE, presence,
+				   v_presence(), []),
+    case match_rule(ServerHost, Host, Perms, roster) of
+	allow ->
+	    roster;
+	deny ->
+	    case match_rule(ServerHost, Host, Perms, managed_entity) of
+		allow -> managed_entity;
+		deny -> none
+	    end
     end.
 
-%% attr() :: {Name, Value}
--spec compare_attrs([attr()], [attr()]) -> boolean().
-compare_attrs([],[]) -> true;
-compare_attrs(Attrs1, Attrs2) when length(Attrs1) == length(Attrs2) ->
-    lists:foldl(fun(Attr,Acc) -> lists:member(Attr, Attrs2) and Acc end, true, Attrs1);
-compare_attrs(_Attrs1, _Attrs2) -> false.
+match_rule(ServerHost, Host, Perms, Type) ->
+    Access = proplists:get_value(Type, Perms, none),
+    acl:match_rule(ServerHost, Access, jid:make(Host)).
 
-%% Check if privacy rules allow this delivery
-%% from ejabberd_c2s.erl
-privacy_check_packet(Server, User, PrivList, From, To, Packet , Dir) ->
-    ejabberd_hooks:run_fold(privacy_check_packet,
-                            Server, allow, [User, Server, PrivList, 
-                            {From, To, Packet}, Dir]).
-
-check_privacy_route(Server, User, PrivList, From, To, Packet) ->
-    case privacy_check_packet(Server, User, PrivList, From, To, Packet, out) of
-        allow ->
-            ejabberd_router:route(From, To, Packet);
-        _ -> ok %% who should receive error : service or user?
+v_roster() ->
+    fun(Props) ->
+	    lists:map(
+	      fun({both, ACL}) -> {both, acl:access_rules_validator(ACL)};
+		 ({get, ACL}) -> {get, acl:access_rules_validator(ACL)};
+		 ({set, ACL}) -> {set, acl:access_rules_validator(ACL)}
+	      end, Props)
     end.
 
-try_roster_subscribe(Server,User, From, To, Packet) ->
-    Access = 
-      gen_mod:get_module_opt(Server, mod_roster, access,
-                             fun(A) when is_atom(A) -> A end, all),
-    case acl:match_rule(Server, Access, From) of
-        deny ->
-            ok;
-        allow ->
-            ejabberd_hooks:run(roster_out_subscription, Server,
-                               [User, Server, To, subscribe]),
-            PrivList = ejabberd_hooks:run_fold(privacy_get_user_list,
-                                               Server,
-                                               #userlist{},
-                                               [User, Server]),
-            check_privacy_route(Server, User, PrivList, From, To, Packet)            
+v_message() ->
+    fun(Props) ->
+	    lists:map(
+	      fun({outgoing, ACL}) -> {outgoing, acl:access_rules_validator(ACL)}
+	      end, Props)
+    end.
+
+v_presence() ->
+    fun(Props) ->
+	    lists:map(
+	      fun({managed_entity, ACL}) ->
+		      {managed_entity, acl:access_rules_validator(ACL)};
+		 ({roster, ACL}) ->
+		      {roster, acl:access_rules_validator(ACL)}
+	      end, Props)
     end.

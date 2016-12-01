@@ -89,9 +89,9 @@ loop(_State) -> receive stop -> ok end.
 %% TODO: Support comment lines starting by %
 update_bl_c2s() ->
     ?INFO_MSG("Updating C2S Blacklist", []),
-    case httpc:request(?BLC2S) of
+    case p1_http:get(?BLC2S) of
       {ok, 200, _Headers, Body} ->
-	  IPs = str:tokens(Body, <<"\n">>),
+	  IPs = str:tokens(iolist_to_binary(Body), <<"\n">>),
 	  ets:delete_all_objects(bl_c2s),
 	  lists:foreach(fun (IP) ->
 				ets:insert(bl_c2s,
@@ -109,6 +109,10 @@ update_bl_c2s() ->
 %% Return: false: IP not blacklisted
 %%         true: IP is blacklisted
 %% IPV4 IP tuple:
+-spec is_ip_in_c2s_blacklist(
+	{true, binary(), binary()} | false,
+	{inet:ip_address(), non_neg_integer()},
+	binary()) -> {stop, {true, binary(), binary()}} | false.
 is_ip_in_c2s_blacklist(_Val, IP, Lang) when is_tuple(IP) ->
     BinaryIP = jlib:ip_to_list(IP),
     case ets:lookup(bl_c2s, BinaryIP) of

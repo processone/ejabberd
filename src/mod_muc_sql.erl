@@ -11,13 +11,16 @@
 -compile([{parse_transform, ejabberd_sql_pt}]).
 
 -behaviour(mod_muc).
+-behaviour(mod_muc_room).
 
 %% API
 -export([init/2, store_room/4, restore_room/3, forget_room/3,
 	 can_use_nick/4, get_rooms/2, get_nick/3, set_nick/4,
-	 import/1, import/2, export/1]).
+	 import/3, export/1]).
+-export([set_affiliation/6, set_affiliations/4, get_affiliation/5,
+	 get_affiliations/3, search_affiliation/4]).
 
--include("jlib.hrl").
+-include("jid.hrl").
 -include("mod_muc.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
@@ -127,6 +130,21 @@ set_nick(LServer, Host, From, Nick) ->
 	end,
     ejabberd_sql:sql_transaction(LServer, F).
 
+set_affiliation(_ServerHost, _Room, _Host, _JID, _Affiliation, _Reason) ->
+    {error, not_implemented}.
+
+set_affiliations(_ServerHost, _Room, _Host, _Affiliations) ->
+    {error, not_implemented}.
+
+get_affiliation(_ServerHost, _Room, _Host, _LUser, _LServer) ->
+    {error, not_implemented}.
+
+get_affiliations(_ServerHost, _Room, _Host) ->
+    {error, not_implemented}.
+
+search_affiliation(_ServerHost, _Room, _Host, _Affiliation) ->
+    {error, not_implemented}.
+
 export(_Server) ->
     [{muc_room,
       fun(Host, #muc_room{name_host = {Name, RoomHost}, opts = Opts}) ->
@@ -158,21 +176,8 @@ export(_Server) ->
               end
       end}].
 
-import(_LServer) ->
-    [{<<"select name, host, opts from muc_room;">>,
-      fun([Name, RoomHost, SOpts]) ->
-              Opts = mod_muc:opts_to_binary(ejabberd_sql:decode_term(SOpts)),
-              #muc_room{name_host = {Name, RoomHost}, opts = Opts}
-      end},
-     {<<"select jid, host, nick from muc_registered;">>,
-      fun([J, RoomHost, Nick]) ->
-              #jid{user = U, server = S} = jid:from_string(J),
-              #muc_registered{us_host = {{U, S}, RoomHost},
-                              nick = Nick}
-      end}].
-
-import(_, _) ->
-    pass.
+import(_, _, _) ->
+    ok.
 
 %%%===================================================================
 %%% Internal functions

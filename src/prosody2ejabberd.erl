@@ -12,7 +12,7 @@
 -export([from_dir/1]).
 
 -include("ejabberd.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("logger.hrl").
 -include("mod_roster.hrl").
 -include("mod_offline.hrl").
@@ -300,8 +300,8 @@ convert_privacy_item({_, Item}) ->
 	      match_presence_out = MatchPresOut}.
 
 el_to_offline_msg(LUser, LServer, #xmlel{attrs = Attrs} = El) ->
-    case jlib:datetime_string_to_timestamp(
-	   fxml:get_attr_s(<<"stamp">>, Attrs)) of
+    try xmpp_util:decode_timestamp(
+	  fxml:get_attr_s(<<"stamp">>, Attrs)) of
 	{_, _, _} = TS ->
 	    Attrs1 = lists:filter(
 		       fun(<<"stamp">>) -> false;
@@ -321,8 +321,8 @@ el_to_offline_msg(LUser, LServer, #xmlel{attrs = Attrs} = El) ->
 			packet = Packet}];
 		_ ->
 		    []
-	    end;
-	_ ->
+	    end
+    catch _:{bad_timestamp, _} ->
 	    []
     end.
 

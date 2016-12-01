@@ -39,7 +39,9 @@
 
 -define(EJABBERD_URI, <<"http://www.process-one.net/en/ejabberd/">>).
 
--define(S2STIMEOUT, 600000).
+-define(COPYRIGHT, "Copyright (c) 2002-2016 ProcessOne").
+
+-define(S2STIMEOUT, timer:minutes(10)).
 
 %%-define(DBGFSM, true).
 
@@ -64,7 +66,7 @@
 
 -define(TDICT, dict:dict()).
 -define(TGB_TREE, gb_trees:tree()).
--define(TGB_SET, gb_set:set()).
+-define(TGB_SET, gb_sets:set()).
 -define(TQUEUE, queue:queue()).
 
 -endif.

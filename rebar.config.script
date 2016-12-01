@@ -21,6 +21,14 @@ ModCfg0 = fun(F, Cfg, [Key|Tail], Op, Default) ->
          end,
 ModCfg = fun(Cfg, Keys, Op, Default) -> ModCfg0(ModCfg0, Cfg, Keys, Op, Default) end,
 
+IsRebar3 = case application:get_key(rebar, vsn) of
+	       {ok, VSN} ->
+		   [VSN1 | _] = string:tokens(VSN, "-"),
+		   [Maj, Min, Patch] = string:tokens(VSN1, "."),
+		   (list_to_integer(Maj) >= 3);
+	       undefined ->
+		   lists:keymember(mix, 1, application:loaded_applications())
+	   end,
 Cfg = case file:consult(filename:join(filename:dirname(SCRIPT), "vars.config")) of
           {ok, Terms} ->
               Terms;
@@ -119,12 +127,64 @@ TestConfig = case file:read_file_info(TestConfigFile) of
                      "-userconfig ct_config_plain " ++ TestConfigFile ++ " ";
                  _ ->
                      ""
-             end,
+	     end,
 
-Conf2 = [{ct_extra_params, "-ct_hooks cth_surefire "
-         ++ TestConfig
-         ++ "-include "
-         ++ filename:join([Cwd, "tools"])} | Conf1],
+ResolveDepPath = case IsRebar3 of
+		     true ->
+			 fun("deps/" ++ Rest) ->
+				 Slash = string:str(Rest, "/"),
+				 Dir = "_build/default/lib/" ++
+				     string:sub_string(Rest, 1, Slash-1),
+				 Dir ++ string:sub_string(Rest, Slash);
+			    (Path) ->
+				 Path
+			 end;
+		     _ ->
+			 fun(P) ->
+				  P
+			 end
+		 end,
+
+CtIncludes = case lists:keyfind(eunit_compile_opts, 1, Conf1) of
+		 false ->
+		     [];
+		 {_, EunitCompOpts} ->
+		     [[" -include ", filename:join([Cwd, ResolveDepPath(IncPath)])]
+		      || {i, IncPath} <- EunitCompOpts]
+	     end,
+
+ProcessErlOpt = fun({i, Path}) ->
+			{i, ResolveDepPath(Path)};
+		   (ErlOpt) ->
+			ErlOpt
+		 end,
+
+Conf1a = ModCfg(Conf1, [erl_opts],
+		 fun(ErlOpts) -> lists:map(ProcessErlOpt, ErlOpts) end, []),
+
+Conf2a = [{ct_extra_params, lists:flatten(["-ct_hooks cth_surefire ", TestConfig,
+					  CtIncludes])} | Conf1a],
+
+Conf2 = case IsRebar3 of
+	    true ->
+		DepsFun = fun(DepsList) ->
+				  lists:filtermap(fun({rebar_elixir_plugin, _, _}) ->
+							  false;
+						     ({DepName,_, {git,_, _} = Git}) ->
+							  {true, {DepName, Git}};
+						     (Dep) ->
+							  true
+						  end, DepsList)
+			  end,
+		RB1 = ModCfg(Conf2a, [deps], DepsFun, []),
+		ModCfg(RB1, [plugins], fun(V) -> V -- [deps_erl_opts,
+						       rebar_elixir_compiler,
+						       rebar_exunit] ++
+						     [rebar3_hex] end, []);
+	    false ->
+		Conf2a
+	end,
+
 
 Conf3 = case lists:keytake(xref_exclusions, 1, Conf2) of
             {value, {_, Items2}, Rest2} ->

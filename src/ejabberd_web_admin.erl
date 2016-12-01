@@ -38,7 +38,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -include("ejabberd_http.hrl").
 
@@ -274,7 +274,7 @@ get_auth_account(HostOfRule, AccessRule, User, Server,
     case ejabberd_auth:check_password(User, <<"">>, Server, Pass) of
       true ->
 	  case acl:any_rules_allowed(HostOfRule, AccessRule,
-                               jid:make(User, Server, <<"">>))
+			    jid:make(User, Server, <<"">>))
 	      of
 	    false -> {unauthorized, <<"unprivileged-account">>};
 	    true -> {ok, {User, Server}}
@@ -763,8 +763,8 @@ process_admin(Host,
 		   [?XAE(<<"form">>,
 			 [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}]++direction(ltr),
 			 [?TEXTAREA(<<"acls">>,
-				    (iolist_to_binary(integer_to_list(lists:max([16,
-										 NumLines])))),
+				    (integer_to_binary(lists:max([16,
+										 NumLines]))),
 				    <<"80">>, <<(iolist_to_binary(ACLsP))/binary, ".">>),
 			  ?BR,
 			  ?INPUTT(<<"submit">>, <<"submit">>, <<"Submit">>)])],
@@ -865,8 +865,8 @@ process_admin(Host,
 		   [?XAE(<<"form">>,
 			 [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}]++direction(ltr),
 			 [?TEXTAREA(<<"access">>,
-				    (iolist_to_binary(integer_to_list(lists:max([16,
-										 NumLines])))),
+				    (integer_to_binary(lists:max([16,
+										 NumLines]))),
 				    <<"80">>, <<(iolist_to_binary(AccessP))/binary, ".">>),
 			  ?BR,
 			  ?INPUTT(<<"submit">>, <<"submit">>, <<"Submit">>)])],
@@ -926,7 +926,7 @@ process_admin(Host,
 	      Rs1 -> Rs1
 	    end,
     make_xhtml([?XC(<<"h1">>,
-		    list_to_binary(io_lib:format(
+		    (str:format(
                                      ?T(<<"~s access rule configuration">>),
                                      [SName])))]
 		 ++
@@ -1052,17 +1052,21 @@ process_admin(Host,
 process_admin(Host,
 	      #request{lang = Lang, auth = {_, _Auth, AJID}} =
 		  Request) ->
-    {Hook, Opts} = case Host of
-		     global -> {webadmin_page_main, [Request]};
-		     Host -> {webadmin_page_host, [Host, Request]}
-		   end,
-    case ejabberd_hooks:run_fold(Hook, Host, [], Opts) of
+    Res = case Host of
+	      global ->
+		  ejabberd_hooks:run_fold(
+		    webadmin_page_main, Host, [], [Request]);
+	      _ ->
+		  ejabberd_hooks:run_fold(
+		    webadmin_page_host, Host, [], [Host, Request])
+	  end,
+    case Res of
       [] ->
 	  setelement(1,
 		     make_xhtml([?XC(<<"h1">>, <<"Not Found">>)], Host, Lang,
 				AJID),
 		     404);
-      Res -> make_xhtml(Res, Host, Lang, AJID)
+      _ -> make_xhtml(Res, Host, Lang, AJID)
     end.
 
 %%%==================================
@@ -1137,7 +1141,7 @@ acl_spec_select(ID, Opt) ->
 %% @spec (T::any()) -> StringLine::string()
 term_to_string(T) ->
     StringParagraph =
-	iolist_to_binary(io_lib:format("~1000000p", [T])),
+	(str:format("~1000000p", [T])),
     ejabberd_regexp:greplace(StringParagraph, <<"\\n ">>,
 			     <<"">>).
 
@@ -1461,8 +1465,8 @@ list_users_in_diapason(Host, Diap, Lang, URLFunc) ->
     Users = ejabberd_auth:get_vh_registered_users(Host),
     SUsers = lists:sort([{S, U} || {U, S} <- Users]),
     [S1, S2] = ejabberd_regexp:split(Diap, <<"-">>),
-    N1 = jlib:binary_to_integer(S1),
-    N2 = jlib:binary_to_integer(S2),
+    N1 = binary_to_integer(S1),
+    N2 = binary_to_integer(S2),
     Sub = lists:sublist(SUsers, N1, N2 - N1 + 1),
     [list_given_users(Host, Sub, <<"../../">>, Lang,
 		      URLFunc)].
@@ -1502,7 +1506,7 @@ list_given_users(Host, Users, Prefix, Lang, URLFunc) ->
 						    {{Year, Month, Day},
 						     {Hour, Minute, Second}} =
 							calendar:now_to_local_time(TimeStamp),
-						    iolist_to_binary(io_lib:format("~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
+						    (str:format("~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
 										   [Year,
 										    Month,
 										    Day,
@@ -1651,7 +1655,7 @@ user_info(User, Server, Query, Lang) ->
                                                 "://",
                                                 (jlib:ip_to_list(IP))/binary,
                                                 ":",
-                                                (jlib:integer_to_binary(Port))/binary,
+                                                (integer_to_binary(Port))/binary,
                                                 "#",
                                                 (jlib:atom_to_binary(Node))/binary>>
                                       end,
@@ -1679,14 +1683,14 @@ user_info(User, Server, Query, Lang) ->
 					    Shift rem 1000000, 0},
 			       {{Year, Month, Day}, {Hour, Minute, Second}} =
 				   calendar:now_to_local_time(TimeStamp),
-			       iolist_to_binary(io_lib:format("~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
+			       (str:format("~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
 							      [Year, Month, Day,
 							       Hour, Minute,
 							       Second]))
 			 end;
 		     _ -> ?T(<<"Online">>)
 		   end,
-    [?XC(<<"h1">>, list_to_binary(io_lib:format(?T(<<"User ~s">>),
+    [?XC(<<"h1">>, (str:format(?T(<<"User ~s">>),
                                                 [us_to_list(US)])))]
       ++
       case Res of
@@ -1769,9 +1773,7 @@ list_last_activity(Host, Lang, Integral, Period) ->
 		       [?XAE(<<"li">>,
 			     [{<<"style">>,
 			       <<"width:",
-				 (iolist_to_binary(integer_to_list(trunc(90 * V
-									   /
-									   Max))))/binary,
+				 (integer_to_binary(trunc(90 * V / Max)))/binary,
 				 "%;">>}],
 			     [{xmlcdata, pretty_string_int(V)}])
 			|| V <- Hist ++ Tail])]
@@ -1846,7 +1848,7 @@ get_node(global, Node, [], Query, Lang) ->
     Base = get_base_path(global, Node),
     MenuItems2 = make_menu_items(global, Node, Base, Lang),
     [?XC(<<"h1">>,
-	 list_to_binary(io_lib:format(?T(<<"Node ~p">>), [Node])))]
+	 (str:format(?T(<<"Node ~p">>), [Node])))]
       ++
       case Res of
 	ok -> [?XREST(<<"Submitted">>)];
@@ -1871,7 +1873,7 @@ get_node(global, Node, [], Query, Lang) ->
 get_node(Host, Node, [], _Query, Lang) ->
     Base = get_base_path(Host, Node),
     MenuItems2 = make_menu_items(Host, Node, Base, Lang),
-    [?XC(<<"h1">>, list_to_binary(io_lib:format(?T(<<"Node ~p">>), [Node]))),
+    [?XC(<<"h1">>, (str:format(?T(<<"Node ~p">>), [Node]))),
      ?XE(<<"ul">>,
 	 ([?LI([?ACT(<<Base/binary, "modules/">>,
 		     <<"Modules">>)])]
@@ -1930,7 +1932,7 @@ get_node(global, Node, [<<"db">>], Query, Lang) ->
 			   end,
 			   STables),
 	  [?XC(<<"h1">>,
-	       list_to_binary(io_lib:format(?T(<<"Database Tables at ~p">>),
+	       (str:format(?T(<<"Database Tables at ~p">>),
                                             [Node]))
 	  )]
 	    ++
@@ -1966,9 +1968,9 @@ get_node(global, Node, [<<"backup">>], Query, Lang) ->
 	     ok -> [?XREST(<<"Submitted">>)];
 	     {error, Error} ->
 		 [?XRES(<<(?T(<<"Error">>))/binary, ": ",
-			  (list_to_binary(io_lib:format("~p", [Error])))/binary>>)]
+			  ((str:format("~p", [Error])))/binary>>)]
 	   end,
-    [?XC(<<"h1">>, list_to_binary(io_lib:format(?T(<<"Backup of ~p">>), [Node])))]
+    [?XC(<<"h1">>, (str:format(?T(<<"Backup of ~p">>), [Node])))]
       ++
       ResS ++
 	[?XCT(<<"p">>,
@@ -2120,7 +2122,7 @@ get_node(global, Node, [<<"ports">>], Query, Lang) ->
 	    {'EXIT', _Reason} -> error;
 	    {is_added, ok} -> ok;
 	    {is_added, {error, Reason}} ->
-		{error, iolist_to_binary(io_lib:format("~p", [Reason]))};
+		{error, (str:format("~p", [Reason]))};
 	    _ -> nothing
 	  end,
     NewPorts = lists:sort(ejabberd_cluster:call(Node, ejabberd_config,
@@ -2157,7 +2159,7 @@ get_node(Host, Node, [<<"modules">>], Query, Lang)
 	  end,
     NewModules = lists:sort(ejabberd_cluster:call(Node, gen_mod,
 				     loaded_modules_with_opts, [Host])),
-    H1String = list_to_binary(io_lib:format(?T(<<"Modules at ~p">>), [Node])),
+    H1String = (str:format(?T(<<"Modules at ~p">>), [Node])),
     (?H1GL(H1String, <<"modulesoverview">>,
 	   <<"Modules Overview">>))
       ++
@@ -2173,10 +2175,10 @@ get_node(Host, Node, [<<"modules">>], Query, Lang)
 get_node(global, Node, [<<"stats">>], _Query, Lang) ->
     UpTime = ejabberd_cluster:call(Node, erlang, statistics,
 		      [wall_clock]),
-    UpTimeS = list_to_binary(io_lib:format("~.3f",
+    UpTimeS = (str:format("~.3f",
                                            [element(1, UpTime) / 1000])),
     CPUTime = ejabberd_cluster:call(Node, erlang, statistics, [runtime]),
-    CPUTimeS = list_to_binary(io_lib:format("~.3f",
+    CPUTimeS = (str:format("~.3f",
                                             [element(1, CPUTime) / 1000])),
     OnlineUsers = ejabberd_sm:connected_users_number(),
     TransactionsCommitted = ejabberd_cluster:call(Node, mnesia,
@@ -2188,7 +2190,7 @@ get_node(global, Node, [<<"stats">>], _Query, Lang) ->
     TransactionsLogged = ejabberd_cluster:call(Node, mnesia, system_info,
 				  [transaction_log_writes]),
     [?XC(<<"h1">>,
-	 list_to_binary(io_lib:format(?T(<<"Statistics of ~p">>), [Node]))),
+	 (str:format(?T(<<"Statistics of ~p">>), [Node]))),
      ?XAE(<<"table">>, [],
 	  [?XE(<<"tbody">>,
 	       [?XE(<<"tr">>,
@@ -2252,11 +2254,11 @@ get_node(global, Node, [<<"update">>], Query, Lang) ->
 		      (BeamsLis ++ SelectButtons))
 	   end,
     FmtScript = (?XC(<<"pre">>,
-		     list_to_binary(io_lib:format("~p", [Script])))),
+		     (str:format("~p", [Script])))),
     FmtLowLevelScript = (?XC(<<"pre">>,
-			     list_to_binary(io_lib:format("~p", [LowLevelScript])))),
+			     (str:format("~p", [LowLevelScript])))),
     [?XC(<<"h1">>,
-	 list_to_binary(io_lib:format(?T(<<"Update ~p">>), [Node])))]
+	 (str:format(?T(<<"Update ~p">>), [Node])))]
       ++
       case Res of
 	ok -> [?XREST(<<"Submitted">>)];
@@ -2276,16 +2278,17 @@ get_node(global, Node, [<<"update">>], Query, Lang) ->
 	       ?BR,
 	       ?INPUTT(<<"submit">>, <<"update">>, <<"Update">>)])];
 get_node(Host, Node, NPath, Query, Lang) ->
-    {Hook, Opts} = case Host of
-		     global ->
-			 {webadmin_page_node, [Node, NPath, Query, Lang]};
-		     Host ->
-			 {webadmin_page_hostnode,
-			  [Host, Node, NPath, Query, Lang]}
-		   end,
-    case ejabberd_hooks:run_fold(Hook, Host, [], Opts) of
+    Res = case Host of
+	      global ->
+		  ejabberd_hooks:run_fold(webadmin_page_node, Host, [],
+					  [Node, NPath, Query, Lang]);
+	      _ ->
+		  ejabberd_hooks:run_fold(webadmin_page_hostnode, Host, [],
+					  [Host, Node, NPath, Query, Lang])
+	  end,
+    case Res of
       [] -> [?XC(<<"h1">>, <<"Not Found">>)];
-      Res -> Res
+      _ -> Res
     end.
 
 %%%==================================
@@ -2477,7 +2480,7 @@ node_ports_to_xhtml(Ports, Lang) ->
 						   SModule, <<"15">>)]),
 				      ?XAE(<<"td">>, direction(ltr),
 					  [?TEXTAREA(<<"opts", SSPort/binary>>,
-						     (iolist_to_binary(integer_to_list(NumLines))),
+						     (integer_to_binary(NumLines)),
 						     <<"35">>, SOptsClean)]),
 				      ?XE(<<"td">>,
 					  [?INPUTT(<<"submit">>,
@@ -2522,7 +2525,7 @@ make_netprot_html(NetProt) ->
 get_port_data(PortIP, Opts) ->
     {Port, IPT, IPS, _IPV, NetProt, OptsClean} =
 	ejabberd_listener:parse_listener_portip(PortIP, Opts),
-    SPort = jlib:integer_to_binary(Port),
+    SPort = integer_to_binary(Port),
     SSPort = list_to_binary(
                lists:map(fun (N) ->
                                  io_lib:format("~.16b", [N])
@@ -2620,7 +2623,7 @@ node_modules_to_xhtml(Modules, Lang) ->
 				     [?XC(<<"td">>, SModule),
 				      ?XAE(<<"td">>, direction(ltr),
 					  [?TEXTAREA(<<"opts", SModule/binary>>,
-						     (iolist_to_binary(integer_to_list(NumLines))),
+						     (integer_to_binary(NumLines)),
 						     <<"40">>, SOpts)]),
 				      ?XE(<<"td">>,
 					  [?INPUTT(<<"submit">>,
@@ -2702,11 +2705,11 @@ node_update_parse_query(Node, Query) ->
 	    {ok, _} -> ok;
 	    {error, Error} ->
 		?ERROR_MSG("~p~n", [Error]),
-		{error, iolist_to_binary(io_lib:format("~p", [Error]))};
+		{error, (str:format("~p", [Error]))};
 	    {badrpc, Error} ->
 		?ERROR_MSG("Bad RPC: ~p~n", [Error]),
 		{error,
-		 <<"Bad RPC: ", (iolist_to_binary(io_lib:format("~p", [Error])))/binary>>}
+		 <<"Bad RPC: ", ((str:format("~p", [Error])))/binary>>}
 	  end;
       _ -> nothing
     end.
@@ -2771,7 +2774,7 @@ pretty_print_xml(#xmlel{name = Name, attrs = Attrs,
 element_to_list(X) when is_atom(X) ->
     iolist_to_binary(atom_to_list(X));
 element_to_list(X) when is_integer(X) ->
-    iolist_to_binary(integer_to_list(X)).
+    integer_to_binary(X).
 
 list_to_element(Bin) ->
     {ok, Tokens, _} = erl_scan:string(binary_to_list(Bin)),
@@ -2779,8 +2782,8 @@ list_to_element(Bin) ->
     Element.
 
 url_func({user_diapason, From, To}) ->
-    <<(iolist_to_binary(integer_to_list(From)))/binary, "-",
-      (iolist_to_binary(integer_to_list(To)))/binary, "/">>;
+    <<(integer_to_binary(From))/binary, "-",
+      (integer_to_binary(To))/binary, "/">>;
 url_func({users_queue, Prefix, User, _Server}) ->
     <<Prefix/binary, "user/", User/binary, "/queue/">>;
 url_func({user, Prefix, User, _Server}) ->
@@ -2795,7 +2798,7 @@ cache_control_public() ->
 
 %% Transform 1234567890 into "1,234,567,890"
 pretty_string_int(Integer) when is_integer(Integer) ->
-    pretty_string_int(iolist_to_binary(integer_to_list(Integer)));
+    pretty_string_int(integer_to_binary(Integer));
 pretty_string_int(String) when is_binary(String) ->
     {_, Result} = lists:foldl(fun (NewNumber, {3, Result}) ->
 				      {1, <<NewNumber, $,, Result/binary>>};

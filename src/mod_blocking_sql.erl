@@ -14,7 +14,6 @@
 -export([process_blocklist_block/3, unblock_by_filter/3,
 	 process_blocklist_get/2]).
 
--include("jlib.hrl").
 -include("mod_privacy.hrl").
 
 %%%===================================================================

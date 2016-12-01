@@ -50,7 +50,7 @@
 -spec start() -> ok.
 
 start() ->
-    mnesia:create_table(shaper,
+    ejabberd_mnesia:create(?MODULE, shaper,
                         [{ram_copies, [node()]},
                          {local_content, true},
 			 {attributes, record_info(fields, shaper)}]),

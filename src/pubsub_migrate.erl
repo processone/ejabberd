@@ -253,7 +253,7 @@ update_node_database(Host, ServerHost) ->
 	      end,
 	  {atomic, NewRecords} = mnesia:transaction(F),
 	  {atomic, ok} = mnesia:delete_table(pubsub_node),
-	  {atomic, ok} = mnesia:create_table(pubsub_node,
+	  {atomic, ok} = ejabberd_mnesia:create(?MODULE, pubsub_node,
 					     [{disc_copies, [node()]},
 					      {attributes,
 					       record_info(fields,
@@ -421,7 +421,7 @@ update_state_database(_Host, _ServerHost) ->
 	    {atomic, NewRecs} = mnesia:transaction(fun mnesia:foldl/3,
 						   [F, [], pubsub_state]),
 	    {atomic, ok} = mnesia:delete_table(pubsub_state),
-	    {atomic, ok} = mnesia:create_table(pubsub_state,
+	    {atomic, ok} = ejabberd_mnesia:create(?MODULE, pubsub_state,
 					       [{disc_copies, [node()]},
 						{attributes, record_info(fields, pubsub_state)}]),
 	    FNew = fun () ->

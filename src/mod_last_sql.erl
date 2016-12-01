@@ -13,7 +13,7 @@
 
 %% API
 -export([init/2, get_last/2, store_last_info/4, remove_user/2,
-	 import/1, import/2, export/1]).
+	 import/2, export/1]).
 
 -include("mod_last.hrl").
 -include("logger.hrl").
@@ -43,9 +43,6 @@ store_last_info(LUser, LServer, TimeStamp, Status) ->
 remove_user(LUser, LServer) ->
     sql_queries:del_last(LServer, LUser).
 
-import(_LServer, _LA) ->
-    pass.
-
 export(_Server) ->
     [{last_activity,
       fun(Host, #last_activity{us = {LUser, LServer},
@@ -58,15 +55,5 @@ export(_Server) ->
               []
       end}].
 
-import(LServer) ->
-    [{<<"select username, seconds, state from last">>,
-      fun([LUser, TimeStamp, State]) ->
-              #last_activity{us = {LUser, LServer},
-                             timestamp = jlib:binary_to_integer(
-                                           TimeStamp),
-                             status = State}
-      end}].
-
-%%%===================================================================
-%%% Internal functions
-%%%===================================================================
+import(_LServer, _LA) ->
+    pass.

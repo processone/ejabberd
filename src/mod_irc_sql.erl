@@ -15,7 +15,7 @@
 %% API
 -export([init/2, get_data/3, set_data/4, import/1, import/2, export/1]).
 
--include("jlib.hrl").
+-include("jid.hrl").
 -include("mod_irc.hrl").
 -include("ejabberd_sql_pt.hrl").
 

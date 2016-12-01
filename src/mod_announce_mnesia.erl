@@ -11,9 +11,9 @@
 
 %% API
 -export([init/2, set_motd_users/2, set_motd/2, delete_motd/1,
-	 get_motd/1, is_motd_user/2, set_motd_user/2, import/2]).
+	 get_motd/1, is_motd_user/2, set_motd_user/2, import/3]).
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_announce.hrl").
 -include("logger.hrl").
 
@@ -21,11 +21,11 @@
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
-    mnesia:create_table(motd,
+    ejabberd_mnesia:create(?MODULE, motd,
 			[{disc_copies, [node()]},
 			 {attributes,
 			  record_info(fields, motd)}]),
-    mnesia:create_table(motd_users,
+    ejabberd_mnesia:create(?MODULE, motd_users,
 			[{disc_copies, [node()]},
 			 {attributes,
 			  record_info(fields, motd_users)}]),
@@ -81,10 +81,11 @@ set_motd_user(LUser, LServer) ->
 	end,
     mnesia:transaction(F).
 
-import(_LServer, #motd{} = Motd) ->
-    mnesia:dirty_write(Motd);
-import(_LServer, #motd_users{} = Users) ->
-    mnesia:dirty_write(Users).
+import(LServer, <<"motd">>, [<<>>, XML, _TimeStamp]) ->
+    El = fxml_stream:parse_element(XML),
+    mnesia:dirty_write(#motd{server = LServer, packet = El});
+import(LServer, <<"motd">>, [LUser, <<>>, _TimeStamp]) ->
+    mnesia:dirty_write(#motd_users{us = {LUser, LServer}}).
 
 %%%===================================================================
 %%% Internal functions

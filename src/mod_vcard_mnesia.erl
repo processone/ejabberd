@@ -11,10 +11,12 @@
 -behaviour(mod_vcard).
 
 %% API
--export([init/2, import/2, get_vcard/2, set_vcard/4, search/4, remove_user/2]).
+-export([init/2, stop/1, import/3, get_vcard/2, set_vcard/4, search/4,
+	 search_fields/1, search_reported/1, remove_user/2]).
+-export([is_search_supported/1]).
 
 -include("ejabberd.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_vcard.hrl").
 -include("logger.hrl").
 
@@ -22,10 +24,10 @@
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
-    mnesia:create_table(vcard,
+    ejabberd_mnesia:create(?MODULE, vcard,
 			[{disc_only_copies, [node()]},
 			 {attributes, record_info(fields, vcard)}]),
-    mnesia:create_table(vcard_search,
+    ejabberd_mnesia:create(?MODULE, vcard_search,
 			[{disc_copies, [node()]},
 			 {attributes,
 			  record_info(fields, vcard_search)}]),
@@ -42,6 +44,12 @@ init(_Host, _Opts) ->
     mnesia:add_table_index(vcard_search, lemail),
     mnesia:add_table_index(vcard_search, lorgname),
     mnesia:add_table_index(vcard_search, lorgunit).
+
+stop(_Host) ->
+    ok.
+
+is_search_supported(_ServerHost) ->
+    true.
 
 get_vcard(LUser, LServer) ->
     US = {LUser, LServer},
@@ -71,14 +79,43 @@ search(LServer, Data, AllowReturnAll, MaxMatch) ->
 		{'EXIT', Reason} ->
 		    ?ERROR_MSG("~p", [Reason]), [];
 		Rs ->
+		    Fields = lists:map(fun record_to_item/1, Rs),
 		    case MaxMatch of
 			infinity ->
-			    Rs;
+			    Fields;
 			Val ->
-			    lists:sublist(Rs, Val)
+			    lists:sublist(Fields, Val)
 		    end
 	    end
     end.
+
+search_fields(_LServer) ->
+    [{<<"User">>, <<"user">>},
+     {<<"Full Name">>, <<"fn">>},
+     {<<"Name">>, <<"first">>},
+     {<<"Middle Name">>, <<"middle">>},
+     {<<"Family Name">>, <<"last">>},
+     {<<"Nickname">>, <<"nick">>},
+     {<<"Birthday">>, <<"bday">>},
+     {<<"Country">>, <<"ctry">>},
+     {<<"City">>, <<"locality">>},
+     {<<"Email">>, <<"email">>},
+     {<<"Organization Name">>, <<"orgname">>},
+     {<<"Organization Unit">>, <<"orgunit">>}].
+
+search_reported(_LServer) ->
+    [{<<"Jabber ID">>, <<"jid">>},
+     {<<"Full Name">>, <<"fn">>},
+     {<<"Name">>, <<"first">>},
+     {<<"Middle Name">>, <<"middle">>},
+     {<<"Family Name">>, <<"last">>},
+     {<<"Nickname">>, <<"nick">>},
+     {<<"Birthday">>, <<"bday">>},
+     {<<"Country">>, <<"ctry">>},
+     {<<"City">>, <<"locality">>},
+     {<<"Email">>, <<"email">>},
+     {<<"Organization Name">>, <<"orgname">>},
+     {<<"Organization Unit">>, <<"orgunit">>}].
 
 remove_user(LUser, LServer) ->
     US = {LUser, LServer},
@@ -88,10 +125,29 @@ remove_user(LUser, LServer) ->
 	end,
     mnesia:transaction(F).
 
-import(_LServer, #vcard{} = VCard) ->
+import(LServer, <<"vcard">>, [LUser, XML, _TimeStamp]) ->
+    #xmlel{} = El = fxml_stream:parse_element(XML),
+    VCard = #vcard{us = {LUser, LServer}, vcard = El},
     mnesia:dirty_write(VCard);
-import(_LServer, #vcard_search{} = S) ->
-    mnesia:dirty_write(S).
+import(LServer, <<"vcard_search">>,
+       [User, LUser, FN, LFN,
+        Family, LFamily, Given, LGiven,
+        Middle, LMiddle, Nickname, LNickname,
+        BDay, LBDay, CTRY, LCTRY, Locality, LLocality,
+        EMail, LEMail, OrgName, LOrgName, OrgUnit, LOrgUnit]) ->
+    mnesia:dirty_write(
+      #vcard_search{us = {LUser, LServer},
+                    user = {User, LServer}, luser = LUser,
+                    fn = FN, lfn = LFN, family = Family,
+                    lfamily = LFamily, given = Given,
+                    lgiven = LGiven, middle = Middle,
+                    lmiddle = LMiddle, nickname = Nickname,
+                    lnickname = LNickname, bday = BDay,
+                    lbday = LBDay, ctry = CTRY, lctry = LCTRY,
+                    locality = Locality, llocality = LLocality,
+                    email = EMail, lemail = LEMail,
+                    orgname = OrgName, lorgname = LOrgName,
+                    orgunit = OrgUnit, lorgunit = LOrgUnit}).
 
 %%%===================================================================
 %%% Internal functions
@@ -211,3 +267,19 @@ parts_to_string(Parts) ->
     str:strip(list_to_binary(
                 lists:map(fun (S) -> <<S/binary, $.>> end, Parts)),
               right, $.).
+
+-spec record_to_item(#vcard_search{}) -> [{binary(), binary()}].
+record_to_item(R) ->
+    {User, Server} = R#vcard_search.user,
+    [{<<"jid">>, <<User/binary, "@", Server/binary>>},
+     {<<"fn">>, (R#vcard_search.fn)},
+     {<<"last">>, (R#vcard_search.family)},
+     {<<"first">>, (R#vcard_search.given)},
+     {<<"middle">>, (R#vcard_search.middle)},
+     {<<"nick">>, (R#vcard_search.nickname)},
+     {<<"bday">>, (R#vcard_search.bday)},
+     {<<"ctry">>, (R#vcard_search.ctry)},
+     {<<"locality">>, (R#vcard_search.locality)},
+     {<<"email">>, (R#vcard_search.email)},
+     {<<"orgname">>, (R#vcard_search.orgname)},
+     {<<"orgunit">>, (R#vcard_search.orgunit)}].

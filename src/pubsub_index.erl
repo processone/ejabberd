@@ -34,7 +34,7 @@
 -export([init/3, new/1, free/2]).
 
 init(_Host, _ServerHost, _Opts) ->
-    mnesia:create_table(pubsub_index,
+    ejabberd_mnesia:create(?MODULE, pubsub_index,
 	[{disc_copies, [node()]},
 	    {attributes, record_info(fields, pubsub_index)}]).
 

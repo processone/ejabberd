@@ -12,9 +12,9 @@
 
 %% API
 -export([init/2, set_data/3, get_data/3, get_all_data/2, remove_user/2,
-	 import/2]).
+	 import/3]).
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_private.hrl").
 
 %%%===================================================================
@@ -56,7 +56,10 @@ remove_user(LUser, LServer) ->
     {atomic, ejabberd_riak:delete_by_index(private_storage,
                                            <<"us">>, {LUser, LServer})}.
 
-import(_LServer, #private_storage{usns = {LUser, LServer, _}} = PS) ->
+import(LServer, <<"private_storage">>,
+       [LUser, XMLNS, XML, _TimeStamp]) ->
+    El = #xmlel{} = fxml_stream:parse_element(XML),
+    PS = #private_storage{usns = {LUser, LServer, XMLNS}, xml = El},
     ejabberd_riak:put(PS, private_storage_schema(),
 		      [{'2i', [{<<"us">>, {LUser, LServer}}]}]).
 

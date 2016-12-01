@@ -28,7 +28,7 @@
 -author('christophe.romain@process-one.net').
 
 -include("pubsub.hrl").
--include("jlib.hrl").
+-include("jid.hrl").
 
 -export([init/3, terminate/2, options/0, features/0,
     create_node_permission/6, create_node/2, delete_node/1,
@@ -57,6 +57,7 @@ terminate(Host, ServerHost) ->
 			  ?MODULE, user_offline, 75),
     ok.
 
+-spec user_offline(ejabberd_sm:sid(), jid(), ejabberd_sm:info()) -> _.
 user_offline(_SID, #jid{luser=LUser,lserver=LServer}, _Info) ->
     mod_pubsub:remove_user(LUser, LServer).
 

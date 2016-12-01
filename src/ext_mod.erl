@@ -45,7 +45,7 @@
 start() ->
     [code:add_patha(module_ebin_dir(Module))
      || {Module, _} <- installed()],
-    application:start(inets),
+    p1_http:start(),
     ejabberd_commands:register_commands(get_commands_spec()).
 
 stop() ->
@@ -170,7 +170,10 @@ install(Package) when is_binary(Package) ->
                 ok ->
                     code:add_patha(module_ebin_dir(Module)),
                     ejabberd_config:reload_file(),
-                    ok;
+                    case erlang:function_exported(Module, post_install, 0) of
+                        true -> Module:post_install();
+                        _ -> ok
+                    end;
                 Error ->
                     delete_path(module_lib_dir(Module)),
                     Error
@@ -183,6 +186,10 @@ uninstall(Package) when is_binary(Package) ->
     case installed(Package) of
         true ->
             Module = jlib:binary_to_atom(Package),
+            case erlang:function_exported(Module, pre_uninstall, 0) of
+                true -> Module:pre_uninstall();
+                _ -> ok
+            end,
             [catch gen_mod:stop_module(Host, Module)
              || Host <- ejabberd_config:get_myhosts()],
             code:purge(Module),
@@ -271,10 +278,10 @@ geturl(Url, Hdrs, UsrOpts) ->
         [U, Pass] -> [{proxy_user, U}, {proxy_password, Pass}];
         _ -> []
     end,
-    case httpc:request(get, {Url, Hdrs}, Host++User++UsrOpts++[{version, "HTTP/1.0"}], []) of
-        {ok, {{_, 200, _}, Headers, Response}} ->
+    case p1_http:request(get, Url, Hdrs, [], Host++User++UsrOpts++[{version, "HTTP/1.0"}]) of
+        {ok, 200, Headers, Response} ->
             {ok, Headers, Response};
-        {ok, {{_, Code, _}, _Headers, Response}} ->
+        {ok, Code, _Headers, Response} ->
             {error, {Code, Response}};
         {error, Reason} ->
             {error, Reason}
@@ -520,11 +527,8 @@ compile(_Module, _Spec, DestDir) ->
     filelib:ensure_dir(filename:join(Ebin, ".")),
     EjabBin = filename:dirname(code:which(ejabberd)),
     EjabInc = filename:join(filename:dirname(EjabBin), "include"),
-    XmlHrl = filename:join(EjabInc, "fxml.hrl"),
-    ExtLib = [{d, 'NO_EXT_LIB'} || filelib:is_file(XmlHrl)],
     Options = [{outdir, Ebin}, {i, "include"}, {i, EjabInc},
-               verbose, report_errors, report_warnings]
-              ++ ExtLib,
+               verbose, report_errors, report_warnings],
     [file:copy(App, Ebin) || App <- filelib:wildcard("src/*.app")],
 
     %% Compile erlang files

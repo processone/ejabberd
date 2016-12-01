@@ -27,6 +27,8 @@
 
 -compile([{parse_transform, ejabberd_sql_pt}]).
 
+-behaviour(ejabberd_config).
+
 -author('alexey@process-one.net').
 
 -behaviour(ejabberd_auth).
@@ -39,8 +41,8 @@
 	 get_vh_registered_users_number/1,
 	 get_vh_registered_users_number/2, get_password/2,
 	 get_password_s/2, is_user_exists/2, remove_user/2,
-	 remove_user/3, store_type/0, export/1, import/3,
-	 plain_password_required/0]).
+	 remove_user/3, store_type/0, export/1, import/2,
+	 plain_password_required/0, opt_type/1]).
 -export([passwd_schema/0]).
 
 -include("ejabberd.hrl").
@@ -301,7 +303,9 @@ export(_Server) ->
               []
       end}].
 
-import(LServer, riak, #passwd{} = Passwd) ->
-    ejabberd_riak:put(Passwd, passwd_schema(), [{'2i', [{<<"host">>, LServer}]}]);
-import(_, _, _) ->
-    pass.
+import(LServer, [LUser, Password, _TimeStamp]) ->
+    Passwd = #passwd{us = {LUser, LServer}, password = Password},
+    ejabberd_riak:put(Passwd, passwd_schema(), [{'2i', [{<<"host">>, LServer}]}]).
+
+opt_type(auth_password_format) -> fun (V) -> V end;
+opt_type(_) -> [auth_password_format].

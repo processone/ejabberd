@@ -13,12 +13,11 @@
 
 %% API
 -export([init/2, read_roster_version/2, write_roster_version/4,
-	 get_roster/2, get_roster_by_jid/3,
+	 get_roster/2, get_roster_by_jid/3, create_roster/1,
 	 roster_subscribe/4, get_roster_by_jid_with_groups/3,
 	 remove_user/2, update_roster/4, del_roster/3, transaction/2,
-	 read_subscription_and_groups/3, get_only_items/2, import/2]).
+	 read_subscription_and_groups/3, get_only_items/2, import/3]).
 
--include("jlib.hrl").
 -include("mod_roster.hrl").
 
 %%%===================================================================
@@ -97,10 +96,17 @@ read_subscription_and_groups(LUser, LServer, LJID) ->
             error
     end.
 
-import(_LServer, #roster{us = {LUser, LServer}} = R) ->
-    ejabberd_riak:put(R, roster_schema(),
+create_roster(#roster{us = {LUser, LServer}} = RItem) ->
+    ejabberd_riak:put(
+      RItem, roster_schema(),
+      [{'2i', [{<<"us">>, {LUser, LServer}}]}]).
+
+import(_LServer, <<"rosterusers">>, RosterItem) ->
+    {LUser, LServer} = RosterItem#roster.us,
+    ejabberd_riak:put(RosterItem, roster_schema(),
 		      [{'2i', [{<<"us">>, {LUser, LServer}}]}]);
-import(_LServer, #roster_version{} = RV) ->
+import(LServer, <<"roster_version">>, [LUser, Ver]) ->
+    RV = #roster_version{us = {LUser, LServer}, version = Ver},
     ejabberd_riak:put(RV, roster_version_schema()).
 
 %%%===================================================================

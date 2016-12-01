@@ -15,11 +15,11 @@
 	 process_default_set/3, process_active_set/3,
 	 remove_privacy_list/3, set_privacy_list/1,
 	 set_privacy_list/4, get_user_list/2, get_user_lists/2,
-	 remove_user/2, import/2]).
+	 remove_user/2, import/1]).
 
 -export([privacy_schema/0]).
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_privacy.hrl").
 
 %%%===================================================================
@@ -31,12 +31,7 @@ init(_Host, _Opts) ->
 process_lists_get(LUser, LServer) ->
     case ejabberd_riak:get(privacy, privacy_schema(), {LUser, LServer}) of
         {ok, #privacy{default = Default, lists = Lists}} ->
-            LItems = lists:map(fun ({N, _}) ->
-                                       #xmlel{name = <<"list">>,
-                                              attrs = [{<<"name">>, N}],
-                                              children = []}
-                               end,
-                               Lists),
+            LItems = lists:map(fun ({N, _}) -> N end, Lists),
             {Default, LItems};
         {error, notfound} ->
             {none, []};
@@ -57,7 +52,15 @@ process_list_get(LUser, LServer, Name) ->
             error
     end.
 
-process_default_set(LUser, LServer, {value, Name}) ->
+process_default_set(LUser, LServer, none) ->
+    {atomic,
+     case ejabberd_riak:get(privacy, privacy_schema(), {LUser, LServer}) of
+         {ok, R} ->
+             ejabberd_riak:put(R#privacy{default = none}, privacy_schema());
+         {error, _} ->
+             ok
+     end};
+process_default_set(LUser, LServer, Name) ->
     {atomic,
      case ejabberd_riak:get(privacy, privacy_schema(), {LUser, LServer}) of
          {ok, #privacy{lists = Lists} = P} ->
@@ -71,14 +74,6 @@ process_default_set(LUser, LServer, {value, Name}) ->
              end;
          {error, _} ->
              not_found
-     end};
-process_default_set(LUser, LServer, false) ->
-    {atomic,
-     case ejabberd_riak:get(privacy, privacy_schema(), {LUser, LServer}) of
-         {ok, R} ->
-             ejabberd_riak:put(R#privacy{default = none}, privacy_schema());
-         {error, _} ->
-             ok
      end}.
 
 process_active_set(LUser, LServer, Name) ->
@@ -150,7 +145,7 @@ get_user_lists(LUser, LServer) ->
 remove_user(LUser, LServer) ->
     {atomic, ejabberd_riak:delete(privacy, {LUser, LServer})}.
 
-import(_LServer, #privacy{} = P) ->
+import(#privacy{} = P) ->
     ejabberd_riak:put(P, privacy_schema()).
 
 %%%===================================================================

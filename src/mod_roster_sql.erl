@@ -18,9 +18,8 @@
 	 roster_subscribe/4, get_roster_by_jid_with_groups/3,
 	 remove_user/2, update_roster/4, del_roster/3, transaction/2,
 	 read_subscription_and_groups/3, get_only_items/2,
-	 import/1, import/2, export/1]).
+	 import/3, export/1, raw_to_record/2]).
 
--include("jlib.hrl").
 -include("mod_roster.hrl").
 -include("ejabberd_sql_pt.hrl").
 
@@ -186,27 +185,8 @@ export(_Server) ->
               []
       end}].
 
-import(LServer) ->
-    [{<<"select username, jid, nick, subscription, "
-        "ask, askmessage, server, subscribe, type from rosterusers;">>,
-      fun([LUser, JID|_] = Row) ->
-              Item = raw_to_record(LServer, Row),
-              Username = ejabberd_sql:escape(LUser),
-              SJID = ejabberd_sql:escape(JID),
-              {selected, _, Rows} =
-                  ejabberd_sql:sql_query_t(
-                    [<<"select grp from rostergroups where username='">>,
-                     Username, <<"' and jid='">>, SJID, <<"'">>]),
-              Groups = [Grp || [Grp] <- Rows],
-              Item#roster{groups = Groups}
-      end},
-     {<<"select username, version from roster_version;">>,
-      fun([LUser, Ver]) ->
-              #roster_version{us = {LUser, LServer}, version = Ver}
-      end}].
-
-import(_, _) ->
-    pass.
+import(_, _, _) ->
+    ok.
 
 %%%===================================================================
 %%% Internal functions

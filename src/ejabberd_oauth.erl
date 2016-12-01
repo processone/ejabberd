@@ -51,7 +51,7 @@
 
 -export([oauth_issue_token/3, oauth_list_tokens/0, oauth_revoke_token/1, oauth_list_scopes/0]).
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -140,11 +140,11 @@ oauth_issue_token(Jid, TTLSeconds, ScopesString) ->
             case oauth2:authorize_password({Username, Server},  Scopes, admin_generated) of
                 {ok, {_Ctx,Authorization}} ->
                     {ok, {_AppCtx2, Response}} = oauth2:issue_token(Authorization, [{expiry_time, TTLSeconds}]),
-                    {ok, AccessToken} = oauth2_response:access_token(Response),
-                    {ok, VerifiedScope} = oauth2_response:scope(Response),
+            {ok, AccessToken} = oauth2_response:access_token(Response),
+            {ok, VerifiedScope} = oauth2_response:scope(Response),
                     {AccessToken, VerifiedScope, integer_to_list(TTLSeconds) ++ " seconds"};
-                {error, Error} ->
-                    {error, Error}
+        {error, Error} ->
+            {error, Error}
             end;
         error ->
             {error, "Invalid JID: " ++ Jid}
@@ -212,12 +212,12 @@ authenticate_user({User, Server}, Ctx) ->
                 allow ->
                     case Ctx of
                         {password, Password} ->
-                            case ejabberd_auth:check_password(User, <<"">>, Server, Password) of
-                                true ->
-                                    {ok, {Ctx, {user, User, Server}}};
-                                false ->
-                                    {error, badpass}
-                            end;
+                    case ejabberd_auth:check_password(User, <<"">>, Server, Password) of
+                        true ->
+                            {ok, {Ctx, {user, User, Server}}};
+                        false ->
+                            {error, badpass}
+                    end;
                         admin_generated ->
                             {ok, {Ctx, {user, User, Server}}}
                     end;
@@ -291,7 +291,7 @@ associate_access_token(AccessToken, Context, AppContext) ->
             %% It always pass the global configured value.  Here we use the app context to pass the per-case
             %% ttl if we want to override it.
             seconds_since_epoch(ExpiresIn)
-    end,
+                           end,
     {user, User, Server} = proplists:get_value(<<"resource_owner">>, Context, <<"">>),
     Scope = proplists:get_value(<<"scope">>, Context, []),
     R = #oauth_token{
@@ -335,7 +335,7 @@ check_token(User, Server, ScopeList, Token) ->
     LServer = jid:nameprep(Server),
     case lookup(Token) of
         {ok, #oauth_token{us = {LUser, LServer},
-                          scope = TokenScope,
+                      scope = TokenScope,
                           expire = Expire}} ->
             {MegaSecs, Secs, _} = os:timestamp(),
             TS = 1000000 * MegaSecs + Secs,
@@ -355,7 +355,7 @@ check_token(User, Server, ScopeList, Token) ->
 check_token(ScopeList, Token) ->
     case lookup(Token) of
         {ok, #oauth_token{us = US,
-                          scope = TokenScope,
+                      scope = TokenScope,
                           expire = Expire}} ->
             {MegaSecs, Secs, _} = os:timestamp(),
             TS = 1000000 * MegaSecs + Secs,
@@ -367,7 +367,7 @@ check_token(ScopeList, Token) ->
                                    ScopeList) of
                         true -> {ok, user, US};
                         false -> {false, no_matching_scope}
-                    end;
+                        end;
                 true ->
                     {false, expired}
             end;
@@ -471,7 +471,7 @@ process(_Handlers,
                          [{<<"href">>, <<"https://www.ejabberd.im">>},
                           {<<"title">>, <<"ejabberd XMPP server">>}],
                          <<"ejabberd">>),
-                    ?C(" is maintained by "),
+                    ?C(<<" is maintained by ">>),
                     ?XAC(<<"a">>,
                          [{<<"href">>, <<"https://www.process-one.net">>},
                           {<<"title">>, <<"ProcessOne - Leader in Instant Messaging and Push Solutions">>}],
@@ -494,7 +494,7 @@ process(_Handlers,
     TTL = proplists:get_value(<<"ttl">>, Q, <<"">>),
     ExpiresIn = case TTL of
                     <<>> -> undefined;
-                    _ -> jlib:binary_to_integer(TTL)
+                    _ -> binary_to_integer(TTL)
                 end,
     case oauth2:authorize_password({Username, Server},
                                    ClientId,
@@ -556,7 +556,7 @@ process(_Handlers,
         TTL = proplists:get_value(<<"ttl">>, Q, <<"">>),
         ExpiresIn = case TTL of
                         <<>> -> undefined;
-                        _ -> jlib:binary_to_integer(TTL)
+                        _ -> binary_to_integer(TTL)
                     end,
         case oauth2:authorize_password({Username, Server},
                                        Scope,
@@ -732,7 +732,7 @@ css() ->
             text-decoration: underline;
           }
 
-      .container > .section {
+      .container > .section { 
           background: #424A55;
       }
 

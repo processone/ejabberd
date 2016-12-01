@@ -53,7 +53,7 @@
 %% ejabberd_hooks callback.
 -export([handle_slot_request/5]).
 
--include("jlib.hrl").
+-include("jid.hrl").
 -include("logger.hrl").
 -include_lib("kernel/include/file.hrl").
 
@@ -263,8 +263,8 @@ code_change(_OldVsn, #state{server_host = ServerHost} = State, _Extra) ->
 %% ejabberd_hooks callback.
 %%--------------------------------------------------------------------
 
--spec handle_slot_request(term(), jid(), binary(), non_neg_integer(), binary())
-      -> term().
+-spec handle_slot_request(allow | deny, jid(), binary(),
+			  non_neg_integer(), binary()) -> allow | deny.
 
 handle_slot_request(allow, #jid{lserver = ServerHost} = JID, Path, Size,
 		    _Lang) ->

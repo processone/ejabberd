@@ -311,7 +311,7 @@ try_call_command(Args, Auth, AccessCommands, Version) ->
     end.
 
 %% @spec (Args::[string()], Auth, AccessCommands) -> string() | integer() | {string(), integer()} | {error, ErrorType}
-call_command([CmdString | Args], Auth, AccessCommands, Version) ->
+call_command([CmdString | Args], Auth, _AccessCommands, Version) ->
     CmdStringU = ejabberd_regexp:greplace(
                    list_to_binary(CmdString), <<"-">>, <<"_">>),
     Command = list_to_atom(binary_to_list(CmdStringU)),

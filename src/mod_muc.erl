@@ -43,11 +43,17 @@
 	 forget_room/3,
 	 create_room/5,
 	 shutdown_rooms/1,
-	 process_iq_disco_items/5,
+	 process_disco_info/1,
+	 process_disco_items/1,
+	 process_vcard/1,
+	 process_register/1,
+	 process_muc_unique/1,
+	 process_mucsub/1,
 	 broadcast_service_message/2,
 	 export/1,
-	 import/1,
-	 import/3,
+	 import_info/0,
+	 import/5,
+	 import_start/2,
 	 opts_to_binary/1,
 	 can_use_nick/4]).
 
@@ -57,8 +63,8 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
-
--include("jlib.hrl").
+-include_lib("stdlib/include/ms_transform.hrl").
+-include("xmpp.hrl").
 -include("mod_muc.hrl").
 
 -record(state,
@@ -74,7 +80,7 @@
 
 -type muc_room_opts() :: [{atom(), any()}].
 -callback init(binary(), gen_mod:opts()) -> any().
--callback import(binary(), #muc_room{} | #muc_registered{}) -> ok | pass.
+-callback import(binary(), binary(), [binary()]) -> ok.
 -callback store_room(binary(), binary(), binary(), list()) -> {atomic, any()}.
 -callback restore_room(binary(), binary(), binary()) -> muc_room_opts() | error.
 -callback forget_room(binary(), binary(), binary()) -> {atomic, any()}.
@@ -153,17 +159,6 @@ forget_room(ServerHost, Host, Name) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:forget_room(LServer, Host, Name).
 
-process_iq_disco_items(Host, From, To, MaxRoomsDiscoItems,
-		       #iq{lang = Lang} = IQ) ->
-    Rsm = jlib:rsm_decode(IQ),
-    DiscoNode = fxml:get_tag_attr_s(<<"node">>, IQ#iq.sub_el),
-    Res = IQ#iq{type = result,
-		sub_el =
-		    [#xmlel{name = <<"query">>,
-			    attrs = [{<<"xmlns">>, ?NS_DISCO_ITEMS}],
-			    children = iq_disco_items(Host, From, Lang, MaxRoomsDiscoItems, DiscoNode, Rsm)}]},
-    ejabberd_router:route(To, From, jlib:iq_to_xml(Res)).
-
 can_use_nick(_ServerHost, _Host, _JID, <<"">>) -> false;
 can_use_nick(ServerHost, Host, JID, Nick) ->
     LServer = jid:nameprep(ServerHost),
@@ -175,12 +170,16 @@ can_use_nick(ServerHost, Host, JID, Nick) ->
 %%====================================================================
 
 init([Host, Opts]) ->
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
+                             one_queue),
     MyHost = gen_mod:get_opt_host(Host, Opts,
 				  <<"conference.@HOST@">>),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, [{host, MyHost}|Opts]),
-    mnesia:create_table(muc_online_room,
+    update_tables(),
+    ejabberd_mnesia:create(?MODULE, muc_online_room,
 			[{ram_copies, [node()]},
+			 {type, ordered_set},
 			 {attributes, record_info(fields, muc_online_room)}]),
     mnesia:add_table_copy(muc_online_room, node(), ram_copies),
     catch ets:new(muc_online_users, [bag, named_table, public, {keypos, 2}]),
@@ -258,6 +257,18 @@ init([Host, Opts]) ->
     RoomShaper = gen_mod:get_opt(room_shaper, Opts,
                                  fun(A) when is_atom(A) -> A end,
                                  none),
+    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_REGISTER,
+				  ?MODULE, process_register, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_VCARD,
+				  ?MODULE, process_vcard, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_MUCSUB,
+				  ?MODULE, process_mucsub, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_MUC_UNIQUE,
+				  ?MODULE, process_muc_unique, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_INFO,
+				  ?MODULE, process_disco_info, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_ITEMS,
+				  ?MODULE, process_disco_items, IQDisc),
     ejabberd_router:register_route(MyHost, Host),
     load_permanent_rooms(MyHost, Host,
 			 {Access, AccessCreate, AccessAdmin, AccessPersistent},
@@ -319,8 +330,14 @@ handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
     {noreply, State};
 handle_info(_Info, State) -> {noreply, State}.
 
-terminate(_Reason, State) ->
-    ejabberd_router:unregister_route(State#state.host),
+terminate(_Reason, #state{host = MyHost}) ->
+    ejabberd_router:unregister_route(MyHost),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_REGISTER),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_VCARD),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_MUCSUB),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_MUC_UNIQUE),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_INFO),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_ITEMS),
     ok.
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
@@ -330,215 +347,196 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%--------------------------------------------------------------------
 
 do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
-	 From, To, Packet, DefRoomOpts, MaxRoomsDiscoItems) ->
+	 From, To, Packet, DefRoomOpts, _MaxRoomsDiscoItems) ->
     {AccessRoute, _AccessCreate, _AccessAdmin, _AccessPersistent} = Access,
     case acl:match_rule(ServerHost, AccessRoute, From) of
 	allow ->
 	    do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
-		From, To, Packet, DefRoomOpts, MaxRoomsDiscoItems);
-	_ ->
-	    #xmlel{attrs = Attrs} = Packet,
-	    Lang = fxml:get_attr_s(<<"xml:lang">>, Attrs),
+		      From, To, Packet, DefRoomOpts);
+	deny ->
+	    Lang = xmpp:get_lang(Packet),
 	    ErrText = <<"Access denied by service policy">>,
-	    Err = jlib:make_error_reply(Packet,
-		    ?ERRT_FORBIDDEN(Lang, ErrText)),
-	    ejabberd_router:route_error(To, From, Err, Packet)
+	    Err = xmpp:err_forbidden(ErrText, Lang),
+	    ejabberd_router:route_error(To, From, Packet, Err)
     end.
 
-
-do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
-	  From, To, Packet, DefRoomOpts, MaxRoomsDiscoItems) ->
-    {_AccessRoute, AccessCreate, AccessAdmin, _AccessPersistent} = Access,
-    {Room, _, Nick} = jid:tolower(To),
-    #xmlel{name = Name, attrs = Attrs} = Packet,
-    case Room of
-      <<"">> ->
-	  case Nick of
-	    <<"">> ->
-		case Name of
-		  <<"iq">> ->
-		      case jlib:iq_query_info(Packet) of
-			#iq{type = get, xmlns = (?NS_DISCO_INFO) = XMLNS,
-			    sub_el = _SubEl, lang = Lang} =
-			    IQ ->
-			    Info = ejabberd_hooks:run_fold(disco_info,
-							   ServerHost, [],
-							   [ServerHost, ?MODULE,
-							    <<"">>, <<"">>]),
-			    Res = IQ#iq{type = result,
-					sub_el =
-					    [#xmlel{name = <<"query">>,
-						    attrs =
-							[{<<"xmlns">>, XMLNS}],
-						    children =
-							iq_disco_info(
-							  ServerHost, Lang) ++
-							  Info}]},
-			    ejabberd_router:route(To, From,
-						  jlib:iq_to_xml(Res));
-			#iq{type = get, xmlns = ?NS_DISCO_ITEMS} = IQ ->
-			    spawn(?MODULE, process_iq_disco_items,
-				  [Host, From, To, MaxRoomsDiscoItems, IQ]);
-			#iq{type = get, xmlns = (?NS_REGISTER) = XMLNS,
-			    lang = Lang, sub_el = _SubEl} =
-			    IQ ->
-			    Res = IQ#iq{type = result,
-					sub_el =
-					    [#xmlel{name = <<"query">>,
-						    attrs =
-							[{<<"xmlns">>, XMLNS}],
-						    children =
-							iq_get_register_info(ServerHost,
-									     Host,
-									     From,
-									     Lang)}]},
-			    ejabberd_router:route(To, From,
-						  jlib:iq_to_xml(Res));
-			#iq{type = set, xmlns = (?NS_REGISTER) = XMLNS,
-			    lang = Lang, sub_el = SubEl} =
-			    IQ ->
-			    case process_iq_register_set(ServerHost, Host, From,
-							 SubEl, Lang)
-				of
-			      {result, IQRes} ->
-				  Res = IQ#iq{type = result,
-					      sub_el =
-						  [#xmlel{name = <<"query">>,
-							  attrs =
-							      [{<<"xmlns">>,
-								XMLNS}],
-							  children = IQRes}]},
-				  ejabberd_router:route(To, From,
-							jlib:iq_to_xml(Res));
-			      {error, Error} ->
-				  Err = jlib:make_error_reply(Packet, Error),
-				  ejabberd_router:route(To, From, Err)
-			    end;
-			#iq{type = get, xmlns = (?NS_VCARD) = XMLNS,
-			    lang = Lang, sub_el = _SubEl} =
-			    IQ ->
-			    Res = IQ#iq{type = result,
-					sub_el =
-					    [#xmlel{name = <<"vCard">>,
-						    attrs =
-							[{<<"xmlns">>, XMLNS}],
-						    children =
-							iq_get_vcard(Lang)}]},
-			    ejabberd_router:route(To, From,
-						  jlib:iq_to_xml(Res));
-			#iq{type = get, xmlns = ?NS_MUCSUB,
-			    sub_el = #xmlel{name = <<"subscriptions">>} = SubEl} = IQ ->
-			      RoomJIDs = get_subscribed_rooms(ServerHost, Host, From),
-			      Subs = lists:map(
-				       fun(J) ->
-					       #xmlel{name = <<"subscription">>,
-						      attrs = [{<<"jid">>,
-								jid:to_string(J)}]}
-				       end, RoomJIDs),
-			      Res = IQ#iq{type = result,
-					  sub_el = [SubEl#xmlel{children = Subs}]},
-			      ejabberd_router:route(To, From, jlib:iq_to_xml(Res));
-			#iq{type = get, xmlns = ?NS_MUC_UNIQUE} = IQ ->
-			    Res = IQ#iq{type = result,
-					sub_el =
-					    [#xmlel{name = <<"unique">>,
-						    attrs =
-							[{<<"xmlns">>,
-							  ?NS_MUC_UNIQUE}],
-						    children =
-							[iq_get_unique(From)]}]},
-			    ejabberd_router:route(To, From,
-						  jlib:iq_to_xml(Res));
-			#iq{} ->
-			    Err = jlib:make_error_reply(Packet,
-							?ERR_FEATURE_NOT_IMPLEMENTED),
-			    ejabberd_router:route(To, From, Err);
-			_ -> ok
-		      end;
-		  <<"message">> ->
-		      case fxml:get_attr_s(<<"type">>, Attrs) of
-			<<"error">> -> ok;
-			_ ->
-			    case acl:match_rule(ServerHost, AccessAdmin, From)
-				of
-			      allow ->
-				  Msg = fxml:get_path_s(Packet,
-						       [{elem, <<"body">>},
-							cdata]),
-				  broadcast_service_message(Host, Msg);
-			      _ ->
-				  Lang = fxml:get_attr_s(<<"xml:lang">>, Attrs),
-				  ErrText =
-				      <<"Only service administrators are allowed "
-					"to send service messages">>,
-				  Err = jlib:make_error_reply(Packet,
-							      ?ERRT_FORBIDDEN(Lang,
-									      ErrText)),
-				  ejabberd_router:route(To, From, Err)
-			    end
-		      end;
-		  <<"presence">> -> ok
-		end;
-	    _ ->
-		case fxml:get_attr_s(<<"type">>, Attrs) of
-		  <<"error">> -> ok;
-		  <<"result">> -> ok;
-		  _ ->
-		      Err = jlib:make_error_reply(Packet,
-						  ?ERR_ITEM_NOT_FOUND),
-		      ejabberd_router:route(To, From, Err)
-		end
-	  end;
-      _ ->
-	    case mnesia:dirty_read(muc_online_room, {Room, Host}) of
-		[] ->
-		    case is_create_request(Packet) of
-			true ->
-			    case check_user_can_create_room(ServerHost,
-				    AccessCreate, From, Room) and
-				check_create_roomid(ServerHost, Room) of
-				true ->
-				    {ok, Pid} = start_new_room(Host, ServerHost, Access,
-					    Room, HistorySize,
-					    RoomShaper, From, Nick, DefRoomOpts),
-				    register_room(Host, Room, Pid),
-				    mod_muc_room:route(Pid, From, Nick, Packet),
-				    ok;
-				false ->
-				    Lang = fxml:get_attr_s(<<"xml:lang">>, Attrs),
-				    ErrText = <<"Room creation is denied by service policy">>,
-				    Err = jlib:make_error_reply(
-					    Packet, ?ERRT_FORBIDDEN(Lang, ErrText)),
-				    ejabberd_router:route(To, From, Err)
-			    end;
-			false ->
-			    Lang = fxml:get_attr_s(<<"xml:lang">>, Attrs),
-			    ErrText = <<"Conference room does not exist">>,
-			    Err = jlib:make_error_reply(Packet,
-				    ?ERRT_ITEM_NOT_FOUND(Lang, ErrText)),
-			    ejabberd_router:route(To, From, Err)
-		    end;
-		[R] ->
-		    Pid = R#muc_online_room.pid,
-		    ?DEBUG("MUC: send to process ~p~n", [Pid]),
-		    mod_muc_room:route(Pid, From, Nick, Packet),
-		    ok
+do_route1(_Host, _ServerHost, _Access, _HistorySize, _RoomShaper,
+	  From, #jid{luser = <<"">>, lresource = <<"">>} = To,
+	  #iq{} = IQ, _DefRoomOpts) ->
+    ejabberd_local:process_iq(From, To, IQ);
+do_route1(Host, ServerHost, Access, _HistorySize, _RoomShaper,
+	  From, #jid{luser = <<"">>, lresource = <<"">>} = To,
+	  #message{lang = Lang, body = Body, type = Type} = Packet, _) ->
+    {_AccessRoute, _AccessCreate, AccessAdmin, _AccessPersistent} = Access,
+    if Type == error ->
+	    ok;
+       true ->
+	    case acl:match_rule(ServerHost, AccessAdmin, From) of
+		allow ->
+		    Msg = xmpp:get_text(Body),
+		    broadcast_service_message(Host, Msg);
+		deny ->
+		    ErrText = <<"Only service administrators are allowed "
+				"to send service messages">>,
+		    Err = xmpp:err_forbidden(ErrText, Lang),
+		    ejabberd_router:route_error(To, From, Packet, Err)
 	    end
+    end;
+do_route1(_Host, _ServerHost, _Access, _HistorySize, _RoomShaper,
+	  From, #jid{luser = <<"">>} = To, Packet, _DefRoomOpts) ->
+    Err = xmpp:err_service_unavailable(),
+    ejabberd_router:route_error(To, From, Packet, Err);
+do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
+	  From, To, Packet, DefRoomOpts) ->
+    {_AccessRoute, AccessCreate, _AccessAdmin, _AccessPersistent} = Access,
+    {Room, _, Nick} = jid:tolower(To),
+    case mnesia:dirty_read(muc_online_room, {Room, Host}) of
+	[] ->
+	    case is_create_request(Packet) of
+		true ->
+		    case check_user_can_create_room(
+			   ServerHost, AccessCreate, From, Room) and
+			check_create_roomid(ServerHost, Room) of
+			true ->
+			    {ok, Pid} = start_new_room(
+					  Host, ServerHost, Access,
+					  Room, HistorySize,
+					  RoomShaper, From, Nick, DefRoomOpts),
+			    register_room(Host, Room, Pid),
+			    mod_muc_room:route(Pid, From, Nick, Packet),
+			    ok;
+			false ->
+			    Lang = xmpp:get_lang(Packet),
+			    ErrText = <<"Room creation is denied by service policy">>,
+			    Err = xmpp:err_forbidden(ErrText, Lang),
+			    ejabberd_router:route_error(To, From, Packet, Err)
+		    end;
+		false ->
+		    Lang = xmpp:get_lang(Packet),
+		    ErrText = <<"Conference room does not exist">>,
+		    Err = xmpp:err_item_not_found(ErrText, Lang),
+		    ejabberd_router:route_error(To, From, Packet, Err)
+	    end;
+	[R] ->
+	    Pid = R#muc_online_room.pid,
+	    ?DEBUG("MUC: send to process ~p~n", [Pid]),
+	    mod_muc_room:route(Pid, From, Nick, Packet),
+	    ok
     end.
 
--spec is_create_request(xmlel()) -> boolean().
-is_create_request(#xmlel{name = <<"presence">>} = Packet) ->
-    <<"">> == fxml:get_tag_attr_s(<<"type">>, Packet);
-is_create_request(#xmlel{name = <<"iq">>} = Packet) ->
-    case jlib:iq_query_info(Packet) of
-	#iq{type = set, xmlns = ?NS_MUCSUB,
-	    sub_el = #xmlel{name = <<"subscribe">>}} ->
-	    true;
-	#iq{type = get, xmlns = ?NS_MUC_OWNER, sub_el = SubEl} ->
-	    [] == fxml:remove_cdata(SubEl#xmlel.children);
-	_ ->
-	    false
+-spec process_vcard(iq()) -> iq().
+process_vcard(#iq{type = get, lang = Lang, sub_els = [#vcard_temp{}]} = IQ) ->
+    Desc = translate:translate(Lang, <<"ejabberd MUC module">>),
+    xmpp:make_iq_result(
+      IQ, #vcard_temp{fn = <<"ejabberd/mod_muc">>,
+		      url = ?EJABBERD_URI,
+		      desc = <<Desc/binary, $\n, ?COPYRIGHT>>});
+process_vcard(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_vcard(#iq{lang = Lang} = IQ) ->
+    Txt = <<"No module is handling this query">>,
+    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
+
+-spec process_register(iq()) -> iq().
+process_register(#iq{type = get, from = From, to = To, lang = Lang,
+		     sub_els = [#register{}]} = IQ) ->
+    Host = To#jid.lserver,
+    ServerHost = ejabberd_router:host_of_route(Host),
+    xmpp:make_iq_result(IQ, iq_get_register_info(ServerHost, Host, From, Lang));
+process_register(#iq{type = set, from = From, to = To,
+		     lang = Lang, sub_els = [El = #register{}]} = IQ) ->
+    Host = To#jid.lserver,
+    ServerHost = ejabberd_router:host_of_route(Host),
+    case process_iq_register_set(ServerHost, Host, From, El, Lang) of
+	{result, Result} ->
+	    xmpp:make_iq_result(IQ, Result);
+	{error, Err} ->
+	    xmpp:make_error(IQ, Err)
+    end.
+
+-spec process_disco_info(iq()) -> iq().
+process_disco_info(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_disco_info(#iq{type = get, to = To, lang = Lang,
+		       sub_els = [#disco_info{node = <<"">>}]} = IQ) ->
+    ServerHost = ejabberd_router:host_of_route(To#jid.lserver),
+    X = ejabberd_hooks:run_fold(disco_info, ServerHost, [],
+				[ServerHost, ?MODULE, <<"">>, Lang]),
+    MAMFeatures = case gen_mod:is_loaded(ServerHost, mod_mam) of
+		      true -> [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1];
+		      false -> []
+		  end,
+    Features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
+		?NS_REGISTER, ?NS_MUC, ?NS_RSM,
+		?NS_VCARD, ?NS_MUCSUB, ?NS_MUC_UNIQUE | MAMFeatures],
+    Identity = #identity{category = <<"conference">>,
+			 type = <<"text">>,
+			 name = translate:translate(Lang, <<"Chatrooms">>)},
+    xmpp:make_iq_result(
+      IQ, #disco_info{features = Features,
+		      identities = [Identity],
+		      xdata = X});
+process_disco_info(#iq{type = get, lang = Lang,
+		       sub_els = [#disco_info{}]} = IQ) ->
+    xmpp:make_error(IQ, xmpp:err_item_not_found(<<"Node not found">>, Lang));
+process_disco_info(#iq{lang = Lang} = IQ) ->
+    Txt = <<"No module is handling this query">>,
+    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
+
+-spec process_disco_items(iq()) -> iq().
+process_disco_items(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_disco_items(#iq{type = get, from = From, to = To, lang = Lang,
+			sub_els = [#disco_items{node = Node, rsm = RSM}]} = IQ) ->
+    Host = To#jid.lserver,
+    ServerHost = ejabberd_router:host_of_route(Host),
+    MaxRoomsDiscoItems = gen_mod:get_module_opt(
+			   ServerHost, ?MODULE, max_rooms_discoitems,
+			   fun(I) when is_integer(I), I>=0 -> I end,
+			   100),
+    case iq_disco_items(Host, From, Lang, MaxRoomsDiscoItems, Node, RSM) of
+	{error, Err} ->
+	    xmpp:make_error(IQ, Err);
+	{result, Result} ->
+	    xmpp:make_iq_result(IQ, Result)
     end;
+process_disco_items(#iq{lang = Lang} = IQ) ->
+    Txt = <<"No module is handling this query">>,
+    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
+
+-spec process_muc_unique(iq()) -> iq().
+process_muc_unique(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_muc_unique(#iq{from = From, type = get,
+		       sub_els = [#muc_unique{}]} = IQ) ->
+    Name = p1_sha:sha(term_to_binary([From, p1_time_compat:timestamp(),
+				      randoms:get_string()])),
+    xmpp:make_iq_result(IQ, #muc_unique{name = Name}).
+
+-spec process_mucsub(iq()) -> iq().
+process_mucsub(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_mucsub(#iq{type = get, from = From, to = To,
+		   sub_els = [#muc_subscriptions{}]} = IQ) ->
+    Host = To#jid.lserver,
+    ServerHost = ejabberd_router:host_of_route(Host),
+    RoomJIDs = get_subscribed_rooms(ServerHost, Host, From),
+    xmpp:make_iq_result(IQ, #muc_subscriptions{list = RoomJIDs});
+process_mucsub(#iq{lang = Lang} = IQ) ->
+    Txt = <<"No module is handling this query">>,
+    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
+
+-spec is_create_request(stanza()) -> boolean().
+is_create_request(#presence{type = available}) ->
+    true;
+is_create_request(#iq{type = T} = IQ) when T == get; T == set ->
+    xmpp:has_subtag(IQ, #muc_subscribe{}) orelse
+    xmpp:has_subtag(IQ, #muc_owner{});
 is_create_request(_) ->
     false.
 
@@ -603,167 +601,125 @@ register_room(Host, Room, Pid) ->
     end,
     mnesia:transaction(F).
 
-
-iq_disco_info(ServerHost, Lang) ->
-    [#xmlel{name = <<"identity">>,
-	    attrs =
-		[{<<"category">>, <<"conference">>},
-		 {<<"type">>, <<"text">>},
-		 {<<"name">>,
-		  translate:translate(Lang, <<"Chatrooms">>)}],
-	    children = []},
-     #xmlel{name = <<"feature">>,
-	    attrs = [{<<"var">>, ?NS_DISCO_INFO}], children = []},
-     #xmlel{name = <<"feature">>,
-	    attrs = [{<<"var">>, ?NS_DISCO_ITEMS}], children = []},
-     #xmlel{name = <<"feature">>,
-	    attrs = [{<<"var">>, ?NS_MUC}], children = []},
-     #xmlel{name = <<"feature">>,
-	    attrs = [{<<"var">>, ?NS_MUC_UNIQUE}], children = []},
-     #xmlel{name = <<"feature">>,
-	    attrs = [{<<"var">>, ?NS_REGISTER}], children = []},
-     #xmlel{name = <<"feature">>,
-	    attrs = [{<<"var">>, ?NS_RSM}], children = []},
-     #xmlel{name = <<"feature">>,
-	    attrs = [{<<"var">>, ?NS_MUCSUB}], children = []},
-     #xmlel{name = <<"feature">>,
-	    attrs = [{<<"var">>, ?NS_VCARD}], children = []}] ++
-	case gen_mod:is_loaded(ServerHost, mod_mam) of
-	    true ->
-		[#xmlel{name = <<"feature">>,
-			attrs = [{<<"var">>, ?NS_MAM_TMP}]},
-		 #xmlel{name = <<"feature">>,
-			attrs = [{<<"var">>, ?NS_MAM_0}]},
-		 #xmlel{name = <<"feature">>,
-			attrs = [{<<"var">>, ?NS_MAM_1}]}];
-	    false ->
-		[]
-	end.
-
-iq_disco_items(Host, From, Lang, MaxRoomsDiscoItems, <<>>, none) ->
-    Rooms = get_vh_rooms(Host),
-    case erlang:length(Rooms) < MaxRoomsDiscoItems of
-	true ->
-	    iq_disco_items_list(Host, Rooms, {get_disco_item, all, From, Lang});
-	false ->
-	    iq_disco_items(Host, From, Lang, MaxRoomsDiscoItems, <<"nonemptyrooms">>, none)
-    end;
-iq_disco_items(Host, From, Lang, _MaxRoomsDiscoItems, <<"nonemptyrooms">>, none) ->
-    XmlEmpty = #xmlel{name = <<"item">>,
-				   attrs =
-				       [{<<"jid">>, <<"conference.localhost">>},
-					{<<"node">>, <<"emptyrooms">>},
-					{<<"name">>, translate:translate(Lang, <<"Empty Rooms">>)}],
-				   children = []},
-    Query = {get_disco_item, only_non_empty, From, Lang},
-    [XmlEmpty | iq_disco_items_list(Host, get_vh_rooms(Host), Query)];
-iq_disco_items(Host, From, Lang, _MaxRoomsDiscoItems, <<"emptyrooms">>, none) ->
-    iq_disco_items_list(Host, get_vh_rooms(Host), {get_disco_item, 0, From, Lang});
-iq_disco_items(Host, From, Lang, _MaxRoomsDiscoItems, _DiscoNode, Rsm) ->
-    {Rooms, RsmO} = get_vh_rooms(Host, Rsm),
-    RsmOut = jlib:rsm_encode(RsmO),
-    iq_disco_items_list(Host, Rooms, {get_disco_item, all, From, Lang}) ++ RsmOut.
-
-iq_disco_items_list(Host, Rooms, Query) ->
-    lists:zf(fun (#muc_online_room{name_host =
-				       {Name, _Host},
-				   pid = Pid}) ->
-		     case catch gen_fsm:sync_send_all_state_event(Pid,
-								  Query,
-								  100)
-			 of
-		       {item, Desc} ->
-			   flush(),
-			   {true,
-			    #xmlel{name = <<"item">>,
-				   attrs =
-				       [{<<"jid">>,
-					 jid:to_string({Name, Host,
-							     <<"">>})},
-					{<<"name">>, Desc}],
-				   children = []}};
-		       _ -> false
-		     end
-	     end, Rooms).
-
-get_vh_rooms(Host, #rsm_in{max=M, direction=Direction, id=I, index=Index})->
-    AllRooms = lists:sort(get_vh_rooms(Host)),
-    Count = erlang:length(AllRooms),
-    Guard = case Direction of
-		_ when Index =/= undefined -> [{'==', {element, 2, '$1'}, Host}];
-		aft -> [{'==', {element, 2, '$1'}, Host}, {'>=',{element, 1, '$1'} ,I}];
-		before when I =/= []-> [{'==', {element, 2, '$1'}, Host}, {'=<',{element, 1, '$1'} ,I}];
-		_ -> [{'==', {element, 2, '$1'}, Host}]
+-spec iq_disco_items(binary(), jid(), binary(), integer(), binary(),
+		     rsm_set() | undefined) ->
+			    {result, disco_items()} | {error, stanza_error()}.
+iq_disco_items(Host, From, Lang, MaxRoomsDiscoItems, Node, RSM)
+  when Node == <<"">>; Node == <<"nonemptyrooms">>; Node == <<"emptyrooms">> ->
+    Count = get_vh_rooms_count(Host),
+    Query = if Node == <<"">>, RSM == undefined, Count > MaxRoomsDiscoItems ->
+		    {get_disco_item, only_non_empty, From, Lang};
+	       Node == <<"nonemptyrooms">> ->
+		    {get_disco_item, only_non_empty, From, Lang};
+	       Node == <<"emptyrooms">> ->
+		    {get_disco_item, 0, From, Lang};
+	       true ->
+		    {get_disco_item, all, From, Lang}
 	    end,
-    L = lists:sort(
-	  mnesia:dirty_select(muc_online_room,
-			      [{#muc_online_room{name_host = '$1', _ = '_'},
-				Guard,
-				['$_']}])),
-    L2 = if
-	     Index == undefined andalso Direction == before ->
-		 lists:reverse(lists:sublist(lists:reverse(L), 1, M));
-	     Index == undefined ->
-		 lists:sublist(L, 1, M);
-	     Index > Count  orelse Index < 0 ->
-		 [];
-	     true ->
-		 lists:sublist(L, Index+1, M)
-	 end,
-    if L2 == [] -> {L2, #rsm_out{count = Count}};
-       true ->
-	   H = hd(L2),
-	   NewIndex = get_room_pos(H, AllRooms),
-	   T = lists:last(L2),
-	   {F, _} = H#muc_online_room.name_host,
-	   {Last, _} = T#muc_online_room.name_host,
-	   {L2,
-	    #rsm_out{first = F, last = Last, count = Count,
-		     index = NewIndex}}
+    Items = get_vh_rooms(Host, Query, RSM),
+    ResRSM = case Items of
+		 [_|_] when RSM /= undefined ->
+		     #disco_item{jid = #jid{luser = First}} = hd(Items),
+		     #disco_item{jid = #jid{luser = Last}} = lists:last(Items),
+		     #rsm_set{first = #rsm_first{data = First},
+			      last = Last,
+			      count = Count};
+		 [] when RSM /= undefined ->
+		     #rsm_set{count = Count};
+		 _ ->
+		     undefined
+	     end,
+    {result, #disco_items{node = Node, items = Items, rsm = ResRSM}};
+iq_disco_items(_Host, _From, Lang, _MaxRoomsDiscoItems, _Node, _RSM) ->
+    {error, xmpp:err_item_not_found(<<"Node not found">>, Lang)}.
+
+-spec get_vh_rooms(binary, term(), rsm_set() | undefined) -> [disco_item()].
+get_vh_rooms(Host, Query,
+	     #rsm_set{max = Max, 'after' = After, before = undefined})
+  when is_binary(After), After /= <<"">> ->
+    lists:reverse(get_vh_rooms(next, {After, Host}, Host, Query, 0, Max, []));
+get_vh_rooms(Host, Query,
+	     #rsm_set{max = Max, 'after' = undefined, before = Before})
+  when is_binary(Before), Before /= <<"">> ->
+    get_vh_rooms(prev, {Before, Host}, Host, Query, 0, Max, []);
+get_vh_rooms(Host, Query,
+	     #rsm_set{max = Max, 'after' = undefined, before = <<"">>}) ->
+    get_vh_rooms(last, {<<"">>, Host}, Host, Query, 0, Max, []);
+get_vh_rooms(Host, Query, #rsm_set{max = Max}) ->
+    lists:reverse(get_vh_rooms(first, {<<"">>, Host}, Host, Query, 0, Max, []));
+get_vh_rooms(Host, Query, undefined) ->
+    lists:reverse(get_vh_rooms(first, {<<"">>, Host}, Host, Query, 0, undefined, [])).
+
+-spec get_vh_rooms(prev | next | last | first,
+		   {binary(), binary()}, binary(), term(),
+		   non_neg_integer(), non_neg_integer() | undefined,
+		   [disco_item()]) -> [disco_item()].
+get_vh_rooms(_Action, _Key, _Host, _Query, Count, Max, Items) when Count >= Max ->
+    Items;
+get_vh_rooms(Action, Key, Host, Query, Count, Max, Items) ->
+    Call = fun() ->
+		   case Action of
+		       prev -> mnesia:dirty_prev(muc_online_room, Key);
+		       next -> mnesia:dirty_next(muc_online_room, Key);
+		       last -> mnesia:dirty_last(muc_online_room);
+		       first -> mnesia:dirty_first(muc_online_room)
+		   end
+	   end,
+    NewAction = case Action of
+		    last -> prev;
+		    first -> next;
+		    _ -> Action
+		end,
+    try Call() of
+	'$end_of_table' ->
+	    Items;
+	{_, Host} = NewKey ->
+	    case get_room_disco_item(NewKey, Query) of
+		{ok, Item} ->
+		    get_vh_rooms(NewAction, NewKey, Host, Query,
+				 Count + 1, Max, [Item|Items]);
+		{error, _} ->
+		    get_vh_rooms(NewAction, NewKey, Host, Query,
+				 Count, Max, Items)
+	    end;
+	NewKey ->
+	    get_vh_rooms(NewAction, NewKey, Host, Query, Count, Max, Items)
+    catch _:{aborted, {badarg, _}} ->
+	    Items
     end.
 
-get_subscribed_rooms(_ServerHost, Host1, From) ->
-    Rooms = get_vh_rooms(Host1),
+-spec get_room_disco_item({binary(), binary()}, term()) -> {ok, disco_item()} |
+							   {error, timeout | notfound}.
+get_room_disco_item({Name, Host}, Query) ->
+    case mnesia:dirty_read(muc_online_room, {Name, Host}) of
+	[#muc_online_room{pid = Pid}|_] ->
+	    RoomJID = jid:make(Name, Host),
+	    try gen_fsm:sync_send_all_state_event(Pid, Query, 100) of
+		{item, Desc} ->
+		    {ok, #disco_item{jid = RoomJID, name = Desc}};
+		false ->
+		    {error, notfound}
+	    catch _:{timeout, _} ->
+		    {error, timeout};
+		  _:{noproc, _} ->
+		    {error, notfound}
+	    end;
+	_ ->
+	    {error, notfound}
+    end.
+
+get_subscribed_rooms(_ServerHost, Host, From) ->
+    Rooms = get_vh_rooms(Host),
     BareFrom = jid:remove_resource(From),
     lists:flatmap(
-      fun(#muc_online_room{name_host = {Name, Host}, pid = Pid}) ->
+      fun(#muc_online_room{name_host = {Name, _}, pid = Pid}) ->
 	      case gen_fsm:sync_send_all_state_event(Pid, {is_subscribed, BareFrom}) of
-		  true -> [jid:make(Name, Host, <<>>)];
+		  true -> [jid:make(Name, Host)];
 		  false -> []
 	      end;
 	 (_) ->
 	      []
       end, Rooms).
-
-%% @doc Return the position of desired room in the list of rooms.
-%% The room must exist in the list. The count starts in 0.
-%% @spec (Desired::muc_online_room(), Rooms::[muc_online_room()]) -> integer()
-get_room_pos(Desired, Rooms) ->
-    get_room_pos(Desired, Rooms, 0).
-
-get_room_pos(Desired, [HeadRoom | _], HeadPosition)
-    when Desired#muc_online_room.name_host ==
-	   HeadRoom#muc_online_room.name_host ->
-    HeadPosition;
-get_room_pos(Desired, [_ | Rooms], HeadPosition) ->
-    get_room_pos(Desired, Rooms, HeadPosition + 1).
-
-flush() -> receive _ -> flush() after 0 -> ok end.
-
--define(XFIELD(Type, Label, Var, Val),
-	#xmlel{name = <<"field">>,
-	       attrs =
-		   [{<<"type">>, Type},
-		    {<<"label">>, translate:translate(Lang, Label)},
-		    {<<"var">>, Var}],
-	       children =
-		   [#xmlel{name = <<"value">>, attrs = [],
-			   children = [{xmlcdata, Val}]}]}).
-
-iq_get_unique(From) ->
-    {xmlcdata,
-     p1_sha:sha(term_to_binary([From, p1_time_compat:timestamp(),
-			     randoms:get_string()]))}.
 
 get_nick(ServerHost, Host, From) ->
     LServer = jid:nameprep(ServerHost),
@@ -771,39 +727,25 @@ get_nick(ServerHost, Host, From) ->
     Mod:get_nick(LServer, Host, From).
 
 iq_get_register_info(ServerHost, Host, From, Lang) ->
-    {Nick, Registered} = case get_nick(ServerHost, Host,
-				       From)
-			     of
-			   error -> {<<"">>, []};
-			   N ->
-			       {N,
-				[#xmlel{name = <<"registered">>, attrs = [],
-					children = []}]}
+    {Nick, Registered} = case get_nick(ServerHost, Host, From) of
+			     error -> {<<"">>, false};
+			     N -> {N, true}
 			 end,
-    Registered ++
-      [#xmlel{name = <<"instructions">>, attrs = [],
-	      children =
-		  [{xmlcdata,
-		    translate:translate(Lang,
-					<<"You need a client that supports x:data "
-					  "to register the nickname">>)}]},
-       #xmlel{name = <<"x">>,
-	      attrs = [{<<"xmlns">>, ?NS_XDATA},
-		       {<<"type">>, <<"form">>}],
-	      children =
-		  [#xmlel{name = <<"title">>, attrs = [],
-			  children =
-			      [{xmlcdata,
-				<<(translate:translate(Lang,
-						       <<"Nickname Registration at ">>))/binary,
-				  Host/binary>>}]},
-		   #xmlel{name = <<"instructions">>, attrs = [],
-			  children =
-			      [{xmlcdata,
-				translate:translate(Lang,
-						    <<"Enter nickname you want to register">>)}]},
-		   ?XFIELD(<<"text-single">>, <<"Nickname">>, <<"nick">>,
-			   Nick)]}].
+    Title = <<(translate:translate(
+		 Lang, <<"Nickname Registration at ">>))/binary, Host/binary>>,
+    Inst = translate:translate(Lang, <<"Enter nickname you want to register">>),
+    Fields = muc_register:encode(
+	       [{roomnick, Nick}],
+	       fun(T) -> translate:translate(Lang, T) end),
+    X = #xdata{type = form, title = Title,
+	       instructions = [Inst], fields = Fields},
+    #register{nick = Nick,
+	      registered = Registered,
+	      instructions = 
+		  translate:translate(
+		    Lang, <<"You need a client that supports x:data "
+			    "to register the nickname">>),
+	      xdata = X}.
 
 set_nick(ServerHost, Host, From, Nick) ->
     LServer = jid:nameprep(ServerHost),
@@ -813,65 +755,43 @@ set_nick(ServerHost, Host, From, Nick) ->
 iq_set_register_info(ServerHost, Host, From, Nick,
 		     Lang) ->
     case set_nick(ServerHost, Host, From, Nick) of
-      {atomic, ok} -> {result, []};
+      {atomic, ok} -> {result, undefined};
       {atomic, false} ->
 	  ErrText = <<"That nickname is registered by another "
 		      "person">>,
-	  {error, ?ERRT_CONFLICT(Lang, ErrText)};
+	  {error, xmpp:err_conflict(ErrText, Lang)};
       _ ->
 	  Txt = <<"Database failure">>,
-	  {error, ?ERRT_INTERNAL_SERVER_ERROR(Lang, Txt)}
+	  {error, xmpp:err_internal_server_error(Txt, Lang)}
     end.
 
-process_iq_register_set(ServerHost, Host, From, SubEl,
-			Lang) ->
-    #xmlel{children = Els} = SubEl,
-    case fxml:get_subtag(SubEl, <<"remove">>) of
-      false ->
-	  case fxml:remove_cdata(Els) of
-	    [#xmlel{name = <<"x">>} = XEl] ->
-		case {fxml:get_tag_attr_s(<<"xmlns">>, XEl),
-		      fxml:get_tag_attr_s(<<"type">>, XEl)}
-		    of
-		  {?NS_XDATA, <<"cancel">>} -> {result, []};
-		  {?NS_XDATA, <<"submit">>} ->
-		      XData = jlib:parse_xdata_submit(XEl),
-		      case XData of
-			invalid ->
-			      Txt = <<"Incorrect data form">>,
-			      {error, ?ERRT_BAD_REQUEST(Lang, Txt)};
-			_ ->
-			    case lists:keysearch(<<"nick">>, 1, XData) of
-			      {value, {_, [Nick]}} when Nick /= <<"">> ->
-				  iq_set_register_info(ServerHost, Host, From,
-						       Nick, Lang);
-			      _ ->
-				  ErrText =
-				      <<"You must fill in field \"Nickname\" "
-					"in the form">>,
-				  {error, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)}
-			    end
-		      end;
-		  _ -> {error, ?ERR_BAD_REQUEST}
-		end;
-	    _ -> {error, ?ERR_BAD_REQUEST}
-	  end;
-      _ ->
-	  iq_set_register_info(ServerHost, Host, From, <<"">>,
-			       Lang)
+process_iq_register_set(ServerHost, Host, From,
+			#register{remove = true}, Lang) ->
+    iq_set_register_info(ServerHost, Host, From, <<"">>, Lang);
+process_iq_register_set(_ServerHost, _Host, _From,
+			#register{xdata = #xdata{type = cancel}}, _Lang) ->
+    {result, undefined};
+process_iq_register_set(ServerHost, Host, From,
+			#register{nick = Nick, xdata = XData}, Lang) ->
+    case XData of
+	#xdata{type = submit, fields = Fs} ->
+	    try
+		Options = muc_register:decode(Fs),
+		N = proplists:get_value(roomnick, Options),
+		iq_set_register_info(ServerHost, Host, From, N, Lang)
+	    catch _:{muc_register, Why} ->
+		    ErrText = muc_register:format_error(Why),
+		    {error, xmpp:err_bad_request(ErrText, Lang)}
+	    end;
+	#xdata{} ->
+	    Txt = <<"Incorrect data form">>,
+	    {error, xmpp:err_bad_request(Txt, Lang)};
+	_ when is_binary(Nick), Nick /= <<"">> ->
+	    iq_set_register_info(ServerHost, Host, From, Nick, Lang);
+	_ ->
+	    ErrText = <<"You must fill in field \"Nickname\" in the form">>,
+	    {error, xmpp:err_not_acceptable(ErrText, Lang)}
     end.
-
-iq_get_vcard(Lang) ->
-    [#xmlel{name = <<"FN">>, attrs = [],
-	    children = [{xmlcdata, <<"ejabberd/mod_muc">>}]},
-     #xmlel{name = <<"URL">>, attrs = [],
-	    children = [{xmlcdata, ?EJABBERD_URI}]},
-     #xmlel{name = <<"DESC">>, attrs = [],
-	    children =
-		[{xmlcdata,
-		  <<(translate:translate(Lang,
-					 <<"ejabberd MUC module">>))/binary,
-		    "\nCopyright (c) 2003-2016 ProcessOne">>}]}].
 
 broadcast_service_message(Host, Msg) ->
     lists:foreach(
@@ -887,6 +807,13 @@ get_vh_rooms(Host) ->
 			  [{'==', {element, 2, '$1'}, Host}],
 			  ['$_']}]).
 
+-spec get_vh_rooms_count(binary()) -> non_neg_integer().
+get_vh_rooms_count(Host) ->
+    ets:select_count(muc_online_room,
+		     ets:fun2ms(
+		       fun(#muc_online_room{name_host = {_, H}}) ->
+			       H == Host
+		       end)).
 
 clean_table_from_bad_node(Node) ->
     F = fun() ->
@@ -915,6 +842,23 @@ clean_table_from_bad_node(Node, Host) ->
 			      end, Es)
         end,
     mnesia:async_dirty(F).
+
+update_tables() ->
+    try
+	case mnesia:table_info(muc_online_room, type) of
+	    ordered_set -> ok;
+	    _ ->
+		case mnesia:delete_table(muc_online_room) of
+		    {atomic, ok} -> ok;
+		    Err -> erlang:error(Err)
+		end
+	end
+    catch _:{aborted, {no_exists, muc_online_room}} -> ok;
+	  _:{aborted, {no_exists, muc_online_room, type}} -> ok;
+	  E:R ->
+	    ?ERROR_MSG("failed to update mnesia table '~s': ~p",
+		       [muc_online_room, {E, R}])
+    end.
 
 opts_to_binary(Opts) ->
     lists:map(
@@ -958,13 +902,16 @@ export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:export(LServer).
 
-import(LServer) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:import(LServer).
+import_info() ->
+    [{<<"muc_room">>, 4}, {<<"muc_registered">>, 4}].
 
-import(LServer, DBType, Data) ->
+import_start(LServer, DBType) ->
     Mod = gen_mod:db_mod(DBType, ?MODULE),
-    Mod:import(LServer, Data).
+    Mod:init(LServer, []).
+
+import(LServer, {sql, _}, DBType, Tab, L) ->
+    Mod = gen_mod:db_mod(DBType, ?MODULE),
+    Mod:import(LServer, Tab, L).
 
 mod_opt_type(access) ->
     fun acl:access_rules_validator/1;

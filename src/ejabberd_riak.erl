@@ -428,7 +428,7 @@ map_key(Obj, _, _) ->
          <<"b_", B/binary>> ->
              B;
          <<"i_", B/binary>> ->
-             list_to_integer(binary_to_list(B));
+             (binary_to_integer(B));
          B ->
              erlang:binary_to_term(B)
      end].
@@ -483,7 +483,7 @@ encode_index_key(Idx, Key) ->
 encode_key(Bin) when is_binary(Bin) ->
     <<"b_", Bin/binary>>;
 encode_key(Int) when is_integer(Int) ->
-    <<"i_", (list_to_binary(integer_to_list(Int)))/binary>>;
+    <<"i_", ((integer_to_binary(Int)))/binary>>;
 encode_key(Term) ->
     erlang:term_to_binary(Term).
 
@@ -519,7 +519,7 @@ log_error(_, _, _) ->
     ok.
 
 make_invalid_object(Val) ->
-    list_to_binary(io_lib:fwrite("Invalid object: ~p", [Val])).
+    (str:format("Invalid object: ~p", [Val])).
 
 get_random_pid() ->
     PoolPid = ejabberd_riak_sup:get_random_pid(),

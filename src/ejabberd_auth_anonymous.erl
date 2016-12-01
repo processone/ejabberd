@@ -50,8 +50,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
-
--include("jlib.hrl").
+-include("jid.hrl").
 
 %% Create the anonymous table if at least one virtual host has anonymous features enabled
 %% Register to login / logout events
@@ -60,7 +59,7 @@
 
 start(Host) ->
     %% TODO: Check cluster mode
-    mnesia:create_table(anonymous, [{ram_copies, [node()]},
+    ejabberd_mnesia:create(?MODULE, anonymous, [{ram_copies, [node()]},
 				    {type, bag},
 				    {attributes, record_info(fields, anonymous)}]),
     %% The hooks are needed to add / remove users from the anonymous tables
@@ -140,6 +139,7 @@ remove_connection(SID, LUser, LServer) ->
     mnesia:transaction(F).
 
 %% Register connection
+-spec register_connection(ejabberd_sm:sid(), jid(), ejabberd_sm:info()) -> ok.
 register_connection(SID,
 		    #jid{luser = LUser, lserver = LServer}, Info) ->
     AuthModule = proplists:get_value(auth_module, Info, undefined),
@@ -156,6 +156,7 @@ register_connection(SID,
     end.
 
 %% Remove an anonymous user from the anonymous users table
+-spec unregister_connection(ejabberd_sm:sid(), jid(), ejabberd_sm:info()) -> any().
 unregister_connection(SID,
 		      #jid{luser = LUser, lserver = LServer}, _) ->
     purge_hook(anonymous_user_exist(LUser, LServer), LUser,

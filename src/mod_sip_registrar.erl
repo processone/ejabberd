@@ -179,7 +179,7 @@ ping(SIPSocket) ->
 %%%===================================================================
 init([]) ->
     update_table(),
-    mnesia:create_table(sip_session,
+    ejabberd_mnesia:create(?MODULE, sip_session,
 			[{ram_copies, [node()]},
 			 {type, bag},
 			 {attributes, record_info(fields, sip_session)}]),
@@ -355,7 +355,7 @@ min_expires() ->
     60.
 
 to_integer(Bin, Min, Max) ->
-    case catch list_to_integer(binary_to_list(Bin)) of
+    case catch (binary_to_integer(Bin)) of
         N when N >= Min, N =< Max ->
             {ok, N};
         _ ->

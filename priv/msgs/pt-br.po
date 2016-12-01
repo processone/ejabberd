@@ -31,7 +31,7 @@ msgstr "foi removido"
 
 #: ejabberd_c2s.erl:2105
 msgid "Your active privacy list has denied the routing of this stanza."
-msgstr "Sua lista de privacidade ativa negou o roteamento deste."
+msgstr "Sua lista de privacidade ativa negou o roteamento desta instância."
 
 #: ejabberd_c2s.erl:2420
 msgid "Too many unacked stanzas"
@@ -286,7 +286,7 @@ msgstr "Nós em execução"
 
 #: ejabberd_web_admin.erl:1815 mod_configure.erl:526
 msgid "Stopped Nodes"
-msgstr "Nos parados"
+msgstr "Nós parados"
 
 #: ejabberd_web_admin.erl:1833 ejabberd_web_admin.erl:1858
 msgid "Node ~p"
@@ -302,7 +302,7 @@ msgstr "Salvar cópia de segurança"
 
 #: ejabberd_web_admin.erl:1845
 msgid "Listened Ports"
-msgstr "Portas escutadas"
+msgstr "Portas abertas"
 
 #: ejabberd_web_admin.erl:1848 ejabberd_web_admin.erl:2261
 msgid "Update"
@@ -1013,7 +1013,7 @@ msgstr "Apelido"
 
 #: mod_muc.erl:1050 mod_muc_room.erl:1104 mod_muc_room.erl:1843
 msgid "That nickname is registered by another person"
-msgstr "O nick já está registrado por outra pessoa"
+msgstr "O apelido já está registrado por outra pessoa"
 
 #: mod_muc.erl:1078
 msgid "You must fill in field \"Nickname\" in the form"
@@ -1303,7 +1303,7 @@ msgstr "O Jabber ID ~s não es válido"
 
 #: mod_muc_room.erl:2772
 msgid "Nickname ~s does not exist in the room"
-msgstr "O nick ~s não existe na sala"
+msgstr "O apelido ~s não existe na sala"
 
 #: mod_muc_room.erl:2795 mod_muc_room.erl:3175
 msgid "Invalid affiliation: ~s"
@@ -1568,15 +1568,15 @@ msgstr "Entregar as notificações de evento"
 
 #: mod_pubsub.erl:3749
 msgid "Notify subscribers when the node configuration changes"
-msgstr "Notificar subscritores quando cambia la configuração do nodo"
+msgstr "Notificar assinantes a configuração do nó mudar"
 
 #: mod_pubsub.erl:3751
 msgid "Notify subscribers when the node is deleted"
-msgstr "Notificar subscritores quando o nodo se elimine"
+msgstr "Notificar assinantes quando o nó for eliminado se elimine"
 
 #: mod_pubsub.erl:3753
 msgid "Notify subscribers when items are removed from the node"
-msgstr "Notificar subscritores quando os elementos se eliminem do nodo"
+msgstr "Notificar assinantes quando itens forem eliminados do nó"
 
 #: mod_pubsub.erl:3755
 msgid "Persist items to storage"
@@ -1637,7 +1637,7 @@ msgstr "A verificação do CAPTCHA falhou"
 #: mod_register.erl:253
 msgid "You need a client that supports x:data and CAPTCHA to register"
 msgstr ""
-"Você precisa de um cliente com suporte de x:data para poder registrar o nick"
+"Você precisa de um cliente com suporte de x:data para poder registrar o apelido"
 
 #: mod_register.erl:259 mod_register.erl:320
 msgid "Choose a username and password to register with this server"
@@ -1693,7 +1693,7 @@ msgid ""
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
-"Esta pagina aceita criações de novas contas Jabber neste servidor. A sua JID "
+"Esta pagina aceita criações de novas contas Jabber neste servidor. O seu JID "
 "(Identificador Jabber) será da seguinte forma: 'usuário@servidor'. Por "
 "favor, leia cuidadosamente as instruções para preencher corretamente os "
 "campos."
@@ -1732,7 +1732,7 @@ msgid ""
 "Some Jabber clients can store your password in the computer, but you should "
 "do this only in your personal computer for safety reasons."
 msgstr ""
-"Alguns clientes jabber podem salvar a sua senha no seu computador. Use "
+"Alguns clientes jabber podem salvar a sua senha no seu computador. Use o "
 "recurso somente se você considera este computador seguro o suficiente."
 
 #: mod_register_web.erl:256

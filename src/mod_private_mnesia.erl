@@ -11,9 +11,9 @@
 
 %% API
 -export([init/2, set_data/3, get_data/3, get_all_data/2, remove_user/2,
-	 import/2]).
+	 import/3]).
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_private.hrl").
 -include("logger.hrl").
 
@@ -21,7 +21,7 @@
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
-    mnesia:create_table(private_storage,
+    ejabberd_mnesia:create(?MODULE, private_storage,
 			[{disc_only_copies, [node()]},
 			 {attributes,
 			  record_info(fields, private_storage)}]),
@@ -72,7 +72,10 @@ remove_user(LUser, LServer) ->
 	end,
     mnesia:transaction(F).
 
-import(_LServer, #private_storage{} = PS) ->
+import(LServer, <<"private_storage">>,
+       [LUser, XMLNS, XML, _TimeStamp]) ->
+    El = #xmlel{} = fxml_stream:parse_element(XML),
+    PS = #private_storage{usns = {LUser, LServer, XMLNS}, xml = El},
     mnesia:dirty_write(PS).
 
 %%%===================================================================

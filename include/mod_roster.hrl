@@ -20,15 +20,15 @@
 
 -record(roster,
 {
-    usj = {<<>>, <<>>, {<<>>, <<>>, <<>>}} :: {binary(), binary(), ljid()} | '_',
+    usj = {<<>>, <<>>, {<<>>, <<>>, <<>>}} :: {binary(), binary(), jid:ljid()} | '_',
     us = {<<>>, <<>>}                      :: {binary(), binary()} | '_',
-    jid = {<<>>, <<>>, <<>>}               :: ljid(),
+    jid = {<<>>, <<>>, <<>>}               :: jid:ljid(),
     name = <<>>                            :: binary() | '_',
     subscription = none                    :: subscription() | '_',
     ask = none                             :: ask() | '_',
     groups = []                            :: [binary()] | '_',
     askmessage = <<"">>                    :: binary() | '_',
-    xs = []                                :: [xmlel()] | '_'
+    xs = []                                :: [fxml:xmlel()] | '_'
 }).
 
 -record(roster_version,

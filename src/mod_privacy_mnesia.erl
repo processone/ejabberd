@@ -15,9 +15,9 @@
 	 process_default_set/3, process_active_set/3,
 	 remove_privacy_list/3, set_privacy_list/1,
 	 set_privacy_list/4, get_user_list/2, get_user_lists/2,
-	 remove_user/2, import/2]).
+	 remove_user/2, import/1]).
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_privacy.hrl").
 -include("logger.hrl").
 
@@ -25,7 +25,7 @@
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
-    mnesia:create_table(privacy,
+    ejabberd_mnesia:create(?MODULE, privacy,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, privacy)}]),
     update_table().
@@ -35,11 +35,7 @@ process_lists_get(LUser, LServer) ->
 	{'EXIT', _Reason} -> error;
 	[] -> {none, []};
 	[#privacy{default = Default, lists = Lists}] ->
-	    LItems = lists:map(fun ({N, _}) ->
-				       #xmlel{name = <<"list">>,
-					      attrs = [{<<"name">>, N}],
-					      children = []}
-			       end, Lists),
+	    LItems = lists:map(fun ({N, _}) -> N end, Lists),
 	    {Default, LItems}
     end.
 
@@ -54,7 +50,15 @@ process_list_get(LUser, LServer, Name) ->
 	    end
     end.
 
-process_default_set(LUser, LServer, {value, Name}) ->
+process_default_set(LUser, LServer, none) ->
+    F = fun () ->
+		case mnesia:read({privacy, {LUser, LServer}}) of
+		    [] -> ok;
+		    [R] -> mnesia:write(R#privacy{default = none})
+		end
+	end,
+    mnesia:transaction(F);
+process_default_set(LUser, LServer, Name) ->
     F = fun () ->
 		case mnesia:read({privacy, {LUser, LServer}}) of
 		    [] -> not_found;
@@ -66,14 +70,6 @@ process_default_set(LUser, LServer, {value, Name}) ->
 				ok;
 			    false -> not_found
 			end
-		end
-	end,
-    mnesia:transaction(F);
-process_default_set(LUser, LServer, false) ->
-    F = fun () ->
-		case mnesia:read({privacy, {LUser, LServer}}) of
-		    [] -> ok;
-		    [R] -> mnesia:write(R#privacy{default = none})
 		end
 	end,
     mnesia:transaction(F).
@@ -148,7 +144,7 @@ remove_user(LUser, LServer) ->
     F = fun () -> mnesia:delete({privacy, {LUser, LServer}}) end,
     mnesia:transaction(F).
 
-import(_LServer, #privacy{} = P) ->
+import(#privacy{} = P) ->
     mnesia:dirty_write(P).
 
 %%%===================================================================

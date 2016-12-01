@@ -36,7 +36,7 @@
 -include("ejabberd_oauth.hrl").
 -include("ejabberd.hrl").
 -include("ejabberd_sql_pt.hrl").
--include("jlib.hrl").
+-include("jid.hrl").
 
 init() ->
     ok.

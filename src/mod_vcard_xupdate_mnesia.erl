@@ -10,7 +10,7 @@
 -behaviour(mod_vcard_xupdate).
 
 %% API
--export([init/2, import/2, add_xupdate/3, get_xupdate/2, remove_xupdate/2]).
+-export([init/2, import/3, add_xupdate/3, get_xupdate/2, remove_xupdate/2]).
 
 -include("mod_vcard_xupdate.hrl").
 -include("logger.hrl").
@@ -19,7 +19,7 @@
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
-    mnesia:create_table(vcard_xupdate,
+    ejabberd_mnesia:create(?MODULE, vcard_xupdate,
 			[{disc_copies, [node()]},
 			 {attributes,
 			  record_info(fields, vcard_xupdate)}]),
@@ -45,8 +45,9 @@ remove_xupdate(LUser, LServer) ->
 	end,
     mnesia:transaction(F).
 
-import(_LServer, #vcard_xupdate{} = R) ->
-    mnesia:dirty_write(R).
+import(LServer, <<"vcard_xupdate">>, [LUser, Hash, _TimeStamp]) ->
+    mnesia:dirty_write(
+      #vcard_xupdate{us = {LUser, LServer}, hash = Hash}).
 
 %%%===================================================================
 %%% Internal functions

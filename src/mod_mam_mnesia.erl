@@ -12,10 +12,10 @@
 
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
-	 extended_fields/0, store/7, write_prefs/4, get_prefs/2, select/8]).
+	 extended_fields/0, store/7, write_prefs/4, get_prefs/2, select/6]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("logger.hrl").
 -include("mod_mam.hrl").
 
@@ -32,11 +32,11 @@
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
-    mnesia:create_table(archive_msg,
+    ejabberd_mnesia:create(?MODULE, archive_msg,
 			[{disc_only_copies, [node()]},
 			 {type, bag},
 			 {attributes, record_info(fields, archive_msg)}]),
-    mnesia:create_table(archive_prefs,
+    ejabberd_mnesia:create(?MODULE, archive_prefs,
 			[{disc_only_copies, [node()]},
 			 {attributes, record_info(fields, archive_prefs)}]).
 
@@ -97,7 +97,7 @@ store(Pkt, _, {LUser, LServer}, Type, Peer, Nick, _Dir) ->
 	_ ->
 	    LPeer = {PUser, PServer, _} = jid:tolower(Peer),
 	    TS = p1_time_compat:timestamp(),
-	    ID = jlib:integer_to_binary(now_to_usec(TS)),
+	    ID = integer_to_binary(now_to_usec(TS)),
 	    F = fun() ->
 			mnesia:write(
 			  #archive_msg{us = {LUser, LServer},
@@ -132,8 +132,14 @@ get_prefs(LUser, LServer) ->
 
 select(_LServer, JidRequestor,
        #jid{luser = LUser, lserver = LServer} = JidArchive,
-       Start, End, With, RSM, MsgType) ->
-    MS = make_matchspec(LUser, LServer, Start, End, With),
+       Query, RSM, MsgType) ->
+    Start = proplists:get_value(start, Query),
+    End = proplists:get_value('end', Query),
+    With = proplists:get_value(with, Query),
+    LWith = if With /= undefined -> jid:tolower(With);
+	       true -> undefined
+	    end,
+    MS = make_matchspec(LUser, LServer, Start, End, LWith),
     Msgs = mnesia:dirty_select(archive_msg, MS),
     SortedMsgs = lists:keysort(#archive_msg.timestamp, Msgs),
     {FilteredMsgs, IsComplete} = filter_by_rsm(SortedMsgs, RSM),
@@ -141,7 +147,7 @@ select(_LServer, JidRequestor,
     Result = {lists:map(
 		fun(Msg) ->
 			{Msg#archive_msg.id,
-			 jlib:binary_to_integer(Msg#archive_msg.id),
+			 binary_to_integer(Msg#archive_msg.id),
 			 mod_mam:msg_to_el(Msg, MsgType, JidRequestor,
 					   JidArchive)}
 		end, FilteredMsgs), IsComplete, Count},
@@ -154,6 +160,9 @@ select(_LServer, JidRequestor,
 now_to_usec({MSec, Sec, USec}) ->
     (MSec*1000000 + Sec)*1000000 + USec.
 
+make_matchspec(LUser, LServer, Start, undefined, With) ->
+    %% List is always greater than a tuple
+    make_matchspec(LUser, LServer, Start, [], With);
 make_matchspec(LUser, LServer, Start, End, {_, _, <<>>} = With) ->
     ets:fun2ms(
       fun(#archive_msg{timestamp = TS,
@@ -174,7 +183,7 @@ make_matchspec(LUser, LServer, Start, End, {_, _, _} = With) ->
 		 Peer == With ->
 	      Msg
       end);
-make_matchspec(LUser, LServer, Start, End, none) ->
+make_matchspec(LUser, LServer, Start, End, undefined) ->
     ets:fun2ms(
       fun(#archive_msg{timestamp = TS,
 		       us = US,
@@ -184,28 +193,27 @@ make_matchspec(LUser, LServer, Start, End, none) ->
 	      Msg
       end).
 
-filter_by_rsm(Msgs, none) ->
+filter_by_rsm(Msgs, undefined) ->
     {Msgs, true};
-filter_by_rsm(_Msgs, #rsm_in{max = Max}) when Max < 0 ->
+filter_by_rsm(_Msgs, #rsm_set{max = Max}) when Max < 0 ->
     {[], true};
-filter_by_rsm(Msgs, #rsm_in{max = Max, direction = Direction, id = ID}) ->
-    NewMsgs = case Direction of
-		  aft when ID /= <<"">> ->
+filter_by_rsm(Msgs, #rsm_set{max = Max, before = Before, 'after' = After}) ->
+    NewMsgs = if is_binary(After), After /= <<"">> ->
 		      lists:filter(
 			fun(#archive_msg{id = I}) ->
-				?BIN_GREATER_THAN(I, ID)
+				?BIN_GREATER_THAN(I, After)
 			end, Msgs);
-		  before when ID /= <<"">> ->
+		 is_binary(Before), Before /= <<"">> ->
 		      lists:foldl(
 			fun(#archive_msg{id = I} = Msg, Acc)
-				when ?BIN_LESS_THAN(I, ID) ->
+				when ?BIN_LESS_THAN(I, Before) ->
 				[Msg|Acc];
 			   (_, Acc) ->
 				Acc
 			end, [], Msgs);
-		  before when ID == <<"">> ->
+		 is_binary(Before), Before == <<"">> ->
 		      lists:reverse(Msgs);
-		  _ ->
+		 true ->
 		      Msgs
 	      end,
     filter_by_max(NewMsgs, Max).

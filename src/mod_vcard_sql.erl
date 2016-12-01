@@ -13,10 +13,11 @@
 -behaviour(mod_vcard).
 
 %% API
--export([init/2, get_vcard/2, set_vcard/4, search/4, remove_user/2,
-	 import/1, import/2, export/1]).
+-export([init/2, stop/1, get_vcard/2, set_vcard/4, search/4, remove_user/2,
+	 search_fields/1, search_reported/1, import/3, export/1]).
+-export([is_search_supported/1]).
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("mod_vcard.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
@@ -26,6 +27,12 @@
 %%%===================================================================
 init(_Host, _Opts) ->
     ok.
+
+stop(_Host) ->
+    ok.
+
+is_search_supported(_LServer) ->
+    true.
 
 get_vcard(LUser, LServer) ->
     case catch sql_queries:get_vcard(LServer, LUser) of
@@ -79,7 +86,7 @@ search(LServer, Data, AllowReturnAll, MaxMatch) ->
 			infinity ->
 			    <<"">>;
 			Val ->
-			    [<<" LIMIT ">>, jlib:integer_to_binary(Val)]
+			    [<<" LIMIT ">>, integer_to_binary(Val)]
 		    end,
 	   case catch ejabberd_sql:sql_query(
 			LServer,
@@ -93,11 +100,39 @@ search(LServer, Data, AllowReturnAll, MaxMatch) ->
 		 <<"middle">>, <<"nickname">>, <<"bday">>, <<"ctry">>,
 		 <<"locality">>, <<"email">>, <<"orgname">>,
 		 <<"orgunit">>], Rs} when is_list(Rs) ->
-		   Rs;
+		   [row_to_item(LServer, R) || R <- Rs];
 	       Error ->
 		   ?ERROR_MSG("~p", [Error]), []
 	   end
     end.
+
+search_fields(_LServer) ->
+    [{<<"User">>, <<"user">>},
+     {<<"Full Name">>, <<"fn">>},
+     {<<"Name">>, <<"first">>},
+     {<<"Middle Name">>, <<"middle">>},
+     {<<"Family Name">>, <<"last">>},
+     {<<"Nickname">>, <<"nick">>},
+     {<<"Birthday">>, <<"bday">>},
+     {<<"Country">>, <<"ctry">>},
+     {<<"City">>, <<"locality">>},
+     {<<"Email">>, <<"email">>},
+     {<<"Organization Name">>, <<"orgname">>},
+     {<<"Organization Unit">>, <<"orgunit">>}].
+
+search_reported(_LServer) ->
+    [{<<"Jabber ID">>, <<"jid">>},
+     {<<"Full Name">>, <<"fn">>},
+     {<<"Name">>, <<"first">>},
+     {<<"Middle Name">>, <<"middle">>},
+     {<<"Family Name">>, <<"last">>},
+     {<<"Nickname">>, <<"nick">>},
+     {<<"Birthday">>, <<"bday">>},
+     {<<"Country">>, <<"ctry">>},
+     {<<"City">>, <<"locality">>},
+     {<<"Email">>, <<"email">>},
+     {<<"Organization Name">>, <<"orgname">>},
+     {<<"Organization Unit">>, <<"orgunit">>}].
 
 remove_user(LUser, LServer) ->
     ejabberd_sql:sql_transaction(
@@ -157,37 +192,8 @@ export(_Server) ->
               []
       end}].
 
-import(LServer) ->
-    [{<<"select username, vcard from vcard;">>,
-      fun([LUser, SVCard]) ->
-              #xmlel{} = VCARD = fxml_stream:parse_element(SVCard),
-              #vcard{us = {LUser, LServer}, vcard = VCARD}
-      end},
-     {<<"select username, lusername, fn, lfn, family, lfamily, "
-        "given, lgiven, middle, lmiddle, nickname, lnickname, "
-        "bday, lbday, ctry, lctry, locality, llocality, email, "
-        "lemail, orgname, lorgname, orgunit, lorgunit from vcard_search;">>,
-      fun([User, LUser, FN, LFN,
-           Family, LFamily, Given, LGiven,
-           Middle, LMiddle, Nickname, LNickname,
-           BDay, LBDay, CTRY, LCTRY, Locality, LLocality,
-           EMail, LEMail, OrgName, LOrgName, OrgUnit, LOrgUnit]) ->
-              #vcard_search{us = {LUser, LServer},
-                            user = {User, LServer}, luser = LUser,
-                            fn = FN, lfn = LFN, family = Family,
-                            lfamily = LFamily, given = Given,
-                            lgiven = LGiven, middle = Middle,
-                            lmiddle = LMiddle, nickname = Nickname,
-                            lnickname = LNickname, bday = BDay,
-                            lbday = LBDay, ctry = CTRY, lctry = LCTRY,
-                            locality = Locality, llocality = LLocality,
-                            email = EMail, lemail = LEMail,
-                            orgname = OrgName, lorgname = LOrgName,
-                            orgunit = OrgUnit, lorgunit = LOrgUnit}
-      end}].
-
-import(_, _) ->
-    pass.
+import(_, _, _) ->
+    ok.
 
 %%%===================================================================
 %%% Internal functions
@@ -240,3 +246,18 @@ make_val(Match, Field, Val) ->
       <<"">> -> Condition;
       _ -> [Match, <<" and ">>, Condition]
     end.
+
+row_to_item(LServer, [Username, FN, Family, Given, Middle, Nickname, BDay,
+		      CTRY, Locality, EMail, OrgName, OrgUnit]) ->
+    [{<<"jid">>, <<Username/binary, $@, LServer/binary>>},
+     {<<"fn">>, FN},
+     {<<"last">>, Family},
+     {<<"first">>, Given},
+     {<<"middle">>, Middle},
+     {<<"nick">>, Nickname},
+     {<<"bday">>, BDay},
+     {<<"ctry">>, CTRY},
+     {<<"locality">>, Locality},
+     {<<"email">>, EMail},
+     {<<"orgname">>, OrgName},
+     {<<"orgunit">>, OrgUnit}].

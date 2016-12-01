@@ -13,7 +13,7 @@
 %% API
 -export([init/2, get_data/3, set_data/4, import/2]).
 
--include("jlib.hrl").
+-include("jid.hrl").
 -include("mod_irc.hrl").
 -include("logger.hrl").
 
@@ -21,7 +21,7 @@
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
-    mnesia:create_table(irc_custom,
+    ejabberd_mnesia:create(?MODULE, irc_custom,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, irc_custom)}]),
     update_table().

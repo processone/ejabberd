@@ -41,7 +41,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("jlib.hrl").
+-include("jid.hrl").
 
 -record(acl, {aclname, aclspec}).
 -record(access, {name       :: aclname(),
@@ -76,11 +76,11 @@
 -export_type([acl/0]).
 
 start() ->
-    mnesia:create_table(acl,
+    ejabberd_mnesia:create(?MODULE, acl,
 			[{ram_copies, [node()]}, {type, bag},
                          {local_content, true},
 			 {attributes, record_info(fields, acl)}]),
-    mnesia:create_table(access,
+    ejabberd_mnesia:create(?MODULE, access,
                         [{ram_copies, [node()]},
                          {local_content, true},
 			 {attributes, record_info(fields, access)}]),
@@ -342,7 +342,7 @@ acl_rule_verify({node_glob, {UR, SR}}) when is_binary(UR), is_binary(SR) ->
 acl_rule_verify(_Spec) ->
     false.
 invalid_syntax(Msg, Data) ->
-    throw({invalid_syntax, iolist_to_binary(io_lib:format(Msg, Data))}).
+    throw({invalid_syntax, (str:format(Msg, Data))}).
 
 acl_rules_verify([{acl, Name} | Rest], true) when is_atom(Name) ->
     acl_rules_verify(Rest, true);
@@ -446,8 +446,8 @@ resolve_access(Name, Host) when is_atom(Name) ->
     GAccess = mnesia:dirty_read(access, {Name, global}),
     LAccess =
     if Host /= global -> mnesia:dirty_read(access, {Name, Host});
-	true -> []
-    end,
+	    true -> []
+	end,
     case GAccess ++ LAccess of
 	[] ->
 	    [];
@@ -542,7 +542,7 @@ parse_ip_netmask(S) ->
 	    _ -> error
 	  end;
       [IPStr, MaskStr] ->
-	  case catch jlib:binary_to_integer(MaskStr) of
+	  case catch binary_to_integer(MaskStr) of
 	    Mask when is_integer(Mask), Mask >= 0 ->
 		case inet_parse:address(binary_to_list(IPStr)) of
 		  {ok, {_, _, _, _} = IP} when Mask =< 32 ->

@@ -42,7 +42,7 @@
 -include("ejabberd_http.hrl").
 -include("mod_roster.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -record(state,
 	{access_commands = [] :: list(),
@@ -216,10 +216,10 @@ process(_, #request{method = 'POST', data = Data, opts = Opts, ip = {IP, _}}) ->
                                                         L),
                                                L
                                        end, all),
-                          CommOpts = gen_mod:get_opt(
-                                       options, AcOpts,
-                                       fun(L) when is_list(L) -> L end,
-                                       []),
+                          %% CommOpts = gen_mod:get_opt(
+                          %%              options, AcOpts,
+                          %%              fun(L) when is_list(L) -> L end,
+                          %%              []),
 			  [{<<"ejabberd_xmlrpc compatibility shim">>, {[?MODULE], [{access, Ac}], Commands}}];
                      (Wrong) ->
                           ?WARNING_MSG("wrong options format for ~p: ~p",

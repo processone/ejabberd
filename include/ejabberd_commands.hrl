@@ -46,12 +46,13 @@
 %% to command, so that the command can perform additional check.
 
 -record(ejabberd_commands,
-	{name                    :: atom(),
+        {name                    :: atom(),
          tags = []               :: [atom()] | '_' | '$2',
          desc = ""               :: string() | '_' | '$3',
          longdesc = ""           :: string() | '_',
-	 version = 0             :: integer(),
-	 module                  :: atom() | '_',
+         version = 0             :: integer(),
+         weight = 1              :: integer(),
+         module                  :: atom() | '_',
          function                :: atom() | '_',
          args = []               :: [aterm()] | '_' | '$1' | '$2',
          policy = restricted     :: open | restricted | admin | user,

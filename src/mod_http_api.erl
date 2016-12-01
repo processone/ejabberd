@@ -77,7 +77,7 @@
 -export([start/2, stop/1, process/2, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
 
@@ -134,28 +134,28 @@ depends(_Host, _Opts) ->
 
 extract_auth(#request{auth = HTTPAuth, ip = {IP, _}}) ->
     Info = case HTTPAuth of
-	       {SJID, Pass} ->
-		   case jid:from_string(SJID) of
+            {SJID, Pass} ->
+                case jid:from_string(SJID) of
 		       #jid{luser = User, lserver = Server} ->
-			   case ejabberd_auth:check_password(User, <<"">>, Server, Pass) of
+                        case ejabberd_auth:check_password(User, <<"">>, Server, Pass) of
 			       true ->
 				   #{usr => {User, Server, <<"">>}, caller_server => Server};
 			       false ->
 				   {error, invalid_auth}
-			   end;
-		       _ ->
+                        end;
+                    _ ->
 			   {error, invalid_auth}
-		   end;
-	       {oauth, Token, _} ->
+                end;
+            {oauth, Token, _} ->
 		   case ejabberd_oauth:check_token(Token) of
 		       {ok, {U, S}, Scope} ->
 			   #{usr => {U, S, <<"">>}, oauth_scope => Scope, caller_server => S};
 		       {false, Reason} ->
 			   {error, Reason}
-		   end;
-	       _ ->
+                end;
+            _ ->
 		   #{}
-	   end,
+        end,
     case Info of
 	Map when is_map(Map) ->
 	    Map#{caller_module => ?MODULE, ip => IP};
@@ -186,9 +186,9 @@ process([Call], #request{method = 'POST', data = Data, ip = IPPort} = Req) ->
         throw:{error, unknown_command} ->
             json_format({404, 44, <<"Command not found.">>});
         _:{error,{_,invalid_json}} = _Err ->
-            ?DEBUG("Bad Request: ~p", [_Err]),
-            badrequest_response(<<"Invalid JSON input">>);
-          _:_Error ->
+	    ?DEBUG("Bad Request: ~p", [_Err]),
+	    badrequest_response(<<"Invalid JSON input">>);
+	  _:_Error ->
             ?DEBUG("Bad Request: ~p ~p", [_Error, erlang:get_stacktrace()]),
             badrequest_response()
     end;
@@ -247,11 +247,11 @@ extract_args(Data) ->
 get_api_version(#request{path = Path}) ->
     get_api_version(lists:reverse(Path));
 get_api_version([<<"v", String/binary>> | Tail]) ->
-    case catch jlib:binary_to_integer(String) of
-        N when is_integer(N) ->
-            N;
-        _ ->
-            get_api_version(Tail)
+    case catch binary_to_integer(String) of
+	N when is_integer(N) ->
+	    N;
+	_ ->
+	    get_api_version(Tail)
     end;
 get_api_version([_Head | Tail]) ->
     get_api_version(Tail);
@@ -273,7 +273,7 @@ handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
                     fun ({Key, binary}, Acc) ->
                             [{Key, <<>>}|Acc];
                         ({Key, string}, Acc) ->
-                            [{Key, <<>>}|Acc];
+			    [{Key, ""}|Acc];
                         ({Key, integer}, Acc) ->
                             [{Key, 0}|Acc];
                         ({Key, {list, _}}, Acc) ->
@@ -295,7 +295,7 @@ handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
 		    {401, jlib:atom_to_binary(Why)};
 		  throw:{not_allowed, Msg} ->
 		    {401, iolist_to_binary(Msg)};
-      throw:{error, account_unprivileged} ->
+                  throw:{error, account_unprivileged} ->
         {403, 31, <<"Command need to be run with admin priviledge.">>};
       throw:{error, access_rules_unauthorized} ->
         {403, 32, <<"AccessRules: Account associated to token does not have the right to perform the operation.">>};
@@ -406,10 +406,10 @@ format_arg(Elements, {list, ElementsDef})
 format_arg(Arg, integer) when is_integer(Arg) -> Arg;
 format_arg(Arg, binary) when is_list(Arg) -> process_unicode_codepoints(Arg);
 format_arg(Arg, binary) when is_binary(Arg) -> Arg;
-format_arg(Arg, string) when is_list(Arg) -> process_unicode_codepoints(Arg);
-format_arg(Arg, string) when is_binary(Arg) -> Arg;
+format_arg(Arg, string) when is_list(Arg) -> Arg;
+format_arg(Arg, string) when is_binary(Arg) -> binary_to_list(Arg);
 format_arg(undefined, binary) -> <<>>;
-format_arg(undefined, string) -> <<>>;
+format_arg(undefined, string) -> "";
 format_arg(Arg, Format) ->
     ?ERROR_MSG("don't know how to format Arg ~p for format ~p", [Arg, Format]),
     throw({invalid_parameter,
@@ -431,24 +431,24 @@ match(Args, Spec) ->
 format_command_result(Cmd, Auth, Result, Version) ->
     {_, ResultFormat} = ejabberd_commands:get_command_format(Cmd, Auth, Version),
     case {ResultFormat, Result} of
-        {{_, rescode}, V} when V == true; V == ok ->
-            {200, 0};
-        {{_, rescode}, _} ->
-            {200, 1};
+	{{_, rescode}, V} when V == true; V == ok ->
+	    {200, 0};
+	{{_, rescode}, _} ->
+	    {200, 1};
         {_, {error, ErrorAtom, Code, Msg}} ->
             format_error_result(ErrorAtom, Code, Msg);
         {{_, restuple}, {V, Text}} when V == true; V == ok ->
             {200, iolist_to_binary(Text)};
         {{_, restuple}, {ErrorAtom, Msg}} ->
             format_error_result(ErrorAtom, 0, Msg);
-        {{_, {list, _}}, _V} ->
-            {_, L} = format_result(Result, ResultFormat),
-            {200, L};
-        {{_, {tuple, _}}, _V} ->
-            {_, T} = format_result(Result, ResultFormat),
-            {200, T};
-        _ ->
-            {200, {[format_result(Result, ResultFormat)]}}
+	{{_, {list, _}}, _V} ->
+	    {_, L} = format_result(Result, ResultFormat),
+	    {200, L};
+	{{_, {tuple, _}}, _V} ->
+	    {_, T} = format_result(Result, ResultFormat),
+	    {200, T};
+	_ ->
+	    {200, {[format_result(Result, ResultFormat)]}}
     end.
 
 format_result(Atom, {Name, atom}) ->
@@ -503,8 +503,8 @@ unauthorized_response() ->
 invalid_token_response() ->
     json_error(401, 10, <<"Oauth Token is invalid or expired.">>).
 
-outofscope_response() ->
-    json_error(401, 11, <<"Token does not grant usage to command required scope.">>).
+%% outofscope_response() ->
+%%     json_error(401, 11, <<"Token does not grant usage to command required scope.">>).
 
 badrequest_response() ->
     badrequest_response(<<"400 Bad Request">>).
