@@ -402,8 +402,8 @@ registered_vhosts() ->
 
 reload_config() ->
     ejabberd_config:reload_file(),
-    acl:start(),
-    shaper:start(),
+    acl:load_from_config(),
+    shaper:load_from_config(),
     ejabberd_access_permissions:invalidate().
 
 %%%
