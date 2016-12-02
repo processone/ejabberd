@@ -2024,8 +2024,11 @@ check_captcha(Affiliation, From, StateData) ->
 
 -spec extract_password(stanza()) -> binary() | false.
 extract_password(Packet) ->
-    case xmpp:get_subtag(Packet, #muc{}) of
-	#muc{password = Password} when is_binary(Password) ->
+    case {xmpp:get_subtag(Packet, #muc{}),
+          xmpp:get_subtag(Packet, #muc_subscribe{})} of
+	{#muc{password = Password}, _} when is_binary(Password) ->
+	    Password;
+	{_, #muc_subscribe{password = Password}} when is_binary(Password) ->
 	    Password;
 	_ ->
 	    false
