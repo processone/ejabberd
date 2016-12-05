@@ -36,7 +36,7 @@
 % Commands API
 -export([
 	 % Adminsys
-	 compile/1, get_cookie/0, remove_node/1, export2sql/2,
+	 compile/1, get_cookie/0, export2sql/2,
 	 restart_module/2,
 
 	 % Sessions
@@ -145,15 +145,6 @@ get_commands_spec() ->
 			result = {cookie, string},
 			result_example = "MWTAVMODFELNLSMYXPPD",
 			result_desc = "Erlang cookie used for authentication by ejabberd"},
-     #ejabberd_commands{name = remove_node, tags = [erlang],
-			desc = "Remove an ejabberd node from Mnesia clustering config",
-			module = ?MODULE, function = remove_node,
-			args = [{node, string}],
-			args_example = ["ejabberd@server2"],
-			args_desc = ["Name of erlang node to remove"],
-			result = {res, rescode},
-			result_example = ok,
-			result_desc = "Status code: 0 on success, 1 otherwise"},
      #ejabberd_commands{name = export2sql, tags = [mnesia],
 			desc = "Export Mnesia tables to files in directory",
 			module = ?MODULE, function = export2sql,
@@ -656,10 +647,6 @@ compile(File) ->
 
 get_cookie() ->
     atom_to_list(erlang:get_cookie()).
-
-remove_node(Node) ->
-    mnesia:del_table_copy(schema, list_to_atom(Node)),
-    ok.
 
 restart_module(Host, Module) when is_binary(Module) ->
     restart_module(Host, jlib:binary_to_atom(Module));
