@@ -32,6 +32,7 @@ defmodule EjabberdCyrsaslTest do
     :ok = :cyrsasl.start
     cyrstate = :cyrsasl.server_new("domain1", "domain1", "domain1", :ok, &get_password/1,
                                    &check_password/3, &check_password_digest/5)
+    setup_anonymous_mocks()
     {:ok, cyrstate: cyrstate}
   end
 
@@ -53,7 +54,6 @@ defmodule EjabberdCyrsaslTest do
   end
 
   test "Anonymous", context do
-    setup_anonymous_mocks()
     step1 = :cyrsasl.server_start(context[:cyrstate], "ANONYMOUS", "domain1")
     assert {:ok, _} = step1
   end
