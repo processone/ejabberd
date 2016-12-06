@@ -3,7 +3,7 @@ defmodule Ejabberd.Mixfile do
 
   def project do
     [app: :ejabberd,
-     version: "16.11.0",
+     version: "16.12.0-beta1",
      description: description,
      elixir: "~> 1.3",
      elixirc_paths: ["lib"],
@@ -34,7 +34,7 @@ defmodule Ejabberd.Mixfile do
 
   defp erlc_options do
     # Use our own includes + includes from all dependencies
-    includes = ["include"] ++ Path.wildcard("deps/*/include")
+    includes = ["include"] ++ deps_include(["fast_xml", "xmpp"])
     [:debug_info, {:d, :ELIXIR_ENABLED}] ++ Enum.map(includes, fn(path) -> {:i, path} end)
   end
 
@@ -51,12 +51,13 @@ defmodule Ejabberd.Mixfile do
      {:esip, "~> 1.0"},
      {:jiffy, "~> 0.14.7"},
      {:p1_oauth2, "~> 0.6.1"},
-     {:exrm, "~> 1.0.0", only: :dev},
-     # relx is used by exrm. Lock version as for now, ejabberd doesn not compile fine with
-     # version 3.20:
-     {:relx, "~> 3.21", only: :dev},
+     {:distillery, "~> 1.0"},
      {:ex_doc, ">= 0.0.0", only: :dev}]
     ++ cond_deps
+  end
+
+  defp deps_include(deps) do
+    Enum.map(deps, fn dep -> "deps/#{dep}/include" end)
   end
 
   defp cond_deps do
