@@ -493,7 +493,8 @@ compile_deps(_Module, _Spec, DestDir) ->
                 Inc = filename:join(Dep, "include"),
                 Lib = filename:join(Dep, "lib"),
                 Src = filename:join(Dep, "src"),
-                Options = [{outdir, Ebin}, {i, Inc}],
+                Options = [verbose, report_errors, report_warnings,
+                           {outdir, Ebin}, {i, Inc}],
                 [file:copy(App, Ebin) || App <- filelib:wildcard(Src++"/*.app")],
 
                 %% Compile erlang files
@@ -525,10 +526,10 @@ compile_deps(_Module, _Spec, DestDir) ->
 compile(_Module, _Spec, DestDir) ->
     Ebin = filename:join(DestDir, "ebin"),
     filelib:ensure_dir(filename:join(Ebin, ".")),
-    EjabBin = filename:dirname(code:which(ejabberd)),
-    EjabInc = filename:join(filename:dirname(EjabBin), "include"),
-    Options = [{outdir, Ebin}, {i, "include"}, {i, EjabInc},
-               verbose, report_errors, report_warnings],
+    Includes = [{i, filename:join(code:lib_dir(App), "include")}
+                || App <- [fast_xml, xmpp, ejabberd]],
+    Options = [verbose, report_errors, report_warnings,
+               {outdir, Ebin}, {i, "include"} | Includes],
     [file:copy(App, Ebin) || App <- filelib:wildcard("src/*.app")],
 
     %% Compile erlang files

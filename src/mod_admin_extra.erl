@@ -639,11 +639,22 @@ get_commands_spec() ->
 
 
 %%%
-%%% Node
+%%% Adminsys
 %%%
 
 compile(File) ->
-    compile:file(File).
+    Includes = [{i, filename:join(code:lib_dir(App), "include")}
+                || App <- [fast_xml, xmpp, ejabberd]],
+    Ebin = filename:join(code:lib_dir(ejabberd), "ebin"),
+    case compile:file(File, [{outdir, Ebin}|Includes]) of
+        error -> error;
+        {error, _, _} -> error;
+        OK ->
+            [ok, ModuleName | _] = tuple_to_list(OK),
+            code:purge(ModuleName),
+            code:load_file(ModuleName),
+            ok
+    end.
 
 get_cookie() ->
     atom_to_list(erlang:get_cookie()).
