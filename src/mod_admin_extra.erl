@@ -643,17 +643,14 @@ get_commands_spec() ->
 %%%
 
 compile(File) ->
-    Includes = [{i, filename:join(code:lib_dir(App), "include")}
-                || App <- [fast_xml, xmpp, ejabberd]],
     Ebin = filename:join(code:lib_dir(ejabberd), "ebin"),
-    case compile:file(File, [{outdir, Ebin}|Includes]) of
-        error -> error;
-        {error, _, _} -> error;
-        OK ->
-            [ok, ModuleName | _] = tuple_to_list(OK),
-            code:purge(ModuleName),
-            code:load_file(ModuleName),
-            ok
+    case ext_mod:compile_erlang_file(Ebin, File) of
+	{ok, Module} ->
+	    code:purge(Module),
+	    code:load_file(Module),
+	    ok;
+	_ ->
+	    error
     end.
 
 get_cookie() ->
