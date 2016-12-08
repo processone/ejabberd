@@ -331,7 +331,8 @@ command_matches_patterns(C, [_ | Tail]) ->
 parse_api_permissions(Data) when is_list(Data) ->
     throw({replace_with, [parse_api_permission(Name, Args) || {Name, Args} <- Data]}).
 
-parse_api_permission(Name, Args) ->
+parse_api_permission(Name, Args0) ->
+    Args = lists:flatten(Args0),
     {From, Who, What} = case key_split(Args, [{from, []}, {who, none}, {what, []}]) of
 			    {error, Msg} ->
 				report_error(<<"~s inside api_permission '~s' section">>, [Msg, Name]);
