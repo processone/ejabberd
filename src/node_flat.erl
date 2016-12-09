@@ -137,9 +137,8 @@ delete_node(Nodes) ->
     end,
     Reply = lists:map(fun (#pubsub_node{id = Nidx} = PubsubNode) ->
 		    {result, States} = get_states(Nidx),
-		    lists:foreach(fun (#pubsub_state{stateid = {LJID, _}, items = Items}) ->
-				del_items(Nidx, Items),
-				del_state(Nidx, LJID)
+		    lists:foreach(fun (State) ->
+				del_state(State)
 			end, States),
 		    {PubsubNode, lists:flatmap(Tr, States)}
 	    end, Nodes),
@@ -286,7 +285,7 @@ unsubscribe_node(Nidx, Sender, Subscriber, SubId) ->
 		    SubState#pubsub_state.subscriptions),
 	    case Sub of
 		{value, S} ->
-		    delete_subscriptions(SubKey, Nidx, [S], SubState),
+		    delete_subscriptions(SubState, [S]),
 		    {result, default};
 		false ->
 		    {error,
@@ -294,11 +293,11 @@ unsubscribe_node(Nidx, Sender, Subscriber, SubId) ->
 	    end;
 	%% Asking to remove all subscriptions to the given node
 	SubId == all ->
-	    delete_subscriptions(SubKey, Nidx, Subscriptions, SubState),
+	    delete_subscriptions(SubState, Subscriptions),
 	    {result, default};
 	%% No subid supplied, but there's only one matching subscription
 	length(Subscriptions) == 1 ->
-	    delete_subscriptions(SubKey, Nidx, Subscriptions, SubState),
+	    delete_subscriptions(SubState, Subscriptions),
 	    {result, default};
 	%% No subid and more than one possible subscription match.
 	true ->
@@ -306,13 +305,13 @@ unsubscribe_node(Nidx, Sender, Subscriber, SubId) ->
 		mod_pubsub:extended_error((xmpp:err_bad_request()), mod_pubsub:err_subid_required())}
     end.
 
-delete_subscriptions(SubKey, Nidx, Subscriptions, SubState) ->
+delete_subscriptions(SubState, Subscriptions) ->
     NewSubs = lists:foldl(fun ({Subscription, SubId}, Acc) ->
 		    %%pubsub_subscription:delete_subscription(SubKey, Nidx, SubId),
 		    Acc -- [{Subscription, SubId}]
 	    end, SubState#pubsub_state.subscriptions, Subscriptions),
     case {SubState#pubsub_state.affiliation, NewSubs} of
-	{none, []} -> del_state(Nidx, SubKey);
+	{none, []} -> del_state(SubState);
 	_          -> set_state(SubState#pubsub_state{subscriptions = NewSubs})
     end.
 
@@ -515,7 +514,7 @@ set_affiliation(Nidx, Owner, Affiliation) ->
     GenKey = jid:remove_resource(SubKey),
     GenState = get_state(Nidx, GenKey),
     case {Affiliation, GenState#pubsub_state.subscriptions} of
-	{none, []} -> del_state(Nidx, GenKey);
+	{none, []} -> del_state(GenState);
 	_ -> set_state(GenState#pubsub_state{affiliation = Affiliation})
     end.
 
@@ -588,7 +587,7 @@ set_subscriptions(Nidx, Owner, Subscription, SubId) ->
 	    end;
 	{<<>>, [{_, SID}]} ->
 	    case Subscription of
-		none -> unsub_with_subid(Nidx, SID, SubState);
+		none -> unsub_with_subid(SubState, SID);
 		_ -> replace_subscription({Subscription, SID}, SubState)
 	    end;
 	{<<>>, [_ | _]} ->
@@ -596,7 +595,7 @@ set_subscriptions(Nidx, Owner, Subscription, SubId) ->
 		mod_pubsub:extended_error((xmpp:err_bad_request()), mod_pubsub:err_subid_required())};
 	_ ->
 	    case Subscription of
-		none -> unsub_with_subid(Nidx, SubId, SubState);
+		none -> unsub_with_subid(SubState, SubId);
 		_ -> replace_subscription({Subscription, SubId}, SubState)
 	    end
     end.
@@ -616,13 +615,13 @@ new_subscription(_Nidx, _Owner, Sub, SubState) ->
     set_state(SubState#pubsub_state{subscriptions = [{Sub, SubId} | Subs]}),
     {Sub, SubId}.
 
-unsub_with_subid(Nidx, SubId, #pubsub_state{stateid = {Entity, _}} = SubState) ->
+unsub_with_subid(SubState, SubId) ->
     %%pubsub_subscription:delete_subscription(SubState#pubsub_state.stateid, Nidx, SubId),
     NewSubs = [{S, Sid}
 	    || {S, Sid} <- SubState#pubsub_state.subscriptions,
 		SubId =/= Sid],
     case {NewSubs, SubState#pubsub_state.affiliation} of
-	{[], none} -> del_state(Nidx, Entity);
+	{[], none} -> del_state(SubState);
 	_ -> set_state(SubState#pubsub_state{subscriptions = NewSubs})
     end.
 
@@ -697,8 +696,9 @@ set_state(State) when is_record(State, pubsub_state) ->
 %set_state(_) -> {error, ?ERR_INTERNAL_SERVER_ERROR}.
 
 %% @doc <p>Delete a state from database.</p>
-del_state(Nidx, Key) ->
-    mnesia:delete({pubsub_state, {Key, Nidx}}).
+del_state(#pubsub_state{stateid = {LJID, Nidx}, items = Items}) ->
+    del_items(Nidx, Items),
+    mnesia:delete({pubsub_state, {LJID, Nidx}}).
 
 %% @doc Returns the list of stored items for a given node.
 %% <p>For the default PubSub module, items are stored in Mnesia database.</p>
