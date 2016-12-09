@@ -58,6 +58,9 @@ init(_Host, _ServerHost, _Opts) ->
     ejabberd_mnesia:create(?MODULE, pubsub_item,
 	[{disc_only_copies, [node()]},
 	    {attributes, record_info(fields, pubsub_item)}]),
+    ejabberd_mnesia:create(?MODULE, pubsub_orphan,
+	[{disc_copies, [node()]},
+	    {attributes, record_info(fields, pubsub_orphan)}]),
     ItemsFields = record_info(fields, pubsub_item),
     case mnesia:table_info(pubsub_item, attributes) of
 	ItemsFields -> ok;
@@ -138,8 +141,10 @@ delete_node(Nodes) ->
     Reply = lists:map(fun (#pubsub_node{id = Nidx} = PubsubNode) ->
 		    {result, States} = get_states(Nidx),
 		    lists:foreach(fun (State) ->
-				del_state(State)
+				del_items(Nidx, State#pubsub_state.items),
+				del_state(State#pubsub_state{items = []})
 			end, States),
+		    del_orphan_items(Nidx),
 		    {PubsubNode, lists:flatmap(Tr, States)}
 	    end, Nodes),
     {result, {default, broadcast, Reply}}.
@@ -472,6 +477,7 @@ purge_node(Nidx, Owner) ->
 			set_state(S#pubsub_state{items = []})
 		end,
 		States),
+	    del_orphan_items(Nidx),
 	    {result, {default, broadcast}};
 	_ ->
 	    {error, xmpp:err_forbidden()}
@@ -696,9 +702,15 @@ set_state(State) when is_record(State, pubsub_state) ->
 %set_state(_) -> {error, ?ERR_INTERNAL_SERVER_ERROR}.
 
 %% @doc <p>Delete a state from database.</p>
-del_state(#pubsub_state{stateid = {LJID, Nidx}, items = Items}) ->
-    del_items(Nidx, Items),
-    mnesia:delete({pubsub_state, {LJID, Nidx}}).
+del_state(#pubsub_state{stateid = {Key, Nidx}, items = Items}) ->
+    case Items of
+	[] ->
+	    ok;
+	_ ->
+	    Orphan = #pubsub_orphan{nodeid = Nidx, items = Items},
+	    mnesia:write(Orphan)
+    end,
+    mnesia:delete({pubsub_state, {Key, Nidx}}).
 
 %% @doc Returns the list of stored items for a given node.
 %% <p>For the default PubSub module, items are stored in Mnesia database.</p>
@@ -800,6 +812,15 @@ del_items(Nidx, ItemIds) ->
     lists:foreach(fun (ItemId) -> del_item(Nidx, ItemId)
 	end,
 	ItemIds).
+
+del_orphan_items(Nidx) ->
+    case mnesia:read({pubsub_orphan, Nidx}) of
+	[#pubsub_orphan{items = ItemIds}] ->
+	    del_items(Nidx, ItemIds),
+	    mnesia:delete({pubsub_orphan, Nidx});
+	_ ->
+	    ok
+    end.
 
 get_item_name(_Host, _Node, Id) ->
     Id.

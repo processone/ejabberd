@@ -642,9 +642,6 @@ set_state(Nidx, State) ->
 del_state(Nidx, JID) ->
     J = encode_jid(JID),
     catch ejabberd_sql:sql_query_t(
-            ?SQL("delete from pubsub_item where publisher=%(J)s"
-                 " and nodeid=%(Nidx)d")),
-    catch ejabberd_sql:sql_query_t(
             ?SQL("delete from pubsub_state"
                  " where jid=%(J)s and nodeid=%(Nidx)d")),
     ok.
