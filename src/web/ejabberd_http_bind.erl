@@ -186,6 +186,8 @@ process_request(Data, IP) ->
 	end,
     PayloadSize = iolist_size(Data),
     case catch parse_request(Data, PayloadSize, MaxStanzaSize) of
+    {error, Error} -> %% proxy errors
+	    Error;
 	%% No existing session:
 	{ok, {"", Rid, Attrs, Payload}} ->
 	    case xml:get_attr_s("to",Attrs) of
@@ -1164,7 +1166,34 @@ parse_request(Data, PayloadSize, MaxStanzaSize) ->
                             Sid = xml:get_attr_s("sid",Attrs),
 			    if
 				PayloadSize =< MaxStanzaSize ->
-				    {ok, {Sid, Rid, Attrs, FixedEls}};
+				    case Els of
+				    	[{xmlelement, "response", _, []}] -> %% no encoded response
+        				    {ok, {Sid, Rid, Attrs, FixedEls}};
+				    	[{xmlelement, "response", RespAttrs, RespEls}] ->
+				    	    case xml:get_attr_s("xmlns", RespAttrs) of
+				    	    	"urn:ietf:params:xml:ns:xmpp-sasl" ->
+		    	    			    Auth = cyrsasl_digest:parse(jlib:decode_base64(xml:get_cdata(RespEls))),
+		    	    			    Jid = jlib:jid_to_string(jlib:make_jid(proplists:get_value("username", Auth),
+											    	    			       proplists:get_value("realm", Auth),
+											    	    			       "")),
+		    	    			    Blacklist = gen_mod:get_module_opt(global, mod_http_bind, blacklist, []),
+							        BlacklistRE = "(" ++ string:join(Blacklist,"|") ++ ")",
+						            case {Blacklist, re:run(Jid, BlacklistRE, [caseless])} of 
+						                {[_|_], {match, _}} ->
+						                	?INFO_MSG("BOSH blacklist: ~s matches, terminating",[Jid]),
+							                {error, 
+							                  {200, ?HEADER, "<body type='terminate' "
+							                                 "condition='denied' "
+							                                 "xmlns='" ++ ?NS_HTTP_BIND ++ "'/>"}};
+						                _ ->
+		                				    {ok, {Sid, Rid, Attrs, FixedEls}}
+		                			end;
+	                			_ ->
+            							    {ok, {Sid, Rid, Attrs, FixedEls}}
+                			end;
+                		_ ->
+						    {ok, {Sid, Rid, Attrs, FixedEls}}
+				    end;
 				true ->
 				    {size_limit, Sid}
 			    end
