@@ -37,7 +37,48 @@
 -type next_state() :: {noreply, state()} | {stop, term(), state()}.
 
 -callback init(list()) -> {ok, state()} | {stop, term()} | ignore.
+-callback handle_stream_start(state()) -> next_state().
+-callback handle_stream_end(state()) -> next_state().
+-callback handle_stream_close(state()) -> next_state().
+-callback handle_cdata(binary(), state()) -> next_state().
+-callback handle_unauthenticated_packet(xmpp_element(), state()) -> next_state().
 -callback handle_authenticated_packet(xmpp_element(), state()) -> next_state().
+-callback handle_unbinded_packet(xmpp_element(), state()) -> next_state().
+-callback handle_auth_success(binary(), binary(), module(), state()) -> next_state().
+-callback handle_auth_failure(binary(), binary(), atom(), state()) -> next_state().
+-callback handle_send(ok | {error, atom()},
+		      xmpp_element(), fxml:xmlel(), binary(), state()) -> next_state().
+-callback init_sasl(state()) -> cyrsasl:sasl_state().
+-callback bind(binary(), state()) -> {ok, state()} | {error, stanza_error(), state()}.
+-callback handshake(binary(), state()) -> {ok, state()} | {error, stream_error(), state()}.
+-callback compress_methods(state()) -> [binary()].
+-callback tls_options(state()) -> [proplists:property()].
+-callback tls_required(state()) -> boolean().
+-callback sasl_mechanisms(state()) -> [binary()].
+-callback unauthenticated_stream_features(state()) -> [xmpp_element()].
+-callback authenticated_stream_features(state()) -> [xmpp_element()].
+
+%% All callbacks are optional
+-optional_callbacks([init/1,
+		     handle_stream_start/1,
+		     handle_stream_end/1,
+		     handle_stream_close/1,
+		     handle_cdata/2,
+		     handle_authenticated_packet/2,
+		     handle_unauthenticated_packet/2,
+		     handle_unbinded_packet/2,
+		     handle_auth_success/4,
+		     handle_auth_failure/4,
+		     handle_send/5,
+		     init_sasl/1,
+		     bind/2,
+		     handshake/2,
+		     compress_methods/1,
+		     tls_options/1,
+		     tls_required/1,
+		     sasl_mechanisms/1,
+		     unauthenticated_stream_features/1,
+		     authenticated_stream_features/1]).
 
 %%%===================================================================
 %%% API
@@ -94,21 +135,28 @@ init([Module, {SockMod, Socket}, Opts]) ->
 		      user => <<"">>,
 		      server => <<"">>,
 		      resource => <<"">>,
+		      lserver => <<"">>,
 		      ip => IP},
-	    Module:init([State, Opts]);
+	    try Module:init([State, Opts])
+	    catch _:undef -> {ok, State}
+	    end;
 	{error, Reason} ->
 	    {stop, Reason}
     end.
 
 handle_cast(Cast, #{mod := Mod} = State) ->
-    Mod:handle_cast(Cast, State).
+    try Mod:handle_cast(Cast, State)
+    catch _:undef -> {noreply, State}
+    end.
 
 handle_call(Call, From, #{mod := Mod} = State) ->
-    Mod:handle_call(Call, From, State).
+    try Mod:handle_call(Call, From, State)
+    catch _:undef -> {reply, ok, State}
+    end.
 
 handle_info({'$gen_event', {xmlstreamstart, Name, Attrs}},
-	    #{stream_state := wait_for_stream} = State) ->
-    try xmpp:decode(#xmlel{name = Name, attrs = Attrs}) of
+	    #{stream_state := wait_for_stream, xmlns := XMLNS} = State) ->
+    try xmpp:decode(#xmlel{name = Name, attrs = Attrs}, XMLNS, []) of
 	#stream_start{} = Pkt ->
 	    case send_header(State, Pkt) of
 		{noreply, State1} ->
@@ -169,11 +217,15 @@ handle_info({'DOWN', MRef, _Type, _Object, _Info},
     catch _:undef -> {stop, normal, State}
     end;
 handle_info(Info, #{mod := Mod} = State) ->
-    Mod:handle_info(Info, State).
+    try Mod:handle_info(Info, State)
+    catch _:undef -> {noreply, State}
+    end.
 
 terminate(Reason, #{mod := Mod, socket := Socket,
 		    sockmod := SockMod} = State) ->
-    Mod:terminate(Reason, State),
+    try Mod:terminate(Reason, State)
+    catch _:undef -> ok
+    end,
     send_text(State, <<"</stream:stream>">>),
     SockMod:close(Socket).
 
@@ -234,13 +286,14 @@ process_stream(#stream_start{to = #jid{lserver = RemoteServer}},
 	Err ->
 	    Err
     end;
-process_stream(#stream_start{to = #jid{server = Server}, from = From},
+process_stream(#stream_start{to = #jid{server = Server, lserver = LServer},
+			     from = From},
 	       #{stream_authenticated := Authenticated,
 		 stream_restarted := StreamWasRestarted,
 		 mod := Mod, xmlns := NS, resource := Resource,
 		 stream_tlsed := TLSEnabled} = State) ->
     case if not StreamWasRestarted ->
-		 State1 = State#{server => Server},
+		 State1 = State#{server => Server, lserver => LServer},
 		 try Mod:handle_stream_start(State1)
 		 catch _:undef -> {noreply, State1}
 		 end;
@@ -342,10 +395,18 @@ process_authenticated_packet(Pkt, #{xmlns := NS, mod := Mod} = State) ->
 		#xmpp_session{} ->
 		    send_element(State, xmpp:make_iq_result(Pkt2));
 		_ ->
-		    Mod:handle_authenticated_packet(Pkt2, State)
+		    try Mod:handle_authenticated_packet(Pkt2, State)
+		    catch _:undef ->
+			    Err = xmpp:err_service_unavailable(),
+			    send_error(State, Pkt, Err)
+		    end
 	    end;
 	{ok, Pkt2} ->
-	    Mod:handle_authenticated_packet(Pkt2, State);
+	    try Mod:handle_authenticated_packet(Pkt2, State)
+	    catch _:undef ->
+		    Err = xmpp:err_service_unavailable(),
+		    send_error(State, Pkt, Err)
+	    end;
 	{error, Err} ->
 	    send_element(State, Err)
     end.
@@ -385,8 +446,15 @@ process_bind(Pkt, #{mod := Mod} = State) ->
 	    send_error(State, Pkt, Err)
     end.
 
-process_handshake(#handshake{} = Pkt, #{mod := Mod} = State) ->
-    Mod:handle_handshake(Pkt, State).
+process_handshake(#handshake{data = Data}, #{mod := Mod} = State) ->
+    case Mod:handshake(Data, State) of
+	{ok, State1} ->
+	    State2 = State1#{stream_state => session_established,
+			     stream_authenticated => true},
+	    send_element(State2, #handshake{});
+	{error, #stream_error{} = Err, State1} ->
+	    send_element(State1, Err)
+    end.
 
 process_compress(#compress{}, #{stream_compressed := true} = State) ->
     send_element(State, #compress_failure{reason = 'setup-failed'});
@@ -436,9 +504,13 @@ process_sasl_request(#sasl_auth{mechanism = <<"EXTERNAL">>},
     process_sasl_failure('encryption-required', <<"">>, State);
 process_sasl_request(#sasl_auth{mechanism = Mech, text = ClientIn},
 		     #{mod := Mod} = State) ->
-    SASLState = Mod:init_sasl(State),
-    SASLResult = cyrsasl:server_start(SASLState, Mech, ClientIn),
-    process_sasl_result(SASLResult, State).
+    try Mod:init_sasl(State) of
+	SASLState ->
+	    SASLResult = cyrsasl:server_start(SASLState, Mech, ClientIn),
+	    process_sasl_result(SASLResult, State)
+    catch _:undef ->
+	    process_sasl_failure('temporary-auth-failure', <<"">>, State)
+    end.
 
 process_sasl_response(#sasl_response{text = ClientIn},
 		      #{sasl_state := SASLState} = State) ->

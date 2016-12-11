@@ -71,6 +71,7 @@
     mech_state
 }).
 -type sasl_state() :: #sasl_state{}.
+-export_type([sasl_state/0]).
 
 -callback mech_new(binary(), fun(), fun(), fun()) -> any().
 -callback mech_step(any(), binary()) -> {ok, props()} |
