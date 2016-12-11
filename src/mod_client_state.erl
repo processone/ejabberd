@@ -260,20 +260,15 @@ queue_take(Stanza, Host, C2SState) ->
     NewState = set_queue(Rest, C2SState),
     {NewState, get_stanzas(Selected, Host) ++ [Stanza]}.
 
--spec set_queue(csi_queue(), term()) -> term().
+-spec set_queue(csi_queue(), ejabberd_c2s:state()) -> ejabberd_c2s:state().
 
 set_queue(Queue, C2SState) ->
-    ejabberd_c2s:set_aux_field(csi_queue, Queue, C2SState).
+    C2SState#{csi_queue => Queue}.
 
--spec get_queue(term()) -> csi_queue().
+-spec get_queue(ejabberd_c2s:state()) -> csi_queue().
 
 get_queue(C2SState) ->
-    case ejabberd_c2s:get_aux_field(csi_queue, C2SState) of
-      {ok, Queue} ->
-	      Queue;
-      error ->
-	      []
-    end.
+    maps:get(csi_queue, C2SState, []).
 
 -spec get_stanzas(csi_queue(), binary()) -> [stanza()].
 

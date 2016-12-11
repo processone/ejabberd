@@ -34,7 +34,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, stream_feature_register/2,
-	 unauthenticated_iq_register/4, try_register/5,
+	 c2s_unauthenticated_packet/2, try_register/5,
 	 process_iq/1, send_registration_notifications/3,
 	 transform_options/1, transform_module_options/1,
 	 mod_opt_type/1, opt_type/1, depends/2]).
@@ -50,10 +50,10 @@ start(Host, Opts) ->
 				  ?NS_REGISTER, ?MODULE, process_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
 				  ?NS_REGISTER, ?MODULE, process_iq, IQDisc),
-    ejabberd_hooks:add(c2s_stream_features, Host, ?MODULE,
+    ejabberd_hooks:add(c2s_pre_auth_features, Host, ?MODULE,
 		       stream_feature_register, 50),
-    ejabberd_hooks:add(c2s_unauthenticated_iq, Host,
-		       ?MODULE, unauthenticated_iq_register, 50),
+    ejabberd_hooks:add(c2s_unauthenticated_packet, Host,
+		       ?MODULE, c2s_unauthenticated_packet, 50),
     ejabberd_mnesia:create(?MODULE, mod_register_ip,
 			[{ram_copies, [node()]}, {local_content, true},
 			 {attributes, [key, value]}]),
@@ -62,10 +62,10 @@ start(Host, Opts) ->
     ok.
 
 stop(Host) ->
-    ejabberd_hooks:delete(c2s_stream_features, Host,
+    ejabberd_hooks:delete(c2s_pre_auth_features, Host,
 			  ?MODULE, stream_feature_register, 50),
-    ejabberd_hooks:delete(c2s_unauthenticated_iq, Host,
-			  ?MODULE, unauthenticated_iq_register, 50),
+    ejabberd_hooks:delete(c2s_unauthenticated_packet, Host,
+			  ?MODULE, c2s_unauthenticated_packet, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host,
 				     ?NS_REGISTER),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
@@ -86,19 +86,20 @@ stream_feature_register(Acc, Host) ->
 	    Acc
     end.
 
--spec unauthenticated_iq_register(empty | iq(), binary(), iq(),
-				  {inet:ip_address(), non_neg_integer()}) ->
-					 empty | iq().
-unauthenticated_iq_register(_Acc, Server,
-			    #iq{sub_els = [#register{}]} = IQ, IP) ->
-    Address = case IP of
-		{A, _Port} -> A;
-		_ -> undefined
-	      end,
-    ResIQ = process_iq(xmpp:set_from_to(IQ, jid:make(<<>>), jid:make(Server)),
-		       Address),
-    xmpp:set_from_to(ResIQ, jid:make(Server), undefined);
-unauthenticated_iq_register(Acc, _Server, _IQ, _IP) ->
+c2s_unauthenticated_packet({noreply, #{ip := IP, server := Server} = State},
+			   #iq{type = T, sub_els = [_]} = IQ)
+  when T == set; T == get ->
+    case xmpp:get_subtag(IQ, #register{}) of
+	#register{} ->
+	    {Address, _} = IP,
+	    IQ1 = xmpp:set_from_to(IQ, jid:make(<<>>), jid:make(Server)),
+	    ResIQ = process_iq(IQ1, Address),
+	    ResIQ1 = xmpp:set_from_to(ResIQ, jid:make(Server), undefined),
+	    {stop, ejabberd_c2s:send(State, ResIQ1)};
+	false ->
+	    {noreply, State}
+    end;
+c2s_unauthenticated_packet(Acc, _) ->
     Acc.
 
 process_iq(#iq{from = From} = IQ) ->

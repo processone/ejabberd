@@ -49,6 +49,7 @@
 	 sockname/1, peername/1]).
 
 -include("ejabberd.hrl").
+-include("xmpp.hrl").
 -include("logger.hrl").
 
 -type sockmod() :: ejabberd_http_bind |
@@ -150,15 +151,25 @@ connect(Addr, Port, Opts, Timeout, Owner) ->
     end.
 
 starttls(SocketData, TLSOpts) ->
-    {ok, TLSSocket} = fast_tls:tcp_to_tls(SocketData#socket_state.socket, TLSOpts),
-    ejabberd_receiver:starttls(SocketData#socket_state.receiver, TLSSocket),
-    SocketData#socket_state{socket = TLSSocket, sockmod = fast_tls}.
+    case fast_tls:tcp_to_tls(SocketData#socket_state.socket, TLSOpts) of
+	{ok, TLSSocket} ->
+	    ejabberd_receiver:starttls(SocketData#socket_state.receiver, TLSSocket),
+	    {ok, SocketData#socket_state{socket = TLSSocket, sockmod = fast_tls}};
+	Err ->
+	    ?ERROR_MSG("starttls failed: ~p", [Err]),
+	    Err
+    end.
 
 starttls(SocketData, TLSOpts, Data) ->
-    {ok, TLSSocket} = fast_tls:tcp_to_tls(SocketData#socket_state.socket, TLSOpts),
-    ejabberd_receiver:starttls(SocketData#socket_state.receiver, TLSSocket),
-    send(SocketData, Data),
-    SocketData#socket_state{socket = TLSSocket, sockmod = fast_tls}.
+    case fast_tls:tcp_to_tls(SocketData#socket_state.socket, TLSOpts) of
+	{ok, TLSSocket} ->
+	    ejabberd_receiver:starttls(SocketData#socket_state.receiver, TLSSocket),
+	    send(SocketData, Data),
+	    {ok, SocketData#socket_state{socket = TLSSocket, sockmod = fast_tls}};
+	Err ->
+	    ?ERROR_MSG("starttls failed: ~p", [Err]),
+	    Err
+    end.
 
 compress(SocketData) -> compress(SocketData, undefined).
 
@@ -184,10 +195,10 @@ send(SocketData, Data) ->
         ok -> ok;
 	{error, timeout} ->
 	    ?INFO_MSG("Timeout on ~p:send",[SocketData#socket_state.sockmod]),
-	    exit(normal);
+	    {error, timeout};
         Error ->
 	    ?DEBUG("Error in ~p:send: ~p",[SocketData#socket_state.sockmod, Error]),
-	    exit(normal)
+	    Error
     end.
 
 %% Can only be called when in c2s StateData#state.xml_socket is true

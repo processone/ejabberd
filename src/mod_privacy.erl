@@ -35,7 +35,7 @@
 	 process_iq_set/3, process_iq_get/3, get_user_list/3,
 	 check_packet/6, remove_user/2, encode_list_item/1,
 	 is_list_needdb/1, updated_list/3,
-	 import_start/2, import_stop/2,
+	 import_start/2, import_stop/2, c2s_handle_info/2,
          item_to_xml/1, get_user_lists/2, import/5,
 	 set_privacy_list/1, mod_opt_type/1, depends/2]).
 
@@ -77,6 +77,8 @@ start(Host, Opts) ->
 		       updated_list, 50),
     ejabberd_hooks:add(remove_user, Host, ?MODULE,
 		       remove_user, 50),
+    ejabberd_hooks:add(c2s_handle_info, Host, ?MODULE,
+		       c2s_handle_info, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
 				  ?NS_PRIVACY, ?MODULE, process_iq, IQDisc).
 
@@ -94,6 +96,8 @@ stop(Host) ->
 			  ?MODULE, updated_list, 50),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE,
 			  remove_user, 50),
+    ejabberd_hooks:delete(c2s_handle_info, Host, ?MODULE,
+			  c2s_handle_info, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
 				     ?NS_PRIVACY).
 
@@ -310,13 +314,8 @@ process_lists_set(LUser, LServer, Name, [], _UserList, Lang) ->
 	    Txt = <<"No privacy list with this name found">>,
 	    {error, xmpp:err_item_not_found(Txt, Lang)};
 	{atomic, ok} ->
-	    ejabberd_sm:route(jid:make(LUser, LServer,
-				       <<"">>),
-			      jid:make(LUser, LServer, <<"">>),
-			      {broadcast, {privacy_list,
-					   #userlist{name = Name,
-						     list = []},
-					   Name}}),
+	    ejabberd_sm:route(jid:make(LUser, LServer, <<"">>),
+			      {privacy_list, #userlist{name = Name}, Name}),
 	    {result, undefined};
 	Err ->
 	    ?ERROR_MSG("failed to remove privacy list '~s' for user ~s@~s: ~p",
@@ -334,14 +333,12 @@ process_lists_set(LUser, LServer, Name, Items, _UserList, Lang) ->
 	    case Mod:set_privacy_list(LUser, LServer, Name, List) of
 		{atomic, ok} ->
 		    NeedDb = is_list_needdb(List),
-		    ejabberd_sm:route(jid:make(LUser, LServer,
-					       <<"">>),
-				      jid:make(LUser, LServer, <<"">>),
-				      {broadcast, {privacy_list,
-						   #userlist{name = Name,
-							     list = List,
-							     needdb = NeedDb},
-						   Name}}),
+		    ejabberd_sm:route(jid:make(LUser, LServer, <<"">>),
+				      {privacy_list,
+				       #userlist{name = Name,
+						 list = List,
+						 needdb = NeedDb},
+				       Name}),
 		    {result, undefined};
 		Err ->
 		    ?ERROR_MSG("failed to set privacy list '~s' "
@@ -537,6 +534,23 @@ remove_user(User, Server) ->
     LServer = jid:nameprep(Server),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:remove_user(LUser, LServer).
+
+c2s_handle_info({noreply, #{privacy_list := Old,
+			    user := U, server := S, resource := R} = State},
+		{privacy_list, New, Name}) ->
+    List = if Old#userlist.name == New#userlist.name -> New;
+	      true -> Old
+	   end,
+    From = jid:make(U, S),
+    To = jid:make(U, S, R),
+    PushIQ = #iq{type = set, from = From, to = To,
+		 id = <<"push", (randoms:get_string())/binary>>,
+		 sub_els = [#privacy_query{
+			       lists = [#privacy_list{name = Name}]}]},
+    State1 = State#{privacy_list => List},
+    ejabberd_c2s:send(State1, PushIQ);
+c2s_handle_info(Acc, _) ->
+    Acc.
 
 -spec updated_list(userlist(), userlist(), userlist()) -> userlist().
 updated_list(_, #userlist{name = OldName} = Old,

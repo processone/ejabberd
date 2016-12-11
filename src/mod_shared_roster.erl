@@ -1038,11 +1038,8 @@ split_grouphost(Host, Group) ->
     end.
 
 broadcast_subscription(User, Server, ContactJid, Subscription) ->
-    ejabberd_sm:route(
-		      jid:make(<<"">>, Server, <<"">>),
-		      jid:make(User, Server, <<"">>),
-                      {broadcast, {item, ContactJid,
-				   Subscription}}).
+    ejabberd_sm:route(jid:make(User, Server, <<"">>),
+                      {item, ContactJid, Subscription}).
 
 displayed_groups_update(Members, DisplayedGroups, Subscription) ->
     lists:foreach(fun({U, S}) ->

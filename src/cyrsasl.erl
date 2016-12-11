@@ -31,7 +31,7 @@
 
 -export([start/0, register_mechanism/3, listmech/1,
 	 server_new/7, server_start/3, server_step/2,
-	 opt_type/1]).
+	 get_mech/1, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -53,6 +53,7 @@
 -type(password_type() :: plain | digest | scram).
 -type(props() :: [{username, binary()} |
                   {authzid, binary()} |
+		  {mechanism, binary()} |
                   {auth_module, atom()}]).
 
 -type(sasl_mechanism() :: #sasl_mechanism{}).
@@ -65,9 +66,11 @@
     get_password,
     check_password,
     check_password_digest,
+    mech_name = <<"">>,
     mech_mod,
     mech_state
 }).
+-type sasl_state() :: #sasl_state{}.
 
 -callback mech_new(binary(), fun(), fun(), fun()) -> any().
 -callback mech_step(any(), binary()) -> {ok, props()} |
@@ -150,6 +153,7 @@ server_start(State, Mech, ClientIn) ->
 				    State#sasl_state.check_password,
 				    State#sasl_state.check_password_digest),
 		server_step(State#sasl_state{mech_mod = Module,
+					     mech_name = Mech,
 					     mech_state = MechState},
 			    ClientIn);
 	    _ -> {error, 'no-mechanism'}
@@ -180,6 +184,10 @@ server_step(State, ClientIn) ->
         {error, Error} ->
             {error, Error}
     end.
+
+-spec get_mech(sasl_state()) -> binary().
+get_mech(#sasl_state{mech_name = Mech}) ->
+    Mech.
 
 %% Remove the anonymous mechanism from the list if not enabled for the given
 %% host

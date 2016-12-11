@@ -54,7 +54,8 @@
     on_user_offline/3, remove_user/2,
     disco_local_identity/5, disco_local_features/5,
     disco_local_items/5, disco_sm_identity/5,
-    disco_sm_features/5, disco_sm_items/5]).
+    disco_sm_features/5, disco_sm_items/5,
+    c2s_handle_info/2]).
 
 %% exported iq handlers
 -export([iq_sm/1, process_disco_info/1, process_disco_items/1,
@@ -305,6 +306,8 @@ init([ServerHost, Opts]) ->
 	?MODULE, remove_user, 50),
     ejabberd_hooks:add(anonymous_purge_hook, ServerHost,
 	?MODULE, remove_user, 50),
+    ejabberd_hooks:add(c2s_handle_info, ServerHost,
+	?MODULE, c2s_handle_info, 50),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO,
 				  ?MODULE, process_disco_info, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS,
@@ -912,6 +915,8 @@ terminate(_Reason,
 	?MODULE, remove_user, 50),
     ejabberd_hooks:delete(anonymous_purge_hook, ServerHost,
 	?MODULE, remove_user, 50),
+    ejabberd_hooks:delete(c2s_handle_info, ServerHost,
+	?MODULE, c2s_handle_info, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_PUBSUB),
@@ -2212,22 +2217,21 @@ send_items(Host, Node, _Nidx, _Type, Options, LJID, _) ->
     dispatch_items(Host, LJID, Node, Stanza).
 
 dispatch_items({FromU, FromS, FromR} = From, {ToU, ToS, ToR} = To,
-	    Node, Stanza) ->
+	       Node, Stanza) ->
     C2SPid = case ejabberd_sm:get_session_pid(ToU, ToS, ToR) of
-	ToPid when is_pid(ToPid) -> ToPid;
-	_ ->
-	    R = user_resource(FromU, FromS, FromR),
-	    case ejabberd_sm:get_session_pid(FromU, FromS, R) of
-		FromPid when is_pid(FromPid) -> FromPid;
-		_ -> undefined
-	    end
-    end,
+		 ToPid when is_pid(ToPid) -> ToPid;
+		 _ ->
+		     R = user_resource(FromU, FromS, FromR),
+		     case ejabberd_sm:get_session_pid(FromU, FromS, R) of
+			 FromPid when is_pid(FromPid) -> FromPid;
+			 _ -> undefined
+		     end
+	     end,
     if C2SPid == undefined -> ok;
-	true ->
-	    ejabberd_c2s:send_filtered(C2SPid,
-		{pep_message, <<Node/binary, "+notify">>},
-		service_jid(From), jid:make(To),
-		Stanza)
+       true ->
+	    C2SPid ! {send_filtered, {pep_message, <<Node/binary, "+notify">>},
+		      service_jid(From), jid:make(To),
+		      Stanza}
     end;
 dispatch_items(From, To, _Node, Stanza) ->
     ejabberd_router:route(service_jid(From), jid:make(To), Stanza).
@@ -2761,9 +2765,10 @@ get_resource_state({U, S, R}, ShowValues, JIDs) ->
 	    lists:append([{U, S, R}], JIDs);
 	Pid ->
 	    Show = case ejabberd_c2s:get_presence(Pid) of
-		{_, _, <<"available">>, _} -> <<"online">>;
-		{_, _, State, _} -> State
-	    end,
+		       #presence{type = unavailable} -> <<"unavailable">>;
+		       #presence{show = undefined} -> <<"online">>;
+		       #presence{show = S} -> atom_to_binary(S, latin1)
+		   end,
 	    case lists:member(Show, ShowValues) of
 		%% If yes, item can be delivered
 		true -> lists:append([{U, S, R}], JIDs);
@@ -3008,24 +3013,55 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, Nidx, Type, NodeO
     broadcast_stanza({LUser, LServer, <<>>}, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM),
     %% Handles implicit presence subscriptions
     SenderResource = user_resource(LUser, LServer, LResource),
-    case ejabberd_sm:get_session_pid(LUser, LServer, SenderResource) of
-	C2SPid when is_pid(C2SPid) ->
-	    NotificationType = get_option(NodeOptions, notification_type, headline),
-	    Stanza = add_message_type(BaseStanza, NotificationType),
-	    %% set the from address on the notification to the bare JID of the account owner
-	    %% Also, add "replyto" if entity has presence subscription to the account owner
-	    %% See XEP-0163 1.1 section 4.3.1
-	    ejabberd_c2s:broadcast(C2SPid,
-		{pep_message, <<((Node))/binary, "+notify">>},
-		_Sender = jid:make(LUser, LServer, <<"">>),
-		_StanzaToSend = add_extended_headers(
-				  Stanza, 
-				  _ReplyTo = extended_headers([Publisher])));
-	_ ->
-	    ?DEBUG("~p@~p has no session; can't deliver ~p to contacts", [LUser, LServer, BaseStanza])
-    end;
+    NotificationType = get_option(NodeOptions, notification_type, headline),
+    Stanza = add_message_type(BaseStanza, NotificationType),
+    %% set the from address on the notification to the bare JID of the account owner
+    %% Also, add "replyto" if entity has presence subscription to the account owner
+    %% See XEP-0163 1.1 section 4.3.1
+    ejabberd_sm:route(jid:make(LUser, LServer, SenderResource),
+		      {pep_message, <<((Node))/binary, "+notify">>,
+		       jid:make(LUser, LServer, <<"">>),
+		       add_extended_headers(
+			 Stanza, extended_headers([Publisher]))});
 broadcast_stanza(Host, _Publisher, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
     broadcast_stanza(Host, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM).
+
+-spec c2s_handle_info(ejabberd_c2s:next_state(), term()) -> ejabberd_c2s:next_state().
+c2s_handle_info({noreply, #{server := Server} = C2SState},
+		{pep_message, Feature, From, Packet}) ->
+    LServer = jid:nameprep(Server),
+    lists:foreach(
+      fun({USR, Caps}) ->
+	      Features = mod_caps:get_features(LServer, Caps),
+	      case lists:member(Feature, Features) of
+		  true ->
+		      To = jid:make(USR),
+		      NewPacket = xmpp:set_from_to(Packet, From, To),
+		      ejabberd_router:route(From, To, NewPacket);
+		  false ->
+		      ok
+	      end
+      end, mod_caps:list_features(C2SState)),
+    {noreply, C2SState};
+c2s_handle_info({noreply, #{server := Server} = C2SState},
+		{send_filtered, {pep_message, Feature}, From, To, Packet}) ->
+    LServer = jid:nameprep(Server),
+    case mod_caps:get_user_caps(To, C2SState) of
+	{ok, Caps} ->
+	    Features = mod_caps:get_features(LServer, Caps),
+	    case lists:member(Feature, Features) of
+		true ->
+		    NewPacket = xmpp:set_from_to(Packet, From, To),
+		    ejabberd_router:route(From, To, NewPacket);
+		false ->
+		    ok
+	    end;
+	error ->
+	    ok
+    end,
+    {noreply, C2SState};
+c2s_handle_info(Acc, _) ->
+    Acc.
 
 subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
     NodesToDeliver = fun (Depth, Node, Subs, Acc) ->

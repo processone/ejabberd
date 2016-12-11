@@ -34,6 +34,7 @@
 %% API
 -export([start/0,
 	 start_link/0,
+	 route/2,
 	 route/3,
 	 process_iq/3,
 	 open_session/5,
@@ -69,6 +70,7 @@
 	 get_all_pids/0,
 	 is_existing_resource/3,
 	 get_commands_spec/0,
+	 c2s_handle_info/2,
 	 make_sid/0
 	]).
 
@@ -98,15 +100,6 @@
 %% default value for the maximum number of user connections
 -define(MAX_USER_SESSIONS, infinity).
 
--type broadcast() :: {broadcast, broadcast_data()}.
-
--type broadcast_data() ::
-        {rebind, pid(), binary()} | %% ejabberd_c2s
-        {item, ljid(), mod_roster:subscription()} | %% mod_roster/mod_shared_roster
-        {exit, binary()} | %% mod_roster/mod_shared_roster
-        {privacy_list, mod_privacy:userlist(), binary()} | %% mod_privacy
-        {blocking, unblock_all | {block | unblock, [ljid()]}}. %% mod_blocking
-
 %%====================================================================
 %% API
 %%====================================================================
@@ -120,7 +113,18 @@ start() ->
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec route(jid(), jid(), stanza() | broadcast()) -> ok.
+-spec route(jid(), term()) -> ok.
+%% @doc route arbitrary term to c2s process(es)
+route(To, Term) ->
+    case catch do_route(To, Term) of
+	{'EXIT', Reason} ->
+	    ?ERROR_MSG("route ~p to ~p failed: ~p",
+		       [Term, To, Reason]);
+	_ ->
+	    ok
+    end.
+
+-spec route(jid(), jid(), stanza()) -> ok.
 
 route(From, To, Packet) ->
     case catch do_route(From, To, Packet) of
@@ -180,9 +184,7 @@ bounce_offline_message(From, To, Packet) ->
 -spec disconnect_removed_user(binary(), binary()) -> ok.
 
 disconnect_removed_user(User, Server) ->
-    ejabberd_sm:route(jid:make(<<"">>, <<"">>, <<"">>),
-		      jid:make(User, Server, <<"">>),
-                      {broadcast, {exit, <<"User removed">>}}).
+    route(jid:make(User, Server, <<"">>), {exit, <<"User removed">>}).
 
 get_user_resources(User, Server) ->
     LUser = jid:nodeprep(User),
@@ -356,6 +358,21 @@ register_iq_handler(Host, XMLNS, Module, Fun, Opts) ->
 unregister_iq_handler(Host, XMLNS) ->
     ejabberd_sm ! {unregister_iq_handler, Host, XMLNS}.
 
+%% Why the hell do we have so many similar kicks?
+c2s_handle_info({noreply, #{lang := Lang} = State}, replaced) ->
+    State1 = State#{replaced => true},
+    Err = xmpp:serr_conflict(<<"Replaced by new connection">>, Lang),
+    ejabberd_c2s:send(State1, Err);
+c2s_handle_info({noreply, #{lang := Lang} = State}, kick) ->
+    Err = xmpp:serr_policy_violation(<<"has been kicked">>, Lang),
+    c2s_handle_info({noreply, State}, {kick, kicked_by_admin, Err});
+c2s_handle_info({noreply, State}, {kick, _Reason, Err}) ->
+    ejabberd_c2s:send(State, Err);
+c2s_handle_info({noreply, #{lang := Lang} = State}, {exit, Reason}) ->
+    Err = xmpp:serr_conflict(Reason, Lang),
+    ejabberd_c2s:send(State, Err);
+c2s_handle_info(Acc, _) ->
+    Acc.
 
 %%====================================================================
 %% gen_server callbacks
@@ -366,6 +383,8 @@ init([]) ->
     ets:new(sm_iqtable, [named_table]),
     lists:foreach(
       fun(Host) ->
+	      ejabberd_hooks:add(c2s_handle_info, Host,
+				 ejabberd_sm, c2s_handle_info, 50),
 	      ejabberd_hooks:add(roster_in_subscription, Host,
 				 ejabberd_sm, check_in_subscription, 20),
 	      ejabberd_hooks:add(offline_message_hook, Host,
@@ -411,6 +430,17 @@ handle_info({unregister_iq_handler, Host, XMLNS},
 handle_info(_Info, State) -> {noreply, State}.
 
 terminate(_Reason, _State) ->
+    lists:foreach(
+      fun(Host) ->
+	      ejabberd_hooks:delete(c2s_handle_info, Host,
+				    ejabberd_sm, c2s_handle_info, 50),
+	      ejabberd_hooks:delete(roster_in_subscription, Host,
+				    ejabberd_sm, check_in_subscription, 20),
+	      ejabberd_hooks:delete(offline_message_hook, Host,
+				    ejabberd_sm, bounce_offline_message, 100),
+	      ejabberd_hooks:delete(remove_user, Host,
+				    ejabberd_sm, disconnect_removed_user, 100)
+      end, ?MYHOSTS),
     ejabberd_commands:unregister_commands(get_commands_spec()),
     ok.
 
@@ -444,26 +474,27 @@ is_online(#session{info = Info}) ->
     not proplists:get_bool(offline, Info).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec do_route(jid(), jid(), stanza() | broadcast()) -> any().
-do_route(From, #jid{lresource = <<"">>} = To, {broadcast, _} = Packet) ->
-    ?DEBUG("processing broadcast to bare JID: ~p", [Packet]),
+-spec do_route(jid(), term()) -> any().
+do_route(#jid{lresource = <<"">>} = To, Term) ->
     lists:foreach(
       fun(R) ->
-	      do_route(From, jid:replace_resource(To, R), Packet)
+	      do_route(jid:replace_resource(To, R), Term)
       end, get_user_resources(To#jid.user, To#jid.server));
-do_route(From, To, {broadcast, _} = Packet) ->
-    ?DEBUG("processing broadcast to full JID: ~p", [Packet]),
+do_route(To, Term) ->
+    ?DEBUG("broadcasting ~p to ~s", [Term, jid:to_string(To)]),
     {U, S, R} = jid:tolower(To),
     Mod = get_sm_backend(S),
     case online(Mod:get_sessions(U, S, R)) of
 	[] ->
-	    ?DEBUG("dropping broadcast to unavailable resourse: ~p", [Packet]);
+	    ?DEBUG("dropping broadcast to unavailable resourse: ~p", [Term]);
 	Ss ->
 	    Session = lists:max(Ss),
 	    Pid = element(2, Session#session.sid),
-	    ?DEBUG("sending to process ~p: ~p", [Pid, Packet]),
-	    Pid ! {route, From, To, Packet}
-    end;
+	    ?DEBUG("sending to process ~p: ~p", [Pid, Term]),
+	    Pid ! Term
+    end.
+
+-spec do_route(jid(), jid(), stanza()) -> any().
 do_route(From, To, #presence{type = T, status = Status} = Packet)
   when T == subscribe; T == subscribed; T == unsubscribe; T == unsubscribed ->
     ?DEBUG("processing subscription:~n~s", [xmpp:pp(Packet)]),

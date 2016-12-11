@@ -29,7 +29,7 @@
 
 -protocol({xep, 191, '1.2'}).
 
--export([start/2, stop/1, process_iq/1,
+-export([start/2, stop/1, process_iq/1, c2s_handle_info/2,
 	 process_iq_set/3, process_iq_get/3, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
@@ -52,6 +52,10 @@ start(Host, Opts) ->
 		       process_iq_get, 40),
     ejabberd_hooks:add(privacy_iq_set, Host, ?MODULE,
 		       process_iq_set, 40),
+    ejabberd_hooks:add(c2s_handle_info, Host, ?MODULE,
+		       c2s_handle_info, 40),
+    ejabberd_hooks:add(c2s_handle_info, Host, ?MODULE,
+		       c2s_handle_info, 40),
     mod_disco:register_feature(Host, ?NS_BLOCKING),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
 				  ?NS_BLOCKING, ?MODULE, process_iq, IQDisc).
@@ -229,14 +233,12 @@ make_userlist(Name, List) ->
 -spec broadcast_list_update(binary(), binary(), binary(), userlist()) -> ok.
 broadcast_list_update(LUser, LServer, Name, UserList) ->
     ejabberd_sm:route(jid:make(LUser, LServer, <<"">>),
-                      jid:make(LUser, LServer, <<"">>),
-                      {broadcast, {privacy_list, UserList, Name}}).
+                      {privacy_list, UserList, Name}).
 
 -spec broadcast_blocklist_event(binary(), binary(), block_event()) -> ok.
 broadcast_blocklist_event(LUser, LServer, Event) ->
     JID = jid:make(LUser, LServer, <<"">>),
-    ejabberd_sm:route(JID, JID,
-                      {broadcast, {blocking, Event}}).
+    ejabberd_sm:route(JID, {blocking, Event}).
 
 -spec process_blocklist_get(binary(), binary(), binary()) ->
 				   {error, stanza_error()} | {result, block_list()}.
@@ -250,6 +252,27 @@ process_blocklist_get(LUser, LServer, Lang) ->
 	  Items = [jid:make(J) || J <- LJIDs],
 	  {result, #block_list{items = Items}}
     end.
+
+-spec c2s_handle_info(ejabberd_c2s:next_state(), term()) -> ejabberd_c2s:next_state().
+c2s_handle_info({noreply, #{user := U, server := S, resource := R} = State},
+		{blocking, Action}) ->
+    SubEl = case Action of
+		{block, JIDs} ->
+		    #block{items = JIDs};
+		{unblock, JIDs} ->
+		    #unblock{items = JIDs};
+		unblock_all ->
+		    #unblock{}
+	    end,
+    PushIQ = #iq{type = set,
+		 from = jid:make(U, S),
+		 to = jid:make(U, S, R),
+		 id = <<"push", (randoms:get_string())/binary>>,
+		 sub_els = [SubEl]},
+    %% No need to replace active privacy list here,
+    %% blocking pushes are always accompanied by
+    %% Privacy List pushes
+    ejabberd_c2s:send(State, PushIQ).
 
 -spec db_mod(binary()) -> module().
 db_mod(LServer) ->

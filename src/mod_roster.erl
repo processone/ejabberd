@@ -44,7 +44,7 @@
 -export([start/2, stop/1, process_iq/1, export/1,
 	 import_info/0, process_local_iq/1, get_user_roster/2,
 	 import/5, get_subscription_lists/3, get_roster/2,
-	 import_start/2, import_stop/2,
+	 import_start/2, import_stop/2, c2s_handle_info/2,
 	 get_in_pending_subscriptions/3, in_subscription/6,
 	 out_subscription/4, set_items/3, remove_user/2,
 	 get_jid_info/4, encode_item/1, webadmin_page/3,
@@ -62,6 +62,8 @@
 -include("ejabberd_http.hrl").
 
 -include("ejabberd_web_admin.hrl").
+
+-define(SETS, gb_sets).
 
 -export_type([subscription/0]).
 
@@ -102,12 +104,14 @@ start(Host, Opts) ->
 		       remove_user, 50),
     ejabberd_hooks:add(resend_subscription_requests_hook,
 		       Host, ?MODULE, get_in_pending_subscriptions, 50),
-    ejabberd_hooks:add(roster_get_versioning_feature, Host,
+    ejabberd_hooks:add(c2s_post_auth_features, Host,
 		       ?MODULE, get_versioning_feature, 50),
     ejabberd_hooks:add(webadmin_page_host, Host, ?MODULE,
 		       webadmin_page, 50),
     ejabberd_hooks:add(webadmin_user, Host, ?MODULE,
 		       webadmin_user, 50),
+    ejabberd_hooks:add(c2s_handle_info, Host, ?MODULE,
+		       c2s_handle_info, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
 				  ?NS_ROSTER, ?MODULE, process_iq, IQDisc).
 
@@ -128,12 +132,14 @@ stop(Host) ->
 			  ?MODULE, remove_user, 50),
     ejabberd_hooks:delete(resend_subscription_requests_hook,
 			  Host, ?MODULE, get_in_pending_subscriptions, 50),
-    ejabberd_hooks:delete(roster_get_versioning_feature,
+    ejabberd_hooks:delete(c2s_post_auth_features,
 			  Host, ?MODULE, get_versioning_feature, 50),
     ejabberd_hooks:delete(webadmin_page_host, Host, ?MODULE,
 			  webadmin_page, 50),
     ejabberd_hooks:delete(webadmin_user, Host, ?MODULE,
 			  webadmin_user, 50),
+    ejabberd_hooks:delete(c2s_handle_info, Host, ?MODULE,
+			  c2s_handle_info, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
 				     ?NS_ROSTER).
 
@@ -417,10 +423,8 @@ process_iq_set(#iq{from = From, to = To,
     end.
 
 push_item(User, Server, From, Item) ->
-    ejabberd_sm:route(jid:make(<<"">>, <<"">>, <<"">>),
-		      jid:make(User, Server, <<"">>),
-                      {broadcast, {item, Item#roster.jid,
-				   Item#roster.subscription}}),
+    ejabberd_sm:route(jid:make(User, Server, <<"">>),
+                      {item, Item#roster.jid, Item#roster.subscription}),
     case roster_versioning_enabled(Server) of
       true ->
 	  push_item_version(Server, User, From, Item,
@@ -459,6 +463,66 @@ push_item_version(Server, User, From, Item,
 				    RosterVersion)
 		  end,
 		  ejabberd_sm:get_user_resources(User, Server)).
+
+c2s_handle_info({noreply, State}, {item, JID, Sub}) ->
+    {noreply, roster_change(State, JID, Sub)};
+c2s_handle_info(Acc, _) ->
+    Acc.
+
+-spec roster_change(ejabberd_c2s:state(), jid(), subscription()) -> ejabberd_c2s:state().
+roster_change(#{user := U, server := S, resource := R} = State,
+	      IJID, ISubscription) ->
+    LIJID = jid:tolower(IJID),
+    IsFrom = (ISubscription == both) or (ISubscription == from),
+    IsTo = (ISubscription == both) or (ISubscription == to),
+    PresF = maps:get(pres_f, State, ?SETS:new()),
+    PresT = maps:get(pres_t, State, ?SETS:new()),
+    OldIsFrom = ?SETS:is_element(LIJID, PresF),
+    FSet = if IsFrom -> ?SETS:add_element(LIJID, PresF);
+	      true -> ?SETS:del_element(LIJID, PresF)
+	   end,
+    TSet = if IsTo -> ?SETS:add_element(LIJID, PresT);
+	      true -> ?SETS:del_element(LIJID, PresT)
+	   end,
+    State1 = State#{pres_f => FSet, pres_t => TSet},
+    case maps:get(pres_last, State, undefined) of
+	undefined ->
+	    State1;
+	LastPres ->
+	    From = jid:make(U, S, R),
+	    PresA = maps:get(pres_a, State1, ?SETS:new()),
+	    To = jid:make(IJID),
+	    Cond1 = IsFrom andalso not OldIsFrom,
+	    Cond2 = not IsFrom andalso OldIsFrom andalso
+		?SETS:is_element(LIJID, PresA),
+	    if Cond1 ->
+		    case ejabberd_hooks:run_fold(
+			   privacy_check_packet, allow,
+			   [State1, LastPres, out]) of
+			deny ->
+			    ok;
+			allow ->
+			    Pres = xmpp:set_from_to(LastPres, From, To),
+			    ejabberd_router:route(From, To, Pres)
+		    end,
+		    A = ?SETS:add_element(LIJID, PresA),
+		    State1#{pres_a => A};
+	     Cond2 ->
+		    PU = #presence{from = From, to = To, type = unavailable},
+		    case ejabberd_hooks:run_fold(
+			   privacy_check_packet, allow,
+			   [State1, PU, out]) of
+			deny ->
+			    ok;
+			allow ->
+			    ejabberd_router:route(From, To, PU)
+		    end,
+		    A = ?SETS:del_element(LIJID, PresA),
+		    State1#{pres_a => A};
+	       true ->
+		    State1
+	    end
+    end.
 
 -spec get_subscription_lists({[ljid()], [ljid()]}, binary(), binary())
       -> {[ljid()], [ljid()]}.
