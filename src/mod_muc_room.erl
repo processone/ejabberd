@@ -1264,12 +1264,7 @@ get_error_condition(undefined) ->
     "undefined".
 
 get_error_text(Error) ->
-    case fxml:get_subtag_with_xmlns(Error, <<"text">>, ?NS_STANZAS) of
-	#xmlel{} = Tag ->
-	    fxml:get_tag_cdata(Tag);
-	false ->
-	    <<"">>
-    end.
+    (Error#stanza_error.text)#text.data.
 
 -spec make_reason(stanza(), jid(), state(), binary()) -> binary().
 make_reason(Packet, From, StateData, Reason1) ->
