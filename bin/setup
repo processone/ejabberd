@@ -25,10 +25,15 @@ keypress() {
 init() {
     echo "Installation dir cleanup ($DIR_TARGET)"
     rm -rf $DIR_TARGET/*
+    ls -la $DIR_TARGET/
 }
-configure() {
+clean() {
     echo "Source code cleanup"
     make clean
+    make distclean
+}
+configure() {
+    clean
     echo "Autogen"
     ./autogen.sh
     keypress
@@ -42,6 +47,9 @@ OPTION=$1
 case $OPTION in
     init)
         init
+        ;;
+    clean)
+        clean
         ;;
     make)
         configure
@@ -59,9 +67,10 @@ case $OPTION in
         make install
         ;;
     *)
-        echo -e "\nUsage:     [NOTE: Run this script from GIT source code dir]"
+        echo -e "\nUsage:     [NOTE: Run this script from GIT source code dir $DIR_SRC]"
         echo -e "    '`basename $0` [option]' "
         echo -e "              init   Init installation directory (wipe it)"
+        echo -e "              clean  Clean ejabberd source code and configure options"
         echo -e "              make   Clean/Configure/Make ejabberd source code"
         echo -e "              all    init+make+install"
         echo -e ""
