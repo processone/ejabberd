@@ -4,7 +4,7 @@
 #
 # @see Here are project requirements for a full blown compile
 #      - erlang (v18.0 used during latest compile)
-#      - gcc, autotools, binutils (for dealing with some compile stuff
+#      - gcc, autotools, binutils (for dealing with some compile stuff)
 
 
 # Configuration settings
@@ -13,35 +13,59 @@ DIR_TARGET=/opt/ejabberd
 
 DEBUG=--enable-debug
 #DEBUG=--disable-debug
-
-
+ENABLE_TOOLS=--enable-tools
 
 
 # Business logic
+printline() {
+    COLS=$(tput cols)
+    for ((I=0; I<COLS; I++));do printf "="; done; echo
+}
 keypress() {
     echo -n "any key to continue..."
     read -n 1 junk
 }
 init() {
-    echo "Installation dir cleanup ($DIR_TARGET)"
+    echo -e "\nInstallation dir cleanup ($DIR_TARGET)"
+    printline
     rm -rf $DIR_TARGET/*
     ls -la $DIR_TARGET/
+    echo -e ""
 }
 clean() {
     echo "Source code cleanup"
+    printline
     make clean
     make distclean
 }
 configure() {
-    clean
-    echo "Autogen"
+    echo -e "\nAutogen"
+    printline
     ./autogen.sh
+    echo "done."
     keypress
-    echo "Configure"
-    ./configure --prefix=$DIR_TARGET \
-                --sysconfdir=$DIR_TARGET/conf \
-                --enable-lager $DEBUG
+    echo -e "\nConfigure"
+    printline
+    ./configure --prefix=$DIR_TARGET            \
+                --exec-prefix=$DIR_TARGET       \
+                --sbindir=$DIR_TARGET/bin       \
+                --sysconfdir=$DIR_TARGET/conf   \
+                --datarootdir=$DIR_TARGET       \
+                --enable-pgsql                  \
+                --enable-user=ben               \
+                $ENABLE_TOOLS $DEBUG
 }
+make_ejabberd() {
+    echo -e "\nCompiling"
+    printline
+    make
+}
+install_ejabberd() {
+    echo -e "\nInstallation"
+    printline
+    make install
+}
+
 cd $DIR_SRC >/dev/null 2>&1
 OPTION=$1
 case $OPTION in
@@ -52,27 +76,31 @@ case $OPTION in
         clean
         ;;
     make)
+        clean
         configure
-        make
+        make_ejabberd
         ;;
     install)
-        make install
+        install_ejabberd
         ;;
     all)
         init
+        clean
+        keypress
         configure
         keypress
-        make
+        make_ejabberd
         keypress
-        make install
+        install_ejabberd
         ;;
     *)
         echo -e "\nUsage:     [NOTE: Run this script from GIT source code dir $DIR_SRC]"
         echo -e "    '`basename $0` [option]' "
-        echo -e "              init   Init installation directory (wipe it)"
-        echo -e "              clean  Clean ejabberd source code and configure options"
-        echo -e "              make   Clean/Configure/Make ejabberd source code"
-        echo -e "              all    init+make+install"
+        echo -e "              init    Init installation directory (wipe it)"
+        echo -e "              clean   Clean ejabberd source code and configure options"
+        echo -e "              make    Clean/Configure/Make ejabberd source code"
+        echo -e "              install install ejabberd"
+        echo -e "              all     init+clean+make+install"
         echo -e ""
         cd - >/dev/null 2>&1
         exit 1
