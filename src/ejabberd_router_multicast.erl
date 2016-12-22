@@ -115,7 +115,7 @@ unregister_route(Domain) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([]) ->
-    mnesia:create_table(route_multicast,
+    ejabberd_mnesia:create(?MODULE, route_multicast,
 			[{ram_copies, [node()]},
 			 {type, bag},
 			 {attributes,

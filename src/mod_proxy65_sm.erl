@@ -62,7 +62,7 @@ start_link(Host, Opts) ->
 			  []).
 
 init([Opts]) ->
-    mnesia:create_table(bytestream,
+    ejabberd_mnesia:create(?MODULE, bytestream,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, bytestream)}]),
     mnesia:add_table_copy(bytestream, node(), ram_copies),

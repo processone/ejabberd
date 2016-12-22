@@ -21,7 +21,7 @@
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
-    mnesia:create_table(irc_custom,
+    ejabberd_mnesia:create(?MODULE, irc_custom,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, irc_custom)}]),
     update_table().

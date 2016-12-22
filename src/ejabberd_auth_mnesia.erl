@@ -66,10 +66,10 @@ start(Host) ->
     ok.
 
 init_db() ->
-    mnesia:create_table(passwd,
+    ejabberd_mnesia:create(?MODULE, passwd,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, passwd)}]),
-    mnesia:create_table(reg_users_counter,
+    ejabberd_mnesia:create(?MODULE, reg_users_counter,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, reg_users_counter)}]).
 

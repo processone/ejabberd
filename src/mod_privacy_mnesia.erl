@@ -25,7 +25,7 @@
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
-    mnesia:create_table(privacy,
+    ejabberd_mnesia:create(?MODULE, privacy,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, privacy)}]),
     update_table().

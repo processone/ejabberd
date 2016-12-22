@@ -19,7 +19,7 @@
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
-    mnesia:create_table(last_activity,
+    ejabberd_mnesia:create(?MODULE, last_activity,
 			[{disc_copies, [node()]},
 			 {attributes,
 			  record_info(fields, last_activity)}]),

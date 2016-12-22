@@ -176,3 +176,9 @@
     creation ,% :: {erlang:timestamp(), jlib:ljid()},
     payload  % :: mod_pubsub:payload()
 }).
+
+-record(pubsub_orphan,
+{
+    nodeid    ,% :: mod_pubsub:nodeIdx(),
+    items = [] % :: list()
+}).

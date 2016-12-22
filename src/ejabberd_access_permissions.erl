@@ -266,7 +266,7 @@ matches_definition({_Name, {From, Who, What}}, Cmd, Module, Host, CallerInfo) ->
 		    lists:any(
 			fun({access, Access}) when Scope == none ->
 			    acl:access_matches(Access, CallerInfo, Host) == allow;
-			   ({acl, _} = Acl) when Scope == none ->
+			   ({acl, Acl}) when Scope == none ->
 			       acl:acl_rule_matches(Acl, CallerInfo, Host);
 			   ({oauth, Scopes, List}) when Scope /= none ->
 			       case ejabberd_oauth:scope_in_scope_list(Scope, Scopes) of
@@ -274,7 +274,7 @@ matches_definition({_Name, {From, Who, What}}, Cmd, Module, Host, CallerInfo) ->
 				       lists:any(
 					   fun({access, Access}) ->
 					       acl:access_matches(Access, CallerInfo, Host) == allow;
-					      ({acl, _} = Acl) ->
+					      ({acl, Acl} = Acl) ->
 						  acl:acl_rule_matches(Acl, CallerInfo, Host)
 					   end, List);
 				   _ ->
@@ -331,7 +331,8 @@ command_matches_patterns(C, [_ | Tail]) ->
 parse_api_permissions(Data) when is_list(Data) ->
     throw({replace_with, [parse_api_permission(Name, Args) || {Name, Args} <- Data]}).
 
-parse_api_permission(Name, Args) ->
+parse_api_permission(Name, Args0) ->
+    Args = lists:flatten(Args0),
     {From, Who, What} = case key_split(Args, [{from, []}, {who, none}, {what, []}]) of
 			    {error, Msg} ->
 				report_error(<<"~s inside api_permission '~s' section">>, [Msg, Name]);
@@ -406,7 +407,7 @@ parse_who(Name, Defs, ParseOauth) when is_list(Defs) ->
 		       {scope, ScopeList2}
 	       end;
 	   (Atom) when is_atom(Atom) ->
-	       {acl, Atom};
+	       {acl, {acl, Atom}};
 	   ([Other]) ->
 	       try acl:normalize_spec(Other) of
 		   Rule2 ->

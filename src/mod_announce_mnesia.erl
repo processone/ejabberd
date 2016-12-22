@@ -21,11 +21,11 @@
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
-    mnesia:create_table(motd,
+    ejabberd_mnesia:create(?MODULE, motd,
 			[{disc_copies, [node()]},
 			 {attributes,
 			  record_info(fields, motd)}]),
-    mnesia:create_table(motd_users,
+    ejabberd_mnesia:create(?MODULE, motd_users,
 			[{disc_copies, [node()]},
 			 {attributes,
 			  record_info(fields, motd_users)}]),

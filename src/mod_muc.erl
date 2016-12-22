@@ -177,7 +177,7 @@ init([Host, Opts]) ->
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, [{host, MyHost}|Opts]),
     update_tables(),
-    mnesia:create_table(muc_online_room,
+    ejabberd_mnesia:create(?MODULE, muc_online_room,
 			[{ram_copies, [node()]},
 			 {type, ordered_set},
 			 {attributes, record_info(fields, muc_online_room)}]),

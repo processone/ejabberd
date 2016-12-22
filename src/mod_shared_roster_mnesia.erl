@@ -26,10 +26,10 @@
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
-    mnesia:create_table(sr_group,
+    ejabberd_mnesia:create(?MODULE, sr_group,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, sr_group)}]),
-    mnesia:create_table(sr_user,
+    ejabberd_mnesia:create(?MODULE, sr_user,
 			[{disc_copies, [node()]}, {type, bag},
 			 {attributes, record_info(fields, sr_user)}]),
     update_tables(),

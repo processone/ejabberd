@@ -30,24 +30,53 @@
 
 -include("logger.hrl").
 
--export([start/2, stop/1, compile/1, get_cookie/0,
-	 remove_node/1, set_password/3, check_password/3,
-	 check_password_hash/4, delete_old_users/1,
-	 delete_old_users_vhost/2, ban_account/3,
+-export([start/2, stop/1, mod_opt_type/1,
+	 get_commands_spec/0, depends/2]).
+
+% Commands API
+-export([
+	 % Adminsys
+	 compile/1, get_cookie/0, export2sql/2,
+	 restart_module/2,
+
+	 % Sessions
 	 num_active_users/2, num_resources/2, resource_num/3,
 	 kick_session/4, status_num/2, status_num/1,
 	 status_list/2, status_list/1, connected_users_info/0,
 	 connected_users_vhost/1, set_presence/7,
-	 user_sessions_info/2, set_nickname/3, get_vcard/3,
+	 get_presence/2, user_sessions_info/2, get_last/2,
+
+	 % Accounts
+	 set_password/3, check_password_hash/4, delete_old_users/1,
+	 delete_old_users_vhost/2, ban_account/3, check_password/3,
+
+	 % vCard
+	 set_nickname/3, get_vcard/3,
 	 get_vcard/4, get_vcard_multi/4, set_vcard/4,
-	 set_vcard/5, add_rosteritem/7, delete_rosteritem/4,
+	 set_vcard/5,
+
+	 % Roster
+	 add_rosteritem/7, delete_rosteritem/4,
 	 process_rosteritems/5, get_roster/2, push_roster/3,
-	 push_roster_all/1, push_alltoall/2, get_last/2,
-	 private_get/4, private_set/3, srg_create/5,
+	 push_roster_all/1, push_alltoall/2,
+
+	 % Private storage
+	 private_get/4, private_set/3,
+
+	 % Shared roster
+	 srg_create/5,
 	 srg_delete/2, srg_list/1, srg_get_info/2,
 	 srg_get_members/2, srg_user_add/4, srg_user_del/4,
-	 send_message/5, send_stanza/3, send_stanza_c2s/4, privacy_set/3,
-	 stats/1, stats/2, mod_opt_type/1, get_commands_spec/0, depends/2]).
+
+	 % Send message
+	 send_message/5, send_stanza/3, send_stanza_c2s/4,
+
+	 % Privacy list
+	 privacy_set/3,
+
+	 % Stats
+	 stats/1, stats/2
+	]).
 
 
 -include("ejabberd.hrl").
@@ -116,18 +145,30 @@ get_commands_spec() ->
 			result = {cookie, string},
 			result_example = "MWTAVMODFELNLSMYXPPD",
 			result_desc = "Erlang cookie used for authentication by ejabberd"},
-     #ejabberd_commands{name = remove_node, tags = [erlang],
-			desc = "Remove an ejabberd node from Mnesia clustering config",
-			module = ?MODULE, function = remove_node,
-			args = [{node, string}],
-			args_example = ["ejabberd@server2"],
-			args_desc = ["Name of erlang node to remove"],
+     #ejabberd_commands{name = export2sql, tags = [mnesia],
+			desc = "Export Mnesia tables to files in directory",
+			module = ?MODULE, function = export2sql,
+			args = [{host, string}, {path, string}],
+			args_example = ["myserver.com","/tmp/export/sql"],
+			args_desc = ["Server name", "File to write sql export"],
 			result = {res, rescode},
 			result_example = ok,
 			result_desc = "Status code: 0 on success, 1 otherwise"},
+    #ejabberd_commands{name = restart_module, tags = [erlang],
+			desc = "Stop an ejabberd module, reload code and start",
+			module = ?MODULE, function = restart_module,
+			args = [{host, binary}, {module, binary}],
+			args_example = ["myserver.com","mod_admin_extra"],
+			args_desc = ["Server name", "Module to restart"],
+			result = {res, integer},
+			result_example = 0,
+			result_desc = "Returns integer code:\n"
+				      " - 0: code reloaded, module restarted\n"
+				      " - 1: error: module not loaded\n"
+				      " - 2: code not reloaded, but module restarted"},
      #ejabberd_commands{name = num_active_users, tags = [accounts, stats],
 			desc = "Get number of users active in the last days",
-                        policy = admin,
+			policy = admin,
 			module = ?MODULE, function = num_active_users,
 			args = [{host, binary}, {days, integer}],
 			args_example = [<<"myserver.com">>, 3],
@@ -236,7 +277,7 @@ get_commands_spec() ->
 			result_desc = "Status code: 0 on success, 1 otherwise"},
      #ejabberd_commands{name = status_num_host, tags = [session, stats],
 			desc = "Number of logged users with this status in host",
-                        policy = admin,
+			policy = admin,
 			module = ?MODULE, function = status_num,
 			args = [{host, binary}, {status, binary}],
 			args_example = [<<"myserver.com">>, <<"dnd">>],
@@ -246,7 +287,7 @@ get_commands_spec() ->
 			result_desc = "Number of connected sessions with given status type"},
      #ejabberd_commands{name = status_num, tags = [session, stats],
 			desc = "Number of logged users with this status",
-                        policy = admin,
+			policy = admin,
 			module = ?MODULE, function = status_num,
 			args = [{status, binary}],
 			args_example = [<<"dnd">>],
@@ -298,11 +339,11 @@ get_commands_spec() ->
 					       ]}}
 				  }}},
      #ejabberd_commands{name = connected_users_vhost,
-                       tags = [session],
-                       desc = "Get the list of established sessions in a vhost",
-                       module = ?MODULE, function = connected_users_vhost,
-                       args = [{host, binary}],
-                       result = {connected_users_vhost, {list, {sessions, string}}}},
+			tags = [session],
+			desc = "Get the list of established sessions in a vhost",
+			module = ?MODULE, function = connected_users_vhost,
+			args = [{host, binary}],
+			result = {connected_users_vhost, {list, {sessions, string}}}},
      #ejabberd_commands{name = user_sessions_info,
 			tags = [session],
 			desc = "Get information about all sessions of a user",
@@ -323,6 +364,28 @@ get_commands_spec() ->
 					      ]}}
 				  }}},
 
+     #ejabberd_commands{name = get_presence, tags = [session],
+			desc =
+			    "Retrieve the resource with highest priority, "
+			    "and its presence (show and status message) "
+			    "for a given user.",
+			longdesc =
+			    "The 'jid' value contains the user jid "
+			    "with resource.\nThe 'show' value contains "
+			    "the user presence flag. It can take "
+			    "limited values:\n - available\n - chat "
+			    "(Free for chat)\n - away\n - dnd (Do "
+			    "not disturb)\n - xa (Not available, "
+			    "extended away)\n - unavailable (Not "
+			    "connected)\n\n'status' is a free text "
+			    "defined by the user client.",
+			module = ?MODULE, function = get_presence,
+			args = [{user, binary}, {server, binary}],
+			result =
+			    {presence,
+			     {tuple,
+			      [{jid, string}, {show, string},
+			       {status, string}]}}},
      #ejabberd_commands{name = set_presence,
 			tags = [session],
 			desc = "Set presence of a session",
@@ -534,7 +597,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = get_offline_count,
 			tags = [offline],
 			desc = "Get the number of unread offline messages",
-                        policy = user,
+			policy = user,
 			module = mod_offline, function = count_offline_messages,
 			args = [],
 			result = {value, integer}},
@@ -562,13 +625,13 @@ get_commands_spec() ->
 
      #ejabberd_commands{name = stats, tags = [stats],
 			desc = "Get statistical value: registeredusers onlineusers onlineusersnode uptimeseconds processes",
-                        policy = admin,
+			policy = admin,
 			module = ?MODULE, function = stats,
 			args = [{name, binary}],
 			result = {stat, integer}},
      #ejabberd_commands{name = stats_host, tags = [stats],
 			desc = "Get statistical value for this host: registeredusers onlineusers",
-                        policy = admin,
+			policy = admin,
 			module = ?MODULE, function = stats,
 			args = [{name, binary}, {host, binary}],
 			result = {stat, integer}}
@@ -576,17 +639,63 @@ get_commands_spec() ->
 
 
 %%%
-%%% Node
+%%% Adminsys
 %%%
 
 compile(File) ->
-    compile:file(File).
+    Ebin = filename:join(code:lib_dir(ejabberd), "ebin"),
+    case ext_mod:compile_erlang_file(Ebin, File) of
+	{ok, Module} ->
+	    code:purge(Module),
+	    code:load_file(Module),
+	    ok;
+	_ ->
+	    error
+    end.
 
 get_cookie() ->
     atom_to_list(erlang:get_cookie()).
 
-remove_node(Node) ->
-    mnesia:del_table_copy(schema, list_to_atom(Node)),
+restart_module(Host, Module) when is_binary(Module) ->
+    restart_module(Host, jlib:binary_to_atom(Module));
+restart_module(Host, Module) when is_atom(Module) ->
+    List = gen_mod:loaded_modules_with_opts(Host),
+    case proplists:get_value(Module, List) of
+	undefined ->
+	    % not a running module, force code reload anyway
+	    code:purge(Module),
+	    code:delete(Module),
+	    code:load_file(Module),
+	    1;
+	Opts ->
+	    gen_mod:stop_module(Host, Module),
+	    case code:soft_purge(Module) of
+		true ->
+		    code:delete(Module),
+		    code:load_file(Module),
+		    gen_mod:start_module(Host, Module, Opts),
+		    0;
+		false ->
+		    gen_mod:start_module(Host, Module, Opts),
+		    2
+	    end
+    end.
+
+export2sql(Host, Directory) ->
+    Tables = [{export_last, last},
+	      {export_offline, offline},
+	      {export_passwd, passwd},
+	      {export_private_storage, private_storage},
+	      {export_roster, roster},
+	      {export_vcard, vcard},
+	      {export_vcard_search, vcard_search}],
+    Export = fun({TableFun, Table}) ->
+		     Filename = filename:join([Directory, atom_to_list(Table)++".txt"]),
+		     io:format("Trying to export Mnesia table '~p' on Host '~s' to file '~s'~n", [Table, Host, Filename]),
+		     Res = (catch ejd2sql:TableFun(Host, Filename)),
+		     io:format("  Result: ~p~n", [Res])
+	     end,
+    lists:foreach(Export, Tables),
     ok.
 
 %%%
@@ -607,10 +716,10 @@ check_password_hash(User, Host, PasswordHash, HashMethod) ->
 			  {A, _} when is_tuple(A) -> scrammed;
 			  {_, <<"md5">>} -> get_md5(AccountPass);
 			  {_, <<"sha">>} -> get_sha(AccountPass);
-                          {_, Method} ->
+			  {_, Method} ->
 			      ?ERROR_MSG("check_password_hash called "
- 					 "with hash method: ~p", [Method]),
- 			      undefined
+					 "with hash method: ~p", [Method]),
+			      undefined
 		      end,
     case AccountPassHash of
 	scrammed ->
@@ -628,10 +737,11 @@ get_sha(AccountPass) ->
  		      || X <- binary_to_list(p1_sha:sha1(AccountPass))]).
 
 num_active_users(Host, Days) ->
-    list_last_activity(Host, true, Days).
+    DB_Type = gen_mod:db_type(Host, mod_last),
+    list_last_activity(Host, true, Days, DB_Type).
 
 %% Code based on ejabberd/src/web/ejabberd_web_admin.erl
-list_last_activity(Host, Integral, Days) ->
+list_last_activity(Host, Integral, Days, mnesia) ->
     TimeStamp = p1_time_compat:system_time(seconds),
     TS = TimeStamp - Days * 86400,
     case catch mnesia:dirty_select(
@@ -657,7 +767,11 @@ list_last_activity(Host, Integral, Days) ->
 				end,
 			 lists:nth(Days, Hist ++ Tail)
 		 end
-	 end.
+	 end;
+list_last_activity(_Host, _Integral, _Days, DB_Type) ->
+    throw({error, iolist_to_binary(io_lib:format("Unsupported backend: ~p",
+						 [DB_Type]))}).
+
 histogram(Values, Integral) ->
     histogram(lists:sort(Values), Integral, 0, 0, []).
 histogram([H | T], Integral, Current, Count, Hist) when Current == H ->
@@ -881,6 +995,20 @@ dirty_get_sessions_list2() ->
 stringize(String) ->
     %% Replace newline characters with other code
     ejabberd_regexp:greplace(String, <<"\n">>, <<"\\n">>).
+
+get_presence(U, S) ->
+    Pids = [ejabberd_sm:get_session_pid(U, S, R)
+	    || R <- ejabberd_sm:get_user_resources(U, S)],
+    OnlinePids = [Pid || Pid <- Pids, Pid=/=none],
+    case OnlinePids of
+	[] ->
+	    {jid:to_string({U, S, <<>>}), <<"unavailable">>, <<"">>};
+	[SessionPid|_] ->
+	    {_User, Resource, Show, Status} =
+		     ejabberd_c2s:get_presence(SessionPid),
+	    FullJID = jid:to_string({U, S, Resource}),
+	    {FullJID, Show, Status}
+    end.
 
 set_presence(User, Host, Resource, Type, Show, Status, Priority)
         when is_integer(Priority) ->

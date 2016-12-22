@@ -993,38 +993,50 @@ get_subscribers(Name, Host) ->
 	    throw({error, "The room does not exist"})
     end.
 
+%% Copied from mod_muc_room.erl
+get_config_opt_name(Pos) ->
+    Fs = [config|record_info(fields, config)],
+    lists:nth(Pos, Fs).
+-define(MAKE_CONFIG_OPT(Opt),
+        {get_config_opt_name(Opt), element(Opt, Config)}).
 make_opts(StateData) ->
     Config = StateData#state.config,
-    [
-     {title, Config#config.title},
-     {vcard, Config#config.vcard},
-     {voice_request_min_interval, Config#config.voice_request_min_interval},
-     {allow_change_subj, Config#config.allow_change_subj},
-     {allow_query_users, Config#config.allow_query_users},
-     {allow_private_messages, Config#config.allow_private_messages},
-     {allow_private_messages_from_visitors, Config#config.allow_private_messages_from_visitors},
-     {allow_visitor_status, Config#config.allow_visitor_status},
-     {allow_visitor_nickchange, Config#config.allow_visitor_nickchange},
-     {allow_voice_requests, Config#config.allow_voice_requests},
-     {public, Config#config.public},
-     {public_list, Config#config.public_list},
-     {persistent, Config#config.persistent},
-     {mam, Config#config.mam},
-     {moderated, Config#config.moderated},
-     {members_by_default, Config#config.members_by_default},
-     {members_only, Config#config.members_only},
-     {allow_user_invites, Config#config.allow_user_invites},
-     {password_protected, Config#config.password_protected},
-     {password, Config#config.password},
-     {anonymous, Config#config.anonymous},
-     {captcha_protected, Config#config.captcha_protected},
-     {description, Config#config.description},
-     {logging, Config#config.logging},
-     {max_users, Config#config.max_users},
-     {affiliations, ?DICT:to_list(StateData#state.affiliations)},
+    Subscribers = (?DICT):fold(
+                    fun(_LJID, Sub, Acc) ->
+                            [{Sub#subscriber.jid,
+                              Sub#subscriber.nick,
+                              Sub#subscriber.nodes}|Acc]
+                    end, [], StateData#state.subscribers),
+    [?MAKE_CONFIG_OPT(#config.title), ?MAKE_CONFIG_OPT(#config.description),
+     ?MAKE_CONFIG_OPT(#config.allow_change_subj),
+     ?MAKE_CONFIG_OPT(#config.allow_query_users),
+     ?MAKE_CONFIG_OPT(#config.allow_private_messages),
+     ?MAKE_CONFIG_OPT(#config.allow_private_messages_from_visitors),
+     ?MAKE_CONFIG_OPT(#config.allow_visitor_status),
+     ?MAKE_CONFIG_OPT(#config.allow_visitor_nickchange),
+     ?MAKE_CONFIG_OPT(#config.public), ?MAKE_CONFIG_OPT(#config.public_list),
+     ?MAKE_CONFIG_OPT(#config.persistent),
+     ?MAKE_CONFIG_OPT(#config.moderated),
+     ?MAKE_CONFIG_OPT(#config.members_by_default),
+     ?MAKE_CONFIG_OPT(#config.members_only),
+     ?MAKE_CONFIG_OPT(#config.allow_user_invites),
+     ?MAKE_CONFIG_OPT(#config.password_protected),
+     ?MAKE_CONFIG_OPT(#config.captcha_protected),
+     ?MAKE_CONFIG_OPT(#config.password), ?MAKE_CONFIG_OPT(#config.anonymous),
+     ?MAKE_CONFIG_OPT(#config.logging), ?MAKE_CONFIG_OPT(#config.max_users),
+     ?MAKE_CONFIG_OPT(#config.allow_voice_requests),
+     ?MAKE_CONFIG_OPT(#config.allow_subscription),
+     ?MAKE_CONFIG_OPT(#config.mam),
+     ?MAKE_CONFIG_OPT(#config.presence_broadcast),
+     ?MAKE_CONFIG_OPT(#config.voice_request_min_interval),
+     ?MAKE_CONFIG_OPT(#config.vcard),
+     {captcha_whitelist,
+      (?SETS):to_list((StateData#state.config)#config.captcha_whitelist)},
+     {affiliations,
+      (?DICT):to_list(StateData#state.affiliations)},
      {subject, StateData#state.subject},
-     {subject_author, StateData#state.subject_author}
-    ].
+     {subject_author, StateData#state.subject_author},
+     {subscribers, Subscribers}].
 
 
 %%----------------------------

@@ -89,7 +89,7 @@ stop(_Host) ->
 
 setup_database() ->
     migrate_database(),
-    mnesia:create_table(http_bind,
+    ejabberd_mnesia:create(?MODULE, http_bind,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, http_bind)}]).
 

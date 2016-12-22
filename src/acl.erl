@@ -76,11 +76,11 @@
 -export_type([acl/0]).
 
 start() ->
-    mnesia:create_table(acl,
+    ejabberd_mnesia:create(?MODULE, acl,
 			[{ram_copies, [node()]}, {type, bag},
                          {local_content, true},
 			 {attributes, record_info(fields, acl)}]),
-    mnesia:create_table(access,
+    ejabberd_mnesia:create(?MODULE, access,
                         [{ram_copies, [node()]},
                          {local_content, true},
 			 {attributes, record_info(fields, access)}]),

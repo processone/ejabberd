@@ -24,10 +24,10 @@
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
-    mnesia:create_table(roster,
+    ejabberd_mnesia:create(?MODULE, roster,
 			[{disc_copies, [node()]},
 			 {attributes, record_info(fields, roster)}]),
-    mnesia:create_table(roster_version,
+    ejabberd_mnesia:create(?MODULE, roster_version,
 			[{disc_copies, [node()]},
 			 {attributes,
 			  record_info(fields, roster_version)}]),

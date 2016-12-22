@@ -27,7 +27,7 @@ init(_Host, _Opts) ->
         _ ->
             mnesia:delete_table(caps_features)
     end,
-    mnesia:create_table(caps_features,
+    ejabberd_mnesia:create(?MODULE, caps_features,
                         [{disc_only_copies, [node()]},
                          {local_content, true},
                          {attributes,

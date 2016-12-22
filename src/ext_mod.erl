@@ -29,11 +29,13 @@
 -author("Christophe Romain <christophe.romain@process-one.net>").
 
 -export([start/0, stop/0, update/0, check/1,
-	 available_command/0, available/0, available/1,
-	 installed_command/0, installed/0, installed/1,
-	 install/1, uninstall/1, upgrade/0, upgrade/1,
-	 add_sources/2, del_sources/1, modules_dir/0,
-	 config_dir/0, opt_type/1, get_commands_spec/0]).
+         available_command/0, available/0, available/1,
+         installed_command/0, installed/0, installed/1,
+         install/1, uninstall/1, upgrade/0, upgrade/1,
+         add_sources/2, del_sources/1, modules_dir/0,
+         config_dir/0, opt_type/1, get_commands_spec/0]).
+
+-export([compile_erlang_file/2, compile_elixir_file/2]).
 
 -include("ejabberd_commands.hrl").
 -include("logger.hrl").
@@ -170,7 +172,10 @@ install(Package) when is_binary(Package) ->
                 ok ->
                     code:add_patha(module_ebin_dir(Module)),
                     ejabberd_config:reload_file(),
-                    ok;
+                    case erlang:function_exported(Module, post_install, 0) of
+                        true -> Module:post_install();
+                        _ -> ok
+                    end;
                 Error ->
                     delete_path(module_lib_dir(Module)),
                     Error
@@ -183,6 +188,10 @@ uninstall(Package) when is_binary(Package) ->
     case installed(Package) of
         true ->
             Module = jlib:binary_to_atom(Package),
+            case erlang:function_exported(Module, pre_uninstall, 0) of
+                true -> Module:pre_uninstall();
+                _ -> ok
+            end,
             [catch gen_mod:stop_module(Host, Module)
              || Host <- ejabberd_config:get_myhosts()],
             code:purge(Module),
@@ -334,14 +343,17 @@ copy(From, To) ->
                     SubTo = filename:join(To, F),
                     copy(SubFrom, SubTo)
             end,
-            lists:foldl(fun({ok, C2}, {ok, C1}) -> {ok, C1+C2};
-                           ({ok, _}, Error) -> Error;
+            lists:foldl(fun(ok, ok) -> ok;
+                           (ok, Error) -> Error;
                            (Error, _) -> Error
-                end, {ok, 0},
+                end, ok,
                 [Copy(filename:basename(X)) || X<-filelib:wildcard(From++"/*")]);
         false ->
             filelib:ensure_dir(To),
-            file:copy(From, To)
+            case file:copy(From, To) of
+                {ok, _} -> ok;
+                Error -> Error
+            end
     end.
 
 delete_path(Path) ->
@@ -454,19 +466,15 @@ compile_and_install(Module, Spec) ->
     LibDir = module_lib_dir(Module),
     case filelib:is_dir(SrcDir) of
         true ->
-            {ok, Dir} = file:get_cwd(),
-            file:set_cwd(SrcDir),
-            Result = case compile_deps(Module, Spec, LibDir) of
+            case compile_deps(SrcDir) of
                 ok ->
-                    case compile(Module, Spec, LibDir) of
-                        ok -> install(Module, Spec, LibDir);
+                    case compile(SrcDir) of
+                        ok -> install(Module, Spec, SrcDir, LibDir);
                         Error -> Error
                     end;
                 Error ->
                     Error
-            end,
-            file:set_cwd(Dir),
-            Result;
+            end;
         false ->
             Path = proplists:get_value(url, Spec, ""),
             case add_sources(Module, Path) of
@@ -475,78 +483,54 @@ compile_and_install(Module, Spec) ->
             end
     end.
 
-compile_deps(_Module, _Spec, DestDir) ->
-    case filelib:is_dir("deps") of
-        true -> ok;
-        false -> fetch_rebar_deps()
+compile_deps(LibDir) ->
+    Deps = filename:join(LibDir, "deps"),
+    case filelib:is_dir(Deps) of
+        true -> ok;  % assume deps are included
+        false -> fetch_rebar_deps(LibDir)
     end,
-    Ebin = filename:join(DestDir, "ebin"),
-    filelib:ensure_dir(filename:join(Ebin, ".")),
-    Result = lists:foldl(fun(Dep, Acc) ->
-                Inc = filename:join(Dep, "include"),
-                Lib = filename:join(Dep, "lib"),
-                Src = filename:join(Dep, "src"),
-                Options = [{outdir, Ebin}, {i, Inc}],
-                [file:copy(App, Ebin) || App <- filelib:wildcard(Src++"/*.app")],
+    Rs = [compile(Dep) || Dep <- filelib:wildcard(filename:join(Deps, "*"))],
+    compile_result(Rs).
 
-                %% Compile erlang files
-                Acc1 = Acc ++ [case compile:file(File, Options) of
-                        {ok, _} -> ok;
-                        {ok, _, _} -> ok;
-                        {ok, _, _, _} -> ok;
-                        error -> {error, {compilation_failed, File}};
-                        Error -> Error
-                    end
-                     || File <- filelib:wildcard(Src++"/*.erl")],
+compile(LibDir) ->
+    Bin = filename:join(LibDir, "ebin"),
+    Inc = filename:join(LibDir, "include"),
+    Lib = filename:join(LibDir, "lib"),
+    Src = filename:join(LibDir, "src"),
+    Options = [{outdir, Bin}, {i, Inc} | compile_options()],
+    filelib:ensure_dir(filename:join(Bin, ".")),
+    [copy(App, Bin) || App <- filelib:wildcard(Src++"/*.app")],
+    Er = [compile_erlang_file(Bin, File, Options)
+          || File <- filelib:wildcard(Src++"/*.erl")],
+    Ex = [compile_elixir_file(Bin, File)
+          || File <- filelib:wildcard(Lib ++ "/*.ex")],
+    compile_result(Er++Ex).
 
-                %% Compile elixir files
-                Acc1 ++ [case compile_elixir_file(Ebin, File) of
-                  {ok, _} -> ok;
-                  {error, File} -> {error, {compilation_failed, File}}
-                end
-                 || File <- filelib:wildcard(Lib ++ "/*.ex")]
-
-        end, [], filelib:wildcard("deps/*")),
+compile_result(Results) ->
     case lists:dropwhile(
-            fun(ok) -> true;
-                (_) -> false
-            end, Result) of
+            fun({ok, _}) -> true;
+               (_) -> false
+            end, Results) of
         [] -> ok;
         [Error|_] -> Error
     end.
 
-compile(_Module, _Spec, DestDir) ->
-    Ebin = filename:join(DestDir, "ebin"),
-    filelib:ensure_dir(filename:join(Ebin, ".")),
-    EjabBin = filename:dirname(code:which(ejabberd)),
-    EjabInc = filename:join(filename:dirname(EjabBin), "include"),
-    Options = [{outdir, Ebin}, {i, "include"}, {i, EjabInc},
-               verbose, report_errors, report_warnings],
-    [file:copy(App, Ebin) || App <- filelib:wildcard("src/*.app")],
+compile_options() ->
+    [verbose, report_errors, report_warnings]
+    ++ [{i, filename:join(code:lib_dir(App), "include")}
+        || App <- [fast_xml, xmpp, ejabberd]].
 
-    %% Compile erlang files
-    Result = [case compile:file(File, Options) of
-            {ok, _} -> ok;
-            {ok, _, _} -> ok;
-            {ok, _, _, _} -> ok;
-            error -> {error, {compilation_failed, File}};
-            Error -> Error
-        end
-        || File <- filelib:wildcard("src/*.erl")],
+compile_erlang_file(Dest, File) ->
+    compile_erlang_file(Dest, File, compile_options()).
 
-    %% Compile elixir files
-    Result1 = Result ++ [case compile_elixir_file(Ebin, File) of
-      {ok, _} -> ok;
-      {error, File} -> {error, {compilation_failed, File}}
-    end
-    || File <- filelib:wildcard("lib/*.ex")],
-
-    case lists:dropwhile(
-            fun(ok) -> true;
-                (_) -> false
-            end, Result1) of
-        [] -> ok;
-        [Error|_] -> Error
+compile_erlang_file(Dest, File, ErlOptions) ->
+    Options = [{outdir, Dest} | ErlOptions],
+    case compile:file(File, Options) of
+        {ok, Module} -> {ok, Module};
+        {ok, Module, _} -> {ok, Module};
+        {ok, Module, _, _} -> {ok, Module};
+        error -> {error, {compilation_failed, File}};
+        {error, E, W} -> {error, {compilation_failed, File, E, W}}
     end.
 
 compile_elixir_file(Dest, File) when is_list(Dest) and is_list(File) ->
@@ -556,13 +540,15 @@ compile_elixir_file(Dest, File) ->
   try 'Elixir.Kernel.ParallelCompiler':files_to_path([File], Dest, []) of
     [Module] -> {ok, Module}
   catch
-    _ -> {error, File}
+    _ -> {error, {compilation_failed, File}}
   end.
 
-install(Module, Spec, DestDir) ->
-    Errors = lists:dropwhile(fun({_, {ok, _}}) -> true;
+install(Module, Spec, SrcDir, LibDir) ->
+    {ok, CurDir} = file:get_cwd(),
+    file:set_cwd(SrcDir),
+    Errors = lists:dropwhile(fun({_, ok}) -> true;
                                 (_) -> false
-            end, [{File, copy(File, filename:join(DestDir, File))}
+            end, [{File, copy(File, filename:join(LibDir, File))}
                   || File <- filelib:wildcard("{ebin,priv,conf,include}/**")]),
     Result = case Errors of
         [{F, {error, E}}|_] ->
@@ -570,25 +556,28 @@ install(Module, Spec, DestDir) ->
         [] ->
             SpecPath = proplists:get_value(path, Spec),
             SpecFile = filename:flatten([Module, ".spec"]),
-            copy(filename:join(SpecPath, SpecFile), filename:join(DestDir, SpecFile))
+            copy(filename:join(SpecPath, SpecFile), filename:join(LibDir, SpecFile))
     end,
-    case Result of
-        {ok, _} -> ok;
-        Error -> Error
-    end.
+    file:set_cwd(CurDir),
+    Result.
 
 %% -- minimalist rebar spec parser, only support git
 
-fetch_rebar_deps() ->
-    case rebar_deps("rebar.config")++rebar_deps("rebar.config.script") of
+fetch_rebar_deps(SrcDir) ->
+    case rebar_deps(filename:join(SrcDir, "rebar.config"))
+      ++ rebar_deps(filename:join(SrcDir, "rebar.config.script")) of
         [] ->
             ok;
         Deps ->
+            {ok, CurDir} = file:get_cwd(),
+            file:set_cwd(SrcDir),
             filelib:ensure_dir(filename:join("deps", ".")),
             lists:foreach(fun({_App, Cmd}) ->
                         os:cmd("cd deps; "++Cmd++"; cd ..")
-                end, Deps)
+                end, Deps),
+            file:set_cwd(CurDir)
     end.
+
 rebar_deps(Script) ->
     case file:script(Script) of
         {ok, Config} when is_list(Config) ->
@@ -629,7 +618,7 @@ format({Key, Val}) -> % TODO: improve Yaml parsing
 
 opt_type(allow_contrib_modules) ->
     fun (false) -> false;
-	(no) -> false;
-	(_) -> true
+        (no) -> false;
+        (_) -> true
     end;
 opt_type(_) -> [allow_contrib_modules].

@@ -24,10 +24,10 @@
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
-    mnesia:create_table(vcard,
+    ejabberd_mnesia:create(?MODULE, vcard,
 			[{disc_only_copies, [node()]},
 			 {attributes, record_info(fields, vcard)}]),
-    mnesia:create_table(vcard_search,
+    ejabberd_mnesia:create(?MODULE, vcard_search,
 			[{disc_copies, [node()]},
 			 {attributes,
 			  record_info(fields, vcard_search)}]),

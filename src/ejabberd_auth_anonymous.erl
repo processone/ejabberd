@@ -59,7 +59,7 @@
 
 start(Host) ->
     %% TODO: Check cluster mode
-    mnesia:create_table(anonymous, [{ram_copies, [node()]},
+    ejabberd_mnesia:create(?MODULE, anonymous, [{ram_copies, [node()]},
 				    {type, bag},
 				    {attributes, record_info(fields, anonymous)}]),
     %% The hooks are needed to add / remove users from the anonymous tables

@@ -1264,12 +1264,7 @@ get_error_condition(undefined) ->
     "undefined".
 
 get_error_text(Error) ->
-    case fxml:get_subtag_with_xmlns(Error, <<"text">>, ?NS_STANZAS) of
-	#xmlel{} = Tag ->
-	    fxml:get_tag_cdata(Tag);
-	false ->
-	    <<"">>
-    end.
+    (Error#stanza_error.text)#text.data.
 
 -spec make_reason(stanza(), jid(), state(), binary()) -> binary().
 make_reason(Packet, From, StateData, Reason1) ->
@@ -2024,8 +2019,11 @@ check_captcha(Affiliation, From, StateData) ->
 
 -spec extract_password(stanza()) -> binary() | false.
 extract_password(Packet) ->
-    case xmpp:get_subtag(Packet, #muc{}) of
-	#muc{password = Password} when is_binary(Password) ->
+    case {xmpp:get_subtag(Packet, #muc{}),
+          xmpp:get_subtag(Packet, #muc_subscribe{})} of
+	{#muc{password = Password}, _} when is_binary(Password) ->
+	    Password;
+	{_, #muc_subscribe{password = Password}} when is_binary(Password) ->
 	    Password;
 	_ ->
 	    false
@@ -2723,8 +2721,8 @@ find_changed_items(UJID, UAffiliation, URole,
 	   Nick /= <<"">> ->
 		case find_jids_by_nick(Nick, StateData) of
 		    [] ->
-			ErrText = {<<"Nickname ~s does not exist in the room">>,
-				   [Nick]},
+			ErrText = str:format(<<"Nickname ~s does not exist in the room">>,
+				   [Nick]),
 			throw({error, xmpp:err_not_acceptable(ErrText, Lang)});
 		    JIDList ->
 			JIDList
@@ -3745,7 +3743,11 @@ process_iq_mucsub(From, #iq{type = set, sub_els = [#muc_unsubscribe{}]},
 	    NewStateData = StateData#state{subscribers = Subscribers,
 					   subscriber_nicks = Nicks},
 	    store_room(NewStateData),
-	    {result, undefined, NewStateData};
+	    NewStateData2 = case close_room_if_temporary_and_empty(NewStateData) of
+		{stop, normal, _} -> stop;
+		{next_state, normal_state, SD} -> SD
+	    end,
+	    {result, undefined, NewStateData2};
 	_ ->
 	    {result, undefined, StateData}
     end;

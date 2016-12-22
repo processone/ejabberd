@@ -54,7 +54,7 @@ start(Host, Opts) ->
 		       stream_feature_register, 50),
     ejabberd_hooks:add(c2s_unauthenticated_iq, Host,
 		       ?MODULE, unauthenticated_iq_register, 50),
-    mnesia:create_table(mod_register_ip,
+    ejabberd_mnesia:create(?MODULE, mod_register_ip,
 			[{ram_copies, [node()]}, {local_content, true},
 			 {attributes, [key, value]}]),
     mnesia:add_table_copy(mod_register_ip, node(),
