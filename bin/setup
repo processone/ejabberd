@@ -35,12 +35,14 @@ init() {
 clean() {
     echo "Source code cleanup"
     printline
-    make clean
+    #make clean # Automatically executed in distclean
     make distclean
+    echo "Cleanup completed"
 }
 configure() {
     echo -e "\nAutogen"
     printline
+    echo -n "..."
     ./autogen.sh
     echo "done."
     keypress
@@ -51,6 +53,8 @@ configure() {
                 --sbindir=$DIR_TARGET/bin       \
                 --sysconfdir=$DIR_TARGET/conf   \
                 --datarootdir=$DIR_TARGET       \
+                --docdir=$DIR_TARGET/doc        \
+                --localstatedir=$DIR_TARGET     \
                 --enable-pgsql                  \
                 --enable-user=ben               \
                 --enable-group=users            \
@@ -65,6 +69,20 @@ install_ejabberd() {
     echo -e "\nInstallation"
     printline
     make install
+    install_patch_ejabberd
+}
+# Patching installation to carefully match ejabberd binary installer directories
+install_patch_ejabberd() {
+    # Database dir
+    mkdir $DIR_TARGET/database
+    # etc <-> conf directory
+    mv    $DIR_TARGET/conf/ejabberd/* $DIR_TARGET/conf/
+    rmdir $DIR_TARGET/conf/ejabberd
+    # Log dir
+    rmdir $DIR_TARGET/log/ejabberd
+    mv    $DIR_TARGET/log $DIR_TARGET/logs
+    # Lock directory
+    rmdir $DIR_TARGET/lock/ejabberdctl
 }
 
 cd $DIR_SRC >/dev/null 2>&1
