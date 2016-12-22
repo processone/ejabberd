@@ -11,6 +11,7 @@
   "iconv": {:hex, :iconv, "1.0.3", "f5c159f7e0ad2a3b55c6b5528ce71d7926f206df2f9bf83201a77cf1bc91c6f0", [:rebar3], [{:p1_utils, "1.0.6", [hex: :p1_utils, optional: false]}]},
   "jiffy": {:hex, :jiffy, "0.14.7", "9f33b893edd6041ceae03bc1e50b412e858cc80b46f3d7535a7a9940a79a1c37", [:make, :rebar], []},
   "lager": {:hex, :lager, "3.2.1", "eef4e18b39e4195d37606d9088ea05bf1b745986cf8ec84f01d332456fe88d17", [:rebar3], [{:goldrush, "0.1.8", [hex: :goldrush, optional: false]}]},
+  "p1_mysql": {:hex, :p1_mysql, "1.0.1", "d2be1cfc71bb4f1391090b62b74c3f5cb8e7a45b0076b8cb290cd6b2856c581b", [:rebar3], []},
   "p1_oauth2": {:hex, :p1_oauth2, "0.6.1", "4e021250cc198c538b097393671a41e7cebf463c248980320e038fe0316eb56b", [:rebar3], []},
   "p1_utils": {:hex, :p1_utils, "1.0.6", "ef0951ddf38e92b7e479af4b8dc950df76af8c1030432ef68b7fd7ad17c436fe", [:rebar3], []},
   "stringprep": {:hex, :stringprep, "1.0.7", "f709c7ee3697ae9d2becbbbba1dcea47e0f583e313b4eb7d0ced2163c595ee12", [:rebar3], [{:p1_utils, "1.0.6", [hex: :p1_utils, optional: false]}]},
