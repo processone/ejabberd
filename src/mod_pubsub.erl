@@ -3432,7 +3432,7 @@ serverhost(Host) ->
 
 -spec tree(host()) -> atom().
 tree(Host) ->
-    case config(Host, nodetree) of
+    case config(serverhost(Host), nodetree) of
 	undefined -> tree(Host, ?STDTREE);
 	Tree -> Tree
     end.
