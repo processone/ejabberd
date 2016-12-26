@@ -3702,7 +3702,7 @@ process_iq_vcard(From, #iq{type = set, lang = Lang, sub_els = [SubEl]},
 			       {ignore, state()}.
 process_iq_mucsub(_From, #iq{type = set, lang = Lang,
 			     sub_els = [#muc_subscribe{}]},
-		  #state{config = #config{allow_subscription = false}}) ->
+		  #state{just_created = false, config = #config{allow_subscription = false}}) ->
     {error, xmpp:err_not_allowed(<<"Subscriptions are not allowed">>, Lang)};
 process_iq_mucsub(From,
 		  #iq{type = set, lang = Lang,
@@ -3731,7 +3731,8 @@ process_iq_mucsub(From,
 	    NewStateData = set_subscriber(From, Nick, Nodes, StateData),
 	    {result, subscribe_result(Packet), NewStateData};
 	error ->
-	    add_new_user(From, Nick, Packet, StateData)
+	    SD2 = maybe_enable_subscriptions(StateData),
+	    add_new_user(From, Nick, Packet, SD2)
     end;
 process_iq_mucsub(From, #iq{type = set, sub_els = [#muc_unsubscribe{}]},
 		  StateData) ->
@@ -3769,6 +3770,11 @@ process_iq_mucsub(From, #iq{type = get, lang = Lang,
 process_iq_mucsub(_From, #iq{type = get, lang = Lang}, _StateData) ->
     Txt = <<"Value 'get' of 'type' attribute is not allowed">>,
     {error, xmpp:err_bad_request(Txt, Lang)}.
+
+maybe_enable_subscriptions(#state{just_created = JC, config = #config{allow_subscription = AS}} = SD) ->
+    SD#state{config = (SD#state.config)#config{allow_subscription = true}};
+maybe_enable_subscriptions(SD) ->
+    SD.
 
 remove_subscriptions(StateData) ->
     if not (StateData#state.config)#config.allow_subscription ->
