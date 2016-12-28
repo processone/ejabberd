@@ -41,8 +41,6 @@
 
 -define(COPYRIGHT, "Copyright (c) 2002-2016 ProcessOne").
 
--define(S2STIMEOUT, timer:minutes(10)).
-
 %%-define(DBGFSM, true).
 
 -record(scram,

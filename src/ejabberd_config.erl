@@ -38,7 +38,8 @@
 	 transform_options/1, collect_options/1, default_db/2,
 	 convert_to_yaml/1, convert_to_yaml/2, v_db/2,
 	 env_binary_to_list/2, opt_type/1, may_hide_data/1,
-	 is_elixir_enabled/0, v_dbs/1, v_dbs_mods/1]).
+	 is_elixir_enabled/0, v_dbs/1, v_dbs_mods/1,
+	 fsm_limit_opts/1]).
 
 -export([start/2]).
 
@@ -1403,6 +1404,8 @@ opt_type(hosts) ->
     end;
 opt_type(language) ->
     fun iolist_to_binary/1;
+opt_type(max_fsm_queue) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
 opt_type(_) ->
     [hide_sensitive_log_data, hosts, language].
 
@@ -1420,4 +1423,18 @@ may_hide_data(Data) ->
 	    Data;
 	true ->
 	    "hidden_by_ejabberd"
+    end.
+
+-spec fsm_limit_opts([proplists:property()]) -> [{max_queue, pos_integer()}].
+fsm_limit_opts(Opts) ->
+    case lists:keyfind(max_fsm_queue, 1, Opts) of
+	{_, I} when is_integer(I), I>0 ->
+	    [{max_queue, I}];
+	false ->
+	    case get_option(
+		   max_fsm_queue,
+		   fun(I) when is_integer(I), I>0 -> I end) of
+		undefined -> [];
+		N -> [{max_queue, N}]
+	    end
     end.

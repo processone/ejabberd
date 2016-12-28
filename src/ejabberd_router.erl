@@ -43,7 +43,9 @@
 	 unregister_route/1,
 	 unregister_routes/1,
 	 dirty_get_all_routes/0,
-	 dirty_get_all_domains/0
+	 dirty_get_all_domains/0,
+	 is_my_route/1,
+	 is_my_host/1
 	]).
 
 -export([start_link/0]).
@@ -110,12 +112,12 @@ register_route(Domain) ->
 		 [?MODULE, ?MODULE]),
     register_route(Domain, ?MYNAME).
 
--spec register_route(binary(), binary()) -> term().
+-spec register_route(binary(), binary()) -> ok.
 
 register_route(Domain, ServerHost) ->
     register_route(Domain, ServerHost, undefined).
 
--spec register_route(binary(), binary(), local_hint()) -> term().
+-spec register_route(binary(), binary(), local_hint()) -> ok.
 
 register_route(Domain, ServerHost, LocalHint) ->
     case {jid:nameprep(Domain), jid:nameprep(ServerHost)} of
@@ -165,6 +167,11 @@ register_route(Domain, ServerHost, LocalHint) ->
 			    end
 		    end,
 		mnesia:transaction(F)
+	  end,
+	  if LocalHint == undefined ->
+		  ?INFO_MSG("Route registered: ~s", [LDomain]);
+	     true ->
+		  ok
 	  end
     end.
 
@@ -175,7 +182,7 @@ register_routes(Domains) ->
 		  end,
 		  Domains).
 
--spec unregister_route(binary()) -> term().
+-spec unregister_route(binary()) -> ok.
 
 unregister_route(Domain) ->
     case jid:nameprep(Domain) of
@@ -210,7 +217,8 @@ unregister_route(Domain) ->
 			    end
 		    end,
 		mnesia:transaction(F)
-	  end
+	  end,
+	  ?INFO_MSG("Route unregistered: ~s", [LDomain])
     end.
 
 -spec unregister_routes([binary()]) -> ok.
@@ -242,6 +250,29 @@ host_of_route(Domain) ->
 		    ServerHost;
 		[] ->
 		    erlang:error({unregistered_route, Domain})
+	    end
+    end.
+
+-spec is_my_route(binary()) -> boolean().
+is_my_route(Domain) ->
+    case jid:nameprep(Domain) of
+	error ->
+	    erlang:error({invalid_domain, Domain});
+	LDomain ->
+	    mnesia:dirty_read(route, LDomain) /= []
+    end.
+
+-spec is_my_host(binary()) -> boolean().
+is_my_host(Domain) ->
+    case jid:nameprep(Domain) of
+	error ->
+	    erlang:error({invalid_domain, Domain});
+	LDomain ->
+	    case mnesia:dirty_read(route, LDomain) of
+		[#route{server_host = Host}|_] ->
+		    Host == LDomain;
+		[] ->
+		    false
 	    end
     end.
 

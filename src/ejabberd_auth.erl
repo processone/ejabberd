@@ -42,7 +42,7 @@
 	 get_password_s/2, get_password_with_authmodule/2,
 	 is_user_exists/2, is_user_exists_in_other_modules/3,
 	 remove_user/2, remove_user/3, plain_password_required/1,
-	 store_type/1, entropy/1]).
+	 store_type/1, entropy/1, backend_type/1]).
 
 -export([auth_modules/1, opt_type/1]).
 
@@ -410,6 +410,13 @@ entropy(B) ->
 			    end,
 			    [0, 0, 0, 0, 0], S),
 	  length(S) * math:log(lists:sum(Set)) / math:log(2)
+    end.
+
+-spec backend_type(atom()) -> atom().
+backend_type(Mod) ->
+    case atom_to_list(Mod) of
+	"ejabberd_auth_" ++ T -> list_to_atom(T);
+	_ -> Mod
     end.
 
 %%%----------------------------------------------------------------------

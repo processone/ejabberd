@@ -86,7 +86,7 @@ stream_feature_register(Acc, Host) ->
 	    Acc
     end.
 
-c2s_unauthenticated_packet({noreply, #{ip := IP, server := Server} = State},
+c2s_unauthenticated_packet(#{ip := IP, server := Server} = State,
 			   #iq{type = T, sub_els = [_]} = IQ)
   when T == set; T == get ->
     case xmpp:get_subtag(IQ, #register{}) of
@@ -97,10 +97,10 @@ c2s_unauthenticated_packet({noreply, #{ip := IP, server := Server} = State},
 	    ResIQ1 = xmpp:set_from_to(ResIQ, jid:make(Server), undefined),
 	    {stop, ejabberd_c2s:send(State, ResIQ1)};
 	false ->
-	    {noreply, State}
+	    State
     end;
-c2s_unauthenticated_packet(Acc, _) ->
-    Acc.
+c2s_unauthenticated_packet(State, _) ->
+    State.
 
 process_iq(#iq{from = From} = IQ) ->
     process_iq(IQ, jid:tolower(From)).

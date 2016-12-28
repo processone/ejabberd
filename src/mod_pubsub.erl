@@ -3026,8 +3026,8 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, Nidx, Type, NodeO
 broadcast_stanza(Host, _Publisher, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
     broadcast_stanza(Host, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM).
 
--spec c2s_handle_info(ejabberd_c2s:next_state(), term()) -> ejabberd_c2s:next_state().
-c2s_handle_info({noreply, #{server := Server} = C2SState},
+-spec c2s_handle_info(ejabberd_c2s:state(), term()) -> ejabberd_c2s:state().
+c2s_handle_info(#{server := Server} = C2SState,
 		{pep_message, Feature, From, Packet}) ->
     LServer = jid:nameprep(Server),
     lists:foreach(
@@ -3042,8 +3042,8 @@ c2s_handle_info({noreply, #{server := Server} = C2SState},
 		      ok
 	      end
       end, mod_caps:list_features(C2SState)),
-    {noreply, C2SState};
-c2s_handle_info({noreply, #{server := Server} = C2SState},
+    {stop, C2SState};
+c2s_handle_info(#{server := Server} = C2SState,
 		{send_filtered, {pep_message, Feature}, From, To, Packet}) ->
     LServer = jid:nameprep(Server),
     case mod_caps:get_user_caps(To, C2SState) of
@@ -3059,9 +3059,9 @@ c2s_handle_info({noreply, #{server := Server} = C2SState},
 	error ->
 	    ok
     end,
-    {noreply, C2SState};
-c2s_handle_info(Acc, _) ->
-    Acc.
+    {stop, C2SState};
+c2s_handle_info(C2SState, _) ->
+    C2SState.
 
 subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
     NodesToDeliver = fun (Depth, Node, Subs, Acc) ->

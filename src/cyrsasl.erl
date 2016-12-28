@@ -36,13 +36,6 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
-%%
--export_type([
-    mechanism/0,
-    mechanisms/0,
-    sasl_mechanism/0
-]).
-
 -record(sasl_mechanism,
         {mechanism = <<"">>    :: mechanism() | '$1',
          module                :: atom(),
@@ -51,10 +44,15 @@
 -type(mechanism() :: binary()).
 -type(mechanisms() :: [mechanism(),...]).
 -type(password_type() :: plain | digest | scram).
--type(props() :: [{username, binary()} |
-                  {authzid, binary()} |
-		  {mechanism, binary()} |
-                  {auth_module, atom()}]).
+-type sasl_property() :: {username, binary()} |
+			 {authzid, binary()} |
+			 {mechanism, binary()} |
+			 {auth_module, atom()}.
+-type sasl_return() :: {ok, [sasl_property()]} |
+		       {ok, [sasl_property()], binary()} |
+		       {continue, binary(), any()} |
+		       {error, atom()} |
+		       {error, atom(), binary()}.
 
 -type(sasl_mechanism() :: #sasl_mechanism{}).
 
@@ -71,14 +69,11 @@
     mech_state
 }).
 -type sasl_state() :: #sasl_state{}.
--export_type([sasl_state/0]).
+-export_type([mechanism/0, mechanisms/0, sasl_mechanism/0,
+	      sasl_state/0, sasl_return/0, sasl_property/0]).
 
 -callback mech_new(binary(), fun(), fun(), fun()) -> any().
--callback mech_step(any(), binary()) -> {ok, props()} |
-                                        {ok, props(), binary()} |
-                                        {continue, binary(), any()} |
-                                        {error, atom()} |
-                                        {error, atom(), binary()}.
+-callback mech_step(any(), binary()) -> sasl_return().
 
 start() ->
     ets:new(sasl_mechanism,

@@ -52,16 +52,16 @@ depends(_Host, _Opts) ->
 mod_opt_type(_) ->
     [].
 
-c2s_unauthenticated_packet({noreply, State}, #iq{type = T, sub_els = [_]} = IQ)
+c2s_unauthenticated_packet(State, #iq{type = T, sub_els = [_]} = IQ)
   when T == get; T == set ->
     case xmpp:get_subtag(IQ, #legacy_auth{}) of
 	#legacy_auth{} = Auth ->
 	    {stop, authenticate(State, xmpp:set_els(IQ, [Auth]))};
 	false ->
-	    {noreply, State}
+	    State
     end;
-c2s_unauthenticated_packet(Acc, _) ->
-    Acc.
+c2s_unauthenticated_packet(State, _) ->
+    State.
 
 c2s_stream_features(Acc, LServer) ->
     case gen_mod:is_loaded(LServer, ?MODULE) of
@@ -112,14 +112,10 @@ authenticate(#{stream_id := StreamID, server := Server,
 	    case ejabberd_auth:check_password_with_authmodule(
 		   U, U, JID#jid.lserver, P, D, DGen) of
 		{true, AuthModule} ->
-		    case ejabberd_c2s:handle_auth_success(
-			   U, <<"legacy">>, AuthModule, State) of
-			{noreply, State1} ->
-			    State2 = State1#{user := U},
-			    open_session(State2, IQ, R);
-			Err ->
-			    Err
-		    end;
+		    State1 = ejabberd_c2s:handle_auth_success(
+			       U, <<"legacy">>, AuthModule, State),
+		    State2 = State1#{user := U},
+		    open_session(State2, IQ, R);
 		_ ->
 		    Err = xmpp:make_error(IQ, xmpp:err_not_authorized()),
 		    process_auth_failure(State, U, Err, 'not-authorized')
@@ -137,23 +133,13 @@ open_session(State, IQ, R) ->
     case ejabberd_c2s:bind(R, State) of
 	{ok, State1} ->
 	    Res = xmpp:make_iq_result(IQ),
-	    case ejabberd_c2s:send(State1, Res) of
-		{noreply, State2} ->
-		    {noreply, State2#{stream_authenticated := true,
-				      stream_state := session_established}};
-		Err ->
-		    Err
-	    end;
+	    State2 = ejabberd_c2s:send(State1, Res),
+	    ejabberd_c2s:establish(State2);
 	{error, Err, State1} ->
 	    Res = xmpp:make_error(IQ, Err),
 	    ejabberd_c2s:send(State1, Res)
     end.
 
 process_auth_failure(State, User, StanzaErr, Reason) ->
-    case ejabberd_c2s:send(State, StanzaErr) of
-	{noreply, State1} ->
-	    ejabberd_c2s:handle_auth_failure(
-	      User, <<"legacy">>, Reason, State1);
-	Err ->
-	    Err
-    end.
+    State1 = ejabberd_c2s:send(State, StanzaErr),
+    ejabberd_c2s:handle_auth_failure(User, <<"legacy">>, Reason, State1).

@@ -464,10 +464,10 @@ push_item_version(Server, User, From, Item,
 		  end,
 		  ejabberd_sm:get_user_resources(User, Server)).
 
-c2s_handle_info({noreply, State}, {item, JID, Sub}) ->
-    {noreply, roster_change(State, JID, Sub)};
-c2s_handle_info(Acc, _) ->
-    Acc.
+c2s_handle_info(State, {item, JID, Sub}) ->
+    {stop, roster_change(State, JID, Sub)};
+c2s_handle_info(State, _) ->
+    State.
 
 -spec roster_change(ejabberd_c2s:state(), jid(), subscription()) -> ejabberd_c2s:state().
 roster_change(#{user := U, server := S, resource := R} = State,

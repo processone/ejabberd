@@ -359,20 +359,20 @@ unregister_iq_handler(Host, XMLNS) ->
     ejabberd_sm ! {unregister_iq_handler, Host, XMLNS}.
 
 %% Why the hell do we have so many similar kicks?
-c2s_handle_info({noreply, #{lang := Lang} = State}, replaced) ->
+c2s_handle_info(#{lang := Lang} = State, replaced) ->
     State1 = State#{replaced => true},
     Err = xmpp:serr_conflict(<<"Replaced by new connection">>, Lang),
-    ejabberd_c2s:send(State1, Err);
-c2s_handle_info({noreply, #{lang := Lang} = State}, kick) ->
+    {stop, ejabberd_c2s:send(State1, Err)};
+c2s_handle_info(#{lang := Lang} = State, kick) ->
     Err = xmpp:serr_policy_violation(<<"has been kicked">>, Lang),
-    c2s_handle_info({noreply, State}, {kick, kicked_by_admin, Err});
-c2s_handle_info({noreply, State}, {kick, _Reason, Err}) ->
-    ejabberd_c2s:send(State, Err);
-c2s_handle_info({noreply, #{lang := Lang} = State}, {exit, Reason}) ->
+    c2s_handle_info(State, {kick, kicked_by_admin, Err});
+c2s_handle_info(State, {kick, _Reason, Err}) ->
+    {stop, ejabberd_c2s:send(State, Err)};
+c2s_handle_info(#{lang := Lang} = State, {exit, Reason}) ->
     Err = xmpp:serr_conflict(Reason, Lang),
-    ejabberd_c2s:send(State, Err);
-c2s_handle_info(Acc, _) ->
-    Acc.
+    {stop, ejabberd_c2s:send(State, Err)};
+c2s_handle_info(State, _) ->
+    State.
 
 %%====================================================================
 %% gen_server callbacks

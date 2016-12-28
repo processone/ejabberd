@@ -376,8 +376,11 @@ run_fold1([{_Seq, Module, Function} | Ls], Hook, Val, Args) ->
     end.
 
 safe_apply(Module, Function, Args) ->
-    if is_function(Function) ->
-            catch apply(Function, Args);
-       true ->
-            catch apply(Module, Function, Args)
+    try if is_function(Function) ->
+		apply(Function, Args);
+	   true ->
+		apply(Module, Function, Args)
+	end
+    catch E:R when E /= exit, R /= normal ->
+	    {'EXIT', {E, {R, erlang:get_stacktrace()}}}
     end.

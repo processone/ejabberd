@@ -169,7 +169,7 @@ broadcast_c2s_shutdown() ->
     Children = ejabberd_sm:get_all_pids(),
     lists:foreach(
       fun(C2SPid) when node(C2SPid) == node() ->
-	      C2SPid ! system_shutdown;
+	      ejabberd_c2s:send(C2SPid, xmpp:serr_system_shutdown());
 	 (_) ->
 	      ok
       end, Children).

@@ -46,6 +46,7 @@
 	 get_peer_certificate/1,
 	 get_verify_result/1,
 	 close/1,
+	 pp/1,
 	 sockname/1, peername/1]).
 
 -include("ejabberd.hrl").
@@ -71,6 +72,11 @@
 
 -export_type([socket/0, socket_state/0, sockmod/0]).
 
+-callback start({module(), socket_state()},
+		[proplists:property()]) -> {ok, pid()} | {error, term()} | ignore.
+-callback start_link({module(), socket_state()},
+		     [proplists:property()]) -> {ok, pid()} | {error, term()} | ignore.
+-callback socket_type() -> xml_stream | independent | raw.
 
 %%====================================================================
 %% API
@@ -109,7 +115,7 @@ start(Module, SockMod, Socket, Opts) ->
 		  {error, _Reason} -> SockMod:close(Socket)
 		end,
 		ReceiverMod:become_controller(Receiver, Pid);
-	    {error, _Reason} ->
+	    _ ->
 		SockMod:close(Socket),
 		case ReceiverMod of
 		  ejabberd_receiver -> ReceiverMod:close(Receiver);
@@ -190,6 +196,7 @@ reset_stream(SocketData)
 -spec send(socket_state(), iodata()) -> ok.
 
 send(SocketData, Data) ->
+    ?DEBUG("Send XML on stream = ~p", [Data]),
     case catch (SocketData#socket_state.sockmod):send(
 	     SocketData#socket_state.socket, Data) of
         ok -> ok;
@@ -238,8 +245,8 @@ get_transport(#socket_state{sockmod = SockMod,
 	fast_tls -> tls;
 	ezlib ->
 	    case ezlib:get_sockmod(Socket) of
-		tcp -> tcp_zlib;
-		tls -> tls_zlib
+		gen_tcp -> tcp_zlib;
+		fast_tls -> tls_zlib
 	    end;
 	ejabberd_bosh -> http_bind;
 	ejabberd_http_bind -> http_bind;
@@ -268,3 +275,7 @@ peername(#socket_state{sockmod = SockMod,
       gen_tcp -> inet:peername(Socket);
       _ -> SockMod:peername(Socket)
     end.
+
+pp(#socket_state{receiver = Receiver} = State) ->
+    Transport = get_transport(State),
+    io_lib:format("~s|~w", [Transport, Receiver]).

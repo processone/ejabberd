@@ -535,8 +535,8 @@ remove_user(User, Server) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:remove_user(LUser, LServer).
 
-c2s_handle_info({noreply, #{privacy_list := Old,
-			    user := U, server := S, resource := R} = State},
+c2s_handle_info(#{privacy_list := Old,
+		  user := U, server := S, resource := R} = State,
 		{privacy_list, New, Name}) ->
     List = if Old#userlist.name == New#userlist.name -> New;
 	      true -> Old
@@ -548,9 +548,9 @@ c2s_handle_info({noreply, #{privacy_list := Old,
 		 sub_els = [#privacy_query{
 			       lists = [#privacy_list{name = Name}]}]},
     State1 = State#{privacy_list => List},
-    ejabberd_c2s:send(State1, PushIQ);
-c2s_handle_info(Acc, _) ->
-    Acc.
+    {stop, ejabberd_c2s:send(State1, PushIQ)};
+c2s_handle_info(State, _) ->
+    State.
 
 -spec updated_list(userlist(), userlist(), userlist()) -> userlist().
 updated_list(_, #userlist{name = OldName} = Old,

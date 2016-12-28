@@ -309,11 +309,11 @@ get_info(_Acc, #jid{luser = U, lserver = S} = JID,
 get_info(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
--spec c2s_handle_info(ejabberd_c2s:next_state(), term()) -> ejabberd_c2s:next_state().
-c2s_handle_info({noreply, State}, {resend_offline, Flag}) ->
-    {noreply, State#{resend_offline => Flag}};
-c2s_handle_info(Acc, _) ->
-    Acc.
+-spec c2s_handle_info(ejabberd_c2s:state(), term()) -> ejabberd_c2s:state().
+c2s_handle_info(State, {resend_offline, Flag}) ->
+    {stop, State#{resend_offline => Flag}};
+c2s_handle_info(State, _) ->
+    State.
 
 -spec handle_offline_query(iq()) -> iq().
 handle_offline_query(#iq{from = #jid{luser = U1, lserver = S1},

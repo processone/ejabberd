@@ -54,8 +54,6 @@ start(Host, Opts) ->
 		       process_iq_set, 40),
     ejabberd_hooks:add(c2s_handle_info, Host, ?MODULE,
 		       c2s_handle_info, 40),
-    ejabberd_hooks:add(c2s_handle_info, Host, ?MODULE,
-		       c2s_handle_info, 40),
     mod_disco:register_feature(Host, ?NS_BLOCKING),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
 				  ?NS_BLOCKING, ?MODULE, process_iq, IQDisc).
@@ -65,6 +63,8 @@ stop(Host) ->
 			  process_iq_get, 40),
     ejabberd_hooks:delete(privacy_iq_set, Host, ?MODULE,
 			  process_iq_set, 40),
+    ejabberd_hooks:delete(c2s_handle_info, Host, ?MODULE,
+			  c2s_handle_info, 40),
     mod_disco:unregister_feature(Host, ?NS_BLOCKING),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
 				     ?NS_BLOCKING).
@@ -253,8 +253,8 @@ process_blocklist_get(LUser, LServer, Lang) ->
 	  {result, #block_list{items = Items}}
     end.
 
--spec c2s_handle_info(ejabberd_c2s:next_state(), term()) -> ejabberd_c2s:next_state().
-c2s_handle_info({noreply, #{user := U, server := S, resource := R} = State},
+-spec c2s_handle_info(ejabberd_c2s:state(), term()) -> ejabberd_c2s:state().
+c2s_handle_info(#{user := U, server := S, resource := R} = State,
 		{blocking, Action}) ->
     SubEl = case Action of
 		{block, JIDs} ->
@@ -272,7 +272,9 @@ c2s_handle_info({noreply, #{user := U, server := S, resource := R} = State},
     %% No need to replace active privacy list here,
     %% blocking pushes are always accompanied by
     %% Privacy List pushes
-    ejabberd_c2s:send(State, PushIQ).
+    {stop, ejabberd_c2s:send(State, PushIQ)};
+c2s_handle_info(State, _) ->
+    State.
 
 -spec db_mod(binary()) -> module().
 db_mod(LServer) ->
