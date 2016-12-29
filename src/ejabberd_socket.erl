@@ -227,8 +227,8 @@ get_transport(#socket_state{sockmod = SockMod,
 	fast_tls -> tls;
 	ezlib ->
 	    case ezlib:get_sockmod(Socket) of
-		tcp -> tcp_zlib;
-		tls -> tls_zlib
+		gen_tcp -> tcp_zlib;
+		fast_tls -> tls_zlib
 	    end;
 	ejabberd_bosh -> http_bind;
 	ejabberd_http_bind -> http_bind;
