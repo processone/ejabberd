@@ -15,14 +15,14 @@
 %% xmpp_stream_out callbacks
 -export([tls_options/1, tls_required/1, tls_verify/1, tls_enabled/1,
 	 handle_auth_success/2, handle_auth_failure/3, handle_packet/2,
-	 handle_stream_end/2, handle_stream_close/2,
+	 handle_stream_end/2, handle_stream_downgraded/2,
 	 handle_recv/3, handle_send/4, handle_cdata/2,
 	 handle_stream_established/1, handle_timeout/1]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 %% Hooks
 -export([process_auth_result/2, process_closed/2, handle_unexpected_info/2,
-	 handle_unexpected_cast/2]).
+	 handle_unexpected_cast/2, process_downgraded/2]).
 %% API
 -export([start/3, start_link/3, connect/1, close/1, stop/1, send/2,
 	 route/2, establish/1, update_state/2, add_hooks/0]).
@@ -83,7 +83,9 @@ add_hooks() ->
 	      ejabberd_hooks:add(s2s_out_handle_info, Host, ?MODULE,
 				 handle_unexpected_info, 100),
 	      ejabberd_hooks:add(s2s_out_handle_cast, Host, ?MODULE,
-				 handle_unexpected_cast, 100)
+				 handle_unexpected_cast, 100),
+	      ejabberd_hooks:add(s2s_out_downgraded, Host, ?MODULE,
+				 process_downgraded, 100)
       end, ?MYHOSTS).
 
 %%%===================================================================
@@ -95,25 +97,28 @@ process_auth_result(#{server := LServer, remote_server := RServer} = State,
     ?INFO_MSG("Closing outbound s2s connection ~s -> ~s: authentication failed;"
 	      " bouncing for ~p seconds",
 	      [LServer, RServer, Delay]),
-    State1 = close(State),
-    State2 = bounce_queue(State1),
-    xmpp_stream_out:set_timeout(State2, timer:seconds(Delay));
+    State1 = State#{on_route => bounce},
+    State2 = close(State1),
+    State3 = bounce_queue(State2),
+    xmpp_stream_out:set_timeout(State3, timer:seconds(Delay));
 process_auth_result(State, true) ->
     State.
 
+process_closed(#{server := LServer, remote_server := RServer,
+		 on_route := send} = State,
+	       Reason) ->
+    ?INFO_MSG("Closing outbound s2s connection ~s -> ~s: ~s",
+	      [LServer, RServer, xmpp_stream_out:format_error(Reason)]),
+    stop(State);
 process_closed(#{server := LServer, remote_server := RServer} = State,
-	       _Reason) ->
+	       Reason) ->
     Delay = get_delay(),
     ?INFO_MSG("Closing outbound s2s connection ~s -> ~s: ~s; "
 	      "bouncing for ~p seconds",
-	      [LServer, RServer,
-	       try maps:get(stop_reason, State) of
-		   {error, Why} -> xmpp_stream_out:format_error(Why)
-	       catch _:undef -> <<"unexplained reason">>
-	       end,
-	       Delay]),
-    State1 = bounce_queue(State),
-    xmpp_stream_out:set_timeout(State1, timer:seconds(Delay)).
+	      [LServer, RServer, xmpp_stream_out:format_error(Reason), Delay]),
+    State1 = State#{on_route => bounce},
+    State2 = bounce_queue(State1),
+    xmpp_stream_out:set_timeout(State2, timer:seconds(Delay)).
 
 handle_unexpected_info(State, Info) ->
     ?WARNING_MSG("got unexpected info: ~p", [Info]),
@@ -122,6 +127,9 @@ handle_unexpected_info(State, Info) ->
 handle_unexpected_cast(State, Msg) ->
     ?WARNING_MSG("got unexpected cast: ~p", [Msg]),
     State.
+
+process_downgraded(State, _StreamStart) ->
+    send(State, xmpp:serr_unsupported_version()).
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -153,20 +161,18 @@ handle_auth_failure(Mech, Reason,
     ?INFO_MSG("(~s) Failed outbound s2s ~s authentication ~s -> ~s (~s): ~s",
 	      [ejabberd_socket:pp(Socket), Mech, LServer, RServer,
 	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP)), Reason]),
-    State1 = State#{on_route => bounce,
-		    stop_reason => {error, {auth, Reason}}},
+    State1 = State#{stop_reason => {auth, Reason}},
     ejabberd_hooks:run_fold(s2s_out_auth_result, LServer, State1, [false]).
 
 handle_packet(Pkt, #{server := LServer} = State) ->
     ejabberd_hooks:run_fold(s2s_out_packet, LServer, State, [Pkt]).
 
 handle_stream_end(Reason, #{server := LServer} = State) ->
-    State1 = State#{on_route => bounce, stop_reason => Reason},
-    ejabberd_hooks:run_fold(s2s_out_closed, LServer, State1, [normal]).
-
-handle_stream_close(Reason, #{server := LServer} = State) ->
-    State1 = State#{on_route => bounce, stop_reason => Reason},
+    State1 = State#{stop_reason => Reason},
     ejabberd_hooks:run_fold(s2s_out_closed, LServer, State1, [Reason]).
+
+handle_stream_downgraded(StreamStart, #{server := LServer} = State) ->
+    ejabberd_hooks:run_fold(s2s_out_downgraded, LServer, State, [StreamStart]).
 
 handle_stream_established(State) ->
     State1 = State#{on_route => send},
@@ -183,15 +189,10 @@ handle_send(Pkt, El, Data, #{server := LServer} = State) ->
     ejabberd_hooks:run_fold(s2s_out_handle_send, LServer,
 			    State, [Pkt, El, Data]).
 
-handle_timeout(#{server := LServer, remote_server := RServer,
-		 on_route := Action} = State) ->
+handle_timeout(#{on_route := Action} = State) ->
     case Action of
 	bounce -> stop(State);
-	queue -> send(State, xmpp:serr_connection_timeout());
-	send ->
-	    ?INFO_MSG("Closing outbound s2s connection ~s -> ~s: inactive",
-		      [LServer, RServer]),
-	    stop(State)
+	_ -> send(State, xmpp:serr_connection_timeout())
     end.
 
 init([#{server := LServer, remote_server := RServer} = State, Opts]) ->
@@ -229,7 +230,7 @@ terminate(Reason, #{server := LServer,
     ejabberd_s2s:remove_connection({LServer, RServer}, self()),
     State1 = case Reason of
 		 normal -> State;
-		 _ -> State#{stop_reason => {error, internal_failure}}
+		 _ -> State#{stop_reason => internal_failure}
 	     end,
     bounce_queue(State1),
     bounce_message_queue(State1).
@@ -258,8 +259,7 @@ bounce_queue(#{queue := Q} = State) ->
 
 -spec bounce_message_queue(state()) -> state().
 bounce_message_queue(State) ->
-    receive
-	{route, Pkt} ->
+    receive {route, Pkt} ->
 	    State1 = bounce_packet(Pkt, State),
 	    bounce_message_queue(State1)
     after 0 ->
@@ -278,21 +278,19 @@ bounce_packet(_, State) ->
     State.
 
 -spec mk_bounce_error(binary(), state()) -> stanza_error().
-mk_bounce_error(Lang, State) ->
-    try maps:get(stop_reason, State) of
-	{error, internal_failure} ->
+mk_bounce_error(Lang, #{stop_reason := Why}) ->
+    Reason = xmpp_stream_out:format_error(Why),
+    case Why of
+	internal_failure ->
 	    xmpp:err_internal_server_error();
-	{error, Why} ->
-	    Reason = xmpp_stream_out:format_error(Why),
-	    case Why of
-		{dns, _} ->
-		    xmpp:err_remote_server_timeout(Reason, Lang);
-		_ ->
-		    xmpp:err_remote_server_not_found(Reason, Lang)
-	    end
-    catch _:{badkey, _} ->
-	    xmpp:err_remote_server_not_found()
-    end.
+	{dns, _} ->
+	    xmpp:err_remote_server_not_found(Reason, Lang);
+	_ ->
+	    xmpp:err_remote_server_timeout(Reason, Lang)
+    end;
+mk_bounce_error(_Lang, _State) ->
+    %% We should not be here. Probably :)
+    xmpp:err_remote_server_not_found().
 
 -spec get_delay() -> non_neg_integer().
 get_delay() ->

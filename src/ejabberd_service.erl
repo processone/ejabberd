@@ -99,7 +99,7 @@ handle_stream_start(_StreamStart,
 		    #{remote_server := RemoteServer,
 		      lang := Lang,
 		      host_opts := HostOpts} = State) ->
-    case lists:member(RemoteServer, ?MYHOSTS) of
+    case ejabberd_router:is_my_host(RemoteServer) of
 	true ->
 	    Txt = <<"Unable to register route on existing local domain">>,
 	    xmpp_stream_in:send(State, xmpp:serr_conflict(Txt, Lang));

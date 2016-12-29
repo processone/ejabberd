@@ -30,8 +30,9 @@
 %% hooks
 -export([c2s_stream_init/2, c2s_stream_started/2, c2s_stream_features/2,
 	 c2s_authenticated_packet/2, c2s_unauthenticated_packet/2,
-	 c2s_unbinded_packet/2, c2s_closed/2,
-	 c2s_handle_send/3, c2s_filter_send/2, c2s_handle_info/2]).
+	 c2s_unbinded_packet/2, c2s_closed/2, c2s_terminated/2,
+	 c2s_handle_send/3, c2s_filter_send/1, c2s_handle_info/2,
+	 c2s_handle_call/3, c2s_handle_recv/3]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -60,13 +61,13 @@ start(Host, _Opts) ->
 		       c2s_unbinded_packet, 50),
     ejabberd_hooks:add(c2s_authenticated_packet, Host, ?MODULE,
 		       c2s_authenticated_packet, 50),
-    ejabberd_hooks:add(c2s_handle_send, Host, ?MODULE,
-		       c2s_handle_send, 50),
-    ejabberd_hooks:add(c2s_filter_send, Host, ?MODULE,
-		       c2s_filter_send, 50),
-    ejabberd_hooks:add(c2s_handle_info, Host, ?MODULE,
-		       c2s_handle_info, 50),
-    ejabberd_hooks:add(c2s_closed, Host, ?MODULE, c2s_closed, 50).
+    ejabberd_hooks:add(c2s_handle_send, Host, ?MODULE, c2s_handle_send, 50),
+    ejabberd_hooks:add(c2s_handle_recv, Host, ?MODULE, c2s_handle_recv, 50),
+    ejabberd_hooks:add(c2s_filter_send, Host, ?MODULE, c2s_filter_send, 50),
+    ejabberd_hooks:add(c2s_handle_info, Host, ?MODULE, c2s_handle_info, 50),
+    ejabberd_hooks:add(c2s_handle_call, Host, ?MODULE, c2s_handle_call, 50),
+    ejabberd_hooks:add(c2s_closed, Host, ?MODULE, c2s_closed, 50),
+    ejabberd_hooks:add(c2s_terminated, Host, ?MODULE, c2s_terminated, 50).
 
 stop(Host) ->
     %% TODO: do something with global 'c2s_init' hook
@@ -80,13 +81,13 @@ stop(Host) ->
 			  c2s_unbinded_packet, 50),
     ejabberd_hooks:delete(c2s_authenticated_packet, Host, ?MODULE,
 			  c2s_authenticated_packet, 50),
-    ejabberd_hooks:delete(c2s_handle_send, Host, ?MODULE,
-			  c2s_handle_send, 50),
-    ejabberd_hooks:delete(c2s_filter_send, Host, ?MODULE,
-			  c2s_filter_send, 50),
-    ejabberd_hooks:delete(c2s_handle_info, Host, ?MODULE,
-			  c2s_handle_info, 50),
-    ejabberd_hooks:delete(c2s_closed, Host, ?MODULE, c2s_closed, 50).
+    ejabberd_hooks:delete(c2s_handle_send, Host, ?MODULE, c2s_handle_send, 50),
+    ejabberd_hooks:delete(c2s_handle_recv, Host, ?MODULE, c2s_handle_recv, 50),
+    ejabberd_hooks:delete(c2s_filter_send, Host, ?MODULE, c2s_filter_send, 50),
+    ejabberd_hooks:delete(c2s_handle_info, Host, ?MODULE, c2s_handle_info, 50),
+    ejabberd_hooks:delete(c2s_handle_call, Host, ?MODULE, c2s_handle_call, 50),
+    ejabberd_hooks:delete(c2s_closed, Host, ?MODULE, c2s_closed, 50),
+    ejabberd_hooks:delete(c2s_terminated, Host, ?MODULE, c2s_terminated, 50).
 
 depends(_Host, _Opts) ->
     [].
@@ -115,7 +116,10 @@ c2s_stream_started(#{lserver := LServer, mgmt_options := Opts} = State,
 	    mgmt_timeout => ResumeTimeout,
 	    mgmt_max_timeout => MaxResumeTimeout,
 	    mgmt_ack_timeout => get_ack_timeout(LServer, Opts),
-	    mgmt_resend => get_resend_on_timeout(LServer, Opts)};
+	    mgmt_resend => get_resend_on_timeout(LServer, Opts),
+	    mgmt_stanzas_in => 0,
+	    mgmt_stanzas_out => 0,
+	    mgmt_stanzas_req => 0};
 c2s_stream_started(State, _StreamStart) ->
     State.
 
@@ -143,8 +147,8 @@ c2s_unbinded_packet(State, #sm_resume{} = Pkt) ->
     case handle_resume(State, Pkt) of
 	{ok, ResumedState} ->
 	    {stop, ResumedState};
-	error ->
-	    {stop, State}
+	{error, State1} ->
+	    {stop, State1}
     end;
 c2s_unbinded_packet(State, Pkt) when ?is_sm_packet(Pkt) ->
     c2s_unauthenticated_packet(State, Pkt);
@@ -161,12 +165,26 @@ c2s_authenticated_packet(#{mgmt_state := MgmtState} = State, Pkt)
 c2s_authenticated_packet(State, Pkt) ->
     update_num_stanzas_in(State, Pkt).
 
+c2s_handle_recv(#{lang := Lang} = State, El, {error, Why}) ->
+    Xmlns = xmpp:get_ns(El),
+    if Xmlns == ?NS_STREAM_MGMT_2; Xmlns == ?NS_STREAM_MGMT_3 ->
+	    Txt = xmpp:io_format_error(Why),
+	    Err = #sm_failed{reason = 'bad-request',
+			     text = xmpp:mk_text(Txt, Lang),
+			     xmlns = Xmlns},
+	    send(State, Err);
+       true ->
+	    State
+    end;
+c2s_handle_recv(State, _, _) ->
+    State.
+
 c2s_handle_send(#{mgmt_state := MgmtState} = State, Pkt, Result)
   when MgmtState == pending; MgmtState == active ->
     State1 = mgmt_queue_add(State, Pkt),
     case Result of
 	ok when ?is_stanza(Pkt) ->
-	    send_ack(State1);
+	    send_rack(State1);
 	ok ->
 	    State1;
 	{error, _} ->
@@ -175,21 +193,57 @@ c2s_handle_send(#{mgmt_state := MgmtState} = State, Pkt, Result)
 c2s_handle_send(State, _Pkt, _Result) ->
     State.
 
-c2s_filter_send(Pkt, _State) ->
-    Pkt.
+c2s_filter_send({Pkt, State}) ->
+    {Pkt, State}.
 
-c2s_handle_info(#{mgmt_ack_timer := T, jid := JID} = State,
-		{timeout, T, ack_timeout}) ->
-    ?DEBUG("Timeout waiting for stream management acknowledgement of ~s",
+c2s_handle_call(#{sid := {Time, _}} = State,
+		{resume_session, Time}, From) ->
+    ejabberd_c2s:reply(From, {resume, State}),
+    {stop, State#{mgmt_state => resumed}};
+c2s_handle_call(State, {resume_session, _}, From) ->
+    ejabberd_c2s:reply(From, {error, <<"Previous session not found">>}),
+    {stop, State};
+c2s_handle_call(State, _Call, _From) ->
+    State.
+
+c2s_handle_info(#{mgmt_ack_timer := TRef, jid := JID} = State,
+		{timeout, TRef, ack_timeout}) ->
+    ?DEBUG("Timed out waiting for stream management acknowledgement of ~s",
 	   [jid:to_string(JID)]),
     State1 = ejabberd_c2s:close(State, _SendTrailer = false),
-    c2s_closed(State1, ack_timeout);
+    {stop, transition_to_pending(State1)};
+c2s_handle_info(#{mgmt_state := pending, jid := JID} = State,
+		{timeout, _, pending_timeout}) ->
+    ?DEBUG("Timed out waiting for resumption of stream for ~s",
+	   [jid:to_string(JID)]),
+    ejabberd_c2s:stop(State#{mgmt_state => timeout});
 c2s_handle_info(State, _) ->
     State.
 
-c2s_closed(#{mgmt_state := active} = State, Reason) when Reason /= normal ->
-    {stop, transition_to_pending(State)};
-c2s_closed(State, _) ->
+c2s_closed(State, {stream, _}) ->
+    State;
+c2s_closed(#{mgmt_state := active} = State, Reason) ->
+    {stop, transition_to_pending(State#{stop_reason => Reason})};
+c2s_closed(State, _Reason) ->
+    State.
+
+c2s_terminated(#{mgmt_state := resumed, jid := JID} = State, _Reason) ->
+    ?INFO_MSG("Closing former stream of resumed session for ~s",
+	      [jid:to_string(JID)]),
+    bounce_message_queue(),
+    {stop, State};
+c2s_terminated(#{mgmt_state := MgmtState, mgmt_stanzas_in := In, sid := SID,
+		 user := U, server := S, resource := R} = State, _Reason) ->
+    case MgmtState of
+	timeout ->
+	    Info = [{num_stanzas_in, In}],
+	    ejabberd_sm:set_offline_info(SID, U, S, R, Info);
+	_ ->
+	    ok
+    end,
+    route_unacked_stanzas(State),
+    State;
+c2s_terminated(State, _Reason) ->
     State.
 
 %%%===================================================================
@@ -201,17 +255,14 @@ negotiate_stream_mgmt(Pkt, State) ->
     case Pkt of
 	#sm_enable{} ->
 	    handle_enable(State#{mgmt_xmlns => Xmlns}, Pkt);
+	_ when is_record(Pkt, sm_a);
+	       is_record(Pkt, sm_r);
+	       is_record(Pkt, sm_resume) ->
+	    Err = #sm_failed{reason = 'unexpected-request', xmlns = Xmlns},
+	    send(State, Err);
 	_ ->
-	    Res = if is_record(Pkt, sm_a);
-		     is_record(Pkt, sm_r);
-		     is_record(Pkt, sm_resume) ->
-			  #sm_failed{reason = 'unexpected-request',
-				     xmlns = Xmlns};
-		     true ->
-			  #sm_failed{reason = 'bad-request',
-				     xmlns = Xmlns}
-		  end,
-	    send(State, Res)
+	    Err = #sm_failed{reason = 'bad-request', xmlns = Xmlns},
+	    send(State, Err)
     end.
 
 -spec perform_stream_mgmt(xmpp_element(), state()) -> state().
@@ -223,16 +274,13 @@ perform_stream_mgmt(Pkt, #{mgmt_xmlns := Xmlns} = State) ->
 		    handle_r(State);
 		#sm_a{} ->
 		    handle_a(State, Pkt);
+		_ when is_record(Pkt, sm_enable);
+		       is_record(Pkt, sm_resume) ->
+		    send(State, #sm_failed{reason = 'unexpected-request',
+					   xmlns = Xmlns});
 		_ ->
-		    Res = if is_record(Pkt, sm_enable);
-			     is_record(Pkt, sm_resume) ->
-				  #sm_failed{reason = 'unexpected-request',
-					     xmlns = Xmlns};
-			     true ->
-				  #sm_failed{reason = 'bad-request',
-					     xmlns = Xmlns}
-			  end,
-		    send(State, Res)
+		    send(State, #sm_failed{reason = 'bad-request',
+					   xmlns = Xmlns})
 	    end;
 	_ ->
 	    send(State, #sm_failed{reason = 'unsupported-version', xmlns = Xmlns})
@@ -241,7 +289,7 @@ perform_stream_mgmt(Pkt, #{mgmt_xmlns := Xmlns} = State) ->
 -spec handle_enable(state(), sm_enable()) -> state().
 handle_enable(#{mgmt_timeout := DefaultTimeout,
 		mgmt_max_timeout := MaxTimeout,
-		xmlns := Xmlns, jid := JID} = State,
+		mgmt_xmlns := Xmlns, jid := JID} = State,
 	      #sm_enable{resume = Resume, max = Max}) ->
     Timeout = if Resume == false ->
 		      0;
@@ -264,7 +312,7 @@ handle_enable(#{mgmt_timeout := DefaultTimeout,
 	  end,
     State1 = State#{mgmt_state => active,
 		    mgmt_queue => queue_new(),
-		    mgmt_timeout => Timeout * 1000},
+		    mgmt_timeout => Timeout},
     send(State1, Res).
 
 -spec handle_r(state()) -> state().
@@ -275,23 +323,26 @@ handle_r(#{mgmt_xmlns := Xmlns, mgmt_stanzas_in := H} = State) ->
 -spec handle_a(state(), sm_a()) -> state().
 handle_a(State, #sm_a{h = H}) ->
     State1 = check_h_attribute(State, H),
-    resend_ack(State1).
+    resend_rack(State1).
 
 -spec handle_resume(state(), sm_resume()) -> {ok, state()} | {error, state()}.
-handle_resume(#{lserver := LServer, jid := JID, socket := Socket} = State,
+handle_resume(#{user := User, lserver := LServer,
+		lang := Lang, socket := Socket} = State,
 	      #sm_resume{h = H, previd = PrevID, xmlns = Xmlns}) ->
     R = case inherit_session_state(State, PrevID) of
 	    {ok, InheritedState} ->
 		{ok, InheritedState, H};
 	    {error, Err, InH} ->
 		{error, #sm_failed{reason = 'item-not-found',
+				   text = xmpp:mk_text(Err, Lang),
 				   h = InH, xmlns = Xmlns}, Err};
 	    {error, Err} ->
 		{error, #sm_failed{reason = 'item-not-found',
+				   text = xmpp:mk_text(Err, Lang),
 				   xmlns = Xmlns}, Err}
 	end,
     case R of
-	{ok, ResumedState, NumHandled} ->
+	{ok, #{jid := JID} = ResumedState, NumHandled} ->
 	    State1 = check_h_attribute(ResumedState, NumHandled),
 	    #{mgmt_xmlns := AttrXmlns, mgmt_stanzas_in := AttrH} = State1,
 	    AttrId = make_resume_id(State1),
@@ -307,14 +358,20 @@ handle_resume(#{lserver := LServer, jid := JID, socket := Socket} = State,
 		      [ejabberd_socket:pp(Socket), jid:to_string(JID)]),
 	    {ok, State5};
 	{error, El, Msg} ->
-	    ?INFO_MSG("Cannot resume session for ~s: ~s", [jid:to_string(JID), Msg]),
+	    ?INFO_MSG("Cannot resume session for ~s@~s: ~s",
+		      [User, LServer, Msg]),
 	    {error, send(State, El)}
     end.
 
 -spec transition_to_pending(state()) -> state().
-transition_to_pending(#{mgmt_state := active} = State) ->
-    %% TODO
-    State;
+transition_to_pending(#{mgmt_state := active, jid := JID,
+			lserver := LServer, mgmt_timeout := Timeout} = State) ->
+    State1 = cancel_ack_timer(State),
+    ?INFO_MSG("Waiting for resumption of stream for ~s", [jid:to_string(JID)]),
+    State2 = ejabberd_hooks:run_fold(c2s_session_pending, LServer, State1, []),
+    State3 = ejabberd_c2s:close(State2, _SendTrailer = false),
+    erlang:start_timer(timer:seconds(Timeout), self(), pending_timeout),
+    State3#{mgmt_state => pending};
 transition_to_pending(State) ->
     State.
 
@@ -345,25 +402,25 @@ update_num_stanzas_in(#{mgmt_state := MgmtState,
 update_num_stanzas_in(State, _El) ->
     State.
 
-send_ack(#{mgmt_ack_timer := _} = State) ->
+send_rack(#{mgmt_ack_timer := _} = State) ->
     State;
-send_ack(#{mgmt_xmlns := Xmlns,
+send_rack(#{mgmt_xmlns := Xmlns,
 	   mgmt_stanzas_out := NumStanzasOut,
 	   mgmt_ack_timeout := AckTimeout} = State) ->
     State1 = send(State, #sm_r{xmlns = Xmlns}),
     TRef = erlang:start_timer(AckTimeout, self(), ack_timeout),
     State1#{mgmt_ack_timer => TRef, mgmt_stanzas_req => NumStanzasOut}.
 
-resend_ack(#{mgmt_ack_timer := _,
-	     mgmt_queue := Queue,
-	     mgmt_stanzas_out := NumStanzasOut,
-	     mgmt_stanzas_req := NumStanzasReq} = State) ->
+resend_rack(#{mgmt_ack_timer := _,
+	      mgmt_queue := Queue,
+	      mgmt_stanzas_out := NumStanzasOut,
+	      mgmt_stanzas_req := NumStanzasReq} = State) ->
     State1 = cancel_ack_timer(State),
     case NumStanzasReq < NumStanzasOut andalso not queue_is_empty(Queue) of
-	true -> send_ack(State1);
+	true -> send_rack(State1);
 	false -> State1
     end;
-resend_ack(State) ->
+resend_rack(State) ->
     State.
 
 -spec mgmt_queue_add(state(), xmpp_element()) -> state().
@@ -492,10 +549,22 @@ inherit_session_state(#{user := U, server := S} = State, ResumeID) ->
 		OldPID ->
 		    OldSID = {Time, OldPID},
 		    try resume_session(OldSID, State) of
-			{resume, OldState} ->
+			{resume, #{mgmt_xmlns := Xmlns,
+				   mgmt_queue := Queue,
+				   mgmt_timeout := Timeout,
+				   mgmt_stanzas_in := NumStanzasIn,
+				   mgmt_stanzas_out := NumStanzasOut} = OldState} ->
 			    State1 = ejabberd_c2s:copy_state(State, OldState),
-			    State2 = ejabberd_c2s:open_session(State1),
-			    {ok, State2};
+			    State2 = State1#{mgmt_xmlns => Xmlns,
+					     mgmt_queue => Queue,
+					     mgmt_timeout => Timeout,
+					     mgmt_stanzas_in => NumStanzasIn,
+					     mgmt_stanzas_out => NumStanzasOut,
+					     mgmt_state => active},
+			    ejabberd_sm:close_session(OldSID, U, S, R),
+			    State3 = ejabberd_c2s:open_session(State2),
+			    ejabberd_c2s:stop(OldPID),
+			    {ok, State3};
 			{error, Msg} ->
 			    {error, Msg}
 		    catch exit:{noproc, _} ->
@@ -590,6 +659,15 @@ cancel_ack_timer(#{mgmt_ack_timer := TRef} = State) ->
     maps:remove(mgmt_ack_timer, State);
 cancel_ack_timer(State) ->
     State.
+
+-spec bounce_message_queue() -> ok.
+bounce_message_queue() ->
+    receive {route, From, To, Pkt} ->
+	    ejabberd_router:route(From, To, Pkt),
+	    bounce_message_queue()
+    after 0 ->
+	    ok
+    end.
 
 %%%===================================================================
 %%% Configuration processing

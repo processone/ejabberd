@@ -350,7 +350,7 @@ process_el({xmlstreamelement, #xmlel{name = <<"host">>,
     JIDS = fxml:get_attr_s(<<"jid">>, Attrs),
     case jid:from_string(JIDS) of
         #jid{lserver = S} ->
-            case lists:member(S, ?MYHOSTS) of
+            case ejabberd_router:is_my_host(S) of
                 true ->
                     process_users(Els, State#state{server = S});
                 false ->

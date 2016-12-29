@@ -44,7 +44,8 @@
 -type state() :: map().
 -type stop_reason() :: {stream, reset | stream_error()} |
 		       {tls, term()} |
-		       {socket, inet:posix() | closed | timeout}.
+		       {socket, inet:posix() | closed | timeout} |
+		       internal_failure.
 
 -callback init(list()) -> {ok, state()} | {stop, term()} | ignore.
 -callback handle_cast(term(), state()) -> state().
@@ -54,7 +55,6 @@
 -callback code_change(term(), state(), term()) -> {ok, state()} | {error, term()}.
 -callback handle_stream_start(state()) -> state().
 -callback handle_stream_end(stop_reason(), state()) -> state().
--callback handle_stream_close(stop_reason(), state()) -> state().
 -callback handle_cdata(binary(), state()) -> state().
 -callback handle_unauthenticated_packet(xmpp_element(), state()) -> state().
 -callback handle_authenticated_packet(xmpp_element(), state()) -> state().
@@ -83,7 +83,6 @@
 		     code_change/3,
 		     handle_stream_start/1,
 		     handle_stream_end/2,
-		     handle_stream_close/2,
 		     handle_cdata/2,
 		     handle_authenticated_packet/2,
 		     handle_unauthenticated_packet/2,
@@ -193,6 +192,8 @@ format_error({stream, #stream_error{reason = Reason, text = Txt}}) ->
     format("Stream failed: ~s", [format_stream_error(Reason, Txt)]);
 format_error({tls, Reason}) ->
     format("TLS failed: ~w", [Reason]);
+format_error(internal_failure) ->
+    <<"Internal server error">>;
 format_error(Err) ->
     format("Unrecognized error: ~w", [Err]).
 
@@ -263,75 +264,78 @@ handle_info({'$gen_event', {xmlstreamstart, Name, Attrs}},
 	    #{stream_state := wait_for_stream,
 	      xmlns := XMLNS, lang := MyLang} = State) ->
     El = #xmlel{name = Name, attrs = Attrs},
-    try xmpp:decode(El, XMLNS, []) of
-	#stream_start{} = Pkt ->
-	    State1 = send_header(State, Pkt),
-	    case is_disconnected(State1) of
-		true -> State1;
-		false -> noreply(process_stream(Pkt, State1))
-	    end;
-	_ ->
-	    State1 = send_header(State),
-	    case is_disconnected(State1) of
-		true -> State1;
-		false -> noreply(send_element(State1, xmpp:serr_invalid_xml()))
-	    end
-    catch _:{xmpp_codec, Why} ->
-	    State1 = send_header(State),
-	    case is_disconnected(State1) of
-		true -> State1;
-		false ->
-		    Txt = xmpp:io_format_error(Why),
-		    Lang = select_lang(MyLang, xmpp:get_lang(El)),
-		    Err = xmpp:serr_invalid_xml(Txt, Lang),
-		    noreply(send_element(State1, Err))
-	    end
-    end;
+    noreply(
+      try xmpp:decode(El, XMLNS, []) of
+	  #stream_start{} = Pkt ->
+	      State1 = send_header(State, Pkt),
+	      case is_disconnected(State1) of
+		  true -> State1;
+		  false -> process_stream(Pkt, State1)
+	      end;
+	  _ ->
+	      State1 = send_header(State),
+	      case is_disconnected(State1) of
+		  true -> State1;
+		  false -> send_element(State1, xmpp:serr_invalid_xml())
+	      end
+      catch _:{xmpp_codec, Why} ->
+	      State1 = send_header(State),
+	      case is_disconnected(State1) of
+		  true -> State1;
+		  false ->
+		      Txt = xmpp:io_format_error(Why),
+		      Lang = select_lang(MyLang, xmpp:get_lang(El)),
+		      Err = xmpp:serr_invalid_xml(Txt, Lang),
+		      send_element(State1, Err)
+	      end
+      end);
 handle_info({'$gen_event', {xmlstreamerror, Reason}}, #{lang := Lang}= State) ->
     State1 = send_header(State),
-    case is_disconnected(State1) of
-	true -> State1;
-	false ->
-	    Err = case Reason of
-		      <<"XML stanza is too big">> ->
-			  xmpp:serr_policy_violation(Reason, Lang);
-		      _ ->
-			  xmpp:serr_not_well_formed()
-		  end,
-	    noreply(send_element(State1, Err))
-    end;
+    noreply(
+      case is_disconnected(State1) of
+	  true -> State1;
+	  false ->
+	      Err = case Reason of
+			<<"XML stanza is too big">> ->
+			    xmpp:serr_policy_violation(Reason, Lang);
+			_ ->
+			    xmpp:serr_not_well_formed()
+		    end,
+	      send_element(State1, Err)
+      end);
 handle_info({'$gen_event', {xmlstreamelement, El}},
 	    #{xmlns := NS, lang := MyLang, mod := Mod} = State) ->
-    try xmpp:decode(El, NS, [ignore_els]) of
-	Pkt ->
-	    State1 = try Mod:handle_recv(El, Pkt, State)
-		     catch _:undef -> State
-		     end,
-	    case is_disconnected(State1) of
-		true -> State1;
-		false -> noreply(process_element(Pkt, State1))
-	    end
-    catch _:{xmpp_codec, Why} ->
-	    State1 = try Mod:handle_recv(El, {error, Why}, State)
-		     catch _:undef -> State
-		     end,
-	    case is_disconnected(State1) of
-		true -> State1;
-		false ->
-		    Txt = xmpp:io_format_error(Why),
-		    Lang = select_lang(MyLang, xmpp:get_lang(El)),
-		    noreply(send_error(State1, El, xmpp:err_bad_request(Txt, Lang)))
-	    end
-    end;
+    noreply(
+      try xmpp:decode(El, NS, [ignore_els]) of
+	  Pkt ->
+	      State1 = try Mod:handle_recv(El, Pkt, State)
+		       catch _:undef -> State
+		       end,
+	      case is_disconnected(State1) of
+		  true -> State1;
+		  false -> process_element(Pkt, State1)
+	      end
+      catch _:{xmpp_codec, Why} ->
+	      State1 = try Mod:handle_recv(El, {error, Why}, State)
+		       catch _:undef -> State
+		       end,
+	      case is_disconnected(State1) of
+		  true -> State1;
+		  false ->
+		      Txt = xmpp:io_format_error(Why),
+		      Lang = select_lang(MyLang, xmpp:get_lang(El)),
+		      send_error(State1, El, xmpp:err_bad_request(Txt, Lang))
+	      end
+      end);
 handle_info({'$gen_all_state_event', {xmlstreamcdata, Data}},
 	    #{mod := Mod} = State) ->
     noreply(try Mod:handle_cdata(Data, State)
 	    catch _:undef -> State
 	    end);
 handle_info({'$gen_event', {xmlstreamend, _}}, State) ->
-    noreply(process_stream_end({error, {stream, reset}}, State));
+    noreply(process_stream_end({stream, reset}, State));
 handle_info({'$gen_event', closed}, State) ->
-    noreply(process_stream_close({error, {socket, closed}}, State));
+    noreply(process_stream_end({socket, closed}, State));
 handle_info(timeout, #{mod := Mod} = State) ->
     Disconnected = is_disconnected(State),
     noreply(try Mod:handle_timeout(State)
@@ -342,7 +346,7 @@ handle_info(timeout, #{mod := Mod} = State) ->
 	    end);
 handle_info({'DOWN', MRef, _Type, _Object, _Info},
 	    #{socket_monitor := MRef} = State) ->
-    noreply(process_stream_close({error, {socket, closed}}, State));
+    noreply(process_stream_end({socket, closed}, State));
 handle_info(Info, #{mod := Mod} = State) ->
     noreply(try Mod:handle_info(Info, State)
 	    catch _:undef -> State
@@ -390,15 +394,6 @@ peername(SockMod, Socket) ->
 	_ -> SockMod:peername(Socket)
     end.
 
--spec process_stream_close(stop_reason(), state()) -> state().
-process_stream_close(_, #{stream_state := disconnected} = State) ->
-    State;
-process_stream_close(Reason, #{mod := Mod} = State) ->
-    State1 = send_trailer(State),
-    try Mod:handle_stream_close(Reason, State1)
-    catch _:undef -> stop(State1)
-    end.
-
 -spec process_stream_end(stop_reason(), state()) -> state().
 process_stream_end(_, #{stream_state := disconnected} = State) ->
     State;
@@ -414,6 +409,8 @@ process_stream(#stream_start{xmlns = XML_NS,
 	       #{xmlns := NS} = State)
   when XML_NS /= NS; STREAM_NS /= ?NS_STREAM ->
     send_element(State, xmpp:serr_invalid_namespace());
+process_stream(#stream_start{version = {N, _}}, State) when N > 1 ->
+    send_element(State, xmpp:serr_unsupported_version());
 process_stream(#stream_start{lang = Lang},
 	       #{xmlns := ?NS_CLIENT, lang := DefaultLang} = State)
   when size(Lang) > 35 ->
@@ -520,7 +517,7 @@ process_element(Pkt, #{stream_state := StateName, lang := Lang} = State) ->
 	#handshake{} ->
 	    State;
 	#stream_error{} ->
-	    process_stream_end({error, {stream, Pkt}}, State);
+	    process_stream_end({stream, Pkt}, State);
 	_ when StateName == wait_for_sasl_request;
 	       StateName == wait_for_handshake;
 	       StateName == wait_for_sasl_response ->
@@ -704,7 +701,7 @@ process_starttls_failure(Why, State) ->
     State1 = send_element(State, #starttls_failure{}),
     case is_disconnected(State1) of
 	true -> State1;
-	false -> process_stream_end({error, {tls, Why}}, State1)
+	false -> process_stream_end({tls, Why}, State1)
     end.
 
 -spec process_sasl_request(sasl_auth(), state()) -> state().
@@ -939,8 +936,8 @@ set_from_to(Pkt, #{lang := Lang}) ->
     end.
 
 -spec send_header(state()) -> state().
-send_header(State) ->
-    send_header(State, #stream_start{}).
+send_header(#{stream_version := Version} = State) ->
+    send_header(State, #stream_start{version = Version}).
 
 -spec send_header(state(), stream_start()) -> state().
 send_header(#{stream_id := StreamID,
@@ -959,8 +956,9 @@ send_header(#{stream_id := StreamID,
 	       undefined -> jid:make(DefaultServer)
 	   end,
     Version = case HisVersion of
-		  undefined -> MyVersion;
-		  _ -> HisVersion
+		  undefined -> undefined;
+		  {0,_} -> HisVersion;
+		  _ -> MyVersion
 	      end,
     Header = xmpp:encode(#stream_start{version = Version,
 				       lang = Lang,
@@ -969,10 +967,12 @@ send_header(#{stream_id := StreamID,
 				       db_xmlns = NS_DB,
 				       id = StreamID,
 				       from = From}),
-    State1 = State#{lang => Lang, stream_header_sent => true},
+    State1 = State#{lang => Lang,
+		    stream_version => Version,
+		    stream_header_sent => true},
     case send_text(State1, fxml:element_to_header(Header)) of
 	ok -> State1;
-	{error, Why} -> process_stream_close({error, {socket, Why}}, State1)
+	{error, Why} -> process_stream_end({socket, Why}, State1)
     end;
 send_header(State, _) ->
     State.
@@ -987,11 +987,11 @@ send_element(#{xmlns := NS, mod := Mod} = State, Pkt) ->
 	     end,
     case Result of
 	_ when is_record(Pkt, stream_error) ->
-	    process_stream_end({error, {stream, Pkt}}, State1);
+	    process_stream_end({stream, Pkt}, State1);
 	ok ->
 	    State1;
 	{error, Why} ->
-	    process_stream_close({error, {socket, Why}}, State1)
+	    process_stream_end({socket, Why}, State1)
     end.
 
 -spec send_error(state(), xmpp_element(), stanza_error()) -> state().
@@ -1022,7 +1022,7 @@ send_text(#{socket := Sock, sockmod := SockMod,
 	    stream_header_sent := true}, Data) when StateName /= disconnected ->
     SockMod:send(Sock, Data);
 send_text(_, _) ->
-    {error, einval}.
+    {error, closed}.
 
 -spec close_socket(state()) -> state().
 close_socket(#{sockmod := SockMod, socket := Socket} = State) ->

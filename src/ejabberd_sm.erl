@@ -390,7 +390,8 @@ init([]) ->
 	      ejabberd_hooks:add(offline_message_hook, Host,
 				 ejabberd_sm, bounce_offline_message, 100),
 	      ejabberd_hooks:add(remove_user, Host,
-				 ejabberd_sm, disconnect_removed_user, 100)
+				 ejabberd_sm, disconnect_removed_user, 100),
+	      ejabberd_c2s:add_hooks(Host)
       end, ?MYHOSTS),
     ejabberd_commands:register_commands(get_commands_spec()),
     {ok, #state{}}.

@@ -133,8 +133,7 @@ open_session(State, IQ, R) ->
     case ejabberd_c2s:bind(R, State) of
 	{ok, State1} ->
 	    Res = xmpp:make_iq_result(IQ),
-	    State2 = ejabberd_c2s:send(State1, Res),
-	    ejabberd_c2s:establish(State2);
+	    ejabberd_c2s:send(State1, Res);
 	{error, Err, State1} ->
 	    Res = xmpp:make_error(IQ, Err),
 	    ejabberd_c2s:send(State1, Res)

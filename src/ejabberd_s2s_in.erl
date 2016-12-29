@@ -34,7 +34,7 @@
 -export([tls_options/1, tls_required/1, tls_verify/1, tls_enabled/1,
 	 compress_methods/1,
 	 unauthenticated_stream_features/1, authenticated_stream_features/1,
-	 handle_stream_start/2, handle_stream_end/2, handle_stream_close/2,
+	 handle_stream_start/2, handle_stream_end/2,
 	 handle_stream_established/1, handle_auth_success/4,
 	 handle_auth_failure/4, handle_send/3, handle_recv/3, handle_cdata/2,
 	 handle_unauthenticated_packet/2, handle_authenticated_packet/2]).
@@ -159,9 +159,6 @@ handle_stream_start(_StreamStart, #{lserver := LServer} = State) ->
 
 handle_stream_end(Reason, #{server_host := LServer} = State) ->
     ejabberd_hooks:run_fold(s2s_in_closed, LServer, State, [Reason]).
-
-handle_stream_close(_Reason, #{server_host := LServer} = State) ->
-    ejabberd_hooks:run_fold(s2s_in_closed, LServer, State, [normal]).
 
 handle_stream_established(State) ->
     set_idle_timeout(State#{established => true}).

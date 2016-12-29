@@ -28,7 +28,8 @@
 %% gen_mod API
 -export([start/2, stop/1, depends/2, mod_opt_type/1]).
 %% Hooks
--export([s2s_out_auth_result/2, s2s_in_packet/2, s2s_out_packet/2,
+-export([s2s_out_auth_result/2, s2s_out_downgraded/2,
+	 s2s_in_packet/2, s2s_out_packet/2,
 	 s2s_in_features/2, s2s_out_init/2, s2s_out_closed/2]).
 
 -include("ejabberd.hrl").
@@ -57,6 +58,8 @@ start(Host, _Opts) ->
 			       s2s_in_packet, 50),
 	    ejabberd_hooks:add(s2s_out_packet, Host, ?MODULE,
 			       s2s_out_packet, 50),
+	    ejabberd_hooks:add(s2s_out_downgraded, Host, ?MODULE,
+			       s2s_out_downgraded, 50),
 	    ejabberd_hooks:add(s2s_out_auth_result, Host, ?MODULE,
 			       s2s_out_auth_result, 50)
     end.
@@ -74,6 +77,8 @@ stop(Host) ->
 			  s2s_in_packet, 50),
     ejabberd_hooks:delete(s2s_out_packet, Host, ?MODULE,
 			  s2s_out_packet, 50),
+    ejabberd_hooks:delete(s2s_out_downgraded, Host, ?MODULE,
+			  s2s_out_downgraded, 50),
     ejabberd_hooks:delete(s2s_out_auth_result, Host, ?MODULE,
 			  s2s_out_auth_result, 50).
 
@@ -104,45 +109,54 @@ s2s_out_init(Acc, _Opts) ->
 
 s2s_out_closed(#{server := LServer,
 		 remote_server := RServer,
-		 db_verify := {StreamID, _Key, _Pid}} = State, _Reason) ->
+		 db_verify := {StreamID, _Key, _Pid}} = State, Reason) ->
     %% Outbound s2s verificating connection (created at step 1) is
     %% closed suddenly without receiving the response.
     %% Building a response on our own
     Response = #db_verify{from = RServer, to = LServer,
 			  id = StreamID, type = error,
-			  sub_els = [mk_error(internal_server_error)]},
+			  sub_els = [mk_error(Reason)]},
     s2s_out_packet(State, Response);
 s2s_out_closed(State, _Reason) ->
     State.
 
-s2s_out_auth_result(#{server := LServer,
-		      remote_server := RServer,
-		      db_verify := {StreamID, Key, _Pid}} = State,
-		    _) ->
+s2s_out_auth_result(#{db_verify := _} = State, _) ->
     %% The temporary outbound s2s connect (intended for verification)
     %% has passed authentication state (either successfully or not, no matter)
     %% and at this point we can send verification request as described
     %% in section 2.1.2, step 2
-    Request = #db_verify{from = LServer, to = RServer,
-			 key = Key, id = StreamID},
-    {stop, ejabberd_s2s_out:send(State, Request)};
+    {stop, send_verify_request(State)};
 s2s_out_auth_result(#{db_enabled := true,
 		      socket := Socket, ip := IP,
 		      server := LServer,
-		      remote_server := RServer,
-		      stream_remote_id := StreamID} = State, false) ->
+		      remote_server := RServer} = State, false) ->
     %% SASL authentication has failed, retrying with dialback
     %% Sending dialback request, section 2.1.1, step 1
     ?INFO_MSG("(~s) Retrying with s2s dialback authentication: ~s -> ~s (~s)",
 	      [ejabberd_socket:pp(Socket), LServer, RServer,
 	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
-    Key = make_key(LServer, RServer, StreamID),
     State1 = maps:remove(stop_reason, State#{on_route => queue}),
-    State2 = ejabberd_s2s_out:send(State1, #db_result{from = LServer,
-						      to = RServer,
-						      key = Key}),
-    {stop, State2};
+    {stop, send_db_request(State1)};
 s2s_out_auth_result(State, _) ->
+    State.
+
+s2s_out_downgraded(#{db_verify := _} = State, _) ->
+    %% The verifying outbound s2s connection detected non-RFC compliant
+    %% server, send verification request immediately without auth phase,
+    %% section 2.1.2, step 2
+    {stop, send_verify_request(State)};
+s2s_out_downgraded(#{db_enabled := true,
+		     socket := Socket, ip := IP,
+		     server := LServer,
+		     remote_server := RServer} = State, _) ->
+    %% non-RFC compliant server detected, send dialback request instantly,
+    %% section 2.1.1, step 1
+    ?INFO_MSG("(~s) Trying s2s dialback authentication with "
+	      "non-RFC compliant server: ~s -> ~s (~s)",
+	      [ejabberd_socket:pp(Socket), LServer, RServer,
+	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
+    {stop, send_db_request(State)};
+s2s_out_downgraded(State, _) ->
     State.
 
 s2s_in_packet(#{stream_id := StreamID} = State,
@@ -220,6 +234,23 @@ make_key(From, To, StreamID) ->
       crypto:hmac(sha256, p1_sha:to_hexlist(crypto:hash(sha256, Secret)),
 		  [To, " ", From, " ", StreamID])).
 
+-spec send_verify_request(ejabberd_s2s_out:state()) -> ejabberd_s2s_out:state().
+send_verify_request(#{server := LServer,
+		      remote_server := RServer,
+		      db_verify := {StreamID, Key, _Pid}} = State) ->
+    Request = #db_verify{from = LServer, to = RServer,
+			 key = Key, id = StreamID},
+    ejabberd_s2s_out:send(State, Request).
+
+-spec send_db_request(ejabberd_s2s_out:state()) -> ejabberd_s2s_out:state().
+send_db_request(#{server := LServer,
+		  remote_server := RServer,
+		  stream_remote_id := StreamID} = State) ->
+    Key = make_key(LServer, RServer, StreamID),
+    ejabberd_s2s_out:send(State, #db_result{from = LServer,
+					    to = RServer,
+					    key = Key}).
+
 -spec send_db_result(ejabberd_s2s_in:state(), db_verify()) -> ejabberd_s2s_in:state().
 send_db_result(State, #db_verify{from = From, to = To,
 				 type = Type, sub_els = Els}) ->
@@ -255,6 +286,9 @@ mk_error(forbidden) ->
     xmpp:err_forbidden(<<"Denied by ACL">>, ?MYLANG);
 mk_error(host_unknown) ->
     xmpp:err_not_allowed(<<"Host unknown">>, ?MYLANG);
+mk_error({_Class, _Reason} = Why) ->
+    Txt = xmpp_stream_out:format_error(Why),
+    xmpp:err_remote_server_not_found(Txt, ?MYLANG);
 mk_error(_) ->
     xmpp:err_internal_server_error().
 

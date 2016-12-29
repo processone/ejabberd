@@ -188,7 +188,7 @@ try_register(User, Server, Password) ->
       true -> {atomic, exists};
       false ->
 	  LServer = jid:nameprep(Server),
-	  case lists:member(LServer, ?MYHOSTS) of
+	  case ejabberd_router:is_my_host(LServer) of
 	    true ->
 		Res = lists:foldl(fun (_M, {atomic, ok} = Res) -> Res;
 				      (M, _) ->
