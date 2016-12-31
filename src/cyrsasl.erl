@@ -31,7 +31,7 @@
 
 -export([start/0, register_mechanism/3, listmech/1,
 	 server_new/7, server_start/3, server_step/2,
-	 get_mech/1, opt_type/1]).
+	 get_mech/1, format_error/2, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -50,12 +50,16 @@
 			 {auth_module, atom()}.
 -type sasl_return() :: {ok, [sasl_property()]} |
 		       {ok, [sasl_property()], binary()} |
-		       {continue, binary(), any()} |
-		       {error, atom()} |
+		       {continue, binary(), sasl_state()} |
 		       {error, atom(), binary()}.
 
 -type(sasl_mechanism() :: #sasl_mechanism{}).
-
+-type error_reason() :: cyrsasl_digest:error_reason() |
+			cyrsasl_oauth:error_reason() |
+			cyrsasl_plain:error_reason() |
+			cyrsasl_scram:error_reason() |
+			unsupported_mechanism | nodeprep_failed |
+			empty_username | aborted.
 -record(sasl_state,
 {
     service,
@@ -69,7 +73,7 @@
     mech_state
 }).
 -type sasl_state() :: #sasl_state{}.
--export_type([mechanism/0, mechanisms/0, sasl_mechanism/0,
+-export_type([mechanism/0, mechanisms/0, sasl_mechanism/0, error_reason/0,
 	      sasl_state/0, sasl_return/0, sasl_property/0]).
 
 -callback mech_new(binary(), fun(), fun(), fun()) -> any().
@@ -86,7 +90,25 @@ start() ->
     cyrsasl_oauth:start([]),
     ok.
 
-%%
+-spec format_error(mechanism() | sasl_state(), error_reason()) -> {atom(), binary()}.
+format_error(_, unsupported_mechanism) ->
+    {'invalid-mechanism', <<"Unsupported mechanism">>};
+format_error(_, nodeprep_failed) ->
+    {'bad-protocol', <<"Nodeprep failed">>};
+format_error(_, empty_username) ->
+    {'bad-protocol', <<"Empty username">>};
+format_error(_, aborted) ->
+    {'aborted', <<"Aborted">>};
+format_error(#sasl_state{mech_mod = Mod}, Reason) ->
+    Mod:format_error(Reason);
+format_error(Mech, Reason) ->
+    case ets:lookup(sasl_mechanism, Mech) of
+	[#sasl_mechanism{module = Mod}] ->
+	    Mod:format_error(Reason);
+	[] ->
+	    {'invalid-mechanism', <<"Unsupported mechanism">>}
+    end.
+
 -spec register_mechanism(Mechanim :: mechanism(), Module :: module(),
 			 PasswordType :: password_type()) -> any().
 
@@ -104,8 +126,8 @@ register_mechanism(Mechanism, Module, PasswordType) ->
 check_credentials(_State, Props) ->
     User = proplists:get_value(authzid, Props, <<>>),
     case jid:nodeprep(User) of
-      error -> {error, 'not-authorized'};
-      <<"">> -> {error, 'not-authorized'};
+      error -> {error, nodeprep_failed};
+      <<"">> -> {error, empty_username};
       _LUser -> ok
     end.
 
@@ -127,6 +149,8 @@ listmech(Host) ->
 			 ['$1']}]),
     filter_anonymous(Host, Mechs).
 
+-spec server_new(binary(), binary(), binary(), term(),
+		 fun(), fun(), fun()) -> sasl_state().
 server_new(Service, ServerFQDN, UserRealm, _SecFlags,
 	   GetPassword, CheckPassword, CheckPasswordDigest) ->
     #sasl_state{service = Service, myname = ServerFQDN,
@@ -134,8 +158,7 @@ server_new(Service, ServerFQDN, UserRealm, _SecFlags,
 		check_password = CheckPassword,
 		check_password_digest = CheckPasswordDigest}.
 
-server_start(State, Mech, undefined) ->
-    server_start(State, Mech, <<"">>);
+-spec server_start(sasl_state(), mechanism(), binary()) -> sasl_return().
 server_start(State, Mech, ClientIn) ->
     case lists:member(Mech,
 		      listmech(State#sasl_state.myname))
@@ -152,13 +175,12 @@ server_start(State, Mech, ClientIn) ->
 					     mech_name = Mech,
 					     mech_state = MechState},
 			    ClientIn);
-	    _ -> {error, 'no-mechanism'}
+	    _ -> {error, unsupported_mechanism, <<"">>}
 	  end;
-      false -> {error, 'no-mechanism'}
+      false -> {error, unsupported_mechanism, <<"">>}
     end.
 
-server_step(State, undefined) ->
-    server_step(State, <<"">>);
+-spec server_step(sasl_state(), binary()) -> sasl_return().
 server_step(State, ClientIn) ->
     Module = State#sasl_state.mech_mod,
     MechState = State#sasl_state.mech_state,
@@ -166,19 +188,19 @@ server_step(State, ClientIn) ->
         {ok, Props} ->
             case check_credentials(State, Props) of
                 ok             -> {ok, Props};
-                {error, Error} -> {error, Error}
+                {error, Error} -> {error, Error, <<"">>}
             end;
         {ok, Props, ServerOut} ->
             case check_credentials(State, Props) of
                 ok             -> {ok, Props, ServerOut};
-                {error, Error} -> {error, Error}
+                {error, Error} -> {error, Error, <<"">>}
             end;
         {continue, ServerOut, NewMechState} ->
             {continue, ServerOut, State#sasl_state{mech_state = NewMechState}};
         {error, Error, Username} ->
             {error, Error, Username};
         {error, Error} ->
-            {error, Error}
+            {error, Error, <<"">>}
     end.
 
 -spec get_mech(sasl_state()) -> binary().
