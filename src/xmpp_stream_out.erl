@@ -214,7 +214,7 @@ handle_cast(connect, #{remote_server := RemoteServer,
 		       sockmod := SockMod,
 		       stream_state := connecting} = State) ->
     noreply(
-      case ejabberd_idna:domain_utf8_to_ascii(RemoteServer) of
+      case idna_to_ascii(RemoteServer) of
 	  false ->
 	      process_stream_end({idna, bad_string}, State);
 	  ASCIIName ->
@@ -717,6 +717,25 @@ format(Fmt, Args) ->
 %%%===================================================================
 %%% Connection stuff
 %%%===================================================================
+idna_to_ascii(<<$[, _/binary>> = Host) ->
+    %% This is an IPv6 address in 'IP-literal' format (as per RFC7622)
+    %% We remove brackets here
+    case binary:last(Host) of
+	$] ->
+	    IPv6 = binary:part(Host, {1, size(Host)-2}),
+	    case inet:parse_ipv6strict_address(binary_to_list(IPv6)) of
+		{ok, _} -> IPv6;
+		{error, _} -> false
+	    end;
+	_ ->
+	    false
+    end;
+idna_to_ascii(Host) ->
+    case inet:parse_address(binary_to_list(Host)) of
+	{ok, _} -> Host;
+	{error, _} -> ejabberd_idna:domain_utf8_to_ascii(Host)
+    end.
+
 -spec resolve(string(), state()) -> {ok, [host_port()]} | network_error().
 resolve(Host, State) ->
     case srv_lookup(Host, State) of
