@@ -29,7 +29,7 @@
 -export([start/2, stop/1, depends/2, mod_opt_type/1]).
 %% Hooks
 -export([s2s_out_auth_result/2, s2s_out_downgraded/2,
-	 s2s_in_packet/2, s2s_out_packet/2,
+	 s2s_in_packet/2, s2s_out_packet/2, s2s_in_recv/3,
 	 s2s_in_features/2, s2s_out_init/2, s2s_out_closed/2]).
 
 -include("ejabberd.hrl").
@@ -52,6 +52,8 @@ start(Host, _Opts) ->
 			       s2s_in_features, 50),
 	    ejabberd_hooks:add(s2s_in_post_auth_features, Host, ?MODULE,
 			       s2s_in_features, 50),
+	    ejabberd_hooks:add(s2s_in_handle_recv, Host, ?MODULE,
+			       s2s_in_recv, 50),
 	    ejabberd_hooks:add(s2s_in_unauthenticated_packet, Host, ?MODULE,
 			       s2s_in_packet, 50),
 	    ejabberd_hooks:add(s2s_in_authenticated_packet, Host, ?MODULE,
@@ -71,6 +73,8 @@ stop(Host) ->
 			  s2s_in_features, 50),
     ejabberd_hooks:delete(s2s_in_post_auth_features, Host, ?MODULE,
 			  s2s_in_features, 50),
+    ejabberd_hooks:delete(s2s_in_handle_recv, Host, ?MODULE,
+			  s2s_in_recv, 50),
     ejabberd_hooks:delete(s2s_in_unauthenticated_packet, Host, ?MODULE,
 			  s2s_in_packet, 50),
     ejabberd_hooks:delete(s2s_in_authenticated_packet, Host, ?MODULE,
@@ -191,6 +195,25 @@ s2s_in_packet(State, Pkt) when is_record(Pkt, db_result);
 s2s_in_packet(State, _) ->
     State.
 
+s2s_in_recv(State, El, {error, Why}) ->
+    case xmpp:get_name(El) of
+	Tag when Tag == <<"db:result">>;
+		 Tag == <<"db:verify">> ->
+	    case xmpp:get_type(El) of
+		T when T /= <<"valid">>,
+		       T /= <<"invalid">>,
+		       T /= <<"error">> ->
+		    Err = xmpp:make_error(El, mk_error({codec_error, Why})),
+		    {stop, ejabberd_s2s_in:send(State, Err)};
+		_ ->
+		    State
+	    end;
+	_ ->
+	    State
+    end;
+s2s_in_recv(State, _El, _Pkt) ->
+    State.
+
 s2s_out_packet(#{server := LServer,
 		 remote_server := RServer,
 		 db_verify := {StreamID, _Key, Pid}} = State,
@@ -286,6 +309,8 @@ mk_error(forbidden) ->
     xmpp:err_forbidden(<<"Denied by ACL">>, ?MYLANG);
 mk_error(host_unknown) ->
     xmpp:err_not_allowed(<<"Host unknown">>, ?MYLANG);
+mk_error({codec_error, Why}) ->
+    xmpp:err_bad_request(xmpp:io_format_error(Why), ?MYLANG);
 mk_error({_Class, _Reason} = Why) ->
     Txt = xmpp_stream_out:format_error(Why),
     xmpp:err_remote_server_not_found(Txt, ?MYLANG);

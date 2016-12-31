@@ -1,10 +1,23 @@
 %%%-------------------------------------------------------------------
-%%% @author Evgeny Khramtsov <ekhramtsov@process-one.net>
-%%% @copyright (C) 2016, Evgeny Khramtsov
-%%% @doc
-%%%
-%%% @end
 %%% Created : 14 Dec 2016 by Evgeny Khramtsov <ekhramtsov@process-one.net>
+%%%
+%%%
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
+%%%
+%%% This program is free software; you can redistribute it and/or
+%%% modify it under the terms of the GNU General Public License as
+%%% published by the Free Software Foundation; either version 2 of the
+%%% License, or (at your option) any later version.
+%%%
+%%% This program is distributed in the hope that it will be useful,
+%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%%% General Public License for more details.
+%%%
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+%%%
 %%%-------------------------------------------------------------------
 -module(xmpp_stream_out).
 -behaviour(gen_server).
@@ -39,7 +52,7 @@
 -type network_error() :: {error, inet:posix() | inet_res:res_error()}.
 -type stop_reason() :: {idna, bad_string} |
 		       {dns, inet:posix() | inet_res:res_error()} |
-		       {stream, reset | stream_error()} |
+		       {stream, reset | {in | out, stream_error()}} |
 		       {tls, term()} |
 		       {pkix, binary()} |
 		       {auth, atom() | binary() | string()} |
@@ -135,7 +148,7 @@ change_shaper(_, _) ->
 
 -spec format_error(stop_reason()) ->  binary().
 format_error({idna, _}) ->
-    <<"Not an IDN hostname">>;
+    <<"Remote domain is not an IDN hostname">>;
 format_error({dns, Reason}) ->
     format("DNS lookup failed: ~s", [format_inet_error(Reason)]);
 format_error({socket, Reason}) ->
@@ -144,8 +157,10 @@ format_error({pkix, Reason}) ->
     format("Peer certificate rejected: ~s", [Reason]);
 format_error({stream, reset}) ->
     <<"Stream reset by peer">>;
-format_error({stream, #stream_error{reason = Reason, text = Txt}}) ->
-    format("Stream failed: ~s", [format_stream_error(Reason, Txt)]);
+format_error({stream, {in, #stream_error{reason = Reason, text = Txt}}}) ->
+    format("Stream closed by peer: ~s", [format_stream_error(Reason, Txt)]);
+format_error({stream, {out, #stream_error{reason = Reason, text = Txt}}}) ->
+    format("Stream closed by us: ~s", [format_stream_error(Reason, Txt)]);
 format_error({tls, Reason}) ->
     format("TLS failed: ~w", [Reason]);
 format_error({auth, Reason}) ->
@@ -264,7 +279,7 @@ handle_info({'$gen_event', {xmlstreamerror, Reason}}, #{lang := Lang}= State) ->
 	      send_element(State1, Err)
       end);
 handle_info({'$gen_event', {xmlstreamelement, El}},
-	    #{xmlns := NS, lang := MyLang, mod := Mod} = State) ->
+	    #{xmlns := NS, mod := Mod} = State) ->
     noreply(
       try xmpp:decode(El, NS, [ignore_els]) of
 	  Pkt ->
@@ -281,10 +296,7 @@ handle_info({'$gen_event', {xmlstreamelement, El}},
 		       end,
 	      case is_disconnected(State1) of
 		  true -> State1;
-		  false ->
-		      Txt = xmpp:io_format_error(Why),
-		      Lang = select_lang(MyLang, xmpp:get_lang(El)),
-		      send_error(State1, El, xmpp:err_bad_request(Txt, Lang))
+		  false -> process_invalid_xml(State1, El, Why)
 	      end
       end);
 handle_info({'$gen_all_state_event', {xmlstreamcdata, Data}},
@@ -347,6 +359,17 @@ new_id() ->
 is_disconnected(#{stream_state := StreamState}) ->
     StreamState == disconnected.
 
+-spec process_invalid_xml(state(), fxml:xmlel(), term()) -> state().
+process_invalid_xml(#{lang := MyLang} = State, El, Reason) ->
+    case xmpp:is_stanza(El) of
+	true ->
+	    Txt = xmpp:io_format_error(Reason),
+	    Lang = select_lang(MyLang, xmpp:get_lang(El)),
+	    send_error(State, El, xmpp:err_bad_request(Txt, Lang));
+	false ->
+	    State
+    end.
+
 -spec process_stream_end(stop_reason(), state()) -> state().
 process_stream_end(_, #{stream_state := disconnected} = State) ->
     State;
@@ -394,7 +417,7 @@ process_element(Pkt, #{stream_state := StateName} = State) ->
 	#sasl_failure{} when StateName == wait_for_sasl_response ->
 	    process_sasl_failure(Pkt, State);
 	#stream_error{} ->
-	    process_stream_end({stream, Pkt}, State);
+	    process_stream_end({stream, {in, Pkt}}, State);
 	_ when is_record(Pkt, stream_features);
 	       is_record(Pkt, starttls_proceed);
 	       is_record(Pkt, starttls);
@@ -612,7 +635,7 @@ send_element(#{xmlns := NS, mod := Mod} = State, Pkt) ->
 	false ->
 	    case send_text(State1, Data) of
 		_ when is_record(Pkt, stream_error) ->
-		    process_stream_end({stream, Pkt}, State1);
+		    process_stream_end({stream, {out, Pkt}}, State1);
 		ok ->
 		    State1;
 		{error, Why} ->
@@ -650,6 +673,8 @@ send_trailer(State) ->
     close_socket(State).
 
 -spec close_socket(state()) -> state().
+close_socket(#{stream_state := disconnected} = State) ->
+    State;
 close_socket(State) ->
     case State of
 	#{sockmod := SockMod, socket := Socket} ->
@@ -674,6 +699,7 @@ format_inet_error(Reason) ->
 -spec format_stream_error(atom() | 'see-other-host'(), undefined | text()) -> string().
 format_stream_error(Reason, Txt) ->
     Slogan = case Reason of
+		 undefined -> "no reason";
 		 #'see-other-host'{} -> "see-other-host";
 		 _ -> atom_to_list(Reason)
 	     end,

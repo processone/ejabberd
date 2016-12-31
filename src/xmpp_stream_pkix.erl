@@ -9,7 +9,7 @@
 -module(xmpp_stream_pkix).
 
 %% API
--export([authenticate/1, authenticate/2]).
+-export([authenticate/1, authenticate/2, format_error/1]).
 
 -include("xmpp.hrl").
 -include_lib("public_key/include/public_key.hrl").
@@ -19,21 +19,24 @@
 %%% API
 %%%===================================================================
 -spec authenticate(xmpp_stream_in:state() | xmpp_stream_out:state())
-      -> {ok, binary()} | {error, binary(), binary()}.
+      -> {ok, binary()} | {error, atom(), binary()}.
 authenticate(State) ->
     authenticate(State, <<"">>).
 
 -spec authenticate(xmpp_stream_in:state() | xmpp_stream_out:state(), binary())
-      -> {ok, binary()} | {error, binary(), binary()}.
-authenticate(#{xmlns := ?NS_SERVER, remote_server := Peer,
-	       sockmod := SockMod, socket := Socket}, _Authzid) ->
+      -> {ok, binary()} | {error, atom(), binary()}.
+authenticate(#{xmlns := ?NS_SERVER, sockmod := SockMod,
+	       socket := Socket} = State, Authzid) ->
+    Peer = try maps:get(remote_server, State)
+	   catch _:{badkey, _} -> Authzid
+	   end,
     case SockMod:get_peer_certificate(Socket) of
 	{ok, Cert} ->
 	    case SockMod:get_verify_result(Socket) of
 		0 ->
 		    case ejabberd_idna:domain_utf8_to_ascii(Peer) of
 			false ->
-			    {error, <<"Cannot decode remote server name">>, Peer};
+			    {error, idna_failed, Peer};
 			AsciiPeer ->
 			    case lists:any(
 				   fun(D) -> match_domain(AsciiPeer, D) end,
@@ -41,20 +44,34 @@ authenticate(#{xmlns := ?NS_SERVER, remote_server := Peer,
 				true ->
 				    {ok, Peer};
 				false ->
-				    {error, <<"Certificate host name mismatch">>, Peer}
+				    {error, hostname_mismatch, Peer}
 			    end
 		    end;
 		VerifyRes ->
-		    {error, fast_tls:get_cert_verify_string(VerifyRes, Cert), Peer}
+		    %% TODO: return atomic errors
+		    %% This should be improved in fast_tls
+		    Reason = fast_tls:get_cert_verify_string(VerifyRes, Cert),
+		    {error, erlang:binary_to_atom(Reason, utf8), Peer}
 	    end;
 	{error, _Reason} ->
-	    {error, <<"Cannot get peer certificate">>, Peer};
+	    {error, get_cert_failed, Peer};
 	error ->
-	    {error, <<"Cannot get peer certificate">>, Peer}
+	    {error, get_cert_failed, Peer}
     end;
 authenticate(_State, _Authzid) ->
     %% TODO: client PKIX authentication
-    {error, <<"Client certificate verification not implemented">>, <<"">>}.
+    {error, client_not_supported, <<"">>}.
+
+format_error(idna_failed) ->
+    {'bad-protocol', <<"Remote domain is not an IDN hostname">>};
+format_error(hostname_mismatch) ->
+    {'not-authorized', <<"Certificate host name mismatch">>};
+format_error(get_cert_failed) ->
+    {'bad-protocol', <<"Failed to get peer certificate">>};
+format_error(client_not_supported) ->
+    {'invalid-mechanism', <<"Client certificate verification is not supported">>};
+format_error(Other) ->
+    {'not-authorized', erlang:atom_to_binary(Other, utf8)}.
 
 %%%===================================================================
 %%% Internal functions

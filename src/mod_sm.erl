@@ -179,16 +179,14 @@ c2s_handle_recv(#{lang := Lang} = State, El, {error, Why}) ->
 c2s_handle_recv(State, _, _) ->
     State.
 
-c2s_handle_send(#{mgmt_state := MgmtState} = State, Pkt, Result)
+c2s_handle_send(#{mgmt_state := MgmtState} = State, Pkt, _Result)
   when MgmtState == pending; MgmtState == active ->
     State1 = mgmt_queue_add(State, Pkt),
-    case Result of
-	ok when ?is_stanza(Pkt) ->
+    case xmpp:is_stanza(Pkt) of
+	true ->
 	    send_rack(State1);
-	ok ->
-	    State1;
-	{error, _} ->
-	    transition_to_pending(State1)
+	false ->
+	    State1
     end;
 c2s_handle_send(State, _Pkt, _Result) ->
     State.
@@ -210,8 +208,9 @@ c2s_handle_info(#{mgmt_ack_timer := TRef, jid := JID} = State,
 		{timeout, TRef, ack_timeout}) ->
     ?DEBUG("Timed out waiting for stream management acknowledgement of ~s",
 	   [jid:to_string(JID)]),
-    State1 = ejabberd_c2s:close(State, _SendTrailer = false),
-    {stop, transition_to_pending(State1)};
+    State1 = State#{stop_reason => {socket, timeout}},
+    State2 = ejabberd_c2s:close(State1, _SendTrailer = false),
+    {stop, transition_to_pending(State2)};
 c2s_handle_info(#{mgmt_state := pending, jid := JID} = State,
 		{timeout, _, pending_timeout}) ->
     ?DEBUG("Timed out waiting for resumption of stream for ~s",
@@ -222,8 +221,8 @@ c2s_handle_info(State, _) ->
 
 c2s_closed(State, {stream, _}) ->
     State;
-c2s_closed(#{mgmt_state := active} = State, Reason) ->
-    {stop, transition_to_pending(State#{stop_reason => Reason})};
+c2s_closed(#{mgmt_state := active} = State, _Reason) ->
+    {stop, transition_to_pending(State)};
 c2s_closed(State, _Reason) ->
     State.
 
@@ -368,10 +367,9 @@ transition_to_pending(#{mgmt_state := active, jid := JID,
 			lserver := LServer, mgmt_timeout := Timeout} = State) ->
     State1 = cancel_ack_timer(State),
     ?INFO_MSG("Waiting for resumption of stream for ~s", [jid:to_string(JID)]),
-    State2 = ejabberd_hooks:run_fold(c2s_session_pending, LServer, State1, []),
-    State3 = ejabberd_c2s:close(State2, _SendTrailer = false),
     erlang:start_timer(timer:seconds(Timeout), self(), pending_timeout),
-    State3#{mgmt_state => pending};
+    State2 = State1#{mgmt_state => pending},
+    ejabberd_hooks:run_fold(c2s_session_pending, LServer, State2, []);
 transition_to_pending(State) ->
     State.
 
@@ -405,8 +403,8 @@ update_num_stanzas_in(State, _El) ->
 send_rack(#{mgmt_ack_timer := _} = State) ->
     State;
 send_rack(#{mgmt_xmlns := Xmlns,
-	   mgmt_stanzas_out := NumStanzasOut,
-	   mgmt_ack_timeout := AckTimeout} = State) ->
+	    mgmt_stanzas_out := NumStanzasOut,
+	    mgmt_ack_timeout := AckTimeout} = State) ->
     State1 = send(State, #sm_r{xmlns = Xmlns}),
     TRef = erlang:start_timer(AckTimeout, self(), ack_timeout),
     State1#{mgmt_ack_timer => TRef, mgmt_stanzas_req => NumStanzasOut}.
@@ -425,16 +423,19 @@ resend_rack(State) ->
 
 -spec mgmt_queue_add(state(), xmpp_element()) -> state().
 mgmt_queue_add(#{mgmt_stanzas_out := NumStanzasOut,
-		 mgmt_queue := Queue} = State, Stanza) when ?is_stanza(Stanza) ->
-    NewNum = case NumStanzasOut of
-	       4294967295 -> 0;
-	       Num -> Num + 1
-	     end,
-    Queue1 = queue_in({NewNum, p1_time_compat:timestamp(), Stanza}, Queue),
-    State1 = State#{mgmt_queue => Queue1, mgmt_stanzas_out => NewNum},
-    check_queue_length(State1);
-mgmt_queue_add(State, _Nonza) ->
-    State.
+		 mgmt_queue := Queue} = State, Pkt) ->
+    case xmpp:is_stanza(Pkt) of
+	true ->
+	    NewNum = case NumStanzasOut of
+			 4294967295 -> 0;
+			 Num -> Num + 1
+		     end,
+	    Queue1 = queue_in({NewNum, p1_time_compat:timestamp(), Pkt}, Queue),
+	    State1 = State#{mgmt_queue => Queue1, mgmt_stanzas_out => NewNum},
+	    check_queue_length(State1);
+	false ->
+	    State
+    end.
 
 -spec mgmt_queue_drop(state(), non_neg_integer()) -> state().
 mgmt_queue_drop(#{mgmt_queue := Queue} = State, NumHandled) ->
