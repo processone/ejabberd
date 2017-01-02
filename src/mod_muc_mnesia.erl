@@ -17,7 +17,7 @@
 -export([set_affiliation/6, set_affiliations/4, get_affiliation/5,
 	 get_affiliations/3, search_affiliation/4]).
 
--include("jlib.hrl").
+-include("jid.hrl").
 -include("mod_muc.hrl").
 -include("logger.hrl").
 
