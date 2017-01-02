@@ -135,7 +135,7 @@ init({SockMod, Socket}, Opts) ->
               false -> []
             end,
     Bind = case proplists:get_bool(http_bind, Opts) of
-             true -> [{[<<"http-bind">>], mod_http_bind}];
+	     true -> [{[<<"http-bind">>], mod_bosh}];
              false -> []
            end,
     XMLRPC = case proplists:get_bool(xmlrpc, Opts) of
@@ -150,9 +150,14 @@ init({SockMod, Socket}, Opts) ->
                                   ({Path, Mod}) -> {Path, Mod}
                                 end, Hs),
 
-                                [{str:tokens(
-                                    iolist_to_binary(Path), <<"/">>),
-                                  Mod} || {Path, Mod} <- Hs1]
+				Hs2 = [{str:tokens(
+					  iolist_to_binary(Path), <<"/">>),
+					Mod} || {Path, Mod} <- Hs1],
+				[{Path,
+				  case Mod of
+				      mod_http_bind -> mod_bosh;
+				      _ -> Mod
+				  end} || {Path, Mod} <- Hs2]
                         end, []),
     RequestHandlers = DefinedHandlers ++ Captcha ++ Register ++
         Admin ++ Bind ++ XMLRPC,
