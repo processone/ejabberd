@@ -45,12 +45,12 @@ defmodule EjabberdCyrsaslTest do
 
   test "Plain text (correct user wrong pass)", context do
     step1 = :cyrsasl.server_start(context[:cyrstate], "PLAIN", <<0,"user1",0,"badpass">>)
-    assert step1 == {:error, :"not-authorized", "user1"}
+    assert step1 == {:error, :not_authorized, "user1"}
   end
 
   test "Plain text (wrong user wrong pass)", context do
     step1 = :cyrsasl.server_start(context[:cyrstate], "PLAIN", <<0,"nouser1",0,"badpass">>)
-    assert step1 == {:error, :"not-authorized", "nouser1"}
+    assert step1 == {:error, :not_authorized, "nouser1"}
   end
 
   test "Anonymous", context do
@@ -63,15 +63,15 @@ defmodule EjabberdCyrsaslTest do
   end
 
   test "Digest-MD5 (correct user wrong pass)", context do
-    assert {:error, :"not-authorized", "user1"} = process_digest_md5(context[:cyrstate], "user1", "domain1", "badpass")
+    assert {:error, :not_authorized, "user1"} = process_digest_md5(context[:cyrstate], "user1", "domain1", "badpass")
   end
 
   test "Digest-MD5 (wrong user correct pass)", context do
-    assert {:error, :"not-authorized", "baduser"} = process_digest_md5(context[:cyrstate], "baduser", "domain1", "pass")
+    assert {:error, :not_authorized, "baduser"} = process_digest_md5(context[:cyrstate], "baduser", "domain1", "pass")
   end
 
   test "Digest-MD5 (wrong user and pass)", context do
-    assert {:error, :"not-authorized", "baduser"} = process_digest_md5(context[:cyrstate], "baduser", "domain1", "badpass")
+    assert {:error, :not_authorized, "baduser"} = process_digest_md5(context[:cyrstate], "baduser", "domain1", "badpass")
   end
 
   defp process_digest_md5(cyrstate, user, domain, pass) do
