@@ -1805,9 +1805,8 @@ histogram([], _Integral, _Current, Count, Hist) ->
 %%%% get_nodes
 
 get_nodes(Lang) ->
-    RunningNodes = mnesia:system_info(running_db_nodes),
-    StoppedNodes = lists:usort(mnesia:system_info(db_nodes)
-				 ++ mnesia:system_info(extra_db_nodes))
+    RunningNodes = ejabberd_cluster:get_nodes(),
+    StoppedNodes = ejabberd_clustet:get_known_nodes()
 		     -- RunningNodes,
     FRN = if RunningNodes == [] -> ?CT(<<"None">>);
 	     true ->
@@ -1833,8 +1832,8 @@ get_nodes(Lang) ->
      ?XCT(<<"h3">>, <<"Stopped Nodes">>), FSN].
 
 search_running_node(SNode) ->
-    search_running_node(SNode,
-			mnesia:system_info(running_db_nodes)).
+    RunningNodes = ejabberd_cluster:get_nodes(),
+    search_running_node(SNode, RunningNodes).
 
 search_running_node(_, []) -> false;
 search_running_node(SNode, [Node | Nodes]) ->
