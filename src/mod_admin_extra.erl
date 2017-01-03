@@ -458,7 +458,7 @@ get_commands_spec() ->
 				{user, binary}, {server, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = process_rosteritems, tags = [roster],
-			desc = "List or delete rosteritems that match filtering options",
+			desc = "List/delete rosteritems that match filter (only Mnesia)",
 			longdesc = "Explanation of each argument:\n"
 			" - action: what to do with each rosteritem that "
 			"matches all the filtering options\n"
