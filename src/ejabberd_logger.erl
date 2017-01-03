@@ -1,9 +1,9 @@
 %%%-------------------------------------------------------------------
-%%% @author Evgeniy Khramtsov <ekhramtsov@process-one.net>
-%%% @doc
-%%%
-%%% @end
+%%% File    : ejabberd_logger.erl
+%%% Author  : Evgeniy Khramtsov <ekhramtsov@process-one.net>
+%%% Purpose : ejabberd logger wrapper
 %%% Created : 12 May 2013 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
+%%%
 %%%
 %%% ejabberd, Copyright (C) 2013-2017   ProcessOne
 %%%

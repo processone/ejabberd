@@ -1,7 +1,26 @@
 %%%-------------------------------------------------------------------
-%%% @author Mickael Remond <mremond@process-one.net>
-%%% @copyright (C) 2002-2017, ProcessOne
-%%% @doc
+%%% Author  : Mickael Remond <mremond@process-one.net>
+%%% Created : 19 Feb 2015 by Mickael Remond <mremond@process-one.net>
+%%%
+%%%
+%%% ejabberd, Copyright (C) 2002-2017   ProcessOne
+%%%
+%%% This program is free software; you can redistribute it and/or
+%%% modify it under the terms of the GNU General Public License as
+%%% published by the Free Software Foundation; either version 2 of the
+%%% License, or (at your option) any later version.
+%%%
+%%% This program is distributed in the hope that it will be useful,
+%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%%% General Public License for more details.
+%%%
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+%%%
+%%%----------------------------------------------------------------------
+
 %%% This is a common test wrapper to run our ejabberd tests written in
 %%% Elixir from standard common test code.
 %%%
@@ -9,9 +28,6 @@
 %%%     ./rebar skip_deps=true ct suites=elixir
 %%% or from ejabber overall test suite:
 %%%     make quicktest
-%%% @end
-%%% Created :  19 Feb 2015 by Mickael Remond <mremond@process-one.net>
-%%%-------------------------------------------------------------------
 
 -module(elixir_SUITE).
 

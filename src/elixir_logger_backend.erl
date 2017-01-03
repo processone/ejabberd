@@ -1,9 +1,9 @@
 %%%-------------------------------------------------------------------
-%%% @author Mickael Remond <mremond@process-one.net>
-%%% @doc
-%%% This module bridges lager logs to Elixir Logger.
-%%% @end
+%%% File    : elixir_logger_backend.erl
+%%% Author  : Mickael Remond <mremond@process-one.net>
+%%% Purpose : This module bridges lager logs to Elixir Logger.
 %%% Created : 9 March 2016 by Mickael Remond <mremond@process-one.net>
+%%%
 %%%
 %%% ejabberd, Copyright (C) 2002-2017   ProcessOne
 %%%
