@@ -39,7 +39,7 @@
 
 -include("pubsub.hrl").
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -define(PUBSUB_DELIVER, <<"pubsub#deliver">>).
 -define(PUBSUB_DIGEST, <<"pubsub#digest">>).

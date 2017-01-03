@@ -43,7 +43,7 @@
 	 is_feature_available/0, create_captcha_x/5,
 	 opt_type/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("ejabberd_http.hrl").

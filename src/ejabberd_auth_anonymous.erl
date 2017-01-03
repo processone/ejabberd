@@ -50,7 +50,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("jid.hrl").
+-include_lib("xmpp/include/jid.hrl").
 
 %% Create the anonymous table if at least one virtual host has anonymous features enabled
 %% Register to login / logout events

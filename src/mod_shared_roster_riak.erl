@@ -35,7 +35,7 @@
 
 -include("mod_roster.hrl").
 -include("mod_shared_roster.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 %%%===================================================================
 %%% API

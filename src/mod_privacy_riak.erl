@@ -35,7 +35,7 @@
 
 -export([privacy_schema/0]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_privacy.hrl").
 
 %%%===================================================================

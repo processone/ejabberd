@@ -39,7 +39,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -define(CSI_QUEUE_MAX, 100).
 

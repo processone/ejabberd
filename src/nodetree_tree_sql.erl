@@ -40,7 +40,7 @@
 -compile([{parse_transform, ejabberd_sql_pt}]).
 
 -include("pubsub.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd_sql_pt.hrl").
 
 -export([init/3, terminate/2, options/0, set_node/1,

@@ -51,7 +51,7 @@
 
 -export([oauth_issue_token/3, oauth_list_tokens/0, oauth_revoke_token/1, oauth_list_scopes/0]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -include("ejabberd.hrl").
 -include("logger.hrl").

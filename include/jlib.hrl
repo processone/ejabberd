@@ -18,8 +18,8 @@
 %%%
 %%%----------------------------------------------------------------------
 
--include("ns.hrl").
--include("fxml.hrl").
+-include_lib("xmpp/include/ns.hrl").
+-include_lib("fast_xml/include/fxml.hrl").
 
 -define(STANZA_ERROR(Code, Type, Condition),
 	#xmlel{name = <<"error">>,

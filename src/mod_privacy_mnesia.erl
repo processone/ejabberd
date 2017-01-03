@@ -33,7 +33,7 @@
 	 set_privacy_list/4, get_user_list/2, get_user_lists/2,
 	 remove_user/2, import/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_privacy.hrl").
 -include("logger.hrl").
 

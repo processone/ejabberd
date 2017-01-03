@@ -54,7 +54,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_caps.hrl").
 
 -define(PROCNAME, ejabberd_mod_caps).

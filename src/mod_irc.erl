@@ -43,7 +43,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_irc.hrl").
 
 -define(DEFAULT_IRC_ENCODING, <<"iso8859-15">>).

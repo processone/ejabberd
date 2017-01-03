@@ -32,7 +32,7 @@
 -export([is_search_supported/1]).
 
 -include("ejabberd.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_vcard.hrl").
 -include("logger.hrl").
 

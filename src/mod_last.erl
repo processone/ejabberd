@@ -42,7 +42,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -include("mod_privacy.hrl").
 -include("mod_last.hrl").

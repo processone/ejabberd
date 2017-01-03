@@ -31,7 +31,7 @@
 	 extended_fields/0, store/7, write_prefs/4, get_prefs/2, select/6]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("mod_mam.hrl").
 

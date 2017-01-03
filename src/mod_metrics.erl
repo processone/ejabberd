@@ -31,7 +31,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -export([start/2, stop/1, send_metrics/4, opt_type/1, mod_opt_type/1,
 	 depends/2]).

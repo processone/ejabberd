@@ -37,7 +37,7 @@
 	 terminate/2, code_change/3]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -define(PROCNAME, ejabberd_mod_mix).
 -define(NODES, [?NS_MIX_NODES_MESSAGES,

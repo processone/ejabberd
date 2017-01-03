@@ -84,7 +84,7 @@
 -include("mod_roster.hrl").
 -include("mod_privacy.hrl").
 -include("ejabberd_sm.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 %%%
 %%% gen_mod

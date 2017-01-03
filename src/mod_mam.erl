@@ -39,7 +39,7 @@
 	 muc_filter_message/5, message_is_archived/5, delete_old_messages/2,
 	 get_commands_spec/0, msg_to_el/4, get_room_config/4, set_room_option/3]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("mod_muc_room.hrl").
 -include("ejabberd_commands.hrl").

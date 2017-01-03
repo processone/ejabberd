@@ -74,7 +74,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 %%-include("legacy.hrl").
 
 -include("mod_privacy.hrl").

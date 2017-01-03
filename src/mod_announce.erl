@@ -39,7 +39,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_announce.hrl").
 
 -callback init(binary(), gen_mod:opts()) -> any().

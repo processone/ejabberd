@@ -31,7 +31,7 @@
 	 search_fields/1, search_reported/1, import/3, stop/1]).
 -export([is_search_supported/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_vcard.hrl").
 
 %%%===================================================================

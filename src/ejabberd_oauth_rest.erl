@@ -35,7 +35,7 @@
 -include("ejabberd.hrl").
 -include("ejabberd_oauth.hrl").
 -include("logger.hrl").
--include("jid.hrl").
+-include_lib("xmpp/include/jid.hrl").
 
 init() ->
     rest:start(?MYNAME),

@@ -54,7 +54,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -type local_hint() :: undefined | integer() | {apply, atom(), atom()}.
 

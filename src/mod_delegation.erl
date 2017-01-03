@@ -43,7 +43,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -type disco_acc() :: {error, stanza_error()} | {result, [binary()]} | empty.
 -record(state, {server_host = <<"">> :: binary(),

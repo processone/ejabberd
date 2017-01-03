@@ -41,7 +41,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("jid.hrl").
+-include_lib("xmpp/include/jid.hrl").
 
 -record(acl, {aclname, aclspec}).
 -record(access, {name       :: aclname(),
