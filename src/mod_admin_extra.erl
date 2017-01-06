@@ -1098,8 +1098,8 @@ set_vcard(User, Host, Name, Subname, SomeContent) ->
 
 get_vcard_content(User, Server, Data) ->
     case mod_vcard:get_vcard(jid:nodeprep(User), jid:nameprep(Server)) of
-	[_|_] = Els ->
-	    case get_vcard(Data, Els) of
+	[El|_] ->
+	    case get_vcard(Data, El) of
 		[false] -> throw(error_no_value_found_in_vcard);
 		ElemList -> ?DEBUG("ELS ~p", [ElemList]), [fxml:get_tag_cdata(Elem) || Elem <- ElemList]
 	    end;
