@@ -177,7 +177,7 @@ c2s_handle_recv(#{lang := Lang} = State, El, {error, Why}) ->
 c2s_handle_recv(State, _, _) ->
     State.
 
-c2s_handle_send(#{mgmt_state := MgmtState,
+c2s_handle_send(#{mgmt_state := MgmtState, mod := Mod,
 		  lang := Lang} = State, Pkt, SendResult)
   when MgmtState == pending; MgmtState == active ->
     case xmpp:is_stanza(Pkt) of
@@ -191,7 +191,7 @@ c2s_handle_send(#{mgmt_state := MgmtState,
 				    <<"Too many unacked stanzas">>, Lang),
 			    send(State2, Err);
 			_ ->
-			    ejabberd_c2s:stop(State2)
+			    Mod:stop(State2)
 		    end;
 		State1 when SendResult == ok ->
 		    send_rack(State1);
@@ -204,28 +204,28 @@ c2s_handle_send(#{mgmt_state := MgmtState,
 c2s_handle_send(State, _Pkt, _Result) ->
     State.
 
-c2s_handle_call(#{sid := {Time, _}} = State,
+c2s_handle_call(#{sid := {Time, _}, mod := Mod} = State,
 		{resume_session, Time}, From) ->
-    ejabberd_c2s:reply(From, {resume, State}),
+    Mod:reply(From, {resume, State}),
     {stop, State#{mgmt_state => resumed}};
-c2s_handle_call(State, {resume_session, _}, From) ->
-    ejabberd_c2s:reply(From, {error, <<"Previous session not found">>}),
+c2s_handle_call(#{mod := Mod} = State, {resume_session, _}, From) ->
+    Mod:reply(From, {error, <<"Previous session not found">>}),
     {stop, State};
 c2s_handle_call(State, _Call, _From) ->
     State.
 
-c2s_handle_info(#{mgmt_ack_timer := TRef, jid := JID} = State,
+c2s_handle_info(#{mgmt_ack_timer := TRef, jid := JID, mod := Mod} = State,
 		{timeout, TRef, ack_timeout}) ->
     ?DEBUG("Timed out waiting for stream management acknowledgement of ~s",
 	   [jid:to_string(JID)]),
     State1 = State#{stop_reason => {socket, timeout}},
-    State2 = ejabberd_c2s:close(State1, _SendTrailer = false),
+    State2 = Mod:close(State1, _SendTrailer = false),
     {stop, transition_to_pending(State2)};
-c2s_handle_info(#{mgmt_state := pending, jid := JID} = State,
+c2s_handle_info(#{mgmt_state := pending, jid := JID, mod := Mod} = State,
 		{timeout, _, pending_timeout}) ->
     ?DEBUG("Timed out waiting for resumption of stream for ~s",
 	   [jid:to_string(JID)]),
-    ejabberd_c2s:stop(State#{mgmt_state => timeout});
+    Mod:stop(State#{mgmt_state => timeout});
 c2s_handle_info(#{jid := JID} = State, {_Ref, {resume, OldState}}) ->
     %% This happens if the resume_session/1 request timed out; the new session
     %% now receives the late response.
@@ -380,8 +380,9 @@ handle_resume(#{user := User, lserver := LServer, sockmod := SockMod,
     end.
 
 -spec transition_to_pending(state()) -> state().
-transition_to_pending(#{mgmt_state := active, mgmt_timeout := 0} = State) ->
-    ejabberd_c2s:stop(State);
+transition_to_pending(#{mgmt_state := active, mod := Mod,
+			mgmt_timeout := 0} = State) ->
+    Mod:stop(State);
 transition_to_pending(#{mgmt_state := active, jid := JID,
 			lserver := LServer, mgmt_timeout := Timeout} = State) ->
     State1 = cancel_ack_timer(State),
