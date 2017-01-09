@@ -31,8 +31,8 @@
 -export([c2s_stream_init/2, c2s_stream_started/2, c2s_stream_features/2,
 	 c2s_authenticated_packet/2, c2s_unauthenticated_packet/2,
 	 c2s_unbinded_packet/2, c2s_closed/2, c2s_terminated/2,
-	 c2s_handle_send/3, c2s_filter_send/1, c2s_handle_info/2,
-	 c2s_handle_call/3, c2s_handle_recv/3]).
+	 c2s_handle_send/3, c2s_handle_info/2, c2s_handle_call/3,
+	 c2s_handle_recv/3]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -63,7 +63,6 @@ start(Host, _Opts) ->
 		       c2s_authenticated_packet, 50),
     ejabberd_hooks:add(c2s_handle_send, Host, ?MODULE, c2s_handle_send, 50),
     ejabberd_hooks:add(c2s_handle_recv, Host, ?MODULE, c2s_handle_recv, 50),
-    ejabberd_hooks:add(c2s_filter_send, Host, ?MODULE, c2s_filter_send, 50),
     ejabberd_hooks:add(c2s_handle_info, Host, ?MODULE, c2s_handle_info, 50),
     ejabberd_hooks:add(c2s_handle_call, Host, ?MODULE, c2s_handle_call, 50),
     ejabberd_hooks:add(c2s_closed, Host, ?MODULE, c2s_closed, 50),
@@ -83,7 +82,6 @@ stop(Host) ->
 			  c2s_authenticated_packet, 50),
     ejabberd_hooks:delete(c2s_handle_send, Host, ?MODULE, c2s_handle_send, 50),
     ejabberd_hooks:delete(c2s_handle_recv, Host, ?MODULE, c2s_handle_recv, 50),
-    ejabberd_hooks:delete(c2s_filter_send, Host, ?MODULE, c2s_filter_send, 50),
     ejabberd_hooks:delete(c2s_handle_info, Host, ?MODULE, c2s_handle_info, 50),
     ejabberd_hooks:delete(c2s_handle_call, Host, ?MODULE, c2s_handle_call, 50),
     ejabberd_hooks:delete(c2s_closed, Host, ?MODULE, c2s_closed, 50),
@@ -179,20 +177,32 @@ c2s_handle_recv(#{lang := Lang} = State, El, {error, Why}) ->
 c2s_handle_recv(State, _, _) ->
     State.
 
-c2s_handle_send(#{mgmt_state := MgmtState} = State, Pkt, _Result)
+c2s_handle_send(#{mgmt_state := MgmtState,
+		  lang := Lang} = State, Pkt, SendResult)
   when MgmtState == pending; MgmtState == active ->
-    State1 = mgmt_queue_add(State, Pkt),
     case xmpp:is_stanza(Pkt) of
 	true ->
-	    send_rack(State1);
+	    case mgmt_queue_add(State, Pkt) of
+		#{mgmt_max_queue := exceeded} = State1 ->
+		    State2 = State1#{mgmt_resend => false},
+		    case MgmtState of
+			active ->
+			    Err = xmpp:serr_policy_violation(
+				    <<"Too many unacked stanzas">>, Lang),
+			    send(State2, Err);
+			_ ->
+			    ejabberd_c2s:stop(State2)
+		    end;
+		State1 when SendResult == ok ->
+		    send_rack(State1);
+		State1 ->
+		    State1
+	    end;
 	false ->
-	    State1
+	    State
     end;
 c2s_handle_send(State, _Pkt, _Result) ->
     State.
-
-c2s_filter_send({Pkt, State}) ->
-    {Pkt, State}.
 
 c2s_handle_call(#{sid := {Time, _}} = State,
 		{resume_session, Time}, From) ->
@@ -216,6 +226,13 @@ c2s_handle_info(#{mgmt_state := pending, jid := JID} = State,
     ?DEBUG("Timed out waiting for resumption of stream for ~s",
 	   [jid:to_string(JID)]),
     ejabberd_c2s:stop(State#{mgmt_state => timeout});
+c2s_handle_info(#{jid := JID} = State, {_Ref, {resume, OldState}}) ->
+    %% This happens if the resume_session/1 request timed out; the new session
+    %% now receives the late response.
+    ?DEBUG("Received old session state for ~s after failed resumption",
+	   [jid:to_string(JID)]),
+    route_unacked_stanzas(OldState#{mgmt_resend => false}),
+    State;
 c2s_handle_info(State, _) ->
     State.
 
@@ -325,7 +342,7 @@ handle_a(State, #sm_a{h = H}) ->
     resend_rack(State1).
 
 -spec handle_resume(state(), sm_resume()) -> {ok, state()} | {error, state()}.
-handle_resume(#{user := User, lserver := LServer,
+handle_resume(#{user := User, lserver := LServer, sockmod := SockMod,
 		lang := Lang, socket := Socket} = State,
 	      #sm_resume{h = H, previd = PrevID, xmlns = Xmlns}) ->
     R = case inherit_session_state(State, PrevID) of
@@ -354,7 +371,7 @@ handle_resume(#{user := User, lserver := LServer,
 	    %% csi_flush_queue(State4),
 	    State5 = ejabberd_hooks:run_fold(c2s_session_resumed, LServer, State4, []),
 	    ?INFO_MSG("(~s) Resumed session for ~s",
-		      [ejabberd_socket:pp(Socket), jid:to_string(JID)]),
+		      [SockMod:pp(Socket), jid:to_string(JID)]),
 	    {ok, State5};
 	{error, El, Msg} ->
 	    ?INFO_MSG("Cannot resume session for ~s@~s: ~s",
@@ -363,6 +380,8 @@ handle_resume(#{user := User, lserver := LServer,
     end.
 
 -spec transition_to_pending(state()) -> state().
+transition_to_pending(#{mgmt_state := active, mgmt_timeout := 0} = State) ->
+    ejabberd_c2s:stop(State);
 transition_to_pending(#{mgmt_state := active, jid := JID,
 			lserver := LServer, mgmt_timeout := Timeout} = State) ->
     State1 = cancel_ack_timer(State),
@@ -405,9 +424,9 @@ send_rack(#{mgmt_ack_timer := _} = State) ->
 send_rack(#{mgmt_xmlns := Xmlns,
 	    mgmt_stanzas_out := NumStanzasOut,
 	    mgmt_ack_timeout := AckTimeout} = State) ->
-    State1 = send(State, #sm_r{xmlns = Xmlns}),
     TRef = erlang:start_timer(AckTimeout, self(), ack_timeout),
-    State1#{mgmt_ack_timer => TRef, mgmt_stanzas_req => NumStanzasOut}.
+    State1 = State#{mgmt_ack_timer => TRef, mgmt_stanzas_req => NumStanzasOut},
+    send(State1, #sm_r{xmlns = Xmlns}).
 
 resend_rack(#{mgmt_ack_timer := _,
 	      mgmt_queue := Queue,
@@ -424,18 +443,13 @@ resend_rack(State) ->
 -spec mgmt_queue_add(state(), xmpp_element()) -> state().
 mgmt_queue_add(#{mgmt_stanzas_out := NumStanzasOut,
 		 mgmt_queue := Queue} = State, Pkt) ->
-    case xmpp:is_stanza(Pkt) of
-	true ->
-	    NewNum = case NumStanzasOut of
-			 4294967295 -> 0;
-			 Num -> Num + 1
-		     end,
-	    Queue1 = queue_in({NewNum, p1_time_compat:timestamp(), Pkt}, Queue),
-	    State1 = State#{mgmt_queue => Queue1, mgmt_stanzas_out => NewNum},
-	    check_queue_length(State1);
-	false ->
-	    State
-    end.
+    NewNum = case NumStanzasOut of
+		 4294967295 -> 0;
+		 Num -> Num + 1
+	     end,
+    Queue1 = queue_in({NewNum, p1_time_compat:timestamp(), Pkt}, Queue),
+    State1 = State#{mgmt_queue => Queue1, mgmt_stanzas_out => NewNum},
+    check_queue_length(State1).
 
 -spec mgmt_queue_drop(state(), non_neg_integer()) -> state().
 mgmt_queue_drop(#{mgmt_queue := Queue} = State, NumHandled) ->
@@ -510,20 +524,24 @@ route_unacked_stanzas(#{mgmt_state := MgmtState,
 	      %% easily lead to unexpected results as well.
 	      ?DEBUG("Dropping forwarded message stanza from ~s",
 		     [jid:to_string(From)]);
-	 ({_, Time, El}) ->
+	 ({_, Time, #message{} = Msg}) ->
 	      case ejabberd_hooks:run_fold(message_is_archived,
 					   LServer, false,
-					   [State, El]) of
+					   [State, Msg]) of
 		  true ->
 		      ?DEBUG("Dropping archived message stanza from ~s",
-			     [jid:to_string(xmpp:get_from(El))]);
+			     [jid:to_string(xmpp:get_from(Msg))]);
 		  false when ResendOnTimeout ->
-		      NewEl = add_resent_delay_info(State, El, Time),
+		      NewEl = add_resent_delay_info(State, Msg, Time),
 		      route(NewEl);
 		  false ->
 		      Txt = <<"User session terminated">>,
-		      route_error(El, xmpp:err_service_unavailable(Txt, Lang))
-	      end
+		      route_error(Msg, xmpp:err_service_unavailable(Txt, Lang))
+	      end;
+	 ({_, _Time, El}) ->
+	      %% Raw element of type 'error' resulting from a validation error
+	      %% We cannot pass it to the router, it will generate an error
+	      ?DEBUG("Do not route raw element from ack queue: ~p", [El])
       end, Queue);
 route_unacked_stanzas(_State) ->
     ok.
@@ -587,11 +605,13 @@ resume_session({Time, Pid}, _State) ->
 make_resume_id(#{sid := {Time, _}, resource := Resource}) ->
     jlib:term_to_base64({Resource, Time}).
 
--spec add_resent_delay_info(state(), stanza(), erlang:timestamp()) -> stanza().
-add_resent_delay_info(_State, #iq{} = El, _Time) ->
-    El;
-add_resent_delay_info(#{lserver := LServer}, El, Time) ->
-    xmpp_util:add_delay_info(El, jid:make(LServer), Time, <<"Resent">>).
+-spec add_resent_delay_info(state(), stanza(), erlang:timestamp()) -> stanza();
+			   (state(), xmlel(), erlang:timestamp()) -> xmlel().
+add_resent_delay_info(#{lserver := LServer}, El, Time)
+  when is_record(El, message); is_record(El, presence) ->
+    xmpp_util:add_delay_info(El, jid:make(LServer), Time, <<"Resent">>);
+add_resent_delay_info(_State, El, _Time) ->
+    El.
 
 -spec route(stanza()) -> ok.
 route(Pkt) ->

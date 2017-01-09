@@ -85,7 +85,8 @@ init([State, Opts]) ->
 		       dict:from_list([{global, Pass}])
 	       end,
     CheckFrom = gen_mod:get_opt(check_from, Opts,
-				fun(Flag) when is_boolean(Flag) -> Flag end),
+				fun(Flag) when is_boolean(Flag) -> Flag end,
+				true),
     xmpp_stream_in:change_shaper(State, Shaper),
     State1 = State#{access => Access,
 		    xmlns => ?NS_COMPONENT,
@@ -119,7 +120,7 @@ handle_stream_start(_StreamStart,
     end.
 
 get_password_fun(#{remote_server := RemoteServer,
-		   socket := Socket,
+		   socket := Socket, sockmod := SockMod,
 		   ip := IP,
 		   host_opts := HostOpts}) ->
     fun(_) ->
@@ -129,7 +130,7 @@ get_password_fun(#{remote_server := RemoteServer,
 		error ->
 		    ?ERROR_MSG("(~s) Domain ~s is unconfigured for "
 			       "external component from ~s",
-			       [ejabberd_socket:pp(Socket), RemoteServer,
+			       [SockMod:pp(Socket), RemoteServer,
 				ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
 		    {false, undefined}
 	    end
@@ -137,10 +138,11 @@ get_password_fun(#{remote_server := RemoteServer,
 
 handle_auth_success(_, Mech, _,
 		    #{remote_server := RemoteServer, host_opts := HostOpts,
-		      socket := Socket, ip := IP} = State) ->
+		      socket := Socket, sockmod := SockMod,
+		      ip := IP} = State) ->
     ?INFO_MSG("(~s) Accepted external component ~s authentication "
 	      "for ~s from ~s",
-	      [ejabberd_socket:pp(Socket), Mech, RemoteServer,
+	      [SockMod:pp(Socket), Mech, RemoteServer,
 	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
     lists:foreach(
       fun (H) ->
@@ -151,10 +153,11 @@ handle_auth_success(_, Mech, _,
 
 handle_auth_failure(_, Mech, Reason,
 		    #{remote_server := RemoteServer,
+		      sockmod := SockMod,
 		      socket := Socket, ip := IP} = State) ->
     ?ERROR_MSG("(~s) Failed external component ~s authentication "
 	       "for ~s from ~s: ~s",
-	       [ejabberd_socket:pp(Socket), Mech, RemoteServer,
+	       [SockMod:pp(Socket), Mech, RemoteServer,
 		ejabberd_config:may_hide_data(jlib:ip_to_list(IP)),
 		Reason]),
     State.

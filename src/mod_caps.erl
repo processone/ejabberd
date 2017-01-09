@@ -47,7 +47,7 @@
 -export([init/1, handle_info/2, handle_call/3,
 	 handle_cast/2, terminate/2, code_change/3]).
 
--export([user_send_packet/4, user_receive_packet/5,
+-export([user_send_packet/1, user_receive_packet/1,
 	 c2s_presence_in/2, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
@@ -126,47 +126,51 @@ read_caps(Presence) ->
 	Caps -> Caps
     end.
 
--spec user_send_packet(stanza(), ejabberd_c2s:state(), jid(), jid()) -> stanza().
-user_send_packet(#presence{type = available} = Pkt,
-		 _C2SState,
-		 #jid{luser = User, lserver = Server} = From,
-		 #jid{luser = User, lserver = Server,
-		      lresource = <<"">>}) ->
+-spec user_send_packet({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
+user_send_packet({#presence{type = available,
+			    from = #jid{luser = U, lserver = LServer} = From,
+			    to = #jid{luser = U, lserver = LServer,
+				      lresource = <<"">>}} = Pkt,
+		  State}) ->
     case read_caps(Pkt) of
 	nothing -> ok;
 	#caps{version = Version, exts = Exts} = Caps ->
-	    feature_request(Server, From, Caps, [Version | Exts])
+	    feature_request(LServer, From, Caps, [Version | Exts])
     end,
-    Pkt;
-user_send_packet(Pkt, _C2SState, _From, _To) ->
-    Pkt.
+    {Pkt, State};
+user_send_packet(Acc) ->
+    Acc.
 
--spec user_receive_packet(stanza(), ejabberd_c2s:state(),
-			  jid(), jid(), jid()) -> stanza().
-user_receive_packet(#presence{type = available} = Pkt,
-		    _C2SState,
-		    #jid{lserver = Server},
-		    From, _To) ->
-    IsRemote = not lists:member(From#jid.lserver, ?MYHOSTS),
+-spec user_receive_packet({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
+user_receive_packet({#presence{from = From, type = available} = Pkt,
+		     #{lserver := LServer} = State}) ->
+    IsRemote = not ejabberd_router:is_my_host(From#jid.lserver),
     if IsRemote ->
-	   case read_caps(Pkt) of
-	     nothing -> ok;
-	     #caps{version = Version, exts = Exts} = Caps ->
-		 feature_request(Server, From, Caps, [Version | Exts])
-	   end;
+	    case read_caps(Pkt) of
+		nothing -> ok;
+		#caps{version = Version, exts = Exts} = Caps ->
+		    feature_request(LServer, From, Caps, [Version | Exts])
+	    end;
        true -> ok
     end,
-    Pkt;
-user_receive_packet(Pkt, _C2SState, _JID, _From, _To) ->
-    Pkt.
+    {Pkt, State};
+user_receive_packet(Acc) ->
+    Acc.
 
 -spec caps_stream_features([xmpp_element()], binary()) -> [xmpp_element()].
 
 caps_stream_features(Acc, MyHost) ->
-    case make_my_disco_hash(MyHost) of
-      <<"">> -> Acc;
-      Hash ->
-	  [#caps{hash = <<"sha-1">>, node = ?EJABBERD_URI, version = Hash}|Acc]
+    case gen_mod:is_loaded(MyHost, ?MODULE) of
+	true ->
+	    case make_my_disco_hash(MyHost) of
+		<<"">> ->
+		    Acc;
+		Hash ->
+		    [#caps{hash = <<"sha-1">>, node = ?EJABBERD_URI,
+			   version = Hash}|Acc]
+	    end;
+	false ->
+	    Acc
     end.
 
 -spec disco_features({error, stanza_error()} | {result, [binary()]} | empty,
@@ -238,7 +242,7 @@ c2s_presence_in(C2SState,
 			    end;
 			_ -> gb_trees:delete_any(LFrom, Rs)
 		    end,
-	    C2SState#{caps_resources := NewRs};
+	    C2SState#{caps_resources => NewRs};
        true ->
 	    C2SState
     end.
@@ -266,7 +270,7 @@ init([Host, Opts]) ->
 		       user_receive_packet, 75),
     ejabberd_hooks:add(c2s_post_auth_features, Host, ?MODULE,
 		       caps_stream_features, 75),
-    ejabberd_hooks:add(s2s_stream_features, Host, ?MODULE,
+    ejabberd_hooks:add(s2s_in_post_auth_features, Host, ?MODULE,
 		       caps_stream_features, 75),
     ejabberd_hooks:add(disco_local_features, Host, ?MODULE,
 		       disco_features, 75),
@@ -295,7 +299,7 @@ terminate(_Reason, State) ->
 			  ?MODULE, user_receive_packet, 75),
     ejabberd_hooks:delete(c2s_post_auth_features, Host,
 			  ?MODULE, caps_stream_features, 75),
-    ejabberd_hooks:delete(s2s_stream_features, Host,
+    ejabberd_hooks:delete(s2s_in_post_auth_features, Host,
 			  ?MODULE, caps_stream_features, 75),
     ejabberd_hooks:delete(disco_local_features, Host,
 			  ?MODULE, disco_features, 75),

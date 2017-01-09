@@ -12,7 +12,7 @@
 %% gen_mod callbacks
 -export([start/2, stop/1]).
 
--export([update_presence/3, vcard_set/3, export/1,
+-export([update_presence/1, vcard_set/3, export/1,
 	 import_info/0, import/5, import_start/2,
 	 mod_opt_type/1, depends/2]).
 
@@ -33,14 +33,14 @@
 start(Host, Opts) ->
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
-    ejabberd_hooks:add(c2s_update_presence, Host, ?MODULE,
+    ejabberd_hooks:add(c2s_self_presence, Host, ?MODULE,
 		       update_presence, 100),
     ejabberd_hooks:add(vcard_set, Host, ?MODULE, vcard_set,
 		       100),
     ok.
 
 stop(Host) ->
-    ejabberd_hooks:delete(c2s_update_presence, Host,
+    ejabberd_hooks:delete(c2s_self_presence, Host,
 			  ?MODULE, update_presence, 100),
     ejabberd_hooks:delete(vcard_set, Host, ?MODULE,
 			  vcard_set, 100),
@@ -52,10 +52,15 @@ depends(_Host, _Opts) ->
 %%====================================================================
 %% Hooks
 %%====================================================================
--spec update_presence(presence(), binary(), binary()) -> presence().
-update_presence(#presence{type = available} = Packet, User, Host) ->
-    presence_with_xupdate(Packet, User, Host);
-update_presence(Packet, _User, _Host) -> Packet.
+-spec update_presence({presence(), ejabberd_c2s:state()})
+      -> {presence(), ejabberd_c2s:state()}.
+update_presence({#presence{type = available} = Pres,
+		 #{jid := #jid{luser = LUser, lserver = LServer}} = State}) ->
+    Hash = get_xupdate(LUser, LServer),
+    Pres1 = xmpp:set_subtag(Pres, #vcard_xupdate{hash = Hash}),
+    {Pres1, State};
+update_presence(Acc) ->
+    Acc.
 
 -spec vcard_set(binary(), binary(), xmlel()) -> ok.
 vcard_set(LUser, LServer, VCARD) ->
@@ -86,15 +91,6 @@ remove_xupdate(LUser, LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:remove_xupdate(LUser, LServer).
 
-%%%----------------------------------------------------------------------
-%%% Presence stanza rebuilding
-%%%----------------------------------------------------------------------
-
-presence_with_xupdate(Presence, User, Host) ->
-    Hash = get_xupdate(User, Host),
-    Presence1 = xmpp:remove_subtag(Presence, #vcard_xupdate{}),
-    xmpp:set_subtag(Presence1, #vcard_xupdate{hash = Hash}).
-
 import_info() ->
     [{<<"vcard_xupdate">>, 3}].
 
@@ -110,5 +106,8 @@ export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:export(LServer).
 
+%%====================================================================
+%% Options
+%%====================================================================
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(_) -> [db_type].

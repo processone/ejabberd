@@ -186,7 +186,9 @@ init_tcp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
 listen_tcp(PortIP, Module, SockOpts, Port, IPS) ->
     case ets:lookup(listen_sockets, PortIP) of
 	[{PortIP, ListenSocket}] ->
-	    ?INFO_MSG("Reusing listening port for ~p", [PortIP]),
+	    {_, _, Transport} = PortIP,
+	    ?INFO_MSG("Reusing listening ~s port ~p at ~s",
+		      [Transport, Port, IPS]),
 	    ets:delete(listen_sockets, PortIP),
 	    ListenSocket;
 	_ ->
@@ -330,21 +332,26 @@ accept(ListenSocket, Module, Opts, Interval) ->
 	{ok, Socket} ->
 	    case {inet:sockname(Socket), inet:peername(Socket)} of
 		{{ok, {Addr, Port}}, {ok, {PAddr, PPort}}} ->
-		    ?INFO_MSG("Accepted connection ~s:~p -> ~s:~p",
-			      [ejabberd_config:may_hide_data(inet_parse:ntoa(PAddr)),
+		    CallMod = case is_frontend(Module) of
+				  true -> ejabberd_frontend_socket;
+				  false -> ejabberd_socket
+			      end,
+		    Receiver = case CallMod:start(strip_frontend(Module),
+						  gen_tcp, Socket, Opts) of
+				   {ok, RecvPid} -> RecvPid;
+				   _ -> none
+			       end,
+		    ?INFO_MSG("(~p) Accepted connection ~s:~p -> ~s:~p",
+			      [Receiver,
+			       ejabberd_config:may_hide_data(inet_parse:ntoa(PAddr)),
 			       PPort, inet_parse:ntoa(Addr), Port]);
 		_ ->
 		    ok
 	    end,
-	    CallMod = case is_frontend(Module) of
-			  true -> ejabberd_frontend_socket;
-			  false -> ejabberd_socket
-		      end,
-	    CallMod:start(strip_frontend(Module), gen_tcp, Socket, Opts),
 	    accept(ListenSocket, Module, Opts, NewInterval);
 	{error, Reason} ->
-	    ?ERROR_MSG("(~w) Failed TCP accept: ~w",
-                       [ListenSocket, Reason]),
+	    ?ERROR_MSG("(~w) Failed TCP accept: ~s",
+                       [ListenSocket, inet:format_error(Reason)]),
 	    accept(ListenSocket, Module, Opts, NewInterval)
     end.
 

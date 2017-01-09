@@ -83,7 +83,6 @@
 -include("xmpp.hrl").
 
 -include("ejabberd_commands.hrl").
--include("mod_privacy.hrl").
 -include("ejabberd_sm.hrl").
 
 -callback init() -> ok | {error, any()}.
@@ -576,24 +575,10 @@ do_route(From, To, Packet) ->
 %% or if there are no current sessions for the user.
 -spec is_privacy_allow(jid(), jid(), stanza()) -> boolean().
 is_privacy_allow(From, To, Packet) ->
-    User = To#jid.user,
-    Server = To#jid.server,
-    PrivacyList =
-	ejabberd_hooks:run_fold(privacy_get_user_list, Server,
-				#userlist{}, [User, Server]),
-    is_privacy_allow(From, To, Packet, PrivacyList).
-
-%% Check if privacy rules allow this delivery
-%% Function copied from ejabberd_c2s.erl
--spec is_privacy_allow(jid(), jid(), stanza(), #userlist{}) -> boolean().
-is_privacy_allow(From, To, Packet, PrivacyList) ->
-    User = To#jid.user,
-    Server = To#jid.server,
-    allow ==
-      ejabberd_hooks:run_fold(privacy_check_packet, Server,
-			      allow,
-			      [User, Server, PrivacyList, {From, To, Packet},
-			       in]).
+    LServer = To#jid.server,
+    allow == ejabberd_hooks:run_fold(
+	       privacy_check_packet, LServer, allow,
+	       [To, xmpp:set_from_to(Packet, From, To), in]).
 
 -spec route_message(jid(), jid(), message(), message_type()) -> any().
 route_message(From, To, Packet, Type) ->
@@ -757,10 +742,14 @@ process_iq(From, To, #iq{type = T, lang = Lang, sub_els = [El]} = Packet)
 	    Err = xmpp:err_service_unavailable(Txt, Lang),
 	    ejabberd_router:route_error(To, From, Packet, Err)
     end;
-process_iq(From, To, #iq{type = T} = Packet) when T == get; T == set ->
-    Err = xmpp:err_bad_request(),
-    ejabberd_router:route_error(To, From, Packet, Err),
-    ok;
+process_iq(From, To, #iq{type = T, lang = Lang, sub_els = SubEls} = Packet)
+  when T == get; T == set ->
+    Txt = case SubEls of
+	      [] -> <<"No child elements found">>;
+	      _ -> <<"Too many child elements">>
+	  end,
+    Err = xmpp:err_bad_request(Txt, Lang),
+    ejabberd_router:route_error(To, From, Packet, Err);
 process_iq(_From, _To, #iq{}) ->
     ok.
 
@@ -770,7 +759,7 @@ force_update_presence({LUser, LServer}) ->
     Mod = get_sm_backend(LServer),
     Ss = online(Mod:get_sessions(LUser, LServer)),
     lists:foreach(fun (#session{sid = {_, Pid}}) ->
-			  Pid ! {force_update_presence, LUser, LServer}
+			  Pid ! force_update_presence
 		  end,
 		  Ss).
 

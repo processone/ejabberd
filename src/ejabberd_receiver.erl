@@ -135,8 +135,8 @@ handle_call({starttls, TLSSocket}, _From, State) ->
 	{ok, TLSData} ->
 	    {reply, ok,
 		process_data(TLSData, NewState), ?HIBERNATE_TIMEOUT};
-	{error, _Reason} ->
-	    {stop, normal, ok, NewState}
+	{error, _} = Err ->
+	    {stop, normal, Err, NewState}
     end;
 handle_call({compress, Data}, _From,
 	    #state{socket = Socket, sock_mod = SockMod} =

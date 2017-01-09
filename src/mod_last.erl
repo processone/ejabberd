@@ -130,13 +130,10 @@ process_sm_iq(#iq{from = From, to = To, lang = Lang} = IQ) ->
     if (Subscription == both) or (Subscription == from) or
        (From#jid.luser == To#jid.luser) and
        (From#jid.lserver == To#jid.lserver) ->
-	    UserListRecord =
-		ejabberd_hooks:run_fold(privacy_get_user_list, Server,
-					#userlist{}, [User, Server]),
+	    Pres = xmpp:set_from_to(#presence{}, To, From),
 	    case ejabberd_hooks:run_fold(privacy_check_packet,
 					 Server, allow,
-					 [User, Server, UserListRecord,
-					  {To, From, #presence{}}, out]) of
+					 [To, Pres, out]) of
 		allow -> get_last_iq(IQ, User, Server);
 		deny -> xmpp:make_error(IQ, xmpp:err_forbidden())
 	    end;

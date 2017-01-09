@@ -131,13 +131,14 @@ s2s_out_auth_result(#{db_verify := _} = State, _) ->
     %% in section 2.1.2, step 2
     {stop, send_verify_request(State)};
 s2s_out_auth_result(#{db_enabled := true,
+		      sockmod := SockMod,
 		      socket := Socket, ip := IP,
 		      server := LServer,
-		      remote_server := RServer} = State, false) ->
+		      remote_server := RServer} = State, {false, _}) ->
     %% SASL authentication has failed, retrying with dialback
     %% Sending dialback request, section 2.1.1, step 1
     ?INFO_MSG("(~s) Retrying with s2s dialback authentication: ~s -> ~s (~s)",
-	      [ejabberd_socket:pp(Socket), LServer, RServer,
+	      [SockMod:pp(Socket), LServer, RServer,
 	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
     State1 = maps:remove(stop_reason, State#{on_route => queue}),
     {stop, send_db_request(State1)};
@@ -150,6 +151,7 @@ s2s_out_downgraded(#{db_verify := _} = State, _) ->
     %% section 2.1.2, step 2
     {stop, send_verify_request(State)};
 s2s_out_downgraded(#{db_enabled := true,
+		     sockmod := SockMod,
 		     socket := Socket, ip := IP,
 		     server := LServer,
 		     remote_server := RServer} = State, _) ->
@@ -157,7 +159,7 @@ s2s_out_downgraded(#{db_enabled := true,
     %% section 2.1.1, step 1
     ?INFO_MSG("(~s) Trying s2s dialback authentication with "
 	      "non-RFC compliant server: ~s -> ~s (~s)",
-	      [ejabberd_socket:pp(Socket), LServer, RServer,
+	      [SockMod:pp(Socket), LServer, RServer,
 	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
     {stop, send_db_request(State)};
 s2s_out_downgraded(State, _) ->

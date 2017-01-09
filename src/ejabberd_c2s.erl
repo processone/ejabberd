@@ -33,9 +33,9 @@
 %% xmpp_stream_in callbacks
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
--export([tls_options/1, tls_required/1, tls_verify/1,
-	 compress_methods/1, bind/2, get_password_fun/1,
-	 check_password_fun/1, check_password_digest_fun/1,
+-export([tls_options/1, tls_required/1, tls_verify/1, tls_enabled/1,
+	 compress_methods/1, bind/2, sasl_mechanisms/2,
+	 get_password_fun/1, check_password_fun/1, check_password_digest_fun/1,
 	 unauthenticated_stream_features/1, authenticated_stream_features/1,
 	 handle_stream_start/2, handle_stream_end/2,
 	 handle_unauthenticated_packet/2, handle_authenticated_packet/2,
@@ -47,7 +47,7 @@
 	 process_terminated/2, process_info/2]).
 %% API
 -export([get_presence/1, get_subscription/2, get_subscribed/1,
-	 open_session/1, call/3, send/2, close/1, close/2, stop/1, establish/1,
+	 open_session/1, call/3, send/2, close/1, close/2, stop/1,
 	 reply/2, copy_state/2, set_timeout/2, add_hooks/1]).
 
 -include("ejabberd.hrl").
@@ -73,6 +73,9 @@ start_link(SockData, Opts) ->
 socket_type() ->
     xml_stream.
 
+%%%===================================================================
+%%% Common API
+%%%===================================================================
 -spec call(pid(), term(), non_neg_integer() | infinity) -> term().
 call(Ref, Msg, Timeout) ->
     xmpp_stream_in:call(Ref, Msg, Timeout).
@@ -116,18 +119,15 @@ stop(Ref) ->
 send(Pid, Pkt) when is_pid(Pid) ->
     xmpp_stream_in:send(Pid, Pkt);
 send(#{lserver := LServer} = State, Pkt) ->
-    case ejabberd_hooks:run_fold(c2s_filter_send, LServer, {Pkt, State}, []) of
+    Pkt1 = fix_from_to(Pkt, State),
+    case ejabberd_hooks:run_fold(c2s_filter_send, LServer, {Pkt1, State}, []) of
 	{drop, State1} -> State1;
-	{Pkt1, State1} -> xmpp_stream_in:send(State1, Pkt1)
+	{Pkt2, State1} -> xmpp_stream_in:send(State1, Pkt2)
     end.
 
 -spec set_timeout(state(), timeout()) -> state().
 set_timeout(State, Timeout) ->
     xmpp_stream_in:set_timeout(State, Timeout).
-
--spec establish(state()) -> state().
-establish(State) ->
-    xmpp_stream_in:establish(State).
 
 -spec add_hooks(binary()) -> ok.
 add_hooks(Host) ->
@@ -162,7 +162,7 @@ copy_state(#{owner := Owner} = NewState,
 		     auth_module => AuthModule,
 		     pres_t => PresT, pres_a => PresA,
 		     pres_f => PresF},
-    ejabberd_hooks:run_fold(c2s_copy_state, LServer, State2, [OldState]).
+    ejabberd_hooks:run_fold(c2s_copy_session, LServer, State2, [OldState]).
 
 -spec open_session(state()) -> {ok, state()} | state().
 open_session(#{user := U, server := S, resource := R,
@@ -195,13 +195,21 @@ process_info(#{lserver := LServer} = State,
 			     process_iq_in(State, Packet)
 		     end,
     if Pass ->
-	    Packet1 = ejabberd_hooks:run_fold(
-			user_receive_packet, LServer, Packet, [State1]),
-	    ejabberd_hooks:run(c2s_loop_debug, [{route, From, To, Packet}]),
-	    send(State1, Packet1);
+	    {Packet1, State2} = ejabberd_hooks:run_fold(
+				  user_receive_packet, LServer,
+				  {Packet, State1}, []),
+	    case Packet1 of
+		drop -> State2;
+		_ -> send(State2, Packet1)
+	    end;
        true ->
-	    ejabberd_hooks:run(c2s_loop_debug, [{route, From, To, Packet}]),
 	    State1
+    end;
+process_info(State, force_update_presence) ->
+    try maps:get(pres_last, State) of
+	Pres -> process_self_presence(State, Pres)
+    catch _:{badkey, _} ->
+	    State
     end;
 process_info(State, Info) ->
     ?WARNING_MSG("got unexpected info: ~p", [Info]),
@@ -218,15 +226,21 @@ reject_unauthenticated_packet(State, Pkt) ->
 process_closed(State, Reason) ->
     stop(State#{stop_reason => Reason}).
 
-process_terminated(#{socket := Socket, jid := JID} = State,
+process_terminated(#{sockmod := SockMod, socket := Socket, jid := JID} = State,
 		   Reason) ->
     Status = format_reason(State, Reason),
     ?INFO_MSG("(~s) Closing c2s session for ~s: ~s",
-	      [ejabberd_socket:pp(Socket), jid:to_string(JID), Status]),
-    Pres = #presence{type = unavailable,
-		     status = xmpp:mk_text(Status),
-		     from = JID, to = jid:remove_resource(JID)},
-    State1 = broadcast_presence_unavailable(State, Pres),
+	      [SockMod:pp(Socket), jid:to_string(JID), Status]),
+    State1 = case maps:is_key(pres_last, State) of
+		 true ->
+		     Pres = #presence{type = unavailable,
+				      status = xmpp:mk_text(Status),
+				      from = JID,
+				      to = jid:remove_resource(JID)},
+		     broadcast_presence_unavailable(State, Pres);
+		 false ->
+		     State
+	     end,
     bounce_message_queue(),
     State1;
 process_terminated(State, _Reason) ->
@@ -235,13 +249,51 @@ process_terminated(State, _Reason) ->
 %%%===================================================================
 %%% xmpp_stream_in callbacks
 %%%===================================================================
-tls_options(#{lserver := LServer, tls_options := TLSOpts}) ->
-    case ejabberd_config:get_option({domain_certfile, LServer},
-				    fun iolist_to_binary/1) of
-	undefined ->
-	    TLSOpts;
-	CertFile ->
-	    lists:keystore(certfile, 1, TLSOpts, {certfile, CertFile})
+tls_options(#{lserver := LServer, tls_options := DefaultOpts}) ->
+    TLSOpts1 = case ejabberd_config:get_option(
+		      {c2s_certfile, LServer},
+		      fun iolist_to_binary/1,
+		      ejabberd_config:get_option(
+			{domain_certfile, LServer},
+			fun iolist_to_binary/1)) of
+		   undefined -> [];
+		   CertFile -> lists:keystore(certfile, 1, DefaultOpts,
+					      {certfile, CertFile})
+	       end,
+    TLSOpts2 = case ejabberd_config:get_option(
+                      {c2s_ciphers, LServer},
+		      fun iolist_to_binary/1) of
+                   undefined -> TLSOpts1;
+                   Ciphers -> lists:keystore(ciphers, 1, TLSOpts1,
+					     {ciphers, Ciphers})
+               end,
+    TLSOpts3 = case ejabberd_config:get_option(
+                      {c2s_protocol_options, LServer},
+                      fun (Options) -> str:join(Options, <<$|>>) end) of
+                   undefined -> TLSOpts2;
+                   ProtoOpts -> lists:keystore(protocol_options, 1, TLSOpts2,
+					       {protocol_options, ProtoOpts})
+               end,
+    TLSOpts4 = case ejabberd_config:get_option(
+                      {c2s_dhfile, LServer},
+		      fun iolist_to_binary/1) of
+                   undefined -> TLSOpts3;
+                   DHFile -> lists:keystore(dhfile, 1, TLSOpts3,
+					    {dhfile, DHFile})
+               end,
+    TLSOpts5 = case ejabberd_config:get_option(
+		      {c2s_cafile, LServer},
+		      fun iolist_to_binary/1) of
+		   undefined -> TLSOpts4;
+		   CAFile -> lists:keystore(cafile, 1, TLSOpts4,
+					    {cafile, CAFile})
+	       end,
+    case ejabberd_config:get_option(
+	   {c2s_tls_compression, LServer},
+	   fun(B) when is_boolean(B) -> B end) of
+	undefined -> TLSOpts5;
+	false -> [compression_none | TLSOpts5];
+	true -> lists:delete(compression_none, TLSOpts5)
     end.
 
 tls_required(#{tls_required := TLSRequired}) ->
@@ -249,6 +301,11 @@ tls_required(#{tls_required := TLSRequired}) ->
 
 tls_verify(#{tls_verify := TLSVerify}) ->
     TLSVerify.
+
+tls_enabled(#{tls_enabled := TLSEnabled,
+	      tls_required := TLSRequired,
+	      tls_verify := TLSVerify}) ->
+    TLSEnabled or TLSRequired or TLSVerify.
 
 compress_methods(#{zlib := true}) ->
     [<<"zlib">>];
@@ -260,6 +317,20 @@ unauthenticated_stream_features(#{lserver := LServer}) ->
 
 authenticated_stream_features(#{lserver := LServer}) ->
     ejabberd_hooks:run_fold(c2s_post_auth_features, LServer, [], [LServer]).
+
+sasl_mechanisms(Mechs, #{lserver := LServer}) ->
+    Mechs1 = ejabberd_config:get_option(
+	       {disable_sasl_mechanisms, LServer},
+	       fun(V) when is_list(V) ->
+		       lists:map(fun(M) -> str:to_upper(M) end, V);
+		  (V) ->
+		       [str:to_upper(V)]
+	       end, []),
+    Mechs2 = case ejabberd_auth_anonymous:is_sasl_anonymous_enabled(LServer) of
+		 true -> Mechs1;
+		 false -> [<<"ANONYMOUS">>|Mechs1]
+	     end,
+    Mechs -- Mechs2.
 
 get_password_fun(#{lserver := LServer}) ->
     fun(U) ->
@@ -279,7 +350,8 @@ check_password_digest_fun(#{lserver := LServer}) ->
 bind(<<"">>, State) ->
     bind(new_uniq_id(), State);
 bind(R, #{user := U, server := S, access := Access, lang := Lang,
-	  lserver := LServer, socket := Socket, ip := IP} = State) ->
+	  lserver := LServer, sockmod := SockMod, socket := Socket,
+	  ip := IP} = State) ->
     case resource_conflict_action(U, S, R) of
 	closenew ->
 	    {error, xmpp:err_conflict(), State};
@@ -289,38 +361,30 @@ bind(R, #{user := U, server := S, access := Access, lang := Lang,
 				    #{usr => jid:split(JID), ip => IP},
 				    LServer) of
 		allow ->
-		    State1 = open_session(State#{resource => Resource}),
+		    State1 = open_session(State#{resource => Resource,
+						 sid => ejabberd_sm:make_sid()}),
 		    State2 = ejabberd_hooks:run_fold(
 			       c2s_session_opened, LServer, State1, []),
 		    ?INFO_MSG("(~s) Opened c2s session for ~s",
-			      [ejabberd_socket:pp(Socket), jid:to_string(JID)]),
+			      [SockMod:pp(Socket), jid:to_string(JID)]),
 		    {ok, State2};
 		deny ->
 		    ejabberd_hooks:run(forbidden_session_hook, LServer, [JID]),
 		    ?INFO_MSG("(~s) Forbidden c2s session for ~s",
-			      [ejabberd_socket:pp(Socket), jid:to_string(JID)]),
+			      [SockMod:pp(Socket), jid:to_string(JID)]),
 		    Txt = <<"Denied by ACL">>,
 		    {error, xmpp:err_not_allowed(Txt, Lang), State}
 	    end
     end.
 
-handle_stream_start(StreamStart,
-		    #{lserver := LServer, ip := IP, lang := Lang} = State) ->
+handle_stream_start(StreamStart, #{lserver := LServer} = State) ->
     case ejabberd_router:is_my_host(LServer) of
 	false ->
 	    send(State, xmpp:serr_host_unknown());
 	true ->
-	    case check_bl_c2s(IP, Lang) of
-		false ->
-		    change_shaper(State),
-		    ejabberd_hooks:run_fold(
-		      c2s_stream_started, LServer, State, [StreamStart]);
-		{true, LogReason, ReasonT} ->
-		    ?INFO_MSG("Connection attempt from blacklisted IP ~s: ~s",
-			      [jlib:ip_to_list(IP), LogReason]),
-		    Err = xmpp:serr_policy_violation(ReasonT, Lang),
-		    send(State, Err)
-	    end
+	    change_shaper(State),
+	    ejabberd_hooks:run_fold(
+	      c2s_stream_started, LServer, State, [StreamStart])
     end.
 
 handle_stream_end(Reason, #{lserver := LServer} = State) ->
@@ -328,18 +392,20 @@ handle_stream_end(Reason, #{lserver := LServer} = State) ->
     ejabberd_hooks:run_fold(c2s_closed, LServer, State1, [Reason]).
 
 handle_auth_success(User, Mech, AuthModule,
-		    #{socket := Socket, ip := IP, lserver := LServer} = State) ->
+		    #{socket := Socket, sockmod := SockMod,
+		      ip := IP, lserver := LServer} = State) ->
     ?INFO_MSG("(~s) Accepted c2s ~s authentication for ~s@~s by ~s backend from ~s",
-	      [ejabberd_socket:pp(Socket), Mech, User, LServer,
+	      [SockMod:pp(Socket), Mech, User, LServer,
 	       ejabberd_auth:backend_type(AuthModule),
 	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
     State1 = State#{auth_module => AuthModule},
     ejabberd_hooks:run_fold(c2s_auth_result, LServer, State1, [true, User]).
 
 handle_auth_failure(User, Mech, Reason,
-		    #{socket := Socket, ip := IP, lserver := LServer} = State) ->
+		    #{socket := Socket, sockmod := SockMod,
+		      ip := IP, lserver := LServer} = State) ->
     ?INFO_MSG("(~s) Failed c2s ~s authentication ~sfrom ~s: ~s",
-	      [ejabberd_socket:pp(Socket), Mech,
+	      [SockMod:pp(Socket), Mech,
 	       if User /= <<"">> -> ["for ", User, "@", LServer, " "];
 		  true -> ""
 	       end,
@@ -355,17 +421,22 @@ handle_unauthenticated_packet(Pkt, #{lserver := LServer} = State) ->
 handle_authenticated_packet(Pkt, #{lserver := LServer} = State) when not ?is_stanza(Pkt) ->
     ejabberd_hooks:run_fold(c2s_authenticated_packet,
 			    LServer, State, [Pkt]);
-handle_authenticated_packet(Pkt, #{lserver := LServer} = State) ->
+handle_authenticated_packet(Pkt, #{lserver := LServer, jid := JID} = State) ->
     State1 = ejabberd_hooks:run_fold(c2s_authenticated_packet,
 				     LServer, State, [Pkt]),
-    Pkt1 = ejabberd_hooks:run_fold(user_send_packet, LServer, Pkt, [State1]),
+    #jid{luser = LUser} = JID,
+    {Pkt1, State2} = ejabberd_hooks:run_fold(
+		       user_send_packet, LServer, {Pkt, State1}, []),
     case Pkt1 of
-	#presence{to = #jid{lresource = <<"">>}} ->
-	    process_self_presence(State1, Pkt1);
+	drop ->
+	    State2;
+	#presence{to = #jid{luser = LUser, lserver = LServer,
+			    lresource = <<"">>}} ->
+	    process_self_presence(State2, Pkt1);
 	#presence{} ->
-	    process_presence_out(State1, Pkt1);
+	    process_presence_out(State2, Pkt1);
 	_ ->
-	    check_privacy_then_route(State1, Pkt1)
+	    check_privacy_then_route(State2, Pkt1)
     end.
 
 handle_cdata(Data, #{lserver := LServer} = State) ->
@@ -381,22 +452,34 @@ handle_send(Pkt, Result, #{lserver := LServer} = State) ->
 init([State, Opts]) ->
     Access = gen_mod:get_opt(access, Opts, fun acl:access_rules_validator/1, all),
     Shaper = gen_mod:get_opt(shaper, Opts, fun acl:shaper_rules_validator/1, none),
-    TLSOpts = lists:filter(
-		fun({certfile, _}) -> true;
-		   ({ciphers, _}) -> true;
-		   ({dhfile, _}) -> true;
-		   (_) -> false
-		end, Opts),
+    TLSOpts1 = lists:filter(
+		 fun({certfile, _}) -> true;
+		    ({ciphers, _}) -> true;
+		    ({dhfile, _}) -> true;
+		    ({cafile, _}) -> true;
+		    (_) -> false
+		 end, Opts),
+    TLSOpts2 = case lists:keyfind(protocol_options, 1, Opts) of
+		   false -> TLSOpts1;
+		   {_, OptString} ->
+		       ProtoOpts = str:join(OptString, <<$|>>),
+		       [{protocol_options, ProtoOpts}|TLSOpts1]
+	       end,
+    TLSOpts3 = case proplists:get_bool(tls_compression, Opts) of
+                   false -> [compression_none | TLSOpts2];
+                   true -> TLSOpts2
+               end,
+    TLSEnabled = proplists:get_bool(starttls, Opts),
     TLSRequired = proplists:get_bool(starttls_required, Opts),
     TLSVerify = proplists:get_bool(tls_verify, Opts),
     Zlib = proplists:get_bool(zlib, Opts),
-    State1 = State#{tls_options => TLSOpts,
+    State1 = State#{tls_options => TLSOpts3,
 		    tls_required => TLSRequired,
+		    tls_enabled => TLSEnabled,
 		    tls_verify => TLSVerify,
 		    pres_a => ?SETS:new(),
 		    pres_f => ?SETS:new(),
 		    pres_t => ?SETS:new(),
-		    sid => ejabberd_sm:make_sid(),
 		    zlib => Zlib,
 		    lang => ?MYLANG,
 		    server => ?MYNAME,
@@ -426,12 +509,12 @@ handle_cast(Msg, #{lserver := LServer} = State) ->
 handle_info(Info, #{lserver := LServer} = State) ->
     ejabberd_hooks:run_fold(c2s_handle_info, LServer, State, [Info]).
 
-terminate(Reason, #{sid := SID, jid := _,
+terminate(Reason, #{sid := SID,
 		    user := U, server := S, resource := R,
 		    lserver := LServer} = State) ->
-    Status = format_reason(State, Reason),
     case maps:is_key(pres_last, State) of
 	true ->
+	    Status = format_reason(State, Reason),
 	    ejabberd_sm:close_session_unset_presence(SID, U, S, R, Status);
 	false ->
 	    ejabberd_sm:close_session(SID, U, S, R)
@@ -446,11 +529,6 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
--spec check_bl_c2s({inet:ip_address(), non_neg_integer()}, binary())
-      -> false | {true, binary(), binary()}.
-check_bl_c2s({IP, _Port}, Lang) ->
-    ejabberd_hooks:run_fold(check_bl_c2s, false, [IP, Lang]).
-
 -spec process_iq_in(state(), iq()) -> {boolean(), state()}.
 process_iq_in(State, #iq{} = IQ) ->
     case privacy_check_packet(State, IQ, in) of
@@ -484,7 +562,7 @@ process_presence_in(#{lserver := LServer, pres_a := PresA} = State0,
     State = ejabberd_hooks:run_fold(c2s_presence_in, LServer, State0, [Pres]),
     case T of
 	probe ->
-	    NewState = do_some_magic(State, From),
+	    NewState = add_to_pres_a(State, From),
 	    route_probe_reply(From, To, NewState),
 	    {false, NewState};
 	error ->
@@ -495,7 +573,7 @@ process_presence_in(#{lserver := LServer, pres_a := PresA} = State0,
 		allow when T == error ->
 		    {true, State};
 		allow ->
-		    NewState = do_some_magic(State, From),
+		    NewState = add_to_pres_a(State, From),
 		    {true, NewState};
 		deny ->
 		    {false, State}
@@ -577,24 +655,27 @@ process_presence_out(#{user := User, server := Server, lserver := LServer,
     end.
 
 -spec process_self_presence(state(), presence()) -> state().
-process_self_presence(#{ip := IP, conn := Conn,
+process_self_presence(#{ip := IP, conn := Conn, lserver := LServer,
 			auth_module := AuthMod, sid := SID,
 			user := U, server := S,	resource := R} = State,
 		      #presence{type = unavailable} = Pres) ->
     Status = xmpp:get_text(Pres#presence.status),
     Info = [{ip, IP}, {conn, Conn}, {auth_module, AuthMod}],
     ejabberd_sm:unset_presence(SID, U, S, R, Status, Info),
-    State1 = broadcast_presence_unavailable(State, Pres),
-    maps:remove(pres_last, maps:remove(pres_timestamp, State1));
+    {Pres1, State1} = ejabberd_hooks:run_fold(
+			c2s_self_presence, LServer, {Pres, State}, []),
+    State2 = broadcast_presence_unavailable(State1, Pres1),
+    maps:remove(pres_last, maps:remove(pres_timestamp, State2));
 process_self_presence(#{lserver := LServer} = State,
 		      #presence{type = available} = Pres) ->
     PreviousPres = maps:get(pres_last, State, undefined),
     update_priority(State, Pres),
-    State1 = ejabberd_hooks:run_fold(user_available_hook, LServer, State, [Pres]),
-    State2 = State1#{pres_last => Pres,
+    {Pres1, State1} = ejabberd_hooks:run_fold(
+			c2s_self_presence, LServer, {Pres, State}, []),
+    State2 = State1#{pres_last => Pres1,
 		     pres_timestamp => p1_time_compat:timestamp()},
     FromUnavailable = PreviousPres == undefined,
-    broadcast_presence_available(State2, Pres, FromUnavailable);
+    broadcast_presence_available(State2, Pres1, FromUnavailable);
 process_self_presence(State, _Pres) ->
     State.
 
@@ -614,9 +695,9 @@ broadcast_presence_unavailable(#{pres_a := PresA} = State, Pres) ->
 
 -spec broadcast_presence_available(state(), presence(), boolean()) -> state().
 broadcast_presence_available(#{pres_a := PresA, pres_f := PresF,
-			       pres_t := PresT} = State,
+			       pres_t := PresT, jid := JID} = State,
 			     Pres, _FromUnavailable = true) ->
-    Probe = #presence{type = probe},
+    Probe = #presence{from = JID, type = probe},
     TJIDs = filter_blocked(State, Probe, PresT),
     FJIDs = filter_blocked(State, Pres, PresF),
     route_multiple(State, TJIDs, Probe),
@@ -739,6 +820,19 @@ get_conn_type(State) ->
 	websocket -> websocket
     end.
 
+-spec fix_from_to(xmpp_element(), state()) -> stanza().
+fix_from_to(Pkt, #{jid := JID}) when ?is_stanza(Pkt) ->
+    #jid{luser = U, lserver = S, lresource = R} = JID,
+    From = xmpp:get_from(Pkt),
+    From1 = case jid:tolower(From) of
+		{U, S, R} -> JID;
+		{U, S, _} -> jid:replace_resource(JID, From#jid.resource);
+		_ -> From
+	    end,
+    xmpp:set_from_to(Pkt, From1, JID);
+fix_from_to(Pkt, _State) ->
+    Pkt.
+
 -spec change_shaper(state()) -> ok.
 change_shaper(#{shaper := ShaperName, ip := IP, lserver := LServer,
 		user := U, server := S, resource := R} = State) ->
@@ -748,8 +842,8 @@ change_shaper(#{shaper := ShaperName, ip := IP, lserver := LServer,
 				LServer),
     xmpp_stream_in:change_shaper(State, Shaper).
 
--spec do_some_magic(state(), jid()) -> state().
-do_some_magic(#{pres_a := PresA, pres_f := PresF} = State, From) ->
+-spec add_to_pres_a(state(), jid()) -> state().
+add_to_pres_a(#{pres_a := PresA, pres_f := PresF} = State, From) ->
     LFrom = jid:tolower(From),
     LBFrom = jid:remove_resource(LFrom),
     case (?SETS):is_element(LFrom, PresA) orelse
@@ -775,20 +869,41 @@ do_some_magic(#{pres_a := PresA, pres_f := PresF} = State, From) ->
 -spec format_reason(state(), term()) -> binary().
 format_reason(#{stop_reason := Reason}, _) ->
     xmpp_stream_in:format_error(Reason);
-format_reason(_, Reason) when Reason /= normal ->
-    <<"internal server error">>;
+format_reason(_, normal) ->
+    <<"unknown reason">>;
+format_reason(_, shutdown) ->
+    <<"stopped by supervisor">>;
+format_reason(_, {shutdown, _}) ->
+    <<"stopped by supervisor">>;
 format_reason(_, _) ->
-    <<"">>.
+    <<"internal server error">>.
 
 transform_listen_option(Opt, Opts) ->
     [Opt|Opts].
 
 opt_type(domain_certfile) -> fun iolist_to_binary/1;
+opt_type(c2s_certfile) -> fun iolist_to_binary/1;
+opt_type(c2s_ciphers) -> fun iolist_to_binary/1;
+opt_type(c2s_dhfile) -> fun iolist_to_binary/1;
+opt_type(c2s_cafile) -> fun iolist_to_binary/1;
+opt_type(c2s_protocol_options) ->
+    fun (Options) -> str:join(Options, <<"|">>) end;
+opt_type(c2s_tls_compression) ->
+    fun (true) -> true;
+	(false) -> false
+    end;
 opt_type(resource_conflict) ->
     fun (setresource) -> setresource;
 	(closeold) -> closeold;
 	(closenew) -> closenew;
 	(acceptnew) -> acceptnew
     end;
+opt_type(disable_sasl_mechanisms) ->
+    fun (V) when is_list(V) ->
+	    lists:map(fun (M) -> str:to_upper(M) end, V);
+	(V) -> [str:to_upper(V)]
+    end;
 opt_type(_) ->
-    [domain_certfile, resource_conflict].
+    [domain_certfile, c2s_certfile, c2s_ciphers, c2s_cafile,
+     c2s_protocol_options, c2s_tls_compression, resource_conflict,
+     disable_sasl_mechanisms].

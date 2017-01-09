@@ -36,8 +36,7 @@
 	 process_iq_reply/3, register_iq_handler/4,
 	 register_iq_handler/5, register_iq_response_handler/4,
 	 register_iq_response_handler/5, unregister_iq_handler/2,
-	 unregister_iq_response_handler/2, refresh_iq_handlers/0,
-	 bounce_resource_packet/3]).
+	 unregister_iq_response_handler/2, bounce_resource_packet/3]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
@@ -90,8 +89,13 @@ process_iq(From, To, #iq{type = T, lang = Lang, sub_els = [El]} = Packet)
 	    Err = xmpp:err_service_unavailable(Txt, Lang),
 	    ejabberd_router:route_error(To, From, Packet, Err)
     end;
-process_iq(From, To, #iq{type = T} = Packet) when T == get; T == set ->
-    Err = xmpp:err_bad_request(),
+process_iq(From, To, #iq{type = T, lang = Lang, sub_els = SubEls} = Packet)
+  when T == get; T == set ->
+    Txt = case SubEls of
+	      [] -> <<"No child elements found">>;
+	      _ -> <<"Too many child elements">>
+	  end,
+    Err = xmpp:err_bad_request(Txt, Lang),
     ejabberd_router:route_error(To, From, Packet, Err);
 process_iq(From, To, #iq{type = T} = Packet) when T == result; T == error ->
     process_iq_reply(From, To, Packet).
@@ -171,10 +175,6 @@ unregister_iq_response_handler(_Host, ID) ->
 unregister_iq_handler(Host, XMLNS) ->
     ejabberd_local ! {unregister_iq_handler, Host, XMLNS}.
 
--spec refresh_iq_handlers() -> any().
-refresh_iq_handlers() ->
-    ejabberd_local ! refresh_iq_handlers.
-
 -spec bounce_resource_packet(jid(), jid(), stanza()) -> stop.
 bounce_resource_packet(_From, #jid{lresource = <<"">>}, #presence{}) ->
     ok;
@@ -228,14 +228,12 @@ handle_info({register_iq_handler, Host, XMLNS, Module,
 	     Function},
 	    State) ->
     ets:insert(?IQTABLE, {{XMLNS, Host}, Module, Function}),
-    catch mod_disco:register_feature(Host, XMLNS),
     {noreply, State};
 handle_info({register_iq_handler, Host, XMLNS, Module,
 	     Function, Opts},
 	    State) ->
     ets:insert(?IQTABLE,
 	       {{XMLNS, Host}, Module, Function, Opts}),
-    catch mod_disco:register_feature(Host, XMLNS),
     {noreply, State};
 handle_info({unregister_iq_handler, Host, XMLNS},
 	    State) ->
@@ -245,19 +243,6 @@ handle_info({unregister_iq_handler, Host, XMLNS},
       _ -> ok
     end,
     ets:delete(?IQTABLE, {XMLNS, Host}),
-    catch mod_disco:unregister_feature(Host, XMLNS),
-    {noreply, State};
-handle_info(refresh_iq_handlers, State) ->
-    lists:foreach(fun (T) ->
-			  case T of
-			    {{XMLNS, Host}, _Module, _Function, _Opts} ->
-				catch mod_disco:register_feature(Host, XMLNS);
-			    {{XMLNS, Host}, _Module, _Function} ->
-				catch mod_disco:register_feature(Host, XMLNS);
-			    _ -> ok
-			  end
-		  end,
-		  ets:tab2list(?IQTABLE)),
     {noreply, State};
 handle_info({timeout, _TRef, ID}, State) ->
     process_iq_timeout(ID),

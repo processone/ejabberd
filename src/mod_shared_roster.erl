@@ -31,9 +31,9 @@
 
 -export([start/2, stop/1, export/1,
 	 import_info/0, webadmin_menu/3, webadmin_page/3,
-	 get_user_roster/2, get_subscription_lists/3,
+	 get_user_roster/2, c2s_session_opened/1,
 	 get_jid_info/4, import/5, process_item/2, import_start/2,
-	 in_subscription/6, out_subscription/4, user_available/1,
+	 in_subscription/6, out_subscription/4, c2s_self_presence/1,
 	 unset_presence/4, register_user/2, remove_user/2,
 	 list_groups/1, create_group/2, create_group/3,
 	 delete_group/2, get_group_opts/2, set_group_opts/3,
@@ -53,6 +53,8 @@
 -include("ejabberd_web_admin.hrl").
 
 -include("mod_shared_roster.hrl").
+
+-define(SETS, gb_sets).
 
 -type group_options() :: [{atom(), any()}].
 -callback init(binary(), gen_mod:opts()) -> any().
@@ -84,14 +86,14 @@ start(Host, Opts) ->
 		       ?MODULE, in_subscription, 30),
     ejabberd_hooks:add(roster_out_subscription, Host,
 		       ?MODULE, out_subscription, 30),
-    ejabberd_hooks:add(roster_get_subscription_lists, Host,
-		       ?MODULE, get_subscription_lists, 70),
+    ejabberd_hooks:add(c2s_session_opened, Host,
+		       ?MODULE, c2s_session_opened, 70),
     ejabberd_hooks:add(roster_get_jid_info, Host, ?MODULE,
 		       get_jid_info, 70),
     ejabberd_hooks:add(roster_process_item, Host, ?MODULE,
 		       process_item, 50),
-    ejabberd_hooks:add(user_available_hook, Host, ?MODULE,
-		       user_available, 50),
+    ejabberd_hooks:add(c2s_self_presence, Host, ?MODULE,
+		       c2s_self_presence, 50),
     ejabberd_hooks:add(unset_presence_hook, Host, ?MODULE,
 		       unset_presence, 50),
     ejabberd_hooks:add(register_user, Host, ?MODULE,
@@ -112,14 +114,14 @@ stop(Host) ->
 			  ?MODULE, in_subscription, 30),
     ejabberd_hooks:delete(roster_out_subscription, Host,
 			  ?MODULE, out_subscription, 30),
-    ejabberd_hooks:delete(roster_get_subscription_lists,
-			  Host, ?MODULE, get_subscription_lists, 70),
+    ejabberd_hooks:delete(c2s_session_opened,
+			  Host, ?MODULE, c2s_session_opened, 70),
     ejabberd_hooks:delete(roster_get_jid_info, Host,
 			  ?MODULE, get_jid_info, 70),
     ejabberd_hooks:delete(roster_process_item, Host,
 			  ?MODULE, process_item, 50),
-    ejabberd_hooks:delete(user_available_hook, Host,
-			  ?MODULE, user_available, 50),
+    ejabberd_hooks:delete(c2s_self_presence, Host,
+			  ?MODULE, c2s_self_presence, 50),
     ejabberd_hooks:delete(unset_presence_hook, Host,
 			  ?MODULE, unset_presence, 50),
     ejabberd_hooks:delete(register_user, Host, ?MODULE,
@@ -294,19 +296,21 @@ set_item(User, Server, Resource, Item) ->
 			  jid:make(Server),
 			  ResIQ).
 
--spec get_subscription_lists({[ljid()], [ljid()]}, binary(), binary())
-      -> {[ljid()], [ljid()]}.
-get_subscription_lists({F, T}, User, Server) ->
-    LUser = jid:nodeprep(User),
-    LServer = jid:nameprep(Server),
+c2s_session_opened(#{jid := #jid{luser = LUser, lserver = LServer} = JID,
+		     pres_f := PresF, pres_t := PresT} = State) ->
     US = {LUser, LServer},
     DisplayedGroups = get_user_displayed_groups(US),
-    SRUsers = lists:usort(lists:flatmap(fun (Group) ->
-						get_group_users(LServer, Group)
-					end,
-					DisplayedGroups)),
-    SRJIDs = [{U1, S1, <<"">>} || {U1, S1} <- SRUsers],
-    {lists:usort(SRJIDs ++ F), lists:usort(SRJIDs ++ T)}.
+    SRUsers = lists:flatmap(fun(Group) ->
+				    get_group_users(LServer, Group)
+			    end,
+			    DisplayedGroups),
+    BareLJID = jid:tolower(jid:remove_resource(JID)),
+    PresBoth = lists:foldl(
+		 fun({U, S}, Acc) ->
+			 ?SETS:add_element({U, S, <<"">>}, Acc)
+		 end, ?SETS:new(), [BareLJID|SRUsers]),
+    State#{pres_f => ?SETS:union(PresBoth, PresF),
+	   pres_t => ?SETS:union(PresBoth, PresT)}.
 
 -spec get_jid_info({subscription(), [binary()]}, binary(), binary(), jid())
       -> {subscription(), [binary()]}.
@@ -739,12 +743,15 @@ push_roster_item(User, Server, ContactU, ContactS,
 		   groups = [GroupName]},
     push_item(User, Server, Item).
 
--spec user_available(jid()) -> ok.
-user_available(New) ->
+-spec c2s_self_presence({presence(), ejabberd_c2s:state()})
+      -> {presence(), ejabberd_c2s:state()}.
+c2s_self_presence({_, #{pres_last := _}} = Acc) ->
+    %% This is just a presence update, nothing to do
+    Acc;
+c2s_self_presence({#presence{type = available}, #{jid := New}} = Acc) ->
     LUser = New#jid.luser,
     LServer = New#jid.lserver,
-    Resources = ejabberd_sm:get_user_resources(LUser,
-					       LServer),
+    Resources = ejabberd_sm:get_user_resources(LUser, LServer),
     ?DEBUG("user_available for ~p @ ~p (~p resources)",
 	   [LUser, LServer, length(Resources)]),
     case length(Resources) of
@@ -761,7 +768,10 @@ user_available(New) ->
 			end,
 			UserGroups);
       _ -> ok
-    end.
+    end,
+    Acc;
+c2s_self_presence(Acc) ->
+    Acc.
 
 -spec unset_presence(binary(), binary(), binary(), binary()) -> ok.
 unset_presence(LUser, LServer, Resource, Status) ->

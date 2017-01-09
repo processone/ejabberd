@@ -20,9 +20,11 @@
 %%%
 %%%-------------------------------------------------------------------
 -module(xmpp_stream_out).
--behaviour(gen_server).
+-define(GEN_SERVER, gen_server).
+-behaviour(?GEN_SERVER).
 
 -protocol({rfc, 6120}).
+-protocol({xep, 114, '1.6'}).
 
 %% API
 -export([start/3, start_link/3, call/3, cast/2, reply/2, connect/1,
@@ -42,7 +44,6 @@
 -define(TCP_SEND_TIMEOUT, 15000).
 
 -include("xmpp.hrl").
--include("logger.hrl").
 -include_lib("kernel/include/inet.hrl").
 
 -type state() :: map().
@@ -53,31 +54,87 @@
 -type stop_reason() :: {idna, bad_string} |
 		       {dns, inet:posix() | inet_res:res_error()} |
 		       {stream, reset | {in | out, stream_error()}} |
-		       {tls, term()} |
+		       {tls, inet:posix() | atom() | binary()} |
 		       {pkix, binary()} |
 		       {auth, atom() | binary() | string()} |
 		       {socket, inet:posix() | closed | timeout} |
 		       internal_failure.
 
--callback init(list()) -> {ok, state()} | {stop, term()} | ignore.
+-callback init(list()) -> {ok, state()} | {error, term()} | ignore.
+-callback handle_cast(term(), state()) -> state().
+-callback handle_call(term(), term(), state()) -> state().
+-callback handle_info(term(), state()) -> state().
+-callback terminate(term(), state()) -> any().
+-callback code_change(term(), state(), term()) -> {ok, state()} | {error, term()}.
+-callback handle_stream_start(stream_start(), state()) -> state().
+-callback handle_stream_established(state()) -> state().
+-callback handle_stream_downgraded(stream_start(), state()) -> state().
+-callback handle_stream_end(stop_reason(), state()) -> state().
+-callback handle_cdata(binary(), state()) -> state().
+-callback handle_send(xmpp_element(), ok | {error, inet:posix()}, state()) -> state().
+-callback handle_recv(fxml:xmlel(), xmpp_element() | {error, term()}, state()) -> state().
+-callback handle_timeout(state()) -> state().
+-callback handle_authenticated_features(stream_features(), state()) -> state().
+-callback handle_unauthenticated_features(stream_features(), state()) -> state().
+-callback handle_auth_success(cyrsasl:mechanism(), state()) -> state().
+-callback handle_auth_failure(cyrsasl:mechanism(), binary(), state()) -> state().
+-callback handle_packet(xmpp_element(), state()) -> state().
+-callback tls_options(state()) -> [proplists:property()].
+-callback tls_required(state()) -> boolean().
+-callback tls_verify(state()) -> boolean().
+-callback tls_enabled(state()) -> boolean().
+-callback dns_timeout(state()) -> timeout().
+-callback dns_retries(state()) -> non_neg_integer().
+-callback default_port(state()) -> inet:port_number().
+-callback address_families(state()) -> [inet:address_family()].
+-callback connect_timeout(state()) -> timeout().
+
+-optional_callbacks([init/1,
+		     handle_cast/2,
+		     handle_call/3,
+		     handle_info/2,
+		     terminate/2,
+		     code_change/3,
+		     handle_stream_start/2,
+		     handle_stream_established/1,
+		     handle_stream_downgraded/2,
+		     handle_stream_end/2,
+		     handle_cdata/2,
+		     handle_send/3,
+		     handle_recv/3,
+		     handle_timeout/1,
+		     handle_authenticated_features/2,
+		     handle_unauthenticated_features/2,
+		     handle_auth_success/2,
+		     handle_auth_failure/3,
+		     handle_packet/2,
+		     tls_options/1,
+		     tls_required/1,
+		     tls_verify/1,
+		     tls_enabled/1,
+		     dns_timeout/1,
+		     dns_retries/1,
+		     default_port/1,
+		     address_families/1,
+		     connect_timeout/1]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 start(Mod, Args, Opts) ->
-    gen_server:start(?MODULE, [Mod|Args], Opts ++ ?FSMOPTS).
+    ?GEN_SERVER:start(?MODULE, [Mod|Args], Opts ++ ?FSMOPTS).
 
 start_link(Mod, Args, Opts) ->
-    gen_server:start_link(?MODULE, [Mod|Args], Opts ++ ?FSMOPTS).
+    ?GEN_SERVER:start_link(?MODULE, [Mod|Args], Opts ++ ?FSMOPTS).
 
 call(Ref, Msg, Timeout) ->
-    gen_server:call(Ref, Msg, Timeout).
+    ?GEN_SERVER:call(Ref, Msg, Timeout).
 
 cast(Ref, Msg) ->
-    gen_server:cast(Ref, Msg).
+    ?GEN_SERVER:cast(Ref, Msg).
 
 reply(Ref, Reply) ->
-    gen_server:reply(Ref, Reply).
+    ?GEN_SERVER:reply(Ref, Reply).
 
 -spec connect(pid()) -> ok.
 connect(Ref) ->
@@ -98,7 +155,7 @@ stop(_) ->
 send(Pid, Pkt) when is_pid(Pid) ->
     cast(Pid, {send, Pkt});
 send(#{owner := Owner} = State, Pkt) when Owner == self() ->
-    send_element(State, Pkt);
+    send_pkt(State, Pkt);
 send(_, _) ->
     erlang:error(badarg).
 
@@ -154,7 +211,8 @@ format_error({dns, Reason}) ->
 format_error({socket, Reason}) ->
     format("Connection failed: ~s", [format_inet_error(Reason)]);
 format_error({pkix, Reason}) ->
-    format("Peer certificate rejected: ~s", [Reason]);
+    {_, ErrTxt} = xmpp_stream_pkix:format_error(Reason),
+    format("Peer certificate rejected: ~s", [ErrTxt]);
 format_error({stream, reset}) ->
     <<"Stream reset by peer">>;
 format_error({stream, {in, #stream_error{reason = Reason, text = Txt}}}) ->
@@ -162,7 +220,7 @@ format_error({stream, {in, #stream_error{reason = Reason, text = Txt}}}) ->
 format_error({stream, {out, #stream_error{reason = Reason, text = Txt}}}) ->
     format("Stream closed by us: ~s", [format_stream_error(Reason, Txt)]);
 format_error({tls, Reason}) ->
-    format("TLS failed: ~w", [Reason]);
+    format("TLS failed: ~s", [format_tls_error(Reason)]);
 format_error({auth, Reason}) ->
     format("Authentication failed: ~s", [Reason]);
 format_error(internal_failure) ->
@@ -199,8 +257,10 @@ init([Mod, SockMod, From, To, Opts]) ->
 	{ok, State1} ->
 	    {_, State2, Timeout} = noreply(State1),
 	    {ok, State2, Timeout};
-	Err ->
-	    Err
+	{error, Reason} ->
+	    {stop, Reason};
+	ignore ->
+	    ignore
     end.
 
 -spec handle_call(term(), term(), state()) -> noreply().
@@ -239,7 +299,7 @@ handle_cast(connect, State) ->
     %% Ignoring connection attempts in other states
     noreply(State);
 handle_cast({send, Pkt}, State) ->
-    noreply(send_element(State, Pkt));
+    noreply(send_pkt(State, Pkt));
 handle_cast(stop, State) ->
     {stop, normal, State};
 handle_cast(Cast, #{mod := Mod} = State) ->
@@ -257,12 +317,12 @@ handle_info({'$gen_event', {xmlstreamstart, Name, Attrs}},
 	  #stream_start{} = Pkt ->
 	      process_stream(Pkt, State);
 	  _ ->
-	      send_element(State, xmpp:serr_invalid_xml())
+	      send_pkt(State, xmpp:serr_invalid_xml())
       catch _:{xmpp_codec, Why} ->
 	      Txt = xmpp:io_format_error(Why),
 	      Lang = select_lang(MyLang, xmpp:get_lang(El)),
 	      Err = xmpp:serr_invalid_xml(Txt, Lang),
-	      send_element(State, Err)
+	      send_pkt(State, Err)
       end);
 handle_info({'$gen_event', {xmlstreamerror, Reason}}, #{lang := Lang}= State) ->
     State1 = send_header(State),
@@ -276,7 +336,7 @@ handle_info({'$gen_event', {xmlstreamerror, Reason}}, #{lang := Lang}= State) ->
 			_ ->
 			    xmpp:serr_not_well_formed()
 		    end,
-	      send_element(State1, Err)
+	      send_pkt(State1, Err)
       end);
 handle_info({'$gen_event', {xmlstreamelement, El}},
 	    #{xmlns := NS, mod := Mod} = State) ->
@@ -291,7 +351,7 @@ handle_info({'$gen_event', {xmlstreamelement, El}},
 		  false -> process_element(Pkt, State1)
 	      end
       catch _:{xmpp_codec, Why} ->
-	      State1 = try Mod:handle_recv(El, undefined, State)
+	      State1 = try Mod:handle_recv(El, {error, Why}, State)
 		       catch _:undef -> State
 		       end,
 	      case is_disconnected(State1) of
@@ -312,7 +372,7 @@ handle_info(timeout, #{mod := Mod} = State) ->
     Disconnected = is_disconnected(State),
     noreply(try Mod:handle_timeout(State)
 	    catch _:undef when not Disconnected ->
-		    send_element(State, xmpp:serr_connection_timeout());
+		    send_pkt(State, xmpp:serr_connection_timeout());
 		  _:undef ->
 		    stop(State)
 	    end);
@@ -384,9 +444,9 @@ process_stream(#stream_start{xmlns = XML_NS,
 			     stream_xmlns = STREAM_NS},
 	       #{xmlns := NS} = State)
   when XML_NS /= NS; STREAM_NS /= ?NS_STREAM ->
-    send_element(State, xmpp:serr_invalid_namespace());
+    send_pkt(State, xmpp:serr_invalid_namespace());
 process_stream(#stream_start{version = {N, _}}, State) when N > 1 ->
-    send_element(State, xmpp:serr_unsupported_version());
+    send_pkt(State, xmpp:serr_unsupported_version());
 process_stream(#stream_start{lang = Lang, id = ID,
 			     version = Version} = StreamStart,
 	       #{mod := Mod} = State) ->
@@ -451,15 +511,19 @@ process_features(#stream_features{sub_els = Els} = StreamFeatures,
 	true -> State1;
 	false ->
 	    TLSRequired = is_starttls_required(State1),
+	    TLSAvailable = is_starttls_available(State1),
 	    %% TODO: improve xmpp.erl
 	    Msg = #message{sub_els = Els},
 	    case xmpp:get_subtag(Msg, #starttls{}) of
 		false when TLSRequired and not Encrypted ->
 		    Txt = <<"Use of STARTTLS required">>,
-		    send_element(State1, xmpp:err_policy_violation(Txt, Lang));
-		#starttls{} when not Encrypted ->
+		    send_pkt(State1, xmpp:serr_policy_violation(Txt, Lang));
+		#starttls{required = true} when not TLSAvailable and not Encrypted ->
+		    Txt = <<"Use of STARTTLS forbidden">>,
+		    send_pkt(State1, xmpp:serr_policy_violation(Txt, Lang));
+		#starttls{} when TLSAvailable and not Encrypted ->
 		    State2 = State1#{stream_state => wait_for_starttls_response},
-		    send_element(State2, #starttls{});
+		    send_pkt(State2, #starttls{});
 		_ ->
 		    State2 = process_cert_verification(State1),
 		    case is_disconnected(State2) of
@@ -497,7 +561,7 @@ process_sasl_mechanisms(Mechs, #{user := User, server := Server} = State) ->
 	true ->
 	    State1 = State#{stream_state => wait_for_sasl_response},
 	    Authzid = jid:to_string(jid:make(User, Server)),
-	    send_element(State1, #sasl_auth{mechanism = Mech, text = Authzid});
+	    send_pkt(State1, #sasl_auth{mechanism = Mech, text = Authzid});
 	false ->
 	    process_sasl_failure(
 	      #sasl_failure{reason = 'invalid-mechanism'}, State)
@@ -527,12 +591,12 @@ process_stream_downgrade(StreamStart,
     TLSRequired = is_starttls_required(State),
     if not Encrypted and TLSRequired ->
 	    Txt = <<"Use of STARTTLS required">>,
-	    send_element(State, xmpp:err_policy_violation(Txt, Lang));
+	    send_pkt(State, xmpp:serr_policy_violation(Txt, Lang));
        true ->
 	    State1 = State#{stream_state => downgraded},
 	    try Mod:handle_stream_downgraded(StreamStart, State1)
 	    catch _:undef ->
-		    send_element(State1, xmpp:serr_unsupported_version())
+		    send_pkt(State1, xmpp:serr_unsupported_version())
 	    end
     end.
 
@@ -576,7 +640,7 @@ process_sasl_success(#{mod := Mod,
 
 -spec process_sasl_failure(sasl_failure(), state()) -> state().
 process_sasl_failure(#sasl_failure{reason = Reason}, #{mod := Mod} = State) ->
-    try Mod:handle_auth_failure(<<"EXTERNAL">>, Reason, State)
+    try Mod:handle_auth_failure(<<"EXTERNAL">>, {auth, Reason}, State)
     catch _:undef -> process_stream_end({auth, Reason}, State)
     end.
 
@@ -590,6 +654,12 @@ process_packet(Pkt, #{mod := Mod} = State) ->
 is_starttls_required(#{mod := Mod} = State) ->
     try Mod:tls_required(State)
     catch _:undef -> false
+    end.
+
+-spec is_starttls_available(state()) -> boolean().
+is_starttls_available(#{mod := Mod} = State) ->
+    try Mod:tls_enabled(State)
+    catch _:undef -> true
     end.
 
 -spec send_header(state()) -> state().
@@ -610,40 +680,34 @@ send_header(#{remote_server := RemoteServer,
 	      true ->
 		   undefined
 	   end,
-    Header = xmpp:encode(
-	       #stream_start{xmlns = NS,
-			     lang = Lang,
-			     stream_xmlns = ?NS_STREAM,
-			     db_xmlns = NS_DB,
-			     from = From,
-			     to = jid:make(RemoteServer),
-			     version = {1,0}}),
-    case send_text(State, fxml:element_to_header(Header)) of
+    StreamStart = #stream_start{xmlns = NS,
+				lang = Lang,
+				stream_xmlns = ?NS_STREAM,
+				db_xmlns = NS_DB,
+				from = From,
+				to = jid:make(RemoteServer),
+				version = {1,0}},
+    case socket_send(State, StreamStart) of
 	ok -> State;
 	{error, Why} -> process_stream_end({socket, Why}, State)
     end.
 
--spec send_element(state(), xmpp_element()) -> state().
-send_element(#{xmlns := NS, mod := Mod} = State, Pkt) ->
-    El = xmpp:encode(Pkt, NS),
-    Data = fxml:element_to_binary(El),
-    State1 = try Mod:handle_send(Pkt, El, Data, State)
+-spec send_pkt(state(), xmpp_element() | xmlel()) -> state().
+send_pkt(#{mod := Mod} = State, Pkt) ->
+    Result = socket_send(State, Pkt),
+    State1 = try Mod:handle_send(Pkt, Result, State)
 	     catch _:undef -> State
 	     end,
-    case is_disconnected(State1) of
-	true -> State1;
-	false ->
-	    case send_text(State1, Data) of
-		_ when is_record(Pkt, stream_error) ->
-		    process_stream_end({stream, {out, Pkt}}, State1);
-		ok ->
-		    State1;
-		{error, Why} ->
-		    process_stream_end({socket, Why}, State1)
-	    end
+    case Result of
+	_ when is_record(Pkt, stream_error) ->
+	    process_stream_end({stream, {out, Pkt}}, State1);
+	ok ->
+	    State1;
+	{error, Why} ->
+	    process_stream_end({socket, Why}, State1)
     end.
 
--spec send_error(state(), xmpp_element(), stanza_error()) -> state().
+-spec send_error(state(), xmpp_element() | xmlel(), stanza_error()) -> state().
 send_error(State, Pkt, Err) ->
     case xmpp:is_stanza(Pkt) of
 	true ->
@@ -654,22 +718,29 @@ send_error(State, Pkt, Err) ->
 		<<"error">> -> State;
 		_ ->
 		    ErrPkt = xmpp:make_error(Pkt, Err),
-		    send_element(State, ErrPkt)
+		    send_pkt(State, ErrPkt)
 	    end;
 	false ->
 	    State
     end.
 
--spec send_text(state(), binary()) -> ok | {error, inet:posix()}.
-send_text(#{sockmod := SockMod, socket := Socket,
-	    stream_state := StateName}, Data) when StateName /= disconnected ->
-    SockMod:send(Socket, Data);
-send_text(_, _) ->
+-spec socket_send(state(), xmpp_element() | xmlel() | trailer) -> ok | {error, inet:posix()}.
+socket_send(#{sockmod := SockMod, socket := Socket, xmlns := NS,
+	      stream_state := StateName}, Pkt) when StateName /= disconnected ->
+    case Pkt of
+	trailer ->
+	    SockMod:send_trailer(Socket);
+	#stream_start{} ->
+	    SockMod:send_header(Socket, xmpp:encode(Pkt));
+	_ ->
+	    SockMod:send_element(Socket, xmpp:encode(Pkt, NS))
+    end;
+socket_send(_, _) ->
     {error, closed}.
 
 -spec send_trailer(state()) -> state().
 send_trailer(State) ->
-    send_text(State, <<"</stream:stream>">>),
+    socket_send(State, trailer),
     close_socket(State).
 
 -spec close_socket(state()) -> state().
@@ -710,6 +781,12 @@ format_stream_error(Reason, Txt) ->
 	    binary_to_list(Data) ++ " (" ++ Slogan ++ ")"
     end.
 
+-spec format_tls_error(atom() | binary()) -> list().
+format_tls_error(Reason) when is_atom(Reason) ->
+    format_inet_error(Reason);
+format_tls_error(Reason) ->
+    binary_to_list(Reason).
+
 -spec format(io:format(), list()) -> binary().
 format(Fmt, Args) ->
     iolist_to_binary(io_lib:format(Fmt, Args)).
@@ -747,13 +824,16 @@ resolve(Host, State) ->
     end.
 
 -spec srv_lookup(string(), state()) -> {ok, [host_port()]} | network_error().
+srv_lookup(_Host, #{xmlns := ?NS_COMPONENT}) ->
+    %% Do not attempt to lookup SRV for component connections
+    {error, nxdomain};
 srv_lookup(Host, State) ->
     %% Only perform SRV lookups for FQDN names
     case string:chr(Host, $.) of
 	0 ->
 	    {error, nxdomain};
 	_ ->
-	    case inet_parse:address(Host) of
+	    case inet:parse_address(Host) of
 		{ok, _} ->
 		    {error, nxdomain};
 		{error, _} ->
@@ -763,7 +843,7 @@ srv_lookup(Host, State) ->
 	    end
     end.
 
--spec srv_lookup(string(), non_neg_integer(), integer()) ->
+-spec srv_lookup(string(), timeout(), integer()) ->
 			{ok, [host_port()]} | network_error().
 srv_lookup(_Host, _Timeout, Retries) when Retries < 1 ->
     {error, timeout};
@@ -807,7 +887,7 @@ a_lookup([], _State, Err) ->
     Err.
 
 -spec a_lookup(inet:hostname(), inet:port_number(), inet:address_family(),
-	       non_neg_integer(), integer()) -> {ok, [ip_port()]} | network_error().
+	       timeout(), integer()) -> {ok, [ip_port()]} | network_error().
 a_lookup(_Host, _Port, _Family, _Timeout, Retries) when Retries < 1 ->
     {error, timeout};
 a_lookup(Host, Port, Family, Timeout, Retries) ->
@@ -861,7 +941,7 @@ connect(AddrPorts, #{sockmod := SockMod} = State) ->
     Timeout = get_connect_timeout(State),
     connect(AddrPorts, SockMod, Timeout, {error, nxdomain}).
 
--spec connect([ip_port()], module(), non_neg_integer(), network_error()) ->
+-spec connect([ip_port()], module(), timeout(), network_error()) ->
 		     {ok, term(), ip_port()} | network_error().
 connect([{Addr, Port}|AddrPorts], SockMod, Timeout, _) ->
     Type = get_addr_type(Addr),
@@ -883,12 +963,11 @@ connect([], _SockMod, _Timeout, Err) ->
 get_addr_type({_, _, _, _}) -> inet;
 get_addr_type({_, _, _, _, _, _, _, _}) -> inet6.
 
--spec get_dns_timeout(state()) -> non_neg_integer().
+-spec get_dns_timeout(state()) -> timeout().
 get_dns_timeout(#{mod := Mod} = State) ->
-    timer:seconds(
-      try Mod:dns_timeout(State)
-      catch _:undef -> 10
-      end).
+    try Mod:dns_timeout(State)
+    catch _:undef -> timer:seconds(10)
+    end.
 
 -spec get_dns_retries(state()) -> non_neg_integer().
 get_dns_retries(#{mod := Mod} = State) ->
@@ -909,9 +988,8 @@ get_address_families(#{mod := Mod} = State) ->
     catch _:undef -> [inet, inet6]
     end.
 
--spec get_connect_timeout(state()) -> non_neg_integer().
+-spec get_connect_timeout(state()) -> timeout().
 get_connect_timeout(#{mod := Mod} = State) ->
-    timer:seconds(
-      try Mod:connect_timeout(State)
-      catch _:undef -> 10
-      end).
+    try Mod:connect_timeout(State)
+    catch _:undef -> timer:seconds(10)
+    end.

@@ -38,7 +38,7 @@
 	 terminate/2, code_change/3]).
 -export([component_connected/1, component_disconnected/2,
 	 roster_access/2, process_message/3,
-	 process_presence_out/4, process_presence_in/5]).
+	 process_presence_out/1, process_presence_in/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -133,10 +133,11 @@ roster_access(false, #iq{from = From, to = To, type = Type}) ->
 	    false
     end.
 
--spec process_presence_out(stanza(), ejabberd_c2s:state(), jid(), jid()) -> stanza().
-process_presence_out(#presence{type = Type} = Pres, _C2SState,
-		     #jid{luser = LUser, lserver = LServer} = From,
-		     #jid{luser = LUser, lserver = LServer, lresource = <<"">>})
+-spec process_presence_out({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
+process_presence_out({#presence{
+			 from = #jid{luser = LUser, lserver = LServer} = From,
+			 to = #jid{luser = LUser, lserver = LServer, lresource = <<"">>},
+			 type = Type} = Pres, C2SState})
   when Type == available; Type == unavailable ->
     %% Self-presence processing
     Permissions = get_permissions(LServer),
@@ -151,15 +152,15 @@ process_presence_out(#presence{type = Type} = Pres, _C2SState,
 		      ok
 	      end
       end, dict:to_list(Permissions)),
-    Pres;
-process_presence_out(Acc, _, _, _) ->
+    {Pres, C2SState};
+process_presence_out(Acc) ->
     Acc.
 
--spec process_presence_in(stanza(), ejabberd_c2s:state(),
-			  jid(), jid(), jid()) -> stanza().
-process_presence_in(#presence{type = Type} = Pres, _C2SState, _,
-		    #jid{luser = U, lserver = S} = From,
-		    #jid{luser = LUser, lserver = LServer})
+-spec process_presence_in({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
+process_presence_in({#presence{
+			from = #jid{luser = U, lserver = S} = From,
+			to = #jid{luser = LUser, lserver = LServer},
+			type = Type} = Pres, C2SState})
   when {U, S} /= {LUser, LServer} andalso
        (Type == available orelse Type == unavailable) ->
     Permissions = get_permissions(LServer),
@@ -179,8 +180,8 @@ process_presence_in(#presence{type = Type} = Pres, _C2SState, _,
 		      ok
 	      end
       end, dict:to_list(Permissions)),
-    Pres;
-process_presence_in(Acc, _, _, _, _) ->
+    {Pres, C2SState};
+process_presence_in(Acc) ->
     Acc.
 
 %%%===================================================================

@@ -120,12 +120,8 @@ process_closed(State, _Reason) ->
 %%%===================================================================
 %%% xmpp_stream_in callbacks
 %%%===================================================================
-tls_options(#{tls_compression := Compression, server_host := LServer}) ->
-    Opts = case Compression of
-	       false -> [compression_none];
-	       true -> []
-	   end,
-    ejabberd_s2s:tls_options(LServer, Opts).
+tls_options(#{tls_options := TLSOpts, server_host := LServer}) ->
+    ejabberd_s2s:tls_options(LServer, TLSOpts).
 
 tls_required(#{server_host := LServer}) ->
     ejabberd_s2s:tls_required(LServer).
@@ -164,16 +160,18 @@ handle_stream_established(State) ->
     set_idle_timeout(State#{established => true}).
 
 handle_auth_success(RServer, Mech, _AuthModule,
-		    #{socket := Socket, ip := IP,
+		    #{sockmod := SockMod,
+		      socket := Socket, ip := IP,
 		      auth_domains := AuthDomains,
 		      server_host := ServerHost,
 		      lserver := LServer} = State) ->
     ?INFO_MSG("(~s) Accepted inbound s2s ~s authentication ~s -> ~s (~s)",
-	      [ejabberd_socket:pp(Socket), Mech, RServer, LServer,
+	      [SockMod:pp(Socket), Mech, RServer, LServer,
 	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
     State1 = case ejabberd_s2s:allow_host(ServerHost, RServer) of
 		 true ->
 		     AuthDomains1 = sets:add_element(RServer, AuthDomains),
+		     change_shaper(State, RServer),
 		     State#{auth_domains => AuthDomains1};
 		 false ->
 		     State
@@ -181,11 +179,12 @@ handle_auth_success(RServer, Mech, _AuthModule,
     ejabberd_hooks:run_fold(s2s_in_auth_result, ServerHost, State1, [true, RServer]).
 
 handle_auth_failure(RServer, Mech, Reason,
-		    #{socket := Socket, ip := IP,
+		    #{sockmod := SockMod,
+		      socket := Socket, ip := IP,
 		      server_host := ServerHost,
 		      lserver := LServer} = State) ->
     ?INFO_MSG("(~s) Failed inbound s2s ~s authentication ~s -> ~s (~s): ~s",
-	      [ejabberd_socket:pp(Socket), Mech, RServer, LServer,
+	      [SockMod:pp(Socket), Mech, RServer, LServer,
 	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP)), Reason]),
     ejabberd_hooks:run_fold(s2s_in_auth_result,
 			    ServerHost, State, [false, RServer]).
@@ -204,10 +203,13 @@ handle_authenticated_packet(Pkt, State) ->
 	    LServer = ejabberd_router:host_of_route(To#jid.lserver),
 	    State1 = ejabberd_hooks:run_fold(s2s_in_authenticated_packet,
 					     LServer, State, [Pkt]),
-	    Pkt1 = ejabberd_hooks:run_fold(s2s_receive_packet, LServer,
-					   Pkt, [State1]),
-	    ejabberd_router:route(From, To, Pkt1),
-	    State1;
+	    {Pkt1, State2} = ejabberd_hooks:run_fold(s2s_receive_packet, LServer,
+						     {Pkt, State1}, []),
+	    case Pkt1 of
+		drop -> ok;
+		_ -> ejabberd_router:route(From, To, Pkt1)
+	    end,
+	    State2;
 	{error, Err} ->
 	    send(State, Err)
     end.
@@ -225,8 +227,24 @@ handle_send(Pkt, Result, #{server_host := LServer} = State) ->
 
 init([State, Opts]) ->
     Shaper = gen_mod:get_opt(shaper, Opts, fun acl:shaper_rules_validator/1, none),
-    TLSCompression = proplists:get_bool(tls_compression, Opts),
-    State1 = State#{tls_compression => TLSCompression,
+    TLSOpts1 = lists:filter(
+		 fun({certfile, _}) -> true;
+		    ({ciphers, _}) -> true;
+		    ({dhfile, _}) -> true;
+		    ({cafile, _}) -> true;
+		    (_) -> false
+		 end, Opts),
+    TLSOpts2 = case lists:keyfind(protocol_options, 1, Opts) of
+		   false -> TLSOpts1;
+		   {_, OptString} ->
+		       ProtoOpts = str:join(OptString, <<$|>>),
+		       [{protocol_options, ProtoOpts}|TLSOpts1]
+	       end,
+    TLSOpts3 = case proplists:get_bool(tls_compression, Opts) of
+                   false -> [compression_none | TLSOpts2];
+                   true -> TLSOpts2
+               end,
+    State1 = State#{tls_options => TLSOpts3,
 		    auth_domains => sets:new(),
 		    xmlns => ?NS_SERVER,
 		    lang => ?MYLANG,
@@ -251,8 +269,16 @@ handle_cast(Msg, #{server_host := LServer} = State) ->
 handle_info(Info, #{server_host := LServer} = State) ->
     ejabberd_hooks:run_fold(s2s_in_handle_info, LServer, State, [Info]).
 
-terminate(_Reason, _State) ->
-    ok.
+terminate(Reason, #{auth_domains := AuthDomains}) ->
+    case Reason of
+	{process_limit, _} ->
+	    sets:fold(
+	      fun(Host, _) ->
+		      ejabberd_s2s:external_host_overloaded(Host)
+	      end, ok, AuthDomains);
+	_ ->
+	    ok
+    end.
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
@@ -289,6 +315,12 @@ set_idle_timeout(#{server_host := LServer,
     xmpp_stream_in:set_timeout(State, Timeout);
 set_idle_timeout(State) ->
     State.
+
+-spec change_shaper(state(), binary()) -> ok.
+change_shaper(#{shaper := ShaperName, server_host := ServerHost} = State,
+	      RServer) ->
+    Shaper = acl:match_rule(ServerHost, ShaperName, jid:make(RServer)),
+    xmpp_stream_in:change_shaper(State, Shaper).
 
 opt_type(_) ->
     [].

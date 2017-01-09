@@ -272,7 +272,6 @@ init([ServerHost, Opts]) ->
     ejabberd_mnesia:create(?MODULE, pubsub_last_item,
 	[{ram_copies, [node()]},
 	    {attributes, record_info(fields, pubsub_last_item)}]),
-    mod_disco:register_feature(ServerHost, ?NS_PUBSUB),
     lists:foreach(
       fun(H) ->
 	      T = gen_mod:get_module_proc(H, config),
@@ -533,7 +532,7 @@ disco_local_features(Acc, _From, To, <<>>, _Lang) ->
 	{result, I} -> I;
 	_ -> []
     end,
-    {result, Feats ++ [feature(F) || F <- features(Host, <<>>)]};
+    {result, Feats ++ [?NS_PUBSUB|[feature(F) || F <- features(Host, <<>>)]]};
 disco_local_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
@@ -923,7 +922,6 @@ terminate(_Reason,
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_PUBSUB_OWNER),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_COMMANDS),
-    mod_disco:unregister_feature(ServerHost, ?NS_PUBSUB),
     case whereis(gen_mod:get_module_proc(ServerHost, ?LOOPNAME)) of
 	undefined ->
 	    ?ERROR_MSG("~s process is dead, pubsub was broken", [?LOOPNAME]);

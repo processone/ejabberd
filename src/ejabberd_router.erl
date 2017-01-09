@@ -76,8 +76,17 @@ start_link() ->
 
 -spec route(jid(), jid(), xmlel() | stanza()) -> ok.
 
-route(From, To, Packet) ->
-    case catch do_route(From, To, Packet) of
+route(#jid{} = From, #jid{} = To, #xmlel{} = El) ->
+    try xmpp:decode(El, ?NS_CLIENT, [ignore_els]) of
+	Pkt -> route(From, To, xmpp:set_from_to(Pkt, From, To))
+    catch _:{xmpp_codec, Why} ->
+	    ?ERROR_MSG("failed to decode xml element ~p when "
+		       "routing from ~s to ~s: ~s",
+		       [El, jid:to_string(From), jid:to_string(To),
+			xmpp:format_error(Why)])
+    end;
+route(#jid{} = From, #jid{} = To, Packet) ->
+    case catch do_route(From, To, xmpp:set_from_to(Packet, From, To)) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p~nwhen processing: ~p",
 		       [Reason, {From, To, Packet}]);
@@ -169,7 +178,7 @@ register_route(Domain, ServerHost, LocalHint) ->
 		mnesia:transaction(F)
 	  end,
 	  if LocalHint == undefined ->
-		  ?INFO_MSG("Route registered: ~s", [LDomain]);
+		  ?DEBUG("Route registered: ~s", [LDomain]);
 	     true ->
 		  ok
 	  end
@@ -218,7 +227,7 @@ unregister_route(Domain) ->
 		    end,
 		mnesia:transaction(F)
 	  end,
-	  ?INFO_MSG("Route unregistered: ~s", [LDomain])
+	  ?DEBUG("Route unregistered: ~s", [LDomain])
     end.
 
 -spec unregister_routes([binary()]) -> ok.
@@ -283,9 +292,9 @@ process_iq(From, To, #iq{} = IQ) ->
        true ->
 	    ejabberd_sm:process_iq(From, To, IQ)
     end;
-process_iq(From, To, El) ->
+process_iq(From, To, #xmlel{} = El) ->
     try xmpp:decode(El, ?NS_CLIENT, [ignore_els]) of
-	IQ -> process_iq(From, To, IQ)
+	IQ -> process_iq(From, To, xmpp:set_from_to(IQ, From, To))
     catch _:{xmpp_codec, Why} ->
 	    Type = xmpp:get_type(El),
 	    if Type == <<"get">>; Type == <<"set">> ->
@@ -409,70 +418,56 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
--spec do_route(jid(), jid(), xmlel() | xmpp_element()) -> any().
+-spec do_route(jid(), jid(), stanza()) -> any().
 do_route(OrigFrom, OrigTo, OrigPacket) ->
-    ?DEBUG("route~n\tfrom ~p~n\tto ~p~n\tpacket "
-	   "~p~n",
-	   [OrigFrom, OrigTo, OrigPacket]),
+    ?DEBUG("route:~n~s", [xmpp:pp(OrigPacket)]),
     case ejabberd_hooks:run_fold(filter_packet,
-				 {OrigFrom, OrigTo, OrigPacket}, [])
-	of
-      {From, To, Packet} ->
-	  LDstDomain = To#jid.lserver,
-	  case mnesia:dirty_read(route, LDstDomain) of
-	    [] ->
-		  try xmpp:decode(Packet, ?NS_CLIENT, [ignore_els]) of
-		      Pkt ->
-			  ejabberd_s2s:route(From, To, Pkt)
-		  catch _:{xmpp_codec, Why} ->
-			  log_decoding_error(From, To, Packet, Why)
-		  end;
-	    [R] ->
-		do_route(From, To, Packet, R);
-	    Rs ->
-		Value = get_domain_balancing(From, To, LDstDomain),
-		case get_component_number(LDstDomain) of
-		  undefined ->
-		      case [R || R <- Rs, node(R#route.pid) == node()] of
-			[] ->
-			    R = lists:nth(erlang:phash(Value, length(Rs)), Rs),
-			    do_route(From, To, Packet, R);
-			LRs ->
-			    R = lists:nth(erlang:phash(Value, length(LRs)), LRs),
-			    do_route(From, To, Packet, R)
-		      end;
-		  _ ->
-		      SRs = lists:ukeysort(#route.local_hint, Rs),
-		      R = lists:nth(erlang:phash(Value, length(SRs)), SRs),
-		      do_route(From, To, Packet, R)
-		end
-	  end;
-      drop -> ok
+				 {OrigFrom, OrigTo, OrigPacket}, []) of
+	{From, To, Packet} ->
+	    LDstDomain = To#jid.lserver,
+	    case mnesia:dirty_read(route, LDstDomain) of
+		[] ->
+		    ejabberd_s2s:route(From, To, Packet);
+		[Route] ->
+		    do_route(From, To, Packet, Route);
+		Routes ->
+		    balancing_route(From, To, Packet, Routes)
+	    end;
+	drop ->
+	    ok
     end.
 
--spec do_route(jid(), jid(), xmlel() | xmpp_element(), #route{}) -> any().
-do_route(From, To, Packet, #route{local_hint = LocalHint,
-				  pid = Pid}) when is_pid(Pid) ->
-    try xmpp:decode(Packet, ?NS_CLIENT, [ignore_els]) of
-	Pkt ->
-	    case LocalHint of
-		{apply, Module, Function} when node(Pid) == node() ->
-		    Module:Function(From, To, Pkt);
-		_ ->
-		    Pid ! {route, From, To, Pkt}
-	    end
-    catch error:{xmpp_codec, Why} ->
-	    log_decoding_error(From, To, Packet, Why)
+-spec do_route(jid(), jid(), stanza(), #route{}) -> any().
+do_route(From, To, Pkt, #route{local_hint = LocalHint,
+			       pid = Pid}) when is_pid(Pid) ->
+    case LocalHint of
+	{apply, Module, Function} when node(Pid) == node() ->
+	    Module:Function(From, To, Pkt);
+	_ ->
+	    Pid ! {route, From, To, Pkt}
     end;
-do_route(_From, _To, _Packet, _Route) ->
+do_route(_From, _To, _Pkt, _Route) ->
     drop.
 
--spec log_decoding_error(jid(), jid(), xmlel() | xmpp_element(), term()) -> ok.
-log_decoding_error(From, To, Packet, Reason) ->
-    ?ERROR_MSG("failed to decode xml element ~p when "
-	       "routing from ~s to ~s: ~s",
-	       [Packet, jid:to_string(From), jid:to_string(To),
-		xmpp:format_error(Reason)]).
+-spec balancing_route(jid(), jid(), stanza(), [#route{}]) -> any().
+balancing_route(From, To, Packet, Rs) ->
+    LDstDomain = To#jid.lserver,
+    Value = get_domain_balancing(From, To, LDstDomain),
+    case get_component_number(LDstDomain) of
+	undefined ->
+	    case [R || R <- Rs, node(R#route.pid) == node()] of
+		[] ->
+		    R = lists:nth(erlang:phash(Value, length(Rs)), Rs),
+		    do_route(From, To, Packet, R);
+		LRs ->
+		    R = lists:nth(erlang:phash(Value, length(LRs)), LRs),
+		    do_route(From, To, Packet, R)
+	    end;
+	_ ->
+	    SRs = lists:ukeysort(#route.local_hint, Rs),
+	    R = lists:nth(erlang:phash(Value, length(SRs)), SRs),
+	    do_route(From, To, Packet, R)
+    end.
 
 -spec get_component_number(binary()) -> pos_integer() | undefined.
 get_component_number(LDomain) ->

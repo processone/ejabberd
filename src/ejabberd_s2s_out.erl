@@ -1,10 +1,23 @@
 %%%-------------------------------------------------------------------
-%%% @author Evgeny Khramtsov <ekhramtsov@process-one.net>
-%%% @copyright (C) 2016, Evgeny Khramtsov
-%%% @doc
-%%%
-%%% @end
 %%% Created : 16 Dec 2016 by Evgeny Khramtsov <ekhramtsov@process-one.net>
+%%%
+%%%
+%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
+%%%
+%%% This program is free software; you can redistribute it and/or
+%%% modify it under the terms of the GNU General Public License as
+%%% published by the Free Software Foundation; either version 2 of the
+%%% License, or (at your option) any later version.
+%%%
+%%% This program is distributed in the hope that it will be useful,
+%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%%% General Public License for more details.
+%%%
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+%%%
 %%%-------------------------------------------------------------------
 -module(ejabberd_s2s_out).
 -behaviour(xmpp_stream_out).
@@ -14,9 +27,11 @@
 -export([opt_type/1, transform_options/1]).
 %% xmpp_stream_out callbacks
 -export([tls_options/1, tls_required/1, tls_verify/1, tls_enabled/1,
+	 connect_timeout/1, address_families/1, default_port/1,
+	 dns_retries/1, dns_timeout/1,
 	 handle_auth_success/2, handle_auth_failure/3, handle_packet/2,
 	 handle_stream_end/2, handle_stream_downgraded/2,
-	 handle_recv/3, handle_send/4, handle_cdata/2,
+	 handle_recv/3, handle_send/3, handle_cdata/2,
 	 handle_stream_established/1, handle_timeout/1]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
@@ -92,12 +107,12 @@ add_hooks() ->
 %%% Hooks
 %%%===================================================================
 process_auth_result(#{server := LServer, remote_server := RServer} = State,
-		    false) ->
+		    {false, Reason}) ->
     Delay = get_delay(),
-    ?INFO_MSG("Closing outbound s2s connection ~s -> ~s: authentication failed;"
-	      " bouncing for ~p seconds",
+    ?INFO_MSG("Failed to establish outbound s2s connection ~s -> ~s: "
+	      "authentication failed; bouncing for ~p seconds",
 	      [LServer, RServer, Delay]),
-    State1 = State#{on_route => bounce},
+    State1 = State#{on_route => bounce, stop_reason => Reason},
     State2 = close(State1),
     State3 = bounce_queue(State2),
     xmpp_stream_out:set_timeout(State3, timer:seconds(Delay));
@@ -113,7 +128,7 @@ process_closed(#{server := LServer, remote_server := RServer,
 process_closed(#{server := LServer, remote_server := RServer} = State,
 	       Reason) ->
     Delay = get_delay(),
-    ?INFO_MSG("Closing outbound s2s connection ~s -> ~s: ~s; "
+    ?INFO_MSG("Failed to establish outbound s2s connection ~s -> ~s: ~s; "
 	      "bouncing for ~p seconds",
 	      [LServer, RServer, xmpp_stream_out:format_error(Reason), Delay]),
     State1 = State#{on_route => bounce},
@@ -146,23 +161,65 @@ tls_verify(#{server := LServer}) ->
 tls_enabled(#{server := LServer}) ->
     ejabberd_s2s:tls_enabled(LServer).
 
-handle_auth_success(Mech, #{socket := Socket, ip := IP,
+connect_timeout(#{server := LServer}) ->
+    ejabberd_config:get_option(
+      {outgoing_s2s_timeout, LServer},
+      fun(TimeOut) when is_integer(TimeOut), TimeOut > 0 ->
+              timer:seconds(TimeOut);
+         (infinity) ->
+              infinity
+      end, timer:seconds(10)).
+
+default_port(#{server := LServer}) ->
+    ejabberd_config:get_option(
+      {outgoing_s2s_port, LServer},
+      fun(I) when is_integer(I), I > 0, I =< 65536 -> I end,
+      5269).
+
+address_families(#{server := LServer}) ->
+    ejabberd_config:get_option(
+      {outgoing_s2s_families, LServer},
+      fun(Families) ->
+	      lists:map(
+		fun(ipv4) -> inet;
+		   (ipv6) -> inet6
+		end, Families)
+      end, [inet, inet6]).
+
+dns_retries(#{server := LServer}) ->
+    ejabberd_config:get_option(
+      {s2s_dns_retries, LServer},
+      fun(I) when is_integer(I), I>=0 -> I end,
+      2).
+
+dns_timeout(#{server := LServer}) ->
+    ejabberd_config:get_option(
+      {s2s_dns_timeout, LServer},
+      fun(I) when is_integer(I), I>=0 ->
+	      timer:seconds(I);
+	 (infinity) ->
+	      infinity
+      end, timer:seconds(10)).
+
+handle_auth_success(Mech, #{sockmod := SockMod,
+			    socket := Socket, ip := IP,
 			    remote_server := RServer,
 			    server := LServer} = State) ->
     ?INFO_MSG("(~s) Accepted outbound s2s ~s authentication ~s -> ~s (~s)",
-	      [ejabberd_socket:pp(Socket), Mech, LServer, RServer,
+	      [SockMod:pp(Socket), Mech, LServer, RServer,
 	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
     ejabberd_hooks:run_fold(s2s_out_auth_result, LServer, State, [true]).
 
 handle_auth_failure(Mech, Reason,
-		    #{socket := Socket, ip := IP,
+		    #{sockmod := SockMod,
+		      socket := Socket, ip := IP,
 		      remote_server := RServer,
 		      server := LServer} = State) ->
     ?INFO_MSG("(~s) Failed outbound s2s ~s authentication ~s -> ~s (~s): ~s",
-	      [ejabberd_socket:pp(Socket), Mech, LServer, RServer,
-	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP)), Reason]),
-    State1 = State#{stop_reason => {auth, Reason}},
-    ejabberd_hooks:run_fold(s2s_out_auth_result, LServer, State1, [false]).
+	      [SockMod:pp(Socket), Mech, LServer, RServer,
+	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP)),
+	       xmpp_stream_out:format_error(Reason)]),
+    ejabberd_hooks:run_fold(s2s_out_auth_result, LServer, State, [{false, Reason}]).
 
 handle_packet(Pkt, #{server := LServer} = State) ->
     ejabberd_hooks:run_fold(s2s_out_packet, LServer, State, [Pkt]).
@@ -185,9 +242,8 @@ handle_cdata(Data, #{server := LServer} = State) ->
 handle_recv(El, Pkt, #{server := LServer} = State) ->
     ejabberd_hooks:run_fold(s2s_out_handle_recv, LServer, State, [El, Pkt]).
 
-handle_send(Pkt, El, Data, #{server := LServer} = State) ->
-    ejabberd_hooks:run_fold(s2s_out_handle_send, LServer,
-			    State, [Pkt, El, Data]).
+handle_send(El, Pkt, #{server := LServer} = State) ->
+    ejabberd_hooks:run_fold(s2s_out_handle_send, LServer, State, [El, Pkt]).
 
 handle_timeout(#{on_route := Action} = State) ->
     case Action of
@@ -298,7 +354,7 @@ get_delay() ->
 		 s2s_max_retry_delay,
 		 fun(I) when is_integer(I), I > 0 -> I end,
 		 300),
-    crypto:rand_uniform(0, MaxDelay).
+    crypto:rand_uniform(1, MaxDelay).
 
 -spec set_idle_timeout(state()) -> state().
 set_idle_timeout(#{on_route := send, server := LServer} = State) ->
@@ -316,6 +372,7 @@ transform_options({outgoing_s2s_options, Families, Timeout}, Opts) ->
                  "but it is better to fix your config: "
                  "use 'outgoing_s2s_timeout' and "
                  "'outgoing_s2s_families' instead.", []),
+    maybe_report_huge_timeout(outgoing_s2s_timeout, Timeout),
     [{outgoing_s2s_families, Families},
      {outgoing_s2s_timeout, Timeout}
      | Opts];
@@ -327,14 +384,26 @@ transform_options({s2s_dns_options, S2SDNSOpts}, AllOpts) ->
                  "'s2s_dns_retries' instead", []),
     lists:foldr(
       fun({timeout, T}, AccOpts) ->
+	      maybe_report_huge_timeout(s2s_dns_timeout, T),
               [{s2s_dns_timeout, T}|AccOpts];
          ({retries, R}, AccOpts) ->
               [{s2s_dns_retries, R}|AccOpts];
          (_, AccOpts) ->
               AccOpts
       end, AllOpts, S2SDNSOpts);
+transform_options({Opt, T}, Opts)
+  when Opt == outgoing_s2s_timeout; Opt == s2s_dns_timeout ->
+    maybe_report_huge_timeout(Opt, T),
+    [{outgoing_s2s_timeout, T}|Opts];
 transform_options(Opt, Opts) ->
     [Opt|Opts].
+
+maybe_report_huge_timeout(Opt, T) when is_integer(T), T >= 1000 ->
+    ?WARNING_MSG("value '~p' of option '~p' is too big, "
+		 "are you sure you have set seconds?",
+		 [T, Opt]);
+maybe_report_huge_timeout(_, _) ->
+    ok.
 
 opt_type(outgoing_s2s_families) ->
     fun (Families) ->
@@ -354,7 +423,10 @@ opt_type(outgoing_s2s_timeout) ->
 opt_type(s2s_dns_retries) ->
     fun (I) when is_integer(I), I >= 0 -> I end;
 opt_type(s2s_dns_timeout) ->
-    fun (I) when is_integer(I), I >= 0 -> I end;
+    fun (TimeOut) when is_integer(TimeOut), TimeOut > 0 ->
+	    TimeOut;
+	(infinity) -> infinity
+    end;
 opt_type(s2s_max_retry_delay) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 opt_type(_) ->

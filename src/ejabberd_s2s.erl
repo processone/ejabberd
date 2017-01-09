@@ -257,7 +257,7 @@ tls_verify(LServer) ->
 -spec tls_enabled(binary()) -> boolean().
 tls_enabled(LServer) ->
     TLS = use_starttls(LServer),
-    TLS == true orelse TLS == optional.
+    TLS /= false.
 
 -spec zlib_enabled(binary()) -> boolean().
 zlib_enabled(LServer) ->
