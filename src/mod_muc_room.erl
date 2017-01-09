@@ -3731,7 +3731,7 @@ process_iq_mucsub(From,
 	    NewStateData = set_subscriber(From, Nick, Nodes, StateData),
 	    {result, subscribe_result(Packet), NewStateData};
 	error ->
-	    SD2 = maybe_enable_subscriptions(StateData),
+	    SD2 = StateData#state{config = (StateData#state.config)#config{allow_subscription = true}},
 	    add_new_user(From, Nick, Packet, SD2)
     end;
 process_iq_mucsub(From, #iq{type = set, sub_els = [#muc_unsubscribe{}]},
@@ -3770,11 +3770,6 @@ process_iq_mucsub(From, #iq{type = get, lang = Lang,
 process_iq_mucsub(_From, #iq{type = get, lang = Lang}, _StateData) ->
     Txt = <<"Value 'get' of 'type' attribute is not allowed">>,
     {error, xmpp:err_bad_request(Txt, Lang)}.
-
-maybe_enable_subscriptions(#state{just_created = JC, config = #config{allow_subscription = AS}} = SD) ->
-    SD#state{config = (SD#state.config)#config{allow_subscription = true}};
-maybe_enable_subscriptions(SD) ->
-    SD.
 
 remove_subscriptions(StateData) ->
     if not (StateData#state.config)#config.allow_subscription ->
