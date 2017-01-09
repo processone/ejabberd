@@ -1806,7 +1806,7 @@ histogram([], _Integral, _Current, Count, Hist) ->
 
 get_nodes(Lang) ->
     RunningNodes = ejabberd_cluster:get_nodes(),
-    StoppedNodes = ejabberd_clustet:get_known_nodes()
+    StoppedNodes = ejabberd_cluster:get_known_nodes()
 		     -- RunningNodes,
     FRN = if RunningNodes == [] -> ?CT(<<"None">>);
 	     true ->
