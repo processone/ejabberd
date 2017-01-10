@@ -180,7 +180,8 @@ get_local_features(Acc, _From, _To, <<"">>, _Lang) ->
 		{result, Features} -> Features;
 		empty -> []
 	    end,
-    {result, [<<"iq">>, <<"presence">>|Feats]};
+    {result, [<<"iq">>, <<"presence">>,
+	      ?NS_DISCO_INFO, ?NS_DISCO_ITEMS |Feats]};
 get_local_features(Acc, _From, _To, _Node, Lang) ->
     case Acc of
       {result, _Features} -> Acc;
