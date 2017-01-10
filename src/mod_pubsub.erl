@@ -338,6 +338,7 @@ init([ServerHost, Opts]) ->
     end,
     pubsub_migrate:update_node_database(Host, ServerHost),
     pubsub_migrate:update_state_database(Host, ServerHost),
+    pubsub_migrate:update_item_database(Host, ServerHost),
     pubsub_migrate:update_lastitem_database(Host, ServerHost),
     {_, State} = init_send_loop(ServerHost),
     {ok, State}.
