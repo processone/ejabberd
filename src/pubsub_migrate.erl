@@ -311,7 +311,7 @@ update_state_database(_Host, _ServerHost) ->
 				   [] ->
 				       [];
 				   _ ->
-				       {result, SubID} = pubsub_subscription:subscribe_node(JID, NodeID, []),
+				       SubID = pubsub_subscription:make_subid(),
 				       [{Sub, SubID}]
 			       end,
 			NewState = #pubsub_state{stateid       = {JID, NodeID},
@@ -399,7 +399,7 @@ convert_list_nodes() ->
 	end).
 
 convert_list_subscriptions() ->
-    convert_list_records(
+    [convert_list_records(
 	pubsub_subscription,
 	record_info(fields, pubsub_subscription),
 	fun(#pubsub_subscription{subid = I}) -> I end,
@@ -407,7 +407,7 @@ convert_list_subscriptions() ->
 				 options = Opts} = R) ->
 	    R#pubsub_subscription{subid = bin(I),
 				  options = Opts}
-	end).
+	end) || lists:member(pubsub_subscription, mnesia:system_info(tables))].
 
 convert_list_lasts() ->
     convert_list_records(
