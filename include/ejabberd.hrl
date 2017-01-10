@@ -1,6 +1,6 @@
 %%%----------------------------------------------------------------------
 %%%
-%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2017   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -39,7 +39,7 @@
 
 -define(EJABBERD_URI, <<"http://www.process-one.net/en/ejabberd/">>).
 
--define(COPYRIGHT, "Copyright (c) 2002-2016 ProcessOne").
+-define(COPYRIGHT, "Copyright (c) 2002-2017 ProcessOne").
 
 -define(S2STIMEOUT, timer:minutes(10)).
 

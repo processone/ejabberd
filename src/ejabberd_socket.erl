@@ -5,7 +5,7 @@
 %%% Created : 23 Aug 2006 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2017   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -51,16 +51,14 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--type sockmod() :: ejabberd_http_bind |
-		   ejabberd_bosh |
+-type sockmod() :: ejabberd_bosh |
                    ejabberd_http_ws |
                    gen_tcp | fast_tls | ezlib.
 -type receiver() :: pid () | atom().
 -type socket() :: pid() | inet:socket() |
                   fast_tls:tls_socket() |
 		  ezlib:zlib_socket() |
-		  ejabberd_bosh:bind_socket() |
-                  ejabberd_http_bind:bind_socket().
+		  ejabberd_bosh:bind_socket().
 
 -record(socket_state, {sockmod = gen_tcp :: sockmod(),
                        socket = self() :: socket(),
@@ -227,11 +225,10 @@ get_transport(#socket_state{sockmod = SockMod,
 	fast_tls -> tls;
 	ezlib ->
 	    case ezlib:get_sockmod(Socket) of
-		tcp -> tcp_zlib;
-		tls -> tls_zlib
+		gen_tcp -> tcp_zlib;
+		fast_tls -> tls_zlib
 	    end;
 	ejabberd_bosh -> http_bind;
-	ejabberd_http_bind -> http_bind;
 	ejabberd_http_ws -> websocket
     end.
 

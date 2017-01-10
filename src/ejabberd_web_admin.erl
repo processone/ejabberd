@@ -5,7 +5,7 @@
 %%% Created :  9 Apr 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2017   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -349,7 +349,7 @@ make_xhtml(Els, Host, Node, Lang, JID) ->
 			   [?XAE(<<"div">>, [{<<"id">>, <<"copyright">>}],
 				 [?XE(<<"p">>,
 				  [?AC(<<"https://www.ejabberd.im/">>, <<"ejabberd">>),
-				   ?C(<<" (c) 2002-2016 ">>),
+				   ?C(<<" (c) 2002-2017 ">>),
 				   ?AC(<<"https://www.process-one.net/">>, <<"ProcessOne, leader in messaging and push solutions">>)]
                                  )])])])]}}.
 
@@ -1805,9 +1805,8 @@ histogram([], _Integral, _Current, Count, Hist) ->
 %%%% get_nodes
 
 get_nodes(Lang) ->
-    RunningNodes = mnesia:system_info(running_db_nodes),
-    StoppedNodes = lists:usort(mnesia:system_info(db_nodes)
-				 ++ mnesia:system_info(extra_db_nodes))
+    RunningNodes = ejabberd_cluster:get_nodes(),
+    StoppedNodes = ejabberd_cluster:get_known_nodes()
 		     -- RunningNodes,
     FRN = if RunningNodes == [] -> ?CT(<<"None">>);
 	     true ->
@@ -1833,8 +1832,8 @@ get_nodes(Lang) ->
      ?XCT(<<"h3">>, <<"Stopped Nodes">>), FSN].
 
 search_running_node(SNode) ->
-    search_running_node(SNode,
-			mnesia:system_info(running_db_nodes)).
+    RunningNodes = ejabberd_cluster:get_nodes(),
+    search_running_node(SNode, RunningNodes).
 
 search_running_node(_, []) -> false;
 search_running_node(SNode, [Node | Nodes]) ->

@@ -5,7 +5,7 @@
 %%% Created : 7 Oct 2015 by Christophe Romain <christophe.romain@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2017   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -27,7 +27,7 @@
 
 %% API
 -export([get_nodes/0, call/4, multicall/3, multicall/4]).
--export([join/1, leave/1]).
+-export([join/1, leave/1, get_known_nodes/0]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -36,6 +36,12 @@
 
 get_nodes() ->
     mnesia:system_info(running_db_nodes).
+
+-spec get_known_nodes() -> [node()].
+
+get_known_nodes() ->
+    lists:usort(mnesia:system_info(db_nodes)
+		++ mnesia:system_info(extra_db_nodes)).
 
 -spec call(node(), module(), atom(), [any()]) -> any().
 

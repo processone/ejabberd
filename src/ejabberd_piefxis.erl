@@ -1,14 +1,11 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_piefxis.erl
-%%% Author  : Pablo Polvorin, Vidal Santiago Martinez
+%%% Author  : Pablo Polvorin, Vidal Santiago Martinez, Evgeniy Khramtsov
 %%% Purpose : XEP-0227: Portable Import/Export Format for XMPP-IM Servers
 %%% Created : 17 Jul 2008 by Pablo Polvorin <pablo.polvorin@process-one.net>
-%%%-------------------------------------------------------------------
-%%% @author Evgeniy Khramtsov <ekhramtsov@process-one.net>
-%%% @doc
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2017   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as

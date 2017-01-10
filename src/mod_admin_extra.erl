@@ -5,7 +5,7 @@
 %%% Created : 10 Aug 2008 by Badlop <badlop@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2017   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -458,7 +458,7 @@ get_commands_spec() ->
 				{user, binary}, {server, binary}],
 			result = {res, rescode}},
      #ejabberd_commands{name = process_rosteritems, tags = [roster],
-			desc = "List or delete rosteritems that match filtering options",
+			desc = "List/delete rosteritems that match filter (only Mnesia)",
 			longdesc = "Explanation of each argument:\n"
 			" - action: what to do with each rosteritem that "
 			"matches all the filtering options\n"
@@ -1098,8 +1098,8 @@ set_vcard(User, Host, Name, Subname, SomeContent) ->
 
 get_vcard_content(User, Server, Data) ->
     case mod_vcard:get_vcard(jid:nodeprep(User), jid:nameprep(Server)) of
-	[_|_] = Els ->
-	    case get_vcard(Data, Els) of
+	[El|_] ->
+	    case get_vcard(Data, El) of
 		[false] -> throw(error_no_value_found_in_vcard);
 		ElemList -> ?DEBUG("ELS ~p", [ElemList]), [fxml:get_tag_cdata(Elem) || Elem <- ElemList]
 	    end;

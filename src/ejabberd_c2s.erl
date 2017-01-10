@@ -5,7 +5,7 @@
 %%% Created : 16 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2017   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -719,17 +719,22 @@ wait_for_feature_request(#sasl_auth{mechanism = Mech,
 	    fsm_next_state(wait_for_sasl_response,
 			   StateData#state{sasl_state = NewSASLState});
 	{error, Error, Username} ->
-	    ?INFO_MSG("(~w) Failed authentication for ~s@~s from ~s",
+	    {Reason, ErrTxt} = cyrsasl:format_error(Mech, Error),
+	    ?INFO_MSG("(~w) Failed authentication for ~s@~s from ~s: ~s",
 		      [StateData#state.socket,
 		       Username, StateData#state.server,
-		       ejabberd_config:may_hide_data(jlib:ip_to_list(StateData#state.ip))]),
+		       ejabberd_config:may_hide_data(jlib:ip_to_list(StateData#state.ip)),
+		       ErrTxt]),
 	    ejabberd_hooks:run(c2s_auth_result, StateData#state.server,
 			       [false, Username, StateData#state.server,
 				StateData#state.ip]),
-	    send_element(StateData, #sasl_failure{reason = Error}),
+	    send_element(StateData, #sasl_failure{reason = Reason,
+						  text = xmpp:mk_text(ErrTxt)}),
 	    fsm_next_state(wait_for_feature_request, StateData);
 	{error, Error} ->
-	    send_element(StateData, #sasl_failure{reason = Error}),
+	    {Reason, ErrTxt} = cyrsasl:format_error(Mech, Error),
+	    send_element(StateData, #sasl_failure{reason = Reason,
+						  text = xmpp:mk_text(ErrTxt)}),
 	    fsm_next_state(wait_for_feature_request, StateData)
     end;
 wait_for_feature_request(#starttls{},
@@ -839,17 +844,22 @@ wait_for_sasl_response(#sasl_response{text = ClientIn}, StateData) ->
 	    fsm_next_state(wait_for_sasl_response,
 			   StateData#state{sasl_state = NewSASLState});
 	{error, Error, Username} ->
-	    ?INFO_MSG("(~w) Failed authentication for ~s@~s from ~s",
+	    {Reason, ErrTxt} = cyrsasl:format_error(StateData#state.sasl_state, Error),
+	    ?INFO_MSG("(~w) Failed authentication for ~s@~s from ~s: ~s",
 		      [StateData#state.socket,
 		       Username, StateData#state.server,
-		       ejabberd_config:may_hide_data(jlib:ip_to_list(StateData#state.ip))]),
+		       ejabberd_config:may_hide_data(jlib:ip_to_list(StateData#state.ip)),
+		       ErrTxt]),
 	    ejabberd_hooks:run(c2s_auth_result, StateData#state.server,
 			       [false, Username, StateData#state.server,
 				StateData#state.ip]),
-	    send_element(StateData, #sasl_failure{reason = Error}),
+	    send_element(StateData, #sasl_failure{reason = Reason,
+						  text = xmpp:mk_text(ErrTxt)}),
 	    fsm_next_state(wait_for_feature_request, StateData);
 	{error, Error} ->
-	    send_element(StateData, #sasl_failure{reason = Error}),
+	    {Reason, ErrTxt} = cyrsasl:format_error(StateData#state.sasl_state, Error),
+	    send_element(StateData, #sasl_failure{reason = Reason,
+						  text = xmpp:mk_text(ErrTxt)}),
 	    fsm_next_state(wait_for_feature_request, StateData)
     end;
 wait_for_sasl_response(timeout, StateData) ->

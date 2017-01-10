@@ -5,7 +5,7 @@
 %%% Created : 27 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2017   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -74,8 +74,17 @@ start_link() ->
 
 -spec route(jid(), jid(), xmlel() | stanza()) -> ok.
 
-route(From, To, Packet) ->
-    case catch do_route(From, To, Packet) of
+route(#jid{} = From, #jid{} = To, #xmlel{} = El) ->
+    try xmpp:decode(El, ?NS_CLIENT, [ignore_els]) of
+	Pkt -> route(From, To, xmpp:set_from_to(Pkt, From, To))
+    catch _:{xmpp_codec, Why} ->
+	    ?ERROR_MSG("failed to decode xml element ~p when "
+		       "routing from ~s to ~s: ~s",
+		       [El, jid:to_string(From), jid:to_string(To),
+			xmpp:format_error(Why)])
+    end;
+route(#jid{} = From, #jid{} = To, Packet) ->
+    case catch do_route(From, To, xmpp:set_from_to(Packet, From, To)) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p~nwhen processing: ~p",
 		       [Reason, {From, To, Packet}]);
@@ -390,12 +399,7 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 	  LDstDomain = To#jid.lserver,
 	  case mnesia:dirty_read(route, LDstDomain) of
 	    [] ->
-		  try xmpp:decode(Packet, ?NS_CLIENT, [ignore_els]) of
-		      Pkt ->
-			  ejabberd_s2s:route(From, To, Pkt)
-		  catch _:{xmpp_codec, Why} ->
-			  log_decoding_error(From, To, Packet, Why)
-		  end;
+		ejabberd_s2s:route(From, To, Packet);
 	    [R] ->
 		do_route(From, To, Packet, R);
 	    Rs ->
@@ -422,26 +426,14 @@ do_route(OrigFrom, OrigTo, OrigPacket) ->
 -spec do_route(jid(), jid(), xmlel() | xmpp_element(), #route{}) -> any().
 do_route(From, To, Packet, #route{local_hint = LocalHint,
 				  pid = Pid}) when is_pid(Pid) ->
-    try xmpp:decode(Packet, ?NS_CLIENT, [ignore_els]) of
-	Pkt ->
-	    case LocalHint of
-		{apply, Module, Function} when node(Pid) == node() ->
-		    Module:Function(From, To, Pkt);
-		_ ->
-		    Pid ! {route, From, To, Pkt}
-	    end
-    catch error:{xmpp_codec, Why} ->
-	    log_decoding_error(From, To, Packet, Why)
+    case LocalHint of
+	{apply, Module, Function} when node(Pid) == node() ->
+	    Module:Function(From, To, Packet);
+	_ ->
+	    Pid ! {route, From, To, Packet}
     end;
 do_route(_From, _To, _Packet, _Route) ->
     drop.
-
--spec log_decoding_error(jid(), jid(), xmlel() | xmpp_element(), term()) -> ok.
-log_decoding_error(From, To, Packet, Reason) ->
-    ?ERROR_MSG("failed to decode xml element ~p when "
-	       "routing from ~s to ~s: ~s",
-	       [Packet, jid:to_string(From), jid:to_string(To),
-		xmpp:format_error(Reason)]).
 
 -spec get_component_number(binary()) -> pos_integer() | undefined.
 get_component_number(LDomain) ->

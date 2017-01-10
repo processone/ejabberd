@@ -5,7 +5,7 @@
 %%% Created : 11 Mar 2003 by Alexey Shchepin <alexey@sevcom.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2017   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -30,7 +30,7 @@
 -author('alexey@sevcom.net').
 
 -export([start/1, stop/0, mech_new/4, mech_step/2,
-	 parse/1, opt_type/1]).
+	 parse/1, format_error/1, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -39,11 +39,13 @@
 
 -type get_password_fun() :: fun((binary()) -> {false, any()} |
                                               {binary(), atom()}).
-
 -type check_password_fun() :: fun((binary(), binary(), binary(),
                                    fun((binary()) -> binary())) ->
                                            {boolean(), any()} |
                                            false).
+-type error_reason() :: parser_failed | invalid_digest_uri |
+			not_authorized | unexpected_response.
+-export_type([error_reason/0]).
 
 -record(state, {step = 1 :: 1 | 3 | 5,
                 nonce = <<"">> :: binary(),
@@ -64,6 +66,16 @@ start(_Opts) ->
 
 stop() -> ok.
 
+-spec format_error(error_reason()) -> {atom(), binary()}.
+format_error(parser_failed) ->
+    {'bad-protocol', <<"Response decoding failed">>};
+format_error(invalid_digest_uri) ->
+    {'bad-protocol', <<"Invalid digest URI">>};
+format_error(not_authorized) ->
+    {'not-authorized', <<"Invalid username or password">>};
+format_error(unexpected_response) ->
+    {'bad-protocol', <<"Unexpected response">>}.
+
 mech_new(Host, GetPassword, _CheckPassword,
 	 CheckPasswordDigest) ->
     {ok,
@@ -80,8 +92,8 @@ mech_step(#state{step = 1, nonce = Nonce} = State, _) ->
 mech_step(#state{step = 3, nonce = Nonce} = State,
 	  ClientIn) ->
     case parse(ClientIn) of
-      bad -> {error, 'bad-protocol'};
-      KeyVals ->
+	bad -> {error, parser_failed};
+	KeyVals ->
 	  DigestURI = proplists:get_value(<<"digest-uri">>, KeyVals, <<>>),
 	  UserName = proplists:get_value(<<"username">>, KeyVals, <<>>),
 	  case is_digesturi_valid(DigestURI, State#state.host,
@@ -92,11 +104,11 @@ mech_step(#state{step = 3, nonce = Nonce} = State,
 		       "seems invalid: ~p (checking for Host "
 		       "~p, FQDN ~p)",
 		       [DigestURI, State#state.host, State#state.hostfqdn]),
-		{error, 'not-authorized', UserName};
+		{error, invalid_digest_uri, UserName};
 	    true ->
 		AuthzId = proplists:get_value(<<"authzid">>, KeyVals, <<>>),
 		case (State#state.get_password)(UserName) of
-		  {false, _} -> {error, 'not-authorized', UserName};
+		  {false, _} -> {error, not_authorized, UserName};
 		  {Passwd, AuthModule} ->
 		      case (State#state.check_password)(UserName, UserName, <<"">>,
 		                    proplists:get_value(<<"response">>, KeyVals, <<>>),
@@ -116,8 +128,8 @@ mech_step(#state{step = 3, nonce = Nonce} = State,
 			     State#state{step = 5, auth_module = AuthModule,
 					 username = UserName,
 					 authzid = AuthzId}};
-			false -> {error, 'not-authorized', UserName};
-			{false, _} -> {error, 'not-authorized', UserName}
+			false -> {error, not_authorized, UserName};
+			{false, _} -> {error, not_authorized, UserName}
 		      end
 		end
 	  end
@@ -134,7 +146,7 @@ mech_step(#state{step = 5, auth_module = AuthModule,
       {auth_module, AuthModule}]};
 mech_step(A, B) ->
     ?DEBUG("SASL DIGEST: A ~p B ~p", [A, B]),
-    {error, 'bad-protocol'}.
+    {error, unexpected_response}.
 
 parse(S) -> parse1(binary_to_list(S), "", []).
 

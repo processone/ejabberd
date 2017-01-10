@@ -1,12 +1,11 @@
 %%%-------------------------------------------------------------------
-%%% @author Alexey Shchepin <alexey@process-one.net>
-%%% @doc
-%%% Interface for Riak database
-%%% @end
+%%% File    : ejabberd_riak.erl
+%%% Author  : Alexey Shchepin <alexey@process-one.net>
+%%% Purpose : Interface for Riak database
 %%% Created : 29 Dec 2011 by Alexey Shchepin <alexey@process-one.net>
-%%% @copyright (C) 2002-2016   ProcessOne
 %%%
-%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
+%%%
+%%% ejabberd, Copyright (C) 2002-2017   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as

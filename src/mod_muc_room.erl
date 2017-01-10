@@ -5,7 +5,7 @@
 %%% Created : 19 Mar 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2016   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2017   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -3702,7 +3702,7 @@ process_iq_vcard(From, #iq{type = set, lang = Lang, sub_els = [SubEl]},
 			       {ignore, state()}.
 process_iq_mucsub(_From, #iq{type = set, lang = Lang,
 			     sub_els = [#muc_subscribe{}]},
-		  #state{config = #config{allow_subscription = false}}) ->
+		  #state{just_created = false, config = #config{allow_subscription = false}}) ->
     {error, xmpp:err_not_allowed(<<"Subscriptions are not allowed">>, Lang)};
 process_iq_mucsub(From,
 		  #iq{type = set, lang = Lang,
@@ -3731,7 +3731,8 @@ process_iq_mucsub(From,
 	    NewStateData = set_subscriber(From, Nick, Nodes, StateData),
 	    {result, subscribe_result(Packet), NewStateData};
 	error ->
-	    add_new_user(From, Nick, Packet, StateData)
+	    SD2 = StateData#state{config = (StateData#state.config)#config{allow_subscription = true}},
+	    add_new_user(From, Nick, Packet, SD2)
     end;
 process_iq_mucsub(From, #iq{type = set, sub_els = [#muc_unsubscribe{}]},
 		  StateData) ->
