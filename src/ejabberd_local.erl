@@ -30,7 +30,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0]).
+-export([start/0, start_link/0]).
 
 -export([route/3, route_iq/4, route_iq/5, process_iq/3,
 	 process_iq_reply/3, register_iq_handler/4,
@@ -68,6 +68,11 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
+start() ->
+    ChildSpec = {?MODULE, {?MODULE, start_link, []},
+		 transient, 1000, worker, [?MODULE]},
+    supervisor:start_child(ejabberd_sup, ChildSpec).
+
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [],
 			  []).

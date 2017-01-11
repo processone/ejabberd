@@ -470,6 +470,5 @@ get_module_proc(Host, Base) ->
 is_loaded(Host, Module) ->
     ets:member(ejabberd_modules, {Module, Host}).
 
-opt_type(default_db) -> fun(T) when is_atom(T) -> T end;
 opt_type(modules) -> fun (L) when is_list(L) -> L end;
-opt_type(_) -> [default_db, modules].
+opt_type(_) -> [modules].

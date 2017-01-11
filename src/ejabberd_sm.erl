@@ -766,10 +766,14 @@ force_update_presence({LUser, LServer}) ->
 -spec get_sm_backend(binary()) -> module().
 
 get_sm_backend(Host) ->
-    DBType = ejabberd_config:get_option(
-	       {sm_db_type, Host},
-	       fun(T) -> ejabberd_config:v_db(?MODULE, T) end,
-	       mnesia),
+    DBType = case ejabberd_config:get_option(
+		    {sm_db_type, Host},
+		    fun(T) -> ejabberd_config:v_db(?MODULE, T) end) of
+		 undefined ->
+		     ejabberd_config:default_ram_db(Host, ?MODULE);
+		 T ->
+		     T
+	     end,
     list_to_atom("ejabberd_sm_" ++ atom_to_list(DBType)).
 
 -spec get_sm_backends() -> [module()].

@@ -235,7 +235,7 @@ get_vh_services(Host) ->
 			   [VH | _] -> VH == Host
 			 end
 		 end,
-		 ejabberd_router:dirty_get_all_routes()).
+		 ejabberd_router:get_all_routes()).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
