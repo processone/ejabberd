@@ -53,8 +53,14 @@
 %%% API
 %%%===================================================================
 start(From, To, Opts) ->
-    xmpp_stream_out:start(?MODULE, [ejabberd_socket, From, To, Opts],
-			  ejabberd_config:fsm_limit_opts([])).
+    case proplists:get_value(supervisor, Opts, true) of
+	true ->
+	    supervisor:start_child(ejabberd_s2s_out_sup,
+				   [ejabberd_socket, From, To, Opts]);
+	_ ->
+	    xmpp_stream_out:start(?MODULE, [ejabberd_socket, From, To, Opts],
+				  ejabberd_config:fsm_limit_opts([]))
+    end.
 
 start_link(From, To, Opts) ->
     xmpp_stream_out:start_link(?MODULE, [ejabberd_socket, From, To, Opts],
