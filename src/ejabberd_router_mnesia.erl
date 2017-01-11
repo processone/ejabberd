@@ -158,7 +158,9 @@ handle_event({'DOWN', _Ref, _Type, Pid, _Info}) ->
 			  end
 		  end, Es)
 	end,
-    transaction(F).
+    transaction(F);
+handle_event(_Event) ->
+    ok.
 
 %%%===================================================================
 %%% Internal functions
