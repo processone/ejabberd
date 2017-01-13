@@ -42,6 +42,7 @@
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("ejabberd_sm.hrl").
+-include_lib("stdlib/include/ms_transform.hrl").
 
 -define(T(Lang, Text), translate:translate(Lang, Text)).
 
