@@ -17,6 +17,11 @@
 -export([init/2, store_room/4, restore_room/3, forget_room/3,
 	 can_use_nick/4, get_rooms/2, get_nick/3, set_nick/4,
 	 import/3, export/1]).
+-export([register_online_room/3, unregister_online_room/3, find_online_room/2,
+	 get_online_rooms/2, count_online_rooms/1, rsm_supported/0,
+	 register_online_user/3, unregister_online_user/3,
+	 count_online_rooms_by_user/2, get_online_rooms_by_user/2,
+	 handle_event/1]).
 -export([set_affiliation/6, set_affiliations/4, get_affiliation/5,
 	 get_affiliations/3, search_affiliation/4]).
 
@@ -144,6 +149,39 @@ get_affiliations(_ServerHost, _Room, _Host) ->
 
 search_affiliation(_ServerHost, _Room, _Host, _Affiliation) ->
     {error, not_implemented}.
+
+register_online_room(_, _, _) ->
+    erlang:error(not_implemented).
+
+unregister_online_room(_, _, _) ->
+    erlang:error(not_implemented).
+
+find_online_room(_, _) ->
+    erlang:error(not_implemented).
+
+count_online_rooms(_) ->
+    erlang:error(not_implemented).
+
+get_online_rooms(_, _) ->
+    erlang:error(not_implemented).
+
+handle_event(_) ->
+    ok.
+
+rsm_supported() ->
+    false.
+
+register_online_user(_, _, _) ->
+    erlang:error(not_implemented).
+
+unregister_online_user(_, _, _) ->
+    erlang:error(not_implemented).
+
+count_online_rooms_by_user(_, _) ->
+    erlang:error(not_implemented).
+
+get_online_rooms_by_user(_, _) ->
+    erlang:error(not_implemented).
 
 export(_Server) ->
     [{muc_room,

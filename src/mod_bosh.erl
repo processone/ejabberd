@@ -30,31 +30,25 @@
 
 %%-define(ejabberd_debug, true).
 
--behaviour(gen_server).
 -behaviour(gen_mod).
 
 -export([start_link/0]).
 -export([start/2, stop/1, process/2, open_session/2,
 	 close_session/1, find_session/1]).
 
--export([init/1, handle_call/3, handle_cast/2,
-	 handle_info/2, terminate/2, code_change/3,
-	 depends/2, mod_opt_type/1]).
+-export([depends/2, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("jlib.hrl").
-
 -include("ejabberd_http.hrl").
-
 -include("bosh.hrl").
 
--record(bosh, {sid = <<"">>      :: binary() | '_',
-               timestamp = p1_time_compat:timestamp() :: erlang:timestamp() | '_',
-               pid = self()      :: pid() | '$1'}).
-
--record(state, {}).
+-callback init() -> any().
+-callback open_session(binary(), pid()) -> any().
+-callback close_session(binary()) -> any().
+-callback find_session(binary()) -> {ok, pid()} | error.
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -114,81 +108,26 @@ get_human_html_xmlel() ->
 					   "client that supports it.">>}]}]}]}.
 
 open_session(SID, Pid) ->
-    Session = #bosh{sid = SID, timestamp = p1_time_compat:timestamp(), pid = Pid},
-    lists:foreach(
-      fun(Node) when Node == node() ->
-	      gen_server:call(?MODULE, {write, Session});
-	 (Node) ->
-	      cluster_send({?MODULE, Node}, {write, Session})
-      end, ejabberd_cluster:get_nodes()).
+    Mod = gen_mod:ram_db_mod(global, ?MODULE),
+    Mod:open_session(SID, Pid).
 
 close_session(SID) ->
-    case mnesia:dirty_read(bosh, SID) of
-	[Session] ->
-	    lists:foreach(
-	      fun(Node) when Node == node() ->
-		      gen_server:call(?MODULE, {delete, Session});
-		 (Node) ->
-		      cluster_send({?MODULE, Node}, {delete, Session})
-	      end, ejabberd_cluster:get_nodes());
-	[] ->
-	    ok
-    end.
-
-write_session(#bosh{pid = Pid1, sid = SID, timestamp = T1} = S1) ->
-    case mnesia:dirty_read(bosh, SID) of
-	[#bosh{pid = Pid2, timestamp = T2} = S2] ->
-	    if Pid1 == Pid2 ->
-		    mnesia:dirty_write(S1);
-	       T1 < T2 ->
-		    cluster_send(Pid2, replaced),
-		    mnesia:dirty_write(S1);
-	       true ->
-		    cluster_send(Pid1, replaced),
-		    mnesia:dirty_write(S2)
-	    end;
-	[] ->
-	    mnesia:dirty_write(S1)
-    end.
-
-delete_session(#bosh{sid = SID, pid = Pid1}) ->
-    case mnesia:dirty_read(bosh, SID) of
-	[#bosh{pid = Pid2}] ->
-	    if Pid1 == Pid2 ->
-		    mnesia:dirty_delete(bosh, SID);
-	       true ->
-		    ok
-	    end;
-	[] ->
-	    ok
-    end.
+    Mod = gen_mod:ram_db_mod(global, ?MODULE),
+    Mod:close_session(SID).
 
 find_session(SID) ->
-    case mnesia:dirty_read(bosh, SID) of
-        [#bosh{pid = Pid}] ->
-            {ok, Pid};
-        [] ->
-            error
-    end.
+    Mod = gen_mod:ram_db_mod(global, ?MODULE),
+    Mod:find_session(SID).
 
 start(Host, Opts) ->
-    setup_database(),
     start_jiffy(Opts),
     TmpSup = gen_mod:get_module_proc(Host, ?PROCNAME),
     TmpSupSpec = {TmpSup,
 		  {ejabberd_tmp_sup, start_link, [TmpSup, ejabberd_bosh]},
 		  permanent, infinity, supervisor, [ejabberd_tmp_sup]},
-    ProcSpec = {?MODULE,
-		{?MODULE, start_link, []},
-		transient, 2000, worker, [?MODULE]},
-    case supervisor:start_child(ejabberd_sup, ProcSpec) of
-	{ok, _} ->
-	    supervisor:start_child(ejabberd_sup, TmpSupSpec);
-	{error, {already_started, _}} ->
-	    supervisor:start_child(ejabberd_sup, TmpSupSpec);
-	Err ->
-	    Err
-    end.
+    supervisor:start_child(ejabberd_sup, TmpSupSpec),
+    Mod = gen_mod:ram_db_mod(global, ?MODULE),
+    Mod:init().
 
 stop(Host) ->
     TmpSup = gen_mod:get_module_proc(Host, ?PROCNAME),
@@ -196,55 +135,8 @@ stop(Host) ->
     supervisor:delete_child(ejabberd_sup, TmpSup).
 
 %%%===================================================================
-%%% gen_server callbacks
-%%%===================================================================
-init([]) ->
-    {ok, #state{}}.
-
-handle_call({write, Session}, _From, State) ->
-    Res = write_session(Session),
-    {reply, Res, State};
-handle_call({delete, Session}, _From, State) ->
-    Res = delete_session(Session),
-    {reply, Res, State};
-handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
-
-handle_cast(_Msg, State) ->
-    {noreply, State}.
-
-handle_info({write, Session}, State) ->
-    write_session(Session),
-    {noreply, State};
-handle_info({delete, Session}, State) ->
-    delete_session(Session),
-    {noreply, State};
-handle_info(_Info, State) ->
-    ?ERROR_MSG("got unexpected info: ~p", [_Info]),
-    {noreply, State}.
-
-terminate(_Reason, _State) ->
-    ok.
-
-code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.
-
-%%%===================================================================
 %%% Internal functions
 %%%===================================================================
-setup_database() ->
-    case catch mnesia:table_info(bosh, attributes) of
-        [sid, pid] ->
-            mnesia:delete_table(bosh);
-        _ ->
-            ok
-    end,
-    ejabberd_mnesia:create(?MODULE, bosh,
-			[{ram_copies, [node()]}, {local_content, true},
-			 {attributes, record_info(fields, bosh)}]),
-    mnesia:add_table_copy(bosh, node(), ram_copies).
-
 start_jiffy(Opts) ->
     case gen_mod:get_opt(json, Opts,
                          fun(false) -> false;
@@ -272,9 +164,6 @@ get_type(Hdrs) ->
             xml
     end.
 
-cluster_send(NodePid, Msg) ->
-    erlang:send(NodePid, Msg, [noconnect, nosuspend]).
-
 depends(_Host, _Opts) ->
     [].
 
@@ -292,5 +181,7 @@ mod_opt_type(max_pause) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 mod_opt_type(prebind) ->
     fun (B) when is_boolean(B) -> B end;
+mod_opt_type(ram_db_type) ->
+    fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(_) ->
-    [json, max_concat, max_inactivity, max_pause, prebind].
+    [json, max_concat, max_inactivity, max_pause, prebind, ram_db_type].

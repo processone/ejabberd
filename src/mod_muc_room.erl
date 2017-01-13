@@ -1798,7 +1798,7 @@ add_new_user(From, Nick, Packet, StateData) ->
     Affiliation = get_affiliation(From, StateData),
     ServiceAffiliation = get_service_affiliation(From,
 						 StateData),
-    NConferences = tab_count_user(From),
+    NConferences = tab_count_user(From, StateData),
     MaxConferences =
 	gen_mod:get_module_opt(StateData#state.server_host,
 			       mod_muc, max_user_conferences,
@@ -3968,38 +3968,25 @@ add_to_log(Type, Data, StateData) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Users number checking
 
--spec tab_add_online_user(jid(), state()) -> ok.
+-spec tab_add_online_user(jid(), state()) -> any().
 tab_add_online_user(JID, StateData) ->
-    {LUser, LServer, LResource} = jid:tolower(JID),
-    US = {LUser, LServer},
     Room = StateData#state.room,
     Host = StateData#state.host,
-    catch ets:insert(muc_online_users,
-		     #muc_online_users{us = US, resource = LResource,
-				       room = Room, host = Host}),
-    ok.
+    ServerHost = StateData#state.server_host,
+    mod_muc:register_online_user(ServerHost, jid:tolower(JID), Room, Host).
 
--spec tab_remove_online_user(jid(), state()) -> ok.
+-spec tab_remove_online_user(jid(), state()) -> any().
 tab_remove_online_user(JID, StateData) ->
-    {LUser, LServer, LResource} = jid:tolower(JID),
-    US = {LUser, LServer},
     Room = StateData#state.room,
     Host = StateData#state.host,
-    catch ets:delete_object(muc_online_users,
-			    #muc_online_users{us = US, resource = LResource,
-					      room = Room, host = Host}),
-    ok.
+    ServerHost = StateData#state.server_host,
+    mod_muc:unregister_online_user(ServerHost, jid:tolower(JID), Room, Host).
 
--spec tab_count_user(jid()) -> non_neg_integer().
-tab_count_user(JID) ->
+-spec tab_count_user(jid(), state()) -> non_neg_integer().
+tab_count_user(JID, StateData) ->
+    ServerHost = StateData#state.server_host,
     {LUser, LServer, _} = jid:tolower(JID),
-    US = {LUser, LServer},
-    case catch ets:select(muc_online_users,
-			  [{#muc_online_users{us = US, _ = '_'}, [], [[]]}])
-	of
-      Res when is_list(Res) -> length(Res);
-      _ -> 0
-    end.
+    mod_muc:count_online_rooms_by_user(ServerHost, LUser, LServer).
 
 -spec element_size(stanza()) -> non_neg_integer().
 element_size(El) ->

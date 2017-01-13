@@ -31,12 +31,13 @@
 
 -export([start/0, start_module/2, start_module/3,
 	 stop_module/2, stop_module_keep_config/2, get_opt/3,
-	 get_opt/4, get_opt_host/3, db_type/2, db_type/3,
+	 get_opt/4, get_opt_host/3, opt_type/1,
 	 get_module_opt/4, get_module_opt/5, get_module_opt_host/3,
 	 loaded_modules/1, loaded_modules_with_opts/1,
 	 get_hosts/2, get_module_proc/2, is_loaded/2,
 	 start_modules/0, start_modules/1, stop_modules/0, stop_modules/1,
-	 opt_type/1, db_mod/2, db_mod/3]).
+	 db_mod/2, db_mod/3, ram_db_mod/2, ram_db_mod/3,
+	 db_type/2, db_type/3, ram_db_type/2, ram_db_type/3]).
 
 %%-export([behaviour_info/1]).
 
@@ -423,6 +424,43 @@ db_mod(Host, Module) when is_binary(Host) orelse Host == global ->
 
 db_mod(Host, Opts, Module) when is_list(Opts) ->
     db_mod(db_type(Host, Opts, Module), Module).
+
+-spec ram_db_type(binary() | global, module()) -> db_type();
+		 (opts(), module()) -> db_type().
+ram_db_type(Opts, Module) when is_list(Opts) ->
+    ram_db_type(global, Opts, Module);
+ram_db_type(Host, Module) when is_atom(Module) ->
+    case catch Module:mod_opt_type(ram_db_type) of
+	F when is_function(F) ->
+	    case get_module_opt(Host, Module, ram_db_type, F) of
+		undefined -> ejabberd_config:default_ram_db(Host, Module);
+		Type -> Type
+	    end;
+	_ ->
+	    undefined
+    end.
+
+-spec ram_db_type(binary(), opts(), module()) -> db_type().
+ram_db_type(Host, Opts, Module) ->
+    case catch Module:mod_opt_type(ram_db_type) of
+	F when is_function(F) ->
+	    case get_opt(ram_db_type, Opts, F) of
+		undefined -> ejabberd_config:default_ram_db(Host, Module);
+		Type -> Type
+	    end;
+	_ ->
+	    undefined
+    end.
+
+-spec ram_db_mod(binary() | global | db_type(), module()) -> module().
+ram_db_mod(Type, Module) when is_atom(Type), Type /= global ->
+    list_to_atom(atom_to_list(Module) ++ "_" ++ atom_to_list(Type));
+ram_db_mod(Host, Module) when is_binary(Host) orelse Host == global ->
+    ram_db_mod(ram_db_type(Host, Module), Module).
+
+-spec ram_db_mod(binary() | global, opts(), module()) -> module().
+ram_db_mod(Host, Opts, Module) when is_list(Opts) ->
+    ram_db_mod(ram_db_type(Host, Opts, Module), Module).
 
 -spec loaded_modules(binary()) -> [atom()].
 

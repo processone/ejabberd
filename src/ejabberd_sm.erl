@@ -64,6 +64,7 @@
 	 user_resources/2,
 	 kick_user/2,
 	 get_session_pid/3,
+	 get_user_info/2,
 	 get_user_info/3,
 	 get_user_ip/3,
 	 get_max_user_sessions/2,
@@ -215,6 +216,17 @@ get_user_ip(User, Server, Resource) ->
 	    proplists:get_value(ip, Session#session.info)
     end.
 
+-spec get_user_info(binary(), binary()) -> [{binary(), info()}].
+get_user_info(User, Server) ->
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
+    Mod = get_sm_backend(LServer),
+    Ss = online(Mod:get_sessions(LUser, LServer)),
+    [{LResource, [{node, node(Pid)}|Info]}
+     || #session{usr = {_, _, LResource},
+		 info = Info,
+		 sid = {_, Pid}} <- clean_session_list(Ss)].
+
 -spec get_user_info(binary(), binary(), binary()) -> info() | offline.
 
 get_user_info(User, Server, Resource) ->
@@ -228,9 +240,7 @@ get_user_info(User, Server, Resource) ->
 	Ss ->
 	    Session = lists:max(Ss),
 	    Node = node(element(2, Session#session.sid)),
-	    Conn = proplists:get_value(conn, Session#session.info),
-	    IP = proplists:get_value(ip, Session#session.info),
-	    [{node, Node}, {conn, Conn}, {ip, IP}]
+	    [{node, Node}|Session#session.info]
     end.
 
 -spec set_presence(sid(), binary(), binary(), binary(),

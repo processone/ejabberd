@@ -120,10 +120,3 @@
     room_shaper             = none :: shaper:shaper(),
     room_queue              = queue:new() :: ?TQUEUE
 }).
-
--record(muc_online_users, {us = {<<>>, <<>>} :: {binary(), binary()},
-                           resource = <<>> :: binary() | '_',
-                           room = <<>> :: binary() | '_' | '$1',
-                           host = <<>> :: binary() | '_' | '$2'}).
-
--type muc_online_users() :: #muc_online_users{}.

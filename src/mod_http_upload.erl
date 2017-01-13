@@ -139,8 +139,6 @@ start(ServerHost, Opts) ->
 			 true) of
 	true ->
 	    ejabberd_hooks:add(remove_user, ServerHost, ?MODULE,
-			       remove_user, 50),
-	    ejabberd_hooks:add(anonymous_purge_hook, ServerHost, ?MODULE,
 			       remove_user, 50);
 	false ->
 	    ok
@@ -162,8 +160,6 @@ stop(ServerHost) ->
 			        true) of
 	true ->
 	    ejabberd_hooks:delete(remove_user, ServerHost, ?MODULE,
-				  remove_user, 50),
-	    ejabberd_hooks:delete(anonymous_purge_hook, ServerHost, ?MODULE,
 				  remove_user, 50);
 	false ->
 	    ok
