@@ -341,16 +341,15 @@ adhoc_local_items(Acc, From,
 	  PermLev = get_permission_level(From),
 	  Nodes = recursively_get_local_items(PermLev, LServer,
 					      <<"">>, Server, Lang),
-	  Nodes1 = lists:filter(fun (N) ->
-					Nd = fxml:get_tag_attr_s(<<"node">>, N),
-					F = get_local_features([], From, To, Nd,
-							       Lang),
-					case F of
-					  {result, [?NS_COMMANDS]} -> true;
-					  _ -> false
-					end
-				end,
-				Nodes),
+	  Nodes1 = lists:filter(
+		     fun (#disco_item{node = Nd}) ->
+			     F = get_local_features([], From, To, Nd, Lang),
+			     case F of
+				 {result, [?NS_COMMANDS]} -> true;
+				 _ -> false
+			     end
+		     end,
+		     Nodes),
 	  {result, Items ++ Nodes1};
       _ -> Acc
     end.
