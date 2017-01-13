@@ -915,7 +915,7 @@ shared_roster_group(Host, Group, Query, Lang) ->
 			      ?XE(<<"td">>,
 				  [?TEXTAREA(<<"members">>,
 					     integer_to_binary(lists:max([3,
-                                                                               byte_size(FMembers)])),
+                                                                               length(Members)+3])),
 					     <<"20">>, FMembers)])]),
 			 ?XE(<<"tr">>,
 			     [?XCT(<<"td">>, <<"Displayed Groups:">>),
