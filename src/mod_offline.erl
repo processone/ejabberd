@@ -570,30 +570,32 @@ pop_offline_messages(Ls, User, Server) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case Mod:pop_messages(LUser, LServer) of
 	{ok, Rs} ->
-	    TS = p1_time_compat:timestamp(),
 	    Ls ++
 		lists:flatmap(
-		  fun(R) ->
+		  fun(#offline_msg{expire = Expire} = R) ->
 			  case offline_msg_to_route(LServer, R) of
-			      error -> [];
-			      RouteMsg -> [RouteMsg]
+			      error ->
+				  [];
+			      {route, _From, _To, Msg} = RouteMsg ->
+				  case is_expired_message(Expire, Msg) of
+				      true -> [];
+				      false -> [RouteMsg]
+				  end
 			  end
-		  end,
-		  lists:filter(
-		    fun(#offline_msg{packet = Pkt} = R) ->
-			    Expire = case R#offline_msg.expire of
-					 undefined ->
-					     find_x_expire(TS, Pkt);
-					 Exp ->
-					     Exp
-				     end,
-			    case Expire of
-				never -> true;
-				TimeStamp -> TS < TimeStamp
-			    end
-		    end, Rs));
+		  end, Rs);
 	_ ->
 	    Ls
+    end.
+
+is_expired_message(Expire, Pkt) ->
+    TS = p1_time_compat:timestamp(),
+    Exp = case Expire of
+	      undefined -> find_x_expire(TS, Pkt);
+	      _ -> Expire
+	  end,
+    case Exp of
+	never -> false;
+	TimeStamp -> TS >= TimeStamp
     end.
 
 remove_expired_messages(Server) ->
