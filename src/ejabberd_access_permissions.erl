@@ -237,7 +237,8 @@ get_definitions(#state{definitions = Defs, fragments_generators = Gens} = State)
 			{all, none}}},
 		      {<<"admin access">>,
 		       {[],
-			[{acl, admin}],
+			[{acl,{acl,admin}},
+			 {oauth,[<<"ejabberd:admin">>],[{acl,{acl,admin}}]}],
 			{all, [start, stop]}}}],
     NDefs = case Defs of
 		none ->
