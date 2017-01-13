@@ -224,9 +224,9 @@ handle_unexpected_cast(State, Msg) ->
     ?WARNING_MSG("got unexpected cast: ~p", [Msg]),
     State.
 
-reject_unauthenticated_packet(State, Pkt) ->
-    Err = xmpp:err_not_authorized(),
-    xmpp_stream_in:send_error(State, Pkt, Err).
+reject_unauthenticated_packet(State, _Pkt) ->
+    Err = xmpp:serr_not_authorized(),
+    send(State, Err).
 
 process_closed(State, Reason) ->
     stop(State#{stop_reason => Reason}).

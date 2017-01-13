@@ -319,8 +319,8 @@ handle_info({'$gen_event', {xmlstreamerror, Reason}}, #{lang := Lang}= State) ->
 	      Err = case Reason of
 			<<"XML stanza is too big">> ->
 			    xmpp:serr_policy_violation(Reason, Lang);
-			_ ->
-			    xmpp:serr_not_well_formed()
+			{_, Txt} ->
+			    xmpp:serr_not_well_formed(Txt, Lang)
 		    end,
 	      send_pkt(State1, Err)
       end);
@@ -523,6 +523,8 @@ process_element(Pkt, #{stream_state := StateName, lang := Lang} = State) ->
 	    send_pkt(State, #sasl_failure{reason = 'encryption-required'});
 	#sasl_auth{} when StateName == wait_for_sasl_request ->
 	    process_sasl_request(Pkt, State);
+	#sasl_auth{} when StateName == wait_for_sasl_response ->
+	    process_sasl_request(Pkt, maps:remove(sasl_state, State));
 	#sasl_auth{} ->
 	    Txt = <<"SASL negotiation is not allowed in this state">>,
 	    send_pkt(State, #sasl_failure{reason = 'not-authorized',
@@ -570,8 +572,8 @@ process_unauthenticated_packet(Pkt, #{mod := Mod} = State) ->
     NewPkt = set_lang(Pkt, State),
     try Mod:handle_unauthenticated_packet(NewPkt, State)
     catch _:undef ->
-	    Err = xmpp:err_not_authorized(),
-	    send_error(State, Pkt, Err)
+	    Err = xmpp:serr_not_authorized(),
+	    send(State, Err)
     end.
 
 -spec process_authenticated_packet(xmpp_element(), state()) -> state().
@@ -993,7 +995,7 @@ set_from_to(Pkt, #{lang := Lang}) ->
     To = xmpp:get_to(Pkt),
     if From == undefined ->
 	    Txt = <<"Missing 'from' attribute">>,
-	    {error, xmpp:serr_invalid_from(Txt, Lang)};
+	    {error, xmpp:serr_improper_addressing(Txt, Lang)};
        To == undefined ->
 	    Txt = <<"Missing 'to' attribute">>,
 	    {error, xmpp:serr_improper_addressing(Txt, Lang)};
@@ -1010,18 +1012,13 @@ send_header(#{stream_id := StreamID,
 	      stream_version := MyVersion,
 	      stream_header_sent := false,
 	      lang := MyLang,
-	      xmlns := NS,
-	      server := DefaultServer} = State,
+	      xmlns := NS} = State,
 	    #stream_start{to = HisTo, from = HisFrom,
 			  lang = HisLang, version = HisVersion}) ->
     Lang = select_lang(MyLang, HisLang),
     NS_DB = if NS == ?NS_SERVER -> ?NS_SERVER_DIALBACK;
 	       true -> <<"">>
 	    end,
-    From = case HisTo of
-	       #jid{} -> HisTo;
-	       undefined -> jid:make(DefaultServer)
-	   end,
     Version = case HisVersion of
 		  undefined -> undefined;
 		  {0,_} -> HisVersion;
@@ -1034,7 +1031,7 @@ send_header(#{stream_id := StreamID,
 				db_xmlns = NS_DB,
 				id = StreamID,
 				to = HisFrom,
-				from = From},
+				from = HisTo},
     State1 = State#{lang => Lang,
 		    stream_version => Version,
 		    stream_header_sent => true},

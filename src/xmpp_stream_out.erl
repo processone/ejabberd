@@ -333,8 +333,8 @@ handle_info({'$gen_event', {xmlstreamerror, Reason}}, #{lang := Lang}= State) ->
 	      Err = case Reason of
 			<<"XML stanza is too big">> ->
 			    xmpp:serr_policy_violation(Reason, Lang);
-			_ ->
-			    xmpp:serr_not_well_formed()
+			{_, Txt} ->
+			    xmpp:serr_not_well_formed(Txt, Lang)
 		    end,
 	      send_pkt(State1, Err)
       end);
@@ -520,7 +520,7 @@ process_features(#stream_features{sub_els = Els} = StreamFeatures,
 		    send_pkt(State1, xmpp:serr_policy_violation(Txt, Lang));
 		#starttls{required = true} when not TLSAvailable and not Encrypted ->
 		    Txt = <<"Use of STARTTLS forbidden">>,
-		    send_pkt(State1, xmpp:serr_policy_violation(Txt, Lang));
+		    send_pkt(State1, xmpp:serr_unsupported_feature(Txt, Lang));
 		#starttls{} when TLSAvailable and not Encrypted ->
 		    State2 = State1#{stream_state => wait_for_starttls_response},
 		    send_pkt(State2, #starttls{});
