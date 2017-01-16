@@ -35,7 +35,8 @@
 %%% API
 %%%===================================================================
 init(Host, Opts) ->
-    case gen_server:start_link({local, ?MODULE}, ?MODULE, [Host, Opts], []) of
+    Name = gen_mod:get_module_proc(Host, ?MODULE),
+    case gen_server:start_link({local, Name}, ?MODULE, [Host, Opts], []) of
 	{ok, _Pid} ->
 	    ok;
 	Err ->
