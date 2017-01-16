@@ -205,26 +205,12 @@ is_my_host(Domain) ->
 	    Mod:is_my_host(LDomain)
     end.
 
--spec process_iq(jid(), jid(), iq() | xmlel()) -> any().
+-spec process_iq(jid(), jid(), iq()) -> any().
 process_iq(From, To, #iq{} = IQ) ->
     if To#jid.luser == <<"">> ->
 	    ejabberd_local:process_iq(From, To, IQ);
        true ->
 	    ejabberd_sm:process_iq(From, To, IQ)
-    end;
-process_iq(From, To, #xmlel{} = El) ->
-    try xmpp:decode(El, ?NS_CLIENT, [ignore_els]) of
-	#iq{} = IQ -> process_iq(From, To, xmpp:set_from_to(IQ, From, To))
-    catch _:{xmpp_codec, Why} ->
-	    Type = xmpp:get_type(El),
-	    if Type == <<"get">>; Type == <<"set">> ->
-		    Txt = xmpp:format_error(Why),
-		    Lang = xmpp:get_lang(El),
-		    Err = xmpp:make_error(El, xmpp:err_bad_request(Txt, Lang)),
-		    ejabberd_router:route(To, From, Err);
-	       true ->
-		    ok
-	    end
     end.
 
 %%====================================================================
