@@ -81,7 +81,7 @@ filter_packet({#message{} = Msg, State} = Acc) ->
             end,
             if
                 Drop ->
-                    {drop, State};
+                    {stop, {drop, State}};
                 true ->
                     Acc
             end
