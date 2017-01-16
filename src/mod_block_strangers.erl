@@ -55,7 +55,8 @@ filter_packet({#message{} = Msg, State} = Acc) ->
     LFrom = jid:tolower(From),
     LBFrom = jid:remove_resource(LFrom),
     #{pres_a := PresA} = State,
-    case ejabberd_router:is_my_route(From#jid.lserver)
+    case Msg#message.body == []
+        orelse ejabberd_router:is_my_route(From#jid.lserver)
         orelse (?SETS):is_element(LFrom, PresA)
 	orelse (?SETS):is_element(LBFrom, PresA)
         orelse sets_bare_member(LBFrom, PresA) of
