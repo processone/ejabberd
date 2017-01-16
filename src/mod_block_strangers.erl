@@ -53,11 +53,11 @@ stop(Host) ->
 filter_packet(deny = Acc, _State, _Msg) ->
     Acc;
 filter_packet(Acc, State, Msg) ->
-    From = Msg#message.from,
+    From = xmpp:get_from(Msg),
     LFrom = jid:tolower(From),
     LBFrom = jid:remove_resource(LFrom),
     #{pres_a := PresA} = State,
-    case false%ejabberd_router:is_my_route(From#jid.lserver)
+    case ejabberd_router:is_my_route(From#jid.lserver)
         orelse (?SETS):is_element(LFrom, PresA)
 	orelse (?SETS):is_element(LBFrom, PresA)
         orelse sets_bare_member(LBFrom, PresA) of
@@ -75,9 +75,9 @@ filter_packet(Acc, State, Msg) ->
                                        false),
             if
                 Log ->
-                    Packet = xmpp:encode(Msg, ?NS_CLIENT),
                     ?INFO_MSG("Drop packet: ~s",
-                              [fxml:element_to_binary(Packet)]);
+                              [fxml:element_to_binary(
+                                 xmpp:encode(Msg, ?NS_CLIENT))]);
                 true ->
                     ok
             end,
