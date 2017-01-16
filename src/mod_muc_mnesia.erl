@@ -17,51 +17,29 @@
 -export([register_online_room/3, unregister_online_room/3, find_online_room/2,
 	 get_online_rooms/2, count_online_rooms/1, rsm_supported/0,
 	 register_online_user/3, unregister_online_user/3,
-	 count_online_rooms_by_user/2, get_online_rooms_by_user/2,
-	 handle_event/1]).
+	 count_online_rooms_by_user/2, get_online_rooms_by_user/2]).
 -export([set_affiliation/6, set_affiliations/4, get_affiliation/5,
 	 get_affiliations/3, search_affiliation/4]).
+%% gen_server callbacks
+-export([init/1, handle_cast/2, handle_call/3, handle_info/2,
+	 terminate/2, code_change/3]).
 
 -include("mod_muc.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 
+-record(state, {}).
+
 %%%===================================================================
 %%% API
 %%%===================================================================
 init(Host, Opts) ->
-    MyHost = proplists:get_value(host, Opts),
-    case gen_mod:db_mod(Host, Opts, mod_muc) of
-	?MODULE ->
-	    ejabberd_mnesia:create(?MODULE, muc_room,
-				   [{disc_copies, [node()]},
-				    {attributes,
-				     record_info(fields, muc_room)}]),
-	    ejabberd_mnesia:create(?MODULE, muc_registered,
-				   [{disc_copies, [node()]},
-				    {attributes,
-				     record_info(fields, muc_registered)}]),
-	    update_tables(MyHost),
-	    mnesia:add_table_index(muc_registered, nick);
-	_ ->
-	    ok
-    end,
-    case gen_mod:ram_db_mod(Host, Opts, mod_muc) of
-	?MODULE ->
-	    update_muc_online_table(),
-	    ejabberd_mnesia:create(?MODULE, muc_online_room,
-				   [{ram_copies, [node()]},
-				    {type, ordered_set},
-				    {attributes,
-				     record_info(fields, muc_online_room)}]),
-	    mnesia:add_table_copy(muc_online_room, node(), ram_copies),
-	    catch ets:new(muc_online_users,
-			  [bag, named_table, public, {keypos, 2}]),
-	    clean_table_from_bad_node(node(), MyHost),
-	    mnesia:subscribe(system);
-	_ ->
-	    ok
+    case gen_server:start_link({local, ?MODULE}, ?MODULE, [Host, Opts], []) of
+	{ok, _Pid} ->
+	    ok;
+	Err ->
+	    Err
     end.
 
 store_room(_LServer, Host, Name, Opts) ->
@@ -247,11 +225,6 @@ get_online_rooms(Action, Key, Host, Count, Max, Items) ->
 	    Items
     end.
 
-handle_event({mnesia_system_event, {mnesia_down, Node}}) ->
-    clean_table_from_bad_node(Node);
-handle_event(_) ->
-    ok.
-
 rsm_supported() ->
     true.
 
@@ -293,6 +266,64 @@ import(_LServer, <<"muc_registered">>,
     mnesia:dirty_write(
       #muc_registered{us_host = {{U, S}, RoomHost},
                       nick = Nick}).
+
+%%%===================================================================
+%%% gen_server callbacks
+%%%===================================================================
+init([Host, Opts]) ->
+    MyHost = proplists:get_value(host, Opts),
+    case gen_mod:db_mod(Host, Opts, mod_muc) of
+	?MODULE ->
+	    ejabberd_mnesia:create(?MODULE, muc_room,
+				   [{disc_copies, [node()]},
+				    {attributes,
+				     record_info(fields, muc_room)}]),
+	    ejabberd_mnesia:create(?MODULE, muc_registered,
+				   [{disc_copies, [node()]},
+				    {attributes,
+				     record_info(fields, muc_registered)}]),
+	    update_tables(MyHost),
+	    mnesia:add_table_index(muc_registered, nick);
+	_ ->
+	    ok
+    end,
+    case gen_mod:ram_db_mod(Host, Opts, mod_muc) of
+	?MODULE ->
+	    update_muc_online_table(),
+	    ejabberd_mnesia:create(?MODULE, muc_online_room,
+				   [{ram_copies, [node()]},
+				    {type, ordered_set},
+				    {attributes,
+				     record_info(fields, muc_online_room)}]),
+	    mnesia:add_table_copy(muc_online_room, node(), ram_copies),
+	    catch ets:new(muc_online_users,
+			  [bag, named_table, public, {keypos, 2}]),
+	    clean_table_from_bad_node(node(), MyHost),
+	    mnesia:subscribe(system);
+	_ ->
+	    ok
+    end,
+    {ok, #state{}}.
+
+handle_call(_Request, _From, State) ->
+    Reply = ok,
+    {reply, Reply, State}.
+
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
+    clean_table_from_bad_node(Node),
+    {noreply, State};
+handle_info(Info, State) ->
+    ?ERROR_MSG("unexpected info: ~p", [Info]),
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
+    ok.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
 
 %%%===================================================================
 %%% Internal functions

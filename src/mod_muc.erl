@@ -105,7 +105,6 @@
 -callback unregister_online_user(ljid(), binary(), binary()) -> any().
 -callback count_online_rooms_by_user(binary(), binary()) -> non_neg_integer().
 -callback get_online_rooms_by_user(binary(), binary()) -> [{binary(), binary()}].
--callback handle_event(term()) -> any().
 
 %%====================================================================
 %% API
@@ -377,9 +376,8 @@ handle_info({room_destroyed, {Room, Host}, Pid}, State) ->
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
     RMod:unregister_online_room(Room, Host, Pid),
     {noreply, State};
-handle_info(Event, #state{server_host = LServer} = State) ->
-    RMod = gen_mod:ram_db_mod(LServer, ?MODULE),
-    RMod:handle_event(Event),
+handle_info(Info, State) ->
+    ?ERROR_MSG("unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, #state{host = MyHost}) ->

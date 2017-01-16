@@ -17,8 +17,7 @@
 -export([register_online_room/3, unregister_online_room/3, find_online_room/2,
 	 get_online_rooms/2, count_online_rooms/1, rsm_supported/0,
 	 register_online_user/3, unregister_online_user/3,
-	 count_online_rooms_by_user/2, get_online_rooms_by_user/2,
-	 handle_event/1]).
+	 count_online_rooms_by_user/2, get_online_rooms_by_user/2]).
 -export([set_affiliation/6, set_affiliations/4, get_affiliation/5,
 	 get_affiliations/3, search_affiliation/4]).
 
@@ -139,9 +138,6 @@ count_online_rooms(_) ->
 
 get_online_rooms(_, _) ->
     erlang:error(not_implemented).
-
-handle_event(_) ->
-    ok.
 
 rsm_supported() ->
     false.

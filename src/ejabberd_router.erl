@@ -65,7 +65,6 @@
 -callback is_my_route(binary()) -> boolean().
 -callback is_my_host(binary()) -> boolean().
 -callback get_all_routes() -> [binary()].
--callback handle_event(term()) -> any().
 
 -record(state, {}).
 
@@ -251,9 +250,8 @@ handle_info({route, From, To, Packet}, State) ->
       _ -> ok
     end,
     {noreply, State};
-handle_info(Event, State) ->
-    Mod = get_backend(),
-    Mod:handle_event(Event),
+handle_info(Info, State) ->
+    ?ERROR_MSG("unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->

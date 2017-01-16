@@ -8,32 +8,32 @@
 %%%-------------------------------------------------------------------
 -module(ejabberd_router_mnesia).
 -behaviour(ejabberd_router).
+-behaviour(gen_server).
 
 %% API
 -export([init/0, register_route/4, unregister_route/2, find_routes/1,
-	 host_of_route/1, is_my_route/1, is_my_host/1, get_all_routes/0,
-	 handle_event/1]).
+	 host_of_route/1, is_my_route/1, is_my_host/1, get_all_routes/0]).
+%% gen_server callbacks
+-export([init/1, handle_cast/2, handle_call/3, handle_info/2,
+	 terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
 -include("ejabberd_router.hrl").
 -include("logger.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 
+-record(state, {}).
+
 %%%===================================================================
 %%% API
 %%%===================================================================
 init() ->
-    update_tables(),
-    ejabberd_mnesia:create(?MODULE, route,
-			   [{ram_copies, [node()]},
-			    {type, bag},
-			    {attributes, record_info(fields, route)}]),
-    mnesia:add_table_copy(route, node(), ram_copies),
-    mnesia:subscribe({table, route, simple}),
-    lists:foreach(
-      fun (Pid) -> erlang:monitor(process, Pid) end,
-      mnesia:dirty_select(route,
-			  [{{route, '_', '$1', '_'}, [], ['$1']}])).
+    case gen_server:start_link({local, ?MODULE}, ?MODULE, [], []) of
+	{ok, _Pid} ->
+	    ok;
+	Err ->
+	    Err
+    end.
 
 register_route(Domain, ServerHost, LocalHint, undefined) ->
     F = fun () ->
@@ -135,10 +135,35 @@ get_all_routes() ->
 	      when Domain /= ServerHost -> Domain
 	end)).
 
-handle_event({mnesia_table_event,
-	      {write, #route{pid = Pid}, _ActivityId}}) ->
-    erlang:monitor(process, Pid);
-handle_event({'DOWN', _Ref, _Type, Pid, _Info}) ->
+%%%===================================================================
+%%% gen_server callbacks
+%%%===================================================================
+init([]) ->
+    update_tables(),
+    ejabberd_mnesia:create(?MODULE, route,
+			   [{ram_copies, [node()]},
+			    {type, bag},
+			    {attributes, record_info(fields, route)}]),
+    mnesia:add_table_copy(route, node(), ram_copies),
+    mnesia:subscribe({table, route, simple}),
+    lists:foreach(
+      fun (Pid) -> erlang:monitor(process, Pid) end,
+      mnesia:dirty_select(route,
+			  [{{route, '_', '$1', '_'}, [], ['$1']}])),
+    {ok, #state{}}.
+
+handle_call(_Request, _From, State) ->
+    Reply = ok,
+    {reply, Reply, State}.
+
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+handle_info({mnesia_table_event,
+	     {write, #route{pid = Pid}, _ActivityId}}, State) ->
+    erlang:monitor(process, Pid),
+    {noreply, State};
+handle_info({'DOWN', _Ref, _Type, Pid, _Info}, State) ->
     F = fun () ->
 		Es = mnesia:select(route,
 				   [{#route{pid = Pid, _ = '_'}, [], ['$_']}]),
@@ -158,9 +183,17 @@ handle_event({'DOWN', _Ref, _Type, Pid, _Info}) ->
 			  end
 		  end, Es)
 	end,
-    transaction(F);
-handle_event(_Event) ->
+    transaction(F),
+    {noreply, State};
+handle_info(Info, State) ->
+    ?ERROR_MSG("unexpected info: ~p", [Info]),
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
     ok.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
 
 %%%===================================================================
 %%% Internal functions
