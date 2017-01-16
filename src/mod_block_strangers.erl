@@ -32,7 +32,7 @@
 -export([start/2, stop/1,
          depends/2, mod_opt_type/1]).
 
--export([filter_packet/3]).
+-export([filter_packet/1]).
 
 -include("xmpp.hrl").
 -include("ejabberd.hrl").
@@ -41,18 +41,16 @@
 -define(SETS, gb_sets).
 
 start(Host, _Opts) ->
-    ejabberd_hooks:add(c2s_filter_incoming_packet, Host,
-                       ?MODULE, filter_packet, 50),
+    ejabberd_hooks:add(user_receive_packet, Host,
+                       ?MODULE, filter_packet, 25),
     ok.
 
 stop(Host) ->
-    ejabberd_hooks:delete(c2s_filter_incoming_packet, Host,
-                          ?MODULE, filter_packet, 50),
+    ejabberd_hooks:delete(user_receive_packet, Host,
+                          ?MODULE, filter_packet, 25),
     ok.
 
-filter_packet(deny = Acc, _State, _Msg) ->
-    Acc;
-filter_packet(Acc, State, Msg) ->
+filter_packet({#message{} = Msg, State} = Acc) ->
     From = xmpp:get_from(Msg),
     LFrom = jid:tolower(From),
     LBFrom = jid:remove_resource(LFrom),
@@ -83,12 +81,13 @@ filter_packet(Acc, State, Msg) ->
             end,
             if
                 Drop ->
-                    deny;
+                    {drop, State};
                 true ->
                     Acc
             end
-    end.
-
+    end;
+filter_packet(Acc) ->
+    Acc.
 
 sets_bare_member({U, S, <<"">>} = LBJID, Set) ->
     case ?SETS:next(?SETS:iterator_from(LBJID, Set)) of

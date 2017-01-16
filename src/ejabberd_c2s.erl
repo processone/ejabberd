@@ -546,7 +546,7 @@ process_iq_in(State, #iq{} = IQ) ->
 
 -spec process_message_in(state(), message()) -> {boolean(), state()}.
 process_message_in(State, #message{type = T} = Msg) ->
-    case filter_incoming_message(State, Msg) of
+    case privacy_check_packet(State, Msg, in) of
 	allow ->
 	    {true, State};
 	deny when T == groupchat; T == headline ->
@@ -559,24 +559,6 @@ process_message_in(State, #message{type = T} = Msg) ->
 		    route_error(Msg, xmpp:err_service_unavailable())
 	    end,
 	    {false, State}
-    end.
-
-filter_incoming_message(State, Msg) ->
-    case privacy_check_packet(State, Msg, in) of
-        allow ->
-            #{lserver := LServer} = State,
-            case ejabberd_hooks:run_fold(
-                   c2s_filter_incoming_packet,
-                   LServer,
-                   allow,
-                   [State, Msg]) of
-                allow ->
-                    allow;
-                deny ->
-                    deny
-            end;
-        deny ->
-            deny
     end.
 
 -spec process_presence_in(state(), presence()) -> {boolean(), state()}.
