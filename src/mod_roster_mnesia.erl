@@ -47,8 +47,7 @@ init(_Host, _Opts) ->
     ejabberd_mnesia:create(?MODULE, roster_version,
 			[{disc_copies, [node()]},
 			 {attributes,
-			  record_info(fields, roster_version)},
-			 {index, [us]}]),
+			  record_info(fields, roster_version)}]),
     update_tables().
 
 read_roster_version(LUser, LServer) ->
