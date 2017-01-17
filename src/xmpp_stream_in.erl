@@ -809,6 +809,7 @@ process_sasl_success(Props, ServerOut,
 		       mod := Mod, sasl_mech := Mech} = State) ->
     User = identity(Props),
     AuthModule = proplists:get_value(auth_module, Props),
+    SockMod:reset_stream(Socket),
     State1 = send_pkt(State, #sasl_success{text = ServerOut}),
     case is_disconnected(State1) of
 	true -> State1;
@@ -819,7 +820,6 @@ process_sasl_success(Props, ServerOut,
 	    case is_disconnected(State2) of
 		true -> State2;
 		false ->
-		    SockMod:reset_stream(Socket),
 		    State3 = maps:remove(sasl_state,
 					 maps:remove(sasl_mech, State2)),
 		    State3#{stream_id => new_id(),
