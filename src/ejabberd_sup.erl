@@ -41,13 +41,6 @@ init([]) ->
 	 brutal_kill,
 	 worker,
 	 [ejabberd_hooks]},
-    NodeGroups =
-	{ejabberd_node_groups,
-	 {ejabberd_node_groups, start_link, []},
-	 permanent,
-	 brutal_kill,
-	 worker,
-	 [ejabberd_node_groups]},
     SystemMonitor =
 	{ejabberd_system_monitor,
 	 {ejabberd_system_monitor, start_link, []},
@@ -100,14 +93,6 @@ init([]) ->
 	 infinity,
 	 supervisor,
 	 [ejabberd_tmp_sup]},
-    FrontendSocketSupervisor =
-	{ejabberd_frontend_socket_sup,
-	 {ejabberd_tmp_sup, start_link,
-	  [ejabberd_frontend_socket_sup, ejabberd_frontend_socket]},
-	 permanent,
-	 infinity,
-	 supervisor,
-	 [ejabberd_tmp_sup]},
     IQSupervisor =
 	{ejabberd_iq_sup,
 	 {ejabberd_tmp_sup, start_link,
@@ -118,7 +103,6 @@ init([]) ->
 	 [ejabberd_tmp_sup]},
     {ok, {{one_for_one, 10, 1},
 	  [Hooks,
-	   NodeGroups,
 	   SystemMonitor,
 	   S2S,
 	   Captcha,
@@ -126,5 +110,4 @@ init([]) ->
 	   S2SOutSupervisor,
 	   ServiceSupervisor,
 	   IQSupervisor,
-	   FrontendSocketSupervisor,
 	   Listener]}}.
