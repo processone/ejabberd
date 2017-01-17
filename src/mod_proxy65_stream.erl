@@ -102,7 +102,7 @@ terminate(_Reason, StateName, #state{sha1 = SHA1}) ->
     Mod = gen_mod:ram_db_mod(global, mod_proxy65),
     Mod:unregister_stream(SHA1),
     if StateName == stream_established ->
-	   ?INFO_MSG("Bytestream terminated", []);
+	   ?INFO_MSG("(~w) Bytestream terminated", [self()]);
        true -> ok
     end.
 
