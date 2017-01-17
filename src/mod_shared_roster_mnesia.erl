@@ -47,9 +47,9 @@ init(_Host, _Opts) ->
 			 {attributes, record_info(fields, sr_group)}]),
     ejabberd_mnesia:create(?MODULE, sr_user,
 			[{disc_copies, [node()]}, {type, bag},
-			 {attributes, record_info(fields, sr_user)}]),
-    update_tables(),
-    mnesia:add_table_index(sr_user, group_host).
+			 {attributes, record_info(fields, sr_user)},
+			 {index, [group_host]}]),
+    update_tables().
 
 list_groups(Host) ->
     mnesia:dirty_select(sr_group,

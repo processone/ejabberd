@@ -42,14 +42,14 @@
 init(_Host, _Opts) ->
     ejabberd_mnesia:create(?MODULE, roster,
 			[{disc_copies, [node()]},
-			 {attributes, record_info(fields, roster)}]),
+			 {attributes, record_info(fields, roster)},
+			 {index, [us]}]),
     ejabberd_mnesia:create(?MODULE, roster_version,
 			[{disc_copies, [node()]},
 			 {attributes,
-			  record_info(fields, roster_version)}]),
-    update_tables(),
-    mnesia:add_table_index(roster, us),
-    mnesia:add_table_index(roster_version, us).
+			  record_info(fields, roster_version)},
+			 {index, [us]}]),
+    update_tables().
 
 read_roster_version(LUser, LServer) ->
     US = {LUser, LServer},

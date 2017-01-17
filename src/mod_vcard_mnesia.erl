@@ -46,20 +46,13 @@ init(_Host, _Opts) ->
     ejabberd_mnesia:create(?MODULE, vcard_search,
 			[{disc_copies, [node()]},
 			 {attributes,
-			  record_info(fields, vcard_search)}]),
-    update_tables(),
-    mnesia:add_table_index(vcard_search, luser),
-    mnesia:add_table_index(vcard_search, lfn),
-    mnesia:add_table_index(vcard_search, lfamily),
-    mnesia:add_table_index(vcard_search, lgiven),
-    mnesia:add_table_index(vcard_search, lmiddle),
-    mnesia:add_table_index(vcard_search, lnickname),
-    mnesia:add_table_index(vcard_search, lbday),
-    mnesia:add_table_index(vcard_search, lctry),
-    mnesia:add_table_index(vcard_search, llocality),
-    mnesia:add_table_index(vcard_search, lemail),
-    mnesia:add_table_index(vcard_search, lorgname),
-    mnesia:add_table_index(vcard_search, lorgunit).
+			  record_info(fields, vcard_search)},
+			 {index, [ luser, lfn, lfamily,
+				   lgiven, lmiddle, lnickname,
+				   lbday, lctry, llocality,
+				   lemail, lorgname, lorgunit
+				 ]}]),
+    update_tables().
 
 stop(_Host) ->
     ok.

@@ -49,9 +49,9 @@ init(_Host, Opts) ->
     ejabberd_mnesia:create(?MODULE, muc_registered,
 			[{disc_copies, [node()]},
 			 {attributes,
-			  record_info(fields, muc_registered)}]),
-    update_tables(MyHost),
-    mnesia:add_table_index(muc_registered, nick).
+			  record_info(fields, muc_registered)},
+			 {index, [nick]}]),
+    update_tables(MyHost).
 
 store_room(_LServer, Host, Name, Opts) ->
     F = fun () ->

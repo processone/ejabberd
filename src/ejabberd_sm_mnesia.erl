@@ -98,14 +98,11 @@ init([]) ->
     update_tables(),
     ejabberd_mnesia:create(?MODULE, session,
 			[{ram_copies, [node()]},
-			 {attributes, record_info(fields, session)}]),
+			 {attributes, record_info(fields, session)},
+			 {index, [usr,us]}]),
     ejabberd_mnesia:create(?MODULE, session_counter,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, session_counter)}]),
-    mnesia:add_table_index(session, usr),
-    mnesia:add_table_index(session, us),
-    mnesia:add_table_copy(session, node(), ram_copies),
-    mnesia:add_table_copy(session_counter, node(), ram_copies),
     mnesia:subscribe(system),
     {ok, #state{}}.
 
