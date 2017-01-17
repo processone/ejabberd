@@ -117,19 +117,15 @@ merge(TabDef, CustomDef) ->
 		   lists:ukeysort(1, CleanDef)).
 
 parse(Module) ->
-    Path = case os:getenv("EJABBERD_SCHEMA_PATH") of
-		false ->
-		    case code:priv_dir(ejabberd) of
-			{error, _} -> "schema";  % $SPOOL_DIR/schema
-			Priv -> filename:join(Priv, "schema")
-		    end;
-		CustomDir ->
-		    CustomDir
-	    end,
-    File = filename:join(Path, atom_to_list(Module)++".mnesia"),
-    case file:consult(File) of
-	{ok, Terms} -> parse(Terms, []);
-	Error -> Error
+    case os:getenv("EJABBERD_SCHEMA_PATH") of
+	false ->
+	    {error, undefined};
+	Path ->
+	    File = filename:join(Path, atom_to_list(Module)++".mnesia"),
+	    case file:consult(File) of
+		{ok, Terms} -> parse(Terms, []);
+		Error -> Error
+	    end
     end.
 
 parse([], Acc) ->
