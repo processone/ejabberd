@@ -44,7 +44,7 @@ create(Module, Name, TabDef) ->
 	Attrs ->
 	    case need_reset(TabDef, Schema) of
 		true -> reset(Name, Schema);
-		false -> update(Name, Schema)
+		false -> update(Name, Attrs, Schema)
 	    end;
 	OldAttrs ->
 	    Fun = case lists:member({transform,1}, Module:module_info(exports)) of
@@ -59,6 +59,9 @@ reset(Name, TabDef) ->
     ejabberd_mnesia:create(?MODULE, Name, TabDef).
 
 update(Name, TabDef) ->
+    {attributes, Attrs} = lists:keyfind(attributes, 1, TabDef),
+    update(Name, Attrs, TabDef).
+update(Name, Attrs, TabDef) ->
     Storage = mnesia:table_info(Name, storage_type),
     NewStorage = lists:foldl(
 		   fun({Key, _}, Acc) ->
@@ -72,12 +75,12 @@ update(Name, TabDef) ->
        true ->
 	    {atomic, ok}
     end,
-    Indexes = mnesia:table_info(Name, index),
+    CurIndexes = [lists:nth(N-1, Attrs) || N<-mnesia:table_info(Name, index)],
     NewIndexes = proplists:get_value(index, TabDef, []),
     [mnesia:del_table_index(Name, Attr)
-     || Attr <- Indexes--NewIndexes],
+     || Attr <- CurIndexes--NewIndexes],
     R2 = [mnesia:add_table_index(Name, Attr)
-	  || Attr <- NewIndexes--Indexes],
+	  || Attr <- NewIndexes--CurIndexes],
     lists:foldl(
       fun({atomic, ok}, Acc) -> Acc;
 	 (Error, _Acc) -> Error
