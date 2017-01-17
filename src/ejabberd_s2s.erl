@@ -360,9 +360,13 @@ do_route(From, To, Packet) ->
 	    ejabberd_hooks:run(s2s_send_packet, MyServer, [From, To, Packet]),
 	    ejabberd_s2s_out:route(Pid, xmpp:set_from_to(Packet, From, To));
 	{error, Reason} ->
+	    Lang = xmpp:get_lang(Packet),
 	    Err = case Reason of
+		      policy_violation ->
+			  xmpp:err_policy_violation(
+			    <<"Server connections to local "
+			      "subdomains are forbidden">>, Lang);
 		      forbidden ->
-			  Lang = xmpp:get_lang(Packet),
 			  xmpp:err_forbidden(<<"Denied by ACL">>, Lang);
 		      internal_server_error ->
 			  xmpp:err_internal_server_error()
@@ -370,13 +374,13 @@ do_route(From, To, Packet) ->
 	    ejabberd_router:route_error(To, From, Packet, Err)
     end.
 
--spec start_connection(jid(), jid()) -> {ok, pid()} |
-					{error, forbidden | internal_server_error}.
+-spec start_connection(jid(), jid())
+      -> {ok, pid()} | {error, policy_violation | forbidden | internal_server_error}.
 start_connection(From, To) ->
     start_connection(From, To, []).
 
 -spec start_connection(jid(), jid(), [proplists:property()])
-      -> {ok, pid()} | {error, forbidden | internal_server_error}.
+      -> {ok, pid()} | {error, policy_violation | forbidden | internal_server_error}.
 start_connection(From, To, Opts) ->
     #jid{lserver = MyServer} = From,
     #jid{lserver = Server} = To,
@@ -392,16 +396,23 @@ start_connection(From, To, Opts) ->
 	  %% service and if the s2s host is not blacklisted or
 	  %% is in whitelist:
 	  LServer = ejabberd_router:host_of_route(MyServer),
-	  case not is_service(From, To) andalso allow_host(LServer, Server) of
-	    true ->
-		NeededConnections = needed_connections_number([],
-							      MaxS2SConnectionsNumber,
-							      MaxS2SConnectionsNumberPerNode),
-		open_several_connections(NeededConnections, MyServer,
-					 Server, From, FromTo,
-					 MaxS2SConnectionsNumber,
-					 MaxS2SConnectionsNumberPerNode, Opts);
-	    false -> {error, forbidden}
+	  case is_service(From, To) of
+	      true ->
+		  {error, policy_violation};
+	      false ->
+		  case allow_host(LServer, Server) of
+		      true ->
+			  NeededConnections = needed_connections_number(
+						[],
+						MaxS2SConnectionsNumber,
+						MaxS2SConnectionsNumberPerNode),
+			  open_several_connections(NeededConnections, MyServer,
+						   Server, From, FromTo,
+						   MaxS2SConnectionsNumber,
+						   MaxS2SConnectionsNumberPerNode, Opts);
+		      false ->
+			  {error, forbidden}
+		  end
 	  end;
       L when is_list(L) ->
 	  NeededConnections = needed_connections_number(L,
