@@ -852,16 +852,10 @@ srv_lookup(Host, Timeout, Retries) ->
     case inet_res:getbyname(SRVName, srv, Timeout) of
 	{ok, HostEntry} ->
 	    host_entry_to_host_ports(HostEntry);
-	{error, _} ->
-	    LegacySRVName = "_jabber._tcp." ++ Host,
-	    case inet_res:getbyname(LegacySRVName, srv, Timeout) of
-		{error, timeout} ->
-		    srv_lookup(Host, Timeout, Retries - 1);
-		{error, _} = Err ->
-		    Err;
-		{ok, HostEntry} ->
-		    host_entry_to_host_ports(HostEntry)
-	    end
+	{error, timeout} ->
+	    srv_lookup(Host, Timeout, Retries - 1);
+	{error, _} = Err ->
+	    Err
     end.
 
 -spec a_lookup([{inet:hostname(), inet:port_number()}], state()) ->
