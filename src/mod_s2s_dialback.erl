@@ -240,7 +240,7 @@ s2s_out_packet(#{server := LServer, remote_server := RServer} = State,
 	    ejabberd_s2s_out:establish(State2);
 	_ ->
 	    Reason = format_error(Result),
-	    ejabberd_s2s_out:handle_auth_failure(<<"dialback">>, Reason, State1)
+	    ejabberd_s2s_out:handle_auth_failure(<<"dialback">>, {auth, Reason}, State1)
     end;
 s2s_out_packet(State, Pkt) when is_record(Pkt, db_result);
 				is_record(Pkt, db_verify) ->

@@ -63,7 +63,7 @@
 -callback handle_authenticated_packet(xmpp_element(), state()) -> state().
 -callback handle_unbinded_packet(xmpp_element(), state()) -> state().
 -callback handle_auth_success(binary(), binary(), module(), state()) -> state().
--callback handle_auth_failure(binary(), binary(), atom(), state()) -> state().
+-callback handle_auth_failure(binary(), binary(), binary(), state()) -> state().
 -callback handle_send(xmpp_element(), ok | {error, inet:posix()}, state()) -> state().
 -callback handle_recv(fxml:xmlel(), xmpp_element() | {error, term()}, state()) -> state().
 -callback handle_timeout(state()) -> state().
@@ -664,7 +664,7 @@ process_handshake(#handshake{data = Digest},
 	    end;
 	false ->
 	    State1 = try Mod:handle_auth_failure(
-			   RemoteServer, <<"handshake">>, 'not-authorized', State)
+			   RemoteServer, <<"handshake">>, <<"not authorized">>, State)
 		     catch _:undef -> State
 		     end,
 	    case is_disconnected(State1) of
