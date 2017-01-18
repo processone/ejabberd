@@ -38,6 +38,7 @@
 
 -include("mod_roster.hrl").
 -include("ejabberd_sql_pt.hrl").
+-include("logger.hrl").
 
 %%%===================================================================
 %%% API
@@ -117,7 +118,13 @@ get_roster_by_jid(LUser, LServer, LJID) ->
 get_only_items(LUser, LServer) ->
     case catch sql_queries:get_roster(LServer, LUser) of
 	{selected, Is} when is_list(Is) ->
-	    lists:map(fun(I) -> raw_to_record(LServer, I) end, Is);
+	    lists:flatmap(
+	      fun(I) ->
+		      case raw_to_record(LServer, I) of
+			  error -> [];
+			  R -> [R]
+		      end
+	      end, Is);
 	_ -> []
     end.
 
@@ -132,14 +139,19 @@ get_roster_by_jid_with_groups(LUser, LServer, LJID) ->
     SJID = jid:to_string(LJID),
     case sql_queries:get_roster_by_jid(LServer, LUser, SJID) of
 	{selected, [I]} ->
-            R = raw_to_record(LServer, I),
-            Groups =
-                case sql_queries:get_roster_groups(LServer, LUser, SJID) of
-                    {selected, JGrps} when is_list(JGrps) ->
-                        [JGrp || {JGrp} <- JGrps];
-                    _ -> []
-                end,
-            R#roster{groups = Groups};
+            case raw_to_record(LServer, I) of
+		error ->
+		    #roster{usj = {LUser, LServer, LJID},
+			    us = {LUser, LServer}, jid = LJID};
+		R ->
+		    Groups =
+			case sql_queries:get_roster_groups(LServer, LUser, SJID) of
+			    {selected, JGrps} when is_list(JGrps) ->
+				[JGrp || {JGrp} <- JGrps];
+			    _ -> []
+			end,
+		    R#roster{groups = Groups}
+	    end;
 	{selected, []} ->
 	    #roster{usj = {LUser, LServer, LJID},
 		    us = {LUser, LServer}, jid = LJID}
@@ -168,7 +180,13 @@ read_subscription_and_groups(LUser, LServer, LJID) ->
 			       <<"B">> -> both;
 			       <<"T">> -> to;
 			       <<"F">> -> from;
-			       _ -> none
+			       <<"N">> -> none;
+			       <<"">> -> none;
+			       _ ->
+				   ?ERROR_MSG("~s", [format_row_error(
+						       LUser, LServer,
+						       {subscription, SSubscription})]),
+				   none
 			   end,
 	    Groups = case catch sql_queries:get_rostergroup_by_jid(
 				  LServer, LUser, SJID) of
@@ -217,22 +235,34 @@ raw_to_record(LServer,
 	      {User, SJID, Nick, SSubscription, SAsk, SAskMessage,
 	       _SServer, _SSubscribe, _SType}) ->
     case jid:from_string(SJID) of
-      error -> error;
+      error ->
+	  ?ERROR_MSG("~s", [format_row_error(User, LServer, {jid, SJID})]),
+	  error;
       JID ->
 	  LJID = jid:tolower(JID),
 	  Subscription = case SSubscription of
-			   <<"B">> -> both;
-			   <<"T">> -> to;
-			   <<"F">> -> from;
-			   _ -> none
+			     <<"B">> -> both;
+			     <<"T">> -> to;
+			     <<"F">> -> from;
+			     <<"N">> -> none;
+			     <<"">> -> none;
+			     _ ->
+				 ?ERROR_MSG("~s", [format_row_error(
+						     User, LServer,
+						     {subscription, SSubscription})]),
+				 none
 			 end,
 	  Ask = case SAsk of
-		  <<"S">> -> subscribe;
-		  <<"U">> -> unsubscribe;
-		  <<"B">> -> both;
-		  <<"O">> -> out;
-		  <<"I">> -> in;
-		  _ -> none
+		    <<"S">> -> subscribe;
+		    <<"U">> -> unsubscribe;
+		    <<"B">> -> both;
+		    <<"O">> -> out;
+		    <<"I">> -> in;
+		    <<"N">> -> none;
+		    <<"">> -> none;
+		    _ ->
+			?ERROR_MSG("~s", [format_row_error(User, LServer, {ask, SAsk})]),
+			none
 		end,
 	  #roster{usj = {User, LServer, LJID},
 		  us = {User, LServer}, jid = LJID, name = Nick,
@@ -260,3 +290,11 @@ record_to_row(
 	     none -> <<"N">>
 	   end,
     {LUser, SJID, Name, SSubscription, SAsk, AskMessage}.
+
+format_row_error(User, Server, Why) ->
+    [case Why of
+	 {jid, JID} -> ["Malformed 'jid' field with value '", JID, "'"];
+	 {subscription, Sub} -> ["Malformed 'subscription' field with value '", Sub, "'"];
+	 {ask, Ask} -> ["Malformed 'ask' field with value '", Ask, "'"]
+     end,
+     " detected for ", User, "@", Server, " in table 'rosterusers'"].
