@@ -44,7 +44,7 @@ create(Module, Name, TabDef)
     {attributes, Attrs} = lists:keyfind(attributes, 1, Schema),
     case catch mnesia:table_info(Name, attributes) of
 	{'EXIT', _} ->
-	    mnesia_op(create, [Name, TabDef]);
+	    mnesia_op(create_table, [Name, TabDef]);
 	Attrs ->
 	    case need_reset(Name, Schema) of
 		true -> reset(Name, Schema);
@@ -61,7 +61,7 @@ create(Module, Name, TabDef)
 reset(Name, TabDef)
   when is_atom(Name), is_list(TabDef) ->
     mnesia_op(delete_table, [Name]),
-    mnesia_op(create, [Name, TabDef]).
+    mnesia_op(create_table, [Name, TabDef]).
 
 update(Name, TabDef)
   when is_atom(Name), is_list(TabDef) ->
