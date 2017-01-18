@@ -842,10 +842,12 @@ count_offline_messages(User, Server) ->
 
 -spec add_delay_info(message(), binary(),
 		     undefined | erlang:timestamp()) -> message().
-add_delay_info(Packet, _LServer, undefined) ->
-    Packet;
-add_delay_info(Packet, LServer, {_, _, _} = TS) ->
-    xmpp_util:add_delay_info(Packet, jid:make(LServer), TS,
+add_delay_info(Packet, LServer, TS) ->
+    NewTS = case TS of
+		undefined -> p1_time_compat:timestamp();
+		_ -> TS
+	    end,
+    xmpp_util:add_delay_info(Packet, jid:make(LServer), NewTS,
 			     <<"Offline storage">>).
 
 export(LServer) ->
