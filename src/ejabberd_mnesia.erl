@@ -46,7 +46,7 @@ create(Module, Name, TabDef)
 	{'EXIT', _} ->
 	    mnesia_op(create, [Name, TabDef]);
 	Attrs ->
-	    case need_reset(TabDef, Schema) of
+	    case need_reset(Name, Schema) of
 		true -> reset(Name, Schema);
 		false -> update(Name, Attrs, Schema)
 	    end;
@@ -152,12 +152,12 @@ parse([{Name, Storage, TabDef}|Tail], Acc)
 parse([Other|_], _) ->
     {error, {invalid, Other}}.
 
-need_reset(FromDef, ToDef) ->
-    ValuesF = [lists:keyfind(Key, 1, FromDef) || Key <- ?NEED_RESET],
-    ValuesT = [lists:keyfind(Key, 1, ToDef) || Key <- ?NEED_RESET],
+need_reset(Table, TabDef) ->
+    ValuesF = [mnesia:table_info(Table, Key) || Key <- ?NEED_RESET],
+    ValuesT = [proplists:get_value(Key, TabDef) || Key <- ?NEED_RESET],
     lists:foldl(
       fun({Val, Val}, Acc) -> Acc;
-	 ({_, false}, Acc) -> Acc;
+	 ({_, undefined}, Acc) -> Acc;
 	 ({_, _}, _) -> true
       end, false, lists:zip(ValuesF, ValuesT)).
 
