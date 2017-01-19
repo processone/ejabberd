@@ -825,14 +825,15 @@ process_normal_message(From, #message{lang = Lang} = Pkt, StateData) ->
     Action = lists:foldl(
 	       fun(_, {error, _} = Err) ->
 		       Err;
-		  (#muc_user{invites = [#muc_invite{to = undefined}]}, _) ->
-		       Txt = <<"No 'to' attribute found">>,
-		       {error, xmpp:err_bad_request(Txt, Lang)};
-		  (#muc_user{invites = [I]}, _) ->
-		       {ok, I};
-		  (#muc_user{invites = [_|_]}, _) ->
-		       Txt = <<"Multiple invitations are not allowed">>,
-		       {error, xmpp:err_resource_constraint(Txt, Lang)};
+		  (_, {ok, _} = Result) ->
+		       Result;
+		  (#muc_user{invites = [_|_] = Invites}, _) ->
+		       case check_invitation(From, Invites, Lang, StateData) of
+			   ok ->
+			       {ok, Invites};
+			   {error, _} = Err ->
+			       Err
+		       end;
 		  (#xdata{type = submit, fields = Fs}, _) ->
 		       try {ok, muc_request:decode(Fs)}
 		       catch _:{muc_request, Why} ->
@@ -843,8 +844,11 @@ process_normal_message(From, #message{lang = Lang} = Pkt, StateData) ->
 		       Acc
 	       end, ok, xmpp:get_els(Pkt)),
     case Action of
-	{ok, #muc_invite{} = Invitation} ->
-	    process_invitation(From, Pkt, Invitation, StateData);
+	{ok, [#muc_invite{}|_] = Invitations} ->
+	    lists:foldl(
+	      fun(Invitation, AccState) ->
+		      process_invitation(From, Invitation, Lang, AccState)
+	      end, StateData, Invitations);
 	{ok, [{role, participant}]} ->
 	    process_voice_request(From, Pkt, StateData);
 	{ok, VoiceApproval} ->
@@ -856,29 +860,23 @@ process_normal_message(From, #message{lang = Lang} = Pkt, StateData) ->
 	    StateData
     end.
 
--spec process_invitation(jid(), message(), muc_invite(), state()) -> state().
-process_invitation(From, Pkt, Invitation, StateData) ->
-    Lang = xmpp:get_lang(Pkt),
-    case check_invitation(From, Invitation, Lang, StateData) of
-	{error, Error} ->
-	    ejabberd_router:route_error(StateData#state.jid, From, Pkt, Error),
-	    StateData;
-	IJID ->
-	    Config = StateData#state.config,
-	    case Config#config.members_only of
-		true ->
-		    case get_affiliation(IJID, StateData) of
-			none ->
-			    NSD = set_affiliation(IJID, member, StateData),
-			    send_affiliation(IJID, member, StateData),
-			    store_room(NSD),
-			    NSD;
-			_ ->
-			    StateData
-		    end;
-		false ->
+-spec process_invitation(jid(), muc_invite(), binary(), state()) -> state().
+process_invitation(From, Invitation, Lang, StateData) ->
+    IJID = route_invitation(From, Invitation, Lang, StateData),
+    Config = StateData#state.config,
+    case Config#config.members_only of
+	true ->
+	    case get_affiliation(IJID, StateData) of
+		none ->
+		    NSD = set_affiliation(IJID, member, StateData),
+		    send_affiliation(IJID, member, StateData),
+		    store_room(NSD),
+		    NSD;
+		_ ->
 		    StateData
-	    end
+	    end;
+	false ->
+	    StateData
     end.
 
 -spec process_voice_request(jid(), message(), state()) -> state().
@@ -3897,59 +3895,69 @@ send_voice_request(From, Lang, StateData) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Invitation support
-
--spec check_invitation(jid(), muc_invite(), binary(), state()) -> {error, stanza_error()} | jid().
-check_invitation(From, Invitation, Lang, StateData) ->
+-spec check_invitation(jid(), [muc_invite()], binary(), state()) ->
+			      ok | {error, stanza_error()}.
+check_invitation(From, Invitations, Lang, StateData) ->
     FAffiliation = get_affiliation(From, StateData),
-    CanInvite = (StateData#state.config)#config.allow_user_invites
-	orelse
-	FAffiliation == admin orelse FAffiliation == owner,
+    CanInvite = (StateData#state.config)#config.allow_user_invites orelse
+	        FAffiliation == admin orelse FAffiliation == owner,
     case CanInvite of
+	true ->
+	    case lists:all(
+		   fun(#muc_invite{to = #jid{}}) -> true;
+		      (_) -> false
+		   end, Invitations) of
+		true ->
+		    ok;
+		false ->
+		    Txt = <<"No 'to' attribute found in the invitation">>,
+		    {error, xmpp:err_bad_request(Txt, Lang)}
+	    end;
 	false ->
 	    Txt = <<"Invitations are not allowed in this conference">>,
-	    {error, xmpp:err_not_allowed(Txt, Lang)};
-	true ->
-	    #muc_invite{to = JID, reason = Reason} = Invitation,
-	    Invite = Invitation#muc_invite{to = undefined, from = From},
-	    Password = case (StateData#state.config)#config.password_protected of
-			   true ->
-			       (StateData#state.config)#config.password;
-			   false ->
-			       undefined
-		       end,
-	    XUser = #muc_user{password = Password, invites = [Invite]},
-	    XConference = #x_conference{jid = jid:make(StateData#state.room,
-						       StateData#state.host),
-					reason = Reason},
-	    Body = iolist_to_binary(
-		     [io_lib:format(
-			translate:translate(
-			  Lang,
-			  <<"~s invites you to the room ~s">>),
-			[jid:to_string(From),
-			 jid:to_string({StateData#state.room,
-					StateData#state.host,
-					<<"">>})]),
-		      case (StateData#state.config)#config.password_protected of
-			  true ->
-			      <<", ",
-				(translate:translate(
-				   Lang, <<"the password is">>))/binary,
-				" '",
-				((StateData#state.config)#config.password)/binary,
-				"'">>;
-			  _ -> <<"">>
-		      end,
-		      case Reason of
-			  <<"">> -> <<"">>;
-			  _ -> <<" (", Reason/binary, ") ">>
-		      end]),
-	    Msg = #message{type = normal,
-			   body = xmpp:mk_text(Body),
-			   sub_els = [XUser, XConference]},
-	    ejabberd_router:route(StateData#state.jid, JID, Msg),
-	    JID
+	    {error, xmpp:err_not_allowed(Txt, Lang)}
     end.
+
+-spec route_invitation(jid(), muc_invite(), binary(), state()) -> jid().
+route_invitation(From, Invitation, Lang, StateData) ->
+    #muc_invite{to = JID, reason = Reason} = Invitation,
+    Invite = Invitation#muc_invite{to = undefined, from = From},
+    Password = case (StateData#state.config)#config.password_protected of
+		   true ->
+		       (StateData#state.config)#config.password;
+		   false ->
+		       undefined
+	       end,
+    XUser = #muc_user{password = Password, invites = [Invite]},
+    XConference = #x_conference{jid = jid:make(StateData#state.room,
+					       StateData#state.host),
+				reason = Reason},
+    Body = iolist_to_binary(
+	     [io_lib:format(
+		translate:translate(
+		  Lang,
+		  <<"~s invites you to the room ~s">>),
+		[jid:to_string(From),
+		 jid:to_string({StateData#state.room, StateData#state.host, <<"">>})]),
+	      case (StateData#state.config)#config.password_protected of
+		  true ->
+		      <<", ",
+			(translate:translate(
+			   Lang, <<"the password is">>))/binary,
+			" '",
+			((StateData#state.config)#config.password)/binary,
+			"'">>;
+		  _ -> <<"">>
+	      end,
+	      case Reason of
+		  <<"">> -> <<"">>;
+		  _ -> <<" (", Reason/binary, ") ">>
+	      end]),
+    Msg = #message{type = normal,
+		   body = xmpp:mk_text(Body),
+		   sub_els = [XUser, XConference]},
+    ejabberd_router:route(StateData#state.jid, JID, Msg),
+    JID.
 
 %% Handle a message sent to the room by a non-participant.
 %% If it is a decline, send to the inviter.
