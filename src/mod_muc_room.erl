@@ -3956,6 +3956,9 @@ route_invitation(From, Invitation, Lang, StateData) ->
     Msg = #message{type = normal,
 		   body = xmpp:mk_text(Body),
 		   sub_els = [XUser, XConference]},
+    ejabberd_hooks:run(muc_invite, StateData#state.server_host,
+		       [StateData#state.jid, StateData#state.config,
+			From, JID, Reason]),
     ejabberd_router:route(StateData#state.jid, JID, Msg),
     JID.
 
