@@ -3010,6 +3010,8 @@ convert_legacy_fields(Fs) ->
 			       <<"voice_request_min_interval">>;
 			   <<"muc#roomconfig_captcha_whitelist">> ->
 			       <<"captcha_whitelist">>;
+			   <<"muc#roomconfig_mam">> ->
+			       <<"mam">>;
 			   _ ->
 			       Var
 		       end,
