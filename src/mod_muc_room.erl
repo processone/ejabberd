@@ -2994,6 +2994,28 @@ get_actor_nick(MJID, StateData) ->
 	_ -> <<"">>
     end.
 
+convert_legacy_fields(Fs) ->
+    lists:map(
+      fun(#xdata_field{var = Var} = F) ->
+	      NewVar = case Var of
+			   <<"muc#roomconfig_allowvisitorstatus">> ->
+			       <<"allow_visitor_status">>;
+			   <<"muc#roomconfig_allowvisitornickchange">> ->
+			       <<"allow_visitor_nickchange">>;
+			   <<"muc#roomconfig_allowvoicerequests">> ->
+			       <<"allow_voice_requests">>;
+			   <<"muc#roomconfig_allow_subscription">> ->
+			       <<"allow_subscription">>;
+			   <<"muc#roomconfig_voicerequestmininterval">> ->
+			       <<"voice_request_min_interval">>;
+			   <<"muc#roomconfig_captcha_whitelist">> ->
+			       <<"captcha_whitelist">>;
+			   _ ->
+			       Var
+		       end,
+	      F#xdata_field{var = NewVar}
+      end, Fs).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Owner stuff
 -spec process_iq_owner(jid(), iq(), state()) ->
@@ -3019,7 +3041,8 @@ process_iq_owner(From, #iq{type = set, lang = Lang,
 		#xdata{type = cancel} ->
 		    {result, undefined};
 		#xdata{type = submit, fields = Fs} ->
-		    try muc_roomconfig:decode(Fs) of
+		    Fs1 = convert_legacy_fields(Fs),
+		    try muc_roomconfig:decode(Fs1) of
 			Options ->
 			    case is_allowed_log_change(Options, StateData, From) andalso
 				is_allowed_persistent_change(Options, StateData, From) andalso
