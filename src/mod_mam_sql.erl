@@ -168,28 +168,12 @@ select(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
 		end,
 	    {lists:flatmap(
 	       fun([TS, XML, PeerBin, Kind, Nick]) ->
-		       try
-			   #xmlel{} = El = fxml_stream:parse_element(XML),
-			   Now = usec_to_now(binary_to_integer(TS)),
-			   PeerJid = jid:tolower(jid:from_string(PeerBin)),
-			   T = case Kind of
-				   <<"">> -> chat;
-				   null -> chat;
-				   _ -> jlib:binary_to_atom(Kind)
-			       end,
-			   [{TS, binary_to_integer(TS),
-			     mod_mam:msg_to_el(#archive_msg{timestamp = Now,
-							    packet = El,
-							    type = T,
-							    nick = Nick,
-							    peer = PeerJid},
-					       MsgType, JidRequestor, JidArchive)}]
-		       catch _:Err ->
-			       ?ERROR_MSG("failed to parse data from SQL: ~p. "
-					  "The data was: "
-					  "timestamp = ~s, xml = ~s, "
-					  "peer = ~s, kind = ~s, nick = ~s",
-					  [Err, TS, XML, PeerBin, Kind, Nick]),
+		       case make_archive_el(
+			      TS, XML, PeerBin, Kind, Nick,
+			      MsgType, JidRequestor, JidArchive) of
+			   {ok, El} ->
+			       [{TS, binary_to_integer(TS), El}];
+			   {error, _} ->
 			       []
 		       end
 	       end, Res1), IsComplete, binary_to_integer(Count)};
@@ -318,4 +302,52 @@ get_max_direction_id(RSM) ->
 	    {Max, undefined, <<>>};
 	_ ->
 	    {undefined, undefined, <<>>}
+    end.
+
+-spec make_archive_el(binary(), binary(), binary(), binary(),
+		      binary(), _, jid(), jid()) ->
+			     {ok, xmpp_element()} | {error, invalid_jid |
+						     invalid_timestamp |
+						     invalid_xml}.
+make_archive_el(TS, XML, Peer, Kind, Nick, MsgType, JidRequestor, JidArchive) ->
+    case fxml_stream:parse_element(XML) of
+	#xmlel{} = El ->
+	    try binary_to_integer(TS) of
+		TSInt ->
+		    case jid:from_string(Peer) of
+			#jid{} = PeerJID ->
+			    Now = usec_to_now(TSInt),
+			    PeerLJID = jid:tolower(PeerJID),
+			    T = case Kind of
+				    <<"">> -> chat;
+				    null -> chat;
+				    _ -> jlib:binary_to_atom(Kind)
+				end,
+			    mod_mam:msg_to_el(
+			      #archive_msg{timestamp = Now,
+					   id = TS,
+					   packet = El,
+					   type = T,
+					   nick = Nick,
+					   peer = PeerLJID},
+			      MsgType, JidRequestor, JidArchive);
+			error ->
+			    ?ERROR_MSG("Malformed 'peer' field with value "
+				       "'~s' detected for user ~s in table "
+				       "'archive': invalid JID",
+				       [Peer, jid:to_string(JidArchive)]),
+			    {error, invalid_jid}
+		    end
+	    catch _:_ ->
+		    ?ERROR_MSG("Malformed 'timestamp' field with value '~s' "
+			       "detected for user ~s in table 'archive': "
+			       "not an integer",
+			       [TS, jid:to_string(JidArchive)]),
+		    {error, invalid_timestamp}
+	    end;
+	{error, {_, Reason}} ->
+	    ?ERROR_MSG("Malformed 'xml' field with value '~s' detected "
+		       "for user ~s in table 'archive': ~s",
+		       [XML, jid:to_string(JidArchive), Reason]),
+	    {error, invalid_xml}
     end.

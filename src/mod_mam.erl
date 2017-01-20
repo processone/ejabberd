@@ -750,14 +750,19 @@ select(_LServer, JidRequestor, JidArchive, Query, RSM,
 		  case match_interval(Now, Start, End) and
 		      match_rsm(Now, RSM) of
 		      true ->
-			  [{integer_to_binary(TS), TS,
-			    msg_to_el(#archive_msg{
-					 type = groupchat,
-					 timestamp = Now,
-					 peer = undefined,
-					 nick = Nick,
-					 packet = Pkt},
-				      MsgType, JidRequestor, JidArchive)}];
+			  case msg_to_el(#archive_msg{
+					    id = integer_to_binary(TS),
+					    type = groupchat,
+					    timestamp = Now,
+					    peer = undefined,
+					    nick = Nick,
+					    packet = Pkt},
+					 MsgType, JidRequestor, JidArchive) of
+			      {ok, Msg} ->
+				  [{integer_to_binary(TS), TS, Msg}];
+			      {error, _} ->
+				  []
+			  end;
 		      false ->
 			  []
 		  end
@@ -776,25 +781,23 @@ select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType).
 
-msg_to_el(#archive_msg{timestamp = TS, packet = Pkt1, nick = Nick, peer = Peer},
+msg_to_el(#archive_msg{timestamp = TS, packet = El, nick = Nick,
+		       peer = Peer, id = ID},
 	  MsgType, JidRequestor, #jid{lserver = LServer} = JidArchive) ->
-    Pkt2 = maybe_update_from_to(Pkt1, JidRequestor, JidArchive, Peer, MsgType,
-				Nick),
-    El = case Pkt2 of
-	     #xmlel{attrs = Attrs} ->
-		 Attrs1 = lists:keystore(<<"xmlns">>, 1, Attrs,
-					 {<<"xmlns">>, ?NS_CLIENT}),
-		 Pkt2#xmlel{attrs = Attrs1};
-	     _ ->
-		 xmpp:encode(Pkt2)
-	 end,
-    #forwarded{xml_els = [El],
-	       delay = #delay{stamp = TS, from = jid:make(LServer)}}.
+    try xmpp:decode(El, ?NS_CLIENT, [ignore_els]) of
+	Pkt1 ->
+	    Pkt2 = set_stanza_id(Pkt1, JidArchive, ID),
+	    Pkt3 = maybe_update_from_to(
+		     Pkt2, JidRequestor, JidArchive, Peer, MsgType, Nick),
+	    Delay = #delay{stamp = TS, from = jid:make(LServer)},
+	    {ok, #forwarded{xml_els = [xmpp:encode(Pkt3)], delay = Delay}}
+    catch _:{xmpp_codec, Why} ->
+	    ?ERROR_MSG("Failed to decode raw element ~p from message "
+		       "archive of user ~s: ~s",
+		       [El, jid:to_string(JidArchive), xmpp:format_error(Why)]),
+	    {error, invalid_xml}
+    end.
 
-maybe_update_from_to(#xmlel{} = El, JidRequestor, JidArchive, Peer,
-		     {groupchat, _, _} = MsgType, Nick) ->
-    Pkt = xmpp:decode(El, ?NS_CLIENT, [ignore_els]),
-    maybe_update_from_to(Pkt, JidRequestor, JidArchive, Peer, MsgType, Nick);
 maybe_update_from_to(#message{sub_els = Els} = Pkt, JidRequestor, JidArchive,
 		     Peer, {groupchat, Role,
 			    #state{config = #config{anonymous = Anon}}},
