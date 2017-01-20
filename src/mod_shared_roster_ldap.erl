@@ -39,7 +39,7 @@
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
 
--export([get_user_roster/2, get_subscription_lists/3,
+-export([get_user_roster/2, c2s_session_opened/1,
 	 get_jid_info/4, process_item/2, in_subscription/6,
 	 out_subscription/4, mod_opt_type/1, opt_type/1, depends/2]).
 
@@ -49,6 +49,7 @@
 -include("mod_roster.hrl").
 -include("eldap.hrl").
 
+-define(SETS, gb_sets).
 -define(CACHE_SIZE, 1000).
 -define(USER_CACHE_VALIDITY, 300).  %% in seconds
 -define(GROUP_CACHE_VALIDITY, 300).
@@ -160,19 +161,21 @@ process_item(RosterItem, _Host) ->
       _ -> RosterItem#roster{subscription = both, ask = none}
     end.
 
--spec get_subscription_lists({[ljid()], [ljid()]}, binary(), binary())
-      -> {[ljid()], [ljid()]}.
-get_subscription_lists({F, T}, User, Server) ->
-    LUser = jid:nodeprep(User),
-    LServer = jid:nameprep(Server),
+c2s_session_opened(#{jid := #jid{luser = LUser, lserver = LServer} = JID,
+		     pres_f := PresF, pres_t := PresT} = State) ->
     US = {LUser, LServer},
     DisplayedGroups = get_user_displayed_groups(US),
-    SRUsers = lists:usort(lists:flatmap(fun (Group) ->
+    SRUsers = lists:flatmap(fun(Group) ->
 						get_group_users(LServer, Group)
 					end,
-					DisplayedGroups)),
-    SRJIDs = [{U1, S1, <<"">>} || {U1, S1} <- SRUsers],
-    {lists:usort(SRJIDs ++ F), lists:usort(SRJIDs ++ T)}.
+			    DisplayedGroups),
+    BareLJID = jid:tolower(jid:remove_resource(JID)),
+    PresBoth = lists:foldl(
+		 fun({U, S}, Acc) ->
+			 ?SETS:add_element({U, S, <<"">>}, Acc)
+		 end, ?SETS:new(), [BareLJID|SRUsers]),
+    State#{pres_f => ?SETS:union(PresBoth, PresF),
+	   pres_t => ?SETS:union(PresBoth, PresT)}.
 
 -spec get_jid_info({subscription(), [binary()]}, binary(), binary(), jid())
       -> {subscription(), [binary()]}.
@@ -246,8 +249,8 @@ init([Host, Opts]) ->
 		       ?MODULE, in_subscription, 30),
     ejabberd_hooks:add(roster_out_subscription, Host,
 		       ?MODULE, out_subscription, 30),
-    ejabberd_hooks:add(roster_get_subscription_lists, Host,
-		       ?MODULE, get_subscription_lists, 70),
+    ejabberd_hooks:add(c2s_session_opened, Host,
+		       ?MODULE, c2s_session_opened, 70),
     ejabberd_hooks:add(roster_get_jid_info, Host, ?MODULE,
 		       get_jid_info, 70),
     ejabberd_hooks:add(roster_process_item, Host, ?MODULE,
@@ -275,8 +278,8 @@ terminate(_Reason, State) ->
 			  ?MODULE, in_subscription, 30),
     ejabberd_hooks:delete(roster_out_subscription, Host,
 			  ?MODULE, out_subscription, 30),
-    ejabberd_hooks:delete(roster_get_subscription_lists,
-			  Host, ?MODULE, get_subscription_lists, 70),
+    ejabberd_hooks:delete(c2s_session_opened,
+			  Host, ?MODULE, c2s_session_opened, 70),
     ejabberd_hooks:delete(roster_get_jid_info, Host,
 			  ?MODULE, get_jid_info, 70),
     ejabberd_hooks:delete(roster_process_item, Host,

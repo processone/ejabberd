@@ -414,7 +414,7 @@ send_service_message_all_mucs(Subject, AnnouncementText) ->
       fun(ServerHost) ->
 	      MUCHost = gen_mod:get_module_opt_host(
 			  ServerHost, mod_muc, <<"conference.@HOST@">>),
-	      mod_muc:broadcast_service_message(MUCHost, Message)
+	      mod_muc:broadcast_service_message(ServerHost, MUCHost, Message)
       end,
       ?MYHOSTS).
 

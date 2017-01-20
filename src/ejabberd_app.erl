@@ -54,8 +54,6 @@ start(normal, _Args) ->
     ejabberd_ctl:init(),
     ejabberd_commands:init(),
     ejabberd_admin:start(),
-    gen_mod:start(),
-    ext_mod:start(),
     setup_if_elixir_conf_used(),
     ejabberd_config:start(),
     set_settings_from_config(),
@@ -66,11 +64,13 @@ start(normal, _Args) ->
     ejabberd_rdbms:start(),
     ejabberd_riak_sup:start(),
     ejabberd_redis:start(),
+    ejabberd_router:start(),
+    ejabberd_router_multicast:start(),
+    ejabberd_local:start(),
     ejabberd_sm:start(),
     cyrsasl:start(),
-    % Profiling
-    %ejabberd_debug:eprof_start(),
-    %ejabberd_debug:fprof_start(),
+    gen_mod:start(),
+    ext_mod:start(),
     maybe_add_nameservers(),
     ejabberd_auth:start(),
     ejabberd_oauth:start(),
@@ -169,7 +169,7 @@ broadcast_c2s_shutdown() ->
     Children = ejabberd_sm:get_all_pids(),
     lists:foreach(
       fun(C2SPid) when node(C2SPid) == node() ->
-	      C2SPid ! system_shutdown;
+	      ejabberd_c2s:send(C2SPid, xmpp:serr_system_shutdown());
 	 (_) ->
 	      ok
       end, Children).

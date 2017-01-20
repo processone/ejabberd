@@ -35,10 +35,12 @@
 	 get_version/0, get_myhosts/0, get_mylang/0,
 	 get_ejabberd_config_path/0, is_using_elixir_config/0,
 	 prepare_opt_val/4, convert_table_to_binary/5,
-	 transform_options/1, collect_options/1, default_db/2,
+	 transform_options/1, collect_options/1,
 	 convert_to_yaml/1, convert_to_yaml/2, v_db/2,
 	 env_binary_to_list/2, opt_type/1, may_hide_data/1,
-	 is_elixir_enabled/0, v_dbs/1, v_dbs_mods/1]).
+	 is_elixir_enabled/0, v_dbs/1, v_dbs_mods/1,
+	 default_db/1, default_db/2, default_ram_db/1, default_ram_db/2,
+	 fsm_limit_opts/1]).
 
 -export([start/2]).
 
@@ -906,11 +908,26 @@ v_dbs_mods(Mod) ->
 				       (atom_to_binary(M, utf8))/binary>>, utf8)
 	      end, ets:match(module_db, {Mod, '$1'})).
 
--spec default_db(binary(), module()) -> atom().
+-spec default_db(module()) -> atom().
+default_db(Module) ->
+    default_db(global, Module).
 
+-spec default_db(binary(), module()) -> atom().
 default_db(Host, Module) ->
+    default_db(default_db, Host, Module).
+
+-spec default_ram_db(module()) -> atom().
+default_ram_db(Module) ->
+    default_ram_db(global, Module).
+
+-spec default_ram_db(binary(), module()) -> atom().
+default_ram_db(Host, Module) ->
+    default_db(default_ram_db, Host, Module).
+
+-spec default_db(default_db | default_ram_db, binary(), module()) -> atom().
+default_db(Opt, Host, Module) ->
     case ejabberd_config:get_option(
-	   {default_db, Host}, fun(T) when is_atom(T) -> T end) of
+	   {Opt, Host}, fun(T) when is_atom(T) -> T end) of
 	undefined ->
 	    mnesia;
 	DBType ->
@@ -918,8 +935,8 @@ default_db(Host, Module) ->
 		v_db(Module, DBType)
 	    catch error:badarg ->
 		    ?WARNING_MSG("Module '~s' doesn't support database '~s' "
-				 "defined in option 'default_db', using "
-				 "'mnesia' as fallback", [Module, DBType]),
+				 "defined in option '~s', using "
+				 "'mnesia' as fallback", [Module, DBType, Opt]),
 		    mnesia
 	    end
     end.
@@ -1405,8 +1422,15 @@ opt_type(hosts) ->
     end;
 opt_type(language) ->
     fun iolist_to_binary/1;
+opt_type(max_fsm_queue) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(default_db) ->
+    fun(T) when is_atom(T) -> T end;
+opt_type(default_ram_db) ->
+    fun(T) when is_atom(T) -> T end;
 opt_type(_) ->
-    [hide_sensitive_log_data, hosts, language].
+    [hide_sensitive_log_data, hosts, language,
+     default_db, default_ram_db].
 
 -spec may_hide_data(string()) -> string();
                    (binary()) -> binary().
@@ -1422,4 +1446,18 @@ may_hide_data(Data) ->
 	    Data;
 	true ->
 	    "hidden_by_ejabberd"
+    end.
+
+-spec fsm_limit_opts([proplists:property()]) -> [{max_queue, pos_integer()}].
+fsm_limit_opts(Opts) ->
+    case lists:keyfind(max_fsm_queue, 1, Opts) of
+	{_, I} when is_integer(I), I>0 ->
+	    [{max_queue, I}];
+	false ->
+	    case get_option(
+		   max_fsm_queue,
+		   fun(I) when is_integer(I), I>0 -> I end) of
+		undefined -> [];
+		N -> [{max_queue, N}]
+	    end
     end.

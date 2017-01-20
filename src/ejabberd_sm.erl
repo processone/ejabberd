@@ -34,6 +34,7 @@
 %% API
 -export([start/0,
 	 start_link/0,
+	 route/2,
 	 route/3,
 	 process_iq/3,
 	 open_session/5,
@@ -63,12 +64,14 @@
 	 user_resources/2,
 	 kick_user/2,
 	 get_session_pid/3,
+	 get_user_info/2,
 	 get_user_info/3,
 	 get_user_ip/3,
 	 get_max_user_sessions/2,
 	 get_all_pids/0,
 	 is_existing_resource/3,
 	 get_commands_spec/0,
+	 c2s_handle_info/2,
 	 make_sid/0
 	]).
 
@@ -81,7 +84,6 @@
 -include("xmpp.hrl").
 
 -include("ejabberd_commands.hrl").
--include("mod_privacy.hrl").
 -include("ejabberd_sm.hrl").
 
 -callback init() -> ok | {error, any()}.
@@ -98,15 +100,6 @@
 %% default value for the maximum number of user connections
 -define(MAX_USER_SESSIONS, infinity).
 
--type broadcast() :: {broadcast, broadcast_data()}.
-
--type broadcast_data() ::
-        {rebind, pid(), binary()} | %% ejabberd_c2s
-        {item, ljid(), mod_roster:subscription()} | %% mod_roster/mod_shared_roster
-        {exit, binary()} | %% mod_roster/mod_shared_roster
-        {privacy_list, mod_privacy:userlist(), binary()} | %% mod_privacy
-        {blocking, unblock_all | {block | unblock, [ljid()]}}. %% mod_blocking
-
 %%====================================================================
 %% API
 %%====================================================================
@@ -120,7 +113,18 @@ start() ->
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec route(jid(), jid(), stanza() | broadcast()) -> ok.
+-spec route(jid(), term()) -> ok.
+%% @doc route arbitrary term to c2s process(es)
+route(To, Term) ->
+    case catch do_route(To, Term) of
+	{'EXIT', Reason} ->
+	    ?ERROR_MSG("route ~p to ~p failed: ~p",
+		       [Term, To, Reason]);
+	_ ->
+	    ok
+    end.
+
+-spec route(jid(), jid(), stanza()) -> ok.
 
 route(From, To, Packet) ->
     case catch do_route(From, To, Packet) of
@@ -180,9 +184,7 @@ bounce_offline_message(From, To, Packet) ->
 -spec disconnect_removed_user(binary(), binary()) -> ok.
 
 disconnect_removed_user(User, Server) ->
-    ejabberd_sm:route(jid:make(<<"">>, <<"">>, <<"">>),
-		      jid:make(User, Server, <<"">>),
-                      {broadcast, {exit, <<"User removed">>}}).
+    route(jid:make(User, Server, <<"">>), {exit, <<"User removed">>}).
 
 get_user_resources(User, Server) ->
     LUser = jid:nodeprep(User),
@@ -214,6 +216,17 @@ get_user_ip(User, Server, Resource) ->
 	    proplists:get_value(ip, Session#session.info)
     end.
 
+-spec get_user_info(binary(), binary()) -> [{binary(), info()}].
+get_user_info(User, Server) ->
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
+    Mod = get_sm_backend(LServer),
+    Ss = online(Mod:get_sessions(LUser, LServer)),
+    [{LResource, [{node, node(Pid)}|Info]}
+     || #session{usr = {_, _, LResource},
+		 info = Info,
+		 sid = {_, Pid}} <- clean_session_list(Ss)].
+
 -spec get_user_info(binary(), binary(), binary()) -> info() | offline.
 
 get_user_info(User, Server, Resource) ->
@@ -227,9 +240,7 @@ get_user_info(User, Server, Resource) ->
 	Ss ->
 	    Session = lists:max(Ss),
 	    Node = node(element(2, Session#session.sid)),
-	    Conn = proplists:get_value(conn, Session#session.info),
-	    IP = proplists:get_value(ip, Session#session.info),
-	    [{node, Node}, {conn, Conn}, {ip, IP}]
+	    [{node, Node}|Session#session.info]
     end.
 
 -spec set_presence(sid(), binary(), binary(), binary(),
@@ -356,6 +367,21 @@ register_iq_handler(Host, XMLNS, Module, Fun, Opts) ->
 unregister_iq_handler(Host, XMLNS) ->
     ejabberd_sm ! {unregister_iq_handler, Host, XMLNS}.
 
+%% Why the hell do we have so many similar kicks?
+c2s_handle_info(#{lang := Lang} = State, replaced) ->
+    State1 = State#{replaced => true},
+    Err = xmpp:serr_conflict(<<"Replaced by new connection">>, Lang),
+    {stop, ejabberd_c2s:send(State1, Err)};
+c2s_handle_info(#{lang := Lang} = State, kick) ->
+    Err = xmpp:serr_policy_violation(<<"has been kicked">>, Lang),
+    c2s_handle_info(State, {kick, kicked_by_admin, Err});
+c2s_handle_info(State, {kick, _Reason, Err}) ->
+    {stop, ejabberd_c2s:send(State, Err)};
+c2s_handle_info(#{lang := Lang} = State, {exit, Reason}) ->
+    Err = xmpp:serr_conflict(Reason, Lang),
+    {stop, ejabberd_c2s:send(State, Err)};
+c2s_handle_info(State, _) ->
+    State.
 
 %%====================================================================
 %% gen_server callbacks
@@ -366,12 +392,15 @@ init([]) ->
     ets:new(sm_iqtable, [named_table]),
     lists:foreach(
       fun(Host) ->
+	      ejabberd_hooks:add(c2s_handle_info, Host,
+				 ejabberd_sm, c2s_handle_info, 50),
 	      ejabberd_hooks:add(roster_in_subscription, Host,
 				 ejabberd_sm, check_in_subscription, 20),
 	      ejabberd_hooks:add(offline_message_hook, Host,
 				 ejabberd_sm, bounce_offline_message, 100),
 	      ejabberd_hooks:add(remove_user, Host,
-				 ejabberd_sm, disconnect_removed_user, 100)
+				 ejabberd_sm, disconnect_removed_user, 100),
+	      ejabberd_c2s:add_hooks(Host)
       end, ?MYHOSTS),
     ejabberd_commands:register_commands(get_commands_spec()),
     {ok, #state{}}.
@@ -411,6 +440,17 @@ handle_info({unregister_iq_handler, Host, XMLNS},
 handle_info(_Info, State) -> {noreply, State}.
 
 terminate(_Reason, _State) ->
+    lists:foreach(
+      fun(Host) ->
+	      ejabberd_hooks:delete(c2s_handle_info, Host,
+				    ejabberd_sm, c2s_handle_info, 50),
+	      ejabberd_hooks:delete(roster_in_subscription, Host,
+				    ejabberd_sm, check_in_subscription, 20),
+	      ejabberd_hooks:delete(offline_message_hook, Host,
+				    ejabberd_sm, bounce_offline_message, 100),
+	      ejabberd_hooks:delete(remove_user, Host,
+				    ejabberd_sm, disconnect_removed_user, 100)
+      end, ?MYHOSTS),
     ejabberd_commands:unregister_commands(get_commands_spec()),
     ok.
 
@@ -444,26 +484,27 @@ is_online(#session{info = Info}) ->
     not proplists:get_bool(offline, Info).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec do_route(jid(), jid(), stanza() | broadcast()) -> any().
-do_route(From, #jid{lresource = <<"">>} = To, {broadcast, _} = Packet) ->
-    ?DEBUG("processing broadcast to bare JID: ~p", [Packet]),
+-spec do_route(jid(), term()) -> any().
+do_route(#jid{lresource = <<"">>} = To, Term) ->
     lists:foreach(
       fun(R) ->
-	      do_route(From, jid:replace_resource(To, R), Packet)
+	      do_route(jid:replace_resource(To, R), Term)
       end, get_user_resources(To#jid.user, To#jid.server));
-do_route(From, To, {broadcast, _} = Packet) ->
-    ?DEBUG("processing broadcast to full JID: ~p", [Packet]),
+do_route(To, Term) ->
+    ?DEBUG("broadcasting ~p to ~s", [Term, jid:to_string(To)]),
     {U, S, R} = jid:tolower(To),
     Mod = get_sm_backend(S),
     case online(Mod:get_sessions(U, S, R)) of
 	[] ->
-	    ?DEBUG("dropping broadcast to unavailable resourse: ~p", [Packet]);
+	    ?DEBUG("dropping broadcast to unavailable resourse: ~p", [Term]);
 	Ss ->
 	    Session = lists:max(Ss),
 	    Pid = element(2, Session#session.sid),
-	    ?DEBUG("sending to process ~p: ~p", [Pid, Packet]),
-	    Pid ! {route, From, To, Packet}
-    end;
+	    ?DEBUG("sending to process ~p: ~p", [Pid, Term]),
+	    Pid ! Term
+    end.
+
+-spec do_route(jid(), jid(), stanza()) -> any().
 do_route(From, To, #presence{type = T, status = Status} = Packet)
   when T == subscribe; T == subscribed; T == unsubscribe; T == unsubscribed ->
     ?DEBUG("processing subscription:~n~s", [xmpp:pp(Packet)]),
@@ -544,24 +585,10 @@ do_route(From, To, Packet) ->
 %% or if there are no current sessions for the user.
 -spec is_privacy_allow(jid(), jid(), stanza()) -> boolean().
 is_privacy_allow(From, To, Packet) ->
-    User = To#jid.user,
-    Server = To#jid.server,
-    PrivacyList =
-	ejabberd_hooks:run_fold(privacy_get_user_list, Server,
-				#userlist{}, [User, Server]),
-    is_privacy_allow(From, To, Packet, PrivacyList).
-
-%% Check if privacy rules allow this delivery
-%% Function copied from ejabberd_c2s.erl
--spec is_privacy_allow(jid(), jid(), stanza(), #userlist{}) -> boolean().
-is_privacy_allow(From, To, Packet, PrivacyList) ->
-    User = To#jid.user,
-    Server = To#jid.server,
-    allow ==
-      ejabberd_hooks:run_fold(privacy_check_packet, Server,
-			      allow,
-			      [User, Server, PrivacyList, {From, To, Packet},
-			       in]).
+    LServer = To#jid.server,
+    allow == ejabberd_hooks:run_fold(
+	       privacy_check_packet, LServer, allow,
+	       [To, xmpp:set_from_to(Packet, From, To), in]).
 
 -spec route_message(jid(), jid(), message(), message_type()) -> any().
 route_message(From, To, Packet, Type) ->
@@ -725,10 +752,14 @@ process_iq(From, To, #iq{type = T, lang = Lang, sub_els = [El]} = Packet)
 	    Err = xmpp:err_service_unavailable(Txt, Lang),
 	    ejabberd_router:route_error(To, From, Packet, Err)
     end;
-process_iq(From, To, #iq{type = T} = Packet) when T == get; T == set ->
-    Err = xmpp:err_bad_request(),
-    ejabberd_router:route_error(To, From, Packet, Err),
-    ok;
+process_iq(From, To, #iq{type = T, lang = Lang, sub_els = SubEls} = Packet)
+  when T == get; T == set ->
+    Txt = case SubEls of
+	      [] -> <<"No child elements found">>;
+	      _ -> <<"Too many child elements">>
+	  end,
+    Err = xmpp:err_bad_request(Txt, Lang),
+    ejabberd_router:route_error(To, From, Packet, Err);
 process_iq(_From, _To, #iq{}) ->
     ok.
 
@@ -738,17 +769,21 @@ force_update_presence({LUser, LServer}) ->
     Mod = get_sm_backend(LServer),
     Ss = online(Mod:get_sessions(LUser, LServer)),
     lists:foreach(fun (#session{sid = {_, Pid}}) ->
-			  Pid ! {force_update_presence, LUser, LServer}
+			  Pid ! force_update_presence
 		  end,
 		  Ss).
 
 -spec get_sm_backend(binary()) -> module().
 
 get_sm_backend(Host) ->
-    DBType = ejabberd_config:get_option(
+    DBType = case ejabberd_config:get_option(
 	       {sm_db_type, Host},
-	       fun(T) -> ejabberd_config:v_db(?MODULE, T) end,
-	       mnesia),
+		    fun(T) -> ejabberd_config:v_db(?MODULE, T) end) of
+		 undefined ->
+		     ejabberd_config:default_ram_db(Host, ?MODULE);
+		 T ->
+		     T
+	     end,
     list_to_atom("ejabberd_sm_" ++ atom_to_list(DBType)).
 
 -spec get_sm_backends() -> [module()].

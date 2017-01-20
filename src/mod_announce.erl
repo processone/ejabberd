@@ -68,7 +68,7 @@ start(Host, Opts) ->
     ejabberd_hooks:add(disco_local_items, Host, ?MODULE, disco_items, 50),
     ejabberd_hooks:add(adhoc_local_items, Host, ?MODULE, announce_items, 50),
     ejabberd_hooks:add(adhoc_local_commands, Host, ?MODULE, announce_commands, 50),
-    ejabberd_hooks:add(user_available_hook, Host,
+    ejabberd_hooks:add(c2s_self_presence, Host,
 		       ?MODULE, send_motd, 50),
     register(gen_mod:get_module_proc(Host, ?PROCNAME),
 	     proc_lib:spawn(?MODULE, init, [])).
@@ -123,7 +123,7 @@ stop(Host) ->
     ejabberd_hooks:delete(disco_local_items, Host, ?MODULE, disco_items, 50),
     ejabberd_hooks:delete(local_send_to_resource_hook, Host,
 			  ?MODULE, announce, 50),
-    ejabberd_hooks:delete(user_available_hook, Host,
+    ejabberd_hooks:delete(c2s_self_presence, Host,
 			  ?MODULE, send_motd, 50),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     exit(whereis(Proc), stop),
@@ -733,8 +733,13 @@ announce_motd_delete(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:delete_motd(LServer).
 
--spec send_motd(jid()) -> ok | {atomic, any()}.
-send_motd(#jid{luser = LUser, lserver = LServer} = JID) when LUser /= <<>> ->
+-spec send_motd({presence(), ejabberd_c2s:state()}) -> {presence(), ejabberd_c2s:state()}.
+send_motd({_, #{pres_last := _}} = Acc) ->
+    %% This is just a presence update, nothing to do
+    Acc;
+send_motd({#presence{type = available},
+	   #{jid := #jid{luser = LUser, lserver = LServer} = JID}} = Acc)
+  when LUser /= <<>> ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case Mod:get_motd(LServer) of
 	{ok, Packet} ->
@@ -754,9 +759,10 @@ send_motd(#jid{luser = LUser, lserver = LServer} = JID) when LUser /= <<>> ->
 	    end;
 	error ->
 	    ok
-    end;
-send_motd(_) ->
-    ok.
+    end,
+    Acc;
+send_motd(Acc) ->
+    Acc.
 
 get_stored_motd(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),

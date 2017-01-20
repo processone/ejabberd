@@ -54,7 +54,8 @@
     on_user_offline/3, remove_user/2,
     disco_local_identity/5, disco_local_features/5,
     disco_local_items/5, disco_sm_identity/5,
-    disco_sm_features/5, disco_sm_items/5]).
+    disco_sm_features/5, disco_sm_items/5,
+    c2s_handle_info/2]).
 
 %% exported iq handlers
 -export([iq_sm/1, process_disco_info/1, process_disco_items/1,
@@ -274,7 +275,6 @@ init([ServerHost, Opts]) ->
     ejabberd_mnesia:create(?MODULE, pubsub_last_item,
 	[{ram_copies, [node()]},
 	    {attributes, record_info(fields, pubsub_last_item)}]),
-    mod_disco:register_feature(ServerHost, ?NS_PUBSUB),
     lists:foreach(
       fun(H) ->
 	      T = gen_mod:get_module_proc(H, config),
@@ -306,8 +306,8 @@ init([ServerHost, Opts]) ->
 	?MODULE, out_subscription, 50),
     ejabberd_hooks:add(remove_user, ServerHost,
 	?MODULE, remove_user, 50),
-    ejabberd_hooks:add(anonymous_purge_hook, ServerHost,
-	?MODULE, remove_user, 50),
+    ejabberd_hooks:add(c2s_handle_info, ServerHost,
+	?MODULE, c2s_handle_info, 50),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO,
 				  ?MODULE, process_disco_info, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS,
@@ -542,7 +542,7 @@ disco_local_features(Acc, _From, To, <<>>, _Lang) ->
 	{result, I} -> I;
 	_ -> []
     end,
-    {result, Feats ++ [feature(F) || F <- features(Host, <<>>)]};
+    {result, Feats ++ [?NS_PUBSUB|[feature(F) || F <- features(Host, <<>>)]]};
 disco_local_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
@@ -922,15 +922,14 @@ terminate(_Reason,
 	?MODULE, out_subscription, 50),
     ejabberd_hooks:delete(remove_user, ServerHost,
 	?MODULE, remove_user, 50),
-    ejabberd_hooks:delete(anonymous_purge_hook, ServerHost,
-	?MODULE, remove_user, 50),
+    ejabberd_hooks:delete(c2s_handle_info, ServerHost,
+	?MODULE, c2s_handle_info, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_PUBSUB),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_PUBSUB_OWNER),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_COMMANDS),
-    mod_disco:unregister_feature(ServerHost, ?NS_PUBSUB),
     case whereis(gen_mod:get_module_proc(ServerHost, ?LOOPNAME)) of
 	undefined ->
 	    ?ERROR_MSG("~s process is dead, pubsub was broken", [?LOOPNAME]);
@@ -2236,10 +2235,9 @@ dispatch_items({FromU, FromS, FromR} = From, {ToU, ToS, ToR} = To,
     end,
     if C2SPid == undefined -> ok;
 	true ->
-	    ejabberd_c2s:send_filtered(C2SPid,
-		{pep_message, <<Node/binary, "+notify">>},
+	    C2SPid ! {send_filtered, {pep_message, <<Node/binary, "+notify">>},
 		service_jid(From), jid:make(To),
-		Stanza)
+		      Stanza}
     end;
 dispatch_items(From, To, _Node, Stanza) ->
     ejabberd_router:route(service_jid(From), jid:make(To), Stanza).
@@ -2773,8 +2771,9 @@ get_resource_state({U, S, R}, ShowValues, JIDs) ->
 	    lists:append([{U, S, R}], JIDs);
 	Pid ->
 	    Show = case ejabberd_c2s:get_presence(Pid) of
-		{_, _, <<"available">>, _} -> <<"online">>;
-		{_, _, State, _} -> State
+		       #presence{type = unavailable} -> <<"unavailable">>;
+		       #presence{show = undefined} -> <<"online">>;
+		       #presence{show = S} -> atom_to_binary(S, latin1)
 	    end,
 	    case lists:member(Show, ShowValues) of
 		%% If yes, item can be delivered
@@ -3020,24 +3019,55 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, Nidx, Type, NodeO
     broadcast_stanza({LUser, LServer, <<>>}, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM),
     %% Handles implicit presence subscriptions
     SenderResource = user_resource(LUser, LServer, LResource),
-    case ejabberd_sm:get_session_pid(LUser, LServer, SenderResource) of
-	C2SPid when is_pid(C2SPid) ->
 	    NotificationType = get_option(NodeOptions, notification_type, headline),
 	    Stanza = add_message_type(BaseStanza, NotificationType),
 	    %% set the from address on the notification to the bare JID of the account owner
 	    %% Also, add "replyto" if entity has presence subscription to the account owner
 	    %% See XEP-0163 1.1 section 4.3.1
-	    ejabberd_c2s:broadcast(C2SPid,
-		{pep_message, <<((Node))/binary, "+notify">>},
-		_Sender = jid:make(LUser, LServer, <<"">>),
-		_StanzaToSend = add_extended_headers(
-				  Stanza, 
-				  _ReplyTo = extended_headers([Publisher])));
-	_ ->
-	    ?DEBUG("~p@~p has no session; can't deliver ~p to contacts", [LUser, LServer, BaseStanza])
-    end;
+    ejabberd_sm:route(jid:make(LUser, LServer, SenderResource),
+		      {pep_message, <<((Node))/binary, "+notify">>,
+		       jid:make(LUser, LServer, <<"">>),
+		       add_extended_headers(
+			 Stanza, extended_headers([Publisher]))});
 broadcast_stanza(Host, _Publisher, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
     broadcast_stanza(Host, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM).
+
+-spec c2s_handle_info(ejabberd_c2s:state(), term()) -> ejabberd_c2s:state().
+c2s_handle_info(#{server := Server} = C2SState,
+		{pep_message, Feature, From, Packet}) ->
+    LServer = jid:nameprep(Server),
+    lists:foreach(
+      fun({USR, Caps}) ->
+	      Features = mod_caps:get_features(LServer, Caps),
+	      case lists:member(Feature, Features) of
+		  true ->
+		      To = jid:make(USR),
+		      NewPacket = xmpp:set_from_to(Packet, From, To),
+		      ejabberd_router:route(From, To, NewPacket);
+		  false ->
+		      ok
+	      end
+      end, mod_caps:list_features(C2SState)),
+    {stop, C2SState};
+c2s_handle_info(#{server := Server} = C2SState,
+		{send_filtered, {pep_message, Feature}, From, To, Packet}) ->
+    LServer = jid:nameprep(Server),
+    case mod_caps:get_user_caps(To, C2SState) of
+	{ok, Caps} ->
+	    Features = mod_caps:get_features(LServer, Caps),
+	    case lists:member(Feature, Features) of
+		true ->
+		    NewPacket = xmpp:set_from_to(Packet, From, To),
+		    ejabberd_router:route(From, To, NewPacket);
+		false ->
+		    ok
+	    end;
+	error ->
+	    ok
+    end,
+    {stop, C2SState};
+c2s_handle_info(C2SState, _) ->
+    C2SState.
 
 subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
     NodesToDeliver = fun (Depth, Node, Subs, Acc) ->

@@ -47,7 +47,6 @@
 -include("logger.hrl").
 
 -include("xmpp.hrl").
--include("mod_muc.hrl").
 -include("mod_muc_room.hrl").
 
 -define(T(Text), translate:translate(Lang, Text)).
@@ -1169,13 +1168,11 @@ get_room_occupants(RoomJIDString) ->
 -spec get_room_state(binary(), binary()) -> mod_muc_room:state().
 
 get_room_state(RoomName, MucService) ->
-    case mnesia:dirty_read(muc_online_room,
-			   {RoomName, MucService})
-	of
-      [R] ->
-	  RoomPid = R#muc_online_room.pid,
+    case mod_muc:find_online_room(RoomName, MucService) of
+	{ok, RoomPid} ->
 	  get_room_state(RoomPid);
-      [] -> #state{}
+	error ->
+	    #state{}
     end.
 
 -spec get_room_state(pid()) -> mod_muc_room:state().

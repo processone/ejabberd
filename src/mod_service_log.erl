@@ -29,8 +29,8 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, log_user_send/4,
-	 log_user_receive/5, mod_opt_type/1, depends/2]).
+-export([start/2, stop/1, log_user_send/1,
+	 log_user_receive/1, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -54,15 +54,19 @@ stop(Host) ->
 depends(_Host, _Opts) ->
     [].
 
--spec log_user_send(stanza(), ejabberd_c2s:state(), jid(), jid()) -> stanza().
-log_user_send(Packet, _C2SState, From, To) ->
+-spec log_user_send({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
+log_user_send({Packet, C2SState}) ->
+    From = xmpp:get_from(Packet),
+    To = xmpp:get_to(Packet),
     log_packet(From, To, Packet, From#jid.lserver),
-    Packet.
+    {Packet, C2SState}.
 
--spec log_user_receive(stanza(), ejabberd_c2s:state(), jid(), jid(), jid()) -> stanza().
-log_user_receive(Packet, _C2SState, _JID, From, To) ->
+-spec log_user_receive({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
+log_user_receive({Packet, C2SState}) ->
+    From = xmpp:get_from(Packet),
+    To = xmpp:get_to(Packet),
     log_packet(From, To, Packet, To#jid.lserver),
-    Packet.
+    {Packet, C2SState}.
 
 -spec log_packet(jid(), jid(), stanza(), binary()) -> ok.
 log_packet(From, To, Packet, Host) ->

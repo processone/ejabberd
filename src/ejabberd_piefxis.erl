@@ -347,7 +347,7 @@ process_el({xmlstreamelement, #xmlel{name = <<"host">>,
     JIDS = fxml:get_attr_s(<<"jid">>, Attrs),
     case jid:from_string(JIDS) of
         #jid{lserver = S} ->
-            case lists:member(S, ?MYHOSTS) of
+            case ejabberd_router:is_my_host(S) of
                 true ->
                     process_users(Els, State#state{server = S});
                 false ->
@@ -481,17 +481,16 @@ process_privacy(#privacy_query{lists = Lists,
     JID = jid:make(U, S),
     IQ = #iq{type = set, id = randoms:get_string(),
 	     from = JID, to = JID, sub_els = [PrivacyQuery]},
-    Txt = <<"No module is handling this query">>,
-    Error = {error, xmpp:err_feature_not_implemented(Txt, ?MYLANG)},
-    case mod_privacy:process_iq_set(Error, IQ, #userlist{}) of
-        {error, #stanza_error{reason = Reason}} = Err ->
+    case mod_privacy:process_iq(IQ) of
+	#iq{type = error} = ResIQ ->
+	    #stanza_error{reason = Reason} = xmpp:get_error(ResIQ),
 	    if Reason == 'item-not-found', Lists == [],
 	       Active == undefined, Default /= undefined ->
 		    %% Failed to set default list because there is no
 		    %% list with such name. We shouldn't stop here.
 		    {ok, State};
 	       true ->
-		    stop("Failed to write privacy: ~p", [Err])
+		    stop("Failed to write privacy: ~p", [Reason])
             end;
         _ ->
             {ok, State}

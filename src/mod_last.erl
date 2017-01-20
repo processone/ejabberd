@@ -37,7 +37,7 @@
 	 process_sm_iq/1, on_presence_update/4, import_info/0,
 	 import/5, import_start/2, store_last_info/4, get_last_info/2,
 	 remove_user/2, transform_options/1, mod_opt_type/1,
-	 opt_type/1, register_user/2, depends/2]).
+	 opt_type/1, register_user/2, depends/2, privacy_check_packet/4]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -64,6 +64,8 @@ start(Host, Opts) ->
 				  ?NS_LAST, ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
 				  ?NS_LAST, ?MODULE, process_sm_iq, IQDisc),
+    ejabberd_hooks:add(privacy_check_packet, Host, ?MODULE,
+		       privacy_check_packet, 30),
     ejabberd_hooks:add(register_user, Host, ?MODULE,
 		       register_user, 50),
     ejabberd_hooks:add(remove_user, Host, ?MODULE,
@@ -128,13 +130,10 @@ process_sm_iq(#iq{from = From, to = To, lang = Lang} = IQ) ->
     if (Subscription == both) or (Subscription == from) or
        (From#jid.luser == To#jid.luser) and
        (From#jid.lserver == To#jid.lserver) ->
-	    UserListRecord =
-		ejabberd_hooks:run_fold(privacy_get_user_list, Server,
-					#userlist{}, [User, Server]),
+	    Pres = xmpp:set_from_to(#presence{}, To, From),
 	    case ejabberd_hooks:run_fold(privacy_check_packet,
 					 Server, allow,
-					 [User, Server, UserListRecord,
-					  {To, From, #presence{}}, out]) of
+					 [To, Pres, out]) of
 		allow -> get_last_iq(IQ, User, Server);
 		deny -> xmpp:make_error(IQ, xmpp:err_forbidden())
 	    end;
@@ -142,6 +141,31 @@ process_sm_iq(#iq{from = From, to = To, lang = Lang} = IQ) ->
 	    Txt = <<"Not subscribed">>,
 	    xmpp:make_error(IQ, xmpp:err_subscription_required(Txt, Lang))
     end.
+
+privacy_check_packet(allow, C2SState,
+		     #iq{from = From, to = To, type = T} = IQ, in)
+  when T == get; T == set ->
+    case xmpp:has_subtag(IQ, #last{}) of
+	true ->
+	    Sub = ejabberd_c2s:get_subscription(From, C2SState),
+	    if Sub == from; Sub == both ->
+		    Pres = #presence{from = To, to = From},
+		    case ejabberd_hooks:run_fold(
+			   privacy_check_packet, allow,
+			   [C2SState, Pres, out]) of
+			allow ->
+			    allow;
+			deny ->
+			    {stop, deny}
+		    end;
+	       true ->
+		    {stop, deny}
+	    end;
+	false ->
+	    allow
+    end;
+privacy_check_packet(Acc, _, _, _) ->
+    Acc.
 
 %% @spec (LUser::string(), LServer::string()) ->
 %%      {ok, TimeStamp::integer(), Status::string()} | not_found | {error, Reason}

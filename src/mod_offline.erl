@@ -44,7 +44,7 @@
 	 store_packet/3,
 	 store_offline_msg/5,
 	 resend_offline_messages/2,
-	 pop_offline_messages/3,
+	 c2s_self_presence/1,
 	 get_sm_features/5,
 	 get_sm_identity/5,
 	 get_sm_items/5,
@@ -61,6 +61,8 @@
 	 count_offline_messages/2,
 	 get_offline_els/2,
 	 find_x_expire/2,
+	 c2s_handle_info/2,
+	 c2s_copy_session/2,
 	 webadmin_page/3,
 	 webadmin_user/4,
 	 webadmin_user_parse_query/5]).
@@ -90,6 +92,8 @@
 -define(MAX_USER_MESSAGES, infinity).
 
 -type us() :: {binary(), binary()}.
+-type c2s_state() :: ejabberd_c2s:state().
+
 -callback init(binary(), gen_mod:opts()) -> any().
 -callback import(#offline_msg{}) -> ok.
 -callback store_messages(binary(), us(), [#offline_msg{}],
@@ -140,11 +144,8 @@ init([Host, Opts]) ->
 			     no_queue),
     ejabberd_hooks:add(offline_message_hook, Host, ?MODULE,
 		       store_packet, 50),
-    ejabberd_hooks:add(resend_offline_messages_hook, Host,
-		       ?MODULE, pop_offline_messages, 50),
+    ejabberd_hooks:add(c2s_self_presence, Host, ?MODULE, c2s_self_presence, 50),
     ejabberd_hooks:add(remove_user, Host,
-		       ?MODULE, remove_user, 50),
-    ejabberd_hooks:add(anonymous_purge_hook, Host,
 		       ?MODULE, remove_user, 50),
     ejabberd_hooks:add(disco_sm_features, Host,
 		       ?MODULE, get_sm_features, 50),
@@ -155,6 +156,8 @@ init([Host, Opts]) ->
     ejabberd_hooks:add(disco_sm_items, Host,
 		       ?MODULE, get_sm_items, 50),
     ejabberd_hooks:add(disco_info, Host, ?MODULE, get_info, 50),
+    ejabberd_hooks:add(c2s_handle_info, Host, ?MODULE, c2s_handle_info, 50),
+    ejabberd_hooks:add(c2s_copy_session, Host, ?MODULE, c2s_copy_session, 50),
     ejabberd_hooks:add(webadmin_page_host, Host,
 		       ?MODULE, webadmin_page, 50),
     ejabberd_hooks:add(webadmin_user, Host,
@@ -199,17 +202,16 @@ terminate(_Reason, State) ->
     Host = State#state.host,
     ejabberd_hooks:delete(offline_message_hook, Host,
 			  ?MODULE, store_packet, 50),
-    ejabberd_hooks:delete(resend_offline_messages_hook,
-			  Host, ?MODULE, pop_offline_messages, 50),
+    ejabberd_hooks:delete(c2s_self_presence, Host, ?MODULE, c2s_self_presence, 50),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE,
 			  remove_user, 50),
-    ejabberd_hooks:delete(anonymous_purge_hook, Host,
-			  ?MODULE, remove_user, 50),
     ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
     ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, get_sm_features, 50),
     ejabberd_hooks:delete(disco_sm_identity, Host, ?MODULE, get_sm_identity, 50),
     ejabberd_hooks:delete(disco_sm_items, Host, ?MODULE, get_sm_items, 50),
     ejabberd_hooks:delete(disco_info, Host, ?MODULE, get_info, 50),
+    ejabberd_hooks:delete(c2s_handle_info, Host, ?MODULE, c2s_handle_info, 50),
+    ejabberd_hooks:delete(c2s_copy_session, Host, ?MODULE, c2s_copy_session, 50),
     ejabberd_hooks:delete(webadmin_page_host, Host,
 			  ?MODULE, webadmin_page, 50),
     ejabberd_hooks:delete(webadmin_user, Host,
@@ -276,15 +278,13 @@ get_sm_identity(Acc, #jid{luser = U, lserver = S}, #jid{luser = U, lserver = S},
 get_sm_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
-get_sm_items(_Acc, #jid{luser = U, lserver = S, lresource = R} = JID,
+get_sm_items(_Acc, #jid{luser = U, lserver = S} = JID,
 	     #jid{luser = U, lserver = S},
 	     ?NS_FLEX_OFFLINE, _Lang) ->
-    case ejabberd_sm:get_session_pid(U, S, R) of
-	Pid when is_pid(Pid) ->
+    ejabberd_sm:route(JID, {resend_offline, false}),
 	    Mod = gen_mod:db_mod(S, ?MODULE),
 	    Hdrs = Mod:read_message_headers(U, S),
 	    BareJID = jid:remove_resource(JID),
-	    Pid ! dont_ask_offline,
 	    {result, lists:map(
 		       fun({Seq, From, _To, _TS, _El}) ->
 			       Node = integer_to_binary(Seq),
@@ -292,28 +292,32 @@ get_sm_items(_Acc, #jid{luser = U, lserver = S, lresource = R} = JID,
 					   node = Node,
 					   name = jid:to_string(From)}
 		       end, Hdrs)};
-	none ->
-	    {result, []}
-    end;
 get_sm_items(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
 -spec get_info([xdata()], binary(), module(), binary(), binary()) -> [xdata()];
 	      ([xdata()], jid(), jid(), binary(), binary()) -> [xdata()].
-get_info(_Acc, #jid{luser = U, lserver = S, lresource = R},
+get_info(_Acc, #jid{luser = U, lserver = S} = JID,
 	 #jid{luser = U, lserver = S}, ?NS_FLEX_OFFLINE, Lang) ->
-    case ejabberd_sm:get_session_pid(U, S, R) of
-	Pid when is_pid(Pid) ->
-	    Pid ! dont_ask_offline;
-	none ->
-	    ok
-    end,
+    ejabberd_sm:route(JID, {resend_offline, false}),
     [#xdata{type = result,
 	    fields = flex_offline:encode(
 		       [{number_of_messages, count_offline_messages(U, S)}],
 		       fun(T) -> translate:translate(Lang, T) end)}];
 get_info(Acc, _From, _To, _Node, _Lang) ->
     Acc.
+
+-spec c2s_handle_info(c2s_state(), term()) -> c2s_state().
+c2s_handle_info(State, {resend_offline, Flag}) ->
+    {stop, State#{resend_offline => Flag}};
+c2s_handle_info(State, _) ->
+    State.
+
+-spec c2s_copy_session(c2s_state(), c2s_state()) -> c2s_state().
+c2s_copy_session(State, #{resend_offline := Flag}) ->
+    State#{resend_offline => Flag};
+c2s_copy_session(State, _) ->
+    State.
 
 -spec handle_offline_query(iq()) -> iq().
 handle_offline_query(#iq{from = #jid{luser = U1, lserver = S1},
@@ -394,18 +398,15 @@ set_offline_tag(Msg, Node) ->
     xmpp:set_subtag(Msg, #offline{items = [#offline_item{node = Node}]}).
 
 -spec handle_offline_fetch(jid()) -> ok.
-handle_offline_fetch(#jid{luser = U, lserver = S, lresource = R}) ->
-    case ejabberd_sm:get_session_pid(U, S, R) of
-	none ->
-	    ok;
-	Pid when is_pid(Pid) ->
-	    Pid ! dont_ask_offline,
+handle_offline_fetch(#jid{luser = U, lserver = S} = JID) ->
+    ejabberd_sm:route(JID, {resend_offline, false}),
 	    lists:foreach(
 	      fun({Node, El}) ->
-		      NewEl = set_offline_tag(El, Node),
-		      Pid ! {route, xmpp:get_from(El), xmpp:get_to(El), NewEl}
-	      end, read_messages(U, S))
-    end.
+	      El1 = set_offline_tag(El, Node),
+	      From = xmpp:get_from(El1),
+	      To = xmpp:get_to(El1),
+	      ejabberd_router:route(From, To, El1)
+      end, read_messages(U, S)).
 
 -spec fetch_msg_by_node(jid(), binary()) -> error | {ok, #offline_msg{}}.
 fetch_msg_by_node(To, Seq) ->
@@ -560,42 +561,66 @@ resend_offline_messages(User, Server) ->
       _ -> ok
     end.
 
--spec pop_offline_messages([{route, jid(), jid(), message()}],
-			   binary(), binary()) ->
-      [{route, jid(), jid(), message()}].
-pop_offline_messages(Ls, User, Server) ->
-    LUser = jid:nodeprep(User),
-    LServer = jid:nameprep(Server),
+c2s_self_presence({#presence{type = available} = NewPres, State} = Acc) ->
+    NewPrio = get_priority_from_presence(NewPres),
+    LastPrio = try maps:get(pres_last, State) of
+		   LastPres -> get_priority_from_presence(LastPres)
+	       catch _:{badkey, _} ->
+		       -1
+	       end,
+    if LastPrio < 0 andalso NewPrio >= 0 ->
+	    route_offline_messages(State);
+       true ->
+	    ok
+    end,
+    Acc;
+c2s_self_presence(Acc) ->
+    Acc.
+
+-spec route_offline_messages(c2s_state()) -> ok.
+route_offline_messages(#{jid := #jid{luser = LUser, lserver = LServer}} = State) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case Mod:pop_messages(LUser, LServer) of
-	{ok, Rs} ->
-	    Ls ++
-		lists:flatmap(
-		  fun(#offline_msg{expire = Expire} = R) ->
-			  case offline_msg_to_route(LServer, R) of
-			      error ->
-				  [];
-			      {route, _From, _To, Msg} = RouteMsg ->
-				  case is_expired_message(Expire, Msg) of
-				      true -> [];
-				      false -> [RouteMsg]
-				  end
-			  end
-		  end, Rs);
+	{ok, OffMsgs} ->
+	    lists:foreach(
+	      fun(OffMsg) ->
+		      route_offline_message(State, OffMsg)
+	      end, OffMsgs);
 	_ ->
-	    Ls
+	    ok
     end.
 
-is_expired_message(Expire, Pkt) ->
-    TS = p1_time_compat:timestamp(),
-    Exp = case Expire of
-	      undefined -> find_x_expire(TS, Pkt);
-	      _ -> Expire
-	  end,
-    case Exp of
-	never -> false;
-	TimeStamp -> TS >= TimeStamp
+-spec route_offline_message(c2s_state(), #offline_msg{}) -> ok.
+route_offline_message(#{lserver := LServer} = State,
+		      #offline_msg{expire = Expire} = OffMsg) ->
+    case offline_msg_to_route(LServer, OffMsg) of
+	error ->
+	    ok;
+	{route, From, To, Msg} ->
+	    case is_message_expired(Expire, Msg) of
+		true ->
+		    ok;
+		false ->
+		    case privacy_check_packet(State, Msg, in) of
+			allow -> ejabberd_router:route(From, To, Msg);
+			false -> ok
+		    end
+	    end
     end.
+
+-spec is_message_expired(erlang:timestamp() | never, message()) -> boolean().
+is_message_expired(Expire, Msg) ->
+    TS = p1_time_compat:timestamp(),
+    Expire1 = case Expire of
+		  undefined -> find_x_expire(TS, Msg);
+		  _ -> Expire
+	      end,
+    Expire1 /= never andalso Expire1 =< TS.
+
+-spec privacy_check_packet(c2s_state(), stanza(), in | out) -> allow | deny.
+privacy_check_packet(#{lserver := LServer} = State, Pkt, Dir) ->
+    ejabberd_hooks:run_fold(privacy_check_packet,
+			    LServer, allow, [State, Pkt, Dir]).
 
 remove_expired_messages(Server) ->
     LServer = jid:nameprep(Server),
@@ -640,14 +665,15 @@ get_offline_els(LUser, LServer) ->
 
 -spec offline_msg_to_route(binary(), #offline_msg{}) ->
 				  {route, jid(), jid(), message()} | error.
-offline_msg_to_route(LServer, #offline_msg{} = R) ->
+offline_msg_to_route(LServer, #offline_msg{from = From, to = To} = R) ->
     try xmpp:decode(R#offline_msg.packet, ?NS_CLIENT, [ignore_els]) of
 	Pkt ->
-	    NewPkt = add_delay_info(Pkt, LServer, R#offline_msg.timestamp),
-	    {route, R#offline_msg.from, R#offline_msg.to, NewPkt}
+	    Pkt1 = xmpp:set_from_to(Pkt, From, To),
+	    Pkt2 = add_delay_info(Pkt1, LServer, R#offline_msg.timestamp),
+	    {route, From, To, Pkt2}
     catch _:{xmpp_codec, Why} ->
 	    ?ERROR_MSG("failed to decode packet ~p of user ~s: ~s",
-		       [R#offline_msg.packet, jid:to_string(R#offline_msg.to),
+		       [R#offline_msg.packet, jid:to_string(To),
 			xmpp:format_error(Why)]),
 	    error
     end.
@@ -847,8 +873,16 @@ add_delay_info(Packet, LServer, TS) ->
 		undefined -> p1_time_compat:timestamp();
 		_ -> TS
 	    end,
-    xmpp_util:add_delay_info(Packet, jid:make(LServer), NewTS,
+    Packet1 = xmpp:put_meta(Packet, from_offline, true),
+    xmpp_util:add_delay_info(Packet1, jid:make(LServer), NewTS,
 			     <<"Offline storage">>).
+
+-spec get_priority_from_presence(presence()) -> integer().
+get_priority_from_presence(#presence{priority = Prio}) ->
+    case Prio of
+	undefined -> 0;
+	_ -> Prio
+    end.
 
 export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),

@@ -35,10 +35,10 @@
 
 -behaviour(gen_mod).
 
--export([read_caps/1, caps_stream_features/2,
+-export([read_caps/1, list_features/1, caps_stream_features/2,
 	 disco_features/5, disco_identity/5, disco_info/5,
 	 get_features/2, export/1, import_info/0, import/5,
-         import_start/2, import_stop/2]).
+         get_user_caps/2, import_start/2, import_stop/2]).
 
 %% gen_mod callbacks
 -export([start/2, start_link/2, stop/1, depends/2]).
@@ -47,9 +47,8 @@
 -export([init/1, handle_info/2, handle_call/3,
 	 handle_cast/2, terminate/2, code_change/3]).
 
--export([user_send_packet/4, user_receive_packet/5,
-	 c2s_presence_in/2, c2s_filter_packet/6,
-	 c2s_broadcast_recipients/6, mod_opt_type/1]).
+-export([user_send_packet/1, user_receive_packet/1,
+	 c2s_presence_in/2, mod_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -104,6 +103,22 @@ get_features(Host, #caps{node = Node, version = Version,
 		end,
 		[], SubNodes).
 
+-spec list_features(ejabberd_c2s:state()) -> [{ljid(), caps()}].
+list_features(C2SState) ->
+    Rs = maps:get(caps_features, C2SState, gb_trees:empty()),
+    gb_trees:to_list(Rs).
+
+-spec get_user_caps(jid(), ejabberd_c2s:state()) -> {ok, caps()} | error.
+get_user_caps(JID, C2SState) ->
+    Rs = maps:get(caps_features, C2SState, gb_trees:empty()),
+    LJID = jid:tolower(JID),
+    case gb_trees:lookup(LJID, Rs) of
+	{value, Caps} ->
+	    {ok, Caps};
+	none ->
+	    error
+    end.
+
 -spec read_caps(#presence{}) -> nothing | caps().
 read_caps(Presence) ->
     case xmpp:get_subtag(Presence, #caps{}) of
@@ -111,47 +126,51 @@ read_caps(Presence) ->
 	Caps -> Caps
     end.
 
--spec user_send_packet(stanza(), ejabberd_c2s:state(), jid(), jid()) -> stanza().
-user_send_packet(#presence{type = available} = Pkt,
-		 _C2SState,
-		 #jid{luser = User, lserver = Server} = From,
-		 #jid{luser = User, lserver = Server,
-		      lresource = <<"">>}) ->
+-spec user_send_packet({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
+user_send_packet({#presence{type = available,
+			    from = #jid{luser = U, lserver = LServer} = From,
+			    to = #jid{luser = U, lserver = LServer,
+				      lresource = <<"">>}} = Pkt,
+		  State}) ->
     case read_caps(Pkt) of
 	nothing -> ok;
 	#caps{version = Version, exts = Exts} = Caps ->
-	    feature_request(Server, From, Caps, [Version | Exts])
+	    feature_request(LServer, From, Caps, [Version | Exts])
     end,
-    Pkt;
-user_send_packet(Pkt, _C2SState, _From, _To) ->
-    Pkt.
+    {Pkt, State};
+user_send_packet(Acc) ->
+    Acc.
 
--spec user_receive_packet(stanza(), ejabberd_c2s:state(),
-			  jid(), jid(), jid()) -> stanza().
-user_receive_packet(#presence{type = available} = Pkt,
-		    _C2SState,
-		    #jid{lserver = Server},
-		    From, _To) ->
-    IsRemote = not lists:member(From#jid.lserver, ?MYHOSTS),
+-spec user_receive_packet({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
+user_receive_packet({#presence{from = From, type = available} = Pkt,
+		     #{lserver := LServer} = State}) ->
+    IsRemote = not ejabberd_router:is_my_host(From#jid.lserver),
     if IsRemote ->
 	   case read_caps(Pkt) of
 	     nothing -> ok;
 	     #caps{version = Version, exts = Exts} = Caps ->
-		 feature_request(Server, From, Caps, [Version | Exts])
+		    feature_request(LServer, From, Caps, [Version | Exts])
 	   end;
        true -> ok
     end,
-    Pkt;
-user_receive_packet(Pkt, _C2SState, _JID, _From, _To) ->
-    Pkt.
+    {Pkt, State};
+user_receive_packet(Acc) ->
+    Acc.
 
 -spec caps_stream_features([xmpp_element()], binary()) -> [xmpp_element()].
 
 caps_stream_features(Acc, MyHost) ->
+    case gen_mod:is_loaded(MyHost, ?MODULE) of
+	true ->
     case make_my_disco_hash(MyHost) of
-      <<"">> -> Acc;
+		<<"">> ->
+		    Acc;
       Hash ->
-	  [#caps{hash = <<"sha-1">>, node = ?EJABBERD_URI, version = Hash}|Acc]
+		    [#caps{hash = <<"sha-1">>, node = ?EJABBERD_URI,
+			   version = Hash}|Acc]
+	    end;
+	false ->
+	    Acc
     end.
 
 -spec disco_features({error, stanza_error()} | {result, [binary()]} | empty,
@@ -194,23 +213,16 @@ disco_info(Acc, Host, Module, Node, Lang) when is_atom(Module) ->
 disco_info(Acc, _, _, _Node, _Lang) ->
     Acc.
 
--spec c2s_presence_in(ejabberd_c2s:state(), {jid(), jid(), presence()}) ->
-			     ejabberd_c2s:state().
+-spec c2s_presence_in(ejabberd_c2s:state(), presence()) -> ejabberd_c2s:state().
 c2s_presence_in(C2SState,
-		{From, To, #presence{type = Type} = Presence}) ->
-    Subscription = ejabberd_c2s:get_subscription(From,
-						 C2SState),
+		#presence{from = From, to = To, type = Type} = Presence) ->
+    Subscription = ejabberd_c2s:get_subscription(From, C2SState),
     Insert = (Type == available)
 	       and ((Subscription == both) or (Subscription == to)),
     Delete = (Type == unavailable) or (Type == error),
     if Insert or Delete ->
 	   LFrom = jid:tolower(From),
-	   Rs = case ejabberd_c2s:get_aux_field(caps_resources,
-						C2SState)
-		    of
-		  {ok, Rs1} -> Rs1;
-		  error -> gb_trees:empty()
-		end,
+	    Rs = maps:get(caps_resources, C2SState, gb_trees:empty()),
 	   Caps = read_caps(Presence),
 	   NewRs = case Caps of
 		     nothing when Insert == true -> Rs;
@@ -230,50 +242,10 @@ c2s_presence_in(C2SState,
 			 end;
 		     _ -> gb_trees:delete_any(LFrom, Rs)
 		   end,
-	   ejabberd_c2s:set_aux_field(caps_resources, NewRs,
-				      C2SState);
-       true -> C2SState
+	    C2SState#{caps_resources => NewRs};
+       true ->
+	    C2SState
     end.
-
--spec c2s_filter_packet(boolean(), binary(), ejabberd_c2s:state(),
-			{pep_message, binary()}, jid(), stanza()) ->
-			       boolean().
-c2s_filter_packet(InAcc, Host, C2SState, {pep_message, Feature}, To, _Packet) ->
-    case ejabberd_c2s:get_aux_field(caps_resources, C2SState) of
-      {ok, Rs} ->
-	  LTo = jid:tolower(To),
-	  case gb_trees:lookup(LTo, Rs) of
-	    {value, Caps} ->
-		Drop = not lists:member(Feature, get_features(Host, Caps)),
-		{stop, Drop};
-	    none ->
-		{stop, true}
-	  end;
-      _ -> InAcc
-    end;
-c2s_filter_packet(Acc, _, _, _, _, _) -> Acc.
-
--spec c2s_broadcast_recipients([ljid()], binary(), ejabberd_c2s:state(),
-			       {pep_message, binary()}, jid(), stanza()) ->
-				      [ljid()].
-c2s_broadcast_recipients(InAcc, Host, C2SState,
-			 {pep_message, Feature}, _From, _Packet) ->
-    case ejabberd_c2s:get_aux_field(caps_resources,
-				    C2SState)
-	of
-      {ok, Rs} ->
-	  gb_trees_fold(fun (USR, Caps, Acc) ->
-				case lists:member(Feature,
-                                                  get_features(Host, Caps))
-				    of
-				  true -> [USR | Acc];
-				  false -> Acc
-				end
-			end,
-			InAcc, Rs);
-      _ -> InAcc
-    end;
-c2s_broadcast_recipients(Acc, _, _, _, _, _) -> Acc.
 
 -spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
 depends(_Host, _Opts) ->
@@ -292,17 +264,13 @@ init([Host, Opts]) ->
 		  [{max_size, MaxSize}, {life_time, LifeTime}]),
     ejabberd_hooks:add(c2s_presence_in, Host, ?MODULE,
 		       c2s_presence_in, 75),
-    ejabberd_hooks:add(c2s_filter_packet, Host, ?MODULE,
-		       c2s_filter_packet, 75),
-    ejabberd_hooks:add(c2s_broadcast_recipients, Host,
-		       ?MODULE, c2s_broadcast_recipients, 75),
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
 		       user_send_packet, 75),
     ejabberd_hooks:add(user_receive_packet, Host, ?MODULE,
 		       user_receive_packet, 75),
-    ejabberd_hooks:add(c2s_stream_features, Host, ?MODULE,
+    ejabberd_hooks:add(c2s_post_auth_features, Host, ?MODULE,
 		       caps_stream_features, 75),
-    ejabberd_hooks:add(s2s_stream_features, Host, ?MODULE,
+    ejabberd_hooks:add(s2s_in_post_auth_features, Host, ?MODULE,
 		       caps_stream_features, 75),
     ejabberd_hooks:add(disco_local_features, Host, ?MODULE,
 		       disco_features, 75),
@@ -325,17 +293,13 @@ terminate(_Reason, State) ->
     Host = State#state.host,
     ejabberd_hooks:delete(c2s_presence_in, Host, ?MODULE,
 			  c2s_presence_in, 75),
-    ejabberd_hooks:delete(c2s_filter_packet, Host, ?MODULE,
-			  c2s_filter_packet, 75),
-    ejabberd_hooks:delete(c2s_broadcast_recipients, Host,
-			  ?MODULE, c2s_broadcast_recipients, 75),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
 			  user_send_packet, 75),
     ejabberd_hooks:delete(user_receive_packet, Host,
 			  ?MODULE, user_receive_packet, 75),
-    ejabberd_hooks:delete(c2s_stream_features, Host,
+    ejabberd_hooks:delete(c2s_post_auth_features, Host,
 			  ?MODULE, caps_stream_features, 75),
-    ejabberd_hooks:delete(s2s_stream_features, Host,
+    ejabberd_hooks:delete(s2s_in_post_auth_features, Host,
 			  ?MODULE, caps_stream_features, 75),
     ejabberd_hooks:delete(disco_local_features, Host,
 			  ?MODULE, disco_features, 75),
@@ -493,20 +457,6 @@ concat_xdata_fields(#xdata{fields = Fields} = X) ->
 	   || #xdata_field{var = Var, values = Values} <- Fields,
 	      is_binary(Var), Var /= <<"FORM_TYPE">>],
     [Form, $<, lists:sort(Res)].
-
--spec gb_trees_fold(fun((_, _, T) -> T), T, gb_trees:tree()) -> T.
-gb_trees_fold(F, Acc, Tree) ->
-    Iter = gb_trees:iterator(Tree),
-    gb_trees_fold_iter(F, Acc, Iter).
-
--spec gb_trees_fold_iter(fun((_, _, T) -> T), T, gb_trees:iter()) -> T.
-gb_trees_fold_iter(F, Acc, Iter) ->
-    case gb_trees:next(Iter) of
-      {Key, Val, NewIter} ->
-	  NewAcc = F(Key, Val, Acc),
-	  gb_trees_fold_iter(F, NewAcc, NewIter);
-      _ -> Acc
-    end.
 
 -spec now_ts() -> integer().
 now_ts() ->

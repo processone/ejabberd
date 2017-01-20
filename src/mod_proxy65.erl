@@ -43,6 +43,12 @@
 
 -define(PROCNAME, ejabberd_mod_proxy65).
 
+-callback init() -> any().
+-callback register_stream(binary(), pid()) -> ok | {error, any()}.
+-callback unregister_stream(binary()) -> ok | {error, any()}.
+-callback activate_stream(binary(), binary(), pos_integer() | infinity, node()) ->
+    ok | {error, limit | conflict | notfound | term()}.
+
 start(Host, Opts) ->
     case mod_proxy65_service:add_listener(Host, Opts) of
       {error, _} = Err -> erlang:error(Err);
@@ -50,7 +56,12 @@ start(Host, Opts) ->
 	  Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
 	  ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
 		       transient, infinity, supervisor, [?MODULE]},
-	  supervisor:start_child(ejabberd_sup, ChildSpec)
+	  case supervisor:start_child(ejabberd_sup, ChildSpec) of
+	      {error, _} = Err -> erlang:error(Err);
+	      _ ->
+		  Mod = gen_mod:ram_db_mod(global, ?MODULE),
+		  Mod:init()
+	  end
     end.
 
 stop(Host) ->
@@ -77,12 +88,9 @@ init([Host, Opts]) ->
 						  ejabberd_mod_proxy65_sup),
 			  mod_proxy65_stream]},
 			transient, infinity, supervisor, [ejabberd_tmp_sup]},
-    StreamManager = {mod_proxy65_sm,
-		     {mod_proxy65_sm, start_link, [Host, Opts]}, transient,
-		     5000, worker, [mod_proxy65_sm]},
     {ok,
      {{one_for_one, 10, 1},
-      [StreamManager, StreamSupervisor, Service]}}.
+      [StreamSupervisor, Service]}}.
 
 depends(_Host, _Opts) ->
     [].
@@ -112,7 +120,9 @@ mod_opt_type(max_connections) ->
     fun (I) when is_integer(I), I > 0 -> I;
 	(infinity) -> infinity
     end;
+mod_opt_type(ram_db_type) ->
+    fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(_) ->
     [auth_type, recbuf, shaper, sndbuf,
      access, host, hostname, ip, name, port,
-     max_connections].
+     max_connections, ram_db_type].

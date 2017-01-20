@@ -46,7 +46,7 @@
 %% utility for other http modules
 -export([content_type/3]).
 
--export([reopen_log/1, mod_opt_type/1, depends/2]).
+-export([reopen_log/0, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -236,7 +236,7 @@ check_docroot_is_readable(DRInfo, DocRoot) ->
 
 try_open_log(undefined, _Host) ->
     undefined;
-try_open_log(FN, Host) ->
+try_open_log(FN, _Host) ->
     FD = try open_log(FN) of
 	     FD1 -> FD1
 	 catch
@@ -244,7 +244,7 @@ try_open_log(FN, Host) ->
 		 ?ERROR_MSG("Cannot open access log file: ~p~nReason: ~p", [FN, Reason]),
 		 undefined
 	 end,
-    ejabberd_hooks:add(reopen_log_hook, Host, ?MODULE, reopen_log, 50),
+    ejabberd_hooks:add(reopen_log_hook, ?MODULE, reopen_log, 50),
     FD.
 
 %%--------------------------------------------------------------------
@@ -298,7 +298,8 @@ handle_info(_Info, State) ->
 %%--------------------------------------------------------------------
 terminate(_Reason, State) ->
     close_log(State#state.accesslogfd),
-    ejabberd_hooks:delete(reopen_log_hook, State#state.host, ?MODULE, reopen_log, 50),
+    %% TODO: unregister the hook gracefully
+    %% ejabberd_hooks:delete(reopen_log_hook, State#state.host, ?MODULE, reopen_log, 50),
     ok.
 
 %%--------------------------------------------------------------------
@@ -410,8 +411,11 @@ reopen_log(FN, FD) ->
     close_log(FD),
     open_log(FN).
 
-reopen_log(Host) ->
-    gen_server:cast(get_proc_name(Host), reopen_log).
+reopen_log() ->
+    lists:foreach(
+      fun(Host) ->
+	      gen_server:cast(get_proc_name(Host), reopen_log)
+      end, ?MYHOSTS).
 
 add_to_log(FileSize, Code, Request) ->
     gen_server:cast(get_proc_name(Request#request.host),

@@ -192,7 +192,7 @@ process([<<"server">>, SHost | RPath] = Path,
 		 method = Method} =
 	    Request) ->
     Host = jid:nameprep(SHost),
-    case lists:member(Host, ?MYHOSTS) of
+    case ejabberd_router:is_my_host(Host) of
       true ->
 	  case get_auth_admin(Auth, HostHTTP, Path, Method) of
 	    {ok, {User, Server}} ->

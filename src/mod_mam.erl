@@ -32,10 +32,10 @@
 %% API
 -export([start/2, stop/1, depends/2]).
 
--export([user_send_packet/4, user_send_packet_strip_tag/4, user_receive_packet/5,
+-export([user_send_packet/1, user_send_packet_strip_tag/1, user_receive_packet/1,
 	 process_iq_v0_2/1, process_iq_v0_3/1, disco_sm_features/5,
 	 remove_user/2, remove_room/3, mod_opt_type/1, muc_process_iq/2,
-	 muc_filter_message/5, message_is_archived/5, delete_old_messages/2,
+	 muc_filter_message/5, message_is_archived/3, delete_old_messages/2,
 	 get_commands_spec/0, msg_to_el/4, get_room_config/4, set_room_option/3]).
 
 -include("xmpp.hrl").
@@ -103,8 +103,6 @@ start(Host, Opts) ->
 		       get_room_config, 50),
     ejabberd_hooks:add(set_room_option, Host, ?MODULE,
 		       set_room_option, 50),
-    ejabberd_hooks:add(anonymous_purge_hook, Host, ?MODULE,
-		       remove_user, 50),
     case gen_mod:get_opt(assume_mam_usage, Opts,
 			 fun(B) when is_boolean(B) -> B end, false) of
 	true ->
@@ -153,8 +151,6 @@ stop(Host) ->
 			  get_room_config, 50),
     ejabberd_hooks:delete(set_room_option, Host, ?MODULE,
 			  set_room_option, 50),
-    ejabberd_hooks:delete(anonymous_purge_hook, Host,
-			  ?MODULE, remove_user, 50),
     case gen_mod:get_module_opt(Host, ?MODULE, assume_mam_usage,
 				fun(B) when is_boolean(B) -> B end, false) of
 	true ->
@@ -199,46 +195,50 @@ set_room_option(_Acc, {mam, Val}, _Lang) ->
 set_room_option(Acc, _Property, _Lang) ->
     Acc.
 
--spec user_receive_packet(stanza(), ejabberd_c2s:state(), jid(), jid(), jid()) -> stanza().
-user_receive_packet(Pkt, C2SState, JID, Peer, _To) ->
+-spec user_receive_packet({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
+user_receive_packet({Pkt, #{jid := JID} = C2SState}) ->
+    Peer = xmpp:get_from(Pkt),
     LUser = JID#jid.luser,
     LServer = JID#jid.lserver,
-    case should_archive(Pkt, LServer) of
+    Pkt2 = case should_archive(Pkt, LServer) of
 	true ->
-	    NewPkt = strip_my_archived_tag(Pkt, LServer),
-	    case store_msg(C2SState, NewPkt, LUser, LServer, Peer, recv) of
+		   Pkt1 = strip_my_archived_tag(Pkt, LServer),
+		   case store_msg(C2SState, Pkt1, LUser, LServer, Peer, recv) of
 		{ok, ID} ->
-		    set_stanza_id(NewPkt, JID, ID);
+			   set_stanza_id(Pkt1, JID, ID);
 		_ ->
-		    NewPkt
+			   Pkt1
 	    end;
 	_ ->
 	    Pkt
-    end.
+	   end,
+    {Pkt2, C2SState}.
 
--spec user_send_packet(stanza(), ejabberd_c2s:state(), jid(), jid()) -> stanza().
-user_send_packet(Pkt, C2SState, JID, Peer) ->
+-spec user_send_packet({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
+user_send_packet({Pkt, #{jid := JID} = C2SState}) ->
+    Peer = xmpp:get_to(Pkt),
     LUser = JID#jid.luser,
     LServer = JID#jid.lserver,
-    case should_archive(Pkt, LServer) of
+    Pkt2 = case should_archive(Pkt, LServer) of
 	true ->
-	    NewPkt = strip_my_archived_tag(Pkt, LServer),
-	    case store_msg(C2SState, xmpp:set_from_to(NewPkt, JID, Peer),
+		   Pkt1 = strip_my_archived_tag(Pkt, LServer),
+		   case store_msg(C2SState, xmpp:set_from_to(Pkt1, JID, Peer),
 		      LUser, LServer, Peer, send) of
               {ok, ID} ->
-		    set_stanza_id(NewPkt, JID, ID);
+			   set_stanza_id(Pkt1, JID, ID);
             _ ->
-                NewPkt
+			   Pkt1
         end;
 	false ->
 	    Pkt
-    end.
+	   end,
+    {Pkt2, C2SState}.
 
--spec user_send_packet_strip_tag(stanza(), ejabberd_c2s:state(),
-				 jid(), jid()) -> stanza().
-user_send_packet_strip_tag(Pkt, _C2SState, JID, _Peer) ->
+-spec user_send_packet_strip_tag({stanza(), ejabberd_c2s:state()}) ->
+					{stanza(), ejabberd_c2s:state()}.
+user_send_packet_strip_tag({Pkt, #{jid := JID} = C2SState}) ->
     LServer = JID#jid.lserver,
-    strip_my_archived_tag(Pkt, LServer).
+    {strip_my_archived_tag(Pkt, LServer), C2SState}.
 
 -spec muc_filter_message(message(), mod_muc_room:state(),
 			 jid(), jid(), binary()) -> message().
@@ -337,12 +337,12 @@ disco_sm_features({result, OtherFeatures},
 disco_sm_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
--spec message_is_archived(boolean(), ejabberd_c2s:state(),
-			  jid(), jid(), message()) -> boolean().
-message_is_archived(true, _C2SState, _Peer, _JID, _Pkt) ->
+-spec message_is_archived(boolean(), ejabberd_c2s:state(), message()) -> boolean().
+message_is_archived(true, _C2SState, _Pkt) ->
     true;
-message_is_archived(false, C2SState, Peer,
-		    #jid{luser = LUser, lserver = LServer}, Pkt) ->
+message_is_archived(false, #{jid := JID} = C2SState, Pkt) ->
+    #jid{luser = LUser, lserver = LServer} = JID,
+    Peer = xmpp:get_from(Pkt),
     case gen_mod:get_module_opt(LServer, ?MODULE, assume_mam_usage,
 				fun(B) when is_boolean(B) -> B end, false) of
 	true ->
