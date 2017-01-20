@@ -262,7 +262,10 @@ init([ServerHost, Opts]) ->
 	    fun(A) when is_integer(A) andalso A >= 0 -> A end, ?MAXITEMS),
     MaxSubsNode = gen_mod:get_opt(max_subscriptions_node, Opts,
 	    fun(A) when is_integer(A) andalso A >= 0 -> A end, undefined),
-    [pubsub_index:init(Host, ServerHost, Opts) || gen_mod:db_type(ServerHost, ?MODULE)==mnesia],
+    case gen_mod:db_type(ServerHost, ?MODULE) of
+	mnesia -> init_mnesia(Host, ServerHost, Opts);
+	_ -> ok
+    end,
     {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
     DefaultModule = plugin(Host, hd(Plugins)),
     BaseOptions = DefaultModule:options(),
@@ -336,10 +339,6 @@ init([ServerHost, Opts]) ->
 	false ->
 	    ok
     end,
-    pubsub_migrate:update_node_database(Host, ServerHost),
-    pubsub_migrate:update_state_database(Host, ServerHost),
-    pubsub_migrate:update_item_database(Host, ServerHost),
-    pubsub_migrate:update_lastitem_database(Host, ServerHost),
     {_, State} = init_send_loop(ServerHost),
     {ok, State}.
 
@@ -381,6 +380,18 @@ depends(ServerHost, Opts) ->
 	      catch _:undef -> []
 	      end
       end, Plugins).
+
+init_mnesia(Host, ServerHost, Opts) ->
+    pubsub_index:init(Host, ServerHost, Opts),
+    spawn(fun() ->
+	      %% maybe upgrade db. this can take time when upgrading existing
+	      %% data from ejabberd 2.1.x, so we don't want this to block
+	      %% calling gen_server:start
+	      pubsub_migrate:update_node_database(Host, ServerHost),
+	      pubsub_migrate:update_state_database(Host, ServerHost),
+	      pubsub_migrate:update_item_database(Host, ServerHost),
+	      pubsub_migrate:update_lastitem_database(Host, ServerHost)
+	  end).
 
 %% @doc Call the init/1 function for each plugin declared in the config file.
 %% The default plugin module is implicit.
