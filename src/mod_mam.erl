@@ -37,7 +37,7 @@
 	 remove_user/2, remove_room/3, mod_opt_type/1, muc_process_iq/2,
 	 muc_filter_message/5, message_is_archived/3, delete_old_messages/2,
 	 get_commands_spec/0, msg_to_el/4, get_room_config/4, set_room_option/3,
-	 offline_message/3]).
+	 offline_message/4]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -241,17 +241,21 @@ user_send_packet({Pkt, #{jid := JID} = C2SState}) ->
 	   end,
     {Pkt2, C2SState}.
 
--spec offline_message(jid(), jid(), message()) -> ok.
-offline_message(Peer, To, Pkt) ->
+-spec offline_message(any(), jid(), jid(), message()) -> any().
+offline_message(Acc, Peer, To, Pkt) ->
     LUser = To#jid.luser,
     LServer = To#jid.lserver,
     case should_archive(Pkt, LServer) of
 	true ->
 	    Pkt1 = strip_my_archived_tag(Pkt, LServer),
-	    store_msg(undefined, Pkt1, LUser, LServer, Peer, recv),
-	    ok;
+	    case store_msg(undefined, Pkt1, LUser, LServer, Peer, recv) of
+		{ok, _ID} ->
+		    archived;
+		_ ->
+		    Acc
+	    end;
 	false ->
-	    ok
+	    Acc
     end.
 
 -spec user_send_packet_strip_tag({stanza(), ejabberd_c2s:state()}) ->

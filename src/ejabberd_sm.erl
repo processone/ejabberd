@@ -41,7 +41,7 @@
 	 open_session/6,
 	 close_session/4,
 	 check_in_subscription/6,
-	 bounce_offline_message/3,
+	 bounce_offline_message/4,
 	 disconnect_removed_user/2,
 	 get_user_resources/2,
 	 get_user_present_resources/2,
@@ -172,14 +172,16 @@ check_in_subscription(Acc, User, Server, _JID, _Type, _Reason) ->
       false -> {stop, false}
     end.
 
--spec bounce_offline_message(jid(), jid(), message()) -> stop.
+-spec bounce_offline_message(bounce | any(), jid(), jid(), message()) -> stop.
 
-bounce_offline_message(From, To, Packet) ->
+bounce_offline_message(bounce = Acc, From, To, Packet) ->
     Lang = xmpp:get_lang(Packet),
     Txt = <<"User session not found">>,
     Err = xmpp:err_service_unavailable(Txt, Lang),
     ejabberd_router:route_error(To, From, Packet, Err),
-    stop.
+    {stop, Acc};
+bounce_offline_message(Acc, _From, _To, _Packet) ->
+    Acc.
 
 -spec disconnect_removed_user(binary(), binary()) -> ok.
 
@@ -625,8 +627,9 @@ route_message(From, To, Packet, Type) ->
 	    case ejabberd_auth:is_user_exists(LUser, LServer) andalso
 		is_privacy_allow(From, To, Packet) of
 		true ->
-		    ejabberd_hooks:run(offline_message_hook, LServer,
-				       [From, To, Packet]);
+		    ejabberd_hooks:run_fold(offline_message_hook,
+					    LServer, bounce,
+					    [From, To, Packet]);
 		false ->
 		    Err = xmpp:err_service_unavailable(),
 		    ejabberd_router:route_error(To, From, Packet, Err)

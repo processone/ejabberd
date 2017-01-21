@@ -41,7 +41,7 @@
 -export([start/2,
 	 start_link/2,
 	 stop/1,
-	 store_packet/3,
+	 store_packet/4,
 	 store_offline_msg/5,
 	 resend_offline_messages/2,
 	 c2s_self_presence/1,
@@ -464,8 +464,8 @@ need_to_store(LServer, #message{type = Type} = Packet) ->
 	    false
     end.
 
--spec store_packet(jid(), jid(), message()) -> ok | stop.
-store_packet(From, To, Packet) ->
+-spec store_packet(any(), jid(), jid(), message()) -> any().
+store_packet(Acc, From, To, Packet) ->
     case need_to_store(To#jid.lserver, Packet) of
 	true ->
 	    case check_event(From, To, Packet) of
@@ -474,7 +474,7 @@ store_packet(From, To, Packet) ->
 		    case ejabberd_hooks:run_fold(store_offline_message, LServer,
 						 Packet, [From, To]) of
 			drop ->
-			    ok;
+			    Acc;
 			NewPacket ->
 			    TimeStamp = p1_time_compat:timestamp(),
 			    Expire = find_x_expire(TimeStamp, NewPacket),
@@ -485,11 +485,11 @@ store_packet(From, To, Packet) ->
 					     from = From,
 					     to = To,
 					     packet = NewPacket},
-			    stop
+			    offlined
 		    end;
-		_ -> ok
+		_ -> Acc
 	    end;
-	false -> ok
+	false -> Acc
     end.
 
 -spec check_store_hint(message()) -> store | no_store | none.

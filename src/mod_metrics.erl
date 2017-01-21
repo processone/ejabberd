@@ -36,7 +36,7 @@
 -export([start/2, stop/1, send_metrics/4, opt_type/1, mod_opt_type/1,
 	 depends/2]).
 
--export([offline_message_hook/3,
+-export([offline_message_hook/4,
          sm_register_connection_hook/3, sm_remove_connection_hook/3,
          user_send_packet/1, user_receive_packet/1,
          s2s_send_packet/3, s2s_receive_packet/1,
@@ -74,9 +74,10 @@ depends(_Host, _Opts) ->
 %%====================================================================
 %% Hooks handlers
 %%====================================================================
--spec offline_message_hook(jid(), jid(), message()) -> any().
-offline_message_hook(_From, #jid{lserver=LServer}, _Packet) ->
-    push(LServer, offline_message).
+-spec offline_message_hook(any(), jid(), jid(), message()) -> any().
+offline_message_hook(Acc, _From, #jid{lserver=LServer}, _Packet) ->
+    push(LServer, offline_message),
+    Acc.
 
 -spec sm_register_connection_hook(ejabberd_sm:sid(), jid(), ejabberd_sm:info()) -> any().
 sm_register_connection_hook(_SID, #jid{lserver=LServer}, _Info) ->

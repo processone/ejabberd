@@ -161,8 +161,8 @@ process_offline(Server, To, #xmlel{children = Els}) ->
 				 undefined -> jid:make(Server);
 				 _ -> JID
 			     end,
-		      ejabberd_hooks:run(offline_message_hook,
-					 LServer, [From, To, El]);
+		      ejabberd_hooks:run_fold(offline_message_hook,
+					      LServer, pass, [From, To, El]);
 		  _ ->
 		      ok
 	      catch _:{xmpp_codec, Why} ->
