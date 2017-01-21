@@ -696,22 +696,22 @@ process_compress(#compress{methods = HisMethods},
     CommonMethods = lists_intersection(MyMethods, HisMethods),
     case lists:member(<<"zlib">>, CommonMethods) of
 	true ->
-	    State1 = send_pkt(State, #compressed{}),
-	    case is_disconnected(State1) of
-		true -> State1;
-		false ->
-		    case SockMod:compress(Socket) of
-			{ok, ZlibSocket} ->
+	    case SockMod:compress(Socket) of
+		{ok, ZlibSocket} ->
+		    State1 = send_pkt(State, #compressed{}),
+		    case is_disconnected(State1) of
+			true -> State1;
+			false ->
 			    State1#{socket => ZlibSocket,
 				    stream_id => new_id(),
 				    stream_header_sent => false,
 				    stream_restarted => true,
 				    stream_state => wait_for_stream,
-				    stream_compressed => true};
-			{error, _} ->
-			    Err = #compress_failure{reason = 'setup-failed'},
-			    send_pkt(State1, Err)
-		    end
+				    stream_compressed => true}
+		    end;
+		{error, _} ->
+		    Err = #compress_failure{reason = 'setup-failed'},
+		    send_pkt(State, Err)
 	    end;
 	false ->
 	    send_pkt(State, #compress_failure{reason = 'unsupported-method'})
