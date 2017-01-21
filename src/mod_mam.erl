@@ -36,7 +36,8 @@
 	 process_iq_v0_2/1, process_iq_v0_3/1, disco_sm_features/5,
 	 remove_user/2, remove_room/3, mod_opt_type/1, muc_process_iq/2,
 	 muc_filter_message/5, message_is_archived/3, delete_old_messages/2,
-	 get_commands_spec/0, msg_to_el/4, get_room_config/4, set_room_option/3]).
+	 get_commands_spec/0, msg_to_el/4, get_room_config/4, set_room_option/3,
+	 offline_message/3]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -46,6 +47,8 @@
 
 -define(DEF_PAGE_SIZE, 50).
 -define(MAX_PAGE_SIZE, 250).
+
+-type c2s_state() :: ejabberd_c2s:state().
 
 -callback init(binary(), gen_mod:opts()) -> any().
 -callback remove_user(binary(), binary()) -> any().
@@ -89,6 +92,8 @@ start(Host, Opts) ->
 		       user_send_packet, 88),
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
                user_send_packet_strip_tag, 500),
+    ejabberd_hooks:add(offline_message_hook, Host, ?MODULE,
+		       offline_message, 50),
     ejabberd_hooks:add(muc_filter_message, Host, ?MODULE,
 		       muc_filter_message, 50),
     ejabberd_hooks:add(muc_process_iq, Host, ?MODULE,
@@ -131,6 +136,8 @@ stop(Host) ->
 			  user_receive_packet, 88),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
               user_send_packet_strip_tag, 500),
+    ejabberd_hooks:delete(offline_message_hook, Host, ?MODULE,
+			  offline_message, 50),
     ejabberd_hooks:delete(muc_filter_message, Host, ?MODULE,
 			  muc_filter_message, 50),
     ejabberd_hooks:delete(muc_process_iq, Host, ?MODULE,
@@ -233,6 +240,19 @@ user_send_packet({Pkt, #{jid := JID} = C2SState}) ->
 	    Pkt
 	   end,
     {Pkt2, C2SState}.
+
+-spec offline_message(jid(), jid(), message()) -> ok.
+offline_message(Peer, To, Pkt) ->
+    LUser = To#jid.luser,
+    LServer = To#jid.lserver,
+    case should_archive(Pkt, LServer) of
+	true ->
+	    Pkt1 = strip_my_archived_tag(Pkt, LServer),
+	    store_msg(undefined, Pkt1, LUser, LServer, Peer, recv),
+	    ok;
+	false ->
+	    ok
+    end.
 
 -spec user_send_packet_strip_tag({stanza(), ejabberd_c2s:state()}) ->
 					{stanza(), ejabberd_c2s:state()}.
@@ -347,7 +367,8 @@ message_is_archived(false, #{jid := JID} = C2SState, Pkt) ->
 				fun(B) when is_boolean(B) -> B end, false) of
 	true ->
 	    should_archive(strip_my_archived_tag(Pkt, LServer), LServer)
-		andalso should_archive_peer(C2SState, get_prefs(LUser, LServer),
+		andalso should_archive_peer(C2SState, LUser, LServer,
+					    get_prefs(LUser, LServer),
 					    Peer);
 	false ->
 	    false
@@ -455,6 +476,8 @@ should_archive(#message{type = error}, _LServer) ->
     false;
 should_archive(#message{meta = #{sm_copy := true}}, _LServer) ->
     false;
+should_archive(#message{meta = #{from_offline := true}}, _LServer) ->
+    false;
 should_archive(#message{body = Body, subject = Subject,
 			type = Type} = Pkt, LServer) ->
     case is_resent(Pkt, LServer) of
@@ -530,7 +553,9 @@ strip_x_jid_tags(Pkt) ->
 	       end, Els),
     xmpp:set_els(Pkt, NewEls).
 
-should_archive_peer(C2SState,
+-spec should_archive_peer(c2s_state() | undefined, binary(), binary(),
+			  #archive_prefs{}, jid()) -> boolean().
+should_archive_peer(C2SState, LUser, LServer,
 		    #archive_prefs{default = Default,
 				   always = Always,
 				   never = Never},
@@ -548,8 +573,18 @@ should_archive_peer(C2SState,
 			always -> true;
 			never -> false;
 			roster ->
-			    case ejabberd_c2s:get_subscription(
-				   LPeer, C2SState) of
+			    Sub = case C2SState of
+				      undefined ->
+					  {S, _} = ejabberd_hooks:run_fold(
+						     roster_get_jid_info,
+						     LServer, {none, []},
+						     [LUser, LServer, Peer]),
+					  S;
+				      _ ->
+					  ejabberd_c2s:get_subscription(
+					    LPeer, C2SState)
+				  end,
+			    case Sub of
 				both -> true;
 				from -> true;
 				to -> true;
@@ -622,9 +657,12 @@ may_enter_room(From,
 may_enter_room(From, MUCState) ->
     mod_muc_room:is_occupant_or_admin(From, MUCState).
 
+-spec store_msg(c2s_state() | undefined, stanza(),
+		binary(), binary(), jid(), send | recv) ->
+		       {ok, binary()} | pass.
 store_msg(C2SState, Pkt, LUser, LServer, Peer, Dir) ->
     Prefs = get_prefs(LUser, LServer),
-    case should_archive_peer(C2SState, Prefs, Peer) of
+    case should_archive_peer(C2SState, LUser, LServer, Prefs, Peer) of
 	true ->
 	    US = {LUser, LServer},
 	    case ejabberd_hooks:run_fold(store_mam_message, LServer, Pkt,
