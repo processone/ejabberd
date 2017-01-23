@@ -257,8 +257,8 @@ defmodule EjabberdModAdminExtraTest do
 		jid = :jlib.make_jid(@user, @domain, @resource)
 		assert 1 ==
 			:meck.num_calls(:ejabberd_sm, :route,
-											[jid, jid,
-											 {:broadcast, {:item, {@user<>"1", @domain, ""}, :both}}])
+                      [jid,
+                       {:item, {@user<>"1", @domain, ""}, :both}])
 
 		assert :ok ==
 			:ejabberd_commands.execute_command(:add_rosteritem, [@user, @domain,
@@ -274,8 +274,8 @@ defmodule EjabberdModAdminExtraTest do
 		# 'both' to user online ressource
 		assert 1 ==
 			:meck.num_calls(:ejabberd_sm, :route,
-											[jid, jid,
-											 {:broadcast, {:item, {@user<>"2", @domain, ""}, :both}}])
+                      [jid,
+                       {:item, {@user<>"2", @domain, ""}, :both}])
 
 
 		:ejabberd_commands.execute_command(:delete_rosteritem, [@user, @domain,
@@ -293,8 +293,8 @@ defmodule EjabberdModAdminExtraTest do
 		jid = :jlib.make_jid(@user, @domain, @resource)
 		assert 1 ==
 			:meck.num_calls(:ejabberd_sm, :route,
-											[jid, jid,
-											 {:broadcast, {:item, {@user<>"1", @domain, ""}, :none}}])
+                      [jid,
+                       {:item, {@user<>"1", @domain, ""}, :none}])
 
 		:ejabberd_commands.execute_command(:delete_rosteritem, [@user, @domain,
 																														@user<>"2", @domain])
@@ -303,16 +303,16 @@ defmodule EjabberdModAdminExtraTest do
 		# 'none' to user online ressource
 		assert 1 ==
 			:meck.num_calls(:ejabberd_sm, :route,
-											[jid, jid,
-											 {:broadcast, {:item, {@user<>"2", @domain, ""}, :none}}])
+                      [jid,
+                       {:item, {@user<>"2", @domain, ""}, :none}])
 
 		# Check that nothing else was pushed to user resource
 		jid = jid(user: @user, server: @domain, resource: :_,
 							luser: @user, lserver: @domain, lresource: :_)
 		assert 4 ==
 			:meck.num_calls(:ejabberd_sm, :route,
-											[jid, jid,
-											 {:broadcast, {:item, :_, :_}}])
+                      [jid,
+                       {:item, :_, :_}])
 
 		assert [] == ModRosterMock.get_roster(@user, @domain)
 		assert :meck.validate :ejabberd_sm
