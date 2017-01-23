@@ -54,7 +54,7 @@
 -export([init/1, terminate/2, handle_call/3,
 	 handle_cast/2, handle_info/2, code_change/3]).
 
--export([iq_ping/1, user_online/3, user_offline/3, disco_features/5,
+-export([iq_ping/1, user_online/3, user_offline/3,
 	 user_send/1, mod_opt_type/1, depends/2]).
 
 -record(state,
@@ -116,7 +116,6 @@ init([Host, Opts]) ->
                                     end, none),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
                              no_queue),
-    ejabberd_hooks:add(disco_local_features, Host, ?MODULE, disco_features, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
 				  ?NS_PING, ?MODULE, iq_ping, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
@@ -145,8 +144,6 @@ terminate(_Reason, #state{host = Host}) ->
 			  ?MODULE, user_online, 100),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
 			  user_send, 100),
-    ejabberd_hooks:delete(disco_local_features, Host, ?MODULE,
-			  disco_features, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host,
 				     ?NS_PING),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
@@ -220,18 +217,6 @@ user_offline(_SID, JID, _Info) ->
 user_send({Packet, #{jid := JID} = C2SState}) ->
     start_ping(JID#jid.lserver, JID),
     {Packet, C2SState}.
-
--spec disco_features({error, stanza_error()} | {result, [binary()]} | empty,
-		     jid(), jid(), binary(), binary()) ->
-			    {error, stanza_error()} | {result, [binary()]}.
-disco_features({error, Err}, _From, _To, _Node, _Lang) ->
-    {error, Err};
-disco_features(empty, _From, _To, <<"">>, _Lang) ->
-    {result, [?NS_PING]};
-disco_features({result, Feats}, _From, _To, <<"">>, _Lang) ->
-    {result, [?NS_PING|Feats]};
-disco_features(Acc, _From, _To, _Node, _Lang) ->
-    Acc.
 
 %%====================================================================
 %% Internal functions
