@@ -527,7 +527,7 @@ process_offline_msg(Msg, State = #state{user = U, server = S}) ->
     From = xmpp:get_from(Msg),
     To = jid:make(U, S, <<>>),
     NewMsg = xmpp:set_from_to(Msg, From, To),
-    case catch mod_offline:store_packet(From, To, NewMsg) of
+    case catch mod_offline:store_packet(pass, From, To, NewMsg) of
 	{'EXIT', _} = Err ->
 	    stop("Failed to store offline message: ~p", [Err]);
 	_ ->
