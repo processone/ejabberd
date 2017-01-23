@@ -368,11 +368,15 @@ bind(R, #{user := U, server := S, access := Access, lang := Lang,
 		allow ->
 		    State1 = open_session(State#{resource => Resource,
 						 sid => ejabberd_sm:make_sid()}),
-		    State2 = ejabberd_hooks:run_fold(
-			       c2s_session_opened, LServer, State1, []),
+		    LBJID = jid:remove_resource(jid:tolower(JID)),
+		    PresF = ?SETS:add_element(LBJID, maps:get(pres_f, State1)),
+		    PresT = ?SETS:add_element(LBJID, maps:get(pres_t, State1)),
+		    State2 = State1#{pres_f => PresF, pres_t => PresT},
+		    State3 = ejabberd_hooks:run_fold(
+			       c2s_session_opened, LServer, State2, []),
 		    ?INFO_MSG("(~s) Opened c2s session for ~s",
 			      [SockMod:pp(Socket), jid:to_string(JID)]),
-		    {ok, State2};
+		    {ok, State3};
 		deny ->
 		    ejabberd_hooks:run(forbidden_session_hook, LServer, [JID]),
 		    ?INFO_MSG("(~s) Forbidden c2s session for ~s",

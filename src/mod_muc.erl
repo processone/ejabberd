@@ -135,12 +135,12 @@ shutdown_rooms(Host) ->
     MyHost = gen_mod:get_module_opt_host(Host, mod_muc,
 					 <<"conference.@HOST@">>),
     Rooms = RMod:get_online_rooms(MyHost, undefined),
-    lists:filter(
+    lists:flatmap(
       fun({_, _, Pid}) when node(Pid) == node() ->
 	      Pid ! shutdown,
-	      true;
+	      [Pid];
 	 (_) ->
-	      false
+	      []
       end, Rooms).
 
 %% This function is called by a room in three situations:

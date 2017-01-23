@@ -235,6 +235,8 @@ process_stream_features(Config) ->
 		      set_opt(register, true, Acc);
 		 (#starttls{}, Acc) ->
 		      set_opt(starttls, true, Acc);
+		 (#legacy_auth_feature{}, Acc) ->
+		      set_opt(legacy_auth, true, Acc);
 		 (#compression{methods = Ms}, Acc) ->
 		      set_opt(compression, Ms, Acc);
 		 (_, Acc) ->
@@ -246,7 +248,7 @@ disconnect(Config) ->
     ct:comment("Disconnecting"),
     Socket = ?config(socket, Config),
     try
-	ok = send_text(Config, ?STREAM_TRAILER)
+	send_text(Config, ?STREAM_TRAILER)
     catch exit:normal ->
 	    ok
     end,
@@ -274,17 +276,17 @@ starttls(Config, ShouldFail) ->
 	#starttls_failure{} ->
 	    ct:fail(starttls_failed);
 	#starttls_proceed{} ->
-	    TLSSocket = ejabberd_socket:starttls(
-			  ?config(socket, Config),
-			  [{certfile, ?config(certfile, Config)},
-			   connect]),
+	    {ok, TLSSocket} = ejabberd_socket:starttls(
+				?config(socket, Config),
+				[{certfile, ?config(certfile, Config)},
+				 connect]),
 	    set_opt(socket, TLSSocket, Config)
     end.
 
 zlib(Config) ->
     send(Config, #compress{methods = [<<"zlib">>]}),
     receive #compressed{} -> ok end,
-    ZlibSocket = ejabberd_socket:compress(?config(socket, Config)),
+    {ok, ZlibSocket} = ejabberd_socket:compress(?config(socket, Config)),
     process_stream_features(init_stream(set_opt(socket, ZlibSocket, Config))).
 
 auth(Config) ->

@@ -160,7 +160,7 @@ process_block(#iq{from = #jid{luser = LUser, lserver = LServer},
 	    broadcast_list_update(LUser, LServer, UserList, Default),
 	    broadcast_event(LUser, LServer,
 			    #block{items = [jid:make(J) || J <- JIDs]}),
-	    xmpp:make_iq_result(IQ);
+	    xmpp:make_iq_result(xmpp:put_meta(IQ, privacy_list, UserList));
       _Err ->
 	    ?ERROR_MSG("Error processing ~p: ~p", [{LUser, LServer, JIDs}, _Err]),
 	    Err = xmpp:err_internal_server_error(<<"Database failure">>, Lang),
@@ -183,7 +183,7 @@ process_unblock_all(#iq{from = #jid{luser = LUser, lserver = LServer},
 	  UserList = make_userlist(Default, List),
 	    broadcast_list_update(LUser, LServer, UserList, Default),
 	    broadcast_event(LUser, LServer, #unblock{}),
-	    xmpp:make_iq_result(IQ);
+	    xmpp:make_iq_result(xmpp:put_meta(IQ, privacy_list, UserList));
       _Err ->
 	    ?ERROR_MSG("Error processing ~p: ~p", [{LUser, LServer}, _Err]),
 	    Err = xmpp:err_internal_server_error(<<"Database failure">>, Lang),
@@ -210,7 +210,7 @@ process_unblock(#iq{from = #jid{luser = LUser, lserver = LServer},
 	    broadcast_list_update(LUser, LServer, UserList, Default),
 	    broadcast_event(LUser, LServer,
 			    #unblock{items = [jid:make(J) || J <- JIDs]}),
-	    xmpp:make_iq_result(IQ);
+	    xmpp:make_iq_result(xmpp:put_meta(IQ, privacy_list, UserList));
       _Err ->
 	    ?ERROR_MSG("Error processing ~p: ~p", [{LUser, LServer, JIDs}, _Err]),
 	    Err = xmpp:err_internal_server_error(<<"Database failure">>, Lang),

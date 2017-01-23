@@ -292,7 +292,7 @@ set_item(User, Server, Resource, Item) ->
 			  jid:make(Server),
 			  ResIQ).
 
-c2s_session_opened(#{jid := #jid{luser = LUser, lserver = LServer} = JID,
+c2s_session_opened(#{jid := #jid{luser = LUser, lserver = LServer},
 		     pres_f := PresF, pres_t := PresT} = State) ->
     US = {LUser, LServer},
     DisplayedGroups = get_user_displayed_groups(US),
@@ -300,11 +300,12 @@ c2s_session_opened(#{jid := #jid{luser = LUser, lserver = LServer} = JID,
 						get_group_users(LServer, Group)
 					end,
 			    DisplayedGroups),
-    BareLJID = jid:tolower(jid:remove_resource(JID)),
     PresBoth = lists:foldl(
-		 fun({U, S}, Acc) ->
+		 fun({U, S, _}, Acc) ->
+			 ?SETS:add_element({U, S, <<"">>}, Acc);
+		    ({U, S}, Acc) ->
 			 ?SETS:add_element({U, S, <<"">>}, Acc)
-		 end, ?SETS:new(), [BareLJID|SRUsers]),
+		 end, ?SETS:new(), SRUsers),
     State#{pres_f => ?SETS:union(PresBoth, PresF),
 	   pres_t => ?SETS:union(PresBoth, PresT)}.
 

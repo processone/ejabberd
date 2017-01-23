@@ -33,7 +33,7 @@
 -export([start/0, start_link/0]).
 
 -export([route/3, route_iq/4, route_iq/5, process_iq/3,
-	 process_iq_reply/3, register_iq_handler/4,
+	 process_iq_reply/3, register_iq_handler/4, get_features/1,
 	 register_iq_handler/5, register_iq_response_handler/4,
 	 register_iq_response_handler/5, unregister_iq_handler/2,
 	 unregister_iq_response_handler/2, bounce_resource_packet/3]).
@@ -44,7 +44,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
-
+-include_lib("stdlib/include/ms_transform.hrl").
 -include("xmpp.hrl").
 
 -record(state, {}).
@@ -192,6 +192,14 @@ bounce_resource_packet(From, To, Packet) ->
     Err = xmpp:err_item_not_found(Txt, Lang),
     ejabberd_router:route_error(To, From, Packet, Err),
     stop.
+
+-spec get_features(binary()) -> [binary()].
+get_features(Host) ->
+    ets:select(
+      ?IQTABLE,
+      ets:fun2ms(fun({{XMLNS, H}, _, _, _}) when H == Host ->
+			 XMLNS
+		 end)).
 
 %%====================================================================
 %% gen_server callbacks

@@ -79,7 +79,7 @@ stream_feature_register(Acc, Host) ->
     AF = gen_mod:get_module_opt(Host, ?MODULE, access_from,
                                           fun(A) -> A end,
 					  all),
-    case (AF /= none) and lists:keymember(sasl_mechanisms, 1, Acc) of
+    case (AF /= none) of
 	true ->
 	    [#feature_register{}|Acc];
 	false ->
@@ -90,10 +90,11 @@ c2s_unauthenticated_packet(#{ip := IP, server := Server} = State,
 			   #iq{type = T, sub_els = [_]} = IQ)
   when T == set; T == get ->
     case xmpp:get_subtag(IQ, #register{}) of
-	#register{} ->
+	#register{} = Register ->
 	    {Address, _} = IP,
-	    IQ1 = xmpp:set_from_to(IQ, jid:make(<<>>), jid:make(Server)),
-	    ResIQ = process_iq(IQ1, Address),
+	    IQ1 = xmpp:set_els(IQ, [Register]),
+	    IQ2 = xmpp:set_from_to(IQ1, jid:make(<<>>), jid:make(Server)),
+	    ResIQ = process_iq(IQ2, Address),
 	    ResIQ1 = xmpp:set_from_to(ResIQ, jid:make(Server), undefined),
 	    {stop, ejabberd_c2s:send(State, ResIQ1)};
 	false ->

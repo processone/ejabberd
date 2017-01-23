@@ -176,6 +176,8 @@ handle_info({mnesia_table_event,
 	     {write, #route{pid = Pid}, _ActivityId}}, State) ->
     erlang:monitor(process, Pid),
     {noreply, State};
+handle_info({mnesia_table_event, _}, State) ->
+    {noreply, State};
 handle_info({'DOWN', _Ref, _Type, Pid, _Info}, State) ->
     F = fun () ->
 		Es = mnesia:select(route,

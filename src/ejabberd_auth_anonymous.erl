@@ -122,7 +122,7 @@ register_connection(_SID,
     case proplists:get_value(auth_module, Info) of
 	?MODULE ->
 	    ejabberd_hooks:run(register_user, LServer, [LUser, LServer]);
-	false ->
+	_ ->
 	    ok
     end.
 

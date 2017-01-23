@@ -698,6 +698,7 @@ opt_type(domain_certfile) -> fun iolist_to_binary/1;
 opt_type(s2s_certfile) -> fun iolist_to_binary/1;
 opt_type(s2s_ciphers) -> fun iolist_to_binary/1;
 opt_type(s2s_dhfile) -> fun iolist_to_binary/1;
+opt_type(s2s_cafile) -> fun iolist_to_binary/1;
 opt_type(s2s_protocol_options) ->
     fun (Options) -> str:join(Options, <<"|">>) end;
 opt_type(s2s_tls_compression) ->
@@ -717,5 +718,5 @@ opt_type(s2s_timeout) ->
     end;
 opt_type(_) ->
     [route_subdomains, s2s_access,  s2s_certfile,
-     s2s_ciphers, s2s_dhfile, s2s_protocol_options,
+     s2s_ciphers, s2s_dhfile, s2s_cafile, s2s_protocol_options,
      s2s_tls_compression, s2s_use_starttls, s2s_timeout].

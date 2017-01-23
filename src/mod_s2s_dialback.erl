@@ -175,11 +175,12 @@ s2s_in_packet(#{stream_id := StreamID} = State,
 	{ok, Pid} = ejabberd_s2s_out:start(
 		      To, From, [{db_verify, {StreamID, Key, self()}}]),
 	ejabberd_s2s_out:connect(Pid),
-	State
+	{stop, State}
     catch _:{badmatch, {error, Reason}} ->
-	    send_db_result(State,
-			   #db_verify{from = From, to = To, type = error,
-				      sub_els = [mk_error(Reason)]})
+	    {stop,
+	     send_db_result(State,
+			    #db_verify{from = From, to = To, type = error,
+				       sub_els = [mk_error(Reason)]})}
     end;
 s2s_in_packet(State, #db_verify{to = To, from = From, key = Key,
 				id = StreamID, type = undefined}) ->
@@ -189,7 +190,7 @@ s2s_in_packet(State, #db_verify{to = To, from = From, key = Key,
 	       _ -> invalid
 	   end,
     Response = #db_verify{from = To, to = From, id = StreamID, type = Type},
-    ejabberd_s2s_in:send(State, Response);
+    {stop, ejabberd_s2s_in:send(State, Response)};
 s2s_in_packet(State, Pkt) when is_record(Pkt, db_result);
 			       is_record(Pkt, db_verify) ->
     ?WARNING_MSG("Got stray dialback packet:~n~s", [xmpp:pp(Pkt)]),

@@ -175,13 +175,16 @@ get_local_identity(Acc, _From, _To, _Node, _Lang) ->
 get_local_features({error, _Error} = Acc, _From, _To,
 		   _Node, _Lang) ->
     Acc;
-get_local_features(Acc, _From, _To, <<"">>, _Lang) ->
+get_local_features(Acc, _From, To, <<"">>, _Lang) ->
     Feats = case Acc of
 		{result, Features} -> Features;
 		empty -> []
 	    end,
-    {result, [<<"iq">>, <<"presence">>,
-	      ?NS_DISCO_INFO, ?NS_DISCO_ITEMS |Feats]};
+    {result, lists:usort(
+	       lists:flatten(
+		 [<<"iq">>, <<"presence">>,
+		  ?NS_DISCO_INFO, ?NS_DISCO_ITEMS, Feats,
+		  ejabberd_local:get_features(To#jid.lserver)]))};
 get_local_features(Acc, _From, _To, _Node, Lang) ->
     case Acc of
       {result, _Features} -> Acc;

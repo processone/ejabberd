@@ -93,6 +93,7 @@ init([State, Opts]) ->
 		    lang => ?MYLANG,
 		    server => ?MYNAME,
 		    host_opts => HostOpts,
+		    stream_version => undefined,
 		    check_from => CheckFrom},
     ejabberd_hooks:run_fold(component_init, {ok, State1}, [Opts]).
 
@@ -128,10 +129,10 @@ get_password_fun(#{remote_server := RemoteServer,
     	{ok, Password} ->
 		    {Password, undefined};
 		error ->
-		    ?ERROR_MSG("(~s) Domain ~s is unconfigured for "
-			       "external component from ~s",
-			       [SockMod:pp(Socket), RemoteServer,
-				ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
+		    ?INFO_MSG("(~s) Domain ~s is unconfigured for "
+			      "external component from ~s",
+			      [SockMod:pp(Socket), RemoteServer,
+			       ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
 		    {false, undefined}
 	    end
     end.
@@ -155,14 +156,14 @@ handle_auth_failure(_, Mech, Reason,
 		    #{remote_server := RemoteServer,
 		      sockmod := SockMod,
 		      socket := Socket, ip := IP} = State) ->
-    ?ERROR_MSG("(~s) Failed external component ~s authentication "
-	       "for ~s from ~s: ~s",
-	       [SockMod:pp(Socket), Mech, RemoteServer,
-		ejabberd_config:may_hide_data(jlib:ip_to_list(IP)),
-		Reason]),
+    ?INFO_MSG("(~s) Failed external component ~s authentication "
+	      "for ~s from ~s: ~s",
+	      [SockMod:pp(Socket), Mech, RemoteServer,
+	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP)),
+	       Reason]),
     State.
 
-handle_authenticated_packet(Pkt, #{lang := Lang} = State) ->
+handle_authenticated_packet(Pkt, #{lang := Lang} = State) when ?is_stanza(Pkt) ->
     From = xmpp:get_from(Pkt),
     case check_from(From, State) of
 		true ->
@@ -173,7 +174,9 @@ handle_authenticated_packet(Pkt, #{lang := Lang} = State) ->
 		    Txt = <<"Improper domain part of 'from' attribute">>,
 	    Err = xmpp:serr_invalid_from(Txt, Lang),
 	    xmpp_stream_in:send(State, Err)
-    end.
+    end;
+handle_authenticated_packet(_Pkt, State) ->
+    State.
 
 handle_info({route, From, To, Packet}, #{access := Access} = State) ->
     case acl:match_rule(global, Access, From) of

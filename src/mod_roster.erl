@@ -521,13 +521,12 @@ roster_change(#{user := U, server := S, resource := R,
     end.
 
 -spec c2s_session_opened(ejabberd_c2s:state()) -> ejabberd_c2s:state().
-c2s_session_opened(#{jid := #jid{luser = LUser, lserver = LServer} = JID,
+c2s_session_opened(#{jid := #jid{luser = LUser, lserver = LServer},
 		     pres_f := PresF, pres_t := PresT} = State) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Items = Mod:get_only_items(LUser, LServer),
     {F, T} = fill_subscription_lists(Items, PresF, PresT),
-    LJID = jid:tolower(jid:remove_resource(JID)),
-    State#{pres_f => ?SETS:add(LJID, F), pres_t => ?SETS:add(LJID, T)}.
+    State#{pres_f => F, pres_t => T}.
 
 fill_subscription_lists([I | Is], F, T) ->
     J = element(3, I#roster.usj),

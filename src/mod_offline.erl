@@ -561,6 +561,8 @@ resend_offline_messages(User, Server) ->
       _ -> ok
     end.
 
+c2s_self_presence({_Pres, #{resend_offline := false}} = Acc) ->
+    Acc;
 c2s_self_presence({#presence{type = available} = NewPres, State} = Acc) ->
     NewPrio = get_priority_from_presence(NewPres),
     LastPrio = try maps:get(pres_last, State) of

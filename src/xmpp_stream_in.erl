@@ -559,8 +559,8 @@ process_element(Pkt, #{stream_state := StateName, lang := Lang} = State) ->
 	    process_unauthenticated_packet(Pkt, State);
 	_ when StateName == wait_for_starttls ->
 	    Txt = <<"Use of STARTTLS required">>,
-	    Err = xmpp:err_policy_violation(Txt, Lang),
-	    send_error(State, Pkt, Err);
+	    Err = xmpp:serr_policy_violation(Txt, Lang),
+	    send_pkt(State, Err);
 	_ when StateName == wait_for_bind ->
 	    process_bind(Pkt, State);
 	_ when StateName == established ->
