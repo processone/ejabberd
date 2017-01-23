@@ -339,7 +339,10 @@ queue_new() ->
 queue_in(Key, Type, Val, {N, Seq, Q}) ->
     Seq1 = Seq + 1,
     Time = {Seq1, p1_time_compat:timestamp()},
-    try maps:get(Key, Q) of
+    case maps:get(Key, Q, error) of
+	error ->
+	    Q1 = maps:put(Key, [{Type, Time, Val}], Q),
+	    {N + 1, Seq1, Q1};
 	TypeVals ->
 	    case lists:keymember(Type, 1, TypeVals) of
 		true ->
@@ -352,9 +355,6 @@ queue_in(Key, Type, Val, {N, Seq, Q}) ->
 		    Q1 = maps:put(Key, TypeVals1, Q),
 		    {N + 1, Seq1, Q1}
 	    end
-    catch _:{badkey, _} ->
-	    Q1 = maps:put(Key, [{Type, Time, Val}], Q),
-	    {N + 1, Seq1, Q1}
     end.
 
 -spec queue_take(term(), csi_queue()) -> {list(), csi_queue()} | error.

@@ -40,9 +40,7 @@ authenticate(State) ->
       -> {ok, binary()} | {error, atom(), binary()}.
 authenticate(#{xmlns := ?NS_SERVER, sockmod := SockMod,
 	       socket := Socket} = State, Authzid) ->
-    Peer = try maps:get(remote_server, State)
-	   catch _:{badkey, _} -> Authzid
-	   end,
+    Peer = maps:get(remote_server, State, Authzid),
     case SockMod:get_peer_certificate(Socket) of
 	{ok, Cert} ->
 	    case SockMod:get_verify_result(Socket) of

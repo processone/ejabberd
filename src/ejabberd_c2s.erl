@@ -176,10 +176,9 @@ open_session(#{user := U, server := S, resource := R,
     change_shaper(State),
     Conn = get_conn_type(State),
     State1 = State#{conn => Conn, resource => R, jid => JID},
-    Prio = try maps:get(pres_last, State) of
+    Prio = case maps:get(pres_last, State, undefined) of
+	       undefined -> undefined;
 	       Pres -> get_priority_from_presence(Pres)
-	   catch _:{badkey, _} ->
-		   undefined
 	   end,
     Info = [{ip, IP}, {conn, Conn}, {auth_module, AuthModule}],
     ejabberd_sm:open_session(SID, U, S, R, Prio, Info),
@@ -211,10 +210,9 @@ process_info(#{lserver := LServer} = State,
 	    State1
     end;
 process_info(State, force_update_presence) ->
-    try maps:get(pres_last, State) of
+    case maps:get(pres_last, State, error) of
+	error -> State;
 	Pres -> process_self_presence(State, Pres)
-    catch _:{badkey, _} ->
-	    State
     end;
 process_info(State, Info) ->
     ?WARNING_MSG("got unexpected info: ~p", [Info]),
@@ -498,10 +496,11 @@ init([State, Opts]) ->
     ejabberd_hooks:run_fold(c2s_init, {ok, State1}, [Opts]).
 
 handle_call(get_presence, From, #{jid := JID} = State) ->
-    Pres = try maps:get(pres_last, State)
-	   catch _:{badkey, _} ->
+    Pres = case maps:get(pres_last, State, error) of
+	       error ->
 		   BareJID = jid:remove_resource(JID),
-		   #presence{from = JID, to = BareJID, type = unavailable}
+		   #presence{from = JID, to = BareJID, type = unavailable};
+	       P -> P
 	   end,
     reply(From, Pres),
     State;

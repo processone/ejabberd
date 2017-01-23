@@ -565,10 +565,9 @@ c2s_self_presence({_Pres, #{resend_offline := false}} = Acc) ->
     Acc;
 c2s_self_presence({#presence{type = available} = NewPres, State} = Acc) ->
     NewPrio = get_priority_from_presence(NewPres),
-    LastPrio = try maps:get(pres_last, State) of
+    LastPrio = case maps:get(pres_last, State, error) of
+		   error -> -1;
 		   LastPres -> get_priority_from_presence(LastPres)
-	       catch _:{badkey, _} ->
-		       -1
 	       end,
     if LastPrio < 0 andalso NewPrio >= 0 ->
 	    route_offline_messages(State);
