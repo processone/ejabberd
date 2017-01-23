@@ -359,11 +359,12 @@ queue_in(Key, Type, Val, {N, Seq, Q}) ->
 
 -spec queue_take(term(), csi_queue()) -> {list(), csi_queue()} | error.
 queue_take(Key, {N, Seq, Q}) ->
-    case maps:take(Key, Q) of
-	{TypeVals, Q1} ->
-	    {lists:keysort(2, TypeVals), {N-length(TypeVals), Seq, Q1}};
+    case maps:get(Key, Q, error) of
 	error ->
-	    error
+	    error;
+	TypeVals ->
+	    Q1 = maps:remove(Key, Q),
+	    {lists:keysort(2, TypeVals), {N-length(TypeVals), Seq, Q1}}
     end.
 
 -spec queue_len(csi_queue()) -> non_neg_integer().
