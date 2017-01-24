@@ -391,7 +391,7 @@ c2s_handle_info(State, _) ->
 
 init([]) ->
     lists:foreach(fun(Mod) -> Mod:init() end, get_sm_backends()),
-    ets:new(sm_iqtable, [named_table]),
+    ets:new(sm_iqtable, [named_table, public]),
     lists:foreach(
       fun(Host) ->
 	      ejabberd_hooks:add(c2s_handle_info, Host,
@@ -422,22 +422,22 @@ handle_info({route, From, To, Packet}, State) ->
     end,
     {noreply, State};
 handle_info({register_iq_handler, Host, XMLNS, Module, Function}, State) ->
-    ets:insert(sm_iqtable, {{XMLNS, Host}, Module, Function}),
+    ets:insert(sm_iqtable, {{Host, XMLNS}, Module, Function}),
     {noreply, State};
 handle_info({register_iq_handler, Host, XMLNS, Module,
 	     Function, Opts},
 	    State) ->
     ets:insert(sm_iqtable,
-	       {{XMLNS, Host}, Module, Function, Opts}),
+	       {{Host, XMLNS}, Module, Function, Opts}),
     {noreply, State};
 handle_info({unregister_iq_handler, Host, XMLNS},
 	    State) ->
-    case ets:lookup(sm_iqtable, {XMLNS, Host}) of
+    case ets:lookup(sm_iqtable, {Host, XMLNS}) of
       [{_, Module, Function, Opts}] ->
 	  gen_iq_handler:stop_iq_handler(Module, Function, Opts);
       _ -> ok
     end,
-    ets:delete(sm_iqtable, {XMLNS, Host}),
+    ets:delete(sm_iqtable, {Host, XMLNS}),
     {noreply, State};
 handle_info(_Info, State) -> {noreply, State}.
 
@@ -743,7 +743,7 @@ process_iq(From, To, #iq{type = T, lang = Lang, sub_els = [El]} = Packet)
   when T == get; T == set ->
     XMLNS = xmpp:get_ns(El),
     Host = To#jid.lserver,
-    case ets:lookup(sm_iqtable, {XMLNS, Host}) of
+    case ets:lookup(sm_iqtable, {Host, XMLNS}) of
 	[{_, Module, Function}] ->
 	    gen_iq_handler:handle(Host, Module, Function, no_queue,
 				  From, To, Packet);

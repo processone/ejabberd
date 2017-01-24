@@ -82,7 +82,7 @@ process_iq(From, To, #iq{type = T, lang = Lang, sub_els = [El]} = Packet)
   when T == get; T == set ->
     XMLNS = xmpp:get_ns(El),
     Host = To#jid.lserver,
-    case ets:lookup(?IQTABLE, {XMLNS, Host}) of
+    case ets:lookup(?IQTABLE, {Host, XMLNS}) of
 	[{_, Module, Function}] ->
 	    gen_iq_handler:handle(Host, Module, Function, no_queue,
 				  From, To, Packet);
@@ -195,11 +195,12 @@ bounce_resource_packet(From, To, Packet) ->
 
 -spec get_features(binary()) -> [binary()].
 get_features(Host) ->
-    ets:select(
-      ?IQTABLE,
-      ets:fun2ms(fun({{XMLNS, H}, _, _, _}) when H == Host ->
-			 XMLNS
-		 end)).
+    get_features(ets:next(?IQTABLE, {Host, <<"">>}), Host, []).
+
+get_features({Host, XMLNS}, Host, XMLNSs) ->
+    get_features(ets:next(?IQTABLE, {Host, XMLNS}), Host, [XMLNS|XMLNSs]);
+get_features(_, _, XMLNSs) ->
+    XMLNSs.
 
 %%====================================================================
 %% gen_server callbacks
@@ -216,7 +217,7 @@ init([]) ->
 					     100)
 		  end,
 		  ?MYHOSTS),
-    catch ets:new(?IQTABLE, [named_table, public]),
+    catch ets:new(?IQTABLE, [named_table, public, ordered_set]),
     update_table(),
     ejabberd_mnesia:create(?MODULE, iq_response,
 			[{ram_copies, [node()]},
@@ -240,22 +241,22 @@ handle_info({route, From, To, Packet}, State) ->
 handle_info({register_iq_handler, Host, XMLNS, Module,
 	     Function},
 	    State) ->
-    ets:insert(?IQTABLE, {{XMLNS, Host}, Module, Function}),
+    ets:insert(?IQTABLE, {{Host, XMLNS}, Module, Function}),
     {noreply, State};
 handle_info({register_iq_handler, Host, XMLNS, Module,
 	     Function, Opts},
 	    State) ->
     ets:insert(?IQTABLE,
-	       {{XMLNS, Host}, Module, Function, Opts}),
+	       {{Host, XMLNS}, Module, Function, Opts}),
     {noreply, State};
 handle_info({unregister_iq_handler, Host, XMLNS},
 	    State) ->
-    case ets:lookup(?IQTABLE, {XMLNS, Host}) of
+    case ets:lookup(?IQTABLE, {Host, XMLNS}) of
       [{_, Module, Function, Opts}] ->
 	  gen_iq_handler:stop_iq_handler(Module, Function, Opts);
       _ -> ok
     end,
-    ets:delete(?IQTABLE, {XMLNS, Host}),
+    ets:delete(?IQTABLE, {Host, XMLNS}),
     {noreply, State};
 handle_info({timeout, _TRef, ID}, State) ->
     process_iq_timeout(ID),
