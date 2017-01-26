@@ -259,7 +259,7 @@ tls_options(#{lserver := LServer, tls_options := DefaultOpts}) ->
 		      ejabberd_config:get_option(
 			{domain_certfile, LServer},
 			fun iolist_to_binary/1)) of
-		   undefined -> [];
+		   undefined -> DefaultOpts;
 		   CertFile -> lists:keystore(certfile, 1, DefaultOpts,
 					      {certfile, CertFile})
 	       end,
