@@ -68,7 +68,7 @@ defmodule Ejabberd.Mixfile do
                          {config(:redis), {:eredis, "~> 1.0"}},
                          {config(:zlib), {:ezlib, "~> 1.0"}},
                          {config(:iconv), {:iconv, "~> 1.0"}},
-                         {config(:pam), {:p1_pam, "~> 1.0"}},
+                         {config(:pam), {:epam, "~> 1.0"}},
                          {config(:tools), {:luerl, github: "rvirding/luerl", tag: "v0.2"}},
                          {config(:tools), {:meck, "~> 0.8.4"}},
                          {config(:tools), {:moka, github: "processone/moka", tag: "1.0.5c"}}], do:
