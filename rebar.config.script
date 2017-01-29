@@ -323,7 +323,7 @@ Rules = [
 	  ProcessErlOpt, []},
 	 {[xref_queries], [xref_exclusions], true,
 	  AppendList2(ProcssXrefExclusions), [], []},
-	 {[deps], [floating_deps], IsRebar3,
+	 {[deps], [floating_deps], true,
 	  ProcessFloatingDeps, [], []},
 	 {[deps], IsRebar3,
 	  Rebar3DepsFilter, []},
