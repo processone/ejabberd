@@ -3515,17 +3515,20 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 		StateData#state{config =
 				    (StateData#state.config)#config{allow_subscription = Val}};
 	    subscribers ->
-		Subscribers = lists:foldl(
-				fun({JID, Nick, Nodes}, Acc) ->
-					BareJID = jid:remove_resource(JID),
-					?DICT:store(
-					   jid:tolower(BareJID),
-					   #subscriber{jid = BareJID,
-						       nick = Nick,
-						       nodes = Nodes},
-					   Acc)
-				end, ?DICT:new(), Val),
-		StateData#state{subscribers = Subscribers};
+		  {Subscribers, Nicks} =
+		      lists:foldl(
+			fun({JID, Nick, Nodes}, {SubAcc, NickAcc}) ->
+				BareJID = jid:remove_resource(JID),
+				{?DICT:store(
+				    jid:tolower(BareJID),
+				    #subscriber{jid = BareJID,
+						nick = Nick,
+						nodes = Nodes},
+				    SubAcc),
+				 ?DICT:store(Nick, [jid:tolower(BareJID)], NickAcc)}
+			end, {?DICT:new(), ?DICT:new()}, Val),
+		  StateData#state{subscribers = Subscribers,
+				  subscriber_nicks = Nicks};
 	    affiliations ->
 		StateData#state{affiliations = (?DICT):from_list(Val)};
 	    subject -> StateData#state{subject = Val};
