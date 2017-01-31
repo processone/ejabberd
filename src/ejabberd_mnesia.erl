@@ -111,6 +111,9 @@ schema(Path, Module, Name, TabDef) ->
 		_ ->
 		    TabDef
 	    end;
+	{error, enoent} ->
+	    ?DEBUG("No custom ~s schema path", [Module]),
+	    TabDef;
 	{error, Error} ->
 	    ?ERROR_MSG("Can not use custom ~s schema for table ~s: ~p",
 		       [Module, Name, Error]),
