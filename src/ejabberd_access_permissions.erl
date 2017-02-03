@@ -230,31 +230,34 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 
 -spec get_definitions(#state{}) -> {#state{}, any()}.
-get_definitions(#state{definitions = Defs, fragments_generators = Gens} = State) ->
-    DefaultOptions = [{<<"console commands">>,
-		       {[ejabberd_ctl],
-			[{acl, all}],
-			{all, none}}},
-		      {<<"admin access">>,
+get_definitions(#state{definitions = Defs} = State) when Defs /= none ->
+    {State, Defs};
+get_definitions(#state{definitions = none, fragments_generators = Gens} = State) ->
+    DefaultOptions = [{<<"admin access">>,
 		       {[],
 			[{acl,{acl,admin}},
 			 {oauth,[<<"ejabberd:admin">>],[{acl,{acl,admin}}]}],
 			{all, [start, stop]}}}],
-    NDefs = case Defs of
-		none ->
-		    ApiPerms = ejabberd_config:get_option(api_permissions, fun(A) -> A end, DefaultOptions),
-		    AllCommands = ejabberd_commands:get_commands_definition(),
-		    Frags = lists:foldl(
-			fun({_Name, Generator}, Acc) ->
-			    Acc ++ Generator()
-			end, [], Gens),
-		    lists:map(
-			fun({Name, {From, Who, {Add, Del}}}) ->
-			    Cmds = filter_commands_with_permissions(AllCommands, Add, Del),
-			    {Name, {From, Who, Cmds}}
-			end, ApiPerms ++ Frags);
-		V ->
-		    V
+    ApiPerms = ejabberd_config:get_option(api_permissions, fun(A) -> A end,
+					  DefaultOptions),
+    AllCommands = ejabberd_commands:get_commands_definition(),
+    Frags = lists:foldl(
+	      fun({_Name, Generator}, Acc) ->
+		      Acc ++ Generator()
+	      end, [], Gens),
+    NDefs0 = lists:map(
+	       fun({Name, {From, Who, {Add, Del}}}) ->
+		       Cmds = filter_commands_with_permissions(AllCommands, Add, Del),
+		       {Name, {From, Who, Cmds}}
+	       end, ApiPerms ++ Frags),
+    NDefs = case lists:keyfind(<<"console commands">>, 1, NDefs0) of
+		false ->
+		    [{<<"console commands">>,
+		      {[ejabberd_ctl],
+		       [{acl, all}],
+		       filter_commands_with_permissions(AllCommands, all, none)}} | NDefs0];
+		_ ->
+		    NDefs0
 	    end,
     {State#state{definitions = NDefs}, NDefs}.
 
