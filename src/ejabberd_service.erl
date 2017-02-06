@@ -33,7 +33,7 @@
 %% xmpp_stream_in callbacks
 -export([init/1, handle_info/2, terminate/2, code_change/3]).
 -export([handle_stream_start/2, handle_auth_success/4, handle_auth_failure/4,
-	 handle_authenticated_packet/2, get_password_fun/1]).
+	 handle_authenticated_packet/2, get_password_fun/1, tls_options/1]).
 %% API
 -export([send/2]).
 
@@ -66,6 +66,9 @@ send(Stream, Pkt) ->
 %%%===================================================================
 %%% xmpp_stream_in callbacks
 %%%===================================================================
+tls_options(#{tls_options := TLSOptions}) ->
+    TLSOptions.
+
 init([State, Opts]) ->
     Access = gen_mod:get_opt(access, Opts, fun acl:access_rules_validator/1, all),
     Shaper = gen_mod:get_opt(shaper_rule, Opts, fun acl:shaper_rules_validator/1, none),
@@ -87,6 +90,23 @@ init([State, Opts]) ->
     CheckFrom = gen_mod:get_opt(check_from, Opts,
 				fun(Flag) when is_boolean(Flag) -> Flag end,
 				true),
+    TLSOpts1 = lists:filter(
+		 fun({certfile, _}) -> true;
+		    ({ciphers, _}) -> true;
+		    ({dhfile, _}) -> true;
+		    ({cafile, _}) -> true;
+		    (_) -> false
+		 end, Opts),
+    TLSOpts2 = case lists:keyfind(protocol_options, 1, Opts) of
+		   false -> TLSOpts1;
+		   {_, OptString} ->
+		       ProtoOpts = str:join(OptString, <<$|>>),
+		       [{protocol_options, ProtoOpts}|TLSOpts1]
+	       end,
+    TLSOpts = case proplists:get_bool(tls_compression, Opts) of
+		  false -> [compression_none | TLSOpts2];
+		  true -> TLSOpts2
+	      end,
     xmpp_stream_in:change_shaper(State, Shaper),
     State1 = State#{access => Access,
 		    xmlns => ?NS_COMPONENT,
@@ -94,6 +114,7 @@ init([State, Opts]) ->
 		    server => ?MYNAME,
 		    host_opts => HostOpts,
 		    stream_version => undefined,
+		    tls_options => TLSOpts,
 		    check_from => CheckFrom},
     ejabberd_hooks:run_fold(component_init, {ok, State1}, [Opts]).
 
