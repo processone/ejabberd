@@ -818,6 +818,8 @@ get_exposed_commands(Version) ->
     Cmds.
 
 %% This is used to allow mixing command policy (like open, user, admin, restricted), with command entry
+expand_commands(L, OpenCmds, UserCmds, AdminCmds, RestrictedCmds) when is_atom(L) ->
+    expand_commands([L], OpenCmds, UserCmds, AdminCmds, RestrictedCmds);
 expand_commands(L, OpenCmds, UserCmds, AdminCmds, RestrictedCmds) when is_list(L) ->
     lists:foldl(fun(open, Acc) -> OpenCmds ++ Acc;
                    (user, Acc) -> UserCmds ++ Acc;
