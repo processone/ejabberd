@@ -278,7 +278,7 @@ matches_definition({_Name, {From, Who, What}}, Cmd, Module, Host, CallerInfo) ->
 				       lists:any(
 					   fun({access, Access}) ->
 					       acl:access_matches(Access, CallerInfo, Host) == allow;
-					      ({acl, Acl} = Acl) ->
+					      ({acl, Acl}) ->
 						  acl:acl_rule_matches(Acl, CallerInfo, Host)
 					   end, List);
 				   _ ->
