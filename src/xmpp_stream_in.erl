@@ -20,7 +20,7 @@
 %%%
 %%%-------------------------------------------------------------------
 -module(xmpp_stream_in).
--define(GEN_SERVER, gen_server).
+-define(GEN_SERVER, p1_server).
 -behaviour(?GEN_SERVER).
 
 -protocol({rfc, 6120}).
