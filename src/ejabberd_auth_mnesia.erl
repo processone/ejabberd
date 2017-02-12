@@ -143,9 +143,12 @@ check_password(User, AuthzId, Server, Password, Digest,
 set_password(User, Server, Password) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
+    LPassword = jid:resourceprep(Password),
     US = {LUser, LServer},
     if (LUser == error) or (LServer == error) ->
 	   {error, invalid_jid};
+       LPassword == error ->
+	   {error, invalid_password};
        true ->
 	   F = fun () ->
 		       Password2 = case is_scrammed() and is_binary(Password)
@@ -167,9 +170,12 @@ try_register(User, Server, PasswordList) ->
       iolist_to_binary(PasswordList);
       true -> PasswordList
     end,
+    LPassword = jid:resourceprep(Password),
     US = {LUser, LServer},
     if (LUser == error) or (LServer == error) ->
 	   {error, invalid_jid};
+       LPassword == error ->
+	   {error, invalid_password};
        true ->
 	   F = fun () ->
 		       case mnesia:read({passwd, US}) of
@@ -441,9 +447,21 @@ scram_passwords() ->
     ?INFO_MSG("Converting the stored passwords into "
 	      "SCRAM bits",
 	      []),
-    Fun = fun (#passwd{password = Password} = P) ->
-		  Scram = password_to_scram(Password),
-		  P#passwd{password = Scram}
+    Fun = fun (#passwd{us = {U, S}, password = Password} = P)
+		when is_binary(Password) ->
+		  case jid:resourceprep(Password) of
+		      error ->
+			  ?ERROR_MSG(
+			     "SASLprep failed for "
+			     "password of user ~s@~s",
+			     [U, S]),
+			  P;
+		      _ ->
+			  Scram = password_to_scram(Password),
+			  P#passwd{password = Scram}
+		  end;
+	      (P) ->
+		  P
 	  end,
     Fields = record_info(fields, passwd),
     mnesia:transform_table(passwd, Fun, Fields).
@@ -465,13 +483,18 @@ password_to_scram(Password, IterationCount) ->
 	   iterationcount = IterationCount}.
 
 is_password_scram_valid(Password, Scram) ->
-    IterationCount = Scram#scram.iterationcount,
-    Salt = jlib:decode_base64(Scram#scram.salt),
-    SaltedPassword = scram:salted_password(Password, Salt,
-					   IterationCount),
-    StoredKey =
-	scram:stored_key(scram:client_key(SaltedPassword)),
-    jlib:decode_base64(Scram#scram.storedkey) == StoredKey.
+    case jid:resourceprep(Password) of
+	error ->
+	    false;
+	_ ->
+	    IterationCount = Scram#scram.iterationcount,
+	    Salt = jlib:decode_base64(Scram#scram.salt),
+	    SaltedPassword = scram:salted_password(Password, Salt,
+						   IterationCount),
+	    StoredKey =
+		scram:stored_key(scram:client_key(SaltedPassword)),
+	    jlib:decode_base64(Scram#scram.storedkey) == StoredKey
+    end.
 
 export(_Server) ->
     [{passwd,

@@ -120,9 +120,12 @@ check_password(User, AuthzId, Server, Password, Digest,
 set_password(User, Server, Password) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
+    LPassword = jid:resourceprep(Password),
     US = {LUser, LServer},
     if (LUser == error) or (LServer == error) ->
 	   {error, invalid_jid};
+       LPassword == error ->
+	   {error, invalid_password};
        true ->
             Password2 = case is_scrammed() and is_binary(Password)
                         of
@@ -141,9 +144,12 @@ try_register(User, Server, PasswordList) ->
       iolist_to_binary(PasswordList);
       true -> PasswordList
     end,
+    LPassword = jid:resourceprep(Password),
     US = {LUser, LServer},
     if (LUser == error) or (LServer == error) ->
 	   {error, invalid_jid};
+       LPassword == error ->
+	   {error, invalid_password};
        true ->
             case ejabberd_riak:get(passwd, passwd_schema(), US) of
                 {error, notfound} ->
@@ -284,13 +290,18 @@ password_to_scram(Password, IterationCount) ->
 	   iterationcount = IterationCount}.
 
 is_password_scram_valid(Password, Scram) ->
-    IterationCount = Scram#scram.iterationcount,
-    Salt = jlib:decode_base64(Scram#scram.salt),
-    SaltedPassword = scram:salted_password(Password, Salt,
-					   IterationCount),
-    StoredKey =
-	scram:stored_key(scram:client_key(SaltedPassword)),
-    jlib:decode_base64(Scram#scram.storedkey) == StoredKey.
+    case jid:resourceprep(Password) of
+	error ->
+	    false;
+	_ ->
+	    IterationCount = Scram#scram.iterationcount,
+	    Salt = jlib:decode_base64(Scram#scram.salt),
+	    SaltedPassword = scram:salted_password(Password, Salt,
+						   IterationCount),
+	    StoredKey =
+		scram:stored_key(scram:client_key(SaltedPassword)),
+	    jlib:decode_base64(Scram#scram.storedkey) == StoredKey
+    end.
 
 export(_Server) ->
     [{passwd,
