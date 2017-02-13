@@ -70,8 +70,9 @@ start(Host, Opts) ->
     ejabberd_hooks:add(adhoc_local_commands, Host, ?MODULE, announce_commands, 50),
     ejabberd_hooks:add(c2s_self_presence, Host,
 		       ?MODULE, send_motd, 50),
-    register(gen_mod:get_module_proc(Host, ?PROCNAME),
-	     proc_lib:spawn(?MODULE, init, [])).
+    Pid = proc_lib:spawn(?MODULE, init, []),
+    register(gen_mod:get_module_proc(Host, ?PROCNAME), Pid),
+    {ok, Pid}.
 
 depends(_Host, _Opts) ->
     [{mod_adhoc, hard}].

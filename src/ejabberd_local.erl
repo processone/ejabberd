@@ -33,7 +33,7 @@
 -export([start/0, start_link/0]).
 
 -export([route/3, route_iq/4, route_iq/5, process_iq/3,
-	 process_iq_reply/3, register_iq_handler/4, get_features/1,
+	 process_iq_reply/3, get_features/1,
 	 register_iq_handler/5, register_iq_response_handler/4,
 	 register_iq_response_handler/5, unregister_iq_handler/2,
 	 unregister_iq_response_handler/2, bounce_resource_packet/3]).
@@ -83,9 +83,6 @@ process_iq(From, To, #iq{type = T, lang = Lang, sub_els = [El]} = Packet)
     XMLNS = xmpp:get_ns(El),
     Host = To#jid.lserver,
     case ets:lookup(?IQTABLE, {Host, XMLNS}) of
-	[{_, Module, Function}] ->
-	    gen_iq_handler:handle(Host, Module, Function, no_queue,
-				  From, To, Packet);
 	[{_, Module, Function, Opts}] ->
 	    gen_iq_handler:handle(Host, Module, Function, Opts,
 				  From, To, Packet);
@@ -161,24 +158,21 @@ register_iq_response_handler(_Host, ID, Module,
 				    function = Function,
 				    timer = TRef}).
 
--spec register_iq_handler(binary(), binary(), module(), function()) -> any().
-register_iq_handler(Host, XMLNS, Module, Fun) ->
-    ejabberd_local !
-      {register_iq_handler, Host, XMLNS, Module, Fun}.
-
 -spec register_iq_handler(binary(), binary(), module(), function(),
-			  gen_iq_handler:opts()) -> any().
+			  gen_iq_handler:opts()) -> ok.
 register_iq_handler(Host, XMLNS, Module, Fun, Opts) ->
     ejabberd_local !
-      {register_iq_handler, Host, XMLNS, Module, Fun, Opts}.
+	{register_iq_handler, Host, XMLNS, Module, Fun, Opts},
+    ok.
 
 -spec unregister_iq_response_handler(binary(), binary()) -> ok.
 unregister_iq_response_handler(_Host, ID) ->
     catch get_iq_callback(ID), ok.
 
--spec unregister_iq_handler(binary(), binary()) -> any().
+-spec unregister_iq_handler(binary(), binary()) -> ok.
 unregister_iq_handler(Host, XMLNS) ->
-    ejabberd_local ! {unregister_iq_handler, Host, XMLNS}.
+    ejabberd_local ! {unregister_iq_handler, Host, XMLNS},
+    ok.
 
 -spec bounce_resource_packet(jid(), jid(), stanza()) -> stop.
 bounce_resource_packet(_From, #jid{lresource = <<"">>}, #presence{}) ->
@@ -237,11 +231,6 @@ handle_info({route, From, To, Packet}, State) ->
 		     [Reason, {From, To, Packet}]);
       _ -> ok
     end,
-    {noreply, State};
-handle_info({register_iq_handler, Host, XMLNS, Module,
-	     Function},
-	    State) ->
-    ets:insert(?IQTABLE, {{Host, XMLNS}, Module, Function}),
     {noreply, State};
 handle_info({register_iq_handler, Host, XMLNS, Module,
 	     Function, Opts},

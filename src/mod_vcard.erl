@@ -98,8 +98,9 @@ start(Host, Opts) ->
        true ->
 	    ok
     end,
-    register(gen_mod:get_module_proc(Host, ?PROCNAME),
-	     spawn(?MODULE, init, [MyHost, Host, Search])).
+    Pid = spawn(?MODULE, init, [MyHost, Host, Search]),
+    register(gen_mod:get_module_proc(Host, ?PROCNAME), Pid),
+    {ok, Pid}.
 
 init(Host, ServerHost, Search) ->
     case Search of

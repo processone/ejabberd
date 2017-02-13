@@ -60,7 +60,7 @@ start_link(Host, Module, Function) ->
     gen_server:start_link(?MODULE, [Host, Module, Function],
 			  []).
 
--spec add_iq_handler(module(), binary(), binary(), module(), atom(), type()) -> any().
+-spec add_iq_handler(module(), binary(), binary(), module(), atom(), type()) -> ok.
 
 add_iq_handler(Component, Host, NS, Module, Function,
 	       Type) ->
@@ -89,7 +89,7 @@ add_iq_handler(Component, Host, NS, Module, Function,
 		Function, parallel)
     end.
 
--spec remove_iq_handler(component(), binary(), binary()) -> any().
+-spec remove_iq_handler(component(), binary(), binary()) -> ok.
 
 remove_iq_handler(Component, Host, NS) ->
     Component:unregister_iq_handler(Host, NS).

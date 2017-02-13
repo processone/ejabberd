@@ -55,7 +55,6 @@
 	 get_vh_session_list/1,
 	 get_vh_session_number/1,
 	 get_vh_by_backend/1,
-	 register_iq_handler/4,
 	 register_iq_handler/5,
 	 unregister_iq_handler/2,
 	 force_update_presence/1,
@@ -356,18 +355,17 @@ get_vh_session_number(Server) ->
     Mod = get_sm_backend(LServer),
     length(online(Mod:get_sessions(LServer))).
 
-register_iq_handler(Host, XMLNS, Module, Fun) ->
-    ejabberd_sm ! {register_iq_handler, Host, XMLNS, Module, Fun}.
-
--spec register_iq_handler(binary(), binary(), atom(), atom(), list()) -> any().
+-spec register_iq_handler(binary(), binary(), atom(), atom(), list()) -> ok.
 
 register_iq_handler(Host, XMLNS, Module, Fun, Opts) ->
-    ejabberd_sm ! {register_iq_handler, Host, XMLNS, Module, Fun, Opts}.
+    ejabberd_sm ! {register_iq_handler, Host, XMLNS, Module, Fun, Opts},
+    ok.
 
--spec unregister_iq_handler(binary(), binary()) -> any().
+-spec unregister_iq_handler(binary(), binary()) -> ok.
 
 unregister_iq_handler(Host, XMLNS) ->
-    ejabberd_sm ! {unregister_iq_handler, Host, XMLNS}.
+    ejabberd_sm ! {unregister_iq_handler, Host, XMLNS},
+    ok.
 
 %% Why the hell do we have so many similar kicks?
 c2s_handle_info(#{lang := Lang} = State, replaced) ->
@@ -420,9 +418,6 @@ handle_info({route, From, To, Packet}, State) ->
 	_ ->
 	    ok
     end,
-    {noreply, State};
-handle_info({register_iq_handler, Host, XMLNS, Module, Function}, State) ->
-    ets:insert(sm_iqtable, {{Host, XMLNS}, Module, Function}),
     {noreply, State};
 handle_info({register_iq_handler, Host, XMLNS, Module,
 	     Function, Opts},
@@ -744,9 +739,6 @@ process_iq(From, To, #iq{type = T, lang = Lang, sub_els = [El]} = Packet)
     XMLNS = xmpp:get_ns(El),
     Host = To#jid.lserver,
     case ets:lookup(sm_iqtable, {Host, XMLNS}) of
-	[{_, Module, Function}] ->
-	    gen_iq_handler:handle(Host, Module, Function, no_queue,
-				  From, To, Packet);
 	[{_, Module, Function, Opts}] ->
 	    gen_iq_handler:handle(Host, Module, Function, Opts,
 				  From, To, Packet);

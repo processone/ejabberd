@@ -51,7 +51,7 @@
 -type opts() :: [{atom(), any()}].
 -type db_type() :: sql | mnesia | riak.
 
--callback start(binary(), opts()) -> any().
+-callback start(binary(), opts()) -> ok | {ok, pid()}.
 -callback stop(binary()) -> any().
 -callback mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
 -callback depends(binary(), opts()) -> [{module(), hard | soft}].
@@ -145,19 +145,24 @@ start_module(Host, Module) ->
 	    {error, not_found_in_config}
     end.
 
--spec start_module(binary(), atom(), opts()) -> any().
+-spec start_module(binary(), atom(), opts()) -> ok | {ok, pid()}.
 
 start_module(Host, Module, Opts0) ->
+    ?DEBUG("loading ~s at ~s", [Module, Host]),
     Opts = validate_opts(Module, Opts0),
     ets:insert(ejabberd_modules,
 	       #ejabberd_module{module_host = {Module, Host},
 				opts = Opts}),
-    try Module:start(Host, Opts) catch
-      Class:Reason ->
+    try case Module:start(Host, Opts) of
+	    ok -> ok;
+	    {ok, Pid} when is_pid(Pid) -> {ok, Pid};
+	    Err -> erlang:error(Err)
+	end
+    catch Class:Reason ->
 	  ets:delete(ejabberd_modules, {Module, Host}),
 	  ErrorText =
-	      io_lib:format("Problem starting the module ~p for host "
-			    "~p ~n options: ~p~n ~p: ~p~n~p",
+	      io_lib:format("Problem starting the module ~s for host "
+			    "~s ~n options: ~p~n ~p: ~p~n~p",
 			    [Module, Host, Opts, Class, Reason,
 			     erlang:get_stacktrace()]),
 	  ?CRITICAL_MSG(ErrorText, []),

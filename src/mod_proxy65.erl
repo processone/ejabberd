@@ -51,17 +51,15 @@
 
 start(Host, Opts) ->
     case mod_proxy65_service:add_listener(Host, Opts) of
-      {error, _} = Err -> erlang:error(Err);
-      _ ->
-	  Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-	  ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
-		       transient, infinity, supervisor, [?MODULE]},
-	  case supervisor:start_child(ejabberd_sup, ChildSpec) of
-	      {error, _} = Err -> erlang:error(Err);
-	      _ ->
-		  Mod = gen_mod:ram_db_mod(global, ?MODULE),
-		  Mod:init()
-	  end
+	{error, _} = Err ->
+	    Err;
+	_ ->
+	    Mod = gen_mod:ram_db_mod(global, ?MODULE),
+	    Mod:init(),
+	    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+	    ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
+			 transient, infinity, supervisor, [?MODULE]},
+	    supervisor:start_child(ejabberd_sup, ChildSpec)
     end.
 
 stop(Host) ->
