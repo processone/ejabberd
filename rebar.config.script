@@ -213,7 +213,7 @@ end,
 TestConfigFile = filename:join([Cwd, "test", "config.ctc"]),
 TestConfig = case file:read_file_info(TestConfigFile) of
 		 {ok, _} ->
-		     ["-userconfig ct_config_plain ", TestConfigFile, " "];
+		     [" -userconfig ct_config_plain ", TestConfigFile, " "];
 		 _ ->
 		     ""
 	     end,
