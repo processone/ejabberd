@@ -92,14 +92,14 @@ start(Host, Opts) ->
     start_jiffy(Opts),
     Mod = gen_mod:ram_db_mod(global, ?MODULE),
     Mod:init(),
-    TmpSup = gen_mod:get_module_proc(Host, ?PROCNAME),
+    TmpSup = gen_mod:get_module_proc(Host, ?MODULE),
     TmpSupSpec = {TmpSup,
 		  {ejabberd_tmp_sup, start_link, [TmpSup, ejabberd_bosh]},
 		  permanent, infinity, supervisor, [ejabberd_tmp_sup]},
     supervisor:start_child(ejabberd_sup, TmpSupSpec).
 
 stop(Host) ->
-    TmpSup = gen_mod:get_module_proc(Host, ?PROCNAME),
+    TmpSup = gen_mod:get_module_proc(Host, ?MODULE),
     supervisor:terminate_child(ejabberd_sup, TmpSup),
     supervisor:delete_child(ejabberd_sup, TmpSup).
 

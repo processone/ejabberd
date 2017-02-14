@@ -33,13 +33,14 @@
 -protocol({xep, 160, '1.0'}).
 -protocol({xep, 334, '0.2'}).
 
--define(GEN_SERVER, p1_server).
+-ifndef(GEN_SERVER).
+-define(GEN_SERVER, gen_server).
+-endif.
 -behaviour(?GEN_SERVER).
 
 -behaviour(gen_mod).
 
 -export([start/2,
-	 start_link/2,
 	 stop/1,
 	 store_packet/4,
 	 store_offline_msg/5,
@@ -83,8 +84,6 @@
 
 -include("mod_offline.hrl").
 
--define(PROCNAME, ejabberd_offline).
-
 -define(OFFLINE_TABLE_LOCK_THRESHOLD, 1000).
 
 %% default value for the maximum number of user messages
@@ -112,22 +111,11 @@
 -callback remove_all_messages(binary(), binary()) -> {atomic, any()}.
 -callback count_messages(binary(), binary()) -> non_neg_integer().
 
-start_link(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    ?GEN_SERVER:start_link({local, Proc}, ?MODULE,
-                           [Host, Opts], []).
-
 start(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
-		 transient, 1000, worker, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, ChildSpec).
+    gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc),
-    ok.
+    gen_mod:stop_child(?MODULE, Host).
 
 depends(_Host, _Opts) ->
     [].
@@ -478,7 +466,7 @@ store_packet(Acc, From, To, Packet) ->
 			NewPacket ->
 			    TimeStamp = p1_time_compat:timestamp(),
 			    Expire = find_x_expire(TimeStamp, NewPacket),
-			    gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME) !
+			    gen_mod:get_module_proc(To#jid.lserver, ?MODULE) !
 				#offline_msg{us = {LUser, LServer},
 					     timestamp = TimeStamp,
 					     expire = Expire,

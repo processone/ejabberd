@@ -26,9 +26,12 @@
 -module(gen_mod).
 
 -behaviour(ejabberd_config).
+-behaviour(supervisor).
 
 -author('alexey@process-one.net').
 
+-export([init/1, start_link/0, start_child/3, start_child/4,
+	 stop_child/1, stop_child/2]).
 -export([start/0, start_module/2, start_module/3,
 	 stop_module/2, stop_module_keep_config/2, get_opt/3,
 	 get_opt/4, get_opt_host/3, opt_type/1,
@@ -59,14 +62,43 @@
 -export_type([opts/0]).
 -export_type([db_type/0]).
 
-%%behaviour_info(callbacks) -> [{start, 2}, {stop, 1}];
-%%behaviour_info(_Other) -> undefined.
+-ifndef(GEN_SERVER).
+-define(GEN_SERVER, gen_server).
+-endif.
 
 start() ->
+    Spec = {ejabberd_gen_mod_sup, {?MODULE, start_link, []},
+	    permanent, infinity, supervisor, [?MODULE]},
+    supervisor:start_child(ejabberd_sup, Spec).
+
+start_link() ->
+    supervisor:start_link({local, ejabberd_gen_mod_sup}, ?MODULE, []).
+
+init([]) ->
     ets:new(ejabberd_modules,
 	    [named_table, public,
 	     {keypos, #ejabberd_module.module_host}]),
-    ok.
+    {ok, {{one_for_one, 10, 1}, []}}.
+
+-spec start_child(module(), binary() | global, opts()) -> ok | {error, any()}.
+start_child(Mod, Host, Opts) ->
+    start_child(Mod, Host, Opts, get_module_proc(Host, Mod)).
+
+-spec start_child(module(), binary() | global, opts(), atom()) -> ok | {error, any()}.
+start_child(Mod, Host, Opts, Proc) ->
+    Spec = {Proc, {?GEN_SERVER, start_link,
+		   [{local, Proc}, Mod, [Host, Opts], []]},
+            transient, 2000, worker, [Mod]},
+    supervisor:start_child(ejabberd_gen_mod_sup, Spec).
+
+-spec stop_child(module(), binary() | global) -> ok.
+stop_child(Mod, Host) ->
+    stop_child(get_module_proc(Host, Mod)).
+
+-spec stop_child(atom()) -> ok | {error, any()}.
+stop_child(Proc) ->
+    supervisor:terminate_child(ejabberd_gen_mod_sup, Proc),
+    supervisor:delete_child(ejabberd_gen_mod_sup, Proc).
 
 -spec start_modules() -> any().
 
@@ -500,7 +532,6 @@ get_hosts(Opts, Prefix) ->
     end.
 
 -spec get_module_proc(binary(), {frontend, atom()} | atom()) -> atom().
-
 get_module_proc(Host, {frontend, Base}) ->
     get_module_proc(<<"frontend_", Host/binary>>, Base);
 get_module_proc(Host, Base) ->

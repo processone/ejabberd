@@ -24,7 +24,9 @@
 %%%-------------------------------------------------------------------
 -module(mod_sip_registrar).
 
--define(GEN_SERVER, p1_server).
+-ifndef(GEN_SERVER).
+-define(GEN_SERVER, gen_server).
+-endif.
 -behaviour(?GEN_SERVER).
 
 %% API

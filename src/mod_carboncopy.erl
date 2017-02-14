@@ -42,7 +42,6 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
--define(PROCNAME, ?MODULE).
 
 -type direction() :: sent | received.
 

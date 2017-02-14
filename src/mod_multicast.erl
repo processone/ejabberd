@@ -34,7 +34,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start_link/2, start/2, stop/1]).
+-export([start/2, stop/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_info/2, handle_call/3,
@@ -97,8 +97,6 @@
 
 -define(VERSION_MULTICAST, <<"$Revision: 440 $ ">>).
 
--define(PROCNAME, ejabberd_mod_multicast).
-
 -define(PURGE_PROCNAME,
 	ejabberd_mod_multicast_purgeloop).
 
@@ -118,23 +116,11 @@
 
 -define(DEFAULT_LIMIT_REMOTE_PRESENCE, 20).
 
-start_link(LServerS, Opts) ->
-    Proc = gen_mod:get_module_proc(LServerS, ?PROCNAME),
-    gen_server:start_link({local, Proc}, ?MODULE,
-			  [LServerS, Opts], []).
-
 start(LServerS, Opts) ->
-    Proc = gen_mod:get_module_proc(LServerS, ?PROCNAME),
-    ChildSpec = {Proc,
-		 {?MODULE, start_link, [LServerS, Opts]}, temporary,
-		 1000, worker, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, ChildSpec).
+    gen_mod:start_child(?MODULE, LServerS, Opts).
 
 stop(LServerS) ->
-    Proc = gen_mod:get_module_proc(LServerS, ?PROCNAME),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc),
-    ok.
+    gen_mod:stop_child(?MODULE, LServerS).
 
 %%====================================================================
 %% gen_server callbacks

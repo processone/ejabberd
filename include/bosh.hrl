@@ -47,5 +47,3 @@
 
 -define(HEADER(CType),
 	[CType, ?AC_ALLOW_ORIGIN, ?AC_ALLOW_HEADERS]).
-
--define(PROCNAME, ejabberd_mod_bosh).

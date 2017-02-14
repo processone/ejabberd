@@ -37,7 +37,7 @@
 	 disco_features/5, disco_items/5, depends/2,
 	 send_announcement_to_all/3, announce_commands/4,
 	 announce_items/4, mod_opt_type/1]).
--export([start_link/2, init/1, handle_call/3, handle_cast/2,
+-export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
@@ -56,34 +56,19 @@
 
 -record(state, {host :: binary()}).
 
--define(PROCNAME, ejabberd_announce).
-
 -define(NS_ADMINL(Sub), [<<"http:">>, <<"jabber.org">>, <<"protocol">>,
                          <<"admin">>, <<Sub>>]).
 
 tokenize(Node) -> str:tokens(Node, <<"/#">>).
 
 %%====================================================================
-%% API
-%%====================================================================
-start_link(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
-
-%%====================================================================
 %% gen_mod callbacks
 %%====================================================================
 start(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    Spec = {Proc, {?MODULE, start_link, [Host, Opts]},
-	    transient, 2000, worker, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, Spec).
+    gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc),
-    ok.
+    gen_mod:stop_child(?MODULE, Host).
 
 depends(_Host, _Opts) ->
     [{mod_adhoc, hard}].
@@ -155,7 +140,7 @@ code_change(_OldVsn, State, _Extra) ->
 %% Announcing via messages to a custom resource
 -spec announce(jid(), jid(), stanza()) -> ok | stop.
 announce(From, #jid{luser = <<>>} = To, #message{} = Packet) ->
-    Proc = gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME),
+    Proc = gen_mod:get_module_proc(To#jid.lserver, ?MODULE),
     Res = case To#jid.lresource of
 	      <<"announce/all">> ->
 		  gen_server:cast(Proc, {announce_all, From, To, Packet});
@@ -539,7 +524,7 @@ handle_adhoc_form(From, #jid{lserver = LServer} = To,
     Packet = #message{type = headline,
 		      body = xmpp:mk_text(Body),
 		      subject = xmpp:mk_text(Subject)},
-    Proc = gen_mod:get_module_proc(LServer, ?PROCNAME),
+    Proc = gen_mod:get_module_proc(LServer, ?MODULE),
     case {Node, Body} of
 	{?NS_ADMIN_DELETE_MOTD, _} ->
 	    if	Confirm ->
@@ -560,7 +545,7 @@ handle_adhoc_form(From, #jid{lserver = LServer} = To,
 	    %% Throw an error and give him/her a chance to send message again.
 	    {error, xmpp:err_not_acceptable(
 		      <<"No body provided for announce message">>, Lang)};
-	%% Now send the packet to ?PROCNAME.
+	%% Now send the packet to ?MODULE.
 	%% We don't use direct announce_* functions because it
 	%% leads to large delay in response and <iq/> queries processing
 	{?NS_ADMIN_ANNOUNCE, _} ->

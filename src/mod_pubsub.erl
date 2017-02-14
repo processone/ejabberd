@@ -86,13 +86,12 @@
 	 err_unsupported_access_model/0]).
 
 %% API and gen_server callbacks
--export([start_link/2, start/2, stop/1, init/1,
+-export([start/2, stop/1, init/1,
     handle_call/3, handle_cast/2, handle_info/2,
     terminate/2, code_change/3, depends/2]).
 
 -export([send_loop/1, mod_opt_type/1]).
 
--define(PROCNAME, ejabberd_mod_pubsub).
 -define(LOOPNAME, ejabberd_mod_pubsub_loop).
 
 %%====================================================================
@@ -219,21 +218,11 @@
     ).
 
 
-start_link(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
-
 start(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
-	    transient, 1000, worker, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, ChildSpec).
+    gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc),
-    ok.
+    gen_mod:stop_child(?MODULE, Host).
 
 %%====================================================================
 %% gen_server callbacks

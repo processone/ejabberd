@@ -41,7 +41,7 @@
          get_user_caps/2, import_start/2, import_stop/2]).
 
 %% gen_mod callbacks
--export([start/2, start_link/2, stop/1, depends/2]).
+-export([start/2, stop/1, depends/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_info/2, handle_call/3,
@@ -56,8 +56,6 @@
 -include("xmpp.hrl").
 -include("mod_caps.hrl").
 
--define(PROCNAME, ejabberd_mod_caps).
-
 -define(BAD_HASH_LIFETIME, 600).
 
 -record(state, {host = <<"">> :: binary()}).
@@ -69,21 +67,11 @@
 -callback caps_write(binary(), {binary(), binary()},
 		     non_neg_integer() | [binary()]) -> any().
 
-start_link(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:start_link({local, Proc}, ?MODULE,
-			  [Host, Opts], []).
-
 start(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
-		 transient, 1000, worker, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, ChildSpec).
+    gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    gen_mod:stop_child(?MODULE, Host).
 
 -spec get_features(binary(), nothing | caps()) -> [binary()].
 get_features(_Host, nothing) -> [];

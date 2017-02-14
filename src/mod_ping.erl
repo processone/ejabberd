@@ -45,7 +45,7 @@
 -define(DEFAULT_PING_INTERVAL, 60).
 
 %% API
--export([start_link/2, start_ping/2, stop_ping/2]).
+-export([start_ping/2, stop_ping/2]).
 
 %% gen_mod callbacks
 -export([start/2, stop/1]).
@@ -68,11 +68,6 @@
 %%====================================================================
 %% API
 %%====================================================================
-start_link(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    gen_server:start_link({local, Proc}, ?MODULE,
-			  [Host, Opts], []).
-
 -spec start_ping(binary(), jid()) -> ok.
 start_ping(Host, JID) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
@@ -87,16 +82,10 @@ stop_ping(Host, JID) ->
 %% gen_mod callbacks
 %%====================================================================
 start(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    PingSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
-		transient, 2000, worker, [?MODULE]},
-    supervisor:start_child(?SUPERVISOR, PingSpec).
+    gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(?SUPERVISOR, Proc),
-    ok.
+    gen_mod:stop_child(?MODULE, Host).
 
 %%====================================================================
 %% gen_server callbacks

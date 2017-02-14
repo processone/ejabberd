@@ -39,7 +39,7 @@
 	 depends/2, process_search/1, process_vcard/1, get_vcard/2,
 	 disco_items/5, disco_features/5, disco_identity/5,
 	 decode_iq_subel/1, mod_opt_type/1, set_vcard/3, make_vcard_search/4]).
--export([start_link/2, init/1, handle_call/3, handle_cast/2,
+-export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
@@ -48,8 +48,6 @@
 -include("mod_vcard.hrl").
 
 -define(JUD_MATCHES, 30).
-
--define(PROCNAME, ejabberd_mod_vcard).
 
 -callback init(binary(), gen_mod:opts()) -> any().
 -callback stop(binary()) -> any().
@@ -67,26 +65,13 @@
 -record(state, {host :: binary(), server_host :: binary()}).
 
 %%====================================================================
-%% API
-%%====================================================================
-start_link(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
-
-%%====================================================================
 %% gen_mod callbacks
 %%====================================================================
 start(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    Spec = {Proc, {?MODULE, start_link, [Host, Opts]},
-	    transient, 2000, worker, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, Spec).
+    gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc),
-    ok.
+    gen_mod:stop_child(?MODULE, Host).
 
 %%====================================================================
 %% gen_server callbacks

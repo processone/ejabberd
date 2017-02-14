@@ -34,8 +34,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start_link/2,
-	 start/2,
+-export([start/2,
 	 stop/1,
 	 room_destroyed/4,
 	 store_room/4,
@@ -83,8 +82,6 @@
          default_room_opts = [] :: list(),
          room_shaper = none :: shaper:shaper()}).
 
--define(PROCNAME, ejabberd_mod_muc).
-
 -type muc_room_opts() :: [{atom(), any()}].
 -callback init(binary(), gen_mod:opts()) -> any().
 -callback import(binary(), binary(), [binary()]) -> ok.
@@ -109,22 +106,12 @@
 %%====================================================================
 %% API
 %%====================================================================
-start_link(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:start_link({local, Proc}, ?MODULE,
-			  [Host, Opts], []).
-
 start(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
-		 transient, 1000, worker, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, ChildSpec).
+    gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
     Rooms = shutdown_rooms(Host),
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc),
+    gen_mod:stop_child(?MODULE, Host),
     {wait, Rooms}.
 
 depends(_Host, _Opts) ->
@@ -150,7 +137,7 @@ shutdown_rooms(Host) ->
 %%    In this case, the mod_muc process died before the room processes
 %%    So the message sending must be catched
 room_destroyed(Host, Room, Pid, ServerHost) ->
-    catch gen_mod:get_module_proc(ServerHost, ?PROCNAME) !
+    catch gen_mod:get_module_proc(ServerHost, ?MODULE) !
 	    {room_destroyed, {Room, Host}, Pid},
     ok.
 
@@ -158,7 +145,7 @@ room_destroyed(Host, Room, Pid, ServerHost) ->
 %% If Opts = default, the default room options are used.
 %% Else use the passed options as defined in mod_muc_room.
 create_room(Host, Name, From, Nick, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    Proc = gen_mod:get_module_proc(Host, ?MODULE),
     gen_server:call(Proc, {create, Name, From, Nick, Opts}).
 
 store_room(ServerHost, Host, Name, Opts) ->

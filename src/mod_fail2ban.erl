@@ -28,7 +28,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/2, start/2, stop/1, c2s_auth_result/3,
+-export([start/2, stop/1, c2s_auth_result/3,
 	 c2s_stream_started/2]).
 
 -export([init/1, handle_call/3, handle_cast/2,
@@ -49,10 +49,6 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-start_link(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
-
 -spec c2s_auth_result(ejabberd_c2s:state(), boolean(), binary())
       -> ejabberd_c2s:state() | {stop, ejabberd_c2s:state()}.
 c2s_auth_result(#{ip := {Addr, _}, lserver := LServer} = State, false, _User) ->
@@ -111,16 +107,10 @@ c2s_stream_started(#{ip := {Addr, _}} = State, _) ->
 %%====================================================================
 start(Host, Opts) ->
     catch ets:new(failed_auth, [named_table, public]),
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
-		 transient, 1000, worker, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, ChildSpec).
+    gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc),
-    ok.
+    gen_mod:stop_child(?MODULE, Host).
 
 depends(_Host, _Opts) ->
     [].
