@@ -94,13 +94,15 @@ start(Host, Opts) ->
 
 stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    gen_server:call(Proc, stop),
-    supervisor:delete_child(?SUPERVISOR, Proc).
+    supervisor:terminate_child(ejabberd_sup, Proc),
+    supervisor:delete_child(?SUPERVISOR, Proc),
+    ok.
 
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
 init([Host, Opts]) ->
+    process_flag(trap_exit, true),
     SendPings = gen_mod:get_opt(send_pings, Opts,
                                 fun(B) when is_boolean(B) -> B end,
 				?DEFAULT_SEND_PINGS),

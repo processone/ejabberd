@@ -102,9 +102,9 @@ start(Host, Opts) ->
 
 stop(Host) ->
     Proc = get_proc_name(Host),
-    gen_server:call(Proc, stop),
     supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    supervisor:delete_child(ejabberd_sup, Proc),
+    ok.
 
 depends(_Host, _Opts) ->
     [].
@@ -135,6 +135,7 @@ init([Host, Opts]) ->
 	{DocRoot, AccessLog, AccessLogFD, DirectoryIndices,
 	 CustomHeaders, DefaultContentType, ContentTypes,
 	 UserAccess} ->
+	    process_flag(trap_exit, true),
 	    {ok, #state{host = Host,
 			accesslog = AccessLog,
 			accesslogfd = AccessLogFD,

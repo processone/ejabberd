@@ -231,8 +231,9 @@ start(Host, Opts) ->
 
 stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:call(Proc, stop),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    supervisor:terminate_child(ejabberd_sup, Proc),
+    supervisor:delete_child(ejabberd_sup, Proc),
+    ok.
 
 %%====================================================================
 %% gen_server callbacks
@@ -248,6 +249,7 @@ stop(Host) ->
 -spec init([binary() | [{_,_}],...]) -> {'ok',state()}.
 
 init([ServerHost, Opts]) ->
+    process_flag(trap_exit, true),
     ?DEBUG("pubsub init ~p ~p", [ServerHost, Opts]),
     Host = gen_mod:get_opt_host(ServerHost, Opts, <<"pubsub.@HOST@">>),
     ejabberd_router:register_route(Host, ServerHost),

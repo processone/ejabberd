@@ -123,7 +123,7 @@ start(Host, Opts) ->
 stop(Host) ->
     Rooms = shutdown_rooms(Host),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:call(Proc, stop),
+    supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc),
     {wait, Rooms}.
 
@@ -230,6 +230,7 @@ get_online_rooms_by_user(ServerHost, LUser, LServer) ->
 %%====================================================================
 
 init([Host, Opts]) ->
+    process_flag(trap_exit, true),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
                              one_queue),
     MyHost = gen_mod:get_opt_host(Host, Opts,

@@ -55,6 +55,7 @@ start_link(Host, Opts) ->
 			  [Host, Opts], []).
 
 init([Host, Opts]) ->
+    process_flag(trap_exit, true),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
                              one_queue),
     MyHost = gen_mod:get_opt_host(Host, Opts, <<"proxy.@HOST@">>),

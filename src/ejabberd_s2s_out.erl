@@ -153,7 +153,7 @@ process_downgraded(State, _StreamStart) ->
     send(State, xmpp:serr_unsupported_version()).
 
 %%%===================================================================
-%%% gen_server callbacks
+%%% xmpp_stream_out callbacks
 %%%===================================================================
 tls_options(#{server := LServer}) ->
     ejabberd_s2s:tls_options(LServer, []).

@@ -29,13 +29,16 @@
 -module(mod_announce).
 -author('alexey@process-one.net').
 
+-behaviour(gen_server).
 -behaviour(gen_mod).
 
--export([start/2, init/0, stop/1, export/1, import_info/0,
+-export([start/2, stop/1, export/1, import_info/0,
 	 import_start/2, import/5, announce/3, send_motd/1, disco_identity/5,
 	 disco_features/5, disco_items/5, depends/2,
 	 send_announcement_to_all/3, announce_commands/4,
 	 announce_items/4, mod_opt_type/1]).
+-export([start_link/2, init/1, handle_call/3, handle_cast/2,
+	 handle_info/2, terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -51,6 +54,8 @@
 -callback is_motd_user(binary(), binary()) -> boolean().
 -callback set_motd_user(binary(), binary()) -> {atomic, any()}.
 
+-record(state, {host :: binary()}).
+
 -define(PROCNAME, ejabberd_announce).
 
 -define(NS_ADMINL(Sub), [<<"http:">>, <<"jabber.org">>, <<"protocol">>,
@@ -58,7 +63,36 @@
 
 tokenize(Node) -> str:tokens(Node, <<"/#">>).
 
+%%====================================================================
+%% API
+%%====================================================================
+start_link(Host, Opts) ->
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
+
+%%====================================================================
+%% gen_mod callbacks
+%%====================================================================
 start(Host, Opts) ->
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    Spec = {Proc, {?MODULE, start_link, [Host, Opts]},
+	    transient, 2000, worker, [?MODULE]},
+    supervisor:start_child(ejabberd_sup, Spec).
+
+stop(Host) ->
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    supervisor:terminate_child(ejabberd_sup, Proc),
+    supervisor:delete_child(ejabberd_sup, Proc),
+    ok.
+
+depends(_Host, _Opts) ->
+    [{mod_adhoc, hard}].
+
+%%====================================================================
+%% gen_server callbacks
+%%====================================================================
+init([Host, Opts]) ->
+    process_flag(trap_exit, true),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
     ejabberd_hooks:add(local_send_to_resource_hook, Host,
@@ -70,65 +104,53 @@ start(Host, Opts) ->
     ejabberd_hooks:add(adhoc_local_commands, Host, ?MODULE, announce_commands, 50),
     ejabberd_hooks:add(c2s_self_presence, Host,
 		       ?MODULE, send_motd, 50),
-    Pid = proc_lib:spawn(?MODULE, init, []),
-    register(gen_mod:get_module_proc(Host, ?PROCNAME), Pid),
-    {ok, Pid}.
+    {ok, #state{host = Host}}.
 
-depends(_Host, _Opts) ->
-    [{mod_adhoc, hard}].
+handle_call(_Call, _From, State) ->
+    {noreply, State}.
 
-init() ->
-    loop().
-
-loop() ->
-    receive
+handle_cast(Msg, State) ->
+    case Msg of
 	{announce_all, From, To, Packet} ->
-	    announce_all(From, To, Packet),
-	    loop();
+	    announce_all(From, To, Packet);
 	{announce_all_hosts_all, From, To, Packet} ->
-	    announce_all_hosts_all(From, To, Packet),
-	    loop();
+	    announce_all_hosts_all(From, To, Packet);
 	{announce_online, From, To, Packet} ->
-	    announce_online(From, To, Packet),
-	    loop();
+	    announce_online(From, To, Packet);
 	{announce_all_hosts_online, From, To, Packet} ->
-	    announce_all_hosts_online(From, To, Packet),
-	    loop();
+	    announce_all_hosts_online(From, To, Packet);
 	{announce_motd, From, To, Packet} ->
-	    announce_motd(From, To, Packet),
-	    loop();
+	    announce_motd(From, To, Packet);
 	{announce_all_hosts_motd, From, To, Packet} ->
-	    announce_all_hosts_motd(From, To, Packet),
-	    loop();
+	    announce_all_hosts_motd(From, To, Packet);
 	{announce_motd_update, From, To, Packet} ->
-	    announce_motd_update(From, To, Packet),
-	    loop();
+	    announce_motd_update(From, To, Packet);
 	{announce_all_hosts_motd_update, From, To, Packet} ->
-	    announce_all_hosts_motd_update(From, To, Packet),
-	    loop();
+	    announce_all_hosts_motd_update(From, To, Packet);
 	{announce_motd_delete, From, To, Packet} ->
-	    announce_motd_delete(From, To, Packet),
-	    loop();
+	    announce_motd_delete(From, To, Packet);
 	{announce_all_hosts_motd_delete, From, To, Packet} ->
-	    announce_all_hosts_motd_delete(From, To, Packet),
-	    loop();
+	    announce_all_hosts_motd_delete(From, To, Packet);
 	_ ->
-	    loop()
-    end.
+	    ?WARNING_MSG("unexpected cast: ~p", [Msg])
+    end,
+    {noreply, State}.
 
-stop(Host) ->
+handle_info(Info, State) ->
+    ?WARNING_MSG("unexpected info: ~p", [Info]),
+    {noreply, State}.
+
+terminate(_Reason, #state{host = Host}) ->
     ejabberd_hooks:delete(adhoc_local_commands, Host, ?MODULE, announce_commands, 50),
     ejabberd_hooks:delete(adhoc_local_items, Host, ?MODULE, announce_items, 50),
     ejabberd_hooks:delete(disco_local_identity, Host, ?MODULE, disco_identity, 50),
     ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, disco_features, 50),
     ejabberd_hooks:delete(disco_local_items, Host, ?MODULE, disco_items, 50),
-    ejabberd_hooks:delete(local_send_to_resource_hook, Host,
-			  ?MODULE, announce, 50),
-    ejabberd_hooks:delete(c2s_self_presence, Host,
-			  ?MODULE, send_motd, 50),
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    exit(whereis(Proc), stop),
-    {wait, Proc}.
+    ejabberd_hooks:delete(local_send_to_resource_hook, Host, ?MODULE, announce, 50),
+    ejabberd_hooks:delete(c2s_self_presence, Host, ?MODULE, send_motd, 50).
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
 
 %% Announcing via messages to a custom resource
 -spec announce(jid(), jid(), stanza()) -> ok | stop.
@@ -136,31 +158,31 @@ announce(From, #jid{luser = <<>>} = To, #message{} = Packet) ->
     Proc = gen_mod:get_module_proc(To#jid.lserver, ?PROCNAME),
     Res = case To#jid.lresource of
 	      <<"announce/all">> ->
-		  Proc ! {announce_all, From, To, Packet};
+		  gen_server:cast(Proc, {announce_all, From, To, Packet});
 	      <<"announce/all-hosts/all">> ->
-		  Proc ! {announce_all_hosts_all, From, To, Packet};
+		  gen_server:cast(Proc, {announce_all_hosts_all, From, To, Packet});
 	      <<"announce/online">> ->
-		  Proc ! {announce_online, From, To, Packet};
+		  gen_server:cast(Proc, {announce_online, From, To, Packet});
 	      <<"announce/all-hosts/online">> ->
-		  Proc ! {announce_all_hosts_online, From, To, Packet};
+		  gen_server:cast(Proc, {announce_all_hosts_online, From, To, Packet});
 	      <<"announce/motd">> ->
-		  Proc ! {announce_motd, From, To, Packet};
+		  gen_server:cast(Proc, {announce_motd, From, To, Packet});
 	      <<"announce/all-hosts/motd">> ->
-		  Proc ! {announce_all_hosts_motd, From, To, Packet};
+		  gen_server:cast(Proc, {announce_all_hosts_motd, From, To, Packet});
 	      <<"announce/motd/update">> ->
-		  Proc ! {announce_motd_update, From, To, Packet};
+		  gen_server:cast(Proc, {announce_motd_update, From, To, Packet});
 	      <<"announce/all-hosts/motd/update">> ->
-		  Proc ! {announce_all_hosts_motd_update, From, To, Packet};
+		  gen_server:cast(Proc, {announce_all_hosts_motd_update, From, To, Packet});
 	      <<"announce/motd/delete">> ->
-		  Proc ! {announce_motd_delete, From, To, Packet};
+		  gen_server:cast(Proc, {announce_motd_delete, From, To, Packet});
 	      <<"announce/all-hosts/motd/delete">> ->
-		  Proc ! {announce_all_hosts_motd_delete, From, To, Packet};
+		  gen_server:cast(Proc, {announce_all_hosts_motd_delete, From, To, Packet});
 	      _ ->
-		  ok
+		  undefined
 	  end,
     case Res of
-	ok -> ok;
-	_ -> stop
+	ok -> stop;
+	_ -> ok
     end;
 announce(_From, _To, _Packet) ->
     ok.
@@ -521,14 +543,14 @@ handle_adhoc_form(From, #jid{lserver = LServer} = To,
     case {Node, Body} of
 	{?NS_ADMIN_DELETE_MOTD, _} ->
 	    if	Confirm ->
-		    Proc ! {announce_motd_delete, From, To, Packet},
+		    gen_server:cast(Proc, {announce_motd_delete, From, To, Packet}),
 		    Response;
 		true ->
 		    Response
 	    end;
 	{?NS_ADMIN_DELETE_MOTD_ALLHOSTS, _} ->
 	    if	Confirm ->
-		    Proc ! {announce_all_hosts_motd_delete, From, To, Packet},
+		    gen_server:cast(Proc, {announce_all_hosts_motd_delete, From, To, Packet}),
 		    Response;
 		true ->
 		    Response
@@ -542,28 +564,28 @@ handle_adhoc_form(From, #jid{lserver = LServer} = To,
 	%% We don't use direct announce_* functions because it
 	%% leads to large delay in response and <iq/> queries processing
 	{?NS_ADMIN_ANNOUNCE, _} ->
-	    Proc ! {announce_online, From, To, Packet},
+	    gen_server:cast(Proc, {announce_online, From, To, Packet}),
 	    Response;
 	{?NS_ADMIN_ANNOUNCE_ALLHOSTS, _} ->	    
-	    Proc ! {announce_all_hosts_online, From, To, Packet},
+	    gen_server:cast(Proc, {announce_all_hosts_online, From, To, Packet}),
 	    Response;
 	{?NS_ADMIN_ANNOUNCE_ALL, _} ->
-	    Proc ! {announce_all, From, To, Packet},
+	    gen_server:cast(Proc, {announce_all, From, To, Packet}),
 	    Response;
 	{?NS_ADMIN_ANNOUNCE_ALL_ALLHOSTS, _} ->	    
-	    Proc ! {announce_all_hosts_all, From, To, Packet},
+	    gen_server:cast(Proc, {announce_all_hosts_all, From, To, Packet}),
 	    Response;
 	{?NS_ADMIN_SET_MOTD, _} ->
-	    Proc ! {announce_motd, From, To, Packet},
+	    gen_server:cast(Proc, {announce_motd, From, To, Packet}),
 	    Response;
 	{?NS_ADMIN_SET_MOTD_ALLHOSTS, _} ->	    
-	    Proc ! {announce_all_hosts_motd, From, To, Packet},
+	    gen_server:cast(Proc, {announce_all_hosts_motd, From, To, Packet}),
 	    Response;
 	{?NS_ADMIN_EDIT_MOTD, _} ->
-	    Proc ! {announce_motd_update, From, To, Packet},
+	    gen_server:cast(Proc, {announce_motd_update, From, To, Packet}),
 	    Response;
 	{?NS_ADMIN_EDIT_MOTD_ALLHOSTS, _} ->	    
-	    Proc ! {announce_all_hosts_motd_update, From, To, Packet},
+	    gen_server:cast(Proc, {announce_all_hosts_motd_update, From, To, Packet}),
 	    Response;
 	Junk ->
 	    %% This can't happen, as we haven't registered any other

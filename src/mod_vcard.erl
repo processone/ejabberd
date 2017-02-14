@@ -30,14 +30,17 @@
 -protocol({xep, 54, '1.2'}).
 -protocol({xep, 55, '1.3'}).
 
+-behaviour(gen_server).
 -behaviour(gen_mod).
 
--export([start/2, init/3, stop/1, get_sm_features/5,
+-export([start/2, stop/1, get_sm_features/5,
 	 process_local_iq/1, process_sm_iq/1, string2lower/1,
 	 remove_user/2, export/1, import_info/0, import/5, import_start/2,
 	 depends/2, process_search/1, process_vcard/1, get_vcard/2,
 	 disco_items/5, disco_features/5, disco_identity/5,
 	 decode_iq_subel/1, mod_opt_type/1, set_vcard/3, make_vcard_search/4]).
+-export([start_link/2, init/1, handle_call/3, handle_cast/2,
+	 handle_info/2, terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -61,7 +64,35 @@
 -callback remove_user(binary(), binary()) -> {atomic, any()}.
 -callback is_search_supported(binary()) -> boolean().
 
+-record(state, {host :: binary(), server_host :: binary()}).
+
+%%====================================================================
+%% API
+%%====================================================================
+start_link(Host, Opts) ->
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
+
+%%====================================================================
+%% gen_mod callbacks
+%%====================================================================
 start(Host, Opts) ->
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    Spec = {Proc, {?MODULE, start_link, [Host, Opts]},
+	    transient, 2000, worker, [?MODULE]},
+    supervisor:start_child(ejabberd_sup, Spec).
+
+stop(Host) ->
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    supervisor:terminate_child(ejabberd_sup, Proc),
+    supervisor:delete_child(ejabberd_sup, Proc),
+    ok.
+
+%%====================================================================
+%% gen_server callbacks
+%%====================================================================
+init([Host, Opts]) ->
+    process_flag(trap_exit, true),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
     ejabberd_hooks:add(remove_user, Host, ?MODULE,
@@ -94,65 +125,55 @@ start(Host, Opts) ->
 	      process_local_iq_items, IQDisc),
 	    gen_iq_handler:add_iq_handler(
 	      ejabberd_local, MyHost, ?NS_DISCO_INFO, mod_disco,
-	      process_local_iq_info, IQDisc);
+	      process_local_iq_info, IQDisc),
+	    case Mod:is_search_supported(Host) of
+		false ->
+		    ?WARNING_MSG("vcard search functionality is "
+				 "not implemented for ~s backend",
+				 [gen_mod:db_type(Host, Opts, ?MODULE)]);
+		true ->
+		    ejabberd_router:register_route(MyHost, Host)
+	    end;
        true ->
 	    ok
     end,
-    Pid = spawn(?MODULE, init, [MyHost, Host, Search]),
-    register(gen_mod:get_module_proc(Host, ?PROCNAME), Pid),
-    {ok, Pid}.
+    {ok, #state{host = MyHost, server_host = Host}}.
 
-init(Host, ServerHost, Search) ->
-    case Search of
-      false -> loop(Host, ServerHost);
-      _ ->
-	  ejabberd_router:register_route(Host, ServerHost),
-	  Mod = gen_mod:db_mod(ServerHost, ?MODULE),
-	  case Mod:is_search_supported(ServerHost) of
-	      false ->
-		  ?WARNING_MSG("vcard search functionality is "
-			       "not implemented for ~s backend",
-			       [gen_mod:db_type(ServerHost, ?MODULE)]);
-	       true ->
-		  ejabberd_router:register_route(Host, ServerHost)
-	  end,
-	  loop(Host, ServerHost)
-    end.
+handle_call(_Call, _From, State) ->
+    {noreply, State}.
 
-loop(Host, ServerHost) ->
-    receive
-      {route, From, To, Packet} ->
-	  case catch do_route(From, To, Packet) of
-	    {'EXIT', Reason} -> ?ERROR_MSG("~p", [Reason]);
-	    _ -> ok
-	  end,
-	  loop(Host, ServerHost);
-      stop ->
-	    ejabberd_router:unregister_route(Host),
-	    ejabberd_hooks:delete(disco_local_items, Host, ?MODULE, disco_items, 100),
-	    ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, disco_features, 100),
-	    ejabberd_hooks:delete(disco_local_identity, Host, ?MODULE, disco_identity, 100),
-	    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_SEARCH),
-	    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
-	    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS),
-	    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO);
-      _ -> loop(Host, ServerHost)
-    end.
+handle_cast(Cast, State) ->
+    ?WARNING_MSG("unexpected cast: ~p", [Cast]),
+    {noreply, State}.
 
-stop(Host) ->
-    ejabberd_hooks:delete(remove_user, Host, ?MODULE,
-			  remove_user, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host,
-				     ?NS_VCARD),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
-				     ?NS_VCARD),
-    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE,
-			  get_sm_features, 50),
+handle_info({route, From, To, Packet}, State) ->
+    case catch do_route(From, To, Packet) of
+	{'EXIT', Reason} -> ?ERROR_MSG("~p", [Reason]);
+	_ -> ok
+    end,
+    {noreply, State};
+handle_info(Info, State) ->
+    ?WARNING_MSG("unexpected info: ~p", [Info]),
+    {noreply, State}.
+
+terminate(_Reason, #state{host = MyHost, server_host = Host}) ->
+    ejabberd_hooks:delete(remove_user, Host, ?MODULE, remove_user, 50),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_VCARD),
+    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
     Mod = gen_mod:db_mod(Host, ?MODULE),
     Mod:stop(Host),
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    Proc ! stop,
-    {wait, Proc}.
+    ejabberd_router:unregister_route(MyHost),
+    ejabberd_hooks:delete(disco_local_items, MyHost, ?MODULE, disco_items, 100),
+    ejabberd_hooks:delete(disco_local_features, MyHost, ?MODULE, disco_features, 100),
+    ejabberd_hooks:delete(disco_local_identity, MyHost, ?MODULE, disco_identity, 100),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_SEARCH),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_VCARD),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_ITEMS),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_INFO).
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
 
 do_route(From, To, #xmlel{name = <<"iq">>} = El) ->
     ejabberd_router:process_iq(From, To, El);

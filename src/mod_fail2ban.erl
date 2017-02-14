@@ -119,7 +119,8 @@ start(Host, Opts) ->
 stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
     supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    supervisor:delete_child(ejabberd_sup, Proc),
+    ok.
 
 depends(_Host, _Opts) ->
     [].
@@ -128,6 +129,7 @@ depends(_Host, _Opts) ->
 %%% gen_server callbacks
 %%%===================================================================
 init([Host, _Opts]) ->
+    process_flag(trap_exit, true),
     ejabberd_hooks:add(c2s_auth_result, Host, ?MODULE, c2s_auth_result, 100),
     ejabberd_hooks:add(c2s_stream_started, Host, ?MODULE, c2s_stream_started, 100),
     erlang:send_after(?CLEAN_INTERVAL, self(), clean),

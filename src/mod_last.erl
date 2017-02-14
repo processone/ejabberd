@@ -80,6 +80,8 @@ stop(Host) ->
 			  remove_user, 50),
     ejabberd_hooks:delete(unset_presence_hook, Host,
 			  ?MODULE, on_presence_update, 50),
+    ejabberd_hooks:delete(privacy_check_packet, Host, ?MODULE,
+			  privacy_check_packet, 30),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host,
 				     ?NS_LAST),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,

@@ -82,7 +82,6 @@ start(Host, Opts) ->
 
 stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:call(Proc, stop),
     supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc).
 
@@ -252,6 +251,7 @@ depends(_Host, _Opts) ->
     [].
 
 init([Host, Opts]) ->
+    process_flag(trap_exit, true),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
     MaxSize = gen_mod:get_opt(cache_size, Opts,

@@ -358,14 +358,13 @@ get_vh_session_number(Server) ->
 -spec register_iq_handler(binary(), binary(), atom(), atom(), list()) -> ok.
 
 register_iq_handler(Host, XMLNS, Module, Fun, Opts) ->
-    ejabberd_sm ! {register_iq_handler, Host, XMLNS, Module, Fun, Opts},
-    ok.
+    gen_server:cast(?MODULE,
+		    {register_iq_handler, Host, XMLNS, Module, Fun, Opts}).
 
 -spec unregister_iq_handler(binary(), binary()) -> ok.
 
 unregister_iq_handler(Host, XMLNS) ->
-    ejabberd_sm ! {unregister_iq_handler, Host, XMLNS},
-    ok.
+    gen_server:cast(?MODULE, {unregister_iq_handler, Host, XMLNS}).
 
 %% Why the hell do we have so many similar kicks?
 c2s_handle_info(#{lang := Lang} = State, replaced) ->
@@ -408,6 +407,21 @@ init([]) ->
 handle_call(_Request, _From, State) ->
     Reply = ok, {reply, Reply, State}.
 
+handle_cast({register_iq_handler, Host, XMLNS, Module,
+	     Function, Opts},
+	    State) ->
+    ets:insert(sm_iqtable,
+	       {{Host, XMLNS}, Module, Function, Opts}),
+    {noreply, State};
+handle_cast({unregister_iq_handler, Host, XMLNS},
+	    State) ->
+    case ets:lookup(sm_iqtable, {Host, XMLNS}) of
+      [{_, Module, Function, Opts}] ->
+	  gen_iq_handler:stop_iq_handler(Module, Function, Opts);
+      _ -> ok
+    end,
+    ets:delete(sm_iqtable, {Host, XMLNS}),
+    {noreply, State};
 handle_cast(_Msg, State) -> {noreply, State}.
 
 handle_info({route, From, To, Packet}, State) ->
@@ -419,22 +433,9 @@ handle_info({route, From, To, Packet}, State) ->
 	    ok
     end,
     {noreply, State};
-handle_info({register_iq_handler, Host, XMLNS, Module,
-	     Function, Opts},
-	    State) ->
-    ets:insert(sm_iqtable,
-	       {{Host, XMLNS}, Module, Function, Opts}),
-    {noreply, State};
-handle_info({unregister_iq_handler, Host, XMLNS},
-	    State) ->
-    case ets:lookup(sm_iqtable, {Host, XMLNS}) of
-      [{_, Module, Function, Opts}] ->
-	  gen_iq_handler:stop_iq_handler(Module, Function, Opts);
-      _ -> ok
-    end,
-    ets:delete(sm_iqtable, {Host, XMLNS}),
-    {noreply, State};
-handle_info(_Info, State) -> {noreply, State}.
+handle_info(Info, State) ->
+    ?WARNING_MSG("unexpected info: ~p", [Info]),
+    {noreply, State}.
 
 terminate(_Reason, _State) ->
     lists:foreach(

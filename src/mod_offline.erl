@@ -43,7 +43,6 @@
 	 stop/1,
 	 store_packet/4,
 	 store_offline_msg/5,
-	 resend_offline_messages/2,
 	 c2s_self_presence/1,
 	 get_sm_features/5,
 	 get_sm_identity/5,
@@ -138,6 +137,7 @@ depends(_Host, _Opts) ->
 %%====================================================================
 
 init([Host, Opts]) ->
+    process_flag(trap_exit, true),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
@@ -543,22 +543,6 @@ find_x_expire(TimeStamp, Msg) ->
 	    {MegaSecs1, Secs1, MicroSecs};
 	false ->
 	    never
-    end.
-
-resend_offline_messages(User, Server) ->
-    LUser = jid:nodeprep(User),
-    LServer = jid:nameprep(Server),
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    case Mod:pop_messages(LUser, LServer) of
-      {ok, Rs} ->
-	  lists:foreach(
-	    fun(R) ->
-		    case offline_msg_to_route(LServer, R) of
-			error -> ok;
-			RouteMsg -> ejabberd_sm ! RouteMsg
-		    end
-	    end, lists:keysort(#offline_msg.timestamp, Rs));
-      _ -> ok
     end.
 
 c2s_self_presence({_Pres, #{resend_offline := false}} = Acc) ->

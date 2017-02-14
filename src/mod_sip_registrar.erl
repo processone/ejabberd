@@ -177,6 +177,7 @@ ping(SIPSocket) ->
 %%% gen_server callbacks
 %%%===================================================================
 init([]) ->
+    process_flag(trap_exit, true),
     update_table(),
     ejabberd_mnesia:create(?MODULE, sip_session,
 			[{ram_copies, [node()]},

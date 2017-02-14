@@ -64,8 +64,9 @@ start(Host, Opts) ->
 
 stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    gen_server:call(Proc, stop),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    supervisor:terminate_child(ejabberd_sup, Proc),
+    supervisor:delete_child(ejabberd_sup, Proc),
+    ok.
 
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(namespaces) -> validate_fun();
@@ -125,6 +126,7 @@ disco_sm_identity(Acc, From, To, Node, Lang) ->
 %%% gen_server callbacks
 %%%===================================================================
 init([Host, _Opts]) ->
+    process_flag(trap_exit, true),
     ejabberd_hooks:add(component_connected, ?MODULE,
 		       component_connected, 50),
     ejabberd_hooks:add(component_disconnected, ?MODULE,

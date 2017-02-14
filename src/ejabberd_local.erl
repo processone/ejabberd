@@ -152,7 +152,7 @@ register_iq_response_handler(_Host, ID, Module,
 		undefined -> ?IQ_TIMEOUT;
 		N when is_integer(N), N > 0 -> N
 	      end,
-    TRef = erlang:start_timer(Timeout, ejabberd_local, ID),
+    TRef = erlang:start_timer(Timeout, ?MODULE, ID),
     mnesia:dirty_write(#iq_response{id = ID,
 				    module = Module,
 				    function = Function,
@@ -161,9 +161,8 @@ register_iq_response_handler(_Host, ID, Module,
 -spec register_iq_handler(binary(), binary(), module(), function(),
 			  gen_iq_handler:opts()) -> ok.
 register_iq_handler(Host, XMLNS, Module, Fun, Opts) ->
-    ejabberd_local !
-	{register_iq_handler, Host, XMLNS, Module, Fun, Opts},
-    ok.
+    gen_server:cast(?MODULE,
+		    {register_iq_handler, Host, XMLNS, Module, Fun, Opts}).
 
 -spec unregister_iq_response_handler(binary(), binary()) -> ok.
 unregister_iq_response_handler(_Host, ID) ->
@@ -171,8 +170,7 @@ unregister_iq_response_handler(_Host, ID) ->
 
 -spec unregister_iq_handler(binary(), binary()) -> ok.
 unregister_iq_handler(Host, XMLNS) ->
-    ejabberd_local ! {unregister_iq_handler, Host, XMLNS},
-    ok.
+    gen_server:cast(?MODULE, {unregister_iq_handler, Host, XMLNS}).
 
 -spec bounce_resource_packet(jid(), jid(), stanza()) -> stop.
 bounce_resource_packet(_From, #jid{lresource = <<"">>}, #presence{}) ->
@@ -222,6 +220,21 @@ init([]) ->
 handle_call(_Request, _From, State) ->
     Reply = ok, {reply, Reply, State}.
 
+handle_cast({register_iq_handler, Host, XMLNS, Module,
+	     Function, Opts},
+	    State) ->
+    ets:insert(?IQTABLE,
+	       {{Host, XMLNS}, Module, Function, Opts}),
+    {noreply, State};
+handle_cast({unregister_iq_handler, Host, XMLNS},
+	    State) ->
+    case ets:lookup(?IQTABLE, {Host, XMLNS}) of
+      [{_, Module, Function, Opts}] ->
+	  gen_iq_handler:stop_iq_handler(Module, Function, Opts);
+      _ -> ok
+    end,
+    ets:delete(?IQTABLE, {Host, XMLNS}),
+    {noreply, State};
 handle_cast(_Msg, State) -> {noreply, State}.
 
 handle_info({route, From, To, Packet}, State) ->
@@ -232,25 +245,11 @@ handle_info({route, From, To, Packet}, State) ->
       _ -> ok
     end,
     {noreply, State};
-handle_info({register_iq_handler, Host, XMLNS, Module,
-	     Function, Opts},
-	    State) ->
-    ets:insert(?IQTABLE,
-	       {{Host, XMLNS}, Module, Function, Opts}),
-    {noreply, State};
-handle_info({unregister_iq_handler, Host, XMLNS},
-	    State) ->
-    case ets:lookup(?IQTABLE, {Host, XMLNS}) of
-      [{_, Module, Function, Opts}] ->
-	  gen_iq_handler:stop_iq_handler(Module, Function, Opts);
-      _ -> ok
-    end,
-    ets:delete(?IQTABLE, {Host, XMLNS}),
-    {noreply, State};
 handle_info({timeout, _TRef, ID}, State) ->
     process_iq_timeout(ID),
     {noreply, State};
-handle_info(_Info, State) ->
+handle_info(Info, State) ->
+    ?WARNING_MSG("unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->

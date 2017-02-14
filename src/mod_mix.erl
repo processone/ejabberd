@@ -134,6 +134,7 @@ process_iq(#iq{lang = Lang} = IQ) ->
 %%% gen_server callbacks
 %%%===================================================================
 init([ServerHost, Opts]) ->
+    process_flag(trap_exit, true),
     Host = gen_mod:get_opt_host(ServerHost, Opts, <<"mix.@HOST@">>),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
                              one_queue),

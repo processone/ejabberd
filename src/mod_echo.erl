@@ -68,9 +68,9 @@ start(Host, Opts) ->
 
 stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:call(Proc, stop),
     supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    supervisor:delete_child(ejabberd_sup, Proc),
+    ok.
 
 %%====================================================================
 %% gen_server callbacks
@@ -84,6 +84,7 @@ stop(Host) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
+    process_flag(trap_exit, true),
     MyHost = gen_mod:get_opt_host(Host, Opts,
 				  <<"echo.@HOST@">>),
     ejabberd_router:register_route(MyHost, Host),

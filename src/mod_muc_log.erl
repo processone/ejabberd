@@ -85,8 +85,9 @@ start(Host, Opts) ->
 
 stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:call(Proc, stop),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    supervisor:terminate_child(ejabberd_sup, Proc),
+    supervisor:delete_child(ejabberd_sup, Proc),
+    ok.
 
 add_to_log(Host, Type, Data, Room, Opts) ->
     gen_server:cast(get_proc_name(Host),
@@ -115,6 +116,7 @@ depends(_Host, _Opts) ->
 %% gen_server callbacks
 %%====================================================================
 init([Host, Opts]) ->
+    process_flag(trap_exit, true),
     OutDir = gen_mod:get_opt(outdir, Opts,
                              fun iolist_to_binary/1,
                              <<"www/muc">>),

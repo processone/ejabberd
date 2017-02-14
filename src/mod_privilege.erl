@@ -62,8 +62,9 @@ start(Host, Opts) ->
 
 stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    gen_server:call(Proc, stop),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    supervisor:terminate_child(ejabberd_sup, Proc),
+    supervisor:delete_child(ejabberd_sup, Proc),
+    ok.
 
 mod_opt_type(roster) -> v_roster();
 mod_opt_type(message) -> v_message();
@@ -188,6 +189,7 @@ process_presence_in(Acc) ->
 %%% gen_server callbacks
 %%%===================================================================
 init([Host, _Opts]) ->
+    process_flag(trap_exit, true),
     ejabberd_hooks:add(component_connected, ?MODULE,
                        component_connected, 50),
     ejabberd_hooks:add(component_disconnected, ?MODULE,

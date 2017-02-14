@@ -104,7 +104,8 @@ start(Host, Opts) ->
 stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
     supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    supervisor:delete_child(ejabberd_sup, Proc),
+    ok.
 
 depends(_Host, _Opts) ->
     [{mod_roster, hard}].
@@ -237,6 +238,7 @@ process_subscription(Direction, User, Server, JID,
 %% gen_server callbacks
 %%====================================================================
 init([Host, Opts]) ->
+    process_flag(trap_exit, true),
     State = parse_options(Host, Opts),
     cache_tab:new(shared_roster_ldap_user,
 		  [{max_size, State#state.user_cache_size}, {lru, false},

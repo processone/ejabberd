@@ -132,15 +132,16 @@ start(LServerS, Opts) ->
 
 stop(LServerS) ->
     Proc = gen_mod:get_module_proc(LServerS, ?PROCNAME),
-    gen_server:call(Proc, stop),
     supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    supervisor:delete_child(ejabberd_sup, Proc),
+    ok.
 
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
 
 init([LServerS, Opts]) ->
+    process_flag(trap_exit, true),
     LServiceS = gen_mod:get_opt_host(LServerS, Opts,
 				     <<"multicast.@HOST@">>),
     Access = gen_mod:get_opt(access, Opts,
