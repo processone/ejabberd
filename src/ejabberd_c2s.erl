@@ -428,22 +428,24 @@ handle_unauthenticated_packet(Pkt, #{lserver := LServer} = State) ->
 handle_authenticated_packet(Pkt, #{lserver := LServer} = State) when not ?is_stanza(Pkt) ->
     ejabberd_hooks:run_fold(c2s_authenticated_packet,
 			    LServer, State, [Pkt]);
-handle_authenticated_packet(Pkt, #{lserver := LServer, jid := JID} = State) ->
+handle_authenticated_packet(Pkt, #{lserver := LServer, jid := JID,
+				   ip := {IP, _}} = State) ->
+    Pkt1 = xmpp:put_meta(Pkt, ip, IP),
     State1 = ejabberd_hooks:run_fold(c2s_authenticated_packet,
-				     LServer, State, [Pkt]),
+				     LServer, State, [Pkt1]),
     #jid{luser = LUser} = JID,
-    {Pkt1, State2} = ejabberd_hooks:run_fold(
-		       user_send_packet, LServer, {Pkt, State1}, []),
-    case Pkt1 of
+    {Pkt2, State2} = ejabberd_hooks:run_fold(
+		       user_send_packet, LServer, {Pkt1, State1}, []),
+    case Pkt2 of
 	drop ->
 	    State2;
 	#presence{to = #jid{luser = LUser, lserver = LServer,
 			    lresource = <<"">>}} ->
-	    process_self_presence(State2, Pkt1);
+	    process_self_presence(State2, Pkt2);
 	#presence{} ->
-	    process_presence_out(State2, Pkt1);
+	    process_presence_out(State2, Pkt2);
 	_ ->
-	    check_privacy_then_route(State2, Pkt1)
+	    check_privacy_then_route(State2, Pkt2)
     end.
 
 handle_cdata(Data, #{lserver := LServer} = State) ->

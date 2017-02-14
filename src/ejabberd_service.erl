@@ -184,7 +184,9 @@ handle_auth_failure(_, Mech, Reason,
 	       Reason]),
     State.
 
-handle_authenticated_packet(Pkt, #{lang := Lang} = State) when ?is_stanza(Pkt) ->
+handle_authenticated_packet(Pkt0, #{ip := {IP, _}, lang := Lang} = State)
+  when ?is_stanza(Pkt0) ->
+    Pkt = xmpp:put_meta(Pkt0, ip, IP),
     From = xmpp:get_from(Pkt),
     case check_from(From, State) of
 		true ->

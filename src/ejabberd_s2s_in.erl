@@ -200,7 +200,8 @@ handle_unauthenticated_packet(Pkt, #{server_host := LServer} = State) ->
 
 handle_authenticated_packet(Pkt, #{server_host := LServer} = State) when not ?is_stanza(Pkt) ->
     ejabberd_hooks:run_fold(s2s_in_authenticated_packet, LServer, State, [Pkt]);
-handle_authenticated_packet(Pkt, State) ->
+handle_authenticated_packet(Pkt0, #{ip := {IP, _}} = State) ->
+    Pkt = xmpp:put_meta(Pkt0, ip, IP),
     From = xmpp:get_from(Pkt),
     To = xmpp:get_to(Pkt),
     case check_from_to(From, To, State) of
