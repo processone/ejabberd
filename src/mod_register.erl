@@ -268,11 +268,15 @@ try_register_or_set_password(User, Server, Password,
     end.
 
 %% @doc Try to change password and return IQ response
-try_set_password(User, Server, Password, #iq{lang = Lang} = IQ) ->
+try_set_password(User, Server, Password, #iq{lang = Lang, meta = M} = IQ) ->
     case is_strong_password(Server, Password) of
       true ->
 	  case ejabberd_auth:set_password(User, Server, Password) of
 	    ok ->
+		?INFO_MSG("~s has changed password from ~s",
+			  [jid:to_string({User, Server, <<"">>}),
+			   ejabberd_config:may_hide_data(
+			     jlib:ip_to_list(maps:get(ip, M, {0,0,0,0})))]),
 		xmpp:make_iq_result(IQ);
 	    {error, empty_password} ->
 		Txt = <<"Empty password">>,
