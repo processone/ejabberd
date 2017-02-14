@@ -26,14 +26,11 @@
 -module(mod_http_upload_quota).
 -author('holger@zedat.fu-berlin.de').
 
--ifndef(GEN_SERVER).
--define(GEN_SERVER, gen_server).
--endif.
 -define(TIMEOUT, timer:hours(24)).
 -define(INITIAL_TIMEOUT, timer:minutes(10)).
 -define(FORMAT(Error), file:format_error(Error)).
 
--behaviour(?GEN_SERVER).
+-behaviour(gen_server).
 -behaviour(gen_mod).
 
 %% gen_mod/supervisor callbacks.
@@ -253,7 +250,7 @@ code_change(_OldVsn, #state{server_host = ServerHost} = State, _Extra) ->
 handle_slot_request(allow, #jid{lserver = ServerHost} = JID, Path, Size,
 		    _Lang) ->
     Proc = mod_http_upload:get_proc_name(ServerHost, ?MODULE),
-    ?GEN_SERVER:cast(Proc, {handle_slot_request, JID, Path, Size}),
+    gen_server:cast(Proc, {handle_slot_request, JID, Path, Size}),
     allow;
 handle_slot_request(Acc, _JID, _Path, _Size, _Lang) -> Acc.
 

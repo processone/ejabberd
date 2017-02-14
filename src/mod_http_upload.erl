@@ -28,9 +28,6 @@
 
 -protocol({xep, 363, '0.1'}).
 
--ifndef(GEN_SERVER).
--define(GEN_SERVER, gen_server).
--endif.
 -define(SERVICE_REQUEST_TIMEOUT, 5000). % 5 seconds.
 -define(SLOT_TIMEOUT, 18000000). % 5 hours.
 -define(FORMAT(Error), file:format_error(Error)).
@@ -62,7 +59,7 @@
 	 {<<".xz">>, <<"application/x-xz">>},
 	 {<<".zip">>, <<"application/zip">>}]).
 
--behaviour(?GEN_SERVER).
+-behaviour(gen_server).
 -behaviour(gen_mod).
 
 %% gen_mod/supervisor callbacks.

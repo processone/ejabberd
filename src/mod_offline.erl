@@ -33,11 +33,7 @@
 -protocol({xep, 160, '1.0'}).
 -protocol({xep, 334, '0.2'}).
 
--ifndef(GEN_SERVER).
--define(GEN_SERVER, gen_server).
--endif.
--behaviour(?GEN_SERVER).
-
+-behaviour(gen_server).
 -behaviour(gen_mod).
 
 -export([start/2,

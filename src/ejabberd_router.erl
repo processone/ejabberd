@@ -29,7 +29,10 @@
 
 -author('alexey@process-one.net').
 
--behaviour(gen_server).
+-ifndef(GEN_SERVER).
+-define(GEN_SERVER, gen_server).
+-endif.
+-behaviour(?GEN_SERVER).
 
 %% API
 -export([route/3,
@@ -77,7 +80,7 @@ start() ->
     supervisor:start_child(ejabberd_sup, ChildSpec).
 
 start_link() ->
-    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+    ?GEN_SERVER:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 -spec route(jid(), jid(), xmlel() | stanza()) -> ok.
 route(#jid{} = From, #jid{} = To, #xmlel{} = El) ->

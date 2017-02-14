@@ -29,7 +29,10 @@
 
 -author('alexey@process-one.net').
 
--behaviour(gen_server).
+-ifndef(GEN_SERVER).
+-define(GEN_SERVER, gen_server).
+-endif.
+-behaviour(?GEN_SERVER).
 
 %% API
 -export([start/0,
@@ -110,7 +113,7 @@ start() ->
     supervisor:start_child(ejabberd_sup, ChildSpec).
 
 start_link() ->
-    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+    ?GEN_SERVER:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 -spec route(jid(), term()) -> ok.
 %% @doc route arbitrary term to c2s process(es)
@@ -358,13 +361,13 @@ get_vh_session_number(Server) ->
 -spec register_iq_handler(binary(), binary(), atom(), atom(), list()) -> ok.
 
 register_iq_handler(Host, XMLNS, Module, Fun, Opts) ->
-    gen_server:cast(?MODULE,
+    ?GEN_SERVER:cast(?MODULE,
 		    {register_iq_handler, Host, XMLNS, Module, Fun, Opts}).
 
 -spec unregister_iq_handler(binary(), binary()) -> ok.
 
 unregister_iq_handler(Host, XMLNS) ->
-    gen_server:cast(?MODULE, {unregister_iq_handler, Host, XMLNS}).
+    ?GEN_SERVER:cast(?MODULE, {unregister_iq_handler, Host, XMLNS}).
 
 %% Why the hell do we have so many similar kicks?
 c2s_handle_info(#{lang := Lang} = State, replaced) ->
