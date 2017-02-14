@@ -41,7 +41,7 @@
 	 opt_type/1]).
 
 start(_Host) ->
-    ejabberd:start_app(p1_pam).
+    ejabberd:start_app(epam).
 
 set_password(_User, _Server, _Password) ->
     {error, not_allowed}.

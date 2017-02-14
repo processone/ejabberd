@@ -35,14 +35,13 @@
 -export([start/2,
          stop/1]).
 
--export([user_send_packet/4, user_receive_packet/5,
-	 iq_handler/1, remove_connection/4,
+-export([user_send_packet/1, user_receive_packet/1,
+	 iq_handler/1, remove_connection/4, disco_features/5,
 	 is_carbon_copy/1, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
--define(PROCNAME, ?MODULE).
 
 -type direction() :: sent | received.
 
@@ -59,7 +58,7 @@ is_carbon_copy(_) ->
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts,fun gen_iq_handler:check_type/1, one_queue),
-    mod_disco:register_feature(Host, ?NS_CARBONS_2),
+    ejabberd_hooks:add(disco_local_features, Host, ?MODULE, disco_features, 50),
     Mod = gen_mod:db_mod(Host, ?MODULE),
     Mod:init(Host, Opts),
     ejabberd_hooks:add(unset_presence_hook,Host, ?MODULE, remove_connection, 10),
@@ -70,11 +69,23 @@ start(Host, Opts) ->
 
 stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_CARBONS_2),
-    mod_disco:unregister_feature(Host, ?NS_CARBONS_2),
+    ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, disco_features, 50),
     %% why priority 89: to define clearly that we must run BEFORE mod_logdb hook (90)
     ejabberd_hooks:delete(user_send_packet,Host, ?MODULE, user_send_packet, 89),
     ejabberd_hooks:delete(user_receive_packet,Host, ?MODULE, user_receive_packet, 89),
     ejabberd_hooks:delete(unset_presence_hook,Host, ?MODULE, remove_connection, 10).
+
+-spec disco_features({error, stanza_error()} | {result, [binary()]} | empty,
+		     jid(), jid(), binary(), binary()) ->
+			    {error, stanza_error()} | {result, [binary()]}.
+disco_features({error, Err}, _From, _To, _Node, _Lang) ->
+    {error, Err};
+disco_features(empty, _From, _To, <<"">>, _Lang) ->
+    {result, [?NS_CARBONS_2]};
+disco_features({result, Feats}, _From, _To, <<"">>, _Lang) ->
+    {result, [?NS_CARBONS_2|Feats]};
+disco_features(Acc, _From, _To, _Node, _Lang) ->
+    Acc.
 
 -spec iq_handler(iq()) -> iq().
 iq_handler(#iq{type = set, lang = Lang, from = From,
@@ -105,16 +116,24 @@ iq_handler(#iq{type = get, lang = Lang} = IQ)->
     Txt = <<"Value 'get' of 'type' attribute is not allowed">>,
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang)).
 
--spec user_send_packet(stanza(), ejabberd_c2s:state(), jid(), jid()) ->
-			      stanza() | {stop, stanza()}.
-user_send_packet(Packet, _C2SState, From, To) ->
-    check_and_forward(From, To, Packet, sent).
+-spec user_send_packet({stanza(), ejabberd_c2s:state()})
+      -> {stanza(), ejabberd_c2s:state()} | {stop, {stanza(), ejabberd_c2s:state()}}.
+user_send_packet({Packet, C2SState}) ->
+    From = xmpp:get_from(Packet),
+    To = xmpp:get_to(Packet),
+    case check_and_forward(From, To, Packet, sent) of
+	{stop, Pkt} -> {stop, {Pkt, C2SState}};
+	Pkt -> {Pkt, C2SState}
+    end.
 
--spec user_receive_packet(stanza(), ejabberd_c2s:state(),
-			  jid(), jid(), jid()) ->
-				 stanza() | {stop, stanza()}.
-user_receive_packet(Packet, _C2SState, JID, _From, To) ->
-    check_and_forward(JID, To, Packet, received).
+-spec user_receive_packet({stanza(), ejabberd_c2s:state()})
+      -> {stanza(), ejabberd_c2s:state()} | {stop, {stanza(), ejabberd_c2s:state()}}.
+user_receive_packet({Packet, #{jid := JID} = C2SState}) ->
+    To = xmpp:get_to(Packet),
+    case check_and_forward(JID, To, Packet, received) of
+	{stop, Pkt} -> {stop, {Pkt, C2SState}};
+	Pkt -> {Pkt, C2SState}
+    end.
 
 % Modified from original version:
 %    - registered to the user_send_packet hook, to be called only once even for multicast

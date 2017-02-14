@@ -32,8 +32,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start_link/2, start/2, stop/1,
-	 do_client_version/3]).
+-export([start/2, stop/1, do_client_version/3]).
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
@@ -46,31 +45,20 @@
 
 -record(state, {host = <<"">> :: binary()}).
 
--define(PROCNAME, ejabberd_mod_echo).
-
 %%====================================================================
-%% API
+%% gen_mod API
 %%====================================================================
-%%--------------------------------------------------------------------
-%% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
-%% Description: Starts the server
-%%--------------------------------------------------------------------
-start_link(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:start_link({local, Proc}, ?MODULE,
-			  [Host, Opts], []).
-
 start(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
-		 transient, 1000, worker, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, ChildSpec).
+    gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:call(Proc, stop),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    gen_mod:stop_child(?MODULE, Host).
+
+depends(_Host, _Opts) ->
+    [].
+
+mod_opt_type(host) -> fun iolist_to_binary/1;
+mod_opt_type(_) -> [host].
 
 %%====================================================================
 %% gen_server callbacks
@@ -84,6 +72,7 @@ stop(Host) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
+    process_flag(trap_exit, true),
     MyHost = gen_mod:get_opt_host(Host, Opts,
 				  <<"echo.@HOST@">>),
     ejabberd_router:register_route(MyHost, Host),
@@ -189,9 +178,3 @@ do_client_version(enabled, From, To) ->
     after 5000 -> % Timeout in miliseconds: 5 seconds
 	    []
     end.
-
-depends(_Host, _Opts) ->
-    [].
-
-mod_opt_type(host) -> fun iolist_to_binary/1;
-mod_opt_type(_) -> [host].

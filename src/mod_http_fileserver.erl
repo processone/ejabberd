@@ -33,9 +33,6 @@
 %% gen_mod callbacks
 -export([start/2, stop/1]).
 
-%% API
--export([start_link/2]).
-
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
@@ -46,7 +43,7 @@
 %% utility for other http modules
 -export([content_type/3]).
 
--export([reopen_log/1, mod_opt_type/1, depends/2]).
+-export([reopen_log/0, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -57,8 +54,6 @@
 	{host, docroot, accesslog, accesslogfd,
 	 directory_indices, custom_headers, default_content_type,
 	 content_types = [], user_access = none}).
-
--define(PROCNAME, ejabberd_mod_http_fileserver).
 
 %% Response is {DataSize, Code, [{HeaderKey, HeaderValue}], Data}
 -define(HTTP_ERR_FILE_NOT_FOUND,
@@ -90,35 +85,13 @@
 %%====================================================================
 
 start(Host, Opts) ->
-    Proc = get_proc_name(Host),
-    ChildSpec =
-	{Proc,
-	 {?MODULE, start_link, [Host, Opts]},
-	 transient, % if process crashes abruptly, it gets restarted
-	 1000,
-	 worker,
-	 [?MODULE]},
-    supervisor:start_child(ejabberd_sup, ChildSpec).
+    gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
-    Proc = get_proc_name(Host),
-    gen_server:call(Proc, stop),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    gen_mod:stop_child(?MODULE, Host).
 
 depends(_Host, _Opts) ->
     [].
-
-%%====================================================================
-%% API
-%%====================================================================
-%%--------------------------------------------------------------------
-%% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
-%% Description: Starts the server
-%%--------------------------------------------------------------------
-start_link(Host, Opts) ->
-    Proc = get_proc_name(Host),
-    gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
 
 %%====================================================================
 %% gen_server callbacks
@@ -135,6 +108,7 @@ init([Host, Opts]) ->
 	{DocRoot, AccessLog, AccessLogFD, DirectoryIndices,
 	 CustomHeaders, DefaultContentType, ContentTypes,
 	 UserAccess} ->
+	    process_flag(trap_exit, true),
 	    {ok, #state{host = Host,
 			accesslog = AccessLog,
 			accesslogfd = AccessLogFD,
@@ -236,7 +210,7 @@ check_docroot_is_readable(DRInfo, DocRoot) ->
 
 try_open_log(undefined, _Host) ->
     undefined;
-try_open_log(FN, Host) ->
+try_open_log(FN, _Host) ->
     FD = try open_log(FN) of
 	     FD1 -> FD1
 	 catch
@@ -244,7 +218,7 @@ try_open_log(FN, Host) ->
 		 ?ERROR_MSG("Cannot open access log file: ~p~nReason: ~p", [FN, Reason]),
 		 undefined
 	 end,
-    ejabberd_hooks:add(reopen_log_hook, Host, ?MODULE, reopen_log, 50),
+    ejabberd_hooks:add(reopen_log_hook, ?MODULE, reopen_log, 50),
     FD.
 
 %%--------------------------------------------------------------------
@@ -298,7 +272,8 @@ handle_info(_Info, State) ->
 %%--------------------------------------------------------------------
 terminate(_Reason, State) ->
     close_log(State#state.accesslogfd),
-    ejabberd_hooks:delete(reopen_log_hook, State#state.host, ?MODULE, reopen_log, 50),
+    %% TODO: unregister the hook gracefully
+    %% ejabberd_hooks:delete(reopen_log_hook, State#state.host, ?MODULE, reopen_log, 50),
     ok.
 
 %%--------------------------------------------------------------------
@@ -410,8 +385,11 @@ reopen_log(FN, FD) ->
     close_log(FD),
     open_log(FN).
 
-reopen_log(Host) ->
-    gen_server:cast(get_proc_name(Host), reopen_log).
+reopen_log() ->
+    lists:foreach(
+      fun(Host) ->
+	      gen_server:cast(get_proc_name(Host), reopen_log)
+      end, ?MYHOSTS).
 
 add_to_log(FileSize, Code, Request) ->
     gen_server:cast(get_proc_name(Request#request.host),
@@ -454,7 +432,7 @@ find_header(Header, Headers, Default) ->
 %% Utilities
 %%----------------------------------------------------------------------
 
-get_proc_name(Host) -> gen_mod:get_module_proc(Host, ?PROCNAME).
+get_proc_name(Host) -> gen_mod:get_module_proc(Host, ?MODULE).
 
 join([], _) ->
     <<"">>;

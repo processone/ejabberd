@@ -85,9 +85,9 @@ init(Host, Opts) ->
 
 stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:call(Proc, stop),
     supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    supervisor:delete_child(ejabberd_sup, Proc),
+    ok.
 
 is_search_supported(_LServer) ->
     true.
@@ -186,6 +186,7 @@ import(_, _, _) ->
 %%% gen_server callbacks
 %%%===================================================================
 init([Host, Opts]) ->
+    process_flag(trap_exit, true),
     State = parse_options(Host, Opts),
     eldap_pool:start_link(State#state.eldap_id,
 			  State#state.servers, State#state.backups,

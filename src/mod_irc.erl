@@ -32,7 +32,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start_link/2, start/2, stop/1, export/1, import/1,
+-export([start/2, stop/1, export/1, import/1,
 	 import/3, closed_connection/3, get_connection_params/3,
 	 data_to_binary/2, process_disco_info/1, process_disco_items/1,
 	 process_register/1, process_vcard/1, process_command/1]).
@@ -62,37 +62,21 @@
                 server_host = <<"">> :: binary(),
                 access = all         :: atom()}).
 
--define(PROCNAME, ejabberd_mod_irc).
-
 -callback init(binary(), gen_mod:opts()) -> any().
 -callback import(binary(), #irc_custom{}) -> ok | pass.
 -callback get_data(binary(), binary(), jid()) -> error | empty | irc_data().
 -callback set_data(binary(), binary(), jid(), irc_data()) -> {atomic, any()}.
 
 %%====================================================================
-%% API
+%% gen_mod API
 %%====================================================================
-%%--------------------------------------------------------------------
-%% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
-%% Description: Starts the server
-%%--------------------------------------------------------------------
-start_link(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:start_link({local, Proc}, ?MODULE,
-			  [Host, Opts], []).
-
 start(Host, Opts) ->
     start_supervisor(Host),
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
-		 transient, 1000, worker, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, ChildSpec).
+    gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
     stop_supervisor(Host),
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:call(Proc, stop),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    gen_mod:stop_child(?MODULE, Host).
 
 depends(_Host, _Opts) ->
     [].
@@ -109,6 +93,7 @@ depends(_Host, _Opts) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
+    process_flag(trap_exit, true),
     ejabberd:start_app(iconv),
     MyHost = gen_mod:get_opt_host(Host, Opts,
 				  <<"irc.@HOST@">>),

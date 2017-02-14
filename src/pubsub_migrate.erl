@@ -31,106 +31,8 @@
 -export([update_node_database/2, update_state_database/2]).
 -export([update_item_database/2, update_lastitem_database/2]).
 
-update_item_database_binary() ->
-    F = fun () ->
-		case catch mnesia:read({pubsub_last_item, mnesia:first(pubsub_last_item)}) of
-		    [First] when is_list(First#pubsub_last_item.itemid) ->
-			?INFO_MSG("Binarization of pubsub items table...", []),
-			lists:foreach(fun (Id) ->
-					      [Node] = mnesia:read({pubsub_last_item, Id}),
-
-					      ItemId = iolist_to_binary(Node#pubsub_last_item.itemid),
-
-					      ok = mnesia:delete({pubsub_last_item, Id}),
-					      ok = mnesia:write(Node#pubsub_last_item{itemid=ItemId})
-				      end,
-				      mnesia:all_keys(pubsub_last_item));
-		    _-> no_need
-		end
-	end,
-    case mnesia:transaction(F) of
-	{aborted, Reason} ->
-	    ?ERROR_MSG("Failed to binarize pubsub items table: ~p", [Reason]);
-	{atomic, no_need} ->
-	    ok;
-	{atomic, Result} ->
-	    ?INFO_MSG("Pubsub items table has been binarized: ~p", [Result])
-    end.
-
 update_item_database(_Host, _ServerHost) ->
-    F = fun() ->
-	    ?INFO_MSG("Migration of old pubsub items...", []),
-	    lists:foreach(fun (Key) ->
-			[Item] = mnesia:read({pubsub_item, Key}),
-			Payload = [xmlelement_to_xmlel(El) || El <- Item#pubsub_item.payload],
-			mnesia:write(Item#pubsub_item{payload=Payload})
-		end,
-		mnesia:all_keys(pubsub_item))
-	end,
-    case mnesia:transaction(F) of
-	{aborted, Reason} ->
-	    ?ERROR_MSG("Failed to migrate old pubsub items to xmlel: ~p", [Reason]);
-	{atomic, Result} ->
-	    ?INFO_MSG("Pubsub items has been migrated: ~p", [Result])
-    end.
-
-xmlelement_to_xmlel({xmlelement, A, B, C}) when is_list(C) ->
-    {xmlel, A, B, [xmlelement_to_xmlel(El) || El <- C]};
-xmlelement_to_xmlel(El) ->
-    El.
-
-update_node_database_binary() ->
-    F = fun () ->
-		case catch mnesia:read({pubsub_node, mnesia:first(pubsub_node)}) of
-		    [First] when is_list(First#pubsub_node.type) ->
-			?INFO_MSG("Binarization of pubsub nodes table...", []),
-			lists:foreach(fun ({H, N}) ->
-					      [Node] = mnesia:read({pubsub_node, {H, N}}),
-
-					      Type = iolist_to_binary(Node#pubsub_node.type),
-					      BN = case N of
-						       Binary when is_binary(Binary) ->
-							   N;
-						       _ ->
-							   {result, BN1} = mod_pubsub:node_call(H, Type, path_to_node, [N]),
-							   BN1
-						   end,
-					      BP = case [case P of
-							     Binary2 when is_binary(Binary2) -> P;
-							     _ -> element(2, mod_pubsub:node_call(H, Type, path_to_node, [P]))
-							 end
-							 || P <- Node#pubsub_node.parents] of
-						       [<<>>] -> [];
-						       Parents -> Parents
-						   end,
-
-					      BH = case H of
-						       {U, S, R} -> {iolist_to_binary(U), iolist_to_binary(S), iolist_to_binary(R)};
-						       String -> iolist_to_binary(String)
-						   end,
-
-					      Owners = [{iolist_to_binary(U), iolist_to_binary(S), iolist_to_binary(R)} ||
-							   {U, S, R} <- Node#pubsub_node.owners],
-
-					      ok = mnesia:delete({pubsub_node, {H, N}}),
-					      ok = mnesia:write(Node#pubsub_node{nodeid = {BH, BN},
-									    parents = BP,
-									    type = Type,
-									    owners = Owners});
-					  (_) -> ok
-				      end,
-				      mnesia:all_keys(pubsub_node));
-		    _-> no_need
-		end
-	end,
-    case mnesia:transaction(F) of
-	{aborted, Reason} ->
-	    ?ERROR_MSG("Failed to binarize pubsub node table: ~p", [Reason]);
-	{atomic, no_need} ->
-	    ok;
-	{atomic, Result} ->
-	    ?INFO_MSG("Pubsub nodes table has been binarized: ~p", [Result])
-    end.
+    convert_list_items().
 
 update_node_database(Host, ServerHost) ->
     mnesia:del_table_index(pubsub_node, type),
@@ -386,7 +288,7 @@ update_node_database(Host, ServerHost) ->
 	  rename_default_nodeplugin();
       _ -> ok
     end,
-    update_node_database_binary().
+    convert_list_nodes().
 
 rename_default_nodeplugin() ->
     lists:foreach(fun (Node) ->
@@ -402,14 +304,14 @@ update_state_database(_Host, _ServerHost) ->
 	[stateid, nodeidx, items, affiliation, subscriptions] ->
 	    ?INFO_MSG("Upgrading pubsub states table...", []),
 	    F = fun ({pubsub_state, {{U,S,R}, NodeID}, _NodeIdx, Items, Aff, Sub}, Acc) ->
-			JID = {iolist_to_binary(U), iolist_to_binary(S), iolist_to_binary(R)},
+			JID = {U,S,R},
 			Subs = case Sub of
 				   none ->
 				       [];
 				   [] ->
 				       [];
 				   _ ->
-				       {result, SubID} = pubsub_subscription:subscribe_node(JID, NodeID, []),
+				       SubID = pubsub_subscription:make_subid(),
 				       [{Sub, SubID}]
 			       end,
 			NewState = #pubsub_state{stateid       = {JID, NodeID},
@@ -437,7 +339,108 @@ update_state_database(_Host, _ServerHost) ->
 	    end;
 	_ ->
 	    ok
-    end.
+    end,
+    convert_list_subscriptions(),
+    convert_list_states().
 
 update_lastitem_database(_Host, _ServerHost) ->
-    update_item_database_binary().
+    convert_list_lasts().
+
+%% binarization from old 2.1.x
+
+convert_list_items() ->
+    convert_list_records(
+	pubsub_item,
+	record_info(fields, pubsub_item),
+	fun(#pubsub_item{itemid = {I, _}}) -> I end,
+	fun(#pubsub_item{itemid = {I, Nidx},
+			 creation = {C, CKey},
+			 modification = {M, MKey},
+			 payload = Els} = R) ->
+	    R#pubsub_item{itemid = {bin(I), Nidx},
+			  creation = {C, binusr(CKey)},
+			  modification = {M, binusr(MKey)},
+			  payload = [fxml:to_xmlel(El) || El<-Els]}
+	end).
+
+convert_list_states() ->
+    convert_list_records(
+	pubsub_state,
+	record_info(fields, pubsub_state),
+	fun(#pubsub_state{stateid = {{U,_,_}, _}}) -> U end,
+	fun(#pubsub_state{stateid = {U, Nidx},
+			  items = Is,
+			  affiliation = A,
+			  subscriptions = Ss} = R) ->
+	    R#pubsub_state{stateid = {binusr(U), Nidx},
+			  items = [bin(I) || I<-Is],
+			  affiliation = A,
+			  subscriptions = [{S,bin(Sid)} || {S,Sid}<-Ss]}
+	end).
+
+convert_list_nodes() ->
+    convert_list_records(
+	pubsub_node,
+	record_info(fields, pubsub_node),
+	fun(#pubsub_node{nodeid = {{U,_,_}, _}}) -> U;
+	   (#pubsub_node{nodeid = {H, _}}) -> H end,
+	fun(#pubsub_node{nodeid = {H, N},
+			 id = I,
+			 parents = Ps,
+			 type = T,
+			 owners = Os,
+			 options = Opts} = R) ->
+	    R#pubsub_node{nodeid = {binhost(H), bin(N)},
+			  id = I,
+			  parents = [bin(P) || P<-Ps],
+			  type = bin(T),
+			  owners = [binusr(O) || O<-Os],
+			  options = Opts}
+	end).
+
+convert_list_subscriptions() ->
+    [convert_list_records(
+	pubsub_subscription,
+	record_info(fields, pubsub_subscription),
+	fun(#pubsub_subscription{subid = I}) -> I end,
+	fun(#pubsub_subscription{subid = I,
+				 options = Opts} = R) ->
+	    R#pubsub_subscription{subid = bin(I),
+				  options = Opts}
+	end) || lists:member(pubsub_subscription, mnesia:system_info(tables))].
+
+convert_list_lasts() ->
+    convert_list_records(
+	pubsub_last_item,
+	record_info(fields, pubsub_last_item),
+	fun(#pubsub_last_item{itemid = I}) -> I end,
+	fun(#pubsub_last_item{itemid = I,
+			      nodeid = Nidx,
+			      creation = {C, CKey},
+			      payload = Payload} = R) ->
+	    R#pubsub_last_item{itemid = bin(I),
+			       nodeid = Nidx,
+			       creation = {C, binusr(CKey)},
+			       payload = fxml:to_xmlel(Payload)}
+	end).
+
+%% internal tools
+
+convert_list_records(Tab, Fields, DetectFun, ConvertFun) ->
+    case mnesia:table_info(Tab, attributes) of
+	Fields ->
+	    ejabberd_config:convert_table_to_binary(
+	      Tab, Fields, set, DetectFun, ConvertFun);
+	_ ->
+	    ?INFO_MSG("Recreating ~p table", [Tab]),
+	    mnesia:transform_table(Tab, ignore, Fields),
+	    convert_list_records(Tab, Fields, DetectFun, ConvertFun)
+    end.
+
+binhost({U,S,R}) -> binusr({U,S,R});
+binhost(L) -> bin(L).
+
+binusr({U,S,R}) -> {bin(U), bin(S), bin(R)}.
+
+bin(L) -> iolist_to_binary(L).
+

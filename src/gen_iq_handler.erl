@@ -27,7 +27,10 @@
 
 -author('alexey@process-one.net').
 
--behaviour(gen_server).
+-ifndef(GEN_SERVER).
+-define(GEN_SERVER, gen_server).
+-endif.
+-behaviour(?GEN_SERVER).
 
 %% API
 -export([start_link/3, add_iq_handler/6,
@@ -57,10 +60,10 @@
 %% Description: Starts the server
 %%--------------------------------------------------------------------
 start_link(Host, Module, Function) ->
-    gen_server:start_link(?MODULE, [Host, Module, Function],
+    ?GEN_SERVER:start_link(?MODULE, [Host, Module, Function],
 			  []).
 
--spec add_iq_handler(module(), binary(), binary(), module(), atom(), type()) -> any().
+-spec add_iq_handler(module(), binary(), binary(), module(), atom(), type()) -> ok.
 
 add_iq_handler(Component, Host, NS, Module, Function,
 	       Type) ->
@@ -89,7 +92,7 @@ add_iq_handler(Component, Host, NS, Module, Function,
 		Function, parallel)
     end.
 
--spec remove_iq_handler(component(), binary(), binary()) -> any().
+-spec remove_iq_handler(component(), binary(), binary()) -> ok.
 
 remove_iq_handler(Component, Host, NS) ->
     Component:unregister_iq_handler(Host, NS).
@@ -98,10 +101,10 @@ remove_iq_handler(Component, Host, NS) ->
 
 stop_iq_handler(_Module, _Function, Opts) ->
     case Opts of
-      {one_queue, Pid} -> gen_server:call(Pid, stop);
+      {one_queue, Pid} -> ?GEN_SERVER:call(Pid, stop);
       {queues, Pids} ->
 	  lists:foreach(fun (Pid) ->
-				catch gen_server:call(Pid, stop)
+				catch ?GEN_SERVER:call(Pid, stop)
 			end,
 			Pids);
       _ -> ok

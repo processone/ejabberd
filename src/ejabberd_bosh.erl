@@ -49,7 +49,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--include("jlib.hrl").
+-include("xmpp.hrl").
 
 -include("ejabberd_http.hrl").
 
@@ -123,7 +123,7 @@
 
 start(#body{attrs = Attrs} = Body, IP, SID) ->
     XMPPDomain = get_attr(to, Attrs),
-    SupervisorProc = gen_mod:get_module_proc(XMPPDomain, ?PROCNAME),
+    SupervisorProc = gen_mod:get_module_proc(XMPPDomain, mod_bosh),
     case catch supervisor:start_child(SupervisorProc,
 				      [Body, IP, SID])
 	of

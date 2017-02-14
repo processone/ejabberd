@@ -31,14 +31,13 @@
 -behaviour(gen_mod).
 
 %% API
--export([start_link/2]).
 -export([start/2, stop/1, mod_opt_type/1, depends/2]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 -export([component_connected/1, component_disconnected/2,
 	 roster_access/2, process_message/3,
-	 process_presence_out/4, process_presence_in/5]).
+	 process_presence_out/1, process_presence_in/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -50,20 +49,11 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-start_link(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
-
 start(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    PingSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
-                transient, 2000, worker, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, PingSpec).
+    gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    gen_server:call(Proc, stop),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    gen_mod:stop_child(?MODULE, Host).
 
 mod_opt_type(roster) -> v_roster();
 mod_opt_type(message) -> v_message();
@@ -133,10 +123,11 @@ roster_access(false, #iq{from = From, to = To, type = Type}) ->
 	    false
     end.
 
--spec process_presence_out(stanza(), ejabberd_c2s:state(), jid(), jid()) -> stanza().
-process_presence_out(#presence{type = Type} = Pres, _C2SState,
-		     #jid{luser = LUser, lserver = LServer} = From,
-		     #jid{luser = LUser, lserver = LServer, lresource = <<"">>})
+-spec process_presence_out({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
+process_presence_out({#presence{
+			 from = #jid{luser = LUser, lserver = LServer} = From,
+			 to = #jid{luser = LUser, lserver = LServer, lresource = <<"">>},
+			 type = Type} = Pres, C2SState})
   when Type == available; Type == unavailable ->
     %% Self-presence processing
     Permissions = get_permissions(LServer),
@@ -151,15 +142,15 @@ process_presence_out(#presence{type = Type} = Pres, _C2SState,
 		      ok
 	      end
       end, dict:to_list(Permissions)),
-    Pres;
-process_presence_out(Acc, _, _, _) ->
+    {Pres, C2SState};
+process_presence_out(Acc) ->
     Acc.
 
--spec process_presence_in(stanza(), ejabberd_c2s:state(),
-			  jid(), jid(), jid()) -> stanza().
-process_presence_in(#presence{type = Type} = Pres, _C2SState, _,
-		    #jid{luser = U, lserver = S} = From,
-		    #jid{luser = LUser, lserver = LServer})
+-spec process_presence_in({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
+process_presence_in({#presence{
+			from = #jid{luser = U, lserver = S} = From,
+			to = #jid{luser = LUser, lserver = LServer},
+			type = Type} = Pres, C2SState})
   when {U, S} /= {LUser, LServer} andalso
        (Type == available orelse Type == unavailable) ->
     Permissions = get_permissions(LServer),
@@ -179,14 +170,15 @@ process_presence_in(#presence{type = Type} = Pres, _C2SState, _,
 		      ok
 	      end
       end, dict:to_list(Permissions)),
-    Pres;
-process_presence_in(Acc, _, _, _, _) ->
+    {Pres, C2SState};
+process_presence_in(Acc) ->
     Acc.
 
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
 init([Host, _Opts]) ->
+    process_flag(trap_exit, true),
     ejabberd_hooks:add(component_connected, ?MODULE,
                        component_connected, 50),
     ejabberd_hooks:add(component_disconnected, ?MODULE,

@@ -59,7 +59,7 @@
 
 start(_Opts) ->
     Fqdn = get_local_fqdn(),
-    ?INFO_MSG("FQDN used to check DIGEST-MD5 SASL authentication: ~p",
+    ?INFO_MSG("FQDN used to check DIGEST-MD5 SASL authentication: ~s",
 	      [Fqdn]),
     cyrsasl:register_mechanism(<<"DIGEST-MD5">>, ?MODULE,
 			       digest).

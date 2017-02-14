@@ -24,7 +24,9 @@
 %%%-------------------------------------------------------------------
 -module(mod_sip_registrar).
 
--define(GEN_SERVER, p1_server).
+-ifndef(GEN_SERVER).
+-define(GEN_SERVER, gen_server).
+-endif.
 -behaviour(?GEN_SERVER).
 
 %% API
@@ -177,14 +179,13 @@ ping(SIPSocket) ->
 %%% gen_server callbacks
 %%%===================================================================
 init([]) ->
+    process_flag(trap_exit, true),
     update_table(),
     ejabberd_mnesia:create(?MODULE, sip_session,
 			[{ram_copies, [node()]},
 			 {type, bag},
-			 {attributes, record_info(fields, sip_session)}]),
-    mnesia:add_table_index(sip_session, conn_mref),
-    mnesia:add_table_index(sip_session, socket),
-    mnesia:add_table_copy(sip_session, node(), ram_copies),
+			 {attributes, record_info(fields, sip_session)},
+			 {index, [conn_mref,socket]}]),
     {ok, #state{}}.
 
 handle_call({write, Sessions, Supported}, _From, State) ->

@@ -56,8 +56,7 @@ bind_tcp_ports() ->
 	Ls ->
 	    lists:foreach(
 	      fun({Port, Module, Opts}) ->
-		      ModuleRaw = strip_frontend(Module),
-		      case ModuleRaw:socket_type() of
+		      case Module:socket_type() of
 			  independent -> ok;
 			  _ ->
 			      bind_tcp_port(Port, Module, Opts)
@@ -112,9 +111,8 @@ report_duplicated_portips(L) ->
 
 start(Port, Module, Opts) ->
     %% Check if the module is an ejabberd listener or an independent listener
-    ModuleRaw = strip_frontend(Module),
-    case ModuleRaw:socket_type() of
-	independent -> ModuleRaw:start_listener(Port, Opts);
+    case Module:socket_type() of
+	independent -> Module:start_listener(Port, Opts);
 	_ -> start_dependent(Port, Module, Opts)
     end.
 
@@ -186,7 +184,9 @@ init_tcp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
 listen_tcp(PortIP, Module, SockOpts, Port, IPS) ->
     case ets:lookup(listen_sockets, PortIP) of
 	[{PortIP, ListenSocket}] ->
-	    ?INFO_MSG("Reusing listening port for ~p", [PortIP]),
+	    {_, _, Transport} = PortIP,
+	    ?INFO_MSG("Reusing listening ~s port ~p at ~s",
+		      [Transport, Port, IPS]),
 	    ets:delete(listen_sockets, PortIP),
 	    ListenSocket;
 	_ ->
@@ -330,21 +330,22 @@ accept(ListenSocket, Module, Opts, Interval) ->
 	{ok, Socket} ->
 	    case {inet:sockname(Socket), inet:peername(Socket)} of
 		{{ok, {Addr, Port}}, {ok, {PAddr, PPort}}} ->
-		    ?INFO_MSG("(~w) Accepted connection ~s:~p -> ~s:~p",
-			      [Socket, ejabberd_config:may_hide_data(inet_parse:ntoa(PAddr)), PPort,
-			       inet_parse:ntoa(Addr), Port]);
+		    Receiver = case ejabberd_socket:start(Module,
+							  gen_tcp, Socket, Opts) of
+				   {ok, RecvPid} -> RecvPid;
+				   _ -> none
+			       end,
+		    ?INFO_MSG("(~p) Accepted connection ~s:~p -> ~s:~p",
+			      [Receiver,
+			       ejabberd_config:may_hide_data(inet_parse:ntoa(PAddr)),
+			       PPort, inet_parse:ntoa(Addr), Port]);
 		_ ->
 		    ok
 	    end,
-	    CallMod = case is_frontend(Module) of
-			  true -> ejabberd_frontend_socket;
-			  false -> ejabberd_socket
-		      end,
-	    CallMod:start(strip_frontend(Module), gen_tcp, Socket, Opts),
 	    accept(ListenSocket, Module, Opts, NewInterval);
 	{error, Reason} ->
-	    ?ERROR_MSG("(~w) Failed TCP accept: ~w",
-                       [ListenSocket, Reason]),
+	    ?ERROR_MSG("(~w) Failed TCP accept: ~s",
+                       [ListenSocket, inet:format_error(Reason)]),
 	    accept(ListenSocket, Module, Opts, NewInterval)
     end.
 
@@ -394,7 +395,7 @@ start_module_sup(_Port, Module) ->
     Proc1 = gen_mod:get_module_proc(<<"sup">>, Module),
     ChildSpec1 =
 	{Proc1,
-	 {ejabberd_tmp_sup, start_link, [Proc1, strip_frontend(Module)]},
+	 {ejabberd_tmp_sup, start_link, [Proc1, Module]},
 	 permanent,
 	 infinity,
 	 supervisor,
@@ -488,18 +489,6 @@ delete_listener(PortIP, Module, Opts) ->
     ejabberd_config:add_option(listen, Ports2),
     stop_listener(PortIP1, Module).
 
-
--spec is_frontend({frontend, module} | module()) -> boolean().
-
-is_frontend({frontend, _Module}) -> true;
-is_frontend(_) -> false.
-
-%% @doc(FrontMod) -> atom()
-%% where FrontMod = atom() | {frontend, atom()}
--spec strip_frontend({frontend, module()} | module()) -> module().
-
-strip_frontend({frontend, Module}) -> Module;
-strip_frontend(Module) when is_atom(Module) -> Module.
 
 maybe_start_sip(esip_socket) ->
     ejabberd:start_app(esip);

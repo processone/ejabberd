@@ -28,10 +28,8 @@
 
 -protocol({xep, 363, '0.1'}).
 
--define(GEN_SERVER, gen_server).
 -define(SERVICE_REQUEST_TIMEOUT, 5000). % 5 seconds.
 -define(SLOT_TIMEOUT, 18000000). % 5 hours.
--define(PROCNAME, ?MODULE).
 -define(FORMAT(Error), file:format_error(Error)).
 -define(URL_ENC(URL), binary_to_list(ejabberd_http:url_encode(URL))).
 -define(ADDR_TO_STR(IP), ejabberd_config:may_hide_data(jlib:ip_to_list(IP))).
@@ -61,12 +59,11 @@
 	 {<<".xz">>, <<"application/x-xz">>},
 	 {<<".zip">>, <<"application/zip">>}]).
 
--behaviour(?GEN_SERVER).
+-behaviour(gen_server).
 -behaviour(gen_mod).
 
 %% gen_mod/supervisor callbacks.
--export([start_link/3,
-	 start/2,
+-export([start/2,
 	 stop/1,
 	 depends/2,
 	 mod_opt_type/1]).
@@ -124,13 +121,6 @@
 %%--------------------------------------------------------------------
 %% gen_mod/supervisor callbacks.
 %%--------------------------------------------------------------------
-
--spec start_link(binary(), atom(), gen_mod:opts())
-      -> {ok, pid()} | ignore | {error, _}.
-
-start_link(ServerHost, Proc, Opts) ->
-    ?GEN_SERVER:start_link({local, Proc}, ?MODULE, {ServerHost, Opts}, []).
-
 -spec start(binary(), gen_mod:opts()) -> {ok, _} | {ok, _, _} | {error, _}.
 
 start(ServerHost, Opts) ->
@@ -139,20 +129,12 @@ start(ServerHost, Opts) ->
 			 true) of
 	true ->
 	    ejabberd_hooks:add(remove_user, ServerHost, ?MODULE,
-			       remove_user, 50),
-	    ejabberd_hooks:add(anonymous_purge_hook, ServerHost, ?MODULE,
 			       remove_user, 50);
 	false ->
 	    ok
     end,
-    Proc = get_proc_name(ServerHost, ?PROCNAME),
-    Spec = {Proc,
-	    {?MODULE, start_link, [ServerHost, Proc, Opts]},
-	    permanent,
-	    3000,
-	    worker,
-	    [?MODULE]},
-    supervisor:start_child(ejabberd_sup, Spec).
+    Proc = get_proc_name(ServerHost, ?MODULE),
+    gen_mod:start_child(?MODULE, ServerHost, Opts, Proc).
 
 -spec stop(binary()) -> ok.
 
@@ -162,15 +144,12 @@ stop(ServerHost) ->
 			        true) of
 	true ->
 	    ejabberd_hooks:delete(remove_user, ServerHost, ?MODULE,
-				  remove_user, 50),
-	    ejabberd_hooks:delete(anonymous_purge_hook, ServerHost, ?MODULE,
 				  remove_user, 50);
 	false ->
 	    ok
     end,
-    Proc = get_proc_name(ServerHost, ?PROCNAME),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    Proc = get_proc_name(ServerHost, ?MODULE),
+    gen_mod:stop_child(Proc).
 
 -spec mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
 
@@ -234,7 +213,7 @@ depends(_Host, _Opts) ->
 
 -spec init({binary(), gen_mod:opts()}) -> {ok, state()}.
 
-init({ServerHost, Opts}) ->
+init([ServerHost, Opts]) ->
     process_flag(trap_exit, true),
     Host = gen_mod:get_opt_host(ServerHost, Opts, <<"upload.@HOST@">>),
     Name = gen_mod:get_opt(name, Opts,
@@ -754,7 +733,7 @@ parse_http_request(#request{host = Host, path = Path}) ->
 			 true ->
 			      {Host, Path}
 		      end,
-    {gen_mod:get_module_proc(ProcURL, ?PROCNAME), Slot}.
+    {gen_mod:get_module_proc(ProcURL, ?MODULE), Slot}.
 
 -spec store_file(binary(), binary(),
 		 integer() | undefined,

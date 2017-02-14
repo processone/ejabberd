@@ -45,7 +45,6 @@
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("mod_muc_room.hrl").
--include("mod_muc.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
 -include("ejabberd_commands.hrl").
@@ -224,22 +223,12 @@ get_commands_spec() ->
 %%%
 
 muc_online_rooms(ServerHost) ->
-    MUCHost = find_host(ServerHost),
-    Rooms = ets:tab2list(muc_online_room),
-    lists:foldl(
-      fun(Room, Results) ->
-	      {Roomname, Host} = Room#muc_online_room.name_host,
-	      case MUCHost of
-		  global ->
-		      [<<Roomname/binary, "@", Host/binary>> | Results];
-		  Host ->
-		      [<<Roomname/binary, "@", Host/binary>> | Results];
-		  _ ->
-		      Results
-	      end
-      end,
-      [],
-      Rooms).
+    Hosts = find_hosts(ServerHost),
+    lists:flatmap(
+      fun(Host) ->
+	      [{<<Name/binary, "@", Host/binary>>}
+	       || {Name, _, _} <- mod_muc:get_online_rooms(Host)]
+      end, Hosts).
 
 muc_unregister_nick(Nick) ->
     F2 = fun(N) ->
@@ -254,14 +243,18 @@ muc_unregister_nick(Nick) ->
     end.
 
 get_user_rooms(LUser, LServer) ->
-    US = {LUser, LServer},
-    case catch ets:select(muc_online_users,
-                          [{#muc_online_users{us = US, room='$1', host='$2', _ = '_'}, [], [{{'$1', '$2'}}]}])
-        of
-      Res when is_list(Res) ->
-	[<<R/binary, "@", H/binary>> || {R, H} <- Res];
-      _ -> []
-    end.
+    lists:flatmap(
+      fun(ServerHost) ->
+	      case gen_mod:is_loaded(ServerHost, mod_muc) of
+		  true ->
+		      Rooms = mod_muc:get_online_rooms_by_user(
+				ServerHost, LUser, LServer),
+		      [<<Name/binary, "@", Host/binary>>
+			   || {Name, Host} <- Rooms];
+		  false ->
+		      []
+	      end
+      end, ?MYHOSTS).
 
 %%----------------------------
 %% Ad-hoc commands
@@ -291,10 +284,14 @@ web_menu_host(Acc, _Host, Lang) ->
 		      ])).
 
 web_page_main(_, #request{path=[<<"muc">>], lang = Lang} = _Request) ->
+    OnlineRoomsNumber = lists:foldl(
+			  fun(Host, Acc) ->
+				  Acc ++ mod_muc:count_online_rooms(Host)
+			  end, 0, find_hosts(global)),
     Res = [?XCT(<<"h1">>, <<"Multi-User Chat">>),
 	   ?XCT(<<"h3">>, <<"Statistics">>),
 	   ?XAE(<<"table">>, [],
-		[?XE(<<"tbody">>, [?TDTD(<<"Total rooms">>, ets:info(muc_online_room, size)),
+		[?XE(<<"tbody">>, [?TDTD(<<"Total rooms">>, OnlineRoomsNumber),
 				   ?TDTD(<<"Permanent rooms">>, mnesia:table_info(muc_room, size)),
 				   ?TDTD(<<"Registered nicknames">>, mnesia:table_info(muc_registered, size))
 				  ])
@@ -473,8 +470,8 @@ create_room_with_opts(Name1, Host1, ServerHost, CustomRoomOpts) ->
     RoomShaper = gen_mod:get_module_opt(ServerHost, mod_muc, room_shaper, fun(X) -> X end, none),
 
     %% If the room does not exist yet in the muc_online_room
-    case mnesia:dirty_read(muc_online_room, {Name, Host}) of
-        [] ->
+    case mod_muc:find_online_room(Name, Host) of
+	error ->
 	    %% Start the room
 	    {ok, Pid} = mod_muc_room:start(
 			  Host,
@@ -484,18 +481,11 @@ create_room_with_opts(Name1, Host1, ServerHost, CustomRoomOpts) ->
 			  HistorySize,
 			  RoomShaper,
 			  RoomOpts),
-	    {atomic, ok} = register_room(Host, Name, Pid),
+	    mod_muc:register_online_room(Host, Name, Pid),
 	    ok;
-	_ ->
+	{ok, _} ->
 	    error
     end.
-
-register_room(Host, Name, Pid) ->
-    F = fun() ->
-		mnesia:write(#muc_online_room{name_host = {Name, Host},
-					      pid = Pid})
-	end,
-    mnesia:transaction(F).
 
 %% Create the room only in the database.
 %% It is required to restart the MUC service for the room to appear.
@@ -509,12 +499,11 @@ muc_create_room(ServerHost, {Name, Host, _}, DefRoomOpts) ->
 %% If the room has participants, they are not notified that the room was destroyed;
 %% they will notice when they try to chat and receive an error that the room doesn't exist.
 destroy_room(Name, Service) ->
-    case mnesia:dirty_read(muc_online_room, {Name, Service}) of
-	[R] ->
-	    Pid = R#muc_online_room.pid,
+    case mod_muc:find_online_room(Name, Service) of
+	{ok, Pid} ->
 	    gen_fsm:send_all_state_event(Pid, destroy),
 	    ok;
-	[] ->
+	error ->
 	    error
     end.
 
@@ -540,7 +529,9 @@ destroy_rooms_file(Filename) ->
 
 read_rooms(_F, eof, L) ->
     L;
-
+read_rooms(F, no_room, L) ->
+    RJID2 = read_room(F),
+    read_rooms(F, RJID2, L);
 read_rooms(F, RJID, L) ->
     RJID2 = read_room(F),
     read_rooms(F, RJID2, [RJID | L]).
@@ -559,9 +550,12 @@ read_room(F) ->
 %% This function is quite rudimentary
 %% and may not be accurate
 split_roomjid(RoomJID) ->
-    [Name, Host] = binary:split(RoomJID, <<"@">>),
+    split_roomjid2(binary:split(RoomJID, <<"@">>)).
+split_roomjid2([Name, Host]) ->
     [_MUC_service_name, ServerHost] = binary:split(Host, <<".">>),
-    {Name, Host, ServerHost}.
+    {Name, Host, ServerHost};
+split_roomjid2(_) ->
+    no_room.
 
 %%----------------------------
 %% Create Rooms in File
@@ -619,19 +613,12 @@ muc_unused2(Action, ServerHost, Host, Last_allowed) ->
 %%---------------
 %% Get info
 
-get_rooms(Host) ->
-    Get_room_names = fun(Room_reg, Names) ->
-			     Pid = Room_reg#muc_online_room.pid,
-			     case {Host, Room_reg#muc_online_room.name_host} of
-				 {Host, {Name1, Host}} ->
-				     [{Name1, Host, Pid} | Names];
-				 {global, {Name1, Host1}} ->
-				     [{Name1, Host1, Pid} | Names];
-				 _ ->
-				     Names
-			     end
-		     end,
-    ets:foldr(Get_room_names, [], muc_online_room).
+get_rooms(ServerHost) ->
+    Hosts = find_hosts(ServerHost),
+    lists:flatmap(
+      fun(Host) ->
+	      mod_muc:get_online_rooms(Host)
+      end, Hosts).
 
 get_room_config(Room_pid) ->
     {ok, R} = gen_fsm:sync_send_all_state_event(Room_pid, get_config),
@@ -830,11 +817,11 @@ format_room_option(OptionString, ValueString) ->
 
 %% @doc Get the Pid of an existing MUC room, or 'room_not_found'.
 get_room_pid(Name, Service) ->
-    case mnesia:dirty_read(muc_online_room, {Name, Service}) of
-	[] ->
+    case mod_muc:find_online_room(Name, Service) of
+	error ->
 	    room_not_found;
-	[Room] ->
-	    Room#muc_online_room.pid
+	{ok, Pid} ->
+	    Pid
     end.
 
 %% It is required to put explicitely all the options because
@@ -901,10 +888,9 @@ get_options(Config) ->
 %%    [{JID::string(), Domain::string(), Role::string(), Reason::string()}]
 %% @doc Get the affiliations of  the room Name@Service.
 get_room_affiliations(Name, Service) ->
-    case mnesia:dirty_read(muc_online_room, {Name, Service}) of
-	[R] ->
+    case mod_muc:find_online_room(Name, Service) of
+	{ok, Pid} ->
 	    %% Get the PID of the online room, then request its state
-	    Pid = R#muc_online_room.pid,
 	    {ok, StateData} = gen_fsm:sync_send_all_state_event(Pid, get_state),
 	    Affiliations = ?DICT:to_list(StateData#state.affiliations),
 	    lists:map(
@@ -913,7 +899,7 @@ get_room_affiliations(Name, Service) ->
 		 ({{Uname, Domain, _Res}, Aff}) when is_atom(Aff)->
 		      {Uname, Domain, Aff, <<>>}
 	      end, Affiliations);
-	[] ->
+	error ->
 	    throw({error, "The room does not exist."})
     end.
 
@@ -931,14 +917,13 @@ get_room_affiliations(Name, Service) ->
 %% In any other case the action will be to create the affiliation.
 set_room_affiliation(Name, Service, JID, AffiliationString) ->
     Affiliation = jlib:binary_to_atom(AffiliationString),
-    case mnesia:dirty_read(muc_online_room, {Name, Service}) of
-	[R] ->
+    case mod_muc:find_online_room(Name, Service) of
+	{ok, Pid} ->
 	    %% Get the PID for the online room so we can get the state of the room
-	    Pid = R#muc_online_room.pid,
 	    {ok, StateData} = gen_fsm:sync_send_all_state_event(Pid, {process_item_change, {jid:from_string(JID), affiliation, Affiliation, <<"">>}, <<"">>}),
 	    mod_muc:store_room(StateData#state.server_host, StateData#state.host, StateData#state.room, make_opts(StateData)),
 	    ok;
-	[] ->
+	error ->
 	    error
     end.
 
@@ -1073,5 +1058,29 @@ find_host(ServerHost) when is_list(ServerHost) ->
     find_host(list_to_binary(ServerHost));
 find_host(ServerHost) ->
     gen_mod:get_module_opt_host(ServerHost, mod_muc, <<"conference.@HOST@">>).
+
+find_hosts(Global) when Global == global;
+			Global == "global";
+			Global == <<"global">> ->
+    lists:flatmap(
+      fun(ServerHost) ->
+	      case gen_mod:is_loaded(ServerHost, mod_muc) of
+		  true ->
+		      [gen_mod:get_module_opt_host(
+			 ServerHost, mod_muc, <<"conference.@HOST@">>)];
+		  false ->
+		      []
+	      end
+      end, ?MYHOSTS);
+find_hosts(ServerHost) when is_list(ServerHost) ->
+    find_hosts(list_to_binary(ServerHost));
+find_hosts(ServerHost) ->
+    case gen_mod:is_loaded(ServerHost, mod_muc) of
+	true ->
+	    [gen_mod:get_module_opt_host(
+	       ServerHost, mod_muc, <<"conference.@HOST@">>)];
+	false ->
+	    []
+    end.
 
 mod_opt_type(_) -> [].

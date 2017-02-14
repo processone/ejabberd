@@ -153,7 +153,7 @@ $(foreach file,$(DEPS_FILES_FILTERED) $(MAIN_FILES),$(eval $(call COPY_template,
 $(sort $(call TO_DEST,$(MAIN_DIRS) $(DEPS_DIRS))):
 	$(INSTALL) -d $@
 
-$(call TO_DEST,deps/p1_pam/priv/bin/epam): $(LIBDIR)/%: deps/p1_pam/priv/bin/epam $(call TO_DEST,deps/p1_pam/priv/bin/)
+$(call TO_DEST,deps/epam/priv/bin/epam): $(LIBDIR)/%: deps/epam/priv/bin/epam $(call TO_DEST,deps/epam/priv/bin/)
 	$(INSTALL) -m 750 $(O_USER) $< $@
 
 $(call TO_DEST,priv/sql/lite.sql): sql/lite.sql $(call TO_DEST,priv/sql)

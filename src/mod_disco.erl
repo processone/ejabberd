@@ -37,9 +37,7 @@
 	 get_local_features/5, get_local_services/5,
 	 process_sm_iq_items/1, process_sm_iq_info/1,
 	 get_sm_identity/5, get_sm_features/5, get_sm_items/5,
-	 get_info/5, register_feature/2, unregister_feature/2,
-	 register_extra_domain/2, unregister_extra_domain/2,
-	 transform_module_options/1, mod_opt_type/1, depends/2]).
+	 get_info/5, transform_module_options/1, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -48,8 +46,10 @@
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("mod_roster.hrl").
 
+-type features_acc() :: {error, stanza_error()} | {result, [binary()]} | empty.
+-type items_acc() :: {error, stanza_error()} | {result, [disco_item()]} | empty.
+
 start(Host, Opts) ->
-    ejabberd_local:refresh_iq_handlers(),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
                              one_queue),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
@@ -64,12 +64,9 @@ start(Host, Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
 				  ?NS_DISCO_INFO, ?MODULE, process_sm_iq_info,
 				  IQDisc),
-    catch ets:new(disco_features,
-		  [named_table, ordered_set, public]),
-    register_feature(Host, <<"iq">>),
-    register_feature(Host, <<"presence">>),
     catch ets:new(disco_extra_domains,
-		  [named_table, ordered_set, public]),
+		  [named_table, ordered_set, public,
+		   {heir, erlang:group_leader(), none}]),
     ExtraDomains = gen_mod:get_opt(extra_domains, Opts,
                                    fun(Hs) ->
                                            [iolist_to_binary(H) || H <- Hs]
@@ -78,10 +75,6 @@ start(Host, Opts) ->
 			  register_extra_domain(Host, Domain)
 		  end,
 		  ExtraDomains),
-    catch ets:new(disco_sm_features,
-		  [named_table, ordered_set, public]),
-    catch ets:new(disco_sm_nodes,
-		  [named_table, ordered_set, public]),
     ejabberd_hooks:add(disco_local_items, Host, ?MODULE,
 		       get_local_services, 100),
     ejabberd_hooks:add(disco_local_features, Host, ?MODULE,
@@ -121,34 +114,13 @@ stop(Host) ->
 				     ?NS_DISCO_ITEMS),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
 				     ?NS_DISCO_INFO),
-    catch ets:match_delete(disco_features, {{'_', Host}}),
     catch ets:match_delete(disco_extra_domains,
 			   {{'_', Host}}),
     ok.
 
--spec register_feature(binary(), binary()) -> true.
-register_feature(Host, Feature) ->
-    catch ets:new(disco_features,
-		  [named_table, ordered_set, public]),
-    ets:insert(disco_features, {{Feature, Host}}).
-
--spec unregister_feature(binary(), binary()) -> true.
-unregister_feature(Host, Feature) ->
-    catch ets:new(disco_features,
-		  [named_table, ordered_set, public]),
-    ets:delete(disco_features, {Feature, Host}).
-
 -spec register_extra_domain(binary(), binary()) -> true.
 register_extra_domain(Host, Domain) ->
-    catch ets:new(disco_extra_domains,
-		  [named_table, ordered_set, public]),
     ets:insert(disco_extra_domains, {{Domain, Host}}).
-
--spec unregister_extra_domain(binary(), binary()) -> true.
-unregister_extra_domain(Host, Domain) ->
-    catch ets:new(disco_extra_domains,
-		  [named_table, ordered_set, public]),
-    ets:delete(disco_extra_domains, {Domain, Host}).
 
 -spec process_local_iq_items(iq()) -> iq().
 process_local_iq_items(#iq{type = set, lang = Lang} = IQ) ->
@@ -198,8 +170,7 @@ get_local_identity(Acc, _From, _To, <<"">>, _Lang) ->
 get_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
--spec get_local_features({error, stanza_error()} | {result, [binary()]} | empty,
-			 jid(), jid(), binary(), binary()) ->
+-spec get_local_features(features_acc(), jid(), jid(), binary(), binary()) ->
 				{error, stanza_error()} | {result, [binary()]}.
 get_local_features({error, _Error} = Acc, _From, _To,
 		   _Node, _Lang) ->
@@ -209,11 +180,11 @@ get_local_features(Acc, _From, To, <<"">>, _Lang) ->
 		{result, Features} -> Features;
 		empty -> []
 	    end,
-    Host = To#jid.lserver,
-    {result,
-     ets:select(disco_features,
-		ets:fun2ms(fun({{F, H}}) when H == Host -> F end))
-     ++ Feats};
+    {result, lists:usort(
+	       lists:flatten(
+		 [<<"iq">>, <<"presence">>,
+		  ?NS_DISCO_INFO, ?NS_DISCO_ITEMS, Feats,
+		  ejabberd_local:get_features(To#jid.lserver)]))};
 get_local_features(Acc, _From, _To, _Node, Lang) ->
     case Acc of
       {result, _Features} -> Acc;
@@ -222,9 +193,7 @@ get_local_features(Acc, _From, _To, _Node, Lang) ->
 	    {error, xmpp:err_item_not_found(Txt, Lang)}
     end.
 
--spec get_local_services({error, stanza_error()} | {result, [disco_item()]} | empty,
-			 jid(), jid(),
-			 binary(), binary()) ->
+-spec get_local_services(items_acc(), jid(), jid(), binary(), binary()) ->
 				{error, stanza_error()} | {result, [disco_item()]}.
 get_local_services({error, _Error} = Acc, _From, _To,
 		   _Node, _Lang) ->
@@ -269,7 +238,7 @@ get_vh_services(Host) ->
 			   [VH | _] -> VH == Host
 			 end
 		 end,
-		 ejabberd_router:dirty_get_all_routes()).
+		 ejabberd_router:get_all_routes()).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -296,9 +265,7 @@ process_sm_iq_items(#iq{type = get, lang = Lang,
 	    xmpp:make_error(IQ, xmpp:err_subscription_required(Txt, Lang))
     end.
 
--spec get_sm_items({error, stanza_error()} | {result, [disco_item()]} | empty,
-		   jid(), jid(),
-		   binary(), binary()) ->
+-spec get_sm_items(items_acc(), jid(), jid(), binary(), binary()) ->
 			  {error, stanza_error()} | {result, [disco_item()]}.
 get_sm_items({error, _Error} = Acc, _From, _To, _Node,
 	     _Lang) ->
@@ -383,8 +350,7 @@ get_sm_identity(Acc, _From,
 	_ -> []
       end.
 
--spec get_sm_features({error, stanza_error()} | {result, [binary()]} | empty,
-		      jid(), jid(), binary(), binary()) ->
+-spec get_sm_features(features_acc(), jid(), jid(), binary(), binary()) ->
 			     {error, stanza_error()} | {result, [binary()]}.
 get_sm_features(empty, From, To, _Node, Lang) ->
     #jid{luser = LFrom, lserver = LSFrom} = From,

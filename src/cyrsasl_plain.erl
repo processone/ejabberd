@@ -36,8 +36,7 @@
 -export_type([error_reason/0]).
 
 start(_Opts) ->
-    cyrsasl:register_mechanism(<<"PLAIN">>, ?MODULE, plain),
-    ok.
+    cyrsasl:register_mechanism(<<"PLAIN">>, ?MODULE, plain).
 
 stop() -> ok.
 

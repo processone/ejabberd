@@ -55,6 +55,7 @@ start_link(Host, Opts) ->
 			  [Host, Opts], []).
 
 init([Host, Opts]) ->
+    process_flag(trap_exit, true),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
                              one_queue),
     MyHost = gen_mod:get_opt_host(Host, Opts, <<"proxy.@HOST@">>),
@@ -175,31 +176,39 @@ process_bytestreams(#iq{type = set, lang = Lang, from = InitiatorJID, to = To,
 				 all),
     case acl:match_rule(ServerHost, ACL, InitiatorJID) of
 	allow ->
+	    Node = ejabberd_cluster:get_node_by_id(To#jid.lresource),
 	    Target = jid:to_string(jid:tolower(TargetJID)),
 	    Initiator = jid:to_string(jid:tolower(InitiatorJID)),
 	    SHA1 = p1_sha:sha(<<SID/binary, Initiator/binary, Target/binary>>),
-	    case mod_proxy65_sm:activate_stream(SHA1, InitiatorJID,
-						TargetJID, ServerHost) of
-		ok ->
+	    Mod = gen_mod:ram_db_mod(global, mod_proxy65),
+	    MaxConnections = max_connections(ServerHost),
+	    case Mod:activate_stream(SHA1, Initiator, MaxConnections, Node) of
+		{ok, InitiatorPid, TargetPid} ->
+		    mod_proxy65_stream:activate(
+		      {InitiatorPid, InitiatorJID}, {TargetPid, TargetJID}),
 		    xmpp:make_iq_result(IQ);
-		false ->
+		{error, notfound} ->
 		    Txt = <<"Failed to activate bytestream">>,
 		    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang));
-		limit ->
+		{error, {limit, InitiatorPid, TargetPid}} ->
+		    mod_proxy65_stream:stop(InitiatorPid),
+		    mod_proxy65_stream:stop(TargetPid),
 		    Txt = <<"Too many active bytestreams">>,
 		    xmpp:make_error(IQ, xmpp:err_resource_constraint(Txt, Lang));
-		conflict ->
+		{error, conflict} ->
 		    Txt = <<"Bytestream already activated">>,
 		    xmpp:make_error(IQ, xmpp:err_conflict(Txt, Lang));
-		Err ->
+		{error, Err} ->
 		    ?ERROR_MSG("failed to activate bytestream from ~s to ~s: ~p",
 			       [Initiator, Target, Err]),
-		    xmpp:make_error(IQ, xmpp:err_internal_server_error())
+		    Txt = <<"Database failure">>,
+		    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
 	    end;
 	deny ->
 	    Txt = <<"Denied by ACL">>,
 	    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang))
     end.
+
 %%%-------------------------
 %%% Auxiliary functions.
 %%%-------------------------
@@ -219,7 +228,8 @@ get_streamhost(Host, ServerHost) ->
     HostName = gen_mod:get_module_opt(ServerHost, mod_proxy65, hostname,
 				      fun iolist_to_binary/1,
 				      jlib:ip_to_list(IP)),
-    #streamhost{jid = jid:make(Host),
+    Resource = ejabberd_cluster:node_id(),
+    #streamhost{jid = jid:make(<<"">>, Host, Resource),
 		host = HostName,
 		port = Port}.
 
@@ -246,3 +256,9 @@ get_my_ip() ->
       {ok, Addr} -> Addr;
       {error, _} -> {127, 0, 0, 1}
     end.
+
+max_connections(ServerHost) ->
+    gen_mod:get_module_opt(ServerHost, mod_proxy65, max_connections,
+			   fun(I) when is_integer(I), I>0 -> I;
+			      (infinity) -> infinity
+			   end, infinity).

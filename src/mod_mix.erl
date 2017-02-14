@@ -28,7 +28,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start_link/2, start/2, stop/1, process_iq/1,
+-export([start/2, stop/1, process_iq/1,
 	 disco_items/5, disco_identity/5, disco_info/5,
 	 disco_features/5, mod_opt_type/1, depends/2]).
 
@@ -39,7 +39,6 @@
 -include("logger.hrl").
 -include("xmpp.hrl").
 
--define(PROCNAME, ejabberd_mod_mix).
 -define(NODES, [?NS_MIX_NODES_MESSAGES,
 		?NS_MIX_NODES_PRESENCE,
 		?NS_MIX_NODES_PARTICIPANTS,
@@ -52,21 +51,11 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-start_link(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
-
 start(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
-		 transient, 5000, worker, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, ChildSpec).
+    gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc),
-    ok.
+    gen_mod:stop_child(?MODULE, Host).
 
 -spec disco_features({error, stanza_error()} | {result, [binary()]} | empty,
 		     jid(), jid(), binary(), binary()) -> {result, [binary()]}.
@@ -134,6 +123,7 @@ process_iq(#iq{lang = Lang} = IQ) ->
 %%% gen_server callbacks
 %%%===================================================================
 init([ServerHost, Opts]) ->
+    process_flag(trap_exit, true),
     Host = gen_mod:get_opt_host(ServerHost, Opts, <<"mix.@HOST@">>),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
                              one_queue),

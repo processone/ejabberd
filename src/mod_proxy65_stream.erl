@@ -99,9 +99,10 @@ init([Socket, Host, Opts]) ->
 	    socket = Socket, shaper = Shaper, timer = TRef}}.
 
 terminate(_Reason, StateName, #state{sha1 = SHA1}) ->
-    catch mod_proxy65_sm:unregister_stream(SHA1),
+    Mod = gen_mod:ram_db_mod(global, mod_proxy65),
+    Mod:unregister_stream(SHA1),
     if StateName == stream_established ->
-	   ?INFO_MSG("Bytestream terminated", []);
+	   ?INFO_MSG("(~w) Bytestream terminated", [self()]);
        true -> ok
     end.
 
@@ -168,8 +169,9 @@ wait_for_request(Packet,
     Request = mod_proxy65_lib:unpack_request(Packet),
     case Request of
       #s5_request{sha1 = SHA1, cmd = connect} ->
-	  case catch mod_proxy65_sm:register_stream(SHA1) of
-	    {atomic, ok} ->
+	  Mod = gen_mod:ram_db_mod(global, mod_proxy65),
+	  case Mod:register_stream(SHA1, self()) of
+	    ok ->
 		inet:setopts(Socket, [{active, false}]),
 		gen_tcp:send(Socket,
 			     mod_proxy65_lib:make_reply(Request)),

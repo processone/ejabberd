@@ -54,7 +54,8 @@
     on_user_offline/3, remove_user/2,
     disco_local_identity/5, disco_local_features/5,
     disco_local_items/5, disco_sm_identity/5,
-    disco_sm_features/5, disco_sm_items/5]).
+    disco_sm_features/5, disco_sm_items/5,
+    c2s_handle_info/2]).
 
 %% exported iq handlers
 -export([iq_sm/1, process_disco_info/1, process_disco_items/1,
@@ -85,13 +86,12 @@
 	 err_unsupported_access_model/0]).
 
 %% API and gen_server callbacks
--export([start_link/2, start/2, stop/1, init/1,
+-export([start/2, stop/1, init/1,
     handle_call/3, handle_cast/2, handle_info/2,
     terminate/2, code_change/3, depends/2]).
 
 -export([send_loop/1, mod_opt_type/1]).
 
--define(PROCNAME, ejabberd_mod_pubsub).
 -define(LOOPNAME, ejabberd_mod_pubsub_loop).
 
 %%====================================================================
@@ -176,7 +176,7 @@
 
 -type(pubsubLastItem() ::
     #pubsub_last_item{
-	nodeid   :: mod_pubsub:nodeIdx(),
+	nodeid   :: {binary(), mod_pubsub:nodeIdx()},
 	itemid   :: mod_pubsub:itemId(),
 	creation :: {erlang:timestamp(), ljid()},
 	payload  :: mod_pubsub:payload()
@@ -218,20 +218,11 @@
     ).
 
 
-start_link(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
-
 start(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
-	    transient, 1000, worker, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, ChildSpec).
+    gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:call(Proc, stop),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    gen_mod:stop_child(?MODULE, Host).
 
 %%====================================================================
 %% gen_server callbacks
@@ -247,6 +238,7 @@ stop(Host) ->
 -spec init([binary() | [{_,_}],...]) -> {'ok',state()}.
 
 init([ServerHost, Opts]) ->
+    process_flag(trap_exit, true),
     ?DEBUG("pubsub init ~p ~p", [ServerHost, Opts]),
     Host = gen_mod:get_opt_host(ServerHost, Opts, <<"pubsub.@HOST@">>),
     ejabberd_router:register_route(Host, ServerHost),
@@ -262,7 +254,10 @@ init([ServerHost, Opts]) ->
 	    fun(A) when is_integer(A) andalso A >= 0 -> A end, ?MAXITEMS),
     MaxSubsNode = gen_mod:get_opt(max_subscriptions_node, Opts,
 	    fun(A) when is_integer(A) andalso A >= 0 -> A end, undefined),
-    [pubsub_index:init(Host, ServerHost, Opts) || gen_mod:db_type(ServerHost, ?MODULE)==mnesia],
+    case gen_mod:db_type(ServerHost, ?MODULE) of
+	mnesia -> init_mnesia(Host, ServerHost, Opts);
+	_ -> ok
+    end,
     {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
     DefaultModule = plugin(Host, hd(Plugins)),
     BaseOptions = DefaultModule:options(),
@@ -271,7 +266,6 @@ init([ServerHost, Opts]) ->
     ejabberd_mnesia:create(?MODULE, pubsub_last_item,
 	[{ram_copies, [node()]},
 	    {attributes, record_info(fields, pubsub_last_item)}]),
-    mod_disco:register_feature(ServerHost, ?NS_PUBSUB),
     lists:foreach(
       fun(H) ->
 	      T = gen_mod:get_module_proc(H, config),
@@ -303,8 +297,8 @@ init([ServerHost, Opts]) ->
 	?MODULE, out_subscription, 50),
     ejabberd_hooks:add(remove_user, ServerHost,
 	?MODULE, remove_user, 50),
-    ejabberd_hooks:add(anonymous_purge_hook, ServerHost,
-	?MODULE, remove_user, 50),
+    ejabberd_hooks:add(c2s_handle_info, ServerHost,
+	?MODULE, c2s_handle_info, 50),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO,
 				  ?MODULE, process_disco_info, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS,
@@ -336,9 +330,6 @@ init([ServerHost, Opts]) ->
 	false ->
 	    ok
     end,
-    pubsub_migrate:update_node_database(Host, ServerHost),
-    pubsub_migrate:update_state_database(Host, ServerHost),
-    pubsub_migrate:update_lastitem_database(Host, ServerHost),
     {_, State} = init_send_loop(ServerHost),
     {ok, State}.
 
@@ -380,6 +371,18 @@ depends(ServerHost, Opts) ->
 	      catch _:undef -> []
 	      end
       end, Plugins).
+
+init_mnesia(Host, ServerHost, Opts) ->
+    pubsub_index:init(Host, ServerHost, Opts),
+    spawn(fun() ->
+	      %% maybe upgrade db. this can take time when upgrading existing
+	      %% data from ejabberd 2.1.x, so we don't want this to block
+	      %% calling gen_server:start
+	      pubsub_migrate:update_node_database(Host, ServerHost),
+	      pubsub_migrate:update_state_database(Host, ServerHost),
+	      pubsub_migrate:update_item_database(Host, ServerHost),
+	      pubsub_migrate:update_lastitem_database(Host, ServerHost)
+	  end).
 
 %% @doc Call the init/1 function for each plugin declared in the config file.
 %% The default plugin module is implicit.
@@ -530,7 +533,7 @@ disco_local_features(Acc, _From, To, <<>>, _Lang) ->
 	{result, I} -> I;
 	_ -> []
     end,
-    {result, Feats ++ [feature(F) || F <- features(Host, <<>>)]};
+    {result, Feats ++ [?NS_PUBSUB|[feature(F) || F <- features(Host, <<>>)]]};
 disco_local_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
@@ -910,15 +913,14 @@ terminate(_Reason,
 	?MODULE, out_subscription, 50),
     ejabberd_hooks:delete(remove_user, ServerHost,
 	?MODULE, remove_user, 50),
-    ejabberd_hooks:delete(anonymous_purge_hook, ServerHost,
-	?MODULE, remove_user, 50),
+    ejabberd_hooks:delete(c2s_handle_info, ServerHost,
+	?MODULE, c2s_handle_info, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_PUBSUB),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_PUBSUB_OWNER),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_COMMANDS),
-    mod_disco:unregister_feature(ServerHost, ?NS_PUBSUB),
     case whereis(gen_mod:get_module_proc(ServerHost, ?LOOPNAME)) of
 	undefined ->
 	    ?ERROR_MSG("~s process is dead, pubsub was broken", [?LOOPNAME]);
@@ -2224,10 +2226,9 @@ dispatch_items({FromU, FromS, FromR} = From, {ToU, ToS, ToR} = To,
     end,
     if C2SPid == undefined -> ok;
 	true ->
-	    ejabberd_c2s:send_filtered(C2SPid,
-		{pep_message, <<Node/binary, "+notify">>},
+	    C2SPid ! {send_filtered, {pep_message, <<Node/binary, "+notify">>},
 		service_jid(From), jid:make(To),
-		Stanza)
+		      Stanza}
     end;
 dispatch_items(From, To, _Node, Stanza) ->
     ejabberd_router:route(service_jid(From), jid:make(To), Stanza).
@@ -2761,8 +2762,9 @@ get_resource_state({U, S, R}, ShowValues, JIDs) ->
 	    lists:append([{U, S, R}], JIDs);
 	Pid ->
 	    Show = case ejabberd_c2s:get_presence(Pid) of
-		{_, _, <<"available">>, _} -> <<"online">>;
-		{_, _, State, _} -> State
+		       #presence{type = unavailable} -> <<"unavailable">>;
+		       #presence{show = undefined} -> <<"online">>;
+		       #presence{show = S} -> atom_to_binary(S, latin1)
 	    end,
 	    case lists:member(Show, ShowValues) of
 		%% If yes, item can be delivered
@@ -3008,24 +3010,55 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, Nidx, Type, NodeO
     broadcast_stanza({LUser, LServer, <<>>}, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM),
     %% Handles implicit presence subscriptions
     SenderResource = user_resource(LUser, LServer, LResource),
-    case ejabberd_sm:get_session_pid(LUser, LServer, SenderResource) of
-	C2SPid when is_pid(C2SPid) ->
 	    NotificationType = get_option(NodeOptions, notification_type, headline),
 	    Stanza = add_message_type(BaseStanza, NotificationType),
 	    %% set the from address on the notification to the bare JID of the account owner
 	    %% Also, add "replyto" if entity has presence subscription to the account owner
 	    %% See XEP-0163 1.1 section 4.3.1
-	    ejabberd_c2s:broadcast(C2SPid,
-		{pep_message, <<((Node))/binary, "+notify">>},
-		_Sender = jid:make(LUser, LServer, <<"">>),
-		_StanzaToSend = add_extended_headers(
-				  Stanza, 
-				  _ReplyTo = extended_headers([Publisher])));
-	_ ->
-	    ?DEBUG("~p@~p has no session; can't deliver ~p to contacts", [LUser, LServer, BaseStanza])
-    end;
+    ejabberd_sm:route(jid:make(LUser, LServer, SenderResource),
+		      {pep_message, <<((Node))/binary, "+notify">>,
+		       jid:make(LUser, LServer, <<"">>),
+		       add_extended_headers(
+			 Stanza, extended_headers([Publisher]))});
 broadcast_stanza(Host, _Publisher, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
     broadcast_stanza(Host, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM).
+
+-spec c2s_handle_info(ejabberd_c2s:state(), term()) -> ejabberd_c2s:state().
+c2s_handle_info(#{server := Server} = C2SState,
+		{pep_message, Feature, From, Packet}) ->
+    LServer = jid:nameprep(Server),
+    lists:foreach(
+      fun({USR, Caps}) ->
+	      Features = mod_caps:get_features(LServer, Caps),
+	      case lists:member(Feature, Features) of
+		  true ->
+		      To = jid:make(USR),
+		      NewPacket = xmpp:set_from_to(Packet, From, To),
+		      ejabberd_router:route(From, To, NewPacket);
+		  false ->
+		      ok
+	      end
+      end, mod_caps:list_features(C2SState)),
+    {stop, C2SState};
+c2s_handle_info(#{server := Server} = C2SState,
+		{send_filtered, {pep_message, Feature}, From, To, Packet}) ->
+    LServer = jid:nameprep(Server),
+    case mod_caps:get_user_caps(To, C2SState) of
+	{ok, Caps} ->
+	    Features = mod_caps:get_features(LServer, Caps),
+	    case lists:member(Feature, Features) of
+		true ->
+		    NewPacket = xmpp:set_from_to(Packet, From, To),
+		    ejabberd_router:route(From, To, NewPacket);
+		false ->
+		    ok
+	    end;
+	error ->
+	    ok
+    end,
+    {stop, C2SState};
+c2s_handle_info(C2SState, _) ->
+    C2SState.
 
 subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
     NodesToDeliver = fun (Depth, Node, Subs, Acc) ->
@@ -3384,7 +3417,7 @@ set_cached_item({_, ServerHost, _}, Nidx, ItemId, Publisher, Payload) ->
     set_cached_item(ServerHost, Nidx, ItemId, Publisher, Payload);
 set_cached_item(Host, Nidx, ItemId, Publisher, Payload) ->
     case is_last_item_cache_enabled(Host) of
-	true -> mnesia:dirty_write({pubsub_last_item, Nidx, ItemId,
+	true -> mnesia:dirty_write({pubsub_last_item, {Host, Nidx}, ItemId,
 		    {p1_time_compat:timestamp(), jid:tolower(jid:remove_resource(Publisher))},
 		    Payload});
 	_ -> ok
@@ -3395,7 +3428,7 @@ unset_cached_item({_, ServerHost, _}, Nidx) ->
     unset_cached_item(ServerHost, Nidx);
 unset_cached_item(Host, Nidx) ->
     case is_last_item_cache_enabled(Host) of
-	true -> mnesia:dirty_delete({pubsub_last_item, Nidx});
+	true -> mnesia:dirty_delete({pubsub_last_item, {Host, Nidx}});
 	_ -> ok
     end.
 
@@ -3405,8 +3438,8 @@ get_cached_item({_, ServerHost, _}, Nidx) ->
 get_cached_item(Host, Nidx) ->
     case is_last_item_cache_enabled(Host) of
 	true ->
-	    case mnesia:dirty_read({pubsub_last_item, Nidx}) of
-		[#pubsub_last_item{itemid = ItemId, creation = Creation, payload = Payload}] ->
+	    case mnesia:dirty_read({pubsub_last_item, {Host, Nidx}}) of
+		[#pubsub_last_item{itemid = {Host, ItemId}, creation = Creation, payload = Payload}] ->
 		    %            [{pubsub_last_item, Nidx, ItemId, Creation,
 		    %              Payload}] ->
 		    #pubsub_item{itemid = {ItemId, Nidx},

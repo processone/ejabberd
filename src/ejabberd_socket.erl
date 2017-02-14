@@ -33,10 +33,12 @@
 	 connect/4,
 	 connect/5,
 	 starttls/2,
-	 starttls/3,
 	 compress/1,
 	 compress/2,
 	 reset_stream/1,
+	 send_element/2,
+	 send_header/2,
+	 send_trailer/1,
 	 send/2,
 	 send_xml/2,
 	 change_shaper/2,
@@ -46,9 +48,11 @@
 	 get_peer_certificate/1,
 	 get_verify_result/1,
 	 close/1,
+	 pp/1,
 	 sockname/1, peername/1]).
 
 -include("ejabberd.hrl").
+-include("xmpp.hrl").
 -include("logger.hrl").
 
 -type sockmod() :: ejabberd_bosh |
@@ -68,60 +72,68 @@
 
 -export_type([socket/0, socket_state/0, sockmod/0]).
 
+-callback start({module(), socket_state()},
+		[proplists:property()]) -> {ok, pid()} | {error, term()} | ignore.
+-callback start_link({module(), socket_state()},
+		     [proplists:property()]) -> {ok, pid()} | {error, term()} | ignore.
+-callback socket_type() -> xml_stream | independent | raw.
+
+-define(is_http_socket(S),
+	(S#socket_state.sockmod == ejabberd_bosh orelse
+	 S#socket_state.sockmod == ejabberd_http_ws)).
 
 %%====================================================================
 %% API
 %%====================================================================
--spec start(atom(), sockmod(), socket(), [{atom(), any()}]) -> any().
-
+-spec start(atom(), sockmod(), socket(), [proplists:propery()])
+      -> {ok, pid() | independent} | {error, inet:posix() | any()}.
 start(Module, SockMod, Socket, Opts) ->
     case Module:socket_type() of
+	independent -> {ok, independent};
       xml_stream ->
-	  MaxStanzaSize = case lists:keysearch(max_stanza_size, 1,
-					       Opts)
-			      of
-			    {value, {_, Size}} -> Size;
-			    _ -> infinity
-			  end,
-	  {ReceiverMod, Receiver, RecRef} = case catch
-						   SockMod:custom_receiver(Socket)
-						of
+	    MaxStanzaSize = proplists:get_value(max_stanza_size, Opts, infinity),
+	    {ReceiverMod, Receiver, RecRef} =
+		try SockMod:custom_receiver(Socket) of
 					      {receiver, RecMod, RecPid} ->
-						  {RecMod, RecPid, RecMod};
-					      _ ->
-						  RecPid =
-						      ejabberd_receiver:start(Socket,
-									      SockMod,
-									      none,
-									      MaxStanzaSize),
-						  {ejabberd_receiver, RecPid,
-						   RecPid}
+			{RecMod, RecPid, RecMod}
+		catch _:_ ->
+			RecPid = ejabberd_receiver:start(
+				   Socket, SockMod, none, MaxStanzaSize),
+			{ejabberd_receiver, RecPid, RecPid}
 					    end,
 	  SocketData = #socket_state{sockmod = SockMod,
 				     socket = Socket, receiver = RecRef},
 	  case Module:start({?MODULE, SocketData}, Opts) of
 	    {ok, Pid} ->
 		case SockMod:controlling_process(Socket, Receiver) of
-		  ok -> ok;
-		  {error, _Reason} -> SockMod:close(Socket)
-		end,
-		ReceiverMod:become_controller(Receiver, Pid);
-	    {error, _Reason} ->
+			ok ->
+			    ReceiverMod:become_controller(Receiver, Pid),
+			    {ok, Receiver};
+			Err ->
+			    SockMod:close(Socket),
+			    Err
+		    end;
+		Err ->
 		SockMod:close(Socket),
 		case ReceiverMod of
 		  ejabberd_receiver -> ReceiverMod:close(Receiver);
 		  _ -> ok
-		end
+		    end,
+		    Err
 	  end;
-      independent -> ok;
       raw ->
 	  case Module:start({SockMod, Socket}, Opts) of
 	    {ok, Pid} ->
 		case SockMod:controlling_process(Socket, Pid) of
-		  ok -> ok;
-		  {error, _Reason} -> SockMod:close(Socket)
+			ok ->
+			    {ok, Pid};
+			{error, _} = Err ->
+			    SockMod:close(Socket),
+			    Err
 		end;
-	    {error, _Reason} -> SockMod:close(Socket)
+		Err ->
+		    SockMod:close(Socket),
+		    Err
 	  end
     end.
 
@@ -147,25 +159,31 @@ connect(Addr, Port, Opts, Timeout, Owner) ->
       {error, _Reason} = Error -> Error
     end.
 
-starttls(SocketData, TLSOpts) ->
-    {ok, TLSSocket} = fast_tls:tcp_to_tls(SocketData#socket_state.socket, TLSOpts),
-    ejabberd_receiver:starttls(SocketData#socket_state.receiver, TLSSocket),
-    SocketData#socket_state{socket = TLSSocket, sockmod = fast_tls}.
-
-starttls(SocketData, TLSOpts, Data) ->
-    {ok, TLSSocket} = fast_tls:tcp_to_tls(SocketData#socket_state.socket, TLSOpts),
-    ejabberd_receiver:starttls(SocketData#socket_state.receiver, TLSSocket),
-    send(SocketData, Data),
-    SocketData#socket_state{socket = TLSSocket, sockmod = fast_tls}.
+starttls(#socket_state{socket = Socket,
+		       receiver = Receiver} = SocketData, TLSOpts) ->
+    case fast_tls:tcp_to_tls(Socket, TLSOpts) of
+	{ok, TLSSocket} ->
+	    case ejabberd_receiver:starttls(Receiver, TLSSocket) of
+		ok ->
+		    {ok, SocketData#socket_state{socket = TLSSocket,
+						 sockmod = fast_tls}};
+		{error, _} = Err ->
+		    Err
+	    end;
+	{error, _} = Err ->
+	    Err
+    end.
 
 compress(SocketData) -> compress(SocketData, undefined).
 
 compress(SocketData, Data) ->
-    {ok, ZlibSocket} =
-	ejabberd_receiver:compress(SocketData#socket_state.receiver,
-				   Data),
-    SocketData#socket_state{socket = ZlibSocket,
-			    sockmod = ezlib}.
+    case ejabberd_receiver:compress(SocketData#socket_state.receiver, Data) of
+	{ok, ZlibSocket} ->
+	    {ok, SocketData#socket_state{socket = ZlibSocket, sockmod = ezlib}};
+	Err ->
+	    ?ERROR_MSG("compress failed: ~p", [Err]),
+	    Err
+    end.
 
 reset_stream(SocketData)
     when is_pid(SocketData#socket_state.receiver) ->
@@ -174,29 +192,41 @@ reset_stream(SocketData)
     when is_atom(SocketData#socket_state.receiver) ->
     (SocketData#socket_state.receiver):reset_stream(SocketData#socket_state.socket).
 
--spec send(socket_state(), iodata()) -> ok.
+-spec send_element(socket_state(), fxml:xmlel()) -> ok | {error, inet:posix()}.
+send_element(SocketData, El) when ?is_http_socket(SocketData) ->
+    send_xml(SocketData, {xmlstreamelement, El});
+send_element(SocketData, El) ->
+    send(SocketData, fxml:element_to_binary(El)).
 
-send(SocketData, Data) ->
-    case catch (SocketData#socket_state.sockmod):send(
-	     SocketData#socket_state.socket, Data) of
-        ok -> ok;
-	{error, timeout} ->
-	    ?INFO_MSG("Timeout on ~p:send",[SocketData#socket_state.sockmod]),
-	    exit(normal);
-        Error ->
-	    ?DEBUG("Error in ~p:send: ~p",[SocketData#socket_state.sockmod, Error]),
-	    exit(normal)
+-spec send_header(socket_state(), fxml:xmlel()) -> ok | {error, inet:posix()}.
+send_header(SocketData, El) when ?is_http_socket(SocketData) ->
+    send_xml(SocketData, {xmlstreamstart, El#xmlel.name, El#xmlel.attrs});
+send_header(SocketData, El) ->
+    send(SocketData, fxml:element_to_header(El)).
+
+-spec send_trailer(socket_state()) -> ok | {error, inet:posix()}.
+send_trailer(SocketData) when ?is_http_socket(SocketData) ->
+    send_xml(SocketData, {xmlstreamend, <<"stream:stream">>});
+send_trailer(SocketData) ->
+    send(SocketData, <<"</stream:stream>">>).
+
+-spec send(socket_state(), iodata()) -> ok | {error, inet:posix()}.
+send(#socket_state{sockmod = SockMod, socket = Socket} = SocketData, Data) ->
+    ?DEBUG("(~s) Send XML on stream = ~p", [pp(SocketData), Data]),
+    try SockMod:send(Socket, Data)
+    catch _:badarg ->
+	    %% Some modules throw badarg exceptions on closed sockets
+	    %% TODO: their code should be improved
+	    {error, einval}
     end.
 
-%% Can only be called when in c2s StateData#state.xml_socket is true
-%% This function is used for HTTP bind
-%% sockmod=ejabberd_http_ws|ejabberd_http_bind or any custom module
--spec send_xml(socket_state(), fxml:xmlel()) -> any().
-
-send_xml(SocketData, Data) ->
-    catch
-      (SocketData#socket_state.sockmod):send_xml(SocketData#socket_state.socket,
-						 Data).
+-spec send_xml(socket_state(),
+	       {xmlstreamelement, fxml:xmlel()} |
+	       {xmlstreamstart, binary(), [{binary(), binary()}]} |
+	       {xmlstreamend, binary()} |
+	       {xmlstreamraw, iodata()}) -> term().
+send_xml(SocketData, El) ->
+    (SocketData#socket_state.sockmod):send_xml(SocketData#socket_state.socket, El).
 
 change_shaper(SocketData, Shaper)
     when is_pid(SocketData#socket_state.receiver) ->
@@ -254,3 +284,7 @@ peername(#socket_state{sockmod = SockMod,
       gen_tcp -> inet:peername(Socket);
       _ -> SockMod:peername(Socket)
     end.
+
+pp(#socket_state{receiver = Receiver} = State) ->
+    Transport = get_transport(State),
+    io_lib:format("~s|~w", [Transport, Receiver]).

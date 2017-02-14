@@ -30,14 +30,13 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0]).
+-export([start/0, start_link/0]).
 
 -export([route/3, route_iq/4, route_iq/5, process_iq/3,
-	 process_iq_reply/3, register_iq_handler/4,
+	 process_iq_reply/3, get_features/1,
 	 register_iq_handler/5, register_iq_response_handler/4,
 	 register_iq_response_handler/5, unregister_iq_handler/2,
-	 unregister_iq_response_handler/2, refresh_iq_handlers/0,
-	 bounce_resource_packet/3]).
+	 unregister_iq_response_handler/2, bounce_resource_packet/3]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
@@ -45,7 +44,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
-
+-include_lib("stdlib/include/ms_transform.hrl").
 -include("xmpp.hrl").
 
 -record(state, {}).
@@ -69,6 +68,11 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
+start() ->
+    ChildSpec = {?MODULE, {?MODULE, start_link, []},
+		 transient, 1000, worker, [?MODULE]},
+    supervisor:start_child(ejabberd_sup, ChildSpec).
+
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [],
 			  []).
@@ -78,10 +82,7 @@ process_iq(From, To, #iq{type = T, lang = Lang, sub_els = [El]} = Packet)
   when T == get; T == set ->
     XMLNS = xmpp:get_ns(El),
     Host = To#jid.lserver,
-    case ets:lookup(?IQTABLE, {XMLNS, Host}) of
-	[{_, Module, Function}] ->
-	    gen_iq_handler:handle(Host, Module, Function, no_queue,
-				  From, To, Packet);
+    case ets:lookup(?IQTABLE, {Host, XMLNS}) of
 	[{_, Module, Function, Opts}] ->
 	    gen_iq_handler:handle(Host, Module, Function, Opts,
 				  From, To, Packet);
@@ -90,8 +91,13 @@ process_iq(From, To, #iq{type = T, lang = Lang, sub_els = [El]} = Packet)
 	    Err = xmpp:err_service_unavailable(Txt, Lang),
 	    ejabberd_router:route_error(To, From, Packet, Err)
     end;
-process_iq(From, To, #iq{type = T} = Packet) when T == get; T == set ->
-    Err = xmpp:err_bad_request(),
+process_iq(From, To, #iq{type = T, lang = Lang, sub_els = SubEls} = Packet)
+  when T == get; T == set ->
+    Txt = case SubEls of
+	      [] -> <<"No child elements found">>;
+	      _ -> <<"Too many child elements">>
+	  end,
+    Err = xmpp:err_bad_request(Txt, Lang),
     ejabberd_router:route_error(To, From, Packet, Err);
 process_iq(From, To, #iq{type = T} = Packet) when T == result; T == error ->
     process_iq_reply(From, To, Packet).
@@ -146,34 +152,25 @@ register_iq_response_handler(_Host, ID, Module,
 		undefined -> ?IQ_TIMEOUT;
 		N when is_integer(N), N > 0 -> N
 	      end,
-    TRef = erlang:start_timer(Timeout, ejabberd_local, ID),
+    TRef = erlang:start_timer(Timeout, ?MODULE, ID),
     mnesia:dirty_write(#iq_response{id = ID,
 				    module = Module,
 				    function = Function,
 				    timer = TRef}).
 
--spec register_iq_handler(binary(), binary(), module(), function()) -> any().
-register_iq_handler(Host, XMLNS, Module, Fun) ->
-    ejabberd_local !
-      {register_iq_handler, Host, XMLNS, Module, Fun}.
-
 -spec register_iq_handler(binary(), binary(), module(), function(),
-			  gen_iq_handler:opts()) -> any().
+			  gen_iq_handler:opts()) -> ok.
 register_iq_handler(Host, XMLNS, Module, Fun, Opts) ->
-    ejabberd_local !
-      {register_iq_handler, Host, XMLNS, Module, Fun, Opts}.
+    gen_server:cast(?MODULE,
+		    {register_iq_handler, Host, XMLNS, Module, Fun, Opts}).
 
 -spec unregister_iq_response_handler(binary(), binary()) -> ok.
 unregister_iq_response_handler(_Host, ID) ->
     catch get_iq_callback(ID), ok.
 
--spec unregister_iq_handler(binary(), binary()) -> any().
+-spec unregister_iq_handler(binary(), binary()) -> ok.
 unregister_iq_handler(Host, XMLNS) ->
-    ejabberd_local ! {unregister_iq_handler, Host, XMLNS}.
-
--spec refresh_iq_handlers() -> any().
-refresh_iq_handlers() ->
-    ejabberd_local ! refresh_iq_handlers.
+    gen_server:cast(?MODULE, {unregister_iq_handler, Host, XMLNS}).
 
 -spec bounce_resource_packet(jid(), jid(), stanza()) -> stop.
 bounce_resource_packet(_From, #jid{lresource = <<"">>}, #presence{}) ->
@@ -187,6 +184,15 @@ bounce_resource_packet(From, To, Packet) ->
     Err = xmpp:err_item_not_found(Txt, Lang),
     ejabberd_router:route_error(To, From, Packet, Err),
     stop.
+
+-spec get_features(binary()) -> [binary()].
+get_features(Host) ->
+    get_features(ets:next(?IQTABLE, {Host, <<"">>}), Host, []).
+
+get_features({Host, XMLNS}, Host, XMLNSs) ->
+    get_features(ets:next(?IQTABLE, {Host, XMLNS}), Host, [XMLNS|XMLNSs]);
+get_features(_, _, XMLNSs) ->
+    XMLNSs.
 
 %%====================================================================
 %% gen_server callbacks
@@ -203,7 +209,7 @@ init([]) ->
 					     100)
 		  end,
 		  ?MYHOSTS),
-    catch ets:new(?IQTABLE, [named_table, public]),
+    catch ets:new(?IQTABLE, [named_table, public, ordered_set]),
     update_table(),
     ejabberd_mnesia:create(?MODULE, iq_response,
 			[{ram_copies, [node()]},
@@ -214,6 +220,21 @@ init([]) ->
 handle_call(_Request, _From, State) ->
     Reply = ok, {reply, Reply, State}.
 
+handle_cast({register_iq_handler, Host, XMLNS, Module,
+	     Function, Opts},
+	    State) ->
+    ets:insert(?IQTABLE,
+	       {{Host, XMLNS}, Module, Function, Opts}),
+    {noreply, State};
+handle_cast({unregister_iq_handler, Host, XMLNS},
+	    State) ->
+    case ets:lookup(?IQTABLE, {Host, XMLNS}) of
+      [{_, Module, Function, Opts}] ->
+	  gen_iq_handler:stop_iq_handler(Module, Function, Opts);
+      _ -> ok
+    end,
+    ets:delete(?IQTABLE, {Host, XMLNS}),
+    {noreply, State};
 handle_cast(_Msg, State) -> {noreply, State}.
 
 handle_info({route, From, To, Packet}, State) ->
@@ -224,45 +245,11 @@ handle_info({route, From, To, Packet}, State) ->
       _ -> ok
     end,
     {noreply, State};
-handle_info({register_iq_handler, Host, XMLNS, Module,
-	     Function},
-	    State) ->
-    ets:insert(?IQTABLE, {{XMLNS, Host}, Module, Function}),
-    catch mod_disco:register_feature(Host, XMLNS),
-    {noreply, State};
-handle_info({register_iq_handler, Host, XMLNS, Module,
-	     Function, Opts},
-	    State) ->
-    ets:insert(?IQTABLE,
-	       {{XMLNS, Host}, Module, Function, Opts}),
-    catch mod_disco:register_feature(Host, XMLNS),
-    {noreply, State};
-handle_info({unregister_iq_handler, Host, XMLNS},
-	    State) ->
-    case ets:lookup(?IQTABLE, {XMLNS, Host}) of
-      [{_, Module, Function, Opts}] ->
-	  gen_iq_handler:stop_iq_handler(Module, Function, Opts);
-      _ -> ok
-    end,
-    ets:delete(?IQTABLE, {XMLNS, Host}),
-    catch mod_disco:unregister_feature(Host, XMLNS),
-    {noreply, State};
-handle_info(refresh_iq_handlers, State) ->
-    lists:foreach(fun (T) ->
-			  case T of
-			    {{XMLNS, Host}, _Module, _Function, _Opts} ->
-				catch mod_disco:register_feature(Host, XMLNS);
-			    {{XMLNS, Host}, _Module, _Function} ->
-				catch mod_disco:register_feature(Host, XMLNS);
-			    _ -> ok
-			  end
-		  end,
-		  ets:tab2list(?IQTABLE)),
-    {noreply, State};
 handle_info({timeout, _TRef, ID}, State) ->
     process_iq_timeout(ID),
     {noreply, State};
-handle_info(_Info, State) ->
+handle_info(Info, State) ->
+    ?WARNING_MSG("unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->

@@ -31,7 +31,6 @@
 -behaviour(gen_mod).
 
 %% API
--export([start_link/2]).
 -export([start/2, stop/1, mod_opt_type/1, depends/2]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -52,20 +51,11 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-start_link(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
-
 start(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    PingSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
-                transient, 2000, worker, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, PingSpec).
+    gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    gen_server:call(Proc, stop),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    gen_mod:stop_child(?MODULE, Host).
 
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(namespaces) -> validate_fun();
@@ -125,6 +115,7 @@ disco_sm_identity(Acc, From, To, Node, Lang) ->
 %%% gen_server callbacks
 %%%===================================================================
 init([Host, _Opts]) ->
+    process_flag(trap_exit, true),
     ejabberd_hooks:add(component_connected, ?MODULE,
 		       component_connected, 50),
     ejabberd_hooks:add(component_disconnected, ?MODULE,

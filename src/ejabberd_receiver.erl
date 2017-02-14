@@ -27,7 +27,10 @@
 
 -author('alexey@process-one.net').
 
--behaviour(gen_server).
+-ifndef(GEN_SERVER).
+-define(GEN_SERVER, gen_server).
+-endif.
+-behaviour(?GEN_SERVER).
 
 %% API
 -export([start_link/4,
@@ -65,7 +68,7 @@
                                                   {ok, pid()}.
 
 start_link(Socket, SockMod, Shaper, MaxStanzaSize) ->
-    gen_server:start_link(?MODULE,
+    ?GEN_SERVER:start_link(?MODULE,
 			  [Socket, SockMod, Shaper, MaxStanzaSize], []).
 
 -spec start(inet:socket(), atom(), shaper:shaper()) -> undefined | pid().
@@ -77,14 +80,14 @@ start(Socket, SockMod, Shaper) ->
             non_neg_integer() | infinity) -> undefined | pid().
 
 start(Socket, SockMod, Shaper, MaxStanzaSize) ->
-    {ok, Pid} = gen_server:start(ejabberd_receiver,
+    {ok, Pid} = ?GEN_SERVER:start(ejabberd_receiver,
 				 [Socket, SockMod, Shaper, MaxStanzaSize], []),
     Pid.
 
 -spec change_shaper(pid(), shaper:shaper()) -> ok.
 
 change_shaper(Pid, Shaper) ->
-    gen_server:cast(Pid, {change_shaper, Shaper}).
+    ?GEN_SERVER:cast(Pid, {change_shaper, Shaper}).
 
 -spec reset_stream(pid()) -> ok | {error, any()}.
 
@@ -109,7 +112,7 @@ become_controller(Pid, C2SPid) ->
 -spec close(pid()) -> ok.
 
 close(Pid) ->
-    gen_server:cast(Pid, close).
+    ?GEN_SERVER:cast(Pid, close).
 
 
 %%====================================================================
@@ -135,8 +138,8 @@ handle_call({starttls, TLSSocket}, _From, State) ->
 	{ok, TLSData} ->
 	    {reply, ok,
 		process_data(TLSData, NewState), ?HIBERNATE_TIMEOUT};
-	{error, _Reason} ->
-	    {stop, normal, ok, NewState}
+	{error, _} = Err ->
+	    {stop, normal, Err, NewState}
     end;
 handle_call({compress, Data}, _From,
 	    #state{socket = Socket, sock_mod = SockMod} =
@@ -220,7 +223,7 @@ handle_info({timeout, _Ref, activate}, State) ->
     activate_socket(State),
     {noreply, State, ?HIBERNATE_TIMEOUT};
 handle_info(timeout, State) ->
-    proc_lib:hibernate(gen_server, enter_loop,
+    proc_lib:hibernate(?GEN_SERVER, enter_loop,
 		       [?MODULE, [], State]),
     {noreply, State, ?HIBERNATE_TIMEOUT};
 handle_info(_Info, State) ->
@@ -335,7 +338,7 @@ do_send(State, Data) ->
     (State#state.sock_mod):send(State#state.socket, Data).
 
 do_call(Pid, Msg) ->
-    case catch gen_server:call(Pid, Msg) of
+    case catch ?GEN_SERVER:call(Pid, Msg) of
       {'EXIT', Why} -> {error, Why};
       Res -> Res
     end.

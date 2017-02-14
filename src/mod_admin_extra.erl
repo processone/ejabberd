@@ -734,7 +734,7 @@ get_md5(AccountPass) ->
                       || X <- binary_to_list(erlang:md5(AccountPass))]).
 get_sha(AccountPass) ->
     iolist_to_binary([io_lib:format("~2.16.0B", [X])
- 		      || X <- binary_to_list(p1_sha:sha1(AccountPass))]).
+		      || X <- binary_to_list(crypto:hash(sha, AccountPass))]).
 
 num_active_users(Host, Days) ->
     DB_Type = gen_mod:db_type(Host, mod_last),
@@ -913,9 +913,8 @@ kick_session(User, Server, Resource, ReasonText) ->
     ok.
 
 kick_this_session(User, Server, Resource, Reason) ->
-    ejabberd_sm:route(jid:make(<<"">>, <<"">>, <<"">>),
-                      jid:make(User, Server, Resource),
-                      {broadcast, {exit, Reason}}).
+    ejabberd_sm:route(jid:make(User, Server, Resource),
+                      {exit, Reason}).
 
 status_num(Host, Status) ->
     length(get_status_list(Host, Status)).
@@ -943,7 +942,7 @@ get_status_list(Host, Status_required) ->
 	    end,
     Sessions3 = [ {Pid, Server, Priority} || {{_User, Server, _Resource}, {_, Pid}, Priority} <- Sessions2, apply(Fhost, [Server, Host])],
     %% For each Pid, get its presence
-    Sessions4 = [ {catch ejabberd_c2s:get_presence(Pid), Server, Priority} || {Pid, Server, Priority} <- Sessions3],
+    Sessions4 = [ {catch get_presence(Pid), Server, Priority} || {Pid, Server, Priority} <- Sessions3],
     %% Filter by status
     Fstatus = case Status_required of
 		  <<"all">> ->
@@ -996,6 +995,16 @@ stringize(String) ->
     %% Replace newline characters with other code
     ejabberd_regexp:greplace(String, <<"\n">>, <<"\\n">>).
 
+get_presence(Pid) ->
+    Pres = #presence{from = From} = ejabberd_c2s:get_presence(Pid),
+    Show = case Pres of
+	       #presence{type = unavailable} -> <<"unavailable">>;
+	       #presence{show = undefined} -> <<"available">>;
+	       #presence{show = S} -> atom_to_binary(S, utf8)
+	   end,
+    Status = xmpp:get_text(Pres#presence.status),
+    {From#jid.user, From#jid.resource, Show, Status}.
+
 get_presence(U, S) ->
     Pids = [ejabberd_sm:get_session_pid(U, S, R)
 	    || R <- ejabberd_sm:get_user_resources(U, S)],
@@ -1004,8 +1013,7 @@ get_presence(U, S) ->
 	[] ->
 	    {jid:to_string({U, S, <<>>}), <<"unavailable">>, <<"">>};
 	[SessionPid|_] ->
-	    {_User, Resource, Show, Status} =
-		     ejabberd_c2s:get_presence(SessionPid),
+	    {_User, Resource, Show, Status} = get_presence(SessionPid),
 	    FullJID = jid:to_string({U, S, Resource}),
 	    {FullJID, Show, Status}
     end.
@@ -1048,7 +1056,7 @@ user_sessions_info(User, Host) ->
       fun(Session) ->
 	      {_U, _S, Resource} = Session#session.usr,
 	      {Now, Pid} = Session#session.sid,
-	      {_U, _Resource, Status, StatusText} = ejabberd_c2s:get_presence(Pid),
+	      {_U, _Resource, Status, StatusText} = get_presence(Pid),
 	      Info = Session#session.info,
 	      Priority = Session#session.priority,
 	      Conn = proplists:get_value(conn, Info),
@@ -1301,7 +1309,7 @@ push_roster_item(LU, LS, U, S, Action) ->
 push_roster_item(LU, LS, R, U, S, Action) ->
     LJID = jid:make(LU, LS, R),
     BroadcastEl = build_broadcast(U, S, Action),
-    ejabberd_sm:route(LJID, LJID, BroadcastEl),
+    ejabberd_sm:route(LJID, BroadcastEl),
     Item = build_roster_item(U, S, Action),
     ResIQ = build_iq_roster_push(Item),
     ejabberd_router:route(jid:remove_resource(LJID), LJID, ResIQ).
@@ -1326,7 +1334,7 @@ build_broadcast(U, S, remove) ->
 %% @spec (U::binary(), S::binary(), Subs::atom()) -> any()
 %% Subs = both | from | to | none
 build_broadcast(U, S, SubsAtom) when is_atom(SubsAtom) ->
-    {broadcast, {item, {U, S, <<>>}, SubsAtom}}.
+    {item, {U, S, <<>>}, SubsAtom}.
 
 %%%
 %%% Last Activity

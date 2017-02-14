@@ -26,17 +26,21 @@
 -module(gen_mod).
 
 -behaviour(ejabberd_config).
+-behaviour(supervisor).
 
 -author('alexey@process-one.net').
 
+-export([init/1, start_link/0, start_child/3, start_child/4,
+	 stop_child/1, stop_child/2]).
 -export([start/0, start_module/2, start_module/3,
 	 stop_module/2, stop_module_keep_config/2, get_opt/3,
-	 get_opt/4, get_opt_host/3, db_type/2, db_type/3,
+	 get_opt/4, get_opt_host/3, opt_type/1,
 	 get_module_opt/4, get_module_opt/5, get_module_opt_host/3,
 	 loaded_modules/1, loaded_modules_with_opts/1,
 	 get_hosts/2, get_module_proc/2, is_loaded/2,
 	 start_modules/0, start_modules/1, stop_modules/0, stop_modules/1,
-	 opt_type/1, db_mod/2, db_mod/3]).
+	 db_mod/2, db_mod/3, ram_db_mod/2, ram_db_mod/3,
+	 db_type/2, db_type/3, ram_db_type/2, ram_db_type/3]).
 
 %%-export([behaviour_info/1]).
 
@@ -50,7 +54,7 @@
 -type opts() :: [{atom(), any()}].
 -type db_type() :: sql | mnesia | riak.
 
--callback start(binary(), opts()) -> any().
+-callback start(binary(), opts()) -> ok | {ok, pid()}.
 -callback stop(binary()) -> any().
 -callback mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
 -callback depends(binary(), opts()) -> [{module(), hard | soft}].
@@ -58,14 +62,43 @@
 -export_type([opts/0]).
 -export_type([db_type/0]).
 
-%%behaviour_info(callbacks) -> [{start, 2}, {stop, 1}];
-%%behaviour_info(_Other) -> undefined.
+-ifndef(GEN_SERVER).
+-define(GEN_SERVER, gen_server).
+-endif.
 
 start() ->
+    Spec = {ejabberd_gen_mod_sup, {?MODULE, start_link, []},
+	    permanent, infinity, supervisor, [?MODULE]},
+    supervisor:start_child(ejabberd_sup, Spec).
+
+start_link() ->
+    supervisor:start_link({local, ejabberd_gen_mod_sup}, ?MODULE, []).
+
+init([]) ->
     ets:new(ejabberd_modules,
 	    [named_table, public,
 	     {keypos, #ejabberd_module.module_host}]),
-    ok.
+    {ok, {{one_for_one, 10, 1}, []}}.
+
+-spec start_child(module(), binary() | global, opts()) -> ok | {error, any()}.
+start_child(Mod, Host, Opts) ->
+    start_child(Mod, Host, Opts, get_module_proc(Host, Mod)).
+
+-spec start_child(module(), binary() | global, opts(), atom()) -> ok | {error, any()}.
+start_child(Mod, Host, Opts, Proc) ->
+    Spec = {Proc, {?GEN_SERVER, start_link,
+		   [{local, Proc}, Mod, [Host, Opts], []]},
+            transient, 2000, worker, [Mod]},
+    supervisor:start_child(ejabberd_gen_mod_sup, Spec).
+
+-spec stop_child(module(), binary() | global) -> ok.
+stop_child(Mod, Host) ->
+    stop_child(get_module_proc(Host, Mod)).
+
+-spec stop_child(atom()) -> ok | {error, any()}.
+stop_child(Proc) ->
+    supervisor:terminate_child(ejabberd_gen_mod_sup, Proc),
+    supervisor:delete_child(ejabberd_gen_mod_sup, Proc).
 
 -spec start_modules() -> any().
 
@@ -144,19 +177,24 @@ start_module(Host, Module) ->
 	    {error, not_found_in_config}
     end.
 
--spec start_module(binary(), atom(), opts()) -> any().
+-spec start_module(binary(), atom(), opts()) -> ok | {ok, pid()}.
 
 start_module(Host, Module, Opts0) ->
+    ?DEBUG("loading ~s at ~s", [Module, Host]),
     Opts = validate_opts(Module, Opts0),
     ets:insert(ejabberd_modules,
 	       #ejabberd_module{module_host = {Module, Host},
 				opts = Opts}),
-    try Module:start(Host, Opts) catch
-      Class:Reason ->
+    try case Module:start(Host, Opts) of
+	    ok -> ok;
+	    {ok, Pid} when is_pid(Pid) -> {ok, Pid};
+	    Err -> erlang:error(Err)
+	end
+    catch Class:Reason ->
 	  ets:delete(ejabberd_modules, {Module, Host}),
 	  ErrorText =
-	      io_lib:format("Problem starting the module ~p for host "
-			    "~p ~n options: ~p~n ~p: ~p~n~p",
+	      io_lib:format("Problem starting the module ~s for host "
+			    "~s ~n options: ~p~n ~p: ~p~n~p",
 			    [Module, Host, Opts, Class, Reason,
 			     erlang:get_stacktrace()]),
 	  ?CRITICAL_MSG(ErrorText, []),
@@ -424,6 +462,43 @@ db_mod(Host, Module) when is_binary(Host) orelse Host == global ->
 db_mod(Host, Opts, Module) when is_list(Opts) ->
     db_mod(db_type(Host, Opts, Module), Module).
 
+-spec ram_db_type(binary() | global, module()) -> db_type();
+		 (opts(), module()) -> db_type().
+ram_db_type(Opts, Module) when is_list(Opts) ->
+    ram_db_type(global, Opts, Module);
+ram_db_type(Host, Module) when is_atom(Module) ->
+    case catch Module:mod_opt_type(ram_db_type) of
+	F when is_function(F) ->
+	    case get_module_opt(Host, Module, ram_db_type, F) of
+		undefined -> ejabberd_config:default_ram_db(Host, Module);
+		Type -> Type
+	    end;
+	_ ->
+	    undefined
+    end.
+
+-spec ram_db_type(binary(), opts(), module()) -> db_type().
+ram_db_type(Host, Opts, Module) ->
+    case catch Module:mod_opt_type(ram_db_type) of
+	F when is_function(F) ->
+	    case get_opt(ram_db_type, Opts, F) of
+		undefined -> ejabberd_config:default_ram_db(Host, Module);
+		Type -> Type
+	    end;
+	_ ->
+	    undefined
+    end.
+
+-spec ram_db_mod(binary() | global | db_type(), module()) -> module().
+ram_db_mod(Type, Module) when is_atom(Type), Type /= global ->
+    list_to_atom(atom_to_list(Module) ++ "_" ++ atom_to_list(Type));
+ram_db_mod(Host, Module) when is_binary(Host) orelse Host == global ->
+    ram_db_mod(ram_db_type(Host, Module), Module).
+
+-spec ram_db_mod(binary() | global, opts(), module()) -> module().
+ram_db_mod(Host, Opts, Module) when is_list(Opts) ->
+    ram_db_mod(ram_db_type(Host, Opts, Module), Module).
+
 -spec loaded_modules(binary()) -> [atom()].
 
 loaded_modules(Host) ->
@@ -457,7 +532,6 @@ get_hosts(Opts, Prefix) ->
     end.
 
 -spec get_module_proc(binary(), {frontend, atom()} | atom()) -> atom().
-
 get_module_proc(Host, {frontend, Base}) ->
     get_module_proc(<<"frontend_", Host/binary>>, Base);
 get_module_proc(Host, Base) ->
@@ -470,6 +544,5 @@ get_module_proc(Host, Base) ->
 is_loaded(Host, Module) ->
     ets:member(ejabberd_modules, {Module, Host}).
 
-opt_type(default_db) -> fun(T) when is_atom(T) -> T end;
 opt_type(modules) -> fun (L) when is_list(L) -> L end;
-opt_type(_) -> [default_db, modules].
+opt_type(_) -> [modules].

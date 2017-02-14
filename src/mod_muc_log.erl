@@ -36,7 +36,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start_link/2, start/2, stop/1, transform_module_options/1,
+-export([start/2, stop/1, transform_module_options/1,
 	 check_access_log/2, add_to_log/5]).
 
 -export([init/1, handle_call/3, handle_cast/2,
@@ -47,11 +47,9 @@
 -include("logger.hrl").
 
 -include("xmpp.hrl").
--include("mod_muc.hrl").
 -include("mod_muc_room.hrl").
 
 -define(T(Text), translate:translate(Lang, Text)).
--define(PROCNAME, ejabberd_mod_muc_log).
 -record(room, {jid, title, subject, subject_author, config}).
 
 -define(PLAINTEXT_CO, <<"ZZCZZ">>).
@@ -74,20 +72,11 @@
 %%====================================================================
 %% API
 %%====================================================================
-start_link(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:start_link({local, Proc}, ?MODULE, [Host, Opts], []).
-
 start(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
-		 transient, 1000, worker, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, ChildSpec).
+    gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:call(Proc, stop),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    gen_mod:stop_child(?MODULE, Host).
 
 add_to_log(Host, Type, Data, Room, Opts) ->
     gen_server:cast(get_proc_name(Host),
@@ -116,6 +105,7 @@ depends(_Host, _Opts) ->
 %% gen_server callbacks
 %%====================================================================
 init([Host, Opts]) ->
+    process_flag(trap_exit, true),
     OutDir = gen_mod:get_opt(outdir, Opts,
                              fun iolist_to_binary/1,
                              <<"www/muc">>),
@@ -1169,13 +1159,11 @@ get_room_occupants(RoomJIDString) ->
 -spec get_room_state(binary(), binary()) -> mod_muc_room:state().
 
 get_room_state(RoomName, MucService) ->
-    case mnesia:dirty_read(muc_online_room,
-			   {RoomName, MucService})
-	of
-      [R] ->
-	  RoomPid = R#muc_online_room.pid,
+    case mod_muc:find_online_room(RoomName, MucService) of
+	{ok, RoomPid} ->
 	  get_room_state(RoomPid);
-      [] -> #state{}
+	error ->
+	    #state{}
     end.
 
 -spec get_room_state(pid()) -> mod_muc_room:state().
@@ -1186,7 +1174,7 @@ get_room_state(RoomPid) ->
     R.
 
 get_proc_name(Host) ->
-    gen_mod:get_module_proc(Host, ?PROCNAME).
+    gen_mod:get_module_proc(Host, ?MODULE).
 
 calc_hour_offset(TimeHere) ->
     TimeZero = calendar:universal_time(),

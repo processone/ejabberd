@@ -166,7 +166,7 @@
 
 -record(pubsub_last_item,
 {
-    nodeid   ,% :: mod_pubsub:nodeIdx(),
+    nodeid   ,% :: {binary(), mod_pubsub:nodeIdx()},
     itemid   ,% :: mod_pubsub:itemId(),
     creation ,% :: {erlang:timestamp(), jlib:ljid()},
     payload  % :: mod_pubsub:payload()

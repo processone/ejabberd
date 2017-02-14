@@ -539,26 +539,28 @@ permission_addon() ->
 				    fun(V) -> V end,
 				    none),
     Rules = acl:resolve_access(Access, global),
-    R = lists:filtermap(
-	fun({V, AclRules}) when V == all; V == [all]; V == [allow]; V == allow ->
-	       {true, {[{allow, AclRules}], {[<<"*">>], []}}};
-	   ({List, AclRules}) when is_list(List) ->
-	       {true, {[{allow, AclRules}], {List, []}}};
-	   (_) ->
-	       false
-	end, Rules),
-    case R of
-	[] ->
-	    none;
-	_ ->
-	    {_, Res} = lists:foldl(
-		fun({R2, L2}, {Idx, Acc}) ->
-		    {Idx+1, [{<<"'mod_http_api admin_ip_access' option compatibility shim ",
-				(integer_to_binary(Idx))/binary>>,
-			      {[?MODULE], [{access, R2}], L2}} | Acc]}
-		end, {1, []}, R),
-	    Res
-    end.
+    R = case Rules of
+	    all ->
+		[{[{allow, all}], {all, []}}];
+	    none ->
+		[];
+	    _ ->
+		lists:filtermap(
+		  fun({V, AclRules}) when V == all; V == [all]; V == [allow]; V == allow ->
+			  {true, {[{allow, AclRules}], {all, []}}};
+		     ({List, AclRules}) when is_list(List) ->
+			  {true, {[{allow, AclRules}], {List, []}}};
+		     (_) ->
+			  false
+		  end, Rules)
+	end,
+    {_, Res} = lists:foldl(
+		 fun({R2, L2}, {Idx, Acc}) ->
+			 {Idx+1, [{<<"'mod_http_api admin_ip_access' option compatibility shim ",
+				     (integer_to_binary(Idx))/binary>>,
+				   {[?MODULE], [{access, R2}], L2}} | Acc]}
+		 end, {1, []}, R),
+    Res.
 
 mod_opt_type(admin_ip_access) -> fun acl:access_rules_validator/1;
 mod_opt_type(_) -> [admin_ip_access].

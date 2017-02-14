@@ -45,7 +45,7 @@
 -define(DEFAULT_PING_INTERVAL, 60).
 
 %% API
--export([start_link/2, start_ping/2, stop_ping/2]).
+-export([start_ping/2, stop_ping/2]).
 
 %% gen_mod callbacks
 -export([start/2, stop/1]).
@@ -55,7 +55,7 @@
 	 handle_cast/2, handle_info/2, code_change/3]).
 
 -export([iq_ping/1, user_online/3, user_offline/3,
-	 user_send/4, mod_opt_type/1, depends/2]).
+	 user_send/1, mod_opt_type/1, depends/2]).
 
 -record(state,
 	{host = <<"">>,
@@ -68,11 +68,6 @@
 %%====================================================================
 %% API
 %%====================================================================
-start_link(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    gen_server:start_link({local, Proc}, ?MODULE,
-			  [Host, Opts], []).
-
 -spec start_ping(binary(), jid()) -> ok.
 start_ping(Host, JID) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
@@ -87,20 +82,16 @@ stop_ping(Host, JID) ->
 %% gen_mod callbacks
 %%====================================================================
 start(Host, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    PingSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
-		transient, 2000, worker, [?MODULE]},
-    supervisor:start_child(?SUPERVISOR, PingSpec).
+    gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    gen_server:call(Proc, stop),
-    supervisor:delete_child(?SUPERVISOR, Proc).
+    gen_mod:stop_child(?MODULE, Host).
 
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
 init([Host, Opts]) ->
+    process_flag(trap_exit, true),
     SendPings = gen_mod:get_opt(send_pings, Opts,
                                 fun(B) when is_boolean(B) -> B end,
 				?DEFAULT_SEND_PINGS),
@@ -116,7 +107,6 @@ init([Host, Opts]) ->
                                     end, none),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
                              no_queue),
-    mod_disco:register_feature(Host, ?NS_PING),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
 				  ?NS_PING, ?MODULE, iq_ping, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
@@ -148,8 +138,7 @@ terminate(_Reason, #state{host = Host}) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host,
 				     ?NS_PING),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
-				     ?NS_PING),
-    mod_disco:unregister_feature(Host, ?NS_PING).
+				     ?NS_PING).
 
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
@@ -215,10 +204,10 @@ user_online(_SID, JID, _Info) ->
 user_offline(_SID, JID, _Info) ->
     stop_ping(JID#jid.lserver, JID).
 
--spec user_send(stanza(), ejabberd_c2s:state(), jid(), jid()) -> stanza().
-user_send(Packet, _C2SState, JID, _From) ->
+-spec user_send({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
+user_send({Packet, #{jid := JID} = C2SState}) ->
     start_ping(JID#jid.lserver, JID),
-    Packet.
+    {Packet, C2SState}.
 
 %%====================================================================
 %% Internal functions

@@ -28,6 +28,7 @@
 %% API
 -export([get_nodes/0, call/4, multicall/3, multicall/4]).
 -export([join/1, leave/1, get_known_nodes/0]).
+-export([node_id/0, get_node_by_id/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -108,3 +109,31 @@ leave([Master|_], Node) ->
                 erlang:halt(0)
         end),
     ok.
+
+-spec node_id() -> binary().
+node_id() ->
+    integer_to_binary(erlang:phash2(node())).
+
+-spec get_node_by_id(binary()) -> node().
+get_node_by_id(Hash) ->
+    try binary_to_integer(Hash) of
+	I -> match_node_id(I)
+    catch _:_ ->
+	    node()
+    end.
+
+%%%===================================================================
+%%% Internal functions
+%%%===================================================================
+-spec match_node_id(integer()) -> node().
+match_node_id(I) ->
+    match_node_id(I, get_nodes()).
+
+-spec match_node_id(integer(), [node()]) -> node().
+match_node_id(I, [Node|Nodes]) ->
+    case erlang:phash2(Node) of
+	I -> Node;
+	_ -> match_node_id(I, Nodes)
+    end;
+match_node_id(_I, []) ->
+    node().

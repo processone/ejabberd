@@ -35,31 +35,43 @@
 -define(STORAGE_TYPES, [disc_copies, disc_only_copies, ram_copies]).
 -define(NEED_RESET, [local_content, type]).
 
-create(Module, Name, TabDef) ->
-    Schema = schema(Module, Name, TabDef),
+-include("logger.hrl").
+
+create(Module, Name, TabDef)
+  when is_atom(Module), is_atom(Name), is_list(TabDef) ->
+    Path = os:getenv("EJABBERD_SCHEMA_PATH"),
+    Schema = schema(Path, Module, Name, TabDef),
     {attributes, Attrs} = lists:keyfind(attributes, 1, Schema),
     case catch mnesia:table_info(Name, attributes) of
 	{'EXIT', _} ->
-	    mnesia:create_table(Name, Schema);
+	    mnesia_op(create_table, [Name, TabDef]);
 	Attrs ->
-	    case need_reset(TabDef, Schema) of
+	    case need_reset(Name, Schema) of
 		true -> reset(Name, Schema);
-		false -> update(Name, Schema)
+		false -> update(Name, Attrs, Schema)
 	    end;
 	OldAttrs ->
 	    Fun = case lists:member({transform,1}, Module:module_info(exports)) of
 		true -> fun(Old) -> Module:transform(Old) end;
 		false -> fun(Old) -> transform(OldAttrs, Attrs, Old) end
 	    end,
-	    mnesia:transform_table(Name, Fun, Attrs)
+	    mnesia_op(transform_table, [Name, Fun, Attrs])
     end.
 
-reset(Name, TabDef) ->
-    mnesia:delete_table(Name),
-    ejabberd_mnesia:create(?MODULE, Name, TabDef).
+reset(Name, TabDef)
+  when is_atom(Name), is_list(TabDef) ->
+    mnesia_op(delete_table, [Name]),
+    mnesia_op(create_table, [Name, TabDef]).
 
-update(Name, TabDef) ->
-    Storage = mnesia:table_info(Name, storage_type),
+update(Name, TabDef)
+  when is_atom(Name), is_list(TabDef) ->
+    {attributes, Attrs} = lists:keyfind(attributes, 1, TabDef),
+    update(Name, Attrs, TabDef).
+update(Name, Attrs, TabDef) ->
+    Storage = case catch mnesia:table_info(Name, storage_type) of
+	{'EXIT', _} -> unknown;
+	Type -> Type
+	end,
     NewStorage = lists:foldl(
 		   fun({Key, _}, Acc) ->
 			   case lists:member(Key, ?STORAGE_TYPES) of
@@ -67,34 +79,44 @@ update(Name, TabDef) ->
 			       false -> Acc
 			   end
 		   end, Storage, TabDef),
-    R1 = if Storage=/=NewStorage ->
-	    mnesia:change_table_copy_type(Name, node(), NewStorage);
-       true ->
-	    {atomic, ok}
-    end,
-    Indexes = mnesia:table_info(Name, index),
+    R1 = [mnesia_op(change_table_copy_type, [Name, node(), NewStorage])
+	  || Storage=/=NewStorage],
+    CurIndexes = [lists:nth(N-1, Attrs) || N<-mnesia:table_info(Name, index)],
     NewIndexes = proplists:get_value(index, TabDef, []),
-    [mnesia:del_table_index(Name, Attr)
-     || Attr <- Indexes--NewIndexes],
-    R2 = [mnesia:add_table_index(Name, Attr)
-	  || Attr <- NewIndexes--Indexes],
+    R2 = [mnesia_op(del_table_index, [Name, Attr])
+	  || Attr <- CurIndexes--NewIndexes],
+    R3 = [mnesia_op(add_table_index, [Name, Attr])
+	  || Attr <- NewIndexes--CurIndexes],
     lists:foldl(
       fun({atomic, ok}, Acc) -> Acc;
 	 (Error, _Acc) -> Error
-      end, {atomic, ok}, [R1|R2]).
+      end, {atomic, ok}, R1++R2++R3).
 
 %
 % utilities
 %
 
-schema(Module, Name, TabDef) ->
-    case parse(Module) of
+schema(false, Module, _Name, TabDef) ->
+    ?DEBUG("No custom ~s schema path", [Module]),
+    TabDef;
+schema(Path, Module, Name, TabDef) ->
+    File = filename:join(Path, atom_to_list(Module)++".mnesia"),
+    case parse(File) of
 	{ok, CustomDefs} ->
 	    case lists:keyfind(Name, 1, CustomDefs) of
-		{Name, CustomDef} -> merge(TabDef, CustomDef);
-		_ -> TabDef
+		{Name, CustomDef} ->
+		    ?INFO_MSG("Using custom ~s schema for table ~s",
+			      [Module, Name]),
+		    merge(TabDef, CustomDef);
+		_ ->
+		    TabDef
 	    end;
-	_ ->
+	{error, enoent} ->
+	    ?DEBUG("No custom ~s schema path", [Module]),
+	    TabDef;
+	{error, Error} ->
+	    ?ERROR_MSG("Can not use custom ~s schema for table ~s: ~p",
+		       [Module, Name, Error]),
 	    TabDef
     end.
 
@@ -116,28 +138,15 @@ merge(TabDef, CustomDef) ->
 		   lists:ukeysort(1, CustomDef),
 		   lists:ukeysort(1, CleanDef)).
 
-parse(Module) ->
-    Path = case os:getenv("EJABBERD_SCHEMA_PATH") of
-		false ->
-		    case code:priv_dir(ejabberd) of
-			{error, _} -> "schema";  % $SPOOL_DIR/schema
-			Priv -> filename:join(Priv, "schema")
-		    end;
-		CustomDir ->
-		    CustomDir
-	    end,
-    File = filename:join(Path, atom_to_list(Module)++".mnesia"),
+parse(File) ->
     case file:consult(File) of
 	{ok, Terms} -> parse(Terms, []);
 	Error -> Error
     end.
-
 parse([], Acc) ->
     {ok, lists:reverse(Acc)};
 parse([{Name, Storage, TabDef}|Tail], Acc)
-  when is_atom(Name),
-       is_atom(Storage),
-       is_list(TabDef) ->
+  when is_atom(Name), is_atom(Storage), is_list(TabDef) ->
     NewDef = case lists:member(Storage, ?STORAGE_TYPES) of
 	true -> [{Storage, [node()]} | TabDef];
 	false -> TabDef
@@ -146,12 +155,12 @@ parse([{Name, Storage, TabDef}|Tail], Acc)
 parse([Other|_], _) ->
     {error, {invalid, Other}}.
 
-need_reset(FromDef, ToDef) ->
-    ValuesF = [lists:keyfind(Key, 1, FromDef) || Key <- ?NEED_RESET],
-    ValuesT = [lists:keyfind(Key, 1, ToDef) || Key <- ?NEED_RESET],
+need_reset(Table, TabDef) ->
+    ValuesF = [mnesia:table_info(Table, Key) || Key <- ?NEED_RESET],
+    ValuesT = [proplists:get_value(Key, TabDef) || Key <- ?NEED_RESET],
     lists:foldl(
       fun({Val, Val}, Acc) -> Acc;
-	 ({_, false}, Acc) -> Acc;
+	 ({_, undefined}, Acc) -> Acc;
 	 ({_, _}, _) -> true
       end, false, lists:zip(ValuesF, ValuesT)).
 
@@ -167,3 +176,13 @@ transform(OldAttrs, Attrs, Old) ->
 	      end, [], lists:reverse(Attrs)),
     {Attrs, NewRecord} = lists:unzip(After),
     list_to_tuple([Name|NewRecord]).
+
+mnesia_op(Fun, Args) ->
+    case apply(mnesia, Fun, Args) of
+	{atomic, ok} ->
+	    {atomic, ok};
+	Other ->
+	    ?ERROR_MSG("failure on mnesia ~s ~p: ~p",
+		      [Fun, Args, Other]),
+	    Other
+    end.

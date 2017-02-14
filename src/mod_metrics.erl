@@ -36,10 +36,10 @@
 -export([start/2, stop/1, send_metrics/4, opt_type/1, mod_opt_type/1,
 	 depends/2]).
 
--export([offline_message_hook/3,
+-export([offline_message_hook/4,
          sm_register_connection_hook/3, sm_remove_connection_hook/3,
-         user_send_packet/4, user_receive_packet/5,
-         s2s_send_packet/3, s2s_receive_packet/3,
+         user_send_packet/1, user_receive_packet/1,
+         s2s_send_packet/3, s2s_receive_packet/1,
          remove_user/2, register_user/2]).
 
 %%====================================================================
@@ -74,9 +74,10 @@ depends(_Host, _Opts) ->
 %%====================================================================
 %% Hooks handlers
 %%====================================================================
--spec offline_message_hook(jid(), jid(), message()) -> any().
-offline_message_hook(_From, #jid{lserver=LServer}, _Packet) ->
-    push(LServer, offline_message).
+-spec offline_message_hook(any(), jid(), jid(), message()) -> any().
+offline_message_hook(Acc, _From, #jid{lserver=LServer}, _Packet) ->
+    push(LServer, offline_message),
+    Acc.
 
 -spec sm_register_connection_hook(ejabberd_sm:sid(), jid(), ejabberd_sm:info()) -> any().
 sm_register_connection_hook(_SID, #jid{lserver=LServer}, _Info) ->
@@ -86,23 +87,27 @@ sm_register_connection_hook(_SID, #jid{lserver=LServer}, _Info) ->
 sm_remove_connection_hook(_SID, #jid{lserver=LServer}, _Info) ->
     push(LServer, sm_remove_connection).
 
--spec user_send_packet(stanza(), ejabberd_c2s:state(), jid(), jid()) -> stanza().
-user_send_packet(Packet, _C2SState, #jid{lserver=LServer}, _To) ->
+-spec user_send_packet({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
+user_send_packet({Packet, #{jid := #jid{lserver = LServer}} = C2SState}) ->
     push(LServer, user_send_packet),
-    Packet.
+    {Packet, C2SState}.
 
--spec user_receive_packet(stanza(), ejabberd_c2s:state(), jid(), jid(), jid()) -> stanza().
-user_receive_packet(Packet, _C2SState, _JID, _From, #jid{lserver=LServer}) ->
+-spec user_receive_packet({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
+user_receive_packet({Packet, #{jid := #jid{lserver = LServer}} = C2SState}) ->
     push(LServer, user_receive_packet),
-    Packet.
+    {Packet, C2SState}.
 
 -spec s2s_send_packet(jid(), jid(), stanza()) -> any().
 s2s_send_packet(#jid{lserver=LServer}, _To, _Packet) ->
     push(LServer, s2s_send_packet).
 
--spec s2s_receive_packet(jid(), jid(), stanza()) -> any().
-s2s_receive_packet(_From, #jid{lserver=LServer}, _Packet) ->
-    push(LServer, s2s_receive_packet).
+-spec s2s_receive_packet({stanza(), ejabberd_s2s_in:state()}) ->
+				{stanza(), ejabberd_s2s_in:state()}.
+s2s_receive_packet({Packet, S2SState}) ->
+    To = xmpp:get_to(Packet),
+    LServer = ejabberd_router:host_of_route(To#jid.lserver),
+    push(LServer, s2s_receive_packet),
+    {Packet, S2SState}.
 
 -spec remove_user(binary(), binary()) -> any().
 remove_user(_User, Server) ->

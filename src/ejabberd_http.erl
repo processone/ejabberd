@@ -327,7 +327,7 @@ add_header(Name, Value, State)->
 get_host_really_served(undefined, Provided) ->
     Provided;
 get_host_really_served(Default, Provided) ->
-    case lists:member(Provided, ?MYHOSTS) of
+    case ejabberd_router:is_my_host(Provided) of
       true -> Provided;
       false -> Default
     end.

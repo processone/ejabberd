@@ -26,18 +26,15 @@
 -module(mod_http_upload_quota).
 -author('holger@zedat.fu-berlin.de').
 
--define(GEN_SERVER, gen_server).
--define(PROCNAME, ?MODULE).
 -define(TIMEOUT, timer:hours(24)).
 -define(INITIAL_TIMEOUT, timer:minutes(10)).
 -define(FORMAT(Error), file:format_error(Error)).
 
--behaviour(?GEN_SERVER).
+-behaviour(gen_server).
 -behaviour(gen_mod).
 
 %% gen_mod/supervisor callbacks.
--export([start_link/3,
-	 start/2,
+-export([start/2,
 	 stop/1,
 	 depends/2,
 	 mod_opt_type/1]).
@@ -71,31 +68,17 @@
 %%--------------------------------------------------------------------
 %% gen_mod/supervisor callbacks.
 %%--------------------------------------------------------------------
-
--spec start_link(binary(), atom(), gen_mod:opts())
-      -> {ok, pid()} | ignore | {error, _}.
-
-start_link(ServerHost, Proc, Opts) ->
-    ?GEN_SERVER:start_link({local, Proc}, ?MODULE, {ServerHost, Opts}, []).
-
 -spec start(binary(), gen_mod:opts()) -> {ok, _} | {ok, _, _} | {error, _}.
 
 start(ServerHost, Opts) ->
-    Proc = mod_http_upload:get_proc_name(ServerHost, ?PROCNAME),
-    Spec = {Proc,
-	    {?MODULE, start_link, [ServerHost, Proc, Opts]},
-	    permanent,
-	    3000,
-	    worker,
-	    [?MODULE]},
-    supervisor:start_child(ejabberd_sup, Spec).
+    Proc = mod_http_upload:get_proc_name(ServerHost, ?MODULE),
+    gen_mod:start_child(?MODULE, ServerHost, Opts, Proc).
 
 -spec stop(binary()) -> ok.
 
 stop(ServerHost) ->
-    Proc = mod_http_upload:get_proc_name(ServerHost, ?PROCNAME),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    Proc = mod_http_upload:get_proc_name(ServerHost, ?MODULE),
+    gen_mod:stop_child(Proc).
 
 -spec mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
 
@@ -119,9 +102,7 @@ depends(_Host, _Opts) ->
 %% gen_server callbacks.
 %%--------------------------------------------------------------------
 
--spec init({binary(), gen_mod:opts()}) -> {ok, state()}.
-
-init({ServerHost, Opts}) ->
+init([ServerHost, Opts]) ->
     process_flag(trap_exit, true),
     AccessSoftQuota = gen_mod:get_opt(access_soft_quota, Opts,
 				      fun acl:shaper_rules_validator/1,
@@ -268,8 +249,8 @@ code_change(_OldVsn, #state{server_host = ServerHost} = State, _Extra) ->
 
 handle_slot_request(allow, #jid{lserver = ServerHost} = JID, Path, Size,
 		    _Lang) ->
-    Proc = mod_http_upload:get_proc_name(ServerHost, ?PROCNAME),
-    ?GEN_SERVER:cast(Proc, {handle_slot_request, JID, Path, Size}),
+    Proc = mod_http_upload:get_proc_name(ServerHost, ?MODULE),
+    gen_server:cast(Proc, {handle_slot_request, JID, Path, Size}),
     allow;
 handle_slot_request(Acc, _JID, _Path, _Size, _Lang) -> Acc.
 

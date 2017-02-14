@@ -524,6 +524,40 @@ access_rules:
   ##     - ip: "XXX.XXX.XXX.XXX/32"
   ##   - allow
 
+## ===============
+## API PERMISSIONS
+## ===============
+##
+## This section allows you to define who and using what method
+## can execute commands offered by ejabberd.
+##
+## By default "console commands" section allow executing all commands
+## issued using ejabberdctl command, and "admin access" section allows
+## users in admin acl to  execute all commands except start and stop
+## with any available access method (ejabberdctl, http-api, xmlrpc
+## depending what is enabled on server).
+##
+## Remember to not remove "console commands" section when doing modifications
+## or ejabberdctl will not be able to execute commands!
+##
+##
+## api_permissions:
+##  "console commands":
+##    from:
+##      - ejabberd_ctl
+##    who: all
+##    what: "*"
+##  "admin access":
+##    who:
+##      - admin
+##      - oauth:
+##        - scope: "ejabberd:admin"
+##        - admin
+##    what:
+##      - "*"
+##      - "!stop"
+##      - "!start"
+
 ## By default the frequency of account registrations from the same IP
 ## is limited to 1 account every 10 minutes. To disable, specify: infinity
 ## registration_timeout: 600
@@ -668,6 +702,10 @@ modules:
   mod_vcard:
     search: false
   mod_version: {}
+  # Since 17.02 S2S Dialback (XEP-0220) and Stream Management (XEP-0198)
+  # are implemented in modules
+  mod_s2s_dialback: {}
+  mod_sm: {}
 
 ##
 ## Enable modules with custom options in a specific virtual host

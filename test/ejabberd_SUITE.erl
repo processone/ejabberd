@@ -285,6 +285,8 @@ init_per_testcase(TestCase, OrigConfig) ->
     case Test of
         "test_connect" ++ _ ->
             Config;
+	"test_legacy_auth_feature" ->
+	    connect(Config);
 	"test_legacy_auth" ++ _ ->
 	    init_stream(set_opt(stream_version, undefined, Config));
         "test_auth" ++ _ ->
@@ -326,7 +328,8 @@ end_per_testcase(_TestCase, _Config) ->
 
 legacy_auth_tests() ->
     {legacy_auth, [parallel],
-     [test_legacy_auth,
+     [test_legacy_auth_feature,
+      test_legacy_auth,
       test_legacy_auth_digest,
       test_legacy_auth_no_resource,
       test_legacy_auth_bad_jid,
@@ -344,7 +347,8 @@ no_db_tests() ->
        test_connect_missing_to,
        test_connect,
        unauthenticated_iq,
-       unauthenticated_stanza,
+       unauthenticated_message,
+       unauthenticated_presence,
        test_starttls,
        test_zlib,
        test_auth,
@@ -481,7 +485,8 @@ component_tests() ->
        test_auth,
        test_auth_fail]},
      {component_tests, [sequence],
-      [test_missing_address,
+      [test_missing_from,
+       test_missing_to,
        test_invalid_from,
        test_component_send,
        bad_nonza,
@@ -497,11 +502,11 @@ s2s_tests() ->
        test_connect,
        test_connect_s2s_starttls_required,
        test_starttls,
-       test_connect_missing_from,
        test_connect_s2s_unauthenticated_iq,
        test_auth_starttls]},
      {s2s_tests, [sequence],
-      [test_missing_address,
+      [test_missing_from,
+       test_missing_to,
        test_invalid_from,
        bad_nonza,
        codec_failure]}].
@@ -598,20 +603,12 @@ test_connect_missing_to(Config) ->
     ?recv1({xmlstreamend, <<"stream:stream">>}),
     close_socket(Config0).
 
-test_connect_missing_from(Config) ->
-    Config1 = starttls(connect(Config)),
-    Config2 = set_opt(stream_from, <<"">>, Config1),
-    Config3 = init_stream(Config2),
-    ?recv1(#stream_error{reason = 'policy-violation'}),
-    ?recv1({xmlstreamend, <<"stream:stream">>}),
-    close_socket(Config3).
-
 test_connect(Config) ->
     disconnect(connect(Config)).
 
 test_connect_s2s_starttls_required(Config) ->
     Config1 = connect(Config),
-    send(Config1, #caps{}),
+    send(Config1, #presence{}),
     ?recv1(#stream_error{reason = 'policy-violation'}),
     ?recv1({xmlstreamend, <<"stream:stream">>}),
     close_socket(Config1).
@@ -681,18 +678,23 @@ try_unregister(Config) ->
     ?recv1(#stream_error{reason = conflict}),
     Config.
 
-unauthenticated_stanza(Config) ->
-    %% Unauthenticated stanza should be silently dropped.
-    send(Config, #message{to = server_jid(Config)}),
-    disconnect(Config).
+unauthenticated_presence(Config) ->
+    unauthenticated_packet(Config, #presence{}).
+
+unauthenticated_message(Config) ->
+    unauthenticated_packet(Config, #message{}).
 
 unauthenticated_iq(Config) ->
+    IQ = #iq{type = get, sub_els = [#disco_info{}]},
+    unauthenticated_packet(Config, IQ).
+
+unauthenticated_packet(Config, Pkt) ->
     From = my_jid(Config),
     To = server_jid(Config),
-    #iq{type = error} =
-	send_recv(Config, #iq{type = get, from = From, to = To,
-			      sub_els = [#disco_info{}]}),
-    disconnect(Config).
+    send(Config, xmpp:set_from_to(Pkt, From, To)),
+    #stream_error{reason = 'not-authorized'} = recv(Config),
+    {xmlstreamend, <<"stream:stream">>} = recv(Config),
+    close_socket(Config).
 
 bad_nonza(Config) ->
     %% Unsupported and invalid nonza should be silently dropped.
@@ -706,18 +708,27 @@ invalid_from(Config) ->
     ?recv1({xmlstreamend, <<"stream:stream">>}),
     close_socket(Config).
 
-test_missing_address(Config) ->
+test_missing_from(Config) ->
     Server = server_jid(Config),
-    #iq{type = error} = send_recv(Config, #iq{type = get, from = Server}),
-    #iq{type = error} = send_recv(Config, #iq{type = get, to = Server}),
-    disconnect(Config).
+    send(Config, #message{to = Server}),
+    ?recv1(#stream_error{reason = 'improper-addressing'}),
+    ?recv1({xmlstreamend, <<"stream:stream">>}),
+    close_socket(Config).
+
+test_missing_to(Config) ->
+    Server = server_jid(Config),
+    send(Config, #message{from = Server}),
+    ?recv1(#stream_error{reason = 'improper-addressing'}),
+    ?recv1({xmlstreamend, <<"stream:stream">>}),
+    close_socket(Config).
 
 test_invalid_from(Config) ->
     From = jid:make(randoms:get_string()),
     To = jid:make(randoms:get_string()),
-    #iq{type = error} =
-	send_recv(Config, #iq{type = get, from = From, to = To}),
-    disconnect(Config).
+    send(Config, #message{from = From, to = To}),
+    ?recv1(#stream_error{reason = 'invalid-from'}),
+    ?recv1({xmlstreamend, <<"stream:stream">>}),
+    close_socket(Config).
 
 test_component_send(Config) ->
     To = jid:make(?COMMON_VHOST),
@@ -778,6 +789,10 @@ auth_plain(Config) ->
             disconnect(Config),
             {skipped, 'PLAIN_not_available'}
     end.
+
+test_legacy_auth_feature(Config) ->
+    true = ?config(legacy_auth, Config),
+    disconnect(Config).
 
 test_legacy_auth(Config) ->
     disconnect(auth_legacy(Config, _Digest = false)).

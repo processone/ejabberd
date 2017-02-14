@@ -825,14 +825,15 @@ process_normal_message(From, #message{lang = Lang} = Pkt, StateData) ->
     Action = lists:foldl(
 	       fun(_, {error, _} = Err) ->
 		       Err;
-		  (#muc_user{invites = [#muc_invite{to = undefined}]}, _) ->
-		       Txt = <<"No 'to' attribute found">>,
-		       {error, xmpp:err_bad_request(Txt, Lang)};
-		  (#muc_user{invites = [I]}, _) ->
-		       {ok, I};
-		  (#muc_user{invites = [_|_]}, _) ->
-		       Txt = <<"Multiple invitations are not allowed">>,
-		       {error, xmpp:err_resource_constraint(Txt, Lang)};
+		  (_, {ok, _} = Result) ->
+		       Result;
+		  (#muc_user{invites = [_|_] = Invites}, _) ->
+		       case check_invitation(From, Invites, Lang, StateData) of
+			   ok ->
+			       {ok, Invites};
+			   {error, _} = Err ->
+			       Err
+		       end;
 		  (#xdata{type = submit, fields = Fs}, _) ->
 		       try {ok, muc_request:decode(Fs)}
 		       catch _:{muc_request, Why} ->
@@ -843,8 +844,11 @@ process_normal_message(From, #message{lang = Lang} = Pkt, StateData) ->
 		       Acc
 	       end, ok, xmpp:get_els(Pkt)),
     case Action of
-	{ok, #muc_invite{} = Invitation} ->
-	    process_invitation(From, Pkt, Invitation, StateData);
+	{ok, [#muc_invite{}|_] = Invitations} ->
+	    lists:foldl(
+	      fun(Invitation, AccState) ->
+		      process_invitation(From, Invitation, Lang, AccState)
+	      end, StateData, Invitations);
 	{ok, [{role, participant}]} ->
 	    process_voice_request(From, Pkt, StateData);
 	{ok, VoiceApproval} ->
@@ -856,29 +860,23 @@ process_normal_message(From, #message{lang = Lang} = Pkt, StateData) ->
 	    StateData
     end.
 
--spec process_invitation(jid(), message(), muc_invite(), state()) -> state().
-process_invitation(From, Pkt, Invitation, StateData) ->
-    Lang = xmpp:get_lang(Pkt),
-    case check_invitation(From, Invitation, Lang, StateData) of
-	{error, Error} ->
-	    ejabberd_router:route_error(StateData#state.jid, From, Pkt, Error),
-	    StateData;
-	IJID ->
-	    Config = StateData#state.config,
-	    case Config#config.members_only of
-		true ->
-		    case get_affiliation(IJID, StateData) of
-			none ->
-			    NSD = set_affiliation(IJID, member, StateData),
-			    send_affiliation(IJID, member, StateData),
-			    store_room(NSD),
-			    NSD;
-			_ ->
-			    StateData
-		    end;
-		false ->
+-spec process_invitation(jid(), muc_invite(), binary(), state()) -> state().
+process_invitation(From, Invitation, Lang, StateData) ->
+    IJID = route_invitation(From, Invitation, Lang, StateData),
+    Config = StateData#state.config,
+    case Config#config.members_only of
+	true ->
+	    case get_affiliation(IJID, StateData) of
+		none ->
+		    NSD = set_affiliation(IJID, member, StateData),
+		    send_affiliation(IJID, member, StateData),
+		    store_room(NSD),
+		    NSD;
+		_ ->
 		    StateData
-	    end
+	    end;
+	false ->
+	    StateData
     end.
 
 -spec process_voice_request(jid(), message(), state()) -> state().
@@ -1793,7 +1791,7 @@ add_new_user(From, Nick, Packet, StateData) ->
     Affiliation = get_affiliation(From, StateData),
     ServiceAffiliation = get_service_affiliation(From,
 						 StateData),
-    NConferences = tab_count_user(From),
+    NConferences = tab_count_user(From, StateData),
     MaxConferences =
 	gen_mod:get_module_opt(StateData#state.server_host,
 			       mod_muc, max_user_conferences,
@@ -2994,6 +2992,30 @@ get_actor_nick(MJID, StateData) ->
 	_ -> <<"">>
     end.
 
+convert_legacy_fields(Fs) ->
+    lists:map(
+      fun(#xdata_field{var = Var} = F) ->
+	      NewVar = case Var of
+			   <<"muc#roomconfig_allowvisitorstatus">> ->
+			       <<"allow_visitor_status">>;
+			   <<"muc#roomconfig_allowvisitornickchange">> ->
+			       <<"allow_visitor_nickchange">>;
+			   <<"muc#roomconfig_allowvoicerequests">> ->
+			       <<"allow_voice_requests">>;
+			   <<"muc#roomconfig_allow_subscription">> ->
+			       <<"allow_subscription">>;
+			   <<"muc#roomconfig_voicerequestmininterval">> ->
+			       <<"voice_request_min_interval">>;
+			   <<"muc#roomconfig_captcha_whitelist">> ->
+			       <<"captcha_whitelist">>;
+			   <<"muc#roomconfig_mam">> ->
+			       <<"mam">>;
+			   _ ->
+			       Var
+		       end,
+	      F#xdata_field{var = NewVar}
+      end, Fs).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Owner stuff
 -spec process_iq_owner(jid(), iq(), state()) ->
@@ -3019,7 +3041,8 @@ process_iq_owner(From, #iq{type = set, lang = Lang,
 		#xdata{type = cancel} ->
 		    {result, undefined};
 		#xdata{type = submit, fields = Fs} ->
-		    try muc_roomconfig:decode(Fs) of
+		    Fs1 = convert_legacy_fields(Fs),
+		    try muc_roomconfig:decode(Fs1) of
 			Options ->
 			    case is_allowed_log_change(Options, StateData, From) andalso
 				is_allowed_persistent_change(Options, StateData, From) andalso
@@ -3492,17 +3515,20 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 		StateData#state{config =
 				    (StateData#state.config)#config{allow_subscription = Val}};
 	    subscribers ->
-		Subscribers = lists:foldl(
-				fun({JID, Nick, Nodes}, Acc) ->
-					BareJID = jid:remove_resource(JID),
-					?DICT:store(
-					   jid:tolower(BareJID),
-					   #subscriber{jid = BareJID,
-						       nick = Nick,
-						       nodes = Nodes},
-					   Acc)
-				end, ?DICT:new(), Val),
-		StateData#state{subscribers = Subscribers};
+		  {Subscribers, Nicks} =
+		      lists:foldl(
+			fun({JID, Nick, Nodes}, {SubAcc, NickAcc}) ->
+				BareJID = jid:remove_resource(JID),
+				{?DICT:store(
+				    jid:tolower(BareJID),
+				    #subscriber{jid = BareJID,
+						nick = Nick,
+						nodes = Nodes},
+				    SubAcc),
+				 ?DICT:store(Nick, [jid:tolower(BareJID)], NickAcc)}
+			end, {?DICT:new(), ?DICT:new()}, Val),
+		  StateData#state{subscribers = Subscribers,
+				  subscriber_nicks = Nicks};
 	    affiliations ->
 		StateData#state{affiliations = (?DICT):from_list(Val)};
 	    subject -> StateData#state{subject = Val};
@@ -3872,59 +3898,72 @@ send_voice_request(From, Lang, StateData) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Invitation support
-
--spec check_invitation(jid(), muc_invite(), binary(), state()) -> {error, stanza_error()} | jid().
-check_invitation(From, Invitation, Lang, StateData) ->
+-spec check_invitation(jid(), [muc_invite()], binary(), state()) ->
+			      ok | {error, stanza_error()}.
+check_invitation(From, Invitations, Lang, StateData) ->
     FAffiliation = get_affiliation(From, StateData),
-    CanInvite = (StateData#state.config)#config.allow_user_invites
-	orelse
-	FAffiliation == admin orelse FAffiliation == owner,
+    CanInvite = (StateData#state.config)#config.allow_user_invites orelse
+	        FAffiliation == admin orelse FAffiliation == owner,
     case CanInvite of
+	true ->
+	    case lists:all(
+		   fun(#muc_invite{to = #jid{}}) -> true;
+		      (_) -> false
+		   end, Invitations) of
+		true ->
+		    ok;
+		false ->
+		    Txt = <<"No 'to' attribute found in the invitation">>,
+		    {error, xmpp:err_bad_request(Txt, Lang)}
+	    end;
 	false ->
 	    Txt = <<"Invitations are not allowed in this conference">>,
-	    {error, xmpp:err_not_allowed(Txt, Lang)};
-	true ->
-	    #muc_invite{to = JID, reason = Reason} = Invitation,
-	    Invite = Invitation#muc_invite{to = undefined, from = From},
-	    Password = case (StateData#state.config)#config.password_protected of
-			   true ->
-			       (StateData#state.config)#config.password;
-			   false ->
-			       undefined
-		       end,
-	    XUser = #muc_user{password = Password, invites = [Invite]},
-	    XConference = #x_conference{jid = jid:make(StateData#state.room,
-						       StateData#state.host),
-					reason = Reason},
-	    Body = iolist_to_binary(
-		     [io_lib:format(
-			translate:translate(
-			  Lang,
-			  <<"~s invites you to the room ~s">>),
-			[jid:to_string(From),
-			 jid:to_string({StateData#state.room,
-					StateData#state.host,
-					<<"">>})]),
-		      case (StateData#state.config)#config.password_protected of
-			  true ->
-			      <<", ",
-				(translate:translate(
-				   Lang, <<"the password is">>))/binary,
-				" '",
-				((StateData#state.config)#config.password)/binary,
-				"'">>;
-			  _ -> <<"">>
-		      end,
-		      case Reason of
-			  <<"">> -> <<"">>;
-			  _ -> <<" (", Reason/binary, ") ">>
-		      end]),
-	    Msg = #message{type = normal,
-			   body = xmpp:mk_text(Body),
-			   sub_els = [XUser, XConference]},
-	    ejabberd_router:route(StateData#state.jid, JID, Msg),
-	    JID
+	    {error, xmpp:err_not_allowed(Txt, Lang)}
     end.
+
+-spec route_invitation(jid(), muc_invite(), binary(), state()) -> jid().
+route_invitation(From, Invitation, Lang, StateData) ->
+    #muc_invite{to = JID, reason = Reason} = Invitation,
+    Invite = Invitation#muc_invite{to = undefined, from = From},
+    Password = case (StateData#state.config)#config.password_protected of
+		   true ->
+		       (StateData#state.config)#config.password;
+		   false ->
+		       undefined
+	       end,
+    XUser = #muc_user{password = Password, invites = [Invite]},
+    XConference = #x_conference{jid = jid:make(StateData#state.room,
+					       StateData#state.host),
+				reason = Reason},
+    Body = iolist_to_binary(
+	     [io_lib:format(
+		translate:translate(
+		  Lang,
+		  <<"~s invites you to the room ~s">>),
+		[jid:to_string(From),
+		 jid:to_string({StateData#state.room, StateData#state.host, <<"">>})]),
+	      case (StateData#state.config)#config.password_protected of
+		  true ->
+		      <<", ",
+			(translate:translate(
+			   Lang, <<"the password is">>))/binary,
+			" '",
+			((StateData#state.config)#config.password)/binary,
+			"'">>;
+		  _ -> <<"">>
+	      end,
+	      case Reason of
+		  <<"">> -> <<"">>;
+		  _ -> <<" (", Reason/binary, ") ">>
+	      end]),
+    Msg = #message{type = normal,
+		   body = xmpp:mk_text(Body),
+		   sub_els = [XUser, XConference]},
+    ejabberd_hooks:run(muc_invite, StateData#state.server_host,
+		       [StateData#state.jid, StateData#state.config,
+			From, JID, Reason]),
+    ejabberd_router:route(StateData#state.jid, JID, Msg),
+    JID.
 
 %% Handle a message sent to the room by a non-participant.
 %% If it is a decline, send to the inviter.
@@ -3964,38 +4003,25 @@ add_to_log(Type, Data, StateData) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Users number checking
 
--spec tab_add_online_user(jid(), state()) -> ok.
+-spec tab_add_online_user(jid(), state()) -> any().
 tab_add_online_user(JID, StateData) ->
-    {LUser, LServer, LResource} = jid:tolower(JID),
-    US = {LUser, LServer},
     Room = StateData#state.room,
     Host = StateData#state.host,
-    catch ets:insert(muc_online_users,
-		     #muc_online_users{us = US, resource = LResource,
-				       room = Room, host = Host}),
-    ok.
+    ServerHost = StateData#state.server_host,
+    mod_muc:register_online_user(ServerHost, jid:tolower(JID), Room, Host).
 
--spec tab_remove_online_user(jid(), state()) -> ok.
+-spec tab_remove_online_user(jid(), state()) -> any().
 tab_remove_online_user(JID, StateData) ->
-    {LUser, LServer, LResource} = jid:tolower(JID),
-    US = {LUser, LServer},
     Room = StateData#state.room,
     Host = StateData#state.host,
-    catch ets:delete_object(muc_online_users,
-			    #muc_online_users{us = US, resource = LResource,
-					      room = Room, host = Host}),
-    ok.
+    ServerHost = StateData#state.server_host,
+    mod_muc:unregister_online_user(ServerHost, jid:tolower(JID), Room, Host).
 
--spec tab_count_user(jid()) -> non_neg_integer().
-tab_count_user(JID) ->
+-spec tab_count_user(jid(), state()) -> non_neg_integer().
+tab_count_user(JID, StateData) ->
+    ServerHost = StateData#state.server_host,
     {LUser, LServer, _} = jid:tolower(JID),
-    US = {LUser, LServer},
-    case catch ets:select(muc_online_users,
-			  [{#muc_online_users{us = US, _ = '_'}, [], [[]]}])
-	of
-      Res when is_list(Res) -> length(Res);
-      _ -> 0
-    end.
+    mod_muc:count_online_rooms_by_user(ServerHost, LUser, LServer).
 
 -spec element_size(stanza()) -> non_neg_integer().
 element_size(El) ->
