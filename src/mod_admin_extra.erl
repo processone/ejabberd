@@ -734,7 +734,7 @@ get_md5(AccountPass) ->
                       || X <- binary_to_list(erlang:md5(AccountPass))]).
 get_sha(AccountPass) ->
     iolist_to_binary([io_lib:format("~2.16.0B", [X])
- 		      || X <- binary_to_list(p1_sha:sha1(AccountPass))]).
+		      || X <- binary_to_list(crypto:hash(sha, AccountPass))]).
 
 num_active_users(Host, Days) ->
     DB_Type = gen_mod:db_type(Host, mod_last),

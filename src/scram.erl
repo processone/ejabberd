@@ -45,7 +45,7 @@ client_key(SaltedPassword) ->
 
 -spec stored_key(binary()) -> binary().
 
-stored_key(ClientKey) -> p1_sha:sha1(ClientKey).
+stored_key(ClientKey) -> crypto:hash(sha, ClientKey).
 
 -spec server_key(binary()) -> binary().
 
