@@ -31,6 +31,8 @@
 
 -include("xmpp.hrl").
 
+-type c2s_state() :: ejabberd_c2s:state().
+
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -52,6 +54,8 @@ depends(_Host, _Opts) ->
 mod_opt_type(_) ->
     [].
 
+-spec c2s_unauthenticated_packet(c2s_state(), iq()) ->
+      c2s_state() | {stop, c2s_state()}.
 c2s_unauthenticated_packet(State, #iq{type = T, sub_els = [_]} = IQ)
   when T == get; T == set ->
     case xmpp:get_subtag(IQ, #legacy_auth{}) of
@@ -63,6 +67,7 @@ c2s_unauthenticated_packet(State, #iq{type = T, sub_els = [_]} = IQ)
 c2s_unauthenticated_packet(State, _) ->
     State.
 
+-spec c2s_stream_features([xmpp_element()], binary()) -> [xmpp_element()].
 c2s_stream_features(Acc, LServer) ->
     case gen_mod:is_loaded(LServer, ?MODULE) of
 	true ->
@@ -74,6 +79,7 @@ c2s_stream_features(Acc, LServer) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+-spec authenticate(c2s_state(), iq()) -> c2s_state().
 authenticate(#{server := Server} = State,
 	     #iq{type = get, sub_els = [#legacy_auth{}]} = IQ) ->
     LServer = jid:nameprep(Server),
@@ -129,6 +135,7 @@ authenticate(#{stream_id := StreamID, server := Server,
 	    process_auth_failure(State, U, Err, 'forbidden')
     end.
 
+-spec open_session(c2s_state(), iq(), binary()) -> c2s_state().
 open_session(State, IQ, R) ->
     case ejabberd_c2s:bind(R, State) of
 	{ok, State1} ->
@@ -139,6 +146,7 @@ open_session(State, IQ, R) ->
 	    ejabberd_c2s:send(State1, Res)
     end.
 
+-spec process_auth_failure(c2s_state(), binary(), stanza_error(), atom()) -> c2s_state().
 process_auth_failure(State, User, StanzaErr, Reason) ->
     State1 = ejabberd_c2s:send(State, StanzaErr),
     ejabberd_c2s:handle_auth_failure(User, <<"legacy">>, Reason, State1).

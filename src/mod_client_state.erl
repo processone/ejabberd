@@ -253,7 +253,7 @@ filter_other({Stanza, #{jid := JID} = C2SState} = Acc) when ?is_stanza(Stanza) -
 filter_other(Acc) ->
     Acc.
 
--spec add_stream_feature([xmpp_element()], binary) -> [xmpp_element()].
+-spec add_stream_feature([xmpp_element()], binary()) -> [xmpp_element()].
 add_stream_feature(Features, Host) ->
     case gen_mod:is_loaded(Host, ?MODULE) of
 	true ->

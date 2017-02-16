@@ -56,7 +56,7 @@
 -record(state, {limits = treap:empty() :: treap:treap()}).
 
 -record(captcha, {id :: binary(),
-                  pid :: pid(),
+                  pid :: pid() | undefined,
                   key :: binary(),
                   tref :: reference(),
                   args :: any()}).

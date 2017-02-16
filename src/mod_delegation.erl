@@ -65,8 +65,7 @@ mod_opt_type(_) ->
 depends(_, _) ->
     [].
 
--spec decode_iq_subel(xmpp_element()) -> xmpp_element();
-		     (xmlel()) -> xmlel().
+-spec decode_iq_subel(xmpp_element() | xmlel()) -> xmpp_element() | xmlel().
 %% Tell gen_iq_handler not to auto-decode IQ payload
 decode_iq_subel(El) ->
     El.

@@ -52,7 +52,7 @@
          opts = [] :: opts() | '_' | '$2'}).
 
 -type opts() :: [{atom(), any()}].
--type db_type() :: sql | mnesia | riak.
+-type db_type() :: atom().
 
 -callback start(binary(), opts()) -> ok | {ok, pid()}.
 -callback stop(binary()) -> any().

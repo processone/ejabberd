@@ -406,7 +406,7 @@ commands_result(Allow, From, To, Request) ->
 	    announce_commands(From, To, Request)
     end.
 
--spec announce_commands(adhoc_command(), jid(), jid(), adhoc_command()) ->
+-spec announce_commands(empty | adhoc_command(), jid(), jid(), adhoc_command()) ->
 			       adhoc_command() | {error, stanza_error()}.
 announce_commands(Acc, From, #jid{lserver = LServer} = To,
 		  #adhoc_command{node = Node} = Request) ->

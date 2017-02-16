@@ -218,7 +218,7 @@ code_change(_OldVsn, State, _Extra) ->
 do_route(Domain, Destinations, Packet) ->
     ?DEBUG("route multicast:~n~s~nDomain: ~s~nDestinations: ~s~n",
 	   [xmpp:pp(Packet), Domain,
-	    str:join([jid:to_string(To) || To <- Destinations], ", ")]),
+	    str:join([jid:to_string(To) || To <- Destinations], <<", ">>)]),
     %% Try to find an appropriate multicast service
     case mnesia:dirty_read(route_multicast, Domain) of
 

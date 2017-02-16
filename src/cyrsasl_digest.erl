@@ -39,7 +39,7 @@
 
 -type get_password_fun() :: fun((binary()) -> {false, any()} |
                                               {binary(), atom()}).
--type check_password_fun() :: fun((binary(), binary(), binary(),
+-type check_password_fun() :: fun((binary(), binary(), binary(), binary(),
                                    fun((binary()) -> binary())) ->
                                            {boolean(), any()} |
                                            false).
@@ -51,8 +51,8 @@
                 nonce = <<"">> :: binary(),
                 username = <<"">> :: binary(),
                 authzid = <<"">> :: binary(),
-                get_password = fun(_) -> {false, <<>>} end :: get_password_fun(),
-                check_password = fun(_, _, _, _, _) -> false end :: check_password_fun(),
+                get_password :: get_password_fun(),
+                check_password :: check_password_fun(),
                 auth_module :: atom(),
                 host = <<"">> :: binary(),
                 hostfqdn = <<"">> :: binary() | [binary()]}).
@@ -111,7 +111,7 @@ mech_step(#state{step = 3, nonce = Nonce} = State,
 		  {false, _} -> {error, not_authorized, UserName};
 		  {Passwd, AuthModule} ->
 		      case (State#state.check_password)(UserName, UserName, <<"">>,
-		                    proplists:get_value(<<"response">>, KeyVals, <<>>),
+							proplists:get_value(<<"response">>, KeyVals, <<>>),
 							fun (PW) ->
 								response(KeyVals,
 									 UserName,
