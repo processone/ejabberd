@@ -460,7 +460,7 @@ resolve_access(Name, Host) when is_atom(Name) ->
 resolve_access(Rules, _Host) when is_list(Rules) ->
     Rules.
 
--spec access_matches(atom()|list(), any(), global|binary()) -> allow|deny.
+-spec access_matches(atom()|list(), any(), global|binary()) -> allow|deny|atom()|integer().
 access_matches(Rules, Data, Host) ->
     case resolve_access(Rules, Host) of
 	all -> allow;
