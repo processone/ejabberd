@@ -330,11 +330,9 @@ bounce_message_queue(State) ->
 
 -spec bounce_packet(xmpp_element(), state()) -> state().
 bounce_packet(Pkt, State) when ?is_stanza(Pkt) ->
-    From = xmpp:get_from(Pkt),
-    To = xmpp:get_to(Pkt),
     Lang = xmpp:get_lang(Pkt),
     Err = mk_bounce_error(Lang, State),
-    ejabberd_router:route_error(To, From, Pkt, Err),
+    ejabberd_router:route_error(Pkt, Err),
     State;
 bounce_packet(_, State) ->
     State.

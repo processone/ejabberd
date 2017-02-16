@@ -235,7 +235,7 @@ broadcast_event(LUser, LServer, Event) ->
 	      IQ = #iq{type = set, from = From, to = To,
 		       id = <<"push", (randoms:get_string())/binary>>,
 		       sub_els = [Event]},
-	      ejabberd_router:route(From, To, IQ)
+	      ejabberd_router:route(IQ)
       end, ejabberd_sm:get_user_resources(LUser, LServer)).
 
 -spec process_get(iq()) -> iq().

@@ -187,9 +187,7 @@ open_session(#{user := U, server := S, resource := R,
 %%%===================================================================
 %%% Hooks
 %%%===================================================================
-process_info(#{lserver := LServer} = State,
-	     {route, From, To, Packet0}) ->
-    Packet = xmpp:set_from_to(Packet0, From, To),
+process_info(#{lserver := LServer} = State, {route, Packet}) ->
     {Pass, State1} = case Packet of
 			 #presence{} ->
 			     process_presence_in(State, Packet);
@@ -545,7 +543,7 @@ process_iq_in(State, #iq{} = IQ) ->
 	allow ->
 	    {true, State};
 	deny ->
-	    route_error(IQ, xmpp:err_service_unavailable()),
+	    ejabberd_router:route_error(IQ, xmpp:err_service_unavailable()),
 	    {false, State}
     end.
 
@@ -561,7 +559,8 @@ process_message_in(State, #message{type = T} = Msg) ->
 		true ->
 		    ok;
 		false ->
-		    route_error(Msg, xmpp:err_service_unavailable())
+		    ejabberd_router:route_error(
+		      Msg, xmpp:err_service_unavailable())
 	    end,
 	    {false, State}
     end.
@@ -611,7 +610,8 @@ route_probe_reply(From, To, #{lserver := LServer, pres_f := PresF,
 		    %% Don't route a presence probe to oneself
 		    case From == To of
 			false ->
-			    route(xmpp:set_from_to(Packet, To, From));
+			    ejabberd_router:route(
+			      xmpp:set_from_to(Packet, To, From));
 			true ->
 			    ok
 		    end
@@ -649,14 +649,14 @@ process_presence_out(#{user := User, server := Server, lserver := LServer,
 				       LServer,
 				       [User, Server, To, Type]),
 		    BareFrom = jid:remove_resource(From),
-		    route(xmpp:set_from_to(Pres, BareFrom, To)),
+		    ejabberd_router:route(xmpp:set_from_to(Pres, BareFrom, To)),
 		    State
 	    end;
 	allow when Type == error; Type == probe ->
-	    route(Pres),
+	    ejabberd_router:route(Pres),
 	    State;
 	allow ->
-	    route(Pres),
+	    ejabberd_router:route(Pres),
 	    A = case Type of
 		    available -> ?SETS:add_element(LTo, PresA);
 		    unavailable -> ?SETS:del_element(LTo, PresA)
@@ -728,7 +728,7 @@ check_privacy_then_route(#{lang := Lang} = State, Pkt) ->
 	    Err = xmpp:err_not_acceptable(ErrText, Lang),
 	    xmpp_stream_in:send_error(State, Pkt, Err);
         allow ->
-	    route(Pkt),
+	    ejabberd_router:route(Pkt),
 	    State
     end.
 
@@ -754,18 +754,6 @@ filter_blocked(#{jid := From} = State, Pres, LJIDSet) ->
 		   deny -> Acc
 	       end
        end, [], LJIDSet).
-
--spec route(stanza()) -> ok.
-route(Pkt) ->
-    From = xmpp:get_from(Pkt),
-    To = xmpp:get_to(Pkt),
-    ejabberd_router:route(From, To, Pkt).
-
--spec route_error(stanza(), stanza_error()) -> ok.
-route_error(Pkt, Err) ->
-    From = xmpp:get_from(Pkt),
-    To = xmpp:get_to(Pkt),
-    ejabberd_router:route_error(To, From, Pkt, Err).
 
 -spec route_multiple(state(), [jid()], stanza()) -> ok.
 route_multiple(#{lserver := LServer}, JIDs, Pkt) ->
@@ -805,8 +793,8 @@ resource_conflict_action(U, S, R) ->
 
 -spec bounce_message_queue() -> ok.
 bounce_message_queue() ->
-    receive {route, From, To, Pkt} ->
-	    ejabberd_router:route(From, To, Pkt),
+    receive {route, Pkt} ->
+	    ejabberd_router:route(Pkt),
 	    bounce_message_queue()
     after 0 ->
 	    ok

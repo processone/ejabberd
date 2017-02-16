@@ -32,11 +32,11 @@
 %% API
 -export([start/0, start_link/0]).
 
--export([route/3, route_iq/4, route_iq/5, process_iq/3,
-	 process_iq_reply/3, get_features/1,
+-export([route/1, route_iq/2, route_iq/3, process_iq/1,
+	 process_iq_reply/1, get_features/1,
 	 register_iq_handler/5, register_iq_response_handler/4,
 	 register_iq_response_handler/5, unregister_iq_handler/2,
-	 unregister_iq_response_handler/2, bounce_resource_packet/3]).
+	 unregister_iq_response_handler/2, bounce_resource_packet/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
@@ -77,55 +77,53 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [],
 			  []).
 
--spec process_iq(jid(), jid(), iq()) -> any().
-process_iq(From, To, #iq{type = T, lang = Lang, sub_els = [El]} = Packet)
+-spec process_iq(iq()) -> any().
+process_iq(#iq{to = To, type = T, lang = Lang, sub_els = [El]} = Packet)
   when T == get; T == set ->
     XMLNS = xmpp:get_ns(El),
     Host = To#jid.lserver,
     case ets:lookup(?IQTABLE, {Host, XMLNS}) of
 	[{_, Module, Function, Opts}] ->
-	    gen_iq_handler:handle(Host, Module, Function, Opts,
-				  From, To, Packet);
+	    gen_iq_handler:handle(Host, Module, Function, Opts, Packet);
 	[] ->
 	    Txt = <<"No module is handling this query">>,
 	    Err = xmpp:err_service_unavailable(Txt, Lang),
-	    ejabberd_router:route_error(To, From, Packet, Err)
+	    ejabberd_router:route_error(Packet, Err)
     end;
-process_iq(From, To, #iq{type = T, lang = Lang, sub_els = SubEls} = Packet)
+process_iq(#iq{type = T, lang = Lang, sub_els = SubEls} = Packet)
   when T == get; T == set ->
     Txt = case SubEls of
 	      [] -> <<"No child elements found">>;
 	      _ -> <<"Too many child elements">>
 	  end,
     Err = xmpp:err_bad_request(Txt, Lang),
-    ejabberd_router:route_error(To, From, Packet, Err);
-process_iq(From, To, #iq{type = T} = Packet) when T == result; T == error ->
-    process_iq_reply(From, To, Packet).
+    ejabberd_router:route_error(Packet, Err);
+process_iq(#iq{type = T} = Packet) when T == result; T == error ->
+    process_iq_reply(Packet).
 
--spec process_iq_reply(jid(), jid(), iq()) -> any().
-process_iq_reply(From, To, #iq{id = ID} = IQ) ->
+-spec process_iq_reply(iq()) -> any().
+process_iq_reply(#iq{id = ID} = IQ) ->
     case get_iq_callback(ID) of
       {ok, undefined, Function} -> Function(IQ), ok;
       {ok, Module, Function} ->
-	  Module:Function(From, To, IQ), ok;
+	  Module:Function(IQ), ok;
       _ -> nothing
     end.
 
--spec route(jid(), jid(), stanza()) -> any().
-route(From, To, Packet) ->
-    case catch do_route(From, To, Packet) of
-      {'EXIT', Reason} ->
-	  ?ERROR_MSG("~p~nwhen processing: ~p",
-		     [Reason, {From, To, Packet}]);
-      _ -> ok
+-spec route(stanza()) -> any().
+route(Packet) ->
+    try do_route(Packet)
+    catch E:R ->
+	    ?ERROR_MSG("failed to route packet:~n~s~nReason = ~p",
+		       [xmpp:pp(Packet), {E, {R, erlang:get_stacktrace()}}])
     end.
 
--spec route_iq(jid(), jid(), iq(), function()) -> any().
-route_iq(From, To, IQ, F) ->
-    route_iq(From, To, IQ, F, undefined).
+-spec route_iq(iq(), function()) -> any().
+route_iq(IQ, F) ->
+    route_iq(IQ, F, undefined).
 
--spec route_iq(jid(), jid(), iq(), function(), ping_timeout()) -> any().
-route_iq(From, To, #iq{type = Type} = IQ, F, Timeout)
+-spec route_iq(iq(), function(), ping_timeout()) -> any().
+route_iq(#iq{from = From, type = Type} = IQ, F, Timeout)
     when is_function(F) ->
     Packet = if Type == set; Type == get ->
 		     ID = randoms:get_string(),
@@ -135,7 +133,7 @@ route_iq(From, To, #iq{type = Type} = IQ, F, Timeout)
 		true ->
 		     IQ
 	     end,
-    ejabberd_router:route(From, To, Packet).
+    ejabberd_router:route(Packet).
 
 -spec register_iq_response_handler(binary(), binary(), module(),
 				   atom() | function()) -> any().
@@ -172,17 +170,16 @@ unregister_iq_response_handler(_Host, ID) ->
 unregister_iq_handler(Host, XMLNS) ->
     gen_server:cast(?MODULE, {unregister_iq_handler, Host, XMLNS}).
 
--spec bounce_resource_packet(jid(), jid(), stanza()) -> stop.
-bounce_resource_packet(_From, #jid{lresource = <<"">>}, #presence{}) ->
+-spec bounce_resource_packet(stanza()) -> ok | stop.
+bounce_resource_packet(#presence{to = #jid{lresource = <<"">>}}) ->
     ok;
-bounce_resource_packet(_From, #jid{lresource = <<"">>},
-		       #message{type = headline}) ->
+bounce_resource_packet(#message{to = #jid{lresource = <<"">>}, type = headline}) ->
     ok;
-bounce_resource_packet(From, To, Packet) ->
+bounce_resource_packet(Packet) ->
     Lang = xmpp:get_lang(Packet),
     Txt = <<"No available resource found">>,
     Err = xmpp:err_item_not_found(Txt, Lang),
-    ejabberd_router:route_error(To, From, Packet, Err),
+    ejabberd_router:route_error(Packet, Err),
     stop.
 
 -spec get_features(binary()) -> [binary()].
@@ -237,13 +234,8 @@ handle_cast({unregister_iq_handler, Host, XMLNS},
     {noreply, State};
 handle_cast(_Msg, State) -> {noreply, State}.
 
-handle_info({route, From, To, Packet}, State) ->
-    case catch do_route(From, To, Packet) of
-      {'EXIT', Reason} ->
-	  ?ERROR_MSG("~p~nwhen processing: ~p",
-		     [Reason, {From, To, Packet}]);
-      _ -> ok
-    end,
+handle_info({route, Packet}, State) ->
+    route(Packet),
     {noreply, State};
 handle_info({timeout, _TRef, ID}, State) ->
     process_iq_timeout(ID),
@@ -261,21 +253,20 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
--spec do_route(jid(), jid(), stanza()) -> any().
-do_route(From, To, Packet) ->
-    ?DEBUG("local route~n\tfrom ~p~n\tto ~p~n\tpacket "
-	   "~P~n",
-	   [From, To, Packet, 8]),
+-spec do_route(stanza()) -> any().
+do_route(Packet) ->
+    ?DEBUG("local route:~n~s", [xmpp:pp(Packet)]),
     Type = xmpp:get_type(Packet),
+    To = xmpp:get_to(Packet),
     if To#jid.luser /= <<"">> ->
-	    ejabberd_sm:route(From, To, Packet);
+	    ejabberd_sm:route(Packet);
        is_record(Packet, iq), To#jid.lresource == <<"">> ->
-	    process_iq(From, To, Packet);
+	    process_iq(Packet);
        Type == result; Type == error ->
 	    ok;
        true ->
 	    ejabberd_hooks:run(local_send_to_resource_hook,
-			       To#jid.lserver, [From, To, Packet])
+			       To#jid.lserver, [Packet])
     end.
 
 -spec update_table() -> ok.

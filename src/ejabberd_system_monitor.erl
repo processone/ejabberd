@@ -32,7 +32,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, process_command/3, register_hook/1,
+-export([start_link/0, process_command/1, register_hook/1,
 	 process_remote_command/1]).
 
 -export([init/1, handle_call/3, handle_cast/2,
@@ -61,28 +61,26 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, Opts,
 			  []).
 
--spec process_command(jid(), jid(), stanza()) -> ok.
-process_command(From, To, Packet) ->
+-spec process_command(stanza()) -> ok.
+process_command(#message{from = From, to = To, body = Body}) ->
     case To of
-      #jid{luser = <<"">>, lresource = <<"watchdog">>} ->
-	  case Packet of
-	    #message{body = Body} ->
-		LFrom =
-		    jid:tolower(jid:remove_resource(From)),
-		case lists:member(LFrom, get_admin_jids()) of
-		  true ->
-		      BodyText = xmpp:get_text(Body),
-		      spawn(fun () ->
-				    process_flag(priority, high),
-				    process_command1(From, To, BodyText)
-			    end),
-		      ok;
-		  false -> ok
-		end;
-	    _ -> ok
-	  end;
-      _ -> ok
-    end.
+	#jid{luser = <<"">>, lresource = <<"watchdog">>} ->
+	    LFrom = jid:tolower(jid:remove_resource(From)),
+	    case lists:member(LFrom, get_admin_jids()) of
+		true ->
+		    BodyText = xmpp:get_text(Body),
+		    spawn(fun () ->
+				  process_flag(priority, high),
+				  process_command1(From, To, BodyText)
+			  end),
+		    ok;
+		false -> ok
+	    end;
+	_ ->
+	    ok
+    end;
+process_command(_) ->
+    ok.
 
 register_hook(Host) ->
     ejabberd_hooks:add(local_send_to_resource_hook, Host,
@@ -194,8 +192,9 @@ send_message(From, To, Body) ->
     send_message(From, To, Body, []).
 
 send_message(From, To, Body, ExtraEls) ->
-    ejabberd_router:route(From, To,
-			  #message{type = chat,
+    ejabberd_router:route(#message{type = chat,
+				   from = From,
+				   to = To,
 				   body = xmpp:mk_text(Body),
 				   sub_els = ExtraEls}).
 

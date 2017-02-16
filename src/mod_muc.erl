@@ -345,12 +345,14 @@ handle_call({create, Room, From, Nick, Opts}, _From,
 
 handle_cast(_Msg, State) -> {noreply, State}.
 
-handle_info({route, From, To, Packet},
+handle_info({route, Packet},
 	    #state{host = Host, server_host = ServerHost,
 		   access = Access, default_room_opts = DefRoomOpts,
 		   history_size = HistorySize,
 		   max_rooms_discoitems = MaxRoomsDiscoItems,
 		   room_shaper = RoomShaper} = State) ->
+    From = xmpp:get_from(Packet),
+    To = xmpp:get_to(Packet),
     case catch do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
 			From, To, Packet, DefRoomOpts, MaxRoomsDiscoItems) of
 	{'EXIT', Reason} ->
@@ -395,15 +397,15 @@ do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
 	    Lang = xmpp:get_lang(Packet),
 	    ErrText = <<"Access denied by service policy">>,
 	    Err = xmpp:err_forbidden(ErrText, Lang),
-	    ejabberd_router:route_error(To, From, Packet, Err)
+	    ejabberd_router:route_error(Packet, Err)
     end.
 
 do_route1(_Host, _ServerHost, _Access, _HistorySize, _RoomShaper,
-	  From, #jid{luser = <<"">>, lresource = <<"">>} = To,
+	  _From, #jid{luser = <<"">>, lresource = <<"">>} = _To,
 	  #iq{} = IQ, _DefRoomOpts) ->
-    ejabberd_local:process_iq(From, To, IQ);
+    ejabberd_local:process_iq(IQ);
 do_route1(Host, ServerHost, Access, _HistorySize, _RoomShaper,
-	  From, #jid{luser = <<"">>, lresource = <<"">>} = To,
+	  From, #jid{luser = <<"">>, lresource = <<"">>} = _To,
 	  #message{lang = Lang, body = Body, type = Type} = Packet, _) ->
     {_AccessRoute, _AccessCreate, AccessAdmin, _AccessPersistent} = Access,
     if Type == error ->
@@ -417,13 +419,13 @@ do_route1(Host, ServerHost, Access, _HistorySize, _RoomShaper,
 		    ErrText = <<"Only service administrators are allowed "
 				"to send service messages">>,
 		    Err = xmpp:err_forbidden(ErrText, Lang),
-		    ejabberd_router:route_error(To, From, Packet, Err)
+		    ejabberd_router:route_error(Packet, Err)
 	    end
     end;
 do_route1(_Host, _ServerHost, _Access, _HistorySize, _RoomShaper,
-	  From, #jid{luser = <<"">>} = To, Packet, _DefRoomOpts) ->
+	  _From, #jid{luser = <<"">>} = _To, Packet, _DefRoomOpts) ->
     Err = xmpp:err_service_unavailable(),
-    ejabberd_router:route_error(To, From, Packet, Err);
+    ejabberd_router:route_error(Packet, Err);
 do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 	  From, To, Packet, DefRoomOpts) ->
     {_AccessRoute, AccessCreate, _AccessAdmin, _AccessPersistent} = Access,
@@ -442,23 +444,23 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 					  Room, HistorySize,
 					  RoomShaper, From, Nick, DefRoomOpts),
 			    RMod:register_online_room(Room, Host, Pid),
-			    mod_muc_room:route(Pid, From, Nick, Packet),
+			    mod_muc_room:route(Pid, Packet),
 			    ok;
 			false ->
 			    Lang = xmpp:get_lang(Packet),
 			    ErrText = <<"Room creation is denied by service policy">>,
 			    Err = xmpp:err_forbidden(ErrText, Lang),
-			    ejabberd_router:route_error(To, From, Packet, Err)
+			    ejabberd_router:route_error(Packet, Err)
 		    end;
 		false ->
 		    Lang = xmpp:get_lang(Packet),
 		    ErrText = <<"Conference room does not exist">>,
 		    Err = xmpp:err_item_not_found(ErrText, Lang),
-		    ejabberd_router:route_error(To, From, Packet, Err)
+		    ejabberd_router:route_error(Packet, Err)
 	    end;
 	{ok, Pid} ->
 	    ?DEBUG("MUC: send to process ~p~n", [Pid]),
-	    mod_muc_room:route(Pid, From, Nick, Packet),
+	    mod_muc_room:route(Pid, Packet),
 	    ok
     end.
 

@@ -172,13 +172,13 @@ handle_cast({iq_pong, JID, timeout}, State) ->
 handle_cast(_Msg, State) -> {noreply, State}.
 
 handle_info({timeout, _TRef, {ping, JID}}, State) ->
-    IQ = #iq{type = get, sub_els = [#ping{}]},
+    From = jid:make(State#state.host),
+    IQ = #iq{from = From, to = JID, type = get, sub_els = [#ping{}]},
     Pid = self(),
     F = fun (Response) ->
 		gen_server:cast(Pid, {iq_pong, JID, Response})
 	end,
-    From = jid:make(<<"">>, State#state.host, <<"">>),
-    ejabberd_local:route_iq(From, JID, IQ, F, State#state.ping_ack_timeout),
+    ejabberd_local:route_iq(IQ, F, State#state.ping_ack_timeout),
     Timers = add_timer(JID, State#state.ping_interval,
 		       State#state.timers),
     {noreply, State#state{timers = Timers}};

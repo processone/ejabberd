@@ -146,7 +146,7 @@ send_messages(Config) ->
 	      end;
 	 ({recv, #message{} = Msg}) ->
 	      ejabberd_router:route(
-		JID, MyJID, Msg#message{from = JID, to = MyJID}),
+		Msg#message{from = JID, to = MyJID}),
 	      ct:comment("Receiving message ~s", [xmpp:pp(Msg)]),
 	      #message{} = recv_message(Config)
       end, message_iterator(Config)).

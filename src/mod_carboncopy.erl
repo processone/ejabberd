@@ -212,7 +212,7 @@ send_copies(JID, To, Packet, Direction)->
 		    Sender = jid:make({U, S, <<>>}),
 		    %{xmlelement, N, A, C} = Packet,
 		    New = build_forward_packet(JID, Packet, Sender, Dest, Direction),
-		    ejabberd_router:route(Sender, Dest, New)
+		    ejabberd_router:route(xmpp:set_from_to(New, Sender, Dest))
 	      end, TargetJIDs),
     ok.
 

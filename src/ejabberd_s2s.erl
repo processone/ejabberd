@@ -34,7 +34,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, route/3, have_connection/1,
+-export([start_link/0, route/1, have_connection/1,
 	 get_connections_pids/1, try_register/1,
 	 remove_connection/2, start_connection/2, start_connection/3,
 	 dirty_get_connections/0, allow_host/2,
@@ -90,14 +90,13 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [],
 			  []).
 
--spec route(jid(), jid(), xmpp_element()) -> ok.
+-spec route(stanza()) -> ok.
 
-route(From, To, Packet) ->
-    case catch do_route(From, To, Packet) of
-      {'EXIT', Reason} ->
-	  ?ERROR_MSG("~p~nwhen processing: ~p",
-		     [Reason, {From, To, Packet}]);
-      _ -> ok
+route(Packet) ->
+    try do_route(Packet)
+    catch E:R ->
+            ?ERROR_MSG("failed to route packet:~n~s~nReason = ~p",
+                       [xmpp:pp(Packet), {E, {R, erlang:get_stacktrace()}}])
     end.
 
 clean_temporarily_blocked_table() ->
@@ -314,13 +313,8 @@ handle_cast(_Msg, State) ->
 handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
     clean_table_from_bad_node(Node),
     {noreply, State};
-handle_info({route, From, To, Packet}, State) ->
-    case catch do_route(From, To, Packet) of
-      {'EXIT', Reason} ->
-	  ?ERROR_MSG("~p~nwhen processing: ~p",
-		     [Reason, {From, To, Packet}]);
-      _ -> ok
-    end,
+handle_info({route, Packet}, State) ->
+    route(Packet),
     {noreply, State};
 handle_info(_Info, State) -> {noreply, State}.
 
@@ -348,17 +342,17 @@ clean_table_from_bad_node(Node) ->
 	end,
     mnesia:async_dirty(F).
 
--spec do_route(jid(), jid(), stanza()) -> ok.
-do_route(From, To, Packet) ->
-    ?DEBUG("s2s manager~n\tfrom ~p~n\tto ~p~n\tpacket "
-	   "~P~n",
-	   [From, To, Packet, 8]),
+-spec do_route(stanza()) -> ok.
+do_route(Packet) ->
+    ?DEBUG("local route:~n~s", [xmpp:pp(Packet)]),
+    From = xmpp:get_from(Packet),
+    To = xmpp:get_to(Packet),
     case start_connection(From, To) of
 	{ok, Pid} when is_pid(Pid) ->
 	  ?DEBUG("sending to process ~p~n", [Pid]),
 	  #jid{lserver = MyServer} = From,
-	    ejabberd_hooks:run(s2s_send_packet, MyServer, [From, To, Packet]),
-	    ejabberd_s2s_out:route(Pid, xmpp:set_from_to(Packet, From, To));
+	    ejabberd_hooks:run(s2s_send_packet, MyServer, [Packet]),
+	    ejabberd_s2s_out:route(Pid, Packet);
 	{error, Reason} ->
 	  Lang = xmpp:get_lang(Packet),
 	    Err = case Reason of
@@ -371,7 +365,7 @@ do_route(From, To, Packet) ->
 		      internal_server_error ->
 			  xmpp:err_internal_server_error()
 		  end,
-	    ejabberd_router:route_error(To, From, Packet, Err)
+	    ejabberd_router:route_error(Packet, Err)
     end.
 
 -spec start_connection(jid(), jid())

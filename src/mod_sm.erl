@@ -516,7 +516,8 @@ route_unacked_stanzas(#{mgmt_state := MgmtState,
 	      ?DEBUG("Dropping presence stanza from ~s", [jid:to_string(From)]);
 	 ({_, _Time, #iq{} = El}) ->
 	      Txt = <<"User session terminated">>,
-	      route_error(El, xmpp:err_service_unavailable(Txt, Lang));
+	      ejabberd_router:route_error(
+		El, xmpp:err_service_unavailable(Txt, Lang));
 	 ({_, _Time, #message{from = From, meta = #{carbon_copy := true}}}) ->
 	      %% XEP-0280 says: "When a receiving server attempts to deliver a
 	      %% forked message, and that message bounces with an error for
@@ -534,10 +535,11 @@ route_unacked_stanzas(#{mgmt_state := MgmtState,
 			     [jid:to_string(xmpp:get_from(Msg))]);
 		  false when ResendOnTimeout ->
 		      NewEl = add_resent_delay_info(State, Msg, Time),
-		      route(NewEl);
+		      ejabberd_router:route(NewEl);
 		  false ->
 		      Txt = <<"User session terminated">>,
-		      route_error(Msg, xmpp:err_service_unavailable(Txt, Lang))
+		      ejabberd_router:route_error(
+			Msg, xmpp:err_service_unavailable(Txt, Lang))
 	      end;
 	 ({_, _Time, El}) ->
 	      %% Raw element of type 'error' resulting from a validation error
@@ -614,18 +616,6 @@ add_resent_delay_info(#{lserver := LServer}, El, Time)
 add_resent_delay_info(_State, El, _Time) ->
     El.
 
--spec route(stanza()) -> ok.
-route(Pkt) ->
-    From = xmpp:get_from(Pkt),
-    To = xmpp:get_to(Pkt),
-    ejabberd_router:route(From, To, Pkt).
-
--spec route_error(stanza(), stanza_error()) -> ok.
-route_error(Pkt, Err) ->
-    From = xmpp:get_from(Pkt),
-    To = xmpp:get_to(Pkt),
-    ejabberd_router:route_error(To, From, Pkt, Err).
-
 -spec send(state(), xmpp_element()) -> state().
 send(#{mod := Mod} = State, Pkt) ->
     Mod:send(State, Pkt).
@@ -684,8 +674,8 @@ cancel_ack_timer(State) ->
 
 -spec bounce_message_queue() -> ok.
 bounce_message_queue() ->
-    receive {route, From, To, Pkt} ->
-	    ejabberd_router:route(From, To, Pkt),
+    receive {route, Pkt} ->
+	    ejabberd_router:route(Pkt),
 	    bounce_message_queue()
     after 0 ->
 	    ok

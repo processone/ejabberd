@@ -150,7 +150,7 @@ process_iq(#iq{type = set, lang = Lang, to = To, from = From,
 	    case From of
 		#jid{luser = LUser, lserver = Server} ->
 		    ResIQ = xmpp:make_iq_result(IQ),
-		    ejabberd_router:route(From, From, ResIQ),
+		    ejabberd_router:route(xmpp:set_from_to(ResIQ, From, From)),
 		    ejabberd_auth:remove_user(LUser, Server),
 		    ignore;
 		_ ->
@@ -380,8 +380,9 @@ send_welcome_message(JID) ->
       {<<"">>, <<"">>} -> ok;
       {Subj, Body} ->
 	  ejabberd_router:route(
-	    jid:make(Host), JID,
-	    #message{subject = xmpp:mk_text(Subj),
+	    #message{from = jid:make(Host),
+		     to = JID,
+		     subject = xmpp:mk_text(Subj),
 		     body = xmpp:mk_text(Body)});
       _ -> ok
     end.
@@ -406,8 +407,9 @@ send_registration_notifications(Mod, UJID, Source) ->
             lists:foreach(
               fun(JID) ->
                       ejabberd_router:route(
-                        jid:make(Host), JID,
-			#message{type = chat,
+			#message{from = jid:make(Host),
+				 to = JID,
+				 type = chat,
 				 body = xmpp:mk_text(Body)})
               end, JIDs)
     end.

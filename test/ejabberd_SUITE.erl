@@ -766,7 +766,8 @@ s2s_ping(Config) ->
     From = my_jid(Config),
     To = jid:make(?MNESIA_VHOST),
     ID = randoms:get_string(),
-    ejabberd_s2s:route(From, To, #iq{id = ID, type = get, sub_els = [#ping{}]}),
+    ejabberd_s2s:route(#iq{from = From, to = To, id = ID,
+			   type = get, sub_els = [#ping{}]}),
     #iq{type = result, id = ID, sub_els = []} = recv_iq(Config),
     disconnect(Config).
 

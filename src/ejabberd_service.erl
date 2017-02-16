@@ -190,8 +190,7 @@ handle_authenticated_packet(Pkt0, #{ip := {IP, _}, lang := Lang} = State)
     From = xmpp:get_from(Pkt),
     case check_from(From, State) of
 		true ->
-	    To = xmpp:get_to(Pkt),
-	    ejabberd_router:route(From, To, Pkt),
+	    ejabberd_router:route(Pkt),
 	    State;
 		false ->
 		    Txt = <<"Improper domain part of 'from' attribute">>,
@@ -201,15 +200,14 @@ handle_authenticated_packet(Pkt0, #{ip := {IP, _}, lang := Lang} = State)
 handle_authenticated_packet(_Pkt, State) ->
     State.
 
-handle_info({route, From, To, Packet}, #{access := Access} = State) ->
-    case acl:match_rule(global, Access, From) of
+handle_info({route, Packet}, #{access := Access} = State) ->
+    case acl:match_rule(global, Access, xmpp:get_from(Packet)) of
       allow ->
-	    Pkt = xmpp:set_from_to(Packet, From, To),
-	    xmpp_stream_in:send(State, Pkt);
+	    xmpp_stream_in:send(State, Packet);
 	deny ->
 	    Lang = xmpp:get_lang(Packet),
 	    Err = xmpp:err_not_allowed(<<"Denied by ACL">>, Lang),
-	    ejabberd_router:route_error(To, From, Packet, Err),
+	    ejabberd_router:route_error(Packet, Err),
 	    State
     end;
 handle_info(Info, State) ->

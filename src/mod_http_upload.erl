@@ -339,9 +339,9 @@ handle_cast(Request, State) ->
 
 -spec handle_info(timeout | _, state()) -> {noreply, state()}.
 
-handle_info({route, From, To, #iq{} = Packet}, State) ->
+handle_info({route, #iq{} = Packet}, State) ->
     IQ = xmpp:decode_els(Packet),
-    {Reply, NewState} = case process_iq(From, IQ, State) of
+    {Reply, NewState} = case process_iq(IQ, State) of
 			    R when is_record(R, iq) ->
 				{R, State};
 			    {R, S} ->
@@ -350,7 +350,7 @@ handle_info({route, From, To, #iq{} = Packet}, State) ->
 				{none, State}
 			end,
     if Reply /= none ->
-	    ejabberd_router:route(To, From, Reply);
+	    ejabberd_router:route(Reply);
        true ->
 	    ok
     end,
@@ -510,19 +510,18 @@ expand_host(Subject, Host) ->
 
 %% XMPP request handling.
 
--spec process_iq(jid(), iq(), state()) -> {iq(), state()} | iq() | not_request.
+-spec process_iq(iq(), state()) -> {iq(), state()} | iq() | not_request.
 
-process_iq(_From,
-	   #iq{type = get, lang = Lang, sub_els = [#disco_info{}]} = IQ,
+process_iq(#iq{type = get, lang = Lang, sub_els = [#disco_info{}]} = IQ,
 	   #state{server_host = ServerHost, name = Name}) ->
     AddInfo = ejabberd_hooks:run_fold(disco_info, ServerHost, [],
 				      [ServerHost, ?MODULE, <<"">>, <<"">>]),
     xmpp:make_iq_result(IQ, iq_disco_info(ServerHost, Lang, Name, AddInfo));
-process_iq(From, #iq{type = get, lang = Lang,
-		     sub_els = [#upload_request{filename = File,
-						size = Size,
-						'content-type' = CType,
-						xmlns = XMLNS}]} = IQ,
+process_iq(#iq{type = get, lang = Lang, from = From,
+	       sub_els = [#upload_request{filename = File,
+					  size = Size,
+					  'content-type' = CType,
+					  xmlns = XMLNS}]} = IQ,
 	   #state{server_host = ServerHost, access = Access} = State) ->
     case acl:match_rule(ServerHost, Access, From) of
 	allow ->
@@ -547,9 +546,9 @@ process_iq(From, #iq{type = get, lang = Lang,
 	    Txt = <<"Denied by ACL">>,
 	    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang))
     end;
-process_iq(_From, #iq{type = T} = IQ, _State) when T == get; T == set ->
+process_iq(#iq{type = T} = IQ, _State) when T == get; T == set ->
     xmpp:make_error(IQ, xmpp:err_not_allowed());
-process_iq(_From, #iq{}, _State) ->
+process_iq(#iq{}, _State) ->
     not_request.
 
 -spec create_slot(state(), jid(), binary(), pos_integer(), binary(), binary())

@@ -451,7 +451,7 @@ push_item(User, Server, Resource, From, Item,
 		id = <<"push", (randoms:get_string())/binary>>,
 		sub_els = [#roster_query{ver = Ver,
 					 items = [encode_item(Item)]}]},
-    ejabberd_router:route(From, To, xmpp:put_meta(ResIQ, roster_item, Item)).
+    ejabberd_router:route(xmpp:put_meta(ResIQ, roster_item, Item)).
 
 push_item_version(Server, User, From, Item,
 		  RosterVersion) ->
@@ -499,7 +499,7 @@ roster_change(#{user := U, server := S, resource := R,
 			    ok;
 			allow ->
 			    Pres = xmpp:set_from_to(LastPres, From, To),
-			    ejabberd_router:route(From, To, Pres)
+			    ejabberd_router:route(Pres)
 		    end,
 		    A = ?SETS:add_element(LIJID, PresA),
 		    State1#{pres_a => A};
@@ -511,7 +511,7 @@ roster_change(#{user := U, server := S, resource := R,
 			deny ->
 			    ok;
 			allow ->
-			    ejabberd_router:route(From, To, PU)
+			    ejabberd_router:route(PU)
 		    end,
 		    A = ?SETS:del_element(LIJID, PresA),
 		    State1#{pres_a => A};
@@ -623,8 +623,10 @@ process_subscription(Direction, User, Server, JID1,
 	  case AutoReply of
 	    none -> ok;
 	    _ ->
-		ejabberd_router:route(jid:make(User, Server, <<"">>),
-				      JID1, #presence{type = AutoReply})
+		ejabberd_router:route(
+		  #presence{type = AutoReply,
+			    from = jid:make(User, Server, <<"">>),
+			    to = JID1})
 	  end,
 	  case Push of
 	    {push, Item} ->
@@ -788,15 +790,17 @@ send_unsubscribing_presence(From, Item) ->
 	       _ -> false
 	     end,
     if IsTo ->
-	    ejabberd_router:route(jid:remove_resource(From),
-				  jid:make(Item#roster.jid),
-				  #presence{type = unsubscribe});
+	    ejabberd_router:route(
+	      #presence{type = unsubscribe,
+			from = jid:remove_resource(From),
+			to = jid:make(Item#roster.jid)});
        true -> ok
     end,
     if IsFrom ->
-	    ejabberd_router:route(jid:remove_resource(From),
-				  jid:make(Item#roster.jid),
-				  #presence{type = unsubscribed});
+	    ejabberd_router:route(
+	      #presence{type = unsubscribed,
+			from = jid:remove_resource(From),
+			to = jid:make(Item#roster.jid)});
        true -> ok
     end,
     ok.
@@ -1046,7 +1050,7 @@ user_roster_parse_query(User, Server, Items, Query) ->
 user_roster_subscribe_jid(User, Server, JID) ->
     out_subscription(User, Server, JID, subscribe),
     UJID = jid:make(User, Server, <<"">>),
-    ejabberd_router:route(UJID, JID, #presence{type = subscribe}).
+    ejabberd_router:route(#presence{from = UJID, to = JID, type = subscribe}).
 
 user_roster_item_parse_query(User, Server, Items,
 			     Query) ->
@@ -1061,8 +1065,9 @@ user_roster_item_parse_query(User, Server, Items,
 				out_subscription(User, Server, JID1,
 						 subscribed),
 				UJID = jid:make(User, Server, <<"">>),
-				ejabberd_router:route(UJID, JID1,
-						      #presence{type = subscribed}),
+				ejabberd_router:route(
+				  #presence{from = UJID, to = JID1,
+					    type = subscribed}),
 				throw(submitted);
 			    false ->
 				case lists:keysearch(<<"remove",

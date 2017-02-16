@@ -104,17 +104,20 @@ handle_cast(_Msg, State) -> {noreply, State}.
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-handle_info({route, From, To, Packet}, State) ->
+handle_info({route, Packet}, State) ->
+    From = xmpp:get_from(Packet),
+    To = xmpp:get_to(Packet),
     Packet2 = case From#jid.user of
 		<<"">> ->
 		    Lang = xmpp:get_lang(Packet),
 		    Txt = <<"User part of JID in 'from' is empty">>,
 		    xmpp:make_error(
 		      Packet, xmpp:err_bad_request(Txt, Lang));
-		_ -> Packet
+		_ ->
+		    xmpp:set_from_to(Packet, To, From)
 	      end,
     do_client_version(disabled, To, From),
-    ejabberd_router:route(To, From, Packet2),
+    ejabberd_router:route(Packet2),
     {noreply, State};
 handle_info(_Info, State) -> {noreply, State}.
 
@@ -166,13 +169,14 @@ do_client_version(enabled, From, To) ->
     From2 = From#jid{resource = Random_resource,
 		     lresource = Random_resource},
     ID = randoms:get_string(),
-    Packet = #iq{from = From, to = To, type = get,
+    Packet = #iq{from = From2, to = To, type = get,
 		 id = randoms:get_string(),
 		 sub_els = [#version{}]},
-    ejabberd_router:route(From2, To, Packet),
+    ejabberd_router:route(Packet),
     receive
-	{route, To, From2,
-	 #iq{id = ID, type = result, sub_els = [#version{} = V]}} ->
+	{route,
+	 #iq{to = To, from = From2,
+	     id = ID, type = result, sub_els = [#version{} = V]}} ->
 	    ?INFO_MSG("Version of the client ~s:~n~s",
 		      [jid:to_string(To), xmpp:pp(V)])
     after 5000 -> % Timeout in miliseconds: 5 seconds

@@ -77,8 +77,8 @@ terminate(_Reason, #state{myhost = MyHost}) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_VCARD),
     gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_BYTESTREAMS).
 
-handle_info({route, From, To, #iq{} = Packet}, State) ->
-    ejabberd_router:process_iq(From, To, Packet),
+handle_info({route, #iq{} = Packet}, State) ->
+    ejabberd_router:process_iq(Packet),
     {noreply, State};
 handle_info(_Info, State) -> {noreply, State}.
 

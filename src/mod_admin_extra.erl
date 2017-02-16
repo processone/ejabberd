@@ -1037,7 +1037,7 @@ set_presence(User, Host, Resource, Type, Show, Status, Priority0) ->
 				 show = jlib:binary_to_atom(Show),
 				 status = xmpp:mk_text(Status),
 				 priority = Priority},
-	    Pid ! {route, From, To, Presence},
+	    Pid ! {route, Presence},
 	    ok
     end.
 
@@ -1312,7 +1312,8 @@ push_roster_item(LU, LS, R, U, S, Action) ->
     ejabberd_sm:route(LJID, BroadcastEl),
     Item = build_roster_item(U, S, Action),
     ResIQ = build_iq_roster_push(Item),
-    ejabberd_router:route(jid:remove_resource(LJID), LJID, ResIQ).
+    ejabberd_router:route(
+      xmpp:set_from_to(ResIQ, jid:remove_resource(LJID), LJID)).
 
 build_roster_item(U, S, {add, Nick, Subs, Group}) ->
     Groups = binary:split(Group,<<";">>, [global]),
@@ -1448,7 +1449,7 @@ send_message(Type, From, To, Subject, Body) ->
     FromJID = jid:from_string(From),
     ToJID = jid:from_string(To),
     Packet = build_packet(Type, Subject, Body),
-    ejabberd_router:route(FromJID, ToJID, Packet).
+    ejabberd_router:route(xmpp:set_from_to(Packet, FromJID, ToJID)).
 
 build_packet(Type, Subject, Body) ->
     #message{type = jlib:binary_to_atom(Type),
@@ -1461,7 +1462,7 @@ send_stanza(FromString, ToString, Stanza) ->
 	#jid{} = From = jid:from_string(FromString),
 	#jid{} = To = jid:to_string(ToString),
 	Pkt = xmpp:decode(El, ?NS_CLIENT, [ignore_els]),
-	ejabberd_router:route(From, To, Pkt)
+	ejabberd_router:route(xmpp:set_from_to(Pkt, From, To))
     catch _:{xmpp_codec, Why} ->
 	    io:format("incorrect stanza: ~s~n", [xmpp:format_error(Why)]),
 	    {error, Why};

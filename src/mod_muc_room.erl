@@ -37,7 +37,7 @@
 	 get_role/2,
 	 get_affiliation/2,
 	 is_occupant_or_admin/2,
-	 route/4]).
+	 route/2]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -149,8 +149,9 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts]) ->
     add_to_log(room_existence, started, State),
     {ok, normal_state, State}.
 
-normal_state({route, From, <<"">>,
-	      #message{type = Type, lang = Lang} = Packet}, StateData) ->
+normal_state({route, <<"">>,
+	      #message{from = From, type = Type, lang = Lang} = Packet},
+	     StateData) ->
     case is_user_online(From, StateData) orelse
 	is_subscriber(From, StateData) orelse
 	is_user_allowed_message_nonparticipant(From, StateData) of
@@ -168,7 +169,7 @@ normal_state({route, From, <<"">>,
 	    if Activity#activity.message /= undefined ->
 		    ErrText = <<"Traffic rate limit is exceeded">>,
 		    Err = xmpp:err_resource_constraint(ErrText, Lang),
-		    ejabberd_router:route_error(StateData#state.jid, From, Packet, Err),
+		    ejabberd_router:route_error(Packet, Err),
 		    {next_state, normal_state, StateData};
 	       Now >= Activity#activity.message_time + MinMessageInterval,
 	       MessageShaperInterval == 0 ->
@@ -237,7 +238,7 @@ normal_state({route, From, <<"">>,
 	    ErrText = <<"It is not allowed to send private messages "
 			"to the conference">>,
 	    Err = xmpp:err_not_acceptable(ErrText, Lang),
-	    ejabberd_router:route_error(StateData#state.jid, From, Packet, Err),
+	    ejabberd_router:route_error(Packet, Err),
 	    {next_state, normal_state, StateData};
 	true when Type == normal ->
 	    {next_state, normal_state,
@@ -246,14 +247,13 @@ normal_state({route, From, <<"">>,
 	     catch _:{xmpp_codec, Why} ->
 		     Txt = xmpp:format_error(Why),
 		     Err = xmpp:err_bad_request(Txt, Lang),
-		     ejabberd_router:route_error(
-		       StateData#state.jid, From, Packet, Err),
+		     ejabberd_router:route_error(Packet, Err),
 		     StateData
 	     end};
 	true ->
 	    ErrText = <<"Improper message type">>,
 	    Err = xmpp:err_not_acceptable(ErrText, Lang),
-	    ejabberd_router:route_error(StateData#state.jid, From, Packet, Err),
+	    ejabberd_router:route_error(Packet, Err),
 	    {next_state, normal_state, StateData};
 	false when Type /= error ->
 	    handle_roommessage_from_nonparticipant(Packet, StateData, From),
@@ -261,8 +261,8 @@ normal_state({route, From, <<"">>,
 	false ->
 	    {next_state, normal_state, StateData}
     end;
-normal_state({route, From, <<"">>,
-	      #iq{type = Type, lang = Lang, sub_els = [_]} = IQ0},
+normal_state({route, <<"">>,
+	      #iq{from = From, type = Type, lang = Lang, sub_els = [_]} = IQ0},
 	     StateData) when Type == get; Type == set ->
     try
 	case ejabberd_hooks:run_fold(
@@ -274,7 +274,7 @@ normal_state({route, From, <<"">>,
 	    ignore ->
 		{next_state, normal_state, StateData};
 	    #iq{type = T} = IQRes when T == error; T == result ->
-		ejabberd_router:route(StateData#state.jid, From, IQRes),
+		ejabberd_router:route(IQRes),
 		{next_state, normal_state, StateData};
 	    #iq{sub_els = [SubEl]} = IQ ->
 		Res1 = case xmpp:get_ns(SubEl) of
@@ -311,7 +311,7 @@ normal_state({route, From, <<"">>,
 			    {xmpp:make_error(IQ0, Error), StateData}
 		    end,
 		if IQRes /= ignore ->
-			ejabberd_router:route(StateData#state.jid, From, IQRes);
+			ejabberd_router:route(IQRes);
 		   true ->
 			ok
 		end,
@@ -327,16 +327,16 @@ normal_state({route, From, <<"">>,
     catch _:{xmpp_codec, Why} ->
 	    ErrTxt = xmpp:format_error(Why),
 	    Err = xmpp:err_bad_request(ErrTxt, Lang),
-	    ejabberd_router:route_error(StateData#state.jid, From, IQ0, Err)
+	    ejabberd_router:route_error(IQ0, Err)
     end;
-normal_state({route, From, <<"">>, #iq{} = IQ}, StateData) ->
+normal_state({route, <<"">>, #iq{} = IQ}, StateData) ->
     Err = xmpp:err_bad_request(),
-    ejabberd_router:route_error(StateData#state.jid, From, IQ, Err),
+    ejabberd_router:route_error(IQ, Err),
     case StateData#state.just_created of
 	true -> {stop, normal, StateData};
 	false -> {next_state, normal_state, StateData}
     end;
-normal_state({route, From, Nick, #presence{} = Packet}, StateData) ->
+normal_state({route, Nick, #presence{from = From} = Packet}, StateData) ->
     Activity = get_user_activity(From, StateData),
     Now = p1_time_compat:system_time(micro_seconds),
     MinPresenceInterval =
@@ -365,8 +365,8 @@ normal_state({route, From, Nick, #presence{} = Packet}, StateData) ->
 					     StateData),
 	    {next_state, normal_state, StateData1}
     end;
-normal_state({route, From, ToNick,
-	      #message{type = Type, lang = Lang} = Packet},
+normal_state({route, ToNick,
+	      #message{from = From, type = Type, lang = Lang} = Packet},
 	     StateData) ->
     case decide_fate_message(Packet, From, StateData) of
 	{expulse_sender, Reason} ->
@@ -387,17 +387,13 @@ normal_state({route, From, ToNick,
 		    ErrText = <<"It is not allowed to send private messages "
 				"of type \"groupchat\"">>,
 		    Err = xmpp:err_bad_request(ErrText, Lang),
-		    ejabberd_router:route_error(
-		      jid:replace_resource(StateData#state.jid, ToNick),
-		      From, Packet, Err);
+		    ejabberd_router:route_error(Packet, Err);
 		{true, true} ->
 		    case find_jids_by_nick(ToNick, StateData) of
 			[] ->
 			    ErrText = <<"Recipient is not in the conference room">>,
 			    Err = xmpp:err_item_not_found(ErrText, Lang),
-			    ejabberd_router:route_error(
-			      jid:replace_resource(StateData#state.jid, ToNick),
-			      From, Packet, Err);
+			    ejabberd_router:route_error(Packet, Err);
 			ToJIDs ->
 			    SrcIsVisitor = is_visitor(From, StateData),
 			    DstIsModerator = is_moderator(hd(ToJIDs), StateData),
@@ -412,35 +408,31 @@ normal_state({route, From, ToNick,
 					jid:replace_resource(StateData#state.jid,
 							     FromNick),
 				    X = #muc_user{},
-				    PrivMsg = xmpp:set_subtag(Packet, X),
-				    [ejabberd_router:route(FromNickJID, ToJID, PrivMsg)
+				    PrivMsg = xmpp:set_from(
+						xmpp:set_subtag(Packet, X),
+						FromNickJID),
+				    [ejabberd_router:route(xmpp:set_to(PrivMsg, ToJID))
 				     || ToJID <- ToJIDs];
 			       true ->
 				    ErrText = <<"It is not allowed to send private messages">>,
 				    Err = xmpp:err_forbidden(ErrText, Lang),
-				    ejabberd_router:route_error(
-				      jid:replace_resource(StateData#state.jid, ToNick),
-				      From, Packet, Err)
+				    ejabberd_router:route_error(Packet, Err)
 			    end
 		    end;
 		{true, false} ->
 		    ErrText = <<"Only occupants are allowed to send messages "
 				"to the conference">>,
 		    Err = xmpp:err_not_acceptable(ErrText, Lang),
-		    ejabberd_router:route_error(
-		      jid:replace_resource(StateData#state.jid, ToNick),
-		      From, Packet, Err);
+		    ejabberd_router:route_error(Packet, Err);
 		{false, _} ->
 		    ErrText = <<"It is not allowed to send private messages">>,
 		    Err = xmpp:err_forbidden(ErrText, Lang),
-		    ejabberd_router:route_error(
-		      jid:replace_resource(StateData#state.jid, ToNick),
-		      From, Packet, Err)
+		    ejabberd_router:route_error(Packet, Err)
 	    end,
 	  {next_state, normal_state, StateData}
     end;
-normal_state({route, From, ToNick,
-	      #iq{id = StanzaId, lang = Lang} = Packet},
+normal_state({route, ToNick,
+	      #iq{from = From, id = StanzaId, lang = Lang} = Packet},
 	     StateData) ->
     case {(StateData#state.config)#config.allow_query_users,
 	  is_user_online_iq(StanzaId, From, StateData)} of
@@ -449,31 +441,27 @@ normal_state({route, From, ToNick,
 		false ->
 		    ErrText = <<"Recipient is not in the conference room">>,
 		    Err = xmpp:err_item_not_found(ErrText, Lang),
-		    ejabberd_router:route_error(
-		      jid:replace_resource(StateData#state.jid, ToNick),
-		      From, Packet, Err);
+		    ejabberd_router:route_error(Packet, Err);
 		ToJID ->
 		    {ok, #user{nick = FromNick}} =
 			(?DICT):find(jid:tolower(FromFull), StateData#state.users),
 		    {ToJID2, Packet2} = handle_iq_vcard(ToJID, NewId, Packet),
 		    ejabberd_router:route(
-		      jid:replace_resource(StateData#state.jid, FromNick),
-		      ToJID2, Packet2)
+		      xmpp:set_from_to(
+			Packet2,
+			jid:replace_resource(StateData#state.jid, FromNick),
+			ToJID2))
 	    end;
 	{_, {false, _, _}} ->
 	    ErrText = <<"Only occupants are allowed to send queries "
 			"to the conference">>,
 	    Err = xmpp:err_not_acceptable(ErrText, Lang),
-	    ejabberd_router:route_error(
-	      jid:replace_resource(StateData#state.jid, ToNick),
-	      From, Packet, Err);
+	    ejabberd_router:route_error(Packet, Err);
 	_ ->
 	    ErrText = <<"Queries to the conference members are "
 			"not allowed in this room">>,
 	    Err = xmpp:err_not_allowed(ErrText, Lang),
-	    ejabberd_router:route_error(
-	      jid:replace_resource(StateData#state.jid, ToNick),
-	      From, Packet, Err)
+	    ejabberd_router:route_error(Packet, Err)
     end,
     {next_state, normal_state, StateData};
 normal_state(_Event, StateData) ->
@@ -667,14 +655,12 @@ handle_info({captcha_failed, From}, normal_state,
     NewState = case (?DICT):find(From,
 				 StateData#state.robots)
 		   of
-		 {ok, {Nick, Packet}} ->
+		 {ok, {_Nick, Packet}} ->
 		     Robots = (?DICT):erase(From, StateData#state.robots),
 		     Txt = <<"The CAPTCHA verification has failed">>,
 		     Lang = xmpp:get_lang(Packet),
 		     Err = xmpp:err_not_authorized(Txt, Lang),
-		     ejabberd_router:route_error(
-		       jid:replace_resource(StateData#state.jid, Nick),
-		       From, Packet, Err),
+		     ejabberd_router:route_error(Packet, Err),
 		     StateData#state{robots = Robots};
 		 _ -> StateData
 	       end,
@@ -721,9 +707,10 @@ terminate(Reason, _StateName, StateData) ->
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
--spec route(pid(), jid(), binary(), stanza()) -> ok.
-route(Pid, From, ToNick, Packet) ->
-    gen_fsm:send_event(Pid, {route, From, ToNick, Packet}).
+-spec route(pid(), stanza()) -> ok.
+route(Pid, Packet) ->
+    #jid{lresource = Nick} = xmpp:get_to(Packet),
+    gen_fsm:send_event(Pid, {route, Nick, Packet}).
 
 -spec process_groupchat_message(jid(), message(), state()) -> fsm_next().
 process_groupchat_message(From, #message{lang = Lang} = Packet, StateData) ->
@@ -800,23 +787,21 @@ process_groupchat_message(From, #message{lang = Lang} = Packet, StateData) ->
 				     <<"Only moderators are allowed to change "
 				       "the subject in this room">>, Lang)
 			     end,
-		       ejabberd_router:route_error(
-			 StateData#state.jid, From, Packet, Err),
+		       ejabberd_router:route_error(Packet, Err),
 		       {next_state, normal_state, StateData}
 		 end;
 	     true ->
 		 ErrText = <<"Visitors are not allowed to send messages "
 			     "to all occupants">>,
 		 Err = xmpp:err_forbidden(ErrText, Lang),
-		 ejabberd_router:route_error(
-		   StateData#state.jid, From, Packet, Err),
+		 ejabberd_router:route_error(Packet, Err),
 		 {next_state, normal_state, StateData}
 	  end;
       false ->
 	  ErrText = <<"Only occupants are allowed to send messages "
 		      "to the conference">>,
 	  Err = xmpp:err_not_acceptable(ErrText, Lang),
-	  ejabberd_router:route_error(StateData#state.jid, From, Packet, Err),
+	  ejabberd_router:route_error(Packet, Err),
 	  {next_state, normal_state, StateData}
     end.
 
@@ -854,7 +839,7 @@ process_normal_message(From, #message{lang = Lang} = Pkt, StateData) ->
 	{ok, VoiceApproval} ->
 	    process_voice_approval(From, Pkt, VoiceApproval, StateData);
 	{error, Err} ->
-	    ejabberd_router:route_error(StateData#state.jid, From, Pkt, Err),
+	    ejabberd_router:route_error(Pkt, Err),
 	    StateData;
 	ok ->
 	    StateData
@@ -902,15 +887,13 @@ process_voice_request(From, Pkt, StateData) ->
 		    ErrText = <<"Please, wait for a while before sending "
 				"new voice request">>,
 		    Err = xmpp:err_resource_constraint(ErrText, Lang),
-		    ejabberd_router:route_error(
-		      StateData#state.jid, From, Pkt, Err),
+		    ejabberd_router:route_error(Pkt, Err),
 		    StateData#state{last_voice_request_time = Times}
 	    end;
 	false ->
 	    ErrText = <<"Voice requests are disabled in this conference">>,
 	    Err = xmpp:err_forbidden(ErrText, Lang),
-	    ejabberd_router:route_error(
-	      StateData#state.jid, From, Pkt, Err),
+	    ejabberd_router:route_error(Pkt, Err),
 	    StateData
     end.
 
@@ -936,15 +919,13 @@ process_voice_approval(From, Pkt, VoiceApproval, StateData) ->
 		    ErrText = <<"Failed to extract JID from your voice "
 				"request approval">>,
 		    Err = xmpp:err_bad_request(ErrText, Lang),
-		    ejabberd_router:route_error(
-		      StateData#state.jid, From, Pkt, Err),
+		    ejabberd_router:route_error(Pkt, Err),
 		    StateData
 	    end;
 	false ->
 	    ErrText = <<"Only moderators can approve voice requests">>,
 	    Err = xmpp:err_not_allowed(ErrText, Lang),
-	    ejabberd_router:route_error(
-	      StateData#state.jid, From, Pkt, Err),
+	    ejabberd_router:route_error(Pkt, Err),
 	    StateData
     end.
 
@@ -1023,25 +1004,19 @@ do_process_presence(From, Nick, #presence{type = available, lang = Lang} = Packe
 			    ErrText = <<"Visitors are not allowed to change their "
 					"nicknames in this room">>,
 			    Err = xmpp:err_not_allowed(ErrText, Lang),
-			    ejabberd_router:route_error(
-			      jid:replace_resource(StateData#state.jid, Nick),
-			      From, Packet, Err),
+			    ejabberd_router:route_error(Packet, Err),
 			    StateData;
 			{true, _, _} ->
 			    ErrText = <<"That nickname is already in use by another "
 					"occupant">>,
 			    Err = xmpp:err_conflict(ErrText, Lang),
-			    ejabberd_router:route_error(
-			      jid:replace_resource(StateData#state.jid, Nick),
-			      From, Packet, Err),
+			    ejabberd_router:route_error(Packet, Err),
 			    StateData;
 			{_, false, _} ->
 			    ErrText = <<"That nickname is registered by another "
 					"person">>,
 			    Err = xmpp:err_conflict(ErrText, Lang),
-			    ejabberd_router:route_error(
-			      jid:replace_resource(StateData#state.jid, Nick),
-			      From, Packet, Err),
+			    ejabberd_router:route_error(Packet, Err),
 			    StateData;
 			_ ->
 				    change_nick(From, Nick, StateData)
@@ -1782,7 +1757,6 @@ nick_collision(User, Nick, StateData) ->
 			  {result, xmpp_element(), state()}.
 add_new_user(From, Nick, Packet, StateData) ->
     Lang = xmpp:get_lang(Packet),
-    UserRoomJID = jid:replace_resource(StateData#state.jid, Nick),
     MaxUsers = get_max_users(StateData),
     MaxAdminUsers = MaxUsers +
 		      get_max_users_admin_threshold(StateData),
@@ -1813,7 +1787,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 	  Txt = <<"Too many users in this conference">>,
 	  Err = xmpp:err_resource_constraint(Txt, Lang),
 	  if not IsSubscribeRequest ->
-		  ejabberd_router:route_error(UserRoomJID, From, Packet, Err),
+		  ejabberd_router:route_error(Packet, Err),
 		  StateData;
 	     true ->
 		  {error, Err}
@@ -1822,7 +1796,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 	  Txt = <<"You have joined too many conferences">>,
 	  Err = xmpp:err_resource_constraint(Txt, Lang),
 	  if not IsSubscribeRequest ->
-		  ejabberd_router:route_error(UserRoomJID, From, Packet, Err),
+		  ejabberd_router:route_error(Packet, Err),
 		  StateData;
 	     true ->
 		  {error, Err}
@@ -1830,7 +1804,7 @@ add_new_user(From, Nick, Packet, StateData) ->
       {false, _, _, _} ->
 	  Err = xmpp:err_service_unavailable(),
 	  if not IsSubscribeRequest ->
-		  ejabberd_router:route_error(UserRoomJID, From, Packet, Err),
+		  ejabberd_router:route_error(Packet, Err),
 		  StateData;
 	     true ->
 		  {error, Err}
@@ -1845,7 +1819,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 			xmpp:err_registration_required(ErrText, Lang)
 		end,
 	  if not IsSubscribeRequest ->
-		  ejabberd_router:route_error(UserRoomJID, From, Packet, Err),
+		  ejabberd_router:route_error(Packet, Err),
 		  StateData;
 	     true ->
 		  {error, Err}
@@ -1854,7 +1828,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 	  ErrText = <<"That nickname is already in use by another occupant">>,
 	  Err = xmpp:err_conflict(ErrText, Lang),
 	  if not IsSubscribeRequest ->
-		  ejabberd_router:route_error(UserRoomJID, From, Packet, Err),
+		  ejabberd_router:route_error(Packet, Err),
 		  StateData;
 	     true ->
 		  {error, Err}
@@ -1863,7 +1837,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 	  ErrText = <<"That nickname is registered by another person">>,
 	  Err = xmpp:err_conflict(ErrText, Lang),
 	  if not IsSubscribeRequest ->
-		  ejabberd_router:route_error(UserRoomJID, From, Packet, Err),
+		  ejabberd_router:route_error(Packet, Err),
 		  StateData;
 	     true ->
 		  {error, Err}
@@ -1904,7 +1878,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 		ErrText = <<"A password is required to enter this room">>,
 		Err = xmpp:err_not_authorized(ErrText, Lang),
 		if not IsSubscribeRequest ->
-			ejabberd_router:route_error(UserRoomJID, From, Packet, Err),
+			ejabberd_router:route_error(Packet, Err),
 			StateData;
 		   true ->
 			{error, Err}
@@ -1918,11 +1892,13 @@ add_new_user(From, Nick, Packet, StateData) ->
 						     Lang, Limiter, From)
                    of
 		  {ok, ID, Body, CaptchaEls} ->
-		      MsgPkt = #message{id = ID, body = Body,
+		      MsgPkt = #message{from = RoomJID,
+					to = From,
+					id = ID, body = Body,
 					sub_els = CaptchaEls},
 		      Robots = (?DICT):store(From, {Nick, Packet},
 					     StateData#state.robots),
-		      ejabberd_router:route(RoomJID, From, MsgPkt),
+		      ejabberd_router:route(MsgPkt),
 		      NewState = StateData#state{robots = Robots},
 		      if not IsSubscribeRequest ->
 			      NewState;
@@ -1933,8 +1909,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 		      ErrText = <<"Too many CAPTCHA requests">>,
 		      Err = xmpp:err_resource_constraint(ErrText, Lang),
 		      if not IsSubscribeRequest ->
-			      ejabberd_router:route_error(
-				UserRoomJID, From, Packet, Err),
+			      ejabberd_router:route_error(Packet, Err),
 			      StateData;
 			 true ->
 			      {error, Err}
@@ -1943,8 +1918,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 		      ErrText = <<"Unable to generate a CAPTCHA">>,
 		      Err = xmpp:err_internal_server_error(ErrText, Lang),
 		      if not IsSubscribeRequest ->
-			      ejabberd_router:route_error(
-				UserRoomJID, From, Packet, Err),
+			      ejabberd_router:route_error(Packet, Err),
 			      StateData;
 			 true ->
 			      {error, Err}
@@ -1954,8 +1928,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 		ErrText = <<"Incorrect password">>,
 		Err = xmpp:err_not_authorized(ErrText, Lang),
 		if not IsSubscribeRequest ->
-			ejabberd_router:route_error(
-			  UserRoomJID, From, Packet, Err),
+			ejabberd_router:route_error(Packet, Err),
 			StateData;
 		   true ->
 			{error, Err}
@@ -2481,8 +2454,10 @@ send_history(JID, History, StateData) ->
     lists:foreach(
       fun({Nick, Packet, _HaveSubject, _TimeStamp, _Size}) ->
 	      ejabberd_router:route(
-		jid:replace_resource(StateData#state.jid, Nick),
-		JID, Packet)
+		xmpp:set_from_to(
+		  Packet,
+		  jid:replace_resource(StateData#state.jid, Nick),
+		  JID))
       end, lqueue_to_list(History)).
 
 -spec send_subject(jid(), state()) -> ok.
@@ -2491,9 +2466,9 @@ send_subject(JID, #state{subject_author = Nick} = StateData) ->
 		  <<"">> -> [#text{}];
 		  Subj -> xmpp:mk_text(Subj)
 	      end,
-    Packet = #message{type = groupchat, subject = Subject},
-    ejabberd_router:route(jid:replace_resource(StateData#state.jid, Nick), JID,
-			  Packet).
+    Packet = #message{from = jid:replace_resource(StateData#state.jid, Nick),
+		      to = JID, type = groupchat, subject = Subject},
+    ejabberd_router:route(Packet).
 
 -spec check_subject(message()) -> false | binary().
 check_subject(#message{subject = [_|_] = Subj, body = [],
@@ -3889,12 +3864,13 @@ prepare_request_form(Requester, Nick, Lang) ->
 send_voice_request(From, Lang, StateData) ->
     Moderators = search_role(moderator, StateData),
     FromNick = find_nick_by_jid(From, StateData),
-    lists:foreach(fun ({_, User}) ->
-			  ejabberd_router:route(
-			    StateData#state.jid, User#user.jid,
-			    prepare_request_form(From, FromNick, Lang))
-		  end,
-		  Moderators).
+    lists:foreach(
+      fun({_, User}) ->
+	      ejabberd_router:route(
+		xmpp:set_from_to(
+		  prepare_request_form(From, FromNick, Lang),
+		  StateData#state.jid, User#user.jid))
+      end, Moderators).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Invitation support
@@ -3956,13 +3932,15 @@ route_invitation(From, Invitation, Lang, StateData) ->
 		  <<"">> -> <<"">>;
 		  _ -> <<" (", Reason/binary, ") ">>
 	      end]),
-    Msg = #message{type = normal,
+    Msg = #message{from = StateData#state.jid,
+		   to = JID,
+		   type = normal,
 		   body = xmpp:mk_text(Body),
 		   sub_els = [XUser, XConference]},
     ejabberd_hooks:run(muc_invite, StateData#state.server_host,
 		       [StateData#state.jid, StateData#state.config,
 			From, JID, Reason]),
-    ejabberd_router:route(StateData#state.jid, JID, Msg),
+    ejabberd_router:route(Msg),
     JID.
 
 %% Handle a message sent to the room by a non-participant.
@@ -3975,12 +3953,13 @@ handle_roommessage_from_nonparticipant(Packet, StateData, From) ->
 	    NewDecline = Decline#muc_decline{to = undefined, from = From},
 	    NewXUser = XUser#muc_user{decline = NewDecline},
 	    NewPacket = xmpp:set_subtag(Packet, NewXUser),
-	    ejabberd_router:route(StateData#state.jid, To, NewPacket);
+	    ejabberd_router:route(
+	      xmpp:set_from_to(NewPacket, StateData#state.jid, To));
 	_ ->
 	    ErrText = <<"Only occupants are allowed to send messages "
 			"to the conference">>,
 	    Err = xmpp:err_not_acceptable(ErrText, xmpp:get_lang(Packet)),
-	    ejabberd_router:route_error(StateData#state.jid, From, Packet, Err)
+	    ejabberd_router:route_error(Packet, Err)
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4052,7 +4031,8 @@ send_wrapped(From, To, Packet, Node, State) ->
 	    case lists:member(Node, Nodes) of
 		true ->
 			    NewPacket = wrap(From, JID, Packet, Node),
-			    ejabberd_router:route(State#state.jid, JID, NewPacket);
+			    ejabberd_router:route(
+			      xmpp:set_from_to(NewPacket, State#state.jid, JID));
 		false ->
 		    ok
 	    end;
@@ -4060,7 +4040,7 @@ send_wrapped(From, To, Packet, Node, State) ->
 		    ok
 	    end;
        true ->
-	    ejabberd_router:route(From, To, Packet)
+	    ejabberd_router:route(xmpp:set_from_to(Packet, From, To))
     end.
 
 -spec wrap(jid(), jid(), stanza(), binary()) -> message().

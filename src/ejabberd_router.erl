@@ -35,13 +35,13 @@
 -behaviour(?GEN_SERVER).
 
 %% API
--export([route/3,
-	 route_error/4,
+-export([route/1,
+	 route_error/2,
 	 register_route/2,
 	 register_route/3,
 	 register_routes/1,
 	 host_of_route/1,
-	 process_iq/3,
+	 process_iq/1,
 	 unregister_route/1,
 	 unregister_routes/1,
 	 get_all_routes/0,
@@ -53,6 +53,10 @@
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3, opt_type/1]).
+
+%% Deprecated functions
+-export([route/3, route_error/4]).
+-deprecated([{route, 3}, {route_error, 4}]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -82,6 +86,14 @@ start() ->
 start_link() ->
     ?GEN_SERVER:start_link({local, ?MODULE}, ?MODULE, [], []).
 
+-spec route(stanza()) -> ok.
+route(Packet) ->
+    try do_route(Packet)
+    catch E:R ->
+	    ?ERROR_MSG("failed to route packet:~n~s~nReason = ~p",
+		       [xmpp:pp(Packet), {E, {R, erlang:get_stacktrace()}}])
+    end.
+
 -spec route(jid(), jid(), xmlel() | stanza()) -> ok.
 route(#jid{} = From, #jid{} = To, #xmlel{} = El) ->
     try xmpp:decode(El, ?NS_CLIENT, [ignore_els]) of
@@ -93,12 +105,21 @@ route(#jid{} = From, #jid{} = To, #xmlel{} = El) ->
 			xmpp:format_error(Why)])
     end;
 route(#jid{} = From, #jid{} = To, Packet) ->
-    case catch do_route(From, To, xmpp:set_from_to(Packet, From, To)) of
+    case catch do_route(xmpp:set_from_to(Packet, From, To)) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p~nwhen processing: ~p",
 		       [Reason, {From, To, Packet}]);
 	_ ->
 	    ok
+    end.
+
+-spec route_error(stanza(), stanza_error()) -> ok.
+route_error(Packet, Err) ->
+    Type = xmpp:get_type(Packet),
+    if Type == error; Type == result ->
+	    ok;
+       true ->
+	    route(xmpp:make_error(Packet, Err))
     end.
 
 %% Route the error packet only if the originating packet is not an error itself.
@@ -116,7 +137,7 @@ route_error(From, To, Packet, #stanza_error{} = Err) ->
     if Type == error; Type == result ->
 	    ok;
        true ->
-	    ejabberd_router:route(From, To, xmpp:make_error(Packet, Err))
+	    route(From, To, xmpp:make_error(Packet, Err))
     end.
 
 -spec register_route(binary(), binary()) -> ok.
@@ -208,12 +229,12 @@ is_my_host(Domain) ->
 	    Mod:is_my_host(LDomain)
     end.
 
--spec process_iq(jid(), jid(), iq()) -> any().
-process_iq(From, To, #iq{} = IQ) ->
+-spec process_iq(iq()) -> any().
+process_iq(#iq{to = To} = IQ) ->
     if To#jid.luser == <<"">> ->
-	    ejabberd_local:process_iq(From, To, IQ);
+	    ejabberd_local:process_iq(IQ);
        true ->
-	    ejabberd_sm:process_iq(From, To, IQ)
+	    ejabberd_sm:process_iq(IQ)
     end.
 
 %%====================================================================
@@ -231,13 +252,8 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-handle_info({route, From, To, Packet}, State) ->
-    case catch do_route(From, To, Packet) of
-      {'EXIT', Reason} ->
-	  ?ERROR_MSG("~p~nwhen processing: ~p",
-		     [Reason, {From, To, Packet}]);
-      _ -> ok
-    end,
+handle_info({route, Packet}, State) ->
+    route(Packet),
     {noreply, State};
 handle_info(Info, State) ->
     ?ERROR_MSG("unexpected info: ~p", [Info]),
@@ -252,37 +268,39 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
--spec do_route(jid(), jid(), stanza()) -> any().
-do_route(OrigFrom, OrigTo, OrigPacket) ->
+-spec do_route(stanza()) -> ok.
+do_route(OrigPacket) ->
     ?DEBUG("route:~n~s", [xmpp:pp(OrigPacket)]),
-    case ejabberd_hooks:run_fold(filter_packet,
-				 {OrigFrom, OrigTo, OrigPacket}, []) of
-	{From, To, Packet} ->
+    case ejabberd_hooks:run_fold(filter_packet, OrigPacket, []) of
+	drop ->
+	    ok;
+	Packet ->
+	    To = xmpp:get_to(Packet),
 	    LDstDomain = To#jid.lserver,
 	    Mod = get_backend(),
 	    case Mod:find_routes(LDstDomain) of
 		[] ->
-		    ejabberd_s2s:route(From, To, Packet);
+		    ejabberd_s2s:route(Packet);
 		[Route] ->
-		    do_route(From, To, Packet, Route);
+		    do_route(Packet, Route);
 		Routes ->
+		    From = xmpp:get_from(Packet),
 		    balancing_route(From, To, Packet, Routes)
-	    end;
-	drop ->
+	    end,
 	    ok
     end.
 
--spec do_route(jid(), jid(), stanza(), #route{}) -> any().
-do_route(From, To, Pkt, #route{local_hint = LocalHint,
-			       pid = Pid}) when is_pid(Pid) ->
+-spec do_route(stanza(), #route{}) -> any().
+do_route(Pkt, #route{local_hint = LocalHint,
+		     pid = Pid}) when is_pid(Pid) ->
     case LocalHint of
 	{apply, Module, Function} when node(Pid) == node() ->
-	    Module:Function(From, To, Pkt);
+	    Module:Function(Pkt);
 	_ ->
-	    Pid ! {route, From, To, Pkt}
+	    Pid ! {route, Pkt}
     end;
-do_route(_From, _To, _Pkt, _Route) ->
-    drop.
+do_route(_Pkt, _Route) ->
+    ok.
 
 -spec balancing_route(jid(), jid(), stanza(), [#route{}]) -> any().
 balancing_route(From, To, Packet, Rs) ->
@@ -293,15 +311,15 @@ balancing_route(From, To, Packet, Rs) ->
 	    case [R || R <- Rs, node(R#route.pid) == node()] of
 		[] ->
 		    R = lists:nth(erlang:phash(Value, length(Rs)), Rs),
-		    do_route(From, To, Packet, R);
+		    do_route(Packet, R);
 		LRs ->
 		    R = lists:nth(erlang:phash(Value, length(LRs)), LRs),
-		    do_route(From, To, Packet, R)
+		    do_route(Packet, R)
 	    end;
 	_ ->
 	    SRs = lists:ukeysort(#route.local_hint, Rs),
 	    R = lists:nth(erlang:phash(Value, length(SRs)), SRs),
-	    do_route(From, To, Packet, R)
+	    do_route(Packet, R)
     end.
 
 -spec get_component_number(binary()) -> pos_integer() | undefined.

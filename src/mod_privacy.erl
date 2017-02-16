@@ -366,7 +366,7 @@ push_list_update(From, List, Name) ->
 		       sub_els = [#privacy_query{
 				     lists = [#privacy_list{name = Name}]}],
 		       meta = #{privacy_updated_list => List}},
-	      ejabberd_router:route(BareFrom, To, IQ)
+	      ejabberd_router:route(IQ)
       end, ejabberd_sm:get_user_resources(From#jid.luser, From#jid.lserver)).
 
 -spec user_send_packet({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.

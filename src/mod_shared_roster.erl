@@ -285,12 +285,12 @@ set_new_rosteritems(UserFrom, ServerFrom, UserTo,
     RIFrom.
 
 set_item(User, Server, Resource, Item) ->
-    ResIQ = #iq{type = set, id = <<"push", (randoms:get_string())/binary>>,
+    ResIQ = #iq{from = jid:make(User, Server, Resource),
+		to = jid:make(Server),
+		type = set, id = <<"push", (randoms:get_string())/binary>>,
 		sub_els = [#roster_query{
 			      items = [mod_roster:encode_item(Item)]}]},
-    ejabberd_router:route(jid:make(User, Server, Resource),
-			  jid:make(Server),
-			  ResIQ).
+    ejabberd_router:route(ResIQ).
 
 c2s_session_opened(#{jid := #jid{luser = LUser, lserver = LServer},
 		     pres_f := PresF, pres_t := PresT} = State) ->
@@ -727,7 +727,8 @@ push_item(User, Server, Item) ->
 			       items = [mod_roster:encode_item(Item)]}]},
     lists:foreach(fun (Resource) ->
 			  JID = jid:make(User, Server, Resource),
-			  ejabberd_router:route(jid:remove_resource(JID), JID, Stanza)
+			  ejabberd_router:route(
+			    xmpp:set_from_to(Stanza, jid:remove_resource(JID), JID))
 		  end,
 		  ejabberd_sm:get_user_resources(User, Server)).
 

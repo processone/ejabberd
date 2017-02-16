@@ -162,7 +162,7 @@ handle_cast({disco_info, Type, Host, NS, Info}, State) ->
 	    Delegations = dict:store({NS, Type}, {Host, Info}, State#state.delegations),
 	    gen_iq_handler:add_iq_handler(Type, State#state.server_host, NS,
 					  ?MODULE, Type, one_queue),
-	    ejabberd_router:route(From, To, Msg),
+	    ejabberd_router:route(Msg),
 	    ?INFO_MSG("Namespace '~s' is delegated to external component '~s'",
 		      [NS, Host]),
 	    {noreply, State#state{delegations = Delegations}};
@@ -238,7 +238,6 @@ process_iq(#iq{to = To, lang = Lang, sub_els = [SubEl]} = IQ, Type) ->
 	    NewFrom = jid:make(LServer),
 	    NewTo = jid:make(Host),
 	    ejabberd_local:route_iq(
-	      NewFrom, NewTo,
 	      #iq{type = set,
 		  from = NewFrom,
 		  to = NewTo,
@@ -259,22 +258,22 @@ process_iq_result(#iq{from = From, to = To, id = ID, lang = Lang} = IQ,
 	case xmpp:decode(SubEl, ?NS_CLIENT, [ignore_els]) of
 	    #iq{from = To, to = From, type = Type, id = ID} = Reply
 	      when Type == error; Type == result ->
-		ejabberd_router:route(To, From, Reply)
+		ejabberd_router:route(Reply)
 	end
     catch _:_ ->
 	    ?ERROR_MSG("got iq-result with invalid delegated "
 		       "payload:~n~s", [xmpp:pp(ResIQ)]),
 	    Txt = <<"External component failure">>,
 	    Err = xmpp:err_internal_server_error(Txt, Lang),
-	    ejabberd_router:route_error(To, From, IQ, Err)
+	    ejabberd_router:route_error(IQ, Err)
     end;
 process_iq_result(#iq{from = From, to = To}, #iq{type = error} = ResIQ) ->
     Err = xmpp:set_from_to(ResIQ, To, From),
-    ejabberd_router:route(To, From, Err);
-process_iq_result(#iq{from = From, to = To, lang = Lang} = IQ, timeout) ->
+    ejabberd_router:route(Err);
+process_iq_result(#iq{lang = Lang} = IQ, timeout) ->
     Txt = <<"External component timeout">>,
     Err = xmpp:err_internal_server_error(Txt, Lang),
-    ejabberd_router:route_error(To, From, IQ, Err).
+    ejabberd_router:route_error(IQ, Err).
 
 -spec send_disco_queries(binary(), binary(), binary()) -> ok.
 send_disco_queries(LServer, Host, NS) ->
@@ -283,8 +282,8 @@ send_disco_queries(LServer, Host, NS) ->
     lists:foreach(
       fun({Type, Node}) ->
 	      ejabberd_local:route_iq(
-		From, To, #iq{type = get, from = From, to = To,
-			      sub_els = [#disco_info{node = Node}]},
+		#iq{type = get, from = From, to = To,
+		    sub_els = [#disco_info{node = Node}]},
 		fun(#iq{type = result, sub_els = [SubEl]}) ->
 			try xmpp:decode(SubEl) of
 			    #disco_info{} = Info->

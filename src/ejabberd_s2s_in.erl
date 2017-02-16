@@ -213,7 +213,7 @@ handle_authenticated_packet(Pkt0, #{ip := {IP, _}} = State) ->
 						     {Pkt, State1}, []),
 	    case Pkt1 of
 		drop -> ok;
-		_ -> ejabberd_router:route(From, To, Pkt1)
+		_ -> ejabberd_router:route(Pkt1)
     end,
 	    State2;
 	{error, Err} ->

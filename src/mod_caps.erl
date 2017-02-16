@@ -316,6 +316,8 @@ feature_request(Host, From, Caps,
 			end,
 	  if NeedRequest ->
 		 IQ = #iq{type = get,
+			  from = jid:make(Host),
+			  to = From,
 			  sub_els = [#disco_info{node = <<Node/binary, "#",
 							  SubNode/binary>>}]},
 		 cache_tab:insert(caps_features, NodePair, now_ts(),
@@ -324,9 +326,7 @@ feature_request(Host, From, Caps,
 			     feature_response(IQReply, Host, From, Caps,
 					      SubNodes)
 		     end,
-		 ejabberd_local:route_iq(jid:make(<<"">>, Host,
-						       <<"">>),
-					 From, IQ, F);
+		 ejabberd_local:route_iq(IQ, F);
 	     true -> feature_request(Host, From, Caps, Tail)
 	  end
     end;

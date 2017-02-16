@@ -77,7 +77,7 @@ resume(Config) ->
     Txt = #text{data = <<"body">>},
     Msg = #message{from = ServerJID, to = MyJID, body = [Txt]},
     %% Route message. The message should be queued by the C2S process.
-    ejabberd_router:route(ServerJID, MyJID, Msg),
+    ejabberd_router:route(Msg),
     send(Config, #sm_resume{previd = ID, h = 0, xmlns = ?NS_STREAM_MGMT_3}),
     #sm_resumed{previd = ID, h = 3} = recv(Config),
     #message{from = ServerJID, to = MyJID, body = [Txt]} = recv_message(Config),

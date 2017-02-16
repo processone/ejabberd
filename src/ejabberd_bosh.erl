@@ -752,26 +752,24 @@ bounce_receivers(State, Reason) ->
 		State, Receivers ++ ShapedReceivers).
 
 bounce_els_from_obuf(State) ->
-    lists:foreach(fun ({xmlstreamelement, El}) ->
-			  case El of
-			    #xmlel{name = Name, attrs = Attrs}
-				when Name == <<"presence">>;
-				     Name == <<"message">>;
-				     Name == <<"iq">> ->
-				FromS = fxml:get_attr_s(<<"from">>, Attrs),
-				ToS = fxml:get_attr_s(<<"to">>, Attrs),
-				case {jid:from_string(FromS),
-				      jid:from_string(ToS)}
-				    of
-				  {#jid{} = From, #jid{} = To} ->
-				      ejabberd_router:route(From, To, El);
-				  _ -> ok
-				end;
-			    _ -> ok
-			  end;
-		      (_) -> ok
-		  end,
-		  buf_to_list(State#state.el_obuf)).
+    lists:foreach(
+      fun({xmlstreamelement, El}) ->
+	      try xmpp:decode(El, ?NS_CLIENT, [ignore_els]) of
+		  Pkt when ?is_stanza(Pkt) ->
+		      case {xmpp:get_from(Pkt), xmpp:get_to(Pkt)} of
+			  {#jid{}, #jid{}} ->
+			      ejabberd_router:route(Pkt);
+			  _ ->
+			      ok
+		      end;
+		  _ ->
+		      ok
+	      catch _:{xmpp_codec, _} ->
+		      ok
+	      end;
+	 (_) ->
+	      ok
+      end, buf_to_list(State#state.el_obuf)).
 
 is_valid_key(<<"">>, <<"">>) -> true;
 is_valid_key(PrevKey, Key) ->

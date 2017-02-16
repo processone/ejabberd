@@ -785,12 +785,12 @@ server_send_iqs(Config) ->
     lists:foreach(
       fun(Type) ->
 	      ejabberd_router:route(
-		ServerJID, MyJID, #iq{type = Type})
+		#iq{from = ServerJID, to = MyJID, type = Type})
       end, [error, result]),
     lists:foreach(
       fun(Type) ->
 	      ejabberd_local:route_iq(
-		ServerJID, MyJID, #iq{type = Type},
+		#iq{from = ServerJID, to = MyJID, type = Type},
 		fun(#iq{type = result, sub_els = []}) -> ok;
 		   (IQ) -> ct:fail({unexpected_iq_result, IQ})
 		end)

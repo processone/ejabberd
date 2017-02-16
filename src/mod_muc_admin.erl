@@ -730,8 +730,7 @@ get_room_occupants_number(Room, Host) ->
 
 send_direct_invitation(RoomName, RoomService, Password, Reason, UsersString) ->
     RoomJid = jid:make(RoomName, RoomService, <<"">>),
-    RoomString = jid:to_string(RoomJid),
-    XmlEl = build_invitation(Password, Reason, RoomString),
+    XmlEl = build_invitation(Password, Reason, RoomJid),
     UsersStrings = get_users_to_invite(RoomJid, UsersString),
     [send_direct_invitation(RoomJid, UserStrings, XmlEl)
      || UserStrings <- UsersStrings],
@@ -759,24 +758,20 @@ get_users_to_invite(RoomJid, UsersString) ->
       end,
       UsersStrings).
 
-build_invitation(Password, Reason, RoomString) ->
-    PasswordAttrList = case Password of
-	<<"none">> -> [];
-	_ -> [{<<"password">>, Password}]
-    end,
-    ReasonAttrList = case Reason of
-	<<"none">> -> [];
-	_ -> [{<<"reason">>, Reason}]
-    end,
-    XAttrs = [{<<"xmlns">>, ?NS_XCONFERENCE},
-	      {<<"jid">>, RoomString}]
-	++ PasswordAttrList
-	++ ReasonAttrList,
-    XEl = {xmlel, <<"x">>, XAttrs, []},
-    {xmlel, <<"message">>, [], [XEl]}.
+build_invitation(Password, Reason, RoomJid) ->
+    Invite = #x_conference{jid = RoomJid,
+			   password = case Password of
+					  <<"none">> -> <<>>;
+					  _ -> Password
+				      end,
+			   reason = case Reason of
+					<<"none">> -> <<>>;
+					_ -> Reason
+				    end},
+    #message{sub_els = [Invite]}.
 
-send_direct_invitation(FromJid, UserJid, XmlEl) ->
-    ejabberd_router:route(FromJid, UserJid, XmlEl).
+send_direct_invitation(FromJid, UserJid, Msg) ->
+    ejabberd_router:route(xmpp:set_from_to(Msg, FromJid, UserJid)).
 
 %%----------------------------
 %% Change Room Option

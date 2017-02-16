@@ -148,13 +148,11 @@ handle_cast(_Msg, State) -> {noreply, State}.
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-handle_info({route, From, To, Packet},
+handle_info({route, Packet},
 	    #state{host = Host, server_host = ServerHost,
 		   access = Access} =
 		State) ->
-    case catch do_route(Host, ServerHost, Access, From, To,
-			Packet)
-	of
+    case catch do_route(Host, ServerHost, Access, Packet) of
       {'EXIT', Reason} -> ?ERROR_MSG("~p", [Reason]);
       _ -> ok
     end,
@@ -200,23 +198,24 @@ stop_supervisor(Host) ->
     supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc).
 
-do_route(Host, ServerHost, Access, From,
-	 #jid{luser = LUser, lresource = LResource} = To, Packet) ->
+do_route(Host, ServerHost, Access, Packet) ->
+    #jid{luser = LUser, lresource = LResource} = xmpp:get_to(Packet),
+    From = xmpp:get_from(Packet),
     case acl:match_rule(ServerHost, Access, From) of
 	allow ->
 	    case Packet of
 		#iq{} when LUser == <<"">>, LResource == <<"">> ->
-		    ejabberd_router:process_iq(From, To, Packet);
+		    ejabberd_router:process_iq(Packet);
 		#iq{} when LUser == <<"">>, LResource /= <<"">> ->
 		    Err = xmpp:err_service_unavailable(),
-		    ejabberd_router:route_error(To, From, Packet, Err);
+		    ejabberd_router:route_error(Packet, Err);
 		_ ->
-		    sm_route(Host, ServerHost, From, To, Packet)
+		    sm_route(Host, ServerHost, Packet)
 	    end;
 	deny ->
 	    Lang = xmpp:get_lang(Packet),
 	    Err = xmpp:err_forbidden(<<"Denied by ACL">>, Lang),
-	    ejabberd_router:route_error(To, From, Packet, Err)
+	    ejabberd_router:route_error(Packet, Err)
     end.
 
 process_disco_info(#iq{type = set, lang = Lang} = IQ) ->
@@ -320,8 +319,9 @@ process_command(#iq{type = set, lang = Lang, to = To, from = From,
 	    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang))
     end.
 
-sm_route(Host, ServerHost, From, To, Packet) ->
-    #jid{user = ChanServ, resource = Resource} = To,
+sm_route(Host, ServerHost, Packet) ->
+    From = xmpp:get_from(Packet),
+    #jid{user = ChanServ, resource = Resource} = xmpp:get_to(Packet),
     case str:tokens(ChanServ, <<"%">>) of
 	[<<_, _/binary>> = Channel, <<_, _/binary>> = Server] ->
 	    case ets:lookup(irc_connection, {From, Server, Host}) of
@@ -368,7 +368,7 @@ sm_route(Host, ServerHost, From, To, Packet) ->
 			[] ->
 			    Txt = <<"IRC connection not found">>,
 			    Err = xmpp:err_service_unavailable(Txt, Lang),
-			    ejabberd_router:route_error(To, From, Packet, Err);
+			    ejabberd_router:route_error(Packet, Err);
 			[R] ->
 			    Pid = R#irc_connection.pid,
 			    ?DEBUG("send to process ~p~n", [Pid]),
@@ -377,7 +377,7 @@ sm_route(Host, ServerHost, From, To, Packet) ->
 		_ ->
 		    Txt = <<"Failed to parse chanserv">>,
 		    Err = xmpp:err_bad_request(Txt, Lang),
-		    ejabberd_router:route_error(To, From, Packet, Err)
+		    ejabberd_router:route_error(Packet, Err)
 	    end
     end.
 
@@ -643,13 +643,14 @@ adhoc_join(From, To, #adhoc_command{lang = Lang, xdata = X} = Request) ->
 	    BodyTxt = {<<"Join the IRC channel in this Jabber ID: ~s">>,
 		       [jid:to_string(RoomJID)]},
 	    Invite = #message{
+			from = RoomJID, to = From,
 			body = xmpp:mk_text(BodyTxt, Lang),
 			sub_els = [#muc_user{
 				      invites = [#muc_invite{from = From,
 							     reason = Reason}]},
 				   #x_conference{reason = Reason,
 						 jid = RoomJID}]},
-	    ejabberd_router:route(RoomJID, From, Invite),
+	    ejabberd_router:route(Invite),
 	    xmpp_util:make_adhoc_response(
 	      Request, #adhoc_command{status = completed});
        true ->
