@@ -332,7 +332,7 @@ expose_commands(Commands) ->
                       end,
                       Commands),
 
-    case ejabberd_config:add_local_option(commands, [{add_commands, Names}]) of
+    case ejabberd_config:add_option(commands, [{add_commands, Names}]) of
         {aborted, Reason} ->
             {error, Reason};
         {atomic, Result} ->

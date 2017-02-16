@@ -270,7 +270,7 @@ remove_user(User, Server, Password) ->
 
 is_scrammed() ->
     scram ==
-      ejabberd_config:get_local_option({auth_password_format, ?MYNAME},
+      ejabberd_config:get_option({auth_password_format, ?MYNAME},
                                        fun(V) -> V end).
 
 password_to_scram(Password) ->
