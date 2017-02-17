@@ -57,7 +57,11 @@ defmodule Ejabberd.Mixfile do
   end
 
   defp deps_include(deps) do
-    Enum.map(deps, fn dep -> "deps/#{dep}/include" end)
+    base = case Mix.Project.deps_paths()[:ejabberd] do
+      nil -> "deps"
+      _ -> ".."
+    end
+    Enum.map(deps, fn dep -> base<>"/#{dep}/include" end)
   end
 
   defp cond_deps do
