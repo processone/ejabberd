@@ -27,9 +27,6 @@
 -author('alexey@process-one.net').
 
 -export([start/0, load_file/1, reload_file/0, read_file/1,
-	 add_global_option/2, add_local_option/2,
-	 get_global_option/2, get_local_option/2,
-	 get_global_option/3, get_local_option/3,
 	 get_option/2, get_option/3, add_option/2, has_option/1,
 	 get_vh_by_auth_method/1, is_file_readable/1,
 	 get_version/0, get_myhosts/0, get_mylang/0,
@@ -43,6 +40,15 @@
 	 fsm_limit_opts/1]).
 
 -export([start/2]).
+
+%% The following functions are deprecated.
+-export([add_global_option/2, add_local_option/2,
+	 get_global_option/2, get_local_option/2,
+	 get_global_option/3, get_local_option/3]).
+
+-deprecated([{add_global_option, 2}, {add_local_option, 2},
+	     {get_global_option, 2}, {get_local_option, 2},
+	     {get_global_option, 3}, {get_local_option, 3}]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
