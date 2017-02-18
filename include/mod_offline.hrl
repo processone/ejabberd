@@ -20,11 +20,11 @@
 
 -record(offline_msg,
 	{us = {<<"">>, <<"">>} :: {binary(), binary()},
-	 timestamp = p1_time_compat:timestamp() :: erlang:timestamp() | '_',
-	 expire = p1_time_compat:timestamp() :: erlang:timestamp() | never | '_',
+	 timestamp             :: erlang:timestamp() | '_' | undefined,
+	 expire                :: erlang:timestamp() | never | undefined | '_',
 	 from = #jid{}         :: jid() | '_',
 	 to = #jid{}           :: jid() | '_',
-	 packet = #xmlel{}     :: xmlel() | '_'}).
+	 packet = #xmlel{}     :: xmlel() | message() | '_'}).
 
 -record(state,
 	{host = <<"">> :: binary(),

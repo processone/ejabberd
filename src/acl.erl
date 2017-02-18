@@ -271,7 +271,7 @@ normalize_spec(Spec) ->
             end
     end.
 
--spec any_rules_allowed(global | binary(), access_name(),
+-spec any_rules_allowed(global | binary(), [access_name()],
                            jid() | ljid() | inet:ip_address()) -> boolean().
 
 any_rules_allowed(Host, Access, Entity) ->

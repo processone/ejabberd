@@ -91,7 +91,7 @@ start_child(Mod, Host, Opts, Proc) ->
             transient, 2000, worker, [Mod]},
     supervisor:start_child(ejabberd_gen_mod_sup, Spec).
 
--spec stop_child(module(), binary() | global) -> ok.
+-spec stop_child(module(), binary() | global) -> ok | {error, any()}.
 stop_child(Mod, Host) ->
     stop_child(get_module_proc(Host, Mod)).
 
@@ -437,7 +437,7 @@ db_type(Host, Module) when is_atom(Module) ->
 	    undefined
     end.
 
--spec db_type(binary(), opts(), module()) -> db_type().
+-spec db_type(binary() | global, opts(), module()) -> db_type().
 
 db_type(Host, Opts, Module) ->
     case catch Module:mod_opt_type(db_type) of
@@ -477,7 +477,7 @@ ram_db_type(Host, Module) when is_atom(Module) ->
 	    undefined
     end.
 
--spec ram_db_type(binary(), opts(), module()) -> db_type().
+-spec ram_db_type(binary() | global, opts(), module()) -> db_type().
 ram_db_type(Host, Opts, Module) ->
     case catch Module:mod_opt_type(ram_db_type) of
 	F when is_function(F) ->

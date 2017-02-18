@@ -648,7 +648,7 @@ has_no_store_hint(Message) ->
 
 -spec is_resent(message(), binary()) -> boolean().
 is_resent(Pkt, LServer) ->
-    case xmpp:get_subtag(Pkt, #stanza_id{}) of
+    case xmpp:get_subtag(Pkt, #stanza_id{by = #jid{}}) of
 	#stanza_id{by = #jid{lserver = LServer}} ->
 	    true;
 	_ ->

@@ -48,7 +48,7 @@
 		       {tls, inet:posix() | atom() | binary()} |
 		       {socket, inet:posix() | closed | timeout} |
 		       internal_failure.
-
+-export_type([state/0, stop_reason/0]).
 -callback init(list()) -> {ok, state()} | {error, term()} | ignore.
 -callback handle_cast(term(), state()) -> state().
 -callback handle_call(term(), term(), state()) -> state().
@@ -619,7 +619,7 @@ process_bind(#iq{type = set, sub_els = [_]} = Pkt,
 			    Reply = #bind{jid = jid:make(U, S, NewR)},
 			    State2 = send_pkt(State1, xmpp:make_iq_result(Pkt, Reply)),
 			    process_stream_established(State2);
-			{error, #stanza_error{}, State1} = Err ->
+			{error, #stanza_error{} = Err, State1} ->
 			    send_error(State1, Pkt, Err)
 		    end
 	    end;

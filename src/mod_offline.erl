@@ -94,10 +94,10 @@
 			 non_neg_integer(), non_neg_integer()) ->
     {atomic, any()}.
 -callback pop_messages(binary(), binary()) ->
-    {atomic, [#offline_msg{}]} | {aborted, any()}.
+    {ok, [#offline_msg{}]} | {error, any()}.
 -callback remove_expired_messages(binary()) -> {atomic, any()}.
 -callback remove_old_messages(non_neg_integer(), binary()) -> {atomic, any()}.
--callback remove_user(binary(), binary()) -> {atomic, any()}.
+-callback remove_user(binary(), binary()) -> any().
 -callback read_message_headers(binary(), binary()) ->
     [{non_neg_integer(), jid(), jid(), undefined | erlang:timestamp(), xmlel()}].
 -callback read_message(binary(), binary(), non_neg_integer()) ->
@@ -517,7 +517,7 @@ check_event(#message{from = From, to = To, id = ID} = Msg) ->
 
 -spec find_x_expire(erlang:timestamp(), message()) -> erlang:timestamp() | never.
 find_x_expire(TimeStamp, Msg) ->
-    case xmpp:get_subtag(Msg, #expire{}) of
+    case xmpp:get_subtag(Msg, #expire{seconds = 0}) of
 	#expire{seconds = Int} ->
 	    {MegaSecs, Secs, MicroSecs} = TimeStamp,
 	    S = MegaSecs * 1000000 + Secs + Int,
@@ -571,7 +571,7 @@ route_offline_message(#{lserver := LServer} = State,
 		false ->
 		    case privacy_check_packet(State, Msg, in) of
 			allow -> ejabberd_router:route(Msg);
-			false -> ok
+			deny -> ok
 		    end
 	    end
     end.
@@ -813,14 +813,14 @@ delete_all_msgs(User, Server) ->
 webadmin_user_parse_query(_, <<"removealloffline">>,
 			  User, Server, _Query) ->
     case delete_all_msgs(User, Server) of
-      {aborted, Reason} ->
-	  ?ERROR_MSG("Failed to remove offline messages: ~p",
-		     [Reason]),
-	  {stop, error};
-      {atomic, ok} ->
-	  ?INFO_MSG("Removed all offline messages for ~s@~s",
-		    [User, Server]),
-	  {stop, ok}
+	{atomic, ok} ->
+	    ?INFO_MSG("Removed all offline messages for ~s@~s",
+		      [User, Server]),
+	    {stop, ok};
+	Err ->
+	    ?ERROR_MSG("Failed to remove offline messages: ~p",
+		       [Err]),
+	    {stop, error}
     end;
 webadmin_user_parse_query(Acc, _Action, _User, _Server,
 			  _Query) ->
@@ -866,25 +866,20 @@ import_start(LServer, DBType) ->
 import(LServer, {sql, _}, DBType, <<"spool">>,
        [LUser, XML, _Seq, _TimeStamp]) ->
     El = fxml_stream:parse_element(XML),
-    From = #jid{} = jid:from_string(
-                                fxml:get_attr_s(<<"from">>, El#xmlel.attrs)),
-    To = #jid{} = jid:from_string(
-                              fxml:get_attr_s(<<"to">>, El#xmlel.attrs)),
-              Stamp = fxml:get_path_s(El, [{elem, <<"delay">>},
-                                {attr, <<"stamp">>}]),
-    TS = try xmpp_util:decode_timestamp(Stamp) of
-	     {MegaSecs, Secs, _} ->
-                 {MegaSecs, Secs, 0}
-	 catch _:_ ->
-                 p1_time_compat:timestamp()
-         end,
+    #message{from = From, to = To} = Msg = xmpp:decode(El, ?NS_CLIENT, [ignore_els]),
+    TS = case xmpp:get_subtag(Msg, #delay{stamp = {0,0,0}}) of
+	     #delay{stamp = {MegaSecs, Secs, _}} ->
+		 {MegaSecs, Secs, 0};
+	     false ->
+		 p1_time_compat:timestamp()
+	 end,
     US = {LUser, LServer},
-    Expire = find_x_expire(TS, El#xmlel.children),
-    Msg = #offline_msg{us = US, packet = El,
-                       from = From, to = To,
-                       timestamp = TS, expire = Expire},
+    Expire = find_x_expire(TS, Msg),
+    OffMsg = #offline_msg{us = US, packet = El,
+			  from = From, to = To,
+			  timestamp = TS, expire = Expire},
     Mod = gen_mod:db_mod(DBType, ?MODULE),
-    Mod:import(Msg).
+    Mod:import(OffMsg).
 
 mod_opt_type(access_max_user_messages) ->
     fun acl:shaper_rules_validator/1;

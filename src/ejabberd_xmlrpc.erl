@@ -46,7 +46,7 @@
 
 -record(state,
 	{access_commands = [] :: list(),
-         auth = noauth        :: noauth | {binary(), binary(), binary()},
+         auth = noauth        :: noauth | map(),
          get_auth = true      :: boolean(),
 	 ip                   :: inet:ip_address()}).
 

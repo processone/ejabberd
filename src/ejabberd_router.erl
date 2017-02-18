@@ -144,7 +144,7 @@ route_error(From, To, Packet, #stanza_error{} = Err) ->
 register_route(Domain, ServerHost) ->
     register_route(Domain, ServerHost, undefined).
 
--spec register_route(binary(), binary(), local_hint()) -> ok.
+-spec register_route(binary(), binary(), local_hint() | undefined) -> ok.
 register_route(Domain, ServerHost, LocalHint) ->
     case {jid:nameprep(Domain), jid:nameprep(ServerHost)} of
 	{error, _} ->

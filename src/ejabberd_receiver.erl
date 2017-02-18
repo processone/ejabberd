@@ -54,9 +54,9 @@
 	{socket :: inet:socket() | fast_tls:tls_socket() | ezlib:zlib_socket(),
          sock_mod = gen_tcp :: gen_tcp | fast_tls | ezlib,
          shaper_state = none :: shaper:shaper(),
-         c2s_pid :: pid(),
+         c2s_pid :: pid() | undefined,
 	 max_stanza_size = infinity :: non_neg_integer() | infinity,
-         xml_stream_state :: fxml_stream:xml_stream_state(),
+         xml_stream_state :: fxml_stream:xml_stream_state() | undefined,
          timeout = infinity:: timeout()}).
 
 -define(HIBERNATE_TIMEOUT, ejabberd_config:get_option(receiver_hibernate, fun(X) when is_integer(X); X == hibernate-> X end, 90000)).

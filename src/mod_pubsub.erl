@@ -1473,7 +1473,7 @@ send_authorization_request(#pubsub_node{nodeid = {Host, Node},
 						pubsub_subscribe_authorization:result() |
 						{error, stanza_error()}.
 find_authorization_response(Packet) ->
-    case xmpp:get_subtag(Packet, #xdata{}) of
+    case xmpp:get_subtag(Packet, #xdata{type = form}) of
 	#xdata{type = cancel} ->
 	    undefined;
 	#xdata{type = submit, fields = Fs} ->
@@ -1798,11 +1798,11 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
     Reply = fun (Subscription) ->
 	    Sub = case Subscription of
 		      {subscribed, SubId} ->
-			  #ps_subscription{type = subscribed, subid = SubId};
+			  #ps_subscription{jid = JID, type = subscribed, subid = SubId};
 		      Other ->
-			  #ps_subscription{type = Other}
+			  #ps_subscription{jid = JID, type = Other}
 		  end,
-	    #pubsub{subscription = Sub#ps_subscription{jid = Subscriber, node = Node}}
+	    #pubsub{subscription = Sub#ps_subscription{node = Node}}
     end,
     case transaction(Host, Node, Action, sync_dirty) of
 	{result, {TNode, {Result, subscribed, SubId, send_last}}} ->

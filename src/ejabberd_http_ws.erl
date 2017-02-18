@@ -50,12 +50,12 @@
         {socket                       :: ws_socket(),
          ping_interval = ?PING_INTERVAL :: non_neg_integer(),
          ping_timer = make_ref()      :: reference(),
-         pong_expected                :: boolean(),
+         pong_expected = false        :: boolean(),
          timeout = ?WEBSOCKET_TIMEOUT :: non_neg_integer(),
          timer = make_ref()           :: reference(),
          input = []                   :: list(),
          waiting_input = false        :: false | pid(),
-         last_receiver                :: pid(),
+         last_receiver = self()       :: pid(),
          ws                           :: {#ws{}, pid()},
          rfc_compilant = undefined    :: boolean() | undefined}).
 

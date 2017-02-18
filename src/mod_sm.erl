@@ -599,8 +599,8 @@ inherit_session_state(#{user := U, server := S} = State, ResumeID) ->
 	    {error, <<"Invalid 'previd' value">>}
     end.
 
--spec resume_session({integer(), pid()}, state()) -> {resume, state()} |
-						     {error, binary()}.
+-spec resume_session({erlang:timestamp(), pid()}, state()) -> {resume, state()} |
+							      {error, binary()}.
 resume_session({Time, Pid}, _State) ->
     ejabberd_c2s:call(Pid, {resume_session, Time}, timer:seconds(15)).
 

@@ -471,15 +471,15 @@
 
 -type(iq() :: iq_request() | iq_reply()).
 
--record(rsm_in, {max :: integer() | error,
-                 direction :: before | aft,
-                 id :: binary(),
-                 index :: integer() | error}).
+-record(rsm_in, {max :: integer() | error | undefined,
+                 direction :: before | aft | undefined,
+                 id :: binary() | undefined,
+                 index :: integer() | error | undefined}).
 
--record(rsm_out, {count :: integer(),
-                  index :: integer(),
-                  first :: binary(),
-                  last :: binary()}).
+-record(rsm_out, {count :: integer() | undefined,
+                  index :: integer() | undefined,
+                  first :: binary() | undefined,
+                  last :: binary() | undefined}).
 
 -type(rsm_in() :: #rsm_in{}).
 

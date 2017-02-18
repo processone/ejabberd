@@ -68,13 +68,13 @@
 %%--------------------------------------------------------------------
 %% gen_mod/supervisor callbacks.
 %%--------------------------------------------------------------------
--spec start(binary(), gen_mod:opts()) -> {ok, _} | {ok, _, _} | {error, _}.
+-spec start(binary(), gen_mod:opts()) -> {ok, pid()}.
 
 start(ServerHost, Opts) ->
     Proc = mod_http_upload:get_proc_name(ServerHost, ?MODULE),
     gen_mod:start_child(?MODULE, ServerHost, Opts, Proc).
 
--spec stop(binary()) -> ok.
+-spec stop(binary()) -> ok | {error, any()}.
 
 stop(ServerHost) ->
     Proc = mod_http_upload:get_proc_name(ServerHost, ?MODULE),

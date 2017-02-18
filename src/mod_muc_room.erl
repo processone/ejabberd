@@ -305,8 +305,6 @@ normal_state({route, <<"">>,
 			    {xmpp:make_iq_result(IQ, Res), StateData};
 			{ignore, SD} ->
 			    {ignore, SD};
-			{error, Error, ResStateData} ->
-			    {xmpp:make_error(IQ0, Error), ResStateData};
 			{error, Error} ->
 			    {xmpp:make_error(IQ0, Error), StateData}
 		    end,
@@ -559,13 +557,7 @@ handle_sync_event({muc_subscribe, From, Nick, Nodes}, _From,
 	    NewConfig = (NewState#state.config)#config{
 			  captcha_protected = CaptchaRequired,
 			  password_protected = PasswordProtected},
-	    {reply, {error, <<"Requrest is ignored">>},
-	     NewState#state{config = NewConfig}};
-	{error, Err, NewState} ->
-	    NewConfig = (NewState#state.config)#config{
-			  captcha_protected = CaptchaRequired,
-			  password_protected = PasswordProtected},
-	    {reply, {error, get_error_text(Err)}, StateName,
+	    {reply, {error, <<"Request is ignored">>},
 	     NewState#state{config = NewConfig}};
 	{error, Err} ->
 	    {reply, {error, get_error_text(Err)}, StateName, StateData}
@@ -577,9 +569,7 @@ handle_sync_event({muc_unsubscribe, From}, _From, StateName, StateData) ->
 	{result, _, NewState} ->
 	    {reply, ok, StateName, NewState};
 	{ignore, NewState} ->
-	    {reply, {error, <<"Requrest is ignored">>}, NewState};
-	{error, Err, NewState} ->
-	    {reply, {error, get_error_text(Err)}, StateName, NewState};
+	    {reply, {error, <<"Request is ignored">>}, NewState};
 	{error, Err} ->
 	    {reply, {error, get_error_text(Err)}, StateName, StateData}
     end;
@@ -984,8 +974,7 @@ process_presence(From, Nick, #presence{type = Type0} = Packet0, StateData) ->
 	    {next_state, normal_state, StateData}
     end.
 
--spec do_process_presence(jid(), binary(), presence(), state()) ->
-				 state().
+-spec do_process_presence(jid(), binary(), presence(), state()) -> state().
 do_process_presence(From, Nick, #presence{type = available, lang = Lang} = Packet,
 		    StateData) ->
     case is_user_online(From, StateData) of
@@ -1077,6 +1066,7 @@ close_room_if_temporary_and_empty(StateData1) ->
       _ -> {next_state, normal_state, StateData1}
     end.
 
+-spec get_users_and_subscribers(state()) -> ?TDICT.
 get_users_and_subscribers(StateData) ->
     OnlineSubscribers = ?DICT:fold(
 			   fun(LJID, _, Acc) ->
@@ -1236,8 +1226,9 @@ get_error_condition(#stanza_error{reason = Reason}) ->
 get_error_condition(undefined) ->
     "undefined".
 
-get_error_text(Error) ->
-    (Error#stanza_error.text)#text.data.
+-spec get_error_text(stanza_error()) -> binary().
+get_error_text(#stanza_error{text = Txt}) ->
+    xmpp:get_text([Txt]).
 
 -spec make_reason(stanza(), jid(), state(), binary()) -> binary().
 make_reason(Packet, From, StateData, Reason1) ->
@@ -1514,7 +1505,7 @@ store_user_activity(JID, UserActivity, StateData) ->
 		 end,
     StateData1.
 
--spec clean_treap(treap:treap(), integer()) -> treap:treap().
+-spec clean_treap(treap:treap(), integer() | {1, integer()}) -> treap:treap().
 clean_treap(Treap, CleanPriority) ->
     case treap:is_empty(Treap) of
       true -> Treap;
@@ -1750,11 +1741,10 @@ nick_collision(User, Nick, StateData) ->
       jid:remove_resource(jid:tolower(UserOfNick))
 	/= jid:remove_resource(jid:tolower(User))).
 
--spec add_new_user(jid(), binary(), presence() | iq(), state()) ->
-			  state() |
-			  {error, stanza_error()} |
-			  {ignore, state()} |
-			  {result, xmpp_element(), state()}.
+-spec add_new_user(jid(), binary(), presence(), state()) -> state();
+		  (jid(), binary(), iq(), state()) -> {error, stanza_error()} |
+						      {ignore, state()} |
+						      {result, muc_subscribe(), state()}.
 add_new_user(From, Nick, Packet, StateData) ->
     Lang = xmpp:get_lang(Packet),
     MaxUsers = get_max_users(StateData),
@@ -1874,7 +1864,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 		  if not IsSubscribeRequest -> ResultState;
 		     true -> {result, subscribe_result(Packet), ResultState}
 		  end;
-	    nopass ->
+	    need_password ->
 		ErrText = <<"A password is required to enter this room">>,
 		Err = xmpp:err_not_authorized(ErrText, Lang),
 		if not IsSubscribeRequest ->
@@ -1937,7 +1927,8 @@ add_new_user(From, Nick, Packet, StateData) ->
     end.
 
 -spec check_password(affiliation(), affiliation(),
-		     stanza(), jid(), state()) -> boolean() | nopass.
+		     presence() | iq(), jid(), state()) ->
+      boolean() | need_password | captcha_required.
 check_password(owner, _Affiliation, _Packet, _From,
 	       _StateData) ->
     %% Don't check pass if user is owner in MUC service (access_admin option)
@@ -1950,7 +1941,7 @@ check_password(_ServiceAffiliation, Affiliation, Packet,
       true ->
 	  Pass = extract_password(Packet),
 	  case Pass of
-	    false -> nopass;
+	    false -> need_password;
 	    _ ->
 		case (StateData#state.config)#config.password of
 		  Pass -> true;
@@ -1988,13 +1979,17 @@ check_captcha(Affiliation, From, StateData) ->
       _ -> true
     end.
 
--spec extract_password(stanza()) -> binary() | false.
-extract_password(Packet) ->
-    case {xmpp:get_subtag(Packet, #muc{}),
-          xmpp:get_subtag(Packet, #muc_subscribe{})} of
-	{#muc{password = Password}, _} when is_binary(Password) ->
+-spec extract_password(presence() | iq()) -> binary() | false.
+extract_password(#presence{} = Pres) ->
+    case xmpp:get_subtag(Pres, #muc{}) of
+	#muc{password = Password} when is_binary(Password) ->
 	    Password;
-	{_, #muc_subscribe{password = Password}} when is_binary(Password) ->
+	_ ->
+	    false
+    end;
+extract_password(#iq{} = IQ) ->
+    case xmpp:get_subtag(IQ, #muc_subscribe{}) of
+	#muc_subscribe{password = Password} when Password /= <<"">> ->
 	    Password;
 	_ ->
 	    false
@@ -2107,17 +2102,13 @@ send_new_presence(NJID, Reason, IsInitialPresence, StateData, OldStateData) ->
 				    OldStateData)
     end.
 
--spec is_ra_changed(jid() | ljid(), boolean(), state(), state()) -> boolean().
+-spec is_ra_changed(jid(), boolean(), state(), state()) -> boolean().
 is_ra_changed(_, _IsInitialPresence = true, _, _) ->
     false;
-is_ra_changed(LJID, _IsInitialPresence = false, NewStateData, OldStateData) ->
-    JID = case LJID of
-	      #jid{} -> LJID;
-	      _ -> jid:make(LJID)
-	  end,
-    NewRole = get_role(LJID, NewStateData),
+is_ra_changed(JID, _IsInitialPresence = false, NewStateData, OldStateData) ->
+    NewRole = get_role(JID, NewStateData),
     NewAff = get_affiliation(JID, NewStateData),
-    OldRole = get_role(LJID, OldStateData),
+    OldRole = get_role(JID, OldStateData),
     OldAff = get_affiliation(JID, OldStateData),
     if (NewRole == none) and (NewAff == OldAff) ->
 	    %% A user is leaving the room;
@@ -2449,7 +2440,7 @@ add_message_to_history(FromNick, FromJID, Packet, StateData) ->
 	    StateData
     end.
 
--spec send_history(jid(), lqueue(), state()) -> boolean().
+-spec send_history(jid(), lqueue(), state()) -> ok.
 send_history(JID, History, StateData) ->
     lists:foreach(
       fun({Nick, Packet, _HaveSubject, _TimeStamp, _Size}) ->
@@ -2675,7 +2666,7 @@ find_changed_items(_UJID, _UAffiliation, _URole, [],
 		   _Lang, _StateData, Res) ->
     {result, Res};
 find_changed_items(_UJID, _UAffiliation, _URole,
-		   [#muc_item{jid = undefined, nick = undefined}|_],
+		   [#muc_item{jid = undefined, nick = <<"">>}|_],
 		   Lang, _StateData, _Res) ->
     Txt = <<"Neither 'jid' nor 'nick' attribute found">>,
     throw({error, xmpp:err_bad_request(Txt, Lang)});
@@ -2743,16 +2734,16 @@ find_changed_items(UJID, UAffiliation, URole,
 		      end,
 	    find_changed_items(UJID, UAffiliation, URole,
 			       Items, Lang, StateData,
-			       [MoreRes | Res]);
+			       MoreRes ++ Res);
 	false ->
 	    Txt = <<"Changing role/affiliation is not allowed">>,
 	    throw({error, xmpp:err_not_allowed(Txt, Lang)})
     end.
 
 -spec can_change_ra(affiliation(), role(), affiliation(), role(),
-		    affiliation, affiliation(), affiliation()) -> boolean();
+		    affiliation, affiliation(), affiliation()) -> boolean() | nothing | check_owner;
 		   (affiliation(), role(), affiliation(), role(),
-		    role, role(), affiliation()) -> boolean().
+		    role, role(), affiliation()) -> boolean() | nothing | check_owner.
 can_change_ra(_FAffiliation, _FRole, owner, _TRole,
 	      affiliation, owner, owner) ->
     %% A room owner tries to add as persistent owner a
@@ -2877,14 +2868,14 @@ can_change_ra(_FAffiliation, _FRole, _TAffiliation,
 	      _TRole, role, _Value, _ServiceAf) ->
     false.
 
--spec send_kickban_presence(jid(), jid(), binary(),
+-spec send_kickban_presence(undefined | jid(), jid(), binary(),
 			    pos_integer(), state()) -> ok.
 send_kickban_presence(UJID, JID, Reason, Code, StateData) ->
     NewAffiliation = get_affiliation(JID, StateData),
     send_kickban_presence(UJID, JID, Reason, Code, NewAffiliation,
 			  StateData).
 
--spec send_kickban_presence(jid(), jid(), binary(), pos_integer(),
+-spec send_kickban_presence(undefined | jid(), jid(), binary(), pos_integer(),
 			    affiliation(), state()) -> ok.
 send_kickban_presence(UJID, JID, Reason, Code, NewAffiliation,
 		      StateData) ->
@@ -2914,7 +2905,7 @@ send_kickban_presence(UJID, JID, Reason, Code, NewAffiliation,
 		  end,
 		  LJIDs).
 
--spec send_kickban_presence1(jid(), jid(), binary(), pos_integer(),
+-spec send_kickban_presence1(undefined | jid(), jid(), binary(), pos_integer(),
 			     affiliation(), state()) -> ok.
 send_kickban_presence1(MJID, UJID, Reason, Code, Affiliation,
 		       StateData) ->
@@ -2958,8 +2949,8 @@ send_kickban_presence1(MJID, UJID, Reason, Code, Affiliation,
       end,
 		  (?DICT):to_list(get_users_and_subscribers(StateData))).
 
--spec get_actor_nick(binary() | jid(), state()) -> binary().
-get_actor_nick(<<"">>, _StateData) ->
+-spec get_actor_nick(undefined | jid(), state()) -> binary().
+get_actor_nick(undefined, _StateData) ->
     <<"">>;
 get_actor_nick(MJID, StateData) ->
     case (?DICT):find(jid:tolower(MJID), StateData#state.users) of
@@ -3150,12 +3141,7 @@ get_config(Lang, StateData, From) ->
     ServiceMaxUsers = get_service_max_users(StateData),
     DefaultRoomMaxUsers = get_default_room_maxusers(StateData),
     Config = StateData#state.config,
-    {MaxUsersRoomInteger, MaxUsersRoomString} =
-	case get_max_users(StateData) of
-	    N when is_integer(N) ->
-		{N, N};
-	    _ -> {0, none}
-	end,
+    MaxUsersRoom = get_max_users(StateData),
     Title = str:format(
 	      translate:translate(Lang, <<"Configuration of room ~s">>),
 	      [jid:to_string(StateData#state.jid)]),
@@ -3172,13 +3158,13 @@ get_config(Lang, StateData, From) ->
 			  true -> Config#config.password;
 			  false -> <<"">>
 		      end},
-	 {maxusers, MaxUsersRoomString,
+	 {maxusers, MaxUsersRoom,
 	  [if is_integer(ServiceMaxUsers) -> [];
 	      true -> [{<<"No limit">>, <<"none">>}]
 	   end] ++ [{integer_to_binary(N), N}
 		    || N <- lists:usort([ServiceMaxUsers,
 					 DefaultRoomMaxUsers,
-					 MaxUsersRoomInteger
+					 MaxUsersRoom
 					 | ?MAX_USERS_DEFAULT_LIST]),
 		       N =< ServiceMaxUsers]},
 	 {whois, if Config#config.anonymous -> moderators;
@@ -3362,7 +3348,7 @@ remove_nonmembers(StateData) ->
 			Affiliation = get_affiliation(JID, SD),
 			case Affiliation of
 			  none ->
-			      catch send_kickban_presence(<<"">>, JID, <<"">>,
+			      catch send_kickban_presence(undefined, JID, <<"">>,
 							  322, SD),
 			      set_role(JID, none, SD);
 			  _ -> SD
@@ -3698,9 +3684,9 @@ process_iq_vcard(From, #iq{type = set, lang = Lang, sub_els = [SubEl]},
     end.
 
 -spec process_iq_mucsub(jid(), iq(), state()) ->
-			       {error, stanza_error()} |
-			       {result, undefined | muc_subscribe(), state()} |
-			       {ignore, state()}.
+      {error, stanza_error()} |
+      {result, undefined | muc_subscribe() | muc_subscriptions(), state()} |
+      {ignore, state()}.
 process_iq_mucsub(_From, #iq{type = set, lang = Lang,
 			     sub_els = [#muc_subscribe{}]},
 		  #state{just_created = false, config = #config{allow_subscription = false}}) ->
@@ -3780,7 +3766,7 @@ remove_subscriptions(StateData) ->
 	    StateData
     end.
 
--spec get_subscription_nodes(iq()) -> [binary()].
+-spec get_subscription_nodes(stanza()) -> [binary()].
 get_subscription_nodes(#iq{sub_els = [#muc_subscribe{events = Nodes}]}) ->
     lists:filter(
       fun(Node) ->
@@ -4059,7 +4045,7 @@ wrap(From, To, Packet, Node) ->
 %%     JIDs = [ User#user.jid || {_, User} <- ?DICT:to_list(Users)],
 %%     ejabberd_router_multicast:route_multicast(From, Server, JIDs, Packet).
 
--spec send_wrapped_multiple(jid(), [#user{}], stanza(), binary(), state()) -> ok.
+-spec send_wrapped_multiple(jid(), ?TDICT, stanza(), binary(), state()) -> ok.
 send_wrapped_multiple(From, Users, Packet, Node, State) ->
     lists:foreach(
       fun({_, #user{jid = To}}) ->

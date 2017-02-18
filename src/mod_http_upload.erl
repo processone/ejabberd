@@ -121,7 +121,7 @@
 %%--------------------------------------------------------------------
 %% gen_mod/supervisor callbacks.
 %%--------------------------------------------------------------------
--spec start(binary(), gen_mod:opts()) -> {ok, _} | {ok, _, _} | {error, _}.
+-spec start(binary(), gen_mod:opts()) -> {ok, pid()}.
 
 start(ServerHost, Opts) ->
     case gen_mod:get_opt(rm_on_unregister, Opts,
@@ -136,7 +136,7 @@ start(ServerHost, Opts) ->
     Proc = get_proc_name(ServerHost, ?MODULE),
     gen_mod:start_child(?MODULE, ServerHost, Opts, Proc).
 
--spec stop(binary()) -> ok.
+-spec stop(binary()) -> ok | {error, any()}.
 
 stop(ServerHost) ->
     case gen_mod:get_module_opt(ServerHost, ?MODULE, rm_on_unregister,
@@ -211,7 +211,7 @@ depends(_Host, _Opts) ->
 %% gen_server callbacks.
 %%--------------------------------------------------------------------
 
--spec init({binary(), gen_mod:opts()}) -> {ok, state()}.
+-spec init(list()) -> {ok, state()}.
 
 init([ServerHost, Opts]) ->
     process_flag(trap_exit, true),
@@ -694,7 +694,7 @@ map_int_to_char(N) when N =< 61 -> N + 61. % Lower-case character.
 yield_content_type(<<"">>) -> ?DEFAULT_CONTENT_TYPE;
 yield_content_type(Type) -> Type.
 
--spec iq_disco_info(binary(), binary(), binary(), [xdata()]) -> [xmlel()].
+-spec iq_disco_info(binary(), binary(), binary(), [xdata()]) -> disco_info().
 
 iq_disco_info(Host, Lang, Name, AddInfo) ->
     Form = case gen_mod:get_module_opt(Host, ?MODULE, max_size,

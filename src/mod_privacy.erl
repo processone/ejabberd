@@ -57,7 +57,7 @@
 -callback set_privacy_list(binary(), binary(), binary(), [listitem()]) -> {atomic, any()}.
 -callback get_user_list(binary(), binary()) -> {none | binary(), [listitem()]}.
 -callback get_user_lists(binary(), binary()) -> {ok, #privacy{}} | error.
--callback remove_user(binary(), binary()) -> {atomic, any()}.
+-callback remove_user(binary(), binary()) -> any().
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,

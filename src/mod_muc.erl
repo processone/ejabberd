@@ -781,7 +781,7 @@ process_iq_register_set(ServerHost, Host, From,
 	    {error, xmpp:err_not_acceptable(ErrText, Lang)}
     end.
 
--spec broadcast_service_message(binary(), binary(), message()) -> ok.
+-spec broadcast_service_message(binary(), binary(), binary()) -> ok.
 broadcast_service_message(ServerHost, Host, Msg) ->
     lists:foreach(
       fun({_, _, Pid}) ->

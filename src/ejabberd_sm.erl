@@ -494,7 +494,7 @@ do_route(To, Term) ->
 	    Session = lists:max(Ss),
 	    Pid = element(2, Session#session.sid),
 	    ?DEBUG("sending to process ~p: ~p", [Pid, Term]),
-	    Pid ! Term
+	    ejabberd_c2s:route(Pid, Term)
     end.
 
 -spec do_route(stanza()) -> any().
@@ -520,7 +520,7 @@ do_route(#presence{from = From, to = To, type = T, status = Status} = Packet)
 		      Packet1 = Packet#presence{to = jid:replace_resource(To, R)},
 		      ?DEBUG("sending to process ~p:~n~s",
 			     [Pid, xmpp:pp(Packet1)]),
-		      Pid ! {route, Packet1};
+		      ejabberd_c2s:route(Pid, {route, Packet1});
 		 (_) ->
 		      ok
 	      end, online(Mod:get_sessions(LUser, LServer)));
@@ -571,7 +571,7 @@ do_route(Packet) ->
 	    Session = lists:max(Ss),
 	    Pid = element(2, Session#session.sid),
 	    ?DEBUG("sending to process ~p:~n~s", [Pid, xmpp:pp(Packet)]),
-	    Pid ! {route, Packet}
+	    ejabberd_c2s:route(Pid, {route, Packet})
     end.
 
 %% The default list applies to the user as a whole,
@@ -611,7 +611,7 @@ route_message(#message{to = To, type = Type} = Packet) ->
 								   LResource,
 								   LMaxRes,
 								   P, MaxPrio),
-				      Pid ! {route, Packet1}
+				      ejabberd_c2s:route(Pid, {route, Packet1})
 				end;
 			    %% Ignore other priority:
 			    ({_Prio, _Res}) -> ok
@@ -680,7 +680,7 @@ check_existing_resources(LUser, LServer, LResource) ->
 	   SIDs = [SID || #session{sid = SID} <- OnlineSs],
 	   MaxSID = lists:max(SIDs),
 	   lists:foreach(fun ({_, Pid} = S) when S /= MaxSID ->
-				 Pid ! replaced;
+				 ejabberd_c2s:route(Pid, replaced);
 			     (_) -> ok
 			 end,
 			 SIDs)
@@ -708,7 +708,7 @@ check_max_sessions(LUser, LServer) ->
     if length(OnlineSs) =< MaxSessions -> ok;
        true ->
 	    #session{sid = {_, Pid}} = lists:min(OnlineSs),
-	    Pid ! replaced
+	    ejabberd_c2s:route(Pid, replaced)
     end,
     if length(OfflineSs) =< MaxSessions -> ok;
        true ->
@@ -762,7 +762,7 @@ force_update_presence({LUser, LServer}) ->
     Mod = get_sm_backend(LServer),
     Ss = online(Mod:get_sessions(LUser, LServer)),
     lists:foreach(fun (#session{sid = {_, Pid}}) ->
-			  Pid ! force_update_presence
+			  ejabberd_c2s:route(Pid, force_update_presence)
 		  end,
 		  Ss).
 
@@ -842,7 +842,7 @@ kick_user(User, Server) ->
     lists:foreach(
 	fun(Resource) ->
 		PID = get_session_pid(User, Server, Resource),
-		PID ! kick
+		ejabberd_c2s:route(PID, kick)
 	end, Resources),
     length(Resources).
 

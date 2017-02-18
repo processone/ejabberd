@@ -49,6 +49,10 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
+-type scrammed_password() :: {binary(), binary(), binary(), non_neg_integer()}.
+-type password() :: binary() | scrammed_password().
+-export_type([password/0]).
+
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
@@ -73,8 +77,8 @@
 -callback get_vh_registered_users(binary(), opts()) -> [{binary(), binary()}].
 -callback get_vh_registered_users_number(binary()) -> number().
 -callback get_vh_registered_users_number(binary(), opts()) -> number().
--callback get_password(binary(), binary()) -> false | binary() | {binary(), binary(), binary(), integer()}.
--callback get_password_s(binary(), binary()) -> binary() | {binary(), binary(), binary(), integer()}.
+-callback get_password(binary(), binary()) -> false | password().
+-callback get_password_s(binary(), binary()) -> password().
 
 start() ->
     %% This is only executed by ejabberd_c2s for non-SASL auth client
@@ -270,7 +274,7 @@ get_vh_registered_users_number(Server, Opts) ->
 			end,
 			auth_modules(Server))).
 
--spec get_password(binary(), binary()) -> false | binary() | {binary(), binary(), binary(), integer()}.
+-spec get_password(binary(), binary()) -> false | password().
 
 get_password(User, Server) ->
     lists:foldl(fun (M, false) ->
@@ -279,7 +283,7 @@ get_password(User, Server) ->
 		end,
 		false, auth_modules(Server)).
 
--spec get_password_s(binary(), binary()) -> binary() | {binary(), binary(), binary(), integer()}.
+-spec get_password_s(binary(), binary()) -> password().
 
 get_password_s(User, Server) ->
     case get_password(User, Server) of
@@ -290,7 +294,7 @@ get_password_s(User, Server) ->
 %% @doc Get the password of the user and the auth module.
 %% @spec (User::string(), Server::string()) ->
 %%     {Password::string(), AuthModule::atom()} | {false, none}
--spec get_password_with_authmodule(binary(), binary()) -> {false | binary(), atom()}.
+-spec get_password_with_authmodule(binary(), binary()) -> {false | password(), module()}.
 
 get_password_with_authmodule(User, Server) ->
 %% Returns true if the user exists in the DB or if an anonymous user is logged

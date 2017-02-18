@@ -865,8 +865,9 @@ resend_pending_subscriptions(#{jid := JID} = State, Mod) ->
 		    Status = if is_binary(Message) -> (Message);
 				true -> <<"">>
 			     end,
-	      Sub = #presence{from = R#roster.jid, to = BareJID,
-			       type = subscribe,
+	      Sub = #presence{from = jid:make(R#roster.jid),
+			      to = BareJID,
+			      type = subscribe,
 			      status = xmpp:mk_text(Status)},
 	      ejabberd_c2s:send(AccState, Sub);
 	 (_, AccState) ->

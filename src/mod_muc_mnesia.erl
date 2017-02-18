@@ -232,7 +232,7 @@ get_online_rooms(Action, Key, Host, Count, Max, Items) ->
 		{ok, Pid} ->
 		    get_online_rooms(NewAction, NewKey, Host,
 				     Count + 1, Max, [{Room, Host, Pid}|Items]);
-		{error, _} ->
+		error ->
 		    get_online_rooms(NewAction, NewKey, Host,
 				     Count, Max, Items)
 	    end;

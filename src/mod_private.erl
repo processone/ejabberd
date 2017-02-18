@@ -46,7 +46,7 @@
 -callback set_data(binary(), binary(), [{binary(), xmlel()}]) -> {atomic, any()}.
 -callback get_data(binary(), binary(), binary()) -> {ok, xmlel()} | error.
 -callback get_all_data(binary(), binary()) -> [xmlel()].
--callback remove_user(binary(), binary()) -> {atomic, any()}.
+-callback remove_user(binary(), binary()) -> any().
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,

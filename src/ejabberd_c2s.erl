@@ -48,7 +48,7 @@
 %% API
 -export([get_presence/1, get_subscription/2, get_subscribed/1,
 	 open_session/1, call/3, send/2, close/1, close/2, stop/1,
-	 reply/2, copy_state/2, set_timeout/2, add_hooks/1]).
+	 reply/2, copy_state/2, set_timeout/2, route/2, add_hooks/1]).
 
 -include("ejabberd.hrl").
 -include("xmpp.hrl").
@@ -110,12 +110,18 @@ get_subscription(LFrom, #{pres_f := PresF, pres_t := PresT}) ->
 get_subscribed(Ref) ->
     call(Ref, get_subscribed, 1000).
 
+-spec close(pid()) -> ok;
+	   (state()) -> state().
 close(Ref) ->
     xmpp_stream_in:close(Ref).
 
+-spec close(pid(), boolean()) -> ok;
+	   (state(), boolean()) -> state().
 close(Ref, SendTrailer) ->
     xmpp_stream_in:close(Ref, SendTrailer).
 
+-spec stop(pid()) -> ok;
+	  (state()) -> no_return().
 stop(Ref) ->
     xmpp_stream_in:stop(Ref).
 
@@ -129,6 +135,11 @@ send(#{lserver := LServer} = State, Pkt) ->
 	{drop, State1} -> State1;
 	{Pkt2, State1} -> xmpp_stream_in:send(State1, Pkt2)
     end.
+
+-spec route(pid(), term()) -> ok.
+route(Pid, Term) ->
+    Pid ! Term,
+    ok.
 
 -spec set_timeout(state(), timeout()) -> state().
 set_timeout(State, Timeout) ->
@@ -579,8 +590,6 @@ process_presence_in(#{lserver := LServer, pres_a := PresA} = State0,
 	    {true, State#{pres_a => A}};
 	_ ->
 	    case privacy_check_packet(State, Pres, in) of
-		allow when T == error ->
-		    {true, State};
 		allow ->
 		    NewState = add_to_pres_a(State, From),
 		    {true, NewState};

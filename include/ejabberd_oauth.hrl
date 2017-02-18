@@ -22,5 +22,5 @@
           token = <<"">>           :: binary() | '_',
           us = {<<"">>, <<"">>}    :: {binary(), binary()} | '_',
           scope = []               :: [binary()] | '_',
-          expire                   :: integer() | '$1'
+          expire                   :: integer() | '$1' | '_'
          }).

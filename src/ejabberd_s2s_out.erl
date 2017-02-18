@@ -66,12 +66,17 @@ start_link(From, To, Opts) ->
     xmpp_stream_out:start_link(?MODULE, [ejabberd_socket, From, To, Opts],
 			       ejabberd_config:fsm_limit_opts([])).
 
+-spec connect(pid()) -> ok.
 connect(Ref) ->
     xmpp_stream_out:connect(Ref).
 
+-spec close(pid()) -> ok;
+	   (state()) -> state().
 close(Ref) ->
     xmpp_stream_out:close(Ref).
 
+-spec stop(pid()) -> ok;
+	  (state()) -> no_return().
 stop(Ref) ->
     xmpp_stream_out:stop(Ref).
 
@@ -82,7 +87,8 @@ send(Stream, Pkt) ->
 
 -spec route(pid(), xmpp_element()) -> ok.
 route(Ref, Pkt) ->
-    Ref ! {route, Pkt}.
+    Ref ! {route, Pkt},
+    ok.
 
 -spec establish(state()) -> state().
 establish(State) ->

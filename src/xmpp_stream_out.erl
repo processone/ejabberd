@@ -59,7 +59,7 @@
 		       {auth, atom() | binary() | string()} |
 		       {socket, inet:posix() | closed | timeout} |
 		       internal_failure.
-
+-export_type([state/0, stop_reason/0]).
 -callback init(list()) -> {ok, state()} | {error, term()} | ignore.
 -callback handle_cast(term(), state()) -> state().
 -callback handle_call(term(), term(), state()) -> state().
@@ -794,6 +794,7 @@ format(Fmt, Args) ->
 %%%===================================================================
 %%% Connection stuff
 %%%===================================================================
+-spec idna_to_ascii(binary()) -> binary() | false.
 idna_to_ascii(<<$[, _/binary>> = Host) ->
     %% This is an IPv6 address in 'IP-literal' format (as per RFC7622)
     %% We remove brackets here
@@ -813,7 +814,7 @@ idna_to_ascii(Host) ->
 	{error, _} -> ejabberd_idna:domain_utf8_to_ascii(Host)
     end.
 
--spec resolve(string(), state()) -> {ok, [host_port()]} | network_error().
+-spec resolve(string(), state()) -> {ok, [ip_port()]} | network_error().
 resolve(Host, State) ->
     case srv_lookup(Host, State) of
 	{error, _Reason} ->

@@ -46,7 +46,7 @@
 -define(SETS, gb_sets).
 
 -record(state,
-	{socket                :: inet:socket(),
+	{socket                :: inet:socket() | undefined,
          encoding = <<"">>     :: binary(),
          port = 0              :: inet:port_number(),
          password = <<"">>     :: binary(),
@@ -59,7 +59,7 @@
 	 realname = <<"">>        :: binary(),
          nick = <<"">>         :: binary(),
          channels = dict:new() :: ?TDICT,
-         nickchannel           :: binary(),
+         nickchannel           :: binary() | undefined,
 	 webirc_password       :: binary(),
          mod = mod_irc         :: atom(),
 	 inbuf = <<"">>        :: binary(),

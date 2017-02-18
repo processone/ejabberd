@@ -36,27 +36,29 @@
 	ServerHost :: binary(),
 	Opts :: [any()]) -> atom().
 
+-include("xmpp.hrl").
+
 -callback terminate(Host :: host(), ServerHost :: binary()) -> atom().
 
 -callback options() -> nodeOptions().
 
 -callback set_node(PubsubNode :: pubsubNode()) ->
-    ok | {result, NodeIdx::nodeIdx()} | {error, fxml:xmlel()}.
+    ok | {result, NodeIdx::nodeIdx()} | {error, stanza_error()}.
 
 -callback get_node(Host   :: host(),
 	NodeId :: nodeId(),
 	From   :: jid:jid()) ->
     pubsubNode() |
-    {error, fxml:xmlel()}.
+    {error, stanza_error()}.
 
 -callback get_node(Host :: host(),
 	NodeId :: nodeId()) ->
     pubsubNode() |
-    {error, fxml:xmlel()}.
+    {error, stanza_error()}.
 
 -callback get_node(NodeIdx :: nodeIdx()) ->
     pubsubNode() |
-    {error, fxml:xmlel()}.
+    {error, stanza_error()}.
 
 -callback get_nodes(Host :: host(),
 	From :: jid:jid())->
@@ -69,7 +71,7 @@
 	NodeId :: nodeId(),
 	From :: jid:jid()) ->
     [pubsubNode()] |
-    {error, fxml:xmlel()}.
+    {error, stanza_error()}.
 
 -callback get_parentnodes_tree(Host :: host(),
 	NodeId :: nodeId(),
@@ -93,7 +95,7 @@
 	Options :: nodeOptions(),
 	Parents :: [nodeId()]) ->
     {ok, NodeIdx::nodeIdx()} |
-    {error, fxml:xmlel()} |
+    {error, stanza_error()} |
     {error, {virtual, {host(), nodeId()}}}.
 
 -callback delete_node(Host :: host(),

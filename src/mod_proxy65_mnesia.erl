@@ -35,7 +35,7 @@
 -record(bytestream,
 	{sha1 = <<"">> :: binary() | '$1',
          target :: pid() | '_',
-         initiator :: pid() | '_',
+         initiator :: pid() | '_' | undefined,
          active = false :: boolean() | '_',
          jid_i :: undefined | binary() | '_'}).
 

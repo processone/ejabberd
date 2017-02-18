@@ -61,10 +61,10 @@
 -define(NS_PIEFXIS, <<"http://www.xmpp.org/extensions/xep-0227.html#ns">>).
 -define(NS_XI, <<"http://www.w3.org/2001/XInclude">>).
 
--record(state, {xml_stream_state :: fxml_stream:xml_stream_state(),
+-record(state, {xml_stream_state :: fxml_stream:xml_stream_state() | undefined,
                 user = <<"">>    :: binary(),
                 server = <<"">>  :: binary(),
-                fd               :: file:io_device(),
+                fd = self()      :: file:io_device(),
                 dir = <<"">>     :: binary()}).
 
 -type state() :: #state{}.

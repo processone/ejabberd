@@ -180,7 +180,7 @@ remove_user(_User, _Server) ->
     {atomic, not_implemented}.
 
 import(_, _, _) ->
-    pass.
+    ok.
 
 %%%===================================================================
 %%% gen_server callbacks

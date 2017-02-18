@@ -239,7 +239,5 @@ el_to_offline_msg(El) ->
 	    {ok, #offline_msg{us = {To#jid.luser, To#jid.lserver},
 			      from = From,
 			      to = To,
-			      timestamp = undefined,
-			      expire = undefined,
 			      packet = El}}
     end.

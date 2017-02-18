@@ -918,7 +918,7 @@ v_dbs_mods(Mod) ->
 default_db(Module) ->
     default_db(global, Module).
 
--spec default_db(binary(), module()) -> atom().
+-spec default_db(binary() | global, module()) -> atom().
 default_db(Host, Module) ->
     default_db(default_db, Host, Module).
 
@@ -926,14 +926,13 @@ default_db(Host, Module) ->
 default_ram_db(Module) ->
     default_ram_db(global, Module).
 
--spec default_ram_db(binary(), module()) -> atom().
+-spec default_ram_db(binary() | global, module()) -> atom().
 default_ram_db(Host, Module) ->
     default_db(default_ram_db, Host, Module).
 
--spec default_db(default_db | default_ram_db, binary(), module()) -> atom().
+-spec default_db(default_db | default_ram_db, binary() | global, module()) -> atom().
 default_db(Opt, Host, Module) ->
-    case ejabberd_config:get_option(
-	   {Opt, Host}, fun(T) when is_atom(T) -> T end) of
+    case get_option({Opt, Host}, fun(T) when is_atom(T) -> T end) of
 	undefined ->
 	    mnesia;
 	DBType ->
@@ -1438,9 +1437,7 @@ opt_type(_) ->
     [hide_sensitive_log_data, hosts, language,
      default_db, default_ram_db].
 
--spec may_hide_data(string()) -> string();
-                   (binary()) -> binary().
-
+-spec may_hide_data(any()) -> any().
 may_hide_data(Data) ->
     case ejabberd_config:get_option(
 	hide_sensitive_log_data,

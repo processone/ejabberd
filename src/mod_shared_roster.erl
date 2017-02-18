@@ -70,7 +70,7 @@
 -callback get_user_displayed_groups(binary(), binary(), group_options()) ->
     [{binary(), group_options()}].
 -callback is_user_in_group({binary(), binary()}, binary(), binary()) -> boolean().
--callback add_user_to_group(binary(), {binary(), binary()}, binary()) -> {atomic, any()}.
+-callback add_user_to_group(binary(), {binary(), binary()}, binary()) -> any().
 -callback remove_user_from_group(binary(), {binary(), binary()}, binary()) -> {atomic, any()}.
 
 start(Host, Opts) ->
@@ -235,7 +235,7 @@ process_item(RosterItem, Host) ->
 					    jid:make(UserFrom, ServerFrom,
 							  <<"">>),
 					    unsubscribe),
-		mod_roster:in_subscription(aaaa, UserFrom, ServerFrom,
+		mod_roster:in_subscription(false, UserFrom, ServerFrom,
 					   jid:make(UserTo, ServerTo,
 							 <<"">>),
 					   unsubscribe, <<"">>),
@@ -268,19 +268,19 @@ set_new_rosteritems(UserFrom, ServerFrom, UserTo,
     set_item(UserTo, ServerTo, <<"">>, RITo),
     mod_roster:out_subscription(UserFrom, ServerFrom, JIDTo,
 				subscribe),
-    mod_roster:in_subscription(aaa, UserTo, ServerTo,
+    mod_roster:in_subscription(false, UserTo, ServerTo,
 			       JIDFrom, subscribe, <<"">>),
     mod_roster:out_subscription(UserTo, ServerTo, JIDFrom,
 				subscribed),
-    mod_roster:in_subscription(aaa, UserFrom, ServerFrom,
+    mod_roster:in_subscription(false, UserFrom, ServerFrom,
 			       JIDTo, subscribed, <<"">>),
     mod_roster:out_subscription(UserTo, ServerTo, JIDFrom,
 				subscribe),
-    mod_roster:in_subscription(aaa, UserFrom, ServerFrom,
+    mod_roster:in_subscription(false, UserFrom, ServerFrom,
 			       JIDTo, subscribe, <<"">>),
     mod_roster:out_subscription(UserFrom, ServerFrom, JIDTo,
 				subscribed),
-    mod_roster:in_subscription(aaa, UserTo, ServerTo,
+    mod_roster:in_subscription(false, UserTo, ServerTo,
 			       JIDFrom, subscribed, <<"">>),
     RIFrom.
 
@@ -355,7 +355,7 @@ out_subscription(UserFrom, ServerFrom, JIDTo,
     JIDFrom = jid:make(UserFrom, ServerFrom, <<"">>),
     mod_roster:out_subscription(UserTo, ServerTo, JIDFrom,
 				unsubscribe),
-    mod_roster:in_subscription(aaaa, UserFrom, ServerFrom,
+    mod_roster:in_subscription(false, UserFrom, ServerFrom,
 			       JIDTo, unsubscribe, <<"">>),
     process_subscription(out, UserFrom, ServerFrom, JIDTo,
 			 unsubscribed, false);

@@ -146,7 +146,7 @@ open_session(State, IQ, R) ->
 	    ejabberd_c2s:send(State1, Res)
     end.
 
--spec process_auth_failure(c2s_state(), binary(), stanza_error(), atom()) -> c2s_state().
+-spec process_auth_failure(c2s_state(), binary(), iq(), atom()) -> c2s_state().
 process_auth_failure(State, User, StanzaErr, Reason) ->
     State1 = ejabberd_c2s:send(State, StanzaErr),
     ejabberd_c2s:handle_auth_failure(User, <<"legacy">>, Reason, State1).
