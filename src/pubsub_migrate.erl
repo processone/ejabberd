@@ -392,7 +392,7 @@ convert_list_nodes() ->
 			 options = Opts} = R) ->
 	    R#pubsub_node{nodeid = {binhost(H), bin(N)},
 			  id = I,
-			  parents = [bin(P) || P<-Ps],
+			  parents = [bin(P) || P<-Ps],
 			  type = bin(T),
 			  owners = [binusr(O) || O<-Os],
 			  options = Opts}
