@@ -577,20 +577,9 @@ process_unauthenticated_packet(Pkt, #{mod := Mod} = State) ->
     end.
 
 -spec process_authenticated_packet(xmpp_element(), state()) -> state().
-process_authenticated_packet(Pkt, #{xmlns := NS, mod := Mod} = State) ->
+process_authenticated_packet(Pkt, #{mod := Mod} = State) ->
     Pkt1 = set_lang(Pkt, State),
     case set_from_to(Pkt1, State) of
-	{ok, #iq{type = set, sub_els = [_]} = Pkt2} when NS == ?NS_CLIENT ->
-	    case xmpp:get_subtag(Pkt2, #xmpp_session{}) of
-		#xmpp_session{} ->
-		    send_pkt(State, xmpp:make_iq_result(Pkt2));
-		_ ->
-		    try Mod:handle_authenticated_packet(Pkt2, State)
-		    catch _:undef ->
-			    Err = xmpp:err_service_unavailable(),
-			    send_error(State, Pkt, Err)
-		    end
-	    end;
 	{ok, Pkt2} ->
 	    try Mod:handle_authenticated_packet(Pkt2, State)
 	    catch _:undef ->
