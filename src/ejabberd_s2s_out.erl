@@ -404,7 +404,7 @@ transform_options({s2s_dns_options, S2SDNSOpts}, AllOpts) ->
 transform_options({Opt, T}, Opts)
   when Opt == outgoing_s2s_timeout; Opt == s2s_dns_timeout ->
     maybe_report_huge_timeout(Opt, T),
-    [{outgoing_s2s_timeout, T}|Opts];
+    [{Opt, T}|Opts];
 transform_options(Opt, Opts) ->
     [Opt|Opts].
 

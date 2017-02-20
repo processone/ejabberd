@@ -886,9 +886,20 @@ a_lookup([], _State, Err) ->
 a_lookup(_Host, _Port, _Family, _Timeout, Retries) when Retries < 1 ->
     {error, timeout};
 a_lookup(Host, Port, Family, Timeout, Retries) ->
+    Start = p1_time_compat:monotonic_time(milli_seconds),
     case inet:gethostbyname(Host, Family, Timeout) of
-	{error, timeout} ->
-	    a_lookup(Host, Port, Family, Timeout, Retries - 1);
+	{error, nxdomain} = Err ->
+	    %% inet:gethostbyname/3 doesn't return {error, timeout},
+	    %% so we should check if 'nxdomain' is in fact a result
+	    %% of a timeout.
+	    %% We also cannot use inet_res:gethostbyname/3 because
+	    %% it ignores DNS configuration settings (/etc/hosts, etc)
+	    End = p1_time_compat:monotonic_time(milli_seconds),
+	    if (End - Start) >= Timeout ->
+		    a_lookup(Host, Port, Family, Timeout, Retries - 1);
+	       true ->
+		    Err
+	    end;
 	{error, _} = Err ->
 	    Err;
 	{ok, HostEntry} ->
