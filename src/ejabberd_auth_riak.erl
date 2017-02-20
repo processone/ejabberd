@@ -148,7 +148,7 @@ try_register(User, Server, PasswordList) ->
     US = {LUser, LServer},
     if (LUser == error) or (LServer == error) ->
 	   {error, invalid_jid};
-       LPassword == error ->
+       LPassword == error and not is_record(Password, scram) ->
 	   {error, invalid_password};
        true ->
             case ejabberd_riak:get(passwd, passwd_schema(), US) of

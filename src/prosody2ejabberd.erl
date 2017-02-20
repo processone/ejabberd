@@ -109,8 +109,25 @@ eval_file(Path) ->
 	    Err
     end.
 
+maybe_get_scram_auth(Data) ->
+    case proplists:get_value(<<"iteration_count">>, Data, no_ic) of
+	IC when is_float(IC) -> %% A float like 4096.0 is read
+	    #scram{
+		storedkey = proplists:get_value(<<"stored_key">>, Data, <<"">>),
+		serverkey = proplists:get_value(<<"server_key">>, Data, <<"">>),
+		salt = proplists:get_value(<<"salt">>, Data, <<"">>),
+		iterationcount = round(IC)
+	    };
+	_ -> <<"">>
+    end.
+
 convert_data(Host, "accounts", User, [Data]) ->
-    Password = proplists:get_value(<<"password">>, Data, <<>>),
+    Password = case proplists:get_value(<<"password">>, Data, no_pass) of
+	no_pass ->
+	    maybe_get_scram_auth(Data);
+	Pass when is_binary(Pass) ->
+	    Pass
+    end,
     case ejabberd_auth:try_register(User, Host, Password) of
 	{atomic, ok} ->
 	    ok;

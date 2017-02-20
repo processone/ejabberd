@@ -201,12 +201,15 @@ try_register(User, Server, Password) ->
             {error, invalid_jid};
        (LUser == <<>>) or (LServer == <<>>) ->
             {error, invalid_jid};
-       LPassword == error ->
+       LPassword == error and not is_record(Password, scram) ->
 	   {error, invalid_password};
        true ->
             case is_scrammed() of
                 true ->
-                    Scram = password_to_scram(Password),
+                    Scram = case is_record(Password, scram) of
+                        true -> Password;
+                        false -> password_to_scram(Password)
+                    end,
                     case catch sql_queries:add_user_scram(
                                  LServer,
                                  LUser,
