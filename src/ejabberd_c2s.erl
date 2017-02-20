@@ -449,11 +449,11 @@ handle_authenticated_packet(Pkt, #{lserver := LServer, jid := JID,
 	drop ->
 	    State2;
 	#iq{type = set, sub_els = [_]} ->
-	    case xmpp:get_subtag(Pkt1, #xmpp_session{}) of
+	    case xmpp:get_subtag(Pkt2, #xmpp_session{}) of
 		#xmpp_session{} ->
-		    send(State2, xmpp:make_iq_result(Pkt1));
+		    send(State2, xmpp:make_iq_result(Pkt2));
 		_ ->
-		    check_privacy_then_route(State2, Pkt1)
+		    check_privacy_then_route(State2, Pkt2)
 	    end;
 	#presence{to = #jid{luser = LUser, lserver = LServer,
 			    lresource = <<"">>}} ->
