@@ -182,21 +182,27 @@ c2s_handle_send(#{mgmt_state := MgmtState, mod := Mod,
   when MgmtState == pending; MgmtState == active ->
     case xmpp:is_stanza(Pkt) of
 	true ->
-	    case mgmt_queue_add(State, Pkt) of
-		#{mgmt_max_queue := exceeded} = State1 ->
-		    State2 = State1#{mgmt_resend => false},
-		    case MgmtState of
-			active ->
-			    Err = xmpp:serr_policy_violation(
-				    <<"Too many unacked stanzas">>, Lang),
-			    send(State2, Err);
-			_ ->
-			    Mod:stop(State2)
+	    Meta = xmpp:get_meta(Pkt),
+	    case maps:get(mgmt_is_resent, Meta, false) of
+		false ->
+		    case mgmt_queue_add(State, Pkt) of
+			#{mgmt_max_queue := exceeded} = State1 ->
+			    State2 = State1#{mgmt_resend => false},
+			    case MgmtState of
+				active ->
+				    Err = xmpp:serr_policy_violation(
+					    <<"Too many unacked stanzas">>, Lang),
+				    send(State2, Err);
+				_ ->
+				    Mod:stop(State2)
+			    end;
+			State1 when SendResult == ok ->
+			    send_rack(State1);
+			State1 ->
+			    State1
 		    end;
-		State1 when SendResult == ok ->
-		    send_rack(State1);
-		State1 ->
-		    State1
+		true ->
+		    State
 	    end;
 	false ->
 	    State
@@ -482,7 +488,7 @@ resend_unacked_stanzas(#{mgmt_state := MgmtState,
     queue_foldl(
       fun({_, Time, Pkt}, AccState) ->
 	      NewPkt = add_resent_delay_info(AccState, Pkt, Time),
-	      send(AccState, NewPkt)
+	      send(AccState, xmpp:put_meta(NewPkt, mgmt_is_resent, true))
       end, State, Queue);
 resend_unacked_stanzas(State) ->
     State.
