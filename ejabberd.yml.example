@@ -705,7 +705,7 @@ modules:
   # Since 17.02 S2S Dialback (XEP-0220) and Stream Management (XEP-0198)
   # are implemented in modules
   mod_s2s_dialback: {}
-  mod_sm: {}
+  mod_stream_mgmt: {}
 
 ##
 ## Enable modules with custom options in a specific virtual host

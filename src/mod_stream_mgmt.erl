@@ -20,7 +20,7 @@
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%-------------------------------------------------------------------
--module(mod_sm).
+-module(mod_stream_mgmt).
 -behaviour(gen_mod).
 -author('holger@zedat.fu-berlin.de').
 -protocol({xep, 198, '1.5.2'}).

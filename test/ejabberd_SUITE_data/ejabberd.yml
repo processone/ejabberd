@@ -464,7 +464,7 @@ Welcome to this XMPP server."
   mod_stats: []
   mod_s2s_dialback: []
   mod_legacy_auth: []
-  mod_sm: []
+  mod_stream_mgmt: []
   mod_time: []
   mod_version: []
 registration_timeout: infinity
