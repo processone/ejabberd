@@ -372,6 +372,7 @@ no_db_tests() ->
        s2s_required,
        s2s_required_trusted]},
      sm_tests:single_cases(),
+     sm_tests:master_slave_cases(),
      muc_tests:single_cases(),
      muc_tests:master_slave_cases(),
      proxy65_tests:single_cases(),

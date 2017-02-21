@@ -26,7 +26,8 @@
 %% API
 -compile(export_all).
 -import(suite, [send/2, recv/1, close_socket/1, set_opt/3, my_jid/1,
-		recv_message/1, disconnect/1]).
+		recv_message/1, disconnect/1, send_recv/2,
+		put_event/2, get_event/1]).
 
 -include("suite.hrl").
 
@@ -109,7 +110,51 @@ resume_failed(Config) ->
 %%% Master-slave tests
 %%%===================================================================
 master_slave_cases() ->
-    {sm_master_slave, [sequence], []}.
+    {sm_master_slave, [sequence],
+     [master_slave_test(queue_limit),
+      master_slave_test(queue_limit_detached)]}.
+
+queue_limit_master(Config) ->
+    ct:comment("Waiting for 'send' command from the peer"),
+    send = get_event(Config),
+    send_recv_messages(Config),
+    ct:comment("Waiting for peer to disconnect"),
+    peer_down = get_event(Config),
+    disconnect(Config).
+
+queue_limit_slave(Config) ->
+    ct:comment("Enable the session management without resumption"),
+    send(Config, #sm_enable{xmlns = ?NS_STREAM_MGMT_3}),
+    #sm_enabled{resume = false} = recv(Config),
+    put_event(Config, send),
+    ct:comment("Receiving all messages"),
+    lists:foreach(
+      fun(I) ->
+	      ID = integer_to_binary(I),
+	      Body = xmpp:mk_text(ID),
+	      #message{id = ID, body = Body} = recv_message(Config)
+      end, lists:seq(1, 11)),
+    ct:comment("Receiving request ACK"),
+    #sm_r{} = recv(Config),
+    ct:comment("Receiving policy-violation stream error"),
+    #stream_error{reason = 'policy-violation'} = recv(Config),
+    {xmlstreamend, <<"stream:stream">>} = recv(Config),
+    ct:comment("Closing socket"),
+    close_socket(Config).
+
+queue_limit_detached_master(Config) ->
+    ct:comment("Waiting for the peer to disconnect"),
+    peer_down = get_event(Config),
+    send_recv_messages(Config),
+    disconnect(Config).
+
+queue_limit_detached_slave(Config) ->
+    #presence{} = send_recv(Config, #presence{}),
+    ct:comment("Enable the session management with resumption enabled"),
+    send(Config, #sm_enable{resume = true, xmlns = ?NS_STREAM_MGMT_3}),
+    #sm_enabled{resume = true} = recv(Config),
+    ct:comment("Closing socket"),
+    close_socket(Config).
 
 %%%===================================================================
 %%% Internal functions
@@ -121,3 +166,20 @@ master_slave_test(T) ->
     {list_to_atom("sm_" ++ atom_to_list(T)), [parallel],
      [list_to_atom("sm_" ++ atom_to_list(T) ++ "_master"),
       list_to_atom("sm_" ++ atom_to_list(T) ++ "_slave")]}.
+
+send_recv_messages(Config) ->
+    PeerJID = ?config(peer, Config),
+    Msg = #message{to = PeerJID},
+    ct:comment("Sending messages to peer"),
+    lists:foreach(
+      fun(I) ->
+	      ID = integer_to_binary(I),
+	      send(Config, Msg#message{id = ID, body = xmpp:mk_text(ID)})
+      end, lists:seq(1, 11)),
+    ct:comment("Receiving bounced messages from the peer"),
+    lists:foreach(
+      fun(I) ->
+	      ID = integer_to_binary(I),
+	      Err = #message{id = ID, type = error} = recv_message(Config),
+	      #stanza_error{reason = 'service-unavailable'} = xmpp:get_error(Err)
+      end, lists:seq(1, 11)).

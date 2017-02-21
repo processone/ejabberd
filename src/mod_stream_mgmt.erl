@@ -180,22 +180,17 @@ c2s_handle_recv(State, _, _) ->
 c2s_handle_send(#{mgmt_state := MgmtState, mod := Mod,
 		  lang := Lang} = State, Pkt, SendResult)
   when MgmtState == pending; MgmtState == active ->
-    case xmpp:is_stanza(Pkt) of
-	true ->
+    case Pkt of
+	_ when ?is_stanza(Pkt) ->
 	    Meta = xmpp:get_meta(Pkt),
 	    case maps:get(mgmt_is_resent, Meta, false) of
 		false ->
 		    case mgmt_queue_add(State, Pkt) of
 			#{mgmt_max_queue := exceeded} = State1 ->
 			    State2 = State1#{mgmt_resend => false},
-			    case MgmtState of
-				active ->
-				    Err = xmpp:serr_policy_violation(
-					    <<"Too many unacked stanzas">>, Lang),
-				    send(State2, Err);
-				_ ->
-				    Mod:stop(State2)
-			    end;
+			    Err = xmpp:serr_policy_violation(
+				    <<"Too many unacked stanzas">>, Lang),
+			    send(State2, Err);
 			State1 when SendResult == ok ->
 			    send_rack(State1);
 			State1 ->
@@ -204,7 +199,14 @@ c2s_handle_send(#{mgmt_state := MgmtState, mod := Mod,
 		true ->
 		    State
 	    end;
-	false ->
+	#stream_error{} ->
+	    case MgmtState of
+		active ->
+		    State;
+		pending ->
+		    Mod:stop(State#{stop_reason => {stream, {out, Pkt}}})
+	    end;
+	_ ->
 	    State
     end;
 c2s_handle_send(State, _Pkt, _Result) ->
