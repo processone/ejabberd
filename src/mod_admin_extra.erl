@@ -30,7 +30,7 @@
 
 -include("logger.hrl").
 
--export([start/2, stop/1, mod_opt_type/1,
+-export([start/2, stop/1, reload/3, mod_opt_type/1,
 	 get_commands_spec/0, depends/2]).
 
 % Commands API
@@ -95,6 +95,9 @@ start(_Host, _Opts) ->
 
 stop(_Host) ->
     ejabberd_commands:unregister_commands(get_commands_spec()).
+
+reload(_Host, _NewOpts, _OldOpts) ->
+    ok.
 
 depends(_Host, _Opts) ->
     [].

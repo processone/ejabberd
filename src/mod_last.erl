@@ -33,7 +33,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_local_iq/1, export/1,
+-export([start/2, stop/1, reload/3, process_local_iq/1, export/1,
 	 process_sm_iq/1, on_presence_update/4, import_info/0,
 	 import/5, import_start/2, store_last_info/4, get_last_info/2,
 	 remove_user/2, transform_options/1, mod_opt_type/1,
@@ -85,6 +85,26 @@ stop(Host) ->
 				     ?NS_LAST),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
 				     ?NS_LAST).
+
+reload(Host, NewOpts, OldOpts) ->
+    NewMod = gen_mod:db_mod(Host, NewOpts, ?MODULE),
+    OldMod = gen_mod:db_mod(Host, OldOpts, ?MODULE),
+    if NewMod /= OldMod ->
+	    NewMod:init(Host, NewOpts);
+       true ->
+	    ok
+    end,
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts,
+			      fun gen_iq_handler:check_type/1,
+			      one_queue) of
+	{false, IQDisc, _} ->
+	    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_LAST,
+					  ?MODULE, process_local_iq, IQDisc),
+	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_LAST,
+					  ?MODULE, process_sm_iq, IQDisc);
+	true ->
+	    ok
+    end.
 
 %%%
 %%% Uptime of ejabberd node

@@ -32,7 +32,7 @@
 -behaviour(gen_server).
 -behaviour(gen_mod).
 
--export([start/2, stop/1, export/1, import_info/0,
+-export([start/2, stop/1, reload/3, export/1, import_info/0,
 	 import_start/2, import/5, announce/1, send_motd/1, disco_identity/5,
 	 disco_features/5, disco_items/5, depends/2,
 	 send_announcement_to_all/3, announce_commands/4,
@@ -79,6 +79,16 @@ start(Host, Opts) ->
 
 stop(Host) ->
     gen_mod:stop_child(?MODULE, Host).
+
+reload(Host, NewOpts, OldOpts) ->
+    NewMod = gen_mod:db_mod(Host, NewOpts, ?MODULE),
+    OldMod = gen_mod:db_mod(Host, OldOpts, ?MODULE),
+    if NewMod /= OldMod ->
+	    NewMod:init(Host, NewOpts);
+       true ->
+	    ok
+    end,
+    ok.
 
 depends(_Host, _Opts) ->
     [{mod_adhoc, hard}].

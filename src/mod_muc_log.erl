@@ -36,7 +36,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start/2, stop/1, transform_module_options/1,
+-export([start/2, stop/1, reload/3, transform_module_options/1,
 	 check_access_log/2, add_to_log/5]).
 
 -export([init/1, handle_call/3, handle_cast/2,
@@ -78,6 +78,10 @@ start(Host, Opts) ->
 stop(Host) ->
     gen_mod:stop_child(?MODULE, Host).
 
+reload(Host, NewOpts, _OldOpts) ->
+    Proc = get_proc_name(Host),
+    gen_server:cast(Proc, {reload, NewOpts}).
+
 add_to_log(Host, Type, Data, Room, Opts) ->
     gen_server:cast(get_proc_name(Host),
 		    {add_to_log, Type, Data, Room, Opts}).
@@ -106,6 +110,36 @@ depends(_Host, _Opts) ->
 %%====================================================================
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
+    {ok, init_state(Host, Opts)}.
+
+handle_call({check_access_log, ServerHost, FromJID}, _From, State) ->
+    Reply = acl:match_rule(ServerHost, State#logstate.access, FromJID),
+    {reply, Reply, State};
+handle_call(stop, _From, State) ->
+    {stop, normal, ok, State}.
+
+handle_cast({reload, Opts}, #logstate{host = Host}) ->
+    {noreply, init_state(Host, Opts)};
+handle_cast({add_to_log, Type, Data, Room, Opts}, State) ->
+    case catch add_to_log2(Type, Data, Room, Opts, State) of
+      {'EXIT', Reason} -> ?ERROR_MSG("~p", [Reason]);
+      _ -> ok
+    end,
+    {noreply, State};
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
+    {noreply, State}.
+
+handle_info(_Info, State) -> {noreply, State}.
+
+terminate(_Reason, _State) -> ok.
+
+code_change(_OldVsn, State, _Extra) -> {ok, State}.
+
+%%--------------------------------------------------------------------
+%%% Internal functions
+%%--------------------------------------------------------------------
+init_state(Host, Opts) ->
     OutDir = gen_mod:get_opt(outdir, Opts,
                              fun iolist_to_binary/1,
                              <<"www/muc">>),
@@ -152,37 +186,13 @@ init([Host, Opts]) ->
              {language, Host},
              fun iolist_to_binary/1,
              ?MYLANG),
-    {ok,
-     #logstate{host = Host, out_dir = OutDir,
-	       dir_type = DirType, dir_name = DirName,
-	       file_format = FileFormat, css_file = CSSFile,
-	       file_permissions = FilePermissions,
-	       access = AccessLog, lang = Lang, timezone = Timezone,
-	       spam_prevention = NoFollow, top_link = Top_link}}.
+    #logstate{host = Host, out_dir = OutDir,
+	      dir_type = DirType, dir_name = DirName,
+	      file_format = FileFormat, css_file = CSSFile,
+	      file_permissions = FilePermissions,
+	      access = AccessLog, lang = Lang, timezone = Timezone,
+	      spam_prevention = NoFollow, top_link = Top_link}.
 
-handle_call({check_access_log, ServerHost, FromJID}, _From, State) ->
-    Reply = acl:match_rule(ServerHost, State#logstate.access, FromJID),
-    {reply, Reply, State};
-handle_call(stop, _From, State) ->
-    {stop, normal, ok, State}.
-
-handle_cast({add_to_log, Type, Data, Room, Opts}, State) ->
-    case catch add_to_log2(Type, Data, Room, Opts, State) of
-      {'EXIT', Reason} -> ?ERROR_MSG("~p", [Reason]);
-      _ -> ok
-    end,
-    {noreply, State};
-handle_cast(_Msg, State) -> {noreply, State}.
-
-handle_info(_Info, State) -> {noreply, State}.
-
-terminate(_Reason, _State) -> ok.
-
-code_change(_OldVsn, State, _Extra) -> {ok, State}.
-
-%%--------------------------------------------------------------------
-%%% Internal functions
-%%--------------------------------------------------------------------
 add_to_log2(text, {Nick, Packet}, Room, Opts, State) ->
     case has_no_permanent_store_hint(Packet) of
 	false ->

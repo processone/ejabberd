@@ -27,7 +27,7 @@
 
 -behavior(gen_mod).
 
--export([start/2, stop/1, check_packet/4,
+-export([start/2, stop/1, reload/3, check_packet/4,
 	 mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
@@ -46,6 +46,9 @@ start(Host, _Opts) ->
 stop(Host) ->
     ejabberd_hooks:delete(privacy_check_packet, Host,
 			  ?MODULE, check_packet, 25),
+    ok.
+
+reload(_Host, _NewOpts, _OldOpts) ->
     ok.
 
 depends(_Host, _Opts) ->

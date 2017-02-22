@@ -31,7 +31,7 @@
 -behavior(gen_mod).
 
 %% gen_mod callbacks.
--export([start/2, stop/1, mod_opt_type/1, depends/2]).
+-export([start/2, stop/1, reload/3, mod_opt_type/1, depends/2]).
 
 %% ejabberd_hooks callbacks.
 -export([filter_presence/1, filter_chat_states/1,
@@ -72,16 +72,7 @@ start(Host, Opts) ->
 			fun(B) when is_boolean(B) -> B end,
 			true),
     if QueuePresence; QueueChatStates; QueuePEP ->
-	   ejabberd_hooks:add(c2s_stream_started, Host, ?MODULE,
-			      c2s_stream_started, 50),
-	   ejabberd_hooks:add(c2s_post_auth_features, Host, ?MODULE,
-			      add_stream_feature, 50),
-	   ejabberd_hooks:add(c2s_authenticated_packet, Host, ?MODULE,
-			      c2s_authenticated_packet, 50),
-	   ejabberd_hooks:add(c2s_copy_session, Host, ?MODULE,
-			      c2s_copy_session, 50),
-	   ejabberd_hooks:add(c2s_session_resumed, Host, ?MODULE,
-			      c2s_session_resumed, 50),
+	   register_hooks(Host),
 	   if QueuePresence ->
 		  ejabberd_hooks:add(c2s_filter_send, Host, ?MODULE,
 				     filter_presence, 50);
@@ -96,9 +87,7 @@ start(Host, Opts) ->
 		  ejabberd_hooks:add(c2s_filter_send, Host, ?MODULE,
 				     filter_pep, 50);
 	      true -> ok
-	   end,
-	   ejabberd_hooks:add(c2s_filter_send, Host, ?MODULE,
-			      filter_other, 75);
+	   end;
        true -> ok
     end.
 
@@ -118,16 +107,7 @@ stop(Host) ->
 			       fun(B) when is_boolean(B) -> B end,
 			       true),
     if QueuePresence; QueueChatStates; QueuePEP ->
-	   ejabberd_hooks:delete(c2s_stream_started, Host, ?MODULE,
-				 c2s_stream_started, 50),
-	   ejabberd_hooks:delete(c2s_post_auth_features, Host, ?MODULE,
-				 add_stream_feature, 50),
-	   ejabberd_hooks:delete(c2s_authenticated_packet, Host, ?MODULE,
-				 c2s_authenticated_packet, 50),
-	   ejabberd_hooks:delete(c2s_copy_session, Host, ?MODULE,
-				 c2s_copy_session, 50),
-	   ejabberd_hooks:delete(c2s_session_resumed, Host, ?MODULE,
-				 c2s_session_resumed, 50),
+	   unregister_hooks(Host),
 	   if QueuePresence ->
 		  ejabberd_hooks:delete(c2s_filter_send, Host, ?MODULE,
 					filter_presence, 50);
@@ -142,10 +122,46 @@ stop(Host) ->
 		  ejabberd_hooks:delete(c2s_filter_send, Host, ?MODULE,
 					filter_pep, 50);
 	      true -> ok
-	   end,
-	   ejabberd_hooks:delete(c2s_filter_send, Host, ?MODULE,
-				 filter_other, 75);
+	   end;
        true -> ok
+    end.
+
+-spec reload(binary(), gen_mod:opts(), gen_mod:opts()) -> ok.
+reload(Host, NewOpts, _OldOpts) ->
+    QueuePresence = gen_mod:get_opt(queue_presence, NewOpts,
+				    fun(B) when is_boolean(B) -> B end,
+				    true),
+    QueueChatStates = gen_mod:get_opt(queue_chat_states, NewOpts,
+				      fun(B) when is_boolean(B) -> B end,
+				      true),
+    QueuePEP = gen_mod:get_opt(queue_pep, NewOpts,
+			       fun(B) when is_boolean(B) -> B end,
+			       true),
+    if QueuePresence; QueueChatStates; QueuePEP ->
+	    register_hooks(Host);
+       true ->
+	    unregister_hooks(Host)
+    end,
+    if QueuePresence ->
+	    ejabberd_hooks:add(c2s_filter_send, Host, ?MODULE,
+			       filter_presence, 50);
+       true ->
+	    ejabberd_hooks:delete(c2s_filter_send, Host, ?MODULE,
+				  filter_presence, 50)
+    end,
+    if QueueChatStates ->
+	    ejabberd_hooks:add(c2s_filter_send, Host, ?MODULE,
+			       filter_chat_states, 50);
+       true ->
+	    ejabberd_hooks:delete(c2s_filter_send, Host, ?MODULE,
+				  filter_chat_states, 50)
+    end,
+    if QueuePEP ->
+	    ejabberd_hooks:add(c2s_filter_send, Host, ?MODULE,
+			       filter_pep, 50);
+       true ->
+	    ejabberd_hooks:delete(c2s_filter_send, Host, ?MODULE,
+				  filter_pep, 50)
     end.
 
 -spec mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
@@ -162,6 +178,36 @@ mod_opt_type(_) -> [queue_presence, queue_chat_states, queue_pep].
 
 depends(_Host, _Opts) ->
     [].
+
+-spec register_hooks(binary()) -> ok.
+register_hooks(Host) ->
+    ejabberd_hooks:add(c2s_stream_started, Host, ?MODULE,
+		       c2s_stream_started, 50),
+    ejabberd_hooks:add(c2s_post_auth_features, Host, ?MODULE,
+		       add_stream_feature, 50),
+    ejabberd_hooks:add(c2s_authenticated_packet, Host, ?MODULE,
+		       c2s_authenticated_packet, 50),
+    ejabberd_hooks:add(c2s_copy_session, Host, ?MODULE,
+		       c2s_copy_session, 50),
+    ejabberd_hooks:add(c2s_session_resumed, Host, ?MODULE,
+		       c2s_session_resumed, 50),
+    ejabberd_hooks:add(c2s_filter_send, Host, ?MODULE,
+		       filter_other, 75).
+
+-spec unregister_hooks(binary()) -> ok.
+unregister_hooks(Host) ->
+    ejabberd_hooks:delete(c2s_stream_started, Host, ?MODULE,
+			  c2s_stream_started, 50),
+    ejabberd_hooks:delete(c2s_post_auth_features, Host, ?MODULE,
+			  add_stream_feature, 50),
+    ejabberd_hooks:delete(c2s_authenticated_packet, Host, ?MODULE,
+			  c2s_authenticated_packet, 50),
+    ejabberd_hooks:delete(c2s_copy_session, Host, ?MODULE,
+			  c2s_copy_session, 50),
+    ejabberd_hooks:delete(c2s_session_resumed, Host, ?MODULE,
+			  c2s_session_resumed, 50),
+    ejabberd_hooks:delete(c2s_filter_send, Host, ?MODULE,
+			  filter_other, 75).
 
 %%--------------------------------------------------------------------
 %% ejabberd_hooks callbacks.

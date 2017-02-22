@@ -36,6 +36,7 @@
 %% API
 -export([start/2,
 	 stop/1,
+	 reload/3,
 	 room_destroyed/4,
 	 store_room/4,
 	 restore_room/3,
@@ -113,6 +114,10 @@ stop(Host) ->
     Rooms = shutdown_rooms(Host),
     gen_mod:stop_child(?MODULE, Host),
     {wait, Rooms}.
+
+reload(Host, NewOpts, OldOpts) ->
+    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    gen_server:cast(Proc, {reload, Host, NewOpts, OldOpts}).
 
 depends(_Host, _Opts) ->
     [{mod_mam, soft}].
@@ -220,12 +225,115 @@ init([Host, Opts]) ->
     process_flag(trap_exit, true),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
                              one_queue),
-    MyHost = gen_mod:get_opt_host(Host, Opts,
-				  <<"conference.@HOST@">>),
+    #state{access = Access, host = MyHost,
+	   history_size = HistorySize,
+	   room_shaper = RoomShaper} = State = init_state(Host, Opts),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     RMod = gen_mod:ram_db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, [{host, MyHost}|Opts]),
     RMod:init(Host, [{host, MyHost}|Opts]),
+    register_iq_handlers(MyHost, IQDisc),
+    ejabberd_router:register_route(MyHost, Host),
+    load_permanent_rooms(MyHost, Host, Access, HistorySize, RoomShaper),
+    {ok, State}.
+
+handle_call(stop, _From, State) ->
+    {stop, normal, ok, State};
+handle_call({create, Room, From, Nick, Opts}, _From,
+	    #state{host = Host, server_host = ServerHost,
+		   access = Access, default_room_opts = DefOpts,
+		   history_size = HistorySize,
+		   room_shaper = RoomShaper} = State) ->
+    ?DEBUG("MUC: create new room '~s'~n", [Room]),
+    NewOpts = case Opts of
+		default -> DefOpts;
+		_ -> Opts
+	      end,
+    {ok, Pid} = mod_muc_room:start(
+		  Host, ServerHost, Access,
+		  Room, HistorySize,
+		  RoomShaper, From,
+		  Nick, NewOpts),
+    RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
+    RMod:register_online_room(Room, Host, Pid),
+    {reply, ok, State}.
+
+handle_cast({reload, ServerHost, NewOpts, OldOpts}, #state{host = OldHost}) ->
+    NewIQDisc = gen_mod:get_opt(iqdisc, NewOpts,
+				fun gen_iq_handler:check_type/1,
+				one_queue),
+    OldIQDisc = gen_mod:get_opt(iqdisc, OldOpts,
+				fun gen_iq_handler:check_type/1,
+				one_queue),
+    NewMod = gen_mod:db_mod(ServerHost, NewOpts, ?MODULE),
+    NewRMod = gen_mod:ram_db_mod(ServerHost, NewOpts, ?MODULE),
+    OldMod = gen_mod:db_mod(ServerHost, OldOpts, ?MODULE),
+    OldRMod = gen_mod:ram_db_mod(ServerHost, OldOpts, ?MODULE),
+    #state{host = NewHost} = NewState = init_state(ServerHost, NewOpts),
+    if NewMod /= OldMod ->
+	    NewMod:init(ServerHost, [{host, NewHost}|NewOpts]);
+       true ->
+	    ok
+    end,
+    if NewRMod /= OldRMod ->
+	    NewRMod:init(ServerHost, [{host, NewHost}|NewOpts]);
+       true ->
+	    ok
+    end,
+    if (NewIQDisc /= OldIQDisc) or (NewHost /= OldHost) ->
+	    register_iq_handlers(NewHost, NewIQDisc);
+       true ->
+	    ok
+    end,
+    if NewHost /= OldHost ->
+	    ejabberd_router:register_route(NewHost, ServerHost),
+	    ejabberd_router:unregister_route(OldHost),
+	    unregister_iq_handlers(OldHost);
+       true ->
+	    ok
+    end,
+    {noreply, NewState};
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
+    {noreply, State}.
+
+handle_info({route, Packet},
+	    #state{host = Host, server_host = ServerHost,
+		   access = Access, default_room_opts = DefRoomOpts,
+		   history_size = HistorySize,
+		   max_rooms_discoitems = MaxRoomsDiscoItems,
+		   room_shaper = RoomShaper} = State) ->
+    From = xmpp:get_from(Packet),
+    To = xmpp:get_to(Packet),
+    case catch do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
+			From, To, Packet, DefRoomOpts, MaxRoomsDiscoItems) of
+	{'EXIT', Reason} ->
+	    ?ERROR_MSG("~p", [Reason]);
+	_ ->
+	    ok
+    end,
+    {noreply, State};
+handle_info({room_destroyed, {Room, Host}, Pid}, State) ->
+    ServerHost = State#state.server_host,
+    RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
+    RMod:unregister_online_room(Room, Host, Pid),
+    {noreply, State};
+handle_info(Info, State) ->
+    ?ERROR_MSG("unexpected info: ~p", [Info]),
+    {noreply, State}.
+
+terminate(_Reason, #state{host = MyHost}) ->
+    ejabberd_router:unregister_route(MyHost),
+    unregister_iq_handlers(MyHost).
+
+code_change(_OldVsn, State, _Extra) -> {ok, State}.
+
+%%--------------------------------------------------------------------
+%%% Internal functions
+%%--------------------------------------------------------------------
+init_state(Host, Opts) ->
+    MyHost = gen_mod:get_opt_host(Host, Opts,
+				  <<"conference.@HOST@">>),
     Access = gen_mod:get_opt(access, Opts,
                              fun acl:access_rules_validator/1, all),
     AccessCreate = gen_mod:get_opt(access_create, Opts,
@@ -298,93 +406,35 @@ init([Host, Opts]) ->
     RoomShaper = gen_mod:get_opt(room_shaper, Opts,
                                  fun(A) when is_atom(A) -> A end,
                                  none),
-    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_REGISTER,
+    #state{host = MyHost,
+	   server_host = Host,
+	   access = {Access, AccessCreate, AccessAdmin, AccessPersistent},
+	   default_room_opts = DefRoomOpts,
+	   history_size = HistorySize,
+	   max_rooms_discoitems = MaxRoomsDiscoItems,
+	   room_shaper = RoomShaper}.
+
+register_iq_handlers(Host, IQDisc) ->
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_REGISTER,
 				  ?MODULE, process_register, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_VCARD,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VCARD,
 				  ?MODULE, process_vcard, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_MUCSUB,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MUCSUB,
 				  ?MODULE, process_mucsub, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_MUC_UNIQUE,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MUC_UNIQUE,
 				  ?MODULE, process_muc_unique, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_INFO,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO,
 				  ?MODULE, process_disco_info, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_ITEMS,
-				  ?MODULE, process_disco_items, IQDisc),
-    ejabberd_router:register_route(MyHost, Host),
-    load_permanent_rooms(MyHost, Host,
-			 {Access, AccessCreate, AccessAdmin, AccessPersistent},
-			 HistorySize, RoomShaper),
-    {ok, #state{host = MyHost,
-		server_host = Host,
-		access = {Access, AccessCreate, AccessAdmin, AccessPersistent},
-		default_room_opts = DefRoomOpts,
-		history_size = HistorySize,
-		max_rooms_discoitems = MaxRoomsDiscoItems,
-		room_shaper = RoomShaper}}.
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS,
+				  ?MODULE, process_disco_items, IQDisc).
 
-handle_call(stop, _From, State) ->
-    {stop, normal, ok, State};
-handle_call({create, Room, From, Nick, Opts}, _From,
-	    #state{host = Host, server_host = ServerHost,
-		   access = Access, default_room_opts = DefOpts,
-		   history_size = HistorySize,
-		   room_shaper = RoomShaper} = State) ->
-    ?DEBUG("MUC: create new room '~s'~n", [Room]),
-    NewOpts = case Opts of
-		default -> DefOpts;
-		_ -> Opts
-	      end,
-    {ok, Pid} = mod_muc_room:start(
-		  Host, ServerHost, Access,
-		  Room, HistorySize,
-		  RoomShaper, From,
-		  Nick, NewOpts),
-    RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
-    RMod:register_online_room(Room, Host, Pid),
-    {reply, ok, State}.
-
-handle_cast(_Msg, State) -> {noreply, State}.
-
-handle_info({route, Packet},
-	    #state{host = Host, server_host = ServerHost,
-		   access = Access, default_room_opts = DefRoomOpts,
-		   history_size = HistorySize,
-		   max_rooms_discoitems = MaxRoomsDiscoItems,
-		   room_shaper = RoomShaper} = State) ->
-    From = xmpp:get_from(Packet),
-    To = xmpp:get_to(Packet),
-    case catch do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
-			From, To, Packet, DefRoomOpts, MaxRoomsDiscoItems) of
-	{'EXIT', Reason} ->
-	    ?ERROR_MSG("~p", [Reason]);
-	_ ->
-	    ok
-    end,
-    {noreply, State};
-handle_info({room_destroyed, {Room, Host}, Pid}, State) ->
-    ServerHost = State#state.server_host,
-    RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
-    RMod:unregister_online_room(Room, Host, Pid),
-    {noreply, State};
-handle_info(Info, State) ->
-    ?ERROR_MSG("unexpected info: ~p", [Info]),
-    {noreply, State}.
-
-terminate(_Reason, #state{host = MyHost}) ->
-    ejabberd_router:unregister_route(MyHost),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_REGISTER),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_VCARD),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_MUCSUB),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_MUC_UNIQUE),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_INFO),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_ITEMS),
-    ok.
-
-code_change(_OldVsn, State, _Extra) -> {ok, State}.
-
-%%--------------------------------------------------------------------
-%%% Internal functions
-%%--------------------------------------------------------------------
+unregister_iq_handlers(Host) ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_REGISTER),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_MUCSUB),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_MUC_UNIQUE),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS).
 
 do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
 	 From, To, Packet, DefRoomOpts, _MaxRoomsDiscoItems) ->

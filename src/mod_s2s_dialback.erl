@@ -26,7 +26,7 @@
 -protocol({xep, 185, '1.0'}).
 
 %% gen_mod API
--export([start/2, stop/1, depends/2, mod_opt_type/1]).
+-export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1]).
 %% Hooks
 -export([s2s_out_auth_result/2, s2s_out_downgraded/2,
 	 s2s_in_packet/2, s2s_out_packet/2, s2s_in_recv/3,
@@ -85,6 +85,14 @@ stop(Host) ->
 			  s2s_out_downgraded, 50),
     ejabberd_hooks:delete(s2s_out_auth_result, Host, ?MODULE,
 			  s2s_out_auth_result, 50).
+
+reload(Host, NewOpts, _OldOpts) ->
+    case ejabberd_s2s:tls_verify(Host) of
+	false ->
+	    start(Host, NewOpts);
+	true ->
+	    stop(Host)
+    end.
 
 depends(_Host, _Opts) ->
     [].

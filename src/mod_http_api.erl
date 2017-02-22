@@ -74,7 +74,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process/2, mod_opt_type/1, depends/2]).
+-export([start/2, stop/1, reload/3, process/2, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("xmpp.hrl").
@@ -124,6 +124,10 @@ start(_Host, _Opts) ->
 stop(_Host) ->
     ejabberd_access_permissions:unregister_permission_addon(?MODULE),
     ok.
+
+reload(Host, NewOpts, _OldOpts) ->
+    stop(Host),
+    start(Host, NewOpts).
 
 depends(_Host, _Opts) ->
     [].

@@ -31,7 +31,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_local_iq/1,
+-export([start/2, stop/1, reload/3, process_local_iq/1,
 	 process_sm_iq/1, get_local_commands/5,
 	 get_local_identity/5, get_local_features/5,
 	 get_sm_commands/5, get_sm_identity/5, get_sm_features/5,
@@ -87,6 +87,19 @@ stop(Host) ->
 				     ?NS_COMMANDS),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host,
 				     ?NS_COMMANDS).
+
+reload(Host, NewOpts, OldOpts) ->
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts,
+			      fun gen_iq_handler:check_type/1,
+			      one_queue) of
+	{false, IQDisc, _} ->
+	    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_COMMANDS,
+					  ?MODULE, process_local_iq, IQDisc),
+	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_COMMANDS,
+					  ?MODULE, process_sm_iq, IQDisc);
+	true ->
+	    ok
+    end.
 
 %-------------------------------------------------------------------------
 

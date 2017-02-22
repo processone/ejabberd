@@ -138,7 +138,7 @@ get_ejabberd_config_path() ->
 -spec get_env_config() -> {ok, string()} | undefined.
 get_env_config() ->
     %% First case: the filename can be specified with: erl -config "/path/to/ejabberd.yml".
-    case application:get_env(config) of
+    case application:get_env(ejabberd, config) of
 	R = {ok, _Path} -> R;
 	undefined ->
             %% Second case for embbeding ejabberd in another app, for example for Elixir:
@@ -194,7 +194,8 @@ load_file(File) ->
 
 reload_file() ->
     Config = get_ejabberd_config_path(),
-    load_file(Config).
+    load_file(Config),
+    ejabberd_hooks:run(config_reloaded, []).
 
 -spec convert_to_yaml(file:filename()) -> ok | {error, any()}.
 

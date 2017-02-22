@@ -26,7 +26,7 @@
 -protocol({xep, 198, '1.5.2'}).
 
 %% gen_mod API
--export([start/2, stop/1, depends/2, mod_opt_type/1]).
+-export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1]).
 %% hooks
 -export([c2s_stream_init/2, c2s_stream_started/2, c2s_stream_features/2,
 	 c2s_authenticated_packet/2, c2s_unauthenticated_packet/2,
@@ -86,6 +86,10 @@ stop(Host) ->
     ejabberd_hooks:delete(c2s_handle_call, Host, ?MODULE, c2s_handle_call, 50),
     ejabberd_hooks:delete(c2s_closed, Host, ?MODULE, c2s_closed, 50),
     ejabberd_hooks:delete(c2s_terminated, Host, ?MODULE, c2s_terminated, 50).
+
+reload(_Host, _NewOpts, _OldOpts) ->
+    ?WARNING_MSG("module ~s is reloaded, but new configuration will take "
+		 "effect for newly created client connections only", []).
 
 depends(_Host, _Opts) ->
     [].

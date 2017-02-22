@@ -31,7 +31,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_local_iq/1,
+-export([start/2, stop/1, reload/3, process_local_iq/1,
 	 process_sm_iq/1, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
@@ -55,6 +55,23 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_SIC_0),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_SIC_1),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_SIC_1).
+
+reload(Host, NewOpts, OldOpts) ->
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts,
+			      fun gen_iq_handler:check_type/1,
+			      one_queue) of
+	{false, IQDisc, _} ->
+	    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_SIC_0,
+					  ?MODULE, process_local_iq, IQDisc),
+	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_SIC_0,
+					  ?MODULE, process_sm_iq, IQDisc),
+	    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_SIC_1,
+					  ?MODULE, process_local_iq, IQDisc),
+	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_SIC_1,
+					  ?MODULE, process_sm_iq, IQDisc);
+	true ->
+	    ok
+    end.
 
 depends(_Host, _Opts) ->
     [].

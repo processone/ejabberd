@@ -41,7 +41,7 @@
          get_user_caps/2, import_start/2, import_stop/2]).
 
 %% gen_mod callbacks
--export([start/2, stop/1, depends/2]).
+-export([start/2, stop/1, reload/3, depends/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_info/2, handle_call/3,
@@ -237,6 +237,31 @@ c2s_presence_in(C2SState,
 -spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
 depends(_Host, _Opts) ->
     [].
+
+reload(Host, NewOpts, OldOpts) ->
+    NewMod = gen_mod:db_mod(Host, NewOpts, ?MODULE),
+    OldMod = gen_mod:db_mod(Host, OldOpts, ?MODULE),
+    if OldMod /= NewMod ->
+	    NewMod:init(Host, NewOpts);
+       true ->
+	    ok
+    end,
+    case gen_mod:is_equal_opt(cache_size, NewOpts, OldOpts,
+			      fun(I) when is_integer(I), I>0 -> I end,
+                              1000) of
+	{false, MaxSize, _} ->
+	    cache_tab:setopts(caps_features, [{max_size, MaxSize}]);
+	true ->
+	    ok
+    end,
+    case gen_mod:is_equal_opt(cache_life_time, NewOpts, OldOpts,
+			      fun(I) when is_integer(I), I>0 -> I end,
+			      timer:hours(24) div 1000) of
+	{false, LifeTime, _} ->
+	    cache_tab:setopts(caps_features, [{life_time, LifeTime}]);
+	true ->
+	    ok
+    end.
 
 init([Host, Opts]) ->
     process_flag(trap_exit, true),

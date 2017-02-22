@@ -31,7 +31,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start/2, stop/1, mod_opt_type/1, depends/2]).
+-export([start/2, stop/1, reload/3, mod_opt_type/1, depends/2]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
@@ -56,6 +56,9 @@ start(Host, Opts) ->
 
 stop(Host) ->
     gen_mod:stop_child(?MODULE, Host).
+
+reload(_Host, _NewOpts, _OldOpts) ->
+    ok.
 
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(namespaces) -> validate_fun();

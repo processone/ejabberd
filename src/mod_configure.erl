@@ -31,7 +31,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, get_local_identity/5,
+-export([start/2, stop/1, reload/3, get_local_identity/5,
 	 get_local_features/5, get_local_items/5,
 	 adhoc_local_items/4, adhoc_local_commands/4,
 	 get_sm_identity/5, get_sm_features/5, get_sm_items/5,
@@ -89,11 +89,10 @@ stop(Host) ->
     ejabberd_hooks:delete(disco_local_features, Host,
 			  ?MODULE, get_local_features, 50),
     ejabberd_hooks:delete(disco_local_items, Host, ?MODULE,
-			  get_local_items, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host,
-				     ?NS_COMMANDS),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
-				     ?NS_COMMANDS).
+			  get_local_items, 50).
+
+reload(_Host, _NewOpts, _OldOpts) ->
+    ok.
 
 depends(_Host, _Opts) ->
     [{mod_adhoc, hard}, {mod_last, soft}].

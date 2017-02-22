@@ -34,7 +34,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start/2, stop/1]).
+-export([start/2, stop/1, reload/3]).
 
 %% gen_server callbacks
 -export([init/1, handle_info/2, handle_call/3,
@@ -122,6 +122,10 @@ start(LServerS, Opts) ->
 stop(LServerS) ->
     gen_mod:stop_child(?MODULE, LServerS).
 
+reload(LServerS, NewOpts, OldOpts) ->
+    Proc = gen_mod:get_module_proc(LServerS, ?MODULE),
+    gen_server:cast(Proc, {reload, NewOpts, OldOpts}).
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
@@ -150,7 +154,29 @@ init([LServerS, Opts]) ->
 handle_call(stop, _From, State) ->
     try_stop_loop(), {stop, normal, ok, State}.
 
-handle_cast(_Msg, State) -> {noreply, State}.
+handle_cast({reload, NewOpts, NewOpts},
+	    #state{lserver = LServerS, lservice = OldLServiceS} = State) ->
+    Access = gen_mod:get_opt(access, NewOpts,
+			     fun acl:access_rules_validator/1, all),
+    SLimits =
+	build_service_limit_record(gen_mod:get_opt(limits, NewOpts,
+						   fun (A) when is_list(A) ->
+							   A
+						   end,
+						   [])),
+    NewLServiceS = gen_mod:get_opt_host(LServerS, NewOpts,
+					<<"multicast.@HOST@">>),
+    if NewLServiceS /= OldLServiceS ->
+	    ejabberd_router:register_route(NewLServiceS, LServerS),
+	    ejabberd_router:unregister_route(OldLServiceS);
+       true ->
+	    ok
+    end,
+    {noreply, State#state{lservice = NewLServiceS,
+			  access = Access, service_limits = SLimits}};
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
+    {noreply, State}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_info(Info, State) -> {noreply, State} |

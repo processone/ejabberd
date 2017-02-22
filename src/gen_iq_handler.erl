@@ -50,7 +50,7 @@
 -type component() :: ejabberd_sm | ejabberd_local.
 -type type() :: no_queue | one_queue | pos_integer() | parallel.
 -type opts() :: no_queue | {one_queue, pid()} | {queues, [pid()]} | parallel.
--export_type([opts/0]).
+-export_type([opts/0, type/0]).
 
 %%====================================================================
 %% API

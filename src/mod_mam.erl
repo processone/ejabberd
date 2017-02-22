@@ -30,7 +30,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start/2, stop/1, depends/2]).
+-export([start/2, stop/1, reload/3, depends/2]).
 
 -export([user_send_packet/1, user_send_packet_strip_tag/1, user_receive_packet/1,
 	 process_iq_v0_2/1, process_iq_v0_3/1, disco_sm_features/5,
@@ -74,18 +74,7 @@ start(Host, Opts) ->
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
     init_cache(Opts),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-				  ?NS_MAM_TMP, ?MODULE, process_iq_v0_2, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-				  ?NS_MAM_TMP, ?MODULE, process_iq_v0_2, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-				  ?NS_MAM_0, ?MODULE, process_iq_v0_3, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-				  ?NS_MAM_0, ?MODULE, process_iq_v0_3, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-				  ?NS_MAM_1, ?MODULE, process_iq_v0_3, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-				  ?NS_MAM_1, ?MODULE, process_iq_v0_3, IQDisc),
+    register_iq_handlers(Host, IQDisc),
     ejabberd_hooks:add(user_receive_packet, Host, ?MODULE,
 		       user_receive_packet, 88),
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
@@ -130,24 +119,19 @@ init_cache(Opts) ->
 				  {life_time, LifeTime}]).
 
 stop(Host) ->
+    unregister_iq_handlers(Host),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
 			  user_send_packet, 88),
     ejabberd_hooks:delete(user_receive_packet, Host, ?MODULE,
 			  user_receive_packet, 88),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
-              user_send_packet_strip_tag, 500),
+			  user_send_packet_strip_tag, 500),
     ejabberd_hooks:delete(offline_message_hook, Host, ?MODULE,
 			  offline_message, 50),
     ejabberd_hooks:delete(muc_filter_message, Host, ?MODULE,
 			  muc_filter_message, 50),
     ejabberd_hooks:delete(muc_process_iq, Host, ?MODULE,
 			  muc_process_iq, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_MAM_TMP),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MAM_TMP),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_MAM_0),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MAM_0),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_MAM_1),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MAM_1),
     ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE,
 			  disco_sm_features, 50),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE,
@@ -169,8 +153,76 @@ stop(Host) ->
     ejabberd_commands:unregister_commands(get_commands_spec()),
     ok.
 
+reload(Host, NewOpts, OldOpts) ->
+    NewMod = gen_mod:db_mod(Host, NewOpts, ?MODULE),
+    OldMod = gen_mod:db_mod(Host, OldOpts, ?MODULE),
+    if NewMod /= OldMod ->
+	    NewMod:init(Host, NewOpts);
+       true ->
+	    ok
+    end,
+    case gen_mod:is_equal_opt(cache_size, NewOpts, OldOpts,
+			      fun(I) when is_integer(I), I>0 -> I end,
+                              1000) of
+	{false, MaxSize, _} ->
+	    cache_tab:setopts(archive_prefs, [{max_size, MaxSize}]);
+	true ->
+	    ok
+    end,
+    case gen_mod:is_equal_opt(cache_life_time, NewOpts, OldOpts,
+			      fun(I) when is_integer(I), I>0 -> I end,
+			      timer:hours(1) div 1000) of
+	{false, LifeTime, _} ->
+	    cache_tab:setopts(archive_prefs, [{life_time, LifeTime}]);
+	true ->
+	    ok
+    end,
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts,
+			      fun gen_iq_handler:check_type/1,
+			      one_queue) of
+	{false, IQDisc, _} ->
+	    register_iq_handlers(Host, IQDisc);
+	true ->
+	    ok
+    end,
+    case gen_mod:is_equal_opt(assume_mam_usage, NewOpts, OldOpts,
+			      fun(B) when is_boolean(B) -> B end, false) of
+	{false, true, _} ->
+	    ejabberd_hooks:add(message_is_archived, Host, ?MODULE,
+			       message_is_archived, 50);
+	{false, false, _} ->
+	    ejabberd_hooks:delete(message_is_archived, Host, ?MODULE,
+				  message_is_archived, 50);
+	true ->
+	    ok
+    end.
+
 depends(_Host, _Opts) ->
     [].
+
+-spec register_iq_handlers(binary(), gen_iq_handler:type()) -> ok.
+register_iq_handlers(Host, IQDisc) ->
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MAM_TMP,
+				  ?MODULE, process_iq_v0_2, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MAM_TMP,
+				  ?MODULE, process_iq_v0_2, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MAM_0,
+				  ?MODULE, process_iq_v0_3, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MAM_0, ?MODULE,
+				  process_iq_v0_3, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MAM_1,
+				  ?MODULE, process_iq_v0_3, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MAM_1,
+				  ?MODULE, process_iq_v0_3, IQDisc).
+
+-spec unregister_iq_handlers(binary()) -> ok.
+unregister_iq_handlers(Host) ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_MAM_TMP),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MAM_TMP),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_MAM_0),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MAM_0),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_MAM_1),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MAM_1).
 
 -spec remove_user(binary(), binary()) -> ok.
 remove_user(User, Server) ->

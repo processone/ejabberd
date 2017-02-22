@@ -32,7 +32,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start/2, stop/1, export/1, import/1,
+-export([start/2, stop/1, reload/3, export/1, import/1,
 	 import/3, closed_connection/3, get_connection_params/3,
 	 data_to_binary/2, process_disco_info/1, process_disco_items/1,
 	 process_register/1, process_vcard/1, process_command/1]).
@@ -78,6 +78,10 @@ stop(Host) ->
     stop_supervisor(Host),
     gen_mod:stop_child(?MODULE, Host).
 
+reload(Host, NewOpts, OldOpts) ->
+    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    gen_server:cast(Proc, {reload, Host, NewOpts, OldOpts}).
+
 depends(_Host, _Opts) ->
     [].
 
@@ -107,16 +111,7 @@ init([Host, Opts]) ->
 		   {keypos, #irc_connection.jid_server_host}]),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
                              one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_INFO,
-				  ?MODULE, process_disco_info, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_ITEMS,
-				  ?MODULE, process_disco_items, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_REGISTER,
-				  ?MODULE, process_register, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_VCARD,
-				  ?MODULE, process_vcard, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_COMMANDS,
-				  ?MODULE, process_command, IQDisc),
+    register_hooks(MyHost, IQDisc),
     ejabberd_router:register_route(MyHost, Host),
     {ok,
      #state{host = MyHost, server_host = Host,
@@ -140,7 +135,44 @@ handle_call(stop, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast(_Msg, State) -> {noreply, State}.
+handle_cast({reload, ServerHost, NewOpts, OldOpts}, State) ->
+    NewHost = gen_mod:get_opt_host(ServerHost, NewOpts, <<"irc.@HOST@">>),
+    OldHost = gen_mod:get_opt_host(ServerHost, OldOpts, <<"irc.@HOST@">>),
+    NewIQDisc = gen_mod:get_opt(iqdisc, NewOpts,
+				fun gen_iq_handler:check_type/1,
+				one_queue),
+    OldIQDisc = gen_mod:get_opt(iqdisc, OldOpts,
+				fun gen_iq_handler:check_type/1,
+				one_queue),
+    NewMod = gen_mod:db_mod(ServerHost, NewOpts, ?MODULE),
+    OldMod = gen_mod:db_mod(ServerHost, OldOpts, ?MODULE),
+    Access = gen_mod:get_opt(access, NewOpts,
+                             fun acl:access_rules_validator/1,
+                             all),
+    if NewMod /= OldMod ->
+	    NewMod:init(ServerHost, NewOpts);
+       true ->
+	    ok
+    end,
+    if (NewIQDisc /= OldIQDisc) or (NewHost /= OldHost) ->
+	    register_hooks(NewHost, NewIQDisc);
+       true ->
+	    ok
+    end,
+    if NewHost /= OldHost ->
+	    ejabberd_router:register_route(NewHost, ServerHost),
+	    ejabberd_router:unregister_route(OldHost),
+	    unregister_hooks(OldHost);
+       true ->
+	    ok
+    end,
+    Access = gen_mod:get_opt(access, NewOpts,
+                             fun acl:access_rules_validator/1,
+                             all),
+    {noreply, State#state{host = NewHost, access = Access}};
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
+    {noreply, State}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_info(Info, State) -> {noreply, State} |
@@ -168,11 +200,7 @@ handle_info(_Info, State) -> {noreply, State}.
 %%--------------------------------------------------------------------
 terminate(_Reason, #state{host = MyHost}) ->
     ejabberd_router:unregister_route(MyHost),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_INFO),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_ITEMS),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_REGISTER),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_VCARD),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_COMMANDS).
+    unregister_hooks(MyHost).
 
 %%--------------------------------------------------------------------
 %% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
@@ -183,6 +211,25 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+register_hooks(Host, IQDisc) ->
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO,
+				  ?MODULE, process_disco_info, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS,
+				  ?MODULE, process_disco_items, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_REGISTER,
+				  ?MODULE, process_register, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VCARD,
+				  ?MODULE, process_vcard, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_COMMANDS,
+				  ?MODULE, process_command, IQDisc).
+
+unregister_hooks(Host) ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_REGISTER),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_COMMANDS).
+
 start_supervisor(Host) ->
     Proc = gen_mod:get_module_proc(Host,
 				   ejabberd_mod_irc_sup),

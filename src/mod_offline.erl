@@ -38,6 +38,7 @@
 
 -export([start/2,
 	 stop/1,
+	 reload/3,
 	 store_packet/2,
 	 store_offline_msg/5,
 	 c2s_self_presence/1,
@@ -113,6 +114,10 @@ start(Host, Opts) ->
 stop(Host) ->
     gen_mod:stop_child(?MODULE, Host).
 
+reload(Host, NewOpts, OldOpts) ->
+    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    gen_server:cast(Proc, {reload, NewOpts, OldOpts}).
+
 depends(_Host, _Opts) ->
     [].
 
@@ -162,8 +167,35 @@ init([Host, Opts]) ->
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State}.
 
-
-handle_cast(_Msg, State) -> {noreply, State}.
+handle_cast({reload, NewOpts, OldOpts}, #state{host = Host} = State) ->
+    NewMod = gen_mod:db_mod(Host, NewOpts, ?MODULE),
+    OldMod = gen_mod:db_mod(Host, OldOpts, ?MODULE),
+    if NewMod /= OldMod ->
+	    NewMod:init(Host, NewOpts);
+       true ->
+	    ok
+    end,
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts,
+			      fun gen_iq_handler:check_type/1,
+			      one_queue) of
+	{false, IQDisc, _} ->
+	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_FLEX_OFFLINE,
+					  ?MODULE, handle_offline_query, IQDisc);
+	true ->
+	    ok
+    end,
+    case gen_mod:is_equal_opt(access_max_user_messages, NewOpts, OldOpts,
+			      fun acl:shaper_rules_validator/1,
+			      max_user_offline_messages) of
+	{false, AccessMaxOfflineMsgs, _} ->
+	    {noreply,
+	     State#state{access_max_offline_messages = AccessMaxOfflineMsgs}};
+	true ->
+	    {noreply, State}
+    end;
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
+    {noreply, State}.
 
 
 handle_info(#offline_msg{us = UserServer} = Msg, State) ->

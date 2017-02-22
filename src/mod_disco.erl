@@ -32,7 +32,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_local_iq_items/1,
+-export([start/2, stop/1, reload/3, process_local_iq_items/1,
 	 process_local_iq_info/1, get_local_identity/5,
 	 get_local_features/5, get_local_services/5,
 	 process_sm_iq_items/1, process_sm_iq_info/1,
@@ -118,9 +118,50 @@ stop(Host) ->
 			   {{'_', Host}}),
     ok.
 
+reload(Host, NewOpts, OldOpts) ->
+    case gen_mod:is_equal_opt(extra_domains, NewOpts, OldOpts,
+			      fun(Hs) ->
+				      [iolist_to_binary(H) || H <- Hs]
+			      end, []) of
+	{false, NewDomains, OldDomains} ->
+	    lists:foreach(
+	      fun(Domain) ->
+		      register_extra_domain(Host, Domain)
+	      end, NewDomains -- OldDomains),
+	    lists:foreach(
+	      fun(Domain) ->
+		      unregister_extra_domain(Host, Domain)
+	      end, OldDomains -- NewDomains);
+	true ->
+	    ok
+    end,
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts,
+			      fun gen_iq_handler:check_type/1,
+			      one_queue) of
+	{false, IQDisc, _} ->
+	    gen_iq_handler:add_iq_handler(ejabberd_local, Host,
+					  ?NS_DISCO_ITEMS, ?MODULE,
+					  process_local_iq_items, IQDisc),
+	    gen_iq_handler:add_iq_handler(ejabberd_local, Host,
+					  ?NS_DISCO_INFO, ?MODULE,
+					  process_local_iq_info, IQDisc),
+	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
+					  ?NS_DISCO_ITEMS, ?MODULE, process_sm_iq_items,
+					  IQDisc),
+	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
+					  ?NS_DISCO_INFO, ?MODULE, process_sm_iq_info,
+					  IQDisc);
+	true ->
+	    ok
+    end.
+
 -spec register_extra_domain(binary(), binary()) -> true.
 register_extra_domain(Host, Domain) ->
     ets:insert(disco_extra_domains, {{Domain, Host}}).
+
+-spec unregister_extra_domain(binary(), binary()) -> true.
+unregister_extra_domain(Host, Domain) ->
+    ets:delete_object(disco_extra_domains, {{Domain, Host}}).
 
 -spec process_local_iq_items(iq()) -> iq().
 process_local_iq_items(#iq{type = set, lang = Lang} = IQ) ->

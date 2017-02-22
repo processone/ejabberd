@@ -29,7 +29,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, export/1,
+-export([start/2, stop/1, reload/3, export/1,
 	 import_info/0, webadmin_menu/3, webadmin_page/3,
 	 get_user_roster/2, c2s_session_opened/1,
 	 get_jid_info/4, import/5, process_item/2, import_start/2,
@@ -127,8 +127,16 @@ stop(Host) ->
     ejabberd_hooks:delete(remove_user, Host, ?MODULE,
 			  remove_user,
 			  50).
-    %%ejabberd_hooks:delete(remove_user, Host,
-    %%    		  ?MODULE, remove_user, 50),
+
+reload(Host, NewOpts, OldOpts) ->
+    NewMod = gen_mod:db_mod(Host, NewOpts, ?MODULE),
+    OldMod = gen_mod:db_mod(Host, OldOpts, ?MODULE),
+    if NewMod /= OldMod ->
+	    NewMod:init(Host, NewOpts);
+       true ->
+	    ok
+    end,
+    ok.
 
 depends(_Host, _Opts) ->
     [].

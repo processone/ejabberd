@@ -33,7 +33,7 @@
 -export([init/1, handle_info/2, handle_call/3,
 	 handle_cast/2, terminate/2, code_change/3]).
 
--export([start_link/2, add_listener/2, process_disco_info/1,
+-export([start_link/2, reload/3, add_listener/2, process_disco_info/1,
 	 process_disco_items/1, process_vcard/1, process_bytestreams/1,
 	 transform_module_options/1, delete_listener/1]).
 
@@ -53,6 +53,10 @@ start_link(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:start_link({local, Proc}, ?MODULE,
 			  [Host, Opts], []).
+
+reload(Host, NewOpts, OldOpts) ->
+    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
+    gen_server:cast(Proc, {reload, Host, NewOpts, OldOpts}).
 
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
@@ -85,7 +89,41 @@ handle_info(_Info, State) -> {noreply, State}.
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
-handle_cast(_Request, State) -> {noreply, State}.
+handle_cast({reload, ServerHost, NewOpts, OldOpts}, State) ->
+    NewHost = gen_mod:get_opt_host(ServerHost, NewOpts, <<"proxy.@HOST@">>),
+    OldHost = gen_mod:get_opt_host(ServerHost, OldOpts, <<"proxy.@HOST@">>),
+    NewIQDisc = gen_mod:get_opt(iqdisc, NewOpts,
+				fun gen_iq_handler:check_type/1,
+				one_queue),
+    OldIQDisc = gen_mod:get_opt(iqdisc, OldOpts,
+				fun gen_iq_handler:check_type/1,
+				one_queue),
+    if (NewIQDisc /= OldIQDisc) or (NewHost /= OldHost) ->
+	    gen_iq_handler:add_iq_handler(ejabberd_local, NewHost, ?NS_DISCO_INFO,
+					  ?MODULE, process_disco_info, NewIQDisc),
+	    gen_iq_handler:add_iq_handler(ejabberd_local, NewHost, ?NS_DISCO_ITEMS,
+					  ?MODULE, process_disco_items, NewIQDisc),
+	    gen_iq_handler:add_iq_handler(ejabberd_local, NewHost, ?NS_VCARD,
+					  ?MODULE, process_vcard, NewIQDisc),
+	    gen_iq_handler:add_iq_handler(ejabberd_local, NewHost, ?NS_BYTESTREAMS,
+					  ?MODULE, process_bytestreams, NewIQDisc);
+       true ->
+	    ok
+    end,
+    if NewHost /= OldHost ->
+	    ejabberd_router:register_route(NewHost, ServerHost),
+	    ejabberd_router:unregister_route(OldHost),
+	    gen_iq_handler:remove_iq_handler(ejabberd_local, OldHost, ?NS_DISCO_INFO),
+	    gen_iq_handler:remove_iq_handler(ejabberd_local, OldHost, ?NS_DISCO_ITEMS),
+	    gen_iq_handler:remove_iq_handler(ejabberd_local, OldHost, ?NS_VCARD),
+	    gen_iq_handler:remove_iq_handler(ejabberd_local, OldHost, ?NS_BYTESTREAMS);
+       true ->
+	    ok
+    end,
+    {noreply, State#state{myhost = NewHost}};
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
+    {noreply, State}.
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 

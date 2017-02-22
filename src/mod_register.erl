@@ -33,7 +33,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, stream_feature_register/2,
+-export([start/2, stop/1, reload/3, stream_feature_register/2,
 	 c2s_unauthenticated_packet/2, try_register/5,
 	 process_iq/1, send_registration_notifications/3,
 	 transform_options/1, transform_module_options/1,
@@ -70,6 +70,19 @@ stop(Host) ->
 				     ?NS_REGISTER),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
 				     ?NS_REGISTER).
+
+reload(Host, NewOpts, OldOpts) ->
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts,
+			      fun gen_iq_handler:check_type/1,
+			      one_queue) of
+	{false, IQDisc, _} ->
+	    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_REGISTER,
+					  ?MODULE, process_iq, IQDisc),
+	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_REGISTER,
+					  ?MODULE, process_iq, IQDisc);
+	true ->
+	    ok
+    end.
 
 depends(_Host, _Opts) ->
     [].

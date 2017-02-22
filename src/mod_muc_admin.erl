@@ -28,7 +28,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, depends/2, muc_online_rooms/1,
+-export([start/2, stop/1, reload/3, depends/2, muc_online_rooms/1,
 	 muc_unregister_nick/1, create_room/3, destroy_room/2,
 	 create_room_with_opts/4,
 	 create_rooms_file/1, destroy_rooms_file/1,
@@ -66,6 +66,9 @@ stop(Host) ->
     ejabberd_hooks:delete(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:delete(webadmin_page_main, ?MODULE, web_page_main, 50),
     ejabberd_hooks:delete(webadmin_page_host, Host, ?MODULE, web_page_host, 50).
+
+reload(_Host, _NewOpts, _OldOpts) ->
+    ok.
 
 depends(_Host, _Opts) ->
     [{mod_muc, hard}].

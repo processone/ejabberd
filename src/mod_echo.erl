@@ -32,7 +32,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start/2, stop/1, do_client_version/3]).
+-export([start/2, stop/1, reload/3, do_client_version/3]).
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
@@ -53,6 +53,10 @@ start(Host, Opts) ->
 
 stop(Host) ->
     gen_mod:stop_child(?MODULE, Host).
+
+reload(Host, NewOpts, OldOpts) ->
+    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    gen_server:cast(Proc, {reload, Host, NewOpts, OldOpts}).
 
 depends(_Host, _Opts) ->
     [].
@@ -96,7 +100,21 @@ handle_call(stop, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast(_Msg, State) -> {noreply, State}.
+handle_cast({reload, Host, NewOpts, OldOpts}, State) ->
+    NewMyHost = gen_mod:get_opt_host(Host, NewOpts,
+				     <<"echo.@HOST@">>),
+    OldMyHost = gen_mod:get_opt_host(Host, OldOpts,
+				     <<"echo.@HOST@">>),
+    if NewMyHost /= OldMyHost ->
+	    ejabberd_router:register_route(NewMyHost, Host),
+	    ejabberd_router:unregister_route(OldMyHost);
+       true ->
+	    ok
+    end,
+    {noreply, State#state{host = NewMyHost}};
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
+    {noreply, State}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_info(Info, State) -> {noreply, State} |

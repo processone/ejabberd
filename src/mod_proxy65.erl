@@ -34,7 +34,7 @@
 -behaviour(supervisor).
 
 %% gen_mod callbacks.
--export([start/2, stop/1, transform_module_options/1]).
+-export([start/2, stop/1, reload/3, transform_module_options/1]).
 
 %% supervisor callbacks.
 -export([init/1]).
@@ -67,6 +67,11 @@ stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc).
+
+reload(Host, NewOpts, OldOpts) ->
+    Mod = gen_mod:ram_db_mod(global, ?MODULE),
+    Mod:init(),
+    mod_proxy65_service:reload(Host, NewOpts, OldOpts).
 
 start_link(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),

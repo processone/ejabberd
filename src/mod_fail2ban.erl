@@ -28,7 +28,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start/2, stop/1, c2s_auth_result/3,
+-export([start/2, stop/1, reload/3, c2s_auth_result/3,
 	 c2s_stream_started/2]).
 
 -export([init/1, handle_call/3, handle_cast/2,
@@ -110,6 +110,9 @@ start(Host, Opts) ->
 
 stop(Host) ->
     gen_mod:stop_child(?MODULE, Host).
+
+reload(_Host, _NewOpts, _OldOpts) ->
+    ok.
 
 depends(_Host, _Opts) ->
     [].

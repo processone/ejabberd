@@ -29,7 +29,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start/2, stop/1,
+-export([start/2, stop/1, reload/3,
          depends/2, mod_opt_type/1]).
 
 -export([filter_packet/1]).
@@ -48,6 +48,9 @@ start(Host, _Opts) ->
 stop(Host) ->
     ejabberd_hooks:delete(user_receive_packet, Host,
                           ?MODULE, filter_packet, 25),
+    ok.
+
+reload(_Host, _NewOpts, _OldOpts) ->
     ok.
 
 filter_packet({#message{} = Msg, State} = Acc) ->

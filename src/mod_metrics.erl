@@ -34,7 +34,7 @@
 -include("xmpp.hrl").
 
 -export([start/2, stop/1, send_metrics/4, opt_type/1, mod_opt_type/1,
-	 depends/2]).
+	 depends/2, reload/3]).
 
 -export([offline_message_hook/2,
          sm_register_connection_hook/3, sm_remove_connection_hook/3,
@@ -67,6 +67,9 @@ stop(Host) ->
     ejabberd_hooks:delete(s2s_receive_packet, Host, ?MODULE, s2s_receive_packet, 20),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE, remove_user, 20),
     ejabberd_hooks:delete(register_user, Host, ?MODULE, register_user, 20).
+
+reload(_Host, _NewOpts, _OldOpts) ->
+    ok.
 
 depends(_Host, _Opts) ->
     [].
