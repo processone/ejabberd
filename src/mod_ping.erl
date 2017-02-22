@@ -38,8 +38,6 @@
 
 -include("xmpp.hrl").
 
--define(SUPERVISOR, ejabberd_sup).
-
 -define(DEFAULT_SEND_PINGS, false).
 
 -define(DEFAULT_PING_INTERVAL, 60).
