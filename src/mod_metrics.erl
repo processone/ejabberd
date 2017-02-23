@@ -36,7 +36,7 @@
 -export([start/2, stop/1, send_metrics/4, opt_type/1, mod_opt_type/1,
 	 depends/2, reload/3]).
 
--export([offline_message_hook/2,
+-export([offline_message_hook/1,
          sm_register_connection_hook/3, sm_remove_connection_hook/3,
          user_send_packet/1, user_receive_packet/1,
          s2s_send_packet/1, s2s_receive_packet/1,
@@ -77,8 +77,8 @@ depends(_Host, _Opts) ->
 %%====================================================================
 %% Hooks handlers
 %%====================================================================
--spec offline_message_hook(any(), message()) -> any().
-offline_message_hook(Acc, #message{to = #jid{lserver = LServer}}) ->
+-spec offline_message_hook({any(), message()}) -> {any(), message()}.
+offline_message_hook({_Action, #message{to = #jid{lserver = LServer}}} = Acc) ->
     push(LServer, offline_message),
     Acc.
 

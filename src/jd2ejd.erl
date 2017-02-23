@@ -163,7 +163,7 @@ process_offline(Server, To, #xmlel{children = Els}) ->
 			     end,
 		      ejabberd_hooks:run_fold(
 			offline_message_hook,
-			LServer, pass, [xmpp:set_from_to(Msg, From, To)]);
+			LServer, {pass, xmpp:set_from_to(Msg, From, To)}, []);
 		  _ ->
 		      ok
 	      catch _:{xmpp_codec, Why} ->

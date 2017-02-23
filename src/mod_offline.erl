@@ -39,7 +39,7 @@
 -export([start/2,
 	 stop/1,
 	 reload/3,
-	 store_packet/2,
+	 store_packet/1,
 	 store_offline_msg/5,
 	 c2s_self_presence/1,
 	 get_sm_features/5,
@@ -478,8 +478,8 @@ need_to_store(LServer, #message{type = Type} = Packet) ->
 	    false
     end.
 
--spec store_packet(any(), message()) -> any().
-store_packet(Acc, #message{from = From, to = To} = Packet) ->
+-spec store_packet({any(), message()}) -> {any(), message()}.
+store_packet({_Action, #message{from = From, to = To} = Packet} = Acc) ->
     case need_to_store(To#jid.lserver, Packet) of
 	true ->
 	    case check_event(Packet) of
@@ -499,7 +499,7 @@ store_packet(Acc, #message{from = From, to = To} = Packet) ->
 					     from = From,
 					     to = To,
 					     packet = NewPacket},
-			    offlined
+			    {offlined, NewPacket}
 		    end;
 		_ -> Acc
 	    end;
