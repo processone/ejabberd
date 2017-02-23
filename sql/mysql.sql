@@ -220,7 +220,7 @@ CREATE TABLE roster_version (
 CREATE TABLE pubsub_node (
   host text NOT NULL,
   node text NOT NULL,
-  parent text NOT NULL DEFAULT '',
+  parent VARCHAR(191) NOT NULL DEFAULT '',
   type text NOT NULL,
   nodeid bigint auto_increment primary key
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -246,7 +246,7 @@ CREATE TABLE pubsub_state (
   nodeid bigint,
   jid text NOT NULL,
   affiliation character(1),
-  subscriptions text NOT NULL DEFAULT '',
+  subscriptions VARCHAR(191) NOT NULL DEFAULT '',
   stateid bigint auto_increment primary key
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE INDEX i_pubsub_state_jid ON pubsub_state(jid(60));
@@ -259,7 +259,7 @@ CREATE TABLE pubsub_item (
   publisher text NOT NULL,
   creation text NOT NULL,
   modification text NOT NULL,
-  payload text NOT NULL DEFAULT ''
+  payload text NOT NULL
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE INDEX i_pubsub_item_itemid ON pubsub_item(itemid(36));
 CREATE UNIQUE INDEX i_pubsub_item_tuple ON pubsub_item(nodeid, itemid(36));
