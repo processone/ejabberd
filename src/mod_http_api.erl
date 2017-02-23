@@ -461,6 +461,10 @@ format_result(Atom, {Name, atom}) ->
 format_result(Int, {Name, integer}) ->
     {jlib:atom_to_binary(Name), Int};
 
+format_result([String | _] = StringList, {Name, string}) when is_list(String) ->
+    Binarized = iolist_to_binary(string:join(StringList, "\n")),
+    {jlib:atom_to_binary(Name), Binarized};
+
 format_result(String, {Name, string}) ->
     {jlib:atom_to_binary(Name), iolist_to_binary(String)};
 
