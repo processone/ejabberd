@@ -181,6 +181,11 @@ get_commands_spec() ->
 			result_desc = "Number of users active on given server in last n days"},
      #ejabberd_commands{name = delete_old_users, tags = [accounts, purge],
 			desc = "Delete users that didn't log in last days, or that never logged",
+			longdesc = "To protect admin accounts, configure this for example:\n"
+			    "access_rules:\n"
+			    "  delete_old_users:\n"
+			    "    - deny: admin\n"
+			    "    - allow: all\n",
 			module = ?MODULE, function = delete_old_users,
 			args = [{days, integer}],
 			args_example = [30],
@@ -190,6 +195,11 @@ get_commands_spec() ->
 			result_desc = "Result tuple"},
      #ejabberd_commands{name = delete_old_users_vhost, tags = [accounts, purge],
 			desc = "Delete users that didn't log in last days in vhost, or that never logged",
+			longdesc = "To protect admin accounts, configure this for example:\n"
+			    "access_rules:\n"
+			    "  delete_old_users:\n"
+			    "    - deny: admin\n"
+			    "    - allow: all\n",
 			module = ?MODULE, function = delete_old_users_vhost,
 			args = [{host, binary}, {days, integer}],
 			args_example = [<<"myserver.com">>, 30],
@@ -810,52 +820,34 @@ delete_old_users_vhost(Host, Days) ->
     {ok, io_lib:format("Deleted ~p users: ~p", [N, UR])}.
 
 delete_old_users(Days, Users) ->
-    %% Convert older time
     SecOlder = Days*24*60*60,
-
-    %% Get current time
     TimeStamp_now = p1_time_compat:system_time(seconds),
-
-    %% For a user, remove if required and answer true
+    TimeStamp_oldest = TimeStamp_now - SecOlder,
     F = fun({LUser, LServer}) ->
-		%% Check if the user is logged
-		case ejabberd_sm:get_user_resources(LUser, LServer) of
-		    %% If it isnt
-		    [] ->
-			%% Look for his last_activity
-			case mod_last:get_last_info(LUser, LServer) of
-			    %% If it is
-			    %% existent:
-			    {ok, TimeStamp, _Status} ->
-				%% get his age
-				Sec = TimeStamp_now - TimeStamp,
-				%% If he is
-				if
-				    %% younger than SecOlder:
-				    Sec < SecOlder ->
-					%% do nothing
-					false;
-				    %% older:
-				    true ->
-					%% remove the user
-					ejabberd_auth:remove_user(LUser, LServer),
-					true
-				end;
-			    %% nonexistent:
-			    not_found ->
-				%% remove the user
-				ejabberd_auth:remove_user(LUser, LServer),
-				true
-			end;
-		    %% Else
-		    _ ->
-			%% do nothing
-			false
-		end
+	    case catch delete_or_not(LUser, LServer, TimeStamp_oldest) of
+		true ->
+		    ejabberd_auth:remove_user(LUser, LServer),
+		    true;
+		_ ->
+		    false
+	    end
 	end,
-    %% Apply the function to every user in the list
     Users_removed = lists:filter(F, Users),
     {removed, length(Users_removed), Users_removed}.
+
+delete_or_not(LUser, LServer, TimeStamp_oldest) ->
+    allow = acl:match_rule(LServer, delete_old_users, jid:make(LUser, LServer)),
+    [] = ejabberd_sm:get_user_resources(LUser, LServer),
+    case mod_last:get_last_info(LUser, LServer) of
+        {ok, TimeStamp, _Status} ->
+	    if TimeStamp_oldest < TimeStamp ->
+		    false;
+		true ->
+		    true
+	    end;
+	not_found ->
+	    true
+    end.
 
 %%
 %% Ban account
