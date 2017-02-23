@@ -595,14 +595,18 @@ supervisor_count(Supervisor) ->
             length(Result)
     end.
 
+-spec stop_all_connections() -> ok.
 stop_all_connections() ->
     lists:foreach(
       fun({_Id, Pid, _Type, _Module}) ->
-	      exit(Pid, kill)
-      end,
-      supervisor:which_children(ejabberd_s2s_in_sup) ++
-	  supervisor:which_children(ejabberd_s2s_out_sup)),
-    mnesia:clear_table(s2s).
+	      supervisor:terminate_child(ejabberd_s2s_in_sup, Pid)
+      end, supervisor:which_children(ejabberd_s2s_in_sup)),
+    lists:foreach(
+      fun({_Id, Pid, _Type, _Module}) ->
+	      supervisor:terminate_child(ejabberd_s2s_out_sup, Pid)
+      end, supervisor:which_children(ejabberd_s2s_out_sup)),
+    mnesia:clear_table(s2s),
+    ok.
 
 %%%----------------------------------------------------------------------
 %%% Update Mnesia tables
