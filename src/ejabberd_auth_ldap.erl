@@ -90,7 +90,6 @@ start(Host) ->
 
 stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    gen_server:call(Proc, stop),
     supervisor:terminate_child(ejabberd_sup, Proc),
     supervisor:delete_child(ejabberd_sup, Proc).
 
@@ -101,6 +100,7 @@ start_link(Host) ->
 terminate(_Reason, _State) -> ok.
 
 init(Host) ->
+    process_flag(trap_exit, true),
     State = parse_options(Host),
     eldap_pool:start_link(State#state.eldap_id,
 			  State#state.servers, State#state.backups,

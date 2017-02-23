@@ -32,7 +32,7 @@
 -author('alexey@process-one.net').
 
 %% External exports
--export([start/0, set_password/3, check_password/4,
+-export([start/0, start/1, stop/1, set_password/3, check_password/4,
 	 check_password/6, check_password_with_authmodule/4,
 	 check_password_with_authmodule/6, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
@@ -61,6 +61,7 @@
                  {offset, integer()}].
 
 -callback start(binary()) -> any().
+-callback stop(binary()) -> any().
 -callback plain_password_required() -> boolean().
 -callback store_type() -> plain | external | scram.
 -callback set_password(binary(), binary(), binary()) -> ok | {error, atom()}.
@@ -81,12 +82,20 @@
 -callback get_password_s(binary(), binary()) -> password().
 
 start() ->
-    %% This is only executed by ejabberd_c2s for non-SASL auth client
-    lists:foreach(fun (Host) ->
-			  lists:foreach(fun (M) -> M:start(Host) end,
-					auth_modules(Host))
-		  end,
-		  ?MYHOSTS).
+    ets:new(ejabberd_auth_modules, [named_table, public]),
+    ejabberd_hooks:add(host_up, ?MODULE, start, 30),
+    ejabberd_hooks:add(host_down, ?MODULE, stop, 80),
+    lists:foreach(fun start/1, ?MYHOSTS).
+
+start(Host) ->
+    Modules = auth_modules_from_config(Host),
+    ets:insert(ejabberd_auth_modules, {Host, Modules}),
+    lists:foreach(fun(M) -> M:start(Host) end, Modules).
+
+stop(Host) ->
+    OldModules = auth_modules(Host),
+    ets:delete(ejabberd_auth_modules, Host),
+    lists:foreach(fun(M) -> M:stop(Host) end, OldModules).
 
 plain_password_required(Server) ->
     lists:any(fun (M) -> M:plain_password_required() end,
@@ -429,21 +438,29 @@ backend_type(Mod) ->
 %% Return the lists of all the auth modules actually used in the
 %% configuration
 auth_modules() ->
-    lists:usort(lists:flatmap(fun (Server) ->
-				      auth_modules(Server)
-			      end,
-			      ?MYHOSTS)).
+    lists:usort(lists:flatmap(fun auth_modules/1, ?MYHOSTS)).
 
 -spec auth_modules(binary()) -> [atom()].
 
 %% Return the list of authenticated modules for a given host
 auth_modules(Server) ->
     LServer = jid:nameprep(Server),
+    try ets:lookup(ejabberd_auth_modules, LServer) of
+	[{_, Modules}] -> Modules;
+	_ -> []
+    catch error:badarg ->
+	    %% ejabberd_auth is not started yet
+	    auth_modules_from_config(Server)
+    end.
+
+-spec auth_modules_from_config(binary()) -> [module()].
+auth_modules_from_config(Server) ->
+    LServer = jid:nameprep(Server),
     Default = ejabberd_config:default_db(LServer, ?MODULE),
     Methods = ejabberd_config:get_option(
                 {auth_method, LServer}, opt_type(auth_method), [Default]),
     [jlib:binary_to_atom(<<"ejabberd_auth_",
-                           (jlib:atom_to_binary(M))/binary>>)
+			   (jlib:atom_to_binary(M))/binary>>)
      || M <- Methods].
 
 export(Server) ->
