@@ -57,10 +57,10 @@ start(normal, _Args) ->
     setup_if_elixir_conf_used(),
     ejabberd_config:start(),
     set_settings_from_config(),
-    acl:start(),
-    shaper:start(),
     connect_nodes(),
     Sup = ejabberd_sup:start_link(),
+    acl:start(),
+    shaper:start(),
     ejabberd_rdbms:start(),
     ejabberd_riak_sup:start(),
     ejabberd_redis:start(),
@@ -88,7 +88,7 @@ start(_, _) ->
 prep_stop(State) ->
     ejabberd_listener:stop_listeners(),
     ejabberd_admin:stop(),
-    broadcast_c2s_shutdown(),
+    ejabberd_sm:stop(),
     gen_mod:stop_modules(),
     timer:sleep(5000),
     State.
@@ -163,16 +163,6 @@ add_windows_nameservers() ->
     IPTs = win32_dns:get_nameservers(),
     ?INFO_MSG("Adding machine's DNS IPs to Erlang system:~n~p", [IPTs]),
     lists:foreach(fun(IPT) -> inet_db:add_ns(IPT) end, IPTs).
-
-
-broadcast_c2s_shutdown() ->
-    Children = ejabberd_sm:get_all_pids(),
-    lists:foreach(
-      fun(C2SPid) when node(C2SPid) == node() ->
-	      ejabberd_c2s:send(C2SPid, xmpp:serr_system_shutdown());
-	 (_) ->
-	      ok
-      end, Children).
 
 %%%
 %%% PID file

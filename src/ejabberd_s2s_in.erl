@@ -42,7 +42,8 @@
 -export([handle_unexpected_info/2, handle_unexpected_cast/2,
 	 reject_unauthenticated_packet/2, process_closed/2]).
 %% API
--export([stop/1, close/1, send/2, update_state/2, establish/1, add_hooks/0]).
+-export([stop/1, close/1, send/2, update_state/2, establish/1,
+	 host_up/1, host_down/1]).
 
 -include("ejabberd.hrl").
 -include("xmpp.hrl").
@@ -90,19 +91,27 @@ establish(State) ->
 update_state(Ref, Callback) ->
     xmpp_stream_in:cast(Ref, {update_state, Callback}).
 
--spec add_hooks() -> ok.
-add_hooks() ->
-    lists:foreach(
-      fun(Host) ->
-	      ejabberd_hooks:add(s2s_in_closed, Host, ?MODULE,
-				 process_closed, 100),
-	      ejabberd_hooks:add(s2s_in_unauthenticated_packet, Host, ?MODULE,
-				 reject_unauthenticated_packet, 100),
-	      ejabberd_hooks:add(s2s_in_handle_info, Host, ?MODULE,
-				 handle_unexpected_info, 100),
-	      ejabberd_hooks:add(s2s_in_handle_cast, Host, ?MODULE,
-				 handle_unexpected_cast, 100)
-      end, ?MYHOSTS).
+-spec host_up(binary()) -> ok.
+host_up(Host) ->
+    ejabberd_hooks:add(s2s_in_closed, Host, ?MODULE,
+		       process_closed, 100),
+    ejabberd_hooks:add(s2s_in_unauthenticated_packet, Host, ?MODULE,
+		       reject_unauthenticated_packet, 100),
+    ejabberd_hooks:add(s2s_in_handle_info, Host, ?MODULE,
+		       handle_unexpected_info, 100),
+    ejabberd_hooks:add(s2s_in_handle_cast, Host, ?MODULE,
+		       handle_unexpected_cast, 100).
+
+-spec host_down(binary()) -> ok.
+host_down(Host) ->
+    ejabberd_hooks:delete(s2s_in_closed, Host, ?MODULE,
+			  process_closed, 100),
+    ejabberd_hooks:delete(s2s_in_unauthenticated_packet, Host, ?MODULE,
+			  reject_unauthenticated_packet, 100),
+    ejabberd_hooks:delete(s2s_in_handle_info, Host, ?MODULE,
+			  handle_unexpected_info, 100),
+    ejabberd_hooks:delete(s2s_in_handle_cast, Host, ?MODULE,
+			  handle_unexpected_cast, 100).
 
 %%%===================================================================
 %%% Hooks

@@ -44,7 +44,8 @@
 	 list_temporarily_blocked_hosts/0,
 	 external_host_overloaded/1, is_temporarly_blocked/1,
 	 get_commands_spec/0, zlib_enabled/1, get_idle_timeout/1,
-	 tls_required/1, tls_verify/1, tls_enabled/1, tls_options/2]).
+	 tls_required/1, tls_verify/1, tls_enabled/1, tls_options/2,
+	 host_up/1, host_down/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
@@ -300,8 +301,9 @@ init([]) ->
     ejabberd_mnesia:create(?MODULE, temporarily_blocked,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, temporarily_blocked)}]),
-    ejabberd_s2s_in:add_hooks(),
-    ejabberd_s2s_out:add_hooks(),
+    ejabberd_hooks:add(host_up, ?MODULE, host_up, 50),
+    ejabberd_hooks:add(host_down, ?MODULE, host_down, 60),
+    lists:foreach(fun host_up/1, ?MYHOSTS),
     {ok, #state{}}.
 
 handle_call(_Request, _From, State) ->
@@ -320,6 +322,9 @@ handle_info(_Info, State) -> {noreply, State}.
 
 terminate(_Reason, _State) ->
     ejabberd_commands:unregister_commands(get_commands_spec()),
+    lists:foreach(fun host_down/1, ?MYHOSTS),
+    ejabberd_hooks:delete(host_up, ?MODULE, host_up, 50),
+    ejabberd_hooks:delete(host_down, ?MODULE, host_down, 60),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -328,6 +333,26 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+host_up(Host) ->
+    ejabberd_s2s_in:host_up(Host),
+    ejabberd_s2s_out:host_up(Host).
+
+host_down(Host) ->
+    lists:foreach(
+      fun(#s2s{fromto = {From, _}, pid = Pid}) when node(Pid) == node() ->
+	      case ejabberd_router:host_of_route(From) of
+		  Host ->
+		      ejabberd_s2s_out:send(Pid, xmpp:serr_system_shutdown()),
+		      ejabberd_s2s_out:stop(Pid);
+		  _ ->
+		      ok
+	      end;
+	 (_) ->
+	      ok
+      end, ets:tab2list(s2s)),
+    ejabberd_s2s_in:host_down(Host),
+    ejabberd_s2s_out:host_down(Host).
+
 -spec clean_table_from_bad_node(node()) -> any().
 clean_table_from_bad_node(Node) ->
     F = fun() ->

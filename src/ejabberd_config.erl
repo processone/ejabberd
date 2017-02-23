@@ -194,7 +194,17 @@ load_file(File) ->
 
 reload_file() ->
     Config = get_ejabberd_config_path(),
+    OldHosts = get_myhosts(),
     load_file(Config),
+    NewHosts = get_myhosts(),
+    lists:foreach(
+      fun(Host) ->
+	      ejabberd_hooks:run(host_up, [Host])
+      end, NewHosts -- OldHosts),
+    lists:foreach(
+      fun(Host) ->
+	      ejabberd_hooks:run(host_down, [Host])
+      end, OldHosts -- NewHosts),
     ejabberd_hooks:run(config_reloaded, []).
 
 -spec convert_to_yaml(file:filename()) -> ok | {error, any()}.

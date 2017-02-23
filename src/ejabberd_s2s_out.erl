@@ -40,7 +40,7 @@
 	 handle_unexpected_cast/2, process_downgraded/2]).
 %% API
 -export([start/3, start_link/3, connect/1, close/1, stop/1, send/2,
-	 route/2, establish/1, update_state/2, add_hooks/0]).
+	 route/2, establish/1, update_state/2, host_up/1, host_down/1]).
 
 -include("ejabberd.hrl").
 -include("xmpp.hrl").
@@ -99,21 +99,31 @@ establish(State) ->
 update_state(Ref, Callback) ->
     xmpp_stream_out:cast(Ref, {update_state, Callback}).
 
--spec add_hooks() -> ok.
-add_hooks() ->
-    lists:foreach(
-      fun(Host) ->
-	      ejabberd_hooks:add(s2s_out_auth_result, Host, ?MODULE,
-				 process_auth_result, 100),
-	      ejabberd_hooks:add(s2s_out_closed, Host, ?MODULE,
-				 process_closed, 100),
-	      ejabberd_hooks:add(s2s_out_handle_info, Host, ?MODULE,
-				 handle_unexpected_info, 100),
-	      ejabberd_hooks:add(s2s_out_handle_cast, Host, ?MODULE,
-				 handle_unexpected_cast, 100),
-	      ejabberd_hooks:add(s2s_out_downgraded, Host, ?MODULE,
-				 process_downgraded, 100)
-      end, ?MYHOSTS).
+-spec host_up(binary()) -> ok.
+host_up(Host) ->
+    ejabberd_hooks:add(s2s_out_auth_result, Host, ?MODULE,
+		       process_auth_result, 100),
+    ejabberd_hooks:add(s2s_out_closed, Host, ?MODULE,
+		       process_closed, 100),
+    ejabberd_hooks:add(s2s_out_handle_info, Host, ?MODULE,
+		       handle_unexpected_info, 100),
+    ejabberd_hooks:add(s2s_out_handle_cast, Host, ?MODULE,
+		       handle_unexpected_cast, 100),
+    ejabberd_hooks:add(s2s_out_downgraded, Host, ?MODULE,
+		       process_downgraded, 100).
+
+-spec host_down(binary()) -> ok.
+host_down(Host) ->
+    ejabberd_hooks:delete(s2s_out_auth_result, Host, ?MODULE,
+			  process_auth_result, 100),
+    ejabberd_hooks:delete(s2s_out_closed, Host, ?MODULE,
+			  process_closed, 100),
+    ejabberd_hooks:delete(s2s_out_handle_info, Host, ?MODULE,
+			  handle_unexpected_info, 100),
+    ejabberd_hooks:delete(s2s_out_handle_cast, Host, ?MODULE,
+			  handle_unexpected_cast, 100),
+    ejabberd_hooks:delete(s2s_out_downgraded, Host, ?MODULE,
+			  process_downgraded, 100).
 
 %%%===================================================================
 %%% Hooks

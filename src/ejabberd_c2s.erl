@@ -48,7 +48,8 @@
 %% API
 -export([get_presence/1, get_subscription/2, get_subscribed/1,
 	 open_session/1, call/3, send/2, close/1, close/2, stop/1,
-	 reply/2, copy_state/2, set_timeout/2, route/2, add_hooks/1]).
+	 reply/2, copy_state/2, set_timeout/2, route/2,
+	 host_up/1, host_down/1]).
 
 -include("ejabberd.hrl").
 -include("xmpp.hrl").
@@ -145,8 +146,8 @@ route(Pid, Term) ->
 set_timeout(State, Timeout) ->
     xmpp_stream_in:set_timeout(State, Timeout).
 
--spec add_hooks(binary()) -> ok.
-add_hooks(Host) ->
+-spec host_up(binary()) -> ok.
+host_up(Host) ->
     ejabberd_hooks:add(c2s_closed, Host, ?MODULE, process_closed, 100),
     ejabberd_hooks:add(c2s_terminated, Host, ?MODULE,
 		       process_terminated, 100),
@@ -156,6 +157,18 @@ add_hooks(Host) ->
 		       process_info, 100),
     ejabberd_hooks:add(c2s_handle_cast, Host, ?MODULE,
 		       handle_unexpected_cast, 100).
+
+-spec host_down(binary()) -> ok.
+host_down(Host) ->
+    ejabberd_hooks:delete(c2s_closed, Host, ?MODULE, process_closed, 100),
+    ejabberd_hooks:delete(c2s_terminated, Host, ?MODULE,
+			  process_terminated, 100),
+    ejabberd_hooks:delete(c2s_unauthenticated_packet, Host, ?MODULE,
+			  reject_unauthenticated_packet, 100),
+    ejabberd_hooks:delete(c2s_handle_info, Host, ?MODULE,
+			  process_info, 100),
+    ejabberd_hooks:delete(c2s_handle_cast, Host, ?MODULE,
+			  handle_unexpected_cast, 100).
 
 %% Copies content of one c2s state to another.
 %% This is needed for session migration from one pid to another.

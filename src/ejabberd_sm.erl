@@ -36,6 +36,7 @@
 
 %% API
 -export([start/0,
+	 stop/0,
 	 start_link/0,
 	 route/1,
 	 route/2,
@@ -74,6 +75,8 @@
 	 is_existing_resource/3,
 	 get_commands_spec/0,
 	 c2s_handle_info/2,
+	 host_up/1,
+	 host_down/1,
 	 make_sid/0
 	]).
 
@@ -109,8 +112,14 @@
 
 start() ->
     ChildSpec = {?MODULE, {?MODULE, start_link, []},
-		 transient, 1000, worker, [?MODULE]},
+		 transient, 5000, worker, [?MODULE]},
     supervisor:start_child(ejabberd_sup, ChildSpec).
+
+-spec stop() -> ok.
+stop() ->
+    supervisor:terminate_child(ejabberd_sup, ?MODULE),
+    supervisor:delete_child(ejabberd_sup, ?MODULE),
+    ok.
 
 start_link() ->
     ?GEN_SERVER:start_link({local, ?MODULE}, ?MODULE, [], []).
@@ -388,20 +397,12 @@ c2s_handle_info(State, _) ->
 %%====================================================================
 
 init([]) ->
+    process_flag(trap_exit, true),
     lists:foreach(fun(Mod) -> Mod:init() end, get_sm_backends()),
     ets:new(sm_iqtable, [named_table, public]),
-    lists:foreach(
-      fun(Host) ->
-	      ejabberd_hooks:add(c2s_handle_info, Host,
-				 ejabberd_sm, c2s_handle_info, 50),
-	      ejabberd_hooks:add(roster_in_subscription, Host,
-				 ejabberd_sm, check_in_subscription, 20),
-	      ejabberd_hooks:add(offline_message_hook, Host,
-				 ejabberd_sm, bounce_offline_message, 100),
-	      ejabberd_hooks:add(remove_user, Host,
-				 ejabberd_sm, disconnect_removed_user, 100),
-	      ejabberd_c2s:add_hooks(Host)
-      end, ?MYHOSTS),
+    ejabberd_hooks:add(host_up, ?MODULE, host_up, 50),
+    ejabberd_hooks:add(host_down, ?MODULE, host_down, 60),
+    lists:foreach(fun host_up/1, ?MYHOSTS),
     ejabberd_commands:register_commands(get_commands_spec()),
     {ok, #state{}}.
 
@@ -433,17 +434,9 @@ handle_info(Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
-    lists:foreach(
-      fun(Host) ->
-	      ejabberd_hooks:delete(c2s_handle_info, Host,
-				    ejabberd_sm, c2s_handle_info, 50),
-	      ejabberd_hooks:delete(roster_in_subscription, Host,
-				    ejabberd_sm, check_in_subscription, 20),
-	      ejabberd_hooks:delete(offline_message_hook, Host,
-				    ejabberd_sm, bounce_offline_message, 100),
-	      ejabberd_hooks:delete(remove_user, Host,
-				    ejabberd_sm, disconnect_removed_user, 100)
-      end, ?MYHOSTS),
+    lists:foreach(fun host_down/1, ?MYHOSTS),
+    ejabberd_hooks:delete(host_up, ?MODULE, host_up, 50),
+    ejabberd_hooks:delete(host_down, ?MODULE, host_down, 60),
     ejabberd_commands:unregister_commands(get_commands_spec()),
     ok.
 
@@ -452,6 +445,36 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+-spec host_up(binary()) -> ok.
+host_up(Host) ->
+    ejabberd_hooks:add(c2s_handle_info, Host,
+		       ejabberd_sm, c2s_handle_info, 50),
+    ejabberd_hooks:add(roster_in_subscription, Host,
+		       ejabberd_sm, check_in_subscription, 20),
+    ejabberd_hooks:add(offline_message_hook, Host,
+		       ejabberd_sm, bounce_offline_message, 100),
+    ejabberd_hooks:add(remove_user, Host,
+		       ejabberd_sm, disconnect_removed_user, 100),
+    ejabberd_c2s:host_up(Host).
+
+-spec host_down(binary()) -> ok.
+host_down(Host) ->
+    Mod = get_sm_backend(Host),
+    lists:foreach(
+      fun(#session{sid = {_, Pid}}) when node(Pid) == node() ->
+	      ejabberd_c2s:send(Pid, xmpp:serr_system_shutdown());
+	 (_) ->
+	      ok
+      end, Mod:get_sessions(Host)),
+    ejabberd_hooks:delete(c2s_handle_info, Host,
+			  ejabberd_sm, c2s_handle_info, 50),
+    ejabberd_hooks:delete(roster_in_subscription, Host,
+			  ejabberd_sm, check_in_subscription, 20),
+    ejabberd_hooks:delete(offline_message_hook, Host,
+			  ejabberd_sm, bounce_offline_message, 100),
+    ejabberd_hooks:delete(remove_user, Host,
+			  ejabberd_sm, disconnect_removed_user, 100),
+    ejabberd_c2s:host_down(Host).
 
 -spec set_session(sid(), binary(), binary(), binary(),
                   prio(), info()) -> ok.

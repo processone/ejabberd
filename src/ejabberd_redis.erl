@@ -28,7 +28,7 @@
 -behaviour(ejabberd_config).
 
 %% API
--export([start/0, start_link/0, q/1, qp/1, opt_type/1]).
+-export([start/0, stop/0, start_link/0, q/1, qp/1, host_up/1, opt_type/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -49,16 +49,16 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 start() ->
+    ejabberd_hooks:add(config_reloaded, ?MODULE, start, 20),
+    ejabberd_hooks:add(host_up, ?MODULE, host_up, 20),
     case lists:any(
 	   fun(Host) ->
 		   is_redis_configured(Host)
 	   end, ?MYHOSTS) of
 	true ->
-	    Spec = {?MODULE, {?MODULE, start_link, []},
-		    permanent, 2000, worker, [?MODULE]},
-	    supervisor:start_child(ejabberd_sup, Spec);
+	    do_start();
 	false ->
-	    ok
+	    stop()
     end.
 
 q(Command) ->
@@ -69,6 +69,16 @@ q(Command) ->
 qp(Pipeline) ->
     try eredis:qp(?PROCNAME, Pipeline)
     catch _:Reason -> {error, Reason}
+    end.
+
+stop() ->
+    supervisor:terminate_child(ejabberd_sup, ?MODULE),
+    supervisor:delete_child(ejabberd_sup, ?MODULE).
+
+host_up(Host) ->
+    case is_redis_configured(Host) of
+	true -> do_start();
+	false -> ok
     end.
 
 %%%===================================================================
@@ -108,6 +118,11 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+do_start() ->
+    Spec = {?MODULE, {?MODULE, start_link, []},
+	    permanent, 5000, worker, [?MODULE]},
+    supervisor:start_child(ejabberd_sup, Spec).
+
 is_redis_configured(Host) ->
     ServerConfigured = ejabberd_config:has_option({redis_server, Host}),
     PortConfigured = ejabberd_config:has_option({redis_port, Host}),

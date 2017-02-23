@@ -28,9 +28,9 @@
 -behaviour(ejabberd_config).
 -author('alexey@process-one.net').
 
--export([start/0, start_link/0, init/1, get_pids/0,
+-export([start/0, stop/0, start_link/0, init/1, get_pids/0,
 	 transform_options/1, get_random_pid/0, get_random_pid/1,
-	 opt_type/1]).
+	 host_up/1, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -45,10 +45,26 @@
 -define(CONNECT_TIMEOUT, 500). % milliseconds
 
 start() ->
+    ejabberd_hooks:add(config_reloaded, ?MODULE, start, 20),
+    ejabberd_hooks:add(host_up, ?MODULE, host_up, 20),
     case lists:any(
 	   fun(Host) ->
 		   is_riak_configured(Host)
 	   end, ?MYHOSTS) of
+	true ->
+	    ejabberd:start_app(riakc),
+            do_start();
+	false ->
+	    stop()
+    end.
+
+stop() ->
+    supervisor:terminate_child(ejabberd_sup, ?MODULE),
+    supervisor:delete_child(ejabberd_sup, ?MODULE),
+    ok.
+
+host_up(Host) ->
+    case is_riak_configured(Host) of
 	true ->
 	    ejabberd:start_app(riakc),
             do_start();
@@ -77,9 +93,8 @@ is_riak_configured(Host) ->
 	or AuthConfigured or ModuleWithRiakDBConfigured.
 
 do_start() ->
-    SupervisorName = ?MODULE,
     ChildSpec =
-	{SupervisorName,
+	{?MODULE,
 	 {?MODULE, start_link, []},
 	 transient,
 	 infinity,
@@ -88,9 +103,11 @@ do_start() ->
     case supervisor:start_child(ejabberd_sup, ChildSpec) of
 	{ok, _PID} ->
 	    ok;
+	{error, {already_started, _}} ->
+	    ok;
 	_Error ->
 	    ?ERROR_MSG("Start of supervisor ~p failed:~n~p~nRetrying...~n",
-                       [SupervisorName, _Error]),
+                       [?MODULE, _Error]),
             timer:sleep(5000),
 	    start()
     end.

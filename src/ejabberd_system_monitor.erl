@@ -33,7 +33,7 @@
 
 %% API
 -export([start_link/0, process_command/1, register_hook/1,
-	 process_remote_command/1]).
+	 unregister_hook/1, process_remote_command/1]).
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3, opt_type/1]).
@@ -86,6 +86,10 @@ register_hook(Host) ->
     ejabberd_hooks:add(local_send_to_resource_hook, Host,
 		       ?MODULE, process_command, 50).
 
+unregister_hook(Host) ->
+    ejabberd_hooks:delete(local_send_to_resource_hook, Host,
+			  ?MODULE, process_command, 50).
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
@@ -101,6 +105,8 @@ init(Opts) ->
     LH = proplists:get_value(large_heap, Opts),
     process_flag(priority, high),
     erlang:system_monitor(self(), [{large_heap, LH}]),
+    ejabberd_hooks:add(host_up, ?MODULE, register_hook, 50),
+    ejabberd_hooks:add(host_down, ?MODULE, unregister_hook, 60),
     lists:foreach(fun register_hook/1, ?MYHOSTS),
     {ok, #state{}}.
 

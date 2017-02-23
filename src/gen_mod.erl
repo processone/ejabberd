@@ -80,6 +80,8 @@ start_link() ->
 
 init([]) ->
     ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),
+    ejabberd_hooks:add(host_up, ?MODULE, start_modules, 40),
+    ejabberd_hooks:add(host_down, ?MODULE, stop_modules, 80),
     ets:new(ejabberd_modules,
 	    [named_table, public,
 	     {keypos, #ejabberd_module.module_host}]),
@@ -162,7 +164,7 @@ sort_modules(Host, ModOpts) ->
       end, ModOpts),
     [digraph:vertex(G, V) || V <- digraph_utils:topsort(G)].
 
--spec start_modules(binary()) -> any().
+-spec start_modules(binary()) -> ok.
 
 start_modules(Host) ->
     Modules = sort_modules(Host, get_modules_options(Host)),
@@ -171,7 +173,7 @@ start_modules(Host) ->
 	    start_module(Host, Module, Opts)
 	end, Modules).
 
--spec start_module(binary(), atom()) -> any().
+-spec start_module(binary(), atom()) -> ok | {ok, pid()} | {error, not_found_in_config}.
 
 start_module(Host, Module) ->
     Modules = get_modules_options(Host),
@@ -293,7 +295,7 @@ is_app_running(AppName) ->
     lists:keymember(AppName, 1,
 		    application:which_applications(Timeout)).
 
--spec stop_modules() -> any().
+-spec stop_modules() -> ok.
 
 stop_modules() ->
     lists:foreach(
@@ -301,7 +303,7 @@ stop_modules() ->
 	    stop_modules(Host)
 	end, ?MYHOSTS).
 
--spec stop_modules(binary()) -> any().
+-spec stop_modules(binary()) -> ok.
 
 stop_modules(Host) ->
     Modules = get_modules_options(Host),

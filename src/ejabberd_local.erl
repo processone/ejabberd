@@ -36,7 +36,8 @@
 	 process_iq_reply/1, get_features/1,
 	 register_iq_handler/5, register_iq_response_handler/4,
 	 register_iq_response_handler/5, unregister_iq_handler/2,
-	 unregister_iq_response_handler/2, bounce_resource_packet/1]).
+	 unregister_iq_response_handler/2, bounce_resource_packet/1,
+	 host_up/1, host_down/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
@@ -196,16 +197,9 @@ get_features(_, _, XMLNSs) ->
 %%====================================================================
 
 init([]) ->
-    lists:foreach(fun (Host) ->
-			  ejabberd_router:register_route(Host,
-							 Host,
-							 {apply, ?MODULE,
-							  route}),
-			  ejabberd_hooks:add(local_send_to_resource_hook, Host,
-					     ?MODULE, bounce_resource_packet,
-					     100)
-		  end,
-		  ?MYHOSTS),
+    lists:foreach(fun host_up/1, ?MYHOSTS),
+    ejabberd_hooks:add(host_up, ?MODULE, host_up, 10),
+    ejabberd_hooks:add(host_down, ?MODULE, host_down, 100),
     catch ets:new(?IQTABLE, [named_table, public, ordered_set]),
     update_table(),
     ejabberd_mnesia:create(?MODULE, iq_response,
@@ -245,6 +239,9 @@ handle_info(Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
+    lists:foreach(fun host_down/1, ?MYHOSTS),
+    ejabberd_hooks:delete(host_up, ?MODULE, host_up, 10),
+    ejabberd_hooks:delete(host_down, ?MODULE, host_down, 100),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -280,6 +277,16 @@ update_table() ->
 	{'EXIT', _} ->
 	    ok
     end.
+
+host_up(Host) ->
+    ejabberd_router:register_route(Host, Host, {apply, ?MODULE, route}),
+    ejabberd_hooks:add(local_send_to_resource_hook, Host,
+		       ?MODULE, bounce_resource_packet, 100).
+
+host_down(Host) ->
+    ejabberd_router:unregister_route(Host),
+    ejabberd_hooks:delete(local_send_to_resource_hook, Host,
+			  ?MODULE, bounce_resource_packet, 100).
 
 -spec get_iq_callback(binary()) -> {ok, module(), atom() | function()} | error.
 get_iq_callback(ID) ->
