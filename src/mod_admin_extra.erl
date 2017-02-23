@@ -538,12 +538,15 @@ get_commands_spec() ->
 			result = {res, rescode}},
 
      #ejabberd_commands{name = get_last, tags = [last],
-			desc = "Get last activity information (timestamp and status)",
-			longdesc = "Timestamp is the seconds since"
-			"1970-01-01 00:00:00 UTC, for example: date +%s",
+			desc = "Get last activity information",
+			longdesc = "Timestamp is UTC and XEP-0082 format, for example: "
+			    "2017-02-23T22:25:28.063062Z     ONLINE",
 			module = ?MODULE, function = get_last,
 			args = [{user, binary}, {host, binary}],
-			result = {last_activity, string}},
+			result = {last_activity,
+				  {tuple, [{timestamp, string},
+					   {status, string}
+					  ]}}},
      #ejabberd_commands{name = set_last, tags = [last],
 			desc = "Set last activity information",
 			longdesc = "Timestamp is the seconds since"
@@ -1337,25 +1340,18 @@ build_broadcast(U, S, SubsAtom) when is_atom(SubsAtom) ->
 %%%
 
 get_last(User, Server) ->
-    case ejabberd_sm:get_user_resources(User, Server) of
+    {Now, Status} = case ejabberd_sm:get_user_resources(User, Server) of
         [] ->
             case mod_last:get_last_info(User, Server) of
                 not_found ->
-                    "Never";
-                {ok, Shift, Status} ->
-                    TimeStamp = {Shift div 1000000,
-                        Shift rem 1000000,
-                        0},
-                    {{Year, Month, Day}, {Hour, Minute, Second}} =
-                        calendar:now_to_local_time(TimeStamp),
-                    lists:flatten(
-                        io_lib:format(
-                            "~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w ~s",
-                            [Year, Month, Day, Hour, Minute, Second, Status]))
+                    {now(), "NOT FOUND"};
+                {ok, Shift, Status1} ->
+                    {{Shift div 1000000, Shift rem 1000000, 0}, Status1}
             end;
         _ ->
-            "Online"
-    end.
+            {now(), "ONLINE"}
+    end,
+    {xmpp_util:encode_timestamp(Now), Status}.
 
 %%%
 %%% Private Storage
