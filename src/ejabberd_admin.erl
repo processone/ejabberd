@@ -174,7 +174,7 @@ get_commands_spec() ->
 			args = [],
 			result = {vhosts, {list, {vhost, string}}}},
      #ejabberd_commands{name = reload_config, tags = [server],
-			desc = "Reload config file in memory (only affects ACL and Access)",
+			desc = "Reload config file in memory",
 			module = ?MODULE, function = reload_config,
 			args = [],
 			result = {res, rescode}},
@@ -473,8 +473,8 @@ registered_vhosts() ->
 
 reload_config() ->
     ejabberd_config:reload_file(),
-    acl:load_from_config(),
-    shaper:load_from_config(),
+    %% TODO: Move this to ejabberd_access_permissions.erl and put on hook
+    %% This requires ejabberd_access_permissions to start after ejabberd_hooks
     ejabberd_access_permissions:invalidate().
 
 %%%
