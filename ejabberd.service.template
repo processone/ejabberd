@@ -11,6 +11,7 @@ Restart=on-failure
 RestartSec=5
 ExecStart=/bin/sh -c '@ctlscriptpath@/ejabberdctl start && @ctlscriptpath@/ejabberdctl started'
 ExecStop=/bin/sh -c '@ctlscriptpath@/ejabberdctl stop && @ctlscriptpath@/ejabberdctl stopped'
+ExecReload=@ctlscriptpath@/ejabberdctl reload_config
 PrivateDevices=true
 ProtectSystem=full
 
