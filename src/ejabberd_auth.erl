@@ -33,7 +33,8 @@
 -author('alexey@process-one.net').
 
 %% External exports
--export([start_link/0, start/1, stop/1, set_password/3, check_password/4,
+-export([start_link/0, host_up/1, host_down/1, config_reloaded/0,
+	 set_password/3, check_password/4,
 	 check_password/6, check_password_with_authmodule/4,
 	 check_password_with_authmodule/6, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
@@ -53,7 +54,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
--record(state, {}).
+-record(state, {host_modules = #{} :: map()}).
 
 -type scrammed_password() :: {binary(), binary(), binary(), non_neg_integer()}.
 -type password() :: binary() | scrammed_password().
@@ -92,39 +93,74 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 init([]) ->
-    ets:new(ejabberd_auth_modules, [named_table, public]),
-    ejabberd_hooks:add(host_up, ?MODULE, start, 30),
-    ejabberd_hooks:add(host_down, ?MODULE, stop, 80),
-    lists:foreach(fun start/1, ?MYHOSTS),
-    {ok, #state{}}.
+    ejabberd_hooks:add(host_up, ?MODULE, host_up, 30),
+    ejabberd_hooks:add(host_down, ?MODULE, host_down, 80),
+    ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 40),
+    HostModules = lists:foldl(
+		    fun(Host, Acc) ->
+			    Modules = auth_modules(Host),
+			    start(Host, Modules),
+			    Acc#{Host => Modules}
+		    end, #{}, ?MYHOSTS),
+    {ok, #state{host_modules = HostModules}}.
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
 
-handle_cast(_Msg, State) ->
+handle_cast({host_up, Host}, #state{host_modules = HostModules} = State) ->
+    Modules = auth_modules(Host),
+    start(Host, Modules),
+    NewHostModules = HostModules#{Host => Modules},
+    {noreply, State#state{host_modules = NewHostModules}};
+handle_cast({host_down, Host}, #state{host_modules = HostModules} = State) ->
+    Modules = maps:get(Host, HostModules, []),
+    stop(Host, Modules),
+    NewHostModules = maps:remove(Host, HostModules),
+    {noreply, State#state{host_modules = NewHostModules}};
+handle_cast(config_reloaded, #state{host_modules = HostModules} = State) ->
+    NewHostModules = lists:foldl(
+		       fun(Host, Acc) ->
+			       OldModules = maps:get(Host, HostModules, []),
+			       NewModules = auth_modules(Host),
+			       start(Host, NewModules -- OldModules),
+			       stop(Host, OldModules -- NewModules),
+			       Acc#{Host => NewModules}
+		       end, HostModules, ?MYHOSTS),
+    {noreply, State#state{host_modules = NewHostModules}};
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
 handle_info(_Info, State) ->
     {noreply, State}.
 
-terminate(_Reason, _State) ->
+terminate(_Reason, State) ->
     ejabberd_hooks:delete(host_up, ?MODULE, start, 30),
     ejabberd_hooks:delete(host_down, ?MODULE, stop, 80),
-    lists:foreach(fun stop/1, ?MYHOSTS).
+    ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 40),
+    lists:foreach(
+      fun({Host, Modules}) ->
+	      stop(Host, Modules)
+      end, maps:to_list(State#state.host_modules)).
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-start(Host) ->
-    Modules = auth_modules_from_config(Host),
-    ets:insert(ejabberd_auth_modules, {Host, Modules}),
+start(Host, Modules) ->
     lists:foreach(fun(M) -> M:start(Host) end, Modules).
 
-stop(Host) ->
-    OldModules = auth_modules(Host),
-    ets:delete(ejabberd_auth_modules, Host),
-    lists:foreach(fun(M) -> M:stop(Host) end, OldModules).
+stop(Host, Modules) ->
+    lists:foreach(fun(M) -> M:stop(Host) end, Modules).
+
+host_up(Host) ->
+    gen_server:cast(?MODULE, {host_up, Host}).
+
+host_down(Host) ->
+    gen_server:cast(?MODULE, {host_down, Host}).
+
+config_reloaded() ->
+    gen_server:cast(?MODULE, config_reloaded).
 
 plain_password_required(Server) ->
     lists:any(fun (M) -> M:plain_password_required() end,
@@ -464,26 +500,12 @@ backend_type(Mod) ->
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
-%% Return the lists of all the auth modules actually used in the
-%% configuration
+-spec auth_modules() -> [module()].
 auth_modules() ->
     lists:usort(lists:flatmap(fun auth_modules/1, ?MYHOSTS)).
 
--spec auth_modules(binary()) -> [atom()].
-
-%% Return the list of authenticated modules for a given host
+-spec auth_modules(binary()) -> [module()].
 auth_modules(Server) ->
-    LServer = jid:nameprep(Server),
-    try ets:lookup(ejabberd_auth_modules, LServer) of
-	[{_, Modules}] -> Modules;
-	_ -> []
-    catch error:badarg ->
-	    %% ejabberd_auth is not started yet
-	    auth_modules_from_config(Server)
-    end.
-
--spec auth_modules_from_config(binary()) -> [module()].
-auth_modules_from_config(Server) ->
     LServer = jid:nameprep(Server),
     Default = ejabberd_config:default_db(LServer, ?MODULE),
     Methods = ejabberd_config:get_option(
