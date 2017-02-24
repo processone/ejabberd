@@ -29,7 +29,8 @@ defmodule ACLTest do
     :ejabberd_hooks.start_link
     :stringprep.start
     :ok = :ejabberd_config.start(["domain1", "domain2"], [])
-    :ok = :acl.start
+    {:ok, _} = :acl.start_link
+    :ok
   end
 
   setup do
