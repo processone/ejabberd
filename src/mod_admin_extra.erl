@@ -1344,12 +1344,12 @@ get_last(User, Server) ->
         [] ->
             case mod_last:get_last_info(User, Server) of
                 not_found ->
-                    {now(), "NOT FOUND"};
+		    {p1_time_compat:timestamp(), "NOT FOUND"};
                 {ok, Shift, Status1} ->
                     {{Shift div 1000000, Shift rem 1000000, 0}, Status1}
             end;
         _ ->
-            {now(), "ONLINE"}
+	    {p1_time_compat:timestamp(), "ONLINE"}
     end,
     {xmpp_util:encode_timestamp(Now), Status}.
 
