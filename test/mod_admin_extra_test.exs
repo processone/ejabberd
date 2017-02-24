@@ -198,29 +198,29 @@ defmodule EjabberdModAdminExtraTest do
 
 	test "get_last works" do
 
-		assert 'Never' ==
+		assert {_, 'NOT FOUND'} =
 			:ejabberd_commands.execute_command(:get_last, [@user, @domain])
 
 		EjabberdSmMock.connect_resource @user, @domain, @resource<>"1"
 		EjabberdSmMock.connect_resource @user, @domain, @resource<>"2"
 
-		assert 'Online' ==
+		assert {_, 'ONLINE'} =
 			:ejabberd_commands.execute_command(:get_last, [@user, @domain])
 
 		EjabberdSmMock.disconnect_resource @user, @domain, @resource<>"1"
 
-		assert 'Online' ==
+		assert {_, 'ONLINE'} =
 			:ejabberd_commands.execute_command(:get_last, [@user, @domain])
 
 		now = {megasecs, secs, _microsecs} = :os.timestamp
 		timestamp = megasecs * 1000000 + secs
 		EjabberdSmMock.disconnect_resource(@user, @domain, @resource<>"2",
 		                                   timestamp)
-		{{year, month, day}, {hour, minute, second}} = :calendar.now_to_local_time now
-		result = List.flatten(:io_lib.format(
-					"~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w ",
+    {{year, month, day}, {hour, minute, second}} = :calendar.now_to_universal_time now
+		result = IO.iodata_to_binary(:io_lib.format(
+					"~w-~.2.0w-~.2.0wT~.2.0w:~.2.0w:~.2.0wZ",
 					[year, month, day, hour, minute, second]))
-		assert result ==
+		assert {result, ""} ==
 			:ejabberd_commands.execute_command(:get_last, [@user, @domain])
 
 		assert :meck.validate :mod_last
