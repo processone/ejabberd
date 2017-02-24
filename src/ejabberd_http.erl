@@ -309,19 +309,22 @@ process_header(State, Data) ->
 		       trail = State3#state.trail,
 		       options = State#state.options,
 		       default_host = State#state.default_host,
-		       request_handlers = State#state.request_handlers};
+		       request_handlers = State#state.request_handlers,
+		       addr_re = State#state.addr_re};
 	    _ ->
 		#state{end_of_request = true,
 		       trail = State3#state.trail,
 		       options = State#state.options,
 		       default_host = State#state.default_host,
-		       request_handlers = State#state.request_handlers}
+		       request_handlers = State#state.request_handlers,
+		       addr_re = State#state.addr_re}
 	  end;
       _ ->
 	  #state{end_of_request = true,
 		 options = State#state.options,
 		 default_host = State#state.default_host,
-		 request_handlers = State#state.request_handlers}
+		 request_handlers = State#state.request_handlers,
+		 addr_re = State#state.addr_re}
     end.
 
 add_header(Name, Value, State)->
