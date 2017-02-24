@@ -137,6 +137,13 @@ send(#{lserver := LServer} = State, Pkt) ->
 	{Pkt2, State1} -> xmpp_stream_in:send(State1, Pkt2)
     end.
 
+-spec send_error(state(), xmpp_element(), stanza_error()) -> state().
+send_error(#{lserver := LServer} = State, Pkt, Err) ->
+    case ejabberd_hooks:run_fold(c2s_filter_send, LServer, {Pkt, State}, []) of
+	{drop, State1} -> State1;
+	{Pkt1, State1} -> xmpp_stream_in:send_error(State1, Pkt1, Err)
+    end.
+
 -spec route(pid(), term()) -> ok.
 route(Pid, Term) ->
     Pid ! Term,
@@ -580,11 +587,16 @@ process_iq_in(State, #iq{} = IQ) ->
 
 -spec process_message_in(state(), message()) -> {boolean(), state()}.
 process_message_in(State, #message{type = T} = Msg) ->
+    %% This function should be as simple as process_iq_in/2,
+    %% however, we don't route errors to MUC rooms in order
+    %% to avoid kicking us, because having a MUC room's JID blocked
+    %% most likely means having only some particular participant
+    %% blocked, i.e. room@conference.server.org/participant.
     case privacy_check_packet(State, Msg, in) of
 	allow ->
 	    {true, State};
 	deny when T == groupchat; T == headline ->
-	    ok;
+	    {false, State};
 	deny ->
 	    case xmpp:has_subtag(Msg, #muc_user{}) of
 		true ->
@@ -661,7 +673,7 @@ process_presence_out(#{user := User, server := Server, lserver := LServer,
             ErrText = <<"Your active privacy list has denied "
 			"the routing of this stanza.">>,
 	    Err = xmpp:err_not_acceptable(ErrText, Lang),
-	    xmpp_stream_in:send_error(State, Pres, Err);
+	    send_error(State, Pres, Err);
 	allow when Type == subscribe; Type == subscribed;
 		   Type == unsubscribe; Type == unsubscribed ->
 	    Access = gen_mod:get_module_opt(LServer, mod_roster, access,
@@ -672,7 +684,7 @@ process_presence_out(#{user := User, server := Server, lserver := LServer,
 		deny ->
 		    ErrText = <<"Denied by ACL">>,
 		    Err = xmpp:err_forbidden(ErrText, Lang),
-		    xmpp_stream_in:send_error(State, Pres, Err);
+		    send_error(State, Pres, Err);
 		allow ->
 		    ejabberd_hooks:run(roster_out_subscription,
 				       LServer,
@@ -755,7 +767,7 @@ check_privacy_then_route(#{lang := Lang} = State, Pkt) ->
             ErrText = <<"Your active privacy list has denied "
 			"the routing of this stanza.">>,
 	    Err = xmpp:err_not_acceptable(ErrText, Lang),
-	    xmpp_stream_in:send_error(State, Pkt, Err);
+	    send_error(State, Pkt, Err);
         allow ->
 	    ejabberd_router:route(Pkt),
 	    State
