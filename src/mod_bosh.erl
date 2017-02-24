@@ -96,12 +96,12 @@ start(Host, Opts) ->
     TmpSupSpec = {TmpSup,
 		  {ejabberd_tmp_sup, start_link, [TmpSup, ejabberd_bosh]},
 		  permanent, infinity, supervisor, [ejabberd_tmp_sup]},
-    supervisor:start_child(ejabberd_sup, TmpSupSpec).
+    supervisor:start_child(ejabberd_gen_mod_sup, TmpSupSpec).
 
 stop(Host) ->
     TmpSup = gen_mod:get_module_proc(Host, ?MODULE),
-    supervisor:terminate_child(ejabberd_sup, TmpSup),
-    supervisor:delete_child(ejabberd_sup, TmpSup).
+    supervisor:terminate_child(ejabberd_gen_mod_sup, TmpSup),
+    supervisor:delete_child(ejabberd_gen_mod_sup, TmpSup).
 
 reload(_Host, NewOpts, _OldOpts) ->
     start_jiffy(NewOpts),

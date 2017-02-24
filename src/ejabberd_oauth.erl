@@ -32,8 +32,7 @@
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
 
--export([start/0,
-         start_link/0,
+-export([start_link/0,
          get_client_identity/2,
          verify_redirection_uri/3,
          authenticate_user/2,
@@ -69,32 +68,6 @@
 %%    (as it has access to ejabberd command line).
 
 -define(EXPIRE, 4294967).
-
-start() ->
-    DBMod = get_db_backend(),
-    DBMod:init(),
-    MaxSize =
-        ejabberd_config:get_option(
-          oauth_cache_size,
-          fun(I) when is_integer(I), I>0 -> I end,
-          1000),
-    LifeTime =
-        ejabberd_config:get_option(
-          oauth_cache_life_time,
-          fun(I) when is_integer(I), I>0 -> I end,
-          timer:hours(1) div 1000),
-    cache_tab:new(oauth_token,
-		  [{max_size, MaxSize}, {life_time, LifeTime}]),
-    Expire = expire(),
-    application:set_env(oauth2, backend, ejabberd_oauth),
-    application:set_env(oauth2, expiry_time, Expire),
-    application:start(oauth2),
-    ChildSpec = {?MODULE, {?MODULE, start_link, []},
-		 transient, 1000, worker, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, ChildSpec),
-    ejabberd_commands:register_commands(get_commands_spec()),
-    ok.
-
 
 get_commands_spec() ->
     [
@@ -173,6 +146,25 @@ start_link() ->
 
 
 init([]) ->
+    DBMod = get_db_backend(),
+    DBMod:init(),
+    MaxSize =
+        ejabberd_config:get_option(
+          oauth_cache_size,
+          fun(I) when is_integer(I), I>0 -> I end,
+          1000),
+    LifeTime =
+        ejabberd_config:get_option(
+          oauth_cache_life_time,
+          fun(I) when is_integer(I), I>0 -> I end,
+          timer:hours(1) div 1000),
+    cache_tab:new(oauth_token,
+		  [{max_size, MaxSize}, {life_time, LifeTime}]),
+    Expire = expire(),
+    application:set_env(oauth2, backend, ejabberd_oauth),
+    application:set_env(oauth2, expiry_time, Expire),
+    application:start(oauth2),
+    ejabberd_commands:register_commands(get_commands_spec()),
     erlang:send_after(expire() * 1000, self(), clean),
     {ok, ok}.
 

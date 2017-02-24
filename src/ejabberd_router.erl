@@ -49,7 +49,7 @@
 	 is_my_host/1,
 	 get_backend/0]).
 
--export([start/0, start_link/0]).
+-export([start_link/0]).
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3, opt_type/1]).
@@ -78,11 +78,6 @@
 %%====================================================================
 %% API
 %%====================================================================
-start() ->
-    ChildSpec = {?MODULE, {?MODULE, start_link, []},
-		 transient, 1000, worker, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, ChildSpec).
-
 start_link() ->
     ?GEN_SERVER:start_link({local, ?MODULE}, ?MODULE, [], []).
 

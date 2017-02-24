@@ -50,7 +50,7 @@ start_link() ->
 init() ->
     Spec = {?MODULE, {?MODULE, start_link, []}, transient,
 	    5000, worker, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, Spec).
+    supervisor:start_child(ejabberd_backend_sup, Spec).
 
 register_stream(SHA1, StreamPid) ->
     F = fun () ->

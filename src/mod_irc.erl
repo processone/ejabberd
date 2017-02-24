@@ -237,13 +237,13 @@ start_supervisor(Host) ->
 		 {ejabberd_tmp_sup, start_link,
 		  [Proc, mod_irc_connection]},
 		 permanent, infinity, supervisor, [ejabberd_tmp_sup]},
-    supervisor:start_child(ejabberd_sup, ChildSpec).
+    supervisor:start_child(ejabberd_gen_mod_sup, ChildSpec).
 
 stop_supervisor(Host) ->
     Proc = gen_mod:get_module_proc(Host,
 				   ejabberd_mod_irc_sup),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    supervisor:terminate_child(ejabberd_gen_mod_sup, Proc),
+    supervisor:delete_child(ejabberd_gen_mod_sup, Proc).
 
 do_route(Host, ServerHost, Access, Packet) ->
     #jid{luser = LUser, lresource = LResource} = xmpp:get_to(Packet),

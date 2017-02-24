@@ -27,12 +27,13 @@
 
 -module(ejabberd_auth).
 
+-behaviour(gen_server).
 -behaviour(ejabberd_config).
 
 -author('alexey@process-one.net').
 
 %% External exports
--export([start/0, start/1, stop/1, set_password/3, check_password/4,
+-export([start_link/0, start/1, stop/1, set_password/3, check_password/4,
 	 check_password/6, check_password_with_authmodule/4,
 	 check_password_with_authmodule/6, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
@@ -43,11 +44,16 @@
 	 is_user_exists/2, is_user_exists_in_other_modules/3,
 	 remove_user/2, remove_user/3, plain_password_required/1,
 	 store_type/1, entropy/1, backend_type/1]).
+%% gen_server callbacks
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+	 terminate/2, code_change/3]).
 
 -export([auth_modules/1, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
+
+-record(state, {}).
 
 -type scrammed_password() :: {binary(), binary(), binary(), non_neg_integer()}.
 -type password() :: binary() | scrammed_password().
@@ -81,11 +87,34 @@
 -callback get_password(binary(), binary()) -> false | password().
 -callback get_password_s(binary(), binary()) -> password().
 
-start() ->
+-spec start_link() -> {ok, pid()} | {error, any()}.
+start_link() ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+init([]) ->
     ets:new(ejabberd_auth_modules, [named_table, public]),
     ejabberd_hooks:add(host_up, ?MODULE, start, 30),
     ejabberd_hooks:add(host_down, ?MODULE, stop, 80),
-    lists:foreach(fun start/1, ?MYHOSTS).
+    lists:foreach(fun start/1, ?MYHOSTS),
+    {ok, #state{}}.
+
+handle_call(_Request, _From, State) ->
+    Reply = ok,
+    {reply, Reply, State}.
+
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+handle_info(_Info, State) ->
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
+    ejabberd_hooks:delete(host_up, ?MODULE, start, 30),
+    ejabberd_hooks:delete(host_down, ?MODULE, stop, 80),
+    lists:foreach(fun stop/1, ?MYHOSTS).
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
 
 start(Host) ->
     Modules = auth_modules_from_config(Host),

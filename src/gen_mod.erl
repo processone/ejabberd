@@ -32,7 +32,7 @@
 
 -export([init/1, start_link/0, start_child/3, start_child/4,
 	 stop_child/1, stop_child/2, config_reloaded/0]).
--export([start/0, start_module/2, start_module/3,
+-export([start_module/2, start_module/3,
 	 stop_module/2, stop_module_keep_config/2, get_opt/3,
 	 get_opt/4, get_opt_host/3, opt_type/1, is_equal_opt/5,
 	 get_module_opt/4, get_module_opt/5, get_module_opt_host/3,
@@ -70,13 +70,14 @@
 -define(GEN_SERVER, gen_server).
 -endif.
 
-start() ->
-    Spec = {ejabberd_gen_mod_sup, {?MODULE, start_link, []},
-	    permanent, infinity, supervisor, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, Spec).
-
 start_link() ->
-    supervisor:start_link({local, ejabberd_gen_mod_sup}, ?MODULE, []).
+    case supervisor:start_link({local, ejabberd_gen_mod_sup}, ?MODULE, []) of
+	{ok, Pid} ->
+	    gen_mod:start_modules(),
+	    {ok, Pid};
+	Err ->
+	    Err
+    end.
 
 init([]) ->
     ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),

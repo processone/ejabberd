@@ -35,9 +35,7 @@
 -behaviour(?GEN_SERVER).
 
 %% API
--export([start/0,
-	 stop/0,
-	 start_link/0,
+-export([start_link/0,
 	 route/1,
 	 route/2,
 	 process_iq/1,
@@ -109,17 +107,6 @@
 %% API
 %%====================================================================
 -export_type([sid/0, info/0]).
-
-start() ->
-    ChildSpec = {?MODULE, {?MODULE, start_link, []},
-		 transient, 5000, worker, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, ChildSpec).
-
--spec stop() -> ok.
-stop() ->
-    supervisor:terminate_child(ejabberd_sup, ?MODULE),
-    supervisor:delete_child(ejabberd_sup, ?MODULE),
-    ok.
 
 start_link() ->
     ?GEN_SERVER:start_link({local, ?MODULE}, ?MODULE, [], []).

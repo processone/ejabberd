@@ -55,8 +55,8 @@ start(_Host, _Opts) ->
 		  {ejabberd_tmp_sup, start_link,
 		   [mod_sip_proxy_sup, mod_sip_proxy]},
 		  permanent, infinity, supervisor, [ejabberd_tmp_sup]},
-    supervisor:start_child(ejabberd_sup, Spec),
-    supervisor:start_child(ejabberd_sup, TmpSupSpec),
+    supervisor:start_child(ejabberd_gen_mod_sup, Spec),
+    supervisor:start_child(ejabberd_gen_mod_sup, TmpSupSpec),
     ok.
 
 stop(_Host) ->

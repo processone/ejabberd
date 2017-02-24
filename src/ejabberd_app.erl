@@ -30,8 +30,7 @@
 
 -behaviour(application).
 
--export([start/2, prep_stop/1, stop/1,
-	 init/0, opt_type/1]).
+-export([start/2, prep_stop/1, stop/1, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -46,9 +45,7 @@ start(normal, _Args) ->
     start_apps(),
     start_elixir_application(),
     ejabberd:check_app(ejabberd),
-    randoms:start(),
     db_init(),
-    start(),
     translate:start(),
     ejabberd_access_permissions:start_link(),
     ejabberd_ctl:init(),
@@ -57,25 +54,11 @@ start(normal, _Args) ->
     setup_if_elixir_conf_used(),
     ejabberd_config:start(),
     set_settings_from_config(),
+    maybe_add_nameservers(),
+    cyrsasl:start(),
     connect_nodes(),
     Sup = ejabberd_sup:start_link(),
-    acl:start(),
-    shaper:start(),
-    ejabberd_rdbms:start(),
-    ejabberd_riak_sup:start(),
-    ejabberd_redis:start(),
-    ejabberd_router:start(),
-    ejabberd_router_multicast:start(),
-    ejabberd_local:start(),
-    ejabberd_sm:start(),
-    cyrsasl:start(),
-    gen_mod:start(),
     ext_mod:start(),
-    maybe_add_nameservers(),
-    ejabberd_auth:start(),
-    ejabberd_oauth:start(),
-    gen_mod:start_modules(),
-    ejabberd_listener:start_listeners(),
     register_elixir_config_hooks(),
     ?INFO_MSG("ejabberd ~s is started in the node ~p", [?VERSION, node()]),
     Sup;
@@ -104,19 +87,6 @@ stop(_State) ->
 %%%
 %%% Internal functions
 %%%
-
-start() ->
-    spawn_link(?MODULE, init, []).
-
-init() ->
-    register(ejabberd, self()),
-    loop().
-
-loop() ->
-    receive
-	_ ->
-	    loop()
-    end.
 
 db_init() ->
     ejabberd_config:env_binary_to_list(mnesia, dir),

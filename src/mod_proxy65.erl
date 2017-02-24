@@ -59,14 +59,14 @@ start(Host, Opts) ->
 	    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
 	    ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
 			 transient, infinity, supervisor, [?MODULE]},
-	    supervisor:start_child(ejabberd_sup, ChildSpec)
+	    supervisor:start_child(ejabberd_gen_mod_sup, ChildSpec)
     end.
 
 stop(Host) ->
     mod_proxy65_service:delete_listener(Host),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    supervisor:terminate_child(ejabberd_gen_mod_sup, Proc),
+    supervisor:delete_child(ejabberd_gen_mod_sup, Proc).
 
 reload(Host, NewOpts, OldOpts) ->
     Mod = gen_mod:ram_db_mod(global, ?MODULE),

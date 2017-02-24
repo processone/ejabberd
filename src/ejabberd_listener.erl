@@ -45,58 +45,29 @@ start_link() ->
 
 
 init(_) ->
-    ets:new(listen_sockets, [named_table, public]),
-    bind_tcp_ports(),
-    {ok, {{one_for_one, 10, 1}, []}}.
+    {ok, {{one_for_one, 10, 1}, listeners_childspec()}}.
 
-bind_tcp_ports() ->
+listeners_childspec() ->
     case ejabberd_config:get_option(listen, fun validate_cfg/1) of
 	undefined ->
-	    ignore;
+	    [];
 	Ls ->
-	    lists:foreach(
-	      fun({Port, Module, Opts}) ->
-		      case Module:socket_type() of
-			  independent -> ok;
-			  _ ->
-			      bind_tcp_port(Port, Module, Opts)
-		      end
-	      end, Ls)
-    end.
-
-bind_tcp_port(PortIP, Module, RawOpts) ->
-    try check_listener_options(RawOpts) of
-	ok ->
-	    {Port, IPT, IPS, IPV, Proto, OptsClean} = parse_listener_portip(PortIP, RawOpts),
-	    {_Opts, SockOpts} = prepare_opts(IPT, IPV, OptsClean),
-	    case Proto of
-		udp -> ok;
-		_ ->
-		    ListenSocket = listen_tcp(PortIP, Module, SockOpts, Port, IPS),
-		    ets:insert(listen_sockets, {PortIP, ListenSocket}),
-                    ok
-	    end
-    catch
-	throw:{error, Error} ->
-	    ?ERROR_MSG(Error, [])
+	    Specs = lists:map(
+		      fun({Port, Module, Opts}) ->
+			      maybe_start_sip(Module),
+			      {Port,
+			       {?MODULE, start, [Port, Module, Opts]},
+			       transient,
+			       brutal_kill,
+			       worker,
+			       [?MODULE]}
+		      end, Ls),
+	    report_duplicated_portips(Ls),
+	    Specs
     end.
 
 start_listeners() ->
-    case ejabberd_config:get_option(listen, fun validate_cfg/1) of
-	undefined ->
-	    ignore;
-	Ls ->
-	    Ls2 = lists:map(
-	        fun({Port, Module, Opts}) ->
-		        case start_listener(Port, Module, Opts) of
-			    {ok, _Pid} = R -> R;
-			    {error, Error} ->
-				throw(Error)
-			end
-		end, Ls),
-	    report_duplicated_portips(Ls),
-	    {ok, {{one_for_one, 10, 1}, Ls2}}
-    end.
+    ok.
 
 report_duplicated_portips(L) ->
     LKeys = [Port || {Port, _, _} <- L],
@@ -144,6 +115,9 @@ init_udp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
 	{ok, Socket} ->
 	    %% Inform my parent that this port was opened succesfully
 	    proc_lib:init_ack({ok, self()}),
+	    start_module_sup(Port, Module),
+	    ?INFO_MSG("Start accepting UDP connections at ~s for ~p",
+		      [format_portip(PortIP), Module]),
 	    case erlang:function_exported(Module, udp_init, 2) of
 		false ->
 		    udp_recv(Socket, Module, Opts);
@@ -166,6 +140,9 @@ init_tcp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
     ListenSocket = listen_tcp(PortIP, Module, SockOpts, Port, IPS),
     %% Inform my parent that this port was opened succesfully
     proc_lib:init_ack({ok, self()}),
+    start_module_sup(Port, Module),
+    ?INFO_MSG("Start accepting TCP connections at ~s for ~p",
+	      [format_portip(PortIP), Module]),
     case erlang:function_exported(Module, tcp_init, 2) of
 	false ->
 	    accept(ListenSocket, Module, Opts);
@@ -182,29 +159,20 @@ init_tcp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
     end.
 
 listen_tcp(PortIP, Module, SockOpts, Port, IPS) ->
-    case ets:lookup(listen_sockets, PortIP) of
-	[{PortIP, ListenSocket}] ->
-	    {_, _, Transport} = PortIP,
-	    ?INFO_MSG("Reusing listening ~s port ~p at ~s",
-		      [Transport, Port, IPS]),
-	    ets:delete(listen_sockets, PortIP),
+    Res = gen_tcp:listen(Port, [binary,
+				{packet, 0},
+				{active, false},
+				{reuseaddr, true},
+				{nodelay, true},
+				{send_timeout, ?TCP_SEND_TIMEOUT},
+				{send_timeout_close, true},
+				{keepalive, true} |
+				SockOpts]),
+    case Res of
+	{ok, ListenSocket} ->
 	    ListenSocket;
-	_ ->
-	    Res = gen_tcp:listen(Port, [binary,
-					{packet, 0},
-					{active, false},
-					{reuseaddr, true},
-					{nodelay, true},
-					{send_timeout, ?TCP_SEND_TIMEOUT},
-					{send_timeout_close, true},
-					{keepalive, true} |
-					SockOpts]),
-	    case Res of
-		{ok, ListenSocket} ->
-		    ListenSocket;
-		{error, Reason} ->
-		    socket_error(Reason, PortIP, Module, SockOpts, Port, IPS)
-	    end
+	{error, Reason} ->
+	    socket_error(Reason, PortIP, Module, SockOpts, Port, IPS)
     end.
 
 %% @spec (PortIP, Opts) -> {Port, IPT, IPS, IPV, OptsClean}
@@ -388,7 +356,6 @@ start_listener2(Port, Module, Opts) ->
     %% But it doesn't hurt to attempt to start it for any listener.
     %% So, it's normal (and harmless) that in most cases this call returns: {error, {already_started, pid()}}
     maybe_start_sip(Module),
-    start_module_sup(Port, Module),
     start_listener_sup(Port, Module, Opts).
 
 start_module_sup(_Port, Module) ->
@@ -577,6 +544,13 @@ format_error(Reason) ->
 	ReasonStr ->
 	    ReasonStr
     end.
+
+format_portip({Port, IP, _Transport}) ->
+    IPStr = case tuple_size(IP) of
+		4 -> inet:ntoa(IP);
+		8 -> "[" ++ inet:ntoa(IP) ++ "]"
+	    end,
+    IPStr ++ ":" ++ integer_to_list(Port).
 
 check_rate_limit(Interval) ->
     NewInterval = receive
