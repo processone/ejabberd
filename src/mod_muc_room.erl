@@ -185,7 +185,7 @@ normal_state({route, <<"">>,
 							     StateData),
 			    StateData2 = StateData1#state{room_shaper =
 							      RoomShaper},
-			    process_groupchat_message(From, Packet,
+			    process_groupchat_message(Packet,
 						      StateData2);
 		       true ->
 			    StateData1 = if RoomQueueEmpty ->
@@ -349,7 +349,7 @@ normal_state({route, Nick, #presence{from = From} = Packet}, StateData) ->
 	    NewActivity = Activity#activity{presence_time = Now},
 	    StateData1 = store_user_activity(From, NewActivity,
 					     StateData),
-	    process_presence(From, Nick, Packet, StateData1);
+	    process_presence(Nick, Packet, StateData1);
        true ->
 	    if Activity#activity.presence == undefined ->
 		    Interval = (Activity#activity.presence_time +
@@ -615,7 +615,7 @@ handle_info(process_room_queue,
 					   StateData),
 	  StateData2 = StateData1#state{room_queue = RoomQueue},
 	  StateData3 = prepare_room_queue(StateData2),
-	  process_groupchat_message(From, Packet, StateData3);
+	  process_groupchat_message(Packet, StateData3);
       {{value, {presence, From}}, RoomQueue} ->
 	  Activity = get_user_activity(From, StateData),
 	  {Nick, Packet} = Activity#activity.presence,
@@ -624,7 +624,7 @@ handle_info(process_room_queue,
 					   StateData),
 	  StateData2 = StateData1#state{room_queue = RoomQueue},
 	  StateData3 = prepare_room_queue(StateData2),
-	  process_presence(From, Nick, Packet, StateData3);
+	  process_presence(Nick, Packet, StateData3);
       {empty, _} -> {next_state, StateName, StateData}
     end;
 handle_info({captcha_succeed, From}, normal_state,
@@ -702,8 +702,8 @@ route(Pid, Packet) ->
     #jid{lresource = Nick} = xmpp:get_to(Packet),
     gen_fsm:send_event(Pid, {route, Nick, Packet}).
 
--spec process_groupchat_message(jid(), message(), state()) -> fsm_next().
-process_groupchat_message(From, #message{lang = Lang} = Packet, StateData) ->
+-spec process_groupchat_message(message(), state()) -> fsm_next().
+process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData) ->
     IsSubscriber = is_subscriber(From, StateData),
     case is_user_online(From, StateData) orelse IsSubscriber orelse
 	   is_user_allowed_message_nonparticipant(From, StateData)
@@ -740,9 +740,7 @@ process_groupchat_message(From, #message{lang = Lang} = Packet, StateData) ->
 			 ejabberd_hooks:run_fold(muc_filter_message,
 						 StateData#state.server_host,
 						 Packet,
-						 [StateData,
-						  StateData#state.jid,
-						  From, FromNick])
+						 [StateData, FromNick])
 			   of
 			 drop ->
 			     {next_state, normal_state, StateData};
@@ -953,29 +951,27 @@ get_participant_data(From, StateData) ->
 	    end
     end.
 
--spec process_presence(jid(), binary(), presence(), state()) -> fsm_transition().
-process_presence(From, Nick, #presence{type = Type0} = Packet0, StateData) ->
+-spec process_presence(binary(), presence(), state()) -> fsm_transition().
+process_presence(Nick, #presence{from = From, type = Type0} = Packet0, StateData) ->
     IsOnline = is_user_online(From, StateData),
     if Type0 == available;
        IsOnline and ((Type0 == unavailable) or (Type0 == error)) ->
 	   case ejabberd_hooks:run_fold(muc_filter_presence,
 					StateData#state.server_host,
 					Packet0,
-					[StateData,
-					 StateData#state.jid,
-					 From, Nick]) of
+					[StateData, Nick]) of
 	     drop ->
 		 {next_state, normal_state, StateData};
 	     #presence{} = Packet ->
 		 close_room_if_temporary_and_empty(
-		   do_process_presence(From, Nick, Packet, StateData))
+		   do_process_presence(Nick, Packet, StateData))
 	   end;
        true ->
 	    {next_state, normal_state, StateData}
     end.
 
--spec do_process_presence(jid(), binary(), presence(), state()) -> state().
-do_process_presence(From, Nick, #presence{type = available, lang = Lang} = Packet,
+-spec do_process_presence(binary(), presence(), state()) -> state().
+do_process_presence(Nick, #presence{from = From, type = available, lang = Lang} = Packet,
 		    StateData) ->
     case is_user_online(From, StateData) of
 	false ->
@@ -1019,7 +1015,7 @@ do_process_presence(From, Nick, #presence{type = available, lang = Lang} = Packe
 		    NewState
 	    end
     end;
-do_process_presence(From, Nick, #presence{type = unavailable} = Packet,
+do_process_presence(Nick, #presence{from = From, type = unavailable} = Packet,
 		    StateData) ->
     NewPacket = case {(StateData#state.config)#config.allow_visitor_status,
 		      is_visitor(From, StateData)} of
@@ -1034,7 +1030,7 @@ do_process_presence(From, Nick, #presence{type = unavailable} = Packet,
     end,
     Reason = xmpp:get_text(NewPacket#presence.status),
     remove_online_user(From, NewState, Reason);
-do_process_presence(From, _Nick, #presence{type = error, lang = Lang} = Packet,
+do_process_presence(_Nick, #presence{from = From, type = error, lang = Lang} = Packet,
 		    StateData) ->
     ErrorText = <<"It is not allowed to send error messages to the"
 		  " room. The participant (~s) has sent an error "

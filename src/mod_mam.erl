@@ -35,7 +35,7 @@
 -export([user_send_packet/1, user_send_packet_strip_tag/1, user_receive_packet/1,
 	 process_iq_v0_2/1, process_iq_v0_3/1, disco_sm_features/5,
 	 remove_user/2, remove_room/3, mod_opt_type/1, muc_process_iq/2,
-	 muc_filter_message/5, message_is_archived/3, delete_old_messages/2,
+	 muc_filter_message/3, message_is_archived/3, delete_old_messages/2,
 	 get_commands_spec/0, msg_to_el/4, get_room_config/4, set_room_option/3,
 	 offline_message/1]).
 
@@ -317,9 +317,10 @@ user_send_packet_strip_tag({Pkt, #{jid := JID} = C2SState}) ->
     {strip_my_archived_tag(Pkt, LServer), C2SState}.
 
 -spec muc_filter_message(message(), mod_muc_room:state(),
-			 jid(), jid(), binary()) -> message().
-muc_filter_message(Pkt, #state{config = Config} = MUCState,
-		   RoomJID, From, FromNick) ->
+			 binary()) -> message().
+muc_filter_message(Pkt, #state{config = Config, jid = RoomJID} = MUCState,
+		   FromNick) ->
+    From = xmpp:get_from(Pkt),
     if Config#config.mam ->
 	    LServer = RoomJID#jid.lserver,
 	    NewPkt = strip_my_archived_tag(Pkt, LServer),

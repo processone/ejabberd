@@ -486,7 +486,7 @@ store_packet({_Action, #message{from = From, to = To} = Packet} = Acc) ->
 		true ->
 		    #jid{luser = LUser, lserver = LServer} = To,
 		    case ejabberd_hooks:run_fold(store_offline_message, LServer,
-						 Packet, [From, To]) of
+						 Packet, []) of
 			drop ->
 			    Acc;
 			NewPacket ->
