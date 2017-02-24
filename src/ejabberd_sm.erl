@@ -36,6 +36,7 @@
 
 %% API
 -export([start_link/0,
+	 stop/0,
 	 route/1,
 	 route/2,
 	 process_iq/1,
@@ -110,6 +111,12 @@
 
 start_link() ->
     ?GEN_SERVER:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+-spec stop() -> ok.
+stop() ->
+    supervisor:terminate_child(ejabberd_sup, ?MODULE),
+    supervisor:delete_child(ejabberd_sup, ?MODULE),
+    ok.
 
 -spec route(jid(), term()) -> ok.
 %% @doc route arbitrary term to c2s process(es)
