@@ -32,7 +32,7 @@
 	 start_listeners/0, start_listener/3, stop_listeners/0,
 	 stop_listener/2, parse_listener_portip/2,
 	 add_listener/3, delete_listener/2, transform_options/1,
-	 validate_cfg/1, opt_type/1]).
+	 validate_cfg/1, opt_type/1, config_reloaded/0]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -41,10 +41,11 @@
 -define(TCP_SEND_TIMEOUT, 15000).
 
 start_link() ->
-    supervisor:start_link({local, ejabberd_listeners}, ?MODULE, []).
-
+    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init(_) ->
+    ets:new(?MODULE, [named_table, public]),
+    ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),
     {ok, {{one_for_one, 10, 1}, listeners_childspec()}}.
 
 listeners_childspec() ->
@@ -55,6 +56,7 @@ listeners_childspec() ->
 	    Specs = lists:map(
 		      fun({Port, Module, Opts}) ->
 			      maybe_start_sip(Module),
+			      ets:insert(?MODULE, {Port, Module, Opts}),
 			      {Port,
 			       {?MODULE, start, [Port, Module, Opts]},
 			       transient,
@@ -67,7 +69,10 @@ listeners_childspec() ->
     end.
 
 start_listeners() ->
-    ok.
+    lists:foreach(
+      fun(Spec) ->
+	      supervisor:start_child(?MODULE, Spec)
+      end, listeners_childspec()).
 
 report_duplicated_portips(L) ->
     LKeys = [Port || {Port, _, _} <- L],
@@ -376,7 +381,7 @@ start_listener_sup(Port, Module, Opts) ->
 		 brutal_kill,
 		 worker,
 		 [?MODULE]},
-    supervisor:start_child(ejabberd_listeners, ChildSpec).
+    supervisor:start_child(?MODULE, ChildSpec).
 
 stop_listeners() ->
     Ports = ejabberd_config:get_option(listen, fun validate_cfg/1),
@@ -386,27 +391,18 @@ stop_listeners() ->
       end,
       Ports).
 
-%% @spec (PortIP, Module) -> ok
-%% where
-%%      PortIP = {Port, IPT | IPS}
-%%      Port = integer()
-%%      IPT = tuple()
-%%      IPS = string()
-%%      Module = atom()
-stop_listener(PortIP, _Module) ->
-    supervisor:terminate_child(ejabberd_listeners, PortIP),
-    supervisor:delete_child(ejabberd_listeners, PortIP).
+stop_listener({_, _, Transport} = PortIP, Module) ->
+    case supervisor:terminate_child(?MODULE, PortIP) of
+	ok ->
+	    ?INFO_MSG("Stop accepting ~s connections at ~s for ~p",
+		      [case Transport of udp -> "UDP"; tcp -> "TCP" end,
+		       format_portip(PortIP), Module]),
+	    ets:delete(?MODULE, PortIP),
+	    supervisor:delete_child(?MODULE, PortIP);
+	Err ->
+	    Err
+    end.
 
-%% @spec (PortIP, Module, Opts) -> {ok, Pid} | {error, Error}
-%% where
-%%      PortIP = {Port, IPT | IPS}
-%%      Port = integer()
-%%      IPT = tuple()
-%%      IPS = string()
-%%      IPV = inet | inet6
-%%      Module = atom()
-%%      Opts = [IPV | {ip, IPT} | atom() | tuple()]
-%% @doc Add a listener and store in config if success
 add_listener(PortIP, Module, Opts) ->
     {Port, IPT, _, _, Proto, _} = parse_listener_portip(PortIP, Opts),
     PortIP1 = {Port, IPT, Proto},
@@ -461,6 +457,36 @@ maybe_start_sip(esip_socket) ->
     ejabberd:start_app(esip);
 maybe_start_sip(_) ->
     ok.
+
+config_reloaded() ->
+    New = case ejabberd_config:get_option(listen, fun validate_cfg/1) of
+	      undefined -> [];
+	      Ls -> Ls
+	  end,
+    Old = ets:tab2list(?MODULE),
+    lists:foreach(
+      fun({PortIP, Module, _Opts}) ->
+	      case lists:keyfind(PortIP, 1, New) of
+		  false ->
+		      stop_listener(PortIP, Module);
+		  _ ->
+		      ok
+	      end
+      end, Old),
+    lists:foreach(
+      fun({PortIP, Module, Opts}) ->
+	      case lists:keyfind(PortIP, 1, Old) of
+		  {_, Module, Opts} ->
+		      ok;
+		  {_, OldModule, _} ->
+		      stop_listener(PortIP, OldModule),
+		      ets:insert(?MODULE, {PortIP, Module, Opts}),
+		      start_listener(PortIP, Module, Opts);
+		  false ->
+		      ets:insert(?MODULE, {PortIP, Module, Opts}),
+		      start_listener(PortIP, Module, Opts)
+	      end
+      end, New).
 
 %%%
 %%% Check options
