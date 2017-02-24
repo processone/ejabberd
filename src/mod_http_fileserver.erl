@@ -154,9 +154,9 @@ initialize(Host, Opts) ->
 					       end, L)
 				     end, []),
                      ?DEFAULT_CONTENT_TYPES),
-    ?INFO_MSG("known content types: ~s",
-	      [str:join([[$*, K, " -> ", V] || {K, V} <- ContentTypes],
-			<<", ">>)]),
+    ?DEBUG("known content types: ~s",
+	   [str:join([[$*, K, " -> ", V] || {K, V} <- ContentTypes],
+		     <<", ">>)]),
     #state{host = Host,
 	   accesslog = AccessLog,
 	   accesslogfd = AccessLogFD,
