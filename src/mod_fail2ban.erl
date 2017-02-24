@@ -150,7 +150,7 @@ handle_info(_Info, State) ->
 terminate(_Reason, #state{host = Host}) ->
     ejabberd_hooks:delete(c2s_auth_result, Host, ?MODULE, c2s_auth_result, 100),
     ejabberd_hooks:delete(c2s_stream_started, Host, ?MODULE, c2s_stream_started, 100),
-    case is_loaded_at_other_hosts(Host) of
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
 	true ->
 	    ok;
 	false ->
@@ -183,14 +183,6 @@ is_whitelisted(Host, Addr) ->
 				    fun(A) -> A end,
 				    none),
     acl:match_rule(Host, Access, Addr) == allow.
-
-is_loaded_at_other_hosts(Host) ->
-    lists:any(
-      fun(VHost) when VHost == Host ->
-	      false;
-	 (VHost) ->
-	      gen_mod:is_loaded(VHost, ?MODULE)
-      end, ?MYHOSTS).
 
 seconds_to_now(Secs) ->
     {Secs div 1000000, Secs rem 1000000, 0}.

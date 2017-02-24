@@ -63,7 +63,12 @@ start(Host, Opts) ->
     end.
 
 stop(Host) ->
-    mod_proxy65_service:delete_listener(Host),
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+	false ->
+	    mod_proxy65_service:delete_listener(Host);
+	true ->
+	    ok
+    end,
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     supervisor:terminate_child(ejabberd_gen_mod_sup, Proc),
     supervisor:delete_child(ejabberd_gen_mod_sup, Proc).

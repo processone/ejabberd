@@ -37,7 +37,7 @@
 	 get_opt/4, get_opt_host/3, opt_type/1, is_equal_opt/5,
 	 get_module_opt/4, get_module_opt/5, get_module_opt_host/3,
 	 loaded_modules/1, loaded_modules_with_opts/1,
-	 get_hosts/2, get_module_proc/2, is_loaded/2,
+	 get_hosts/2, get_module_proc/2, is_loaded/2, is_loaded_elsewhere/2,
 	 start_modules/0, start_modules/1, stop_modules/0, stop_modules/1,
 	 db_mod/2, db_mod/3, ram_db_mod/2, ram_db_mod/3,
 	 db_type/2, db_type/3, ram_db_type/2, ram_db_type/3]).
@@ -621,6 +621,15 @@ get_module_proc(Host, Base) ->
 
 is_loaded(Host, Module) ->
     ets:member(ejabberd_modules, {Module, Host}).
+
+-spec is_loaded_elsewhere(binary(), atom()) -> boolean().
+is_loaded_elsewhere(Host, Module) ->
+    ets:select_count(
+      ejabberd_modules,
+      ets:fun2ms(
+	fun(#ejabberd_module{module_host = {Mod, H}}) ->
+		(Mod == Module) and (H /= Host)
+	end)) /= 0.
 
 -spec config_reloaded() -> ok.
 config_reloaded() ->
