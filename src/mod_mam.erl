@@ -294,7 +294,7 @@ user_send_packet({Pkt, #{jid := JID} = C2SState}) ->
     {Pkt2, C2SState}.
 
 -spec offline_message({any(), message()}) -> {any(), message()}.
-offline_message({Action, #message{from = Peer, to = To} = Pkt} = Acc) ->
+offline_message({_Action, #message{from = Peer, to = To} = Pkt} = Acc) ->
     LUser = To#jid.luser,
     LServer = To#jid.lserver,
     case should_archive(Pkt, LServer) of
