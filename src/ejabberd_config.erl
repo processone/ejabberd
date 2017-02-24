@@ -66,11 +66,8 @@
 
 start() ->
     mnesia_init(),
-    Config = get_ejabberd_config_path(),
-    State0 = read_file(Config),
-    State1 = hosts_to_start(State0),
-    State2 = validate_opts(State1),
-    %% This start time is used by mod_last:
+    ConfigFile = get_ejabberd_config_path(),
+    State1 = load_file(ConfigFile),
     UnixTime = p1_time_compat:system_time(seconds),
     SharedKey = case erlang:get_cookie() of
                     nocookie ->
@@ -78,9 +75,9 @@ start() ->
                     Cookie ->
                         p1_sha:sha(jlib:atom_to_binary(Cookie))
                 end,
-    State3 = set_option({node_start, global}, UnixTime, State2),
-    State4 = set_option({shared_key, global}, SharedKey, State3),
-    set_opts(State4).
+    State2 = set_option({node_start, global}, UnixTime, State1),
+    State3 = set_option({shared_key, global}, SharedKey, State2),
+    set_opts(State3).
 
 %% When starting ejabberd for testing, we sometimes want to start a
 %% subset of hosts from the one define in the config file.
@@ -183,19 +180,20 @@ read_file(File, Opts) ->
     State1 = lists:foldl(fun process_term/2, State, Head ++ Tail),
     State1#state{opts = compact(State1#state.opts)}.
 
--spec load_file(string()) -> ok.
+-spec load_file(string()) -> #state{}.
 
 load_file(File) ->
     State0 = read_file(File),
-    State = validate_opts(State0),
-    set_opts(State).
+    State1 = hosts_to_start(State0),
+    validate_opts(State1).
 
 -spec reload_file() -> ok.
 
 reload_file() ->
     Config = get_ejabberd_config_path(),
     OldHosts = get_myhosts(),
-    load_file(Config),
+    State = load_file(Config),
+    set_opts(State),
     NewHosts = get_myhosts(),
     lists:foreach(
       fun(Host) ->
@@ -766,9 +764,12 @@ append_option({Opt, Host}, Val, State) ->
 set_opts(State) ->
     Opts = State#state.opts,
     F = fun() ->
-		lists:foreach(fun(R) ->
-				      mnesia:write(R)
-			      end, Opts)
+		lists:foreach(
+		  fun({node_start, _}) -> ok;
+		     ({shared_key, _}) -> ok;
+		     (Key) -> mnesia:delete({local_config, Key})
+		  end, mnesia:all_keys(local_config)),
+		lists:foreach(fun mnesia:write/1, Opts)
 	end,
     case mnesia:transaction(F) of
 	{atomic, _} -> ok;
