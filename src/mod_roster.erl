@@ -643,7 +643,7 @@ process_subscription(Direction, User, Server, JID1,
 	    _ ->
 		ejabberd_router:route(
 		  #presence{type = AutoReply,
-			    from = jid:make(User, Server, <<"">>),
+			    from = jid:make(User, Server),
 			    to = JID1})
 	  end,
 	  case Push of
@@ -653,7 +653,7 @@ process_subscription(Direction, User, Server, JID1,
 		       ok;
 		   true ->
 		       push_item(User, Server,
-				 jid:make(User, Server, <<"">>), Item)
+				 jid:make(User, Server), Item)
 		end,
 		true;
 	    none -> false
@@ -1068,7 +1068,7 @@ user_roster_parse_query(User, Server, Items, Query) ->
 
 user_roster_subscribe_jid(User, Server, JID) ->
     out_subscription(User, Server, JID, subscribe),
-    UJID = jid:make(User, Server, <<"">>),
+    UJID = jid:make(User, Server),
     ejabberd_router:route(#presence{from = UJID, to = JID, type = subscribe}).
 
 user_roster_item_parse_query(User, Server, Items,
@@ -1083,7 +1083,7 @@ user_roster_item_parse_query(User, Server, Items,
 				JID1 = jid:make(JID),
 				out_subscription(User, Server, JID1,
 						 subscribed),
-				UJID = jid:make(User, Server, <<"">>),
+				UJID = jid:make(User, Server),
 				ejabberd_router:route(
 				  #presence{from = UJID, to = JID1,
 					    type = subscribed}),

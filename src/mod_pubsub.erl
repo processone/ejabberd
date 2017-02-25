@@ -723,7 +723,7 @@ presence(ServerHost, Presence) ->
 	binary(), binary(), jid(),
 	subscribed | unsubscribed | subscribe | unsubscribe) -> boolean().
 out_subscription(User, Server, JID, subscribed) ->
-    Owner = jid:make(User, Server, <<>>),
+    Owner = jid:make(User, Server),
     {PUser, PServer, PResource} = jid:tolower(JID),
     PResources = case PResource of
 	<<>> -> user_resources(PUser, PServer);
@@ -738,7 +738,7 @@ out_subscription(_, _, _, _) ->
 		      subscribe | subscribed | unsubscribe | unsubscribed,
 		      binary()) -> true.
 in_subscription(_, User, Server, Owner, unsubscribed, _) ->
-    unsubscribe_user(jid:make(User, Server, <<>>), Owner),
+    unsubscribe_user(jid:make(User, Server), Owner),
     true;
 in_subscription(_, _, _, _, _, _) ->
     true.
@@ -789,7 +789,7 @@ unsubscribe_user(Host, Entity, Owner) ->
 remove_user(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
-    Entity = jid:make(LUser, LServer, <<>>),
+    Entity = jid:make(LUser, LServer),
     Host = host(LServer),
     HomeTreeBase = <<"/home/", LServer/binary, "/", LUser/binary>>,
     spawn(fun () ->
@@ -3023,7 +3023,7 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, Nidx, Type, NodeO
 	    %% See XEP-0163 1.1 section 4.3.1
     ejabberd_sm:route(jid:make(LUser, LServer, SenderResource),
 		      {pep_message, <<((Node))/binary, "+notify">>,
-		       jid:make(LUser, LServer, <<"">>),
+		       jid:make(LUser, LServer),
 		       add_extended_headers(
 			 Stanza, extended_headers([Publisher]))});
 broadcast_stanza(Host, _Publisher, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->

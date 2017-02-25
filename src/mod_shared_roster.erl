@@ -240,12 +240,10 @@ process_item(RosterItem, Host) ->
 	    %% existing roster groups.
 	    [] ->
 		mod_roster:out_subscription(UserTo, ServerTo,
-					    jid:make(UserFrom, ServerFrom,
-							  <<"">>),
+					    jid:make(UserFrom, ServerFrom),
 					    unsubscribe),
 		mod_roster:in_subscription(false, UserFrom, ServerFrom,
-					   jid:make(UserTo, ServerTo,
-							 <<"">>),
+					   jid:make(UserTo, ServerTo),
 					   unsubscribe, <<"">>),
 		RosterItem#roster{subscription = both, ask = none};
 	    %% If so, it means the user wants to add that contact
@@ -269,8 +267,8 @@ set_new_rosteritems(UserFrom, ServerFrom, UserTo,
     RIFrom = build_roster_record(UserFrom, ServerFrom,
 				 UserTo, ServerTo, NameTo, GroupsFrom),
     set_item(UserFrom, ServerFrom, ResourceTo, RIFrom),
-    JIDTo = jid:make(UserTo, ServerTo, <<"">>),
-    JIDFrom = jid:make(UserFrom, ServerFrom, <<"">>),
+    JIDTo = jid:make(UserTo, ServerTo),
+    JIDFrom = jid:make(UserFrom, ServerFrom),
     RITo = build_roster_record(UserTo, ServerTo, UserFrom,
 			       ServerFrom, UserFrom, []),
     set_item(UserTo, ServerTo, <<"">>, RITo),
@@ -360,7 +358,7 @@ in_subscription(Acc, User, Server, JID, Type,
 out_subscription(UserFrom, ServerFrom, JIDTo,
 		 unsubscribed) ->
     #jid{luser = UserTo, lserver = ServerTo} = JIDTo,
-    JIDFrom = jid:make(UserFrom, ServerFrom, <<"">>),
+    JIDFrom = jid:make(UserFrom, ServerFrom),
     mod_roster:out_subscription(UserTo, ServerTo, JIDFrom,
 				unsubscribe),
     mod_roster:in_subscription(false, UserFrom, ServerFrom,
@@ -1054,7 +1052,7 @@ split_grouphost(Host, Group) ->
     end.
 
 broadcast_subscription(User, Server, ContactJid, Subscription) ->
-    ejabberd_sm:route(jid:make(User, Server, <<"">>),
+    ejabberd_sm:route(jid:make(User, Server),
                       {item, ContactJid, Subscription}).
 
 displayed_groups_update(Members, DisplayedGroups, Subscription) ->

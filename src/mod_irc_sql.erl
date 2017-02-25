@@ -72,7 +72,7 @@ export(_Server) ->
                             data = Data}) ->
               case str:suffix(Host, IRCHost) of
                   true ->
-                      SJID = jid:to_string(jid:make(U, S, <<"">>)),
+                      SJID = jid:to_string(jid:make(U, S)),
                       SData = jlib:term_to_expr(Data),
                       [?SQL("delete from irc_custom"
                             " where jid=%(SJID)s and host=%(IRCHost)s;"),

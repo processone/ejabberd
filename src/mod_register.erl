@@ -316,7 +316,7 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
     case jid:is_nodename(User) of
       false -> {error, xmpp:err_bad_request(<<"Malformed username">>, Lang)};
       _ ->
-	  JID = jid:make(User, Server, <<"">>),
+	  JID = jid:make(User, Server),
 	  Access = gen_mod:get_module_opt(Server, ?MODULE, access,
                                           fun(A) -> A end,
 					  all),

@@ -251,7 +251,7 @@ store_offline_msg(Host, US, Msgs, Len, MaxOfflineMsgs) ->
 
 get_max_user_messages(AccessRule, {User, Server}, Host) ->
     case acl:match_rule(
-	   Host, AccessRule, jid:make(User, Server, <<"">>)) of
+	   Host, AccessRule, jid:make(User, Server)) of
 	Max when is_integer(Max) -> Max;
 	infinity -> infinity;
 	_ -> ?MAX_USER_MESSAGES
@@ -817,7 +817,7 @@ get_messages_subset2(Max, Length, MsgsAll) ->
     {MsgsFirstN, Msgs2} = lists:split(FirstN, MsgsAll),
     MsgsLastN = lists:nthtail(Length - FirstN - FirstN,
 			      Msgs2),
-    NoJID = jid:make(<<"...">>, <<"...">>, <<"">>),
+    NoJID = jid:make(<<"...">>, <<"...">>),
     Seq = <<"0">>,
     IntermediateMsg = #xmlel{name = <<"...">>, attrs = [],
 			     children = []},

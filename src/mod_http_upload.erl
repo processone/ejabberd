@@ -928,7 +928,7 @@ remove_user(User, Server) ->
 				      end,
 				      sha1),
     DocRoot1 = expand_host(expand_home(DocRoot), ServerHost),
-    UserStr = make_user_string(jid:make(User, Server, <<"">>), JIDinURL),
+    UserStr = make_user_string(jid:make(User, Server), JIDinURL),
     UserDir = str:join([DocRoot1, UserStr], <<$/>>),
     case del_tree(UserDir) of
 	ok ->

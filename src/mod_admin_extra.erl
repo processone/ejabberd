@@ -1418,7 +1418,7 @@ btl(B) -> binary_to_list(B).
 
 srg_get_members(Group, Host) ->
     Members = mod_shared_roster:get_group_explicit_users(Host,Group),
-    [jid:to_string(jid:make(MUser, MServer, <<>>))
+    [jid:to_string(jid:make(MUser, MServer))
      || {MUser, MServer} <- Members].
 
 srg_user_add(User, Host, Group, GroupHost) ->

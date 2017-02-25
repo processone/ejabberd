@@ -246,7 +246,7 @@ get_privacy(User, Server) ->
 
 -spec get_roster(binary(), binary()) -> [xmlel()].
 get_roster(User, Server) ->
-    JID = jid:make(User, Server, <<>>),
+    JID = jid:make(User, Server),
     case mod_roster:get_roster(User, Server) of
         [_|_] = Items ->
             Subs =

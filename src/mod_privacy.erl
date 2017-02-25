@@ -414,7 +414,7 @@ user_receive_packet({#iq{type = set, meta = #{privacy_updated_list := New}} = IQ
 		true ->
 		     State
 	     end,
-    From = jid:make(U, S, <<"">>),
+    From = jid:make(U, S),
     To = jid:make(U, S, R),
     {xmpp:set_from_to(IQ, From, To), State1};
 user_receive_packet(Acc) ->

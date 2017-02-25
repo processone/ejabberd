@@ -732,7 +732,7 @@ get_room_occupants_number(Room, Host) ->
 %% http://xmpp.org/extensions/xep-0249.html
 
 send_direct_invitation(RoomName, RoomService, Password, Reason, UsersString) ->
-    RoomJid = jid:make(RoomName, RoomService, <<"">>),
+    RoomJid = jid:make(RoomName, RoomService),
     XmlEl = build_invitation(Password, Reason, RoomJid),
     UsersStrings = get_users_to_invite(RoomJid, UsersString),
     [send_direct_invitation(RoomJid, UserStrings, XmlEl)

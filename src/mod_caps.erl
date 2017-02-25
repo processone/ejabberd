@@ -395,7 +395,7 @@ caps_write_fun(Host, Node, Features) ->
 
 -spec make_my_disco_hash(binary()) -> binary().
 make_my_disco_hash(Host) ->
-    JID = jid:make(<<"">>, Host, <<"">>),
+    JID = jid:make(Host),
     case {ejabberd_hooks:run_fold(disco_local_features,
 				  Host, empty, [JID, JID, <<"">>, <<"">>]),
 	  ejabberd_hooks:run_fold(disco_local_identity, Host, [],

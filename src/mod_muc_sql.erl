@@ -215,7 +215,7 @@ export(_Server) ->
                                 nick = Nick}) ->
               case str:suffix(Host, RoomHost) of
                   true ->
-                      SJID = jid:to_string(jid:make(U, S, <<"">>)),
+                      SJID = jid:to_string(jid:make(U, S)),
                       [?SQL("delete from muc_registered where"
                             " jid=%(SJID)s and host=%(RoomHost)s;"),
                        ?SQL("insert into muc_registered(jid, host, "

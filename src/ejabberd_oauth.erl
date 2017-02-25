@@ -127,7 +127,7 @@ oauth_list_tokens() ->
     Tokens = mnesia:dirty_match_object(#oauth_token{_ = '_'}),
     {MegaSecs, Secs, _MiniSecs} = os:timestamp(),
     TS = 1000000 * MegaSecs + Secs,
-    [{Token, jid:to_string(jid:make(U,S,<<>>)), Scope, integer_to_list(Expires - TS) ++ " seconds"} ||
+    [{Token, jid:to_string(jid:make(U,S)), Scope, integer_to_list(Expires - TS) ++ " seconds"} ||
         #oauth_token{token=Token, scope=Scope, us= {U,S},expire=Expires} <- Tokens].
 
 
@@ -193,7 +193,7 @@ get_client_identity(Client, Ctx) -> {ok, {Ctx, {client, Client}}}.
 verify_redirection_uri(_, _, Ctx) -> {ok, Ctx}.
 
 authenticate_user({User, Server}, Ctx) ->
-    case jid:make(User, Server, <<"">>) of
+    case jid:make(User, Server) of
         #jid{} = JID ->
             Access =
                 ejabberd_config:get_option(

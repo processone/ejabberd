@@ -731,7 +731,7 @@ check_access(Command, Access, Auth, CallerInfo)
        Command#ejabberd_commands.policy == user ->
     case check_auth(Command, Auth) of
 	{ok, User, Server} ->
-	    check_access2(Access, CallerInfo#{usr => jid:split(jid:make(User, Server, <<>>))}, Server);
+	    check_access2(Access, CallerInfo#{usr => jid:split(jid:make(User, Server))}, Server);
 	no_auth_provided ->
 	    case Command#ejabberd_commands.policy of
 		user ->
@@ -834,7 +834,7 @@ oauth_token_user(noauth) ->
 oauth_token_user(admin) ->
     undefined;
 oauth_token_user({User, Server, _, _}) ->
-    jid:make(User, Server, <<>>).
+    jid:make(User, Server).
 
 is_admin(_Name, admin, _Extra) ->
     true;
@@ -845,7 +845,7 @@ is_admin(_Name, Map, _extra) when is_map(Map) ->
 is_admin(Name, Auth, Extra) ->
     {ACLInfo, Server} = case Auth of
 			    {U, S, _, _} ->
-				{Extra#{usr=>jid:split(jid:make(U, S, <<>>))}, S};
+				{Extra#{usr=>jid:split(jid:make(U, S))}, S};
 			    _ ->
 				{Extra, global}
 	      end,

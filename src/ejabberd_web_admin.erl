@@ -102,7 +102,7 @@ get_acl_rule(_RPath, 'POST') ->
 get_jid(Auth, HostHTTP, Method) ->
     case get_auth_admin(Auth, HostHTTP, [], Method) of
       {ok, {User, Server}} ->
-	  jid:make(User, Server, <<"">>);
+	  jid:make(User, Server);
       {unauthorized, Error} ->
 	  ?ERROR_MSG("Unauthorized ~p: ~p", [Auth, Error]),
 	  throw({unauthorized, Auth})
@@ -274,7 +274,7 @@ get_auth_account(HostOfRule, AccessRule, User, Server,
     case ejabberd_auth:check_password(User, <<"">>, Server, Pass) of
       true ->
 	  case acl:any_rules_allowed(HostOfRule, AccessRule,
-			    jid:make(User, Server, <<"">>))
+			    jid:make(User, Server))
 	      of
 	    false -> {unauthorized, <<"unprivileged-account">>};
 	    true -> {ok, {User, Server}}

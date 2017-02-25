@@ -189,7 +189,7 @@ bounce_offline_message(Acc) ->
 -spec disconnect_removed_user(binary(), binary()) -> ok.
 
 disconnect_removed_user(User, Server) ->
-    route(jid:make(User, Server, <<"">>), {exit, <<"User removed">>}).
+    route(jid:make(User, Server), {exit, <<"User removed">>}).
 
 get_user_resources(User, Server) ->
     LUser = jid:nodeprep(User),
@@ -739,7 +739,7 @@ check_max_sessions(LUser, LServer) ->
 -spec get_max_user_sessions(binary(), binary()) -> infinity | non_neg_integer().
 get_max_user_sessions(LUser, Host) ->
     case acl:match_rule(Host, max_user_sessions,
-			jid:make(LUser, Host, <<"">>))
+			jid:make(LUser, Host))
 	of
       Max when is_integer(Max) -> Max;
       infinity -> infinity;
