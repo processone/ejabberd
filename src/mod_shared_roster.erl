@@ -983,15 +983,13 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 					     <<"@all@">> -> USs;
 					     <<"@online@">> -> USs;
 					     _ ->
-						 case jid:from_string(SJID)
-						     of
-						   JID
-						       when is_record(JID,
-								      jid) ->
+						 try jid:decode(SJID) of
+						     JID ->
 						       [{JID#jid.luser,
 							 JID#jid.lserver}
-							| USs];
-						   error -> error
+							| USs]
+						 catch _:{bad_jid, _} ->
+							 error
 						 end
 					   end
 				   end,
@@ -1043,7 +1041,7 @@ get_opt(Opts, Opt, Default) ->
     end.
 
 us_to_list({User, Server}) ->
-    jid:to_string({User, Server, <<"">>}).
+    jid:encode({User, Server, <<"">>}).
 
 split_grouphost(Host, Group) ->
     case str:tokens(Group, <<"@">>) of

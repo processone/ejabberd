@@ -262,7 +262,7 @@ process_terminated(#{sockmod := SockMod, socket := Socket, jid := JID} = State,
 		   Reason) ->
     Status = format_reason(State, Reason),
     ?INFO_MSG("(~s) Closing c2s session for ~s: ~s",
-	      [SockMod:pp(Socket), jid:to_string(JID), Status]),
+	      [SockMod:pp(Socket), jid:encode(JID), Status]),
     State1 = case maps:is_key(pres_last, State) of
 		 true ->
 		     Pres = #presence{type = unavailable,
@@ -402,12 +402,12 @@ bind(R, #{user := U, server := S, access := Access, lang := Lang,
 		    State3 = ejabberd_hooks:run_fold(
 			       c2s_session_opened, LServer, State2, []),
 		    ?INFO_MSG("(~s) Opened c2s session for ~s",
-			      [SockMod:pp(Socket), jid:to_string(JID)]),
+			      [SockMod:pp(Socket), jid:encode(JID)]),
 		    {ok, State3};
 		deny ->
 		    ejabberd_hooks:run(forbidden_session_hook, LServer, [JID]),
 		    ?INFO_MSG("(~s) Forbidden c2s session for ~s",
-			      [SockMod:pp(Socket), jid:to_string(JID)]),
+			      [SockMod:pp(Socket), jid:encode(JID)]),
 		    Txt = <<"Denied by ACL">>,
 		    {error, xmpp:err_not_allowed(Txt, Lang), State}
 	    end

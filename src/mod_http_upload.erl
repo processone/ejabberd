@@ -542,7 +542,7 @@ process_iq(#iq{type = get, lang = Lang, from = From,
 	    end;
 	deny ->
 	    ?DEBUG("Denying HTTP upload slot request from ~s",
-		   [jid:to_string(From)]),
+		   [jid:encode(From)]),
 	    Txt = <<"Denied by ACL">>,
 	    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang))
     end;
@@ -559,7 +559,7 @@ create_slot(#state{service_url = undefined, max_size = MaxSize},
 						      Size > MaxSize ->
     Text = {<<"File larger than ~w bytes">>, [MaxSize]},
     ?INFO_MSG("Rejecting file ~s from ~s (too large: ~B bytes)",
-	      [File, jid:to_string(JID), Size]),
+	      [File, jid:encode(JID), Size]),
     {error, xmpp:err_not_acceptable(Text, Lang)};
 create_slot(#state{service_url = undefined,
 		   jid_in_url = JIDinURL,
@@ -575,7 +575,7 @@ create_slot(#state{service_url = undefined,
 	    RandStr = make_rand_string(SecretLength),
 	    FileStr = make_file_string(File),
 	    ?INFO_MSG("Got HTTP upload slot for ~s (file: ~s)",
-		      [jid:to_string(JID), File]),
+		      [jid:encode(JID), File]),
 	    {ok, [UserStr, RandStr, FileStr]};
 	deny ->
 	    {error, xmpp:err_service_unavailable()};
@@ -589,7 +589,7 @@ create_slot(#state{service_url = ServiceURL},
     HttpOptions = [{timeout, ?SERVICE_REQUEST_TIMEOUT}],
     SizeStr = integer_to_binary(Size),
     GetRequest = binary_to_list(ServiceURL) ++
-		     "?jid=" ++ ?URL_ENC(jid:to_string({U, S, <<"">>})) ++
+		     "?jid=" ++ ?URL_ENC(jid:encode({U, S, <<"">>})) ++
 		     "&name=" ++ ?URL_ENC(File) ++
 		     "&size=" ++ ?URL_ENC(SizeStr) ++
 		     "&content_type=" ++ ?URL_ENC(ContentType),
@@ -599,33 +599,33 @@ create_slot(#state{service_url = ServiceURL},
 		[<<"http", _/binary>> = PutURL,
 		 <<"http", _/binary>> = GetURL] ->
 		    ?INFO_MSG("Got HTTP upload slot for ~s (file: ~s)",
-			      [jid:to_string(JID), File]),
+			      [jid:encode(JID), File]),
 		    {ok, PutURL, GetURL};
 		Lines ->
 		    ?ERROR_MSG("Can't parse data received for ~s from <~s>: ~p",
-			       [jid:to_string(JID), ServiceURL, Lines]),
+			       [jid:encode(JID), ServiceURL, Lines]),
 		    Txt = <<"Failed to parse HTTP response">>,
 		    {error, xmpp:err_service_unavailable(Txt, Lang)}
 	    end;
 	{ok, {402, _Body}} ->
 	    ?INFO_MSG("Got status code 402 for ~s from <~s>",
-		      [jid:to_string(JID), ServiceURL]),
+		      [jid:encode(JID), ServiceURL]),
 	    {error, xmpp:err_resource_constraint()};
 	{ok, {403, _Body}} ->
 	    ?INFO_MSG("Got status code 403 for ~s from <~s>",
-		      [jid:to_string(JID), ServiceURL]),
+		      [jid:encode(JID), ServiceURL]),
 	    {error, xmpp:err_not_allowed()};
 	{ok, {413, _Body}} ->
 	    ?INFO_MSG("Got status code 413 for ~s from <~s>",
-		      [jid:to_string(JID), ServiceURL]),
+		      [jid:encode(JID), ServiceURL]),
 	    {error, xmpp:err_not_acceptable()};
 	{ok, {Code, _Body}} ->
 	    ?ERROR_MSG("Got unexpected status code for ~s from <~s>: ~B",
-		       [jid:to_string(JID), ServiceURL, Code]),
+		       [jid:encode(JID), ServiceURL, Code]),
 	    {error, xmpp:err_service_unavailable()};
 	{error, Reason} ->
 	    ?ERROR_MSG("Error requesting upload slot for ~s from <~s>: ~p",
-		       [jid:to_string(JID), ServiceURL, Reason]),
+		       [jid:encode(JID), ServiceURL, Reason]),
 	    {error, xmpp:err_service_unavailable()}
     end.
 

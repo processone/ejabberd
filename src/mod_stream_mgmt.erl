@@ -229,20 +229,20 @@ c2s_handle_call(State, _Call, _From) ->
 c2s_handle_info(#{mgmt_ack_timer := TRef, jid := JID, mod := Mod} = State,
 		{timeout, TRef, ack_timeout}) ->
     ?DEBUG("Timed out waiting for stream management acknowledgement of ~s",
-	   [jid:to_string(JID)]),
+	   [jid:encode(JID)]),
     State1 = State#{stop_reason => {socket, timeout}},
     State2 = Mod:close(State1, _SendTrailer = false),
     {stop, transition_to_pending(State2)};
 c2s_handle_info(#{mgmt_state := pending, jid := JID, mod := Mod} = State,
 		{timeout, _, pending_timeout}) ->
     ?DEBUG("Timed out waiting for resumption of stream for ~s",
-	   [jid:to_string(JID)]),
+	   [jid:encode(JID)]),
     Mod:stop(State#{mgmt_state => timeout});
 c2s_handle_info(#{jid := JID} = State, {_Ref, {resume, OldState}}) ->
     %% This happens if the resume_session/1 request timed out; the new session
     %% now receives the late response.
     ?DEBUG("Received old session state for ~s after failed resumption",
-	   [jid:to_string(JID)]),
+	   [jid:encode(JID)]),
     route_unacked_stanzas(OldState#{mgmt_resend => false}),
     State;
 c2s_handle_info(State, _) ->
@@ -257,7 +257,7 @@ c2s_closed(State, _Reason) ->
 
 c2s_terminated(#{mgmt_state := resumed, jid := JID} = State, _Reason) ->
     ?INFO_MSG("Closing former stream of resumed session for ~s",
-	      [jid:to_string(JID)]),
+	      [jid:encode(JID)]),
     bounce_message_queue(),
     {stop, State};
 c2s_terminated(#{mgmt_state := MgmtState, mgmt_stanzas_in := In, sid := SID,
@@ -328,14 +328,14 @@ handle_enable(#{mgmt_timeout := DefaultTimeout,
 	      end,
     Res = if Timeout > 0 ->
 		  ?INFO_MSG("Stream management with resumption enabled for ~s",
-			    [jid:to_string(JID)]),
+			    [jid:encode(JID)]),
 		  #sm_enabled{xmlns = Xmlns,
 			      id = make_resume_id(State),
 			      resume = true,
 			      max = Timeout};
 	     true ->
 		  ?INFO_MSG("Stream management without resumption enabled for ~s",
-			    [jid:to_string(JID)]),
+			    [jid:encode(JID)]),
 		  #sm_enabled{xmlns = Xmlns}
 	  end,
     State1 = State#{mgmt_state => active,
@@ -383,7 +383,7 @@ handle_resume(#{user := User, lserver := LServer, sockmod := SockMod,
 	    %% csi_flush_queue(State4),
 	    State5 = ejabberd_hooks:run_fold(c2s_session_resumed, LServer, State4, []),
 	    ?INFO_MSG("(~s) Resumed session for ~s",
-		      [SockMod:pp(Socket), jid:to_string(JID)]),
+		      [SockMod:pp(Socket), jid:encode(JID)]),
 	    {ok, State5};
 	{error, El, Msg} ->
 	    ?INFO_MSG("Cannot resume session for ~s@~s: ~s",
@@ -398,7 +398,7 @@ transition_to_pending(#{mgmt_state := active, mod := Mod,
 transition_to_pending(#{mgmt_state := active, jid := JID,
 			lserver := LServer, mgmt_timeout := Timeout} = State) ->
     State1 = cancel_ack_timer(State),
-    ?INFO_MSG("Waiting for resumption of stream for ~s", [jid:to_string(JID)]),
+    ?INFO_MSG("Waiting for resumption of stream for ~s", [jid:encode(JID)]),
     erlang:start_timer(timer:seconds(Timeout), self(), pending_timeout),
     State2 = State1#{mgmt_state => pending},
     ejabberd_hooks:run_fold(c2s_session_pending, LServer, State2, []);
@@ -409,11 +409,11 @@ transition_to_pending(State) ->
 check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut, jid := JID} = State, H)
   when H > NumStanzasOut ->
     ?DEBUG("~s acknowledged ~B stanzas, but only ~B were sent",
-	   [jid:to_string(JID), H, NumStanzasOut]),
+	   [jid:encode(JID), H, NumStanzasOut]),
     mgmt_queue_drop(State#{mgmt_stanzas_out => H}, NumStanzasOut);
 check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut, jid := JID} = State, H) ->
     ?DEBUG("~s acknowledged ~B of ~B stanzas",
-	   [jid:to_string(JID), H, NumStanzasOut]),
+	   [jid:encode(JID), H, NumStanzasOut]),
     mgmt_queue_drop(State, H).
 
 -spec update_num_stanzas_in(state(), xmpp_element()) -> state().
@@ -490,7 +490,7 @@ resend_unacked_stanzas(#{mgmt_state := MgmtState,
 	MgmtState == pending orelse
 	MgmtState == timeout) andalso QueueLen > 0 ->
     ?DEBUG("Resending ~B unacknowledged stanza(s) to ~s",
-	   [QueueLen, jid:to_string(JID)]),
+	   [QueueLen, jid:encode(JID)]),
     queue_foldl(
       fun({_, Time, Pkt}, AccState) ->
 	      NewPkt = add_resent_delay_info(AccState, Pkt, Time),
@@ -522,10 +522,10 @@ route_unacked_stanzas(#{mgmt_state := MgmtState,
 			      end
 		      end,
     ?DEBUG("Re-routing ~B unacknowledged stanza(s) to ~s",
-	   [QueueLen, jid:to_string(JID)]),
+	   [QueueLen, jid:encode(JID)]),
     queue_foreach(
       fun({_, _Time, #presence{from = From}}) ->
-	      ?DEBUG("Dropping presence stanza from ~s", [jid:to_string(From)]);
+	      ?DEBUG("Dropping presence stanza from ~s", [jid:encode(From)]);
 	 ({_, _Time, #iq{} = El}) ->
 	      Txt = <<"User session terminated">>,
 	      ejabberd_router:route_error(
@@ -537,14 +537,14 @@ route_unacked_stanzas(#{mgmt_state := MgmtState,
 	      %% back to the original sender."  Resending such a stanza could
 	      %% easily lead to unexpected results as well.
 	      ?DEBUG("Dropping forwarded message stanza from ~s",
-		     [jid:to_string(From)]);
+		     [jid:encode(From)]);
 	 ({_, Time, #message{} = Msg}) ->
 	      case ejabberd_hooks:run_fold(message_is_archived,
 					   LServer, false,
 					   [State, Msg]) of
 		  true ->
 		      ?DEBUG("Dropping archived message stanza from ~s",
-			     [jid:to_string(xmpp:get_from(Msg))]);
+			     [jid:encode(xmpp:get_from(Msg))]);
 		  false when ResendOnTimeout ->
 		      NewEl = add_resent_delay_info(State, Msg, Time),
 		      ejabberd_router:route(NewEl);

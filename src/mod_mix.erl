@@ -261,7 +261,7 @@ publish_participant(From, To) ->
     LFrom = jid:tolower(BareFrom),
     LTo = jid:tolower(jid:remove_resource(To)),
     Participant = #mix_participant{jid = BareFrom},
-    ItemID = p1_sha:sha(jid:to_string(LFrom)),
+    ItemID = p1_sha:sha(jid:encode(LFrom)),
     mod_pubsub:publish_item(
       LTo, To#jid.lserver, ?NS_MIX_NODES_PARTICIPANTS,
       From, ItemID, [xmpp:encode(Participant)]).
@@ -284,7 +284,7 @@ delete_presence(From, To) ->
 
 delete_participant(From, To) ->
     LFrom = jid:tolower(jid:remove_resource(From)),
-    ItemID = p1_sha:sha(jid:to_string(LFrom)),
+    ItemID = p1_sha:sha(jid:encode(LFrom)),
     delete_presence(From, To),
     delete_item(From, To, ?NS_MIX_NODES_PARTICIPANTS, ItemID).
 

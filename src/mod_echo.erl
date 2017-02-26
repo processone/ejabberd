@@ -196,7 +196,7 @@ do_client_version(enabled, From, To) ->
 	 #iq{to = To, from = From2,
 	     id = ID, type = result, sub_els = [#version{} = V]}} ->
 	    ?INFO_MSG("Version of the client ~s:~n~s",
-		      [jid:to_string(To), xmpp:pp(V)])
+		      [jid:encode(To), xmpp:pp(V)])
     after 5000 -> % Timeout in miliseconds: 5 seconds
 	    []
     end.

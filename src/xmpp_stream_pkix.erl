@@ -106,11 +106,13 @@ get_cert_domains(Cert) ->
 			     true -> error
 			  end,
 		      if D /= error ->
-			      case jid:from_string(D) of
+			      try jid:decode(D) of
 				  #jid{luser = <<"">>, lserver = LD,
 				       lresource = <<"">>} ->
 				      [LD];
 				  _ -> []
+			      catch _:{bad_jid, _} ->
+				      []
 			      end;
 			 true -> []
 		      end;
@@ -131,7 +133,7 @@ get_cert_domains(Cert) ->
 							   value = XmppAddr}}) ->
 				    case 'XmppAddr':decode('XmppAddr', XmppAddr) of
 					{ok, D} when is_binary(D) ->
-					    case jid:from_string(D) of
+					    try jid:decode(D) of
 						#jid{luser = <<"">>,
 						     lserver = LD,
 						     lresource = <<"">>} ->
@@ -142,16 +144,20 @@ get_cert_domains(Cert) ->
 							    [PCLD]
 						    end;
 						_ -> []
+					    catch _:{bad_jid, _} ->
+						    []
 					    end;
 					_ -> []
 				    end;
 			       ({dNSName, D}) when is_list(D) ->
-				    case jid:from_string(list_to_binary(D)) of
+				    try jid:decode(list_to_binary(D)) of
 					#jid{luser = <<"">>,
 					     lserver = LD,
 					     lresource = <<"">>} ->
 					    [LD];
 					_ -> []
+				    catch _:{bad_jid, _} ->
+					    []
 				    end;
 			       (_) -> []
 			    end, SANs);

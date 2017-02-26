@@ -45,7 +45,7 @@ store(R) ->
     Path = path(<<"store">>),
     %% Retry 2 times, with a backoff of 500millisec
     {User, Server} = R#oauth_token.us,
-    SJID = jid:to_string({User, Server, <<"">>}),
+    SJID = jid:encode({User, Server, <<"">>}),
     case rest:with_retry(
            post,
            [?MYNAME, Path, [],
@@ -68,7 +68,7 @@ lookup(Token) ->
                          2, 500) of
         {ok, 200, {Data}} ->
             SJID = proplists:get_value(<<"user">>, Data, <<>>),
-            JID = jid:from_string(SJID),
+            JID = jid:decode(SJID),
             US = {JID#jid.luser, JID#jid.lserver},
             Scope = proplists:get_value(<<"scope">>, Data, []),
             Expire = proplists:get_value(<<"expire">>, Data, 0),

@@ -108,18 +108,18 @@ get_commands_spec() ->
 
 oauth_issue_token(Jid, TTLSeconds, ScopesString) ->
     Scopes = [list_to_binary(Scope) || Scope <- string:tokens(ScopesString, ";")],
-    case jid:from_string(list_to_binary(Jid)) of
+    try jid:decode(list_to_binary(Jid)) of
         #jid{luser =Username, lserver = Server} ->
             case oauth2:authorize_password({Username, Server},  Scopes, admin_generated) of
                 {ok, {_Ctx,Authorization}} ->
                     {ok, {_AppCtx2, Response}} = oauth2:issue_token(Authorization, [{expiry_time, TTLSeconds}]),
-            {ok, AccessToken} = oauth2_response:access_token(Response),
-            {ok, VerifiedScope} = oauth2_response:scope(Response),
+		    {ok, AccessToken} = oauth2_response:access_token(Response),
+		    {ok, VerifiedScope} = oauth2_response:scope(Response),
                     {AccessToken, VerifiedScope, integer_to_list(TTLSeconds) ++ " seconds"};
-        {error, Error} ->
-            {error, Error}
-            end;
-        error ->
+		{error, Error} ->
+		    {error, Error}
+            end
+    catch _:{bad_jid, _} ->
             {error, "Invalid JID: " ++ Jid}
     end.
 
@@ -127,7 +127,7 @@ oauth_list_tokens() ->
     Tokens = mnesia:dirty_match_object(#oauth_token{_ = '_'}),
     {MegaSecs, Secs, _MiniSecs} = os:timestamp(),
     TS = 1000000 * MegaSecs + Secs,
-    [{Token, jid:to_string(jid:make(U,S)), Scope, integer_to_list(Expires - TS) ++ " seconds"} ||
+    [{Token, jid:encode(jid:make(U,S)), Scope, integer_to_list(Expires - TS) ++ " seconds"} ||
         #oauth_token{token=Token, scope=Scope, us= {U,S},expire=Expires} <- Tokens].
 
 
@@ -479,7 +479,7 @@ process(_Handlers,
     RedirectURI = proplists:get_value(<<"redirect_uri">>, Q, <<"">>),
     SScope = proplists:get_value(<<"scope">>, Q, <<"">>),
     StringJID = proplists:get_value(<<"username">>, Q, <<"">>),
-    #jid{user = Username, server = Server} = jid:from_string(StringJID),
+    #jid{user = Username, server = Server} = jid:decode(StringJID),
     Password = proplists:get_value(<<"password">>, Q, <<"">>),
     State = proplists:get_value(<<"state">>, Q, <<"">>),
     Scope = str:tokens(SScope, <<" ">>),
@@ -542,7 +542,7 @@ process(_Handlers,
       <<"password">> ->
         SScope = proplists:get_value(<<"scope">>, Q, <<"">>),
         StringJID = proplists:get_value(<<"username">>, Q, <<"">>),
-        #jid{user = Username, server = Server} = jid:from_string(StringJID),
+        #jid{user = Username, server = Server} = jid:decode(StringJID),
         Password = proplists:get_value(<<"password">>, Q, <<"">>),
         Scope = str:tokens(SScope, <<" ">>),
         TTL = proplists:get_value(<<"ttl">>, Q, <<"">>),

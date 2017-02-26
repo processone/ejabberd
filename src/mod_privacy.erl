@@ -236,7 +236,7 @@ encode_list_item(#listitem{action = Action,
 -spec encode_value(listitem_type(), listitem_value()) -> binary().
 encode_value(Type, Val) ->
     case Type of
-	jid -> jid:to_string(Val);
+	jid -> jid:encode(Val);
 	group -> Val;
 	subscription ->
 	    case Val of
@@ -252,7 +252,7 @@ encode_value(Type, Val) ->
 			  listitem_value().
 decode_value(Type, Value) ->
     case Type of
-	jid -> jid:tolower(jid:from_string(Value));
+	jid -> jid:tolower(jid:decode(Value));
 	subscription ->
 	    case Value of
 		<<"from">> -> from;

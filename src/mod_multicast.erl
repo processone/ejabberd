@@ -242,7 +242,7 @@ handle_iq(Packet, State) ->
 		ejabberd_router:route_error(Packet, Error);
 	    reply ->
 		To = xmpp:get_to(IQ),
-		LServiceS = jid:to_string(To),
+		LServiceS = jid:encode(To),
 		case Packet#iq.type of
 		    result ->
 			process_iqreply_result(LServiceS, IQ);
@@ -297,7 +297,7 @@ route_trusted(LServiceS, LServerS, FromJID,
     Delivereds = [],
     Dests2 = lists:map(
 	       fun(D) ->
-		       #dest{jid_string = jid:to_string(D),
+		       #dest{jid_string = jid:encode(D),
 			     jid_jid = D, type = bcc,
 			     full_xml = #address{type = bcc, jid = D}}
 	       end, Destinations),
@@ -463,7 +463,7 @@ convert_dest_record(Addrs) ->
       fun(#address{jid = undefined} = Addr) ->
 	      #dest{jid_string = none, full_xml = Addr};
 	 (#address{jid = JID, type = Type} = Addr) ->
-	      #dest{jid_string = jid:to_string(JID), jid_jid = JID,
+	      #dest{jid_string = jid:encode(JID), jid_jid = JID,
 		    type = Type, full_xml = Addr}
       end, Addrs).
 
@@ -1120,9 +1120,9 @@ make_reply(internal_server_error, Lang, ErrText) ->
 make_reply(forbidden, Lang, ErrText) ->
     xmpp:err_forbidden(ErrText, Lang).
 
-stj(String) -> jid:from_string(String).
+stj(String) -> jid:decode(String).
 
-jts(String) -> jid:to_string(String).
+jts(String) -> jid:encode(String).
 
 depends(_Host, _Opts) ->
     [].

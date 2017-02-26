@@ -215,8 +215,8 @@ process_bytestreams(#iq{type = set, lang = Lang, from = InitiatorJID, to = To,
     case acl:match_rule(ServerHost, ACL, InitiatorJID) of
 	allow ->
 	    Node = ejabberd_cluster:get_node_by_id(To#jid.lresource),
-	    Target = jid:to_string(jid:tolower(TargetJID)),
-	    Initiator = jid:to_string(jid:tolower(InitiatorJID)),
+	    Target = jid:encode(jid:tolower(TargetJID)),
+	    Initiator = jid:encode(jid:tolower(InitiatorJID)),
 	    SHA1 = p1_sha:sha(<<SID/binary, Initiator/binary, Target/binary>>),
 	    Mod = gen_mod:ram_db_mod(global, mod_proxy65),
 	    MaxConnections = max_connections(ServerHost),

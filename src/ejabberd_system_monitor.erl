@@ -209,7 +209,7 @@ get_admin_jids() ->
       watchdog_admins,
       fun(JIDs) ->
               [jid:tolower(
-                 jid:from_string(
+                 jid:decode(
                    iolist_to_binary(S))) || S <- JIDs]
       end, []).
 
@@ -341,7 +341,7 @@ process_remote_command(_) -> throw(unknown_command).
 
 opt_type(watchdog_admins) ->
     fun (JIDs) ->
-	    [jid:tolower(jid:from_string(iolist_to_binary(S)))
+	    [jid:tolower(jid:decode(iolist_to_binary(S)))
 	     || S <- JIDs]
     end;
 opt_type(watchdog_large_heap) ->

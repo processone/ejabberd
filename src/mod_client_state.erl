@@ -241,7 +241,7 @@ filter_presence({#presence{meta = #{csi_resend := true}}, _} = Acc) ->
 filter_presence({#presence{to = To, type = Type} = Pres,
 		 #{csi_state := inactive} = C2SState})
   when Type == available; Type == unavailable ->
-    ?DEBUG("Got availability presence stanza for ~s", [jid:to_string(To)]),
+    ?DEBUG("Got availability presence stanza for ~s", [jid:encode(To)]),
     enqueue_stanza(presence, Pres, C2SState);
 filter_presence(Acc) ->
     Acc.
@@ -261,7 +261,7 @@ filter_chat_states({#message{from = From, to = To} = Msg,
 		    Acc;
 		_ ->
 		?DEBUG("Got standalone chat state notification for ~s",
-		       [jid:to_string(To)]),
+		       [jid:encode(To)]),
 		    enqueue_stanza(chatstate, Msg, C2SState)
 	    end;
 	false ->
@@ -279,7 +279,7 @@ filter_pep({#message{to = To} = Msg,
 	undefined ->
 	    Acc;
 	Node ->
-	    ?DEBUG("Got PEP notification for ~s", [jid:to_string(To)]),
+	    ?DEBUG("Got PEP notification for ~s", [jid:encode(To)]),
 	    enqueue_stanza({pep, Node}, Msg, C2SState)
     end;
 filter_pep(Acc) ->
@@ -291,7 +291,7 @@ filter_other({Stanza, #{jid := JID} = C2SState} = Acc) when ?is_stanza(Stanza) -
 	#{csi_resend := true} ->
 	    Acc;
 	_ ->
-	    ?DEBUG("Won't add stanza for ~s to CSI queue", [jid:to_string(JID)]),
+	    ?DEBUG("Won't add stanza for ~s to CSI queue", [jid:encode(JID)]),
 	    From = xmpp:get_from(Stanza),
 	    C2SState1 = dequeue_sender(From, C2SState),
 	    {Stanza, C2SState1}
@@ -331,7 +331,7 @@ enqueue_stanza(_Type, Stanza, State) ->
 dequeue_sender(#jid{luser = U, lserver = S},
 	       #{csi_queue := Q, jid := JID} = C2SState) ->
     ?DEBUG("Flushing packets of ~s@~s from CSI queue of ~s",
-	   [U, S, jid:to_string(JID)]),
+	   [U, S, jid:encode(JID)]),
     case queue_take({U, S}, Q) of
 	{Stanzas, Q1} ->
 	    C2SState1 = flush_stanzas(C2SState, Stanzas),
@@ -342,7 +342,7 @@ dequeue_sender(#jid{luser = U, lserver = S},
 
 -spec flush_queue(c2s_state()) -> c2s_state().
 flush_queue(#{csi_queue := Q, jid := JID} = C2SState) ->
-    ?DEBUG("Flushing CSI queue of ~s", [jid:to_string(JID)]),
+    ?DEBUG("Flushing CSI queue of ~s", [jid:encode(JID)]),
     C2SState1 = flush_stanzas(C2SState, queue_to_list(Q)),
     C2SState1#{csi_queue => queue_new()}.
 

@@ -123,7 +123,7 @@ get_group_explicit_users(Host, Group) ->
 	{selected, Rs} ->
 	    lists:map(
 	      fun({JID}) ->
-		      {U, S, _} = jid:tolower(jid:from_string(JID)),
+		      {U, S, _} = jid:tolower(jid:decode(JID)),
 		      {U, S}
 	      end, Rs);
 	_ ->
@@ -198,6 +198,6 @@ import(_, _, _) ->
 %%% Internal functions
 %%%===================================================================
 make_jid_s(U, S) ->
-    jid:to_string(jid:tolower(jid:make(U, S))).
+    jid:encode(jid:tolower(jid:make(U, S))).
 
 make_jid_s({U, S}) -> make_jid_s(U, S).

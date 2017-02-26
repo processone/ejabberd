@@ -105,14 +105,14 @@ update(Server, JID, Dir) ->
 		   in ->
 		       ?WARNING_MSG("User ~s is being flooded, ignoring received "
 				    "presence subscriptions",
-				    [jid:to_string(JID)]);
+				    [jid:encode(JID)]);
 		   out ->
 		       IP = ejabberd_sm:get_user_ip(JID#jid.luser,
 						    JID#jid.lserver,
 						    JID#jid.lresource),
 		       ?WARNING_MSG("Flooder detected: ~s, on IP: ~s ignoring "
 				    "sent presence subscriptions~n",
-				    [jid:to_string(JID),
+				    [jid:encode(JID),
 				     jlib:ip_to_list(IP)])
 		 end,
 		 {stop, deny};

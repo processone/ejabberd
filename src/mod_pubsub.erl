@@ -1414,7 +1414,7 @@ get_pending_nodes(Host, Owner, Plugins) ->
 			       binary()) -> adhoc_command() | {error, stanza_error()}.
 send_pending_auth_events(Host, Node, Owner, Lang) ->
     ?DEBUG("Sending pending auth events for ~s on ~s:~s",
-	   [jid:to_string(Owner), Host, Node]),
+	   [jid:encode(Owner), Host, Node]),
     Action =
 	fun(#pubsub_node{id = Nidx, type = Type}) ->
 		case lists:member(<<"get-pending">>, plugin_features(Host, Type)) of
@@ -2819,7 +2819,7 @@ broadcast_publish_item(Host, Node, Nidx, Type, NodeOptions, ItemId, From, Payloa
 				EventItem0;
 			    publisher ->
 				EventItem0#ps_item{
-				  publisher = jid:to_string(From)};
+				  publisher = jid:encode(From)};
 			    none ->
 				EventItem0
 			end,

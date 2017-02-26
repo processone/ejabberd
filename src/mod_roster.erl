@@ -333,7 +333,7 @@ process_iq_get(#iq{to = To, lang = Lang,
 	   end)
     catch E:R ->
 	    ?ERROR_MSG("failed to process roster get for ~s: ~p",
-		       [jid:to_string(To), {E, {R, erlang:get_stacktrace()}}]),
+		       [jid:encode(To), {E, {R, erlang:get_stacktrace()}}]),
 	    Txt = <<"Roster module has failed">>,
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
     end.
@@ -1038,10 +1038,10 @@ build_contact_jid_td(RosterJID) ->
     case JIDURI of
       <<>> ->
 	  ?XAC(<<"td">>, [{<<"class">>, <<"valign">>}],
-	       (jid:to_string(RosterJID)));
+	       (jid:encode(RosterJID)));
       URI when is_binary(URI) ->
 	  ?XAE(<<"td">>, [{<<"class">>, <<"valign">>}],
-	       [?AC(JIDURI, (jid:to_string(RosterJID)))])
+	       [?AC(JIDURI, (jid:encode(RosterJID)))])
     end.
 
 user_roster_parse_query(User, Server, Items, Query) ->
@@ -1049,10 +1049,11 @@ user_roster_parse_query(User, Server, Items, Query) ->
       {value, _} ->
 	  case lists:keysearch(<<"newjid">>, 1, Query) of
 	    {value, {_, SJID}} ->
-		case jid:from_string(SJID) of
-		  JID when is_record(JID, jid) ->
-		      user_roster_subscribe_jid(User, Server, JID), ok;
-		  error -> error
+		try jid:decode(SJID) of
+		  JID ->
+		      user_roster_subscribe_jid(User, Server, JID), ok
+		catch _:{bad_jid, _} ->
+			error
 		end;
 	    false -> error
 	  end;
@@ -1114,7 +1115,7 @@ user_roster_item_parse_query(User, Server, Items,
     nothing.
 
 us_to_list({User, Server}) ->
-    jid:to_string({User, Server, <<"">>}).
+    jid:encode({User, Server, <<"">>}).
 
 webadmin_user(Acc, _User, _Server, Lang) ->
     Acc ++
@@ -1145,7 +1146,7 @@ import_stop(_LServer, _DBType) ->
     ok.
 
 import(LServer, {sql, _}, _DBType, <<"rostergroups">>, [LUser, SJID, Group]) ->
-    LJID = jid:tolower(jid:from_string(SJID)),
+    LJID = jid:tolower(jid:decode(SJID)),
     ets:insert(rostergroups_tmp, {{LUser, LServer, LJID}, Group}),
     ok;
 import(LServer, {sql, _}, DBType, <<"rosterusers">>, Row) ->

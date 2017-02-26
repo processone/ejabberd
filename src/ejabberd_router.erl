@@ -96,7 +96,7 @@ route(#jid{} = From, #jid{} = To, #xmlel{} = El) ->
     catch _:{xmpp_codec, Why} ->
 	    ?ERROR_MSG("failed to decode xml element ~p when "
 		       "routing from ~s to ~s: ~s",
-		       [El, jid:to_string(From), jid:to_string(To),
+		       [El, jid:encode(From), jid:encode(To),
 			xmpp:format_error(Why)])
     end;
 route(#jid{} = From, #jid{} = To, Packet) ->

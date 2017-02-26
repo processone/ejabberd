@@ -501,7 +501,7 @@ do_route(#jid{lresource = <<"">>} = To, Term) ->
 	      do_route(jid:replace_resource(To, R), Term)
       end, get_user_resources(To#jid.user, To#jid.server));
 do_route(To, Term) ->
-    ?DEBUG("broadcasting ~p to ~s", [Term, jid:to_string(To)]),
+    ?DEBUG("broadcasting ~p to ~s", [Term, jid:encode(To)]),
     {U, S, R} = jid:tolower(To),
     Mod = get_sm_backend(S),
     case online(Mod:get_sessions(U, S, R)) of

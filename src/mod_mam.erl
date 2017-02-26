@@ -889,7 +889,7 @@ msg_to_el(#archive_msg{timestamp = TS, packet = El, nick = Nick,
     catch _:{xmpp_codec, Why} ->
 	    ?ERROR_MSG("Failed to decode raw element ~p from message "
 		       "archive of user ~s: ~s",
-		       [El, jid:to_string(JidArchive), xmpp:format_error(Why)]),
+		       [El, jid:encode(JidArchive), xmpp:format_error(Why)]),
 	    {error, invalid_xml}
     end.
 

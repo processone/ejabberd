@@ -89,12 +89,12 @@ create_captcha(SID, From, To, Lang, Limiter, Args) ->
     case create_image(Limiter) of
       {ok, Type, Key, Image} ->
 	  Id = <<(randoms:get_string())/binary>>,
-	  JID = jid:to_string(From),
+	  JID = jid:encode(From),
 	  CID = <<"sha1+", (p1_sha:sha(Image))/binary, "@bob.xmpp.org">>,
 	  Data = #bob_data{cid = CID, 'max-age' = 0, type = Type,
 			   data = Image},
 	  Fs = [mk_field(hidden, <<"FORM_TYPE">>, ?NS_CAPTCHA),
-		mk_field(hidden, <<"from">>, jid:to_string(To)),
+		mk_field(hidden, <<"from">>, jid:encode(To)),
 		mk_field(hidden, <<"challenge">>, Id),
 		mk_field(hidden, <<"sid">>, SID),
 		mk_ocr_field(Lang, CID, Type)],
@@ -134,7 +134,7 @@ create_captcha_x(SID, To, Lang, Limiter, #xdata{fields = Fs} = X) ->
 			      label = translate:translate(
 					Lang, <<"CAPTCHA web page">>),
 			      values = [Imageurl]},
-		 mk_field(hidden, <<"from">>, jid:to_string(To)),
+		 mk_field(hidden, <<"from">>, jid:encode(To)),
 		 mk_field(hidden, <<"challenge">>, Id),
 		 mk_field(hidden, <<"sid">>, SID),
 		 mk_ocr_field(Lang, CID, Type)],

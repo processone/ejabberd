@@ -132,7 +132,7 @@ init([Host, ServerHost, Access, Room, HistorySize,
     State1 = set_opts(DefRoomOpts, State),
     store_room(State1),
     ?INFO_MSG("Created MUC room ~s@~s by ~s",
-	      [Room, Host, jid:to_string(Creator)]),
+	      [Room, Host, jid:encode(Creator)]),
     add_to_log(room_existence, created, State1),
     add_to_log(room_existence, started, State1),
     {ok, normal_state, State1};
@@ -483,12 +483,12 @@ handle_event({destroy, Reason}, _StateName,
 	destroy_room(#muc_destroy{xmlns = ?NS_MUC_OWNER, reason = Reason},
 		     StateData),
     ?INFO_MSG("Destroyed MUC room ~s with reason: ~p",
-	      [jid:to_string(StateData#state.jid), Reason]),
+	      [jid:encode(StateData#state.jid), Reason]),
     add_to_log(room_existence, destroyed, StateData),
     {stop, shutdown, StateData};
 handle_event(destroy, StateName, StateData) ->
     ?INFO_MSG("Destroyed MUC room ~s",
-	      [jid:to_string(StateData#state.jid)]),
+	      [jid:encode(StateData#state.jid)]),
     handle_event({destroy, undefined}, StateName, StateData);
 handle_event({set_affiliations, Affiliations},
 	     StateName, StateData) ->
@@ -1056,7 +1056,7 @@ close_room_if_temporary_and_empty(StateData1) ->
       true ->
 	  ?INFO_MSG("Destroyed MUC room ~s because it's temporary "
 		    "and empty",
-		    [jid:to_string(StateData1#state.jid)]),
+		    [jid:encode(StateData1#state.jid)]),
 	  add_to_log(room_existence, destroyed, StateData1),
 	  {stop, normal, StateData1};
       _ -> {next_state, normal_state, StateData1}
@@ -1178,7 +1178,7 @@ decide_fate_message(#message{type = error} = Msg,
 	   true ->
 	       Reason = str:format("This participant is considered a ghost "
 				   "and is expulsed: ~s",
-				   [jid:to_string(From)]),
+				   [jid:encode(From)]),
 	       {expulse_sender, Reason};
 	   false -> continue_delivery
 	 end,
@@ -2575,8 +2575,8 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
       {result, Res} ->
 	  ?INFO_MSG("Processing MUC admin query from ~s in "
 		    "room ~s:~n ~p",
-		    [jid:to_string(UJID),
-		     jid:to_string(StateData#state.jid), Res]),
+		    [jid:encode(UJID),
+		     jid:encode(StateData#state.jid), Res]),
 	  case lists:foldl(process_item_change(UJID),
 			   StateData, lists:flatten(Res)) of
 	      {error, _} = Err ->
@@ -2650,7 +2650,7 @@ process_item_change(Item, SD, UJID) ->
 	end
     catch E:R ->
 	    ?ERROR_MSG("failed to set item ~p from ~s: ~p",
-		       [Item, jid:to_string(UJID),
+		       [Item, jid:encode(UJID),
 			{E, {R, erlang:get_stacktrace()}}]),
 	    {error, xmpp:err_internal_server_error()}
     end.
@@ -2995,7 +2995,7 @@ process_iq_owner(From, #iq{type = set, lang = Lang,
 	    {error, xmpp:err_forbidden(ErrText, Lang)};
        Destroy /= undefined, Config == undefined, Items == [] ->
 	    ?INFO_MSG("Destroyed MUC room ~s by the owner ~s",
-		      [jid:to_string(StateData#state.jid), jid:to_string(From)]),
+		      [jid:encode(StateData#state.jid), jid:encode(From)]),
 	    add_to_log(room_existence, destroyed, StateData),
 	    destroy_room(Destroy, StateData);
        Config /= undefined, Destroy == undefined, Items == [] ->
@@ -3140,7 +3140,7 @@ get_config(Lang, StateData, From) ->
     MaxUsersRoom = get_max_users(StateData),
     Title = str:format(
 	      translate:translate(Lang, <<"Configuration of room ~s">>),
-	      [jid:to_string(StateData#state.jid)]),
+	      [jid:encode(StateData#state.jid)]),
     Fs = [{roomname, Config#config.title},
 	  {roomdesc, Config#config.description}] ++
 	case acl:match_rule(StateData#state.server_host, AccessPersistent, From) of
@@ -3898,8 +3898,8 @@ route_invitation(From, Invitation, Lang, StateData) ->
 		translate:translate(
 		  Lang,
 		  <<"~s invites you to the room ~s">>),
-		[jid:to_string(From),
-		 jid:to_string({StateData#state.room, StateData#state.host, <<"">>})]),
+		[jid:encode(From),
+		 jid:encode({StateData#state.room, StateData#state.host, <<"">>})]),
 	      case (StateData#state.config)#config.password_protected of
 		  true ->
 		      <<", ",

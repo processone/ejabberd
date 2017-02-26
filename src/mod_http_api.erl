@@ -139,16 +139,16 @@ depends(_Host, _Opts) ->
 extract_auth(#request{auth = HTTPAuth, ip = {IP, _}}) ->
     Info = case HTTPAuth of
             {SJID, Pass} ->
-                case jid:from_string(SJID) of
+                try jid:decode(SJID) of
 		       #jid{luser = User, lserver = Server} ->
                         case ejabberd_auth:check_password(User, <<"">>, Server, Pass) of
 			       true ->
 				   #{usr => {User, Server, <<"">>}, caller_server => Server};
 			       false ->
 				   {error, invalid_auth}
-                        end;
-                    _ ->
-			   {error, invalid_auth}
+                        end
+		catch _:{bad_jid, _} ->
+			{error, invalid_auth}
                 end;
             {oauth, Token, _} ->
 		   case ejabberd_oauth:check_token(Token) of

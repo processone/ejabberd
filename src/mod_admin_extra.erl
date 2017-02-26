@@ -1009,10 +1009,10 @@ get_presence(U, S) ->
     OnlinePids = [Pid || Pid <- Pids, Pid=/=none],
     case OnlinePids of
 	[] ->
-	    {jid:to_string({U, S, <<>>}), <<"unavailable">>, <<"">>};
+	    {jid:encode({U, S, <<>>}), <<"unavailable">>, <<"">>};
 	[SessionPid|_] ->
 	    {_User, Resource, Show, Status} = get_presence(SessionPid),
-	    FullJID = jid:to_string({U, S, Resource}),
+	    FullJID = jid:encode({U, S, Resource}),
 	    {FullJID, Show, Status}
     end.
 
@@ -1238,7 +1238,7 @@ get_roster(User, Server) ->
 make_roster_xmlrpc(Roster) ->
     lists:foldl(
       fun(Item, Res) ->
-	      JIDS = jid:to_string(Item#roster.jid),
+	      JIDS = jid:encode(Item#roster.jid),
 	      Nick = Item#roster.name,
 	      Subs = atom_to_list(Item#roster.subscription),
 	      Ask = atom_to_list(Item#roster.ask),
@@ -1418,7 +1418,7 @@ btl(B) -> binary_to_list(B).
 
 srg_get_members(Group, Host) ->
     Members = mod_shared_roster:get_group_explicit_users(Host,Group),
-    [jid:to_string(jid:make(MUser, MServer))
+    [jid:encode(jid:make(MUser, MServer))
      || {MUser, MServer} <- Members].
 
 srg_user_add(User, Host, Group, GroupHost) ->
@@ -1437,8 +1437,8 @@ srg_user_del(User, Host, Group, GroupHost) ->
 %% @doc Send a message to a Jabber account.
 %% @spec (Type::binary(), From::binary(), To::binary(), Subject::binary(), Body::binary()) -> ok
 send_message(Type, From, To, Subject, Body) ->
-    FromJID = jid:from_string(From),
-    ToJID = jid:from_string(To),
+    FromJID = jid:decode(From),
+    ToJID = jid:decode(To),
     Packet = build_packet(Type, Subject, Body),
     ejabberd_router:route(xmpp:set_from_to(Packet, FromJID, ToJID)).
 
@@ -1450,8 +1450,8 @@ build_packet(Type, Subject, Body) ->
 send_stanza(FromString, ToString, Stanza) ->
     try
 	#xmlel{} = El = fxml_stream:parse_element(Stanza),
-	#jid{} = From = jid:from_string(FromString),
-	#jid{} = To = jid:from_string(ToString),
+	From = jid:decode(FromString),
+	To = jid:decode(ToString),
 	Pkt = xmpp:decode(El, ?NS_CLIENT, [ignore_els]),
 	ejabberd_router:route(xmpp:set_from_to(Pkt, From, To))
     catch _:{xmpp_codec, Why} ->
@@ -1460,7 +1460,8 @@ send_stanza(FromString, ToString, Stanza) ->
 	  _:{badmatch, {error, Why}} ->
 	    io:format("invalid xml: ~p~n", [Why]),
 	    {error, Why};
-	  _:{badmatch, error} ->
+	  _:{bad_jid, S} ->
+	    io:format("malformed JID: ~s~n", [S]),
 	    {error, "JID malformed"}
     end.
 
@@ -1619,7 +1620,7 @@ decide_rip_jid({UName, UServer, _UResource}, Match_list) ->
 decide_rip_jid({UName, UServer}, Match_list) ->
     lists:any(
       fun(Match_string) ->
-	      MJID = jid:from_string(list_to_binary(Match_string)),
+	      MJID = jid:decode(list_to_binary(Match_string)),
 	      MName = MJID#jid.luser,
 	      MServer = MJID#jid.lserver,
 	      Is_server = is_glob_match(UServer, MServer),

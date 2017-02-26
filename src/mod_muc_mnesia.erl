@@ -279,7 +279,7 @@ import(_LServer, <<"muc_room">>,
                 opts = Opts});
 import(_LServer, <<"muc_registered">>,
        [J, RoomHost, Nick, _TimeStamp]) ->
-    #jid{user = U, server = S} = jid:from_string(J),
+    #jid{user = U, server = S} = jid:decode(J),
     mnesia:dirty_write(
       #muc_registered{us_host = {{U, S}, RoomHost},
                       nick = Nick}).

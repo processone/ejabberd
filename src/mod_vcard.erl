@@ -393,7 +393,7 @@ mk_field(Var, Val) ->
 -spec mk_search_form(jid(), binary(), binary()) -> search().
 mk_search_form(JID, ServerHost, Lang) ->
     Title = <<(translate:translate(Lang, <<"Search users in ">>))/binary,
-	      (jid:to_string(JID))/binary>>,
+	      (jid:encode(JID))/binary>>,
     Mod = gen_mod:db_mod(ServerHost, ?MODULE),
     SearchFields = Mod:search_fields(ServerHost),
     Fs = [mk_tfield(Label, Var, Lang) || {Label, Var} <- SearchFields],
@@ -419,7 +419,7 @@ search_result(Lang, JID, ServerHost, XFields) ->
     #xdata{type = result,
 	   title = <<(translate:translate(Lang,
 					  <<"Search Results for ">>))/binary,
-		     (jid:to_string(JID))/binary>>,
+		     (jid:encode(JID))/binary>>,
 	   reported = Reported,
 	   items = lists:map(fun (Item) -> item_to_field(Item) end,
 			     search(ServerHost, XFields))}.

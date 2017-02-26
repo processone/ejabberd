@@ -971,7 +971,7 @@ process_userinfo(StateData, _Nick, From) ->
     send_text(StateData,
 	      io_lib:format("NOTICE ~s :\001USERINFO xmpp:~s\001\r\n",
 			    [FromUser,
-			     jid:to_string(StateData#state.user)])).
+			     jid:encode(StateData#state.user)])).
 
 process_topic(StateData, Chan, From, String) ->
     [FromUser | _] = str:tokens(From, <<"!">>),
@@ -1162,7 +1162,7 @@ iq_admin(StateData, Channel, From, _To,
 	    ejabberd_router:route_error(IQ, Error)
     catch E:R ->
 	    ?ERROR_MSG("failed to process admin query from ~s: ~p",
-		       [jid:to_string(From), {E, {R, erlang:get_stacktrace()}}]),
+		       [jid:encode(From), {E, {R, erlang:get_stacktrace()}}]),
 	    ejabberd_router:route_error(
 	      IQ, xmpp:err_internal_server_error())
     end.

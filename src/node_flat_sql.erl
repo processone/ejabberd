@@ -960,7 +960,7 @@ update_subscription(Nidx, JID, Subscription) ->
 
 -spec decode_jid(SJID :: binary()) -> ljid().
 decode_jid(SJID) ->
-    jid:tolower(jid:from_string(SJID)).
+    jid:tolower(jid:decode(SJID)).
 
 -spec decode_affiliation(Arg :: binary()) -> atom().
 decode_affiliation(<<"o">>) -> owner;
@@ -988,11 +988,11 @@ decode_subscriptions(Subscriptions) ->
 
 -spec encode_jid(JID :: ljid()) -> binary().
 encode_jid(JID) ->
-    jid:to_string(JID).
+    jid:encode(JID).
 
 -spec encode_jid_like(JID :: ljid()) -> binary().
 encode_jid_like(JID) ->
-    ejabberd_sql:escape_like_arg_circumflex(jid:to_string(JID)).
+    ejabberd_sql:escape_like_arg_circumflex(jid:encode(JID)).
 
 -spec encode_host(Host :: host()) -> binary().
 encode_host({_U, _S, _R} = LJID) -> encode_jid(LJID);

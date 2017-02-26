@@ -688,7 +688,7 @@ adhoc_join(From, To, #adhoc_command{lang = Lang, xdata = X} = Request) ->
 			       To#jid.server),
 	    Reason = translate:translate(Lang, <<"Join the IRC channel here.">>),
 	    BodyTxt = {<<"Join the IRC channel in this Jabber ID: ~s">>,
-		       [jid:to_string(RoomJID)]},
+		       [jid:encode(RoomJID)]},
 	    Invite = #message{
 			from = RoomJID, to = From,
 			body = xmpp:mk_text(BodyTxt, Lang),
@@ -934,7 +934,7 @@ data_to_binary(JID, Data) ->
 					 ?ERROR_MSG("failed to convert "
 						    "parameter ~p for user ~s",
 						    [Param,
-						     jid:to_string(JID)]);
+						     jid:encode(JID)]);
 				    true ->
 					 ?ERROR_MSG("failed to convert "
 						    "parameter ~p",

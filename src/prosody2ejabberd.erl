@@ -172,7 +172,7 @@ convert_data(Host, "vcard", User, [Data]) ->
 	    ok
     end;
 convert_data(_Host, "config", _User, [Data]) ->
-    RoomJID = jid:from_string(proplists:get_value(<<"jid">>, Data, <<"">>)),
+    RoomJID = jid:decode(proplists:get_value(<<"jid">>, Data, <<"">>)),
     Config = proplists:get_value(<<"_data">>, Data, []),
     RoomCfg = convert_room_config(Data),
     case proplists:get_bool(<<"persistent">>, Config) of
@@ -217,14 +217,14 @@ convert_data(_Host, _Type, _User, _Data) ->
 convert_pending_item(LUser, LServer, LuaList) ->
     lists:flatmap(
       fun({S, true}) ->
-	      case jid:from_string(S) of
-		  #jid{} = J ->
+	      try jid:decode(S) of
+		  J ->
 		      LJID = jid:tolower(J),
 		      [#roster{usj = {LUser, LServer, LJID},
 			       us = {LUser, LServer},
 			       jid = LJID,
-			       ask = in}];
-		  error ->
+			       ask = in}]
+	      catch _:{bad_jid, _} ->
 		      []
 	      end;
 	 (_) ->
@@ -232,8 +232,8 @@ convert_pending_item(LUser, LServer, LuaList) ->
       end, LuaList).
 
 convert_roster_item(LUser, LServer, JIDstring, LuaList) ->
-    case jid:from_string(JIDstring) of
-	#jid{} = JID ->
+    try jid:decode(JIDstring) of
+	JID ->
 	    LJID = jid:tolower(JID),
 	    InitR = #roster{usj = {LUser, LServer, LJID},
 			    us = {LUser, LServer},
@@ -253,18 +253,18 @@ convert_roster_item(LUser, LServer, JIDstring, LuaList) ->
 		     ({<<"name">>, Name}, R) ->
 			  R#roster{name = Name}
 		  end, InitR, LuaList),
-	    [Roster];
-	error ->
+	    [Roster]
+    catch _:{bad_jid, _} ->
 	    []
     end.
 
 convert_room_affiliations(Data) ->
     lists:flatmap(
       fun({J, Aff}) ->
-	      case jid:from_string(J) of
+	      try jid:decode(J) of
 		  #jid{luser = U, lserver = S} ->
-		      [{{U, S, <<>>}, jlib:binary_to_atom(Aff)}];
-		  error ->
+		      [{{U, S, <<>>}, jlib:binary_to_atom(Aff)}]
+	      catch _:{bad_jid, _} ->
 		      []
 	      end
       end, proplists:get_value(<<"_affiliations">>, Data, [])).
@@ -278,13 +278,13 @@ convert_room_config(Data) ->
 		   [{password_protected, true},
 		    {password, Password}]
 	   end,
-    Subj = case jid:from_string(
+    Subj = try jid:decode(
 		  proplists:get_value(
 		    <<"subject_from">>, Config, <<"">>)) of
 	       #jid{lresource = Nick} when Nick /= <<"">> ->
 		   [{subject, proplists:get_value(<<"subject">>, Config, <<"">>)},
-		    {subject_author, Nick}];
-	       _ ->
+		    {subject_author, Nick}]
+	   catch _:{bad_jid, _} ->
 		   []
 	   end,
     Anonymous = case proplists:get_value(<<"whois">>, Config, <<"moderators">>) of
@@ -316,7 +316,7 @@ convert_privacy_item({_, Item}) ->
     {Type, Value} = try case T of
 			    none -> {T, none};
 			    group -> {T, V};
-			    jid -> {T, jid:tolower(jid:from_string(V))};
+			    jid -> {T, jid:tolower(jid:decode(V))};
 			    subscription -> {T, jlib:binary_to_atom(V)}
 			end
 		    catch _:_ ->
@@ -333,29 +333,27 @@ convert_privacy_item({_, Item}) ->
 	      match_presence_out = MatchPresOut}.
 
 el_to_offline_msg(LUser, LServer, #xmlel{attrs = Attrs} = El) ->
-    try xmpp_util:decode_timestamp(
-	  fxml:get_attr_s(<<"stamp">>, Attrs)) of
-	{_, _, _} = TS ->
-	    Attrs1 = lists:filter(
-		       fun(<<"stamp">>) -> false;
-			  (<<"stamp_legacy">>) -> false;
-			  (_) -> true
-		       end, Attrs),
-	    Packet = El#xmlel{attrs = Attrs1},
-	    case {jid:from_string(fxml:get_attr_s(<<"from">>, Attrs)),
-		  jid:from_string(fxml:get_attr_s(<<"to">>, Attrs))} of
-		{#jid{} = From, #jid{} = To} ->
-		    [#offline_msg{
-			us = {LUser, LServer},
-			timestamp = TS,
-			expire = never,
-			from = From,
-			to = To,
-			packet = Packet}];
-		_ ->
-		    []
-	    end
+    try
+	TS = xmpp_util:decode_timestamp(
+	       fxml:get_attr_s(<<"stamp">>, Attrs)),
+	Attrs1 = lists:filter(
+		   fun(<<"stamp">>) -> false;
+		      (<<"stamp_legacy">>) -> false;
+		      (_) -> true
+		   end, Attrs),
+	Packet = El#xmlel{attrs = Attrs1},
+	From = jid:decode(fxml:get_attr_s(<<"from">>, Attrs)),
+	To = jid:decode(fxml:get_attr_s(<<"to">>, Attrs)),
+	[#offline_msg{
+	    us = {LUser, LServer},
+	    timestamp = TS,
+	    expire = never,
+	    from = From,
+	    to = To,
+	    packet = Packet}]
     catch _:{bad_timestamp, _} ->
+	    [];
+	  _:{bad_jid, _} ->
 	    []
     end.
 

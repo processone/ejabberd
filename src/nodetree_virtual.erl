@@ -112,13 +112,13 @@ node_record(Host, Node, Nidx) ->
                  options = Module:options()}.
 
 nodeidx({U,S,R}, Node) ->
-    JID = jid:to_string(jid:make(U,S,R)),
+    JID = jid:encode(jid:make(U,S,R)),
     <<JID/binary, ":", Node/binary>>;
 nodeidx(Host, Node) ->
     <<Host/binary, ":", Node/binary>>.
 nodeid(Nidx) ->
     [Head, Node] = binary:split(Nidx, <<":">>),
-    case jid:from_string(Head) of
+    case jid:decode(Head) of
         {jid,<<>>,Host,<<>>,_,_,_} -> {Host, Node};
         {jid,U,S,R,_,_,_} -> {{U,S,R}, Node}
     end.

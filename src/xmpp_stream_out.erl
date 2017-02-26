@@ -560,7 +560,7 @@ process_sasl_mechanisms(Mechs, #{user := User, server := Server} = State) ->
     case lists:member(<<"EXTERNAL">>, Mechs) of
 	true ->
 	    State1 = State#{stream_state => wait_for_sasl_response},
-	    Authzid = jid:to_string(jid:make(User, Server)),
+	    Authzid = jid:encode(jid:make(User, Server)),
 	    send_pkt(State1, #sasl_auth{mechanism = Mech, text = Authzid});
 	false ->
 	    process_sasl_failure(

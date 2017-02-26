@@ -306,7 +306,7 @@ get_sm_items(_Acc, #jid{luser = U, lserver = S} = JID,
 			       Node = integer_to_binary(Seq),
 			       #disco_item{jid = BareJID,
 					   node = Node,
-					   name = jid:to_string(From)}
+					   name = jid:encode(From)}
 		       end, Hdrs)};
 get_sm_items(Acc, _From, _To, _Node, _Lang) ->
     Acc.
@@ -673,7 +673,7 @@ offline_msg_to_route(LServer, #offline_msg{from = From, to = To} = R) ->
 	    {route, Pkt2}
     catch _:{xmpp_codec, Why} ->
 	    ?ERROR_MSG("failed to decode packet ~p of user ~s: ~s",
-		       [R#offline_msg.packet, jid:to_string(To),
+		       [R#offline_msg.packet, jid:encode(To),
 			xmpp:format_error(Why)]),
 	    error
     end.
@@ -693,7 +693,7 @@ read_messages(LUser, LServer) ->
 	      catch _:{xmpp_codec, Why} ->
 		      ?ERROR_MSG("failed to decode packet ~p "
 				 "of user ~s: ~s",
-				 [El, jid:to_string(To),
+				 [El, jid:encode(To),
 				  xmpp:format_error(Why)]),
 		      []
 	      end
@@ -704,8 +704,8 @@ format_user_queue(Hdrs) ->
       fun({Seq, From, To, TS, El}) ->
 	      ID = integer_to_binary(Seq),
 	      FPacket = ejabberd_web_admin:pretty_print_xml(El),
-	      SFrom = jid:to_string(From),
-	      STo = jid:to_string(To),
+	      SFrom = jid:encode(From),
+	      STo = jid:encode(To),
 	      Time = case TS of
 			 undefined ->
 			     Stamp = fxml:get_path_s(El, [{elem, <<"delay">>},
@@ -792,7 +792,7 @@ user_queue_parse_query(LUser, LServer, Query) ->
     end.
 
 us_to_list({User, Server}) ->
-    jid:to_string({User, Server, <<"">>}).
+    jid:encode({User, Server, <<"">>}).
 
 get_queue_length(LUser, LServer) ->
     count_offline_messages(LUser, LServer).
