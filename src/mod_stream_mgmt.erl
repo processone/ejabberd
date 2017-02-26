@@ -89,7 +89,7 @@ stop(Host) ->
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ?WARNING_MSG("module ~s is reloaded, but new configuration will take "
-		 "effect for newly created client connections only", []).
+		 "effect for newly created client connections only", [?MODULE]).
 
 depends(_Host, _Opts) ->
     [].
