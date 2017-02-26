@@ -26,13 +26,19 @@
 -module(cyrsasl).
 
 -author('alexey@process-one.net').
+-behaviour(gen_server).
 
--export([start/0, register_mechanism/3, listmech/1,
+-export([start_link/0, register_mechanism/3, listmech/1,
 	 server_new/7, server_start/3, server_step/2,
 	 get_mech/1, format_error/2]).
+%% gen_server callbacks
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+	 terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
+
+-record(state, {}).
 
 -record(sasl_mechanism,
         {mechanism = <<"">>    :: mechanism() | '$1',
@@ -74,10 +80,15 @@
 -export_type([mechanism/0, mechanisms/0, sasl_mechanism/0, error_reason/0,
 	      sasl_state/0, sasl_return/0, sasl_property/0]).
 
+-callback start(list()) -> any().
+-callback stop() -> any().
 -callback mech_new(binary(), fun(), fun(), fun()) -> any().
 -callback mech_step(any(), binary()) -> sasl_return().
 
-start() ->
+start_link() ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+init([]) ->
     ets:new(sasl_mechanism,
 	    [named_table, public,
 	     {keypos, #sasl_mechanism.mechanism}]),
@@ -86,7 +97,27 @@ start() ->
     cyrsasl_scram:start([]),
     cyrsasl_anonymous:start([]),
     cyrsasl_oauth:start([]),
-    ok.
+    {ok, #state{}}.
+
+handle_call(_Request, _From, State) ->
+    Reply = ok,
+    {reply, Reply, State}.
+
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+handle_info(_Info, State) ->
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
+    cyrsasl_plain:stop(),
+    cyrsasl_digest:stop(),
+    cyrsasl_scram:stop(),
+    cyrsasl_anonymous:stop(),
+    cyrsasl_oauth:stop().
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
 
 -spec format_error(mechanism() | sasl_state(), error_reason()) -> {atom(), binary()}.
 format_error(_, unsupported_mechanism) ->

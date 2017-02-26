@@ -37,7 +37,7 @@
 -export([set_affiliation/6, set_affiliations/4, get_affiliation/5,
 	 get_affiliations/3, search_affiliation/4]).
 %% gen_server callbacks
--export([init/1, handle_cast/2, handle_call/3, handle_info/2,
+-export([start_link/2, init/1, handle_cast/2, handle_call/3, handle_info/2,
 	 terminate/2, code_change/3]).
 
 -include("mod_muc.hrl").
@@ -51,13 +51,16 @@
 %%% API
 %%%===================================================================
 init(Host, Opts) ->
-    Name = gen_mod:get_module_proc(Host, ?MODULE),
-    case gen_server:start_link({local, Name}, ?MODULE, [Host, Opts], []) of
-	{ok, _Pid} ->
-	    ok;
-	Err ->
-	    Err
+    Spec = {?MODULE, {?MODULE, start_link, [Host, Opts]},
+	    transient, 5000, worker, [?MODULE]},
+    case supervisor:start_child(ejabberd_backend_sup, Spec) of
+	{ok, _Pid} -> ok;
+	Err -> Err
     end.
+
+start_link(Host, Opts) ->
+    Name = gen_mod:get_module_proc(Host, ?MODULE),
+    gen_server:start_link({local, Name}, ?MODULE, [Host, Opts], []).
 
 store_room(_LServer, Host, Name, Opts) ->
     F = fun () ->

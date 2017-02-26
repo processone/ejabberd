@@ -46,22 +46,20 @@ start(normal, _Args) ->
     start_elixir_application(),
     ejabberd:check_app(ejabberd),
     db_init(),
-    translate:start(),
-    ejabberd_access_permissions:start_link(),
-    ejabberd_ctl:init(),
-    ejabberd_commands:init(),
-    ejabberd_admin:start(),
     setup_if_elixir_conf_used(),
     ejabberd_config:start(),
     set_settings_from_config(),
     maybe_add_nameservers(),
-    cyrsasl:start(),
     connect_nodes(),
-    Sup = ejabberd_sup:start_link(),
-    ext_mod:start(),
-    register_elixir_config_hooks(),
-    ?INFO_MSG("ejabberd ~s is started in the node ~p", [?VERSION, node()]),
-    Sup;
+    case ejabberd_sup:start_link() of
+	{ok, SupPid} ->
+	    register_elixir_config_hooks(),
+	    ?INFO_MSG("ejabberd ~s is started in the node ~p",
+		      [?VERSION, node()]),
+	    {ok, SupPid};
+	Err ->
+	    Err
+    end;
 start(_, _) ->
     {error, badarg}.
 
@@ -70,10 +68,8 @@ start(_, _) ->
 %% before shutting down the processes of the application.
 prep_stop(State) ->
     ejabberd_listener:stop_listeners(),
-    ejabberd_admin:stop(),
     ejabberd_sm:stop(),
     gen_mod:stop_modules(),
-    timer:sleep(5000),
     State.
 
 %% All the processes were killed when this function is called

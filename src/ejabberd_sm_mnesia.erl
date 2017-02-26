@@ -38,7 +38,7 @@
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-	 terminate/2, code_change/3]).
+	 terminate/2, code_change/3, start_link/0]).
 
 -include("ejabberd.hrl").
 -include("ejabberd_sm.hrl").
@@ -51,12 +51,16 @@
 %%%===================================================================
 -spec init() -> ok | {error, any()}.
 init() ->
-    case gen_server:start_link({local, ?MODULE}, ?MODULE, [], []) of
-	{ok, _Pid} ->
-	    ok;
-	Err ->
-	    Err
+    Spec = {?MODULE, {?MODULE, start_link, []},
+	    transient, 5000, worker, [?MODULE]},
+    case supervisor:start_child(ejabberd_backend_sup, Spec) of
+	{ok, _Pid} -> ok;
+	Err -> Err
     end.
+
+-spec start_link() -> {ok, pid()} | {error, any()}.
+start_link() ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 -spec set_session(#session{}) -> ok.
 set_session(Session) ->
