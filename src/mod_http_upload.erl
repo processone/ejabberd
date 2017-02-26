@@ -339,22 +339,29 @@ handle_cast(Request, State) ->
 
 -spec handle_info(timeout | _, state()) -> {noreply, state()}.
 
-handle_info({route, #iq{} = Packet}, State) ->
-    IQ = xmpp:decode_els(Packet),
-    {Reply, NewState} = case process_iq(IQ, State) of
-			    R when is_record(R, iq) ->
-				{R, State};
-			    {R, S} ->
-				{R, S};
-			    not_request ->
-				{none, State}
-			end,
-    if Reply /= none ->
-	    ejabberd_router:route(Reply);
-       true ->
-	    ok
-    end,
-    {noreply, NewState};
+handle_info({route, #iq{lang = Lang} = Packet}, State) ->
+    try xmpp:decode_els(Packet) of
+	IQ ->
+	    {Reply, NewState} = case process_iq(IQ, State) of
+				    R when is_record(R, iq) ->
+					{R, State};
+				    {R, S} ->
+					{R, S};
+				    not_request ->
+					{none, State}
+				end,
+	    if Reply /= none ->
+		    ejabberd_router:route(Reply);
+	       true ->
+		    ok
+	    end,
+	    {noreply, NewState}
+    catch _:{xmpp_codec, Why} ->
+	    Txt = xmpp:io_format_error(Why),
+	    Err = xmpp:err_bad_request(Txt, Lang),
+	    ejabberd_router:route_error(Packet, Err),
+	    {noreply, State}
+    end;
 handle_info({slot_timed_out, Slot}, State) ->
     NewState = del_slot(Slot, State),
     {noreply, NewState};
@@ -517,6 +524,8 @@ process_iq(#iq{type = get, lang = Lang, sub_els = [#disco_info{}]} = IQ,
     AddInfo = ejabberd_hooks:run_fold(disco_info, ServerHost, [],
 				      [ServerHost, ?MODULE, <<"">>, <<"">>]),
     xmpp:make_iq_result(IQ, iq_disco_info(ServerHost, Lang, Name, AddInfo));
+process_iq(#iq{type = get, sub_els = [#disco_items{}]} = IQ, _State) ->
+    xmpp:make_iq_result(IQ, #disco_items{});
 process_iq(#iq{type = get, lang = Lang, from = From,
 	       sub_els = [#upload_request{filename = File,
 					  size = Size,
@@ -546,8 +555,9 @@ process_iq(#iq{type = get, lang = Lang, from = From,
 	    Txt = <<"Denied by ACL">>,
 	    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang))
     end;
-process_iq(#iq{type = T} = IQ, _State) when T == get; T == set ->
-    xmpp:make_error(IQ, xmpp:err_not_allowed());
+process_iq(#iq{type = T, lang = Lang} = IQ, _State) when T == get; T == set ->
+    Txt = <<"No module is handling this query">>,
+    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang));
 process_iq(#iq{}, _State) ->
     not_request.
 
@@ -716,7 +726,8 @@ iq_disco_info(Host, Lang, Name, AddInfo) ->
     #disco_info{identities = [#identity{category = <<"store">>,
 					type = <<"file">>,
 					name = translate:translate(Lang, Name)}],
-		features = [?NS_HTTP_UPLOAD, ?NS_HTTP_UPLOAD_OLD],
+		features = [?NS_HTTP_UPLOAD, ?NS_HTTP_UPLOAD_OLD,
+			    ?NS_DISCO_INFO, ?NS_DISCO_ITEMS],
 		xdata = Form}.
 
 %% HTTP request handling.
