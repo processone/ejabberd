@@ -592,25 +592,17 @@ process_authenticated_packet(Pkt, #{mod := Mod} = State) ->
 
 -spec process_bind(xmpp_element(), state()) -> state().
 process_bind(#iq{type = set, sub_els = [_]} = Pkt,
-	     #{xmlns := ?NS_CLIENT, mod := Mod, lang := Lang} = State) ->
+	     #{xmlns := ?NS_CLIENT, mod := Mod} = State) ->
     case xmpp:get_subtag(Pkt, #bind{}) of
 	#bind{resource = R} ->
-	    case jid:resourceprep(R) of
-		error ->
-		    Txt = <<"Malformed resource">>,
-		    Err = xmpp:err_bad_request(Txt, Lang),
-		    send_error(State, Pkt, Err);
-		_ ->
-		    case Mod:bind(R, State) of
-			{ok, #{user := U,
-			       server := S,
-			       resource := NewR} = State1} when NewR /= <<"">> ->
-			    Reply = #bind{jid = jid:make(U, S, NewR)},
-			    State2 = send_pkt(State1, xmpp:make_iq_result(Pkt, Reply)),
-			    process_stream_established(State2);
-			{error, #stanza_error{} = Err, State1} ->
-			    send_error(State1, Pkt, Err)
-		    end
+	    case Mod:bind(R, State) of
+		{ok, #{user := U, server := S, resource := NewR} = State1}
+		  when NewR /= <<"">> ->
+		    Reply = #bind{jid = jid:make(U, S, NewR)},
+		    State2 = send_pkt(State1, xmpp:make_iq_result(Pkt, Reply)),
+		    process_stream_established(State2);
+		{error, #stanza_error{} = Err, State1} ->
+		    send_error(State1, Pkt, Err)
 	    end;
 	_ ->
 	    try Mod:handle_unbinded_packet(Pkt, State)
