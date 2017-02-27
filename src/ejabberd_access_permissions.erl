@@ -363,7 +363,9 @@ parse_who(Name, Atom, ParseOauth) when is_atom(Atom) ->
     parse_who(Name, [Atom], ParseOauth);
 parse_who(Name, Defs, ParseOauth) when is_list(Defs) ->
     lists:map(
-	fun([{access, Val}]) ->
+      fun([Val]) ->
+	      parse_who(Name, [Val], ParseOauth);
+	 ({access, Val}) ->
 	    try acl:access_rules_validator(Val) of
 		Rule ->
 		    {access, Rule}
@@ -377,7 +379,7 @@ parse_who(Name, Defs, ParseOauth) when is_list(Defs) ->
 		    report_error(<<"Invalid access rule '~p' used inside 'who' section for api_permission '~s'">>,
 				 [Val, Name])
 	    end;
-	   ([{oauth, OauthList}]) when is_list(OauthList) ->
+	   ({oauth, OauthList}) when is_list(OauthList) ->
 	       case ParseOauth of
 		   oauth ->
 		       Nested = parse_who(Name, lists:flatten(OauthList), scope),
@@ -413,7 +415,7 @@ parse_who(Name, Defs, ParseOauth) when is_list(Defs) ->
 	       end;
 	   (Atom) when is_atom(Atom) ->
 	       {acl, {acl, Atom}};
-	   ([Other]) ->
+	   (Other) ->
 	       try acl:normalize_spec(Other) of
 		   Rule2 ->
 		       {acl, Rule2}
@@ -421,10 +423,7 @@ parse_who(Name, Defs, ParseOauth) when is_list(Defs) ->
 		   _:_ ->
 		       report_error(<<"Invalid value '~p' used inside 'who' section for api_permission '~s'">>,
 				    [Other, Name])
-	       end;
-	   (Invalid) ->
-	       report_error(<<"Invalid value '~p' used inside 'who' section for api_permission '~s'">>,
-			    [Invalid, Name])
+	       end
 	end, Defs);
 parse_who(Name, Val, _ParseOauth) ->
     report_error(<<"Invalid value '~p' used inside 'who' section for api_permission '~s'">>,
