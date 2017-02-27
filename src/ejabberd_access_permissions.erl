@@ -109,6 +109,7 @@ start_link() ->
     {ok, State :: #state{}} | {ok, State :: #state{}, timeout() | hibernate} |
     {stop, Reason :: term()} | ignore.
 init([]) ->
+    ejabberd_hooks:add(config_reloaded, ?MODULE, invalidate, 90),
     {ok, #state{}}.
 
 %%--------------------------------------------------------------------
@@ -209,7 +210,7 @@ handle_info(_Info, State) ->
 -spec terminate(Reason :: (normal | shutdown | {shutdown, term()} | term()),
 		State :: #state{}) -> term().
 terminate(_Reason, _State) ->
-    ok.
+    ejabberd_hooks:delete(config_reloaded, ?MODULE, invalidate, 90).
 
 %%--------------------------------------------------------------------
 %% @private

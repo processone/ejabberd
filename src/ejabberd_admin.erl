@@ -497,10 +497,7 @@ registered_vhosts() ->
 	?MYHOSTS.
 
 reload_config() ->
-    ejabberd_config:reload_file(),
-    %% TODO: Move this to ejabberd_access_permissions.erl and put on hook
-    %% This requires ejabberd_access_permissions to start after ejabberd_hooks
-    ejabberd_access_permissions:invalidate().
+    ejabberd_config:reload_file().
 
 %%%
 %%% Cluster management
