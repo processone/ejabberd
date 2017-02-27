@@ -100,7 +100,7 @@ init([]) ->
 		    fun(Host, Acc) ->
 			    Modules = auth_modules(Host),
 			    start(Host, Modules),
-			    Acc#{Host => Modules}
+			    maps:put(Host, Modules, Acc)
 		    end, #{}, ?MYHOSTS),
     {ok, #state{host_modules = HostModules}}.
 
@@ -111,7 +111,7 @@ handle_call(_Request, _From, State) ->
 handle_cast({host_up, Host}, #state{host_modules = HostModules} = State) ->
     Modules = auth_modules(Host),
     start(Host, Modules),
-    NewHostModules = HostModules#{Host => Modules},
+    NewHostModules = maps:put(Host, Modules, HostModules),
     {noreply, State#state{host_modules = NewHostModules}};
 handle_cast({host_down, Host}, #state{host_modules = HostModules} = State) ->
     Modules = maps:get(Host, HostModules, []),
@@ -125,7 +125,7 @@ handle_cast(config_reloaded, #state{host_modules = HostModules} = State) ->
 			       NewModules = auth_modules(Host),
 			       start(Host, NewModules -- OldModules),
 			       stop(Host, OldModules -- NewModules),
-			       Acc#{Host => NewModules}
+			       maps:put(Host, NewModules, Acc)
 		       end, HostModules, ?MYHOSTS),
     {noreply, State#state{host_modules = NewHostModules}};
 handle_cast(Msg, State) ->
