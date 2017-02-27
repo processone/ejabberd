@@ -29,7 +29,7 @@ defmodule EjabberdCyrsaslTest do
     :ok = start_module(:stringprep)
     {:ok, _} = start_module(:jid)
     :ok = :ejabberd_config.start(["domain1"], [])
-    :ok = :cyrsasl.start
+    :ok = :cyrsasl.start_link
     cyrstate = :cyrsasl.server_new("domain1", "domain1", "domain1", :ok, &get_password/1,
                                    &check_password/3, &check_password_digest/5)
     setup_anonymous_mocks()
