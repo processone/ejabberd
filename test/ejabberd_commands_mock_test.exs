@@ -61,7 +61,7 @@ defmodule EjabberdCommandsMockTest do
 		:meck.unload
 		:meck.new(@module, [:non_strict])
     :mnesia.delete_table(:ejabberd_commands)
-		:ejabberd_commands.init
+		:ejabberd_commands.start_link
 	end
 
 	test "API command can be registered, listed and unregistered" do
