@@ -354,7 +354,6 @@ get_absolute_path(File) ->
 	    filename:absname(File)
     end.
 
-
 search_hosts(Term, State) ->
     case Term of
 	{host, Host} ->
@@ -772,19 +771,27 @@ set_opts(State) ->
 		lists:foreach(fun mnesia:write/1, Opts)
 	end,
     case mnesia:transaction(F) of
-	{atomic, _} -> ok;
+	{atomic, _} ->
+	    set_log_level();
 	{aborted,{no_exists,Table}} ->
 	    MnesiaDirectory = mnesia:system_info(directory),
-	    ?ERROR_MSG("Error reading Mnesia database spool files:~n"
-		       "The Mnesia database couldn't read the spool file for the table '~p'.~n"
-		       "ejabberd needs read and write access in the directory:~n   ~s~n"
-		       "Maybe the problem is a change in the computer hostname,~n"
-		       "or a change in the Erlang node name, which is currently:~n   ~p~n"
-		       "Check the ejabberd guide for details about changing the~n"
-		       "computer hostname or Erlang node name.~n",
-		       [Table, MnesiaDirectory, node()]),
+	    ?CRITICAL_MSG("Error reading Mnesia database spool files:~n"
+			  "The Mnesia database couldn't read the spool file for the table '~p'.~n"
+			  "ejabberd needs read and write access in the directory:~n   ~s~n"
+			  "Maybe the problem is a change in the computer hostname,~n"
+			  "or a change in the Erlang node name, which is currently:~n   ~p~n"
+			  "Check the ejabberd guide for details about changing the~n"
+			  "computer hostname or Erlang node name.~n",
+			  [Table, MnesiaDirectory, node()]),
 	    exit("Error reading Mnesia database")
     end.
+
+set_log_level() ->
+    Level = ejabberd_config:get_option(
+              loglevel,
+              fun(P) when P>=0, P=<5 -> P end,
+              4),
+    ejabberd_logger:set(Level).
 
 add_global_option(Opt, Val) ->
     add_option(Opt, Val).
@@ -1445,9 +1452,11 @@ opt_type(default_db) ->
     fun(T) when is_atom(T) -> T end;
 opt_type(default_ram_db) ->
     fun(T) when is_atom(T) -> T end;
+opt_type(loglevel) ->
+    fun (P) when P >= 0, P =< 5 -> P end;
 opt_type(_) ->
     [hide_sensitive_log_data, hosts, language,
-     default_db, default_ram_db].
+     default_db, default_ram_db, loglevel].
 
 -spec may_hide_data(any()) -> any().
 may_hide_data(Data) ->

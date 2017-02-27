@@ -161,11 +161,6 @@ delete_pid_file() ->
     end.
 
 set_settings_from_config() ->
-    Level = ejabberd_config:get_option(
-              loglevel,
-              fun(P) when P>=0, P=<5 -> P end,
-              4),
-    ejabberd_logger:set(Level),
     Ticktime = ejabberd_config:get_option(
                  net_ticktime,
                  opt_type(net_ticktime),
@@ -185,16 +180,7 @@ opt_type(net_ticktime) ->
     fun (P) when is_integer(P), P > 0 -> P end;
 opt_type(cluster_nodes) ->
     fun (Ns) -> true = lists:all(fun is_atom/1, Ns), Ns end;
-opt_type(loglevel) ->
-    fun (P) when P >= 0, P =< 5 -> P end;
-opt_type(modules) ->
-    fun (Mods) ->
-	    lists:map(fun ({M, A}) when is_atom(M), is_list(A) ->
-			      {M, A}
-		      end,
-		      Mods)
-    end;
-opt_type(_) -> [cluster_nodes, loglevel, modules, net_ticktime].
+opt_type(_) -> [cluster_nodes, net_ticktime].
 
 setup_if_elixir_conf_used() ->
   case ejabberd_config:is_using_elixir_config() of
