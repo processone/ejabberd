@@ -964,16 +964,18 @@ connect(AddrPorts, #{sockmod := SockMod} = State) ->
 		     {ok, term(), ip_port()} | network_error().
 connect([{Addr, Port}|AddrPorts], SockMod, Timeout, _) ->
     Type = get_addr_type(Addr),
-    case SockMod:connect(Addr, Port,
-			 [binary, {packet, 0},
-			  {send_timeout, ?TCP_SEND_TIMEOUT},
-			  {send_timeout_close, true},
-			  {active, false}, Type],
-			 Timeout) of
+    try SockMod:connect(Addr, Port,
+			[binary, {packet, 0},
+			 {send_timeout, ?TCP_SEND_TIMEOUT},
+			 {send_timeout_close, true},
+			 {active, false}, Type],
+			Timeout) of
 	{ok, Socket} ->
 	    {ok, Socket, {Addr, Port}};
 	Err ->
 	    connect(AddrPorts, SockMod, Timeout, Err)
+    catch _:badarg ->
+	    connect(AddrPorts, SockMod, Timeout, {error, einval})
     end;
 connect([], _SockMod, _Timeout, Err) ->
     Err.
