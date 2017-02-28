@@ -416,7 +416,7 @@ bind(R, #{user := U, server := S, access := Access, lang := Lang,
 handle_stream_start(StreamStart, #{lserver := LServer} = State) ->
     case ejabberd_router:is_my_host(LServer) of
 	false ->
-	    send(State, xmpp:serr_host_unknown());
+	    send(State#{lserver => ?MYNAME}, xmpp:serr_host_unknown());
 	true ->
 	    change_shaper(State),
 	    ejabberd_hooks:run_fold(
