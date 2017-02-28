@@ -458,8 +458,8 @@ process_stream(#stream_start{lang = Lang},
     Txt = <<"Too long value of 'xml:lang' attribute">>,
     send_pkt(State, xmpp:serr_policy_violation(Txt, DefaultLang));
 process_stream(#stream_start{to = undefined, version = Version} = StreamStart,
-	       #{lang := Lang, server := Server} = State) ->
-    if Version < {1,0} ->
+	       #{lang := Lang, server := Server, xmlns := NS} = State) ->
+    if Version < {1,0} andalso NS /= ?NS_COMPONENT ->
 	    %% Work-around for gmail servers
 	    To = jid:make(Server),
 	    process_stream(StreamStart#stream_start{to = To}, State);
