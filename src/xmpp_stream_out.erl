@@ -639,7 +639,9 @@ process_sasl_success(#{mod := Mod,
     end.
 
 -spec process_sasl_failure(sasl_failure(), state()) -> state().
-process_sasl_failure(#sasl_failure{reason = Reason}, #{mod := Mod} = State) ->
+process_sasl_failure(#sasl_failure{} = Failure, #{mod := Mod} = State) ->
+    Reason = format("Peer responded with error: ~s",
+		    [format_sasl_failure(Failure)]),
     try Mod:handle_auth_failure(<<"EXTERNAL">>, {auth, Reason}, State)
     catch _:undef -> process_stream_end({auth, Reason}, State)
     end.
@@ -787,6 +789,17 @@ format_tls_error(Reason) when is_atom(Reason) ->
 format_tls_error(Reason) ->
     binary_to_list(Reason).
 
+format_sasl_failure(#sasl_failure{reason = Reason, text = Txt}) ->
+    Slogan = case Reason of
+		 undefined -> "no reason";
+		 _ -> atom_to_list(Reason)
+	     end,
+    case xmpp:get_text(Txt) of
+	<<"">> -> Slogan;
+	Data ->
+	    binary_to_list(Data) ++ " (" ++ Slogan ++ ")"
+    end.
+		      
 -spec format(io:format(), list()) -> binary().
 format(Fmt, Args) ->
     iolist_to_binary(io_lib:format(Fmt, Args)).
