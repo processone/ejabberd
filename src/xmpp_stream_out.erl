@@ -624,18 +624,18 @@ process_cert_verification(State) ->
 process_sasl_success(#{mod := Mod,
 		       sockmod := SockMod,
 		       socket := Socket} = State) ->
-    State1 = try Mod:handle_auth_success(<<"EXTERNAL">>, State)
-	     catch _:undef -> State
-	     end,
-    case is_disconnected(State1) of
-	true -> State1;
+    SockMod:reset_stream(Socket),
+    State1 = State#{stream_id => new_id(),
+		    stream_restarted => true,
+		    stream_state => wait_for_stream,
+		    stream_authenticated => true},
+    State2 = send_header(State1),
+    case is_disconnected(State2) of
+	true -> State2;
 	false ->
-	    SockMod:reset_stream(Socket),
-	    State2 = State1#{stream_id => new_id(),
-			     stream_restarted => true,
-			     stream_state => wait_for_stream,
-			     stream_authenticated => true},
-	    send_header(State2)
+	    try Mod:handle_auth_success(<<"EXTERNAL">>, State2)
+	    catch _:undef -> State2
+	    end
     end.
 
 -spec process_sasl_failure(sasl_failure(), state()) -> state().
