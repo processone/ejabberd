@@ -457,9 +457,16 @@ process_stream(#stream_start{lang = Lang},
     %% Do not store long language tag to avoid possible DoS/flood attacks
     Txt = <<"Too long value of 'xml:lang' attribute">>,
     send_pkt(State, xmpp:serr_policy_violation(Txt, DefaultLang));
-process_stream(#stream_start{to = undefined}, #{lang := Lang} = State) ->
-    Txt = <<"Missing 'to' attribute">>,
-    send_pkt(State, xmpp:serr_improper_addressing(Txt, Lang));
+process_stream(#stream_start{to = undefined, version = Version} = StreamStart,
+	       #{lang := Lang, server := Server} = State) ->
+    if Version < {1,0} ->
+	    %% Work-around for gmail servers
+	    To = jid:make(Server),
+	    process_stream(StreamStart#stream_start{to = To}, State);
+       true ->
+	    Txt = <<"Missing 'to' attribute">>,
+	    send_pkt(State, xmpp:serr_improper_addressing(Txt, Lang))
+    end;
 process_stream(#stream_start{to = #jid{luser = U, lresource = R}},
 	       #{lang := Lang} = State) when U /= <<"">>; R /= <<"">> ->
     Txt = <<"Improper 'to' attribute">>,
