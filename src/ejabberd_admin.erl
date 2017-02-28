@@ -26,7 +26,9 @@
 -module(ejabberd_admin).
 -author('mickael.remond@process-one.net').
 
--export([start/0, stop/0,
+-behaviour(gen_server).
+
+-export([start_link/0,
 	 %% Server
 	 status/0, reopen_log/0, rotate_log/0,
 	 set_loglevel/1,
@@ -54,16 +56,39 @@
 	 restore/1, % Still used by some modules
 	 get_commands_spec/0
 	]).
+%% gen_server callbacks
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+	 terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("ejabberd_commands.hrl").
 
-start() ->
-    ejabberd_commands:register_commands(get_commands_spec()).
+-record(state, {}).
 
-stop() ->
+start_link() ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+init([]) ->
+    process_flag(trap_exit, true),
+    ejabberd_commands:register_commands(get_commands_spec()),
+    {ok, #state{}}.
+
+handle_call(_Request, _From, State) ->
+    Reply = ok,
+    {reply, Reply, State}.
+
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+handle_info(_Info, State) ->
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
     ejabberd_commands:unregister_commands(get_commands_spec()).
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
 
 %%%
 %%% ejabberd commands
@@ -174,7 +199,7 @@ get_commands_spec() ->
 			args = [],
 			result = {vhosts, {list, {vhost, string}}}},
      #ejabberd_commands{name = reload_config, tags = [server],
-			desc = "Reload config file in memory (only affects ACL and Access)",
+			desc = "Reload config file in memory",
 			module = ?MODULE, function = reload_config,
 			args = [],
 			result = {res, rescode}},
@@ -472,10 +497,7 @@ registered_vhosts() ->
 	?MYHOSTS.
 
 reload_config() ->
-    ejabberd_config:reload_file(),
-    acl:load_from_config(),
-    shaper:load_from_config(),
-    ejabberd_access_permissions:invalidate().
+    ejabberd_config:reload_file().
 
 %%%
 %%% Cluster management

@@ -61,10 +61,10 @@
 -define(NS_PIEFXIS, <<"http://www.xmpp.org/extensions/xep-0227.html#ns">>).
 -define(NS_XI, <<"http://www.w3.org/2001/XInclude">>).
 
--record(state, {xml_stream_state :: fxml_stream:xml_stream_state(),
+-record(state, {xml_stream_state :: fxml_stream:xml_stream_state() | undefined,
                 user = <<"">>    :: binary(),
                 server = <<"">>  :: binary(),
-                fd               :: file:io_device(),
+                fd = self()      :: file:io_device(),
                 dir = <<"">>     :: binary()}).
 
 -type state() :: #state{}.
@@ -246,7 +246,7 @@ get_privacy(User, Server) ->
 
 -spec get_roster(binary(), binary()) -> [xmlel()].
 get_roster(User, Server) ->
-    JID = jid:make(User, Server, <<>>),
+    JID = jid:make(User, Server),
     case mod_roster:get_roster(User, Server) of
         [_|_] = Items ->
             Subs =
@@ -345,15 +345,15 @@ process_el({xmlstreamelement, #xmlel{name = <<"host">>,
                                      attrs = Attrs,
                                      children = Els}}, State) ->
     JIDS = fxml:get_attr_s(<<"jid">>, Attrs),
-    case jid:from_string(JIDS) of
+    try jid:decode(JIDS) of
         #jid{lserver = S} ->
             case ejabberd_router:is_my_host(S) of
                 true ->
                     process_users(Els, State#state{server = S});
                 false ->
                     stop("Unknown host: ~s", [S])
-            end;
-        error ->
+            end
+    catch _:{bad_jid, _} ->
             stop("Invalid 'jid': ~s", [JIDS])
     end;
 process_el({xmlstreamstart, <<"user">>, Attrs}, State = #state{server = S})
@@ -524,24 +524,18 @@ process_vcard(El, State = #state{user = U, server = S}) ->
 process_offline_msg(#message{from = undefined}, _State) ->
     stop("No 'from' attribute found", []);
 process_offline_msg(Msg, State = #state{user = U, server = S}) ->
-    From = xmpp:get_from(Msg),
-    To = jid:make(U, S, <<>>),
-    NewMsg = xmpp:set_from_to(Msg, From, To),
-    case catch mod_offline:store_packet(pass, From, To, NewMsg) of
-	{'EXIT', _} = Err ->
-	    stop("Failed to store offline message: ~p", [Err]);
-	_ ->
-	    {ok, State}
-    end.
+    To = jid:make(U, S),
+    ejabberd_hooks:run_fold(
+      offline_message_hook, To#jid.lserver, {pass, xmpp:set_to(Msg, To)}, []),
+    {ok, State}.
 
 -spec process_presence(presence(), state()) -> {ok, state()} | {error, _}.
 process_presence(#presence{from = undefined}, _State) ->
     stop("No 'from' attribute found", []);
 process_presence(Pres, #state{user = U, server = S} = State) ->
-    From = xmpp:get_from(Pres),
-    To = jid:make(U, S, <<>>),
-    NewPres = xmpp:set_from_to(Pres, From, To),
-    ejabberd_router:route(From, To, NewPres),
+    To = jid:make(U, S),
+    NewPres = xmpp:set_to(Pres, To),
+    ejabberd_router:route(NewPres),
     {ok, State}.
 
 stop(Fmt, Args) ->

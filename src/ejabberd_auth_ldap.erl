@@ -65,9 +65,9 @@
          uids = []              :: [{binary()} | {binary(), binary()}],
          ufilter = <<"">>       :: binary(),
          sfilter = <<"">>       :: binary(),
-	 lfilter                :: {any(), any()},
+	 lfilter                :: {any(), any()} | undefined,
          deref_aliases = never  :: never | searching | finding | always,
-         dn_filter              :: binary(),
+         dn_filter              :: binary() | undefined,
          dn_filter_attrs = []   :: [binary()]}).
 
 handle_cast(_Request, State) -> {noreply, State}.
@@ -86,13 +86,12 @@ start(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
     ChildSpec = {Proc, {?MODULE, start_link, [Host]},
 		 transient, 1000, worker, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, ChildSpec).
+    supervisor:start_child(ejabberd_backend_sup, ChildSpec).
 
 stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    gen_server:call(Proc, stop),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    supervisor:terminate_child(ejabberd_backend_sup, Proc),
+    supervisor:delete_child(ejabberd_backend_sup, Proc).
 
 start_link(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
@@ -101,6 +100,7 @@ start_link(Host) ->
 terminate(_Reason, _State) -> ok.
 
 init(Host) ->
+    process_flag(trap_exit, true),
     State = parse_options(Host),
     eldap_pool:start_link(State#state.eldap_id,
 			  State#state.servers, State#state.backups,

@@ -28,7 +28,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start/2, stop/1, c2s_auth_result/3,
+-export([start/2, stop/1, reload/3, c2s_auth_result/3,
 	 c2s_stream_started/2]).
 
 -export([init/1, handle_call/3, handle_cast/2,
@@ -88,7 +88,6 @@ c2s_auth_result(#{ip := {Addr, _}} = State, true, _User) ->
 -spec c2s_stream_started(ejabberd_c2s:state(), stream_start())
       -> ejabberd_c2s:state() | {stop, ejabberd_c2s:state()}.
 c2s_stream_started(#{ip := {Addr, _}} = State, _) ->
-    ets:tab2list(failed_auth),
     case ets:lookup(failed_auth, Addr) of
 	[{Addr, N, TS, MaxFailures}] when N >= MaxFailures ->
 	    case TS > p1_time_compat:system_time(seconds) of
@@ -111,6 +110,9 @@ start(Host, Opts) ->
 
 stop(Host) ->
     gen_mod:stop_child(?MODULE, Host).
+
+reload(_Host, _NewOpts, _OldOpts) ->
+    ok.
 
 depends(_Host, _Opts) ->
     [].
@@ -148,7 +150,7 @@ handle_info(_Info, State) ->
 terminate(_Reason, #state{host = Host}) ->
     ejabberd_hooks:delete(c2s_auth_result, Host, ?MODULE, c2s_auth_result, 100),
     ejabberd_hooks:delete(c2s_stream_started, Host, ?MODULE, c2s_stream_started, 100),
-    case is_loaded_at_other_hosts(Host) of
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
 	true ->
 	    ok;
 	false ->
@@ -161,7 +163,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
--spec log_and_disconnect(ejabberd_c2s:state(), pos_integer(), erlang:timestamp())
+-spec log_and_disconnect(ejabberd_c2s:state(), pos_integer(), non_neg_integer())
       -> {stop, ejabberd_c2s:state()}.
 log_and_disconnect(#{ip := {Addr, _}, lang := Lang} = State, Attempts, UnbanTS) ->
     IP = jlib:ip_to_list(Addr),
@@ -181,14 +183,6 @@ is_whitelisted(Host, Addr) ->
 				    fun(A) -> A end,
 				    none),
     acl:match_rule(Host, Access, Addr) == allow.
-
-is_loaded_at_other_hosts(Host) ->
-    lists:any(
-      fun(VHost) when VHost == Host ->
-	      false;
-	 (VHost) ->
-	      gen_mod:is_loaded(VHost, ?MODULE)
-      end, ?MYHOSTS).
 
 seconds_to_now(Secs) ->
     {Secs div 1000000, Secs rem 1000000, 0}.

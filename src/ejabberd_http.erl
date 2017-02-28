@@ -68,7 +68,8 @@
 		end_of_request = false,
 		options = [],
 		default_host,
-		trail = <<>>
+		trail = <<>>,
+		addr_re
 	       }).
 
 -define(XHTML_DOCTYPE,
@@ -164,13 +165,15 @@ init({SockMod, Socket}, Opts) ->
     ?DEBUG("S: ~p~n", [RequestHandlers]),
 
     DefaultHost = gen_mod:get_opt(default_host, Opts, fun(A) -> A end, undefined),
+    {ok, RE} = re:compile(<<"^(?:\\[(.*?)\\]|(.*?))(?::(\\d+))?$">>),
 
     ?INFO_MSG("started: ~p", [{SockMod1, Socket1}]),
     State = #state{sockmod = SockMod1,
                    socket = Socket1,
                    default_host = DefaultHost,
 		   options = Opts,
-                   request_handlers = RequestHandlers},
+		   request_handlers = RequestHandlers,
+		   addr_re = RE},
     try receive_headers(State) of
         V -> V
     catch
@@ -292,7 +295,7 @@ process_header(State, Data) ->
 		 [State#state.socket, State#state.request_method,
 		  element(2, State#state.request_path)]),
 	  {HostProvided, Port, TP} =
-	      get_transfer_protocol(SockMod,
+	      get_transfer_protocol(State#state.addr_re, SockMod,
 				    State#state.request_host),
 	  Host = get_host_really_served(State#state.default_host,
 					HostProvided),
@@ -306,19 +309,22 @@ process_header(State, Data) ->
 		       trail = State3#state.trail,
 		       options = State#state.options,
 		       default_host = State#state.default_host,
-		       request_handlers = State#state.request_handlers};
+		       request_handlers = State#state.request_handlers,
+		       addr_re = State#state.addr_re};
 	    _ ->
 		#state{end_of_request = true,
 		       trail = State3#state.trail,
 		       options = State#state.options,
 		       default_host = State#state.default_host,
-		       request_handlers = State#state.request_handlers}
+		       request_handlers = State#state.request_handlers,
+		       addr_re = State#state.addr_re}
 	  end;
       _ ->
 	  #state{end_of_request = true,
 		 options = State#state.options,
 		 default_host = State#state.default_host,
-		 request_handlers = State#state.request_handlers}
+		 request_handlers = State#state.request_handlers,
+		 addr_re = State#state.addr_re}
     end.
 
 add_header(Name, Value, State)->
@@ -332,16 +338,25 @@ get_host_really_served(Default, Provided) ->
       false -> Default
     end.
 
-get_transfer_protocol(SockMod, HostPort) ->
-    [Host | PortList] = str:tokens(HostPort, <<":">>),
-    case {SockMod, PortList} of
-      {gen_tcp, []} -> {Host, 80, http};
-      {gen_tcp, [Port]} ->
-	  {Host, binary_to_integer(Port), http};
-      {fast_tls, []} -> {Host, 443, https};
-      {fast_tls, [Port]} ->
-	  {Host, binary_to_integer(Port), https}
-    end.
+get_transfer_protocol(RE, SockMod, HostPort) ->
+    {Proto, DefPort} = case SockMod of
+			   gen_tcp -> {http, 80};
+			   fast_tls -> {https, 443}
+		       end,
+    {Host, Port} = case re:run(HostPort, RE, [{capture,[1,2,3],binary}]) of
+		       nomatch ->
+			   {<<"0.0.0.0">>, DefPort};
+		       {match, [<<>>, H, <<>>]} ->
+			   {H, DefPort};
+		       {match, [H, <<>>, <<>>]} ->
+			   {H, DefPort};
+		       {match, [<<>>, H, PortStr]} ->
+			   {H, binary_to_integer(PortStr)};
+		       {match, [H, <<>>, PortStr]} ->
+			   {H, binary_to_integer(PortStr)}
+		   end,
+
+    {Host, Port, Proto}.
 
 %% XXX bard: search through request handlers looking for one that
 %% matches the requested URL path, and pass control to it.  If none is

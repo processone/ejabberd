@@ -82,7 +82,7 @@ forget_room(LServer, Host, Name) ->
     ejabberd_sql:sql_transaction(LServer, F).
 
 can_use_nick(LServer, Host, JID, Nick) ->
-    SJID = jid:to_string(jid:tolower(jid:remove_resource(JID))),
+    SJID = jid:encode(jid:tolower(jid:remove_resource(JID))),
     case catch ejabberd_sql:sql_query(
                  LServer,
                  ?SQL("select @(jid)s from muc_registered "
@@ -110,7 +110,7 @@ get_rooms(LServer, Host) ->
     end.
 
 get_nick(LServer, Host, From) ->
-    SJID = jid:to_string(jid:tolower(jid:remove_resource(From))),
+    SJID = jid:encode(jid:tolower(jid:remove_resource(From))),
     case catch ejabberd_sql:sql_query(
                  LServer,
                  ?SQL("select @(nick)s from muc_registered where"
@@ -120,7 +120,7 @@ get_nick(LServer, Host, From) ->
     end.
 
 set_nick(LServer, Host, From, Nick) ->
-    JID = jid:to_string(jid:tolower(jid:remove_resource(From))),
+    JID = jid:encode(jid:tolower(jid:remove_resource(From))),
     F = fun () ->
 		case Nick of
 		    <<"">> ->
@@ -215,7 +215,7 @@ export(_Server) ->
                                 nick = Nick}) ->
               case str:suffix(Host, RoomHost) of
                   true ->
-                      SJID = jid:to_string(jid:make(U, S, <<"">>)),
+                      SJID = jid:encode(jid:make(U, S)),
                       [?SQL("delete from muc_registered where"
                             " jid=%(SJID)s and host=%(RoomHost)s;"),
                        ?SQL("insert into muc_registered(jid, host, "

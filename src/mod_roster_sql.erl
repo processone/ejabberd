@@ -83,7 +83,7 @@ get_roster(LUser, LServer) ->
 			  %% Bad JID in database:
 			  error -> [];
 			  R ->
-			      SJID = jid:to_string(R#roster.jid),
+			      SJID = jid:encode(R#roster.jid),
 			      Groups = case dict:find(SJID, GroupsDict) of
 					   {ok, Gs} -> Gs;
 					   error -> []
@@ -97,7 +97,7 @@ get_roster(LUser, LServer) ->
 
 get_roster_by_jid(LUser, LServer, LJID) ->
     {selected, Res} =
-	sql_queries:get_roster_by_jid(LServer, LUser, jid:to_string(LJID)),
+	sql_queries:get_roster_by_jid(LServer, LUser, jid:encode(LJID)),
     case Res of
 	[] ->
 	    #roster{usj = {LUser, LServer, LJID},
@@ -136,7 +136,7 @@ transaction(LServer, F) ->
     ejabberd_sql:sql_transaction(LServer, F).
 
 get_roster_by_jid_with_groups(LUser, LServer, LJID) ->
-    SJID = jid:to_string(LJID),
+    SJID = jid:encode(LJID),
     case sql_queries:get_roster_by_jid(LServer, LUser, SJID) of
 	{selected, [I]} ->
             case raw_to_record(LServer, I) of
@@ -162,18 +162,18 @@ remove_user(LUser, LServer) ->
     {atomic, ok}.
 
 update_roster(LUser, LServer, LJID, Item) ->
-    SJID = jid:to_string(LJID),
+    SJID = jid:encode(LJID),
     ItemVals = record_to_row(Item),
     ItemGroups = Item#roster.groups,
     sql_queries:update_roster(LServer, LUser, SJID, ItemVals,
                                ItemGroups).
 
 del_roster(LUser, LServer, LJID) ->
-    SJID = jid:to_string(LJID),
+    SJID = jid:encode(LJID),
     sql_queries:del_roster(LServer, LUser, SJID).
 
 read_subscription_and_groups(LUser, LServer, LJID) ->
-    SJID = jid:to_string(LJID),
+    SJID = jid:encode(LJID),
     case catch sql_queries:get_subscription(LServer, LUser, SJID) of
 	{selected, [{SSubscription}]} ->
 	    Subscription = case SSubscription of
@@ -234,10 +234,7 @@ raw_to_record(LServer,
 raw_to_record(LServer,
 	      {User, SJID, Nick, SSubscription, SAsk, SAskMessage,
 	       _SServer, _SSubscribe, _SType}) ->
-    case jid:from_string(SJID) of
-      error ->
-	  ?ERROR_MSG("~s", [format_row_error(User, LServer, {jid, SJID})]),
-	  error;
+    try jid:decode(SJID) of
       JID ->
 	  LJID = jid:tolower(JID),
 	  Subscription = case SSubscription of
@@ -268,13 +265,16 @@ raw_to_record(LServer,
 		  us = {User, LServer}, jid = LJID, name = Nick,
 		  subscription = Subscription, ask = Ask,
 		  askmessage = SAskMessage}
+    catch _:{bad_jid, _} ->
+	    ?ERROR_MSG("~s", [format_row_error(User, LServer, {jid, SJID})]),
+	    error
     end.
 
 record_to_row(
   #roster{us = {LUser, _LServer},
           jid = JID, name = Name, subscription = Subscription,
           ask = Ask, askmessage = AskMessage}) ->
-    SJID = jid:to_string(jid:tolower(JID)),
+    SJID = jid:encode(jid:tolower(JID)),
     SSubscription = case Subscription of
 		      both -> <<"B">>;
 		      to -> <<"T">>;

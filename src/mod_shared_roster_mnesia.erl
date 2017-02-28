@@ -140,7 +140,7 @@ import(LServer, <<"sr_group">>, [Group, SOpts, _TimeStamp]) ->
                   opts = ejabberd_sql:decode_term(SOpts)},
     mnesia:dirty_write(G);
 import(LServer, <<"sr_user">>, [SJID, Group, _TimeStamp]) ->
-    #jid{luser = U, lserver = S} = jid:from_string(SJID),
+    #jid{luser = U, lserver = S} = jid:decode(SJID),
     User = #sr_user{us = {U, S}, group_host = {Group, LServer}},
     mnesia:dirty_write(User).
 

@@ -33,7 +33,7 @@
 
 -behaviour(ejabberd_auth).
 
--export([start/1, set_password/3, check_password/4,
+-export([start/1, stop/1, set_password/3, check_password/4,
 	 check_password/6, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
 	 get_vh_registered_users/2, init_db/0,
@@ -63,6 +63,9 @@ start(Host) ->
     update_table(),
     update_reg_users_counter_table(Host),
     maybe_alert_password_scrammed_without_option(),
+    ok.
+
+stop(_Host) ->
     ok.
 
 init_db() ->
@@ -174,7 +177,7 @@ try_register(User, Server, PasswordList) ->
     US = {LUser, LServer},
     if (LUser == error) or (LServer == error) ->
 	   {error, invalid_jid};
-       LPassword == error ->
+       (LPassword == error) and not is_record(Password, scram) ->
 	   {error, invalid_password};
        true ->
 	   F = fun () ->

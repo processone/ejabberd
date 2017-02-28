@@ -53,7 +53,7 @@ remove_user(LUser, LServer) ->
       ?SQL("delete from archive_prefs where username=%(LUser)s")).
 
 remove_room(LServer, LName, LHost) ->
-    LUser = jid:to_string({LName, LHost, <<>>}),
+    LUser = jid:encode({LName, LHost, <<>>}),
     remove_user(LUser, LServer).
 
 delete_old_messages(ServerHost, TimeStamp, Type) ->
@@ -74,12 +74,12 @@ store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir) ->
     ID = integer_to_binary(TSinteger),
     SUser = case Type of
 		chat -> LUser;
-		groupchat -> jid:to_string({LUser, LHost, <<>>})
+		groupchat -> jid:encode({LUser, LHost, <<>>})
 	    end,
-    BarePeer = jid:to_string(
+    BarePeer = jid:encode(
 		 jid:tolower(
 		   jid:remove_resource(Peer))),
-    LPeer = jid:to_string(
+    LPeer = jid:encode(
 	      jid:tolower(Peer)),
     XML = fxml:element_to_binary(Pkt),
     Body = fxml:get_subtag_cdata(Pkt, <<"body">>),
@@ -143,7 +143,7 @@ select(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
        MAMQuery, RSM, MsgType) ->
     User = case MsgType of
 	       chat -> LUser;
-	       {groupchat, _Role, _MUCState} -> jid:to_string(JidArchive)
+	       {groupchat, _Role, _MUCState} -> jid:encode(JidArchive)
 	   end,
     {Query, CountQuery} = make_sql_query(User, LServer, MAMQuery, RSM),
     % TODO from XEP-0313 v0.2: "To conserve resources, a server MAY place a
@@ -228,11 +228,11 @@ make_sql_query(User, LServer, MAMQuery, RSM) ->
     WithClause = case catch jid:tolower(With) of
 		     {_, _, <<>>} ->
 			 [<<" and bare_peer='">>,
-			  Escape(jid:to_string(With)),
+			  Escape(jid:encode(With)),
 			  <<"'">>];
 		     {_, _, _} ->
 			 [<<" and peer='">>,
-			  Escape(jid:to_string(With)),
+			  Escape(jid:encode(With)),
 			  <<"'">>];
 		     _ ->
 			 []
@@ -314,8 +314,8 @@ make_archive_el(TS, XML, Peer, Kind, Nick, MsgType, JidRequestor, JidArchive) ->
 	#xmlel{} = El ->
 	    try binary_to_integer(TS) of
 		TSInt ->
-		    case jid:from_string(Peer) of
-			#jid{} = PeerJID ->
+		    try jid:decode(Peer) of
+			PeerJID ->
 			    Now = usec_to_now(TSInt),
 			    PeerLJID = jid:tolower(PeerJID),
 			    T = case Kind of
@@ -330,24 +330,24 @@ make_archive_el(TS, XML, Peer, Kind, Nick, MsgType, JidRequestor, JidArchive) ->
 					   type = T,
 					   nick = Nick,
 					   peer = PeerLJID},
-			      MsgType, JidRequestor, JidArchive);
-			error ->
+			      MsgType, JidRequestor, JidArchive)
+		    catch _:{bad_jid, _} ->
 			    ?ERROR_MSG("Malformed 'peer' field with value "
 				       "'~s' detected for user ~s in table "
 				       "'archive': invalid JID",
-				       [Peer, jid:to_string(JidArchive)]),
+				       [Peer, jid:encode(JidArchive)]),
 			    {error, invalid_jid}
 		    end
 	    catch _:_ ->
 		    ?ERROR_MSG("Malformed 'timestamp' field with value '~s' "
 			       "detected for user ~s in table 'archive': "
 			       "not an integer",
-			       [TS, jid:to_string(JidArchive)]),
+			       [TS, jid:encode(JidArchive)]),
 		    {error, invalid_timestamp}
 	    end;
 	{error, {_, Reason}} ->
 	    ?ERROR_MSG("Malformed 'xml' field with value '~s' detected "
 		       "for user ~s in table 'archive': ~s",
-		       [XML, jid:to_string(JidArchive), Reason]),
+		       [XML, jid:encode(JidArchive), Reason]),
 	    {error, invalid_xml}
     end.

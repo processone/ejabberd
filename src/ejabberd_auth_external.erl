@@ -31,7 +31,7 @@
 
 -behaviour(ejabberd_auth).
 
--export([start/1, set_password/3, check_password/4,
+-export([start/1, stop/1, set_password/3, check_password/4,
 	 check_password/6, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
 	 get_vh_registered_users/2,
@@ -57,6 +57,10 @@ start(Host) ->
     extauth:start(Host, Cmd),
     check_cache_last_options(Host),
     ejabberd_auth_mnesia:start(Host).
+
+stop(Host) ->
+    extauth:stop(Host),
+    ejabberd_auth_mnesia:stop(Host).
 
 check_cache_last_options(Server) ->
     case get_cache_option(Server) of
@@ -315,7 +319,7 @@ get_mod_last_configured(Server) ->
     end.
 
 is_configured(Host, Module) ->
-    Os = ejabberd_config:get_local_option({modules, Host},
+    Os = ejabberd_config:get_option({modules, Host},
 					  fun(M) when is_list(M) -> M end),
     lists:keymember(Module, 1, Os).
 

@@ -28,7 +28,7 @@
 -behaviour(ejabberd_config).
 
 %% API
--export([start/0, start_link/0, q/1, qp/1, opt_type/1]).
+-export([start_link/0, q/1, qp/1, config_reloaded/0, opt_type/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -40,26 +40,13 @@
 -include("logger.hrl").
 -include("ejabberd.hrl").
 
--record(state, {}).
+-record(state, {connection :: {pid(), reference()} | undefined}).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
-
-start() ->
-    case lists:any(
-	   fun(Host) ->
-		   is_redis_configured(Host)
-	   end, ?MYHOSTS) of
-	true ->
-	    Spec = {?MODULE, {?MODULE, start_link, []},
-		    permanent, 2000, worker, [?MODULE]},
-	    supervisor:start_child(ejabberd_sup, Spec);
-	false ->
-	    ok
-    end.
 
 q(Command) ->
     try eredis:q(?PROCNAME, Command)
@@ -71,12 +58,21 @@ qp(Pipeline) ->
     catch _:Reason -> {error, Reason}
     end.
 
+config_reloaded() ->
+    case is_redis_configured() of
+	true ->
+	    ?MODULE ! connect;
+	false ->
+	    ?MODULE ! disconnect
+    end.
+
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
 init([]) ->
+    ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 20),
     process_flag(trap_exit, true),
-    connect(),
+    self() ! connect,
     {ok, #state{}}.
 
 handle_call(_Request, _From, State) ->
@@ -86,13 +82,35 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
+handle_info(connect, #state{connection = undefined} = State) ->
+    NewState = case is_redis_configured() of
+		   true ->
+		       case connect() of
+			   {ok, Connection} ->
+			       State#state{connection = Connection};
+			   {error, _} ->
+			       State
+		       end;
+		   false ->
+		       State
+	       end,
+    {noreply, NewState};
 handle_info(connect, State) ->
-    connect(),
+    %% Already connected
     {noreply, State};
-handle_info({'DOWN', _MRef, _Type, _Pid, Reason}, State) ->
+handle_info(disconnect, #state{connection = {Pid, MRef}} = State) ->
+    ?INFO_MSG("Disconnecting from Redis server", []),
+    erlang:demonitor(MRef, [flush]),
+    eredis:stop(Pid),
+    {noreply, State#state{connection = undefined}};
+handle_info(disconnect, State) ->
+    %% Not connected
+    {noreply, State};
+handle_info({'DOWN', MRef, _Type, Pid, Reason},
+	    #state{connection = {Pid, MRef}} = State) ->
     ?INFO_MSG("Redis connection has failed: ~p", [Reason]),
     connect(),
-    {noreply, State};
+    {noreply, State#state{connection = undefined}};
 handle_info({'EXIT', _, _}, State) ->
     {noreply, State};
 handle_info(Info, State) ->
@@ -100,7 +118,7 @@ handle_info(Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
-    ok.
+    ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 20).
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
@@ -108,6 +126,9 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+is_redis_configured() ->
+    lists:any(fun is_redis_configured/1, ?MYHOSTS).
+
 is_redis_configured(Host) ->
     ServerConfigured = ejabberd_config:has_option({redis_server, Host}),
     PortConfigured = ejabberd_config:has_option({redis_port, Host}),
@@ -166,9 +187,9 @@ connect() ->
 	    {ok, Client} ->
 		?INFO_MSG("Connected to Redis at ~s:~p", [Server, Port]),
 		unlink(Client),
-		erlang:monitor(process, Client),
+		MRef = erlang:monitor(process, Client),
 		register(?PROCNAME, Client),
-		{ok, Client};
+		{ok, {Client, MRef}};
 	    {error, Why} ->
 		erlang:error(Why)
 	end
@@ -177,7 +198,8 @@ connect() ->
 	    ?ERROR_MSG("Redis connection at ~s:~p has failed: ~p; "
 		       "reconnecting in ~p seconds",
 		       [Server, Port, Reason, Timeout]),
-	    erlang:send_after(timer:seconds(Timeout), self(), connect)
+	    erlang:send_after(timer:seconds(Timeout), self(), connect),
+	    {error, Reason}
     end.
 
 opt_type(redis_connect_timeout) ->

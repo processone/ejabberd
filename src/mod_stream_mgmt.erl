@@ -20,13 +20,13 @@
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%-------------------------------------------------------------------
--module(mod_sm).
+-module(mod_stream_mgmt).
 -behaviour(gen_mod).
 -author('holger@zedat.fu-berlin.de').
 -protocol({xep, 198, '1.5.2'}).
 
 %% gen_mod API
--export([start/2, stop/1, depends/2, mod_opt_type/1]).
+-export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1]).
 %% hooks
 -export([c2s_stream_init/2, c2s_stream_started/2, c2s_stream_features/2,
 	 c2s_authenticated_packet/2, c2s_unauthenticated_packet/2,
@@ -86,6 +86,10 @@ stop(Host) ->
     ejabberd_hooks:delete(c2s_handle_call, Host, ?MODULE, c2s_handle_call, 50),
     ejabberd_hooks:delete(c2s_closed, Host, ?MODULE, c2s_closed, 50),
     ejabberd_hooks:delete(c2s_terminated, Host, ?MODULE, c2s_terminated, 50).
+
+reload(_Host, _NewOpts, _OldOpts) ->
+    ?WARNING_MSG("module ~s is reloaded, but new configuration will take "
+		 "effect for newly created client connections only", [?MODULE]).
 
 depends(_Host, _Opts) ->
     [].
@@ -180,25 +184,33 @@ c2s_handle_recv(State, _, _) ->
 c2s_handle_send(#{mgmt_state := MgmtState, mod := Mod,
 		  lang := Lang} = State, Pkt, SendResult)
   when MgmtState == pending; MgmtState == active ->
-    case xmpp:is_stanza(Pkt) of
-	true ->
-	    case mgmt_queue_add(State, Pkt) of
-		#{mgmt_max_queue := exceeded} = State1 ->
-		    State2 = State1#{mgmt_resend => false},
-		    case MgmtState of
-			active ->
+    case Pkt of
+	_ when ?is_stanza(Pkt) ->
+	    Meta = xmpp:get_meta(Pkt),
+	    case maps:get(mgmt_is_resent, Meta, false) of
+		false ->
+		    case mgmt_queue_add(State, Pkt) of
+			#{mgmt_max_queue := exceeded} = State1 ->
+			    State2 = State1#{mgmt_resend => false},
 			    Err = xmpp:serr_policy_violation(
 				    <<"Too many unacked stanzas">>, Lang),
 			    send(State2, Err);
-			_ ->
-			    Mod:stop(State2)
+			State1 when SendResult == ok ->
+			    send_rack(State1);
+			State1 ->
+			    State1
 		    end;
-		State1 when SendResult == ok ->
-		    send_rack(State1);
-		State1 ->
-		    State1
+		true ->
+		    State
 	    end;
-	false ->
+	#stream_error{} ->
+	    case MgmtState of
+		active ->
+		    State;
+		pending ->
+		    Mod:stop(State#{stop_reason => {stream, {out, Pkt}}})
+	    end;
+	_ ->
 	    State
     end;
 c2s_handle_send(State, _Pkt, _Result) ->
@@ -217,20 +229,20 @@ c2s_handle_call(State, _Call, _From) ->
 c2s_handle_info(#{mgmt_ack_timer := TRef, jid := JID, mod := Mod} = State,
 		{timeout, TRef, ack_timeout}) ->
     ?DEBUG("Timed out waiting for stream management acknowledgement of ~s",
-	   [jid:to_string(JID)]),
+	   [jid:encode(JID)]),
     State1 = State#{stop_reason => {socket, timeout}},
     State2 = Mod:close(State1, _SendTrailer = false),
     {stop, transition_to_pending(State2)};
 c2s_handle_info(#{mgmt_state := pending, jid := JID, mod := Mod} = State,
 		{timeout, _, pending_timeout}) ->
     ?DEBUG("Timed out waiting for resumption of stream for ~s",
-	   [jid:to_string(JID)]),
+	   [jid:encode(JID)]),
     Mod:stop(State#{mgmt_state => timeout});
 c2s_handle_info(#{jid := JID} = State, {_Ref, {resume, OldState}}) ->
     %% This happens if the resume_session/1 request timed out; the new session
     %% now receives the late response.
     ?DEBUG("Received old session state for ~s after failed resumption",
-	   [jid:to_string(JID)]),
+	   [jid:encode(JID)]),
     route_unacked_stanzas(OldState#{mgmt_resend => false}),
     State;
 c2s_handle_info(State, _) ->
@@ -245,7 +257,7 @@ c2s_closed(State, _Reason) ->
 
 c2s_terminated(#{mgmt_state := resumed, jid := JID} = State, _Reason) ->
     ?INFO_MSG("Closing former stream of resumed session for ~s",
-	      [jid:to_string(JID)]),
+	      [jid:encode(JID)]),
     bounce_message_queue(),
     {stop, State};
 c2s_terminated(#{mgmt_state := MgmtState, mgmt_stanzas_in := In, sid := SID,
@@ -316,14 +328,14 @@ handle_enable(#{mgmt_timeout := DefaultTimeout,
 	      end,
     Res = if Timeout > 0 ->
 		  ?INFO_MSG("Stream management with resumption enabled for ~s",
-			    [jid:to_string(JID)]),
+			    [jid:encode(JID)]),
 		  #sm_enabled{xmlns = Xmlns,
 			      id = make_resume_id(State),
 			      resume = true,
 			      max = Timeout};
 	     true ->
 		  ?INFO_MSG("Stream management without resumption enabled for ~s",
-			    [jid:to_string(JID)]),
+			    [jid:encode(JID)]),
 		  #sm_enabled{xmlns = Xmlns}
 	  end,
     State1 = State#{mgmt_state => active,
@@ -371,7 +383,7 @@ handle_resume(#{user := User, lserver := LServer, sockmod := SockMod,
 	    %% csi_flush_queue(State4),
 	    State5 = ejabberd_hooks:run_fold(c2s_session_resumed, LServer, State4, []),
 	    ?INFO_MSG("(~s) Resumed session for ~s",
-		      [SockMod:pp(Socket), jid:to_string(JID)]),
+		      [SockMod:pp(Socket), jid:encode(JID)]),
 	    {ok, State5};
 	{error, El, Msg} ->
 	    ?INFO_MSG("Cannot resume session for ~s@~s: ~s",
@@ -386,7 +398,7 @@ transition_to_pending(#{mgmt_state := active, mod := Mod,
 transition_to_pending(#{mgmt_state := active, jid := JID,
 			lserver := LServer, mgmt_timeout := Timeout} = State) ->
     State1 = cancel_ack_timer(State),
-    ?INFO_MSG("Waiting for resumption of stream for ~s", [jid:to_string(JID)]),
+    ?INFO_MSG("Waiting for resumption of stream for ~s", [jid:encode(JID)]),
     erlang:start_timer(timer:seconds(Timeout), self(), pending_timeout),
     State2 = State1#{mgmt_state => pending},
     ejabberd_hooks:run_fold(c2s_session_pending, LServer, State2, []);
@@ -397,11 +409,11 @@ transition_to_pending(State) ->
 check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut, jid := JID} = State, H)
   when H > NumStanzasOut ->
     ?DEBUG("~s acknowledged ~B stanzas, but only ~B were sent",
-	   [jid:to_string(JID), H, NumStanzasOut]),
+	   [jid:encode(JID), H, NumStanzasOut]),
     mgmt_queue_drop(State#{mgmt_stanzas_out => H}, NumStanzasOut);
 check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut, jid := JID} = State, H) ->
     ?DEBUG("~s acknowledged ~B of ~B stanzas",
-	   [jid:to_string(JID), H, NumStanzasOut]),
+	   [jid:encode(JID), H, NumStanzasOut]),
     mgmt_queue_drop(State, H).
 
 -spec update_num_stanzas_in(state(), xmpp_element()) -> state().
@@ -478,11 +490,11 @@ resend_unacked_stanzas(#{mgmt_state := MgmtState,
 	MgmtState == pending orelse
 	MgmtState == timeout) andalso QueueLen > 0 ->
     ?DEBUG("Resending ~B unacknowledged stanza(s) to ~s",
-	   [QueueLen, jid:to_string(JID)]),
+	   [QueueLen, jid:encode(JID)]),
     queue_foldl(
       fun({_, Time, Pkt}, AccState) ->
 	      NewPkt = add_resent_delay_info(AccState, Pkt, Time),
-	      send(AccState, NewPkt)
+	      send(AccState, xmpp:put_meta(NewPkt, mgmt_is_resent, true))
       end, State, Queue);
 resend_unacked_stanzas(State) ->
     State.
@@ -510,13 +522,14 @@ route_unacked_stanzas(#{mgmt_state := MgmtState,
 			      end
 		      end,
     ?DEBUG("Re-routing ~B unacknowledged stanza(s) to ~s",
-	   [QueueLen, jid:to_string(JID)]),
+	   [QueueLen, jid:encode(JID)]),
     queue_foreach(
       fun({_, _Time, #presence{from = From}}) ->
-	      ?DEBUG("Dropping presence stanza from ~s", [jid:to_string(From)]);
+	      ?DEBUG("Dropping presence stanza from ~s", [jid:encode(From)]);
 	 ({_, _Time, #iq{} = El}) ->
 	      Txt = <<"User session terminated">>,
-	      route_error(El, xmpp:err_service_unavailable(Txt, Lang));
+	      ejabberd_router:route_error(
+		El, xmpp:err_service_unavailable(Txt, Lang));
 	 ({_, _Time, #message{from = From, meta = #{carbon_copy := true}}}) ->
 	      %% XEP-0280 says: "When a receiving server attempts to deliver a
 	      %% forked message, and that message bounces with an error for
@@ -524,20 +537,21 @@ route_unacked_stanzas(#{mgmt_state := MgmtState,
 	      %% back to the original sender."  Resending such a stanza could
 	      %% easily lead to unexpected results as well.
 	      ?DEBUG("Dropping forwarded message stanza from ~s",
-		     [jid:to_string(From)]);
+		     [jid:encode(From)]);
 	 ({_, Time, #message{} = Msg}) ->
 	      case ejabberd_hooks:run_fold(message_is_archived,
 					   LServer, false,
 					   [State, Msg]) of
 		  true ->
 		      ?DEBUG("Dropping archived message stanza from ~s",
-			     [jid:to_string(xmpp:get_from(Msg))]);
+			     [jid:encode(xmpp:get_from(Msg))]);
 		  false when ResendOnTimeout ->
 		      NewEl = add_resent_delay_info(State, Msg, Time),
-		      route(NewEl);
+		      ejabberd_router:route(NewEl);
 		  false ->
 		      Txt = <<"User session terminated">>,
-		      route_error(Msg, xmpp:err_service_unavailable(Txt, Lang))
+		      ejabberd_router:route_error(
+			Msg, xmpp:err_service_unavailable(Txt, Lang))
 	      end;
 	 ({_, _Time, El}) ->
 	      %% Raw element of type 'error' resulting from a validation error
@@ -597,8 +611,8 @@ inherit_session_state(#{user := U, server := S} = State, ResumeID) ->
 	    {error, <<"Invalid 'previd' value">>}
     end.
 
--spec resume_session({integer(), pid()}, state()) -> {resume, state()} |
-						     {error, binary()}.
+-spec resume_session({erlang:timestamp(), pid()}, state()) -> {resume, state()} |
+							      {error, binary()}.
 resume_session({Time, Pid}, _State) ->
     ejabberd_c2s:call(Pid, {resume_session, Time}, timer:seconds(15)).
 
@@ -613,18 +627,6 @@ add_resent_delay_info(#{lserver := LServer}, El, Time)
     xmpp_util:add_delay_info(El, jid:make(LServer), Time, <<"Resent">>);
 add_resent_delay_info(_State, El, _Time) ->
     El.
-
--spec route(stanza()) -> ok.
-route(Pkt) ->
-    From = xmpp:get_from(Pkt),
-    To = xmpp:get_to(Pkt),
-    ejabberd_router:route(From, To, Pkt).
-
--spec route_error(stanza(), stanza_error()) -> ok.
-route_error(Pkt, Err) ->
-    From = xmpp:get_from(Pkt),
-    To = xmpp:get_to(Pkt),
-    ejabberd_router:route_error(To, From, Pkt, Err).
 
 -spec send(state(), xmpp_element()) -> state().
 send(#{mod := Mod} = State, Pkt) ->
@@ -684,8 +686,8 @@ cancel_ack_timer(State) ->
 
 -spec bounce_message_queue() -> ok.
 bounce_message_queue() ->
-    receive {route, From, To, Pkt} ->
-	    ejabberd_router:route(From, To, Pkt),
+    receive {route, Pkt} ->
+	    ejabberd_router:route(Pkt),
 	    bounce_message_queue()
     after 0 ->
 	    ok

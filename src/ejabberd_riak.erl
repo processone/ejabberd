@@ -61,7 +61,7 @@
 %% the first element of the record is assumed as a primary index,
 %% i.e. `i' = element(2, Record).
 
--export_types([index_info/0]).
+-export_type([index_info/0]).
 
 %%%===================================================================
 %%% API

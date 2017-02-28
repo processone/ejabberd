@@ -1,4 +1,4 @@
-#!/usr/bin/escript
+#!/usr/bin/env escript
 %% -*- erlang -*-
 %%! -pa ebin
 

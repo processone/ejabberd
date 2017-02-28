@@ -41,7 +41,7 @@ CREATE TABLE rosterusers (
     ask character(1) NOT NULL,
     askmessage text NOT NULL,
     server character(1) NOT NULL,
-    subscribe text,
+    subscribe text NOT NULL,
     type text,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -84,6 +84,31 @@ CREATE TABLE spool (
 
 CREATE INDEX i_despool ON spool (username);
 
+CREATE TABLE archive (
+    username text NOT NULL,
+    timestamp BIGINT UNSIGNED NOT NULL,
+    peer text NOT NULL,
+    bare_peer text NOT NULL,
+    xml text NOT NULL,
+    txt text,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind text,
+    nick text,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX i_username ON archive(username);
+CREATE INDEX i_timestamp ON archive(timestamp);
+CREATE INDEX i_peer ON archive(peer);
+CREATE INDEX i_bare_peer ON archive(bare_peer);
+
+CREATE TABLE archive_prefs (
+    username text NOT NULL PRIMARY KEY,
+    def text NOT NULL,
+    always text NOT NULL,
+    never text NOT NULL,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
 CREATE TABLE vcard (
     username text PRIMARY KEY,
@@ -181,10 +206,10 @@ CREATE TABLE roster_version (
 );
 
 CREATE TABLE pubsub_node (
-  host text,
-  node text,
-  parent text,
-  type text,
+  host text NOT NULL,
+  node text NOT NULL,
+  parent text NOT NULL DEFAULT '',
+  type text NOT NULL,
   nodeid INTEGER PRIMARY KEY AUTOINCREMENT
 );
 CREATE INDEX i_pubsub_node_parent ON pubsub_node (parent);
@@ -192,22 +217,22 @@ CREATE UNIQUE INDEX i_pubsub_node_tuple ON pubsub_node (host, node);
 
 CREATE TABLE pubsub_node_option (
   nodeid bigint REFERENCES pubsub_node(nodeid) ON DELETE CASCADE,
-  name text,
-  val text
+  name text NOT NULL,
+  val text NOT NULL
 );
 CREATE INDEX i_pubsub_node_option_nodeid ON pubsub_node_option (nodeid);
 
 CREATE TABLE pubsub_node_owner (
   nodeid bigint REFERENCES pubsub_node(nodeid) ON DELETE CASCADE,
-  owner text
+  owner text NOT NULL
 );
 CREATE INDEX i_pubsub_node_owner_nodeid ON pubsub_node_owner (nodeid);
 
 CREATE TABLE pubsub_state (
   nodeid bigint REFERENCES pubsub_node(nodeid) ON DELETE CASCADE,
-  jid text,
+  jid text NOT NULL,
   affiliation character(1),
-  subscriptions text,
+  subscriptions text NOT NULL DEFAULT '',
   stateid INTEGER PRIMARY KEY AUTOINCREMENT
 );
 CREATE INDEX i_pubsub_state_jid ON pubsub_state (jid);
@@ -215,19 +240,19 @@ CREATE UNIQUE INDEX i_pubsub_state_tuple ON pubsub_state (nodeid, jid);
 
 CREATE TABLE pubsub_item (
   nodeid bigint REFERENCES pubsub_node(nodeid) ON DELETE CASCADE,
-  itemid text,
-  publisher text,
-  creation text,
-  modification text,
-  payload text
+  itemid text NOT NULL,
+  publisher text NOT NULL,
+  creation text NOT NULL,
+  modification text NOT NULL,
+  payload text NOT NULL DEFAULT ''
 );
 CREATE INDEX i_pubsub_item_itemid ON pubsub_item (itemid);
 CREATE UNIQUE INDEX i_pubsub_item_tuple ON pubsub_item (nodeid, itemid);
 
  CREATE TABLE pubsub_subscription_opt (
-  subid text,
+  subid text NOT NULL,
   opt_name varchar(32),
-  opt_value text
+  opt_value text NOT NULL
 );
 CREATE UNIQUE INDEX i_pubsub_subscription_opt ON pubsub_subscription_opt (subid, opt_name);
 
@@ -273,32 +298,6 @@ CREATE TABLE caps_features (
 );
 
 CREATE INDEX i_caps_features_node_subnode ON caps_features (node, subnode);
-
-CREATE TABLE archive (
-    username text NOT NULL,
-    timestamp BIGINT UNSIGNED NOT NULL,
-    peer text NOT NULL,
-    bare_peer text NOT NULL,
-    xml text NOT NULL,
-    txt text,
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    kind text,
-    nick text,
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX i_username ON archive(username);
-CREATE INDEX i_timestamp ON archive(timestamp);
-CREATE INDEX i_peer ON archive(peer);
-CREATE INDEX i_bare_peer ON archive(bare_peer);
-
-CREATE TABLE archive_prefs (
-    username text NOT NULL PRIMARY KEY,
-    def text NOT NULL,
-    always text NOT NULL,
-    never text NOT NULL,
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
 
 CREATE TABLE sm (
     usec bigint NOT NULL,

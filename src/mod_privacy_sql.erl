@@ -278,10 +278,8 @@ raw_to_item({SType, SValue, SAction, Order, MatchAll,
         {Type, Value} = case SType of
                             <<"n">> -> {none, none};
                             <<"j">> ->
-                                case jid:from_string(SValue) of
-                                    #jid{} = JID ->
-                                        {jid, jid:tolower(JID)}
-                                end;
+                                JID = jid:decode(SValue),
+				{jid, jid:tolower(JID)};
                             <<"g">> -> {group, SValue};
                             <<"s">> ->
                                 case SValue of
@@ -312,7 +310,7 @@ item_to_raw(#listitem{type = Type, value = Value,
 		      match_presence_out = MatchPresenceOut}) ->
     {SType, SValue} = case Type of
 			none -> {<<"n">>, <<"">>};
-			jid -> {<<"j">>, jid:to_string(Value)};
+			jid -> {<<"j">>, jid:encode(Value)};
 			group -> {<<"g">>, Value};
 			subscription ->
 			    case Value of

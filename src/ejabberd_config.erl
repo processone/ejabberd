@@ -27,9 +27,6 @@
 -author('alexey@process-one.net').
 
 -export([start/0, load_file/1, reload_file/0, read_file/1,
-	 add_global_option/2, add_local_option/2,
-	 get_global_option/2, get_local_option/2,
-	 get_global_option/3, get_local_option/3,
 	 get_option/2, get_option/3, add_option/2, has_option/1,
 	 get_vh_by_auth_method/1, is_file_readable/1,
 	 get_version/0, get_myhosts/0, get_mylang/0,
@@ -43,6 +40,15 @@
 	 fsm_limit_opts/1]).
 
 -export([start/2]).
+
+%% The following functions are deprecated.
+-export([add_global_option/2, add_local_option/2,
+	 get_global_option/2, get_local_option/2,
+	 get_global_option/3, get_local_option/3]).
+
+-deprecated([{add_global_option, 2}, {add_local_option, 2},
+	     {get_global_option, 2}, {get_local_option, 2},
+	     {get_global_option, 3}, {get_local_option, 3}]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -60,11 +66,8 @@
 
 start() ->
     mnesia_init(),
-    Config = get_ejabberd_config_path(),
-    State0 = read_file(Config),
-    State1 = hosts_to_start(State0),
-    State2 = validate_opts(State1),
-    %% This start time is used by mod_last:
+    ConfigFile = get_ejabberd_config_path(),
+    State1 = load_file(ConfigFile),
     UnixTime = p1_time_compat:system_time(seconds),
     SharedKey = case erlang:get_cookie() of
                     nocookie ->
@@ -72,9 +75,9 @@ start() ->
                     Cookie ->
                         p1_sha:sha(jlib:atom_to_binary(Cookie))
                 end,
-    State3 = set_option({node_start, global}, UnixTime, State2),
-    State4 = set_option({shared_key, global}, SharedKey, State3),
-    set_opts(State4).
+    State2 = set_option({node_start, global}, UnixTime, State1),
+    State3 = set_option({shared_key, global}, SharedKey, State2),
+    set_opts(State3).
 
 %% When starting ejabberd for testing, we sometimes want to start a
 %% subset of hosts from the one define in the config file.
@@ -97,7 +100,8 @@ hosts_to_start(State) ->
 -spec start(Hosts :: [binary()], Opts :: [acl:acl() | local_config()]) -> ok.
 start(Hosts, Opts) ->
     mnesia_init(),
-    set_opts(set_hosts_in_options(Hosts, #state{opts = Opts})).
+    set_opts(set_hosts_in_options(Hosts, #state{opts = Opts})),
+    ok.
 
 mnesia_init() ->
     case catch mnesia:table_info(local_config, storage_type) of
@@ -132,7 +136,7 @@ get_ejabberd_config_path() ->
 -spec get_env_config() -> {ok, string()} | undefined.
 get_env_config() ->
     %% First case: the filename can be specified with: erl -config "/path/to/ejabberd.yml".
-    case application:get_env(config) of
+    case application:get_env(ejabberd, config) of
 	R = {ok, _Path} -> R;
 	undefined ->
             %% Second case for embbeding ejabberd in another app, for example for Elixir:
@@ -177,18 +181,30 @@ read_file(File, Opts) ->
     State1 = lists:foldl(fun process_term/2, State, Head ++ Tail),
     State1#state{opts = compact(State1#state.opts)}.
 
--spec load_file(string()) -> ok.
+-spec load_file(string()) -> #state{}.
 
 load_file(File) ->
     State0 = read_file(File),
-    State = validate_opts(State0),
-    set_opts(State).
+    State1 = hosts_to_start(State0),
+    validate_opts(State1).
 
 -spec reload_file() -> ok.
 
 reload_file() ->
     Config = get_ejabberd_config_path(),
-    load_file(Config).
+    OldHosts = get_myhosts(),
+    State = load_file(Config),
+    set_opts(State),
+    NewHosts = get_myhosts(),
+    lists:foreach(
+      fun(Host) ->
+	      ejabberd_hooks:run(host_up, [Host])
+      end, NewHosts -- OldHosts),
+    lists:foreach(
+      fun(Host) ->
+	      ejabberd_hooks:run(host_down, [Host])
+      end, OldHosts -- NewHosts),
+    ejabberd_hooks:run(config_reloaded, []).
 
 -spec convert_to_yaml(file:filename()) -> ok | {error, any()}.
 
@@ -338,7 +354,6 @@ get_absolute_path(File) ->
 	volumerelative ->
 	    filename:absname(File)
     end.
-
 
 search_hosts(Term, State) ->
     case Term of
@@ -749,24 +764,35 @@ append_option({Opt, Host}, Val, State) ->
 set_opts(State) ->
     Opts = State#state.opts,
     F = fun() ->
-		lists:foreach(fun(R) ->
-				      mnesia:write(R)
-			      end, Opts)
+		lists:foreach(
+		  fun({node_start, _}) -> ok;
+		     ({shared_key, _}) -> ok;
+		     (Key) -> mnesia:delete({local_config, Key})
+		  end, mnesia:all_keys(local_config)),
+		lists:foreach(fun mnesia:write/1, Opts)
 	end,
     case mnesia:transaction(F) of
-	{atomic, _} -> ok;
+	{atomic, _} ->
+	    set_log_level();
 	{aborted,{no_exists,Table}} ->
 	    MnesiaDirectory = mnesia:system_info(directory),
-	    ?ERROR_MSG("Error reading Mnesia database spool files:~n"
-		       "The Mnesia database couldn't read the spool file for the table '~p'.~n"
-		       "ejabberd needs read and write access in the directory:~n   ~s~n"
-		       "Maybe the problem is a change in the computer hostname,~n"
-		       "or a change in the Erlang node name, which is currently:~n   ~p~n"
-		       "Check the ejabberd guide for details about changing the~n"
-		       "computer hostname or Erlang node name.~n",
-		       [Table, MnesiaDirectory, node()]),
+	    ?CRITICAL_MSG("Error reading Mnesia database spool files:~n"
+			  "The Mnesia database couldn't read the spool file for the table '~p'.~n"
+			  "ejabberd needs read and write access in the directory:~n   ~s~n"
+			  "Maybe the problem is a change in the computer hostname,~n"
+			  "or a change in the Erlang node name, which is currently:~n   ~p~n"
+			  "Check the ejabberd guide for details about changing the~n"
+			  "computer hostname or Erlang node name.~n",
+			  [Table, MnesiaDirectory, node()]),
 	    exit("Error reading Mnesia database")
     end.
+
+set_log_level() ->
+    Level = ejabberd_config:get_option(
+              loglevel,
+              fun(P) when P>=0, P=<5 -> P end,
+              4),
+    ejabberd_logger:set(Level).
 
 add_global_option(Opt, Val) ->
     add_option(Opt, Val).
@@ -912,7 +938,7 @@ v_dbs_mods(Mod) ->
 default_db(Module) ->
     default_db(global, Module).
 
--spec default_db(binary(), module()) -> atom().
+-spec default_db(binary() | global, module()) -> atom().
 default_db(Host, Module) ->
     default_db(default_db, Host, Module).
 
@@ -920,14 +946,13 @@ default_db(Host, Module) ->
 default_ram_db(Module) ->
     default_ram_db(global, Module).
 
--spec default_ram_db(binary(), module()) -> atom().
+-spec default_ram_db(binary() | global, module()) -> atom().
 default_ram_db(Host, Module) ->
     default_db(default_ram_db, Host, Module).
 
--spec default_db(default_db | default_ram_db, binary(), module()) -> atom().
+-spec default_db(default_db | default_ram_db, binary() | global, module()) -> atom().
 default_db(Opt, Host, Module) ->
-    case ejabberd_config:get_option(
-	   {Opt, Host}, fun(T) when is_atom(T) -> T end) of
+    case get_option({Opt, Host}, fun(T) when is_atom(T) -> T end) of
 	undefined ->
 	    mnesia;
 	DBType ->
@@ -1428,13 +1453,13 @@ opt_type(default_db) ->
     fun(T) when is_atom(T) -> T end;
 opt_type(default_ram_db) ->
     fun(T) when is_atom(T) -> T end;
+opt_type(loglevel) ->
+    fun (P) when P >= 0, P =< 5 -> P end;
 opt_type(_) ->
     [hide_sensitive_log_data, hosts, language,
-     default_db, default_ram_db].
+     default_db, default_ram_db, loglevel].
 
--spec may_hide_data(string()) -> string();
-                   (binary()) -> binary().
-
+-spec may_hide_data(any()) -> any().
 may_hide_data(Data) ->
     case ejabberd_config:get_option(
 	hide_sensitive_log_data,

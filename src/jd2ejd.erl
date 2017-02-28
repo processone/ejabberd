@@ -156,13 +156,14 @@ process_offline(Server, To, #xmlel{children = Els}) ->
     lists:foreach(
       fun(#xmlel{} = El) ->
 	      try xmpp:decode(El, ?NS_CLIENT, [ignore_els]) of
-		  #message{from = JID} ->
+		  #message{from = JID} = Msg ->
 		      From = case JID of
 				 undefined -> jid:make(Server);
 				 _ -> JID
 			     end,
-		      ejabberd_hooks:run_fold(offline_message_hook,
-					      LServer, pass, [From, To, El]);
+		      ejabberd_hooks:run_fold(
+			offline_message_hook,
+			LServer, {pass, xmpp:set_from_to(Msg, From, To)}, []);
 		  _ ->
 		      ok
 	      catch _:{xmpp_codec, Why} ->

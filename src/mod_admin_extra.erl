@@ -30,7 +30,7 @@
 
 -include("logger.hrl").
 
--export([start/2, stop/1, mod_opt_type/1,
+-export([start/2, stop/1, reload/3, mod_opt_type/1,
 	 get_commands_spec/0, depends/2]).
 
 % Commands API
@@ -95,6 +95,9 @@ start(_Host, _Opts) ->
 
 stop(_Host) ->
     ejabberd_commands:unregister_commands(get_commands_spec()).
+
+reload(_Host, _NewOpts, _OldOpts) ->
+    ok.
 
 depends(_Host, _Opts) ->
     [].
@@ -178,6 +181,11 @@ get_commands_spec() ->
 			result_desc = "Number of users active on given server in last n days"},
      #ejabberd_commands{name = delete_old_users, tags = [accounts, purge],
 			desc = "Delete users that didn't log in last days, or that never logged",
+			longdesc = "To protect admin accounts, configure this for example:\n"
+			    "access_rules:\n"
+			    "  delete_old_users:\n"
+			    "    - deny: admin\n"
+			    "    - allow: all\n",
 			module = ?MODULE, function = delete_old_users,
 			args = [{days, integer}],
 			args_example = [30],
@@ -187,6 +195,11 @@ get_commands_spec() ->
 			result_desc = "Result tuple"},
      #ejabberd_commands{name = delete_old_users_vhost, tags = [accounts, purge],
 			desc = "Delete users that didn't log in last days in vhost, or that never logged",
+			longdesc = "To protect admin accounts, configure this for example:\n"
+			    "access_rules:\n"
+			    "  delete_old_users:\n"
+			    "    - deny: admin\n"
+			    "    - allow: all\n",
 			module = ?MODULE, function = delete_old_users_vhost,
 			args = [{host, binary}, {days, integer}],
 			args_example = [<<"myserver.com">>, 30],
@@ -525,12 +538,15 @@ get_commands_spec() ->
 			result = {res, rescode}},
 
      #ejabberd_commands{name = get_last, tags = [last],
-			desc = "Get last activity information (timestamp and status)",
-			longdesc = "Timestamp is the seconds since"
-			"1970-01-01 00:00:00 UTC, for example: date +%s",
+			desc = "Get last activity information",
+			longdesc = "Timestamp is UTC and XEP-0082 format, for example: "
+			    "2017-02-23T22:25:28.063062Z     ONLINE",
 			module = ?MODULE, function = get_last,
 			args = [{user, binary}, {host, binary}],
-			result = {last_activity, string}},
+			result = {last_activity,
+				  {tuple, [{timestamp, string},
+					   {status, string}
+					  ]}}},
      #ejabberd_commands{name = set_last, tags = [last],
 			desc = "Set last activity information",
 			longdesc = "Timestamp is the seconds since"
@@ -807,52 +823,34 @@ delete_old_users_vhost(Host, Days) ->
     {ok, io_lib:format("Deleted ~p users: ~p", [N, UR])}.
 
 delete_old_users(Days, Users) ->
-    %% Convert older time
     SecOlder = Days*24*60*60,
-
-    %% Get current time
     TimeStamp_now = p1_time_compat:system_time(seconds),
-
-    %% For a user, remove if required and answer true
+    TimeStamp_oldest = TimeStamp_now - SecOlder,
     F = fun({LUser, LServer}) ->
-		%% Check if the user is logged
-		case ejabberd_sm:get_user_resources(LUser, LServer) of
-		    %% If it isnt
-		    [] ->
-			%% Look for his last_activity
-			case mod_last:get_last_info(LUser, LServer) of
-			    %% If it is
-			    %% existent:
-			    {ok, TimeStamp, _Status} ->
-				%% get his age
-				Sec = TimeStamp_now - TimeStamp,
-				%% If he is
-				if
-				    %% younger than SecOlder:
-				    Sec < SecOlder ->
-					%% do nothing
-					false;
-				    %% older:
-				    true ->
-					%% remove the user
-					ejabberd_auth:remove_user(LUser, LServer),
-					true
-				end;
-			    %% nonexistent:
-			    not_found ->
-				%% remove the user
-				ejabberd_auth:remove_user(LUser, LServer),
-				true
-			end;
-		    %% Else
-		    _ ->
-			%% do nothing
-			false
-		end
+	    case catch delete_or_not(LUser, LServer, TimeStamp_oldest) of
+		true ->
+		    ejabberd_auth:remove_user(LUser, LServer),
+		    true;
+		_ ->
+		    false
+	    end
 	end,
-    %% Apply the function to every user in the list
     Users_removed = lists:filter(F, Users),
     {removed, length(Users_removed), Users_removed}.
+
+delete_or_not(LUser, LServer, TimeStamp_oldest) ->
+    allow = acl:match_rule(LServer, delete_old_users, jid:make(LUser, LServer)),
+    [] = ejabberd_sm:get_user_resources(LUser, LServer),
+    case mod_last:get_last_info(LUser, LServer) of
+        {ok, TimeStamp, _Status} ->
+	    if TimeStamp_oldest < TimeStamp ->
+		    false;
+		true ->
+		    true
+	    end;
+	not_found ->
+	    true
+    end.
 
 %%
 %% Ban account
@@ -1011,10 +1009,10 @@ get_presence(U, S) ->
     OnlinePids = [Pid || Pid <- Pids, Pid=/=none],
     case OnlinePids of
 	[] ->
-	    {jid:to_string({U, S, <<>>}), <<"unavailable">>, <<"">>};
+	    {jid:encode({U, S, <<>>}), <<"unavailable">>, <<"">>};
 	[SessionPid|_] ->
 	    {_User, Resource, Show, Status} = get_presence(SessionPid),
-	    FullJID = jid:to_string({U, S, Resource}),
+	    FullJID = jid:encode({U, S, Resource}),
 	    {FullJID, Show, Status}
     end.
 
@@ -1037,7 +1035,7 @@ set_presence(User, Host, Resource, Type, Show, Status, Priority0) ->
 				 show = jlib:binary_to_atom(Show),
 				 status = xmpp:mk_text(Status),
 				 priority = Priority},
-	    Pid ! {route, From, To, Presence},
+	    Pid ! {route, Presence},
 	    ok
     end.
 
@@ -1240,7 +1238,7 @@ get_roster(User, Server) ->
 make_roster_xmlrpc(Roster) ->
     lists:foldl(
       fun(Item, Res) ->
-	      JIDS = jid:to_string(Item#roster.jid),
+	      JIDS = jid:encode(Item#roster.jid),
 	      Nick = Item#roster.name,
 	      Subs = atom_to_list(Item#roster.subscription),
 	      Ask = atom_to_list(Item#roster.ask),
@@ -1312,7 +1310,8 @@ push_roster_item(LU, LS, R, U, S, Action) ->
     ejabberd_sm:route(LJID, BroadcastEl),
     Item = build_roster_item(U, S, Action),
     ResIQ = build_iq_roster_push(Item),
-    ejabberd_router:route(jid:remove_resource(LJID), LJID, ResIQ).
+    ejabberd_router:route(
+      xmpp:set_from_to(ResIQ, jid:remove_resource(LJID), LJID)).
 
 build_roster_item(U, S, {add, Nick, Subs, Group}) ->
     Groups = binary:split(Group,<<";">>, [global]),
@@ -1341,25 +1340,18 @@ build_broadcast(U, S, SubsAtom) when is_atom(SubsAtom) ->
 %%%
 
 get_last(User, Server) ->
-    case ejabberd_sm:get_user_resources(User, Server) of
+    {Now, Status} = case ejabberd_sm:get_user_resources(User, Server) of
         [] ->
             case mod_last:get_last_info(User, Server) of
                 not_found ->
-                    "Never";
-                {ok, Shift, Status} ->
-                    TimeStamp = {Shift div 1000000,
-                        Shift rem 1000000,
-                        0},
-                    {{Year, Month, Day}, {Hour, Minute, Second}} =
-                        calendar:now_to_local_time(TimeStamp),
-                    lists:flatten(
-                        io_lib:format(
-                            "~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w ~s",
-                            [Year, Month, Day, Hour, Minute, Second, Status]))
+		    {p1_time_compat:timestamp(), "NOT FOUND"};
+                {ok, Shift, Status1} ->
+                    {{Shift div 1000000, Shift rem 1000000, 0}, Status1}
             end;
         _ ->
-            "Online"
-    end.
+	    {p1_time_compat:timestamp(), "ONLINE"}
+    end,
+    {xmpp_util:encode_timestamp(Now), Status}.
 
 %%%
 %%% Private Storage
@@ -1426,7 +1418,7 @@ btl(B) -> binary_to_list(B).
 
 srg_get_members(Group, Host) ->
     Members = mod_shared_roster:get_group_explicit_users(Host,Group),
-    [jid:to_string(jid:make(MUser, MServer, <<>>))
+    [jid:encode(jid:make(MUser, MServer))
      || {MUser, MServer} <- Members].
 
 srg_user_add(User, Host, Group, GroupHost) ->
@@ -1445,10 +1437,10 @@ srg_user_del(User, Host, Group, GroupHost) ->
 %% @doc Send a message to a Jabber account.
 %% @spec (Type::binary(), From::binary(), To::binary(), Subject::binary(), Body::binary()) -> ok
 send_message(Type, From, To, Subject, Body) ->
-    FromJID = jid:from_string(From),
-    ToJID = jid:from_string(To),
+    FromJID = jid:decode(From),
+    ToJID = jid:decode(To),
     Packet = build_packet(Type, Subject, Body),
-    ejabberd_router:route(FromJID, ToJID, Packet).
+    ejabberd_router:route(xmpp:set_from_to(Packet, FromJID, ToJID)).
 
 build_packet(Type, Subject, Body) ->
     #message{type = jlib:binary_to_atom(Type),
@@ -1458,17 +1450,18 @@ build_packet(Type, Subject, Body) ->
 send_stanza(FromString, ToString, Stanza) ->
     try
 	#xmlel{} = El = fxml_stream:parse_element(Stanza),
-	#jid{} = From = jid:from_string(FromString),
-	#jid{} = To = jid:to_string(ToString),
+	From = jid:decode(FromString),
+	To = jid:decode(ToString),
 	Pkt = xmpp:decode(El, ?NS_CLIENT, [ignore_els]),
-	ejabberd_router:route(From, To, Pkt)
+	ejabberd_router:route(xmpp:set_from_to(Pkt, From, To))
     catch _:{xmpp_codec, Why} ->
 	    io:format("incorrect stanza: ~s~n", [xmpp:format_error(Why)]),
 	    {error, Why};
 	  _:{badmatch, {error, Why}} ->
 	    io:format("invalid xml: ~p~n", [Why]),
 	    {error, Why};
-	  _:{badmatch, error} ->
+	  _:{bad_jid, S} ->
+	    io:format("malformed JID: ~s~n", [S]),
 	    {error, "JID malformed"}
     end.
 
@@ -1627,7 +1620,7 @@ decide_rip_jid({UName, UServer, _UResource}, Match_list) ->
 decide_rip_jid({UName, UServer}, Match_list) ->
     lists:any(
       fun(Match_string) ->
-	      MJID = jid:from_string(list_to_binary(Match_string)),
+	      MJID = jid:decode(list_to_binary(Match_string)),
 	      MName = MJID#jid.luser,
 	      MServer = MJID#jid.lserver,
 	      Is_server = is_glob_match(UServer, MServer),

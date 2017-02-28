@@ -62,7 +62,8 @@
 -type socket() :: pid() | inet:socket() |
                   fast_tls:tls_socket() |
 		  ezlib:zlib_socket() |
-		  ejabberd_bosh:bind_socket().
+		  ejabberd_bosh:bosh_socket() |
+		  ejabberd_http_ws:ws_socket().
 
 -record(socket_state, {sockmod = gen_tcp :: sockmod(),
                        socket = self() :: socket(),
@@ -85,7 +86,7 @@
 %%====================================================================
 %% API
 %%====================================================================
--spec start(atom(), sockmod(), socket(), [proplists:propery()])
+-spec start(atom(), sockmod(), socket(), [proplists:property()])
       -> {ok, pid() | independent} | {error, inet:posix() | any()}.
 start(Module, SockMod, Socket, Opts) ->
     case Module:socket_type() of

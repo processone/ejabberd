@@ -25,53 +25,77 @@
 
 -module(ejabberd_rdbms).
 
+-behaviour(supervisor).
 -behaviour(ejabberd_config).
 
 -author('alexey@process-one.net').
 
--export([start/0, opt_type/1]).
+-export([start_link/0, init/1, opt_type/1,
+	 config_reloaded/0, start_host/1, stop_host/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
-start() ->
+start_link() ->
+    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+
+init([]) ->
     file:delete(ejabberd_sql:freetds_config()),
     file:delete(ejabberd_sql:odbc_config()),
     file:delete(ejabberd_sql:odbcinst_config()),
-    case lists:any(fun(H) -> needs_sql(H) /= false end,
-                   ?MYHOSTS) of
-        true ->
-            start_hosts();
-        false ->
-            ok
+    ejabberd_hooks:add(host_up, ?MODULE, start_host, 20),
+    ejabberd_hooks:add(host_down, ?MODULE, stop_host, 90),
+    ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 20),
+    {ok, {{one_for_one, 10, 1}, get_specs()}}.
+
+-spec get_specs() -> [supervisor:child_spec()].
+get_specs() ->
+    lists:flatmap(
+      fun(Host) ->
+	      case get_spec(Host) of
+		  {ok, Spec} -> [Spec];
+		  undefined -> []
+	      end
+      end, ?MYHOSTS).
+
+-spec get_spec(binary()) -> {ok, supervisor:child_spec()} | undefined.
+get_spec(Host) ->
+    case needs_sql(Host) of
+	{true, App} ->
+	    ejabberd:start_app(App),
+	    SupName = gen_mod:get_module_proc(Host, ejabberd_sql_sup),
+	    {ok, {SupName, {ejabberd_sql_sup, start_link, [Host]},
+		  transient, infinity, supervisor, [ejabberd_sql_sup]}};
+	false ->
+	    undefined
     end.
 
-%% Start relationnal DB module on the nodes where it is needed
-start_hosts() ->
-    lists:foreach(fun (Host) ->
-			  case needs_sql(Host) of
-			    {true, App} -> start_sql(Host, App);
-			    false -> ok
-			  end
-		  end,
-		  ?MYHOSTS).
+-spec config_reloaded() -> ok.
+config_reloaded() ->
+    lists:foreach(fun start_host/1, ?MYHOSTS).
 
-%% Start the SQL module on the given host
-start_sql(Host, App) ->
-    ejabberd:start_app(App),
-    Supervisor_name = gen_mod:get_module_proc(Host,
-					      ejabberd_sql_sup),
-    ChildSpec = {Supervisor_name,
-		 {ejabberd_sql_sup, start_link, [Host]}, transient,
-		 infinity, supervisor, [ejabberd_sql_sup]},
-    case supervisor:start_child(ejabberd_sup, ChildSpec) of
-      {ok, _PID} -> ok;
-      _Error ->
-	  ?ERROR_MSG("Start of supervisor ~p failed:~n~p~nRetrying."
-		     "..~n",
-		     [Supervisor_name, _Error]),
-	  start_sql(Host, App)
+-spec start_host(binary()) -> ok.
+start_host(Host) ->
+    case get_spec(Host) of
+	{ok, Spec} ->
+	    case supervisor:start_child(?MODULE, Spec) of
+		{ok, _PID} ->
+		    ok;
+		{error, {already_started, _}} ->
+		    ok;
+		{error, _} = Err ->
+		    erlang:error(Err)
+	    end;
+	undefined ->
+	    ok
     end.
+
+-spec stop_host(binary()) -> ok.
+stop_host(Host) ->
+    SupName = gen_mod:get_module_proc(Host, ejabberd_sql_sup),
+    supervisor:terminate_child(?MODULE, SupName),
+    supervisor:delete_child(?MODULE, SupName),
+    ok.
 
 %% Returns {true, App} if we have configured sql for the given host
 needs_sql(Host) ->

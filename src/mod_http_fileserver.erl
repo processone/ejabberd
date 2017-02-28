@@ -31,7 +31,7 @@
 -behaviour(gen_server).
 
 %% gen_mod callbacks
--export([start/2, stop/1]).
+-export([start/2, stop/1, reload/3]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -90,6 +90,10 @@ start(Host, Opts) ->
 stop(Host) ->
     gen_mod:stop_child(?MODULE, Host).
 
+reload(Host, NewOpts, OldOpts) ->
+    Proc = get_proc_name(Host),
+    gen_server:cast(Proc, {reload, Host, NewOpts, OldOpts}).
+
 depends(_Host, _Opts) ->
     [].
 
@@ -105,19 +109,9 @@ depends(_Host, _Opts) ->
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
     try initialize(Host, Opts) of
-	{DocRoot, AccessLog, AccessLogFD, DirectoryIndices,
-	 CustomHeaders, DefaultContentType, ContentTypes,
-	 UserAccess} ->
+	State ->
 	    process_flag(trap_exit, true),
-	    {ok, #state{host = Host,
-			accesslog = AccessLog,
-			accesslogfd = AccessLogFD,
-			docroot = DocRoot,
-                        directory_indices = DirectoryIndices,
-                        custom_headers = CustomHeaders,
-                        default_content_type = DefaultContentType,
-			content_types = ContentTypes,
-			user_access = UserAccess}}
+	    {ok, State}
     catch
 	throw:Reason ->
 	    {stop, Reason}
@@ -160,12 +154,18 @@ initialize(Host, Opts) ->
 					       end, L)
 				     end, []),
                      ?DEFAULT_CONTENT_TYPES),
-    ?INFO_MSG("known content types: ~s",
-	      [str:join([[$*, K, " -> ", V] || {K, V} <- ContentTypes],
-			<<", ">>)]),
-    {DocRoot, AccessLog, AccessLogFD, DirectoryIndices,
-     CustomHeaders, DefaultContentType, ContentTypes, UserAccess}.
-
+    ?DEBUG("known content types: ~s",
+	   [str:join([[$*, K, " -> ", V] || {K, V} <- ContentTypes],
+		     <<", ">>)]),
+    #state{host = Host,
+	   accesslog = AccessLog,
+	   accesslogfd = AccessLogFD,
+	   docroot = DocRoot,
+	   directory_indices = DirectoryIndices,
+	   custom_headers = CustomHeaders,
+	   default_content_type = DefaultContentType,
+	   content_types = ContentTypes,
+	   user_access = UserAccess}.
 
 %% @spec (AdminCTs::[CT], Default::[CT]) -> [CT]
 %% where CT = {Extension::string(), Value}
@@ -251,7 +251,16 @@ handle_cast({add_to_log, FileSize, Code, Request}, State) ->
 handle_cast(reopen_log, State) ->
     FD2 = reopen_log(State#state.accesslog, State#state.accesslogfd),
     {noreply, State#state{accesslogfd = FD2}};
-handle_cast(_Msg, State) ->
+handle_cast({reload, Host, NewOpts, _OldOpts}, OldState) ->
+    try initialize(Host, NewOpts) of
+	NewState ->
+	    FD = reopen_log(NewState#state.accesslog, OldState#state.accesslogfd),
+	    {noreply, NewState#state{accesslogfd = FD}}
+    catch throw:_ ->
+	    {noreply, OldState}
+    end;
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
 %%--------------------------------------------------------------------

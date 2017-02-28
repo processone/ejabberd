@@ -32,7 +32,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start/2, stop/1, export/1, import/1,
+-export([start/2, stop/1, reload/3, export/1, import/1,
 	 import/3, closed_connection/3, get_connection_params/3,
 	 data_to_binary/2, process_disco_info/1, process_disco_items/1,
 	 process_register/1, process_vcard/1, process_command/1]).
@@ -78,6 +78,10 @@ stop(Host) ->
     stop_supervisor(Host),
     gen_mod:stop_child(?MODULE, Host).
 
+reload(Host, NewOpts, OldOpts) ->
+    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    gen_server:cast(Proc, {reload, Host, NewOpts, OldOpts}).
+
 depends(_Host, _Opts) ->
     [].
 
@@ -107,16 +111,7 @@ init([Host, Opts]) ->
 		   {keypos, #irc_connection.jid_server_host}]),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
                              one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_INFO,
-				  ?MODULE, process_disco_info, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_ITEMS,
-				  ?MODULE, process_disco_items, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_REGISTER,
-				  ?MODULE, process_register, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_VCARD,
-				  ?MODULE, process_vcard, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_COMMANDS,
-				  ?MODULE, process_command, IQDisc),
+    register_hooks(MyHost, IQDisc),
     ejabberd_router:register_route(MyHost, Host),
     {ok,
      #state{host = MyHost, server_host = Host,
@@ -140,7 +135,44 @@ handle_call(stop, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast(_Msg, State) -> {noreply, State}.
+handle_cast({reload, ServerHost, NewOpts, OldOpts}, State) ->
+    NewHost = gen_mod:get_opt_host(ServerHost, NewOpts, <<"irc.@HOST@">>),
+    OldHost = gen_mod:get_opt_host(ServerHost, OldOpts, <<"irc.@HOST@">>),
+    NewIQDisc = gen_mod:get_opt(iqdisc, NewOpts,
+				fun gen_iq_handler:check_type/1,
+				one_queue),
+    OldIQDisc = gen_mod:get_opt(iqdisc, OldOpts,
+				fun gen_iq_handler:check_type/1,
+				one_queue),
+    NewMod = gen_mod:db_mod(ServerHost, NewOpts, ?MODULE),
+    OldMod = gen_mod:db_mod(ServerHost, OldOpts, ?MODULE),
+    Access = gen_mod:get_opt(access, NewOpts,
+                             fun acl:access_rules_validator/1,
+                             all),
+    if NewMod /= OldMod ->
+	    NewMod:init(ServerHost, NewOpts);
+       true ->
+	    ok
+    end,
+    if (NewIQDisc /= OldIQDisc) or (NewHost /= OldHost) ->
+	    register_hooks(NewHost, NewIQDisc);
+       true ->
+	    ok
+    end,
+    if NewHost /= OldHost ->
+	    ejabberd_router:register_route(NewHost, ServerHost),
+	    ejabberd_router:unregister_route(OldHost),
+	    unregister_hooks(OldHost);
+       true ->
+	    ok
+    end,
+    Access = gen_mod:get_opt(access, NewOpts,
+                             fun acl:access_rules_validator/1,
+                             all),
+    {noreply, State#state{host = NewHost, access = Access}};
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
+    {noreply, State}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_info(Info, State) -> {noreply, State} |
@@ -148,13 +180,11 @@ handle_cast(_Msg, State) -> {noreply, State}.
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-handle_info({route, From, To, Packet},
+handle_info({route, Packet},
 	    #state{host = Host, server_host = ServerHost,
 		   access = Access} =
 		State) ->
-    case catch do_route(Host, ServerHost, Access, From, To,
-			Packet)
-	of
+    case catch do_route(Host, ServerHost, Access, Packet) of
       {'EXIT', Reason} -> ?ERROR_MSG("~p", [Reason]);
       _ -> ok
     end,
@@ -170,11 +200,7 @@ handle_info(_Info, State) -> {noreply, State}.
 %%--------------------------------------------------------------------
 terminate(_Reason, #state{host = MyHost}) ->
     ejabberd_router:unregister_route(MyHost),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_INFO),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_ITEMS),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_REGISTER),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_VCARD),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_COMMANDS).
+    unregister_hooks(MyHost).
 
 %%--------------------------------------------------------------------
 %% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
@@ -185,6 +211,25 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+register_hooks(Host, IQDisc) ->
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO,
+				  ?MODULE, process_disco_info, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS,
+				  ?MODULE, process_disco_items, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_REGISTER,
+				  ?MODULE, process_register, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VCARD,
+				  ?MODULE, process_vcard, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_COMMANDS,
+				  ?MODULE, process_command, IQDisc).
+
+unregister_hooks(Host) ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_REGISTER),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_COMMANDS).
+
 start_supervisor(Host) ->
     Proc = gen_mod:get_module_proc(Host,
 				   ejabberd_mod_irc_sup),
@@ -192,31 +237,32 @@ start_supervisor(Host) ->
 		 {ejabberd_tmp_sup, start_link,
 		  [Proc, mod_irc_connection]},
 		 permanent, infinity, supervisor, [ejabberd_tmp_sup]},
-    supervisor:start_child(ejabberd_sup, ChildSpec).
+    supervisor:start_child(ejabberd_gen_mod_sup, ChildSpec).
 
 stop_supervisor(Host) ->
     Proc = gen_mod:get_module_proc(Host,
 				   ejabberd_mod_irc_sup),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    supervisor:terminate_child(ejabberd_gen_mod_sup, Proc),
+    supervisor:delete_child(ejabberd_gen_mod_sup, Proc).
 
-do_route(Host, ServerHost, Access, From,
-	 #jid{luser = LUser, lresource = LResource} = To, Packet) ->
+do_route(Host, ServerHost, Access, Packet) ->
+    #jid{luser = LUser, lresource = LResource} = xmpp:get_to(Packet),
+    From = xmpp:get_from(Packet),
     case acl:match_rule(ServerHost, Access, From) of
 	allow ->
 	    case Packet of
 		#iq{} when LUser == <<"">>, LResource == <<"">> ->
-		    ejabberd_router:process_iq(From, To, Packet);
+		    ejabberd_router:process_iq(Packet);
 		#iq{} when LUser == <<"">>, LResource /= <<"">> ->
 		    Err = xmpp:err_service_unavailable(),
-		    ejabberd_router:route_error(To, From, Packet, Err);
+		    ejabberd_router:route_error(Packet, Err);
 		_ ->
-		    sm_route(Host, ServerHost, From, To, Packet)
+		    sm_route(Host, ServerHost, Packet)
 	    end;
 	deny ->
 	    Lang = xmpp:get_lang(Packet),
 	    Err = xmpp:err_forbidden(<<"Denied by ACL">>, Lang),
-	    ejabberd_router:route_error(To, From, Packet, Err)
+	    ejabberd_router:route_error(Packet, Err)
     end.
 
 process_disco_info(#iq{type = set, lang = Lang} = IQ) ->
@@ -320,8 +366,9 @@ process_command(#iq{type = set, lang = Lang, to = To, from = From,
 	    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang))
     end.
 
-sm_route(Host, ServerHost, From, To, Packet) ->
-    #jid{user = ChanServ, resource = Resource} = To,
+sm_route(Host, ServerHost, Packet) ->
+    From = xmpp:get_from(Packet),
+    #jid{user = ChanServ, resource = Resource} = xmpp:get_to(Packet),
     case str:tokens(ChanServ, <<"%">>) of
 	[<<_, _/binary>> = Channel, <<_, _/binary>> = Server] ->
 	    case ets:lookup(irc_connection, {From, Server, Host}) of
@@ -368,7 +415,7 @@ sm_route(Host, ServerHost, From, To, Packet) ->
 			[] ->
 			    Txt = <<"IRC connection not found">>,
 			    Err = xmpp:err_service_unavailable(Txt, Lang),
-			    ejabberd_router:route_error(To, From, Packet, Err);
+			    ejabberd_router:route_error(Packet, Err);
 			[R] ->
 			    Pid = R#irc_connection.pid,
 			    ?DEBUG("send to process ~p~n", [Pid]),
@@ -377,7 +424,7 @@ sm_route(Host, ServerHost, From, To, Packet) ->
 		_ ->
 		    Txt = <<"Failed to parse chanserv">>,
 		    Err = xmpp:err_bad_request(Txt, Lang),
-		    ejabberd_router:route_error(To, From, Packet, Err)
+		    ejabberd_router:route_error(Packet, Err)
 	    end
     end.
 
@@ -641,15 +688,16 @@ adhoc_join(From, To, #adhoc_command{lang = Lang, xdata = X} = Request) ->
 			       To#jid.server),
 	    Reason = translate:translate(Lang, <<"Join the IRC channel here.">>),
 	    BodyTxt = {<<"Join the IRC channel in this Jabber ID: ~s">>,
-		       [jid:to_string(RoomJID)]},
+		       [jid:encode(RoomJID)]},
 	    Invite = #message{
+			from = RoomJID, to = From,
 			body = xmpp:mk_text(BodyTxt, Lang),
 			sub_els = [#muc_user{
 				      invites = [#muc_invite{from = From,
 							     reason = Reason}]},
 				   #x_conference{reason = Reason,
 						 jid = RoomJID}]},
-	    ejabberd_router:route(RoomJID, From, Invite),
+	    ejabberd_router:route(Invite),
 	    xmpp_util:make_adhoc_response(
 	      Request, #adhoc_command{status = completed});
        true ->
@@ -886,7 +934,7 @@ data_to_binary(JID, Data) ->
 					 ?ERROR_MSG("failed to convert "
 						    "parameter ~p for user ~s",
 						    [Param,
-						     jid:to_string(JID)]);
+						     jid:encode(JID)]);
 				    true ->
 					 ?ERROR_MSG("failed to convert "
 						    "parameter ~p",

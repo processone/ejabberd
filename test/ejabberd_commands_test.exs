@@ -32,7 +32,7 @@ defmodule EjabberdCommandsTest do
     :ok = :ejabberd_config.start(["localhost"], [])
     {:ok, _} = :ejabberd_access_permissions.start_link()
 
-    :ejabberd_commands.init
+    :ejabberd_commands.start_link
     :ok
   end
 

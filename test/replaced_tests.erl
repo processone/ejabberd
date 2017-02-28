@@ -43,10 +43,8 @@ single_cases() ->
 %%% Master-slave tests
 %%%===================================================================
 master_slave_cases() ->
-    {replaced_master_slave, [sequence], []}.
-%% Disable tests for now due to a race condition
-%% because ejabberd_sm:sid() is generated in ejabberd_s2s:init()
-%%[master_slave_test(conflict)]}.
+    {replaced_master_slave, [sequence],
+     [master_slave_test(conflict)]}.
 
 conflict_master(Config0) ->
     Config = bind(Config0),

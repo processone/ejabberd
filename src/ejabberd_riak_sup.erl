@@ -25,12 +25,13 @@
 
 -module(ejabberd_riak_sup).
 
+-behaviour(supervisor).
 -behaviour(ejabberd_config).
 -author('alexey@process-one.net').
 
--export([start/0, start_link/0, init/1, get_pids/0,
+-export([start_link/0, init/1, get_pids/0,
 	 transform_options/1, get_random_pid/0, get_random_pid/1,
-	 opt_type/1]).
+	 host_up/1, config_reloaded/0, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -44,17 +45,36 @@
 % a timeout error to the request
 -define(CONNECT_TIMEOUT, 500). % milliseconds
 
-start() ->
-    case lists:any(
-	   fun(Host) ->
-		   is_riak_configured(Host)
-	   end, ?MYHOSTS) of
+host_up(Host) ->
+    case is_riak_configured(Host) of
 	true ->
 	    ejabberd:start_app(riakc),
-            do_start();
+	    lists:foreach(
+	      fun(Spec) ->
+		      supervisor:start_child(?MODULE, Spec)
+	      end, get_specs());
 	false ->
 	    ok
     end.
+
+config_reloaded() ->
+    case is_riak_configured() of
+	true ->
+	    ejabberd:start_app(riakc),
+	    lists:foreach(
+	      fun(Spec) ->
+		      supervisor:start_child(?MODULE, Spec)
+	      end, get_specs());
+	false ->
+	    lists:foreach(
+	      fun({Id, _, _, _}) ->
+		      supervisor:terminate_child(?MODULE, Id),
+		      supervisor:delete_child(?MODULE, Id)
+	      end, supervisor:which_children(?MODULE))
+    end.
+
+is_riak_configured() ->
+    lists:any(fun is_riak_configured/1, ?MYHOSTS).
 
 is_riak_configured(Host) ->
     ServerConfigured = ejabberd_config:get_option(
@@ -76,29 +96,23 @@ is_riak_configured(Host) ->
     ServerConfigured or PortConfigured
 	or AuthConfigured or ModuleWithRiakDBConfigured.
 
-do_start() ->
-    SupervisorName = ?MODULE,
-    ChildSpec =
-	{SupervisorName,
-	 {?MODULE, start_link, []},
-	 transient,
-	 infinity,
-	 supervisor,
-	 [?MODULE]},
-    case supervisor:start_child(ejabberd_sup, ChildSpec) of
-	{ok, _PID} ->
-	    ok;
-	_Error ->
-	    ?ERROR_MSG("Start of supervisor ~p failed:~n~p~nRetrying...~n",
-                       [SupervisorName, _Error]),
-            timer:sleep(5000),
-	    start()
-    end.
-
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init([]) ->
+    ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 20),
+    ejabberd_hooks:add(host_up, ?MODULE, host_up, 20),
+    Specs = case is_riak_configured() of
+		true ->
+		    ejabberd:start_app(riakc),
+		    get_specs();
+		false ->
+		    []
+	    end,
+    {ok, {{one_for_one, 500, 1}, Specs}}.
+
+-spec get_specs() -> [supervisor:child_spec()].
+get_specs() ->
     PoolSize = get_pool_size(),
     StartInterval = get_start_interval(),
     Server = get_riak_server(),
@@ -116,16 +130,14 @@ init([]) ->
 		 if (Username /= nil) and (Password /= nil) ->
 			 {credentials, Username, Password};
 		    true -> nil
-		 end
-		]),
-    {ok, {{one_for_one, PoolSize*10, 1},
-	  lists:map(
-	    fun(I) ->
-		    {ejabberd_riak:get_proc(I),
-		     {ejabberd_riak, start_link,
-                      [I, Server, Port, StartInterval*1000, Options]},
-		     transient, 2000, worker, [?MODULE]}
-	    end, lists:seq(1, PoolSize))}}.
+		 end]),
+    lists:map(
+      fun(I) ->
+	      {ejabberd_riak:get_proc(I),
+	       {ejabberd_riak, start_link,
+		[I, Server, Port, StartInterval*1000, Options]},
+	       transient, 2000, worker, [?MODULE]}
+      end, lists:seq(1, PoolSize)).
 
 get_start_interval() ->
     ejabberd_config:get_option(

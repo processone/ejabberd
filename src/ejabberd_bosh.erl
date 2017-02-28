@@ -99,15 +99,15 @@
          el_ibuf = buf_new()                      :: ?TQUEUE,
          el_obuf = buf_new()                      :: ?TQUEUE,
          shaper_state = none                      :: shaper:shaper(),
-         c2s_pid                                  :: pid(),
+         c2s_pid                                  :: pid() | undefined,
 	 xmpp_ver = <<"">>                        :: binary(),
-         inactivity_timer                         :: reference(),
-         wait_timer                               :: reference(),
+         inactivity_timer                         :: reference() | undefined,
+         wait_timer                               :: reference() | undefined,
 	 wait_timeout = ?DEFAULT_WAIT             :: timeout(),
          inactivity_timeout = ?DEFAULT_INACTIVITY :: timeout(),
 	 prev_rid = 0                             :: non_neg_integer(),
          prev_key = <<"">>                        :: binary(),
-         prev_poll                                :: erlang:timestamp(),
+         prev_poll                                :: erlang:timestamp() | undefined,
          max_concat = unlimited                   :: unlimited | non_neg_integer(),
 	 responses = gb_trees:empty()             :: ?TGB_TREE,
 	 receivers = gb_trees:empty()             :: ?TGB_TREE,
@@ -752,26 +752,24 @@ bounce_receivers(State, Reason) ->
 		State, Receivers ++ ShapedReceivers).
 
 bounce_els_from_obuf(State) ->
-    lists:foreach(fun ({xmlstreamelement, El}) ->
-			  case El of
-			    #xmlel{name = Name, attrs = Attrs}
-				when Name == <<"presence">>;
-				     Name == <<"message">>;
-				     Name == <<"iq">> ->
-				FromS = fxml:get_attr_s(<<"from">>, Attrs),
-				ToS = fxml:get_attr_s(<<"to">>, Attrs),
-				case {jid:from_string(FromS),
-				      jid:from_string(ToS)}
-				    of
-				  {#jid{} = From, #jid{} = To} ->
-				      ejabberd_router:route(From, To, El);
-				  _ -> ok
-				end;
-			    _ -> ok
-			  end;
-		      (_) -> ok
-		  end,
-		  buf_to_list(State#state.el_obuf)).
+    lists:foreach(
+      fun({xmlstreamelement, El}) ->
+	      try xmpp:decode(El, ?NS_CLIENT, [ignore_els]) of
+		  Pkt when ?is_stanza(Pkt) ->
+		      case {xmpp:get_from(Pkt), xmpp:get_to(Pkt)} of
+			  {#jid{}, #jid{}} ->
+			      ejabberd_router:route(Pkt);
+			  _ ->
+			      ok
+		      end;
+		  _ ->
+		      ok
+	      catch _:{xmpp_codec, _} ->
+		      ok
+	      end;
+	 (_) ->
+	      ok
+      end, buf_to_list(State#state.el_obuf)).
 
 is_valid_key(<<"">>, <<"">>) -> true;
 is_valid_key(PrevKey, Key) ->

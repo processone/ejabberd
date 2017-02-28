@@ -25,13 +25,17 @@
 
 -module(shaper).
 
+-behaviour(gen_server).
 -behaviour(ejabberd_config).
 
 -author('alexey@process-one.net').
 
--export([start/0, new/1, new1/1, update/2,
+-export([start_link/0, new/1, new1/1, update/2,
 	 get_max_rate/1, transform_options/1, load_from_config/0,
 	 opt_type/1]).
+%% gen_server callbacks
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+	 terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -43,20 +47,41 @@
 -record(shaper, {name    :: {atom(), global},
                  maxrate :: integer()}).
 
+-record(state, {}).
+
 -type shaper() :: none | #maxrate{}.
 
 -export_type([shaper/0]).
 
--spec start() -> ok.
+-spec start_link() -> {ok, pid()} | {error, any()}.
+start_link() ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
-start() ->
+init([]) ->
     ejabberd_mnesia:create(?MODULE, shaper,
                         [{ram_copies, [node()]},
                          {local_content, true},
 			 {attributes, record_info(fields, shaper)}]),
     mnesia:add_table_copy(shaper, node(), ram_copies),
+    ejabberd_hooks:add(config_reloaded, ?MODULE, load_from_config, 20),
     load_from_config(),
+    {ok, #state{}}.
+
+handle_call(_Request, _From, State) ->
+    Reply = ok,
+    {reply, Reply, State}.
+
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+handle_info(_Info, State) ->
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
     ok.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
 
 -spec load_from_config() -> ok | {error, any()}.
 

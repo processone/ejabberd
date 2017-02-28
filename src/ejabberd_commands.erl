@@ -210,9 +210,11 @@
 -module(ejabberd_commands).
 -author('badlop@process-one.net').
 
+-behaviour(gen_server).
+
 -define(DEFAULT_VERSION, 1000000).
 
--export([init/0,
+-export([start_link/0,
 	 list_commands/0,
 	 list_commands/1,
 	 get_command_format/1,
@@ -238,6 +240,9 @@
 	 get_commands_definition/1,
 	 execute_command2/3,
 	 execute_command2/4]).
+%% gen_server callbacks
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+	 terminate/2, code_change/3]).
 
 -include("ejabberd_commands.hrl").
 -include("ejabberd.hrl").
@@ -245,6 +250,8 @@
 -include_lib("stdlib/include/ms_transform.hrl").
 
 -define(POLICY_ACCESS, '$policy').
+
+-record(state, {}).
 
 get_commands_spec() ->
     [
@@ -276,7 +283,11 @@ get_commands_spec() ->
                            result_desc = "0 if command failed, 1 when succedded",
                            args_example = ["/home/me/docs/api.html", "mod_admin", "java,json"],
                            result_example = ok}].
-init() ->
+
+start_link() ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+init([]) ->
     try mnesia:transform_table(ejabberd_commands, ignore,
 			       record_info(fields, ejabberd_commands))
     catch exit:{aborted, {no_exists, _}} -> ok
@@ -288,7 +299,24 @@ init() ->
                          {type, bag}]),
     mnesia:add_table_copy(ejabberd_commands, node(), ram_copies),
     register_commands(get_commands_spec()),
-    ejabberd_access_permissions:register_permission_addon(?MODULE, fun permission_addon/0).
+    ejabberd_access_permissions:register_permission_addon(?MODULE, fun permission_addon/0),
+    {ok, #state{}}.
+
+handle_call(_Request, _From, State) ->
+    Reply = ok,
+    {reply, Reply, State}.
+
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+handle_info(_Info, State) ->
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
+    ok.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
 
 -spec register_commands([ejabberd_commands()]) -> ok.
 
@@ -332,7 +360,7 @@ expose_commands(Commands) ->
                       end,
                       Commands),
 
-    case ejabberd_config:add_local_option(commands, [{add_commands, Names}]) of
+    case ejabberd_config:add_option(commands, [{add_commands, Names}]) of
         {aborted, Reason} ->
             {error, Reason};
         {atomic, Result} ->
@@ -731,7 +759,7 @@ check_access(Command, Access, Auth, CallerInfo)
        Command#ejabberd_commands.policy == user ->
     case check_auth(Command, Auth) of
 	{ok, User, Server} ->
-	    check_access2(Access, CallerInfo#{usr => jid:split(jid:make(User, Server, <<>>))}, Server);
+	    check_access2(Access, CallerInfo#{usr => jid:split(jid:make(User, Server))}, Server);
 	no_auth_provided ->
 	    case Command#ejabberd_commands.policy of
 		user ->
@@ -834,7 +862,7 @@ oauth_token_user(noauth) ->
 oauth_token_user(admin) ->
     undefined;
 oauth_token_user({User, Server, _, _}) ->
-    jid:make(User, Server, <<>>).
+    jid:make(User, Server).
 
 is_admin(_Name, admin, _Extra) ->
     true;
@@ -845,7 +873,7 @@ is_admin(_Name, Map, _extra) when is_map(Map) ->
 is_admin(Name, Auth, Extra) ->
     {ACLInfo, Server} = case Auth of
 			    {U, S, _, _} ->
-				{Extra#{usr=>jid:split(jid:make(U, S, <<>>))}, S};
+				{Extra#{usr=>jid:split(jid:make(U, S))}, S};
 			    _ ->
 				{Extra, global}
 	      end,

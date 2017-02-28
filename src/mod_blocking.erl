@@ -29,7 +29,7 @@
 
 -protocol({xep, 191, '1.2'}).
 
--export([start/2, stop/1, process_iq/1, mod_opt_type/1, depends/2,
+-export([start/2, stop/1, reload/3, process_iq/1, mod_opt_type/1, depends/2,
 	 disco_features/5]).
 
 -include("ejabberd.hrl").
@@ -55,6 +55,17 @@ start(Host, Opts) ->
 stop(Host) ->
     ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, disco_features, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_BLOCKING).
+
+reload(Host, NewOpts, OldOpts) ->
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts,
+			      fun gen_iq_handler:check_type/1,
+			      one_queue) of
+	{false, IQDisc, _} ->
+	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_BLOCKING,
+					  ?MODULE, process_iq, IQDisc);
+	true ->
+	    ok
+    end.
 
 depends(_Host, _Opts) ->
     [{mod_privacy, hard}].
@@ -235,7 +246,7 @@ broadcast_event(LUser, LServer, Event) ->
 	      IQ = #iq{type = set, from = From, to = To,
 		       id = <<"push", (randoms:get_string())/binary>>,
 		       sub_els = [Event]},
-	      ejabberd_router:route(From, To, IQ)
+	      ejabberd_router:route(IQ)
       end, ejabberd_sm:get_user_resources(LUser, LServer)).
 
 -spec process_get(iq()) -> iq().

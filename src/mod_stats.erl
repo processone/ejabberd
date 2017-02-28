@@ -31,7 +31,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_iq/1, mod_opt_type/1, depends/2]).
+-export([start/2, stop/1, reload/3, process_iq/1, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -45,6 +45,9 @@ start(Host, Opts) ->
 
 stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_STATS).
+
+reload(Host, NewOpts, _OldOpts) ->
+    start(Host, NewOpts).
 
 depends(_Host, _Opts) ->
     [].

@@ -38,7 +38,8 @@
 
 -export([start/2,
 	 stop/1,
-	 store_packet/4,
+	 reload/3,
+	 store_packet/1,
 	 store_offline_msg/5,
 	 c2s_self_presence/1,
 	 get_sm_features/5,
@@ -94,10 +95,10 @@
 			 non_neg_integer(), non_neg_integer()) ->
     {atomic, any()}.
 -callback pop_messages(binary(), binary()) ->
-    {atomic, [#offline_msg{}]} | {aborted, any()}.
+    {ok, [#offline_msg{}]} | {error, any()}.
 -callback remove_expired_messages(binary()) -> {atomic, any()}.
 -callback remove_old_messages(non_neg_integer(), binary()) -> {atomic, any()}.
--callback remove_user(binary(), binary()) -> {atomic, any()}.
+-callback remove_user(binary(), binary()) -> any().
 -callback read_message_headers(binary(), binary()) ->
     [{non_neg_integer(), jid(), jid(), undefined | erlang:timestamp(), xmlel()}].
 -callback read_message(binary(), binary(), non_neg_integer()) ->
@@ -112,6 +113,10 @@ start(Host, Opts) ->
 
 stop(Host) ->
     gen_mod:stop_child(?MODULE, Host).
+
+reload(Host, NewOpts, OldOpts) ->
+    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    gen_server:cast(Proc, {reload, NewOpts, OldOpts}).
 
 depends(_Host, _Opts) ->
     [].
@@ -162,8 +167,35 @@ init([Host, Opts]) ->
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State}.
 
-
-handle_cast(_Msg, State) -> {noreply, State}.
+handle_cast({reload, NewOpts, OldOpts}, #state{host = Host} = State) ->
+    NewMod = gen_mod:db_mod(Host, NewOpts, ?MODULE),
+    OldMod = gen_mod:db_mod(Host, OldOpts, ?MODULE),
+    if NewMod /= OldMod ->
+	    NewMod:init(Host, NewOpts);
+       true ->
+	    ok
+    end,
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts,
+			      fun gen_iq_handler:check_type/1,
+			      one_queue) of
+	{false, IQDisc, _} ->
+	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_FLEX_OFFLINE,
+					  ?MODULE, handle_offline_query, IQDisc);
+	true ->
+	    ok
+    end,
+    case gen_mod:is_equal_opt(access_max_user_messages, NewOpts, OldOpts,
+			      fun acl:shaper_rules_validator/1,
+			      max_user_offline_messages) of
+	{false, AccessMaxOfflineMsgs, _} ->
+	    {noreply,
+	     State#state{access_max_offline_messages = AccessMaxOfflineMsgs}};
+	true ->
+	    {noreply, State}
+    end;
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
+    {noreply, State}.
 
 
 handle_info(#offline_msg{us = UserServer} = Msg, State) ->
@@ -219,7 +251,7 @@ store_offline_msg(Host, US, Msgs, Len, MaxOfflineMsgs) ->
 
 get_max_user_messages(AccessRule, {User, Server}, Host) ->
     case acl:match_rule(
-	   Host, AccessRule, jid:make(User, Server, <<"">>)) of
+	   Host, AccessRule, jid:make(User, Server)) of
 	Max when is_integer(Max) -> Max;
 	infinity -> infinity;
 	_ -> ?MAX_USER_MESSAGES
@@ -274,7 +306,7 @@ get_sm_items(_Acc, #jid{luser = U, lserver = S} = JID,
 			       Node = integer_to_binary(Seq),
 			       #disco_item{jid = BareJID,
 					   node = Node,
-					   name = jid:to_string(From)}
+					   name = jid:encode(From)}
 		       end, Hdrs)};
 get_sm_items(Acc, _From, _To, _Node, _Lang) ->
     Acc.
@@ -353,11 +385,11 @@ handle_offline_items_view(JID, Items) ->
 	      case fetch_msg_by_node(JID, Node) of
 		  {ok, OfflineMsg} ->
 		      case offline_msg_to_route(S, OfflineMsg) of
-			  {route, From, To, El} ->
+			  {route, El} ->
 			      NewEl = set_offline_tag(El, Node),
 			      case ejabberd_sm:get_session_pid(U, S, R) of
 				  Pid when is_pid(Pid) ->
-				      Pid ! {route, From, To, NewEl};
+				      Pid ! {route, NewEl};
 				  none ->
 				      ok
 			      end,
@@ -387,9 +419,7 @@ handle_offline_fetch(#jid{luser = U, lserver = S} = JID) ->
 	    lists:foreach(
 	      fun({Node, El}) ->
 	      El1 = set_offline_tag(El, Node),
-	      From = xmpp:get_from(El1),
-	      To = xmpp:get_to(El1),
-	      ejabberd_router:route(From, To, El1)
+	      ejabberd_router:route(El1)
       end, read_messages(U, S)).
 
 -spec fetch_msg_by_node(jid(), binary()) -> error | {ok, #offline_msg{}}.
@@ -448,15 +478,15 @@ need_to_store(LServer, #message{type = Type} = Packet) ->
 	    false
     end.
 
--spec store_packet(any(), jid(), jid(), message()) -> any().
-store_packet(Acc, From, To, Packet) ->
+-spec store_packet({any(), message()}) -> {any(), message()}.
+store_packet({_Action, #message{from = From, to = To} = Packet} = Acc) ->
     case need_to_store(To#jid.lserver, Packet) of
 	true ->
-	    case check_event(From, To, Packet) of
+	    case check_event(Packet) of
 		true ->
 		    #jid{luser = LUser, lserver = LServer} = To,
 		    case ejabberd_hooks:run_fold(store_offline_message, LServer,
-						 Packet, [From, To]) of
+						 Packet, []) of
 			drop ->
 			    Acc;
 			NewPacket ->
@@ -469,7 +499,7 @@ store_packet(Acc, From, To, Packet) ->
 					     from = From,
 					     to = To,
 					     packet = NewPacket},
-			    offlined
+			    {offlined, NewPacket}
 		    end;
 		_ -> Acc
 	    end;
@@ -501,16 +531,17 @@ has_no_store_hint(Packet) ->
 	xmpp:has_subtag(Packet, #hint{type = 'no-storage'}).
 
 %% Check if the packet has any content about XEP-0022
--spec check_event(jid(), jid(), message()) -> boolean().
-check_event(From, To, #message{id = ID} = Msg) ->
+-spec check_event(message()) -> boolean().
+check_event(#message{from = From, to = To, id = ID} = Msg) ->
     case xmpp:get_subtag(Msg, #xevent{}) of
 	false ->
 	    true;
 	#xevent{id = undefined, offline = false} ->
 	    true;
 	#xevent{id = undefined, offline = true} ->
-	    NewMsg = Msg#message{sub_els = [#xevent{id = ID, offline = true}]},
-	    ejabberd_router:route(To, From, xmpp:set_from_to(NewMsg, To, From)),
+	    NewMsg = Msg#message{from = To, to = From,
+				 sub_els = [#xevent{id = ID, offline = true}]},
+	    ejabberd_router:route(NewMsg),
 	    true;
 	_ ->
 	    false
@@ -518,7 +549,7 @@ check_event(From, To, #message{id = ID} = Msg) ->
 
 -spec find_x_expire(erlang:timestamp(), message()) -> erlang:timestamp() | never.
 find_x_expire(TimeStamp, Msg) ->
-    case xmpp:get_subtag(Msg, #expire{}) of
+    case xmpp:get_subtag(Msg, #expire{seconds = 0}) of
 	#expire{seconds = Int} ->
 	    {MegaSecs, Secs, MicroSecs} = TimeStamp,
 	    S = MegaSecs * 1000000 + Secs + Int,
@@ -565,14 +596,14 @@ route_offline_message(#{lserver := LServer} = State,
     case offline_msg_to_route(LServer, OffMsg) of
 	error ->
 	    ok;
-	{route, From, To, Msg} ->
+	{route, Msg} ->
 	    case is_message_expired(Expire, Msg) of
 		true ->
 		    ok;
 		false ->
 		    case privacy_check_packet(State, Msg, in) of
-			allow -> ejabberd_router:route(From, To, Msg);
-			false -> ok
+			allow -> ejabberd_router:route(Msg);
+			deny -> ok
 		    end
 	    end
     end.
@@ -614,12 +645,12 @@ remove_user(User, Server) ->
 %% Warn senders that their messages have been discarded:
 discard_warn_sender(Msgs) ->
     lists:foreach(
-      fun(#offline_msg{from = From, to = To, packet = Packet}) ->
+      fun(#offline_msg{packet = Packet}) ->
 	      ErrText = <<"Your contact offline message queue is "
 			  "full. The message has been discarded.">>,
 	      Lang = xmpp:get_lang(Packet),
 	      Err = xmpp:err_resource_constraint(ErrText, Lang),
-	      ejabberd_router:route_error(To, From, Packet, Err)
+	      ejabberd_router:route_error(Packet, Err)
       end, Msgs).
 
 webadmin_page(_, Host,
@@ -633,16 +664,16 @@ get_offline_els(LUser, LServer) ->
     [Packet || {_Seq, Packet} <- read_messages(LUser, LServer)].
 
 -spec offline_msg_to_route(binary(), #offline_msg{}) ->
-				  {route, jid(), jid(), message()} | error.
+				  {route, message()} | error.
 offline_msg_to_route(LServer, #offline_msg{from = From, to = To} = R) ->
     try xmpp:decode(R#offline_msg.packet, ?NS_CLIENT, [ignore_els]) of
 	Pkt ->
 	    Pkt1 = xmpp:set_from_to(Pkt, From, To),
 	    Pkt2 = add_delay_info(Pkt1, LServer, R#offline_msg.timestamp),
-	    {route, From, To, Pkt2}
+	    {route, Pkt2}
     catch _:{xmpp_codec, Why} ->
 	    ?ERROR_MSG("failed to decode packet ~p of user ~s: ~s",
-		       [R#offline_msg.packet, jid:to_string(To),
+		       [R#offline_msg.packet, jid:encode(To),
 			xmpp:format_error(Why)]),
 	    error
     end.
@@ -662,7 +693,7 @@ read_messages(LUser, LServer) ->
 	      catch _:{xmpp_codec, Why} ->
 		      ?ERROR_MSG("failed to decode packet ~p "
 				 "of user ~s: ~s",
-				 [El, jid:to_string(To),
+				 [El, jid:encode(To),
 				  xmpp:format_error(Why)]),
 		      []
 	      end
@@ -673,8 +704,8 @@ format_user_queue(Hdrs) ->
       fun({Seq, From, To, TS, El}) ->
 	      ID = integer_to_binary(Seq),
 	      FPacket = ejabberd_web_admin:pretty_print_xml(El),
-	      SFrom = jid:to_string(From),
-	      STo = jid:to_string(To),
+	      SFrom = jid:encode(From),
+	      STo = jid:encode(To),
 	      Time = case TS of
 			 undefined ->
 			     Stamp = fxml:get_path_s(El, [{elem, <<"delay">>},
@@ -761,7 +792,7 @@ user_queue_parse_query(LUser, LServer, Query) ->
     end.
 
 us_to_list({User, Server}) ->
-    jid:to_string({User, Server, <<"">>}).
+    jid:encode({User, Server, <<"">>}).
 
 get_queue_length(LUser, LServer) ->
     count_offline_messages(LUser, LServer).
@@ -786,7 +817,7 @@ get_messages_subset2(Max, Length, MsgsAll) ->
     {MsgsFirstN, Msgs2} = lists:split(FirstN, MsgsAll),
     MsgsLastN = lists:nthtail(Length - FirstN - FirstN,
 			      Msgs2),
-    NoJID = jid:make(<<"...">>, <<"...">>, <<"">>),
+    NoJID = jid:make(<<"...">>, <<"...">>),
     Seq = <<"0">>,
     IntermediateMsg = #xmlel{name = <<"...">>, attrs = [],
 			     children = []},
@@ -814,14 +845,14 @@ delete_all_msgs(User, Server) ->
 webadmin_user_parse_query(_, <<"removealloffline">>,
 			  User, Server, _Query) ->
     case delete_all_msgs(User, Server) of
-      {aborted, Reason} ->
-	  ?ERROR_MSG("Failed to remove offline messages: ~p",
-		     [Reason]),
-	  {stop, error};
-      {atomic, ok} ->
-	  ?INFO_MSG("Removed all offline messages for ~s@~s",
-		    [User, Server]),
-	  {stop, ok}
+	{atomic, ok} ->
+	    ?INFO_MSG("Removed all offline messages for ~s@~s",
+		      [User, Server]),
+	    {stop, ok};
+	Err ->
+	    ?ERROR_MSG("Failed to remove offline messages: ~p",
+		       [Err]),
+	    {stop, error}
     end;
 webadmin_user_parse_query(Acc, _Action, _User, _Server,
 			  _Query) ->
@@ -867,25 +898,20 @@ import_start(LServer, DBType) ->
 import(LServer, {sql, _}, DBType, <<"spool">>,
        [LUser, XML, _Seq, _TimeStamp]) ->
     El = fxml_stream:parse_element(XML),
-    From = #jid{} = jid:from_string(
-                                fxml:get_attr_s(<<"from">>, El#xmlel.attrs)),
-    To = #jid{} = jid:from_string(
-                              fxml:get_attr_s(<<"to">>, El#xmlel.attrs)),
-              Stamp = fxml:get_path_s(El, [{elem, <<"delay">>},
-                                {attr, <<"stamp">>}]),
-    TS = try xmpp_util:decode_timestamp(Stamp) of
-	     {MegaSecs, Secs, _} ->
-                 {MegaSecs, Secs, 0}
-	 catch _:_ ->
-                 p1_time_compat:timestamp()
-         end,
+    #message{from = From, to = To} = Msg = xmpp:decode(El, ?NS_CLIENT, [ignore_els]),
+    TS = case xmpp:get_subtag(Msg, #delay{stamp = {0,0,0}}) of
+	     #delay{stamp = {MegaSecs, Secs, _}} ->
+		 {MegaSecs, Secs, 0};
+	     false ->
+		 p1_time_compat:timestamp()
+	 end,
     US = {LUser, LServer},
-    Expire = find_x_expire(TS, El#xmlel.children),
-    Msg = #offline_msg{us = US, packet = El,
-                       from = From, to = To,
-                       timestamp = TS, expire = Expire},
+    Expire = find_x_expire(TS, Msg),
+    OffMsg = #offline_msg{us = US, packet = El,
+			  from = From, to = To,
+			  timestamp = TS, expire = Expire},
     Mod = gen_mod:db_mod(DBType, ?MODULE),
-    Mod:import(Msg).
+    Mod:import(OffMsg).
 
 mod_opt_type(access_max_user_messages) ->
     fun acl:shaper_rules_validator/1;

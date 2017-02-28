@@ -31,7 +31,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, get_local_identity/5,
+-export([start/2, stop/1, reload/3, get_local_identity/5,
 	 get_local_features/5, get_local_items/5,
 	 adhoc_local_items/4, adhoc_local_commands/4,
 	 get_sm_identity/5, get_sm_features/5, get_sm_items/5,
@@ -89,11 +89,10 @@ stop(Host) ->
     ejabberd_hooks:delete(disco_local_features, Host,
 			  ?MODULE, get_local_features, 50),
     ejabberd_hooks:delete(disco_local_items, Host, ?MODULE,
-			  get_local_items, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host,
-				     ?NS_COMMANDS),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
-				     ?NS_COMMANDS).
+			  get_local_items, 50).
+
+reload(_Host, _NewOpts, _OldOpts) ->
+    ok.
 
 depends(_Host, _Opts) ->
     [{mod_adhoc, hard}, {mod_last, soft}].
@@ -397,7 +396,7 @@ get_permission_level(JID) ->
 	  allow ->
 	      PermLev = get_permission_level(From),
 	      case get_local_items({PermLev, LServer}, LNode,
-				   jid:to_string(To), Lang)
+				   jid:encode(To), Lang)
 		  of
 		{result, Res} -> {result, Res};
 		{error, Error} -> {error, Error}
@@ -419,7 +418,7 @@ get_local_items(Acc, From, #jid{lserver = LServer} = To,
 	    allow ->
 		PermLev = get_permission_level(From),
 		case get_local_items({PermLev, LServer}, [],
-				     jid:to_string(To), Lang)
+				     jid:encode(To), Lang)
 		    of
 		  {result, Res} -> {result, Items ++ Res};
 		  {error, _Error} -> {result, Items}
@@ -1523,7 +1522,7 @@ set_form(From, Host, ?NS_ADMINL(<<"add-user">>), _Lang,
     AccountString = get_value(<<"accountjid">>, XData),
     Password = get_value(<<"password">>, XData),
     Password = get_value(<<"password-verify">>, XData),
-    AccountJID = jid:from_string(AccountString),
+    AccountJID = jid:decode(AccountString),
     User = AccountJID#jid.luser,
     Server = AccountJID#jid.lserver,
     true = lists:member(Server, ?MYHOSTS),
@@ -1537,7 +1536,7 @@ set_form(From, Host, ?NS_ADMINL(<<"delete-user">>),
 				   XData),
     [_ | _] = AccountStringList,
     ASL2 = lists:map(fun (AccountString) ->
-			     JID = jid:from_string(AccountString),
+			     JID = jid:decode(AccountString),
 			     User = JID#jid.luser,
 			     Server = JID#jid.lserver,
 			     true = Server == Host orelse
@@ -1552,7 +1551,7 @@ set_form(From, Host, ?NS_ADMINL(<<"delete-user">>),
 set_form(From, Host, ?NS_ADMINL(<<"end-user-session">>),
 	 Lang, XData) ->
     AccountString = get_value(<<"accountjid">>, XData),
-    JID = jid:from_string(AccountString),
+    JID = jid:decode(AccountString),
     LUser = JID#jid.luser,
     LServer = JID#jid.lserver,
     true = LServer == Host orelse
@@ -1588,7 +1587,7 @@ set_form(From, Host, ?NS_ADMINL(<<"end-user-session">>),
 set_form(From, Host,
 	 ?NS_ADMINL(<<"get-user-password">>), Lang, XData) ->
     AccountString = get_value(<<"accountjid">>, XData),
-    JID = jid:from_string(AccountString),
+    JID = jid:decode(AccountString),
     User = JID#jid.luser,
     Server = JID#jid.lserver,
     true = Server == Host orelse
@@ -1606,7 +1605,7 @@ set_form(From, Host,
 	 ?NS_ADMINL(<<"change-user-password">>), _Lang, XData) ->
     AccountString = get_value(<<"accountjid">>, XData),
     Password = get_value(<<"password">>, XData),
-    JID = jid:from_string(AccountString),
+    JID = jid:decode(AccountString),
     User = JID#jid.luser,
     Server = JID#jid.lserver,
     true = Server == Host orelse
@@ -1617,7 +1616,7 @@ set_form(From, Host,
 set_form(From, Host,
 	 ?NS_ADMINL(<<"get-user-lastlogin">>), Lang, XData) ->
     AccountString = get_value(<<"accountjid">>, XData),
-    JID = jid:from_string(AccountString),
+    JID = jid:decode(AccountString),
     User = JID#jid.luser,
     Server = JID#jid.lserver,
     true = Server == Host orelse
@@ -1649,7 +1648,7 @@ set_form(From, Host,
 set_form(From, Host, ?NS_ADMINL(<<"user-stats">>), Lang,
 	 XData) ->
     AccountString = get_value(<<"accountjid">>, XData),
-    JID = jid:from_string(AccountString),
+    JID = jid:decode(AccountString),
     User = JID#jid.luser,
     Server = JID#jid.lserver,
     true = Server == Host orelse

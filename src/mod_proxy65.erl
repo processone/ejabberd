@@ -34,7 +34,7 @@
 -behaviour(supervisor).
 
 %% gen_mod callbacks.
--export([start/2, stop/1, transform_module_options/1]).
+-export([start/2, stop/1, reload/3, transform_module_options/1]).
 
 %% supervisor callbacks.
 -export([init/1]).
@@ -59,14 +59,24 @@ start(Host, Opts) ->
 	    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
 	    ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
 			 transient, infinity, supervisor, [?MODULE]},
-	    supervisor:start_child(ejabberd_sup, ChildSpec)
+	    supervisor:start_child(ejabberd_gen_mod_sup, ChildSpec)
     end.
 
 stop(Host) ->
-    mod_proxy65_service:delete_listener(Host),
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+	false ->
+	    mod_proxy65_service:delete_listener(Host);
+	true ->
+	    ok
+    end,
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc).
+    supervisor:terminate_child(ejabberd_gen_mod_sup, Proc),
+    supervisor:delete_child(ejabberd_gen_mod_sup, Proc).
+
+reload(Host, NewOpts, OldOpts) ->
+    Mod = gen_mod:ram_db_mod(global, ?MODULE),
+    Mod:init(),
+    mod_proxy65_service:reload(Host, NewOpts, OldOpts).
 
 start_link(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),

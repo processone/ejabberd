@@ -34,7 +34,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, route/3, have_connection/1,
+-export([start_link/0, route/1, have_connection/1,
 	 get_connections_pids/1, try_register/1,
 	 remove_connection/2, start_connection/2, start_connection/3,
 	 dirty_get_connections/0, allow_host/2,
@@ -44,7 +44,8 @@
 	 list_temporarily_blocked_hosts/0,
 	 external_host_overloaded/1, is_temporarly_blocked/1,
 	 get_commands_spec/0, zlib_enabled/1, get_idle_timeout/1,
-	 tls_required/1, tls_verify/1, tls_enabled/1, tls_options/2]).
+	 tls_required/1, tls_verify/1, tls_enabled/1, tls_options/2,
+	 host_up/1, host_down/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
@@ -90,14 +91,13 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [],
 			  []).
 
--spec route(jid(), jid(), xmpp_element()) -> ok.
+-spec route(stanza()) -> ok.
 
-route(From, To, Packet) ->
-    case catch do_route(From, To, Packet) of
-      {'EXIT', Reason} ->
-	  ?ERROR_MSG("~p~nwhen processing: ~p",
-		     [Reason, {From, To, Packet}]);
-      _ -> ok
+route(Packet) ->
+    try do_route(Packet)
+    catch E:R ->
+            ?ERROR_MSG("failed to route packet:~n~s~nReason = ~p",
+                       [xmpp:pp(Packet), {E, {R, erlang:get_stacktrace()}}])
     end.
 
 clean_temporarily_blocked_table() ->
@@ -301,8 +301,9 @@ init([]) ->
     ejabberd_mnesia:create(?MODULE, temporarily_blocked,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, temporarily_blocked)}]),
-    ejabberd_s2s_in:add_hooks(),
-    ejabberd_s2s_out:add_hooks(),
+    ejabberd_hooks:add(host_up, ?MODULE, host_up, 50),
+    ejabberd_hooks:add(host_down, ?MODULE, host_down, 60),
+    lists:foreach(fun host_up/1, ?MYHOSTS),
     {ok, #state{}}.
 
 handle_call(_Request, _From, State) ->
@@ -314,18 +315,16 @@ handle_cast(_Msg, State) ->
 handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
     clean_table_from_bad_node(Node),
     {noreply, State};
-handle_info({route, From, To, Packet}, State) ->
-    case catch do_route(From, To, Packet) of
-      {'EXIT', Reason} ->
-	  ?ERROR_MSG("~p~nwhen processing: ~p",
-		     [Reason, {From, To, Packet}]);
-      _ -> ok
-    end,
+handle_info({route, Packet}, State) ->
+    route(Packet),
     {noreply, State};
 handle_info(_Info, State) -> {noreply, State}.
 
 terminate(_Reason, _State) ->
     ejabberd_commands:unregister_commands(get_commands_spec()),
+    lists:foreach(fun host_down/1, ?MYHOSTS),
+    ejabberd_hooks:delete(host_up, ?MODULE, host_up, 50),
+    ejabberd_hooks:delete(host_down, ?MODULE, host_down, 60),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -334,6 +333,26 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+host_up(Host) ->
+    ejabberd_s2s_in:host_up(Host),
+    ejabberd_s2s_out:host_up(Host).
+
+host_down(Host) ->
+    lists:foreach(
+      fun(#s2s{fromto = {From, _}, pid = Pid}) when node(Pid) == node() ->
+	      case ejabberd_router:host_of_route(From) of
+		  Host ->
+		      ejabberd_s2s_out:send(Pid, xmpp:serr_system_shutdown()),
+		      ejabberd_s2s_out:stop(Pid);
+		  _ ->
+		      ok
+	      end;
+	 (_) ->
+	      ok
+      end, ets:tab2list(s2s)),
+    ejabberd_s2s_in:host_down(Host),
+    ejabberd_s2s_out:host_down(Host).
+
 -spec clean_table_from_bad_node(node()) -> any().
 clean_table_from_bad_node(Node) ->
     F = fun() ->
@@ -348,17 +367,17 @@ clean_table_from_bad_node(Node) ->
 	end,
     mnesia:async_dirty(F).
 
--spec do_route(jid(), jid(), stanza()) -> ok.
-do_route(From, To, Packet) ->
-    ?DEBUG("s2s manager~n\tfrom ~p~n\tto ~p~n\tpacket "
-	   "~P~n",
-	   [From, To, Packet, 8]),
+-spec do_route(stanza()) -> ok.
+do_route(Packet) ->
+    ?DEBUG("local route:~n~s", [xmpp:pp(Packet)]),
+    From = xmpp:get_from(Packet),
+    To = xmpp:get_to(Packet),
     case start_connection(From, To) of
 	{ok, Pid} when is_pid(Pid) ->
 	  ?DEBUG("sending to process ~p~n", [Pid]),
 	  #jid{lserver = MyServer} = From,
-	    ejabberd_hooks:run(s2s_send_packet, MyServer, [From, To, Packet]),
-	    ejabberd_s2s_out:route(Pid, xmpp:set_from_to(Packet, From, To));
+	    ejabberd_hooks:run(s2s_send_packet, MyServer, [Packet]),
+	    ejabberd_s2s_out:route(Pid, Packet);
 	{error, Reason} ->
 	  Lang = xmpp:get_lang(Packet),
 	    Err = case Reason of
@@ -371,7 +390,7 @@ do_route(From, To, Packet) ->
 		      internal_server_error ->
 			  xmpp:err_internal_server_error()
 		  end,
-	    ejabberd_router:route_error(To, From, Packet, Err)
+	    ejabberd_router:route_error(Packet, Err)
     end.
 
 -spec start_connection(jid(), jid())
@@ -576,14 +595,18 @@ supervisor_count(Supervisor) ->
             length(Result)
     end.
 
+-spec stop_all_connections() -> ok.
 stop_all_connections() ->
     lists:foreach(
       fun({_Id, Pid, _Type, _Module}) ->
-	      exit(Pid, kill)
-      end,
-      supervisor:which_children(ejabberd_s2s_in_sup) ++
-	  supervisor:which_children(ejabberd_s2s_out_sup)),
-    mnesia:clear_table(s2s).
+	      supervisor:terminate_child(ejabberd_s2s_in_sup, Pid)
+      end, supervisor:which_children(ejabberd_s2s_in_sup)),
+    lists:foreach(
+      fun({_Id, Pid, _Type, _Module}) ->
+	      supervisor:terminate_child(ejabberd_s2s_out_sup, Pid)
+      end, supervisor:which_children(ejabberd_s2s_out_sup)),
+    mnesia:clear_table(s2s),
+    ok.
 
 %%%----------------------------------------------------------------------
 %%% Update Mnesia tables

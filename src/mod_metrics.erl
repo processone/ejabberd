@@ -34,12 +34,12 @@
 -include("xmpp.hrl").
 
 -export([start/2, stop/1, send_metrics/4, opt_type/1, mod_opt_type/1,
-	 depends/2]).
+	 depends/2, reload/3]).
 
--export([offline_message_hook/4,
+-export([offline_message_hook/1,
          sm_register_connection_hook/3, sm_remove_connection_hook/3,
          user_send_packet/1, user_receive_packet/1,
-         s2s_send_packet/3, s2s_receive_packet/1,
+         s2s_send_packet/1, s2s_receive_packet/1,
          remove_user/2, register_user/2]).
 
 %%====================================================================
@@ -68,14 +68,17 @@ stop(Host) ->
     ejabberd_hooks:delete(remove_user, Host, ?MODULE, remove_user, 20),
     ejabberd_hooks:delete(register_user, Host, ?MODULE, register_user, 20).
 
+reload(_Host, _NewOpts, _OldOpts) ->
+    ok.
+
 depends(_Host, _Opts) ->
     [].
 
 %%====================================================================
 %% Hooks handlers
 %%====================================================================
--spec offline_message_hook(any(), jid(), jid(), message()) -> any().
-offline_message_hook(Acc, _From, #jid{lserver=LServer}, _Packet) ->
+-spec offline_message_hook({any(), message()}) -> {any(), message()}.
+offline_message_hook({_Action, #message{to = #jid{lserver = LServer}}} = Acc) ->
     push(LServer, offline_message),
     Acc.
 
@@ -97,8 +100,9 @@ user_receive_packet({Packet, #{jid := #jid{lserver = LServer}} = C2SState}) ->
     push(LServer, user_receive_packet),
     {Packet, C2SState}.
 
--spec s2s_send_packet(jid(), jid(), stanza()) -> any().
-s2s_send_packet(#jid{lserver=LServer}, _To, _Packet) ->
+-spec s2s_send_packet(stanza()) -> any().
+s2s_send_packet(Packet) ->
+    #jid{lserver = LServer} = xmpp:get_from(Packet),
     push(LServer, s2s_send_packet).
 
 -spec s2s_receive_packet({stanza(), ejabberd_s2s_in:state()}) ->

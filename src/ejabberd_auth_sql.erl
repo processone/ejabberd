@@ -33,7 +33,7 @@
 
 -behaviour(ejabberd_auth).
 
--export([start/1, set_password/3, check_password/4,
+-export([start/1, stop/1, set_password/3, check_password/4,
 	 check_password/6, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
 	 get_vh_registered_users/2,
@@ -53,6 +53,8 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(_Host) -> ok.
+
+stop(_Host) -> ok.
 
 plain_password_required() ->
     case is_scrammed() of
@@ -201,12 +203,15 @@ try_register(User, Server, Password) ->
             {error, invalid_jid};
        (LUser == <<>>) or (LServer == <<>>) ->
             {error, invalid_jid};
-       LPassword == error ->
+       LPassword == error and not is_record(Password, scram) ->
 	   {error, invalid_password};
        true ->
             case is_scrammed() of
                 true ->
-                    Scram = password_to_scram(Password),
+                    Scram = case is_record(Password, scram) of
+                        true -> Password;
+                        false -> password_to_scram(Password)
+                    end,
                     case catch sql_queries:add_user_scram(
                                  LServer,
                                  LUser,

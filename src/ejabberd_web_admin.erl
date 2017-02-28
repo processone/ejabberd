@@ -102,7 +102,7 @@ get_acl_rule(_RPath, 'POST') ->
 get_jid(Auth, HostHTTP, Method) ->
     case get_auth_admin(Auth, HostHTTP, [], Method) of
       {ok, {User, Server}} ->
-	  jid:make(User, Server, <<"">>);
+	  jid:make(User, Server);
       {unauthorized, Error} ->
 	  ?ERROR_MSG("Unauthorized ~p: ~p", [Auth, Error]),
 	  throw({unauthorized, Auth})
@@ -257,15 +257,16 @@ get_auth_admin(Auth, HostHTTP, RPath, Method) ->
     case Auth of
       {SJID, Pass} ->
 	  {HostOfRule, AccessRule} = get_acl_rule(RPath, Method),
-	  case jid:from_string(SJID) of
-	    error -> {unauthorized, <<"badformed-jid">>};
-	    #jid{user = <<"">>, server = User} ->
-		get_auth_account(HostOfRule, AccessRule, User, HostHTTP,
-				 Pass);
-	    #jid{user = User, server = Server} ->
-		get_auth_account(HostOfRule, AccessRule, User, Server,
-				 Pass)
-	  end;
+	    try jid:decode(SJID) of
+		#jid{user = <<"">>, server = User} ->
+		    get_auth_account(HostOfRule, AccessRule, User, HostHTTP,
+				     Pass);
+		#jid{user = User, server = Server} ->
+		    get_auth_account(HostOfRule, AccessRule, User, Server,
+				     Pass)
+	    catch _:{bad_jid, _} ->
+		    {unauthorized, <<"badformed-jid">>}
+	    end;
       undefined -> {unauthorized, <<"no-auth-provided">>}
     end.
 
@@ -274,7 +275,7 @@ get_auth_account(HostOfRule, AccessRule, User, Server,
     case ejabberd_auth:check_password(User, <<"">>, Server, Pass) of
       true ->
 	  case acl:any_rules_allowed(HostOfRule, AccessRule,
-			    jid:make(User, Server, <<"">>))
+			    jid:make(User, Server))
 	      of
 	    false -> {unauthorized, <<"unprivileged-account">>};
 	    true -> {ok, {User, Server}}
@@ -1213,7 +1214,7 @@ string_to_spec(<<"server_regexp">>, Val) ->
     {server_regexp, Val};
 string_to_spec(<<"node_regexp">>, Val) ->
     #jid{luser = U, lserver = S, resource = <<"">>} =
-	jid:from_string(Val),
+	jid:decode(Val),
     {node_regexp, U, S};
 string_to_spec(<<"user_glob">>, Val) ->
     string_to_spec2(user_glob, Val);
@@ -1221,7 +1222,7 @@ string_to_spec(<<"server_glob">>, Val) ->
     {server_glob, Val};
 string_to_spec(<<"node_glob">>, Val) ->
     #jid{luser = U, lserver = S, resource = <<"">>} =
-	jid:from_string(Val),
+	jid:decode(Val),
     {node_glob, U, S};
 string_to_spec(<<"all">>, _) -> all;
 string_to_spec(<<"raw">>, Val) ->
@@ -1231,7 +1232,7 @@ string_to_spec(<<"raw">>, Val) ->
 
 string_to_spec2(ACLName, Val) ->
     #jid{luser = U, lserver = S, resource = <<"">>} =
-	jid:from_string(Val),
+	jid:decode(Val),
     case U of
       <<"">> -> {ACLName, S};
       _ -> {ACLName, {U, S}}
@@ -1447,16 +1448,17 @@ list_users_parse_query(Query, Host) ->
 	      lists:keysearch(<<"newusername">>, 1, Query),
 	  {value, {_, Password}} =
 	      lists:keysearch(<<"newuserpassword">>, 1, Query),
-	  case jid:from_string(<<Username/binary, "@",
+	  try jid:decode(<<Username/binary, "@",
 				    Host/binary>>)
 	      of
-	    error -> error;
 	    #jid{user = User, server = Server} ->
 		case ejabberd_auth:try_register(User, Server, Password)
 		    of
 		  {error, _Reason} -> error;
 		  _ -> ok
 		end
+	  catch _:{bad_jid, _} ->
+		  error
 	  end;
       false -> nothing
     end.
@@ -1547,10 +1549,10 @@ get_lastactivity_menuitem_list(Server) ->
     end.
 
 us_to_list({User, Server}) ->
-    jid:to_string({User, Server, <<"">>}).
+    jid:encode({User, Server, <<"">>}).
 
 su_to_list({Server, User}) ->
-    jid:to_string({User, Server, <<"">>}).
+    jid:encode({User, Server, <<"">>}).
 
 %%%==================================
 %%%% get_stats

@@ -44,7 +44,7 @@ init() ->
 store(R) ->
     Token = R#oauth_token.token,
     {User, Server} = R#oauth_token.us,
-    SJID = jid:to_string({User, Server, <<"">>}),
+    SJID = jid:encode({User, Server, <<"">>}),
     Scope = str:join(R#oauth_token.scope, <<" ">>),
     Expire = R#oauth_token.expire,
     ?SQL_UPSERT(
@@ -61,7 +61,7 @@ lookup(Token) ->
            ?SQL("select @(jid)s, @(scope)s, @(expire)d"
                 " from oauth_token where token=%(Token)s")) of
         {selected, [{SJID, Scope, Expire}]} ->
-            JID = jid:from_string(SJID),
+            JID = jid:decode(SJID),
             US = {JID#jid.luser, JID#jid.lserver},
             #oauth_token{token = Token,
                          us = US,

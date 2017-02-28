@@ -33,7 +33,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_local_iq/1, export/1,
+-export([start/2, stop/1, reload/3, process_local_iq/1, export/1,
 	 process_sm_iq/1, on_presence_update/4, import_info/0,
 	 import/5, import_start/2, store_last_info/4, get_last_info/2,
 	 remove_user/2, transform_options/1, mod_opt_type/1,
@@ -51,9 +51,8 @@
 -callback import(binary(), #last_activity{}) -> ok | pass.
 -callback get_last(binary(), binary()) ->
     {ok, non_neg_integer(), binary()} | not_found | {error, any()}.
--callback store_last_info(binary(), binary(), non_neg_integer(), binary()) ->
-    {atomic, any()}.
--callback remove_user(binary(), binary()) -> {atomic, any()}.
+-callback store_last_info(binary(), binary(), non_neg_integer(), binary()) -> any().
+-callback remove_user(binary(), binary()) -> any().
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
@@ -86,6 +85,26 @@ stop(Host) ->
 				     ?NS_LAST),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
 				     ?NS_LAST).
+
+reload(Host, NewOpts, OldOpts) ->
+    NewMod = gen_mod:db_mod(Host, NewOpts, ?MODULE),
+    OldMod = gen_mod:db_mod(Host, OldOpts, ?MODULE),
+    if NewMod /= OldMod ->
+	    NewMod:init(Host, NewOpts);
+       true ->
+	    ok
+    end,
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts,
+			      fun gen_iq_handler:check_type/1,
+			      one_queue) of
+	{false, IQDisc, _} ->
+	    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_LAST,
+					  ?MODULE, process_local_iq, IQDisc),
+	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_LAST,
+					  ?MODULE, process_sm_iq, IQDisc);
+	true ->
+	    ok
+    end.
 
 %%%
 %%% Uptime of ejabberd node
@@ -197,7 +216,7 @@ get_last_iq(#iq{lang = Lang} = IQ, LUser, LServer) ->
 	  xmpp:make_iq_result(IQ, #last{seconds = 0})
     end.
 
--spec register_user(binary(), binary()) -> {atomic, any()}.
+-spec register_user(binary(), binary()) -> any().
 register_user(User, Server) ->
     on_presence_update(
        User,
@@ -205,13 +224,12 @@ register_user(User, Server) ->
        <<"RegisterResource">>,
        <<"Registered but didn't login">>).
 
--spec on_presence_update(binary(), binary(), binary(), binary()) -> {atomic, any()}.
+-spec on_presence_update(binary(), binary(), binary(), binary()) -> any().
 on_presence_update(User, Server, _Resource, Status) ->
     TimeStamp = p1_time_compat:system_time(seconds),
     store_last_info(User, Server, TimeStamp, Status).
 
--spec store_last_info(binary(), binary(), non_neg_integer(), binary()) ->
-			     {atomic, any()}.
+-spec store_last_info(binary(), binary(), non_neg_integer(), binary()) -> any().
 store_last_info(User, Server, TimeStamp, Status) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),

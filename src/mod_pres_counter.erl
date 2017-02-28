@@ -27,7 +27,7 @@
 
 -behavior(gen_mod).
 
--export([start/2, stop/1, check_packet/4,
+-export([start/2, stop/1, reload/3, check_packet/4,
 	 mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
@@ -46,6 +46,9 @@ start(Host, _Opts) ->
 stop(Host) ->
     ejabberd_hooks:delete(privacy_check_packet, Host,
 			  ?MODULE, check_packet, 25),
+    ok.
+
+reload(_Host, _NewOpts, _OldOpts) ->
     ok.
 
 depends(_Host, _Opts) ->
@@ -102,14 +105,14 @@ update(Server, JID, Dir) ->
 		   in ->
 		       ?WARNING_MSG("User ~s is being flooded, ignoring received "
 				    "presence subscriptions",
-				    [jid:to_string(JID)]);
+				    [jid:encode(JID)]);
 		   out ->
 		       IP = ejabberd_sm:get_user_ip(JID#jid.luser,
 						    JID#jid.lserver,
 						    JID#jid.lresource),
 		       ?WARNING_MSG("Flooder detected: ~s, on IP: ~s ignoring "
 				    "sent presence subscriptions~n",
-				    [jid:to_string(JID),
+				    [jid:encode(JID),
 				     jlib:ip_to_list(IP)])
 		 end,
 		 {stop, deny};

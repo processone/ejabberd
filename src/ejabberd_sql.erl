@@ -576,7 +576,8 @@ sql_query_internal(Query) ->
 		to_odbc(odbc:sql_query(State#state.db_ref, [Query],
                                        (?TRANSACTION_TIMEOUT) - 1000));
 	    pgsql ->
-		pgsql_to_odbc(pgsql:squery(State#state.db_ref, Query));
+		pgsql_to_odbc(pgsql:squery(State#state.db_ref, Query,
+					   (?TRANSACTION_TIMEOUT) - 1000));
 	    mysql ->
 		R = mysql_to_odbc(p1_mysql_conn:squery(State#state.db_ref,
 						   [Query], self(),

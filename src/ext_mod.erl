@@ -26,9 +26,10 @@
 -module(ext_mod).
 
 -behaviour(ejabberd_config).
+-behaviour(gen_server).
 -author("Christophe Romain <christophe.romain@process-one.net>").
 
--export([start/0, stop/0, update/0, check/1,
+-export([start_link/0, update/0, check/1,
          available_command/0, available/0, available/1,
          installed_command/0, installed/0, installed/1,
          install/1, uninstall/1, upgrade/0, upgrade/1,
@@ -37,22 +38,45 @@
 
 -export([compile_erlang_file/2, compile_elixir_file/2]).
 
+%% gen_server callbacks
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+	 terminate/2, code_change/3]).
+
 -include("ejabberd_commands.hrl").
 -include("logger.hrl").
 
 -define(REPOS, "https://github.com/processone/ejabberd-contrib").
 
-%% -- ejabberd init and commands
+-record(state, {}).
 
-start() ->
+start_link() ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+init([]) ->
+    process_flag(trap_exit, true),
     [code:add_patha(module_ebin_dir(Module))
      || {Module, _} <- installed()],
     p1_http:start(),
-    ejabberd_commands:register_commands(get_commands_spec()).
+    ejabberd_commands:register_commands(get_commands_spec()),
+    {ok, #state{}}.
 
-stop() ->
+handle_call(_Request, _From, State) ->
+    Reply = ok,
+    {reply, Reply, State}.
+
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+handle_info(_Info, State) ->
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
     ejabberd_commands:unregister_commands(get_commands_spec()).
 
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
+
+%% -- ejabberd commands
 get_commands_spec() ->
     [#ejabberd_commands{name = modules_update_specs,
                         tags = [admin,modules],

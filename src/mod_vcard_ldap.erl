@@ -81,12 +81,12 @@ init(Host, Opts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
 		 transient, 1000, worker, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, ChildSpec).
+    supervisor:start_child(ejabberd_backend_sup, ChildSpec).
 
 stop(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    supervisor:terminate_child(ejabberd_sup, Proc),
-    supervisor:delete_child(ejabberd_sup, Proc),
+    supervisor:terminate_child(ejabberd_backend_sup, Proc),
+    supervisor:delete_child(ejabberd_backend_sup, Proc),
     ok.
 
 is_search_supported(_LServer) ->
@@ -180,7 +180,7 @@ remove_user(_User, _Server) ->
     {atomic, not_implemented}.
 
 import(_, _, _) ->
-    pass.
+    ok.
 
 %%%===================================================================
 %%% gen_server callbacks

@@ -33,7 +33,7 @@
 -behaviour(gen_mod).
 
 -export([start_link/0]).
--export([start/2, stop/1, process/2, open_session/2,
+-export([start/2, stop/1, reload/3, process/2, open_session/2,
 	 close_session/1, find_session/1]).
 
 -export([depends/2, mod_opt_type/1]).
@@ -41,7 +41,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
--include("jlib.hrl").
+-include("xmpp.hrl").
 -include("ejabberd_http.hrl").
 -include("bosh.hrl").
 
@@ -96,12 +96,18 @@ start(Host, Opts) ->
     TmpSupSpec = {TmpSup,
 		  {ejabberd_tmp_sup, start_link, [TmpSup, ejabberd_bosh]},
 		  permanent, infinity, supervisor, [ejabberd_tmp_sup]},
-    supervisor:start_child(ejabberd_sup, TmpSupSpec).
+    supervisor:start_child(ejabberd_gen_mod_sup, TmpSupSpec).
 
 stop(Host) ->
     TmpSup = gen_mod:get_module_proc(Host, ?MODULE),
-    supervisor:terminate_child(ejabberd_sup, TmpSup),
-    supervisor:delete_child(ejabberd_sup, TmpSup).
+    supervisor:terminate_child(ejabberd_gen_mod_sup, TmpSup),
+    supervisor:delete_child(ejabberd_gen_mod_sup, TmpSup).
+
+reload(_Host, NewOpts, _OldOpts) ->
+    start_jiffy(NewOpts),
+    Mod = gen_mod:ram_db_mod(global, ?MODULE),
+    Mod:init(),
+    ok.
 
 %%%===================================================================
 %%% Internal functions

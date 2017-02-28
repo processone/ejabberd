@@ -26,7 +26,7 @@
 -protocol({xep, 185, '1.0'}).
 
 %% gen_mod API
--export([start/2, stop/1, depends/2, mod_opt_type/1]).
+-export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1]).
 %% Hooks
 -export([s2s_out_auth_result/2, s2s_out_downgraded/2,
 	 s2s_in_packet/2, s2s_out_packet/2, s2s_in_recv/3,
@@ -85,6 +85,14 @@ stop(Host) ->
 			  s2s_out_downgraded, 50),
     ejabberd_hooks:delete(s2s_out_auth_result, Host, ?MODULE,
 			  s2s_out_auth_result, 50).
+
+reload(Host, NewOpts, _OldOpts) ->
+    case ejabberd_s2s:tls_verify(Host) of
+	false ->
+	    start(Host, NewOpts);
+	true ->
+	    stop(Host)
+    end.
 
 depends(_Host, _Opts) ->
     [].
@@ -240,8 +248,10 @@ s2s_out_packet(#{server := LServer, remote_server := RServer} = State,
 	    State2 = ejabberd_s2s_out:handle_auth_success(<<"dialback">>, State1),
 	    ejabberd_s2s_out:establish(State2);
 	_ ->
-	    Reason = format_error(Result),
-	    ejabberd_s2s_out:handle_auth_failure(<<"dialback">>, {auth, Reason}, State1)
+	    Reason = str:format("Peer responded with error: ~s",
+				[format_error(Result)]),
+	    ejabberd_s2s_out:handle_auth_failure(
+	      <<"dialback">>, {auth, Reason}, State1)
     end;
 s2s_out_packet(State, Pkt) when is_record(Pkt, db_result);
 				is_record(Pkt, db_verify) ->
@@ -290,7 +300,8 @@ send_db_result(State, #db_verify{from = From, to = To,
 		       From, <<"dialback">>, undefined, State1),
 	    ejabberd_s2s_in:establish(State2);
 	_ ->
-	    Reason = format_error(Response),
+	    Reason = str:format("Verification failed: ~s",
+				[format_error(Response)]),
 	    ejabberd_s2s_in:handle_auth_failure(
 	      From, <<"dialback">>, Reason, State1)
     end.
@@ -326,10 +337,25 @@ format_error(#db_result{type = invalid}) ->
 format_error(#db_result{type = error, sub_els = Els}) ->
     %% TODO: improve xmpp.erl
     case xmpp:get_error(#message{sub_els = Els}) of
-	#stanza_error{reason = Reason} ->
-	    erlang:atom_to_binary(Reason, latin1);
+	#stanza_error{} = Err ->
+	    format_stanza_error(Err);
 	undefined ->
 	    <<"unrecognized error">>
     end;
 format_error(_) ->
     <<"unexpected dialback result">>.
+
+-spec format_stanza_error(stanza_error()) -> binary().
+format_stanza_error(#stanza_error{reason = Reason, text = Txt}) ->
+    Slogan = case Reason of
+		 undefined -> <<"no reason">>;
+		 #gone{} -> <<"gone">>;
+		 #redirect{} -> <<"redirect">>;
+		 _ -> erlang:atom_to_binary(Reason, latin1)
+	     end,
+    case Txt of
+	undefined -> Slogan;
+	#text{data = <<"">>} -> Slogan;
+	#text{data = Data} ->
+	    <<Data/binary, " (", Slogan/binary, ")">>
+    end.

@@ -227,19 +227,17 @@ xml_to_offline_msg(XML) ->
 el_to_offline_msg(El) ->
     To_s = fxml:get_tag_attr_s(<<"to">>, El),
     From_s = fxml:get_tag_attr_s(<<"from">>, El),
-    To = jid:from_string(To_s),
-    From = jid:from_string(From_s),
-    if To == error ->
+    try
+	To = jid:decode(To_s),
+	From = jid:decode(From_s),
+	{ok, #offline_msg{us = {To#jid.luser, To#jid.lserver},
+			  from = From,
+			  to = To,
+			  packet = El}}
+    catch _:{bad_jid, To_s} ->
 	    ?ERROR_MSG("failed to get 'to' JID from offline XML ~p", [El]),
 	    {error, bad_jid_to};
-       From == error ->
+	  _:{bad_jid, From_s} ->
 	    ?ERROR_MSG("failed to get 'from' JID from offline XML ~p", [El]),
-	    {error, bad_jid_from};
-       true ->
-	    {ok, #offline_msg{us = {To#jid.luser, To#jid.lserver},
-			      from = From,
-			      to = To,
-			      timestamp = undefined,
-			      expire = undefined,
-			      packet = El}}
+	    {error, bad_jid_from}
     end.

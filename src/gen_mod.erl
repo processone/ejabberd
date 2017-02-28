@@ -31,13 +31,13 @@
 -author('alexey@process-one.net').
 
 -export([init/1, start_link/0, start_child/3, start_child/4,
-	 stop_child/1, stop_child/2]).
--export([start/0, start_module/2, start_module/3,
+	 stop_child/1, stop_child/2, config_reloaded/0]).
+-export([start_module/2, start_module/3,
 	 stop_module/2, stop_module_keep_config/2, get_opt/3,
-	 get_opt/4, get_opt_host/3, opt_type/1,
+	 get_opt/4, get_opt_host/3, opt_type/1, is_equal_opt/5,
 	 get_module_opt/4, get_module_opt/5, get_module_opt_host/3,
 	 loaded_modules/1, loaded_modules_with_opts/1,
-	 get_hosts/2, get_module_proc/2, is_loaded/2,
+	 get_hosts/2, get_module_proc/2, is_loaded/2, is_loaded_elsewhere/2,
 	 start_modules/0, start_modules/1, stop_modules/0, stop_modules/1,
 	 db_mod/2, db_mod/3, ram_db_mod/2, ram_db_mod/3,
 	 db_type/2, db_type/3, ram_db_type/2, ram_db_type/3]).
@@ -46,18 +46,22 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
+-include_lib("stdlib/include/ms_transform.hrl").
 
 -record(ejabberd_module,
         {module_host = {undefined, <<"">>} :: {atom(), binary()},
          opts = [] :: opts() | '_' | '$2'}).
 
 -type opts() :: [{atom(), any()}].
--type db_type() :: sql | mnesia | riak.
+-type db_type() :: atom().
 
 -callback start(binary(), opts()) -> ok | {ok, pid()}.
 -callback stop(binary()) -> any().
+-callback reload(binary(), opts(), opts()) -> ok | {ok, pid()}.
 -callback mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
 -callback depends(binary(), opts()) -> [{module(), hard | soft}].
+
+-optional_callbacks([reload/3]).
 
 -export_type([opts/0]).
 -export_type([db_type/0]).
@@ -66,15 +70,19 @@
 -define(GEN_SERVER, gen_server).
 -endif.
 
-start() ->
-    Spec = {ejabberd_gen_mod_sup, {?MODULE, start_link, []},
-	    permanent, infinity, supervisor, [?MODULE]},
-    supervisor:start_child(ejabberd_sup, Spec).
-
 start_link() ->
-    supervisor:start_link({local, ejabberd_gen_mod_sup}, ?MODULE, []).
+    case supervisor:start_link({local, ejabberd_gen_mod_sup}, ?MODULE, []) of
+	{ok, Pid} ->
+	    gen_mod:start_modules(),
+	    {ok, Pid};
+	Err ->
+	    Err
+    end.
 
 init([]) ->
+    ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),
+    ejabberd_hooks:add(host_up, ?MODULE, start_modules, 40),
+    ejabberd_hooks:add(host_down, ?MODULE, stop_modules, 70),
     ets:new(ejabberd_modules,
 	    [named_table, public,
 	     {keypos, #ejabberd_module.module_host}]),
@@ -91,7 +99,7 @@ start_child(Mod, Host, Opts, Proc) ->
             transient, 2000, worker, [Mod]},
     supervisor:start_child(ejabberd_gen_mod_sup, Spec).
 
--spec stop_child(module(), binary() | global) -> ok.
+-spec stop_child(module(), binary() | global) -> ok | {error, any()}.
 stop_child(Mod, Host) ->
     stop_child(get_module_proc(Host, Mod)).
 
@@ -157,7 +165,7 @@ sort_modules(Host, ModOpts) ->
       end, ModOpts),
     [digraph:vertex(G, V) || V <- digraph_utils:topsort(G)].
 
--spec start_modules(binary()) -> any().
+-spec start_modules(binary()) -> ok.
 
 start_modules(Host) ->
     Modules = sort_modules(Host, get_modules_options(Host)),
@@ -166,7 +174,7 @@ start_modules(Host) ->
 	    start_module(Host, Module, Opts)
 	end, Modules).
 
--spec start_module(binary(), atom()) -> any().
+-spec start_module(binary(), atom()) -> ok | {ok, pid()} | {error, not_found_in_config}.
 
 start_module(Host, Module) ->
     Modules = get_modules_options(Host),
@@ -182,9 +190,7 @@ start_module(Host, Module) ->
 start_module(Host, Module, Opts0) ->
     ?DEBUG("loading ~s at ~s", [Module, Host]),
     Opts = validate_opts(Module, Opts0),
-    ets:insert(ejabberd_modules,
-	       #ejabberd_module{module_host = {Module, Host},
-				opts = Opts}),
+    store_options(Host, Module, Opts),
     try case Module:start(Host, Opts) of
 	    ok -> ok;
 	    {ok, Pid} when is_pid(Pid) -> {ok, Pid};
@@ -201,6 +207,77 @@ start_module(Host, Module, Opts0) ->
           maybe_halt_ejabberd(ErrorText),
 	  erlang:raise(Class, Reason, erlang:get_stacktrace())
     end.
+
+-spec reload_modules(binary()) -> ok.
+reload_modules(Host) ->
+    NewMods = ejabberd_config:get_option(
+		{modules, Host}, opt_type(modules), []),
+    OldMods = ets:select(
+		ejabberd_modules,
+		ets:fun2ms(
+		  fun(#ejabberd_module{module_host = {M, H}, opts = O})
+			when H == Host -> {M, O}
+		  end)),
+    lists:foreach(
+      fun({Mod, _Opts}) ->
+	      case lists:keymember(Mod, 1, NewMods) of
+		  false ->
+		      stop_module(Host, Mod);
+		  true ->
+		      ok
+	      end
+      end, OldMods),
+    lists:foreach(
+      fun({Mod, Opts}) ->
+	      case lists:keymember(Mod, 1, OldMods) of
+		  false ->
+		      start_module(Host, Mod, Opts);
+		  true ->
+		      ok
+	      end
+      end, NewMods),
+    lists:foreach(
+      fun({Mod, OldOpts}) ->
+	      case lists:keyfind(Mod, 1, NewMods) of
+		  {_, NewOpts} when NewOpts /= OldOpts ->
+		      reload_module(Host, Mod, NewOpts, OldOpts);
+		  _ ->
+		      ok
+	      end
+      end, OldMods).
+
+-spec reload_module(binary(), module(), opts(), opts()) -> ok | {ok, pid()}.
+reload_module(Host, Module, NewOpts0, OldOpts) ->
+    case erlang:function_exported(Module, reload, 3) of
+	true ->
+	    ?DEBUG("reloading ~s at ~s", [Module, Host]),
+	    NewOpts = validate_opts(Module, NewOpts0),
+	    store_options(Host, Module, NewOpts),
+	    try case Module:reload(Host, NewOpts, OldOpts) of
+		    ok -> ok;
+		    {ok, Pid} when is_pid(Pid) -> {ok, Pid};
+		    Err -> erlang:error(Err)
+		end
+	    catch Class:Reason ->
+		    StackTrace = erlang:get_stacktrace(),
+		    ?CRITICAL_MSG("failed to reload module ~s at ~s:~n"
+				  "** Reason = ~p",
+				  [Module, Host,
+				   {Class, {Reason, StackTrace}}]),
+		    erlang:raise(Class, Reason, StackTrace)
+	    end;
+	false ->
+	    ?WARNING_MSG("module ~s doesn't support reloading "
+			 "and will be restarted", [Module]),
+	    stop_module(Host, Module),
+	    start_module(Host, Module, NewOpts0)
+    end.
+
+-spec store_options(binary(), module(), opts()) -> true.
+store_options(Host, Module, Opts) ->
+    ets:insert(ejabberd_modules,
+	       #ejabberd_module{module_host = {Module, Host},
+				opts = Opts}).
 
 maybe_halt_ejabberd(ErrorText) ->
     case is_app_running(ejabberd) of
@@ -219,7 +296,7 @@ is_app_running(AppName) ->
     lists:keymember(AppName, 1,
 		    application:which_applications(Timeout)).
 
--spec stop_modules() -> any().
+-spec stop_modules() -> ok.
 
 stop_modules() ->
     lists:foreach(
@@ -227,7 +304,7 @@ stop_modules() ->
 	    stop_modules(Host)
 	end, ?MYHOSTS).
 
--spec stop_modules(binary()) -> any().
+-spec stop_modules(binary()) -> ok.
 
 stop_modules(Host) ->
     Modules = get_modules_options(Host),
@@ -239,6 +316,7 @@ stop_modules(Host) ->
 -spec stop_module(binary(), atom()) -> error | {aborted, any()} | {atomic, any()}.
 
 stop_module(Host, Module) ->
+    ?DEBUG("stopping ~s at ~s", [Module, Host]),
     case stop_module_keep_config(Host, Module) of
       error -> error;
       ok -> ok
@@ -437,7 +515,7 @@ db_type(Host, Module) when is_atom(Module) ->
 	    undefined
     end.
 
--spec db_type(binary(), opts(), module()) -> db_type().
+-spec db_type(binary() | global, opts(), module()) -> db_type().
 
 db_type(Host, Opts, Module) ->
     case catch Module:mod_opt_type(db_type) of
@@ -477,7 +555,7 @@ ram_db_type(Host, Module) when is_atom(Module) ->
 	    undefined
     end.
 
--spec ram_db_type(binary(), opts(), module()) -> db_type().
+-spec ram_db_type(binary() | global, opts(), module()) -> db_type().
 ram_db_type(Host, Opts, Module) ->
     case catch Module:mod_opt_type(ram_db_type) of
 	F when is_function(F) ->
@@ -544,5 +622,38 @@ get_module_proc(Host, Base) ->
 is_loaded(Host, Module) ->
     ets:member(ejabberd_modules, {Module, Host}).
 
-opt_type(modules) -> fun (L) when is_list(L) -> L end;
+-spec is_loaded_elsewhere(binary(), atom()) -> boolean().
+is_loaded_elsewhere(Host, Module) ->
+    ets:select_count(
+      ejabberd_modules,
+      ets:fun2ms(
+	fun(#ejabberd_module{module_host = {Mod, H}}) ->
+		(Mod == Module) and (H /= Host)
+	end)) /= 0.
+
+-spec config_reloaded() -> ok.
+config_reloaded() ->
+    lists:foreach(
+      fun(Host) ->
+	      reload_modules(Host)
+      end, ?MYHOSTS).
+
+-spec is_equal_opt(atom(), opts(), opts(), check_fun(), any()) ->
+			  true | {false, any(), any()}.
+is_equal_opt(Opt, NewOpts, OldOpts, VFun, Default) ->
+    NewVal = get_opt(Opt, NewOpts, VFun, Default),
+    OldVal = get_opt(Opt, OldOpts, VFun, Default),
+    if NewVal /= OldVal ->
+	    {false, NewVal, OldVal};
+       true ->
+	    true
+    end.
+
+opt_type(modules) ->
+    fun(Mods) ->
+	    lists:map(
+	      fun({M, A}) when is_atom(M), is_list(A) ->
+		      {M, A}
+	      end, Mods)
+    end;
 opt_type(_) -> [modules].

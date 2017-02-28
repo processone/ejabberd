@@ -29,12 +29,7 @@
 
 -export([get_string/0, uniform/0, uniform/1, bytes/1]).
 
--export([start/0]).
-
 -define(THRESHOLD, 16#10000000000000000).
-
-start() ->
-    ok.
 
 get_string() ->
     R = crypto:rand_uniform(0, ?THRESHOLD),

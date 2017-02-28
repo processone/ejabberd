@@ -163,14 +163,14 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-handle_info({route, From, To, Packet}, State) ->
-    case catch do_route(State, From, To, Packet) of
+handle_info({route, Packet}, State) ->
+    case catch do_route(State, Packet) of
 	{'EXIT', _} = Err ->
 	    try
-		?ERROR_MSG("failed to route packet ~p from '~s' to '~s': ~p",
-			   [Packet, jid:to_string(From), jid:to_string(To), Err]),
+		?ERROR_MSG("failed to route packet:~n~s~nReason: ~p",
+			   [xmpp:pp(Packet), Err]),
 		Error = xmpp:err_internal_server_error(),
-		ejabberd_router:route_error(To, From, Packet, Error)
+		ejabberd_router:route_error(Packet, Error)
 	    catch _:_ ->
 		    ok
 	    end;
@@ -204,12 +204,12 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-do_route(_State, From, To, #iq{} = Packet) ->
-    ejabberd_router:process_iq(From, To, Packet);
-do_route(_State, From, To, #presence{type = unavailable})
+do_route(_State, #iq{} = Packet) ->
+    ejabberd_router:process_iq(Packet);
+do_route(_State, #presence{from = From, to = To, type = unavailable})
   when To#jid.luser /= <<"">> ->
     delete_presence(From, To);
-do_route(_State, _From, _To, _Packet) ->
+do_route(_State, _Packet) ->
     ok.
 
 subscribe_nodes(From, To, Nodes) ->
@@ -261,7 +261,7 @@ publish_participant(From, To) ->
     LFrom = jid:tolower(BareFrom),
     LTo = jid:tolower(jid:remove_resource(To)),
     Participant = #mix_participant{jid = BareFrom},
-    ItemID = p1_sha:sha(jid:to_string(LFrom)),
+    ItemID = p1_sha:sha(jid:encode(LFrom)),
     mod_pubsub:publish_item(
       LTo, To#jid.lserver, ?NS_MIX_NODES_PARTICIPANTS,
       From, ItemID, [xmpp:encode(Participant)]).
@@ -284,7 +284,7 @@ delete_presence(From, To) ->
 
 delete_participant(From, To) ->
     LFrom = jid:tolower(jid:remove_resource(From)),
-    ItemID = p1_sha:sha(jid:to_string(LFrom)),
+    ItemID = p1_sha:sha(jid:encode(LFrom)),
     delete_presence(From, To),
     delete_item(From, To, ?NS_MIX_NODES_PARTICIPANTS, ItemID).
 

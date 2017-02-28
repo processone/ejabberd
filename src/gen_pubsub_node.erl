@@ -83,7 +83,7 @@
 -callback purge_node(NodeIdx :: nodeIdx(),
 	Owner :: jid()) ->
     {result, {default, broadcast}} |
-    {error, xmlel()}.
+    {error, stanza_error()}.
 
 -callback subscribe_node(NodeIdx :: nodeIdx(),
 	Sender :: jid(),
@@ -96,14 +96,14 @@
     {result, {default, subscribed, subId()}} |
     {result, {default, subscribed, subId(), send_last}} |
     {result, {default, pending, subId()}} |
-    {error, xmlel()}.
+    {error, stanza_error()}.
 
 -callback unsubscribe_node(NodeIdx :: nodeIdx(),
 	Sender :: jid(),
 	Subscriber :: jid(),
 	SubId :: subId()) ->
-    {result, default} |
-    {error, xmlel()}.
+    {result, []} |
+    {error, stanza_error()}.
 
 -callback publish_item(NodeId :: nodeIdx(),
 	Publisher :: jid(),
@@ -113,14 +113,14 @@
 	Payload :: payload(),
 	Options :: pubOptions()) ->
     {result, {default, broadcast, [itemId()]}} |
-    {error, xmlel()}.
+    {error, stanza_error()}.
 
 -callback delete_item(NodeIdx :: nodeIdx(),
 	Publisher :: jid(),
 	PublishModel :: publishModel(),
 	ItemId :: <<>> | itemId()) ->
     {result, {default, broadcast}} |
-    {error, xmlel()}.
+    {error, stanza_error()}.
 
 -callback remove_extra_items(NodeIdx :: nodeIdx(),
 	Max_Items :: unlimited | non_neg_integer(),
@@ -143,7 +143,7 @@
 	Owner :: jid(),
 	Affiliation :: affiliation()) ->
     ok |
-    {error, xmlel()}.
+    {error, stanza_error()}.
 
 -callback get_node_subscriptions(NodeIdx :: nodeIdx()) ->
     {result,
@@ -173,7 +173,7 @@
 
 -callback set_state(State::pubsubState()) ->
     ok |
-    {error, xmlel()}.
+    {error, stanza_error()}.
 
 -callback get_items(nodeIdx(), jid(), accessModel(),
 		    boolean(), boolean(), binary(),
@@ -191,12 +191,12 @@
 	RosterGroup :: boolean(),
 	SubId :: subId()) ->
     {result, pubsubItem()} |
-    {error, xmlel()}.
+    {error, stanza_error()}.
 
 -callback get_item(NodeIdx :: nodeIdx(),
 	ItemId :: itemId()) ->
     {result, pubsubItem()} |
-    {error, xmlel()}.
+    {error, stanza_error()}.
 
 -callback set_item(Item :: pubsubItem()) ->
     ok.

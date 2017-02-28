@@ -707,7 +707,13 @@ del_state(#pubsub_state{stateid = {Key, Nidx}, items = Items}) ->
 	[] ->
 	    ok;
 	_ ->
-	    Orphan = #pubsub_orphan{nodeid = Nidx, items = Items},
+	    Orphan = #pubsub_orphan{nodeid = Nidx, items =
+		case mnesia:read({pubsub_orphan, Nidx}) of
+		    [#pubsub_orphan{items = ItemIds}] ->
+			lists:usort(ItemIds++Items);
+		  _ ->
+			Items
+		end},
 	    mnesia:write(Orphan)
     end,
     mnesia:delete({pubsub_state, {Key, Nidx}}).

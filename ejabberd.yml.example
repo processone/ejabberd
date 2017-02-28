@@ -702,10 +702,17 @@ modules:
   mod_vcard:
     search: false
   mod_version: {}
-  # Since 17.02 S2S Dialback (XEP-0220) and Stream Management (XEP-0198)
-  # are implemented in modules
+  mod_stream_mgmt: {}
+  ##   Non-SASL Authentication (XEP-0078) is now disabled by default
+  ##   because it's obsoleted and is used mostly by abandoned
+  ##   client software
+  ## mod_legacy_auth: {}
+  ##   The module for S2S dialback (XEP-0220). Please note that you cannot
+  ##   rely solely on dialback if you want to federate with other servers,
+  ##   because a lot of servers have dialback disabled and instead rely on
+  ##   PKIX authentication. Make sure you have proper certificates installed
+  ##   and check your accessibility at https://xmpp.net/
   mod_s2s_dialback: {}
-  mod_sm: {}
 
 ##
 ## Enable modules with custom options in a specific virtual host

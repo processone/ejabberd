@@ -48,7 +48,7 @@
 		       {tls, inet:posix() | atom() | binary()} |
 		       {socket, inet:posix() | closed | timeout} |
 		       internal_failure.
-
+-export_type([state/0, stop_reason/0]).
 -callback init(list()) -> {ok, state()} | {error, term()} | ignore.
 -callback handle_cast(term(), state()) -> state().
 -callback handle_call(term(), term(), state()) -> state().
@@ -577,20 +577,9 @@ process_unauthenticated_packet(Pkt, #{mod := Mod} = State) ->
     end.
 
 -spec process_authenticated_packet(xmpp_element(), state()) -> state().
-process_authenticated_packet(Pkt, #{xmlns := NS, mod := Mod} = State) ->
+process_authenticated_packet(Pkt, #{mod := Mod} = State) ->
     Pkt1 = set_lang(Pkt, State),
     case set_from_to(Pkt1, State) of
-	{ok, #iq{type = set, sub_els = [_]} = Pkt2} when NS == ?NS_CLIENT ->
-	    case xmpp:get_subtag(Pkt2, #xmpp_session{}) of
-		#xmpp_session{} ->
-		    send_pkt(State, xmpp:make_iq_result(Pkt2));
-		_ ->
-		    try Mod:handle_authenticated_packet(Pkt2, State)
-		    catch _:undef ->
-			    Err = xmpp:err_service_unavailable(),
-			    send_error(State, Pkt, Err)
-		    end
-	    end;
 	{ok, Pkt2} ->
 	    try Mod:handle_authenticated_packet(Pkt2, State)
 	    catch _:undef ->
@@ -603,25 +592,17 @@ process_authenticated_packet(Pkt, #{xmlns := NS, mod := Mod} = State) ->
 
 -spec process_bind(xmpp_element(), state()) -> state().
 process_bind(#iq{type = set, sub_els = [_]} = Pkt,
-	     #{xmlns := ?NS_CLIENT, mod := Mod, lang := Lang} = State) ->
+	     #{xmlns := ?NS_CLIENT, mod := Mod} = State) ->
     case xmpp:get_subtag(Pkt, #bind{}) of
 	#bind{resource = R} ->
-	    case jid:resourceprep(R) of
-		error ->
-		    Txt = <<"Malformed resource">>,
-		    Err = xmpp:err_bad_request(Txt, Lang),
-		    send_error(State, Pkt, Err);
-		_ ->
-		    case Mod:bind(R, State) of
-			{ok, #{user := U,
-			       server := S,
-			       resource := NewR} = State1} when NewR /= <<"">> ->
-			    Reply = #bind{jid = jid:make(U, S, NewR)},
-			    State2 = send_pkt(State1, xmpp:make_iq_result(Pkt, Reply)),
-			    process_stream_established(State2);
-			{error, #stanza_error{}, State1} = Err ->
-			    send_error(State1, Pkt, Err)
-		    end
+	    case Mod:bind(R, State) of
+		{ok, #{user := U, server := S, resource := NewR} = State1}
+		  when NewR /= <<"">> ->
+		    Reply = #bind{jid = jid:make(U, S, NewR)},
+		    State2 = send_pkt(State1, xmpp:make_iq_result(Pkt, Reply)),
+		    process_stream_established(State2);
+		{error, #stanza_error{} = Err, State1} ->
+		    send_error(State1, Pkt, Err)
 	    end;
 	_ ->
 	    try Mod:handle_unbinded_packet(Pkt, State)

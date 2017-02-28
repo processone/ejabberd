@@ -28,7 +28,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, depends/2, muc_online_rooms/1,
+-export([start/2, stop/1, reload/3, depends/2, muc_online_rooms/1,
 	 muc_unregister_nick/1, create_room/3, destroy_room/2,
 	 create_room_with_opts/4,
 	 create_rooms_file/1, destroy_rooms_file/1,
@@ -66,6 +66,9 @@ stop(Host) ->
     ejabberd_hooks:delete(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:delete(webadmin_page_main, ?MODULE, web_page_main, 50),
     ejabberd_hooks:delete(webadmin_page_host, Host, ?MODULE, web_page_host, 50).
+
+reload(_Host, _NewOpts, _OldOpts) ->
+    ok.
 
 depends(_Host, _Opts) ->
     [{mod_muc, hard}].
@@ -714,7 +717,7 @@ get_room_occupants(Pid) ->
     S = get_room_state(Pid),
     lists:map(
       fun({_LJID, Info}) ->
-	      {jid:to_string(Info#user.jid),
+	      {jid:encode(Info#user.jid),
 	       Info#user.nick,
 	       atom_to_list(Info#user.role)}
       end,
@@ -729,9 +732,8 @@ get_room_occupants_number(Room, Host) ->
 %% http://xmpp.org/extensions/xep-0249.html
 
 send_direct_invitation(RoomName, RoomService, Password, Reason, UsersString) ->
-    RoomJid = jid:make(RoomName, RoomService, <<"">>),
-    RoomString = jid:to_string(RoomJid),
-    XmlEl = build_invitation(Password, Reason, RoomString),
+    RoomJid = jid:make(RoomName, RoomService),
+    XmlEl = build_invitation(Password, Reason, RoomJid),
     UsersStrings = get_users_to_invite(RoomJid, UsersString),
     [send_direct_invitation(RoomJid, UserStrings, XmlEl)
      || UserStrings <- UsersStrings],
@@ -742,11 +744,11 @@ get_users_to_invite(RoomJid, UsersString) ->
     UsersStrings = binary:split(UsersString, <<":">>, [global]),
     OccupantsTuples = get_room_occupants(RoomJid#jid.luser,
 					 RoomJid#jid.lserver),
-    OccupantsJids = [jid:from_string(JidString)
+    OccupantsJids = [jid:decode(JidString)
 		     || {JidString, _Nick, _} <- OccupantsTuples],
     lists:filtermap(
       fun(UserString) ->
-	      UserJid = jid:from_string(UserString),
+	      UserJid = jid:decode(UserString),
 	      Val = lists:all(fun(OccupantJid) ->
 				      UserJid#jid.luser /= OccupantJid#jid.luser
 					  orelse UserJid#jid.lserver /= OccupantJid#jid.lserver
@@ -759,24 +761,20 @@ get_users_to_invite(RoomJid, UsersString) ->
       end,
       UsersStrings).
 
-build_invitation(Password, Reason, RoomString) ->
-    PasswordAttrList = case Password of
-	<<"none">> -> [];
-	_ -> [{<<"password">>, Password}]
-    end,
-    ReasonAttrList = case Reason of
-	<<"none">> -> [];
-	_ -> [{<<"reason">>, Reason}]
-    end,
-    XAttrs = [{<<"xmlns">>, ?NS_XCONFERENCE},
-	      {<<"jid">>, RoomString}]
-	++ PasswordAttrList
-	++ ReasonAttrList,
-    XEl = {xmlel, <<"x">>, XAttrs, []},
-    {xmlel, <<"message">>, [], [XEl]}.
+build_invitation(Password, Reason, RoomJid) ->
+    Invite = #x_conference{jid = RoomJid,
+			   password = case Password of
+					  <<"none">> -> <<>>;
+					  _ -> Password
+				      end,
+			   reason = case Reason of
+					<<"none">> -> <<>>;
+					_ -> Reason
+				    end},
+    #message{sub_els = [Invite]}.
 
-send_direct_invitation(FromJid, UserJid, XmlEl) ->
-    ejabberd_router:route(FromJid, UserJid, XmlEl).
+send_direct_invitation(FromJid, UserJid, Msg) ->
+    ejabberd_router:route(xmpp:set_from_to(Msg, FromJid, UserJid)).
 
 %%----------------------------
 %% Change Room Option
@@ -920,7 +918,7 @@ set_room_affiliation(Name, Service, JID, AffiliationString) ->
     case mod_muc:find_online_room(Name, Service) of
 	{ok, Pid} ->
 	    %% Get the PID for the online room so we can get the state of the room
-	    {ok, StateData} = gen_fsm:sync_send_all_state_event(Pid, {process_item_change, {jid:from_string(JID), affiliation, Affiliation, <<"">>}, <<"">>}),
+	    {ok, StateData} = gen_fsm:sync_send_all_state_event(Pid, {process_item_change, {jid:decode(JID), affiliation, Affiliation, <<"">>}, <<"">>}),
 	    mod_muc:store_room(StateData#state.server_host, StateData#state.host, StateData#state.room, make_opts(StateData)),
 	    ok;
 	error ->
@@ -935,11 +933,9 @@ subscribe_room(_User, Nick, _Room, _Nodes) when Nick == <<"">> ->
     throw({error, "Nickname must be set"});
 subscribe_room(User, Nick, Room, Nodes) ->
     NodeList = re:split(Nodes, "\\h*,\\h*"),
-    case jid:from_string(Room) of
+    try jid:decode(Room) of
 	#jid{luser = Name, lserver = Host} when Name /= <<"">> ->
-	    case jid:from_string(User) of
-		error ->
-		    throw({error, "Malformed user JID"});
+	    try jid:decode(User) of
 		#jid{lresource = <<"">>} ->
 		    throw({error, "User's JID should have a resource"});
 		UserJID ->
@@ -956,17 +952,19 @@ subscribe_room(User, Nick, Room, Nodes) ->
 			_ ->
 			    throw({error, "The room does not exist"})
 		    end
+	    catch _:{bad_jid, _} ->
+		    throw({error, "Malformed user JID"})
 	    end;
 	_ ->
+	    throw({error, "Malformed room JID"})
+    catch _:{bad_jid, _} ->
 	    throw({error, "Malformed room JID"})
     end.
 
 unsubscribe_room(User, Room) ->
-    case jid:from_string(Room) of
+    try jid:decode(Room) of
 	#jid{luser = Name, lserver = Host} when Name /= <<"">> ->
-	    case jid:from_string(User) of
-		error ->
-		    throw({error, "Malformed user JID"});
+	    try jid:decode(User) of
 		UserJID ->
 		    case get_room_pid(Name, Host) of
 			Pid when is_pid(Pid) ->
@@ -981,8 +979,12 @@ unsubscribe_room(User, Room) ->
 			_ ->
 			    throw({error, "The room does not exist"})
 		    end
+	    catch _:{bad_jid, _} ->
+		    throw({error, "Malformed user JID"})
 	    end;
 	_ ->
+	    throw({error, "Malformed room JID"})
+    catch _:{bad_jid, _} ->
 	    throw({error, "Malformed room JID"})
     end.
 
@@ -990,7 +992,7 @@ get_subscribers(Name, Host) ->
     case get_room_pid(Name, Host) of
 	Pid when is_pid(Pid) ->
 	    {ok, JIDList} = gen_fsm:sync_send_all_state_event(Pid, get_subscribers),
-	    [jid:to_string(jid:remove_resource(J)) || J <- JIDList];
+	    [jid:encode(jid:remove_resource(J)) || J <- JIDList];
 	_ ->
 	    throw({error, "The room does not exist"})
     end.

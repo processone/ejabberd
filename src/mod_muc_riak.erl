@@ -178,7 +178,7 @@ import(_LServer, <<"muc_room">>,
       muc_room_schema());
 import(_LServer, <<"muc_registered">>,
        [J, RoomHost, Nick, _TimeStamp]) ->
-    #jid{user = U, server = S} = jid:from_string(J),
+    #jid{user = U, server = S} = jid:decode(J),
     R = #muc_registered{us_host = {{U, S}, RoomHost}, nick = Nick},
     ejabberd_riak:put(R, muc_registered_schema(),
 		      [{'2i', [{<<"nick_host">>, {Nick, RoomHost}}]}]).

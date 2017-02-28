@@ -126,14 +126,14 @@
 -record(eldap,
 	{version = ?LDAP_VERSION :: non_neg_integer(),
          hosts = []              :: [binary()],
-         host                    :: binary(),
+         host = undefined        :: binary() | undefined,
 	 port = 389              :: inet:port_number(),
          sockmod = gen_tcp       :: ssl | gen_tcp,
          tls = none              :: none | tls,
          tls_options = []        :: [{cacertfile, string()} |
                                      {depth, non_neg_integer()} |
                                      {verify, non_neg_integer()}],
-	 fd,
+	 fd                      :: gen_tcp:socket() | undefined,
          rootdn = <<"">>         :: binary(),
          passwd = <<"">>         :: binary(),
          id = 0                  :: non_neg_integer(),

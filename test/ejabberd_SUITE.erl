@@ -372,6 +372,7 @@ no_db_tests() ->
        s2s_required,
        s2s_required_trusted]},
      sm_tests:single_cases(),
+     sm_tests:master_slave_cases(),
      muc_tests:single_cases(),
      muc_tests:master_slave_cases(),
      proxy65_tests:single_cases(),
@@ -766,7 +767,8 @@ s2s_ping(Config) ->
     From = my_jid(Config),
     To = jid:make(?MNESIA_VHOST),
     ID = randoms:get_string(),
-    ejabberd_s2s:route(From, To, #iq{id = ID, type = get, sub_els = [#ping{}]}),
+    ejabberd_s2s:route(#iq{from = From, to = To, id = ID,
+			   type = get, sub_els = [#ping{}]}),
     #iq{type = result, id = ID, sub_els = []} = recv_iq(Config),
     disconnect(Config).
 

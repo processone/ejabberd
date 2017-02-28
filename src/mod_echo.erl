@@ -32,7 +32,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start/2, stop/1, do_client_version/3]).
+-export([start/2, stop/1, reload/3, do_client_version/3]).
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
@@ -53,6 +53,10 @@ start(Host, Opts) ->
 
 stop(Host) ->
     gen_mod:stop_child(?MODULE, Host).
+
+reload(Host, NewOpts, OldOpts) ->
+    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    gen_server:cast(Proc, {reload, Host, NewOpts, OldOpts}).
 
 depends(_Host, _Opts) ->
     [].
@@ -96,7 +100,21 @@ handle_call(stop, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast(_Msg, State) -> {noreply, State}.
+handle_cast({reload, Host, NewOpts, OldOpts}, State) ->
+    NewMyHost = gen_mod:get_opt_host(Host, NewOpts,
+				     <<"echo.@HOST@">>),
+    OldMyHost = gen_mod:get_opt_host(Host, OldOpts,
+				     <<"echo.@HOST@">>),
+    if NewMyHost /= OldMyHost ->
+	    ejabberd_router:register_route(NewMyHost, Host),
+	    ejabberd_router:unregister_route(OldMyHost);
+       true ->
+	    ok
+    end,
+    {noreply, State#state{host = NewMyHost}};
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
+    {noreply, State}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_info(Info, State) -> {noreply, State} |
@@ -104,17 +122,20 @@ handle_cast(_Msg, State) -> {noreply, State}.
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-handle_info({route, From, To, Packet}, State) ->
+handle_info({route, Packet}, State) ->
+    From = xmpp:get_from(Packet),
+    To = xmpp:get_to(Packet),
     Packet2 = case From#jid.user of
 		<<"">> ->
 		    Lang = xmpp:get_lang(Packet),
 		    Txt = <<"User part of JID in 'from' is empty">>,
 		    xmpp:make_error(
 		      Packet, xmpp:err_bad_request(Txt, Lang));
-		_ -> Packet
+		_ ->
+		    xmpp:set_from_to(Packet, To, From)
 	      end,
     do_client_version(disabled, To, From),
-    ejabberd_router:route(To, From, Packet2),
+    ejabberd_router:route(Packet2),
     {noreply, State};
 handle_info(_Info, State) -> {noreply, State}.
 
@@ -166,15 +187,16 @@ do_client_version(enabled, From, To) ->
     From2 = From#jid{resource = Random_resource,
 		     lresource = Random_resource},
     ID = randoms:get_string(),
-    Packet = #iq{from = From, to = To, type = get,
+    Packet = #iq{from = From2, to = To, type = get,
 		 id = randoms:get_string(),
 		 sub_els = [#version{}]},
-    ejabberd_router:route(From2, To, Packet),
+    ejabberd_router:route(Packet),
     receive
-	{route, To, From2,
-	 #iq{id = ID, type = result, sub_els = [#version{} = V]}} ->
+	{route,
+	 #iq{to = To, from = From2,
+	     id = ID, type = result, sub_els = [#version{} = V]}} ->
 	    ?INFO_MSG("Version of the client ~s:~n~s",
-		      [jid:to_string(To), xmpp:pp(V)])
+		      [jid:encode(To), xmpp:pp(V)])
     after 5000 -> % Timeout in miliseconds: 5 seconds
 	    []
     end.

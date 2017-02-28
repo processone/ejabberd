@@ -74,7 +74,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process/2, mod_opt_type/1, depends/2]).
+-export([start/2, stop/1, reload/3, process/2, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("xmpp.hrl").
@@ -125,6 +125,10 @@ stop(_Host) ->
     ejabberd_access_permissions:unregister_permission_addon(?MODULE),
     ok.
 
+reload(Host, NewOpts, _OldOpts) ->
+    stop(Host),
+    start(Host, NewOpts).
+
 depends(_Host, _Opts) ->
     [].
 
@@ -135,16 +139,16 @@ depends(_Host, _Opts) ->
 extract_auth(#request{auth = HTTPAuth, ip = {IP, _}}) ->
     Info = case HTTPAuth of
             {SJID, Pass} ->
-                case jid:from_string(SJID) of
+                try jid:decode(SJID) of
 		       #jid{luser = User, lserver = Server} ->
                         case ejabberd_auth:check_password(User, <<"">>, Server, Pass) of
 			       true ->
 				   #{usr => {User, Server, <<"">>}, caller_server => Server};
 			       false ->
 				   {error, invalid_auth}
-                        end;
-                    _ ->
-			   {error, invalid_auth}
+                        end
+		catch _:{bad_jid, _} ->
+			{error, invalid_auth}
                 end;
             {oauth, Token, _} ->
 		   case ejabberd_oauth:check_token(Token) of
@@ -456,6 +460,10 @@ format_result(Atom, {Name, atom}) ->
 
 format_result(Int, {Name, integer}) ->
     {jlib:atom_to_binary(Name), Int};
+
+format_result([String | _] = StringList, {Name, string}) when is_list(String) ->
+    Binarized = iolist_to_binary(string:join(StringList, "\n")),
+    {jlib:atom_to_binary(Name), Binarized};
 
 format_result(String, {Name, string}) ->
     {jlib:atom_to_binary(Name), iolist_to_binary(String)};

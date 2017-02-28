@@ -31,7 +31,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_iq/1, export/1, import_info/0,
+-export([start/2, stop/1, reload/3, process_iq/1, export/1, import_info/0,
 	 c2s_session_opened/1, c2s_copy_session/2, push_list_update/3,
 	 user_send_packet/1, user_receive_packet/1, disco_features/5,
 	 check_packet/4, remove_user/2, encode_list_item/1,
@@ -57,7 +57,7 @@
 -callback set_privacy_list(binary(), binary(), binary(), [listitem()]) -> {atomic, any()}.
 -callback get_user_list(binary(), binary()) -> {none | binary(), [listitem()]}.
 -callback get_user_lists(binary(), binary()) -> {ok, #privacy{}} | error.
--callback remove_user(binary(), binary()) -> {atomic, any()}.
+-callback remove_user(binary(), binary()) -> any().
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
@@ -98,6 +98,24 @@ stop(Host) ->
 			  remove_user, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
 				     ?NS_PRIVACY).
+
+reload(Host, NewOpts, OldOpts) ->
+    NewMod = gen_mod:db_mod(Host, NewOpts, ?MODULE),
+    OldMod = gen_mod:db_mod(Host, OldOpts, ?MODULE),
+    if NewMod /= OldMod ->
+	    NewMod:init(Host, NewOpts);
+       true ->
+	    ok
+    end,
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts,
+			      fun gen_iq_handler:check_type/1,
+			      one_queue) of
+	{false, IQDisc, _} ->
+	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PRIVACY,
+					  ?MODULE, process_iq, IQDisc);
+	true ->
+	    ok
+    end.
 
 -spec disco_features({error, stanza_error()} | {result, [binary()]} | empty,
 		     jid(), jid(), binary(), binary()) ->
@@ -218,7 +236,7 @@ encode_list_item(#listitem{action = Action,
 -spec encode_value(listitem_type(), listitem_value()) -> binary().
 encode_value(Type, Val) ->
     case Type of
-	jid -> jid:to_string(Val);
+	jid -> jid:encode(Val);
 	group -> Val;
 	subscription ->
 	    case Val of
@@ -234,7 +252,7 @@ encode_value(Type, Val) ->
 			  listitem_value().
 decode_value(Type, Value) ->
     case Type of
-	jid -> jid:tolower(jid:from_string(Value));
+	jid -> jid:tolower(jid:decode(Value));
 	subscription ->
 	    case Value of
 		<<"from">> -> from;
@@ -366,7 +384,7 @@ push_list_update(From, List, Name) ->
 		       sub_els = [#privacy_query{
 				     lists = [#privacy_list{name = Name}]}],
 		       meta = #{privacy_updated_list => List}},
-	      ejabberd_router:route(BareFrom, To, IQ)
+	      ejabberd_router:route(IQ)
       end, ejabberd_sm:get_user_resources(From#jid.luser, From#jid.lserver)).
 
 -spec user_send_packet({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
@@ -396,7 +414,7 @@ user_receive_packet({#iq{type = set, meta = #{privacy_updated_list := New}} = IQ
 		true ->
 		     State
 	     end,
-    From = jid:make(U, S, <<"">>),
+    From = jid:make(U, S),
     To = jid:make(U, S, R),
     {xmpp:set_from_to(IQ, From, To), State1};
 user_receive_packet(Acc) ->

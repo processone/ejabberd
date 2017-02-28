@@ -3,7 +3,7 @@ defmodule Ejabberd.Mixfile do
 
   def project do
     [app: :ejabberd,
-     version: "17.01.0",
+     version: "17.03.0",
      description: description,
      elixir: "~> 1.3",
      elixirc_paths: ["lib"],
@@ -57,7 +57,11 @@ defmodule Ejabberd.Mixfile do
   end
 
   defp deps_include(deps) do
-    Enum.map(deps, fn dep -> "deps/#{dep}/include" end)
+    base = case Mix.Project.deps_paths()[:ejabberd] do
+      nil -> "deps"
+      _ -> ".."
+    end
+    Enum.map(deps, fn dep -> base<>"/#{dep}/include" end)
   end
 
   defp cond_deps do

@@ -73,7 +73,7 @@ update_table() ->
             fun(#irc_custom{us_host = {_, H}}) -> H end,
             fun(#irc_custom{us_host = {{U, S}, H},
                             data = Data} = R) ->
-		    JID = jid:make(U, S, <<"">>),
+		    JID = jid:make(U, S),
                     R#irc_custom{us_host = {{iolist_to_binary(U),
                                              iolist_to_binary(S)},
                                             iolist_to_binary(H)},

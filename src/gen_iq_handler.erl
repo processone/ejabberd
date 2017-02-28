@@ -34,8 +34,8 @@
 
 %% API
 -export([start_link/3, add_iq_handler/6,
-	 remove_iq_handler/3, stop_iq_handler/3, handle/7,
-	 process_iq/6, check_type/1, transform_module_options/1]).
+	 remove_iq_handler/3, stop_iq_handler/3, handle/5,
+	 process_iq/4, check_type/1, transform_module_options/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
@@ -50,7 +50,7 @@
 -type component() :: ejabberd_sm | ejabberd_local.
 -type type() :: no_queue | one_queue | pos_integer() | parallel.
 -type opts() :: no_queue | {one_queue, pid()} | {queues, [pid()]} | parallel.
--export_type([opts/0]).
+-export_type([opts/0, type/0]).
 
 %%====================================================================
 %% API
@@ -110,38 +110,38 @@ stop_iq_handler(_Module, _Function, Opts) ->
       _ -> ok
     end.
 
--spec handle(binary(), atom(), atom(), opts(), jid(), jid(), iq()) -> any().
+-spec handle(binary(), atom(), atom(), opts(), iq()) -> any().
 
-handle(Host, Module, Function, Opts, From, To, IQ) ->
+handle(Host, Module, Function, Opts, IQ) ->
     case Opts of
 	no_queue ->
-	    process_iq(Host, Module, Function, From, To, IQ);
+	    process_iq(Host, Module, Function, IQ);
 	{one_queue, Pid} ->
-	    Pid ! {process_iq, From, To, IQ};
+	    Pid ! {process_iq, IQ};
 	{queues, Pids} ->
 	    Pid = lists:nth(erlang:phash(p1_time_compat:unique_integer(),
                                          length(Pids)), Pids),
-	    Pid ! {process_iq, From, To, IQ};
+	    Pid ! {process_iq, IQ};
 	parallel ->
-	    spawn(?MODULE, process_iq,
-		[Host, Module, Function, From, To, IQ]);
+	    spawn(?MODULE, process_iq, [Host, Module, Function, IQ]);
 	_ -> todo
     end.
 
--spec process_iq(binary(), atom(), atom(), jid(), jid(), iq()) -> any().
+-spec process_iq(binary(), atom(), atom(), iq()) -> any().
 
-process_iq(_Host, Module, Function, From, To, IQ0) ->
-    IQ = xmpp:set_from_to(IQ0, From, To),
+process_iq(_Host, Module, Function, IQ) ->
     try
 	ResIQ = case erlang:function_exported(Module, Function, 1) of
 		    true ->
 			process_iq(Module, Function, IQ);
 		    false ->
+			From = xmpp:get_from(IQ),
+			To = xmpp:get_to(IQ),
 			process_iq(Module, Function, From, To,
 				   jlib:iq_query_info(xmpp:encode(IQ)))
 		end,
 	if ResIQ /= ignore ->
-		ejabberd_router:route(To, From, ResIQ);
+		ejabberd_router:route(ResIQ);
 	   true ->
 		ok
 	end
@@ -150,7 +150,7 @@ process_iq(_Host, Module, Function, From, To, IQ0) ->
 		       [xmpp:pp(IQ), {E, {R, erlang:get_stacktrace()}}]),
 	    Txt = <<"Module failed to handle the query">>,
 	    Err = xmpp:err_internal_server_error(Txt, IQ#iq.lang),
-	    ejabberd_router:route_error(To, From, IQ, Err)
+	    ejabberd_router:route_error(IQ, Err)
     end.
 
 -spec process_iq(module(), atom(), iq()) -> ignore | iq().
@@ -170,7 +170,10 @@ process_iq(Module, Function, #iq{lang = Lang, sub_els = [El]} = IQ) ->
 process_iq(Module, Function, From, To, IQ) ->
     case Module:Function(From, To, IQ) of
 	ignore -> ignore;
-	ResIQ -> xmpp:decode(jlib:iq_to_xml(ResIQ), ?NS_CLIENT, [ignore_els])
+	ResIQ ->
+	    xmpp:set_from_to(
+	      xmpp:decode(jlib:iq_to_xml(ResIQ), ?NS_CLIENT, [ignore_els]),
+	      To, From)
     end.
 
 -spec check_type(type()) -> type().
@@ -204,11 +207,11 @@ handle_call(stop, _From, State) ->
 
 handle_cast(_Msg, State) -> {noreply, State}.
 
-handle_info({process_iq, From, To, IQ},
+handle_info({process_iq, IQ},
 	    #state{host = Host, module = Module,
 		   function = Function} =
 		State) ->
-    process_iq(Host, Module, Function, From, To, IQ),
+    process_iq(Host, Module, Function, IQ),
     {noreply, State};
 handle_info(_Info, State) -> {noreply, State}.
 

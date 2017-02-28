@@ -142,7 +142,7 @@ import(LServer, <<"sr_group">>, [Group, SOpts, _TimeStamp]) ->
                   opts = ejabberd_sql:decode_term(SOpts)},
     ejabberd_riak:put(G, sr_group_schema(), [{'2i', [{<<"host">>, LServer}]}]);
 import(LServer, <<"sr_user">>, [SJID, Group|_]) ->
-    #jid{luser = U, lserver = S} = jid:from_string(SJID),
+    #jid{luser = U, lserver = S} = jid:decode(SJID),
     User = #sr_user{us = {U, S}, group_host = {Group, LServer}},
     ejabberd_riak:put(User, sr_user_schema(),
                       [{i, {{U, S}, {Group, LServer}}},

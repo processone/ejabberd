@@ -123,7 +123,7 @@ get_group_explicit_users(Host, Group) ->
 	{selected, Rs} ->
 	    lists:map(
 	      fun({JID}) ->
-		      {U, S, _} = jid:tolower(jid:from_string(JID)),
+		      {U, S, _} = jid:tolower(jid:decode(JID)),
 		      {U, S}
 	      end, Rs);
 	_ ->
@@ -182,9 +182,7 @@ export(_Server) ->
      {sr_user,
       fun(Host, #sr_user{us = {U, S}, group_host = {Group, LServer}})
             when LServer == Host ->
-              SJID = jid:to_string(
-                       jid:tolower(
-                         jid:make(U, S, <<"">>))),
+              SJID = make_jid_s(U, S),
               [?SQL("select @(jid)s from sr_user where jid=%(SJID)s"
                     " and grp=%(Group)s;"),
                ?SQL("insert into sr_user(jid, grp) values ("
@@ -200,6 +198,6 @@ import(_, _, _) ->
 %%% Internal functions
 %%%===================================================================
 make_jid_s(U, S) ->
-    jid:to_string(jid:tolower(jid:make(U, S, <<"">>))).
+    jid:encode(jid:tolower(jid:make(U, S))).
 
 make_jid_s({U, S}) -> make_jid_s(U, S).

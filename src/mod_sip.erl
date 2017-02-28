@@ -29,7 +29,8 @@
 -behaviour(esip).
 
 %% API
--export([start/2, stop/1, make_response/2, is_my_host/1, at_my_host/1]).
+-export([start/2, stop/1, reload/3,
+	 make_response/2, is_my_host/1, at_my_host/1]).
 
 -export([data_in/2, data_out/2, message_in/2,
 	 message_out/2, request/2, request/3, response/2,
@@ -54,11 +55,14 @@ start(_Host, _Opts) ->
 		  {ejabberd_tmp_sup, start_link,
 		   [mod_sip_proxy_sup, mod_sip_proxy]},
 		  permanent, infinity, supervisor, [ejabberd_tmp_sup]},
-    supervisor:start_child(ejabberd_sup, Spec),
-    supervisor:start_child(ejabberd_sup, TmpSupSpec),
+    supervisor:start_child(ejabberd_gen_mod_sup, Spec),
+    supervisor:start_child(ejabberd_gen_mod_sup, TmpSupSpec),
     ok.
 
 stop(_Host) ->
+    ok.
+
+reload(_Host, _NewOpts, _OldOpts) ->
     ok.
 
 depends(_Host, _Opts) ->

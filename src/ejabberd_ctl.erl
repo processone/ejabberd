@@ -46,11 +46,15 @@
 -module(ejabberd_ctl).
 
 -behaviour(ejabberd_config).
+-behaviour(gen_server).
 -author('alexey@process-one.net').
 
--export([start/0, init/0, process/1, process2/2,
+-export([start/0, start_link/0, process/1, process2/2,
 	 register_commands/3, unregister_commands/3,
 	 opt_type/1]).
+%% gen_server callbacks
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+	 terminate/2, code_change/3]).
 
 -include("ejabberd_ctl.hrl").
 -include("ejabberd_commands.hrl").
@@ -59,6 +63,7 @@
 
 -define(DEFAULT_VERSION, 1000000).
 
+-record(state, {}).
 
 %%-----------------------------
 %% Module
@@ -103,10 +108,29 @@ start() ->
              end,
     halt(Status).
 
-init() ->
-    ets:new(ejabberd_ctl_cmds, [named_table, set, public]),
-    ets:new(ejabberd_ctl_host_cmds, [named_table, set, public]).
+start_link() ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
+init([]) ->
+    ets:new(ejabberd_ctl_cmds, [named_table, set, public]),
+    ets:new(ejabberd_ctl_host_cmds, [named_table, set, public]),
+    {ok, #state{}}.
+
+handle_call(_Request, _From, State) ->
+    Reply = ok,
+    {reply, Reply, State}.
+
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+handle_info(_Info, State) ->
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
+    ok.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
 
 %%-----------------------------
 %% ejabberdctl Command managment

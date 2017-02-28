@@ -29,7 +29,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, export/1,
+-export([start/2, stop/1, reload/3, export/1,
 	 import_info/0, webadmin_menu/3, webadmin_page/3,
 	 get_user_roster/2, c2s_session_opened/1,
 	 get_jid_info/4, import/5, process_item/2, import_start/2,
@@ -70,7 +70,7 @@
 -callback get_user_displayed_groups(binary(), binary(), group_options()) ->
     [{binary(), group_options()}].
 -callback is_user_in_group({binary(), binary()}, binary(), binary()) -> boolean().
--callback add_user_to_group(binary(), {binary(), binary()}, binary()) -> {atomic, any()}.
+-callback add_user_to_group(binary(), {binary(), binary()}, binary()) -> any().
 -callback remove_user_from_group(binary(), {binary(), binary()}, binary()) -> {atomic, any()}.
 
 start(Host, Opts) ->
@@ -127,8 +127,16 @@ stop(Host) ->
     ejabberd_hooks:delete(remove_user, Host, ?MODULE,
 			  remove_user,
 			  50).
-    %%ejabberd_hooks:delete(remove_user, Host,
-    %%    		  ?MODULE, remove_user, 50),
+
+reload(Host, NewOpts, OldOpts) ->
+    NewMod = gen_mod:db_mod(Host, NewOpts, ?MODULE),
+    OldMod = gen_mod:db_mod(Host, OldOpts, ?MODULE),
+    if NewMod /= OldMod ->
+	    NewMod:init(Host, NewOpts);
+       true ->
+	    ok
+    end,
+    ok.
 
 depends(_Host, _Opts) ->
     [].
@@ -232,12 +240,10 @@ process_item(RosterItem, Host) ->
 	    %% existing roster groups.
 	    [] ->
 		mod_roster:out_subscription(UserTo, ServerTo,
-					    jid:make(UserFrom, ServerFrom,
-							  <<"">>),
+					    jid:make(UserFrom, ServerFrom),
 					    unsubscribe),
-		mod_roster:in_subscription(aaaa, UserFrom, ServerFrom,
-					   jid:make(UserTo, ServerTo,
-							 <<"">>),
+		mod_roster:in_subscription(false, UserFrom, ServerFrom,
+					   jid:make(UserTo, ServerTo),
 					   unsubscribe, <<"">>),
 		RosterItem#roster{subscription = both, ask = none};
 	    %% If so, it means the user wants to add that contact
@@ -261,36 +267,36 @@ set_new_rosteritems(UserFrom, ServerFrom, UserTo,
     RIFrom = build_roster_record(UserFrom, ServerFrom,
 				 UserTo, ServerTo, NameTo, GroupsFrom),
     set_item(UserFrom, ServerFrom, ResourceTo, RIFrom),
-    JIDTo = jid:make(UserTo, ServerTo, <<"">>),
-    JIDFrom = jid:make(UserFrom, ServerFrom, <<"">>),
+    JIDTo = jid:make(UserTo, ServerTo),
+    JIDFrom = jid:make(UserFrom, ServerFrom),
     RITo = build_roster_record(UserTo, ServerTo, UserFrom,
 			       ServerFrom, UserFrom, []),
     set_item(UserTo, ServerTo, <<"">>, RITo),
     mod_roster:out_subscription(UserFrom, ServerFrom, JIDTo,
 				subscribe),
-    mod_roster:in_subscription(aaa, UserTo, ServerTo,
+    mod_roster:in_subscription(false, UserTo, ServerTo,
 			       JIDFrom, subscribe, <<"">>),
     mod_roster:out_subscription(UserTo, ServerTo, JIDFrom,
 				subscribed),
-    mod_roster:in_subscription(aaa, UserFrom, ServerFrom,
+    mod_roster:in_subscription(false, UserFrom, ServerFrom,
 			       JIDTo, subscribed, <<"">>),
     mod_roster:out_subscription(UserTo, ServerTo, JIDFrom,
 				subscribe),
-    mod_roster:in_subscription(aaa, UserFrom, ServerFrom,
+    mod_roster:in_subscription(false, UserFrom, ServerFrom,
 			       JIDTo, subscribe, <<"">>),
     mod_roster:out_subscription(UserFrom, ServerFrom, JIDTo,
 				subscribed),
-    mod_roster:in_subscription(aaa, UserTo, ServerTo,
+    mod_roster:in_subscription(false, UserTo, ServerTo,
 			       JIDFrom, subscribed, <<"">>),
     RIFrom.
 
 set_item(User, Server, Resource, Item) ->
-    ResIQ = #iq{type = set, id = <<"push", (randoms:get_string())/binary>>,
+    ResIQ = #iq{from = jid:make(User, Server, Resource),
+		to = jid:make(Server),
+		type = set, id = <<"push", (randoms:get_string())/binary>>,
 		sub_els = [#roster_query{
 			      items = [mod_roster:encode_item(Item)]}]},
-    ejabberd_router:route(jid:make(User, Server, Resource),
-			  jid:make(Server),
-			  ResIQ).
+    ejabberd_router:route(ResIQ).
 
 c2s_session_opened(#{jid := #jid{luser = LUser, lserver = LServer},
 		     pres_f := PresF, pres_t := PresT} = State) ->
@@ -352,10 +358,10 @@ in_subscription(Acc, User, Server, JID, Type,
 out_subscription(UserFrom, ServerFrom, JIDTo,
 		 unsubscribed) ->
     #jid{luser = UserTo, lserver = ServerTo} = JIDTo,
-    JIDFrom = jid:make(UserFrom, ServerFrom, <<"">>),
+    JIDFrom = jid:make(UserFrom, ServerFrom),
     mod_roster:out_subscription(UserTo, ServerTo, JIDFrom,
 				unsubscribe),
-    mod_roster:in_subscription(aaaa, UserFrom, ServerFrom,
+    mod_roster:in_subscription(false, UserFrom, ServerFrom,
 			       JIDTo, unsubscribe, <<"">>),
     process_subscription(out, UserFrom, ServerFrom, JIDTo,
 			 unsubscribed, false);
@@ -727,7 +733,8 @@ push_item(User, Server, Item) ->
 			       items = [mod_roster:encode_item(Item)]}]},
     lists:foreach(fun (Resource) ->
 			  JID = jid:make(User, Server, Resource),
-			  ejabberd_router:route(jid:remove_resource(JID), JID, Stanza)
+			  ejabberd_router:route(
+			    xmpp:set_from_to(Stanza, jid:remove_resource(JID), JID))
 		  end,
 		  ejabberd_sm:get_user_resources(User, Server)).
 
@@ -976,15 +983,13 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 					     <<"@all@">> -> USs;
 					     <<"@online@">> -> USs;
 					     _ ->
-						 case jid:from_string(SJID)
-						     of
-						   JID
-						       when is_record(JID,
-								      jid) ->
+						 try jid:decode(SJID) of
+						     JID ->
 						       [{JID#jid.luser,
 							 JID#jid.lserver}
-							| USs];
-						   error -> error
+							| USs]
+						 catch _:{bad_jid, _} ->
+							 error
 						 end
 					   end
 				   end,
@@ -1036,7 +1041,7 @@ get_opt(Opts, Opt, Default) ->
     end.
 
 us_to_list({User, Server}) ->
-    jid:to_string({User, Server, <<"">>}).
+    jid:encode({User, Server, <<"">>}).
 
 split_grouphost(Host, Group) ->
     case str:tokens(Group, <<"@">>) of
@@ -1045,7 +1050,7 @@ split_grouphost(Host, Group) ->
     end.
 
 broadcast_subscription(User, Server, ContactJid, Subscription) ->
-    ejabberd_sm:route(jid:make(User, Server, <<"">>),
+    ejabberd_sm:route(jid:make(User, Server),
                       {item, ContactJid, Subscription}).
 
 displayed_groups_update(Members, DisplayedGroups, Subscription) ->

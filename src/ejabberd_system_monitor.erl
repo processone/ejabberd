@@ -32,8 +32,8 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, process_command/3, register_hook/1,
-	 process_remote_command/1]).
+-export([start_link/0, process_command/1, register_hook/1,
+	 unregister_hook/1, process_remote_command/1]).
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3, opt_type/1]).
@@ -61,32 +61,34 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, Opts,
 			  []).
 
--spec process_command(jid(), jid(), stanza()) -> ok.
-process_command(From, To, Packet) ->
+-spec process_command(stanza()) -> ok.
+process_command(#message{from = From, to = To, body = Body}) ->
     case To of
-      #jid{luser = <<"">>, lresource = <<"watchdog">>} ->
-	  case Packet of
-	    #message{body = Body} ->
-		LFrom =
-		    jid:tolower(jid:remove_resource(From)),
-		case lists:member(LFrom, get_admin_jids()) of
-		  true ->
-		      BodyText = xmpp:get_text(Body),
-		      spawn(fun () ->
-				    process_flag(priority, high),
-				    process_command1(From, To, BodyText)
-			    end),
-		      ok;
-		  false -> ok
-		end;
-	    _ -> ok
-	  end;
-      _ -> ok
-    end.
+	#jid{luser = <<"">>, lresource = <<"watchdog">>} ->
+	    LFrom = jid:tolower(jid:remove_resource(From)),
+	    case lists:member(LFrom, get_admin_jids()) of
+		true ->
+		    BodyText = xmpp:get_text(Body),
+		    spawn(fun () ->
+				  process_flag(priority, high),
+				  process_command1(From, To, BodyText)
+			  end),
+		    ok;
+		false -> ok
+	    end;
+	_ ->
+	    ok
+    end;
+process_command(_) ->
+    ok.
 
 register_hook(Host) ->
     ejabberd_hooks:add(local_send_to_resource_hook, Host,
 		       ?MODULE, process_command, 50).
+
+unregister_hook(Host) ->
+    ejabberd_hooks:delete(local_send_to_resource_hook, Host,
+			  ?MODULE, process_command, 50).
 
 %%====================================================================
 %% gen_server callbacks
@@ -103,6 +105,8 @@ init(Opts) ->
     LH = proplists:get_value(large_heap, Opts),
     process_flag(priority, high),
     erlang:system_monitor(self(), [{large_heap, LH}]),
+    ejabberd_hooks:add(host_up, ?MODULE, register_hook, 50),
+    ejabberd_hooks:add(host_down, ?MODULE, unregister_hook, 60),
     lists:foreach(fun register_hook/1, ?MYHOSTS),
     {ok, #state{}}.
 
@@ -194,8 +198,9 @@ send_message(From, To, Body) ->
     send_message(From, To, Body, []).
 
 send_message(From, To, Body, ExtraEls) ->
-    ejabberd_router:route(From, To,
-			  #message{type = chat,
+    ejabberd_router:route(#message{type = chat,
+				   from = From,
+				   to = To,
 				   body = xmpp:mk_text(Body),
 				   sub_els = ExtraEls}).
 
@@ -204,7 +209,7 @@ get_admin_jids() ->
       watchdog_admins,
       fun(JIDs) ->
               [jid:tolower(
-                 jid:from_string(
+                 jid:decode(
                    iolist_to_binary(S))) || S <- JIDs]
       end, []).
 
@@ -336,7 +341,7 @@ process_remote_command(_) -> throw(unknown_command).
 
 opt_type(watchdog_admins) ->
     fun (JIDs) ->
-	    [jid:tolower(jid:from_string(iolist_to_binary(S)))
+	    [jid:tolower(jid:decode(iolist_to_binary(S)))
 	     || S <- JIDs]
     end;
 opt_type(watchdog_large_heap) ->

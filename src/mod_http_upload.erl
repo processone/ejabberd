@@ -121,7 +121,7 @@
 %%--------------------------------------------------------------------
 %% gen_mod/supervisor callbacks.
 %%--------------------------------------------------------------------
--spec start(binary(), gen_mod:opts()) -> {ok, _} | {ok, _, _} | {error, _}.
+-spec start(binary(), gen_mod:opts()) -> {ok, pid()}.
 
 start(ServerHost, Opts) ->
     case gen_mod:get_opt(rm_on_unregister, Opts,
@@ -136,7 +136,7 @@ start(ServerHost, Opts) ->
     Proc = get_proc_name(ServerHost, ?MODULE),
     gen_mod:start_child(?MODULE, ServerHost, Opts, Proc).
 
--spec stop(binary()) -> ok.
+-spec stop(binary()) -> ok | {error, any()}.
 
 stop(ServerHost) ->
     case gen_mod:get_module_opt(ServerHost, ?MODULE, rm_on_unregister,
@@ -211,7 +211,7 @@ depends(_Host, _Opts) ->
 %% gen_server callbacks.
 %%--------------------------------------------------------------------
 
--spec init({binary(), gen_mod:opts()}) -> {ok, state()}.
+-spec init(list()) -> {ok, state()}.
 
 init([ServerHost, Opts]) ->
     process_flag(trap_exit, true),
@@ -339,22 +339,29 @@ handle_cast(Request, State) ->
 
 -spec handle_info(timeout | _, state()) -> {noreply, state()}.
 
-handle_info({route, From, To, #iq{} = Packet}, State) ->
-    IQ = xmpp:decode_els(Packet),
-    {Reply, NewState} = case process_iq(From, IQ, State) of
-			    R when is_record(R, iq) ->
-				{R, State};
-			    {R, S} ->
-				{R, S};
-			    not_request ->
-				{none, State}
-			end,
-    if Reply /= none ->
-	    ejabberd_router:route(To, From, Reply);
-       true ->
-	    ok
-    end,
-    {noreply, NewState};
+handle_info({route, #iq{lang = Lang} = Packet}, State) ->
+    try xmpp:decode_els(Packet) of
+	IQ ->
+	    {Reply, NewState} = case process_iq(IQ, State) of
+				    R when is_record(R, iq) ->
+					{R, State};
+				    {R, S} ->
+					{R, S};
+				    not_request ->
+					{none, State}
+				end,
+	    if Reply /= none ->
+		    ejabberd_router:route(Reply);
+	       true ->
+		    ok
+	    end,
+	    {noreply, NewState}
+    catch _:{xmpp_codec, Why} ->
+	    Txt = xmpp:io_format_error(Why),
+	    Err = xmpp:err_bad_request(Txt, Lang),
+	    ejabberd_router:route_error(Packet, Err),
+	    {noreply, State}
+    end;
 handle_info({slot_timed_out, Slot}, State) ->
     NewState = del_slot(Slot, State),
     {noreply, NewState};
@@ -510,19 +517,20 @@ expand_host(Subject, Host) ->
 
 %% XMPP request handling.
 
--spec process_iq(jid(), iq(), state()) -> {iq(), state()} | iq() | not_request.
+-spec process_iq(iq(), state()) -> {iq(), state()} | iq() | not_request.
 
-process_iq(_From,
-	   #iq{type = get, lang = Lang, sub_els = [#disco_info{}]} = IQ,
+process_iq(#iq{type = get, lang = Lang, sub_els = [#disco_info{}]} = IQ,
 	   #state{server_host = ServerHost, name = Name}) ->
     AddInfo = ejabberd_hooks:run_fold(disco_info, ServerHost, [],
 				      [ServerHost, ?MODULE, <<"">>, <<"">>]),
     xmpp:make_iq_result(IQ, iq_disco_info(ServerHost, Lang, Name, AddInfo));
-process_iq(From, #iq{type = get, lang = Lang,
-		     sub_els = [#upload_request{filename = File,
-						size = Size,
-						'content-type' = CType,
-						xmlns = XMLNS}]} = IQ,
+process_iq(#iq{type = get, sub_els = [#disco_items{}]} = IQ, _State) ->
+    xmpp:make_iq_result(IQ, #disco_items{});
+process_iq(#iq{type = get, lang = Lang, from = From,
+	       sub_els = [#upload_request{filename = File,
+					  size = Size,
+					  'content-type' = CType,
+					  xmlns = XMLNS}]} = IQ,
 	   #state{server_host = ServerHost, access = Access} = State) ->
     case acl:match_rule(ServerHost, Access, From) of
 	allow ->
@@ -543,13 +551,14 @@ process_iq(From, #iq{type = get, lang = Lang,
 	    end;
 	deny ->
 	    ?DEBUG("Denying HTTP upload slot request from ~s",
-		   [jid:to_string(From)]),
+		   [jid:encode(From)]),
 	    Txt = <<"Denied by ACL">>,
 	    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang))
     end;
-process_iq(_From, #iq{type = T} = IQ, _State) when T == get; T == set ->
-    xmpp:make_error(IQ, xmpp:err_not_allowed());
-process_iq(_From, #iq{}, _State) ->
+process_iq(#iq{type = T, lang = Lang} = IQ, _State) when T == get; T == set ->
+    Txt = <<"No module is handling this query">>,
+    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang));
+process_iq(#iq{}, _State) ->
     not_request.
 
 -spec create_slot(state(), jid(), binary(), pos_integer(), binary(), binary())
@@ -560,7 +569,7 @@ create_slot(#state{service_url = undefined, max_size = MaxSize},
 						      Size > MaxSize ->
     Text = {<<"File larger than ~w bytes">>, [MaxSize]},
     ?INFO_MSG("Rejecting file ~s from ~s (too large: ~B bytes)",
-	      [File, jid:to_string(JID), Size]),
+	      [File, jid:encode(JID), Size]),
     {error, xmpp:err_not_acceptable(Text, Lang)};
 create_slot(#state{service_url = undefined,
 		   jid_in_url = JIDinURL,
@@ -576,7 +585,7 @@ create_slot(#state{service_url = undefined,
 	    RandStr = make_rand_string(SecretLength),
 	    FileStr = make_file_string(File),
 	    ?INFO_MSG("Got HTTP upload slot for ~s (file: ~s)",
-		      [jid:to_string(JID), File]),
+		      [jid:encode(JID), File]),
 	    {ok, [UserStr, RandStr, FileStr]};
 	deny ->
 	    {error, xmpp:err_service_unavailable()};
@@ -590,7 +599,7 @@ create_slot(#state{service_url = ServiceURL},
     HttpOptions = [{timeout, ?SERVICE_REQUEST_TIMEOUT}],
     SizeStr = integer_to_binary(Size),
     GetRequest = binary_to_list(ServiceURL) ++
-		     "?jid=" ++ ?URL_ENC(jid:to_string({U, S, <<"">>})) ++
+		     "?jid=" ++ ?URL_ENC(jid:encode({U, S, <<"">>})) ++
 		     "&name=" ++ ?URL_ENC(File) ++
 		     "&size=" ++ ?URL_ENC(SizeStr) ++
 		     "&content_type=" ++ ?URL_ENC(ContentType),
@@ -600,33 +609,33 @@ create_slot(#state{service_url = ServiceURL},
 		[<<"http", _/binary>> = PutURL,
 		 <<"http", _/binary>> = GetURL] ->
 		    ?INFO_MSG("Got HTTP upload slot for ~s (file: ~s)",
-			      [jid:to_string(JID), File]),
+			      [jid:encode(JID), File]),
 		    {ok, PutURL, GetURL};
 		Lines ->
 		    ?ERROR_MSG("Can't parse data received for ~s from <~s>: ~p",
-			       [jid:to_string(JID), ServiceURL, Lines]),
+			       [jid:encode(JID), ServiceURL, Lines]),
 		    Txt = <<"Failed to parse HTTP response">>,
 		    {error, xmpp:err_service_unavailable(Txt, Lang)}
 	    end;
 	{ok, {402, _Body}} ->
 	    ?INFO_MSG("Got status code 402 for ~s from <~s>",
-		      [jid:to_string(JID), ServiceURL]),
+		      [jid:encode(JID), ServiceURL]),
 	    {error, xmpp:err_resource_constraint()};
 	{ok, {403, _Body}} ->
 	    ?INFO_MSG("Got status code 403 for ~s from <~s>",
-		      [jid:to_string(JID), ServiceURL]),
+		      [jid:encode(JID), ServiceURL]),
 	    {error, xmpp:err_not_allowed()};
 	{ok, {413, _Body}} ->
 	    ?INFO_MSG("Got status code 413 for ~s from <~s>",
-		      [jid:to_string(JID), ServiceURL]),
+		      [jid:encode(JID), ServiceURL]),
 	    {error, xmpp:err_not_acceptable()};
 	{ok, {Code, _Body}} ->
 	    ?ERROR_MSG("Got unexpected status code for ~s from <~s>: ~B",
-		       [jid:to_string(JID), ServiceURL, Code]),
+		       [jid:encode(JID), ServiceURL, Code]),
 	    {error, xmpp:err_service_unavailable()};
 	{error, Reason} ->
 	    ?ERROR_MSG("Error requesting upload slot for ~s from <~s>: ~p",
-		       [jid:to_string(JID), ServiceURL, Reason]),
+		       [jid:encode(JID), ServiceURL, Reason]),
 	    {error, xmpp:err_service_unavailable()}
     end.
 
@@ -695,7 +704,7 @@ map_int_to_char(N) when N =< 61 -> N + 61. % Lower-case character.
 yield_content_type(<<"">>) -> ?DEFAULT_CONTENT_TYPE;
 yield_content_type(Type) -> Type.
 
--spec iq_disco_info(binary(), binary(), binary(), [xdata()]) -> [xmlel()].
+-spec iq_disco_info(binary(), binary(), binary(), [xdata()]) -> disco_info().
 
 iq_disco_info(Host, Lang, Name, AddInfo) ->
     Form = case gen_mod:get_module_opt(Host, ?MODULE, max_size,
@@ -717,7 +726,8 @@ iq_disco_info(Host, Lang, Name, AddInfo) ->
     #disco_info{identities = [#identity{category = <<"store">>,
 					type = <<"file">>,
 					name = translate:translate(Lang, Name)}],
-		features = [?NS_HTTP_UPLOAD, ?NS_HTTP_UPLOAD_OLD],
+		features = [?NS_HTTP_UPLOAD, ?NS_HTTP_UPLOAD_OLD,
+			    ?NS_DISCO_INFO, ?NS_DISCO_ITEMS],
 		xdata = Form}.
 
 %% HTTP request handling.
@@ -929,7 +939,7 @@ remove_user(User, Server) ->
 				      end,
 				      sha1),
     DocRoot1 = expand_host(expand_home(DocRoot), ServerHost),
-    UserStr = make_user_string(jid:make(User, Server, <<"">>), JIDinURL),
+    UserStr = make_user_string(jid:make(User, Server), JIDinURL),
     UserDir = str:join([DocRoot1, UserStr], <<$/>>),
     case del_tree(UserDir) of
 	ok ->

@@ -27,7 +27,8 @@
 -type ip() :: {inet:ip_address(), inet:port_number()} | undefined.
 -type info() :: [{conn, atom()} | {ip, ip()} | {node, atom()}
                  | {oor, boolean()} | {auth_module, atom()}
-                 | {num_stanzas_in, non_neg_integer()}].
+                 | {num_stanzas_in, non_neg_integer()}
+		 | offline].
 -type prio() :: undefined | integer().
 
 -endif.

@@ -218,8 +218,8 @@ replace_from_to_attrs(From, To, Attrs) ->
 replace_from_to(From, To,
 		#xmlel{name = Name, attrs = Attrs, children = Els}) ->
     NewAttrs =
-	replace_from_to_attrs(jid:to_string(From),
-			      jid:to_string(To), Attrs),
+	replace_from_to_attrs(jid:encode(From),
+			      jid:encode(To), Attrs),
     #xmlel{name = Name, attrs = NewAttrs, children = Els}.
 
 -spec replace_from_attrs(binary(), [attr()]) -> [attr()].
@@ -232,7 +232,7 @@ replace_from_attrs(From, Attrs) ->
 
 replace_from(From,
 	     #xmlel{name = Name, attrs = Attrs, children = Els}) ->
-    NewAttrs = replace_from_attrs(jid:to_string(From),
+    NewAttrs = replace_from_attrs(jid:encode(From),
 				  Attrs),
     #xmlel{name = Name, attrs = NewAttrs, children = Els}.
 
@@ -261,12 +261,13 @@ split_jid(J) ->
 -spec string_to_jid(binary()) -> jid() | error.
 
 string_to_jid(S) ->
-    jid:from_string(S).
+    try jid:decode(S)
+    catch _:_ -> error end.
 
 -spec jid_to_string(jid() | ljid()) -> binary().
 
 jid_to_string(J) ->
-    jid:to_string(J).
+    jid:encode(J).
 
 -spec is_nodename(binary()) -> boolean().
 
@@ -626,7 +627,7 @@ add_delay_info(El, From, Time, Desc) ->
 		       -> xmlel() | error.
 
 create_delay_tag(TimeStamp, FromJID, Desc) when is_tuple(FromJID) ->
-    From = jid:to_string(FromJID),
+    From = jid:encode(FromJID),
     Stamp = now_to_utc_string(TimeStamp, 3),
     Children = case Desc of
 		 <<"">> -> [];
@@ -638,7 +639,7 @@ create_delay_tag(TimeStamp, FromJID, Desc) when is_tuple(FromJID) ->
 		{<<"stamp">>, Stamp}],
 	   children = Children};
 create_delay_tag(DateTime, Host, Desc) when is_binary(Host) ->
-    FromJID = jid:make(<<"">>, Host, <<"">>),
+    FromJID = jid:make(Host),
     create_delay_tag(DateTime, FromJID, Desc).
 
 -type tz() :: {binary(), {integer(), integer()}} | {integer(), integer()} | utc.

@@ -25,12 +25,13 @@
 
 -module(acl).
 
+-behaviour(gen_server).
 -behaviour(ejabberd_config).
 
 -author('alexey@process-one.net').
 
 -export([add_access/3, clear/0]).
--export([start/0, add/3, add_list/3, add_local/3, add_list_local/3,
+-export([start_link/0, add/3, add_list/3, add_local/3, add_list_local/3,
 	 load_from_config/0, match_rule/3, any_rules_allowed/3,
 	 transform_options/1, opt_type/1, acl_rule_matches/3,
 	 acl_rule_verify/1, access_matches/3,
@@ -38,6 +39,9 @@
 	 parse_ip_netmask/1,
 	 access_rules_validator/1, shaper_rules_validator/1,
 	 normalize_spec/1, resolve_access/2]).
+%% gen_server callbacks
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+	 terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -46,6 +50,7 @@
 -record(acl, {aclname, aclspec}).
 -record(access, {name       :: aclname(),
                  rules = [] :: [access_rule()]}).
+-record(state, {}).
 
 -type regexp() :: binary().
 -type iprange() :: {inet:ip_address(), integer()} | binary().
@@ -75,7 +80,10 @@
 
 -export_type([acl/0]).
 
-start() ->
+start_link() ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+init([]) ->
     ejabberd_mnesia:create(?MODULE, acl,
 			[{ram_copies, [node()]}, {type, bag},
                          {local_content, true},
@@ -86,8 +94,25 @@ start() ->
 			 {attributes, record_info(fields, access)}]),
     mnesia:add_table_copy(acl, node(), ram_copies),
     mnesia:add_table_copy(access, node(), ram_copies),
+    ejabberd_hooks:add(config_reloaded, ?MODULE, load_from_config, 20),
     load_from_config(),
+    {ok, #state{}}.
+
+handle_call(_Request, _From, State) ->
+    Reply = ok,
+    {reply, Reply, State}.
+
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+handle_info(_Info, State) ->
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
     ok.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
 
 -spec add(binary(), aclname(), aclspec()) -> ok | {error, any()}.
 
@@ -271,7 +296,7 @@ normalize_spec(Spec) ->
             end
     end.
 
--spec any_rules_allowed(global | binary(), access_name(),
+-spec any_rules_allowed(global | binary(), [access_name()],
                            jid() | ljid() | inet:ip_address()) -> boolean().
 
 any_rules_allowed(Host, Access, Entity) ->
@@ -460,7 +485,7 @@ resolve_access(Name, Host) when is_atom(Name) ->
 resolve_access(Rules, _Host) when is_list(Rules) ->
     Rules.
 
--spec access_matches(atom()|list(), any(), global|binary()) -> allow|deny.
+-spec access_matches(atom()|list(), any(), global|binary()) -> allow|deny|atom()|integer().
 access_matches(Rules, Data, Host) ->
     case resolve_access(Rules, Host) of
 	all -> allow;

@@ -31,7 +31,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, process_local_iq/1,
+-export([start/2, stop/1, reload/3, process_local_iq/1,
 	 mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
@@ -49,6 +49,17 @@ start(Host, Opts) ->
 stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host,
 				     ?NS_VERSION).
+
+reload(Host, NewOpts, OldOpts) ->
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts,
+			      fun gen_iq_handler:check_type/1,
+			      one_queue) of
+	{false, IQDisc, _} ->
+	    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VERSION,
+					  ?MODULE, process_local_iq, IQDisc);
+	true ->
+	    ok
+    end.
 
 process_local_iq(#iq{type = set, lang = Lang} = IQ) ->
     Txt = <<"Value 'set' of 'type' attribute is not allowed">>,

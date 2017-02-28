@@ -30,8 +30,7 @@
 
 -behaviour(application).
 
--export([start/2, prep_stop/1, stop/1,
-	 init/0, opt_type/1]).
+-export([start/2, prep_stop/1, stop/1, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -46,39 +45,21 @@ start(normal, _Args) ->
     start_apps(),
     start_elixir_application(),
     ejabberd:check_app(ejabberd),
-    randoms:start(),
     db_init(),
-    start(),
-    translate:start(),
-    ejabberd_access_permissions:start_link(),
-    ejabberd_ctl:init(),
-    ejabberd_commands:init(),
-    ejabberd_admin:start(),
     setup_if_elixir_conf_used(),
     ejabberd_config:start(),
     set_settings_from_config(),
-    acl:start(),
-    shaper:start(),
-    connect_nodes(),
-    Sup = ejabberd_sup:start_link(),
-    ejabberd_rdbms:start(),
-    ejabberd_riak_sup:start(),
-    ejabberd_redis:start(),
-    ejabberd_router:start(),
-    ejabberd_router_multicast:start(),
-    ejabberd_local:start(),
-    ejabberd_sm:start(),
-    cyrsasl:start(),
-    gen_mod:start(),
-    ext_mod:start(),
     maybe_add_nameservers(),
-    ejabberd_auth:start(),
-    ejabberd_oauth:start(),
-    gen_mod:start_modules(),
-    ejabberd_listener:start_listeners(),
-    register_elixir_config_hooks(),
-    ?INFO_MSG("ejabberd ~s is started in the node ~p", [?VERSION, node()]),
-    Sup;
+    connect_nodes(),
+    case ejabberd_sup:start_link() of
+	{ok, SupPid} ->
+	    register_elixir_config_hooks(),
+	    ?INFO_MSG("ejabberd ~s is started in the node ~p",
+		      [?VERSION, node()]),
+	    {ok, SupPid};
+	Err ->
+	    Err
+    end;
 start(_, _) ->
     {error, badarg}.
 
@@ -87,10 +68,8 @@ start(_, _) ->
 %% before shutting down the processes of the application.
 prep_stop(State) ->
     ejabberd_listener:stop_listeners(),
-    ejabberd_admin:stop(),
-    broadcast_c2s_shutdown(),
+    ejabberd_sm:stop(),
     gen_mod:stop_modules(),
-    timer:sleep(5000),
     State.
 
 %% All the processes were killed when this function is called
@@ -104,19 +83,6 @@ stop(_State) ->
 %%%
 %%% Internal functions
 %%%
-
-start() ->
-    spawn_link(?MODULE, init, []).
-
-init() ->
-    register(ejabberd, self()),
-    loop().
-
-loop() ->
-    receive
-	_ ->
-	    loop()
-    end.
 
 db_init() ->
     ejabberd_config:env_binary_to_list(mnesia, dir),
@@ -164,16 +130,6 @@ add_windows_nameservers() ->
     ?INFO_MSG("Adding machine's DNS IPs to Erlang system:~n~p", [IPTs]),
     lists:foreach(fun(IPT) -> inet_db:add_ns(IPT) end, IPTs).
 
-
-broadcast_c2s_shutdown() ->
-    Children = ejabberd_sm:get_all_pids(),
-    lists:foreach(
-      fun(C2SPid) when node(C2SPid) == node() ->
-	      ejabberd_c2s:send(C2SPid, xmpp:serr_system_shutdown());
-	 (_) ->
-	      ok
-      end, Children).
-
 %%%
 %%% PID file
 %%%
@@ -205,11 +161,6 @@ delete_pid_file() ->
     end.
 
 set_settings_from_config() ->
-    Level = ejabberd_config:get_option(
-              loglevel,
-              fun(P) when P>=0, P=<5 -> P end,
-              4),
-    ejabberd_logger:set(Level),
     Ticktime = ejabberd_config:get_option(
                  net_ticktime,
                  opt_type(net_ticktime),
@@ -229,16 +180,7 @@ opt_type(net_ticktime) ->
     fun (P) when is_integer(P), P > 0 -> P end;
 opt_type(cluster_nodes) ->
     fun (Ns) -> true = lists:all(fun is_atom/1, Ns), Ns end;
-opt_type(loglevel) ->
-    fun (P) when P >= 0, P =< 5 -> P end;
-opt_type(modules) ->
-    fun (Mods) ->
-	    lists:map(fun ({M, A}) when is_atom(M), is_list(A) ->
-			      {M, A}
-		      end,
-		      Mods)
-    end;
-opt_type(_) -> [cluster_nodes, loglevel, modules, net_ticktime].
+opt_type(_) -> [cluster_nodes, net_ticktime].
 
 setup_if_elixir_conf_used() ->
   case ejabberd_config:is_using_elixir_config() of

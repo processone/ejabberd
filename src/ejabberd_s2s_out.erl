@@ -40,7 +40,7 @@
 	 handle_unexpected_cast/2, process_downgraded/2]).
 %% API
 -export([start/3, start_link/3, connect/1, close/1, stop/1, send/2,
-	 route/2, establish/1, update_state/2, add_hooks/0]).
+	 route/2, establish/1, update_state/2, host_up/1, host_down/1]).
 
 -include("ejabberd.hrl").
 -include("xmpp.hrl").
@@ -66,12 +66,17 @@ start_link(From, To, Opts) ->
     xmpp_stream_out:start_link(?MODULE, [ejabberd_socket, From, To, Opts],
 			       ejabberd_config:fsm_limit_opts([])).
 
+-spec connect(pid()) -> ok.
 connect(Ref) ->
     xmpp_stream_out:connect(Ref).
 
+-spec close(pid()) -> ok;
+	   (state()) -> state().
 close(Ref) ->
     xmpp_stream_out:close(Ref).
 
+-spec stop(pid()) -> ok;
+	  (state()) -> no_return().
 stop(Ref) ->
     xmpp_stream_out:stop(Ref).
 
@@ -82,7 +87,8 @@ send(Stream, Pkt) ->
 
 -spec route(pid(), xmpp_element()) -> ok.
 route(Ref, Pkt) ->
-    Ref ! {route, Pkt}.
+    Ref ! {route, Pkt},
+    ok.
 
 -spec establish(state()) -> state().
 establish(State) ->
@@ -93,21 +99,31 @@ establish(State) ->
 update_state(Ref, Callback) ->
     xmpp_stream_out:cast(Ref, {update_state, Callback}).
 
--spec add_hooks() -> ok.
-add_hooks() ->
-    lists:foreach(
-      fun(Host) ->
-	      ejabberd_hooks:add(s2s_out_auth_result, Host, ?MODULE,
-				 process_auth_result, 100),
-	      ejabberd_hooks:add(s2s_out_closed, Host, ?MODULE,
-				 process_closed, 100),
-	      ejabberd_hooks:add(s2s_out_handle_info, Host, ?MODULE,
-				 handle_unexpected_info, 100),
-	      ejabberd_hooks:add(s2s_out_handle_cast, Host, ?MODULE,
-				 handle_unexpected_cast, 100),
-	      ejabberd_hooks:add(s2s_out_downgraded, Host, ?MODULE,
-				 process_downgraded, 100)
-      end, ?MYHOSTS).
+-spec host_up(binary()) -> ok.
+host_up(Host) ->
+    ejabberd_hooks:add(s2s_out_auth_result, Host, ?MODULE,
+		       process_auth_result, 100),
+    ejabberd_hooks:add(s2s_out_closed, Host, ?MODULE,
+		       process_closed, 100),
+    ejabberd_hooks:add(s2s_out_handle_info, Host, ?MODULE,
+		       handle_unexpected_info, 100),
+    ejabberd_hooks:add(s2s_out_handle_cast, Host, ?MODULE,
+		       handle_unexpected_cast, 100),
+    ejabberd_hooks:add(s2s_out_downgraded, Host, ?MODULE,
+		       process_downgraded, 100).
+
+-spec host_down(binary()) -> ok.
+host_down(Host) ->
+    ejabberd_hooks:delete(s2s_out_auth_result, Host, ?MODULE,
+			  process_auth_result, 100),
+    ejabberd_hooks:delete(s2s_out_closed, Host, ?MODULE,
+			  process_closed, 100),
+    ejabberd_hooks:delete(s2s_out_handle_info, Host, ?MODULE,
+			  handle_unexpected_info, 100),
+    ejabberd_hooks:delete(s2s_out_handle_cast, Host, ?MODULE,
+			  handle_unexpected_cast, 100),
+    ejabberd_hooks:delete(s2s_out_downgraded, Host, ?MODULE,
+			  process_downgraded, 100).
 
 %%%===================================================================
 %%% Hooks
@@ -210,46 +226,48 @@ dns_timeout(#{server := LServer}) ->
 handle_auth_success(Mech, #{sockmod := SockMod,
 			    socket := Socket, ip := IP,
 			    remote_server := RServer,
+			    server_host := ServerHost,
 			    server := LServer} = State) ->
     ?INFO_MSG("(~s) Accepted outbound s2s ~s authentication ~s -> ~s (~s)",
 	      [SockMod:pp(Socket), Mech, LServer, RServer,
 	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
-    ejabberd_hooks:run_fold(s2s_out_auth_result, LServer, State, [true]).
+    ejabberd_hooks:run_fold(s2s_out_auth_result, ServerHost, State, [true]).
 
 handle_auth_failure(Mech, Reason,
 		    #{sockmod := SockMod,
 		      socket := Socket, ip := IP,
 		      remote_server := RServer,
+		      server_host := ServerHost,
 		      server := LServer} = State) ->
     ?INFO_MSG("(~s) Failed outbound s2s ~s authentication ~s -> ~s (~s): ~s",
 	      [SockMod:pp(Socket), Mech, LServer, RServer,
 	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP)),
 	       xmpp_stream_out:format_error(Reason)]),
-    ejabberd_hooks:run_fold(s2s_out_auth_result, LServer, State, [{false, Reason}]).
+    ejabberd_hooks:run_fold(s2s_out_auth_result, ServerHost, State, [{false, Reason}]).
 
-handle_packet(Pkt, #{server := LServer} = State) ->
-    ejabberd_hooks:run_fold(s2s_out_packet, LServer, State, [Pkt]).
+handle_packet(Pkt, #{server_host := ServerHost} = State) ->
+    ejabberd_hooks:run_fold(s2s_out_packet, ServerHost, State, [Pkt]).
 
-handle_stream_end(Reason, #{server := LServer} = State) ->
+handle_stream_end(Reason, #{server_host := ServerHost} = State) ->
     State1 = State#{stop_reason => Reason},
-    ejabberd_hooks:run_fold(s2s_out_closed, LServer, State1, [Reason]).
+    ejabberd_hooks:run_fold(s2s_out_closed, ServerHost, State1, [Reason]).
 
-handle_stream_downgraded(StreamStart, #{server := LServer} = State) ->
-    ejabberd_hooks:run_fold(s2s_out_downgraded, LServer, State, [StreamStart]).
+handle_stream_downgraded(StreamStart, #{server_host := ServerHost} = State) ->
+    ejabberd_hooks:run_fold(s2s_out_downgraded, ServerHost, State, [StreamStart]).
 
 handle_stream_established(State) ->
     State1 = State#{on_route => send},
     State2 = resend_queue(State1),
     set_idle_timeout(State2).
 
-handle_cdata(Data, #{server := LServer} = State) ->
-    ejabberd_hooks:run_fold(s2s_out_handle_cdata, LServer, State, [Data]).
+handle_cdata(Data, #{server_host := ServerHost} = State) ->
+    ejabberd_hooks:run_fold(s2s_out_handle_cdata, ServerHost, State, [Data]).
 
-handle_recv(El, Pkt, #{server := LServer} = State) ->
-    ejabberd_hooks:run_fold(s2s_out_handle_recv, LServer, State, [El, Pkt]).
+handle_recv(El, Pkt, #{server_host := ServerHost} = State) ->
+    ejabberd_hooks:run_fold(s2s_out_handle_recv, ServerHost, State, [El, Pkt]).
 
-handle_send(El, Pkt, #{server := LServer} = State) ->
-    ejabberd_hooks:run_fold(s2s_out_handle_send, LServer, State, [El, Pkt]).
+handle_send(El, Pkt, #{server_host := ServerHost} = State) ->
+    ejabberd_hooks:run_fold(s2s_out_handle_send, ServerHost, State, [El, Pkt]).
 
 handle_timeout(#{on_route := Action} = State) ->
     case Action of
@@ -258,25 +276,27 @@ handle_timeout(#{on_route := Action} = State) ->
     end.
 
 init([#{server := LServer, remote_server := RServer} = State, Opts]) ->
+    ServerHost = ejabberd_router:host_of_route(LServer),
     State1 = State#{on_route => queue,
 		    queue => queue:new(),
 		    xmlns => ?NS_SERVER,
 		    lang => ?MYLANG,
+		    server_host => ServerHost,
 		    shaper => none},
     ?INFO_MSG("Outbound s2s connection started: ~s -> ~s",
 	      [LServer, RServer]),
-    ejabberd_hooks:run_fold(s2s_out_init, LServer, {ok, State1}, [Opts]).
+    ejabberd_hooks:run_fold(s2s_out_init, ServerHost, {ok, State1}, [Opts]).
 
-handle_call(Request, From, #{server := LServer} = State) ->
-    ejabberd_hooks:run_fold(s2s_out_handle_call, LServer, State, [Request, From]).
+handle_call(Request, From, #{server_host := ServerHost} = State) ->
+    ejabberd_hooks:run_fold(s2s_out_handle_call, ServerHost, State, [Request, From]).
 
 handle_cast({update_state, Fun}, State) ->
     case Fun of
 	{M, F, A} -> erlang:apply(M, F, [State|A]);
 	_ when is_function(Fun) -> Fun(State)
 	  end;
-handle_cast(Msg, #{server := LServer} = State) ->
-    ejabberd_hooks:run_fold(s2s_out_handle_cast, LServer, State, [Msg]).
+handle_cast(Msg, #{server_host := ServerHost} = State) ->
+    ejabberd_hooks:run_fold(s2s_out_handle_cast, ServerHost, State, [Msg]).
 
 handle_info({route, Pkt}, #{queue := Q, on_route := Action} = State) ->
     case Action of
@@ -284,8 +304,8 @@ handle_info({route, Pkt}, #{queue := Q, on_route := Action} = State) ->
 	bounce -> bounce_packet(Pkt, State);
 	send -> set_idle_timeout(send(State, Pkt))
     end;
-handle_info(Info, #{server := LServer} = State) ->
-    ejabberd_hooks:run_fold(s2s_out_handle_info, LServer, State, [Info]).
+handle_info(Info, #{server_host := ServerHost} = State) ->
+    ejabberd_hooks:run_fold(s2s_out_handle_info, ServerHost, State, [Info]).
 
 terminate(Reason, #{server := LServer,
 		    remote_server := RServer} = State) ->
@@ -330,11 +350,9 @@ bounce_message_queue(State) ->
 
 -spec bounce_packet(xmpp_element(), state()) -> state().
 bounce_packet(Pkt, State) when ?is_stanza(Pkt) ->
-    From = xmpp:get_from(Pkt),
-    To = xmpp:get_to(Pkt),
     Lang = xmpp:get_lang(Pkt),
     Err = mk_bounce_error(Lang, State),
-    ejabberd_router:route_error(To, From, Pkt, Err),
+    ejabberd_router:route_error(Pkt, Err),
     State;
 bounce_packet(_, State) ->
     State.
@@ -400,7 +418,7 @@ transform_options({s2s_dns_options, S2SDNSOpts}, AllOpts) ->
 transform_options({Opt, T}, Opts)
   when Opt == outgoing_s2s_timeout; Opt == s2s_dns_timeout ->
     maybe_report_huge_timeout(Opt, T),
-    [{outgoing_s2s_timeout, T}|Opts];
+    [{Opt, T}|Opts];
 transform_options(Opt, Opts) ->
     [Opt|Opts].
 

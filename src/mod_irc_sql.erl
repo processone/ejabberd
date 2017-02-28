@@ -42,7 +42,7 @@ init(_Host, _Opts) ->
     ok.
 
 get_data(LServer, Host, From) ->
-    SJID = jid:to_string(jid:tolower(jid:remove_resource(From))),
+    SJID = jid:encode(jid:tolower(jid:remove_resource(From))),
     case catch ejabberd_sql:sql_query(
                  LServer,
                  ?SQL("select @(data)s from irc_custom"
@@ -54,7 +54,7 @@ get_data(LServer, Host, From) ->
     end.
 
 set_data(LServer, Host, From, Data) ->
-    SJID = jid:to_string(jid:tolower(jid:remove_resource(From))),
+    SJID = jid:encode(jid:tolower(jid:remove_resource(From))),
     SData = jlib:term_to_expr(Data),
     F = fun () ->
                 ?SQL_UPSERT_T(
@@ -72,7 +72,7 @@ export(_Server) ->
                             data = Data}) ->
               case str:suffix(Host, IRCHost) of
                   true ->
-                      SJID = jid:to_string(jid:make(U, S, <<"">>)),
+                      SJID = jid:encode(jid:make(U, S)),
                       SData = jlib:term_to_expr(Data),
                       [?SQL("delete from irc_custom"
                             " where jid=%(SJID)s and host=%(IRCHost)s;"),
@@ -86,7 +86,7 @@ export(_Server) ->
 import(_LServer) ->
     [{<<"select jid, host, data from irc_custom;">>,
       fun([SJID, IRCHost, SData]) ->
-              #jid{luser = U, lserver = S} = jid:from_string(SJID),
+              #jid{luser = U, lserver = S} = jid:decode(SJID),
               Data = ejabberd_sql:decode_term(SData),
               #irc_custom{us_host = {{U, S}, IRCHost},
                           data = Data}

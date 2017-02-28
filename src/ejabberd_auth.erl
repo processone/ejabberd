@@ -27,12 +27,14 @@
 
 -module(ejabberd_auth).
 
+-behaviour(gen_server).
 -behaviour(ejabberd_config).
 
 -author('alexey@process-one.net').
 
 %% External exports
--export([start/0, set_password/3, check_password/4,
+-export([start_link/0, host_up/1, host_down/1, config_reloaded/0,
+	 set_password/3, check_password/4,
 	 check_password/6, check_password_with_authmodule/4,
 	 check_password_with_authmodule/6, try_register/3,
 	 dirty_get_registered_users/0, get_vh_registered_users/1,
@@ -43,11 +45,20 @@
 	 is_user_exists/2, is_user_exists_in_other_modules/3,
 	 remove_user/2, remove_user/3, plain_password_required/1,
 	 store_type/1, entropy/1, backend_type/1]).
+%% gen_server callbacks
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+	 terminate/2, code_change/3]).
 
 -export([auth_modules/1, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
+
+-record(state, {host_modules = #{} :: map()}).
+
+-type scrammed_password() :: {binary(), binary(), binary(), non_neg_integer()}.
+-type password() :: binary() | scrammed_password().
+-export_type([password/0]).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -57,6 +68,7 @@
                  {offset, integer()}].
 
 -callback start(binary()) -> any().
+-callback stop(binary()) -> any().
 -callback plain_password_required() -> boolean().
 -callback store_type() -> plain | external | scram.
 -callback set_password(binary(), binary(), binary()) -> ok | {error, atom()}.
@@ -73,16 +85,82 @@
 -callback get_vh_registered_users(binary(), opts()) -> [{binary(), binary()}].
 -callback get_vh_registered_users_number(binary()) -> number().
 -callback get_vh_registered_users_number(binary(), opts()) -> number().
--callback get_password(binary(), binary()) -> false | binary() | {binary(), binary(), binary(), integer()}.
--callback get_password_s(binary(), binary()) -> binary() | {binary(), binary(), binary(), integer()}.
+-callback get_password(binary(), binary()) -> false | password().
+-callback get_password_s(binary(), binary()) -> password().
 
-start() ->
-    %% This is only executed by ejabberd_c2s for non-SASL auth client
-    lists:foreach(fun (Host) ->
-			  lists:foreach(fun (M) -> M:start(Host) end,
-					auth_modules(Host))
-		  end,
-		  ?MYHOSTS).
+-spec start_link() -> {ok, pid()} | {error, any()}.
+start_link() ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+init([]) ->
+    ejabberd_hooks:add(host_up, ?MODULE, host_up, 30),
+    ejabberd_hooks:add(host_down, ?MODULE, host_down, 80),
+    ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 40),
+    HostModules = lists:foldl(
+		    fun(Host, Acc) ->
+			    Modules = auth_modules(Host),
+			    start(Host, Modules),
+			    maps:put(Host, Modules, Acc)
+		    end, #{}, ?MYHOSTS),
+    {ok, #state{host_modules = HostModules}}.
+
+handle_call(_Request, _From, State) ->
+    Reply = ok,
+    {reply, Reply, State}.
+
+handle_cast({host_up, Host}, #state{host_modules = HostModules} = State) ->
+    Modules = auth_modules(Host),
+    start(Host, Modules),
+    NewHostModules = maps:put(Host, Modules, HostModules),
+    {noreply, State#state{host_modules = NewHostModules}};
+handle_cast({host_down, Host}, #state{host_modules = HostModules} = State) ->
+    Modules = maps:get(Host, HostModules, []),
+    stop(Host, Modules),
+    NewHostModules = maps:remove(Host, HostModules),
+    {noreply, State#state{host_modules = NewHostModules}};
+handle_cast(config_reloaded, #state{host_modules = HostModules} = State) ->
+    NewHostModules = lists:foldl(
+		       fun(Host, Acc) ->
+			       OldModules = maps:get(Host, HostModules, []),
+			       NewModules = auth_modules(Host),
+			       start(Host, NewModules -- OldModules),
+			       stop(Host, OldModules -- NewModules),
+			       maps:put(Host, NewModules, Acc)
+		       end, HostModules, ?MYHOSTS),
+    {noreply, State#state{host_modules = NewHostModules}};
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
+    {noreply, State}.
+
+handle_info(_Info, State) ->
+    {noreply, State}.
+
+terminate(_Reason, State) ->
+    ejabberd_hooks:delete(host_up, ?MODULE, start, 30),
+    ejabberd_hooks:delete(host_down, ?MODULE, stop, 80),
+    ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 40),
+    lists:foreach(
+      fun({Host, Modules}) ->
+	      stop(Host, Modules)
+      end, maps:to_list(State#state.host_modules)).
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
+
+start(Host, Modules) ->
+    lists:foreach(fun(M) -> M:start(Host) end, Modules).
+
+stop(Host, Modules) ->
+    lists:foreach(fun(M) -> M:stop(Host) end, Modules).
+
+host_up(Host) ->
+    gen_server:cast(?MODULE, {host_up, Host}).
+
+host_down(Host) ->
+    gen_server:cast(?MODULE, {host_down, Host}).
+
+config_reloaded() ->
+    gen_server:cast(?MODULE, config_reloaded).
 
 plain_password_required(Server) ->
     lists:any(fun (M) -> M:plain_password_required() end,
@@ -270,7 +348,7 @@ get_vh_registered_users_number(Server, Opts) ->
 			end,
 			auth_modules(Server))).
 
--spec get_password(binary(), binary()) -> false | binary() | {binary(), binary(), binary(), integer()}.
+-spec get_password(binary(), binary()) -> false | password().
 
 get_password(User, Server) ->
     lists:foldl(fun (M, false) ->
@@ -279,7 +357,7 @@ get_password(User, Server) ->
 		end,
 		false, auth_modules(Server)).
 
--spec get_password_s(binary(), binary()) -> binary() | {binary(), binary(), binary(), integer()}.
+-spec get_password_s(binary(), binary()) -> password().
 
 get_password_s(User, Server) ->
     case get_password(User, Server) of
@@ -290,7 +368,7 @@ get_password_s(User, Server) ->
 %% @doc Get the password of the user and the auth module.
 %% @spec (User::string(), Server::string()) ->
 %%     {Password::string(), AuthModule::atom()} | {false, none}
--spec get_password_with_authmodule(binary(), binary()) -> {false | binary(), atom()}.
+-spec get_password_with_authmodule(binary(), binary()) -> {false | password(), module()}.
 
 get_password_with_authmodule(User, Server) ->
 %% Returns true if the user exists in the DB or if an anonymous user is logged
@@ -422,24 +500,18 @@ backend_type(Mod) ->
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
-%% Return the lists of all the auth modules actually used in the
-%% configuration
+-spec auth_modules() -> [module()].
 auth_modules() ->
-    lists:usort(lists:flatmap(fun (Server) ->
-				      auth_modules(Server)
-			      end,
-			      ?MYHOSTS)).
+    lists:usort(lists:flatmap(fun auth_modules/1, ?MYHOSTS)).
 
--spec auth_modules(binary()) -> [atom()].
-
-%% Return the list of authenticated modules for a given host
+-spec auth_modules(binary()) -> [module()].
 auth_modules(Server) ->
     LServer = jid:nameprep(Server),
     Default = ejabberd_config:default_db(LServer, ?MODULE),
     Methods = ejabberd_config:get_option(
                 {auth_method, LServer}, opt_type(auth_method), [Default]),
     [jlib:binary_to_atom(<<"ejabberd_auth_",
-                           (jlib:atom_to_binary(M))/binary>>)
+			   (jlib:atom_to_binary(M))/binary>>)
      || M <- Methods].
 
 export(Server) ->

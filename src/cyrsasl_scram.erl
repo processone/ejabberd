@@ -42,8 +42,8 @@
          server_key = <<"">>   :: binary(),
          username = <<"">>     :: binary(),
 	 auth_module           :: module(),
-         get_password          :: fun(),
-	 check_password        :: fun(),
+         get_password          :: fun((binary()) ->
+				  {false | ejabberd_auth:password(), module()}),
          auth_message = <<"">> :: binary(),
          client_nonce = <<"">> :: binary(),
 	 server_nonce = <<"">> :: binary()}).
@@ -101,18 +101,22 @@ mech_step(#state{step = 2} = State, ClientIn) ->
 		  UserName ->
 		      case parse_attribute(ClientNonceAttribute) of
 			{$r, ClientNonce} ->
-			    {Ret, AuthModule} = (State#state.get_password)(UserName),
-			    case {Ret, jid:resourceprep(Ret)} of
-			      {false, _} -> {error, not_authorized, UserName};
-			      {_, error} when is_binary(Ret) -> {error, saslprep_failed, UserName};
-			      {Ret, _} ->
+			    {Pass, AuthModule} = (State#state.get_password)(UserName),
+			    LPass = if is_binary(Pass) -> jid:resourceprep(Pass);
+				       true -> Pass
+				    end,
+			    if Pass == false ->
+				  {error, not_authorized, UserName};
+			       LPass == error ->
+				  {error, saslprep_failed, UserName};
+			       true ->
 				  {StoredKey, ServerKey, Salt, IterationCount} =
-				      if is_tuple(Ret) -> Ret;
+				      if is_tuple(Pass) -> Pass;
 					 true ->
 					     TempSalt =
 						 randoms:bytes(?SALT_LENGTH),
 					     SaltedPassword =
-						 scram:salted_password(Ret,
+						 scram:salted_password(Pass,
 								       TempSalt,
 								       ?SCRAM_DEFAULT_ITERATION_COUNT),
 					     {scram:stored_key(scram:client_key(SaltedPassword)),

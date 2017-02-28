@@ -27,7 +27,7 @@
 -record(eldap_search,
 	{scope = wholeSubtree              :: scope(),
          base = <<"">>                     :: binary(),
-         filter                            :: eldap:filter(),
+         filter                            :: eldap:filter() | undefined,
          limit = 0                         :: non_neg_integer(),
 	 attributes = []                   :: [binary()],
          types_only = false                :: boolean(),

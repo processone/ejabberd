@@ -30,14 +30,14 @@
 -behaviour(gen_mod).
 
 %% API
--export([start/2, stop/1, depends/2]).
+-export([start/2, stop/1, reload/3, depends/2]).
 
 -export([user_send_packet/1, user_send_packet_strip_tag/1, user_receive_packet/1,
 	 process_iq_v0_2/1, process_iq_v0_3/1, disco_sm_features/5,
 	 remove_user/2, remove_room/3, mod_opt_type/1, muc_process_iq/2,
-	 muc_filter_message/5, message_is_archived/3, delete_old_messages/2,
+	 muc_filter_message/3, message_is_archived/3, delete_old_messages/2,
 	 get_commands_spec/0, msg_to_el/4, get_room_config/4, set_room_option/3,
-	 offline_message/4]).
+	 offline_message/1]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -74,18 +74,7 @@ start(Host, Opts) ->
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
     init_cache(Opts),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-				  ?NS_MAM_TMP, ?MODULE, process_iq_v0_2, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-				  ?NS_MAM_TMP, ?MODULE, process_iq_v0_2, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-				  ?NS_MAM_0, ?MODULE, process_iq_v0_3, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-				  ?NS_MAM_0, ?MODULE, process_iq_v0_3, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-				  ?NS_MAM_1, ?MODULE, process_iq_v0_3, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-				  ?NS_MAM_1, ?MODULE, process_iq_v0_3, IQDisc),
+    register_iq_handlers(Host, IQDisc),
     ejabberd_hooks:add(user_receive_packet, Host, ?MODULE,
 		       user_receive_packet, 88),
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
@@ -93,7 +82,7 @@ start(Host, Opts) ->
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
                user_send_packet_strip_tag, 500),
     ejabberd_hooks:add(offline_message_hook, Host, ?MODULE,
-		       offline_message, 50),
+		       offline_message, 40),
     ejabberd_hooks:add(muc_filter_message, Host, ?MODULE,
 		       muc_filter_message, 50),
     ejabberd_hooks:add(muc_process_iq, Host, ?MODULE,
@@ -130,24 +119,19 @@ init_cache(Opts) ->
 				  {life_time, LifeTime}]).
 
 stop(Host) ->
+    unregister_iq_handlers(Host),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
 			  user_send_packet, 88),
     ejabberd_hooks:delete(user_receive_packet, Host, ?MODULE,
 			  user_receive_packet, 88),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
-              user_send_packet_strip_tag, 500),
+			  user_send_packet_strip_tag, 500),
     ejabberd_hooks:delete(offline_message_hook, Host, ?MODULE,
-			  offline_message, 50),
+			  offline_message, 40),
     ejabberd_hooks:delete(muc_filter_message, Host, ?MODULE,
 			  muc_filter_message, 50),
     ejabberd_hooks:delete(muc_process_iq, Host, ?MODULE,
 			  muc_process_iq, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_MAM_TMP),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MAM_TMP),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_MAM_0),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MAM_0),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_MAM_1),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MAM_1),
     ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE,
 			  disco_sm_features, 50),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE,
@@ -169,8 +153,76 @@ stop(Host) ->
     ejabberd_commands:unregister_commands(get_commands_spec()),
     ok.
 
+reload(Host, NewOpts, OldOpts) ->
+    NewMod = gen_mod:db_mod(Host, NewOpts, ?MODULE),
+    OldMod = gen_mod:db_mod(Host, OldOpts, ?MODULE),
+    if NewMod /= OldMod ->
+	    NewMod:init(Host, NewOpts);
+       true ->
+	    ok
+    end,
+    case gen_mod:is_equal_opt(cache_size, NewOpts, OldOpts,
+			      fun(I) when is_integer(I), I>0 -> I end,
+                              1000) of
+	{false, MaxSize, _} ->
+	    cache_tab:setopts(archive_prefs, [{max_size, MaxSize}]);
+	true ->
+	    ok
+    end,
+    case gen_mod:is_equal_opt(cache_life_time, NewOpts, OldOpts,
+			      fun(I) when is_integer(I), I>0 -> I end,
+			      timer:hours(1) div 1000) of
+	{false, LifeTime, _} ->
+	    cache_tab:setopts(archive_prefs, [{life_time, LifeTime}]);
+	true ->
+	    ok
+    end,
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts,
+			      fun gen_iq_handler:check_type/1,
+			      one_queue) of
+	{false, IQDisc, _} ->
+	    register_iq_handlers(Host, IQDisc);
+	true ->
+	    ok
+    end,
+    case gen_mod:is_equal_opt(assume_mam_usage, NewOpts, OldOpts,
+			      fun(B) when is_boolean(B) -> B end, false) of
+	{false, true, _} ->
+	    ejabberd_hooks:add(message_is_archived, Host, ?MODULE,
+			       message_is_archived, 50);
+	{false, false, _} ->
+	    ejabberd_hooks:delete(message_is_archived, Host, ?MODULE,
+				  message_is_archived, 50);
+	true ->
+	    ok
+    end.
+
 depends(_Host, _Opts) ->
     [].
+
+-spec register_iq_handlers(binary(), gen_iq_handler:type()) -> ok.
+register_iq_handlers(Host, IQDisc) ->
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MAM_TMP,
+				  ?MODULE, process_iq_v0_2, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MAM_TMP,
+				  ?MODULE, process_iq_v0_2, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MAM_0,
+				  ?MODULE, process_iq_v0_3, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MAM_0, ?MODULE,
+				  process_iq_v0_3, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MAM_1,
+				  ?MODULE, process_iq_v0_3, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MAM_1,
+				  ?MODULE, process_iq_v0_3, IQDisc).
+
+-spec unregister_iq_handlers(binary()) -> ok.
+unregister_iq_handlers(Host) ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_MAM_TMP),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MAM_TMP),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_MAM_0),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MAM_0),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_MAM_1),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MAM_1).
 
 -spec remove_user(binary(), binary()) -> ok.
 remove_user(User, Server) ->
@@ -241,16 +293,16 @@ user_send_packet({Pkt, #{jid := JID} = C2SState}) ->
 	   end,
     {Pkt2, C2SState}.
 
--spec offline_message(any(), jid(), jid(), message()) -> any().
-offline_message(Acc, Peer, To, Pkt) ->
+-spec offline_message({any(), message()}) -> {any(), message()}.
+offline_message({_Action, #message{from = Peer, to = To} = Pkt} = Acc) ->
     LUser = To#jid.luser,
     LServer = To#jid.lserver,
     case should_archive(Pkt, LServer) of
 	true ->
 	    Pkt1 = strip_my_archived_tag(Pkt, LServer),
 	    case store_msg(undefined, Pkt1, LUser, LServer, Peer, recv) of
-		{ok, _ID} ->
-		    archived;
+		{ok, ID} ->
+		    {archived, set_stanza_id(Pkt1, To, ID)};
 		_ ->
 		    Acc
 	    end;
@@ -265,9 +317,10 @@ user_send_packet_strip_tag({Pkt, #{jid := JID} = C2SState}) ->
     {strip_my_archived_tag(Pkt, LServer), C2SState}.
 
 -spec muc_filter_message(message(), mod_muc_room:state(),
-			 jid(), jid(), binary()) -> message().
-muc_filter_message(Pkt, #state{config = Config} = MUCState,
-		   RoomJID, From, FromNick) ->
+			 binary()) -> message().
+muc_filter_message(Pkt, #state{config = Config, jid = RoomJID} = MUCState,
+		   FromNick) ->
+    From = xmpp:get_from(Pkt),
     if Config#config.mam ->
 	    LServer = RoomJID#jid.lserver,
 	    NewPkt = strip_my_archived_tag(Pkt, LServer),
@@ -648,7 +701,7 @@ has_no_store_hint(Message) ->
 
 -spec is_resent(message(), binary()) -> boolean().
 is_resent(Pkt, LServer) ->
-    case xmpp:get_subtag(Pkt, #stanza_id{}) of
+    case xmpp:get_subtag(Pkt, #stanza_id{by = #jid{}}) of
 	#stanza_id{by = #jid{lserver = LServer}} ->
 	    true;
 	_ ->
@@ -836,7 +889,7 @@ msg_to_el(#archive_msg{timestamp = TS, packet = El, nick = Nick,
     catch _:{xmpp_codec, Why} ->
 	    ?ERROR_MSG("Failed to decode raw element ~p from message "
 		       "archive of user ~s: ~s",
-		       [El, jid:to_string(JidArchive), xmpp:format_error(Why)]),
+		       [El, jid:encode(JidArchive), xmpp:format_error(Why)]),
 	    {error, invalid_xml}
     end.
 
@@ -874,7 +927,9 @@ send(Msgs, Count, IsComplete,
     Hint = #hint{type = 'no-store'},
     Els = lists:map(
 	    fun({ID, _IDInt, El}) ->
-		    #message{sub_els = [#mam_result{xmlns = NS,
+		    #message{from = To,
+			     to = From,
+			     sub_els = [#mam_result{xmlns = NS,
 						    id = ID,
 						    queryid = QID,
 						    sub_els = [El]}]}
@@ -889,16 +944,17 @@ send(Msgs, Count, IsComplete,
     if NS == ?NS_MAM_TMP; NS == ?NS_MAM_1 ->
 	    lists:foreach(
 	      fun(El) ->
-		      ejabberd_router:route(To, From, El)
+		      ejabberd_router:route(El)
 	      end, Els),
 	    xmpp:make_iq_result(IQ, Result);
        NS == ?NS_MAM_0 ->
-	    ejabberd_router:route(To, From, xmpp:make_iq_result(IQ)),
+	    ejabberd_router:route(xmpp:make_iq_result(IQ)),
 	    lists:foreach(
 	      fun(El) ->
-		      ejabberd_router:route(To, From, El)
+		      ejabberd_router:route(El)
 	      end, Els),
-	    ejabberd_router:route(To, From, #message{sub_els = [Result, Hint]}),
+	    ejabberd_router:route(
+	      #message{from = To, to = From, sub_els = [Result, Hint]}),
 	    ignore
     end.
 

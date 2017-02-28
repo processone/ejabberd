@@ -34,7 +34,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start/2, stop/1]).
+-export([start/2, stop/1, reload/3]).
 
 %% gen_server callbacks
 -export([init/1, handle_info/2, handle_call/3,
@@ -122,6 +122,10 @@ start(LServerS, Opts) ->
 stop(LServerS) ->
     gen_mod:stop_child(?MODULE, LServerS).
 
+reload(LServerS, NewOpts, OldOpts) ->
+    Proc = gen_mod:get_module_proc(LServerS, ?MODULE),
+    gen_server:cast(Proc, {reload, NewOpts, OldOpts}).
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
@@ -150,7 +154,29 @@ init([LServerS, Opts]) ->
 handle_call(stop, _From, State) ->
     try_stop_loop(), {stop, normal, ok, State}.
 
-handle_cast(_Msg, State) -> {noreply, State}.
+handle_cast({reload, NewOpts, NewOpts},
+	    #state{lserver = LServerS, lservice = OldLServiceS} = State) ->
+    Access = gen_mod:get_opt(access, NewOpts,
+			     fun acl:access_rules_validator/1, all),
+    SLimits =
+	build_service_limit_record(gen_mod:get_opt(limits, NewOpts,
+						   fun (A) when is_list(A) ->
+							   A
+						   end,
+						   [])),
+    NewLServiceS = gen_mod:get_opt_host(LServerS, NewOpts,
+					<<"multicast.@HOST@">>),
+    if NewLServiceS /= OldLServiceS ->
+	    ejabberd_router:register_route(NewLServiceS, LServerS),
+	    ejabberd_router:unregister_route(OldLServiceS);
+       true ->
+	    ok
+    end,
+    {noreply, State#state{lservice = NewLServiceS,
+			  access = Access, service_limits = SLimits}};
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
+    {noreply, State}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_info(Info, State) -> {noreply, State} |
@@ -159,8 +185,8 @@ handle_cast(_Msg, State) -> {noreply, State}.
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
 
-handle_info({route, From, To, #iq{} = Packet}, State) ->
-    case catch handle_iq(From, To, Packet, State) of
+handle_info({route, #iq{} = Packet}, State) ->
+    case catch handle_iq(Packet, State) of
         {'EXIT', Reason} ->
             ?ERROR_MSG("Error when processing IQ stanza: ~p",
                        [Reason]);
@@ -168,17 +194,17 @@ handle_info({route, From, To, #iq{} = Packet}, State) ->
     end,
     {noreply, State};
 %% XEP33 allows only 'message' and 'presence' stanza type
-handle_info({route, From, To, Packet},
+handle_info({route, Packet},
 	    #state{lservice = LServiceS, lserver = LServerS,
 		   access = Access, service_limits = SLimits} =
 		State) when ?is_stanza(Packet) ->
-    route_untrusted(LServiceS, LServerS, Access, SLimits,
-		    From, To, Packet),
+    route_untrusted(LServiceS, LServerS, Access, SLimits, Packet),
     {noreply, State};
 %% Handle multicast packets sent by trusted local services
-handle_info({route_trusted, From, Destinations, Packet},
+handle_info({route_trusted, Destinations, Packet},
 	    #state{lservice = LServiceS, lserver = LServerS} =
 		State) ->
+    From = xmpp:get_from(Packet),
     case catch route_trusted(LServiceS, LServerS, From, Destinations,
                              Packet) of
         {'EXIT', Reason} ->
@@ -206,41 +232,42 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%% IQ Request Processing
 %%%------------------------
 
-handle_iq(From, To, Packet, State) ->
+handle_iq(Packet, State) ->
     try
 	IQ = xmpp:decode_els(Packet),
-	case process_iq(From, IQ, State) of
+	case process_iq(IQ, State) of
 	    {result, SubEl} ->
-		ejabberd_router:route(To, From, xmpp:make_iq_result(Packet, SubEl));
+		ejabberd_router:route(xmpp:make_iq_result(Packet, SubEl));
 	    {error, Error} ->
-		ejabberd_router:route_error(To, From, Packet, Error);
+		ejabberd_router:route_error(Packet, Error);
 	    reply ->
-		LServiceS = jid:to_string(To),
+		To = xmpp:get_to(IQ),
+		LServiceS = jid:encode(To),
 		case Packet#iq.type of
 		    result ->
-			process_iqreply_result(From, LServiceS, IQ);
+			process_iqreply_result(LServiceS, IQ);
 		    error ->
-			process_iqreply_error(From, LServiceS, IQ)
+			process_iqreply_error(LServiceS, IQ)
 		end
 	end
     catch _:{xmpp_codec, Why} ->
 	    Lang = xmpp:get_lang(Packet),
 	    Err = xmpp:err_bad_request(xmpp:format_error(Why), Lang),
-	    ejabberd_router:route_error(To, From, Packet, Err)
+	    ejabberd_router:route_error(Packet, Err)
     end.
 
--spec process_iq(jid(), iq(), state()) -> {result, xmpp_element()} |
-					  {error, stanza_error()} | reply.
-process_iq(From, #iq{type = get, lang = Lang,
-		     sub_els = [#disco_info{}]}, State) ->
+-spec process_iq(iq(), state()) -> {result, xmpp_element()} |
+				   {error, stanza_error()} | reply.
+process_iq(#iq{type = get, lang = Lang, from = From,
+	       sub_els = [#disco_info{}]}, State) ->
     {result, iq_disco_info(From, Lang, State)};
-process_iq(_, #iq{type = get, sub_els = [#disco_items{}]}, _) ->
+process_iq(#iq{type = get, sub_els = [#disco_items{}]}, _) ->
     {result, #disco_items{}};
-process_iq(_, #iq{type = get, lang = Lang, sub_els = [#vcard_temp{}]}, _) ->
+process_iq(#iq{type = get, lang = Lang, sub_els = [#vcard_temp{}]}, _) ->
     {result, iq_vcard(Lang)};
-process_iq(_, #iq{type = T}, _) when T == set; T == get ->
+process_iq(#iq{type = T}, _) when T == set; T == get ->
     {error, xmpp:err_service_unavailable()};
-process_iq(_, _, _) ->
+process_iq(_, _) ->
     reply.
 
 -define(FEATURE(Feat), Feat).
@@ -270,7 +297,7 @@ route_trusted(LServiceS, LServerS, FromJID,
     Delivereds = [],
     Dests2 = lists:map(
 	       fun(D) ->
-		       #dest{jid_string = jid:to_string(D),
+		       #dest{jid_string = jid:encode(D),
 			     jid_jid = D, type = bcc,
 			     full_xml = #address{type = bcc, jid = D}}
 	       end, Destinations),
@@ -278,38 +305,37 @@ route_trusted(LServiceS, LServerS, FromJID,
     route_common(LServerS, LServiceS, FromJID, Groups,
 		 Delivereds, Packet_stripped, AAttrs).
 
-route_untrusted(LServiceS, LServerS, Access, SLimits,
-		From, To, Packet) ->
+route_untrusted(LServiceS, LServerS, Access, SLimits, Packet) ->
     try route_untrusted2(LServiceS, LServerS, Access,
-			 SLimits, From, Packet)
+			 SLimits, Packet)
     catch
       adenied ->
-	  route_error(To, From, Packet, forbidden,
+	  route_error(Packet, forbidden,
 		      <<"Access denied by service policy">>);
       eadsele ->
-	  route_error(To, From, Packet, bad_request,
+	  route_error(Packet, bad_request,
 		      <<"No addresses element found">>);
       eadeles ->
-	  route_error(To, From, Packet, bad_request,
+	  route_error(Packet, bad_request,
 		      <<"No address elements found">>);
       ewxmlns ->
-	  route_error(To, From, Packet, bad_request,
+	  route_error(Packet, bad_request,
 		      <<"Wrong xmlns">>);
       etoorec ->
-	  route_error(To, From, Packet, not_acceptable,
+	  route_error(Packet, not_acceptable,
 		      <<"Too many receiver fields were specified">>);
       edrelay ->
-	  route_error(To, From, Packet, forbidden,
+	  route_error(Packet, forbidden,
 		      <<"Packet relay is denied by service policy">>);
       EType:EReason ->
 	  ?ERROR_MSG("Multicast unknown error: Type: ~p~nReason: ~p",
 		     [EType, EReason]),
-	  route_error(To, From, Packet, internal_server_error,
+	  route_error(Packet, internal_server_error,
 		      <<"Unknown problem">>)
     end.
 
-route_untrusted2(LServiceS, LServerS, Access, SLimits,
-		 FromJID, Packet) ->
+route_untrusted2(LServiceS, LServerS, Access, SLimits, Packet) ->
+    FromJID = xmpp:get_from(Packet),
     ok = check_access(LServerS, Access, FromJID),
     {ok, Packet_stripped, Addresses} = strip_addresses_element(Packet),
     {To_deliver, Delivereds} = split_addresses_todeliver(Addresses),
@@ -437,7 +463,7 @@ convert_dest_record(Addrs) ->
       fun(#address{jid = undefined} = Addr) ->
 	      #dest{jid_string = none, full_xml = Addr};
 	 (#address{jid = JID, type = Type} = Addr) ->
-	      #dest{jid_string = jid:to_string(JID), jid_jid = JID,
+	      #dest{jid_string = jid:encode(JID), jid_jid = JID,
 		    type = Type, full_xml = Addr}
       end, Addrs).
 
@@ -460,7 +486,7 @@ split_dests_jid(Dests) ->
 report_not_jid(From, Packet, Dests) ->
     Dests2 = [fxml:element_to_binary(xmpp:encode(Dest#dest.full_xml))
 	      || Dest <- Dests],
-    [route_error(From, From, Packet, jid_malformed,
+    [route_error(xmpp:set_from_to(Packet, From, From), jid_malformed,
 		 <<"This service can not process the address: ",
 		   D/binary>>)
      || D <- Dests2].
@@ -596,7 +622,7 @@ route_packet2(From, ToS, Dests, Packet, _AAttrs,
 	  end,
     Packet2 = xmpp:set_els(Packet, Els),
     ToJID = stj(ToS),
-    ejabberd_router:route(From, ToJID, Packet2).
+    ejabberd_router:route(xmpp:set_from_to(Packet2, From, ToJID)).
 
 -spec append_dests([#dest{}], {[address()], [address()]} | [address()]) -> [address()].
 append_dests(_Dests, {Others, Addresses}) ->
@@ -645,17 +671,18 @@ send_query_items(RServerS, LServiceS) ->
 
 -spec send_query(binary(), binary(), [disco_info()|disco_items()]) -> ok.
 send_query(RServerS, LServiceS, SubEl) ->
-    Packet = #iq{id = randoms:get_string(),
+    Packet = #iq{from = stj(LServiceS),
+		 to = stj(RServerS),
+		 id = randoms:get_string(),
 		 type = get, sub_els = [SubEl]},
-    ejabberd_router:route(stj(LServiceS), stj(RServerS),
-			  Packet).
+    ejabberd_router:route(Packet).
 
 %%%-------------------------
 %%% Check protocol support: Receive response: Error
 %%%-------------------------
 
-process_iqreply_error(From, LServiceS, _Packet) ->
-    FromS = jts(From),
+process_iqreply_error(LServiceS, Packet) ->
+    FromS = jts(xmpp:get_from(Packet)),
     case search_waiter(FromS, LServiceS, info) of
       {found_waiter, Waiter} ->
 	  received_awaiter(FromS, Waiter, LServiceS);
@@ -666,8 +693,8 @@ process_iqreply_error(From, LServiceS, _Packet) ->
 %%% Check protocol support: Receive response: Disco
 %%%-------------------------
 
--spec process_iqreply_result(jid(), binary(), iq()) -> any().
-process_iqreply_result(From, LServiceS, #iq{sub_els = [SubEl]}) ->
+-spec process_iqreply_result(binary(), iq()) -> any().
+process_iqreply_result(LServiceS, #iq{from = From, sub_els = [SubEl]}) ->
     case SubEl of
 	#disco_info{} ->
 	    process_discoinfo_result(From, LServiceS, SubEl);
@@ -1077,10 +1104,10 @@ to_binary(A) -> list_to_binary(hd(io_lib:format("~p", [A]))).
 %%% Error report
 %%%-------------------------
 
-route_error(From, To, Packet, ErrType, ErrText) ->
+route_error(Packet, ErrType, ErrText) ->
     Lang = xmpp:get_lang(Packet),
     Err = make_reply(ErrType, Lang, ErrText),
-    ejabberd_router:route_error(From, To, Packet, Err).
+    ejabberd_router:route_error(Packet, Err).
 
 make_reply(bad_request, Lang, ErrText) ->
     xmpp:err_bad_request(ErrText, Lang);
@@ -1093,9 +1120,9 @@ make_reply(internal_server_error, Lang, ErrText) ->
 make_reply(forbidden, Lang, ErrText) ->
     xmpp:err_forbidden(ErrText, Lang).
 
-stj(String) -> jid:from_string(String).
+stj(String) -> jid:decode(String).
 
-jts(String) -> jid:to_string(String).
+jts(String) -> jid:encode(String).
 
 depends(_Host, _Opts) ->
     [].

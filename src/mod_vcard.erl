@@ -131,8 +131,8 @@ handle_cast(Cast, State) ->
     ?WARNING_MSG("unexpected cast: ~p", [Cast]),
     {noreply, State}.
 
-handle_info({route, From, To, Packet}, State) ->
-    case catch do_route(From, To, Packet) of
+handle_info({route, Packet}, State) ->
+    case catch do_route(Packet) of
 	{'EXIT', Reason} -> ?ERROR_MSG("~p", [Reason]);
 	_ -> ok
     end,
@@ -160,11 +160,9 @@ terminate(_Reason, #state{host = MyHost, server_host = Host}) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-do_route(From, To, #xmlel{name = <<"iq">>} = El) ->
-    ejabberd_router:process_iq(From, To, El);
-do_route(From, To, #iq{} = IQ) ->
-    ejabberd_router:process_iq(From, To, IQ);
-do_route(_, _, _) ->
+do_route(#iq{} = IQ) ->
+    ejabberd_router:process_iq(IQ);
+do_route(_) ->
     ok.
 
 -spec get_sm_features({error, stanza_error()} | empty | {result, [binary()]},
@@ -395,7 +393,7 @@ mk_field(Var, Val) ->
 -spec mk_search_form(jid(), binary(), binary()) -> search().
 mk_search_form(JID, ServerHost, Lang) ->
     Title = <<(translate:translate(Lang, <<"Search users in ">>))/binary,
-	      (jid:to_string(JID))/binary>>,
+	      (jid:encode(JID))/binary>>,
     Mod = gen_mod:db_mod(ServerHost, ?MODULE),
     SearchFields = Mod:search_fields(ServerHost),
     Fs = [mk_tfield(Label, Var, Lang) || {Label, Var} <- SearchFields],
@@ -421,7 +419,7 @@ search_result(Lang, JID, ServerHost, XFields) ->
     #xdata{type = result,
 	   title = <<(translate:translate(Lang,
 					  <<"Search Results for ">>))/binary,
-		     (jid:to_string(JID))/binary>>,
+		     (jid:encode(JID))/binary>>,
 	   reported = Reported,
 	   items = lists:map(fun (Item) -> item_to_field(Item) end,
 			     search(ServerHost, XFields))}.
