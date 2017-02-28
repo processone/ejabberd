@@ -364,7 +364,8 @@ parse_who(Name, Atom, ParseOauth) when is_atom(Atom) ->
 parse_who(Name, Defs, ParseOauth) when is_list(Defs) ->
     lists:map(
       fun([Val]) ->
-	      parse_who(Name, [Val], ParseOauth);
+	      [NVal] = parse_who(Name, [Val], ParseOauth),
+	      NVal;
 	 ({access, Val}) ->
 	    try acl:access_rules_validator(Val) of
 		Rule ->
