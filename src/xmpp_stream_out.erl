@@ -534,8 +534,7 @@ process_features(#stream_features{sub_els = Els} = StreamFeatures,
 				    process_sasl_mechanisms(Mechs, State2);
 				false ->
 				    process_sasl_failure(
-				      #sasl_failure{reason = 'invalid-mechanism'},
-				      State2)
+				      <<"Peer provided no SASL mechanisms">>, State2)
 			    end
 		    end
 	    end
@@ -564,7 +563,7 @@ process_sasl_mechanisms(Mechs, #{user := User, server := Server} = State) ->
 	    send_pkt(State1, #sasl_auth{mechanism = Mech, text = Authzid});
 	false ->
 	    process_sasl_failure(
-	      #sasl_failure{reason = 'invalid-mechanism'}, State)
+	      <<"Peer doesn't support EXTERNAL authentication">>, State)
     end.
 
 -spec process_starttls(state()) -> state().
@@ -638,10 +637,12 @@ process_sasl_success(#{mod := Mod,
 	    end
     end.
 
--spec process_sasl_failure(sasl_failure(), state()) -> state().
-process_sasl_failure(#sasl_failure{} = Failure, #{mod := Mod} = State) ->
+-spec process_sasl_failure(sasl_failure() | binary(), state()) -> state().
+process_sasl_failure(#sasl_failure{} = Failure, State) ->
     Reason = format("Peer responded with error: ~s",
 		    [format_sasl_failure(Failure)]),
+    process_sasl_failure(Reason, State);
+process_sasl_failure(Reason, #{mod := Mod} = State) ->
     try Mod:handle_auth_failure(<<"EXTERNAL">>, {auth, Reason}, State)
     catch _:undef -> process_stream_end({auth, Reason}, State)
     end.
