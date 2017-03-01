@@ -878,21 +878,23 @@ a_lookup(HostPorts, State) ->
     HostPortFamilies = [{Host, Port, Family}
 			|| {Host, Port} <- HostPorts,
 			   Family <- get_address_families(State)],
-    a_lookup(HostPortFamilies, State, {error, nxdomain}).
+    a_lookup(HostPortFamilies, State, [], {error, nxdomain}).
 
 -spec a_lookup([{inet:hostname(), inet:port_number(), inet:address_family()}],
-	       state(), network_error()) -> {ok, [ip_port()]} | network_error().
-a_lookup([{Host, Port, Family}|HostPortFamilies], State, _) ->
+	       state(), [ip_port()], network_error()) -> {ok, [ip_port()]} | network_error().
+a_lookup([{Host, Port, Family}|HostPortFamilies], State, Acc, Err) ->
     Timeout = get_dns_timeout(State),
     Retries = get_dns_retries(State),
     case a_lookup(Host, Port, Family, Timeout, Retries) of
-	{error, _} = Err ->
-	    a_lookup(HostPortFamilies, State, Err);
+	{error, Reason} ->
+	    a_lookup(HostPortFamilies, State, Acc, {error, Reason});
 	{ok, AddrPorts} ->
-	    {ok, AddrPorts}
+	    a_lookup(HostPortFamilies, State, Acc ++ AddrPorts, Err)
     end;
-a_lookup([], _State, Err) ->
-    Err.
+a_lookup([], _State, [], Err) ->
+    Err;
+a_lookup([], _State, Acc, _) ->
+    {ok, Acc}.
 
 -spec a_lookup(inet:hostname(), inet:port_number(), inet:address_family(),
 	       timeout(), integer()) -> {ok, [ip_port()]} | network_error().
