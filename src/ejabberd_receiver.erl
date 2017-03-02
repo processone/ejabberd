@@ -157,8 +157,8 @@ handle_call({compress, Data}, _From,
       {ok, ZlibData} ->
 	    {reply, {ok, ZlibSocket},
 		process_data(ZlibData, NewState), ?HIBERNATE_TIMEOUT};
-      {error, _Reason} ->
-	    {stop, normal, ok, NewState}
+      {error, _} = Err ->
+	    {stop, normal, Err, NewState}
     end;
 handle_call(reset_stream, _From, State) ->
     NewState = reset_parser(State),
@@ -338,7 +338,10 @@ do_send(State, Data) ->
     (State#state.sock_mod):send(State#state.socket, Data).
 
 do_call(Pid, Msg) ->
-    case catch ?GEN_SERVER:call(Pid, Msg) of
-      {'EXIT', Why} -> {error, Why};
-      Res -> Res
+    try ?GEN_SERVER:call(Pid, Msg) of
+	Res -> Res
+    catch _:{timeout, _} ->
+	    {error, timeout};
+	  _:_ ->
+	    {error, einval}
     end.
