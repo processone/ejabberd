@@ -220,9 +220,8 @@ extendedKeyUsage = OCSPSigning,serverAuth,clientAuth
 subjectAltName          = @alt_names
 
 [alt_names]
-otherName.1 = 1.3.6.1.5.5.7.8.5;UTF8:"localhost"
-otherName.2 = 1.3.6.1.5.5.7.8.5;UTF8:"s2s.localhost"
-otherName.3 = 1.3.6.1.5.5.7.8.5;UTF8:"mnesia.localhost"
+DNS.1 = *.localhost
+otherName.1 = 1.3.6.1.5.5.7.8.5;UTF8:"test_single!#$%^*()`~+-;_=[]{}|\\@localhost"
 
 [ v3_ca ]
 crlDistributionPoints = URI:http://localhost:5280/data/crl.der

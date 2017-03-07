@@ -22,11 +22,14 @@
 -module(xmpp_stream_pkix).
 
 %% API
--export([authenticate/1, authenticate/2, format_error/1]).
+-compile(export_all).
+-export([authenticate/1, authenticate/2, get_cert_domains/1, format_error/1]).
 
 -include("xmpp.hrl").
 -include_lib("public_key/include/public_key.hrl").
 -include("XmppAddr.hrl").
+
+-type cert() :: #'OTPCertificate'{}.
 
 %%%===================================================================
 %%% API
@@ -41,130 +44,176 @@ authenticate(State) ->
 authenticate(#{xmlns := ?NS_SERVER, sockmod := SockMod,
 	       socket := Socket} = State, Authzid) ->
     Peer = maps:get(remote_server, State, Authzid),
-    case SockMod:get_peer_certificate(Socket) of
+    case verify_cert(SockMod, Socket) of
 	{ok, Cert} ->
-	    case SockMod:get_verify_result(Socket) of
-		0 ->
-		    case ejabberd_idna:domain_utf8_to_ascii(Peer) of
+	    case ejabberd_idna:domain_utf8_to_ascii(Peer) of
+		false ->
+		    {error, idna_failed, Peer};
+		AsciiPeer ->
+		    case lists:any(
+			   fun(D) -> match_domain(AsciiPeer, D) end,
+			   get_cert_domains(Cert)) of
+			true ->
+			    {ok, Peer};
 			false ->
-			    {error, idna_failed, Peer};
-			AsciiPeer ->
-			    case lists:any(
-				   fun(D) -> match_domain(AsciiPeer, D) end,
-				   get_cert_domains(Cert)) of
-				true ->
-				    {ok, Peer};
-				false ->
-				    {error, hostname_mismatch, Peer}
-			    end
-		    end;
-		VerifyRes ->
-		    %% TODO: return atomic errors
-		    %% This should be improved in fast_tls
-		    Reason = fast_tls:get_cert_verify_string(VerifyRes, Cert),
-		    {error, erlang:binary_to_atom(Reason, utf8), Peer}
+			    {error, hostname_mismatch, Peer}
+		    end
 	    end;
-	{error, _Reason} ->
-	    {error, get_cert_failed, Peer};
-	error ->
-	    {error, get_cert_failed, Peer}
+	{error, Reason} ->
+	    {error, Reason, Peer}
     end;
-authenticate(_State, _Authzid) ->
-    %% TODO: client PKIX authentication
-    {error, client_not_supported, <<"">>}.
+authenticate(#{xmlns := ?NS_CLIENT, sockmod := SockMod,
+	       socket := Socket, lserver := LServer}, Authzid) ->
+    JID = try jid:decode(Authzid)
+	  catch _:{bad_jid, <<>>} -> jid:make(LServer);
+		_:{bad_jid, _} -> {error, invalid_authzid, Authzid}
+	  end,
+    case JID of
+	#jid{user = User} ->
+	    case verify_cert(SockMod, Socket) of
+		{ok, Cert} ->
+		    JIDs = get_xmpp_addrs(Cert),
+		    get_username(JID, JIDs, LServer);
+		{error, Reason} ->
+		    {error, Reason, User}
+	    end;
+	Err ->
+	    Err
+    end.
 
 format_error(idna_failed) ->
     {'bad-protocol', <<"Remote domain is not an IDN hostname">>};
 format_error(hostname_mismatch) ->
     {'not-authorized', <<"Certificate host name mismatch">>};
+format_error(jid_mismatch) ->
+    {'not-authorized', <<"Certifcate JID mismatch">>};
 format_error(get_cert_failed) ->
     {'bad-protocol', <<"Failed to get peer certificate">>};
-format_error(client_not_supported) ->
-    {'invalid-mechanism', <<"Client certificate verification is not supported">>};
+format_error(invalid_authzid) ->
+    {'invalid-authzid', <<"Malformed JID">>};
 format_error(Other) ->
     {'not-authorized', erlang:atom_to_binary(Other, utf8)}.
+
+-spec get_cert_domains(cert()) -> [binary()].
+get_cert_domains(Cert) ->
+    TBSCert = Cert#'OTPCertificate'.tbsCertificate,
+    {rdnSequence, Subject} = TBSCert#'OTPTBSCertificate'.subject,
+    Extensions = TBSCert#'OTPTBSCertificate'.extensions,
+    get_domain_from_subject(lists:flatten(Subject)) ++
+	get_domains_from_san(Extensions).
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-get_cert_domains(Cert) ->
-    TBSCert = Cert#'Certificate'.tbsCertificate,
-    Subject = case TBSCert#'TBSCertificate'.subject of
-		  {rdnSequence, Subj} -> lists:flatten(Subj);
-		  _ -> []
-	      end,
-    Extensions = case TBSCert#'TBSCertificate'.extensions of
-		     Exts when is_list(Exts) -> Exts;
-		     _ -> []
-		 end,
-    lists:flatmap(
-      fun(#'AttributeTypeAndValue'{type = ?'id-at-commonName',value = Val}) ->
-	      case 'OTP-PUB-KEY':decode('X520CommonName', Val) of
-		  {ok, {_, D1}} ->
-		      D = if is_binary(D1) -> D1;
-			     is_list(D1) -> list_to_binary(D1);
-			     true -> error
-			  end,
-		      if D /= error ->
-			      try jid:decode(D) of
-				  #jid{luser = <<"">>, lserver = LD,
-				       lresource = <<"">>} ->
-				      [LD];
-				  _ -> []
-			      catch _:{bad_jid, _} ->
-				      []
+-spec verify_cert(module(), fast_tls:tls_socket()) -> {ok, cert()} | {error, atom()}.
+verify_cert(SockMod, Socket) ->
+    case SockMod:get_peer_certificate(Socket, otp) of
+	{ok, Cert} ->
+	    case SockMod:get_verify_result(Socket) of
+		0 ->
+		    {ok, Cert};
+		VerifyRes ->
+		    %% TODO: return atomic errors
+		    %% This should be improved in fast_tls
+		    Reason = fast_tls:get_cert_verify_string(VerifyRes, Cert),
+		    {error, erlang:binary_to_atom(Reason, utf8)}
+	    end;
+	{error, _Reason} ->
+	    {error, get_cert_failed};
+	error ->
+	    {error, get_cert_failed}
+    end.
+
+-spec get_domain_from_subject([#'AttributeTypeAndValue'{}]) -> [binary()].
+get_domain_from_subject(AttrVals) ->
+    case lists:keyfind(?'id-at-commonName',
+		       #'AttributeTypeAndValue'.type,
+		       AttrVals) of
+	#'AttributeTypeAndValue'{value = {_, S}} ->
+	    try jid:decode(iolist_to_binary(S)) of
+		#jid{luser = <<"">>, lresource = <<"">>, lserver = Domain} ->
+		    [Domain];
+		_ ->
+		    []
+	    catch _:{bad_jid, _} ->
+		    []
+	    end;
+	_ ->
+	    []
+    end.
+
+-spec get_domains_from_san([#'Extension'{}] | asn1_NOVALUE) -> [binary()].
+get_domains_from_san(Extensions) when is_list(Extensions) ->
+    case lists:keyfind(?'id-ce-subjectAltName',
+		       #'Extension'.extnID,
+		       Extensions) of
+	#'Extension'{extnValue = Vals} ->
+	    lists:flatmap(
+	      fun({dNSName, S}) ->
+		      [iolist_to_binary(S)];
+		 ({otherName, AnotherName}) ->
+		      case decode_xmpp_addr(AnotherName) of
+			  {ok, #jid{luser = <<"">>,
+				    lresource = <<"">>,
+				    lserver = Domain}} ->
+			      case ejabberd_idna:domain_utf8_to_ascii(Domain) of
+				  false ->
+				      [];
+				  ASCIIDomain ->
+				      [ASCIIDomain]
 			      end;
-			 true -> []
+			  _ ->
+			      []
 		      end;
-		  _ -> []
-	      end;
-	 (_) -> []
-      end, Subject) ++
-	lists:flatmap(
-	  fun(#'Extension'{extnID = ?'id-ce-subjectAltName',
-			   extnValue = Val}) ->
-		  BVal = if is_list(Val) -> list_to_binary(Val);
-			    true -> Val
-			 end,
-		  case 'OTP-PUB-KEY':decode('SubjectAltName', BVal) of
-		      {ok, SANs} ->
-			  lists:flatmap(
-			    fun({otherName, #'AnotherName'{'type-id' = ?'id-on-xmppAddr',
-							   value = XmppAddr}}) ->
-				    case 'XmppAddr':decode('XmppAddr', XmppAddr) of
-					{ok, D} when is_binary(D) ->
-					    try jid:decode(D) of
-						#jid{luser = <<"">>,
-						     lserver = LD,
-						     lresource = <<"">>} ->
-						    case ejabberd_idna:domain_utf8_to_ascii(LD) of
-							false ->
-							    [];
-							PCLD ->
-							    [PCLD]
-						    end;
-						_ -> []
-					    catch _:{bad_jid, _} ->
-						    []
-					    end;
-					_ -> []
-				    end;
-			       ({dNSName, D}) when is_list(D) ->
-				    try jid:decode(list_to_binary(D)) of
-					#jid{luser = <<"">>,
-					     lserver = LD,
-					     lresource = <<"">>} ->
-					    [LD];
-					_ -> []
-				    catch _:{bad_jid, _} ->
-					    []
-				    end;
-			       (_) -> []
-			    end, SANs);
-		      _ -> []
-		  end;
-	     (_) -> []
-	  end, Extensions).
+		 (_) ->
+		      []
+	      end, Vals);
+	_ ->
+	    []
+    end;
+get_domains_from_san(_) ->
+    [].
+
+-spec decode_xmpp_addr(#'AnotherName'{}) -> {ok, jid()} | error.
+decode_xmpp_addr(#'AnotherName'{'type-id' = ?'id-on-xmppAddr',
+				value = XmppAddr}) ->
+    try 'XmppAddr':decode('XmppAddr', XmppAddr) of
+	{ok, JIDStr} ->
+	    try {ok, jid:decode(iolist_to_binary(JIDStr))}
+	    catch _:{bad_jid, _} -> error
+	    end;
+	_ ->
+	    error
+    catch _:_ ->
+	    error
+    end;
+decode_xmpp_addr(_) ->
+    error.
+
+-spec get_xmpp_addrs(cert()) -> [jid()].
+get_xmpp_addrs(Cert) ->
+    TBSCert = Cert#'OTPCertificate'.tbsCertificate,
+    case TBSCert#'OTPTBSCertificate'.extensions of
+	Extensions when is_list(Extensions) ->
+	    case lists:keyfind(?'id-ce-subjectAltName',
+			       #'Extension'.extnID,
+			       Extensions) of
+		#'Extension'{extnValue = Vals} ->
+		    lists:flatmap(
+		      fun({otherName, AnotherName}) ->
+			      case decode_xmpp_addr(AnotherName) of
+				  {ok, JID} -> [JID];
+				  _ -> []
+			      end;
+			 (_) ->
+			      []
+		      end, Vals);
+		_ ->
+		    []
+	    end;
+	_ ->
+	    []
+    end.
 
 match_domain(Domain, Domain) -> true;
 match_domain(Domain, Pattern) ->
@@ -191,3 +240,33 @@ match_labels([DL | DLabels], [PL | PLabels]) ->
 	  end;
       false -> false
     end.
+
+-spec get_username(jid(), [jid()], binary()) ->
+			  {ok, binary()} | {error, jid_mismatch, binary()}.
+get_username(#jid{user = User, lserver = LS}, _, LServer) when LS /= LServer ->
+    %% The user provided JID from different domain
+    {error, jid_mismatch, User};
+get_username(#jid{user = <<>>}, [#jid{user = U, lserver = LS}], LServer)
+  when U /= <<>> andalso LS == LServer ->
+    %% The user didn't provide JID or username, and there is only
+    %% one 'non-global' JID matching current domain
+    {ok, U};
+get_username(#jid{user = User, luser = LUser}, JIDs, LServer) when User /= <<>> ->
+    %% The user provided username
+    lists:foldl(
+      fun(_, {ok, _} = OK) ->
+	      OK;
+	 (#jid{user = <<>>, lserver = LS}, _) when LS == LServer ->
+	      %% Found "global" JID in the certficate
+	      %% (i.e. in the form of 'domain.com')
+	      %% within current domain, so we force matching
+	      {ok, User};
+	 (#jid{luser = LU, lserver = LS}, _) when LU == LUser, LS == LServer ->
+	      %% Found exact JID matching
+	      {ok, User};
+	 (_, Err) ->
+	      Err
+      end, {error, jid_mismatch, User}, JIDs);
+get_username(#jid{user = User}, _, _) ->
+    %% Nothing from above is true
+    {error, jid_mismatch, User}.

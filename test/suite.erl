@@ -306,7 +306,7 @@ auth(Config, ShouldFail) ->
             auth_SASL(<<"PLAIN">>, Config, ShouldFail);
        HaveMD5 ->
             auth_SASL(<<"DIGEST-MD5">>, Config, ShouldFail);
-       HaveExternal andalso Type == server ->
+       HaveExternal ->
 	    auth_SASL(<<"EXTERNAL">>, Config, ShouldFail);
        Type == client ->
 	    auth_legacy(Config, false, ShouldFail);
@@ -414,10 +414,13 @@ auth_SASL(Mech, Config) ->
     auth_SASL(Mech, Config, false).
 
 auth_SASL(Mech, Config, ShouldFail) ->
-    {Response, SASL} = sasl_new(Mech,
-                                ?config(user, Config),
-                                ?config(server, Config),
-                                ?config(password, Config)),
+    Creds = {?config(user, Config),
+	     ?config(server, Config),
+	     ?config(password, Config)},
+    auth_SASL(Mech, Config, ShouldFail, Creds).
+
+auth_SASL(Mech, Config, ShouldFail, Creds) ->
+    {Response, SASL} = sasl_new(Mech, Creds),
     send(Config, #sasl_auth{mechanism = Mech, text = Response}),
     wait_auth_SASL_result(set_opt(sasl, SASL, Config), ShouldFail).
 
@@ -549,16 +552,16 @@ send_recv(State, #iq{} = IQ) ->
     ID = send(State, IQ),
     receive #iq{id = ID} = Result -> Result end.
 
-sasl_new(<<"PLAIN">>, User, Server, Password) ->
+sasl_new(<<"PLAIN">>, {User, Server, Password}) ->
     {<<User/binary, $@, Server/binary, 0, User/binary, 0, Password/binary>>,
      fun (_) -> {error, <<"Invalid SASL challenge">>} end};
-sasl_new(<<"EXTERNAL">>, _User, _Server, _Password) ->
+sasl_new(<<"EXTERNAL">>, {User, Server, _Password}) ->
+    {jid:encode(jid:make(User, Server)),
+     fun(_) -> ct:fail(sasl_challenge_is_not_expected) end};
+sasl_new(<<"ANONYMOUS">>, _) ->
     {<<"">>,
      fun(_) -> ct:fail(sasl_challenge_is_not_expected) end};
-sasl_new(<<"ANONYMOUS">>, _User, _Server, _Password) ->
-    {<<"">>,
-     fun(_) -> ct:fail(sasl_challenge_is_not_expected) end};
-sasl_new(<<"DIGEST-MD5">>, User, Server, Password) ->
+sasl_new(<<"DIGEST-MD5">>, {User, Server, Password}) ->
     {<<"">>,
      fun (ServerIn) ->
 	     case cyrsasl_digest:parse(ServerIn) of

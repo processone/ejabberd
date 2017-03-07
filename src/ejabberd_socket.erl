@@ -45,7 +45,7 @@
 	 monitor/1,
 	 get_sockmod/1,
 	 get_transport/1,
-	 get_peer_certificate/1,
+	 get_peer_certificate/2,
 	 get_verify_result/1,
 	 close/1,
 	 pp/1,
@@ -263,8 +263,8 @@ get_transport(#socket_state{sockmod = SockMod,
 	ejabberd_http_ws -> websocket
     end.
 
-get_peer_certificate(SocketData) ->
-    fast_tls:get_peer_certificate(SocketData#socket_state.socket).
+get_peer_certificate(SocketData, Type) ->
+    fast_tls:get_peer_certificate(SocketData#socket_state.socket, Type).
 
 get_verify_result(SocketData) ->
     fast_tls:get_verify_result(SocketData#socket_state.socket).
