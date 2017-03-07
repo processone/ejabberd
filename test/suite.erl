@@ -689,7 +689,7 @@ get_features(Config) ->
     get_features(Config, server_jid(Config)).
 
 get_features(Config, To) ->
-    ct:comment("Getting features of ~s", [jid:to_string(To)]),
+    ct:comment("Getting features of ~s", [jid:encode(To)]),
     #iq{type = result, sub_els = [#disco_info{features = Features}]} =
         send_recv(Config, #iq{type = get, sub_els = [#disco_info{}], to = To}),
     Features.
@@ -738,7 +738,7 @@ set_roster(Config, Subscription, Groups) ->
     PeerBareJID = jid:remove_resource(PeerJID),
     PeerLJID = jid:tolower(PeerBareJID),
     ct:comment("Adding ~s to roster with subscription '~s' in groups ~p",
-	       [jid:to_string(PeerBareJID), Subscription, Groups]),
+	       [jid:encode(PeerBareJID), Subscription, Groups]),
     {atomic, _} = mod_roster:set_roster(#roster{usj = {U, S, PeerLJID},
 						us = {U, S},
 						jid = PeerLJID,
@@ -754,7 +754,7 @@ del_roster(Config, PeerJID) ->
     {U, S, _} = jid:tolower(MyJID),
     PeerBareJID = jid:remove_resource(PeerJID),
     PeerLJID = jid:tolower(PeerBareJID),
-    ct:comment("Removing ~s from roster", [jid:to_string(PeerBareJID)]),
+    ct:comment("Removing ~s from roster", [jid:encode(PeerBareJID)]),
     {atomic, _} = mod_roster:del_roster(U, S, PeerLJID),
     Config.
 

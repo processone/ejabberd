@@ -266,14 +266,14 @@ master_slave_cases() ->
 deny_bare_jid_master(Config) ->
     PeerJID = ?config(peer, Config),
     PeerBareJID = jid:remove_resource(PeerJID),
-    deny_master(Config, {jid, jid:to_string(PeerBareJID)}).
+    deny_master(Config, {jid, jid:encode(PeerBareJID)}).
 
 deny_bare_jid_slave(Config) ->
     deny_slave(Config).
 
 deny_full_jid_master(Config) ->
     PeerJID = ?config(peer, Config),
-    deny_master(Config, {jid, jid:to_string(PeerJID)}).
+    deny_master(Config, {jid, jid:encode(PeerJID)}).
 
 deny_full_jid_slave(Config) ->
     deny_slave(Config).
@@ -781,7 +781,7 @@ server_send_iqs(Config) ->
     ServerJID = server_jid(Config),
     MyJID = my_jid(Config),
     ct:comment("Sending IQs from ~s to ~s",
-	       [jid:to_string(ServerJID), jid:to_string(MyJID)]),
+	       [jid:encode(ServerJID), jid:encode(MyJID)]),
     lists:foreach(
       fun(Type) ->
 	      ejabberd_router:route(
@@ -798,7 +798,7 @@ server_send_iqs(Config) ->
 
 server_recv_iqs(Config) ->
     ServerJID = server_jid(Config),
-    ct:comment("Receiving IQs from ~s", [jid:to_string(ServerJID)]),
+    ct:comment("Receiving IQs from ~s", [jid:encode(ServerJID)]),
     lists:foreach(
       fun(Type) ->
 	      #iq{type = Type, from = ServerJID} = recv_iq(Config)
@@ -814,21 +814,21 @@ send_stanzas_to_server_resource(Config) ->
     ServerJIDResource = jid:replace_resource(ServerJID, <<"resource">>),
     %% All stanzas sent should be handled by local_send_to_resource_hook
     %% and should be bounced with item-not-found error
-    ct:comment("Sending IQs to ~s", [jid:to_string(ServerJIDResource)]),
+    ct:comment("Sending IQs to ~s", [jid:encode(ServerJIDResource)]),
     lists:foreach(
       fun(Type) ->
 	      #iq{type = error} = Err =
 		  send_recv(Config, #iq{type = Type, to = ServerJIDResource}),
 		  #stanza_error{reason = 'item-not-found'} = xmpp:get_error(Err)
       end, [set, get]),
-    ct:comment("Sending messages to ~s", [jid:to_string(ServerJIDResource)]),
+    ct:comment("Sending messages to ~s", [jid:encode(ServerJIDResource)]),
     lists:foreach(
       fun(Type) ->
 	      #message{type = error} = Err =
 		  send_recv(Config, #message{type = Type, to = ServerJIDResource}),
 	      #stanza_error{reason = 'item-not-found'} = xmpp:get_error(Err)
       end, [normal, chat, groupchat, headline]),
-    ct:comment("Sending presences to ~s", [jid:to_string(ServerJIDResource)]),
+    ct:comment("Sending presences to ~s", [jid:encode(ServerJIDResource)]),
     lists:foreach(
       fun(Type) ->
 	      #presence{type = error} = Err =

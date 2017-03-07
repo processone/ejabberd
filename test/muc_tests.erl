@@ -191,14 +191,14 @@ service_disco_items(Config) ->
 
 service_vcard(Config) ->
     MUC = muc_jid(Config),
-    ct:comment("Retreiving vCard from ~s", [jid:to_string(MUC)]),
+    ct:comment("Retreiving vCard from ~s", [jid:encode(MUC)]),
     #iq{type = result, sub_els = [#vcard_temp{}]} =
 	send_recv(Config, #iq{type = get, to = MUC, sub_els = [#vcard_temp{}]}),
     disconnect(Config).
 
 service_unique(Config) ->
     MUC = muc_jid(Config),
-    ct:comment("Requesting muc unique from ~s", [jid:to_string(MUC)]),
+    ct:comment("Requesting muc unique from ~s", [jid:encode(MUC)]),
     #iq{type = result, sub_els = [#muc_unique{name = Name}]} =
 	send_recv(Config, #iq{type = get, to = MUC, sub_els = [#muc_unique{}]}),
     ct:comment("Checking if unique name is set in the response"),
@@ -1711,7 +1711,7 @@ destroy(Config, Reason) ->
 
 disco_items(Config) ->
     MUC = muc_jid(Config),
-    ct:comment("Performing disco#items request to ~s", [jid:to_string(MUC)]),
+    ct:comment("Performing disco#items request to ~s", [jid:encode(MUC)]),
     #iq{type = result, from = MUC, sub_els = [DiscoItems]} =
 	send_recv(Config, #iq{type = get, to = MUC,
 			      sub_els = [#disco_items{}]}),
@@ -1819,7 +1819,7 @@ get_affiliation(Config, Aff) ->
 
 set_vcard(Config, VCard) ->
     Room = muc_room_jid(Config),
-    ct:comment("Setting vCard for ~s", [jid:to_string(Room)]),
+    ct:comment("Setting vCard for ~s", [jid:encode(Room)]),
     case send_recv(Config, #iq{type = set, to = Room,
 			       sub_els = [VCard]}) of
 	#iq{type = result, sub_els = []} ->
@@ -1830,7 +1830,7 @@ set_vcard(Config, VCard) ->
 
 get_vcard(Config) ->
     Room = muc_room_jid(Config),
-    ct:comment("Retreiving vCard from ~s", [jid:to_string(Room)]),
+    ct:comment("Retreiving vCard from ~s", [jid:encode(Room)]),
     case send_recv(Config, #iq{type = get, to = Room,
 			       sub_els = [#vcard_temp{}]}) of
 	#iq{type = result, sub_els = [VCard]} ->

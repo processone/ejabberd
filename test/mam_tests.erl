@@ -94,8 +94,8 @@ get_set_prefs(Config) ->
 		JID <- [undefined, server_jid(Config)],
 		NS <- ?VERSIONS,
 		Default <- [always, never, roster],
-		Always <- [[], [jid:from_string(<<"foo@bar.baz">>)]],
-		Never <- [[], [jid:from_string(<<"baz@bar.foo">>)]]],
+		Always <- [[], [jid:decode(<<"foo@bar.baz">>)]],
+		Never <- [[], [jid:decode(<<"baz@bar.foo">>)]]],
     lists:foreach(
       fun({To, Prefs}) ->
 	      NS = Prefs#mam_prefs.xmlns,
@@ -477,7 +477,7 @@ query_with(Config, From, To, NS) ->
     Range = lists:seq(1, 5),
     lists:foreach(
       fun(JID) ->
-	      ct:comment("Sending query with jid ~s", [jid:to_string(JID)]),
+	      ct:comment("Sending query with jid ~s", [jid:encode(JID)]),
 	      Query = if NS == ?NS_MAM_TMP ->
 			      #mam_query{xmlns = NS, with = JID, id = QID};
 			 true ->

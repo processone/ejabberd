@@ -1025,7 +1025,7 @@ vcard_get(Config) ->
     disconnect(Config).
 
 ldap_shared_roster_get(Config) ->
-    Item = #roster_item{jid = jid:from_string(<<"user2@ldap.localhost">>), name = <<"Test User 2">>,
+    Item = #roster_item{jid = jid:decode(<<"user2@ldap.localhost">>), name = <<"Test User 2">>,
                         groups = [<<"group1">>], subscription = both},
     #iq{type = result, sub_els = [#roster_query{items = [Item]}]} =
         send_recv(Config, #iq{type = get, sub_els = [#roster_query{}]}),
