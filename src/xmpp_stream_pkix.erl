@@ -22,7 +22,6 @@
 -module(xmpp_stream_pkix).
 
 %% API
--compile(export_all).
 -export([authenticate/1, authenticate/2, get_cert_domains/1, format_error/1]).
 
 -include("xmpp.hrl").
