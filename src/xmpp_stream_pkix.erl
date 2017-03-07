@@ -85,7 +85,7 @@ format_error(idna_failed) ->
 format_error(hostname_mismatch) ->
     {'not-authorized', <<"Certificate host name mismatch">>};
 format_error(jid_mismatch) ->
-    {'not-authorized', <<"Certifcate JID mismatch">>};
+    {'not-authorized', <<"Certificate JID mismatch">>};
 format_error(get_cert_failed) ->
     {'bad-protocol', <<"Failed to get peer certificate">>};
 format_error(invalid_authzid) ->
@@ -104,7 +104,7 @@ get_cert_domains(Cert) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
--spec verify_cert(module(), fast_tls:tls_socket()) -> {ok, cert()} | {error, atom()}.
+-spec verify_cert(module(), ejabberd_socket:socket()) -> {ok, cert()} | {error, atom()}.
 verify_cert(SockMod, Socket) ->
     case SockMod:get_peer_certificate(Socket, otp) of
 	{ok, Cert} ->
