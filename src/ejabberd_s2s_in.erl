@@ -288,8 +288,7 @@ handle_info(Info, #{server_host := LServer} = State) ->
 terminate(Reason, #{auth_domains := AuthDomains,
 		    sockmod := SockMod, socket := Socket} = State) ->
     case maps:get(stop_reason, State, undefined) of
-	{tls, no_certfile} = Err ->
-	    %% TODO: we probably need to report more TLS errors here
+	{tls, _} = Err ->
 	    ?ERROR_MSG("(~s) Failed to secure inbound s2s connection: ~s",
 		       [SockMod:pp(Socket), xmpp_stream_in:format_error(Err)]);
 	_ ->

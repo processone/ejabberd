@@ -276,8 +276,7 @@ process_terminated(#{sockmod := SockMod, socket := Socket, jid := JID} = State,
     bounce_message_queue(),
     State1;
 process_terminated(#{sockmod := SockMod, socket := Socket,
-		     stop_reason := {tls, no_certfile}} = State, Reason) ->
-    %% TODO: we probably need to report more TLS errors here
+		     stop_reason := {tls, _}} = State, Reason) ->
     ?ERROR_MSG("(~s) Failed to secure c2s connection: ~s",
 	       [SockMod:pp(Socket), format_reason(State, Reason)]),
     State;
