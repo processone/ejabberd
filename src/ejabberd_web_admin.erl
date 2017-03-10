@@ -1148,9 +1148,7 @@ term_to_string(T) ->
 
 %% @spec (T::any(), Cols::integer()) -> {NumLines::integer(), Paragraph::string()}
 term_to_paragraph(T, Cols) ->
-    P1 = erl_syntax:abstract(T),
-    P2 = erl_prettypr:format(P1, [{paper, Cols}]),
-    Paragraph = list_to_binary(P2),
+    Paragraph = iolist_to_binary(io_lib:print(T, 1, Cols, -1)),
     FieldList = ejabberd_regexp:split(Paragraph, <<"\n">>),
     NumLines = length(FieldList),
     {NumLines, Paragraph}.
