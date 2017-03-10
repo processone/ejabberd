@@ -1114,6 +1114,8 @@ acl_spec_to_text({server_glob, RS}) ->
 acl_spec_to_text({node_glob, {RU, RS}}) ->
     {node_glob, <<RU/binary, "@", RS/binary>>};
 acl_spec_to_text(all) -> {all, <<"">>};
+acl_spec_to_text({ip, {IP, L}}) -> {ip, <<(jlib:ip_to_list(IP))/binary, "/",
+					  (integer_to_binary(L))/binary>>};
 acl_spec_to_text(Spec) -> {raw, term_to_string(Spec)}.
 
 acl_spec_to_xhtml(ID, Spec) ->
@@ -1137,7 +1139,7 @@ acl_spec_select(ID, Opt) ->
 				      (iolist_to_binary(atom_to_list(O))))
 			 end,
 			 [user, server, user_regexp, server_regexp, node_regexp,
-			  user_glob, server_glob, node_glob, all, raw])))]).
+			  user_glob, server_glob, node_glob, all, ip, raw])))]).
 
 %% @spec (T::any()) -> StringLine::string()
 term_to_string(T) ->
@@ -1222,6 +1224,10 @@ string_to_spec(<<"node_glob">>, Val) ->
     #jid{luser = U, lserver = S, resource = <<"">>} =
 	jid:decode(Val),
     {node_glob, U, S};
+string_to_spec(<<"ip">>, Val) ->
+    [IPs, Ms] = str:tokens(Val, <<"/">>),
+    {ok, IP} = inet_parse:address(binary_to_list(IPs)),
+    {ip, {IP, binary_to_integer(Ms)}};
 string_to_spec(<<"all">>, _) -> all;
 string_to_spec(<<"raw">>, Val) ->
     {ok, Tokens, _} = erl_scan:string(binary_to_list(<<Val/binary, ".">>)),
