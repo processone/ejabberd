@@ -471,6 +471,8 @@ create_room_with_opts(Name1, Host1, ServerHost, CustomRoomOpts) ->
     AcPer = gen_mod:get_module_opt(ServerHost, mod_muc, access_persistent, fun(X) -> X end, all),
     HistorySize = gen_mod:get_module_opt(ServerHost, mod_muc, history_size, fun(X) -> X end, 20),
     RoomShaper = gen_mod:get_module_opt(ServerHost, mod_muc, room_shaper, fun(X) -> X end, none),
+    QueueType = gen_mod:get_module_opt(ServerHost, mod_muc, queue_type, fun(X) -> X end,
+				       ejabberd_config:default_queue_type(ServerHost)),
 
     %% If the room does not exist yet in the muc_online_room
     case mod_muc:find_online_room(Name, Host) of
@@ -483,7 +485,8 @@ create_room_with_opts(Name1, Host1, ServerHost, CustomRoomOpts) ->
 			  Name,
 			  HistorySize,
 			  RoomShaper,
-			  RoomOpts),
+			  RoomOpts,
+			  QueueType),
 	    mod_muc:register_online_room(Host, Name, Pid),
 	    ok;
 	{ok, _} ->

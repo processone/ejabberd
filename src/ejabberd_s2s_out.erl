@@ -277,8 +277,14 @@ handle_timeout(#{on_route := Action} = State) ->
 
 init([#{server := LServer, remote_server := RServer} = State, Opts]) ->
     ServerHost = ejabberd_router:host_of_route(LServer),
+    QueueType = ejabberd_s2s:queue_type(LServer),
+    QueueLimit = case lists:keyfind(
+			max_queue, 1, ejabberd_config:fsm_limit_opts([])) of
+		     {_, N} -> N;
+		     false -> unlimited
+		 end,
     State1 = State#{on_route => queue,
-		    queue => queue:new(),
+		    queue => p1_queue:new(QueueType, QueueLimit),
 		    xmlns => ?NS_SERVER,
 		    lang => ?MYLANG,
 		    server_host => ServerHost,
@@ -300,7 +306,15 @@ handle_cast(Msg, #{server_host := ServerHost} = State) ->
 
 handle_info({route, Pkt}, #{queue := Q, on_route := Action} = State) ->
     case Action of
-	queue -> State#{queue => queue:in(Pkt, Q)};
+	queue ->
+	    try State#{queue => p1_queue:in(Pkt, Q)}
+	    catch error:full ->
+		    #{server := LServer, remote_server := RServer} = State,
+		    ?INFO_MSG("Failed to establish outbound s2s connection "
+			      "~s -> ~s: message queue is overloaded",
+			      [LServer, RServer]),
+		    stop(State#{stop_reason => queue_full})
+	    end;
 	bounce -> bounce_packet(Pkt, State);
 	send -> set_idle_timeout(send(State, Pkt))
     end;
@@ -324,20 +338,18 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 -spec resend_queue(state()) -> state().
-resend_queue(#{queue := Q} = State) ->
-    State1 = State#{queue => queue:new()},
-    jlib:queue_foldl(
+resend_queue(State) ->
+    queue_fold(
       fun(Pkt, AccState) ->
 	      send(AccState, Pkt)
-      end, State1, Q).
+      end, State).
 
 -spec bounce_queue(state()) -> state().
-bounce_queue(#{queue := Q} = State) ->
-    State1 = State#{queue => queue:new()},
-    jlib:queue_foldl(
+bounce_queue(State) ->
+    queue_fold(
       fun(Pkt, AccState) ->
 	      bounce_packet(Pkt, AccState)
-      end, State1, Q).
+      end, State).
 
 -spec bounce_message_queue(state()) -> state().
 bounce_message_queue(State) ->
@@ -363,6 +375,8 @@ mk_bounce_error(Lang, #{stop_reason := Why}) ->
     case Why of
 	internal_failure ->
 	    xmpp:err_internal_server_error();
+	queue_full ->
+	    xmpp:err_resource_constraint();
 	{dns, _} ->
 	    xmpp:err_remote_server_not_found(Reason, Lang);
 					     _ ->
@@ -386,6 +400,15 @@ set_idle_timeout(#{on_route := send, server := LServer} = State) ->
     xmpp_stream_out:set_timeout(State, Timeout);
 set_idle_timeout(State) ->
     State.
+
+queue_fold(F, #{queue := Q} = State) ->
+    case p1_queue:out(Q) of
+	{{value, Pkt}, Q1} ->
+	    State1 = F(Pkt, State#{queue => Q1}),
+	    queue_fold(F, State1);
+	{empty, Q1} ->
+	    State#{queue => Q1}
+    end.
 
 transform_options(Opts) ->
     lists:foldl(fun transform_options/2, [], Opts).

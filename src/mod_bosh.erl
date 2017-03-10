@@ -158,9 +158,11 @@ mod_opt_type(prebind) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(ram_db_type) ->
     fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
+mod_opt_type(queue_type) ->
+    fun(ram) -> ram; (file) -> file end;
 mod_opt_type(_) ->
-    [json, max_concat, max_inactivity, max_pause, prebind, ram_db_type].
-
+    [json, max_concat, max_inactivity, max_pause, prebind, ram_db_type,
+     queue_type].
 
 %%%----------------------------------------------------------------------
 %%% Help Web Page

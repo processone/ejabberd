@@ -38,8 +38,7 @@
 -export([tolower/1, term_to_base64/1, base64_to_term/1,
 	 decode_base64/1, encode_base64/1, ip_to_list/1,
 	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
-	 l2i/1, i2l/1, i2l/2, expr_to_term/1, term_to_expr/1,
-	 queue_drop_while/2, queue_foldl/3, queue_foldr/3, queue_foreach/2]).
+	 l2i/1, i2l/1, i2l/2, expr_to_term/1, term_to_expr/1]).
 
 %% The following functions are used by gen_iq_handler.erl for providing backward
 %% compatibility and must not be used in other parts of the code
@@ -959,49 +958,4 @@ i2l(L, N) when is_binary(L) ->
       N -> L;
       C when C > N -> L;
       _ -> i2l(<<$0, L/binary>>, N)
-    end.
-
--spec queue_drop_while(fun((term()) -> boolean()), ?TQUEUE) -> ?TQUEUE.
-
-queue_drop_while(F, Q) ->
-    case queue:peek(Q) of
-      {value, Item} ->
-	  case F(Item) of
-	    true ->
-		queue_drop_while(F, queue:drop(Q));
-	    _ ->
-		Q
-	  end;
-      empty ->
-	  Q
-    end.
-
--spec queue_foldl(fun((term(), T) -> T), T, ?TQUEUE) -> T.
-queue_foldl(F, Acc, Q) ->
-    case queue:out(Q) of
-	{{value, Item}, Q1} ->
-	    Acc1 = F(Item, Acc),
-	    queue_foldl(F, Acc1, Q1);
-	{empty, _} ->
-	    Acc
-    end.
-
--spec queue_foldr(fun((term(), T) -> T), T, ?TQUEUE) -> T.
-queue_foldr(F, Acc, Q) ->
-    case queue:out_r(Q) of
-	{{value, Item}, Q1} ->
-	    Acc1 = F(Item, Acc),
-	    queue_foldr(F, Acc1, Q1);
-	{empty, _} ->
-	    Acc
-    end.
-
--spec queue_foreach(fun((_) -> _), ?TQUEUE) -> ok.
-queue_foreach(F, Q) ->
-    case queue:out(Q) of
-	{{value, Item}, Q1} ->
-	    F(Item),
-	    queue_foreach(F, Q1);
-	{empty, _} ->
-	    ok
     end.
