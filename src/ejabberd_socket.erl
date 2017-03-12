@@ -211,14 +211,16 @@ send_trailer(SocketData) when ?is_http_socket(SocketData) ->
 send_trailer(SocketData) ->
     send(SocketData, <<"</stream:stream>">>).
 
--spec send(socket_state(), iodata()) -> ok | {error, inet:posix()}.
+-spec send(socket_state(), iodata()) -> ok | {error, closed | inet:posix()}.
 send(#socket_state{sockmod = SockMod, socket = Socket} = SocketData, Data) ->
     ?DEBUG("(~s) Send XML on stream = ~p", [pp(SocketData), Data]),
-    try SockMod:send(Socket, Data)
+    try SockMod:send(Socket, Data) of
+	{error, einval} -> {error, closed};
+	Result -> Result
     catch _:badarg ->
 	    %% Some modules throw badarg exceptions on closed sockets
 	    %% TODO: their code should be improved
-	    {error, einval}
+	    {error, closed}
     end.
 
 -spec send_xml(socket_state(),

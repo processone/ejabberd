@@ -764,6 +764,8 @@ select_lang(Lang, <<"">>) -> Lang;
 select_lang(_, Lang) -> Lang.
 
 -spec format_inet_error(atom()) -> string().
+format_inet_error(closed) ->
+    "connection closed";
 format_inet_error(Reason) ->
     case inet:format_error(Reason) of
 	"unknown POSIX error" -> atom_to_list(Reason);
