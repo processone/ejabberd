@@ -517,6 +517,7 @@ access_rules:
   trusted_network: 
     - allow: loopback
   ## Do not establish S2S connections with bad servers
+  ## If you enable this you also have to uncomment "s2s_access: s2s"
   ## s2s: 
   ##   - deny:
   ##     - ip: "XXX.XXX.XXX.XXX/32"
