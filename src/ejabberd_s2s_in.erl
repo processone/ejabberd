@@ -168,7 +168,8 @@ handle_stream_start(_StreamStart, #{lserver := LServer} = State) ->
     end.
 
 handle_stream_end(Reason, #{server_host := LServer} = State) ->
-    ejabberd_hooks:run_fold(s2s_in_closed, LServer, State, [Reason]).
+    State1 = State#{stop_reason => Reason},
+    ejabberd_hooks:run_fold(s2s_in_closed, LServer, State1, [Reason]).
 
 handle_stream_established(State) ->
     set_idle_timeout(State#{established => true}).
@@ -284,7 +285,15 @@ handle_cast(Msg, #{server_host := LServer} = State) ->
 handle_info(Info, #{server_host := LServer} = State) ->
     ejabberd_hooks:run_fold(s2s_in_handle_info, LServer, State, [Info]).
 
-terminate(Reason, #{auth_domains := AuthDomains}) ->
+terminate(Reason, #{auth_domains := AuthDomains,
+		    sockmod := SockMod, socket := Socket} = State) ->
+    case maps:get(stop_reason, State, undefined) of
+	{tls, _} = Err ->
+	    ?ERROR_MSG("(~s) Failed to secure inbound s2s connection: ~s",
+		       [SockMod:pp(Socket), xmpp_stream_in:format_error(Err)]);
+	_ ->
+	    ok
+    end,
     case Reason of
       {process_limit, _} ->
 	    sets:fold(

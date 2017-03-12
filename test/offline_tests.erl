@@ -295,7 +295,7 @@ get_nodes(Config) ->
     MyJID = my_jid(Config),
     MyBareJID = jid:remove_resource(MyJID),
     Peer = ?config(peer, Config),
-    Peer_s = jid:to_string(Peer),
+    Peer_s = jid:encode(Peer),
     ct:comment("Getting headers"), 
     #iq{type = result,
 	sub_els = [#disco_items{

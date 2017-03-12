@@ -32,7 +32,8 @@
 		muc_room_jid/1, my_muc_jid/1, peer_muc_jid/1,
 		mix_jid/1, mix_room_jid/1, get_features/2, recv_iq/1,
 		re_register/1, is_feature_advertised/2, subscribe_to_events/1,
-                is_feature_advertised/3, set_opt/3, auth_SASL/2,
+                is_feature_advertised/3, set_opt/3,
+		auth_SASL/2, auth_SASL/3, auth_SASL/4,
                 wait_for_master/1, wait_for_slave/1, flush/1,
                 make_iq_result/1, start_event_relay/0, alt_room_jid/1,
                 stop_event_relay/1, put_event/2, get_event/1,
@@ -301,6 +302,8 @@ init_per_testcase(TestCase, OrigConfig) ->
             connect(Config);
         "auth_plain" ->
             connect(Config);
+	"auth_external" ++ _ ->
+	    connect(Config);
 	"unauthenticated_" ++ _ ->
 	    connect(Config);
         "test_bind" ->
@@ -371,6 +374,13 @@ no_db_tests() ->
        s2s_optional,
        s2s_required,
        s2s_required_trusted]},
+     auth_external,
+     auth_external_no_jid,
+     auth_external_no_user,
+     auth_external_malformed_jid,
+     auth_external_wrong_jid,
+     auth_external_wrong_server,
+     auth_external_invalid_cert,
      sm_tests:single_cases(),
      sm_tests:master_slave_cases(),
      muc_tests:single_cases(),
@@ -792,6 +802,39 @@ auth_plain(Config) ->
             {skipped, 'PLAIN_not_available'}
     end.
 
+auth_external(Config0) ->
+    Config = connect(starttls(Config0)),
+    disconnect(auth_SASL(<<"EXTERNAL">>, Config)).
+
+auth_external_no_jid(Config0) ->
+    Config = connect(starttls(Config0)),
+    disconnect(auth_SASL(<<"EXTERNAL">>, Config, _ShoudFail = false,
+			 {<<"">>, <<"">>, <<"">>})).
+
+auth_external_no_user(Config0) ->
+    Config = set_opt(user, <<"">>, connect(starttls(Config0))),
+    disconnect(auth_SASL(<<"EXTERNAL">>, Config)).
+
+auth_external_malformed_jid(Config0) ->
+    Config = connect(starttls(Config0)),
+    disconnect(auth_SASL(<<"EXTERNAL">>, Config, _ShouldFail = true,
+			 {<<"">>, <<"@">>, <<"">>})).
+
+auth_external_wrong_jid(Config0) ->
+    Config = set_opt(user, <<"wrong">>,
+		     connect(starttls(Config0))),
+    disconnect(auth_SASL(<<"EXTERNAL">>, Config, _ShouldFail = true)).
+
+auth_external_wrong_server(Config0) ->
+    Config = connect(starttls(Config0)),
+    disconnect(auth_SASL(<<"EXTERNAL">>, Config, _ShouldFail = true,
+			 {<<"">>, <<"wrong.com">>, <<"">>})).
+
+auth_external_invalid_cert(Config0) ->
+    Config = connect(starttls(
+		       set_opt(certfile, "self-signed-cert.pem", Config0))),
+    disconnect(auth_SASL(<<"EXTERNAL">>, Config, _ShouldFail = true)).
+
 test_legacy_auth_feature(Config) ->
     true = ?config(legacy_auth, Config),
     disconnect(Config).
@@ -982,7 +1025,7 @@ vcard_get(Config) ->
     disconnect(Config).
 
 ldap_shared_roster_get(Config) ->
-    Item = #roster_item{jid = jid:from_string(<<"user2@ldap.localhost">>), name = <<"Test User 2">>,
+    Item = #roster_item{jid = jid:decode(<<"user2@ldap.localhost">>), name = <<"Test User 2">>,
                         groups = [<<"group1">>], subscription = both},
     #iq{type = result, sub_els = [#roster_query{items = [Item]}]} =
         send_recv(Config, #iq{type = get, sub_els = [#roster_query{}]}),

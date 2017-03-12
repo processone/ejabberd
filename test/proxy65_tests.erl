@@ -48,7 +48,7 @@ feature_enabled(Config) ->
 
 service_vcard(Config) ->
     JID = proxy_jid(Config),
-    ct:comment("Retreiving vCard from ~s", [jid:to_string(JID)]),
+    ct:comment("Retreiving vCard from ~s", [jid:encode(JID)]),
     #iq{type = result, sub_els = [#vcard_temp{}]} =
 	send_recv(Config, #iq{type = get, to = JID, sub_els = [#vcard_temp{}]}),
     disconnect(Config).
@@ -106,7 +106,7 @@ master_slave_test(T) ->
 
 socks5_connect(#streamhost{host = Host, port = Port},
                {SID, JID1, JID2}) ->
-    Hash = p1_sha:sha([SID, jid:to_string(JID1), jid:to_string(JID2)]),
+    Hash = p1_sha:sha([SID, jid:encode(JID1), jid:encode(JID2)]),
     {ok, Sock} = gen_tcp:connect(binary_to_list(Host), Port,
                                  [binary, {active, false}]),
     Init = <<?VERSION_5, 1, ?AUTH_ANONYMOUS>>,

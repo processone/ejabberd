@@ -66,7 +66,7 @@ feature_enabled(Config) ->
     disconnect(Config).
 
 set_item(Config) ->
-    JID = jid:from_string(<<"nurse@example.com">>),
+    JID = jid:decode(<<"nurse@example.com">>),
     Item = #roster_item{jid = JID},
     {V1, Item} = set_items(Config, [Item]),
     {V1, [Item]} = get_items(Config),
@@ -84,15 +84,15 @@ set_item(Config) ->
     del_roster(disconnect(Config), JID).
 
 iq_set_many_items(Config) ->
-    J1 = jid:from_string(<<"nurse1@example.com">>),
-    J2 = jid:from_string(<<"nurse2@example.com">>),
+    J1 = jid:decode(<<"nurse1@example.com">>),
+    J2 = jid:decode(<<"nurse2@example.com">>),
     ct:comment("Trying to send roster-set with many <item/> elements"),
     Items = [#roster_item{jid = J1}, #roster_item{jid = J2}],
     #stanza_error{reason = 'bad-request'} = set_items(Config, Items),
     disconnect(Config).
 
 iq_set_duplicated_groups(Config) ->
-    JID = jid:from_string(<<"nurse@example.com">>),
+    JID = jid:decode(<<"nurse@example.com">>),
     G = randoms:get_string(),
     ct:comment("Trying to send roster-set with duplicated groups"),
     Item = #roster_item{jid = JID, groups = [G, G]},
@@ -100,14 +100,14 @@ iq_set_duplicated_groups(Config) ->
     disconnect(Config).
 
 iq_set_ask(Config) ->
-    JID = jid:from_string(<<"nurse@example.com">>),
+    JID = jid:decode(<<"nurse@example.com">>),
     ct:comment("Trying to send roster-set with 'ask' included"),
     Item = #roster_item{jid = JID, ask = subscribe},
     #stanza_error{reason = 'bad-request'} = set_items(Config, [Item]),
     disconnect(Config).
 
 iq_get_item(Config) ->
-    JID = jid:from_string(<<"nurse@example.com">>),
+    JID = jid:decode(<<"nurse@example.com">>),
     ct:comment("Trying to send roster-get with <item/> element"),
     #iq{type = error} = Err3 =
 	send_recv(Config, #iq{type = get,
@@ -117,7 +117,7 @@ iq_get_item(Config) ->
     disconnect(Config).
 
 iq_unexpected_element(Config) ->
-    JID = jid:from_string(<<"nurse@example.com">>),
+    JID = jid:decode(<<"nurse@example.com">>),
     ct:comment("Trying to send IQs with unexpected element"),
     lists:foreach(
       fun(Type) ->
@@ -129,7 +129,7 @@ iq_unexpected_element(Config) ->
     disconnect(Config).
 
 version(Config) ->
-    JID = jid:from_string(<<"nurse@example.com">>),
+    JID = jid:decode(<<"nurse@example.com">>),
     ct:comment("Requesting roster"),
     {InitialVersion, _} = get_items(Config, <<"">>),
     ct:comment("Requesting roster with initial version"),

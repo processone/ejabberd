@@ -534,8 +534,7 @@ process_features(#stream_features{sub_els = Els} = StreamFeatures,
 				    process_sasl_mechanisms(Mechs, State2);
 				false ->
 				    process_sasl_failure(
-				      #sasl_failure{reason = 'invalid-mechanism'},
-				      State2)
+				      <<"Peer provided no SASL mechanisms">>, State2)
 			    end
 		    end
 	    end
@@ -564,7 +563,7 @@ process_sasl_mechanisms(Mechs, #{user := User, server := Server} = State) ->
 	    send_pkt(State1, #sasl_auth{mechanism = Mech, text = Authzid});
 	false ->
 	    process_sasl_failure(
-	      #sasl_failure{reason = 'invalid-mechanism'}, State)
+	      <<"Peer doesn't support EXTERNAL authentication">>, State)
     end.
 
 -spec process_starttls(state()) -> state().
@@ -638,10 +637,12 @@ process_sasl_success(#{mod := Mod,
 	    end
     end.
 
--spec process_sasl_failure(sasl_failure(), state()) -> state().
-process_sasl_failure(#sasl_failure{} = Failure, #{mod := Mod} = State) ->
+-spec process_sasl_failure(sasl_failure() | binary(), state()) -> state().
+process_sasl_failure(#sasl_failure{} = Failure, State) ->
     Reason = format("Peer responded with error: ~s",
 		    [format_sasl_failure(Failure)]),
+    process_sasl_failure(Reason, State);
+process_sasl_failure(Reason, #{mod := Mod} = State) ->
     try Mod:handle_auth_failure(<<"EXTERNAL">>, {auth, Reason}, State)
     catch _:undef -> process_stream_end({auth, Reason}, State)
     end.
@@ -763,6 +764,8 @@ select_lang(Lang, <<"">>) -> Lang;
 select_lang(_, Lang) -> Lang.
 
 -spec format_inet_error(atom()) -> string().
+format_inet_error(closed) ->
+    "connection closed";
 format_inet_error(Reason) ->
     case inet:format_error(Reason) of
 	"unknown POSIX error" -> atom_to_list(Reason);
@@ -878,21 +881,23 @@ a_lookup(HostPorts, State) ->
     HostPortFamilies = [{Host, Port, Family}
 			|| {Host, Port} <- HostPorts,
 			   Family <- get_address_families(State)],
-    a_lookup(HostPortFamilies, State, {error, nxdomain}).
+    a_lookup(HostPortFamilies, State, [], {error, nxdomain}).
 
 -spec a_lookup([{inet:hostname(), inet:port_number(), inet:address_family()}],
-	       state(), network_error()) -> {ok, [ip_port()]} | network_error().
-a_lookup([{Host, Port, Family}|HostPortFamilies], State, _) ->
+	       state(), [ip_port()], network_error()) -> {ok, [ip_port()]} | network_error().
+a_lookup([{Host, Port, Family}|HostPortFamilies], State, Acc, Err) ->
     Timeout = get_dns_timeout(State),
     Retries = get_dns_retries(State),
     case a_lookup(Host, Port, Family, Timeout, Retries) of
-	{error, _} = Err ->
-	    a_lookup(HostPortFamilies, State, Err);
+	{error, Reason} ->
+	    a_lookup(HostPortFamilies, State, Acc, {error, Reason});
 	{ok, AddrPorts} ->
-	    {ok, AddrPorts}
+	    a_lookup(HostPortFamilies, State, Acc ++ AddrPorts, Err)
     end;
-a_lookup([], _State, Err) ->
-    Err.
+a_lookup([], _State, [], Err) ->
+    Err;
+a_lookup([], _State, Acc, _) ->
+    {ok, Acc}.
 
 -spec a_lookup(inet:hostname(), inet:port_number(), inet:address_family(),
 	       timeout(), integer()) -> {ok, [ip_port()]} | network_error().

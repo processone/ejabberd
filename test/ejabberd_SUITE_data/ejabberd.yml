@@ -429,8 +429,10 @@ listen:
     module: ejabberd_c2s
     max_stanza_size: 65536
     certfile: CERTFILE
+    cafile: CAFILE
     zlib: true
     starttls: true
+    tls_verify: true
     shaper: c2s_shaper
     access: c2s
     resume_timeout: 3

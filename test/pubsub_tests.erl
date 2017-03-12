@@ -85,7 +85,7 @@ test_features(Config) ->
 
 test_vcard(Config) ->
     JID = pubsub_jid(Config),
-    ct:comment("Retreiving vCard from ~s", [jid:to_string(JID)]),
+    ct:comment("Retreiving vCard from ~s", [jid:encode(JID)]),
     #iq{type = result, sub_els = [#vcard_temp{}]} =
 	send_recv(Config, #iq{type = get, to = JID, sub_els = [#vcard_temp{}]}),
     disconnect(Config).

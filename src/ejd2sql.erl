@@ -57,7 +57,6 @@ modules() ->
      mod_offline,
      mod_privacy,
      mod_private,
-     mod_pubsub,
      mod_roster,
      mod_shared_roster,
      mod_vcard,
@@ -172,7 +171,8 @@ export(LServer, Table, IO, ConvertFun) ->
 output(_LServer, _Table, _IO, []) ->
     ok;
 output(LServer, _Table, sql, SQLs) ->
-    ejabberd_sql:sql_transaction(LServer, SQLs);
+    {atomic, ok} = ejabberd_sql:sql_transaction(LServer, SQLs),
+    ok;
 output(_LServer, Table, Fd, SQLs) ->
     file:write(Fd, ["-- \n-- Mnesia table: ", atom_to_list(Table),
                     "\n--\n", SQLs]).

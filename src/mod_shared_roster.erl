@@ -166,10 +166,12 @@ get_user_roster(Items, US) ->
 						      case dict:find(US1,
 								     SRUsers1)
 							  of
-							{ok, _GroupNames} ->
+							{ok, GroupNames} ->
 							    {Item#roster{subscription
 									     =
 									     both,
+									 groups =
+									     Item#roster.groups ++ GroupNames,
 									 ask =
 									     none},
 							     dict:erase(US1,

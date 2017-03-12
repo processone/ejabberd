@@ -275,6 +275,11 @@ process_terminated(#{sockmod := SockMod, socket := Socket, jid := JID} = State,
 	     end,
     bounce_message_queue(),
     State1;
+process_terminated(#{sockmod := SockMod, socket := Socket,
+		     stop_reason := {tls, _}} = State, Reason) ->
+    ?ERROR_MSG("(~s) Failed to secure c2s connection: ~s",
+	       [SockMod:pp(Socket), format_reason(State, Reason)]),
+    State;
 process_terminated(State, _Reason) ->
     State.
 
@@ -416,7 +421,7 @@ bind(R, #{user := U, server := S, access := Access, lang := Lang,
 handle_stream_start(StreamStart, #{lserver := LServer} = State) ->
     case ejabberd_router:is_my_host(LServer) of
 	false ->
-	    send(State, xmpp:serr_host_unknown());
+	    send(State#{lserver => ?MYNAME}, xmpp:serr_host_unknown());
 	true ->
 	    change_shaper(State),
 	    ejabberd_hooks:run_fold(
