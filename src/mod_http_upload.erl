@@ -669,7 +669,7 @@ mk_slot(PutURL, GetURL, XMLNS) ->
 -spec make_user_string(jid(), sha1 | node) -> binary().
 
 make_user_string(#jid{luser = U, lserver = S}, sha1) ->
-    p1_sha:sha(<<U/binary, $@, S/binary>>);
+    str:sha(<<U/binary, $@, S/binary>>);
 make_user_string(#jid{luser = U}, node) ->
     re:replace(U, <<"[^a-zA-Z0-9_.-]">>, <<$_>>, [global, {return, binary}]).
 

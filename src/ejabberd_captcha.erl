@@ -90,7 +90,7 @@ create_captcha(SID, From, To, Lang, Limiter, Args) ->
       {ok, Type, Key, Image} ->
 	  Id = <<(randoms:get_string())/binary>>,
 	  JID = jid:encode(From),
-	  CID = <<"sha1+", (p1_sha:sha(Image))/binary, "@bob.xmpp.org">>,
+	  CID = <<"sha1+", (str:sha(Image))/binary, "@bob.xmpp.org">>,
 	  Data = #bob_data{cid = CID, 'max-age' = 0, type = Type,
 			   data = Image},
 	  Fs = [mk_field(hidden, <<"FORM_TYPE">>, ?NS_CAPTCHA),
@@ -120,7 +120,7 @@ create_captcha_x(SID, To, Lang, Limiter, #xdata{fields = Fs} = X) ->
     case create_image(Limiter) of
       {ok, Type, Key, Image} ->
 	  Id = <<(randoms:get_string())/binary>>,
-	  CID = <<"sha1+", (p1_sha:sha(Image))/binary, "@bob.xmpp.org">>,
+	  CID = <<"sha1+", (str:sha(Image))/binary, "@bob.xmpp.org">>,
 	  Data = #bob_data{cid = CID, 'max-age' = 0, type = Type, data = Image},
 	  HelpTxt = translate:translate(Lang,
 					<<"If you don't see the CAPTCHA image here, "

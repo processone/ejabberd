@@ -78,13 +78,13 @@ init([State, Opts]) ->
 			 fun({H, Os}, D) ->
 				 P = proplists:get_value(
 				       password, Os,
-				       p1_sha:sha(randoms:bytes(20))),
+				       str:sha(randoms:bytes(20))),
 				 dict:store(H, P, D)
 			 end, dict:new(), HOpts);
 		   false ->
 		       Pass = proplists:get_value(
 				password, Opts,
-				p1_sha:sha(randoms:bytes(20))),
+				str:sha(randoms:bytes(20))),
 		       dict:from_list([{global, Pass}])
 	       end,
     CheckFrom = gen_mod:get_opt(check_from, Opts,

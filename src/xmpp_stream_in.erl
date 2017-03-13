@@ -636,7 +636,7 @@ process_handshake(#handshake{data = Digest},
 		  {false, _} ->
 		      false;
 		  {Password, _} ->
-		      p1_sha:sha(<<StreamID/binary, Password/binary>>) == Digest
+		      str:sha(<<StreamID/binary, Password/binary>>) == Digest
 	      end,
     case AuthRes of
 	true ->

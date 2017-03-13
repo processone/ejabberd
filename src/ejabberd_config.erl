@@ -71,9 +71,9 @@ start() ->
     UnixTime = p1_time_compat:system_time(seconds),
     SharedKey = case erlang:get_cookie() of
                     nocookie ->
-                        p1_sha:sha(randoms:get_string());
+                        str:sha(randoms:get_string());
                     Cookie ->
-                        p1_sha:sha(jlib:atom_to_binary(Cookie))
+                        str:sha(jlib:atom_to_binary(Cookie))
                 end,
     State2 = set_option({node_start, global}, UnixTime, State1),
     State3 = set_option({shared_key, global}, SharedKey, State2),

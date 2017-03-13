@@ -266,8 +266,8 @@ s2s_out_packet(State, _) ->
 -spec make_key(binary(), binary(), binary()) -> binary().
 make_key(From, To, StreamID) ->
     Secret = ejabberd_config:get_option(shared_key, fun(V) -> V end),
-    p1_sha:to_hexlist(
-      crypto:hmac(sha256, p1_sha:to_hexlist(crypto:hash(sha256, Secret)),
+    str:to_hexlist(
+      crypto:hmac(sha256, str:to_hexlist(crypto:hash(sha256, Secret)),
 		  [To, " ", From, " ", StreamID])).
 
 -spec send_verify_request(ejabberd_s2s_out:state()) -> ejabberd_s2s_out:state().

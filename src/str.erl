@@ -65,7 +65,9 @@
          prefix/2,
          suffix/2,
 	 format/2,
-         to_integer/1]).
+         to_integer/1,
+         sha/1,
+         to_hexlist/1]).
 
 %%%===================================================================
 %%% API
@@ -286,6 +288,20 @@ suffix(B1, B2) ->
 format(Format, Args) ->
     iolist_to_binary(io_lib:format(Format, Args)).
 
+
+-spec sha(binary()) -> binary().
+
+sha(Text) ->
+    Bin = crypto:hash(sha, Text),
+    to_hexlist(Bin).
+
+-spec to_hexlist(binary()) -> binary().
+
+to_hexlist(S) when is_list(S) ->
+    to_hexlist(iolist_to_binary(S));
+to_hexlist(Bin) when is_binary(Bin) ->
+    << <<(digit_to_xchar(N div 16)), (digit_to_xchar(N rem 16))>> || <<N>> <= Bin >>.
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
@@ -293,3 +309,6 @@ join_s([], _Sep) ->
     [];
 join_s([H|T], Sep) ->
     [H, [[Sep, X] || X <- T]].
+
+digit_to_xchar(D) when (D >= 0) and (D < 10) -> D + $0;
+digit_to_xchar(D) -> D + $a - 10.
