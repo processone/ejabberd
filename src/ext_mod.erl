@@ -570,10 +570,13 @@ compile_elixir_file(Dest, File) ->
 install(Module, Spec, SrcDir, LibDir) ->
     {ok, CurDir} = file:get_cwd(),
     file:set_cwd(SrcDir),
+    Files1 = [{File, copy(File, filename:join(LibDir, File))}
+                  || File <- filelib:wildcard("{ebin,priv,conf,include}/**")],
+    Files2 = [{File, copy(File, filename:join(LibDir, filename:join(lists:nthtail(2,filename:split(File)))))}
+                  || File <- filelib:wildcard("deps/*/{ebin,priv}/**")],
     Errors = lists:dropwhile(fun({_, ok}) -> true;
                                 (_) -> false
-            end, [{File, copy(File, filename:join(LibDir, File))}
-                  || File <- filelib:wildcard("{ebin,priv,conf,include}/**")]),
+            end, Files1++Files2),
     Result = case Errors of
         [{F, {error, E}}|_] ->
             {error, {F, E}};
