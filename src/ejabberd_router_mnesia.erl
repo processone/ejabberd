@@ -24,7 +24,7 @@
 -behaviour(gen_server).
 
 %% API
--export([init/0, register_route/4, unregister_route/2, find_routes/1,
+-export([init/0, register_route/5, unregister_route/2, find_routes/1,
 	 host_of_route/1, is_my_route/1, is_my_host/1, get_all_routes/0]).
 %% gen_server callbacks
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2,
@@ -53,16 +53,15 @@ init() ->
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
-register_route(Domain, ServerHost, LocalHint, undefined) ->
+register_route(Domain, ServerHost, LocalHint, undefined, Pid) ->
     F = fun () ->
 		mnesia:write(#route{domain = Domain,
-				    pid = self(),
+				    pid = Pid,
 				    server_host = ServerHost,
 				    local_hint = LocalHint})
 	end,
     transaction(F);
-register_route(Domain, ServerHost, _LocalHint, N) ->
-    Pid = self(),
+register_route(Domain, ServerHost, _LocalHint, N, Pid) ->
     F = fun () ->
 		case mnesia:wread({route, Domain}) of
 		    [] ->

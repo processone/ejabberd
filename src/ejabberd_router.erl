@@ -39,6 +39,7 @@
 	 route_error/2,
 	 register_route/2,
 	 register_route/3,
+	 register_route/4,
 	 register_routes/1,
 	 host_of_route/1,
 	 process_iq/1,
@@ -65,7 +66,7 @@
 
 -callback init() -> any().
 -callback register_route(binary(), binary(), local_hint(),
-			 undefined | pos_integer()) -> ok | {error, term()}.
+			 undefined | pos_integer(), pid()) -> ok | {error, term()}.
 -callback unregister_route(binary(), undefined | pos_integer()) -> ok | {error, term()}.
 -callback find_routes(binary()) -> [#route{}].
 -callback host_of_route(binary()) -> {ok, binary()} | error.
@@ -141,6 +142,10 @@ register_route(Domain, ServerHost) ->
 
 -spec register_route(binary(), binary(), local_hint() | undefined) -> ok.
 register_route(Domain, ServerHost, LocalHint) ->
+    register_route(Domain, ServerHost, LocalHint, self()).
+
+-spec register_route(binary(), binary(), local_hint() | undefined, pid()) -> ok.
+register_route(Domain, ServerHost, LocalHint, Pid) ->
     case {jid:nameprep(Domain), jid:nameprep(ServerHost)} of
 	{error, _} ->
 	    erlang:error({invalid_domain, Domain});
@@ -149,7 +154,7 @@ register_route(Domain, ServerHost, LocalHint) ->
 	{LDomain, LServerHost} ->
 	    Mod = get_backend(),
 	    case Mod:register_route(LDomain, LServerHost, LocalHint,
-				    get_component_number(LDomain)) of
+				    get_component_number(LDomain), Pid) of
 		ok ->
 		    ?DEBUG("Route registered: ~s", [LDomain]);
 		{error, Err} ->

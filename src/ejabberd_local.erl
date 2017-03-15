@@ -279,7 +279,11 @@ update_table() ->
     end.
 
 host_up(Host) ->
-    ejabberd_router:register_route(Host, Host, {apply, ?MODULE, route}),
+    Owner = case whereis(?MODULE) of
+		undefined -> self();
+		Pid -> Pid
+	    end,
+    ejabberd_router:register_route(Host, Host, {apply, ?MODULE, route}, Owner),
     ejabberd_hooks:add(local_send_to_resource_hook, Host,
 		       ?MODULE, bounce_resource_packet, 100).
 
