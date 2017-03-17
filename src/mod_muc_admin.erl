@@ -484,7 +484,7 @@ create_room_with_opts(Name1, Host1, ServerHost, CustomRoomOpts) ->
 			  HistorySize,
 			  RoomShaper,
 			  RoomOpts),
-	    mod_muc:register_online_room(Host, Name, Pid),
+	    mod_muc:register_online_room(Name, Host, Pid),
 	    ok;
 	{ok, _} ->
 	    error
