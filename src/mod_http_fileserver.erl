@@ -230,11 +230,17 @@ try_open_log(FN, _Host) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
-handle_call({serve, LocalPath, Auth}, _From, State) ->
+handle_call({serve, LocalPath, Auth, RHeaders}, _From, State) ->
+    IfModifiedSince = case find_header('If-Modified-Since', RHeaders, bad_date) of
+			  bad_date ->
+			      bad_date;
+			  Val ->
+			      httpd_util:convert_request_date(binary_to_list(Val))
+		      end,
     Reply = serve(LocalPath, Auth, State#state.docroot, State#state.directory_indices,
 		  State#state.custom_headers,
 		  State#state.default_content_type, State#state.content_types,
-		  State#state.user_access),
+		  State#state.user_access, IfModifiedSince),
     {reply, Reply, State};
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
@@ -300,9 +306,9 @@ code_change(_OldVsn, State, _Extra) ->
 %% @doc Handle an HTTP request.
 %% LocalPath is the part of the requested URL path that is "local to the module".
 %% Returns the page to be sent back to the client and/or HTTP status code.
-process(LocalPath, #request{host = Host, auth = Auth} = Request) ->
+process(LocalPath, #request{host = Host, auth = Auth, headers = RHeaders} = Request) ->
     ?DEBUG("Requested ~p", [LocalPath]),
-    try gen_server:call(get_proc_name(Host), {serve, LocalPath, Auth}) of
+    try gen_server:call(get_proc_name(Host), {serve, LocalPath, Auth, RHeaders}) of
 	{FileSize, Code, Headers, Contents} ->
 	    add_to_log(FileSize, Code, Request),
 	    {Code, Headers, Contents}
@@ -315,7 +321,7 @@ process(LocalPath, #request{host = Host, auth = Auth} = Request) ->
 
 
 serve(LocalPath, Auth, DocRoot, DirectoryIndices, CustomHeaders, DefaultContentType,
-    ContentTypes, UserAccess) ->
+    ContentTypes, UserAccess, IfModifiedSince) ->
     CanProceed = case {UserAccess, Auth} of
 		     {none, _} -> true;
 		     {_, {User, Pass}} ->
@@ -338,10 +344,17 @@ serve(LocalPath, Auth, DocRoot, DirectoryIndices, CustomHeaders, DefaultContentT
 								  CustomHeaders,
 								  DefaultContentType,
 								  ContentTypes);
-		{ok, FileInfo}                     -> serve_file(FileInfo, FileName,
-								 CustomHeaders,
-								 DefaultContentType,
-								 ContentTypes)
+		{ok, #file_info{mtime = MTime} = FileInfo} ->
+		    case calendar:local_time_to_universal_time_dst(MTime) of
+			[IfModifiedSince | _] ->
+			    serve_not_modified(FileInfo, FileName,
+					       CustomHeaders);
+			_ ->
+			    serve_file(FileInfo, FileName,
+				       CustomHeaders,
+				       DefaultContentType,
+				       ContentTypes)
+		    end
 	    end;
 	_ ->
 	    ?HTTP_ERR_FORBIDDEN
@@ -358,6 +371,13 @@ serve_index(FileName, [Index | T], CH, DefaultContentType, ContentTypes) ->
         {ok, #file_info{type = directory}} -> serve_index(FileName, T, CH, DefaultContentType, ContentTypes);
         {ok, FileInfo}                     -> serve_file(FileInfo, IndexFileName, CH, DefaultContentType, ContentTypes)
     end.
+
+serve_not_modified(FileInfo, FileName, CustomHeaders) ->
+    ?DEBUG("Delivering not modified: ~s", [FileName]),
+    {0, 304,
+     [{<<"Server">>, <<"ejabberd">>},
+      {<<"Last-Modified">>, last_modified(FileInfo)}
+      | CustomHeaders], <<>>}.
 
 %% Assume the file exists if we got this far and attempt to read it in
 %% and serve it up.
