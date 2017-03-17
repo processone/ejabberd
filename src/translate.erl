@@ -43,6 +43,7 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 init([]) ->
+    process_flag(trap_exit, true),
     ets:new(translations, [named_table, public]),
     Dir = case os:getenv("EJABBERD_MSGS_PATH") of
 	    false ->
@@ -53,6 +54,7 @@ init([]) ->
 	    Path -> Path
 	  end,
     load_dir(iolist_to_binary(Dir)),
+    xmpp:set_tr_callback({?MODULE, translate}),
     {ok, #state{}}.
 
 handle_call(_Request, _From, State) ->
@@ -66,7 +68,7 @@ handle_info(_Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
-    ok.
+    xmpp:set_tr_callback(undefined).
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
