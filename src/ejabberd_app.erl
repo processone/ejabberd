@@ -40,6 +40,7 @@
 %%%
 
 start(normal, _Args) ->
+    {T1, _} = statistics(wall_clock),
     ejabberd_logger:start(),
     write_pid_file(),
     start_apps(),
@@ -54,8 +55,9 @@ start(normal, _Args) ->
     case ejabberd_sup:start_link() of
 	{ok, SupPid} ->
 	    register_elixir_config_hooks(),
-	    ?INFO_MSG("ejabberd ~s is started in the node ~p",
-		      [?VERSION, node()]),
+	    {T2, _} = statistics(wall_clock),
+	    ?INFO_MSG("ejabberd ~s is started in the node ~p in ~.2fs",
+		      [?VERSION, node(), (T2-T1)/1000]),
 	    {ok, SupPid};
 	Err ->
 	    Err
