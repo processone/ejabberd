@@ -518,12 +518,18 @@ process_features(#stream_features{sub_els = Els} = StreamFeatures,
 		false when TLSRequired and not Encrypted ->
 		    Txt = <<"Use of STARTTLS required">>,
 		    send_pkt(State1, xmpp:serr_policy_violation(Txt, Lang));
+		false when not Encrypted ->
+		    process_sasl_failure(
+		      <<"Peer doesn't support STARTTLS">>, State1);
 		#starttls{required = true} when not TLSAvailable and not Encrypted ->
 		    Txt = <<"Use of STARTTLS forbidden">>,
 		    send_pkt(State1, xmpp:serr_unsupported_feature(Txt, Lang));
 		#starttls{} when TLSAvailable and not Encrypted ->
 		    State2 = State1#{stream_state => wait_for_starttls_response},
 		    send_pkt(State2, #starttls{});
+		#starttls{} when not Encrypted ->
+		    process_sasl_failure(
+		      <<"STARTTLS is disabled in local configuration">>, State1);
 		_ ->
 		    State2 = process_cert_verification(State1),
 		    case is_disconnected(State2) of
