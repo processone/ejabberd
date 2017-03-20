@@ -6,7 +6,7 @@
   "ex_doc": {:hex, :ex_doc, "0.14.5", "c0433c8117e948404d93ca69411dd575ec6be39b47802e81ca8d91017a0cf83c", [:mix], [{:earmark, "~> 1.0", [hex: :earmark, optional: false]}]},
   "ezlib": {:hex, :ezlib, "1.0.2", "22004ecf553a7d831404394d5642712e2aede90522e22bd6ccc089ca410ee098", [:rebar3], []},
   "fast_tls": {:hex, :fast_tls, "1.0.10", "d403f20978ec30814203191b33764c016a49c0fce09fc0540eb56c087d5167de", [:rebar3], [{:p1_utils, "1.0.6", [hex: :p1_utils, optional: false]}]},
-  "fast_xml": {:hex, :fast_xml, "1.1.19", "7400b1c879941a52a62b97a370419ed7a1d448356bad000d5a80cda3f0b8a60d", [:rebar3], [{:p1_utils, "1.0.6", [hex: :p1_utils, optional: false]}]},
+  "fast_xml": {:git, "https://github.com/processone/fast_xml.git", "984933e581dd4091f775f3b59dd76bfddfa8097e", [tag: "1.1.22"]},
   "fast_yaml": {:hex, :fast_yaml, "1.0.8", "1b7438f1ecc3822b57c0aaa26d8f3ee93725fb89f7cc5a204a77339cac92dd93", [:rebar3], [{:p1_utils, "1.0.6", [hex: :p1_utils, optional: false]}]},
   "goldrush": {:hex, :goldrush, "0.1.9", "f06e5d5f1277da5c413e84d5a2924174182fb108dabb39d5ec548b27424cd106", [:rebar3], []},
   "iconv": {:hex, :iconv, "1.0.3", "f5c159f7e0ad2a3b55c6b5528ce71d7926f206df2f9bf83201a77cf1bc91c6f0", [:rebar3], [{:p1_utils, "1.0.6", [hex: :p1_utils, optional: false]}]},
@@ -14,7 +14,9 @@
   "lager": {:hex, :lager, "3.2.4", "a6deb74dae7927f46bd13255268308ef03eb206ec784a94eaf7c1c0f3b811615", [:rebar3], [{:goldrush, "0.1.9", [hex: :goldrush, optional: false]}]},
   "p1_mysql": {:hex, :p1_mysql, "1.0.2", "893a99415f98ce8b6ad014ef950d4e878895787b6c8333587f1e506f831571e0", [:rebar3], []},
   "p1_oauth2": {:hex, :p1_oauth2, "0.6.1", "4e021250cc198c538b097393671a41e7cebf463c248980320e038fe0316eb56b", [:rebar3], []},
-  "p1_utils": {:hex, :p1_utils, "1.0.6", "ef0951ddf38e92b7e479af4b8dc950df76af8c1030432ef68b7fd7ad17c436fe", [:rebar3], []},
+  "p1_pgsql": {:hex, :p1_pgsql, "1.1.2", "27d3137e0b0098808d9c60bf197344669ed1107ed47ce4af2254099a62ccc27e", [:rebar3], []},
+  "p1_utils": {:git, "https://github.com/processone/p1_utils.git", "0860e5f913ccf6ded432450c942927cca5ccdbea", [tag: "1.0.7"]},
+  "sqlite3": {:hex, :sqlite3, "1.1.5", "794738b6d07b6d36ec6d42492cb9d629bad9cf3761617b8b8d728e765db19840", [:rebar3], []},
   "stringprep": {:hex, :stringprep, "1.0.7", "f709c7ee3697ae9d2becbbbba1dcea47e0f583e313b4eb7d0ced2163c595ee12", [:rebar3], [{:p1_utils, "1.0.6", [hex: :p1_utils, optional: false]}]},
   "stun": {:hex, :stun, "1.0.9", "daf2db395ac69d9808f13c208f26eda75b83e43d7083d4dd8dda28c63d900672", [:rebar3], [{:fast_tls, "1.0.10", [hex: :fast_tls, optional: false]}, {:p1_utils, "1.0.6", [hex: :p1_utils, optional: false]}]},
-  "xmpp": {:hex, :xmpp, "1.1.6", "0b43cc5fd61de06654bbc74e41faa94ca74ebb3fec7ca4ba684318bb105e912a", [:rebar3], [{:fast_xml, "1.1.19", [hex: :fast_xml, optional: false]}, {:stringprep, "1.0.7", [hex: :stringprep, optional: false]}]}}
+  "xmpp": {:git, "https://github.com/processone/xmpp.git", "2d40be0964eebd30b729b1bc20fe309884a20186", [tag: "1.1.9"]}}

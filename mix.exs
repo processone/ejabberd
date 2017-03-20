@@ -40,13 +40,13 @@ defmodule Ejabberd.Mixfile do
 
   defp deps do
     [{:lager, "~> 3.2"},
-     {:p1_utils, "~> 1.0"},
+     {:fast_xml, git: "https://github.com/processone/fast_xml.git", tag: "1.1.22", override: true},
+     {:xmpp, git: "https://github.com/processone/xmpp.git", tag: "1.1.9"},
+     {:p1_utils, git: "https://github.com/processone/p1_utils.git", tag: "1.0.7"},
      {:cache_tab, "~> 1.0"},
      {:stringprep, "~> 1.0"},
      {:fast_yaml, "~> 1.0"},
      {:fast_tls, "~> 1.0"},
-     {:fast_xml, "~> 1.1"},
-     {:xmpp, "~> 1.1"},
      {:stun, "~> 1.0"},
      {:esip, "~> 1.0"},
      {:jiffy, "~> 0.14.7"},
