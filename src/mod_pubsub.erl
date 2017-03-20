@@ -1371,7 +1371,7 @@ adhoc_request(_Host, _ServerHost, _Owner, Other, _Access, _Plugins) ->
 
 -spec send_pending_node_form(binary(), jid(), binary(),
 			     [binary()]) -> adhoc_command() | {error, stanza_error()}.
-send_pending_node_form(Host, Owner, _Lang, Plugins) ->
+send_pending_node_form(Host, Owner, Lang, Plugins) ->
     Filter = fun (Type) ->
 	    lists:member(<<"get-pending">>, plugin_features(Host, Type))
     end,
@@ -1385,7 +1385,7 @@ send_pending_node_form(Host, Owner, _Lang, Plugins) ->
 		{ok, Nodes} ->
 		    XForm = #xdata{type = form,
 				   fields = pubsub_get_pending:encode(
-					      [{node, Nodes}])},
+					      [{node, Nodes}], Lang)},
 		    #adhoc_command{status = executing, action = execute,
 				   xdata = XForm};
 		Err ->
@@ -1454,7 +1454,7 @@ send_authorization_request(#pubsub_node{nodeid = {Host, Node},
 	   [{node, Node},
 	    {subscriber_jid, Subscriber},
 	    {allow, false}],
-	   fun(T) -> translate:translate(Lang, T) end),
+	   Lang),
     X = #xdata{type = form,
 	       title = translate:translate(
 			 Lang, <<"PubSub subscriber request">>),
@@ -3281,7 +3281,7 @@ get_configure_xfields(_Type, Options, Lang, Groups) ->
 	   (Opt) ->
 		Opt
 	end, Options),
-      fun(Txt) -> translate:translate(Lang, Txt) end).
+      Lang).
 
 %%<p>There are several reasons why the node configuration request might fail:</p>
 %%<ul>

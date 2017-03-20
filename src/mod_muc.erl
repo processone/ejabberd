@@ -772,9 +772,7 @@ iq_get_register_info(ServerHost, Host, From, Lang) ->
     Title = <<(translate:translate(
 		 Lang, <<"Nickname Registration at ">>))/binary, Host/binary>>,
     Inst = translate:translate(Lang, <<"Enter nickname you want to register">>),
-    Fields = muc_register:encode(
-	       [{roomnick, Nick}],
-	       fun(T) -> translate:translate(Lang, T) end),
+    Fields = muc_register:encode([{roomnick, Nick}], Lang),
     X = #xdata{type = form, title = Title,
 	       instructions = [Inst], fields = Fields},
     #register{nick = Nick,

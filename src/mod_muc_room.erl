@@ -3198,8 +3198,7 @@ get_config(Lang, StateData, From) ->
 				     Fs,
 				     [StateData, From, Lang]),
     #xdata{type = form, title = Title,
-	   fields = muc_roomconfig:encode(
-		      Fields, fun(T) -> translate:translate(Lang, T) end)}.
+	   fields = muc_roomconfig:encode(Fields, Lang)}.
 
 -spec set_config(muc_roomconfig:result(), state(), binary()) ->
 			{error, stanza_error()} | {result, undefined, state()}.
@@ -3613,8 +3612,7 @@ iq_disco_info_extras(Lang, StateData) ->
     Fs = [{description, (StateData#state.config)#config.description},
 	  {occupants, ?DICT:size(StateData#state.users)}],
     #xdata{type = result,
-	   fields = muc_roominfo:encode(
-		      Fs, fun(T) -> translate:translate(Lang, T) end)}.
+	   fields = muc_roominfo:encode(Fs, Lang)}.
 
 -spec process_iq_disco_items(jid(), iq(), state()) ->
 				    {error, stanza_error()} | {result, disco_items()}.
@@ -3835,7 +3833,7 @@ prepare_request_form(Requester, Nick, Lang) ->
 			     {jid, Requester},
 			     {roomnick, Nick},
 			     {request_allow, false}],
-			    fun(T) -> translate:translate(Lang, T) end),
+			    Lang),
     #message{type = normal,
 	     sub_els = [#xdata{type = form,
 			       title = Title,
