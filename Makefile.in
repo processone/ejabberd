@@ -295,7 +295,7 @@ dialyzer/erlang.plt:
 	@mkdir -p dialyzer
 	@dialyzer --build_plt --output_plt dialyzer/erlang.plt \
 	-o dialyzer/erlang.log --apps kernel stdlib sasl crypto \
-	public_key ssl mnesia inets odbc tools compiler erts webtool \
+	public_key ssl mnesia inets odbc tools compiler erts \
 	runtime_tools asn1 observer xmerl et gs wx syntax_tools; \
 	status=$$? ; if [ $$status -ne 2 ]; then exit $$status; else exit 0; fi
 
