@@ -18,7 +18,7 @@
 %%%
 %%%----------------------------------------------------------------------
 
-Vars = case file:consult("vars.config") of
+Vars = case file:consult(filename:join([filename:dirname(SCRIPT),"vars.config"])) of
 	   {ok, Terms} ->
 	       Terms;
 	   _Err ->
