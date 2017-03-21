@@ -113,9 +113,9 @@ maybe_get_scram_auth(Data) ->
     case proplists:get_value(<<"iteration_count">>, Data, no_ic) of
 	IC when is_float(IC) -> %% A float like 4096.0 is read
 	    #scram{
-		storedkey = jlib:encode_base64(proplists:get_value(<<"stored_key">>, Data, <<"">>)),
-		serverkey = jlib:encode_base64(proplists:get_value(<<"server_key">>, Data, <<"">>)),
-		salt = jlib:encode_base64(proplists:get_value(<<"salt">>, Data, <<"">>)),
+		storedkey = jlib:hex_to_base64(proplists:get_value(<<"stored_key">>, Data, <<"">>)),
+		serverkey = jlib:hex_to_base64(proplists:get_value(<<"server_key">>, Data, <<"">>)),
+		salt = jlib:hex_to_base64(proplists:get_value(<<"salt">>, Data, <<"">>)),
 		iterationcount = round(IC)
 	    };
 	_ -> <<"">>
