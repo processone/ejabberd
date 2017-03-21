@@ -673,20 +673,20 @@ get_items(Nidx, _From, #rsm_set{max = Max, index = IncIndex,
 	case I of
 	    undefined when IncIndex =/= undefined ->
 		case ejabberd_sql:sql_query_t(
-		       [<<"select modification from pubsub_item pi "
+		       [<<"select creation from pubsub_item pi "
 			  "where exists ( select count(*) as count1 "
 			  "from pubsub_item where nodeid='">>, SNidx,
-			<<"' and modification > pi.modification having count1 = ">>,
+			<<"' and creation > pi.creation having count1 = ">>,
 			integer_to_binary(IncIndex), <<" );">>]) of
 		    {selected, [_], [[O]]} ->
-			[<<"modification">>, <<"'", O/binary, "'">>];
+			[<<"creation">>, <<"'", O/binary, "'">>];
 		    _ ->
-			[<<"modification">>, <<"null">>]
+			[<<"creation">>, <<"null">>]
 		end;
 	    undefined ->
-		[<<"modification">>, <<"null">>];
+		[<<"creation">>, <<"null">>];
 	    <<>> ->
-		[<<"modification">>, <<"null">>];
+		[<<"creation">>, <<"null">>];
 	    I ->
 		[A, B] = str:tokens(ejabberd_sql:escape(I), <<"@">>),
 		[A, <<"'", B/binary, "'">>]
@@ -729,8 +729,8 @@ get_items(Nidx, _From, #rsm_set{max = Max, index = IncIndex,
 				      index = Index,
 				      first = #rsm_first{
 						 index = Index,
-						 data = <<"modification@", F/binary>>},
-				      last = <<"modification@", L/binary>>},
+						 data = <<"creation@", F/binary>>},
+				      last = <<"creation@", L/binary>>},
 		    {result, {[raw_to_item(Nidx, RItem) || RItem <- RItems], RsmOut}};
 		[] ->
 		    {result, {[], #rsm_set{count = Count}}}
