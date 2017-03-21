@@ -341,19 +341,24 @@ el_to_offline_msg(LUser, LServer, #xmlel{attrs = Attrs} = El) ->
 		      ({<<"stamp_legacy">>, _}) -> false;
 		      (_) -> true
 		   end, Attrs),
-	Packet = El#xmlel{attrs = Attrs1},
-	From = jid:decode(fxml:get_attr_s(<<"from">>, Attrs)),
-	To = jid:decode(fxml:get_attr_s(<<"to">>, Attrs)),
-	[#offline_msg{
-	    us = {LUser, LServer},
-	    timestamp = TS,
-	    expire = never,
-	    from = From,
-	    to = To,
-	    packet = Packet}]
+	El1 = El#xmlel{attrs = Attrs1},
+	case xmpp:decode(El1, ?NS_CLIENT, [ignore_els]) of
+	    #message{from = #jid{} = From, to = #jid{} = To} = Packet ->
+		[#offline_msg{
+		    us = {LUser, LServer},
+		    timestamp = TS,
+		    expire = never,
+		    from = From,
+		    to = To,
+		    packet = Packet}];
+	    _ ->
+		[]
+	end
     catch _:{bad_timestamp, _} ->
 	    [];
 	  _:{bad_jid, _} ->
+	    [];
+	  _:{xmpp_codec, _} ->
 	    []
     end.
 
