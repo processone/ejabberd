@@ -337,8 +337,8 @@ el_to_offline_msg(LUser, LServer, #xmlel{attrs = Attrs} = El) ->
 	TS = xmpp_util:decode_timestamp(
 	       fxml:get_attr_s(<<"stamp">>, Attrs)),
 	Attrs1 = lists:filter(
-		   fun(<<"stamp">>) -> false;
-		      (<<"stamp_legacy">>) -> false;
+		   fun({<<"stamp">>, _}) -> false;
+		      ({<<"stamp_legacy">>, _}) -> false;
 		      (_) -> true
 		   end, Attrs),
 	Packet = El#xmlel{attrs = Attrs1},
