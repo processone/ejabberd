@@ -289,7 +289,7 @@ web_menu_host(Acc, _Host, Lang) ->
 web_page_main(_, #request{path=[<<"muc">>], lang = Lang} = _Request) ->
     OnlineRoomsNumber = lists:foldl(
 			  fun(Host, Acc) ->
-				  Acc ++ mod_muc:count_online_rooms(Host)
+				  Acc + mod_muc:count_online_rooms(Host)
 			  end, 0, find_hosts(global)),
     Res = [?XCT(<<"h1">>, <<"Multi-User Chat">>),
 	   ?XCT(<<"h3">>, <<"Statistics">>),
