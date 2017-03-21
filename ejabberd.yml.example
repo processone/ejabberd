@@ -628,7 +628,7 @@ modules:
   mod_disco: {}
   ## mod_echo: {}
   mod_irc: {}
-  mod_http_bind: {}
+  mod_bosh: {}
   ## mod_http_fileserver:
   ##   docroot: "/var/www"
   ##   accesslog: "/var/log/ejabberd/access.log"
