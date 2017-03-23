@@ -26,7 +26,7 @@ defmodule Ejabberd.Mixfile do
   def application do
     [mod: {:ejabberd_app, []},
      applications: [:ssl],
-     included_applications: [:lager, :mnesia, :p1_utils, :cache_tab,
+     included_applications: [:lager, :mnesia, :inets, :p1_utils, :cache_tab,
                              :fast_tls, :stringprep, :fast_xml, :xmpp,
                              :stun, :fast_yaml, :esip, :jiffy, :p1_oauth2]
                          ++ cond_apps]
