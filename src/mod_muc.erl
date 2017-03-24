@@ -80,6 +80,7 @@
          access = {none, none, none, none} :: {atom(), atom(), atom(), atom()},
          history_size = 20 :: non_neg_integer(),
          max_rooms_discoitems = 100 :: non_neg_integer(),
+	 queue_type = ram :: ram | file,
          default_room_opts = [] :: list(),
          room_shaper = none :: shaper:shaper()}).
 
@@ -226,7 +227,7 @@ init([Host, Opts]) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
                              one_queue),
     #state{access = Access, host = MyHost,
-	   history_size = HistorySize,
+	   history_size = HistorySize, queue_type = QueueType,
 	   room_shaper = RoomShaper} = State = init_state(Host, Opts),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     RMod = gen_mod:ram_db_mod(Host, Opts, ?MODULE),
@@ -234,7 +235,7 @@ init([Host, Opts]) ->
     RMod:init(Host, [{host, MyHost}|Opts]),
     register_iq_handlers(MyHost, IQDisc),
     ejabberd_router:register_route(MyHost, Host),
-    load_permanent_rooms(MyHost, Host, Access, HistorySize, RoomShaper),
+    load_permanent_rooms(MyHost, Host, Access, HistorySize, RoomShaper, QueueType),
     {ok, State}.
 
 handle_call(stop, _From, State) ->
@@ -242,7 +243,7 @@ handle_call(stop, _From, State) ->
 handle_call({create, Room, From, Nick, Opts}, _From,
 	    #state{host = Host, server_host = ServerHost,
 		   access = Access, default_room_opts = DefOpts,
-		   history_size = HistorySize,
+		   history_size = HistorySize, queue_type = QueueType,
 		   room_shaper = RoomShaper} = State) ->
     ?DEBUG("MUC: create new room '~s'~n", [Room]),
     NewOpts = case Opts of
@@ -253,7 +254,7 @@ handle_call({create, Room, From, Nick, Opts}, _From,
 		  Host, ServerHost, Access,
 		  Room, HistorySize,
 		  RoomShaper, From,
-		  Nick, NewOpts),
+		  Nick, NewOpts, QueueType),
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
     RMod:register_online_room(Room, Host, Pid),
     {reply, ok, State}.
@@ -300,13 +301,14 @@ handle_cast(Msg, State) ->
 handle_info({route, Packet},
 	    #state{host = Host, server_host = ServerHost,
 		   access = Access, default_room_opts = DefRoomOpts,
-		   history_size = HistorySize,
+		   history_size = HistorySize, queue_type = QueueType,
 		   max_rooms_discoitems = MaxRoomsDiscoItems,
 		   room_shaper = RoomShaper} = State) ->
     From = xmpp:get_from(Packet),
     To = xmpp:get_to(Packet),
     case catch do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
-			From, To, Packet, DefRoomOpts, MaxRoomsDiscoItems) of
+			From, To, Packet, DefRoomOpts, MaxRoomsDiscoItems,
+			QueueType) of
 	{'EXIT', Reason} ->
 	    ?ERROR_MSG("~p", [Reason]);
 	_ ->
@@ -353,6 +355,13 @@ init_state(Host, Opts) ->
     DefRoomOpts1 = gen_mod:get_opt(default_room_options, Opts,
 				   fun(L) when is_list(L) -> L end,
 				   []),
+    QueueType = case gen_mod:get_opt(queue_type, Opts,
+				     mod_opt_type(queue_type)) of
+		    undefined ->
+			ejabberd_config:default_queue_type(Host);
+		    Type ->
+			Type
+		end,
     DefRoomOpts =
 	lists:flatmap(
 	  fun({Opt, Val}) ->
@@ -410,6 +419,7 @@ init_state(Host, Opts) ->
 	   server_host = Host,
 	   access = {Access, AccessCreate, AccessAdmin, AccessPersistent},
 	   default_room_opts = DefRoomOpts,
+	   queue_type = QueueType,
 	   history_size = HistorySize,
 	   max_rooms_discoitems = MaxRoomsDiscoItems,
 	   room_shaper = RoomShaper}.
@@ -437,12 +447,12 @@ unregister_iq_handlers(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS).
 
 do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
-	 From, To, Packet, DefRoomOpts, _MaxRoomsDiscoItems) ->
+	 From, To, Packet, DefRoomOpts, _MaxRoomsDiscoItems, QueueType) ->
     {AccessRoute, _AccessCreate, _AccessAdmin, _AccessPersistent} = Access,
     case acl:match_rule(ServerHost, AccessRoute, From) of
 	allow ->
 	    do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
-		      From, To, Packet, DefRoomOpts);
+		      From, To, Packet, DefRoomOpts, QueueType);
 	deny ->
 	    Lang = xmpp:get_lang(Packet),
 	    ErrText = <<"Access denied by service policy">>,
@@ -452,11 +462,11 @@ do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
 
 do_route1(_Host, _ServerHost, _Access, _HistorySize, _RoomShaper,
 	  _From, #jid{luser = <<"">>, lresource = <<"">>} = _To,
-	  #iq{} = IQ, _DefRoomOpts) ->
+	  #iq{} = IQ, _DefRoomOpts, _QueueType) ->
     ejabberd_local:process_iq(IQ);
 do_route1(Host, ServerHost, Access, _HistorySize, _RoomShaper,
 	  From, #jid{luser = <<"">>, lresource = <<"">>} = _To,
-	  #message{lang = Lang, body = Body, type = Type} = Packet, _) ->
+	  #message{lang = Lang, body = Body, type = Type} = Packet, _, _) ->
     {_AccessRoute, _AccessCreate, AccessAdmin, _AccessPersistent} = Access,
     if Type == error ->
 	    ok;
@@ -473,11 +483,11 @@ do_route1(Host, ServerHost, Access, _HistorySize, _RoomShaper,
 	    end
     end;
 do_route1(_Host, _ServerHost, _Access, _HistorySize, _RoomShaper,
-	  _From, #jid{luser = <<"">>} = _To, Packet, _DefRoomOpts) ->
+	  _From, #jid{luser = <<"">>} = _To, Packet, _DefRoomOpts, _) ->
     Err = xmpp:err_service_unavailable(),
     ejabberd_router:route_error(Packet, Err);
 do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
-	  From, To, Packet, DefRoomOpts) ->
+	  From, To, Packet, DefRoomOpts, QueueType) ->
     {_AccessRoute, AccessCreate, _AccessAdmin, _AccessPersistent} = Access,
     {Room, _, Nick} = jid:tolower(To),
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
@@ -492,7 +502,8 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 			    {ok, Pid} = start_new_room(
 					  Host, ServerHost, Access,
 					  Room, HistorySize,
-					  RoomShaper, From, Nick, DefRoomOpts),
+					  RoomShaper, From, Nick, DefRoomOpts,
+					  QueueType),
 			    RMod:register_online_room(Room, Host, Pid),
 			    mod_muc_room:route(Pid, Packet),
 			    ok;
@@ -659,7 +670,7 @@ get_rooms(ServerHost, Host) ->
     Mod:get_rooms(LServer, Host).
 
 load_permanent_rooms(Host, ServerHost, Access,
-		     HistorySize, RoomShaper) ->
+		     HistorySize, RoomShaper, QueueType) ->
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
     lists:foreach(
       fun(R) ->
@@ -669,7 +680,7 @@ load_permanent_rooms(Host, ServerHost, Access,
 			{ok, Pid} = mod_muc_room:start(Host,
 				ServerHost, Access, Room,
 				HistorySize, RoomShaper,
-				R#muc_room.opts),
+				R#muc_room.opts, QueueType),
 		      RMod:register_online_room(Room, Host, Pid);
 		  {ok, _} ->
 		      ok
@@ -679,17 +690,17 @@ load_permanent_rooms(Host, ServerHost, Access,
 
 start_new_room(Host, ServerHost, Access, Room,
 	    HistorySize, RoomShaper, From,
-	    Nick, DefRoomOpts) ->
+	    Nick, DefRoomOpts, QueueType) ->
     case restore_room(ServerHost, Host, Room) of
 	error ->
 	    ?DEBUG("MUC: open new room '~s'~n", [Room]),
 	    mod_muc_room:start(Host, ServerHost, Access, Room,
 		HistorySize, RoomShaper,
-		From, Nick, DefRoomOpts);
+		From, Nick, DefRoomOpts, QueueType);
 	Opts ->
 	    ?DEBUG("MUC: restore room '~s'~n", [Room]),
 	    mod_muc_room:start(Host, ServerHost, Access, Room,
-		HistorySize, RoomShaper, Opts)
+		HistorySize, RoomShaper, Opts, QueueType)
     end.
 
 -spec iq_disco_items(binary(), binary(), jid(), binary(), integer(), binary(),
@@ -954,11 +965,13 @@ mod_opt_type(user_message_shaper) ->
     fun (A) when is_atom(A) -> A end;
 mod_opt_type(user_presence_shaper) ->
     fun (A) when is_atom(A) -> A end;
+mod_opt_type(queue_type) ->
+    fun(ram) -> ram; (file) -> file end;
 mod_opt_type(_) ->
     [access, access_admin, access_create, access_persistent,
      db_type, ram_db_type, default_room_options, history_size, host,
      max_room_desc, max_room_id, max_room_name,
      max_rooms_discoitems, max_user_conferences, max_users,
      max_users_admin_threshold, max_users_presence,
-     min_message_interval, min_presence_interval,
+     min_message_interval, min_presence_interval, queue_type,
      regexp_room_id, room_shaper, user_message_shaper, user_presence_shaper].

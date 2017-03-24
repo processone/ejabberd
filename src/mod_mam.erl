@@ -837,7 +837,8 @@ select(_LServer, JidRequestor, JidArchive, Query, RSM,
 				 history = History}} = MsgType) ->
     Start = proplists:get_value(start, Query),
     End = proplists:get_value('end', Query),
-    #lqueue{len = L, queue = Q} = History,
+    #lqueue{queue = Q} = History,
+    L = p1_queue:len(Q),
     Msgs =
 	lists:flatmap(
 	  fun({Nick, Pkt, _HaveSubject, Now, _Size}) ->
@@ -861,7 +862,7 @@ select(_LServer, JidRequestor, JidArchive, Query, RSM,
 		      false ->
 			  []
 		  end
-	  end, queue:to_list(Q)),
+	  end, p1_queue:to_list(Q)),
     case RSM of
 	#rsm_set{max = Max, before = Before} when is_binary(Before) ->
 	    {NewMsgs, IsComplete} = filter_by_max(lists:reverse(Msgs), Max),

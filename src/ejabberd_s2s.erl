@@ -45,7 +45,7 @@
 	 external_host_overloaded/1, is_temporarly_blocked/1,
 	 get_commands_spec/0, zlib_enabled/1, get_idle_timeout/1,
 	 tls_required/1, tls_verify/1, tls_enabled/1, tls_options/2,
-	 host_up/1, host_down/1]).
+	 host_up/1, host_down/1, queue_type/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
@@ -284,6 +284,14 @@ get_idle_timeout(LServer) ->
       fun(I) when is_integer(I), I >= 0 -> timer:seconds(I);
 	 (infinity) -> infinity
       end, timer:minutes(10)).
+
+-spec queue_type(binary()) -> ram | file.
+queue_type(LServer) ->
+    case ejabberd_config:get_option(
+	   {s2s_queue_type, LServer}, opt_type(s2s_queue_type)) of
+	undefined -> ejabberd_config:default_queue_type(LServer);
+	Type -> Type
+    end.
 
 %%====================================================================
 %% gen_server callbacks
@@ -739,7 +747,9 @@ opt_type(s2s_timeout) ->
     fun(I) when is_integer(I), I>=0 -> I;
        (infinity) -> infinity
     end;
+opt_type(s2s_queue_type) ->
+    fun(ram) -> ram; (file) -> file end;
 opt_type(_) ->
     [route_subdomains, s2s_access,  s2s_certfile,
      s2s_ciphers, s2s_dhfile, s2s_cafile, s2s_protocol_options,
-     s2s_tls_compression, s2s_use_starttls, s2s_timeout].
+     s2s_tls_compression, s2s_use_starttls, s2s_timeout, s2s_queue_type].

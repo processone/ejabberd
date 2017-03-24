@@ -28,9 +28,8 @@
 
 -record(lqueue,
 {
-    queue = queue:new() :: ?TQUEUE,
-    len = 0             :: integer(),
-    max = 0             :: integer()
+    queue   :: p1_queue:queue(),
+    max = 0 :: integer()
 }).
 
 -type lqueue() :: #lqueue{}.
@@ -112,11 +111,11 @@
     robots                  = (?DICT):new() :: ?TDICT,
     nicks                   = (?DICT):new() :: ?TDICT,
     affiliations            = (?DICT):new() :: ?TDICT,
-    history                 = #lqueue{} :: lqueue(),
+    history                 :: lqueue(),
     subject                 = <<"">> :: binary(),
     subject_author          = <<"">> :: binary(),
     just_created            = false :: boolean(),
     activity                = treap:empty() :: treap:treap(),
     room_shaper             = none :: shaper:shaper(),
-    room_queue              = queue:new() :: ?TQUEUE
+    room_queue              :: p1_queue:queue() | undefined
 }).

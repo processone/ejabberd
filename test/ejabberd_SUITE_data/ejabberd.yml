@@ -180,7 +180,8 @@ Welcome to this XMPP server."
       mod_stats: []
       mod_time: []
       mod_version: []
-  "mnesia.localhost": 
+  "mnesia.localhost":
+    queue_type: ram
     auth_method: internal
     modules: 
       mod_announce: 
@@ -238,7 +239,8 @@ Welcome to this XMPP server."
       mod_stats: []
       mod_time: []
       mod_version: []
-  "redis.localhost": 
+  "redis.localhost":
+    queue_type: ram
     auth_method: internal
     sm_db_type: redis
     modules: 
@@ -297,7 +299,8 @@ Welcome to this XMPP server."
       mod_stats: []
       mod_time: []
       mod_version: []
-  "riak.localhost": 
+  "riak.localhost":
+    queue_type: ram
     auth_method: riak
     modules: 
       mod_announce: 
@@ -341,7 +344,8 @@ Welcome to this XMPP server."
       mod_version: []
   "localhost": 
     auth_method: [internal, anonymous]
-  "ldap.localhost": 
+  "ldap.localhost":
+    queue_type: ram
     ldap_servers: 
       - "localhost"
     ldap_rootdn: "cn=admin,dc=localhost"
@@ -374,7 +378,8 @@ Welcome to this XMPP server."
       mod_stats: []
       mod_time: []
       mod_version: []
-  "extauth.localhost": 
+  "extauth.localhost":
+    queue_type: ram
     extauth_program: "python extauth.py"
     auth_method: external
 hosts: 
@@ -450,6 +455,7 @@ listen:
       @@password@@
 loglevel: @@loglevel@@
 max_fsm_queue: 1000
+queue_type: file
 modules: 
   mod_adhoc: []
   mod_configure: []

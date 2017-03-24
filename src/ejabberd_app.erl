@@ -50,6 +50,7 @@ start(normal, _Args) ->
     setup_if_elixir_conf_used(),
     ejabberd_config:start(),
     set_settings_from_config(),
+    file_queue_init(),
     maybe_add_nameservers(),
     connect_nodes(),
     case ejabberd_sup:start_link() of
@@ -168,6 +169,16 @@ set_settings_from_config() ->
                  opt_type(net_ticktime),
                  60),
     net_kernel:set_net_ticktime(Ticktime).
+
+file_queue_init() ->
+    QueueDir = case ejabberd_config:queue_dir() of
+		   undefined ->
+		       {ok, MnesiaDir} = application:get_env(mnesia, dir),
+		       filename:join(MnesiaDir, "queue");
+		   Path ->
+		       Path
+	       end,
+    p1_queue:start(QueueDir).
 
 start_apps() ->
     crypto:start(),
