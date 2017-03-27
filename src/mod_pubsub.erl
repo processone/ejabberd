@@ -1215,7 +1215,7 @@ iq_pubsub(Host, Access, #iq{from = From, type = IQType, lang = Lang,
 		    create_node(Host, ServerHost, Node, From, Type, Access, Config)
 	    end;
 	{set, #pubsub{publish = #ps_publish{node = Node, items = Items},
-		      publish_options = XData, _ = undefined}} ->
+		      publish_options = XData, configure = _, _ = undefined}} ->
 	    ServerHost = serverhost(Host),
 	    case Items of
 		[#ps_item{id = ItemId, xml_els = Payload}] ->
@@ -2215,23 +2215,12 @@ send_items(Host, Node, _Nidx, _Type, Options, LJID, _) ->
     Stanza = items_event_stanza(Node, Options, []),
     dispatch_items(Host, LJID, Node, Stanza).
 
-dispatch_items({FromU, FromS, FromR} = From, {ToU, ToS, ToR} = To,
-	    Node, Stanza) ->
-    C2SPid = case ejabberd_sm:get_session_pid(ToU, ToS, ToR) of
-	ToPid when is_pid(ToPid) -> ToPid;
-	_ ->
-	    R = user_resource(FromU, FromS, FromR),
-	    case ejabberd_sm:get_session_pid(FromU, FromS, R) of
-		FromPid when is_pid(FromPid) -> FromPid;
-		_ -> undefined
-	    end
-    end,
-    if C2SPid == undefined -> ok;
-	true ->
-	    C2SPid ! {send_filtered, {pep_message, <<Node/binary, "+notify">>},
-		service_jid(From), jid:make(To),
-		      Stanza}
-    end;
+dispatch_items({FromU, FromS, FromR}, To, Node, Stanza) ->
+    SenderResource = user_resource(FromU, FromS, FromR),
+    ejabberd_sm:route(jid:make(FromU, FromS, SenderResource),
+		      {send_filtered, {pep_message, <<((Node))/binary, "+notify">>},
+		       jid:make(FromU, FromS), jid:make(To),
+		       Stanza});
 dispatch_items(From, To, _Node, Stanza) ->
     ejabberd_router:route(
       xmpp:set_from_to(Stanza, service_jid(From), jid:make(To))).
@@ -3016,11 +3005,11 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, Nidx, Type, NodeO
     broadcast_stanza({LUser, LServer, <<>>}, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM),
     %% Handles implicit presence subscriptions
     SenderResource = user_resource(LUser, LServer, LResource),
-	    NotificationType = get_option(NodeOptions, notification_type, headline),
-	    Stanza = add_message_type(BaseStanza, NotificationType),
-	    %% set the from address on the notification to the bare JID of the account owner
-	    %% Also, add "replyto" if entity has presence subscription to the account owner
-	    %% See XEP-0163 1.1 section 4.3.1
+    NotificationType = get_option(NodeOptions, notification_type, headline),
+    Stanza = add_message_type(BaseStanza, NotificationType),
+    %% set the from address on the notification to the bare JID of the account owner
+    %% Also, add "replyto" if entity has presence subscription to the account owner
+    %% See XEP-0163 1.1 section 4.3.1
     ejabberd_sm:route(jid:make(LUser, LServer, SenderResource),
 		      {pep_message, <<((Node))/binary, "+notify">>,
 		       jid:make(LUser, LServer),

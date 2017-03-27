@@ -92,12 +92,12 @@ get_features(Host, #caps{node = Node, version = Version,
 
 -spec list_features(ejabberd_c2s:state()) -> [{ljid(), caps()}].
 list_features(C2SState) ->
-    Rs = maps:get(caps_features, C2SState, gb_trees:empty()),
+    Rs = maps:get(caps_resources, C2SState, gb_trees:empty()),
     gb_trees:to_list(Rs).
 
 -spec get_user_caps(jid(), ejabberd_c2s:state()) -> {ok, caps()} | error.
 get_user_caps(JID, C2SState) ->
-    Rs = maps:get(caps_features, C2SState, gb_trees:empty()),
+    Rs = maps:get(caps_resources, C2SState, gb_trees:empty()),
     LJID = jid:tolower(JID),
     case gb_trees:lookup(LJID, Rs) of
 	{value, Caps} ->
@@ -209,7 +209,7 @@ c2s_presence_in(C2SState,
     Delete = (Type == unavailable) or (Type == error),
     if Insert or Delete ->
 	   LFrom = jid:tolower(From),
-	    Rs = maps:get(caps_resources, C2SState, gb_trees:empty()),
+	   Rs = maps:get(caps_resources, C2SState, gb_trees:empty()),
 	   Caps = read_caps(Presence),
 	   NewRs = case Caps of
 		     nothing when Insert == true -> Rs;
