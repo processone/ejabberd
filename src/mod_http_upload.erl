@@ -500,16 +500,14 @@ get_proc_name(ServerHost, ModuleName) ->
 
 -spec expand_home(binary()) -> binary().
 
-expand_home(Subject) ->
+expand_home(Input) ->
     {ok, [[Home]]} = init:get_argument(home),
-    Parts = binary:split(Subject, <<"@HOME@">>, [global]),
-    str:join(Parts, list_to_binary(Home)).
+    jlib:expand_keyword(<<"@HOME@">>, Input, Home).
 
 -spec expand_host(binary(), binary()) -> binary().
 
-expand_host(Subject, Host) ->
-    Parts = binary:split(Subject, <<"@HOST@">>, [global]),
-    str:join(Parts, Host).
+expand_host(Input, Host) ->
+    jlib:expand_keyword(<<"@HOST@">>, Input, Host).
 
 %%--------------------------------------------------------------------
 %% Internal functions.

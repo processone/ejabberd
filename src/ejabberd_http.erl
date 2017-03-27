@@ -169,7 +169,7 @@ init({SockMod, Socket}, Opts) ->
     {ok, RE} = re:compile(<<"^(?:\\[(.*?)\\]|(.*?))(?::(\\d+))?$">>),
 
     CustomHeaders = gen_mod:get_opt(custom_headers, Opts,
-				    fun(L) when is_list(L) -> L end,
+				    fun expand_custom_headers/1,
 				    []),
 
     ?INFO_MSG("started: ~p", [{SockMod1, Socket1}]),
@@ -732,6 +732,11 @@ rest_dir(N, Path, <<$/, T/binary>>) ->
 rest_dir(0, Path, <<H, T/binary>>) ->
     rest_dir(0, <<H, Path/binary>>, T);
 rest_dir(N, Path, <<_H, T/binary>>) -> rest_dir(N, Path, T).
+
+expand_custom_headers(Headers) ->
+    lists:map(fun({K, V}) ->
+		      {K, jlib:expand_keyword(<<"@VERSION@">>, V, ?VERSION)}
+	      end, Headers).
 
 %% hex_to_integer
 

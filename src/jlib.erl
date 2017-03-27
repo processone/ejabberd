@@ -37,7 +37,7 @@
 
 -export([tolower/1, term_to_base64/1, base64_to_term/1,
 	 decode_base64/1, encode_base64/1, ip_to_list/1,
-	 hex_to_bin/1, hex_to_base64/1,
+	 hex_to_bin/1, hex_to_base64/1, expand_keyword/3,
 	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
 	 l2i/1, i2l/1, i2l/2, expr_to_term/1, term_to_expr/1]).
 
@@ -933,6 +933,12 @@ hex_to_bin([H1, H2 | T], Acc) ->
 -spec hex_to_base64(binary()) -> binary().
 
 hex_to_base64(Hex) -> encode_base64(hex_to_bin(Hex)).
+
+-spec expand_keyword(binary(), binary(), binary()) -> binary().
+
+expand_keyword(Keyword, Input, Replacement) ->
+    Parts = binary:split(Input, Keyword, [global]),
+    str:join(Parts, Replacement).
 
 binary_to_atom(Bin) ->
     erlang:binary_to_atom(Bin, utf8).
