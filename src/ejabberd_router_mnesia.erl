@@ -25,7 +25,8 @@
 
 %% API
 -export([init/0, register_route/5, unregister_route/3, find_routes/1,
-	 host_of_route/1, is_my_route/1, is_my_host/1, get_all_routes/0]).
+	 host_of_route/1, is_my_route/1, is_my_host/1, get_all_routes/0,
+	 find_routes/0]).
 %% gen_server callbacks
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2,
 	 terminate/2, code_change/3, start_link/0]).
@@ -151,6 +152,9 @@ get_all_routes() ->
 	fun(#route{domain = Domain, server_host = ServerHost})
 	      when Domain /= ServerHost -> Domain
 	end)).
+
+find_routes() ->
+    ets:tab2list(route).
 
 %%%===================================================================
 %%% gen_server callbacks

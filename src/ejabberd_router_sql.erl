@@ -27,7 +27,8 @@
 
 %% API
 -export([init/0, register_route/5, unregister_route/3, find_routes/1,
-	 host_of_route/1, is_my_route/1, is_my_host/1, get_all_routes/0]).
+	 host_of_route/1, is_my_route/1, is_my_host/1, get_all_routes/0,
+	 find_routes/0]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -119,6 +120,21 @@ get_all_routes() ->
 	   ?SQL("select @(domain)s from route where domain <> server_host")) of
 	{selected, Domains} ->
 	    [Domain || {Domain} <- Domains];
+	Err ->
+	    ?ERROR_MSG("failed to select from 'route' table: ~p", [Err]),
+	    []
+    end.
+
+find_routes() ->
+    case ejabberd_sql:sql_query(
+	   ?MYNAME,
+	   ?SQL("select @(domain)s, @(server_host)s, @(node)s, @(pid)s, "
+		"@(local_hint)s from route")) of
+	{selected, Rows} ->
+	    lists:flatmap(
+	      fun({Domain, ServerHost, Node, Pid, LocalHint}) ->
+		      row_to_route(Domain, {ServerHost, Node, Pid, LocalHint})
+	      end, Rows);
 	Err ->
 	    ?ERROR_MSG("failed to select from 'route' table: ~p", [Err]),
 	    []

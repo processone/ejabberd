@@ -72,8 +72,8 @@ config_reloaded() ->
 init([]) ->
     ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 20),
     process_flag(trap_exit, true),
-    self() ! connect,
-    {ok, #state{}}.
+    {_, State} = handle_info(connect, #state{}),
+    {ok, State}.
 
 handle_call(_Request, _From, State) ->
     Reply = ok,

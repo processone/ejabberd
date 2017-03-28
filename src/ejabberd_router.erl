@@ -49,6 +49,7 @@
 	 get_all_routes/0,
 	 is_my_route/1,
 	 is_my_host/1,
+	 find_routes/0,
 	 get_backend/0]).
 
 -export([start_link/0]).
@@ -70,6 +71,7 @@
 			 undefined | pos_integer(), pid()) -> ok | {error, term()}.
 -callback unregister_route(binary(), undefined | pos_integer(), pid()) -> ok | {error, term()}.
 -callback find_routes(binary()) -> [#route{}].
+-callback find_routes() -> [#route{}].
 -callback host_of_route(binary()) -> {ok, binary()} | error.
 -callback is_my_route(binary()) -> boolean().
 -callback is_my_host(binary()) -> boolean().
@@ -201,6 +203,11 @@ unregister_routes(Domains) ->
 get_all_routes() ->
     Mod = get_backend(),
     Mod:get_all_routes().
+
+-spec find_routes() -> [#route{}].
+find_routes() ->
+    Mod = get_backend(),
+    Mod:find_routes().
 
 -spec host_of_route(binary()) -> binary().
 host_of_route(Domain) ->
