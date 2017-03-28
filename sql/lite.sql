@@ -330,3 +330,11 @@ CREATE TABLE route (
 
 CREATE UNIQUE INDEX i_route ON route(domain, server_host, node, pid);
 CREATE INDEX i_route_domain ON route(domain);
+
+CREATE TABLE bosh (
+    sid text NOT NULL,
+    node text NOT NULL,
+    pid text NOT NULL
+);
+
+CREATE UNIQUE INDEX i_bosh_sid ON bosh(sid);

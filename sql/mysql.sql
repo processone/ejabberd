@@ -346,3 +346,11 @@ CREATE TABLE route (
 
 CREATE UNIQUE INDEX i_route ON route(domain(75), server_host(75), node(75), pid(75));
 CREATE INDEX i_route_domain ON route(domain(75));
+
+CREATE TABLE bosh (
+    sid text NOT NULL,
+    node text NOT NULL,
+    pid text NOT NULL
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE UNIQUE INDEX i_bosh_sid ON bosh(sid(75));

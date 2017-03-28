@@ -350,3 +350,11 @@ CREATE TABLE route (
 
 CREATE UNIQUE INDEX i_route ON route USING btree (domain, server_host, node, pid);
 CREATE INDEX i_route_domain ON route USING btree (domain);
+
+CREATE TABLE bosh (
+    sid text NOT NULL,
+    node text NOT NULL,
+    pid text NOT NULL
+);
+
+CREATE UNIQUE INDEX i_bosh_sid ON bosh USING btree (sid);
