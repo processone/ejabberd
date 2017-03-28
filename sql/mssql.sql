@@ -490,3 +490,17 @@ CREATE TABLE [dbo].[oauth_token] (
         [token] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
 ) TEXTIMAGE_ON [PRIMARY];
+
+CREATE TABLE [dbo].[route] (
+    [domain] [varchar] (255) NOT NULL,
+    [server_host] [varchar] (255) NOT NULL,
+    [node] [varchar] (255) NOT NULL,
+    [pid] [varchar](100) NOT NULL,
+    [local_hint] text NOT NULL
+);
+
+CREATE UNIQUE CLUSTERED INDEX [route_i] ON [route] (domain, server_host, node, pid)
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
+
+CREATE INDEX [route_domain] ON [route] (domain)
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);

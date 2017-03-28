@@ -197,6 +197,7 @@ get_features(_, _, XMLNSs) ->
 %%====================================================================
 
 init([]) ->
+    process_flag(trap_exit, true),
     lists:foreach(fun host_up/1, ?MYHOSTS),
     ejabberd_hooks:add(host_up, ?MODULE, host_up, 10),
     ejabberd_hooks:add(host_down, ?MODULE, host_down, 100),
@@ -288,7 +289,11 @@ host_up(Host) ->
 		       ?MODULE, bounce_resource_packet, 100).
 
 host_down(Host) ->
-    ejabberd_router:unregister_route(Host),
+    Owner = case whereis(?MODULE) of
+		undefined -> self();
+		Pid -> Pid
+	    end,
+    ejabberd_router:unregister_route(Host, Owner),
     ejabberd_hooks:delete(local_send_to_resource_hook, Host,
 			  ?MODULE, bounce_resource_packet, 100).
 

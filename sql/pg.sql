@@ -339,3 +339,14 @@ CREATE TABLE oauth_token (
 );
 
 CREATE UNIQUE INDEX i_oauth_token_token ON oauth_token USING btree (token);
+
+CREATE TABLE route (
+    domain text NOT NULL,
+    server_host text NOT NULL,
+    node text NOT NULL,
+    pid text NOT NULL,
+    local_hint text NOT NULL
+);
+
+CREATE UNIQUE INDEX i_route ON route USING btree (domain, server_host, node, pid);
+CREATE INDEX i_route_domain ON route USING btree (domain);

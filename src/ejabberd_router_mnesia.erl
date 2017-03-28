@@ -24,7 +24,7 @@
 -behaviour(gen_server).
 
 %% API
--export([init/0, register_route/5, unregister_route/2, find_routes/1,
+-export([init/0, register_route/5, unregister_route/3, find_routes/1,
 	 host_of_route/1, is_my_route/1, is_my_host/1, get_all_routes/0]).
 %% gen_server callbacks
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2,
@@ -96,19 +96,19 @@ register_route(Domain, ServerHost, _LocalHint, N, Pid) ->
 	end,
     transaction(F).
 
-unregister_route(Domain, undefined) ->
+unregister_route(Domain, undefined, Pid) ->
     F = fun () ->
 		case mnesia:match_object(
-		       #route{domain = Domain, pid = self(), _ = '_'}) of
+		       #route{domain = Domain, pid = Pid, _ = '_'}) of
 		    [R] -> mnesia:delete_object(R);
 		    _ -> ok
 		end
 	end,
     transaction(F);
-unregister_route(Domain, _) ->
+unregister_route(Domain, _, Pid) ->
     F = fun () ->
 		case mnesia:match_object(
-		       #route{domain = Domain, pid = self(), _ = '_'}) of
+		       #route{domain = Domain, pid = Pid, _ = '_'}) of
 		    [R] ->
 			I = R#route.local_hint,
 			ServerHost = R#route.server_host,
