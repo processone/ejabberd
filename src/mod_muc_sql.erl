@@ -237,7 +237,7 @@ get_online_rooms(ServerHost, Host, _RSM) ->
 	      end, Rows);
 	Err ->
 	    ?ERROR_MSG("failed to select 'muc_online_room': ~p", [Err]),
-	    0
+	    []
     end.
 
 rsm_supported() ->
