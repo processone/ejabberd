@@ -94,16 +94,16 @@
 -callback get_rooms(binary(), binary()) -> [#muc_room{}].
 -callback get_nick(binary(), binary(), jid()) -> binary() | error.
 -callback set_nick(binary(), binary(), jid(), binary()) -> {atomic, ok | false}.
--callback register_online_room(binary(), binary(), pid()) -> any().
--callback unregister_online_room(binary(), binary(), pid()) -> any().
--callback find_online_room(binary(), binary()) -> {ok, pid()} | error.
--callback get_online_rooms(binary(), undefined | rsm_set()) -> [{binary(), binary(), pid()}].
--callback count_online_rooms(binary()) -> non_neg_integer().
+-callback register_online_room(binary(), binary(), binary(), pid()) -> any().
+-callback unregister_online_room(binary(), binary(), binary(), pid()) -> any().
+-callback find_online_room(binary(), binary(), binary()) -> {ok, pid()} | error.
+-callback get_online_rooms(binary(), binary(), undefined | rsm_set()) -> [{binary(), binary(), pid()}].
+-callback count_online_rooms(binary(), binary()) -> non_neg_integer().
 -callback rsm_supported() -> boolean().
--callback register_online_user(ljid(), binary(), binary()) -> any().
--callback unregister_online_user(ljid(), binary(), binary()) -> any().
--callback count_online_rooms_by_user(binary(), binary()) -> non_neg_integer().
--callback get_online_rooms_by_user(binary(), binary()) -> [{binary(), binary()}].
+-callback register_online_user(binary(), ljid(), binary(), binary()) -> any().
+-callback unregister_online_user(binary(), ljid(), binary(), binary()) -> any().
+-callback count_online_rooms_by_user(binary(), binary(), binary()) -> non_neg_integer().
+-callback get_online_rooms_by_user(binary(), binary(), binary()) -> [{binary(), binary()}].
 
 %%====================================================================
 %% API
@@ -127,7 +127,7 @@ shutdown_rooms(Host) ->
     RMod = gen_mod:ram_db_mod(Host, ?MODULE),
     MyHost = gen_mod:get_module_opt_host(Host, mod_muc,
 					 <<"conference.@HOST@">>),
-    Rooms = RMod:get_online_rooms(MyHost, undefined),
+    Rooms = RMod:get_online_rooms(Host, MyHost, undefined),
     lists:flatmap(
       fun({_, _, Pid}) when node(Pid) == node() ->
 	      Pid ! shutdown,
@@ -180,13 +180,13 @@ can_use_nick(ServerHost, Host, JID, Nick) ->
 find_online_room(Room, Host) ->
     ServerHost = ejabberd_router:host_of_route(Host),
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
-    RMod:find_online_room(Room, Host).
+    RMod:find_online_room(ServerHost, Room, Host).
 
 -spec register_online_room(binary(), binary(), pid()) -> any().
 register_online_room(Room, Host, Pid) ->
     ServerHost = ejabberd_router:host_of_route(Host),
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
-    RMod:register_online_room(Room, Host, Pid).
+    RMod:register_online_room(ServerHost, Room, Host, Pid).
 
 -spec get_online_rooms(binary()) -> [{binary(), binary(), pid()}].
 get_online_rooms(Host) ->
@@ -201,22 +201,22 @@ count_online_rooms(Host) ->
 -spec register_online_user(binary(), ljid(), binary(), binary()) -> any().
 register_online_user(ServerHost, LJID, Name, Host) ->
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
-    RMod:register_online_user(LJID, Name, Host).
+    RMod:register_online_user(ServerHost, LJID, Name, Host).
 
 -spec unregister_online_user(binary(), ljid(), binary(), binary()) -> any().
 unregister_online_user(ServerHost, LJID, Name, Host) ->
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
-    RMod:unregister_online_user(LJID, Name, Host).
+    RMod:unregister_online_user(ServerHost, LJID, Name, Host).
 
 -spec count_online_rooms_by_user(binary(), binary(), binary()) -> non_neg_integer().
 count_online_rooms_by_user(ServerHost, LUser, LServer) ->
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
-    RMod:count_online_rooms_by_user(LUser, LServer).
+    RMod:count_online_rooms_by_user(ServerHost, LUser, LServer).
 
 -spec get_online_rooms_by_user(binary(), binary(), binary()) -> [{binary(), binary()}].
 get_online_rooms_by_user(ServerHost, LUser, LServer) ->
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
-    RMod:get_online_rooms_by_user(LUser, LServer).
+    RMod:get_online_rooms_by_user(ServerHost, LUser, LServer).
 
 %%====================================================================
 %% gen_server callbacks
@@ -256,7 +256,7 @@ handle_call({create, Room, From, Nick, Opts}, _From,
 		  RoomShaper, From,
 		  Nick, NewOpts, QueueType),
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
-    RMod:register_online_room(Room, Host, Pid),
+    RMod:register_online_room(ServerHost, Room, Host, Pid),
     {reply, ok, State}.
 
 handle_cast({reload, ServerHost, NewOpts, OldOpts}, #state{host = OldHost}) ->
@@ -318,7 +318,7 @@ handle_info({route, Packet},
 handle_info({room_destroyed, {Room, Host}, Pid}, State) ->
     ServerHost = State#state.server_host,
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
-    RMod:unregister_online_room(Room, Host, Pid),
+    RMod:unregister_online_room(ServerHost, Room, Host, Pid),
     {noreply, State};
 handle_info(Info, State) ->
     ?ERROR_MSG("unexpected info: ~p", [Info]),
@@ -491,7 +491,7 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
     {_AccessRoute, AccessCreate, _AccessAdmin, _AccessPersistent} = Access,
     {Room, _, Nick} = jid:tolower(To),
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
-    case RMod:find_online_room(Room, Host) of
+    case RMod:find_online_room(ServerHost, Room, Host) of
 	error ->
 	    case is_create_request(Packet) of
 		true ->
@@ -504,7 +504,7 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 					  Room, HistorySize,
 					  RoomShaper, From, Nick, DefRoomOpts,
 					  QueueType),
-			    RMod:register_online_room(Room, Host, Pid),
+			    RMod:register_online_room(ServerHost, Room, Host, Pid),
 			    mod_muc_room:route(Pid, Packet),
 			    ok;
 			false ->
@@ -675,13 +675,13 @@ load_permanent_rooms(Host, ServerHost, Access,
     lists:foreach(
       fun(R) ->
 		{Room, Host} = R#muc_room.name_host,
-	      case RMod:find_online_room(Room, Host) of
+	      case RMod:find_online_room(ServerHost, Room, Host) of
 		  error ->
 			{ok, Pid} = mod_muc_room:start(Host,
 				ServerHost, Access, Room,
 				HistorySize, RoomShaper,
 				R#muc_room.opts, QueueType),
-		      RMod:register_online_room(Room, Host, Pid);
+		      RMod:register_online_room(ServerHost, Room, Host, Pid);
 		  {ok, _} ->
 		      ok
 		end
@@ -856,12 +856,12 @@ get_online_rooms(ServerHost, Host) ->
 			  [{binary(), binary(), pid()}].
 get_online_rooms(ServerHost, Host, RSM) ->
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
-    RMod:get_online_rooms(Host, RSM).
+    RMod:get_online_rooms(ServerHost, Host, RSM).
 
 -spec count_online_rooms(binary(), binary()) -> non_neg_integer().
 count_online_rooms(ServerHost, Host) ->
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
-    RMod:count_online_rooms(Host).
+    RMod:count_online_rooms(ServerHost, Host).
 
 opts_to_binary(Opts) ->
     lists:map(

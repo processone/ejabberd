@@ -125,6 +125,30 @@ CREATE TABLE [dbo].[muc_room] (
 CREATE UNIQUE CLUSTERED INDEX [muc_room_name_host] ON [muc_room] (name, host)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
+CREATE TABLE [dbo].[muc_online_room] (
+        [name] [varchar] (250) NOT NULL,
+	[host] [varchar] (250) NOT NULL,
+	[node] [text] NOT NULL,
+	[pid] [text] NOT NULL
+);
+
+CREATE UNIQUE CLUSTERED INDEX [muc_online_room_name_host] ON [muc_online_room] (name, host)
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
+
+CREATE TABLE [dbo].[muc_online_users] (
+    [username] [varchar] (250) NOT NULL,
+    [server] [varchar] (250) NOT NULL,
+    [resource] [varchar] (250) NOT NULL,
+    [name] [varchar] (250) NOT NULL,
+    [host] [varchar] (250) NOT NULL,
+    node text NOT NULL
+);
+
+CREATE UNIQUE CLUSTERED INDEX [muc_online_users_i] ON [muc_online_users] (username, server, resource, name, host)
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
+CREATE UNIQUE CLUSTERED INDEX [muc_online_users_us] ON [muc_online_users] (username, server);
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
+
 CREATE TABLE [dbo].[privacy_default_list] (
         [username] [varchar] (250) NOT NULL,
         [name] [varchar] (250) NOT NULL,

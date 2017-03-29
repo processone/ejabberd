@@ -275,6 +275,27 @@ CREATE TABLE muc_registered (
 CREATE INDEX i_muc_registered_nick ON muc_registered (nick);
 CREATE UNIQUE INDEX i_muc_registered_jid_host ON muc_registered (jid, host);
 
+CREATE TABLE muc_online_room (
+    name text NOT NULL,
+    host text NOT NULL,
+    node text NOT NULL,
+    pid text NOT NULL
+);
+
+CREATE UNIQUE INDEX i_muc_online_room_name_host ON muc_online_room (name, host);
+
+CREATE TABLE muc_online_users (
+    username text NOT NULL,
+    server text NOT NULL,
+    resource text NOT NULL,
+    name text NOT NULL,
+    host text NOT NULL,
+    node text NOT NULL
+);
+
+CREATE UNIQUE INDEX i_muc_online_users ON muc_online_users (username, server, resource, name, host);
+CREATE INDEX i_muc_online_users_us ON muc_online_users (username, server);
+
 CREATE TABLE irc_custom (
     jid text NOT NULL,
     host text NOT NULL,

@@ -20,6 +20,7 @@ host_config:
         db_type: sql
       mod_muc: 
         db_type: sql
+        ram_db_type: sql
       mod_offline: 
         db_type: sql
       mod_privacy: 
@@ -77,6 +78,7 @@ Welcome to this XMPP server."
         db_type: sql
       mod_muc: 
         db_type: sql
+        ram_db_type: sql
       mod_offline: 
         db_type: sql
       mod_privacy: 
@@ -139,6 +141,7 @@ Welcome to this XMPP server."
         db_type: sql
       mod_muc: 
         db_type: sql
+        ram_db_type: sql
       mod_offline: 
         db_type: sql
       mod_privacy: 

@@ -30,10 +30,10 @@
 %% API
 -export([init/2, import/3, store_room/4, restore_room/3, forget_room/3,
 	 can_use_nick/4, get_rooms/2, get_nick/3, set_nick/4]).
--export([register_online_room/3, unregister_online_room/3, find_online_room/2,
-	 get_online_rooms/2, count_online_rooms/1, rsm_supported/0,
-	 register_online_user/3, unregister_online_user/3,
-	 count_online_rooms_by_user/2, get_online_rooms_by_user/2]).
+-export([register_online_room/4, unregister_online_room/4, find_online_room/3,
+	 get_online_rooms/3, count_online_rooms/2, rsm_supported/0,
+	 register_online_user/4, unregister_online_user/4,
+	 count_online_rooms_by_user/3, get_online_rooms_by_user/3]).
 -export([set_affiliation/6, set_affiliations/4, get_affiliation/5,
 	 get_affiliations/3, search_affiliation/4]).
 %% gen_server callbacks
@@ -157,19 +157,22 @@ get_affiliations(_ServerHost, _Room, _Host) ->
 search_affiliation(_ServerHost, _Room, _Host, _Affiliation) ->
     {error, not_implemented}.
 
-register_online_room(Room, Host, Pid) ->
+register_online_room(_ServerHost, Room, Host, Pid) ->
     F = fun() ->
 		mnesia:write(
 		  #muc_online_room{name_host = {Room, Host}, pid = Pid})
 	end,
     mnesia:transaction(F).
 
-unregister_online_room(Room, Host, Pid) ->
+unregister_online_room(_ServerHost, Room, Host, Pid) ->
     F = fun () ->
 		mnesia:delete_object(
 		  #muc_online_room{name_host = {Room, Host}, pid = Pid})
 	end,
     mnesia:transaction(F).
+
+find_online_room(_ServerHost, Room, Host) ->
+    find_online_room(Room, Host).
 
 find_online_room(Room, Host) ->
     case mnesia:dirty_read(muc_online_room, {Room, Host}) of
@@ -177,7 +180,7 @@ find_online_room(Room, Host) ->
 	[#muc_online_room{pid = Pid}] -> {ok, Pid}
     end.
 
-count_online_rooms(Host) ->
+count_online_rooms(_ServerHost, Host) ->
     ets:select_count(
       muc_online_room,
       ets:fun2ms(
@@ -185,20 +188,20 @@ count_online_rooms(Host) ->
 		H == Host
 	end)).
 
-get_online_rooms(Host,
+get_online_rooms(_ServerHost, Host,
 		 #rsm_set{max = Max, 'after' = After, before = undefined})
   when is_binary(After), After /= <<"">> ->
     lists:reverse(get_online_rooms(next, {After, Host}, Host, 0, Max, []));
-get_online_rooms(Host,
+get_online_rooms(_ServerHost, Host,
 		 #rsm_set{max = Max, 'after' = undefined, before = Before})
   when is_binary(Before), Before /= <<"">> ->
     get_online_rooms(prev, {Before, Host}, Host, 0, Max, []);
-get_online_rooms(Host,
+get_online_rooms(_ServerHost, Host,
 		 #rsm_set{max = Max, 'after' = undefined, before = <<"">>}) ->
     get_online_rooms(last, {<<"">>, Host}, Host, 0, Max, []);
-get_online_rooms(Host, #rsm_set{max = Max}) ->
+get_online_rooms(_ServerHost, Host, #rsm_set{max = Max}) ->
     lists:reverse(get_online_rooms(first, {<<"">>, Host}, Host, 0, Max, []));
-get_online_rooms(Host, undefined) ->
+get_online_rooms(_ServerHost, Host, undefined) ->
     mnesia:dirty_select(
       muc_online_room,
       ets:fun2ms(
@@ -248,17 +251,17 @@ get_online_rooms(Action, Key, Host, Count, Max, Items) ->
 rsm_supported() ->
     true.
 
-register_online_user({U, S, R}, Room, Host) ->
+register_online_user(_ServerHost, {U, S, R}, Room, Host) ->
     ets:insert(muc_online_users,
 	       #muc_online_users{us = {U, S}, resource = R,
 				 room = Room, host = Host}).
 
-unregister_online_user({U, S, R}, Room, Host) ->
+unregister_online_user(_ServerHost, {U, S, R}, Room, Host) ->
     ets:delete_object(muc_online_users,
 		      #muc_online_users{us = {U, S}, resource = R,
 					room = Room, host = Host}).
 
-count_online_rooms_by_user(U, S) ->
+count_online_rooms_by_user(_ServerHost, U, S) ->
     ets:select_count(
       muc_online_users,
       ets:fun2ms(
@@ -266,7 +269,7 @@ count_online_rooms_by_user(U, S) ->
 		U == U1 andalso S == S1
 	end)).
 
-get_online_rooms_by_user(U, S) ->
+get_online_rooms_by_user(_ServerHost, U, S) ->
     ets:select(
       muc_online_users,
       ets:fun2ms(
