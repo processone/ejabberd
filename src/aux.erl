@@ -32,7 +32,8 @@
 	 decode_base64/1, encode_base64/1, ip_to_list/1,
 	 hex_to_bin/1, hex_to_base64/1, expand_keyword/3,
 	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
-	 l2i/1, i2l/1, i2l/2, expr_to_term/1, term_to_expr/1]).
+	 l2i/1, i2l/1, i2l/2, expr_to_term/1, term_to_expr/1,
+	 encode_pid/1, decode_pid/2]).
 
 %%%===================================================================
 %%% API
@@ -194,6 +195,32 @@ i2l(L, N) when is_binary(L) ->
       _ -> i2l(<<$0, L/binary>>, N)
     end.
 
+-spec encode_pid(pid()) -> binary().
+encode_pid(Pid) ->
+    list_to_binary(erlang:pid_to_list(Pid)).
+
+-spec decode_pid(binary(), binary()) -> pid().
+decode_pid(PidBin, NodeBin) ->
+    PidStr = binary_to_list(PidBin),
+    Pid = erlang:list_to_pid(PidStr),
+    case erlang:binary_to_atom(NodeBin, latin1) of
+	Node when Node == node() ->
+	    Pid;
+	Node ->
+	    try set_node_id(PidStr, NodeBin)
+	    catch _:badarg ->
+		    erlang:error({node_down, Node})
+	    end
+    end.
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+-spec set_node_id(string(), binary()) -> pid().
+set_node_id(PidStr, NodeBin) ->
+    ExtPidStr = erlang:pid_to_list(
+		  binary_to_term(
+		    <<131,103,100,(size(NodeBin)):16,NodeBin/binary,0:72>>)),
+    [H|_] = string:tokens(ExtPidStr, "."),
+    [_|T] = string:tokens(PidStr, "."),
+    erlang:list_to_pid(string:join([H|T], ".")).

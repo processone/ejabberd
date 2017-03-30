@@ -68,7 +68,7 @@ set_session(#session{sid = {Now, Pid}, usr = {U, LServer, R},
     InfoS = aux:term_to_expr(Info),
     PrioS = enc_priority(Priority),
     TS = now_to_timestamp(Now),
-    PidS = enc_pid(Pid),
+    PidS = aux:encode_pid(Pid),
     Node = erlang:atom_to_binary(node(Pid), latin1),
     case ?SQL_UPSERT(LServer, "sm",
                      ["!usec=%(TS)d",
@@ -194,37 +194,10 @@ enc_priority(Int) when is_integer(Int) ->
 
 row_to_session(LServer, {USec, PidS, NodeS, User, Resource, PrioS, InfoS}) ->
     Now = timestamp_to_now(USec),
-    Pid = dec_pid(PidS, NodeS),
+    Pid = aux:decode_pid(PidS, NodeS),
     Priority = dec_priority(PrioS),
     Info = ejabberd_sql:decode_term(InfoS),
     #session{sid = {Now, Pid}, us = {User, LServer},
 	     usr = {User, LServer, Resource},
 	     priority = Priority,
 	     info = Info}.
-
--spec enc_pid(pid()) -> binary().
-enc_pid(Pid) ->
-    list_to_binary(erlang:pid_to_list(Pid)).
-
--spec dec_pid(binary(), binary()) -> pid().
-dec_pid(PidBin, NodeBin) ->
-    PidStr = binary_to_list(PidBin),
-    Pid = erlang:list_to_pid(PidStr),
-    case erlang:binary_to_atom(NodeBin, latin1) of
-	Node when Node == node() ->
-	    Pid;
-	Node ->
-	    try set_node_id(PidStr, NodeBin)
-	    catch _:badarg ->
-		    erlang:error({node_down, Node})
-	    end
-    end.
-
--spec set_node_id(string(), binary()) -> pid().
-set_node_id(PidStr, NodeBin) ->
-    ExtPidStr = erlang:pid_to_list(
-		  binary_to_term(
-		    <<131,103,100,(size(NodeBin)):16,NodeBin/binary,0:72>>)),
-    [H|_] = string:tokens(ExtPidStr, "."),
-    [_|T] = string:tokens(PidStr, "."),
-    erlang:list_to_pid(string:join([H|T], ".")).

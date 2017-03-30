@@ -171,7 +171,7 @@ search_affiliation(_ServerHost, _Room, _Host, _Affiliation) ->
     {error, not_implemented}.
 
 register_online_room(ServerHost, Room, Host, Pid) ->
-    PidS = enc_pid(Pid),
+    PidS = aux:encode_pid(Pid),
     NodeS = erlang:atom_to_binary(node(Pid), latin1),
     case ?SQL_UPSERT(ServerHost,
 		     "muc_online_room",
@@ -188,7 +188,7 @@ register_online_room(ServerHost, Room, Host, Pid) ->
 
 unregister_online_room(ServerHost, Room, Host, Pid) ->
     %% TODO: report errors
-    PidS = enc_pid(Pid),
+    PidS = aux:encode_pid(Pid),
     NodeS = erlang:atom_to_binary(node(Pid), latin1),
     ejabberd_sql:sql_query(
       ServerHost,
@@ -201,7 +201,7 @@ find_online_room(ServerHost, Room, Host) ->
 	   ?SQL("select @(pid)s, @(node)s from muc_online_room where "
 		"name=%(Room)s and host=%(Host)s")) of
 	{selected, [{PidS, NodeS}]} ->
-	    try {ok, dec_pid(PidS, NodeS)}
+	    try {ok, aux:decode_pid(PidS, NodeS)}
 	    catch _:{node_down, _} -> error
 	    end;
 	{selected, []} ->
@@ -231,7 +231,7 @@ get_online_rooms(ServerHost, Host, _RSM) ->
 	{selected, Rows} ->
 	    lists:flatmap(
 	      fun({Room, PidS, NodeS}) ->
-		      try [{Room, Host, dec_pid(PidS, NodeS)}]
+		      try [{Room, Host, aux:decode_pid(PidS, NodeS)}]
 		      catch _:{node_down, _} -> []
 		      end
 	      end, Rows);
@@ -328,33 +328,6 @@ import(_, _, _) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
--spec enc_pid(pid()) -> binary().
-enc_pid(Pid) ->
-    list_to_binary(erlang:pid_to_list(Pid)).
-
--spec dec_pid(binary(), binary()) -> pid().
-dec_pid(PidBin, NodeBin) ->
-    PidStr = binary_to_list(PidBin),
-    Pid = erlang:list_to_pid(PidStr),
-    case erlang:binary_to_atom(NodeBin, latin1) of
-	Node when Node == node() ->
-	    Pid;
-	Node ->
-	    try set_node_id(PidStr, NodeBin)
-	    catch _:badarg ->
-		    erlang:error({node_down, Node})
-	    end
-    end.
-
--spec set_node_id(string(), binary()) -> pid().
-set_node_id(PidStr, NodeBin) ->
-    ExtPidStr = erlang:pid_to_list(
-		  binary_to_term(
-		    <<131,103,100,(size(NodeBin)):16,NodeBin/binary,0:72>>)),
-    [H|_] = string:tokens(ExtPidStr, "."),
-    [_|T] = string:tokens(PidStr, "."),
-    erlang:list_to_pid(string:join([H|T], ".")).
-
 clean_tables(ServerHost) ->
     NodeS = erlang:atom_to_binary(node(), latin1),
     ?INFO_MSG("Cleaning SQL muc_online_room table...", []),
