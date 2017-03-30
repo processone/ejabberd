@@ -290,7 +290,7 @@ Welcome to this XMPP server."
       mod_vcard_xupdate:
         db_type: internal
       mod_carboncopy:
-        ram_db_type: internal
+        ram_db_type: redis
       mod_client_state:
         queue_presence: true
         queue_chat_states: true
