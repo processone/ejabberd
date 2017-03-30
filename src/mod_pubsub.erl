@@ -152,6 +152,7 @@
 -type(pubsubState() ::
     #pubsub_state{
 	stateid       :: {Entity::ljid(), Nidx::mod_pubsub:nodeIdx()},
+	nodeidx       :: Nidx::mod_pubsub:nodeIdx(),
 	items         :: [ItemId::mod_pubsub:itemId()],
 	affiliation   :: Affs::mod_pubsub:affiliation(),
 	subscriptions :: [{Sub::mod_pubsub:subscription(), SubId::mod_pubsub:subId()}]
@@ -161,6 +162,7 @@
 -type(pubsubItem() ::
     #pubsub_item{
 	itemid       :: {ItemId::mod_pubsub:itemId(), Nidx::mod_pubsub:nodeIdx()},
+	nodeidx      :: Nidx::mod_pubsub:nodeIdx(),
 	creation     :: {erlang:timestamp(), ljid()},
 	modification :: {erlang:timestamp(), ljid()},
 	payload      :: mod_pubsub:payload()
@@ -2165,48 +2167,21 @@ get_allowed_items_call(Host, Nidx, From, Type, Options, Owners, RSM) ->
     {PS, RG} = get_presence_and_roster_permissions(Host, From, Owners, AccessModel, AllowedGroups),
     node_call(Host, Type, get_items, [Nidx, From, AccessModel, PS, RG, undefined, RSM]).
 
-get_last_item(Host, Type, Nidx, LJID) ->
-    case get_cached_item(Host, Nidx) of
-	undefined -> get_last_item(Host, Type, Nidx, LJID, gen_mod:db_type(serverhost(Host), ?MODULE));
-	LastItem -> LastItem
-    end.
-get_last_item(Host, Type, Nidx, LJID, mnesia) ->
-    case node_action(Host, Type, get_items, [Nidx, LJID, undefined]) of
-	{result, {[LastItem|_], _}} -> LastItem;
-	_ -> undefined
-    end;
-get_last_item(Host, Type, Nidx, LJID, sql) ->
-    case node_action(Host, Type, get_last_items, [Nidx, LJID, 1]) of
-	{result, [LastItem]} -> LastItem;
-	_ -> undefined
-    end;
-get_last_item(_Host, _Type, _Nidx, _LJID, _) ->
-    undefined.
-
-get_last_items(Host, Type, Nidx, LJID, Number) ->
-    get_last_items(Host, Type, Nidx, LJID, Number, gen_mod:db_type(serverhost(Host), ?MODULE)).
-get_last_items(Host, Type, Nidx, LJID, Number, mnesia) ->
-    case node_action(Host, Type, get_items, [Nidx, LJID, undefined]) of
-	{result, {Items, _}} -> lists:sublist(Items, Number);
-	_ -> []
-    end;
-get_last_items(Host, Type, Nidx, LJID, Number, sql) ->
-    case node_action(Host, Type, get_last_items, [Nidx, LJID, Number]) of
+get_last_items(Host, Type, Nidx, LJID, Count) ->
+    case node_action(Host, Type, get_last_items, [Nidx, LJID, Count]) of
 	{result, Items} -> Items;
 	_ -> []
-    end;
-get_last_items(_Host, _Type, _Nidx, _LJID, _Number, _) ->
-    [].
+    end.
 
 %% @doc <p>Resend the items of a node to the user.</p>
 %% @todo use cache-last-item feature
 send_items(Host, Node, Nidx, Type, Options, LJID, last) ->
-    case get_last_item(Host, Type, Nidx, LJID) of
-	undefined ->
-	    ok;
-	LastItem ->
+    case get_last_items(Host, Type, Nidx, LJID, 1) of
+	[LastItem] ->
 	    Stanza = items_event_stanza(Node, Options, [LastItem]),
-	    dispatch_items(Host, LJID, Node, Stanza)
+	    dispatch_items(Host, LJID, Node, Stanza);
+	_ ->
+	    ok
     end;
 send_items(Host, Node, Nidx, Type, Options, LJID, Number) when Number > 0 ->
     Stanza = items_event_stanza(Node, Options, get_last_items(Host, Type, Nidx, Number, LJID)),
@@ -2566,28 +2541,21 @@ get_subscriptions(Host, Node, JID) ->
 	    Error
     end.
 
-get_subscriptions_for_send_last(Host, PType, mnesia, JID, LJID, BJID) ->
+get_subscriptions_for_send_last(Host, PType, sql, JID, LJID, BJID) ->
+    {result, Subs} = node_action(Host, PType,
+	    get_entity_subscriptions_for_send_last,
+	    [Host, JID]),
+    [{Node, Sub, SubId, SubJID}
+	|| {Node, Sub, SubId, SubJID} <- Subs,
+	    Sub =:= subscribed, (SubJID == LJID) or (SubJID == BJID)];
+get_subscriptions_for_send_last(Host, PType, _, JID, LJID, BJID) ->
     {result, Subs} = node_action(Host, PType,
 	    get_entity_subscriptions,
 	    [Host, JID]),
     [{Node, Sub, SubId, SubJID}
 	|| {Node, Sub, SubId, SubJID} <- Subs,
 	    Sub =:= subscribed, (SubJID == LJID) or (SubJID == BJID),
-	    match_option(Node, send_last_published_item, on_sub_and_presence)];
-get_subscriptions_for_send_last(Host, PType, sql, JID, LJID, BJID) ->
-    case catch node_action(Host, PType,
-	    get_entity_subscriptions_for_send_last,
-	    [Host, JID])
-    of
-	{result, Subs} ->
-	    [{Node, Sub, SubId, SubJID}
-		|| {Node, Sub, SubId, SubJID} <- Subs,
-		    Sub =:= subscribed, (SubJID == LJID) or (SubJID == BJID)];
-	_ ->
-	    []
-    end;
-get_subscriptions_for_send_last(_Host, _PType, _, _JID, _LJID, _BJID) ->
-    [].
+	    match_option(Node, send_last_published_item, on_sub_and_presence)].
 
 -spec set_subscriptions(host(), binary(), jid(), [ps_subscription()]) ->
 			       {result, undefined} | {error, stanza_error()}.
@@ -3202,28 +3170,18 @@ filter_node_options(Options, BaseOptions) ->
 
 -spec node_owners_action(host(), binary(), nodeIdx(), [ljid()]) -> [ljid()].
 node_owners_action(Host, Type, Nidx, []) ->
-    case gen_mod:db_type(serverhost(Host), ?MODULE) of
-	sql ->
-	    case node_action(Host, Type, get_node_affiliations, [Nidx]) of
-		{result, Affs} -> [LJID || {LJID, Aff} <- Affs, Aff =:= owner];
-		_ -> []
-	    end;
-	_ ->
-	    []
+    case node_action(Host, Type, get_node_affiliations, [Nidx]) of
+	{result, Affs} -> [LJID || {LJID, Aff} <- Affs, Aff =:= owner];
+	_ -> []
     end;
 node_owners_action(_Host, _Type, _Nidx, Owners) ->
     Owners.
 
 -spec node_owners_call(host(), binary(), nodeIdx(), [ljid()]) -> [ljid()].
 node_owners_call(Host, Type, Nidx, []) ->
-    case gen_mod:db_type(serverhost(Host), ?MODULE) of
-	sql ->
-	    case node_call(Host, Type, get_node_affiliations, [Nidx]) of
-		{result, Affs} -> [LJID || {LJID, Aff} <- Affs, Aff =:= owner];
-		_ -> []
-	    end;
-	_ ->
-	    []
+    case node_call(Host, Type, get_node_affiliations, [Nidx]) of
+	{result, Affs} -> [LJID || {LJID, Aff} <- Affs, Aff =:= owner];
+	_ -> []
     end;
 node_owners_call(_Host, _Type, _Nidx, Owners) ->
     Owners.
@@ -3468,23 +3426,15 @@ tree(Host) ->
 	Tree -> Tree
     end.
 
--spec tree(host(), binary() | atom()) -> atom().
+-spec tree(host(), binary()) -> atom().
 tree(_Host, <<"virtual">>) ->
     nodetree_virtual;   % special case, virtual does not use any backend
 tree(Host, Name) ->
-    case gen_mod:db_type(serverhost(Host), ?MODULE) of
-	mnesia -> aux:binary_to_atom(<<"nodetree_", Name/binary>>);
-	sql -> aux:binary_to_atom(<<"nodetree_", Name/binary, "_sql">>);
-	_ -> Name
-    end.
+    submodule(Host, <<"nodetree_", Name/binary>>).
 
--spec plugin(host(), binary() | atom()) -> atom().
+-spec plugin(host(), binary()) -> atom().
 plugin(Host, Name) ->
-    case gen_mod:db_type(serverhost(Host), ?MODULE) of
-	mnesia -> aux:binary_to_atom(<<"node_", Name/binary>>);
-	sql -> aux:binary_to_atom(<<"node_", Name/binary, "_sql">>);
-	_ -> Name
-    end.
+    submodule(Host, <<"node_", Name/binary>>).
 
 -spec plugins(host()) -> [binary()].
 plugins(Host) ->
@@ -3494,14 +3444,16 @@ plugins(Host) ->
 	Plugins -> Plugins
     end.
 
--spec subscription_plugin(host()) -> pubsub_subscription |
-				     pubsub_subscription_sql |
-				     none.
+-spec subscription_plugin(host()) -> atom().
 subscription_plugin(Host) ->
+    submodule(Host, <<"pubsub_subscription">>).
+
+-spec submodule(host(), binary()) -> atom().
+submodule(Host, Name) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
-	mnesia -> pubsub_subscription;
-	sql -> pubsub_subscription_sql;
-	_ -> none
+	mnesia -> aux:binary_to_atom(Name);
+	Type -> aux:binary_to_atom(<<Name/binary, "_",
+		    (jlib:atom_to_binary(Type))/binary>>)
     end.
 
 -spec config(binary(), any()) -> any().
@@ -3614,9 +3566,14 @@ tree_action(Host, Function, Args) ->
 		    {error, xmpp:err_internal_server_error(ErrTxt, ?MYLANG)}
 	    end;
 	Other ->
-	    ?ERROR_MSG("unsupported backend: ~p~n", [Other]),
-	    ErrTxt = <<"Database failure">>,
-	    {error, xmpp:err_internal_server_error(ErrTxt, ?MYLANG)}
+	    case catch Fun() of
+		{'EXIT', _} ->
+		    ?ERROR_MSG("unsupported backend: ~p~n", [Other]),
+		    ErrTxt = <<"Database failure">>,
+		    {error, xmpp:err_internal_server_error(ErrTxt, ?MYLANG)};
+		Result ->
+		    Result
+	    end
     end.
 
 %% @doc <p>node plugin call.</p>
@@ -3684,7 +3641,7 @@ transaction_retry(Host, ServerHost, Fun, Trans, DBType, Count) ->
 	    end,
 	    catch ejabberd_sql:SqlFun(ServerHost, Fun);
 	_ ->
-	    {unsupported, DBType}
+	    catch Fun()
     end,
     case Res of
 	{result, Result} ->

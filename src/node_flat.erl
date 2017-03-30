@@ -46,17 +46,18 @@
     get_subscriptions/2, set_subscriptions/4,
     get_pending_nodes/2, get_states/1, get_state/2,
     set_state/1, get_items/7, get_items/3, get_item/7,
+    get_last_items/3,
     get_item/2, set_item/1, get_item_name/3, node_to_path/1,
-    path_to_node/1, can_fetch_item/2, is_subscribed/1]).
+    path_to_node/1, can_fetch_item/2, is_subscribed/1, transform/1]).
 
 init(_Host, _ServerHost, _Opts) ->
     %pubsub_subscription:init(Host, ServerHost, Opts),
     ejabberd_mnesia:create(?MODULE, pubsub_state,
-	[{disc_copies, [node()]},
+	[{disc_copies, [node()]}, {index, [nodeidx]},
 	    {type, ordered_set},
 	    {attributes, record_info(fields, pubsub_state)}]),
     ejabberd_mnesia:create(?MODULE, pubsub_item,
-	[{disc_only_copies, [node()]},
+	[{disc_only_copies, [node()]}, {index, [nodeidx]},
 	    {attributes, record_info(fields, pubsub_item)}]),
     ejabberd_mnesia:create(?MODULE, pubsub_orphan,
 	[{disc_copies, [node()]},
@@ -131,7 +132,7 @@ create_node_permission(Host, ServerHost, _Node, _ParentNode, Owner, Access) ->
 create_node(Nidx, Owner) ->
     OwnerKey = jid:tolower(jid:remove_resource(Owner)),
     set_state(#pubsub_state{stateid = {OwnerKey, Nidx},
-	    affiliation = owner}),
+	    nodeidx = Nidx, affiliation = owner}),
     {result, {default, broadcast}}.
 
 delete_node(Nodes) ->
@@ -382,6 +383,7 @@ publish_item(Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload,
 				payload = Payload};
 			_ ->
 			    #pubsub_item{itemid = {ItemId, Nidx},
+				nodeidx = Nidx,
 				creation = {Now, GenKey},
 				modification = PubId,
 				payload = Payload}
@@ -681,8 +683,7 @@ get_nodes_helper(NodeTree, #pubsub_state{stateid = {_, N}, subscriptions = Subs}
 %% ```get_states(Nidx) ->
 %%           node_default:get_states(Nidx).'''</p>
 get_states(Nidx) ->
-    States = case catch mnesia:match_object(
-	    #pubsub_state{stateid = {'_', Nidx}, _ = '_'}) of
+    States = case catch mnesia:index_read(pubsub_state, Nidx, #pubsub_state.nodeidx) of
 	List when is_list(List) -> List;
 	_ -> []
     end,
@@ -693,7 +694,7 @@ get_state(Nidx, Key) ->
     StateId = {Key, Nidx},
     case catch mnesia:read({pubsub_state, StateId}) of
 	[State] when is_record(State, pubsub_state) -> State;
-	_ -> #pubsub_state{stateid = StateId}
+	_ -> #pubsub_state{stateid = StateId, nodeidx = Nidx}
     end.
 
 %% @doc <p>Write a state into database.</p>
@@ -725,7 +726,7 @@ del_state(#pubsub_state{stateid = {Key, Nidx}, items = Items}) ->
 %% <p>PubSub plugins can store the items where they wants (for example in a
 %% relational database), or they can even decide not to persist any items.</p>
 get_items(Nidx, _From, _RSM) ->
-    Items = mnesia:match_object(#pubsub_item{itemid = {'_', Nidx}, _ = '_'}),
+    Items = mnesia:index_read(pubsub_item, Nidx, #pubsub_item.nodeidx),
     {result, {lists:reverse(lists:keysort(#pubsub_item.modification, Items)), undefined}}.
 
 get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId, RSM) ->
@@ -763,6 +764,12 @@ get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId, RSM
 	true ->
 	    get_items(Nidx, JID, RSM)
     end.
+
+get_last_items(Nidx, From, Count) when Count > 0 ->
+    {result, {Items, _}} = get_items(Nidx, From, undefined),
+    {result, lists:sublist(Items, Count)};
+get_last_items(_Nidx, _From, _Count) ->
+    {result, []}.
 
 %% @doc <p>Returns an item (one item list), given its reference.</p>
 
@@ -868,3 +875,10 @@ first_in_list(Pred, [H | T]) ->
 	true -> {value, H};
 	_ -> first_in_list(Pred, T)
     end.
+
+transform({pubsub_state, {Id, Nidx}, Is, A, Ss}) ->
+    {pubsub_state, {Id, Nidx}, Nidx, Is, A, Ss};
+transform({pubsub_item, {Id, Nidx}, C, M, P}) ->
+    {pubsub_item, {Id, Nidx}, Nidx, C, M, P};
+transform(Rec) ->
+    Rec.

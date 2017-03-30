@@ -615,10 +615,11 @@ get_state_without_itemids(Nidx, JID) ->
 		"where nodeid=%(Nidx)d and jid=%(J)s")) of
 	{selected, [{SJID, Aff, Subs}]} ->
 	    #pubsub_state{stateid = {decode_jid(SJID), Nidx},
+			  nodeidx = Nidx,
 			  affiliation = decode_affiliation(Aff),
 			  subscriptions = decode_subscriptions(Subs)};
 	_ ->
-	    #pubsub_state{stateid = {JID, Nidx}}
+	    #pubsub_state{stateid = {JID, Nidx}, nodeidx = Nidx}
     end.
 
 set_state(State) ->

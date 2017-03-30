@@ -53,6 +53,7 @@
     get_subscriptions/2, set_subscriptions/4,
     get_pending_nodes/2, get_states/1, get_state/2,
     set_state/1, get_items/7, get_items/3, get_item/7,
+    get_last_items/3,
     get_item/2, set_item/1, get_item_name/3, node_to_path/1,
     path_to_node/1]).
 
@@ -170,6 +171,9 @@ get_items(Nidx, From, RSM) ->
 
 get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, SubId, RSM) ->
     node_pep:get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, SubId, RSM).
+
+get_last_items(Nidx, From, Count) ->
+    node_pep:get_last_items(Nidx, From, Count).
 
 get_item(Nidx, ItemId) ->
     node_pep:get_item(Nidx, ItemId).
