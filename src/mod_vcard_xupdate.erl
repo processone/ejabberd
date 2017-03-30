@@ -99,7 +99,7 @@ vcard_set(LUser, LServer, VCARD) ->
       <<>> -> remove_xupdate(LUser, LServer);
       BinVal ->
 	  add_xupdate(LUser, LServer,
-		      str:sha(jlib:decode_base64(BinVal)))
+		      str:sha(aux:decode_base64(BinVal)))
     end,
     ejabberd_sm:force_update_presence(US).
 

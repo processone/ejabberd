@@ -510,8 +510,8 @@ auth_modules(Server) ->
     Default = ejabberd_config:default_db(LServer, ?MODULE),
     Methods = ejabberd_config:get_option(
                 {auth_method, LServer}, opt_type(auth_method), [Default]),
-    [jlib:binary_to_atom(<<"ejabberd_auth_",
-			   (jlib:atom_to_binary(M))/binary>>)
+    [aux:binary_to_atom(<<"ejabberd_auth_",
+			   (aux:atom_to_binary(M))/binary>>)
      || M <- Methods].
 
 export(Server) ->

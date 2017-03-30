@@ -438,7 +438,7 @@ handle_auth_success(User, Mech, AuthModule,
     ?INFO_MSG("(~s) Accepted c2s ~s authentication for ~s@~s by ~s backend from ~s",
 	      [SockMod:pp(Socket), Mech, User, LServer,
 	       ejabberd_auth:backend_type(AuthModule),
-	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
+	       ejabberd_config:may_hide_data(aux:ip_to_list(IP))]),
     State1 = State#{auth_module => AuthModule},
     ejabberd_hooks:run_fold(c2s_auth_result, LServer, State1, [true, User]).
 
@@ -450,7 +450,7 @@ handle_auth_failure(User, Mech, Reason,
 	       if User /= <<"">> -> ["for ", User, "@", LServer, " "];
 		  true -> ""
 	       end,
-	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP)), Reason]),
+	       ejabberd_config:may_hide_data(aux:ip_to_list(IP)), Reason]),
     ejabberd_hooks:run_fold(c2s_auth_result, LServer, State, [false, User]).
 
 handle_unbinded_packet(Pkt, #{lserver := LServer} = State) ->

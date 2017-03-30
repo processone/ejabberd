@@ -67,7 +67,7 @@ groups_with_opts(Host) ->
     end.
 
 create_group(Host, Group, Opts) ->
-    SOpts = jlib:term_to_expr(Opts),
+    SOpts = aux:term_to_expr(Opts),
     F = fun () ->
 		?SQL_UPSERT_T(
                    "sr_group",
@@ -98,7 +98,7 @@ get_group_opts(Host, Group) ->
     end.
 
 set_group_opts(Host, Group, Opts) ->
-    SOpts = jlib:term_to_expr(Opts),
+    SOpts = aux:term_to_expr(Opts),
     F = fun () ->
 		?SQL_UPSERT_T(
                    "sr_group",
@@ -172,7 +172,7 @@ export(_Server) ->
     [{sr_group,
       fun(Host, #sr_group{group_host = {Group, LServer}, opts = Opts})
             when LServer == Host ->
-              SOpts = jlib:term_to_expr(Opts),
+              SOpts = aux:term_to_expr(Opts),
               [?SQL("delete from sr_group where name=%(Group)s;"),
                ?SQL("insert into sr_group(name, opts) values ("
                     "%(Group)s, %(SOpts)s);")];

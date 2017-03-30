@@ -296,14 +296,14 @@ process_command1(From, To, Body) ->
     process_command2(str:tokens(Body, <<" ">>), From, To).
 
 process_command2([<<"kill">>, SNode, SPid], From, To) ->
-    Node = jlib:binary_to_atom(SNode),
+    Node = aux:binary_to_atom(SNode),
     remote_command(Node, [kill, SPid], From, To);
 process_command2([<<"showlh">>, SNode], From, To) ->
-    Node = jlib:binary_to_atom(SNode),
+    Node = aux:binary_to_atom(SNode),
     remote_command(Node, [showlh], From, To);
 process_command2([<<"setlh">>, SNode, NewValueString],
 		 From, To) ->
-    Node = jlib:binary_to_atom(SNode),
+    Node = aux:binary_to_atom(SNode),
     NewValue = binary_to_integer(NewValueString),
     remote_command(Node, [setlh, NewValue], From, To);
 process_command2([<<"help">>], From, To) ->

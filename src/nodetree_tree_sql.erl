@@ -101,7 +101,7 @@ set_node(Record) when is_record(Record, pubsub_node) ->
 	_ ->
 	    lists:foreach(fun ({Key, Value}) ->
 			SKey = iolist_to_binary(atom_to_list(Key)),
-			SValue = jlib:term_to_expr(Value),
+			SValue = aux:term_to_expr(Value),
 			catch
 			ejabberd_sql:sql_query_t(
                           ?SQL("insert into pubsub_node_option(nodeid, "
@@ -278,13 +278,13 @@ raw_to_node(Host, {Node, Parent, Type, Nidx}) ->
     of
 	{selected, ROptions} ->
 	    DbOpts = lists:map(fun ({Key, Value}) ->
-			    RKey = jlib:binary_to_atom(Key),
+			    RKey = aux:binary_to_atom(Key),
 			    Tokens = element(2, erl_scan:string(binary_to_list(<<Value/binary, ".">>))),
 			    RValue = element(2, erl_parse:parse_term(Tokens)),
 			    {RKey, RValue}
 		    end,
 		    ROptions),
-	    Module = jlib:binary_to_atom(<<"node_", Type/binary, "_sql">>),
+	    Module = aux:binary_to_atom(<<"node_", Type/binary, "_sql">>),
 	    StdOpts = Module:options(),
 	    lists:foldl(fun ({Key, Value}, Acc) ->
 			lists:keyreplace(Key, 1, Acc, {Key, Value})

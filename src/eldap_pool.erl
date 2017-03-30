@@ -83,4 +83,4 @@ do_request(Name, {F, Args}) ->
     end.
 
 make_id(Name) ->
-    jlib:binary_to_atom(<<"eldap_pool_", Name/binary>>).
+    aux:binary_to_atom(<<"eldap_pool_", Name/binary>>).

@@ -113,7 +113,7 @@ update(Server, JID, Dir) ->
 		       ?WARNING_MSG("Flooder detected: ~s, on IP: ~s ignoring "
 				    "sent presence subscriptions~n",
 				    [jid:encode(JID),
-				     jlib:ip_to_list(IP)])
+				     aux:ip_to_list(IP)])
 		 end,
 		 {stop, deny};
 	     true ->

@@ -166,7 +166,7 @@ code_change(_OldVsn, State, _Extra) ->
 -spec log_and_disconnect(ejabberd_c2s:state(), pos_integer(), non_neg_integer())
       -> {stop, ejabberd_c2s:state()}.
 log_and_disconnect(#{ip := {Addr, _}, lang := Lang} = State, Attempts, UnbanTS) ->
-    IP = jlib:ip_to_list(Addr),
+    IP = aux:ip_to_list(Addr),
     UnbanDate = format_date(
 		  calendar:now_to_universal_time(seconds_to_now(UnbanTS))),
     Format = <<"Too many (~p) failed authentications "

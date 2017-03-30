@@ -146,7 +146,7 @@ find_routes() ->
 enc_local_hint(undefined) ->
     <<"">>;
 enc_local_hint(LocalHint) ->
-    jlib:term_to_expr(LocalHint).
+    aux:term_to_expr(LocalHint).
 
 dec_local_hint(<<"">>) ->
     undefined;

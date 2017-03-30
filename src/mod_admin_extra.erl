@@ -673,7 +673,7 @@ get_cookie() ->
     atom_to_list(erlang:get_cookie()).
 
 restart_module(Host, Module) when is_binary(Module) ->
-    restart_module(Host, jlib:binary_to_atom(Module));
+    restart_module(Host, aux:binary_to_atom(Module));
 restart_module(Host, Module) when is_atom(Module) ->
     List = gen_mod:loaded_modules_with_opts(Host),
     case proplists:get_value(Module, List) of
@@ -1031,8 +1031,8 @@ set_presence(User, Host, Resource, Type, Show, Status, Priority0) ->
 	    From = jid:make(User, Host, Resource),
 	    To = jid:make(User, Host),
 	    Presence = #presence{from = From, to = To,
-				 type = jlib:binary_to_atom(Type),
-				 show = jlib:binary_to_atom(Show),
+				 type = aux:binary_to_atom(Type),
+				 show = aux:binary_to_atom(Show),
 				 status = xmpp:mk_text(Status),
 				 priority = Priority},
 	    Pid ! {route, Presence},
@@ -1317,7 +1317,7 @@ build_roster_item(U, S, {add, Nick, Subs, Group}) ->
     Groups = binary:split(Group,<<";">>, [global]),
     #roster_item{jid = jid:make(U, S),
 		 name = Nick,
-		 subscription = jlib:binary_to_atom(Subs),
+		 subscription = aux:binary_to_atom(Subs),
 		 groups = Groups};
 build_roster_item(U, S, remove) ->
     #roster_item{jid = jid:make(U, S), subscription = remove}.
@@ -1410,7 +1410,7 @@ srg_get_info(Group, Host) ->
 	Os when is_list(Os) -> Os;
 	error -> []
     end,
-    [{jlib:atom_to_binary(Title), btl(Value)} || {Title, Value} <- Opts].
+    [{aux:atom_to_binary(Title), btl(Value)} || {Title, Value} <- Opts].
 
 btl([]) -> [];
 btl([B|L]) -> [btl(B)|btl(L)];
@@ -1443,7 +1443,7 @@ send_message(Type, From, To, Subject, Body) ->
     ejabberd_router:route(xmpp:set_from_to(Packet, FromJID, ToJID)).
 
 build_packet(Type, Subject, Body) ->
-    #message{type = jlib:binary_to_atom(Type),
+    #message{type = aux:binary_to_atom(Type),
 	     body = xmpp:mk_text(Body),
 	     subject = xmpp:mk_text(Subject)}.
 

@@ -669,7 +669,7 @@ transform_options({{s2s_host, Host}, Action}, Opts) ->
     ?WARNING_MSG("Option 's2s_host' is deprecated. "
                  "The option is still supported but it is better to "
                  "fix your config: use access rules instead.", []),
-    ACLName = jlib:binary_to_atom(
+    ACLName = aux:binary_to_atom(
                 iolist_to_binary(["s2s_access_", Host])),
     [{acl, ACLName, {server, Host}},
      {access, s2s, [{Action, ACLName}]},

@@ -3473,16 +3473,16 @@ tree(_Host, <<"virtual">>) ->
     nodetree_virtual;   % special case, virtual does not use any backend
 tree(Host, Name) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
-	mnesia -> jlib:binary_to_atom(<<"nodetree_", Name/binary>>);
-	sql -> jlib:binary_to_atom(<<"nodetree_", Name/binary, "_sql">>);
+	mnesia -> aux:binary_to_atom(<<"nodetree_", Name/binary>>);
+	sql -> aux:binary_to_atom(<<"nodetree_", Name/binary, "_sql">>);
 	_ -> Name
     end.
 
 -spec plugin(host(), binary() | atom()) -> atom().
 plugin(Host, Name) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
-	mnesia -> jlib:binary_to_atom(<<"node_", Name/binary>>);
-	sql -> jlib:binary_to_atom(<<"node_", Name/binary, "_sql">>);
+	mnesia -> aux:binary_to_atom(<<"node_", Name/binary>>);
+	sql -> aux:binary_to_atom(<<"node_", Name/binary, "_sql">>);
 	_ -> Name
     end.
 

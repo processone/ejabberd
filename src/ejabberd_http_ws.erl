@@ -283,7 +283,7 @@ cancel_timer(Timer) ->
     receive {timeout, Timer, _} -> ok after 0 -> ok end.
 
 get_human_html_xmlel() ->
-    Heading = <<"ejabberd ", (jlib:atom_to_binary(?MODULE))/binary>>,
+    Heading = <<"ejabberd ", (aux:atom_to_binary(?MODULE))/binary>>,
     #xmlel{name = <<"html">>,
            attrs =
                [{<<"xmlns">>, <<"http://www.w3.org/1999/xhtml">>}],

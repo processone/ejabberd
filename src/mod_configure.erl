@@ -919,7 +919,7 @@ get_form(Host,
 			  ENode/binary>>,
 		Instr = ?T(Lang, <<"Choose modules to stop">>),
 		Fs = lists:map(fun(M) ->
-				       S = jlib:atom_to_binary(M),
+				       S = aux:atom_to_binary(M),
 				       ?XFIELD(boolean, S, S, <<"0">>)
 			       end, SModules),
 		{result, #xdata{title = Title,
@@ -1224,7 +1224,7 @@ set_form(_From, _Host,
       Node ->
 	  lists:foreach(
 	    fun(#xdata_field{var = SVar, values = SVals}) ->
-		    Table = jlib:binary_to_atom(SVar),
+		    Table = aux:binary_to_atom(SVar),
 		    Type = case SVals of
 			       [<<"unknown">>] -> unknown;
 			       [<<"ram_copies">>] -> ram_copies;
@@ -1258,7 +1258,7 @@ set_form(_From, Host,
 	    fun(#xdata_field{var = Var, values = Vals}) ->
 		    case Vals of
 			[<<"1">>] ->
-			    Module = jlib:binary_to_atom(Var),
+			    Module = aux:binary_to_atom(Var),
 			    ejabberd_cluster:call(Node, gen_mod, stop_module,
 						  [Host, Module]);
 			_ -> ok
@@ -1657,7 +1657,7 @@ set_form(From, Host, ?NS_ADMINL(<<"user-stats">>), Lang,
 					       Server),
     IPs1 = [ejabberd_sm:get_user_ip(User, Server, Resource)
 	    || Resource <- Resources],
-    IPs = [<<(jlib:ip_to_list(IP))/binary, ":",
+    IPs = [<<(aux:ip_to_list(IP))/binary, ":",
              (integer_to_binary(Port))/binary>>
                || {IP, Port} <- IPs1],
     Items = ejabberd_hooks:run_fold(roster_get, Server, [],
@@ -1719,7 +1719,7 @@ stop_node(From, Host, ENode, Action, XData) ->
 	    mod_announce:announce_commands(empty, From, To, Request)
     end,
     Time = timer:seconds(Delay),
-    Node = jlib:binary_to_atom(ENode),
+    Node = aux:binary_to_atom(ENode),
     {ok, _} = timer:apply_after(Time, rpc, call, [Node, init, Action, []]),
     {result, undefined}.
 

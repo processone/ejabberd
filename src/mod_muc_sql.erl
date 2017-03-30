@@ -57,7 +57,7 @@ init(Host, Opts) ->
     end.
 
 store_room(LServer, Host, Name, Opts) ->
-    SOpts = jlib:term_to_expr(Opts),
+    SOpts = aux:term_to_expr(Opts),
     F = fun () ->
 		?SQL_UPSERT_T(
                    "muc_room",
@@ -296,7 +296,7 @@ export(_Server) ->
       fun(Host, #muc_room{name_host = {Name, RoomHost}, opts = Opts}) ->
               case str:suffix(Host, RoomHost) of
                   true ->
-                      SOpts = jlib:term_to_expr(Opts),
+                      SOpts = aux:term_to_expr(Opts),
                       [?SQL("delete from muc_room where name=%(Name)s"
                             " and host=%(RoomHost)s;"),
                        ?SQL("insert into muc_room(name, host, opts) "

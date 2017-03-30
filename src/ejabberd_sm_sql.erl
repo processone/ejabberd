@@ -65,7 +65,7 @@ init() ->
 
 set_session(#session{sid = {Now, Pid}, usr = {U, LServer, R},
 		     priority = Priority, info = Info}) ->
-    InfoS = jlib:term_to_expr(Info),
+    InfoS = aux:term_to_expr(Info),
     PrioS = enc_priority(Priority),
     TS = now_to_timestamp(Now),
     PidS = enc_pid(Pid),

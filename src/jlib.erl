@@ -35,6 +35,7 @@
                            binary_to_integer/1,
                            integer_to_binary/1]}).
 
+%% The following functions are deprected: use functions from aux.erl
 -export([tolower/1, term_to_base64/1, base64_to_term/1,
 	 decode_base64/1, encode_base64/1, ip_to_list/1,
 	 hex_to_bin/1, hex_to_base64/1, expand_keyword/3,
@@ -111,7 +112,24 @@
 	     {binary_to_integer, 1},
 	     {binary_to_integer, 2},
 	     {integer_to_binary, 1},
-	     {integer_to_binary, 2}]).
+	     {integer_to_binary, 2},
+	     {tolower, 1},
+	     {term_to_base64, 1},
+	     {base64_to_term, 1},
+	     {decode_base64, 1},
+	     {encode_base64, 1},
+	     {ip_to_list, 1},
+	     {hex_to_bin, 1},
+	     {hex_to_base64, 1},
+	     {expand_keyword, 3},
+	     {atom_to_binary, 1},
+	     {binary_to_atom, 1},
+	     {tuple_to_binary, 1},
+	     {l2i, 1},
+	     {i2l, 1},
+	     {i2l, 2},
+	     {expr_to_term, 1},
+	     {term_to_expr, 1}]).
 
 -include("ejabberd.hrl").
 -include("jlib.hrl").

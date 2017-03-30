@@ -73,7 +73,7 @@ start() ->
                     nocookie ->
                         str:sha(randoms:get_string());
                     Cookie ->
-                        str:sha(jlib:atom_to_binary(Cookie))
+                        str:sha(aux:atom_to_binary(Cookie))
                 end,
     State2 = set_option({node_start, global}, UnixTime, State1),
     State3 = set_option({shared_key, global}, SharedKey, State2),

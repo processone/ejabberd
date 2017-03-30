@@ -272,7 +272,7 @@ get_api_version([]) ->
 handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
     case ejabberd_commands:get_command_format(Call, Auth, Version) of
         {ArgsSpec, _} when is_list(ArgsSpec) ->
-            Args2 = [{jlib:binary_to_atom(Key), Value} || {Key, Value} <- Args],
+            Args2 = [{aux:binary_to_atom(Key), Value} || {Key, Value} <- Args],
             Spec = lists:foldr(
                     fun ({Key, binary}, Acc) ->
                             [{Key, <<>>}|Acc];
@@ -290,13 +290,13 @@ handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
 	    catch throw:not_found ->
 		    {404, <<"not_found">>};
 		  throw:{not_found, Why} when is_atom(Why) ->
-		    {404, jlib:atom_to_binary(Why)};
+		    {404, aux:atom_to_binary(Why)};
 		  throw:{not_found, Msg} ->
 		    {404, iolist_to_binary(Msg)};
 		  throw:not_allowed ->
 		    {401, <<"not_allowed">>};
 		  throw:{not_allowed, Why} when is_atom(Why) ->
-		    {401, jlib:atom_to_binary(Why)};
+		    {401, aux:atom_to_binary(Why)};
 		  throw:{not_allowed, Msg} ->
 		    {401, iolist_to_binary(Msg)};
                   throw:{error, account_unprivileged} ->
@@ -306,11 +306,11 @@ handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
 		  throw:{invalid_parameter, Msg} ->
 		    {400, iolist_to_binary(Msg)};
 		  throw:{error, Why} when is_atom(Why) ->
-		    {400, jlib:atom_to_binary(Why)};
+		    {400, aux:atom_to_binary(Why)};
 		  throw:{error, Msg} ->
 		    {400, iolist_to_binary(Msg)};
 		  throw:Error when is_atom(Error) ->
-		    {400, jlib:atom_to_binary(Error)};
+		    {400, aux:atom_to_binary(Error)};
 		  throw:Msg when is_list(Msg); is_binary(Msg) ->
 		    {400, iolist_to_binary(Msg)};
 		  _Error ->
@@ -456,45 +456,45 @@ format_command_result(Cmd, Auth, Result, Version) ->
     end.
 
 format_result(Atom, {Name, atom}) ->
-    {jlib:atom_to_binary(Name), jlib:atom_to_binary(Atom)};
+    {aux:atom_to_binary(Name), aux:atom_to_binary(Atom)};
 
 format_result(Int, {Name, integer}) ->
-    {jlib:atom_to_binary(Name), Int};
+    {aux:atom_to_binary(Name), Int};
 
 format_result([String | _] = StringList, {Name, string}) when is_list(String) ->
     Binarized = iolist_to_binary(string:join(StringList, "\n")),
-    {jlib:atom_to_binary(Name), Binarized};
+    {aux:atom_to_binary(Name), Binarized};
 
 format_result(String, {Name, string}) ->
-    {jlib:atom_to_binary(Name), iolist_to_binary(String)};
+    {aux:atom_to_binary(Name), iolist_to_binary(String)};
 
 format_result(Code, {Name, rescode}) ->
-    {jlib:atom_to_binary(Name), Code == true orelse Code == ok};
+    {aux:atom_to_binary(Name), Code == true orelse Code == ok};
 
 format_result({Code, Text}, {Name, restuple}) ->
-    {jlib:atom_to_binary(Name),
+    {aux:atom_to_binary(Name),
      {[{<<"res">>, Code == true orelse Code == ok},
        {<<"text">>, iolist_to_binary(Text)}]}};
 
 format_result(Code, {Name, restuple}) ->
-    {jlib:atom_to_binary(Name),
+    {aux:atom_to_binary(Name),
      {[{<<"res">>, Code == true orelse Code == ok},
        {<<"text">>, <<"">>}]}};
 
 format_result(Els, {Name, {list, {_, {tuple, [{_, atom}, _]}} = Fmt}}) ->
-    {jlib:atom_to_binary(Name), {[format_result(El, Fmt) || El <- Els]}};
+    {aux:atom_to_binary(Name), {[format_result(El, Fmt) || El <- Els]}};
 
 format_result(Els, {Name, {list, Def}}) ->
-    {jlib:atom_to_binary(Name), [element(2, format_result(El, Def)) || El <- Els]};
+    {aux:atom_to_binary(Name), [element(2, format_result(El, Def)) || El <- Els]};
 
 format_result(Tuple, {_Name, {tuple, [{_, atom}, ValFmt]}}) ->
     {Name2, Val} = Tuple,
     {_, Val2} = format_result(Val, ValFmt),
-    {jlib:atom_to_binary(Name2), Val2};
+    {aux:atom_to_binary(Name2), Val2};
 
 format_result(Tuple, {Name, {tuple, Def}}) ->
     Els = lists:zip(tuple_to_list(Tuple), Def),
-    {jlib:atom_to_binary(Name), {[format_result(El, ElDef) || {El, ElDef} <- Els]}};
+    {aux:atom_to_binary(Name), {[format_result(El, ElDef) || {El, ElDef} <- Els]}};
 
 format_result(404, {_Name, _}) ->
     "not_found".
@@ -537,7 +537,7 @@ json_error(HTTPCode, JSONCode, Message) ->
     }.
 
 log(Call, Args, {Addr, Port}) ->
-    AddrS = jlib:ip_to_list({Addr, Port}),
+    AddrS = aux:ip_to_list({Addr, Port}),
     ?INFO_MSG("API call ~s ~p from ~s:~p", [Call, Args, AddrS, Port]);
 log(Call, Args, IP) ->
     ?INFO_MSG("API call ~s ~p (~p)", [Call, Args, IP]).

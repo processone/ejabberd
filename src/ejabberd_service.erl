@@ -153,7 +153,7 @@ get_password_fun(#{remote_server := RemoteServer,
 		    ?INFO_MSG("(~s) Domain ~s is unconfigured for "
 			      "external component from ~s",
 			      [SockMod:pp(Socket), RemoteServer,
-			       ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
+			       ejabberd_config:may_hide_data(aux:ip_to_list(IP))]),
 		    {false, undefined}
 	    end
     end.
@@ -165,7 +165,7 @@ handle_auth_success(_, Mech, _,
     ?INFO_MSG("(~s) Accepted external component ~s authentication "
 	      "for ~s from ~s",
 	      [SockMod:pp(Socket), Mech, RemoteServer,
-	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
+	       ejabberd_config:may_hide_data(aux:ip_to_list(IP))]),
     		    lists:foreach(
     		      fun (H) ->
     			      ejabberd_router:register_route(H, ?MYNAME),
@@ -180,7 +180,7 @@ handle_auth_failure(_, Mech, Reason,
     ?INFO_MSG("(~s) Failed external component ~s authentication "
 	      "for ~s from ~s: ~s",
 	      [SockMod:pp(Socket), Mech, RemoteServer,
-	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP)),
+	       ejabberd_config:may_hide_data(aux:ip_to_list(IP)),
 	       Reason]),
     State.
 

@@ -182,7 +182,7 @@ handle_auth_success(RServer, Mech, _AuthModule,
 		      lserver := LServer} = State) ->
     ?INFO_MSG("(~s) Accepted inbound s2s ~s authentication ~s -> ~s (~s)",
 	      [SockMod:pp(Socket), Mech, RServer, LServer,
-	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
+	       ejabberd_config:may_hide_data(aux:ip_to_list(IP))]),
     State1 = case ejabberd_s2s:allow_host(ServerHost, RServer) of
 	       true ->
 		     AuthDomains1 = sets:add_element(RServer, AuthDomains),
@@ -200,7 +200,7 @@ handle_auth_failure(RServer, Mech, Reason,
 		      lserver := LServer} = State) ->
     ?INFO_MSG("(~s) Failed inbound s2s ~s authentication ~s -> ~s (~s): ~s",
 	      [SockMod:pp(Socket), Mech, RServer, LServer,
-	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP)), Reason]),
+	       ejabberd_config:may_hide_data(aux:ip_to_list(IP)), Reason]),
     ejabberd_hooks:run_fold(s2s_in_auth_result,
 			    ServerHost, State, [false, RServer]).
 

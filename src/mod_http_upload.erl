@@ -32,7 +32,7 @@
 -define(SLOT_TIMEOUT, 18000000). % 5 hours.
 -define(FORMAT(Error), file:format_error(Error)).
 -define(URL_ENC(URL), binary_to_list(ejabberd_http:url_encode(URL))).
--define(ADDR_TO_STR(IP), ejabberd_config:may_hide_data(jlib:ip_to_list(IP))).
+-define(ADDR_TO_STR(IP), ejabberd_config:may_hide_data(aux:ip_to_list(IP))).
 -define(STR_TO_INT(Str, B), binary_to_integer(iolist_to_binary(Str), B)).
 -define(DEFAULT_CONTENT_TYPE, <<"application/octet-stream">>).
 -define(CONTENT_TYPES,
@@ -502,12 +502,12 @@ get_proc_name(ServerHost, ModuleName) ->
 
 expand_home(Input) ->
     {ok, [[Home]]} = init:get_argument(home),
-    jlib:expand_keyword(<<"@HOME@">>, Input, Home).
+    aux:expand_keyword(<<"@HOME@">>, Input, Home).
 
 -spec expand_host(binary(), binary()) -> binary().
 
 expand_host(Input, Host) ->
-    jlib:expand_keyword(<<"@HOST@">>, Input, Host).
+    aux:expand_keyword(<<"@HOST@">>, Input, Host).
 
 %%--------------------------------------------------------------------
 %% Internal functions.

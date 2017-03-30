@@ -58,7 +58,7 @@ remove_room(LServer, LName, LHost) ->
 
 delete_old_messages(ServerHost, TimeStamp, Type) ->
     TypeClause = if Type == all -> <<"">>;
-		    true -> [<<" and kind='">>, jlib:atom_to_binary(Type), <<"'">>]
+		    true -> [<<" and kind='">>, aux:atom_to_binary(Type), <<"'">>]
 		 end,
     TS = integer_to_binary(now_to_usec(TimeStamp)),
     ejabberd_sql:sql_query(
@@ -83,7 +83,7 @@ store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir) ->
 	      jid:tolower(Peer)),
     XML = fxml:element_to_binary(Pkt),
     Body = fxml:get_subtag_cdata(Pkt, <<"body">>),
-    SType = jlib:atom_to_binary(Type),
+    SType = aux:atom_to_binary(Type),
     case ejabberd_sql:sql_query(
            LServer,
            ?SQL("insert into archive (username, timestamp,"
@@ -107,8 +107,8 @@ write_prefs(LUser, _LServer, #archive_prefs{default = Default,
 					   always = Always},
 	    ServerHost) ->
     SDefault = erlang:atom_to_binary(Default, utf8),
-    SAlways = jlib:term_to_expr(Always),
-    SNever = jlib:term_to_expr(Never),
+    SAlways = aux:term_to_expr(Always),
+    SNever = aux:term_to_expr(Never),
     case ?SQL_UPSERT(
             ServerHost,
             "archive_prefs",
@@ -321,7 +321,7 @@ make_archive_el(TS, XML, Peer, Kind, Nick, MsgType, JidRequestor, JidArchive) ->
 			    T = case Kind of
 				    <<"">> -> chat;
 				    null -> chat;
-				    _ -> jlib:binary_to_atom(Kind)
+				    _ -> aux:binary_to_atom(Kind)
 				end,
 			    mod_mam:msg_to_el(
 			      #archive_msg{timestamp = Now,

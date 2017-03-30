@@ -133,7 +133,7 @@ send_metrics(Host, Probe, Peer, Port) ->
     % grapherl metrics are named first with service domain, then nodename
     % and name of the data itself, followed by type timestamp and value
     % example => process-one.net/xmpp-1.user_receive_packet:c/1441784958:1
-    [_, NodeId] = str:tokens(jlib:atom_to_binary(node()), <<"@">>),
+    [_, NodeId] = str:tokens(aux:atom_to_binary(node()), <<"@">>),
     [Node | _] = str:tokens(NodeId, <<".">>),
     BaseId = <<Host/binary, "/", Node/binary, ".">>,
     DateTime = erlang:universaltime(),
@@ -144,11 +144,11 @@ send_metrics(Host, Probe, Peer, Port) ->
 	    case Probe of
 		{Key, Val} ->
 		    BVal = integer_to_binary(Val),
-		    Data = <<BaseId/binary, (jlib:atom_to_binary(Key))/binary,
+		    Data = <<BaseId/binary, (aux:atom_to_binary(Key))/binary,
 			    ":g/", TS/binary, ":", BVal/binary>>,
 		    gen_udp:send(Socket, Peer, Port, Data);
 		Key ->
-		    Data = <<BaseId/binary, (jlib:atom_to_binary(Key))/binary,
+		    Data = <<BaseId/binary, (aux:atom_to_binary(Key))/binary,
 			    ":c/", TS/binary, ":1">>,
 		    gen_udp:send(Socket, Peer, Port, Data)
 	    end,
