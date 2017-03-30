@@ -98,7 +98,7 @@ delete_session(_LUser, LServer, _LResource, {Now, Pid}) ->
               ?SQL("delete from sm"
                    " where usec=%(TS)d and pid=%(PidS)s")),
 	    try {ok, row_to_session(LServer, Row)}
-	    catch _:{node_down, _} -> {error, notfound}
+	    catch _:{bad_node, _} -> {error, notfound}
 	    end;
 	{selected, []} ->
 	    {error, notfound};
@@ -122,7 +122,7 @@ get_sessions(LServer) ->
 	    lists:flatmap(
 	      fun(Row) ->
 		      try [row_to_session(LServer, Row)]
-		      catch _:{node_down, _} -> []
+		      catch _:{bad_node, _} -> []
 		      end
 	      end, Rows);
 	Err ->
@@ -140,7 +140,7 @@ get_sessions(LUser, LServer) ->
 	    lists:flatmap(
 	      fun(Row) ->
 		      try [row_to_session(LServer, Row)]
-		      catch _:{node_down, _} -> []
+		      catch _:{bad_node, _} -> []
 		      end
 	      end, Rows);
 	Err ->
@@ -158,7 +158,7 @@ get_sessions(LUser, LServer, LResource) ->
 	    lists:flatmap(
 	      fun(Row) ->
 		      try [row_to_session(LServer, Row)]
-		      catch _:{node_down, _} -> []
+		      catch _:{bad_node, _} -> []
 		      end
 	      end, Rows);
 	Err ->

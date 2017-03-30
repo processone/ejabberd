@@ -209,7 +209,7 @@ decode_pid(PidBin, NodeBin) ->
 	Node ->
 	    try set_node_id(PidStr, NodeBin)
 	    catch _:badarg ->
-		    erlang:error({node_down, Node})
+		    erlang:error({bad_node, Node})
 	    end
     end.
 

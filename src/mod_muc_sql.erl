@@ -202,7 +202,7 @@ find_online_room(ServerHost, Room, Host) ->
 		"name=%(Room)s and host=%(Host)s")) of
 	{selected, [{PidS, NodeS}]} ->
 	    try {ok, aux:decode_pid(PidS, NodeS)}
-	    catch _:{node_down, _} -> error
+	    catch _:{bad_node, _} -> error
 	    end;
 	{selected, []} ->
 	    error;
@@ -232,7 +232,7 @@ get_online_rooms(ServerHost, Host, _RSM) ->
 	    lists:flatmap(
 	      fun({Room, PidS, NodeS}) ->
 		      try [{Room, Host, aux:decode_pid(PidS, NodeS)}]
-		      catch _:{node_down, _} -> []
+		      catch _:{bad_node, _} -> []
 		      end
 	      end, Rows);
 	Err ->

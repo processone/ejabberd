@@ -158,7 +158,7 @@ row_to_route(Domain, {ServerHost, NodeS, PidS, LocalHintS} = Row) ->
 		server_host = ServerHost,
 		pid = aux:decode_pid(PidS, NodeS),
 		local_hint = dec_local_hint(LocalHintS)}]
-    catch _:{node_down, _} ->
+    catch _:{bad_node, _} ->
 	    [];
 	  E:R ->
 	    ?ERROR_MSG("failed to decode row from 'route' table:~n"

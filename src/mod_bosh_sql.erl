@@ -58,7 +58,7 @@ find_session(SID) ->
 	   ?SQL("select @(pid)s, @(node)s from bosh where sid=%(SID)s")) of
 	{selected, [{Pid, Node}]} ->
 	    try	{ok, aux:decode_pid(Pid, Node)}
-	    catch _:{node_down, _} -> error
+	    catch _:{bad_node, _} -> error
 	    end;
 	{selected, []} ->
 	    error;
