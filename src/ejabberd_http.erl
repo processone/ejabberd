@@ -68,6 +68,7 @@
 		end_of_request = false,
 		options = [],
 		default_host,
+		custom_headers,
 		trail = <<>>,
 		addr_re
 	       }).
@@ -167,10 +168,15 @@ init({SockMod, Socket}, Opts) ->
     DefaultHost = gen_mod:get_opt(default_host, Opts, fun(A) -> A end, undefined),
     {ok, RE} = re:compile(<<"^(?:\\[(.*?)\\]|(.*?))(?::(\\d+))?$">>),
 
+    CustomHeaders = gen_mod:get_opt(custom_headers, Opts,
+				    fun expand_custom_headers/1,
+				    []),
+
     ?INFO_MSG("started: ~p", [{SockMod1, Socket1}]),
     State = #state{sockmod = SockMod1,
                    socket = Socket1,
                    default_host = DefaultHost,
+		   custom_headers = CustomHeaders,
 		   options = Opts,
 		   request_handlers = RequestHandlers,
 		   addr_re = RE},
@@ -309,6 +315,7 @@ process_header(State, Data) ->
 		       trail = State3#state.trail,
 		       options = State#state.options,
 		       default_host = State#state.default_host,
+		       custom_headers = State#state.custom_headers,
 		       request_handlers = State#state.request_handlers,
 		       addr_re = State#state.addr_re};
 	    _ ->
@@ -316,6 +323,7 @@ process_header(State, Data) ->
 		       trail = State3#state.trail,
 		       options = State#state.options,
 		       default_host = State#state.default_host,
+		       custom_headers = State#state.custom_headers,
 		       request_handlers = State#state.request_handlers,
 		       addr_re = State#state.addr_re}
 	  end;
@@ -323,6 +331,7 @@ process_header(State, Data) ->
 	  #state{end_of_request = true,
 		 options = State#state.options,
 		 default_host = State#state.default_host,
+		 custom_headers = State#state.custom_headers,
 		 request_handlers = State#state.request_handlers,
 		 addr_re = State#state.addr_re}
     end.
@@ -446,6 +455,7 @@ process_request(#state{request_method = Method,
 		       request_tp = TP,
 		       request_headers = RequestHeaders,
 		       request_handlers = RequestHandlers,
+		       custom_headers = CustomHeaders,
 		       trail = Trail} = State) ->
     case extract_path_query(State) of
 	{State2, false} ->
@@ -478,18 +488,21 @@ process_request(#state{request_method = Method,
                                ip = IP},
 	    Res = case process(RequestHandlers, Request, Socket, SockMod, Trail) of
 		      El when is_record(El, xmlel) ->
-			  make_xhtml_output(State, 200, [], El);
+			  make_xhtml_output(State, 200, CustomHeaders, El);
 		      {Status, Headers, El}
 			when is_record(El, xmlel) ->
-			  make_xhtml_output(State, Status, Headers, El);
+			  make_xhtml_output(State, Status,
+					    Headers ++ CustomHeaders, El);
 		      Output when is_binary(Output) or is_list(Output) ->
-			  make_text_output(State, 200, [], Output);
+			  make_text_output(State, 200, CustomHeaders, Output);
 		      {Status, Headers, Output}
 			when is_binary(Output) or is_list(Output) ->
-			  make_text_output(State, Status, Headers, Output);
+			  make_text_output(State, Status,
+					   Headers ++ CustomHeaders, Output);
 		      {Status, Reason, Headers, Output}
 			when is_binary(Output) or is_list(Output) ->
-			  make_text_output(State, Status, Reason, Headers, Output);
+			  make_text_output(State, Status, Reason,
+					   Headers ++ CustomHeaders, Output);
 		      _ ->
 			  none
 		  end,
@@ -497,7 +510,7 @@ process_request(#state{request_method = Method,
     end.
 
 make_bad_request(State) ->
-    make_xhtml_output(State, 400, [],
+    make_xhtml_output(State, 400, State#state.custom_headers,
 		      ejabberd_web:make_xhtml([#xmlel{name = <<"h1">>,
 						      attrs = [],
 						      children =
@@ -719,6 +732,11 @@ rest_dir(N, Path, <<$/, T/binary>>) ->
 rest_dir(0, Path, <<H, T/binary>>) ->
     rest_dir(0, <<H, Path/binary>>, T);
 rest_dir(N, Path, <<_H, T/binary>>) -> rest_dir(N, Path, T).
+
+expand_custom_headers(Headers) ->
+    lists:map(fun({K, V}) ->
+		      {K, jlib:expand_keyword(<<"@VERSION@">>, V, ?VERSION)}
+	      end, Headers).
 
 %% hex_to_integer
 
