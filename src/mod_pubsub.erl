@@ -3453,7 +3453,7 @@ submodule(Host, Name) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
 	mnesia -> aux:binary_to_atom(Name);
 	Type -> aux:binary_to_atom(<<Name/binary, "_",
-		    (jlib:atom_to_binary(Type))/binary>>)
+		    (aux:atom_to_binary(Type))/binary>>)
     end.
 
 -spec config(binary(), any()) -> any().
