@@ -443,7 +443,6 @@ db_tests(DB) when DB == mnesia; DB == redis ->
      carbons_tests:master_slave_cases(),
      csi_tests:master_slave_cases()];
 db_tests(_) ->
-    %% No support for carboncopy
     [{single_user, [sequence],
       [test_register,
        legacy_auth_tests(),
@@ -469,7 +468,8 @@ db_tests(_) ->
      mam_tests:master_slave_cases(),
      mix_tests:master_slave_cases(),
      vcard_tests:master_slave_cases(),
-     announce_tests:master_slave_cases()].
+     announce_tests:master_slave_cases(),
+     carbons_tests:master_slave_cases()].
 
 ldap_tests() ->
     [{ldap_tests, [sequence],

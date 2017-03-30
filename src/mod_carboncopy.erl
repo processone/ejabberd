@@ -58,7 +58,7 @@ is_carbon_copy(_) ->
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts,fun gen_iq_handler:check_type/1, one_queue),
     ejabberd_hooks:add(disco_local_features, Host, ?MODULE, disco_features, 50),
-    Mod = gen_mod:db_mod(Host, ?MODULE),
+    Mod = gen_mod:ram_db_mod(Host, ?MODULE),
     Mod:init(Host, Opts),
     ejabberd_hooks:add(unset_presence_hook,Host, ?MODULE, remove_connection, 10),
     %% why priority 89: to define clearly that we must run BEFORE mod_logdb hook (90)
@@ -75,8 +75,8 @@ stop(Host) ->
     ejabberd_hooks:delete(unset_presence_hook,Host, ?MODULE, remove_connection, 10).
 
 reload(Host, NewOpts, OldOpts) ->
-    NewMod = gen_mod:db_mod(Host, NewOpts, ?MODULE),
-    OldMod = gen_mod:db_mod(Host, OldOpts, ?MODULE),
+    NewMod = gen_mod:ram_db_mod(Host, NewOpts, ?MODULE),
+    OldMod = gen_mod:ram_db_mod(Host, OldOpts, ?MODULE),
     if NewMod /= OldMod ->
 	    NewMod:init(Host, NewOpts);
        true ->
@@ -246,13 +246,13 @@ build_forward_packet(JID, #message{type = T} = Msg, Sender, Dest, Direction) ->
 -spec enable(binary(), binary(), binary(), binary()) -> ok | {error, any()}.
 enable(Host, U, R, CC)->
     ?DEBUG("enabling for ~p", [U]),
-    Mod = gen_mod:db_mod(Host, ?MODULE),
+    Mod = gen_mod:ram_db_mod(Host, ?MODULE),
     Mod:enable(U, Host, R, CC).
 
 -spec disable(binary(), binary(), binary()) -> ok | {error, any()}.
 disable(Host, U, R)->
     ?DEBUG("disabling for ~p", [U]),
-    Mod = gen_mod:db_mod(Host, ?MODULE),
+    Mod = gen_mod:ram_db_mod(Host, ?MODULE),
     Mod:disable(U, Host, R).
 
 -spec complete_packet(jid(), message(), direction()) -> message().
@@ -279,12 +279,12 @@ is_muc_pm(_To, Packet) ->
 -spec list(binary(), binary()) -> [{binary(), binary()}].
 %% list {resource, cc_version} with carbons enabled for given user and host
 list(User, Server) ->
-    Mod = gen_mod:db_mod(Server, ?MODULE),
+    Mod = gen_mod:ram_db_mod(Server, ?MODULE),
     Mod:list(User, Server).
 
 depends(_Host, _Opts) ->
     [].
 
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
-mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
-mod_opt_type(_) -> [db_type, iqdisc].
+mod_opt_type(ram_db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
+mod_opt_type(_) -> [ram_db_type, iqdisc].

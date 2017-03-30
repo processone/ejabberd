@@ -520,7 +520,7 @@ CREATE TABLE [dbo].[route] (
     [server_host] [varchar] (255) NOT NULL,
     [node] [varchar] (255) NOT NULL,
     [pid] [varchar](100) NOT NULL,
-    [local_hint] text NOT NULL
+    [local_hint] [text] NOT NULL
 );
 
 CREATE UNIQUE CLUSTERED INDEX [route_i] ON [route] (domain, server_host, node, pid)
@@ -538,3 +538,16 @@ CREATE TABLE [dbo].[bosh] (
         [sid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
 ) TEXTIMAGE_ON [PRIMARY];
+
+CREATE TABLE [dbo].[carboncopy] (
+    [username] [varchar] (255) NOT NULL,
+    [resource] [varchar] (255) NOT NULL,
+    [namespace] [varchar] (255) NOT NULL,
+    [node] [varchar] (255) NOT NULL
+);
+
+CREATE UNIQUE CLUSTERED INDEX [carboncopy_ur] ON [carboncopy] (username, resource)
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
+
+CREATE INDEX [carboncopy_user] ON [carboncopy] (username)
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
