@@ -39,6 +39,8 @@
 	 sql_query_t/1,
 	 sql_transaction/2,
 	 sql_bloc/2,
+         abort/1,
+         restart/1,
          sql_query_to_iolist/1,
 	 escape/1,
          standard_escape/1,
@@ -189,6 +191,12 @@ sql_query_t(Query) ->
 	  end;
       _ -> QRes
     end.
+
+abort(Reason) ->
+    exit(Reason).
+
+restart(Reason) ->
+    throw({aborted, Reason}).
 
 %% Escape character that will confuse an SQL engine
 escape(S) ->
