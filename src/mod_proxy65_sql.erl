@@ -105,16 +105,16 @@ activate_stream(SID, IJID, MaxConnections, _Node) ->
 					       ?SQL("select @(count(*))d from proxy65 "
 						    "where jid_i=%(IJID)s")) of
 					    {selected, [{Num}]} when Num > MaxConnections ->
-						exit({limit, IPid, TPid});
+						ejabberd_sql:abort({limit, IPid, TPid});
 					    {selected, _} ->
 						{ok, IPid, TPid};
 					    Err ->
-						exit(Err)
+						ejabberd_sql:abort(Err)
 					end;
 				    {updated, _} ->
 					{ok, IPid, TPid};
 				    Err ->
-					exit(Err)
+					ejabberd_sql:abort(Err)
 				end
 			catch _:{bad_node, _} ->
 				{error, notfound}
@@ -124,7 +124,7 @@ activate_stream(SID, IJID, MaxConnections, _Node) ->
 		    {selected, _} ->
 			{error, notfound};
 		    Err ->
-			exit(Err)
+			ejabberd_sql:abort(Err)
 		end
 	end,
     case ejabberd_sql:sql_transaction(?MYNAME, F) of
