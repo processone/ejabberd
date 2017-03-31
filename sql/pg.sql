@@ -389,3 +389,15 @@ CREATE TABLE carboncopy (
 
 CREATE UNIQUE INDEX i_carboncopy_ur ON carboncopy USING btree (username, resource);
 CREATE INDEX i_carboncopy_user ON carboncopy USING btree (username);
+
+CREATE TABLE proxy65 (
+    sid text NOT NULL,
+    pid_t text NOT NULL,
+    pid_i text NOT NULL,
+    node_t text NOT NULL,
+    node_i text NOT NULL,
+    jid_i text NOT NULL
+);
+
+CREATE UNIQUE INDEX i_proxy65_sid ON proxy65 USING btree (sid);
+CREATE INDEX i_proxy65_jid ON proxy65 USING btree (jid_i);
