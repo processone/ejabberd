@@ -27,8 +27,12 @@
 -behaviour(gen_server).
 -behaviour(ejabberd_config).
 
+-compile({no_auto_import, [get/1, put/2]}).
+
 %% API
 -export([start_link/0, q/1, qp/1, config_reloaded/0, opt_type/1]).
+%% Commands
+-export([multi/1, get/1, set/2, del/1, sadd/2, srem/2, smembers/1, scard/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -36,11 +40,14 @@
 
 -define(SERVER, ?MODULE).
 -define(PROCNAME, 'ejabberd_redis_client').
+-define(TR_STACK, redis_transaction_stack).
 
 -include("logger.hrl").
 -include("ejabberd.hrl").
 
 -record(state, {connection :: {pid(), reference()} | undefined}).
+
+-type redis_error() :: {error, binary() | atom()}.
 
 %%%===================================================================
 %%% API
@@ -58,12 +65,121 @@ qp(Pipeline) ->
     catch _:Reason -> {error, Reason}
     end.
 
+-spec multi(fun(() -> any())) -> {ok, list()} | redis_error().
+multi(F) ->
+    case erlang:get(?TR_STACK) of
+	undefined ->
+	    erlang:put(?TR_STACK, []),
+	    try F() of
+		_ ->
+		    Stack = erlang:get(?TR_STACK),
+		    erlang:erase(?TR_STACK),
+		    Command = [["MULTI"]|lists:reverse([["EXEC"]|Stack])],
+		    case qp(Command) of
+			{error, _} = Err -> Err;
+			Result -> get_result(Result)
+		    end
+	    catch E:R ->
+		    erlang:erase(?TR_STACK),
+		    erlang:raise(E, R, erlang:get_stacktrace())
+	    end;
+	_ ->
+	    {error, nested_transaction}
+    end.
+
 config_reloaded() ->
     case is_redis_configured() of
 	true ->
 	    ?MODULE ! connect;
 	false ->
 	    ?MODULE ! disconnect
+    end.
+
+get(Key) ->
+    case erlang:get(?TR_STACK) of
+	undefined ->
+	    q([<<"GET">>, Key]);
+	_ ->
+	    {error, transaction_unsupported}
+    end.
+
+-spec set(iodata(), iodata()) -> ok | redis_error() | queued.
+set(Key, Val) ->
+    Cmd = [<<"SET">>, Key, Val],
+    case erlang:get(?TR_STACK) of
+	undefined ->
+	    case q(Cmd) of
+		{ok, <<"OK">>} -> ok;
+		{error, _} = Err -> Err
+	    end;
+	Stack ->
+	    erlang:put(?TR_STACK, [Cmd|Stack]),
+	    queued
+    end.
+
+-spec del(list()) -> {ok, non_neg_integer()} | redis_error() | queued.
+del(Keys) ->
+    Cmd = [<<"DEL">>|Keys],
+    case erlang:get(?TR_STACK) of
+	undefined ->
+	    case q(Cmd) of
+		{ok, N} -> {ok, binary_to_integer(N)};
+		{error, _} = Err -> Err
+	    end;
+	Stack ->
+	    erlang:put(?TR_STACK, [Cmd|Stack]),
+	    queued
+    end.
+
+-spec sadd(iodata(), list()) -> {ok, non_neg_integer()} | redis_error() | queued.
+sadd(Set, Members) ->
+    Cmd = [<<"SADD">>, Set|Members],
+    case erlang:get(?TR_STACK) of
+	undefined ->
+	    case q(Cmd) of
+		{ok, N} -> {ok, binary_to_integer(N)};
+		{error, _} = Err -> Err
+	    end;
+	Stack ->
+	    erlang:put(?TR_STACK, [Cmd|Stack]),
+	    queued
+    end.
+
+-spec srem(iodata(), list()) -> {ok, non_neg_integer()} | redis_error() | queued.
+srem(Set, Members) ->
+    Cmd = [<<"SREM">>, Set|Members],
+    case erlang:get(?TR_STACK) of
+	undefined ->
+	    case q(Cmd) of
+		{ok, N} -> {ok, binary_to_integer(N)};
+		{error, _} = Err -> Err
+	    end;
+	Stack ->
+	    erlang:put(?TR_STACK, [Cmd|Stack]),
+	    queued
+    end.
+
+-spec smembers(iodata()) -> {ok, [binary()]} | redis_error().
+smembers(Set) ->
+    case erlang:get(?TR_STACK) of
+	undefined ->
+	    q([<<"SMEMBERS">>, Set]);
+	_ ->
+	    {error, transaction_unsupported}
+    end.
+
+-spec scard(iodata()) -> {ok, non_neg_integer()} | redis_error().
+scard(Set) ->
+    case erlang:get(?TR_STACK) of
+	undefined ->
+	    case q([<<"SCARD">>, Set]) of
+		{ok, N} ->
+		    {ok, binary_to_integer(N)};
+		{error, _} = Err ->
+		    Err
+	    end;
+	_ ->
+	    {error, transaction_unsupported}
     end.
 
 %%%===================================================================
@@ -201,6 +317,13 @@ connect() ->
 	    erlang:send_after(timer:seconds(Timeout), self(), connect),
 	    {error, Reason}
     end.
+
+get_result([{error, _} = Err|_]) ->
+    Err;
+get_result([{ok, _} = OK]) ->
+    OK;
+get_result([_|T]) ->
+    get_result(T).
 
 opt_type(redis_connect_timeout) ->
     fun (I) when is_integer(I), I > 0 -> I end;
