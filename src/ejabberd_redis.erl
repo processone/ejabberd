@@ -32,7 +32,9 @@
 %% API
 -export([start_link/0, q/1, qp/1, config_reloaded/0, opt_type/1]).
 %% Commands
--export([multi/1, get/1, set/2, del/1, sadd/2, srem/2, smembers/1, scard/1]).
+-export([multi/1, get/1, set/2, del/1,
+	 sadd/2, srem/2, smembers/1, sismember/2, scard/1,
+	 hget/2, hset/3, hdel/2, hlen/1, hgetall/1, hkeys/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -57,12 +59,14 @@ start_link() ->
 
 q(Command) ->
     try eredis:q(?PROCNAME, Command)
-    catch _:Reason -> {error, Reason}
+    catch _:{noproc, _} -> {error, disconnected};
+	  _:{timeout, _} -> {error, timeout}
     end.
 
 qp(Pipeline) ->
     try eredis:qp(?PROCNAME, Pipeline)
-    catch _:Reason -> {error, Reason}
+    catch _:{noproc, _} -> {error, disconnected};
+	  _:{timeout, _} -> {error, timeout}
     end.
 
 -spec multi(fun(() -> any())) -> {ok, list()} | redis_error().
@@ -95,6 +99,7 @@ config_reloaded() ->
 	    ?MODULE ! disconnect
     end.
 
+-spec get(iodata()) -> {ok, undefined | binary()} | redis_error().
 get(Key) ->
     case erlang:get(?TR_STACK) of
 	undefined ->
@@ -113,11 +118,12 @@ set(Key, Val) ->
 		{error, _} = Err -> Err
 	    end;
 	Stack ->
-	    erlang:put(?TR_STACK, [Cmd|Stack]),
-	    queued
+	    tr_enq(Cmd, Stack)
     end.
 
 -spec del(list()) -> {ok, non_neg_integer()} | redis_error() | queued.
+del([]) ->
+    reply(0);
 del(Keys) ->
     Cmd = [<<"DEL">>|Keys],
     case erlang:get(?TR_STACK) of
@@ -127,11 +133,12 @@ del(Keys) ->
 		{error, _} = Err -> Err
 	    end;
 	Stack ->
-	    erlang:put(?TR_STACK, [Cmd|Stack]),
-	    queued
+	    tr_enq(Cmd, Stack)
     end.
 
 -spec sadd(iodata(), list()) -> {ok, non_neg_integer()} | redis_error() | queued.
+sadd(_Set, []) ->
+    reply(0);
 sadd(Set, Members) ->
     Cmd = [<<"SADD">>, Set|Members],
     case erlang:get(?TR_STACK) of
@@ -141,11 +148,12 @@ sadd(Set, Members) ->
 		{error, _} = Err -> Err
 	    end;
 	Stack ->
-	    erlang:put(?TR_STACK, [Cmd|Stack]),
-	    queued
+	    tr_enq(Cmd, Stack)
     end.
 
 -spec srem(iodata(), list()) -> {ok, non_neg_integer()} | redis_error() | queued.
+srem(_Set, []) ->
+    reply(0);
 srem(Set, Members) ->
     Cmd = [<<"SREM">>, Set|Members],
     case erlang:get(?TR_STACK) of
@@ -155,8 +163,7 @@ srem(Set, Members) ->
 		{error, _} = Err -> Err
 	    end;
 	Stack ->
-	    erlang:put(?TR_STACK, [Cmd|Stack]),
-	    queued
+	    tr_enq(Cmd, Stack)
     end.
 
 -spec smembers(iodata()) -> {ok, [binary()]} | redis_error().
@@ -164,6 +171,18 @@ smembers(Set) ->
     case erlang:get(?TR_STACK) of
 	undefined ->
 	    q([<<"SMEMBERS">>, Set]);
+	_ ->
+	    {error, transaction_unsupported}
+    end.
+
+-spec sismember(iodata(), iodata()) -> boolean() | redis_error().
+sismember(Set, Member) ->
+    case erlang:get(?TR_STACK) of
+	undefined ->
+	    case q([<<"SISMEMBER">>, Set, Member]) of
+		{ok, Flag} -> {ok, dec_bool(Flag)};
+		{error, _} = Err -> Err
+	    end;
 	_ ->
 	    {error, transaction_unsupported}
     end.
@@ -178,6 +197,76 @@ scard(Set) ->
 		{error, _} = Err ->
 		    Err
 	    end;
+	_ ->
+	    {error, transaction_unsupported}
+    end.
+
+-spec hget(iodata(), iodata()) -> {ok, undefined | binary()} | redis_error().
+hget(Key, Field) ->
+    case erlang:get(?TR_STACK) of
+	undefined ->
+	    q([<<"HGET">>, Key, Field]);
+	_ ->
+	    {error, transaction_unsupported}
+    end.
+
+-spec hset(iodata(), iodata(), iodata()) -> {ok, boolean()} | redis_error() | queued.
+hset(Key, Field, Val) ->
+    Cmd = [<<"HSET">>, Key, Field, Val],
+    case erlang:get(?TR_STACK) of
+	undefined ->
+	    case q(Cmd) of
+		{ok, Flag} -> {ok, dec_bool(Flag)};
+		{error, _} = Err -> Err
+	    end;
+	Stack ->
+	    tr_enq(Cmd, Stack)
+    end.
+
+-spec hdel(iodata(), list()) -> {ok, non_neg_integer()} | redis_error() | queued.
+hdel(_Key, []) ->
+    reply(0);
+hdel(Key, Fields) ->
+    Cmd = [<<"HDEL">>, Key|Fields],
+    case erlang:get(?TR_STACK) of
+	undefined ->
+	    case q(Cmd) of
+		{ok, N} -> {ok, binary_to_integer(N)};
+		{error, _} = Err -> Err
+	    end;
+	Stack ->
+	    tr_enq(Cmd, Stack)
+    end.
+
+-spec hgetall(iodata()) -> {ok, [{binary(), binary()}]} | redis_error().
+hgetall(Key) ->
+    case erlang:get(?TR_STACK) of
+	undefined ->
+	    case q([<<"HGETALL">>, Key]) of
+		{ok, Pairs} -> {ok, decode_pairs(Pairs)};
+		{error, _} = Err -> Err
+	    end;
+	_ ->
+	    {error, transaction_unsupported}
+    end.
+
+-spec hlen(iodata()) -> {ok, non_neg_integer()} | redis_error().
+hlen(Key) ->
+    case erlang:get(?TR_STACK) of
+	undefined ->
+	    case q([<<"HLEN">>, Key]) of
+		{ok, N} -> {ok, binary_to_integer(N)};
+		{error, _} = Err -> Err
+	    end;
+	_ ->
+	    {error, transaction_unsupported}
+    end.
+
+-spec hkeys(iodata()) -> {ok, [binary()]} | redis_error().
+hkeys(Key) ->
+    case erlang:get(?TR_STACK) of
+	undefined ->
+	    q([<<"HKEYS">>, Key]);
 	_ ->
 	    {error, transaction_unsupported}
     end.
@@ -324,6 +413,28 @@ get_result([{ok, _} = OK]) ->
     OK;
 get_result([_|T]) ->
     get_result(T).
+
+-spec tr_enq([iodata()], list()) -> queued.
+tr_enq(Cmd, Stack) ->
+    erlang:put(?TR_STACK, [Cmd|Stack]),
+    queued.
+
+decode_pairs(Pairs) ->
+    decode_pairs(Pairs, []).
+
+decode_pairs([Field, Val|Pairs], Acc) ->
+    decode_pairs(Pairs, [{Field, Val}|Acc]);
+decode_pairs([], Acc) ->
+    lists:reverse(Acc).
+
+dec_bool(<<$1>>) -> true;
+dec_bool(<<$0>>) -> false.
+
+reply(Val) ->
+    case erlang:get(?TR_STACK) of
+	undefined -> {ok, Val};
+	_ -> queued
+    end.
 
 opt_type(redis_connect_timeout) ->
     fun (I) when is_integer(I), I > 0 -> I end;

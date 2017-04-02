@@ -25,7 +25,7 @@ init() ->
 
 open_session(SID, Pid) ->
     PidBin = term_to_binary(Pid),
-    case ejabberd_redis:q(["HSET", ?BOSH_KEY, SID, PidBin]) of
+    case ejabberd_redis:hset(?BOSH_KEY, SID, PidBin) of
 	{ok, _} ->
 	    ok;
 	Err ->
@@ -34,7 +34,7 @@ open_session(SID, Pid) ->
     end.
 
 close_session(SID) ->
-    case ejabberd_redis:q(["HDEL", ?BOSH_KEY, SID]) of
+    case ejabberd_redis:hdel(?BOSH_KEY, [SID]) of
 	{ok, _} ->
 	    ok;
 	Err ->
@@ -42,9 +42,15 @@ close_session(SID) ->
     end.
 
 find_session(SID) ->
-    case ejabberd_redis:q(["HGET", ?BOSH_KEY, SID]) of
+    case ejabberd_redis:hget(?BOSH_KEY, SID) of
 	{ok, Pid} when is_binary(Pid) ->
-	    {ok, binary_to_term(Pid)};
+	    try
+		{ok, binary_to_term(Pid)}
+	    catch _:badarg ->
+		    ?ERROR_MSG("malformed data in redis (key = '~s'): ~p",
+			       [SID, Pid]),
+		    error
+	    end;
 	{ok, _} ->
 	    error;
 	Err ->
@@ -56,21 +62,23 @@ find_session(SID) ->
 %%% Internal functions
 %%%===================================================================
 clean_table() ->
-    ?INFO_MSG("Cleaning Redis BOSH table...", []),
-    case ejabberd_redis:q(["HGETALL", ?BOSH_KEY]) of
+    ?INFO_MSG("Cleaning Redis BOSH sessions...", []),
+    case ejabberd_redis:hgetall(?BOSH_KEY) of
 	{ok, Vals} ->
-	    clean_table(Vals);
+	    case ejabberd_redis:multi(
+		   fun() ->
+			   lists:foreach(
+			     fun({SID, Pid}) when node(Pid) == node() ->
+				     ejabberd_redis:hdel(?BOSH_KEY, [SID]);
+				(_) ->
+				     ok
+			     end, Vals)
+		   end) of
+		{ok, _} ->
+		    ok;
+		Err ->
+		    ?ERROR_MSG("failed to clean bosh sessions in redis: ~p", [Err])
+	    end;
 	Err ->
-	    ?ERROR_MSG("failed to clean bosh table in redis: ~p", [Err])
+	    ?ERROR_MSG("failed to clean bosh sessions in redis: ~p", [Err])
     end.
-
-clean_table([SID, PidBin|Vals]) ->
-    case binary_to_term(PidBin) of
-	Pid when node(Pid) == node() ->
-	    close_session(SID);
-	_ ->
-	    ok
-    end,
-    clean_table(Vals);
-clean_table([]) ->
-    ok.

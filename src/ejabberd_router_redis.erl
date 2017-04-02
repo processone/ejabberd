@@ -44,9 +44,12 @@ register_route(Domain, ServerHost, LocalHint, _, Pid) ->
     DomKey = domain_key(Domain),
     PidKey = term_to_binary(Pid),
     T = term_to_binary({ServerHost, LocalHint}),
-    case ejabberd_redis:qp([["HSET", DomKey, PidKey, T],
-			    ["SADD", ?ROUTES_KEY, Domain]]) of
-	[{ok, _}, {ok, _}] ->
+    case ejabberd_redis:multi(
+	   fun() ->
+		   ejabberd_redis:hset(DomKey, PidKey, T),
+		   ejabberd_redis:sadd(?ROUTES_KEY, [Domain])
+	   end) of
+	{ok, _} ->
 	    ok;
 	Err ->
 	    ?ERROR_MSG("failed to register route in redis: ~p", [Err]),
@@ -57,13 +60,20 @@ unregister_route(Domain, _, Pid) ->
     DomKey = domain_key(Domain),
     PidKey = term_to_binary(Pid),
     try
-	{ok, _} = ejabberd_redis:q(["HDEL", DomKey, PidKey]),
-	{ok, Num} = ejabberd_redis:q(["HLEN", DomKey]),
-	case binary_to_integer(Num) of
-	    0 ->
-		{ok, _} = ejabberd_redis:q(["SREM", ?ROUTES_KEY, Domain]),
-		ok;
-	    _ ->
+	{ok, Num} = ejabberd_redis:hdel(DomKey, [PidKey]),
+	if Num > 0 ->
+		{ok, Len} = ejabberd_redis:hlen(DomKey),
+		if Len == 0 ->
+			{ok, _} = ejabberd_redis:multi(
+				    fun() ->
+					    ejabberd_redis:del([DomKey]),
+					    ejabberd_redis:srem(?ROUTES_KEY, [Domain])
+				    end),
+			ok;
+		   true ->
+			ok
+		end;
+	   true ->
 		ok
 	end
     catch _:{badmatch, Err} ->
@@ -73,7 +83,7 @@ unregister_route(Domain, _, Pid) ->
 
 find_routes(Domain) ->
     DomKey = domain_key(Domain),
-    case ejabberd_redis:q(["HGETALL", DomKey]) of
+    case ejabberd_redis:hgetall(DomKey) of
 	{ok, Vals} ->
 	    decode_routes(Domain, Vals);
 	Err ->
@@ -83,8 +93,8 @@ find_routes(Domain) ->
 
 host_of_route(Domain) ->
     DomKey = domain_key(Domain),
-    case ejabberd_redis:q(["HGETALL", DomKey]) of
-	{ok, [_, Data|_]} ->
+    case ejabberd_redis:hgetall(DomKey) of
+	{ok, [{_Pid, Data}|_]} ->
 	    {ServerHost, _} = binary_to_term(Data),
 	    {ok, ServerHost};
 	{ok, []} ->
@@ -95,9 +105,9 @@ host_of_route(Domain) ->
     end.
 
 is_my_route(Domain) ->
-    case ejabberd_redis:q(["SISMEMBER", ?ROUTES_KEY, Domain]) of
-	{ok, <<"1">>} -> true;
-	{ok, _} -> false;
+    case ejabberd_redis:sismember(?ROUTES_KEY, Domain) of
+	{ok, Bool} ->
+	    Bool;
 	Err ->
 	    ?ERROR_MSG("failed to check route in redis: ~p", [Err]),
 	    false
@@ -107,7 +117,7 @@ is_my_host(Domain) ->
     {ok, Domain} == host_of_route(Domain).
 
 get_all_routes() ->
-    case ejabberd_redis:q(["SMEMBERS", ?ROUTES_KEY]) of
+    case ejabberd_redis:smembers(?ROUTES_KEY) of
 	{ok, Routes} ->
 	    Routes;
 	Err ->
@@ -116,18 +126,7 @@ get_all_routes() ->
     end.
 
 find_routes() ->
-    lists:flatmap(
-      fun(Domain) ->
-	      DomKey = domain_key(Domain),
-	      case ejabberd_redis:q(["HGETALL", DomKey]) of
-		  {ok, Vals} ->
-		      decode_routes(Domain, Vals);
-		  Err ->
-		      ?ERROR_MSG("failed to fetch routes from redis: ~p",
-				 [Err]),
-		      []
-	      end
-      end, get_all_routes()).
+    lists:flatmap(fun find_routes/1, get_all_routes()).
 
 %%%===================================================================
 %%% Internal functions
@@ -143,12 +142,12 @@ clean_table() ->
 domain_key(Domain) ->
     <<"ejabberd:route:", Domain/binary>>.
 
-decode_routes(Domain, [Pid, Data|Vals]) ->
-    {ServerHost, LocalHint} = binary_to_term(Data),
-    [#route{domain = Domain,
-	    pid = binary_to_term(Pid),
-	    server_host = ServerHost,
-	    local_hint = LocalHint}|
-     decode_routes(Domain, Vals)];
-decode_routes(_, []) ->
-    [].
+decode_routes(Domain, Vals) ->
+    lists:map(
+      fun({Pid, Data}) ->
+	      {ServerHost, LocalHint} = binary_to_term(Data),
+	      #route{domain = Domain,
+		     pid = binary_to_term(Pid),
+		     server_host = ServerHost,
+		     local_hint = LocalHint}
+      end, Vals).
