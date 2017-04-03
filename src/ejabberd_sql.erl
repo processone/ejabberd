@@ -301,6 +301,12 @@ connecting(connect, #state{host = Host} = State) ->
     case ConnectRes of
         {ok, Ref} ->
             erlang:monitor(process, Ref),
+            lists:foreach(
+              fun({{?PREPARE_KEY, _} = Key, _}) ->
+                      erase(Key);
+                 (_) ->
+                      ok
+              end, get()),
 	    PendingRequests =
 		p1_queue:dropwhile(
 		  fun(Req) ->
