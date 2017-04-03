@@ -256,6 +256,10 @@ init([ServerHost, Opts]) ->
 	    fun(A) when is_integer(A) andalso A >= 0 -> A end, ?MAXITEMS),
     MaxSubsNode = gen_mod:get_opt(max_subscriptions_node, Opts,
 	    fun(A) when is_integer(A) andalso A >= 0 -> A end, undefined),
+    case gen_mod:db_type(ServerHost, ?MODULE) of
+	mnesia -> pubsub_index:init(Host, ServerHost, Opts);
+	_ -> ok
+    end,
     {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
     DefaultModule = plugin(Host, hd(Plugins)),
     BaseOptions = DefaultModule:options(),
