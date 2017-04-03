@@ -173,7 +173,7 @@ set_settings_from_config() ->
 file_queue_init() ->
     QueueDir = case ejabberd_config:queue_dir() of
 		   undefined ->
-		       {ok, MnesiaDir} = application:get_env(mnesia, dir),
+		       MnesiaDir = mnesia:system_info(directory),
 		       filename:join(MnesiaDir, "queue");
 		   Path ->
 		       Path
