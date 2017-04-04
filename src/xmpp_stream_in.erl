@@ -271,6 +271,16 @@ handle_cast({send, Pkt}, State) ->
     noreply(send_pkt(State, Pkt));
 handle_cast(stop, State) ->
     {stop, normal, State};
+handle_cast({close, SendTrailer}, #{mod := Mod} = State) ->
+    noreply(
+      case is_disconnected(State) of
+	  true -> State;
+	  false ->
+	      State1 = close(State, SendTrailer),
+	      try Mod:handle_stream_end({socket, closed}, State1)
+	      catch _:undef -> stop(State1)
+	      end
+      end);
 handle_cast(Cast, #{mod := Mod} = State) ->
     noreply(try Mod:handle_cast(Cast, State)
 	      catch _:undef -> State
