@@ -300,46 +300,47 @@ rename_default_nodeplugin() ->
 							 _ = '_'})).
 
 update_state_database(_Host, _ServerHost) ->
-    case catch mnesia:table_info(pubsub_state, attributes) of
-	[stateid, nodeidx, items, affiliation, subscriptions] ->
-	    ?INFO_MSG("Upgrading pubsub states table...", []),
-	    F = fun ({pubsub_state, {{U,S,R}, NodeID}, _NodeIdx, Items, Aff, Sub}, Acc) ->
-			JID = {U,S,R},
-			Subs = case Sub of
-				   none ->
-				       [];
-				   [] ->
-				       [];
-				   _ ->
-				       SubID = pubsub_subscription:make_subid(),
-				       [{Sub, SubID}]
-			       end,
-			NewState = #pubsub_state{stateid       = {JID, NodeID},
-						 items	 = Items,
-						 affiliation   = Aff,
-						 subscriptions = Subs},
-			[NewState | Acc]
-		end,
-	    {atomic, NewRecs} = mnesia:transaction(fun mnesia:foldl/3,
-						   [F, [], pubsub_state]),
-	    {atomic, ok} = mnesia:delete_table(pubsub_state),
-	    {atomic, ok} = ejabberd_mnesia:create(?MODULE, pubsub_state,
-					       [{disc_copies, [node()]},
-						{attributes, record_info(fields, pubsub_state)}]),
-	    FNew = fun () ->
-			   lists:foreach(fun mnesia:write/1, NewRecs)
-		   end,
-	    case mnesia:transaction(FNew) of
-		{atomic, Result} ->
-		    ?INFO_MSG("Pubsub states table upgraded: ~p",
-			      [Result]);
-		{aborted, Reason} ->
-		    ?ERROR_MSG("Problem upgrading Pubsub states table:~n~p",
-			       [Reason])
-	    end;
-	_ ->
-	    ok
-    end,
+% useless starting from ejabberd 17.04
+%    case catch mnesia:table_info(pubsub_state, attributes) of
+%	[stateid, nodeidx, items, affiliation, subscriptions] ->
+%	    ?INFO_MSG("Upgrading pubsub states table...", []),
+%	    F = fun ({pubsub_state, {{U,S,R}, NodeID}, _NodeIdx, Items, Aff, Sub}, Acc) ->
+%			JID = {U,S,R},
+%			Subs = case Sub of
+%				   none ->
+%				       [];
+%				   [] ->
+%				       [];
+%				   _ ->
+%				       SubID = pubsub_subscription:make_subid(),
+%				       [{Sub, SubID}]
+%			       end,
+%			NewState = #pubsub_state{stateid       = {JID, NodeID},
+%						 items	 = Items,
+%						 affiliation   = Aff,
+%						 subscriptions = Subs},
+%			[NewState | Acc]
+%		end,
+%	    {atomic, NewRecs} = mnesia:transaction(fun mnesia:foldl/3,
+%						   [F, [], pubsub_state]),
+%	    {atomic, ok} = mnesia:delete_table(pubsub_state),
+%	    {atomic, ok} = ejabberd_mnesia:create(?MODULE, pubsub_state,
+%					       [{disc_copies, [node()]},
+%						{attributes, record_info(fields, pubsub_state)}]),
+%	    FNew = fun () ->
+%			   lists:foreach(fun mnesia:write/1, NewRecs)
+%		   end,
+%	    case mnesia:transaction(FNew) of
+%		{atomic, Result} ->
+%		    ?INFO_MSG("Pubsub states table upgraded: ~p",
+%			      [Result]);
+%		{aborted, Reason} ->
+%		    ?ERROR_MSG("Problem upgrading Pubsub states table:~n~p",
+%			       [Reason])
+%	    end;
+%	_ ->
+%	    ok
+%    end,
     convert_list_subscriptions(),
     convert_list_states().
 
