@@ -152,6 +152,8 @@ handle_cast({iq_pong, JID, timeout}, State) ->
       _ -> ok
     end,
     {noreply, State#state{timers = Timers}};
+handle_cast({iq_pong, _JID, _}, State) ->
+    {noreply, State};
 handle_cast(Msg, State) ->
     ?WARNING_MSG("unexpected cast: ~p", [Msg]),
     {noreply, State}.
