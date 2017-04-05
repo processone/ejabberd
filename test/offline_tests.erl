@@ -410,6 +410,7 @@ message_iterator(Config) ->
 	      Els <- AllEls],
     lists:partition(
       fun(#message{type = error}) -> true;
+	 (#message{type = groupchat}) -> false;
 	 (#message{sub_els = [#offline{}|_]}) -> false;
 	 (#message{sub_els = [_, #xevent{id = I}]}) when I /= undefined -> false;
 	 (#message{sub_els = [#xevent{id = I}]}) when I /= undefined -> false;

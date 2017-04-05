@@ -553,7 +553,7 @@ do_route(#presence{to = #jid{lresource = <<"">>} = To} = Packet) ->
       end, get_user_present_resources(LUser, LServer));
 do_route(#message{to = #jid{lresource = <<"">>}, type = T} = Packet) ->
     ?DEBUG("processing message to bare JID:~n~s", [xmpp:pp(Packet)]),
-    if T == chat; T == headline; T == normal; T == groupchat ->
+    if T == chat; T == headline; T == normal ->
 	    route_message(Packet);
        true ->
 	    Lang = xmpp:get_lang(Packet),
@@ -573,7 +573,7 @@ do_route(Packet) ->
 	[] ->
 	    case Packet of
 		#message{type = T} when T == chat; T == normal;
-					T == headline; T == groupchat ->
+					T == headline ->
 		    route_message(Packet);
 		#presence{} ->
 		    ?DEBUG("dropping presence to unavailable resource:~n~s",
