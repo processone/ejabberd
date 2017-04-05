@@ -576,7 +576,7 @@ do_route(Packet) ->
 					T == headline; T == groupchat ->
 		    route_message(Packet);
 		#presence{} ->
-		    ?DEBUG("dropping presence to unavalable resource:~n~s",
+		    ?DEBUG("dropping presence to unavailable resource:~n~s",
 			   [xmpp:pp(Packet)]);
 		_ ->
 		    Lang = xmpp:get_lang(Packet),
