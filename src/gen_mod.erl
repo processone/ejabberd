@@ -85,7 +85,8 @@ init([]) ->
     ejabberd_hooks:add(host_down, ?MODULE, stop_modules, 70),
     ets:new(ejabberd_modules,
 	    [named_table, public,
-	     {keypos, #ejabberd_module.module_host}]),
+	     {keypos, #ejabberd_module.module_host},
+	     {read_concurrency, true}]),
     {ok, {{one_for_one, 10, 1}, []}}.
 
 -spec start_child(module(), binary() | global, opts()) -> ok | {error, any()}.

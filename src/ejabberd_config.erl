@@ -894,7 +894,8 @@ has_option(Opt) ->
     get_option(Opt, fun(_) -> true end, false).
 
 init_module_db_table(Modules) ->
-    catch ets:new(module_db, [named_table, public, bag]),
+    catch ets:new(module_db, [named_table, public, bag,
+			      {read_concurrency, true}]),
     %% Dirty hack for mod_pubsub
     ets:insert(module_db, {mod_pubsub, mnesia}),
     ets:insert(module_db, {mod_pubsub, sql}),

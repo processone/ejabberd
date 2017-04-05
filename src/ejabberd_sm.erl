@@ -393,7 +393,7 @@ c2s_handle_info(State, _) ->
 init([]) ->
     process_flag(trap_exit, true),
     lists:foreach(fun(Mod) -> Mod:init() end, get_sm_backends()),
-    ets:new(sm_iqtable, [named_table, public]),
+    ets:new(sm_iqtable, [named_table, public, {read_concurrency, true}]),
     ejabberd_hooks:add(host_up, ?MODULE, host_up, 50),
     ejabberd_hooks:add(host_down, ?MODULE, host_down, 60),
     lists:foreach(fun host_up/1, ?MYHOSTS),
