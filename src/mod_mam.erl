@@ -518,7 +518,8 @@ process_iq(LServer, #iq{from = #jid{luser = LUser}, lang = Lang,
     end,
     case SubEl of
 	#mam_query{rsm = #rsm_set{index = I}} when is_integer(I) ->
-	    xmpp:make_error(IQ, xmpp:err_feature_not_implemented());
+	    Txt = <<"Unsupported <index/> element">>,
+	    xmpp:make_error(IQ, xmpp:err_feature_not_implemented(Txt, Lang));
 	#mam_query{rsm = RSM, xmlns = NS} ->
 	    case parse_query(SubEl, Lang) of
 		{ok, Query} ->
