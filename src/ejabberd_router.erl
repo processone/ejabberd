@@ -346,8 +346,8 @@ get_component_number(LDomain) ->
 get_domain_balancing(From, To, LDomain) ->
     case ejabberd_config:get_option(
 	   {domain_balancing, LDomain}, fun(D) when is_atom(D) -> D end) of
-	undefined -> p1_time_compat:monotonic_time();
-	random -> p1_time_compat:monotonic_time();
+	undefined -> p1_time_compat:system_time();
+	random -> p1_time_compat:system_time();
 	source -> jid:tolower(From);
 	destination -> jid:tolower(To);
 	bare_source -> jid:remove_resource(jid:tolower(From));
