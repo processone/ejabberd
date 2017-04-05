@@ -197,7 +197,9 @@ send_all_master(Config) ->
     		  Acc + 1
     	  end, 0, Deliver),
     lists:foreach(
-      fun(Msg) ->
+      fun(#message{type = headline} = Msg) ->
+	      send(Config, Msg#message{to = BarePeer});
+         (Msg) ->
 	      #message{type = error} = Err =
 		  send_recv(Config, Msg#message{to = BarePeer}),
 	      #stanza_error{reason = 'service-unavailable'} = xmpp:get_error(Err)

@@ -177,7 +177,8 @@ check_in_subscription(Acc, User, Server, _JID, _Type, _Reason) ->
 
 -spec bounce_offline_message({bounce, message()} | any()) -> any().
 
-bounce_offline_message({bounce, Packet} = Acc) ->
+bounce_offline_message({bounce, #message{type = T} = Packet} = Acc)
+    when T == chat; T == groupchat; T == normal ->
     Lang = xmpp:get_lang(Packet),
     Txt = <<"User session not found">>,
     Err = xmpp:err_service_unavailable(Txt, Lang),
@@ -572,9 +573,11 @@ do_route(Packet) ->
     case online(Mod:get_sessions(LUser, LServer, LResource)) of
 	[] ->
 	    case Packet of
-		#message{type = T} when T == chat; T == normal;
-					T == headline ->
+		#message{type = T} when T == chat; T == normal ->
 		    route_message(Packet);
+		#message{type = T} when T == headline ->
+		    ?DEBUG("dropping headline to unavailable resource:~n~s",
+			   [xmpp:pp(Packet)]);
 		#presence{} ->
 		    ?DEBUG("dropping presence to unavailable resource:~n~s",
 			   [xmpp:pp(Packet)]);
