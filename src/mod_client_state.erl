@@ -57,9 +57,7 @@
 %%--------------------------------------------------------------------
 %% gen_mod callbacks.
 %%--------------------------------------------------------------------
-
 -spec start(binary(), gen_mod:opts()) -> ok.
-
 start(Host, Opts) ->
     QueuePresence =
 	gen_mod:get_opt(queue_presence, Opts,
@@ -94,7 +92,6 @@ start(Host, Opts) ->
     end.
 
 -spec stop(binary()) -> ok.
-
 stop(Host) ->
     QueuePresence =
 	gen_mod:get_module_opt(Host, ?MODULE, queue_presence,
@@ -167,7 +164,6 @@ reload(Host, NewOpts, _OldOpts) ->
     end.
 
 -spec mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
-
 mod_opt_type(queue_presence) ->
     fun(B) when is_boolean(B) -> B end;
 mod_opt_type(queue_chat_states) ->
@@ -177,7 +173,6 @@ mod_opt_type(queue_pep) ->
 mod_opt_type(_) -> [queue_presence, queue_chat_states, queue_pep].
 
 -spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
-
 depends(_Host, _Opts) ->
     [].
 
@@ -379,11 +374,11 @@ get_pep_node(#message{} = Msg) ->
 queue_new() ->
     {0, #{}}.
 
--spec queue_in(csi_key(), csi_element(), csi_queue()) -> csi_queue().
-queue_in(Key, Val, {Seq, Q}) ->
+-spec queue_in(csi_key(), stanza(), csi_queue()) -> csi_queue().
+queue_in(Key, Stanza, {Seq, Q}) ->
     Seq1 = Seq + 1,
     Time = {Seq1, p1_time_compat:timestamp()},
-    Q1 = maps:put(Key, {Time, Val}, Q),
+    Q1 = maps:put(Key, {Time, Stanza}, Q),
     {Seq1, Q1}.
 
 -spec queue_take(jid(), csi_queue()) -> {[csi_element()], csi_queue()}.
