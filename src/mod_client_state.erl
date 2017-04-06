@@ -47,7 +47,7 @@
 -define(CSI_QUEUE_MAX, 100).
 
 -type csi_type() :: presence | chatstate | {pep, binary()}.
--type csi_queue() :: {non_neg_integer(), non_neg_integer(), map()}.
+-type csi_queue() :: {non_neg_integer(), map()}.
 -type csi_timestamp() :: {non_neg_integer(), erlang:timestamp()}.
 -type c2s_state() :: ejabberd_c2s:state().
 -type filter_acc() :: {stanza() | drop, c2s_state()}.
@@ -379,43 +379,43 @@ get_pep_node(#message{} = Msg) ->
 %%--------------------------------------------------------------------
 -spec queue_new() -> csi_queue().
 queue_new() ->
-    {0, 0, #{}}.
+    {0, #{}}.
 
 -spec queue_in(term(), term(), term(), csi_queue()) -> csi_queue().
-queue_in(Key, Type, Val, {N, Seq, Q}) ->
+queue_in(Key, Type, Val, {Seq, Q}) ->
     Seq1 = Seq + 1,
     Time = {Seq1, p1_time_compat:timestamp()},
     case maps:get(Key, Q, error) of
 	error ->
 	    Q1 = maps:put(Key, [{Type, Time, Val}], Q),
-	    {N + 1, Seq1, Q1};
+	    {Seq1, Q1};
 	TypeVals ->
 	    case lists:keymember(Type, 1, TypeVals) of
 		true ->
 		    TypeVals1 = lists:keyreplace(
 				  Type, 1, TypeVals, {Type, Time, Val}),
 		    Q1 = maps:put(Key, TypeVals1, Q),
-		    {N, Seq1, Q1};
+		    {Seq1, Q1};
 		false ->
 		    TypeVals1 = [{Type, Time, Val}|TypeVals],
 		    Q1 = maps:put(Key, TypeVals1, Q),
-		    {N + 1, Seq1, Q1}
+		    {Seq1, Q1}
 	    end
     end.
 
 -spec queue_take(term(), csi_queue()) -> {list(), csi_queue()} | error.
-queue_take(Key, {N, Seq, Q}) ->
+queue_take(Key, {Seq, Q}) ->
     case maps:get(Key, Q, error) of
 	error ->
 	    error;
 	TypeVals ->
 	    Q1 = maps:remove(Key, Q),
-	    {lists:keysort(2, TypeVals), {N-length(TypeVals), Seq, Q1}}
+	    {lists:keysort(2, TypeVals), {Seq, Q1}}
     end.
 
 -spec queue_len(csi_queue()) -> non_neg_integer().
-queue_len({N, _, _}) ->
-    N.
+queue_len({_, Q}) ->
+    maps:size(Q).
 
 -spec queue_to_list(csi_queue()) -> [term()].
 queue_to_list({_, _, Q}) ->
