@@ -177,7 +177,8 @@ check_in_subscription(Acc, User, Server, _JID, _Type, _Reason) ->
 
 -spec bounce_offline_message({bounce, message()} | any()) -> any().
 
-bounce_offline_message({bounce, Packet} = Acc) ->
+bounce_offline_message({bounce, #message{type = T} = Packet} = Acc)
+    when T == chat; T == groupchat; T == normal ->
     Lang = xmpp:get_lang(Packet),
     Txt = <<"User session not found">>,
     Err = xmpp:err_service_unavailable(Txt, Lang),
@@ -553,7 +554,7 @@ do_route(#presence{to = #jid{lresource = <<"">>} = To} = Packet) ->
       end, get_user_present_resources(LUser, LServer));
 do_route(#message{to = #jid{lresource = <<"">>}, type = T} = Packet) ->
     ?DEBUG("processing message to bare JID:~n~s", [xmpp:pp(Packet)]),
-    if T == chat; T == headline; T == normal; T == groupchat ->
+    if T == chat; T == headline; T == normal ->
 	    route_message(Packet);
        true ->
 	    Lang = xmpp:get_lang(Packet),
@@ -572,11 +573,13 @@ do_route(Packet) ->
     case online(Mod:get_sessions(LUser, LServer, LResource)) of
 	[] ->
 	    case Packet of
-		#message{type = T} when T == chat; T == normal;
-					T == headline; T == groupchat ->
+		#message{type = T} when T == chat; T == normal ->
 		    route_message(Packet);
+		#message{type = T} when T == headline ->
+		    ?DEBUG("dropping headline to unavailable resource:~n~s",
+			   [xmpp:pp(Packet)]);
 		#presence{} ->
-		    ?DEBUG("dropping presence to unavalable resource:~n~s",
+		    ?DEBUG("dropping presence to unavailable resource:~n~s",
 			   [xmpp:pp(Packet)]);
 		_ ->
 		    Lang = xmpp:get_lang(Packet),
