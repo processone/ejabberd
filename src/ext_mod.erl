@@ -541,8 +541,21 @@ compile_result(Results) ->
 
 compile_options() ->
     [verbose, report_errors, report_warnings]
-    ++ [{i, filename:join(code:lib_dir(App), "include")}
+    ++ [{i, filename:join(app_dir(App), "include")}
         || App <- [fast_xml, xmpp, ejabberd]].
+
+app_dir(App) ->
+    case code:lib_dir(App) of
+        {error, bad_name} ->
+            case code:which(App) of
+                Beam when is_list(Beam) ->
+                    filename:dirname(filename:dirname(Beam));
+                _ ->
+                    "."
+            end;
+        Dir ->
+            Dir
+    end.
 
 compile_erlang_file(Dest, File) ->
     compile_erlang_file(Dest, File, compile_options()).
