@@ -542,7 +542,7 @@ compile_result(Results) ->
 compile_options() ->
     [verbose, report_errors, report_warnings]
     ++ [{i, filename:join(app_dir(App), "include")}
-        || App <- [fast_xml, xmpp, ejabberd]].
+        || App <- [fast_xml, xmpp, p1_utils, ejabberd]].
 
 app_dir(App) ->
     case code:lib_dir(App) of
