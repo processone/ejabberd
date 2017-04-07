@@ -28,18 +28,13 @@ open_session(SID, Pid) ->
     case ejabberd_redis:hset(?BOSH_KEY, SID, PidBin) of
 	{ok, _} ->
 	    ok;
-	Err ->
-	    ?ERROR_MSG("failed to register bosh session in redis: ~p", [Err]),
-	    Err
+	{error, _} ->
+	    {error, db_failure}
     end.
 
 close_session(SID) ->
-    case ejabberd_redis:hdel(?BOSH_KEY, [SID]) of
-	{ok, _} ->
-	    ok;
-	Err ->
-	    ?ERROR_MSG("failed to delete bosh session in redis: ~p", [Err])
-    end.
+    ejabberd_redis:hdel(?BOSH_KEY, [SID]),
+    ok.
 
 find_session(SID) ->
     case ejabberd_redis:hget(?BOSH_KEY, SID) of
@@ -51,10 +46,7 @@ find_session(SID) ->
 			       [SID, Pid]),
 		    error
 	    end;
-	{ok, _} ->
-	    error;
-	Err ->
-	    ?ERROR_MSG("failed to lookup bosh session in redis: ~p", [Err]),
+	_ ->
 	    error
     end.
 
@@ -65,20 +57,16 @@ clean_table() ->
     ?INFO_MSG("Cleaning Redis BOSH sessions...", []),
     case ejabberd_redis:hgetall(?BOSH_KEY) of
 	{ok, Vals} ->
-	    case ejabberd_redis:multi(
-		   fun() ->
-			   lists:foreach(
-			     fun({SID, Pid}) when node(Pid) == node() ->
-				     ejabberd_redis:hdel(?BOSH_KEY, [SID]);
-				(_) ->
-				     ok
-			     end, Vals)
-		   end) of
-		{ok, _} ->
-		    ok;
-		Err ->
-		    ?ERROR_MSG("failed to clean bosh sessions in redis: ~p", [Err])
-	    end;
-	Err ->
-	    ?ERROR_MSG("failed to clean bosh sessions in redis: ~p", [Err])
+	    ejabberd_redis:multi(
+	      fun() ->
+		      lists:foreach(
+			fun({SID, Pid}) when node(Pid) == node() ->
+				ejabberd_redis:hdel(?BOSH_KEY, [SID]);
+			   (_) ->
+				ok
+			end, Vals)
+	      end),
+	    ok;
+	{error, _} ->
+	    ?ERROR_MSG("failed to clean bosh sessions in redis", [])
     end.

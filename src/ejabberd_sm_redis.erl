@@ -50,16 +50,12 @@ set_session(Session) ->
     SIDKey = sid_to_key(Session#session.sid),
     ServKey = server_to_key(element(2, Session#session.us)),
     USSIDKey = us_sid_to_key(Session#session.us, Session#session.sid),
-    case ejabberd_redis:multi(
-	   fun() ->
-		   ejabberd_redis:hset(USKey, SIDKey, T),
-		   ejabberd_redis:hset(ServKey, USSIDKey, T)
-	   end) of
-	{ok, _} ->
-	    ok;
-	Err ->
-	    ?ERROR_MSG("failed to set session for redis: ~p", [Err])
-    end.
+    ejabberd_redis:multi(
+      fun() ->
+	      ejabberd_redis:hset(USKey, SIDKey, T),
+	      ejabberd_redis:hset(ServKey, USSIDKey, T)
+      end),
+    ok.
 
 -spec delete_session(binary(), binary(), binary(), sid()) ->
 			    {ok, #session{}} | {error, notfound}.
@@ -75,20 +71,14 @@ delete_session(LUser, LServer, _LResource, SID) ->
 		    SIDKey = sid_to_key(SID),
 		    ServKey = server_to_key(element(2, Session#session.us)),
 		    USSIDKey = us_sid_to_key(Session#session.us, SID),
-		    case ejabberd_redis:multi(
-			   fun() ->
-				   ejabberd_redis:hdel(USKey, [SIDKey]),
-				   ejabberd_redis:hdel(ServKey, [USSIDKey])
-			   end) of
-			{ok, _} ->
-			    ok;
-			Err ->
-			    ?ERROR_MSG("failed to delete session from redis: ~p", [Err])
-		    end,
+		    ejabberd_redis:multi(
+		      fun() ->
+			      ejabberd_redis:hdel(USKey, [SIDKey]),
+			      ejabberd_redis:hdel(ServKey, [USSIDKey])
+		      end),
 		    {ok, Session}
 	    end;
-	Err ->
-	    ?ERROR_MSG("failed to delete session from redis: ~p", [Err]),
+	{error, _} ->
 	    {error, notfound}
     end.
 
@@ -105,8 +95,7 @@ get_sessions(LServer) ->
     case ejabberd_redis:hgetall(ServKey) of
 	{ok, Vals} ->
 	    decode_session_list(Vals);
-	Err ->
-	    ?ERROR_MSG("failed to get sessions from redis: ~p", [Err]),
+	{error, _} ->
 	    []
     end.
 
@@ -116,8 +105,7 @@ get_sessions(LUser, LServer) ->
     case ejabberd_redis:hgetall(USKey) of
 	{ok, Vals} ->
 	    decode_session_list(Vals);
-	Err ->
-	    ?ERROR_MSG("failed to get sessions from redis: ~p", [Err]),
+	{error, _} ->
 	    []
     end.
 
@@ -129,8 +117,7 @@ get_sessions(LUser, LServer, LResource) ->
 	{ok, Vals} ->
 	    [S || S <- decode_session_list(Vals),
 		  element(3, S#session.usr) == LResource];
-	Err ->
-	    ?ERROR_MSG("failed to get sessions from redis: ~p", [Err]),
+	{error, _} ->
 	    []
     end.
 
@@ -179,8 +166,8 @@ clean_table() ->
 				  end, Vals)
 			end)
 	  end, ejabberd_sm:get_vh_by_backend(?MODULE))
-    catch _:{badmatch, {error, _} = Err} ->
-	    ?ERROR_MSG("failed to clean redis c2s sessions: ~p", [Err])
+    catch _:{badmatch, {error, _}} ->
+	    ?ERROR_MSG("failed to clean redis c2s sessions", [])
     end.
 
 opt_type(redis_connect_timeout) ->

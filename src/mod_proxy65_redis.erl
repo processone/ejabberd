@@ -73,8 +73,7 @@ init() ->
 		      ejabberd_redis:del([NodeKey])
 	      end),
 	    ok;
-	Err ->
-	    ?ERROR_MSG("redis request failed: ~p", [Err]),
+	{error, _} ->
 	    {error, db_failure}
     end.
 
@@ -101,8 +100,7 @@ register_stream(SID, Pid) ->
 			   [SIDKey, Val]),
 		{error, db_failure}
 	end
-    catch _:{badmatch, Err} ->
-	    ?ERROR_MSG("redis request failed: ~p", [Err]),
+    catch _:{badmatch, {error, _}} ->
 	    {error, db_failure}
     end.
 
@@ -135,8 +133,7 @@ unregister_stream(SID) ->
 			   [SIDKey, Val]),
 		{error, db_failure}
 	end
-    catch _:{badmatch, Err} ->
-	    ?ERROR_MSG("redis request failed: ~p", [Err]),
+    catch _:{badmatch, {error, _}} ->
 	    {error, db_failure}
     end.
 
@@ -171,8 +168,7 @@ activate_stream(SID, IJID, MaxConnections, _Node) ->
 			   [SIDKey, Val]),
 		{error, db_failure}
 	end
-    catch _:{badmatch, Err} ->
-	    ?ERROR_MSG("redis request failed: ~p", [Err]),
+    catch _:{badmatch, {error, _}} ->
 	    {error, db_failure}
     end.
 

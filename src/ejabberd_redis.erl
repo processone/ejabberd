@@ -31,7 +31,7 @@
 -compile({no_auto_import, [get/1, put/2]}).
 
 %% API
--export([start_link/1, get_proc/1, q/1, qp/1]).
+-export([start_link/1, get_proc/1, q/1, qp/1, format_error/1]).
 %% Commands
 -export([multi/1, get/1, set/2, del/1,
 	 sadd/2, srem/2, smembers/1, sismember/2, scard/1,
@@ -55,7 +55,7 @@
 		num :: pos_integer(),
 		pending_q :: p1_queue:queue()}).
 
--type redis_error() :: {error, binary() | timeout | disconnected}.
+-type redis_error() :: {error, binary() | timeout | disconnected | overloaded}.
 -type redis_reply() :: binary() | [binary()].
 -type redis_command() :: [binary()].
 -type redis_pipeline() :: [redis_command()].
@@ -107,6 +107,15 @@ multi(F) ->
 	    erlang:error(nested_transaction)
     end.
 
+-spec format_error(atom() | binary()) -> binary().
+format_error(Reason) when is_atom(Reason) ->
+    format_error(aux:atom_to_binary(Reason));
+format_error(Reason) ->
+    Reason.
+
+%%%===================================================================
+%%% Redis commands API
+%%%===================================================================
 -spec get(iodata()) -> {ok, undefined | binary()} | redis_error().
 get(Key) ->
     case erlang:get(?TR_STACK) of
@@ -408,12 +417,27 @@ call({Conn, Parent}, {F, Cmd}, Retries) ->
 	    try ?GEN_SERVER:call(Parent, connect, ?CALL_TIMEOUT) of
 		ok -> call({Conn, Parent}, {F, Cmd}, Retries-1);
 		{error, _} = Err -> Err
-	    catch exit:{timeout, _} -> {error, timeout};
-		  exit:{_, {?GEN_SERVER, call, _}} -> {error, disconnected}
+	    catch exit:{Why, {?GEN_SERVER, call, _}} ->
+		    Reason1 = case Why of
+				 timeout -> timeout;
+				 _ -> disconnected
+			     end,
+		    log_error(Cmd, Reason1),
+		    {error, Reason1}
 	    end;
+	{error, Reason1} ->
+	    log_error(Cmd, Reason1),
+	    Res;
 	_ ->
 	    Res
     end.
+
+-spec log_error(redis_command() | redis_pipeline(), atom() | binary()) -> ok.
+log_error(Cmd, Reason) ->
+    ?ERROR_MSG("Redis request has failed:~n"
+	       "** request = ~p~n"
+	       "** response = ~s",
+	       [Cmd, format_error(Reason)]).
 
 -spec get_worker() -> {atom(), atom()}.
 get_worker() ->
@@ -501,7 +525,7 @@ clean_queue(Q, CurrTime) ->
 	    ?ERROR_MSG("Redis request queue is overloaded", []),
 	    p1_queue:dropwhile(
 	      fun({From, _Time}) ->
-		      ?GEN_SERVER:reply(From, {error, disconnected}),
+		      ?GEN_SERVER:reply(From, {error, overloaded}),
 		      true
 	      end, Q1);
        true ->

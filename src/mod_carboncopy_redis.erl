@@ -46,9 +46,8 @@ enable(LUser, LServer, LResource, NS) ->
 	   end) of
 	{ok, _} ->
 	    ok;
-	Err ->
-	    ?ERROR_MSG("failed to write in redis: ~p", [Err]),
-	    Err
+	{error, _} ->
+	    {error, db_failure}
     end.
 
 disable(LUser, LServer, LResource) ->
@@ -62,9 +61,8 @@ disable(LUser, LServer, LResource) ->
 	   end) of
 	{ok, _} ->
 	    ok;
-	Err ->
-	    ?ERROR_MSG("failed to delete from redis: ~p", [Err]),
-	    Err
+	{error, _} ->
+	    {error, db_failure}
     end.
 
 list(LUser, LServer) ->
@@ -72,8 +70,7 @@ list(LUser, LServer) ->
     case ejabberd_redis:hgetall(USKey) of
 	{ok, Vals} ->
 	    Vals;
-	Err ->
-	    ?ERROR_MSG("failed to read from redis: ~p", [Err]),
+	{error, _} ->
 	    []
     end.
 
@@ -85,27 +82,20 @@ clean_table() ->
     NodeKey = node_key(),
     case ejabberd_redis:smembers(NodeKey) of
 	{ok, JIDs} ->
-	    case ejabberd_redis:multi(
-		   fun() ->
-			   lists:foreach(
-			     fun(JID) ->
-				     {U, S, R} = jid:split(jid:decode(JID)),
-				     USKey = us_key(U, S),
-				     ejabberd_redis:hdel(USKey, [R])
-			     end, JIDs)
-		   end) of
-		{ok, _} ->
-		    ok;
-		Err ->
-		    ?ERROR_MSG("failed to delete from redis: ~p", [Err])
-	    end;
-	Err ->
-	    ?ERROR_MSG("failed to read from redis: ~p", [Err])
+	    ejabberd_redis:multi(
+	      fun() ->
+		      lists:foreach(
+			fun(JID) ->
+				{U, S, R} = jid:split(jid:decode(JID)),
+				USKey = us_key(U, S),
+				ejabberd_redis:hdel(USKey, [R])
+			end, JIDs)
+	      end);
+	{error, _} ->
+	    ok
     end,
-    case ejabberd_redis:del([NodeKey]) of
-	{ok, _} -> ok;
-	Error -> ?ERROR_MSG("failed to delete from redis: ~p", [Error])
-    end.
+    ejabberd_redis:del([NodeKey]),
+    ok.
 
 us_key(LUser, LServer) ->
     <<"ejabberd:carboncopy:users:", LUser/binary, $@, LServer/binary>>.

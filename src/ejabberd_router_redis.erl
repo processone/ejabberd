@@ -51,9 +51,8 @@ register_route(Domain, ServerHost, LocalHint, _, Pid) ->
 	   end) of
 	{ok, _} ->
 	    ok;
-	Err ->
-	    ?ERROR_MSG("failed to register route in redis: ~p", [Err]),
-	    Err
+	{error, _} ->
+	    {error, db_failure}
     end.
 
 unregister_route(Domain, _, Pid) ->
@@ -76,9 +75,8 @@ unregister_route(Domain, _, Pid) ->
 	   true ->
 		ok
 	end
-    catch _:{badmatch, Err} ->
-	    ?ERROR_MSG("failed to unregister route in redis: ~p", [Err]),
-	    Err
+    catch _:{badmatch, {error, _}} ->
+	    {error, db_failure}
     end.
 
 find_routes(Domain) ->
@@ -86,8 +84,7 @@ find_routes(Domain) ->
     case ejabberd_redis:hgetall(DomKey) of
 	{ok, Vals} ->
 	    decode_routes(Domain, Vals);
-	Err ->
-	    ?ERROR_MSG("failed to find routes in redis: ~p", [Err]),
+	{error, _} ->
 	    []
     end.
 
@@ -97,10 +94,7 @@ host_of_route(Domain) ->
 	{ok, [{_Pid, Data}|_]} ->
 	    {ServerHost, _} = binary_to_term(Data),
 	    {ok, ServerHost};
-	{ok, []} ->
-	    error;
-	Err ->
-	    ?ERROR_MSG("failed to get host of route in redis: ~p", [Err]),
+	_ ->
 	    error
     end.
 
@@ -108,8 +102,7 @@ is_my_route(Domain) ->
     case ejabberd_redis:sismember(?ROUTES_KEY, Domain) of
 	{ok, Bool} ->
 	    Bool;
-	Err ->
-	    ?ERROR_MSG("failed to check route in redis: ~p", [Err]),
+	{error, _} ->
 	    false
     end.
 
@@ -120,8 +113,7 @@ get_all_routes() ->
     case ejabberd_redis:smembers(?ROUTES_KEY) of
 	{ok, Routes} ->
 	    Routes;
-	Err ->
-	    ?ERROR_MSG("failed to fetch routes from redis: ~p", [Err]),
+	{error, _} ->
 	    []
     end.
 
