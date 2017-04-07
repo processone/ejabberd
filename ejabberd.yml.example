@@ -234,18 +234,16 @@ listen:
 ## Allowed values are: false optional required required_trusted
 ## You must specify a certificate file.
 ##
-## s2s_use_starttls: optional
+## s2s_use_starttls: required
 
 ##
 ## s2s_certfile: Specify a certificate file.
 ##
-## s2s_certfile: "/path/to/ssl.pem"
+## s2s_certfile: 'CERTFILE'
 
 ## Custom OpenSSL options
 ##
-## s2s_protocol_options:
-##   - "no_sslv3"
-##   - "no_tlsv1"
+## s2s_protocol_options: 'TLSOPTS'
 
 ##
 ## domain_certfile: Specify a different certificate for each served hostname.
