@@ -174,7 +174,7 @@ init([]) ->
 	   RouterMulticast,
 	   Local,
 	   SM,
-	   GenModSupervisor,
 	   ExtMod,
+	   GenModSupervisor,
 	   Auth,
 	   OAuth]}}.
