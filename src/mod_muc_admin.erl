@@ -29,8 +29,8 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, reload/3, depends/2, muc_online_rooms/1,
-	 muc_unregister_nick/1, create_room/3, destroy_room/2,
-	 create_room_with_opts/4,
+	 muc_register_nick/3, muc_unregister_nick/1,
+	 create_room_with_opts/4, create_room/3, destroy_room/2,
 	 create_rooms_file/1, destroy_rooms_file/1,
 	 rooms_unused_list/2, rooms_unused_destroy/2,
 	 get_user_rooms/2, get_room_occupants/2,
@@ -44,6 +44,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
+-include("mod_muc.hrl").
 -include("mod_muc_room.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
@@ -85,6 +86,13 @@ get_commands_spec() ->
 		       module = ?MODULE, function = muc_online_rooms,
 		       args = [{host, binary}],
 		       result = {rooms, {list, {room, string}}}},
+     #ejabberd_commands{name = muc_register_nick, tags = [muc],
+		       desc = "Register a nick in the MUC service",
+		       longdesc = "Provide the nick, the user JID and the MUC service",
+		       module = ?MODULE, function = muc_register_nick,
+		       args = [{nick, binary}, {jid, binary}, {domain, binary}],
+		       args_example = [<<"Tim">>, <<"tim@example.org">>, <<"conference.example.org">>],
+		       result = {res, rescode}},
      #ejabberd_commands{name = muc_unregister_nick, tags = [muc],
 		       desc = "Unregister the nick in the MUC service",
 		       module = ?MODULE, function = muc_unregister_nick,
@@ -233,9 +241,20 @@ muc_online_rooms(ServerHost) ->
 	       || {Name, _, _} <- mod_muc:get_online_rooms(Host)]
       end, Hosts).
 
+muc_register_nick(Nick, JIDBinary, Domain) ->
+    JID = jlib:string_to_jid(JIDBinary),
+    %{jid, UID, Host, _,_,_,_} = jlib:string_to_jid(JIDBinary),
+    F = fun (MHost, MNick) ->
+	    mnesia:write(#muc_registered{us_host=MHost, nick=MNick})
+	end,
+    case mnesia:transaction(F, [{{JID#jid.luser, JID#jid.lserver}, Domain}, Nick]) of
+	{atomic, ok} -> ok;
+	{aborted, _Error} -> error
+    end.
+
 muc_unregister_nick(Nick) ->
     F2 = fun(N) ->
-		 [{_,Key,_}] = mnesia:index_read(muc_registered, N, 3),
+		 [{_,Key,_}|_] = mnesia:index_read(muc_registered, N, 3),
 		 mnesia:delete({muc_registered, Key})
 	 end,
     case mnesia:transaction(F2, [Nick], 1) of
