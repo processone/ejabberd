@@ -242,14 +242,17 @@ muc_online_rooms(ServerHost) ->
       end, Hosts).
 
 muc_register_nick(Nick, JIDBinary, Domain) ->
-    JID = jlib:string_to_jid(JIDBinary),
-    %{jid, UID, Host, _,_,_,_} = jlib:string_to_jid(JIDBinary),
-    F = fun (MHost, MNick) ->
-	    mnesia:write(#muc_registered{us_host=MHost, nick=MNick})
-	end,
-    case mnesia:transaction(F, [{{JID#jid.luser, JID#jid.lserver}, Domain}, Nick]) of
-	{atomic, ok} -> ok;
-	{aborted, _Error} -> error
+    try jid:decode(JIDBinary) of
+	JID ->
+	    F = fun (MHost, MNick) ->
+		    mnesia:write(#muc_registered{us_host=MHost, nick=MNick})
+		end,
+	    case mnesia:transaction(F, [{{JID#jid.luser, JID#jid.lserver},
+					 Domain}, Nick]) of
+		{atomic, ok} -> ok;
+		{aborted, _Error} -> error
+	    end
+    catch _:{bad_jid, _} -> throw({error, "Malformed JID"})
     end.
 
 muc_unregister_nick(Nick) ->
