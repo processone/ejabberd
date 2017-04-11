@@ -108,7 +108,7 @@ check_password(User, AuthzId, Server, Password, Digest,
 	  end;
       {ok, #passwd{password = Scram}}
 	  when is_record(Scram, scram) ->
-	  Passwd = aux:decode_base64(Scram#scram.storedkey),
+	  Passwd = misc:decode_base64(Scram#scram.storedkey),
 	  DigRes = if Digest /= <<"">> ->
 			  Digest == DigestGen(Passwd);
 		      true -> false
@@ -213,9 +213,9 @@ get_password(User, Server) ->
 	  Password;
       {ok, #passwd{password = Scram}}
 	  when is_record(Scram, scram) ->
-	  {aux:decode_base64(Scram#scram.storedkey),
-	   aux:decode_base64(Scram#scram.serverkey),
-	   aux:decode_base64(Scram#scram.salt),
+	  {misc:decode_base64(Scram#scram.storedkey),
+	   misc:decode_base64(Scram#scram.serverkey),
+	   misc:decode_base64(Scram#scram.salt),
 	   Scram#scram.iterationcount};
       _ -> false
     end.
@@ -287,9 +287,9 @@ password_to_scram(Password, IterationCount) ->
     StoredKey =
 	scram:stored_key(scram:client_key(SaltedPassword)),
     ServerKey = scram:server_key(SaltedPassword),
-    #scram{storedkey = aux:encode_base64(StoredKey),
-	   serverkey = aux:encode_base64(ServerKey),
-	   salt = aux:encode_base64(Salt),
+    #scram{storedkey = misc:encode_base64(StoredKey),
+	   serverkey = misc:encode_base64(ServerKey),
+	   salt = misc:encode_base64(Salt),
 	   iterationcount = IterationCount}.
 
 is_password_scram_valid(Password, Scram) ->
@@ -298,12 +298,12 @@ is_password_scram_valid(Password, Scram) ->
 	    false;
 	_ ->
 	    IterationCount = Scram#scram.iterationcount,
-	    Salt = aux:decode_base64(Scram#scram.salt),
+	    Salt = misc:decode_base64(Scram#scram.salt),
 	    SaltedPassword = scram:salted_password(Password, Salt,
 						   IterationCount),
 	    StoredKey =
 		scram:stored_key(scram:client_key(SaltedPassword)),
-	    aux:decode_base64(Scram#scram.storedkey) == StoredKey
+	    misc:decode_base64(Scram#scram.storedkey) == StoredKey
     end.
 
 export(_Server) ->

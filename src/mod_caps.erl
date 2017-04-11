@@ -420,7 +420,7 @@ make_my_disco_hash(Host) ->
 make_disco_hash(DiscoInfo, Algo) ->
     Concat = list_to_binary([concat_identities(DiscoInfo),
                              concat_features(DiscoInfo), concat_info(DiscoInfo)]),
-    aux:encode_base64(case Algo of
+    misc:encode_base64(case Algo of
                            md5 -> erlang:md5(Concat);
                            sha -> crypto:hash(sha, Concat);
                            sha224 -> crypto:hash(sha224, Concat);

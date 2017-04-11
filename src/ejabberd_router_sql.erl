@@ -51,7 +51,7 @@ init() ->
     end.
 
 register_route(Domain, ServerHost, LocalHint, _, Pid) ->
-    PidS = aux:encode_pid(Pid),
+    PidS = misc:encode_pid(Pid),
     LocalHintS = enc_local_hint(LocalHint),
     Node = erlang:atom_to_binary(node(Pid), latin1),
     case ?SQL_UPSERT(?MYNAME, "route",
@@ -68,7 +68,7 @@ register_route(Domain, ServerHost, LocalHint, _, Pid) ->
     end.
 
 unregister_route(Domain, _, Pid) ->
-    PidS = aux:encode_pid(Pid),
+    PidS = misc:encode_pid(Pid),
     Node = erlang:atom_to_binary(node(Pid), latin1),
     ejabberd_sql:sql_query(
       ?MYNAME,
@@ -146,7 +146,7 @@ find_routes() ->
 enc_local_hint(undefined) ->
     <<"">>;
 enc_local_hint(LocalHint) ->
-    aux:term_to_expr(LocalHint).
+    misc:term_to_expr(LocalHint).
 
 dec_local_hint(<<"">>) ->
     undefined;
@@ -156,7 +156,7 @@ dec_local_hint(S) ->
 row_to_route(Domain, {ServerHost, NodeS, PidS, LocalHintS} = Row) ->
     try	[#route{domain = Domain,
 		server_host = ServerHost,
-		pid = aux:decode_pid(PidS, NodeS),
+		pid = misc:decode_pid(PidS, NodeS),
 		local_hint = dec_local_hint(LocalHintS)}]
     catch _:{bad_node, _} ->
 	    [];

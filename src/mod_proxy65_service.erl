@@ -253,9 +253,9 @@ process_bytestreams(#iq{type = set, lang = Lang, from = InitiatorJID, to = To,
 transform_module_options(Opts) ->
     lists:map(
       fun({ip, IP}) when is_tuple(IP) ->
-              {ip, aux:ip_to_list(IP)};
+              {ip, misc:ip_to_list(IP)};
          ({hostname, IP}) when is_tuple(IP) ->
-              {hostname, aux:ip_to_list(IP)};
+              {hostname, misc:ip_to_list(IP)};
          (Opt) ->
               Opt
       end, Opts).
@@ -265,7 +265,7 @@ get_streamhost(Host, ServerHost) ->
     {Port, IP} = get_port_ip(ServerHost),
     HostName = gen_mod:get_module_opt(ServerHost, mod_proxy65, hostname,
 				      fun iolist_to_binary/1,
-				      aux:ip_to_list(IP)),
+				      misc:ip_to_list(IP)),
     Resource = ejabberd_cluster:node_id(),
     #streamhost{jid = jid:make(<<"">>, Host, Resource),
 		host = HostName,

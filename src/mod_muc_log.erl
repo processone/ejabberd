@@ -537,7 +537,7 @@ make_dir_rec(Dir) ->
 %% {ok, F1}=file:open("valid-xhtml10.png", [read]).
 %% {ok, F1b}=file:read(F1, 1000000).
 %% c("../../ejabberd/src/jlib.erl").
-%% aux:encode_base64(F1b).
+%% misc:encode_base64(F1b).
 
 image_base64(<<"powered-by-erlang.png">>) ->
     <<"iVBORw0KGgoAAAANSUhEUgAAAGUAAAAfCAYAAAD+xQNoA"
@@ -713,7 +713,7 @@ create_image_files(Images_dir) ->
     lists:foreach(fun (Filename) ->
 			  Filename_full = fjoin([Images_dir, Filename]),
 			  {ok, F} = file:open(Filename_full, [write]),
-			  Image = aux:decode_base64(image_base64(Filename)),
+			  Image = misc:decode_base64(image_base64(Filename)),
 			  io:format(F, <<"~s">>, [Image]),
 			  file:close(F)
 		  end,
@@ -1051,7 +1051,7 @@ roomconfig_to_string(Options, Lang, FileFormat) ->
 					   allow_private_messages_from_visitors ->
 					       <<"<div class=\"rcot\">",
 						 OptText/binary, ": \"",
-						 (htmlize(?T(aux:atom_to_binary(T)),
+						 (htmlize(?T(misc:atom_to_binary(T)),
 							  FileFormat))/binary,
 						 "\"</div>">>;
 					   _ -> <<"\"", T/binary, "\"">>

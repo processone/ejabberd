@@ -3439,9 +3439,9 @@ subscription_plugin(Host) ->
 -spec submodule(host(), binary()) -> atom().
 submodule(Host, Name) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
-	mnesia -> aux:binary_to_atom(Name);
-	Type -> aux:binary_to_atom(<<Name/binary, "_",
-		    (aux:atom_to_binary(Type))/binary>>)
+	mnesia -> misc:binary_to_atom(Name);
+	Type -> misc:binary_to_atom(<<Name/binary, "_",
+		    (misc:atom_to_binary(Type))/binary>>)
     end.
 
 -spec config(binary(), any()) -> any().

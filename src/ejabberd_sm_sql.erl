@@ -65,10 +65,10 @@ init() ->
 
 set_session(#session{sid = {Now, Pid}, usr = {U, LServer, R},
 		     priority = Priority, info = Info}) ->
-    InfoS = aux:term_to_expr(Info),
+    InfoS = misc:term_to_expr(Info),
     PrioS = enc_priority(Priority),
     TS = now_to_timestamp(Now),
-    PidS = aux:encode_pid(Pid),
+    PidS = misc:encode_pid(Pid),
     Node = erlang:atom_to_binary(node(Pid), latin1),
     case ?SQL_UPSERT(LServer, "sm",
                      ["!usec=%(TS)d",
@@ -194,7 +194,7 @@ enc_priority(Int) when is_integer(Int) ->
 
 row_to_session(LServer, {USec, PidS, NodeS, User, Resource, PrioS, InfoS}) ->
     Now = timestamp_to_now(USec),
-    Pid = aux:decode_pid(PidS, NodeS),
+    Pid = misc:decode_pid(PidS, NodeS),
     Priority = dec_priority(PrioS),
     Info = ejabberd_sql:decode_term(InfoS),
     #session{sid = {Now, Pid}, us = {User, LServer},

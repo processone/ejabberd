@@ -436,7 +436,7 @@ delete_old_messages(TypeBin, Days) when TypeBin == <<"chat">>;
 					TypeBin == <<"all">> ->
     Diff = Days * 24 * 60 * 60 * 1000000,
     TimeStamp = usec_to_now(p1_time_compat:system_time(micro_seconds) - Diff),
-    Type = aux:binary_to_atom(TypeBin),
+    Type = misc:binary_to_atom(TypeBin),
     DBTypes = lists:usort(
 		lists:map(
 		  fun(Host) ->

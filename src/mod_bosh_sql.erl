@@ -34,7 +34,7 @@ init() ->
     end.
 
 open_session(SID, Pid) ->
-    PidS = aux:encode_pid(Pid),
+    PidS = misc:encode_pid(Pid),
     Node = erlang:atom_to_binary(node(Pid), latin1),
     case ?SQL_UPSERT(?MYNAME, "bosh",
 		     ["!sid=%(SID)s",
@@ -57,7 +57,7 @@ find_session(SID) ->
 	   ?MYNAME,
 	   ?SQL("select @(pid)s, @(node)s from bosh where sid=%(SID)s")) of
 	{selected, [{Pid, Node}]} ->
-	    try	{ok, aux:decode_pid(Pid, Node)}
+	    try	{ok, misc:decode_pid(Pid, Node)}
 	    catch _:{bad_node, _} -> error
 	    end;
 	{selected, []} ->

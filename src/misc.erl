@@ -25,7 +25,7 @@
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%-------------------------------------------------------------------
--module(aux).
+-module(misc).
 
 %% API
 -export([tolower/1, term_to_base64/1, base64_to_term/1,

@@ -84,7 +84,7 @@ is_connected() ->
 
 %% @private
 get_proc(I) ->
-    aux:binary_to_atom(
+    misc:binary_to_atom(
       iolist_to_binary(
 	[atom_to_list(?MODULE), $_, integer_to_list(I)])).
 

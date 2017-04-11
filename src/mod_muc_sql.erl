@@ -57,7 +57,7 @@ init(Host, Opts) ->
     end.
 
 store_room(LServer, Host, Name, Opts) ->
-    SOpts = aux:term_to_expr(Opts),
+    SOpts = misc:term_to_expr(Opts),
     F = fun () ->
 		?SQL_UPSERT_T(
                    "muc_room",
@@ -171,7 +171,7 @@ search_affiliation(_ServerHost, _Room, _Host, _Affiliation) ->
     {error, not_implemented}.
 
 register_online_room(ServerHost, Room, Host, Pid) ->
-    PidS = aux:encode_pid(Pid),
+    PidS = misc:encode_pid(Pid),
     NodeS = erlang:atom_to_binary(node(Pid), latin1),
     case ?SQL_UPSERT(ServerHost,
 		     "muc_online_room",
@@ -188,7 +188,7 @@ register_online_room(ServerHost, Room, Host, Pid) ->
 
 unregister_online_room(ServerHost, Room, Host, Pid) ->
     %% TODO: report errors
-    PidS = aux:encode_pid(Pid),
+    PidS = misc:encode_pid(Pid),
     NodeS = erlang:atom_to_binary(node(Pid), latin1),
     ejabberd_sql:sql_query(
       ServerHost,
@@ -201,7 +201,7 @@ find_online_room(ServerHost, Room, Host) ->
 	   ?SQL("select @(pid)s, @(node)s from muc_online_room where "
 		"name=%(Room)s and host=%(Host)s")) of
 	{selected, [{PidS, NodeS}]} ->
-	    try {ok, aux:decode_pid(PidS, NodeS)}
+	    try {ok, misc:decode_pid(PidS, NodeS)}
 	    catch _:{bad_node, _} -> error
 	    end;
 	{selected, []} ->
@@ -231,7 +231,7 @@ get_online_rooms(ServerHost, Host, _RSM) ->
 	{selected, Rows} ->
 	    lists:flatmap(
 	      fun({Room, PidS, NodeS}) ->
-		      try [{Room, Host, aux:decode_pid(PidS, NodeS)}]
+		      try [{Room, Host, misc:decode_pid(PidS, NodeS)}]
 		      catch _:{bad_node, _} -> []
 		      end
 	      end, Rows);
@@ -296,7 +296,7 @@ export(_Server) ->
       fun(Host, #muc_room{name_host = {Name, RoomHost}, opts = Opts}) ->
               case str:suffix(Host, RoomHost) of
                   true ->
-                      SOpts = aux:term_to_expr(Opts),
+                      SOpts = misc:term_to_expr(Opts),
                       [?SQL("delete from muc_room where name=%(Name)s"
                             " and host=%(RoomHost)s;"),
                        ?SQL("insert into muc_room(name, host, opts) "

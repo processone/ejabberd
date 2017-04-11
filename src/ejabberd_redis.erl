@@ -68,12 +68,12 @@ start_link(I) ->
     ?GEN_SERVER:start_link({local, get_proc(I)}, ?MODULE, [I], []).
 
 get_proc(I) ->
-    aux:binary_to_atom(
+    misc:binary_to_atom(
       iolist_to_binary(
 	[atom_to_list(?MODULE), $_, integer_to_list(I)])).
 
 get_connection(I) ->
-    aux:binary_to_atom(
+    misc:binary_to_atom(
       iolist_to_binary(
 	[atom_to_list(?MODULE), "_connection_", integer_to_list(I)])).
 
@@ -109,7 +109,7 @@ multi(F) ->
 
 -spec format_error(atom() | binary()) -> binary().
 format_error(Reason) when is_atom(Reason) ->
-    format_error(aux:atom_to_binary(Reason));
+    format_error(misc:atom_to_binary(Reason));
 format_error(Reason) ->
     Reason.
 

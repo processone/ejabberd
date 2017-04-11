@@ -206,10 +206,10 @@ parse_listener_portip(PortIP, Opts) ->
 	case add_proto(PortIP, Opts) of
 	    {P, Prot} ->
 		T = get_ip_tuple(IPOpt, IPVOpt),
-		S = aux:ip_to_list(T),
+		S = misc:ip_to_list(T),
 		{P, T, S, Prot};
 	    {P, T, Prot} when is_integer(P) and is_tuple(T) ->
-		S = aux:ip_to_list(T),
+		S = misc:ip_to_list(T),
 		{P, T, S, Prot};
 	    {P, S, Prot} when is_integer(P) and is_binary(S) ->
 		[S | _] = str:tokens(S, <<"/">>),

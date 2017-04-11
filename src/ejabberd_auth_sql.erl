@@ -301,9 +301,9 @@ get_password(User, Server) ->
                                  LServer, LUser) of
                         {selected,
                          [{StoredKey, ServerKey, Salt, IterationCount}]} ->
-                            {aux:decode_base64(StoredKey),
-                             aux:decode_base64(ServerKey),
-                             aux:decode_base64(Salt),
+                            {misc:decode_base64(StoredKey),
+                             misc:decode_base64(ServerKey),
+                             misc:decode_base64(Salt),
                              IterationCount};
                         _ -> false
                     end;
@@ -423,9 +423,9 @@ password_to_scram(Password, IterationCount) ->
     StoredKey =
 	scram:stored_key(scram:client_key(SaltedPassword)),
     ServerKey = scram:server_key(SaltedPassword),
-    #scram{storedkey = aux:encode_base64(StoredKey),
-	   serverkey = aux:encode_base64(ServerKey),
-	   salt = aux:encode_base64(Salt),
+    #scram{storedkey = misc:encode_base64(StoredKey),
+	   serverkey = misc:encode_base64(ServerKey),
+	   salt = misc:encode_base64(Salt),
 	   iterationcount = IterationCount}.
 
 is_password_scram_valid_stored(Pass, {scram,Pass,<<>>,<<>>,0}, LUser, LServer) ->
@@ -443,12 +443,12 @@ is_password_scram_valid(Password, Scram) ->
 	    false;
 	_ ->
 	    IterationCount = Scram#scram.iterationcount,
-	    Salt = aux:decode_base64(Scram#scram.salt),
+	    Salt = misc:decode_base64(Scram#scram.salt),
 	    SaltedPassword = scram:salted_password(Password, Salt,
 						   IterationCount),
 	    StoredKey =
 		scram:stored_key(scram:client_key(SaltedPassword)),
-	    aux:decode_base64(Scram#scram.storedkey) == StoredKey
+	    misc:decode_base64(Scram#scram.storedkey) == StoredKey
     end.
 
 -define(BATCH_SIZE, 1000).

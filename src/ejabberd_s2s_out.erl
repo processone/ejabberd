@@ -230,7 +230,7 @@ handle_auth_success(Mech, #{sockmod := SockMod,
 			    server := LServer} = State) ->
     ?INFO_MSG("(~s) Accepted outbound s2s ~s authentication ~s -> ~s (~s)",
 	      [SockMod:pp(Socket), Mech, LServer, RServer,
-	       ejabberd_config:may_hide_data(aux:ip_to_list(IP))]),
+	       ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
     ejabberd_hooks:run_fold(s2s_out_auth_result, ServerHost, State, [true]).
 
 handle_auth_failure(Mech, Reason,
@@ -241,7 +241,7 @@ handle_auth_failure(Mech, Reason,
 		      server := LServer} = State) ->
     ?INFO_MSG("(~s) Failed outbound s2s ~s authentication ~s -> ~s (~s): ~s",
 	      [SockMod:pp(Socket), Mech, LServer, RServer,
-	       ejabberd_config:may_hide_data(aux:ip_to_list(IP)),
+	       ejabberd_config:may_hide_data(misc:ip_to_list(IP)),
 	       xmpp_stream_out:format_error(Reason)]),
     ejabberd_hooks:run_fold(s2s_out_auth_result, ServerHost, State, [{false, Reason}]).
 

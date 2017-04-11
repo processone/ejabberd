@@ -83,4 +83,4 @@ do_request(Name, {F, Args}) ->
     end.
 
 make_id(Name) ->
-    aux:binary_to_atom(<<"eldap_pool_", Name/binary>>).
+    misc:binary_to_atom(<<"eldap_pool_", Name/binary>>).

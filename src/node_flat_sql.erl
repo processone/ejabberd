@@ -652,7 +652,7 @@ get_items(Nidx, From, undefined) ->
 		      ?SQL("select @(val)s from pubsub_node_option "
 			   "where nodeid=%(Nidx)d and name='max_items'")) of
 		   {selected, [{Value}]} ->
-		       aux:expr_to_term(Value);
+		       misc:expr_to_term(Value);
 		   _ ->
 		       ?MAXITEMS
 	       end,
@@ -665,7 +665,7 @@ get_items(Nidx, _From, #rsm_set{max = Max, index = IncIndex,
 		      Before /= undefined -> {<<">">>, <<"asc">>};
 		      true -> {<<"is not">>, <<"desc">>}
 		   end,
-    SNidx = aux:i2l(Nidx),
+    SNidx = misc:i2l(Nidx),
     I = if After /= undefined -> After;
 	   Before /= undefined -> Before;
 	   true -> undefined
@@ -774,8 +774,8 @@ get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId, RSM
     end.
 
 get_last_items(Nidx, _From, Count) ->
-    Limit = aux:i2l(Count),
-    SNidx = aux:i2l(Nidx),
+    Limit = misc:i2l(Count),
+    SNidx = misc:i2l(Nidx),
     Query = fun(mssql, _) ->
 		    ejabberd_sql:sql_query_t(
 		      [<<"select top ">>, Limit,
@@ -851,7 +851,7 @@ set_item(Item) ->
     Payload = Item#pubsub_item.payload,
     XML = str:join([fxml:element_to_binary(X) || X<-Payload], <<>>),
     S = fun ({T1, T2, T3}) ->
-	    str:join([aux:i2l(T1, 6), aux:i2l(T2, 6), aux:i2l(T3, 6)], <<":">>)
+	    str:join([misc:i2l(T1, 6), misc:i2l(T2, 6), misc:i2l(T3, 6)], <<":">>)
     end,
     SM = S(M),
     SC = S(C),
@@ -877,7 +877,7 @@ del_items(Nidx, [ItemId]) ->
     del_item(Nidx, ItemId);
 del_items(Nidx, ItemIds) ->
     I = str:join([[<<"'">>, ejabberd_sql:escape(X), <<"'">>] || X <- ItemIds], <<",">>),
-    SNidx = aux:i2l(Nidx),
+    SNidx = misc:i2l(Nidx),
     catch
     ejabberd_sql:sql_query_t([<<"delete from pubsub_item where itemid in (">>,
 	    I, <<") and nodeid='">>, SNidx, <<"';">>]).
@@ -1031,7 +1031,7 @@ raw_to_item(Nidx, {ItemId, SJID, Creation, Modification, XML}) ->
     JID = decode_jid(SJID),
     ToTime = fun (Str) ->
 	    [T1, T2, T3] = str:tokens(Str, <<":">>),
-	    {aux:l2i(T1), aux:l2i(T2), aux:l2i(T3)}
+	    {misc:l2i(T1), misc:l2i(T2), misc:l2i(T3)}
     end,
     Payload = case fxml_stream:parse_element(XML) of
 	{error, _Reason} -> [];

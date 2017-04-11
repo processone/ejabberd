@@ -152,7 +152,7 @@ handshake(#ws{headers = Headers} = State) ->
                             V ->
                                 [<<"Sec-Websocket-Protocol:">>, V, <<"\r\n">>]
                         end,
-    Hash = aux:encode_base64(
+    Hash = misc:encode_base64(
              crypto:hash(sha, <<Key/binary, "258EAFA5-E914-47DA-95CA-C5AB0DC85B11">>)),
     {State, [<<"HTTP/1.1 101 Switching Protocols\r\n">>,
              <<"Upgrade: websocket\r\n">>,

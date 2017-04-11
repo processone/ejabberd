@@ -55,7 +55,7 @@ get_data(LServer, Host, From) ->
 
 set_data(LServer, Host, From, Data) ->
     SJID = jid:encode(jid:tolower(jid:remove_resource(From))),
-    SData = aux:term_to_expr(Data),
+    SData = misc:term_to_expr(Data),
     F = fun () ->
                 ?SQL_UPSERT_T(
                    "irc_custom",
@@ -73,7 +73,7 @@ export(_Server) ->
               case str:suffix(Host, IRCHost) of
                   true ->
                       SJID = jid:encode(jid:make(U, S)),
-                      SData = aux:term_to_expr(Data),
+                      SData = misc:term_to_expr(Data),
                       [?SQL("delete from irc_custom"
                             " where jid=%(SJID)s and host=%(IRCHost)s;"),
                        ?SQL("insert into irc_custom(jid, host, data)"

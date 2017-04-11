@@ -50,7 +50,7 @@ init() ->
     end.
 
 register_stream(SID, Pid) ->
-    PidS = aux:encode_pid(Pid),
+    PidS = misc:encode_pid(Pid),
     NodeS = erlang:atom_to_binary(node(Pid), latin1),
     F = fun() ->
 		case ejabberd_sql:sql_query_t(
@@ -94,8 +94,8 @@ activate_stream(SID, IJID, MaxConnections, _Node) ->
 			    "sid=%(SID)s")) of
 		    {selected, [{TPidS, TNodeS, IPidS, INodeS, <<"">>}]}
 		      when IPidS /= <<"">> ->
-			try {aux:decode_pid(TPidS, TNodeS),
-			     aux:decode_pid(IPidS, INodeS)} of
+			try {misc:decode_pid(TPidS, TNodeS),
+			     misc:decode_pid(IPidS, INodeS)} of
 			    {TPid, IPid} ->
 				case ejabberd_sql:sql_query_t(
 				       ?SQL("update proxy65 set jid_i=%(IJID)s "

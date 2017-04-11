@@ -145,7 +145,7 @@
 %%% API
 %%%----------------------------------------------------------------------
 start_link(Name) ->
-    Reg_name = aux:binary_to_atom(<<"eldap_",
+    Reg_name = misc:binary_to_atom(<<"eldap_",
 				       Name/binary>>),
     gen_fsm:start_link({local, Reg_name}, ?MODULE, [], []).
 
@@ -153,7 +153,7 @@ start_link(Name) ->
                  binary(), tlsopts()) -> any().
 
 start_link(Name, Hosts, Port, Rootdn, Passwd, Opts) ->
-    Reg_name = aux:binary_to_atom(<<"eldap_",
+    Reg_name = misc:binary_to_atom(<<"eldap_",
 				       Name/binary>>),
     gen_fsm:start_link({local, Reg_name}, ?MODULE,
 		       [Hosts, Port, Rootdn, Passwd, Opts], []).
@@ -548,7 +548,7 @@ extensibleMatch_opts([], MRA) -> MRA.
 get_handle(Pid) when is_pid(Pid) -> Pid;
 get_handle(Atom) when is_atom(Atom) -> Atom;
 get_handle(Name) when is_binary(Name) ->
-    aux:binary_to_atom(<<"eldap_",
+    misc:binary_to_atom(<<"eldap_",
 			    Name/binary>>).
 
 %%%----------------------------------------------------------------------

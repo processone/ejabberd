@@ -258,7 +258,7 @@ process_header(State, Data) ->
 		      request_version = Version, request_path = Path,
 		      request_keepalive = KeepAlive};
       {ok, {http_header, _, 'Connection' = Name, _, Conn}} ->
-	  KeepAlive1 = case aux:tolower(Conn) of
+	  KeepAlive1 = case misc:tolower(Conn) of
 			 <<"keep-alive">> -> true;
 			 <<"close">> -> false;
 			 _ -> State#state.request_keepalive
@@ -520,7 +520,7 @@ make_bad_request(State) ->
 analyze_ip_xff(IP, [], _Host) -> IP;
 analyze_ip_xff({IPLast, Port}, XFF, Host) ->
     [ClientIP | ProxiesIPs] = str:tokens(XFF, <<", ">>) ++
-				[aux:ip_to_list(IPLast)],
+				[misc:ip_to_list(IPLast)],
     TrustedProxies = ejabberd_config:get_option(
                        {trusted_proxies, Host},
                        fun(all) -> all;
@@ -735,7 +735,7 @@ rest_dir(N, Path, <<_H, T/binary>>) -> rest_dir(N, Path, T).
 
 expand_custom_headers(Headers) ->
     lists:map(fun({K, V}) ->
-		      {K, aux:expand_keyword(<<"@VERSION@">>, V, ?VERSION)}
+		      {K, misc:expand_keyword(<<"@VERSION@">>, V, ?VERSION)}
 	      end, Headers).
 
 %% hex_to_integer
@@ -801,7 +801,7 @@ code_to_phrase(505) -> <<"HTTP Version Not Supported">>.
 
 -spec parse_auth(binary()) -> {binary(), binary()} | {oauth, binary(), []} | undefined.
 parse_auth(<<"Basic ", Auth64/binary>>) ->
-    Auth = aux:decode_base64(Auth64),
+    Auth = misc:decode_base64(Auth64),
     %% Auth should be a string with the format: user@server:password
     %% Note that password can contain additional characters '@' and ':'
     case str:chr(Auth, $:) of

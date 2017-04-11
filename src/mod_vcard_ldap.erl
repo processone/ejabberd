@@ -362,7 +362,7 @@ parse_options(Host, Opts) ->
                               fun(infinity) -> 0;
                                  (I) when is_integer(I), I>0 -> I
                               end, 30),
-    Eldap_ID = aux:atom_to_binary(gen_mod:get_module_proc(Host, ?PROCNAME)),
+    Eldap_ID = misc:atom_to_binary(gen_mod:get_module_proc(Host, ?PROCNAME)),
     Cfg = eldap_utils:get_config(Host, Opts),
     UIDsTemp = gen_mod:get_opt(
                  {ldap_uids, Host}, Opts,

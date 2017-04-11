@@ -570,7 +570,7 @@ route_unacked_stanzas(_State) ->
 						  {error, binary(), non_neg_integer()}.
 inherit_session_state(#{user := U, server := S,
 			mgmt_queue_type := QueueType} = State, ResumeID) ->
-    case aux:base64_to_term(ResumeID) of
+    case misc:base64_to_term(ResumeID) of
 	{term, {R, Time}} ->
 	    case ejabberd_sm:get_session_pid(U, S, R) of
 		none ->
@@ -627,7 +627,7 @@ resume_session({Time, Pid}, _State) ->
 
 -spec make_resume_id(state()) -> binary().
 make_resume_id(#{sid := {Time, _}, resource := Resource}) ->
-    aux:term_to_base64({Resource, Time}).
+    misc:term_to_base64({Resource, Time}).
 
 -spec add_resent_delay_info(state(), stanza(), erlang:timestamp()) -> stanza();
 			   (state(), xmlel(), erlang:timestamp()) -> xmlel().

@@ -450,10 +450,10 @@ prepare_room_info(Room_info) ->
     [NameHost,
      integer_to_binary(Num_participants),
      Ts_last_message,
-     aux:atom_to_binary(Public),
-     aux:atom_to_binary(Persistent),
-     aux:atom_to_binary(Logging),
-     aux:atom_to_binary(Just_created),
+     misc:atom_to_binary(Public),
+     misc:atom_to_binary(Persistent),
+     misc:atom_to_binary(Logging),
+     misc:atom_to_binary(Just_created),
      Title].
 
 
@@ -823,7 +823,7 @@ change_room_option(Name, Service, OptionString, ValueString) ->
     end.
 
 format_room_option(OptionString, ValueString) ->
-    Option = aux:binary_to_atom(OptionString),
+    Option = misc:binary_to_atom(OptionString),
     Value = case Option of
 		title -> ValueString;
 		description -> ValueString;
@@ -831,7 +831,7 @@ format_room_option(OptionString, ValueString) ->
 		subject ->ValueString;
 		subject_author ->ValueString;
 		max_users -> binary_to_integer(ValueString);
-		_ -> aux:binary_to_atom(ValueString)
+		_ -> misc:binary_to_atom(ValueString)
 	    end,
     {Option, Value}.
 
@@ -892,9 +892,9 @@ get_room_options(Pid) ->
     get_options(Config).
 
 get_options(Config) ->
-    Fields = [aux:atom_to_binary(Field) || Field <- record_info(fields, config)],
+    Fields = [misc:atom_to_binary(Field) || Field <- record_info(fields, config)],
     [config | ValuesRaw] = tuple_to_list(Config),
-    Values = lists:map(fun(V) when is_atom(V) -> aux:atom_to_binary(V);
+    Values = lists:map(fun(V) when is_atom(V) -> misc:atom_to_binary(V);
                           (V) when is_integer(V) -> integer_to_binary(V);
                           (V) when is_tuple(V); is_list(V) -> list_to_binary(hd(io_lib:format("~w", [V])));
                           (V) -> V end, ValuesRaw),
@@ -936,7 +936,7 @@ get_room_affiliations(Name, Service) ->
 %% If the affiliation is 'none', the action is to remove,
 %% In any other case the action will be to create the affiliation.
 set_room_affiliation(Name, Service, JID, AffiliationString) ->
-    Affiliation = aux:binary_to_atom(AffiliationString),
+    Affiliation = misc:binary_to_atom(AffiliationString),
     case mod_muc:find_online_room(Name, Service) of
 	{ok, Pid} ->
 	    %% Get the PID for the online room so we can get the state of the room
