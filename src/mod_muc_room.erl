@@ -3741,6 +3741,19 @@ process_iq_mucsub(From,
 	    SD2 = StateData#state{config = (StateData#state.config)#config{allow_subscription = true}},
 	    add_new_user(From, Nick, Packet, SD2)
     end;
+process_iq_mucsub(From, #iq{type = set, lang = Lang,
+			    sub_els = [#muc_unsubscribe{jid = UnsubJid}]},
+		  StateData) when UnsubJid /= <<>> ->
+    FAffiliation = get_affiliation(From, StateData),
+    FRole = get_role(From, StateData),
+    if FRole == moderator; FAffiliation == owner; FAffiliation == admin ->
+	    FromUnsub = jid:from_string(UnsubJid),
+	    process_iq_mucsub(FromUnsub, #iq{type = set, sub_els = [#muc_unsubscribe{jid = <<>>}]},
+			  StateData);
+       true ->
+	    Txt = <<"Moderator privileges required">>,
+	    {error, xmpp:err_forbidden(Txt, Lang)}
+    end;
 process_iq_mucsub(From, #iq{type = set, sub_els = [#muc_unsubscribe{}]},
 		  StateData) ->
     LBareJID = jid:tolower(jid:remove_resource(From)),
