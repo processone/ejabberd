@@ -162,11 +162,12 @@ close_session(SID, User, Server, Resource) ->
     LServer = jid:nameprep(Server),
     LResource = jid:resourceprep(Resource),
     Mod = get_sm_backend(LServer),
-    Info = case get_sessions(Mod, LUser, LServer, LResource) of
-	       [#session{info = I} = Session|_] ->
+    Sessions = get_sessions(Mod, LUser, LServer, LResource),
+    Info = case lists:keyfind(SID, #session.sid, Sessions) of
+	       #session{info = I} = Session ->
 		   delete_session(Mod, Session),
 		   I;
-	       [] ->
+	       _ ->
 		   []
 	   end,
     JID = jid:make(User, Server, Resource),
@@ -472,7 +473,8 @@ host_down(Host) ->
     Mod = get_sm_backend(Host),
     lists:foreach(
       fun(#session{sid = {_, Pid}}) when node(Pid) == node() ->
-	      ejabberd_c2s:send(Pid, xmpp:serr_system_shutdown());
+	      ejabberd_c2s:send(Pid, xmpp:serr_system_shutdown()),
+	      ejabberd_c2s:stop(Pid);
 	 (_) ->
 	      ok
       end, get_sessions(Mod, Host)),
