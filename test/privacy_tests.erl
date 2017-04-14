@@ -219,7 +219,8 @@ malformed_set(Config) ->
 				    #privacy_list{name = <<"2">>}]},
 	    #block{},
 	    #block_list{},
-	    #block_list{items = [jid:make(randoms:get_string())]}]).
+	    #block_list{items = [jid:make(randoms:get_string())]}]),
+    disconnect(Config).
 
 malformed_type_value(Config) ->
     Item = #privacy_item{order = 0, action = deny},
