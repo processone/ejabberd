@@ -268,7 +268,7 @@ is_my_route(Domain) ->
 	error ->
 	    erlang:error({invalid_domain, Domain});
 	LDomain ->
-	    lists:member(LDomain, get_all_routes())
+	    find_routes(LDomain) /= []
     end.
 
 -spec is_my_host(binary()) -> boolean().

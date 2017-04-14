@@ -38,6 +38,7 @@
 -record(state, {}).
 
 -define(ROUTES_KEY, <<"ejabberd:routes">>).
+-define(DOMAINS_KEY, <<"ejabberd:domains">>).
 
 %%%===================================================================
 %%% API
@@ -61,7 +62,12 @@ register_route(Domain, ServerHost, LocalHint, _, Pid) ->
     case ejabberd_redis:multi(
 	   fun() ->
 		   ejabberd_redis:hset(DomKey, PidKey, T),
-		   ejabberd_redis:sadd(?ROUTES_KEY, [Domain])
+		   ejabberd_redis:sadd(?DOMAINS_KEY, [Domain]),
+		   if Domain /= ServerHost ->
+			   ejabberd_redis:sadd(?ROUTES_KEY, [Domain]);
+		      true ->
+			   ok
+		   end
 	   end) of
 	{ok, _} ->
 	    ok;
@@ -80,7 +86,8 @@ unregister_route(Domain, _, Pid) ->
 			{ok, _} = ejabberd_redis:multi(
 				    fun() ->
 					    ejabberd_redis:del([DomKey]),
-					    ejabberd_redis:srem(?ROUTES_KEY, [Domain])
+					    ejabberd_redis:srem(?ROUTES_KEY, [Domain]),
+					    ejabberd_redis:srem(?DOMAINS_KEY, [Domain])
 				    end),
 			ok;
 		   true ->
@@ -106,6 +113,14 @@ get_all_routes() ->
     case ejabberd_redis:smembers(?ROUTES_KEY) of
 	{ok, Routes} ->
 	    {ok, Routes};
+	_ ->
+	    {error, db_failure}
+    end.
+
+get_all_domains() ->
+    case ejabberd_redis:smembers(?DOMAINS_KEY) of
+	{ok, Domains} ->
+	    {ok, Domains};
 	_ ->
 	    {error, db_failure}
     end.
@@ -147,7 +162,7 @@ clean_table() ->
       end, find_routes()).
 
 find_routes() ->
-    case get_all_routes() of
+    case get_all_domains() of
 	{ok, Domains} ->
 	    lists:flatmap(
 	      fun(Domain) ->
