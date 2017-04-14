@@ -444,7 +444,8 @@ process_invalid_xml(#{lang := MyLang} = State, El, Reason) ->
 process_stream_end(_, #{stream_state := disconnected} = State) ->
     State;
 process_stream_end(Reason, #{mod := Mod} = State) ->
-    State1 = send_trailer(State),
+    State1 = State#{stream_timeout => infinity,
+		    stream_state => disconnected},
     try Mod:handle_stream_end(Reason, State1)
     catch _:undef -> stop(State1)
     end.
@@ -745,14 +746,16 @@ send_error(State, Pkt, Err) ->
 
 -spec socket_send(state(), xmpp_element() | xmlel() | trailer) -> ok | {error, inet:posix()}.
 socket_send(#{sockmod := SockMod, socket := Socket, xmlns := NS,
-	      stream_state := StateName}, Pkt) when StateName /= disconnected ->
+	      stream_state := StateName}, Pkt) ->
     case Pkt of
 	trailer ->
 	    SockMod:send_trailer(Socket);
-	#stream_start{} ->
+	#stream_start{} when StateName /= disconnected ->
 	    SockMod:send_header(Socket, xmpp:encode(Pkt));
+	_ when StateName /= disconnected ->
+	    SockMod:send_element(Socket, xmpp:encode(Pkt, NS));
 	_ ->
-	    SockMod:send_element(Socket, xmpp:encode(Pkt, NS))
+	    {error, closed}
     end;
 socket_send(_, _) ->
     {error, closed}.
@@ -763,8 +766,6 @@ send_trailer(State) ->
     close_socket(State).
 
 -spec close_socket(state()) -> state().
-close_socket(#{stream_state := disconnected} = State) ->
-    State;
 close_socket(State) ->
     case State of
 	#{sockmod := SockMod, socket := Socket} ->
