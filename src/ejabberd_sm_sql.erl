@@ -148,7 +148,7 @@ timestamp_to_now(I) ->
     Head = I div 1000000,
     USec = I rem 1000000,
     MSec = Head div 1000000,
-    Sec = Head div 1000000,
+    Sec = Head rem 1000000,
     {MSec, Sec, USec}.
 
 dec_priority(Prio) ->
