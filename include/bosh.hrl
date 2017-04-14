@@ -47,3 +47,5 @@
 
 -define(HEADER(CType),
 	[CType, ?AC_ALLOW_ORIGIN, ?AC_ALLOW_HEADERS]).
+
+-define(BOSH_CACHE, bosh_cache).

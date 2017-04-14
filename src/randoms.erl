@@ -27,7 +27,7 @@
 
 -author('alexey@process-one.net').
 
--export([get_string/0, uniform/0, uniform/1, bytes/1]).
+-export([get_string/0, uniform/0, uniform/1, uniform/2, bytes/1]).
 
 -define(THRESHOLD, 16#10000000000000000).
 
@@ -40,6 +40,9 @@ uniform() ->
 
 uniform(N) ->
     crypto:rand_uniform(1, N+1).
+
+uniform(N, M) ->
+    crypto:rand_uniform(N, M+1).
 
 -ifdef(STRONG_RAND_BYTES).
 bytes(N) ->

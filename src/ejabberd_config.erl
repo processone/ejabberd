@@ -37,7 +37,8 @@
 	 env_binary_to_list/2, opt_type/1, may_hide_data/1,
 	 is_elixir_enabled/0, v_dbs/1, v_dbs_mods/1,
 	 default_db/1, default_db/2, default_ram_db/1, default_ram_db/2,
-	 default_queue_type/1, queue_dir/0, fsm_limit_opts/1]).
+	 default_queue_type/1, queue_dir/0, fsm_limit_opts/1,
+	 use_cache/1, cache_size/1, cache_missed/1, cache_life_time/1]).
 
 -export([start/2]).
 
@@ -1460,9 +1461,24 @@ opt_type(queue_dir) ->
     fun iolist_to_binary/1;
 opt_type(queue_type) ->
     fun(ram) -> ram; (file) -> file end;
+opt_type(use_cache) ->
+    fun(B) when is_boolean(B) -> B end;
+opt_type(cache_size) ->
+    fun(I) when is_integer(I), I>0 -> I;
+       (infinity) -> infinity;
+       (unlimited) -> infinity
+    end;
+opt_type(cache_missed) ->
+    fun(B) when is_boolean(B) -> B end;
+opt_type(cache_life_time) ->
+    fun(I) when is_integer(I), I>0 -> I;
+       (infinity) -> infinity;
+       (unlimited) -> infinity
+    end;
 opt_type(_) ->
     [hide_sensitive_log_data, hosts, language, max_fsm_queue,
-     default_db, default_ram_db, queue_type, queue_dir, loglevel].
+     default_db, default_ram_db, queue_type, queue_dir, loglevel,
+     use_cache, cache_size, cache_missed, cache_life_time].
 
 -spec may_hide_data(any()) -> any().
 may_hide_data(Data) ->
@@ -1499,3 +1515,20 @@ queue_dir() ->
 -spec default_queue_type(binary()) -> ram | file.
 default_queue_type(Host) ->
     get_option({queue_type, Host}, opt_type(queue_type), ram).
+
+-spec use_cache(binary() | global) -> boolean().
+use_cache(Host) ->
+    get_option({use_cache, Host}, opt_type(use_cache), true).
+
+-spec cache_size(binary() | global) -> pos_integer() | infinity.
+cache_size(Host) ->
+    get_option({cache_size, Host}, opt_type(cache_size), 1000).
+
+-spec cache_missed(binary() | global) -> boolean().
+cache_missed(Host) ->
+    get_option({cache_missed, Host}, opt_type(cache_missed), true).
+
+-spec cache_life_time(binary() | global) -> pos_integer() | infinity.
+%% NOTE: the integer value returned is in *seconds*
+cache_life_time(Host) ->
+    get_option({cache_life_time, Host}, opt_type(cache_life_time), 3600).

@@ -26,7 +26,8 @@
 -module(ejabberd_cluster).
 
 %% API
--export([get_nodes/0, call/4, multicall/3, multicall/4]).
+-export([get_nodes/0, call/4, multicall/3, multicall/4,
+	 eval_everywhere/3, eval_everywhere/4]).
 -export([join/1, leave/1, get_known_nodes/0]).
 -export([node_id/0, get_node_by_id/1]).
 
@@ -58,6 +59,18 @@ multicall(Module, Function, Args) ->
 
 multicall(Nodes, Module, Function, Args) ->
     rpc:multicall(Nodes, Module, Function, Args, 5000).
+
+-spec eval_everywhere(module(), atom(), [any()]) -> ok.
+
+eval_everywhere(Module, Function, Args) ->
+    eval_everywhere(get_nodes(), Module, Function, Args),
+    ok.
+
+-spec eval_everywhere([node()], module(), atom(), [any()]) -> ok.
+
+eval_everywhere(Nodes, Module, Function, Args) ->
+    rpc:eval_everywhere(Nodes, Module, Function, Args),
+    ok.
 
 -spec join(node()) -> ok | {error, any()}.
 

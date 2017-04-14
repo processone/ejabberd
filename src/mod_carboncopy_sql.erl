@@ -49,7 +49,7 @@ enable(LUser, LServer, LResource, NS) ->
 	    ok;
 	Err ->
 	    ?ERROR_MSG("failed to update 'carboncopy' table: ~p", [Err]),
-	    Err
+	    {error, db_failure}
     end.
 
 disable(LUser, LServer, LResource) ->
@@ -61,19 +61,20 @@ disable(LUser, LServer, LResource) ->
 	    ok;
 	Err ->
 	    ?ERROR_MSG("failed to delete from 'carboncopy' table: ~p", [Err]),
-	    Err
+	    {error, db_failure}
     end.
 
 list(LUser, LServer) ->
     case ejabberd_sql:sql_query(
 	   LServer,
-	   ?SQL("select @(resource)s, @(namespace)s from carboncopy "
+	   ?SQL("select @(resource)s, @(namespace)s, @(node)s from carboncopy "
 		"where username=%(LUser)s")) of
 	{selected, Rows} ->
-	    Rows;
+	    {ok, [{Resource, NS, binary_to_atom(Node, latin1)}
+		  || {Resource, NS, Node} <- Rows]};
 	Err ->
 	    ?ERROR_MSG("failed to select from 'carboncopy' table: ~p", [Err]),
-	    []
+	    {error, db_failure}
     end.
 
 %%%===================================================================
@@ -89,5 +90,5 @@ clean_table(LServer) ->
 	    ok;
 	Err ->
 	    ?ERROR_MSG("failed to clean 'carboncopy' table: ~p", [Err]),
-	    Err
+	    {error, db_failure}
     end.

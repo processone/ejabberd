@@ -22,3 +22,5 @@
 -record(carboncopy, {us       :: {binary(), binary()} | matchspec_atom(), 
 		     resource :: binary() | matchspec_atom(),
 		     version  :: binary() | matchspec_atom()}).
+
+-define(CARBONCOPY_CACHE, carboncopy_cache).

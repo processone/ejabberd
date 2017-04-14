@@ -49,7 +49,8 @@
 	 get_all_routes/0,
 	 is_my_route/1,
 	 is_my_host/1,
-	 find_routes/0,
+	 clean_cache/1,
+	 config_reloaded/0,
 	 get_backend/0]).
 
 -export([start_link/0]).
@@ -70,12 +71,8 @@
 -callback register_route(binary(), binary(), local_hint(),
 			 undefined | pos_integer(), pid()) -> ok | {error, term()}.
 -callback unregister_route(binary(), undefined | pos_integer(), pid()) -> ok | {error, term()}.
--callback find_routes(binary()) -> [#route{}].
--callback find_routes() -> [#route{}].
--callback host_of_route(binary()) -> {ok, binary()} | error.
--callback is_my_route(binary()) -> boolean().
--callback is_my_host(binary()) -> boolean().
--callback get_all_routes() -> [binary()].
+-callback find_routes(binary()) -> {ok, [#route{}]} | {error, any()}.
+-callback get_all_routes() -> {ok, [binary()]} | {error, any()}.
 
 -record(state, {}).
 
@@ -159,7 +156,8 @@ register_route(Domain, ServerHost, LocalHint, Pid) ->
 	    case Mod:register_route(LDomain, LServerHost, LocalHint,
 				    get_component_number(LDomain), Pid) of
 		ok ->
-		    ?DEBUG("Route registered: ~s", [LDomain]);
+		    ?DEBUG("Route registered: ~s", [LDomain]),
+		    delete_cache(Mod, LDomain);
 		{error, Err} ->
 		    ?ERROR_MSG("Failed to register route ~s: ~p",
 			       [LDomain, Err])
@@ -186,7 +184,8 @@ unregister_route(Domain, Pid) ->
 	    case Mod:unregister_route(
 		   LDomain, get_component_number(LDomain), Pid) of
 		ok ->
-		    ?DEBUG("Route unregistered: ~s", [LDomain]);
+		    ?DEBUG("Route unregistered: ~s", [LDomain]),
+		    delete_cache(Mod, LDomain);
 		{error, Err} ->
 		    ?ERROR_MSG("Failed to unregister route ~s: ~p",
 			       [LDomain, Err])
@@ -199,15 +198,55 @@ unregister_routes(Domains) ->
 		  end,
 		  Domains).
 
+-spec find_routes(binary()) -> [#route{}].
+find_routes(Domain) ->
+    Mod = get_backend(),
+    case use_cache(Mod) of
+	true ->
+	    case ets_cache:lookup(
+		   ?ROUTES_CACHE, {route, Domain},
+		   fun() ->
+			   case Mod:find_routes(Domain) of
+			       {ok, Rs} when Rs /= [] ->
+				   {ok, Rs};
+			       _ ->
+				   error
+			   end
+		   end) of
+		{ok, Rs} -> Rs;
+		error -> []
+	    end;
+	false ->
+	    case Mod:find_routes(Domain) of
+		{ok, Rs} -> Rs;
+		_ -> []
+	    end
+    end.
+
 -spec get_all_routes() -> [binary()].
 get_all_routes() ->
     Mod = get_backend(),
-    Mod:get_all_routes().
-
--spec find_routes() -> [#route{}].
-find_routes() ->
-    Mod = get_backend(),
-    Mod:find_routes().
+    case use_cache(Mod) of
+	true ->
+	    case ets_cache:lookup(
+		   ?ROUTES_CACHE, routes,
+		   fun() ->
+			   case Mod:get_all_routes() of
+			       {ok, Rs} when Rs /= [] ->
+				   {ok, Rs};
+			       _ ->
+				   error
+			   end
+		   end) of
+		{ok, Rs} -> Rs;
+		error -> []
+	    end;
+	false ->
+	    case Mod:get_all_routes() of
+		{ok, Rs} -> Rs;
+		_ -> []
+	    end
+    end.
 
 -spec host_of_route(binary()) -> binary().
 host_of_route(Domain) ->
@@ -215,10 +254,11 @@ host_of_route(Domain) ->
 	error ->
 	    erlang:error({invalid_domain, Domain});
 	LDomain ->
-	    Mod = get_backend(),
-	    case Mod:host_of_route(LDomain) of
-		{ok, ServerHost} -> ServerHost;
-		error -> erlang:error({unregistered_route, Domain})
+	    case find_routes(LDomain) of
+		[#route{server_host = ServerHost}|_] ->
+		    ServerHost;
+		_ ->
+		    erlang:error({unregistered_route, Domain})
 	    end
     end.
 
@@ -228,8 +268,7 @@ is_my_route(Domain) ->
 	error ->
 	    erlang:error({invalid_domain, Domain});
 	LDomain ->
-	    Mod = get_backend(),
-	    Mod:is_my_route(LDomain)
+	    lists:member(LDomain, get_all_routes())
     end.
 
 -spec is_my_host(binary()) -> boolean().
@@ -238,8 +277,10 @@ is_my_host(Domain) ->
 	error ->
 	    erlang:error({invalid_domain, Domain});
 	LDomain ->
-	    Mod = get_backend(),
-	    Mod:is_my_host(LDomain)
+	    case find_routes(LDomain) of
+		[#route{server_host = LDomain}|_] -> true;
+		_ -> false
+	    end
     end.
 
 -spec process_iq(iq()) -> any().
@@ -250,12 +291,20 @@ process_iq(#iq{to = To} = IQ) ->
 	    ejabberd_sm:process_iq(IQ)
     end.
 
+-spec config_reloaded() -> ok.
+config_reloaded() ->
+    Mod = get_backend(),
+    init_cache(Mod).
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
 init([]) ->
+    ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),
     Mod = get_backend(),
+    init_cache(Mod),
     Mod:init(),
+    clean_cache(),
     {ok, #state{}}.
 
 handle_call(_Request, _From, State) ->
@@ -273,7 +322,7 @@ handle_info(Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
-    ok.
+    ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50).
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
@@ -290,8 +339,7 @@ do_route(OrigPacket) ->
 	Packet ->
 	    To = xmpp:get_to(Packet),
 	    LDstDomain = To#jid.lserver,
-	    Mod = get_backend(),
-	    case Mod:find_routes(LDstDomain) of
+	    case find_routes(LDstDomain) of
 		[] ->
 		    ejabberd_s2s:route(Packet);
 		[Route] ->
@@ -366,6 +414,80 @@ get_backend() ->
 	     end,
     list_to_atom("ejabberd_router_" ++ atom_to_list(DBType)).
 
+-spec cache_nodes(module()) -> [node()].
+cache_nodes(Mod) ->
+    case erlang:function_exported(Mod, cache_nodes, 0) of
+	true -> Mod:cache_nodes();
+	false -> ejabberd_cluster:get_nodes()
+    end.
+
+-spec use_cache(module()) -> boolean().
+use_cache(Mod) ->
+    case erlang:function_exported(Mod, use_cache, 0) of
+	true -> Mod:use_cache();
+	false ->
+	    ejabberd_config:get_option(
+	      router_use_cache, opt_type(router_use_cache),
+	      ejabberd_config:use_cache(global))
+    end.
+
+-spec delete_cache(module(), binary()) -> ok.
+delete_cache(Mod, Domain) ->
+    case use_cache(Mod) of
+	true ->
+	    ets_cache:delete(?ROUTES_CACHE, {route, Domain}, cache_nodes(Mod)),
+	    ets_cache:delete(?ROUTES_CACHE, routes, cache_nodes(Mod));
+	false ->
+	    ok
+    end.
+
+-spec init_cache(module()) -> ok.
+init_cache(Mod) ->
+    case use_cache(Mod) of
+	true ->
+	    ets_cache:new(?ROUTES_CACHE, cache_opts());
+	false ->
+	    ets_cache:delete(?ROUTES_CACHE)
+    end.
+
+-spec cache_opts() -> [proplists:property()].
+cache_opts() ->
+    MaxSize = ejabberd_config:get_option(
+		router_cache_size,
+		opt_type(router_cache_size),
+		ejabberd_config:cache_size(global)),
+    CacheMissed = ejabberd_config:get_option(
+		    router_cache_missed,
+		    opt_type(router_cache_missed),
+		    ejabberd_config:cache_missed(global)),
+    LifeTime = case ejabberd_config:get_option(
+		      router_cache_life_time,
+		      opt_type(router_cache_life_time),
+		      ejabberd_config:cache_life_time(global)) of
+		   infinity -> infinity;
+		   I -> timer:seconds(I)
+	       end,
+    [{max_size, MaxSize}, {cache_missed, CacheMissed}, {life_time, LifeTime}].
+
+-spec clean_cache(node()) -> ok.
+clean_cache(Node) ->
+    ets_cache:filter(
+      ?ROUTES_CACHE,
+      fun(_, error) ->
+	      false;
+	 (routes, _) ->
+	      false;
+	 ({route, _}, {ok, Rs}) ->
+	      not lists:any(
+		    fun(#route{pid = Pid}) ->
+			    node(Pid) == Node
+		    end, Rs)
+      end).
+
+-spec clean_cache() -> ok.
+clean_cache() ->
+    ejabberd_cluster:eval_everywhere(?MODULE, clean_cache, [node()]).
+
 opt_type(domain_balancing) ->
     fun (random) -> random;
 	(source) -> source;
@@ -376,6 +498,14 @@ opt_type(domain_balancing) ->
 opt_type(domain_balancing_component_number) ->
     fun (N) when is_integer(N), N > 1 -> N end;
 opt_type(router_db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
+opt_type(O) when O == router_use_cache; O == router_cache_missed ->
+    fun(B) when is_boolean(B) -> B end;
+opt_type(O) when O == router_cache_size; O == router_cache_life_time ->
+    fun(I) when is_integer(I), I>0 -> I;
+       (unlimited) -> infinity;
+       (infinity) -> infinity
+    end;
 opt_type(_) ->
     [domain_balancing, domain_balancing_component_number,
-     router_db_type].
+     router_db_type, router_use_cache, router_cache_size,
+     router_cache_missed, router_cache_life_time].

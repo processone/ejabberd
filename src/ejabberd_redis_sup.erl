@@ -136,7 +136,7 @@ get_pool_size() ->
     ejabberd_config:get_option(
       redis_pool_size,
       fun(N) when is_integer(N), N >= 1 -> N end,
-      ?DEFAULT_POOL_SIZE).
+      ?DEFAULT_POOL_SIZE) + 1.
 
 iolist_to_list(IOList) ->
     binary_to_list(iolist_to_binary(IOList)).

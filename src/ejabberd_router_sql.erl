@@ -27,8 +27,7 @@
 
 %% API
 -export([init/0, register_route/5, unregister_route/3, find_routes/1,
-	 host_of_route/1, is_my_route/1, is_my_host/1, get_all_routes/0,
-	 find_routes/0]).
+	 get_all_routes/0]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -64,18 +63,22 @@ register_route(Domain, ServerHost, LocalHint, _, Pid) ->
 	    ok;
 	Err ->
 	    ?ERROR_MSG("failed to update 'route' table: ~p", [Err]),
-	    {error, Err}
+	    {error, db_failure}
     end.
 
 unregister_route(Domain, _, Pid) ->
     PidS = misc:encode_pid(Pid),
     Node = erlang:atom_to_binary(node(Pid), latin1),
-    ejabberd_sql:sql_query(
-      ?MYNAME,
-      ?SQL("delete from route where domain=%(Domain)s "
-	   "and pid=%(PidS)s and node=%(Node)s")),
-    %% TODO: return meaningful error
-    ok.
+    case ejabberd_sql:sql_query(
+	   ?MYNAME,
+	   ?SQL("delete from route where domain=%(Domain)s "
+		"and pid=%(PidS)s and node=%(Node)s")) of
+	{updated, _} ->
+	    ok;
+	Err ->
+	    ?ERROR_MSG("failed to delete from 'route' table: ~p", [Err]),
+	    {error, db_failure}
+    end.
 
 find_routes(Domain) ->
     case ejabberd_sql:sql_query(
@@ -83,61 +86,24 @@ find_routes(Domain) ->
 	   ?SQL("select @(server_host)s, @(node)s, @(pid)s, @(local_hint)s "
 		"from route where domain=%(Domain)s")) of
 	{selected, Rows} ->
-	    lists:flatmap(
-	      fun(Row) ->
-		      row_to_route(Domain, Row)
-	      end, Rows);
+	    {ok, lists:flatmap(
+		   fun(Row) ->
+			   row_to_route(Domain, Row)
+		   end, Rows)};
 	Err ->
 	    ?ERROR_MSG("failed to select from 'route' table: ~p", [Err]),
-	    {error, Err}
+	    {error, db_failure}
     end.
-
-host_of_route(Domain) ->
-    case ejabberd_sql:sql_query(
-	   ?MYNAME,
-	   ?SQL("select @(server_host)s from route where domain=%(Domain)s")) of
-	{selected, [{ServerHost}|_]} ->
-	    {ok, ServerHost};
-	{selected, []} ->
-	    error;
-	Err ->
-	    ?ERROR_MSG("failed to select from 'route' table: ~p", [Err]),
-	    error
-    end.
-
-is_my_route(Domain) ->
-    case host_of_route(Domain) of
-	{ok, _} -> true;
-	_ -> false
-    end.
-
-is_my_host(Domain) ->
-    {ok, Domain} == host_of_route(Domain).
 
 get_all_routes() ->
     case ejabberd_sql:sql_query(
 	   ?MYNAME,
 	   ?SQL("select @(domain)s from route where domain <> server_host")) of
 	{selected, Domains} ->
-	    [Domain || {Domain} <- Domains];
+	    {ok, [Domain || {Domain} <- Domains]};
 	Err ->
 	    ?ERROR_MSG("failed to select from 'route' table: ~p", [Err]),
-	    []
-    end.
-
-find_routes() ->
-    case ejabberd_sql:sql_query(
-	   ?MYNAME,
-	   ?SQL("select @(domain)s, @(server_host)s, @(node)s, @(pid)s, "
-		"@(local_hint)s from route")) of
-	{selected, Rows} ->
-	    lists:flatmap(
-	      fun({Domain, ServerHost, Node, Pid, LocalHint}) ->
-		      row_to_route(Domain, {ServerHost, Node, Pid, LocalHint})
-	      end, Rows);
-	Err ->
-	    ?ERROR_MSG("failed to select from 'route' table: ~p", [Err]),
-	    []
+	    {error, db_failure}
     end.
 
 %%%===================================================================

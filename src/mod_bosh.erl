@@ -34,7 +34,7 @@
 
 -export([start_link/0]).
 -export([start/2, stop/1, reload/3, process/2, open_session/2,
-	 close_session/1, find_session/1]).
+	 close_session/1, find_session/1, clean_cache/1]).
 
 -export([depends/2, mod_opt_type/1]).
 
@@ -46,9 +46,13 @@
 -include("bosh.hrl").
 
 -callback init() -> any().
--callback open_session(binary(), pid()) -> any().
--callback close_session(binary()) -> any().
--callback find_session(binary()) -> {ok, pid()} | error.
+-callback open_session(binary(), pid()) -> ok | {error, any()}.
+-callback close_session(binary()) -> ok | {error, any()}.
+-callback find_session(binary()) -> {ok, pid()} | {error, any()}.
+-callback use_cache() -> boolean().
+-callback cache_nodes() -> [node()].
+
+-optional_callbacks([use_cache/0, cache_nodes/0]).
 
 %%%----------------------------------------------------------------------
 %%% API
@@ -76,22 +80,48 @@ process(_Path, _Request) ->
      #xmlel{name = <<"h1">>, attrs = [],
 	    children = [{xmlcdata, <<"400 Bad Request">>}]}}.
 
+-spec open_session(binary(), pid()) -> ok | {error, any()}.
 open_session(SID, Pid) ->
     Mod = gen_mod:ram_db_mod(global, ?MODULE),
-    Mod:open_session(SID, Pid).
+    case Mod:open_session(SID, Pid) of
+	ok ->
+	    delete_cache(Mod, SID);
+	{error, _} = Err ->
+	    Err
+    end.
 
+-spec close_session(binary()) -> ok.
 close_session(SID) ->
     Mod = gen_mod:ram_db_mod(global, ?MODULE),
-    Mod:close_session(SID).
+    Mod:close_session(SID),
+    delete_cache(Mod, SID).
 
+-spec find_session(binary()) -> {ok, pid()} | error.
 find_session(SID) ->
     Mod = gen_mod:ram_db_mod(global, ?MODULE),
-    Mod:find_session(SID).
+    case use_cache(Mod) of
+	true ->
+	    ets_cache:lookup(
+	      ?BOSH_CACHE, SID,
+	      fun() ->
+		      case Mod:find_session(SID) of
+			  {ok, Pid} -> {ok, Pid};
+			  {error, _} -> error
+		      end
+	      end);
+	false ->
+	    case Mod:find_session(SID) of
+		{ok, Pid} -> {ok, Pid};
+		{error, _} -> error
+	    end
+    end.
 
 start(Host, Opts) ->
     start_jiffy(Opts),
     Mod = gen_mod:ram_db_mod(global, ?MODULE),
+    init_cache(Mod),
     Mod:init(),
+    clean_cache(),
     TmpSup = gen_mod:get_module_proc(Host, ?MODULE),
     TmpSupSpec = {TmpSup,
 		  {ejabberd_tmp_sup, start_link, [TmpSup, ejabberd_bosh]},
@@ -106,6 +136,7 @@ stop(Host) ->
 reload(_Host, NewOpts, _OldOpts) ->
     start_jiffy(NewOpts),
     Mod = gen_mod:ram_db_mod(global, ?MODULE),
+    init_cache(Mod),
     Mod:init(),
     ok.
 
@@ -160,9 +191,87 @@ mod_opt_type(ram_db_type) ->
     fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(queue_type) ->
     fun(ram) -> ram; (file) -> file end;
+mod_opt_type(O) when O == use_cache; O == cache_missed ->
+    fun(B) when is_boolean(B) -> B end;
+mod_opt_type(O) when O == cache_size; O == cache_life_time ->
+    fun(I) when is_integer(I), I>0 -> I;
+       (unlimited) -> infinity;
+       (infinity) -> infinity
+    end;
 mod_opt_type(_) ->
     [json, max_concat, max_inactivity, max_pause, prebind, ram_db_type,
-     queue_type].
+     queue_type, use_cache, cache_size, cache_missed, cache_life_time].
+
+%%%----------------------------------------------------------------------
+%%% Cache stuff
+%%%----------------------------------------------------------------------
+-spec init_cache(module()) -> ok.
+init_cache(Mod) ->
+    case use_cache(Mod) of
+	true ->
+	    ets_cache:new(?BOSH_CACHE, cache_opts());
+	false ->
+	    ets_cache:delete(?BOSH_CACHE)
+    end.
+
+-spec use_cache(module()) -> boolean().
+use_cache(Mod) ->
+    case erlang:function_exported(Mod, use_cache, 0) of
+	true -> Mod:use_cache();
+	false ->
+	    gen_mod:get_module_opt(
+	      global, ?MODULE, use_cache, mod_opt_type(use_cache),
+	      ejabberd_config:use_cache(global))
+    end.
+
+-spec cache_nodes(module()) -> [node()].
+cache_nodes(Mod) ->
+    case erlang:function_exported(Mod, cache_nodes, 0) of
+	true -> Mod:cache_nodes();
+	false -> ejabberd_cluster:get_nodes()
+    end.
+
+-spec delete_cache(module(), binary()) -> ok.
+delete_cache(Mod, SID) ->
+    case use_cache(Mod) of
+	true ->
+	    ets_cache:delete(?BOSH_CACHE, SID, cache_nodes(Mod));
+	false ->
+	    ok
+    end.
+
+-spec cache_opts() -> [proplists:property()].
+cache_opts() ->
+    MaxSize = gen_mod:get_module_opt(
+		global, ?MODULE, cache_size,
+		mod_opt_type(cache_size),
+		ejabberd_config:cache_size(global)),
+    CacheMissed = gen_mod:get_module_opt(
+		    global, ?MODULE, cache_missed,
+		    mod_opt_type(cache_missed),
+		    ejabberd_config:cache_missed(global)),
+    LifeTime = case gen_mod:get_module_opt(
+		      global, ?MODULE, cache_life_time,
+		      mod_opt_type(cache_life_time),
+		      ejabberd_config:cache_life_time(global)) of
+		   infinity -> infinity;
+		   I -> timer:seconds(I)
+	       end,
+    [{max_size, MaxSize}, {cache_missed, CacheMissed}, {life_time, LifeTime}].
+
+-spec clean_cache(node()) -> ok.
+clean_cache(Node) ->
+    ets_cache:filter(
+      ?BOSH_CACHE,
+      fun(_, error) ->
+	      false;
+	 (_, {ok, Pid}) ->
+	      node(Pid) /= Node
+      end).
+
+-spec clean_cache() -> ok.
+clean_cache() ->
+    ejabberd_cluster:eval_everywhere(?MODULE, clean_cache, [node()]).
 
 %%%----------------------------------------------------------------------
 %%% Help Web Page

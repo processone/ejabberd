@@ -25,8 +25,7 @@
 
 %% API
 -export([init/0, register_route/5, unregister_route/3, find_routes/1,
-	 host_of_route/1, is_my_route/1, is_my_host/1, get_all_routes/0,
-	 find_routes/0]).
+	 get_all_routes/0, use_cache/0]).
 %% gen_server callbacks
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2,
 	 terminate/2, code_change/3, start_link/0]).
@@ -53,6 +52,9 @@ init() ->
 -spec start_link() -> {ok, pid()} | {error, any()}.
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+use_cache() ->
+    false.
 
 register_route(Domain, ServerHost, LocalHint, undefined, Pid) ->
     F = fun () ->
@@ -124,37 +126,15 @@ unregister_route(Domain, _, Pid) ->
     transaction(F).
 
 find_routes(Domain) ->
-    mnesia:dirty_read(route, Domain).
-
-host_of_route(Domain) ->
-    case mnesia:dirty_read(route, Domain) of
-	[#route{server_host = ServerHost}|_] ->
-	    {ok, ServerHost};
-	[] ->
-	    error
-    end.
-
-is_my_route(Domain) ->
-    mnesia:dirty_read(route, Domain) /= [].
-
-is_my_host(Domain) ->
-    case mnesia:dirty_read(route, Domain) of
-	[#route{server_host = Host}|_] ->
-	    Host == Domain;
-	[] ->
-	    false
-    end.
+    {ok, mnesia:dirty_read(route, Domain)}.
 
 get_all_routes() ->
-    mnesia:dirty_select(
-      route,
-      ets:fun2ms(
-	fun(#route{domain = Domain, server_host = ServerHost})
-	      when Domain /= ServerHost -> Domain
-	end)).
-
-find_routes() ->
-    ets:tab2list(route).
+    {ok, mnesia:dirty_select(
+	   route,
+	   ets:fun2ms(
+	     fun(#route{domain = Domain, server_host = ServerHost})
+		   when Domain /= ServerHost -> Domain
+	     end))}.
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -227,7 +207,7 @@ transaction(F) ->
 	    ok;
 	{aborted, Reason} ->
 	    ?ERROR_MSG("Mnesia transaction failed: ~p", [Reason]),
-	    {error, Reason}
+	    {error, db_failure}
     end.
 
 -spec update_tables() -> ok.

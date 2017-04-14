@@ -44,13 +44,18 @@ open_session(SID, Pid) ->
 	    ok;
 	Err ->
 	    ?ERROR_MSG("failed to update 'bosh' table: ~p", [Err]),
-	    {error, Err}
+	    {error, db_failure}
     end.
 
 close_session(SID) ->
-    %% TODO: report errors
-    ejabberd_sql:sql_query(
-      ?MYNAME, ?SQL("delete from bosh where sid=%(SID)s")).
+    case ejabberd_sql:sql_query(
+	   ?MYNAME, ?SQL("delete from bosh where sid=%(SID)s")) of
+	{updated, _} ->
+	    ok;
+	Err ->
+	    ?ERROR_MSG("failed to delete from 'bosh' table: ~p", [Err]),
+	    {error, db_failure}
+    end.
 
 find_session(SID) ->
     case ejabberd_sql:sql_query(
@@ -58,13 +63,13 @@ find_session(SID) ->
 	   ?SQL("select @(pid)s, @(node)s from bosh where sid=%(SID)s")) of
 	{selected, [{Pid, Node}]} ->
 	    try	{ok, misc:decode_pid(Pid, Node)}
-	    catch _:{bad_node, _} -> error
+	    catch _:{bad_node, _} -> {error, notfound}
 	    end;
 	{selected, []} ->
-	    error;
+	    {error, notfound};
 	Err ->
 	    ?ERROR_MSG("failed to select 'bosh' table: ~p", [Err]),
-	    error
+	    {error, db_failure}
     end.
 
 %%%===================================================================

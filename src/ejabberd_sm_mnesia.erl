@@ -29,12 +29,12 @@
 
 %% API
 -export([init/0,
+	 use_cache/1,
 	 set_session/1,
-	 delete_session/4,
+	 delete_session/1,
 	 get_sessions/0,
 	 get_sessions/1,
-	 get_sessions/2,
-	 get_sessions/3]).
+	 get_sessions/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -62,20 +62,17 @@ init() ->
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
+-spec use_cache(binary()) -> boolean().
+use_cache(_LServer) ->
+    false.
+
 -spec set_session(#session{}) -> ok.
 set_session(Session) ->
     mnesia:dirty_write(Session).
 
--spec delete_session(binary(), binary(), binary(), sid()) ->
-			    {ok, #session{}} | {error, notfound}.
-delete_session(_LUser, _LServer, _LResource, SID) ->
-    case mnesia:dirty_read(session, SID) of
-	[Session] ->
-	    mnesia:dirty_delete(session, SID),
-	    {ok, Session};
-	[] ->
-	    {error, notfound}
-    end.
+-spec delete_session(#session{}) -> ok.
+delete_session(#session{sid = SID}) ->
+    mnesia:dirty_delete(session, SID).
 
 -spec get_sessions() -> [#session{}].
 get_sessions() ->
@@ -87,13 +84,9 @@ get_sessions(LServer) ->
 			[{#session{usr = '$1', _ = '_'},
 			  [{'==', {element, 2, '$1'}, LServer}], ['$_']}]).
 
--spec get_sessions(binary(), binary()) -> [#session{}].
+-spec get_sessions(binary(), binary()) -> {ok, [#session{}]}.
 get_sessions(LUser, LServer) ->
-    mnesia:dirty_index_read(session, {LUser, LServer}, #session.us).
-
--spec get_sessions(binary(), binary(), binary()) -> [#session{}].
-get_sessions(LUser, LServer, LResource) ->
-    mnesia:dirty_index_read(session, {LUser, LServer, LResource}, #session.usr).
+    {ok, mnesia:dirty_index_read(session, {LUser, LServer}, #session.us)}.
 
 %%%===================================================================
 %%% gen_server callbacks

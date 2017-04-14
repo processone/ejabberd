@@ -22,23 +22,37 @@
 %%%-------------------------------------------------------------------
 -module(ejabberd_router_redis).
 -behaviour(ejabberd_router).
+-behaviour(gen_server).
 
 %% API
 -export([init/0, register_route/5, unregister_route/3, find_routes/1,
-	 host_of_route/1, is_my_route/1, is_my_host/1, get_all_routes/0,
-	 find_routes/0]).
+	 get_all_routes/0]).
+%% gen_server callbacks
+-export([init/1, handle_cast/2, handle_call/3, handle_info/2,
+	 terminate/2, code_change/3, start_link/0]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("ejabberd_router.hrl").
 
--define(ROUTES_KEY, "ejabberd:routes").
+-record(state, {}).
+
+-define(ROUTES_KEY, <<"ejabberd:routes">>).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 init() ->
-    clean_table().
+    Spec = {?MODULE, {?MODULE, start_link, []},
+	    transient, 5000, worker, [?MODULE]},
+    case supervisor:start_child(ejabberd_backend_sup, Spec) of
+	{ok, _Pid} -> ok;
+	Err -> Err
+    end.
+
+-spec start_link() -> {ok, pid()} | {error, any()}.
+start_link() ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 register_route(Domain, ServerHost, LocalHint, _, Pid) ->
     DomKey = domain_key(Domain),
@@ -83,53 +97,68 @@ find_routes(Domain) ->
     DomKey = domain_key(Domain),
     case ejabberd_redis:hgetall(DomKey) of
 	{ok, Vals} ->
-	    decode_routes(Domain, Vals);
-	{error, _} ->
-	    []
-    end.
-
-host_of_route(Domain) ->
-    DomKey = domain_key(Domain),
-    case ejabberd_redis:hgetall(DomKey) of
-	{ok, [{_Pid, Data}|_]} ->
-	    {ServerHost, _} = binary_to_term(Data),
-	    {ok, ServerHost};
+	    {ok, decode_routes(Domain, Vals)};
 	_ ->
-	    error
+	    {error, db_failure}
     end.
-
-is_my_route(Domain) ->
-    case ejabberd_redis:sismember(?ROUTES_KEY, Domain) of
-	{ok, Bool} ->
-	    Bool;
-	{error, _} ->
-	    false
-    end.
-
-is_my_host(Domain) ->
-    {ok, Domain} == host_of_route(Domain).
 
 get_all_routes() ->
     case ejabberd_redis:smembers(?ROUTES_KEY) of
 	{ok, Routes} ->
-	    Routes;
-	{error, _} ->
-	    []
+	    {ok, Routes};
+	_ ->
+	    {error, db_failure}
     end.
 
-find_routes() ->
-    lists:flatmap(fun find_routes/1, get_all_routes()).
+%%%===================================================================
+%%% gen_server callbacks
+%%%===================================================================
+init([]) ->
+    clean_table(),
+    {ok, #state{}}.
+
+handle_call(_Request, _From, State) ->
+    Reply = ok,
+    {reply, Reply, State}.
+
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+handle_info(Info, State) ->
+    ?ERROR_MSG("unexpected info: ~p", [Info]),
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
+    ok.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 clean_table() ->
+    ?INFO_MSG("Cleaning Redis route entries...", []),
     lists:foreach(
       fun(#route{domain = Domain, pid = Pid}) when node(Pid) == node() ->
 	      unregister_route(Domain, undefined, Pid);
 	 (_) ->
 	      ok
       end, find_routes()).
+
+find_routes() ->
+    case get_all_routes() of
+	{ok, Domains} ->
+	    lists:flatmap(
+	      fun(Domain) ->
+		      case find_routes(Domain) of
+			  {ok, Routes} -> Routes;
+			  {error, _} -> []
+		      end
+	      end, Domains);
+	{error, _} ->
+	    []
+    end.
 
 domain_key(Domain) ->
     <<"ejabberd:route:", Domain/binary>>.
