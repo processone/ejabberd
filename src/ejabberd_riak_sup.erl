@@ -77,15 +77,22 @@ is_riak_configured() ->
     lists:any(fun is_riak_configured/1, ?MYHOSTS).
 
 is_riak_configured(Host) ->
-    ServerConfigured = ejabberd_config:get_option(
-			 {riak_server, Host},
-			 fun(_) -> true end, false),
-    PortConfigured = ejabberd_config:get_option(
-		       {riak_port, Host},
-		       fun(_) -> true end, false),
+    ServerConfigured = ejabberd_config:has_option({riak_server, Host}),
+    PortConfigured = ejabberd_config:has_option({riak_port, Host}),
+    StartIntervalConfigured = ejabberd_config:has_option({riak_start_interval, Host}),
+    PoolConfigured = ejabberd_config:has_option({riak_pool_size, Host}),
+    CacertConfigured = ejabberd_config:has_option({riak_cacertfile, Host}),
+    UserConfigured = ejabberd_config:has_option({riak_username, Host}),
+    PassConfigured = ejabberd_config:has_option({riak_password, Host}),
     AuthConfigured = lists:member(
 		       ejabberd_auth_riak,
 		       ejabberd_auth:auth_modules(Host)),
+    SMConfigured = ejabberd_config:get_option(
+		     {sm_db_type, Host},
+		     ejabberd_sm:opt_type(sm_db_type)) == riak,
+    RouterConfigured = ejabberd_config:get_option(
+			 {router_db_type, Host},
+			 ejabberd_router:opt_type(router_db_type)) == riak,
     Modules = ejabberd_config:get_option(
 		{modules, Host},
 		fun(L) when is_list(L) -> L end, []),
@@ -93,7 +100,10 @@ is_riak_configured(Host) ->
 				   fun({Module, Opts}) ->
 					   gen_mod:db_type(Host, Opts, Module) == riak
 				   end, Modules),
-    ServerConfigured or PortConfigured
+    ServerConfigured or PortConfigured or StartIntervalConfigured
+	or PoolConfigured or CacertConfigured
+	or UserConfigured or PassConfigured
+	or SMConfigured or RouterConfigured
 	or AuthConfigured or ModuleWithRiakDBConfigured.
 
 start_link() ->

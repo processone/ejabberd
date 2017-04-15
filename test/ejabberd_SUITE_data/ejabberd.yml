@@ -308,6 +308,7 @@ Welcome to this XMPP server."
   "riak.localhost":
     queue_type: ram
     auth_method: riak
+    sm_db_type: riak
     modules: 
       mod_announce: 
         db_type: riak
