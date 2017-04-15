@@ -62,14 +62,15 @@ disable(LUser, LServer, LResource) ->
     ToDelete = mnesia:dirty_match_object(
 		 #carboncopy{us = {LUser, LServer},
 			     resource = LResource,
-			     version = '_'}),
+			     _ = '_'}),
     lists:foreach(fun mnesia:dirty_delete_object/1, ToDelete).
 
 list(LUser, LServer) ->
     {ok, mnesia:dirty_select(
 	   carboncopy,
-	   [{#carboncopy{us = {LUser, LServer}, resource = '$2', version = '$3'},
-	     [], [{{'$2','$3', node()}}]}])}.
+	   [{#carboncopy{us = {LUser, LServer}, resource = '$2',
+			 version = '$3', node = '$4'},
+	     [], [{{'$2','$3','$4'}}]}])}.
 
 use_cache(_LServer) ->
     false.

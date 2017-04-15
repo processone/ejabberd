@@ -404,13 +404,15 @@ db_tests(riak) ->
        vcard_tests:single_cases(),
        muc_tests:single_cases(),
        offline_tests:single_cases(),
+       carbons_tests:single_cases(),
        test_unregister]},
      muc_tests:master_slave_cases(),
      privacy_tests:master_slave_cases(),
      roster_tests:master_slave_cases(),
      offline_tests:master_slave_cases(),
      vcard_tests:master_slave_cases(),
-     announce_tests:master_slave_cases()];
+     announce_tests:master_slave_cases(),
+     carbons_tests:master_slave_cases()];
 db_tests(DB) when DB == mnesia; DB == redis ->
     [{single_user, [sequence],
       [test_register,

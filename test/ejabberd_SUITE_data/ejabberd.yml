@@ -334,6 +334,8 @@ Welcome to this XMPP server."
         db_type: riak
       mod_vcard_xupdate:
         db_type: riak
+      mod_carboncopy:
+        ram_db_type: riak
       mod_adhoc: []
       mod_configure: []
       mod_disco: []

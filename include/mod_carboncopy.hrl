@@ -18,9 +18,10 @@
 %%%
 %%%----------------------------------------------------------------------
 
--type matchspec_atom() :: '_' | '$1' | '$2' | '$3'.
+-type matchspec_atom() :: '_' | '$1' | '$2' | '$3' | '$4'.
 -record(carboncopy, {us       :: {binary(), binary()} | matchspec_atom(), 
 		     resource :: binary() | matchspec_atom(),
-		     version  :: binary() | matchspec_atom()}).
+		     version  :: binary() | matchspec_atom(),
+		     node = node() :: node() | matchspec_atom()}).
 
 -define(CARBONCOPY_CACHE, carboncopy_cache).
