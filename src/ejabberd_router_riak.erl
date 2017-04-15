@@ -74,8 +74,8 @@ clean_table() ->
     case ejabberd_riak:get(route, route_schema()) of
 	{ok, Routes} ->
 	    lists:foreach(
-	      fun(#route{pid = Pid}) ->
-		      ejabberd_riak:delete(route, Pid)
+	      fun(#route{domain = Domain, pid = Pid}) ->
+		      ejabberd_riak:delete(route, {Domain, Pid})
 	      end, Routes);
 	{error, Err} ->
 	    ?ERROR_MSG("failed to clean Riak 'route' table: ~p", [Err]),
