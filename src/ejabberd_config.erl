@@ -317,8 +317,6 @@ consult(File) ->
             case file:consult(File) of
                 {ok, Terms} ->
                     {ok, Terms};
-                {error, enoent} ->
-                    {error, enoent};
                 {error, {LineNumber, erl_parse, _ParseMessage} = Reason} ->
                     {error, describe_config_problem(File, Reason, LineNumber)};
                 {error, Reason} ->
