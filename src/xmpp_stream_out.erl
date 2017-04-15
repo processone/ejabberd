@@ -161,22 +161,16 @@ send(_, _) ->
 
 -spec close(pid()) -> ok;
 	   (state()) -> state().
-close(Ref) ->
-    close(Ref, closed).
-
--spec close(pid(), atom()) -> ok;
-	   (state(), atom()) -> state().
-close(Pid, Reason) when is_pid(Pid) ->
-    cast(Pid, {close, Reason});
-close(#{owner := Owner} = State, Reason) when Owner == self() ->
-    case is_disconnected(State) of
-	true -> State;
-	false ->
-	    _IgnoreState = close_socket(State),
-	    process_stream_end({socket, Reason}, State)
-    end;
-close(_, _) ->
+close(Pid) when is_pid(Pid) ->
+    close(Pid, closed);
+close(#{owner := Owner} = State) when Owner == self() ->
+    close_socket(State);
+close(_) ->
     erlang:error(badarg).
+
+-spec close(pid(), atom()) -> ok.
+close(Pid, Reason) ->
+    cast(Pid, {close, Reason}).
 
 -spec establish(state()) -> state().
 establish(State) ->
@@ -306,7 +300,12 @@ handle_cast({send, Pkt}, State) ->
 handle_cast(stop, State) ->
     {stop, normal, State};
 handle_cast({close, Reason}, State) ->
-    noreply(close(State, Reason));
+    State1 = close_socket(State),
+    noreply(
+      case is_disconnected(State) of
+	  true -> State1;
+	  false -> process_stream_end({socket, Reason}, State)
+      end);
 handle_cast(Cast, #{mod := Mod} = State) ->
     noreply(try Mod:handle_cast(Cast, State)
 	    catch _:undef -> State
