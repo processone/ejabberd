@@ -78,7 +78,8 @@ start() ->
                 end,
     State2 = set_option({node_start, global}, UnixTime, State1),
     State3 = set_option({shared_key, global}, SharedKey, State2),
-    set_opts(State3).
+    set_opts(State3),
+    ?INFO_MSG("Loaded configuration from ~s", [ConfigFile]).
 
 %% When starting ejabberd for testing, we sometimes want to start a
 %% subset of hosts from the one define in the config file.
