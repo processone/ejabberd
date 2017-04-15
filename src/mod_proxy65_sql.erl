@@ -37,7 +37,7 @@
 %%%===================================================================
 init() ->
     NodeS = erlang:atom_to_binary(node(), latin1),
-    ?INFO_MSG("Cleaning SQL 'proxy65' table...", []),
+    ?DEBUG("Cleaning SQL 'proxy65' table...", []),
     case ejabberd_sql:sql_query(
 	   ?MYNAME,
 	   ?SQL("delete from proxy65 where "

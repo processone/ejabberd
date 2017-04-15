@@ -82,7 +82,7 @@ list(LUser, LServer) ->
 %%%===================================================================
 clean_table(LServer) ->
     NodeS = erlang:atom_to_binary(node(), latin1),
-    ?INFO_MSG("Cleaning SQL 'carboncopy' table...", []),
+    ?DEBUG("Cleaning SQL 'carboncopy' table...", []),
     case ejabberd_sql:sql_query(
 	   LServer,
 	   ?SQL("delete from carboncopy where node=%(NodeS)s")) of

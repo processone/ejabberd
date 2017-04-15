@@ -70,7 +70,7 @@ route_schema() ->
     {record_info(fields, route), #route{}}.
 
 clean_table() ->
-    ?INFO_MSG("Cleaning Riak 'route' table...", []),
+    ?DEBUG("Cleaning Riak 'route' table...", []),
     case ejabberd_riak:get(route, route_schema()) of
 	{ok, Routes} ->
 	    lists:foreach(

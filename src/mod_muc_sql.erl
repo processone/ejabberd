@@ -330,7 +330,7 @@ import(_, _, _) ->
 %%%===================================================================
 clean_tables(ServerHost) ->
     NodeS = erlang:atom_to_binary(node(), latin1),
-    ?INFO_MSG("Cleaning SQL muc_online_room table...", []),
+    ?DEBUG("Cleaning SQL muc_online_room table...", []),
     case ejabberd_sql:sql_query(
 	   ServerHost,
 	   ?SQL("delete from muc_online_room where node=%(NodeS)s")) of
@@ -340,7 +340,7 @@ clean_tables(ServerHost) ->
 	    ?ERROR_MSG("failed to clean 'muc_online_room' table: ~p", [Err1]),
 	    Err1
     end,
-    ?INFO_MSG("Cleaning SQL muc_online_users table...", []),
+    ?DEBUG("Cleaning SQL muc_online_users table...", []),
     case ejabberd_sql:sql_query(
 	   ServerHost,
 	   ?SQL("delete from muc_online_users where node=%(NodeS)s")) of

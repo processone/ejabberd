@@ -39,7 +39,7 @@
 %%%===================================================================
 init() ->
     Node = erlang:atom_to_binary(node(), latin1),
-    ?INFO_MSG("Cleaning SQL 'route' table...", []),
+    ?DEBUG("Cleaning SQL 'route' table...", []),
     case ejabberd_sql:sql_query(
 	   ?MYNAME, ?SQL("delete from route where node=%(Node)s")) of
 	{updated, _} ->

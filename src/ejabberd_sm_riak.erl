@@ -63,7 +63,7 @@ session_schema() ->
 
 clean_table() ->
     %% TODO: not very efficient, rewrite using map-reduce or something
-    ?INFO_MSG("Cleaning Riak 'sm' table...", []),
+    ?DEBUG("Cleaning Riak 'sm' table...", []),
     lists:foreach(
       fun(#session{sid = {_, Pid} = SID}) when node(Pid) == node() ->
 	      ejabberd_riak:delete(session, SID);

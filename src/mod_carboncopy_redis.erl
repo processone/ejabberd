@@ -150,7 +150,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 clean_table() ->
-    ?INFO_MSG("Cleaning Redis 'carboncopy' table...", []),
+    ?DEBUG("Cleaning Redis 'carboncopy' table...", []),
     NodeKey = node_key(),
     case ejabberd_redis:smembers(NodeKey) of
 	{ok, JIDs} ->

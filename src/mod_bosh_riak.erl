@@ -56,7 +56,7 @@ bosh_schema() ->
     {record_info(fields, bosh), #bosh{}}.
 
 clean_table() ->
-    ?INFO_MSG("Cleaning Riak 'bosh' table...", []),
+    ?DEBUG("Cleaning Riak 'bosh' table...", []),
     case ejabberd_riak:get(bosh, bosh_schema()) of
 	{ok, Rs} ->
 	    lists:foreach(

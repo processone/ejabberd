@@ -115,7 +115,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 clean_table() ->
-    ?INFO_MSG("Cleaning Redis BOSH sessions...", []),
+    ?DEBUG("Cleaning Redis BOSH sessions...", []),
     case ejabberd_redis:hgetall(?BOSH_KEY) of
 	{ok, Vals} ->
 	    ejabberd_redis:multi(

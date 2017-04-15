@@ -66,7 +66,7 @@ carboncopy_schema() ->
     {record_info(fields, carboncopy), #carboncopy{}}.
 
 clean_table() ->
-    ?INFO_MSG("Cleaning Riak 'carboncopy' table...", []),
+    ?DEBUG("Cleaning Riak 'carboncopy' table...", []),
     case ejabberd_riak:get(carboncopy, carboncopy_schema()) of
 	{ok, Rs} ->
 	    lists:foreach(

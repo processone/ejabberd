@@ -153,7 +153,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 clean_table() ->
-    ?INFO_MSG("Cleaning Redis route entries...", []),
+    ?DEBUG("Cleaning Redis route entries...", []),
     lists:foreach(
       fun(#route{domain = Domain, pid = Pid}) when node(Pid) == node() ->
 	      unregister_route(Domain, undefined, Pid);

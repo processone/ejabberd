@@ -188,7 +188,7 @@ decode_session_list(Vals) ->
   [binary_to_term(Val) || {_, Val} <- Vals].
 
 clean_table() ->
-    ?INFO_MSG("Cleaning Redis SM table...", []),
+    ?DEBUG("Cleaning Redis SM table...", []),
     try
 	lists:foreach(
 	  fun(LServer) ->

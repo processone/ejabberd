@@ -37,7 +37,7 @@
 %%% API
 %%%===================================================================
 init() ->
-    ?INFO_MSG("Cleaning Redis 'proxy65' table...", []),
+    ?DEBUG("Cleaning Redis 'proxy65' table...", []),
     NodeKey = node_key(),
     case ejabberd_redis:smembers(NodeKey) of
 	{ok, SIDs} ->

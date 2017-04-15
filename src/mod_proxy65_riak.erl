@@ -93,7 +93,7 @@ proxy65_schema() ->
     {record_info(fields, proxy65), #proxy65{}}.
 
 clean_table() ->
-    ?INFO_MSG("Cleaning Riak 'proxy65' table...", []),
+    ?DEBUG("Cleaning Riak 'proxy65' table...", []),
     case ejabberd_riak:get(proxy65, proxy65_schema()) of
 	{ok, Rs} ->
 	    lists:foreach(

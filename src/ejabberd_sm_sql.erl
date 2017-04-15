@@ -47,7 +47,7 @@
 -spec init() -> ok | {error, any()}.
 init() ->
     Node = erlang:atom_to_binary(node(), latin1),
-    ?INFO_MSG("Cleaning SQL SM table...", []),
+    ?DEBUG("Cleaning SQL SM table...", []),
     lists:foldl(
       fun(Host, ok) ->
 	      case ejabberd_sql:sql_query(

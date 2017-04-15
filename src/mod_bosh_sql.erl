@@ -23,7 +23,7 @@
 %%%===================================================================
 init() ->
     Node = erlang:atom_to_binary(node(), latin1),
-    ?INFO_MSG("Cleaning SQL 'bosh' table...", []),
+    ?DEBUG("Cleaning SQL 'bosh' table...", []),
     case ejabberd_sql:sql_query(
 	   ?MYNAME, ?SQL("delete from bosh where node=%(Node)s")) of
 	{updated, _} ->
