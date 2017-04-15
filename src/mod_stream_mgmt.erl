@@ -233,9 +233,7 @@ c2s_handle_info(#{mgmt_ack_timer := TRef, jid := JID, mod := Mod} = State,
 		{timeout, TRef, ack_timeout}) ->
     ?DEBUG("Timed out waiting for stream management acknowledgement of ~s",
 	   [jid:encode(JID)]),
-    State1 = State#{stop_reason => {socket, timeout}},
-    State2 = Mod:close(State1, _SendTrailer = false),
-    {stop, transition_to_pending(State2)};
+    {stop, Mod:close(State, ack_timeout)};
 c2s_handle_info(#{mgmt_state := pending, jid := JID, mod := Mod} = State,
 		{timeout, _, pending_timeout}) ->
     ?DEBUG("Timed out waiting for resumption of stream for ~s",

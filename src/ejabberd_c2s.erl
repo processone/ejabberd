@@ -116,10 +116,10 @@ get_subscribed(Ref) ->
 close(Ref) ->
     xmpp_stream_in:close(Ref).
 
--spec close(pid(), boolean()) -> ok;
-	   (state(), boolean()) -> state().
-close(Ref, SendTrailer) ->
-    xmpp_stream_in:close(Ref, SendTrailer).
+-spec close(pid(), atom()) -> ok;
+	   (state(), atom()) -> state().
+close(Ref, Reason) ->
+    xmpp_stream_in:close(Ref, Reason).
 
 -spec stop(pid()) -> ok;
 	  (state()) -> no_return().

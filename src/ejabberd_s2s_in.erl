@@ -42,7 +42,7 @@
 -export([handle_unexpected_info/2, handle_unexpected_cast/2,
 	 reject_unauthenticated_packet/2, process_closed/2]).
 %% API
--export([stop/1, close/1, send/2, update_state/2, establish/1,
+-export([stop/1, close/1, close/2, send/2, update_state/2, establish/1,
 	 host_up/1, host_down/1]).
 
 -include("ejabberd.hrl").
@@ -70,6 +70,9 @@ start_link(SockData, Opts) ->
 
 close(Ref) ->
     xmpp_stream_in:close(Ref).
+
+close(Ref, Reason) ->
+    xmpp_stream_in:close(Ref, Reason).
 
 stop(Ref) ->
     xmpp_stream_in:stop(Ref).

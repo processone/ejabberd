@@ -46,7 +46,7 @@
 -type state() :: map().
 -type stop_reason() :: {stream, reset | {in | out, stream_error()}} |
 		       {tls, inet:posix() | atom() | binary()} |
-		       {socket, inet:posix() | closed | timeout} |
+		       {socket, inet:posix() | atom()} |
 		       internal_failure.
 -export_type([state/0, stop_reason/0]).
 -callback init(list()) -> {ok, state()} | {error, term()} | ignore.
@@ -152,15 +152,18 @@ send(_, _) ->
 -spec close(pid()) -> ok;
 	   (state()) -> state().
 close(Ref) ->
-    close(Ref, true).
+    close(Ref, closed).
 
--spec close(pid(), boolean()) -> ok;
-	   (state(), boolean()) -> state().
-close(Pid, SendTrailer) when is_pid(Pid) ->
-    cast(Pid, {close, SendTrailer});
-close(#{owner := Owner} = State, SendTrailer) when Owner == self() ->
-    if SendTrailer -> send_trailer(State);
-       true -> close_socket(State)
+-spec close(pid(), atom()) -> ok;
+	   (state(), atom()) -> state().
+close(Pid, Reason) when is_pid(Pid) ->
+    cast(Pid, {close, Reason});
+close(#{owner := Owner} = State, Reason) when Owner == self() ->
+    case is_disconnected(State) of
+	true -> State;
+	false ->
+	    _IgnoreState = close_socket(State),
+	    process_stream_end({socket, Reason}, State)
     end;
 close(_, _) ->
     erlang:error(badarg).
@@ -271,16 +274,8 @@ handle_cast({send, Pkt}, State) ->
     noreply(send_pkt(State, Pkt));
 handle_cast(stop, State) ->
     {stop, normal, State};
-handle_cast({close, SendTrailer}, #{mod := Mod} = State) ->
-    noreply(
-      case is_disconnected(State) of
-	  true -> State;
-	  false ->
-	      State1 = close(State, SendTrailer),
-	      try Mod:handle_stream_end({socket, closed}, State1)
-	      catch _:undef -> stop(State1)
-	      end
-      end);
+handle_cast({close, Reason}, State) ->
+    noreply(close(State, Reason));
 handle_cast(Cast, #{mod := Mod} = State) ->
     noreply(try Mod:handle_cast(Cast, State)
 	      catch _:undef -> State

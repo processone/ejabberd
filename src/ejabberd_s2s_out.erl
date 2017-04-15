@@ -39,7 +39,7 @@
 -export([process_auth_result/2, process_closed/2, handle_unexpected_info/2,
 	 handle_unexpected_cast/2, process_downgraded/2]).
 %% API
--export([start/3, start_link/3, connect/1, close/1, stop/1, send/2,
+-export([start/3, start_link/3, connect/1, close/1, close/2, stop/1, send/2,
 	 route/2, establish/1, update_state/2, host_up/1, host_down/1]).
 
 -include("ejabberd.hrl").
@@ -74,6 +74,11 @@ connect(Ref) ->
 	   (state()) -> state().
 close(Ref) ->
     xmpp_stream_out:close(Ref).
+
+-spec close(pid(), atom()) -> ok;
+	   (state(), atom()) -> state().
+close(Ref, Reason) ->
+    xmpp_stream_out:close(Ref, Reason).
 
 -spec stop(pid()) -> ok;
 	  (state()) -> no_return().

@@ -27,7 +27,7 @@
 -protocol({xep, 114, '1.6'}).
 
 %% ejabberd_socket callbacks
--export([start/2, start_link/2, socket_type/0]).
+-export([start/2, start_link/2, socket_type/0, close/1, close/2]).
 %% ejabberd_config callbacks
 -export([opt_type/1, transform_listen_option/2]).
 %% xmpp_stream_in callbacks
@@ -62,6 +62,16 @@ socket_type() ->
 	  (state(), xmpp_element()) -> state().
 send(Stream, Pkt) ->
     xmpp_stream_in:send(Stream, Pkt).
+
+-spec close(pid()) -> ok;
+	   (state()) -> state().
+close(Ref) ->
+    xmpp_stream_in:close(Ref).
+
+-spec close(pid(), atom()) -> ok;
+	   (state(), atom()) -> state().
+close(Ref, Reason) ->
+    xmpp_stream_in:close(Ref, Reason).
 
 %%%===================================================================
 %%% xmpp_stream_in callbacks
