@@ -29,13 +29,16 @@
 
 -behaviour(gen_server).
 
--export([start_link/0, load_dir/1, load_file/2, translate/2]).
+-export([start_link/0, reload/0, translate/2]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
+-include_lib("kernel/include/file.hrl").
+
+-define(ZERO_DATETIME, {{0,0,0}, {0,0,0}}).
 
 -record(state, {}).
 
@@ -44,16 +47,7 @@ start_link() ->
 
 init([]) ->
     process_flag(trap_exit, true),
-    ets:new(translations, [named_table, public]),
-    Dir = case os:getenv("EJABBERD_MSGS_PATH") of
-	    false ->
-		case code:priv_dir(ejabberd) of
-		  {error, _} -> ?MSGS_DIR;
-		  Path -> filename:join([Path, "msgs"])
-		end;
-	    Path -> Path
-	  end,
-    load_dir(iolist_to_binary(Dir)),
+    load(),
     xmpp:set_tr_callback({?MODULE, translate}),
     {ok, #state{}}.
 
@@ -73,33 +67,59 @@ terminate(_Reason, _State) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
--spec load_dir(binary()) -> ok.
+-spec reload() -> ok.
+reload() ->
+    load(true).
 
-load_dir(Dir) ->
-    case file:list_dir(Dir) of
-      {ok, Files} ->
-	  MsgFiles = lists:filter(fun (FN) ->
-					  case length(FN) > 4 of
-					    true ->
-						string:substr(FN, length(FN) - 3)
-						  == ".msg";
-					    _ -> false
-					  end
-				  end,
-				  Files),
-	  lists:foreach(fun (FNS) ->
-                                FN = list_to_binary(FNS),
-				LP = ascii_tolower(str:substr(FN, 1,
-                                                              byte_size(FN) - 4)),
-				L = case str:tokens(LP, <<".">>) of
-				      [Language] -> Language;
-				      [Language, _Project] -> Language
-				    end,
-				load_file(L, <<Dir/binary, "/", FN/binary>>)
-			end,
-			MsgFiles),
-	  ok;
-      {error, Reason} -> ?ERROR_MSG("~p", [Reason])
+-spec load() -> ok.
+load() ->
+    load(false).
+
+-spec load(boolean()) -> ok.
+load(ForceCacheRebuild) ->
+    {MsgsDirMTime, MsgsDir} = get_msg_dir(),
+    {CacheMTime, CacheFile} = get_cache_file(),
+    {FilesMTime, MsgFiles} = get_msg_files(MsgsDir),
+    LastModified = lists:max([MsgsDirMTime, FilesMTime]),
+    if ForceCacheRebuild orelse CacheMTime < LastModified ->
+	    load(MsgFiles, MsgsDir),
+	    dump_to_file(CacheFile);
+       true ->
+	    case ets:file2tab(CacheFile) of
+		{ok, _} ->
+		    ok;
+		{error, {read_error, {file_error, _, enoent}}} ->
+		    load(MsgFiles, MsgsDir);
+		{error, {read_error, {file_error, _, Reason}}} ->
+		    ?WARNING_MSG("Failed to read translation cache from ~s: ~s",
+				 [CacheFile, file:format_error(Reason)]),
+		    load(MsgFiles, MsgsDir);
+		{error, Reason} ->
+		    ?WARNING_MSG("Failed to read translation cache from ~s: ~p",
+				 [CacheFile, Reason]),
+		    load(MsgFiles, MsgsDir)
+	    end
+    end.
+
+-spec load([file:filename()], file:filename()) -> ok.
+
+load(Files, Dir) ->
+    try ets:new(translations, [named_table, public])
+    catch _:badarg -> ok
+    end,
+    case Files of
+	[] ->
+	    ?WARNING_MSG("No translation files found in ~s, "
+			 "check directory access", [Dir]);
+	_ ->
+	    ets:delete_all_objects(translations),
+	    ?INFO_MSG("Building translation cache, this may take a while", []),
+	    lists:foreach(
+	      fun(File) ->
+		      BaseName = filename:basename(File),
+		      Lang = str:to_lower(filename:rootname(BaseName)),
+		      load_file(iolist_to_binary(Lang), File)
+	      end, Files)
     end.
 
 load_file(Lang, File) ->
@@ -206,3 +226,68 @@ ascii_tolower_s([C | Cs]) when C >= $A, C =< $Z ->
     [C + ($a - $A) | ascii_tolower_s(Cs)];
 ascii_tolower_s([C | Cs]) -> [C | ascii_tolower_s(Cs)];
 ascii_tolower_s([]) -> [].
+
+-spec get_msg_dir() -> {calendar:datetime(), file:filename()}.
+get_msg_dir() ->
+    Dir = case os:getenv("EJABBERD_MSGS_PATH") of
+	      false ->
+		  case code:priv_dir(ejabberd) of
+		      {error, _} -> ?MSGS_DIR;
+		      Path -> filename:join([Path, "msgs"])
+		  end;
+	      Path -> Path
+	  end,
+    case file:read_file_info(Dir) of
+	{ok, #file_info{mtime = MTime}} ->
+	    {MTime, Dir};
+	{error, Reason} ->
+	    ?ERROR_MSG("Failed to read directory ~s: ~s",
+		       [Dir, file:format_error(Reason)]),
+	    {?ZERO_DATETIME, Dir}
+    end.
+
+-spec get_msg_files(file:filename()) -> {calendar:datetime(), [file:filename()]}.
+get_msg_files(MsgsDir) ->
+    Res = filelib:fold_files(
+	    MsgsDir, ".+\\.msg", false,
+	    fun(File, {MTime, Files} = Acc) ->
+		    case file:read_file_info(File) of
+			{ok, #file_info{mtime = Time}} ->
+			    {lists:max([MTime, Time]), [File|Files]};
+			{error, Reason} ->
+			    ?ERROR_MSG("Failed to read translation file ~s: ~s",
+				       [File, file:format_error(Reason)]),
+			    Acc
+		    end
+	    end, {?ZERO_DATETIME, []}),
+    case Res of
+	{_, []} ->
+	    case file:list_dir(MsgsDir) of
+		{ok, _} -> ok;
+		{error, Reason} ->
+		    ?ERROR_MSG("Failed to read directory ~s: ~s",
+			       [MsgsDir, file:format_error(Reason)])
+	    end;
+	_ ->
+	    ok
+    end,
+    Res.
+
+-spec get_cache_file() -> {calendar:datetime(), file:filename()}.
+get_cache_file() ->
+    MnesiaDir = mnesia:system_info(directory),
+    CacheFile = filename:join(MnesiaDir, "translations.cache"),
+    CacheMTime = case file:read_file_info(CacheFile) of
+		     {ok, #file_info{mtime = Time}} -> Time;
+		     {error, _} -> ?ZERO_DATETIME
+		 end,
+    {CacheMTime, CacheFile}.
+
+-spec dump_to_file(file:filename()) -> ok.
+dump_to_file(CacheFile) ->
+    case ets:tab2file(translations, CacheFile) of
+	ok -> ok;
+	{error, Reason} ->
+	    ?WARNING_MSG("Failed to create translation cache in ~s: ~p",
+			 [CacheFile, Reason])
+    end.
