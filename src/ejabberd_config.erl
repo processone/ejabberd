@@ -1542,11 +1542,12 @@ cache_life_time(Host) ->
 -spec recompile_options() -> ok.
 recompile_options() ->
     Exprs = get_exprs(),
-    try compile_exprs(Exprs)
-    catch E:R ->
+    case misc:compile_exprs(ejabberd_options, Exprs) of
+	ok -> ok;
+	{error, _} = Err ->
 	    ?CRITICAL_MSG("Failed to compile ejabberd_options:~n~s",
 			  [string:join(Exprs, io_lib:nl())]),
-	    erlang:raise(E, R, erlang:get_stacktrace())
+	    erlang:error(Err)
     end.
 
 -spec get_exprs() -> [string()].
@@ -1575,22 +1576,6 @@ get_exprs() ->
 		       io_lib:format("is_known('~s') -> true;~n", [Opt]) ++ Acc
 	       end, "", Opts) ++ "is_known(_) -> false.",
     [Module, Export, Knowns|Funs].
-
--spec compile_exprs([string()]) -> ok.
-compile_exprs(Exprs) ->
-    Forms = lists:map(
-	      fun(Expr) ->
-		      {ok, Tokens, _} = erl_scan:string(lists:flatten(Expr)),
-		      {ok, Form} = erl_parse:parse_form(Tokens),
-		      Form
-	      end, Exprs),
-    {ok, Code} = case compile:forms(Forms, []) of
-		     {ok, ejabberd_options, Bin} -> {ok, Bin};
-		     {ok, ejabberd_options, Bin, _Warnings} -> {ok, Bin};
-		     Error -> Error
-		 end,
-    {module, _} = code:load_binary(ejabberd_options, "nofile", Code),
-    ok.
 
 %% @doc This is only for debugging purposes, likely to report a bug
 -spec dump() -> ok.

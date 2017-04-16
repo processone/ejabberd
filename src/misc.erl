@@ -33,7 +33,7 @@
 	 hex_to_bin/1, hex_to_base64/1, expand_keyword/3,
 	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
 	 l2i/1, i2l/1, i2l/2, expr_to_term/1, term_to_expr/1,
-	 encode_pid/1, decode_pid/2]).
+	 encode_pid/1, decode_pid/2, compile_exprs/2]).
 
 %%%===================================================================
 %%% API
@@ -211,6 +211,30 @@ decode_pid(PidBin, NodeBin) ->
 	    catch _:badarg ->
 		    erlang:error({bad_node, Node})
 	    end
+    end.
+
+-spec compile_exprs(module(), [string()]) -> ok | {error, any()}.
+compile_exprs(Mod, Exprs) ->
+    try
+	Forms = lists:map(
+		  fun(Expr) ->
+			  {ok, Tokens, _} = erl_scan:string(lists:flatten(Expr)),
+			  {ok, Form} = erl_parse:parse_form(Tokens),
+			  Form
+		  end, Exprs),
+	{ok, Code} = case compile:forms(Forms, []) of
+			 {ok, Mod, Bin} -> {ok, Bin};
+			 {ok, Mod, Bin, _Warnings} -> {ok, Bin};
+			 Error -> Error
+		     end,
+	{module, Mod} = code:load_binary(Mod, "nofile", Code),
+	ok
+    catch _:{badmatch, {error, ErrInfo, _ErrLocation}} ->
+	    {error, ErrInfo};
+	  _:{badmatch, {error, _} = Err} ->
+	    Err;
+	  _:{badmatch, error} ->
+	    {error, compile_failed}
     end.
 
 %%%===================================================================
