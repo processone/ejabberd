@@ -67,8 +67,9 @@
 %% @type macro_value() = term().
 
 start() ->
-    mnesia_init(),
     ConfigFile = get_ejabberd_config_path(),
+    ?INFO_MSG("Loading configuration from ~s", [ConfigFile]),
+    mnesia_init(),
     State1 = load_file(ConfigFile),
     UnixTime = p1_time_compat:system_time(seconds),
     SharedKey = case erlang:get_cookie() of
@@ -79,8 +80,7 @@ start() ->
                 end,
     State2 = set_option({node_start, global}, UnixTime, State1),
     State3 = set_option({shared_key, global}, SharedKey, State2),
-    set_opts(State3),
-    ?INFO_MSG("Loaded configuration from ~s", [ConfigFile]).
+    set_opts(State3).
 
 %% When starting ejabberd for testing, we sometimes want to start a
 %% subset of hosts from the one define in the config file.
