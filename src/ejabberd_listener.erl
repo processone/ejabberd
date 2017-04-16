@@ -408,17 +408,6 @@ add_listener(PortIP, Module, Opts) ->
     PortIP1 = {Port, IPT, Proto},
     case start_listener(PortIP1, Module, Opts) of
 	{ok, _Pid} ->
-	    Ports = case ejabberd_config:get_option(
-                           listen, fun validate_cfg/1) of
-			undefined ->
-			    [];
-			Ls ->
-			    Ls
-		    end,
-	    Ports1 = lists:keydelete(PortIP1, 1, Ports),
-	    Ports2 = [{PortIP1, Module, Opts} | Ports1],
-            Ports3 = lists:map(fun transform_option/1, Ports2),
-	    ejabberd_config:add_option(listen, Ports3),
 	    ok;
 	{error, {already_started, _Pid}} ->
 	    {error, {already_started, PortIP}};
