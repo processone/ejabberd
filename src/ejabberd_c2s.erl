@@ -867,13 +867,17 @@ get_conn_type(State) ->
 -spec fix_from_to(xmpp_element(), state()) -> stanza().
 fix_from_to(Pkt, #{jid := JID}) when ?is_stanza(Pkt) ->
     #jid{luser = U, lserver = S, lresource = R} = JID,
-    From = xmpp:get_from(Pkt),
-    From1 = case jid:tolower(From) of
-		{U, S, R} -> JID;
-		{U, S, _} -> jid:replace_resource(JID, From#jid.resource);
-		_ -> From
-	    end,
-    xmpp:set_from_to(Pkt, From1, JID);
+    case xmpp:get_from(Pkt) of
+	undefined ->
+	    Pkt;
+	From ->
+	    From1 = case jid:tolower(From) of
+			{U, S, R} -> JID;
+			{U, S, _} -> jid:replace_resource(JID, From#jid.resource);
+			_ -> From
+		    end,
+	    xmpp:set_from_to(Pkt, From1, JID)
+    end;
 fix_from_to(Pkt, _State) ->
     Pkt.
 
