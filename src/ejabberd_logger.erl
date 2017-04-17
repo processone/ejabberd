@@ -160,7 +160,7 @@ reopen_log() ->
 
 %% @spec () -> ok
 rotate_log() ->
-    lager_crash_log ! rotate,
+    catch lager_crash_log ! rotate,
     lists:foreach(
       fun({lager_file_backend, File}) ->
               whereis(lager_event) ! {rotate, File};
