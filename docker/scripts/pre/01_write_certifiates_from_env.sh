@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-source "${EJABBERD_HOME}/docker/lib/base_config.sh"
-source "${EJABBERD_HOME}/docker/lib/config.sh"
-source "${EJABBERD_HOME}/docker/lib/base_functions.sh"
-source "${EJABBERD_HOME}/docker/lib/functions.sh"
+source "${EJABBERD_HOME}/scripts/lib/base_config.sh"
+source "${EJABBERD_HOME}/scripts/lib/config.sh"
+source "${EJABBERD_HOME}/scripts/lib/base_functions.sh"
+source "${EJABBERD_HOME}/scripts/lib/functions.sh"
 
 # Instead of having to mount a direction, specify the ssl certs
 # via environment variables:
@@ -12,9 +12,9 @@ source "${EJABBERD_HOME}/docker/lib/functions.sh"
 # For example: `EJABBERD_SSLCERT_EXAMPLE_COM`.
 
 write_file_from_env() {
-    log "Writing $1 to $2"
+    echo "Writing $1 to $2"
     mkdir -p "$(dirname $2)"
-    log "${!1}" > $2
+    echo "${!1}" > $2
 }
 
 # Write the host certificate
@@ -29,6 +29,5 @@ for xmpp_domain in ${XMPP_DOMAIN} ; do
           || write_file_from_env "$var" "${SSLCERTDIR}/${xmpp_domain}.pem"
     fi
 done
-
 
 exit 0

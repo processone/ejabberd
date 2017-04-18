@@ -37,7 +37,9 @@
 	 env_binary_to_list/2, opt_type/1, may_hide_data/1,
 	 is_elixir_enabled/0, v_dbs/1, v_dbs_mods/1,
 	 default_db/1, default_db/2, default_ram_db/1, default_ram_db/2,
-	 fsm_limit_opts/1]).
+	 default_queue_type/1, queue_dir/0, fsm_limit_opts/1,
+	 use_cache/1, cache_size/1, cache_missed/1, cache_life_time/1,
+	 dump/0]).
 
 -export([start/2]).
 
@@ -65,15 +67,16 @@
 %% @type macro_value() = term().
 
 start() ->
-    mnesia_init(),
     ConfigFile = get_ejabberd_config_path(),
+    ?INFO_MSG("Loading configuration from ~s", [ConfigFile]),
+    mnesia_init(),
     State1 = load_file(ConfigFile),
     UnixTime = p1_time_compat:system_time(seconds),
     SharedKey = case erlang:get_cookie() of
                     nocookie ->
-                        p1_sha:sha(randoms:get_string());
+                        str:sha(randoms:get_string());
                     Cookie ->
-                        p1_sha:sha(jlib:atom_to_binary(Cookie))
+                        str:sha(misc:atom_to_binary(Cookie))
                 end,
     State2 = set_option({node_start, global}, UnixTime, State1),
     State3 = set_option({shared_key, global}, SharedKey, State2),
@@ -315,8 +318,6 @@ consult(File) ->
             case file:consult(File) of
                 {ok, Terms} ->
                     {ok, Terms};
-                {error, enoent} ->
-                    {error, enoent};
                 {error, {LineNumber, erl_parse, _ParseMessage} = Reason} ->
                     {error, describe_config_problem(File, Reason, LineNumber)};
                 {error, Reason} ->
@@ -773,6 +774,7 @@ set_opts(State) ->
 	end,
     case mnesia:transaction(F) of
 	{atomic, _} ->
+	    recompile_options(),
 	    set_log_level();
 	{aborted,{no_exists,Table}} ->
 	    MnesiaDirectory = mnesia:system_info(directory),
@@ -788,7 +790,7 @@ set_opts(State) ->
     end.
 
 set_log_level() ->
-    Level = ejabberd_config:get_option(
+    Level = get_option(
               loglevel,
               fun(P) when P>=0, P=<5 -> P end,
               4),
@@ -806,7 +808,8 @@ add_option(Opt, Val) ->
     mnesia:transaction(fun() ->
 			       mnesia:write(#local_config{key = Opt,
 							  value = Val})
-		       end).
+		       end),
+    recompile_options().
 
 -spec prepare_opt_val(any(), any(), check_fun(), any()) -> any().
 
@@ -871,22 +874,23 @@ get_option(Opt, F) ->
 get_option(Opt, F, Default) when is_atom(Opt) ->
     get_option({Opt, global}, F, Default);
 get_option(Opt, F, Default) ->
-    case Opt of
-        {O, global} when is_atom(O) -> ok;
-        {O, H} when is_atom(O), is_binary(H) -> ok;
-        _ -> ?WARNING_MSG("Option ~p has invalid (outdated?) format. "
-                          "This is likely a bug", [Opt])
-    end,
-    case ets:lookup(local_config, Opt) of
-	[#local_config{value = Val}] ->
-	    prepare_opt_val(Opt, Val, F, Default);
-        _ ->
-            case Opt of
-                {Key, Host} when Host /= global ->
-                    get_option({Key, global}, F, Default);
-                _ ->
-                    Default
-            end
+    {Key, Host} = case Opt of
+		      {O, global} when is_atom(O) -> Opt;
+		      {O, H} when is_atom(O), is_binary(H) -> Opt;
+		      _ ->
+			  ?WARNING_MSG("Option ~p has invalid (outdated?) "
+				       "format. This is likely a bug", [Opt]),
+			  {undefined, global}
+		  end,
+    case ejabberd_options:is_known(Key) of
+	true ->
+	    try ejabberd_options:Key(Host) of
+		Val -> prepare_opt_val(Opt, Val, F, Default)
+	    catch _:function_clause ->
+		    Default
+	    end;
+	false ->
+	    Default
     end.
 
 -spec has_option(atom() | {atom(), global | binary()}) -> any().
@@ -894,7 +898,8 @@ has_option(Opt) ->
     get_option(Opt, fun(_) -> true end, false).
 
 init_module_db_table(Modules) ->
-    catch ets:new(module_db, [named_table, public, bag]),
+    catch ets:new(module_db, [named_table, public, bag,
+			      {read_concurrency, true}]),
     %% Dirty hack for mod_pubsub
     ets:insert(module_db, {mod_pubsub, mnesia}),
     ets:insert(module_db, {mod_pubsub, sql}),
@@ -1455,13 +1460,32 @@ opt_type(default_ram_db) ->
     fun(T) when is_atom(T) -> T end;
 opt_type(loglevel) ->
     fun (P) when P >= 0, P =< 5 -> P end;
+opt_type(queue_dir) ->
+    fun iolist_to_binary/1;
+opt_type(queue_type) ->
+    fun(ram) -> ram; (file) -> file end;
+opt_type(use_cache) ->
+    fun(B) when is_boolean(B) -> B end;
+opt_type(cache_size) ->
+    fun(I) when is_integer(I), I>0 -> I;
+       (infinity) -> infinity;
+       (unlimited) -> infinity
+    end;
+opt_type(cache_missed) ->
+    fun(B) when is_boolean(B) -> B end;
+opt_type(cache_life_time) ->
+    fun(I) when is_integer(I), I>0 -> I;
+       (infinity) -> infinity;
+       (unlimited) -> infinity
+    end;
 opt_type(_) ->
-    [hide_sensitive_log_data, hosts, language,
-     default_db, default_ram_db, loglevel].
+    [hide_sensitive_log_data, hosts, language, max_fsm_queue,
+     default_db, default_ram_db, queue_type, queue_dir, loglevel,
+     use_cache, cache_size, cache_missed, cache_life_time].
 
 -spec may_hide_data(any()) -> any().
 may_hide_data(Data) ->
-    case ejabberd_config:get_option(
+    case get_option(
 	hide_sensitive_log_data,
 	    fun(false) -> false;
 	       (true) -> true
@@ -1485,4 +1509,90 @@ fsm_limit_opts(Opts) ->
 		undefined -> [];
 		N -> [{max_queue, N}]
 	    end
+    end.
+
+-spec queue_dir() -> binary() | undefined.
+queue_dir() ->
+    get_option(queue_dir, opt_type(queue_dir)).
+
+-spec default_queue_type(binary()) -> ram | file.
+default_queue_type(Host) ->
+    get_option({queue_type, Host}, opt_type(queue_type), ram).
+
+-spec use_cache(binary() | global) -> boolean().
+use_cache(Host) ->
+    get_option({use_cache, Host}, opt_type(use_cache), true).
+
+-spec cache_size(binary() | global) -> pos_integer() | infinity.
+cache_size(Host) ->
+    get_option({cache_size, Host}, opt_type(cache_size), 1000).
+
+-spec cache_missed(binary() | global) -> boolean().
+cache_missed(Host) ->
+    get_option({cache_missed, Host}, opt_type(cache_missed), true).
+
+-spec cache_life_time(binary() | global) -> pos_integer() | infinity.
+%% NOTE: the integer value returned is in *seconds*
+cache_life_time(Host) ->
+    get_option({cache_life_time, Host}, opt_type(cache_life_time), 3600).
+
+%%%===================================================================
+%%% Dynamic config compilation
+%%%===================================================================
+-spec recompile_options() -> ok.
+recompile_options() ->
+    Exprs = get_exprs(),
+    case misc:compile_exprs(ejabberd_options, Exprs) of
+	ok -> ok;
+	{error, _} = Err ->
+	    ?CRITICAL_MSG("Failed to compile ejabberd_options:~n~s",
+			  [string:join(Exprs, io_lib:nl())]),
+	    erlang:error(Err)
+    end.
+
+-spec get_exprs() -> [string()].
+get_exprs() ->
+    Opts = lists:foldl(
+	    fun(#local_config{key = {Opt, Host}, value = Val}, D) ->
+		    Hosts = maps:get(Opt, D, #{}),
+		    maps:put(Opt, maps:put(Host, Val, Hosts), D)
+	    end, #{}, ets:tab2list(local_config)),
+    Funs = maps:fold(
+	     fun(Opt, Vals, Acc) ->
+		     HostVals = lists:reverse(lists:keysort(1, maps:to_list(Vals))),
+		     [string:join(
+			lists:map(
+			  fun({global, Val}) ->
+				  io_lib:format("'~s'(_) -> ~p", [Opt, Val]);
+			     ({Host, Val}) ->
+				  io_lib:format("'~s'(~p) -> ~p", [Opt, Host, Val])
+			  end, HostVals),
+			";" ++ io_lib:nl()) ++ "."|Acc]
+	     end, [], Opts),
+    Module = "-module(ejabberd_options).",
+    Export = "-compile(export_all).",
+    Knowns = maps:fold(
+	       fun(Opt, _, Acc) ->
+		       io_lib:format("is_known('~s') -> true;~n", [Opt]) ++ Acc
+	       end, "", Opts) ++ "is_known(_) -> false.",
+    [Module, Export, Knowns|Funs].
+
+%% @doc This is only for debugging purposes, likely to report a bug
+-spec dump() -> ok.
+dump() ->
+    ETSFile = filename:join("/tmp", "ejabberd_options.ets"),
+    ErlFile = filename:join("/tmp", "ejabberd_options.erl"),
+    ETSData = io_lib:format("~p~n", [ets:tab2list(local_config)]),
+    ErlData = io_lib:format("~s~n", [str:join(get_exprs(), io_lib:nl())]),
+    case file:write_file(ETSFile, ETSData) of
+	ok -> io:format("ETS data written to ~s~n", [ETSFile]);
+	{error, Reason1} ->
+	    io:format("Failed to write to ~s: ~s",
+		      [ETSFile, file:format_error(Reason1)])
+    end,
+    case file:write_file(ErlFile, ErlData) of
+	ok -> io:format("Dynamic module written to ~s~n", [ErlFile]);
+	{error, Reason2} ->
+	    io:format("Failed to write to ~s: ~s",
+		      [ErlFile, file:format_error(Reason2)])
     end.

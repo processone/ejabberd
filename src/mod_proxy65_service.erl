@@ -217,7 +217,7 @@ process_bytestreams(#iq{type = set, lang = Lang, from = InitiatorJID, to = To,
 	    Node = ejabberd_cluster:get_node_by_id(To#jid.lresource),
 	    Target = jid:encode(jid:tolower(TargetJID)),
 	    Initiator = jid:encode(jid:tolower(InitiatorJID)),
-	    SHA1 = p1_sha:sha(<<SID/binary, Initiator/binary, Target/binary>>),
+	    SHA1 = str:sha(<<SID/binary, Initiator/binary, Target/binary>>),
 	    Mod = gen_mod:ram_db_mod(global, mod_proxy65),
 	    MaxConnections = max_connections(ServerHost),
 	    case Mod:activate_stream(SHA1, Initiator, MaxConnections, Node) of
@@ -253,9 +253,9 @@ process_bytestreams(#iq{type = set, lang = Lang, from = InitiatorJID, to = To,
 transform_module_options(Opts) ->
     lists:map(
       fun({ip, IP}) when is_tuple(IP) ->
-              {ip, jlib:ip_to_list(IP)};
+              {ip, misc:ip_to_list(IP)};
          ({hostname, IP}) when is_tuple(IP) ->
-              {hostname, jlib:ip_to_list(IP)};
+              {hostname, misc:ip_to_list(IP)};
          (Opt) ->
               Opt
       end, Opts).
@@ -265,7 +265,7 @@ get_streamhost(Host, ServerHost) ->
     {Port, IP} = get_port_ip(ServerHost),
     HostName = gen_mod:get_module_opt(ServerHost, mod_proxy65, hostname,
 				      fun iolist_to_binary/1,
-				      jlib:ip_to_list(IP)),
+				      misc:ip_to_list(IP)),
     Resource = ejabberd_cluster:node_id(),
     #streamhost{jid = jid:make(<<"">>, Host, Resource),
 		host = HostName,

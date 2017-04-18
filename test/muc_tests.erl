@@ -152,7 +152,7 @@ service_features(Config) ->
 		  end,
     RequiredFeatures = sets:from_list(
 			 [?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
-			  ?NS_REGISTER, ?NS_MUC, ?NS_RSM,
+			  ?NS_REGISTER, ?NS_MUC,
 			  ?NS_VCARD, ?NS_MUCSUB, ?NS_MUC_UNIQUE
 			  | MAMFeatures]),
     ct:comment("Checking if all needed disco features are set"),

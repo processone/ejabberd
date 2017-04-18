@@ -10,7 +10,7 @@
 #
 # Default: true
 #
-POLL={{ env['POLL'] or 'true' }}
+#POLL=true
 
 #.
 #' SMP: SMP support ([enable|auto|disable])
@@ -24,7 +24,7 @@ POLL={{ env['POLL'] or 'true' }}
 #
 # Default: auto
 #
-SMP={{ env['SMP'] or 'auto' }}
+#SMP=auto
 
 #.
 #' ERL_MAX_PORTS: Maximum number of simultaneously open Erlang ports
@@ -36,7 +36,7 @@ SMP={{ env['SMP'] or 'auto' }}
 # Default: 32000
 # Maximum: 268435456
 #
-ERL_MAX_PORTS={{ env['ERL_MAX_PORTS'] or '32000' }}
+#ERL_MAX_PORTS=32000
 
 #.
 #' FIREWALL_WINDOW: Range of allowed ports to pass through a firewall
@@ -48,9 +48,7 @@ ERL_MAX_PORTS={{ env['ERL_MAX_PORTS'] or '32000' }}
 # Default: not defined
 # Example: 4200-4210
 #
-{%- if env['FIREWALL_WINDOW'] %}
-FIREWALL_WINDOW={{ env['FIREWALL_WINDOW'] }}
-{%- endif %}
+#FIREWALL_WINDOW=
 
 #.
 #' INET_DIST_INTERFACE: IP address where this Erlang node listens other nodes
@@ -58,11 +56,9 @@ FIREWALL_WINDOW={{ env['FIREWALL_WINDOW'] }}
 # This communication is used by ejabberdctl command line tool,
 # and in a cluster of several ejabberd nodes.
 #
-# Default: 0.0.0.0
+# Default: 127.0.0.1
 #
-{%- if env['INET_DIST_INTERFACE'] %}
-INET_DIST_INTERFACE={{ env['INET_DIST_INTERFACE'] }}
-{%- endif %}
+#INET_DIST_INTERFACE=127.0.0.1
 
 #.
 #' ERL_EPMD_ADDRESS: IP addresses where epmd listens for connections
@@ -78,9 +74,7 @@ INET_DIST_INTERFACE={{ env['INET_DIST_INTERFACE'] }}
 #
 # Default: 0.0.0.0
 #
-{%- if env['ERL_EPMD_ADDRESS'] %}
-ERL_EPMD_ADDRESS={{ env['ERL_EPMD_ADDRESS'] }}
-{%- endif %}
+#ERL_EPMD_ADDRESS=127.0.0.1
 
 #.
 #' ERL_PROCESSES: Maximum number of Erlang processes
@@ -94,7 +88,7 @@ ERL_EPMD_ADDRESS={{ env['ERL_EPMD_ADDRESS'] }}
 # Default: 250000
 # Maximum: 268435456
 #
-ERL_PROCESSES={{ env['ERL_PROCESSES'] or '250000' }}
+#ERL_PROCESSES=250000
 
 #.
 #' ERL_MAX_ETS_TABLES: Maximum number of ETS and Mnesia tables
@@ -107,7 +101,7 @@ ERL_PROCESSES={{ env['ERL_PROCESSES'] or '250000' }}
 #
 # Default: 1400
 #
-ERL_MAX_ETS_TABLES={{ env['ERL_MAX_ETS_TABLES'] or '1400' }}
+#ERL_MAX_ETS_TABLES=1400
 
 #.
 #' ERL_OPTIONS: Additional Erlang options
@@ -122,7 +116,7 @@ ERL_MAX_ETS_TABLES={{ env['ERL_MAX_ETS_TABLES'] or '1400' }}
 #
 # Default: ""
 #
-ERL_OPTIONS="{{ env['ERL_OPTIONS'] or '-noshell' }}"
+ERL_OPTIONS="{{ env['ERL_OPTIONS'] or "-noshell" }}"
 
 #.
 #' ERLANG_NODE: Erlang node name
@@ -140,7 +134,7 @@ ERL_OPTIONS="{{ env['ERL_OPTIONS'] or '-noshell' }}"
 #
 # Default: ejabberd@localhost
 #
-ERLANG_NODE={{ env['ERLANG_NODE'] or 'ejabberd@localhost' }}
+ERLANG_NODE={{ env['ERLANG_NODE'] or "ejabberd@localhost" }}
 
 #.
 #' EJABBERD_PID_PATH: ejabberd PID file
@@ -163,7 +157,7 @@ ERLANG_NODE={{ env['ERLANG_NODE'] or 'ejabberd@localhost' }}
 #
 # Default: $ETC_DIR/ejabberd.yml
 #
-EJABBERD_CONFIG_PATH={{ env['EJABBERD_CONFIG_PATH'] or '/opt/ejabberd/conf/ejabberd.yml' }}
+#EJABBERD_CONFIG_PATH=/etc/ejabberd/ejabberd.yml
 
 #.
 #' CONTRIB_MODULES_PATH: contributed ejabberd modules path
@@ -173,19 +167,7 @@ EJABBERD_CONFIG_PATH={{ env['EJABBERD_CONFIG_PATH'] or '/opt/ejabberd/conf/ejabb
 #
 # Default: $HOME/.ejabberd-modules
 #
-CONTRIB_MODULES_PATH={{ env['CONTRIB_MODULES_PATH'] or '/opt/ejabberd/modules' }}
-
-#.
-#' CONTRIB_MODULES_CONF_DIR: configuration directory for contributed modules
-#
-# Specify the full path to the configuration directory for contributed ejabberd
-# modules. In order to configure a module named mod_foo, a mod_foo.yml file can
-# be created in this directory. This file will then be used instead of the
-# default configuration file provided with the module.
-#
-# Default: $CONTRIB_MODULES_PATH/conf
-#
-CONTRIB_MODULES_CONF_DIR={{ env['CONTRIB_MODULES_CONF_DIR'] or '/opt/ejabberd/modules/conf' }}
+#CONTRIB_MODULES_PATH=/opt/ejabberd-modules
 
 #.
 #' EJABBERD_BYPASS_WARNINGS: Bypass LIVE warning
@@ -195,5 +177,11 @@ CONTRIB_MODULES_CONF_DIR={{ env['CONTRIB_MODULES_CONF_DIR'] or '/opt/ejabberd/mo
 EJABBERD_BYPASS_WARNINGS=true
 
 #.
-#'
-# vim: foldmarker=#',#. foldmethod=marker:
+#' SPOOL_DIR: Database spool dir
+#
+# Specify the full path to the database spool dir used in binary installer for
+# backwards compatibility.
+#
+# Docker: rroemhild/ejabberd
+#
+SPOOL_DIR=$EJABBERD_HOME/database/$ERLANG_NODE

@@ -319,7 +319,7 @@ get_info(_Acc, #jid{luser = U, lserver = S} = JID,
     [#xdata{type = result,
 	    fields = flex_offline:encode(
 		       [{number_of_messages, count_offline_messages(U, S)}],
-		       fun(T) -> translate:translate(Lang, T) end)}];
+		       Lang)}];
 get_info(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 

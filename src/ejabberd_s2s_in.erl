@@ -42,7 +42,7 @@
 -export([handle_unexpected_info/2, handle_unexpected_cast/2,
 	 reject_unauthenticated_packet/2, process_closed/2]).
 %% API
--export([stop/1, close/1, send/2, update_state/2, establish/1,
+-export([stop/1, close/1, close/2, send/2, update_state/2, establish/1,
 	 host_up/1, host_down/1]).
 
 -include("ejabberd.hrl").
@@ -70,6 +70,9 @@ start_link(SockData, Opts) ->
 
 close(Ref) ->
     xmpp_stream_in:close(Ref).
+
+close(Ref, Reason) ->
+    xmpp_stream_in:close(Ref, Reason).
 
 stop(Ref) ->
     xmpp_stream_in:stop(Ref).
@@ -182,7 +185,7 @@ handle_auth_success(RServer, Mech, _AuthModule,
 		      lserver := LServer} = State) ->
     ?INFO_MSG("(~s) Accepted inbound s2s ~s authentication ~s -> ~s (~s)",
 	      [SockMod:pp(Socket), Mech, RServer, LServer,
-	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
+	       ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
     State1 = case ejabberd_s2s:allow_host(ServerHost, RServer) of
 	       true ->
 		     AuthDomains1 = sets:add_element(RServer, AuthDomains),
@@ -200,7 +203,7 @@ handle_auth_failure(RServer, Mech, Reason,
 		      lserver := LServer} = State) ->
     ?INFO_MSG("(~s) Failed inbound s2s ~s authentication ~s -> ~s (~s): ~s",
 	      [SockMod:pp(Socket), Mech, RServer, LServer,
-	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP)), Reason]),
+	       ejabberd_config:may_hide_data(misc:ip_to_list(IP)), Reason]),
     ejabberd_hooks:run_fold(s2s_in_auth_result,
 			    ServerHost, State, [false, RServer]).
 

@@ -66,7 +66,7 @@ if test "x$MAKE" = "x"; then
 fi
 
 # Change default prefix
-AC_PREFIX_DEFAULT(/)
+AC_PREFIX_DEFAULT(/usr/local)
 
 AC_ARG_ENABLE(hipe,
 [AC_HELP_STRING([--enable-hipe], [compile natively with HiPE, not recommended (default: no)])],

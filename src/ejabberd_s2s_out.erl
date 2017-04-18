@@ -39,7 +39,7 @@
 -export([process_auth_result/2, process_closed/2, handle_unexpected_info/2,
 	 handle_unexpected_cast/2, process_downgraded/2]).
 %% API
--export([start/3, start_link/3, connect/1, close/1, stop/1, send/2,
+-export([start/3, start_link/3, connect/1, close/1, close/2, stop/1, send/2,
 	 route/2, establish/1, update_state/2, host_up/1, host_down/1]).
 
 -include("ejabberd.hrl").
@@ -74,6 +74,11 @@ connect(Ref) ->
 	   (state()) -> state().
 close(Ref) ->
     xmpp_stream_out:close(Ref).
+
+-spec close(pid(), atom()) -> ok;
+	   (state(), atom()) -> state().
+close(Ref, Reason) ->
+    xmpp_stream_out:close(Ref, Reason).
 
 -spec stop(pid()) -> ok;
 	  (state()) -> no_return().
@@ -145,14 +150,14 @@ process_closed(#{server := LServer, remote_server := RServer,
 		 on_route := send} = State,
 	       Reason) ->
     ?INFO_MSG("Closing outbound s2s connection ~s -> ~s: ~s",
-	      [LServer, RServer, xmpp_stream_out:format_error(Reason)]),
+	      [LServer, RServer, format_error(Reason)]),
     stop(State);
 process_closed(#{server := LServer, remote_server := RServer} = State,
 	       Reason) ->
     Delay = get_delay(),
     ?INFO_MSG("Failed to establish outbound s2s connection ~s -> ~s: ~s; "
 	      "bouncing for ~p seconds",
-	      [LServer, RServer, xmpp_stream_out:format_error(Reason), Delay]),
+	      [LServer, RServer, format_error(Reason), Delay]),
     State1 = State#{on_route => bounce},
     State2 = bounce_queue(State1),
     xmpp_stream_out:set_timeout(State2, timer:seconds(Delay)).
@@ -230,7 +235,7 @@ handle_auth_success(Mech, #{sockmod := SockMod,
 			    server := LServer} = State) ->
     ?INFO_MSG("(~s) Accepted outbound s2s ~s authentication ~s -> ~s (~s)",
 	      [SockMod:pp(Socket), Mech, LServer, RServer,
-	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
+	       ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
     ejabberd_hooks:run_fold(s2s_out_auth_result, ServerHost, State, [true]).
 
 handle_auth_failure(Mech, Reason,
@@ -241,7 +246,7 @@ handle_auth_failure(Mech, Reason,
 		      server := LServer} = State) ->
     ?INFO_MSG("(~s) Failed outbound s2s ~s authentication ~s -> ~s (~s): ~s",
 	      [SockMod:pp(Socket), Mech, LServer, RServer,
-	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP)),
+	       ejabberd_config:may_hide_data(misc:ip_to_list(IP)),
 	       xmpp_stream_out:format_error(Reason)]),
     ejabberd_hooks:run_fold(s2s_out_auth_result, ServerHost, State, [{false, Reason}]).
 
@@ -277,8 +282,14 @@ handle_timeout(#{on_route := Action} = State) ->
 
 init([#{server := LServer, remote_server := RServer} = State, Opts]) ->
     ServerHost = ejabberd_router:host_of_route(LServer),
+    QueueType = ejabberd_s2s:queue_type(LServer),
+    QueueLimit = case lists:keyfind(
+			max_queue, 1, ejabberd_config:fsm_limit_opts([])) of
+		     {_, N} -> N;
+		     false -> unlimited
+		 end,
     State1 = State#{on_route => queue,
-		    queue => queue:new(),
+		    queue => p1_queue:new(QueueType, QueueLimit),
 		    xmlns => ?NS_SERVER,
 		    lang => ?MYLANG,
 		    server_host => ServerHost,
@@ -300,7 +311,13 @@ handle_cast(Msg, #{server_host := ServerHost} = State) ->
 
 handle_info({route, Pkt}, #{queue := Q, on_route := Action} = State) ->
     case Action of
-	queue -> State#{queue => queue:in(Pkt, Q)};
+	queue ->
+	    try State#{queue => p1_queue:in(Pkt, Q)}
+	    catch error:full ->
+		    Q1 = p1_queue:set_limit(Q, unlimited),
+		    Q2 = p1_queue:in(Pkt, Q1),
+		    handle_stream_end(queue_full, State#{queue => Q2})
+	    end;
 	bounce -> bounce_packet(Pkt, State);
 	send -> set_idle_timeout(send(State, Pkt))
     end;
@@ -324,20 +341,18 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 -spec resend_queue(state()) -> state().
-resend_queue(#{queue := Q} = State) ->
-    State1 = State#{queue => queue:new()},
-    jlib:queue_foldl(
+resend_queue(State) ->
+    queue_fold(
       fun(Pkt, AccState) ->
 	      send(AccState, Pkt)
-      end, State1, Q).
+      end, State).
 
 -spec bounce_queue(state()) -> state().
-bounce_queue(#{queue := Q} = State) ->
-    State1 = State#{queue => queue:new()},
-    jlib:queue_foldl(
+bounce_queue(State) ->
+    queue_fold(
       fun(Pkt, AccState) ->
 	      bounce_packet(Pkt, AccState)
-      end, State1, Q).
+      end, State).
 
 -spec bounce_message_queue(state()) -> state().
 bounce_message_queue(State) ->
@@ -359,10 +374,12 @@ bounce_packet(_, State) ->
 
 -spec mk_bounce_error(binary(), state()) -> stanza_error().
 mk_bounce_error(Lang, #{stop_reason := Why}) ->
-    Reason = xmpp_stream_out:format_error(Why),
+    Reason = format_error(Why),
     case Why of
 	internal_failure ->
-	    xmpp:err_internal_server_error();
+	    xmpp:err_internal_server_error(Reason, Lang);
+	queue_full ->
+	    xmpp:err_resource_constraint(Reason, Lang);
 	{dns, _} ->
 	    xmpp:err_remote_server_not_found(Reason, Lang);
 					     _ ->
@@ -386,6 +403,23 @@ set_idle_timeout(#{on_route := send, server := LServer} = State) ->
     xmpp_stream_out:set_timeout(State, Timeout);
 set_idle_timeout(State) ->
     State.
+
+-spec queue_fold(fun((xmpp_element(), state()) -> state()), state()) -> state().
+queue_fold(F, #{queue := Q} = State) ->
+    case p1_queue:out(Q) of
+	{{value, Pkt}, Q1} ->
+	    State1 = F(Pkt, State#{queue => Q1}),
+	    queue_fold(F, State1);
+	{empty, Q1} ->
+	    State#{queue => Q1}
+    end.
+
+format_error(internal_failure) ->
+    <<"Internal server error">>;
+format_error(queue_full) ->
+    <<"Stream queue is overloaded">>;
+format_error(Reason) ->
+    xmpp_stream_out:format_error(Reason).
 
 transform_options(Opts) ->
     lists:foldl(fun transform_options/2, [], Opts).

@@ -436,7 +436,7 @@ delete_old_messages(TypeBin, Days) when TypeBin == <<"chat">>;
 					TypeBin == <<"all">> ->
     Diff = Days * 24 * 60 * 60 * 1000000,
     TimeStamp = usec_to_now(p1_time_compat:system_time(micro_seconds) - Diff),
-    Type = jlib:binary_to_atom(TypeBin),
+    Type = misc:binary_to_atom(TypeBin),
     DBTypes = lists:usort(
 		lists:map(
 		  fun(Host) ->
@@ -518,7 +518,8 @@ process_iq(LServer, #iq{from = #jid{luser = LUser}, lang = Lang,
     end,
     case SubEl of
 	#mam_query{rsm = #rsm_set{index = I}} when is_integer(I) ->
-	    xmpp:make_error(IQ, xmpp:err_feature_not_implemented());
+	    Txt = <<"Unsupported <index/> element">>,
+	    xmpp:make_error(IQ, xmpp:err_feature_not_implemented(Txt, Lang));
 	#mam_query{rsm = RSM, xmlns = NS} ->
 	    case parse_query(SubEl, Lang) of
 		{ok, Query} ->
@@ -837,7 +838,8 @@ select(_LServer, JidRequestor, JidArchive, Query, RSM,
 				 history = History}} = MsgType) ->
     Start = proplists:get_value(start, Query),
     End = proplists:get_value('end', Query),
-    #lqueue{len = L, queue = Q} = History,
+    #lqueue{queue = Q} = History,
+    L = p1_queue:len(Q),
     Msgs =
 	lists:flatmap(
 	  fun({Nick, Pkt, _HaveSubject, Now, _Size}) ->
@@ -861,7 +863,7 @@ select(_LServer, JidRequestor, JidArchive, Query, RSM,
 		      false ->
 			  []
 		  end
-	  end, queue:to_list(Q)),
+	  end, p1_queue:to_list(Q)),
     case RSM of
 	#rsm_set{max = Max, before = Before} when is_binary(Before) ->
 	    {NewMsgs, IsComplete} = filter_by_max(lists:reverse(Msgs), Max),

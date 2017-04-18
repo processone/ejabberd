@@ -147,7 +147,7 @@ s2s_out_auth_result(#{db_enabled := true,
     %% Sending dialback request, section 2.1.1, step 1
     ?INFO_MSG("(~s) Retrying with s2s dialback authentication: ~s -> ~s (~s)",
 	      [SockMod:pp(Socket), LServer, RServer,
-	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
+	       ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
     State1 = maps:remove(stop_reason, State#{on_route => queue}),
     {stop, send_db_request(State1)};
 s2s_out_auth_result(State, _) ->
@@ -168,7 +168,7 @@ s2s_out_downgraded(#{db_enabled := true,
     ?INFO_MSG("(~s) Trying s2s dialback authentication with "
 	      "non-RFC compliant server: ~s -> ~s (~s)",
 	      [SockMod:pp(Socket), LServer, RServer,
-	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
+	       ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
     {stop, send_db_request(State)};
 s2s_out_downgraded(State, _) ->
     State.
@@ -266,8 +266,8 @@ s2s_out_packet(State, _) ->
 -spec make_key(binary(), binary(), binary()) -> binary().
 make_key(From, To, StreamID) ->
     Secret = ejabberd_config:get_option(shared_key, fun(V) -> V end),
-    p1_sha:to_hexlist(
-      crypto:hmac(sha256, p1_sha:to_hexlist(crypto:hash(sha256, Secret)),
+    str:to_hexlist(
+      crypto:hmac(sha256, str:to_hexlist(crypto:hash(sha256, Secret)),
 		  [To, " ", From, " ", StreamID])).
 
 -spec send_verify_request(ejabberd_s2s_out:state()) -> ejabberd_s2s_out:state().

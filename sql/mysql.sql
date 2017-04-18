@@ -291,6 +291,27 @@ CREATE TABLE muc_registered (
 CREATE INDEX i_muc_registered_nick USING BTREE ON muc_registered(nick(75));
 CREATE UNIQUE INDEX i_muc_registered_jid_host USING BTREE ON muc_registered(jid(75), host(75));
 
+CREATE TABLE muc_online_room (
+    name text NOT NULL,
+    host text NOT NULL,
+    node text NOT NULL,
+    pid text NOT NULL
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE UNIQUE INDEX i_muc_online_room_name_host USING BTREE ON muc_online_room(name(75), host(75));
+
+CREATE TABLE muc_online_users (
+    username text NOT NULL,
+    server text NOT NULL,
+    resource text NOT NULL,
+    name text NOT NULL,
+    host text NOT NULL,
+    node text NOT NULL
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE UNIQUE INDEX i_muc_online_users USING BTREE ON muc_online_users(username(75), server(75), resource(75), name(75), host(75));
+CREATE INDEX i_muc_online_users_us USING BTREE ON muc_online_users(username(75), server(75));
+
 CREATE TABLE irc_custom (
     jid text NOT NULL,
     host text NOT NULL,
@@ -335,3 +356,44 @@ CREATE TABLE oauth_token (
     scope text NOT NULL,
     expire bigint NOT NULL
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE route (
+    domain text NOT NULL,
+    server_host text NOT NULL,
+    node text NOT NULL,
+    pid text NOT NULL,
+    local_hint text NOT NULL
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE UNIQUE INDEX i_route ON route(domain(75), server_host(75), node(75), pid(75));
+CREATE INDEX i_route_domain ON route(domain(75));
+
+CREATE TABLE bosh (
+    sid text NOT NULL,
+    node text NOT NULL,
+    pid text NOT NULL
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE UNIQUE INDEX i_bosh_sid ON bosh(sid(75));
+
+CREATE TABLE carboncopy (
+    username text NOT NULL,
+    resource text NOT NULL,
+    namespace text NOT NULL,
+    node text NOT NULL
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE UNIQUE INDEX i_carboncopy_ur ON carboncopy (username(75), resource(75));
+CREATE INDEX i_carboncopy_user ON carboncopy (username(75));
+
+CREATE TABLE proxy65 (
+    sid text NOT NULL,
+    pid_t text NOT NULL,
+    pid_i text NOT NULL,
+    node_t text NOT NULL,
+    node_i text NOT NULL,
+    jid_i text NOT NULL
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE UNIQUE INDEX i_proxy65_sid ON proxy65 (sid(191));
+CREATE INDEX i_proxy65_jid ON proxy65 (jid_i(191));

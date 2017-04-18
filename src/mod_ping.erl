@@ -146,12 +146,14 @@ handle_cast({iq_pong, JID, timeout}, State) ->
 	      JID,
 	  case ejabberd_sm:get_session_pid(User, Server, Resource)
 	      of
-	    Pid when is_pid(Pid) -> ejabberd_c2s:close(Pid);
+	    Pid when is_pid(Pid) -> ejabberd_c2s:close(Pid, ping_timeout);
 	    _ -> ok
 	  end;
       _ -> ok
     end,
     {noreply, State#state{timers = Timers}};
+handle_cast({iq_pong, _JID, _}, State) ->
+    {noreply, State};
 handle_cast(Msg, State) ->
     ?WARNING_MSG("unexpected cast: ~p", [Msg]),
     {noreply, State}.

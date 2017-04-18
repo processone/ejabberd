@@ -106,6 +106,17 @@ hosts:
 ###.  ===============
 ###'  LISTENING PORTS
 
+## Define common macros used by listeners
+## define_macro:
+##   'CERTFILE': "/path/to/xmpp.pem"
+##   'CIPHERS': "ECDH:DH:!3DES:!aNULL:!eNULL:!MEDIUM@STRENGTH"
+##   'TLSOPTS':
+##     - "no_sslv3"
+##     - "no_tlsv1"
+##     - "cipher_server_preference"
+##     - "no_compression"
+##   'DHFILE': "/path/to/dhparams.pem" # generated with: openssl dhparam -out dhparams.pem 2048
+
 ##
 ## listen: The ports ejabberd will listen on, which service each is handled
 ## by and what options to start it with.
@@ -113,36 +124,53 @@ hosts:
 listen: 
   - 
     port: 5222
+    ip: "::"
     module: ejabberd_c2s
     ##
     ## If TLS is compiled in and you installed a SSL
     ## certificate, specify the full path to the
     ## file and uncomment these lines:
     ##
-    ## certfile: "/path/to/ssl.pem"
     ## starttls: true
+    ## certfile: 'CERTFILE'
+    ## protocol_options: 'TLSOPTS'
+    ## dhfile: 'DHFILE'
+    ## ciphers: 'CIPHERS'
     ##
     ## To enforce TLS encryption for client connections,
     ## use this instead of the "starttls" option:
     ##
     ## starttls_required: true
     ##
-    ## Custom OpenSSL options
+    ## Stream compression
     ##
-    ## protocol_options:
-    ##   - "no_sslv3"
-    ##   - "no_tlsv1"
+    ## zlib: true
+    ##
     max_stanza_size: 65536
     shaper: c2s_shaper
     access: c2s
   - 
     port: 5269
+    ip: "::"
     module: ejabberd_s2s_in
+  - 
+    port: 5280
+    ip: "::"
+    module: ejabberd_http
+    request_handlers:
+      "/websocket": ejabberd_http_ws
+      "/api": mod_http_api
+    ##  "/pub/archive": mod_http_fileserver
+    web_admin: true
+    http_bind: true
+    ## register: true
+    captcha: true
   ##
   ## ejabberd_service: Interact with external components (transports, ...)
   ##
   ## - 
   ##   port: 8888
+  ##   ip: "::"
   ##   module: ejabberd_service
   ##   access: all
   ##   shaper_rule: fast
@@ -175,39 +203,47 @@ listen:
   ##
   ## - 
   ##   port: 4560
+  ##   ip: "::"
   ##   module: ejabberd_xmlrpc
   ##   access_commands: {}
-  - 
-    port: 5280
-    module: ejabberd_http
-    request_handlers:
-      "/websocket": ejabberd_http_ws
-    ##  "/pub/archive": mod_http_fileserver
-    web_admin: true
-    http_bind: true
-    ## register: true
-    captcha: true
+
+  ##
+  ## To enable secure http upload
+  ##
+  ## - 
+  ##   port: 5444
+  ##   ip: "::"
+  ##   module: ejabberd_http
+  ##   request_handlers:
+  ##     "": mod_http_upload
+  ##   tls: true
+  ##   certfile: 'CERTFILE'
+  ##   protocol_options: 'TLSOPTS'
+  ##   dhfile: 'DHFILE'
+  ##   ciphers: 'CIPHERS'
+
+## Disabling digest-md5 SASL authentication. digest-md5 requires plain-text
+## password storage (see auth_password_format option).
+## disable_sasl_mechanisms: "digest-md5"
 
 ###.  ==================
 ###'  S2S GLOBAL OPTIONS
 
 ##
-## s2s_use_starttls: Enable STARTTLS + Dialback for S2S connections.
+## s2s_use_starttls: Enable STARTTLS for S2S connections.
 ## Allowed values are: false optional required required_trusted
 ## You must specify a certificate file.
 ##
-## s2s_use_starttls: optional
+## s2s_use_starttls: required
 
 ##
 ## s2s_certfile: Specify a certificate file.
 ##
-## s2s_certfile: "/path/to/ssl.pem"
+## s2s_certfile: 'CERTFILE'
 
 ## Custom OpenSSL options
 ##
-## s2s_protocol_options:
-##   - "no_sslv3"
-##   - "no_tlsv1"
+## s2s_protocol_options: 'TLSOPTS'
 
 ##
 ## domain_certfile: Specify a different certificate for each served hostname.
@@ -534,30 +570,43 @@ access_rules:
 ##
 ## By default "console commands" section allow executing all commands
 ## issued using ejabberdctl command, and "admin access" section allows
-## users in admin acl to  execute all commands except start and stop
-## with any available access method (ejabberdctl, http-api, xmlrpc
-## depending what is enabled on server).
+## users in admin acl that connect from 127.0.0.1 to  execute all
+## commands except start and stop with any available access method
+## (ejabberdctl, http-api, xmlrpc depending what is enabled on server).
 ##
-## Remember to not remove "console commands" section when doing modifications
-## or ejabberdctl will not be able to execute commands!
+## If you remove "console commands" there will be one added by
+## default allowing executing all commands, but if you just change
+## permissions in it, version from config file will be used instead
+## of default one.
 ##
-##
-## api_permissions:
-##  "console commands":
-##    from:
-##      - ejabberd_ctl
-##    who: all
-##    what: "*"
-##  "admin access":
-##    who:
-##      - admin
-##      - oauth:
-##        - scope: "ejabberd:admin"
-##        - admin
-##    what:
-##      - "*"
-##      - "!stop"
-##      - "!start"
+api_permissions:
+  "console commands":
+    from:
+      - ejabberd_ctl
+    who: all
+    what: "*"
+  "admin access":
+    who:
+      - access:
+          - allow:
+            - ip: "127.0.0.1/8"
+            - acl: admin
+      - oauth:
+        - scope: "ejabberd:admin"
+        - access:
+          - allow:
+              - ip: "127.0.0.1/8"
+              - acl: admin
+    what:
+      - "*"
+      - "!stop"
+      - "!start"
+  "public commands":
+    who:
+      - ip: "127.0.0.1/8"
+    what:
+      - "status"
+      - "connected_users_number"
 
 ## By default the frequency of account registrations from the same IP
 ## is limited to 1 account every 10 minutes. To disable, specify: infinity
@@ -616,7 +665,7 @@ language: "en"
 ##
 modules: 
   mod_adhoc: {}
-  ## mod_admin_extra: {}
+  mod_admin_extra: {}
   mod_announce: # recommends mod_adhoc
     access: announce
   mod_blocking: {} # requires mod_privacy
@@ -624,15 +673,25 @@ modules:
   mod_carboncopy: {}
   mod_client_state: {}
   mod_configure: {} # requires mod_adhoc
-  ##mod_delegation: {} # for xep0356
+  ## mod_delegation: {} # for xep0356
   mod_disco: {}
-  ## mod_echo: {}
+  mod_echo: {}
   mod_irc: {}
-  mod_http_bind: {}
+  mod_bosh: {}
   ## mod_http_fileserver:
   ##   docroot: "/var/www"
   ##   accesslog: "/var/log/ejabberd/access.log"
+  ## mod_http_upload:
+  ##   # docroot: "@HOME@/upload"
+  ##   put_url: "https://@HOST@:5444"
+  ##   thumbnail: false # otherwise needs the identify command from ImageMagick installed
+  ## mod_http_upload_quota:
+  ##   max_days: 30
   mod_last: {}
+  ## XEP-0313: Message Archive Management
+  ## You might want to setup a SQL backend for MAM because the mnesia database is
+  ## limited to 2GB which might be exceeded on large servers
+  ## mod_mam: {} # for xep0313, mnesia is limited to 2GB, better use an SQL backend
   mod_muc: 
     ## host: "conference.@HOST@"
     access:
@@ -641,6 +700,7 @@ modules:
       - allow: admin
     access_create: muc_create
     access_persistent: muc_create
+  mod_muc_admin: {}
   ## mod_muc_log: {}
   ## mod_multicast: {}
   mod_offline: 
@@ -714,6 +774,7 @@ modules:
   ##   PKIX authentication. Make sure you have proper certificates installed
   ##   and check your accessibility at https://xmpp.net/
   mod_s2s_dialback: {}
+  mod_http_api: {}
 
 ##
 ## Enable modules with custom options in a specific virtual host

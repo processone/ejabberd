@@ -152,6 +152,7 @@
 -type(pubsubState() ::
     #pubsub_state{
 	stateid       :: {Entity::ljid(), Nidx::mod_pubsub:nodeIdx()},
+	nodeidx       :: Nidx::mod_pubsub:nodeIdx(),
 	items         :: [ItemId::mod_pubsub:itemId()],
 	affiliation   :: Affs::mod_pubsub:affiliation(),
 	subscriptions :: [{Sub::mod_pubsub:subscription(), SubId::mod_pubsub:subId()}]
@@ -161,6 +162,7 @@
 -type(pubsubItem() ::
     #pubsub_item{
 	itemid       :: {ItemId::mod_pubsub:itemId(), Nidx::mod_pubsub:nodeIdx()},
+	nodeidx      :: Nidx::mod_pubsub:nodeIdx(),
 	creation     :: {erlang:timestamp(), ljid()},
 	modification :: {erlang:timestamp(), ljid()},
 	payload      :: mod_pubsub:payload()
@@ -255,7 +257,7 @@ init([ServerHost, Opts]) ->
     MaxSubsNode = gen_mod:get_opt(max_subscriptions_node, Opts,
 	    fun(A) when is_integer(A) andalso A >= 0 -> A end, undefined),
     case gen_mod:db_type(ServerHost, ?MODULE) of
-	mnesia -> init_mnesia(Host, ServerHost, Opts);
+	mnesia -> pubsub_index:init(Host, ServerHost, Opts);
 	_ -> ok
     end,
     {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
@@ -371,18 +373,6 @@ depends(ServerHost, Opts) ->
 	      catch _:undef -> []
 	      end
       end, Plugins).
-
-init_mnesia(Host, ServerHost, Opts) ->
-    pubsub_index:init(Host, ServerHost, Opts),
-    spawn(fun() ->
-	      %% maybe upgrade db. this can take time when upgrading existing
-	      %% data from ejabberd 2.1.x, so we don't want this to block
-	      %% calling gen_server:start
-	      pubsub_migrate:update_node_database(Host, ServerHost),
-	      pubsub_migrate:update_state_database(Host, ServerHost),
-	      pubsub_migrate:update_item_database(Host, ServerHost),
-	      pubsub_migrate:update_lastitem_database(Host, ServerHost)
-	  end).
 
 %% @doc Call the init/1 function for each plugin declared in the config file.
 %% The default plugin module is implicit.
@@ -1215,7 +1205,7 @@ iq_pubsub(Host, Access, #iq{from = From, type = IQType, lang = Lang,
 		    create_node(Host, ServerHost, Node, From, Type, Access, Config)
 	    end;
 	{set, #pubsub{publish = #ps_publish{node = Node, items = Items},
-		      publish_options = XData, _ = undefined}} ->
+		      publish_options = XData, configure = _, _ = undefined}} ->
 	    ServerHost = serverhost(Host),
 	    case Items of
 		[#ps_item{id = ItemId, xml_els = Payload}] ->
@@ -1371,7 +1361,7 @@ adhoc_request(_Host, _ServerHost, _Owner, Other, _Access, _Plugins) ->
 
 -spec send_pending_node_form(binary(), jid(), binary(),
 			     [binary()]) -> adhoc_command() | {error, stanza_error()}.
-send_pending_node_form(Host, Owner, _Lang, Plugins) ->
+send_pending_node_form(Host, Owner, Lang, Plugins) ->
     Filter = fun (Type) ->
 	    lists:member(<<"get-pending">>, plugin_features(Host, Type))
     end,
@@ -1385,7 +1375,7 @@ send_pending_node_form(Host, Owner, _Lang, Plugins) ->
 		{ok, Nodes} ->
 		    XForm = #xdata{type = form,
 				   fields = pubsub_get_pending:encode(
-					      [{node, Nodes}])},
+					      [{node, Nodes}], Lang)},
 		    #adhoc_command{status = executing, action = execute,
 				   xdata = XForm};
 		Err ->
@@ -1454,7 +1444,7 @@ send_authorization_request(#pubsub_node{nodeid = {Host, Node},
 	   [{node, Node},
 	    {subscriber_jid, Subscriber},
 	    {allow, false}],
-	   fun(T) -> translate:translate(Lang, T) end),
+	   Lang),
     X = #xdata{type = form,
 	       title = translate:translate(
 			 Lang, <<"PubSub subscriber request">>),
@@ -2165,48 +2155,21 @@ get_allowed_items_call(Host, Nidx, From, Type, Options, Owners, RSM) ->
     {PS, RG} = get_presence_and_roster_permissions(Host, From, Owners, AccessModel, AllowedGroups),
     node_call(Host, Type, get_items, [Nidx, From, AccessModel, PS, RG, undefined, RSM]).
 
-get_last_item(Host, Type, Nidx, LJID) ->
-    case get_cached_item(Host, Nidx) of
-	undefined -> get_last_item(Host, Type, Nidx, LJID, gen_mod:db_type(serverhost(Host), ?MODULE));
-	LastItem -> LastItem
-    end.
-get_last_item(Host, Type, Nidx, LJID, mnesia) ->
-    case node_action(Host, Type, get_items, [Nidx, LJID, undefined]) of
-	{result, {[LastItem|_], _}} -> LastItem;
-	_ -> undefined
-    end;
-get_last_item(Host, Type, Nidx, LJID, sql) ->
-    case node_action(Host, Type, get_last_items, [Nidx, LJID, 1]) of
-	{result, [LastItem]} -> LastItem;
-	_ -> undefined
-    end;
-get_last_item(_Host, _Type, _Nidx, _LJID, _) ->
-    undefined.
-
-get_last_items(Host, Type, Nidx, LJID, Number) ->
-    get_last_items(Host, Type, Nidx, LJID, Number, gen_mod:db_type(serverhost(Host), ?MODULE)).
-get_last_items(Host, Type, Nidx, LJID, Number, mnesia) ->
-    case node_action(Host, Type, get_items, [Nidx, LJID, undefined]) of
-	{result, {Items, _}} -> lists:sublist(Items, Number);
-	_ -> []
-    end;
-get_last_items(Host, Type, Nidx, LJID, Number, sql) ->
-    case node_action(Host, Type, get_last_items, [Nidx, LJID, Number]) of
+get_last_items(Host, Type, Nidx, LJID, Count) ->
+    case node_action(Host, Type, get_last_items, [Nidx, LJID, Count]) of
 	{result, Items} -> Items;
 	_ -> []
-    end;
-get_last_items(_Host, _Type, _Nidx, _LJID, _Number, _) ->
-    [].
+    end.
 
 %% @doc <p>Resend the items of a node to the user.</p>
 %% @todo use cache-last-item feature
 send_items(Host, Node, Nidx, Type, Options, LJID, last) ->
-    case get_last_item(Host, Type, Nidx, LJID) of
-	undefined ->
-	    ok;
-	LastItem ->
+    case get_last_items(Host, Type, Nidx, LJID, 1) of
+	[LastItem] ->
 	    Stanza = items_event_stanza(Node, Options, [LastItem]),
-	    dispatch_items(Host, LJID, Node, Stanza)
+	    dispatch_items(Host, LJID, Node, Stanza);
+	_ ->
+	    ok
     end;
 send_items(Host, Node, Nidx, Type, Options, LJID, Number) when Number > 0 ->
     Stanza = items_event_stanza(Node, Options, get_last_items(Host, Type, Nidx, Number, LJID)),
@@ -2215,23 +2178,12 @@ send_items(Host, Node, _Nidx, _Type, Options, LJID, _) ->
     Stanza = items_event_stanza(Node, Options, []),
     dispatch_items(Host, LJID, Node, Stanza).
 
-dispatch_items({FromU, FromS, FromR} = From, {ToU, ToS, ToR} = To,
-	    Node, Stanza) ->
-    C2SPid = case ejabberd_sm:get_session_pid(ToU, ToS, ToR) of
-	ToPid when is_pid(ToPid) -> ToPid;
-	_ ->
-	    R = user_resource(FromU, FromS, FromR),
-	    case ejabberd_sm:get_session_pid(FromU, FromS, R) of
-		FromPid when is_pid(FromPid) -> FromPid;
-		_ -> undefined
-	    end
-    end,
-    if C2SPid == undefined -> ok;
-	true ->
-	    C2SPid ! {send_filtered, {pep_message, <<Node/binary, "+notify">>},
-		service_jid(From), jid:make(To),
-		      Stanza}
-    end;
+dispatch_items({FromU, FromS, FromR}, To, Node, Stanza) ->
+    SenderResource = user_resource(FromU, FromS, FromR),
+    ejabberd_sm:route(jid:make(FromU, FromS, SenderResource),
+		      {send_filtered, {pep_message, <<((Node))/binary, "+notify">>},
+		       jid:make(FromU, FromS), jid:make(To),
+		       Stanza});
 dispatch_items(From, To, _Node, Stanza) ->
     ejabberd_router:route(
       xmpp:set_from_to(Stanza, service_jid(From), jid:make(To))).
@@ -2577,28 +2529,21 @@ get_subscriptions(Host, Node, JID) ->
 	    Error
     end.
 
-get_subscriptions_for_send_last(Host, PType, mnesia, JID, LJID, BJID) ->
+get_subscriptions_for_send_last(Host, PType, sql, JID, LJID, BJID) ->
+    {result, Subs} = node_action(Host, PType,
+	    get_entity_subscriptions_for_send_last,
+	    [Host, JID]),
+    [{Node, Sub, SubId, SubJID}
+	|| {Node, Sub, SubId, SubJID} <- Subs,
+	    Sub =:= subscribed, (SubJID == LJID) or (SubJID == BJID)];
+get_subscriptions_for_send_last(Host, PType, _, JID, LJID, BJID) ->
     {result, Subs} = node_action(Host, PType,
 	    get_entity_subscriptions,
 	    [Host, JID]),
     [{Node, Sub, SubId, SubJID}
 	|| {Node, Sub, SubId, SubJID} <- Subs,
 	    Sub =:= subscribed, (SubJID == LJID) or (SubJID == BJID),
-	    match_option(Node, send_last_published_item, on_sub_and_presence)];
-get_subscriptions_for_send_last(Host, PType, sql, JID, LJID, BJID) ->
-    case catch node_action(Host, PType,
-	    get_entity_subscriptions_for_send_last,
-	    [Host, JID])
-    of
-	{result, Subs} ->
-	    [{Node, Sub, SubId, SubJID}
-		|| {Node, Sub, SubId, SubJID} <- Subs,
-		    Sub =:= subscribed, (SubJID == LJID) or (SubJID == BJID)];
-	_ ->
-	    []
-    end;
-get_subscriptions_for_send_last(_Host, _PType, _, _JID, _LJID, _BJID) ->
-    [].
+	    match_option(Node, send_last_published_item, on_sub_and_presence)].
 
 -spec set_subscriptions(host(), binary(), jid(), [ps_subscription()]) ->
 			       {result, undefined} | {error, stanza_error()}.
@@ -3016,11 +2961,11 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, Nidx, Type, NodeO
     broadcast_stanza({LUser, LServer, <<>>}, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM),
     %% Handles implicit presence subscriptions
     SenderResource = user_resource(LUser, LServer, LResource),
-	    NotificationType = get_option(NodeOptions, notification_type, headline),
-	    Stanza = add_message_type(BaseStanza, NotificationType),
-	    %% set the from address on the notification to the bare JID of the account owner
-	    %% Also, add "replyto" if entity has presence subscription to the account owner
-	    %% See XEP-0163 1.1 section 4.3.1
+    NotificationType = get_option(NodeOptions, notification_type, headline),
+    Stanza = add_message_type(BaseStanza, NotificationType),
+    %% set the from address on the notification to the bare JID of the account owner
+    %% Also, add "replyto" if entity has presence subscription to the account owner
+    %% See XEP-0163 1.1 section 4.3.1
     ejabberd_sm:route(jid:make(LUser, LServer, SenderResource),
 		      {pep_message, <<((Node))/binary, "+notify">>,
 		       jid:make(LUser, LServer),
@@ -3213,28 +3158,18 @@ filter_node_options(Options, BaseOptions) ->
 
 -spec node_owners_action(host(), binary(), nodeIdx(), [ljid()]) -> [ljid()].
 node_owners_action(Host, Type, Nidx, []) ->
-    case gen_mod:db_type(serverhost(Host), ?MODULE) of
-	sql ->
-	    case node_action(Host, Type, get_node_affiliations, [Nidx]) of
-		{result, Affs} -> [LJID || {LJID, Aff} <- Affs, Aff =:= owner];
-		_ -> []
-	    end;
-	_ ->
-	    []
+    case node_action(Host, Type, get_node_affiliations, [Nidx]) of
+	{result, Affs} -> [LJID || {LJID, Aff} <- Affs, Aff =:= owner];
+	_ -> []
     end;
 node_owners_action(_Host, _Type, _Nidx, Owners) ->
     Owners.
 
 -spec node_owners_call(host(), binary(), nodeIdx(), [ljid()]) -> [ljid()].
 node_owners_call(Host, Type, Nidx, []) ->
-    case gen_mod:db_type(serverhost(Host), ?MODULE) of
-	sql ->
-	    case node_call(Host, Type, get_node_affiliations, [Nidx]) of
-		{result, Affs} -> [LJID || {LJID, Aff} <- Affs, Aff =:= owner];
-		_ -> []
-	    end;
-	_ ->
-	    []
+    case node_call(Host, Type, get_node_affiliations, [Nidx]) of
+	{result, Affs} -> [LJID || {LJID, Aff} <- Affs, Aff =:= owner];
+	_ -> []
     end;
 node_owners_call(_Host, _Type, _Nidx, Owners) ->
     Owners.
@@ -3281,7 +3216,7 @@ get_configure_xfields(_Type, Options, Lang, Groups) ->
 	   (Opt) ->
 		Opt
 	end, Options),
-      fun(Txt) -> translate:translate(Lang, Txt) end).
+      Lang).
 
 %%<p>There are several reasons why the node configuration request might fail:</p>
 %%<ul>
@@ -3479,23 +3414,15 @@ tree(Host) ->
 	Tree -> Tree
     end.
 
--spec tree(host(), binary() | atom()) -> atom().
+-spec tree(host(), binary()) -> atom().
 tree(_Host, <<"virtual">>) ->
     nodetree_virtual;   % special case, virtual does not use any backend
 tree(Host, Name) ->
-    case gen_mod:db_type(serverhost(Host), ?MODULE) of
-	mnesia -> jlib:binary_to_atom(<<"nodetree_", Name/binary>>);
-	sql -> jlib:binary_to_atom(<<"nodetree_", Name/binary, "_sql">>);
-	_ -> Name
-    end.
+    submodule(Host, <<"nodetree_", Name/binary>>).
 
--spec plugin(host(), binary() | atom()) -> atom().
+-spec plugin(host(), binary()) -> atom().
 plugin(Host, Name) ->
-    case gen_mod:db_type(serverhost(Host), ?MODULE) of
-	mnesia -> jlib:binary_to_atom(<<"node_", Name/binary>>);
-	sql -> jlib:binary_to_atom(<<"node_", Name/binary, "_sql">>);
-	_ -> Name
-    end.
+    submodule(Host, <<"node_", Name/binary>>).
 
 -spec plugins(host()) -> [binary()].
 plugins(Host) ->
@@ -3505,14 +3432,16 @@ plugins(Host) ->
 	Plugins -> Plugins
     end.
 
--spec subscription_plugin(host()) -> pubsub_subscription |
-				     pubsub_subscription_sql |
-				     none.
+-spec subscription_plugin(host()) -> atom().
 subscription_plugin(Host) ->
+    submodule(Host, <<"pubsub_subscription">>).
+
+-spec submodule(host(), binary()) -> atom().
+submodule(Host, Name) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
-	mnesia -> pubsub_subscription;
-	sql -> pubsub_subscription_sql;
-	_ -> none
+	mnesia -> misc:binary_to_atom(Name);
+	Type -> misc:binary_to_atom(<<Name/binary, "_",
+		    (misc:atom_to_binary(Type))/binary>>)
     end.
 
 -spec config(binary(), any()) -> any().
@@ -3625,9 +3554,14 @@ tree_action(Host, Function, Args) ->
 		    {error, xmpp:err_internal_server_error(ErrTxt, ?MYLANG)}
 	    end;
 	Other ->
-	    ?ERROR_MSG("unsupported backend: ~p~n", [Other]),
-	    ErrTxt = <<"Database failure">>,
-	    {error, xmpp:err_internal_server_error(ErrTxt, ?MYLANG)}
+	    case catch Fun() of
+		{'EXIT', _} ->
+		    ?ERROR_MSG("unsupported backend: ~p~n", [Other]),
+		    ErrTxt = <<"Database failure">>,
+		    {error, xmpp:err_internal_server_error(ErrTxt, ?MYLANG)};
+		Result ->
+		    Result
+	    end
     end.
 
 %% @doc <p>node plugin call.</p>
@@ -3695,7 +3629,7 @@ transaction_retry(Host, ServerHost, Fun, Trans, DBType, Count) ->
 	    end,
 	    catch ejabberd_sql:SqlFun(ServerHost, Fun);
 	_ ->
-	    {unsupported, DBType}
+	    catch Fun()
     end,
     case Res of
 	{result, Result} ->

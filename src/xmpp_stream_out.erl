@@ -57,7 +57,7 @@
 		       {tls, inet:posix() | atom() | binary()} |
 		       {pkix, binary()} |
 		       {auth, atom() | binary() | string()} |
-		       {socket, inet:posix() | closed | timeout} |
+		       {socket, inet:posix() | atom()} |
 		       internal_failure.
 -export_type([state/0, stop_reason/0]).
 -callback init(list()) -> {ok, state()} | {error, term()} | ignore.
@@ -161,19 +161,16 @@ send(_, _) ->
 
 -spec close(pid()) -> ok;
 	   (state()) -> state().
-close(Ref) ->
-    close(Ref, true).
-
--spec close(pid(), boolean()) -> ok;
-	   (state(), boolean()) -> state().
-close(Pid, SendTrailer) when is_pid(Pid) ->
-    cast(Pid, {close, SendTrailer});
-close(#{owner := Owner} = State, SendTrailer) when Owner == self() ->
-    if SendTrailer -> send_trailer(State);
-       true -> close_socket(State)
-    end;
-close(_, _) ->
+close(Pid) when is_pid(Pid) ->
+    close(Pid, closed);
+close(#{owner := Owner} = State) when Owner == self() ->
+    close_socket(State);
+close(_) ->
     erlang:error(badarg).
+
+-spec close(pid(), atom()) -> ok.
+close(Pid, Reason) ->
+    cast(Pid, {close, Reason}).
 
 -spec establish(state()) -> state().
 establish(State) ->
@@ -302,6 +299,13 @@ handle_cast({send, Pkt}, State) ->
     noreply(send_pkt(State, Pkt));
 handle_cast(stop, State) ->
     {stop, normal, State};
+handle_cast({close, Reason}, State) ->
+    State1 = close_socket(State),
+    noreply(
+      case is_disconnected(State) of
+	  true -> State1;
+	  false -> process_stream_end({socket, Reason}, State)
+      end);
 handle_cast(Cast, #{mod := Mod} = State) ->
     noreply(try Mod:handle_cast(Cast, State)
 	    catch _:undef -> State
@@ -434,7 +438,8 @@ process_invalid_xml(#{lang := MyLang} = State, El, Reason) ->
 process_stream_end(_, #{stream_state := disconnected} = State) ->
     State;
 process_stream_end(Reason, #{mod := Mod} = State) ->
-    State1 = send_trailer(State),
+    State1 = State#{stream_timeout => infinity,
+		    stream_state => disconnected},
     try Mod:handle_stream_end(Reason, State1)
     catch _:undef -> stop(State1)
     end.
@@ -518,12 +523,18 @@ process_features(#stream_features{sub_els = Els} = StreamFeatures,
 		false when TLSRequired and not Encrypted ->
 		    Txt = <<"Use of STARTTLS required">>,
 		    send_pkt(State1, xmpp:serr_policy_violation(Txt, Lang));
+		false when not Encrypted ->
+		    process_sasl_failure(
+		      <<"Peer doesn't support STARTTLS">>, State1);
 		#starttls{required = true} when not TLSAvailable and not Encrypted ->
 		    Txt = <<"Use of STARTTLS forbidden">>,
 		    send_pkt(State1, xmpp:serr_unsupported_feature(Txt, Lang));
 		#starttls{} when TLSAvailable and not Encrypted ->
 		    State2 = State1#{stream_state => wait_for_starttls_response},
 		    send_pkt(State2, #starttls{});
+		#starttls{} when not Encrypted ->
+		    process_sasl_failure(
+		      <<"STARTTLS is disabled in local configuration">>, State1);
 		_ ->
 		    State2 = process_cert_verification(State1),
 		    case is_disconnected(State2) of
@@ -729,14 +740,16 @@ send_error(State, Pkt, Err) ->
 
 -spec socket_send(state(), xmpp_element() | xmlel() | trailer) -> ok | {error, inet:posix()}.
 socket_send(#{sockmod := SockMod, socket := Socket, xmlns := NS,
-	      stream_state := StateName}, Pkt) when StateName /= disconnected ->
+	      stream_state := StateName}, Pkt) ->
     case Pkt of
 	trailer ->
 	    SockMod:send_trailer(Socket);
-	#stream_start{} ->
+	#stream_start{} when StateName /= disconnected ->
 	    SockMod:send_header(Socket, xmpp:encode(Pkt));
+	_ when StateName /= disconnected ->
+	    SockMod:send_element(Socket, xmpp:encode(Pkt, NS));
 	_ ->
-	    SockMod:send_element(Socket, xmpp:encode(Pkt, NS))
+	    {error, closed}
     end;
 socket_send(_, _) ->
     {error, closed}.
@@ -747,8 +760,6 @@ send_trailer(State) ->
     close_socket(State).
 
 -spec close_socket(state()) -> state().
-close_socket(#{stream_state := disconnected} = State) ->
-    State;
 close_socket(State) ->
     case State of
 	#{sockmod := SockMod, socket := Socket} ->

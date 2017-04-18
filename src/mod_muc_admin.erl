@@ -29,8 +29,8 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, reload/3, depends/2, muc_online_rooms/1,
-	 muc_unregister_nick/1, create_room/3, destroy_room/2,
-	 create_room_with_opts/4,
+	 muc_register_nick/3, muc_unregister_nick/1,
+	 create_room_with_opts/4, create_room/3, destroy_room/2,
 	 create_rooms_file/1, destroy_rooms_file/1,
 	 rooms_unused_list/2, rooms_unused_destroy/2,
 	 get_user_rooms/2, get_room_occupants/2,
@@ -44,6 +44,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
+-include("mod_muc.hrl").
 -include("mod_muc_room.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
@@ -85,6 +86,13 @@ get_commands_spec() ->
 		       module = ?MODULE, function = muc_online_rooms,
 		       args = [{host, binary}],
 		       result = {rooms, {list, {room, string}}}},
+     #ejabberd_commands{name = muc_register_nick, tags = [muc],
+		       desc = "Register a nick in the MUC service",
+		       longdesc = "Provide the nick, the user JID and the MUC service",
+		       module = ?MODULE, function = muc_register_nick,
+		       args = [{nick, binary}, {jid, binary}, {domain, binary}],
+		       args_example = [<<"Tim">>, <<"tim@example.org">>, <<"conference.example.org">>],
+		       result = {res, rescode}},
      #ejabberd_commands{name = muc_unregister_nick, tags = [muc],
 		       desc = "Unregister the nick in the MUC service",
 		       module = ?MODULE, function = muc_unregister_nick,
@@ -233,9 +241,23 @@ muc_online_rooms(ServerHost) ->
 	       || {Name, _, _} <- mod_muc:get_online_rooms(Host)]
       end, Hosts).
 
+muc_register_nick(Nick, JIDBinary, Domain) ->
+    try jid:decode(JIDBinary) of
+	JID ->
+	    F = fun (MHost, MNick) ->
+		    mnesia:write(#muc_registered{us_host=MHost, nick=MNick})
+		end,
+	    case mnesia:transaction(F, [{{JID#jid.luser, JID#jid.lserver},
+					 Domain}, Nick]) of
+		{atomic, ok} -> ok;
+		{aborted, _Error} -> error
+	    end
+    catch _:{bad_jid, _} -> throw({error, "Malformed JID"})
+    end.
+
 muc_unregister_nick(Nick) ->
     F2 = fun(N) ->
-		 [{_,Key,_}] = mnesia:index_read(muc_registered, N, 3),
+		 [{_,Key,_}|_] = mnesia:index_read(muc_registered, N, 3),
 		 mnesia:delete({muc_registered, Key})
 	 end,
     case mnesia:transaction(F2, [Nick], 1) of
@@ -289,7 +311,7 @@ web_menu_host(Acc, _Host, Lang) ->
 web_page_main(_, #request{path=[<<"muc">>], lang = Lang} = _Request) ->
     OnlineRoomsNumber = lists:foldl(
 			  fun(Host, Acc) ->
-				  Acc ++ mod_muc:count_online_rooms(Host)
+				  Acc + mod_muc:count_online_rooms(Host)
 			  end, 0, find_hosts(global)),
     Res = [?XCT(<<"h1">>, <<"Multi-User Chat">>),
 	   ?XCT(<<"h3">>, <<"Statistics">>),
@@ -431,10 +453,10 @@ prepare_room_info(Room_info) ->
     [NameHost,
      integer_to_binary(Num_participants),
      Ts_last_message,
-     jlib:atom_to_binary(Public),
-     jlib:atom_to_binary(Persistent),
-     jlib:atom_to_binary(Logging),
-     jlib:atom_to_binary(Just_created),
+     misc:atom_to_binary(Public),
+     misc:atom_to_binary(Persistent),
+     misc:atom_to_binary(Logging),
+     misc:atom_to_binary(Just_created),
      Title].
 
 
@@ -471,6 +493,8 @@ create_room_with_opts(Name1, Host1, ServerHost, CustomRoomOpts) ->
     AcPer = gen_mod:get_module_opt(ServerHost, mod_muc, access_persistent, fun(X) -> X end, all),
     HistorySize = gen_mod:get_module_opt(ServerHost, mod_muc, history_size, fun(X) -> X end, 20),
     RoomShaper = gen_mod:get_module_opt(ServerHost, mod_muc, room_shaper, fun(X) -> X end, none),
+    QueueType = gen_mod:get_module_opt(ServerHost, mod_muc, queue_type, fun(X) -> X end,
+				       ejabberd_config:default_queue_type(ServerHost)),
 
     %% If the room does not exist yet in the muc_online_room
     case mod_muc:find_online_room(Name, Host) of
@@ -483,8 +507,9 @@ create_room_with_opts(Name1, Host1, ServerHost, CustomRoomOpts) ->
 			  Name,
 			  HistorySize,
 			  RoomShaper,
-			  RoomOpts),
-	    mod_muc:register_online_room(Host, Name, Pid),
+			  RoomOpts,
+			  QueueType),
+	    mod_muc:register_online_room(Name, Host, Pid),
 	    ok;
 	{ok, _} ->
 	    error
@@ -801,7 +826,7 @@ change_room_option(Name, Service, OptionString, ValueString) ->
     end.
 
 format_room_option(OptionString, ValueString) ->
-    Option = jlib:binary_to_atom(OptionString),
+    Option = misc:binary_to_atom(OptionString),
     Value = case Option of
 		title -> ValueString;
 		description -> ValueString;
@@ -809,7 +834,7 @@ format_room_option(OptionString, ValueString) ->
 		subject ->ValueString;
 		subject_author ->ValueString;
 		max_users -> binary_to_integer(ValueString);
-		_ -> jlib:binary_to_atom(ValueString)
+		_ -> misc:binary_to_atom(ValueString)
 	    end,
     {Option, Value}.
 
@@ -870,9 +895,9 @@ get_room_options(Pid) ->
     get_options(Config).
 
 get_options(Config) ->
-    Fields = [jlib:atom_to_binary(Field) || Field <- record_info(fields, config)],
+    Fields = [misc:atom_to_binary(Field) || Field <- record_info(fields, config)],
     [config | ValuesRaw] = tuple_to_list(Config),
-    Values = lists:map(fun(V) when is_atom(V) -> jlib:atom_to_binary(V);
+    Values = lists:map(fun(V) when is_atom(V) -> misc:atom_to_binary(V);
                           (V) when is_integer(V) -> integer_to_binary(V);
                           (V) when is_tuple(V); is_list(V) -> list_to_binary(hd(io_lib:format("~w", [V])));
                           (V) -> V end, ValuesRaw),
@@ -914,7 +939,7 @@ get_room_affiliations(Name, Service) ->
 %% If the affiliation is 'none', the action is to remove,
 %% In any other case the action will be to create the affiliation.
 set_room_affiliation(Name, Service, JID, AffiliationString) ->
-    Affiliation = jlib:binary_to_atom(AffiliationString),
+    Affiliation = misc:binary_to_atom(AffiliationString),
     case mod_muc:find_online_room(Name, Service) of
 	{ok, Pid} ->
 	    %% Get the PID for the online room so we can get the state of the room

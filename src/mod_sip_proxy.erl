@@ -332,7 +332,7 @@ make_sign(TS, Hdrs) ->
     FromTag = esip:get_param(<<"tag">>, FParams),
     CallID = esip:get_hdr('call-id', Hdrs),
     SharedKey = ejabberd_config:get_option(shared_key, fun(V) -> V end),
-    p1_sha:sha([SharedKey, LFUser, LFServer, LTUser, LTServer,
+    str:sha([SharedKey, LFUser, LFServer, LTUser, LTServer,
 		FromTag, CallID, TS]).
 
 is_signed_by_me(TS_Sign, Hdrs) ->

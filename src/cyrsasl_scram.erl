@@ -128,14 +128,14 @@ mech_step(#state{step = 2} = State, ClientIn) ->
 				      str:substr(ClientIn,
                                                  str:str(ClientIn, <<"n=">>)),
 				  ServerNonce =
-				      jlib:encode_base64(randoms:bytes(?NONCE_LENGTH)),
+				      misc:encode_base64(randoms:bytes(?NONCE_LENGTH)),
 				  ServerFirstMessage =
                                         iolist_to_binary(
                                           ["r=",
                                            ClientNonce,
                                            ServerNonce,
                                            ",", "s=",
-                                           jlib:encode_base64(Salt),
+                                           misc:encode_base64(Salt),
                                            ",", "i=",
                                            integer_to_list(IterationCount)]),
 				  {continue, ServerFirstMessage,
@@ -161,7 +161,7 @@ mech_step(#state{step = 4} = State, ClientIn) ->
        ClientProofAttribute] ->
 	  case parse_attribute(GS2ChannelBindingAttribute) of
 	    {$c, CVal} ->
-		ChannelBindingSupport = binary:at(jlib:decode_base64(CVal), 0),
+		ChannelBindingSupport = binary:at(misc:decode_base64(CVal), 0),
 		if (ChannelBindingSupport == $n)
 		  or (ChannelBindingSupport == $y) ->
 		    Nonce = <<(State#state.client_nonce)/binary,
@@ -170,7 +170,7 @@ mech_step(#state{step = 4} = State, ClientIn) ->
 			{$r, CompareNonce} when CompareNonce == Nonce ->
 			    case parse_attribute(ClientProofAttribute) of
 			    {$p, ClientProofB64} ->
-				  ClientProof = jlib:decode_base64(ClientProofB64),
+				  ClientProof = misc:decode_base64(ClientProofB64),
 				  AuthMessage = iolist_to_binary(
 						    [State#state.auth_message,
 						     ",",
@@ -191,7 +191,7 @@ mech_step(#state{step = 4} = State, ClientIn) ->
 					       {auth_module, State#state.auth_module},
 					       {authzid, State#state.username}],
 					  <<"v=",
-					    (jlib:encode_base64(ServerSignature))/binary>>};
+					    (misc:encode_base64(ServerSignature))/binary>>};
 				     true -> {error, not_authorized, State#state.username}
 				  end;
 			    _ -> {error, bad_attribute}

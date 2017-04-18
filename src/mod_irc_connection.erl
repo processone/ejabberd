@@ -50,7 +50,6 @@
          encoding = <<"">>     :: binary(),
          port = 0              :: inet:port_number(),
          password = <<"">>     :: binary(),
-         queue = queue:new()   :: ?TQUEUE,
          user = #jid{}         :: jid(),
          host = <<"">>         :: binary(),
 	 server = <<"">>       :: binary(),
@@ -112,7 +111,7 @@ init([From, Host, Server, Username, Encoding, Port,
       Password, Ident, RemoteAddr, RealName, WebircPassword, Mod]) ->
     gen_fsm:send_event(self(), init),
     {ok, open_socket,
-     #state{queue = queue:new(), mod = Mod,
+     #state{mod = Mod,
 	    encoding = Encoding, port = Port, password = Password,
 	    user = From, nick = Username, host = Host,
 	    server = Server, ident = Ident, realname = RealName,
@@ -694,15 +693,6 @@ send_text(#state{socket = Socket, encoding = Encoding},
 	  Text) ->
     CText = iconv:convert(<<"utf-8">>, Encoding, iolist_to_binary(Text)),
     gen_tcp:send(Socket, CText).
-
-%send_queue(Socket, Q) ->
-%    case queue:out(Q) of
-%	{{value, El}, Q1} ->
-%	    send_element(Socket, El),
-%	    send_queue(Socket, Q1);
-%	{empty, Q1} ->
-%	    ok
-%    end.
 
 bounce_messages(Reason) ->
     receive

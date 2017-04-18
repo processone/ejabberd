@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-source "${EJABBERD_HOME}/docker/lib/base_config.sh"
-source "${EJABBERD_HOME}/docker/lib/config.sh"
-source "${EJABBERD_HOME}/docker/lib/base_functions.sh"
-source "${EJABBERD_HOME}/docker/lib/functions.sh"
+source "${EJABBERD_HOME}/scripts/lib/base_config.sh"
+source "${EJABBERD_HOME}/scripts/lib/config.sh"
+source "${EJABBERD_HOME}/scripts/lib/base_functions.sh"
+source "${EJABBERD_HOME}/scripts/lib/functions.sh"
 
 
 make_snakeoil_certificate() {
@@ -20,7 +20,7 @@ make_snakeoil_certificate() {
                 -keyout /tmp/selfsigned.key \
                 -out /tmp/selfsigned.crt
 
-    log "Writing ssl cert and private key to '${certfile}'..."
+    echo "Writing ssl cert and private key to '${certfile}'..."
     cat /tmp/selfsigned.crt /tmp/selfsigned.key > ${certfile}
     rm /tmp/selfsigned.crt /tmp/selfsigned.key
 }
@@ -43,7 +43,8 @@ make_host_snakeoil_certificate() {
         fi
     fi
 
-    log "Generating snakeoil ssl cert for ${domain}..."
+    echo -n "Missing ssl cert for your host. "
+    echo "Generating snakeoil ssl cert for ${domain}..."
 
     make_snakeoil_certificate ${domain} ${SSLCERTHOST}
 }
@@ -53,16 +54,32 @@ make_domain_snakeoil_certificate() {
     local domain=$1
     local certfile=$2
 
-    log "Generating snakeoil ssl cert for ${domain}..."
+    echo -n "Missing ssl cert for your xmpp domain. "
+    echo "Generating snakeoil ssl cert for ${domain}..."
 
     make_snakeoil_certificate ${domain} ${certfile}
 }
 
 
+## backward compatibility
+# link old xmpp_domain.pem file to the first <domainname>.pem in XMPP_DOMAIN
+readonly SSLCERTDOMAIN="${SSLCERTDIR}/xmpp_domain.pem"
+if file_exist ${SSLCERTDOMAIN} ; then
+    for xmpp_domain in ${XMPP_DOMAIN} ; do
+        file_exist "${SSLCERTDIR}/${xmpp_domain}.pem" \
+          || ln -s ${SSLCERTDOMAIN} "${SSLCERTDIR}/${xmpp_domain}.pem"
+        break
+    done
+fi
+
+
+is_true ${EJABBERD_SKIP_MAKE_SSLCERT} \
+    && echo "Skip certificate generation" \
+    && exit 0
+
 # generate host ssl cert if missing
 file_exist ${SSLCERTHOST} \
   || make_host_snakeoil_certificate
-
 
 # generate xmmp domain ssl certificates if missing
 for xmpp_domain in ${XMPP_DOMAIN} ; do
@@ -70,6 +87,5 @@ for xmpp_domain in ${XMPP_DOMAIN} ; do
   file_exist ${domain_certfile} \
     || make_domain_snakeoil_certificate ${xmpp_domain} ${domain_certfile}
 done
-
 
 exit 0

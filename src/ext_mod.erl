@@ -160,9 +160,9 @@ available() ->
                 lists:keystore(Key, 1, Acc, {Key, Val})
             end, Jungle, Standalone)).
 available(Module) when is_atom(Module) ->
-    available(jlib:atom_to_binary(Module));
+    available(misc:atom_to_binary(Module));
 available(Package) when is_binary(Package) ->
-    Available = [jlib:atom_to_binary(K) || K<-proplists:get_keys(available())],
+    Available = [misc:atom_to_binary(K) || K<-proplists:get_keys(available())],
     lists:member(Package, Available).
 
 available_command() ->
@@ -171,18 +171,18 @@ available_command() ->
 installed() ->
     modules_spec(modules_dir(), "*").
 installed(Module) when is_atom(Module) ->
-    installed(jlib:atom_to_binary(Module));
+    installed(misc:atom_to_binary(Module));
 installed(Package) when is_binary(Package) ->
-    Installed = [jlib:atom_to_binary(K) || K<-proplists:get_keys(installed())],
+    Installed = [misc:atom_to_binary(K) || K<-proplists:get_keys(installed())],
     lists:member(Package, Installed).
 
 installed_command() ->
     [short_spec(Item) || Item <- installed()].
 
 install(Module) when is_atom(Module) ->
-    install(jlib:atom_to_binary(Module));
+    install(misc:atom_to_binary(Module));
 install(Package) when is_binary(Package) ->
-    Spec = [S || {Mod, S} <- available(), jlib:atom_to_binary(Mod)==Package],
+    Spec = [S || {Mod, S} <- available(), misc:atom_to_binary(Mod)==Package],
     case {Spec, installed(Package), is_contrib_allowed()} of
         {_, _, false} ->
             {error, not_allowed};
@@ -191,7 +191,7 @@ install(Package) when is_binary(Package) ->
         {_, true, _} ->
             {error, conflict};
         {[Attrs], _, _} ->
-            Module = jlib:binary_to_atom(Package),
+            Module = misc:binary_to_atom(Package),
             case compile_and_install(Module, Attrs) of
                 ok ->
                     code:add_patha(module_ebin_dir(Module)),
@@ -207,11 +207,11 @@ install(Package) when is_binary(Package) ->
     end.
 
 uninstall(Module) when is_atom(Module) ->
-    uninstall(jlib:atom_to_binary(Module));
+    uninstall(misc:atom_to_binary(Module));
 uninstall(Package) when is_binary(Package) ->
     case installed(Package) of
         true ->
-            Module = jlib:binary_to_atom(Package),
+            Module = misc:binary_to_atom(Package),
             case erlang:function_exported(Module, pre_uninstall, 0) of
                 true -> Module:pre_uninstall();
                 _ -> ok
@@ -230,7 +230,7 @@ uninstall(Package) when is_binary(Package) ->
 upgrade() ->
     [{Package, upgrade(Package)} || {Package, _Spec} <- installed()].
 upgrade(Module) when is_atom(Module) ->
-    upgrade(jlib:atom_to_binary(Module));
+    upgrade(misc:atom_to_binary(Module));
 upgrade(Package) when is_binary(Package) ->
     uninstall(Package),
     install(Package).
@@ -240,7 +240,7 @@ add_sources(Path) when is_list(Path) ->
 add_sources(_, "") ->
     {error, no_url};
 add_sources(Module, Path) when is_atom(Module), is_list(Path) ->
-    add_sources(jlib:atom_to_binary(Module), Path);
+    add_sources(misc:atom_to_binary(Module), Path);
 add_sources(Package, Path) when is_binary(Package), is_list(Path) ->
     DestDir = sources_dir(),
     RepDir = filename:join(DestDir, module_name(Path)),
@@ -261,18 +261,18 @@ add_sources(Package, Path) when is_binary(Package), is_list(Path) ->
     end.
 
 del_sources(Module) when is_atom(Module) ->
-    del_sources(jlib:atom_to_binary(Module));
+    del_sources(misc:atom_to_binary(Module));
 del_sources(Package) when is_binary(Package) ->
     case uninstall(Package) of
         ok ->
-            SrcDir = module_src_dir(jlib:binary_to_atom(Package)),
+            SrcDir = module_src_dir(misc:binary_to_atom(Package)),
             delete_path(SrcDir);
         Error ->
             Error
     end.
 
 check(Module) when is_atom(Module) ->
-    check(jlib:atom_to_binary(Module));
+    check(misc:atom_to_binary(Module));
 check(Package) when is_binary(Package) ->
     case {available(Package), installed(Package)} of
         {false, _} ->
@@ -281,11 +281,11 @@ check(Package) when is_binary(Package) ->
             Status = install(Package),
             uninstall(Package),
             case Status of
-                ok -> check_sources(jlib:binary_to_atom(Package));
+                ok -> check_sources(misc:binary_to_atom(Package));
                 Error -> Error
             end;
         _ ->
-            check_sources(jlib:binary_to_atom(Package))
+            check_sources(misc:binary_to_atom(Package))
     end.
 
 %% -- archives and variables functions
@@ -420,7 +420,7 @@ module_name(Id) ->
     filename:basename(filename:rootname(Id)).
 
 module(Id) ->
-    jlib:binary_to_atom(iolist_to_binary(module_name(Id))).
+    misc:binary_to_atom(iolist_to_binary(module_name(Id))).
 
 module_spec(Spec) ->
     [{path, filename:dirname(Spec)}
@@ -541,8 +541,21 @@ compile_result(Results) ->
 
 compile_options() ->
     [verbose, report_errors, report_warnings]
-    ++ [{i, filename:join(code:lib_dir(App), "include")}
-        || App <- [fast_xml, xmpp, ejabberd]].
+    ++ [{i, filename:join(app_dir(App), "include")}
+        || App <- [fast_xml, xmpp, p1_utils, ejabberd]].
+
+app_dir(App) ->
+    case code:lib_dir(App) of
+        {error, bad_name} ->
+            case code:which(App) of
+                Beam when is_list(Beam) ->
+                    filename:dirname(filename:dirname(Beam));
+                _ ->
+                    "."
+            end;
+        Dir ->
+            Dir
+    end.
 
 compile_erlang_file(Dest, File) ->
     compile_erlang_file(Dest, File, compile_options()).
@@ -570,10 +583,13 @@ compile_elixir_file(Dest, File) ->
 install(Module, Spec, SrcDir, LibDir) ->
     {ok, CurDir} = file:get_cwd(),
     file:set_cwd(SrcDir),
+    Files1 = [{File, copy(File, filename:join(LibDir, File))}
+                  || File <- filelib:wildcard("{ebin,priv,conf,include}/**")],
+    Files2 = [{File, copy(File, filename:join(LibDir, filename:join(lists:nthtail(2,filename:split(File)))))}
+                  || File <- filelib:wildcard("deps/*/{ebin,priv}/**")],
     Errors = lists:dropwhile(fun({_, ok}) -> true;
                                 (_) -> false
-            end, [{File, copy(File, filename:join(LibDir, File))}
-                  || File <- filelib:wildcard("{ebin,priv,conf,include}/**")]),
+            end, Files1++Files2),
     Result = case Errors of
         [{F, {error, E}}|_] ->
             {error, {F, E}};

@@ -27,7 +27,7 @@
 -protocol({xep, 114, '1.6'}).
 
 %% ejabberd_socket callbacks
--export([start/2, start_link/2, socket_type/0]).
+-export([start/2, start_link/2, socket_type/0, close/1, close/2]).
 %% ejabberd_config callbacks
 -export([opt_type/1, transform_listen_option/2]).
 %% xmpp_stream_in callbacks
@@ -63,6 +63,16 @@ socket_type() ->
 send(Stream, Pkt) ->
     xmpp_stream_in:send(Stream, Pkt).
 
+-spec close(pid()) -> ok;
+	   (state()) -> state().
+close(Ref) ->
+    xmpp_stream_in:close(Ref).
+
+-spec close(pid(), atom()) -> ok;
+	   (state(), atom()) -> state().
+close(Ref, Reason) ->
+    xmpp_stream_in:close(Ref, Reason).
+
 %%%===================================================================
 %%% xmpp_stream_in callbacks
 %%%===================================================================
@@ -78,13 +88,13 @@ init([State, Opts]) ->
 			 fun({H, Os}, D) ->
 				 P = proplists:get_value(
 				       password, Os,
-				       p1_sha:sha(randoms:bytes(20))),
+				       str:sha(randoms:bytes(20))),
 				 dict:store(H, P, D)
 			 end, dict:new(), HOpts);
 		   false ->
 		       Pass = proplists:get_value(
 				password, Opts,
-				p1_sha:sha(randoms:bytes(20))),
+				str:sha(randoms:bytes(20))),
 		       dict:from_list([{global, Pass}])
 	       end,
     CheckFrom = gen_mod:get_opt(check_from, Opts,
@@ -153,7 +163,7 @@ get_password_fun(#{remote_server := RemoteServer,
 		    ?INFO_MSG("(~s) Domain ~s is unconfigured for "
 			      "external component from ~s",
 			      [SockMod:pp(Socket), RemoteServer,
-			       ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
+			       ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
 		    {false, undefined}
 	    end
     end.
@@ -165,7 +175,7 @@ handle_auth_success(_, Mech, _,
     ?INFO_MSG("(~s) Accepted external component ~s authentication "
 	      "for ~s from ~s",
 	      [SockMod:pp(Socket), Mech, RemoteServer,
-	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
+	       ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
     		    lists:foreach(
     		      fun (H) ->
     			      ejabberd_router:register_route(H, ?MYNAME),
@@ -180,7 +190,7 @@ handle_auth_failure(_, Mech, Reason,
     ?INFO_MSG("(~s) Failed external component ~s authentication "
 	      "for ~s from ~s: ~s",
 	      [SockMod:pp(Socket), Mech, RemoteServer,
-	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP)),
+	       ejabberd_config:may_hide_data(misc:ip_to_list(IP)),
 	       Reason]),
     State.
 

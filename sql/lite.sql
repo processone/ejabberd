@@ -275,6 +275,27 @@ CREATE TABLE muc_registered (
 CREATE INDEX i_muc_registered_nick ON muc_registered (nick);
 CREATE UNIQUE INDEX i_muc_registered_jid_host ON muc_registered (jid, host);
 
+CREATE TABLE muc_online_room (
+    name text NOT NULL,
+    host text NOT NULL,
+    node text NOT NULL,
+    pid text NOT NULL
+);
+
+CREATE UNIQUE INDEX i_muc_online_room_name_host ON muc_online_room (name, host);
+
+CREATE TABLE muc_online_users (
+    username text NOT NULL,
+    server text NOT NULL,
+    resource text NOT NULL,
+    name text NOT NULL,
+    host text NOT NULL,
+    node text NOT NULL
+);
+
+CREATE UNIQUE INDEX i_muc_online_users ON muc_online_users (username, server, resource, name, host);
+CREATE INDEX i_muc_online_users_us ON muc_online_users (username, server);
+
 CREATE TABLE irc_custom (
     jid text NOT NULL,
     host text NOT NULL,
@@ -319,3 +340,44 @@ CREATE TABLE oauth_token (
     scope text NOT NULL,
     expire bigint NOT NULL
 );
+
+CREATE TABLE route (
+    domain text NOT NULL,
+    server_host text NOT NULL,
+    node text NOT NULL,
+    pid text NOT NULL,
+    local_hint text NOT NULL
+);
+
+CREATE UNIQUE INDEX i_route ON route(domain, server_host, node, pid);
+CREATE INDEX i_route_domain ON route(domain);
+
+CREATE TABLE bosh (
+    sid text NOT NULL,
+    node text NOT NULL,
+    pid text NOT NULL
+);
+
+CREATE UNIQUE INDEX i_bosh_sid ON bosh(sid);
+
+CREATE TABLE carboncopy (
+    username text NOT NULL,
+    resource text NOT NULL,
+    namespace text NOT NULL,
+    node text NOT NULL
+);
+
+CREATE UNIQUE INDEX i_carboncopy_ur ON carboncopy (username, resource);
+CREATE INDEX i_carboncopy_user ON carboncopy (username);
+
+CREATE TABLE proxy65 (
+    sid text NOT NULL,
+    pid_t text NOT NULL,
+    pid_i text NOT NULL,
+    node_t text NOT NULL,
+    node_i text NOT NULL,
+    jid_i text NOT NULL
+);
+
+CREATE UNIQUE INDEX i_proxy65_sid ON proxy65 (sid);
+CREATE INDEX i_proxy65_jid ON proxy65 (jid_i);

@@ -33,10 +33,10 @@
 -export([init/2, store_room/4, restore_room/3, forget_room/3,
 	 can_use_nick/4, get_rooms/2, get_nick/3, set_nick/4,
 	 import/3, export/1]).
--export([register_online_room/3, unregister_online_room/3, find_online_room/2,
-	 get_online_rooms/2, count_online_rooms/1, rsm_supported/0,
-	 register_online_user/3, unregister_online_user/3,
-	 count_online_rooms_by_user/2, get_online_rooms_by_user/2]).
+-export([register_online_room/4, unregister_online_room/4, find_online_room/3,
+	 get_online_rooms/3, count_online_rooms/2, rsm_supported/0,
+	 register_online_user/4, unregister_online_user/4,
+	 count_online_rooms_by_user/3, get_online_rooms_by_user/3]).
 -export([set_affiliation/6, set_affiliations/4, get_affiliation/5,
 	 get_affiliations/3, search_affiliation/4]).
 
@@ -48,11 +48,16 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-init(_Host, _Opts) ->
-    ok.
+init(Host, Opts) ->
+    case gen_mod:ram_db_mod(Host, Opts, mod_muc) of
+	?MODULE ->
+	    clean_tables(Host);
+	_ ->
+	    ok
+    end.
 
 store_room(LServer, Host, Name, Opts) ->
-    SOpts = jlib:term_to_expr(Opts),
+    SOpts = misc:term_to_expr(Opts),
     F = fun () ->
 		?SQL_UPSERT_T(
                    "muc_room",
@@ -165,42 +170,133 @@ get_affiliations(_ServerHost, _Room, _Host) ->
 search_affiliation(_ServerHost, _Room, _Host, _Affiliation) ->
     {error, not_implemented}.
 
-register_online_room(_, _, _) ->
-    erlang:error(not_implemented).
+register_online_room(ServerHost, Room, Host, Pid) ->
+    PidS = misc:encode_pid(Pid),
+    NodeS = erlang:atom_to_binary(node(Pid), latin1),
+    case ?SQL_UPSERT(ServerHost,
+		     "muc_online_room",
+		     ["!name=%(Room)s",
+		      "!host=%(Host)s",
+		      "node=%(NodeS)s",
+		      "pid=%(PidS)s"]) of
+	ok ->
+	    ok;
+	Err ->
+	    ?ERROR_MSG("failed to update 'muc_online_room': ~p", [Err]),
+	    Err
+    end.
 
-unregister_online_room(_, _, _) ->
-    erlang:error(not_implemented).
+unregister_online_room(ServerHost, Room, Host, Pid) ->
+    %% TODO: report errors
+    PidS = misc:encode_pid(Pid),
+    NodeS = erlang:atom_to_binary(node(Pid), latin1),
+    ejabberd_sql:sql_query(
+      ServerHost,
+      ?SQL("delete from muc_online_room where name=%(Room)s and "
+	   "host=%(Host)s and node=%(NodeS)s and pid=%(PidS)s")).
 
-find_online_room(_, _) ->
-    erlang:error(not_implemented).
+find_online_room(ServerHost, Room, Host) ->
+    case ejabberd_sql:sql_query(
+	   ServerHost,
+	   ?SQL("select @(pid)s, @(node)s from muc_online_room where "
+		"name=%(Room)s and host=%(Host)s")) of
+	{selected, [{PidS, NodeS}]} ->
+	    try {ok, misc:decode_pid(PidS, NodeS)}
+	    catch _:{bad_node, _} -> error
+	    end;
+	{selected, []} ->
+	    error;
+	Err ->
+	    ?ERROR_MSG("failed to select 'muc_online_room': ~p", [Err]),
+	    error
+    end.
 
-count_online_rooms(_) ->
-    erlang:error(not_implemented).
+count_online_rooms(ServerHost, Host) ->
+    case ejabberd_sql:sql_query(
+	   ServerHost,
+	   ?SQL("select @(count(*))d from muc_online_room "
+		"where host=%(Host)s")) of
+	{selected, [{Num}]} ->
+	    Num;
+	Err ->
+	    ?ERROR_MSG("failed to select 'muc_online_room': ~p", [Err]),
+	    0
+    end.
 
-get_online_rooms(_, _) ->
-    erlang:error(not_implemented).
+get_online_rooms(ServerHost, Host, _RSM) ->
+    case ejabberd_sql:sql_query(
+	   ServerHost,
+	   ?SQL("select @(name)s, @(pid)s, @(node)s from muc_online_room "
+		"where host=%(Host)s")) of
+	{selected, Rows} ->
+	    lists:flatmap(
+	      fun({Room, PidS, NodeS}) ->
+		      try [{Room, Host, misc:decode_pid(PidS, NodeS)}]
+		      catch _:{bad_node, _} -> []
+		      end
+	      end, Rows);
+	Err ->
+	    ?ERROR_MSG("failed to select 'muc_online_room': ~p", [Err]),
+	    []
+    end.
 
 rsm_supported() ->
     false.
 
-register_online_user(_, _, _) ->
-    erlang:error(not_implemented).
+register_online_user(ServerHost, {U, S, R}, Room, Host) ->
+    NodeS = erlang:atom_to_binary(node(), latin1),
+    case ?SQL_UPSERT(ServerHost, "muc_online_users",
+		     ["!username=%(U)s",
+		      "!server=%(S)s",
+		      "!resource=%(R)s",
+		      "!name=%(Room)s",
+		      "!host=%(Host)s",
+		      "node=%(NodeS)s"]) of
+	ok ->
+	    ok;
+	Err ->
+	    ?ERROR_MSG("failed to update 'muc_online_users': ~p", [Err]),
+	    Err
+    end.
 
-unregister_online_user(_, _, _) ->
-    erlang:error(not_implemented).
+unregister_online_user(ServerHost, {U, S, R}, Room, Host) ->
+    %% TODO: report errors
+    ejabberd_sql:sql_query(
+      ServerHost,
+      ?SQL("delete from muc_online_users where username=%(U)s and "
+	   "server=%(S)s and resource=%(R)s and name=%(Room)s and "
+	   "host=%(Host)s")).
 
-count_online_rooms_by_user(_, _) ->
-    erlang:error(not_implemented).
+count_online_rooms_by_user(ServerHost, U, S) ->
+    case ejabberd_sql:sql_query(
+	   ServerHost,
+	   ?SQL("select @(count(*))d from muc_online_users where "
+		"username=%(U)s and server=%(S)s")) of
+	{selected, [{Num}]} ->
+	    Num;
+	Err ->
+	    ?ERROR_MSG("failed to select 'muc_online_users': ~p", [Err]),
+	    0
+    end.
 
-get_online_rooms_by_user(_, _) ->
-    erlang:error(not_implemented).
+get_online_rooms_by_user(ServerHost, U, S) ->
+    case ejabberd_sql:sql_query(
+	   ServerHost,
+	   ?SQL("select @(name)s, @(host)s from muc_online_users where "
+		"username=%(U)s and server=%(S)s")) of
+	{selected, Rows} ->
+	    Rows;
+	Err ->
+	    ?ERROR_MSG("failed to select 'muc_online_users': ~p", [Err]),
+	    []
+    end.
 
 export(_Server) ->
     [{muc_room,
       fun(Host, #muc_room{name_host = {Name, RoomHost}, opts = Opts}) ->
               case str:suffix(Host, RoomHost) of
                   true ->
-                      SOpts = jlib:term_to_expr(Opts),
+                      SOpts = misc:term_to_expr(Opts),
                       [?SQL("delete from muc_room where name=%(Name)s"
                             " and host=%(RoomHost)s;"),
                        ?SQL("insert into muc_room(name, host, opts) "
@@ -232,3 +328,25 @@ import(_, _, _) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+clean_tables(ServerHost) ->
+    NodeS = erlang:atom_to_binary(node(), latin1),
+    ?DEBUG("Cleaning SQL muc_online_room table...", []),
+    case ejabberd_sql:sql_query(
+	   ServerHost,
+	   ?SQL("delete from muc_online_room where node=%(NodeS)s")) of
+	{updated, _} ->
+	    ok;
+	Err1 ->
+	    ?ERROR_MSG("failed to clean 'muc_online_room' table: ~p", [Err1]),
+	    Err1
+    end,
+    ?DEBUG("Cleaning SQL muc_online_users table...", []),
+    case ejabberd_sql:sql_query(
+	   ServerHost,
+	   ?SQL("delete from muc_online_users where node=%(NodeS)s")) of
+	{updated, _} ->
+	    ok;
+	Err2 ->
+	    ?ERROR_MSG("failed to clean 'muc_online_users' table: ~p", [Err2]),
+	    Err2
+    end.

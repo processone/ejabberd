@@ -32,7 +32,7 @@
 -define(SLOT_TIMEOUT, 18000000). % 5 hours.
 -define(FORMAT(Error), file:format_error(Error)).
 -define(URL_ENC(URL), binary_to_list(ejabberd_http:url_encode(URL))).
--define(ADDR_TO_STR(IP), ejabberd_config:may_hide_data(jlib:ip_to_list(IP))).
+-define(ADDR_TO_STR(IP), ejabberd_config:may_hide_data(misc:ip_to_list(IP))).
 -define(STR_TO_INT(Str, B), binary_to_integer(iolist_to_binary(Str), B)).
 -define(DEFAULT_CONTENT_TYPE, <<"application/octet-stream">>).
 -define(CONTENT_TYPES,
@@ -500,16 +500,14 @@ get_proc_name(ServerHost, ModuleName) ->
 
 -spec expand_home(binary()) -> binary().
 
-expand_home(Subject) ->
+expand_home(Input) ->
     {ok, [[Home]]} = init:get_argument(home),
-    Parts = binary:split(Subject, <<"@HOME@">>, [global]),
-    str:join(Parts, list_to_binary(Home)).
+    misc:expand_keyword(<<"@HOME@">>, Input, Home).
 
 -spec expand_host(binary(), binary()) -> binary().
 
-expand_host(Subject, Host) ->
-    Parts = binary:split(Subject, <<"@HOST@">>, [global]),
-    str:join(Parts, Host).
+expand_host(Input, Host) ->
+    misc:expand_keyword(<<"@HOST@">>, Input, Host).
 
 %%--------------------------------------------------------------------
 %% Internal functions.
@@ -669,7 +667,7 @@ mk_slot(PutURL, GetURL, XMLNS) ->
 -spec make_user_string(jid(), sha1 | node) -> binary().
 
 make_user_string(#jid{luser = U, lserver = S}, sha1) ->
-    p1_sha:sha(<<U/binary, $@, S/binary>>);
+    str:sha(<<U/binary, $@, S/binary>>);
 make_user_string(#jid{luser = U}, node) ->
     re:replace(U, <<"[^a-zA-Z0-9_.-]">>, <<$_>>, [global, {return, binary}]).
 
@@ -835,7 +833,6 @@ http_response(Host, Code, ExtraHeaders) ->
       -> {pos_integer(), [{binary(), binary()}], binary()}.
 
 http_response(Host, Code, ExtraHeaders, Body) ->
-    ServerHeader = {<<"Server">>, <<"ejabberd ", (?VERSION)/binary>>},
     CustomHeaders =
 	gen_mod:get_module_opt(Host, ?MODULE, custom_headers,
 			       fun(Headers) ->
@@ -847,10 +844,9 @@ http_response(Host, Code, ExtraHeaders, Body) ->
 			       []),
     Headers = case proplists:is_defined(<<"Content-Type">>, ExtraHeaders) of
 		  true ->
-		      [ServerHeader | ExtraHeaders];
+		      ExtraHeaders;
 		  false ->
-		      [ServerHeader, {<<"Content-Type">>, <<"text/plain">>} |
-		       ExtraHeaders]
+		      [{<<"Content-Type">>, <<"text/plain">>} | ExtraHeaders]
 	      end ++ CustomHeaders,
     {Code, Headers, Body}.
 

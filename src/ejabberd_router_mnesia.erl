@@ -24,8 +24,8 @@
 -behaviour(gen_server).
 
 %% API
--export([init/0, register_route/4, unregister_route/2, find_routes/1,
-	 host_of_route/1, is_my_route/1, is_my_host/1, get_all_routes/0]).
+-export([init/0, register_route/5, unregister_route/3, find_routes/1,
+	 get_all_routes/0, use_cache/0]).
 %% gen_server callbacks
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2,
 	 terminate/2, code_change/3, start_link/0]).
@@ -53,16 +53,18 @@ init() ->
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
-register_route(Domain, ServerHost, LocalHint, undefined) ->
+use_cache() ->
+    false.
+
+register_route(Domain, ServerHost, LocalHint, undefined, Pid) ->
     F = fun () ->
 		mnesia:write(#route{domain = Domain,
-				    pid = self(),
+				    pid = Pid,
 				    server_host = ServerHost,
 				    local_hint = LocalHint})
 	end,
     transaction(F);
-register_route(Domain, ServerHost, _LocalHint, N) ->
-    Pid = self(),
+register_route(Domain, ServerHost, _LocalHint, N, Pid) ->
     F = fun () ->
 		case mnesia:wread({route, Domain}) of
 		    [] ->
@@ -97,19 +99,19 @@ register_route(Domain, ServerHost, _LocalHint, N) ->
 	end,
     transaction(F).
 
-unregister_route(Domain, undefined) ->
+unregister_route(Domain, undefined, Pid) ->
     F = fun () ->
 		case mnesia:match_object(
-		       #route{domain = Domain, pid = self(), _ = '_'}) of
+		       #route{domain = Domain, pid = Pid, _ = '_'}) of
 		    [R] -> mnesia:delete_object(R);
 		    _ -> ok
 		end
 	end,
     transaction(F);
-unregister_route(Domain, _) ->
+unregister_route(Domain, _, Pid) ->
     F = fun () ->
 		case mnesia:match_object(
-		       #route{domain = Domain, pid = self(), _ = '_'}) of
+		       #route{domain = Domain, pid = Pid, _ = '_'}) of
 		    [R] ->
 			I = R#route.local_hint,
 			ServerHost = R#route.server_host,
@@ -124,34 +126,15 @@ unregister_route(Domain, _) ->
     transaction(F).
 
 find_routes(Domain) ->
-    mnesia:dirty_read(route, Domain).
-
-host_of_route(Domain) ->
-    case mnesia:dirty_read(route, Domain) of
-	[#route{server_host = ServerHost}|_] ->
-	    {ok, ServerHost};
-	[] ->
-	    error
-    end.
-
-is_my_route(Domain) ->
-    mnesia:dirty_read(route, Domain) /= [].
-
-is_my_host(Domain) ->
-    case mnesia:dirty_read(route, Domain) of
-	[#route{server_host = Host}|_] ->
-	    Host == Domain;
-	[] ->
-	    false
-    end.
+    {ok, mnesia:dirty_read(route, Domain)}.
 
 get_all_routes() ->
-    mnesia:dirty_select(
-      route,
-      ets:fun2ms(
-	fun(#route{domain = Domain, server_host = ServerHost})
-	      when Domain /= ServerHost -> Domain
-	end)).
+    {ok, mnesia:dirty_select(
+	   route,
+	   ets:fun2ms(
+	     fun(#route{domain = Domain, server_host = ServerHost})
+		   when Domain /= ServerHost -> Domain
+	     end))}.
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -224,7 +207,7 @@ transaction(F) ->
 	    ok;
 	{aborted, Reason} ->
 	    ?ERROR_MSG("Mnesia transaction failed: ~p", [Reason]),
-	    {error, Reason}
+	    {error, db_failure}
     end.
 
 -spec update_tables() -> ok.

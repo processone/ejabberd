@@ -125,6 +125,30 @@ CREATE TABLE [dbo].[muc_room] (
 CREATE UNIQUE CLUSTERED INDEX [muc_room_name_host] ON [muc_room] (name, host)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
+CREATE TABLE [dbo].[muc_online_room] (
+        [name] [varchar] (250) NOT NULL,
+	[host] [varchar] (250) NOT NULL,
+	[node] [text] NOT NULL,
+	[pid] [text] NOT NULL
+);
+
+CREATE UNIQUE CLUSTERED INDEX [muc_online_room_name_host] ON [muc_online_room] (name, host)
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
+
+CREATE TABLE [dbo].[muc_online_users] (
+    [username] [varchar] (250) NOT NULL,
+    [server] [varchar] (250) NOT NULL,
+    [resource] [varchar] (250) NOT NULL,
+    [name] [varchar] (250) NOT NULL,
+    [host] [varchar] (250) NOT NULL,
+    node text NOT NULL
+);
+
+CREATE UNIQUE CLUSTERED INDEX [muc_online_users_i] ON [muc_online_users] (username, server, resource, name, host)
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
+CREATE UNIQUE CLUSTERED INDEX [muc_online_users_us] ON [muc_online_users] (username, server);
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
+
 CREATE TABLE [dbo].[privacy_default_list] (
         [username] [varchar] (250) NOT NULL,
         [name] [varchar] (250) NOT NULL,
@@ -490,3 +514,40 @@ CREATE TABLE [dbo].[oauth_token] (
         [token] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
 ) TEXTIMAGE_ON [PRIMARY];
+
+CREATE TABLE [dbo].[route] (
+    [domain] [varchar] (255) NOT NULL,
+    [server_host] [varchar] (255) NOT NULL,
+    [node] [varchar] (255) NOT NULL,
+    [pid] [varchar](100) NOT NULL,
+    [local_hint] [text] NOT NULL
+);
+
+CREATE UNIQUE CLUSTERED INDEX [route_i] ON [route] (domain, server_host, node, pid)
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
+
+CREATE INDEX [route_domain] ON [route] (domain)
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
+
+CREATE TABLE [dbo].[bosh] (
+    [sid] [varchar] (255) NOT NULL,
+    [node] [varchar] (255) NOT NULL,
+    [pid] [varchar](100) NOT NULL
+ CONSTRAINT [bosh_PRIMARY] PRIMARY KEY CLUSTERED 
+(
+        [sid] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
+) TEXTIMAGE_ON [PRIMARY];
+
+CREATE TABLE [dbo].[carboncopy] (
+    [username] [varchar] (255) NOT NULL,
+    [resource] [varchar] (255) NOT NULL,
+    [namespace] [varchar] (255) NOT NULL,
+    [node] [varchar] (255) NOT NULL
+);
+
+CREATE UNIQUE CLUSTERED INDEX [carboncopy_ur] ON [carboncopy] (username, resource)
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
+
+CREATE INDEX [carboncopy_user] ON [carboncopy] (username)
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);

@@ -111,7 +111,7 @@ authenticate(#{stream_id := StreamID, server := Server,
 					 resource = R}]} = IQ) ->
     P = if is_binary(P0) -> P0; true -> <<>> end,
     D = if is_binary(D0) -> D0; true -> <<>> end,
-    DGen = fun (PW) -> p1_sha:sha(<<StreamID/binary, PW/binary>>) end,
+    DGen = fun (PW) -> str:sha(<<StreamID/binary, PW/binary>>) end,
     JID = jid:make(U, Server, R),
     case JID /= error andalso
 	acl:access_matches(Access,

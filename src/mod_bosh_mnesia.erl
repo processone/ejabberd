@@ -25,7 +25,8 @@
 -behaviour(mod_bosh).
 
 %% mod_bosh API
--export([init/0, open_session/2, close_session/1, find_session/1]).
+-export([init/0, open_session/2, close_session/1, find_session/1,
+	 use_cache/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -55,6 +56,9 @@ init() ->
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
+use_cache() ->
+    false.
+
 open_session(SID, Pid) ->
     Session = #bosh{sid = SID, timestamp = p1_time_compat:timestamp(), pid = Pid},
     lists:foreach(
@@ -82,7 +86,7 @@ find_session(SID) ->
         [#bosh{pid = Pid}] ->
             {ok, Pid};
         [] ->
-            error
+            {error, notfound}
     end.
 
 %%%===================================================================

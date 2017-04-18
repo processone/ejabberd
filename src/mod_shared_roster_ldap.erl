@@ -462,7 +462,7 @@ get_user_part_re(String, Pattern) ->
     end.
 
 parse_options(Host, Opts) ->
-    Eldap_ID = jlib:atom_to_binary(gen_mod:get_module_proc(Host, ?MODULE)),
+    Eldap_ID = misc:atom_to_binary(gen_mod:get_module_proc(Host, ?MODULE)),
     Cfg = eldap_utils:get_config(Host, Opts),
     GroupAttr = gen_mod:get_opt(ldap_groupattr, Opts,
                                 fun iolist_to_binary/1,

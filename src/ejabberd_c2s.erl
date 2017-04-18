@@ -116,10 +116,10 @@ get_subscribed(Ref) ->
 close(Ref) ->
     xmpp_stream_in:close(Ref).
 
--spec close(pid(), boolean()) -> ok;
-	   (state(), boolean()) -> state().
-close(Ref, SendTrailer) ->
-    xmpp_stream_in:close(Ref, SendTrailer).
+-spec close(pid(), atom()) -> ok;
+	   (state(), atom()) -> state().
+close(Ref, Reason) ->
+    xmpp_stream_in:close(Ref, Reason).
 
 -spec stop(pid()) -> ok;
 	  (state()) -> no_return().
@@ -438,7 +438,7 @@ handle_auth_success(User, Mech, AuthModule,
     ?INFO_MSG("(~s) Accepted c2s ~s authentication for ~s@~s by ~s backend from ~s",
 	      [SockMod:pp(Socket), Mech, User, LServer,
 	       ejabberd_auth:backend_type(AuthModule),
-	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
+	       ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
     State1 = State#{auth_module => AuthModule},
     ejabberd_hooks:run_fold(c2s_auth_result, LServer, State1, [true, User]).
 
@@ -450,7 +450,7 @@ handle_auth_failure(User, Mech, Reason,
 	       if User /= <<"">> -> ["for ", User, "@", LServer, " "];
 		  true -> ""
 	       end,
-	       ejabberd_config:may_hide_data(jlib:ip_to_list(IP)), Reason]),
+	       ejabberd_config:may_hide_data(misc:ip_to_list(IP)), Reason]),
     ejabberd_hooks:run_fold(c2s_auth_result, LServer, State, [false, User]).
 
 handle_unbinded_packet(Pkt, #{lserver := LServer} = State) ->
@@ -867,13 +867,17 @@ get_conn_type(State) ->
 -spec fix_from_to(xmpp_element(), state()) -> stanza().
 fix_from_to(Pkt, #{jid := JID}) when ?is_stanza(Pkt) ->
     #jid{luser = U, lserver = S, lresource = R} = JID,
-    From = xmpp:get_from(Pkt),
-    From1 = case jid:tolower(From) of
-		{U, S, R} -> JID;
-		{U, S, _} -> jid:replace_resource(JID, From#jid.resource);
-		_ -> From
-	    end,
-    xmpp:set_from_to(Pkt, From1, JID);
+    case xmpp:get_from(Pkt) of
+	undefined ->
+	    Pkt;
+	From ->
+	    From1 = case jid:tolower(From) of
+			{U, S, R} -> JID;
+			{U, S, _} -> jid:replace_resource(JID, From#jid.resource);
+			_ -> From
+		    end,
+	    xmpp:set_from_to(Pkt, From1, JID)
+    end;
 fix_from_to(Pkt, _State) ->
     Pkt.
 

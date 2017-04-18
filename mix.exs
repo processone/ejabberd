@@ -26,7 +26,7 @@ defmodule Ejabberd.Mixfile do
   def application do
     [mod: {:ejabberd_app, []},
      applications: [:ssl],
-     included_applications: [:lager, :mnesia, :p1_utils, :cache_tab,
+     included_applications: [:lager, :mnesia, :inets, :p1_utils, :cache_tab,
                              :fast_tls, :stringprep, :fast_xml, :xmpp,
                              :stun, :fast_yaml, :esip, :jiffy, :p1_oauth2]
                          ++ cond_apps]
@@ -34,19 +34,19 @@ defmodule Ejabberd.Mixfile do
 
   defp erlc_options do
     # Use our own includes + includes from all dependencies
-    includes = ["include"] ++ deps_include(["fast_xml", "xmpp"])
+    includes = ["include"] ++ deps_include(["fast_xml", "xmpp", "p1_utils"])
     [:debug_info, {:d, :ELIXIR_ENABLED}] ++ Enum.map(includes, fn(path) -> {:i, path} end)
   end
 
   defp deps do
     [{:lager, "~> 3.2"},
      {:p1_utils, "~> 1.0"},
+     {:fast_xml, "~> 1.1"},
+     {:xmpp, "~> 1.1"},
      {:cache_tab, "~> 1.0"},
      {:stringprep, "~> 1.0"},
      {:fast_yaml, "~> 1.0"},
      {:fast_tls, "~> 1.0"},
-     {:fast_xml, "~> 1.1"},
-     {:xmpp, "~> 1.1"},
      {:stun, "~> 1.0"},
      {:esip, "~> 1.0"},
      {:jiffy, "~> 0.14.7"},

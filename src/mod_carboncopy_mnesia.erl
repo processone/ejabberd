@@ -27,7 +27,7 @@
 -behaviour(mod_carboncopy).
 
 %% API
--export([init/2, enable/4, disable/3, list/2]).
+-export([init/2, enable/4, disable/3, list/2, use_cache/1]).
 
 -include("mod_carboncopy.hrl").
 
@@ -53,31 +53,27 @@ init(_Host, _Opts) ->
     mnesia:add_table_copy(carboncopy, node(), ram_copies).
 
 enable(LUser, LServer, LResource, NS) ->
-    try mnesia:dirty_write(
-	  #carboncopy{us = {LUser, LServer},
-		      resource = LResource,
-		      version = NS}) of
-	ok -> ok
-    catch _:Error ->
-	    {error, Error}
-    end.
+    mnesia:dirty_write(
+      #carboncopy{us = {LUser, LServer},
+		  resource = LResource,
+		  version = NS}).
 
 disable(LUser, LServer, LResource) ->
     ToDelete = mnesia:dirty_match_object(
 		 #carboncopy{us = {LUser, LServer},
 			     resource = LResource,
-			     version = '_'}),
-    try lists:foreach(fun mnesia:dirty_delete_object/1, ToDelete) of
-	ok -> ok
-    catch _:Error ->
-	    {error, Error}
-    end.
+			     _ = '_'}),
+    lists:foreach(fun mnesia:dirty_delete_object/1, ToDelete).
 
 list(LUser, LServer) ->
-    mnesia:dirty_select(
-      carboncopy,
-      [{#carboncopy{us = {LUser, LServer}, resource = '$2', version = '$3'},
-	[], [{{'$2','$3'}}]}]).
+    {ok, mnesia:dirty_select(
+	   carboncopy,
+	   [{#carboncopy{us = {LUser, LServer}, resource = '$2',
+			 version = '$3', node = '$4'},
+	     [], [{{'$2','$3','$4'}}]}])}.
+
+use_cache(_LServer) ->
+    false.
 
 %%%===================================================================
 %%% Internal functions

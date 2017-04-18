@@ -615,10 +615,11 @@ get_state_without_itemids(Nidx, JID) ->
 		"where nodeid=%(Nidx)d and jid=%(J)s")) of
 	{selected, [{SJID, Aff, Subs}]} ->
 	    #pubsub_state{stateid = {decode_jid(SJID), Nidx},
+			  nodeidx = Nidx,
 			  affiliation = decode_affiliation(Aff),
 			  subscriptions = decode_subscriptions(Subs)};
 	_ ->
-	    #pubsub_state{stateid = {JID, Nidx}}
+	    #pubsub_state{stateid = {JID, Nidx}, nodeidx = Nidx}
     end.
 
 set_state(State) ->
@@ -651,7 +652,7 @@ get_items(Nidx, From, undefined) ->
 		      ?SQL("select @(val)s from pubsub_node_option "
 			   "where nodeid=%(Nidx)d and name='max_items'")) of
 		   {selected, [{Value}]} ->
-		       jlib:expr_to_term(Value);
+		       misc:expr_to_term(Value);
 		   _ ->
 		       ?MAXITEMS
 	       end,
@@ -664,7 +665,7 @@ get_items(Nidx, _From, #rsm_set{max = Max, index = IncIndex,
 		      Before /= undefined -> {<<">">>, <<"asc">>};
 		      true -> {<<"is not">>, <<"desc">>}
 		   end,
-    SNidx = jlib:i2l(Nidx),
+    SNidx = misc:i2l(Nidx),
     I = if After /= undefined -> After;
 	   Before /= undefined -> Before;
 	   true -> undefined
@@ -673,20 +674,20 @@ get_items(Nidx, _From, #rsm_set{max = Max, index = IncIndex,
 	case I of
 	    undefined when IncIndex =/= undefined ->
 		case ejabberd_sql:sql_query_t(
-		       [<<"select modification from pubsub_item pi "
+		       [<<"select creation from pubsub_item pi "
 			  "where exists ( select count(*) as count1 "
 			  "from pubsub_item where nodeid='">>, SNidx,
-			<<"' and modification > pi.modification having count1 = ">>,
+			<<"' and creation > pi.creation having count1 = ">>,
 			integer_to_binary(IncIndex), <<" );">>]) of
 		    {selected, [_], [[O]]} ->
-			[<<"modification">>, <<"'", O/binary, "'">>];
+			[<<"creation">>, <<"'", O/binary, "'">>];
 		    _ ->
-			[<<"modification">>, <<"null">>]
+			[<<"creation">>, <<"null">>]
 		end;
 	    undefined ->
-		[<<"modification">>, <<"null">>];
+		[<<"creation">>, <<"null">>];
 	    <<>> ->
-		[<<"modification">>, <<"null">>];
+		[<<"creation">>, <<"null">>];
 	    I ->
 		[A, B] = str:tokens(ejabberd_sql:escape(I), <<"@">>),
 		[A, <<"'", B/binary, "'">>]
@@ -729,8 +730,8 @@ get_items(Nidx, _From, #rsm_set{max = Max, index = IncIndex,
 				      index = Index,
 				      first = #rsm_first{
 						 index = Index,
-						 data = <<"modification@", F/binary>>},
-				      last = <<"modification@", L/binary>>},
+						 data = <<"creation@", F/binary>>},
+				      last = <<"creation@", L/binary>>},
 		    {result, {[raw_to_item(Nidx, RItem) || RItem <- RItems], RsmOut}};
 		[] ->
 		    {result, {[], #rsm_set{count = Count}}}
@@ -773,8 +774,8 @@ get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId, RSM
     end.
 
 get_last_items(Nidx, _From, Count) ->
-    Limit = jlib:i2l(Count),
-    SNidx = jlib:i2l(Nidx),
+    Limit = misc:i2l(Count),
+    SNidx = misc:i2l(Nidx),
     Query = fun(mssql, _) ->
 		    ejabberd_sql:sql_query_t(
 		      [<<"select top ">>, Limit,
@@ -850,7 +851,7 @@ set_item(Item) ->
     Payload = Item#pubsub_item.payload,
     XML = str:join([fxml:element_to_binary(X) || X<-Payload], <<>>),
     S = fun ({T1, T2, T3}) ->
-	    str:join([jlib:i2l(T1, 6), jlib:i2l(T2, 6), jlib:i2l(T3, 6)], <<":">>)
+	    str:join([misc:i2l(T1, 6), misc:i2l(T2, 6), misc:i2l(T3, 6)], <<":">>)
     end,
     SM = S(M),
     SC = S(C),
@@ -876,7 +877,7 @@ del_items(Nidx, [ItemId]) ->
     del_item(Nidx, ItemId);
 del_items(Nidx, ItemIds) ->
     I = str:join([[<<"'">>, ejabberd_sql:escape(X), <<"'">>] || X <- ItemIds], <<",">>),
-    SNidx = jlib:i2l(Nidx),
+    SNidx = misc:i2l(Nidx),
     catch
     ejabberd_sql:sql_query_t([<<"delete from pubsub_item where itemid in (">>,
 	    I, <<") and nodeid='">>, SNidx, <<"';">>]).
@@ -1030,7 +1031,7 @@ raw_to_item(Nidx, {ItemId, SJID, Creation, Modification, XML}) ->
     JID = decode_jid(SJID),
     ToTime = fun (Str) ->
 	    [T1, T2, T3] = str:tokens(Str, <<":">>),
-	    {jlib:l2i(T1), jlib:l2i(T2), jlib:l2i(T3)}
+	    {misc:l2i(T1), misc:l2i(T2), misc:l2i(T3)}
     end,
     Payload = case fxml_stream:parse_element(XML) of
 	{error, _Reason} -> [];

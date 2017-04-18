@@ -361,8 +361,8 @@ result_attrs(#state{uids = UIDs,
 %%%----------------------------------------------------------------------
 parse_options(Host) ->
     Cfg = eldap_utils:get_config(Host, []),
-    Eldap_ID = jlib:atom_to_binary(gen_mod:get_module_proc(Host, ?MODULE)),
-    Bind_Eldap_ID = jlib:atom_to_binary(
+    Eldap_ID = misc:atom_to_binary(gen_mod:get_module_proc(Host, ?MODULE)),
+    Bind_Eldap_ID = misc:atom_to_binary(
                       gen_mod:get_module_proc(Host, bind_ejabberd_auth_ldap)),
     UIDsTemp = gen_mod:get_opt(
                  {ldap_uids, Host}, [],

@@ -40,6 +40,7 @@
 %%%
 
 start(normal, _Args) ->
+    {T1, _} = statistics(wall_clock),
     ejabberd_logger:start(),
     write_pid_file(),
     start_apps(),
@@ -49,13 +50,15 @@ start(normal, _Args) ->
     setup_if_elixir_conf_used(),
     ejabberd_config:start(),
     set_settings_from_config(),
+    file_queue_init(),
     maybe_add_nameservers(),
     connect_nodes(),
     case ejabberd_sup:start_link() of
 	{ok, SupPid} ->
 	    register_elixir_config_hooks(),
-	    ?INFO_MSG("ejabberd ~s is started in the node ~p",
-		      [?VERSION, node()]),
+	    {T2, _} = statistics(wall_clock),
+	    ?INFO_MSG("ejabberd ~s is started in the node ~p in ~.2fs",
+		      [?VERSION, node(), (T2-T1)/1000]),
 	    {ok, SupPid};
 	Err ->
 	    Err
@@ -166,6 +169,16 @@ set_settings_from_config() ->
                  opt_type(net_ticktime),
                  60),
     net_kernel:set_net_ticktime(Ticktime).
+
+file_queue_init() ->
+    QueueDir = case ejabberd_config:queue_dir() of
+		   undefined ->
+		       MnesiaDir = mnesia:system_info(directory),
+		       filename:join(MnesiaDir, "queue");
+		   Path ->
+		       Path
+	       end,
+    p1_queue:start(QueueDir).
 
 start_apps() ->
     crypto:start(),

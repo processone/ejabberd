@@ -289,7 +289,7 @@ try_set_password(User, Server, Password, #iq{lang = Lang, meta = M} = IQ) ->
 		?INFO_MSG("~s has changed password from ~s",
 			  [jid:encode({User, Server, <<"">>}),
 			   ejabberd_config:may_hide_data(
-			     jlib:ip_to_list(maps:get(ip, M, {0,0,0,0})))]),
+			     misc:ip_to_list(maps:get(ip, M, {0,0,0,0})))]),
 		xmpp:make_iq_result(IQ);
 	    {error, empty_password} ->
 		Txt = <<"Empty password">>,
@@ -522,7 +522,7 @@ remove_timeout(Source) ->
     end.
 
 ip_to_string(Source) when is_tuple(Source) ->
-    jlib:ip_to_list(Source);
+    misc:ip_to_list(Source);
 ip_to_string(undefined) -> <<"undefined">>;
 ip_to_string(_) -> <<"unknown">>.
 
@@ -575,7 +575,7 @@ transform_ip_access(Opts) ->
                      "use access rules instead.", []),
         ACLs = lists:flatmap(
                  fun({Action, S}) ->
-                         ACLName = jlib:binary_to_atom(
+                         ACLName = misc:binary_to_atom(
                                      iolist_to_binary(
                                        ["ip_", S])),
                          [{Action, ACLName},
