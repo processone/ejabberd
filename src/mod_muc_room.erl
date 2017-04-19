@@ -3746,13 +3746,16 @@ process_iq_mucsub(From, #iq{type = set, lang = Lang,
 		  StateData) when UnsubJid /= <<>> ->
     FAffiliation = get_affiliation(From, StateData),
     FRole = get_role(From, StateData),
-    if FRole == moderator; FAffiliation == owner; FAffiliation == admin ->
-	    FromUnsub = jid:from_string(UnsubJid),
+    try jid:decode(UnsubJid) of
+       FromUnsub when FRole == moderator; FAffiliation == owner; FAffiliation == admin ->
 	    process_iq_mucsub(FromUnsub, #iq{type = set, sub_els = [#muc_unsubscribe{jid = <<>>}]},
 			  StateData);
-       true ->
+       _ ->
 	    Txt = <<"Moderator privileges required">>,
 	    {error, xmpp:err_forbidden(Txt, Lang)}
+    catch
+       error:{bad_jid,_} ->
+	    {error, xmpp:err_jid_malformed()}
     end;
 process_iq_mucsub(From, #iq{type = set, sub_els = [#muc_unsubscribe{}]},
 		  StateData) ->
