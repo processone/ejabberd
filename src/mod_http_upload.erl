@@ -261,18 +261,6 @@ init([ServerHost, Opts]) ->
 				true),
     DocRoot1 = expand_home(str:strip(DocRoot, right, $/)),
     DocRoot2 = expand_host(DocRoot1, ServerHost),
-    case ServiceURL of
-	undefined ->
-	    ok;
-	<<"http://", _/binary>> ->
-	    application:start(inets);
-	<<"https://", _/binary>> ->
-	    application:start(inets),
-	    application:start(crypto),
-	    application:start(asn1),
-	    application:start(public_key),
-	    application:start(ssl)
-    end,
     case DirMode of
 	undefined ->
 	    ok;
