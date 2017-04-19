@@ -263,16 +263,22 @@ c2s_terminated(#{mgmt_state := resumed, jid := JID} = State, _Reason) ->
     bounce_message_queue(),
     {stop, State};
 c2s_terminated(#{mgmt_state := MgmtState, mgmt_stanzas_in := In, sid := SID,
-		 user := U, server := S, resource := R} = State, _Reason) ->
-    case MgmtState of
-	timeout ->
-	    Info = [{num_stanzas_in, In}],
-	    ejabberd_sm:set_offline_info(SID, U, S, R, Info);
-	_ ->
-	    ok
-    end,
+		 user := U, server := S, resource := R} = State, Reason) ->
+    Result = case MgmtState of
+		 timeout ->
+		     Info = [{num_stanzas_in, In}],
+		     %% TODO: Usually, ejabberd_c2s:process_terminated/2 is
+		     %% called later in the hook chain.  We swap the order so
+		     %% that the offline info won't be purged after we stored
+		     %% it.  This should be fixed in a proper way.
+		     State1 = ejabberd_c2s:process_terminated(State, Reason),
+		     ejabberd_sm:set_offline_info(SID, U, S, R, Info),
+		     {stop, State1};
+		 _ ->
+		     State
+	     end,
     route_unacked_stanzas(State),
-    State;
+    Result;
 c2s_terminated(State, _Reason) ->
     State.
 
