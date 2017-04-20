@@ -80,7 +80,7 @@ get_features(Host, #caps{node = Node, version = Version,
     SubNodes = [Version | Exts],
     lists:foldl(fun (SubNode, Acc) ->
 			NodePair = {Node, SubNode},
-			case cache_tab:lookup(caps_features, NodePair,
+			case ets_cache:lookup(caps_features_cache, NodePair,
 					      caps_read_fun(Host, NodePair))
 			    of
 			  {ok, Features} when is_list(Features) ->
@@ -250,7 +250,8 @@ reload(Host, NewOpts, OldOpts) ->
 			      fun(I) when is_integer(I), I>0 -> I end,
                               1000) of
 	{false, MaxSize, _} ->
-	    cache_tab:setopts(caps_features, [{max_size, MaxSize}]);
+	    ets_cache:setopts(caps_features_cache, [{max_size, MaxSize}]),
+	    ets_cache:setopts(caps_requests_cache, [{max_size, MaxSize}]);
 	true ->
 	    ok
     end,
@@ -258,7 +259,7 @@ reload(Host, NewOpts, OldOpts) ->
 			      fun(I) when is_integer(I), I>0 -> I end,
 			      timer:hours(24) div 1000) of
 	{false, LifeTime, _} ->
-	    cache_tab:setopts(caps_features, [{life_time, LifeTime}]);
+	    ets_cache:setopts(caps_features_cache, [{life_time, LifeTime}]);
 	true ->
 	    ok
     end.
@@ -266,15 +267,8 @@ reload(Host, NewOpts, OldOpts) ->
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
+    init_cache(Host, Opts),
     Mod:init(Host, Opts),
-    MaxSize = gen_mod:get_opt(cache_size, Opts,
-                              fun(I) when is_integer(I), I>0 -> I end,
-                              1000),
-    LifeTime = gen_mod:get_opt(cache_life_time, Opts,
-                               fun(I) when is_integer(I), I>0 -> I end,
-			       timer:hours(24) div 1000),
-    cache_tab:new(caps_features,
-		  [{max_size, MaxSize}, {life_time, LifeTime}]),
     ejabberd_hooks:add(c2s_presence_in, Host, ?MODULE,
 		       c2s_presence_in, 75),
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
@@ -329,35 +323,32 @@ feature_request(Host, From, Caps,
 		[SubNode | Tail] = SubNodes) ->
     Node = Caps#caps.node,
     NodePair = {Node, SubNode},
-    case cache_tab:lookup(caps_features, NodePair,
-			  caps_read_fun(Host, NodePair))
-	of
-      {ok, Fs} when is_list(Fs) ->
-	  feature_request(Host, From, Caps, Tail);
-      Other ->
-	  NeedRequest = case Other of
-			  {ok, TS} -> now_ts() >= TS + (?BAD_HASH_LIFETIME);
-			  _ -> true
+    case ets_cache:lookup(caps_features_cache, NodePair,
+			  caps_read_fun(Host, NodePair)) of
+	{ok, Fs} when is_list(Fs) ->
+	    feature_request(Host, From, Caps, Tail);
+	_ ->
+	    LFrom = jid:tolower(From),
+	    case ets_cache:insert_new(caps_requests_cache, {LFrom, NodePair}, ok) of
+		true ->
+		    IQ = #iq{type = get,
+			     from = jid:make(Host),
+			     to = From,
+			     sub_els = [#disco_info{node = <<Node/binary, "#",
+							     SubNode/binary>>}]},
+		    F = fun (IQReply) ->
+				feature_response(IQReply, Host, From, Caps,
+						 SubNodes)
 			end,
-	  if NeedRequest ->
-		 IQ = #iq{type = get,
-			  from = jid:make(Host),
-			  to = From,
-			  sub_els = [#disco_info{node = <<Node/binary, "#",
-							  SubNode/binary>>}]},
-		 cache_tab:insert(caps_features, NodePair, now_ts(),
-				  caps_write_fun(Host, NodePair, now_ts())),
-		 F = fun (IQReply) ->
-			     feature_response(IQReply, Host, From, Caps,
-					      SubNodes)
-		     end,
-		 ejabberd_local:route_iq(IQ, F);
-	     true -> feature_request(Host, From, Caps, Tail)
-	  end
+		    ejabberd_local:route_iq(IQ, F);
+		false ->
+		    ok
+	    end,
+	    feature_request(Host, From, Caps, Tail)
     end;
 feature_request(_Host, _From, _Caps, []) -> ok.
 
--spec feature_response(iq(), binary(), jid(), caps(), [binary()]) -> any().
+-spec feature_response(iq(), binary(), ljid(), caps(), [binary()]) -> any().
 feature_response(#iq{type = result, sub_els = [El]},
 		 Host, From, Caps, [SubNode | SubNodes]) ->
     NodePair = {Caps#caps.node, SubNode},
@@ -366,9 +357,14 @@ feature_response(#iq{type = result, sub_els = [El]},
 	case check_hash(Caps, DiscoInfo) of
 	    true ->
 		Features = DiscoInfo#disco_info.features,
-		cache_tab:insert(caps_features, NodePair,
-				 Features,
-				 caps_write_fun(Host, NodePair, Features));
+		LServer = jid:nameprep(Host),
+		Mod = gen_mod:db_mod(LServer, ?MODULE),
+		case Mod:caps_write(LServer, NodePair, Features) of
+		    ok ->
+			ets_cache:delete(caps_features_cache, NodePair);
+		    {error, _} ->
+			ok
+		end;
 	    false -> ok
 	end
     catch _:{xmpp_codec, _Why} ->
@@ -385,13 +381,6 @@ caps_read_fun(Host, Node) ->
     LServer = jid:nameprep(Host),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     fun() -> Mod:caps_read(LServer, Node) end.
-
--spec caps_write_fun(binary(), {binary(), binary()},
-		     [binary()] | non_neg_integer()) -> fun().
-caps_write_fun(Host, Node, Features) ->
-    LServer = jid:nameprep(Host),
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    fun() -> Mod:caps_write(LServer, Node, Features) end.
 
 -spec make_my_disco_hash(binary()) -> binary().
 make_my_disco_hash(Host) ->
@@ -471,10 +460,6 @@ concat_xdata_fields(#xdata{fields = Fields} = X) ->
 	      is_binary(Var), Var /= <<"FORM_TYPE">>],
     [Form, $<, lists:sort(Res)].
 
--spec now_ts() -> integer().
-now_ts() ->
-    p1_time_compat:system_time(seconds).
-
 -spec is_valid_node(binary()) -> boolean().
 is_valid_node(Node) ->
     case str:tokens(Node, <<"#">>) of
@@ -483,6 +468,38 @@ is_valid_node(Node) ->
         _ ->
             false
     end.
+
+init_cache(Host, Opts) ->
+    CacheOpts = cache_opts(Host, Opts),
+    case use_cache(Host, Opts) of
+	true ->
+	    ets_cache:new(caps_features_cache, CacheOpts);
+	false ->
+	    ok
+    end,
+    CacheSize = proplists:get_value(max_size, CacheOpts),
+    ets_cache:new(caps_requests_cache,
+		  [{max_size, CacheSize},
+		   {life_time, timer:seconds(?BAD_HASH_LIFETIME)}]).
+
+use_cache(Host, Opts) ->
+    gen_mod:get_opt(use_cache, Opts, mod_opt_type(use_cache),
+		    ejabberd_config:use_cache(Host)).
+
+cache_opts(Host, Opts) ->
+    MaxSize = gen_mod:get_opt(cache_size, Opts,
+			      mod_opt_type(cache_size),
+			      ejabberd_config:cache_size(Host)),
+    CacheMissed = gen_mod:get_opt(cache_missed, Opts,
+				  mod_opt_type(cache_missed),
+				  ejabberd_config:cache_missed(Host)),
+    LifeTime = case gen_mod:get_opt(cache_life_time, Opts,
+				    mod_opt_type(cache_life_time),
+				    ejabberd_config:cache_life_time(Host)) of
+		   infinity -> infinity;
+		   I -> timer:seconds(I)
+	       end,
+    [{max_size, MaxSize}, {cache_missed, CacheMissed}, {life_time, LifeTime}].
 
 export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
@@ -519,10 +536,10 @@ import_next(LServer, DBType, NodePair) ->
     Mod:import(LServer, NodePair, Features),
     import_next(LServer, DBType, ets:next(caps_features_tmp, NodePair)).
 
-mod_opt_type(cache_life_time) ->
+mod_opt_type(O) when O == cache_life_time; O == cache_size ->
     fun (I) when is_integer(I), I > 0 -> I end;
-mod_opt_type(cache_size) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(O) when O == use_cache; O == cache_missed ->
+    fun (B) when is_boolean(B) -> B end;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(_) ->
-    [cache_life_time, cache_size, db_type].
+    [cache_life_time, cache_size, use_cache, cache_missed, db_type].
