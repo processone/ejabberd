@@ -1363,8 +1363,9 @@ get_last(User, Server) ->
 %% <aa xmlns='bb'>Cluth</aa>
 
 private_get(Username, Host, Element, Ns) ->
+    ElementXml = [{Ns, #xmlel{name = Element, attrs = [{<<"xmlns">>, Ns}]}}],
     Els = mod_private:get_data(jid:nodeprep(Username), jid:nameprep(Host),
-			       [Ns, Element]),
+			       [{Ns, ElementXml}]),
     binary_to_list(fxml:element_to_binary(xmpp:encode(#private{xml_els = Els}))).
 
 private_set(Username, Host, ElementString) ->
