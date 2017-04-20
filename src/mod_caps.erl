@@ -537,7 +537,9 @@ import_next(LServer, DBType, NodePair) ->
     import_next(LServer, DBType, ets:next(caps_features_tmp, NodePair)).
 
 mod_opt_type(O) when O == cache_life_time; O == cache_size ->
-    fun (I) when is_integer(I), I > 0 -> I end;
+    fun (I) when is_integer(I), I > 0 -> I;
+	(infinity) -> infinity
+    end;
 mod_opt_type(O) when O == use_cache; O == cache_missed ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;

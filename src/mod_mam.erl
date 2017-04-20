@@ -1041,10 +1041,12 @@ get_commands_spec() ->
 
 mod_opt_type(assume_mam_usage) ->
     fun (B) when is_boolean(B) -> B end;
-mod_opt_type(cache_life_time) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
-mod_opt_type(cache_size) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(O) when O == cache_life_time; O == cache_size ->
+    fun (I) when is_integer(I), I > 0 -> I;
+	(infinity) -> infinity
+    end;
+mod_opt_type(O) when O == use_cache; O == cache_missed ->
+    fun (B) when is_boolean(B) -> B end;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(default) ->
     fun (always) -> always;
@@ -1055,5 +1057,5 @@ mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(request_activates_archiving) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(_) ->
-    [assume_mam_usage, cache_life_time, cache_size, db_type, default, iqdisc,
-     request_activates_archiving].
+    [assume_mam_usage, cache_life_time, cache_size, use_cache, cache_missed,
+     db_type, default, iqdisc, request_activates_archiving].
