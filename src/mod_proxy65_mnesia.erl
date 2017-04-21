@@ -104,7 +104,6 @@ init([]) ->
     ejabberd_mnesia:create(?MODULE, bytestream,
 			   [{ram_copies, [node()]},
 			    {attributes, record_info(fields, bytestream)}]),
-    mnesia:add_table_copy(bytestream, node(), ram_copies),
     {ok, #state{}}.
 
 handle_call({activate_stream, SHA1, Initiator, MaxConnections}, _From, State) ->

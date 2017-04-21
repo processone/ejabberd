@@ -318,7 +318,6 @@ init([Host, Opts]) ->
 				   [{ram_copies, [node()]},
 				    {type, ordered_set},
 				    {attributes, record_info(fields, muc_online_room)}]),
-	    mnesia:add_table_copy(muc_online_room, node(), ram_copies),
 	    catch ets:new(muc_online_users, [bag, named_table, public, {keypos, 2}]),
 	    clean_table_from_bad_node(node(), MyHost),
 	    mnesia:subscribe(system);

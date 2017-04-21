@@ -92,8 +92,6 @@ init([]) ->
                         [{ram_copies, [node()]},
                          {local_content, true},
 			 {attributes, record_info(fields, access)}]),
-    mnesia:add_table_copy(acl, node(), ram_copies),
-    mnesia:add_table_copy(access, node(), ram_copies),
     ejabberd_hooks:add(config_reloaded, ?MODULE, load_from_config, 20),
     load_from_config(),
     {ok, #state{}}.

@@ -297,7 +297,6 @@ init([]) ->
                          {local_content, true},
                          {attributes, record_info(fields, ejabberd_commands)},
                          {type, bag}]),
-    mnesia:add_table_copy(ejabberd_commands, node(), ram_copies),
     register_commands(get_commands_spec()),
     ejabberd_access_permissions:register_permission_addon(?MODULE, fun permission_addon/0),
     {ok, #state{}}.

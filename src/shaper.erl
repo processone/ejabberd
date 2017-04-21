@@ -62,7 +62,6 @@ init([]) ->
                         [{ram_copies, [node()]},
                          {local_content, true},
 			 {attributes, record_info(fields, shaper)}]),
-    mnesia:add_table_copy(shaper, node(), ram_copies),
     ejabberd_hooks:add(config_reloaded, ?MODULE, load_from_config, 20),
     load_from_config(),
     {ok, #state{}}.

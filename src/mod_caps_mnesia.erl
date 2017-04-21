@@ -49,9 +49,7 @@ init(_Host, _Opts) ->
                          {local_content, true},
                          {attributes,
                           record_info(fields, caps_features)}]),
-    update_table(),
-    mnesia:add_table_copy(caps_features, node(),
-                          disc_only_copies).
+    update_table().
 
 caps_read(_LServer, Node) ->
     case mnesia:dirty_read({caps_features, Node}) of

@@ -303,7 +303,6 @@ init([]) ->
 			[{ram_copies, [node()]},
 			 {type, bag},
 			 {attributes, record_info(fields, s2s)}]),
-    mnesia:add_table_copy(s2s, node(), ram_copies),
     mnesia:subscribe(system),
     ejabberd_commands:register_commands(get_commands_spec()),
     ejabberd_mnesia:create(?MODULE, temporarily_blocked,

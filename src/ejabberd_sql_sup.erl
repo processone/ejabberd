@@ -53,7 +53,6 @@ start_link(Host) ->
 			[{ram_copies, [node()]}, {type, bag},
 			 {local_content, true},
 			 {attributes, record_info(fields, sql_pool)}]),
-    mnesia:add_table_copy(sql_pool, node(), ram_copies),
     F = fun () -> mnesia:delete({sql_pool, Host}) end,
     mnesia:ets(F),
     supervisor:start_link({local,

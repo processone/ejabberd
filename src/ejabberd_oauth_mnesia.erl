@@ -38,7 +38,6 @@ init() ->
                         [{disc_copies, [node()]},
                          {attributes,
                           record_info(fields, oauth_token)}]),
-    mnesia:add_table_copy(oauth_token, node(), disc_copies),
     ok.
 
 store(R) ->

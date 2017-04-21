@@ -120,7 +120,6 @@ init([]) ->
 			 {type, bag},
 			 {attributes,
 			  record_info(fields, route_multicast)}]),
-    mnesia:add_table_copy(route_multicast, node(), ram_copies),
     mnesia:subscribe({table, route_multicast, simple}),
     lists:foreach(
       fun(Pid) ->

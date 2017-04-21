@@ -46,7 +46,7 @@ start(normal, _Args) ->
     start_apps(),
     start_elixir_application(),
     ejabberd:check_app(ejabberd),
-    db_init(),
+    ejabberd_mnesia:start(),
     setup_if_elixir_conf_used(),
     ejabberd_config:start(),
     set_settings_from_config(),
@@ -86,29 +86,6 @@ stop(_State) ->
 %%%
 %%% Internal functions
 %%%
-
-db_init() ->
-    ejabberd_config:env_binary_to_list(mnesia, dir),
-    MyNode = node(),
-    DbNodes = mnesia:system_info(db_nodes),
-    case lists:member(MyNode, DbNodes) of
-	true ->
-	    ok;
-	false ->
-	    ?CRITICAL_MSG("Node name mismatch: I'm [~s], "
-			  "the database is owned by ~p", [MyNode, DbNodes]),
-	    ?CRITICAL_MSG("Either set ERLANG_NODE in ejabberdctl.cfg "
-			  "or change node name in Mnesia", []),
-	    erlang:error(node_name_mismatch)
-    end,
-    case mnesia:system_info(extra_db_nodes) of
-	[] ->
-	    mnesia:create_schema([node()]);
-	_ ->
-	    ok
-    end,
-    ejabberd:start_app(mnesia, permanent),
-    mnesia:wait_for_tables(mnesia:system_info(local_tables), infinity).
 
 connect_nodes() ->
     Nodes = ejabberd_config:get_option(

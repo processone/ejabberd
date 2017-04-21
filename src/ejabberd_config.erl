@@ -116,8 +116,7 @@ mnesia_init() ->
     ejabberd_mnesia:create(?MODULE, local_config,
 			[{ram_copies, [node()]},
 			 {local_content, true},
-			 {attributes, record_info(fields, local_config)}]),
-    mnesia:add_table_copy(local_config, node(), ram_copies).
+			 {attributes, record_info(fields, local_config)}]).
 
 %% @doc Get the filename of the ejabberd configuration file.
 %% The filename can be specified with: erl -config "/path/to/ejabberd.yml".

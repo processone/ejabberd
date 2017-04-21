@@ -30,21 +30,82 @@
 
 -module(ejabberd_mnesia).
 -author('christophe.romain@process-one.net').
--export([create/3, reset/2, update/2]).
+
+-behaviour(gen_server).
+
+-export([start/0, create/3, reset/2, update/2]).
+%% gen_server callbacks
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+	 terminate/2, code_change/3]).
 
 -define(STORAGE_TYPES, [disc_copies, disc_only_copies, ram_copies]).
 -define(NEED_RESET, [local_content, type]).
 
 -include("logger.hrl").
 
-create(Module, Name, TabDef)
+-record(state, {tables = #{} :: map()}).
+
+start() ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+create(Module, Name, TabDef) ->
+    gen_server:call(?MODULE, {create, Module, Name, TabDef},
+		    timer:seconds(60)).
+
+init([]) ->
+    ejabberd_config:env_binary_to_list(mnesia, dir),
+    MyNode = node(),
+    DbNodes = mnesia:system_info(db_nodes),
+    case lists:member(MyNode, DbNodes) of
+	true ->
+	    case mnesia:system_info(extra_db_nodes) of
+		[] -> mnesia:create_schema([node()]);
+		_ -> ok
+	    end,
+	    ejabberd:start_app(mnesia, permanent),
+	    ?DEBUG("Waiting for Mnesia tables synchronization...", []),
+	    mnesia:wait_for_tables(mnesia:system_info(local_tables), infinity),
+	    {ok, #state{}};
+	false ->
+	    ?CRITICAL_MSG("Node name mismatch: I'm [~s], "
+			  "the database is owned by ~p", [MyNode, DbNodes]),
+	    ?CRITICAL_MSG("Either set ERLANG_NODE in ejabberdctl.cfg "
+			  "or change node name in Mnesia", []),
+	    {stop, node_name_mismatch}
+    end.
+
+handle_call({create, Module, Name, TabDef}, _From, State) ->
+    case maps:get(Name, State#state.tables, undefined) of
+	{TabDef, Result} ->
+	    {reply, Result, State};
+	_ ->
+	    Result = do_create(Module, Name, TabDef),
+	    Tables = maps:put(Name, {TabDef, Result}, State#state.tables),
+	    {reply, Result, #state{tables = Tables}}
+    end;
+handle_call(_Request, _From, State) ->
+    {noreply, State}.
+
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+handle_info(_Info, State) ->
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
+    ok.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
+
+do_create(Module, Name, TabDef)
   when is_atom(Module), is_atom(Name), is_list(TabDef) ->
     Path = os:getenv("EJABBERD_SCHEMA_PATH"),
     Schema = schema(Path, Module, Name, TabDef),
     {attributes, Attrs} = lists:keyfind(attributes, 1, Schema),
     case catch mnesia:table_info(Name, attributes) of
 	{'EXIT', _} ->
-	    mnesia_op(create_table, [Name, TabDef]);
+	    create(Name, TabDef);
 	Attrs ->
 	    case need_reset(Name, Schema) of
 		true -> reset(Name, Schema);
@@ -61,7 +122,7 @@ create(Module, Name, TabDef)
 reset(Name, TabDef)
   when is_atom(Name), is_list(TabDef) ->
     mnesia_op(delete_table, [Name]),
-    mnesia_op(create_table, [Name, TabDef]).
+    create(Name, TabDef).
 
 update(Name, TabDef)
   when is_atom(Name), is_list(TabDef) ->
@@ -118,6 +179,25 @@ schema(Path, Module, Name, TabDef) ->
 	    ?ERROR_MSG("Can not use custom ~s schema for table ~s: ~p",
 		       [Module, Name, Error]),
 	    TabDef
+    end.
+
+create(Name, TabDef) ->
+    case mnesia_op(create_table, [Name, TabDef]) of
+	{atomic, ok} ->
+	    add_table_copy(Name);
+	Err ->
+	    Err
+    end.
+
+%% The table MUST exist, otherwise the function would fail
+add_table_copy(Name) ->
+    Type = mnesia:table_info(Name, storage_type),
+    Nodes = mnesia:table_info(Name, Type),
+    case lists:member(node(), Nodes) of
+	true ->
+	    {atomic, ok};
+	false ->
+	    mnesia_op(add_table_copy, [Name, node(), Type])
     end.
 
 merge(TabDef, CustomDef) ->

@@ -57,8 +57,6 @@ start(Host, Opts) ->
     ejabberd_mnesia:create(?MODULE, mod_register_ip,
 			[{ram_copies, [node()]}, {local_content, true},
 			 {attributes, [key, value]}]),
-    mnesia:add_table_copy(mod_register_ip, node(),
-			  ram_copies),
     ok.
 
 stop(Host) ->
