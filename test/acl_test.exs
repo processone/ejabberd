@@ -25,6 +25,7 @@ defmodule ACLTest do
 
   setup_all do
     :ok = :mnesia.start
+    :ejabberd_mnesia.start
     {:ok, _} = :jid.start
     :ejabberd_hooks.start_link
     :stringprep.start

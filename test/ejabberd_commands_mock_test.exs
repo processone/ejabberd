@@ -49,11 +49,13 @@ defmodule EjabberdCommandsMockTest do
 			_ -> :ok
 		end
 		:mnesia.start
+		:ejabberd_mnesia.start
         {:ok, _} = :jid.start
         :ejabberd_hooks.start_link
         :ok = :ejabberd_config.start(["domain1", "domain2"], [])
         {:ok, _} = :ejabberd_access_permissions.start_link()
         {:ok, _} = :acl.start_link
+		:ejabberd_commands.start_link
 		EjabberdOauthMock.init
         on_exit fn -> :meck.unload end
 	end
@@ -61,8 +63,8 @@ defmodule EjabberdCommandsMockTest do
 	setup do
 		:meck.unload
 		:meck.new(@module, [:non_strict])
-		:mnesia.delete_table(:ejabberd_commands)
-		:ejabberd_commands.start_link
+		:mnesia.clear_table(:ejabberd_commands)
+		:ejabberd_commands.register_commands(:ejabberd_commands.get_commands_spec())
 		:ok
 	end
 
