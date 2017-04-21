@@ -47,9 +47,9 @@ store(R) ->
 lookup(Token) ->
     case catch mnesia:dirty_read(oauth_token, Token) of
         [R] ->
-            R;
+            {ok, R};
         _ ->
-            false
+            error
     end.
 
 clean(TS) ->
