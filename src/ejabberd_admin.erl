@@ -54,6 +54,7 @@
 	 dump_to_textfile/1, dump_to_textfile/2,
 	 mnesia_change_nodename/4,
 	 restore/1, % Still used by some modules
+	 clear_cache/0,
 	 get_commands_spec/0
 	]).
 %% gen_server callbacks
@@ -360,7 +361,11 @@ get_commands_spec() ->
 			module = ?MODULE, function = install_fallback_mnesia,
 			args_desc = ["Full path to the fallback file"],
 			args_example = ["/var/lib/ejabberd/database.fallback"],
-			args = [{file, string}], result = {res, restuple}}
+			args = [{file, string}], result = {res, restuple}},
+     #ejabberd_commands{name = clear_cache, tags = [server],
+			desc = "Clear database cache on all nodes",
+			module = ?MODULE, function = clear_cache,
+			args = [], result = {res, rescode}}
     ].
 
 
@@ -759,3 +764,7 @@ mnesia_change_nodename(FromString, ToString, Source, Target) ->
 		{[Other], Acc}
 	end,
     mnesia:traverse_backup(Source, Target, Convert, switched).
+
+clear_cache() ->
+    Nodes = ejabberd_cluster:get_nodes(),
+    lists:foreach(fun(T) -> ets_cache:clear(T, Nodes) end, ets_cache:all()).
