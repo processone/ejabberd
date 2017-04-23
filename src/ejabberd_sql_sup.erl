@@ -98,7 +98,9 @@ get_pids(Host) ->
 get_random_pid(Host) ->
     case get_pids(Host) of
       [] -> none;
-      Pids -> lists:nth(erlang:phash(p1_time_compat:unique_integer(), length(Pids)), Pids)
+      Pids ->
+	    I = randoms:round_robin(length(Pids)) + 1,
+	    lists:nth(I, Pids)
     end.
 
 add_pid(Host, Pid) ->

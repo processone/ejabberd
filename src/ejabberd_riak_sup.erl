@@ -30,7 +30,7 @@
 -author('alexey@process-one.net').
 
 -export([start_link/0, init/1, get_pids/0,
-	 transform_options/1, get_random_pid/0, get_random_pid/1,
+	 transform_options/1, get_random_pid/0,
 	 host_up/1, config_reloaded/0, opt_type/1]).
 
 -include("ejabberd.hrl").
@@ -199,10 +199,7 @@ get_pids() ->
     [ejabberd_riak:get_proc(I) || I <- lists:seq(1, get_pool_size())].
 
 get_random_pid() ->
-    get_random_pid(p1_time_compat:system_time()).
-
-get_random_pid(Term) ->
-    I = erlang:phash2(Term, get_pool_size()) + 1,
+    I = randoms:round_robin(get_pool_size()) + 1,
     ejabberd_riak:get_proc(I).
 
 transform_options(Opts) ->

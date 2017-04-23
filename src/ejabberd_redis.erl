@@ -516,7 +516,7 @@ log_error(Cmd, Reason) ->
 
 -spec get_rnd_id() -> pos_integer().
 get_rnd_id() ->
-    randoms:uniform(2, ejabberd_redis_sup:get_pool_size()).
+    randoms:round_robin(ejabberd_redis_sup:get_pool_size() - 1) + 2.
 
 -spec get_result([{error, atom() | binary()} | {ok, iodata()}]) ->
 			{ok, [redis_reply()]} | {error, binary()}.
