@@ -429,16 +429,6 @@ delete_listener(PortIP, Module) ->
 delete_listener(PortIP, Module, Opts) ->
     {Port, IPT, _, _, Proto, _} = parse_listener_portip(PortIP, Opts),
     PortIP1 = {Port, IPT, Proto},
-    Ports = case ejabberd_config:get_option(
-                   listen, fun validate_cfg/1) of
-		undefined ->
-		    [];
-		Ls ->
-		    Ls
-	    end,
-    Ports1 = lists:keydelete(PortIP1, 1, Ports),
-    Ports2 = lists:map(fun transform_option/1, Ports1),
-    ejabberd_config:add_option(listen, Ports2),
     stop_listener(PortIP1, Module).
 
 
