@@ -30,6 +30,7 @@
 -export([init/2, stop/1, import/3, get_vcard/2, set_vcard/4, search/4,
 	 search_fields/1, search_reported/1, remove_user/2]).
 -export([is_search_supported/1]).
+-export([need_transform/1, transform/1]).
 
 -include("ejabberd.hrl").
 -include("xmpp.hrl").
@@ -51,8 +52,7 @@ init(_Host, _Opts) ->
 				   lgiven, lmiddle, lnickname,
 				   lbday, lctry, llocality,
 				   lemail, lorgname, lorgunit
-				 ]}]),
-    update_tables().
+				 ]}]).
 
 stop(_Host) ->
     ok.
@@ -158,53 +158,31 @@ import(LServer, <<"vcard_search">>,
                     orgname = OrgName, lorgname = LOrgName,
                     orgunit = OrgUnit, lorgunit = LOrgUnit}).
 
+need_transform(#vcard{us = {U, S}}) when is_list(U) orelse is_list(S) ->
+    ?INFO_MSG("Mnesia table 'vcard' will be converted to binary", []),
+    true;
+need_transform(#vcard_search{us = {U, S}}) when is_list(U) orelse is_list(S) ->
+    ?INFO_MSG("Mnesia table 'vcard_search' will be converted to binary", []),
+    true;
+need_transform(_) ->
+    false.
+
+transform(#vcard{us = {U, S}, vcard = El} = R) ->
+    R#vcard{us = {iolist_to_binary(U), iolist_to_binary(S)},
+	    vcard = fxml:to_xmlel(El)};
+transform(#vcard_search{} = VS) ->
+    [vcard_search | L] = tuple_to_list(VS),
+    NewL = lists:map(
+	     fun({U, S}) ->
+		     {iolist_to_binary(U), iolist_to_binary(S)};
+		(Str) ->
+		     iolist_to_binary(Str)
+	     end, L),
+    list_to_tuple([vcard_search | NewL]).
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-update_tables() ->
-    update_vcard_table(),
-    update_vcard_search_table().
-
-update_vcard_table() ->
-    Fields = record_info(fields, vcard),
-    case mnesia:table_info(vcard, attributes) of
-      Fields ->
-          ejabberd_config:convert_table_to_binary(
-            vcard, Fields, set,
-            fun(#vcard{us = {U, _}}) -> U end,
-            fun(#vcard{us = {U, S}, vcard = El} = R) ->
-                    R#vcard{us = {iolist_to_binary(U),
-                                  iolist_to_binary(S)},
-                            vcard = fxml:to_xmlel(El)}
-            end);
-      _ ->
-	  ?INFO_MSG("Recreating vcard table", []),
-	  mnesia:transform_table(vcard, ignore, Fields)
-    end.
-
-update_vcard_search_table() ->
-    Fields = record_info(fields, vcard_search),
-    case mnesia:table_info(vcard_search, attributes) of
-      Fields ->
-          ejabberd_config:convert_table_to_binary(
-            vcard_search, Fields, set,
-            fun(#vcard_search{us = {U, _}}) -> U end,
-            fun(#vcard_search{} = VS) ->
-                    [vcard_search | L] = tuple_to_list(VS),
-                    NewL = lists:map(
-                             fun({U, S}) ->
-                                     {iolist_to_binary(U),
-                                      iolist_to_binary(S)};
-                                (Str) ->
-                                     iolist_to_binary(Str)
-                             end, L),
-                    list_to_tuple([vcard_search | NewL])
-            end);
-      _ ->
-	  ?INFO_MSG("Recreating vcard_search table", []),
-	  mnesia:transform_table(vcard_search, ignore, Fields)
-    end.
-
 make_matchspec(LServer, Data) ->
     GlobMatch = #vcard_search{_ = '_'},
     Match = filter_fields(Data, GlobMatch, LServer),

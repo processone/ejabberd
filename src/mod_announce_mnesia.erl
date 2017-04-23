@@ -29,6 +29,7 @@
 %% API
 -export([init/2, set_motd_users/2, set_motd/2, delete_motd/1,
 	 get_motd/1, is_motd_user/2, set_motd_user/2, import/3]).
+-export([need_transform/1, transform/1]).
 
 -include("xmpp.hrl").
 -include("mod_announce.hrl").
@@ -45,8 +46,7 @@ init(_Host, _Opts) ->
     ejabberd_mnesia:create(?MODULE, motd_users,
 			[{disc_copies, [node()]},
 			 {attributes,
-			  record_info(fields, motd_users)}]),
-    update_tables().
+			  record_info(fields, motd_users)}]).
 
 set_motd_users(_LServer, USRs) ->
     F = fun() ->
@@ -98,6 +98,23 @@ set_motd_user(LUser, LServer) ->
 	end,
     mnesia:transaction(F).
 
+need_transform(#motd{server = S}) when is_list(S) ->
+    ?INFO_MSG("Mnesia table 'motd' will be converted to binary", []),
+    true;
+need_transform(#motd_users{us = {U, S}}) when is_list(U) orelse is_list(S) ->
+    ?INFO_MSG("Mnesia table 'motd_users' will be converted to binary", []),
+    true;
+need_transform(_) ->
+    false.
+
+transform(#motd{server = S, packet = P} = R) ->
+    NewS = iolist_to_binary(S),
+    NewP = fxml:to_xmlel(P),
+    R#motd{server = NewS, packet = NewP};
+transform(#motd_users{us = {U, S}} = R) ->
+    NewUS = {iolist_to_binary(U), iolist_to_binary(S)},
+    R#motd_users{us = NewUS}.
+
 import(LServer, <<"motd">>, [<<>>, XML, _TimeStamp]) ->
     El = fxml_stream:parse_element(XML),
     mnesia:dirty_write(#motd{server = LServer, packet = El});
@@ -107,41 +124,3 @@ import(LServer, <<"motd">>, [LUser, <<>>, _TimeStamp]) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-update_tables() ->
-    update_motd_table(),
-    update_motd_users_table().
-
-update_motd_table() ->
-    Fields = record_info(fields, motd),
-    case mnesia:table_info(motd, attributes) of
-	Fields ->
-            ejabberd_config:convert_table_to_binary(
-              motd, Fields, set,
-              fun(#motd{server = S}) -> S end,
-              fun(#motd{server = S, packet = P} = R) ->
-                      NewS = iolist_to_binary(S),
-                      NewP = fxml:to_xmlel(P),
-                      R#motd{server = NewS, packet = NewP}
-              end);
-	_ ->
-	    ?INFO_MSG("Recreating motd table", []),
-	    mnesia:transform_table(motd, ignore, Fields)
-    end.
-
-
-update_motd_users_table() ->
-    Fields = record_info(fields, motd_users),
-    case mnesia:table_info(motd_users, attributes) of
-	Fields ->
-	    ejabberd_config:convert_table_to_binary(
-              motd_users, Fields, set,
-              fun(#motd_users{us = {U, _}}) -> U end,
-              fun(#motd_users{us = {U, S}} = R) ->
-                      NewUS = {iolist_to_binary(U),
-                               iolist_to_binary(S)},
-                      R#motd_users{us = NewUS}
-              end);
-	_ ->
-	    ?INFO_MSG("Recreating motd_users table", []),
-	    mnesia:transform_table(motd_users, ignore, Fields)
-    end.

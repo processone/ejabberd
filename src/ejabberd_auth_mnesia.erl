@@ -42,6 +42,7 @@
 	 get_password_s/2, is_user_exists/2, remove_user/2,
 	 remove_user/3, store_type/0, export/1, import/2,
 	 plain_password_required/0, opt_type/1]).
+-export([need_transform/1, transform/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -60,9 +61,7 @@
 %%%----------------------------------------------------------------------
 start(Host) ->
     init_db(),
-    update_table(),
     update_reg_users_counter_table(Host),
-    maybe_alert_password_scrammed_without_option(),
     ok.
 
 stop(_Host) ->
@@ -90,10 +89,8 @@ plain_password_required() ->
     is_scrammed().
 
 store_type() ->
-    case is_scrammed() of
-      false -> plain; %% allows: PLAIN DIGEST-MD5 SCRAM
-      true -> scram %% allows: PLAIN SCRAM
-    end.
+    ejabberd_config:get_option({auth_password_format, ?MYNAME},
+			       opt_type(auth_password_format), plain).
 
 check_password(User, AuthzId, Server, Password) ->
     if AuthzId /= <<>> andalso AuthzId /= User ->
@@ -374,100 +371,72 @@ remove_user(User, Server, Password) ->
       _ -> bad_request
     end.
 
-update_table() ->
-    Fields = record_info(fields, passwd),
-    case mnesia:table_info(passwd, attributes) of
-        Fields ->
-            convert_to_binary(Fields),
-            maybe_scram_passwords(),
-            ok;
-        _ ->
-            ?INFO_MSG("Recreating passwd table", []),
-            mnesia:transform_table(passwd, ignore, Fields)
+need_transform(#passwd{us = {U, S}, password = Pass}) ->
+    if is_binary(Pass) ->
+	    IsScrammed = is_scrammed(),
+	    if IsScrammed ->
+		    ?INFO_MSG("Passwords in Mnesia table 'passwd' "
+			      "will be SCRAM'ed", []);
+	       true ->
+		    ok
+	    end,
+	    IsScrammed;
+       is_record(Pass, scram) ->
+	    case is_scrammed() of
+		true ->
+		    next;
+		false ->
+		    ?WARNING_MSG("Some passwords were stored in the database "
+				 "as SCRAM, but 'auth_password_format' "
+				 "is not configured as 'scram'.", []),
+		    false
+	    end;
+       is_list(U) orelse is_list(S) orelse is_list(Pass) ->
+	    ?INFO_MSG("Mnesia table 'passwd' will be converted to binary", []),
+	    true
     end.
 
-convert_to_binary(Fields) ->
-    ejabberd_config:convert_table_to_binary(
-      passwd, Fields, set,
-      fun(#passwd{us = {U, _}}) -> U end,
-      fun(#passwd{us = {U, S}, password = Pass} = R) ->
-              NewUS = {iolist_to_binary(U), iolist_to_binary(S)},
-              NewPass = case Pass of
-                            #scram{storedkey = StoredKey,
-                                   serverkey = ServerKey,
-                                   salt = Salt} ->
-                                Pass#scram{
-                                  storedkey = iolist_to_binary(StoredKey),
-                                  serverkey = iolist_to_binary(ServerKey),
-                                  salt = iolist_to_binary(Salt)};
-                            _ ->
-                                iolist_to_binary(Pass)
-                        end,
-              R#passwd{us = NewUS, password = NewPass}
-      end).
+transform(#passwd{us = {U, S}, password = Pass} = R)
+  when is_list(U) orelse is_list(S) orelse is_list(Pass) ->
+    NewUS = {iolist_to_binary(U), iolist_to_binary(S)},
+    NewPass = case Pass of
+		  #scram{storedkey = StoredKey,
+			 serverkey = ServerKey,
+			 salt = Salt} ->
+		      Pass#scram{
+			storedkey = iolist_to_binary(StoredKey),
+			serverkey = iolist_to_binary(ServerKey),
+			salt = iolist_to_binary(Salt)};
+		  _ ->
+		      iolist_to_binary(Pass)
+	      end,
+    transform(R#passwd{us = NewUS, password = NewPass});
+transform(#passwd{us = {U, S}, password = Password} = P)
+  when is_binary(Password) ->
+    case is_scrammed() of
+	true ->
+	    case jid:resourceprep(Password) of
+		error ->
+		    ?ERROR_MSG("SASLprep failed for password of user ~s@~s",
+			       [U, S]),
+		    P;
+		_ ->
+		    Scram = password_to_scram(Password),
+		    P#passwd{password = Scram}
+	    end;
+	false ->
+	    P
+    end;
+transform(#passwd{password = Password} = P)
+  when is_record(Password, scram) ->
+    P.
 
 %%%
 %%% SCRAM
 %%%
 
-%% The passwords are stored scrammed in the table either if the option says so,
-%% or if at least the first password is scrammed.
 is_scrammed() ->
-    OptionScram = is_option_scram(),
-    FirstElement = mnesia:dirty_read(passwd,
-				     mnesia:dirty_first(passwd)),
-    case {OptionScram, FirstElement} of
-      {true, _} -> true;
-      {false, [#passwd{password = Scram}]}
-	  when is_record(Scram, scram) ->
-	  true;
-      _ -> false
-    end.
-
-is_option_scram() ->
-    scram ==
-      ejabberd_config:get_option({auth_password_format, ?MYNAME},
-                                       fun(V) -> V end).
-
-maybe_alert_password_scrammed_without_option() ->
-    case is_scrammed() andalso not is_option_scram() of
-      true ->
-	  ?ERROR_MSG("Some passwords were stored in the database "
-		     "as SCRAM, but 'auth_password_format' "
-		     "is not configured 'scram'. The option "
-		     "will now be considered to be 'scram'.",
-		     []);
-      false -> ok
-    end.
-
-maybe_scram_passwords() ->
-    case is_scrammed() of
-      true -> scram_passwords();
-      false -> ok
-    end.
-
-scram_passwords() ->
-    ?INFO_MSG("Converting the stored passwords into "
-	      "SCRAM bits",
-	      []),
-    Fun = fun (#passwd{us = {U, S}, password = Password} = P)
-		when is_binary(Password) ->
-		  case jid:resourceprep(Password) of
-		      error ->
-			  ?ERROR_MSG(
-			     "SASLprep failed for "
-			     "password of user ~s@~s",
-			     [U, S]),
-			  P;
-		      _ ->
-			  Scram = password_to_scram(Password),
-			  P#passwd{password = Scram}
-		  end;
-	      (P) ->
-		  P
-	  end,
-    Fields = record_info(fields, passwd),
-    mnesia:transform_table(passwd, Fun, Fields).
+    scram == store_type().
 
 password_to_scram(Password) ->
     password_to_scram(Password,
@@ -526,5 +495,8 @@ import(LServer, [LUser, Password, _TimeStamp]) ->
     mnesia:dirty_write(
       #passwd{us = {LUser, LServer}, password = Password}).
 
-opt_type(auth_password_format) -> fun (V) -> V end;
+opt_type(auth_password_format) ->
+    fun (plain) -> plain;
+	(scram) -> scram
+    end;
 opt_type(_) -> [auth_password_format].

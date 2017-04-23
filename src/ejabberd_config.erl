@@ -31,8 +31,7 @@
 	 get_vh_by_auth_method/1, is_file_readable/1,
 	 get_version/0, get_myhosts/0, get_mylang/0,
 	 get_ejabberd_config_path/0, is_using_elixir_config/0,
-	 prepare_opt_val/4, convert_table_to_binary/5,
-	 transform_options/1, collect_options/1,
+	 prepare_opt_val/4, transform_options/1, collect_options/1,
 	 convert_to_yaml/1, convert_to_yaml/2, v_db/2,
 	 env_binary_to_list/2, opt_type/1, may_hide_data/1,
 	 is_elixir_enabled/0, v_dbs/1, v_dbs_mods/1,
@@ -1338,94 +1337,6 @@ transform_options({include_config_file, _, _} = Opt, Opts) ->
     [{include_config_file, [transform_include_option(Opt)]} | Opts];
 transform_options(Opt, Opts) ->
     [Opt|Opts].
-
--spec convert_table_to_binary(atom(), [atom()], atom(),
-                              fun(), fun()) -> ok.
-
-convert_table_to_binary(Tab, Fields, Type, DetectFun, ConvertFun) ->
-    case is_table_still_list(Tab, DetectFun) of
-        true ->
-            ?INFO_MSG("Converting '~s' table from strings to binaries.", [Tab]),
-            TmpTab = list_to_atom(atom_to_list(Tab) ++ "_tmp_table"),
-            catch mnesia:delete_table(TmpTab),
-            case ejabberd_mnesia:create(?MODULE, TmpTab,
-                                     [{disc_only_copies, [node()]},
-                                      {type, Type},
-                                      {local_content, true},
-                                      {record_name, Tab},
-                                      {attributes, Fields}]) of
-                {atomic, ok} ->
-                    mnesia:transform_table(Tab, ignore, Fields),
-                    case mnesia:transaction(
-                           fun() ->
-                                   mnesia:write_lock_table(TmpTab),
-                                   mnesia:foldl(
-                                     fun(R, _) ->
-                                             NewR = ConvertFun(R),
-                                             mnesia:dirty_write(TmpTab, NewR)
-                                     end, ok, Tab)
-                           end) of
-                        {atomic, ok} ->
-                            mnesia:clear_table(Tab),
-                            case mnesia:transaction(
-                                   fun() ->
-                                           mnesia:write_lock_table(Tab),
-                                           mnesia:foldl(
-                                             fun(R, _) ->
-                                                     mnesia:dirty_write(R)
-                                             end, ok, TmpTab)
-                                   end) of
-                                {atomic, ok} ->
-                                    mnesia:delete_table(TmpTab);
-                                Err ->
-                                    report_and_stop(Tab, Err)
-                            end;
-                        Err ->
-                            report_and_stop(Tab, Err)
-                    end;
-                Err ->
-                    report_and_stop(Tab, Err)
-            end;
-        false ->
-            ok
-    end.
-
-is_table_still_list(Tab, DetectFun) ->
-    is_table_still_list(Tab, DetectFun, mnesia:dirty_first(Tab)).
-
-is_table_still_list(_Tab, _DetectFun, '$end_of_table') ->
-    false;
-is_table_still_list(Tab, DetectFun, Key) ->
-    Rs = mnesia:dirty_read(Tab, Key),
-    Res = lists:foldl(fun(_, true) ->
-                              true;
-                         (_, false) ->
-                              false;
-                         (R, _) ->
-                              case DetectFun(R) of
-                                  '$next' ->
-                                      '$next';
-                                  El ->
-                                      is_list(El)
-                              end
-                      end, '$next', Rs),
-    case Res of
-        true ->
-            true;
-        false ->
-            false;
-        '$next' ->
-            is_table_still_list(Tab, DetectFun, mnesia:dirty_next(Tab, Key))
-    end.
-
-report_and_stop(Tab, Err) ->
-    ErrTxt = lists:flatten(
-               io_lib:format(
-                 "Failed to convert '~s' table to binary: ~p",
-                 [Tab, Err])),
-    ?CRITICAL_MSG(ErrTxt, []),
-    timer:sleep(1000),
-    halt(string:substr(ErrTxt, 1, 199)).
 
 emit_deprecation_warning(Module, NewModule, DBType) ->
     ?WARNING_MSG("Module ~s is deprecated, use ~s with 'db_type: ~s'"

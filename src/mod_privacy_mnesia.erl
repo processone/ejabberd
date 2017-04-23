@@ -32,6 +32,7 @@
 	 remove_privacy_list/3, set_privacy_list/1,
 	 set_privacy_list/4, get_user_list/2, get_user_lists/2,
 	 remove_user/2, import/1]).
+-export([need_transform/1, transform/1]).
 
 -include("xmpp.hrl").
 -include("mod_privacy.hrl").
@@ -42,9 +43,8 @@
 %%%===================================================================
 init(_Host, _Opts) ->
     ejabberd_mnesia:create(?MODULE, privacy,
-			[{disc_copies, [node()]},
-			 {attributes, record_info(fields, privacy)}]),
-    update_table().
+			   [{disc_copies, [node()]},
+			    {attributes, record_info(fields, privacy)}]).
 
 process_lists_get(LUser, LServer) ->
     case catch mnesia:dirty_read(privacy, {LUser, LServer}) of
@@ -163,25 +163,18 @@ remove_user(LUser, LServer) ->
 import(#privacy{} = P) ->
     mnesia:dirty_write(P).
 
-%%%===================================================================
-%%% Internal functions
-%%%===================================================================
-update_table() ->
-    Fields = record_info(fields, privacy),
-    case mnesia:table_info(privacy, attributes) of
-      Fields ->
-          ejabberd_config:convert_table_to_binary(
-            privacy, Fields, set,
-            fun(#privacy{us = {U, _}}) -> U end,
-            fun(#privacy{us = {U, S}, default = Def, lists = Lists} = R) ->
-                    NewLists =
-                        lists:map(
-                          fun({Name, Ls}) ->
-                                  NewLs =
-                                      lists:map(
-                                        fun(#listitem{value = Val} = L) ->
-                                                NewVal =
-                                                    case Val of
+need_transform(#privacy{us = {U, S}}) when is_list(U) orelse is_list(S) ->
+    ?INFO_MSG("Mnesia table 'privacy' will be converted to binary", []),
+    true;
+need_transform(_) ->
+    false.
+
+transform(#privacy{us = {U, S}, default = Def, lists = Lists} = R) ->
+    NewLists = lists:map(
+		 fun({Name, Ls}) ->
+			 NewLs = lists:map(
+				   fun(#listitem{value = Val} = L) ->
+					   NewVal = case Val of
                                                         {LU, LS, LR} ->
                                                             {iolist_to_binary(LU),
                                                              iolist_to_binary(LS),
@@ -192,19 +185,17 @@ update_table() ->
                                                         to -> to;
                                                         _ -> iolist_to_binary(Val)
                                                     end,
-                                                L#listitem{value = NewVal}
-                                        end, Ls),
-                                  {iolist_to_binary(Name), NewLs}
-                          end, Lists),
-                    NewDef = case Def of
-                                 none -> none;
-                                 _ -> iolist_to_binary(Def)
-                             end,
-                    NewUS = {iolist_to_binary(U), iolist_to_binary(S)},
-                    R#privacy{us = NewUS, default = NewDef,
-                              lists = NewLists}
-            end);
-      _ ->
-	  ?INFO_MSG("Recreating privacy table", []),
-	  mnesia:transform_table(privacy, ignore, Fields)
-    end.
+					   L#listitem{value = NewVal}
+				   end, Ls),
+			 {iolist_to_binary(Name), NewLs}
+		 end, Lists),
+    NewDef = case Def of
+		 none -> none;
+		 _ -> iolist_to_binary(Def)
+	     end,
+    NewUS = {iolist_to_binary(U), iolist_to_binary(S)},
+    R#privacy{us = NewUS, default = NewDef, lists = NewLists}.
+
+%%%===================================================================
+%%% Internal functions
+%%%===================================================================

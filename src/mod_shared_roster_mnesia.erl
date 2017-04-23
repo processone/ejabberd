@@ -32,6 +32,7 @@
 	 get_user_groups/2, get_group_explicit_users/2,
 	 get_user_displayed_groups/3, is_user_in_group/3,
 	 add_user_to_group/3, remove_user_from_group/3, import/3]).
+-export([need_transform/1, transform/1]).
 
 -include("mod_roster.hrl").
 -include("mod_shared_roster.hrl").
@@ -43,13 +44,12 @@
 %%%===================================================================
 init(_Host, _Opts) ->
     ejabberd_mnesia:create(?MODULE, sr_group,
-			[{disc_copies, [node()]},
-			 {attributes, record_info(fields, sr_group)}]),
+			   [{disc_copies, [node()]},
+			    {attributes, record_info(fields, sr_group)}]),
     ejabberd_mnesia:create(?MODULE, sr_user,
-			[{disc_copies, [node()]}, {type, bag},
-			 {attributes, record_info(fields, sr_user)},
-			 {index, [group_host]}]),
-    update_tables().
+			   [{disc_copies, [node()]}, {type, bag},
+			    {attributes, record_info(fields, sr_user)},
+			    {index, [group_host]}]).
 
 list_groups(Host) ->
     mnesia:dirty_select(sr_group,
@@ -144,44 +144,24 @@ import(LServer, <<"sr_user">>, [SJID, Group, _TimeStamp]) ->
     User = #sr_user{us = {U, S}, group_host = {Group, LServer}},
     mnesia:dirty_write(User).
 
+need_transform(#sr_group{group_host = {G, H}})
+  when is_list(G) orelse is_list(H) ->
+    ?INFO_MSG("Mnesia table 'sr_group' will be converted to binary", []),
+    true;
+need_transform(#sr_user{us = {U, S}, group_host = {G, H}})
+  when is_list(U) orelse is_list(S) orelse is_list(G) orelse is_list(H) ->
+    ?INFO_MSG("Mnesia table 'sr_user' will be converted to binary", []),
+    true;
+need_transform(_) ->
+    false.
+
+transform(#sr_group{group_host = {G, H}, opts = Opts} = R) ->
+    R#sr_group{group_host = {iolist_to_binary(G), iolist_to_binary(H)},
+	       opts = mod_shared_roster:opts_to_binary(Opts)};
+transform(#sr_user{us = {U, S}, group_host = {G, H}} = R) ->
+    R#sr_user{us = {iolist_to_binary(U), iolist_to_binary(S)},
+	      group_host = {iolist_to_binary(G), iolist_to_binary(H)}}.
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-update_tables() ->
-    update_sr_group_table(),
-    update_sr_user_table().
-
-update_sr_group_table() ->
-    Fields = record_info(fields, sr_group),
-    case mnesia:table_info(sr_group, attributes) of
-        Fields ->
-            ejabberd_config:convert_table_to_binary(
-              sr_group, Fields, set,
-              fun(#sr_group{group_host = {G, _}}) -> G end,
-              fun(#sr_group{group_host = {G, H},
-                            opts = Opts} = R) ->
-                      R#sr_group{group_host = {iolist_to_binary(G),
-                                               iolist_to_binary(H)},
-                                 opts = mod_shared_roster:opts_to_binary(Opts)}
-              end);
-        _ ->
-            ?INFO_MSG("Recreating sr_group table", []),
-            mnesia:transform_table(sr_group, ignore, Fields)
-    end.
-
-update_sr_user_table() ->
-    Fields = record_info(fields, sr_user),
-    case mnesia:table_info(sr_user, attributes) of
-        Fields ->
-            ejabberd_config:convert_table_to_binary(
-              sr_user, Fields, bag,
-              fun(#sr_user{us = {U, _}}) -> U end,
-              fun(#sr_user{us = {U, S}, group_host = {G, H}} = R) ->
-                      R#sr_user{us = {iolist_to_binary(U), iolist_to_binary(S)},
-                                group_host = {iolist_to_binary(G),
-                                              iolist_to_binary(H)}}
-              end);
-        _ ->
-            ?INFO_MSG("Recreating sr_user table", []),
-            mnesia:transform_table(sr_user, ignore, Fields)
-    end.

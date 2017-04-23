@@ -29,6 +29,7 @@
 %% API
 -export([init/2, set_data/3, get_data/3, get_all_data/2, remove_user/2,
 	 import/3]).
+-export([need_transform/1, transform/1]).
 
 -include("xmpp.hrl").
 -include("mod_private.hrl").
@@ -39,10 +40,8 @@
 %%%===================================================================
 init(_Host, _Opts) ->
     ejabberd_mnesia:create(?MODULE, private_storage,
-			[{disc_only_copies, [node()]},
-			 {attributes,
-			  record_info(fields, private_storage)}]),
-    update_table().
+			   [{disc_only_copies, [node()]},
+			    {attributes, record_info(fields, private_storage)}]).
 
 set_data(LUser, LServer, Data) ->
     F = fun () ->
@@ -95,23 +94,19 @@ import(LServer, <<"private_storage">>,
     PS = #private_storage{usns = {LUser, LServer, XMLNS}, xml = El},
     mnesia:dirty_write(PS).
 
+need_transform(#private_storage{usns = {U, S, NS}})
+  when is_list(U) orelse is_list(S) orelse is_list(NS) ->
+    ?INFO_MSG("Mnesia table 'private_storage' will be converted to binary", []),
+    true;
+need_transform(_) ->
+    false.
+
+transform(#private_storage{usns = {U, S, NS}, xml = El} = R) ->
+    R#private_storage{usns = {iolist_to_binary(U),
+			      iolist_to_binary(S),
+			      iolist_to_binary(NS)},
+		      xml = fxml:to_xmlel(El)}.
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-update_table() ->
-    Fields = record_info(fields, private_storage),
-    case mnesia:table_info(private_storage, attributes) of
-      Fields ->
-          ejabberd_config:convert_table_to_binary(
-            private_storage, Fields, set,
-            fun(#private_storage{usns = {U, _, _}}) -> U end,
-            fun(#private_storage{usns = {U, S, NS}, xml = El} = R) ->
-                    R#private_storage{usns = {iolist_to_binary(U),
-                                              iolist_to_binary(S),
-                                              iolist_to_binary(NS)},
-                                      xml = fxml:to_xmlel(El)}
-            end);
-      _ ->
-	  ?INFO_MSG("Recreating private_storage table", []),
-	  mnesia:transform_table(private_storage, ignore, Fields)
-    end.
