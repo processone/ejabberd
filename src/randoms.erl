@@ -55,4 +55,4 @@ bytes(N) ->
 
 -spec round_robin(pos_integer()) -> non_neg_integer().
 round_robin(N) ->
-    erlang:unique_integer([monotonic, positive]) rem N.
+    p1_time_compat:unique_integer([monotonic, positive]) rem N.
