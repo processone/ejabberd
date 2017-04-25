@@ -522,7 +522,7 @@ route_unacked_stanzas(#{mgmt_state := MgmtState,
 			  Resend when is_boolean(Resend) ->
 			      Resend;
 			  if_offline ->
-			      case ejabberd_sm:get_user_resources(User, Resource) of
+			      case ejabberd_sm:get_user_resources(User, Server) of
 				  [Resource] ->
 				      %% Same resource opened new session
 				      true;
