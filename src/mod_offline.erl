@@ -539,8 +539,8 @@ check_event(#message{from = From, to = To, id = ID} = Msg) ->
 	#xevent{id = undefined, offline = false} ->
 	    true;
 	#xevent{id = undefined, offline = true} ->
-	    NewMsg = Msg#message{from = To, to = From,
-				 sub_els = [#xevent{id = ID, offline = true}]},
+	    NewMsg = #message{from = To, to = From,
+			      sub_els = [#xevent{id = ID, offline = true}]},
 	    ejabberd_router:route(NewMsg),
 	    true;
 	_ ->
