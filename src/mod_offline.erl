@@ -532,14 +532,14 @@ has_no_store_hint(Packet) ->
 
 %% Check if the packet has any content about XEP-0022
 -spec check_event(message()) -> boolean().
-check_event(#message{from = From, to = To, id = ID} = Msg) ->
+check_event(#message{from = From, to = To, id = ID, type = Type} = Msg) ->
     case xmpp:get_subtag(Msg, #xevent{}) of
 	false ->
 	    true;
 	#xevent{id = undefined, offline = false} ->
 	    true;
 	#xevent{id = undefined, offline = true} ->
-	    NewMsg = #message{from = To, to = From,
+	    NewMsg = #message{from = To, to = From, id = ID, type = Type,
 			      sub_els = [#xevent{id = ID, offline = true}]},
 	    ejabberd_router:route(NewMsg),
 	    true;
