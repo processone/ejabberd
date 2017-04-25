@@ -3713,6 +3713,21 @@ process_iq_mucsub(_From, #iq{type = set, lang = Lang,
     {error, xmpp:err_not_allowed(<<"Subscriptions are not allowed">>, Lang)};
 process_iq_mucsub(From,
 		  #iq{type = set, lang = Lang,
+		      sub_els = [#muc_subscribe{jid = #jid{} = SubJid} = Mucsub]},
+		  StateData) ->
+    FAffiliation = get_affiliation(From, StateData),
+    FRole = get_role(From, StateData),
+    if FRole == moderator; FAffiliation == owner; FAffiliation == admin ->
+	    process_iq_mucsub(SubJid,
+			      #iq{type = set, lang = Lang,
+				  sub_els = [Mucsub#muc_subscribe{jid = undefined}]},
+			      StateData);
+       true ->
+	    Txt = <<"Moderator privileges required">>,
+	    {error, xmpp:err_forbidden(Txt, Lang)}
+    end;
+process_iq_mucsub(From,
+		  #iq{type = set, lang = Lang,
 		      sub_els = [#muc_subscribe{nick = Nick}]} = Packet,
 		  StateData) ->
     LBareJID = jid:tolower(jid:remove_resource(From)),
@@ -3748,7 +3763,7 @@ process_iq_mucsub(From, #iq{type = set, lang = Lang,
     FRole = get_role(From, StateData),
     if FRole == moderator; FAffiliation == owner; FAffiliation == admin ->
 	    process_iq_mucsub(UnsubJid,
-			      #iq{type = set,
+			      #iq{type = set, lang = Lang,
 				  sub_els = [#muc_unsubscribe{jid = undefined}]},
 			      StateData);
        true ->
