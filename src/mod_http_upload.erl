@@ -512,12 +512,31 @@ process_iq(#iq{type = get, lang = Lang, sub_els = [#disco_info{}]} = IQ,
     xmpp:make_iq_result(IQ, iq_disco_info(ServerHost, Lang, Name, AddInfo));
 process_iq(#iq{type = get, sub_els = [#disco_items{}]} = IQ, _State) ->
     xmpp:make_iq_result(IQ, #disco_items{});
-process_iq(#iq{type = get, lang = Lang, from = From,
-	       sub_els = [#upload_request{filename = File,
-					  size = Size,
-					  'content-type' = CType,
-					  xmlns = XMLNS}]} = IQ,
-	   #state{server_host = ServerHost, access = Access} = State) ->
+process_iq(#iq{type = get, sub_els = [#upload_request{filename = File,
+						      size = Size,
+						      'content-type' = CType,
+						      xmlns = XMLNS}]} = IQ,
+	   State) ->
+    process_slot_request(IQ, File, Size, CType, XMLNS, State);
+process_iq(#iq{type = get, sub_els = [#upload_request_0{filename = File,
+							size = Size,
+							'content-type' = CType,
+							xmlns = XMLNS}]} = IQ,
+	   State) ->
+    process_slot_request(IQ, File, Size, CType, XMLNS, State);
+process_iq(#iq{type = T, lang = Lang} = IQ, _State) when T == get; T == set ->
+    Txt = <<"No module is handling this query">>,
+    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang));
+process_iq(#iq{}, _State) ->
+    not_request.
+
+-spec process_slot_request(iq(), binary(), pos_integer(), binary(), binary(),
+			   state()) -> {iq(), state()} | iq().
+
+process_slot_request(#iq{lang = Lang, from = From} = IQ,
+		     File, Size, CType, XMLNS,
+		     #state{server_host = ServerHost,
+			    access = Access} = State) ->
     case acl:match_rule(ServerHost, Access, From) of
 	allow ->
 	    ContentType = yield_content_type(CType),
@@ -540,12 +559,7 @@ process_iq(#iq{type = get, lang = Lang, from = From,
 		   [jid:encode(From)]),
 	    Txt = <<"Denied by ACL">>,
 	    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang))
-    end;
-process_iq(#iq{type = T, lang = Lang} = IQ, _State) when T == get; T == set ->
-    Txt = <<"No module is handling this query">>,
-    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang));
-process_iq(#iq{}, _State) ->
-    not_request.
+    end.
 
 -spec create_slot(state(), jid(), binary(), pos_integer(), binary(), binary())
       -> {ok, slot()} | {ok, binary(), binary()} | {error, xmlel()}.
@@ -649,6 +663,8 @@ mk_slot(Slot, #state{put_url = PutPrefix, get_url = GetPrefix}, XMLNS) ->
     PutURL = str:join([PutPrefix | Slot], <<$/>>),
     GetURL = str:join([GetPrefix | Slot], <<$/>>),
     mk_slot(PutURL, GetURL, XMLNS);
+mk_slot(PutURL, GetURL, ?NS_HTTP_UPLOAD_0) ->
+    #upload_slot_0{get = GetURL, put = PutURL, xmlns = ?NS_HTTP_UPLOAD_0};
 mk_slot(PutURL, GetURL, XMLNS) ->
     #upload_slot{get = GetURL, put = PutURL, xmlns = XMLNS}.
 
@@ -702,18 +718,27 @@ iq_disco_info(Host, Lang, Name, AddInfo) ->
 		   AddInfo;
 	       MaxSize ->
 		   MaxSizeStr = integer_to_binary(MaxSize),
-		   Fields = [#xdata_field{type = hidden,
-					  var = <<"FORM_TYPE">>,
-					  values = [?NS_HTTP_UPLOAD]},
-			     #xdata_field{var = <<"max-file-size">>,
-					  values = [MaxSizeStr]}],
-		   [#xdata{type = result, fields = Fields}|AddInfo]
+		   XData = lists:map(
+			     fun(NS) ->
+				     Fields = [#xdata_field{
+						  type = hidden,
+						  var = <<"FORM_TYPE">>,
+						  values = [NS]},
+					       #xdata_field{
+						  var = <<"max-file-size">>,
+						  values = [MaxSizeStr]}],
+				     #xdata{type = result, fields = Fields}
+			     end, [?NS_HTTP_UPLOAD, ?NS_HTTP_UPLOAD_0]),
+		   XData ++ AddInfo
 	   end,
     #disco_info{identities = [#identity{category = <<"store">>,
 					type = <<"file">>,
 					name = translate:translate(Lang, Name)}],
-		features = [?NS_HTTP_UPLOAD, ?NS_HTTP_UPLOAD_OLD,
-			    ?NS_DISCO_INFO, ?NS_DISCO_ITEMS],
+		features = [?NS_HTTP_UPLOAD,
+			    ?NS_HTTP_UPLOAD_0,
+			    ?NS_HTTP_UPLOAD_OLD,
+			    ?NS_DISCO_INFO,
+			    ?NS_DISCO_ITEMS],
 		xdata = Form}.
 
 %% HTTP request handling.
