@@ -68,7 +68,7 @@ or use a data container
 
 ```bash
 docker create --name ejabberd-data rroemhild/ejabberd-data
-docker run -d --name ejabberd --volumes-from processone-data rroemhild/ejabberd
+docker run -d --name ejabberd --volumes-from ejabberd-data rroemhild/ejabberd
 ```
 
 ## SSL Certificates
