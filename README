@@ -126,6 +126,16 @@ necessary if your source tree didn't come with a `configure` script.
     ./configure
     make
 
+If using git, the above sequence compiles the latest master. To compile a
+specific stable version of ejabberd from git, execute the following commands.
+This is irrelevant if you are installing from a tarball.
+
+    git checkout 15.10 # Or any other version you wish to compile
+    git submodule update --init
+    ./autogen.sh
+    ./configure
+    make
+
 To install ejabberd, run this command with system administrator rights (root
 user):
 
