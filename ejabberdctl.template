@@ -27,7 +27,7 @@ if [ "$INSTALLUSER" != "" ] ; then
                 mkdir -p "$INSTALLUSER_HOME"
                 chown "$INSTALLUSER" "$INSTALLUSER_HOME"
             fi
-            EXEC_CMD="su $INSTALLUSER -c"
+            EXEC_CMD="su $INSTALLUSER --shell=/bin/bash -c"
         fi
     done
     if [ `id -g` -eq `id -g $INSTALLUSER` ] ; then
