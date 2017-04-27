@@ -46,9 +46,9 @@ start(normal, _Args) ->
     start_apps(),
     start_elixir_application(),
     ejabberd:check_app(ejabberd),
-    ejabberd_mnesia:start(),
     setup_if_elixir_conf_used(),
     ejabberd_config:start(),
+    ejabberd_mnesia:start(),
     set_settings_from_config(),
     file_queue_init(),
     maybe_add_nameservers(),
@@ -59,6 +59,7 @@ start(normal, _Args) ->
 	    {T2, _} = statistics(wall_clock),
 	    ?INFO_MSG("ejabberd ~s is started in the node ~p in ~.2fs",
 		      [?VERSION, node(), (T2-T1)/1000]),
+	    lists:foreach(fun erlang:garbage_collect/1, processes()),
 	    {ok, SupPid};
 	Err ->
 	    Err
@@ -161,6 +162,7 @@ start_apps() ->
     crypto:start(),
     ejabberd:start_app(sasl),
     ejabberd:start_app(ssl),
+    ejabberd:start_app(p1_utils),
     ejabberd:start_app(fast_yaml),
     ejabberd:start_app(fast_tls),
     ejabberd:start_app(xmpp),

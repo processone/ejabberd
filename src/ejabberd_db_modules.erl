@@ -5,7 +5,7 @@
 %%%   configuration load via p1_options:compile/1
 %%%   The only purpose of this file is to shut up xref/dialyzer
 %%% @end
-%%% Created : 16 Apr 2017 by Evgeny Khramtsov <ekhramtsov@process-one.net>
+%%% Created : 27 Apr 2017 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
 %%% ejabberd, Copyright (C) 2002-2017   ProcessOne
@@ -25,7 +25,7 @@
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%-------------------------------------------------------------------
--module(ejabberd_options).
+-module(ejabberd_db_modules).
 
 %% API
 -export([is_known/1, get_scope/1]).
