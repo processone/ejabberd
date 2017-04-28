@@ -102,6 +102,8 @@ hosts_to_start(State) ->
 %% At the moment, these functions are mainly used to setup unit tests.
 -spec start(Hosts :: [binary()], Opts :: [acl:acl() | local_config()]) -> ok.
 start(Hosts, Opts) ->
+    p1_options:start_link(ejabberd_options),
+    p1_options:start_link(ejabberd_db_modules),
     set_opts(set_hosts_in_options(Hosts, #state{opts = Opts})),
     ok.
 
