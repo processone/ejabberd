@@ -27,13 +27,12 @@
 -define(GEN_SERVER, p1_server).
 -endif.
 -behaviour(?GEN_SERVER).
--behaviour(ejabberd_config).
 
 -behaviour(ejabberd_sm).
 
 -export([init/0, set_session/1, delete_session/1,
 	 get_sessions/0, get_sessions/1, get_sessions/2,
-	 cache_nodes/1, opt_type/1]).
+	 cache_nodes/1]).
 %% gen_server callbacks
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2,
 	 terminate/2, code_change/3, start_link/0]).
@@ -169,9 +168,6 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-iolist_to_list(IOList) ->
-    binary_to_list(iolist_to_binary(IOList)).
-
 us_to_key({LUser, LServer}) ->
     <<"ejabberd:sm:", LUser/binary, "@", LServer/binary>>.
 
@@ -214,17 +210,3 @@ clean_table() ->
     catch _:{badmatch, {error, _}} ->
 	    ?ERROR_MSG("failed to clean redis c2s sessions", [])
     end.
-
-opt_type(redis_connect_timeout) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
-opt_type(redis_db) ->
-    fun (I) when is_integer(I), I >= 0 -> I end;
-opt_type(redis_password) -> fun iolist_to_list/1;
-opt_type(redis_port) ->
-    fun (P) when is_integer(P), P > 0, P < 65536 -> P end;
-opt_type(redis_reconnect_timeout) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
-opt_type(redis_server) -> fun iolist_to_list/1;
-opt_type(_) ->
-    [redis_connect_timeout, redis_db, redis_password,
-     redis_port, redis_reconnect_timeout, redis_server].

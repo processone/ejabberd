@@ -210,7 +210,6 @@ transform_options({riak_server, {S, P}}, Opts) ->
 transform_options(Opt, Opts) ->
     [Opt|Opts].
 
-opt_type(modules) -> fun (L) when is_list(L) -> L end;
 opt_type(riak_pool_size) ->
     fun (N) when is_integer(N), N >= 1 -> N end;
 opt_type(riak_port) -> fun (_) -> true end;
@@ -221,5 +220,5 @@ opt_type(riak_cacertfile) -> fun iolist_to_binary/1;
 opt_type(riak_username) -> fun iolist_to_binary/1;
 opt_type(riak_password) -> fun iolist_to_binary/1;
 opt_type(_) ->
-    [modules, riak_pool_size, riak_port, riak_server,
+    [riak_pool_size, riak_port, riak_server,
      riak_start_interval, riak_cacertfile, riak_username, riak_password].

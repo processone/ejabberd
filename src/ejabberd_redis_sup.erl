@@ -23,6 +23,7 @@
 -module(ejabberd_redis_sup).
 
 -behaviour(supervisor).
+-behaviour(ejabberd_config).
 
 %% API
 -export([start_link/0, get_pool_size/0,

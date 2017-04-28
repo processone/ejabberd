@@ -44,7 +44,7 @@
 	 get_password_s/2, get_password_with_authmodule/2,
 	 is_user_exists/2, is_user_exists_in_other_modules/3,
 	 remove_user/2, remove_user/3, plain_password_required/1,
-	 store_type/1, entropy/1, backend_type/1]).
+	 store_type/1, entropy/1, backend_type/1, password_format/1]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
@@ -497,6 +497,11 @@ backend_type(Mod) ->
 	_ -> Mod
     end.
 
+password_format(LServer) ->
+    ejabberd_config:get_option({auth_password_format, LServer},
+			       opt_type(auth_password_format),
+			       plain).
+
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
@@ -537,4 +542,8 @@ opt_type(auth_method) ->
 	    lists:map(fun(M) -> ejabberd_config:v_db(?MODULE, M) end, V);
 	(V) -> [ejabberd_config:v_db(?MODULE, V)]
     end;
-opt_type(_) -> [auth_method].
+opt_type(auth_password_format) ->
+    fun (plain) -> plain;
+	(scram) -> scram
+    end;
+opt_type(_) -> [auth_method, auth_password_format].

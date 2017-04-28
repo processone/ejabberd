@@ -379,7 +379,7 @@ parse_options(Host, Opts) ->
     SubFilter = eldap_utils:generate_subfilter(UIDs),
     UserFilter = case gen_mod:get_opt(
                         {ldap_filter, Host}, Opts,
-                        fun check_filter/1, <<"">>) of
+                        fun eldap_utils:check_filter/1, <<"">>) of
                      <<"">> ->
 			 SubFilter;
                      F ->
@@ -447,12 +447,7 @@ parse_options(Host, Opts) ->
 	   search_reported_attrs = SearchReportedAttrs,
 	   matches = Matches}.
 
-check_filter(F) ->
-    NewF = iolist_to_binary(F),
-    {ok, _} = eldap_filter:parse(NewF),
-    NewF.
-
-mod_opt_type(ldap_filter) -> fun check_filter/1;
+mod_opt_type(ldap_filter) -> fun eldap_utils:check_filter/1;
 mod_opt_type(ldap_search_fields) ->
     fun (Ls) ->
 	    [{iolist_to_binary(S), iolist_to_binary(P)}
@@ -525,17 +520,8 @@ mod_opt_type(_) ->
      ldap_tls_cacertfile, ldap_tls_certfile, ldap_tls_depth,
      ldap_tls_verify].
 
-opt_type(ldap_filter) -> fun check_filter/1;
-opt_type(ldap_uids) ->
-    fun (Us) ->
-	    lists:map(fun ({U, P}) ->
-			      {iolist_to_binary(U), iolist_to_binary(P)};
-			  ({U}) -> {iolist_to_binary(U)}
-		      end,
-		      Us)
-    end;
 opt_type(_) ->
-    [ldap_filter, ldap_uids, deref_aliases, ldap_backups, ldap_base,
+    [deref_aliases, ldap_backups, ldap_base,
      ldap_deref_aliases, ldap_encrypt, ldap_password,
      ldap_port, ldap_rootdn, ldap_servers,
      ldap_tls_cacertfile, ldap_tls_certfile, ldap_tls_depth,

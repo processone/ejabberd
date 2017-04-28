@@ -395,7 +395,8 @@ get_transfer_protocol(PortString) ->
     get_captcha_transfer_protocol(PortListeners).
 
 get_port_listeners(PortNumber) ->
-    AllListeners = ejabberd_config:get_option(listen, fun(V) -> V end),
+    AllListeners = ejabberd_config:get_option(
+		     listen, fun ejabberd_listener:validate_cfg/1, []),
     lists:filter(fun (Listener) when is_list(Listener) ->
 			 case proplists:get_value(port, Listener) of
 			   PortNumber -> true;
@@ -545,6 +546,5 @@ opt_type(captcha_cmd) ->
 opt_type(captcha_host) -> fun iolist_to_binary/1;
 opt_type(captcha_limit) ->
     fun (I) when is_integer(I), I > 0 -> I end;
-opt_type(listen) -> fun (V) -> V end;
 opt_type(_) ->
-    [captcha_cmd, captcha_host, captcha_limit, listen].
+    [captcha_cmd, captcha_host, captcha_limit].

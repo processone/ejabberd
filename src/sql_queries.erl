@@ -634,13 +634,6 @@ set_roster_version(LUser, Version) ->
        ["!username=%(LUser)s",
         "version=%(Version)s"]).
 
-opt_type(sql_type) ->
-    fun (pgsql) -> pgsql;
-	(mysql) -> mysql;
-	(sqlite) -> sqlite;
-	(mssql) -> mssql;
-	(odbc) -> odbc
-    end;
 opt_type(pgsql_users_number_estimate) ->
     fun (V) when is_boolean(V) -> V end;
-opt_type(_) -> [sql_type, pgsql_users_number_estimate].
+opt_type(_) -> [pgsql_users_number_estimate].

@@ -29,7 +29,7 @@
 -export([start/0, load_file/1, reload_file/0, read_file/1,
 	 get_option/2, get_option/3, add_option/2, has_option/1,
 	 get_vh_by_auth_method/1, is_file_readable/1,
-	 get_version/0, get_myhosts/0, get_mylang/0,
+	 get_version/0, get_myhosts/0, get_mylang/0, get_lang/1,
 	 get_ejabberd_config_path/0, is_using_elixir_config/0,
 	 prepare_opt_val/4, transform_options/1, collect_options/1,
 	 convert_to_yaml/1, convert_to_yaml/2, v_db/2,
@@ -1067,8 +1067,12 @@ get_myhosts() ->
 -spec get_mylang() -> binary().
 
 get_mylang() ->
+    get_lang(global).
+
+-spec get_lang(global | binary()) -> binary().
+get_lang(Host) ->
     get_option(
-      language,
+      {language, Host},
       fun iolist_to_binary/1,
       <<"en">>).
 
@@ -1206,7 +1210,6 @@ transform_terms(Terms) ->
     %% We could check all ejabberd beams, but this
     %% slows down start-up procedure :(
     Mods = [mod_register,
-            mod_last,
             ejabberd_s2s,
             ejabberd_listener,
             ejabberd_sql_sup,
@@ -1315,6 +1318,10 @@ transform_options(Opt, Opts) when Opt == override_global;
                                   Opt == override_acls ->
     ?WARNING_MSG("Ignoring '~s' option which has no effect anymore", [Opt]),
     Opts;
+transform_options({node_start, {_, _, _} = Now}, Opts) ->
+    ?WARNING_MSG("Old 'node_start' format detected. This is still supported "
+                 "but it is better to fix your config.", []),
+    [{node_start, now_to_seconds(Now)}|Opts];
 transform_options({host_config, Host, HOpts}, Opts) ->
     {AddOpts, HOpts1} =
         lists:mapfoldl(
@@ -1350,6 +1357,10 @@ emit_deprecation_warning(Module, NewModule) ->
             ?WARNING_MSG("Module ~s is deprecated, use ~s instead",
                          [Module, NewModule])
     end.
+
+-spec now_to_seconds(erlang:timestamp()) -> non_neg_integer().
+now_to_seconds({MegaSecs, Secs, _MicroSecs}) ->
+    MegaSecs * 1000000 + Secs.
 
 opt_type(hide_sensitive_log_data) ->
     fun (H) when is_boolean(H) -> H end;
@@ -1388,10 +1399,17 @@ opt_type(cache_life_time) ->
        (infinity) -> infinity;
        (unlimited) -> infinity
     end;
+opt_type(domain_certfile) ->
+    fun iolist_to_binary/1;
+opt_type(shared_key) ->
+    fun iolist_to_binary/1;
+opt_type(node_start) ->
+    fun(I) when is_integer(I), I>0 -> I end;
 opt_type(_) ->
     [hide_sensitive_log_data, hosts, language, max_fsm_queue,
      default_db, default_ram_db, queue_type, queue_dir, loglevel,
-     use_cache, cache_size, cache_missed, cache_life_time].
+     use_cache, cache_size, cache_missed, cache_life_time,
+     domain_certfile, shared_key, node_start].
 
 -spec may_hide_data(any()) -> any().
 may_hide_data(Data) ->

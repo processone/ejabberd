@@ -381,7 +381,7 @@ parse_options(Host) ->
     SubFilter =	eldap_utils:generate_subfilter(UIDs),
     UserFilter = case gen_mod:get_opt(
                         {ldap_filter, Host}, [],
-                        fun check_filter/1, <<"">>) of
+                        fun eldap_utils:check_filter/1, <<"">>) of
                      <<"">> ->
 			 SubFilter;
                      F ->
@@ -399,7 +399,7 @@ parse_options(Host) ->
                                                       [iolist_to_binary(A)
                                                        || A <- DNFA]
                                               end,
-                                    NewDNF = check_filter(DNF),
+                                    NewDNF = eldap_utils:check_filter(DNF),
                                     {NewDNF, NewDNFA}
                             end, {undefined, []}),
     LocalFilter = gen_mod:get_opt(
@@ -418,31 +418,15 @@ parse_options(Host) ->
 	   sfilter = SearchFilter, lfilter = LocalFilter,
 	   dn_filter = DNFilter, dn_filter_attrs = DNFilterAttrs}.
 
-check_filter(F) ->
-    NewF = iolist_to_binary(F),
-    {ok, _} = eldap_filter:parse(NewF),
-    NewF.
-
 opt_type(ldap_dn_filter) ->
     fun ([{DNF, DNFA}]) ->
 	    NewDNFA = case DNFA of
 			undefined -> [];
 			_ -> [iolist_to_binary(A) || A <- DNFA]
 		      end,
-	    NewDNF = check_filter(DNF),
+	    NewDNF = eldap_utils:check_filter(DNF),
 	    {NewDNF, NewDNFA}
     end;
-opt_type(ldap_filter) -> fun check_filter/1;
 opt_type(ldap_local_filter) -> fun (V) -> V end;
-opt_type(ldap_uids) ->
-    fun (Us) ->
-	    lists:map(fun ({U, P}) ->
-			      {iolist_to_binary(U), iolist_to_binary(P)};
-			  ({U}) -> {iolist_to_binary(U)};
-			  (U) -> {iolist_to_binary(U)}
-		      end,
-		      lists:flatten(Us))
-    end;
 opt_type(_) ->
-    [ldap_dn_filter, ldap_filter, ldap_local_filter,
-     ldap_uids].
+    [ldap_dn_filter, ldap_local_filter].

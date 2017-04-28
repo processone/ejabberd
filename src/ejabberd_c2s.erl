@@ -922,7 +922,6 @@ format_reason(_, _) ->
 transform_listen_option(Opt, Opts) ->
     [Opt|Opts].
 
-opt_type(domain_certfile) -> fun iolist_to_binary/1;
 opt_type(c2s_certfile) -> fun iolist_to_binary/1;
 opt_type(c2s_ciphers) -> fun iolist_to_binary/1;
 opt_type(c2s_dhfile) -> fun iolist_to_binary/1;
@@ -945,6 +944,6 @@ opt_type(disable_sasl_mechanisms) ->
 	(V) -> [str:to_upper(V)]
     end;
 opt_type(_) ->
-    [domain_certfile, c2s_certfile, c2s_ciphers, c2s_cafile,
+    [c2s_certfile, c2s_ciphers, c2s_cafile,
      c2s_protocol_options, c2s_tls_compression, resource_conflict,
      disable_sasl_mechanisms].

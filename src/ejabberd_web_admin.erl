@@ -2980,8 +2980,7 @@ make_menu_item(item, 3, URI, Name, Lang) ->
 %%%==================================
 
 
-opt_type(access) -> fun acl:access_rules_validator/1;
 opt_type(access_readonly) -> fun acl:access_rules_validator/1;
-opt_type(_) -> [access, access_readonly].
+opt_type(_) -> [access_readonly].
 
 %%% vim: set foldmethod=marker foldmarker=%%%%,%%%=:

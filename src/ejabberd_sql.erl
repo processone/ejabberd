@@ -1109,13 +1109,6 @@ opt_type(sql_password) -> fun iolist_to_binary/1;
 opt_type(sql_port) ->
     fun (P) when is_integer(P), P > 0, P < 65536 -> P end;
 opt_type(sql_server) -> fun iolist_to_binary/1;
-opt_type(sql_type) ->
-    fun (mysql) -> mysql;
-	(pgsql) -> pgsql;
-	(sqlite) -> sqlite;
-	(mssql) -> mssql;
-	(odbc) -> odbc
-    end;
 opt_type(sql_username) -> fun iolist_to_binary/1;
 opt_type(sql_ssl) -> fun(B) when is_boolean(B) -> B end;
 opt_type(sql_ssl_verify) -> fun(B) when is_boolean(B) -> B end;
@@ -1125,6 +1118,6 @@ opt_type(sql_queue_type) ->
     fun(ram) -> ram; (file) -> file end;
 opt_type(_) ->
     [sql_database, sql_keepalive_interval,
-     sql_password, sql_port, sql_server, sql_type,
+     sql_password, sql_port, sql_server,
      sql_username, sql_ssl, sql_ssl_verify, sql_ssl_cerfile,
      sql_ssl_cafile, sql_queue_type].

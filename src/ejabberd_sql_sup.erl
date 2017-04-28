@@ -230,12 +230,5 @@ opt_type(sql_pool_size) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 opt_type(sql_start_interval) ->
     fun (I) when is_integer(I), I > 0 -> I end;
-opt_type(sql_type) ->
-    fun (mysql) -> mysql;
-	(pgsql) -> pgsql;
-	(sqlite) -> sqlite;
-	(mssql) -> mssql;
-	(odbc) -> odbc
-    end;
 opt_type(_) ->
-    [sql_pool_size, sql_start_interval, sql_type].
+    [sql_pool_size, sql_start_interval].

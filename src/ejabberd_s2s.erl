@@ -724,7 +724,6 @@ opt_type(route_subdomains) ->
     end;
 opt_type(s2s_access) ->
     fun acl:access_rules_validator/1;
-opt_type(domain_certfile) -> fun iolist_to_binary/1;
 opt_type(s2s_certfile) -> fun iolist_to_binary/1;
 opt_type(s2s_ciphers) -> fun iolist_to_binary/1;
 opt_type(s2s_dhfile) -> fun iolist_to_binary/1;
@@ -742,6 +741,8 @@ opt_type(s2s_use_starttls) ->
 	(required) -> required;
 	(required_trusted) -> required_trusted
     end;
+opt_type(s2s_zlib) ->
+    fun(B) when is_boolean(B) -> B end;
 opt_type(s2s_timeout) ->
     fun(I) when is_integer(I), I>=0 -> I;
        (infinity) -> infinity
@@ -749,6 +750,6 @@ opt_type(s2s_timeout) ->
 opt_type(s2s_queue_type) ->
     fun(ram) -> ram; (file) -> file end;
 opt_type(_) ->
-    [route_subdomains, s2s_access,  s2s_certfile,
+    [route_subdomains, s2s_access,  s2s_certfile, s2s_zlib,
      s2s_ciphers, s2s_dhfile, s2s_cafile, s2s_protocol_options,
      s2s_tls_compression, s2s_use_starttls, s2s_timeout, s2s_queue_type].
