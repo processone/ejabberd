@@ -85,8 +85,7 @@ code_change(_OldVsn, State, _Extra) ->
 -spec load_from_config() -> ok | {error, any()}.
 
 load_from_config() ->
-    Shapers = ejabberd_config:get_option(
-                shaper, fun(V) -> V end, []),
+    Shapers = ejabberd_config:get_option(shaper, []),
     case mnesia:transaction(
            fun() ->
                    lists:foreach(

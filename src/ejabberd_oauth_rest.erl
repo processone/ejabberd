@@ -26,6 +26,8 @@
 
 -module(ejabberd_oauth_rest).
 
+-behaviour(ejabberd_config).
+
 -export([init/0,
          store/1,
          lookup/1,
@@ -87,9 +89,7 @@ clean(_TS) ->
     ok.
 
 path(Path) ->
-    Base = ejabberd_config:get_option(ext_api_path_oauth,
-                                      fun(X) -> iolist_to_binary(X) end,
-                                      <<"/oauth">>),
+    Base = ejabberd_config:get_option(ext_api_path_oauth, <<"/oauth">>),
     <<Base/binary, "/", Path/binary>>.
 
 

@@ -211,6 +211,7 @@
 -author('badlop@process-one.net').
 
 -behaviour(gen_server).
+-behaviour(ejabberd_config).
 
 -define(DEFAULT_VERSION, 1000000).
 
@@ -822,10 +823,7 @@ get_access_commands(AccessCommands, _Version) ->
 get_exposed_commands() ->
     get_exposed_commands(?DEFAULT_VERSION).
 get_exposed_commands(Version) ->
-    Opts0 = ejabberd_config:get_option(
-             commands,
-             fun(V) when is_list(V) -> V end,
-              []),
+    Opts0 = ejabberd_config:get_option(commands, []),
     Opts = lists:map(fun(V) when is_tuple(V) -> [V]; (V) -> V end, Opts0),
     CommandsList = list_commands_policy(Version),
     OpenCmds = [N || {N, _, _, open} <- CommandsList],
@@ -876,10 +874,7 @@ is_admin(Name, Auth, Extra) ->
 			    _ ->
 				{Extra, global}
 	      end,
-    AdminAccess = ejabberd_config:get_option(
-                    commands_admin_access,
-		    fun(V) -> V end,
-                    none),
+    AdminAccess = ejabberd_config:get_option(commands_admin_access, none),
     case acl:access_matches(AdminAccess, ACLInfo, Server) of
         allow ->
             case catch check_auth(get_command_definition(Name), Auth) of
@@ -893,9 +888,7 @@ is_admin(Name, Auth, Extra) ->
 permission_addon() ->
     [{<<"'commands' option compatibility shim">>,
      {[],
-      [{access, ejabberd_config:get_option(commands_admin_access,
-					   fun(V) -> V end,
-					   none)}],
+      [{access, ejabberd_config:get_option(commands_admin_access, none)}],
       {get_exposed_commands(), []}}}].
 
 opt_type(commands_admin_access) -> fun acl:access_rules_validator/1;

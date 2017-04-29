@@ -499,13 +499,13 @@ parse_options(Host, Opts) ->
                                    (true) -> true
                                 end, true),
     ConfigFilter = gen_mod:get_opt({ldap_filter, Host}, Opts,
-                                       fun check_filter/1, <<"">>),
+                                       fun eldap_utils:check_filter/1, <<"">>),
     ConfigUserFilter = gen_mod:get_opt({ldap_ufilter, Host}, Opts,
-                                           fun check_filter/1, <<"">>),
+                                           fun eldap_utils:check_filter/1, <<"">>),
     ConfigGroupFilter = gen_mod:get_opt({ldap_gfilter, Host}, Opts,
-                                            fun check_filter/1, <<"">>),
+                                            fun eldap_utils:check_filter/1, <<"">>),
     RosterFilter = gen_mod:get_opt({ldap_rfilter, Host}, Opts,
-                                       fun check_filter/1, <<"">>),
+                                       fun eldap_utils:check_filter/1, <<"">>),
     SubFilter = <<"(&(", UIDAttr/binary, "=",
 		  UIDAttrFormat/binary, ")(", GroupAttr/binary, "=%g))">>,
     UserSubFilter = case ConfigUserFilter of
@@ -551,11 +551,6 @@ parse_options(Host, Opts) ->
 	   uid_format_re = UIDAttrFormatRe, filter = Filter,
 	   ufilter = UserFilter, rfilter = RosterFilter,
 	   gfilter = GroupFilter, auth_check = AuthCheck}.
-
-check_filter(F) ->
-    NewF = iolist_to_binary(F),
-    {ok, _} = eldap_filter:parse(NewF),
-    NewF.
 
 init_cache(Host, Opts) ->
     UseCache = use_cache(Host, Opts),
@@ -654,8 +649,8 @@ mod_opt_type(ldap_auth_check) ->
 	(false) -> false;
 	(true) -> true
     end;
-mod_opt_type(ldap_filter) -> fun check_filter/1;
-mod_opt_type(ldap_gfilter) -> fun check_filter/1;
+mod_opt_type(ldap_filter) -> fun eldap_utils:check_filter/1;
+mod_opt_type(ldap_gfilter) -> fun eldap_utils:check_filter/1;
 mod_opt_type(O) when O == cache_size;
 		     O == cache_life_time ->
     fun (I) when is_integer(I), I > 0 -> I;
@@ -672,8 +667,8 @@ mod_opt_type(ldap_memberattr_format_re) ->
     fun (S) ->
 	    Re = iolist_to_binary(S), {ok, MP} = re:compile(Re), MP
     end;
-mod_opt_type(ldap_rfilter) -> fun check_filter/1;
-mod_opt_type(ldap_ufilter) -> fun check_filter/1;
+mod_opt_type(ldap_rfilter) -> fun eldap_utils:check_filter/1;
+mod_opt_type(ldap_ufilter) -> fun eldap_utils:check_filter/1;
 mod_opt_type(ldap_userdesc) -> fun iolist_to_binary/1;
 mod_opt_type(ldap_useruid) -> fun iolist_to_binary/1;
 mod_opt_type(_) ->
@@ -687,9 +682,8 @@ mod_opt_type(_) ->
      ldap_tls_cacertfile, ldap_tls_certfile, ldap_tls_depth,
      ldap_tls_verify, use_cache, cache_missed, cache_size, cache_life_time].
 
-opt_type(ldap_filter) -> fun check_filter/1;
-opt_type(ldap_gfilter) -> fun check_filter/1;
-opt_type(ldap_rfilter) -> fun check_filter/1;
-opt_type(ldap_ufilter) -> fun check_filter/1;
+opt_type(ldap_gfilter) -> fun eldap_utils:check_filter/1;
+opt_type(ldap_rfilter) -> fun eldap_utils:check_filter/1;
+opt_type(ldap_ufilter) -> fun eldap_utils:check_filter/1;
 opt_type(_) ->
-    [ldap_filter, ldap_gfilter, ldap_rfilter, ldap_ufilter].
+    [ldap_gfilter, ldap_rfilter, ldap_ufilter].

@@ -199,13 +199,13 @@ load_from_config() ->
     lists:foreach(
       fun(Host) ->
               ACLs = ejabberd_config:get_option(
-                       {acl, Host}, fun(V) -> V end, []),
+                       {acl, Host}, []),
               AccessRules = ejabberd_config:get_option(
-                              {access, Host}, fun(V) -> V end, []),
+                              {access, Host}, []),
               AccessRulesNew = ejabberd_config:get_option(
-				 {access_rules, Host}, fun(V) -> V end, []),
+				 {access_rules, Host}, []),
               ShaperRules = ejabberd_config:get_option(
-				 {shaper_rules, Host}, fun(V) -> V end, []),
+				 {shaper_rules, Host}, []),
               lists:foreach(
                 fun({ACLName, SpecList}) ->
                         lists:foreach(
@@ -605,7 +605,7 @@ access_rules_validator(Rules0) ->
 					  (deny) -> true;
 					  (_) -> false
 				       end),
-    throw({replace_with, Rules}).
+    Rules.
 
 
 shaper_rules_validator(Name) when is_atom(Name) ->
@@ -616,7 +616,7 @@ shaper_rules_validator(Rules0) ->
 					  (V2) when is_integer(V2) -> true;
 					  (_) -> false
 				       end),
-    throw({replace_with, Rules}).
+    Rules.
 
 access_shaper_rules_validator([{Type, Acls} = Rule | Rest], RuleTypeCheck) ->
     case RuleTypeCheck(Type) of

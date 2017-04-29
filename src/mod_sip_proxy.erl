@@ -24,8 +24,6 @@
 %%%-------------------------------------------------------------------
 -module(mod_sip_proxy).
 
--behaviour(ejabberd_config).
-
 -define(GEN_FSM, p1_fsm).
 -behaviour(?GEN_FSM).
 
@@ -35,7 +33,7 @@
 -export([init/1, wait_for_request/2,
 	 wait_for_response/2, handle_event/3,
 	 handle_sync_event/4, handle_info/3, terminate/3,
-	 code_change/4, opt_type/1]).
+	 code_change/4]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -269,8 +267,7 @@ cancel_pending_transactions(State) ->
     lists:foreach(fun esip:cancel/1, State#state.tr_ids).
 
 add_certfile(LServer, Opts) ->
-    case ejabberd_config:get_option({domain_certfile, LServer},
-				    fun iolist_to_binary/1) of
+    case ejabberd_config:get_option({domain_certfile, LServer}) of
 	CertFile when is_binary(CertFile), CertFile /= <<"">> ->
 	    [{certfile, CertFile}|Opts];
 	_ ->
@@ -331,7 +328,7 @@ make_sign(TS, Hdrs) ->
     LTServer = safe_nameprep(TServer),
     FromTag = esip:get_param(<<"tag">>, FParams),
     CallID = esip:get_hdr('call-id', Hdrs),
-    SharedKey = ejabberd_config:get_option(shared_key, fun(V) -> V end),
+    SharedKey = ejabberd_config:get_option(shared_key),
     str:sha([SharedKey, LFUser, LFServer, LTUser, LTServer,
 		FromTag, CallID, TS]).
 
@@ -455,7 +452,3 @@ safe_nameprep(S) ->
 	error -> S;
 	S1 -> S1
     end.
-
-opt_type(domain_certfile) -> fun iolist_to_binary/1;
-opt_type(shared_key) -> fun (V) -> V end;
-opt_type(_) -> [domain_certfile, shared_key].

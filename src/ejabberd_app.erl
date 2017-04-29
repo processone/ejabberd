@@ -89,12 +89,7 @@ stop(_State) ->
 %%%
 
 connect_nodes() ->
-    Nodes = ejabberd_config:get_option(
-              cluster_nodes,
-              fun(Ns) ->
-                      true = lists:all(fun is_atom/1, Ns),
-                      Ns
-              end, []),
+    Nodes = ejabberd_config:get_option(cluster_nodes, []),
     lists:foreach(fun(Node) ->
                           net_kernel:connect_node(Node)
                   end, Nodes).
@@ -142,10 +137,7 @@ delete_pid_file() ->
     end.
 
 set_settings_from_config() ->
-    Ticktime = ejabberd_config:get_option(
-                 net_ticktime,
-                 opt_type(net_ticktime),
-                 60),
+    Ticktime = ejabberd_config:get_option(net_ticktime, 60),
     net_kernel:set_net_ticktime(Ticktime).
 
 file_queue_init() ->

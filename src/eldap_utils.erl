@@ -28,7 +28,7 @@
 -behaviour(ejabberd_config).
 -author('mremond@process-one.net').
 
--export([generate_subfilter/1, find_ldap_attrs/2,
+-export([generate_subfilter/1, find_ldap_attrs/2, check_filter/1,
 	 get_ldap_attr/2, get_user_part/2, make_filter/2,
 	 get_state/2, case_insensitive_match/2, get_config/2,
 	 decode_octet_string/3, uids_domain_subst/2, opt_type/1]).
@@ -136,6 +136,11 @@ make_filter(Data, UIDs) ->
 	_ ->
 	    eldap:'and'(Filter)
     end.
+
+check_filter(F) ->
+    NewF = iolist_to_binary(F),
+    {ok, _} = eldap_filter:parse(NewF),
+    NewF.
 
 -spec case_insensitive_match(binary(), binary()) -> boolean().
 
@@ -380,8 +385,19 @@ opt_type(ldap_tls_verify) ->
 	(soft) -> soft;
 	(false) -> false
     end;
+opt_type(ldap_filter) ->
+    fun check_filter/1;
+opt_type(ldap_uids) ->
+    fun (Us) ->
+	    lists:map(fun ({U, P}) ->
+			      {iolist_to_binary(U), iolist_to_binary(P)};
+			  ({U}) -> {iolist_to_binary(U)};
+			  (U) -> {iolist_to_binary(U)}
+		      end,
+		      lists:flatten(Us))
+    end;
 opt_type(_) ->
-    [deref_aliases, ldap_backups, ldap_base,
+    [deref_aliases, ldap_backups, ldap_base, ldap_uids,
      ldap_deref_aliases, ldap_encrypt, ldap_password,
-     ldap_port, ldap_rootdn, ldap_servers,
+     ldap_port, ldap_rootdn, ldap_servers, ldap_filter,
      ldap_tls_cacertfile, ldap_tls_depth, ldap_tls_verify].

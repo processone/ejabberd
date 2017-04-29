@@ -920,12 +920,7 @@ process_admin(Host,
 		end;
 	    _ -> nothing
 	  end,
-    Rules = case ejabberd_config:get_option(
-                   {access, Name, Host}, fun(V) -> V end)
-		of
-	      undefined -> [];
-	      Rs1 -> Rs1
-	    end,
+    Rules = ejabberd_config:get_option({access, Name, Host}, []),
     make_xhtml([?XC(<<"h1">>,
 		    (str:format(
                                      ?T(<<"~s access rule configuration">>),
@@ -2980,8 +2975,7 @@ make_menu_item(item, 3, URI, Name, Lang) ->
 %%%==================================
 
 
-opt_type(access) -> fun acl:access_rules_validator/1;
 opt_type(access_readonly) -> fun acl:access_rules_validator/1;
-opt_type(_) -> [access, access_readonly].
+opt_type(_) -> [access_readonly].
 
 %%% vim: set foldmethod=marker foldmarker=%%%%,%%%=:

@@ -26,24 +26,20 @@
 
 -module(ejabberd_c2s_config).
 
--behaviour(ejabberd_config).
-
 -author('mremond@process-one.net').
 
--export([get_c2s_limits/0, opt_type/1]).
+-export([get_c2s_limits/0]).
 
 %% Get first c2s configuration limitations to apply it to other c2s
 %% connectors.
 get_c2s_limits() ->
-    case ejabberd_config:get_option(listen, fun(V) -> V end) of
-      undefined -> [];
-      C2SFirstListen ->
-	  case lists:keysearch(ejabberd_c2s, 2, C2SFirstListen) of
-	    false -> [];
-	    {value, {_Port, ejabberd_c2s, Opts}} ->
-		select_opts_values(Opts)
-	  end
+    C2SFirstListen = ejabberd_config:get_option(listen, []),
+    case lists:keysearch(ejabberd_c2s, 2, C2SFirstListen) of
+	false -> [];
+	{value, {_Port, ejabberd_c2s, Opts}} ->
+	    select_opts_values(Opts)
     end.
+
 %% Only get access, shaper and max_stanza_size values
 
 select_opts_values(Opts) ->
@@ -65,6 +61,3 @@ select_opts_values([{max_stanza_size, Value} | Opts],
 		       [{max_stanza_size, Value} | SelectedValues]);
 select_opts_values([_Opt | Opts], SelectedValues) ->
     select_opts_values(Opts, SelectedValues).
-
-opt_type(listen) -> fun (V) -> V end;
-opt_type(_) -> [listen].

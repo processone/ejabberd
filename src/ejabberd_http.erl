@@ -521,12 +521,7 @@ analyze_ip_xff(IP, [], _Host) -> IP;
 analyze_ip_xff({IPLast, Port}, XFF, Host) ->
     [ClientIP | ProxiesIPs] = str:tokens(XFF, <<", ">>) ++
 				[misc:ip_to_list(IPLast)],
-    TrustedProxies = ejabberd_config:get_option(
-                       {trusted_proxies, Host},
-                       fun(all) -> all;
-                          (TPs) ->
-                               [iolist_to_binary(TP) || TP <- TPs]
-                       end, []),
+    TrustedProxies = ejabberd_config:get_option({trusted_proxies, Host}, []),
     IPClient = case is_ipchain_trusted(ProxiesIPs,
 				       TrustedProxies)
 		   of

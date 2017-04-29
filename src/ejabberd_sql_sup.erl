@@ -62,15 +62,8 @@ start_link(Host) ->
 init([Host]) ->
     StartInterval = ejabberd_config:get_option(
                       {sql_start_interval, Host},
-                      fun(I) when is_integer(I), I>0 -> I end,
                       ?DEFAULT_SQL_START_INTERVAL),
-    Type = ejabberd_config:get_option({sql_type, Host},
-                                      fun(mysql) -> mysql;
-                                         (pgsql) -> pgsql;
-                                         (sqlite) -> sqlite;
-					 (mssql) -> mssql;
-                                         (odbc) -> odbc
-                                      end, odbc),
+    Type = ejabberd_config:get_option({sql_type, Host}, odbc),
     PoolSize = get_pool_size(Type, Host),
     case Type of
         sqlite ->
@@ -119,7 +112,6 @@ remove_pid(Host, Pid) ->
 get_pool_size(SQLType, Host) ->
     PoolSize = ejabberd_config:get_option(
                  {sql_pool_size, Host},
-                 fun(I) when is_integer(I), I>0 -> I end,
 		 case SQLType of
 		     sqlite -> 1;
 		     _ -> ?DEFAULT_POOL_SIZE
@@ -230,12 +222,5 @@ opt_type(sql_pool_size) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 opt_type(sql_start_interval) ->
     fun (I) when is_integer(I), I > 0 -> I end;
-opt_type(sql_type) ->
-    fun (mysql) -> mysql;
-	(pgsql) -> pgsql;
-	(sqlite) -> sqlite;
-	(mssql) -> mssql;
-	(odbc) -> odbc
-    end;
 opt_type(_) ->
-    [sql_pool_size, sql_start_interval, sql_type].
+    [sql_pool_size, sql_start_interval].

@@ -31,6 +31,7 @@
 -define(GEN_SERVER, gen_server).
 -endif.
 -behaviour(?GEN_SERVER).
+-behaviour(ejabberd_config).
 
 %% API
 -export([start_link/4,
@@ -41,7 +42,8 @@
 	 starttls/2,
 	 compress/2,
 	 become_controller/2,
-	 close/1]).
+	 close/1,
+	 opt_type/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
@@ -58,9 +60,6 @@
 	 max_stanza_size = infinity :: non_neg_integer() | infinity,
          xml_stream_state :: fxml_stream:xml_stream_state() | undefined,
          timeout = infinity:: timeout()}).
-
--define(HIBERNATE_TIMEOUT, ejabberd_config:get_option(receiver_hibernate, fun(X) when is_integer(X); X == hibernate-> X end, 90000)).
-
 
 -spec start_link(inet:socket(), atom(), shaper:shaper(),
                  non_neg_integer() | infinity) -> ignore |
@@ -137,7 +136,7 @@ handle_call({starttls, TLSSocket}, _From, State) ->
     case fast_tls:recv_data(TLSSocket, <<"">>) of
 	{ok, TLSData} ->
 	    {reply, ok,
-		process_data(TLSData, NewState), ?HIBERNATE_TIMEOUT};
+		process_data(TLSData, NewState), hibernate_timeout()};
 	{error, _} = Err ->
 	    {stop, normal, Err, NewState}
     end;
@@ -156,31 +155,31 @@ handle_call({compress, Data}, _From,
     case ezlib:recv_data(ZlibSocket, <<"">>) of
       {ok, ZlibData} ->
 	    {reply, {ok, ZlibSocket},
-		process_data(ZlibData, NewState), ?HIBERNATE_TIMEOUT};
+		process_data(ZlibData, NewState), hibernate_timeout()};
       {error, _} = Err ->
 	    {stop, normal, Err, NewState}
     end;
 handle_call(reset_stream, _From, State) ->
     NewState = reset_parser(State),
     Reply = ok,
-    {reply, Reply, NewState, ?HIBERNATE_TIMEOUT};
+    {reply, Reply, NewState, hibernate_timeout()};
 handle_call({become_controller, C2SPid}, _From, State) ->
     XMLStreamState = fxml_stream:new(C2SPid, State#state.max_stanza_size),
     NewState = State#state{c2s_pid = C2SPid,
 			   xml_stream_state = XMLStreamState},
     activate_socket(NewState),
     Reply = ok,
-    {reply, Reply, NewState, ?HIBERNATE_TIMEOUT};
+    {reply, Reply, NewState, hibernate_timeout()};
 handle_call(_Request, _From, State) ->
-    Reply = ok, {reply, Reply, State, ?HIBERNATE_TIMEOUT}.
+    Reply = ok, {reply, Reply, State, hibernate_timeout()}.
 
 handle_cast({change_shaper, Shaper}, State) ->
     NewShaperState = shaper:new(Shaper),
     {noreply, State#state{shaper_state = NewShaperState},
-     ?HIBERNATE_TIMEOUT};
+     hibernate_timeout()};
 handle_cast(close, State) -> {stop, normal, State};
 handle_cast(_Msg, State) ->
-    {noreply, State, ?HIBERNATE_TIMEOUT}.
+    {noreply, State, hibernate_timeout()}.
 
 handle_info({Tag, _TCPSocket, Data},
 	    #state{socket = Socket, sock_mod = SockMod} = State)
@@ -191,7 +190,7 @@ handle_info({Tag, _TCPSocket, Data},
 	  case fast_tls:recv_data(Socket, Data) of
 	    {ok, TLSData} ->
 		{noreply, process_data(TLSData, State),
-		 ?HIBERNATE_TIMEOUT};
+		 hibernate_timeout()};
 	    {error, Reason} ->
 		  if is_binary(Reason) ->
 			  ?DEBUG("TLS error = ~s", [Reason]);
@@ -204,11 +203,11 @@ handle_info({Tag, _TCPSocket, Data},
 	  case ezlib:recv_data(Socket, Data) of
 	    {ok, ZlibData} ->
 		{noreply, process_data(ZlibData, State),
-		 ?HIBERNATE_TIMEOUT};
+		 hibernate_timeout()};
 	    {error, _Reason} -> {stop, normal, State}
 	  end;
       _ ->
-	  {noreply, process_data(Data, State), ?HIBERNATE_TIMEOUT}
+	  {noreply, process_data(Data, State), hibernate_timeout()}
     end;
 handle_info({Tag, _TCPSocket}, State)
     when (Tag == tcp_closed) or (Tag == ssl_closed) ->
@@ -216,18 +215,18 @@ handle_info({Tag, _TCPSocket}, State)
 handle_info({Tag, _TCPSocket, Reason}, State)
     when (Tag == tcp_error) or (Tag == ssl_error) ->
     case Reason of
-      timeout -> {noreply, State, ?HIBERNATE_TIMEOUT};
+      timeout -> {noreply, State, hibernate_timeout()};
       _ -> {stop, normal, State}
     end;
 handle_info({timeout, _Ref, activate}, State) ->
     activate_socket(State),
-    {noreply, State, ?HIBERNATE_TIMEOUT};
+    {noreply, State, hibernate_timeout()};
 handle_info(timeout, State) ->
     proc_lib:hibernate(?GEN_SERVER, enter_loop,
 		       [?MODULE, [], State]),
-    {noreply, State, ?HIBERNATE_TIMEOUT};
+    {noreply, State, hibernate_timeout()};
 handle_info(_Info, State) ->
-    {noreply, State, ?HIBERNATE_TIMEOUT}.
+    {noreply, State, hibernate_timeout()}.
 
 terminate(_Reason,
 	  #state{xml_stream_state = XMLStreamState,
@@ -345,3 +344,13 @@ do_call(Pid, Msg) ->
 	  _:_ ->
 	    {error, einval}
     end.
+
+hibernate_timeout() ->
+    ejabberd_config:get_option(receiver_hibernate, timer:seconds(90)).
+
+opt_type(receiver_hibernate) ->
+    fun(I) when is_integer(I), I>0 -> I;
+       (hibernate) -> hibernate
+    end;
+opt_type(_) ->
+    [receiver_hibernate].

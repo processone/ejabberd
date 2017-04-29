@@ -27,8 +27,6 @@
 
 -protocol({xep, 334, '0.2'}).
 
--behaviour(ejabberd_config).
-
 -author('badlop@process-one.net').
 
 -behaviour(gen_server).
@@ -41,7 +39,7 @@
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
-	 mod_opt_type/1, opt_type/1, depends/2]).
+	 mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -182,10 +180,7 @@ init_state(Host, Opts) ->
     NoFollow = gen_mod:get_opt(spam_prevention, Opts,
                                fun(B) when is_boolean(B) -> B end,
                                true),
-    Lang = ejabberd_config:get_option(
-             {language, Host},
-             fun iolist_to_binary/1,
-             ?MYLANG),
+    Lang = ejabberd_config:get_lang(Host),
     #logstate{host = Host, out_dir = OutDir,
 	      dir_type = DirType, dir_name = DirName,
 	      file_format = FileFormat, css_file = CSSFile,
@@ -1242,6 +1237,3 @@ mod_opt_type(_) ->
     [access_log, cssfile, dirname, dirtype, file_format,
      file_permissions, outdir, spam_prevention, timezone,
      top_link].
-
-opt_type(language) -> fun iolist_to_binary/1;
-opt_type(_) -> [language].

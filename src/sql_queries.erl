@@ -246,9 +246,7 @@ users_number(LServer) ->
       fun(pgsql, _) ->
               case
                   ejabberd_config:get_option(
-                    {pgsql_users_number_estimate, LServer},
-                    fun(V) when is_boolean(V) -> V end,
-                    false) of
+                    {pgsql_users_number_estimate, LServer}, false) of
                   true ->
                       ejabberd_sql:sql_query_t(
                         ?SQL("select @(reltuples :: bigint)d from pg_class"
@@ -634,13 +632,6 @@ set_roster_version(LUser, Version) ->
        ["!username=%(LUser)s",
         "version=%(Version)s"]).
 
-opt_type(sql_type) ->
-    fun (pgsql) -> pgsql;
-	(mysql) -> mysql;
-	(sqlite) -> sqlite;
-	(mssql) -> mssql;
-	(odbc) -> odbc
-    end;
 opt_type(pgsql_users_number_estimate) ->
     fun (V) when is_boolean(V) -> V end;
-opt_type(_) -> [sql_type, pgsql_users_number_estimate].
+opt_type(_) -> [pgsql_users_number_estimate].

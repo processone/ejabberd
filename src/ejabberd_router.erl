@@ -385,15 +385,11 @@ balancing_route(From, To, Packet, Rs) ->
 
 -spec get_component_number(binary()) -> pos_integer() | undefined.
 get_component_number(LDomain) ->
-    ejabberd_config:get_option(
-      {domain_balancing_component_number, LDomain},
-      fun(N) when is_integer(N), N > 1 -> N end,
-      undefined).
+    ejabberd_config:get_option({domain_balancing_component_number, LDomain}).
 
 -spec get_domain_balancing(jid(), jid(), binary()) -> any().
 get_domain_balancing(From, To, LDomain) ->
-    case ejabberd_config:get_option(
-	   {domain_balancing, LDomain}, fun(D) when is_atom(D) -> D end) of
+    case ejabberd_config:get_option({domain_balancing, LDomain}) of
 	undefined -> p1_time_compat:system_time();
 	random -> p1_time_compat:system_time();
 	source -> jid:tolower(From);
@@ -404,14 +400,9 @@ get_domain_balancing(From, To, LDomain) ->
 
 -spec get_backend() -> module().
 get_backend() ->
-    DBType = case ejabberd_config:get_option(
-		    router_db_type,
-		    fun(T) -> ejabberd_config:v_db(?MODULE, T) end) of
-		 undefined ->
-		     ejabberd_config:default_ram_db(?MODULE);
-		 T ->
-		     T
-	     end,
+    DBType = ejabberd_config:get_option(
+	       router_db_type,
+	       ejabberd_config:default_ram_db(?MODULE)),
     list_to_atom("ejabberd_router_" ++ atom_to_list(DBType)).
 
 -spec cache_nodes(module()) -> [node()].
@@ -427,7 +418,7 @@ use_cache(Mod) ->
 	true -> Mod:use_cache();
 	false ->
 	    ejabberd_config:get_option(
-	      router_use_cache, opt_type(router_use_cache),
+	      router_use_cache,
 	      ejabberd_config:use_cache(global))
     end.
 
@@ -454,15 +445,12 @@ init_cache(Mod) ->
 cache_opts() ->
     MaxSize = ejabberd_config:get_option(
 		router_cache_size,
-		opt_type(router_cache_size),
 		ejabberd_config:cache_size(global)),
     CacheMissed = ejabberd_config:get_option(
 		    router_cache_missed,
-		    opt_type(router_cache_missed),
 		    ejabberd_config:cache_missed(global)),
     LifeTime = case ejabberd_config:get_option(
 		      router_cache_life_time,
-		      opt_type(router_cache_life_time),
 		      ejabberd_config:cache_life_time(global)) of
 		   infinity -> infinity;
 		   I -> timer:seconds(I)

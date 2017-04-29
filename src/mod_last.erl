@@ -25,8 +25,6 @@
 
 -module(mod_last).
 
--behaviour(ejabberd_config).
-
 -author('alexey@process-one.net').
 
 -protocol({xep, 12, '2.0'}).
@@ -36,8 +34,8 @@
 -export([start/2, stop/1, reload/3, process_local_iq/1, export/1,
 	 process_sm_iq/1, on_presence_update/4, import_info/0,
 	 import/5, import_start/2, store_last_info/4, get_last_info/2,
-	 remove_user/2, transform_options/1, mod_opt_type/1,
-	 opt_type/1, register_user/2, depends/2, privacy_check_packet/4]).
+	 remove_user/2, mod_opt_type/1,
+	 register_user/2, depends/2, privacy_check_packet/4]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -121,18 +119,12 @@ process_local_iq(#iq{type = get} = IQ) ->
 %% @doc Get the uptime of the ejabberd node, expressed in seconds.
 %% When ejabberd is starting, ejabberd_config:start/0 stores the datetime.
 get_node_uptime() ->
-    case ejabberd_config:get_option(
-           node_start,
-           fun(S) when is_integer(S), S >= 0 -> S end) of
+    case ejabberd_config:get_option(node_start) of
         undefined ->
             trunc(element(1, erlang:statistics(wall_clock)) / 1000);
         Now ->
             p1_time_compat:system_time(seconds) - Now
     end.
-
--spec now_to_seconds(erlang:timestamp()) -> non_neg_integer().
-now_to_seconds({MegaSecs, Secs, _MicroSecs}) ->
-    MegaSecs * 1000000 + Secs.
 
 %%%
 %%% Serve queries about user last online
@@ -273,23 +265,9 @@ export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:export(LServer).
 
-transform_options(Opts) ->
-    lists:foldl(fun transform_options/2, [], Opts).
-
-transform_options({node_start, {_, _, _} = Now}, Opts) ->
-    ?WARNING_MSG("Old 'node_start' format detected. This is still supported "
-                 "but it is better to fix your config.", []),
-    [{node_start, now_to_seconds(Now)}|Opts];
-transform_options(Opt, Opts) ->
-    [Opt|Opts].
-
 depends(_Host, _Opts) ->
     [].
 
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(_) -> [db_type, iqdisc].
-
-opt_type(node_start) ->
-    fun (S) when is_integer(S), S >= 0 -> S end;
-opt_type(_) -> [node_start].

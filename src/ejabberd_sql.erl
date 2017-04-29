@@ -252,8 +252,7 @@ sqlite_db(Host) ->
 
 -spec sqlite_file(binary()) -> string().
 sqlite_file(Host) ->
-    case ejabberd_config:get_option({sql_database, Host},
-				    fun iolist_to_binary/1) of
+    case ejabberd_config:get_option({sql_database, Host}) of
 	undefined ->
 	    {ok, Cwd} = file:get_cwd(),
 	    filename:join([Cwd, "sqlite", atom_to_list(node()),
@@ -266,9 +265,7 @@ sqlite_file(Host) ->
 %%% Callback functions from gen_fsm
 %%%----------------------------------------------------------------------
 init([Host, StartInterval]) ->
-    case ejabberd_config:get_option(
-           {sql_keepalive_interval, Host},
-           fun(I) when is_integer(I), I>0 -> I end) of
+    case ejabberd_config:get_option({sql_keepalive_interval, Host}) of
         undefined ->
             ok;
         KeepaliveInterval ->
@@ -278,8 +275,7 @@ init([Host, StartInterval]) ->
     [DBType | _] = db_opts(Host),
     (?GEN_FSM):send_event(self(), connect),
     ejabberd_sql_sup:add_pid(Host, self()),
-    QueueType = case ejabberd_config:get_option(
-		       {sql_queue_type, Host}, opt_type(sql_queue_type)) of
+    QueueType = case ejabberd_config:get_option({sql_queue_type, Host}) of
 		    undefined ->
 			ejabberd_config:default_queue_type(Host);
 		    Type ->
@@ -927,20 +923,9 @@ log(Level, Format, Args) ->
     end.
 
 db_opts(Host) ->
-    Type = ejabberd_config:get_option({sql_type, Host},
-                                      fun(mysql) -> mysql;
-                                         (pgsql) -> pgsql;
-                                         (sqlite) -> sqlite;
-					 (mssql) -> mssql;
-                                         (odbc) -> odbc
-                                      end, odbc),
-    Server = ejabberd_config:get_option({sql_server, Host},
-                                        fun iolist_to_binary/1,
-                                        <<"localhost">>),
-    Transport = case ejabberd_config:get_option(
-		       {sql_ssl, Host},
-		       fun(B) when is_boolean(B) -> B end,
-		       false) of
+    Type = ejabberd_config:get_option({sql_type, Host}, odbc),
+    Server = ejabberd_config:get_option({sql_server, Host}, <<"localhost">>),
+    Transport = case ejabberd_config:get_option({sql_ssl, Host}, false) of
 		    false -> tcp;
 		    true -> ssl
 		end,
@@ -953,20 +938,16 @@ db_opts(Host) ->
         _ ->
             Port = ejabberd_config:get_option(
                      {sql_port, Host},
-                     fun(P) when is_integer(P), P > 0, P < 65536 -> P end,
                      case Type of
 			 mssql -> ?MSSQL_PORT;
                          mysql -> ?MYSQL_PORT;
                          pgsql -> ?PGSQL_PORT
                      end),
             DB = ejabberd_config:get_option({sql_database, Host},
-                                            fun iolist_to_binary/1,
                                             <<"ejabberd">>),
             User = ejabberd_config:get_option({sql_username, Host},
-                                              fun iolist_to_binary/1,
                                               <<"ejabberd">>),
             Pass = ejabberd_config:get_option({sql_password, Host},
-                                              fun iolist_to_binary/1,
                                               <<"">>),
 	    SSLOpts = get_ssl_opts(Transport, Host),
 	    case Type of
@@ -986,19 +967,15 @@ warn_if_ssl_unsupported(ssl, Type) ->
     ?WARNING_MSG("SSL connection is not supported for ~s", [Type]).
 
 get_ssl_opts(ssl, Host) ->
-    Opts1 = case ejabberd_config:get_option({sql_ssl_certfile, Host},
-					    fun iolist_to_binary/1) of
+    Opts1 = case ejabberd_config:get_option({sql_ssl_certfile, Host}) of
 		undefined -> [];
 		CertFile -> [{certfile, CertFile}]
 	    end,
-    Opts2 = case ejabberd_config:get_option({sql_ssl_cafile, Host},
-					    fun iolist_to_binary/1) of
+    Opts2 = case ejabberd_config:get_option({sql_ssl_cafile, Host}) of
 		undefined -> Opts1;
 		CAFile -> [{cacertfile, CAFile}|Opts1]
 	    end,
-    case ejabberd_config:get_option({sql_ssl_verify, Host},
-				    fun(B) when is_boolean(B) -> B end,
-				    false) of
+    case ejabberd_config:get_option({sql_ssl_verify, Host}, false) of
 	true ->
 	    case lists:keymember(cacertfile, 1, Opts2) of
 		true ->
@@ -1017,16 +994,9 @@ get_ssl_opts(tcp, _) ->
     [].
 
 init_mssql(Host) ->
-    Server = ejabberd_config:get_option({sql_server, Host},
-                                        fun iolist_to_binary/1,
-                                        <<"localhost">>),
-    Port = ejabberd_config:get_option(
-	     {sql_port, Host},
-	     fun(P) when is_integer(P), P > 0, P < 65536 -> P end,
-	     ?MSSQL_PORT),
-    DB = ejabberd_config:get_option({sql_database, Host},
-				    fun iolist_to_binary/1,
-				    <<"ejabberd">>),
+    Server = ejabberd_config:get_option({sql_server, Host}, <<"localhost">>),
+    Port = ejabberd_config:get_option({sql_port, Host}, ?MSSQL_PORT),
+    DB = ejabberd_config:get_option({sql_database, Host}, <<"ejabberd">>),
     FreeTDS = io_lib:fwrite("[~s]~n"
 			    "\thost = ~s~n"
 			    "\tport = ~p~n"
@@ -1109,13 +1079,6 @@ opt_type(sql_password) -> fun iolist_to_binary/1;
 opt_type(sql_port) ->
     fun (P) when is_integer(P), P > 0, P < 65536 -> P end;
 opt_type(sql_server) -> fun iolist_to_binary/1;
-opt_type(sql_type) ->
-    fun (mysql) -> mysql;
-	(pgsql) -> pgsql;
-	(sqlite) -> sqlite;
-	(mssql) -> mssql;
-	(odbc) -> odbc
-    end;
 opt_type(sql_username) -> fun iolist_to_binary/1;
 opt_type(sql_ssl) -> fun(B) when is_boolean(B) -> B end;
 opt_type(sql_ssl_verify) -> fun(B) when is_boolean(B) -> B end;
@@ -1125,6 +1088,6 @@ opt_type(sql_queue_type) ->
     fun(ram) -> ram; (file) -> file end;
 opt_type(_) ->
     [sql_database, sql_keepalive_interval,
-     sql_password, sql_port, sql_server, sql_type,
+     sql_password, sql_port, sql_server,
      sql_username, sql_ssl, sql_ssl_verify, sql_ssl_cerfile,
      sql_ssl_cafile, sql_queue_type].

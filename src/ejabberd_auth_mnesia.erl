@@ -27,8 +27,6 @@
 
 -compile([{parse_transform, ejabberd_sql_pt}]).
 
--behaviour(ejabberd_config).
-
 -author('alexey@process-one.net').
 
 -behaviour(ejabberd_auth).
@@ -41,7 +39,7 @@
 	 get_vh_registered_users_number/2, get_password/2,
 	 get_password_s/2, is_user_exists/2, remove_user/2,
 	 remove_user/3, store_type/0, export/1, import/2,
-	 plain_password_required/0, opt_type/1]).
+	 plain_password_required/0]).
 -export([need_transform/1, transform/1]).
 
 -include("ejabberd.hrl").
@@ -89,8 +87,7 @@ plain_password_required() ->
     is_scrammed().
 
 store_type() ->
-    ejabberd_config:get_option({auth_password_format, ?MYNAME},
-			       opt_type(auth_password_format), plain).
+    ejabberd_auth:password_format(?MYNAME).
 
 check_password(User, AuthzId, Server, Password) ->
     if AuthzId /= <<>> andalso AuthzId /= User ->
@@ -494,9 +491,3 @@ export(_Server) ->
 import(LServer, [LUser, Password, _TimeStamp]) ->
     mnesia:dirty_write(
       #passwd{us = {LUser, LServer}, password = Password}).
-
-opt_type(auth_password_format) ->
-    fun (plain) -> plain;
-	(scram) -> scram
-    end;
-opt_type(_) -> [auth_password_format].
