@@ -119,14 +119,7 @@ start_modules() ->
 	end, ?MYHOSTS).
 
 get_modules_options(Host) ->
-    ejabberd_config:get_option(
-      {modules, Host},
-      fun(Mods) ->
-	      lists:map(
-		fun({M, A}) when is_atom(M), is_list(A) ->
-			{M, A}
-		end, Mods)
-      end, []).
+    ejabberd_config:get_option({modules, Host}, []).
 
 sort_modules(Host, ModOpts) ->
     G = digraph:new([acyclic]),
@@ -211,8 +204,7 @@ start_module(Host, Module, Opts0) ->
 
 -spec reload_modules(binary()) -> ok.
 reload_modules(Host) ->
-    NewMods = ejabberd_config:get_option(
-		{modules, Host}, opt_type(modules), []),
+    NewMods = ejabberd_config:get_option({modules, Host}, []),
     OldMods = ets:select(
 		ejabberd_modules,
 		ets:fun2ms(
@@ -369,7 +361,7 @@ get_opt(Opt, Opts, F) ->
 get_opt({Opt, Host}, Opts, F, Default) ->
     case lists:keysearch(Opt, 1, Opts) of
         false ->
-            ejabberd_config:get_option({Opt, Host}, F, Default);
+            ejabberd_config:get_option({Opt, Host}, Default);
         {value, {_, Val}} ->
             ejabberd_config:prepare_opt_val(Opt, Val, F, Default)
     end;

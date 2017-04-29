@@ -920,12 +920,7 @@ process_admin(Host,
 		end;
 	    _ -> nothing
 	  end,
-    Rules = case ejabberd_config:get_option(
-                   {access, Name, Host}, fun(V) -> V end)
-		of
-	      undefined -> [];
-	      Rs1 -> Rs1
-	    end,
+    Rules = ejabberd_config:get_option({access, Name, Host}, []),
     make_xhtml([?XC(<<"h1">>,
 		    (str:format(
                                      ?T(<<"~s access rule configuration">>),

@@ -27,7 +27,7 @@
 -author('alexey@process-one.net').
 
 -export([start/0, load_file/1, reload_file/0, read_file/1,
-	 get_option/2, get_option/3, add_option/2, has_option/1,
+	 get_option/1, get_option/2, add_option/2, has_option/1,
 	 get_vh_by_auth_method/1, is_file_readable/1,
 	 get_version/0, get_myhosts/0, get_mylang/0, get_lang/1,
 	 get_ejabberd_config_path/0, is_using_elixir_config/0,
@@ -44,11 +44,13 @@
 %% The following functions are deprecated.
 -export([add_global_option/2, add_local_option/2,
 	 get_global_option/2, get_local_option/2,
-	 get_global_option/3, get_local_option/3]).
+	 get_global_option/3, get_local_option/3,
+	 get_option/3]).
 
 -deprecated([{add_global_option, 2}, {add_local_option, 2},
 	     {get_global_option, 2}, {get_local_option, 2},
-	     {get_global_option, 3}, {get_local_option, 3}]).
+	     {get_global_option, 3}, {get_local_option, 3},
+	     {get_option, 3}]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -764,10 +766,7 @@ set_opts(State) ->
     set_log_level().
 
 set_log_level() ->
-    Level = get_option(
-              loglevel,
-              fun(P) when P>=0, P=<5 -> P end,
-              4),
+    Level = get_option(loglevel, 4),
     ejabberd_logger:set(Level).
 
 add_global_option(Opt, Val) ->
@@ -817,34 +816,38 @@ prepare_opt_val(Opt, Val, F, Default) ->
 
 -spec get_global_option(any(), check_fun()) -> any().
 
-get_global_option(Opt, F) ->
-    get_option(Opt, F, undefined).
+get_global_option(Opt, _) ->
+    get_option(Opt, undefined).
 
 -spec get_global_option(any(), check_fun(), any()) -> any().
 
-get_global_option(Opt, F, Default) ->
-    get_option(Opt, F, Default).
+get_global_option(Opt, _, Default) ->
+    get_option(Opt, Default).
 
 -spec get_local_option(any(), check_fun()) -> any().
 
-get_local_option(Opt, F) ->
-    get_option(Opt, F, undefined).
+get_local_option(Opt, _) ->
+    get_option(Opt, undefined).
 
 -spec get_local_option(any(), check_fun(), any()) -> any().
 
-get_local_option(Opt, F, Default) ->
-    get_option(Opt, F, Default).
+get_local_option(Opt, _, Default) ->
+    get_option(Opt, Default).
 
--spec get_option(any(), check_fun()) -> any().
-
-get_option(Opt, F) ->
-    get_option(Opt, F, undefined).
+-spec get_option(any()) -> any().
+get_option(Opt) ->
+    get_option(Opt, undefined).
 
 -spec get_option(any(), check_fun(), any()) -> any().
+get_option(Opt, _, Default) ->
+    get_option(Opt, Default).
 
-get_option(Opt, F, Default) when is_atom(Opt) ->
-    get_option({Opt, global}, F, Default);
-get_option(Opt, F, Default) ->
+-spec get_option(any(), check_fun() | any()) -> any().
+get_option(Opt, F) when is_function(F) ->
+    get_option(Opt, undefined);
+get_option(Opt, Default) when is_atom(Opt) ->
+    get_option({Opt, global}, Default);
+get_option(Opt, Default) ->
     {Key, Host} = case Opt of
 		      {O, global} when is_atom(O) -> Opt;
 		      {O, H} when is_atom(O), is_binary(H) -> Opt;
@@ -856,7 +859,7 @@ get_option(Opt, F, Default) ->
     case ejabberd_options:is_known(Key) of
 	true ->
 	    case ejabberd_options:Key(Host) of
-		{ok, Val} -> prepare_opt_val(Opt, Val, F, Default);
+		{ok, Val} -> Val;
 		undefined -> Default
 	    end;
 	false ->
@@ -865,7 +868,7 @@ get_option(Opt, F, Default) ->
 
 -spec has_option(atom() | {atom(), global | binary()}) -> any().
 has_option(Opt) ->
-    get_option(Opt, fun(_) -> true end, false).
+    get_option(Opt) /= undefined.
 
 init_module_db_table(Modules) ->
     %% Dirty hack for mod_pubsub
@@ -952,7 +955,7 @@ default_ram_db(Host, Module) ->
 
 -spec default_db(default_db | default_ram_db, binary() | global, module()) -> atom().
 default_db(Opt, Host, Module) ->
-    case get_option({Opt, Host}, fun(T) when is_atom(T) -> T end) of
+    case get_option({Opt, Host}) of
 	undefined ->
 	    mnesia;
 	DBType ->
@@ -997,11 +1000,9 @@ validate_opts(#state{opts = Opts} = State) ->
 			    {ok, [Mod|_]} ->
 				VFun = Mod:opt_type(Opt),
 				try VFun(Val) of
-				    _ ->
-					true
-				catch {replace_with, NewVal} ->
-					{true, In#local_config{value = NewVal}};
-				      {invalid_syntax, Error} ->
+				    NewVal ->
+					{true, In#local_config{value = NewVal}}
+				catch {invalid_syntax, Error} ->
 					?ERROR_MSG("ignoring option '~s' with "
 						   "invalid value: ~p: ~s",
 						   [Opt, Val, Error]),
@@ -1028,7 +1029,7 @@ get_vh_by_auth_method(AuthMethod) ->
     get_vh_by_auth_method(AuthMethod, Hosts, []).
 
 get_vh_by_auth_method(Method, [Host|Hosts], Result) ->
-    Methods = get_option({auth_method, Host}, fun(Ms) -> Ms end, []),
+    Methods = get_option({auth_method, Host}, []),
     case lists:member(Method, Methods) of
 	true when Host == global ->
 	    get_myhosts();
@@ -1062,7 +1063,7 @@ get_version() ->
 -spec get_myhosts() -> [binary()].
 
 get_myhosts() ->
-    get_option(hosts, fun(V) -> V end).
+    get_option(hosts).
 
 -spec get_mylang() -> binary().
 
@@ -1071,10 +1072,7 @@ get_mylang() ->
 
 -spec get_lang(global | binary()) -> binary().
 get_lang(Host) ->
-    get_option(
-      {language, Host},
-      fun iolist_to_binary/1,
-      <<"en">>).
+    get_option({language, Host}, <<"en">>).
 
 replace_module(mod_announce_odbc) -> {mod_announce, sql};
 replace_module(mod_blocking_odbc) -> {mod_blocking, sql};
@@ -1365,11 +1363,8 @@ now_to_seconds({MegaSecs, Secs, _MicroSecs}) ->
 opt_type(hide_sensitive_log_data) ->
     fun (H) when is_boolean(H) -> H end;
 opt_type(hosts) ->
-    fun(L) when is_list(L) ->
-	    lists:map(
-	      fun(H) ->
-		      iolist_to_binary(H)
-	      end, L)
+    fun(L) ->
+	    [iolist_to_binary(H) || H <- L]
     end;
 opt_type(language) ->
     fun iolist_to_binary/1;
@@ -1404,7 +1399,7 @@ opt_type(domain_certfile) ->
 opt_type(shared_key) ->
     fun iolist_to_binary/1;
 opt_type(node_start) ->
-    fun(I) when is_integer(I), I>0 -> I end;
+    fun(I) when is_integer(I), I>=0 -> I end;
 opt_type(_) ->
     [hide_sensitive_log_data, hosts, language, max_fsm_queue,
      default_db, default_ram_db, queue_type, queue_dir, loglevel,
@@ -1413,12 +1408,7 @@ opt_type(_) ->
 
 -spec may_hide_data(any()) -> any().
 may_hide_data(Data) ->
-    case get_option(
-	hide_sensitive_log_data,
-	    fun(false) -> false;
-	       (true) -> true
-	    end,
-        false) of
+    case get_option(hide_sensitive_log_data, false) of
 	false ->
 	    Data;
 	true ->
@@ -1431,9 +1421,7 @@ fsm_limit_opts(Opts) ->
 	{_, I} when is_integer(I), I>0 ->
 	    [{max_queue, I}];
 	false ->
-	    case get_option(
-		   max_fsm_queue,
-		   fun(I) when is_integer(I), I>0 -> I end) of
+	    case get_option(max_fsm_queue) of
 		undefined -> [];
 		N -> [{max_queue, N}]
 	    end
@@ -1441,25 +1429,25 @@ fsm_limit_opts(Opts) ->
 
 -spec queue_dir() -> binary() | undefined.
 queue_dir() ->
-    get_option(queue_dir, opt_type(queue_dir)).
+    get_option(queue_dir).
 
 -spec default_queue_type(binary()) -> ram | file.
 default_queue_type(Host) ->
-    get_option({queue_type, Host}, opt_type(queue_type), ram).
+    get_option({queue_type, Host}, ram).
 
 -spec use_cache(binary() | global) -> boolean().
 use_cache(Host) ->
-    get_option({use_cache, Host}, opt_type(use_cache), true).
+    get_option({use_cache, Host}, true).
 
 -spec cache_size(binary() | global) -> pos_integer() | infinity.
 cache_size(Host) ->
-    get_option({cache_size, Host}, opt_type(cache_size), 1000).
+    get_option({cache_size, Host}, 1000).
 
 -spec cache_missed(binary() | global) -> boolean().
 cache_missed(Host) ->
-    get_option({cache_missed, Host}, opt_type(cache_missed), true).
+    get_option({cache_missed, Host}, true).
 
 -spec cache_life_time(binary() | global) -> pos_integer() | infinity.
 %% NOTE: the integer value returned is in *seconds*
 cache_life_time(Host) ->
-    get_option({cache_life_time, Host}, opt_type(cache_life_time), 3600).
+    get_option({cache_life_time, Host}, 3600).

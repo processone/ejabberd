@@ -108,15 +108,9 @@ is_redis_configured(Host) ->
     PoolSize = ejabberd_config:has_option({redis_pool_size, Host}),
     ConnTimeoutConfigured = ejabberd_config:has_option(
 			      {redis_connect_timeout, Host}),
-    Modules = ejabberd_config:get_option(
-		{modules, Host},
-		fun(L) when is_list(L) -> L end, []),
-    SMConfigured = ejabberd_config:get_option(
-		     {sm_db_type, Host},
-		     fun(V) -> V end) == redis,
-    RouterConfigured = ejabberd_config:get_option(
-			 {router_db_type, Host},
-			 fun(V) -> V end) == redis,
+    Modules = ejabberd_config:get_option({modules, Host}, []),
+    SMConfigured = ejabberd_config:get_option({sm_db_type, Host}) == redis,
+    RouterConfigured = ejabberd_config:get_option({router_db_type, Host}) == redis,
     ModuleWithRedisDBConfigured =
 	lists:any(
 	  fun({Module, Opts}) ->
@@ -134,10 +128,7 @@ get_specs() ->
       end, lists:seq(1, get_pool_size())).
 
 get_pool_size() ->
-    ejabberd_config:get_option(
-      redis_pool_size,
-      fun(N) when is_integer(N), N >= 1 -> N end,
-      ?DEFAULT_POOL_SIZE) + 1.
+    ejabberd_config:get_option(redis_pool_size, ?DEFAULT_POOL_SIZE) + 1.
 
 iolist_to_list(IOList) ->
     binary_to_list(iolist_to_binary(IOList)).

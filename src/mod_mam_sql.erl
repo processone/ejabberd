@@ -200,9 +200,7 @@ make_sql_query(User, LServer, MAMQuery, RSM) ->
     With = proplists:get_value(with, MAMQuery),
     WithText = proplists:get_value(withtext, MAMQuery),
     {Max, Direction, ID} = get_max_direction_id(RSM),
-    ODBCType = ejabberd_config:get_option(
-		 {sql_type, LServer},
-		 ejabberd_sql:opt_type(sql_type)),
+    ODBCType = ejabberd_config:get_option({sql_type, LServer}),
     Escape =
         case ODBCType of
             mssql -> fun ejabberd_sql:standard_escape/1;

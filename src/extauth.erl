@@ -105,11 +105,7 @@ random_instance(MaxNum) ->
     randoms:uniform(MaxNum) - 1.
 
 get_instances(Server) ->
-    ejabberd_config:get_option(
-      {extauth_instances, Server},
-      fun(V) when is_integer(V), V > 0 ->
-              V
-      end, 1).
+    ejabberd_config:get_option({extauth_instances, Server}, 1).
 
 loop(Port, Timeout, ProcessName, ExtPrg) ->
     receive

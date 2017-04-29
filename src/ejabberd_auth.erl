@@ -498,9 +498,7 @@ backend_type(Mod) ->
     end.
 
 password_format(LServer) ->
-    ejabberd_config:get_option({auth_password_format, LServer},
-			       opt_type(auth_password_format),
-			       plain).
+    ejabberd_config:get_option({auth_password_format, LServer}, plain).
 
 %%%----------------------------------------------------------------------
 %%% Internal functions
@@ -513,8 +511,7 @@ auth_modules() ->
 auth_modules(Server) ->
     LServer = jid:nameprep(Server),
     Default = ejabberd_config:default_db(LServer, ?MODULE),
-    Methods = ejabberd_config:get_option(
-                {auth_method, LServer}, opt_type(auth_method), [Default]),
+    Methods = ejabberd_config:get_option({auth_method, LServer}, [Default]),
     [misc:binary_to_atom(<<"ejabberd_auth_",
 			   (misc:atom_to_binary(M))/binary>>)
      || M <- Methods].

@@ -293,45 +293,37 @@ process_terminated(State, _Reason) ->
 tls_options(#{lserver := LServer, tls_options := DefaultOpts}) ->
     TLSOpts1 = case ejabberd_config:get_option(
 		      {c2s_certfile, LServer},
-		      fun iolist_to_binary/1,
 		      ejabberd_config:get_option(
-			{domain_certfile, LServer},
-			fun iolist_to_binary/1)) of
+			{domain_certfile, LServer})) of
 		   undefined -> DefaultOpts;
 		   CertFile -> lists:keystore(certfile, 1, DefaultOpts,
 					      {certfile, CertFile})
 	       end,
     TLSOpts2 = case ejabberd_config:get_option(
-                      {c2s_ciphers, LServer},
-		      fun iolist_to_binary/1) of
+                      {c2s_ciphers, LServer}) of
                    undefined -> TLSOpts1;
                    Ciphers -> lists:keystore(ciphers, 1, TLSOpts1,
 					     {ciphers, Ciphers})
                end,
     TLSOpts3 = case ejabberd_config:get_option(
-                      {c2s_protocol_options, LServer},
-                      fun (Options) -> str:join(Options, <<$|>>) end) of
+                      {c2s_protocol_options, LServer}) of
                    undefined -> TLSOpts2;
                    ProtoOpts -> lists:keystore(protocol_options, 1, TLSOpts2,
 					       {protocol_options, ProtoOpts})
                end,
     TLSOpts4 = case ejabberd_config:get_option(
-                      {c2s_dhfile, LServer},
-		      fun iolist_to_binary/1) of
+                      {c2s_dhfile, LServer}) of
                    undefined -> TLSOpts3;
                    DHFile -> lists:keystore(dhfile, 1, TLSOpts3,
 					    {dhfile, DHFile})
                end,
     TLSOpts5 = case ejabberd_config:get_option(
-		      {c2s_cafile, LServer},
-		      fun iolist_to_binary/1) of
+		      {c2s_cafile, LServer}) of
 		   undefined -> TLSOpts4;
 		   CAFile -> lists:keystore(cafile, 1, TLSOpts4,
 					    {cafile, CAFile})
 	       end,
-    case ejabberd_config:get_option(
-	   {c2s_tls_compression, LServer},
-	   fun(B) when is_boolean(B) -> B end) of
+    case ejabberd_config:get_option({c2s_tls_compression, LServer}) of
 	undefined -> TLSOpts5;
 	false -> [compression_none | TLSOpts5];
 	true -> lists:delete(compression_none, TLSOpts5)
@@ -360,13 +352,7 @@ authenticated_stream_features(#{lserver := LServer}) ->
     ejabberd_hooks:run_fold(c2s_post_auth_features, LServer, [], [LServer]).
 
 sasl_mechanisms(Mechs, #{lserver := LServer}) ->
-    Mechs1 = ejabberd_config:get_option(
-	       {disable_sasl_mechanisms, LServer},
-	       fun(V) when is_list(V) ->
-		       lists:map(fun(M) -> str:to_upper(M) end, V);
-		  (V) ->
-		       [str:to_upper(V)]
-	       end, []),
+    Mechs1 = ejabberd_config:get_option({disable_sasl_mechanisms, LServer}, []),
     Mechs2 = case ejabberd_auth_anonymous:is_sasl_anonymous_enabled(LServer) of
 		 true -> Mechs1;
 		 false -> [<<"ANONYMOUS">>|Mechs1]
@@ -805,22 +791,15 @@ resource_conflict_action(U, S, R) ->
     OptionRaw = case ejabberd_sm:is_existing_resource(U, S, R) of
 		    true ->
 			ejabberd_config:get_option(
-			  {resource_conflict, S},
-			  fun(setresource) -> setresource;
-			     (closeold) -> closeold;
-			     (closenew) -> closenew;
-			     (acceptnew) -> acceptnew
-			  end);
+			  {resource_conflict, S}, acceptnew);
 		    false ->
 			acceptnew
 		end,
     Option = case OptionRaw of
 		 setresource -> setresource;
-		 closeold ->
-		     acceptnew; %% ejabberd_sm will close old session
+		 closeold -> acceptnew; %% ejabberd_sm will close old session
 		 closenew -> closenew;
-		 acceptnew -> acceptnew;
-		 _ -> acceptnew %% default ejabberd behavior
+		 acceptnew -> acceptnew
 	     end,
     case Option of
 	acceptnew -> {accept_resource, R};

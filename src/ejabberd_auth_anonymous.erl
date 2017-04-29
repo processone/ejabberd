@@ -26,9 +26,11 @@
 -module(ejabberd_auth_anonymous).
 
 -behaviour(ejabberd_config).
+-behaviour(ejabberd_auth).
 -author('mickael.remond@process-one.net').
 
 -export([start/1,
+	 stop/1,
 	 allow_anonymous/1,
 	 is_sasl_anonymous_enabled/1,
 	 is_login_anonymous_enabled/1,
@@ -58,6 +60,12 @@ start(Host) ->
     ejabberd_hooks:add(sm_remove_connection_hook, Host,
 		       ?MODULE, unregister_connection, 100),
     ok.
+
+stop(Host) ->
+    ejabberd_hooks:delete(sm_register_connection_hook, Host,
+			  ?MODULE, register_connection, 100),
+    ejabberd_hooks:delete(sm_remove_connection_hook, Host,
+			  ?MODULE, unregister_connection, 100).
 
 %% Return true if anonymous is allowed for host or false otherwise
 allow_anonymous(Host) ->
@@ -93,21 +101,12 @@ is_login_anonymous_enabled(Host) ->
 %% Return the anonymous protocol to use: sasl_anon|login_anon|both
 %% defaults to login_anon
 anonymous_protocol(Host) ->
-    ejabberd_config:get_option(
-      {anonymous_protocol, Host},
-      fun(sasl_anon) -> sasl_anon;
-         (login_anon) -> login_anon;
-         (both) -> both
-      end,
-      sasl_anon).
+    ejabberd_config:get_option({anonymous_protocol, Host}, sasl_anon).
 
 %% Return true if multiple connections have been allowed in the config file
 %% defaults to false
 allow_multiple_connections(Host) ->
-    ejabberd_config:get_option(
-      {allow_multiple_connections, Host},
-      fun(V) when is_boolean(V) -> V end,
-      false).
+    ejabberd_config:get_option({allow_multiple_connections, Host}, false).
 
 anonymous_user_exist(User, Server) ->
     lists:any(

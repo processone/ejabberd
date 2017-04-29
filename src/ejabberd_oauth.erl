@@ -27,6 +27,7 @@
 -module(ejabberd_oauth).
 
 -behaviour(gen_server).
+-behaviour(ejabberd_config).
 
 -compile(export_all).
 
@@ -199,7 +200,6 @@ authenticate_user({User, Server}, Ctx) ->
             Access =
                 ejabberd_config:get_option(
                   {oauth_access, JID#jid.lserver},
-		  fun(A) -> A end,
                   none),
             case acl:match_rule(JID#jid.lserver, Access, JID) of
                 allow ->
@@ -402,22 +402,19 @@ use_cache(DBMod) ->
 	true -> DBMod:use_cache();
 	false ->
 	    ejabberd_config:get_option(
-	      oauth_use_cache, opt_type(oauth_use_cache),
+	      oauth_use_cache,
 	      ejabberd_config:use_cache(global))
     end.
 
 cache_opts() ->
     MaxSize = ejabberd_config:get_option(
 		oauth_cache_size,
-		opt_type(oauth_cache_size),
 		ejabberd_config:cache_size(global)),
     CacheMissed = ejabberd_config:get_option(
 		    oauth_cache_missed,
-		    opt_type(oauth_cache_missed),
 		    ejabberd_config:cache_missed(global)),
     LifeTime = case ejabberd_config:get_option(
 		      oauth_cache_life_time,
-		      opt_type(oauth_cache_life_time),
 		      ejabberd_config:cache_life_time(global)) of
 		   infinity -> infinity;
 		   I -> timer:seconds(I)
@@ -425,10 +422,7 @@ cache_opts() ->
     [{max_size, MaxSize}, {life_time, LifeTime}, {cache_missed, CacheMissed}].
 
 expire() ->
-    ejabberd_config:get_option(
-      oauth_expire,
-      fun(I) when is_integer(I) -> I end,
-      ?EXPIRE).
+    ejabberd_config:get_option(oauth_expire, ?EXPIRE).
 
 -define(DIV(Class, Els),
 	?XAE(<<"div">>, [{<<"class">>, Class}], Els)).
@@ -623,9 +617,8 @@ process(_Handlers, _Request) ->
 
 get_db_backend() ->
     DBType = ejabberd_config:get_option(
-               oauth_db_type,
-               fun(T) -> ejabberd_config:v_db(?MODULE, T) end,
-               mnesia),
+	       oauth_db_type,
+	       ejabberd_config:default_db(?MODULE)),
     list_to_atom("ejabberd_oauth_" ++ atom_to_list(DBType)).
 
 

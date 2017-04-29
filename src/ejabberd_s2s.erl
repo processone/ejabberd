@@ -200,45 +200,37 @@ dirty_get_connections() ->
 tls_options(LServer, DefaultOpts) ->
     TLSOpts1 = case ejabberd_config:get_option(
 		      {s2s_certfile, LServer},
-		      fun iolist_to_binary/1,
 		      ejabberd_config:get_option(
-			{domain_certfile, LServer},
-			fun iolist_to_binary/1)) of
+			{domain_certfile, LServer})) of
 		   undefined -> DefaultOpts;
 		   CertFile -> lists:keystore(certfile, 1, DefaultOpts,
 					      {certfile, CertFile})
 	       end,
     TLSOpts2 = case ejabberd_config:get_option(
-                      {s2s_ciphers, LServer},
-		      fun iolist_to_binary/1) of
+		      {s2s_ciphers, LServer}) of
                    undefined -> TLSOpts1;
                    Ciphers -> lists:keystore(ciphers, 1, TLSOpts1,
 					     {ciphers, Ciphers})
                end,
     TLSOpts3 = case ejabberd_config:get_option(
-                      {s2s_protocol_options, LServer},
-                      fun (Options) -> str:join(Options, <<$|>>) end) of
+                      {s2s_protocol_options, LServer}) of
                    undefined -> TLSOpts2;
                    ProtoOpts -> lists:keystore(protocol_options, 1, TLSOpts2,
 					       {protocol_options, ProtoOpts})
                end,
     TLSOpts4 = case ejabberd_config:get_option(
-                      {s2s_dhfile, LServer},
-		      fun iolist_to_binary/1) of
+		      {s2s_dhfile, LServer}) of
                    undefined -> TLSOpts3;
                    DHFile -> lists:keystore(dhfile, 1, TLSOpts3,
 					    {dhfile, DHFile})
                end,
     TLSOpts5 = case ejabberd_config:get_option(
-		      {s2s_cafile, LServer},
-		      fun iolist_to_binary/1) of
+		      {s2s_cafile, LServer}) of
 		   undefined -> TLSOpts4;
 		   CAFile -> lists:keystore(cafile, 1, TLSOpts4,
 					    {cafile, CAFile})
 	       end,
-    case ejabberd_config:get_option(
-	   {s2s_tls_compression, LServer},
-	   fun(B) when is_boolean(B) -> B end) of
+    case ejabberd_config:get_option({s2s_tls_compression, LServer}) of
 	undefined -> TLSOpts5;
 	false -> [compression_none | TLSOpts5];
 	true -> lists:delete(compression_none, TLSOpts5)
@@ -261,37 +253,21 @@ tls_enabled(LServer) ->
 
 -spec zlib_enabled(binary()) -> boolean().
 zlib_enabled(LServer) ->
-    ejabberd_config:get_option(
-      {s2s_zlib, LServer},
-      fun(B) when is_boolean(B) -> B end,
-      false).
+    ejabberd_config:get_option({s2s_zlib, LServer}, false).
 
 -spec use_starttls(binary()) -> boolean() | optional | required | required_trusted.
 use_starttls(LServer) ->
-    ejabberd_config:get_option(
-      {s2s_use_starttls, LServer},
-      fun(true) -> true;
-	 (false) -> false;
-	 (optional) -> optional;
-	 (required) -> required;
-	 (required_trusted) -> required_trusted
-      end, false).
+    ejabberd_config:get_option({s2s_use_starttls, LServer}, false).
 
 -spec get_idle_timeout(binary()) -> non_neg_integer() | infinity.
 get_idle_timeout(LServer) ->
-    ejabberd_config:get_option(
-      {s2s_timeout, LServer},
-      fun(I) when is_integer(I), I >= 0 -> timer:seconds(I);
-	 (infinity) -> infinity
-      end, timer:minutes(10)).
+    ejabberd_config:get_option({s2s_timeout, LServer}, timer:minutes(10)).
 
 -spec queue_type(binary()) -> ram | file.
 queue_type(LServer) ->
-    case ejabberd_config:get_option(
-	   {s2s_queue_type, LServer}, opt_type(s2s_queue_type)) of
-	undefined -> ejabberd_config:default_queue_type(LServer);
-	Type -> Type
-    end.
+    ejabberd_config:get_option(
+      {s2s_queue_type, LServer},
+      ejabberd_config:default_queue_type(LServer)).
 
 %%====================================================================
 %% gen_server callbacks
@@ -543,9 +519,7 @@ needed_connections_number(Ls, MaxS2SConnectionsNumber,
 -spec is_service(jid(), jid()) -> boolean().
 is_service(From, To) ->
     LFromDomain = From#jid.lserver,
-    case ejabberd_config:get_option(
-           {route_subdomains, LFromDomain},
-           fun(s2s) -> s2s; (local) -> local end, local) of
+    case ejabberd_config:get_option({route_subdomains, LFromDomain}, local) of
       s2s -> % bypass RFC 3920 10.3
 	  false;
       local ->
@@ -645,10 +619,7 @@ allow_host(MyServer, S2SHost) ->
       not is_temporarly_blocked(S2SHost).
 
 allow_host1(MyHost, S2SHost) ->
-    Rule = ejabberd_config:get_option(
-             {s2s_access, MyHost},
-             fun acl:access_rules_validator/1,
-             all),
+    Rule = ejabberd_config:get_option({s2s_access, MyHost}, all),
     JID = jid:make(S2SHost),
     case acl:match_rule(MyHost, Rule, JID) of
         deny -> false;
@@ -744,8 +715,9 @@ opt_type(s2s_use_starttls) ->
 opt_type(s2s_zlib) ->
     fun(B) when is_boolean(B) -> B end;
 opt_type(s2s_timeout) ->
-    fun(I) when is_integer(I), I>=0 -> I;
-       (infinity) -> infinity
+    fun(I) when is_integer(I), I >= 0 -> timer:seconds(I);
+       (infinity) -> infinity;
+       (unlimited) -> infinity
     end;
 opt_type(s2s_queue_type) ->
     fun(ram) -> ram; (file) -> file end;

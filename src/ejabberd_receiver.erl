@@ -346,9 +346,7 @@ do_call(Pid, Msg) ->
     end.
 
 hibernate_timeout() ->
-    ejabberd_config:get_option(receiver_hibernate,
-			       opt_type(receiver_hibernate),
-			       timer:seconds(90)).
+    ejabberd_config:get_option(receiver_hibernate, timer:seconds(90)).
 
 opt_type(receiver_hibernate) ->
     fun(I) when is_integer(I), I>0 -> I;

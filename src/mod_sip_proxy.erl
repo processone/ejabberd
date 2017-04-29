@@ -267,8 +267,7 @@ cancel_pending_transactions(State) ->
     lists:foreach(fun esip:cancel/1, State#state.tr_ids).
 
 add_certfile(LServer, Opts) ->
-    case ejabberd_config:get_option({domain_certfile, LServer},
-				    fun iolist_to_binary/1) of
+    case ejabberd_config:get_option({domain_certfile, LServer}) of
 	CertFile when is_binary(CertFile), CertFile /= <<"">> ->
 	    [{certfile, CertFile}|Opts];
 	_ ->
@@ -329,7 +328,7 @@ make_sign(TS, Hdrs) ->
     LTServer = safe_nameprep(TServer),
     FromTag = esip:get_param(<<"tag">>, FParams),
     CallID = esip:get_hdr('call-id', Hdrs),
-    SharedKey = ejabberd_config:get_option(shared_key, fun(V) -> V end),
+    SharedKey = ejabberd_config:get_option(shared_key),
     str:sha([SharedKey, LFUser, LFServer, LTUser, LTServer,
 		FromTag, CallID, TS]).
 

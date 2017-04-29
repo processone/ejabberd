@@ -48,12 +48,7 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(Host) ->
-    Cmd = ejabberd_config:get_option(
-            {extauth_program, Host},
-            fun(V) ->
-                    binary_to_list(iolist_to_binary(V))
-            end,
-            "extauth"),
+    Cmd = ejabberd_config:get_option({extauth_program, Host}, "extauth"),
     extauth:start(Host, Cmd),
     check_cache_last_options(Host),
     ejabberd_auth_mnesia:start(Host).
@@ -179,12 +174,8 @@ remove_user(User, Server, Password) ->
 
 %% @spec (Host::string()) -> false | {true, CacheTime::integer()}
 get_cache_option(Host) ->
-    case ejabberd_config:get_option(
-           {extauth_cache, Host},
-           fun(false) -> undefined;
-              (I) when is_integer(I), I >= 0 -> I
-           end) of
-        undefined -> false;
+    case ejabberd_config:get_option({extauth_cache, Host}, false) of
+        false -> false;
         CacheTime -> {true, CacheTime}
     end.
 
@@ -319,12 +310,11 @@ get_mod_last_configured(Server) ->
     end.
 
 is_configured(Host, Module) ->
-    Os = ejabberd_config:get_option({modules, Host},
-					  fun(M) when is_list(M) -> M end),
+    Os = ejabberd_config:get_option({modules, Host}, []),
     lists:keymember(Module, 1, Os).
 
 opt_type(extauth_cache) ->
-    fun (false) -> undefined;
+    fun (false) -> false;
 	(I) when is_integer(I), I >= 0 -> I
     end;
 opt_type(extauth_program) ->

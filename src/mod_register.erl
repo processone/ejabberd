@@ -435,15 +435,7 @@ check_from(JID, Server) ->
 
 check_timeout(undefined) -> true;
 check_timeout(Source) ->
-    Timeout = ejabberd_config:get_option(
-                registration_timeout,
-                fun(TO) when is_integer(TO), TO > 0 ->
-                        TO;
-                   (infinity) ->
-                        infinity;
-                   (unlimited) ->
-                        infinity
-                end, 600),
+    Timeout = ejabberd_config:get_option(registration_timeout, 600),
     if is_integer(Timeout) ->
 	   Priority = -p1_time_compat:system_time(seconds),
 	   CleanPriority = Priority + Timeout,
@@ -488,15 +480,7 @@ clean_treap(Treap, CleanPriority) ->
 
 remove_timeout(undefined) -> true;
 remove_timeout(Source) ->
-    Timeout = ejabberd_config:get_option(
-                registration_timeout,
-                fun(TO) when is_integer(TO), TO > 0 ->
-                        TO;
-                   (infinity) ->
-                        infinity;
-                   (unlimited) ->
-                        infinity
-                end, 600),
+    Timeout = ejabberd_config:get_option(registration_timeout, 600),
     if is_integer(Timeout) ->
 	   F = fun () ->
 		       Treap = case mnesia:read(mod_register_ip, treap, write)

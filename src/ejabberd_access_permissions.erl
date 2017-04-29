@@ -239,8 +239,7 @@ get_definitions(#state{definitions = none, fragments_generators = Gens} = State)
 			[{acl,{acl,admin}},
 			 {oauth,[<<"ejabberd:admin">>],[{acl,{acl,admin}}]}],
 			{all, [start, stop]}}}],
-    ApiPerms = ejabberd_config:get_option(api_permissions, fun(A) -> A end,
-					  DefaultOptions),
+    ApiPerms = ejabberd_config:get_option(api_permissions, DefaultOptions),
     AllCommands = ejabberd_commands:get_commands_definition(),
     Frags = lists:foldl(
 	      fun({_Name, Generator}, Acc) ->
@@ -334,7 +333,7 @@ command_matches_patterns(C, [_ | Tail]) ->
 %%%===================================================================
 
 parse_api_permissions(Data) when is_list(Data) ->
-    throw({replace_with, [parse_api_permission(Name, Args) || {Name, Args} <- Data]}).
+    [parse_api_permission(Name, Args) || {Name, Args} <- Data].
 
 parse_api_permission(Name, Args0) ->
     Args = lists:flatten(Args0),
@@ -374,8 +373,6 @@ parse_who(Name, Defs, ParseOauth) when is_list(Defs) ->
 		throw:{invalid_syntax, Msg} ->
 		    report_error(<<"Invalid access rule: '~s' used inside 'who' section for api_permission '~s'">>,
 				 [Msg, Name]);
-		throw:{replace_with, NVal} ->
-		    {access, NVal};
 		error:_ ->
 		    report_error(<<"Invalid access rule '~p' used inside 'who' section for api_permission '~s'">>,
 				 [Val, Name])

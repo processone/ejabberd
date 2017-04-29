@@ -33,8 +33,7 @@
 %% Get first c2s configuration limitations to apply it to other c2s
 %% connectors.
 get_c2s_limits() ->
-    C2SFirstListen = ejabberd_config:get_option(
-		       listen, fun ejabberd_listener:validate_cfg/1, []),
+    C2SFirstListen = ejabberd_config:get_option(listen, []),
     case lists:keysearch(ejabberd_c2s, 2, C2SFirstListen) of
 	false -> [];
 	{value, {_Port, ejabberd_c2s, Opts}} ->

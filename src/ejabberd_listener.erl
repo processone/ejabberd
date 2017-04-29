@@ -49,24 +49,20 @@ init(_) ->
     {ok, {{one_for_one, 10, 1}, listeners_childspec()}}.
 
 listeners_childspec() ->
-    case ejabberd_config:get_option(listen, fun validate_cfg/1) of
-	undefined ->
-	    [];
-	Ls ->
-	    Specs = lists:map(
-		      fun({Port, Module, Opts}) ->
-			      maybe_start_sip(Module),
-			      ets:insert(?MODULE, {Port, Module, Opts}),
-			      {Port,
-			       {?MODULE, start, [Port, Module, Opts]},
-			       transient,
-			       brutal_kill,
-			       worker,
-			       [?MODULE]}
-		      end, Ls),
-	    report_duplicated_portips(Ls),
-	    Specs
-    end.
+    Ls = ejabberd_config:get_option(listen, []),
+    Specs = lists:map(
+	      fun({Port, Module, Opts}) ->
+		      maybe_start_sip(Module),
+		      ets:insert(?MODULE, {Port, Module, Opts}),
+		      {Port,
+		       {?MODULE, start, [Port, Module, Opts]},
+		       transient,
+		       brutal_kill,
+		       worker,
+		       [?MODULE]}
+	      end, Ls),
+    report_duplicated_portips(Ls),
+    Specs.
 
 start_listeners() ->
     lists:foreach(
@@ -384,7 +380,7 @@ start_listener_sup(Port, Module, Opts) ->
     supervisor:start_child(?MODULE, ChildSpec).
 
 stop_listeners() ->
-    Ports = ejabberd_config:get_option(listen, fun validate_cfg/1),
+    Ports = ejabberd_config:get_option(listen, []),
     lists:foreach(
       fun({PortIpNetp, Module, _Opts}) ->
 	      delete_listener(PortIpNetp, Module)
@@ -438,10 +434,7 @@ maybe_start_sip(_) ->
     ok.
 
 config_reloaded() ->
-    New = case ejabberd_config:get_option(listen, fun validate_cfg/1) of
-	      undefined -> [];
-	      Ls -> Ls
-	  end,
+    New = ejabberd_config:get_option(listen, []),
     Old = ets:tab2list(?MODULE),
     lists:foreach(
       fun({PortIP, Module, _Opts}) ->

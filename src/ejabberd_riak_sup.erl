@@ -87,15 +87,9 @@ is_riak_configured(Host) ->
     AuthConfigured = lists:member(
 		       ejabberd_auth_riak,
 		       ejabberd_auth:auth_modules(Host)),
-    SMConfigured = ejabberd_config:get_option(
-		     {sm_db_type, Host},
-		     ejabberd_sm:opt_type(sm_db_type)) == riak,
-    RouterConfigured = ejabberd_config:get_option(
-			 {router_db_type, Host},
-			 ejabberd_router:opt_type(router_db_type)) == riak,
-    Modules = ejabberd_config:get_option(
-		{modules, Host},
-		fun(L) when is_list(L) -> L end, []),
+    SMConfigured = ejabberd_config:get_option({sm_db_type, Host}) == riak,
+    RouterConfigured = ejabberd_config:get_option({router_db_type, Host}) == riak,
+    Modules = ejabberd_config:get_option({modules, Host}, []),
     ModuleWithRiakDBConfigured = lists:any(
 				   fun({Module, Opts}) ->
 					   gen_mod:db_type(Host, Opts, Module) == riak
@@ -150,50 +144,25 @@ get_specs() ->
       end, lists:seq(1, PoolSize)).
 
 get_start_interval() ->
-    ejabberd_config:get_option(
-      riak_start_interval,
-      fun(N) when is_integer(N), N >= 1 -> N end,
-      ?DEFAULT_RIAK_START_INTERVAL).
+    ejabberd_config:get_option(riak_start_interval, ?DEFAULT_RIAK_START_INTERVAL).
 
 get_pool_size() ->
-    ejabberd_config:get_option(
-      riak_pool_size,
-      fun(N) when is_integer(N), N >= 1 -> N end,
-      ?DEFAULT_POOL_SIZE).
+    ejabberd_config:get_option(riak_pool_size, ?DEFAULT_POOL_SIZE).
 
 get_riak_server() ->
-    ejabberd_config:get_option(
-      riak_server,
-      fun(S) ->
-	      binary_to_list(iolist_to_binary(S))
-      end, ?DEFAULT_RIAK_HOST).
+    ejabberd_config:get_option(riak_server, ?DEFAULT_RIAK_HOST).
 
 get_riak_cacertfile() ->
-    ejabberd_config:get_option(
-      riak_cacertfile,
-      fun(S) ->
-	      binary_to_list(iolist_to_binary(S))
-      end, nil).
+    ejabberd_config:get_option(riak_cacertfile, nil).
 
 get_riak_username() ->
-    ejabberd_config:get_option(
-      riak_username,
-      fun(S) ->
-	      binary_to_list(iolist_to_binary(S))
-      end, nil).
+    ejabberd_config:get_option(riak_username, nil).
 
 get_riak_password() ->
-    ejabberd_config:get_option(
-      riak_password,
-      fun(S) ->
-	      binary_to_list(iolist_to_binary(S))
-      end, nil).
+    ejabberd_config:get_option(riak_password, nil).
 
 get_riak_port() ->
-    ejabberd_config:get_option(
-      riak_port,
-      fun(P) when is_integer(P), P > 0, P < 65536 -> P end,
-      ?DEFAULT_RIAK_PORT).
+    ejabberd_config:get_option(riak_port, ?DEFAULT_RIAK_PORT).
 
 get_pids() ->
     [ejabberd_riak:get_proc(I) || I <- lists:seq(1, get_pool_size())].
@@ -212,13 +181,18 @@ transform_options(Opt, Opts) ->
 
 opt_type(riak_pool_size) ->
     fun (N) when is_integer(N), N >= 1 -> N end;
-opt_type(riak_port) -> fun (_) -> true end;
-opt_type(riak_server) -> fun (_) -> true end;
+opt_type(riak_port) ->
+    fun(P) when is_integer(P), P > 0, P < 65536 -> P end;
+opt_type(riak_server) ->
+    fun(S) -> binary_to_list(iolist_to_binary(S)) end;
 opt_type(riak_start_interval) ->
     fun (N) when is_integer(N), N >= 1 -> N end;
-opt_type(riak_cacertfile) -> fun iolist_to_binary/1;
-opt_type(riak_username) -> fun iolist_to_binary/1;
-opt_type(riak_password) -> fun iolist_to_binary/1;
+opt_type(riak_cacertfile) ->
+    fun(S) -> binary_to_list(iolist_to_binary(S)) end;
+opt_type(riak_username) ->
+    fun(S) -> binary_to_list(iolist_to_binary(S)) end;
+opt_type(riak_password) ->
+    fun(S) -> binary_to_list(iolist_to_binary(S)) end;
 opt_type(_) ->
     [riak_pool_size, riak_port, riak_server,
      riak_start_interval, riak_cacertfile, riak_username, riak_password].

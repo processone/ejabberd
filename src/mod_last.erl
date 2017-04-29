@@ -119,9 +119,7 @@ process_local_iq(#iq{type = get} = IQ) ->
 %% @doc Get the uptime of the ejabberd node, expressed in seconds.
 %% When ejabberd is starting, ejabberd_config:start/0 stores the datetime.
 get_node_uptime() ->
-    case ejabberd_config:get_option(
-           node_start,
-           fun(S) when is_integer(S), S >= 0 -> S end) of
+    case ejabberd_config:get_option(node_start) of
         undefined ->
             trunc(element(1, erlang:statistics(wall_clock)) / 1000);
         Now ->
