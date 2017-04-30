@@ -129,8 +129,7 @@ init([Host, Opts]) ->
     process_flag(trap_exit, true),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
-			     no_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, no_queue),
     ejabberd_hooks:add(offline_message_hook, Host, ?MODULE,
 		       store_packet, 50),
     ejabberd_hooks:add(c2s_self_presence, Host, ?MODULE, c2s_self_presence, 50),
@@ -157,7 +156,6 @@ init([Host, Opts]) ->
 				  ?MODULE, handle_offline_query, IQDisc),
     AccessMaxOfflineMsgs =
 	gen_mod:get_opt(access_max_user_messages, Opts,
-			fun acl:shaper_rules_validator/1,
 			max_user_offline_messages),
     {ok,
      #state{host = Host,
@@ -175,9 +173,7 @@ handle_cast({reload, NewOpts, OldOpts}, #state{host = Host} = State) ->
        true ->
 	    ok
     end,
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts,
-			      fun gen_iq_handler:check_type/1,
-			      one_queue) of
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, one_queue) of
 	{false, IQDisc, _} ->
 	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_FLEX_OFFLINE,
 					  ?MODULE, handle_offline_query, IQDisc);
@@ -185,7 +181,6 @@ handle_cast({reload, NewOpts, OldOpts}, #state{host = Host} = State) ->
 	    ok
     end,
     case gen_mod:is_equal_opt(access_max_user_messages, NewOpts, OldOpts,
-			      fun acl:shaper_rules_validator/1,
 			      max_user_offline_messages) of
 	{false, AccessMaxOfflineMsgs, _} ->
 	    {noreply,
@@ -462,9 +457,6 @@ need_to_store(LServer, #message{type = Type} = Packet) ->
 		none ->
 		    case gen_mod:get_module_opt(
 			   LServer, ?MODULE, store_empty_body,
-			   fun(V) when is_boolean(V) -> V;
-			      (unless_chat_state) -> unless_chat_state
-			   end,
 			   unless_chat_state) of
 			true ->
 			    true;
@@ -799,7 +791,6 @@ get_queue_length(LUser, LServer) ->
 
 get_messages_subset(User, Host, MsgsAll) ->
     Access = gen_mod:get_module_opt(Host, ?MODULE, access_max_user_messages,
-                                    fun(A) when is_atom(A) -> A end,
 				    max_user_offline_messages),
     MaxOfflineMsgs = case get_max_user_messages(Access,
 						User, Host)

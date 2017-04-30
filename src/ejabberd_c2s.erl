@@ -29,7 +29,7 @@
 %% ejabberd_socket callbacks
 -export([start/2, start_link/2, socket_type/0]).
 %% ejabberd_config callbacks
--export([opt_type/1, transform_listen_option/2]).
+-export([opt_type/1, listen_opt_type/1, transform_listen_option/2]).
 %% xmpp_stream_in callbacks
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
@@ -490,30 +490,25 @@ handle_send(Pkt, Result, #{lserver := LServer} = State) ->
     ejabberd_hooks:run_fold(c2s_handle_send, LServer, State, [Pkt, Result]).
 
 init([State, Opts]) ->
-    Access = gen_mod:get_opt(access, Opts, fun acl:access_rules_validator/1, all),
-    Shaper = gen_mod:get_opt(shaper, Opts, fun acl:shaper_rules_validator/1, none),
+    Access = gen_mod:get_opt(access, Opts, all),
+    Shaper = gen_mod:get_opt(shaper, Opts, none),
     TLSOpts1 = lists:filter(
 		 fun({certfile, _}) -> true;
 		    ({ciphers, _}) -> true;
 		    ({dhfile, _}) -> true;
 		    ({cafile, _}) -> true;
+		    ({protocol_options, _}) -> true;
 		    (_) -> false
 		 end, Opts),
-    TLSOpts2 = case lists:keyfind(protocol_options, 1, Opts) of
-		   false -> TLSOpts1;
-		   {_, OptString} ->
-		       ProtoOpts = str:join(OptString, <<$|>>),
-		       [{protocol_options, ProtoOpts}|TLSOpts1]
-	       end,
-    TLSOpts3 = case proplists:get_bool(tls_compression, Opts) of
-                   false -> [compression_none | TLSOpts2];
-                   true -> TLSOpts2
+    TLSOpts2 = case proplists:get_bool(tls_compression, Opts) of
+                   false -> [compression_none | TLSOpts1];
+                   true -> TLSOpts1
                end,
     TLSEnabled = proplists:get_bool(starttls, Opts),
     TLSRequired = proplists:get_bool(starttls_required, Opts),
     TLSVerify = proplists:get_bool(tls_verify, Opts),
     Zlib = proplists:get_bool(zlib, Opts),
-    State1 = State#{tls_options => TLSOpts3,
+    State1 = State#{tls_options => TLSOpts2,
 		    tls_required => TLSRequired,
 		    tls_enabled => TLSEnabled,
 		    tls_verify => TLSVerify,
@@ -660,9 +655,7 @@ process_presence_out(#{user := User, server := Server, lserver := LServer,
 	    send_error(State, Pres, Err);
 	allow when Type == subscribe; Type == subscribed;
 		   Type == unsubscribe; Type == unsubscribed ->
-	    Access = gen_mod:get_module_opt(LServer, mod_roster, access,
-					    fun(A) when is_atom(A) -> A end,
-					    all),
+	    Access = gen_mod:get_module_opt(LServer, mod_roster, access, all),
 	    MyBareJID = jid:remove_resource(JID),
 	    case acl:match_rule(LServer, Access, MyBareJID) of
 		deny ->
@@ -926,3 +919,36 @@ opt_type(_) ->
     [c2s_certfile, c2s_ciphers, c2s_cafile,
      c2s_protocol_options, c2s_tls_compression, resource_conflict,
      disable_sasl_mechanisms].
+
+listen_opt_type(access) -> fun acl:access_rules_validator/1;
+listen_opt_type(shaper) -> fun acl:shaper_rules_validator/1;
+listen_opt_type(certfile) -> opt_type(c2s_certfile);
+listen_opt_type(ciphers) -> opt_type(c2s_ciphers);
+listen_opt_type(dhfile) -> opt_type(c2s_dhfile);
+listen_opt_type(cafile) -> opt_type(c2s_cafile);
+listen_opt_type(protocol_options) -> opt_type(c2s_protocol_options);
+listen_opt_type(tls_compression) -> opt_type(c2s_tls_compression);
+listen_opt_type(tls) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(starttls) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(starttls_required) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(tls_verify) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(zlib) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(supervisor) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(max_stanza_size) ->
+    fun(I) when is_integer(I) -> I;
+       (unlimited) -> infinity;
+       (infinity) -> infinity
+    end;
+listen_opt_type(max_fsm_queue) ->
+    fun(I) when is_integer(I), I>0 -> I end;
+listen_opt_type(O) ->
+    %% This hack should be removed in future releases: it is intended
+    %% for backward compatibility with ejabberd 17.01 or older
+    case mod_stream_mgmt:mod_opt_type(O) of
+	L when is_list(L) ->
+	    [access, shaper, certfile, ciphers, dhfile, cafile,
+	     protocol_options, tls, tls_compression, starttls,
+	     starttls_required, tls_verify, zlib, max_fsm_queue] ++ L;
+	VFun ->
+	    VFun
+    end.

@@ -468,44 +468,18 @@ get_user_part_re(String, Pattern) ->
 parse_options(Host, Opts) ->
     Eldap_ID = misc:atom_to_binary(gen_mod:get_module_proc(Host, ?MODULE)),
     Cfg = eldap_utils:get_config(Host, Opts),
-    GroupAttr = gen_mod:get_opt(ldap_groupattr, Opts,
-                                fun iolist_to_binary/1,
-                                <<"cn">>),
-    GroupDesc = gen_mod:get_opt(ldap_groupdesc, Opts,
-                                fun iolist_to_binary/1,
-                                GroupAttr),
-    UserDesc = gen_mod:get_opt(ldap_userdesc, Opts,
-                               fun iolist_to_binary/1,
-                               <<"cn">>),
-    UserUID = gen_mod:get_opt(ldap_useruid, Opts,
-                              fun iolist_to_binary/1,
-                              <<"cn">>),
-    UIDAttr = gen_mod:get_opt(ldap_memberattr, Opts,
-                              fun iolist_to_binary/1,
-                              <<"memberUid">>),
-    UIDAttrFormat = gen_mod:get_opt(ldap_memberattr_format, Opts,
-                                    fun iolist_to_binary/1,
-                                    <<"%u">>),
-    UIDAttrFormatRe = gen_mod:get_opt(ldap_memberattr_format_re, Opts,
-                                      fun(S) ->
-                                              Re = iolist_to_binary(S),
-                                              {ok, MP} = re:compile(Re),
-                                              MP
-                                      end, <<"">>),
-    AuthCheck = gen_mod:get_opt(ldap_auth_check, Opts,
-                                fun(on) -> true;
-                                   (off) -> false;
-                                   (false) -> false;
-                                   (true) -> true
-                                end, true),
-    ConfigFilter = gen_mod:get_opt({ldap_filter, Host}, Opts,
-                                       fun eldap_utils:check_filter/1, <<"">>),
-    ConfigUserFilter = gen_mod:get_opt({ldap_ufilter, Host}, Opts,
-                                           fun eldap_utils:check_filter/1, <<"">>),
-    ConfigGroupFilter = gen_mod:get_opt({ldap_gfilter, Host}, Opts,
-                                            fun eldap_utils:check_filter/1, <<"">>),
-    RosterFilter = gen_mod:get_opt({ldap_rfilter, Host}, Opts,
-                                       fun eldap_utils:check_filter/1, <<"">>),
+    GroupAttr = gen_mod:get_opt(ldap_groupattr, Opts, <<"cn">>),
+    GroupDesc = gen_mod:get_opt(ldap_groupdesc, Opts, GroupAttr),
+    UserDesc = gen_mod:get_opt(ldap_userdesc, Opts, <<"cn">>),
+    UserUID = gen_mod:get_opt(ldap_useruid, Opts, <<"cn">>),
+    UIDAttr = gen_mod:get_opt(ldap_memberattr, Opts, <<"memberUid">>),
+    UIDAttrFormat = gen_mod:get_opt(ldap_memberattr_format, Opts, <<"%u">>),
+    UIDAttrFormatRe = gen_mod:get_opt(ldap_memberattr_format_re, Opts, <<"">>),
+    AuthCheck = gen_mod:get_opt(ldap_auth_check, Opts, true),
+    ConfigFilter = gen_mod:get_opt({ldap_filter, Host}, Opts, <<"">>),
+    ConfigUserFilter = gen_mod:get_opt({ldap_ufilter, Host}, Opts, <<"">>),
+    ConfigGroupFilter = gen_mod:get_opt({ldap_gfilter, Host}, Opts, <<"">>),
+    RosterFilter = gen_mod:get_opt({ldap_rfilter, Host}, Opts, <<"">>),
     SubFilter = <<"(&(", UIDAttr/binary, "=",
 		  UIDAttrFormat/binary, ")(", GroupAttr/binary, "=%g))">>,
     UserSubFilter = case ConfigUserFilter of
@@ -566,18 +540,14 @@ init_cache(Host, Opts) ->
     UseCache.
 
 use_cache(Host, Opts) ->
-    gen_mod:get_opt(use_cache, Opts, mod_opt_type(use_cache),
-		    ejabberd_config:use_cache(Host)).
+    gen_mod:get_opt(use_cache, Opts, ejabberd_config:use_cache(Host)).
 
 cache_opts(Host, Opts) ->
     MaxSize = gen_mod:get_opt(cache_size, Opts,
-			      mod_opt_type(cache_size),
 			      ejabberd_config:cache_size(Host)),
     CacheMissed = gen_mod:get_opt(cache_missed, Opts,
-				  mod_opt_type(cache_missed),
 				  ejabberd_config:cache_missed(Host)),
     LifeTime = case gen_mod:get_opt(cache_life_time, Opts,
-				    mod_opt_type(cache_life_time),
 				    ejabberd_config:cache_life_time(Host)) of
 		   infinity -> infinity;
 		   I -> timer:seconds(I)

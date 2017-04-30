@@ -84,8 +84,7 @@
     {subscription(), [binary()]}.
 
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
-                             one_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
     ejabberd_hooks:add(roster_get, Host, ?MODULE,
@@ -147,9 +146,7 @@ reload(Host, NewOpts, OldOpts) ->
        true ->
 	    ok
     end,
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts,
-			      fun gen_iq_handler:check_type/1,
-			      one_queue) of
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, one_queue) of
 	{false, IQDisc, _} ->
 	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_ROSTER,
 					  ?MODULE, process_iq, IQDisc);
@@ -188,8 +185,7 @@ process_local_iq(#iq{type = set, from = From, lang = Lang,
 	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
 	false ->
 	    #jid{server = Server} = From,
-	    Access = gen_mod:get_module_opt(Server, ?MODULE,
-					    access, fun(A) -> A end, all),
+	    Access = gen_mod:get_module_opt(Server, ?MODULE, access, all),
 	    case acl:match_rule(Server, Access, From) of
 		deny ->
 		    Txt = <<"Denied by ACL">>,
@@ -222,14 +218,10 @@ roster_hash(Items) ->
 					      <- Items]))).
 
 roster_versioning_enabled(Host) ->
-    gen_mod:get_module_opt(Host, ?MODULE, versioning,
-                           fun(B) when is_boolean(B) -> B end,
-			   false).
+    gen_mod:get_module_opt(Host, ?MODULE, versioning, false).
 
 roster_version_on_db(Host) ->
-    gen_mod:get_module_opt(Host, ?MODULE, store_current_id,
-                           fun(B) when is_boolean(B) -> B end,
-			   false).
+    gen_mod:get_module_opt(Host, ?MODULE, store_current_id, false).
 
 %% Returns a list that may contain an xmlelement with the XEP-237 feature if it's enabled.
 -spec get_versioning_feature([xmpp_element()], binary()) -> [xmpp_element()].

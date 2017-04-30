@@ -197,9 +197,7 @@ filter_fields([{SVar, [Val]} | Ds], Match, LServer)
 		   <<"user">> ->
 		       case gen_mod:get_module_opt(LServer, ?MODULE,
 						   search_all_hosts,
-						   fun(B) when is_boolean(B) ->
-							   B
-						   end, true) of
+						   true) of
 			   true -> Match#vcard_search{luser = make_val(LVal)};
 			   false ->
 			       Host = find_my_host(LServer),

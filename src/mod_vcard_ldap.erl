@@ -355,31 +355,15 @@ default_search_reported() ->
 parse_options(Host, Opts) ->
     MyHost = gen_mod:get_opt_host(Host, Opts,
 				  <<"vjud.@HOST@">>),
-    Search = gen_mod:get_opt(search, Opts,
-                             fun(B) when is_boolean(B) -> B end,
-                             false),
-    Matches = gen_mod:get_opt(matches, Opts,
-                              fun(infinity) -> 0;
-                                 (I) when is_integer(I), I>0 -> I
-                              end, 30),
+    Search = gen_mod:get_opt(search, Opts, false),
+    Matches = gen_mod:get_opt(matches, Opts, 30),
     Eldap_ID = misc:atom_to_binary(gen_mod:get_module_proc(Host, ?PROCNAME)),
     Cfg = eldap_utils:get_config(Host, Opts),
-    UIDsTemp = gen_mod:get_opt(
-                 {ldap_uids, Host}, Opts,
-                 fun(Us) ->
-                         lists:map(
-                           fun({U, P}) ->
-                                   {iolist_to_binary(U),
-                                    iolist_to_binary(P)};
-                              ({U}) ->
-                                   {iolist_to_binary(U)}
-                           end, Us)
-                 end, [{<<"uid">>, <<"%u">>}]),
+    UIDsTemp = gen_mod:get_opt({ldap_uids, Host}, Opts,
+			       [{<<"uid">>, <<"%u">>}]),
     UIDs = eldap_utils:uids_domain_subst(Host, UIDsTemp),
     SubFilter = eldap_utils:generate_subfilter(UIDs),
-    UserFilter = case gen_mod:get_opt(
-                        {ldap_filter, Host}, Opts,
-                        fun eldap_utils:check_filter/1, <<"">>) of
+    UserFilter = case gen_mod:get_opt({ldap_filter, Host}, Opts, <<"">>) of
                      <<"">> ->
 			 SubFilter;
                      F ->
@@ -388,28 +372,11 @@ parse_options(Host, Opts) ->
     {ok, SearchFilter} =
 	eldap_filter:parse(eldap_filter:do_sub(UserFilter,
 					       [{<<"%u">>, <<"*">>}])),
-    VCardMap = gen_mod:get_opt(ldap_vcard_map, Opts,
-                               fun(Ls) ->
-                                       lists:map(
-                                         fun({S, [{P, L}]}) ->
-                                                 {iolist_to_binary(S),
-                                                  iolist_to_binary(P),
-                                                  [iolist_to_binary(E)
-                                                   || E <- L]}
-                                         end, Ls)
-                               end, default_vcard_map()),
+    VCardMap = gen_mod:get_opt(ldap_vcard_map, Opts, default_vcard_map()),
     SearchFields = gen_mod:get_opt(ldap_search_fields, Opts,
-                                   fun(Ls) ->
-                                           [{iolist_to_binary(S),
-                                             iolist_to_binary(P)}
-                                            || {S, P} <- Ls]
-                                   end, default_search_fields()),
+                                   default_search_fields()),
     SearchReported = gen_mod:get_opt(ldap_search_reported, Opts,
-                                     fun(Ls) ->
-                                             [{iolist_to_binary(S),
-                                               iolist_to_binary(P)}
-                                              || {S, P} <- Ls]
-                                     end, default_search_reported()),
+                                     default_search_reported()),
     UIDAttrs = [UAttr || {UAttr, _} <- UIDs],
     VCardMapAttrs = lists:usort(lists:append([A
 					      || {_, _, A} <- VCardMap])

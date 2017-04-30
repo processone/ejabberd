@@ -247,8 +247,7 @@ reload(Host, NewOpts, OldOpts) ->
 	    ok
     end,
     case gen_mod:is_equal_opt(cache_size, NewOpts, OldOpts,
-			      fun(I) when is_integer(I), I>0 -> I end,
-                              1000) of
+			      ejabberd_config:cache_size(Host)) of
 	{false, MaxSize, _} ->
 	    ets_cache:setopts(caps_features_cache, [{max_size, MaxSize}]),
 	    ets_cache:setopts(caps_requests_cache, [{max_size, MaxSize}]);
@@ -256,9 +255,12 @@ reload(Host, NewOpts, OldOpts) ->
 	    ok
     end,
     case gen_mod:is_equal_opt(cache_life_time, NewOpts, OldOpts,
-			      fun(I) when is_integer(I), I>0 -> I end,
-			      timer:hours(24) div 1000) of
-	{false, LifeTime, _} ->
+			      ejabberd_config:cache_life_time(Host)) of
+	{false, Time, _} ->
+	    LifeTime = case Time of
+			   infinity -> infinity;
+			   _ -> timer:seconds(Time)
+		       end,
 	    ets_cache:setopts(caps_features_cache, [{life_time, LifeTime}]);
 	true ->
 	    ok
@@ -483,18 +485,14 @@ init_cache(Host, Opts) ->
 		   {life_time, timer:seconds(?BAD_HASH_LIFETIME)}]).
 
 use_cache(Host, Opts) ->
-    gen_mod:get_opt(use_cache, Opts, mod_opt_type(use_cache),
-		    ejabberd_config:use_cache(Host)).
+    gen_mod:get_opt(use_cache, Opts, ejabberd_config:use_cache(Host)).
 
 cache_opts(Host, Opts) ->
     MaxSize = gen_mod:get_opt(cache_size, Opts,
-			      mod_opt_type(cache_size),
 			      ejabberd_config:cache_size(Host)),
     CacheMissed = gen_mod:get_opt(cache_missed, Opts,
-				  mod_opt_type(cache_missed),
 				  ejabberd_config:cache_missed(Host)),
     LifeTime = case gen_mod:get_opt(cache_life_time, Opts,
-				    mod_opt_type(cache_life_time),
 				    ejabberd_config:cache_life_time(Host)) of
 		   infinity -> infinity;
 		   I -> timer:seconds(I)

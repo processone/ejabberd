@@ -614,12 +614,12 @@ execute_check_access(undefined, _Command, _Arguments) ->
 execute_check_access(FromJID, #ejabberd_commands{access = AccessRefs} = Command, Arguments) ->
     %% TODO Review: Do we have smarter / better way to check rule on other Host than global ?
     Host = global,
-    Rules = lists:map(fun({Mod, AccessName, Default}) ->
-                              gen_mod:get_module_opt(Host, Mod,
-                                                     AccessName, fun(A) -> A end, Default);
-                         (Default) ->
-                              Default
-                      end, AccessRefs),
+    Rules = lists:map(
+	      fun({Mod, AccessName, Default}) ->
+		      gen_mod:get_module_opt(Host, Mod, AccessName, Default);
+		 (Default) ->
+		      Default
+	      end, AccessRefs),
     case acl:any_rules_allowed(Host, Rules, FromJID) of
         true ->
             do_execute_command(Command, Arguments);

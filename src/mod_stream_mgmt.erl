@@ -673,58 +673,36 @@ bounce_message_queue() ->
 %%% Configuration processing
 %%%===================================================================
 get_max_ack_queue(Host, Opts) ->
-    VFun = mod_opt_type(max_ack_queue),
-    case gen_mod:get_module_opt(Host, ?MODULE, max_ack_queue, VFun) of
-	undefined -> gen_mod:get_opt(max_ack_queue, Opts, VFun, 1000);
-	Limit -> Limit
-    end.
+    gen_mod:get_module_opt(Host, ?MODULE, max_ack_queue,
+			   gen_mod:get_opt(max_ack_queue, Opts, 1000)).
 
 get_resume_timeout(Host, Opts) ->
-    VFun = mod_opt_type(resume_timeout),
-    case gen_mod:get_module_opt(Host, ?MODULE, resume_timeout, VFun) of
-	undefined -> gen_mod:get_opt(resume_timeout, Opts, VFun, 300);
-	Timeout -> Timeout
-    end.
+    gen_mod:get_module_opt(Host, ?MODULE, resume_timeout,
+			   gen_mod:get_opt(resume_timeout, Opts, 300)).
 
 get_max_resume_timeout(Host, Opts, ResumeTimeout) ->
-    VFun = mod_opt_type(max_resume_timeout),
-    case gen_mod:get_module_opt(Host, ?MODULE, max_resume_timeout, VFun) of
-	undefined ->
-	    case gen_mod:get_opt(max_resume_timeout, Opts, VFun) of
-		undefined -> ResumeTimeout;
-		Max when Max >= ResumeTimeout -> Max;
-		_ -> ResumeTimeout
-	    end;
+    case gen_mod:get_module_opt(Host, ?MODULE, max_resume_timeout,
+				gen_mod:get_opt(max_resume_timeout, Opts)) of
+	undefined -> ResumeTimeout;
 	Max when Max >= ResumeTimeout -> Max;
 	_ -> ResumeTimeout
     end.
 
 get_ack_timeout(Host, Opts) ->
-    VFun = mod_opt_type(ack_timeout),
-    T = case gen_mod:get_module_opt(Host, ?MODULE, ack_timeout, VFun) of
-	    undefined -> gen_mod:get_opt(ack_timeout, Opts, VFun, 60);
-	    AckTimeout -> AckTimeout
-	end,
-    case T of
+    case gen_mod:get_module_opt(Host, ?MODULE, ack_timeout,
+				gen_mod:get_opt(ack_timeout, Opts, 60)) of
 	infinity -> infinity;
-	_ -> timer:seconds(T)
+	T -> timer:seconds(T)
     end.
 
 get_resend_on_timeout(Host, Opts) ->
-    VFun = mod_opt_type(resend_on_timeout),
-    case gen_mod:get_module_opt(Host, ?MODULE, resend_on_timeout, VFun) of
-	undefined -> gen_mod:get_opt(resend_on_timeout, Opts, VFun, false);
-	Resend -> Resend
-    end.
+    gen_mod:get_module_opt(Host, ?MODULE, resend_on_timeout,
+			   gen_mod:get_opt(resend_on_timeout, Opts, false)).
 
 get_queue_type(Host, Opts) ->
-    VFun = mod_opt_type(queue_type),
-    case gen_mod:get_module_opt(Host, ?MODULE, queue_type, VFun) of
-	undefined ->
-	    case gen_mod:get_opt(queue_type, Opts, VFun) of
-		undefined -> ejabberd_config:default_queue_type(Host);
-		Type -> Type
-	    end;
+    case gen_mod:get_module_opt(Host, ?MODULE, queue_type,
+				gen_mod:get_opt(queue_type, Opts)) of
+	undefined -> ejabberd_config:default_queue_type(Host);
 	Type -> Type
     end.
 
@@ -744,6 +722,8 @@ mod_opt_type(resend_on_timeout) ->
     fun(B) when is_boolean(B) -> B;
        (if_offline) -> if_offline
     end;
+mod_opt_type(stream_management) ->
+    fun(B) when is_boolean(B) -> B end;
 mod_opt_type(queue_type) ->
     fun(ram) -> ram; (file) -> file end;
 mod_opt_type(_) ->

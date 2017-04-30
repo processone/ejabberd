@@ -58,11 +58,9 @@ c2s_auth_result(#{ip := {Addr, _}, lserver := LServer} = State, false, _User) ->
 	false ->
 	    BanLifetime = gen_mod:get_module_opt(
 			    LServer, ?MODULE, c2s_auth_ban_lifetime,
-			    fun(T) when is_integer(T), T > 0 -> T end,
 			    ?C2S_AUTH_BAN_LIFETIME),
 	    MaxFailures = gen_mod:get_module_opt(
 			    LServer, ?MODULE, c2s_max_auth_failures,
-			    fun(I) when is_integer(I), I > 0 -> I end,
 			    ?C2S_MAX_AUTH_FAILURES),
 	    UnbanTS = p1_time_compat:system_time(seconds) + BanLifetime,
 	    Attempts = case ets:lookup(failed_auth, Addr) of
@@ -179,9 +177,7 @@ log_and_disconnect(#{ip := {Addr, _}, lang := Lang} = State, Attempts, UnbanTS) 
     {stop, ejabberd_c2s:send(State, Err)}.
 
 is_whitelisted(Host, Addr) ->
-    Access = gen_mod:get_module_opt(Host, ?MODULE, access,
-				    fun(A) -> A end,
-				    none),
+    Access = gen_mod:get_module_opt(Host, ?MODULE, access, none),
     acl:match_rule(Host, Access, Addr) == allow.
 
 seconds_to_now(Secs) ->

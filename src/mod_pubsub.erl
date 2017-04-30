@@ -244,18 +244,12 @@ init([ServerHost, Opts]) ->
     ?DEBUG("pubsub init ~p ~p", [ServerHost, Opts]),
     Host = gen_mod:get_opt_host(ServerHost, Opts, <<"pubsub.@HOST@">>),
     ejabberd_router:register_route(Host, ServerHost),
-    Access = gen_mod:get_opt(access_createnode, Opts,
-	    fun acl:access_rules_validator/1, all),
-    PepOffline = gen_mod:get_opt(ignore_pep_from_offline, Opts,
-	    fun(A) when is_boolean(A) -> A end, true),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts,
-	    fun gen_iq_handler:check_type/1, one_queue),
-    LastItemCache = gen_mod:get_opt(last_item_cache, Opts,
-	    fun(A) when is_boolean(A) -> A end, false),
-    MaxItemsNode = gen_mod:get_opt(max_items_node, Opts,
-	    fun(A) when is_integer(A) andalso A >= 0 -> A end, ?MAXITEMS),
-    MaxSubsNode = gen_mod:get_opt(max_subscriptions_node, Opts,
-	    fun(A) when is_integer(A) andalso A >= 0 -> A end, undefined),
+    Access = gen_mod:get_opt(access_createnode, Opts, all),
+    PepOffline = gen_mod:get_opt(ignore_pep_from_offline, Opts, true),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
+    LastItemCache = gen_mod:get_opt(last_item_cache, Opts, false),
+    MaxItemsNode = gen_mod:get_opt(max_items_node, Opts, ?MAXITEMS),
+    MaxSubsNode = gen_mod:get_opt(max_subscriptions_node, Opts),
     case gen_mod:db_type(ServerHost, ?MODULE) of
 	mnesia -> pubsub_index:init(Host, ServerHost, Opts);
 	_ -> ok
@@ -263,8 +257,9 @@ init([ServerHost, Opts]) ->
     {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
     DefaultModule = plugin(Host, hd(Plugins)),
     BaseOptions = DefaultModule:options(),
-    DefaultNodeCfg = gen_mod:get_opt(default_node_config, Opts,
-	    fun(A) when is_list(A) -> filter_node_options(A, BaseOptions) end, []),
+    DefaultNodeCfg = filter_node_options(
+		       gen_mod:get_opt(default_node_config, Opts, []),
+		       BaseOptions),
     ejabberd_mnesia:create(?MODULE, pubsub_last_item,
 	[{ram_copies, [node()]},
 	    {attributes, record_info(fields, pubsub_last_item)}]),
@@ -364,8 +359,7 @@ init_send_loop(ServerHost) ->
 
 depends(ServerHost, Opts) ->
     Host = gen_mod:get_opt_host(ServerHost, Opts, <<"pubsub.@HOST@">>),
-    Plugins = gen_mod:get_opt(plugins, Opts,
-			      fun(A) when is_list(A) -> A end, [?STDNODE]),
+    Plugins = gen_mod:get_opt(plugins, Opts, [?STDNODE]),
     lists:flatmap(
       fun(Name) ->
 	      Plugin = plugin(ServerHost, Name),
@@ -380,15 +374,11 @@ depends(ServerHost, Opts) ->
 %% <em>node_plugin</em>. The 'node_' prefix is mandatory.</p>
 %% <p>See {@link node_hometree:init/1} for an example implementation.</p>
 init_plugins(Host, ServerHost, Opts) ->
-    TreePlugin = tree(Host, gen_mod:get_opt(nodetree, Opts,
-		fun(A) when is_binary(A) -> A end,
-		?STDTREE)),
+    TreePlugin = tree(Host, gen_mod:get_opt(nodetree, Opts, ?STDTREE)),
     ?DEBUG("** tree plugin is ~p", [TreePlugin]),
     TreePlugin:init(Host, ServerHost, Opts),
-    Plugins = gen_mod:get_opt(plugins, Opts,
-	    fun(A) when is_list(A) -> A end, [?STDNODE]),
-    PepMapping = gen_mod:get_opt(pep_mapping, Opts,
-	    fun(A) when is_list(A) -> A end, []),
+    Plugins = gen_mod:get_opt(plugins, Opts, [?STDNODE]),
+    PepMapping = gen_mod:get_opt(pep_mapping, Opts, []),
     ?DEBUG("** PEP Mapping : ~p~n", [PepMapping]),
     PluginsOK = lists:foldl(
 	    fun (Name, Acc) ->

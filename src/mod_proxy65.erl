@@ -50,14 +50,21 @@
     ok | {error, limit | conflict | notfound | term()}.
 
 start(Host, Opts) ->
-    case mod_proxy65_service:add_listener(Host, Opts) of
+    {ListenOpts, ModOpts} = lists:partition(
+			      fun({auth_type, _}) -> true;
+				 ({recbuf, _}) -> true;
+				 ({sndbuf, _}) -> true;
+				 ({shaper, _}) -> true;
+				 (_) -> false
+			      end, Opts),
+    case mod_proxy65_service:add_listener(Host, ListenOpts) of
 	{error, _} = Err ->
 	    Err;
 	_ ->
 	    Mod = gen_mod:ram_db_mod(global, ?MODULE),
 	    Mod:init(),
 	    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-	    ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
+	    ChildSpec = {Proc, {?MODULE, start_link, [Host, ModOpts]},
 			 transient, infinity, supervisor, [?MODULE]},
 	    supervisor:start_child(ejabberd_gen_mod_sup, ChildSpec)
     end.
@@ -103,15 +110,6 @@ init([Host, Opts]) ->
 depends(_Host, _Opts) ->
     [].
 
-mod_opt_type(auth_type) ->
-    fun (plain) -> plain;
-	(anonymous) -> anonymous
-    end;
-mod_opt_type(recbuf) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
-mod_opt_type(shaper) -> fun acl:shaper_rules_validator/1;
-mod_opt_type(sndbuf) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
 mod_opt_type(access) -> fun acl:access_rules_validator/1;
 mod_opt_type(host) -> fun iolist_to_binary/1;
 mod_opt_type(hostname) -> fun iolist_to_binary/1;
@@ -130,7 +128,11 @@ mod_opt_type(max_connections) ->
     end;
 mod_opt_type(ram_db_type) ->
     fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
-mod_opt_type(_) ->
-    [auth_type, recbuf, shaper, sndbuf,
-     access, host, hostname, ip, name, port,
-     max_connections, ram_db_type].
+mod_opt_type(Opt) ->
+    case mod_proxy65_stream:listen_opt_type(Opt) of
+	Opts when is_list(Opts) ->
+	    [access, host, hostname, ip, name, port,
+	     max_connections, ram_db_type] ++ Opts;
+	Fun ->
+	    Fun
+    end.

@@ -313,11 +313,7 @@ is_request_within_dialog(#sip{hdrs = Hdrs}) ->
     esip:has_param(<<"tag">>, Params).
 
 need_record_route(LServer) ->
-    gen_mod:get_module_opt(
-      LServer, mod_sip, always_record_route,
-      fun(true) -> true;
-	 (false) -> false
-      end, true).
+    gen_mod:get_module_opt(LServer, mod_sip, always_record_route, true).
 
 make_sign(TS, Hdrs) ->
     {_, #uri{user = FUser, host = FServer}, FParams} = esip:get_hdr('from', Hdrs),
@@ -344,41 +340,17 @@ is_signed_by_me(TS_Sign, Hdrs) ->
     end.
 
 get_configured_vias(LServer) ->
-    gen_mod:get_module_opt(
-      LServer, mod_sip, via,
-      fun(L) ->
-	      lists:map(
-		fun(Opts) ->
-			Type = proplists:get_value(type, Opts),
-			Host = proplists:get_value(host, Opts),
-			Port = proplists:get_value(port, Opts),
-			true = (Type == tcp) or (Type == tls) or (Type == udp),
-			true = is_binary(Host) and (Host /= <<"">>),
-			true = (is_integer(Port)
-				and (Port > 0) and (Port < 65536))
-			    or (Port == undefined),
-			{Type, {Host, Port}}
-		end, L)
-      end, []).
+    gen_mod:get_module_opt(LServer, mod_sip, via, []).
 
 get_configured_record_route(LServer) ->
     gen_mod:get_module_opt(
       LServer, mod_sip, record_route,
-      fun(IOList) ->
-	      S = iolist_to_binary(IOList),
-	      #uri{} = esip:decode_uri(S)
-      end, #uri{host = LServer, params = [{<<"lr">>, <<"">>}]}).
+      #uri{host = LServer, params = [{<<"lr">>, <<"">>}]}).
 
 get_configured_routes(LServer) ->
     gen_mod:get_module_opt(
       LServer, mod_sip, routes,
-      fun(L) ->
-	      lists:map(
-		fun(IOList) ->
-			S = iolist_to_binary(IOList),
-			#uri{} = esip:decode_uri(S)
-		end, L)
-      end, [#uri{host = LServer, params = [{<<"lr">>, <<"">>}]}]).
+      [#uri{host = LServer, params = [{<<"lr">>, <<"">>}]}]).
 
 mark_transaction_as_complete(TrID, State) ->
     NewTrIDs = lists:delete(TrID, State#state.tr_ids),

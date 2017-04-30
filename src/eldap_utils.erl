@@ -173,58 +173,25 @@ uids_domain_subst(Host, UIDs) ->
 -spec get_config(binary(), list()) -> eldap_config().
 
 get_config(Host, Opts) ->
-    Servers = gen_mod:get_opt({ldap_servers, Host}, Opts,
-                      fun(L) ->
-                              [iolist_to_binary(H) || H <- L]
-                      end, [<<"localhost">>]),
-    Backups = gen_mod:get_opt({ldap_backups, Host}, Opts,
-                      fun(L) ->
-                              [iolist_to_binary(H) || H <- L]
-                      end, []),
-    Encrypt = gen_mod:get_opt({ldap_encrypt, Host}, Opts,
-                      fun(tls) -> tls;
-                         (starttls) -> starttls;
-                         (none) -> none
-                      end, none),
-    TLSVerify = gen_mod:get_opt({ldap_tls_verify, Host}, Opts,
-                        fun(hard) -> hard;
-                           (soft) -> soft;
-                           (false) -> false
-                        end, false),
-    TLSCAFile = gen_mod:get_opt({ldap_tls_cacertfile, Host}, Opts,
-                        fun iolist_to_binary/1),
-    TLSDepth = gen_mod:get_opt({ldap_tls_depth, Host}, Opts,
-                       fun(I) when is_integer(I), I>=0 -> I end),
+    Servers = gen_mod:get_opt({ldap_servers, Host}, Opts, [<<"localhost">>]),
+    Backups = gen_mod:get_opt({ldap_backups, Host}, Opts, []),
+    Encrypt = gen_mod:get_opt({ldap_encrypt, Host}, Opts, none),
+    TLSVerify = gen_mod:get_opt({ldap_tls_verify, Host}, Opts, false),
+    TLSCAFile = gen_mod:get_opt({ldap_tls_cacertfile, Host}, Opts),
+    TLSDepth = gen_mod:get_opt({ldap_tls_depth, Host}, Opts),
     Port = gen_mod:get_opt({ldap_port, Host}, Opts,
-                   fun(I) when is_integer(I), I>0 -> I end,
-                   case Encrypt of
-                       tls -> ?LDAPS_PORT;
-                       starttls -> ?LDAP_PORT;
-                       _ -> ?LDAP_PORT
-                   end),
-    RootDN = gen_mod:get_opt({ldap_rootdn, Host}, Opts,
-                     fun iolist_to_binary/1,
-                     <<"">>),
-    Password = gen_mod:get_opt({ldap_password, Host}, Opts,
-                 fun iolist_to_binary/1,
-                 <<"">>),
-    Base = gen_mod:get_opt({ldap_base, Host}, Opts,
-                   fun iolist_to_binary/1,
-                   <<"">>),
-    OldDerefAliases = gen_mod:get_opt({deref_aliases, Host}, Opts,
-                              fun(never) -> never;
-                                 (searching) -> searching;
-                                 (finding) -> finding;
-                                 (always) -> always
-                              end, unspecified),
+			   case Encrypt of
+			       tls -> ?LDAPS_PORT;
+			       starttls -> ?LDAP_PORT;
+			       _ -> ?LDAP_PORT
+			   end),
+    RootDN = gen_mod:get_opt({ldap_rootdn, Host}, Opts, <<"">>),
+    Password = gen_mod:get_opt({ldap_password, Host}, Opts, <<"">>),
+    Base = gen_mod:get_opt({ldap_base, Host}, Opts, <<"">>),
+    OldDerefAliases = gen_mod:get_opt({deref_aliases, Host}, Opts, unspecified),
     DerefAliases =
         if OldDerefAliases == unspecified ->
-                gen_mod:get_opt({ldap_deref_aliases, Host}, Opts,
-                        fun(never) -> never;
-                           (searching) -> searching;
-                           (finding) -> finding;
-                           (always) -> always
-                        end, never);
+                gen_mod:get_opt({ldap_deref_aliases, Host}, Opts, never);
            true ->
                 ?WARNING_MSG("Option 'deref_aliases' is deprecated. "
                              "The option is still supported "
@@ -377,7 +344,8 @@ opt_type(ldap_port) ->
 opt_type(ldap_rootdn) -> fun iolist_to_binary/1;
 opt_type(ldap_servers) ->
     fun (L) -> [iolist_to_binary(H) || H <- L] end;
-opt_type(ldap_tls_cacertfile) -> fun iolist_to_binary/1;
+opt_type(ldap_tls_cacertfile) ->
+    fun(S) -> binary_to_list(iolist_to_binary(S)) end;
 opt_type(ldap_tls_depth) ->
     fun (I) when is_integer(I), I >= 0 -> I end;
 opt_type(ldap_tls_verify) ->

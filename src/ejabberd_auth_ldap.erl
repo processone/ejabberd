@@ -364,24 +364,11 @@ parse_options(Host) ->
     Eldap_ID = misc:atom_to_binary(gen_mod:get_module_proc(Host, ?MODULE)),
     Bind_Eldap_ID = misc:atom_to_binary(
                       gen_mod:get_module_proc(Host, bind_ejabberd_auth_ldap)),
-    UIDsTemp = gen_mod:get_opt(
-                 {ldap_uids, Host}, [],
-                 fun(Us) ->
-                         lists:map(
-                           fun({U, P}) ->
-                                   {iolist_to_binary(U),
-                                    iolist_to_binary(P)};
-                              ({U}) ->
-                                   {iolist_to_binary(U)};
-                              (U) ->
-                                   {iolist_to_binary(U)}
-                           end, lists:flatten(Us))
-                 end, [{<<"uid">>, <<"%u">>}]),
+    UIDsTemp = ejabberd_config:get_option(
+		 {ldap_uids, Host}, [{<<"uid">>, <<"%u">>}]),
     UIDs = eldap_utils:uids_domain_subst(Host, UIDsTemp),
     SubFilter =	eldap_utils:generate_subfilter(UIDs),
-    UserFilter = case gen_mod:get_opt(
-                        {ldap_filter, Host}, [],
-                        fun eldap_utils:check_filter/1, <<"">>) of
+    UserFilter = case ejabberd_config:get_option({ldap_filter, Host}, <<"">>) of
                      <<"">> ->
 			 SubFilter;
                      F ->
@@ -390,20 +377,8 @@ parse_options(Host) ->
     SearchFilter = eldap_filter:do_sub(UserFilter,
 				       [{<<"%u">>, <<"*">>}]),
     {DNFilter, DNFilterAttrs} =
-        gen_mod:get_opt({ldap_dn_filter, Host}, [],
-                            fun([{DNF, DNFA}]) ->
-                                    NewDNFA = case DNFA of
-                                                  undefined ->
-                                                      [];
-                                                  _ ->
-                                                      [iolist_to_binary(A)
-                                                       || A <- DNFA]
-                                              end,
-                                    NewDNF = eldap_utils:check_filter(DNF),
-                                    {NewDNF, NewDNFA}
-                            end, {undefined, []}),
-    LocalFilter = gen_mod:get_opt(
-                    {ldap_local_filter, Host}, [], fun(V) -> V end),
+        ejabberd_config:get_option({ldap_dn_filter, Host}, {undefined, []}),
+    LocalFilter = ejabberd_config:get_option({ldap_local_filter, Host}),
     #state{host = Host, eldap_id = Eldap_ID,
            bind_eldap_id = Bind_Eldap_ID,
            servers = Cfg#eldap_config.servers,

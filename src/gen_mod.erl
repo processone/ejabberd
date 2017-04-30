@@ -33,16 +33,18 @@
 -export([init/1, start_link/0, start_child/3, start_child/4,
 	 stop_child/1, stop_child/2, config_reloaded/0]).
 -export([start_module/2, start_module/3,
-	 stop_module/2, stop_module_keep_config/2, get_opt/3,
-	 get_opt/4, get_opt_host/3, opt_type/1, is_equal_opt/5,
-	 get_module_opt/4, get_module_opt/5, get_module_opt_host/3,
+	 stop_module/2, stop_module_keep_config/2,
+	 get_opt/2, get_opt/3, get_opt_host/3, opt_type/1, is_equal_opt/4,
+	 get_module_opt/3, get_module_opt/4, get_module_opt_host/3,
 	 loaded_modules/1, loaded_modules_with_opts/1,
 	 get_hosts/2, get_module_proc/2, is_loaded/2, is_loaded_elsewhere/2,
 	 start_modules/0, start_modules/1, stop_modules/0, stop_modules/1,
 	 db_mod/2, db_mod/3, ram_db_mod/2, ram_db_mod/3,
 	 db_type/2, db_type/3, ram_db_type/2, ram_db_type/3]).
 
-%%-export([behaviour_info/1]).
+%% Deprecated functions
+-export([get_opt/4, get_module_opt/5]).
+-deprecated([{get_opt, 4}, {get_module_opt, 5}]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -73,7 +75,7 @@
 start_link() ->
     case supervisor:start_link({local, ejabberd_gen_mod_sup}, ?MODULE, []) of
 	{ok, Pid} ->
-	    gen_mod:start_modules(),
+	    start_modules(),
 	    {ok, Pid};
 	Err ->
 	    Err
@@ -303,7 +305,7 @@ stop_modules(Host) ->
     Modules = get_modules_options(Host),
     lists:foreach(
 	fun({Module, _Args}) ->
-	    gen_mod:stop_module_keep_config(Host, Module)
+		stop_module_keep_config(Host, Module)
 	end, Modules).
 
 -spec stop_module(binary(), atom()) -> error | {aborted, any()} | {atomic, any()}.
@@ -351,40 +353,47 @@ wait_for_stop1(MonitorReference) ->
 
 -type check_fun() :: fun((any()) -> any()) | {module(), atom()}.
 
--spec get_opt(atom() | {atom(), binary()|global}, opts(), check_fun()) -> any().
+-spec get_opt(atom() | {atom(), binary() | global}, opts()) -> any().
+get_opt(Opt, Opts) ->
+    get_opt(Opt, Opts, undefined).
 
-get_opt(Opt, Opts, F) ->
-    get_opt(Opt, Opts, F, undefined).
+-spec get_opt(atom() | {atom(), binary()|global}, opts(), check_fun() | any()) -> any().
 
--spec get_opt(atom() | {atom(), binary()|global}, opts(), check_fun(), any()) -> any().
-
-get_opt({Opt, Host}, Opts, F, Default) ->
-    case lists:keysearch(Opt, 1, Opts) of
+get_opt(Opt, Opts, F) when is_function(F) ->
+    get_opt(Opt, Opts, undefined);
+get_opt({Opt, Host}, Opts, Default) ->
+    case lists:keyfind(Opt, 1, Opts) of
         false ->
             ejabberd_config:get_option({Opt, Host}, Default);
-        {value, {_, Val}} ->
-            ejabberd_config:prepare_opt_val(Opt, Val, F, Default)
+        {_, Val} ->
+	    Val
     end;
-get_opt(Opt, Opts, F, Default) ->
-    case lists:keysearch(Opt, 1, Opts) of
+get_opt(Opt, Opts, Default) ->
+    case lists:keyfind(Opt, 1, Opts) of
         false ->
             Default;
-        {value, {_, Val}} ->
-            ejabberd_config:prepare_opt_val(Opt, Val, F, Default)
+        {_, Val} ->
+	    Val
     end.
 
--spec get_module_opt(global | binary(), atom(), atom(), check_fun()) -> any().
+-spec get_opt(atom() | {atom(), binary()}, opts(), check_fun(), any()) -> any().
+get_opt(Opt, Opts, _, Default) ->
+    get_opt(Opt, Opts, Default).
 
-get_module_opt(Host, Module, Opt, F) ->
-    get_module_opt(Host, Module, Opt, F, undefined).
+-spec get_module_opt(global | binary(), atom(), atom()) -> any().
 
--spec get_module_opt(global | binary(), atom(), atom(), check_fun(), any()) -> any().
+get_module_opt(Host, Module, Opt) ->
+    get_module_opt(Host, Module, Opt, undefined).
 
-get_module_opt(global, Module, Opt, F, Default) ->
+-spec get_module_opt(global | binary(), atom(), atom(), any()) -> any().
+
+get_module_opt(Host, Module, Opt, F) when is_function(F) ->
+    get_module_opt(Host, Module, Opt, undefined);
+get_module_opt(global, Module, Opt, Default) ->
     Hosts = (?MYHOSTS),
     [Value | Values] = lists:map(fun (Host) ->
 					 get_module_opt(Host, Module, Opt,
-							F, Default)
+							Default)
 				 end,
 				 Hosts),
     Same_all = lists:all(fun (Other_value) ->
@@ -395,26 +404,28 @@ get_module_opt(global, Module, Opt, F, Default) ->
       true -> Value;
       false -> Default
     end;
-get_module_opt(Host, Module, Opt, F, Default) ->
+get_module_opt(Host, Module, Opt, Default) ->
     OptsList = ets:lookup(ejabberd_modules, {Module, Host}),
     case OptsList of
       [] -> Default;
       [#ejabberd_module{opts = Opts} | _] ->
-	  get_opt(Opt, Opts, F, Default)
+	  get_opt(Opt, Opts, Default)
     end.
+
+-spec get_module_opt(global | binary(), atom(), atom(), check_fun(), any()) -> any().
+get_module_opt(Host, Module, Opt, _, Default) ->
+    get_module_opt(Host, Module, Opt, Default).
 
 -spec get_module_opt_host(global | binary(), atom(), binary()) -> binary().
 
 get_module_opt_host(Host, Module, Default) ->
-    Val = get_module_opt(Host, Module, host,
-                         fun iolist_to_binary/1,
-                         Default),
+    Val = get_module_opt(Host, Module, host, Default),
     ejabberd_regexp:greplace(Val, <<"@HOST@">>, Host).
 
 -spec get_opt_host(binary(), opts(), binary()) -> binary().
 
 get_opt_host(Host, Opts, Default) ->
-    Val = get_opt(host, Opts, fun iolist_to_binary/1, Default),
+    Val = get_opt(host, Opts, Default),
     ejabberd_regexp:greplace(Val, <<"@HOST@">>, Host).
 
 
@@ -436,21 +447,17 @@ get_module_mod_opt_type_fun(Module) ->
 		    throw({'EXIT', {undef, mod_opt_type}});
 		{[], Args, _} -> Args;
 		{Funs, _, _} ->
-		    fun(Val) ->
-			    lists:any(fun(F) ->
-					      try F(Val) of
-						  _ ->
-						      true
-					      catch {replace_with, _NewVal} = E ->
-						      throw(E);
-						    {invalid_syntax, _Error} = E2 ->
-						      throw(E2);
-						    _:_ ->
-						      false
-					      end
-				      end, Funs)
-		    end
+		    fun(Val) -> try_mod_opt_type(Funs, Val) end
 	    end
+    end.
+
+try_mod_opt_type([Fun|Funs], Val) ->
+    try Fun(Val) of
+	NewVal -> NewVal
+    catch {invalid_syntax, _Error} = E2 ->
+	    throw(E2);
+	  _:_ ->
+	    try_mod_opt_type(Funs, Val)
     end.
 
 validate_opts(Module, Opts) ->
@@ -460,11 +467,9 @@ validate_opts(Module, Opts) ->
 	      case catch ModOptFun(Opt) of
 		  VFun when is_function(VFun) ->
 		      try VFun(Val) of
-			  _ ->
-			      true
-		      catch {replace_with, NewVal} ->
-			      {true, {Opt, NewVal}};
-			    {invalid_syntax, Error} ->
+			  NewVal ->
+			      {true, {Opt, NewVal}}
+		      catch {invalid_syntax, Error} ->
 			      ?ERROR_MSG("ignoring invalid value '~p' for "
 					 "option '~s' of module '~s': ~s",
 					 [Val, Opt, Module, Error]),
@@ -498,27 +503,21 @@ validate_opts(Module, Opts) ->
 db_type(Opts, Module) when is_list(Opts) ->
     db_type(global, Opts, Module);
 db_type(Host, Module) when is_atom(Module) ->
-    case catch Module:mod_opt_type(db_type) of
-	F when is_function(F) ->
-	    case get_module_opt(Host, Module, db_type, F) of
-		undefined -> ejabberd_config:default_db(Host, Module);
-		Type -> Type
-	    end;
-	_ ->
-	    undefined
+    case get_module_opt(Host, Module, db_type) of
+	undefined ->
+	    ejabberd_config:default_db(Host, Module);
+	Type ->
+	    Type
     end.
 
 -spec db_type(binary() | global, opts(), module()) -> db_type().
 
 db_type(Host, Opts, Module) ->
-    case catch Module:mod_opt_type(db_type) of
-	F when is_function(F) ->
-	    case get_opt(db_type, Opts, F) of
-		undefined -> ejabberd_config:default_db(Host, Module);
-		Type -> Type
-	    end;
-	_ ->
-	    undefined
+    case get_opt(db_type, Opts) of
+	undefined ->
+	    ejabberd_config:default_db(Host, Module);
+	Type ->
+	    Type
     end.
 
 -spec db_mod(binary() | global | db_type(), module()) -> module().
@@ -538,26 +537,20 @@ db_mod(Host, Opts, Module) when is_list(Opts) ->
 ram_db_type(Opts, Module) when is_list(Opts) ->
     ram_db_type(global, Opts, Module);
 ram_db_type(Host, Module) when is_atom(Module) ->
-    case catch Module:mod_opt_type(ram_db_type) of
-	F when is_function(F) ->
-	    case get_module_opt(Host, Module, ram_db_type, F) of
-		undefined -> ejabberd_config:default_ram_db(Host, Module);
-		Type -> Type
-	    end;
-	_ ->
-	    undefined
+    case get_module_opt(Host, Module, ram_db_type) of
+	undefined ->
+	    ejabberd_config:default_ram_db(Host, Module);
+	Type ->
+	    Type
     end.
 
 -spec ram_db_type(binary() | global, opts(), module()) -> db_type().
 ram_db_type(Host, Opts, Module) ->
-    case catch Module:mod_opt_type(ram_db_type) of
-	F when is_function(F) ->
-	    case get_opt(ram_db_type, Opts, F) of
-		undefined -> ejabberd_config:default_ram_db(Host, Module);
-		Type -> Type
-	    end;
-	_ ->
-	    undefined
+    case get_opt(ram_db_type, Opts) of
+	undefined ->
+	    ejabberd_config:default_ram_db(Host, Module);
+	Type ->
+	    Type
     end.
 
 -spec ram_db_mod(binary() | global | db_type(), module()) -> module().
@@ -588,11 +581,9 @@ loaded_modules_with_opts(Host) ->
 -spec get_hosts(opts(), binary()) -> [binary()].
 
 get_hosts(Opts, Prefix) ->
-    case get_opt(hosts, Opts,
-                 fun(Hs) -> [iolist_to_binary(H) || H <- Hs] end) of
+    case get_opt(hosts, Opts) of
         undefined ->
-            case get_opt(host, Opts,
-                         fun iolist_to_binary/1) of
+            case get_opt(host, Opts) of
                 undefined ->
                     [<<Prefix/binary, Host/binary>> || Host <- ?MYHOSTS];
                 Host ->
@@ -631,11 +622,11 @@ config_reloaded() ->
 	      reload_modules(Host)
       end, ?MYHOSTS).
 
--spec is_equal_opt(atom(), opts(), opts(), check_fun(), any()) ->
+-spec is_equal_opt(atom(), opts(), opts(), any()) ->
 			  true | {false, any(), any()}.
-is_equal_opt(Opt, NewOpts, OldOpts, VFun, Default) ->
-    NewVal = get_opt(Opt, NewOpts, VFun, Default),
-    OldVal = get_opt(Opt, OldOpts, VFun, Default),
+is_equal_opt(Opt, NewOpts, OldOpts, Default) ->
+    NewVal = get_opt(Opt, NewOpts, Default),
+    OldVal = get_opt(Opt, OldOpts, Default),
     if NewVal /= OldVal ->
 	    {false, NewVal, OldVal};
        true ->

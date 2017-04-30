@@ -476,7 +476,7 @@ create_room_with_opts(Name1, Host1, ServerHost, CustomRoomOpts) ->
 
     %% Get the default room options from the muc configuration
     DefRoomOpts = gen_mod:get_module_opt(ServerHost, mod_muc,
-					 default_room_options, fun(X) -> X end, []),
+					 default_room_options, []),
     %% Change default room options as required
     FormattedRoomOpts = [format_room_option(Opt, Val) || {Opt, Val}<-CustomRoomOpts],
     RoomOpts = lists:ukeymerge(1,
@@ -487,13 +487,13 @@ create_room_with_opts(Name1, Host1, ServerHost, CustomRoomOpts) ->
     mod_muc:store_room(ServerHost, Host, Name, RoomOpts),
 
     %% Get all remaining mod_muc parameters that might be utilized
-    Access = gen_mod:get_module_opt(ServerHost, mod_muc, access, fun(X) -> X end, all),
-    AcCreate = gen_mod:get_module_opt(ServerHost, mod_muc, access_create, fun(X) -> X end, all),
-    AcAdmin = gen_mod:get_module_opt(ServerHost, mod_muc, access_admin, fun(X) -> X end, none),
-    AcPer = gen_mod:get_module_opt(ServerHost, mod_muc, access_persistent, fun(X) -> X end, all),
-    HistorySize = gen_mod:get_module_opt(ServerHost, mod_muc, history_size, fun(X) -> X end, 20),
-    RoomShaper = gen_mod:get_module_opt(ServerHost, mod_muc, room_shaper, fun(X) -> X end, none),
-    QueueType = gen_mod:get_module_opt(ServerHost, mod_muc, queue_type, fun(X) -> X end,
+    Access = gen_mod:get_module_opt(ServerHost, mod_muc, access, all),
+    AcCreate = gen_mod:get_module_opt(ServerHost, mod_muc, access_create, all),
+    AcAdmin = gen_mod:get_module_opt(ServerHost, mod_muc, access_admin, none),
+    AcPer = gen_mod:get_module_opt(ServerHost, mod_muc, access_persistent, all),
+    HistorySize = gen_mod:get_module_opt(ServerHost, mod_muc, history_size, 20),
+    RoomShaper = gen_mod:get_module_opt(ServerHost, mod_muc, room_shaper, none),
+    QueueType = gen_mod:get_module_opt(ServerHost, mod_muc, queue_type,
 				       ejabberd_config:default_queue_type(ServerHost)),
 
     %% If the room does not exist yet in the muc_online_room
@@ -596,8 +596,7 @@ create_rooms_file(Filename) ->
     file:close(F),
     %% Read the default room options defined for the first virtual host
     DefRoomOpts = gen_mod:get_module_opt(?MYNAME, mod_muc,
-					 default_room_options,
-					 fun(L) when is_list(L) -> L end, []),
+					 default_room_options, []),
     [muc_create_room(?MYNAME, A, DefRoomOpts) || A <- Rooms],
 	ok.
 

@@ -299,10 +299,7 @@ init([#body{attrs = Attrs}, IP, SID]) ->
     XMPPVer = get_attr('xmpp:version', Attrs),
     XMPPDomain = get_attr(to, Attrs),
     {InBuf, Opts} = case gen_mod:get_module_opt(
-                           XMPPDomain,
-                           mod_bosh, prebind,
-                           fun(B) when is_boolean(B) -> B end,
-                           false) of
+                           XMPPDomain, mod_bosh, prebind, false) of
                         true ->
                             JID = make_random_jid(XMPPDomain),
                             {buf_new(XMPPDomain), [{jid, JID} | Opts2]};
@@ -315,12 +312,9 @@ init([#body{attrs = Attrs}, IP, SID]) ->
 			  Opts),
     Inactivity = gen_mod:get_module_opt(XMPPDomain,
 					mod_bosh, max_inactivity,
-                                        fun(I) when is_integer(I), I>0 -> I end,
 					?DEFAULT_INACTIVITY),
     MaxConcat = gen_mod:get_module_opt(XMPPDomain, mod_bosh, max_concat,
-                                       fun(unlimited) -> unlimited;
-                                          (N) when is_integer(N), N>0 -> N
-                                       end, unlimited),
+                                       unlimited),
     ShapedReceivers = buf_new(XMPPDomain, ?MAX_SHAPED_REQUESTS_QUEUE_LEN),
     State = #state{host = XMPPDomain, sid = SID, ip = IP,
 		   xmpp_ver = XMPPVer, el_ibuf = InBuf,
@@ -366,7 +360,6 @@ wait_for_session(#body{attrs = Attrs} = Req, From,
 			  end,
     MaxPause = gen_mod:get_module_opt(State#state.host,
 				      mod_bosh, max_pause,
-                                      fun(I) when is_integer(I), I>0 -> I end,
                                       ?DEFAULT_MAXPAUSE),
     Resp = #body{attrs =
 		     [{sid, State#state.sid}, {wait, Wait},
@@ -1039,12 +1032,9 @@ buf_new(Host) ->
     buf_new(Host, unlimited).
 
 buf_new(Host, Limit) ->
-    QueueType = case gen_mod:get_module_opt(
-		       Host, mod_bosh, queue_type,
-		       mod_bosh:mod_opt_type(queue_type)) of
-		    undefined -> ejabberd_config:default_queue_type(Host);
-		    T -> T
-		end,
+    QueueType = gen_mod:get_module_opt(
+		  Host, mod_bosh, queue_type,
+		  ejabberd_config:default_queue_type(Host)),
     p1_queue:new(QueueType, Limit).
 
 buf_in(Xs, Buf) ->

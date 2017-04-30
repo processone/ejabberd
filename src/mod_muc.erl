@@ -224,8 +224,7 @@ get_online_rooms_by_user(ServerHost, LUser, LServer) ->
 
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
-                             one_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     #state{access = Access, host = MyHost,
 	   history_size = HistorySize, queue_type = QueueType,
 	   room_shaper = RoomShaper} = State = init_state(Host, Opts),
@@ -260,12 +259,8 @@ handle_call({create, Room, From, Nick, Opts}, _From,
     {reply, ok, State}.
 
 handle_cast({reload, ServerHost, NewOpts, OldOpts}, #state{host = OldHost}) ->
-    NewIQDisc = gen_mod:get_opt(iqdisc, NewOpts,
-				fun gen_iq_handler:check_type/1,
-				one_queue),
-    OldIQDisc = gen_mod:get_opt(iqdisc, OldOpts,
-				fun gen_iq_handler:check_type/1,
-				one_queue),
+    NewIQDisc = gen_mod:get_opt(iqdisc, NewOpts, one_queue),
+    OldIQDisc = gen_mod:get_opt(iqdisc, OldOpts, one_queue),
     NewMod = gen_mod:db_mod(ServerHost, NewOpts, ?MODULE),
     NewRMod = gen_mod:ram_db_mod(ServerHost, NewOpts, ?MODULE),
     OldMod = gen_mod:db_mod(ServerHost, OldOpts, ?MODULE),
@@ -336,32 +331,15 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 init_state(Host, Opts) ->
     MyHost = gen_mod:get_opt_host(Host, Opts,
 				  <<"conference.@HOST@">>),
-    Access = gen_mod:get_opt(access, Opts,
-                             fun acl:access_rules_validator/1, all),
-    AccessCreate = gen_mod:get_opt(access_create, Opts,
-                                   fun acl:access_rules_validator/1, all),
-    AccessAdmin = gen_mod:get_opt(access_admin, Opts,
-                                  fun acl:access_rules_validator/1,
-                                  none),
-    AccessPersistent = gen_mod:get_opt(access_persistent, Opts,
-				       fun acl:access_rules_validator/1,
-                                       all),
-    HistorySize = gen_mod:get_opt(history_size, Opts,
-                                  fun(I) when is_integer(I), I>=0 -> I end,
-                                  20),
-    MaxRoomsDiscoItems = gen_mod:get_opt(max_rooms_discoitems, Opts,
-                                  fun(I) when is_integer(I), I>=0 -> I end,
-                                  100),
-    DefRoomOpts1 = gen_mod:get_opt(default_room_options, Opts,
-				   fun(L) when is_list(L) -> L end,
-				   []),
-    QueueType = case gen_mod:get_opt(queue_type, Opts,
-				     mod_opt_type(queue_type)) of
-		    undefined ->
-			ejabberd_config:default_queue_type(Host);
-		    Type ->
-			Type
-		end,
+    Access = gen_mod:get_opt(access, Opts, all),
+    AccessCreate = gen_mod:get_opt(access_create, Opts, all),
+    AccessAdmin = gen_mod:get_opt(access_admin, Opts, none),
+    AccessPersistent = gen_mod:get_opt(access_persistent, Opts, all),
+    HistorySize = gen_mod:get_opt(history_size, Opts, 20),
+    MaxRoomsDiscoItems = gen_mod:get_opt(max_rooms_discoitems, Opts, 100),
+    DefRoomOpts1 = gen_mod:get_opt(default_room_options, Opts, []),
+    QueueType = gen_mod:get_opt(queue_type, Opts,
+				ejabberd_config:default_queue_type(Host)),
     DefRoomOpts =
 	lists:flatmap(
 	  fun({Opt, Val}) ->
@@ -407,14 +385,12 @@ init_state(Host, Opts) ->
 					    [Opt, Val]),
 				 fun(_) -> undefined end
 			 end,
-		  case gen_mod:get_opt(Opt, [{Opt, Val}], VFun) of
+		  case ejabberd_config:prepare_opt_val(Opt, Val, VFun, undefined) of
 		      undefined -> [];
 		      NewVal -> [{Opt, NewVal}]
 		  end
 	  end, DefRoomOpts1),
-    RoomShaper = gen_mod:get_opt(room_shaper, Opts,
-                                 fun(A) when is_atom(A) -> A end,
-                                 none),
+    RoomShaper = gen_mod:get_opt(room_shaper, Opts, none),
     #state{host = MyHost,
 	   server_host = Host,
 	   access = {Access, AccessCreate, AccessAdmin, AccessPersistent},
@@ -601,7 +577,6 @@ process_disco_items(#iq{type = get, from = From, to = To, lang = Lang,
     ServerHost = ejabberd_router:host_of_route(Host),
     MaxRoomsDiscoItems = gen_mod:get_module_opt(
 			   ServerHost, ?MODULE, max_rooms_discoitems,
-			   fun(I) when is_integer(I), I>=0 -> I end,
 			   100),
     case iq_disco_items(ServerHost, Host, From, Lang,
 			MaxRoomsDiscoItems, Node, RSM) of
@@ -655,12 +630,8 @@ check_user_can_create_room(ServerHost, AccessCreate,
     end.
 
 check_create_roomid(ServerHost, RoomID) ->
-    Max = gen_mod:get_module_opt(ServerHost, ?MODULE, max_room_id,
-				 fun(infinity) -> infinity;
-				    (I) when is_integer(I), I>0 -> I
-				 end, infinity),
-    Regexp = gen_mod:get_module_opt(ServerHost, ?MODULE, regexp_room_id,
-				    fun iolist_to_binary/1, ""),
+    Max = gen_mod:get_module_opt(ServerHost, ?MODULE, max_room_id, infinity),
+    Regexp = gen_mod:get_module_opt(ServerHost, ?MODULE, regexp_room_id, ""),
     (byte_size(RoomID) =< Max) and
     (re:run(RoomID, Regexp, [unicode, {capture, none}]) == match).
 
@@ -956,7 +927,7 @@ mod_opt_type(max_users_admin_threshold) ->
 mod_opt_type(max_users_presence) ->
     fun (MUP) when is_integer(MUP) -> MUP end;
 mod_opt_type(min_message_interval) ->
-    fun (MMI) when is_number(MMI) -> MMI end;
+    fun (MMI) when is_number(MMI), MMI >= 0 -> MMI end;
 mod_opt_type(min_presence_interval) ->
     fun (I) when is_number(I), I >= 0 -> I end;
 mod_opt_type(room_shaper) ->

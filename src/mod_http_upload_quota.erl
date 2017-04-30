@@ -105,18 +105,11 @@ depends(_Host, _Opts) ->
 init([ServerHost, Opts]) ->
     process_flag(trap_exit, true),
     AccessSoftQuota = gen_mod:get_opt(access_soft_quota, Opts,
-				      fun acl:shaper_rules_validator/1,
 				      soft_upload_quota),
     AccessHardQuota = gen_mod:get_opt(access_hard_quota, Opts,
-				      fun acl:shaper_rules_validator/1,
 				      hard_upload_quota),
-    MaxDays = gen_mod:get_opt(max_days, Opts,
-			      fun(I) when is_integer(I), I > 0 -> I;
-				 (infinity) -> infinity
-			      end,
-			      infinity),
+    MaxDays = gen_mod:get_opt(max_days, Opts, infinity),
     DocRoot1 = gen_mod:get_module_opt(ServerHost, mod_http_upload, docroot,
-				      fun iolist_to_binary/1,
 				      <<"@HOME@/upload">>),
     DocRoot2 = mod_http_upload:expand_home(str:strip(DocRoot1, right, $/)),
     DocRoot3 = mod_http_upload:expand_host(DocRoot2, ServerHost),

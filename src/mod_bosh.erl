@@ -144,10 +144,7 @@ reload(_Host, NewOpts, _OldOpts) ->
 %%% Internal functions
 %%%===================================================================
 start_jiffy(Opts) ->
-    case gen_mod:get_opt(json, Opts,
-                         fun(false) -> false;
-                            (true) -> true
-                         end, false) of
+    case gen_mod:get_opt(json, Opts, false) of
         false ->
             ok;
         true ->
@@ -220,7 +217,7 @@ use_cache(Mod) ->
 	true -> Mod:use_cache();
 	false ->
 	    gen_mod:get_module_opt(
-	      global, ?MODULE, use_cache, mod_opt_type(use_cache),
+	      global, ?MODULE, use_cache,
 	      ejabberd_config:use_cache(global))
     end.
 
@@ -244,15 +241,12 @@ delete_cache(Mod, SID) ->
 cache_opts() ->
     MaxSize = gen_mod:get_module_opt(
 		global, ?MODULE, cache_size,
-		mod_opt_type(cache_size),
 		ejabberd_config:cache_size(global)),
     CacheMissed = gen_mod:get_module_opt(
 		    global, ?MODULE, cache_missed,
-		    mod_opt_type(cache_missed),
 		    ejabberd_config:cache_missed(global)),
     LifeTime = case gen_mod:get_module_opt(
 		      global, ?MODULE, cache_life_time,
-		      mod_opt_type(cache_life_time),
 		      ejabberd_config:cache_life_time(global)) of
 		   infinity -> infinity;
 		   I -> timer:seconds(I)

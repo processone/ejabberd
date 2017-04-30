@@ -496,9 +496,7 @@ form_del_get(Host, Lang) ->
 %%                                    {error, not_allowed} |
 %%                                    {error, invalid_jid}
 register_account(Username, Host, Password) ->
-    Access = gen_mod:get_module_opt(Host, mod_register, access,
-                                    fun(A) -> A end,
-                                    all),
+    Access = gen_mod:get_module_opt(Host, mod_register, access, all),
     case jid:make(Username, Host) of
       error -> {error, invalid_jid};
       JID ->

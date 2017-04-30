@@ -29,7 +29,7 @@
 %% ejabberd_socket callbacks
 -export([start/2, start_link/2, socket_type/0, close/1, close/2]).
 %% ejabberd_config callbacks
--export([opt_type/1, transform_listen_option/2]).
+-export([opt_type/1, listen_opt_type/1, transform_listen_option/2]).
 %% xmpp_stream_in callbacks
 -export([init/1, handle_info/2, terminate/2, code_change/3]).
 -export([handle_stream_start/2, handle_auth_success/4, handle_auth_failure/4,
@@ -80,49 +80,33 @@ tls_options(#{tls_options := TLSOptions}) ->
     TLSOptions.
 
 init([State, Opts]) ->
-    Access = gen_mod:get_opt(access, Opts, fun acl:access_rules_validator/1, all),
-    Shaper = gen_mod:get_opt(shaper_rule, Opts, fun acl:shaper_rules_validator/1, none),
-    HostOpts = case lists:keyfind(hosts, 1, Opts) of
-		   {hosts, HOpts} ->
-		       lists:foldl(
-			 fun({H, Os}, D) ->
-				 P = proplists:get_value(
-				       password, Os,
-				       str:sha(randoms:bytes(20))),
-				 dict:store(H, P, D)
-			 end, dict:new(), HOpts);
-		   false ->
-		       Pass = proplists:get_value(
-				password, Opts,
-				str:sha(randoms:bytes(20))),
-		       dict:from_list([{global, Pass}])
-	       end,
-    CheckFrom = gen_mod:get_opt(check_from, Opts,
-				fun(Flag) when is_boolean(Flag) -> Flag end,
-				true),
+    Access = gen_mod:get_opt(access, Opts, all),
+    Shaper = gen_mod:get_opt(shaper_rule, Opts, none),
+    GlobalPassword = gen_mod:get_opt(password, Opts, random_password()),
+    HostOpts = gen_mod:get_opt(hosts, Opts, [{global, GlobalPassword}]),
+    HostOpts1 = lists:map(
+		  fun({Host, undefined}) -> {Host, GlobalPassword};
+		     ({Host, Password}) -> {Host, Password}
+		  end, HostOpts),
+    CheckFrom = gen_mod:get_opt(check_from, Opts, true),
     TLSOpts1 = lists:filter(
 		 fun({certfile, _}) -> true;
 		    ({ciphers, _}) -> true;
 		    ({dhfile, _}) -> true;
 		    ({cafile, _}) -> true;
+		    ({protocol_options, _}) -> true;
 		    (_) -> false
 		 end, Opts),
-    TLSOpts2 = case lists:keyfind(protocol_options, 1, Opts) of
-		   false -> TLSOpts1;
-		   {_, OptString} ->
-		       ProtoOpts = str:join(OptString, <<$|>>),
-		       [{protocol_options, ProtoOpts}|TLSOpts1]
-	       end,
     TLSOpts = case proplists:get_bool(tls_compression, Opts) of
-		  false -> [compression_none | TLSOpts2];
-		  true -> TLSOpts2
+		  false -> [compression_none | TLSOpts1];
+		  true -> TLSOpts1
 	      end,
     xmpp_stream_in:change_shaper(State, Shaper),
     State1 = State#{access => Access,
 		    xmlns => ?NS_COMPONENT,
 		    lang => ?MYLANG,
 		    server => ?MYNAME,
-		    host_opts => HostOpts,
+		    host_opts => dict:from_list(HostOpts1),
 		    stream_version => undefined,
 		    tls_options => TLSOpts,
 		    check_from => CheckFrom},
@@ -254,6 +238,9 @@ check_from(From, #{host_opts := HostOpts}) ->
     Server = From#jid.lserver,
     dict:is_key(Server, HostOpts).
 
+random_password() ->
+    str:sha(randoms:bytes(20)).
+
 transform_listen_option({hosts, Hosts, O}, Opts) ->
     case lists:keyfind(hosts, 1, Opts) of
         {_, PrevHostOpts} ->
@@ -273,3 +260,38 @@ transform_listen_option(Opt, Opts) ->
     [Opt|Opts].
 
 opt_type(_) -> [].
+
+listen_opt_type(access) -> fun acl:access_rules_validator/1;
+listen_opt_type(shaper_rule) -> fun acl:shaper_rules_validator/1;
+listen_opt_type(certfile) -> fun iolist_to_binary/1;
+listen_opt_type(ciphers) -> fun iolist_to_binary/1;
+listen_opt_type(dhfile) -> fun iolist_to_binary/1;
+listen_opt_type(cafile) -> fun iolist_to_binary/1;
+listen_opt_type(protocol_options) ->
+    fun(Options) -> str:join(Options, <<"|">>) end;
+listen_opt_type(tls_compression) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(tls) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(check_from) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(password) -> fun iolist_to_binary/1;
+listen_opt_type(hosts) ->
+    fun(HostOpts) ->
+	    lists:map(
+	      fun({Host, Opts}) ->
+		      Password = case proplists:get_value(password, Opts) of
+				     undefined -> undefined;
+				     P -> iolist_to_binary(P)
+				 end,
+		      {iolist_to_binary(Host), Password}
+	      end, HostOpts)
+    end;
+listen_opt_type(max_stanza_size) ->
+    fun(I) when is_integer(I) -> I;
+       (unlimited) -> infinity;
+       (infinity) -> infinity
+    end;
+listen_opt_type(max_fsm_queue) ->
+    fun(I) when is_integer(I), I>0 -> I end;
+listen_opt_type(_) ->
+    [access, shaper_rule, certfile, ciphers, dhfile, cafile, tls,
+     protocol_options, tls_compression, password, hosts, check_from,
+     max_fsm_queue].

@@ -124,9 +124,7 @@
 -spec start(binary(), gen_mod:opts()) -> {ok, pid()}.
 
 start(ServerHost, Opts) ->
-    case gen_mod:get_opt(rm_on_unregister, Opts,
-			 fun(B) when is_boolean(B) -> B end,
-			 true) of
+    case gen_mod:get_opt(rm_on_unregister, Opts, true) of
 	true ->
 	    ejabberd_hooks:add(remove_user, ServerHost, ?MODULE,
 			       remove_user, 50);
@@ -139,9 +137,7 @@ start(ServerHost, Opts) ->
 -spec stop(binary()) -> ok | {error, any()}.
 
 stop(ServerHost) ->
-    case gen_mod:get_module_opt(ServerHost, ?MODULE, rm_on_unregister,
-				fun(B) when is_boolean(B) -> B end,
-			        true) of
+    case gen_mod:get_module_opt(ServerHost, ?MODULE, rm_on_unregister, true) of
 	true ->
 	    ejabberd_hooks:delete(remove_user, ServerHost, ?MODULE,
 				  remove_user, 50);
@@ -216,49 +212,18 @@ depends(_Host, _Opts) ->
 init([ServerHost, Opts]) ->
     process_flag(trap_exit, true),
     Host = gen_mod:get_opt_host(ServerHost, Opts, <<"upload.@HOST@">>),
-    Name = gen_mod:get_opt(name, Opts,
-			   fun iolist_to_binary/1,
-			   <<"HTTP File Upload">>),
-    Access = gen_mod:get_opt(access, Opts,
-			     fun acl:access_rules_validator/1,
-			     local),
-    MaxSize = gen_mod:get_opt(max_size, Opts,
-			      fun(I) when is_integer(I), I > 0 -> I;
-				 (infinity) -> infinity
-			      end,
-			      104857600),
-    SecretLength = gen_mod:get_opt(secret_length, Opts,
-				   fun(I) when is_integer(I), I >= 8 -> I end,
-				   40),
-    JIDinURL = gen_mod:get_opt(jid_in_url, Opts,
-				   fun(sha1) -> sha1;
-				      (node) -> node
-				   end,
-				   sha1),
-    DocRoot = gen_mod:get_opt(docroot, Opts,
-			      fun iolist_to_binary/1,
-			      <<"@HOME@/upload">>),
-    FileMode = gen_mod:get_opt(file_mode, Opts,
-			       fun(Mode) -> ?STR_TO_INT(Mode, 8) end),
-    DirMode = gen_mod:get_opt(dir_mode, Opts,
-			      fun(Mode) -> ?STR_TO_INT(Mode, 8) end),
-    PutURL = gen_mod:get_opt(put_url, Opts,
-			     fun(<<"http://", _/binary>> = URL) -> URL;
-				(<<"https://", _/binary>> = URL) -> URL
-			     end,
-			     <<"http://@HOST@:5444">>),
-    GetURL = gen_mod:get_opt(get_url, Opts,
-			     fun(<<"http://", _/binary>> = URL) -> URL;
-				(<<"https://", _/binary>> = URL) -> URL
-			     end,
-			     PutURL),
-    ServiceURL = gen_mod:get_opt(service_url, Opts,
-				 fun(<<"http://", _/binary>> = URL) -> URL;
-				    (<<"https://", _/binary>> = URL) -> URL
-				 end),
-    Thumbnail = gen_mod:get_opt(thumbnail, Opts,
-				fun(B) when is_boolean(B) -> B end,
-				true),
+    Name = gen_mod:get_opt(name, Opts, <<"HTTP File Upload">>),
+    Access = gen_mod:get_opt(access, Opts, local),
+    MaxSize = gen_mod:get_opt(max_size, Opts, 104857600),
+    SecretLength = gen_mod:get_opt(secret_length, Opts, 40),
+    JIDinURL = gen_mod:get_opt(jid_in_url, Opts, sha1),
+    DocRoot = gen_mod:get_opt(docroot, Opts, <<"@HOME@/upload">>),
+    FileMode = gen_mod:get_opt(file_mode, Opts),
+    DirMode = gen_mod:get_opt(dir_mode, Opts),
+    PutURL = gen_mod:get_opt(put_url, Opts, <<"http://@HOST@:5444">>),
+    GetURL = gen_mod:get_opt(get_url, Opts, PutURL),
+    ServiceURL = gen_mod:get_opt(service_url, Opts),
+    Thumbnail = gen_mod:get_opt(thumbnail, Opts, true),
     DocRoot1 = expand_home(str:strip(DocRoot, right, $/)),
     DocRoot2 = expand_host(DocRoot1, ServerHost),
     case DirMode of
@@ -476,10 +441,6 @@ process(_LocalPath, #request{method = Method, host = Host, ip = IP}) ->
 
 get_proc_name(ServerHost, ModuleName) ->
     PutURL = gen_mod:get_module_opt(ServerHost, ?MODULE, put_url,
-				    fun(<<"http://", _/binary>> = URL) -> URL;
-				       (<<"https://", _/binary>> = URL) -> URL;
-				       (_) -> <<"http://@HOST@">>
-				    end,
 				    <<"http://@HOST@">>),
     {ok, {_Scheme, _UserInfo, Host, _Port, Path, _Query}} =
 	http_uri:parse(binary_to_list(expand_host(PutURL, ServerHost))),
@@ -709,11 +670,7 @@ yield_content_type(Type) -> Type.
 -spec iq_disco_info(binary(), binary(), binary(), [xdata()]) -> disco_info().
 
 iq_disco_info(Host, Lang, Name, AddInfo) ->
-    Form = case gen_mod:get_module_opt(Host, ?MODULE, max_size,
-				       fun(I) when is_integer(I), I > 0 -> I;
-					  (infinity) -> infinity
-				       end,
-				       104857600) of
+    Form = case gen_mod:get_module_opt(Host, ?MODULE, max_size, 104857600) of
 	       infinity ->
 		   AddInfo;
 	       MaxSize ->
@@ -846,15 +803,7 @@ http_response(Host, Code, ExtraHeaders) ->
       -> {pos_integer(), [{binary(), binary()}], binary()}.
 
 http_response(Host, Code, ExtraHeaders, Body) ->
-    CustomHeaders =
-	gen_mod:get_module_opt(Host, ?MODULE, custom_headers,
-			       fun(Headers) ->
-				       lists:map(fun({K, V}) ->
-							 {iolist_to_binary(K),
-							  iolist_to_binary(V)}
-						 end, Headers)
-			       end,
-			       []),
+    CustomHeaders = gen_mod:get_module_opt(Host, ?MODULE, custom_headers, []),
     Headers = case proplists:is_defined(<<"Content-Type">>, ExtraHeaders) of
 		  true ->
 		      ExtraHeaders;
@@ -940,13 +889,8 @@ thumb_el(Path, URI) ->
 remove_user(User, Server) ->
     ServerHost = jid:nameprep(Server),
     DocRoot = gen_mod:get_module_opt(ServerHost, ?MODULE, docroot,
-				     fun iolist_to_binary/1,
 				     <<"@HOME@/upload">>),
-    JIDinURL = gen_mod:get_module_opt(ServerHost, ?MODULE, jid_in_url,
-				      fun(sha1) -> sha1;
-					 (node) -> node
-				      end,
-				      sha1),
+    JIDinURL = gen_mod:get_module_opt(ServerHost, ?MODULE, jid_in_url, sha1),
     DocRoot1 = expand_host(expand_home(DocRoot), ServerHost),
     UserStr = make_user_string(jid:make(User, Server), JIDinURL),
     UserDir = str:join([DocRoot1, UserStr], <<$/>>),

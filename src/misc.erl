@@ -33,7 +33,7 @@
 	 hex_to_bin/1, hex_to_base64/1, expand_keyword/3,
 	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
 	 l2i/1, i2l/1, i2l/2, expr_to_term/1, term_to_expr/1,
-	 encode_pid/1, decode_pid/2, compile_exprs/2]).
+	 encode_pid/1, decode_pid/2, compile_exprs/2, join_atoms/2]).
 
 %%%===================================================================
 %%% API
@@ -236,6 +236,10 @@ compile_exprs(Mod, Exprs) ->
 	  _:{badmatch, error} ->
 	    {error, compile_failed}
     end.
+
+-spec join_atoms([atom()], binary()) -> binary().
+join_atoms(Atoms, Sep) ->
+    str:join([io_lib:format("~p", [A]) || A <- Atoms], Sep).
 
 %%%===================================================================
 %%% Internal functions

@@ -138,48 +138,16 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%% Internal functions
 %%--------------------------------------------------------------------
 init_state(Host, Opts) ->
-    OutDir = gen_mod:get_opt(outdir, Opts,
-                             fun iolist_to_binary/1,
-                             <<"www/muc">>),
-    DirType = gen_mod:get_opt(dirtype, Opts,
-                              fun(subdirs) -> subdirs;
-                                 (plain) -> plain
-                              end, subdirs),
-    DirName = gen_mod:get_opt(dirname, Opts,
-                              fun(room_jid) -> room_jid;
-                                 (room_name) -> room_name
-                              end, room_jid),
-    FileFormat = gen_mod:get_opt(file_format, Opts,
-                                 fun(html) -> html;
-                                    (plaintext) -> plaintext
-                                 end, html),
-    FilePermissions = gen_mod:get_opt(file_permissions, Opts,
-                                 fun(SubOpts) ->
-                                         F = fun({mode, Mode}, {_M, G}) ->
-                                                        {Mode, G};
-                                                ({group, Group}, {M, _G}) ->
-                                                        {M, Group}
-                                             end,
-                                         lists:foldl(F, {644, 33}, SubOpts)
-                                 end, {644, 33}),
-    CSSFile = gen_mod:get_opt(cssfile, Opts,
-                              fun iolist_to_binary/1,
-                              false),
-    AccessLog = gen_mod:get_opt(access_log, Opts,
-                                fun acl:access_rules_validator/1,
-                                muc_admin),
-    Timezone = gen_mod:get_opt(timezone, Opts,
-                               fun(local) -> local;
-                                  (universal) -> universal
-                               end, local),
-    Top_link = gen_mod:get_opt(top_link, Opts,
-                               fun([{S1, S2}]) ->
-                                       {iolist_to_binary(S1),
-                                        iolist_to_binary(S2)}
-                               end, {<<"/">>, <<"Home">>}),
-    NoFollow = gen_mod:get_opt(spam_prevention, Opts,
-                               fun(B) when is_boolean(B) -> B end,
-                               true),
+    OutDir = gen_mod:get_opt(outdir, Opts, <<"www/muc">>),
+    DirType = gen_mod:get_opt(dirtype, Opts, subdirs),
+    DirName = gen_mod:get_opt(dirname, Opts, room_jid),
+    FileFormat = gen_mod:get_opt(file_format, Opts, html),
+    FilePermissions = gen_mod:get_opt(file_permissions, Opts, {644, 33}),
+    CSSFile = gen_mod:get_opt(cssfile, Opts, false),
+    AccessLog = gen_mod:get_opt(access_log, Opts, muc_admin),
+    Timezone = gen_mod:get_opt(timezone, Opts, local),
+    Top_link = gen_mod:get_opt(top_link, Opts, {<<"/">>, <<"Home">>}),
+    NoFollow = gen_mod:get_opt(spam_prevention, Opts, true),
     Lang = ejabberd_config:get_lang(Host),
     #logstate{host = Host, out_dir = OutDir,
 	      dir_type = DirType, dir_name = DirName,
@@ -1201,7 +1169,7 @@ has_no_permanent_store_hint(Packet) ->
     xmpp:has_subtag(Packet, #hint{type = 'no-permanent-storage'}).
 
 mod_opt_type(access_log) ->
-    fun (A) when is_atom(A) -> A end;
+    fun acl:access_rules_validator/1;
 mod_opt_type(cssfile) -> fun iolist_to_binary/1;
 mod_opt_type(dirname) ->
     fun (room_jid) -> room_jid;

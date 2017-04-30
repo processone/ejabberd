@@ -75,25 +75,25 @@ get_acl_rule([<<"vhosts">>], _) ->
 get_acl_rule([<<"server">>, VHost | _RPath], Method)
     when Method =:= 'GET' orelse Method =:= 'HEAD' ->
     AC = gen_mod:get_module_opt(VHost, ejabberd_web_admin,
-				access, fun(A) -> A end, configure),
+				access, configure),
     ACR = gen_mod:get_module_opt(VHost, ejabberd_web_admin,
-				 access_readonly, fun(A) -> A end, webadmin_view),
+				 access_readonly, webadmin_view),
     {VHost, [AC, ACR]};
 get_acl_rule([<<"server">>, VHost | _RPath], 'POST') ->
     AC = gen_mod:get_module_opt(VHost, ejabberd_web_admin,
-				access, fun(A) -> A end, configure),
+				access, configure),
     {VHost, [AC]};
 %% Default rule: only global admins can access any other random page
 get_acl_rule(_RPath, Method)
     when Method =:= 'GET' orelse Method =:= 'HEAD' ->
     AC = gen_mod:get_module_opt(global, ejabberd_web_admin,
-				access, fun(A) -> A end, configure),
+				access, configure),
     ACR = gen_mod:get_module_opt(global, ejabberd_web_admin,
-				 access_readonly, fun(A) -> A end, webadmin_view),
+				 access_readonly, webadmin_view),
     {global, [AC, ACR]};
 get_acl_rule(_RPath, 'POST') ->
     AC = gen_mod:get_module_opt(global, ejabberd_web_admin,
-				access, fun(A) -> A end, configure),
+				access, configure),
     {global, [AC]}.
 
 %%%==================================

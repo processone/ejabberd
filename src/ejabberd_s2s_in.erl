@@ -27,7 +27,7 @@
 %% ejabberd_socket callbacks
 -export([start/2, start_link/2, socket_type/0]).
 %% ejabberd_config callbacks
--export([opt_type/1]).
+-export([opt_type/1, listen_opt_type/1]).
 %% xmpp_stream_in callbacks
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
@@ -245,25 +245,20 @@ handle_send(Pkt, Result, #{server_host := LServer} = State) ->
 			    State, [Pkt, Result]).
 
 init([State, Opts]) ->
-    Shaper = gen_mod:get_opt(shaper, Opts, fun acl:shaper_rules_validator/1, none),
+    Shaper = gen_mod:get_opt(shaper, Opts, none),
     TLSOpts1 = lists:filter(
 		 fun({certfile, _}) -> true;
 		    ({ciphers, _}) -> true;
 		    ({dhfile, _}) -> true;
 		    ({cafile, _}) -> true;
+		    ({protocol_options, _}) -> true;
 		    (_) -> false
 		 end, Opts),
-    TLSOpts2 = case lists:keyfind(protocol_options, 1, Opts) of
-		   false -> TLSOpts1;
-		   {_, OptString} ->
-		       ProtoOpts = str:join(OptString, <<$|>>),
-		       [{protocol_options, ProtoOpts}|TLSOpts1]
-		   end,
-    TLSOpts3 = case proplists:get_bool(tls_compression, Opts) of
-                   false -> [compression_none | TLSOpts2];
-                   true -> TLSOpts2
+    TLSOpts2 = case proplists:get_bool(tls_compression, Opts) of
+                   false -> [compression_none | TLSOpts1];
+                   true -> TLSOpts1
     end,
-    State1 = State#{tls_options => TLSOpts3,
+    State1 = State#{tls_options => TLSOpts2,
 		    auth_domains => sets:new(),
 		    xmlns => ?NS_SERVER,
 		    lang => ?MYLANG,
@@ -351,3 +346,23 @@ change_shaper(#{shaper := ShaperName, server_host := ServerHost} = State,
 
 opt_type(_) ->
     [].
+
+listen_opt_type(shaper) -> fun acl:shaper_rules_validator/1;
+listen_opt_type(certfile) -> ejabberd_s2s:opt_type(s2s_certfile);
+listen_opt_type(ciphers) -> ejabberd_s2s:opt_type(s2s_ciphers);
+listen_opt_type(dhfile) -> ejabberd_s2s:opt_type(s2s_dhfile);
+listen_opt_type(cafile) -> ejabberd_s2s:opt_type(s2s_cafile);
+listen_opt_type(protocol_options) -> ejabberd_s2s:opt_type(s2s_protocol_options);
+listen_opt_type(tls_compression) -> ejabberd_s2s:opt_type(s2s_tls_compression);
+listen_opt_type(tls) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(supervisor) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(max_stanza_size) ->
+    fun(I) when is_integer(I) -> I;
+       (unlimited) -> infinity;
+       (infinity) -> infinity
+    end;
+listen_opt_type(max_fsm_queue) ->
+    fun(I) when is_integer(I), I>0 -> I end;
+listen_opt_type(_) ->
+    [shaper, certfile, ciphers, dhfile, cafile, protocol_options,
+     tls_compression, tls, max_fsm_queue].

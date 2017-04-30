@@ -543,9 +543,7 @@ log(Call, Args, IP) ->
     ?INFO_MSG("API call ~s ~p (~p)", [Call, Args, IP]).
 
 permission_addon() ->
-    Access = gen_mod:get_module_opt(global, ?MODULE, admin_ip_access,
-				    fun(V) -> V end,
-				    none),
+    Access = gen_mod:get_module_opt(global, ?MODULE, admin_ip_access, none),
     Rules = acl:resolve_access(Access, global),
     R = case Rules of
 	    all ->

@@ -763,9 +763,7 @@ send_announcement_to_all(Host, SubjectS, BodyS) ->
 -spec get_access(global | binary()) -> atom().
 
 get_access(Host) ->
-    gen_mod:get_module_opt(Host, ?MODULE, access,
-                           fun(A) -> A end,
-                           none).
+    gen_mod:get_module_opt(Host, ?MODULE, access, none).
 
 -spec add_store_hint(stanza()) -> stanza().
 add_store_hint(El) ->

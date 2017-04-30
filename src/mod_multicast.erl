@@ -134,14 +134,8 @@ init([LServerS, Opts]) ->
     process_flag(trap_exit, true),
     LServiceS = gen_mod:get_opt_host(LServerS, Opts,
 				     <<"multicast.@HOST@">>),
-    Access = gen_mod:get_opt(access, Opts,
-			     fun acl:access_rules_validator/1, all),
-    SLimits =
-	build_service_limit_record(gen_mod:get_opt(limits, Opts,
-						   fun (A) when is_list(A) ->
-							   A
-						   end,
-						   [])),
+    Access = gen_mod:get_opt(access, Opts, all),
+    SLimits = build_service_limit_record(gen_mod:get_opt(limits, Opts, [])),
     create_cache(),
     try_start_loop(),
     create_pool(),
@@ -156,14 +150,8 @@ handle_call(stop, _From, State) ->
 
 handle_cast({reload, NewOpts, NewOpts},
 	    #state{lserver = LServerS, lservice = OldLServiceS} = State) ->
-    Access = gen_mod:get_opt(access, NewOpts,
-			     fun acl:access_rules_validator/1, all),
-    SLimits =
-	build_service_limit_record(gen_mod:get_opt(limits, NewOpts,
-						   fun (A) when is_list(A) ->
-							   A
-						   end,
-						   [])),
+    Access = gen_mod:get_opt(access, NewOpts, all),
+    SLimits = build_service_limit_record(gen_mod:get_opt(limits, NewOpts, [])),
     NewLServiceS = gen_mod:get_opt_host(LServerS, NewOpts,
 					<<"multicast.@HOST@">>),
     if NewLServiceS /= OldLServiceS ->

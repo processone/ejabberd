@@ -32,7 +32,7 @@
 %% External exports
 -export([start/2, start_link/2, become_controller/1,
 	 socket_type/0, receive_headers/1, url_encode/1,
-         transform_listen_option/2]).
+         transform_listen_option/2, listen_opt_type/1]).
 
 -export([init/2, opt_type/1]).
 
@@ -100,23 +100,15 @@ init({SockMod, Socket}, Opts) ->
     TLSOpts1 = lists:filter(fun ({certfile, _}) -> true;
 				({ciphers, _}) -> true;
 				({dhfile, _}) -> true;
+				({protocol_options, _}) -> true;
 				(_) -> false
 			    end,
 			    Opts),
-    TLSOpts2 = case lists:keysearch(protocol_options, 1, Opts) of
-                   {value, {_, O}} ->
-                       [_|ProtocolOptions] = lists:foldl(
-                                    fun(X, Acc) -> X ++ Acc end, [],
-                                    [["|" | binary_to_list(Opt)] || Opt <- O, is_binary(Opt)]
-                                   ),
-                        [{protocol_options, iolist_to_binary(ProtocolOptions)} | TLSOpts1];
-                   _ -> TLSOpts1
+    TLSOpts2 = case proplists:get_bool(tls_compression, Opts) of
+                   false -> [compression_none | TLSOpts1];
+                   true -> TLSOpts1
                end,
-    TLSOpts3 = case proplists:get_bool(tls_compression, Opts) of
-                   false -> [compression_none | TLSOpts2];
-                   true -> TLSOpts2
-               end,
-    TLSOpts = [verify_none | TLSOpts3],
+    TLSOpts = [verify_none | TLSOpts2],
     {SockMod1, Socket1} = if TLSEnabled ->
 				 inet:setopts(Socket, [{recbuf, 8192}]),
 				 {ok, TLSSocket} = fast_tls:tcp_to_tls(Socket,
@@ -144,33 +136,15 @@ init({SockMod, Socket}, Opts) ->
 		 true -> [{[], ejabberd_xmlrpc}];
 		 false -> []
 	     end,
-    DefinedHandlers = gen_mod:get_opt(
-                        request_handlers, Opts,
-                        fun(Hs) ->
-                                Hs1 = lists:map(fun
-                                  ({Mod, Path}) when is_atom(Mod) -> {Path, Mod};
-                                  ({Path, Mod}) -> {Path, Mod}
-                                end, Hs),
-
-				Hs2 = [{str:tokens(
-					  iolist_to_binary(Path), <<"/">>),
-					Mod} || {Path, Mod} <- Hs1],
-				[{Path,
-				  case Mod of
-				      mod_http_bind -> mod_bosh;
-				      _ -> Mod
-				  end} || {Path, Mod} <- Hs2]
-                        end, []),
+    DefinedHandlers = gen_mod:get_opt(request_handlers, Opts, []),
     RequestHandlers = DefinedHandlers ++ Captcha ++ Register ++
         Admin ++ Bind ++ XMLRPC,
     ?DEBUG("S: ~p~n", [RequestHandlers]),
 
-    DefaultHost = gen_mod:get_opt(default_host, Opts, fun(A) -> A end, undefined),
+    DefaultHost = gen_mod:get_opt(default_host, Opts, undefined),
     {ok, RE} = re:compile(<<"^(?:\\[(.*?)\\]|(.*?))(?::(\\d+))?$">>),
 
-    CustomHeaders = gen_mod:get_opt(custom_headers, Opts,
-				    fun expand_custom_headers/1,
-				    []),
+    CustomHeaders = gen_mod:get_opt(custom_headers, Opts, []),
 
     ?INFO_MSG("started: ~p", [{SockMod1, Socket1}]),
     State = #state{sockmod = SockMod1,
@@ -929,3 +903,48 @@ opt_type(trusted_proxies) ->
     fun (all) -> all;
         (TPs) -> [iolist_to_binary(TP) || TP <- TPs] end;
 opt_type(_) -> [trusted_proxies].
+
+listen_opt_type(tls) ->
+    fun(B) when is_boolean(B) -> B end;
+listen_opt_type(certfile) ->
+    fun iolist_to_binary/1;
+listen_opt_type(ciphers) ->
+    fun iolist_to_binary/1;
+listen_opt_type(dhfile) ->
+    fun iolist_to_binary/1;
+listen_opt_type(protocol_options) ->
+    fun(Options) -> str:join(Options, <<"|">>) end;
+listen_opt_type(tls_compression) ->
+    fun(B) when is_boolean(B) -> B end;
+listen_opt_type(captcha) ->
+    fun(B) when is_boolean(B) -> B end;
+listen_opt_type(register) ->
+    fun(B) when is_boolean(B) -> B end;
+listen_opt_type(web_admin) ->
+    fun(B) when is_boolean(B) -> B end;
+listen_opt_type(http_bind) ->
+    fun(B) when is_boolean(B) -> B end;
+listen_opt_type(xmlrpc) ->
+    fun(B) when is_boolean(B) -> B end;
+listen_opt_type(request_handlers) ->
+    fun(Hs) ->
+	    Hs1 = lists:map(fun
+				({Mod, Path}) when is_atom(Mod) -> {Path, Mod};
+				({Path, Mod}) -> {Path, Mod}
+			    end, Hs),
+	    Hs2 = [{str:tokens(
+		      iolist_to_binary(Path), <<"/">>),
+		    Mod} || {Path, Mod} <- Hs1],
+	    [{Path,
+	      case Mod of
+		  mod_http_bind -> mod_bosh;
+		  _ -> Mod
+	      end} || {Path, Mod} <- Hs2]
+    end;
+listen_opt_type(default_host) ->
+    fun(A) -> A end;
+listen_opt_type(custom_headers) ->
+    fun expand_custom_headers/1;
+listen_opt_type(_) ->
+    %% TODO
+    fun(A) -> A end.
