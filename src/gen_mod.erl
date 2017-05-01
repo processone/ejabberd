@@ -159,7 +159,9 @@ sort_modules(Host, ModOpts) ->
 			end
 		end, Deps)
       end, ModOpts),
-    [digraph:vertex(G, V) || V <- digraph_utils:topsort(G)].
+    Result = [digraph:vertex(G, V) || V <- digraph_utils:topsort(G)],
+    digraph:delete(G),
+    Result.
 
 -spec start_modules(binary()) -> ok.
 
