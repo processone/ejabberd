@@ -178,16 +178,23 @@ start_module(Host, Module) ->
     Modules = get_modules_options(Host),
     case lists:keyfind(Module, 1, Modules) of
 	{_, Opts} ->
-	    start_module(Host, Module, Opts);
+	    start_module(Host, Module, Opts, false);
 	false ->
 	    {error, not_found_in_config}
     end.
 
 -spec start_module(binary(), atom(), opts()) -> ok | {ok, pid()}.
+start_module(Host, Module, Opts) ->
+    start_module(Host, Module, Opts, true).
 
-start_module(Host, Module, Opts0) ->
+-spec start_module(binary(), atom(), opts(), boolean()) -> ok | {ok, pid()}.
+start_module(Host, Module, Opts0, NeedValidation) ->
     ?DEBUG("loading ~s at ~s", [Module, Host]),
-    Opts = validate_opts(Module, Opts0),
+    Opts = if NeedValidation ->
+		   validate_opts(Module, Opts0);
+	      true ->
+		   Opts0
+	   end,
     store_options(Host, Module, Opts),
     try case Module:start(Host, Opts) of
 	    ok -> ok;
@@ -236,19 +243,23 @@ reload_modules(Host) ->
     lists:foreach(
       fun({Mod, OldOpts}) ->
 	      case lists:keyfind(Mod, 1, NewMods) of
-		  {_, NewOpts} when NewOpts /= OldOpts ->
-		      reload_module(Host, Mod, NewOpts, OldOpts);
+		  {_, NewOpts0} ->
+		      case validate_opts(Mod, NewOpts0) of
+			  OldOpts ->
+			      ok;
+			  NewOpts ->
+			      reload_module(Host, Mod, NewOpts, OldOpts)
+		      end;
 		  _ ->
 		      ok
 	      end
       end, OldMods).
 
 -spec reload_module(binary(), module(), opts(), opts()) -> ok | {ok, pid()}.
-reload_module(Host, Module, NewOpts0, OldOpts) ->
+reload_module(Host, Module, NewOpts, OldOpts) ->
     case erlang:function_exported(Module, reload, 3) of
 	true ->
 	    ?DEBUG("reloading ~s at ~s", [Module, Host]),
-	    NewOpts = validate_opts(Module, NewOpts0),
 	    store_options(Host, Module, NewOpts),
 	    try case Module:reload(Host, NewOpts, OldOpts) of
 		    ok -> ok;
@@ -267,7 +278,7 @@ reload_module(Host, Module, NewOpts0, OldOpts) ->
 	    ?WARNING_MSG("module ~s doesn't support reloading "
 			 "and will be restarted", [Module]),
 	    stop_module(Host, Module),
-	    start_module(Host, Module, NewOpts0)
+	    start_module(Host, Module, NewOpts, false)
     end.
 
 -spec store_options(binary(), module(), opts()) -> true.
