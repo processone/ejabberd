@@ -1,7 +1,7 @@
 FROM debian:jessie-slim
 MAINTAINER Rafael Römhild <rafael@roemhild.de>
 
-ENV EJABBERD_BRANCH=17.03 \
+ENV EJABBERD_BRANCH=17.04 \
     EJABBERD_USER=ejabberd \
     EJABBERD_HTTPS=true \
     EJABBERD_STARTTLS=true \
@@ -68,6 +68,7 @@ RUN set -x \
     && chmod +x ./autogen.sh \
     && ./autogen.sh \
     && ./configure --enable-user=$EJABBERD_USER \
+        --prefix=/ \
         --enable-all \
         --disable-tools \
         --disable-pam \
