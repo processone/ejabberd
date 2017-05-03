@@ -429,9 +429,10 @@ mod_opt_type(ldap_uids) ->
     fun (Us) ->
 	    lists:map(fun ({U, P}) ->
 			      {iolist_to_binary(U), iolist_to_binary(P)};
-			  ({U}) -> {iolist_to_binary(U)}
+			  ({U}) -> {iolist_to_binary(U)};
+			  (U) -> {iolist_to_binary(U)}
 		      end,
-		      Us)
+		      lists:flatten(Us))
     end;
 mod_opt_type(ldap_vcard_map) ->
     fun (Ls) ->
