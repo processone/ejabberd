@@ -740,7 +740,10 @@ process_admin(Host,
 		  {ok, Tokens, _} ->
 		      case erl_parse:parse_term(Tokens) of
 			{ok, NewACLs} ->
-                            acl:add_list(Host, NewACLs, true);
+			    case catch acl:add_list(Host, NewACLs, true) of
+				ok -> ok;
+				_ -> error
+			    end;
 			_ -> error
 		      end;
 		  _ -> error
@@ -779,8 +782,11 @@ process_admin(Host,
 		case catch acl_parse_query(Host, Query) of
 		  {'EXIT', _} -> error;
 		  NewACLs ->
-		      ?INFO_MSG("NewACLs at ~s: ~p", [Host, NewACLs]),
-		      acl:add_list(Host, NewACLs, true)
+			?INFO_MSG("NewACLs at ~s: ~p", [Host, NewACLs]),
+			case catch acl:add_list(Host, NewACLs, true) of
+			    ok -> ok;
+			    _ -> error
+			end
 		end;
 	    _ -> nothing
 	  end,
