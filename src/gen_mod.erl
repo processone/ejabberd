@@ -191,7 +191,7 @@ start_module(Host, Module, Opts) ->
 start_module(Host, Module, Opts0, NeedValidation) ->
     ?DEBUG("loading ~s at ~s", [Module, Host]),
     Opts = if NeedValidation ->
-		   validate_opts(Module, Opts0);
+		   validate_opts(Host, Module, Opts0);
 	      true ->
 		   Opts0
 	   end,
@@ -244,7 +244,7 @@ reload_modules(Host) ->
       fun({Mod, OldOpts}) ->
 	      case lists:keyfind(Mod, 1, NewMods) of
 		  {_, NewOpts0} ->
-		      case validate_opts(Mod, NewOpts0) of
+		      case validate_opts(Host, Mod, NewOpts0) of
 			  OldOpts ->
 			      ok;
 			  NewOpts ->
@@ -441,74 +441,95 @@ get_opt_host(Host, Opts, Default) ->
     Val = get_opt(host, Opts, Default),
     ejabberd_regexp:greplace(Val, <<"@HOST@">>, Host).
 
-
-get_module_mod_opt_type_fun(Module) ->
-    DBSubMods = ejabberd_config:v_dbs_mods(Module),
-    fun(Opt) ->
-	    Res = lists:foldl(fun(Mod, {Funs, ArgsList, _} = Acc) ->
-				      case catch Mod:mod_opt_type(Opt) of
-					  Fun when is_function(Fun) ->
-					      {[Fun | Funs], ArgsList, true};
-					  L when is_list(L) ->
-					      {Funs, L ++ ArgsList, true};
-					  _ ->
-					      Acc
-				      end
-			      end, {[], [], false}, [Module | DBSubMods]),
-	    case Res of
-		{[], [], false} ->
-		    throw({'EXIT', {undef, mod_opt_type}});
-		{[], Args, _} -> Args;
-		{Funs, _, _} ->
-		    fun(Val) -> try_mod_opt_type(Funs, Val) end
-	    end
+-spec get_validators(binary(), module(), opts()) -> {ok, [{atom(), check_fun()}]} | undef.
+get_validators(Host, Module, Opts) ->
+    try Module:mod_opt_type('') of
+	L ->
+	    SubMods1 = case lists:member(db_type, L) of
+			   true -> [db_mod(Host, Opts, Module)];
+			   false -> []
+		       end,
+	    SubMods2 = case lists:member(ram_db_type, L) of
+			   true -> [ram_db_mod(Host, Opts, Module)];
+			   false -> []
+		       end,
+	    {ok, dict:to_list(
+		   lists:foldl(
+		     fun(Mod, D) ->
+			     try Mod:mod_opt_type('') of
+				 Os ->
+				     lists:foldl(
+				       fun({Opt, SubOpt} = O, Acc) ->
+					       F = Mod:mod_opt_type(O),
+					       dict:append(Opt, {SubOpt, F}, Acc);
+					  (O, Acc) ->
+					       F = Mod:mod_opt_type(O),
+					       dict:store(O, F, Acc)
+				       end, D, Os)
+			     catch _:undef ->
+				     D
+			     end
+		     end, dict:new(), [Module|SubMods1 ++ SubMods2]))}
+    catch _:undef ->
+	    ?WARNING_MSG("module '~s' doesn't export mod_opt_type/1",
+			 [Module]),
+	    undef
     end.
 
-try_mod_opt_type([Fun|Funs], Val) ->
-    try Fun(Val) of
-	NewVal -> NewVal
-    catch {invalid_syntax, _Error} = E2 ->
-	    throw(E2);
-	  _:_ ->
-	    try_mod_opt_type(Funs, Val)
+-spec validate_opts(binary(), module(), opts()) -> opts().
+validate_opts(Host, Module, Opts) ->
+    case get_validators(Host, Module, Opts) of
+	{ok, Validators} ->
+	    validate_opts(Host, Module, Opts, Validators);
+	undef ->
+	    Opts
     end.
 
-validate_opts(Module, Opts) ->
-    ModOptFun = get_module_mod_opt_type_fun(Module),
-    lists:filtermap(
-      fun({Opt, Val}) ->
-	      case catch ModOptFun(Opt) of
-		  VFun when is_function(VFun) ->
-		      try VFun(Val) of
-			  NewVal ->
-			      {true, {Opt, NewVal}}
-		      catch {invalid_syntax, Error} ->
-			      ?ERROR_MSG("ignoring invalid value '~p' for "
-					 "option '~s' of module '~s': ~s",
-					 [Val, Opt, Module, Error]),
-			      false;
-			    _:_ ->
+validate_opts(Host, Module, Opts, Validators) when is_list(Opts) ->
+    lists:flatmap(
+      fun({Opt, Val}) when is_atom(Opt) ->
+	      case lists:keyfind(Opt, 1, Validators) of
+		  {_, VFun} when is_function(VFun) ->
+		      validate_opt(Module, Opt, Val, VFun);
+		  {_, SubValidators} ->
+		      try validate_opts(Host, Module, Val, SubValidators) of
+			  SubOpts -> [{Opt, SubOpts}]
+		      catch _:bad_option ->
 			      ?ERROR_MSG("ignoring invalid value '~p' for "
 					 "option '~s' of module '~s'",
 					 [Val, Opt, Module]),
-			      false
+			      []
 		      end;
-		  L when is_list(L) ->
-		      SOpts = str:join([[$', atom_to_list(A), $'] || A <- L], <<", ">>),
+		  false ->
 		      ?ERROR_MSG("unknown option '~s' for module '~s' will be"
 				 " likely ignored, available options are: ~s",
-				 [Opt, Module, SOpts]),
-		      true;
-		  {'EXIT', {undef, _}} ->
-		      ?WARNING_MSG("module '~s' doesn't export mod_opt_type/1",
-				   [Module]),
-		      true
+				 [Opt, Module,
+				  misc:join_atoms([K || {K, _} <- Validators],
+						  <<", ">>)]),
+		      [{Opt, Val}]
 	      end;
-	 (Junk) ->
-	      ?ERROR_MSG("failed to understand option ~p for module '~s'",
-			 [Junk, Module]),
-	      false
-      end, Opts).
+	 (_) ->
+	      erlang:error(bad_option)
+      end, Opts);
+validate_opts(_, _, _, _) ->
+    erlang:error(bad_option).
+
+-spec validate_opt(module(), atom(), any(),
+		   [{atom(), check_fun(), any()}]) -> [{atom(), any()}].
+validate_opt(Module, Opt, Val, VFun) ->
+    try VFun(Val) of
+	NewVal -> [{Opt, NewVal}]
+    catch {invalid_syntax, Error} ->
+	    ?ERROR_MSG("ignoring invalid value '~p' for "
+		       "option '~s' of module '~s': ~s",
+		       [Val, Opt, Module, Error]),
+	    [];
+	  _:_ ->
+	    ?ERROR_MSG("ignoring invalid value '~p' for "
+		       "option '~s' of module '~s'",
+		       [Val, Opt, Module]),
+	    []
+    end.
 
 -spec db_type(binary() | global, module()) -> db_type();
 	     (opts(), module()) -> db_type().
