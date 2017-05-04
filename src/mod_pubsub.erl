@@ -246,7 +246,7 @@ init([ServerHost, Opts]) ->
     ejabberd_router:register_route(Host, ServerHost),
     Access = gen_mod:get_opt(access_createnode, Opts, all),
     PepOffline = gen_mod:get_opt(ignore_pep_from_offline, Opts, true),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
     LastItemCache = gen_mod:get_opt(last_item_cache, Opts, false),
     MaxItemsNode = gen_mod:get_opt(max_items_node, Opts, ?MAXITEMS),
     MaxSubsNode = gen_mod:get_opt(max_subscriptions_node, Opts),

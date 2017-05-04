@@ -129,7 +129,7 @@ init([Host, Opts]) ->
     process_flag(trap_exit, true),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, no_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
     ejabberd_hooks:add(offline_message_hook, Host, ?MODULE,
 		       store_packet, 50),
     ejabberd_hooks:add(c2s_self_presence, Host, ?MODULE, c2s_self_presence, 50),
@@ -173,7 +173,7 @@ handle_cast({reload, NewOpts, OldOpts}, #state{host = Host} = State) ->
        true ->
 	    ok
     end,
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, one_queue) of
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
 	{false, IQDisc, _} ->
 	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_FLEX_OFFLINE,
 					  ?MODULE, handle_offline_query, IQDisc);

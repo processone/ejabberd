@@ -60,7 +60,7 @@ reload(Host, NewOpts, OldOpts) ->
 
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
     MyHost = gen_mod:get_opt_host(Host, Opts, <<"proxy.@HOST@">>),
     gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_INFO,
 				  ?MODULE, process_disco_info, IQDisc),
@@ -91,8 +91,8 @@ handle_call(_Request, _From, State) ->
 handle_cast({reload, ServerHost, NewOpts, OldOpts}, State) ->
     NewHost = gen_mod:get_opt_host(ServerHost, NewOpts, <<"proxy.@HOST@">>),
     OldHost = gen_mod:get_opt_host(ServerHost, OldOpts, <<"proxy.@HOST@">>),
-    NewIQDisc = gen_mod:get_opt(iqdisc, NewOpts, one_queue),
-    OldIQDisc = gen_mod:get_opt(iqdisc, OldOpts, one_queue),
+    NewIQDisc = gen_mod:get_opt(iqdisc, NewOpts, gen_iq_handler:iqdisc(ServerHost)),
+    OldIQDisc = gen_mod:get_opt(iqdisc, OldOpts, gen_iq_handler:iqdisc(ServerHost)),
     if (NewIQDisc /= OldIQDisc) or (NewHost /= OldHost) ->
 	    gen_iq_handler:add_iq_handler(ejabberd_local, NewHost, ?NS_DISCO_INFO,
 					  ?MODULE, process_disco_info, NewIQDisc),

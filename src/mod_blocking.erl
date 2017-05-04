@@ -46,7 +46,7 @@
 -type block_event() :: {block, [jid()]} | {unblock, [jid()]} | unblock_all.
 
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
     ejabberd_hooks:add(disco_local_features, Host, ?MODULE, disco_features, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
 				  ?NS_BLOCKING, ?MODULE, process_iq, IQDisc).
@@ -56,7 +56,7 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_BLOCKING).
 
 reload(Host, NewOpts, OldOpts) ->
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, one_queue) of
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
 	{false, IQDisc, _} ->
 	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_BLOCKING,
 					  ?MODULE, process_iq, IQDisc);

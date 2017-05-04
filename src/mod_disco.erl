@@ -50,7 +50,7 @@
 -type items_acc() :: {error, stanza_error()} | {result, [disco_item()]} | empty.
 
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
 				  ?NS_DISCO_ITEMS, ?MODULE,
 				  process_local_iq_items, IQDisc),
@@ -128,7 +128,7 @@ reload(Host, NewOpts, OldOpts) ->
 	true ->
 	    ok
     end,
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, one_queue) of
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
 	{false, IQDisc, _} ->
 	    gen_iq_handler:add_iq_handler(ejabberd_local, Host,
 					  ?NS_DISCO_ITEMS, ?MODULE,

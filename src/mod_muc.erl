@@ -224,7 +224,7 @@ get_online_rooms_by_user(ServerHost, LUser, LServer) ->
 
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
     #state{access = Access, host = MyHost,
 	   history_size = HistorySize, queue_type = QueueType,
 	   room_shaper = RoomShaper} = State = init_state(Host, Opts),
@@ -259,8 +259,8 @@ handle_call({create, Room, From, Nick, Opts}, _From,
     {reply, ok, State}.
 
 handle_cast({reload, ServerHost, NewOpts, OldOpts}, #state{host = OldHost}) ->
-    NewIQDisc = gen_mod:get_opt(iqdisc, NewOpts, one_queue),
-    OldIQDisc = gen_mod:get_opt(iqdisc, OldOpts, one_queue),
+    NewIQDisc = gen_mod:get_opt(iqdisc, NewOpts, gen_iq_handler:iqdisc(ServerHost)),
+    OldIQDisc = gen_mod:get_opt(iqdisc, OldOpts, gen_iq_handler:iqdisc(ServerHost)),
     NewMod = gen_mod:db_mod(ServerHost, NewOpts, ?MODULE),
     NewRMod = gen_mod:ram_db_mod(ServerHost, NewOpts, ?MODULE),
     OldMod = gen_mod:db_mod(ServerHost, OldOpts, ?MODULE),

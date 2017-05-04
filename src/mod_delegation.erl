@@ -170,7 +170,7 @@ handle_cast({disco_info, Type, Host, NS, Info}, State) ->
 			   sub_els = [#delegation{delegated = [#delegated{ns = NS}]}]},
 	    Delegations = dict:store({NS, Type}, {Host, Info}, State#state.delegations),
 	    gen_iq_handler:add_iq_handler(Type, State#state.server_host, NS,
-					  ?MODULE, Type, one_queue),
+					  ?MODULE, Type, gen_iq_handler:iqdisc(Host)),
 	    ejabberd_router:route(Msg),
 	    ?INFO_MSG("Namespace '~s' is delegated to external component '~s'",
 		      [NS, Host]),

@@ -61,7 +61,7 @@ is_carbon_copy(_) ->
     false.
 
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
     ejabberd_hooks:add(disco_local_features, Host, ?MODULE, disco_features, 50),
     Mod = gen_mod:ram_db_mod(Host, ?MODULE),
     init_cache(Mod, Host, Opts),
@@ -95,7 +95,7 @@ reload(Host, NewOpts, OldOpts) ->
 	false ->
 	    ok
     end,
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, one_queue) of
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
 	{false, IQDisc, _} ->
 	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_CARBONS_2,
 					  ?MODULE, iq_handler, IQDisc);

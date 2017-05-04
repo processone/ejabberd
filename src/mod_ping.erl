@@ -95,7 +95,7 @@ reload(Host, NewOpts, OldOpts) ->
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
     State = init_state(Host, Opts),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, no_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
     register_iq_handlers(Host, IQDisc),
     case State#state.send_pings of
 	true -> register_hooks(Host);
@@ -114,7 +114,7 @@ handle_call(_Req, _From, State) ->
 
 handle_cast({reload, Host, NewOpts, OldOpts},
 	    #state{timers = Timers} = OldState) ->
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, one_queue) of
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
 	{false, IQDisc, _} -> register_iq_handlers(Host, IQDisc);
 	true -> ok
     end,
