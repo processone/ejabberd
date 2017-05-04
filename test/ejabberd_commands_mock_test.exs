@@ -42,7 +42,7 @@ defmodule EjabberdCommandsMockTest do
 	Record.defrecord :ejabberd_commands, Record.extract(:ejabberd_commands,	from_lib: "ejabberd/include/ejabberd_commands.hrl")
 
 	setup_all do
-        :ok = :ejabberd.start_app(:lager)
+    :ok = :ejabberd.start_app(:lager)
 		try do
 			:stringprep.start
 		rescue
@@ -50,14 +50,15 @@ defmodule EjabberdCommandsMockTest do
 		end
 		:mnesia.start
 		:ejabberd_mnesia.start
-        :jid.start
-        :ejabberd_hooks.start_link
-        :ok = :ejabberd_config.start(["domain1", "domain2"], [])
-        {:ok, _} = :ejabberd_access_permissions.start_link()
-        {:ok, _} = :acl.start_link
+    :jid.start
+    :ejabberd_hooks.start_link
+    :ok = :ejabberd_config.start(["domain1", "domain2"], [])
+    {:ok, _} = :ejabberd_access_permissions.start_link()
+    {:ok, _} = :acl.start_link
+    :ejabberd_oauth.start_link
 		:ejabberd_commands.start_link
 		EjabberdOauthMock.init
-        on_exit fn -> :meck.unload end
+    on_exit fn -> :meck.unload end
 	end
 
 	setup do
@@ -453,13 +454,17 @@ defmodule EjabberdCommandsMockTest do
 
 		:meck.new :ejabberd_config
 		:meck.expect(:ejabberd_config, :get_option,
-			fn(:commands_admin_access, _, _) -> :commands_admin_access
-			  (:oauth_access, _, _) -> :all
-        (:commands, _, _) -> [{:add_commands, commands}]
-				(_, _, default) -> default
+      fn(:commands_admin_access, _) -> :commands_admin_access
+        (:oauth_access, _) -> :all
+        (:commands, _) -> [{:add_commands, commands}]
+        (_, default) -> default
 			end)
 		:meck.expect(:ejabberd_config, :get_myhosts,
 			fn() -> [@domain]	end)
+    :meck.expect(:ejabberd_config, :default_db,
+      fn(_) -> :mnesia	end)
+    :meck.expect(:ejabberd_config, :default_db,
+      fn(_, _) -> :mnesia	end)
 
 		:meck.new :acl
 		:meck.expect(:acl, :access_matches,
