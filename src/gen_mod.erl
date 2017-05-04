@@ -178,7 +178,7 @@ start_module(Host, Module) ->
     Modules = get_modules_options(Host),
     case lists:keyfind(Module, 1, Modules) of
 	{_, Opts} ->
-	    start_module(Host, Module, Opts, false);
+	    start_module(Host, Module, Opts);
 	false ->
 	    {error, not_found_in_config}
     end.
