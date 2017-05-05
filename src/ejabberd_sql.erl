@@ -284,11 +284,11 @@ init([Host, StartInterval]) ->
 
 connecting(connect, #state{host = Host} = State) ->
     ConnectRes = case db_opts(Host) of
-		   [mysql | Args] -> apply(fun mysql_connect/7, Args);
-           [pgsql | Args] -> apply(fun pgsql_connect/7, Args);
+		   [mysql | Args] -> apply(fun mysql_connect/8, Args);
+           [pgsql | Args] -> apply(fun pgsql_connect/8, Args);
            [sqlite | Args] -> apply(fun sqlite_connect/1, Args);
-		   [mssql | Args] -> apply(fun odbc_connect/1, Args);
-		   [odbc | Args] -> apply(fun odbc_connect/1, Args)
+		   [mssql | Args] -> apply(fun odbc_connect/2, Args);
+		   [odbc | Args] -> apply(fun odbc_connect/2, Args)
 		 end,
     case ConnectRes of
         {ok, Ref} ->
@@ -739,11 +739,12 @@ abort_on_driver_error(Reply, From) ->
 
 %% part of init/1
 %% Open an ODBC database connection
-odbc_connect(SQLServer) ->
+odbc_connect(SQLServer, Timeout) ->
     ejabberd:start_app(odbc),
     odbc:connect(binary_to_list(SQLServer),
 		 [{scrollable_cursors, off},
 		  {tuple_row, off},
+		  {timeout, Timeout},
 		  {binary_strings, on}]).
 
 %% == Native SQLite code
@@ -791,13 +792,15 @@ sqlite_to_odbc(_Host, _) ->
 
 %% part of init/1
 %% Open a database connection to PostgreSQL
-pgsql_connect(Server, Port, DB, Username, Password, Transport, SSLOpts) ->
+pgsql_connect(Server, Port, DB, Username, Password, ConnectTimeout,
+	      Transport, SSLOpts) ->
     case pgsql:connect([{host, Server},
                         {database, DB},
                         {user, Username},
                         {password, Password},
                         {port, Port},
 			{transport, Transport},
+			{connect_timeout, ConnectTimeout},
                         {as_binary, true}|SSLOpts]) of
         {ok, Ref} ->
             pgsql:squery(Ref, [<<"alter database \"">>, DB, <<"\" set ">>,
@@ -847,11 +850,12 @@ pgsql_execute_to_odbc(_) -> {updated, undefined}.
 
 %% part of init/1
 %% Open a database connection to MySQL
-mysql_connect(Server, Port, DB, Username, Password, _, _) ->
+mysql_connect(Server, Port, DB, Username, Password, ConnectTimeout,  _, _) ->
     case p1_mysql_conn:start(binary_to_list(Server), Port,
 			     binary_to_list(Username),
 			     binary_to_list(Password),
-			     binary_to_list(DB), fun log/3)
+			     binary_to_list(DB),
+			     ConnectTimeout, fun log/3)
 	of
 	{ok, Ref} ->
 	    p1_mysql_conn:fetch(
@@ -923,6 +927,8 @@ log(Level, Format, Args) ->
 db_opts(Host) ->
     Type = ejabberd_config:get_option({sql_type, Host}, odbc),
     Server = ejabberd_config:get_option({sql_server, Host}, <<"localhost">>),
+    Timeout = timer:seconds(
+		ejabberd_config:get_option({sql_connect_timeout, Host}, 5)),
     Transport = case ejabberd_config:get_option({sql_ssl, Host}, false) of
 		    false -> tcp;
 		    true -> ssl
@@ -930,7 +936,7 @@ db_opts(Host) ->
     warn_if_ssl_unsupported(Transport, Type),
     case Type of
         odbc ->
-            [odbc, Server];
+            [odbc, Server, Timeout];
         sqlite ->
             [sqlite, Host];
         _ ->
@@ -951,9 +957,9 @@ db_opts(Host) ->
 	    case Type of
 		mssql ->
 		    [mssql, <<"DSN=", Host/binary, ";UID=", User/binary,
-			      ";PWD=", Pass/binary>>];
+			      ";PWD=", Pass/binary>>, Timeout];
 		_ ->
-		    [Type, Server, Port, DB, User, Pass, Transport, SSLOpts]
+		    [Type, Server, Port, DB, User, Pass, Timeout, Transport, SSLOpts]
 	    end
     end.
 
@@ -1088,10 +1094,13 @@ opt_type(sql_ssl_certfile) -> fun iolist_to_binary/1;
 opt_type(sql_ssl_cafile) -> fun iolist_to_binary/1;
 opt_type(sql_query_timeout) ->
     fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(sql_connect_timeout) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
 opt_type(sql_queue_type) ->
     fun(ram) -> ram; (file) -> file end;
 opt_type(_) ->
     [sql_database, sql_keepalive_interval,
      sql_password, sql_port, sql_server,
      sql_username, sql_ssl, sql_ssl_verify, sql_ssl_cerfile,
-     sql_ssl_cafile, sql_queue_type, sql_query_timeout].
+     sql_ssl_cafile, sql_queue_type, sql_query_timeout,
+     sql_connect_timeout].
