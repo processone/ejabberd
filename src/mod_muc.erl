@@ -337,59 +337,9 @@ init_state(Host, Opts) ->
     AccessPersistent = gen_mod:get_opt(access_persistent, Opts, all),
     HistorySize = gen_mod:get_opt(history_size, Opts, 20),
     MaxRoomsDiscoItems = gen_mod:get_opt(max_rooms_discoitems, Opts, 100),
-    DefRoomOpts1 = gen_mod:get_opt(default_room_options, Opts, []),
+    DefRoomOpts = gen_mod:get_opt(default_room_options, Opts, []),
     QueueType = gen_mod:get_opt(queue_type, Opts,
 				ejabberd_config:default_queue_type(Host)),
-    DefRoomOpts =
-	lists:flatmap(
-	  fun({Opt, Val}) ->
-		  Bool = fun(B) when is_boolean(B) -> B end,
-		  VFun = case Opt of
-			     allow_change_subj -> Bool;
-			     allow_private_messages -> Bool;
-			     allow_query_users -> Bool;
-			     allow_user_invites -> Bool;
-			     allow_visitor_nickchange -> Bool;
-			     allow_visitor_status -> Bool;
-			     anonymous -> Bool;
-			     captcha_protected -> Bool;
-			     logging -> Bool;
-			     members_by_default -> Bool;
-			     members_only -> Bool;
-			     moderated -> Bool;
-			     password_protected -> Bool;
-			     persistent -> Bool;
-			     public -> Bool;
-			     public_list -> Bool;
-			     mam -> Bool;
-			     allow_subscription -> Bool;
-			     password -> fun iolist_to_binary/1;
-			     title -> fun iolist_to_binary/1;
-			     allow_private_messages_from_visitors ->
-				 fun(anyone) -> anyone;
-				    (moderators) -> moderators;
-				    (nobody) -> nobody
-				 end;
-			     max_users ->
-				 fun(I) when is_integer(I), I > 0 -> I end;
-                             presence_broadcast ->
-                                 fun(L) ->
-                                         lists:map(
-                                           fun(moderator) -> moderator;
-                                              (participant) -> participant;
-                                              (visitor) -> visitor
-                                           end, L)
-                                 end;
-			     _ ->
-				 ?ERROR_MSG("unknown option ~p with value ~p",
-					    [Opt, Val]),
-				 fun(_) -> undefined end
-			 end,
-		  case ejabberd_config:prepare_opt_val(Opt, Val, VFun, undefined) of
-		      undefined -> [];
-		      NewVal -> [{Opt, NewVal}]
-		  end
-	  end, DefRoomOpts1),
     RoomShaper = gen_mod:get_opt(room_shaper, Opts, none),
     #state{host = MyHost,
 	   server_host = Host,
@@ -897,8 +847,6 @@ mod_opt_type(access_persistent) ->
     fun acl:access_rules_validator/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(ram_db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
-mod_opt_type(default_room_options) ->
-    fun (L) when is_list(L) -> L end;
 mod_opt_type(history_size) ->
     fun (I) when is_integer(I), I >= 0 -> I end;
 mod_opt_type(host) -> fun iolist_to_binary/1;
@@ -938,11 +886,89 @@ mod_opt_type(user_presence_shaper) ->
     fun (A) when is_atom(A) -> A end;
 mod_opt_type(queue_type) ->
     fun(ram) -> ram; (file) -> file end;
+mod_opt_type({default_room_options, allow_change_subj}) ->
+    fun(B) when is_boolean(B) -> B end;
+mod_opt_type({default_room_options, allow_private_messages}) ->
+    fun(B) when is_boolean(B) -> B end;
+mod_opt_type({default_room_options, allow_query_users}) ->
+    fun(B) when is_boolean(B) -> B end;
+mod_opt_type({default_room_options, allow_user_invites}) ->
+    fun(B) when is_boolean(B) -> B end;
+mod_opt_type({default_room_options, allow_visitor_nickchange}) ->
+    fun(B) when is_boolean(B) -> B end;
+mod_opt_type({default_room_options, allow_visitor_status}) ->
+    fun(B) when is_boolean(B) -> B end;
+mod_opt_type({default_room_options, anonymous}) ->
+    fun(B) when is_boolean(B) -> B end;
+mod_opt_type({default_room_options, captcha_protected}) ->
+    fun(B) when is_boolean(B) -> B end;
+mod_opt_type({default_room_options, logging}) ->
+    fun(B) when is_boolean(B) -> B end;
+mod_opt_type({default_room_options, members_by_default}) ->
+    fun(B) when is_boolean(B) -> B end;
+mod_opt_type({default_room_options, members_only}) ->
+    fun(B) when is_boolean(B) -> B end;
+mod_opt_type({default_room_options, moderated}) ->
+    fun(B) when is_boolean(B) -> B end;
+mod_opt_type({default_room_options, password_protected}) ->
+    fun(B) when is_boolean(B) -> B end;
+mod_opt_type({default_room_options, persistent}) ->
+    fun(B) when is_boolean(B) -> B end;
+mod_opt_type({default_room_options, public}) ->
+    fun(B) when is_boolean(B) -> B end;
+mod_opt_type({default_room_options, public_list}) ->
+    fun(B) when is_boolean(B) -> B end;
+mod_opt_type({default_room_options, mam}) ->
+    fun(B) when is_boolean(B) -> B end;
+mod_opt_type({default_room_options, allow_subscription}) ->
+    fun(B) when is_boolean(B) -> B end;
+mod_opt_type({default_room_options, password}) ->
+    fun iolist_to_binary/1;
+mod_opt_type({default_room_options, title}) ->
+    fun iolist_to_binary/1;
+mod_opt_type({default_room_options, allow_private_messages_from_visitors}) ->
+    fun(anyone) -> anyone;
+       (moderators) -> moderators;
+       (nobody) -> nobody
+    end;
+mod_opt_type({default_room_options, max_users}) ->
+    fun(I) when is_integer(I), I > 0 -> I end;
+mod_opt_type({default_room_options, presence_broadcast}) ->
+    fun(L) ->
+	    lists:map(
+	      fun(moderator) -> moderator;
+		 (participant) -> participant;
+		 (visitor) -> visitor
+	      end, L)
+    end;
 mod_opt_type(_) ->
     [access, access_admin, access_create, access_persistent,
-     db_type, ram_db_type, default_room_options, history_size, host,
+     db_type, ram_db_type, history_size, host,
      max_room_desc, max_room_id, max_room_name,
      max_rooms_discoitems, max_user_conferences, max_users,
      max_users_admin_threshold, max_users_presence,
      min_message_interval, min_presence_interval, queue_type,
-     regexp_room_id, room_shaper, user_message_shaper, user_presence_shaper].
+     regexp_room_id, room_shaper, user_message_shaper, user_presence_shaper,
+     {default_room_options, allow_change_subj},
+     {default_room_options, allow_private_messages},
+     {default_room_options, allow_query_users},
+     {default_room_options, allow_user_invites},
+     {default_room_options, allow_visitor_nickchange},
+     {default_room_options, allow_visitor_status},
+     {default_room_options, anonymous},
+     {default_room_options, captcha_protected},
+     {default_room_options, logging},
+     {default_room_options, members_by_default},
+     {default_room_options, members_only},
+     {default_room_options, moderated},
+     {default_room_options, password_protected},
+     {default_room_options, persistent},
+     {default_room_options, public},
+     {default_room_options, public_list},
+     {default_room_options, mam},
+     {default_room_options, allow_subscription},
+     {default_room_options, password},
+     {default_room_options, title},
+     {default_room_options, allow_private_messages_from_visitors},
+     {default_room_options, max_users},
+     {default_room_options, presence_broadcast}].

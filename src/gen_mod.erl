@@ -441,7 +441,7 @@ get_opt_host(Host, Opts, Default) ->
     Val = get_opt(host, Opts, Default),
     ejabberd_regexp:greplace(Val, <<"@HOST@">>, Host).
 
--spec get_validators(binary(), module(), opts()) -> {ok, [{atom(), check_fun()}]} | undef.
+-spec get_validators(binary(), module(), opts()) -> dict:dict() | undef.
 get_validators(Host, Module, Opts) ->
     try Module:mod_opt_type('') of
 	L ->
@@ -453,23 +453,29 @@ get_validators(Host, Module, Opts) ->
 			   true -> [ram_db_mod(Host, Opts, Module)];
 			   false -> []
 		       end,
-	    {ok, dict:to_list(
-		   lists:foldl(
-		     fun(Mod, D) ->
-			     try Mod:mod_opt_type('') of
-				 Os ->
-				     lists:foldl(
-				       fun({Opt, SubOpt} = O, Acc) ->
-					       F = Mod:mod_opt_type(O),
-					       dict:append(Opt, {SubOpt, F}, Acc);
-					  (O, Acc) ->
-					       F = Mod:mod_opt_type(O),
-					       dict:store(O, F, Acc)
-				       end, D, Os)
-			     catch _:undef ->
-				     D
-			     end
-		     end, dict:new(), [Module|SubMods1 ++ SubMods2]))}
+	    lists:foldl(
+	      fun(Mod, D) ->
+		      try Mod:mod_opt_type('') of
+			  Os ->
+			      lists:foldl(
+				fun({Opt, SubOpt} = O, Acc) ->
+					SubF = Mod:mod_opt_type(O),
+					F = case Mod:mod_opt_type(Opt) of
+						F1 when is_function(F1) ->
+						    F1;
+						_ ->
+						    fun(X) -> X end
+					    end,
+					dict:append_list(
+					  Opt, [F, {SubOpt, [SubF]}], Acc);
+				   (O, Acc) ->
+					F = Mod:mod_opt_type(O),
+					dict:store(O, [F], Acc)
+				end, D, Os)
+		      catch _:undef ->
+			      D
+		      end
+	      end, dict:new(), [Module|SubMods1 ++ SubMods2])
     catch _:undef ->
 	    ?WARNING_MSG("module '~s' doesn't export mod_opt_type/1",
 			 [Module]),
@@ -479,26 +485,30 @@ get_validators(Host, Module, Opts) ->
 -spec validate_opts(binary(), module(), opts()) -> opts().
 validate_opts(Host, Module, Opts) ->
     case get_validators(Host, Module, Opts) of
-	{ok, Validators} ->
-	    validate_opts(Host, Module, Opts, Validators);
 	undef ->
-	    Opts
+	    Opts;
+	Validators ->
+	    validate_opts(Host, Module, Opts, dict:to_list(Validators))
     end.
 
 validate_opts(Host, Module, Opts, Validators) when is_list(Opts) ->
     lists:flatmap(
       fun({Opt, Val}) when is_atom(Opt) ->
 	      case lists:keyfind(Opt, 1, Validators) of
-		  {_, VFun} when is_function(VFun) ->
-		      validate_opt(Module, Opt, Val, VFun);
-		  {_, SubValidators} ->
-		      try validate_opts(Host, Module, Val, SubValidators) of
-			  SubOpts -> [{Opt, SubOpts}]
-		      catch _:bad_option ->
-			      ?ERROR_MSG("ignoring invalid value '~p' for "
-					 "option '~s' of module '~s'",
-					 [Val, Opt, Module]),
-			      []
+		  {_, L} ->
+		      case lists:partition(fun is_function/1, L) of
+			  {[VFun|_], []} ->
+			      validate_opt(Module, Opt, Val, VFun);
+			  {[VFun|_], SubValidators} ->
+			      try validate_opts(Host, Module, Val, SubValidators) of
+				  SubOpts ->
+				      validate_opt(Module, Opt, SubOpts, VFun)
+			      catch _:bad_option ->
+				      ?ERROR_MSG("ignoring invalid value '~p' for "
+						 "option '~s' of module '~s'",
+						 [Val, Opt, Module]),
+				      []
+			      end
 		      end;
 		  false ->
 		      ?ERROR_MSG("unknown option '~s' for module '~s' will be"

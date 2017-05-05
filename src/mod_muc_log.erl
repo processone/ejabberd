@@ -1185,11 +1185,13 @@ mod_opt_type(file_format) ->
     end;
 mod_opt_type(file_permissions) ->
     fun (SubOpts) ->
-	    F = fun ({mode, Mode}, {_M, G}) -> {Mode, G};
-		    ({group, Group}, {M, _G}) -> {M, Group}
-		end,
-	    lists:foldl(F, {644, 33}, SubOpts)
+	    {proplists:get_value(mode, SubOpts, 644),
+	     proplists:get_value(group, SubOpts, 33)}
     end;
+mod_opt_type({file_permissions, mode}) ->
+    fun(I) when is_integer(I), I>=0 -> I end;
+mod_opt_type({file_permissions, group}) ->
+    fun(I) when is_integer(I), I>=0 -> I end;
 mod_opt_type(outdir) -> fun iolist_to_binary/1;
 mod_opt_type(spam_prevention) ->
     fun (B) when is_boolean(B) -> B end;
@@ -1203,5 +1205,5 @@ mod_opt_type(top_link) ->
     end;
 mod_opt_type(_) ->
     [access_log, cssfile, dirname, dirtype, file_format,
-     file_permissions, outdir, spam_prevention, timezone,
-     top_link].
+     {file_permissions, mode}, {file_permissions, group},
+     outdir, spam_prevention, timezone, top_link].

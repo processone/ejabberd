@@ -58,31 +58,12 @@ stop(Host) ->
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.
 
-mod_opt_type(roster) ->
-    fun(Props) ->
-	    lists:map(
-	      fun({both, ACL}) -> {both, acl:access_rules_validator(ACL)};
-		 ({get, ACL}) -> {get, acl:access_rules_validator(ACL)};
-		 ({set, ACL}) -> {set, acl:access_rules_validator(ACL)}
-	      end, Props)
-    end;
-mod_opt_type(message) ->
-    fun(Props) ->
-	    lists:map(
-	      fun({outgoing, ACL}) -> {outgoing, acl:access_rules_validator(ACL)}
-	      end, Props)
-    end;
-mod_opt_type(presence) ->
-    fun(Props) ->
-	    lists:map(
-	      fun({managed_entity, ACL}) ->
-		      {managed_entity, acl:access_rules_validator(ACL)};
-		 ({roster, ACL}) ->
-		      {roster, acl:access_rules_validator(ACL)}
-	      end, Props)
-    end;
+mod_opt_type({roster, _}) -> fun acl:access_rules_validator/1;
+mod_opt_type({message, _}) -> fun acl:access_rules_validator/1;
+mod_opt_type({presence, _}) -> fun acl:access_rules_validator/1;
 mod_opt_type(_) ->
-    [roster, message, presence].
+    [{roster, both}, {roster, get}, {roster, set},
+     {message, outgoing}, {presence, managed_entity}, {presence, roster}].
 
 depends(_, _) ->
     [].

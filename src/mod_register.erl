@@ -599,15 +599,18 @@ mod_opt_type(registration_watchers) ->
 	    [jid:decode(iolist_to_binary(S)) || S <- Ss]
     end;
 mod_opt_type(welcome_message) ->
-    fun (Opts) ->
-	    S = proplists:get_value(subject, Opts, <<>>),
-	    B = proplists:get_value(body, Opts, <<>>),
-	    {iolist_to_binary(S), iolist_to_binary(B)}
+    fun(L) ->
+	    {proplists:get_value(subject, L, <<"">>),
+	     proplists:get_value(body, L, <<"">>)}
     end;
+mod_opt_type({welcome_message, subject}) ->
+    fun iolist_to_binary/1;
+mod_opt_type({welcome_message, body}) ->
+    fun iolist_to_binary/1;
 mod_opt_type(_) ->
     [access, access_from, captcha_protected, ip_access,
      iqdisc, password_strength, registration_watchers,
-     welcome_message].
+     {welcome_message, subject}, {welcome_message, body}].
 
 opt_type(registration_timeout) ->
     fun (TO) when is_integer(TO), TO > 0 -> TO;
