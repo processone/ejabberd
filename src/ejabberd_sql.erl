@@ -56,7 +56,7 @@
 	 freetds_config/0,
 	 odbcinst_config/0,
 	 init_mssql/1,
-	 keep_alive/1]).
+	 keep_alive/2]).
 
 %% gen_fsm callbacks
 -export([init/1, handle_event/3, handle_sync_event/4,
@@ -92,10 +92,6 @@
 -define(MSSQL_PORT, 1433).
 
 -define(MAX_TRANSACTION_RESTARTS, 10).
-
--define(TRANSACTION_TIMEOUT, 60000).
-
--define(KEEPALIVE_TIMEOUT, 60000).
 
 -define(KEEPALIVE_QUERY, [<<"SELECT 1;">>]).
 
@@ -166,16 +162,16 @@ sql_call(Host, Msg) ->
           Pid ->
             (?GEN_FSM):sync_send_event(Pid,{sql_cmd, Msg,
                                             p1_time_compat:monotonic_time(milli_seconds)},
-                                       ?TRANSACTION_TIMEOUT)
+                                       query_timeout(Host))
           end;
       _State -> nested_op(Msg)
     end.
 
-keep_alive(PID) ->
+keep_alive(Host, PID) ->
     (?GEN_FSM):sync_send_event(PID,
 			       {sql_cmd, {sql_query, ?KEEPALIVE_QUERY},
                                 p1_time_compat:monotonic_time(milli_seconds)},
-			       ?KEEPALIVE_TIMEOUT).
+			       query_timeout(Host)).
 
 -spec sql_query_t(sql_query()) -> sql_query_result().
 
@@ -270,7 +266,7 @@ init([Host, StartInterval]) ->
             ok;
         KeepaliveInterval ->
             timer:apply_interval(KeepaliveInterval * 1000, ?MODULE,
-                                 keep_alive, [self()])
+                                 keep_alive, [Host, self()])
     end,
     [DBType | _] = db_opts(Host),
     (?GEN_FSM):send_event(self(), connect),
@@ -414,8 +410,9 @@ print_state(State) -> State.
 %%%----------------------------------------------------------------------
 
 run_sql_cmd(Command, From, State, Timestamp) ->
+    QueryTimeout = query_timeout(State#state.host),
     case p1_time_compat:monotonic_time(milli_seconds) - Timestamp of
-      Age when Age < (?TRANSACTION_TIMEOUT) ->
+      Age when Age < QueryTimeout ->
 	  put(?NESTING_KEY, ?TOP_LEVEL_TXN),
 	  put(?STATE_KEY, State),
 	  abort_on_driver_error(outer_op(Command), From);
@@ -578,20 +575,21 @@ sql_query_internal(F) when is_function(F) ->
 sql_query_internal(Query) ->
     State = get(?STATE_KEY),
     ?DEBUG("SQL: \"~s\"", [Query]),
+    QueryTimeout = query_timeout(State#state.host),
     Res = case State#state.db_type of
 	    odbc ->
 		to_odbc(odbc:sql_query(State#state.db_ref, [Query],
-                                       (?TRANSACTION_TIMEOUT) - 1000));
+                                       QueryTimeout - 1000));
 	    mssql ->
 		to_odbc(odbc:sql_query(State#state.db_ref, [Query],
-                                       (?TRANSACTION_TIMEOUT) - 1000));
+                                       QueryTimeout - 1000));
 	    pgsql ->
 		pgsql_to_odbc(pgsql:squery(State#state.db_ref, Query,
-					   (?TRANSACTION_TIMEOUT) - 1000));
+					   QueryTimeout - 1000));
 	    mysql ->
 		R = mysql_to_odbc(p1_mysql_conn:squery(State#state.db_ref,
 						   [Query], self(),
-						   [{timeout, (?TRANSACTION_TIMEOUT) - 1000},
+						   [{timeout, QueryTimeout - 1000},
 						    {result_type, binary}])),
 		%% ?INFO_MSG("MySQL, Received result~n~p~n", [R]),
 		  R;
@@ -1057,6 +1055,10 @@ max_fsm_queue() ->
 fsm_limit_opts() ->
     ejabberd_config:fsm_limit_opts([]).
 
+query_timeout(LServer) ->
+    timer:seconds(
+      ejabberd_config:get_option({sql_query_timeout, LServer}, 60)).
+
 check_error({error, Why} = Err, #sql_query{} = Query) ->
     ?ERROR_MSG("SQL query '~s' at ~p failed: ~p",
                [Query#sql_query.hash, Query#sql_query.loc, Why]),
@@ -1084,10 +1086,12 @@ opt_type(sql_ssl) -> fun(B) when is_boolean(B) -> B end;
 opt_type(sql_ssl_verify) -> fun(B) when is_boolean(B) -> B end;
 opt_type(sql_ssl_certfile) -> fun iolist_to_binary/1;
 opt_type(sql_ssl_cafile) -> fun iolist_to_binary/1;
+opt_type(sql_query_timeout) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
 opt_type(sql_queue_type) ->
     fun(ram) -> ram; (file) -> file end;
 opt_type(_) ->
     [sql_database, sql_keepalive_interval,
      sql_password, sql_port, sql_server,
      sql_username, sql_ssl, sql_ssl_verify, sql_ssl_cerfile,
-     sql_ssl_cafile, sql_queue_type].
+     sql_ssl_cafile, sql_queue_type, sql_query_timeout].
