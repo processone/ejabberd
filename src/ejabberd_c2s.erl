@@ -941,14 +941,20 @@ listen_opt_type(max_stanza_size) ->
     end;
 listen_opt_type(max_fsm_queue) ->
     fun(I) when is_integer(I), I>0 -> I end;
+%% The following hack should be removed in future releases: it is intended
+%% for backward compatibility with ejabberd 17.01 or older
+listen_opt_type(stream_management) ->
+    ?WARNING_MSG("listening option 'stream_management' is deprecated: "
+		 "use mod_stream_mgmt module", []),
+    fun(B) when is_boolean(B) -> B end;
 listen_opt_type(O) ->
-    %% This hack should be removed in future releases: it is intended
-    %% for backward compatibility with ejabberd 17.01 or older
     case mod_stream_mgmt:mod_opt_type(O) of
 	L when is_list(L) ->
 	    [access, shaper, certfile, ciphers, dhfile, cafile,
 	     protocol_options, tls, tls_compression, starttls,
-	     starttls_required, tls_verify, zlib, max_fsm_queue] ++ L;
+	     starttls_required, tls_verify, zlib, max_fsm_queue];
 	VFun ->
+	    ?WARNING_MSG("listening option '~s' is deprecated: use '~s' "
+			 "option from mod_stream_mgmt module", [O, O]),
 	    VFun
     end.

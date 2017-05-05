@@ -722,8 +722,6 @@ mod_opt_type(resend_on_timeout) ->
     fun(B) when is_boolean(B) -> B;
        (if_offline) -> if_offline
     end;
-mod_opt_type(stream_management) ->
-    fun(B) when is_boolean(B) -> B end;
 mod_opt_type(queue_type) ->
     fun(ram) -> ram; (file) -> file end;
 mod_opt_type(_) ->
