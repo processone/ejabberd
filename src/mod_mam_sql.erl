@@ -30,7 +30,7 @@
 
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
-	 extended_fields/0, store/7, write_prefs/4, get_prefs/2, select/6]).
+	 extended_fields/0, store/7, write_prefs/4, get_prefs/2, select/6, export/1]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("xmpp.hrl").
@@ -180,6 +180,47 @@ select(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
 	_ ->
 	    {[], false, 0}
     end.
+
+export(_Server) ->
+    [{archive_prefs,
+      fun(Host, #archive_prefs{us =
+                {LUser, LServer},
+                default = Default,
+                always = Always,
+                never = Never})
+          when LServer == Host ->
+                SDefault = erlang:atom_to_binary(Default, utf8),
+                SAlways = misc:term_to_expr(Always),
+                SNever = misc:term_to_expr(Never),
+                [?SQL("insert into archive_prefs (username, def, always, never) values"
+                "(%(LUser)s, %(SDefault)s, %(SAlways)s, %(SNever)s)")];
+          (_Host, _R) ->
+              []
+      end},
+     {archive_msg,
+      fun(Host, #archive_msg{us ={_LUser, LServer},
+                id = _ID, timestamp = TS, peer = Peer,
+                bare_peer = {PUser, PServer, <<>>},
+                type = Type, nick = Nick, packet = Pkt})
+          when LServer == Host ->
+                TStmp = now_to_usec(TS),
+                SUser = case Type of
+                      chat -> PUser;
+                      groupchat -> jid:to_string({PUser, PServer, <<>>})
+                    end,
+                BarePeer = jid:to_string(jid:tolower(jid:remove_resource(Peer))),
+                LPeer = jid:to_string(jid:tolower(Peer)),
+                XML = fxml:element_to_binary(Pkt),
+                Body = fxml:get_subtag_cdata(Pkt, <<"body">>),
+                SType = jlib:atom_to_binary(Type),
+                [?SQL("insert into archive (username, timestamp, "
+				 "peer, bare_peer, xml, txt, kind, nick) "
+				 "values (%(SUser)s, %(TStmp)d, %(LPeer)s, "
+				 "%(BarePeer)s, %(XML)s, %(Body)s, %(SType)s, "
+				 "%(Nick)s)")];
+         (_Host, _R) ->
+              []
+      end}].
 
 %%%===================================================================
 %%% Internal functions
