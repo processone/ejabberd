@@ -26,8 +26,6 @@
 -module(ejabberd_config).
 -author('alexey@process-one.net').
 
--compile(export_all).
-
 -export([start/0, load_file/1, reload_file/0, read_file/1,
 	 get_option/1, get_option/2, add_option/2, has_option/1,
 	 get_vh_by_auth_method/1, is_file_readable/1,
