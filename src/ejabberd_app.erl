@@ -160,6 +160,9 @@ start_apps() ->
     ejabberd:start_app(xmpp),
     ejabberd:start_app(cache_tab).
 
+-spec opt_type(net_ticktime) -> fun((pos_integer()) -> pos_integer());
+	      (cluster_nodes) -> fun(([node()]) -> [node()]);
+	      (atom()) -> atom().
 opt_type(net_ticktime) ->
     fun (P) when is_integer(P), P > 0 -> P end;
 opt_type(cluster_nodes) ->

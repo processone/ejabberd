@@ -21,15 +21,14 @@
 %%%-------------------------------------------------------------------
 -module(ejabberd_service).
 -behaviour(xmpp_stream_in).
--behaviour(ejabberd_config).
 -behaviour(ejabberd_socket).
 
 -protocol({xep, 114, '1.6'}).
 
 %% ejabberd_socket callbacks
 -export([start/2, start_link/2, socket_type/0, close/1, close/2]).
-%% ejabberd_config callbacks
--export([opt_type/1, listen_opt_type/1, transform_listen_option/2]).
+%% ejabberd_listener callbacks
+-export([listen_opt_type/1, transform_listen_option/2]).
 %% xmpp_stream_in callbacks
 -export([init/1, handle_info/2, terminate/2, code_change/3]).
 -export([handle_stream_start/2, handle_auth_success/4, handle_auth_failure/4,
@@ -259,8 +258,22 @@ transform_listen_option({host, Host, Os}, Opts) ->
 transform_listen_option(Opt, Opts) ->
     [Opt|Opts].
 
-opt_type(_) -> [].
-
+-spec listen_opt_type(access) -> fun((any()) -> any());
+		     (shaper_rule) -> fun((any()) -> any());
+		     (certfile) -> fun((binary()) -> binary());
+		     (ciphers) -> fun((binary()) -> binary());
+		     (dhfile) -> fun((binary()) -> binary());
+		     (cafile) -> fun((binary()) -> binary());
+		     (protocol_options) -> fun(([binary()]) -> binary());
+		     (tls_compression) -> fun((boolean()) -> boolean());
+		     (tls) -> fun((boolean()) -> boolean());
+		     (check_from) -> fun((boolean()) -> boolean());
+		     (password) -> fun((boolean()) -> boolean());
+		     (hosts) -> fun(([{binary(), [{password, binary()}]}]) ->
+				     [{binary(), binary() | undefined}]);
+		     (max_stanza_type) -> fun((timeout()) -> timeout());
+		     (max_fsm_queue) -> fun((pos_integer()) -> pos_integer());
+		     (atom()) -> [atom()].
 listen_opt_type(access) -> fun acl:access_rules_validator/1;
 listen_opt_type(shaper_rule) -> fun acl:shaper_rules_validator/1;
 listen_opt_type(certfile) -> fun iolist_to_binary/1;

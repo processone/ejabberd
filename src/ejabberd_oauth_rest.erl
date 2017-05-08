@@ -93,6 +93,8 @@ path(Path) ->
     <<Base/binary, "/", Path/binary>>.
 
 
+-spec opt_type(ext_api_path_oauth) -> fun((binary()) -> binary());
+	      (atom()) -> [atom()].
 opt_type(ext_api_path_oauth) ->
     fun (X) -> iolist_to_binary(X) end;
 opt_type(_) -> [ext_api_path_oauth].

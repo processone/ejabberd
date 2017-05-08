@@ -313,6 +313,10 @@ is_configured(Host, Module) ->
     Os = ejabberd_config:get_option({modules, Host}, []),
     lists:keymember(Module, 1, Os).
 
+-spec opt_type(extauth_cache) -> fun((false | non_neg_integer()) ->
+				      false | non_neg_integer());
+	      (extauth_program) -> fun((binary()) -> string());
+	      (atom()) -> [atom()].
 opt_type(extauth_cache) ->
     fun (false) -> false;
 	(I) when is_integer(I), I >= 0 -> I

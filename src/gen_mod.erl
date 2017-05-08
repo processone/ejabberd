@@ -677,6 +677,8 @@ is_equal_opt(Opt, NewOpts, OldOpts, Default) ->
 	    true
     end.
 
+-spec opt_type(modules) -> fun(([{atom(), list()}]) -> [{atom(), list()}]);
+	      (atom()) -> [atom()].
 opt_type(modules) ->
     fun(Mods) ->
 	    lists:map(

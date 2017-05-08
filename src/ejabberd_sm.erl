@@ -1010,6 +1010,12 @@ kick_user(User, Server) ->
 make_sid() ->
     {p1_time_compat:unique_timestamp(), self()}.
 
+-spec opt_type(sm_db_type) -> fun((atom()) -> atom());
+	      (sm_use_cache) -> fun((boolean()) -> boolean());
+	      (sm_cache_missed) -> fun((boolean()) -> boolean());
+	      (sm_cache_size) -> fun((timeout()) -> timeout());
+	      (sm_cache_life_time) -> fun((timeout()) -> timeout());
+	      (atom()) -> [atom()].
 opt_type(sm_db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 opt_type(O) when O == sm_use_cache; O == sm_cache_missed ->
     fun(B) when is_boolean(B) -> B end;

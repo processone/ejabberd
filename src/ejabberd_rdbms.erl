@@ -109,6 +109,9 @@ needs_sql(Host) ->
         undefined -> false
     end.
 
+-type sql_type() :: mysql | pgsql | sqlite | mssql | odbc.
+-spec opt_type(sql_type) -> fun((sql_type()) -> sql_type());
+	      (atom()) -> [atom()].
 opt_type(sql_type) ->
     fun (mysql) -> mysql;
 	(pgsql) -> pgsql;

@@ -168,5 +168,7 @@ transform_options({OptName, Name, none}, Opts) when OptName == shaper ->
 transform_options(Opt, Opts) ->
     [Opt|Opts].
 
+-spec opt_type(shaper) -> fun((any()) -> any());
+	      (atom()) -> [atom()].
 opt_type(shaper) -> fun (V) -> V end;
 opt_type(_) -> [shaper].

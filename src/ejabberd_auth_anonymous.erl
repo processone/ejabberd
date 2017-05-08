@@ -236,6 +236,10 @@ plain_password_required() -> false.
 store_type() ->
 	plain.
 
+-spec opt_type(allow_multiple_connection) -> fun((boolean()) -> boolean());
+	      (anonymous_protocol) -> fun((sasl_anon | login_anon | both) ->
+						 sasl_anon | login_anon | both);
+	      (atom()) -> [atom()].
 opt_type(allow_multiple_connections) ->
     fun (V) when is_boolean(V) -> V end;
 opt_type(anonymous_protocol) ->

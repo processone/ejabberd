@@ -218,6 +218,9 @@ read_lines(Fd, File, Acc) ->
             []
     end.
 
+-spec opt_type(sql_pool_size) -> fun((pos_integer()) -> pos_integer());
+	      (sql_start_interval) -> fun((pos_integer()) -> pos_integer());
+	      (atom()) -> [atom()].
 opt_type(sql_pool_size) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 opt_type(sql_start_interval) ->

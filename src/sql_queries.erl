@@ -632,6 +632,8 @@ set_roster_version(LUser, Version) ->
        ["!username=%(LUser)s",
         "version=%(Version)s"]).
 
+-spec opt_type(pgsql_users_number_estimate) -> fun((boolean()) -> boolean());
+	      (atom()) -> [atom()].
 opt_type(pgsql_users_number_estimate) ->
     fun (V) when is_boolean(V) -> V end;
 opt_type(_) -> [pgsql_users_number_estimate].

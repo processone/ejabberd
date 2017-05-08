@@ -260,6 +260,8 @@ response(KeyVals, User, Passwd, Nonce, AuthzId,
 	  ":", (hex((erlang:md5(A2))))/binary>>,
     hex((erlang:md5(T))).
 
+-spec opt_type(fqdn) -> fun((binary() | [binary()]) -> [binary()]);
+	      (atom()) -> [atom()].
 opt_type(fqdn) ->
     fun(FQDN) when is_binary(FQDN) ->
 	    [FQDN];

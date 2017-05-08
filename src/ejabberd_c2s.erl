@@ -894,6 +894,16 @@ format_reason(_, _) ->
 transform_listen_option(Opt, Opts) ->
     [Opt|Opts].
 
+-type resource_conflict() :: setresource | closeold | closenew | acceptnew.
+-spec opt_type(c2s_certfile) -> fun((binary()) -> binary());
+	      (c2s_ciphers) -> fun((binary()) -> binary());
+	      (c2s_dhfile) -> fun((binary()) -> binary());
+	      (c2s_cafile) -> fun((binary()) -> binary());
+	      (c2s_protocol_options) -> fun(([binary()]) -> binary());
+	      (c2s_tls_compression) -> fun((boolean()) -> boolean());
+	      (resource_conflict) -> fun((resource_conflict()) -> resource_conflict());
+	      (disable_sasl_mechanisms) -> fun((binary() | [binary()]) -> [binary()]);
+	      (atom()) -> [atom()].
 opt_type(c2s_certfile) -> fun iolist_to_binary/1;
 opt_type(c2s_ciphers) -> fun iolist_to_binary/1;
 opt_type(c2s_dhfile) -> fun iolist_to_binary/1;
@@ -920,6 +930,23 @@ opt_type(_) ->
      c2s_protocol_options, c2s_tls_compression, resource_conflict,
      disable_sasl_mechanisms].
 
+-spec listen_opt_type(access) -> fun((any()) -> any());
+		     (shaper) -> fun((any()) -> any());
+		     (certfile) -> fun((binary()) -> binary());
+		     (ciphers) -> fun((binary()) -> binary());
+		     (dhfile) -> fun((binary()) -> binary());
+		     (cafile) -> fun((binary()) -> binary());
+		     (protocol_options) -> fun(([binary()]) -> binary());
+		     (tls_compression) -> fun((boolean()) -> boolean());
+		     (tls) -> fun((boolean()) -> boolean());
+		     (starttls) -> fun((boolean()) -> boolean());
+		     (tls_verify) -> fun((boolean()) -> boolean());
+		     (zlib) -> fun((boolean()) -> boolean());
+		     (supervisor) -> fun((boolean()) -> boolean());
+		     (max_stanza_size) -> fun((timeout()) -> timeout());
+		     (max_fsm_queue) -> fun((timeout()) -> timeout());
+		     (stream_management) -> fun((boolean()) -> boolean());
+		     (atom()) -> [atom()].
 listen_opt_type(access) -> fun acl:access_rules_validator/1;
 listen_opt_type(shaper) -> fun acl:shaper_rules_validator/1;
 listen_opt_type(certfile) -> opt_type(c2s_certfile);
@@ -935,7 +962,7 @@ listen_opt_type(tls_verify) -> fun(B) when is_boolean(B) -> B end;
 listen_opt_type(zlib) -> fun(B) when is_boolean(B) -> B end;
 listen_opt_type(supervisor) -> fun(B) when is_boolean(B) -> B end;
 listen_opt_type(max_stanza_size) ->
-    fun(I) when is_integer(I) -> I;
+    fun(I) when is_integer(I), I>0 -> I;
        (unlimited) -> infinity;
        (infinity) -> infinity
     end;

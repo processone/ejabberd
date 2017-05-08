@@ -154,6 +154,8 @@ encode(L) -> str:join(L, <<":">>).
 decode([0, 0]) -> false;
 decode([0, 1]) -> true.
 
+-spec opt_type(extauth_instances) -> fun((pos_integer()) -> pos_integer());
+	      (atom()) -> [atom()].
 opt_type(extauth_instances) ->
     fun (V) when is_integer(V), V > 0 -> V end;
 opt_type(_) -> [extauth_instances].

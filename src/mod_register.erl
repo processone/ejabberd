@@ -612,6 +612,8 @@ mod_opt_type(_) ->
      iqdisc, password_strength, registration_watchers,
      {welcome_message, subject}, {welcome_message, body}].
 
+-spec opt_type(registration_timeout) -> fun((timeout()) -> timeout());
+	      (atom()) -> [atom()].
 opt_type(registration_timeout) ->
     fun (TO) when is_integer(TO), TO > 0 -> TO;
 	(infinity) -> infinity;

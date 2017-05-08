@@ -330,6 +330,9 @@ process_remote_command([setlh, NewValue]) ->
 		  [OldLH, NewLH]);
 process_remote_command(_) -> throw(unknown_command).
 
+-spec opt_type(watchdog_admins) -> fun(([binary()]) -> ljid());
+	      (watchdog_large_heap) -> fun((pos_integer()) -> pos_integer());
+	      (atom()) -> [atom()].
 opt_type(watchdog_admins) ->
     fun (JIDs) ->
 	    [jid:tolower(jid:decode(iolist_to_binary(S)))

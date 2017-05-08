@@ -899,11 +899,30 @@ transform_listen_option({request_handlers, Hs}, Opts) ->
 transform_listen_option(Opt, Opts) ->
     [Opt|Opts].
 
+-spec opt_type(trusted_proxies) -> fun((all | [binary()]) -> all | [binary()]);
+	      (atom()) -> [atom()].
 opt_type(trusted_proxies) ->
     fun (all) -> all;
         (TPs) -> [iolist_to_binary(TP) || TP <- TPs] end;
 opt_type(_) -> [trusted_proxies].
 
+-spec listen_opt_type(tls) -> fun((boolean()) -> boolean());
+		     (certfile) -> fun((binary()) -> binary());
+		     (ciphers) -> fun((binary()) -> binary());
+		     (dhfile) -> fun((binary()) -> binary());
+		     (protocol_options) -> fun(([binary()]) -> binary());
+		     (tls_compression) -> fun((boolean()) -> boolean());
+		     (captcha) -> fun((boolean()) -> boolean());
+		     (register) -> fun((boolean()) -> boolean());
+		     (web_admin) -> fun((boolean()) -> boolean());
+		     (http_bind) -> fun((boolean()) -> boolean());
+		     (xmlrpc) -> fun((boolean()) -> boolean());
+		     (request_handlers) -> fun(([{binary(), atom()}]) ->
+						[{binary(), atom()}]);
+		     (default_host) -> fun((binary()) -> binary());
+		     (custom_headers) -> fun(([{binary(), binary()}]) ->
+					      [{binary(), binary()}]);
+		     (atom()) -> [atom()].
 listen_opt_type(tls) ->
     fun(B) when is_boolean(B) -> B end;
 listen_opt_type(certfile) ->

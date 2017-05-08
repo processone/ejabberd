@@ -25,7 +25,6 @@
 
 -module(mod_metrics).
 
--behaviour(ejabberd_config).
 -author('christophe.romain@process-one.net').
 -behaviour(gen_mod).
 
@@ -33,7 +32,7 @@
 -include("logger.hrl").
 -include("xmpp.hrl").
 
--export([start/2, stop/1, send_metrics/4, opt_type/1, mod_opt_type/1,
+-export([start/2, stop/1, send_metrics/4, mod_opt_type/1,
 	 depends/2, reload/3]).
 
 -export([offline_message_hook/1,
@@ -156,9 +155,6 @@ send_metrics(Host, Probe, Peer, Port) ->
 	Error ->
 	    ?WARNING_MSG("can not open udp socket to grapherl: ~p", [Error])
     end.
-
-opt_type(_) ->
-     [].
 
 mod_opt_type(_) ->
     [].

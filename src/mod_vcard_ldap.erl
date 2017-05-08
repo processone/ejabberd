@@ -24,8 +24,6 @@
 
 -module(mod_vcard_ldap).
 
--behaviour(ejabberd_config).
-
 -behaviour(gen_server).
 -behaviour(mod_vcard).
 
@@ -33,7 +31,7 @@
 -export([start_link/2]).
 -export([init/2, stop/1, get_vcard/2, set_vcard/4, search/4,
 	 remove_user/2, import/3, search_fields/1, search_reported/1,
-	 mod_opt_type/1, opt_type/1]).
+	 mod_opt_type/1]).
 -export([is_search_supported/1]).
 
 %% gen_server callbacks
@@ -483,13 +481,6 @@ mod_opt_type(_) ->
     [ldap_filter, ldap_search_fields,
      ldap_search_reported, ldap_uids, ldap_vcard_map,
      deref_aliases, ldap_backups, ldap_base,
-     ldap_deref_aliases, ldap_encrypt, ldap_password,
-     ldap_port, ldap_rootdn, ldap_servers,
-     ldap_tls_cacertfile, ldap_tls_certfile, ldap_tls_depth,
-     ldap_tls_verify].
-
-opt_type(_) ->
-    [deref_aliases, ldap_backups, ldap_base,
      ldap_deref_aliases, ldap_encrypt, ldap_password,
      ldap_port, ldap_rootdn, ldap_servers,
      ldap_tls_cacertfile, ldap_tls_certfile, ldap_tls_depth,
