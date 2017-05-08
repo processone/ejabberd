@@ -26,6 +26,8 @@
 -module(ejabberd_config).
 -author('alexey@process-one.net').
 
+-compile(export_all).
+
 -export([start/0, load_file/1, reload_file/0, read_file/1,
 	 get_option/1, get_option/2, add_option/2, has_option/1,
 	 get_vh_by_auth_method/1, is_file_readable/1,
@@ -179,7 +181,10 @@ read_file(File, Opts) ->
 load_file(File) ->
     State0 = read_file(File),
     State1 = hosts_to_start(State0),
-    validate_opts(State1).
+    AllMods = get_modules(),
+    init_module_db_table(AllMods),
+    ModOpts = get_modules_with_options(AllMods),
+    validate_opts(State1, ModOpts).
 
 -spec reload_file() -> ok.
 
@@ -971,11 +976,12 @@ default_db(Opt, Host, Module) ->
 	    end
     end.
 
-get_modules_with_options() ->
+get_modules() ->
     {ok, Mods} = application:get_key(ejabberd, modules),
     ExtMods = [Name || {Name, _Details} <- ext_mod:installed()],
-    AllMods = [?MODULE|ExtMods++Mods],
-    init_module_db_table(AllMods),
+    ExtMods ++ Mods.
+
+get_modules_with_options(Modules) ->
     lists:foldl(
       fun(Mod, D) ->
 	      case is_behaviour(?MODULE, Mod) orelse Mod == ?MODULE of
@@ -992,10 +998,9 @@ get_modules_with_options() ->
 		  false ->
 		      D
 	      end
-      end, dict:new(), AllMods).
+      end, dict:new(), Modules).
 
-validate_opts(#state{opts = Opts} = State) ->
-    ModOpts = get_modules_with_options(),
+validate_opts(#state{opts = Opts} = State, ModOpts) ->
     NewOpts = lists:filtermap(
 		fun(#local_config{key = {Opt, _Host}, value = Val} = In) ->
 			case dict:find(Opt, ModOpts) of
