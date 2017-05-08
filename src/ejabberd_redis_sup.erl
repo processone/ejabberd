@@ -155,5 +155,4 @@ opt_type(redis_queue_type) ->
     fun(ram) -> ram; (file) -> file end;
 opt_type(_) ->
     [redis_connect_timeout, redis_db, redis_password,
-     redis_port, redis_pool_size, redis_server,
-     redis_pool_size, redis_queue_type].
+     redis_port, redis_pool_size, redis_server, redis_queue_type].
