@@ -193,7 +193,7 @@ export(_Server) ->
                 SAlways = misc:term_to_expr(Always),
                 SNever = misc:term_to_expr(Never),
                 [?SQL("insert into archive_prefs (username, def, always, never) values"
-                "(%(LUser)s, %(SDefault)s, %(SAlways)s, %(SNever)s)")];
+                "(%(LUser)s, %(SDefault)s, %(SAlways)s, %(SNever)s);")];
           (_Host, _R) ->
               []
       end},
@@ -217,7 +217,7 @@ export(_Server) ->
 				 "peer, bare_peer, xml, txt, kind, nick) "
 				 "values (%(SUser)s, %(TStmp)d, %(LPeer)s, "
 				 "%(BarePeer)s, %(XML)s, %(Body)s, %(SType)s, "
-				 "%(Nick)s)")];
+				 "%(Nick)s);")];
          (_Host, _R) ->
               []
       end}].

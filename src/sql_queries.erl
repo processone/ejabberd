@@ -385,7 +385,7 @@ update_roster_sql({LUser, SJID, Name, SSubscription, SAsk, AskMessage},
           " username=%(LUser)s and jid=%(SJID)s;")]
       ++
       [?SQL("insert into rostergroups(username, jid, grp) "
-            "values (%(LUser)s, %(SJID)s, %(ItemGroup)s)")
+            "values (%(LUser)s, %(SJID)s, %(ItemGroup)s);")
        || ItemGroup <- ItemGroups].
 
 roster_subscribe({LUser, SJID, Name, SSubscription, SAsk, AskMessage}) ->
