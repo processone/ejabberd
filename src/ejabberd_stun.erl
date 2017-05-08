@@ -73,9 +73,9 @@ prepare_turn_opts(Opts, _UseTurn = true) ->
 	    ok
     end,
     AuthFun = fun ejabberd_auth:get_password_s/2,
-    Shaper = gen_mod:get_opt(shaper, Opts, none),
-    AuthType = gen_mod:get_opt(auth_type, Opts, user),
-    Realm = case gen_mod:get_opt(auth_realm, Opts) of
+    Shaper = proplists:get_value(shaper, Opts, none),
+    AuthType = proplists:get_value(auth_type, Opts, user),
+    Realm = case proplists:get_value(auth_realm, Opts) of
 		undefined when AuthType == user ->
 		    if NumberOfMyHosts > 1 ->
 			    ?WARNING_MSG("you have several virtual "

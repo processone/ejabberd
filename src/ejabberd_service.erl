@@ -79,15 +79,15 @@ tls_options(#{tls_options := TLSOptions}) ->
     TLSOptions.
 
 init([State, Opts]) ->
-    Access = gen_mod:get_opt(access, Opts, all),
-    Shaper = gen_mod:get_opt(shaper_rule, Opts, none),
-    GlobalPassword = gen_mod:get_opt(password, Opts, random_password()),
-    HostOpts = gen_mod:get_opt(hosts, Opts, [{global, GlobalPassword}]),
+    Access = proplists:get_value(access, Opts, all),
+    Shaper = proplists:get_value(shaper_rule, Opts, none),
+    GlobalPassword = proplists:get_value(password, Opts, random_password()),
+    HostOpts = proplists:get_value(hosts, Opts, [{global, GlobalPassword}]),
     HostOpts1 = lists:map(
 		  fun({Host, undefined}) -> {Host, GlobalPassword};
 		     ({Host, Password}) -> {Host, Password}
 		  end, HostOpts),
-    CheckFrom = gen_mod:get_opt(check_from, Opts, true),
+    CheckFrom = proplists:get_value(check_from, Opts, true),
     TLSOpts1 = lists:filter(
 		 fun({certfile, _}) -> true;
 		    ({ciphers, _}) -> true;

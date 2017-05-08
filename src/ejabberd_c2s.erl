@@ -490,8 +490,8 @@ handle_send(Pkt, Result, #{lserver := LServer} = State) ->
     ejabberd_hooks:run_fold(c2s_handle_send, LServer, State, [Pkt, Result]).
 
 init([State, Opts]) ->
-    Access = gen_mod:get_opt(access, Opts, all),
-    Shaper = gen_mod:get_opt(shaper, Opts, none),
+    Access = proplists:get_value(access, Opts, all),
+    Shaper = proplists:get_value(shaper, Opts, none),
     TLSOpts1 = lists:filter(
 		 fun({certfile, _}) -> true;
 		    ({ciphers, _}) -> true;

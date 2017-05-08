@@ -244,7 +244,7 @@ handle_send(Pkt, Result, #{server_host := LServer} = State) ->
 			    State, [Pkt, Result]).
 
 init([State, Opts]) ->
-    Shaper = gen_mod:get_opt(shaper, Opts, none),
+    Shaper = proplists:get_value(shaper, Opts, none),
     TLSOpts1 = lists:filter(
 		 fun({certfile, _}) -> true;
 		    ({ciphers, _}) -> true;

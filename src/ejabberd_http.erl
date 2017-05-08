@@ -136,15 +136,15 @@ init({SockMod, Socket}, Opts) ->
 		 true -> [{[], ejabberd_xmlrpc}];
 		 false -> []
 	     end,
-    DefinedHandlers = gen_mod:get_opt(request_handlers, Opts, []),
+    DefinedHandlers = proplists:get_value(request_handlers, Opts, []),
     RequestHandlers = DefinedHandlers ++ Captcha ++ Register ++
         Admin ++ Bind ++ XMLRPC,
     ?DEBUG("S: ~p~n", [RequestHandlers]),
 
-    DefaultHost = gen_mod:get_opt(default_host, Opts, undefined),
+    DefaultHost = proplists:get_value(default_host, Opts),
     {ok, RE} = re:compile(<<"^(?:\\[(.*?)\\]|(.*?))(?::(\\d+))?$">>),
 
-    CustomHeaders = gen_mod:get_opt(custom_headers, Opts, []),
+    CustomHeaders = proplists:get_value(custom_headers, Opts, []),
 
     ?INFO_MSG("started: ~p", [{SockMod1, Socket1}]),
     State = #state{sockmod = SockMod1,

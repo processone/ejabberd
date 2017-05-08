@@ -565,7 +565,7 @@ get_handle(Name) when is_binary(Name) ->
 %% process.      
 %%----------------------------------------------------------------------
 init([Hosts, Port, Rootdn, Passwd, Opts]) ->
-    Encrypt = case gen_mod:get_opt(encrypt, Opts) of
+    Encrypt = case proplists:get_value(encrypt, Opts) of
                   tls -> tls;
                   _ -> none
 	      end,
@@ -577,19 +577,19 @@ init([Hosts, Port, Rootdn, Passwd, Opts]) ->
 		     end;
 		 PT -> PT
 	       end,
-    CacertOpts = case gen_mod:get_opt(tls_cacertfile, Opts) of
+    CacertOpts = case proplists:get_value(tls_cacertfile, Opts) of
                      undefined ->
                          [];
                      Path ->
                          [{cacertfile, Path}]
                  end,
-    DepthOpts = case gen_mod:get_opt(tls_depth, Opts) of
+    DepthOpts = case proplists:get_value(tls_depth, Opts) of
                     undefined ->
                         [];
                     Depth ->
                         [{depth, Depth}]
                 end,
-    Verify = gen_mod:get_opt(tls_verify, Opts, false),
+    Verify = proplists:get_value(tls_verify, Opts, false),
     TLSOpts = if (Verify == hard orelse Verify == soft)
 		   andalso CacertOpts == [] ->
 		     ?WARNING_MSG("TLS verification is enabled but no CA "

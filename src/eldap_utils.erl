@@ -173,25 +173,25 @@ uids_domain_subst(Host, UIDs) ->
 -spec get_config(binary(), list()) -> eldap_config().
 
 get_config(Host, Opts) ->
-    Servers = gen_mod:get_opt({ldap_servers, Host}, Opts, [<<"localhost">>]),
-    Backups = gen_mod:get_opt({ldap_backups, Host}, Opts, []),
-    Encrypt = gen_mod:get_opt({ldap_encrypt, Host}, Opts, none),
-    TLSVerify = gen_mod:get_opt({ldap_tls_verify, Host}, Opts, false),
-    TLSCAFile = gen_mod:get_opt({ldap_tls_cacertfile, Host}, Opts),
-    TLSDepth = gen_mod:get_opt({ldap_tls_depth, Host}, Opts),
-    Port = gen_mod:get_opt({ldap_port, Host}, Opts,
-			   case Encrypt of
-			       tls -> ?LDAPS_PORT;
-			       starttls -> ?LDAP_PORT;
-			       _ -> ?LDAP_PORT
-			   end),
-    RootDN = gen_mod:get_opt({ldap_rootdn, Host}, Opts, <<"">>),
-    Password = gen_mod:get_opt({ldap_password, Host}, Opts, <<"">>),
-    Base = gen_mod:get_opt({ldap_base, Host}, Opts, <<"">>),
-    OldDerefAliases = gen_mod:get_opt({deref_aliases, Host}, Opts, unspecified),
+    Servers = get_opt(ldap_servers, Host, Opts, [<<"localhost">>]),
+    Backups = get_opt(ldap_backups, Host, Opts, []),
+    Encrypt = get_opt(ldap_encrypt, Host, Opts, none),
+    TLSVerify = get_opt(ldap_tls_verify, Host, Opts, false),
+    TLSCAFile = get_opt(ldap_tls_cacertfile, Host, Opts),
+    TLSDepth = get_opt(ldap_tls_depth, Host, Opts),
+    Port = get_opt(ldap_port, Host, Opts,
+		   case Encrypt of
+		       tls -> ?LDAPS_PORT;
+		       starttls -> ?LDAP_PORT;
+		       _ -> ?LDAP_PORT
+		   end),
+    RootDN = get_opt(ldap_rootdn, Host, Opts, <<"">>),
+    Password = get_opt(ldap_password, Host, Opts, <<"">>),
+    Base = get_opt(ldap_base, Host, Opts, <<"">>),
+    OldDerefAliases = get_opt(deref_aliases, Host, Opts, unspecified),
     DerefAliases =
         if OldDerefAliases == unspecified ->
-                gen_mod:get_opt({ldap_deref_aliases, Host}, Opts, never);
+                get_opt(ldap_deref_aliases, Host, Opts, never);
            true ->
                 ?WARNING_MSG("Option 'deref_aliases' is deprecated. "
                              "The option is still supported "
@@ -210,6 +210,15 @@ get_config(Host, Opts) ->
                   password = Password,
                   base = Base,
                   deref_aliases = DerefAliases}.
+
+get_opt(Opt, Host, Opts) ->
+    get_opt(Opt, Host, Opts, undefined).
+
+get_opt(Opt, Host, Opts, Default) ->
+    case proplists:get_value(Opt, Opts) of
+	undefined -> ejabberd_config:get_option({Opt, Host}, Default);
+	Value -> Value
+    end.
 
 %%---------------------------------------- 
 %% Borrowed from asn1rt_ber_bin_v2.erl
