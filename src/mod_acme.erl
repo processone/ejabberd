@@ -108,6 +108,10 @@ init([]) ->
     ok = application:start(asn1),
     ok = application:start(public_key),
     ok = application:start(ssl),
+
+    ok = application:start(base64url),
+    ok = application:start(jose),
+
     {ok, #state{}}.
 
 handle_call(directory, _From, S = #state{dir_url=Url, dirs=Dirs}) ->
@@ -139,6 +143,9 @@ handle_call(new_account, _From, S = #state{ca_url = Ca, dirs=Dirs}) ->
     %% Make the request body
     ReqBody = jiffy:encode({[]}),
 
+    %% Jose
+    % SignedBody = sign_a_json_object_using_jose(ReqBody),
+
     {ok, {Status, Head, Body}} = 
         httpc:request(post, {Url, [], "application/jose+json", ReqBody}, [], []),
     {reply, {ok, {Status, Head, Body}}, S};    
@@ -167,6 +174,27 @@ final_url(Urls) ->
 
 
 %% Test
+
+sign_a_json_object_using_jose(Json) ->
+    % Generate a key for now
+    Key = jose_jwk:generate_key({okp, 'Ed448'}),
+    io:format("Key: ~p~n", [Key]),
+
+    % Jws object containing the algorithm
+    JwsObj = jose_jws:from(#{<<"alg">> => <<"Ed448">>}),
+    io:format("Jws: ~p~n", [JwsObj]),
+
+    %% Signed Message
+    Signed = jose_jws:sign(Key, Json, JwsObj),
+    io:format("Signed: ~p~n", [Signed]),    
+
+    %% Compact Message
+    Compact = jose_jws:compact(Signed),
+    io:format("Compact: ~p~n", [Compact]),    
+
+    %% Verify
+    io:format("Verify: ~p~n", [jose_jws:verify(Key, Signed)]),
+    Signed.
 
 scenario() ->
     {ok, Pid} = start(),
