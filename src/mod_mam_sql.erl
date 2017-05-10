@@ -212,7 +212,7 @@ export(_Server) ->
                 LPeer = jid:encode(jid:tolower(Peer)),
                 XML = fxml:element_to_binary(Pkt),
                 Body = fxml:get_subtag_cdata(Pkt, <<"body">>),
-                SType = jlib:atom_to_binary(Type),
+                SType = misc:atom_to_binary(Type),
                 [?SQL("insert into archive (username, timestamp, "
 				 "peer, bare_peer, xml, txt, kind, nick) "
 				 "values (%(SUser)s, %(TStmp)d, %(LPeer)s, "
