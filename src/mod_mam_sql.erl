@@ -206,10 +206,10 @@ export(_Server) ->
                 TStmp = now_to_usec(TS),
                 SUser = case Type of
                       chat -> PUser;
-                      groupchat -> jid:to_string({PUser, PServer, <<>>})
+                      groupchat -> jid:encode({PUser, PServer, <<>>})
                     end,
-                BarePeer = jid:to_string(jid:tolower(jid:remove_resource(Peer))),
-                LPeer = jid:to_string(jid:tolower(Peer)),
+                BarePeer = jid:encode(jid:tolower(jid:remove_resource(Peer))),
+                LPeer = jid:encode(jid:tolower(Peer)),
                 XML = fxml:element_to_binary(Pkt),
                 Body = fxml:get_subtag_cdata(Pkt, <<"body">>),
                 SType = jlib:atom_to_binary(Type),
