@@ -281,7 +281,7 @@ get_auth_account(HostOfRule, AccessRule, User, Server,
 	    true -> {ok, {User, Server}}
 	  end;
       false ->
-	  case ejabberd_auth:is_user_exists(User, Server) of
+	  case ejabberd_auth:user_exists(User, Server) of
 	    true -> {unauthorized, <<"bad-password">>};
 	    false -> {unauthorized, <<"inexistent-account">>}
 	  end
@@ -1025,7 +1025,7 @@ process_admin(Host,
 process_admin(Host,
 	      #request{path = [<<"user">>, U],
 		       auth = {_, _Auth, AJID}, q = Query, lang = Lang}) ->
-    case ejabberd_auth:is_user_exists(U, Host) of
+    case ejabberd_auth:user_exists(U, Host) of
       true ->
 	  Res = user_info(U, Host, Query, Lang),
 	  make_xhtml(Res, Host, Lang, AJID);

@@ -438,7 +438,7 @@ change_password(Username, Host, PasswordOld,
     end.
 
 check_account_exists(Username, Host) ->
-    case ejabberd_auth:is_user_exists(Username, Host) of
+    case ejabberd_auth:user_exists(Username, Host) of
       true -> account_exists;
       false -> account_doesnt_exist
     end.

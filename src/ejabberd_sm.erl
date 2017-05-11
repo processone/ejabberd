@@ -178,7 +178,7 @@ close_session(SID, User, Server, Resource) ->
 			    subscribe | subscribed | unsubscribe | unsubscribed,
 			    binary()) -> boolean() | {stop, false}.
 check_in_subscription(Acc, User, Server, _JID, _Type, _Reason) ->
-    case ejabberd_auth:is_user_exists(User, Server) of
+    case ejabberd_auth:user_exists(User, Server) of
       true -> Acc;
       false -> {stop, false}
     end.
@@ -716,7 +716,7 @@ route_message(#message{to = To, type = Type} = Packet) ->
 			end,
 			PrioRes);
       _ ->
-	    case ejabberd_auth:is_user_exists(LUser, LServer) andalso
+	    case ejabberd_auth:user_exists(LUser, LServer) andalso
 		is_privacy_allow(Packet) of
 		true ->
 		    ejabberd_hooks:run_fold(offline_message_hook,

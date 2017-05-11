@@ -39,7 +39,7 @@
 	 count_users/1, import/5, import_start/2,
 	 count_users/2, get_password/2,
 	 get_password_s/2, get_password_with_authmodule/2,
-	 is_user_exists/2, is_user_exists_in_other_modules/3,
+	 user_exists/2, user_exists_in_other_modules/3,
 	 remove_user/2, remove_user/3, plain_password_required/1,
 	 store_type/1, entropy/1, backend_type/1, password_format/1]).
 %% gen_server callbacks
@@ -73,7 +73,7 @@
 -callback store_type(binary()) -> plain | external | scram.
 -callback set_password(binary(), binary(), binary()) -> ok | {error, atom()}.
 -callback remove_user(binary(), binary()) -> ok | {error, any()}.
--callback is_user_exists(binary(), binary()) -> boolean() | {error, atom()}.
+-callback user_exists(binary(), binary()) -> boolean() | {error, atom()}.
 -callback check_password(binary(), binary(), binary(), binary()) -> boolean().
 -callback try_register(binary(), binary(), password()) -> ok | {error, atom()}.
 -callback get_users(binary(), opts()) -> [{binary(), binary()}].
@@ -84,7 +84,7 @@
 
 -optional_callbacks([set_password/3,
 		     remove_user/2,
-		     is_user_exists/2,
+		     user_exists/2,
 		     check_password/4,
 		     try_register/3,
 		     get_users/2,
@@ -250,7 +250,7 @@ set_password(User, Server, Password) ->
 try_register(User, Server, Password) ->
     case validate_credentials(User, Server, Password) of
 	{ok, LUser, LServer} ->
-	    case is_user_exists(LUser, LServer) of
+	    case user_exists(LUser, LServer) of
 		true ->
 		    {error, exists};
 		false ->
@@ -357,15 +357,15 @@ get_password_with_authmodule(User, Server) ->
 	    {false, undefined}
     end.
 
--spec is_user_exists(binary(), binary()) -> boolean().
-is_user_exists(_User, <<"">>) ->
+-spec user_exists(binary(), binary()) -> boolean().
+user_exists(_User, <<"">>) ->
     false;
-is_user_exists(User, Server) ->
+user_exists(User, Server) ->
     case validate_credentials(User, Server) of
 	{ok, LUser, LServer} ->
 	    lists:any(
 	      fun(M) ->
-		      case db_is_user_exists(LUser, LServer, M) of
+		      case db_user_exists(LUser, LServer, M) of
 			  {error, _} ->
 			      false;
 			  Else ->
@@ -376,19 +376,19 @@ is_user_exists(User, Server) ->
 	    false
     end.
 
--spec is_user_exists_in_other_modules(atom(), binary(), binary()) -> boolean() | maybe.
-is_user_exists_in_other_modules(Module, User, Server) ->
-    is_user_exists_in_other_modules_loop(
+-spec user_exists_in_other_modules(atom(), binary(), binary()) -> boolean() | maybe.
+user_exists_in_other_modules(Module, User, Server) ->
+    user_exists_in_other_modules_loop(
       auth_modules(Server) -- [Module], User, Server).
 
-is_user_exists_in_other_modules_loop([], _User, _Server) ->
+user_exists_in_other_modules_loop([], _User, _Server) ->
     false;
-is_user_exists_in_other_modules_loop([AuthModule | AuthModules], User, Server) ->
-    case db_is_user_exists(User, Server, AuthModule) of
+user_exists_in_other_modules_loop([AuthModule | AuthModules], User, Server) ->
+    case db_user_exists(User, Server, AuthModule) of
 	true ->
 	    true;
 	false ->
-	    is_user_exists_in_other_modules_loop(AuthModules, User, Server);
+	    user_exists_in_other_modules_loop(AuthModules, User, Server);
 	{error, _} ->
 	    maybe
     end.
@@ -537,14 +537,14 @@ db_get_password(User, Server, Mod) ->
 	    Mod:get_password(User, Server)
     end.
 
-db_is_user_exists(User, Server, Mod) ->
+db_user_exists(User, Server, Mod) ->
     case db_get_password(User, Server, Mod) of
 	{ok, _} ->
 	    true;
 	error ->
 	    case Mod:store_type(Server) of
 		external ->
-		    Mod:is_user_exists(User, Server);
+		    Mod:user_exists(User, Server);
 		_ ->
 		    false
 	    end

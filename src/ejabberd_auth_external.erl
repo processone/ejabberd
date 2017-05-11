@@ -32,7 +32,7 @@
 -behaviour(ejabberd_auth).
 
 -export([start/1, stop/1, set_password/3, check_password/4,
-	 try_register/3, is_user_exists/2, remove_user/2,
+	 try_register/3, user_exists/2, remove_user/2,
 	 store_type/1, plain_password_required/1, opt_type/1]).
 
 -include("ejabberd.hrl").
@@ -68,8 +68,8 @@ set_password(User, Server, Password) ->
 try_register(User, Server, Password) ->
     extauth:try_register(User, Server, Password).
 
-is_user_exists(User, Server) ->
-    try extauth:is_user_exists(User, Server) of
+user_exists(User, Server) ->
+    try extauth:user_exists(User, Server) of
 	Res -> Res
     catch
 	_:Error ->

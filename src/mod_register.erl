@@ -198,7 +198,7 @@ process_iq(#iq{type = get, from = From, to = To, id = ID, lang = Lang} = IQ,
     {IsRegistered, Username} =
 	case From of
 	    #jid{user = User, lserver = Server} ->
-		case ejabberd_auth:is_user_exists(User, Server) of
+		case ejabberd_auth:user_exists(User, Server) of
 		    true ->
 			{true, User};
 		    false ->

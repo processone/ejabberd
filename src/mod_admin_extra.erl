@@ -210,7 +210,7 @@ get_commands_spec() ->
 			result_desc = "Result tuple"},
      #ejabberd_commands{name = check_account, tags = [accounts],
 			desc = "Check if an account exists or not",
-			module = ejabberd_auth, function = is_user_exists,
+			module = ejabberd_auth, function = user_exists,
 			args = [{user, binary}, {host, binary}],
 			args_example = [<<"peter">>, <<"myserver.com">>],
 			args_desc = ["User name to check", "Server to check"],
@@ -1638,7 +1638,7 @@ decide_rip_jid({UName, UServer}, Match_list) ->
       Match_list).
 
 user_action(User, Server, Fun, OK) ->
-    case ejabberd_auth:is_user_exists(User, Server) of
+    case ejabberd_auth:user_exists(User, Server) of
         true ->
  	    case catch Fun() of
                 OK -> ok;

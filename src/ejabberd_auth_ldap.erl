@@ -37,7 +37,7 @@
 	 handle_cast/2, terminate/2, code_change/3]).
 
 -export([start/1, stop/1, start_link/1, set_password/3,
-	 check_password/4, is_user_exists/2,
+	 check_password/4, user_exists/2,
 	 get_users/2, count_users/2,
 	 store_type/1, plain_password_required/1,
 	 opt_type/1]).
@@ -147,8 +147,8 @@ count_users(Server, Opts) ->
     length(get_users(Server, Opts)).
 
 %% @spec (User, Server) -> true | false | {error, Error}
-is_user_exists(User, Server) ->
-    case catch is_user_exists_ldap(User, Server) of
+user_exists(User, Server) ->
+    case catch user_exists_ldap(User, Server) of
       {'EXIT', _Error} -> {error, db_failure};
       Result -> Result
     end.
@@ -218,7 +218,7 @@ get_users_ldap(Server) ->
       _ -> []
     end.
 
-is_user_exists_ldap(User, Server) ->
+user_exists_ldap(User, Server) ->
     {ok, State} = eldap_utils:get_state(Server, ?MODULE),
     case find_user_dn(User, State) of
       false -> false;

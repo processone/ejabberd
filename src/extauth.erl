@@ -31,7 +31,7 @@
 
 -export([start/2, stop/1, init/2, check_password/3,
 	 set_password/3, try_register/3, remove_user/2,
-	 remove_user/3, is_user_exists/2, opt_type/1]).
+	 remove_user/3, user_exists/2, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -73,7 +73,7 @@ get_process_name(Host, Integer) ->
 check_password(User, Server, Password) ->
     call_port(Server, [<<"auth">>, User, Server, Password]).
 
-is_user_exists(User, Server) ->
+user_exists(User, Server) ->
     call_port(Server, [<<"isuser">>, User, Server]).
 
 set_password(User, Server, Password) ->

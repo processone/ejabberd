@@ -148,7 +148,7 @@ search_items(Entries, State) ->
 		  {U, UIDAttrFormat} ->
 		      case eldap_utils:get_user_part(U, UIDAttrFormat) of
 			  {ok, Username} ->
-			      case ejabberd_auth:is_user_exists(Username,
+			      case ejabberd_auth:user_exists(Username,
 								LServer) of
 				  true ->
 				      RFields = lists:map(

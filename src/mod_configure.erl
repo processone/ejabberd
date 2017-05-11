@@ -1541,7 +1541,7 @@ set_form(From, Host, ?NS_ADMINL(<<"delete-user">>),
 			     Server = JID#jid.lserver,
 			     true = Server == Host orelse
 				      get_permission_level(From) == global,
-			     true = ejabberd_auth:is_user_exists(User, Server),
+			     true = ejabberd_auth:user_exists(User, Server),
 			     {User, Server}
 		     end,
 		     AccountStringList),
@@ -1610,7 +1610,7 @@ set_form(From, Host,
     Server = JID#jid.lserver,
     true = Server == Host orelse
 	     get_permission_level(From) == global,
-    true = ejabberd_auth:is_user_exists(User, Server),
+    true = ejabberd_auth:user_exists(User, Server),
     ejabberd_auth:set_password(User, Server, Password),
     {result, undefined};
 set_form(From, Host,

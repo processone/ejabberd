@@ -40,7 +40,7 @@
 	 unregister_connection/3
 	]).
 
--export([login/2, check_password/4, is_user_exists/2,
+-export([login/2, check_password/4, user_exists/2,
 	 get_users/2, count_users/2, store_type/1,
 	 plain_password_required/1, opt_type/1]).
 
@@ -135,7 +135,7 @@ unregister_connection(_SID,
 %% ---------------------------------
 check_password(User, _AuthzId, Server, _Password) ->
     case
-      ejabberd_auth:is_user_exists_in_other_modules(?MODULE,
+      ejabberd_auth:user_exists_in_other_modules(?MODULE,
 						    User, Server)
 	of
       %% If user exists in other module, reject anonnymous authentication
@@ -165,7 +165,7 @@ get_users(Server, _) ->
 count_users(Server, Opts) ->
     length(get_users(Server, Opts)).
 
-is_user_exists(User, Server) ->
+user_exists(User, Server) ->
     anonymous_user_exist(User, Server).
 
 plain_password_required(_) ->

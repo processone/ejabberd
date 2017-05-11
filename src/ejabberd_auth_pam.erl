@@ -31,7 +31,7 @@
 -behaviour(ejabberd_auth).
 
 -export([start/1, stop/1, check_password/4,
-	 is_user_exists/2, store_type/1, plain_password_required/1,
+	 user_exists/2, store_type/1, plain_password_required/1,
 	 opt_type/1]).
 
 start(_Host) ->
@@ -57,7 +57,7 @@ check_password(User, AuthzId, Host, Password) ->
         end
     end.
 
-is_user_exists(User, Host) ->
+user_exists(User, Host) ->
     Service = get_pam_service(Host),
     UserInfo = case get_pam_userinfotype(Host) of
 		 username -> User;
