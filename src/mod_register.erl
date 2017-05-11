@@ -120,7 +120,7 @@ process_iq(#iq{from = From, to = To} = IQ, Source) ->
 	    false -> false
 	end,
     Server = To#jid.lserver,
-    Access = gen_mod:get_module_opt(Server, ?MODULE, access, all),
+    Access = gen_mod:get_module_opt(Server, ?MODULE, access_remove, all),
     AllowRemove = allow == acl:match_rule(Server, Access, From),
     process_iq(IQ, Source, IsCaptchaEnabled, AllowRemove).
 
@@ -588,6 +588,7 @@ check_ip_access(IPAddress, IPAccess) ->
 
 mod_opt_type(access) -> fun acl:access_rules_validator/1;
 mod_opt_type(access_from) -> fun acl:access_rules_validator/1;
+mod_opt_type(access_remove) -> fun acl:access_rules_validator/1;
 mod_opt_type(captcha_protected) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(ip_access) -> fun acl:access_rules_validator/1;
@@ -608,7 +609,7 @@ mod_opt_type({welcome_message, subject}) ->
 mod_opt_type({welcome_message, body}) ->
     fun iolist_to_binary/1;
 mod_opt_type(_) ->
-    [access, access_from, captcha_protected, ip_access,
+    [access, access_from, access_remove, captcha_protected, ip_access,
      iqdisc, password_strength, registration_watchers,
      {welcome_message, subject}, {welcome_message, body}].
 
