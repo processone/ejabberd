@@ -323,7 +323,7 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 			    case ejabberd_auth:try_register(User, Server,
 							    Password)
 				of
-			      {atomic, ok} ->
+			      ok ->
 				  send_welcome_message(JID),
 				  send_registration_notifications(
                                     ?MODULE, JID, Source),
@@ -331,7 +331,7 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 			      Error ->
 				  remove_timeout(Source),
 				  case Error of
-				    {atomic, exists} ->
+				    {error, exists} ->
 					Txt = <<"User already exists">>,
 					{error, xmpp:err_conflict(Txt, Lang)};
 				    {error, invalid_jid} ->

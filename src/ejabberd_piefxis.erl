@@ -135,7 +135,7 @@ export_host(Dir, FnH, Host) ->
         {ok, Fd} ->
             print(Fd, make_piefxis_xml_head()),
             print(Fd, make_piefxis_host_head(Host)),
-            Users = ejabberd_auth:get_vh_registered_users(Host),
+            Users = ejabberd_auth:get_users(Host),
             case export_users(Users, Host, Fd) of
                 ok ->
                     print(Fd, make_piefxis_host_tail()),
@@ -402,9 +402,9 @@ process_user(#xmlel{name = <<"user">>, attrs = Attrs, children = Els},
             stop("Invalid 'user': ~s", [Name]);
         LUser ->
             case ejabberd_auth:try_register(LUser, LServer, Pass) of
-                {atomic, _} ->
+                ok ->
                     process_user_els(Els, State#state{user = LUser});
-                Err ->
+                {error, Err} ->
                     stop("Failed to create user '~s': ~p", [Name, Err])
             end
     end.

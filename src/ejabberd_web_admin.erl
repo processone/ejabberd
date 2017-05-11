@@ -1370,7 +1370,7 @@ list_vhosts2(Lang, Hosts) ->
 				 OnlineUsers =
 				     length(ejabberd_sm:get_vh_session_list(Host)),
 				 RegisteredUsers =
-				     ejabberd_auth:get_vh_registered_users_number(Host),
+				     ejabberd_auth:count_users(Host),
 				 ?XE(<<"tr">>,
 				     [?XE(<<"td">>,
 					  [?AC(<<"../server/", Host/binary,
@@ -1388,7 +1388,7 @@ list_vhosts2(Lang, Hosts) ->
 
 list_users(Host, Query, Lang, URLFunc) ->
     Res = list_users_parse_query(Query, Host),
-    Users = ejabberd_auth:get_vh_registered_users(Host),
+    Users = ejabberd_auth:get_users(Host),
     SUsers = lists:sort([{S, U} || {U, S} <- Users]),
     FUsers = case length(SUsers) of
 	       N when N =< 100 ->
@@ -1469,7 +1469,7 @@ list_users_parse_query(Query, Host) ->
     end.
 
 list_users_in_diapason(Host, Diap, Lang, URLFunc) ->
-    Users = ejabberd_auth:get_vh_registered_users(Host),
+    Users = ejabberd_auth:get_users(Host),
     SUsers = lists:sort([{S, U} || {U, S} <- Users]),
     [S1, S2] = ejabberd_regexp:split(Diap, <<"-">>),
     N1 = binary_to_integer(S1),
@@ -1565,7 +1565,7 @@ su_to_list({Server, User}) ->
 get_stats(global, Lang) ->
     OnlineUsers = ejabberd_sm:connected_users_number(),
     RegisteredUsers = lists:foldl(fun (Host, Total) ->
-					  ejabberd_auth:get_vh_registered_users_number(Host)
+					  ejabberd_auth:count_users(Host)
 					    + Total
 				  end,
 				  0, ?MYHOSTS),
@@ -1589,7 +1589,7 @@ get_stats(Host, Lang) ->
     OnlineUsers =
 	length(ejabberd_sm:get_vh_session_list(Host)),
     RegisteredUsers =
-	ejabberd_auth:get_vh_registered_users_number(Host),
+	ejabberd_auth:count_users(Host),
     [?XAE(<<"table">>, [],
 	  [?XE(<<"tbody">>,
 	       [?XE(<<"tr">>,

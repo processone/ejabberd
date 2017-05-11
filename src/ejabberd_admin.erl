@@ -478,9 +478,9 @@ update_module(ModuleNameString) ->
 
 register(User, Host, Password) ->
     case ejabberd_auth:try_register(User, Host, Password) of
-	{atomic, ok} ->
+	ok ->
 	    {ok, io_lib:format("User ~s@~s successfully registered", [User, Host])};
-	{atomic, exists} ->
+	{error, exists} ->
 	    Msg = io_lib:format("User ~s@~s already registered", [User, Host]),
 	    {error, conflict, 10090, Msg};
 	{error, Reason} ->
@@ -494,7 +494,7 @@ unregister(User, Host) ->
     {ok, ""}.
 
 registered_users(Host) ->
-    Users = ejabberd_auth:get_vh_registered_users(Host),
+    Users = ejabberd_auth:get_users(Host),
     SUsers = lists:sort(Users),
     lists:map(fun({U, _S}) -> U end, SUsers).
 

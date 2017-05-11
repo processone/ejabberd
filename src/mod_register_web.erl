@@ -510,8 +510,8 @@ register_account2(Username, Host, Password) ->
     case ejabberd_auth:try_register(Username, Host,
 				    Password)
 	of
-      {atomic, Res} ->
-	  {success, Res, {Username, Host, Password}};
+      ok ->
+	  {success, ok, {Username, Host, Password}};
       Other -> Other
     end.
 
