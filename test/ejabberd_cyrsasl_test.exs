@@ -114,7 +114,7 @@ defmodule EjabberdCyrsaslTest do
       fn (_host) ->
         true
       end)
-    mock(:ejabberd_auth, :is_user_exists,
+    mock(:ejabberd_auth, :user_exists,
       fn (user, domain) ->
         domain == "domain1" and get_password(user) != {:false, :internal}
       end)

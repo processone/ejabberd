@@ -32,7 +32,7 @@ defmodule EjabberdAuthMock do
 
 		{:ok, _pid} = Agent.start_link(fn -> %{} end, name: @agent)
 
-		mock(:ejabberd_auth, :is_user_exists,
+		mock(:ejabberd_auth, :user_exists,
 			fn (user, domain)  ->
 				Agent.get(@agent, fn users -> Map.get(users, {user, domain}) end) != nil
 			end)
