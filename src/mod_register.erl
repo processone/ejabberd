@@ -289,6 +289,9 @@ try_set_password(User, Server, Password, #iq{lang = Lang, meta = M} = IQ) ->
 		xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 	    {error, invalid_jid} ->
 		xmpp:make_error(IQ, xmpp:err_jid_malformed());
+	    {error, invalid_password} ->
+		Txt = <<"Incorrect password">>,
+		xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 	    Err ->
 		?ERROR_MSG("failed to register user ~s@~s: ~p",
 			   [User, Server, Err]),
