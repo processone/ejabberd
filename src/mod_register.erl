@@ -336,6 +336,9 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 					{error, xmpp:err_conflict(Txt, Lang)};
 				    {error, invalid_jid} ->
 					{error, xmpp:err_jid_malformed()};
+				    {error, invalid_password} ->
+					Txt = <<"Incorrect password">>,
+					{error, xmpp:err_not_allowed(Txt, Lang)};
 				    {error, not_allowed} ->
 					{error, xmpp:err_not_allowed()};
 				    {error, too_many_users} ->
