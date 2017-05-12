@@ -949,7 +949,11 @@ opt_type(_) ->
 		     (atom()) -> [atom()].
 listen_opt_type(access) -> fun acl:access_rules_validator/1;
 listen_opt_type(shaper) -> fun acl:shaper_rules_validator/1;
-listen_opt_type(certfile) -> opt_type(c2s_certfile);
+listen_opt_type(certfile) ->
+    fun(S) ->
+	    ejabberd_pkix:add_certfile(S),
+	    iolist_to_binary(S)
+    end;
 listen_opt_type(ciphers) -> opt_type(c2s_ciphers);
 listen_opt_type(dhfile) -> opt_type(c2s_dhfile);
 listen_opt_type(cafile) -> opt_type(c2s_cafile);

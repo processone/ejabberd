@@ -356,7 +356,11 @@ change_shaper(#{shaper := ShaperName, server_host := ServerHost} = State,
 		     (max_fsm_queue) -> fun((pos_integer()) -> pos_integer());
 		     (atom()) -> [atom()].
 listen_opt_type(shaper) -> fun acl:shaper_rules_validator/1;
-listen_opt_type(certfile) -> ejabberd_s2s:opt_type(s2s_certfile);
+listen_opt_type(certfile) ->
+    fun(S) ->
+	    ejabberd_pkix:add_certfile(S),
+	    iolist_to_binary(S)
+    end;
 listen_opt_type(ciphers) -> ejabberd_s2s:opt_type(s2s_ciphers);
 listen_opt_type(dhfile) -> ejabberd_s2s:opt_type(s2s_dhfile);
 listen_opt_type(cafile) -> ejabberd_s2s:opt_type(s2s_cafile);

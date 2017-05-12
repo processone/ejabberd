@@ -157,6 +157,7 @@ register_route(Domain, ServerHost, LocalHint, Pid) ->
 				    get_component_number(LDomain), Pid) of
 		ok ->
 		    ?DEBUG("Route registered: ~s", [LDomain]),
+		    ejabberd_hooks:run(route_registered, [LDomain]),
 		    delete_cache(Mod, LDomain);
 		{error, Err} ->
 		    ?ERROR_MSG("Failed to register route ~s: ~p",
@@ -185,6 +186,7 @@ unregister_route(Domain, Pid) ->
 		   LDomain, get_component_number(LDomain), Pid) of
 		ok ->
 		    ?DEBUG("Route unregistered: ~s", [LDomain]),
+		    ejabberd_hooks:run(route_unregistered, [LDomain]),
 		    delete_cache(Mod, LDomain);
 		{error, Err} ->
 		    ?ERROR_MSG("Failed to unregister route ~s: ~p",

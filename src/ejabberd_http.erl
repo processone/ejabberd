@@ -926,7 +926,10 @@ opt_type(_) -> [trusted_proxies].
 listen_opt_type(tls) ->
     fun(B) when is_boolean(B) -> B end;
 listen_opt_type(certfile) ->
-    fun misc:try_read_file/1;
+    fun(S) ->
+	    ejabberd_pkix:add_certfile(S),
+	    iolist_to_binary(S)
+    end;
 listen_opt_type(ciphers) ->
     fun misc:try_read_file/1;
 listen_opt_type(dhfile) ->
