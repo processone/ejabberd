@@ -152,7 +152,10 @@ init([]) ->
     ejabberd_hooks:add(route_registered, ?MODULE, route_registered, 50),
     Validate = case os:type() of
 		   {win32, _} -> false;
-		   _ -> true
+		   _ ->
+		       code:ensure_loaded(public_key),
+		       erlang:function_exported(
+			 public_key, short_name_hash, 1)
 	       end,
     if Validate -> check_ca_dir();
        true -> ok
