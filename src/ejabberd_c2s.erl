@@ -904,10 +904,10 @@ transform_listen_option(Opt, Opts) ->
 	      (resource_conflict) -> fun((resource_conflict()) -> resource_conflict());
 	      (disable_sasl_mechanisms) -> fun((binary() | [binary()]) -> [binary()]);
 	      (atom()) -> [atom()].
-opt_type(c2s_certfile) -> fun iolist_to_binary/1;
-opt_type(c2s_ciphers) -> fun iolist_to_binary/1;
-opt_type(c2s_dhfile) -> fun iolist_to_binary/1;
-opt_type(c2s_cafile) -> fun iolist_to_binary/1;
+opt_type(c2s_certfile) -> fun misc:try_read_file/1;
+opt_type(c2s_ciphers) -> fun misc:try_read_file/1;
+opt_type(c2s_dhfile) -> fun misc:try_read_file/1;
+opt_type(c2s_cafile) -> fun misc:try_read_file/1;
 opt_type(c2s_protocol_options) ->
     fun (Options) -> str:join(Options, <<"|">>) end;
 opt_type(c2s_tls_compression) ->

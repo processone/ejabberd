@@ -1417,7 +1417,7 @@ opt_type(cache_life_time) ->
        (unlimited) -> infinity
     end;
 opt_type(domain_certfile) ->
-    fun iolist_to_binary/1;
+    fun misc:try_read_file/1;
 opt_type(shared_key) ->
     fun iolist_to_binary/1;
 opt_type(node_start) ->

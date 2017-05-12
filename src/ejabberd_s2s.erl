@@ -709,10 +709,10 @@ opt_type(route_subdomains) ->
     end;
 opt_type(s2s_access) ->
     fun acl:access_rules_validator/1;
-opt_type(s2s_certfile) -> fun iolist_to_binary/1;
-opt_type(s2s_ciphers) -> fun iolist_to_binary/1;
-opt_type(s2s_dhfile) -> fun iolist_to_binary/1;
-opt_type(s2s_cafile) -> fun iolist_to_binary/1;
+opt_type(s2s_certfile) -> fun misc:try_read_file/1;
+opt_type(s2s_ciphers) -> fun misc:try_read_file/1;
+opt_type(s2s_dhfile) -> fun misc:try_read_file/1;
+opt_type(s2s_cafile) -> fun misc:try_read_file/1;
 opt_type(s2s_protocol_options) ->
     fun (Options) -> str:join(Options, <<"|">>) end;
 opt_type(s2s_tls_compression) ->

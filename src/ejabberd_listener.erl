@@ -90,14 +90,7 @@ start(Port, Module, Opts) ->
 
 %% @spec(Port, Module, Opts) -> {ok, Pid} | {error, ErrorMessage}
 start_dependent(Port, Module, Opts) ->
-    try check_listener_options(Opts) of
-	ok ->
-	    proc_lib:start_link(?MODULE, init, [Port, Module, Opts])
-    catch
-	throw:{error, Error} ->
-	    ?ERROR_MSG(Error, []),
-	    {error, Error}
-    end.
+    proc_lib:start_link(?MODULE, init, [Port, Module, Opts]).
 
 init(PortIP, Module, RawOpts) ->
     {Port, IPT, IPS, IPV, Proto, OptsClean} = parse_listener_portip(PortIP, RawOpts),
@@ -456,48 +449,6 @@ config_reloaded() ->
 %%%
 %%% Check options
 %%%
-
-check_listener_options(Opts) ->
-    case includes_deprecated_ssl_option(Opts) of
-	false -> ok;
-	true ->
-	    Error = "There is a problem with your ejabberd configuration file: "
-		"the option 'ssl' for listening sockets is no longer available."
-		" To get SSL encryption use the option 'tls'.",
-	    throw({error, Error})
-    end,
-    case certfile_readable(Opts) of
-	true -> ok;
-	{false, Path} ->
-            ErrorText = "There is a problem in the configuration: "
-		"the specified file is not readable: ",
-	    throw({error, ErrorText ++ Path})
-    end,
-    ok.
-
-%% Parse the options of the socket,
-%% and return if the deprecated option 'ssl' is included
-%% @spec (Opts) -> true | false
-includes_deprecated_ssl_option(Opts) ->
-    case lists:keysearch(ssl, 1, Opts) of
-	{value, {ssl, _SSLOpts}} ->
-	    true;
-	_ ->
-	    lists:member(ssl, Opts)
-    end.
-
-%% @spec (Opts) -> true | {false, Path::string()}
-certfile_readable(Opts) ->
-    case proplists:lookup(certfile, Opts) of
-	none -> true;
-	{certfile, Path} ->
-            PathS = binary_to_list(Path),
-	    case ejabberd_config:is_file_readable(PathS) of
-		true -> true;
-		false -> {false, PathS}
-	    end
-    end.
-
 get_proto(Opts) ->
     case proplists:get_value(proto, Opts) of
 	undefined ->

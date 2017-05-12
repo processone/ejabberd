@@ -367,7 +367,7 @@ opt_type(ldap_rootdn) -> fun iolist_to_binary/1;
 opt_type(ldap_servers) ->
     fun (L) -> [iolist_to_binary(H) || H <- L] end;
 opt_type(ldap_tls_cacertfile) ->
-    fun(S) -> binary_to_list(iolist_to_binary(S)) end;
+    fun(S) -> binary_to_list(misc:try_read_file(S)) end;
 opt_type(ldap_tls_depth) ->
     fun (I) when is_integer(I), I >= 0 -> I end;
 opt_type(ldap_tls_verify) ->

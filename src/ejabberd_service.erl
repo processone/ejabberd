@@ -276,10 +276,10 @@ transform_listen_option(Opt, Opts) ->
 		     (atom()) -> [atom()].
 listen_opt_type(access) -> fun acl:access_rules_validator/1;
 listen_opt_type(shaper_rule) -> fun acl:shaper_rules_validator/1;
-listen_opt_type(certfile) -> fun iolist_to_binary/1;
-listen_opt_type(ciphers) -> fun iolist_to_binary/1;
-listen_opt_type(dhfile) -> fun iolist_to_binary/1;
-listen_opt_type(cafile) -> fun iolist_to_binary/1;
+listen_opt_type(certfile) -> fun misc:try_read_file/1;
+listen_opt_type(ciphers) -> fun misc:try_read_file/1;
+listen_opt_type(dhfile) -> fun misc:try_read_file/1;
+listen_opt_type(cafile) -> fun misc:try_read_file/1;
 listen_opt_type(protocol_options) ->
     fun(Options) -> str:join(Options, <<"|">>) end;
 listen_opt_type(tls_compression) -> fun(B) when is_boolean(B) -> B end;

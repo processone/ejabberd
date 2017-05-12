@@ -114,7 +114,7 @@ listen_opt_type(auth_realm) ->
 listen_opt_type(tls) ->
     fun(B) when is_boolean(B) -> B end;
 listen_opt_type(certfile) ->
-    fun iolist_to_binary/1;
+    fun misc:try_read_file/1;
 listen_opt_type(turn_min_port) ->
     fun(P) when is_integer(P), P > 0, P =< 65535 -> P end;
 listen_opt_type(turn_max_port) ->

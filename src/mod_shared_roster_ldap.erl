@@ -603,9 +603,9 @@ mod_opt_type(ldap_rootdn) -> fun iolist_to_binary/1;
 mod_opt_type(ldap_servers) ->
     fun (L) -> [iolist_to_binary(H) || H <- L] end;
 mod_opt_type(ldap_tls_cacertfile) ->
-    fun iolist_to_binary/1;
+    fun misc:try_read_file/1;
 mod_opt_type(ldap_tls_certfile) ->
-    fun iolist_to_binary/1;
+    fun misc:try_read_file/1;
 mod_opt_type(ldap_tls_depth) ->
     fun (I) when is_integer(I), I >= 0 -> I end;
 mod_opt_type(ldap_tls_verify) ->

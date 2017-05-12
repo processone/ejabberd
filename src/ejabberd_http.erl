@@ -926,11 +926,11 @@ opt_type(_) -> [trusted_proxies].
 listen_opt_type(tls) ->
     fun(B) when is_boolean(B) -> B end;
 listen_opt_type(certfile) ->
-    fun iolist_to_binary/1;
+    fun misc:try_read_file/1;
 listen_opt_type(ciphers) ->
-    fun iolist_to_binary/1;
+    fun misc:try_read_file/1;
 listen_opt_type(dhfile) ->
-    fun iolist_to_binary/1;
+    fun misc:try_read_file/1;
 listen_opt_type(protocol_options) ->
     fun(Options) -> str:join(Options, <<"|">>) end;
 listen_opt_type(tls_compression) ->

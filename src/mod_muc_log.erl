@@ -1170,7 +1170,7 @@ has_no_permanent_store_hint(Packet) ->
 
 mod_opt_type(access_log) ->
     fun acl:access_rules_validator/1;
-mod_opt_type(cssfile) -> fun iolist_to_binary/1;
+mod_opt_type(cssfile) -> fun misc:try_read_file/1;
 mod_opt_type(dirname) ->
     fun (room_jid) -> room_jid;
 	(room_name) -> room_name
