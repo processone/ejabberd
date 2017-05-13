@@ -393,7 +393,7 @@ check_ca_dir() ->
 -spec find_local_issuer(cert()) -> {ok, cert()} | {error, {bad_cert, unknown_ca}}.
 find_local_issuer(Cert) ->
     {ok, {_, IssuerID}} = public_key:pkix_issuer_id(Cert, self),
-    Hash = public_key:short_name_hash(IssuerID),
+    Hash = short_name_hash(IssuerID),
     filelib:fold_files(
       ca_dir(), Hash ++ "\\.[0-9]+", false,
       fun(_, {ok, IssuerCert}) ->
@@ -514,3 +514,11 @@ get_cert_path(G, [Root|_] = Acc) ->
 		      get_cert_path(G, [V|Acc])
 	      end, Es)
     end.
+
+-ifdef(SHORT_NAME_HASH).
+short_name_hash(IssuerID) ->
+    public_key:short_name_hash(IssuerID).
+-else.
+short_name_hash(_) ->
+    "".
+-endif.
