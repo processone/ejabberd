@@ -77,10 +77,14 @@ update_reg_users_counter_table(Server) ->
 	end,
     mnesia:sync_dirty(F).
 
-use_cache(_) ->
+use_cache(Host) ->
     case mnesia:table_info(passwd, storage_type) of
-	disc_only_copies -> true;
-	_ -> false
+	disc_only_copies ->
+	    ejabberd_config:get_option(
+	      {auth_use_cache, Host},
+	      ejabberd_config:use_cache(Host));
+	_ ->
+	    false
     end.
 
 plain_password_required(Server) ->
