@@ -62,7 +62,6 @@ init([]) ->
                         [{ram_copies, [node()]},
                          {local_content, true},
 			 {attributes, record_info(fields, shaper)}]),
-    mnesia:add_table_copy(shaper, node(), ram_copies),
     ejabberd_hooks:add(config_reloaded, ?MODULE, load_from_config, 20),
     load_from_config(),
     {ok, #state{}}.
@@ -86,8 +85,7 @@ code_change(_OldVsn, State, _Extra) ->
 -spec load_from_config() -> ok | {error, any()}.
 
 load_from_config() ->
-    Shapers = ejabberd_config:get_option(
-                shaper, fun(V) -> V end, []),
+    Shapers = ejabberd_config:get_option(shaper, []),
     case mnesia:transaction(
            fun() ->
                    lists:foreach(
@@ -170,5 +168,7 @@ transform_options({OptName, Name, none}, Opts) when OptName == shaper ->
 transform_options(Opt, Opts) ->
     [Opt|Opts].
 
+-spec opt_type(shaper) -> fun((any()) -> any());
+	      (atom()) -> [atom()].
 opt_type(shaper) -> fun (V) -> V end;
 opt_type(_) -> [shaper].

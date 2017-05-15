@@ -53,6 +53,7 @@ modules() ->
      mod_caps,
      mod_irc,
      mod_last,
+     mod_mam,
      mod_muc,
      mod_offline,
      mod_privacy,

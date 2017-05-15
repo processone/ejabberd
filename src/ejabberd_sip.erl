@@ -1,9 +1,9 @@
 %%%-------------------------------------------------------------------
-%%% Author  : Evgeny Khramtsov <ekhramtsov@process-one.net>
-%%% Created : 25 Sep 2016 by Evgeny Khramtsov <ekhramtsov@process-one.net>
+%%% @author Evgeny Khramtsov <ekhramtsov@process-one.net>
+%%% Created : 30 Apr 2017 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2017   ProcessOne
+%%% ejabberd, Copyright (C) 2013-2017   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -19,34 +19,43 @@
 %%% with this program; if not, write to the Free Software Foundation, Inc.,
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
-%%%----------------------------------------------------------------------
-
--module(mod_legacy).
--behaviour(gen_mod).
+%%%-------------------------------------------------------------------
+-module(ejabberd_sip).
 
 %% API
--export([start/2, stop/1, mod_opt_type/1, depends/2, process_iq/3]).
--include("jlib.hrl").
+-export([tcp_init/2, udp_init/2, udp_recv/5, start/2,
+	 socket_type/0, listen_opt_type/1]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
-start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_EVENT,
-				  ?MODULE, process_iq, IQDisc).
+tcp_init(Socket, Opts) ->
+    ejabberd:start_app(esip),
+    esip_socket:tcp_init(Socket, Opts).
 
-stop(Host) ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?MODULE).
+udp_init(Socket, Opts) ->
+    ejabberd:start_app(esip),
+    esip_socket:udp_init(Socket, Opts).
 
-mod_opt_type(_) ->
-    [].
+udp_recv(Sock, Addr, Port, Data, Opts) ->
+    esip_socket:udp_recv(Sock, Addr, Port, Data, Opts).
 
-depends(_, _) ->
-    [].
+start(Opaque, Opts) ->
+    esip_socket:start(Opaque, Opts).
+
+socket_type() ->
+    raw.
+
+listen_opt_type(certfile) ->
+    fun(S) ->
+	    ejabberd_pkix:add_certfile(S),
+	    iolist_to_binary(S)
+    end;
+listen_opt_type(tls) ->
+    fun(B) when is_boolean(B) -> B end;
+listen_opt_type(_) ->
+    [tls, certfile].
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-process_iq(_From, _To, IQ) ->
-    IQ#iq{type = result, sub_el = []}.

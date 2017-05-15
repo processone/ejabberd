@@ -33,7 +33,11 @@
 	 hex_to_bin/1, hex_to_base64/1, expand_keyword/3,
 	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
 	 l2i/1, i2l/1, i2l/2, expr_to_term/1, term_to_expr/1,
-	 encode_pid/1, decode_pid/2, compile_exprs/2]).
+	 encode_pid/1, decode_pid/2, compile_exprs/2, join_atoms/2,
+	 try_read_file/1]).
+
+-include("logger.hrl").
+-include_lib("kernel/include/file.hrl").
 
 %%%===================================================================
 %%% API
@@ -235,6 +239,34 @@ compile_exprs(Mod, Exprs) ->
 	    Err;
 	  _:{badmatch, error} ->
 	    {error, compile_failed}
+    end.
+
+-spec join_atoms([atom()], binary()) -> binary().
+join_atoms(Atoms, Sep) ->
+    str:join([io_lib:format("~p", [A]) || A <- Atoms], Sep).
+
+%% @doc Checks if the file is readable and converts its name to binary.
+%%      Fails with `badarg` otherwise. The function is intended for usage
+%%      in configuration validators only.
+-spec try_read_file(file:filename_all()) -> binary().
+try_read_file(Path) ->
+    Res = case file:read_file_info(Path) of
+	      {ok, #file_info{type = Type, access = Access}} ->
+		  case {Type, Access} of
+		      {regular, read} -> ok;
+		      {regular, read_write} -> ok;
+		      {regular, _} -> {error, file:format_error(eaccess)};
+		      _ -> {error, "not a regular file"}
+		  end;
+	      {error, Why} ->
+		  {error, file:format_error(Why)}
+	  end,
+    case Res of
+	ok ->
+	    iolist_to_binary(Path);
+	{error, Reason} ->
+	    ?ERROR_MSG("Failed to read ~s: ~s", [Path, Reason]),
+	    erlang:error(badarg)
     end.
 
 %%%===================================================================

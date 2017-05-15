@@ -28,6 +28,7 @@
 
 %% API
 -export([init/2, import/3, add_xupdate/3, get_xupdate/2, remove_xupdate/2]).
+-export([need_transform/1, transform/1]).
 
 -include("mod_vcard_xupdate.hrl").
 -include("logger.hrl").
@@ -39,8 +40,7 @@ init(_Host, _Opts) ->
     ejabberd_mnesia:create(?MODULE, vcard_xupdate,
 			[{disc_copies, [node()]},
 			 {attributes,
-			  record_info(fields, vcard_xupdate)}]),
-    update_table().
+			  record_info(fields, vcard_xupdate)}]).
 
 add_xupdate(LUser, LServer, Hash) ->
     F = fun () ->
@@ -66,22 +66,17 @@ import(LServer, <<"vcard_xupdate">>, [LUser, Hash, _TimeStamp]) ->
     mnesia:dirty_write(
       #vcard_xupdate{us = {LUser, LServer}, hash = Hash}).
 
+need_transform(#vcard_xupdate{us = {U, S}, hash = Hash})
+  when is_list(U) orelse is_list(S) orelse is_list(Hash) ->
+    ?INFO_MSG("Mnesia table 'vcard_xupdate' will be converted to binary", []),
+    true;
+need_transform(_) ->
+    false.
+
+transform(#vcard_xupdate{us = {U, S}, hash = Hash} = R) ->
+    R#vcard_xupdate{us = {iolist_to_binary(U), iolist_to_binary(S)},
+		    hash = iolist_to_binary(Hash)}.
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-update_table() ->
-    Fields = record_info(fields, vcard_xupdate),
-    case mnesia:table_info(vcard_xupdate, attributes) of
-      Fields ->
-            ejabberd_config:convert_table_to_binary(
-              vcard_xupdate, Fields, set,
-              fun(#vcard_xupdate{us = {U, _}}) -> U end,
-              fun(#vcard_xupdate{us = {U, S}, hash = Hash} = R) ->
-                      R#vcard_xupdate{us = {iolist_to_binary(U),
-                                            iolist_to_binary(S)},
-                                      hash = iolist_to_binary(Hash)}
-              end);
-        _ ->            
-            ?INFO_MSG("Recreating vcard_xupdate table", []),
-            mnesia:transform_table(vcard_xupdate, ignore, Fields)
-    end.

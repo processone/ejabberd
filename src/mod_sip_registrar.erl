@@ -494,12 +494,10 @@ get_flow_timeout(LServer, #sip_socket{type = Type}) ->
 	udp ->
 	    gen_mod:get_module_opt(
 	      LServer, mod_sip, flow_timeout_udp,
-	      fun(I) when is_integer(I), I>0 -> I end,
 	      ?FLOW_TIMEOUT_UDP);
 	_ ->
 	    gen_mod:get_module_opt(
 	      LServer, mod_sip, flow_timeout_tcp,
-	      fun(I) when is_integer(I), I>0 -> I end,
 	      ?FLOW_TIMEOUT_TCP)
     end.
 

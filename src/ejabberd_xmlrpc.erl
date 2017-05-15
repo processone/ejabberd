@@ -35,7 +35,7 @@
 -author('badlop@process-one.net').
 
 -export([start/2, handler/2, process/2, socket_type/0,
-	 transform_listen_option/2]).
+	 transform_listen_option/2, listen_opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -197,36 +197,7 @@ socket_type() -> raw.
 %% HTTP interface
 %% -----------------------------
 process(_, #request{method = 'POST', data = Data, opts = Opts, ip = {IP, _}}) ->
-    AccessCommandsOpts = gen_mod:get_opt(access_commands, Opts,
-                                         fun(L) when is_list(L) -> L end,
-                                         undefined),
-    AccessCommands =
-        case AccessCommandsOpts of
-            undefined -> undefined;
-            _ ->
-                lists:flatmap(
-                  fun({Ac, AcOpts}) ->
-                          Commands = gen_mod:get_opt(
-                                       commands, lists:flatten(AcOpts),
-                                       fun(A) when is_atom(A) ->
-                                               A;
-                                          (L) when is_list(L) ->
-                                               true = lists:all(
-                                                        fun is_atom/1,
-                                                        L),
-                                               L
-                                       end, all),
-                          %% CommOpts = gen_mod:get_opt(
-                          %%              options, AcOpts,
-                          %%              fun(L) when is_list(L) -> L end,
-                          %%              []),
-			  [{<<"ejabberd_xmlrpc compatibility shim">>, {[?MODULE], [{access, Ac}], Commands}}];
-                     (Wrong) ->
-                          ?WARNING_MSG("wrong options format for ~p: ~p",
-                                       [?MODULE, Wrong]),
-                          []
-                  end, lists:flatten(AccessCommandsOpts))
-        end,
+    AccessCommands = proplists:get_value(access_commands, Opts),
     GetAuth = true,
     State = #state{access_commands = AccessCommands, get_auth = GetAuth, ip = IP},
     case fxml_stream:parse_element(Data) of
@@ -590,3 +561,25 @@ transform_listen_option({access_commands, ACOpts}, Opts) ->
     [{access_commands, NewACOpts}|Opts];
 transform_listen_option(Opt, Opts) ->
     [Opt|Opts].
+
+listen_opt_type(access_commands) ->
+    fun(Opts) ->
+	    lists:map(
+	      fun({Ac, AcOpts}) ->
+		      Commands = case proplists:get_value(
+					commands, lists:flatten(AcOpts), all) of
+				     Cmd when is_atom(Cmd) -> Cmd;
+				     Cmds when is_list(Cmds) ->
+					 true = lists:all(fun is_atom/1, Cmds),
+					 Cmds
+				 end,
+		      {<<"ejabberd_xmlrpc compatibility shim">>,
+		       {[?MODULE], [{access, Ac}], Commands}}
+	      end, lists:flatten(Opts))
+    end;
+listen_opt_type(maxsessions) ->
+    fun(I) when is_integer(I), I>0 -> I end;
+listen_opt_type(timeout) ->
+    fun(I) when is_integer(I), I>0 -> I end;
+listen_opt_type(_) ->
+    [access_commands, maxsessions, timeout].

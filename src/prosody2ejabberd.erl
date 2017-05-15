@@ -129,7 +129,7 @@ convert_data(Host, "accounts", User, [Data]) ->
 	    Pass
     end,
     case ejabberd_auth:try_register(User, Host, Password) of
-	{atomic, ok} ->
+	ok ->
 	    ok;
 	Err ->
 	    ?ERROR_MSG("failed to register user ~s@~s: ~p",

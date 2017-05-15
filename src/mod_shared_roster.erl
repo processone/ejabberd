@@ -450,7 +450,7 @@ get_online_users(Host) ->
 get_group_users(Host1, Group1) ->
     {Host, Group} = split_grouphost(Host1, Group1),
     case get_group_opt(Host, Group, all_users, false) of
-      true -> ejabberd_auth:get_vh_registered_users(Host);
+      true -> ejabberd_auth:get_users(Host);
       false -> []
     end
       ++
@@ -462,7 +462,7 @@ get_group_users(Host1, Group1) ->
 
 get_group_users(Host, Group, GroupOpts) ->
     case proplists:get_value(all_users, GroupOpts, false) of
-      true -> ejabberd_auth:get_vh_registered_users(Host);
+      true -> ejabberd_auth:get_users(Host);
       false -> []
     end
       ++

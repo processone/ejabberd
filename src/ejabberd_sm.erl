@@ -178,7 +178,7 @@ close_session(SID, User, Server, Resource) ->
 			    subscribe | subscribed | unsubscribe | unsubscribed,
 			    binary()) -> boolean() | {stop, false}.
 check_in_subscription(Acc, User, Server, _JID, _Type, _Reason) ->
-    case ejabberd_auth:is_user_exists(User, Server) of
+    case ejabberd_auth:user_exists(User, Server) of
       true -> Acc;
       false -> {stop, false}
     end.
@@ -716,7 +716,7 @@ route_message(#message{to = To, type = Type} = Packet) ->
 			end,
 			PrioRes);
       _ ->
-	    case ejabberd_auth:is_user_exists(LUser, LServer) andalso
+	    case ejabberd_auth:user_exists(LUser, LServer) andalso
 		is_privacy_allow(Packet) of
 		true ->
 		    ejabberd_hooks:run_fold(offline_message_hook,
@@ -865,14 +865,9 @@ force_update_presence({LUser, LServer}) ->
 -spec get_sm_backend(binary()) -> module().
 
 get_sm_backend(Host) ->
-    DBType = case ejabberd_config:get_option(
+    DBType = ejabberd_config:get_option(
 	       {sm_db_type, Host},
-		    fun(T) -> ejabberd_config:v_db(?MODULE, T) end) of
-		 undefined ->
-		     ejabberd_config:default_ram_db(Host, ?MODULE);
-		 T ->
-		     T
-	     end,
+	       ejabberd_config:default_ram_db(Host, ?MODULE)),
     list_to_atom("ejabberd_sm_" ++ atom_to_list(DBType)).
 
 -spec get_sm_backends() -> [module()].
@@ -904,15 +899,12 @@ init_cache() ->
 cache_opts() ->
     MaxSize = ejabberd_config:get_option(
 		sm_cache_size,
-		opt_type(sm_cache_size),
 		ejabberd_config:cache_size(global)),
     CacheMissed = ejabberd_config:get_option(
 		    sm_cache_missed,
-		    opt_type(sm_cache_missed),
 		    ejabberd_config:cache_missed(global)),
     LifeTime = case ejabberd_config:get_option(
 		      sm_cache_life_time,
-		      opt_type(sm_cache_life_time),
 		      ejabberd_config:cache_life_time(global)) of
 		   infinity -> infinity;
 		   I -> timer:seconds(I)
@@ -943,7 +935,6 @@ use_cache(Mod, LServer) ->
 	false ->
 	    ejabberd_config:get_option(
 	      {sm_use_cache, LServer},
-	      ejabberd_sm:opt_type(sm_use_cache),
 	      ejabberd_config:use_cache(LServer))
     end.
 
@@ -1019,6 +1010,12 @@ kick_user(User, Server) ->
 make_sid() ->
     {p1_time_compat:unique_timestamp(), self()}.
 
+-spec opt_type(sm_db_type) -> fun((atom()) -> atom());
+	      (sm_use_cache) -> fun((boolean()) -> boolean());
+	      (sm_cache_missed) -> fun((boolean()) -> boolean());
+	      (sm_cache_size) -> fun((timeout()) -> timeout());
+	      (sm_cache_life_time) -> fun((timeout()) -> timeout());
+	      (atom()) -> [atom()].
 opt_type(sm_db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 opt_type(O) when O == sm_use_cache; O == sm_cache_missed ->
     fun(B) when is_boolean(B) -> B end;

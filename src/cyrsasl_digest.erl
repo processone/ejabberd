@@ -55,7 +55,7 @@
                 check_password :: check_password_fun(),
                 auth_module :: atom(),
                 host = <<"">> :: binary(),
-                hostfqdn = <<"">> :: binary() | [binary()]}).
+                hostfqdn = [] :: [binary()]}).
 
 start(_Opts) ->
     Fqdn = get_local_fqdn(),
@@ -204,8 +204,6 @@ is_digesturi_valid(DigestURICase, JabberDomain,
 	    false
     end.
 
-is_host_fqdn(Host, Fqdn) when is_binary(Fqdn) ->
-    Host == Fqdn;
 is_host_fqdn(_Host, []) ->
     false;
 is_host_fqdn(Host, [Fqdn | _FqdnTail]) when Host == Fqdn ->
@@ -214,26 +212,13 @@ is_host_fqdn(Host, [Fqdn | FqdnTail]) when Host /= Fqdn ->
     is_host_fqdn(Host, FqdnTail).
 
 get_local_fqdn() ->
-    case catch get_local_fqdn2() of
-      Str when is_binary(Str) -> Str;
-      List when is_list(List) -> List;
-      _ ->
-	  <<"unknown-fqdn, please configure fqdn "
-	    "option in ejabberd.yml!">>
-    end.
-
-get_local_fqdn2() ->
-    case ejabberd_config:get_option(
-           fqdn, fun(X) -> X end) of
-        ConfiguredFqdn when is_binary(ConfiguredFqdn) ->
-            ConfiguredFqdn;
-        [A | _] = ConfiguredFqdns when is_binary(A) ->
-            ConfiguredFqdns;
-        undefined ->
-            {ok, Hostname} = inet:gethostname(),
-            {ok, {hostent, Fqdn, _, _, _, _}} =
-            inet:gethostbyname(Hostname),
-            list_to_binary(Fqdn)
+    case ejabberd_config:get_option(fqdn) of
+	undefined ->
+	    {ok, Hostname} = inet:gethostname(),
+	    {ok, {hostent, Fqdn, _, _, _, _}} = inet:gethostbyname(Hostname),
+	    [list_to_binary(Fqdn)];
+	Fqdn ->
+	    Fqdn
     end.
 
 hex(S) ->
@@ -275,5 +260,12 @@ response(KeyVals, User, Passwd, Nonce, AuthzId,
 	  ":", (hex((erlang:md5(A2))))/binary>>,
     hex((erlang:md5(T))).
 
-opt_type(fqdn) -> fun iolist_to_binary/1;
+-spec opt_type(fqdn) -> fun((binary() | [binary()]) -> [binary()]);
+	      (atom()) -> [atom()].
+opt_type(fqdn) ->
+    fun(FQDN) when is_binary(FQDN) ->
+	    [FQDN];
+       (FQDNs) when is_list(FQDNs) ->
+	    [iolist_to_binary(FQDN) || FQDN <- FQDNs]
+    end;
 opt_type(_) -> [fqdn].

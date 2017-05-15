@@ -56,7 +56,7 @@
 	 freetds_config/0,
 	 odbcinst_config/0,
 	 init_mssql/1,
-	 keep_alive/1]).
+	 keep_alive/2]).
 
 %% gen_fsm callbacks
 -export([init/1, handle_event/3, handle_sync_event/4,
@@ -92,10 +92,6 @@
 -define(MSSQL_PORT, 1433).
 
 -define(MAX_TRANSACTION_RESTARTS, 10).
-
--define(TRANSACTION_TIMEOUT, 60000).
-
--define(KEEPALIVE_TIMEOUT, 60000).
 
 -define(KEEPALIVE_QUERY, [<<"SELECT 1;">>]).
 
@@ -166,16 +162,16 @@ sql_call(Host, Msg) ->
           Pid ->
             (?GEN_FSM):sync_send_event(Pid,{sql_cmd, Msg,
                                             p1_time_compat:monotonic_time(milli_seconds)},
-                                       ?TRANSACTION_TIMEOUT)
+                                       query_timeout(Host))
           end;
       _State -> nested_op(Msg)
     end.
 
-keep_alive(PID) ->
+keep_alive(Host, PID) ->
     (?GEN_FSM):sync_send_event(PID,
 			       {sql_cmd, {sql_query, ?KEEPALIVE_QUERY},
                                 p1_time_compat:monotonic_time(milli_seconds)},
-			       ?KEEPALIVE_TIMEOUT).
+			       query_timeout(Host)).
 
 -spec sql_query_t(sql_query()) -> sql_query_result().
 
@@ -252,8 +248,7 @@ sqlite_db(Host) ->
 
 -spec sqlite_file(binary()) -> string().
 sqlite_file(Host) ->
-    case ejabberd_config:get_option({sql_database, Host},
-				    fun iolist_to_binary/1) of
+    case ejabberd_config:get_option({sql_database, Host}) of
 	undefined ->
 	    {ok, Cwd} = file:get_cwd(),
 	    filename:join([Cwd, "sqlite", atom_to_list(node()),
@@ -266,20 +261,17 @@ sqlite_file(Host) ->
 %%% Callback functions from gen_fsm
 %%%----------------------------------------------------------------------
 init([Host, StartInterval]) ->
-    case ejabberd_config:get_option(
-           {sql_keepalive_interval, Host},
-           fun(I) when is_integer(I), I>0 -> I end) of
+    case ejabberd_config:get_option({sql_keepalive_interval, Host}) of
         undefined ->
             ok;
         KeepaliveInterval ->
             timer:apply_interval(KeepaliveInterval * 1000, ?MODULE,
-                                 keep_alive, [self()])
+                                 keep_alive, [Host, self()])
     end,
     [DBType | _] = db_opts(Host),
     (?GEN_FSM):send_event(self(), connect),
     ejabberd_sql_sup:add_pid(Host, self()),
-    QueueType = case ejabberd_config:get_option(
-		       {sql_queue_type, Host}, opt_type(sql_queue_type)) of
+    QueueType = case ejabberd_config:get_option({sql_queue_type, Host}) of
 		    undefined ->
 			ejabberd_config:default_queue_type(Host);
 		    Type ->
@@ -292,11 +284,11 @@ init([Host, StartInterval]) ->
 
 connecting(connect, #state{host = Host} = State) ->
     ConnectRes = case db_opts(Host) of
-		   [mysql | Args] -> apply(fun mysql_connect/7, Args);
-           [pgsql | Args] -> apply(fun pgsql_connect/7, Args);
+		   [mysql | Args] -> apply(fun mysql_connect/8, Args);
+           [pgsql | Args] -> apply(fun pgsql_connect/8, Args);
            [sqlite | Args] -> apply(fun sqlite_connect/1, Args);
-		   [mssql | Args] -> apply(fun odbc_connect/1, Args);
-		   [odbc | Args] -> apply(fun odbc_connect/1, Args)
+		   [mssql | Args] -> apply(fun odbc_connect/2, Args);
+		   [odbc | Args] -> apply(fun odbc_connect/2, Args)
 		 end,
     case ConnectRes of
         {ok, Ref} ->
@@ -418,8 +410,9 @@ print_state(State) -> State.
 %%%----------------------------------------------------------------------
 
 run_sql_cmd(Command, From, State, Timestamp) ->
+    QueryTimeout = query_timeout(State#state.host),
     case p1_time_compat:monotonic_time(milli_seconds) - Timestamp of
-      Age when Age < (?TRANSACTION_TIMEOUT) ->
+      Age when Age < QueryTimeout ->
 	  put(?NESTING_KEY, ?TOP_LEVEL_TXN),
 	  put(?STATE_KEY, State),
 	  abort_on_driver_error(outer_op(Command), From);
@@ -582,20 +575,21 @@ sql_query_internal(F) when is_function(F) ->
 sql_query_internal(Query) ->
     State = get(?STATE_KEY),
     ?DEBUG("SQL: \"~s\"", [Query]),
+    QueryTimeout = query_timeout(State#state.host),
     Res = case State#state.db_type of
 	    odbc ->
 		to_odbc(odbc:sql_query(State#state.db_ref, [Query],
-                                       (?TRANSACTION_TIMEOUT) - 1000));
+                                       QueryTimeout - 1000));
 	    mssql ->
 		to_odbc(odbc:sql_query(State#state.db_ref, [Query],
-                                       (?TRANSACTION_TIMEOUT) - 1000));
+                                       QueryTimeout - 1000));
 	    pgsql ->
 		pgsql_to_odbc(pgsql:squery(State#state.db_ref, Query,
-					   (?TRANSACTION_TIMEOUT) - 1000));
+					   QueryTimeout - 1000));
 	    mysql ->
 		R = mysql_to_odbc(p1_mysql_conn:squery(State#state.db_ref,
 						   [Query], self(),
-						   [{timeout, (?TRANSACTION_TIMEOUT) - 1000},
+						   [{timeout, QueryTimeout - 1000},
 						    {result_type, binary}])),
 		%% ?INFO_MSG("MySQL, Received result~n~p~n", [R]),
 		  R;
@@ -745,11 +739,12 @@ abort_on_driver_error(Reply, From) ->
 
 %% part of init/1
 %% Open an ODBC database connection
-odbc_connect(SQLServer) ->
+odbc_connect(SQLServer, Timeout) ->
     ejabberd:start_app(odbc),
     odbc:connect(binary_to_list(SQLServer),
 		 [{scrollable_cursors, off},
 		  {tuple_row, off},
+		  {timeout, Timeout},
 		  {binary_strings, on}]).
 
 %% == Native SQLite code
@@ -797,13 +792,15 @@ sqlite_to_odbc(_Host, _) ->
 
 %% part of init/1
 %% Open a database connection to PostgreSQL
-pgsql_connect(Server, Port, DB, Username, Password, Transport, SSLOpts) ->
+pgsql_connect(Server, Port, DB, Username, Password, ConnectTimeout,
+	      Transport, SSLOpts) ->
     case pgsql:connect([{host, Server},
                         {database, DB},
                         {user, Username},
                         {password, Password},
                         {port, Port},
 			{transport, Transport},
+			{connect_timeout, ConnectTimeout},
                         {as_binary, true}|SSLOpts]) of
         {ok, Ref} ->
             pgsql:squery(Ref, [<<"alter database \"">>, DB, <<"\" set ">>,
@@ -853,11 +850,12 @@ pgsql_execute_to_odbc(_) -> {updated, undefined}.
 
 %% part of init/1
 %% Open a database connection to MySQL
-mysql_connect(Server, Port, DB, Username, Password, _, _) ->
+mysql_connect(Server, Port, DB, Username, Password, ConnectTimeout,  _, _) ->
     case p1_mysql_conn:start(binary_to_list(Server), Port,
 			     binary_to_list(Username),
 			     binary_to_list(Password),
-			     binary_to_list(DB), fun log/3)
+			     binary_to_list(DB),
+			     ConnectTimeout, fun log/3)
 	of
 	{ok, Ref} ->
 	    p1_mysql_conn:fetch(
@@ -927,54 +925,41 @@ log(Level, Format, Args) ->
     end.
 
 db_opts(Host) ->
-    Type = ejabberd_config:get_option({sql_type, Host},
-                                      fun(mysql) -> mysql;
-                                         (pgsql) -> pgsql;
-                                         (sqlite) -> sqlite;
-					 (mssql) -> mssql;
-                                         (odbc) -> odbc
-                                      end, odbc),
-    Server = ejabberd_config:get_option({sql_server, Host},
-                                        fun iolist_to_binary/1,
-                                        <<"localhost">>),
-    Transport = case ejabberd_config:get_option(
-		       {sql_ssl, Host},
-		       fun(B) when is_boolean(B) -> B end,
-		       false) of
+    Type = ejabberd_config:get_option({sql_type, Host}, odbc),
+    Server = ejabberd_config:get_option({sql_server, Host}, <<"localhost">>),
+    Timeout = timer:seconds(
+		ejabberd_config:get_option({sql_connect_timeout, Host}, 5)),
+    Transport = case ejabberd_config:get_option({sql_ssl, Host}, false) of
 		    false -> tcp;
 		    true -> ssl
 		end,
     warn_if_ssl_unsupported(Transport, Type),
     case Type of
         odbc ->
-            [odbc, Server];
+            [odbc, Server, Timeout];
         sqlite ->
             [sqlite, Host];
         _ ->
             Port = ejabberd_config:get_option(
                      {sql_port, Host},
-                     fun(P) when is_integer(P), P > 0, P < 65536 -> P end,
                      case Type of
 			 mssql -> ?MSSQL_PORT;
                          mysql -> ?MYSQL_PORT;
                          pgsql -> ?PGSQL_PORT
                      end),
             DB = ejabberd_config:get_option({sql_database, Host},
-                                            fun iolist_to_binary/1,
                                             <<"ejabberd">>),
             User = ejabberd_config:get_option({sql_username, Host},
-                                              fun iolist_to_binary/1,
                                               <<"ejabberd">>),
             Pass = ejabberd_config:get_option({sql_password, Host},
-                                              fun iolist_to_binary/1,
                                               <<"">>),
 	    SSLOpts = get_ssl_opts(Transport, Host),
 	    case Type of
 		mssql ->
 		    [mssql, <<"DSN=", Host/binary, ";UID=", User/binary,
-			      ";PWD=", Pass/binary>>];
+			      ";PWD=", Pass/binary>>, Timeout];
 		_ ->
-		    [Type, Server, Port, DB, User, Pass, Transport, SSLOpts]
+		    [Type, Server, Port, DB, User, Pass, Timeout, Transport, SSLOpts]
 	    end
     end.
 
@@ -986,19 +971,15 @@ warn_if_ssl_unsupported(ssl, Type) ->
     ?WARNING_MSG("SSL connection is not supported for ~s", [Type]).
 
 get_ssl_opts(ssl, Host) ->
-    Opts1 = case ejabberd_config:get_option({sql_ssl_certfile, Host},
-					    fun iolist_to_binary/1) of
+    Opts1 = case ejabberd_config:get_option({sql_ssl_certfile, Host}) of
 		undefined -> [];
 		CertFile -> [{certfile, CertFile}]
 	    end,
-    Opts2 = case ejabberd_config:get_option({sql_ssl_cafile, Host},
-					    fun iolist_to_binary/1) of
+    Opts2 = case ejabberd_config:get_option({sql_ssl_cafile, Host}) of
 		undefined -> Opts1;
 		CAFile -> [{cacertfile, CAFile}|Opts1]
 	    end,
-    case ejabberd_config:get_option({sql_ssl_verify, Host},
-				    fun(B) when is_boolean(B) -> B end,
-				    false) of
+    case ejabberd_config:get_option({sql_ssl_verify, Host}, false) of
 	true ->
 	    case lists:keymember(cacertfile, 1, Opts2) of
 		true ->
@@ -1017,16 +998,9 @@ get_ssl_opts(tcp, _) ->
     [].
 
 init_mssql(Host) ->
-    Server = ejabberd_config:get_option({sql_server, Host},
-                                        fun iolist_to_binary/1,
-                                        <<"localhost">>),
-    Port = ejabberd_config:get_option(
-	     {sql_port, Host},
-	     fun(P) when is_integer(P), P > 0, P < 65536 -> P end,
-	     ?MSSQL_PORT),
-    DB = ejabberd_config:get_option({sql_database, Host},
-				    fun iolist_to_binary/1,
-				    <<"ejabberd">>),
+    Server = ejabberd_config:get_option({sql_server, Host}, <<"localhost">>),
+    Port = ejabberd_config:get_option({sql_port, Host}, ?MSSQL_PORT),
+    DB = ejabberd_config:get_option({sql_database, Host}, <<"ejabberd">>),
     FreeTDS = io_lib:fwrite("[~s]~n"
 			    "\thost = ~s~n"
 			    "\tport = ~p~n"
@@ -1087,6 +1061,10 @@ max_fsm_queue() ->
 fsm_limit_opts() ->
     ejabberd_config:fsm_limit_opts([]).
 
+query_timeout(LServer) ->
+    timer:seconds(
+      ejabberd_config:get_option({sql_query_timeout, LServer}, 60)).
+
 check_error({error, Why} = Err, #sql_query{} = Query) ->
     ?ERROR_MSG("SQL query '~s' at ~p failed: ~p",
                [Query#sql_query.hash, Query#sql_query.loc, Why]),
@@ -1102,6 +1080,20 @@ check_error({error, Why} = Err, Query) ->
 check_error(Result, _Query) ->
     Result.
 
+-spec opt_type(sql_database) -> fun((binary()) -> binary());
+	      (sql_keepalive_interval) -> fun((pos_integer()) -> pos_integer());
+	      (sql_password) -> fun((binary()) -> binary());
+	      (sql_port) -> fun((0..65535) -> 0..65535);
+	      (sql_server) -> fun((binary()) -> binary());
+	      (sql_username) -> fun((binary()) -> binary());
+	      (sql_ssl) -> fun((boolean()) -> boolean());
+	      (sql_ssl_verify) -> fun((boolean()) -> boolean());
+	      (sql_ssl_certfile) -> fun((boolean()) -> boolean());
+	      (sql_ssl_cafile) -> fun((boolean()) -> boolean());
+	      (sql_query_timeout) -> fun((pos_integer()) -> pos_integer());
+	      (sql_connect_timeout) -> fun((pos_integer()) -> pos_integer());
+	      (sql_queue_type) -> fun((ram | file) -> ram | file);
+	      (atom()) -> [atom()].
 opt_type(sql_database) -> fun iolist_to_binary/1;
 opt_type(sql_keepalive_interval) ->
     fun (I) when is_integer(I), I > 0 -> I end;
@@ -1109,22 +1101,20 @@ opt_type(sql_password) -> fun iolist_to_binary/1;
 opt_type(sql_port) ->
     fun (P) when is_integer(P), P > 0, P < 65536 -> P end;
 opt_type(sql_server) -> fun iolist_to_binary/1;
-opt_type(sql_type) ->
-    fun (mysql) -> mysql;
-	(pgsql) -> pgsql;
-	(sqlite) -> sqlite;
-	(mssql) -> mssql;
-	(odbc) -> odbc
-    end;
 opt_type(sql_username) -> fun iolist_to_binary/1;
 opt_type(sql_ssl) -> fun(B) when is_boolean(B) -> B end;
 opt_type(sql_ssl_verify) -> fun(B) when is_boolean(B) -> B end;
-opt_type(sql_ssl_certfile) -> fun iolist_to_binary/1;
-opt_type(sql_ssl_cafile) -> fun iolist_to_binary/1;
+opt_type(sql_ssl_certfile) -> fun misc:try_read_file/1;
+opt_type(sql_ssl_cafile) -> fun misc:try_read_file/1;
+opt_type(sql_query_timeout) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(sql_connect_timeout) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
 opt_type(sql_queue_type) ->
     fun(ram) -> ram; (file) -> file end;
 opt_type(_) ->
     [sql_database, sql_keepalive_interval,
-     sql_password, sql_port, sql_server, sql_type,
+     sql_password, sql_port, sql_server,
      sql_username, sql_ssl, sql_ssl_verify, sql_ssl_cerfile,
-     sql_ssl_cafile, sql_queue_type].
+     sql_ssl_cafile, sql_queue_type, sql_query_timeout,
+     sql_connect_timeout].

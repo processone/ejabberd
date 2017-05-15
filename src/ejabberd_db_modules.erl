@@ -1,6 +1,11 @@
 %%%-------------------------------------------------------------------
-%%% Author  : Evgeny Khramtsov <ekhramtsov@process-one.net>
-%%% Created : 25 Sep 2016 by Evgeny Khramtsov <ekhramtsov@process-one.net>
+%%% @author Evgeny Khramtsov <ekhramtsov@process-one.net>
+%%% @doc
+%%%   This is a stub module which will be replaced during
+%%%   configuration load via p1_options:compile/1
+%%%   The only purpose of this file is to shut up xref/dialyzer
+%%% @end
+%%% Created : 27 Apr 2017 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
 %%% ejabberd, Copyright (C) 2002-2017   ProcessOne
@@ -19,34 +24,21 @@
 %%% with this program; if not, write to the Free Software Foundation, Inc.,
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
-%%%----------------------------------------------------------------------
-
--module(mod_legacy).
--behaviour(gen_mod).
+%%%-------------------------------------------------------------------
+-module(ejabberd_db_modules).
 
 %% API
--export([start/2, stop/1, mod_opt_type/1, depends/2, process_iq/3]).
--include("jlib.hrl").
+-export([is_known/1, get_scope/1]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
-start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_EVENT,
-				  ?MODULE, process_iq, IQDisc).
+is_known(_) ->
+    false.
 
-stop(Host) ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?MODULE).
-
-mod_opt_type(_) ->
-    [].
-
-depends(_, _) ->
+get_scope(_) ->
     [].
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-process_iq(_From, _To, IQ) ->
-    IQ#iq{type = result, sub_el = []}.

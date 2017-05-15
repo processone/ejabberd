@@ -29,7 +29,7 @@
 %% ejabberd_socket callbacks
 -export([start/2, start_link/2, socket_type/0]).
 %% ejabberd_config callbacks
--export([opt_type/1, transform_listen_option/2]).
+-export([opt_type/1, listen_opt_type/1, transform_listen_option/2]).
 %% xmpp_stream_in callbacks
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
@@ -293,45 +293,37 @@ process_terminated(State, _Reason) ->
 tls_options(#{lserver := LServer, tls_options := DefaultOpts}) ->
     TLSOpts1 = case ejabberd_config:get_option(
 		      {c2s_certfile, LServer},
-		      fun iolist_to_binary/1,
 		      ejabberd_config:get_option(
-			{domain_certfile, LServer},
-			fun iolist_to_binary/1)) of
+			{domain_certfile, LServer})) of
 		   undefined -> DefaultOpts;
 		   CertFile -> lists:keystore(certfile, 1, DefaultOpts,
 					      {certfile, CertFile})
 	       end,
     TLSOpts2 = case ejabberd_config:get_option(
-                      {c2s_ciphers, LServer},
-		      fun iolist_to_binary/1) of
+                      {c2s_ciphers, LServer}) of
                    undefined -> TLSOpts1;
                    Ciphers -> lists:keystore(ciphers, 1, TLSOpts1,
 					     {ciphers, Ciphers})
                end,
     TLSOpts3 = case ejabberd_config:get_option(
-                      {c2s_protocol_options, LServer},
-                      fun (Options) -> str:join(Options, <<$|>>) end) of
+                      {c2s_protocol_options, LServer}) of
                    undefined -> TLSOpts2;
                    ProtoOpts -> lists:keystore(protocol_options, 1, TLSOpts2,
 					       {protocol_options, ProtoOpts})
                end,
     TLSOpts4 = case ejabberd_config:get_option(
-                      {c2s_dhfile, LServer},
-		      fun iolist_to_binary/1) of
+                      {c2s_dhfile, LServer}) of
                    undefined -> TLSOpts3;
                    DHFile -> lists:keystore(dhfile, 1, TLSOpts3,
 					    {dhfile, DHFile})
                end,
     TLSOpts5 = case ejabberd_config:get_option(
-		      {c2s_cafile, LServer},
-		      fun iolist_to_binary/1) of
+		      {c2s_cafile, LServer}) of
 		   undefined -> TLSOpts4;
 		   CAFile -> lists:keystore(cafile, 1, TLSOpts4,
 					    {cafile, CAFile})
 	       end,
-    case ejabberd_config:get_option(
-	   {c2s_tls_compression, LServer},
-	   fun(B) when is_boolean(B) -> B end) of
+    case ejabberd_config:get_option({c2s_tls_compression, LServer}) of
 	undefined -> TLSOpts5;
 	false -> [compression_none | TLSOpts5];
 	true -> lists:delete(compression_none, TLSOpts5)
@@ -360,13 +352,7 @@ authenticated_stream_features(#{lserver := LServer}) ->
     ejabberd_hooks:run_fold(c2s_post_auth_features, LServer, [], [LServer]).
 
 sasl_mechanisms(Mechs, #{lserver := LServer}) ->
-    Mechs1 = ejabberd_config:get_option(
-	       {disable_sasl_mechanisms, LServer},
-	       fun(V) when is_list(V) ->
-		       lists:map(fun(M) -> str:to_upper(M) end, V);
-		  (V) ->
-		       [str:to_upper(V)]
-	       end, []),
+    Mechs1 = ejabberd_config:get_option({disable_sasl_mechanisms, LServer}, []),
     Mechs2 = case ejabberd_auth_anonymous:is_sasl_anonymous_enabled(LServer) of
 		 true -> Mechs1;
 		 false -> [<<"ANONYMOUS">>|Mechs1]
@@ -504,30 +490,25 @@ handle_send(Pkt, Result, #{lserver := LServer} = State) ->
     ejabberd_hooks:run_fold(c2s_handle_send, LServer, State, [Pkt, Result]).
 
 init([State, Opts]) ->
-    Access = gen_mod:get_opt(access, Opts, fun acl:access_rules_validator/1, all),
-    Shaper = gen_mod:get_opt(shaper, Opts, fun acl:shaper_rules_validator/1, none),
+    Access = proplists:get_value(access, Opts, all),
+    Shaper = proplists:get_value(shaper, Opts, none),
     TLSOpts1 = lists:filter(
 		 fun({certfile, _}) -> true;
 		    ({ciphers, _}) -> true;
 		    ({dhfile, _}) -> true;
 		    ({cafile, _}) -> true;
+		    ({protocol_options, _}) -> true;
 		    (_) -> false
 		 end, Opts),
-    TLSOpts2 = case lists:keyfind(protocol_options, 1, Opts) of
-		   false -> TLSOpts1;
-		   {_, OptString} ->
-		       ProtoOpts = str:join(OptString, <<$|>>),
-		       [{protocol_options, ProtoOpts}|TLSOpts1]
-	       end,
-    TLSOpts3 = case proplists:get_bool(tls_compression, Opts) of
-                   false -> [compression_none | TLSOpts2];
-                   true -> TLSOpts2
+    TLSOpts2 = case proplists:get_bool(tls_compression, Opts) of
+                   false -> [compression_none | TLSOpts1];
+                   true -> TLSOpts1
                end,
     TLSEnabled = proplists:get_bool(starttls, Opts),
     TLSRequired = proplists:get_bool(starttls_required, Opts),
     TLSVerify = proplists:get_bool(tls_verify, Opts),
     Zlib = proplists:get_bool(zlib, Opts),
-    State1 = State#{tls_options => TLSOpts3,
+    State1 = State#{tls_options => TLSOpts2,
 		    tls_required => TLSRequired,
 		    tls_enabled => TLSEnabled,
 		    tls_verify => TLSVerify,
@@ -674,9 +655,7 @@ process_presence_out(#{user := User, server := Server, lserver := LServer,
 	    send_error(State, Pres, Err);
 	allow when Type == subscribe; Type == subscribed;
 		   Type == unsubscribe; Type == unsubscribed ->
-	    Access = gen_mod:get_module_opt(LServer, mod_roster, access,
-					    fun(A) when is_atom(A) -> A end,
-					    all),
+	    Access = gen_mod:get_module_opt(LServer, mod_roster, access, all),
 	    MyBareJID = jid:remove_resource(JID),
 	    case acl:match_rule(LServer, Access, MyBareJID) of
 		deny ->
@@ -805,22 +784,15 @@ resource_conflict_action(U, S, R) ->
     OptionRaw = case ejabberd_sm:is_existing_resource(U, S, R) of
 		    true ->
 			ejabberd_config:get_option(
-			  {resource_conflict, S},
-			  fun(setresource) -> setresource;
-			     (closeold) -> closeold;
-			     (closenew) -> closenew;
-			     (acceptnew) -> acceptnew
-			  end);
+			  {resource_conflict, S}, acceptnew);
 		    false ->
 			acceptnew
 		end,
     Option = case OptionRaw of
 		 setresource -> setresource;
-		 closeold ->
-		     acceptnew; %% ejabberd_sm will close old session
+		 closeold -> acceptnew; %% ejabberd_sm will close old session
 		 closenew -> closenew;
-		 acceptnew -> acceptnew;
-		 _ -> acceptnew %% default ejabberd behavior
+		 acceptnew -> acceptnew
 	     end,
     case Option of
 	acceptnew -> {accept_resource, R};
@@ -922,11 +894,20 @@ format_reason(_, _) ->
 transform_listen_option(Opt, Opts) ->
     [Opt|Opts].
 
-opt_type(domain_certfile) -> fun iolist_to_binary/1;
-opt_type(c2s_certfile) -> fun iolist_to_binary/1;
-opt_type(c2s_ciphers) -> fun iolist_to_binary/1;
-opt_type(c2s_dhfile) -> fun iolist_to_binary/1;
-opt_type(c2s_cafile) -> fun iolist_to_binary/1;
+-type resource_conflict() :: setresource | closeold | closenew | acceptnew.
+-spec opt_type(c2s_certfile) -> fun((binary()) -> binary());
+	      (c2s_ciphers) -> fun((binary()) -> binary());
+	      (c2s_dhfile) -> fun((binary()) -> binary());
+	      (c2s_cafile) -> fun((binary()) -> binary());
+	      (c2s_protocol_options) -> fun(([binary()]) -> binary());
+	      (c2s_tls_compression) -> fun((boolean()) -> boolean());
+	      (resource_conflict) -> fun((resource_conflict()) -> resource_conflict());
+	      (disable_sasl_mechanisms) -> fun((binary() | [binary()]) -> [binary()]);
+	      (atom()) -> [atom()].
+opt_type(c2s_certfile) -> fun misc:try_read_file/1;
+opt_type(c2s_ciphers) -> fun misc:try_read_file/1;
+opt_type(c2s_dhfile) -> fun misc:try_read_file/1;
+opt_type(c2s_cafile) -> fun misc:try_read_file/1;
 opt_type(c2s_protocol_options) ->
     fun (Options) -> str:join(Options, <<"|">>) end;
 opt_type(c2s_tls_compression) ->
@@ -945,6 +926,66 @@ opt_type(disable_sasl_mechanisms) ->
 	(V) -> [str:to_upper(V)]
     end;
 opt_type(_) ->
-    [domain_certfile, c2s_certfile, c2s_ciphers, c2s_cafile,
+    [c2s_certfile, c2s_ciphers, c2s_cafile,
      c2s_protocol_options, c2s_tls_compression, resource_conflict,
      disable_sasl_mechanisms].
+
+-spec listen_opt_type(access) -> fun((any()) -> any());
+		     (shaper) -> fun((any()) -> any());
+		     (certfile) -> fun((binary()) -> binary());
+		     (ciphers) -> fun((binary()) -> binary());
+		     (dhfile) -> fun((binary()) -> binary());
+		     (cafile) -> fun((binary()) -> binary());
+		     (protocol_options) -> fun(([binary()]) -> binary());
+		     (tls_compression) -> fun((boolean()) -> boolean());
+		     (tls) -> fun((boolean()) -> boolean());
+		     (starttls) -> fun((boolean()) -> boolean());
+		     (tls_verify) -> fun((boolean()) -> boolean());
+		     (zlib) -> fun((boolean()) -> boolean());
+		     (supervisor) -> fun((boolean()) -> boolean());
+		     (max_stanza_size) -> fun((timeout()) -> timeout());
+		     (max_fsm_queue) -> fun((timeout()) -> timeout());
+		     (stream_management) -> fun((boolean()) -> boolean());
+		     (atom()) -> [atom()].
+listen_opt_type(access) -> fun acl:access_rules_validator/1;
+listen_opt_type(shaper) -> fun acl:shaper_rules_validator/1;
+listen_opt_type(certfile) ->
+    fun(S) ->
+	    ejabberd_pkix:add_certfile(S),
+	    iolist_to_binary(S)
+    end;
+listen_opt_type(ciphers) -> opt_type(c2s_ciphers);
+listen_opt_type(dhfile) -> opt_type(c2s_dhfile);
+listen_opt_type(cafile) -> opt_type(c2s_cafile);
+listen_opt_type(protocol_options) -> opt_type(c2s_protocol_options);
+listen_opt_type(tls_compression) -> opt_type(c2s_tls_compression);
+listen_opt_type(tls) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(starttls) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(starttls_required) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(tls_verify) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(zlib) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(supervisor) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(max_stanza_size) ->
+    fun(I) when is_integer(I), I>0 -> I;
+       (unlimited) -> infinity;
+       (infinity) -> infinity
+    end;
+listen_opt_type(max_fsm_queue) ->
+    fun(I) when is_integer(I), I>0 -> I end;
+%% The following hack should be removed in future releases: it is intended
+%% for backward compatibility with ejabberd 17.01 or older
+listen_opt_type(stream_management) ->
+    ?WARNING_MSG("listening option 'stream_management' is deprecated: "
+		 "use mod_stream_mgmt module", []),
+    fun(B) when is_boolean(B) -> B end;
+listen_opt_type(O) ->
+    case mod_stream_mgmt:mod_opt_type(O) of
+	L when is_list(L) ->
+	    [access, shaper, certfile, ciphers, dhfile, cafile,
+	     protocol_options, tls, tls_compression, starttls,
+	     starttls_required, tls_verify, zlib, max_fsm_queue];
+	VFun ->
+	    ?WARNING_MSG("listening option '~s' is deprecated: use '~s' "
+			 "option from mod_stream_mgmt module", [O, O]),
+	    VFun
+    end.

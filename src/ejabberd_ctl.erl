@@ -289,8 +289,7 @@ process2(Args, AccessCommands, Auth, Version) ->
     end.
 
 get_accesscommands() ->
-    ejabberd_config:get_option(ejabberdctl_access_commands,
-                                     fun(V) when is_list(V) -> V end, []).
+    ejabberd_config:get_option(ejabberdctl_access_commands, []).
 
 %%-----------------------------
 %% Command calling
@@ -876,6 +875,8 @@ print(Format, Args) ->
 %%    ["aaaa bbb ccc"].
 
 
+-spec opt_type(ejabberdctl_access_commands) -> fun((list()) -> list());
+	      (atom()) -> [atom()].
 opt_type(ejabberdctl_access_commands) ->
     fun (V) when is_list(V) -> V end;
 opt_type(_) -> [ejabberdctl_access_commands].

@@ -54,6 +54,7 @@
 	 dump_to_textfile/1, dump_to_textfile/2,
 	 mnesia_change_nodename/4,
 	 restore/1, % Still used by some modules
+	 clear_cache/0,
 	 get_commands_spec/0
 	]).
 %% gen_server callbacks
@@ -360,7 +361,11 @@ get_commands_spec() ->
 			module = ?MODULE, function = install_fallback_mnesia,
 			args_desc = ["Full path to the fallback file"],
 			args_example = ["/var/lib/ejabberd/database.fallback"],
-			args = [{file, string}], result = {res, restuple}}
+			args = [{file, string}], result = {res, restuple}},
+     #ejabberd_commands{name = clear_cache, tags = [server],
+			desc = "Clear database cache on all nodes",
+			module = ?MODULE, function = clear_cache,
+			args = [], result = {res, rescode}}
     ].
 
 
@@ -473,9 +478,9 @@ update_module(ModuleNameString) ->
 
 register(User, Host, Password) ->
     case ejabberd_auth:try_register(User, Host, Password) of
-	{atomic, ok} ->
+	ok ->
 	    {ok, io_lib:format("User ~s@~s successfully registered", [User, Host])};
-	{atomic, exists} ->
+	{error, exists} ->
 	    Msg = io_lib:format("User ~s@~s already registered", [User, Host]),
 	    {error, conflict, 10090, Msg};
 	{error, Reason} ->
@@ -489,7 +494,7 @@ unregister(User, Host) ->
     {ok, ""}.
 
 registered_users(Host) ->
-    Users = ejabberd_auth:get_vh_registered_users(Host),
+    Users = ejabberd_auth:get_users(Host),
     SUsers = lists:sort(Users),
     lists:map(fun({U, _S}) -> U end, SUsers).
 
@@ -611,7 +616,7 @@ restore(Path) ->
 %% Obsolete tables or tables created by module who are no longer used are not
 %% restored and are ignored.
 keep_tables() ->
-    lists:flatten([acl, passwd, config, local_config,
+    lists:flatten([acl, passwd, config,
 		   keep_modules_tables()]).
 
 %% Returns the list of modules tables in use, according to the list of actually
@@ -759,3 +764,7 @@ mnesia_change_nodename(FromString, ToString, Source, Target) ->
 		{[Other], Acc}
 	end,
     mnesia:traverse_backup(Source, Target, Convert, switched).
+
+clear_cache() ->
+    Nodes = ejabberd_cluster:get_nodes(),
+    lists:foreach(fun(T) -> ets_cache:clear(T, Nodes) end, ets_cache:all()).

@@ -26,6 +26,8 @@
 
 -module(ejabberd_oauth_rest).
 
+-behaviour(ejabberd_config).
+
 -export([init/0,
          store/1,
          lookup/1,
@@ -58,7 +60,7 @@ store(R) ->
             ok;
         Err ->
             ?ERROR_MSG("failed to store oauth record ~p: ~p", [R, Err]),
-            {error, Err}
+            {error, db_failure}
     end.
 
 lookup(Token) ->
@@ -72,27 +74,27 @@ lookup(Token) ->
             US = {JID#jid.luser, JID#jid.lserver},
             Scope = proplists:get_value(<<"scope">>, Data, []),
             Expire = proplists:get_value(<<"expire">>, Data, 0),
-            #oauth_token{token = Token,
-                         us = US,
-                         scope = Scope,
-                         expire = Expire};
+            {ok, #oauth_token{token = Token,
+			      us = US,
+			      scope = Scope,
+			      expire = Expire}};
         {ok, 404, _Resp} ->
-            false;
+            error;
         Other ->
             ?ERROR_MSG("Unexpected response for oauth lookup: ~p", [Other]),
-            {error, rest_failed}
+	    error
     end.
 
 clean(_TS) ->
     ok.
 
 path(Path) ->
-    Base = ejabberd_config:get_option(ext_api_path_oauth,
-                                      fun(X) -> iolist_to_binary(X) end,
-                                      <<"/oauth">>),
+    Base = ejabberd_config:get_option(ext_api_path_oauth, <<"/oauth">>),
     <<Base/binary, "/", Path/binary>>.
 
 
+-spec opt_type(ext_api_path_oauth) -> fun((binary()) -> binary());
+	      (atom()) -> [atom()].
 opt_type(ext_api_path_oauth) ->
     fun (X) -> iolist_to_binary(X) end;
 opt_type(_) -> [ext_api_path_oauth].

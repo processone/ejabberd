@@ -49,24 +49,19 @@ init(_) ->
     {ok, {{one_for_one, 10, 1}, listeners_childspec()}}.
 
 listeners_childspec() ->
-    case ejabberd_config:get_option(listen, fun validate_cfg/1) of
-	undefined ->
-	    [];
-	Ls ->
-	    Specs = lists:map(
-		      fun({Port, Module, Opts}) ->
-			      maybe_start_sip(Module),
-			      ets:insert(?MODULE, {Port, Module, Opts}),
-			      {Port,
-			       {?MODULE, start, [Port, Module, Opts]},
-			       transient,
-			       brutal_kill,
-			       worker,
-			       [?MODULE]}
-		      end, Ls),
-	    report_duplicated_portips(Ls),
-	    Specs
-    end.
+    Ls = ejabberd_config:get_option(listen, []),
+    Specs = lists:map(
+	      fun({Port, Module, Opts}) ->
+		      ets:insert(?MODULE, {Port, Module, Opts}),
+		      {Port,
+		       {?MODULE, start, [Port, Module, Opts]},
+		       transient,
+		       brutal_kill,
+		       worker,
+		       [?MODULE]}
+	      end, Ls),
+    report_duplicated_portips(Ls),
+    Specs.
 
 start_listeners() ->
     lists:foreach(
@@ -86,22 +81,16 @@ report_duplicated_portips(L) ->
   end.
 
 start(Port, Module, Opts) ->
+    NewOpts = validate_module_options(Module, Opts),
     %% Check if the module is an ejabberd listener or an independent listener
     case Module:socket_type() of
-	independent -> Module:start_listener(Port, Opts);
-	_ -> start_dependent(Port, Module, Opts)
+	independent -> Module:start_listener(Port, NewOpts);
+	_ -> start_dependent(Port, Module, NewOpts)
     end.
 
 %% @spec(Port, Module, Opts) -> {ok, Pid} | {error, ErrorMessage}
 start_dependent(Port, Module, Opts) ->
-    try check_listener_options(Opts) of
-	ok ->
-	    proc_lib:start_link(?MODULE, init, [Port, Module, Opts])
-    catch
-	throw:{error, Error} ->
-	    ?ERROR_MSG(Error, []),
-	    {error, Error}
-    end.
+    proc_lib:start_link(?MODULE, init, [Port, Module, Opts]).
 
 init(PortIP, Module, RawOpts) ->
     {Port, IPT, IPS, IPV, Proto, OptsClean} = parse_listener_portip(PortIP, RawOpts),
@@ -360,7 +349,6 @@ start_listener2(Port, Module, Opts) ->
     %% It is only required to start the supervisor in some cases.
     %% But it doesn't hurt to attempt to start it for any listener.
     %% So, it's normal (and harmless) that in most cases this call returns: {error, {already_started, pid()}}
-    maybe_start_sip(Module),
     start_listener_sup(Port, Module, Opts).
 
 start_module_sup(_Port, Module) ->
@@ -384,7 +372,7 @@ start_listener_sup(Port, Module, Opts) ->
     supervisor:start_child(?MODULE, ChildSpec).
 
 stop_listeners() ->
-    Ports = ejabberd_config:get_option(listen, fun validate_cfg/1),
+    Ports = ejabberd_config:get_option(listen, []),
     lists:foreach(
       fun({PortIpNetp, Module, _Opts}) ->
 	      delete_listener(PortIpNetp, Module)
@@ -429,29 +417,10 @@ delete_listener(PortIP, Module) ->
 delete_listener(PortIP, Module, Opts) ->
     {Port, IPT, _, _, Proto, _} = parse_listener_portip(PortIP, Opts),
     PortIP1 = {Port, IPT, Proto},
-    Ports = case ejabberd_config:get_option(
-                   listen, fun validate_cfg/1) of
-		undefined ->
-		    [];
-		Ls ->
-		    Ls
-	    end,
-    Ports1 = lists:keydelete(PortIP1, 1, Ports),
-    Ports2 = lists:map(fun transform_option/1, Ports1),
-    ejabberd_config:add_option(listen, Ports2),
     stop_listener(PortIP1, Module).
 
-
-maybe_start_sip(esip_socket) ->
-    ejabberd:start_app(esip);
-maybe_start_sip(_) ->
-    ok.
-
 config_reloaded() ->
-    New = case ejabberd_config:get_option(listen, fun validate_cfg/1) of
-	      undefined -> [];
-	      Ls -> Ls
-	  end,
+    New = ejabberd_config:get_option(listen, []),
     Old = ets:tab2list(?MODULE),
     lists:foreach(
       fun({PortIP, Module, _Opts}) ->
@@ -480,48 +449,6 @@ config_reloaded() ->
 %%%
 %%% Check options
 %%%
-
-check_listener_options(Opts) ->
-    case includes_deprecated_ssl_option(Opts) of
-	false -> ok;
-	true ->
-	    Error = "There is a problem with your ejabberd configuration file: "
-		"the option 'ssl' for listening sockets is no longer available."
-		" To get SSL encryption use the option 'tls'.",
-	    throw({error, Error})
-    end,
-    case certfile_readable(Opts) of
-	true -> ok;
-	{false, Path} ->
-            ErrorText = "There is a problem in the configuration: "
-		"the specified file is not readable: ",
-	    throw({error, ErrorText ++ Path})
-    end,
-    ok.
-
-%% Parse the options of the socket,
-%% and return if the deprecated option 'ssl' is included
-%% @spec (Opts) -> true | false
-includes_deprecated_ssl_option(Opts) ->
-    case lists:keysearch(ssl, 1, Opts) of
-	{value, {ssl, _SSLOpts}} ->
-	    true;
-	_ ->
-	    lists:member(ssl, Opts)
-    end.
-
-%% @spec (Opts) -> true | {false, Path::string()}
-certfile_readable(Opts) ->
-    case proplists:lookup(certfile, Opts) of
-	none -> true;
-	{certfile, Path} ->
-            PathS = binary_to_list(Path),
-	    case ejabberd_config:is_file_readable(PathS) of
-		true -> true;
-		false -> {false, PathS}
-	    end
-    end.
-
 get_proto(Opts) ->
     case proplists:get_value(proto, Opts) of
 	undefined ->
@@ -643,6 +570,47 @@ transform_options({listen, LOpts}, Opts) ->
 transform_options(Opt, Opts) ->
     [Opt|Opts].
 
+-spec validate_module_options(module(), [{atom(), any()}]) -> [{atom(), any()}].
+validate_module_options(Module, Opts) ->
+    try Module:listen_opt_type('') of
+	_ ->
+	    lists:filtermap(
+	      fun({Opt, Val}) ->
+		      case validate_module_option(Module, Opt, Val) of
+			  {ok, NewVal} -> {true, {Opt, NewVal}};
+			  error -> false
+		      end
+	      end, Opts)
+    catch _:undef ->
+	    ?WARNING_MSG("module '~s' doesn't export listen_opt_type/1",
+			 [Module]),
+	    Opts
+    end.
+
+-spec validate_module_option(module(), atom(), any()) -> {ok, any()} | error.
+validate_module_option(Module, Opt, Val) ->
+    case Module:listen_opt_type(Opt) of
+	VFun when is_function(VFun) ->
+	    try VFun(Val) of
+		NewVal -> {ok, NewVal}
+	    catch {invalid_syntax, Error} ->
+		    ?ERROR_MSG("ignoring listen option '~s' with "
+			       "invalid value: ~p: ~s",
+			       [Opt, Val, Error]),
+		    error;
+		  _:_ ->
+		    ?ERROR_MSG("ignoring listen option '~s' with "
+			       "invalid value: ~p",
+			       [Opt, Val]),
+		    error
+	    end;
+	KnownOpts when is_list(KnownOpts) ->
+	    ?ERROR_MSG("unknown listen option '~s' for '~s' will be likely "
+		       "ignored, available options are: ~s",
+		       [Opt, Module, misc:join_atoms(KnownOpts, <<", ">>)]),
+	    {ok, Val}
+    end.
+
 -type transport() :: udp | tcp.
 -type port_ip_transport() :: inet:port_number() |
                              {inet:port_number(), transport()} |
@@ -664,7 +632,7 @@ validate_cfg(L) ->
                         true = ?IS_TRANSPORT(T),
                         {{Port, IP, T}, Mod, Opts};
                    ({module, Mod}, {Port, _, Opts}) ->
-                        {Port, prepare_mod(Mod), Opts};
+                        {Port, Mod, Opts};
                    (Opt, {Port, Mod, Opts}) ->
                         {Port, Mod, [Opt|Opts]}
                 end, {{5222, all_zero_ip(LOpts), tcp}, ejabberd_c2s, []}, LOpts)
@@ -682,13 +650,6 @@ prepare_ip(IP) when is_list(IP) ->
     Addr;
 prepare_ip(IP) when is_binary(IP) ->
     prepare_ip(binary_to_list(IP)).
-
-prepare_mod(ejabberd_sip) ->
-    prepare_mod(sip);
-prepare_mod(sip) ->
-    esip_socket;
-prepare_mod(Mod) when is_atom(Mod) ->
-    Mod.
 
 all_zero_ip(Opts) ->
     case proplists:get_bool(inet6, Opts) of

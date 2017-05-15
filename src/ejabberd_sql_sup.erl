@@ -53,7 +53,6 @@ start_link(Host) ->
 			[{ram_copies, [node()]}, {type, bag},
 			 {local_content, true},
 			 {attributes, record_info(fields, sql_pool)}]),
-    mnesia:add_table_copy(sql_pool, node(), ram_copies),
     F = fun () -> mnesia:delete({sql_pool, Host}) end,
     mnesia:ets(F),
     supervisor:start_link({local,
@@ -63,15 +62,8 @@ start_link(Host) ->
 init([Host]) ->
     StartInterval = ejabberd_config:get_option(
                       {sql_start_interval, Host},
-                      fun(I) when is_integer(I), I>0 -> I end,
                       ?DEFAULT_SQL_START_INTERVAL),
-    Type = ejabberd_config:get_option({sql_type, Host},
-                                      fun(mysql) -> mysql;
-                                         (pgsql) -> pgsql;
-                                         (sqlite) -> sqlite;
-					 (mssql) -> mssql;
-                                         (odbc) -> odbc
-                                      end, odbc),
+    Type = ejabberd_config:get_option({sql_type, Host}, odbc),
     PoolSize = get_pool_size(Type, Host),
     case Type of
         sqlite ->
@@ -99,7 +91,9 @@ get_pids(Host) ->
 get_random_pid(Host) ->
     case get_pids(Host) of
       [] -> none;
-      Pids -> lists:nth(erlang:phash(p1_time_compat:unique_integer(), length(Pids)), Pids)
+      Pids ->
+	    I = randoms:round_robin(length(Pids)) + 1,
+	    lists:nth(I, Pids)
     end.
 
 add_pid(Host, Pid) ->
@@ -118,7 +112,6 @@ remove_pid(Host, Pid) ->
 get_pool_size(SQLType, Host) ->
     PoolSize = ejabberd_config:get_option(
                  {sql_pool_size, Host},
-                 fun(I) when is_integer(I), I>0 -> I end,
 		 case SQLType of
 		     sqlite -> 1;
 		     _ -> ?DEFAULT_POOL_SIZE
@@ -225,16 +218,12 @@ read_lines(Fd, File, Acc) ->
             []
     end.
 
+-spec opt_type(sql_pool_size) -> fun((pos_integer()) -> pos_integer());
+	      (sql_start_interval) -> fun((pos_integer()) -> pos_integer());
+	      (atom()) -> [atom()].
 opt_type(sql_pool_size) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 opt_type(sql_start_interval) ->
     fun (I) when is_integer(I), I > 0 -> I end;
-opt_type(sql_type) ->
-    fun (mysql) -> mysql;
-	(pgsql) -> pgsql;
-	(sqlite) -> sqlite;
-	(mssql) -> mssql;
-	(odbc) -> odbc
-    end;
 opt_type(_) ->
-    [sql_pool_size, sql_start_interval, sql_type].
+    [sql_pool_size, sql_start_interval].

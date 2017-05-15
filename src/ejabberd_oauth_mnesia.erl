@@ -38,7 +38,6 @@ init() ->
                         [{disc_copies, [node()]},
                          {attributes,
                           record_info(fields, oauth_token)}]),
-    mnesia:add_table_copy(oauth_token, node(), disc_copies),
     ok.
 
 store(R) ->
@@ -47,9 +46,9 @@ store(R) ->
 lookup(Token) ->
     case catch mnesia:dirty_read(oauth_token, Token) of
         [R] ->
-            R;
+            {ok, R};
         _ ->
-            false
+            error
     end.
 
 clean(TS) ->

@@ -263,16 +263,22 @@ c2s_terminated(#{mgmt_state := resumed, jid := JID} = State, _Reason) ->
     bounce_message_queue(),
     {stop, State};
 c2s_terminated(#{mgmt_state := MgmtState, mgmt_stanzas_in := In, sid := SID,
-		 user := U, server := S, resource := R} = State, _Reason) ->
-    case MgmtState of
-	timeout ->
-	    Info = [{num_stanzas_in, In}],
-	    ejabberd_sm:set_offline_info(SID, U, S, R, Info);
-	_ ->
-	    ok
-    end,
+		 user := U, server := S, resource := R} = State, Reason) ->
+    Result = case MgmtState of
+		 timeout ->
+		     Info = [{num_stanzas_in, In}],
+		     %% TODO: Usually, ejabberd_c2s:process_terminated/2 is
+		     %% called later in the hook chain.  We swap the order so
+		     %% that the offline info won't be purged after we stored
+		     %% it.  This should be fixed in a proper way.
+		     State1 = ejabberd_c2s:process_terminated(State, Reason),
+		     ejabberd_sm:set_offline_info(SID, U, S, R, Info),
+		     {stop, State1};
+		 _ ->
+		     State
+	     end,
     route_unacked_stanzas(State),
-    State;
+    Result;
 c2s_terminated(State, _Reason) ->
     State.
 
@@ -516,7 +522,7 @@ route_unacked_stanzas(#{mgmt_state := MgmtState,
 			  Resend when is_boolean(Resend) ->
 			      Resend;
 			  if_offline ->
-			      case ejabberd_sm:get_user_resources(User, Resource) of
+			      case ejabberd_sm:get_user_resources(User, LServer) of
 				  [Resource] ->
 				      %% Same resource opened new session
 				      true;
@@ -667,58 +673,36 @@ bounce_message_queue() ->
 %%% Configuration processing
 %%%===================================================================
 get_max_ack_queue(Host, Opts) ->
-    VFun = mod_opt_type(max_ack_queue),
-    case gen_mod:get_module_opt(Host, ?MODULE, max_ack_queue, VFun) of
-	undefined -> gen_mod:get_opt(max_ack_queue, Opts, VFun, 1000);
-	Limit -> Limit
-    end.
+    gen_mod:get_module_opt(Host, ?MODULE, max_ack_queue,
+			   gen_mod:get_opt(max_ack_queue, Opts, 1000)).
 
 get_resume_timeout(Host, Opts) ->
-    VFun = mod_opt_type(resume_timeout),
-    case gen_mod:get_module_opt(Host, ?MODULE, resume_timeout, VFun) of
-	undefined -> gen_mod:get_opt(resume_timeout, Opts, VFun, 300);
-	Timeout -> Timeout
-    end.
+    gen_mod:get_module_opt(Host, ?MODULE, resume_timeout,
+			   gen_mod:get_opt(resume_timeout, Opts, 300)).
 
 get_max_resume_timeout(Host, Opts, ResumeTimeout) ->
-    VFun = mod_opt_type(max_resume_timeout),
-    case gen_mod:get_module_opt(Host, ?MODULE, max_resume_timeout, VFun) of
-	undefined ->
-	    case gen_mod:get_opt(max_resume_timeout, Opts, VFun) of
-		undefined -> ResumeTimeout;
-		Max when Max >= ResumeTimeout -> Max;
-		_ -> ResumeTimeout
-	    end;
+    case gen_mod:get_module_opt(Host, ?MODULE, max_resume_timeout,
+				gen_mod:get_opt(max_resume_timeout, Opts)) of
+	undefined -> ResumeTimeout;
 	Max when Max >= ResumeTimeout -> Max;
 	_ -> ResumeTimeout
     end.
 
 get_ack_timeout(Host, Opts) ->
-    VFun = mod_opt_type(ack_timeout),
-    T = case gen_mod:get_module_opt(Host, ?MODULE, ack_timeout, VFun) of
-	    undefined -> gen_mod:get_opt(ack_timeout, Opts, VFun, 60);
-	    AckTimeout -> AckTimeout
-	end,
-    case T of
+    case gen_mod:get_module_opt(Host, ?MODULE, ack_timeout,
+				gen_mod:get_opt(ack_timeout, Opts, 60)) of
 	infinity -> infinity;
-	_ -> timer:seconds(T)
+	T -> timer:seconds(T)
     end.
 
 get_resend_on_timeout(Host, Opts) ->
-    VFun = mod_opt_type(resend_on_timeout),
-    case gen_mod:get_module_opt(Host, ?MODULE, resend_on_timeout, VFun) of
-	undefined -> gen_mod:get_opt(resend_on_timeout, Opts, VFun, false);
-	Resend -> Resend
-    end.
+    gen_mod:get_module_opt(Host, ?MODULE, resend_on_timeout,
+			   gen_mod:get_opt(resend_on_timeout, Opts, false)).
 
 get_queue_type(Host, Opts) ->
-    VFun = mod_opt_type(queue_type),
-    case gen_mod:get_module_opt(Host, ?MODULE, queue_type, VFun) of
-	undefined ->
-	    case gen_mod:get_opt(queue_type, Opts, VFun) of
-		undefined -> ejabberd_config:default_queue_type(Host);
-		Type -> Type
-	    end;
+    case gen_mod:get_module_opt(Host, ?MODULE, queue_type,
+				gen_mod:get_opt(queue_type, Opts)) of
+	undefined -> ejabberd_config:default_queue_type(Host);
 	Type -> Type
     end.
 

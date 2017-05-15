@@ -123,11 +123,9 @@ init([{#ws{ip = IP, http_opts = HOpts}, _} = WS]) ->
     Opts = ejabberd_c2s_config:get_c2s_limits() ++ SOpts,
     PingInterval = ejabberd_config:get_option(
                      {websocket_ping_interval, ?MYNAME},
-                     fun(I) when is_integer(I), I>=0 -> I end,
                      ?PING_INTERVAL) * 1000,
     WSTimeout = ejabberd_config:get_option(
                   {websocket_timeout, ?MYNAME},
-                  fun(I) when is_integer(I), I>0 -> I end,
                   ?WEBSOCKET_TIMEOUT) * 1000,
     Socket = {http_ws, self(), IP},
     ?DEBUG("Client connected through websocket ~p",

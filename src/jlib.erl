@@ -35,7 +35,7 @@
                            binary_to_integer/1,
                            integer_to_binary/1]}).
 
-%% The following functions are deprected: use functions from aux.erl
+%% The following functions are deprected: use functions from misc.erl
 -export([tolower/1, term_to_base64/1, base64_to_term/1,
 	 decode_base64/1, encode_base64/1, ip_to_list/1,
 	 hex_to_bin/1, hex_to_base64/1, expand_keyword/3,

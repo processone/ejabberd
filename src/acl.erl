@@ -92,8 +92,6 @@ init([]) ->
                         [{ram_copies, [node()]},
                          {local_content, true},
 			 {attributes, record_info(fields, access)}]),
-    mnesia:add_table_copy(acl, node(), ram_copies),
-    mnesia:add_table_copy(access, node(), ram_copies),
     ejabberd_hooks:add(config_reloaded, ?MODULE, load_from_config, 20),
     load_from_config(),
     {ok, #state{}}.
@@ -201,13 +199,13 @@ load_from_config() ->
     lists:foreach(
       fun(Host) ->
               ACLs = ejabberd_config:get_option(
-                       {acl, Host}, fun(V) -> V end, []),
+                       {acl, Host}, []),
               AccessRules = ejabberd_config:get_option(
-                              {access, Host}, fun(V) -> V end, []),
+                              {access, Host}, []),
               AccessRulesNew = ejabberd_config:get_option(
-				 {access_rules, Host}, fun(V) -> V end, []),
+				 {access_rules, Host}, []),
               ShaperRules = ejabberd_config:get_option(
-				 {shaper_rules, Host}, fun(V) -> V end, []),
+				 {shaper_rules, Host}, []),
               lists:foreach(
                 fun({ACLName, SpecList}) ->
                         lists:foreach(
@@ -268,24 +266,42 @@ normalize_spec(Spec) ->
     case Spec of
         all -> all;
         none -> none;
-        {acl, N} -> {acl, N};
-        {user, {U, S}} -> {user, {nodeprep(U), nameprep(S)}};
-        {user, U} -> {user, split_user_server(U, fun nodeprep/1, fun nameprep/1)};
-        {shared_group, {G, H}} -> {shared_group, {b(G), nameprep(H)}};
-        {shared_group, G} -> {shared_group, split_user_server(G, fun b/1, fun nameprep/1)};
-        {user_regexp, {UR, S}} -> {user_regexp, {b(UR), nameprep(S)}};
-        {user_regexp, UR} -> {user_regexp, split_user_server(UR, fun b/1, fun nameprep/1)};
-        {node_regexp, {UR, SR}} -> {node_regexp, {b(UR), b(SR)}};
-        {user_glob, {UR, S}} -> {user_glob, {b(UR), nameprep(S)}};
-        {user_glob, UR} -> {user_glob, split_user_server(UR, fun b/1, fun nameprep/1)};
-        {node_glob, {UR, SR}} -> {node_glob, {b(UR), b(SR)}};
-        {server, S} -> {server, nameprep(S)};
-        {resource, R} -> {resource, resourceprep(R)};
-        {server_regexp, SR} -> {server_regexp, b(SR)};
-        {resource_regexp, R} -> {resource_regexp, b(R)};
-        {server_glob, S} -> {server_glob, b(S)};
-        {resource_glob, R} -> {resource_glob, b(R)};
-        {ip, {Net, Mask}} -> {ip, {Net, Mask}};
+	{acl, N} when is_atom(N) ->
+	    {acl, N};
+	{user, {U, S}} when is_binary(U), is_binary(S) ->
+	    {user, {nodeprep(U), nameprep(S)}};
+	{user, U} when is_binary(U) ->
+	    {user, split_user_server(U, fun nodeprep/1, fun nameprep/1)};
+	{shared_group, {G, H}} when is_binary(G), is_binary(H) ->
+	    {shared_group, {b(G), nameprep(H)}};
+	{shared_group, G} when is_binary(G) ->
+	    {shared_group, split_user_server(G, fun b/1, fun nameprep/1)};
+	{user_regexp, {UR, S}} when is_binary(UR), is_binary(S) ->
+	    {user_regexp, {b(UR), nameprep(S)}};
+	{user_regexp, UR} when is_binary(UR) ->
+	    {user_regexp, split_user_server(UR, fun b/1, fun nameprep/1)};
+	{node_regexp, {UR, SR}} when is_binary(UR), is_binary(SR) ->
+	    {node_regexp, {b(UR), b(SR)}};
+	{user_glob, {UR, S}} when is_binary(UR), is_binary(S) ->
+	    {user_glob, {b(UR), nameprep(S)}};
+	{user_glob, UR} when is_binary(UR) ->
+	    {user_glob, split_user_server(UR, fun b/1, fun nameprep/1)};
+	{node_glob, {UR, SR}} when is_binary(UR), is_binary(SR) ->
+	    {node_glob, {b(UR), b(SR)}};
+	{server, S} when is_binary(S) ->
+	    {server, nameprep(S)};
+	{resource, R} when is_binary(R) ->
+	    {resource, resourceprep(R)};
+	{server_regexp, SR} when is_binary(SR) ->
+	    {server_regexp, b(SR)};
+	{resource_regexp, R} when is_binary(R) ->
+	    {resource_regexp, b(R)};
+	{server_glob, S} when is_binary(S) ->
+	    {server_glob, b(S)};
+	{resource_glob, R} when is_binary(R) ->
+	    {resource_glob, b(R)};
+	{ip, {Net, Mask}} when is_binary(Net), is_integer(Mask) ->
+	    {ip, {Net, Mask}};
         {ip, S} ->
             case parse_ip_netmask(b(S)) of
                 {ok, Net, Mask} ->
@@ -293,7 +309,9 @@ normalize_spec(Spec) ->
                 error ->
                     ?INFO_MSG("Invalid network address: ~p", [S]),
                     none
-            end
+	    end;
+	BadVal ->
+	    throw({<<"Invalid acl value">>, BadVal})
     end.
 
 -spec any_rules_allowed(global | binary(), [access_name()],
@@ -607,7 +625,7 @@ access_rules_validator(Rules0) ->
 					  (deny) -> true;
 					  (_) -> false
 				       end),
-    throw({replace_with, Rules}).
+    Rules.
 
 
 shaper_rules_validator(Name) when is_atom(Name) ->
@@ -618,7 +636,7 @@ shaper_rules_validator(Rules0) ->
 					  (V2) when is_integer(V2) -> true;
 					  (_) -> false
 				       end),
-    throw({replace_with, Rules}).
+    Rules.
 
 access_shaper_rules_validator([{Type, Acls} = Rule | Rest], RuleTypeCheck) ->
     case RuleTypeCheck(Type) of

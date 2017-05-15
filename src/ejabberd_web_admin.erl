@@ -75,25 +75,25 @@ get_acl_rule([<<"vhosts">>], _) ->
 get_acl_rule([<<"server">>, VHost | _RPath], Method)
     when Method =:= 'GET' orelse Method =:= 'HEAD' ->
     AC = gen_mod:get_module_opt(VHost, ejabberd_web_admin,
-				access, fun(A) -> A end, configure),
+				access, configure),
     ACR = gen_mod:get_module_opt(VHost, ejabberd_web_admin,
-				 access_readonly, fun(A) -> A end, webadmin_view),
+				 access_readonly, webadmin_view),
     {VHost, [AC, ACR]};
 get_acl_rule([<<"server">>, VHost | _RPath], 'POST') ->
     AC = gen_mod:get_module_opt(VHost, ejabberd_web_admin,
-				access, fun(A) -> A end, configure),
+				access, configure),
     {VHost, [AC]};
 %% Default rule: only global admins can access any other random page
 get_acl_rule(_RPath, Method)
     when Method =:= 'GET' orelse Method =:= 'HEAD' ->
     AC = gen_mod:get_module_opt(global, ejabberd_web_admin,
-				access, fun(A) -> A end, configure),
+				access, configure),
     ACR = gen_mod:get_module_opt(global, ejabberd_web_admin,
-				 access_readonly, fun(A) -> A end, webadmin_view),
+				 access_readonly, webadmin_view),
     {global, [AC, ACR]};
 get_acl_rule(_RPath, 'POST') ->
     AC = gen_mod:get_module_opt(global, ejabberd_web_admin,
-				access, fun(A) -> A end, configure),
+				access, configure),
     {global, [AC]}.
 
 %%%==================================
@@ -281,7 +281,7 @@ get_auth_account(HostOfRule, AccessRule, User, Server,
 	    true -> {ok, {User, Server}}
 	  end;
       false ->
-	  case ejabberd_auth:is_user_exists(User, Server) of
+	  case ejabberd_auth:user_exists(User, Server) of
 	    true -> {unauthorized, <<"bad-password">>};
 	    false -> {unauthorized, <<"inexistent-account">>}
 	  end
@@ -740,7 +740,10 @@ process_admin(Host,
 		  {ok, Tokens, _} ->
 		      case erl_parse:parse_term(Tokens) of
 			{ok, NewACLs} ->
-                            acl:add_list(Host, NewACLs, true);
+			    case catch acl:add_list(Host, NewACLs, true) of
+				ok -> ok;
+				_ -> error
+			    end;
 			_ -> error
 		      end;
 		  _ -> error
@@ -779,8 +782,11 @@ process_admin(Host,
 		case catch acl_parse_query(Host, Query) of
 		  {'EXIT', _} -> error;
 		  NewACLs ->
-		      ?INFO_MSG("NewACLs at ~s: ~p", [Host, NewACLs]),
-		      acl:add_list(Host, NewACLs, true)
+			?INFO_MSG("NewACLs at ~s: ~p", [Host, NewACLs]),
+			case catch acl:add_list(Host, NewACLs, true) of
+			    ok -> ok;
+			    _ -> error
+			end
 		end;
 	    _ -> nothing
 	  end,
@@ -920,12 +926,7 @@ process_admin(Host,
 		end;
 	    _ -> nothing
 	  end,
-    Rules = case ejabberd_config:get_option(
-                   {access, Name, Host}, fun(V) -> V end)
-		of
-	      undefined -> [];
-	      Rs1 -> Rs1
-	    end,
+    Rules = ejabberd_config:get_option({access, Name, Host}, []),
     make_xhtml([?XC(<<"h1">>,
 		    (str:format(
                                      ?T(<<"~s access rule configuration">>),
@@ -1024,7 +1025,7 @@ process_admin(Host,
 process_admin(Host,
 	      #request{path = [<<"user">>, U],
 		       auth = {_, _Auth, AJID}, q = Query, lang = Lang}) ->
-    case ejabberd_auth:is_user_exists(U, Host) of
+    case ejabberd_auth:user_exists(U, Host) of
       true ->
 	  Res = user_info(U, Host, Query, Lang),
 	  make_xhtml(Res, Host, Lang, AJID);
@@ -1369,7 +1370,7 @@ list_vhosts2(Lang, Hosts) ->
 				 OnlineUsers =
 				     length(ejabberd_sm:get_vh_session_list(Host)),
 				 RegisteredUsers =
-				     ejabberd_auth:get_vh_registered_users_number(Host),
+				     ejabberd_auth:count_users(Host),
 				 ?XE(<<"tr">>,
 				     [?XE(<<"td">>,
 					  [?AC(<<"../server/", Host/binary,
@@ -1387,7 +1388,7 @@ list_vhosts2(Lang, Hosts) ->
 
 list_users(Host, Query, Lang, URLFunc) ->
     Res = list_users_parse_query(Query, Host),
-    Users = ejabberd_auth:get_vh_registered_users(Host),
+    Users = ejabberd_auth:get_users(Host),
     SUsers = lists:sort([{S, U} || {U, S} <- Users]),
     FUsers = case length(SUsers) of
 	       N when N =< 100 ->
@@ -1468,7 +1469,7 @@ list_users_parse_query(Query, Host) ->
     end.
 
 list_users_in_diapason(Host, Diap, Lang, URLFunc) ->
-    Users = ejabberd_auth:get_vh_registered_users(Host),
+    Users = ejabberd_auth:get_users(Host),
     SUsers = lists:sort([{S, U} || {U, S} <- Users]),
     [S1, S2] = ejabberd_regexp:split(Diap, <<"-">>),
     N1 = binary_to_integer(S1),
@@ -1564,7 +1565,7 @@ su_to_list({Server, User}) ->
 get_stats(global, Lang) ->
     OnlineUsers = ejabberd_sm:connected_users_number(),
     RegisteredUsers = lists:foldl(fun (Host, Total) ->
-					  ejabberd_auth:get_vh_registered_users_number(Host)
+					  ejabberd_auth:count_users(Host)
 					    + Total
 				  end,
 				  0, ?MYHOSTS),
@@ -1588,7 +1589,7 @@ get_stats(Host, Lang) ->
     OnlineUsers =
 	length(ejabberd_sm:get_vh_session_list(Host)),
     RegisteredUsers =
-	ejabberd_auth:get_vh_registered_users_number(Host),
+	ejabberd_auth:count_users(Host),
     [?XAE(<<"table">>, [],
 	  [?XE(<<"tbody">>,
 	       [?XE(<<"tr">>,
@@ -2980,8 +2981,9 @@ make_menu_item(item, 3, URI, Name, Lang) ->
 %%%==================================
 
 
-opt_type(access) -> fun acl:access_rules_validator/1;
+-spec opt_type(access_readonly) -> fun((any()) -> any());
+	      (atom()) -> [atom()].
 opt_type(access_readonly) -> fun acl:access_rules_validator/1;
-opt_type(_) -> [access, access_readonly].
+opt_type(_) -> [access_readonly].
 
 %%% vim: set foldmethod=marker foldmarker=%%%%,%%%=:

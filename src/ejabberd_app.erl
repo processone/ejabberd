@@ -46,9 +46,9 @@ start(normal, _Args) ->
     start_apps(),
     start_elixir_application(),
     ejabberd:check_app(ejabberd),
-    db_init(),
     setup_if_elixir_conf_used(),
     ejabberd_config:start(),
+    ejabberd_mnesia:start(),
     set_settings_from_config(),
     file_queue_init(),
     maybe_add_nameservers(),
@@ -59,6 +59,7 @@ start(normal, _Args) ->
 	    {T2, _} = statistics(wall_clock),
 	    ?INFO_MSG("ejabberd ~s is started in the node ~p in ~.2fs",
 		      [?VERSION, node(), (T2-T1)/1000]),
+	    lists:foreach(fun erlang:garbage_collect/1, processes()),
 	    {ok, SupPid};
 	Err ->
 	    Err
@@ -87,36 +88,8 @@ stop(_State) ->
 %%% Internal functions
 %%%
 
-db_init() ->
-    ejabberd_config:env_binary_to_list(mnesia, dir),
-    MyNode = node(),
-    DbNodes = mnesia:system_info(db_nodes),
-    case lists:member(MyNode, DbNodes) of
-	true ->
-	    ok;
-	false ->
-	    ?CRITICAL_MSG("Node name mismatch: I'm [~s], "
-			  "the database is owned by ~p", [MyNode, DbNodes]),
-	    ?CRITICAL_MSG("Either set ERLANG_NODE in ejabberdctl.cfg "
-			  "or change node name in Mnesia", []),
-	    erlang:error(node_name_mismatch)
-    end,
-    case mnesia:system_info(extra_db_nodes) of
-	[] ->
-	    mnesia:create_schema([node()]);
-	_ ->
-	    ok
-    end,
-    ejabberd:start_app(mnesia, permanent),
-    mnesia:wait_for_tables(mnesia:system_info(local_tables), infinity).
-
 connect_nodes() ->
-    Nodes = ejabberd_config:get_option(
-              cluster_nodes,
-              fun(Ns) ->
-                      true = lists:all(fun is_atom/1, Ns),
-                      Ns
-              end, []),
+    Nodes = ejabberd_config:get_option(cluster_nodes, []),
     lists:foreach(fun(Node) ->
                           net_kernel:connect_node(Node)
                   end, Nodes).
@@ -164,10 +137,7 @@ delete_pid_file() ->
     end.
 
 set_settings_from_config() ->
-    Ticktime = ejabberd_config:get_option(
-                 net_ticktime,
-                 opt_type(net_ticktime),
-                 60),
+    Ticktime = ejabberd_config:get_option(net_ticktime, 60),
     net_kernel:set_net_ticktime(Ticktime).
 
 file_queue_init() ->
@@ -184,11 +154,15 @@ start_apps() ->
     crypto:start(),
     ejabberd:start_app(sasl),
     ejabberd:start_app(ssl),
+    ejabberd:start_app(p1_utils),
     ejabberd:start_app(fast_yaml),
     ejabberd:start_app(fast_tls),
     ejabberd:start_app(xmpp),
     ejabberd:start_app(cache_tab).
 
+-spec opt_type(net_ticktime) -> fun((pos_integer()) -> pos_integer());
+	      (cluster_nodes) -> fun(([node()]) -> [node()]);
+	      (atom()) -> atom().
 opt_type(net_ticktime) ->
     fun (P) when is_integer(P), P > 0 -> P end;
 opt_type(cluster_nodes) ->

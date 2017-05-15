@@ -49,8 +49,7 @@ init(_Host, _Opts) ->
     ejabberd_mnesia:create(?MODULE, carboncopy,
 			[{ram_copies, [node()]}, 
 			 {attributes, record_info(fields, carboncopy)}, 
-			 {type, bag}]),
-    mnesia:add_table_copy(carboncopy, node(), ram_copies).
+			 {type, bag}]).
 
 enable(LUser, LServer, LResource, NS) ->
     mnesia:dirty_write(

@@ -28,6 +28,7 @@
 
 %% API
 -export([init/2, get_data/3, set_data/4, import/2]).
+-export([need_transform/1, transform/1]).
 
 -include("jid.hrl").
 -include("mod_irc.hrl").
@@ -38,9 +39,8 @@
 %%%===================================================================
 init(_Host, _Opts) ->
     ejabberd_mnesia:create(?MODULE, irc_custom,
-			[{disc_copies, [node()]},
-			 {attributes, record_info(fields, irc_custom)}]),
-    update_table().
+			   [{disc_copies, [node()]},
+			    {attributes, record_info(fields, irc_custom)}]).
 
 get_data(_LServer, Host, From) ->
     {U, S, _} = jid:tolower(From),
@@ -61,25 +61,21 @@ set_data(_LServer, Host, From, Data) ->
 import(_LServer, #irc_custom{} = R) ->
     mnesia:dirty_write(R).
 
+need_transform(#irc_custom{us_host = {{U, S}, H}})
+  when is_list(U) orelse is_list(S) orelse is_list(H) ->
+    ?INFO_MSG("Mnesia table 'irc_custom' will be converted to binary", []),
+    true;
+need_transform(_) ->
+    false.
+
+transform(#irc_custom{us_host = {{U, S}, H},
+		      data = Data} = R) ->
+    JID = jid:make(U, S),
+    R#irc_custom{us_host = {{iolist_to_binary(U),
+			     iolist_to_binary(S)},
+			    iolist_to_binary(H)},
+		 data = mod_irc:data_to_binary(JID, Data)}.
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-update_table() ->
-    Fields = record_info(fields, irc_custom),
-    case mnesia:table_info(irc_custom, attributes) of
-      Fields ->
-          ejabberd_config:convert_table_to_binary(
-            irc_custom, Fields, set,
-            fun(#irc_custom{us_host = {_, H}}) -> H end,
-            fun(#irc_custom{us_host = {{U, S}, H},
-                            data = Data} = R) ->
-		    JID = jid:make(U, S),
-                    R#irc_custom{us_host = {{iolist_to_binary(U),
-                                             iolist_to_binary(S)},
-                                            iolist_to_binary(H)},
-                                 data = mod_irc:data_to_binary(JID, Data)}
-            end);
-      _ ->
-	  ?INFO_MSG("Recreating irc_custom table", []),
-	  mnesia:transform_table(irc_custom, ignore, Fields)
-    end.

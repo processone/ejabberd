@@ -210,7 +210,7 @@ get_commands_spec() ->
 			result_desc = "Result tuple"},
      #ejabberd_commands{name = check_account, tags = [accounts],
 			desc = "Check if an account exists or not",
-			module = ejabberd_auth, function = is_user_exists,
+			module = ejabberd_auth, function = user_exists,
 			args = [{user, binary}, {host, binary}],
 			args_example = [<<"peter">>, <<"myserver.com">>],
 			args_desc = ["User name to check", "Server to check"],
@@ -810,14 +810,14 @@ histogram([], _Integral, _Current, Count, Hist) ->
 
 delete_old_users(Days) ->
     %% Get the list of registered users
-    Users = ejabberd_auth:dirty_get_registered_users(),
+    Users = ejabberd_auth:get_users(),
 
     {removed, N, UR} = delete_old_users(Days, Users),
     {ok, io_lib:format("Deleted ~p users: ~p", [N, UR])}.
 
 delete_old_users_vhost(Host, Days) ->
     %% Get the list of registered users
-    Users = ejabberd_auth:get_vh_registered_users(Host),
+    Users = ejabberd_auth:get_users(Host),
 
     {removed, N, UR} = delete_old_users(Days, Users),
     {ok, io_lib:format("Deleted ~p users: ~p", [N, UR])}.
@@ -1285,7 +1285,7 @@ subscribe_roster({Name1, Server1, Group1, Nick1}, [{Name2, Server2, Group2, Nick
     subscribe_roster({Name1, Server1, Group1, Nick1}, Roster).
 
 push_alltoall(S, G) ->
-    Users = ejabberd_auth:get_vh_registered_users(S),
+    Users = ejabberd_auth:get_users(S),
     Users2 = build_list_users(G, Users, []),
     subscribe_all(Users2),
     ok.
@@ -1363,8 +1363,9 @@ get_last(User, Server) ->
 %% <aa xmlns='bb'>Cluth</aa>
 
 private_get(Username, Host, Element, Ns) ->
+    ElementXml = #xmlel{name = Element, attrs = [{<<"xmlns">>, Ns}]},
     Els = mod_private:get_data(jid:nodeprep(Username), jid:nameprep(Host),
-			       [Ns, Element]),
+			       [{Ns, ElementXml}]),
     binary_to_list(fxml:element_to_binary(xmpp:encode(#private{xml_els = Els}))).
 
 private_set(Username, Host, ElementString) ->
@@ -1498,14 +1499,14 @@ stats(Name) ->
     case Name of
 	<<"uptimeseconds">> -> trunc(element(1, erlang:statistics(wall_clock))/1000);
 	<<"processes">> -> length(erlang:processes());
-	<<"registeredusers">> -> lists:foldl(fun(Host, Sum) -> ejabberd_auth:get_vh_registered_users_number(Host) + Sum end, 0, ?MYHOSTS);
+	<<"registeredusers">> -> lists:foldl(fun(Host, Sum) -> ejabberd_auth:count_users(Host) + Sum end, 0, ?MYHOSTS);
 	<<"onlineusersnode">> -> length(ejabberd_sm:dirty_get_my_sessions_list());
 	<<"onlineusers">> -> length(ejabberd_sm:dirty_get_sessions_list())
     end.
 
 stats(Name, Host) ->
     case Name of
-	<<"registeredusers">> -> ejabberd_auth:get_vh_registered_users_number(Host);
+	<<"registeredusers">> -> ejabberd_auth:count_users(Host);
 	<<"onlineusers">> -> length(ejabberd_sm:get_vh_session_list(Host))
     end.
 
@@ -1637,7 +1638,7 @@ decide_rip_jid({UName, UServer}, Match_list) ->
       Match_list).
 
 user_action(User, Server, Fun, OK) ->
-    case ejabberd_auth:is_user_exists(User, Server) of
+    case ejabberd_auth:user_exists(User, Server) of
         true ->
  	    case catch Fun() of
                 OK -> ok;

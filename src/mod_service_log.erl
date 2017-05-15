@@ -68,8 +68,7 @@ log_user_receive({Packet, C2SState}) ->
 
 -spec log_packet(stanza(), binary()) -> ok.
 log_packet(Packet, Host) ->
-    Loggers = gen_mod:get_module_opt(Host, ?MODULE, loggers,
-				     mod_opt_type(loggers), []),
+    Loggers = gen_mod:get_module_opt(Host, ?MODULE, loggers, []),
     ForwardedMsg = #message{from = jid:make(Host),
 			    id = randoms:get_string(),
 			    sub_els = [#forwarded{

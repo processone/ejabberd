@@ -2,7 +2,7 @@
 %%% @author Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%% @doc
 %%%   This is a stub module which will be replaced during
-%%%   configuration load, see ejabberd_config:recompile_options/0.
+%%%   configuration load via p1_options:compile/1
 %%%   The only purpose of this file is to shut up xref/dialyzer
 %%% @end
 %%% Created : 16 Apr 2017 by Evgeny Khramtsov <ekhramtsov@process-one.net>
@@ -28,13 +28,16 @@
 -module(ejabberd_options).
 
 %% API
--export([is_known/1]).
+-export([is_known/1, get_scope/1]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 is_known(_) ->
     false.
+
+get_scope(_) ->
+    [].
 
 %%%===================================================================
 %%% Internal functions

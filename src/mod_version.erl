@@ -40,8 +40,7 @@
 -include("xmpp.hrl").
 
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
-                             one_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
 				  ?NS_VERSION, ?MODULE, process_local_iq,
 				  IQDisc).
@@ -51,9 +50,7 @@ stop(Host) ->
 				     ?NS_VERSION).
 
 reload(Host, NewOpts, OldOpts) ->
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts,
-			      fun gen_iq_handler:check_type/1,
-			      one_queue) of
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
 	{false, IQDisc, _} ->
 	    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VERSION,
 					  ?MODULE, process_local_iq, IQDisc);
@@ -66,9 +63,7 @@ process_local_iq(#iq{type = set, lang = Lang} = IQ) ->
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_local_iq(#iq{type = get, to = To} = IQ) ->
     Host = To#jid.lserver,
-    OS = case gen_mod:get_module_opt(Host, ?MODULE, show_os,
-				     fun(B) when is_boolean(B) -> B end,
-				     true) of
+    OS = case gen_mod:get_module_opt(Host, ?MODULE, show_os, true) of
 	     true -> get_os();
 	     false -> undefined
 	 end,

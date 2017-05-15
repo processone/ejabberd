@@ -37,7 +37,7 @@
 	 remove_user/2, remove_room/3, mod_opt_type/1, muc_process_iq/2,
 	 muc_filter_message/3, message_is_archived/3, delete_old_messages/2,
 	 get_commands_spec/0, msg_to_el/4, get_room_config/4, set_room_option/3,
-	 offline_message/1]).
+	 offline_message/1, export/1]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -64,16 +64,18 @@
 -callback select(binary(), jid(), jid(), mam_query:result(),
 		 #rsm_set{} | undefined, chat | groupchat) ->
     {[{binary(), non_neg_integer(), xmlel()}], boolean(), non_neg_integer()}.
+-callback use_cache(binary(), gen_mod:opts()) -> boolean().
+
+-optional_callbacks([use_cache/2]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
-			     one_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
-    init_cache(Opts),
+    init_cache(Host, Opts),
     register_iq_handlers(Host, IQDisc),
     ejabberd_hooks:add(user_receive_packet, Host, ?MODULE,
 		       user_receive_packet, 88),
@@ -97,8 +99,7 @@ start(Host, Opts) ->
 		       get_room_config, 50),
     ejabberd_hooks:add(set_room_option, Host, ?MODULE,
 		       set_room_option, 50),
-    case gen_mod:get_opt(assume_mam_usage, Opts,
-			 fun(B) when is_boolean(B) -> B end, false) of
+    case gen_mod:get_opt(assume_mam_usage, Opts, false) of
 	true ->
 	    ejabberd_hooks:add(message_is_archived, Host, ?MODULE,
 			       message_is_archived, 50);
@@ -108,15 +109,34 @@ start(Host, Opts) ->
     ejabberd_commands:register_commands(get_commands_spec()),
     ok.
 
-init_cache(Opts) ->
+use_cache(Host, Opts) ->
+    Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
+    case erlang:function_exported(Mod, use_cache, 2) of
+	true -> Mod:use_cache(Host, Opts);
+	false ->
+	    gen_mod:get_opt(use_cache, Opts,
+			    ejabberd_config:use_cache(Host))
+    end.
+
+init_cache(Host, Opts) ->
+    case use_cache(Host, Opts) of
+	true ->
+	    ets_cache:new(archive_prefs_cache, cache_opts(Host, Opts));
+	false ->
+	    ok
+    end.
+
+cache_opts(Host, Opts) ->
     MaxSize = gen_mod:get_opt(cache_size, Opts,
-			      fun(I) when is_integer(I), I>0 -> I end,
-			      1000),
-    LifeTime = gen_mod:get_opt(cache_life_time, Opts,
-			       fun(I) when is_integer(I), I>0 -> I end,
-			       timer:hours(1) div 1000),
-    cache_tab:new(archive_prefs, [{max_size, MaxSize},
-				  {life_time, LifeTime}]).
+			      ejabberd_config:cache_size(Host)),
+    CacheMissed = gen_mod:get_opt(cache_missed, Opts,
+				  ejabberd_config:cache_missed(Host)),
+    LifeTime = case gen_mod:get_opt(cache_life_time, Opts,
+				    ejabberd_config:cache_life_time(Host)) of
+		   infinity -> infinity;
+		   I -> timer:seconds(I)
+	       end,
+    [{max_size, MaxSize}, {life_time, LifeTime}, {cache_missed, CacheMissed}].
 
 stop(Host) ->
     unregister_iq_handlers(Host),
@@ -142,8 +162,7 @@ stop(Host) ->
 			  get_room_config, 50),
     ejabberd_hooks:delete(set_room_option, Host, ?MODULE,
 			  set_room_option, 50),
-    case gen_mod:get_module_opt(Host, ?MODULE, assume_mam_usage,
-				fun(B) when is_boolean(B) -> B end, false) of
+    case gen_mod:get_module_opt(Host, ?MODULE, assume_mam_usage, false) of
 	true ->
 	    ejabberd_hooks:delete(message_is_archived, Host, ?MODULE,
 				  message_is_archived, 50);
@@ -161,32 +180,14 @@ reload(Host, NewOpts, OldOpts) ->
        true ->
 	    ok
     end,
-    case gen_mod:is_equal_opt(cache_size, NewOpts, OldOpts,
-			      fun(I) when is_integer(I), I>0 -> I end,
-                              1000) of
-	{false, MaxSize, _} ->
-	    cache_tab:setopts(archive_prefs, [{max_size, MaxSize}]);
-	true ->
-	    ok
-    end,
-    case gen_mod:is_equal_opt(cache_life_time, NewOpts, OldOpts,
-			      fun(I) when is_integer(I), I>0 -> I end,
-			      timer:hours(1) div 1000) of
-	{false, LifeTime, _} ->
-	    cache_tab:setopts(archive_prefs, [{life_time, LifeTime}]);
-	true ->
-	    ok
-    end,
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts,
-			      fun gen_iq_handler:check_type/1,
-			      one_queue) of
+    ets_cache:setopts(archive_prefs_cache, NewOpts),
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
 	{false, IQDisc, _} ->
 	    register_iq_handlers(Host, IQDisc);
 	true ->
 	    ok
     end,
-    case gen_mod:is_equal_opt(assume_mam_usage, NewOpts, OldOpts,
-			      fun(B) when is_boolean(B) -> B end, false) of
+    case gen_mod:is_equal_opt(assume_mam_usage, NewOpts, OldOpts, false) of
 	{false, true, _} ->
 	    ejabberd_hooks:add(message_is_archived, Host, ?MODULE,
 			       message_is_archived, 50);
@@ -230,8 +231,8 @@ remove_user(User, Server) ->
     LServer = jid:nameprep(Server),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:remove_user(LUser, LServer),
-    cache_tab:dirty_delete(archive_prefs, {LUser, LServer}, fun() -> ok end),
-    ok.
+    ets_cache:delete(archive_prefs_cache, {LUser, LServer},
+		     ejabberd_cluster:get_nodes()).
 
 -spec remove_room(binary(), binary(), binary()) -> ok.
 remove_room(LServer, Name, Host) ->
@@ -420,8 +421,7 @@ message_is_archived(true, _C2SState, _Pkt) ->
 message_is_archived(false, #{jid := JID} = C2SState, Pkt) ->
     #jid{luser = LUser, lserver = LServer} = JID,
     Peer = xmpp:get_from(Pkt),
-    case gen_mod:get_module_opt(LServer, ?MODULE, assume_mam_usage,
-				fun(B) when is_boolean(B) -> B end, false) of
+    case gen_mod:get_module_opt(LServer, ?MODULE, assume_mam_usage, false) of
 	true ->
 	    should_archive(strip_my_archived_tag(Pkt, LServer), LServer)
 		andalso should_archive_peer(C2SState, LUser, LServer,
@@ -456,6 +456,10 @@ delete_old_messages(TypeBin, Days) when TypeBin == <<"chat">>;
     end;
 delete_old_messages(_TypeBin, _Days) ->
     unsupported_type.
+
+export(LServer) ->
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    Mod:export(LServer).
 
 %%%===================================================================
 %%% Internal functions
@@ -760,31 +764,31 @@ write_prefs(LUser, LServer, Host, Default, Always, Never) ->
 			   always = Always,
 			   never = Never},
     Mod = gen_mod:db_mod(Host, ?MODULE),
-    cache_tab:dirty_insert(
-      archive_prefs, {LUser, LServer}, Prefs,
-      fun() ->  Mod:write_prefs(LUser, LServer, Prefs, Host) end).
+    case Mod:write_prefs(LUser, LServer, Prefs, Host) of
+	ok ->
+	    ets_cache:delete(archive_prefs_cache, {LUser, LServer},
+			     ejabberd_cluster:get_nodes());
+	_Err ->
+	    {error, db_failure}
+    end.
 
 get_prefs(LUser, LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Res = cache_tab:lookup(archive_prefs, {LUser, LServer},
+    Res = ets_cache:lookup(archive_prefs_cache, {LUser, LServer},
 			   fun() -> Mod:get_prefs(LUser, LServer) end),
     case Res of
 	{ok, Prefs} ->
 	    Prefs;
 	error ->
 	    ActivateOpt = gen_mod:get_module_opt(
-			    LServer, ?MODULE, request_activates_archiving,
-			    fun(B) when is_boolean(B) -> B end, false),
+			    LServer, ?MODULE,
+			    request_activates_archiving, false),
 	    case ActivateOpt of
 		true ->
 		    #archive_prefs{us = {LUser, LServer}, default = never};
 		false ->
 		    Default = gen_mod:get_module_opt(
-				LServer, ?MODULE, default,
-				fun(always) -> always;
-				   (never) -> never;
-				   (roster) -> roster
-				end, never),
+				LServer, ?MODULE, default, never),
 		    #archive_prefs{us = {LUser, LServer}, default = Default}
 	    end
     end.
@@ -796,14 +800,12 @@ prefs_el(Default, Always, Never, NS) ->
 	       xmlns = NS}.
 
 maybe_activate_mam(LUser, LServer) ->
-    ActivateOpt = gen_mod:get_module_opt(LServer, ?MODULE,
-					 request_activates_archiving,
-					 fun(B) when is_boolean(B) -> B end,
-					 false),
+    ActivateOpt = gen_mod:get_module_opt(
+		    LServer, ?MODULE, request_activates_archiving, false),
     case ActivateOpt of
 	true ->
 	    Mod = gen_mod:db_mod(LServer, ?MODULE),
-	    Res = cache_tab:lookup(archive_prefs, {LUser, LServer},
+	    Res = ets_cache:lookup(archive_prefs_cache, {LUser, LServer},
 				   fun() ->
 					   Mod:get_prefs(LUser, LServer)
 				   end),
@@ -811,11 +813,8 @@ maybe_activate_mam(LUser, LServer) ->
 		{ok, _Prefs} ->
 		    ok;
 		error ->
-		    Default = gen_mod:get_module_opt(LServer, ?MODULE, default,
-						     fun(always) -> always;
-							(never) -> never;
-							(roster) -> roster
-						     end, never),
+		    Default = gen_mod:get_module_opt(
+				LServer, ?MODULE, default, never),
 		    write_prefs(LUser, LServer, LServer, Default, [], [])
 	    end;
 	false ->
@@ -1026,10 +1025,12 @@ get_commands_spec() ->
 
 mod_opt_type(assume_mam_usage) ->
     fun (B) when is_boolean(B) -> B end;
-mod_opt_type(cache_life_time) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
-mod_opt_type(cache_size) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
+mod_opt_type(O) when O == cache_life_time; O == cache_size ->
+    fun (I) when is_integer(I), I > 0 -> I;
+	(infinity) -> infinity
+    end;
+mod_opt_type(O) when O == use_cache; O == cache_missed ->
+    fun (B) when is_boolean(B) -> B end;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(default) ->
     fun (always) -> always;
@@ -1040,5 +1041,5 @@ mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(request_activates_archiving) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(_) ->
-    [assume_mam_usage, cache_life_time, cache_size, db_type, default, iqdisc,
-     request_activates_archiving].
+    [assume_mam_usage, cache_life_time, cache_size, use_cache, cache_missed,
+     db_type, default, iqdisc, request_activates_archiving].

@@ -31,11 +31,13 @@
 -define(GEN_SERVER, gen_server).
 -endif.
 -behaviour(?GEN_SERVER).
+-behaviour(ejabberd_config).
 
 %% API
 -export([start_link/3, add_iq_handler/6,
 	 remove_iq_handler/3, stop_iq_handler/3, handle/5,
-	 process_iq/4, check_type/1, transform_module_options/1]).
+	 process_iq/4, check_type/1, transform_module_options/1,
+	 opt_type/1, iqdisc/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
@@ -183,6 +185,9 @@ check_type(one_queue) -> one_queue;
 check_type(N) when is_integer(N), N>0 -> N;
 check_type(parallel) -> parallel.
 
+iqdisc(Host) ->
+    ejabberd_config:get_option({iqdisc, Host}, one_queue).
+
 -spec transform_module_options([{atom(), any()}]) -> [{atom(), any()}].
 
 transform_module_options(Opts) ->
@@ -192,6 +197,11 @@ transform_module_options(Opts) ->
          (Opt) ->
               Opt
       end, Opts).
+
+-spec opt_type(iqdisc) -> fun((type()) -> type());
+	      (atom()) -> [atom()].
+opt_type(iqdisc) -> fun check_type/1;
+opt_type(_) -> [iqdisc].
 
 %%====================================================================
 %% gen_server callbacks

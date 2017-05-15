@@ -30,6 +30,7 @@
 	 remove_old_messages/2, remove_user/2, read_message_headers/2,
 	 read_message/3, remove_message/3, read_all_messages/2,
 	 remove_all_messages/2, count_messages/2, import/1]).
+-export([need_transform/1, transform/1]).
 
 -include("xmpp.hrl").
 -include("mod_offline.hrl").
@@ -42,9 +43,8 @@
 %%%===================================================================
 init(_Host, _Opts) ->
     ejabberd_mnesia:create(?MODULE, offline_msg,
-			[{disc_only_copies, [node()]}, {type, bag},
-			 {attributes, record_info(fields, offline_msg)}]),
-    update_table().
+			   [{disc_only_copies, [node()]}, {type, bag},
+			    {attributes, record_info(fields, offline_msg)}]).
 
 store_messages(_Host, US, Msgs, Len, MaxOfflineMsgs) ->
     F = fun () ->
@@ -183,6 +183,19 @@ count_messages(LUser, LServer) ->
 import(#offline_msg{} = Msg) ->
     mnesia:dirty_write(Msg).
 
+need_transform(#offline_msg{us = {U, S}}) when is_list(U) orelse is_list(S) ->
+    ?INFO_MSG("Mnesia table 'offline_msg' will be converted to binary", []),
+    true;
+need_transform(_) ->
+    false.
+
+transform(#offline_msg{us = {U, S}, from = From, to = To,
+		       packet = El} = R) ->
+    R#offline_msg{us = {iolist_to_binary(U), iolist_to_binary(S)},
+		  from = jid_to_binary(From),
+		  to = jid_to_binary(To),
+		  packet = fxml:to_xmlel(El)}.
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
@@ -230,25 +243,3 @@ integer_to_now(Int) ->
     MSec = Secs div 1000000,
     Sec = Secs rem 1000000,
     {MSec, Sec, USec}.
-
-update_table() ->
-    Fields = record_info(fields, offline_msg),
-    case mnesia:table_info(offline_msg, attributes) of
-        Fields ->
-            ejabberd_config:convert_table_to_binary(
-              offline_msg, Fields, bag,
-              fun(#offline_msg{us = {U, _}}) -> U end,
-              fun(#offline_msg{us = {U, S},
-                               from = From,
-                               to = To,
-                               packet = El} = R) ->
-                      R#offline_msg{us = {iolist_to_binary(U),
-                                          iolist_to_binary(S)},
-                                    from = jid_to_binary(From),
-                                    to = jid_to_binary(To),
-                                    packet = fxml:to_xmlel(El)}
-              end);
-        _ ->
-            ?INFO_MSG("Recreating offline_msg table", []),
-            mnesia:transform_table(offline_msg, ignore, Fields)
-    end.

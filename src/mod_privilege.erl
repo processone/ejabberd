@@ -58,11 +58,12 @@ stop(Host) ->
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.
 
-mod_opt_type(roster) -> v_roster();
-mod_opt_type(message) -> v_message();
-mod_opt_type(presence) -> v_presence();
+mod_opt_type({roster, _}) -> fun acl:access_rules_validator/1;
+mod_opt_type({message, _}) -> fun acl:access_rules_validator/1;
+mod_opt_type({presence, _}) -> fun acl:access_rules_validator/1;
 mod_opt_type(_) ->
-    [roster, message, presence].
+    [{roster, both}, {roster, get}, {roster, set},
+     {message, outgoing}, {presence, managed_entity}, {presence, roster}].
 
 depends(_, _) ->
     [].
@@ -302,8 +303,7 @@ forward_message(#message{to = To} = Msg) ->
     end.
 
 get_roster_permission(ServerHost, Host) ->
-    Perms = gen_mod:get_module_opt(ServerHost, ?MODULE, roster,
-				   v_roster(), []),
+    Perms = gen_mod:get_module_opt(ServerHost, ?MODULE, roster, []),
     case match_rule(ServerHost, Host, Perms, both) of
 	allow ->
 	    both;
@@ -318,16 +318,14 @@ get_roster_permission(ServerHost, Host) ->
     end.
 
 get_message_permission(ServerHost, Host) ->
-    Perms = gen_mod:get_module_opt(ServerHost, ?MODULE, message,
-				   v_message(), []),
+    Perms = gen_mod:get_module_opt(ServerHost, ?MODULE, message, []),
     case match_rule(ServerHost, Host, Perms, outgoing) of
 	allow -> outgoing;
 	deny -> none
     end.
 
 get_presence_permission(ServerHost, Host) ->
-    Perms = gen_mod:get_module_opt(ServerHost, ?MODULE, presence,
-				   v_presence(), []),
+    Perms = gen_mod:get_module_opt(ServerHost, ?MODULE, presence, []),
     case match_rule(ServerHost, Host, Perms, roster) of
 	allow ->
 	    roster;
@@ -341,29 +339,3 @@ get_presence_permission(ServerHost, Host) ->
 match_rule(ServerHost, Host, Perms, Type) ->
     Access = proplists:get_value(Type, Perms, none),
     acl:match_rule(ServerHost, Access, jid:make(Host)).
-
-v_roster() ->
-    fun(Props) ->
-	    lists:map(
-	      fun({both, ACL}) -> {both, acl:access_rules_validator(ACL)};
-		 ({get, ACL}) -> {get, acl:access_rules_validator(ACL)};
-		 ({set, ACL}) -> {set, acl:access_rules_validator(ACL)}
-	      end, Props)
-    end.
-
-v_message() ->
-    fun(Props) ->
-	    lists:map(
-	      fun({outgoing, ACL}) -> {outgoing, acl:access_rules_validator(ACL)}
-	      end, Props)
-    end.
-
-v_presence() ->
-    fun(Props) ->
-	    lists:map(
-	      fun({managed_entity, ACL}) ->
-		      {managed_entity, acl:access_rules_validator(ACL)};
-		 ({roster, ACL}) ->
-		      {roster, acl:access_rules_validator(ACL)}
-	      end, Props)
-    end.

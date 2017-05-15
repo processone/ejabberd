@@ -38,8 +38,7 @@
 -include("xmpp.hrl").
 
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
-                             one_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_STATS,
 				  ?MODULE, process_iq, IQDisc).
 
@@ -120,7 +119,7 @@ get_local_stat(Server, [], Name)
 get_local_stat(Server, [], Name)
     when Name == <<"users/total">> ->
     case catch
-	   ejabberd_auth:get_vh_registered_users_number(Server)
+	   ejabberd_auth:count_users(Server)
 	of
       {'EXIT', _Reason} ->
 	  ?STATERR(500, <<"Internal Server Error">>);
@@ -135,7 +134,7 @@ get_local_stat(_Server, [], Name)
 get_local_stat(_Server, [], Name)
     when Name == <<"users/all-hosts/total">> ->
     NumUsers = lists:foldl(fun (Host, Total) ->
-				   ejabberd_auth:get_vh_registered_users_number(Host)
+				   ejabberd_auth:count_users(Host)
 				     + Total
 			   end,
 			   0, ?MYHOSTS),

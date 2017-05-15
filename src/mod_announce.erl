@@ -633,7 +633,7 @@ announce_all(#message{to = To} = Packet) ->
 	      Dest = jid:make(User, Server),
 	      ejabberd_router:route(
 		xmpp:set_from_to(add_store_hint(Packet), Local, Dest))
-      end, ejabberd_auth:get_vh_registered_users(To#jid.lserver)).
+      end, ejabberd_auth:get_users(To#jid.lserver)).
 
 announce_all_hosts_all(#message{to = To} = Packet) ->
     Local = jid:make(To#jid.server),
@@ -642,7 +642,7 @@ announce_all_hosts_all(#message{to = To} = Packet) ->
 	      Dest = jid:make(User, Server),
 	      ejabberd_router:route(
 		xmpp:set_from_to(add_store_hint(Packet), Local, Dest))
-      end, ejabberd_auth:dirty_get_registered_users()).
+      end, ejabberd_auth:get_users()).
 
 announce_online(#message{to = To} = Packet) ->
     announce_online1(ejabberd_sm:get_vh_session_list(To#jid.lserver),
@@ -763,9 +763,7 @@ send_announcement_to_all(Host, SubjectS, BodyS) ->
 -spec get_access(global | binary()) -> atom().
 
 get_access(Host) ->
-    gen_mod:get_module_opt(Host, ?MODULE, access,
-                           fun(A) -> A end,
-                           none).
+    gen_mod:get_module_opt(Host, ?MODULE, access, none).
 
 -spec add_store_hint(stanza()) -> stanza().
 add_store_hint(El) ->

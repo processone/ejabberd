@@ -82,8 +82,7 @@ init([Host, Opts]) ->
     Mod:init(Host, Opts),
     ejabberd_hooks:add(remove_user, Host, ?MODULE,
 		       remove_user, 50),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
-                             one_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
 				  ?NS_VCARD, ?MODULE, process_local_iq, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
@@ -91,9 +90,7 @@ init([Host, Opts]) ->
     ejabberd_hooks:add(disco_sm_features, Host, ?MODULE,
 		       get_sm_features, 50),
     MyHost = gen_mod:get_opt_host(Host, Opts, <<"vjud.@HOST@">>),
-    Search = gen_mod:get_opt(search, Opts,
-                             fun(B) when is_boolean(B) -> B end,
-                             false),
+    Search = gen_mod:get_opt(search, Opts, false),
     if Search ->
 	    ejabberd_hooks:add(
 	      disco_local_items, MyHost, ?MODULE, disco_items, 100),
@@ -433,14 +430,8 @@ search(LServer, XFields) ->
     Data = [{Var, Vals} || #xdata_field{var = Var, values = Vals} <- XFields],
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     AllowReturnAll = gen_mod:get_module_opt(LServer, ?MODULE, allow_return_all,
-                                            fun(B) when is_boolean(B) -> B end,
                                             false),
-    MaxMatch = gen_mod:get_module_opt(LServer, ?MODULE, matches,
-				      fun(infinity) -> infinity;
-					 (I) when is_integer(I),
-						  I>0 ->
-					      I
-				      end, ?JUD_MATCHES),
+    MaxMatch = gen_mod:get_module_opt(LServer, ?MODULE, matches, ?JUD_MATCHES),
     Mod:search(LServer, Data, AllowReturnAll, MaxMatch).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

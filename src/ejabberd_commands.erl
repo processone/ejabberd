@@ -211,6 +211,7 @@
 -author('badlop@process-one.net').
 
 -behaviour(gen_server).
+-behaviour(ejabberd_config).
 
 -define(DEFAULT_VERSION, 1000000).
 
@@ -297,7 +298,6 @@ init([]) ->
                          {local_content, true},
                          {attributes, record_info(fields, ejabberd_commands)},
                          {type, bag}]),
-    mnesia:add_table_copy(ejabberd_commands, node(), ram_copies),
     register_commands(get_commands_spec()),
     ejabberd_access_permissions:register_permission_addon(?MODULE, fun permission_addon/0),
     {ok, #state{}}.
@@ -614,12 +614,12 @@ execute_check_access(undefined, _Command, _Arguments) ->
 execute_check_access(FromJID, #ejabberd_commands{access = AccessRefs} = Command, Arguments) ->
     %% TODO Review: Do we have smarter / better way to check rule on other Host than global ?
     Host = global,
-    Rules = lists:map(fun({Mod, AccessName, Default}) ->
-                              gen_mod:get_module_opt(Host, Mod,
-                                                     AccessName, fun(A) -> A end, Default);
-                         (Default) ->
-                              Default
-                      end, AccessRefs),
+    Rules = lists:map(
+	      fun({Mod, AccessName, Default}) ->
+		      gen_mod:get_module_opt(Host, Mod, AccessName, Default);
+		 (Default) ->
+		      Default
+	      end, AccessRefs),
     case acl:any_rules_allowed(Host, Rules, FromJID) of
         true ->
             do_execute_command(Command, Arguments);
@@ -823,10 +823,7 @@ get_access_commands(AccessCommands, _Version) ->
 get_exposed_commands() ->
     get_exposed_commands(?DEFAULT_VERSION).
 get_exposed_commands(Version) ->
-    Opts0 = ejabberd_config:get_option(
-             commands,
-             fun(V) when is_list(V) -> V end,
-              []),
+    Opts0 = ejabberd_config:get_option(commands, []),
     Opts = lists:map(fun(V) when is_tuple(V) -> [V]; (V) -> V end, Opts0),
     CommandsList = list_commands_policy(Version),
     OpenCmds = [N || {N, _, _, open} <- CommandsList],
@@ -877,10 +874,7 @@ is_admin(Name, Auth, Extra) ->
 			    _ ->
 				{Extra, global}
 	      end,
-    AdminAccess = ejabberd_config:get_option(
-                    commands_admin_access,
-		    fun(V) -> V end,
-                    none),
+    AdminAccess = ejabberd_config:get_option(commands_admin_access, none),
     case acl:access_matches(AdminAccess, ACLInfo, Server) of
         allow ->
             case catch check_auth(get_command_definition(Name), Auth) of
@@ -894,11 +888,12 @@ is_admin(Name, Auth, Extra) ->
 permission_addon() ->
     [{<<"'commands' option compatibility shim">>,
      {[],
-      [{access, ejabberd_config:get_option(commands_admin_access,
-					   fun(V) -> V end,
-					   none)}],
+      [{access, ejabberd_config:get_option(commands_admin_access, none)}],
       {get_exposed_commands(), []}}}].
 
+-spec opt_type(commands_admin_access) -> fun((any()) -> any());
+	      (commands) -> fun((list()) -> list());
+	      (atom()) -> [atom()].
 opt_type(commands_admin_access) -> fun acl:access_rules_validator/1;
 opt_type(commands) ->
     fun(V) when is_list(V) -> V end;

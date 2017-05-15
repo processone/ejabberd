@@ -95,8 +95,7 @@ reload(Host, NewOpts, OldOpts) ->
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
     State = init_state(Host, Opts),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
-                             no_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
     register_iq_handlers(Host, IQDisc),
     case State#state.send_pings of
 	true -> register_hooks(Host);
@@ -115,9 +114,7 @@ handle_call(_Req, _From, State) ->
 
 handle_cast({reload, Host, NewOpts, OldOpts},
 	    #state{timers = Timers} = OldState) ->
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts,
-			      fun gen_iq_handler:check_type/1,
-			      one_queue) of
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
 	{false, IQDisc, _} -> register_iq_handlers(Host, IQDisc);
 	true -> ok
     end,
@@ -200,19 +197,10 @@ user_send({Packet, #{jid := JID} = C2SState}) ->
 %% Internal functions
 %%====================================================================
 init_state(Host, Opts) ->
-    SendPings = gen_mod:get_opt(send_pings, Opts,
-                                fun(B) when is_boolean(B) -> B end,
-				?DEFAULT_SEND_PINGS),
-    PingInterval = gen_mod:get_opt(ping_interval, Opts,
-                                   fun(I) when is_integer(I), I>0 -> I end,
-				   ?DEFAULT_PING_INTERVAL),
-    PingAckTimeout = gen_mod:get_opt(ping_ack_timeout, Opts,
-                                     fun(I) when is_integer(I), I>0 -> I * 1000 end,
-                                     undefined),
-    TimeoutAction = gen_mod:get_opt(timeout_action, Opts,
-                                    fun(none) -> none;
-                                       (kill) -> kill
-                                    end, none),
+    SendPings = gen_mod:get_opt(send_pings, Opts, ?DEFAULT_SEND_PINGS),
+    PingInterval = gen_mod:get_opt(ping_interval, Opts, ?DEFAULT_PING_INTERVAL),
+    PingAckTimeout = gen_mod:get_opt(ping_ack_timeout, Opts),
+    TimeoutAction = gen_mod:get_opt(timeout_action, Opts, none),
     #state{host = Host,
 	   send_pings = SendPings,
 	   ping_interval = PingInterval,
@@ -284,7 +272,7 @@ mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(ping_interval) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 mod_opt_type(ping_ack_timeout) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
+    fun(I) when is_integer(I), I>0 -> timer:seconds(I) end;
 mod_opt_type(send_pings) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(timeout_action) ->

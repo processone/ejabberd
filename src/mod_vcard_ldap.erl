@@ -24,8 +24,6 @@
 
 -module(mod_vcard_ldap).
 
--behaviour(ejabberd_config).
-
 -behaviour(gen_server).
 -behaviour(mod_vcard).
 
@@ -33,7 +31,7 @@
 -export([start_link/2]).
 -export([init/2, stop/1, get_vcard/2, set_vcard/4, search/4,
 	 remove_user/2, import/3, search_fields/1, search_reported/1,
-	 mod_opt_type/1, opt_type/1]).
+	 mod_opt_type/1]).
 -export([is_search_supported/1]).
 
 %% gen_server callbacks
@@ -150,7 +148,7 @@ search_items(Entries, State) ->
 		  {U, UIDAttrFormat} ->
 		      case eldap_utils:get_user_part(U, UIDAttrFormat) of
 			  {ok, Username} ->
-			      case ejabberd_auth:is_user_exists(Username,
+			      case ejabberd_auth:user_exists(Username,
 								LServer) of
 				  true ->
 				      RFields = lists:map(
@@ -355,31 +353,15 @@ default_search_reported() ->
 parse_options(Host, Opts) ->
     MyHost = gen_mod:get_opt_host(Host, Opts,
 				  <<"vjud.@HOST@">>),
-    Search = gen_mod:get_opt(search, Opts,
-                             fun(B) when is_boolean(B) -> B end,
-                             false),
-    Matches = gen_mod:get_opt(matches, Opts,
-                              fun(infinity) -> 0;
-                                 (I) when is_integer(I), I>0 -> I
-                              end, 30),
+    Search = gen_mod:get_opt(search, Opts, false),
+    Matches = gen_mod:get_opt(matches, Opts, 30),
     Eldap_ID = misc:atom_to_binary(gen_mod:get_module_proc(Host, ?PROCNAME)),
     Cfg = eldap_utils:get_config(Host, Opts),
-    UIDsTemp = gen_mod:get_opt(
-                 {ldap_uids, Host}, Opts,
-                 fun(Us) ->
-                         lists:map(
-                           fun({U, P}) ->
-                                   {iolist_to_binary(U),
-                                    iolist_to_binary(P)};
-                              ({U}) ->
-                                   {iolist_to_binary(U)}
-                           end, Us)
-                 end, [{<<"uid">>, <<"%u">>}]),
+    UIDsTemp = gen_mod:get_opt({ldap_uids, Host}, Opts,
+			       [{<<"uid">>, <<"%u">>}]),
     UIDs = eldap_utils:uids_domain_subst(Host, UIDsTemp),
     SubFilter = eldap_utils:generate_subfilter(UIDs),
-    UserFilter = case gen_mod:get_opt(
-                        {ldap_filter, Host}, Opts,
-                        fun check_filter/1, <<"">>) of
+    UserFilter = case gen_mod:get_opt({ldap_filter, Host}, Opts, <<"">>) of
                      <<"">> ->
 			 SubFilter;
                      F ->
@@ -388,28 +370,11 @@ parse_options(Host, Opts) ->
     {ok, SearchFilter} =
 	eldap_filter:parse(eldap_filter:do_sub(UserFilter,
 					       [{<<"%u">>, <<"*">>}])),
-    VCardMap = gen_mod:get_opt(ldap_vcard_map, Opts,
-                               fun(Ls) ->
-                                       lists:map(
-                                         fun({S, [{P, L}]}) ->
-                                                 {iolist_to_binary(S),
-                                                  iolist_to_binary(P),
-                                                  [iolist_to_binary(E)
-                                                   || E <- L]}
-                                         end, Ls)
-                               end, default_vcard_map()),
+    VCardMap = gen_mod:get_opt(ldap_vcard_map, Opts, default_vcard_map()),
     SearchFields = gen_mod:get_opt(ldap_search_fields, Opts,
-                                   fun(Ls) ->
-                                           [{iolist_to_binary(S),
-                                             iolist_to_binary(P)}
-                                            || {S, P} <- Ls]
-                                   end, default_search_fields()),
+                                   default_search_fields()),
     SearchReported = gen_mod:get_opt(ldap_search_reported, Opts,
-                                     fun(Ls) ->
-                                             [{iolist_to_binary(S),
-                                               iolist_to_binary(P)}
-                                              || {S, P} <- Ls]
-                                     end, default_search_reported()),
+                                     default_search_reported()),
     UIDAttrs = [UAttr || {UAttr, _} <- UIDs],
     VCardMapAttrs = lists:usort(lists:append([A
 					      || {_, _, A} <- VCardMap])
@@ -447,12 +412,7 @@ parse_options(Host, Opts) ->
 	   search_reported_attrs = SearchReportedAttrs,
 	   matches = Matches}.
 
-check_filter(F) ->
-    NewF = iolist_to_binary(F),
-    {ok, _} = eldap_filter:parse(NewF),
-    NewF.
-
-mod_opt_type(ldap_filter) -> fun check_filter/1;
+mod_opt_type(ldap_filter) -> fun eldap_utils:check_filter/1;
 mod_opt_type(ldap_search_fields) ->
     fun (Ls) ->
 	    [{iolist_to_binary(S), iolist_to_binary(P)}
@@ -467,9 +427,10 @@ mod_opt_type(ldap_uids) ->
     fun (Us) ->
 	    lists:map(fun ({U, P}) ->
 			      {iolist_to_binary(U), iolist_to_binary(P)};
-			  ({U}) -> {iolist_to_binary(U)}
+			  ({U}) -> {iolist_to_binary(U)};
+			  (U) -> {iolist_to_binary(U)}
 		      end,
-		      Us)
+		      lists:flatten(Us))
     end;
 mod_opt_type(ldap_vcard_map) ->
     fun (Ls) ->
@@ -506,9 +467,9 @@ mod_opt_type(ldap_rootdn) -> fun iolist_to_binary/1;
 mod_opt_type(ldap_servers) ->
     fun (L) -> [iolist_to_binary(H) || H <- L] end;
 mod_opt_type(ldap_tls_cacertfile) ->
-    fun iolist_to_binary/1;
+    fun misc:try_read_file/1;
 mod_opt_type(ldap_tls_certfile) ->
-    fun iolist_to_binary/1;
+    fun misc:try_read_file/1;
 mod_opt_type(ldap_tls_depth) ->
     fun (I) when is_integer(I), I >= 0 -> I end;
 mod_opt_type(ldap_tls_verify) ->
@@ -520,22 +481,6 @@ mod_opt_type(_) ->
     [ldap_filter, ldap_search_fields,
      ldap_search_reported, ldap_uids, ldap_vcard_map,
      deref_aliases, ldap_backups, ldap_base,
-     ldap_deref_aliases, ldap_encrypt, ldap_password,
-     ldap_port, ldap_rootdn, ldap_servers,
-     ldap_tls_cacertfile, ldap_tls_certfile, ldap_tls_depth,
-     ldap_tls_verify].
-
-opt_type(ldap_filter) -> fun check_filter/1;
-opt_type(ldap_uids) ->
-    fun (Us) ->
-	    lists:map(fun ({U, P}) ->
-			      {iolist_to_binary(U), iolist_to_binary(P)};
-			  ({U}) -> {iolist_to_binary(U)}
-		      end,
-		      Us)
-    end;
-opt_type(_) ->
-    [ldap_filter, ldap_uids, deref_aliases, ldap_backups, ldap_base,
      ldap_deref_aliases, ldap_encrypt, ldap_password,
      ldap_port, ldap_rootdn, ldap_servers,
      ldap_tls_cacertfile, ldap_tls_certfile, ldap_tls_depth,

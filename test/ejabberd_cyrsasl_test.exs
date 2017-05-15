@@ -27,8 +27,9 @@ defmodule EjabberdCyrsaslTest do
     :ok = :ejabberd.start_app(:lager)
     :p1_sha.load_nif()
     :mnesia.start
+    :ejabberd_mnesia.start
     :ok = start_module(:stringprep)
-    {:ok, _} = start_module(:jid)
+    start_module(:jid)
     :ok = :ejabberd_config.start(["domain1"], [])
     {:ok, _} = :cyrsasl.start_link
     cyrstate = :cyrsasl.server_new("domain1", "domain1", "domain1", :ok, &get_password/1,
@@ -113,7 +114,7 @@ defmodule EjabberdCyrsaslTest do
       fn (_host) ->
         true
       end)
-    mock(:ejabberd_auth, :is_user_exists,
+    mock(:ejabberd_auth, :user_exists,
       fn (user, domain) ->
         domain == "domain1" and get_password(user) != {:false, :internal}
       end)

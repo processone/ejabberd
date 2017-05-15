@@ -103,14 +103,11 @@ init([Host, Opts]) ->
 				  <<"irc.@HOST@">>),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
-    Access = gen_mod:get_opt(access, Opts,
-                             fun acl:access_rules_validator/1,
-                             all),
+    Access = gen_mod:get_opt(access, Opts, all),
     catch ets:new(irc_connection,
 		  [named_table, public,
 		   {keypos, #irc_connection.jid_server_host}]),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
-                             one_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
     register_hooks(MyHost, IQDisc),
     ejabberd_router:register_route(MyHost, Host),
     {ok,
@@ -138,17 +135,11 @@ handle_call(stop, _From, State) ->
 handle_cast({reload, ServerHost, NewOpts, OldOpts}, State) ->
     NewHost = gen_mod:get_opt_host(ServerHost, NewOpts, <<"irc.@HOST@">>),
     OldHost = gen_mod:get_opt_host(ServerHost, OldOpts, <<"irc.@HOST@">>),
-    NewIQDisc = gen_mod:get_opt(iqdisc, NewOpts,
-				fun gen_iq_handler:check_type/1,
-				one_queue),
-    OldIQDisc = gen_mod:get_opt(iqdisc, OldOpts,
-				fun gen_iq_handler:check_type/1,
-				one_queue),
+    NewIQDisc = gen_mod:get_opt(iqdisc, NewOpts, gen_iq_handler:iqdisc(ServerHost)),
+    OldIQDisc = gen_mod:get_opt(iqdisc, OldOpts, gen_iq_handler:iqdisc(ServerHost)),
     NewMod = gen_mod:db_mod(ServerHost, NewOpts, ?MODULE),
     OldMod = gen_mod:db_mod(ServerHost, OldOpts, ?MODULE),
-    Access = gen_mod:get_opt(access, NewOpts,
-                             fun acl:access_rules_validator/1,
-                             all),
+    Access = gen_mod:get_opt(access, NewOpts, all),
     if NewMod /= OldMod ->
 	    NewMod:init(ServerHost, NewOpts);
        true ->
@@ -166,9 +157,7 @@ handle_cast({reload, ServerHost, NewOpts, OldOpts}, State) ->
        true ->
 	    ok
     end,
-    Access = gen_mod:get_opt(access, NewOpts,
-                             fun acl:access_rules_validator/1,
-                             all),
+    Access = gen_mod:get_opt(access, NewOpts, all),
     {noreply, State#state{host = NewHost, access = Access}};
 handle_cast(Msg, State) ->
     ?WARNING_MSG("unexpected cast: ~p", [Msg]),
@@ -593,7 +582,6 @@ get_connection_params(Host, From, IRCServer) ->
 
 get_default_encoding(ServerHost) ->
     Result = gen_mod:get_module_opt(ServerHost, ?MODULE, default_encoding,
-                                    fun iolist_to_binary/1,
                                     ?DEFAULT_IRC_ENCODING),
     ?INFO_MSG("The default_encoding configured for "
 	      "host ~p is: ~p~n",
@@ -601,10 +589,10 @@ get_default_encoding(ServerHost) ->
     Result.
 
 get_realname(ServerHost) ->
-    gen_mod:get_module_opt(ServerHost, ?MODULE, realname, fun iolist_to_binary/1, ?DEFAULT_REALNAME).
+    gen_mod:get_module_opt(ServerHost, ?MODULE, realname, ?DEFAULT_REALNAME).
 
 get_webirc_password(ServerHost) ->
-    gen_mod:get_module_opt(ServerHost, ?MODULE, webirc_password, fun iolist_to_binary/1, ?DEFAULT_WEBIRC_PASSWORD).
+    gen_mod:get_module_opt(ServerHost, ?MODULE, webirc_password, ?DEFAULT_WEBIRC_PASSWORD).
 
 get_connection_params(Host, ServerHost, From,
 		      IRCServer) ->

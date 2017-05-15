@@ -438,7 +438,7 @@ change_password(Username, Host, PasswordOld,
     end.
 
 check_account_exists(Username, Host) ->
-    case ejabberd_auth:is_user_exists(Username, Host) of
+    case ejabberd_auth:user_exists(Username, Host) of
       true -> account_exists;
       false -> account_doesnt_exist
     end.
@@ -496,9 +496,7 @@ form_del_get(Host, Lang) ->
 %%                                    {error, not_allowed} |
 %%                                    {error, invalid_jid}
 register_account(Username, Host, Password) ->
-    Access = gen_mod:get_module_opt(Host, mod_register, access,
-                                    fun(A) -> A end,
-                                    all),
+    Access = gen_mod:get_module_opt(Host, mod_register, access, all),
     case jid:make(Username, Host) of
       error -> {error, invalid_jid};
       JID ->
@@ -512,8 +510,8 @@ register_account2(Username, Host, Password) ->
     case ejabberd_auth:try_register(Username, Host,
 				    Password)
 	of
-      {atomic, Res} ->
-	  {success, Res, {Username, Host, Password}};
+      ok ->
+	  {success, ok, {Username, Host, Password}};
       Other -> Other
     end.
 

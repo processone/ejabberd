@@ -207,7 +207,6 @@ init([]) ->
     ejabberd_mnesia:create(?MODULE, iq_response,
 			[{ram_copies, [node()]},
 			 {attributes, record_info(fields, iq_response)}]),
-    mnesia:add_table_copy(iq_response, node(), ram_copies),
     {ok, #state{}}.
 
 handle_call(_Request, _From, State) ->

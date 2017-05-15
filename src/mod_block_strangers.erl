@@ -74,14 +74,8 @@ filter_packet({#message{} = Msg, State} = Acc) ->
 	    Acc;
 	false ->
             #{lserver := LServer} = State,
-            Drop =
-                gen_mod:get_module_opt(LServer, ?MODULE, drop,
-                                       fun(B) when is_boolean(B) -> B end,
-                                       true),
-            Log =
-                gen_mod:get_module_opt(LServer, ?MODULE, log,
-                                       fun(B) when is_boolean(B) -> B end,
-                                       false),
+            Drop = gen_mod:get_module_opt(LServer, ?MODULE, drop, true),
+            Log = gen_mod:get_module_opt(LServer, ?MODULE, log, false),
             if
                 Log ->
                     ?INFO_MSG("Drop packet: ~s",

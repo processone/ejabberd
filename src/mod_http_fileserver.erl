@@ -118,41 +118,25 @@ init([Host, Opts]) ->
     end.
 
 initialize(Host, Opts) ->
-    DocRoot = gen_mod:get_opt(docroot, Opts, fun(A) -> A end, undefined),
+    DocRoot = gen_mod:get_opt(docroot, Opts),
     check_docroot_defined(DocRoot, Host),
     DRInfo = check_docroot_exists(DocRoot),
     check_docroot_is_dir(DRInfo, DocRoot),
     check_docroot_is_readable(DRInfo, DocRoot),
-    AccessLog = gen_mod:get_opt(accesslog, Opts,
-                                fun iolist_to_binary/1,
-                                undefined),
+    AccessLog = gen_mod:get_opt(accesslog, Opts),
     AccessLogFD = try_open_log(AccessLog, Host),
-    DirectoryIndices = gen_mod:get_opt(directory_indices, Opts,
-                                       fun(L) when is_list(L) -> L end,
-                                       []),
-    CustomHeaders = gen_mod:get_opt(custom_headers, Opts,
-                                    fun(L) when is_list(L) -> L end,
-                                    []),
+    DirectoryIndices = gen_mod:get_opt(directory_indices, Opts, []),
+    CustomHeaders = gen_mod:get_opt(custom_headers, Opts, []),
     DefaultContentType = gen_mod:get_opt(default_content_type, Opts,
-                                         fun iolist_to_binary/1,
 					 ?DEFAULT_CONTENT_TYPE),
-    UserAccess0 = gen_mod:get_opt(must_authenticate_with, Opts,
-				  mod_opt_type(must_authenticate_with),
-				  []),
+    UserAccess0 = gen_mod:get_opt(must_authenticate_with, Opts, []),
     UserAccess = case UserAccess0 of
 		     [] -> none;
 		     _ ->
 			 dict:from_list(UserAccess0)
 		 end,
     ContentTypes = build_list_content_types(
-                     gen_mod:get_opt(content_types, Opts,
-                                     fun(L) when is_list(L) ->
-					     lists:map(
-					       fun({K, V}) ->
-						       {iolist_to_binary(K),
-							iolist_to_binary(V)}
-					       end, L)
-				     end, []),
+                     gen_mod:get_opt(content_types, Opts, []),
                      ?DEFAULT_CONTENT_TYPES),
     ?DEBUG("known content types: ~s",
 	   [str:join([[$*, K, " -> ", V] || {K, V} <- ContentTypes],
@@ -493,7 +477,13 @@ ip_to_string(Address) when size(Address) == 8 ->
 
 mod_opt_type(accesslog) -> fun iolist_to_binary/1;
 mod_opt_type(content_types) ->
-    fun (L) when is_list(L) -> L end;
+    fun(L) when is_list(L) ->
+	    lists:map(
+	      fun({K, V}) ->
+		      {iolist_to_binary(K),
+		       iolist_to_binary(V)}
+	      end, L)
+    end;
 mod_opt_type(custom_headers) ->
     fun (L) when is_list(L) -> L end;
 mod_opt_type(default_content_type) ->

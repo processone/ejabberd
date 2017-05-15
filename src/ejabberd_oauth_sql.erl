@@ -37,6 +37,7 @@
 -include("ejabberd.hrl").
 -include("ejabberd_sql_pt.hrl").
 -include("jid.hrl").
+-include("logger.hrl").
 
 init() ->
     ok.
@@ -47,13 +48,20 @@ store(R) ->
     SJID = jid:encode({User, Server, <<"">>}),
     Scope = str:join(R#oauth_token.scope, <<" ">>),
     Expire = R#oauth_token.expire,
-    ?SQL_UPSERT(
-       ?MYNAME,
-       "oauth_token",
-       ["!token=%(Token)s",
-        "jid=%(SJID)s",
-        "scope=%(Scope)s",
-        "expire=%(Expire)d"]).
+    case ?SQL_UPSERT(
+	    ?MYNAME,
+	    "oauth_token",
+	    ["!token=%(Token)s",
+	     "jid=%(SJID)s",
+	     "scope=%(Scope)s",
+	     "expire=%(Expire)d"]) of
+	ok ->
+	    ok;
+	Err ->
+	    ?ERROR_MSG("Failed to write to SQL 'oauth_token' table: ~p",
+		       [Err]),
+	    {error, db_failure}
+    end.
 
 lookup(Token) ->
     case ejabberd_sql:sql_query(
@@ -63,12 +71,12 @@ lookup(Token) ->
         {selected, [{SJID, Scope, Expire}]} ->
             JID = jid:decode(SJID),
             US = {JID#jid.luser, JID#jid.lserver},
-            #oauth_token{token = Token,
-                         us = US,
-                         scope = str:tokens(Scope, <<" ">>),
-                         expire = Expire};
+            {ok, #oauth_token{token = Token,
+			      us = US,
+			      scope = str:tokens(Scope, <<" ">>),
+			      expire = Expire}};
         _ ->
-            false
+            error
     end.
 
 clean(TS) ->

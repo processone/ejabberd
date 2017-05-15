@@ -28,6 +28,7 @@
 
 %% API
 -export([init/2, caps_read/2, caps_write/3, import/3]).
+-export([need_transform/1, transform/1]).
 
 -include("mod_caps.hrl").
 -include("logger.hrl").
@@ -36,22 +37,10 @@
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
-    case catch mnesia:table_info(caps_features, storage_type) of
-        {'EXIT', _} ->
-            ok;
-        disc_only_copies ->
-            ok;
-        _ ->
-            mnesia:delete_table(caps_features)
-    end,
     ejabberd_mnesia:create(?MODULE, caps_features,
-                        [{disc_only_copies, [node()]},
-                         {local_content, true},
-                         {attributes,
-                          record_info(fields, caps_features)}]),
-    update_table(),
-    mnesia:add_table_copy(caps_features, node(),
-                          disc_only_copies).
+			   [{disc_only_copies, [node()]},
+			    {local_content, true},
+			    {attributes, record_info(fields, caps_features)}]).
 
 caps_read(_LServer, Node) ->
     case mnesia:dirty_read({caps_features, Node}) of
@@ -70,28 +59,26 @@ import(_LServer, NodePair, Features) ->
     mnesia:dirty_write(
       #caps_features{node_pair = NodePair, features = Features}).
 
+need_transform(#caps_features{node_pair = {N, P}, features = Fs}) ->
+    case is_list(N) orelse is_list(P) orelse
+	(is_list(Fs) andalso lists:any(fun is_list/1, Fs)) of
+	true ->
+	    ?INFO_MSG("Mnesia table 'caps_features' will be "
+		      "converted to binary", []),
+	    true;
+	false ->
+	    false
+    end.
+
+transform(#caps_features{node_pair = {N, P}, features = Fs} = R) ->
+    NewFs = if is_integer(Fs) ->
+		    Fs;
+	       true ->
+		    [iolist_to_binary(F) || F <- Fs]
+	    end,
+    R#caps_features{node_pair = {iolist_to_binary(N), iolist_to_binary(P)},
+		    features = NewFs}.
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-update_table() ->
-    Fields = record_info(fields, caps_features),
-    case mnesia:table_info(caps_features, attributes) of
-        Fields ->
-            ejabberd_config:convert_table_to_binary(
-              caps_features, Fields, set,
-              fun(#caps_features{node_pair = {N, _}}) -> N end,
-              fun(#caps_features{node_pair = {N, P},
-                                 features = Fs} = R) ->
-                      NewFs = if is_integer(Fs) ->
-                                      Fs;
-                                 true ->
-                                      [iolist_to_binary(F) || F <- Fs]
-                              end,
-                      R#caps_features{node_pair = {iolist_to_binary(N),
-                                                   iolist_to_binary(P)},
-                                      features = NewFs}
-              end);
-        _ ->
-            ?INFO_MSG("Recreating caps_features table", []),
-            mnesia:transform_table(caps_features, ignore, Fields)
-    end.

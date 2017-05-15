@@ -59,18 +59,9 @@
 %%--------------------------------------------------------------------
 -spec start(binary(), gen_mod:opts()) -> ok.
 start(Host, Opts) ->
-    QueuePresence =
-	gen_mod:get_opt(queue_presence, Opts,
-			fun(B) when is_boolean(B) -> B end,
-			true),
-    QueueChatStates =
-	gen_mod:get_opt(queue_chat_states, Opts,
-			fun(B) when is_boolean(B) -> B end,
-			true),
-    QueuePEP =
-	gen_mod:get_opt(queue_pep, Opts,
-			fun(B) when is_boolean(B) -> B end,
-			true),
+    QueuePresence = gen_mod:get_opt(queue_presence, Opts, true),
+    QueueChatStates = gen_mod:get_opt(queue_chat_states, Opts, true),
+    QueuePEP = gen_mod:get_opt(queue_pep, Opts, true),
     if QueuePresence; QueueChatStates; QueuePEP ->
 	   register_hooks(Host),
 	   if QueuePresence ->
@@ -93,18 +84,9 @@ start(Host, Opts) ->
 
 -spec stop(binary()) -> ok.
 stop(Host) ->
-    QueuePresence =
-	gen_mod:get_module_opt(Host, ?MODULE, queue_presence,
-			       fun(B) when is_boolean(B) -> B end,
-			       true),
-    QueueChatStates =
-	gen_mod:get_module_opt(Host, ?MODULE, queue_chat_states,
-			       fun(B) when is_boolean(B) -> B end,
-			       true),
-    QueuePEP =
-	gen_mod:get_module_opt(Host, ?MODULE, queue_pep,
-			       fun(B) when is_boolean(B) -> B end,
-			       true),
+    QueuePresence = gen_mod:get_module_opt(Host, ?MODULE, queue_presence, true),
+    QueueChatStates = gen_mod:get_module_opt(Host, ?MODULE, queue_chat_states, true),
+    QueuePEP = gen_mod:get_module_opt(Host, ?MODULE, queue_pep, true),
     if QueuePresence; QueueChatStates; QueuePEP ->
 	   unregister_hooks(Host),
 	   if QueuePresence ->
@@ -127,15 +109,9 @@ stop(Host) ->
 
 -spec reload(binary(), gen_mod:opts(), gen_mod:opts()) -> ok.
 reload(Host, NewOpts, _OldOpts) ->
-    QueuePresence = gen_mod:get_opt(queue_presence, NewOpts,
-				    fun(B) when is_boolean(B) -> B end,
-				    true),
-    QueueChatStates = gen_mod:get_opt(queue_chat_states, NewOpts,
-				      fun(B) when is_boolean(B) -> B end,
-				      true),
-    QueuePEP = gen_mod:get_opt(queue_pep, NewOpts,
-			       fun(B) when is_boolean(B) -> B end,
-			       true),
+    QueuePresence = gen_mod:get_opt(queue_presence, NewOpts, true),
+    QueueChatStates = gen_mod:get_opt(queue_chat_states, NewOpts, true),
+    QueuePEP = gen_mod:get_opt(queue_pep, NewOpts, true),
     if QueuePresence; QueueChatStates; QueuePEP ->
 	    register_hooks(Host);
        true ->

@@ -38,7 +38,7 @@
 	 stream_established/2]).
 
 -export([start/2, stop/1, start_link/3, activate/2,
-	 relay/3, socket_type/0]).
+	 relay/3, socket_type/0, listen_opt_type/1]).
 
 -include("mod_proxy65.hrl").
 
@@ -65,9 +65,10 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 %%-------------------------------
 
 start({gen_tcp, Socket}, Opts1) ->
-    {[Host], Opts} = lists:partition(fun (O) -> is_binary(O)
-				     end,
-				     Opts1),
+    {[{server_host, Host}], Opts} = lists:partition(
+				      fun({server_host, _}) -> true;
+					 (_) -> false
+				      end, Opts1),
     Supervisor = gen_mod:get_module_proc(Host,
 					 ejabberd_mod_proxy65_sup),
     supervisor:start_child(Supervisor,
@@ -78,19 +79,10 @@ start_link(Socket, Host, Opts) ->
 
 init([Socket, Host, Opts]) ->
     process_flag(trap_exit, true),
-    AuthType = gen_mod:get_opt(auth_type, Opts,
-                               fun(plain) -> plain;
-                                  (anonymous) -> anonymous
-                               end, anonymous),
-    Shaper = gen_mod:get_opt(shaper, Opts,
-                             fun acl:shaper_rules_validator/1,
-                             none),
-    RecvBuf = gen_mod:get_opt(recbuf, Opts,
-                              fun(I) when is_integer(I), I>0 -> I end,
-                              8192),
-    SendBuf = gen_mod:get_opt(sndbuf, Opts,
-                              fun(I) when is_integer(I), I>0 -> I end,
-                              8192),
+    AuthType = gen_mod:get_opt(auth_type, Opts, anonymous),
+    Shaper = gen_mod:get_opt(shaper, Opts, none),
+    RecvBuf = gen_mod:get_opt(recbuf, Opts, 8192),
+    SendBuf = gen_mod:get_opt(sndbuf, Opts, 8192),
     TRef = erlang:send_after(?WAIT_TIMEOUT, self(), stop),
     inet:setopts(Socket,
 		 [{active, true}, {recbuf, RecvBuf}, {sndbuf, SendBuf}]),
@@ -290,3 +282,17 @@ find_maxrate(Shaper, JID1, JID2, Host) ->
     if MaxRate1 == none; MaxRate2 == none -> none;
        true -> lists:max([MaxRate1, MaxRate2])
     end.
+
+listen_opt_type(server_host) ->
+    fun iolist_to_binary/1;
+listen_opt_type(auth_type) ->
+    fun (plain) -> plain;
+	(anonymous) -> anonymous
+    end;
+listen_opt_type(recbuf) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+listen_opt_type(shaper) -> fun acl:shaper_rules_validator/1;
+listen_opt_type(sndbuf) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+listen_opt_type(_) ->
+    [auth_type, recbuf, sndbuf, shaper].

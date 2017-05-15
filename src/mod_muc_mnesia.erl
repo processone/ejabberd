@@ -39,6 +39,7 @@
 %% gen_server callbacks
 -export([start_link/2, init/1, handle_cast/2, handle_call/3, handle_info/2,
 	 terminate/2, code_change/3]).
+-export([need_transform/1, transform/1]).
 
 -include("mod_muc.hrl").
 -include("logger.hrl").
@@ -269,12 +270,13 @@ count_online_rooms_by_user(_ServerHost, U, S) ->
 		U == U1 andalso S == S1
 	end)).
 
-get_online_rooms_by_user(_ServerHost, U, S) ->
+get_online_rooms_by_user(ServerHost, U, S) ->
+    MucHost = gen_mod:get_module_opt_host(ServerHost, mod_muc, <<"conference.@HOST@">>),
     ets:select(
       muc_online_users,
       ets:fun2ms(
 	fun(#muc_online_users{us = {U1, S1}, room = Room, host = Host})
-	      when U == U1 andalso S == S1 -> {Room, Host}
+	      when U == U1 andalso S == S1 andalso MucHost == Host -> {Room, Host}
 	end)).
 
 import(_LServer, <<"muc_room">>,
@@ -305,19 +307,16 @@ init([Host, Opts]) ->
 				   [{disc_copies, [node()]},
 				    {attributes,
 				     record_info(fields, muc_registered)},
-				    {index, [nick]}]),
-	    update_tables(MyHost);
+				    {index, [nick]}]);
 	_ ->
 	    ok
     end,
     case gen_mod:ram_db_mod(Host, Opts, mod_muc) of
 	?MODULE ->
-	    update_muc_online_table(),
 	    ejabberd_mnesia:create(?MODULE, muc_online_room,
 				   [{ram_copies, [node()]},
 				    {type, ordered_set},
 				    {attributes, record_info(fields, muc_online_room)}]),
-	    mnesia:add_table_copy(muc_online_room, node(), ram_copies),
 	    catch ets:new(muc_online_users, [bag, named_table, public, {keypos, 2}]),
 	    clean_table_from_bad_node(node(), MyHost),
 	    mnesia:subscribe(system);
@@ -377,60 +376,21 @@ clean_table_from_bad_node(Node, Host) ->
         end,
     mnesia:async_dirty(F).
 
-update_tables(Host) ->
-    update_muc_room_table(Host),
-    update_muc_registered_table(Host).
+need_transform(#muc_room{name_host = {N, H}})
+  when is_list(N) orelse is_list(H) ->
+    ?INFO_MSG("Mnesia table 'muc_room' will be converted to binary", []),
+    true;
+need_transform(#muc_registered{us_host = {{U, S}, H}, nick = Nick})
+  when is_list(U) orelse is_list(S) orelse is_list(H) orelse is_list(Nick) ->
+    ?INFO_MSG("Mnesia table 'muc_registered' will be converted to binary", []),
+    true;
+need_transform(_) ->
+    false.
 
-update_muc_room_table(_Host) ->
-    Fields = record_info(fields, muc_room),
-    case mnesia:table_info(muc_room, attributes) of
-      Fields ->
-          ejabberd_config:convert_table_to_binary(
-            muc_room, Fields, set,
-            fun(#muc_room{name_host = {N, _}}) -> N end,
-            fun(#muc_room{name_host = {N, H},
-                          opts = Opts} = R) ->
-                    R#muc_room{name_host = {iolist_to_binary(N),
-                                            iolist_to_binary(H)},
-                               opts = mod_muc:opts_to_binary(Opts)}
-            end);
-      _ ->
-	  ?INFO_MSG("Recreating muc_room table", []),
-	  mnesia:transform_table(muc_room, ignore, Fields)
-    end.
-
-update_muc_registered_table(_Host) ->
-    Fields = record_info(fields, muc_registered),
-    case mnesia:table_info(muc_registered, attributes) of
-      Fields ->
-          ejabberd_config:convert_table_to_binary(
-            muc_registered, Fields, set,
-            fun(#muc_registered{us_host = {_, H}}) -> H end,
-            fun(#muc_registered{us_host = {{U, S}, H},
-                                nick = Nick} = R) ->
-                    R#muc_registered{us_host = {{iolist_to_binary(U),
-                                                 iolist_to_binary(S)},
-                                                iolist_to_binary(H)},
-                                     nick = iolist_to_binary(Nick)}
-            end);
-      _ ->
-	  ?INFO_MSG("Recreating muc_registered table", []),
-	  mnesia:transform_table(muc_registered, ignore, Fields)
-    end.
-
-update_muc_online_table() ->
-    try
-	case mnesia:table_info(muc_online_room, type) of
-	    ordered_set -> ok;
-	    _ ->
-		case mnesia:delete_table(muc_online_room) of
-		    {atomic, ok} -> ok;
-		    Err -> erlang:error(Err)
-		end
-	end
-    catch _:{aborted, {no_exists, muc_online_room}} -> ok;
-	  _:{aborted, {no_exists, muc_online_room, type}} -> ok;
-	  E:R ->
-	    ?ERROR_MSG("failed to update mnesia table '~s': ~p",
-		       [muc_online_room, {E, R, erlang:get_stacktrace()}])
-    end.
+transform(#muc_room{name_host = {N, H}, opts = Opts} = R) ->
+    R#muc_room{name_host = {iolist_to_binary(N), iolist_to_binary(H)},
+	       opts = mod_muc:opts_to_binary(Opts)};
+transform(#muc_registered{us_host = {{U, S}, H}, nick = Nick} = R) ->
+    R#muc_registered{us_host = {{iolist_to_binary(U), iolist_to_binary(S)},
+				iolist_to_binary(H)},
+		     nick = iolist_to_binary(Nick)}.

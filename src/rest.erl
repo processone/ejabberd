@@ -37,12 +37,7 @@
 
 start(Host) ->
     p1_http:start(),
-    Pool_size =
-	ejabberd_config:get_option({ext_api_http_pool_size, Host},
-				   fun(X) when is_integer(X), X > 0->
-					   X
-				   end,
-				   100),
+    Pool_size = ejabberd_config:get_option({ext_api_http_pool_size, Host}, 100),
     p1_http:set_pool_size(Pool_size).
 
 stop(_Host) ->
@@ -167,9 +162,6 @@ base_url(Server, Path) ->
         <<"http", _Url/binary>> -> Tail;
         _ ->
             Base = ejabberd_config:get_option({ext_api_url, Server},
-                                              fun(X) ->
-						      iolist_to_binary(X)
-					      end,
                                               <<"http://localhost/api">>),
             <<Base/binary, "/", Tail/binary>>
     end.
@@ -185,6 +177,9 @@ url(Server, Path, Params) ->
     Tail = iolist_to_binary([ParHead | ParTail]),
     binary_to_list(<<Base/binary, $?, Tail/binary>>).
 
+-spec opt_type(ext_api_http_pool_size) -> fun((pos_integer()) -> pos_integer());
+	      (ext_api_url) -> fun((binary()) -> binary());
+	      (atom()) -> [atom()].
 opt_type(ext_api_http_pool_size) ->
     fun (X) when is_integer(X), X > 0 -> X end;
 opt_type(ext_api_url) ->

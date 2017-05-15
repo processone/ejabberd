@@ -100,13 +100,7 @@ stop_host(Host) ->
 %% Returns {true, App} if we have configured sql for the given host
 needs_sql(Host) ->
     LHost = jid:nameprep(Host),
-    case ejabberd_config:get_option({sql_type, LHost},
-                                    fun(mysql) -> mysql;
-                                       (pgsql) -> pgsql;
-                                       (sqlite) -> sqlite;
-				       (mssql) -> mssql;
-                                       (odbc) -> odbc
-                                    end, undefined) of
+    case ejabberd_config:get_option({sql_type, LHost}, undefined) of
         mysql -> {true, p1_mysql};
         pgsql -> {true, p1_pgsql};
         sqlite -> {true, sqlite3};
@@ -115,6 +109,9 @@ needs_sql(Host) ->
         undefined -> false
     end.
 
+-type sql_type() :: mysql | pgsql | sqlite | mssql | odbc.
+-spec opt_type(sql_type) -> fun((sql_type()) -> sql_type());
+	      (atom()) -> [atom()].
 opt_type(sql_type) ->
     fun (mysql) -> mysql;
 	(pgsql) -> pgsql;

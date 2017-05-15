@@ -61,7 +61,15 @@ reload(_Host, _NewOpts, _OldOpts) ->
     ok.
 
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
-mod_opt_type(namespaces) -> validate_fun();
+mod_opt_type(namespaces) ->
+    fun(L) ->
+	    lists:map(
+	      fun({NS, Opts}) ->
+		      Attrs = proplists:get_value(filtering, Opts, []),
+		      Access = proplists:get_value(access, Opts, none),
+		      {NS, Attrs, Access}
+	      end, L)
+    end;
 mod_opt_type(_) ->
     [namespaces, iqdisc].
 
@@ -142,8 +150,7 @@ handle_cast({component_connected, Host}, State) ->
     ServerHost = State#state.server_host,
     To = jid:make(Host),
     NSAttrsAccessList = gen_mod:get_module_opt(
-			  ServerHost, ?MODULE, namespaces,
-			  validate_fun(), []),
+			  ServerHost, ?MODULE, namespaces, []),
     lists:foreach(
       fun({NS, _Attrs, Access}) ->
 	      case acl:match_rule(ServerHost, Access, To) of
@@ -163,7 +170,7 @@ handle_cast({disco_info, Type, Host, NS, Info}, State) ->
 			   sub_els = [#delegation{delegated = [#delegated{ns = NS}]}]},
 	    Delegations = dict:store({NS, Type}, {Host, Info}, State#state.delegations),
 	    gen_iq_handler:add_iq_handler(Type, State#state.server_host, NS,
-					  ?MODULE, Type, one_queue),
+					  ?MODULE, Type, gen_iq_handler:iqdisc(Host)),
 	    ejabberd_router:route(Msg),
 	    ?INFO_MSG("Namespace '~s' is delegated to external component '~s'",
 		      [NS, Host]),
@@ -342,13 +349,3 @@ disco_identity(Acc, _From, _To, _Node, _Lang, _Type) ->
 
 my_features(ejabberd_local) -> [?NS_DELEGATION];
 my_features(ejabberd_sm) -> [].
-
-validate_fun() ->
-    fun(L) ->
-	    lists:map(
-	      fun({NS, Opts}) ->
-		      Attrs = proplists:get_value(filtering, Opts, []),
-		      Access = proplists:get_value(access, Opts, none),
-		      {NS, Attrs, Access}
-	      end, L)
-    end.

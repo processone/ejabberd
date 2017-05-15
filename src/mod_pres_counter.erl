@@ -79,12 +79,8 @@ check_packet(Acc, _, _, _) ->
     Acc.
 
 update(Server, JID, Dir) ->
-    StormCount = gen_mod:get_module_opt(Server, ?MODULE, count,
-                                        fun(I) when is_integer(I), I>0 -> I end,
-                                        5),
-    TimeInterval = gen_mod:get_module_opt(Server, ?MODULE, interval,
-                                          fun(I) when is_integer(I), I>0 -> I end,
-                                          60),
+    StormCount = gen_mod:get_module_opt(Server, ?MODULE, count, 5),
+    TimeInterval = gen_mod:get_module_opt(Server, ?MODULE, interval, 60),
     TimeStamp = p1_time_compat:system_time(seconds),
     case read(Dir) of
       undefined ->

@@ -53,10 +53,7 @@
 %% Description: Starts the server
 %%--------------------------------------------------------------------
 start_link() ->
-    LH = ejabberd_config:get_option(
-           watchdog_large_heap,
-           fun(I) when is_integer(I), I > 0 -> I end,
-	   1000000),
+    LH = ejabberd_config:get_option(watchdog_large_heap, 1000000),
     Opts = [{large_heap, LH}],
     gen_server:start_link({local, ?MODULE}, ?MODULE, Opts,
 			  []).
@@ -205,13 +202,7 @@ send_message(From, To, Body, ExtraEls) ->
 				   sub_els = ExtraEls}).
 
 get_admin_jids() ->
-    ejabberd_config:get_option(
-      watchdog_admins,
-      fun(JIDs) ->
-              [jid:tolower(
-                 jid:decode(
-                   iolist_to_binary(S))) || S <- JIDs]
-      end, []).
+    ejabberd_config:get_option(watchdog_admins, []).
 
 detailed_info(Pid) ->
     case process_info(Pid, dictionary) of
@@ -339,6 +330,9 @@ process_remote_command([setlh, NewValue]) ->
 		  [OldLH, NewLH]);
 process_remote_command(_) -> throw(unknown_command).
 
+-spec opt_type(watchdog_admins) -> fun(([binary()]) -> ljid());
+	      (watchdog_large_heap) -> fun((pos_integer()) -> pos_integer());
+	      (atom()) -> [atom()].
 opt_type(watchdog_admins) ->
     fun (JIDs) ->
 	    [jid:tolower(jid:decode(iolist_to_binary(S)))

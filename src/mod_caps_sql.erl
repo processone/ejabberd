@@ -33,6 +33,7 @@
 
 -include("mod_caps.hrl").
 -include("ejabberd_sql_pt.hrl").
+-include("logger.hrl").
 
 %%%===================================================================
 %%% API
@@ -57,9 +58,16 @@ caps_read(LServer, {Node, SubNode}) ->
     end.
 
 caps_write(LServer, NodePair, Features) ->
-    ejabberd_sql:sql_transaction(
-      LServer,
-      sql_write_features_t(NodePair, Features)).
+    case ejabberd_sql:sql_transaction(
+	   LServer,
+	   sql_write_features_t(NodePair, Features)) of
+	{atomic, _} ->
+	    ok;
+	{aborted, Reason} ->
+	    ?ERROR_MSG("Failed to write to SQL 'caps_features' table: ~p",
+		       [Reason]),
+	    {error, db_failure}
+    end.
 
 export(_Server) ->
     [{caps_features,

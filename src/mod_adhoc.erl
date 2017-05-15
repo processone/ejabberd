@@ -42,8 +42,7 @@
 -include("xmpp.hrl").
 
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
-                             one_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
 				  ?NS_COMMANDS, ?MODULE, process_local_iq,
 				  IQDisc),
@@ -89,9 +88,7 @@ stop(Host) ->
 				     ?NS_COMMANDS).
 
 reload(Host, NewOpts, OldOpts) ->
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts,
-			      fun gen_iq_handler:check_type/1,
-			      one_queue) of
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
 	{false, IQDisc, _} ->
 	    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_COMMANDS,
 					  ?MODULE, process_local_iq, IQDisc),
@@ -108,7 +105,6 @@ get_local_commands(Acc, _From,
 		   Lang) ->
     Display = gen_mod:get_module_opt(LServer, ?MODULE,
 				     report_commands_node,
-                                     fun(B) when is_boolean(B) -> B end,
                                      false),
     case Display of
       false -> Acc;
@@ -138,7 +134,6 @@ get_sm_commands(Acc, _From,
 		#jid{lserver = LServer} = To, <<"">>, Lang) ->
     Display = gen_mod:get_module_opt(LServer, ?MODULE,
 				     report_commands_node,
-                                     fun(B) when is_boolean(B) -> B end,
                                      false),
     case Display of
       false -> Acc;

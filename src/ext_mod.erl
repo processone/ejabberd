@@ -439,11 +439,7 @@ short_spec({Module, Attrs}) when is_atom(Module), is_list(Attrs) ->
     {Module, proplists:get_value(summary, Attrs, "")}.
 
 is_contrib_allowed() ->
-    ejabberd_config:get_option(allow_contrib_modules,
-               fun(false) -> false;
-                  (no) -> false;
-                  (_) -> true
-            end, true).
+    ejabberd_config:get_option(allow_contrib_modules, true).
 
 %% -- build functions
 
@@ -656,6 +652,8 @@ format({Key, Val}) when is_binary(Val) ->
 format({Key, Val}) -> % TODO: improve Yaml parsing
     {Key, Val}.
 
+-spec opt_type(allow_contrib_modules) -> fun((boolean()) -> boolean());
+	      (atom()) -> [atom()].
 opt_type(allow_contrib_modules) ->
     fun (false) -> false;
         (no) -> false;

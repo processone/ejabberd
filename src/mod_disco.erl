@@ -50,8 +50,7 @@
 -type items_acc() :: {error, stanza_error()} | {result, [disco_item()]} | empty.
 
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
-                             one_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
 				  ?NS_DISCO_ITEMS, ?MODULE,
 				  process_local_iq_items, IQDisc),
@@ -67,10 +66,7 @@ start(Host, Opts) ->
     catch ets:new(disco_extra_domains,
 		  [named_table, ordered_set, public,
 		   {heir, erlang:group_leader(), none}]),
-    ExtraDomains = gen_mod:get_opt(extra_domains, Opts,
-                                   fun(Hs) ->
-                                           [iolist_to_binary(H) || H <- Hs]
-                                   end, []),
+    ExtraDomains = gen_mod:get_opt(extra_domains, Opts, []),
     lists:foreach(fun (Domain) ->
 			  register_extra_domain(Host, Domain)
 		  end,
@@ -119,10 +115,7 @@ stop(Host) ->
     ok.
 
 reload(Host, NewOpts, OldOpts) ->
-    case gen_mod:is_equal_opt(extra_domains, NewOpts, OldOpts,
-			      fun(Hs) ->
-				      [iolist_to_binary(H) || H <- Hs]
-			      end, []) of
+    case gen_mod:is_equal_opt(extra_domains, NewOpts, OldOpts, []) of
 	{false, NewDomains, OldDomains} ->
 	    lists:foreach(
 	      fun(Domain) ->
@@ -135,9 +128,7 @@ reload(Host, NewOpts, OldOpts) ->
 	true ->
 	    ok
     end,
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts,
-			      fun gen_iq_handler:check_type/1,
-			      one_queue) of
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
 	{false, IQDisc, _} ->
 	    gen_iq_handler:add_iq_handler(ejabberd_local, Host,
 					  ?NS_DISCO_ITEMS, ?MODULE,
@@ -385,7 +376,7 @@ process_sm_iq_info(#iq{type = get, lang = Lang,
 get_sm_identity(Acc, _From,
 		#jid{luser = LUser, lserver = LServer}, _Node, _Lang) ->
     Acc ++
-      case ejabberd_auth:is_user_exists(LUser, LServer) of
+      case ejabberd_auth:user_exists(LUser, LServer) of
 	true ->
 	    [#identity{category = <<"account">>, type = <<"registered">>}];
 	_ -> []
@@ -447,17 +438,7 @@ get_info(Acc, _, _, _Node, _) -> Acc.
 
 -spec get_fields(binary(), module()) -> [xdata_field()].
 get_fields(Host, Module) ->
-    Fields = gen_mod:get_module_opt(
-               Host, ?MODULE, server_info,
-               fun(L) ->
-                       lists:map(
-                         fun(Opts) ->
-                                 Mods = proplists:get_value(modules, Opts, all),
-                                 Name = proplists:get_value(name, Opts, <<>>),
-                                 URLs = proplists:get_value(urls, Opts, []),
-                                 {Mods, Name, URLs}
-                         end, L)
-               end, []),
+    Fields = gen_mod:get_module_opt(Host, ?MODULE, server_info, []),
     Fields1 = lists:filter(fun ({Modules, _, _}) ->
 				   case Modules of
 				       all -> true;

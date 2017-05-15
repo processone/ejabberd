@@ -44,6 +44,7 @@ defmodule ModHttpApiMockTest do
 		try do
       :jid.start
       :mnesia.start
+      :ejabberd_mnesia.start
 			:stringprep.start
       :ejabberd_config.start([@domain], [])
       {:ok, _} = :ejabberd_access_permissions.start_link()

@@ -30,130 +30,281 @@
 
 -module(ejabberd_mnesia).
 -author('christophe.romain@process-one.net').
--export([create/3, reset/2, update/2]).
+
+-behaviour(gen_server).
+
+-export([start/0, create/3, update/2, transform/2, transform/3,
+	 dump_schema/0]).
+%% gen_server callbacks
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+	 terminate/2, code_change/3]).
 
 -define(STORAGE_TYPES, [disc_copies, disc_only_copies, ram_copies]).
 -define(NEED_RESET, [local_content, type]).
 
 -include("logger.hrl").
 
-create(Module, Name, TabDef)
-  when is_atom(Module), is_atom(Name), is_list(TabDef) ->
-    Path = os:getenv("EJABBERD_SCHEMA_PATH"),
-    Schema = schema(Path, Module, Name, TabDef),
+-record(state, {tables = #{} :: map(),
+		schema = [] :: [{atom(), [{atom(), any()}]}]}).
+
+start() ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+-spec create(module(), atom(), list()) -> any().
+create(Module, Name, TabDef) ->
+    gen_server:call(?MODULE, {create, Module, Name, TabDef},
+		    %% Huge timeout is need to have enough
+		    %% time to transform huge tables
+		    timer:minutes(30)).
+
+init([]) ->
+    ejabberd_config:env_binary_to_list(mnesia, dir),
+    MyNode = node(),
+    DbNodes = mnesia:system_info(db_nodes),
+    case lists:member(MyNode, DbNodes) of
+	true ->
+	    case mnesia:system_info(extra_db_nodes) of
+		[] -> mnesia:create_schema([node()]);
+		_ -> ok
+	    end,
+	    ejabberd:start_app(mnesia, permanent),
+	    ?DEBUG("Waiting for Mnesia tables synchronization...", []),
+	    mnesia:wait_for_tables(mnesia:system_info(local_tables), infinity),
+	    Schema = read_schema_file(),
+	    {ok, #state{schema = Schema}};
+	false ->
+	    ?CRITICAL_MSG("Node name mismatch: I'm [~s], "
+			  "the database is owned by ~p", [MyNode, DbNodes]),
+	    ?CRITICAL_MSG("Either set ERLANG_NODE in ejabberdctl.cfg "
+			  "or change node name in Mnesia", []),
+	    {stop, node_name_mismatch}
+    end.
+
+handle_call({create, Module, Name, TabDef}, _From, State) ->
+    case maps:get(Name, State#state.tables, undefined) of
+	{TabDef, Result} ->
+	    {reply, Result, State};
+	_ ->
+	    Result = do_create(Module, Name, TabDef, State#state.schema),
+	    Tables = maps:put(Name, {TabDef, Result}, State#state.tables),
+	    {reply, Result, State#state{tables = Tables}}
+    end;
+handle_call(_Request, _From, State) ->
+    {noreply, State}.
+
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+handle_info(_Info, State) ->
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
+    ok.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
+
+do_create(Module, Name, TabDef, TabDefs) ->
+    code:ensure_loaded(Module),
+    Schema = schema(Name, TabDef, TabDefs),
     {attributes, Attrs} = lists:keyfind(attributes, 1, Schema),
     case catch mnesia:table_info(Name, attributes) of
 	{'EXIT', _} ->
-	    mnesia_op(create_table, [Name, TabDef]);
+	    create(Name, TabDef);
 	Attrs ->
 	    case need_reset(Name, Schema) of
-		true -> reset(Name, Schema);
-		false -> update(Name, Attrs, Schema)
+		true ->
+		    reset(Name, Schema);
+		false ->
+		    case update(Name, Attrs, Schema) of
+			{atomic, ok} ->
+			    transform(Module, Name, Attrs, Attrs);
+			Err ->
+			    Err
+		    end
 	    end;
 	OldAttrs ->
-	    Fun = case lists:member({transform,1}, Module:module_info(exports)) of
-		true -> fun(Old) -> Module:transform(Old) end;
-		false -> fun(Old) -> transform(OldAttrs, Attrs, Old) end
-	    end,
-	    mnesia_op(transform_table, [Name, Fun, Attrs])
+	    transform(Module, Name, OldAttrs, Attrs)
     end.
 
-reset(Name, TabDef)
-  when is_atom(Name), is_list(TabDef) ->
+reset(Name, TabDef) ->
+    ?INFO_MSG("Deleting Mnesia table '~s'", [Name]),
     mnesia_op(delete_table, [Name]),
-    mnesia_op(create_table, [Name, TabDef]).
+    create(Name, TabDef).
 
-update(Name, TabDef)
-  when is_atom(Name), is_list(TabDef) ->
+update(Name, TabDef) ->
     {attributes, Attrs} = lists:keyfind(attributes, 1, TabDef),
     update(Name, Attrs, TabDef).
+
 update(Name, Attrs, TabDef) ->
-    Storage = case catch mnesia:table_info(Name, storage_type) of
-	{'EXIT', _} -> unknown;
-	Type -> Type
-	end,
-    NewStorage = lists:foldl(
-		   fun({Key, _}, Acc) ->
-			   case lists:member(Key, ?STORAGE_TYPES) of
-			       true -> Key;
-			       false -> Acc
-			   end
-		   end, Storage, TabDef),
-    R1 = [mnesia_op(change_table_copy_type, [Name, node(), NewStorage])
-	  || Storage=/=NewStorage],
-    CurIndexes = [lists:nth(N-1, Attrs) || N<-mnesia:table_info(Name, index)],
-    NewIndexes = proplists:get_value(index, TabDef, []),
-    R2 = [mnesia_op(del_table_index, [Name, Attr])
-	  || Attr <- CurIndexes--NewIndexes],
-    R3 = [mnesia_op(add_table_index, [Name, Attr])
-	  || Attr <- NewIndexes--CurIndexes],
-    lists:foldl(
-      fun({atomic, ok}, Acc) -> Acc;
-	 (Error, _Acc) -> Error
-      end, {atomic, ok}, R1++R2++R3).
+    case change_table_copy_type(Name, TabDef) of
+	{atomic, ok} ->
+	    CurrIndexes = [lists:nth(N-1, Attrs) ||
+			      N <- mnesia:table_info(Name, index)],
+	    NewIndexes = proplists:get_value(index, TabDef, []),
+	    case delete_indexes(Name, CurrIndexes -- NewIndexes) of
+		{atomic, ok} ->
+		    add_indexes(Name, NewIndexes -- CurrIndexes);
+		Err ->
+		    Err
+	    end;
+	Err ->
+	    Err
+    end.
+
+change_table_copy_type(Name, TabDef) ->
+    CurrType = mnesia:table_info(Name, storage_type),
+    NewType = case lists:filter(fun is_storage_type_option/1, TabDef) of
+		  [{Type, _}|_] -> Type;
+		  [] -> CurrType
+	      end,
+    if NewType /= CurrType ->
+	    ?INFO_MSG("Changing Mnesia table '~s' from ~s to ~s",
+		      [Name, CurrType, NewType]),
+	    mnesia_op(change_table_copy_type, [Name, node(), NewType]);
+       true ->
+	    {atomic, ok}
+    end.
+
+delete_indexes(Name, [Index|Indexes]) ->
+    ?INFO_MSG("Deleting index '~s' from Mnesia table '~s'", [Index, Name]),
+    case mnesia_op(del_table_index, [Name, Index]) of
+	{atomic, ok} ->
+	    delete_indexes(Name, Indexes);
+	Err ->
+	    Err
+    end;
+delete_indexes(_Name, []) ->
+    {atomic, ok}.
+
+add_indexes(Name, [Index|Indexes]) ->
+    ?INFO_MSG("Adding index '~s' to Mnesia table '~s'", [Index, Name]),
+    case mnesia_op(add_table_index, [Name, Index]) of
+	{atomic, ok} ->
+	    add_indexes(Name, Indexes);
+	Err ->
+	    Err
+    end;
+add_indexes(_Name, []) ->
+    {atomic, ok}.
 
 %
 % utilities
 %
 
-schema(false, Module, _Name, TabDef) ->
-    ?DEBUG("No custom ~s schema path", [Module]),
-    TabDef;
-schema(Path, Module, Name, TabDef) ->
-    File = filename:join(Path, atom_to_list(Module)++".mnesia"),
-    case parse(File) of
-	{ok, CustomDefs} ->
-	    case lists:keyfind(Name, 1, CustomDefs) of
-		{Name, CustomDef} ->
-		    ?INFO_MSG("Using custom ~s schema for table ~s",
-			      [Module, Name]),
-		    merge(TabDef, CustomDef);
-		_ ->
-		    TabDef
-	    end;
+schema(Name, Default, Schema) ->
+    case lists:keyfind(Name, 1, Schema) of
+	{_, Custom} ->
+	    TabDefs = merge(Custom, Default),
+	    ?DEBUG("Using custom schema for table '~s': ~p",
+		   [Name, TabDefs]),
+	    TabDefs;
+	false ->
+	    ?DEBUG("No custom Mnesia schema for table '~s' found",
+		   [Name]),
+	    Default
+    end.
+
+read_schema_file() ->
+    File = schema_path(),
+    case fast_yaml:decode_from_file(File, [plain_as_atom]) of
+	{ok, [Defs|_]} ->
+	    ?INFO_MSG("Using custom Mnesia schema from ~s", [File]),
+	    lists:flatmap(
+	      fun({Tab, Opts}) ->
+		      case validate_schema_opts(File, Opts) of
+			  {ok, NewOpts} ->
+			      [{Tab, lists:ukeysort(1, NewOpts)}];
+			  error ->
+			      []
+		      end
+	      end, Defs);
+	{ok, []} ->
+	    ?WARNING_MSG("Mnesia schema file ~s is empty", [File]),
+	    [];
 	{error, enoent} ->
-	    ?DEBUG("No custom ~s schema path", [Module]),
-	    TabDef;
-	{error, Error} ->
-	    ?ERROR_MSG("Can not use custom ~s schema for table ~s: ~p",
-		       [Module, Name, Error]),
-	    TabDef
+	    ?DEBUG("No custom Mnesia schema file found", []),
+	    [];
+	{error, Reason} ->
+	    ?ERROR_MSG("Failed to read Mnesia schema file ~s: ~s",
+		       [File, fast_yaml:format_error(Reason)]),
+	    []
     end.
 
-merge(TabDef, CustomDef) ->
-    {CustomKeys, _} = lists:unzip(CustomDef),
-    CleanDef = lists:foldl(
-		fun(Elem, Acc) ->
-		    case lists:member(Elem, ?STORAGE_TYPES) of
-			true ->
-			    lists:foldl(
-			      fun(Key, CleanAcc) ->
-				      lists:keydelete(Key, 1, CleanAcc)
-			      end, Acc, ?STORAGE_TYPES);
-			false ->
-			    Acc
-		    end
-		end, TabDef, CustomKeys),
-    lists:ukeymerge(1,
-		   lists:ukeysort(1, CustomDef),
-		   lists:ukeysort(1, CleanDef)).
-
-parse(File) ->
-    case file:consult(File) of
-	{ok, Terms} -> parse(Terms, []);
-	Error -> Error
+validate_schema_opts(File, Opts) ->
+    try {ok, lists:map(
+	       fun({storage_type, Type}) when Type == ram_copies;
+					      Type == disc_copies;
+					      Type == disc_only_copies ->
+		       {Type, [node()]};
+		  ({storage_type, _} = Opt) ->
+		       erlang:error({invalid_value, Opt});
+		  ({local_content, Bool}) when is_boolean(Bool) ->
+		       {local_content, Bool};
+		  ({local_content, _} = Opt) ->
+		       erlang:error({invalid_value, Opt});
+		  ({type, Type}) when Type == set;
+				      Type == ordered_set;
+				      Type == bag ->
+		       {type, Type};
+		  ({type, _} = Opt) ->
+		       erlang:error({invalid_value, Opt});
+		  ({attributes, Attrs} = Opt) ->
+		       try lists:all(fun is_atom/1, Attrs) of
+			   true -> {attributes, Attrs};
+			   false -> erlang:error({invalid_value, Opt})
+		       catch _:_ -> erlang:error({invalid_value, Opt})
+		       end;
+		  ({index, Indexes} = Opt) ->
+		       try lists:all(fun is_atom/1, Indexes) of
+			   true -> {index, Indexes};
+			   false -> erlang:error({invalid_value, Opt})
+		       catch _:_ -> erlang:error({invalid_value, Opt})
+		       end;
+		  (Opt) ->
+		       erlang:error({unknown_option, Opt})
+	       end, Opts)}
+    catch _:{invalid_value, {Opt, Val}} ->
+	    ?ERROR_MSG("Mnesia schema ~s is incorrect: invalid value ~p of "
+		       "option '~s'", [File, Val, Opt]),
+	    error;
+	  _:{unknown_option, Opt} ->
+	    ?ERROR_MSG("Mnesia schema ~s is incorrect: unknown option ~p",
+		       [File, Opt]),
+	    error
     end.
-parse([], Acc) ->
-    {ok, lists:reverse(Acc)};
-parse([{Name, Storage, TabDef}|Tail], Acc)
-  when is_atom(Name), is_atom(Storage), is_list(TabDef) ->
-    NewDef = case lists:member(Storage, ?STORAGE_TYPES) of
-	true -> [{Storage, [node()]} | TabDef];
-	false -> TabDef
-    end,
-    parse(Tail, [{Name, NewDef} | Acc]);
-parse([Other|_], _) ->
-    {error, {invalid, Other}}.
+
+create(Name, TabDef) ->
+    ?INFO_MSG("Creating Mnesia table '~s'", [Name]),
+    case mnesia_op(create_table, [Name, TabDef]) of
+	{atomic, ok} ->
+	    add_table_copy(Name);
+	Err ->
+	    Err
+    end.
+
+%% The table MUST exist, otherwise the function would fail
+add_table_copy(Name) ->
+    Type = mnesia:table_info(Name, storage_type),
+    Nodes = mnesia:table_info(Name, Type),
+    case lists:member(node(), Nodes) of
+	true ->
+	    {atomic, ok};
+	false ->
+	    mnesia_op(add_table_copy, [Name, node(), Type])
+    end.
+
+merge(Custom, Default) ->
+    NewDefault = case lists:any(fun is_storage_type_option/1, Custom) of
+		     true ->
+			 lists:filter(
+			   fun(O) ->
+				   not is_storage_type_option(O)
+			   end, Default);
+		     false ->
+			 Default
+		 end,
+    lists:ukeymerge(1, Custom, lists:ukeysort(1, NewDefault)).
 
 need_reset(Table, TabDef) ->
     ValuesF = [mnesia:table_info(Table, Key) || Key <- ?NEED_RESET],
@@ -164,7 +315,61 @@ need_reset(Table, TabDef) ->
 	 ({_, _}, _) -> true
       end, false, lists:zip(ValuesF, ValuesT)).
 
-transform(OldAttrs, Attrs, Old) ->
+transform(Module, Name) ->
+    try mnesia:table_info(Name, attributes) of
+	Attrs ->
+	    transform(Module, Name, Attrs, Attrs)
+    catch _:{aborted, _} = Err ->
+	    Err
+    end.
+
+transform(Module, Name, NewAttrs) ->
+    try mnesia:table_info(Name, attributes) of
+	OldAttrs ->
+	    transform(Module, Name, OldAttrs, NewAttrs)
+    catch _:{aborted, _} = Err ->
+	    Err
+    end.
+
+transform(Module, Name, Attrs, Attrs) ->
+    case need_transform(Module, Name) of
+	true ->
+	    ?INFO_MSG("Transforming table '~s', this may take a while", [Name]),
+	    transform_table(Module, Name);
+	false ->
+	    {atomic, ok}
+    end;
+transform(Module, Name, OldAttrs, NewAttrs) ->
+    Fun = case erlang:function_exported(Module, transform, 1) of
+	      true -> transform_fun(Module, Name);
+	      false -> fun(Old) -> do_transform(OldAttrs, NewAttrs, Old) end
+	  end,
+    mnesia_op(transform_table, [Name, Fun, NewAttrs]).
+
+-spec need_transform(module(), atom()) -> boolean().
+need_transform(Module, Name) ->
+    case erlang:function_exported(Module, need_transform, 1) of
+	true ->
+	    do_need_transform(Module, Name, mnesia:dirty_first(Name));
+	false ->
+	    false
+    end.
+
+do_need_transform(_Module, _Name, '$end_of_table') ->
+    false;
+do_need_transform(Module, Name, Key) ->
+    Objs = mnesia:dirty_read(Name, Key),
+    case lists:foldl(
+	   fun(_, true) -> true;
+	      (Obj, _) -> Module:need_transform(Obj)
+	   end, undefined, Objs) of
+	true -> true;
+	false -> false;
+	_ ->
+	    do_need_transform(Module, Name, mnesia:dirty_next(Name, Key))
+    end.
+
+do_transform(OldAttrs, Attrs, Old) ->
     [Name|OldValues] = tuple_to_list(Old),
     Before = lists:zip(OldAttrs, OldValues),
     After = lists:foldl(
@@ -177,6 +382,56 @@ transform(OldAttrs, Attrs, Old) ->
     {Attrs, NewRecord} = lists:unzip(After),
     list_to_tuple([Name|NewRecord]).
 
+transform_fun(Module, Name) ->
+    fun(Obj) ->
+	    try Module:transform(Obj)
+	    catch E:R ->
+		    StackTrace = erlang:get_stacktrace(),
+		    ?ERROR_MSG("Failed to transform Mnesia table ~s:~n"
+			       "** Record: ~p~n"
+			       "** Reason: ~p~n"
+			       "** StackTrace: ~p",
+			       [Name, Obj, R, StackTrace]),
+		    erlang:raise(E, R, StackTrace)
+	    end
+    end.
+
+transform_table(Module, Name) ->
+    Type = mnesia:table_info(Name, type),
+    Attrs = mnesia:table_info(Name, attributes),
+    TmpTab = list_to_atom(atom_to_list(Name) ++ "_backup"),
+    StorageType = if Type == ordered_set -> disc_copies;
+		     true -> disc_only_copies
+		  end,
+    mnesia:create_table(TmpTab,
+			[{StorageType, [node()]},
+			 {type, Type},
+			 {local_content, true},
+			 {record_name, Name},
+			 {attributes, Attrs}]),
+    mnesia:clear_table(TmpTab),
+    Fun = transform_fun(Module, Name),
+    Res = mnesia_op(
+	    transaction,
+	    [fun() -> do_transform_table(Name, Fun, TmpTab, mnesia:first(Name)) end]),
+    mnesia:delete_table(TmpTab),
+    Res.
+
+do_transform_table(Name, _Fun, TmpTab, '$end_of_table') ->
+    mnesia:foldl(
+      fun(Obj, _) ->
+	      mnesia:write(Name, Obj, write)
+      end, ok, TmpTab);
+do_transform_table(Name, Fun, TmpTab, Key) ->
+    Next = mnesia:next(Name, Key),
+    Objs = mnesia:read(Name, Key),
+    lists:foreach(
+      fun(Obj) ->
+	      mnesia:write(TmpTab, Fun(Obj), write),
+	      mnesia:delete_object(Obj)
+      end, Objs),
+    do_transform_table(Name, Fun, TmpTab, Next).
+
 mnesia_op(Fun, Args) ->
     case apply(mnesia, Fun, Args) of
 	{atomic, ok} ->
@@ -185,4 +440,33 @@ mnesia_op(Fun, Args) ->
 	    ?ERROR_MSG("failure on mnesia ~s ~p: ~p",
 		      [Fun, Args, Other]),
 	    Other
+    end.
+
+schema_path() ->
+    Dir = case os:getenv("EJABBERD_MNESIA_SCHEMA") of
+	      false -> mnesia:system_info(directory);
+	      Path -> Path
+	  end,
+    filename:join(Dir, "ejabberd.schema").
+
+is_storage_type_option({O, _}) ->
+    O == ram_copies orelse O == disc_copies orelse O == disc_only_copies.
+
+dump_schema() ->
+    File = schema_path(),
+    Schema = lists:flatmap(
+	       fun(schema) ->
+		       [];
+		  (Tab) ->
+		       [{Tab, [{storage_type,
+				mnesia:table_info(Tab, storage_type)},
+			       {local_content,
+				mnesia:table_info(Tab, local_content)}]}]
+	       end, mnesia:system_info(tables)),
+    case file:write_file(File, [fast_yaml:encode(Schema), io_lib:nl()]) of
+	ok ->
+	    io:format("Mnesia schema is written to ~s~n", [File]);
+	{error, Reason} ->
+	    io:format("Failed to write Mnesia schema to ~s: ~s",
+		      [File, file:format_error(Reason)])
     end.

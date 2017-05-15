@@ -141,6 +141,15 @@ ProcessVars = fun(_F, [], Acc) ->
 			  _ ->
 			      F(F, Tail, Acc)
 		      end;
+		 (F, [{if_have_fun, MFA, Value} | Tail], Acc) ->
+		      {Mod, Fun, Arity} = MFA,
+		      code:ensure_loaded(Mod),
+		      case erlang:function_exported(Mod, Fun, Arity) of
+			  true ->
+			      F(F, Tail, ProcessSingleVar(F, Value, Acc));
+			  false ->
+			      F(F, Tail, Acc)
+		      end;
 		 (F, [Other1 | Tail1], Acc) ->
 		      F(F, Tail1, [F(F, Other1, []) | Acc]);
 		 (F, Val, Acc) when is_tuple(Val) ->

@@ -60,8 +60,7 @@ reload(Host, NewOpts, OldOpts) ->
 
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, fun gen_iq_handler:check_type/1,
-                             one_queue),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
     MyHost = gen_mod:get_opt_host(Host, Opts, <<"proxy.@HOST@">>),
     gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_INFO,
 				  ?MODULE, process_disco_info, IQDisc),
@@ -92,12 +91,8 @@ handle_call(_Request, _From, State) ->
 handle_cast({reload, ServerHost, NewOpts, OldOpts}, State) ->
     NewHost = gen_mod:get_opt_host(ServerHost, NewOpts, <<"proxy.@HOST@">>),
     OldHost = gen_mod:get_opt_host(ServerHost, OldOpts, <<"proxy.@HOST@">>),
-    NewIQDisc = gen_mod:get_opt(iqdisc, NewOpts,
-				fun gen_iq_handler:check_type/1,
-				one_queue),
-    OldIQDisc = gen_mod:get_opt(iqdisc, OldOpts,
-				fun gen_iq_handler:check_type/1,
-				one_queue),
+    NewIQDisc = gen_mod:get_opt(iqdisc, NewOpts, gen_iq_handler:iqdisc(ServerHost)),
+    OldIQDisc = gen_mod:get_opt(iqdisc, OldOpts, gen_iq_handler:iqdisc(ServerHost)),
     if (NewIQDisc /= OldIQDisc) or (NewHost /= OldHost) ->
 	    gen_iq_handler:add_iq_handler(ejabberd_local, NewHost, ?NS_DISCO_INFO,
 					  ?MODULE, process_disco_info, NewIQDisc),
@@ -132,7 +127,7 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%%------------------------
 
 add_listener(Host, Opts) ->
-    NewOpts = [Host | Opts],
+    NewOpts = [{server_host, Host} | Opts],
     ejabberd_listener:add_listener(get_port_ip(Host),
 				   mod_proxy65_stream, NewOpts).
 
@@ -150,7 +145,6 @@ process_disco_info(#iq{type = set, lang = Lang} = IQ) ->
 process_disco_info(#iq{type = get, to = To, lang = Lang} = IQ) ->
     Host = ejabberd_router:host_of_route(To#jid.lserver),
     Name = gen_mod:get_module_opt(Host, mod_proxy65, name,
-				  fun iolist_to_binary/1,
 				  <<"SOCKS5 Bytestreams">>),
     Info = ejabberd_hooks:run_fold(disco_info, Host,
 				   [], [Host, ?MODULE, <<"">>, <<"">>]),
@@ -184,9 +178,7 @@ process_vcard(#iq{type = get, lang = Lang} = IQ) ->
 process_bytestreams(#iq{type = get, from = JID, to = To, lang = Lang} = IQ) ->
     Host = To#jid.lserver,
     ServerHost = ejabberd_router:host_of_route(Host),
-    ACL = gen_mod:get_module_opt(ServerHost, mod_proxy65, access,
-				 fun acl:access_rules_validator/1,
-				 all),
+    ACL = gen_mod:get_module_opt(ServerHost, mod_proxy65, access, all),
     case acl:match_rule(ServerHost, ACL, JID) of
 	allow ->
 	    StreamHost = get_streamhost(Host, ServerHost),
@@ -209,9 +201,7 @@ process_bytestreams(#iq{type = set, lang = Lang, from = InitiatorJID, to = To,
 			sub_els = [#bytestreams{activate = TargetJID,
 						sid = SID}]} = IQ) ->
     ServerHost = ejabberd_router:host_of_route(To#jid.lserver),
-    ACL = gen_mod:get_module_opt(ServerHost, mod_proxy65, access,
-				 fun acl:access_rules_validator/1,
-				 all),
+    ACL = gen_mod:get_module_opt(ServerHost, mod_proxy65, access, all),
     case acl:match_rule(ServerHost, ACL, InitiatorJID) of
 	allow ->
 	    Node = ejabberd_cluster:get_node_by_id(To#jid.lresource),
@@ -264,7 +254,6 @@ transform_module_options(Opts) ->
 get_streamhost(Host, ServerHost) ->
     {Port, IP} = get_port_ip(ServerHost),
     HostName = gen_mod:get_module_opt(ServerHost, mod_proxy65, hostname,
-				      fun iolist_to_binary/1,
 				      misc:ip_to_list(IP)),
     Resource = ejabberd_cluster:node_id(),
     #streamhost{jid = jid:make(<<"">>, Host, Resource),
@@ -273,18 +262,8 @@ get_streamhost(Host, ServerHost) ->
 
 -spec get_port_ip(binary()) -> {pos_integer(), inet:ip_address()}.
 get_port_ip(Host) ->
-    Port = gen_mod:get_module_opt(Host, mod_proxy65, port,
-				  fun(P) when is_integer(P), P>0, P<65536 ->
-					  P
-				  end,
-				  7777),
-    IP = gen_mod:get_module_opt(Host, mod_proxy65, ip,
-				fun(S) ->
-					{ok, Addr} = inet_parse:address(
-						       binary_to_list(
-							 iolist_to_binary(S))),
-					Addr
-				end, get_my_ip()),
+    Port = gen_mod:get_module_opt(Host, mod_proxy65, port, 7777),
+    IP = gen_mod:get_module_opt(Host, mod_proxy65, ip, get_my_ip()),
     {Port, IP}.
 
 -spec get_my_ip() -> inet:ip_address().
@@ -296,7 +275,4 @@ get_my_ip() ->
     end.
 
 max_connections(ServerHost) ->
-    gen_mod:get_module_opt(ServerHost, mod_proxy65, max_connections,
-			   fun(I) when is_integer(I), I>0 -> I;
-			      (infinity) -> infinity
-			   end, infinity).
+    gen_mod:get_module_opt(ServerHost, mod_proxy65, max_connections, infinity).

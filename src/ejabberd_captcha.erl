@@ -350,12 +350,7 @@ do_create_image(Key) ->
     end.
 
 get_prog_name() ->
-    case ejabberd_config:get_option(
-           captcha_cmd,
-           fun(FileName) ->
-                   F = iolist_to_binary(FileName),
-                   if F /= <<"">> -> F end
-           end) of
+    case ejabberd_config:get_option(captcha_cmd) of
         undefined ->
             ?DEBUG("The option captcha_cmd is not configured, "
                    "but some module wants to use the CAPTCHA "
@@ -367,10 +362,7 @@ get_prog_name() ->
     end.
 
 get_url(Str) ->
-    CaptchaHost = ejabberd_config:get_option(
-                    captcha_host,
-                    fun iolist_to_binary/1,
-                    <<"">>),
+    CaptchaHost = ejabberd_config:get_option(captcha_host, <<"">>),
     case str:tokens(CaptchaHost, <<":">>) of
       [Host] ->
 	  <<"http://", Host/binary, "/captcha/", Str/binary>>;
@@ -395,7 +387,7 @@ get_transfer_protocol(PortString) ->
     get_captcha_transfer_protocol(PortListeners).
 
 get_port_listeners(PortNumber) ->
-    AllListeners = ejabberd_config:get_option(listen, fun(V) -> V end),
+    AllListeners = ejabberd_config:get_option(listen, []),
     lists:filter(fun (Listener) when is_list(Listener) ->
 			 case proplists:get_value(port, Listener) of
 			   PortNumber -> true;
@@ -425,9 +417,7 @@ get_captcha_transfer_protocol([_ | Listeners]) ->
 
 is_limited(undefined) -> false;
 is_limited(Limiter) ->
-    case ejabberd_config:get_option(
-           captcha_limit,
-           fun(I) when is_integer(I), I > 0 -> I end) of
+    case ejabberd_config:get_option(captcha_limit) of
       undefined -> false;
       Int ->
 	  case catch gen_server:call(?MODULE,
@@ -538,6 +528,10 @@ clean_treap(Treap, CleanPriority) ->
 now_priority() ->
     -p1_time_compat:system_time(micro_seconds).
 
+-spec opt_type(captcha_cmd) -> fun((binary()) -> binary());
+	      (captcha_host) -> fun((binary()) -> binary());
+	      (captcha_limit) -> fun((pos_integer()) -> pos_integer());
+	      (atom()) -> [atom()].
 opt_type(captcha_cmd) ->
     fun (FileName) ->
 	    F = iolist_to_binary(FileName), if F /= <<"">> -> F end
@@ -545,6 +539,5 @@ opt_type(captcha_cmd) ->
 opt_type(captcha_host) -> fun iolist_to_binary/1;
 opt_type(captcha_limit) ->
     fun (I) when is_integer(I), I > 0 -> I end;
-opt_type(listen) -> fun (V) -> V end;
 opt_type(_) ->
-    [captcha_cmd, captcha_host, captcha_limit, listen].
+    [captcha_cmd, captcha_host, captcha_limit].

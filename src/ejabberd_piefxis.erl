@@ -34,12 +34,9 @@
 
 -module(ejabberd_piefxis).
 
--behaviour(ejabberd_config).
-
 -protocol({xep, 227, '1.0'}).
 
--export([import_file/1, export_server/1, export_host/2,
-	 opt_type/1]).
+-export([import_file/1, export_server/1, export_host/2]).
 
 -define(CHUNK_SIZE, 1024*20). %20k
 
@@ -138,7 +135,7 @@ export_host(Dir, FnH, Host) ->
         {ok, Fd} ->
             print(Fd, make_piefxis_xml_head()),
             print(Fd, make_piefxis_host_head(Host)),
-            Users = ejabberd_auth:get_vh_registered_users(Host),
+            Users = ejabberd_auth:get_users(Host),
             case export_users(Users, Host, Fd) of
                 ok ->
                     print(Fd, make_piefxis_host_tail()),
@@ -169,7 +166,7 @@ export_users([], _Server, _Fd) ->
 export_user(User, Server, Fd) ->
     Password = ejabberd_auth:get_password_s(User, Server),
     LServer = jid:nameprep(Server),
-    PasswordFormat = ejabberd_config:get_option({auth_password_format, LServer}, fun(X) -> X end, plain),
+    PasswordFormat = ejabberd_auth:password_format(LServer),
     Pass = case Password of
       {_,_,_,_} ->
         case PasswordFormat of
@@ -389,7 +386,7 @@ process_user(#xmlel{name = <<"user">>, attrs = Attrs, children = Els},
              #state{server = LServer} = State) ->
     Name = fxml:get_attr_s(<<"name">>, Attrs),
     Password = fxml:get_attr_s(<<"password">>, Attrs),
-    PasswordFormat = ejabberd_config:get_option({auth_password_format, LServer}, fun(X) -> X end, plain),
+    PasswordFormat = ejabberd_auth:password_format(LServer),
     Pass = case PasswordFormat of
       scram ->
         case Password of 
@@ -405,9 +402,9 @@ process_user(#xmlel{name = <<"user">>, attrs = Attrs, children = Els},
             stop("Invalid 'user': ~s", [Name]);
         LUser ->
             case ejabberd_auth:try_register(LUser, LServer, Pass) of
-                {atomic, _} ->
+                ok ->
                     process_user_els(Els, State#state{user = LUser});
-                Err ->
+                {error, Err} ->
                     stop("Failed to create user '~s': ~p", [Name, Err])
             end
     end.
@@ -596,7 +593,3 @@ make_xinclude(Fn) ->
 
 print(Fd, String) ->
     file:write(Fd, String).
-
-opt_type(auth_password_format) -> fun (X) -> X end;
-opt_type(_) -> [auth_password_format].
-

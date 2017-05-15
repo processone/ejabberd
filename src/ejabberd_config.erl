@@ -27,35 +27,36 @@
 -author('alexey@process-one.net').
 
 -export([start/0, load_file/1, reload_file/0, read_file/1,
-	 get_option/2, get_option/3, add_option/2, has_option/1,
+	 get_option/1, get_option/2, add_option/2, has_option/1,
 	 get_vh_by_auth_method/1, is_file_readable/1,
-	 get_version/0, get_myhosts/0, get_mylang/0,
+	 get_version/0, get_myhosts/0, get_mylang/0, get_lang/1,
 	 get_ejabberd_config_path/0, is_using_elixir_config/0,
-	 prepare_opt_val/4, convert_table_to_binary/5,
-	 transform_options/1, collect_options/1,
+	 prepare_opt_val/4, transform_options/1, collect_options/1,
 	 convert_to_yaml/1, convert_to_yaml/2, v_db/2,
 	 env_binary_to_list/2, opt_type/1, may_hide_data/1,
 	 is_elixir_enabled/0, v_dbs/1, v_dbs_mods/1,
 	 default_db/1, default_db/2, default_ram_db/1, default_ram_db/2,
 	 default_queue_type/1, queue_dir/0, fsm_limit_opts/1,
-	 use_cache/1, cache_size/1, cache_missed/1, cache_life_time/1,
-	 dump/0]).
+	 use_cache/1, cache_size/1, cache_missed/1, cache_life_time/1]).
 
 -export([start/2]).
 
 %% The following functions are deprecated.
 -export([add_global_option/2, add_local_option/2,
 	 get_global_option/2, get_local_option/2,
-	 get_global_option/3, get_local_option/3]).
+	 get_global_option/3, get_local_option/3,
+	 get_option/3]).
 
 -deprecated([{add_global_option, 2}, {add_local_option, 2},
 	     {get_global_option, 2}, {get_local_option, 2},
-	     {get_global_option, 3}, {get_local_option, 3}]).
+	     {get_global_option, 3}, {get_local_option, 3},
+	     {get_option, 3}]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("ejabberd_config.hrl").
 -include_lib("kernel/include/file.hrl").
+-include_lib("stdlib/include/ms_transform.hrl").
 
 -callback opt_type(atom()) -> function() | [atom()].
 
@@ -69,7 +70,8 @@
 start() ->
     ConfigFile = get_ejabberd_config_path(),
     ?INFO_MSG("Loading configuration from ~s", [ConfigFile]),
-    mnesia_init(),
+    p1_options:start_link(ejabberd_options),
+    p1_options:start_link(ejabberd_db_modules),
     State1 = load_file(ConfigFile),
     UnixTime = p1_time_compat:system_time(seconds),
     SharedKey = case erlang:get_cookie() of
@@ -102,22 +104,10 @@ hosts_to_start(State) ->
 %% At the moment, these functions are mainly used to setup unit tests.
 -spec start(Hosts :: [binary()], Opts :: [acl:acl() | local_config()]) -> ok.
 start(Hosts, Opts) ->
-    mnesia_init(),
+    p1_options:start_link(ejabberd_options),
+    p1_options:start_link(ejabberd_db_modules),
     set_opts(set_hosts_in_options(Hosts, #state{opts = Opts})),
     ok.
-
-mnesia_init() ->
-    case catch mnesia:table_info(local_config, storage_type) of
-        disc_copies ->
-            mnesia:delete_table(local_config);
-        _ ->
-            ok
-    end,
-    ejabberd_mnesia:create(?MODULE, local_config,
-			[{ram_copies, [node()]},
-			 {local_content, true},
-			 {attributes, record_info(fields, local_config)}]),
-    mnesia:add_table_copy(local_config, node(), ram_copies).
 
 %% @doc Get the filename of the ejabberd configuration file.
 %% The filename can be specified with: erl -config "/path/to/ejabberd.yml".
@@ -189,7 +179,10 @@ read_file(File, Opts) ->
 load_file(File) ->
     State0 = read_file(File),
     State1 = hosts_to_start(State0),
-    validate_opts(State1).
+    AllMods = get_modules(),
+    init_module_db_table(AllMods),
+    ModOpts = get_modules_with_options(AllMods),
+    validate_opts(State1, ModOpts).
 
 -spec reload_file() -> ok.
 
@@ -764,36 +757,21 @@ append_option({Opt, Host}, Val, State) ->
 
 set_opts(State) ->
     Opts = State#state.opts,
-    F = fun() ->
-		lists:foreach(
-		  fun({node_start, _}) -> ok;
-		     ({shared_key, _}) -> ok;
-		     (Key) -> mnesia:delete({local_config, Key})
-		  end, mnesia:all_keys(local_config)),
-		lists:foreach(fun mnesia:write/1, Opts)
-	end,
-    case mnesia:transaction(F) of
-	{atomic, _} ->
-	    recompile_options(),
-	    set_log_level();
-	{aborted,{no_exists,Table}} ->
-	    MnesiaDirectory = mnesia:system_info(directory),
-	    ?CRITICAL_MSG("Error reading Mnesia database spool files:~n"
-			  "The Mnesia database couldn't read the spool file for the table '~p'.~n"
-			  "ejabberd needs read and write access in the directory:~n   ~s~n"
-			  "Maybe the problem is a change in the computer hostname,~n"
-			  "or a change in the Erlang node name, which is currently:~n   ~p~n"
-			  "Check the ejabberd guide for details about changing the~n"
-			  "computer hostname or Erlang node name.~n",
-			  [Table, MnesiaDirectory, node()]),
-	    exit("Error reading Mnesia database")
-    end.
+    ets:select_delete(ejabberd_options,
+		      ets:fun2ms(
+			fun({{node_start, _}, _}) -> false;
+			   ({{shared_key, _}, _}) -> false;
+			   (_) -> true
+			end)),
+    lists:foreach(
+      fun(#local_config{key = {Opt, Host}, value = Val}) ->
+	      p1_options:insert(ejabberd_options, Opt, Host, Val)
+      end, Opts),
+    p1_options:compile(ejabberd_options),
+    set_log_level().
 
 set_log_level() ->
-    Level = get_option(
-              loglevel,
-              fun(P) when P>=0, P=<5 -> P end,
-              4),
+    Level = get_option(loglevel, 4),
     ejabberd_logger:set(Level).
 
 add_global_option(Opt, Val) ->
@@ -804,12 +782,9 @@ add_local_option(Opt, Val) ->
 
 add_option(Opt, Val) when is_atom(Opt) ->
     add_option({Opt, global}, Val);
-add_option(Opt, Val) ->
-    mnesia:transaction(fun() ->
-			       mnesia:write(#local_config{key = Opt,
-							  value = Val})
-		       end),
-    recompile_options().
+add_option({Opt, Host}, Val) ->
+    p1_options:insert(ejabberd_options, Opt, Host, Val),
+    p1_options:compile(ejabberd_options).
 
 -spec prepare_opt_val(any(), any(), check_fun(), any()) -> any().
 
@@ -846,34 +821,38 @@ prepare_opt_val(Opt, Val, F, Default) ->
 
 -spec get_global_option(any(), check_fun()) -> any().
 
-get_global_option(Opt, F) ->
-    get_option(Opt, F, undefined).
+get_global_option(Opt, _) ->
+    get_option(Opt, undefined).
 
 -spec get_global_option(any(), check_fun(), any()) -> any().
 
-get_global_option(Opt, F, Default) ->
-    get_option(Opt, F, Default).
+get_global_option(Opt, _, Default) ->
+    get_option(Opt, Default).
 
 -spec get_local_option(any(), check_fun()) -> any().
 
-get_local_option(Opt, F) ->
-    get_option(Opt, F, undefined).
+get_local_option(Opt, _) ->
+    get_option(Opt, undefined).
 
 -spec get_local_option(any(), check_fun(), any()) -> any().
 
-get_local_option(Opt, F, Default) ->
-    get_option(Opt, F, Default).
+get_local_option(Opt, _, Default) ->
+    get_option(Opt, Default).
 
--spec get_option(any(), check_fun()) -> any().
-
-get_option(Opt, F) ->
-    get_option(Opt, F, undefined).
+-spec get_option(any()) -> any().
+get_option(Opt) ->
+    get_option(Opt, undefined).
 
 -spec get_option(any(), check_fun(), any()) -> any().
+get_option(Opt, _, Default) ->
+    get_option(Opt, Default).
 
-get_option(Opt, F, Default) when is_atom(Opt) ->
-    get_option({Opt, global}, F, Default);
-get_option(Opt, F, Default) ->
+-spec get_option(any(), check_fun() | any()) -> any().
+get_option(Opt, F) when is_function(F) ->
+    get_option(Opt, undefined);
+get_option(Opt, Default) when is_atom(Opt) ->
+    get_option({Opt, global}, Default);
+get_option(Opt, Default) ->
     {Key, Host} = case Opt of
 		      {O, global} when is_atom(O) -> Opt;
 		      {O, H} when is_atom(O), is_binary(H) -> Opt;
@@ -884,10 +863,9 @@ get_option(Opt, F, Default) ->
 		  end,
     case ejabberd_options:is_known(Key) of
 	true ->
-	    try ejabberd_options:Key(Host) of
-		Val -> prepare_opt_val(Opt, Val, F, Default)
-	    catch _:function_clause ->
-		    Default
+	    case ejabberd_options:Key(Host) of
+		{ok, Val} -> Val;
+		undefined -> Default
 	    end;
 	false ->
 	    Default
@@ -895,49 +873,74 @@ get_option(Opt, F, Default) ->
 
 -spec has_option(atom() | {atom(), global | binary()}) -> any().
 has_option(Opt) ->
-    get_option(Opt, fun(_) -> true end, false).
+    get_option(Opt) /= undefined.
 
 init_module_db_table(Modules) ->
-    catch ets:new(module_db, [named_table, public, bag,
-			      {read_concurrency, true}]),
     %% Dirty hack for mod_pubsub
-    ets:insert(module_db, {mod_pubsub, mnesia}),
-    ets:insert(module_db, {mod_pubsub, sql}),
+    p1_options:insert(ejabberd_db_modules, mod_pubsub, mnesia, true),
+    p1_options:insert(ejabberd_db_modules, mod_pubsub, sql, true),
     lists:foreach(
       fun(M) ->
 	      case re:split(atom_to_list(M), "_", [{return, list}]) of
 		  [_] ->
 		      ok;
 		  Parts ->
-		      [Suffix|T] = lists:reverse(Parts),
-		      BareMod = string:join(lists:reverse(T), "_"),
-		      ets:insert(module_db, {list_to_atom(BareMod),
-					     list_to_atom(Suffix)})
+		      [H|T] = lists:reverse(Parts),
+		      Suffix = list_to_atom(H),
+		      BareMod = list_to_atom(string:join(lists:reverse(T), "_")),
+		      case is_behaviour(BareMod, M) of
+			  true ->
+			      p1_options:insert(ejabberd_db_modules,
+						BareMod, Suffix, true);
+			  false ->
+			      ok
+		      end
 	      end
-      end, Modules).
+      end, Modules),
+    p1_options:compile(ejabberd_db_modules).
+
+is_behaviour(Behav, Mod) ->
+    try Mod:module_info(attributes) of
+	[] ->
+	    %% Stripped module?
+	    true;
+	Attrs ->
+	    lists:any(
+	      fun({behaviour, L}) -> lists:member(Behav, L);
+		 ({behavior, L}) -> lists:member(Behav, L);
+		 (_) -> false
+	      end, Attrs)
+    catch _:_ ->
+	    true
+    end.
 
 -spec v_db(module(), atom()) -> atom().
 
 v_db(Mod, internal) -> v_db(Mod, mnesia);
 v_db(Mod, odbc) -> v_db(Mod, sql);
 v_db(Mod, Type) ->
-    case ets:match_object(module_db, {Mod, Type}) of
-	[_|_] -> Type;
-	[] -> erlang:error(badarg)
+    case ejabberd_db_modules:is_known(Mod) of
+	true ->
+	    case ejabberd_db_modules:Mod(Type) of
+		{ok, _} -> Type;
+		_ -> erlang:error(badarg)
+	    end;
+	false ->
+	    erlang:error(badarg)
     end.
 
 -spec v_dbs(module()) -> [atom()].
 
 v_dbs(Mod) ->
-    lists:flatten(ets:match(module_db, {Mod, '$1'})).
+    ejabberd_db_modules:get_scope(Mod).
 
 -spec v_dbs_mods(module()) -> [module()].
 
 v_dbs_mods(Mod) ->
-    lists:map(fun([M]) ->
+    lists:map(fun(M) ->
 		      binary_to_atom(<<(atom_to_binary(Mod, utf8))/binary, "_",
 				       (atom_to_binary(M, utf8))/binary>>, utf8)
-	      end, ets:match(module_db, {Mod, '$1'})).
+	      end, v_dbs(Mod)).
 
 -spec default_db(module()) -> atom().
 default_db(Module) ->
@@ -957,7 +960,7 @@ default_ram_db(Host, Module) ->
 
 -spec default_db(default_db | default_ram_db, binary() | global, module()) -> atom().
 default_db(Opt, Host, Module) ->
-    case get_option({Opt, Host}, fun(T) when is_atom(T) -> T end) of
+    case get_option({Opt, Host}) of
 	undefined ->
 	    mnesia;
 	DBType ->
@@ -971,37 +974,40 @@ default_db(Opt, Host, Module) ->
 	    end
     end.
 
-get_modules_with_options() ->
+get_modules() ->
     {ok, Mods} = application:get_key(ejabberd, modules),
     ExtMods = [Name || {Name, _Details} <- ext_mod:installed()],
-    AllMods = [?MODULE|ExtMods++Mods],
-    init_module_db_table(AllMods),
+    ExtMods ++ Mods.
+
+get_modules_with_options(Modules) ->
     lists:foldl(
       fun(Mod, D) ->
-	      case catch Mod:opt_type('') of
-		  Opts when is_list(Opts) ->
-		      lists:foldl(
-			fun(Opt, Acc) ->
-				dict:append(Opt, Mod, Acc)
-			end, D, Opts);
-		  {'EXIT', {undef, _}} ->
+	      case is_behaviour(?MODULE, Mod) orelse Mod == ?MODULE of
+		  true ->
+		      try Mod:opt_type('') of
+			  Opts when is_list(Opts) ->
+			      lists:foldl(
+				fun(Opt, Acc) ->
+					dict:append(Opt, Mod, Acc)
+				end, D, Opts)
+		      catch _:undef ->
+			      D
+		      end;
+		  false ->
 		      D
 	      end
-      end, dict:new(), AllMods).
+      end, dict:new(), Modules).
 
-validate_opts(#state{opts = Opts} = State) ->
-    ModOpts = get_modules_with_options(),
+validate_opts(#state{opts = Opts} = State, ModOpts) ->
     NewOpts = lists:filtermap(
 		fun(#local_config{key = {Opt, _Host}, value = Val} = In) ->
 			case dict:find(Opt, ModOpts) of
 			    {ok, [Mod|_]} ->
 				VFun = Mod:opt_type(Opt),
 				try VFun(Val) of
-				    _ ->
-					true
-				catch {replace_with, NewVal} ->
-					{true, In#local_config{value = NewVal}};
-				      {invalid_syntax, Error} ->
+				    NewVal ->
+					{true, In#local_config{value = NewVal}}
+				catch {invalid_syntax, Error} ->
 					?ERROR_MSG("ignoring option '~s' with "
 						   "invalid value: ~p: ~s",
 						   [Opt, Val, Error]),
@@ -1024,23 +1030,21 @@ validate_opts(#state{opts = Opts} = State) ->
 
 %% Return the list of hosts with a given auth method
 get_vh_by_auth_method(AuthMethod) ->
-    Cfgs = mnesia:dirty_match_object(local_config,
-				     #local_config{key = {auth_method, '_'},
-						   _ = '_'}),
-    lists:flatmap(
-      fun(#local_config{key = {auth_method, Host}, value = M}) ->
-	      Methods = if not is_list(M) -> [M];
-			   true -> M
-			end,
-	      case lists:member(AuthMethod, Methods) of
-		  true when Host == global ->
-		      get_myhosts();
-		  true ->
-		      [Host];
-		  false ->
-		      []
-	      end
-      end, Cfgs).
+    Hosts = ejabberd_options:get_scope(auth_method),
+    get_vh_by_auth_method(AuthMethod, Hosts, []).
+
+get_vh_by_auth_method(Method, [Host|Hosts], Result) ->
+    Methods = get_option({auth_method, Host}, []),
+    case lists:member(Method, Methods) of
+	true when Host == global ->
+	    get_myhosts();
+	true ->
+	    get_vh_by_auth_method(Method, Hosts, [Host|Result]);
+	false ->
+	    get_vh_by_auth_method(Method, Hosts, Result)
+    end;
+get_vh_by_auth_method(_, [], Result) ->
+    Result.
 
 %% @spec (Path::string()) -> true | false
 is_file_readable(Path) ->
@@ -1064,15 +1068,16 @@ get_version() ->
 -spec get_myhosts() -> [binary()].
 
 get_myhosts() ->
-    get_option(hosts, fun(V) -> V end).
+    get_option(hosts).
 
 -spec get_mylang() -> binary().
 
 get_mylang() ->
-    get_option(
-      language,
-      fun iolist_to_binary/1,
-      <<"en">>).
+    get_lang(global).
+
+-spec get_lang(global | binary()) -> binary().
+get_lang(Host) ->
+    get_option({language, Host}, <<"en">>).
 
 replace_module(mod_announce_odbc) -> {mod_announce, sql};
 replace_module(mod_blocking_odbc) -> {mod_blocking, sql};
@@ -1208,7 +1213,6 @@ transform_terms(Terms) ->
     %% We could check all ejabberd beams, but this
     %% slows down start-up procedure :(
     Mods = [mod_register,
-            mod_last,
             ejabberd_s2s,
             ejabberd_listener,
             ejabberd_sql_sup,
@@ -1317,6 +1321,10 @@ transform_options(Opt, Opts) when Opt == override_global;
                                   Opt == override_acls ->
     ?WARNING_MSG("Ignoring '~s' option which has no effect anymore", [Opt]),
     Opts;
+transform_options({node_start, {_, _, _} = Now}, Opts) ->
+    ?WARNING_MSG("Old 'node_start' format detected. This is still supported "
+                 "but it is better to fix your config.", []),
+    [{node_start, now_to_seconds(Now)}|Opts];
 transform_options({host_config, Host, HOpts}, Opts) ->
     {AddOpts, HOpts1} =
         lists:mapfoldl(
@@ -1340,94 +1348,6 @@ transform_options({include_config_file, _, _} = Opt, Opts) ->
 transform_options(Opt, Opts) ->
     [Opt|Opts].
 
--spec convert_table_to_binary(atom(), [atom()], atom(),
-                              fun(), fun()) -> ok.
-
-convert_table_to_binary(Tab, Fields, Type, DetectFun, ConvertFun) ->
-    case is_table_still_list(Tab, DetectFun) of
-        true ->
-            ?INFO_MSG("Converting '~s' table from strings to binaries.", [Tab]),
-            TmpTab = list_to_atom(atom_to_list(Tab) ++ "_tmp_table"),
-            catch mnesia:delete_table(TmpTab),
-            case ejabberd_mnesia:create(?MODULE, TmpTab,
-                                     [{disc_only_copies, [node()]},
-                                      {type, Type},
-                                      {local_content, true},
-                                      {record_name, Tab},
-                                      {attributes, Fields}]) of
-                {atomic, ok} ->
-                    mnesia:transform_table(Tab, ignore, Fields),
-                    case mnesia:transaction(
-                           fun() ->
-                                   mnesia:write_lock_table(TmpTab),
-                                   mnesia:foldl(
-                                     fun(R, _) ->
-                                             NewR = ConvertFun(R),
-                                             mnesia:dirty_write(TmpTab, NewR)
-                                     end, ok, Tab)
-                           end) of
-                        {atomic, ok} ->
-                            mnesia:clear_table(Tab),
-                            case mnesia:transaction(
-                                   fun() ->
-                                           mnesia:write_lock_table(Tab),
-                                           mnesia:foldl(
-                                             fun(R, _) ->
-                                                     mnesia:dirty_write(R)
-                                             end, ok, TmpTab)
-                                   end) of
-                                {atomic, ok} ->
-                                    mnesia:delete_table(TmpTab);
-                                Err ->
-                                    report_and_stop(Tab, Err)
-                            end;
-                        Err ->
-                            report_and_stop(Tab, Err)
-                    end;
-                Err ->
-                    report_and_stop(Tab, Err)
-            end;
-        false ->
-            ok
-    end.
-
-is_table_still_list(Tab, DetectFun) ->
-    is_table_still_list(Tab, DetectFun, mnesia:dirty_first(Tab)).
-
-is_table_still_list(_Tab, _DetectFun, '$end_of_table') ->
-    false;
-is_table_still_list(Tab, DetectFun, Key) ->
-    Rs = mnesia:dirty_read(Tab, Key),
-    Res = lists:foldl(fun(_, true) ->
-                              true;
-                         (_, false) ->
-                              false;
-                         (R, _) ->
-                              case DetectFun(R) of
-                                  '$next' ->
-                                      '$next';
-                                  El ->
-                                      is_list(El)
-                              end
-                      end, '$next', Rs),
-    case Res of
-        true ->
-            true;
-        false ->
-            false;
-        '$next' ->
-            is_table_still_list(Tab, DetectFun, mnesia:dirty_next(Tab, Key))
-    end.
-
-report_and_stop(Tab, Err) ->
-    ErrTxt = lists:flatten(
-               io_lib:format(
-                 "Failed to convert '~s' table to binary: ~p",
-                 [Tab, Err])),
-    ?CRITICAL_MSG(ErrTxt, []),
-    timer:sleep(1000),
-    halt(string:substr(ErrTxt, 1, 199)).
-
 emit_deprecation_warning(Module, NewModule, DBType) ->
     ?WARNING_MSG("Module ~s is deprecated, use ~s with 'db_type: ~s'"
                  " instead", [Module, NewModule, DBType]).
@@ -1441,14 +1361,32 @@ emit_deprecation_warning(Module, NewModule) ->
                          [Module, NewModule])
     end.
 
+-spec now_to_seconds(erlang:timestamp()) -> non_neg_integer().
+now_to_seconds({MegaSecs, Secs, _MicroSecs}) ->
+    MegaSecs * 1000000 + Secs.
+
+-spec opt_type(hide_sensitive_log_data) -> fun((boolean()) -> boolean());
+	      (hosts) -> fun(([binary()]) -> [binary()]);
+	      (language) -> fun((binary()) -> binary());
+	      (max_fsm_queue) -> fun((pos_integer()) -> pos_integer());
+	      (default_db) -> fun((atom()) -> atom());
+	      (default_ram_db) -> fun((atom()) -> atom());
+	      (loglevel) -> fun((0..5) -> 0..5);
+	      (queue_dir) -> fun((binary()) -> binary());
+	      (queue_type) -> fun((ram | file) -> ram | file);
+	      (use_cache) -> fun((boolean()) -> boolean());
+	      (cache_size) -> fun((timeout()) -> timeout());
+	      (cache_missed) -> fun((boolean()) -> boolean());
+	      (cache_life_time) -> fun((timeout()) -> timeout());
+	      (domain_certfile) -> fun((binary()) -> binary());
+	      (shared_key) -> fun((binary()) -> binary());
+	      (node_start) -> fun((non_neg_integer()) -> non_neg_integer());
+	      (atom()) -> [atom()].
 opt_type(hide_sensitive_log_data) ->
     fun (H) when is_boolean(H) -> H end;
 opt_type(hosts) ->
-    fun(L) when is_list(L) ->
-	    lists:map(
-	      fun(H) ->
-		      iolist_to_binary(H)
-	      end, L)
+    fun(L) ->
+	    [iolist_to_binary(H) || H <- L]
     end;
 opt_type(language) ->
     fun iolist_to_binary/1;
@@ -1478,19 +1416,21 @@ opt_type(cache_life_time) ->
        (infinity) -> infinity;
        (unlimited) -> infinity
     end;
+opt_type(domain_certfile) ->
+    fun misc:try_read_file/1;
+opt_type(shared_key) ->
+    fun iolist_to_binary/1;
+opt_type(node_start) ->
+    fun(I) when is_integer(I), I>=0 -> I end;
 opt_type(_) ->
     [hide_sensitive_log_data, hosts, language, max_fsm_queue,
      default_db, default_ram_db, queue_type, queue_dir, loglevel,
-     use_cache, cache_size, cache_missed, cache_life_time].
+     use_cache, cache_size, cache_missed, cache_life_time,
+     domain_certfile, shared_key, node_start].
 
 -spec may_hide_data(any()) -> any().
 may_hide_data(Data) ->
-    case get_option(
-	hide_sensitive_log_data,
-	    fun(false) -> false;
-	       (true) -> true
-	    end,
-        false) of
+    case get_option(hide_sensitive_log_data, false) of
 	false ->
 	    Data;
 	true ->
@@ -1503,9 +1443,7 @@ fsm_limit_opts(Opts) ->
 	{_, I} when is_integer(I), I>0 ->
 	    [{max_queue, I}];
 	false ->
-	    case get_option(
-		   max_fsm_queue,
-		   fun(I) when is_integer(I), I>0 -> I end) of
+	    case get_option(max_fsm_queue) of
 		undefined -> [];
 		N -> [{max_queue, N}]
 	    end
@@ -1513,86 +1451,25 @@ fsm_limit_opts(Opts) ->
 
 -spec queue_dir() -> binary() | undefined.
 queue_dir() ->
-    get_option(queue_dir, opt_type(queue_dir)).
+    get_option(queue_dir).
 
 -spec default_queue_type(binary()) -> ram | file.
 default_queue_type(Host) ->
-    get_option({queue_type, Host}, opt_type(queue_type), ram).
+    get_option({queue_type, Host}, ram).
 
 -spec use_cache(binary() | global) -> boolean().
 use_cache(Host) ->
-    get_option({use_cache, Host}, opt_type(use_cache), true).
+    get_option({use_cache, Host}, true).
 
 -spec cache_size(binary() | global) -> pos_integer() | infinity.
 cache_size(Host) ->
-    get_option({cache_size, Host}, opt_type(cache_size), 1000).
+    get_option({cache_size, Host}, 1000).
 
 -spec cache_missed(binary() | global) -> boolean().
 cache_missed(Host) ->
-    get_option({cache_missed, Host}, opt_type(cache_missed), true).
+    get_option({cache_missed, Host}, true).
 
 -spec cache_life_time(binary() | global) -> pos_integer() | infinity.
 %% NOTE: the integer value returned is in *seconds*
 cache_life_time(Host) ->
-    get_option({cache_life_time, Host}, opt_type(cache_life_time), 3600).
-
-%%%===================================================================
-%%% Dynamic config compilation
-%%%===================================================================
--spec recompile_options() -> ok.
-recompile_options() ->
-    Exprs = get_exprs(),
-    case misc:compile_exprs(ejabberd_options, Exprs) of
-	ok -> ok;
-	{error, _} = Err ->
-	    ?CRITICAL_MSG("Failed to compile ejabberd_options:~n~s",
-			  [string:join(Exprs, io_lib:nl())]),
-	    erlang:error(Err)
-    end.
-
--spec get_exprs() -> [string()].
-get_exprs() ->
-    Opts = lists:foldl(
-	    fun(#local_config{key = {Opt, Host}, value = Val}, D) ->
-		    Hosts = maps:get(Opt, D, #{}),
-		    maps:put(Opt, maps:put(Host, Val, Hosts), D)
-	    end, #{}, ets:tab2list(local_config)),
-    Funs = maps:fold(
-	     fun(Opt, Vals, Acc) ->
-		     HostVals = lists:reverse(lists:keysort(1, maps:to_list(Vals))),
-		     [string:join(
-			lists:map(
-			  fun({global, Val}) ->
-				  io_lib:format("'~s'(_) -> ~p", [Opt, Val]);
-			     ({Host, Val}) ->
-				  io_lib:format("'~s'(~p) -> ~p", [Opt, Host, Val])
-			  end, HostVals),
-			";" ++ io_lib:nl()) ++ "."|Acc]
-	     end, [], Opts),
-    Module = "-module(ejabberd_options).",
-    Export = "-compile(export_all).",
-    Knowns = maps:fold(
-	       fun(Opt, _, Acc) ->
-		       io_lib:format("is_known('~s') -> true;~n", [Opt]) ++ Acc
-	       end, "", Opts) ++ "is_known(_) -> false.",
-    [Module, Export, Knowns|Funs].
-
-%% @doc This is only for debugging purposes, likely to report a bug
--spec dump() -> ok.
-dump() ->
-    ETSFile = filename:join("/tmp", "ejabberd_options.ets"),
-    ErlFile = filename:join("/tmp", "ejabberd_options.erl"),
-    ETSData = io_lib:format("~p~n", [ets:tab2list(local_config)]),
-    ErlData = io_lib:format("~s~n", [str:join(get_exprs(), io_lib:nl())]),
-    case file:write_file(ETSFile, ETSData) of
-	ok -> io:format("ETS data written to ~s~n", [ETSFile]);
-	{error, Reason1} ->
-	    io:format("Failed to write to ~s: ~s",
-		      [ETSFile, file:format_error(Reason1)])
-    end,
-    case file:write_file(ErlFile, ErlData) of
-	ok -> io:format("Dynamic module written to ~s~n", [ErlFile]);
-	{error, Reason2} ->
-	    io:format("Failed to write to ~s: ~s",
-		      [ErlFile, file:format_error(Reason2)])
-    end.
+    get_option({cache_life_time, Host}, 3600).

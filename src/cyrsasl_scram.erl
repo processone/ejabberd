@@ -111,7 +111,11 @@ mech_step(#state{step = 2} = State, ClientIn) ->
 				  {error, saslprep_failed, UserName};
 			       true ->
 				  {StoredKey, ServerKey, Salt, IterationCount} =
-				      if is_tuple(Pass) -> Pass;
+				      if is_record(Pass, scram) ->
+					      {misc:decode_base64(Pass#scram.storedkey),
+					       misc:decode_base64(Pass#scram.serverkey),
+					       misc:decode_base64(Pass#scram.salt),
+					       Pass#scram.iterationcount};
 					 true ->
 					     TempSalt =
 						 randoms:bytes(?SALT_LENGTH),

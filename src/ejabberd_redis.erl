@@ -421,26 +421,13 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 -spec connect(state()) -> {ok, pid()} | {error, any()}.
 connect(#state{num = Num}) ->
-    Server = ejabberd_config:get_option(redis_server,
-					fun iolist_to_list/1,
-					"localhost"),
-    Port = ejabberd_config:get_option(redis_port,
-				      fun(P) when is_integer(P),
-						  P>0, P<65536 ->
-					      P
-				      end, 6379),
-    DB = ejabberd_config:get_option(redis_db,
-				    fun(I) when is_integer(I), I >= 0 ->
-					    I
-				    end, 0),
-    Pass = ejabberd_config:get_option(redis_password,
-				      fun iolist_to_list/1,
-				      ""),
+    Server = ejabberd_config:get_option(redis_server, "localhost"),
+    Port = ejabberd_config:get_option(redis_port, 6379),
+    DB = ejabberd_config:get_option(redis_db, 0),
+    Pass = ejabberd_config:get_option(redis_password, ""),
     ConnTimeout = timer:seconds(
 		    ejabberd_config:get_option(
-		      redis_connect_timeout,
-		      fun(I) when is_integer(I), I>0 -> I end,
-		      1)),
+		      redis_connect_timeout, 1)),
     try case do_connect(Num, Server, Port, Pass, DB, ConnTimeout) of
 	    {ok, Client} ->
 		?DEBUG("Connection #~p established to Redis at ~s:~p",
@@ -516,7 +503,7 @@ log_error(Cmd, Reason) ->
 
 -spec get_rnd_id() -> pos_integer().
 get_rnd_id() ->
-    randoms:uniform(2, ejabberd_redis_sup:get_pool_size()).
+    randoms:round_robin(ejabberd_redis_sup:get_pool_size() - 1) + 2.
 
 -spec get_result([{error, atom() | binary()} | {ok, iodata()}]) ->
 			{ok, [redis_reply()]} | {error, binary()}.
@@ -552,10 +539,6 @@ reply(Val) ->
 	_ -> queued
     end.
 
--spec iolist_to_list(iodata()) -> string().
-iolist_to_list(IOList) ->
-    binary_to_list(iolist_to_binary(IOList)).
-
 -spec max_fsm_queue() -> pos_integer().
 max_fsm_queue() ->
     proplists:get_value(max_queue, fsm_limit_opts(), ?DEFAULT_MAX_QUEUE).
@@ -564,14 +547,9 @@ fsm_limit_opts() ->
     ejabberd_config:fsm_limit_opts([]).
 
 get_queue_type() ->
-    case ejabberd_config:get_option(
-	   redis_queue_type,
-	   ejabberd_redis_sup:opt_type(redis_queue_type)) of
-	undefined ->
-	    ejabberd_config:default_queue_type(global);
-	Type ->
-	    Type
-    end.
+    ejabberd_config:get_option(
+      redis_queue_type,
+      ejabberd_config:default_queue_type(global)).
 
 -spec flush_queue(p1_queue:queue()) -> p1_queue:queue().
 flush_queue(Q) ->
