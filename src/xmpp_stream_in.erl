@@ -27,7 +27,7 @@
 -protocol({xep, 114, '1.6'}).
 
 %% API
--export([start/3, start_link/3, call/3, cast/2, reply/2, stop/1,
+-export([start/3, start_link/3, call/3, cast/2, reply/2, stop/1, shutdown/1,
 	 send/2, close/1, close/2, send_error/3, establish/1,
 	 get_transport/1, change_shaper/2, set_timeout/2, format_error/1]).
 
@@ -129,6 +129,10 @@ cast(Ref, Msg) ->
 
 reply(Ref, Reply) ->
     ?GEN_SERVER:reply(Ref, Reply).
+
+-spec shutdown(pid()) -> ok.
+shutdown(Pid) when is_pid(Pid) ->
+    cast(Pid, shutdown).
 
 -spec stop(pid()) -> ok;
 	  (state()) -> no_return().
@@ -268,6 +272,8 @@ handle_cast({send, Pkt}, State) ->
     noreply(send_pkt(State, Pkt));
 handle_cast(stop, State) ->
     {stop, normal, State};
+handle_cast(shutdown, State) ->
+    {stop, shutdown, State};
 handle_cast({close, Reason}, State) ->
     State1 = close_socket(State),
     noreply(

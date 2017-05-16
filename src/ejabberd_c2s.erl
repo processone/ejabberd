@@ -47,9 +47,9 @@
 	 process_terminated/2, process_info/2]).
 %% API
 -export([get_presence/1, get_subscription/2, get_subscribed/1,
-	 open_session/1, call/3, send/2, close/1, close/2, stop/1,
-	 reply/2, copy_state/2, set_timeout/2, route/2,
-	 host_up/1, host_down/1]).
+	 open_session/1, call/3, send/2, close/1, close/2, 
+	 stop/1, shutdown/1, reply/2, copy_state/2, set_timeout/2, 
+	 route/2, host_up/1, host_down/1]).
 
 -include("ejabberd.hrl").
 -include("xmpp.hrl").
@@ -125,6 +125,11 @@ close(Ref, Reason) ->
 	  (state()) -> no_return().
 stop(Ref) ->
     xmpp_stream_in:stop(Ref).
+
+-spec shutdown(pid()) -> ok.
+shutdown(Ref) ->
+    xmpp_stream_in:(Ref).
+
 
 -spec send(pid(), xmpp_element()) -> ok;
 	  (state(), xmpp_element()) -> state().
