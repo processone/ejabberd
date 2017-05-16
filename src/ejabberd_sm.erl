@@ -474,7 +474,7 @@ host_down(Host) ->
     lists:foreach(
       fun(#session{sid = {_, Pid}}) when node(Pid) == node() ->
 	      ejabberd_c2s:send(Pid, xmpp:serr_system_shutdown()),
-	      ejabberd_c2s:stop(Pid);
+	      ejabberd_c2s:shutdown(Pid);
 	 (_) ->
 	      ok
       end, get_sessions(Mod, Host)),
