@@ -28,10 +28,10 @@
 
 %% API
 -export([init/2, read_roster_version/2, write_roster_version/4,
-	 get_roster/2, get_roster_by_jid/3, create_roster/1,
-	 roster_subscribe/4, get_roster_by_jid_with_groups/3,
-	 remove_user/2, update_roster/4, del_roster/3, transaction/2,
-	 read_subscription_and_groups/3, get_only_items/2, import/3]).
+	 get_roster/2, get_roster_item/3, create_roster/1,
+	 roster_subscribe/4, remove_user/2, update_roster/4,
+	 del_roster/3, read_subscription_and_groups/3, transaction/2,
+	 import/3]).
 
 -include("mod_roster.hrl").
 
@@ -44,7 +44,7 @@ init(_Host, _Opts) ->
 read_roster_version(LUser, LServer) ->
     case ejabberd_riak:get(roster_version, roster_version_schema(),
 			   {LUser, LServer}) of
-        {ok, #roster_version{version = V}} -> V;
+        {ok, #roster_version{version = V}} -> {ok, V};
         _Err -> error
     end.
 
@@ -56,23 +56,9 @@ write_roster_version(LUser, LServer, _InTransaction, Ver) ->
 get_roster(LUser, LServer) ->
     case ejabberd_riak:get_by_index(roster, roster_schema(),
 				    <<"us">>, {LUser, LServer}) of
-        {ok, Items} -> Items;
-        _Err -> []
+        {ok, Items} -> {ok, Items};
+        _Err -> error
     end.
-
-get_roster_by_jid(LUser, LServer, LJID) ->
-    case ejabberd_riak:get(roster, roster_schema(), {LUser, LServer, LJID}) of
-        {ok, I} ->
-            I#roster{jid = LJID, name = <<"">>, groups = [], xs = []};
-        {error, notfound} ->
-            #roster{usj = {LUser, LServer, LJID},
-                    us = {LUser, LServer}, jid = LJID};
-        Err ->
-            exit(Err)
-    end.
-
-get_only_items(LUser, LServer) ->
-    get_roster(LUser, LServer).
 
 roster_subscribe(LUser, LServer, _LJID, Item) ->
     ejabberd_riak:put(Item, roster_schema(),
@@ -81,19 +67,16 @@ roster_subscribe(LUser, LServer, _LJID, Item) ->
 transaction(_LServer, F) ->
     {atomic, F()}.
 
-get_roster_by_jid_with_groups(LUser, LServer, LJID) ->
+get_roster_item(LUser, LServer, LJID) ->
     case ejabberd_riak:get(roster, roster_schema(), {LUser, LServer, LJID}) of
         {ok, I} ->
-            I;
-        {error, notfound} ->
-            #roster{usj = {LUser, LServer, LJID},
-                    us = {LUser, LServer}, jid = LJID};
-        Err ->
-            exit(Err)
+            {ok, I};
+        {error, _} ->
+	    error
     end.
 
 remove_user(LUser, LServer) ->
-    {atomic, ejabberd_riak:delete_by_index(roster, <<"us">>, {LUser, LServer})}.
+    ejabberd_riak:delete_by_index(roster, <<"us">>, {LUser, LServer}).
 
 update_roster(LUser, LServer, _LJID, Item) ->
     ejabberd_riak:put(Item, roster_schema(),
@@ -104,11 +87,11 @@ del_roster(LUser, LServer, LJID) ->
 
 read_subscription_and_groups(LUser, LServer, LJID) ->
     case ejabberd_riak:get(roster, roster_schema(), {LUser, LServer, LJID}) of
-        {ok, #roster{subscription = Subscription,
-                     groups = Groups}} ->
-            {Subscription, Groups};
-        _ ->
-            error
+	{ok, #roster{subscription = Subscription,
+		     groups = Groups}} ->
+	    {ok, {Subscription, Groups}};
+	_ ->
+	    error
     end.
 
 create_roster(#roster{us = {LUser, LServer}} = RItem) ->

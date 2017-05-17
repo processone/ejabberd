@@ -858,7 +858,7 @@ force_update_presence({LUser, LServer}) ->
     Mod = get_sm_backend(LServer),
     Ss = online(get_sessions(Mod, LUser, LServer)),
     lists:foreach(fun (#session{sid = {_, Pid}}) ->
-			  ejabberd_c2s:route(Pid, force_update_presence)
+			  ejabberd_c2s:resend_presence(Pid)
 		  end,
 		  Ss).
 

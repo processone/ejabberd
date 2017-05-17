@@ -255,7 +255,7 @@ set_room_option(_Acc, {mam, Val}, _Lang) ->
 set_room_option(Acc, _Property, _Lang) ->
     Acc.
 
--spec user_receive_packet({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
+-spec user_receive_packet({stanza(), c2s_state()}) -> {stanza(), c2s_state()}.
 user_receive_packet({Pkt, #{jid := JID} = C2SState}) ->
     Peer = xmpp:get_from(Pkt),
     LUser = JID#jid.luser,
@@ -263,7 +263,7 @@ user_receive_packet({Pkt, #{jid := JID} = C2SState}) ->
     Pkt2 = case should_archive(Pkt, LServer) of
 	true ->
 		   Pkt1 = strip_my_archived_tag(Pkt, LServer),
-		   case store_msg(C2SState, Pkt1, LUser, LServer, Peer, recv) of
+		   case store_msg(Pkt1, LUser, LServer, Peer, recv) of
 		{ok, ID} ->
 			   set_stanza_id(Pkt1, JID, ID);
 		_ ->
@@ -274,7 +274,7 @@ user_receive_packet({Pkt, #{jid := JID} = C2SState}) ->
 	   end,
     {Pkt2, C2SState}.
 
--spec user_send_packet({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
+-spec user_send_packet({stanza(), c2s_state()}) -> {stanza(), c2s_state()}.
 user_send_packet({Pkt, #{jid := JID} = C2SState}) ->
     Peer = xmpp:get_to(Pkt),
     LUser = JID#jid.luser,
@@ -282,7 +282,7 @@ user_send_packet({Pkt, #{jid := JID} = C2SState}) ->
     Pkt2 = case should_archive(Pkt, LServer) of
 	true ->
 		   Pkt1 = strip_my_archived_tag(Pkt, LServer),
-		   case store_msg(C2SState, xmpp:set_from_to(Pkt1, JID, Peer),
+		   case store_msg(xmpp:set_from_to(Pkt1, JID, Peer),
 		      LUser, LServer, Peer, send) of
               {ok, ID} ->
 			   set_stanza_id(Pkt1, JID, ID);
@@ -301,7 +301,7 @@ offline_message({_Action, #message{from = Peer, to = To} = Pkt} = Acc) ->
     case should_archive(Pkt, LServer) of
 	true ->
 	    Pkt1 = strip_my_archived_tag(Pkt, LServer),
-	    case store_msg(undefined, Pkt1, LUser, LServer, Peer, recv) of
+	    case store_msg(Pkt1, LUser, LServer, Peer, recv) of
 		{ok, ID} ->
 		    {archived, set_stanza_id(Pkt1, To, ID)};
 		_ ->
@@ -311,8 +311,8 @@ offline_message({_Action, #message{from = Peer, to = To} = Pkt} = Acc) ->
 	    Acc
     end.
 
--spec user_send_packet_strip_tag({stanza(), ejabberd_c2s:state()}) ->
-					{stanza(), ejabberd_c2s:state()}.
+-spec user_send_packet_strip_tag({stanza(), c2s_state()}) ->
+					{stanza(), c2s_state()}.
 user_send_packet_strip_tag({Pkt, #{jid := JID} = C2SState}) ->
     LServer = JID#jid.lserver,
     {strip_my_archived_tag(Pkt, LServer), C2SState}.
@@ -415,16 +415,16 @@ disco_sm_features({result, OtherFeatures},
 disco_sm_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
--spec message_is_archived(boolean(), ejabberd_c2s:state(), message()) -> boolean().
+-spec message_is_archived(boolean(), c2s_state(), message()) -> boolean().
 message_is_archived(true, _C2SState, _Pkt) ->
     true;
-message_is_archived(false, #{jid := JID} = C2SState, Pkt) ->
+message_is_archived(false, #{jid := JID}, Pkt) ->
     #jid{luser = LUser, lserver = LServer} = JID,
     Peer = xmpp:get_from(Pkt),
     case gen_mod:get_module_opt(LServer, ?MODULE, assume_mam_usage, false) of
 	true ->
 	    should_archive(strip_my_archived_tag(Pkt, LServer), LServer)
-		andalso should_archive_peer(C2SState, LUser, LServer,
+		andalso should_archive_peer(LUser, LServer,
 					    get_prefs(LUser, LServer),
 					    Peer);
 	false ->
@@ -615,9 +615,9 @@ strip_x_jid_tags(Pkt) ->
 	       end, Els),
     xmpp:set_els(Pkt, NewEls).
 
--spec should_archive_peer(c2s_state() | undefined, binary(), binary(),
+-spec should_archive_peer(binary(), binary(),
 			  #archive_prefs{}, jid()) -> boolean().
-should_archive_peer(C2SState, LUser, LServer,
+should_archive_peer(LUser, LServer,
 		    #archive_prefs{default = Default,
 				   always = Always,
 				   never = Never},
@@ -635,23 +635,11 @@ should_archive_peer(C2SState, LUser, LServer,
 			always -> true;
 			never -> false;
 			roster ->
-			    Sub = case C2SState of
-				      undefined ->
-					  {S, _} = ejabberd_hooks:run_fold(
-						     roster_get_jid_info,
-						     LServer, {none, []},
-						     [LUser, LServer, Peer]),
-					  S;
-				      _ ->
-					  ejabberd_c2s:get_subscription(
-					    LPeer, C2SState)
-				  end,
-			    case Sub of
-				both -> true;
-				from -> true;
-				to -> true;
-				_ -> false
-			    end
+			    {Sub, _} = ejabberd_hooks:run_fold(
+					 roster_get_jid_info,
+					 LServer, {none, []},
+					 [LUser, LServer, Peer]),
+			    Sub == both orelse Sub == from orelse Sub == to
 		    end
 	    end
     end.
@@ -719,12 +707,12 @@ may_enter_room(From,
 may_enter_room(From, MUCState) ->
     mod_muc_room:is_occupant_or_admin(From, MUCState).
 
--spec store_msg(c2s_state() | undefined, stanza(),
+-spec store_msg(stanza(),
 		binary(), binary(), jid(), send | recv) ->
 		       {ok, binary()} | pass.
-store_msg(C2SState, Pkt, LUser, LServer, Peer, Dir) ->
+store_msg(Pkt, LUser, LServer, Peer, Dir) ->
     Prefs = get_prefs(LUser, LServer),
-    case should_archive_peer(C2SState, LUser, LServer, Prefs, Peer) of
+    case should_archive_peer(LUser, LServer, Prefs, Peer) of
 	true ->
 	    US = {LUser, LServer},
 	    case ejabberd_hooks:run_fold(store_mam_message, LServer, Pkt,

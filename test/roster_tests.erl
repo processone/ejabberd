@@ -161,18 +161,25 @@ subscribe_slave(Config) ->
 process_subscriptions_master(Config, Actions) ->
     EnumeratedActions = lists:zip(lists:seq(1, length(Actions)), Actions),
     self_presence(Config, available),
+    Peer = ?config(peer, Config),
     lists:foldl(
       fun({N, {Dir, Type}}, State) ->
-	      timer:sleep(100),
 	      if Dir == out -> put_event(Config, {N, in, Type});
 		 Dir == in -> put_event(Config, {N, out, Type})
 	      end,
-	      wait_for_slave(Config),
+	      Roster = get_roster(Config),
 	      ct:pal("Performing ~s-~s (#~p) "
 		     "in state:~n~s~nwith roster:~n~s",
-		     [Dir, Type, N, pp(State),
-		      pp(get_roster(Config))]),
-	      transition(Config, Dir, Type, State)
+		     [Dir, Type, N, pp(State), pp(Roster)]),
+	      check_roster(Roster, Config, State),
+	      wait_for_slave(Config),
+	      Id = mk_id(N, Dir, Type),
+	      NewState = transition(Id, Config, Dir, Type, State),
+	      wait_for_slave(Config),
+	      send_recv(Config, #iq{type = get, to = Peer, id = Id,
+				    sub_els = [#ping{}]}),
+	      check_roster_item(Config, NewState),
+	      NewState
       end, #state{}, EnumeratedActions),
     put_event(Config, done),
     wait_for_slave(Config),
@@ -186,11 +193,16 @@ process_subscriptions_slave(Config, done, _State) ->
     wait_for_master(Config),
     Config;
 process_subscriptions_slave(Config, {N, Dir, Type}, State) ->
-    wait_for_master(Config),
+    Roster = get_roster(Config),
     ct:pal("Performing ~s-~s (#~p) "
 	   "in state:~n~s~nwith roster:~n~s",
-	   [Dir, Type, N, pp(State), pp(get_roster(Config))]),
-    NewState = transition(Config, Dir, Type, State),
+	   [Dir, Type, N, pp(State), pp(Roster)]),
+    check_roster(Roster, Config, State),
+    wait_for_master(Config),
+    NewState = transition(mk_id(N, Dir, Type), Config, Dir, Type, State),
+    wait_for_master(Config),
+    send(Config, xmpp:make_iq_result(recv_iq(Config))),
+    check_roster_item(Config, NewState),
     process_subscriptions_slave(Config, get_event(Config), NewState).
 
 %%%===================================================================
@@ -288,12 +300,42 @@ pp(roster, N) ->
     catch _:_ -> no end;
 pp(_, _) -> no.
 
+mk_id(N, Dir, Type) ->
+    list_to_binary([integer_to_list(N), $-, atom_to_list(Dir),
+		    $-, atom_to_list(Type)]).
+
+check_roster([], _Config, _State) ->
+    ok;
+check_roster([Roster], _Config, State) ->
+    case {Roster#roster.subscription == State#state.subscription,
+	  Roster#roster.ask, State#state.pending_in, State#state.pending_out} of
+	{true, both, true, true} -> ok;
+	{true, in, true, false} -> ok;
+	{true, out, false, true} -> ok;
+	{true, none, false, false} -> ok;
+	_ ->
+	    ct:fail({roster_mismatch, State, Roster})
+    end.
+
+check_roster_item(Config, State) ->
+    Peer = jid:remove_resource(?config(peer, Config)),
+    RosterItem = case get_item(Config, Peer) of
+		     false -> #roster_item{};
+		     Item -> Item
+		 end,
+    case {RosterItem#roster_item.subscription == State#state.subscription,
+	  RosterItem#roster_item.ask, State#state.pending_out} of
+	{true, subscribe, true} -> ok;
+	{true, undefined, false} -> ok;
+	_ -> ct:fail({roster_item_mismatch, State, RosterItem})
+    end.
+
 %% RFC6121, A.2.1
-transition(Config, out, subscribe,
+transition(Id, Config, out, subscribe,
 	   #state{subscription = Sub, pending_in = In, pending_out = Out} = State) ->
     PeerJID = ?config(peer, Config),
     PeerBareJID = jid:remove_resource(PeerJID),
-    send(Config, #presence{to = PeerBareJID, type = subscribe}),
+    send(Config, #presence{id = Id, to = PeerBareJID, type = subscribe}),
     case {Sub, Out, In} of
 	{none, false, _} ->
 	    recv_push(Config, none, subscribe),
@@ -309,11 +351,11 @@ transition(Config, out, subscribe,
 	    State
     end;
 %% RFC6121, A.2.2
-transition(Config, out, unsubscribe,
+transition(Id, Config, out, unsubscribe,
 	   #state{subscription = Sub, pending_in = In, pending_out = Out} = State) ->
     PeerJID = ?config(peer, Config),
     PeerBareJID = jid:remove_resource(PeerJID),
-    send(Config, #presence{to = PeerBareJID, type = unsubscribe}),
+    send(Config, #presence{id = Id, to = PeerBareJID, type = unsubscribe}),
     case {Sub, Out, In} of
 	{none, true, _} ->
 	    recv_push(Config, none, undefined),
@@ -333,11 +375,11 @@ transition(Config, out, unsubscribe,
 	    State
     end;
 %% RFC6121, A.2.3
-transition(Config, out, subscribed,
+transition(Id, Config, out, subscribed,
 	    #state{subscription = Sub, pending_in = In, pending_out = Out} = State) ->
     PeerJID = ?config(peer, Config),
     PeerBareJID = jid:remove_resource(PeerJID),
-    send(Config, #presence{to = PeerBareJID, type = subscribed}),
+    send(Config, #presence{id = Id, to = PeerBareJID, type = subscribed}),
     case {Sub, Out, In} of
 	{none, false, true} ->
 	    recv_push(Config, from, undefined),
@@ -356,11 +398,11 @@ transition(Config, out, subscribed,
 	    State
     end;
 %% RFC6121, A.2.4
-transition(Config, out, unsubscribed,
+transition(Id, Config, out, unsubscribed,
 	   #state{subscription = Sub, pending_in = In, pending_out = Out} = State) ->
     PeerJID = ?config(peer, Config),
     PeerBareJID = jid:remove_resource(PeerJID),
-    send(Config, #presence{to = PeerBareJID, type = unsubscribed}),
+    send(Config, #presence{id = Id, to = PeerBareJID, type = unsubscribed}),
     case {Sub, Out, In} of
 	{none, false, true} ->
 	    State#state{subscription = none, pending_in = false};
@@ -382,7 +424,7 @@ transition(Config, out, unsubscribed,
 	    State
     end;
 %% RFC6121, A.3.1
-transition(Config, in, subscribe = Type,
+transition(_, Config, in, subscribe = Type,
 	   #state{subscription = Sub, pending_in = In, pending_out = Out} = State) ->
     case {Sub, Out, In} of
 	{none, false, false} ->
@@ -401,7 +443,7 @@ transition(Config, in, subscribe = Type,
 	    State
     end;
 %% RFC6121, A.3.2
-transition(Config, in, unsubscribe = Type,
+transition(_, Config, in, unsubscribe = Type,
 	   #state{subscription = Sub, pending_in = In, pending_out = Out} = State) ->
     case {Sub, Out, In} of
 	{none, _, true} ->
@@ -426,7 +468,7 @@ transition(Config, in, unsubscribe = Type,
 	    State
     end;
 %% RFC6121, A.3.3
-transition(Config, in, subscribed = Type,
+transition(_, Config, in, subscribed = Type,
 	   #state{subscription = Sub, pending_in = In, pending_out = Out} = State) ->
     case {Sub, Out, In} of
 	{none, true, _} ->
@@ -449,7 +491,7 @@ transition(Config, in, subscribed = Type,
 	    State
     end;
 %% RFC6121, A.3.4
-transition(Config, in, unsubscribed = Type,
+transition(_, Config, in, unsubscribed = Type,
 	   #state{subscription = Sub, pending_in = In, pending_out = Out} = State) ->
     case {Sub, Out, In} of
 	{none, true, true} ->
@@ -464,8 +506,8 @@ transition(Config, in, unsubscribed = Type,
 	    State;
 	{to, false, _} ->
 	    recv_push(Config, none, undefined),
-	    recv_subscription(Config, Type),
 	    recv_presence(Config, unavailable),
+	    recv_subscription(Config, Type),
 	    State#state{subscription = none, peer_available = false};
 	{from, true, false} ->
 	    recv_push(Config, from, undefined),
@@ -473,20 +515,20 @@ transition(Config, in, unsubscribed = Type,
 	    State#state{subscription = from, pending_out = false};
 	{both, _, _} ->
 	    recv_push(Config, from, undefined),
-	    recv_subscription(Config, Type),
 	    recv_presence(Config, unavailable),
+	    recv_subscription(Config, Type),
 	    State#state{subscription = from, peer_available = false};
 	_ ->
 	    State
     end;
 %% Outgoing roster remove
-transition(Config, out, remove,
+transition(Id, Config, out, remove,
 	   #state{subscription = Sub, pending_in = In, pending_out = Out}) ->
     PeerJID = ?config(peer, Config),
     PeerBareJID = jid:remove_resource(PeerJID),
     Item = #roster_item{jid = PeerBareJID, subscription = remove},
     #iq{type = result, sub_els = []} =
-	send_recv(Config, #iq{type = set,
+	send_recv(Config, #iq{type = set, id = Id,
 			      sub_els = [#roster_query{items = [Item]}]}),
     recv_push(Config, remove, undefined),
     case {Sub, Out, In} of
@@ -499,7 +541,7 @@ transition(Config, out, remove,
     end,
     #state{};
 %% Incoming roster remove
-transition(Config, in, remove,
+transition(_, Config, in, remove,
 	   #state{subscription = Sub, pending_in = In, pending_out = Out} = State) ->
     case {Sub, Out, In} of
 	{none, true, _} ->

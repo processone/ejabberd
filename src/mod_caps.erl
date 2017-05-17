@@ -203,7 +203,9 @@ disco_info(Acc, _, _, _Node, _Lang) ->
 -spec c2s_presence_in(ejabberd_c2s:state(), presence()) -> ejabberd_c2s:state().
 c2s_presence_in(C2SState,
 		#presence{from = From, to = To, type = Type} = Presence) ->
-    Subscription = ejabberd_c2s:get_subscription(From, C2SState),
+    {Subscription, _} = ejabberd_hooks:run_fold(
+			  roster_get_jid_info, To#jid.lserver,
+			  {none, []}, [To#jid.luser, To#jid.lserver, From]),
     Insert = (Type == available)
 	       and ((Subscription == both) or (Subscription == to)),
     Delete = (Type == unavailable) or (Type == error),

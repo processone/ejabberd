@@ -46,7 +46,7 @@
 	 reject_unauthenticated_packet/2, process_closed/2,
 	 process_terminated/2, process_info/2]).
 %% API
--export([get_presence/1, get_subscription/2, get_subscribed/1,
+-export([get_presence/1, resend_presence/1, resend_presence/2,
 	 open_session/1, call/3, send/2, close/1, close/2, stop/1,
 	 reply/2, copy_state/2, set_timeout/2, route/2,
 	 host_up/1, host_down/1]).
@@ -54,6 +54,7 @@
 -include("ejabberd.hrl").
 -include("xmpp.hrl").
 -include("logger.hrl").
+-include("mod_roster.hrl").
 
 -define(SETS, gb_sets).
 
@@ -93,23 +94,13 @@ reply(Ref, Reply) ->
 get_presence(Ref) ->
     call(Ref, get_presence, 1000).
 
--spec get_subscription(jid() | ljid(), state()) -> both | from | to | none.
-get_subscription(#jid{} = From, State) ->
-    get_subscription(jid:tolower(From), State);
-get_subscription(LFrom, #{pres_f := PresF, pres_t := PresT}) ->
-    LBFrom = jid:remove_resource(LFrom),
-    F = ?SETS:is_element(LFrom, PresF) orelse ?SETS:is_element(LBFrom, PresF),
-    T = ?SETS:is_element(LFrom, PresT) orelse ?SETS:is_element(LBFrom, PresT),
-    if F and T -> both;
-       F -> from;
-       T -> to;
-       true -> none
-    end.
+-spec resend_presence(pid()) -> ok.
+resend_presence(Pid) ->
+    resend_presence(Pid, undefined).
 
--spec get_subscribed(pid()) -> [ljid()].
-%% Return list of all available resources of contacts
-get_subscribed(Ref) ->
-    call(Ref, get_subscribed, 1000).
+-spec resend_presence(pid(), jid() | undefined) -> ok.
+resend_presence(Pid, To) ->
+    route(Pid, {resend_presence, To}).
 
 -spec close(pid()) -> ok;
 	   (state()) -> state().
@@ -183,8 +174,7 @@ host_down(Host) ->
 copy_state(#{owner := Owner} = NewState,
 	   #{jid := JID, resource := Resource, sid := {Time, _},
 	     auth_module := AuthModule, lserver := LServer,
-	     pres_t := PresT, pres_a := PresA,
-	     pres_f := PresF} = OldState) ->
+	     pres_a := PresA} = OldState) ->
     State1 = case OldState of
 		 #{pres_last := Pres, pres_timestamp := PresTS} ->
 		     NewState#{pres_last => Pres, pres_timestamp => PresTS};
@@ -196,8 +186,7 @@ copy_state(#{owner := Owner} = NewState,
 		     conn => Conn,
 		     sid => {Time, Owner},
 		     auth_module => AuthModule,
-		     pres_t => PresT, pres_a => PresA,
-		     pres_f => PresF},
+		     pres_a => PresA},
     ejabberd_hooks:run_fold(c2s_copy_session, LServer, State2, [OldState]).
 
 -spec open_session(state()) -> {ok, state()} | state().
@@ -238,10 +227,17 @@ process_info(#{lserver := LServer} = State, {route, Packet}) ->
        true ->
 	    State1
     end;
-process_info(State, force_update_presence) ->
+process_info(#{jid := JID} = State, {resend_presence, To}) ->
     case maps:get(pres_last, State, error) of
 	error -> State;
-	Pres -> process_self_presence(State, Pres)
+	Pres when To == undefined ->
+	    process_self_presence(State, Pres);
+	Pres when To#jid.luser == JID#jid.luser andalso
+		  To#jid.lserver == JID#jid.lserver andalso
+		  To#jid.lresource == <<"">> ->
+	    process_self_presence(State, Pres);
+	Pres ->
+	    process_presence_out(State, xmpp:set_to(Pres, To))
     end;
 process_info(State, Info) ->
     ?WARNING_MSG("got unexpected info: ~p", [Info]),
@@ -390,15 +386,11 @@ bind(R, #{user := U, server := S, access := Access, lang := Lang,
 		allow ->
 		    State1 = open_session(State#{resource => Resource,
 						 sid => ejabberd_sm:make_sid()}),
-		    LBJID = jid:remove_resource(jid:tolower(JID)),
-		    PresF = ?SETS:add_element(LBJID, maps:get(pres_f, State1)),
-		    PresT = ?SETS:add_element(LBJID, maps:get(pres_t, State1)),
-		    State2 = State1#{pres_f => PresF, pres_t => PresT},
-		    State3 = ejabberd_hooks:run_fold(
-			       c2s_session_opened, LServer, State2, []),
+		    State2 = ejabberd_hooks:run_fold(
+			       c2s_session_opened, LServer, State1, []),
 		    ?INFO_MSG("(~s) Opened c2s session for ~s",
 			      [SockMod:pp(Socket), jid:encode(JID)]),
-		    {ok, State3};
+		    {ok, State2};
 		deny ->
 		    ejabberd_hooks:run(forbidden_session_hook, LServer, [JID]),
 		    ?INFO_MSG("(~s) Forbidden c2s session for ~s",
@@ -513,8 +505,6 @@ init([State, Opts]) ->
 		    tls_enabled => TLSEnabled,
 		    tls_verify => TLSVerify,
 		    pres_a => ?SETS:new(),
-		    pres_f => ?SETS:new(),
-		    pres_t => ?SETS:new(),
 		    zlib => Zlib,
 		    lang => ?MYLANG,
 		    server => ?MYNAME,
@@ -531,9 +521,6 @@ handle_call(get_presence, From, #{jid := JID} = State) ->
 	       P -> P
 	   end,
     reply(From, Pres),
-    State;
-handle_call(get_subscribed, From, #{pres_f := PresF} = State) ->
-    reply(From, ?SETS:to_list(PresF)),
     State;
 handle_call(Request, From, #{lserver := LServer} = State) ->
     ejabberd_hooks:run_fold(
@@ -589,36 +576,36 @@ process_message_in(State, #message{type = T} = Msg) ->
 
 -spec process_presence_in(state(), presence()) -> {boolean(), state()}.
 process_presence_in(#{lserver := LServer, pres_a := PresA} = State0,
-		    #presence{from = From, to = To, type = T} = Pres) ->
+		    #presence{from = From, type = T} = Pres) ->
     State = ejabberd_hooks:run_fold(c2s_presence_in, LServer, State0, [Pres]),
     case T of
 	probe ->
-	    NewState = add_to_pres_a(State, From),
-	    route_probe_reply(From, To, NewState),
-	    {false, NewState};
+	    route_probe_reply(From, State),
+	    {false, State};
 	error ->
 	    A = ?SETS:del_element(jid:tolower(From), PresA),
 	    {true, State#{pres_a => A}};
 	_ ->
 	    case privacy_check_packet(State, Pres, in) of
 		allow ->
-		    NewState = add_to_pres_a(State, From),
-		    {true, NewState};
+		    {true, State};
 		deny ->
 		    {false, State}
 	    end
     end.
 
--spec route_probe_reply(jid(), jid(), state()) -> ok.
-route_probe_reply(From, To, #{lserver := LServer, pres_f := PresF,
-			      pres_last := LastPres,
-			      pres_timestamp := TS} = State) ->
-    LFrom = jid:tolower(From),
-    LBFrom = jid:remove_resource(LFrom),
-    case ?SETS:is_element(LFrom, PresF)
-	orelse ?SETS:is_element(LBFrom, PresF) of
-	true ->
-	    %% To is my JID
+-spec route_probe_reply(jid(), state()) -> ok.
+route_probe_reply(From, #{jid := To,
+			  pres_last := LastPres,
+			  pres_timestamp := TS} = State) ->
+    {LUser, LServer, LResource} = jid:tolower(To),
+    IsAnotherResource = case jid:tolower(From) of
+			    {LUser, LServer, R} when R /= LResource -> true;
+			    _ -> false
+			end,
+    Subscription = get_subscription(To, From),
+    if IsAnotherResource orelse
+       Subscription == both orelse Subscription == from ->
 	    Packet = xmpp_util:add_delay_info(LastPres, To, TS),
 	    case privacy_check_packet(State, Packet, out) of
 		deny ->
@@ -627,19 +614,12 @@ route_probe_reply(From, To, #{lserver := LServer, pres_f := PresF,
 		    ejabberd_hooks:run(presence_probe_hook,
 				       LServer,
 				       [From, To, self()]),
-		    %% Don't route a presence probe to oneself
-		    case From == To of
-			false ->
-			    ejabberd_router:route(
-			      xmpp:set_from_to(Packet, To, From));
-			true ->
-			    ok
-		    end
+		    ejabberd_router:route(xmpp:set_from_to(Packet, To, From))
 	    end;
-	false ->
+       true ->
 	    ok
     end;
-route_probe_reply(_, _, _) ->
+route_probe_reply(_, _) ->
     ok.
 
 -spec process_presence_out(state(), presence()) -> state().
@@ -675,11 +655,22 @@ process_presence_out(#{user := User, server := Server, lserver := LServer,
 	    State;
 	allow ->
 	    ejabberd_router:route(Pres),
-	    A = case Type of
-		    available -> ?SETS:add_element(LTo, PresA);
-		    unavailable -> ?SETS:del_element(LTo, PresA)
-		end,
-	    State#{pres_a => A}
+	    LBareTo = jid:remove_resource(LTo),
+	    LBareFrom = jid:remove_resource(jid:tolower(From)),
+	    if LBareTo /= LBareFrom ->
+		    Subscription = get_subscription(From, To),
+		    if Subscription /= both andalso Subscription /= from ->
+			    A = case Type of
+				    available -> ?SETS:add_element(LTo, PresA);
+				    unavailable -> ?SETS:del_element(LTo, PresA)
+				end,
+			    State#{pres_a => A};
+		       true ->
+			    State
+		    end;
+	       true ->
+		    State
+	    end
     end.
 
 -spec process_self_presence(state(), presence()) -> state().
@@ -716,24 +707,81 @@ update_priority(#{ip := IP, conn := Conn, auth_module := AuthMod,
     ejabberd_sm:set_presence(SID, U, S, R, Priority, Pres, Info).
 
 -spec broadcast_presence_unavailable(state(), presence()) -> state().
-broadcast_presence_unavailable(#{pres_a := PresA} = State, Pres) ->
-    JIDs = filter_blocked(State, Pres, PresA),
+broadcast_presence_unavailable(#{jid := JID, pres_a := PresA} = State, Pres) ->
+    #jid{luser = LUser, lserver = LServer} = JID,
+    BareJID = jid:remove_resource(JID),
+    Items1 = ejabberd_hooks:run_fold(roster_get, LServer,
+				     [], [{LUser, LServer}]),
+    Items2 = ?SETS:fold(
+		fun(LJID, Items) ->
+			[#roster{jid = LJID, subscription = from}|Items]
+		end, Items1, PresA),
+    JIDs = lists:foldl(
+	     fun(#roster{jid = LJID, subscription = Sub}, Tos)
+		   when Sub == both orelse Sub == from ->
+		     To = jid:make(LJID),
+		     P = xmpp:set_to(Pres, jid:make(LJID)),
+		     case privacy_check_packet(State, P, out) of
+			 allow -> [To|Tos];
+			 deny -> Tos
+		     end;
+		(_, Tos) ->
+		     Tos
+	     end, [BareJID], Items2),
     route_multiple(State, JIDs, Pres),
     State#{pres_a => ?SETS:new()}.
 
 -spec broadcast_presence_available(state(), presence(), boolean()) -> state().
-broadcast_presence_available(#{pres_a := PresA, pres_f := PresF,
-			       pres_t := PresT, jid := JID} = State,
+broadcast_presence_available(#{jid := JID} = State,
 			     Pres, _FromUnavailable = true) ->
     Probe = #presence{from = JID, type = probe},
-    TJIDs = filter_blocked(State, Probe, PresT),
-    FJIDs = filter_blocked(State, Pres, PresF),
+    #jid{luser = LUser, lserver = LServer} = JID,
+    BareJID = jid:remove_resource(JID),
+    Items = ejabberd_hooks:run_fold(roster_get, LServer,
+				    [], [{LUser, LServer}]),
+    {FJIDs, TJIDs} =
+	lists:foldl(
+	  fun(#roster{jid = LJID, subscription = Sub}, {F, T}) ->
+		  To = jid:make(LJID),
+		  F1 = if Sub == both orelse Sub == from ->
+			       Pres1 = xmpp:set_to(Pres, To),
+			       case privacy_check_packet(State, Pres1, out) of
+				   allow -> [To|F];
+				   deny -> F
+			       end;
+			  true -> F
+		       end,
+		  T1 = if Sub == both orelse Sub == to ->
+			       Probe1 = xmpp:set_to(Probe, To),
+			       case privacy_check_packet(State, Probe1, out) of
+				   allow -> [To|T];
+				   deny -> T
+			       end;
+			  true -> T
+		       end,
+		  {F1, T1}
+	  end, {[BareJID], [BareJID]}, Items),
     route_multiple(State, TJIDs, Probe),
     route_multiple(State, FJIDs, Pres),
-    State#{pres_a => ?SETS:union(PresA, PresF)};
-broadcast_presence_available(#{pres_a := PresA, pres_f := PresF} = State,
+    State;
+broadcast_presence_available(#{jid := JID} = State,
 			     Pres, _FromUnavailable = false) ->
-    JIDs = filter_blocked(State, Pres, ?SETS:intersection(PresA, PresF)),
+    #jid{luser = LUser, lserver = LServer} = JID,
+    BareJID = jid:remove_resource(JID),
+    Items = ejabberd_hooks:run_fold(
+	      roster_get, LServer, [], [{LUser, LServer}]),
+    JIDs = lists:foldl(
+	     fun(#roster{jid = LJID, subscription = Sub}, Tos)
+		   when Sub == both orelse Sub == from ->
+		     To = jid:make(LJID),
+		     P = xmpp:set_to(Pres, jid:make(LJID)),
+		     case privacy_check_packet(State, P, out) of
+			 allow -> [To|Tos];
+			 deny -> Tos
+		     end;
+		(_, Tos) ->
+		     Tos
+	     end, [BareJID], Items),
     route_multiple(State, JIDs, Pres),
     State.
 
@@ -761,22 +809,16 @@ get_priority_from_presence(#presence{priority = Prio}) ->
 	_ -> Prio
     end.
 
--spec filter_blocked(state(), presence(), ?SETS:set()) -> [jid()].
-filter_blocked(#{jid := From} = State, Pres, LJIDSet) ->
-    ?SETS:fold(
-       fun(LJID, Acc) ->
-	       To = jid:make(LJID),
-	       Pkt = xmpp:set_from_to(Pres, From, To),
-	       case privacy_check_packet(State, Pkt, out) of
-		   allow -> [To|Acc];
-		   deny -> Acc
-	       end
-       end, [], LJIDSet).
-
 -spec route_multiple(state(), [jid()], stanza()) -> ok.
 route_multiple(#{lserver := LServer}, JIDs, Pkt) ->
     From = xmpp:get_from(Pkt),
     ejabberd_router_multicast:route_multicast(From, LServer, JIDs, Pkt).
+
+get_subscription(#jid{luser = LUser, lserver = LServer}, JID) ->
+    {Subscription, _} = ejabberd_hooks:run_fold(
+			  roster_get_jid_info, LServer, {none, []},
+			  [LUser, LServer, JID]),
+    Subscription.
 
 -spec resource_conflict_action(binary(), binary(), binary()) ->
 				      {accept_resource, binary()} | closenew.
@@ -854,30 +896,6 @@ change_shaper(#{shaper := ShaperName, ip := IP, lserver := LServer,
 				#{usr => jid:split(JID), ip => IP},
 				LServer),
     xmpp_stream_in:change_shaper(State, Shaper).
-
--spec add_to_pres_a(state(), jid()) -> state().
-add_to_pres_a(#{pres_a := PresA, pres_f := PresF} = State, From) ->
-    LFrom = jid:tolower(From),
-    LBFrom = jid:remove_resource(LFrom),
-    case (?SETS):is_element(LFrom, PresA) orelse
-	 (?SETS):is_element(LBFrom, PresA) of
-	true ->
-	    State;
-	false ->
-	    case (?SETS):is_element(LFrom, PresF) of
-		true ->
-		    A = (?SETS):add_element(LFrom, PresA),
-		    State#{pres_a => A};
-		false ->
-		    case (?SETS):is_element(LBFrom, PresF) of
-			true ->
-			    A = (?SETS):add_element(LBFrom, PresA),
-			    State#{pres_a => A};
-			false ->
-			    State
-		    end
-	    end
-    end.
 
 -spec format_reason(state(), term()) -> binary().
 format_reason(#{stop_reason := Reason}, _) ->
