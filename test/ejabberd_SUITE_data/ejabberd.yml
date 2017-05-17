@@ -443,7 +443,6 @@ listen:
     tls_verify: true
     shaper: c2s_shaper
     access: c2s
-    resume_timeout: 3
   - 
     port: @@s2s_port@@
     module: ejabberd_s2s_in
@@ -477,6 +476,7 @@ Welcome to this XMPP server."
   mod_legacy_auth: []
   mod_stream_mgmt:
     max_ack_queue: 10
+    resume_timeout: 3
   mod_time: []
   mod_version: []
 registration_timeout: infinity
