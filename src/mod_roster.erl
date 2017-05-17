@@ -1212,6 +1212,12 @@ mod_opt_type(store_current_id) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(versioning) ->
     fun (B) when is_boolean(B) -> B end;
+mod_opt_type(O) when O == cache_life_time; O == cache_size ->
+    fun (I) when is_integer(I), I > 0 -> I;
+        (infinity) -> infinity
+    end;
+mod_opt_type(O) when O == use_cache; O == cache_missed ->
+    fun (B) when is_boolean(B) -> B end;
 mod_opt_type(_) ->
     [access, db_type, iqdisc, managers, store_current_id,
-     versioning].
+     versioning, cache_life_time, cache_size, use_cache, cache_missed].
