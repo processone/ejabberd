@@ -55,9 +55,9 @@ get_vcard(LUser, LServer) ->
 	{selected, [{SVCARD}]} ->
 	    case fxml_stream:parse_element(SVCARD) of
 		{error, _Reason} -> error;
-		VCARD -> [VCARD]
+		VCARD -> {ok, [VCARD]}
 	    end;
-	{selected, []} -> [];
+	{selected, []} -> {ok, []};
 	_ -> error
     end.
 

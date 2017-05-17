@@ -97,9 +97,9 @@ get_vcard(LUser, LServer) ->
 	#eldap_entry{attributes = Attributes} ->
 	    VCard = ldap_attributes_to_vcard(Attributes, VCardMap,
 					     {LUser, LServer}),
-	    [xmpp:encode(VCard)];
+	    {ok, [xmpp:encode(VCard)]};
 	_ ->
-	    []
+	    {ok, []}
     end.
 
 set_vcard(_LUser, _LServer, _VCard, _VCardSearch) ->
