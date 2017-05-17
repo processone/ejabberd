@@ -847,8 +847,7 @@ process_item_set_t(_LUser, _LServer, _) -> ok.
       -> {presence(), ejabberd_c2s:state()}.
 c2s_self_presence({_, #{pres_last := _}} = Acc) ->
     Acc;
-c2s_self_presence({#presence{type = available} = Pkt,
-		   #{lserver := LServer} = State}) ->
+c2s_self_presence({#presence{type = available} = Pkt, State}) ->
     Prio = get_priority_from_presence(Pkt),
     if Prio >= 0 ->
 	    State1 = resend_pending_subscriptions(State),
