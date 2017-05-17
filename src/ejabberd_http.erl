@@ -931,7 +931,7 @@ listen_opt_type(certfile) ->
 	    iolist_to_binary(S)
     end;
 listen_opt_type(ciphers) ->
-    fun misc:try_read_file/1;
+    fun iolist_to_binary/1;
 listen_opt_type(dhfile) ->
     fun misc:try_read_file/1;
 listen_opt_type(protocol_options) ->

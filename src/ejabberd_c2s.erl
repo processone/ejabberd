@@ -923,7 +923,7 @@ transform_listen_option(Opt, Opts) ->
 	      (disable_sasl_mechanisms) -> fun((binary() | [binary()]) -> [binary()]);
 	      (atom()) -> [atom()].
 opt_type(c2s_certfile) -> fun misc:try_read_file/1;
-opt_type(c2s_ciphers) -> fun misc:try_read_file/1;
+opt_type(c2s_ciphers) -> fun iolist_to_binary/1;
 opt_type(c2s_dhfile) -> fun misc:try_read_file/1;
 opt_type(c2s_cafile) -> fun misc:try_read_file/1;
 opt_type(c2s_protocol_options) ->
