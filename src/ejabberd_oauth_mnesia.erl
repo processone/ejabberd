@@ -29,16 +29,27 @@
 -export([init/0,
          store/1,
          lookup/1,
-         clean/1]).
+         clean/1,
+	 use_cache/0]).
 
 -include("ejabberd_oauth.hrl").
 
 init() ->
     ejabberd_mnesia:create(?MODULE, oauth_token,
-                        [{disc_copies, [node()]},
+                        [{disc_only_copies, [node()]},
                          {attributes,
                           record_info(fields, oauth_token)}]),
     ok.
+
+use_cache() ->
+    case mnesia:table_info(oauth_token, storage_type) of
+	disc_only_copies ->
+	    ejabberd_config:get_option(
+	      oauth_use_cache,
+	      ejabberd_config:use_cache(global));
+	_ ->
+	    false
+    end.
 
 store(R) ->
     mnesia:dirty_write(R).
