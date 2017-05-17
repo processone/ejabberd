@@ -99,7 +99,7 @@ start_child(Mod, Host, Opts) ->
 start_child(Mod, Host, Opts, Proc) ->
     Spec = {Proc, {?GEN_SERVER, start_link,
 		   [{local, Proc}, Mod, [Host, Opts], []]},
-            transient, 2000, worker, [Mod]},
+            transient, timer:minutes(1), worker, [Mod]},
     supervisor:start_child(ejabberd_gen_mod_sup, Spec).
 
 -spec stop_child(module(), binary() | global) -> ok | {error, any()}.
