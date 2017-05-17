@@ -162,6 +162,14 @@ compute_hash(VCard) ->
 %%====================================================================
 %% Options
 %%====================================================================
+mod_opt_type(db_type) ->
+    fun(_) ->
+	    ?WARNING_MSG("option 'db_type' for module '~s' has no effect: "
+			 "the module doesn't require database anymore; "
+			 "feel free to delete any tables related to the module",
+			 [?MODULE]),
+	    erlang:error(badarg)
+    end;
 mod_opt_type(O) when O == cache_life_time; O == cache_size ->
     fun (I) when is_integer(I), I > 0 -> I;
         (infinity) -> infinity
@@ -169,4 +177,4 @@ mod_opt_type(O) when O == cache_life_time; O == cache_size ->
 mod_opt_type(O) when O == use_cache; O == cache_missed ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(_) ->
-    [cache_life_time, cache_size, use_cache, cache_missed].
+    [db_type, cache_life_time, cache_size, use_cache, cache_missed].

@@ -60,8 +60,7 @@ modules() ->
      mod_private,
      mod_roster,
      mod_shared_roster,
-     mod_vcard,
-     mod_vcard_xupdate].
+     mod_vcard].
 
 export(Server, Output) ->
     LServer = jid:nameprep(iolist_to_binary(Server)),

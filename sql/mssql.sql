@@ -470,16 +470,6 @@ WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW
 CREATE INDEX [vcard_search_lorgunit] ON [vcard_search] (lorgunit)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
-CREATE TABLE [dbo].[vcard_xupdate] (
-        [username] [varchar] (250) NOT NULL,
-        [hash] [text] NOT NULL,
-        [created_at] [datetime] NOT NULL DEFAULT GETDATE(),
- CONSTRAINT [vcard_xupdate_PRIMARY] PRIMARY KEY CLUSTERED 
-(
-        [username] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
-) TEXTIMAGE_ON [PRIMARY];
-
 ALTER TABLE [dbo].[pubsub_item]  WITH CHECK ADD  CONSTRAINT [pubsub_item_ibfk_1] FOREIGN KEY([nodeid])
 REFERENCES [dbo].[pubsub_node] ([nodeid])
 ON DELETE CASCADE;
