@@ -205,10 +205,12 @@ del_user_return_password(_LServer, LUser, Password) ->
     P.
 
 list_users(LServer) ->
+    list_users(LServer, []).
+
+list_users(LServer, []) ->
     ejabberd_sql:sql_query(
       LServer,
-      ?SQL("select @(username)s from users")).
-
+      ?SQL("select @(username)s from users"));
 list_users(LServer, [{from, Start}, {to, End}])
     when is_integer(Start) and is_integer(End) ->
     list_users(LServer,
