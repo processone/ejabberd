@@ -116,7 +116,7 @@ write_prefs(LUser, _LServer, #archive_prefs{default = Default,
              "def=%(SDefault)s",
              "always=%(SAlways)s",
              "never=%(SNever)s"]) of
-	{updated, _} ->
+	ok ->
 	    ok;
 	Err ->
 	    Err
