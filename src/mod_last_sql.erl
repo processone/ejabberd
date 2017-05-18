@@ -45,17 +45,24 @@ init(_Host, _Opts) ->
 get_last(LUser, LServer) ->
     case catch sql_queries:get_last(LServer, LUser) of
         {selected, []} ->
-            not_found;
+	    error;
         {selected, [{TimeStamp, Status}]} ->
-            {ok, TimeStamp, Status};
+            {ok, {TimeStamp, Status}};
         Reason ->
 	    ?ERROR_MSG("failed to get last for user ~s@~s: ~p",
 		       [LUser, LServer, Reason]),
-	    {error, {invalid_result, Reason}}
+	    {error, db_failure}
     end.
 
 store_last_info(LUser, LServer, TimeStamp, Status) ->
-    sql_queries:set_last_t(LServer, LUser, TimeStamp, Status).
+    case sql_queries:set_last_t(LServer, LUser, TimeStamp, Status) of
+	ok ->
+	    ok;
+	Err ->
+	    ?ERROR_MSG("failed to store last activity for ~s@~s: ~p",
+		       [LUser, LServer, Err]),
+	    {error, db_failure}
+    end.
 
 remove_user(LUser, LServer) ->
     sql_queries:del_last(LServer, LUser).
