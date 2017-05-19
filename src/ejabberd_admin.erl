@@ -138,7 +138,7 @@ get_commands_spec() ->
 			desc = "Get the current loglevel",
 			module = ejabberd_logger, function = get,
 			result_desc = "Tuple with the log level number, its keyword and description",
-			result_example = {4, <<"info">>, <<"Info">>},
+			result_example = {4, info, <<"Info">>},
 			args = [],
                         result = {leveltuple, {tuple, [{levelnumber, integer},
                                                        {levelatom, atom},

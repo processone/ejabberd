@@ -80,7 +80,7 @@ get_commands_spec() ->
                         module = ?MODULE, function = oauth_issue_token,
                         args = [{jid, string},{ttl, integer}, {scopes, string}],
                         policy = restricted,
-                        args_example = ["user@server.com", "connected_users_number;muc_online_rooms"],
+                        args_example = ["user@server.com", 3600, "connected_users_number;muc_online_rooms"],
                         args_desc = ["Jid for which issue token",
 				     "Time to live of generated token in seconds",
 				     "List of scopes to allow, separated by ';'"],
