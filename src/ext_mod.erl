@@ -85,6 +85,13 @@ get_commands_spec() ->
                         module = ?MODULE, function = update,
                         args = [],
                         result = {res, integer}},
+     #ejabberd_commands{name = modules_update_specs_from_github,
+                        tags = [admin,modules],
+                        desc = "",
+                        longdesc = "",
+                        module = ?MODULE, function = update,
+                        args = [{module, binary}],
+                        result = {res, integer}},
      #ejabberd_commands{name = modules_available,
                         tags = [admin,modules],
                         desc = "",
@@ -137,7 +144,12 @@ get_commands_spec() ->
 %% -- public modules functions
 
 update() ->
-    add_sources(?REPOS),
+    update(?REPOS).
+
+update(GITHUB_URL) when is_binary(GITHUB_URL) ->
+    update(binary_to_list(GITHUB_URL));
+update(GITHUB_URL) ->
+    add_sources(GITHUB_URL),
     Res = lists:foldl(fun({Package, Spec}, Acc) ->
                 Path = proplists:get_value(url, Spec, ""),
                 Update = add_sources(Package, Path),
