@@ -368,15 +368,16 @@ get_roster_item(LUser, LServer, LJID) ->
 	{ok, Item} ->
 	    Item;
 	error ->
-	    #roster{usj = {LUser, LServer, LJID},
-		    us = {LUser, LServer}, jid = LJID}
+	    LBJID = jid:remove_resource(LJID),
+	    #roster{usj = {LUser, LServer, LBJID},
+		    us = {LUser, LServer}, jid = LBJID}
     end.
 
 get_subscription_and_groups(LUser, LServer, LJID) ->
+    LBJID = jid:remove_resource(LJID),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Res = case use_cache(Mod, LServer, roster) of
 	      true ->
-		  LBJID = jid:remove_resource(LJID),
 		  ets_cache:lookup(
 		    ?ROSTER_ITEM_CACHE, {LUser, LServer, LBJID},
 		    fun() ->
@@ -384,19 +385,12 @@ get_subscription_and_groups(LUser, LServer, LJID) ->
 			    case lists:keyfind(LBJID, #roster.jid, Items) of
 				#roster{subscription = Sub, groups = Groups} ->
 				    {ok, {Sub, Groups}};
-				false when element(3, LJID) == <<"">> ->
-				    error;
 				false ->
-				    case lists:keyfind(LJID, #roster.jid, Items) of
-					{Sub, Groups} ->
-					    {ok, {Sub, Groups}};
-					false ->
-					    error
-				    end
+				    error
 			    end
 		    end);
 	      false ->
-		  Mod:read_subscription_and_groups(LUser, LServer, LJID)
+		  Mod:read_subscription_and_groups(LUser, LServer, LBJID)
 	  end,
     case Res of
 	{ok, SubAndGroups} ->

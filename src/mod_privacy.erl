@@ -31,42 +31,51 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, reload/3, process_iq/1, export/1, import_info/0,
-	 c2s_session_opened/1, c2s_copy_session/2, push_list_update/3,
-	 user_send_packet/1, user_receive_packet/1, disco_features/5,
+-export([start/2, stop/1, reload/3, process_iq/1, export/1,
+	 c2s_copy_session/2, push_list_update/2, disco_features/5,
 	 check_packet/4, remove_user/2, encode_list_item/1,
-	 is_list_needdb/1, import_start/2, import_stop/2,
-         item_to_xml/1, get_user_lists/2, import/5,
-	 set_privacy_list/1, mod_opt_type/1, depends/2]).
+         get_user_lists/2, get_user_list/3,
+	 set_list/1, set_list/4, set_default_list/3,
+	 user_send_packet/1, user_receive_packet/1,
+	 import_start/2, import_stop/2, import/5, import_info/0,
+	 mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
-
 -include("xmpp.hrl").
-
 -include("mod_privacy.hrl").
 
+-define(PRIVACY_CACHE, privacy_cache).
+-define(PRIVACY_LIST_CACHE, privacy_list_cache).
+
+-type c2s_state() :: ejabberd_c2s:state().
 -callback init(binary(), gen_mod:opts()) -> any().
 -callback import(#privacy{}) -> ok.
--callback process_lists_get(binary(), binary()) -> {none | binary(), [binary()]} | error.
--callback process_list_get(binary(), binary(), binary()) -> [listitem()] | error | not_found.
--callback process_default_set(binary(), binary(), binary() | none) -> {atomic, any()}.
--callback process_active_set(binary(), binary(), binary()) -> [listitem()] | error.
--callback remove_privacy_list(binary(), binary(), binary()) -> {atomic, any()}.
--callback set_privacy_list(#privacy{}) -> any().
--callback set_privacy_list(binary(), binary(), binary(), [listitem()]) -> {atomic, any()}.
--callback get_user_list(binary(), binary()) -> {none | binary(), [listitem()]}.
--callback get_user_lists(binary(), binary()) -> {ok, #privacy{}} | error.
--callback remove_user(binary(), binary()) -> any().
+-callback set_default(binary(), binary(), binary()) ->
+          ok | {error, notfound | any()}.
+-callback unset_default(binary(), binary()) -> ok | {error, any()}.
+-callback remove_list(binary(), binary(), binary()) ->
+          ok | {error, notfound | conflict | any()}.
+-callback remove_lists(binary(), binary()) -> ok | {error, any()}.
+-callback set_lists(#privacy{}) -> ok | {error, any()}.
+-callback set_list(binary(), binary(), binary(), listitem()) ->
+          ok | {error, any()}.
+-callback get_list(binary(), binary(), binary() | default) ->
+          {ok, {binary(), [listitem()]}} | error | {error, any()}.
+-callback get_lists(binary(), binary()) ->
+          {ok, #privacy{}} | error | {error, any()}.
+-callback use_cache(binary()) -> boolean().
+-callback cache_nodes(binary()) -> [node()].
+
+-optional_callbacks([use_cache/1, cache_nodes/1]).
 
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
+    init_cache(Mod, Host, Opts),
     ejabberd_hooks:add(disco_local_features, Host, ?MODULE,
 		       disco_features, 50),
-    ejabberd_hooks:add(c2s_session_opened, Host, ?MODULE,
-		       c2s_session_opened, 50),
     ejabberd_hooks:add(c2s_copy_session, Host, ?MODULE,
 		       c2s_copy_session, 50),
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
@@ -83,8 +92,6 @@ start(Host, Opts) ->
 stop(Host) ->
     ejabberd_hooks:delete(disco_local_features, Host, ?MODULE,
 			  disco_features, 50),
-    ejabberd_hooks:delete(c2s_session_opened, Host, ?MODULE,
-			  c2s_session_opened, 50),
     ejabberd_hooks:delete(c2s_copy_session, Host, ?MODULE,
 			  c2s_copy_session, 50),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
@@ -106,6 +113,7 @@ reload(Host, NewOpts, OldOpts) ->
        true ->
 	    ok
     end,
+    init_cache(NewMod, Host, NewOpts),
     case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
 	{false, IQDisc, _} ->
 	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PRIVACY,
@@ -162,46 +170,40 @@ process_iq_get(#iq{lang = Lang} = IQ) ->
 
 -spec process_lists_get(iq()) -> iq().
 process_lists_get(#iq{from = #jid{luser = LUser, lserver = LServer},
-		      lang = Lang,
-		      meta = #{privacy_active_list := Active}} = IQ) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    case Mod:process_lists_get(LUser, LServer) of
-	error ->
-	    Txt = <<"Database failure">>,
-	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang));
-	{_Default, []} ->
-	    xmpp:make_iq_result(IQ, #privacy_query{});
-	{Default, ListNames} ->
+		      lang = Lang} = IQ) ->
+    case get_user_lists(LUser, LServer) of
+	{ok, #privacy{default = Default, lists = Lists}} ->
+	    Active = xmpp:get_meta(IQ, privacy_active_list, none),
 	    xmpp:make_iq_result(
-	      IQ,
-	     #privacy_query{active = Active,
-			    default = Default,
-			    lists = [#privacy_list{name = ListName}
-				      || ListName <- ListNames]})
+	      IQ, #privacy_query{active = Active,
+				 default = Default,
+				 lists = [#privacy_list{name = Name}
+					  || {Name, _} <- Lists]});
+	error ->
+	    xmpp:make_iq_result(
+	      IQ, #privacy_query{active = none, default = none});
+	{error, _} ->
+	    Txt = <<"Database failure">>,
+	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
     end.
 
 -spec process_list_get(iq(), binary()) -> iq().
 process_list_get(#iq{from = #jid{luser = LUser, lserver = LServer},
 		     lang = Lang} = IQ, Name) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    case Mod:process_list_get(LUser, LServer, Name) of
-	error ->
-	    Txt = <<"Database failure">>,
-	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang));
-	not_found ->
-	    Txt = <<"No privacy list with this name found">>,
-	    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang));
-	Items ->
-	    LItems = lists:map(fun encode_list_item/1, Items),
+    case get_user_list(LUser, LServer, Name) of
+	{ok, {_, List}} ->
+	    Items = lists:map(fun encode_list_item/1, List),
 	    xmpp:make_iq_result(
 	      IQ,
-	     #privacy_query{
-		 lists = [#privacy_list{name = Name, items = LItems}]})
+	      #privacy_query{
+		 lists = [#privacy_list{name = Name, items = Items}]});
+	error ->
+	    Txt = <<"No privacy list with this name found">>,
+	    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang));
+	{error, _} ->
+	    Txt = <<"Database failure">>,
+	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
     end.
-
--spec item_to_xml(listitem()) -> xmlel().
-item_to_xml(ListItem) ->
-    xmpp:encode(encode_list_item(ListItem)).
 
 -spec encode_list_item(listitem()) -> privacy_item().
 encode_list_item(#listitem{action = Action,
@@ -283,69 +285,69 @@ process_iq_set(#iq{lang = Lang} = IQ) ->
     Txt = <<"No module is handling this query">>,
     xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
--spec process_default_set(iq(), binary()) -> iq().
+-spec process_default_set(iq(), none | binary()) -> iq().
 process_default_set(#iq{from = #jid{luser = LUser, lserver = LServer},
 			lang = Lang} = IQ, Value) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    case Mod:process_default_set(LUser, LServer, Value) of
-	{atomic, error} ->
-	    Txt = <<"Database failure">>,
-	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang));
-	{atomic, not_found} ->
+    case set_default_list(LUser, LServer, Value) of
+	ok ->
+	    xmpp:make_iq_result(IQ);
+	{error, notfound} ->
 	    Txt = <<"No privacy list with this name found">>,
 	    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang));
-	{atomic, ok} ->
-	    xmpp:make_iq_result(IQ);
-	Err ->
-	    ?ERROR_MSG("failed to set default list '~s' for user ~s@~s: ~p",
-		       [Value, LUser, LServer, Err]),
-	    xmpp:make_error(IQ, xmpp:err_internal_server_error())
+	{error, _} ->
+	    Txt = <<"Database failure">>,
+	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
     end.
 
 -spec process_active_set(IQ, none | binary()) -> IQ.
 process_active_set(IQ, none) ->
-    xmpp:make_iq_result(xmpp:put_meta(IQ, privacy_list, #userlist{}));
+    xmpp:make_iq_result(xmpp:put_meta(IQ, privacy_active_list, none));
 process_active_set(#iq{from = #jid{luser = LUser, lserver = LServer},
 		       lang = Lang} = IQ, Name) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    case Mod:process_active_set(LUser, LServer, Name) of
+    case get_user_list(LUser, LServer, Name) of
+	{ok, _} ->
+	    xmpp:make_iq_result(xmpp:put_meta(IQ, privacy_active_list, Name));
 	error ->
 	    Txt = <<"No privacy list with this name found">>,
 	    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang));
-	Items ->
-	    NeedDb = is_list_needdb(Items),
-	    List = #userlist{name = Name, list = Items, needdb = NeedDb},
-	    xmpp:make_iq_result(xmpp:put_meta(IQ, privacy_list, List))
-    end.
-
--spec set_privacy_list(privacy()) -> any().
-set_privacy_list(#privacy{us = {_, LServer}} = Privacy) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:set_privacy_list(Privacy).
-
--spec process_lists_set(iq(), binary(), [privacy_item()]) -> iq().
-process_lists_set(#iq{meta = #{privacy_active_list := Name},
-		      lang = Lang} = IQ, Name, []) ->
-    Txt = <<"Cannot remove active list">>,
-    xmpp:make_error(IQ, xmpp:err_conflict(Txt, Lang));
-process_lists_set(#iq{from = #jid{luser = LUser, lserver = LServer} = From,
-		      lang = Lang} = IQ, Name, []) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    case Mod:remove_privacy_list(LUser, LServer, Name) of
-	{atomic, conflict} ->
-	    Txt = <<"Cannot remove default list">>,
-	    xmpp:make_error(IQ, xmpp:err_conflict(Txt, Lang));
-	{atomic, not_found} ->
-	    Txt = <<"No privacy list with this name found">>,
-	    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang));
-	{atomic, ok} ->
-	    push_list_update(From, #userlist{name = Name}, Name),
-	    xmpp:make_iq_result(IQ);
-	Err ->
-	    ?ERROR_MSG("failed to remove privacy list '~s' for user ~s@~s: ~p",
-		       [Name, LUser, LServer, Err]),
+	{error, _} ->
 	    Txt = <<"Database failure">>,
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
+    end.
+
+-spec set_list(privacy()) -> ok | {error, any()}.
+set_list(#privacy{us = {LUser, LServer}, lists = Lists} = Privacy) ->
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    case Mod:set_lists(Privacy) of
+	ok ->
+	    Names = [Name || {Name, _} <- Lists],
+	    delete_cache(Mod, LUser, LServer, Names);
+	{error, _} = Err ->
+	    Err
+    end.
+
+-spec process_lists_set(iq(), binary(), [privacy_item()]) -> iq().
+process_lists_set(#iq{from = #jid{luser = LUser, lserver = LServer},
+		      lang = Lang} = IQ, Name, []) ->
+    case xmpp:get_meta(IQ, privacy_active_list, none) of
+	Name ->
+	    Txt = <<"Cannot remove active list">>,
+	    xmpp:make_error(IQ, xmpp:err_conflict(Txt, Lang));
+	_ ->
+	    case remove_list(LUser, LServer, Name) of
+		ok ->
+		    xmpp:make_iq_result(IQ);
+		{error, conflict} ->
+		    Txt = <<"Cannot remove default list">>,
+		    xmpp:make_error(IQ, xmpp:err_conflict(Txt, Lang));
+		{error, notfound} ->
+		    Txt = <<"No privacy list with this name found">>,
+		    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang));
+		{error, _} ->
+		    Txt = <<"Database failure">>,
+		    Err = xmpp:err_internal_server_error(Txt, Lang),
+		    xmpp:make_error(IQ, Err)
+	    end
     end;
 process_lists_set(#iq{from = #jid{luser = LUser, lserver = LServer} = From,
 		      lang = Lang} = IQ, Name, Items) ->
@@ -354,24 +356,18 @@ process_lists_set(#iq{from = #jid{luser = LUser, lserver = LServer} = From,
 	    Txt = xmpp:format_error(Why),
 	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
 	List ->
-	    Mod = gen_mod:db_mod(LServer, ?MODULE),
-	    case Mod:set_privacy_list(LUser, LServer, Name, List) of
-		{atomic, ok} ->
-		    UserList = #userlist{name = Name, list = List,
-					 needdb = is_list_needdb(List)},
-		    push_list_update(From, UserList, Name),
+	    case set_list(LUser, LServer, Name, List) of
+		ok ->
+		    push_list_update(From, Name),
 		    xmpp:make_iq_result(IQ);
-		Err ->
-		    ?ERROR_MSG("failed to set privacy list '~s' "
-			       "for user ~s@~s: ~p",
-			       [Name, LUser, LServer, Err]),
+		{error, _} ->
 		    Txt = <<"Database failure">>,
 		    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
 	    end
     end.
 
--spec push_list_update(jid(), #userlist{}, binary() | none) -> ok.
-push_list_update(From, List, Name) ->
+-spec push_list_update(jid(), binary()) -> ok.
+push_list_update(From, Name) ->
     BareFrom = jid:remove_resource(From),
     lists:foreach(
       fun(R) ->
@@ -379,43 +375,9 @@ push_list_update(From, List, Name) ->
 	      IQ = #iq{type = set, from = BareFrom, to = To,
 		       id = <<"push", (randoms:get_string())/binary>>,
 		       sub_els = [#privacy_query{
-				     lists = [#privacy_list{name = Name}]}],
-		       meta = #{privacy_updated_list => List}},
+				     lists = [#privacy_list{name = Name}]}]},
 	      ejabberd_router:route(IQ)
       end, ejabberd_sm:get_user_resources(From#jid.luser, From#jid.lserver)).
-
--spec user_send_packet({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
-user_send_packet({#iq{type = Type,
-		      to = #jid{luser = U, lserver = S, lresource = <<"">>},
-		      from = #jid{luser = U, lserver = S},
-		      sub_els = [_]} = IQ,
-		  #{privacy_list := #userlist{name = Name}} = State})
-  when Type == get; Type == set ->
-    NewIQ = case xmpp:has_subtag(IQ, #privacy_query{}) of
-		true -> xmpp:put_meta(IQ, privacy_active_list, Name);
-		false -> IQ
-	    end,
-    {NewIQ, State};
-user_send_packet(Acc) ->
-    Acc.
-
--spec user_receive_packet({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
-user_receive_packet({#iq{type = result, meta = #{privacy_list := List}} = IQ,
-		     State}) ->
-    {IQ, State#{privacy_list => List}};
-user_receive_packet({#iq{type = set, meta = #{privacy_updated_list := New}} = IQ,
-		     #{user := U, server := S, resource := R,
-		       privacy_list := Old} = State}) ->
-    State1 = if Old#userlist.name == New#userlist.name ->
-		     State#{privacy_list => New};
-		true ->
-		     State
-	     end,
-    From = jid:make(U, S),
-    To = jid:make(U, S, R),
-    {xmpp:set_from_to(IQ, From, To), State1};
-user_receive_packet(Acc) ->
-    Acc.
 
 -spec decode_item(privacy_item()) -> listitem().
 decode_item(#privacy_item{order = Order,
@@ -448,47 +410,145 @@ decode_item(#privacy_item{order = Order,
 			      match_presence_out = MatchPresenceOut}
     end.
 
--spec is_list_needdb([listitem()]) -> boolean().
-is_list_needdb(Items) ->
-    lists:any(fun (X) ->
-		      case X#listitem.type of
-			subscription -> true;
-			group -> true;
-			_ -> false
-		      end
-	      end,
-	      Items).
+-spec c2s_copy_session(ejabberd_c2s:state(), c2s_state()) -> c2s_state().
+c2s_copy_session(State, #{privacy_active_list := List}) ->
+    State#{privacy_active_list => List}.
 
--spec get_user_list(binary(), binary()) -> #userlist{}.
-get_user_list(LUser, LServer) ->
+-spec user_send_packet({stanza(), c2s_state()}) -> {stanza(), c2s_state()}.
+user_send_packet({#iq{type = Type,
+		      to = #jid{luser = U, lserver = S, lresource = <<"">>},
+		      from = #jid{luser = U, lserver = S},
+		      sub_els = [_]} = IQ,
+		  #{privacy_active_list := Name} = State})
+  when Type == get; Type == set ->
+    NewIQ = case xmpp:has_subtag(IQ, #privacy_query{}) of
+		true -> xmpp:put_meta(IQ, privacy_active_list, Name);
+		false -> IQ
+	    end,
+    {NewIQ, State};
+user_send_packet(Acc) ->
+    Acc.
+
+-spec user_receive_packet({stanza(), c2s_state()}) -> {stanza(), c2s_state()}.
+user_receive_packet({#iq{type = result,
+			 meta = #{privacy_active_list := Name}} = IQ, State}) ->
+    {IQ, State#{privacy_active_list => Name}};
+user_receive_packet(Acc) ->
+    Acc.
+
+-spec set_list(binary(), binary(), binary(), [listitem()]) -> ok | {error, any()}.
+set_list(LUser, LServer, Name, List) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    {Default, Items} = Mod:get_user_list(LUser, LServer),
-    NeedDb = is_list_needdb(Items),
-    #userlist{name = Default, list = Items, needdb = NeedDb}.
+    case Mod:set_list(LUser, LServer, Name, List) of
+	ok ->
+	    delete_cache(Mod, LUser, LServer, [Name]);
+	{error, _} = Err ->
+	    Err
+    end.
 
--spec c2s_session_opened(ejabberd_c2s:state()) -> ejabberd_c2s:state().
-c2s_session_opened(#{jid := #jid{luser = LUser, lserver = LServer}} = State) ->
-    State#{privacy_list => get_user_list(LUser, LServer)}.
+-spec remove_list(binary(), binary(), binary()) ->
+      ok | {error, conflict | notfound | any()}.
+remove_list(LUser, LServer, Name) ->
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    case Mod:remove_list(LUser, LServer, Name) of
+	ok ->
+	    delete_cache(Mod, LUser, LServer, [Name]);
+	Err ->
+	    Err
+    end.
 
--spec c2s_copy_session(ejabberd_c2s:state(), ejabberd_c2s:state()) -> ejabberd_c2s:state().
-c2s_copy_session(State, #{privacy_list := List}) ->
-    State#{privacy_list => List}.
-
--spec get_user_lists(binary(), binary()) -> {ok, privacy()} | error.
+-spec get_user_lists(binary(), binary()) -> {ok, privacy()} | error | {error, any()}.
 get_user_lists(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:get_user_lists(LUser, LServer).
+    case use_cache(Mod, LServer) of
+	true ->
+	    ets_cache:lookup(
+	      ?PRIVACY_CACHE, {LUser, LServer},
+	      fun() -> Mod:get_lists(LUser, LServer) end);
+	false ->
+	    Mod:get_lists(LUser, LServer)
+    end.
+
+-spec get_user_list(binary(), binary(), binary() | default) ->
+      {ok, {binary(), [listitem()]}} | error | {error, any()}.
+get_user_list(LUser, LServer, Name) ->
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    case use_cache(Mod, LServer) of
+	true ->
+	    ets_cache:lookup(
+	      ?PRIVACY_LIST_CACHE, {LUser, LServer, Name},
+	      fun() ->
+		      case ets_cache:lookup(
+			     ?PRIVACY_CACHE, {LUser, LServer}) of
+			  {ok, Privacy} ->
+			      get_list_by_name(Privacy, Name);
+			  error ->
+			      Mod:get_list(LUser, LServer, Name)
+		      end
+	      end);
+	false ->
+	    Mod:get_list(LUser, LServer, Name)
+    end.
+
+-spec get_list_by_name(#privacy{}, binary() | default) ->
+      {ok, {binary(), [listitem()]}} | error.
+get_list_by_name(#privacy{default = Default} = Privacy, default) ->
+    get_list_by_name(Privacy, Default);
+get_list_by_name(#privacy{lists = Lists}, Name) ->
+    case lists:keyfind(Name, 1, Lists) of
+	{_, List} -> {ok, {Name, List}};
+	false -> error
+    end.
+
+-spec set_default_list(binary(), binary(), binary() | none) ->
+      ok | {error, notfound | any()}.
+set_default_list(LUser, LServer, Name) ->
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    Res = case Name of
+	      none -> Mod:unset_default(LUser, LServer);
+	      _ -> Mod:set_default(LUser, LServer, Name)
+	  end,
+    case Res of
+	ok ->
+	    delete_cache(Mod, LUser, LServer, []);
+	Err ->
+	    Err
+    end.
+
+-spec check_packet(allow | deny, c2s_state() | jid(), stanza(), in | out) -> allow | deny.
+check_packet(Acc, #{jid := JID} = State, Packet, Dir) ->
+    case maps:get(privacy_active_list, State, none) of
+	none ->
+	    check_packet(Acc, JID, Packet, Dir);
+	ListName ->
+	    #jid{luser = LUser, lserver = LServer} = JID,
+	    case get_user_list(LUser, LServer, ListName) of
+		{ok, {_, List}} ->
+		    do_check_packet(JID, List, Packet, Dir);
+		_ ->
+		    ?DEBUG("Non-existing active list '~s' is set "
+			   "for user '~s'", [ListName, jid:encode(JID)]),
+		    check_packet(Acc, JID, Packet, Dir)
+	    end
+    end;
+check_packet(_, JID, Packet, Dir) ->
+    #jid{luser = LUser, lserver = LServer} = JID,
+    case get_user_list(LUser, LServer, default) of
+	{ok, {_, List}} ->
+	    do_check_packet(JID, List, Packet, Dir);
+	_ ->
+	    allow
+    end.
 
 %% From is the sender, To is the destination.
 %% If Dir = out, User@Server is the sender account (From).
 %% If Dir = in, User@Server is the destination account (To).
--spec check_packet(allow | deny, ejabberd_c2s:state() | jid(),
-		   stanza(), in | out) -> allow | deny.
-check_packet(_, #{jid := #jid{luser = LUser, lserver = LServer},
-		  privacy_list := #userlist{list = List, needdb = NeedDb}},
-	     Packet, Dir) ->
+-spec do_check_packet(jid(), [listitem()], stanza(), in | out) -> allow | deny.
+do_check_packet(_, [], _, _) ->
+    allow;
+do_check_packet(#jid{luser = LUser, lserver = LServer}, List, Packet, Dir) ->
     From = xmpp:get_from(Packet),
     To = xmpp:get_to(Packet),
     case {From, To} of
@@ -508,8 +568,6 @@ check_packet(_, #{jid := #jid{luser = LUser, lserver = LServer},
 	 #jid{luser = LUser, lserver = LServer, lresource = <<"">>}} when Dir == out ->
 	    %% Allow outgoing packets from user's full jid to his bare JID
 	    allow;
-	_ when List == [] ->
-    allow;
       _ ->
 	  PType = case Packet of
 		    #message{} -> message;
@@ -529,21 +587,11 @@ check_packet(_, #{jid := #jid{luser = LUser, lserver = LServer},
 		   in -> jid:tolower(From);
 		   out -> jid:tolower(To)
 		 end,
-	    {Subscription, Groups} =
-		case NeedDb of
-				     true ->
-					 ejabberd_hooks:run_fold(roster_get_jid_info,
-						LServer,
-								 {none, []},
-						[LUser, LServer, LJID]);
-		    false ->
-			{[], []}
-				   end,
-	    check_packet_aux(List, PType2, LJID, Subscription, Groups)
-    end;
-check_packet(Acc, #jid{luser = LUser, lserver = LServer} = JID, Packet, Dir) ->
-    List = get_user_list(LUser, LServer),
-    check_packet(Acc, #{jid => JID, privacy_list => List}, Packet, Dir).
+	  {Subscription, Groups} = ejabberd_hooks:run_fold(
+				     roster_get_jid_info, LServer,
+				     {none, []}, [LUser, LServer, LJID]),
+	  check_packet_aux(List, PType2, LJID, Subscription, Groups)
+    end.
 
 -spec check_packet_aux([listitem()],
 		       message | iq | presence_in | presence_out | other,
@@ -608,12 +656,82 @@ is_type_match(Type, Value, JID, Subscription, Groups) ->
       group -> lists:member(Value, Groups)
     end.
 
--spec remove_user(binary(), binary()) -> any().
+-spec remove_user(binary(), binary()) -> ok.
 remove_user(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
+    Privacy = get_user_lists(LUser, LServer),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:remove_user(LUser, LServer).
+    Mod:remove_lists(LUser, LServer),
+    case Privacy of
+	{ok, #privacy{lists = Lists}} ->
+	    Names = [Name || {Name, _} <- Lists],
+	    delete_cache(Mod, LUser, LServer, Names);
+	_ ->
+	    ok
+    end.
+
+-spec init_cache(module(), binary(), gen_mod:opts()) -> ok.
+init_cache(Mod, Host, Opts) ->
+    case use_cache(Mod, Host) of
+	true ->
+	    CacheOpts = cache_opts(Host, Opts),
+	    ets_cache:new(?PRIVACY_CACHE, CacheOpts),
+	    ets_cache:new(?PRIVACY_LIST_CACHE, CacheOpts);
+	false ->
+	    ets_cache:delete(?PRIVACY_CACHE),
+	    ets_cache:delete(?PRIVACY_LIST_CACHE)
+    end.
+
+-spec cache_opts(binary(), gen_mod:opts()) -> [proplists:property()].
+cache_opts(Host, Opts) ->
+    MaxSize = gen_mod:get_opt(
+		cache_size, Opts,
+		ejabberd_config:cache_size(Host)),
+    CacheMissed = gen_mod:get_opt(
+		    cache_missed, Opts,
+		    ejabberd_config:cache_missed(Host)),
+    LifeTime = case gen_mod:get_opt(
+		      cache_life_time, Opts,
+		      ejabberd_config:cache_life_time(Host)) of
+		   infinity -> infinity;
+		   I -> timer:seconds(I)
+	       end,
+    [{max_size, MaxSize}, {cache_missed, CacheMissed}, {life_time, LifeTime}].
+
+-spec use_cache(module(), binary()) -> boolean().
+use_cache(Mod, Host) ->
+    case erlang:function_exported(Mod, use_cache, 1) of
+	true -> Mod:use_cache(Host);
+	false ->
+	    gen_mod:get_module_opt(
+	      Host, ?MODULE, use_cache,
+	      ejabberd_config:use_cache(Host))
+    end.
+
+-spec cache_nodes(module(), binary()) -> [node()].
+cache_nodes(Mod, Host) ->
+    case erlang:function_exported(Mod, cache_nodes, 1) of
+	true -> Mod:cache_nodes(Host);
+	false -> ejabberd_cluster:get_nodes()
+    end.
+
+-spec delete_cache(module(), binary(), binary(), [binary()]) -> ok.
+delete_cache(Mod, LUser, LServer, Names) ->
+    case use_cache(Mod, LServer) of
+	true ->
+	    Nodes = cache_nodes(Mod, LServer),
+	    ets_cache:delete(?PRIVACY_CACHE, {LUser, LServer}, Nodes),
+	    lists:foreach(
+	      fun(Name) ->
+		      ets_cache:delete(
+			?PRIVACY_LIST_CACHE,
+			{LUser, LServer, Name},
+			Nodes)
+	      end, [default|Names]);
+	false ->
+	    ok
+    end.
 
 numeric_to_binary(<<0, 0, _/binary>>) ->
     <<"0">>;

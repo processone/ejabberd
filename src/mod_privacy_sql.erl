@@ -29,20 +29,11 @@
 -behaviour(mod_privacy).
 
 %% API
--export([init/2, process_lists_get/2, process_list_get/3,
-	 process_default_set/3, process_active_set/3,
-	 remove_privacy_list/3, set_privacy_list/1,
-	 set_privacy_list/4, get_user_list/2, get_user_lists/2,
-	 remove_user/2, import/1, export/1]).
+-export([init/2, set_default/3, unset_default/2, set_lists/1,
+	 set_list/4, get_lists/2, get_list/3, remove_lists/2,
+	 remove_list/3, import/1, export/1]).
 
--export([item_to_raw/1, raw_to_item/1,
-	 sql_add_privacy_list/2,
-	 sql_get_default_privacy_list/2,
-	 sql_get_default_privacy_list_t/1,
-	 sql_get_privacy_list_data/3,
-	 sql_get_privacy_list_data_by_id_t/1,
-	 sql_get_privacy_list_id_t/2,
-	 sql_set_default_privacy_list/2, sql_set_privacy_list/2]).
+-export([item_to_raw/1, raw_to_item/1]).
 
 -include("xmpp.hrl").
 -include("mod_privacy.hrl").
@@ -55,159 +46,143 @@
 init(_Host, _Opts) ->
     ok.
 
-process_lists_get(LUser, LServer) ->
-    Default = case catch sql_get_default_privacy_list(LUser, LServer) of
-		{selected, []} -> none;
-		{selected, [{DefName}]} -> DefName;
-		_ -> none
-	      end,
-    case catch sql_get_privacy_list_names(LUser, LServer) of
-      {selected, Names} ->
-	  LItems = lists:map(fun ({N}) -> N end, Names),
-	  {Default, LItems};
-      _ -> error
+unset_default(LUser, LServer) ->
+    case unset_default_privacy_list(LUser, LServer) of
+	ok ->
+	    ok;
+	_Err ->
+	    {error, db_failure}
     end.
 
-process_list_get(LUser, LServer, Name) ->
-    case catch sql_get_privacy_list_id(LUser, LServer, Name) of
-      {selected, []} -> not_found;
-      {selected, [{ID}]} ->
-	  case catch sql_get_privacy_list_data_by_id(ID, LServer) of
-	    {selected, RItems} ->
-		lists:flatmap(fun raw_to_item/1, RItems);
-	    _ -> error
-	  end;
-      _ -> error
-    end.
-
-process_default_set(LUser, LServer, none) ->
-    case catch sql_unset_default_privacy_list(LUser,
-					      LServer)
-	of
-      {'EXIT', _Reason} -> {atomic, error};
-      {error, _Reason} -> {atomic, error};
-      _ -> {atomic, ok}
-    end;
-process_default_set(LUser, LServer, Name) ->
+set_default(LUser, LServer, Name) ->
     F = fun () ->
-		case sql_get_privacy_list_names_t(LUser) of
-		  {selected, []} -> not_found;
-		  {selected, Names} ->
-		      case lists:member({Name}, Names) of
-			true -> sql_set_default_privacy_list(LUser, Name), ok;
-			false -> not_found
-		      end
+		case get_privacy_list_names_t(LUser) of
+		    {selected, []} ->
+			{error, notfound};
+		    {selected, Names} ->
+			case lists:member({Name}, Names) of
+			    true ->
+				set_default_privacy_list(LUser, Name);
+			    false ->
+				{error, notfound}
+			end
 		end
 	end,
-    sql_queries:sql_transaction(LServer, F).
+    transaction(LServer, F).
 
-process_active_set(LUser, LServer, Name) ->
-    case catch sql_get_privacy_list_id(LUser, LServer, Name) of
-      {selected, []} -> error;
-      {selected, [{ID}]} ->
-	  case catch sql_get_privacy_list_data_by_id(ID, LServer) of
-	    {selected, RItems} ->
-		lists:flatmap(fun raw_to_item/1, RItems);
-	    _ -> error
-	  end;
-      _ -> error
-    end.
-
-remove_privacy_list(LUser, LServer, Name) ->
+remove_list(LUser, LServer, Name) ->
     F = fun () ->
-		case sql_get_default_privacy_list_t(LUser) of
-		  {selected, []} ->
-		      sql_remove_privacy_list(LUser, Name), ok;
-		  {selected, [{Default}]} ->
-		      if Name == Default -> conflict;
-			 true -> sql_remove_privacy_list(LUser, Name), ok
-		      end
+		case get_default_privacy_list_t(LUser) of
+		    {selected, []} ->
+			remove_privacy_list(LUser, Name);
+		    {selected, [{Default}]} ->
+			if Name == Default ->
+				{error, conflict};
+			   true ->
+				remove_privacy_list(LUser, Name)
+			end
 		end
 	end,
-    sql_queries:sql_transaction(LServer, F).
+    transaction(LServer, F).
 
-set_privacy_list(#privacy{us = {LUser, LServer},
-			  default = Default,
-			  lists = Lists}) ->
+set_lists(#privacy{us = {LUser, LServer},
+		   default = Default,
+		   lists = Lists}) ->
     F = fun() ->
 		lists:foreach(
 		  fun({Name, List}) ->
-			  sql_add_privacy_list(LUser, Name),
+			  add_privacy_list(LUser, Name),
 			  {selected, [<<"id">>], [[I]]} =
-			      sql_get_privacy_list_id_t(LUser, Name),
+			      get_privacy_list_id_t(LUser, Name),
 			  RItems = lists:map(fun item_to_raw/1, List),
-			  sql_set_privacy_list(I, RItems),
+			  set_privacy_list(I, RItems),
 			  if is_binary(Default) ->
-				  sql_set_default_privacy_list(LUser, Default),
-				  ok;
+				  set_default_privacy_list(LUser, Default);
 			     true ->
 				  ok
 			  end
 		  end, Lists)
 	end,
-    sql_queries:sql_transaction(LServer, F).
+    transaction(LServer, F).
 
-set_privacy_list(LUser, LServer, Name, List) ->
+set_list(LUser, LServer, Name, List) ->
     RItems = lists:map(fun item_to_raw/1, List),
     F = fun () ->
-		ID = case sql_get_privacy_list_id_t(LUser, Name) of
+		ID = case get_privacy_list_id_t(LUser, Name) of
                          {selected, []} ->
-			   sql_add_privacy_list(LUser, Name),
-			   {selected, [{I}]} =
-			       sql_get_privacy_list_id_t(LUser, Name),
-			   I;
-		       {selected, [{I}]} -> I
+			     add_privacy_list(LUser, Name),
+			     {selected, [{I}]} =
+				 get_privacy_list_id_t(LUser, Name),
+			     I;
+			 {selected, [{I}]} -> I
 		     end,
-		sql_set_privacy_list(ID, RItems),
-		ok
+		set_privacy_list(ID, RItems)
 	end,
-    sql_queries:sql_transaction(LServer, F).
+    transaction(LServer, F).
 
-get_user_list(LUser, LServer) ->
-    case catch sql_get_default_privacy_list(LUser, LServer)
-	of
-      {selected, []} -> {none, []};
-      {selected, [{Default}]} ->
-	  case catch sql_get_privacy_list_data(LUser, LServer,
-					       Default) of
-              {selected, RItems} ->
-		{Default, lists:flatmap(fun raw_to_item/1, RItems)};
-	    _ -> {none, []}
-	  end;
-      _ -> {none, []}
+get_list(LUser, LServer, default) ->
+    case get_default_privacy_list(LUser, LServer) of
+	{selected, []} ->
+	    error;
+	{selected, [{Default}]} ->
+	    get_list(LUser, LServer, Default);
+	_Err ->
+	    {error, db_failure}
+    end;
+get_list(LUser, LServer, Name) ->
+    case get_privacy_list_data(LUser, LServer, Name) of
+	{selected, []} ->
+	    error;
+	{selected, RItems} ->
+	    {ok, {Name, lists:flatmap(fun raw_to_item/1, RItems)}};
+	_Err ->
+	    {error, db_failure}
     end.
 
-get_user_lists(LUser, LServer) ->
-    Default = case catch sql_get_default_privacy_list(LUser, LServer) of
-                  {selected, []} ->
-                      none;
-                  {selected, [{DefName}]} ->
-                      DefName;
-                  _ ->
-                      none
-	      end,
-    case catch sql_get_privacy_list_names(LUser, LServer) of
-        {selected, Names} ->
-            Lists =
-                lists:flatmap(
-                  fun({Name}) ->
-                          case catch sql_get_privacy_list_data(
-                                       LUser, LServer, Name) of
-                              {selected, RItems} ->
-                                  [{Name, lists:flatmap(fun raw_to_item/1, RItems)}];
-                              _ ->
-                                  []
-                          end
-                  end, Names),
-            {ok, #privacy{default = Default,
-                          us = {LUser, LServer},
-                          lists = Lists}};
-        _ ->
-            error
+get_lists(LUser, LServer) ->
+    case get_default_privacy_list(LUser, LServer) of
+	{selected, Selected} ->
+	    Default = case Selected of
+			  [] -> none;
+			  [{DefName}] -> DefName
+		      end,
+	    case get_privacy_list_names(LUser, LServer) of
+		{selected, Names} ->
+		    case lists:foldl(
+			   fun(_, {error, _} = Err) ->
+				   Err;
+			      ({Name}, Acc) ->
+				   case get_privacy_list_data(LUser, LServer, Name) of
+				       {selected, RItems} ->
+					   Items = lists:flatmap(
+						     fun raw_to_item/1,
+						     RItems),
+					   [{Name, Items}|Acc];
+				       _Err ->
+					   {error, db_failure}
+				   end
+			   end, [], Names) of
+			{error, Reason} ->
+			    {error, Reason};
+			Lists ->
+			    {ok, #privacy{default = Default,
+					  us = {LUser, LServer},
+					  lists = Lists}}
+		    end;
+		_Err ->
+		    {error, db_failure}
+	    end;
+	_Err ->
+	    {error, db_failure}
     end.
 
-remove_user(LUser, LServer) ->
-    sql_del_privacy_lists(LUser, LServer).
+remove_lists(LUser, LServer) ->
+    case del_privacy_lists(LUser, LServer) of
+	ok ->
+	    ok;
+	_Err ->
+	    {error, db_failure}
+    end.
 
 export(Server) ->
     case catch ejabberd_sql:sql_query(jid:nameprep(Server),
@@ -271,6 +246,12 @@ import(_) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+transaction(LServer, F) ->
+    case ejabberd_sql:sql_transaction(LServer, F) of
+	{atomic, Res} -> Res;
+	{aborted, _Reason} -> {error, db_failure}
+    end.
+
 raw_to_item({SType, SValue, SAction, Order, MatchAll,
 	     MatchIQ, MatchMessage, MatchPresenceIn,
 	     MatchPresenceOut} = Row) ->
@@ -327,47 +308,48 @@ item_to_raw(#listitem{type = Type, value = Value,
     {SType, SValue, SAction, Order, MatchAll, MatchIQ,
      MatchMessage, MatchPresenceIn, MatchPresenceOut}.
 
-sql_get_default_privacy_list(LUser, LServer) ->
+get_default_privacy_list(LUser, LServer) ->
     sql_queries:get_default_privacy_list(LServer, LUser).
 
-sql_get_default_privacy_list_t(LUser) ->
+get_default_privacy_list_t(LUser) ->
     sql_queries:get_default_privacy_list_t(LUser).
 
-sql_get_privacy_list_names(LUser, LServer) ->
+get_privacy_list_names(LUser, LServer) ->
     sql_queries:get_privacy_list_names(LServer, LUser).
 
-sql_get_privacy_list_names_t(LUser) ->
+get_privacy_list_names_t(LUser) ->
     sql_queries:get_privacy_list_names_t(LUser).
 
-sql_get_privacy_list_id(LUser, LServer, Name) ->
-    sql_queries:get_privacy_list_id(LServer, LUser, Name).
-
-sql_get_privacy_list_id_t(LUser, Name) ->
+get_privacy_list_id_t(LUser, Name) ->
     sql_queries:get_privacy_list_id_t(LUser, Name).
 
-sql_get_privacy_list_data(LUser, LServer, Name) ->
+get_privacy_list_data(LUser, LServer, Name) ->
     sql_queries:get_privacy_list_data(LServer, LUser, Name).
 
-sql_get_privacy_list_data_by_id(ID, LServer) ->
-    sql_queries:get_privacy_list_data_by_id(LServer, ID).
-
-sql_get_privacy_list_data_by_id_t(ID) ->
-    sql_queries:get_privacy_list_data_by_id_t(ID).
-
-sql_set_default_privacy_list(LUser, Name) ->
+set_default_privacy_list(LUser, Name) ->
     sql_queries:set_default_privacy_list(LUser, Name).
 
-sql_unset_default_privacy_list(LUser, LServer) ->
-    sql_queries:unset_default_privacy_list(LServer, LUser).
+unset_default_privacy_list(LUser, LServer) ->
+    case sql_queries:unset_default_privacy_list(LServer, LUser) of
+	{updated, _} -> ok;
+	Err -> Err
+    end.
 
-sql_remove_privacy_list(LUser, Name) ->
-    sql_queries:remove_privacy_list(LUser, Name).
+remove_privacy_list(LUser, Name) ->
+    case sql_queries:remove_privacy_list(LUser, Name) of
+	{updated, 0} -> {error, notfound};
+	{updated, _} -> ok;
+	Err -> Err
+    end.
 
-sql_add_privacy_list(LUser, Name) ->
+add_privacy_list(LUser, Name) ->
     sql_queries:add_privacy_list(LUser, Name).
 
-sql_set_privacy_list(ID, RItems) ->
+set_privacy_list(ID, RItems) ->
     sql_queries:set_privacy_list(ID, RItems).
 
-sql_del_privacy_lists(LUser, LServer) ->
-    sql_queries:del_privacy_lists(LServer, LUser).
+del_privacy_lists(LUser, LServer) ->
+    case sql_queries:del_privacy_lists(LServer, LUser) of
+	{updated, _} -> ok;
+	Err -> Err
+    end.

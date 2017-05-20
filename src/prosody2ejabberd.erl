@@ -210,7 +210,7 @@ convert_data(Host, "privacy", User, [Data]) ->
 				    ListItems -> [{Name, ListItems}]
 				end
 			end, Lists)},
-    mod_privacy:set_privacy_list(Priv);
+    mod_privacy:set_list(Priv);
 convert_data(_Host, _Type, _User, _Data) ->
     ok.
 

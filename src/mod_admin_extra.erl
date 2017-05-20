@@ -1485,10 +1485,7 @@ privacy_set(Username, Host, QueryS) ->
     SubEl = xmpp:decode(QueryEl),
     IQ = #iq{type = set, id = <<"push">>, sub_els = [SubEl],
 	     from = From, to = To},
-    ejabberd_hooks:run_fold(privacy_iq_set,
-			    Host,
-			    {error, xmpp:err_feature_not_implemented()},
-			    [IQ, #userlist{}]),
+    mod_privacy:process_iq(IQ),
     ok.
 
 %%%
