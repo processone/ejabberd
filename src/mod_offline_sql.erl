@@ -28,7 +28,7 @@
 
 -behaviour(mod_offline).
 
--export([init/2, store_messages/5, pop_messages/2, remove_expired_messages/1,
+-export([init/2, store_message/1, pop_messages/2, remove_expired_messages/1,
 	 remove_old_messages/2, remove_user/2, read_message_headers/2,
 	 read_message/3, remove_message/3, read_all_messages/2,
 	 remove_all_messages/2, count_messages/2, import/1, export/1]).
@@ -44,30 +44,21 @@
 init(_Host, _Opts) ->
     ok.
 
-store_messages(Host, {User, _Server}, Msgs, Len, MaxOfflineMsgs) ->
-    Count = if MaxOfflineMsgs =/= infinity ->
-		    Len + count_messages(User, Host);
-	       true -> 0
-	    end,
-    if Count > MaxOfflineMsgs -> {atomic, discard};
-       true ->
-	    Query = lists:map(
-		      fun(M) ->
-			      LUser = (M#offline_msg.to)#jid.luser,
-			      From = M#offline_msg.from,
-			      To = M#offline_msg.to,
-			      Packet = xmpp:set_from_to(
-					 M#offline_msg.packet, From, To),
-			      NewPacket = xmpp_util:add_delay_info(
-					    Packet, jid:make(Host),
-					    M#offline_msg.timestamp,
-					    <<"Offline Storage">>),
-			      XML = fxml:element_to_binary(
-				      xmpp:encode(NewPacket)),
-                              sql_queries:add_spool_sql(LUser, XML)
-		      end,
-		      Msgs),
-	    sql_queries:add_spool(Host, Query)
+store_message(#offline_msg{us = {LUser, LServer}} = M) ->
+    From = M#offline_msg.from,
+    To = M#offline_msg.to,
+    Packet = xmpp:set_from_to(M#offline_msg.packet, From, To),
+    NewPacket = xmpp_util:add_delay_info(
+		  Packet, jid:make(LServer),
+		  M#offline_msg.timestamp,
+		  <<"Offline Storage">>),
+    XML = fxml:element_to_binary(
+	    xmpp:encode(NewPacket)),
+    case sql_queries:add_spool(LUser, LServer, XML) of
+	{updated, _} ->
+	    ok;
+	_ ->
+	    {error, db_failure}
     end.
 
 pop_messages(LUser, LServer) ->

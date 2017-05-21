@@ -26,7 +26,7 @@
 
 -behaviour(mod_offline).
 
--export([init/2, store_messages/5, pop_messages/2, remove_expired_messages/1,
+-export([init/2, store_message/1, pop_messages/2, remove_expired_messages/1,
 	 remove_old_messages/2, remove_user/2, read_message_headers/2,
 	 read_message/3, remove_message/3, read_all_messages/2,
 	 remove_all_messages/2, count_messages/2, import/1]).
@@ -36,8 +36,6 @@
 -include("mod_offline.hrl").
 -include("logger.hrl").
 
--define(OFFLINE_TABLE_LOCK_THRESHOLD, 1000).
-
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -46,26 +44,9 @@ init(_Host, _Opts) ->
 			   [{disc_only_copies, [node()]}, {type, bag},
 			    {attributes, record_info(fields, offline_msg)}]).
 
-store_messages(_Host, US, Msgs, Len, MaxOfflineMsgs) ->
-    F = fun () ->
-		Count = if MaxOfflineMsgs =/= infinity ->
-				Len + count_mnesia_records(US);
-			   true -> 0
-			end,
-		if Count > MaxOfflineMsgs -> discard;
-		   true ->
-			if Len >= (?OFFLINE_TABLE_LOCK_THRESHOLD) ->
-				mnesia:write_lock_table(offline_msg);
-			   true -> ok
-			end,
-			lists:foreach(
-			  fun(#offline_msg{packet = Pkt} = M) ->
-				  El = xmpp:encode(Pkt),
-				  mnesia:write(M#offline_msg{packet = El})
-			  end, Msgs)
-		end
-	end,
-    mnesia:transaction(F).
+store_message(#offline_msg{packet = Pkt} = OffMsg) ->
+    El = xmpp:encode(Pkt),
+    mnesia:dirty_write(OffMsg#offline_msg{packet = El}).
 
 pop_messages(LUser, LServer) ->
     US = {LUser, LServer},

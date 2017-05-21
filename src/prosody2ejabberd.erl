@@ -185,15 +185,16 @@ convert_data(_Host, "config", _User, [Data]) ->
 convert_data(Host, "offline", User, [Data]) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Host),
-    Msgs = lists:flatmap(
-	     fun({_, RawXML}) ->
-		     case deserialize(RawXML) of
-			 [El] -> el_to_offline_msg(LUser, LServer, El);
-			 _ -> []
-		     end
-	     end, Data),
-    mod_offline:store_offline_msg(
-      LServer, {LUser, LServer}, Msgs, length(Msgs), infinity);
+    lists:foreach(
+      fun({_, RawXML}) ->
+	      case deserialize(RawXML) of
+		  [El] ->
+		      Msg = el_to_offline_msg(LUser, LServer, El),
+		      ok = mod_offline:store_offline_msg(Msg);
+		  _ ->
+		      ok
+	      end
+      end, Data);
 convert_data(Host, "privacy", User, [Data]) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Host),

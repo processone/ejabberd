@@ -26,7 +26,7 @@
 
 -behaviour(mod_offline).
 
--export([init/2, store_messages/5, pop_messages/2, remove_expired_messages/1,
+-export([init/2, store_message/1, pop_messages/2, remove_expired_messages/1,
 	 remove_old_messages/2, remove_user/2, read_message_headers/2,
 	 read_message/3, remove_message/3, read_all_messages/2,
 	 remove_all_messages/2, count_messages/2, import/1]).
@@ -40,31 +40,11 @@
 init(_Host, _Opts) ->
     ok.
 
-store_messages(Host, {User, _}, Msgs, Len, MaxOfflineMsgs) ->
-    Count = if MaxOfflineMsgs =/= infinity ->
-                    Len + count_messages(User, Host);
-               true -> 0
-            end,
-    if
-        Count > MaxOfflineMsgs ->
-            {atomic, discard};
-        true ->
-	    try
-		lists:foreach(
-		  fun(#offline_msg{us = US,
-				   packet = Pkt,
-				   timestamp = TS} = M) ->
-			  El = xmpp:encode(Pkt),
-			  ok = ejabberd_riak:put(
-				 M#offline_msg{packet = El},
-				 offline_msg_schema(),
-				 [{i, TS}, {'2i', [{<<"us">>, US}]}])
-		  end, Msgs),
-		{atomic, ok}
-	    catch _:{badmatch, Err} ->
-		    {atomic, Err}
-	    end
-    end.
+store_message(#offline_msg{us = US, packet = Pkt, timestamp = TS} = M) ->
+    El = xmpp:encode(Pkt),
+    ejabberd_riak:put(M#offline_msg{packet = El},
+		      offline_msg_schema(),
+		      [{i, TS}, {'2i', [{<<"us">>, US}]}]).
 
 pop_messages(LUser, LServer) ->
     case ejabberd_riak:get_by_index(offline_msg, offline_msg_schema(),
