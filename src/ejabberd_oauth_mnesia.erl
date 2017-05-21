@@ -25,6 +25,7 @@
 %%%-------------------------------------------------------------------
 
 -module(ejabberd_oauth_mnesia).
+-behaviour(ejabberd_oauth).
 
 -export([init/0,
          store/1,

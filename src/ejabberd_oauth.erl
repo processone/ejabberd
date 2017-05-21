@@ -63,6 +63,10 @@
 
 -include("ejabberd_commands.hrl").
 
+-callback init() -> any().
+-callback store(#oauth_token{}) -> ok | {error, any()}.
+-callback lookup(binary()) -> {ok, #oauth_token{}} | error.
+-callback clean(non_neg_integer()) -> any().
 
 %% There are two ways to obtain an oauth token:
 %%   * Using the web form/api results in the token being generated in behalf of the user providing the user/pass

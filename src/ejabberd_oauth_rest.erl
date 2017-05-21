@@ -25,7 +25,7 @@
 %%%-------------------------------------------------------------------
 
 -module(ejabberd_oauth_rest).
-
+-behaviour(ejabberd_oauth).
 -behaviour(ejabberd_config).
 
 -export([init/0,
