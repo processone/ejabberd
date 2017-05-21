@@ -248,17 +248,15 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 activate_socket(#state{socket = Socket,
 		       sock_mod = SockMod}) ->
-    PeerName = case SockMod of
-		 gen_tcp ->
-		     inet:setopts(Socket, [{active, once}]),
-		     inet:peername(Socket);
-		 _ ->
-		     SockMod:setopts(Socket, [{active, once}]),
-		     SockMod:peername(Socket)
-	       end,
-    case PeerName of
+    Res = case SockMod of
+	      gen_tcp ->
+		  inet:setopts(Socket, [{active, once}]);
+	      _ ->
+		  SockMod:setopts(Socket, [{active, once}])
+	  end,
+    case Res of
       {error, _Reason} -> self() ! {tcp_closed, Socket};
-      {ok, _} -> ok
+      ok -> ok
     end.
 
 %% Data processing for connectors directly generating xmlelement in
