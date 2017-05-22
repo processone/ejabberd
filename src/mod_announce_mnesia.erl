@@ -40,11 +40,11 @@
 %%%===================================================================
 init(_Host, _Opts) ->
     ejabberd_mnesia:create(?MODULE, motd,
-			[{disc_copies, [node()]},
+			[{disc_only_copies, [node()]},
 			 {attributes,
 			  record_info(fields, motd)}]),
     ejabberd_mnesia:create(?MODULE, motd_users,
-			[{disc_copies, [node()]},
+			[{disc_only_copies, [node()]},
 			 {attributes,
 			  record_info(fields, motd_users)}]).
 
@@ -55,13 +55,13 @@ set_motd_users(_LServer, USRs) ->
 			  mnesia:write(#motd_users{us = {U, S}})
 		  end, USRs)
 	end,
-    mnesia:transaction(F).
+    transaction(F).
 
 set_motd(LServer, Packet) ->
     F = fun() ->
 		mnesia:write(#motd{server = LServer, packet = Packet})
 	end,
-    mnesia:transaction(F).
+    transaction(F).
 
 delete_motd(LServer) ->
     F = fun() ->
@@ -76,27 +76,27 @@ delete_motd(LServer) ->
 				      mnesia:delete({motd_users, US})
 			      end, Users)
 	end,
-    mnesia:transaction(F).
+    transaction(F).
 
 get_motd(LServer) ->
     case mnesia:dirty_read({motd, LServer}) of
 	[#motd{packet = Packet}] ->
 	    {ok, Packet};
-	_ ->
+	[] ->
 	    error
     end.
 
 is_motd_user(LUser, LServer) ->
     case mnesia:dirty_read({motd_users, {LUser, LServer}}) of
-	[#motd_users{}] -> true;
-	_ -> false
+	[#motd_users{}] -> {ok, true};
+	_ -> {ok, false}
     end.
 
 set_motd_user(LUser, LServer) ->
     F = fun() ->
 		mnesia:write(#motd_users{us = {LUser, LServer}})
 	end,
-    mnesia:transaction(F).
+    transaction(F).
 
 need_transform(#motd{server = S}) when is_list(S) ->
     ?INFO_MSG("Mnesia table 'motd' will be converted to binary", []),
@@ -124,3 +124,11 @@ import(LServer, <<"motd">>, [LUser, <<>>, _TimeStamp]) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+transaction(F) ->
+    case mnesia:transaction(F) of
+	{atomic, Res} ->
+	    Res;
+	{aborted, Reason} ->
+	    ?ERROR_MSG("Mnesia transaction failed: ~p", [Reason]),
+	    {error, db_failure}
+    end.

@@ -36,6 +36,7 @@
 -include("xmpp.hrl").
 -include("mod_announce.hrl").
 -include("ejabberd_sql_pt.hrl").
+-include("logger.hrl").
 
 %%%===================================================================
 %%% API
@@ -53,7 +54,7 @@ set_motd_users(LServer, USRs) ->
                               "xml=''"])
 		  end, USRs)
 	end,
-    ejabberd_sql:sql_transaction(LServer, F).
+    transaction(LServer, F).
 
 set_motd(LServer, Packet) ->
     XML = fxml:element_to_binary(Packet),
@@ -63,27 +64,24 @@ set_motd(LServer, Packet) ->
                    ["!username=''",
                     "xml=%(XML)s"])
 	end,
-    ejabberd_sql:sql_transaction(LServer, F).
+    transaction(LServer, F).
 
 delete_motd(LServer) ->
     F = fun() ->
                 ejabberd_sql:sql_query_t(?SQL("delete from motd"))
 	end,
-    ejabberd_sql:sql_transaction(LServer, F).
+    transaction(LServer, F).
 
 get_motd(LServer) ->
     case catch ejabberd_sql:sql_query(
                  LServer,
                  ?SQL("select @(xml)s from motd where username=''")) of
         {selected, [{XML}]} ->
-            case fxml_stream:parse_element(XML) of
-                {error, _} ->
-                    error;
-                Packet ->
-		    {ok, Packet}
-	    end;
+	    parse_element(XML);
+	{selected, []} ->
+	    error;
 	_ ->
-	    error
+	    {error, db_failure}
     end.
 
 is_motd_user(LUser, LServer) ->
@@ -92,9 +90,11 @@ is_motd_user(LUser, LServer) ->
                  ?SQL("select @(username)s from motd"
                       " where username=%(LUser)s")) of
         {selected, [_|_]} ->
-	    true;
+	    {ok, true};
+	{selected, []} ->
+	    {ok, false};
 	_ ->
-	    false
+	    {error, db_failure}
     end.
 
 set_motd_user(LUser, LServer) ->
@@ -104,7 +104,7 @@ set_motd_user(LUser, LServer) ->
                    ["!username=%(LUser)s",
                     "xml=''"])
         end,
-    ejabberd_sql:sql_transaction(LServer, F).
+    transaction(LServer, F).
 
 export(_Server) ->
     [{motd,
@@ -131,3 +131,18 @@ import(_, _, _) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+transaction(LServer, F) ->
+    case ejabberd_sql:sql_transaction(LServer, F) of
+	{atomic, _} -> ok;
+	_ -> {error, db_failure}
+    end.
+
+parse_element(XML) ->
+    case fxml_stream:parse_element(XML) of
+        El when is_record(El, xmlel) ->
+            {ok, El};
+        _ ->
+            ?ERROR_MSG("malformed XML element in SQL table "
+                       "'motd' for username='': ~s", [XML]),
+            {error, db_failure}
+    end.
