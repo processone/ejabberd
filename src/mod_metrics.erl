@@ -41,6 +41,7 @@
          remove_user/2, register_user/2]).
 
 -define(SOCKET_NAME, mod_metrics_udp_socket).
+-define(SOCKET_REGISTER_RETRIES, 10).
 
 %%====================================================================
 %% API
@@ -139,7 +140,7 @@ send_metrics(Host, Probe, Peer, Port) ->
     [Node|_] = binary:split(FQDN, <<".">>),
     BaseId = <<Host/binary, "/", Node/binary, ".">>,
     TS = integer_to_binary(p1_time_compat:system_time(seconds)),
-    case get_socket() of
+    case get_socket(?SOCKET_REGISTER_RETRIES) of
 	{ok, Socket} ->
 	    case Probe of
 		{Key, Val} ->
@@ -156,15 +157,16 @@ send_metrics(Host, Probe, Peer, Port) ->
 	    Err
     end.
 
-get_socket() ->
+get_socket(N) ->
     case whereis(?SOCKET_NAME) of
 	undefined ->
 	    case gen_udp:open(0) of
 		{ok, Socket} ->
 		    try register(?SOCKET_NAME, Socket) of
 			true -> {ok, Socket}
-		    catch _:badarg ->
-			    {ok, Socket}
+		    catch _:badarg when N > 1 ->
+			    gen_udp:close(Socket),
+			    get_socket(N-1)
 		    end;
 		{error, Reason} = Err ->
 		    ?ERROR_MSG("can not open udp socket to grapherl: ~s",
