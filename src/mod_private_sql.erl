@@ -27,11 +27,12 @@
 -behaviour(mod_private).
 
 %% API
--export([init/2, set_data/3, get_data/3, get_all_data/2, remove_user/2,
+-export([init/2, set_data/3, get_data/3, get_all_data/2, del_data/2,
 	 import/3, export/1]).
 
 -include("xmpp.hrl").
 -include("mod_private.hrl").
+-include("logger.hrl").
 
 %%%===================================================================
 %%% API
@@ -48,39 +49,46 @@ set_data(LUser, LServer, Data) ->
 			    LServer, LUser, XMLNS, SData)
 		  end, Data)
 	end,
-    ejabberd_sql:sql_transaction(LServer, F).
+    case ejabberd_sql:sql_transaction(LServer, F) of
+	{atomic, ok} ->
+	    ok;
+	_ ->
+	    {error, db_failure}
+    end.
 
 get_data(LUser, LServer, XMLNS) ->
-    case catch sql_queries:get_private_data(LServer, LUser, XMLNS) of
+    case sql_queries:get_private_data(LServer, LUser, XMLNS) of
 	{selected, [{SData}]} ->
-	    case fxml_stream:parse_element(SData) of
-		Data when is_record(Data, xmlel) ->
-		    {ok, Data};
-		_ ->
-		    error
-	    end;
+	    parse_element(LUser, LServer, SData);
+	{selected, []} ->
+	    error;
 	_ ->
-	    error
+	    {error, db_failure}
     end.
 
 get_all_data(LUser, LServer) ->
     case catch sql_queries:get_private_data(LServer, LUser) of
+	{selected, []} ->
+	    error;
         {selected, Res} ->
-            lists:flatmap(
-              fun({_, SData}) ->
-                      case fxml_stream:parse_element(SData) of
-                          #xmlel{} = El ->
-                              [El];
-                          _ ->
-                              []
-                      end
-              end, Res);
+            {ok, lists:flatmap(
+		   fun({_, SData}) ->
+			   case parse_element(LUser, LServer, SData) of
+			       {ok, El} -> [El];
+			       error -> []
+			   end
+		   end, Res)};
         _ ->
-            []
+	    {error, db_failure}
     end.
 
-remove_user(LUser, LServer) ->
-    sql_queries:del_user_private_storage(LServer, LUser).
+del_data(LUser, LServer) ->
+    case sql_queries:del_user_private_storage(LServer, LUser) of
+	{updated, _} ->
+	    ok;
+	_ ->
+	    {error, db_failure}
+    end.
 
 export(_Server) ->
     [{private_storage,
@@ -99,3 +107,13 @@ import(_, _, _) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+parse_element(LUser, LServer, XML) ->
+    case fxml_stream:parse_element(XML) of
+	El when is_record(El, xmlel) ->
+	    {ok, El};
+	_ ->
+	    ?ERROR_MSG("malformed XML element in SQL table "
+		       "'private_storage' for user ~s@~s: ~s",
+		       [LUser, LServer, XML]),
+	    error
+    end.
