@@ -194,9 +194,20 @@ abort(Reason) ->
 restart(Reason) ->
     throw({aborted, Reason}).
 
-%% Escape character that will confuse an SQL engine
+-spec escape_char(char()) -> binary().
+escape_char($\000) -> <<"\\0">>;
+escape_char($\n) -> <<"\\n">>;
+escape_char($\t) -> <<"\\t">>;
+escape_char($\b) -> <<"\\b">>;
+escape_char($\r) -> <<"\\r">>;
+escape_char($') -> <<"''">>;
+escape_char($") -> <<"\\\"">>;
+escape_char($\\) -> <<"\\\\">>;
+escape_char(C) -> <<C>>.
+
+-spec escape(binary()) -> binary().
 escape(S) ->
-	<<  <<(sql_queries:escape(Char))/binary>> || <<Char>> <= S >>.
+	<<  <<(escape_char(Char))/binary>> || <<Char>> <= S >>.
 
 %% Escape character that will confuse an SQL engine
 %% Percent and underscore only need to be escaped for pattern matching like
@@ -206,7 +217,7 @@ escape_like(S) when is_binary(S) ->
 escape_like($%) -> <<"\\%">>;
 escape_like($_) -> <<"\\_">>;
 escape_like($\\) -> <<"\\\\\\\\">>;
-escape_like(C) when is_integer(C), C >= 0, C =< 255 -> sql_queries:escape(C).
+escape_like(C) when is_integer(C), C >= 0, C =< 255 -> escape_char(C).
 
 escape_like_arg(S) when is_binary(S) ->
     << <<(escape_like_arg(C))/binary>> || <<C>> <= S >>;

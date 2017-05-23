@@ -54,7 +54,10 @@ store_message(#offline_msg{us = {LUser, LServer}} = M) ->
 		  <<"Offline Storage">>),
     XML = fxml:element_to_binary(
 	    xmpp:encode(NewPacket)),
-    case sql_queries:add_spool(LUser, LServer, XML) of
+    case ejabberd_sql:sql_query(
+	   LServer,
+	   ?SQL("insert into spool(username, xml) values "
+		"(%(LUser)s, %(XML)s)")) of
 	{updated, _} ->
 	    ok;
 	_ ->
@@ -62,7 +65,7 @@ store_message(#offline_msg{us = {LUser, LServer}} = M) ->
     end.
 
 pop_messages(LUser, LServer) ->
-    case sql_queries:get_and_del_spool_msg_t(LServer, LUser) of
+    case get_and_del_spool_msg_t(LServer, LUser) of
 	{atomic, {selected, Rs}} ->
 	    {ok, lists:flatmap(
 		   fun({_, XML}) ->
@@ -82,12 +85,12 @@ remove_expired_messages(_LServer) ->
     {atomic, ok}.
 
 remove_old_messages(Days, LServer) ->
-    case catch ejabberd_sql:sql_query(
-		 LServer,
-		 [<<"DELETE FROM spool"
-		   " WHERE created_at < "
-		   "NOW() - INTERVAL '">>,
-		  integer_to_list(Days), <<"' DAY;">>]) of
+    case ejabberd_sql:sql_query(
+	   LServer,
+	   [<<"DELETE FROM spool"
+	      " WHERE created_at < "
+	      "NOW() - INTERVAL '">>,
+	    integer_to_list(Days), <<"' DAY;">>]) of
 	{updated, N} ->
 	    ?INFO_MSG("~p message(s) deleted from offline spool", [N]);
 	_Error ->
@@ -96,13 +99,15 @@ remove_old_messages(Days, LServer) ->
     {atomic, ok}.
 
 remove_user(LUser, LServer) ->
-    sql_queries:del_spool_msg(LServer, LUser).
+    ejabberd_sql:sql_query(
+      LServer,
+      ?SQL("delete from spool where username=%(LUser)s")).
 
 read_message_headers(LUser, LServer) ->
-    case catch ejabberd_sql:sql_query(
-		 LServer,
-                 ?SQL("select @(xml)s, @(seq)d from spool"
-                      " where username=%(LUser)s order by seq")) of
+    case ejabberd_sql:sql_query(
+	   LServer,
+	   ?SQL("select @(xml)s, @(seq)d from spool"
+		" where username=%(LUser)s order by seq")) of
 	{selected, Rows} ->
 	    lists:flatmap(
 	      fun({XML, Seq}) ->
@@ -144,10 +149,10 @@ remove_message(LUser, LServer, Seq) ->
     ok.
 
 read_all_messages(LUser, LServer) ->
-    case catch ejabberd_sql:sql_query(
-                 LServer,
-                 ?SQL("select @(xml)s from spool where "
-                      "username=%(LUser)s order by seq")) of
+    case ejabberd_sql:sql_query(
+	   LServer,
+	   ?SQL("select @(xml)s from spool where "
+		"username=%(LUser)s order by seq")) of
         {selected, Rs} ->
             lists:flatmap(
               fun({XML}) ->
@@ -161,7 +166,7 @@ read_all_messages(LUser, LServer) ->
     end.
 
 remove_all_messages(LUser, LServer) ->
-    sql_queries:del_spool_msg(LServer, LUser),
+    remove_user(LUser, LServer),
     {atomic, ok}.
 
 count_messages(LUser, LServer) ->
@@ -232,3 +237,15 @@ el_to_offline_msg(El) ->
 	    ?ERROR_MSG("failed to get 'from' JID from offline XML ~p", [El]),
 	    {error, bad_jid_from}
     end.
+
+get_and_del_spool_msg_t(LServer, LUser) ->
+    F = fun () ->
+		Result =
+		    ejabberd_sql:sql_query_t(
+                      ?SQL("select @(username)s, @(xml)s from spool where "
+                           "username=%(LUser)s order by seq;")),
+		ejabberd_sql:sql_query_t(
+                  ?SQL("delete from spool where username=%(LUser)s;")),
+		Result
+	end,
+    ejabberd_sql:sql_transaction(LServer, F).

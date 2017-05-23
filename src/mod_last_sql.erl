@@ -43,7 +43,10 @@ init(_Host, _Opts) ->
     ok.
 
 get_last(LUser, LServer) ->
-    case catch sql_queries:get_last(LServer, LUser) of
+    case ejabberd_sql:sql_query(
+	   LServer,
+	   ?SQL("select @(seconds)d, @(state)s from last"
+		" where username=%(LUser)s")) of
         {selected, []} ->
 	    error;
         {selected, [{TimeStamp, Status}]} ->
@@ -55,7 +58,10 @@ get_last(LUser, LServer) ->
     end.
 
 store_last_info(LUser, LServer, TimeStamp, Status) ->
-    case sql_queries:set_last_t(LServer, LUser, TimeStamp, Status) of
+    case ?SQL_UPSERT(LServer, "last",
+		     ["!username=%(LUser)s",
+		      "seconds=%(TimeStamp)d",
+		      "state=%(Status)s"]) of
 	ok ->
 	    ok;
 	Err ->
@@ -65,7 +71,9 @@ store_last_info(LUser, LServer, TimeStamp, Status) ->
     end.
 
 remove_user(LUser, LServer) ->
-    sql_queries:del_last(LServer, LUser).
+    ejabberd_sql:sql_query(
+      LServer,
+      ?SQL("delete from last where username=%(LUser)s")).
 
 export(_Server) ->
     [{last_activity,

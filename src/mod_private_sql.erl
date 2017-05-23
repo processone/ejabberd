@@ -23,7 +23,7 @@
 %%%----------------------------------------------------------------------
 
 -module(mod_private_sql).
-
+-compile([{parse_transform, ejabberd_sql_pt}]).
 -behaviour(mod_private).
 
 %% API
@@ -32,6 +32,7 @@
 
 -include("xmpp.hrl").
 -include("mod_private.hrl").
+-include("ejabberd_sql_pt.hrl").
 -include("logger.hrl").
 
 %%%===================================================================
@@ -45,8 +46,11 @@ set_data(LUser, LServer, Data) ->
 		lists:foreach(
 		  fun({XMLNS, El}) ->
 			  SData = fxml:element_to_binary(El),
-			  sql_queries:set_private_data(
-			    LServer, LUser, XMLNS, SData)
+			  ?SQL_UPSERT_T(
+			     "private_storage",
+			     ["!username=%(LUser)s",
+			      "!namespace=%(XMLNS)s",
+			      "data=%(SData)s"])
 		  end, Data)
 	end,
     case ejabberd_sql:sql_transaction(LServer, F) of
@@ -57,7 +61,10 @@ set_data(LUser, LServer, Data) ->
     end.
 
 get_data(LUser, LServer, XMLNS) ->
-    case sql_queries:get_private_data(LServer, LUser, XMLNS) of
+    case ejabberd_sql:sql_query(
+	   LServer,
+	   ?SQL("select @(data)s from private_storage"
+		" where username=%(LUser)s and namespace=%(XMLNS)s")) of
 	{selected, [{SData}]} ->
 	    parse_element(LUser, LServer, SData);
 	{selected, []} ->
@@ -67,7 +74,10 @@ get_data(LUser, LServer, XMLNS) ->
     end.
 
 get_all_data(LUser, LServer) ->
-    case catch sql_queries:get_private_data(LServer, LUser) of
+    case ejabberd_sql:sql_query(
+	   LServer,
+	   ?SQL("select @(namespace)s, @(data)s from private_storage"
+		" where username=%(LUser)s")) of
 	{selected, []} ->
 	    error;
         {selected, Res} ->
@@ -83,7 +93,9 @@ get_all_data(LUser, LServer) ->
     end.
 
 del_data(LUser, LServer) ->
-    case sql_queries:del_user_private_storage(LServer, LUser) of
+    case ejabberd_sql:sql_query(
+	   LServer,
+	   ?SQL("delete from private_storage where username=%(LUser)s")) of
 	{updated, _} ->
 	    ok;
 	_ ->
@@ -96,7 +108,11 @@ export(_Server) ->
                                  xml = Data})
             when LServer == Host ->
               SData = fxml:element_to_binary(Data),
-              sql_queries:set_private_data_sql(LUser, XMLNS, SData);
+	      [?SQL("delete from private_storage where"
+		    " username=%(LUser)s and namespace=%(XMLNS)s;"),
+	       ?SQL("insert into private_storage(username, "
+		    "namespace, data) values ("
+		    "%(LUser)s, %(XMLNS)s, %(SData)s);")];
          (_Host, _R) ->
               []
       end}].

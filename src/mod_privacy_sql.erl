@@ -74,12 +74,12 @@ remove_list(LUser, LServer, Name) ->
     F = fun () ->
 		case get_default_privacy_list_t(LUser) of
 		    {selected, []} ->
-			remove_privacy_list(LUser, Name);
+			remove_privacy_list_t(LUser, Name);
 		    {selected, [{Default}]} ->
 			if Name == Default ->
 				{error, conflict};
 			   true ->
-				remove_privacy_list(LUser, Name)
+				remove_privacy_list_t(LUser, Name)
 			end
 		end
 	end,
@@ -309,47 +309,101 @@ item_to_raw(#listitem{type = Type, value = Value,
      MatchMessage, MatchPresenceIn, MatchPresenceOut}.
 
 get_default_privacy_list(LUser, LServer) ->
-    sql_queries:get_default_privacy_list(LServer, LUser).
+    ejabberd_sql:sql_query(
+      LServer,
+      ?SQL("select @(name)s from privacy_default_list "
+           "where username=%(LUser)s")).
 
 get_default_privacy_list_t(LUser) ->
-    sql_queries:get_default_privacy_list_t(LUser).
+    ejabberd_sql:sql_query_t(
+      ?SQL("select @(name)s from privacy_default_list "
+           "where username=%(LUser)s")).
 
 get_privacy_list_names(LUser, LServer) ->
-    sql_queries:get_privacy_list_names(LServer, LUser).
+    ejabberd_sql:sql_query(
+      LServer,
+      ?SQL("select @(name)s from privacy_list"
+           " where username=%(LUser)s")).
 
 get_privacy_list_names_t(LUser) ->
-    sql_queries:get_privacy_list_names_t(LUser).
+    ejabberd_sql:sql_query_t(
+      ?SQL("select @(name)s from privacy_list"
+           " where username=%(LUser)s")).
 
 get_privacy_list_id_t(LUser, Name) ->
-    sql_queries:get_privacy_list_id_t(LUser, Name).
+    ejabberd_sql:sql_query_t(
+      ?SQL("select @(id)d from privacy_list"
+           " where username=%(LUser)s and name=%(Name)s")).
 
 get_privacy_list_data(LUser, LServer, Name) ->
-    sql_queries:get_privacy_list_data(LServer, LUser, Name).
+    ejabberd_sql:sql_query(
+      LServer,
+      ?SQL("select @(t)s, @(value)s, @(action)s, @(ord)d, @(match_all)b, "
+           "@(match_iq)b, @(match_message)b, @(match_presence_in)b, "
+           "@(match_presence_out)b from privacy_list_data "
+           "where id ="
+           " (select id from privacy_list"
+           " where username=%(LUser)s and name=%(Name)s) "
+           "order by ord")).
 
 set_default_privacy_list(LUser, Name) ->
-    sql_queries:set_default_privacy_list(LUser, Name).
+    ?SQL_UPSERT_T(
+       "privacy_default_list",
+       ["!username=%(LUser)s",
+        "name=%(Name)s"]).
 
 unset_default_privacy_list(LUser, LServer) ->
-    case sql_queries:unset_default_privacy_list(LServer, LUser) of
+    case ejabberd_sql:sql_query(
+	   LServer,
+	   ?SQL("delete from privacy_default_list"
+		" where username=%(LUser)s")) of
 	{updated, _} -> ok;
 	Err -> Err
     end.
 
-remove_privacy_list(LUser, Name) ->
-    case sql_queries:remove_privacy_list(LUser, Name) of
+remove_privacy_list_t(LUser, Name) ->
+    case ejabberd_sql:sql_query_t(
+	   ?SQL("delete from privacy_list where"
+		" username=%(LUser)s and name=%(Name)s")) of
 	{updated, 0} -> {error, notfound};
 	{updated, _} -> ok;
 	Err -> Err
     end.
 
 add_privacy_list(LUser, Name) ->
-    sql_queries:add_privacy_list(LUser, Name).
+    ejabberd_sql:sql_query_t(
+      ?SQL("insert into privacy_list(username, name) "
+           "values (%(LUser)s, %(Name)s)")).
 
 set_privacy_list(ID, RItems) ->
-    sql_queries:set_privacy_list(ID, RItems).
+    ejabberd_sql:sql_query_t(
+      ?SQL("delete from privacy_list_data where id=%(ID)d")),
+    lists:foreach(
+      fun({SType, SValue, SAction, Order, MatchAll, MatchIQ,
+           MatchMessage, MatchPresenceIn, MatchPresenceOut}) ->
+              ejabberd_sql:sql_query_t(
+                ?SQL("insert into privacy_list_data(id, t, "
+                     "value, action, ord, match_all, match_iq, "
+                     "match_message, match_presence_in, match_presence_out) "
+                     "values (%(ID)d, %(SType)s, %(SValue)s, %(SAction)s,"
+                     " %(Order)d, %(MatchAll)b, %(MatchIQ)b,"
+                     " %(MatchMessage)b, %(MatchPresenceIn)b,"
+                     " %(MatchPresenceOut)b)"))
+		  end,
+		  RItems).
 
 del_privacy_lists(LUser, LServer) ->
-    case sql_queries:del_privacy_lists(LServer, LUser) of
-	{updated, _} -> ok;
-	Err -> Err
+    case ejabberd_sql:sql_query(
+	   LServer,
+	   ?SQL("delete from privacy_list where username=%(LUser)s")) of
+	{updated, _} ->
+	    case ejabberd_sql:sql_query(
+		   LServer,
+		   ?SQL("delete from privacy_default_list "
+			"where username=%(LUser)s")) of
+		{updated, _} -> ok;
+		Err -> Err
+	    end;
+	Err ->
+	    Err
     end.
