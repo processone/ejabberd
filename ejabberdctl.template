@@ -96,6 +96,13 @@ ERL_INETRC=$ETC_DIR/inetrc
 MNESIA_OPTS="-mnesia dir \"\\\"$SPOOL_DIR\\\"\" $MNESIA_OPTIONS"
 # define erl parameters
 ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES $ERL_OPTIONS"
+
+# Determine if the .erlang.cookie file is present or not, and use -setcookie if it is
+if [ -f "$SPOOL_DIR/.erlang.cookie" ] ; then
+    ERLANG_COOKIE=$(cat "$SPOOL_DIR/.erlang.cookie")
+    ERLANG_OPTS+=" -setcookie $ERLANG_COOKIE"
+fi
+
 KERNEL_OPTS=""
 if [ "$FIREWALL_WINDOW" != "" ] ; then
     KERNEL_OPTS="${KERNEL_OPTS} -kernel inet_dist_listen_min ${FIREWALL_WINDOW%-*} inet_dist_listen_max ${FIREWALL_WINDOW#*-}"
@@ -360,7 +367,7 @@ ctl()
 {
     NID=$(uid ctl)
     CMD="`shell_escape \"$ERL\" \"$NAME\" \"$NID\"` \
-         -noinput -hidden $KERNEL_OPTS -s ejabberd_ctl \
+         -noinput -hidden $KERNEL_OPTS $ERLANG_OPTS -s ejabberd_ctl \
          -extra `shell_escape \"$ERLANG_NODE\"` $EJABBERD_NO_TIMEOUT \
          `shell_escape \"$@\"`"
     $EXEC_CMD "$CMD"
