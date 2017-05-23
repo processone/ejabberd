@@ -24,6 +24,9 @@
 %%%-------------------------------------------------------------------
 -module(mod_sip_registrar).
 
+-ifndef(SIP).
+-export([]).
+-else.
 -ifndef(GEN_SERVER).
 -define(GEN_SERVER, gen_server).
 -endif.
@@ -580,3 +583,5 @@ process_ping(SIPSocket) ->
 	 (_, Acc) ->
 	      Acc
       end, ErrResponse, Sessions).
+
+-endif.

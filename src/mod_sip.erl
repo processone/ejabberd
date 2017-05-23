@@ -25,6 +25,20 @@
 -module(mod_sip).
 -protocol({rfc, 3261}).
 
+-include("logger.hrl").
+
+-ifndef(SIP).
+-export([start/2, stop/1, depends/2, mod_opt_type/1]).
+start(_, _) ->
+    ?CRITICAL_MSG("ejabberd is not compiled with SIP support", []),
+    {error, sip_not_compiled}.
+stop(_) ->
+    ok.
+depends(_, _) ->
+    [].
+mod_opt_type(_) ->
+    [].
+-else.
 -behaviour(gen_mod).
 -behaviour(esip).
 
@@ -37,7 +51,6 @@
 	 locate/1, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
--include("logger.hrl").
 -include_lib("esip/include/esip.hrl").
 
 %%%===================================================================
@@ -350,3 +363,5 @@ mod_opt_type(via) ->
 mod_opt_type(_) ->
     [always_record_route, flow_timeout_tcp,
      flow_timeout_udp, record_route, routes, via].
+
+-endif.

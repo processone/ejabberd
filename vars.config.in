@@ -40,6 +40,8 @@
 {redis, @redis@}.
 {elixir, @elixir@}.
 {iconv, @iconv@}.
+{stun, @stun@}.
+{sip, @sip@}.
 
 %% Version
 {vsn, "@PACKAGE_VERSION@"}.
