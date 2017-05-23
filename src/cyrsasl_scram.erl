@@ -112,9 +112,9 @@ mech_step(#state{step = 2} = State, ClientIn) ->
 			       true ->
 				  {StoredKey, ServerKey, Salt, IterationCount} =
 				      if is_record(Pass, scram) ->
-					      {misc:decode_base64(Pass#scram.storedkey),
-					       misc:decode_base64(Pass#scram.serverkey),
-					       misc:decode_base64(Pass#scram.salt),
+					      {base64:decode(Pass#scram.storedkey),
+					       base64:decode(Pass#scram.serverkey),
+					       base64:decode(Pass#scram.salt),
 					       Pass#scram.iterationcount};
 					 true ->
 					     TempSalt =
@@ -132,14 +132,14 @@ mech_step(#state{step = 2} = State, ClientIn) ->
 				      str:substr(ClientIn,
                                                  str:str(ClientIn, <<"n=">>)),
 				  ServerNonce =
-				      misc:encode_base64(randoms:bytes(?NONCE_LENGTH)),
+				      base64:encode(randoms:bytes(?NONCE_LENGTH)),
 				  ServerFirstMessage =
                                         iolist_to_binary(
                                           ["r=",
                                            ClientNonce,
                                            ServerNonce,
                                            ",", "s=",
-                                           misc:encode_base64(Salt),
+                                           base64:encode(Salt),
                                            ",", "i=",
                                            integer_to_list(IterationCount)]),
 				  {continue, ServerFirstMessage,
@@ -165,7 +165,9 @@ mech_step(#state{step = 4} = State, ClientIn) ->
        ClientProofAttribute] ->
 	  case parse_attribute(GS2ChannelBindingAttribute) of
 	    {$c, CVal} ->
-		ChannelBindingSupport = binary:at(misc:decode_base64(CVal), 0),
+		ChannelBindingSupport = try binary:first(base64:decode(CVal))
+					catch _:badarg -> 0
+					end,
 		if (ChannelBindingSupport == $n)
 		  or (ChannelBindingSupport == $y) ->
 		    Nonce = <<(State#state.client_nonce)/binary,
@@ -174,7 +176,9 @@ mech_step(#state{step = 4} = State, ClientIn) ->
 			{$r, CompareNonce} when CompareNonce == Nonce ->
 			    case parse_attribute(ClientProofAttribute) of
 			    {$p, ClientProofB64} ->
-				  ClientProof = misc:decode_base64(ClientProofB64),
+				  ClientProof = try base64:decode(ClientProofB64)
+						catch _:badarg -> <<>>
+						end,
 				  AuthMessage = iolist_to_binary(
 						    [State#state.auth_message,
 						     ",",
@@ -195,7 +199,7 @@ mech_step(#state{step = 4} = State, ClientIn) ->
 					       {auth_module, State#state.auth_module},
 					       {authzid, State#state.username}],
 					  <<"v=",
-					    (misc:encode_base64(ServerSignature))/binary>>};
+					    (base64:encode(ServerSignature))/binary>>};
 				     true -> {error, not_authorized, State#state.username}
 				  end;
 			    _ -> {error, bad_attribute}

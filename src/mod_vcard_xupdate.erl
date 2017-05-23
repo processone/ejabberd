@@ -156,7 +156,9 @@ compute_hash(VCard) ->
 	<<>> ->
 	    <<>>;
 	BinVal ->
-	    str:sha(misc:decode_base64(BinVal))
+	    try str:sha(base64:decode(BinVal))
+	    catch _:badarg -> <<>>
+	    end
     end.
 
 %%====================================================================

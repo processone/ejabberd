@@ -770,7 +770,9 @@ code_to_phrase(505) -> <<"HTTP Version Not Supported">>.
 
 -spec parse_auth(binary()) -> {binary(), binary()} | {oauth, binary(), []} | undefined.
 parse_auth(<<"Basic ", Auth64/binary>>) ->
-    Auth = misc:decode_base64(Auth64),
+    Auth = try base64:decode(Auth64)
+	   catch _:badarg -> <<>>
+	   end,
     %% Auth should be a string with the format: user@server:password
     %% Note that password can contain additional characters '@' and ':'
     case str:chr(Auth, $:) of
