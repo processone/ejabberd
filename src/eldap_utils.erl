@@ -177,6 +177,7 @@ get_config(Host, Opts) ->
     Backups = get_opt(ldap_backups, Host, Opts, []),
     Encrypt = get_opt(ldap_encrypt, Host, Opts, none),
     TLSVerify = get_opt(ldap_tls_verify, Host, Opts, false),
+    TLSCertFile = get_opt(ldap_tls_certfile, Host, Opts),
     TLSCAFile = get_opt(ldap_tls_cacertfile, Host, Opts),
     TLSDepth = get_opt(ldap_tls_depth, Host, Opts),
     Port = get_opt(ldap_port, Host, Opts,
@@ -203,6 +204,7 @@ get_config(Host, Opts) ->
                   backups = Backups,
                   tls_options = [{encrypt, Encrypt},
                                  {tls_verify, TLSVerify},
+				 {tls_certfile, TLSCertFile},
                                  {tls_cacertfile, TLSCAFile},
                                  {tls_depth, TLSDepth}],
                   port = Port,
@@ -339,6 +341,7 @@ collect_parts_bit([],Acc,Uacc) ->
 	      (ldap_rootdn) -> fun((binary()) -> binary());
 	      (ldap_servers) -> fun(([binary()]) -> [binary()]);
 	      (ldap_tls_certfile) -> fun((binary()) -> string());
+	      (ldap_tls_cacertfile) -> fun((binary()) -> string());
 	      (ldap_tls_depth) -> fun((non_neg_integer()) -> non_neg_integer());
 	      (ldap_tls_verify) -> fun((hard | soft | false) -> hard | soft | false);
 	      (ldap_filter) -> fun((binary()) -> binary());
@@ -366,6 +369,10 @@ opt_type(ldap_port) ->
 opt_type(ldap_rootdn) -> fun iolist_to_binary/1;
 opt_type(ldap_servers) ->
     fun (L) -> [iolist_to_binary(H) || H <- L] end;
+opt_type(ldap_tls_certfile) ->
+    fun(S) ->
+	    binary_to_list(ejabberd_pkix:try_certfile(S))
+    end;
 opt_type(ldap_tls_cacertfile) ->
     fun(S) -> binary_to_list(misc:try_read_file(S)) end;
 opt_type(ldap_tls_depth) ->
@@ -390,4 +397,5 @@ opt_type(_) ->
     [deref_aliases, ldap_backups, ldap_base, ldap_uids,
      ldap_deref_aliases, ldap_encrypt, ldap_password,
      ldap_port, ldap_rootdn, ldap_servers, ldap_filter,
-     ldap_tls_cacertfile, ldap_tls_depth, ldap_tls_verify].
+     ldap_tls_certfile, ldap_tls_cacertfile, ldap_tls_depth,
+     ldap_tls_verify].

@@ -1104,7 +1104,7 @@ opt_type(sql_server) -> fun iolist_to_binary/1;
 opt_type(sql_username) -> fun iolist_to_binary/1;
 opt_type(sql_ssl) -> fun(B) when is_boolean(B) -> B end;
 opt_type(sql_ssl_verify) -> fun(B) when is_boolean(B) -> B end;
-opt_type(sql_ssl_certfile) -> fun misc:try_read_file/1;
+opt_type(sql_ssl_certfile) -> fun ejabberd_pkix:try_certfile/1;
 opt_type(sql_ssl_cafile) -> fun misc:try_read_file/1;
 opt_type(sql_query_timeout) ->
     fun (I) when is_integer(I), I > 0 -> I end;
@@ -1115,6 +1115,6 @@ opt_type(sql_queue_type) ->
 opt_type(_) ->
     [sql_database, sql_keepalive_interval,
      sql_password, sql_port, sql_server,
-     sql_username, sql_ssl, sql_ssl_verify, sql_ssl_cerfile,
+     sql_username, sql_ssl, sql_ssl_verify, sql_ssl_certfile,
      sql_ssl_cafile, sql_queue_type, sql_query_timeout,
      sql_connect_timeout].

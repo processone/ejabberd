@@ -130,7 +130,8 @@
 	 port = 389              :: inet:port_number(),
          sockmod = gen_tcp       :: ssl | gen_tcp,
          tls = none              :: none | tls,
-         tls_options = []        :: [{cacertfile, string()} |
+         tls_options = []        :: [{certfile, string()} |
+				     {cacertfile, string()} |
                                      {depth, non_neg_integer()} |
                                      {verify, non_neg_integer()}],
 	 fd                      :: gen_tcp:socket() | undefined,
@@ -577,11 +578,17 @@ init([Hosts, Port, Rootdn, Passwd, Opts]) ->
 		     end;
 		 PT -> PT
 	       end,
+    CertOpts = case proplists:get_value(tls_certfile, Opts) of
+		   undefined ->
+		       [];
+		   Path1 ->
+		       [{certfile, Path1}]
+	       end,
     CacertOpts = case proplists:get_value(tls_cacertfile, Opts) of
                      undefined ->
                          [];
-                     Path ->
-                         [{cacertfile, Path}]
+                     Path2 ->
+                         [{cacertfile, Path2}]
                  end,
     DepthOpts = case proplists:get_value(tls_depth, Opts) of
                     undefined ->
@@ -596,11 +603,11 @@ init([Hosts, Port, Rootdn, Passwd, Opts]) ->
 				  "certfiles configured, so verification "
 				  "is disabled.",
 				  []),
-		     [];
+		     CertOpts;
 		 Verify == soft ->
-		     [{verify, 1}] ++ CacertOpts ++ DepthOpts;
+		     [{verify, 1}] ++ CertOpts ++ CacertOpts ++ DepthOpts;
 		 Verify == hard ->
-		     [{verify, 2}] ++ CacertOpts ++ DepthOpts;
+		     [{verify, 2}] ++ CertOpts ++ CacertOpts ++ DepthOpts;
 		 true -> []
 	      end,
     {ok, connecting,

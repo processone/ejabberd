@@ -469,7 +469,7 @@ mod_opt_type(ldap_servers) ->
 mod_opt_type(ldap_tls_cacertfile) ->
     fun misc:try_read_file/1;
 mod_opt_type(ldap_tls_certfile) ->
-    fun misc:try_read_file/1;
+    fun ejabberd_pkix:try_certfile/1;
 mod_opt_type(ldap_tls_depth) ->
     fun (I) when is_integer(I), I >= 0 -> I end;
 mod_opt_type(ldap_tls_verify) ->

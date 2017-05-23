@@ -27,7 +27,7 @@
 
 %% API
 -export([start_link/0, add_certfile/1, format_error/1, opt_type/1,
-	 get_certfile/1, route_registered/1]).
+	 get_certfile/1, try_certfile/1, route_registered/1]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
@@ -56,15 +56,16 @@
 %%%===================================================================
 -spec add_certfile(filename:filename())
       -> ok | {error, cert_error() | file:posix()}.
-add_certfile(Path0) ->
-    Path = case filename:pathtype(Path0) of
-	       relative ->
-		   {ok, CWD} = file:get_cwd(),
-		   iolist_to_binary(filename:join(CWD, Path0));
-	       _ ->
-		   iolist_to_binary(Path0)
-	   end,
-    gen_server:call(?MODULE, {add_certfile, Path}).
+add_certfile(Path) ->
+    gen_server:call(?MODULE, {add_certfile, prep_path(Path)}).
+
+-spec try_certfile(filename:filename()) -> binary().
+try_certfile(Path0) ->
+    Path = prep_path(Path0),
+    case mk_cert_state(Path, false) of
+	{ok, _} -> Path;
+	{error, _} -> erlang:error(badarg)
+    end.
 
 route_registered(Route) ->
     gen_server:call(?MODULE, {route_registered, Route}).
@@ -513,6 +514,16 @@ get_cert_path(G, [Root|_] = Acc) ->
 		      {_, _, V, _} = digraph:edge(G, E),
 		      get_cert_path(G, [V|Acc])
 	      end, Es)
+    end.
+
+-spec prep_path(filename:filename()) -> binary().
+prep_path(Path0) ->
+    case filename:pathtype(Path0) of
+	relative ->
+	    {ok, CWD} = file:get_cwd(),
+	    iolist_to_binary(filename:join(CWD, Path0));
+	_ ->
+	    iolist_to_binary(Path0)
     end.
 
 -ifdef(SHORT_NAME_HASH).
