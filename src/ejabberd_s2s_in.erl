@@ -164,7 +164,7 @@ handle_stream_start(_StreamStart, #{lserver := LServer} = State) ->
     case check_to(jid:make(LServer), State) of
 	false ->
 	    send(State, xmpp:serr_host_unknown());
-		      true ->
+	true ->
 	    ServerHost = ejabberd_router:host_of_route(LServer),
 	    State#{server_host => ServerHost}
     end.
@@ -186,7 +186,7 @@ handle_auth_success(RServer, Mech, _AuthModule,
 	      [SockMod:pp(Socket), Mech, RServer, LServer,
 	       ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
     State1 = case ejabberd_s2s:allow_host(ServerHost, RServer) of
-	       true ->
+		 true ->
 		     AuthDomains1 = sets:add_element(RServer, AuthDomains),
 		     change_shaper(State, RServer),
 		     State#{auth_domains => AuthDomains1};
@@ -310,13 +310,13 @@ code_change(_OldVsn, State, _Extra) ->
 -spec check_from_to(jid(), jid(), state()) -> ok | {error, stream_error()}.
 check_from_to(From, To, State) ->
     case check_from(From, State) of
-       true ->
+	true ->
 	    case check_to(To, State) of
-	      true ->
+		true ->
 		    ok;
-                false ->
+		false ->
 		    {error, xmpp:serr_host_unknown()}
-    end;
+	    end;
 	false ->
 	    {error, xmpp:serr_invalid_from()}
     end.

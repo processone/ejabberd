@@ -321,7 +321,7 @@ get_offline_info(Time, User, Server, Resource) ->
 	[#session{sid = {Time, _}, info = Info}] ->
 	    case proplists:get_bool(offline, Info) of
 		true ->
-	    Info;
+		    Info;
 		false ->
 		    none
 	    end;
