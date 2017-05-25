@@ -480,9 +480,13 @@ new_connection(MyServer, Server, From, FromTo,
 	end,
     TRes = mnesia:transaction(F),
     case TRes of
-      {atomic, Pid} ->
-	    ejabberd_s2s_out:connect(Pid),
-	    [Pid];
+      {atomic, Pid1} ->
+	    if Pid1 == Pid ->
+		    ejabberd_s2s_out:connect(Pid);
+	       true ->
+		    ejabberd_s2s_out:stop(Pid)
+	    end,
+	    [Pid1];
       {aborted, Reason} ->
 	    ?ERROR_MSG("failed to register connection ~s -> ~s: ~p",
 		       [MyServer, Server, Reason]),
