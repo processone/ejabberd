@@ -893,6 +893,7 @@ format_room_option(OptionString, ValueString) ->
 		password -> ValueString;
 		subject ->ValueString;
 		subject_author ->ValueString;
+		presence_broadcast ->misc:expr_to_term(ValueString);
 		max_users -> binary_to_integer(ValueString);
 		_ -> misc:binary_to_atom(ValueString)
 	    end,
@@ -933,6 +934,7 @@ change_option(Option, Value, Config) ->
 	password -> Config#config{password = Value};
 	password_protected -> Config#config{password_protected = Value};
 	persistent -> Config#config{persistent = Value};
+	presence_broadcast -> Config#config{presence_broadcast = Value};
 	public -> Config#config{public = Value};
 	public_list -> Config#config{public_list = Value};
 	title -> Config#config{title = Value};
