@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # define default configuration
 POLL=true
@@ -27,35 +27,59 @@ if [ "$INSTALLUSER" != "" ] ; then
                 mkdir -p "$INSTALLUSER_HOME"
                 chown "$INSTALLUSER" "$INSTALLUSER_HOME"
             fi
-            EXEC_CMD="su $INSTALLUSER -c"
+            EXEC_CMD="as_install_user"
         fi
     done
     if [ `id -g` -eq `id -g $INSTALLUSER` ] ; then
-        EXEC_CMD="bash -c"
+        EXEC_CMD="as_current_user"
     fi
     if [ "$EXEC_CMD" = "false" ] ; then
         echo "This command can only be run by root or the user $INSTALLUSER" >&2
         exit 4
     fi
 else
-    EXEC_CMD="bash -c"
+    EXEC_CMD="as_current_user"
 fi
 
+# run command either directly or via su $INSTALLUSER
+exec_cmd()
+{
+    if [ "EXEC_CMD" = as_install_user ]; then
+        su -c '"$0" $@"' "INSTALLUSER" -- "$@"
+    else
+        "$@"
+    fi
+}
+
 # parse command line parameters
-declare -a ARGS=()
-while [ $# -ne 0 ] ; do
-    PARAM="$1"
-    shift
-    case $PARAM in
-        --) break ;;
-        --no-timeout) EJABBERD_NO_TIMEOUT="--no-timeout" ;;
-        --node) ERLANG_NODE_ARG=$1 ; shift ;;
-        --config-dir) ETC_DIR="$1" ; shift ;;
-        --config) EJABBERD_CONFIG_PATH="$1" ; shift ;;
-        --ctl-config) EJABBERDCTL_CONFIG_PATH="$1" ; shift ;;
-        --logs) LOGS_DIR="$1" ; shift ;;
-        --spool) SPOOL_DIR="$1" ; shift ;;
-        *) ARGS=("${ARGS[@]}" "$PARAM") ;;
+next=init
+for arg; do
+    # Empty argument list as it is already saved in the for buffer
+    if [ "$next" = init ]; then
+        next=
+        set --
+    fi
+    case $next in
+        node) ERLANG_NODE_ARG=$arg; next=;;
+        config-dir) ETC_DIR=$arg; next=;;
+        config) EJABBERD_CONFIG_PATH=$arg; next=;;
+        ctl-config) EJABBERDCTL_CONFIG_PATH=$arg; next=;;
+        logs) LOGS_DIR=$arg; next=;;
+        spool) SPOOL_DIR=$arg; next=;;
+        "")
+            case $arg in
+                --) next=raw;;
+                --no-timeout) EJABBERD_NO_TIMEOUT="--no-timeout" ;;
+                --node) next=node;;
+                --config-dir) next=config-dir;;
+                --config) next=config;;
+                --ctl-config) next=ctl-config;;
+                --logs) next=logs;;
+                --spool) next=spool;;
+                *) set -- "$@" "$arg";; # unknown option, keep it.
+            esac;;
+        raw) # we are after --, keep options as it is.
+            set -- "$@" "$arg";;
     esac
 done
 
@@ -93,7 +117,7 @@ ERL_CRASH_DUMP=$LOGS_DIR/erl_crash_$DATETIME.dump
 ERL_INETRC=$ETC_DIR/inetrc
 
 # define mnesia options
-MNESIA_OPTS="-mnesia dir \"\\\"$SPOOL_DIR\\\"\" $MNESIA_OPTIONS"
+MNESIA_OPTS="-mnesia dir \"$SPOOL_DIR\" $MNESIA_OPTIONS"
 # define erl parameters
 ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES $ERL_OPTIONS"
 KERNEL_OPTS=""
@@ -150,40 +174,20 @@ export CONTRIB_MODULES_PATH
 export CONTRIB_MODULES_CONF_DIR
 export ERL_LIBS
 
-shell_escape_str()
-{
-    if test $# -eq 0; then
-        printf '"" '
-    else
-        shell_escape "$@"
-    fi
-}
-
-shell_escape()
-{
-    local RES=()
-    for i in "$@"; do
-        if test -z "$i"; then
-            printf '"" '
-        else
-            printf '%q ' "$i"
-        fi
-    done
-}
-
+# TODO: Too much copy-and-paste below, factorize!
 # start server
 start()
 {
     check_start
-    CMD="`shell_escape \"$ERL\" \"$NAME\" \"$ERLANG_NODE\"` \
-         -noinput -detached \
-         $MNESIA_OPTS \
-         $KERNEL_OPTS \
-         $EJABBERD_OPTS \
-         -s ejabberd \
-         $ERLANG_OPTS \
-         `shell_escape \"${ARGS[@]}\" \"$@\"`"
-    $EXEC_CMD "$CMD"
+    exec_cmd $ERL \
+             $NAME $ERLANG_NODE \
+             -noinput -detached \
+             $MNESIA_OPTS \
+             $KERNEL_OPTS \
+             $EJABBERD_OPTS \
+             -s ejabberd \
+             $ERLANG_OPTS \
+             "$@"
 }
 
 # attach to server
@@ -191,13 +195,12 @@ debug()
 {
     debugwarning
     NID=$(uid debug)
-    CMD="`shell_escape \"$ERL\" \"$NAME\" \"$NID\"` \
-         -remsh $ERLANG_NODE \
-         -hidden \
-         $KERNEL_OPTS \
-         $ERLANG_OPTS \
-         `shell_escape \"${ARGS[@]}\" \"$@\"`"
-    $EXEC_CMD "$CMD"
+    exec_cmd $ERL $NAME $NID \
+             -remsh $ERLANG_NODE \
+             -hidden \
+             $KERNEL_OPTS \
+             $ERLANG_OPTS \
+             "$@"
 }
 
 # attach to server using Elixir
@@ -206,27 +209,24 @@ iexdebug()
     debugwarning
     # Elixir shell is hidden as default
     NID=$(uid debug)
-    CMD="`shell_escape \"$IEX\" \"$IEXNAME\" \"$NID\"` \
-         -remsh $ERLANG_NODE \
-         --erl `shell_escape \"$KERNEL_OPTS\"` \
-         --erl `shell_escape \"$ERLANG_OPTS\"` \
-         --erl `shell_escape \"${ARGS[@]}\"` \
-         --erl `shell_escape_str \"$@\"`"
-    $EXEC_CMD "ERL_PATH=\"$ERL\" $CMD"
+    exec_cmd $IEX $IEXNAME $NID \
+             -remsh "$ERLANG_NODE" \
+             --erl "$KERNEL_OPTS" \
+             --erl "$ERLANG_OPTS" \
+             --erl "$@"
 }
 
 # start interactive server
 live()
 {
     livewarning
-    CMD="`shell_escape \"$ERL\" \"$NAME\" \"${ERLANG_NODE}\"` \
-         $MNESIA_OPTS \
-         $KERNEL_OPTS \
-         $EJABBERD_OPTS \
-         -s ejabberd \
-         $ERLANG_OPTS \
-         `shell_escape \"${ARGS[@]}\" \"$@\"`"
-    $EXEC_CMD "$CMD"
+    exec_cmd $ERL $NAME $ERLANG_NODE \
+             $MNESIA_OPTS \
+             $KERNEL_OPTS \
+             $EJABBERD_OPTS \
+             -s ejabberd \
+             $ERLANG_OPTS \
+             "$@"
 }
 
 # start interactive server with Elixir
@@ -234,30 +234,27 @@ iexlive()
 {
     livewarning
     echo $@
-    CMD="`shell_escape \"$IEX\" \"$IEXNAME\" \"${ERLANG_NODE}\"` \
-         --erl \"-mnesia dir \\\"$SPOOL_DIR\\\"\" \
-         --erl \"`shell_escape \"$KERNEL_OPTS\"`\" \
-         --erl \"`shell_escape \"$EJABBERD_OPTS\"`\" \
+    exec_cmd $IEX $IEXNAME $ERLANG_NODE \
+         --erl "-mnesia dir \"$SPOOL_DIR\"" \
+         --erl "$KERNEL_OPTS" \
+         --erl "$EJABBERD_OPTS" \
          --app ejabberd \
-         --erl `shell_escape \"$ERLANG_OPTS\"` \
-         --erl `shell_escape \"${ARGS[@]}\"` \
-         --erl `shell_escape_str \"$@\"`"
-    $EXEC_CMD "ERL_PATH=\"$ERL\" $CMD"
+         --erl "$ERLANG_OPTS" \
+         --erl "$@"
 }
 
 # start server in the foreground
 foreground()
 {
     check_start
-    CMD="`shell_escape \"$ERL\" \"$NAME\" \"$ERLANG_NODE\"` \
+    exec_cmd $ERL $NAME $ERLANG_NODE \
          -noinput \
          $MNESIA_OPTS \
          $KERNEL_OPTS \
          $EJABBERD_OPTS \
          -s ejabberd \
          $ERLANG_OPTS \
-         `shell_escape \"${ARGS[@]}\" \"$@\"`"
-    $EXEC_CMD "$CMD"
+         "$@"
 }
 
 debugwarning()
@@ -311,9 +308,9 @@ livewarning()
 etop()
 {
     NID=$(uid top)
-    $EXEC_CMD "$ERL \
+    exec_cmd $ERL \
       $NAME $NID \
-      -hidden -s etop -s erlang halt -output text -node $ERLANG_NODE"
+      -hidden -s etop -s erlang halt -output text -node $ERLANG_NODE
 }
 
 ping()
@@ -327,11 +324,11 @@ ping()
         PING_NODE=$(hostname)
     fi
     NID=$(uid ping ${PING_NODE})
-    $EXEC_CMD "$ERL \
-      $PING_NAME $NID \
-      -hidden $KERNEL_OPTS $ERLANG_OPTS \
-      -eval 'io:format(\"~p~n\",[net_adm:ping('\"'\"'$PEER'\"'\"')])' \
-      -s erlang halt -output text -noinput"
+    exec_cmd $ERL \
+             $PING_NAME $NID \
+             -hidden $KERNEL_OPTS $ERLANG_OPTS \
+             -eval 'io:format("~p~n",[net_adm:ping('"$PEER"')])' \
+             -s erlang halt -output text -noinput
 }
 
 help()
@@ -359,11 +356,10 @@ help()
 ctl()
 {
     NID=$(uid ctl)
-    CMD="`shell_escape \"$ERL\" \"$NAME\" \"$NID\"` \
+    exec_cmd $ERL $NAME $NID \
          -noinput -hidden $KERNEL_OPTS -s ejabberd_ctl \
-         -extra `shell_escape \"$ERLANG_NODE\"` $EJABBERD_NO_TIMEOUT \
-         `shell_escape \"$@\"`"
-    $EXEC_CMD "$CMD"
+         -extra $ERLANG_NODE $EJABBERD_NO_TIMEOUT \
+         "$@"
     result=$?
     case $result in
         2) help;;
@@ -376,7 +372,8 @@ ctl()
 uid()
 {
     uuid=$(uuidgen 2>/dev/null)
-    [ -z "$uuid" -a -f /proc/sys/kernel/random/uuid ] && uuid=$(</proc/sys/kernel/random/uuid)
+    [ -z "$uuid" -a -f /proc/sys/kernel/random/uuid ] && \
+        uuid=$(cat /proc/sys/kernel/random/uuid)
     [ -z "$uuid" ] && uuid=$(printf "%X" $RANDOM$(date +%M%S)$$)
     uuid=${uuid%%-*}
     [ $# -eq 0 ] && echo ${uuid}-${ERLANG_NODE}
@@ -431,16 +428,16 @@ wait_for_status()
 }
 
 # main handler
-case "${ARGS[0]}" in
+case $@ in
     'start') start;;
     'debug') debug;;
     'iexdebug') iexdebug;;
     'live') live;;
     'iexlive') iexlive;;
     'foreground') foreground;;
-    'ping'*) ping ${ARGS[1]};;
+    'ping'*) shift; ping "$@";;
     'etop') etop;;
     'started') wait_for_status 0 30 2;; # wait 30x2s before timeout
     'stopped') wait_for_status 3 30 2 && stop_epmd;; # wait 30x2s before timeout
-    *) ctl "${ARGS[@]}";;
+    *) ctl "$@";;
 esac
