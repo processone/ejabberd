@@ -20,20 +20,29 @@ ERL_LIBS={{libdir}}
 # check the proper system user is used if defined
 if [ "$INSTALLUSER" != "" ] ; then
     EXEC_CMD="false"
+    # is the user part of the group "root"?
     for GID in `id -G`; do
         if [ $GID -eq 0 ] ; then
-            INSTALLUSER_HOME=$(getent passwd "$INSTALLUSER" | cut -d: -f6)
-            if [ -n "$INSTALLUSER_HOME" ] && [ ! -d "$INSTALLUSER_HOME" ] ; then
-                mkdir -p "$INSTALLUSER_HOME"
-                chown "$INSTALLUSER" "$INSTALLUSER_HOME"
-            fi
-            EXEC_CMD="su $INSTALLUSER -c"
+            EXEC_CMD="become_root"
         fi
     done
+    # is the user "root"?
+    if [ "$(id -u)" -eq 0 ] ; then
+        EXEC_CMD="become_root"
+    fi
+    # a properly set primary group is sufficient (no need to switch identities)
     if [ `id -g` -eq `id -g $INSTALLUSER` ] ; then
         EXEC_CMD="bash -c"
     fi
-    if [ "$EXEC_CMD" = "false" ] ; then
+    if [ "$EXEC_CMD" = "become_root" ] ; then
+        # prepare an empty install user's home directory, if it is missing
+        INSTALLUSER_HOME=$(getent passwd "$INSTALLUSER" | cut -d: -f6)
+        if [ -n "$INSTALLUSER_HOME" ] && [ ! -d "$INSTALLUSER_HOME" ] ; then
+            mkdir -p "$INSTALLUSER_HOME"
+            chown "$INSTALLUSER" "$INSTALLUSER_HOME"
+        fi
+        EXEC_CMD="su $INSTALLUSER -c"
+    elif [ "$EXEC_CMD" = "false" ] ; then
         echo "This command can only be run by root or the user $INSTALLUSER" >&2
         exit 4
     fi
