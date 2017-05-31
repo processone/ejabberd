@@ -212,6 +212,14 @@ AC_ARG_ENABLE(latest_deps,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-latest-deps) ;;
 esac],[if test "x$latest_deps" = "x"; then latest_deps=false; fi])
 
+AC_ARG_ENABLE(system_deps,
+[AC_HELP_STRING([--enable-system-deps], [makes rebar use localy installed dependences instead of downloading them (default: no)])],
+[case "${enableval}" in
+  yes) system_deps=true ;;
+  no)  system_deps=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-system-deps) ;;
+esac],[if test "x$system_deps" = "x"; then system_deps=false; fi])
+
 AC_ARG_ENABLE(stun,
 [AC_HELP_STRING([--enable-stun], [enable STUN/TURN support (default: no)])],
 [case "${enableval}" in
@@ -274,6 +282,7 @@ AC_SUBST(sip)
 AC_SUBST(debug)
 AC_SUBST(tools)
 AC_SUBST(latest_deps)
+AC_SUBST(system_deps)
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)

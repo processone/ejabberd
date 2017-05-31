@@ -60,6 +60,7 @@
 {docdir, "{{release_dir}}/doc"}.
 
 {latest_deps, @latest_deps@}.
+{system_deps, @system_deps@}.
 
 {ldflags, "@LDFLAGS@"}.
 {cflags, "@CFLAGS@"}.

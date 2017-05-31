@@ -23,10 +23,12 @@ Vars = case file:consult(filename:join([filename:dirname(SCRIPT),"vars.config"])
 	       Terms;
 	   _Err ->
 	       []
-       end ++ [{cflags, "-g -O2 -Wall"}, {cppflags, "-g -O2 -Wall"}, {ldflags, ""}],
+       end ++ [{cflags, "-g -O2 -Wall"}, {cppflags, "-g -O2 -Wall"},
+	       {ldflags, ""}, {system_deps, false}],
 {cflags, CFlags} = lists:keyfind(cflags, 1, Vars),
 {cppflags, CPPFlags} = lists:keyfind(cppflags, 1, Vars),
 {ldflags, LDFlags} = lists:keyfind(ldflags, 1, Vars),
+{system_deps, SystemDeps}  = lists:keyfind(system_deps, 1, Vars),
 
 GetCfg0 = fun(F, Cfg, [Key | Tail], Default) ->
 		  Val = case lists:keyfind(Key, 1, Cfg) of
@@ -336,7 +338,7 @@ Rules = [
 	  ProcessFloatingDeps, [], []},
 	 {[deps], IsRebar3,
 	  Rebar3DepsFilter, []},
-	 {[deps], os:getenv("USE_GLOBAL_DEPS") /= false,
+	 {[deps], SystemDeps /= false,
 	  GlobalDepsFilter, []}
 	],
 
