@@ -32,8 +32,6 @@ if [ "$EXEC_CMD" = "false" ] ; then
 fi
 
 # parse command line parameters
-ARGS=`getopt -o n:s:l:f:c:d:t --long node:,spool:,logs:,config:,ctl-config:,config-dir:,no-timeout -n ejabberdctl -- "$@"`
-eval set -- "$ARGS";
 for arg; do
     case $1 in
         -n|--node) ERLANG_NODE_ARG=$2; shift;;
@@ -43,7 +41,8 @@ for arg; do
         -c|--ctl-config) EJABBERDCTL_CONFIG_PATH=$2; shift;;
         -d|--config-dir) ETC_DIR=$2; shift;;
         -t|--no-timeout) NO_TIMEOUT="--no-timeout";;
-        --) shift; break;;
+        --) :;;
+        *) break;;
     esac
     shift
 done
