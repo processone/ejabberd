@@ -224,6 +224,7 @@ check_start()
             }
         }
     } || {
+        [ -d "$SPOOL_DIR" ] || mkdir -p "$SPOOL_DIR"
         cd "$SPOOL_DIR" || {
             echo "ERROR: ejabberd can not access directory $SPOOL_DIR"
             exit 6
