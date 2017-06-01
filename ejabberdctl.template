@@ -31,25 +31,22 @@ if [ "$EXEC_CMD" = "false" ] ; then
     exit 7
 fi
 
-# set backward compatibility on command line parameters
-set -- $(echo "$*" | sed -e \
-  "s/--node/-n/;s/--spool/-s/;s/--logs/-l/;\
-   s/--config/-f/;s/--ctl-config/-c/;s/--config-dir/-d/;\
-   s/--no-timeout/-t/")
 # parse command line parameters
-while getopts n:s:l:f:c:d:tx opt; do
-    case $opt in
-        n) ERLANG_NODE_ARG=$OPTARG;;
-        s) SPOOL_DIR=$OPTARG;;
-        l) LOGS_DIR=$OPTARG;;
-        f) EJABBERD_CONFIG_PATH=$OPTARG;;
-        c) EJABBERDCTL_CONFIG_PATH=$OPTARG;;
-        d) ETC_DIR=$OPTARG;;
-        t) NO_TIMEOUT="--no-timeout";;
+ARGS=`getopt -o n:s:l:f:c:d:t --long node:,spool:,logs:,config:,ctl-config:,config-dir:,no-timeout -n ejabberdctl -- "$@"`
+eval set -- "$ARGS";
+for arg; do
+    case $1 in
+        -n|--node) ERLANG_NODE_ARG=$2; shift;;
+        -s|--spool) SPOOL_DIR=$2; shift;;
+        -l|--logs) LOGS_DIR=$2; shift;;
+        -f|--config) EJABBERD_CONFIG_PATH=$2; shift;;
+        -c|--ctl-config) EJABBERDCTL_CONFIG_PATH=$2; shift;;
+        -d|--config-dir) ETC_DIR=$2; shift;;
+        -t|--no-timeout) NO_TIMEOUT="--no-timeout";;
+        --) shift; break;;
     esac
+    shift
 done
-# keep extra command line parameters for ejabberd
-shift $((OPTIND-1))
 
 # define ejabberd variables if not already defined from the command line
 : ${ETC_DIR:={{sysconfdir}}/ejabberd}
