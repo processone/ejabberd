@@ -398,7 +398,7 @@ web_page_host(_, Host,
 		       q = Q,
 		       lang = Lang} = _Request) ->
     Sort_query = get_sort_query(Q),
-    Res = make_rooms_page(find_host(Host), Lang, Sort_query),
+    Res = make_rooms_page(Host, Lang, Sort_query),
     {stop, Res};
 web_page_host(Acc, _, _) -> Acc.
 
@@ -482,11 +482,11 @@ build_info_room({Name, Host, Pid}) ->
 
     History = (S#state.history)#lqueue.queue,
     Ts_last_message =
-	case queue:is_empty(History) of
+	case p1_queue:is_empty(History) of
 	    true ->
 		<<"A long time ago">>;
 	    false ->
-		Last_message1 = queue:last(History),
+		Last_message1 = get_queue_last(History),
 		{_, _, _, Ts_last, _} = Last_message1,
 		xmpp_util:encode_timestamp(Ts_last)
 	end,
@@ -499,6 +499,10 @@ build_info_room({Name, Host, Pid}) ->
      Logging,
      Just_created,
      Title}.
+
+get_queue_last(Queue) ->
+    List = p1_queue:to_list(Queue),
+    lists:last(List).
 
 prepare_rooms_infos(Rooms) ->
     [prepare_room_info(Room) || Room <- Rooms].
@@ -736,11 +740,11 @@ decide_room({_Room_name, _Host, Room_pid}, Last_allowed) ->
     History = (S#state.history)#lqueue.queue,
     Ts_now = calendar:universal_time(),
     Ts_uptime = uptime_seconds(),
-    {Has_hist, Last} = case queue:is_empty(History) of
+    {Has_hist, Last} = case p1_queue:is_empty(History) of
 			   true ->
 			       {false, Ts_uptime};
 			   false ->
-			       Last_message = queue:last(History),
+			       Last_message = get_queue_last(History),
 			       {_, _, _, Ts_last, _} = Last_message,
 			       Ts_diff =
 				   calendar:datetime_to_gregorian_seconds(Ts_now)
