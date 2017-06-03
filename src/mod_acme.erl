@@ -32,18 +32,34 @@
 -include("logger.hrl").
 
 -include("xmpp.hrl").
- -include_lib("public_key/include/public_key.hrl").
+-include_lib("public_key/include/public_key.hrl").
 
 % -define(CA_URL, "https://acme-v01.api.letsencrypt.org").
--define(CA_URL, "https://acme-staging.api.letsencrypt.org").
-% -define(CA_URL, "http://localhost:4000").
+
+
 
 -define(DEFAULT_DIRECTORY, ?CA_URL ++ "/directory").
 -define(DEFAULT_NEW_NONCE, ?CA_URL ++ "/acme/new_nonce").
--define(DEFAULT_ACCOUNT, "2273801").
 
 -define(DEFAULT_KEY_FILE, "private_key_temporary").
+
+
+
+
+-define(LOCAL_TESTING, true).
+
+-ifdef(LOCAL_TESTING).
+-define(CA_URL, "http://localhost:4000").
+-define(DEFAULT_ACCOUNT, "2").
+-define(DEFAULT_TOS, <<"http://boulder:4000/terms/v1">>).
+-define(DEFAULT_AUTHZ, 
+    <<"http://localhost:4000/acme/authz/XDAfMW6xBdRogD2-VIfTxlzo4RTlaE2U6x0yrwxnXlw">>).
+-else.
+-define(CA_URL, "https://acme-staging.api.letsencrypt.org").
+-define(DEFAULT_ACCOUNT, "2273801").
 -define(DEFAULT_TOS, <<"https://letsencrypt.org/documents/LE-SA-v1.1.1-August-1-2016.pdf">>).
+-define(DEFAULT_AUTHZ, <<"">>).
+-endif.
 
 -record(state, {
         ca_url  = ?CA_URL :: list(),
@@ -94,10 +110,10 @@ get_certificate(Pid, Options) ->
     ok.
 
 get_authz(Pid, Options) ->
-    ok.
+    gen_server:call(Pid, ?FUNCTION_NAME).
 
 complete_challenge(Pid, Options) ->
-    ok.
+    gen_server:call(Pid, {?FUNCTION_NAME, Options}).
 
 deactivate_authz(Pid, Options) ->
     ok.
@@ -125,10 +141,9 @@ init([]) ->
 handle_call(directory, _From, S = #state{dir_url=Url, dirs=Dirs}) ->
     %% Make the get request
     {ok, {_Status, Head, Body}} = httpc:request(get, {Url, []}, [], []),
-
+    
     %% Decode the json string
-    Result = jiffy:decode(Body),
-    {Directories} = Result,
+    {Directories} = jiffy:decode(Body),
     StrDirectories = [{bitstring_to_list(X), bitstring_to_list(Y)} || 
                         {X,Y} <- Directories],
 
@@ -137,11 +152,10 @@ handle_call(directory, _From, S = #state{dir_url=Url, dirs=Dirs}) ->
     Nonce = get_nonce(Head),
 
     %% Update the directories in state
-    %% TODO: Get the merge of the old and the new dictionary
     NewDirs = maps:from_list(StrDirectories),
     % io:format("New directories: ~p~n", [NewDirs]),
     
-    {reply, {ok, Result}, S#state{dirs = NewDirs, nonce = Nonce}};
+    {reply, {ok, {Directories}}, S#state{dirs = NewDirs, nonce = Nonce}};
 handle_call(new_nonce, _From, S = #state{dirs=Dirs}) ->
     %% Get url from all directories
     #{"new_nonce" := Url} = Dirs,
@@ -166,7 +180,7 @@ handle_call(new_reg, _From, S = #state{ca_url = Ca, dirs=Dirs, nonce = Nonce}) -
 
     %% Jose
     {_, SignedBody} = sign_a_json_object_using_jose(Key, ReqBody, Url, Nonce),
-    io:format("Signed Body: ~p~n", [SignedBody]),
+    % io:format("Signed Body: ~p~n", [SignedBody]),
 
     %% Encode the Signed body with jiffy
     FinalBody = jiffy:encode(SignedBody),
@@ -193,7 +207,7 @@ handle_call({account_info, AccountId}, _From, S = #state{ca_url = Ca, dirs=Dirs,
 
     %% Jose
     {_, SignedBody} = sign_a_json_object_using_jose(Key, ReqBody, Url, Nonce),
-    io:format("Signed Body: ~p~n", [SignedBody]),
+    % io:format("Signed Body: ~p~n", [SignedBody]),
 
     %% Encode the Signed body with jiffy
     FinalBody = jiffy:encode(SignedBody),
@@ -221,7 +235,7 @@ handle_call({update_account, AccountId}, _From, S = #state{ca_url = Ca, dirs=Dir
 
     %% Jose
     {_, SignedBody} = sign_a_json_object_using_jose(Key, ReqBody, Url, Nonce),
-    io:format("Signed Body: ~p~n", [SignedBody]),
+    % io:format("Signed Body: ~p~n", [SignedBody]),
 
     %% Encode the Signed body with jiffy
     FinalBody = jiffy:encode(SignedBody),
@@ -248,7 +262,7 @@ handle_call(new_cert, _From, S = #state{ca_url = Ca, dirs=Dirs, nonce = Nonce}) 
 
     %% Jose
     {_, SignedBody} = sign_a_json_object_using_jose(Key, ReqBody, Url, Nonce),
-    io:format("Signed Body: ~p~n", [SignedBody]),
+    % io:format("Signed Body: ~p~n", [SignedBody]),
 
     %% Encode the Signed body with jiffy
     FinalBody = jiffy:encode(SignedBody),
@@ -266,16 +280,64 @@ handle_call(new_authz, _From, S = #state{ca_url = Ca, dirs=Dirs, nonce = Nonce})
     #{"new-authz" := Url} = Dirs,
 
     %% Make the request body
-    ReqBody = jiffy:encode({[
-        { <<"resource">>, <<"new-authz">>}
-    ]}),
+    ReqBody = jiffy:encode({
+      [ { <<"identifier">>, {
+          [ {<<"type">>, <<"dns">>} 
+          , {<<"value">>, <<"my-acme-test-ejabberd.com">>}
+          ] }}
+      , {<<"existing">>, <<"accept">>}
+      , { <<"resource">>, <<"new-authz">>}
+      ] }),
 
     %% Get the key from a file
     Key = jose_jwk:from_file(?DEFAULT_KEY_FILE),
 
     %% Jose
     {_, SignedBody} = sign_a_json_object_using_jose(Key, ReqBody, Url, Nonce),
-    io:format("Signed Body: ~p~n", [SignedBody]),
+    % io:format("Signed Body: ~p~n", [SignedBody]),
+
+    %% Encode the Signed body with jiffy
+    FinalBody = jiffy:encode(SignedBody),
+
+    %% Post request
+    {ok, {Status, Head, Body}} = 
+        httpc:request(post, {Url, [], "application/jose+json", FinalBody}, [], []),
+
+    % Get and save the new nonce
+    NewNonce = get_nonce(Head),
+        
+    {reply, {ok, {Status, Head, Body}}, S#state{nonce=NewNonce}};
+handle_call(get_authz, _From, S = #state{ca_url = Ca, dirs=Dirs, nonce = Nonce}) ->
+    %% Get url from all directories
+    Url = bitstring_to_list(?DEFAULT_AUTHZ),
+
+    %% Post request
+    {ok, {Status, Head, Body}} = 
+        % httpc:request(post, {Url, [], "application/jose+json", FinalBody}, [], []),
+        httpc:request(Url),
+
+    % Get and save the new nonce
+    NewNonce = get_nonce(Head),
+        
+    {reply, {ok, {Status, Head, Body}}, S#state{nonce=NewNonce}};
+handle_call({complete_challenge, [Solution]}, _From, S = #state{ca_url = Ca, dirs=Dirs, nonce = Nonce}) ->
+    %% Get url from all directories
+    {ChallengeType, BitUrl, KeyAuthz} = Solution,
+    Url = bitstring_to_list(BitUrl),
+
+    %% Make the request body
+    ReqBody = jiffy:encode({
+      [ { <<"keyAuthorization">>, KeyAuthz}
+      , {<<"type">>, ChallengeType}
+      , { <<"resource">>, <<"challenge">>}
+      ] }),
+
+    %% Get the key from a file
+    Key = jose_jwk:from_file(?DEFAULT_KEY_FILE),
+
+    %% Jose
+    {_, SignedBody} = sign_a_json_object_using_jose(Key, ReqBody, Url, Nonce),
+    % io:format("Signed Body: ~p~n", [SignedBody]),
 
     %% Encode the Signed body with jiffy
     FinalBody = jiffy:encode(SignedBody),
@@ -314,6 +376,10 @@ get_nonce(Head) ->
     {"replay-nonce", Nonce} = proplists:lookup("replay-nonce", Head),
     Nonce.
 
+get_challenges({Body}) ->
+    {<<"challenges">>, Challenges} = proplists:lookup(<<"challenges">>, Body),
+    Challenges.
+
 
 %% Test
 
@@ -321,7 +387,6 @@ generate_key() ->
     % Generate a key for now
     Key = jose_jwk:generate_key({ec, secp256r1}),
     io:format("Key: ~p~n", [Key]),
-
     Key.
 
 sign_a_json_object_using_jose(Key, Json, Url, Nonce) ->
@@ -331,17 +396,11 @@ sign_a_json_object_using_jose(Key, Json, Url, Nonce) ->
     {_, BinaryPubKey} = jose_jwk:to_binary(PubKey),
     % io:format("Public Key: ~p~n", [BinaryPubKey]),    
     PubKeyJson = jiffy:decode(BinaryPubKey),
-    io:format("Public Key: ~p~n", [PubKeyJson]), 
-
-    % KeyOkp = jose_jwk:to_okp(Key),
-    % io:format("Key Okp: ~p~n", [KeyOkp]),
-
+    % io:format("Public Key: ~p~n", [PubKeyJson]), 
     
     % Jws object containing the algorithm
     JwsObj = jose_jws:from(
-      #{ 
-         % <<"alg">> => <<"HS256">>
-         <<"alg">> => <<"ES256">>
+      #{ <<"alg">> => <<"ES256">>
        %% Im not sure if it is needed
        % , <<"b64">> => true
        , <<"jwk">> => PubKeyJson
@@ -349,14 +408,13 @@ sign_a_json_object_using_jose(Key, Json, Url, Nonce) ->
        }),
     % io:format("Jws: ~p~n", [JwsObj]),
 
-
     %% Signed Message
     Signed = jose_jws:sign(Key, Json, JwsObj),
     % io:format("Signed: ~p~n", [Signed]),    
 
     %% Peek protected
     Protected = jose_jws:peek_protected(Signed),
-    io:format("Protected: ~p~n", [jiffy:decode(Protected)]),    
+    % io:format("Protected: ~p~n", [jiffy:decode(Protected)]),    
 
     %% Peek Payload
     Payload = jose_jws:peek_payload(Signed),
@@ -369,15 +427,15 @@ sign_a_json_object_using_jose(Key, Json, Url, Nonce) ->
     Signed.
 
 scenario() ->
+     % scenario_new_account().
+     scenario_old_account().
+
+scenario_old_account() ->
     {ok, Pid} = start(),
     io:format("Server started: ~p~n", [Pid]),
 
     {ok, Result} = directory(Pid, []),
     io:format("Directory result: ~p~n", [Result]),
-
-    % %% Request the creation of a new account
-    % {ok, {Status, Head, Body}} = new_reg(Pid, []),
-    % io:format("New account~nHead: ~p~nBody: ~p~n", [{Status, Head}, jiffy:decode(Body)]),
 
     %% Get the info of an existing account
     % {ok, {Status1, Head1, Body1}} = account_info(Pid, ?DEFAULT_ACCOUNT),
@@ -389,14 +447,47 @@ scenario() ->
     io:format("Account: ~p~nHead: ~p~nBody: ~p~n", 
         [?DEFAULT_ACCOUNT, {Status1, Head1}, jiffy:decode(Body1)]),
 
+    %% New authorization
+    % {ok, {Status2, Head2, Body2}} = new_authz(Pid, []),
+    % io:format("New Authz~nHead: ~p~nBody: ~p~n", 
+    %     [{Status2, Head2}, jiffy:decode(Body2)]), 
+
+    %% Get authorization
+    {ok, {Status2, Head2, Body2}} = get_authz(Pid, []),
+    io:format("Get Authz~nHead: ~p~nBody: ~p~n", 
+        [{Status2, Head2}, jiffy:decode(Body2)]), 
+
+    % Challenges = get_challenges(jiffy:decode(Body2)),
+    % % io:format("Challenges: ~p~n", [Challenges]),
+
+    % ChallengeObjects = acme_challenge:challenges_to_objects(Challenges),
+    % % io:format("Challenges: ~p~n", [ChallengeObjects]),
+
+    % %% Create a key-authorization
+    % Key = jose_jwk:from_file(?DEFAULT_KEY_FILE),
+    % % acme_challenge:key_authorization(<<"pipi">>, Key),
+
+    % Solutions = acme_challenge:solve_challenges(ChallengeObjects, Key),
+    % io:format("Solutions: ~p~n", [Solutions]),
+
+    % {ok, {Status3, Head3, Body3}} = 
+    %     complete_challenge(Pid, [X || X <- Solutions, X =/= ok]),
+    % io:format("Complete_challenge~nHead: ~p~nBody: ~p~n", 
+    %     [{Status3, Head3}, jiffy:decode(Body3)]), 
+
     %% New certification
     % {ok, {Status2, Head2, Body2}} = new_cert(Pid, []),
     % io:format("New Cert~nHead: ~p~nBody: ~p~n", 
     %     [{Status2, Head2}, jiffy:decode(Body2)]),    
+    ok. 
 
-    %% New authorization
-    {ok, {Status2, Head2, Body2}} = new_authz(Pid, []),
-    io:format("New Authz~nHead: ~p~nBody: ~p~n", 
-        [{Status2, Head2}, jiffy:decode(Body2)]),    
-    ok.  
+scenario_new_account() ->
+    {ok, Pid} = start(),
+    io:format("Server started: ~p~n", [Pid]),
 
+    {ok, Result} = directory(Pid, []),
+    io:format("Directory result: ~p~n", [Result]),
+
+    %% Request the creation of a new account
+    {ok, {Status, Head, Body}} = new_reg(Pid, []),
+    io:format("New account~nHead: ~p~nBody: ~p~n", [{Status, Head}, jiffy:decode(Body)]).
