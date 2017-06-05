@@ -252,11 +252,28 @@ handle_call(new_cert, _From, S = #state{ca_url = Ca, dirs=Dirs, nonce = Nonce}) 
     %% Get url from all directories
     #{"new-cert" := Url} = Dirs,
 
+    MyCSR = make_csr(),
+    % file:write_file("myCSR.der", CSR),
+    % {ok, CSR} = file:read_file("CSR.der"),
+    % io:format("CSR: ~p~nMy Encoded CSR: ~p~nCorrect Encoded CSR: ~p~n", 
+    %     [ public_key:der_decode('CertificationRequest', CSR)
+    %     , MyCSR
+    %     , CSR]),
+
+    CSRbase64 = base64url:encode(MyCSR),
+
+    % io:format("CSR base64: ~p~n", [CSRbase64]),
+    {MegS, Sec, MicS} = erlang:timestamp(),
+    NotBefore = xmpp_util:encode_timestamp({MegS-1, Sec, MicS}),
+    NotAfter = xmpp_util:encode_timestamp({MegS+1, Sec, MicS}),
+
     %% Make the request body
     ReqBody = jiffy:encode({[
-        { <<"resource">>, <<"new-cert">>}
+        {<<"resource">>, <<"new-cert">>},
+        {<<"csr">>, CSRbase64},
+        {<<"notBefore">>, NotBefore},
+        {<<"NotAfter">>, NotAfter}
     ]}),
-
     %% Get the key from a file
     Key = jose_jwk:from_file(?DEFAULT_KEY_FILE),
 
@@ -269,7 +286,7 @@ handle_call(new_cert, _From, S = #state{ca_url = Ca, dirs=Dirs, nonce = Nonce}) 
 
     %% Post request
     {ok, {Status, Head, Body}} = 
-        httpc:request(post, {Url, [], "application/jose+json", FinalBody}, [], []),
+        httpc:request(post, {Url, [], "application/pkix-cert", FinalBody}, [], []),
 
     % Get and save the new nonce
     NewNonce = get_nonce(Head),
@@ -426,9 +443,102 @@ sign_a_json_object_using_jose(Key, Json, Url, Nonce) ->
     
     Signed.
 
+make_csr() ->
+
+    SigningKey = jose_jwk:from_pem_file("csr_signing_private_key.key"),   
+    {_, PrivateKey} = jose_jwk:to_key(SigningKey),
+    % io:format("PrivateKey: ~p~n", [PrivateKey]),
+
+    PubKey = jose_jwk:to_public(SigningKey),
+    % io:format("Public Key: ~p~n", [PubKey]),    
+
+    {_, BinaryPubKey} = jose_jwk:to_binary(PubKey),
+    % io:format("Public Key: ~p~n", [BinaryPubKey]),
+
+    {_, RawPubKey} = jose_jwk:to_key(PubKey),
+    % io:format("Raw Public Key: ~p~n", [RawPubKey]),
+    {{_, RawBinPubKey}, _} = RawPubKey,
+    % io:format("Encoded Raw Public Key: ~p~n", [RawBinPubKey]),
+
+    %% TODO: Understand how to extract the information below from the key struct
+    AlgoID = #'CertificationRequestInfo_subjectPKInfo_algorithm'{
+        algorithm = {1,2,840,10045,2,1}, %% Very dirty
+        parameters = {asn1_OPENTYPE,<<6,8,42,134,72,206,61,3,1,7>>}
+    },                 
+    SubPKInfo = #'CertificationRequestInfo_subjectPKInfo'{
+        algorithm = AlgoID, %% Very dirty
+        subjectPublicKey = RawBinPubKey %% public_key:der_encode('ECPoint', RawPubKey)
+    },
+
+    CommonName = #'AttributeTypeAndValue'{
+        type = {2,5,4,3},
+        % value = list_to_bitstring([12,25] ++ "my-acme-test-ejabberd.com")
+        value = length_bitstring(<<"my-acme-test-ejabberd.com">>)
+    },
+    CountryName = #'AttributeTypeAndValue'{
+        type = {2,5,4,6},
+        value = length_bitstring(<<"US">>)
+    },
+    StateOrProvinceName = #'AttributeTypeAndValue'{
+        type = {2,5,4,8},
+        value = length_bitstring(<<"California">>)
+    },
+    LocalityName = #'AttributeTypeAndValue'{
+        type = {2,5,4,7},
+        value = length_bitstring(<<"San Jose">>)
+    },
+    OrganizationName = #'AttributeTypeAndValue'{
+        type = {2,5,4,10},
+        value = length_bitstring(<<"Example">>)
+    },
+    CRI = #'CertificationRequestInfo'{
+        version = 0,
+        % subject = {rdnSequence, [[CommonName]]},
+        subject = {rdnSequence, 
+            [ [CommonName] 
+            , [CountryName]
+            , [StateOrProvinceName]
+            , [LocalityName]
+            , [OrganizationName]]},
+        subjectPKInfo = SubPKInfo,
+        attributes = []
+    },
+    EncodedCRI = public_key:der_encode(
+        'CertificationRequestInfo',
+        CRI),
+    
+    SignedCRI = public_key:sign(EncodedCRI, 'sha256', PrivateKey),
+
+    SigningAlgoID = #'CertificationRequest_signatureAlgorithm'{
+        algorithm = [1,2,840,10045,4,3,2], %% Very dirty
+        parameters = asn1_NOVALUE
+    },
+
+    CSR = #'CertificationRequest'{
+        certificationRequestInfo = CRI,
+        signatureAlgorithm = SigningAlgoID,
+        signature = SignedCRI
+    },
+    Result = public_key:der_encode(
+        'CertificationRequest',
+        CSR),
+    % io:format("My CSR: ~p~n", [CSR]),  
+
+    Result.
+
+%% TODO: Find a correct function to do this 
+length_bitstring(Bitstring) ->
+    Size = size(Bitstring),
+    case Size < 127 of
+        true ->
+            <<12, Size, Bitstring/binary>>;
+        false ->
+            error(not_implemented)
+    end.
+
 scenario() ->
-     % scenario_new_account().
-     scenario_old_account().
+    % scenario_new_account().
+    scenario_old_account().
 
 scenario_old_account() ->
     {ok, Pid} = start(),
@@ -458,7 +568,7 @@ scenario_old_account() ->
         [{Status2, Head2}, jiffy:decode(Body2)]), 
 
     % Challenges = get_challenges(jiffy:decode(Body2)),
-    % % io:format("Challenges: ~p~n", [Challenges]),
+    % io:format("Challenges: ~p~n", [Challenges]),
 
     % ChallengeObjects = acme_challenge:challenges_to_objects(Challenges),
     % % io:format("Challenges: ~p~n", [ChallengeObjects]),
@@ -474,11 +584,15 @@ scenario_old_account() ->
     %     complete_challenge(Pid, [X || X <- Solutions, X =/= ok]),
     % io:format("Complete_challenge~nHead: ~p~nBody: ~p~n", 
     %     [{Status3, Head3}, jiffy:decode(Body3)]), 
+    
+    % Get a certification
+    {ok, {Status4, Head4, Body4}} = 
+        new_cert(Pid, []),
+    io:format("New Cert~nHead: ~p~nBody: ~p~n", 
+        [{Status4, Head4}, Body4]), 
+    
+    % make_csr(),
 
-    %% New certification
-    % {ok, {Status2, Head2, Body2}} = new_cert(Pid, []),
-    % io:format("New Cert~nHead: ~p~nBody: ~p~n", 
-    %     [{Status2, Head2}, jiffy:decode(Body2)]),    
     ok. 
 
 scenario_new_account() ->
