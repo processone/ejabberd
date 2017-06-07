@@ -342,7 +342,8 @@ Rules = [
 	  GlobalDepsFilter, []}
 	],
 
-Config = FilterConfig(FilterConfig, ProcessVars(ProcessVars, CONFIG, []), Rules),
+Config = [{plugin_dir, filename:join([filename:dirname(SCRIPT),"plugins"])}]++
+FilterConfig(FilterConfig, ProcessVars(ProcessVars, CONFIG, []), Rules),
 
 %io:format("ejabberd configuration:~n  ~p~n", [Config]),
 
