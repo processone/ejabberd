@@ -177,7 +177,7 @@
 {"Last year","Último ano"}.
 {"leaves the room","Sair da sala"}.
 {"Listened Ports at ","Portas abertas em "}.
-{"Listened Ports","Portas escutadas"}.
+{"Listened Ports","Portas abertas"}.
 {"List of modules to start","Listas de módulos para inicializar"}.
 {"List of rooms","Lista de salas"}.
 {"Low level update script","Script de atualização low level"}.
@@ -216,7 +216,7 @@
 {"New Password:","Nova Senha:"}.
 {"Nickname","Apelido"}.
 {"Nickname Registration at ","Registro do apelido em "}.
-{"Nickname ~s does not exist in the room","O nick ~s não existe na sala"}.
+{"Nickname ~s does not exist in the room","O apelido ~s não existe na sala"}.
 {"nobody","ninguém"}.
 {"No body provided for announce message","Nenhum corpo de texto fornecido para anunciar mensagem"}.
 {"No Data","Nenhum dado"}.
@@ -228,9 +228,9 @@
 {"None","Nenhum"}.
 {"No resource provided","Nenhum recurso foi informado"}.
 {"Not Found","Não encontrado"}.
-{"Notify subscribers when items are removed from the node","Notificar subscritores quando os elementos se eliminem do nodo"}.
-{"Notify subscribers when the node configuration changes","Notificar subscritores quando cambia la configuração do nodo"}.
-{"Notify subscribers when the node is deleted","Notificar subscritores quando o nodo se elimine"}.
+{"Notify subscribers when items are removed from the node","Notificar assinantes quando itens forem eliminados do nó"}.
+{"Notify subscribers when the node configuration changes","Notificar assinantes quando a configuração do nó mudar"}.
+{"Notify subscribers when the node is deleted","Notificar assinantes quando o nó for eliminado"}.
 {"November","Novembro"}.
 {"Number of occupants","Número de participantes"}.
 {"Number of online users","Número de usuários online"}.
@@ -341,7 +341,7 @@
 {"Show Ordinary Table","Mostrar Tabela Ordinária"}.
 {"Shut Down Service","Parar Serviço"}.
 {"~s invites you to the room ~s","~s convidou você para a sala ~s"}.
-{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Alguns clientes jabber podem salvar a sua senha no seu computador. Use recurso somente se você considera este computador seguro o suficiente."}.
+{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Alguns clientes jabber podem salvar a sua senha no seu computador. Use o recurso somente se você considera este computador seguro o suficiente."}.
 {"Specify the access model","Especificar os modelos de acesso"}.
 {"Specify the event message type","Especificar o tipo de mensagem para o evento"}.
 {"Specify the publisher model","Especificar o modelo do publicante"}.
@@ -354,7 +354,7 @@
 {"Stop Modules at ","Parar módulos em "}.
 {"Stop Modules","Parar módulos"}.
 {"Stop","Parar"}.
-{"Stopped Nodes","Nos parados"}.
+{"Stopped Nodes","Nós parados"}.
 {"Storage Type","Tipo de armazenamento"}.
 {"Store binary backup:","Armazenar backup binário:"}.
 {"Store plain text backup:","Armazenar backup em texto:"}.
@@ -365,7 +365,7 @@
 {"Subscription","Subscrição"}.
 {"Sunday","Domingo"}.
 {"That nickname is already in use by another occupant","O apelido (nick) já está sendo utilizado"}.
-{"That nickname is registered by another person","O nick já está registrado por outra pessoa"}.
+{"That nickname is registered by another person","O apelido já está registrado por outra pessoa"}.
 {"The CAPTCHA is valid.","O CAPTCHA é inválido."}.
 {"The CAPTCHA verification has failed","A verificação do CAPTCHA falhou"}.
 {"The collections with which a node is affiliated","As coleções com as quais o nó está relacionado"}.
@@ -377,7 +377,7 @@
 {"There was an error deleting the account: ","Houve um erro ao deletar esta conta: "}.
 {"This IP address is blacklisted in ~s","Este endereço IP está bloqueado em ~s"}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Não é 'case insensitive': macbeth é o mesmo que MacBeth e ainda Macbeth. "}.
-{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Esta pagina aceita criações de novas contas Jabber neste servidor. A sua JID (Identificador Jabber) será da seguinte forma: 'usuário@servidor'. Por favor, leia cuidadosamente as instruções para preencher corretamente os campos."}.
+{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Esta pagina aceita criações de novas contas Jabber neste servidor. O seu JID (Identificador Jabber) será da seguinte forma: 'usuário@servidor'. Por favor, leia cuidadosamente as instruções para preencher corretamente os campos."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Esta página aceita para deletar uma conta Jabber neste servidor."}.
 {"Thursday","Quinta"}.
 {"Time delay","Intervalo (Tempo)"}.
@@ -428,12 +428,12 @@
 {"You can later change your password using a Jabber client.","Mais tarde você pode alterar a sua senha usando um cliente Jabber."}.
 {"You have been banned from this room","Você foi banido desta sala"}.
 {"You must fill in field \"Nickname\" in the form","Você deve completar o campo \"Apelido\" no formulário"}.
-{"You need a client that supports x:data and CAPTCHA to register","Você precisa de um cliente com suporte de x:data para poder registrar o nick"}.
+{"You need a client that supports x:data and CAPTCHA to register","Você precisa de um cliente com suporte de x:data para poder registrar o apelido"}.
 {"You need a client that supports x:data to register the nickname","Você precisa de um cliente com suporte a x:data para registrar o seu apelido"}.
 {"You need an x:data capable client to configure mod_irc settings","Necessitas um cliente com suporte de x:data para configurar as opções de mod_irc"}.
 {"You need an x:data capable client to configure room","Necessitas um cliente com suporte de x:data para configurar a sala"}.
 {"You need an x:data capable client to search","Necessitas um cliente com suporte de x:data para poder buscar"}.
-{"Your active privacy list has denied the routing of this stanza.","Sua lista de privacidade ativa negou o roteamento deste."}.
+{"Your active privacy list has denied the routing of this stanza.","Sua lista de privacidade ativa negou o roteamento desta instância."}.
 {"Your contact offline message queue is full. The message has been discarded.","Sua fila de mensagens offline esta cheia. Sua mensagem foi descartada"}.
 {"Your Jabber account was successfully created.","Sua conta jabber foi criada com sucesso."}.
 {"Your Jabber account was successfully deleted.","Sua conta Jabber foi deletada com sucesso."}.
