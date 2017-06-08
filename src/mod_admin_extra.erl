@@ -528,6 +528,10 @@ get_commands_spec() ->
 			result = {res, rescode}},
      #ejabberd_commands{name = push_roster_all, tags = [roster],
 			desc = "Push template roster from file to all those users",
+			longdesc = "The text file must contain an erlang term: a list "
+			    "of tuples with username, servername, group and nick. Example:\n"
+			    "[{\"user1\", \"localhost\", \"Workers\", \"User 1\"},\n"
+			    " {\"user2\", \"localhost\", \"Workers\", \"User 2\"}].",
 			module = ?MODULE, function = push_roster_all,
 			args = [{file, binary}],
 			result = {res, rescode}},
@@ -1280,7 +1284,7 @@ subscribe_roster({Name, Server, Group, Nick}, [{Name, Server, _, _} | Roster]) -
     subscribe_roster({Name, Server, Group, Nick}, Roster);
 %% Subscribe Name2 to Name1
 subscribe_roster({Name1, Server1, Group1, Nick1}, [{Name2, Server2, Group2, Nick2} | Roster]) ->
-    subscribe(Name1, Server1, iolist_to_binary(Name2), iolist_to_binary(Server2),
+    subscribe(iolist_to_binary(Name1), iolist_to_binary(Server1), iolist_to_binary(Name2), iolist_to_binary(Server2),
 	iolist_to_binary(Nick2), iolist_to_binary(Group2), <<"both">>, []),
     subscribe_roster({Name1, Server1, Group1, Nick1}, Roster).
 
