@@ -1,5 +1,6 @@
 [Unit]
 Description=XMPP Server
+Requires=network.target
 After=network.target
 
 [Service]
