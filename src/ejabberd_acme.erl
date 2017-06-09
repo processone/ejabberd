@@ -23,33 +23,31 @@
 
 -spec directory(url()) ->
   {ok, map(), nonce()} | {error, _}.
-directory(DirURL) ->
+directory(Url) ->
   Options = [],
   HttpOptions = [{timeout, ?REQUEST_TIMEOUT}],
-  case httpc:request(get, {DirURL, []}, HttpOptions, Options) of
+  case httpc:request(get, {Url, []}, HttpOptions, Options) of
     {ok, {{_, Code, _}, Head, Body}} when Code >= 200, Code =< 299 ->
       %% Decode the json string
-      {Directories} = jiffy:decode(Body),
-      StrDirectories = [{bitstring_to_list(X), bitstring_to_list(Y)} ||
-                          {X,Y} <- Directories],
-      % Find and save the replay nonce
-      Nonce = get_nonce(Head),
-      %% Return Map of Directories
-      NewDirs = maps:from_list(StrDirectories),
-      {ok, NewDirs, Nonce};
-    {ok, {{_, Code, _}, _Head, _Body}} ->
-      ?ERROR_MSG("Got unexpected status code from <~s>: ~B",
-        [DirURL, Code]),
-      {error, unexpected_code};
-    {error, Reason} ->
-      ?ERROR_MSG("Error requesting directory from <~s>: ~p",
-        [DirURL, Reason]),
-      {error, Reason}
+      case decode(Body) of
+        {error, Reason} ->
+          ?ERROR_MSG("Problem decoding: ~s", [Body]),
+          {error, Reason};
+        Directories ->
+          StrDirectories = [{bitstring_to_list(X), bitstring_to_list(Y)} ||
+                              {X,Y} <- Directories],
+          Nonce = get_nonce(Head),
+          %% Return Map of Directories
+          NewDirs = maps:from_list(StrDirectories),
+          {ok, NewDirs, Nonce}
+      end;
+    Error ->
+      failed_http_request(Error, Url)
   end.
 
 -spec new_account(url(), jose_jwk:key(), proplist(), nonce()) ->
   {ok, {url(), proplist()}, nonce()} | {error, _}.
-new_account(NewAccURl, PrivateKey, Req, Nonce) ->
+new_account(Url, PrivateKey, Req, Nonce) ->
   %% Make the request body
   ReqBody = jiffy:encode({[{ <<"resource">>, <<"new-reg">>}] ++ Req}),
   {_, SignedBody} = sign_json_jose(PrivateKey, ReqBody, Nonce),
@@ -58,27 +56,24 @@ new_account(NewAccURl, PrivateKey, Req, Nonce) ->
   Options = [],
   HttpOptions = [{timeout, ?REQUEST_TIMEOUT}],
   case httpc:request(post,
-      {NewAccURl, [], "application/jose+json", FinalBody}, HttpOptions, Options) of
+      {Url, [], "application/jose+json", FinalBody}, HttpOptions, Options) of
     {ok, {{_, Code, _}, Head, Body}} when Code >= 200, Code =< 299 ->
-      %% Decode the json string
-      {Return} = jiffy:decode(Body),
-      TOSUrl = get_tos(Head),
-      % Find and save the replay nonce
-      NewNonce = get_nonce(Head),
-      {ok, {TOSUrl, Return}, NewNonce};
-    {ok, {{_, Code, _}, _Head, Body}} ->
-      ?ERROR_MSG("Got unexpected status code from <~s>: ~B, Body: ~s",
-        [NewAccURl, Code, Body]),
-      {error, unexpected_code};
-    {error, Reason} ->
-      ?ERROR_MSG("Error requesting directory from <~s>: ~p",
-        [NewAccURl, Reason]),
-      {error, Reason}
+      case decode(Body) of
+        {error, Reason} ->
+          ?ERROR_MSG("Problem decoding: ~s", [Body]),
+          {error, Reason};
+        Return ->
+          TOSUrl = get_tos(Head),
+          NewNonce = get_nonce(Head),
+          {ok, {TOSUrl, Return}, NewNonce}
+      end;
+    Error ->
+      failed_http_request(Error, Url)
   end.
 
 -spec update_account(url(), jose_jwk:key(), proplist(), nonce()) ->
   {ok, proplist(), nonce()} | {error, _}.
-update_account(AccURl, PrivateKey, Req, Nonce) ->
+update_account(Url, PrivateKey, Req, Nonce) ->
   %% Make the request body
   ReqBody = jiffy:encode({[{ <<"resource">>, <<"reg">>}] ++ Req}),
   {_, SignedBody} = sign_json_jose(PrivateKey, ReqBody, Nonce),
@@ -87,26 +82,23 @@ update_account(AccURl, PrivateKey, Req, Nonce) ->
   Options = [],
   HttpOptions = [{timeout, ?REQUEST_TIMEOUT}],
   case httpc:request(post,
-      {AccURl, [], "application/jose+json", FinalBody}, HttpOptions, Options) of
+      {Url, [], "application/jose+json", FinalBody}, HttpOptions, Options) of
     {ok, {{_, Code, _}, Head, Body}} when Code >= 200, Code =< 299 ->
-      %% Decode the json string
-      {Return} = jiffy:decode(Body),
-      % Find and save the replay nonce
-      NewNonce = get_nonce(Head),
-      {ok, Return, NewNonce};
-    {ok, {{_, Code, _}, _Head, Body}} ->
-      ?ERROR_MSG("Got unexpected status code from <~s>: ~B, Body: ~s",
-        [AccURl, Code, Body]),
-      {error, unexpected_code};
-    {error, Reason} ->
-      ?ERROR_MSG("Error requesting directory from <~s>: ~p",
-        [AccURl, Reason]),
-      {error, Reason}
+      case decode(Body) of
+        {error, Reason} ->
+          ?ERROR_MSG("Problem decoding: ~s", [Body]),
+          {error, Reason};
+        Return ->
+          NewNonce = get_nonce(Head),
+          {ok, Return, NewNonce}
+      end;
+    Error ->
+      failed_http_request(Error, Url)
   end.
 
 -spec get_account(url(), jose_jwk:key(), nonce()) ->
   {ok, {url(), proplist()}, nonce()} | {error, _}.
-get_account(AccURl, PrivateKey, Nonce) ->
+get_account(Url, PrivateKey, Nonce) ->
   %% Make the request body
   ReqBody = jiffy:encode({[{<<"resource">>, <<"reg">>}]}),
   %% Jose Sign
@@ -116,22 +108,19 @@ get_account(AccURl, PrivateKey, Nonce) ->
   Options = [],
   HttpOptions = [{timeout, ?REQUEST_TIMEOUT}],
   case httpc:request(post,
-      {AccURl, [], "application/jose+json", FinalBody}, HttpOptions, Options) of
+      {Url, [], "application/jose+json", FinalBody}, HttpOptions, Options) of
     {ok, {{_, Code, _}, Head, Body}} when Code >= 200, Code =< 299 ->
-      %% Decode the json string
-      {Return} = jiffy:decode(Body),
-      TOSUrl = get_tos(Head),
-      % Find and save the replay nonce
-      NewNonce = get_nonce(Head),
-      {ok, {TOSUrl, Return}, NewNonce};
-    {ok, {{_, Code, _}, _Head, Body}} ->
-      ?ERROR_MSG("Got unexpected status code from <~s>: ~B, Head: ~s",
-        [AccURl, Code, Body]),
-      {error, unexpected_code};
-    {error, Reason} ->
-      ?ERROR_MSG("Error requesting directory from <~s>: ~p",
-        [AccURl, Reason]),
-      {error, Reason}
+      case decode(Body) of
+        {error, Reason} ->
+          ?ERROR_MSG("Problem decoding: ~s", [Body]),
+          {error, Reason};
+        Return ->
+          TOSUrl = get_tos(Head),
+          NewNonce = get_nonce(Head),
+          {ok, {TOSUrl, Return}, NewNonce}
+      end;
+    Error ->
+      failed_http_request(Error, Url)
   end.
 
 
@@ -178,6 +167,26 @@ sign_json_jose(Key, Json, Nonce) ->
     %% Signed Message
     jose_jws:sign(Key, Json, JwsObj).
 
+decode(Json) ->
+  try
+    {Result} = jiffy:decode(Json),
+    Result
+  catch
+    _:Reason ->
+      {error, Reason}
+  end.
+
+-spec failed_http_request({ok, _} | {error, _}, url()) -> {error, _}.
+failed_http_request({ok, {{_, Code, _}, _Head, Body}}, Url) ->
+  ?ERROR_MSG("Got unexpected status code from <~s>: ~B, Body: ~s",
+    [Url, Code, Body]),
+  {error, unexpected_code};
+failed_http_request({error, Reason}, Url) ->
+  ?ERROR_MSG("Error making a request to <~s>: ~p",
+    [Url, Reason]),
+  {error, Reason}.
+
+
 %%
 %% Debugging Funcs -- They are only used for the development phase
 %%
@@ -213,5 +222,5 @@ generate_key() ->
 %% Just a test
 scenario0(KeyFile) ->
   PrivateKey = jose_jwk:from_file(KeyFile),
-  % scenario("http://localhost:4000", "2", PrivateKey).
-  new_user_scenario("http://localhost:4000").
+  scenario("http://localhost:4000", "2", PrivateKey).
+  % new_user_scenario("http://localhost:4000").
