@@ -36,7 +36,7 @@
 % Commands API
 -export([
 	 % Adminsys
-	 compile/1, get_cookie/0, export2sql/2,
+	 compile/1, get_cookie/0,
 	 restart_module/2,
 
 	 % Sessions
@@ -148,15 +148,6 @@ get_commands_spec() ->
 			result = {cookie, string},
 			result_example = "MWTAVMODFELNLSMYXPPD",
 			result_desc = "Erlang cookie used for authentication by ejabberd"},
-     #ejabberd_commands{name = export2sql, tags = [mnesia],
-			desc = "Export Mnesia tables to files in directory",
-			module = ?MODULE, function = export2sql,
-			args = [{host, string}, {path, string}],
-			args_example = ["myserver.com","/tmp/export/sql"],
-			args_desc = ["Server name", "File to write sql export"],
-			result = {res, rescode},
-			result_example = ok,
-			result_desc = "Status code: 0 on success, 1 otherwise"},
     #ejabberd_commands{name = restart_module, tags = [erlang],
 			desc = "Stop an ejabberd module, reload code and start",
 			module = ?MODULE, function = restart_module,
@@ -700,23 +691,6 @@ restart_module(Host, Module) when is_atom(Module) ->
 		    2
 	    end
     end.
-
-export2sql(Host, Directory) ->
-    Tables = [{export_last, last},
-	      {export_offline, offline},
-	      {export_passwd, passwd},
-	      {export_private_storage, private_storage},
-	      {export_roster, roster},
-	      {export_vcard, vcard},
-	      {export_vcard_search, vcard_search}],
-    Export = fun({TableFun, Table}) ->
-		     Filename = filename:join([Directory, atom_to_list(Table)++".txt"]),
-		     io:format("Trying to export Mnesia table '~p' on Host '~s' to file '~s'~n", [Table, Host, Filename]),
-		     Res = (catch ejd2sql:TableFun(Host, Filename)),
-		     io:format("  Result: ~p~n", [Res])
-	     end,
-    lists:foreach(Export, Tables),
-    ok.
 
 %%%
 %%% Accounts

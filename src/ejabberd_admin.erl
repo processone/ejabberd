@@ -303,6 +303,7 @@ get_commands_spec() ->
 
      #ejabberd_commands{name = export2sql, tags = [mnesia],
 			desc = "Export virtual host information from Mnesia tables to SQL file",
+			longdesc = "Configure the modules to use SQL, then call this command."
 			module = ejd2sql, function = export,
 			args_desc = ["Vhost", "Full path to the destination SQL file"],
 			args_example = ["example.com", "/var/lib/ejabberd/example.com.sql"],
