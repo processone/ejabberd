@@ -1,4 +1,4 @@
--module(mod_acme).
+-module(acme_experimental).
 
 -behaviour(gen_server).
 
