@@ -174,9 +174,9 @@ get_commands_spec() ->
 			desc = "Delete users that didn't log in last days, or that never logged",
 			longdesc = "To protect admin accounts, configure this for example:\n"
 			    "access_rules:\n"
-			    "  delete_old_users:\n"
-			    "    - deny: admin\n"
-			    "    - allow: all\n",
+			    "  protect_old_users:\n"
+			    "    - allow: admin\n"
+			    "    - deny: all\n",
 			module = ?MODULE, function = delete_old_users,
 			args = [{days, integer}],
 			args_example = [30],
@@ -817,7 +817,7 @@ delete_old_users(Days, Users) ->
     {removed, length(Users_removed), Users_removed}.
 
 delete_or_not(LUser, LServer, TimeStamp_oldest) ->
-    allow = acl:match_rule(LServer, delete_old_users, jid:make(LUser, LServer)),
+    deny = acl:match_rule(LServer, protect_old_users, jid:make(LUser, LServer)),
     [] = ejabberd_sm:get_user_resources(LUser, LServer),
     case mod_last:get_last_info(LUser, LServer) of
         {ok, TimeStamp, _Status} ->
