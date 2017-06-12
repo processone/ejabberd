@@ -11,6 +11,7 @@
         % , key_roll_over/5
 
         , new_authz/4
+        % , get_authz/3
         ]).
 
 -include("ejabberd.hrl").
@@ -25,6 +26,7 @@
 -type url() :: string().
 -type proplist() :: [{_, _}].
 -type jws() :: map().
+-type handle_resp_fun() :: fun(({ok, proplist(), proplist()}) -> {ok, _, nonce()}).
 
 -spec directory(url()) ->
   {ok, map(), nonce()} | {error, _}.
@@ -34,130 +36,78 @@ directory(Url) ->
   case httpc:request(get, {Url, []}, HttpOptions, Options) of
     {ok, {{_, Code, _}, Head, Body}} when Code >= 200, Code =< 299 ->
       case decode(Body) of
-        {error, Reason} ->
-          ?ERROR_MSG("Problem decoding: ~s", [Body]),
-          {error, Reason};
-        Directories ->
+        {ok, Directories} ->
           StrDirectories = [{bitstring_to_list(X), bitstring_to_list(Y)} ||
                               {X,Y} <- Directories],
           Nonce = get_nonce(Head),
           %% Return Map of Directories
           NewDirs = maps:from_list(StrDirectories),
-          {ok, NewDirs, Nonce}
+          {ok, NewDirs, Nonce};
+        {error, Reason} ->
+          ?ERROR_MSG("Problem decoding: ~s", [Body]),
+          {error, Reason}
       end;
     Error ->
       failed_http_request(Error, Url)
   end.
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
 %% Account Handling
 %%
-%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -spec new_account(url(), jose_jwk:key(), proplist(), nonce()) ->
   {ok, {url(), proplist()}, nonce()} | {error, _}.
 new_account(Url, PrivateKey, Req, Nonce) ->
   %% Make the request body
-  ReqBody = jiffy:encode({[{ <<"resource">>, <<"new-reg">>}] ++ Req}),
-  {_, SignedBody} = sign_json_jose(PrivateKey, ReqBody, Nonce),
-  %% Encode the Signed body with jiffy
-  FinalBody = jiffy:encode(SignedBody),
-  case make_post_request(Url, FinalBody) of
-    {ok, Head, Return} ->
-      TOSUrl = get_tos(Head),
-      NewNonce = get_nonce(Head),
-      {ok, {TOSUrl, Return}, NewNonce};
-    Error ->
-      Error
-  end.
+  EJson = {[{ <<"resource">>, <<"new-reg">>}] ++ Req},
+  prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response_tos/1).
 
 -spec update_account(url(), jose_jwk:key(), proplist(), nonce()) ->
   {ok, proplist(), nonce()} | {error, _}.
 update_account(Url, PrivateKey, Req, Nonce) ->
   %% Make the request body
-  ReqBody = jiffy:encode({[{ <<"resource">>, <<"reg">>}] ++ Req}),
-  {_, SignedBody} = sign_json_jose(PrivateKey, ReqBody, Nonce),
-  %% Encode the Signed body with jiffy
-  FinalBody = jiffy:encode(SignedBody),
-  case make_post_request(Url, FinalBody) of
-    {ok, Head, Return} ->
-      NewNonce = get_nonce(Head),
-      {ok, Return, NewNonce};
-    Error ->
-      Error
-  end.
+  EJson = {[{ <<"resource">>, <<"reg">>}] ++ Req},
+  prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response/1).
 
 -spec get_account(url(), jose_jwk:key(), nonce()) ->
   {ok, {url(), proplist()}, nonce()} | {error, _}.
 get_account(Url, PrivateKey, Nonce) ->
   %% Make the request body
-  ReqBody = jiffy:encode({[{<<"resource">>, <<"reg">>}]}),
-  %% Jose Sign
-  {_, SignedBody} = sign_json_jose(PrivateKey, ReqBody, Nonce),
-  %% Encode the Signed body with jiffy
-  FinalBody = jiffy:encode(SignedBody),
-  case make_post_request(Url, FinalBody) of
-    {ok, Head, Return} ->
-      TOSUrl = get_tos(Head),
-      NewNonce = get_nonce(Head),
-      {ok, {TOSUrl, Return}, NewNonce};
-    Error ->
-      Error
-  end.
-
+  EJson = {[{<<"resource">>, <<"reg">>}]},
+  prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response_tos/1).
 
 -spec delete_account(url(), jose_jwk:key(), nonce()) ->
   {ok, proplist(), nonce()} | {error, _}.
 delete_account(Url, PrivateKey, Nonce) ->
-  %% Make the request body
-  ReqBody = jiffy:encode({
+  EJson = {
     [ {<<"resource">>, <<"reg">>}
     , {<<"status">>, <<"deactivated">>}
-    ]}),
-  %% Jose Sign
-  {_, SignedBody} = sign_json_jose(PrivateKey, ReqBody, Nonce),
-  %% Encode the Signed body with jiffy
-  FinalBody = jiffy:encode(SignedBody),
-  case make_post_request(Url, FinalBody) of
-    {ok, Head, Return} ->
-      NewNonce = get_nonce(Head),
-      {ok, Return, NewNonce};
-    Error ->
-      Error
-  end.
+    ]},
+  prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response/1).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
 %% Authorization Handling
 %%
-%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -spec new_authz(url(), jose_jwk:key(), proplist(), nonce()) ->
   {ok, proplist(), nonce()} | {error, _}.
 new_authz(Url, PrivateKey, Req, Nonce) ->
-  %% Make the request body
-  ReqBody = jiffy:encode({
-    [ { <<"resource">>, <<"new-authz">>}] ++ Req}),
-  {_, SignedBody} = sign_json_jose(PrivateKey, ReqBody, Nonce),
-  %% Encode the Signed body with jiffy
-  FinalBody = jiffy:encode(SignedBody),
-  case make_post_request(Url, FinalBody) of
-    {ok, Head, Return} ->
-      NewNonce = get_nonce(Head),
-      {ok, Return, NewNonce};
-    Error ->
-      Error
-  end.
+  EJson = {[{<<"resource">>, <<"new-authz">>}] ++ Req},
+  prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response/1).
 
 
-
-
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
 %% Useful funs
 %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 -spec get_nonce(proplist()) -> nonce() | 'none'.
 get_nonce(Head) ->
   case proplists:lookup("replay-nonce", Head) of
@@ -180,6 +130,9 @@ get_tos(Head) ->
       none
   end.
 
+
+-spec make_post_request(url(), bitstring()) ->
+  {ok, proplist(), proplist()} | {error, _}.
 make_post_request(Url, ReqBody) ->
   Options = [],
   HttpOptions = [{timeout, ?REQUEST_TIMEOUT}],
@@ -187,14 +140,31 @@ make_post_request(Url, ReqBody) ->
       {Url, [], "application/jose+json", ReqBody}, HttpOptions, Options) of
     {ok, {{_, Code, _}, Head, Body}} when Code >= 200, Code =< 299 ->
       case decode(Body) of
+        {ok, Return} ->
+          {ok, Head, Return};
         {error, Reason} ->
           ?ERROR_MSG("Problem decoding: ~s", [Body]),
-          {error, Reason};
-        Return ->
-          {ok, Head, Return}
+          {error, Reason}
       end;
     Error ->
       failed_http_request(Error, Url)
+  end.
+
+-spec prepare_post_request(url(), jose_jwk:key(), jiffy:json_value(), 
+  nonce(), handle_resp_fun()) -> {ok, _, nonce()} | {error, _}.
+prepare_post_request(Url, PrivateKey, EJson, Nonce, HandleRespFun) ->
+  case encode(EJson) of
+    {ok, ReqBody} ->
+      FinalBody = sign_encode_json_jose(PrivateKey, ReqBody, Nonce),
+      case make_post_request(Url, FinalBody) of
+        {ok, Head, Return} ->
+          HandleRespFun({ok, Head, Return});
+        Error ->
+          Error
+      end;
+    {error, Reason} ->
+      ?ERROR_MSG("Error: ~p when encoding: ~p", [Reason, EJson]),
+      {error, Reason}
   end.
 
 -spec sign_json_jose(jose_jwk:key(), string()) -> jws().
@@ -228,18 +198,55 @@ sign_json_jose(Key, Json, Nonce) ->
        , <<"jwk">> => PubKeyJson
        , <<"nonce">> => list_to_bitstring(Nonce)
        }),
-
     %% Signed Message
     jose_jws:sign(Key, Json, JwsObj).
 
-decode(Json) ->
+-spec sign_encode_json_jose(jose_jwk:key(), string(), nonce()) -> bitstring().
+sign_encode_json_jose(Key, Json, Nonce) ->
+  {_, Signed} = sign_json_jose(Key, Json, Nonce),
+  %% This depends on jose library, so we can consider it safe
+  jiffy:encode(Signed).
+
+encode(EJson) ->
   try
-    {Result} = jiffy:decode(Json),
-    Result
+    {ok, jiffy:encode(EJson)}
   catch
     _:Reason ->
       {error, Reason}
   end.
+
+decode(Json) ->
+  try
+    {Result} = jiffy:decode(Json),
+    {ok, Result}
+  catch
+    _:Reason ->
+      {error, Reason}
+  end.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Handle Response Functions
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+-spec get_response({ok, proplist(), proplist()}) -> {ok, proplist(), nonce()}.
+get_response({ok, Head, Return}) ->
+  NewNonce = get_nonce(Head),
+  {ok, Return, NewNonce}.
+
+-spec get_response_tos({ok, proplist(), proplist()}) -> {ok, {url(), proplist()}, nonce()}.
+get_response_tos({ok, Head, Return}) ->
+  TOSUrl = get_tos(Head),
+  NewNonce = get_nonce(Head),
+  {ok, {TOSUrl, Return}, NewNonce}.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Handle Failed HTTP Requests
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -spec failed_http_request({ok, _} | {error, _}, url()) -> {error, _}.
 failed_http_request({ok, {{_, Code, _}, _Head, Body}}, Url) ->
@@ -252,9 +259,12 @@ failed_http_request({error, Reason}, Url) ->
   {error, Reason}.
 
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
 %% Debugging Funcs -- They are only used for the development phase
 %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% A typical acme workflow
 scenario(CAUrl, AccId, PrivateKey) ->
@@ -268,7 +278,7 @@ scenario(CAUrl, AccId, PrivateKey) ->
   Req =
     [ { <<"identifier">>, {
       [ {<<"type">>, <<"dns">>}
-      , {<<"value">>, <<"my-acme-test.com">>}
+      , {<<"value">>, <<"my-acme-test-ejabberd.com">>}
       ] }}
     , {<<"existing">>, <<"accept">>}
     ],
