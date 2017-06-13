@@ -245,7 +245,8 @@ wait_status()
         if [ $timeout -eq 0 ] ; then
             status=$1
         else
-            ctl status > /dev/null
+            exec_erl $(uid ctl) -hidden -noinput -s ejabberd_ctl \
+                     -extra $ERLANG_NODE $NO_TIMEOUT status > /dev/null
             status=$?
         fi
     done
