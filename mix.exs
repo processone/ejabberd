@@ -3,9 +3,9 @@ defmodule Ejabberd.Mixfile do
 
   def project do
     [app: :ejabberd,
-     version: "17.3.0",
+     version: "17.6.0",
      description: description(),
-     elixir: "~> 1.3",
+     elixir: "~> 1.4",
      elixirc_paths: ["lib"],
      compile_path: ".",
      compilers: [:asn1] ++ Mix.compilers,
@@ -39,7 +39,7 @@ defmodule Ejabberd.Mixfile do
   end
 
   defp deps do
-    [{:lager, "~> 3.2"},
+    [{:lager, "~> 3.4.0"},
      {:p1_utils, "~> 1.0"},
      {:fast_xml, "~> 1.1"},
      {:xmpp, "~> 1.1"},
@@ -89,7 +89,7 @@ defmodule Ejabberd.Mixfile do
       app
   end
 
-  def package do
+  defp package do
     [# These are the default files included in the package
       files: ["lib", "src", "priv", "mix.exs", "include", "README.md", "COPYING"],
       maintainers: ["ProcessOne"],
@@ -100,7 +100,7 @@ defmodule Ejabberd.Mixfile do
                "ProcessOne" => "http://www.process-one.net/"}]
   end
 
-  def vars do
+  defp vars do
     case :file.consult("vars.config") do
       {:ok,config} -> config
       _ -> [zlib: true, iconv: true]
