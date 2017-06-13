@@ -179,7 +179,8 @@ get_socket(N) ->
 
 mod_opt_type(ip) ->
     fun(S) ->
-	    {ok, IP} = inet:parse_ipv4_address(iolist_to_binary(S)),
+	    {ok, IP} = inet:parse_ipv4_address(
+			 binary_to_list(iolist_to_binary(S))),
 	    IP
     end;
 mod_opt_type(port) ->
