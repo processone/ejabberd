@@ -99,7 +99,7 @@ run_elixir_test(Func) ->
 
     'Elixir.Code':load_file(list_to_binary(filename:join(test_dir(), atom_to_list(Func)))),
     %% I did not use map syntax, so that this file can still be build under R16
-    'Elixir.ExUnit.Server':cases_loaded(),
+    catch 'Elixir.ExUnit.Server':cases_loaded(),
     ResultMap = 'Elixir.ExUnit':run(),
     case maps:find(failures, ResultMap) of
         {ok, 0} ->
