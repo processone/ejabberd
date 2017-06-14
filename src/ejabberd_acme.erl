@@ -11,7 +11,7 @@
         % , key_roll_over/5
 
         , new_authz/4
-        % , get_authz/3
+        , get_authz/1
         ]).
 
 -include("ejabberd.hrl").
@@ -28,29 +28,17 @@
 -type jws() :: map().
 -type handle_resp_fun() :: fun(({ok, proplist(), proplist()}) -> {ok, _, nonce()}).
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Get Directory
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 -spec directory(url()) ->
   {ok, map(), nonce()} | {error, _}.
 directory(Url) ->
-  Options = [],
-  HttpOptions = [{timeout, ?REQUEST_TIMEOUT}],
-  case httpc:request(get, {Url, []}, HttpOptions, Options) of
-    {ok, {{_, Code, _}, Head, Body}} when Code >= 200, Code =< 299 ->
-      case decode(Body) of
-        {ok, Directories} ->
-          StrDirectories = [{bitstring_to_list(X), bitstring_to_list(Y)} ||
-                              {X,Y} <- Directories],
-          Nonce = get_nonce(Head),
-          %% Return Map of Directories
-          NewDirs = maps:from_list(StrDirectories),
-          {ok, NewDirs, Nonce};
-        {error, Reason} ->
-          ?ERROR_MSG("Problem decoding: ~s", [Body]),
-          {error, Reason}
-      end;
-    Error ->
-      failed_http_request(Error, Url)
-  end.
-
+  prepare_get_request(Url, fun get_dirs/1).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
@@ -99,7 +87,45 @@ delete_account(Url, PrivateKey, Nonce) ->
   {ok, proplist(), nonce()} | {error, _}.
 new_authz(Url, PrivateKey, Req, Nonce) ->
   EJson = {[{<<"resource">>, <<"new-authz">>}] ++ Req},
-  prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response/1).
+  prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response_location/1).
+
+-spec get_authz(url()) ->
+  {ok, proplist(), nonce()} | {error, _}.
+get_authz(Url) ->
+  prepare_get_request(Url, fun get_response/1).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Handle Response Functions
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+-spec get_dirs({ok, proplist(), proplist()}) -> {ok, map(), nonce()}.
+get_dirs({ok, Head, Return}) ->
+  NewNonce = get_nonce(Head),
+  StrDirectories = [{bitstring_to_list(X), bitstring_to_list(Y)} ||
+                              {X,Y} <- Return],
+  NewDirs = maps:from_list(StrDirectories),
+  {ok, NewDirs, NewNonce}.
+
+-spec get_response({ok, proplist(), proplist()}) -> {ok, proplist(), nonce()}.
+get_response({ok, Head, Return}) ->
+  NewNonce = get_nonce(Head),
+  {ok, Return, NewNonce}.
+
+-spec get_response_tos({ok, proplist(), proplist()}) -> {ok, {url(), proplist()}, nonce()}.
+get_response_tos({ok, Head, Return}) ->
+  TOSUrl = get_tos(Head),
+  NewNonce = get_nonce(Head),
+  {ok, {TOSUrl, Return}, NewNonce}.
+
+-spec get_response_location({ok, proplist(), proplist()}) -> {ok, {url(), proplist()}, nonce()}.
+get_response_location({ok, Head, Return}) ->
+  Location = get_location(Head),
+  NewNonce = get_nonce(Head),
+  {ok, {Location, Return}, NewNonce}.
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -112,6 +138,13 @@ new_authz(Url, PrivateKey, Req, Nonce) ->
 get_nonce(Head) ->
   case proplists:lookup("replay-nonce", Head) of
     {"replay-nonce", Nonce} -> Nonce;
+    none -> none
+  end.
+
+-spec get_location(proplist()) -> url() | 'none'.
+get_location(Head) ->
+  case proplists:lookup("location", Head) of
+    {"location", Location} -> Location;
     none -> none
   end.
 
@@ -130,6 +163,7 @@ get_tos(Head) ->
       none
   end.
 
+%% TODO: Fix the duplicated code at the below 4 functions
 
 -spec make_post_request(url(), bitstring()) ->
   {ok, proplist(), proplist()} | {error, _}.
@@ -138,6 +172,24 @@ make_post_request(Url, ReqBody) ->
   HttpOptions = [{timeout, ?REQUEST_TIMEOUT}],
   case httpc:request(post,
       {Url, [], "application/jose+json", ReqBody}, HttpOptions, Options) of
+    {ok, {{_, Code, _}, Head, Body}} when Code >= 200, Code =< 299 ->
+      case decode(Body) of
+        {ok, Return} ->
+          {ok, Head, Return};
+        {error, Reason} ->
+          ?ERROR_MSG("Problem decoding: ~s", [Body]),
+          {error, Reason}
+      end;
+    Error ->
+      failed_http_request(Error, Url)
+  end.
+
+-spec make_get_request(url()) ->
+  {ok, proplist(), proplist()} | {error, _}.
+make_get_request(Url) ->
+  Options = [],
+  HttpOptions = [{timeout, ?REQUEST_TIMEOUT}],
+  case httpc:request(get, {Url, []}, HttpOptions, Options) of
     {ok, {{_, Code, _}, Head, Body}} when Code >= 200, Code =< 299 ->
       case decode(Body) of
         {ok, Return} ->
@@ -165,6 +217,16 @@ prepare_post_request(Url, PrivateKey, EJson, Nonce, HandleRespFun) ->
     {error, Reason} ->
       ?ERROR_MSG("Error: ~p when encoding: ~p", [Reason, EJson]),
       {error, Reason}
+  end.
+
+-spec prepare_get_request(url(), handle_resp_fun()) ->
+  {ok, _, nonce()} | {error, _}.
+prepare_get_request(Url, HandleRespFun) ->
+  case make_get_request(Url) of
+    {ok, Head, Return} ->
+      HandleRespFun({ok, Head, Return});
+    Error ->
+      Error
   end.
 
 -spec sign_json_jose(jose_jwk:key(), string()) -> jws().
@@ -224,22 +286,6 @@ decode(Json) ->
       {error, Reason}
   end.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%
-%% Handle Response Functions
-%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
--spec get_response({ok, proplist(), proplist()}) -> {ok, proplist(), nonce()}.
-get_response({ok, Head, Return}) ->
-  NewNonce = get_nonce(Head),
-  {ok, Return, NewNonce}.
-
--spec get_response_tos({ok, proplist(), proplist()}) -> {ok, {url(), proplist()}, nonce()}.
-get_response_tos({ok, Head, Return}) ->
-  TOSUrl = get_tos(Head),
-  NewNonce = get_nonce(Head),
-  {ok, {TOSUrl, Return}, NewNonce}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -306,13 +352,10 @@ new_user_scenario(CAUrl) ->
   Req1 = [{ <<"agreement">>, list_to_bitstring(TOS)}],
   {ok, Account2, Nonce3} = update_account(AccURL, PrivateKey, Req1, Nonce2),
 
-  %%
-  %% Delete account
-  %%
-
-  {ok, Account3, Nonce4} = delete_account(AccURL, PrivateKey, Nonce3),
-  {ok, {_TOS, Account4}, Nonce5} = get_account(AccURL, PrivateKey, Nonce4),
-  ?INFO_MSG("New account: ~p~n", [Account4]),
+  % %% Delete account
+  % {ok, Account3, Nonce4} = delete_account(AccURL, PrivateKey, Nonce3),
+  % {ok, {_TOS, Account4}, Nonce5} = get_account(AccURL, PrivateKey, Nonce4),
+  % ?INFO_MSG("New account: ~p~n", [Account4]),
 
   % NewKey = generate_key(),
   % KeyChangeUrl = CAUrl ++ "/acme/key-change/",
@@ -321,8 +364,23 @@ new_user_scenario(CAUrl) ->
 
   % {ok, {_TOS, Account4}, Nonce5} = get_account(AccURL, NewKey, Nonce4),
   % ?INFO_MSG("New account:~p~n", [Account4]),
+  % {Account4, PrivateKey}.
 
-  {Account4, PrivateKey}.
+  AccIdBin = list_to_bitstring(integer_to_list(AccId)),
+  #{"new-authz" := NewAuthz} = Dirs,
+  Req2 =
+    [ { <<"identifier">>, {
+      [ {<<"type">>, <<"dns">>}
+      , {<<"value">>, << <<"my-acme-test-ejabberd">>/binary, AccIdBin/binary, <<".com">>/binary >>}
+      ] }}
+    , {<<"existing">>, <<"accept">>}
+    ],
+  {ok, {AuthzUrl, Authz}, Nonce4} = new_authz(NewAuthz, PrivateKey, Req2, Nonce3),
+
+  {ok, Authz2, Nonce5} = get_authz(AuthzUrl),
+
+  {Account2, Authz2, PrivateKey}.
+
 
 generate_key() ->
   jose_jwk:generate_key({ec, secp256r1}).
