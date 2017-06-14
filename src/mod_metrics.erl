@@ -25,7 +25,6 @@
 
 -module(mod_metrics).
 
--behaviour(ejabberd_config).
 -author('christophe.romain@process-one.net').
 -behaviour(gen_mod).
 
@@ -33,14 +32,16 @@
 -include("logger.hrl").
 -include("xmpp.hrl").
 
--export([start/2, stop/1, send_metrics/4, opt_type/1, mod_opt_type/1,
-	 depends/2, reload/3]).
+-export([start/2, stop/1, mod_opt_type/1, depends/2, reload/3]).
 
 -export([offline_message_hook/1,
          sm_register_connection_hook/3, sm_remove_connection_hook/3,
          user_send_packet/1, user_receive_packet/1,
          s2s_send_packet/1, s2s_receive_packet/1,
          remove_user/2, register_user/2]).
+
+-define(SOCKET_NAME, mod_metrics_udp_socket).
+-define(SOCKET_REGISTER_RETRIES, 10).
 
 %%====================================================================
 %% API
@@ -126,20 +127,20 @@ register_user(_User, Server) ->
 %%====================================================================
 
 push(Host, Probe) ->
-    spawn(?MODULE, send_metrics, [Host, Probe, {127,0,0,1}, 11111]).
+    IP = gen_mod:get_module_opt(Host, ?MODULE, ip, {127,0,0,1}),
+    Port = gen_mod:get_module_opt(Host, ?MODULE, port, 11111),
+    send_metrics(Host, Probe, IP, Port).
 
 send_metrics(Host, Probe, Peer, Port) ->
     % our default metrics handler is https://github.com/processone/grapherl
     % grapherl metrics are named first with service domain, then nodename
     % and name of the data itself, followed by type timestamp and value
     % example => process-one.net/xmpp-1.user_receive_packet:c/1441784958:1
-    [_, NodeId] = str:tokens(misc:atom_to_binary(node()), <<"@">>),
-    [Node | _] = str:tokens(NodeId, <<".">>),
+    [_, FQDN] = binary:split(misc:atom_to_binary(node()), <<"@">>),
+    [Node|_] = binary:split(FQDN, <<".">>),
     BaseId = <<Host/binary, "/", Node/binary, ".">>,
-    DateTime = erlang:universaltime(),
-    UnixTime = calendar:datetime_to_gregorian_seconds(DateTime) - 62167219200,
-    TS = integer_to_binary(UnixTime),
-    case gen_udp:open(0) of
+    TS = integer_to_binary(p1_time_compat:system_time(seconds)),
+    case get_socket(?SOCKET_REGISTER_RETRIES) of
 	{ok, Socket} ->
 	    case Probe of
 		{Key, Val} ->
@@ -151,14 +152,38 @@ send_metrics(Host, Probe, Peer, Port) ->
 		    Data = <<BaseId/binary, (misc:atom_to_binary(Key))/binary,
 			    ":c/", TS/binary, ":1">>,
 		    gen_udp:send(Socket, Peer, Port, Data)
-	    end,
-	    gen_udp:close(Socket);
-	Error ->
-	    ?WARNING_MSG("can not open udp socket to grapherl: ~p", [Error])
+	    end;
+	Err ->
+	    Err
     end.
 
-opt_type(_) ->
-     [].
+get_socket(N) ->
+    case whereis(?SOCKET_NAME) of
+	undefined ->
+	    case gen_udp:open(0) of
+		{ok, Socket} ->
+		    try register(?SOCKET_NAME, Socket) of
+			true -> {ok, Socket}
+		    catch _:badarg when N > 1 ->
+			    gen_udp:close(Socket),
+			    get_socket(N-1)
+		    end;
+		{error, Reason} = Err ->
+		    ?ERROR_MSG("can not open udp socket to grapherl: ~s",
+			       [inet:format_error(Reason)]),
+		    Err
+	    end;
+	Socket ->
+	    {ok, Socket}
+    end.
 
+mod_opt_type(ip) ->
+    fun(S) ->
+	    {ok, IP} = inet:parse_ipv4_address(
+			 binary_to_list(iolist_to_binary(S))),
+	    IP
+    end;
+mod_opt_type(port) ->
+    fun(I) when is_integer(I), I>0, I<65536 -> I end;
 mod_opt_type(_) ->
-    [].
+    [ip, port].

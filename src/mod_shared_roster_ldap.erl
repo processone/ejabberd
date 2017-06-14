@@ -39,7 +39,7 @@
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
 
--export([get_user_roster/2, c2s_session_opened/1,
+-export([get_user_roster/2,
 	 get_jid_info/4, process_item/2, in_subscription/6,
 	 out_subscription/4, mod_opt_type/1, opt_type/1, depends/2,
 	 transform_module_options/1]).
@@ -50,7 +50,6 @@
 -include("mod_roster.hrl").
 -include("eldap.hrl").
 
--define(SETS, gb_sets).
 -define(USER_CACHE, shared_roster_ldap_user_cache).
 -define(GROUP_CACHE, shared_roster_ldap_group_cache).
 -define(LDAP_SEARCH_TIMEOUT, 5).    %% Timeout for LDAP search queries in seconds
@@ -160,23 +159,6 @@ process_item(RosterItem, _Host) ->
       _ -> RosterItem#roster{subscription = both, ask = none}
     end.
 
-c2s_session_opened(#{jid := #jid{luser = LUser, lserver = LServer},
-		     pres_f := PresF, pres_t := PresT} = State) ->
-    US = {LUser, LServer},
-    DisplayedGroups = get_user_displayed_groups(US),
-    SRUsers = lists:flatmap(fun(Group) ->
-						get_group_users(LServer, Group)
-					end,
-			    DisplayedGroups),
-    PresBoth = lists:foldl(
-		 fun({U, S, _}, Acc) ->
-			 ?SETS:add_element({U, S, <<"">>}, Acc);
-		    ({U, S}, Acc) ->
-			 ?SETS:add_element({U, S, <<"">>}, Acc)
-		 end, ?SETS:new(), SRUsers),
-    State#{pres_f => ?SETS:union(PresBoth, PresF),
-	   pres_t => ?SETS:union(PresBoth, PresT)}.
-
 -spec get_jid_info({subscription(), [binary()]}, binary(), binary(), jid())
       -> {subscription(), [binary()]}.
 get_jid_info({Subscription, Groups}, User, Server,
@@ -245,8 +227,6 @@ init([Host, Opts]) ->
 		       ?MODULE, in_subscription, 30),
     ejabberd_hooks:add(roster_out_subscription, Host,
 		       ?MODULE, out_subscription, 30),
-    ejabberd_hooks:add(c2s_session_opened, Host,
-		       ?MODULE, c2s_session_opened, 70),
     ejabberd_hooks:add(roster_get_jid_info, Host, ?MODULE,
 		       get_jid_info, 70),
     ejabberd_hooks:add(roster_process_item, Host, ?MODULE,
@@ -276,8 +256,6 @@ terminate(_Reason, State) ->
 			  ?MODULE, in_subscription, 30),
     ejabberd_hooks:delete(roster_out_subscription, Host,
 			  ?MODULE, out_subscription, 30),
-    ejabberd_hooks:delete(c2s_session_opened,
-			  Host, ?MODULE, c2s_session_opened, 70),
     ejabberd_hooks:delete(roster_get_jid_info, Host,
 			  ?MODULE, get_jid_info, 70),
     ejabberd_hooks:delete(roster_process_item, Host,
@@ -390,7 +368,7 @@ search_group_info(State, Group) ->
 		      end
 		end,
     AuthChecker = case State#state.auth_check of
-		    true -> fun ejabberd_auth:is_user_exists/2;
+		    true -> fun ejabberd_auth:user_exists/2;
 		    _ -> fun (_U, _S) -> true end
 		  end,
     case eldap_search(State,
@@ -603,9 +581,9 @@ mod_opt_type(ldap_rootdn) -> fun iolist_to_binary/1;
 mod_opt_type(ldap_servers) ->
     fun (L) -> [iolist_to_binary(H) || H <- L] end;
 mod_opt_type(ldap_tls_cacertfile) ->
-    fun iolist_to_binary/1;
+    fun misc:try_read_file/1;
 mod_opt_type(ldap_tls_certfile) ->
-    fun iolist_to_binary/1;
+    fun ejabberd_pkix:try_certfile/1;
 mod_opt_type(ldap_tls_depth) ->
     fun (I) when is_integer(I), I >= 0 -> I end;
 mod_opt_type(ldap_tls_verify) ->

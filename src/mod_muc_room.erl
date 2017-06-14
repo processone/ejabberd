@@ -1152,13 +1152,13 @@ handle_iq_vcard(ToJID, NewId, #iq{type = Type, sub_els = SubEls} = IQ) ->
 -spec stanzaid_pack(binary(), binary()) -> binary().
 stanzaid_pack(OriginalId, Resource) ->
     <<"berd",
-      (misc:encode_base64(<<"ejab\000",
+      (base64:encode(<<"ejab\000",
 		       OriginalId/binary, "\000",
 		       Resource/binary>>))/binary>>.
 
 -spec stanzaid_unpack(binary()) -> {binary(), binary()}.
 stanzaid_unpack(<<"berd", StanzaIdBase64/binary>>) ->
-    StanzaId = misc:decode_base64(StanzaIdBase64),
+    StanzaId = base64:decode(StanzaIdBase64),
     [<<"ejab">>, OriginalId, Resource] =
 	str:tokens(StanzaId, <<"\000">>),
     {OriginalId, Resource}.

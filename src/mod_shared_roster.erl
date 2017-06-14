@@ -31,7 +31,7 @@
 
 -export([start/2, stop/1, reload/3, export/1,
 	 import_info/0, webadmin_menu/3, webadmin_page/3,
-	 get_user_roster/2, c2s_session_opened/1,
+	 get_user_roster/2,
 	 get_jid_info/4, import/5, process_item/2, import_start/2,
 	 in_subscription/6, out_subscription/4, c2s_self_presence/1,
 	 unset_presence/4, register_user/2, remove_user/2,
@@ -53,8 +53,6 @@
 -include("ejabberd_web_admin.hrl").
 
 -include("mod_shared_roster.hrl").
-
--define(SETS, gb_sets).
 
 -type group_options() :: [{atom(), any()}].
 -callback init(binary(), gen_mod:opts()) -> any().
@@ -86,8 +84,6 @@ start(Host, Opts) ->
 		       ?MODULE, in_subscription, 30),
     ejabberd_hooks:add(roster_out_subscription, Host,
 		       ?MODULE, out_subscription, 30),
-    ejabberd_hooks:add(c2s_session_opened, Host,
-		       ?MODULE, c2s_session_opened, 70),
     ejabberd_hooks:add(roster_get_jid_info, Host, ?MODULE,
 		       get_jid_info, 70),
     ejabberd_hooks:add(roster_process_item, Host, ?MODULE,
@@ -112,8 +108,6 @@ stop(Host) ->
 			  ?MODULE, in_subscription, 30),
     ejabberd_hooks:delete(roster_out_subscription, Host,
 			  ?MODULE, out_subscription, 30),
-    ejabberd_hooks:delete(c2s_session_opened,
-			  Host, ?MODULE, c2s_session_opened, 70),
     ejabberd_hooks:delete(roster_get_jid_info, Host,
 			  ?MODULE, get_jid_info, 70),
     ejabberd_hooks:delete(roster_process_item, Host,
@@ -300,23 +294,6 @@ set_item(User, Server, Resource, Item) ->
 			      items = [mod_roster:encode_item(Item)]}]},
     ejabberd_router:route(ResIQ).
 
-c2s_session_opened(#{jid := #jid{luser = LUser, lserver = LServer},
-		     pres_f := PresF, pres_t := PresT} = State) ->
-    US = {LUser, LServer},
-    DisplayedGroups = get_user_displayed_groups(US),
-    SRUsers = lists:flatmap(fun(Group) ->
-						get_group_users(LServer, Group)
-					end,
-			    DisplayedGroups),
-    PresBoth = lists:foldl(
-		 fun({U, S, _}, Acc) ->
-			 ?SETS:add_element({U, S, <<"">>}, Acc);
-		    ({U, S}, Acc) ->
-			 ?SETS:add_element({U, S, <<"">>}, Acc)
-		 end, ?SETS:new(), SRUsers),
-    State#{pres_f => ?SETS:union(PresBoth, PresF),
-	   pres_t => ?SETS:union(PresBoth, PresT)}.
-
 -spec get_jid_info({subscription(), [binary()]}, binary(), binary(), jid())
       -> {subscription(), [binary()]}.
 get_jid_info({Subscription, Groups}, User, Server,
@@ -450,7 +427,7 @@ get_online_users(Host) ->
 get_group_users(Host1, Group1) ->
     {Host, Group} = split_grouphost(Host1, Group1),
     case get_group_opt(Host, Group, all_users, false) of
-      true -> ejabberd_auth:get_vh_registered_users(Host);
+      true -> ejabberd_auth:get_users(Host);
       false -> []
     end
       ++
@@ -462,7 +439,7 @@ get_group_users(Host1, Group1) ->
 
 get_group_users(Host, Group, GroupOpts) ->
     case proplists:get_value(all_users, GroupOpts, false) of
-      true -> ejabberd_auth:get_vh_registered_users(Host);
+      true -> ejabberd_auth:get_users(Host);
       false -> []
     end
       ++

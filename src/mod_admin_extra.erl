@@ -36,7 +36,7 @@
 % Commands API
 -export([
 	 % Adminsys
-	 compile/1, get_cookie/0, export2sql/2,
+	 compile/1, get_cookie/0,
 	 restart_module/2,
 
 	 % Sessions
@@ -148,15 +148,6 @@ get_commands_spec() ->
 			result = {cookie, string},
 			result_example = "MWTAVMODFELNLSMYXPPD",
 			result_desc = "Erlang cookie used for authentication by ejabberd"},
-     #ejabberd_commands{name = export2sql, tags = [mnesia],
-			desc = "Export Mnesia tables to files in directory",
-			module = ?MODULE, function = export2sql,
-			args = [{host, string}, {path, string}],
-			args_example = ["myserver.com","/tmp/export/sql"],
-			args_desc = ["Server name", "File to write sql export"],
-			result = {res, rescode},
-			result_example = ok,
-			result_desc = "Status code: 0 on success, 1 otherwise"},
     #ejabberd_commands{name = restart_module, tags = [erlang],
 			desc = "Stop an ejabberd module, reload code and start",
 			module = ?MODULE, function = restart_module,
@@ -183,9 +174,9 @@ get_commands_spec() ->
 			desc = "Delete users that didn't log in last days, or that never logged",
 			longdesc = "To protect admin accounts, configure this for example:\n"
 			    "access_rules:\n"
-			    "  delete_old_users:\n"
-			    "    - deny: admin\n"
-			    "    - allow: all\n",
+			    "  protect_old_users:\n"
+			    "    - allow: admin\n"
+			    "    - deny: all\n",
 			module = ?MODULE, function = delete_old_users,
 			args = [{days, integer}],
 			args_example = [30],
@@ -210,7 +201,7 @@ get_commands_spec() ->
 			result_desc = "Result tuple"},
      #ejabberd_commands{name = check_account, tags = [accounts],
 			desc = "Check if an account exists or not",
-			module = ejabberd_auth, function = is_user_exists,
+			module = ejabberd_auth, function = user_exists,
 			args = [{user, binary}, {host, binary}],
 			args_example = [<<"peter">>, <<"myserver.com">>],
 			args_desc = ["User name to check", "Server to check"],
@@ -528,6 +519,10 @@ get_commands_spec() ->
 			result = {res, rescode}},
      #ejabberd_commands{name = push_roster_all, tags = [roster],
 			desc = "Push template roster from file to all those users",
+			longdesc = "The text file must contain an erlang term: a list "
+			    "of tuples with username, servername, group and nick. Example:\n"
+			    "[{\"user1\", \"localhost\", \"Workers\", \"User 1\"},\n"
+			    " {\"user2\", \"localhost\", \"Workers\", \"User 2\"}].",
 			module = ?MODULE, function = push_roster_all,
 			args = [{file, binary}],
 			result = {res, rescode}},
@@ -697,23 +692,6 @@ restart_module(Host, Module) when is_atom(Module) ->
 	    end
     end.
 
-export2sql(Host, Directory) ->
-    Tables = [{export_last, last},
-	      {export_offline, offline},
-	      {export_passwd, passwd},
-	      {export_private_storage, private_storage},
-	      {export_roster, roster},
-	      {export_vcard, vcard},
-	      {export_vcard_search, vcard_search}],
-    Export = fun({TableFun, Table}) ->
-		     Filename = filename:join([Directory, atom_to_list(Table)++".txt"]),
-		     io:format("Trying to export Mnesia table '~p' on Host '~s' to file '~s'~n", [Table, Host, Filename]),
-		     Res = (catch ejd2sql:TableFun(Host, Filename)),
-		     io:format("  Result: ~p~n", [Res])
-	     end,
-    lists:foreach(Export, Tables),
-    ok.
-
 %%%
 %%% Accounts
 %%%
@@ -810,14 +788,14 @@ histogram([], _Integral, _Current, Count, Hist) ->
 
 delete_old_users(Days) ->
     %% Get the list of registered users
-    Users = ejabberd_auth:dirty_get_registered_users(),
+    Users = ejabberd_auth:get_users(),
 
     {removed, N, UR} = delete_old_users(Days, Users),
     {ok, io_lib:format("Deleted ~p users: ~p", [N, UR])}.
 
 delete_old_users_vhost(Host, Days) ->
     %% Get the list of registered users
-    Users = ejabberd_auth:get_vh_registered_users(Host),
+    Users = ejabberd_auth:get_users(Host),
 
     {removed, N, UR} = delete_old_users(Days, Users),
     {ok, io_lib:format("Deleted ~p users: ~p", [N, UR])}.
@@ -839,7 +817,7 @@ delete_old_users(Days, Users) ->
     {removed, length(Users_removed), Users_removed}.
 
 delete_or_not(LUser, LServer, TimeStamp_oldest) ->
-    allow = acl:match_rule(LServer, delete_old_users, jid:make(LUser, LServer)),
+    deny = acl:match_rule(LServer, protect_old_users, jid:make(LUser, LServer)),
     [] = ejabberd_sm:get_user_resources(LUser, LServer),
     case mod_last:get_last_info(LUser, LServer) of
         {ok, TimeStamp, _Status} ->
@@ -1280,12 +1258,12 @@ subscribe_roster({Name, Server, Group, Nick}, [{Name, Server, _, _} | Roster]) -
     subscribe_roster({Name, Server, Group, Nick}, Roster);
 %% Subscribe Name2 to Name1
 subscribe_roster({Name1, Server1, Group1, Nick1}, [{Name2, Server2, Group2, Nick2} | Roster]) ->
-    subscribe(Name1, Server1, iolist_to_binary(Name2), iolist_to_binary(Server2),
+    subscribe(iolist_to_binary(Name1), iolist_to_binary(Server1), iolist_to_binary(Name2), iolist_to_binary(Server2),
 	iolist_to_binary(Nick2), iolist_to_binary(Group2), <<"both">>, []),
     subscribe_roster({Name1, Server1, Group1, Nick1}, Roster).
 
 push_alltoall(S, G) ->
-    Users = ejabberd_auth:get_vh_registered_users(S),
+    Users = ejabberd_auth:get_users(S),
     Users2 = build_list_users(G, Users, []),
     subscribe_all(Users2),
     ok.
@@ -1485,10 +1463,7 @@ privacy_set(Username, Host, QueryS) ->
     SubEl = xmpp:decode(QueryEl),
     IQ = #iq{type = set, id = <<"push">>, sub_els = [SubEl],
 	     from = From, to = To},
-    ejabberd_hooks:run_fold(privacy_iq_set,
-			    Host,
-			    {error, xmpp:err_feature_not_implemented()},
-			    [IQ, #userlist{}]),
+    mod_privacy:process_iq(IQ),
     ok.
 
 %%%
@@ -1499,14 +1474,14 @@ stats(Name) ->
     case Name of
 	<<"uptimeseconds">> -> trunc(element(1, erlang:statistics(wall_clock))/1000);
 	<<"processes">> -> length(erlang:processes());
-	<<"registeredusers">> -> lists:foldl(fun(Host, Sum) -> ejabberd_auth:get_vh_registered_users_number(Host) + Sum end, 0, ?MYHOSTS);
+	<<"registeredusers">> -> lists:foldl(fun(Host, Sum) -> ejabberd_auth:count_users(Host) + Sum end, 0, ?MYHOSTS);
 	<<"onlineusersnode">> -> length(ejabberd_sm:dirty_get_my_sessions_list());
 	<<"onlineusers">> -> length(ejabberd_sm:dirty_get_sessions_list())
     end.
 
 stats(Name, Host) ->
     case Name of
-	<<"registeredusers">> -> ejabberd_auth:get_vh_registered_users_number(Host);
+	<<"registeredusers">> -> ejabberd_auth:count_users(Host);
 	<<"onlineusers">> -> length(ejabberd_sm:get_vh_session_list(Host))
     end.
 
@@ -1638,7 +1613,7 @@ decide_rip_jid({UName, UServer}, Match_list) ->
       Match_list).
 
 user_action(User, Server, Fun, OK) ->
-    case ejabberd_auth:is_user_exists(User, Server) of
+    case ejabberd_auth:user_exists(User, Server) of
         true ->
  	    case catch Fun() of
                 OK -> ok;

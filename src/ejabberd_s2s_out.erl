@@ -439,6 +439,13 @@ maybe_report_huge_timeout(Opt, T) when is_integer(T), T >= 1000 ->
 maybe_report_huge_timeout(_, _) ->
     ok.
 
+-spec opt_type(outgoing_s2s_families) -> fun(([ipv4|ipv6]) -> [inet|inet6]);
+	      (outgoing_s2s_port) -> fun((0..65535) -> 0..65535);
+	      (outgoing_s2s_timeout) -> fun((timeout()) -> timeout());
+	      (s2s_dns_retries) -> fun((non_neg_integer()) -> non_neg_integer());
+	      (s2s_dns_timeout) -> fun((timeout()) -> timeout());
+	      (s2s_max_retry_delay) -> fun((pos_integer()) -> pos_integer());
+	      (atom()) -> [atom()].
 opt_type(outgoing_s2s_families) ->
     fun(Families) ->
 	    lists:map(
@@ -447,7 +454,7 @@ opt_type(outgoing_s2s_families) ->
 	      end, Families)
     end;
 opt_type(outgoing_s2s_port) ->
-    fun (I) when is_integer(I), I > 0, I =< 65536 -> I end;
+    fun (I) when is_integer(I), I > 0, I < 65536 -> I end;
 opt_type(outgoing_s2s_timeout) ->
     fun(TimeOut) when is_integer(TimeOut), TimeOut > 0 ->
 	    timer:seconds(TimeOut);

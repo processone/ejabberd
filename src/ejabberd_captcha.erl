@@ -528,6 +528,10 @@ clean_treap(Treap, CleanPriority) ->
 now_priority() ->
     -p1_time_compat:system_time(micro_seconds).
 
+-spec opt_type(captcha_cmd) -> fun((binary()) -> binary());
+	      (captcha_host) -> fun((binary()) -> binary());
+	      (captcha_limit) -> fun((pos_integer()) -> pos_integer());
+	      (atom()) -> [atom()].
 opt_type(captcha_cmd) ->
     fun (FileName) ->
 	    F = iolist_to_binary(FileName), if F /= <<"">> -> F end

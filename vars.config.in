@@ -40,6 +40,8 @@
 {redis, @redis@}.
 {elixir, @elixir@}.
 {iconv, @iconv@}.
+{stun, @stun@}.
+{sip, @sip@}.
 
 %% Version
 {vsn, "@PACKAGE_VERSION@"}.
@@ -58,6 +60,7 @@
 {docdir, "{{release_dir}}/doc"}.
 
 {latest_deps, @latest_deps@}.
+{system_deps, @system_deps@}.
 
 {ldflags, "@LDFLAGS@"}.
 {cflags, "@CFLAGS@"}.

@@ -53,14 +53,14 @@ modules() ->
      mod_caps,
      mod_irc,
      mod_last,
+     mod_mam,
      mod_muc,
      mod_offline,
      mod_privacy,
      mod_private,
      mod_roster,
      mod_shared_roster,
-     mod_vcard,
-     mod_vcard_xupdate].
+     mod_vcard].
 
 export(Server, Output) ->
     LServer = jid:nameprep(iolist_to_binary(Server)),

@@ -33,14 +33,13 @@
 -protocol({xep, 160, '1.0'}).
 -protocol({xep, 334, '0.2'}).
 
--behaviour(gen_server).
 -behaviour(gen_mod).
 
 -export([start/2,
 	 stop/1,
 	 reload/3,
 	 store_packet/1,
-	 store_offline_msg/5,
+	 store_offline_msg/1,
 	 c2s_self_presence/1,
 	 get_sm_features/5,
 	 get_sm_identity/5,
@@ -64,9 +63,7 @@
 	 webadmin_user/4,
 	 webadmin_user_parse_query/5]).
 
--export([init/1, handle_call/3, handle_cast/2,
-	 handle_info/2, terminate/2, code_change/3,
-	 mod_opt_type/1, depends/2]).
+-export([mod_opt_type/1, depends/2]).
 
 -deprecated({get_queue_length,2}).
 
@@ -86,14 +83,11 @@
 %% default value for the maximum number of user messages
 -define(MAX_USER_MESSAGES, infinity).
 
--type us() :: {binary(), binary()}.
 -type c2s_state() :: ejabberd_c2s:state().
 
 -callback init(binary(), gen_mod:opts()) -> any().
 -callback import(#offline_msg{}) -> ok.
--callback store_messages(binary(), us(), [#offline_msg{}],
-			 non_neg_integer(), non_neg_integer()) ->
-    {atomic, any()}.
+-callback store_message(#offline_msg{}) -> ok | {error, any()}.
 -callback pop_messages(binary(), binary()) ->
     {ok, [#offline_msg{}]} | {error, any()}.
 -callback remove_expired_messages(binary()) -> {atomic, any()}.
@@ -108,25 +102,10 @@
 -callback remove_all_messages(binary(), binary()) -> {atomic, any()}.
 -callback count_messages(binary(), binary()) -> non_neg_integer().
 
-start(Host, Opts) ->
-    gen_mod:start_child(?MODULE, Host, Opts).
-
-stop(Host) ->
-    gen_mod:stop_child(?MODULE, Host).
-
-reload(Host, NewOpts, OldOpts) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    gen_server:cast(Proc, {reload, NewOpts, OldOpts}).
-
 depends(_Host, _Opts) ->
     [].
 
-%%====================================================================
-%% gen_server callbacks
-%%====================================================================
-
-init([Host, Opts]) ->
-    process_flag(trap_exit, true),
+start(Host, Opts) ->
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
@@ -153,64 +132,9 @@ init([Host, Opts]) ->
     ejabberd_hooks:add(webadmin_user_parse_query, Host,
 		       ?MODULE, webadmin_user_parse_query, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_FLEX_OFFLINE,
-				  ?MODULE, handle_offline_query, IQDisc),
-    AccessMaxOfflineMsgs =
-	gen_mod:get_opt(access_max_user_messages, Opts,
-			max_user_offline_messages),
-    {ok,
-     #state{host = Host,
-            access_max_offline_messages = AccessMaxOfflineMsgs}}.
+				  ?MODULE, handle_offline_query, IQDisc).
 
-
-handle_call(stop, _From, State) ->
-    {stop, normal, ok, State}.
-
-handle_cast({reload, NewOpts, OldOpts}, #state{host = Host} = State) ->
-    NewMod = gen_mod:db_mod(Host, NewOpts, ?MODULE),
-    OldMod = gen_mod:db_mod(Host, OldOpts, ?MODULE),
-    if NewMod /= OldMod ->
-	    NewMod:init(Host, NewOpts);
-       true ->
-	    ok
-    end,
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
-	{false, IQDisc, _} ->
-	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_FLEX_OFFLINE,
-					  ?MODULE, handle_offline_query, IQDisc);
-	true ->
-	    ok
-    end,
-    case gen_mod:is_equal_opt(access_max_user_messages, NewOpts, OldOpts,
-			      max_user_offline_messages) of
-	{false, AccessMaxOfflineMsgs, _} ->
-	    {noreply,
-	     State#state{access_max_offline_messages = AccessMaxOfflineMsgs}};
-	true ->
-	    {noreply, State}
-    end;
-handle_cast(Msg, State) ->
-    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
-    {noreply, State}.
-
-
-handle_info(#offline_msg{us = UserServer} = Msg, State) ->
-    #state{host = Host,
-           access_max_offline_messages = AccessMaxOfflineMsgs} = State,
-    DBType = gen_mod:db_type(Host, ?MODULE),
-    Msgs = receive_all(UserServer, [Msg], DBType),
-    Len = length(Msgs),
-    MaxOfflineMsgs = get_max_user_messages(AccessMaxOfflineMsgs,
-                                           UserServer, Host),
-    store_offline_msg(Host, UserServer, Msgs, Len, MaxOfflineMsgs),
-    {noreply, State};
-
-handle_info(_Info, State) ->
-    ?ERROR_MSG("got unexpected info: ~p", [_Info]),
-    {noreply, State}.
-
-
-terminate(_Reason, State) ->
-    Host = State#state.host,
+stop(Host) ->
     ejabberd_hooks:delete(offline_message_hook, Host,
 			  ?MODULE, store_packet, 50),
     ejabberd_hooks:delete(c2s_self_presence, Host, ?MODULE, c2s_self_presence, 50),
@@ -229,39 +153,46 @@ terminate(_Reason, State) ->
 			  ?MODULE, webadmin_user, 50),
     ejabberd_hooks:delete(webadmin_user_parse_query, Host,
 			  ?MODULE, webadmin_user_parse_query, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_FLEX_OFFLINE),
-    ok.
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_FLEX_OFFLINE).
 
-
-code_change(_OldVsn, State, _Extra) -> {ok, State}.
-
-store_offline_msg(Host, US, Msgs, Len, MaxOfflineMsgs) ->
-    Mod = gen_mod:db_mod(Host, ?MODULE),
-    case Mod:store_messages(Host, US, Msgs, Len, MaxOfflineMsgs) of
-	{atomic, discard} ->
-	    discard_warn_sender(Msgs);
-	_ ->
+reload(Host, NewOpts, OldOpts) ->
+    NewMod = gen_mod:db_mod(Host, NewOpts, ?MODULE),
+    OldMod = gen_mod:db_mod(Host, OldOpts, ?MODULE),
+    if NewMod /= OldMod ->
+	    NewMod:init(Host, NewOpts);
+       true ->
+	    ok
+    end,
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
+	{false, IQDisc, _} ->
+	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_FLEX_OFFLINE,
+					  ?MODULE, handle_offline_query, IQDisc);
+	true ->
 	    ok
     end.
 
-get_max_user_messages(AccessRule, {User, Server}, Host) ->
-    case acl:match_rule(
-	   Host, AccessRule, jid:make(User, Server)) of
+-spec store_offline_msg(#offline_msg{}) -> ok | {error, full | any()}.
+store_offline_msg(#offline_msg{us = {User, Server}} = Msg) ->
+    Mod = gen_mod:db_mod(Server, ?MODULE),
+    case get_max_user_messages(User, Server) of
+	infinity ->
+	    Mod:store_message(Msg);
+	Limit ->
+	    Num = count_offline_messages(User, Server),
+	    if Num < Limit ->
+		    Mod:store_message(Msg);
+	       true ->
+		    {error, full}
+	    end
+    end.
+
+get_max_user_messages(User, Server) ->
+    Access = gen_mod:get_module_opt(Server, ?MODULE, access_max_user_messages,
+				    max_user_offline_messages),
+    case acl:match_rule(Server, Access, jid:make(User, Server)) of
 	Max when is_integer(Max) -> Max;
 	infinity -> infinity;
 	_ -> ?MAX_USER_MESSAGES
-    end.
-
-receive_all(US, Msgs, DBType) ->
-    receive
-      #offline_msg{us = US} = Msg ->
-	  receive_all(US, [Msg | Msgs], DBType)
-      after 0 ->
-		case DBType of
-		  mnesia -> Msgs;
-		  sql -> lists:reverse(Msgs);
-		  riak -> Msgs
-		end
     end.
 
 get_sm_features(Acc, _From, _To, <<"">>, _Lang) ->
@@ -484,14 +415,19 @@ store_packet({_Action, #message{from = From, to = To} = Packet} = Acc) ->
 			NewPacket ->
 			    TimeStamp = p1_time_compat:timestamp(),
 			    Expire = find_x_expire(TimeStamp, NewPacket),
-			    gen_mod:get_module_proc(To#jid.lserver, ?MODULE) !
-				#offline_msg{us = {LUser, LServer},
-					     timestamp = TimeStamp,
-					     expire = Expire,
-					     from = From,
-					     to = To,
-					     packet = NewPacket},
-			    {offlined, NewPacket}
+			    OffMsg = #offline_msg{us = {LUser, LServer},
+						  timestamp = TimeStamp,
+						  expire = Expire,
+						  from = From,
+						  to = To,
+						  packet = NewPacket},
+			    case store_offline_msg(OffMsg) of
+				ok ->
+				    {offlined, NewPacket};
+				{error, Reason} ->
+				    discard_warn_sender(Packet, Reason),
+				    stop
+			    end
 		    end;
 		_ -> Acc
 	    end;
@@ -635,15 +571,18 @@ remove_user(User, Server) ->
 %% Helper functions:
 
 %% Warn senders that their messages have been discarded:
-discard_warn_sender(Msgs) ->
-    lists:foreach(
-      fun(#offline_msg{packet = Packet}) ->
-	      ErrText = <<"Your contact offline message queue is "
-			  "full. The message has been discarded.">>,
-	      Lang = xmpp:get_lang(Packet),
-	      Err = xmpp:err_resource_constraint(ErrText, Lang),
-	      ejabberd_router:route_error(Packet, Err)
-      end, Msgs).
+-spec discard_warn_sender(message(), full | any()) -> ok.
+discard_warn_sender(Packet, full) ->
+    ErrText = <<"Your contact offline message queue is "
+		"full. The message has been discarded.">>,
+    Lang = xmpp:get_lang(Packet),
+    Err = xmpp:err_resource_constraint(ErrText, Lang),
+    ejabberd_router:route_error(Packet, Err);
+discard_warn_sender(Packet, _) ->
+    ErrText = <<"Database failure">>,
+    Lang = xmpp:get_lang(Packet),
+    Err = xmpp:err_internal_server_error(ErrText, Lang),
+    ejabberd_router:route_error(Packet, Err).
 
 webadmin_page(_, Host,
 	      #request{us = _US, path = [<<"user">>, U, <<"queue">>],
@@ -790,11 +729,7 @@ get_queue_length(LUser, LServer) ->
     count_offline_messages(LUser, LServer).
 
 get_messages_subset(User, Host, MsgsAll) ->
-    Access = gen_mod:get_module_opt(Host, ?MODULE, access_max_user_messages,
-				    max_user_offline_messages),
-    MaxOfflineMsgs = case get_max_user_messages(Access,
-						User, Host)
-			 of
+    MaxOfflineMsgs = case get_max_user_messages(User, Host) of
 		       Number when is_integer(Number) -> Number;
 		       _ -> 100
 		     end,

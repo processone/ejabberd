@@ -57,39 +57,40 @@ filter_packet({#message{} = Msg, State} = Acc) ->
     From = xmpp:get_from(Msg),
     LFrom = jid:tolower(From),
     LBFrom = jid:remove_resource(LFrom),
-    #{pres_a := PresA,
-      pres_t := PresT,
-      pres_f := PresF} = State,
+    #{pres_a := PresA, jid := JID, lserver := LServer} = State,
     case (Msg#message.body == [] andalso
           Msg#message.subject == [])
         orelse ejabberd_router:is_my_route(From#jid.lserver)
         orelse (?SETS):is_element(LFrom, PresA)
         orelse (?SETS):is_element(LBFrom, PresA)
-        orelse sets_bare_member(LBFrom, PresA)
-        orelse (?SETS):is_element(LFrom, PresT)
-        orelse (?SETS):is_element(LBFrom, PresT)
-        orelse (?SETS):is_element(LFrom, PresF)
-        orelse (?SETS):is_element(LBFrom, PresF) of
-	true ->
-	    Acc;
+        orelse sets_bare_member(LBFrom, PresA) of
 	false ->
-            #{lserver := LServer} = State,
-            Drop = gen_mod:get_module_opt(LServer, ?MODULE, drop, true),
-            Log = gen_mod:get_module_opt(LServer, ?MODULE, log, false),
-            if
-                Log ->
-                    ?INFO_MSG("Drop packet: ~s",
-                              [fxml:element_to_binary(
-                                 xmpp:encode(Msg, ?NS_CLIENT))]);
-                true ->
-                    ok
-            end,
-            if
-                Drop ->
-                    {stop, {drop, State}};
-                true ->
-                    Acc
-            end
+	    {Sub, _} = ejabberd_hooks:run_fold(
+			 roster_get_jid_info, LServer,
+			 {none, []}, [JID#jid.luser, LServer, From]),
+	    case Sub of
+		none ->
+		    Drop = gen_mod:get_module_opt(LServer, ?MODULE, drop, true),
+		    Log = gen_mod:get_module_opt(LServer, ?MODULE, log, false),
+		    if
+			Log ->
+			    ?INFO_MSG("Drop packet: ~s",
+				      [fxml:element_to_binary(
+					 xmpp:encode(Msg, ?NS_CLIENT))]);
+			true ->
+			    ok
+		    end,
+		    if
+			Drop ->
+			    {stop, {drop, State}};
+			true ->
+			    Acc
+		    end;
+		_ ->
+		    Acc
+	    end;
+	true ->
+	    Acc
     end;
 filter_packet(Acc) ->
     Acc.

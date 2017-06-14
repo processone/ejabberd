@@ -21,15 +21,14 @@
 %%%-------------------------------------------------------------------
 -module(ejabberd_service).
 -behaviour(xmpp_stream_in).
--behaviour(ejabberd_config).
 -behaviour(ejabberd_socket).
 
 -protocol({xep, 114, '1.6'}).
 
 %% ejabberd_socket callbacks
 -export([start/2, start_link/2, socket_type/0, close/1, close/2]).
-%% ejabberd_config callbacks
--export([opt_type/1, listen_opt_type/1, transform_listen_option/2]).
+%% ejabberd_listener callbacks
+-export([listen_opt_type/1, transform_listen_option/2]).
 %% xmpp_stream_in callbacks
 -export([init/1, handle_info/2, terminate/2, code_change/3]).
 -export([handle_stream_start/2, handle_auth_success/4, handle_auth_failure/4,
@@ -80,15 +79,15 @@ tls_options(#{tls_options := TLSOptions}) ->
     TLSOptions.
 
 init([State, Opts]) ->
-    Access = gen_mod:get_opt(access, Opts, all),
-    Shaper = gen_mod:get_opt(shaper_rule, Opts, none),
-    GlobalPassword = gen_mod:get_opt(password, Opts, random_password()),
-    HostOpts = gen_mod:get_opt(hosts, Opts, [{global, GlobalPassword}]),
+    Access = proplists:get_value(access, Opts, all),
+    Shaper = proplists:get_value(shaper_rule, Opts, none),
+    GlobalPassword = proplists:get_value(password, Opts, random_password()),
+    HostOpts = proplists:get_value(hosts, Opts, [{global, GlobalPassword}]),
     HostOpts1 = lists:map(
 		  fun({Host, undefined}) -> {Host, GlobalPassword};
 		     ({Host, Password}) -> {Host, Password}
 		  end, HostOpts),
-    CheckFrom = gen_mod:get_opt(check_from, Opts, true),
+    CheckFrom = proplists:get_value(check_from, Opts, true),
     TLSOpts1 = lists:filter(
 		 fun({certfile, _}) -> true;
 		    ({ciphers, _}) -> true;
@@ -259,14 +258,32 @@ transform_listen_option({host, Host, Os}, Opts) ->
 transform_listen_option(Opt, Opts) ->
     [Opt|Opts].
 
-opt_type(_) -> [].
-
+-spec listen_opt_type(access) -> fun((any()) -> any());
+		     (shaper_rule) -> fun((any()) -> any());
+		     (certfile) -> fun((binary()) -> binary());
+		     (ciphers) -> fun((binary()) -> binary());
+		     (dhfile) -> fun((binary()) -> binary());
+		     (cafile) -> fun((binary()) -> binary());
+		     (protocol_options) -> fun(([binary()]) -> binary());
+		     (tls_compression) -> fun((boolean()) -> boolean());
+		     (tls) -> fun((boolean()) -> boolean());
+		     (check_from) -> fun((boolean()) -> boolean());
+		     (password) -> fun((boolean()) -> boolean());
+		     (hosts) -> fun(([{binary(), [{password, binary()}]}]) ->
+				     [{binary(), binary() | undefined}]);
+		     (max_stanza_type) -> fun((timeout()) -> timeout());
+		     (max_fsm_queue) -> fun((pos_integer()) -> pos_integer());
+		     (atom()) -> [atom()].
 listen_opt_type(access) -> fun acl:access_rules_validator/1;
 listen_opt_type(shaper_rule) -> fun acl:shaper_rules_validator/1;
-listen_opt_type(certfile) -> fun iolist_to_binary/1;
+listen_opt_type(certfile) ->
+    fun(S) ->
+	    ejabberd_pkix:add_certfile(S),
+	    iolist_to_binary(S)
+    end;
 listen_opt_type(ciphers) -> fun iolist_to_binary/1;
-listen_opt_type(dhfile) -> fun iolist_to_binary/1;
-listen_opt_type(cafile) -> fun iolist_to_binary/1;
+listen_opt_type(dhfile) -> fun misc:try_read_file/1;
+listen_opt_type(cafile) -> fun misc:try_read_file/1;
 listen_opt_type(protocol_options) ->
     fun(Options) -> str:join(Options, <<"|">>) end;
 listen_opt_type(tls_compression) -> fun(B) when is_boolean(B) -> B end;

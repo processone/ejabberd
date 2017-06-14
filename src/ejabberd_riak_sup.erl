@@ -89,16 +89,11 @@ is_riak_configured(Host) ->
 		       ejabberd_auth:auth_modules(Host)),
     SMConfigured = ejabberd_config:get_option({sm_db_type, Host}) == riak,
     RouterConfigured = ejabberd_config:get_option({router_db_type, Host}) == riak,
-    Modules = ejabberd_config:get_option({modules, Host}, []),
-    ModuleWithRiakDBConfigured = lists:any(
-				   fun({Module, Opts}) ->
-					   gen_mod:db_type(Host, Opts, Module) == riak
-				   end, Modules),
     ServerConfigured or PortConfigured or StartIntervalConfigured
 	or PoolConfigured or CacertConfigured
 	or UserConfigured or PassConfigured
 	or SMConfigured or RouterConfigured
-	or AuthConfigured or ModuleWithRiakDBConfigured.
+	or AuthConfigured.
 
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
@@ -179,6 +174,14 @@ transform_options({riak_server, {S, P}}, Opts) ->
 transform_options(Opt, Opts) ->
     [Opt|Opts].
 
+-spec opt_type(riak_pool_size) -> fun((pos_integer()) -> pos_integer());
+	      (riak_port) -> fun((0..65535) -> 0..65535);
+	      (riak_server) -> fun((binary()) -> binary());
+	      (riak_start_interval) -> fun((pos_integer()) -> pos_integer());
+	      (riak_cacertfile) -> fun((binary()) -> binary());
+	      (riak_username) -> fun((binary()) -> binary());
+	      (riak_password) -> fun((binary()) -> binary());
+	      (atom()) -> [atom()].
 opt_type(riak_pool_size) ->
     fun (N) when is_integer(N), N >= 1 -> N end;
 opt_type(riak_port) ->

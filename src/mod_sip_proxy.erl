@@ -24,6 +24,9 @@
 %%%-------------------------------------------------------------------
 -module(mod_sip_proxy).
 
+-ifndef(SIP).
+-export([]).
+-else.
 -define(GEN_FSM, p1_fsm).
 -behaviour(?GEN_FSM).
 
@@ -424,3 +427,5 @@ safe_nameprep(S) ->
 	error -> S;
 	S1 -> S1
     end.
+
+-endif.

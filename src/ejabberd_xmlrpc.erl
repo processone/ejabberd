@@ -197,7 +197,7 @@ socket_type() -> raw.
 %% HTTP interface
 %% -----------------------------
 process(_, #request{method = 'POST', data = Data, opts = Opts, ip = {IP, _}}) ->
-    AccessCommands = gen_mod:get_opt(access_commands, Opts),
+    AccessCommands = proplists:get_value(access_commands, Opts),
     GetAuth = true,
     State = #state{access_commands = AccessCommands, get_auth = GetAuth, ip = IP},
     case fxml_stream:parse_element(Data) of

@@ -28,12 +28,20 @@
 -module(misc).
 
 %% API
--export([tolower/1, term_to_base64/1, base64_to_term/1,
-	 decode_base64/1, encode_base64/1, ip_to_list/1,
+-export([tolower/1, term_to_base64/1, base64_to_term/1, ip_to_list/1,
 	 hex_to_bin/1, hex_to_base64/1, expand_keyword/3,
 	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
 	 l2i/1, i2l/1, i2l/2, expr_to_term/1, term_to_expr/1,
-	 encode_pid/1, decode_pid/2, compile_exprs/2, join_atoms/2]).
+	 encode_pid/1, decode_pid/2, compile_exprs/2, join_atoms/2,
+	 try_read_file/1]).
+
+%% Deprecated functions
+-export([decode_base64/1, encode_base64/1]).
+-deprecated([{decode_base64, 1},
+	     {encode_base64, 1}]).
+
+-include("logger.hrl").
+-include_lib("kernel/include/file.hrl").
 
 %%%===================================================================
 %%% API
@@ -54,83 +62,21 @@ term_to_base64(Term) ->
 
 -spec base64_to_term(binary()) -> {term, term()} | error.
 base64_to_term(Base64) ->
-    case catch binary_to_term(decode_base64(Base64), [safe]) of
-      {'EXIT', _} ->
-	  error;
-      Term ->
-	  {term, Term}
+    try binary_to_term(base64:decode(Base64), [safe]) of
+	Term -> {term, Term}
+    catch _:badarg ->
+	    error
     end.
 
 -spec decode_base64(binary()) -> binary().
 decode_base64(S) ->
-    case catch binary:last(S) of
-      C when C == $\n; C == $\s ->
-	  decode_base64(binary:part(S, 0, byte_size(S) - 1));
-      _ ->
-	  decode_base64_bin(S, <<>>)
+    try base64:mime_decode(S)
+    catch _:badarg -> <<>>
     end.
 
-take_without_spaces(Bin, Count) ->
-    take_without_spaces(Bin, Count, <<>>).
-
-take_without_spaces(Bin, 0, Acc) ->
-    {Acc, Bin};
-take_without_spaces(<<>>, _, Acc) ->
-    {Acc, <<>>};
-take_without_spaces(<<$\s, Tail/binary>>, Count, Acc) ->
-    take_without_spaces(Tail, Count, Acc);
-take_without_spaces(<<$\t, Tail/binary>>, Count, Acc) ->
-    take_without_spaces(Tail, Count, Acc);
-take_without_spaces(<<$\n, Tail/binary>>, Count, Acc) ->
-    take_without_spaces(Tail, Count, Acc);
-take_without_spaces(<<$\r, Tail/binary>>, Count, Acc) ->
-    take_without_spaces(Tail, Count, Acc);
-take_without_spaces(<<Char:8, Tail/binary>>, Count, Acc) ->
-    take_without_spaces(Tail, Count-1, <<Acc/binary, Char:8>>).
-
-decode_base64_bin(<<>>, Acc) ->
-    Acc;
-decode_base64_bin(Bin, Acc) ->
-    case take_without_spaces(Bin, 4) of
-        {<<A, B, $=, $=>>, _} ->
-            <<Acc/binary, (d(A)):6, (d(B) bsr 4):2>>;
-        {<<A, B, C, $=>>, _} ->
-            <<Acc/binary, (d(A)):6, (d(B)):6, (d(C) bsr 2):4>>;
-        {<<A, B, C, D>>, Tail} ->
-            Acc2 = <<Acc/binary, (d(A)):6, (d(B)):6, (d(C)):6, (d(D)):6>>,
-            decode_base64_bin(Tail, Acc2);
-        _ ->
-            <<"">>
-    end.
-
-d(X) when X >= $A, X =< $Z -> X - 65;
-d(X) when X >= $a, X =< $z -> X - 71;
-d(X) when X >= $0, X =< $9 -> X + 4;
-d($+) -> 62;
-d($/) -> 63;
-d(_) -> 63.
-
-
-%% Convert Erlang inet IP to list
 -spec encode_base64(binary()) -> binary().
 encode_base64(Data) ->
-    encode_base64_bin(Data, <<>>).
-
-encode_base64_bin(<<A:6, B:6, C:6, D:6, Tail/binary>>, Acc) ->
-    encode_base64_bin(Tail, <<Acc/binary, (e(A)):8, (e(B)):8, (e(C)):8, (e(D)):8>>);
-encode_base64_bin(<<A:6, B:6, C:4>>, Acc) ->
-    <<Acc/binary, (e(A)):8, (e(B)):8, (e(C bsl 2)):8, $=>>;
-encode_base64_bin(<<A:6, B:2>>, Acc) ->
-    <<Acc/binary, (e(A)):8, (e(B bsl 4)):8, $=, $=>>;
-encode_base64_bin(<<>>, Acc) ->
-    Acc.
-
-e(X) when X >= 0, X < 26 -> X + 65;
-e(X) when X > 25, X < 52 -> X + 71;
-e(X) when X > 51, X < 62 -> X - 4;
-e(62) -> $+;
-e(63) -> $/;
-e(X) -> exit({bad_encode_base64_token, X}).
+    base64:encode(Data).
 
 -spec ip_to_list(inet:ip_address() | undefined |
                  {inet:ip_address(), inet:port_number()}) -> binary().
@@ -156,7 +102,7 @@ hex_to_bin([H1, H2 | T], Acc) ->
 
 -spec hex_to_base64(binary()) -> binary().
 hex_to_base64(Hex) ->
-    encode_base64(hex_to_bin(Hex)).
+    base64:encode(hex_to_bin(Hex)).
 
 -spec expand_keyword(binary(), binary(), binary()) -> binary().
 expand_keyword(Keyword, Input, Replacement) ->
@@ -240,6 +186,30 @@ compile_exprs(Mod, Exprs) ->
 -spec join_atoms([atom()], binary()) -> binary().
 join_atoms(Atoms, Sep) ->
     str:join([io_lib:format("~p", [A]) || A <- Atoms], Sep).
+
+%% @doc Checks if the file is readable and converts its name to binary.
+%%      Fails with `badarg` otherwise. The function is intended for usage
+%%      in configuration validators only.
+-spec try_read_file(file:filename_all()) -> binary().
+try_read_file(Path) ->
+    Res = case file:read_file_info(Path) of
+	      {ok, #file_info{type = Type, access = Access}} ->
+		  case {Type, Access} of
+		      {regular, read} -> ok;
+		      {regular, read_write} -> ok;
+		      {regular, _} -> {error, file:format_error(eaccess)};
+		      _ -> {error, "not a regular file"}
+		  end;
+	      {error, Why} ->
+		  {error, file:format_error(Why)}
+	  end,
+    case Res of
+	ok ->
+	    iolist_to_binary(Path);
+	{error, Reason} ->
+	    ?ERROR_MSG("Failed to read ~s: ~s", [Path, Reason]),
+	    erlang:error(badarg)
+    end.
 
 %%%===================================================================
 %%% Internal functions

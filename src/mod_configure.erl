@@ -547,7 +547,7 @@ get_local_items({_, Host}, [<<"all users">>], _Server,
 get_local_items({_, Host},
 		[<<"all users">>, <<$@, Diap/binary>>], _Server,
 		_Lang) ->
-    Users = ejabberd_auth:get_vh_registered_users(Host),
+    Users = ejabberd_auth:get_users(Host),
     SUsers = lists:sort([{S, U} || {U, S} <- Users]),
     try
 	[S1, S2] = ejabberd_regexp:split(Diap, <<"-">>),
@@ -661,7 +661,7 @@ get_online_vh_users(Host) ->
     end.
 
 get_all_vh_users(Host) ->
-    case catch ejabberd_auth:get_vh_registered_users(Host)
+    case catch ejabberd_auth:get_users(Host)
 	of
       {'EXIT', _Reason} -> [];
       Users ->
@@ -1194,7 +1194,7 @@ get_form(_Host, ?NS_ADMINL(<<"user-stats">>), Lang) ->
 				   required = true}]}};
 get_form(Host,
 	 ?NS_ADMINL(<<"get-registered-users-num">>), Lang) ->
-    Num = integer_to_binary(ejabberd_auth:get_vh_registered_users_number(Host)),
+    Num = integer_to_binary(ejabberd_auth:count_users(Host)),
     {result, completed,
      #xdata{type = form,
 	    fields = [?HFIELD(),
@@ -1541,7 +1541,7 @@ set_form(From, Host, ?NS_ADMINL(<<"delete-user">>),
 			     Server = JID#jid.lserver,
 			     true = Server == Host orelse
 				      get_permission_level(From) == global,
-			     true = ejabberd_auth:is_user_exists(User, Server),
+			     true = ejabberd_auth:user_exists(User, Server),
 			     {User, Server}
 		     end,
 		     AccountStringList),
@@ -1610,7 +1610,7 @@ set_form(From, Host,
     Server = JID#jid.lserver,
     true = Server == Host orelse
 	     get_permission_level(From) == global,
-    true = ejabberd_auth:is_user_exists(User, Server),
+    true = ejabberd_auth:user_exists(User, Server),
     ejabberd_auth:set_password(User, Server, Password),
     {result, undefined};
 set_form(From, Host,

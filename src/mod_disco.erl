@@ -376,7 +376,7 @@ process_sm_iq_info(#iq{type = get, lang = Lang,
 get_sm_identity(Acc, _From,
 		#jid{luser = LUser, lserver = LServer}, _Node, _Lang) ->
     Acc ++
-      case ejabberd_auth:is_user_exists(LUser, LServer) of
+      case ejabberd_auth:user_exists(LUser, LServer) of
 	true ->
 	    [#identity{category = <<"account">>, type = <<"registered">>}];
 	_ -> []

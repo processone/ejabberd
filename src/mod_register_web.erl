@@ -438,7 +438,7 @@ change_password(Username, Host, PasswordOld,
     end.
 
 check_account_exists(Username, Host) ->
-    case ejabberd_auth:is_user_exists(Username, Host) of
+    case ejabberd_auth:user_exists(Username, Host) of
       true -> account_exists;
       false -> account_doesnt_exist
     end.
@@ -510,8 +510,8 @@ register_account2(Username, Host, Password) ->
     case ejabberd_auth:try_register(Username, Host,
 				    Password)
 	of
-      {atomic, Res} ->
-	  {success, Res, {Username, Host, Password}};
+      ok ->
+	  {success, ok, {Username, Host, Password}};
       Other -> Other
     end.
 

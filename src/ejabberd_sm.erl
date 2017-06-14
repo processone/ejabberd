@@ -178,7 +178,7 @@ close_session(SID, User, Server, Resource) ->
 			    subscribe | subscribed | unsubscribe | unsubscribed,
 			    binary()) -> boolean() | {stop, false}.
 check_in_subscription(Acc, User, Server, _JID, _Type, _Reason) ->
-    case ejabberd_auth:is_user_exists(User, Server) of
+    case ejabberd_auth:user_exists(User, Server) of
       true -> Acc;
       false -> {stop, false}
     end.
@@ -321,7 +321,7 @@ get_offline_info(Time, User, Server, Resource) ->
 	[#session{sid = {Time, _}, info = Info}] ->
 	    case proplists:get_bool(offline, Info) of
 		true ->
-	    Info;
+		    Info;
 		false ->
 		    none
 	    end;
@@ -716,7 +716,7 @@ route_message(#message{to = To, type = Type} = Packet) ->
 			end,
 			PrioRes);
       _ ->
-	    case ejabberd_auth:is_user_exists(LUser, LServer) andalso
+	    case ejabberd_auth:user_exists(LUser, LServer) andalso
 		is_privacy_allow(Packet) of
 		true ->
 		    ejabberd_hooks:run_fold(offline_message_hook,
@@ -858,7 +858,7 @@ force_update_presence({LUser, LServer}) ->
     Mod = get_sm_backend(LServer),
     Ss = online(get_sessions(Mod, LUser, LServer)),
     lists:foreach(fun (#session{sid = {_, Pid}}) ->
-			  ejabberd_c2s:route(Pid, force_update_presence)
+			  ejabberd_c2s:resend_presence(Pid)
 		  end,
 		  Ss).
 
@@ -1010,6 +1010,12 @@ kick_user(User, Server) ->
 make_sid() ->
     {p1_time_compat:unique_timestamp(), self()}.
 
+-spec opt_type(sm_db_type) -> fun((atom()) -> atom());
+	      (sm_use_cache) -> fun((boolean()) -> boolean());
+	      (sm_cache_missed) -> fun((boolean()) -> boolean());
+	      (sm_cache_size) -> fun((timeout()) -> timeout());
+	      (sm_cache_life_time) -> fun((timeout()) -> timeout());
+	      (atom()) -> [atom()].
 opt_type(sm_db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 opt_type(O) when O == sm_use_cache; O == sm_cache_missed ->
     fun(B) when is_boolean(B) -> B end;

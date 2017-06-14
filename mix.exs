@@ -3,18 +3,18 @@ defmodule Ejabberd.Mixfile do
 
   def project do
     [app: :ejabberd,
-     version: "17.03.0",
-     description: description,
-     elixir: "~> 1.3",
+     version: "17.6.0",
+     description: description(),
+     elixir: "~> 1.4",
      elixirc_paths: ["lib"],
      compile_path: ".",
      compilers: [:asn1] ++ Mix.compilers,
-     erlc_options: erlc_options,
+     erlc_options: erlc_options(),
      erlc_paths: ["asn1", "src"],
      # Elixir tests are starting the part of ejabberd they need
      aliases: [test: "test --no-start"],
-     package: package,
-     deps: deps]
+     package: package(),
+     deps: deps()]
   end
 
   def description do
@@ -29,7 +29,7 @@ defmodule Ejabberd.Mixfile do
      included_applications: [:lager, :mnesia, :inets, :p1_utils, :cache_tab,
                              :fast_tls, :stringprep, :fast_xml, :xmpp,
                              :stun, :fast_yaml, :esip, :jiffy, :p1_oauth2]
-                         ++ cond_apps]
+                         ++ cond_apps()]
   end
 
   defp erlc_options do
@@ -39,7 +39,7 @@ defmodule Ejabberd.Mixfile do
   end
 
   defp deps do
-    [{:lager, "~> 3.2"},
+    [{:lager, "~> 3.4.0"},
      {:p1_utils, "~> 1.0"},
      {:fast_xml, "~> 1.1"},
      {:xmpp, "~> 1.1"},
@@ -53,7 +53,7 @@ defmodule Ejabberd.Mixfile do
      {:p1_oauth2, "~> 0.6.1"},
      {:distillery, "~> 1.0"},
      {:ex_doc, ">= 0.0.0", only: :dev}]
-    ++ cond_deps
+    ++ cond_deps()
   end
 
   defp deps_include(deps) do
@@ -89,7 +89,7 @@ defmodule Ejabberd.Mixfile do
       app
   end
 
-  def package do
+  defp package do
     [# These are the default files included in the package
       files: ["lib", "src", "priv", "mix.exs", "include", "README.md", "COPYING"],
       maintainers: ["ProcessOne"],
@@ -100,7 +100,7 @@ defmodule Ejabberd.Mixfile do
                "ProcessOne" => "http://www.process-one.net/"}]
   end
 
-  def vars do
+  defp vars do
     case :file.consult("vars.config") do
       {:ok,config} -> config
       _ -> [zlib: true, iconv: true]
@@ -108,7 +108,7 @@ defmodule Ejabberd.Mixfile do
   end
 
   defp config(key) do
-    case vars[key] do
+    case vars()[key] do
       nil -> false
       value -> value
     end
@@ -142,7 +142,7 @@ defmodule Mix.Tasks.Compile.Asn1 do
     end)
   end
 
-  def manifests, do: [manifest]
+  def manifests, do: [manifest()]
   defp manifest, do: Path.join(Mix.Project.manifest_path, @manifest)
 
   def clean, do: Erlang.clean(manifest())

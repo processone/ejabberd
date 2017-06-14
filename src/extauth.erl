@@ -31,7 +31,7 @@
 
 -export([start/2, stop/1, init/2, check_password/3,
 	 set_password/3, try_register/3, remove_user/2,
-	 remove_user/3, is_user_exists/2, opt_type/1]).
+	 remove_user/3, user_exists/2, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -73,7 +73,7 @@ get_process_name(Host, Integer) ->
 check_password(User, Server, Password) ->
     call_port(Server, [<<"auth">>, User, Server, Password]).
 
-is_user_exists(User, Server) ->
+user_exists(User, Server) ->
     call_port(Server, [<<"isuser">>, User, Server]).
 
 set_password(User, Server, Password) ->
@@ -83,7 +83,7 @@ try_register(User, Server, Password) ->
     case call_port(Server,
 		   [<<"tryregister">>, User, Server, Password])
 	of
-      true -> {atomic, ok};
+      true -> ok;
       false -> {error, not_allowed}
     end.
 
@@ -154,6 +154,8 @@ encode(L) -> str:join(L, <<":">>).
 decode([0, 0]) -> false;
 decode([0, 1]) -> true.
 
+-spec opt_type(extauth_instances) -> fun((pos_integer()) -> pos_integer());
+	      (atom()) -> [atom()].
 opt_type(extauth_instances) ->
     fun (V) when is_integer(V), V > 0 -> V end;
 opt_type(_) -> [extauth_instances].

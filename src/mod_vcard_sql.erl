@@ -51,13 +51,15 @@ is_search_supported(_LServer) ->
     true.
 
 get_vcard(LUser, LServer) ->
-    case catch sql_queries:get_vcard(LServer, LUser) of
+    case ejabberd_sql:sql_query(
+	   LServer,
+	   ?SQL("select @(vcard)s from vcard where username=%(LUser)s")) of
 	{selected, [{SVCARD}]} ->
 	    case fxml_stream:parse_element(SVCARD) of
 		{error, _Reason} -> error;
-		VCARD -> [VCARD]
+		VCARD -> {ok, [VCARD]}
 	    end;
-	{selected, []} -> [];
+	{selected, []} -> {ok, []};
 	_ -> error
     end.
 
@@ -86,13 +88,38 @@ set_vcard(LUser, LServer, VCARD,
 			orgunit = OrgUnit,
 			lorgunit = LOrgUnit}) ->
     SVCARD = fxml:element_to_binary(VCARD),
-    sql_queries:set_vcard(LServer, LUser, BDay, CTRY,
-			   EMail, FN, Family, Given, LBDay,
-			   LCTRY, LEMail, LFN, LFamily,
-			   LGiven, LLocality, LMiddle,
-			   LNickname, LOrgName, LOrgUnit,
-			   Locality, Middle, Nickname, OrgName,
-			   OrgUnit, SVCARD, User).
+    ejabberd_sql:sql_transaction(
+      LServer,
+      fun() ->
+              ?SQL_UPSERT(LServer, "vcard",
+                          ["!username=%(LUser)s",
+                           "vcard=%(SVCARD)s"]),
+              ?SQL_UPSERT(LServer, "vcard_search",
+                          ["username=%(User)s",
+                           "!lusername=%(LUser)s",
+                           "fn=%(FN)s",
+                           "lfn=%(LFN)s",
+                           "family=%(Family)s",
+                           "lfamily=%(LFamily)s",
+                           "given=%(Given)s",
+                           "lgiven=%(LGiven)s",
+                           "middle=%(Middle)s",
+                           "lmiddle=%(LMiddle)s",
+                           "nickname=%(Nickname)s",
+                           "lnickname=%(LNickname)s",
+                           "bday=%(BDay)s",
+                           "lbday=%(LBDay)s",
+                           "ctry=%(CTRY)s",
+                           "lctry=%(LCTRY)s",
+                           "locality=%(Locality)s",
+                           "llocality=%(LLocality)s",
+                           "email=%(EMail)s",
+                           "lemail=%(LEMail)s",
+                           "orgname=%(OrgName)s",
+                           "lorgname=%(LOrgName)s",
+                           "orgunit=%(OrgUnit)s",
+                           "lorgunit=%(LOrgUnit)s"])
+      end).
 
 search(LServer, Data, AllowReturnAll, MaxMatch) ->
     MatchSpec = make_matchspec(LServer, Data),

@@ -46,47 +46,48 @@ set_motd_users(_LServer, USRs) ->
 		  ok = ejabberd_riak:put(#motd_users{us = {U, S}},
 					 motd_users_schema(),
 					 [{'2i', [{<<"server">>, S}]}])
-	  end, USRs),
-	{atomic, ok}
-    catch _:{badmatch, Err} ->
-	    {atomic, Err}
+	  end, USRs)
+    catch _:{badmatch, {error, _} = Err} ->
+	    Err
     end.
 
 set_motd(LServer, Packet) ->
-    {atomic, ejabberd_riak:put(#motd{server = LServer,
-				     packet = Packet},
-			       motd_schema())}.
+    ejabberd_riak:put(#motd{server = LServer,
+			    packet = Packet},
+		      motd_schema()).
 
 delete_motd(LServer) ->
     try
 	ok = ejabberd_riak:delete(motd, LServer),
 	ok = ejabberd_riak:delete_by_index(motd_users,
 					   <<"server">>,
-					   LServer),
-	{atomic, ok}
-    catch _:{badmatch, Err} ->
-	    {atomic, Err}
+					   LServer)
+    catch _:{badmatch, {error, _} = Err} ->
+	    Err
     end.
 
 get_motd(LServer) ->
     case ejabberd_riak:get(motd, motd_schema(), LServer) of
         {ok, #motd{packet = Packet}} ->
 	    {ok, Packet};
-	_ ->
-	    error
+	{error, notfound} ->
+	    error;
+	{error, _} = Err ->
+	    Err
     end.
 
 is_motd_user(LUser, LServer) ->
     case ejabberd_riak:get(motd_users, motd_users_schema(),
 			   {LUser, LServer}) of
-	{ok, #motd_users{}} -> true;
-	_ -> false
+	{ok, #motd_users{}} -> {ok, true};
+	{error, notfound} -> {ok, false};
+	{error, _} = Err -> Err
     end.
 
 set_motd_user(LUser, LServer) ->
-    {atomic, ejabberd_riak:put(
-	       #motd_users{us = {LUser, LServer}}, motd_users_schema(),
-	       [{'2i', [{<<"server">>, LServer}]}])}.
+    ejabberd_riak:put(
+      #motd_users{us = {LUser, LServer}}, motd_users_schema(),
+      [{'2i', [{<<"server">>, LServer}]}]).
 
 import(LServer, <<"motd">>, [<<>>, XML, _TimeStamp]) ->
     El = fxml_stream:parse_element(XML),

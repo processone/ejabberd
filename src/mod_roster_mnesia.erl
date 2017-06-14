@@ -28,10 +28,10 @@
 
 %% API
 -export([init/2, read_roster_version/2, write_roster_version/4,
-	 get_roster/2, get_roster_by_jid/3, get_only_items/2,
-	 roster_subscribe/4, get_roster_by_jid_with_groups/3,
+	 get_roster/2, get_roster_item/3, roster_subscribe/4,
 	 remove_user/2, update_roster/4, del_roster/3, transaction/2,
-	 read_subscription_and_groups/3, import/3, create_roster/1]).
+	 read_subscription_and_groups/3, import/3, create_roster/1,
+	 use_cache/2]).
 -export([need_transform/1, transform/1]).
 
 -include("mod_roster.hrl").
@@ -42,18 +42,28 @@
 %%%===================================================================
 init(_Host, _Opts) ->
     ejabberd_mnesia:create(?MODULE, roster,
-			[{disc_copies, [node()]},
+			[{disc_only_copies, [node()]},
 			 {attributes, record_info(fields, roster)},
 			 {index, [us]}]),
     ejabberd_mnesia:create(?MODULE, roster_version,
-			[{disc_copies, [node()]},
+			[{disc_only_copies, [node()]},
 			 {attributes,
 			  record_info(fields, roster_version)}]).
+
+use_cache(Host, Table) ->
+    case mnesia:table_info(Table, storage_type) of
+	disc_only_copies ->
+	    gen_mod:get_module_opt(
+	      Host, mod_roster, use_cache,
+	      ejabberd_config:use_cache(Host));
+	_ ->
+	    false
+    end.
 
 read_roster_version(LUser, LServer) ->
     US = {LUser, LServer},
     case mnesia:dirty_read(roster_version, US) of
-	[#roster_version{version = V}] -> V;
+	[#roster_version{version = V}] -> {ok, V};
 	[] -> error
     end.
 
@@ -66,31 +76,16 @@ write_roster_version(LUser, LServer, InTransaction, Ver) ->
     end.
 
 get_roster(LUser, LServer) ->
-    mnesia:dirty_index_read(roster, {LUser, LServer}, #roster.us).
+    {ok, mnesia:dirty_index_read(roster, {LUser, LServer}, #roster.us)}.
 
-get_roster_by_jid(LUser, LServer, LJID) ->
+get_roster_item(LUser, LServer, LJID) ->
     case mnesia:read({roster, {LUser, LServer, LJID}}) of
-	[] ->
-	    #roster{usj = {LUser, LServer, LJID},
-		    us = {LUser, LServer}, jid = LJID};
-	[I] ->
-	    I#roster{jid = LJID, name = <<"">>, groups = [],
-		     xs = []}
+	[I] -> {ok, I};
+	[] -> error
     end.
-
-get_only_items(LUser, LServer) ->
-    get_roster(LUser, LServer).
 
 roster_subscribe(_LUser, _LServer, _LJID, Item) ->
     mnesia:write(Item).
-
-get_roster_by_jid_with_groups(LUser, LServer, LJID) ->
-    case mnesia:read({roster, {LUser, LServer, LJID}}) of
-	[] ->
-	    #roster{usj = {LUser, LServer, LJID},
-		    us = {LUser, LServer}, jid = LJID};
-	[I] -> I
-    end.
 
 remove_user(LUser, LServer) ->
     US = {LUser, LServer},
@@ -110,7 +105,7 @@ del_roster(LUser, LServer, LJID) ->
 read_subscription_and_groups(LUser, LServer, LJID) ->
     case mnesia:dirty_read(roster, {LUser, LServer, LJID}) of
 	[#roster{subscription = Subscription, groups = Groups}] ->
-	    {Subscription, Groups};
+	    {ok, {Subscription, Groups}};
 	_ ->
 	    error
     end.

@@ -179,7 +179,10 @@ read_file(File, Opts) ->
 load_file(File) ->
     State0 = read_file(File),
     State1 = hosts_to_start(State0),
-    validate_opts(State1).
+    AllMods = get_modules(),
+    init_module_db_table(AllMods),
+    ModOpts = get_modules_with_options(AllMods),
+    validate_opts(State1, ModOpts).
 
 -spec reload_file() -> ok.
 
@@ -971,11 +974,12 @@ default_db(Opt, Host, Module) ->
 	    end
     end.
 
-get_modules_with_options() ->
+get_modules() ->
     {ok, Mods} = application:get_key(ejabberd, modules),
     ExtMods = [Name || {Name, _Details} <- ext_mod:installed()],
-    AllMods = [?MODULE|ExtMods++Mods],
-    init_module_db_table(AllMods),
+    ExtMods ++ Mods.
+
+get_modules_with_options(Modules) ->
     lists:foldl(
       fun(Mod, D) ->
 	      case is_behaviour(?MODULE, Mod) orelse Mod == ?MODULE of
@@ -992,10 +996,9 @@ get_modules_with_options() ->
 		  false ->
 		      D
 	      end
-      end, dict:new(), AllMods).
+      end, dict:new(), Modules).
 
-validate_opts(#state{opts = Opts} = State) ->
-    ModOpts = get_modules_with_options(),
+validate_opts(#state{opts = Opts} = State, ModOpts) ->
     NewOpts = lists:filtermap(
 		fun(#local_config{key = {Opt, _Host}, value = Val} = In) ->
 			case dict:find(Opt, ModOpts) of
@@ -1089,7 +1092,7 @@ replace_module(mod_roster_odbc) -> {mod_roster, sql};
 replace_module(mod_shared_roster_odbc) -> {mod_shared_roster, sql};
 replace_module(mod_vcard_odbc) -> {mod_vcard, sql};
 replace_module(mod_vcard_ldap) -> {mod_vcard, ldap};
-replace_module(mod_vcard_xupdate_odbc) -> {mod_vcard_xupdate, sql};
+replace_module(mod_vcard_xupdate_odbc) -> mod_vcard_xupdate;
 replace_module(mod_pubsub_odbc) -> {mod_pubsub, sql};
 replace_module(mod_http_bind) -> mod_bosh;
 replace_module(Module) ->
@@ -1362,6 +1365,23 @@ emit_deprecation_warning(Module, NewModule) ->
 now_to_seconds({MegaSecs, Secs, _MicroSecs}) ->
     MegaSecs * 1000000 + Secs.
 
+-spec opt_type(hide_sensitive_log_data) -> fun((boolean()) -> boolean());
+	      (hosts) -> fun(([binary()]) -> [binary()]);
+	      (language) -> fun((binary()) -> binary());
+	      (max_fsm_queue) -> fun((pos_integer()) -> pos_integer());
+	      (default_db) -> fun((atom()) -> atom());
+	      (default_ram_db) -> fun((atom()) -> atom());
+	      (loglevel) -> fun((0..5) -> 0..5);
+	      (queue_dir) -> fun((binary()) -> binary());
+	      (queue_type) -> fun((ram | file) -> ram | file);
+	      (use_cache) -> fun((boolean()) -> boolean());
+	      (cache_size) -> fun((timeout()) -> timeout());
+	      (cache_missed) -> fun((boolean()) -> boolean());
+	      (cache_life_time) -> fun((timeout()) -> timeout());
+	      (domain_certfile) -> fun((binary()) -> binary());
+	      (shared_key) -> fun((binary()) -> binary());
+	      (node_start) -> fun((non_neg_integer()) -> non_neg_integer());
+	      (atom()) -> [atom()].
 opt_type(hide_sensitive_log_data) ->
     fun (H) when is_boolean(H) -> H end;
 opt_type(hosts) ->
@@ -1397,7 +1417,7 @@ opt_type(cache_life_time) ->
        (unlimited) -> infinity
     end;
 opt_type(domain_certfile) ->
-    fun iolist_to_binary/1;
+    fun misc:try_read_file/1;
 opt_type(shared_key) ->
     fun iolist_to_binary/1;
 opt_type(node_start) ->

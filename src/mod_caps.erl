@@ -203,7 +203,9 @@ disco_info(Acc, _, _, _Node, _Lang) ->
 -spec c2s_presence_in(ejabberd_c2s:state(), presence()) -> ejabberd_c2s:state().
 c2s_presence_in(C2SState,
 		#presence{from = From, to = To, type = Type} = Presence) ->
-    Subscription = ejabberd_c2s:get_subscription(From, C2SState),
+    {Subscription, _} = ejabberd_hooks:run_fold(
+			  roster_get_jid_info, To#jid.lserver,
+			  {none, []}, [To#jid.luser, To#jid.lserver, From]),
     Insert = (Type == available)
 	       and ((Subscription == both) or (Subscription == to)),
     Delete = (Type == unavailable) or (Type == error),
@@ -411,7 +413,7 @@ make_my_disco_hash(Host) ->
 make_disco_hash(DiscoInfo, Algo) ->
     Concat = list_to_binary([concat_identities(DiscoInfo),
                              concat_features(DiscoInfo), concat_info(DiscoInfo)]),
-    misc:encode_base64(case Algo of
+    base64:encode(case Algo of
                            md5 -> erlang:md5(Concat);
                            sha -> crypto:hash(sha, Concat);
                            sha224 -> crypto:hash(sha224, Concat);

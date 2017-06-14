@@ -177,6 +177,9 @@ url(Server, Path, Params) ->
     Tail = iolist_to_binary([ParHead | ParTail]),
     binary_to_list(<<Base/binary, $?, Tail/binary>>).
 
+-spec opt_type(ext_api_http_pool_size) -> fun((pos_integer()) -> pos_integer());
+	      (ext_api_url) -> fun((binary()) -> binary());
+	      (atom()) -> [atom()].
 opt_type(ext_api_http_pool_size) ->
     fun (X) when is_integer(X), X > 0 -> X end;
 opt_type(ext_api_url) ->

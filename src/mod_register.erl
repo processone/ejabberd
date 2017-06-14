@@ -120,7 +120,7 @@ process_iq(#iq{from = From, to = To} = IQ, Source) ->
 	    false -> false
 	end,
     Server = To#jid.lserver,
-    Access = gen_mod:get_module_opt(Server, ?MODULE, access, all),
+    Access = gen_mod:get_module_opt(Server, ?MODULE, access_remove, all),
     AllowRemove = allow == acl:match_rule(Server, Access, From),
     process_iq(IQ, Source, IsCaptchaEnabled, AllowRemove).
 
@@ -198,7 +198,7 @@ process_iq(#iq{type = get, from = From, to = To, id = ID, lang = Lang} = IQ,
     {IsRegistered, Username} =
 	case From of
 	    #jid{user = User, lserver = Server} ->
-		case ejabberd_auth:is_user_exists(User, Server) of
+		case ejabberd_auth:user_exists(User, Server) of
 		    true ->
 			{true, User};
 		    false ->
@@ -289,6 +289,9 @@ try_set_password(User, Server, Password, #iq{lang = Lang, meta = M} = IQ) ->
 		xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 	    {error, invalid_jid} ->
 		xmpp:make_error(IQ, xmpp:err_jid_malformed());
+	    {error, invalid_password} ->
+		Txt = <<"Incorrect password">>,
+		xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 	    Err ->
 		?ERROR_MSG("failed to register user ~s@~s: ~p",
 			   [User, Server, Err]),
@@ -323,7 +326,7 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 			    case ejabberd_auth:try_register(User, Server,
 							    Password)
 				of
-			      {atomic, ok} ->
+			      ok ->
 				  send_welcome_message(JID),
 				  send_registration_notifications(
                                     ?MODULE, JID, Source),
@@ -331,11 +334,14 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 			      Error ->
 				  remove_timeout(Source),
 				  case Error of
-				    {atomic, exists} ->
+				    {error, exists} ->
 					Txt = <<"User already exists">>,
 					{error, xmpp:err_conflict(Txt, Lang)};
 				    {error, invalid_jid} ->
 					{error, xmpp:err_jid_malformed()};
+				    {error, invalid_password} ->
+					Txt = <<"Incorrect password">>,
+					{error, xmpp:err_not_allowed(Txt, Lang)};
 				    {error, not_allowed} ->
 					{error, xmpp:err_not_allowed()};
 				    {error, too_many_users} ->
@@ -588,6 +594,7 @@ check_ip_access(IPAddress, IPAccess) ->
 
 mod_opt_type(access) -> fun acl:access_rules_validator/1;
 mod_opt_type(access_from) -> fun acl:access_rules_validator/1;
+mod_opt_type(access_remove) -> fun acl:access_rules_validator/1;
 mod_opt_type(captcha_protected) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(ip_access) -> fun acl:access_rules_validator/1;
@@ -608,10 +615,12 @@ mod_opt_type({welcome_message, subject}) ->
 mod_opt_type({welcome_message, body}) ->
     fun iolist_to_binary/1;
 mod_opt_type(_) ->
-    [access, access_from, captcha_protected, ip_access,
+    [access, access_from, access_remove, captcha_protected, ip_access,
      iqdisc, password_strength, registration_watchers,
      {welcome_message, subject}, {welcome_message, body}].
 
+-spec opt_type(registration_timeout) -> fun((timeout()) -> timeout());
+	      (atom()) -> [atom()].
 opt_type(registration_timeout) ->
     fun (TO) when is_integer(TO), TO > 0 -> TO;
 	(infinity) -> infinity;

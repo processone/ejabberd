@@ -173,25 +173,26 @@ uids_domain_subst(Host, UIDs) ->
 -spec get_config(binary(), list()) -> eldap_config().
 
 get_config(Host, Opts) ->
-    Servers = gen_mod:get_opt({ldap_servers, Host}, Opts, [<<"localhost">>]),
-    Backups = gen_mod:get_opt({ldap_backups, Host}, Opts, []),
-    Encrypt = gen_mod:get_opt({ldap_encrypt, Host}, Opts, none),
-    TLSVerify = gen_mod:get_opt({ldap_tls_verify, Host}, Opts, false),
-    TLSCAFile = gen_mod:get_opt({ldap_tls_cacertfile, Host}, Opts),
-    TLSDepth = gen_mod:get_opt({ldap_tls_depth, Host}, Opts),
-    Port = gen_mod:get_opt({ldap_port, Host}, Opts,
-			   case Encrypt of
-			       tls -> ?LDAPS_PORT;
-			       starttls -> ?LDAP_PORT;
-			       _ -> ?LDAP_PORT
-			   end),
-    RootDN = gen_mod:get_opt({ldap_rootdn, Host}, Opts, <<"">>),
-    Password = gen_mod:get_opt({ldap_password, Host}, Opts, <<"">>),
-    Base = gen_mod:get_opt({ldap_base, Host}, Opts, <<"">>),
-    OldDerefAliases = gen_mod:get_opt({deref_aliases, Host}, Opts, unspecified),
+    Servers = get_opt(ldap_servers, Host, Opts, [<<"localhost">>]),
+    Backups = get_opt(ldap_backups, Host, Opts, []),
+    Encrypt = get_opt(ldap_encrypt, Host, Opts, none),
+    TLSVerify = get_opt(ldap_tls_verify, Host, Opts, false),
+    TLSCertFile = get_opt(ldap_tls_certfile, Host, Opts),
+    TLSCAFile = get_opt(ldap_tls_cacertfile, Host, Opts),
+    TLSDepth = get_opt(ldap_tls_depth, Host, Opts),
+    Port = get_opt(ldap_port, Host, Opts,
+		   case Encrypt of
+		       tls -> ?LDAPS_PORT;
+		       starttls -> ?LDAP_PORT;
+		       _ -> ?LDAP_PORT
+		   end),
+    RootDN = get_opt(ldap_rootdn, Host, Opts, <<"">>),
+    Password = get_opt(ldap_password, Host, Opts, <<"">>),
+    Base = get_opt(ldap_base, Host, Opts, <<"">>),
+    OldDerefAliases = get_opt(deref_aliases, Host, Opts, unspecified),
     DerefAliases =
         if OldDerefAliases == unspecified ->
-                gen_mod:get_opt({ldap_deref_aliases, Host}, Opts, never);
+                get_opt(ldap_deref_aliases, Host, Opts, never);
            true ->
                 ?WARNING_MSG("Option 'deref_aliases' is deprecated. "
                              "The option is still supported "
@@ -203,6 +204,7 @@ get_config(Host, Opts) ->
                   backups = Backups,
                   tls_options = [{encrypt, Encrypt},
                                  {tls_verify, TLSVerify},
+				 {tls_certfile, TLSCertFile},
                                  {tls_cacertfile, TLSCAFile},
                                  {tls_depth, TLSDepth}],
                   port = Port,
@@ -210,6 +212,15 @@ get_config(Host, Opts) ->
                   password = Password,
                   base = Base,
                   deref_aliases = DerefAliases}.
+
+get_opt(Opt, Host, Opts) ->
+    get_opt(Opt, Host, Opts, undefined).
+
+get_opt(Opt, Host, Opts, Default) ->
+    case proplists:get_value(Opt, Opts) of
+	undefined -> ejabberd_config:get_option({Opt, Host}, Default);
+	Value -> Value
+    end.
 
 %%---------------------------------------- 
 %% Borrowed from asn1rt_ber_bin_v2.erl
@@ -318,12 +329,26 @@ collect_parts_bit([{?N_BIT_STRING,<<Unused,Bits/binary>>}|Rest],Acc,Uacc) ->
 collect_parts_bit([],Acc,Uacc) ->
     list_to_binary([Uacc|lists:reverse(Acc)]).
 
+-type deref_aliases() :: never | searching | finding | always.
+-type uids() :: binary() | {binary()} | {binary(), binary()}.
+-spec opt_type(deref_aliases) -> fun((deref_aliases()) -> deref_aliases());
+	      (ldap_backups) -> fun(([binary()]) -> [binary()]);
+	      (ldap_base) -> fun((binary()) -> binary());
+	      (ldap_deref_aliases) -> fun((deref_aliases()) -> deref_aliases());
+	      (ldap_encrypt) -> fun((tls | starttls | none) -> tls | starttls | none);
+	      (ldap_password) -> fun((binary()) -> binary());
+	      (ldap_port) -> fun((0..65535) -> 0..65535);
+	      (ldap_rootdn) -> fun((binary()) -> binary());
+	      (ldap_servers) -> fun(([binary()]) -> [binary()]);
+	      (ldap_tls_certfile) -> fun((binary()) -> string());
+	      (ldap_tls_cacertfile) -> fun((binary()) -> string());
+	      (ldap_tls_depth) -> fun((non_neg_integer()) -> non_neg_integer());
+	      (ldap_tls_verify) -> fun((hard | soft | false) -> hard | soft | false);
+	      (ldap_filter) -> fun((binary()) -> binary());
+	      (ldap_uids) -> fun((uids()) -> uids());
+	      (atom()) -> [atom()].
 opt_type(deref_aliases) ->
-    fun (never) -> never;
-	(searching) -> searching;
-	(finding) -> finding;
-	(always) -> always
-    end;
+    opt_type(ldap_deref_aliases);
 opt_type(ldap_backups) ->
     fun (L) -> [iolist_to_binary(H) || H <- L] end;
 opt_type(ldap_base) -> fun iolist_to_binary/1;
@@ -344,8 +369,12 @@ opt_type(ldap_port) ->
 opt_type(ldap_rootdn) -> fun iolist_to_binary/1;
 opt_type(ldap_servers) ->
     fun (L) -> [iolist_to_binary(H) || H <- L] end;
+opt_type(ldap_tls_certfile) ->
+    fun(S) ->
+	    binary_to_list(ejabberd_pkix:try_certfile(S))
+    end;
 opt_type(ldap_tls_cacertfile) ->
-    fun(S) -> binary_to_list(iolist_to_binary(S)) end;
+    fun(S) -> binary_to_list(misc:try_read_file(S)) end;
 opt_type(ldap_tls_depth) ->
     fun (I) when is_integer(I), I >= 0 -> I end;
 opt_type(ldap_tls_verify) ->
@@ -368,4 +397,5 @@ opt_type(_) ->
     [deref_aliases, ldap_backups, ldap_base, ldap_uids,
      ldap_deref_aliases, ldap_encrypt, ldap_password,
      ldap_port, ldap_rootdn, ldap_servers, ldap_filter,
-     ldap_tls_cacertfile, ldap_tls_depth, ldap_tls_verify].
+     ldap_tls_certfile, ldap_tls_cacertfile, ldap_tls_depth,
+     ldap_tls_verify].

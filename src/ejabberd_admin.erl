@@ -138,7 +138,7 @@ get_commands_spec() ->
 			desc = "Get the current loglevel",
 			module = ejabberd_logger, function = get,
 			result_desc = "Tuple with the log level number, its keyword and description",
-			result_example = {4, <<"info">>, <<"Info">>},
+			result_example = {4, info, <<"Info">>},
 			args = [],
                         result = {leveltuple, {tuple, [{levelnumber, integer},
                                                        {levelatom, atom},
@@ -303,6 +303,7 @@ get_commands_spec() ->
 
      #ejabberd_commands{name = export2sql, tags = [mnesia],
 			desc = "Export virtual host information from Mnesia tables to SQL file",
+			longdesc = "Configure the modules to use SQL, then call this command.",
 			module = ejd2sql, function = export,
 			args_desc = ["Vhost", "Full path to the destination SQL file"],
 			args_example = ["example.com", "/var/lib/ejabberd/example.com.sql"],
@@ -478,9 +479,9 @@ update_module(ModuleNameString) ->
 
 register(User, Host, Password) ->
     case ejabberd_auth:try_register(User, Host, Password) of
-	{atomic, ok} ->
+	ok ->
 	    {ok, io_lib:format("User ~s@~s successfully registered", [User, Host])};
-	{atomic, exists} ->
+	{error, exists} ->
 	    Msg = io_lib:format("User ~s@~s already registered", [User, Host]),
 	    {error, conflict, 10090, Msg};
 	{error, Reason} ->
@@ -494,7 +495,7 @@ unregister(User, Host) ->
     {ok, ""}.
 
 registered_users(Host) ->
-    Users = ejabberd_auth:get_vh_registered_users(Host),
+    Users = ejabberd_auth:get_users(Host),
     SUsers = lists:sort(Users),
     lists:map(fun({U, _S}) -> U end, SUsers).
 

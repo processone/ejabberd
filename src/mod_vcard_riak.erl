@@ -49,9 +49,9 @@ is_search_supported(_LServer) ->
 get_vcard(LUser, LServer) ->
     case ejabberd_riak:get(vcard, vcard_schema(), {LUser, LServer}) of
         {ok, R} ->
-            [R#vcard.vcard];
+            {ok, [R#vcard.vcard]};
         {error, notfound} ->
-            [];
+            {ok, []};
         _ ->
             error
     end.

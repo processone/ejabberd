@@ -652,6 +652,8 @@ format({Key, Val}) when is_binary(Val) ->
 format({Key, Val}) -> % TODO: improve Yaml parsing
     {Key, Val}.
 
+-spec opt_type(allow_contrib_modules) -> fun((boolean()) -> boolean());
+	      (atom()) -> [atom()].
 opt_type(allow_contrib_modules) ->
     fun (false) -> false;
         (no) -> false;

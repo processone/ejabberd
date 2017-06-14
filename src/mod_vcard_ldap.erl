@@ -24,8 +24,6 @@
 
 -module(mod_vcard_ldap).
 
--behaviour(ejabberd_config).
-
 -behaviour(gen_server).
 -behaviour(mod_vcard).
 
@@ -33,7 +31,7 @@
 -export([start_link/2]).
 -export([init/2, stop/1, get_vcard/2, set_vcard/4, search/4,
 	 remove_user/2, import/3, search_fields/1, search_reported/1,
-	 mod_opt_type/1, opt_type/1]).
+	 mod_opt_type/1]).
 -export([is_search_supported/1]).
 
 %% gen_server callbacks
@@ -99,9 +97,9 @@ get_vcard(LUser, LServer) ->
 	#eldap_entry{attributes = Attributes} ->
 	    VCard = ldap_attributes_to_vcard(Attributes, VCardMap,
 					     {LUser, LServer}),
-	    [xmpp:encode(VCard)];
+	    {ok, [xmpp:encode(VCard)]};
 	_ ->
-	    []
+	    {ok, []}
     end.
 
 set_vcard(_LUser, _LServer, _VCard, _VCardSearch) ->
@@ -150,7 +148,7 @@ search_items(Entries, State) ->
 		  {U, UIDAttrFormat} ->
 		      case eldap_utils:get_user_part(U, UIDAttrFormat) of
 			  {ok, Username} ->
-			      case ejabberd_auth:is_user_exists(Username,
+			      case ejabberd_auth:user_exists(Username,
 								LServer) of
 				  true ->
 				      RFields = lists:map(
@@ -469,9 +467,9 @@ mod_opt_type(ldap_rootdn) -> fun iolist_to_binary/1;
 mod_opt_type(ldap_servers) ->
     fun (L) -> [iolist_to_binary(H) || H <- L] end;
 mod_opt_type(ldap_tls_cacertfile) ->
-    fun iolist_to_binary/1;
+    fun misc:try_read_file/1;
 mod_opt_type(ldap_tls_certfile) ->
-    fun iolist_to_binary/1;
+    fun ejabberd_pkix:try_certfile/1;
 mod_opt_type(ldap_tls_depth) ->
     fun (I) when is_integer(I), I >= 0 -> I end;
 mod_opt_type(ldap_tls_verify) ->
@@ -483,13 +481,6 @@ mod_opt_type(_) ->
     [ldap_filter, ldap_search_fields,
      ldap_search_reported, ldap_uids, ldap_vcard_map,
      deref_aliases, ldap_backups, ldap_base,
-     ldap_deref_aliases, ldap_encrypt, ldap_password,
-     ldap_port, ldap_rootdn, ldap_servers,
-     ldap_tls_cacertfile, ldap_tls_certfile, ldap_tls_depth,
-     ldap_tls_verify].
-
-opt_type(_) ->
-    [deref_aliases, ldap_backups, ldap_base,
      ldap_deref_aliases, ldap_encrypt, ldap_password,
      ldap_port, ldap_rootdn, ldap_servers,
      ldap_tls_cacertfile, ldap_tls_certfile, ldap_tls_depth,

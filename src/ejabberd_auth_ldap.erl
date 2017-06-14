@@ -37,13 +37,9 @@
 	 handle_cast/2, terminate/2, code_change/3]).
 
 -export([start/1, stop/1, start_link/1, set_password/3,
-	 check_password/4, check_password/6, try_register/3,
-	 dirty_get_registered_users/0, get_vh_registered_users/1,
-	 get_vh_registered_users/2,
-	 get_vh_registered_users_number/1,
-	 get_vh_registered_users_number/2, get_password/2,
-	 get_password_s/2, is_user_exists/2, remove_user/2,
-	 remove_user/3, store_type/0, plain_password_required/0,
+	 check_password/4, user_exists/2,
+	 get_users/2, count_users/2,
+	 store_type/1, plain_password_required/1,
 	 opt_type/1]).
 
 -include("ejabberd.hrl").
@@ -112,9 +108,9 @@ init(Host) ->
 			  State#state.password, State#state.tls_options),
     {ok, State}.
 
-plain_password_required() -> true.
+plain_password_required(_) -> true.
 
-store_type() -> external.
+store_type(_) -> external.
 
 check_password(User, AuthzId, Server, Password) ->
     if AuthzId /= <<>> andalso AuthzId /= User ->
@@ -129,59 +125,33 @@ check_password(User, AuthzId, Server, Password) ->
 	    end
     end.
 
-check_password(User, AuthzId, Server, Password, _Digest,
-	       _DigestGen) ->
-    check_password(User, AuthzId, Server, Password).
-
 set_password(User, Server, Password) ->
     {ok, State} = eldap_utils:get_state(Server, ?MODULE),
     case find_user_dn(User, State) of
-      false -> {error, user_not_found};
+      false -> {error, notfound};
       DN ->
-	  eldap_pool:modify_passwd(State#state.eldap_id, DN,
-				   Password)
+	    case eldap_pool:modify_passwd(State#state.eldap_id, DN,
+					  Password) of
+		ok -> ok;
+		_Err -> {error, db_failure}
+	    end
     end.
 
-%% @spec (User, Server, Password) -> {error, not_allowed}
-try_register(_User, _Server, _Password) ->
-    {error, not_allowed}.
-
-dirty_get_registered_users() ->
-    Servers = ejabberd_config:get_vh_by_auth_method(ldap),
-    lists:flatmap(fun (Server) ->
-			  get_vh_registered_users(Server)
-		  end,
-		  Servers).
-
-get_vh_registered_users(Server) ->
-    case catch get_vh_registered_users_ldap(Server) of
+get_users(Server, []) ->
+    case catch get_users_ldap(Server) of
       {'EXIT', _} -> [];
       Result -> Result
     end.
 
-get_vh_registered_users(Server, _) ->
-    get_vh_registered_users(Server).
-
-get_vh_registered_users_number(Server) ->
-    length(get_vh_registered_users(Server)).
-
-get_vh_registered_users_number(Server, _) ->
-    get_vh_registered_users_number(Server).
-
-get_password(_User, _Server) -> false.
-
-get_password_s(_User, _Server) -> <<"">>.
+count_users(Server, Opts) ->
+    length(get_users(Server, Opts)).
 
 %% @spec (User, Server) -> true | false | {error, Error}
-is_user_exists(User, Server) ->
-    case catch is_user_exists_ldap(User, Server) of
-      {'EXIT', Error} -> {error, Error};
+user_exists(User, Server) ->
+    case catch user_exists_ldap(User, Server) of
+      {'EXIT', _Error} -> {error, db_failure};
       Result -> Result
     end.
-
-remove_user(_User, _Server) -> {error, not_allowed}.
-
-remove_user(_User, _Server, _Password) -> not_allowed.
 
 %%%----------------------------------------------------------------------
 %%% Internal functions
@@ -199,7 +169,7 @@ check_password_ldap(User, Server, Password) ->
 	  end
     end.
 
-get_vh_registered_users_ldap(Server) ->
+get_users_ldap(Server) ->
     {ok, State} = eldap_utils:get_state(Server, ?MODULE),
     UIDs = State#state.uids,
     Eldap_ID = State#state.eldap_id,
@@ -248,7 +218,7 @@ get_vh_registered_users_ldap(Server) ->
       _ -> []
     end.
 
-is_user_exists_ldap(User, Server) ->
+user_exists_ldap(User, Server) ->
     {ok, State} = eldap_utils:get_state(Server, ?MODULE),
     case find_user_dn(User, State) of
       false -> false;
@@ -393,6 +363,10 @@ parse_options(Host) ->
 	   sfilter = SearchFilter, lfilter = LocalFilter,
 	   dn_filter = DNFilter, dn_filter_attrs = DNFilterAttrs}.
 
+-spec opt_type(ldap_dn_filter) -> fun(([{binary(), binary()}]) ->
+				       [{binary(), binary()}]);
+	      (ldap_local_filter) -> fun((any()) -> any());
+	      (atom()) -> [atom()].
 opt_type(ldap_dn_filter) ->
     fun ([{DNF, DNFA}]) ->
 	    NewDNFA = case DNFA of

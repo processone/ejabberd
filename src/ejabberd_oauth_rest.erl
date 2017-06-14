@@ -25,7 +25,7 @@
 %%%-------------------------------------------------------------------
 
 -module(ejabberd_oauth_rest).
-
+-behaviour(ejabberd_oauth).
 -behaviour(ejabberd_config).
 
 -export([init/0,
@@ -93,6 +93,8 @@ path(Path) ->
     <<Base/binary, "/", Path/binary>>.
 
 
+-spec opt_type(ext_api_path_oauth) -> fun((binary()) -> binary());
+	      (atom()) -> [atom()].
 opt_type(ext_api_path_oauth) ->
     fun (X) -> iolist_to_binary(X) end;
 opt_type(_) -> [ext_api_path_oauth].

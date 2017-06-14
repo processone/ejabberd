@@ -101,10 +101,10 @@ AC_ARG_ENABLE(mssql,
 esac],[db_type=generic])
 
 AC_ARG_ENABLE(all,
-[AC_HELP_STRING([--enable-all], [same as --enable-odbc --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-riak --enable-redis --enable-elixir --enable-iconv --enable-debug --enable-tools (useful for Dialyzer checks, default: no)])],
+[AC_HELP_STRING([--enable-all], [same as --enable-odbc --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-riak --enable-redis --enable-elixir --enable-iconv --enable-stun --enable-sip --enable-debug --enable-tools (useful for Dialyzer checks, default: no)])],
 [case "${enableval}" in
-  yes) odbc=true mysql=true pgsql=true sqlite=true pam=true zlib=true riak=true redis=true elixir=true iconv=true debug=true tools=true ;;
-  no) odbc=false mysql=false pgsql=false sqlite=false pam=false zlib=false riak=false redis=false elixir=false iconv=false debug=false tools=false ;;
+  yes) odbc=true mysql=true pgsql=true sqlite=true pam=true zlib=true riak=true redis=true elixir=true iconv=true stun=true sip=true debug=true tools=true ;;
+  no) odbc=false mysql=false pgsql=false sqlite=false pam=false zlib=false riak=false redis=false elixir=false iconv=false stun=false sip=false debug=false tools=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-all) ;;
 esac],[])
 
@@ -212,6 +212,30 @@ AC_ARG_ENABLE(latest_deps,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-latest-deps) ;;
 esac],[if test "x$latest_deps" = "x"; then latest_deps=false; fi])
 
+AC_ARG_ENABLE(system_deps,
+[AC_HELP_STRING([--enable-system-deps], [makes rebar use localy installed dependences instead of downloading them (default: no)])],
+[case "${enableval}" in
+  yes) system_deps=true ;;
+  no)  system_deps=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-system-deps) ;;
+esac],[if test "x$system_deps" = "x"; then system_deps=false; fi])
+
+AC_ARG_ENABLE(stun,
+[AC_HELP_STRING([--enable-stun], [enable STUN/TURN support (default: no)])],
+[case "${enableval}" in
+  yes) stun=true ;;
+  no)  stun=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-stun) ;;
+esac],[if test "x$stun" = "x"; then stun=false; fi])
+
+AC_ARG_ENABLE(sip,
+[AC_HELP_STRING([--enable-sip], [enable SIP support (default: no)])],
+[case "${enableval}" in
+  yes) sip=true ;;
+  no)  sip=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-sip) ;;
+esac],[if test "x$sip" = "x"; then sip=false; fi])
+
 AC_CONFIG_FILES([Makefile
 		 vars.config
 		 src/ejabberd.app.src])
@@ -253,9 +277,12 @@ AC_SUBST(riak)
 AC_SUBST(redis)
 AC_SUBST(elixir)
 AC_SUBST(iconv)
+AC_SUBST(stun)
+AC_SUBST(sip)
 AC_SUBST(debug)
 AC_SUBST(tools)
 AC_SUBST(latest_deps)
+AC_SUBST(system_deps)
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)

@@ -121,12 +121,6 @@ CREATE TABLE vcard (
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE vcard_xupdate (
-    username varchar(191) PRIMARY KEY,
-    hash text NOT NULL,
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
 CREATE TABLE vcard_search (
     username varchar(191) NOT NULL,
     lusername varchar(191) PRIMARY KEY,

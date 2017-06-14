@@ -40,15 +40,9 @@
 	 unregister_connection/3
 	]).
 
--export([login/2, set_password/3, check_password/4,
-	 check_password/6, try_register/3,
-	 dirty_get_registered_users/0, get_vh_registered_users/1,
-	 get_vh_registered_users/2,
-	 get_vh_registered_users_number/1,
-	 get_vh_registered_users_number/2, get_password_s/2,
-	 get_password/2, get_password/3, is_user_exists/2,
-	 remove_user/2, remove_user/3, store_type/0,
-	 plain_password_required/0, opt_type/1]).
+-export([login/2, check_password/4, user_exists/2,
+	 get_users/2, count_users/2, store_type/1,
+	 plain_password_required/1, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -139,17 +133,9 @@ unregister_connection(_SID,
 %% ---------------------------------
 %% Specific anonymous auth functions
 %% ---------------------------------
-
-%% When anonymous login is enabled, check the password for permenant users
-%% before allowing access
-check_password(User, AuthzId, Server, Password) ->
-    check_password(User, AuthzId, Server, Password, undefined,
-		   undefined).
-
-check_password(User, _AuthzId, Server, _Password, _Digest,
-	       _DigestGen) ->
+check_password(User, _AuthzId, Server, _Password) ->
     case
-      ejabberd_auth:is_user_exists_in_other_modules(?MODULE,
+      ejabberd_auth:user_exists_in_other_modules(?MODULE,
 						    User, Server)
 	of
       %% If user exists in other module, reject anonnymous authentication
@@ -173,69 +159,25 @@ login(User, Server) ->
 	  end
     end.
 
-%% When anonymous login is enabled, check that the user is permanent before
-%% changing its password
-set_password(User, Server, _Password) ->
-    case anonymous_user_exist(User, Server) of
-      true -> ok;
-      false -> {error, not_allowed}
-    end.
+get_users(Server, _) ->
+    [{U, S} || {U, S, _R} <- ejabberd_sm:get_vh_session_list(Server)].
 
-%% When anonymous login is enabled, check if permanent users are allowed on
-%% the server:
-try_register(_User, _Server, _Password) ->
-    {error, not_allowed}.
+count_users(Server, Opts) ->
+    length(get_users(Server, Opts)).
 
-dirty_get_registered_users() -> [].
-
-get_vh_registered_users(Server) ->
-    [{U, S}
-     || {U, S, _R}
-	    <- ejabberd_sm:get_vh_session_list(Server)].
-
-get_vh_registered_users(Server, _) ->
-    get_vh_registered_users(Server).
-
-get_vh_registered_users_number(Server) ->
-    length(get_vh_registered_users(Server)).
-
-get_vh_registered_users_number(Server, _) ->
-    get_vh_registered_users_number(Server).
-
-%% Return password of permanent user or false for anonymous users
-get_password(User, Server) ->
-    get_password(User, Server, <<"">>).
-
-get_password(User, Server, DefaultValue) ->
-    case anonymous_user_exist(User, Server) or
-	   login(User, Server)
-	of
-      %% We return the default value if the user is anonymous
-      true -> DefaultValue;
-      %% We return the permanent user password otherwise
-      false -> false
-    end.
-
-get_password_s(User, Server) ->
-    case get_password(User, Server) of
-        false ->
-            <<"">>;
-        Password ->
-            Password
-    end.
-
-is_user_exists(User, Server) ->
+user_exists(User, Server) ->
     anonymous_user_exist(User, Server).
 
-remove_user(_User, _Server) -> {error, not_allowed}.
+plain_password_required(_) ->
+    false.
 
-remove_user(_User, _Server, _Password) -> not_allowed.
+store_type(_) ->
+    external.
 
-plain_password_required() -> false.
-
-store_type() ->
-	plain.
-
+-spec opt_type(allow_multiple_connection) -> fun((boolean()) -> boolean());
+	      (anonymous_protocol) -> fun((sasl_anon | login_anon | both) ->
+						 sasl_anon | login_anon | both);
+	      (atom()) -> [atom()].
 opt_type(allow_multiple_connections) ->
     fun (V) when is_boolean(V) -> V end;
 opt_type(anonymous_protocol) ->

@@ -136,15 +136,15 @@ init({SockMod, Socket}, Opts) ->
 		 true -> [{[], ejabberd_xmlrpc}];
 		 false -> []
 	     end,
-    DefinedHandlers = gen_mod:get_opt(request_handlers, Opts, []),
+    DefinedHandlers = proplists:get_value(request_handlers, Opts, []),
     RequestHandlers = DefinedHandlers ++ Captcha ++ Register ++
         Admin ++ Bind ++ XMLRPC,
     ?DEBUG("S: ~p~n", [RequestHandlers]),
 
-    DefaultHost = gen_mod:get_opt(default_host, Opts, undefined),
+    DefaultHost = proplists:get_value(default_host, Opts),
     {ok, RE} = re:compile(<<"^(?:\\[(.*?)\\]|(.*?))(?::(\\d+))?$">>),
 
-    CustomHeaders = gen_mod:get_opt(custom_headers, Opts, []),
+    CustomHeaders = proplists:get_value(custom_headers, Opts, []),
 
     ?INFO_MSG("started: ~p", [{SockMod1, Socket1}]),
     State = #state{sockmod = SockMod1,
@@ -770,7 +770,9 @@ code_to_phrase(505) -> <<"HTTP Version Not Supported">>.
 
 -spec parse_auth(binary()) -> {binary(), binary()} | {oauth, binary(), []} | undefined.
 parse_auth(<<"Basic ", Auth64/binary>>) ->
-    Auth = misc:decode_base64(Auth64),
+    Auth = try base64:decode(Auth64)
+	   catch _:badarg -> <<>>
+	   end,
     %% Auth should be a string with the format: user@server:password
     %% Note that password can contain additional characters '@' and ':'
     case str:chr(Auth, $:) of
@@ -899,19 +901,41 @@ transform_listen_option({request_handlers, Hs}, Opts) ->
 transform_listen_option(Opt, Opts) ->
     [Opt|Opts].
 
+-spec opt_type(trusted_proxies) -> fun((all | [binary()]) -> all | [binary()]);
+	      (atom()) -> [atom()].
 opt_type(trusted_proxies) ->
     fun (all) -> all;
         (TPs) -> [iolist_to_binary(TP) || TP <- TPs] end;
 opt_type(_) -> [trusted_proxies].
 
+-spec listen_opt_type(tls) -> fun((boolean()) -> boolean());
+		     (certfile) -> fun((binary()) -> binary());
+		     (ciphers) -> fun((binary()) -> binary());
+		     (dhfile) -> fun((binary()) -> binary());
+		     (protocol_options) -> fun(([binary()]) -> binary());
+		     (tls_compression) -> fun((boolean()) -> boolean());
+		     (captcha) -> fun((boolean()) -> boolean());
+		     (register) -> fun((boolean()) -> boolean());
+		     (web_admin) -> fun((boolean()) -> boolean());
+		     (http_bind) -> fun((boolean()) -> boolean());
+		     (xmlrpc) -> fun((boolean()) -> boolean());
+		     (request_handlers) -> fun(([{binary(), atom()}]) ->
+						[{binary(), atom()}]);
+		     (default_host) -> fun((binary()) -> binary());
+		     (custom_headers) -> fun(([{binary(), binary()}]) ->
+					      [{binary(), binary()}]);
+		     (atom()) -> [atom()].
 listen_opt_type(tls) ->
     fun(B) when is_boolean(B) -> B end;
 listen_opt_type(certfile) ->
-    fun iolist_to_binary/1;
+    fun(S) ->
+	    ejabberd_pkix:add_certfile(S),
+	    iolist_to_binary(S)
+    end;
 listen_opt_type(ciphers) ->
     fun iolist_to_binary/1;
 listen_opt_type(dhfile) ->
-    fun iolist_to_binary/1;
+    fun misc:try_read_file/1;
 listen_opt_type(protocol_options) ->
     fun(Options) -> str:join(Options, <<"|">>) end;
 listen_opt_type(tls_compression) ->

@@ -36,7 +36,7 @@
 	 import_start/2, import/5, announce/1, send_motd/1, disco_identity/5,
 	 disco_features/5, disco_items/5, depends/2,
 	 send_announcement_to_all/3, announce_commands/4,
-	 announce_items/4, mod_opt_type/1]).
+	 announce_items/4, mod_opt_type/1, clean_cache/1]).
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
 -export([announce_all/1,
@@ -57,17 +57,22 @@
 
 -callback init(binary(), gen_mod:opts()) -> any().
 -callback import(binary(), binary(), [binary()]) -> ok.
--callback set_motd_users(binary(), [{binary(), binary(), binary()}]) -> {atomic, any()}.
--callback set_motd(binary(), xmlel()) -> {atomic, any()}.
--callback delete_motd(binary()) -> {atomic, any()}.
--callback get_motd(binary()) -> {ok, xmlel()} | error.
--callback is_motd_user(binary(), binary()) -> boolean().
--callback set_motd_user(binary(), binary()) -> {atomic, any()}.
+-callback set_motd_users(binary(), [{binary(), binary(), binary()}]) -> ok | {error, any()}.
+-callback set_motd(binary(), xmlel()) -> ok | {error, any()}.
+-callback delete_motd(binary()) -> ok | {error, any()}.
+-callback get_motd(binary()) -> {ok, xmlel()} | error | {error, any()}.
+-callback is_motd_user(binary(), binary()) -> {ok, boolean()} | {error, any()}.
+-callback set_motd_user(binary(), binary()) -> ok | {error, any()}.
+-callback use_cache(binary()) -> boolean().
+-callback cache_nodes(binary()) -> [node()].
+
+-optional_callbacks([use_cache/1, cache_nodes/1]).
 
 -record(state, {host :: binary()}).
 
 -define(NS_ADMINL(Sub), [<<"http:">>, <<"jabber.org">>, <<"protocol">>,
                          <<"admin">>, <<Sub>>]).
+-define(MOTD_CACHE, motd_cache).
 
 tokenize(Node) -> str:tokens(Node, <<"/#">>).
 
@@ -88,7 +93,7 @@ reload(Host, NewOpts, OldOpts) ->
        true ->
 	    ok
     end,
-    ok.
+    init_cache(NewMod, Host, NewOpts).
 
 depends(_Host, _Opts) ->
     [{mod_adhoc, hard}].
@@ -100,6 +105,7 @@ init([Host, Opts]) ->
     process_flag(trap_exit, true),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
+    init_cache(Mod, Host, Opts),
     ejabberd_hooks:add(local_send_to_resource_hook, Host,
 		       ?MODULE, announce, 50),
     ejabberd_hooks:add(disco_local_identity, Host, ?MODULE, disco_identity, 50),
@@ -633,7 +639,7 @@ announce_all(#message{to = To} = Packet) ->
 	      Dest = jid:make(User, Server),
 	      ejabberd_router:route(
 		xmpp:set_from_to(add_store_hint(Packet), Local, Dest))
-      end, ejabberd_auth:get_vh_registered_users(To#jid.lserver)).
+      end, ejabberd_auth:get_users(To#jid.lserver)).
 
 announce_all_hosts_all(#message{to = To} = Packet) ->
     Local = jid:make(To#jid.server),
@@ -642,7 +648,7 @@ announce_all_hosts_all(#message{to = To} = Packet) ->
 	      Dest = jid:make(User, Server),
 	      ejabberd_router:route(
 		xmpp:set_from_to(add_store_hint(Packet), Local, Dest))
-      end, ejabberd_auth:dirty_get_registered_users()).
+      end, ejabberd_auth:get_users()).
 
 announce_online(#message{to = To} = Packet) ->
     announce_online1(ejabberd_sm:get_vh_session_list(To#jid.lserver),
@@ -684,19 +690,19 @@ announce_all_hosts_motd_update(Packet) ->
 
 announce_motd_update(LServer, Packet) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:delete_motd(LServer),
-    Mod:set_motd(LServer, xmpp:encode(Packet)).
+    delete_motd(Mod, LServer),
+    set_motd(Mod, LServer, xmpp:encode(Packet)).
 
 announce_motd_delete(#message{to = To}) ->
     LServer = To#jid.lserver,
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:delete_motd(LServer).
+    delete_motd(Mod, LServer).
 
 announce_all_hosts_motd_delete(_Packet) ->
     lists:foreach(
       fun(Host) ->
 	      Mod = gen_mod:db_mod(Host, ?MODULE),
-	      Mod:delete_motd(Host)
+	      delete_motd(Mod, Host)
       end, ?MYHOSTS).
 
 -spec send_motd({presence(), ejabberd_c2s:state()}) -> {presence(), ejabberd_c2s:state()}.
@@ -707,16 +713,16 @@ send_motd({#presence{type = available},
 	   #{jid := #jid{luser = LUser, lserver = LServer} = JID}} = Acc)
   when LUser /= <<>> ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    case Mod:get_motd(LServer) of
+    case get_motd(Mod, LServer) of
 	{ok, Packet} ->
 	    try xmpp:decode(Packet, ?NS_CLIENT, [ignore_els]) of
 		Msg ->
-		    case Mod:is_motd_user(LUser, LServer) of
+		    case is_motd_user(Mod, LUser, LServer) of
 			false ->
 			    Local = jid:make(LServer),
 			    ejabberd_router:route(
 			      xmpp:set_from_to(Msg, Local, JID)),
-			    Mod:set_motd_user(LUser, LServer);
+			    set_motd_user(Mod, LUser, LServer);
 			true ->
 			    ok
 		    end
@@ -724,16 +730,81 @@ send_motd({#presence{type = available},
 		    ?ERROR_MSG("failed to decode motd packet ~p: ~s",
 			       [Packet, xmpp:format_error(Why)])
 	    end;
-	error ->
+	_ ->
 	    ok
     end,
     Acc;
 send_motd(Acc) ->
     Acc.
 
+-spec get_motd(module(), binary()) -> {ok, xmlel()} | error | {error, any()}.
+get_motd(Mod, LServer) ->
+    case use_cache(Mod, LServer) of
+	true ->
+	    ets_cache:lookup(
+	      ?MOTD_CACHE, {<<"">>, LServer},
+	      fun() -> Mod:get_motd(LServer) end);
+	false ->
+	    Mod:get_motd(LServer)
+    end.
+
+-spec set_motd(module(), binary(), xmlel()) -> any().
+set_motd(Mod, LServer, XML) ->
+    case use_cache(Mod, LServer) of
+	true ->
+	    ets_cache:update(
+	      ?MOTD_CACHE, {<<"">>, LServer}, {ok, XML},
+	      fun() -> Mod:set_motd(LServer, XML) end,
+	      cache_nodes(Mod, LServer));
+	false ->
+	    Mod:set_motd(LServer, XML)
+    end.
+
+-spec is_motd_user(module(), binary(), binary()) -> boolean().
+is_motd_user(Mod, LUser, LServer) ->
+    Res = case use_cache(Mod, LServer) of
+	      true ->
+		  ets_cache:lookup(
+		    ?MOTD_CACHE, {LUser, LServer},
+		    fun() -> Mod:is_motd_user(LUser, LServer) end);
+	      false ->
+		  Mod:is_motd_user(LUser, LServer)
+	  end,
+    case Res of
+	{ok, Bool} -> Bool;
+	_ -> false
+    end.
+
+-spec set_motd_user(module(), binary(), binary()) -> any().
+set_motd_user(Mod, LUser, LServer) ->
+    case use_cache(Mod, LServer) of
+	true ->
+	    ets_cache:update(
+	      ?MOTD_CACHE, {LUser, LServer}, {ok, true},
+	      fun() -> Mod:set_motd_user(LUser, LServer) end,
+	      cache_nodes(Mod, LServer));
+	false ->
+	    Mod:set_motd_user(LUser, LServer)
+    end.
+
+-spec delete_motd(module(), binary()) -> ok | {error, any()}.
+delete_motd(Mod, LServer) ->
+    case Mod:delete_motd(LServer) of
+	ok ->
+	    case use_cache(Mod, LServer) of
+		true ->
+		    ejabberd_cluster:eval_everywhere(
+		      ?MODULE, clean_cache, [LServer]);
+		false ->
+		    ok
+	    end;
+	Err ->
+	    Err
+    end.
+
 get_stored_motd(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    case Mod:get_motd(LServer) of
+    case get_motd(Mod, LServer) of
         {ok, Packet} ->
 	    try xmpp:decode(Packet, ?NS_CLIENT, [ignore_els]) of
 		#message{body = Body, subject = Subject} ->
@@ -742,7 +813,7 @@ get_stored_motd(LServer) ->
 		    ?ERROR_MSG("failed to decode motd packet ~p: ~s",
 			       [Packet, xmpp:format_error(Why)])
 	    end;
-        error ->
+        _ ->
             {<<>>, <<>>}
     end.
 
@@ -774,6 +845,55 @@ route_forbidden_error(Packet) ->
     Lang = xmpp:get_lang(Packet),
     Err = xmpp:err_forbidden(<<"Denied by ACL">>, Lang),
     ejabberd_router:route_error(Packet, Err).
+
+-spec init_cache(module(), binary(), gen_mod:opts()) -> ok.
+init_cache(Mod, Host, Opts) ->
+    case use_cache(Mod, Host) of
+	true ->
+	    CacheOpts = cache_opts(Host, Opts),
+	    ets_cache:new(?MOTD_CACHE, CacheOpts);
+	false ->
+	    ets_cache:delete(?MOTD_CACHE)
+    end.
+
+-spec cache_opts(binary(), gen_mod:opts()) -> [proplists:property()].
+cache_opts(Host, Opts) ->
+    MaxSize = gen_mod:get_opt(
+		cache_size, Opts,
+		ejabberd_config:cache_size(Host)),
+    CacheMissed = gen_mod:get_opt(
+		    cache_missed, Opts,
+		    ejabberd_config:cache_missed(Host)),
+    LifeTime = case gen_mod:get_opt(
+		      cache_life_time, Opts,
+		      ejabberd_config:cache_life_time(Host)) of
+		   infinity -> infinity;
+		   I -> timer:seconds(I)
+	       end,
+    [{max_size, MaxSize}, {cache_missed, CacheMissed}, {life_time, LifeTime}].
+
+-spec use_cache(module(), binary()) -> boolean().
+use_cache(Mod, Host) ->
+    case erlang:function_exported(Mod, use_cache, 1) of
+	true -> Mod:use_cache(Host);
+	false ->
+	    gen_mod:get_module_opt(
+	      Host, ?MODULE, use_cache,
+	      ejabberd_config:use_cache(Host))
+    end.
+
+-spec cache_nodes(module(), binary()) -> [node()].
+cache_nodes(Mod, Host) ->
+    case erlang:function_exported(Mod, cache_nodes, 1) of
+	true -> Mod:cache_nodes(Host);
+	false -> ejabberd_cluster:get_nodes()
+    end.
+
+-spec clean_cache(binary()) -> non_neg_integer().
+clean_cache(LServer) ->
+    ets_cache:filter(
+      ?MOTD_CACHE,
+      fun({_, S}, _) -> S /= LServer end).
 
 %%-------------------------------------------------------------------------
 export(LServer) ->

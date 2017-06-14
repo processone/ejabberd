@@ -104,13 +104,6 @@
 ).
 %% @type affiliation() = 'none' | 'owner' | 'publisher' | 'publish-only' | 'member' | 'outcast'.
 
--type(subscription() :: 'none'
-                      | 'pending'
-                      | 'unconfigured'
-                      | 'subscribed'
-).
-%% @type subscription() = 'none' | 'pending' | 'unconfigured' | 'subscribed'.
-
 -type(accessModel() :: 'open'
                      | 'presence'
                      | 'roster'

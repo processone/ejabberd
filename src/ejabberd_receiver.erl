@@ -248,17 +248,15 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 activate_socket(#state{socket = Socket,
 		       sock_mod = SockMod}) ->
-    PeerName = case SockMod of
-		 gen_tcp ->
-		     inet:setopts(Socket, [{active, once}]),
-		     inet:peername(Socket);
-		 _ ->
-		     SockMod:setopts(Socket, [{active, once}]),
-		     SockMod:peername(Socket)
-	       end,
-    case PeerName of
+    Res = case SockMod of
+	      gen_tcp ->
+		  inet:setopts(Socket, [{active, once}]);
+	      _ ->
+		  SockMod:setopts(Socket, [{active, once}])
+	  end,
+    case Res of
       {error, _Reason} -> self() ! {tcp_closed, Socket};
-      {ok, _} -> ok
+      ok -> ok
     end.
 
 %% Data processing for connectors directly generating xmlelement in
@@ -348,6 +346,9 @@ do_call(Pid, Msg) ->
 hibernate_timeout() ->
     ejabberd_config:get_option(receiver_hibernate, timer:seconds(90)).
 
+-spec opt_type(receiver_hibernate) -> fun((pos_integer() | hibernate) ->
+					   pos_integer() | hibernate);
+	      (atom()) -> [atom()].
 opt_type(receiver_hibernate) ->
     fun(I) when is_integer(I), I>0 -> I;
        (hibernate) -> hibernate

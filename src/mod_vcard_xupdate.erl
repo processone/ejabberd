@@ -30,52 +30,39 @@
 %% gen_mod callbacks
 -export([start/2, stop/1, reload/3]).
 
--export([update_presence/1, vcard_set/3, export/1,
-	 import_info/0, import/5, import_start/2,
+-export([update_presence/1, vcard_set/3, remove_user/2,
 	 mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 
--callback init(binary(), gen_mod:opts()) -> any().
--callback import(binary(), binary(), [binary()]) -> ok.
--callback add_xupdate(binary(), binary(), binary()) -> {atomic, any()}.
--callback get_xupdate(binary(), binary()) -> binary() | undefined.
--callback remove_xupdate(binary(), binary()) -> {atomic, any()}.
+-define(VCARD_XUPDATE_CACHE, vcard_xupdate_cache).
 
 %%====================================================================
 %% gen_mod callbacks
 %%====================================================================
 
 start(Host, Opts) ->
-    Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
-    Mod:init(Host, Opts),
+    init_cache(Host, Opts),
     ejabberd_hooks:add(c2s_self_presence, Host, ?MODULE,
 		       update_presence, 100),
     ejabberd_hooks:add(vcard_set, Host, ?MODULE, vcard_set,
 		       100),
-    ok.
+    ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 50).
 
 stop(Host) ->
     ejabberd_hooks:delete(c2s_self_presence, Host,
 			  ?MODULE, update_presence, 100),
     ejabberd_hooks:delete(vcard_set, Host, ?MODULE,
 			  vcard_set, 100),
-    ok.
+    ejabberd_hooks:delete(remove_user, Host, ?MODULE, remove_user, 50).
 
-reload(Host, NewOpts, OldOpts) ->
-    NewMod = gen_mod:db_mod(Host, NewOpts, ?MODULE),
-    OldMod = gen_mod:db_mod(Host, OldOpts, ?MODULE),
-    if NewMod /= OldMod ->
-	    NewMod:init(Host, NewOpts);
-       true ->
-	    ok
-    end,
-    ok.
+reload(Host, NewOpts, _OldOpts) ->
+    init_cache(Host, NewOpts).
 
 depends(_Host, _Opts) ->
-    [].
+    [{mod_vcard, hard}].
 
 %%====================================================================
 %% Hooks
@@ -91,51 +78,97 @@ update_presence(Acc) ->
     Acc.
 
 -spec vcard_set(binary(), binary(), xmlel()) -> ok.
-vcard_set(LUser, LServer, VCARD) ->
-    US = {LUser, LServer},
-    case fxml:get_path_s(VCARD,
-			[{elem, <<"PHOTO">>}, {elem, <<"BINVAL">>}, cdata])
-	of
-      <<>> -> remove_xupdate(LUser, LServer);
-      BinVal ->
-	  add_xupdate(LUser, LServer,
-		      str:sha(misc:decode_base64(BinVal)))
-    end,
-    ejabberd_sm:force_update_presence(US).
+vcard_set(LUser, LServer, _VCARD) ->
+    ets_cache:delete(?VCARD_XUPDATE_CACHE, {LUser, LServer}),
+    ejabberd_sm:force_update_presence({LUser, LServer}).
+
+-spec remove_user(binary(), binary()) -> ok.
+remove_user(User, Server) ->
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
+    ets_cache:delete(?VCARD_XUPDATE_CACHE, {LUser, LServer}).
 
 %%====================================================================
 %% Storage
 %%====================================================================
-
-add_xupdate(LUser, LServer, Hash) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:add_xupdate(LUser, LServer, Hash).
-
+-spec get_xupdate(binary(), binary()) -> binary() | undefined.
 get_xupdate(LUser, LServer) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:get_xupdate(LUser, LServer).
+    Result = case use_cache(LServer) of
+		 true ->
+		     ets_cache:lookup(
+		       ?VCARD_XUPDATE_CACHE, {LUser, LServer},
+		       fun() -> db_get_xupdate(LUser, LServer) end);
+		 false ->
+		     db_get_xupdate(LUser, LServer)
+	     end,
+    case Result of
+	{ok, Hash} -> Hash;
+	error -> undefined
+    end.
 
-remove_xupdate(LUser, LServer) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:remove_xupdate(LUser, LServer).
+-spec db_get_xupdate(binary(), binary()) -> {ok, binary()} | error.
+db_get_xupdate(LUser, LServer) ->
+    case mod_vcard:get_vcard(LUser, LServer) of
+	[VCard] ->
+	    {ok, compute_hash(VCard)};
+	_ ->
+	    error
+    end.
 
-import_info() ->
-    [{<<"vcard_xupdate">>, 3}].
+-spec init_cache(binary(), gen_mod:opts()) -> ok.
+init_cache(Host, Opts) ->
+    case use_cache(Host) of
+	true ->
+	    CacheOpts = cache_opts(Host, Opts),
+	    ets_cache:new(?VCARD_XUPDATE_CACHE, CacheOpts);
+	false ->
+	    ets_cache:delete(?VCARD_XUPDATE_CACHE)
+    end.
 
-import_start(LServer, DBType) ->
-    Mod = gen_mod:db_mod(DBType, ?MODULE),
-    Mod:init(LServer, []).
+-spec cache_opts(binary(), gen_mod:opts()) -> [proplists:property()].
+cache_opts(Host, Opts) ->
+    MaxSize = gen_mod:get_opt(
+		cache_size, Opts,
+		ejabberd_config:cache_size(Host)),
+    CacheMissed = gen_mod:get_opt(
+		    cache_missed, Opts,
+		    ejabberd_config:cache_missed(Host)),
+    LifeTime = case gen_mod:get_opt(
+		      cache_life_time, Opts,
+		      ejabberd_config:cache_life_time(Host)) of
+		   infinity -> infinity;
+		   I -> timer:seconds(I)
+	       end,
+    [{max_size, MaxSize}, {cache_missed, CacheMissed}, {life_time, LifeTime}].
 
-import(LServer, {sql, _}, DBType, Tab, [LUser, Hash, TimeStamp]) ->
-    Mod = gen_mod:db_mod(DBType, ?MODULE),
-    Mod:import(LServer, Tab, [LUser, Hash, TimeStamp]).
+-spec use_cache(binary()) -> boolean().
+use_cache(Host) ->
+    gen_mod:get_module_opt(
+      Host, ?MODULE, use_cache,
+      ejabberd_config:use_cache(Host)).
 
-export(LServer) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:export(LServer).
+-spec compute_hash(xmlel()) -> binary().
+compute_hash(VCard) ->
+    case fxml:get_path_s(VCard,
+			 [{elem, <<"PHOTO">>},
+			  {elem, <<"BINVAL">>},
+			  cdata]) of
+	<<>> ->
+	    <<>>;
+	BinVal ->
+	    try str:sha(base64:decode(BinVal))
+	    catch _:badarg -> <<>>
+	    end
+    end.
 
 %%====================================================================
 %% Options
 %%====================================================================
-mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
-mod_opt_type(_) -> [db_type].
+mod_opt_type(O) when O == cache_life_time; O == cache_size ->
+    fun (I) when is_integer(I), I > 0 -> I;
+        (infinity) -> infinity
+    end;
+mod_opt_type(O) when O == use_cache; O == cache_missed ->
+    fun (B) when is_boolean(B) -> B end;
+mod_opt_type(_) ->
+    [cache_life_time, cache_size, use_cache, cache_missed].

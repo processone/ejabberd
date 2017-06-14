@@ -43,6 +43,7 @@
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("pubsub.hrl").
+-include("mod_roster.hrl").
 
 -define(STDTREE, <<"tree">>).
 -define(STDNODE, <<"flat">>).
@@ -405,9 +406,19 @@ terminate_plugins(Host, ServerHost, Plugins, TreePlugin) ->
     TreePlugin:terminate(Host, ServerHost),
     ok.
 
+get_subscribed(User, Server) ->
+    Items = ejabberd_hooks:run_fold(roster_get, Server, [], [{User, Server}]),
+    lists:filtermap(
+      fun(#roster{jid = LJID, subscription = Sub})
+	    when Sub == both orelse Sub == from ->
+	      {true, LJID};
+	 (_) ->
+	      false
+      end, Items).
+
 send_loop(State) ->
     receive
-	{presence, JID, Pid} ->
+	{presence, JID, _Pid} ->
 	    Host = State#state.host,
 	    ServerHost = State#state.server_host,
 	    DBType = State#state.db_type,
@@ -429,26 +440,21 @@ send_loop(State) ->
 		State#state.plugins),
 	    if not State#state.ignore_pep_from_offline ->
 		    {User, Server, Resource} = LJID,
-		    case catch ejabberd_c2s:get_subscribed(Pid) of
-			Contacts when is_list(Contacts) ->
-			    lists:foreach(
-				fun({U, S, R}) when S == ServerHost ->
-					case user_resources(U, S) of
-					    [] -> %% offline
-						PeerJID = jid:make(U, S, R),
-						self() !  {presence, User, Server, [Resource], PeerJID};
-					    _ -> %% online
-						% this is already handled by presence probe
-						ok
-					end;
-				    (_) ->
-					% we can not do anything in any cases
-					ok
-				end,
-				Contacts);
-			_ ->
-			    ok
-		    end;
+		    Contacts = get_subscribed(User, Server),
+		    lists:foreach(
+		      fun({U, S, R}) when S == ServerHost ->
+			      case user_resources(U, S) of
+				  [] -> %% offline
+				      PeerJID = jid:make(U, S, R),
+				      self() !  {presence, User, Server, [Resource], PeerJID};
+				  _ -> %% online
+				      %% this is already handled by presence probe
+				      ok
+			      end;
+			 (_) ->
+			      %% we can not do anything in any cases
+			      ok
+		      end, Contacts);
 		true ->
 		    ok
 	    end,

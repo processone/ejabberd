@@ -480,9 +480,13 @@ new_connection(MyServer, Server, From, FromTo,
 	end,
     TRes = mnesia:transaction(F),
     case TRes of
-      {atomic, Pid} ->
-	    ejabberd_s2s_out:connect(Pid),
-	    [Pid];
+      {atomic, Pid1} ->
+	    if Pid1 == Pid ->
+		    ejabberd_s2s_out:connect(Pid);
+	       true ->
+		    ejabberd_s2s_out:stop(Pid)
+	    end,
+	    [Pid1];
       {aborted, Reason} ->
 	    ?ERROR_MSG("failed to register connection ~s -> ~s: ~p",
 		       [MyServer, Server, Reason]),
@@ -689,16 +693,30 @@ get_s2s_state(S2sPid) ->
 	    end,
     [{s2s_pid, S2sPid} | Infos].
 
+-type use_starttls() :: boolean() | optional | required | required_trusted.
+-spec opt_type(route_subdomains) -> fun((s2s | local) -> s2s | local);
+	      (s2s_access) -> fun((any()) -> any());
+	      (s2s_certfile) -> fun((binary()) -> binary());
+	      (s2s_ciphers) -> fun((binary()) -> binary());
+	      (s2s_dhfile) -> fun((binary()) -> binary());
+	      (s2s_cafile) -> fun((binary()) -> binary());
+	      (s2s_protocol_options) -> fun(([binary()]) -> binary());
+	      (s2s_tls_compression) -> fun((boolean()) -> boolean());
+	      (s2s_use_starttls) -> fun((use_starttls()) -> use_starttls());
+	      (s2s_zlib) -> fun((boolean()) -> boolean());
+	      (s2s_timeout) -> fun((timeout()) -> timeout());
+	      (s2s_queue_type) -> fun((ram | file) -> ram | file);
+	      (atom()) -> [atom()].
 opt_type(route_subdomains) ->
     fun (s2s) -> s2s;
 	(local) -> local
     end;
 opt_type(s2s_access) ->
     fun acl:access_rules_validator/1;
-opt_type(s2s_certfile) -> fun iolist_to_binary/1;
+opt_type(s2s_certfile) -> fun misc:try_read_file/1;
 opt_type(s2s_ciphers) -> fun iolist_to_binary/1;
-opt_type(s2s_dhfile) -> fun iolist_to_binary/1;
-opt_type(s2s_cafile) -> fun iolist_to_binary/1;
+opt_type(s2s_dhfile) -> fun misc:try_read_file/1;
+opt_type(s2s_cafile) -> fun misc:try_read_file/1;
 opt_type(s2s_protocol_options) ->
     fun (Options) -> str:join(Options, <<"|">>) end;
 opt_type(s2s_tls_compression) ->

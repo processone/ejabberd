@@ -27,6 +27,21 @@
 -protocol({rfc, 5766}).
 -protocol({xep, 176, '1.0'}).
 
+-ifndef(STUN).
+-include("logger.hrl").
+-export([socket_type/0, start/2, listen_opt_type/1]).
+log_error() ->
+    ?CRITICAL_MSG("ejabberd is not compiled with STUN/TURN support", []).
+socket_type() ->
+    log_error(),
+    raw.
+listen_opt_type(_) ->
+    log_error(),
+    [].
+start(_, _) ->
+    log_error(),
+    {error, sip_not_compiled}.
+-else.
 -export([tcp_init/2, udp_init/2, udp_recv/5, start/2,
 	 socket_type/0, listen_opt_type/1]).
 
@@ -73,9 +88,9 @@ prepare_turn_opts(Opts, _UseTurn = true) ->
 	    ok
     end,
     AuthFun = fun ejabberd_auth:get_password_s/2,
-    Shaper = gen_mod:get_opt(shaper, Opts, none),
-    AuthType = gen_mod:get_opt(auth_type, Opts, user),
-    Realm = case gen_mod:get_opt(auth_realm, Opts) of
+    Shaper = proplists:get_value(shaper, Opts, none),
+    AuthType = proplists:get_value(auth_type, Opts, user),
+    Realm = case proplists:get_value(auth_realm, Opts) of
 		undefined when AuthType == user ->
 		    if NumberOfMyHosts > 1 ->
 			    ?WARNING_MSG("you have several virtual "
@@ -114,7 +129,10 @@ listen_opt_type(auth_realm) ->
 listen_opt_type(tls) ->
     fun(B) when is_boolean(B) -> B end;
 listen_opt_type(certfile) ->
-    fun iolist_to_binary/1;
+    fun(S) ->
+	    ejabberd_pkix:add_certfile(S),
+	    iolist_to_binary(S)
+    end;
 listen_opt_type(turn_min_port) ->
     fun(P) when is_integer(P), P > 0, P =< 65535 -> P end;
 listen_opt_type(turn_max_port) ->
@@ -135,3 +153,4 @@ listen_opt_type(_) ->
     [shaper, auth_type, auth_realm, tls, certfile, turn_min_port,
      turn_max_port, turn_max_allocations, turn_max_permissions,
      server_name].
+-endif.

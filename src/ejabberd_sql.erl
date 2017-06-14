@@ -194,9 +194,20 @@ abort(Reason) ->
 restart(Reason) ->
     throw({aborted, Reason}).
 
-%% Escape character that will confuse an SQL engine
+-spec escape_char(char()) -> binary().
+escape_char($\000) -> <<"\\0">>;
+escape_char($\n) -> <<"\\n">>;
+escape_char($\t) -> <<"\\t">>;
+escape_char($\b) -> <<"\\b">>;
+escape_char($\r) -> <<"\\r">>;
+escape_char($') -> <<"''">>;
+escape_char($") -> <<"\\\"">>;
+escape_char($\\) -> <<"\\\\">>;
+escape_char(C) -> <<C>>.
+
+-spec escape(binary()) -> binary().
 escape(S) ->
-	<<  <<(sql_queries:escape(Char))/binary>> || <<Char>> <= S >>.
+	<<  <<(escape_char(Char))/binary>> || <<Char>> <= S >>.
 
 %% Escape character that will confuse an SQL engine
 %% Percent and underscore only need to be escaped for pattern matching like
@@ -206,7 +217,7 @@ escape_like(S) when is_binary(S) ->
 escape_like($%) -> <<"\\%">>;
 escape_like($_) -> <<"\\_">>;
 escape_like($\\) -> <<"\\\\\\\\">>;
-escape_like(C) when is_integer(C), C >= 0, C =< 255 -> sql_queries:escape(C).
+escape_like(C) when is_integer(C), C >= 0, C =< 255 -> escape_char(C).
 
 escape_like_arg(S) when is_binary(S) ->
     << <<(escape_like_arg(C))/binary>> || <<C>> <= S >>;
@@ -1080,6 +1091,20 @@ check_error({error, Why} = Err, Query) ->
 check_error(Result, _Query) ->
     Result.
 
+-spec opt_type(sql_database) -> fun((binary()) -> binary());
+	      (sql_keepalive_interval) -> fun((pos_integer()) -> pos_integer());
+	      (sql_password) -> fun((binary()) -> binary());
+	      (sql_port) -> fun((0..65535) -> 0..65535);
+	      (sql_server) -> fun((binary()) -> binary());
+	      (sql_username) -> fun((binary()) -> binary());
+	      (sql_ssl) -> fun((boolean()) -> boolean());
+	      (sql_ssl_verify) -> fun((boolean()) -> boolean());
+	      (sql_ssl_certfile) -> fun((boolean()) -> boolean());
+	      (sql_ssl_cafile) -> fun((boolean()) -> boolean());
+	      (sql_query_timeout) -> fun((pos_integer()) -> pos_integer());
+	      (sql_connect_timeout) -> fun((pos_integer()) -> pos_integer());
+	      (sql_queue_type) -> fun((ram | file) -> ram | file);
+	      (atom()) -> [atom()].
 opt_type(sql_database) -> fun iolist_to_binary/1;
 opt_type(sql_keepalive_interval) ->
     fun (I) when is_integer(I), I > 0 -> I end;
@@ -1090,8 +1115,8 @@ opt_type(sql_server) -> fun iolist_to_binary/1;
 opt_type(sql_username) -> fun iolist_to_binary/1;
 opt_type(sql_ssl) -> fun(B) when is_boolean(B) -> B end;
 opt_type(sql_ssl_verify) -> fun(B) when is_boolean(B) -> B end;
-opt_type(sql_ssl_certfile) -> fun iolist_to_binary/1;
-opt_type(sql_ssl_cafile) -> fun iolist_to_binary/1;
+opt_type(sql_ssl_certfile) -> fun ejabberd_pkix:try_certfile/1;
+opt_type(sql_ssl_cafile) -> fun misc:try_read_file/1;
 opt_type(sql_query_timeout) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 opt_type(sql_connect_timeout) ->
@@ -1101,6 +1126,6 @@ opt_type(sql_queue_type) ->
 opt_type(_) ->
     [sql_database, sql_keepalive_interval,
      sql_password, sql_port, sql_server,
-     sql_username, sql_ssl, sql_ssl_verify, sql_ssl_cerfile,
+     sql_username, sql_ssl, sql_ssl_verify, sql_ssl_certfile,
      sql_ssl_cafile, sql_queue_type, sql_query_timeout,
      sql_connect_timeout].

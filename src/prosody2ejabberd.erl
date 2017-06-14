@@ -129,7 +129,7 @@ convert_data(Host, "accounts", User, [Data]) ->
 	    Pass
     end,
     case ejabberd_auth:try_register(User, Host, Password) of
-	{atomic, ok} ->
+	ok ->
 	    ok;
 	Err ->
 	    ?ERROR_MSG("failed to register user ~s@~s: ~p",
@@ -185,15 +185,16 @@ convert_data(_Host, "config", _User, [Data]) ->
 convert_data(Host, "offline", User, [Data]) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Host),
-    Msgs = lists:flatmap(
-	     fun({_, RawXML}) ->
-		     case deserialize(RawXML) of
-			 [El] -> el_to_offline_msg(LUser, LServer, El);
-			 _ -> []
-		     end
-	     end, Data),
-    mod_offline:store_offline_msg(
-      LServer, {LUser, LServer}, Msgs, length(Msgs), infinity);
+    lists:foreach(
+      fun({_, RawXML}) ->
+	      case deserialize(RawXML) of
+		  [El] ->
+		      Msg = el_to_offline_msg(LUser, LServer, El),
+		      ok = mod_offline:store_offline_msg(Msg);
+		  _ ->
+		      ok
+	      end
+      end, Data);
 convert_data(Host, "privacy", User, [Data]) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Host),
@@ -210,7 +211,7 @@ convert_data(Host, "privacy", User, [Data]) ->
 				    ListItems -> [{Name, ListItems}]
 				end
 			end, Lists)},
-    mod_privacy:set_privacy_list(Priv);
+    mod_privacy:set_list(Priv);
 convert_data(_Host, _Type, _User, _Data) ->
     ok.
 
