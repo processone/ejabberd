@@ -1401,11 +1401,11 @@ srg_get_members(Group, Host) ->
      || {MUser, MServer} <- Members].
 
 srg_user_add(User, Host, Group, GroupHost) ->
-    {atomic, _} = mod_shared_roster:add_user_to_group(GroupHost, {User, Host}, Group),
+    mod_shared_roster:add_user_to_group(GroupHost, {User, Host}, Group),
     ok.
 
 srg_user_del(User, Host, Group, GroupHost) ->
-    {atomic, _} = mod_shared_roster:remove_user_from_group(GroupHost, {User, Host}, Group),
+    mod_shared_roster:remove_user_from_group(GroupHost, {User, Host}, Group),
     ok.
 
 
