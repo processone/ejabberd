@@ -252,14 +252,16 @@ sign_json_jose(Key, Json, Nonce) ->
     {_, BinaryPubKey} = jose_jwk:to_binary(PubKey),
     % ?INFO_MSG("Key Record: ~p", [jose_jwk:to_map(Key)]),
     PubKeyJson = jiffy:decode(BinaryPubKey),
-    % Jws object containing the algorithm
-    %% TODO: Dont hardcode the alg
-    JwsObj = jose_jws:from(
-      #{ <<"alg">> => <<"ES256">>
+    %% TODO: Ensure this works for all cases
+    AlgMap = jose_jwk:signer(Key),
+    % ?INFO_MSG("Algorithm:~p~n", [AlgMap]),
+    JwsMap =
+      #{ <<"jwk">> => PubKeyJson
        % , <<"b64">> => true
-       , <<"jwk">> => PubKeyJson
        , <<"nonce">> => list_to_bitstring(Nonce)
-       }),
+       },
+    JwsObj0 = maps:merge(JwsMap, AlgMap),
+    JwsObj = jose_jws:from(JwsObj0),
     %% Signed Message
     jose_jws:sign(Key, Json, JwsObj).
 
@@ -388,7 +390,7 @@ generate_key() ->
 %% Just a test
 scenario0(KeyFile) ->
   PrivateKey = jose_jwk:from_file(KeyFile),
-  % scenario("http://localhost:4000", "2", PrivateKey).
-  new_user_scenario("http://localhost:4000").
+  scenario("http://localhost:4000", "2", PrivateKey).
+  % new_user_scenario("http://localhost:4000").
 
 % ejabberd_acme:scenario0("/home/konstantinos/Desktop/Programming/ejabberd/private_key_temporary").
