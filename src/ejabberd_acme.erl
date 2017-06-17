@@ -1,8 +1,6 @@
 -module (ejabberd_acme).
 
--export([ scenario/3
-        , scenario0/1
-        , directory/1
+-export([ directory/1
 
         , get_account/3
         , new_account/4
@@ -12,21 +10,19 @@
 
         , new_authz/4
         , get_authz/1
+        
+        , scenario/3
+        , scenario0/2
         ]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
+
+-include("ejabberd_acme.hrl").
 -include_lib("public_key/include/public_key.hrl").
 
 -define(REQUEST_TIMEOUT, 5000). % 5 seconds.
-
-
--type nonce() :: string().
--type url() :: string().
--type proplist() :: [{_, _}].
--type jws() :: map().
--type handle_resp_fun() :: fun(({ok, proplist(), proplist()}) -> {ok, _, nonce()}).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -163,6 +159,12 @@ get_tos(Head) ->
       none
   end.
 
+-spec get_challenges(proplist()) -> [{proplist()}].
+get_challenges(Body) ->
+    {<<"challenges">>, Challenges} = proplists:lookup(<<"challenges">>, Body),
+    Challenges.
+
+
 %% TODO: Fix the duplicated code at the below 4 functions
 
 -spec make_post_request(url(), bitstring()) ->
@@ -228,21 +230,6 @@ prepare_get_request(Url, HandleRespFun) ->
     Error ->
       Error
   end.
-
--spec sign_json_jose(jose_jwk:key(), string()) -> jws().
-sign_json_jose(Key, Json) ->
-    PubKey = jose_jwk:to_public(Key),
-    {_, BinaryPubKey} = jose_jwk:to_binary(PubKey),
-    PubKeyJson = jiffy:decode(BinaryPubKey),
-    % Jws object containing the algorithm
-    %% TODO: Dont hardcode the alg
-    JwsObj = jose_jws:from(
-      #{ <<"alg">> => <<"ES256">>
-       % , <<"b64">> => true
-       , <<"jwk">> => PubKeyJson
-       }),
-    %% Signed Message
-    jose_jws:sign(Key, Json, JwsObj).
 
 -spec sign_json_jose(jose_jwk:key(), string(), nonce()) -> jws().
 sign_json_jose(Key, Json, Nonce) ->
@@ -321,6 +308,7 @@ scenario(CAUrl, AccId, PrivateKey) ->
 
   AccURL = CAUrl ++ "/acme/reg/" ++ AccId,
   {ok, {_TOS, Account}, Nonce1} = get_account(AccURL, PrivateKey, Nonce0),
+  ?INFO_MSG("Account: ~p~n", [Account]),
 
   #{"new-authz" := NewAuthz} = Dirs,
   Req =
@@ -335,7 +323,7 @@ scenario(CAUrl, AccId, PrivateKey) ->
   {Account, Authz, PrivateKey}.
 
 
-new_user_scenario(CAUrl) ->
+new_user_scenario(CAUrl, HttpDir) ->
   PrivateKey = generate_key(),
 
   DirURL = CAUrl ++ "/directory",
@@ -381,6 +369,12 @@ new_user_scenario(CAUrl) ->
 
   {ok, Authz2, Nonce5} = get_authz(AuthzUrl),
 
+  Challenges = get_challenges(Authz2),
+  ?INFO_MSG("Challenges: ~p~n", [Challenges]),
+
+  {ok, ChallengeUrl, KeyAuthz} = acme_challenge:solve_challenge(<<"http-01">>, Challenges, {PrivateKey, HttpDir}),
+  ?INFO_MSG("File for http-01 challenge written correctly", []),
+
   {Account2, Authz2, PrivateKey}.
 
 
@@ -388,9 +382,8 @@ generate_key() ->
   jose_jwk:generate_key({ec, secp256r1}).
 
 %% Just a test
-scenario0(KeyFile) ->
+scenario0(KeyFile, HttpDir) ->
   PrivateKey = jose_jwk:from_file(KeyFile),
-  scenario("http://localhost:4000", "2", PrivateKey).
-  % new_user_scenario("http://localhost:4000").
+  % scenario("http://localhost:4000", "2", PrivateKey).
+  new_user_scenario("http://localhost:4000", HttpDir).
 
-% ejabberd_acme:scenario0("/home/konstantinos/Desktop/Programming/ejabberd/private_key_temporary").
