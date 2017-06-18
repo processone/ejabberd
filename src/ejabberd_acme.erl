@@ -10,7 +10,9 @@
 
         , new_authz/4
         , get_authz/1
-        
+
+        , solve_challenge/4
+
         , scenario/3
         , scenario0/2
         ]).
@@ -23,6 +25,7 @@
 -include_lib("public_key/include/public_key.hrl").
 
 -define(REQUEST_TIMEOUT, 5000). % 5 seconds.
+-define(MAX_POLL_REQUESTS, 20).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -90,6 +93,11 @@ new_authz(Url, PrivateKey, Req, Nonce) ->
 get_authz(Url) ->
   prepare_get_request(Url, fun get_response/1).
 
+-spec solve_challenge(url(), jose_jwk:key(), proplist(), nonce()) ->
+  {ok, proplist(), nonce()} | {error, _}.
+solve_challenge(Url, PrivateKey, Req, Nonce) ->
+   EJson = {[{<<"resource">>, <<"challenge">>}] ++ Req},
+  prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response/1).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
@@ -164,6 +172,37 @@ get_challenges(Body) ->
     {<<"challenges">>, Challenges} = proplists:lookup(<<"challenges">>, Body),
     Challenges.
 
+-spec get_authz_until_valid(url()) ->
+  {ok, proplist(), nonce()} | {error, _}.
+get_authz_until_valid(Url) ->
+  get_authz_until_valid(Url, ?MAX_POLL_REQUESTS).
+
+-spec get_authz_until_valid(url(), non_neg_integer()) ->
+  {ok, proplist(), nonce()} | {error, _}.
+get_authz_until_valid(Url, 0) ->
+  ?ERROR_MSG("Maximum request limit waiting for validation reached", []),
+  {error, max_request_limit};
+get_authz_until_valid(Url, N) ->
+  case get_authz(Url) of
+    {ok, Resp, Nonce} ->
+      case is_authz_valid(Resp) of
+        true ->
+          {ok, Resp, Nonce};
+        false ->
+          get_authz_until_valid(Url, N-1)
+      end;
+    {error, _} = Err ->
+      Err
+  end.
+
+-spec is_authz_valid(proplist()) -> boolean().
+is_authz_valid(Authz) ->
+  case proplists:lookup(<<"status">>, Authz) of
+    {<<"status">>, <<"valid">>} ->
+      true;
+    none ->
+      false
+  end.
 
 %% TODO: Fix the duplicated code at the below 4 functions
 
@@ -204,7 +243,7 @@ make_get_request(Url) ->
       failed_http_request(Error, Url)
   end.
 
--spec prepare_post_request(url(), jose_jwk:key(), jiffy:json_value(), 
+-spec prepare_post_request(url(), jose_jwk:key(), jiffy:json_value(),
   nonce(), handle_resp_fun()) -> {ok, _, nonce()} | {error, _}.
 prepare_post_request(Url, PrivateKey, EJson, Nonce, HandleRespFun) ->
   case encode(EJson) of
@@ -370,12 +409,22 @@ new_user_scenario(CAUrl, HttpDir) ->
   {ok, Authz2, Nonce5} = get_authz(AuthzUrl),
 
   Challenges = get_challenges(Authz2),
-  ?INFO_MSG("Challenges: ~p~n", [Challenges]),
+  % ?INFO_MSG("Challenges: ~p~n", [Challenges]),
 
   {ok, ChallengeUrl, KeyAuthz} = acme_challenge:solve_challenge(<<"http-01">>, Challenges, {PrivateKey, HttpDir}),
   ?INFO_MSG("File for http-01 challenge written correctly", []),
 
-  {Account2, Authz2, PrivateKey}.
+  Req3 =
+    [ {<<"type">>, <<"http-01">>}
+    , {<<"keyAuthorization">>, KeyAuthz}
+    ],
+  {ok, SolvedChallenge, Nonce6} = solve_challenge(ChallengeUrl, PrivateKey, Req3, Nonce5),
+  ?INFO_MSG("SolvedChallenge: ~p~n", [SolvedChallenge]),
+
+  timer:sleep(2000),
+  {ok, Authz3, Nonce7} = get_authz_until_valid(AuthzUrl),
+
+  {Account2, Authz2, Authz3, PrivateKey}.
 
 
 generate_key() ->

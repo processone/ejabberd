@@ -1,6 +1,6 @@
 -module(acme_challenge).
 
--export ([ key_authorization/2 
+-export ([ key_authorization/2
          , solve_challenge/3
          ]).
 %% Challenge Types
@@ -16,7 +16,7 @@
 
 -include("ejabberd_acme.hrl").
 
--spec parse_challenge(string(), jose_jwk:key()) -> bitstring().
+-spec key_authorization(string(), jose_jwk:key()) -> bitstring().
 key_authorization(Token, Key) ->
   Thumbprint = jose_jwk:thumbprint(Key),
   % ?INFO_MSG("Thumbprint: ~p~n", [Thumbprint]),
@@ -34,7 +34,7 @@ parse_challenge(Challenge0) ->
     Res = #challenge{
       type = Type,
       status = list_to_atom(bitstring_to_list(Status)),
-      uri = Uri,
+      uri = bitstring_to_list(Uri),
       token = Token
     },
     {ok, Res}
@@ -73,6 +73,7 @@ solve_challenge1(Chal = #challenge{type = <<"http-01">>, token=Tkn}, {Key, HttpD
       ?ERROR_MSG("Error writing to file: ~s with reason: ~p~n", [FileLocation, Err]),
       Err
   end;
+%% TODO: Fill stub
 solve_challenge1(Challenge, _Key) ->
   ?INFO_MSG("Challenge: ~p~n", [Challenge]).
 
