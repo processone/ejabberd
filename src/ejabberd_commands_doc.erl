@@ -326,11 +326,10 @@ gen_calls(#ejabberd_commands{args_example=Values, args=ArgsDesc,
        true ->
            case Langs of
                Val when length(Val) == 0 orelse length(Val) == 1 ->
-                   [<<"\n">>,
-                    case lists:member(<<"java">>, Langs) of true -> [<<"\n* ">>, ?TAG(pre, Java), <<"~~~\n">>]; _ -> [] end,
-                    case lists:member(<<"perl">>, Langs) of true -> [<<"\n* ">>, ?TAG(pre, Perl), <<"~~~\n">>]; _ -> [] end,
-                    case lists:member(<<"xmlrpc">>, Langs) of true -> [<<"\n* ">>, ?TAG(pre, XML), <<"~~~\n">>]; _ -> [] end,
-                    case lists:member(<<"json">>, Langs) of true -> [<<"\n* ">>, ?TAG(pre, JSON), <<"~~~\n">>]; _ -> [] end,
+                   [case lists:member(<<"java">>, Langs) of true -> [<<"\n">>, ?TAG(pre, Java), <<"~~~\n">>]; _ -> [] end,
+                    case lists:member(<<"perl">>, Langs) of true -> [<<"\n">>, ?TAG(pre, Perl), <<"~~~\n">>]; _ -> [] end,
+                    case lists:member(<<"xmlrpc">>, Langs) of true -> [<<"\n">>, ?TAG(pre, XML), <<"~~~\n">>]; _ -> [] end,
+                    case lists:member(<<"json">>, Langs) of true -> [<<"\n">>, ?TAG(pre, JSON), <<"~~~\n">>]; _ -> [] end,
                     <<"\n\n">>];
                _ ->
                    [<<"\n">>, case lists:member(<<"java">>, Langs) of true -> <<"* Java\n">>; _ -> [] end,
