@@ -85,6 +85,13 @@ get_commands_spec() ->
                         module = ?MODULE, function = update,
                         args = [],
                         result = {res, integer}},
+     #ejabberd_commands{name = modules_update_specs_from_github,
+                        tags = [admin,modules],
+                        desc = "",
+                        longdesc = "",
+                        module = ?MODULE, function = update,
+                        args = [{module, binary}],
+                        result = {res, integer}},
      #ejabberd_commands{name = modules_available,
                         tags = [admin,modules],
                         desc = "",
@@ -137,7 +144,12 @@ get_commands_spec() ->
 %% -- public modules functions
 
 update() ->
-    add_sources(?REPOS),
+    update(?REPOS).
+
+update(GITHUB_URL) when is_binary(GITHUB_URL) ->
+    update(binary_to_list(GITHUB_URL));
+update(GITHUB_URL) ->
+    add_sources(GITHUB_URL),
     Res = lists:foldl(fun({Package, Spec}, Acc) ->
                 Path = proplists:get_value(url, Spec, ""),
                 Update = add_sources(Package, Path),
@@ -512,6 +524,36 @@ compile_deps(LibDir) ->
     Rs = [compile(Dep) || Dep <- filelib:wildcard(filename:join(Deps, "*"))],
     compile_result(Rs).
 
+compile_includes() ->
+    Path = modules_dir(),
+    case filelib:is_dir(Path) of
+        true ->
+            {ok, Folders} = file:list_dir(Path),
+            compile_includes(lists:flatten(compile_includes(Path, Folders)));
+        false ->
+            enotdir
+    end.
+compile_includes([]) ->
+    [];
+compile_includes([{Path, Folder} = H|T]) ->
+    case Folder of 
+        "include" ->
+            [{i, Path ++ "/" ++ Folder} | compile_includes(T)];
+        _ ->
+            compile_includes(T)
+    end.
+compile_includes(_, []) ->
+    [];
+compile_includes(Path, [H|T]) ->
+    Paths = Path ++ "/" ++ H,
+    case filelib:is_dir(Paths) of
+        true ->
+            {ok, Folders} = file:list_dir(Paths),
+            [[{Path,H}|compile_includes(Paths, Folders)] | compile_includes(Path, T)];
+        false ->
+            [{Paths,H}| compile_includes(Path, T)]
+    end.
+
 compile(LibDir) ->
     Bin = filename:join(LibDir, "ebin"),
     Inc = filename:join(LibDir, "include"),
@@ -520,7 +562,7 @@ compile(LibDir) ->
     Options = [{outdir, Bin}, {i, Inc} | compile_options()],
     filelib:ensure_dir(filename:join(Bin, ".")),
     [copy(App, Bin) || App <- filelib:wildcard(Src++"/*.app")],
-    Er = [compile_erlang_file(Bin, File, Options)
+    Er = [compile_erlang_file(Bin, File, compile_includes() ++ Options)
           || File <- filelib:wildcard(Src++"/*.erl")],
     Ex = [compile_elixir_file(Bin, File)
           || File <- filelib:wildcard(Lib ++ "/*.ex")],
