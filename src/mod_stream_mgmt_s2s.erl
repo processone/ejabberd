@@ -33,7 +33,7 @@ start(Host, _Opts) ->
                        Host, ?MODULE, s2s_out_stream_features, 50),
     ejabberd_hooks:add(s2s_out_packet, Host, ?MODULE, s2s_out_packet, 5),
     ejabberd_hooks:add(s2s_out_handle_recv, 
-                       Host, ?MODULE, s2s_out_handle_recv, 1),
+                       Host, ?MODULE, s2s_out_handle_recv, 50),
     ejabberd_hooks:add(s2s_out_handle_send, 
                        Host, ?MODULE, s2s_out_handle_send, 50),
     ejabberd_hooks:add(s2s_out_handle_info,
