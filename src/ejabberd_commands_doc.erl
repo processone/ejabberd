@@ -87,13 +87,8 @@ md_tag(strong, V) ->
 md_tag(_, V) ->
     V.
 
-
-%% rescode_to_int(ok) ->
-%%     0;
-%% rescode_to_int(true) ->
-%%     0;
-%% rescode_to_int(_) ->
-%%     1.
+unbinarize(binary) -> string;
+unbinarize(Other) -> Other.
 
 perl_gen({Name, integer}, Int, _Indent, HTMLOutput) ->
     [?ARG(Name), ?OP_L(" => "), ?NUM(Int)];
@@ -345,6 +340,14 @@ gen_calls(#ejabberd_commands{args_example=Values, args=ArgsDesc,
            end
     end.
 
+gen_param(Name, Type, undefined, HTMLOutput) ->
+    [?TAG(li, [?TAG_R(strong, atom_to_list(Name)), <<" :: ">>,
+               ?RAW(io_lib:format("~p", [unbinarize(Type)]))])];
+gen_param(Name, Type, Desc, HTMLOutput) ->
+    [?TAG(dt, [?TAG_R(strong, atom_to_list(Name)), <<" :: ">>,
+               ?RAW(io_lib:format("~p", [unbinarize(Type)]))]),
+     ?TAG(dd, ?RAW(Desc))].
+
 gen_doc(#ejabberd_commands{name=Name, tags=_Tags, desc=Desc, longdesc=LongDesc,
                            args=Args, args_desc=ArgsDesc,
                            result=Result, result_desc=ResultDesc}=Cmd, HTMLOutput, Langs) ->
@@ -354,35 +357,36 @@ gen_doc(#ejabberd_commands{name=Name, tags=_Tags, desc=Desc, longdesc=LongDesc,
             end,
     ArgsText = case ArgsDesc of
                    none ->
-                       [?TAG(ul, "args-list", lists:map(fun({AName, Type}) ->
-                                                                [?TAG(li, [?TAG_R(strong, atom_to_list(AName)), <<" :: ">>,
-                                                                           ?RAW(io_lib:format("~p", [Type]))])]
-                                                        end, Args))];
+                       [?TAG(ul, "args-list", [gen_param(AName, Type, undefined, HTMLOutput)
+                                               || {AName, Type} <- Args])];
                    _ ->
-                       [?TAG(dl, "args-list", lists:map(fun({{AName, Type}, ADesc}) ->
-                                                                [?TAG(dt, [?TAG_R(strong, atom_to_list(AName)), <<" :: ">>,
-                                                                           ?RAW(io_lib:format("~p", [Type]))]),
-                                                                 ?TAG(dd, ?RAW(ADesc))]
-                                                        end, lists:zip(Args, ArgsDesc)))]
+                       [?TAG(dl, "args-list", [gen_param(AName, Type, ADesc, HTMLOutput)
+                                               || {{AName, Type}, ADesc} <- lists:zip(Args, ArgsDesc)])]
                end,
-    ResultText = case ResultDesc of
-                     none ->
-                         [?RAW(io_lib:format("~p", [Result]))];
-                     _ ->
-                         [?TAG(dl, [
-			       ?TAG(dt, io_lib:format("~p", [Result])),
-			       ?TAG_R(dd, ResultDesc)])]
+    ResultText = case Result of
+                   {res,rescode} ->
+                       [?TAG(dl, [gen_param(res, integer,
+                                            "Status code (0 on success, 1 otherwise)",
+                                            HTMLOutput)])];
+                   {res,restuple} ->
+                       [?TAG(dl, [gen_param(res, string,
+                                            "Raw result string",
+                                            HTMLOutput)])];
+                   {RName, Type} ->
+                       case ResultDesc of
+                         none ->
+                             [?TAG(ul, [gen_param(RName, Type, undefined, HTMLOutput)])];
+                         _ ->
+                             [?TAG(dl, [gen_param(RName, Type, ResultDesc, HTMLOutput)])]
+                       end
                  end,
 
     try
 	[?TAG(h1, [?TAG(strong, atom_to_list(Name)), <<" - ">>, ?RAW(Desc)]),
 	 ?TAG(p, ?RAW(LDesc)),
-	 ?TAG(h2, <<"Arguments:">>),
-	 ArgsText,
-	 ?TAG(h2, <<"Result:">>),
-	 ResultText,
-	 ?TAG(h2, <<"Examples:">>),
-	 gen_calls(Cmd, HTMLOutput, Langs)]
+	 ?TAG(h2, <<"Arguments:">>), ArgsText,
+	 ?TAG(h2, <<"Result:">>), ResultText,
+	 ?TAG(h2, <<"Examples:">>), gen_calls(Cmd, HTMLOutput, Langs)]
     catch
 	_:Ex ->
 	    throw(iolist_to_binary(io_lib:format(
