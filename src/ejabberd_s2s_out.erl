@@ -32,7 +32,8 @@
 	 handle_auth_success/2, handle_auth_failure/3, handle_packet/2,
 	 handle_stream_end/2, handle_stream_downgraded/2,
 	 handle_recv/3, handle_send/3, handle_cdata/2,
-	 handle_stream_established/1, handle_timeout/1]).
+	 handle_stream_established/1, handle_timeout/1,
+     handle_authenticated_features/2]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 %% Hooks
@@ -210,6 +211,10 @@ dns_retries(#{server := LServer}) ->
 dns_timeout(#{server := LServer}) ->
     ejabberd_config:get_option({s2s_dns_timeout, LServer}, timer:seconds(10)).
 
+handle_authenticated_features(StreamFeatures, #{server_host := ServerHost} = State) ->
+    ejabberd_hooks:run_fold(s2s_out_authenticated_features,
+                            ServerHost, State, [StreamFeatures]).
+
 handle_auth_success(Mech, #{sockmod := SockMod,
 			    socket := Socket, ip := IP,
 			    remote_server := RServer,
@@ -242,8 +247,9 @@ handle_stream_end(Reason, #{server_host := ServerHost} = State) ->
 handle_stream_downgraded(StreamStart, #{server_host := ServerHost} = State) ->
     ejabberd_hooks:run_fold(s2s_out_downgraded, ServerHost, State, [StreamStart]).
 
-handle_stream_established(State) ->
-    State1 = State#{on_route => send},
+handle_stream_established(#{server_host := ServerHost} = State) ->
+    State0 = ejabberd_hooks:run_fold(s2s_out_established, ServerHost, State, []),
+    State1 = State0#{on_route => send},
     State2 = resend_queue(State1),
     set_idle_timeout(State2).
 
@@ -306,7 +312,7 @@ handle_info({route, Pkt}, #{queue := Q, on_route := Action} = State) ->
 handle_info(Info, #{server_host := ServerHost} = State) ->
     ejabberd_hooks:run_fold(s2s_out_handle_info, ServerHost, State, [Info]).
 
-terminate(Reason, #{server := LServer,
+terminate(Reason, #{server := LServer, server_host := ServerHost,
 		    remote_server := RServer} = State) ->
     ejabberd_s2s:remove_connection({LServer, RServer}, self()),
     State1 = case Reason of
@@ -314,7 +320,8 @@ terminate(Reason, #{server := LServer,
 		 _ -> State#{stop_reason => internal_failure}
     end,
     bounce_queue(State1),
-    bounce_message_queue(State1).
+    bounce_message_queue(State1),
+    ejabberd_hooks:run_fold(s2s_out_terminate, ServerHost, State, [Reason]).
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
