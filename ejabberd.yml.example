@@ -265,12 +265,12 @@ listen:
 ## Outgoing S2S options
 ##
 ## Preferred address families (which to try first) and connect timeout
-## in milliseconds.
+## in seconds.
 ##
 ## outgoing_s2s_families:
 ##   - ipv4
 ##   - ipv6
-## outgoing_s2s_timeout: 10000
+## outgoing_s2s_timeout: 190
 
 ###.  ==============
 ###'  AUTHENTICATION
