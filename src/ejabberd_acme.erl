@@ -10,8 +10,9 @@
 
         , new_authz/4
         , get_authz/1
+        , complete_challenge/4
 
-        , solve_challenge/4
+        , new_cert/4
 
         , scenario/3
         , scenario0/2
@@ -26,11 +27,12 @@
 
 -define(REQUEST_TIMEOUT, 5000). % 5 seconds.
 -define(MAX_POLL_REQUESTS, 20).
+-define(POLL_WAIT_TIME, 500).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
-%% Get Directory
+%% Directory
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -93,11 +95,25 @@ new_authz(Url, PrivateKey, Req, Nonce) ->
 get_authz(Url) ->
   prepare_get_request(Url, fun get_response/1).
 
--spec solve_challenge(url(), jose_jwk:key(), proplist(), nonce()) ->
+-spec complete_challenge(url(), jose_jwk:key(), proplist(), nonce()) ->
   {ok, proplist(), nonce()} | {error, _}.
-solve_challenge(Url, PrivateKey, Req, Nonce) ->
+complete_challenge(Url, PrivateKey, Req, Nonce) ->
    EJson = {[{<<"resource">>, <<"challenge">>}] ++ Req},
   prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response/1).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Certificate Handling
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+-spec new_cert(url(), jose_jwk:key(), proplist(), nonce()) ->
+  {ok, proplist(), nonce()} | {error, _}.
+new_cert(Url, PrivateKey, Req, Nonce) ->
+  EJson = {[{<<"resource">>, <<"new-cert">>}] ++ Req},
+  prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response/1, "application/pkix-cert").
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
@@ -109,7 +125,7 @@ solve_challenge(Url, PrivateKey, Req, Nonce) ->
 get_dirs({ok, Head, Return}) ->
   NewNonce = get_nonce(Head),
   StrDirectories = [{bitstring_to_list(X), bitstring_to_list(Y)} ||
-                              {X,Y} <- Return],
+                              {X, Y} <- Return],
   NewDirs = maps:from_list(StrDirectories),
   {ok, NewDirs, NewNonce}.
 
@@ -130,6 +146,304 @@ get_response_location({ok, Head, Return}) ->
   NewNonce = get_nonce(Head),
   {ok, {Location, Return}, NewNonce}.
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Certificate Request Functions
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% For now we accept only generating a key of
+%% specific type for signing the csr
+%% TODO: Make this function handle more signing keys
+%%  1. Derive oid from Key
+%%  2. Derive the whole algo objects from Key
+%% TODO: Encode Strings using length.
+
+-spec make_csr(proplist()) -> binary().
+make_csr(Attributes) ->
+  Key = generate_key(),
+
+  {_, KeyKey} = jose_jwk:to_key(Key),
+
+  KeyPub = jose_jwk:to_public(Key),
+
+  try
+    SubPKInfoAlgo = subject_pk_info_algo(KeyPub),
+
+    {ok, RawBinPubKey} = raw_binary_public_key(KeyPub),
+    SubPKInfo = subject_pk_info(SubPKInfoAlgo, RawBinPubKey),
+
+    {ok, Subject} = attributes_from_list(Attributes),
+
+    CRI = certificate_request_info(SubPKInfo, Subject),
+    ?INFO_MSG("CRI: ~p~n", [CRI]),
+    {ok, EncodedCRI} = der_encode(
+        'CertificationRequestInfo',
+        CRI),
+
+    SignedCRI = public_key:sign(EncodedCRI, 'sha256', KeyKey),
+
+    SignatureAlgo = signature_algo(Key, 'sha256'),
+
+    CSR = certification_request(CRI, SignatureAlgo, SignedCRI),
+
+    {ok, DerCSR} = der_encode(
+        'CertificationRequest',
+        CSR),
+
+    Result = base64url:encode(DerCSR),
+
+    Result
+  catch
+    _:{badmatch, {error, bad_public_key}} ->
+      {error, bad_public_key};
+    _:{badmatch, {error, bad_attributes}} ->
+      {error, bad_public_key};
+    _:{badmatch, {error, der_encode}} ->
+      {error, der_encode}
+  end.
+
+
+
+subject_pk_info_algo(_KeyPub) ->
+  #'SubjectPublicKeyInfoAlgorithm'{
+    algorithm = ?'id-ecPublicKey',
+    parameters = {asn1_OPENTYPE,<<6,8,42,134,72,206,61,3,1,7>>}
+  }.
+
+subject_pk_info(Algo, RawBinPubKey) ->
+  #'SubjectPublicKeyInfo-PKCS-10'{
+    algorithm = Algo,
+    subjectPublicKey = RawBinPubKey
+  }.
+
+certificate_request_info(SubPKInfo, Subject) ->
+  #'CertificationRequestInfo'{
+    version = 0,
+    subject = Subject,
+    subjectPKInfo = SubPKInfo,
+    attributes = []
+  }.
+
+signature_algo(_Key, _Hash) ->
+  #'CertificationRequest_signatureAlgorithm'{
+    algorithm = ?'ecdsa-with-SHA256',
+    parameters = asn1_NOVALUE
+  }.
+
+certification_request(CRI, SignatureAlgo, SignedCRI) ->
+  #'CertificationRequest'{
+    certificationRequestInfo = CRI,
+    signatureAlgorithm = SignatureAlgo,
+    signature = SignedCRI
+  }.
+
+raw_binary_public_key(KeyPub) ->
+  try
+    {_, RawPubKey} = jose_jwk:to_key(KeyPub),
+    {{_, RawBinPubKey}, _} = RawPubKey,
+    {ok, RawBinPubKey}
+  catch
+    _:_ ->
+      ?ERROR_MSG("Bad public key: ~p~n", [KeyPub]),
+      {error, bad_public_key}
+  end.
+
+der_encode(Type, Term) ->
+  try
+    {ok, public_key:der_encode(Type, Term)}
+  catch
+    _:_ ->
+      ?ERROR_MSG("Cannot DER encode: ~p, with asn1type: ~p", [Term, Type]),
+      {error, der_encode}
+  end.
+
+%% TODO: I haven't found a function that does that, but there must exist one
+length_bitstring(Bitstring) ->
+  ?INFO_MSG("Bitstring: ~p", [Bitstring]),
+  Size = byte_size(Bitstring),
+  ?INFO_MSG("Size: ~p", [Size]),
+  case Size =< 127 of
+    true ->
+      <<12:8, Size:8, Bitstring/binary>>;
+    false ->
+      LenOctets = binary:encode_unsigned(Size),
+      FirstOctet = byte_size(LenOctets),
+      <<12:8, 1:1, FirstOctet:7, LenOctets:(FirstOctet * 8), Bitstring/binary>>
+  end.
+
+
+%%
+%% Attributes Parser
+%%
+
+attributes_from_list(Attrs) ->
+  ParsedAttrs = [attribute_parser_fun(Attr) || Attr <- Attrs],
+  case lists:any(fun is_error/1, ParsedAttrs) of
+    true ->
+      {error, bad_attributes};
+    false ->
+      {ok, {rdnSequence, [[PAttr] || PAttr <- ParsedAttrs]}}
+  end.
+
+attribute_parser_fun({AttrName, AttrVal}) ->
+  try
+    #'AttributeTypeAndValue'{
+          type = attribute_oid(AttrName),
+          value = length_bitstring(list_to_bitstring(AttrVal))
+    }
+  catch
+    _:_ ->
+      ?ERROR_MSG("Bad attribute: ~p~n", [{AttrName, AttrVal}]),
+      {error, bad_attributes}
+  end.
+
+attribute_oid(commonName) -> ?'id-at-commonName';
+attribute_oid(countryName) -> ?'id-at-countryName';
+attribute_oid(stateOrProvinceName) -> ?'id-at-stateOrProvinceName';
+attribute_oid(localityName) -> ?'id-at-localityName';
+attribute_oid(organizationName) -> ?'id-at-organizationName';
+attribute_oid(_) -> error(bad_attributes).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Authorization Polling
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+-spec get_authz_until_valid(url()) ->
+  {ok, proplist(), nonce()} | {error, _}.
+get_authz_until_valid(Url) ->
+  get_authz_until_valid(Url, ?MAX_POLL_REQUESTS).
+
+-spec get_authz_until_valid(url(), non_neg_integer()) ->
+  {ok, proplist(), nonce()} | {error, _}.
+get_authz_until_valid(Url, 0) ->
+  ?ERROR_MSG("Maximum request limit waiting for validation reached", []),
+  {error, max_request_limit};
+get_authz_until_valid(Url, N) ->
+  case get_authz(Url) of
+    {ok, Resp, Nonce} ->
+      case is_authz_valid(Resp) of
+        true ->
+          {ok, Resp, Nonce};
+        false ->
+          timer:sleep(?POLL_WAIT_TIME),
+          get_authz_until_valid(Url, N-1)
+      end;
+    {error, _} = Err ->
+      Err
+  end.
+
+-spec is_authz_valid(proplist()) -> boolean().
+is_authz_valid(Authz) ->
+  case proplists:lookup(<<"status">>, Authz) of
+    {<<"status">>, <<"valid">>} ->
+      true;
+    _ ->
+      false
+  end.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Request Functions
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% TODO: Fix the duplicated code at the below 4 functions
+-spec make_post_request(url(), bitstring(), string()) ->
+  {ok, proplist(), proplist()} | {error, _}.
+make_post_request(Url, ReqBody, ResponseType) ->
+  Options = [],
+  HttpOptions = [{timeout, ?REQUEST_TIMEOUT}],
+  case httpc:request(post,
+      {Url, [], "application/jose+json", ReqBody}, HttpOptions, Options) of
+    {ok, {{_, Code, _}, Head, Body}} when Code >= 200, Code =< 299 ->
+      decode_response(Head, Body, ResponseType);
+    Error ->
+      failed_http_request(Error, Url)
+  end.
+
+-spec make_get_request(url(), string()) ->
+  {ok, proplist(), proplist()} | {error, _}.
+make_get_request(Url, ResponseType) ->
+  Options = [],
+  HttpOptions = [{timeout, ?REQUEST_TIMEOUT}],
+  case httpc:request(get, {Url, []}, HttpOptions, Options) of
+    {ok, {{_, Code, _}, Head, Body}} when Code >= 200, Code =< 299 ->
+      decode_response(Head, Body, ResponseType);
+    Error ->
+      failed_http_request(Error, Url)
+  end.
+
+-spec prepare_post_request(url(), jose_jwk:key(), jiffy:json_value(),
+  nonce(), handle_resp_fun()) -> {ok, _, nonce()} | {error, _}.
+prepare_post_request(Url, PrivateKey, EJson, Nonce, HandleRespFun) ->
+  prepare_post_request(Url, PrivateKey, EJson, Nonce, HandleRespFun, "application/jose+json").
+
+-spec prepare_post_request(url(), jose_jwk:key(), jiffy:json_value(),
+  nonce(), handle_resp_fun(), string()) -> {ok, _, nonce()} | {error, _}.
+prepare_post_request(Url, PrivateKey, EJson, Nonce, HandleRespFun, ResponseType) ->
+  case encode(EJson) of
+    {ok, ReqBody} ->
+      FinalBody = sign_encode_json_jose(PrivateKey, ReqBody, Nonce),
+      case make_post_request(Url, FinalBody, ResponseType) of
+        {ok, Head, Return} ->
+          HandleRespFun({ok, Head, Return});
+        Error ->
+          Error
+      end;
+    {error, Reason} ->
+      ?ERROR_MSG("Error: ~p when encoding: ~p", [Reason, EJson]),
+      {error, Reason}
+  end.
+
+-spec prepare_get_request(url(), handle_resp_fun()) ->
+  {ok, _, nonce()} | {error, _}.
+prepare_get_request(Url, HandleRespFun) ->
+  prepare_get_request(Url, HandleRespFun, "application/jose+json").
+
+-spec prepare_get_request(url(), handle_resp_fun(), string()) ->
+  {ok, _, nonce()} | {error, _}.
+prepare_get_request(Url, HandleRespFun, ResponseType) ->
+  case make_get_request(Url, ResponseType) of
+    {ok, Head, Return} ->
+      HandleRespFun({ok, Head, Return});
+    Error ->
+      Error
+  end.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Jose Json Functions
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+-spec sign_json_jose(jose_jwk:key(), string(), nonce()) -> jws().
+sign_json_jose(Key, Json, Nonce) ->
+    PubKey = jose_jwk:to_public(Key),
+    {_, BinaryPubKey} = jose_jwk:to_binary(PubKey),
+    PubKeyJson = jiffy:decode(BinaryPubKey),
+    %% TODO: Ensure this works for all cases
+    AlgMap = jose_jwk:signer(Key),
+    JwsMap =
+      #{ <<"jwk">> => PubKeyJson
+       % , <<"b64">> => true
+       , <<"nonce">> => list_to_bitstring(Nonce)
+       },
+    JwsObj0 = maps:merge(JwsMap, AlgMap),
+    JwsObj = jose_jws:from(JwsObj0),
+    jose_jws:sign(Key, Json, JwsObj).
+
+-spec sign_encode_json_jose(jose_jwk:key(), string(), nonce()) -> bitstring().
+sign_encode_json_jose(Key, Json, Nonce) ->
+  {_, Signed} = sign_json_jose(Key, Json, Nonce),
+  %% This depends on jose library, so we can consider it safe
+  jiffy:encode(Signed).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -172,130 +486,16 @@ get_challenges(Body) ->
     {<<"challenges">>, Challenges} = proplists:lookup(<<"challenges">>, Body),
     Challenges.
 
--spec get_authz_until_valid(url()) ->
-  {ok, proplist(), nonce()} | {error, _}.
-get_authz_until_valid(Url) ->
-  get_authz_until_valid(Url, ?MAX_POLL_REQUESTS).
-
--spec get_authz_until_valid(url(), non_neg_integer()) ->
-  {ok, proplist(), nonce()} | {error, _}.
-get_authz_until_valid(Url, 0) ->
-  ?ERROR_MSG("Maximum request limit waiting for validation reached", []),
-  {error, max_request_limit};
-get_authz_until_valid(Url, N) ->
-  case get_authz(Url) of
-    {ok, Resp, Nonce} ->
-      case is_authz_valid(Resp) of
-        true ->
-          {ok, Resp, Nonce};
-        false ->
-          get_authz_until_valid(Url, N-1)
-      end;
-    {error, _} = Err ->
-      Err
-  end.
-
--spec is_authz_valid(proplist()) -> boolean().
-is_authz_valid(Authz) ->
-  case proplists:lookup(<<"status">>, Authz) of
-    {<<"status">>, <<"valid">>} ->
-      true;
-    none ->
-      false
-  end.
-
-%% TODO: Fix the duplicated code at the below 4 functions
-
--spec make_post_request(url(), bitstring()) ->
-  {ok, proplist(), proplist()} | {error, _}.
-make_post_request(Url, ReqBody) ->
-  Options = [],
-  HttpOptions = [{timeout, ?REQUEST_TIMEOUT}],
-  case httpc:request(post,
-      {Url, [], "application/jose+json", ReqBody}, HttpOptions, Options) of
-    {ok, {{_, Code, _}, Head, Body}} when Code >= 200, Code =< 299 ->
-      case decode(Body) of
-        {ok, Return} ->
-          {ok, Head, Return};
-        {error, Reason} ->
-          ?ERROR_MSG("Problem decoding: ~s", [Body]),
-          {error, Reason}
-      end;
-    Error ->
-      failed_http_request(Error, Url)
-  end.
-
--spec make_get_request(url()) ->
-  {ok, proplist(), proplist()} | {error, _}.
-make_get_request(Url) ->
-  Options = [],
-  HttpOptions = [{timeout, ?REQUEST_TIMEOUT}],
-  case httpc:request(get, {Url, []}, HttpOptions, Options) of
-    {ok, {{_, Code, _}, Head, Body}} when Code >= 200, Code =< 299 ->
-      case decode(Body) of
-        {ok, Return} ->
-          {ok, Head, Return};
-        {error, Reason} ->
-          ?ERROR_MSG("Problem decoding: ~s", [Body]),
-          {error, Reason}
-      end;
-    Error ->
-      failed_http_request(Error, Url)
-  end.
-
--spec prepare_post_request(url(), jose_jwk:key(), jiffy:json_value(),
-  nonce(), handle_resp_fun()) -> {ok, _, nonce()} | {error, _}.
-prepare_post_request(Url, PrivateKey, EJson, Nonce, HandleRespFun) ->
-  case encode(EJson) of
-    {ok, ReqBody} ->
-      FinalBody = sign_encode_json_jose(PrivateKey, ReqBody, Nonce),
-      case make_post_request(Url, FinalBody) of
-        {ok, Head, Return} ->
-          HandleRespFun({ok, Head, Return});
-        Error ->
-          Error
-      end;
+decode_response(Head, Body, "application/pkix-cert") ->
+  {ok, Head, Body};
+decode_response(Head, Body, "application/jose+json") ->
+  case decode(Body) of
+    {ok, Return} ->
+      {ok, Head, Return};
     {error, Reason} ->
-      ?ERROR_MSG("Error: ~p when encoding: ~p", [Reason, EJson]),
+      ?ERROR_MSG("Problem decoding: ~s", [Body]),
       {error, Reason}
   end.
-
--spec prepare_get_request(url(), handle_resp_fun()) ->
-  {ok, _, nonce()} | {error, _}.
-prepare_get_request(Url, HandleRespFun) ->
-  case make_get_request(Url) of
-    {ok, Head, Return} ->
-      HandleRespFun({ok, Head, Return});
-    Error ->
-      Error
-  end.
-
--spec sign_json_jose(jose_jwk:key(), string(), nonce()) -> jws().
-sign_json_jose(Key, Json, Nonce) ->
-    % Generate a public key
-    PubKey = jose_jwk:to_public(Key),
-    % ?INFO_MSG("Key: ~p", [Key]),
-    {_, BinaryPubKey} = jose_jwk:to_binary(PubKey),
-    % ?INFO_MSG("Key Record: ~p", [jose_jwk:to_map(Key)]),
-    PubKeyJson = jiffy:decode(BinaryPubKey),
-    %% TODO: Ensure this works for all cases
-    AlgMap = jose_jwk:signer(Key),
-    % ?INFO_MSG("Algorithm:~p~n", [AlgMap]),
-    JwsMap =
-      #{ <<"jwk">> => PubKeyJson
-       % , <<"b64">> => true
-       , <<"nonce">> => list_to_bitstring(Nonce)
-       },
-    JwsObj0 = maps:merge(JwsMap, AlgMap),
-    JwsObj = jose_jws:from(JwsObj0),
-    %% Signed Message
-    jose_jws:sign(Key, Json, JwsObj).
-
--spec sign_encode_json_jose(jose_jwk:key(), string(), nonce()) -> bitstring().
-sign_encode_json_jose(Key, Json, Nonce) ->
-  {_, Signed} = sign_json_jose(Key, Json, Nonce),
-  %% This depends on jose library, so we can consider it safe
-  jiffy:encode(Signed).
 
 encode(EJson) ->
   try
@@ -314,7 +514,8 @@ decode(Json) ->
       {error, Reason}
   end.
 
-
+is_error({error, _}) -> true;
+is_error(_) -> false.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
@@ -367,7 +568,7 @@ new_user_scenario(CAUrl, HttpDir) ->
 
   DirURL = CAUrl ++ "/directory",
   {ok, Dirs, Nonce0} = directory(DirURL),
-  ?INFO_MSG("Directories: ~p", [Dirs]),
+  % ?INFO_MSG("Directories: ~p", [Dirs]),
 
   #{"new-reg" := NewAccURL} = Dirs,
   Req0 = [{ <<"contact">>, [<<"mailto:cert-example-admin@example2.com">>]}],
@@ -376,7 +577,7 @@ new_user_scenario(CAUrl, HttpDir) ->
   {_, AccId} = proplists:lookup(<<"id">>, Account),
   AccURL = CAUrl ++ "/acme/reg/" ++ integer_to_list(AccId),
   {ok, {_TOS, Account1}, Nonce2} = get_account(AccURL, PrivateKey, Nonce1),
-  ?INFO_MSG("Old account: ~p~n", [Account1]),
+  % ?INFO_MSG("Old account: ~p~n", [Account1]),
 
   Req1 = [{ <<"agreement">>, list_to_bitstring(TOS)}],
   {ok, Account2, Nonce3} = update_account(AccURL, PrivateKey, Req1, Nonce2),
@@ -397,10 +598,11 @@ new_user_scenario(CAUrl, HttpDir) ->
 
   AccIdBin = list_to_bitstring(integer_to_list(AccId)),
   #{"new-authz" := NewAuthz} = Dirs,
+  DomainName = << <<"my-acme-test-ejabberd">>/binary, AccIdBin/binary, <<".com">>/binary >>,
   Req2 =
     [ { <<"identifier">>, {
       [ {<<"type">>, <<"dns">>}
-      , {<<"value">>, << <<"my-acme-test-ejabberd">>/binary, AccIdBin/binary, <<".com">>/binary >>}
+      , {<<"value">>, DomainName}
       ] }}
     , {<<"existing">>, <<"accept">>}
     ],
@@ -411,28 +613,51 @@ new_user_scenario(CAUrl, HttpDir) ->
   Challenges = get_challenges(Authz2),
   % ?INFO_MSG("Challenges: ~p~n", [Challenges]),
 
-  {ok, ChallengeUrl, KeyAuthz} = acme_challenge:solve_challenge(<<"http-01">>, Challenges, {PrivateKey, HttpDir}),
+  {ok, ChallengeUrl, KeyAuthz} =
+    acme_challenge:solve_challenge(<<"http-01">>, Challenges, {PrivateKey, HttpDir}),
   ?INFO_MSG("File for http-01 challenge written correctly", []),
 
   Req3 =
     [ {<<"type">>, <<"http-01">>}
     , {<<"keyAuthorization">>, KeyAuthz}
     ],
-  {ok, SolvedChallenge, Nonce6} = solve_challenge(ChallengeUrl, PrivateKey, Req3, Nonce5),
-  ?INFO_MSG("SolvedChallenge: ~p~n", [SolvedChallenge]),
+  {ok, SolvedChallenge, Nonce6} = complete_challenge(ChallengeUrl, PrivateKey, Req3, Nonce5),
+  % ?INFO_MSG("SolvedChallenge: ~p~n", [SolvedChallenge]),
 
-  timer:sleep(2000),
+  % timer:sleep(2000),
   {ok, Authz3, Nonce7} = get_authz_until_valid(AuthzUrl),
 
-  {Account2, Authz2, Authz3, PrivateKey}.
+  #{"new-cert" := NewCert} = Dirs,
+  CSRSubject = [ {commonName, bitstring_to_list(DomainName)}
+               , {organizationName, "Example Corp"}],
+  CSR = make_csr(CSRSubject),
+  {MegS, Sec, MicS} = erlang:timestamp(),
+  NotBefore = xmpp_util:encode_timestamp({MegS-1, Sec, MicS}),
+  NotAfter = xmpp_util:encode_timestamp({MegS+1, Sec, MicS}),
+  Req4 =
+    [ {<<"csr">>, CSR}
+    , {<<"notBefore">>, NotBefore}
+    , {<<"NotAfter">>, NotAfter}
+    ],
+  {ok, Certificate, Nonce8} = new_cert(NewCert, PrivateKey, Req4, Nonce7),
+
+  {Account2, Authz2, Authz3, CSR, Certificate, PrivateKey}.
 
 
 generate_key() ->
   jose_jwk:generate_key({ec, secp256r1}).
+
+scenario3() ->
+  CSRSubject = [ {commonName, "my-acme-test-ejabberd.com"}
+               , {organizationName, "Example Corp"}],
+  CSR = make_csr(CSRSubject).
+
+
 
 %% Just a test
 scenario0(KeyFile, HttpDir) ->
   PrivateKey = jose_jwk:from_file(KeyFile),
   % scenario("http://localhost:4000", "2", PrivateKey).
   new_user_scenario("http://localhost:4000", HttpDir).
+  % scenario3().
 
