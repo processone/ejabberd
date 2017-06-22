@@ -177,7 +177,6 @@ make_csr(Attributes) ->
     {ok, Subject} = attributes_from_list(Attributes),
 
     CRI = certificate_request_info(SubPKInfo, Subject),
-    ?INFO_MSG("CRI: ~p~n", [CRI]),
     {ok, EncodedCRI} = der_encode(
         'CertificationRequestInfo',
         CRI),
@@ -261,9 +260,7 @@ der_encode(Type, Term) ->
 
 %% TODO: I haven't found a function that does that, but there must exist one
 length_bitstring(Bitstring) ->
-  ?INFO_MSG("Bitstring: ~p", [Bitstring]),
   Size = byte_size(Bitstring),
-  ?INFO_MSG("Size: ~p", [Size]),
   case Size =< 127 of
     true ->
       <<12:8, Size:8, Bitstring/binary>>;
