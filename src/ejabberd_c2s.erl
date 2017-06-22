@@ -67,7 +67,10 @@
 start(SockData, Opts) ->
     case proplists:get_value(supervisor, Opts, true) of
 	true ->
-	    supervisor:start_child(ejabberd_c2s_sup, [SockData, Opts]);
+	    case supervisor:start_child(ejabberd_c2s_sup, [SockData, Opts]) of
+		{ok, undefined} -> ignore;
+		Res -> Res
+	    end;
 	_ ->
 	    xmpp_stream_in:start(?MODULE, [SockData, Opts],
 				 ejabberd_config:fsm_limit_opts(Opts))
