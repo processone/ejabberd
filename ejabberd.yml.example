@@ -158,11 +158,11 @@ listen:
     ip: "::"
     module: ejabberd_http
     request_handlers:
-      "/websocket": ejabberd_http_ws
+      "/ws": ejabberd_http_ws
+      "/bosh": mod_bosh
       "/api": mod_http_api
     ##  "/pub/archive": mod_http_fileserver
     web_admin: true
-    http_bind: true
     ## register: true
     captcha: true
   ##
