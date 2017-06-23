@@ -81,8 +81,14 @@ start_link(WS) ->
     gen_fsm:start_link(?MODULE, [WS], ?FSMOPTS).
 
 send_xml({http_ws, FsmRef, _IP}, Packet) ->
-    gen_fsm:sync_send_all_state_event(FsmRef,
-				      {send_xml, Packet}).
+    case catch gen_fsm:sync_send_all_state_event(FsmRef,
+						    {send_xml, Packet},
+						    15000)
+    of
+	{'EXIT', {timeout, _}} -> {error, timeout};
+	{'EXIT', _} -> {error, einval};
+	Res -> Res
+    end.
 
 setopts({http_ws, FsmRef, _IP}, Opts) ->
     case lists:member({active, once}, Opts) of
