@@ -72,7 +72,6 @@ reload(_Host, _NewOpts, _OldOpts) ->
 depends(_Host, _Opts) -> [].
 
 s2s_out_stream_init({ok, #{server_host := ServerHost, mod := Mod} = State}, Opts) ->
-    ?INFO_MSG("init pid ~p", [self()]),
     case proplists:get_value(resume, Opts) of
         OldState when OldState /= undefined ->
             #{mgmt_stanzas_in := H, mgmt_stanzas_out := NumStanzasOut, 
