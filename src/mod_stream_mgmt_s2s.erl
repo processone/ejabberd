@@ -72,6 +72,7 @@ reload(_Host, _NewOpts, _OldOpts) ->
 depends(_Host, _Opts) -> [].
 
 s2s_out_stream_init({ok, #{server_host := ServerHost, mod := Mod} = State}, Opts) ->
+    ?INFO_MSG("init pid ~p", [self()]),
     case proplists:get_value(resume, Opts) of
         OldState when OldState /= undefined ->
             #{mgmt_stanzas_in := H, mgmt_stanzas_out := NumStanzasOut, 
@@ -127,6 +128,7 @@ s2s_out_stream_features(State, _) ->
     State.
 
 s2s_out_established(#{mgmt_state := resume} = State) ->
+    % register connection ?
     #{mgmt_stanzas_in := H, mgmt_privid := Id} = State,
     State1 = send(State, #sm_resume{h = H, previd = Id, xmlns = ?NS_STREAM_MGMT_3}),
     State1#{mgmt_xmlns => ?NS_STREAM_MGMT_3, mgmt_state => pending};
@@ -209,22 +211,23 @@ s2s_out_handle_info(#{mgmt_ack_timer := TRef, remote_server := RServer,
                       mod := Mod} = State, {timeout, TRef, ack_timeout}) ->
     ?DEBUG("Timed out waiting for stream management "
            "acknowledgement of ~s", [RServer]),
-    State1 = Mod:close(State),
-    {stop, transition_to_resume(State1)};
+    Mod:stop(State);
+    % State1 = Mod:close(State),
+    % {stop, transition_to_resume(State1)};
 s2s_out_handle_info(#{mgmt_state := resume,
                       remote_server := RServer, mod := Mod} = State,
                      {timeout, TRef, connection_timeout}) ->
     ?DEBUG("Timed out waiting for connection "
-           "establishment for resumption ~s", [RServer]),
-    Mod:stop(State),
+           "establishment with ~s for resumption", [RServer]),
+    % Mod:stop(State),
     State;
 s2s_out_handle_info(State, _) ->
     State.
 
 s2s_out_closed(#{mgmt_state := resume, mod := Mod} = State, _) ->
     {stop, transition_to_resume(State#{stream_state => connecting})};
-s2s_out_closed(#{mgmt_state := active} = State, _) ->
-    State;
+% s2s_out_closed(#{mgmt_state := active} = State, _) ->
+%     State;
 s2s_out_closed(State, _) ->
     State.
 
@@ -234,7 +237,7 @@ s2s_out_closed(State, _) ->
 % s2s_out_terminate(#{mgmt_state := resumed} = State, _Reason) ->
 %     {stop, State};
 % s2s_out_terminate(#{mgmt_state := resume} = State, _Reason) ->
-%     bounce_errors(State),
+%     % bounce_errors(State),
 %     State;
 % s2s_out_terminate(#{mgmt_state := active} = State, _Reason) ->
 %     transition_to_resume(State);
@@ -378,13 +381,18 @@ transition_to_resume(#{mgmt_state := active, mod := Mod,
                        remote_server := RServer,server_host := Server,
                        mgmt_connection_timeout := Timeout} = State) ->
     State1 = mod_stream_mgmt:cancel_ack_timer(State),
-    {ok, Pid} = Mod:start(Server, RServer, [{resume, State1}]),
-    erlang:start_timer(Timeout, Pid, connection_timeout),
     ?DEBUG("Try to connect to remote server ~s", [RServer]),
-    timer:sleep(100000),
-    Mod:connect(Pid),    
+    {ok, Pid} = 
+        ejabberd_s2s:start_connection(jid:make(Server), 
+                                      jid:make(RServer),
+                                      [{resume, State1}]),
+
+    erlang:start_timer(Timeout, Pid, connection_timeout),
+
     State1;
-transition_to_resume(#{mgmt_state := resume, mod := Mod, remote_server := RServer} = State) ->    
+transition_to_resume(#{mgmt_state := resume,
+                       mod := Mod,
+                       remote_server := RServer} = State) ->    
     Mod:connect(self()),
     State;
 transition_to_resume(State) ->
@@ -500,7 +508,7 @@ get_max_unacked_stanzas(Host) ->
     gen_mod:get_module_opt(Host, ?MODULE, max_unacked_stanzas, 0).
 
 get_connection_timeout(Host) ->
-    gen_mod:get_module_opt(Host, ?MODULE, connection_timeout, 60000).
+    gen_mod:get_module_opt(Host, ?MODULE, connection_timeout, 120000).
 
 mod_opt_type(connection_timeout) ->
     fun(I) when is_integer(I), I >= 0 -> I end;
