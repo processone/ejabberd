@@ -1117,6 +1117,13 @@ depends(_Host, _Opts) ->
 mod_opt_type(access) ->
     fun acl:access_rules_validator/1;
 mod_opt_type(host) -> fun iolist_to_binary/1;
-mod_opt_type(limits) ->
-    fun (A) when is_list(A) -> A end;
-mod_opt_type(_) -> [access, host, limits].
+mod_opt_type({limits, Type}) when (Type == local) or (Type == remote) ->
+    fun(L) ->
+	    lists:map(
+		fun ({message, infinite}) -> infinite;
+		    ({presence, infinite}) -> infinite;
+		    ({message, I}) when is_integer(I) -> I;
+		    ({presence, I}) when is_integer(I) -> I
+		end, L)
+    end;
+mod_opt_type(_) -> [access, host, {limits, local}, {limits, remote}].
