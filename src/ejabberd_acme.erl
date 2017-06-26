@@ -1,17 +1,25 @@
 -module (ejabberd_acme).
 
 -export([directory/1,
+         %% Account
 	 get_account/3,
 	 new_account/4,
 	 update_account/4,
 	 delete_account/3,
+         %% Authorization
 	 new_authz/4,
 	 get_authz/1,
 	 complete_challenge/4,
+         %% Certificate
 	 new_cert/4,
+         get_cert/1,
+         revoke_cert/4,
+         %% Debugging Scenarios
 	 scenario/3,
 	 scenario0/2
-	 %% , key_roll_over/5
+         %% Not yet implemented
+	 %% key_roll_over/5
+         %% delete_authz/3
 	]).
 
 -include("ejabberd.hrl").
@@ -23,7 +31,7 @@
 
 -define(REQUEST_TIMEOUT, 5000). % 5 seconds.
 -define(MAX_POLL_REQUESTS, 20).
--define(POLL_WAIT_TIME, 500).
+-define(POLL_WAIT_TIME, 500). % 500 ms.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -45,21 +53,18 @@ directory(Url) ->
 -spec new_account(url(), jose_jwk:key(), proplist(), nonce()) ->
 			 {ok, {url(), proplist()}, nonce()} | {error, _}.
 new_account(Url, PrivateKey, Req, Nonce) ->
-    %% Make the request body
     EJson = {[{ <<"resource">>, <<"new-reg">>}] ++ Req},
     prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response_tos/1).
 
 -spec update_account(url(), jose_jwk:key(), proplist(), nonce()) ->
 			    {ok, proplist(), nonce()} | {error, _}.
 update_account(Url, PrivateKey, Req, Nonce) ->
-    %% Make the request body
     EJson = {[{ <<"resource">>, <<"reg">>}] ++ Req},
     prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response/1).
 
 -spec get_account(url(), jose_jwk:key(), nonce()) ->
 			 {ok, {url(), proplist()}, nonce()} | {error, _}.
 get_account(Url, PrivateKey, Nonce) ->
-    %% Make the request body
     EJson = {[{<<"resource">>, <<"reg">>}]},
     prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response_tos/1).
 
@@ -79,7 +84,7 @@ delete_account(Url, PrivateKey, Nonce) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -spec new_authz(url(), jose_jwk:key(), proplist(), nonce()) ->
-		       {ok, proplist(), nonce()} | {error, _}.
+		       {ok, {url(), proplist()}, nonce()} | {error, _}.
 new_authz(Url, PrivateKey, Req, Nonce) ->
     EJson = {[{<<"resource">>, <<"new-authz">>}] ++ Req},
     prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response_location/1).
@@ -102,10 +107,22 @@ complete_challenge(Url, PrivateKey, Req, Nonce) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -spec new_cert(url(), jose_jwk:key(), proplist(), nonce()) ->
-		      {ok, proplist(), nonce()} | {error, _}.
+		      {ok, {url(), list()}, nonce()} | {error, _}.
 new_cert(Url, PrivateKey, Req, Nonce) ->
     EJson = {[{<<"resource">>, <<"new-cert">>}] ++ Req},
-    prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response/1, "application/pkix-cert").
+    prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response_location/1,
+			 "application/pkix-cert").
+
+-spec get_cert(url()) -> {ok, list(), nonce()} | {error, _}.
+get_cert(Url) ->
+    prepare_get_request(Url, fun get_response/1, "application/pkix-cert").
+
+-spec revoke_cert(url(), jose_jwk:key(), proplist(), nonce()) ->
+			 {ok, _, nonce()} | {error, _}.
+revoke_cert(Url, PrivateKey, Req, Nonce) ->
+    EJson = {[{<<"resource">>, <<"revoke-cert">>}] ++ Req},
+    prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response/1,
+                         "application/pkix-cert").
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -153,40 +170,28 @@ get_response_location({ok, Head, Return}) ->
 %%  2. Derive the whole algo objects from Key
 %% TODO: Encode Strings using length.
 
--spec make_csr(proplist()) -> binary().
+-spec make_csr(proplist()) -> {binary(), jose_jwk:key()}.
 make_csr(Attributes) ->
     Key = generate_key(),
-
     {_, KeyKey} = jose_jwk:to_key(Key),
-
     KeyPub = jose_jwk:to_public(Key),
-
     try
 	SubPKInfoAlgo = subject_pk_info_algo(KeyPub),
-
 	{ok, RawBinPubKey} = raw_binary_public_key(KeyPub),
 	SubPKInfo = subject_pk_info(SubPKInfoAlgo, RawBinPubKey),
-
 	{ok, Subject} = attributes_from_list(Attributes),
-
 	CRI = certificate_request_info(SubPKInfo, Subject),
 	{ok, EncodedCRI} = der_encode(
 			     'CertificationRequestInfo',
 			     CRI),
-
 	SignedCRI = public_key:sign(EncodedCRI, 'sha256', KeyKey),
-
 	SignatureAlgo = signature_algo(Key, 'sha256'),
-
 	CSR = certification_request(CRI, SignatureAlgo, SignedCRI),
-
 	{ok, DerCSR} = der_encode(
 			 'CertificationRequest',
 			 CSR),
-
 	Result = base64url:encode(DerCSR),
-
-	Result
+	{Result, Key}
     catch
 	_:{badmatch, {error, bad_public_key}} ->
 	    {error, bad_public_key};
@@ -260,7 +265,7 @@ length_bitstring(Bitstring) ->
 	false ->
 	    LenOctets = binary:encode_unsigned(Size),
 	    FirstOctet = byte_size(LenOctets),
-	    <<12:8, 1:1, FirstOctet:7, LenOctets:(FirstOctet * 8), Bitstring/binary>>
+	    <<12:8, 1:1, FirstOctet:7, Size:(FirstOctet * 8), Bitstring/binary>>
     end.
 
 
@@ -289,6 +294,7 @@ attribute_parser_fun({AttrName, AttrVal}) ->
 	    {error, bad_attributes}
     end.
 
+-spec attribute_oid(atom()) -> tuple().
 attribute_oid(commonName) -> ?'id-at-commonName';
 attribute_oid(countryName) -> ?'id-at-countryName';
 attribute_oid(stateOrProvinceName) -> ?'id-at-stateOrProvinceName';
@@ -412,7 +418,7 @@ prepare_get_request(Url, HandleRespFun, ResponseType) ->
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
--spec sign_json_jose(jose_jwk:key(), string(), nonce()) -> jws().
+-spec sign_json_jose(jose_jwk:key(), bitstring(), nonce()) -> {_, jws()}.
 sign_json_jose(Key, Json, Nonce) ->
     PubKey = jose_jwk:to_public(Key),
     {_, BinaryPubKey} = jose_jwk:to_binary(PubKey),
@@ -428,7 +434,7 @@ sign_json_jose(Key, Json, Nonce) ->
     JwsObj = jose_jws:from(JwsObj0),
     jose_jws:sign(Key, Json, JwsObj).
 
--spec sign_encode_json_jose(jose_jwk:key(), string(), nonce()) -> bitstring().
+-spec sign_encode_json_jose(jose_jwk:key(), bitstring(), nonce()) -> bitstring().
 sign_encode_json_jose(Key, Json, Nonce) ->
     {_, Signed} = sign_json_jose(Key, Json, Nonce),
     %% This depends on jose library, so we can consider it safe
@@ -571,11 +577,6 @@ new_user_scenario(CAUrl, HttpDir) ->
     Req1 = [{ <<"agreement">>, list_to_bitstring(TOS)}],
     {ok, Account2, Nonce3} = update_account(AccURL, PrivateKey, Req1, Nonce2),
 
-    %% Delete account
-    %% {ok, Account3, Nonce4} = delete_account(AccURL, PrivateKey, Nonce3),
-    %% {ok, {_TOS, Account4}, Nonce5} = get_account(AccURL, PrivateKey, Nonce4),
-    %% ?INFO_MSG("New account: ~p~n", [Account4]),
-
     %% NewKey = generate_key(),
     %% KeyChangeUrl = CAUrl ++ "/acme/key-change/",
     %% {ok, Account3, Nonce4} = key_roll_over(KeyChangeUrl, AccURL, PrivateKey, NewKey, Nonce3),
@@ -618,7 +619,7 @@ new_user_scenario(CAUrl, HttpDir) ->
     #{"new-cert" := NewCert} = Dirs,
     CSRSubject = [{commonName, bitstring_to_list(DomainName)},
 		  {organizationName, "Example Corp"}],
-    CSR = make_csr(CSRSubject),
+    {CSR, CSRKey} = make_csr(CSRSubject),
     {MegS, Sec, MicS} = erlang:timestamp(),
     NotBefore = xmpp_util:encode_timestamp({MegS-1, Sec, MicS}),
     NotAfter = xmpp_util:encode_timestamp({MegS+1, Sec, MicS}),
@@ -627,9 +628,34 @@ new_user_scenario(CAUrl, HttpDir) ->
 	 {<<"notBefore">>, NotBefore},
 	 {<<"NotAfter">>, NotAfter}
 	],
-    {ok, Certificate, Nonce8} = new_cert(NewCert, PrivateKey, Req4, Nonce7),
+    {ok, {CertUrl, Certificate}, Nonce8} = new_cert(NewCert, PrivateKey, Req4, Nonce7),
 
-    {Account2, Authz2, Authz3, CSR, Certificate, PrivateKey}.
+
+    {ok, Certificate2, Nonce9} = get_cert(CertUrl),
+
+    DecodedCert = public_key:pkix_decode_cert(list_to_binary(Certificate2), plain),
+    %% ?INFO_MSG("DecodedCert: ~p~n", [DecodedCert]),
+    PemEntryCert = public_key:pem_entry_encode('Certificate', DecodedCert),
+    %% ?INFO_MSG("PemEntryCert: ~p~n", [PemEntryCert]),
+
+    {_, CSRKeyKey} = jose_jwk:to_key(CSRKey),
+    PemEntryKey = public_key:pem_entry_encode('ECPrivateKey', CSRKeyKey),
+    %% ?INFO_MSG("PemKey: ~p~n", [jose_jwk:to_pem(CSRKey)]),
+    %% ?INFO_MSG("PemEntryKey: ~p~n", [PemEntryKey]),
+
+    PemCert = public_key:pem_encode([PemEntryKey, PemEntryCert]),
+    %% ?INFO_MSG("PemCert: ~p~n", [PemCert]),
+
+    ok = file:write_file(HttpDir ++ "/my_server.pem", PemCert),
+
+    Base64Cert = base64url:encode(Certificate2),
+    #{"revoke-cert" := RevokeCert} = Dirs,
+    Req5 = [{<<"certificate">>, Base64Cert}],
+    {ok, [], Nonce10} = revoke_cert(RevokeCert, PrivateKey, Req5, Nonce9),
+
+    {ok, Certificate3, Nonce11} = get_cert(CertUrl),
+
+    {Account2, Authz3, CSR, Certificate, PrivateKey}.
 
 
 generate_key() ->
@@ -638,14 +664,56 @@ generate_key() ->
 scenario3() ->
     CSRSubject = [{commonName, "my-acme-test-ejabberd.com"},
 		  {organizationName, "Example Corp"}],
-    CSR = make_csr(CSRSubject).
+    {CSR, CSRKey} = make_csr(CSRSubject).
 
 
+%% It doesn't seem to work, The user can get a new authorization even though the account has been deleted
+delete_account_scenario(CAUrl) ->
+    PrivateKey = generate_key(),
+
+    DirURL = CAUrl ++ "/directory",
+    {ok, Dirs, Nonce0} = directory(DirURL),
+    %% ?INFO_MSG("Directories: ~p", [Dirs]),
+
+    #{"new-reg" := NewAccURL} = Dirs,
+    Req0 = [{ <<"contact">>, [<<"mailto:cert-example-admin@example2.com">>]}],
+    {ok, {TOS, Account}, Nonce1} = new_account(NewAccURL, PrivateKey, Req0, Nonce0),
+
+    {_, AccId} = proplists:lookup(<<"id">>, Account),
+    AccURL = CAUrl ++ "/acme/reg/" ++ integer_to_list(AccId),
+    {ok, {_TOS, Account1}, Nonce2} = get_account(AccURL, PrivateKey, Nonce1),
+    %% ?INFO_MSG("Old account: ~p~n", [Account1]),
+
+    Req1 = [{ <<"agreement">>, list_to_bitstring(TOS)}],
+    {ok, Account2, Nonce3} = update_account(AccURL, PrivateKey, Req1, Nonce2),
+
+    %% Delete account
+    {ok, Account3, Nonce4} = delete_account(AccURL, PrivateKey, Nonce3),
+
+    timer:sleep(3000),
+
+    {ok, {_TOS, Account4}, Nonce5} = get_account(AccURL, PrivateKey, Nonce4),
+    ?INFO_MSG("New account: ~p~n", [Account4]),
+
+    AccIdBin = list_to_bitstring(integer_to_list(AccId)),
+    #{"new-authz" := NewAuthz} = Dirs,
+    DomainName = << <<"my-acme-test-ejabberd">>/binary, AccIdBin/binary, <<".com">>/binary >>,
+    Req2 =
+        [{<<"identifier">>,
+          {[{<<"type">>, <<"dns">>},
+            {<<"value">>, DomainName}]}},
+         {<<"existing">>, <<"accept">>}
+        ],
+    {ok, {AuthzUrl, Authz}, Nonce6} = new_authz(NewAuthz, PrivateKey, Req2, Nonce5),
+
+    {ok, Account1, Account3, Authz}.
 
 %% Just a test
 scenario0(KeyFile, HttpDir) ->
     PrivateKey = jose_jwk:from_file(KeyFile),
     %% scenario("http://localhost:4000", "2", PrivateKey).
+    %% delete_account_scenario("http://localhost:4000").
     new_user_scenario("http://localhost:4000", HttpDir).
+
 %% scenario3().
 

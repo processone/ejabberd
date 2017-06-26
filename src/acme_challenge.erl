@@ -16,7 +16,7 @@
 
 -include("ejabberd_acme.hrl").
 
--spec key_authorization(string(), jose_jwk:key()) -> bitstring().
+-spec key_authorization(bitstring(), jose_jwk:key()) -> bitstring().
 key_authorization(Token, Key) ->
     Thumbprint = jose_jwk:thumbprint(Key),
     %% ?INFO_MSG("Thumbprint: ~p~n", [Thumbprint]),
@@ -31,7 +31,7 @@ parse_challenge(Challenge0) ->
 	{<<"status">>,Status} = proplists:lookup(<<"status">>, Challenge),
 	{<<"uri">>,Uri} = proplists:lookup(<<"uri">>, Challenge),
 	{<<"token">>,Token} = proplists:lookup(<<"token">>, Challenge),
-	Res = 
+	Res =
 	    #challenge{
 	       type = Type,
 	       status = list_to_atom(bitstring_to_list(Status)),
@@ -46,7 +46,8 @@ parse_challenge(Challenge0) ->
 
 
 
--spec solve_challenge(bitstring(), [{proplist()}], _) -> {ok, url(), bitstring()} | {error, _}.
+-spec solve_challenge(bitstring(), [{proplist()}], _) ->
+			     {ok, url(), bitstring()} | {error, _}.
 solve_challenge(ChallengeType, Challenges, Options) ->
     ParsedChallenges = [parse_challenge(Chall) || Chall <- Challenges],
     case lists:any(fun is_error/1, ParsedChallenges) of
@@ -63,7 +64,8 @@ solve_challenge(ChallengeType, Challenges, Options) ->
 	    end
     end.
 
--spec solve_challenge1(acme_challenge(), _) -> {ok, url(), bitstring()} | {error, _}.
+-spec solve_challenge1(acme_challenge(), {jose_jwk:key(), string()}) ->
+			      {ok, url(), bitstring()} | {error, _}.
 solve_challenge1(Chal = #challenge{type = <<"http-01">>, token=Tkn}, {Key, HttpDir}) ->
     KeyAuthz = key_authorization(Tkn, Key),
     FileLocation = HttpDir ++ "/.well-known/acme-challenge/" ++ bitstring_to_list(Tkn),
@@ -85,5 +87,7 @@ is_challenge_type(DesiredType, #challenge{type = Type}) when DesiredType =:= Typ
 is_challenge_type(_DesiredType, #challenge{type = _Type}) ->
     false.
 
+-spec is_error({'error', _}) -> 'true';
+	      ({'ok', _}) -> 'false'.
 is_error({error, _}) -> true;
 is_error(_) -> false.
