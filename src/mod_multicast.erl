@@ -998,9 +998,8 @@ build_service_limit_record(LimitOpts) ->
      build_limit_record(LimitOptsR, remote)}.
 
 get_from_limitopts(LimitOpts, SenderT) ->
-    [{StanzaT, Number}
-     || {SenderT2, StanzaT, Number} <- LimitOpts,
-	SenderT =:= SenderT2].
+    {SenderT, Result} = lists:keyfind(SenderT, 1, LimitOpts),
+    Result.
 
 build_remote_limit_record(LimitOpts, SenderT) ->
     build_limit_record(LimitOpts, SenderT).
