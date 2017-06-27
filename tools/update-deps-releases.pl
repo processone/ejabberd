@@ -22,7 +22,11 @@ sub get_deps {
     return { } unless $config =~ /\{\s*deps\s*,\s*\[(.*?)\]/s;
     my $sdeps = $1;
 
-    while ($sdeps =~ /\{\s*(\w+)\s*,\s*".*?"\s*,\s*\{\s*git\s*,\s*"(.*?)"\s*,\s*(?:{\s*tag\s*,\s*"(.*?)"|"(.*?)" )/sg) {
+    while ($sdeps =~ /\{\s* (\w+) \s*,\s* ".*?" \s*,\s* \{\s*git \s*,\s* "(.*?)" \s*,\s*
+                      (?:
+                        (?:{\s*tag \s*,\s* "(.*?)") |
+                        "(.*?)" |
+                        ( \{ (?: (?-1) | [^{}]+ )+ \} ) )/sgx) {
         next unless not %fdeps or exists $fdeps{$1};
         $deps{$1} = { repo => $2, commit => $3 || $4 };
     }
@@ -359,7 +363,9 @@ while (1) {
 
         for my $dep (keys %$top_deps) {
             for my $sdep (keys %{$sub_deps->{$dep}}) {
-                next if $sub_deps->{$dep}->{$sdep}->{commit} eq $top_deps->{$sdep}->{commit};
+                next if not defined $top_deps->{$sdep} or
+                    $sub_deps->{$dep}->{$sdep}->{commit} eq $top_deps->{$sdep}->{commit};
+                say "$dep $sdep ",$sub_deps->{$dep}->{$sdep}->{commit}," <=> $sdep ",$top_deps->{$sdep}->{commit};
                 schedule_operation("update", $dep, $git_info->{$dep}->{new_tag},
                     "Updating $sdep to version $top_deps->{$sdep}->{commit}.", [$sdep, $top_deps->{$sdep}->{commit}]);
             }
