@@ -10,9 +10,9 @@ FIREWALL_WINDOW=""
 ERLANG_NODE=ejabberd@localhost
 
 # define default environment variables
-ERL={{erl}}
-IEX={{bindir}}/iex
-EPMD={{epmd}}
+ERL="{{erl}}"
+IEX="{{bindir}}/iex"
+EPMD="{{epmd}}"
 INSTALLUSER={{installuser}}
 
 # check the proper system user is used if defined
@@ -110,12 +110,12 @@ exec_cmd()
 exec_erl()
 {
     NODE=$1; shift
-    exec_cmd $ERL ${S:--}name $NODE $ERLANG_OPTS "$@"
+    exec_cmd "$ERL" ${S:--}name $NODE $ERLANG_OPTS "$@"
 }
 exec_iex()
 {
     NODE=$1; shift
-    exec_cmd $IEX ${S:---}name $NODE --erl "$ERLANG_OPTS" "$@"
+    exec_cmd "$IEX" ${S:---}name $NODE --erl "$ERLANG_OPTS" "$@"
 }
 
 # usage
@@ -287,7 +287,7 @@ case $1 in
     ping)
         PEER=${2:-$ERLANG_NODE}
         [ "$PEER" = "${PEER%.*}" ] && PS="-s"
-        exec_cmd $ERL ${PS:--}name $(uid ping $(hostname $PS)) $ERLANG_OPTS \
+        exec_cmd "$ERL" ${PS:--}name $(uid ping $(hostname $PS)) $ERLANG_OPTS \
                  -noinput -hidden -eval 'io:format("~p~n",[net_adm:ping('"$PEER"')])' \
                  -s erlang halt -output text
         ;;
