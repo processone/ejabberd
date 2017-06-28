@@ -18,10 +18,10 @@ INSTALLUSER={{installuser}}
 # check the proper system user is used if defined
 EXEC_CMD="false"
 if [ -n "$INSTALLUSER" ] ; then
-    if [ $(id -g) -eq $(id -g $INSTALLUSER || echo -1) ] ; then
+    if [ $(id -g) -eq $(id -g "$INSTALLUSER" || echo -1) ] ; then
         EXEC_CMD="as_current_user"
     else
-        id -Gn | grep -q wheel && EXEC_CMD="as_install_user"
+        id -Gn | grep -qw wheel && EXEC_CMD="as_install_user"
     fi
 else
     EXEC_CMD="as_current_user"
@@ -305,6 +305,6 @@ case $1 in
             2|3) help;;
             *) :;;
         esac
-        exit $result
+        exit "$result"
         ;;
 esac
