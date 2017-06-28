@@ -56,7 +56,7 @@ sub update_deps_repos {
         if (not -d $dd) {
             say "Downloading $dep...";
             my $repo = $deps->{$dep}->{repo};
-            $repo =~ s!^https?://github/!git\@github.com:!;
+            $repo =~ s!^https?://github.com/!git\@github.com:!;
             system("git", "-C", ".deps-update", "clone", $repo);
         } elsif (time() - stat($dd)->mtime > 24 * 60 * 60) {
             say "Updating $dep...";
@@ -407,7 +407,6 @@ while (1) {
                 $top_changes{$op->{dep}} = $op->{version};
             }
             update_deps_versions("rebar.config", %top_changes);
-
             for my $op (@operations) {
                 if ($git_info->{$op->{dep}}->{last_tag} ne $op->{version}) {
                     git_push($op->{dep});
