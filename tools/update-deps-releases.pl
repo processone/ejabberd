@@ -60,7 +60,7 @@ sub update_deps_repos {
             system("git", "-C", ".deps-update", "clone", $repo);
         } elsif (time() - stat($dd)->mtime > 24 * 60 * 60) {
             say "Updating $dep...";
-            system("git", "-C", $dd, "fetch");
+            system("git", "-C", $dd, "pull");
             touch($dd)
         }
     }
@@ -134,7 +134,7 @@ sub update_deps_versions {
     my $config = slurp $config_path;
 
     for (keys %deps) {
-        $config =~ s/(\{\s*$_\s*,\s*".*?"\s*,\s*\{\s*git\s*,\s*".*?"\s*,\s*)(?:{\s*tag\s*,\s*"(.*?)"\s*}|"(.*?)" )/$1\{tag, "$deps{$_}"}/s;
+        $config =~ s/(\{\s*$_\s*,\s*".*?"\s*,\s*\{\s*git\s*,\s*".*?"\s*,\s*)(?:{\s*tag\s*,\s*"(.*?)"\s*}|"(.*?)")/$1\{tag, "$deps{$_}"}/s;
     }
 
     write_file($config_path, $config);
