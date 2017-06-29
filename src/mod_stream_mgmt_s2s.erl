@@ -7,7 +7,7 @@
 -export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1]).
 %% client part hooks
 -export([s2s_out_stream_init/2, s2s_out_stream_features/2,
-         s2s_out_packet/2, s2s_out_established/1]).
+         s2s_out_packet/2, s2s_handle_send/3, s2s_out_established/1]).
         % s2s_out_packet/2, s2s_out_handle_recv/3, s2s_out_handle_send/3,
          %s2s_out_handle_info/2, s2s_out_closed/2,
         % s2s_out_terminate/2]). % , s2s_out_established/1]).
@@ -41,8 +41,8 @@ start(Host, _Opts) ->
     ejabberd_hooks:add(s2s_out_packet, Host, ?MODULE, s2s_out_packet, 5),
     % ejabberd_hooks:add(s2s_out_handle_recv, 
     %                    Host, ?MODULE, s2s_out_handle_recv, 50),
-    % ejabberd_hooks:add(s2s_out_handle_send, 
-    %                    Host, ?MODULE, s2s_out_handle_send, 50),
+    ejabberd_hooks:add(s2s_out_handle_send, 
+                       Host, ?MODULE, s2s_handle_send, 50),
     % ejabberd_hooks:add(s2s_out_handle_info,
     %                    Host, ?MODULE, s2s_out_handle_info, 50),
     % ejabberd_hooks:add(s2s_out_closed,
@@ -57,7 +57,9 @@ start(Host, _Opts) ->
                        Host, ?MODULE, s2s_in_post_auth_features, 50),
     ejabberd_hooks:add(s2s_in_init, ?MODULE, s2s_in_init, 50),
     ejabberd_hooks:add(s2s_in_authenticated_packet,
-                       Host, ?MODULE, s2s_in_authenticated_packet, 50).
+                       Host, ?MODULE, s2s_in_authenticated_packet, 50),
+    ejabberd_hooks:add(s2s_in_handle_send,
+                       Host, ?MODULE, s2s_handle_send, 50).
 
 stop(Host) ->
     ejabberd_hooks:delete(s2s_out_init, Host, ?MODULE, s2s_out_stream_init, 50),
@@ -66,8 +68,8 @@ stop(Host) ->
     ejabberd_hooks:delete(s2s_out_packet, Host, ?MODULE, s2s_out_packet, 50),
     % ejabberd_hooks:delete(s2s_out_handle_recv, 
     %                       Host, ?MODULE, s2s_out_handle_recv, 50),
-    % ejabberd_hooks:delete(s2s_out_handle_send, 
-    %                       Host, ?MODULE, s2s_out_handle_send, 50),
+    ejabberd_hooks:delete(s2s_out_handle_send, 
+                          Host, ?MODULE, s2s_out_handle_send, 50),
     % ejabberd_hooks:delete(s2s_out_handle_info,
     %                       Host, ?MODULE, s2s_out_handle_info, 50),
     % ejabberd_hooks:delete(s2s_out_closed,
@@ -82,7 +84,9 @@ stop(Host) ->
                           Host, ?MODULE, s2s_in_post_auth_features, 50),
     % ejabberd_hooks:delete(s2s_in_init, ?MODULE, s2s_in_init),
     ejabberd_hooks:delete(s2s_in_authenticated_packet,
-                          Host, ?MODULE, s2s_in_authenticated_packet, 50).
+                          Host, ?MODULE, s2s_in_authenticated_packet, 50),
+    ejabberd_hooks:delete(s2s_in_handle_send,
+                          Host, ?MODULE, s2s_handle_send, 50).
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ?WARNING_MSG("module ~s is reloaded, but new configuration will take "
@@ -170,12 +174,40 @@ s2s_out_established(State) ->
 
 s2s_out_packet(#{mgmt_state := MgmtState} = State, Pkt)
   when ?is_sm_packet(Pkt) ->
-    if MgmtState == wait_for_enabled ->
+    if MgmtState == active ->
+            {stop, perform_stream_mgmt(Pkt, State)};
+       MgmtState == wait_for_enabled -> % может быть и в других состояниях можно
             {stop, negotiate_stream_mgmt(Pkt, State)};
        true ->
             {stop, State}
     end;
 s2s_out_packet(State, Pkt) ->
+    update_num_stanzas_in(State, Pkt).
+
+s2s_handle_send(#{mgmt_state := MgmtState, lang := Lang} = State, Pkt, SendResult)
+  when MgmtState == active; MgmtState == wait_for_enabled ->
+    case Pkt of
+        _ when ?is_stanza(Pkt) ->
+            Meta = xmpp:get_meta(Pkt),
+            case maps:get(mgmt_is_resent, Meta, false) of
+                false ->
+                    case mod_stream_mgmt:mgmt_queue_add(State, Pkt) of
+                        #{mgmt_max_queue := exceeded} = State1 ->
+                            Err = xmpp:serr_policy_violation(
+                                        <<"Too many unacked stanzas">>, Lang),
+                            send(State1, Err);
+                        State1 when MgmtState /= wait_for_enabled, SendResult == ok ->
+                            send_rack(State1);
+                        State1 ->
+                            State1
+                    end;
+                true ->
+                    State
+            end;
+        _ ->
+            State
+    end;
+s2s_handle_send(State, _, _) ->
     State.
 
 %% client part
@@ -199,7 +231,9 @@ s2s_in_init(State, _Opts) ->
 
 s2s_in_authenticated_packet(#{mgmt_state := MgmtState} = State, Pkt)
   when ?is_sm_packet(Pkt) ->
-    if MgmtState == inactive ->
+    if MgmtState == active ->
+            {stop, server_perform_stream_mgmt(Pkt, State)};
+       MgmtState == inactive ->
             {stop, server_negotiate_stream_mgmt(Pkt, State)};
        true ->
             {stop, State}
@@ -379,6 +413,23 @@ handle_enable(#{remote_server := RServer,
                     mgmt_queue => p1_queue:new(QueueType)},
     send(State1, Res).
 
+% mgmt_state := active, pending and pkt is sm packet
+-spec server_perform_stream_mgmt(xmpp_element(), state()) -> state().
+server_perform_stream_mgmt(Pkt, #{mgmt_xmlns := Xmlns} = State) ->
+    case xmpp:get_ns(Pkt) of
+        Xmlns ->
+            case Pkt of
+                #sm_a{} ->
+                    handle_a(State, Pkt);
+                #sm_r{} ->
+                    handle_r(State);
+                _ ->
+                    send(State, #sm_failed{reason = 'bad-request', xmlns = Xmlns})
+            end;
+        _ ->
+            send(State, #sm_failed{reason = 'unsupported-version', xmlns = Xmlns})
+    end.
+
 -spec negotiate_stream_mgmt(xmpp_element(), state()) -> state().
 negotiate_stream_mgmt(Pkt, #{mgmt_xmlns := Xmlns} = State) ->
     case Pkt of
@@ -414,8 +465,43 @@ handle_enabled(#{remote_server := RServer,
                     ?INFO_MSG("Stream management enabled for ~s", [RServer]),
                     State
              end,
+     State2 = 
+        case not p1_queue:is_empty(Queue) of
+            true ->
+                send_rack(State1);
+            _ ->
+                State1
+        end,
 
-    State1#{mgmt_state => active, mgmt_timeout => Timeout}.
+    State2#{mgmt_state => active, mgmt_timeout => Timeout}.
+
+% mgmt_state := active, pending and pkt is sm packet
+-spec perform_stream_mgmt(xmpp_element(), state()) -> state().
+perform_stream_mgmt(Pkt, #{mgmt_xmlns := Xmlns} = State) ->
+    case xmpp:get_ns(Pkt) of
+        Xmlns ->
+            case Pkt of
+                #sm_a{} ->
+                    handle_a(State, Pkt);
+                #sm_r{} ->
+                    handle_r(State);
+                _ ->
+                    send(State, #sm_failed{reason = 'bad-request', xmlns = Xmlns})
+            end;
+        _ ->
+            send(State, #sm_failed{reason = 'unsupported-version', xmlns = Xmlns})
+    end.
+
+-spec handle_r(state()) -> state().
+handle_r(#{mgmt_stanzas_in := H,
+           mgmt_xmlns := Xmlns} = State) ->
+    send(State, #sm_a{h = H, xmlns = Xmlns}).
+
+-spec handle_a(state(), sm_a()) -> state().
+handle_a(#{mgmt_stanzas_out := NumStanzasOut, 
+           remote_server := RServer} = State, #sm_a{h = H}) ->
+    State1 = check_h_attribute(State, H),
+    resend_rack(State1).
 
 % What should we encode?
 -spec make_resume_id(state()) -> binary().
@@ -506,17 +592,6 @@ make_resume_id(#{owner := Owner, remote_server := RServer}) ->
 
 %     State2#{mgmt_state => active, mgmt_timeout => Timeout}.
 
-% -spec handle_r(state()) -> state().
-% handle_r(#{mgmt_stanzas_in := H,
-%            mgmt_xmlns := Xmlns} = State) ->
-%     send(State, #sm_a{h = H, xmlns = Xmlns}).
-
-% -spec handle_a(state(), sm_a()) -> state().
-% handle_a(#{mgmt_stanzas_out := NumStanzasOut, 
-%            remote_server := RServer} = State, #sm_a{h = H}) ->
-%     State1 = check_h_attribute(State, H),
-%     resend_rack(State1).
-
 % -spec transition_to_resume(state()) -> state().
 % transition_to_resume(#{mgmt_state := active, mod := Mod,
 %                        mgmt_timeout := 0} = State) ->
@@ -572,43 +647,44 @@ make_resume_id(#{owner := Owner, remote_server := RServer}) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% todo: import from mod_stream_mgmt.erl
 
-% -spec check_h_attribute(state(), non_neg_integer()) -> state().
-% check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut,
-%                     remote_server := RServer} = State, H)
-%   when H > NumStanzasOut ->
-%     ?DEBUG("~s acknowledged ~B stanzas," 
-%            "but only ~B were sent ", [RServer, H, NumStanzasOut]),
-%     mod_stream_mgmt:mgmt_queue_drop(State#{mgmt_stanzas_out => H}, NumStanzasOut);
-% check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut,
-%                     remote_server := RServer} = State, H) ->
-%     ?DEBUG("~s acknowledged ~B of ~B "
-%            "stanzas", [RServer, H, NumStanzasOut]),
-%     mod_stream_mgmt:mgmt_queue_drop(State, H).
+-spec check_h_attribute(state(), non_neg_integer()) -> state().
+check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut,
+                    remote_server := RServer} = State, H)
+  when H > NumStanzasOut ->
+    ?DEBUG("~s acknowledged ~B stanzas," 
+           "but only ~B were sent ", [RServer, H, NumStanzasOut]),
+    mod_stream_mgmt:mgmt_queue_drop(State#{mgmt_stanzas_out => H}, NumStanzasOut);
+check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut,
+                    remote_server := RServer} = State, H) ->
+    ?DEBUG("~s acknowledged ~B of ~B "
+           "stanzas", [RServer, H, NumStanzasOut]),
+    mod_stream_mgmt:mgmt_queue_drop(State, H).
 
 -spec send(state(), xmpp_element()) -> state().
 send(#{mod := Mod} = State, Pkt) ->
+    ?INFO_MSG("mod ~p", [Mod]),
     Mod:send(State, Pkt).
 
-% send_rack(#{mgmt_ack_timer := _} = State) ->
-%     State;
-% send_rack(#{mgmt_xmlns := Xmlns,
-%             mgmt_stanzas_out := NumStanzasOut,
-%             mgmt_ack_timeout := AckTimeout} = State) ->
-%     TRef = erlang:start_timer(AckTimeout, self(), ack_timeout),
-%     State1 = State#{mgmt_ack_timer => TRef, mgmt_stanzas_req => NumStanzasOut},
-%     send(State1, #sm_r{xmlns = Xmlns}).
+send_rack(#{mgmt_ack_timer := _} = State) ->
+    State;
+send_rack(#{mgmt_xmlns := Xmlns,
+            mgmt_stanzas_out := NumStanzasOut,
+            mgmt_ack_timeout := AckTimeout} = State) ->
+    TRef = erlang:start_timer(AckTimeout, self(), ack_timeout),
+    State1 = State#{mgmt_ack_timer => TRef, mgmt_stanzas_req => NumStanzasOut},
+    send(State1, #sm_r{xmlns = Xmlns}).
 
-% resend_rack(#{mgmt_ack_timer := _,
-%               mgmt_queue := Queue,
-%               mgmt_stanzas_out := NumStanzasOut,
-%               mgmt_stanzas_req := NumStanzasReq} = State) ->
-%     State1 = State, % mod_stream_mgmt:cancel_ack_timer(State),
-%     case NumStanzasReq < NumStanzasOut andalso not p1_queue:is_empty(Queue) of
-%         true -> send_rack(State1);
-%         false -> State1
-%     end;
-% resend_rack(State) ->
-%     State.
+resend_rack(#{mgmt_ack_timer := _,
+              mgmt_queue := Queue,
+              mgmt_stanzas_out := NumStanzasOut,
+              mgmt_stanzas_req := NumStanzasReq} = State) ->
+    State1 = mod_stream_mgmt:cancel_ack_timer(State),
+    case NumStanzasReq < NumStanzasOut andalso not p1_queue:is_empty(Queue) of
+        true -> send_rack(State1);
+        false -> State1
+    end;
+resend_rack(State) ->
+    State.
 
 -spec update_num_stanzas_in(state(), xmpp_element()) -> state().
 update_num_stanzas_in(#{mgmt_state := MgmtState,
