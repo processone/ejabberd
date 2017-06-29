@@ -115,7 +115,7 @@ maybe_get_scram_auth(Data) ->
 	    #scram{
 		storedkey = misc:hex_to_base64(proplists:get_value(<<"stored_key">>, Data, <<"">>)),
 		serverkey = misc:hex_to_base64(proplists:get_value(<<"server_key">>, Data, <<"">>)),
-		salt = misc:hex_to_base64(proplists:get_value(<<"salt">>, Data, <<"">>)),
+		salt = base64:encode(proplists:get_value(<<"salt">>, Data, <<"">>)),
 		iterationcount = round(IC)
 	    };
 	_ -> <<"">>
