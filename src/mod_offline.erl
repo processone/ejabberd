@@ -671,7 +671,7 @@ user_queue(User, Server, Query, Lang) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Res = user_queue_parse_query(LUser, LServer, Query),
     HdrsAll = Mod:read_message_headers(LUser, LServer),
-    Hdrs = get_messages_subset(US, Server, HdrsAll),
+    Hdrs = get_messages_subset(User, Server, HdrsAll),
     FMsgs = format_user_queue(Hdrs),
     [?XC(<<"h1">>,
 	 (str:format(?T(<<"~s's Offline Messages Queue">>),
