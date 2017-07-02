@@ -10,6 +10,7 @@ defmodule Ejabberd.Mixfile do
      compile_path: ".",
      compilers: [:asn1] ++ Mix.compilers,
      erlc_options: erlc_options(),
+     erlc_include_path: ["include", "deps/p1_utils/include", "deps/xmpp/include", "deps/fast_xml/include"],
      erlc_paths: ["asn1", "src"],
      # Elixir tests are starting the part of ejabberd they need
      aliases: [test: "test --no-start"],
@@ -33,9 +34,7 @@ defmodule Ejabberd.Mixfile do
   end
 
   defp erlc_options do
-    # Use our own includes + includes from all dependencies
-    includes = ["include"] ++ deps_include(["fast_xml", "xmpp", "p1_utils"])
-    [:debug_info, {:d, :ELIXIR_ENABLED}] ++ Enum.map(includes, fn(path) -> {:i, path} end)
+    [:debug_info, :return_errors, {:d, :ELIXIR_ENABLED}]
   end
 
   defp deps do
