@@ -9,7 +9,8 @@ defmodule Ejabberd.Mixfile do
      elixirc_paths: ["lib"],
      compile_path: ".",
      compilers: [:asn1] ++ Mix.compilers,
-     erlc_options: erlc_options(),
+     erlc_options: [:debug_info, :return_errors, {:d, :ELIXIR_ENABLED}],
+     erlc_include_path: ["include", "deps/p1_utils/include", "deps/xmpp/include", "deps/fast_xml/include"],
      erlc_paths: ["asn1", "src"],
      # Elixir tests are starting the part of ejabberd they need
      aliases: [test: "test --no-start"],
@@ -32,12 +33,6 @@ defmodule Ejabberd.Mixfile do
                          ++ cond_apps()]
   end
 
-  defp erlc_options do
-    # Use our own includes + includes from all dependencies
-    includes = ["include"] ++ deps_include(["fast_xml", "xmpp", "p1_utils"])
-    [:debug_info, {:d, :ELIXIR_ENABLED}] ++ Enum.map(includes, fn(path) -> {:i, path} end)
-  end
-
   defp deps do
     [{:lager, "~> 3.4.0"},
      {:p1_utils, "~> 1.0"},
@@ -54,14 +49,6 @@ defmodule Ejabberd.Mixfile do
      {:distillery, "~> 1.0"},
      {:ex_doc, ">= 0.0.0", only: :dev}]
     ++ cond_deps()
-  end
-
-  defp deps_include(deps) do
-    base = case Mix.Project.deps_paths()[:ejabberd] do
-      nil -> "deps"
-      _ -> ".."
-    end
-    Enum.map(deps, fn dep -> base<>"/#{dep}/include" end)
   end
 
   defp cond_deps do
