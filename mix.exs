@@ -9,7 +9,7 @@ defmodule Ejabberd.Mixfile do
      elixirc_paths: ["lib"],
      compile_path: ".",
      compilers: [:asn1] ++ Mix.compilers,
-     erlc_options: erlc_options(),
+     erlc_options: [:debug_info, :return_errors, {:d, :ELIXIR_ENABLED}],
      erlc_include_path: ["include", "deps/p1_utils/include", "deps/xmpp/include", "deps/fast_xml/include"],
      erlc_paths: ["asn1", "src"],
      # Elixir tests are starting the part of ejabberd they need
@@ -31,10 +31,6 @@ defmodule Ejabberd.Mixfile do
                              :fast_tls, :stringprep, :fast_xml, :xmpp,
                              :stun, :fast_yaml, :esip, :jiffy, :p1_oauth2]
                          ++ cond_apps()]
-  end
-
-  defp erlc_options do
-    [:debug_info, :return_errors, {:d, :ELIXIR_ENABLED}]
   end
 
   defp deps do
