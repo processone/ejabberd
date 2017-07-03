@@ -1,10 +1,11 @@
 -module (ejabberd_acme).
 
--export([directory/1,
+-export([%% Directory
+	 directory/1,
          %% Account
-	 get_account/3,
 	 new_account/4,
 	 update_account/4,
+	 get_account/3,
 	 delete_account/3,
          %% Authorization
 	 new_authz/4,
@@ -14,9 +15,14 @@
 	 new_cert/4,
          get_cert/1,
          revoke_cert/4,
-         %% Debugging Scenarios
+         %% Ejabberdctl Commands
+	 get_certificates/3,
+	 %% Command Options Validity
+	 is_valid_account_opt/1,
+	 %% Debugging Scenarios
 	 scenario/3,
-	 scenario0/2
+	 scenario0/2,
+	 new_user_scenario/2
          %% Not yet implemented
 	 %% key_roll_over/5
          %% delete_authz/3
@@ -40,8 +46,9 @@
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
--spec directory(url()) -> {ok, map(), nonce()} | {error, _}.
-directory(Url) ->
+-spec directory(url()) -> {ok, dirs(), nonce()} | {error, _}.
+directory(CAUrl) ->
+    Url = CAUrl ++ "/directory",
     prepare_get_request(Url, fun get_dirs/1).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -50,27 +57,31 @@ directory(Url) ->
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
--spec new_account(url(), jose_jwk:key(), proplist(), nonce()) ->
+-spec new_account(dirs(), jose_jwk:key(), proplist(), nonce()) ->
 			 {ok, {url(), proplist()}, nonce()} | {error, _}.
-new_account(Url, PrivateKey, Req, Nonce) ->
+new_account(Dirs, PrivateKey, Req, Nonce) ->
+    #{"new-reg" := Url} = Dirs,
     EJson = {[{ <<"resource">>, <<"new-reg">>}] ++ Req},
     prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response_tos/1).
 
--spec update_account(url(), jose_jwk:key(), proplist(), nonce()) ->
+-spec update_account({url(), string()}, jose_jwk:key(), proplist(), nonce()) ->
 			    {ok, proplist(), nonce()} | {error, _}.
-update_account(Url, PrivateKey, Req, Nonce) ->
+update_account({CAUrl, AccId}, PrivateKey, Req, Nonce) ->
+    Url = CAUrl ++ "/acme/reg/" ++ AccId,
     EJson = {[{ <<"resource">>, <<"reg">>}] ++ Req},
     prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response/1).
 
--spec get_account(url(), jose_jwk:key(), nonce()) ->
+-spec get_account({url(), string()}, jose_jwk:key(), nonce()) ->
 			 {ok, {url(), proplist()}, nonce()} | {error, _}.
-get_account(Url, PrivateKey, Nonce) ->
+get_account({CAUrl, AccId}, PrivateKey, Nonce) ->
+    Url = CAUrl ++ "/acme/reg/" ++ AccId,
     EJson = {[{<<"resource">>, <<"reg">>}]},
     prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response_tos/1).
 
--spec delete_account(url(), jose_jwk:key(), nonce()) ->
+-spec delete_account({url(), string()}, jose_jwk:key(), nonce()) ->
 			    {ok, proplist(), nonce()} | {error, _}.
-delete_account(Url, PrivateKey, Nonce) ->
+delete_account({CAUrl, AccId}, PrivateKey, Nonce) ->
+    Url = CAUrl ++ "/acme/reg/" ++ AccId,
     EJson =
 	{[{<<"resource">>, <<"reg">>},
 	  {<<"status">>, <<"deactivated">>}]},
@@ -83,19 +94,22 @@ delete_account(Url, PrivateKey, Nonce) ->
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
--spec new_authz(url(), jose_jwk:key(), proplist(), nonce()) ->
+-spec new_authz(dirs(), jose_jwk:key(), proplist(), nonce()) ->
 		       {ok, {url(), proplist()}, nonce()} | {error, _}.
-new_authz(Url, PrivateKey, Req, Nonce) ->
+new_authz(Dirs, PrivateKey, Req, Nonce) ->
+    #{"new-authz" := Url} = Dirs,
     EJson = {[{<<"resource">>, <<"new-authz">>}] ++ Req},
     prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response_location/1).
 
--spec get_authz(url()) -> {ok, proplist(), nonce()} | {error, _}.
-get_authz(Url) ->
+-spec get_authz({url(), string()}) -> {ok, proplist(), nonce()} | {error, _}.
+get_authz({CAUrl, AuthzId}) ->
+    Url = CAUrl ++ "/acme/authz/" ++ AuthzId,
     prepare_get_request(Url, fun get_response/1).
 
--spec complete_challenge(url(), jose_jwk:key(), proplist(), nonce()) ->
+-spec complete_challenge({url(), string(), string()}, jose_jwk:key(), proplist(), nonce()) ->
 				{ok, proplist(), nonce()} | {error, _}.
-complete_challenge(Url, PrivateKey, Req, Nonce) ->
+complete_challenge({CAUrl, AuthzId, ChallId}, PrivateKey, Req, Nonce) ->
+    Url = CAUrl ++ "/acme/challenge/" ++ AuthzId ++ "/" ++ ChallId,
     EJson = {[{<<"resource">>, <<"challenge">>}] ++ Req},
     prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response/1).
 
@@ -106,20 +120,23 @@ complete_challenge(Url, PrivateKey, Req, Nonce) ->
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
--spec new_cert(url(), jose_jwk:key(), proplist(), nonce()) ->
+-spec new_cert(dirs(), jose_jwk:key(), proplist(), nonce()) ->
 		      {ok, {url(), list()}, nonce()} | {error, _}.
-new_cert(Url, PrivateKey, Req, Nonce) ->
+new_cert(Dirs, PrivateKey, Req, Nonce) ->
+    #{"new-cert" := Url} = Dirs,
     EJson = {[{<<"resource">>, <<"new-cert">>}] ++ Req},
     prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response_location/1,
 			 "application/pkix-cert").
 
--spec get_cert(url()) -> {ok, list(), nonce()} | {error, _}.
-get_cert(Url) ->
+-spec get_cert({url(), string()}) -> {ok, list(), nonce()} | {error, _}.
+get_cert({CAUrl, CertId}) ->
+    Url = CAUrl ++ "/acme/cert/" ++ CertId,
     prepare_get_request(Url, fun get_response/1, "application/pkix-cert").
 
--spec revoke_cert(url(), jose_jwk:key(), proplist(), nonce()) ->
+-spec revoke_cert(dirs(), jose_jwk:key(), proplist(), nonce()) ->
 			 {ok, _, nonce()} | {error, _}.
-revoke_cert(Url, PrivateKey, Req, Nonce) ->
+revoke_cert(Dirs, PrivateKey, Req, Nonce) ->
+    #{"revoke-cert" := Url} = Dirs,
     EJson = {[{<<"resource">>, <<"revoke-cert">>}] ++ Req},
     prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response/1,
                          "application/pkix-cert").
@@ -294,7 +311,7 @@ attribute_parser_fun({AttrName, AttrVal}) ->
 	    {error, bad_attributes}
     end.
 
--spec attribute_oid(atom()) -> tuple().
+-spec attribute_oid(atom()) -> tuple() | no_return().
 attribute_oid(commonName) -> ?'id-at-commonName';
 attribute_oid(countryName) -> ?'id-at-countryName';
 attribute_oid(stateOrProvinceName) -> ?'id-at-stateOrProvinceName';
@@ -309,24 +326,24 @@ attribute_oid(_) -> error(bad_attributes).
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
--spec get_authz_until_valid(url()) -> {ok, proplist(), nonce()} | {error, _}.
-get_authz_until_valid(Url) ->
-    get_authz_until_valid(Url, ?MAX_POLL_REQUESTS).
+-spec get_authz_until_valid({url(), string()}) -> {ok, proplist(), nonce()} | {error, _}.
+get_authz_until_valid({CAUrl, AuthzId}) ->
+    get_authz_until_valid({CAUrl, AuthzId}, ?MAX_POLL_REQUESTS).
 
--spec get_authz_until_valid(url(), non_neg_integer()) ->
+-spec get_authz_until_valid({url(), string()}, non_neg_integer()) ->
 				   {ok, proplist(), nonce()} | {error, _}.
-get_authz_until_valid(Url, 0) ->
+get_authz_until_valid({_CAUrl, _AuthzId}, 0) ->
     ?ERROR_MSG("Maximum request limit waiting for validation reached", []),
     {error, max_request_limit};
-get_authz_until_valid(Url, N) ->
-    case get_authz(Url) of
+get_authz_until_valid({CAUrl, AuthzId}, N) ->
+    case get_authz({CAUrl, AuthzId}) of
 	{ok, Resp, Nonce} ->
 	    case is_authz_valid(Resp) of
 		true ->
 		    {ok, Resp, Nonce};
 		false ->
 		    timer:sleep(?POLL_WAIT_TIME),
-		    get_authz_until_valid(Url, N-1)
+		    get_authz_until_valid({CAUrl, AuthzId}, N-1)
 	    end;
 	{error, _} = Err ->
 	    Err
@@ -461,6 +478,17 @@ get_location(Head) ->
 	none -> none
     end.
 
+-spec location_to_id(url()) -> {ok, string()} | {error, not_found}.
+location_to_id(Url0) ->
+    Url = string:strip(Url0, right, $/),
+    case string:rchr(Url, $/) of
+	0 ->
+	    ?ERROR_MSG("Couldn't find id in url: ~p~n", [Url]),
+	    {error, not_found};
+	Ind ->
+	    {ok, string:sub_string(Url, Ind+1)}
+    end.
+
 %% Very bad way to extract this
 %% TODO: Find a better way
 -spec get_tos(proplist()) -> url() | 'none'.
@@ -529,7 +557,228 @@ failed_http_request({error, Reason}, Url) ->
 	       [Url, Reason]),
     {error, Reason}.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Handle Config and Persistence Files
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+persistent_file() ->
+    MnesiaDir = mnesia:system_info(directory),
+    filename:join(MnesiaDir, "acme.DAT").
+
+read_persistent() ->
+    case file:read_file(persistent_file()) of
+	{ok, Binary} ->
+	    {ok, binary_to_term(Binary)};
+	{error, enoent} ->
+	    {ok, #data{}};
+	{error, Reason} ->
+	    ?ERROR_MSG("Error: ~p reading acme data file", [Reason]),
+	    {error, Reason}
+    end.
+
+write_persistent(Data) ->
+    Binary = term_to_binary(Data),
+    case file:write_file(persistent_file(), Binary) of
+	ok -> ok;
+	{error, Reason} ->
+	    ?ERROR_MSG("Error: ~p writing acme data file", [Reason]),
+	    {error, Reason}
+    end.    
+
+get_account_persistent(#data{account = Account}) ->
+    case Account of
+	#data_acc{id = AccId, key = PrivateKey} ->
+	    {ok, AccId, PrivateKey};
+	none ->
+	    none
+    end.
+
+set_account_persistent(Data = #data{}, {AccId, PrivateKey}) -> 
+    NewAcc = #data_acc{id = AccId, key = PrivateKey},
+    Data#data{account = NewAcc}.
+
+get_config_contact() ->
+    case ejabberd_config:get_option(acme, undefined) of
+	undefined ->
+	    ?ERROR_MSG("No acme configuration has been specified", []),
+	    {error, configuration};
+        Acme ->
+	    case lists:keyfind(contact, 1, Acme) of
+		{contact, Contact} ->
+		    {ok, Contact};
+		false ->
+		    ?ERROR_MSG("No contact has been specified", []),
+		    {error, configuration_contact}
+	    end
+    end.
+
+get_config_hosts() ->
+    case ejabberd_config:get_option(hosts, undefined) of
+	undefined ->
+	    ?ERROR_MSG("No hosts have been specified", []),
+	    {error, configuration_hosts};
+        Hosts ->
+	    {ok, Hosts}
+    end.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Command Functions
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%
+%% Check Validity of command options
+%%
+
+is_valid_account_opt("old-account") -> true;
+is_valid_account_opt("new-account") -> true;
+is_valid_account_opt(_) -> false.
+
+%%
+%% Get Certificate
+%%
+
+%% Needs a hell lot of cleaning
+get_certificates(CAUrl, HttpDir, NewAccountOpt) ->
+    try
+	get_certificates0(CAUrl, HttpDir, NewAccountOpt)
+    catch
+	E:R ->
+	    {E,R}
+    end.
+
+get_certificates0(CAUrl, HttpDir, "old-account") ->
+    %% Read Persistent Data
+    {ok, Data} = read_persistent(),
+
+    %% Get the current account
+    case get_account_persistent(Data) of
+	none ->
+	    ?ERROR_MSG("No existing account", []),
+	    {error, no_old_account};
+	{ok, _AccId, PrivateKey} ->
+	    get_certificates1(CAUrl, HttpDir, PrivateKey)
+    end;
+get_certificates0(CAUrl, HttpDir, "new-account") ->
+    %% Get contact from configuration file
+    {ok, Contact} = get_config_contact(),
+
+    %% Generate a Key
+    PrivateKey = generate_key(),
+
+    %% Create a new account
+    {ok, _Id} = create_new_account(CAUrl, Contact, Key),
+
+    %% Write Persistent Data
+    {ok, Data} = read_persistent(),
+    NewData = set_account_persistent(Data, {Id, Key}),
+    ok = write_persistent(NewData),
+
+    get_certificates1(CAUrl, HttpDir, PrivateKey).
+
+
+get_certificates1(CAUrl, HttpDir, PrivateKey) ->
+    %% Read Config
+    {ok, Hosts} = get_config_hosts(),
+
+    %% Get a certificate for each host
+    PemCertKeys = [get_certificate(CAUrl, Host, PrivateKey, HttpDir) || Host <- Hosts],
+    {AccId, PrivateKey, PemCertKeys}.
+
+
+get_certificate(CAUrl, DomainName, PrivateKey, HttpDir) ->
+    ?INFO_MSG("Getting a Certificate for domain: ~p~n", [DomainName]),
+    case create_new_authorization(CAUrl, DomainName, PrivateKey, HttpDir) of
+	{ok, Authz} ->
+	    create_new_certificate(CAUrl, DomainName, PrivateKey);
+	{error, authorization} ->
+	    {error, {authorization, {host, DomainName}}}
+    end.
+
+%% TODO:
+%% Find a way to ask the user if he accepts the TOS
+create_new_account(CAUrl, Contact, PrivateKey) ->
+    try
+	{ok, Dirs, Nonce0} = directory(CAUrl),
+	Req0 = [{ <<"contact">>, [Contact]}],
+	{ok, {TOS, Account}, Nonce1} = new_account(Dirs, PrivateKey, Req0, Nonce0),
+	{<<"id">>, AccIdInt} = lists:keyfind(<<"id">>, 1, Account),
+	AccId = integer_to_list(AccIdInt),
+	Req1 = [{ <<"agreement">>, list_to_bitstring(TOS)}],
+	{ok, Account2, _Nonce2} = update_account({CAUrl, AccId}, PrivateKey, Req1, Nonce1),
+	{ok, AccId}
+    catch
+	E:R ->
+	    {error,create_new_account}
+    end.
+
+
+create_new_authorization(CAUrl, DomainName, PrivateKey, HttpDir) ->
+    try
+	{ok, Dirs, Nonce0} = directory(CAUrl),
+	Req0 = [{<<"identifier">>,
+		 {[{<<"type">>, <<"dns">>},
+		   {<<"value">>, DomainName}]}},
+		{<<"existing">>, <<"accept">>}],
+	{ok, {AuthzUrl, Authz}, Nonce1} = new_authz(Dirs, PrivateKey, Req0, Nonce0),
+	{ok, AuthzId} = location_to_id(AuthzUrl),
+
+	Challenges = get_challenges(Authz),
+	{ok, ChallengeUrl, KeyAuthz} =
+	    acme_challenge:solve_challenge(<<"http-01">>, Challenges, {PrivateKey, HttpDir}),
+	{ok, ChallengeId} = location_to_id(ChallengeUrl),
+	Req3 = [{<<"type">>, <<"http-01">>},{<<"keyAuthorization">>, KeyAuthz}],
+	{ok, SolvedChallenge, Nonce2} = 
+	    complete_challenge({CAUrl, AuthzId, ChallengeId}, PrivateKey, Req3, Nonce1),
+
+	{ok, AuthzValid, _Nonce} = get_authz_until_valid({CAUrl, AuthzId}),
+	{ok, AuthzValid}
+    catch
+	E:R ->
+	    ?ERROR_MSG("Error: ~p getting an authorization for domain: ~p~n",
+		       [{E,R}, DomainName]),
+	    {error, authorization}
+    end.
+
+create_new_certificate(CAUrl, DomainName, PrivateKey) ->
+    try
+	{ok, Dirs, Nonce0} = directory(CAUrl),
+	CSRSubject = [{commonName, bitstring_to_list(DomainName)}],
+	{CSR, CSRKey} = make_csr(CSRSubject),
+	{NotBefore, NotAfter} = not_before_not_after(),
+	Req =
+	    [{<<"csr">>, CSR},
+	     {<<"notBefore">>, NotBefore},
+	     {<<"NotAfter">>, NotAfter}
+	    ],
+	{ok, {CertUrl, Certificate}, Nonce1} = new_cert(Dirs, PrivateKey, Req, Nonce0),
+
+	{ok, CertId} = location_to_id(CertUrl),
+
+	DecodedCert = public_key:pkix_decode_cert(list_to_binary(Certificate), plain),	
+	PemEntryCert = public_key:pem_entry_encode('Certificate', DecodedCert),
+
+	{_, CSRKeyKey} = jose_jwk:to_key(CSRKey),
+	PemEntryKey = public_key:pem_entry_encode('ECPrivateKey', CSRKeyKey),
+
+	PemCertKey = public_key:pem_encode([PemEntryKey, PemEntryCert]),
+
+	{ok, PemCertKey}
+    catch		     
+	E:R ->
+	    ?ERROR_MSG("Error: ~p getting an authorization for domain: ~p~n",
+		       [{E,R}, DomainName]),
+	    {error, certificate}
+    end.
+not_before_not_after() ->
+    %% TODO: Make notBefore and notAfter like they do it in other clients
+    {MegS, Sec, MicS} = erlang:timestamp(),
+    NotBefore = xmpp_util:encode_timestamp({MegS-1, Sec, MicS}),
+    NotAfter = xmpp_util:encode_timestamp({MegS+1, Sec, MicS}),
+    {NotBefore, NotAfter}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
@@ -539,21 +788,18 @@ failed_http_request({error, Reason}, Url) ->
 
 %% A typical acme workflow
 scenario(CAUrl, AccId, PrivateKey) ->
-    DirURL = CAUrl ++ "/directory",
-    {ok, Dirs, Nonce0} = directory(DirURL),
+    {ok, Dirs, Nonce0} = directory(CAUrl),
 
-    AccURL = CAUrl ++ "/acme/reg/" ++ AccId,
-    {ok, {_TOS, Account}, Nonce1} = get_account(AccURL, PrivateKey, Nonce0),
+    {ok, {_TOS, Account}, Nonce1} = get_account({CAUrl, AccId}, PrivateKey, Nonce0),
     ?INFO_MSG("Account: ~p~n", [Account]),
 
-    #{"new-authz" := NewAuthz} = Dirs,
     Req =
 	[{<<"identifier">>,
 	  {[{<<"type">>, <<"dns">>},
 	    {<<"value">>, <<"my-acme-test-ejabberd.com">>}]}},
 	 {<<"existing">>, <<"accept">>}
 	],
-    {ok, Authz, Nonce2} = new_authz(NewAuthz, PrivateKey, Req, Nonce1),
+    {ok, Authz, Nonce2} = new_authz(Dirs, PrivateKey, Req, Nonce1),
 
     {Account, Authz, PrivateKey}.
 
@@ -561,21 +807,19 @@ scenario(CAUrl, AccId, PrivateKey) ->
 new_user_scenario(CAUrl, HttpDir) ->
     PrivateKey = generate_key(),
 
-    DirURL = CAUrl ++ "/directory",
-    {ok, Dirs, Nonce0} = directory(DirURL),
+    {ok, Dirs, Nonce0} = directory(CAUrl),
     %% ?INFO_MSG("Directories: ~p", [Dirs]),
 
-    #{"new-reg" := NewAccURL} = Dirs,
     Req0 = [{ <<"contact">>, [<<"mailto:cert-example-admin@example2.com">>]}],
-    {ok, {TOS, Account}, Nonce1} = new_account(NewAccURL, PrivateKey, Req0, Nonce0),
+    {ok, {TOS, Account}, Nonce1} = new_account(Dirs, PrivateKey, Req0, Nonce0),
 
-    {_, AccId} = proplists:lookup(<<"id">>, Account),
-    AccURL = CAUrl ++ "/acme/reg/" ++ integer_to_list(AccId),
-    {ok, {_TOS, Account1}, Nonce2} = get_account(AccURL, PrivateKey, Nonce1),
+    {_, AccIdInt} = proplists:lookup(<<"id">>, Account),
+    AccId = integer_to_list(AccIdInt),
+    {ok, {_TOS, Account1}, Nonce2} = get_account({CAUrl, AccId}, PrivateKey, Nonce1),
     %% ?INFO_MSG("Old account: ~p~n", [Account1]),
 
     Req1 = [{ <<"agreement">>, list_to_bitstring(TOS)}],
-    {ok, Account2, Nonce3} = update_account(AccURL, PrivateKey, Req1, Nonce2),
+    {ok, Account2, Nonce3} = update_account({CAUrl, AccId}, PrivateKey, Req1, Nonce2),
 
     %% NewKey = generate_key(),
     %% KeyChangeUrl = CAUrl ++ "/acme/key-change/",
@@ -586,8 +830,7 @@ new_user_scenario(CAUrl, HttpDir) ->
     %% ?INFO_MSG("New account:~p~n", [Account4]),
     %% {Account4, PrivateKey}.
 
-    AccIdBin = list_to_bitstring(integer_to_list(AccId)),
-    #{"new-authz" := NewAuthz} = Dirs,
+    AccIdBin = list_to_bitstring(integer_to_list(AccIdInt)),
     DomainName = << <<"my-acme-test-ejabberd">>/binary, AccIdBin/binary, <<".com">>/binary >>,
     Req2 =
 	[{<<"identifier">>,
@@ -595,26 +838,29 @@ new_user_scenario(CAUrl, HttpDir) ->
 	    {<<"value">>, DomainName}]}},
 	 {<<"existing">>, <<"accept">>}
 	],
-    {ok, {AuthzUrl, Authz}, Nonce4} = new_authz(NewAuthz, PrivateKey, Req2, Nonce3),
+    {ok, {AuthzUrl, Authz}, Nonce4} = new_authz(Dirs, PrivateKey, Req2, Nonce3),
 
-    {ok, Authz2, Nonce5} = get_authz(AuthzUrl),
+    {ok, AuthzId} = location_to_id(AuthzUrl),
+    {ok, Authz2, Nonce5} = get_authz({CAUrl, AuthzId}),
+    ?INFO_MSG("AuthzUrl: ~p~n", [AuthzUrl]),
 
     Challenges = get_challenges(Authz2),
-    %% ?INFO_MSG("Challenges: ~p~n", [Challenges]),
+    ?INFO_MSG("Challenges: ~p~n", [Challenges]),
 
     {ok, ChallengeUrl, KeyAuthz} =
 	acme_challenge:solve_challenge(<<"http-01">>, Challenges, {PrivateKey, HttpDir}),
     ?INFO_MSG("File for http-01 challenge written correctly", []),
 
+    {ok, ChallengeId} = location_to_id(ChallengeUrl),
     Req3 =
 	[ {<<"type">>, <<"http-01">>}
 	, {<<"keyAuthorization">>, KeyAuthz}
 	],
-    {ok, SolvedChallenge, Nonce6} = complete_challenge(ChallengeUrl, PrivateKey, Req3, Nonce5),
+    {ok, SolvedChallenge, Nonce6} = complete_challenge({CAUrl, AuthzId, ChallengeId}, PrivateKey, Req3, Nonce5),
     %% ?INFO_MSG("SolvedChallenge: ~p~n", [SolvedChallenge]),
 
     %% timer:sleep(2000),
-    {ok, Authz3, Nonce7} = get_authz_until_valid(AuthzUrl),
+    {ok, Authz3, Nonce7} = get_authz_until_valid({CAUrl, AuthzId}),
 
     #{"new-cert" := NewCert} = Dirs,
     CSRSubject = [{commonName, bitstring_to_list(DomainName)},
@@ -628,10 +874,11 @@ new_user_scenario(CAUrl, HttpDir) ->
 	 {<<"notBefore">>, NotBefore},
 	 {<<"NotAfter">>, NotAfter}
 	],
-    {ok, {CertUrl, Certificate}, Nonce8} = new_cert(NewCert, PrivateKey, Req4, Nonce7),
+    {ok, {CertUrl, Certificate}, Nonce8} = new_cert(Dirs, PrivateKey, Req4, Nonce7),
+    ?INFO_MSG("CertUrl: ~p~n", [CertUrl]),
 
-
-    {ok, Certificate2, Nonce9} = get_cert(CertUrl),
+    {ok, CertId} = location_to_id(CertUrl),
+    {ok, Certificate2, Nonce9} = get_cert({CAUrl, CertId}),
 
     DecodedCert = public_key:pkix_decode_cert(list_to_binary(Certificate2), plain),
     %% ?INFO_MSG("DecodedCert: ~p~n", [DecodedCert]),
@@ -649,9 +896,8 @@ new_user_scenario(CAUrl, HttpDir) ->
     ok = file:write_file(HttpDir ++ "/my_server.pem", PemCert),
 
     Base64Cert = base64url:encode(Certificate2),
-    #{"revoke-cert" := RevokeCert} = Dirs,
     Req5 = [{<<"certificate">>, Base64Cert}],
-    {ok, [], Nonce10} = revoke_cert(RevokeCert, PrivateKey, Req5, Nonce9),
+    {ok, [], Nonce10} = revoke_cert(Dirs, PrivateKey, Req5, Nonce9),
 
     {ok, Certificate3, Nonce11} = get_cert(CertUrl),
 
@@ -675,28 +921,26 @@ delete_account_scenario(CAUrl) ->
     {ok, Dirs, Nonce0} = directory(DirURL),
     %% ?INFO_MSG("Directories: ~p", [Dirs]),
 
-    #{"new-reg" := NewAccURL} = Dirs,
     Req0 = [{ <<"contact">>, [<<"mailto:cert-example-admin@example2.com">>]}],
-    {ok, {TOS, Account}, Nonce1} = new_account(NewAccURL, PrivateKey, Req0, Nonce0),
+    {ok, {TOS, Account}, Nonce1} = new_account(Dirs, PrivateKey, Req0, Nonce0),
 
-    {_, AccId} = proplists:lookup(<<"id">>, Account),
-    AccURL = CAUrl ++ "/acme/reg/" ++ integer_to_list(AccId),
-    {ok, {_TOS, Account1}, Nonce2} = get_account(AccURL, PrivateKey, Nonce1),
+    {_, AccIdInt} = proplists:lookup(<<"id">>, Account),
+    AccId = integer_to_list(AccIdInt),
+    {ok, {_TOS, Account1}, Nonce2} = get_account({CAUrl, AccId}, PrivateKey, Nonce1),
     %% ?INFO_MSG("Old account: ~p~n", [Account1]),
 
     Req1 = [{ <<"agreement">>, list_to_bitstring(TOS)}],
-    {ok, Account2, Nonce3} = update_account(AccURL, PrivateKey, Req1, Nonce2),
+    {ok, Account2, Nonce3} = update_account({CAUrl, AccId}, PrivateKey, Req1, Nonce2),
 
     %% Delete account
-    {ok, Account3, Nonce4} = delete_account(AccURL, PrivateKey, Nonce3),
+    {ok, Account3, Nonce4} = delete_account({CAUrl, AccId}, PrivateKey, Nonce3),
 
     timer:sleep(3000),
 
-    {ok, {_TOS, Account4}, Nonce5} = get_account(AccURL, PrivateKey, Nonce4),
+    {ok, {_TOS, Account4}, Nonce5} = get_account({CAUrl, AccId}, PrivateKey, Nonce4),
     ?INFO_MSG("New account: ~p~n", [Account4]),
 
-    AccIdBin = list_to_bitstring(integer_to_list(AccId)),
-    #{"new-authz" := NewAuthz} = Dirs,
+    AccIdBin = list_to_bitstring(integer_to_list(AccIdInt)),
     DomainName = << <<"my-acme-test-ejabberd">>/binary, AccIdBin/binary, <<".com">>/binary >>,
     Req2 =
         [{<<"identifier">>,
@@ -704,7 +948,7 @@ delete_account_scenario(CAUrl) ->
             {<<"value">>, DomainName}]}},
          {<<"existing">>, <<"accept">>}
         ],
-    {ok, {AuthzUrl, Authz}, Nonce6} = new_authz(NewAuthz, PrivateKey, Req2, Nonce5),
+    {ok, {AuthzUrl, Authz}, Nonce6} = new_authz(Dirs, PrivateKey, Req2, Nonce5),
 
     {ok, Account1, Account3, Authz}.
 

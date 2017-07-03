@@ -659,6 +659,16 @@ language: "en"
 ##
 ## captcha_limit: 5
 
+###.  ====
+###'  ACME
+
+##
+## Must contain a contact and a directory that the Http Challenges can be solved at
+##
+acme:
+  contact: "mailto:cert-admin-ejabberd@example.com"
+  http_dir: "/home/konstantinos/Desktop/Programming/test-server-for-acme/"
+  
 ###.  =======
 ###'  MODULES
 
