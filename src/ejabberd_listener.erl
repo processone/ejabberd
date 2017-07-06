@@ -302,7 +302,7 @@ accept(ListenSocket, Module, Opts, Interval) ->
 			       ejabberd_config:may_hide_data(inet_parse:ntoa(PAddr)),
 			       PPort, inet_parse:ntoa(Addr), Port]);
 		_ ->
-		    ok
+		    gen_tcp:close(Socket)
 	    end,
 	    accept(ListenSocket, Module, Opts, NewInterval);
 	{error, Reason} ->
