@@ -7,14 +7,14 @@
 -export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1]).
 %% client part hooks
 -export([s2s_out_stream_init/2, s2s_out_stream_features/2,
-         s2s_out_packet/2, s2s_handle_send/3, s2s_handle_info/2,
-         s2s_out_established/1]).
+         s2s_out_packet/2, s2s_out_handle_recv/3, s2s_handle_send/3,
+         s2s_handle_info/2, s2s_out_established/1]).
         % s2s_out_packet/2, s2s_out_handle_recv/3, s2s_out_handle_send/3,
          %s2s_out_handle_info/2, s2s_out_closed/2,
         % s2s_out_terminate/2]). % , s2s_out_established/1]).
 %% server part hooks
--export([s2s_in_post_auth_features/2, s2s_in_init/2,
-         s2s_in_authenticated_packet/2]).
+-export([s2s_in_stream_init/2, s2s_in_stream_features/2,
+         s2s_in_unauthenticated_packet/2, s2s_in_authenticated_packet/2]).
 
 
 -include("xmpp.hrl").
@@ -39,9 +39,9 @@ start(Host, _Opts) ->
     ejabberd_hooks:add(s2s_out_init, Host, ?MODULE, s2s_out_stream_init, 50),
     ejabberd_hooks:add(s2s_out_authenticated_features, 
                        Host, ?MODULE, s2s_out_stream_features, 50),
-    ejabberd_hooks:add(s2s_out_packet, Host, ?MODULE, s2s_out_packet, 5),
-    % ejabberd_hooks:add(s2s_out_handle_recv, 
-    %                    Host, ?MODULE, s2s_out_handle_recv, 50),
+    ejabberd_hooks:add(s2s_out_packet, Host, ?MODULE, s2s_out_packet, 50),
+    ejabberd_hooks:add(s2s_out_handle_recv, 
+                       Host, ?MODULE, s2s_out_handle_recv, 50),
     ejabberd_hooks:add(s2s_out_handle_send, 
                        Host, ?MODULE, s2s_handle_send, 50),
     ejabberd_hooks:add(s2s_out_handle_info,
@@ -50,13 +50,14 @@ start(Host, _Opts) ->
     %                    Host, ?MODULE, s2s_out_closed, 50),
     % ejabberd_hooks:add(s2s_out_terminate,
     %                    Host, ?MODULE, s2s_out_terminate, 50),
-    % delete after implementation of server part
     ejabberd_hooks:add(s2s_out_established,
                        Host, ?MODULE, s2s_out_established, 50),
     %% server part
     ejabberd_hooks:add(s2s_in_post_auth_features,
-                       Host, ?MODULE, s2s_in_post_auth_features, 50),
-    ejabberd_hooks:add(s2s_in_init, ?MODULE, s2s_in_init, 50),
+                       Host, ?MODULE, s2s_in_stream_features, 50),
+    ejabberd_hooks:add(s2s_in_init, ?MODULE, s2s_in_stream_init, 50),
+    ejabberd_hooks:add(s2s_in_unauthenticated_packet,
+                       Host, ?MODULE, s2s_in_unauthenticated_packet, 50),
     ejabberd_hooks:add(s2s_in_authenticated_packet,
                        Host, ?MODULE, s2s_in_authenticated_packet, 50),
     ejabberd_hooks:add(s2s_in_handle_send,
@@ -69,8 +70,8 @@ stop(Host) ->
     ejabberd_hooks:delete(s2s_out_authenticated_features, 
                           Host, ?MODULE, s2s_out_stream_features, 50),
     ejabberd_hooks:delete(s2s_out_packet, Host, ?MODULE, s2s_out_packet, 50),
-    % ejabberd_hooks:delete(s2s_out_handle_recv, 
-    %                       Host, ?MODULE, s2s_out_handle_recv, 50),
+    ejabberd_hooks:delete(s2s_out_handle_recv, 
+                          Host, ?MODULE, s2s_out_handle_recv, 50),
     ejabberd_hooks:delete(s2s_out_handle_send, 
                           Host, ?MODULE, s2s_out_handle_send, 50),
     ejabberd_hooks:delete(s2s_out_handle_info,
@@ -84,8 +85,10 @@ stop(Host) ->
                           Host, ?MODULE, s2s_out_established, 50),
     %% server part
     ejabberd_hooks:delete(s2s_in_post_auth_features,
-                          Host, ?MODULE, s2s_in_post_auth_features, 50),
+                          Host, ?MODULE, s2s_in_stream_features, 50),
     % ejabberd_hooks:delete(s2s_in_init, ?MODULE, s2s_in_init),
+    ejabberd_hooks:delete(s2s_in_unauthenticated_packet,
+                          Host, ?MODULE, s2s_in_unauthenticated_packet, 50),
     ejabberd_hooks:delete(s2s_in_authenticated_packet,
                           Host, ?MODULE, s2s_in_authenticated_packet, 50),
     ejabberd_hooks:delete(s2s_in_handle_send,
@@ -191,7 +194,6 @@ s2s_out_packet(State, Pkt) ->
 
 s2s_handle_send(#{mgmt_state := MgmtState, lang := Lang} = State, Pkt, SendResult)
   when MgmtState == active; MgmtState == wait_for_enabled ->
-    ?INFO_MSG("handle send ~p", [Pkt]),
     case Pkt of
         _ when ?is_stanza(Pkt) ->
             Meta = xmpp:get_meta(Pkt),
@@ -225,15 +227,18 @@ s2s_handle_info(#{mgmt_ack_timer := TRef, remote_server := RServer,
 s2s_handle_info(State, _) ->
     State.
 
+s2s_out_handle_recv(#{mgmt_state := wait_for_enabled,
+                      remote_server := RServer} = State, _El, #sm_failed{}) ->
+    ?DEBUG("Remote server ~s can't enable stream management", [RServer]),
+    State#{mgmt_state => inactive};
+s2s_out_handle_recv(State, _El, _Pkt) ->
+    State.
+
 %% client part
 
 %% server part
 
-s2s_in_post_auth_features(Acc, _Host) ->
-    [#feature_sm{xmlns = ?NS_STREAM_MGMT_2},
-     #feature_sm{xmlns = ?NS_STREAM_MGMT_3}| Acc].
-
-s2s_in_init({ok, #{server_host := Host} = State}, _Opts) ->
+s2s_in_stream_init({ok, #{server_host := Host} = State}, _Opts) ->
     Timeout = get_resume_timeout(Host),
     MaxTimeout = get_max_resume_timeout(Host, Timeout),
     {ok, State#{mgmt_state => inactive,
@@ -244,13 +249,23 @@ s2s_in_init({ok, #{server_host := Host} = State}, _Opts) ->
                 mgmt_stanzas_in => 0,
                 mgmt_stanzas_out => 0,
                 mgmt_stanzas_req => 0}};
-s2s_in_init(State, _Opts) ->
+s2s_in_stream_init(State, _Opts) ->
+    State.
+
+s2s_in_stream_features(Acc, _Host) ->
+    [#feature_sm{xmlns = ?NS_STREAM_MGMT_2},
+     #feature_sm{xmlns = ?NS_STREAM_MGMT_3}| Acc].
+
+s2s_in_unauthenticated_packet(State, Pkt) when ?is_sm_packet(Pkt) ->
+    Err = #sm_failed{reason = 'unexpected-request', xmlns = ?NS_STREAM_MGMT_3},
+    {stop, send(State, Err)};
+s2s_in_unauthenticated_packet(State, Pkt) ->
     State.
 
 s2s_in_authenticated_packet(#{mgmt_state := MgmtState} = State, Pkt)
   when ?is_sm_packet(Pkt) ->
     if MgmtState == active ->
-            {stop, server_perform_stream_mgmt(Pkt, State)};
+            {stop, perform_stream_mgmt(Pkt, State)};
        MgmtState == inactive ->
             {stop, server_negotiate_stream_mgmt(Pkt, State)};
        true ->
@@ -377,38 +392,10 @@ server_negotiate_stream_mgmt(Pkt, State) ->
             send(State, Err)
     end.
 
-handle_enable(#{remote_server := RServer,
-                mgmt_timeout := DefaultTimeout,
-                mgmt_max_timeout := MaxTimeout,
-                mgmt_xmlns := Xmlns,
-                mgmt_queue_type := QueueType} = State,
-              #sm_enable{resume = Resume, max = Max}) ->
-    Timeout =
-        if Resume == false ->
-                0;
-           Max /= undefined, Max > 0, Max =< MaxTimeout ->
-                Max;
-           true ->
-                DefaultTimeout
-        end,
-    Res = if Timeout > 0 ->
-                  ?INFO_MSG("Stream management with "
-                            "resumption enabled for ~s", [RServer]),
-                  #sm_enabled{resume = true,
-                              id = make_resume_id(State),
-                              max = Timeout, xmlns = Xmlns};
-             true ->
-                  ?INFO_MSG("Stream management enabled for ~s", [RServer]),
-                  #sm_enabled{xmlns = Xmlns}
-          end,
-    State1 = State#{mgmt_state => active,
-                    mgmt_timeout => Timeout,
-                    mgmt_queue => p1_queue:new(QueueType)},
-    send(State1, Res).
-
 % mgmt_state := active, pending and pkt is sm packet
--spec server_perform_stream_mgmt(xmpp_element(), state()) -> state().
-server_perform_stream_mgmt(Pkt, #{mgmt_xmlns := Xmlns} = State) ->
+% ask about error messages for client part
+-spec perform_stream_mgmt(xmpp_element(), state()) -> state().
+perform_stream_mgmt(Pkt, #{mgmt_xmlns := Xmlns} = State) ->
     case xmpp:get_ns(Pkt) of
         Xmlns ->
             case Pkt of
@@ -437,6 +424,35 @@ negotiate_stream_mgmt(Pkt, #{mgmt_xmlns := Xmlns} = State) ->
             Err = #sm_failed{reason = 'bad-request', xmlns = Xmlns},
             send(State, Err)
     end.
+
+handle_enable(#{remote_server := RServer,
+                mgmt_timeout := DefaultTimeout,
+                mgmt_max_timeout := MaxTimeout,
+                mgmt_xmlns := Xmlns,
+                mgmt_queue_type := QueueType} = State,
+              #sm_enable{resume = Resume, max = Max}) ->
+    Timeout =
+        if Resume == false ->
+                0;
+           Max /= undefined, Max > 0, Max =< MaxTimeout ->
+                Max;
+           true ->
+                DefaultTimeout
+        end,
+    Res = if Timeout > 0 ->
+                  ?INFO_MSG("Stream management with "
+                            "resumption enabled for ~s", [RServer]),
+                  #sm_enabled{resume = true,
+                              id = make_resume_id(State),
+                              max = Timeout, xmlns = Xmlns};
+             true ->
+                  ?INFO_MSG("Stream management enabled for ~s", [RServer]),
+                  #sm_enabled{xmlns = Xmlns}
+          end,
+    State1 = State#{mgmt_state => active,
+                    mgmt_timeout => Timeout,
+                    mgmt_queue => p1_queue:new(QueueType)},
+    send(State1, Res).
 
 -spec handle_enabled(state(), sm_enabled()) -> state().
 handle_enabled(#{remote_server := RServer,
@@ -467,23 +483,6 @@ handle_enabled(#{remote_server := RServer,
         end,
 
     State2#{mgmt_state => active, mgmt_timeout => Timeout}.
-
-% mgmt_state := active, pending and pkt is sm packet
--spec perform_stream_mgmt(xmpp_element(), state()) -> state().
-perform_stream_mgmt(Pkt, #{mgmt_xmlns := Xmlns} = State) ->
-    case xmpp:get_ns(Pkt) of
-        Xmlns ->
-            case Pkt of
-                #sm_a{} ->
-                    handle_a(State, Pkt);
-                #sm_r{} ->
-                    handle_r(State);
-                _ ->
-                    send(State, #sm_failed{reason = 'bad-request', xmlns = Xmlns})
-            end;
-        _ ->
-            send(State, #sm_failed{reason = 'unsupported-version', xmlns = Xmlns})
-    end.
 
 -spec handle_r(state()) -> state().
 handle_r(#{mgmt_stanzas_in := H,
@@ -595,7 +594,6 @@ check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut,
 
 -spec send(state(), xmpp_element()) -> state().
 send(#{mod := Mod} = State, Pkt) ->
-    ?INFO_MSG("mod ~p", [Mod]),
     Mod:send(State, Pkt).
 
 send_rack(#{mgmt_ack_timer := _} = State) ->
