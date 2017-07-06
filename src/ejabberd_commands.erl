@@ -355,6 +355,8 @@ expose_commands(Commands) ->
                       Commands),
 
     case ejabberd_config:add_option(commands, [{add_commands, Names}]) of
+	ok ->
+	    ok;
         {aborted, Reason} ->
             {error, Reason};
         {atomic, Result} ->
