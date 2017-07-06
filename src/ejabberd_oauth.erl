@@ -50,7 +50,7 @@
 	 config_reloaded/0,
          opt_type/1]).
 
--export([oauth_issue_token/3, oauth_list_tokens/0, oauth_revoke_token/1, oauth_list_scopes/0]).
+-export([oauth_issue_token/3, oauth_list_tokens/0, oauth_revoke_token/1]).
 
 -include("xmpp.hrl").
 
@@ -96,14 +96,6 @@ get_commands_spec() ->
                         policy = restricted,
                         result = {tokens, {list, {token, {tuple, [{token, string}, {user, string}, {scope, string}, {expires_in, string}]}}}}
                        },
-     #ejabberd_commands{name = oauth_list_scopes, tags = [oauth],
-                        desc = "List scopes that can be granted, and commands",
-                        longdesc = "List scopes that can be granted to tokens generated through the command line, together with the commands they allow",
-                        module = ?MODULE, function = oauth_list_scopes,
-                        args = [],
-                        policy = restricted,
-                        result = {scopes, {list, {scope, {tuple, [{scope, string}, {commands, string}]}}}}
-                       },
      #ejabberd_commands{name = oauth_revoke_token, tags = [oauth],
                         desc = "Revoke authorization for a token (only Mnesia)",
                         module = ?MODULE, function = oauth_revoke_token,
@@ -142,9 +134,6 @@ oauth_list_tokens() ->
 oauth_revoke_token(Token) ->
     ok = mnesia:dirty_delete(oauth_token, list_to_binary(Token)),
     oauth_list_tokens().
-
-oauth_list_scopes() ->
-    [ {Scope, string:join([atom_to_list(Cmd) || Cmd <- Cmds], ",")}   || {Scope, Cmds} <- dict:to_list(get_cmd_scopes())].
 
 config_reloaded() ->
     DBMod = get_db_backend(),
@@ -239,17 +228,6 @@ verify_resowner_scope({user, _User, _Server}, Scope, Ctx) ->
 verify_resowner_scope(_, _, _) ->
     {error, badscope}.
 
-
-get_cmd_scopes() ->
-    ScopeMap = lists:foldl(fun(Cmd, Accum) ->
-                        case ejabberd_commands:get_command_policy_and_scope(Cmd) of
-                            {ok, Policy, Scopes} when Policy =/= restricted ->
-                                lists:foldl(fun(Scope, Accum2) ->
-                                                    dict:append(Scope, Cmd, Accum2)
-                                            end, Accum, Scopes);
-                            _ -> Accum
-                        end end, dict:new(), ejabberd_commands:get_exposed_commands()),
-    ScopeMap.
 
 %% This is callback for oauth tokens generated through the command line.  Only open and admin commands are
 %% made available.
@@ -755,7 +733,7 @@ css() ->
             text-decoration: underline;
           }
 
-      .container > .section { 
+      .container > .section {
           background: #424A55;
       }
 
