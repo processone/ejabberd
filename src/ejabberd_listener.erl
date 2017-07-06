@@ -109,6 +109,7 @@ init_udp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
 	{ok, Socket} ->
 	    %% Inform my parent that this port was opened succesfully
 	    proc_lib:init_ack({ok, self()}),
+	    application:ensure_started(ejabberd),
 	    start_module_sup(Port, Module),
 	    ?INFO_MSG("Start accepting UDP connections at ~s for ~p",
 		      [format_portip(PortIP), Module]),
@@ -134,6 +135,7 @@ init_tcp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
     ListenSocket = listen_tcp(PortIP, Module, SockOpts, Port, IPS),
     %% Inform my parent that this port was opened succesfully
     proc_lib:init_ack({ok, self()}),
+    application:ensure_started(ejabberd),
     start_module_sup(Port, Module),
     ?INFO_MSG("Start accepting TCP connections at ~s for ~p",
 	      [format_portip(PortIP), Module]),
