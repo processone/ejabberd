@@ -31,9 +31,11 @@ defmodule ModHttpApiTest do
     :ok = :mnesia.start
     :ejabberd_mnesia.start
     :stringprep.start
+    :ejabberd_hooks.start_link
     :ok = :ejabberd_config.start(["localhost"], [])
+    :acl.start_link
     {:ok, _} = :ejabberd_access_permissions.start_link()
-    :ok = :ejabberd_commands.init
+    {:ok, _} = :ejabberd_commands.start_link
     :ok = :ejabberd_commands.register_commands(cmds)
     on_exit fn ->
       :meck.unload
@@ -42,7 +44,7 @@ defmodule ModHttpApiTest do
 
   test "We can expose several commands to API at a time" do
     setup_mocks()
-    :ejabberd_commands.expose_commands([:open_cmd, :user_cmd])
+    assert :ok == :ejabberd_commands.expose_commands([:open_cmd, :user_cmd])
     commands = :ejabberd_commands.get_exposed_commands()
     assert Enum.member?(commands, :open_cmd)
     assert Enum.member?(commands, :user_cmd)
@@ -58,14 +60,14 @@ defmodule ModHttpApiTest do
   # This related to the commands config file option
   test "Attempting to access a command that is not exposed as HTTP API returns 403" do
     setup_mocks()
-    :ejabberd_commands.expose_commands([])
+    assert :ok == :ejabberd_commands.expose_commands([])
     request = request(method: :POST, ip: {{127,0,0,1},50000}, data: "[]")
     {403, _, _} = :mod_http_api.process(["open_cmd"], request)
   end
 
   test "Call to user, admin or restricted commands without authentication are rejected" do
     setup_mocks()
-    :ejabberd_commands.expose_commands([:user_cmd, :admin_cmd, :restricted])
+    assert :ok == :ejabberd_commands.expose_commands([:user_cmd, :admin_cmd, :restricted])
     request = request(method: :POST, ip: {{127,0,0,1},50000}, data: "[]")
     {403, _, _} = :mod_http_api.process(["user_cmd"], request)
     {403, _, _} = :mod_http_api.process(["admin_cmd"], request)
