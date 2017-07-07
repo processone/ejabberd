@@ -412,7 +412,9 @@ decode_item(#privacy_item{order = Order,
 
 -spec c2s_copy_session(c2s_state(), c2s_state()) -> c2s_state().
 c2s_copy_session(State, #{privacy_active_list := List}) ->
-    State#{privacy_active_list => List}.
+    State#{privacy_active_list => List};
+c2s_copy_session(State, _) ->
+    State.
 
 -spec user_send_packet({stanza(), c2s_state()}) -> {stanza(), c2s_state()}.
 user_send_packet({#iq{type = Type,
