@@ -410,7 +410,7 @@ decode_item(#privacy_item{order = Order,
 			      match_presence_out = MatchPresenceOut}
     end.
 
--spec c2s_copy_session(ejabberd_c2s:state(), c2s_state()) -> c2s_state().
+-spec c2s_copy_session(c2s_state(), c2s_state()) -> c2s_state().
 c2s_copy_session(State, #{privacy_active_list := List}) ->
     State#{privacy_active_list => List}.
 
