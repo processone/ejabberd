@@ -25,3 +25,7 @@
 -type handle_resp_fun() :: fun(({ok, proplist(), proplist()}) -> {ok, _, nonce()}).
 
 -type acme_challenge() :: #challenge{}.
+
+-type account_opt() :: string().
+
+-type pem_certificate() :: bitstring().

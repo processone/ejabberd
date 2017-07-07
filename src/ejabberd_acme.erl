@@ -23,6 +23,179 @@
 -include_lib("public_key/include/public_key.hrl").
 
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Command Functions
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%
+%% Check Validity of command options
+%%
+
+-spec is_valid_account_opt(string()) -> boolean().
+is_valid_account_opt("old-account") -> true;
+is_valid_account_opt("new-account") -> true;
+is_valid_account_opt(_) -> false.
+
+%%
+%% Get Certificate
+%%
+
+%% Needs a hell lot of cleaning
+-spec get_certificates(url(), string(), account_opt()) -> 
+			      [{'ok', bitstring(), 'saved'} | {'error', bitstring(), _}] | 
+			      {'error', _}.
+get_certificates(CAUrl, HttpDir, NewAccountOpt) ->
+    try
+	get_certificates0(CAUrl, HttpDir, NewAccountOpt)
+    catch
+	E:R ->
+	    %% ?ERROR_MSG("Unknown ~p:~p", [E, R]), 
+	    {error, get_certificates}
+    end.
+
+-spec get_certificates0(url(), string(), account_opt()) -> 
+			       [{'ok', bitstring(), 'saved'} | {'error', bitstring(), _}] |
+			       {'error', _}.
+get_certificates0(CAUrl, HttpDir, "old-account") ->
+    %% Read Persistent Data
+    {ok, Data} = read_persistent(),
+
+    %% Get the current account
+    case get_account_persistent(Data) of
+	none ->
+	    ?ERROR_MSG("No existing account", []),
+	    {error, no_old_account};
+	{ok, _AccId, PrivateKey} ->
+	    get_certificates1(CAUrl, HttpDir, PrivateKey)
+    end;
+get_certificates0(CAUrl, HttpDir, "new-account") ->
+    %% Get contact from configuration file
+    {ok, Contact} = get_config_contact(),
+
+    %% Generate a Key
+    PrivateKey = generate_key(),
+
+    %% Create a new account
+    {ok, Id} = create_new_account(CAUrl, Contact, PrivateKey),
+
+    %% Write Persistent Data
+    {ok, Data} = read_persistent(),
+    NewData = set_account_persistent(Data, {Id, PrivateKey}),
+    ok = write_persistent(NewData),
+
+    get_certificates1(CAUrl, HttpDir, PrivateKey).
+
+-spec get_certificates1(url(), string(), jose_jwk:key()) -> 
+			       {'ok', [{'ok', pem_certificate()} | {'error', _}]} | 
+			       {'error', _}.
+get_certificates1(CAUrl, HttpDir, PrivateKey) ->
+    %% Read Config
+    {ok, Hosts} = get_config_hosts(),
+
+    %% Get a certificate for each host
+    PemCertKeys = [get_certificate(CAUrl, Host, PrivateKey, HttpDir) || Host <- Hosts],
+
+    %% Save Certificates
+    SavedCerts = [save_certificate(Cert) || Cert <- PemCertKeys],
+
+    %% Format the result to send back to ejabberdctl
+    %% Result
+    SavedCerts.
+
+-spec get_certificate(url(), bitstring(), jose_jwk:key(), string()) -> 
+			     {'ok', pem_certificate()} | 
+			     {'error', _}.
+get_certificate(CAUrl, DomainName, PrivateKey, HttpDir) ->
+    ?INFO_MSG("Getting a Certificate for domain: ~p~n", [DomainName]),
+    case create_new_authorization(CAUrl, DomainName, PrivateKey, HttpDir) of
+	{ok, _Authz} ->
+	    create_new_certificate(CAUrl, DomainName, PrivateKey);
+	{error, authorization} ->
+	    {error, DomainName, authorization}
+    end.
+
+%% TODO:
+%% Find a way to ask the user if he accepts the TOS
+create_new_account(CAUrl, Contact, PrivateKey) ->
+    try
+	{ok, Dirs, Nonce0} = ejabberd_acme_comm:directory(CAUrl),
+	Req0 = [{ <<"contact">>, [Contact]}],
+	{ok, {TOS, Account}, Nonce1} = 
+	    ejabberd_acme_comm:new_account(Dirs, PrivateKey, Req0, Nonce0),
+	{<<"id">>, AccIdInt} = lists:keyfind(<<"id">>, 1, Account),
+	AccId = integer_to_list(AccIdInt),
+	Req1 = [{ <<"agreement">>, list_to_bitstring(TOS)}],
+	{ok, _Account2, _Nonce2} = 
+	    ejabberd_acme_comm:update_account({CAUrl, AccId}, PrivateKey, Req1, Nonce1),
+	{ok, AccId}
+    catch
+	E:R ->
+	    {error,create_new_account}
+    end.
+
+
+create_new_authorization(CAUrl, DomainName, PrivateKey, HttpDir) ->
+    try
+	{ok, Dirs, Nonce0} = ejabberd_acme_comm:directory(CAUrl),
+	Req0 = [{<<"identifier">>,
+		 {[{<<"type">>, <<"dns">>},
+		   {<<"value">>, DomainName}]}},
+		{<<"existing">>, <<"accept">>}],
+	{ok, {AuthzUrl, Authz}, Nonce1} = 
+	    ejabberd_acme_comm:new_authz(Dirs, PrivateKey, Req0, Nonce0),
+	{ok, AuthzId} = location_to_id(AuthzUrl),
+
+	Challenges = get_challenges(Authz),
+	{ok, ChallengeUrl, KeyAuthz} =
+	    acme_challenge:solve_challenge(<<"http-01">>, Challenges, {PrivateKey, HttpDir}),
+	{ok, ChallengeId} = location_to_id(ChallengeUrl),
+	Req3 = [{<<"type">>, <<"http-01">>},{<<"keyAuthorization">>, KeyAuthz}],
+	{ok, SolvedChallenge, Nonce2} = ejabberd_acme_comm:complete_challenge(
+					  {CAUrl, AuthzId, ChallengeId}, PrivateKey, Req3, Nonce1),
+
+	{ok, AuthzValid, _Nonce} = ejabberd_acme_comm:get_authz_until_valid({CAUrl, AuthzId}),
+	{ok, AuthzValid}
+    catch
+	E:R ->
+	    ?ERROR_MSG("Error: ~p getting an authorization for domain: ~p~n",
+		       [{E,R}, DomainName]),
+	    {error, authorization}
+    end.
+
+create_new_certificate(CAUrl, DomainName, PrivateKey) ->
+    try
+	{ok, Dirs, Nonce0} = ejabberd_acme_comm:directory(CAUrl),
+	CSRSubject = [{commonName, bitstring_to_list(DomainName)}],
+	{CSR, CSRKey} = make_csr(CSRSubject),
+	{NotBefore, NotAfter} = not_before_not_after(),
+	Req =
+	    [{<<"csr">>, CSR},
+	     {<<"notBefore">>, NotBefore},
+	     {<<"NotAfter">>, NotAfter}
+	    ],
+	{ok, {CertUrl, Certificate}, Nonce1} = ejabberd_acme_comm:new_cert(Dirs, PrivateKey, Req, Nonce0),
+
+	{ok, CertId} = location_to_id(CertUrl),
+
+	DecodedCert = public_key:pkix_decode_cert(list_to_binary(Certificate), plain),	
+	PemEntryCert = public_key:pem_entry_encode('Certificate', DecodedCert),
+
+	{_, CSRKeyKey} = jose_jwk:to_key(CSRKey),
+	PemEntryKey = public_key:pem_entry_encode('ECPrivateKey', CSRKeyKey),
+
+	PemCertKey = public_key:pem_encode([PemEntryKey, PemEntryCert]),
+
+	{ok, DomainName, PemCertKey}
+    catch		     
+	E:R ->
+	    ?ERROR_MSG("Error: ~p getting an authorization for domain: ~p~n",
+		       [{E,R}, DomainName]),
+	    {error, certificate}
+    end.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
 %% Certificate Request Functions
@@ -34,7 +207,7 @@
 %% TODO: Make this function handle more signing keys
 %%  1. Derive oid from Key
 %%  2. Derive the whole algo objects from Key
-%% TODO: Encode Strings using length.
+%% TODO: Encode Strings using length using a library function
 
 -spec make_csr(proplist()) -> {binary(), jose_jwk:key()}.
 make_csr(Attributes) ->
@@ -192,6 +365,13 @@ get_challenges(Body) ->
     {<<"challenges">>, Challenges} = proplists:lookup(<<"challenges">>, Body),
     Challenges.
 
+not_before_not_after() ->
+    %% TODO: Make notBefore and notAfter like they do it in other clients
+    {MegS, Sec, MicS} = erlang:timestamp(),
+    NotBefore = xmpp_util:encode_timestamp({MegS-1, Sec, MicS}),
+    NotAfter = xmpp_util:encode_timestamp({MegS+1, Sec, MicS}),
+    {NotBefore, NotAfter}.
+
 is_error({error, _}) -> true;
 is_error(_) -> false.
 
@@ -237,19 +417,47 @@ set_account_persistent(Data = #data{}, {AccId, PrivateKey}) ->
     NewAcc = #data_acc{id = AccId, key = PrivateKey},
     Data#data{account = NewAcc}.
 
-get_config_contact() ->
+save_certificate({error, _, _} = Error) ->
+    Error;
+save_certificate({ok, DomainName, Cert}) ->
+    try
+	{ok, CertDir} = get_config_cert_dir(),
+	DomainString = bitstring_to_list(DomainName),
+	CertificateFile = filename:join([CertDir, DomainString ++ "_cert.pem"]),
+	case file:write_file(CertificateFile, Cert) of
+	    ok ->
+		{ok, DomainName, saved};
+	    {error, Reason} ->
+		?ERROR_MSG("Error: ~p saving certificate at file: ~p",
+			   [Reason, CertificateFile]),
+	        {error, DomainName, saving}
+	end
+    catch
+	E:R ->
+	    {error, DomainName, saving}
+    end.
+
+get_config_acme() ->
     case ejabberd_config:get_option(acme, undefined) of
 	undefined ->
 	    ?ERROR_MSG("No acme configuration has been specified", []),
 	    {error, configuration};
         Acme ->
+	    {ok, Acme}
+    end.
+
+get_config_contact() ->
+    case get_config_acme() of
+	{ok, Acme} ->
 	    case lists:keyfind(contact, 1, Acme) of
 		{contact, Contact} ->
 		    {ok, Contact};
 		false ->
 		    ?ERROR_MSG("No contact has been specified", []),
 		    {error, configuration_contact}
-	    end
+	    end;
+	{error, Reason} ->
+	    {error, Reason}
     end.
 
 get_config_hosts() ->
@@ -261,165 +469,19 @@ get_config_hosts() ->
 	    {ok, Hosts}
     end.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%
-%% Command Functions
-%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%
-%% Check Validity of command options
-%%
-
-is_valid_account_opt("old-account") -> true;
-is_valid_account_opt("new-account") -> true;
-is_valid_account_opt(_) -> false.
-
-%%
-%% Get Certificate
-%%
-
-%% Needs a hell lot of cleaning
-get_certificates(CAUrl, HttpDir, NewAccountOpt) ->
-    try
-	get_certificates0(CAUrl, HttpDir, NewAccountOpt)
-    catch
-	E:R ->
-	    {E,R}
+get_config_cert_dir() ->
+    case get_config_acme() of
+	{ok, Acme} ->
+    	    case lists:keyfind(cert_dir, 1, Acme) of
+		{cert_dir, CertDir} ->
+		    {ok, CertDir};
+		false ->
+		    ?ERROR_MSG("No certificate directory has been specified", []),
+		    {error, configuration_cert_dir}
+	    end;
+	{error, Reason} ->
+	    {error, Reason}
     end.
-
-get_certificates0(CAUrl, HttpDir, "old-account") ->
-    %% Read Persistent Data
-    {ok, Data} = read_persistent(),
-
-    %% Get the current account
-    case get_account_persistent(Data) of
-	none ->
-	    ?ERROR_MSG("No existing account", []),
-	    {error, no_old_account};
-	{ok, _AccId, PrivateKey} ->
-	    get_certificates1(CAUrl, HttpDir, PrivateKey)
-    end;
-get_certificates0(CAUrl, HttpDir, "new-account") ->
-    %% Get contact from configuration file
-    {ok, Contact} = get_config_contact(),
-
-    %% Generate a Key
-    PrivateKey = generate_key(),
-
-    %% Create a new account
-    {ok, Id} = create_new_account(CAUrl, Contact, PrivateKey),
-
-    %% Write Persistent Data
-    {ok, Data} = read_persistent(),
-    NewData = set_account_persistent(Data, {Id, PrivateKey}),
-    ok = write_persistent(NewData),
-
-    get_certificates1(CAUrl, HttpDir, PrivateKey).
-
-
-get_certificates1(CAUrl, HttpDir, PrivateKey) ->
-    %% Read Config
-    {ok, Hosts} = get_config_hosts(),
-
-    %% Get a certificate for each host
-    PemCertKeys = [get_certificate(CAUrl, Host, PrivateKey, HttpDir) || Host <- Hosts],
-    {ok, PrivateKey, PemCertKeys}.
-
-
-get_certificate(CAUrl, DomainName, PrivateKey, HttpDir) ->
-    ?INFO_MSG("Getting a Certificate for domain: ~p~n", [DomainName]),
-    case create_new_authorization(CAUrl, DomainName, PrivateKey, HttpDir) of
-	{ok, _Authz} ->
-	    create_new_certificate(CAUrl, DomainName, PrivateKey);
-	{error, authorization} ->
-	    {error, {authorization, {host, DomainName}}}
-    end.
-
-%% TODO:
-%% Find a way to ask the user if he accepts the TOS
-create_new_account(CAUrl, Contact, PrivateKey) ->
-    try
-	{ok, Dirs, Nonce0} = ejabberd_acme_comm:directory(CAUrl),
-	Req0 = [{ <<"contact">>, [Contact]}],
-	{ok, {TOS, Account}, Nonce1} = 
-	    ejabberd_acme_comm:new_account(Dirs, PrivateKey, Req0, Nonce0),
-	{<<"id">>, AccIdInt} = lists:keyfind(<<"id">>, 1, Account),
-	AccId = integer_to_list(AccIdInt),
-	Req1 = [{ <<"agreement">>, list_to_bitstring(TOS)}],
-	{ok, _Account2, _Nonce2} = 
-	    ejabberd_acme_comm:update_account({CAUrl, AccId}, PrivateKey, Req1, Nonce1),
-	{ok, AccId}
-    catch
-	E:R ->
-	    {error,create_new_account}
-    end.
-
-
-create_new_authorization(CAUrl, DomainName, PrivateKey, HttpDir) ->
-    try
-	{ok, Dirs, Nonce0} = ejabberd_acme_comm:directory(CAUrl),
-	Req0 = [{<<"identifier">>,
-		 {[{<<"type">>, <<"dns">>},
-		   {<<"value">>, DomainName}]}},
-		{<<"existing">>, <<"accept">>}],
-	{ok, {AuthzUrl, Authz}, Nonce1} = 
-	    ejabberd_acme_comm:new_authz(Dirs, PrivateKey, Req0, Nonce0),
-	{ok, AuthzId} = location_to_id(AuthzUrl),
-
-	Challenges = get_challenges(Authz),
-	{ok, ChallengeUrl, KeyAuthz} =
-	    acme_challenge:solve_challenge(<<"http-01">>, Challenges, {PrivateKey, HttpDir}),
-	{ok, ChallengeId} = location_to_id(ChallengeUrl),
-	Req3 = [{<<"type">>, <<"http-01">>},{<<"keyAuthorization">>, KeyAuthz}],
-	{ok, SolvedChallenge, Nonce2} = ejabberd_acme_comm:complete_challenge(
-					  {CAUrl, AuthzId, ChallengeId}, PrivateKey, Req3, Nonce1),
-
-	{ok, AuthzValid, _Nonce} = ejabberd_acme_comm:get_authz_until_valid({CAUrl, AuthzId}),
-	{ok, AuthzValid}
-    catch
-	E:R ->
-	    ?ERROR_MSG("Error: ~p getting an authorization for domain: ~p~n",
-		       [{E,R}, DomainName]),
-	    {error, authorization}
-    end.
-
-create_new_certificate(CAUrl, DomainName, PrivateKey) ->
-    try
-	{ok, Dirs, Nonce0} = ejabberd_acme_comm:directory(CAUrl),
-	CSRSubject = [{commonName, bitstring_to_list(DomainName)}],
-	{CSR, CSRKey} = make_csr(CSRSubject),
-	{NotBefore, NotAfter} = not_before_not_after(),
-	Req =
-	    [{<<"csr">>, CSR},
-	     {<<"notBefore">>, NotBefore},
-	     {<<"NotAfter">>, NotAfter}
-	    ],
-	{ok, {CertUrl, Certificate}, Nonce1} = ejabberd_acme_comm:new_cert(Dirs, PrivateKey, Req, Nonce0),
-
-	{ok, CertId} = location_to_id(CertUrl),
-
-	DecodedCert = public_key:pkix_decode_cert(list_to_binary(Certificate), plain),	
-	PemEntryCert = public_key:pem_entry_encode('Certificate', DecodedCert),
-
-	{_, CSRKeyKey} = jose_jwk:to_key(CSRKey),
-	PemEntryKey = public_key:pem_entry_encode('ECPrivateKey', CSRKeyKey),
-
-	PemCertKey = public_key:pem_encode([PemEntryKey, PemEntryCert]),
-
-	{ok, PemCertKey}
-    catch		     
-	E:R ->
-	    ?ERROR_MSG("Error: ~p getting an authorization for domain: ~p~n",
-		       [{E,R}, DomainName]),
-	    {error, certificate}
-    end.
-not_before_not_after() ->
-    %% TODO: Make notBefore and notAfter like they do it in other clients
-    {MegS, Sec, MicS} = erlang:timestamp(),
-    NotBefore = xmpp_util:encode_timestamp({MegS-1, Sec, MicS}),
-    NotAfter = xmpp_util:encode_timestamp({MegS+1, Sec, MicS}),
-    {NotBefore, NotAfter}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
@@ -546,7 +608,7 @@ new_user_scenario(CAUrl, HttpDir) ->
     Req5 = [{<<"certificate">>, Base64Cert}],
     {ok, [], Nonce10} = ejabberd_acme_comm:revoke_cert(Dirs, PrivateKey, Req5, Nonce9),
 
-    {ok, Certificate3, Nonce11} = ejabberd_acme_comm:get_cert(CertUrl),
+    {ok, Certificate3, Nonce11} = ejabberd_acme_comm:get_cert({CAUrl, CertId}),
 
     {Account2, Authz3, CSR, Certificate, PrivateKey}.
 
