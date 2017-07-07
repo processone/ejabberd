@@ -668,7 +668,8 @@ language: "en"
 acme:
   contact: "mailto:cert-admin-ejabberd@example.com"
   http_dir: "/home/konstantinos/Desktop/Programming/test-server-for-acme/"
-  
+  cert_dir: "/usr/local/var/lib/ejabberd/"
+
 ###.  =======
 ###'  MODULES
 
