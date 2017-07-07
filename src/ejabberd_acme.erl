@@ -51,26 +51,23 @@ get_certificates(CAUrl, HttpDir, NewAccountOpt) ->
     try
 	get_certificates0(CAUrl, HttpDir, NewAccountOpt)
     catch
+	throw:Throw ->
+	    Throw;
 	E:R ->
-	    %% ?ERROR_MSG("Unknown ~p:~p", [E, R]), 
+	    ?ERROR_MSG("Unknown ~p:~p", [E, R]), 
 	    {error, get_certificates}
     end.
 
 -spec get_certificates0(url(), string(), account_opt()) -> 
 			       [{'ok', bitstring(), 'saved'} | {'error', bitstring(), _}] |
-			       {'error', _}.
+			       no_return().
 get_certificates0(CAUrl, HttpDir, "old-account") ->
     %% Read Persistent Data
     {ok, Data} = read_persistent(),
 
     %% Get the current account
-    case get_account_persistent(Data) of
-	none ->
-	    ?ERROR_MSG("No existing account", []),
-	    {error, no_old_account};
-	{ok, _AccId, PrivateKey} ->
-	    get_certificates1(CAUrl, HttpDir, PrivateKey)
-    end;
+    {ok, _AccId, PrivateKey} = ensure_account_exists(Data),
+    get_certificates1(CAUrl, HttpDir, PrivateKey);
 get_certificates0(CAUrl, HttpDir, "new-account") ->
     %% Get contact from configuration file
     {ok, Contact} = get_config_contact(),
@@ -89,8 +86,8 @@ get_certificates0(CAUrl, HttpDir, "new-account") ->
     get_certificates1(CAUrl, HttpDir, PrivateKey).
 
 -spec get_certificates1(url(), string(), jose_jwk:key()) -> 
-			       {'ok', [{'ok', pem_certificate()} | {'error', _}]} | 
-			       {'error', _}.
+			       [{'ok', bitstring(), 'saved'} | {'error', bitstring(), _}] |
+			       no_return().
 get_certificates1(CAUrl, HttpDir, PrivateKey) ->
     %% Read Config
     {ok, Hosts} = get_config_hosts(),
@@ -106,15 +103,19 @@ get_certificates1(CAUrl, HttpDir, PrivateKey) ->
     SavedCerts.
 
 -spec get_certificate(url(), bitstring(), jose_jwk:key(), string()) -> 
-			     {'ok', pem_certificate()} | 
-			     {'error', _}.
+			     {'ok', bitstring(), pem_certificate()} | 
+			     {'error', bitstring(), _}.
 get_certificate(CAUrl, DomainName, PrivateKey, HttpDir) ->
     ?INFO_MSG("Getting a Certificate for domain: ~p~n", [DomainName]),
-    case create_new_authorization(CAUrl, DomainName, PrivateKey, HttpDir) of
-	{ok, _Authz} ->
-	    create_new_certificate(CAUrl, DomainName, PrivateKey);
-	{error, authorization} ->
-	    {error, DomainName, authorization}
+    try
+	{ok, _Authz} = create_new_authorization(CAUrl, DomainName, PrivateKey, HttpDir),
+	create_new_certificate(CAUrl, DomainName, PrivateKey)
+    catch
+	throw:Throw ->
+	    Throw;
+	E:R ->
+	    ?ERROR_MSG("Unknown ~p:~p", [E, R]), 
+	    {error, DomainName, get_certificate}
     end.
 
 %% TODO:
@@ -133,7 +134,9 @@ create_new_account(CAUrl, Contact, PrivateKey) ->
 	{ok, AccId}
     catch
 	E:R ->
-	    {error,create_new_account}
+	    ?ERROR_MSG("Error: ~p creating an account for contact", 
+		       [{E,R}, Contact]),
+	    throw({error,create_new_account})
     end.
 
 
@@ -153,7 +156,7 @@ create_new_authorization(CAUrl, DomainName, PrivateKey, HttpDir) ->
 	    acme_challenge:solve_challenge(<<"http-01">>, Challenges, {PrivateKey, HttpDir}),
 	{ok, ChallengeId} = location_to_id(ChallengeUrl),
 	Req3 = [{<<"type">>, <<"http-01">>},{<<"keyAuthorization">>, KeyAuthz}],
-	{ok, SolvedChallenge, Nonce2} = ejabberd_acme_comm:complete_challenge(
+	{ok, _SolvedChallenge, _Nonce2} = ejabberd_acme_comm:complete_challenge(
 					  {CAUrl, AuthzId, ChallengeId}, PrivateKey, Req3, Nonce1),
 
 	{ok, AuthzValid, _Nonce} = ejabberd_acme_comm:get_authz_until_valid({CAUrl, AuthzId}),
@@ -162,7 +165,7 @@ create_new_authorization(CAUrl, DomainName, PrivateKey, HttpDir) ->
 	E:R ->
 	    ?ERROR_MSG("Error: ~p getting an authorization for domain: ~p~n",
 		       [{E,R}, DomainName]),
-	    {error, authorization}
+	    throw({error, DomainName, authorization})
     end.
 
 create_new_certificate(CAUrl, DomainName, PrivateKey) ->
@@ -176,9 +179,8 @@ create_new_certificate(CAUrl, DomainName, PrivateKey) ->
 	     {<<"notBefore">>, NotBefore},
 	     {<<"NotAfter">>, NotAfter}
 	    ],
-	{ok, {CertUrl, Certificate}, Nonce1} = ejabberd_acme_comm:new_cert(Dirs, PrivateKey, Req, Nonce0),
-
-	{ok, CertId} = location_to_id(CertUrl),
+	{ok, {_CertUrl, Certificate}, _Nonce1} = 
+	    ejabberd_acme_comm:new_cert(Dirs, PrivateKey, Req, Nonce0),
 
 	DecodedCert = public_key:pkix_decode_cert(list_to_binary(Certificate), plain),	
 	PemEntryCert = public_key:pem_entry_encode('Certificate', DecodedCert),
@@ -193,7 +195,16 @@ create_new_certificate(CAUrl, DomainName, PrivateKey) ->
 	E:R ->
 	    ?ERROR_MSG("Error: ~p getting an authorization for domain: ~p~n",
 		       [{E,R}, DomainName]),
-	    {error, certificate}
+	    throw({error, DomainName, certificate})
+    end.
+
+ensure_account_exists(Data) ->
+    case get_account_persistent(Data) of
+	none ->
+	    ?ERROR_MSG("No existing account", []),
+	    {error, no_old_account};
+	{ok, AccId, PrivateKey} ->
+	    {ok, AccId, PrivateKey}
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -393,7 +404,7 @@ read_persistent() ->
 	    {ok, #data{}};
 	{error, Reason} ->
 	    ?ERROR_MSG("Error: ~p reading acme data file", [Reason]),
-	    {error, Reason}
+	    throw({error, Reason})
     end.
 
 write_persistent(Data) ->
@@ -402,7 +413,7 @@ write_persistent(Data) ->
 	ok -> ok;
 	{error, Reason} ->
 	    ?ERROR_MSG("Error: ~p writing acme data file", [Reason]),
-	    {error, Reason}
+	    throw({error, Reason})
     end.    
 
 get_account_persistent(#data{account = Account}) ->
@@ -430,10 +441,13 @@ save_certificate({ok, DomainName, Cert}) ->
 	    {error, Reason} ->
 		?ERROR_MSG("Error: ~p saving certificate at file: ~p",
 			   [Reason, CertificateFile]),
-	        {error, DomainName, saving}
+	        throw({error, DomainName, saving})
 	end
     catch
+	throw:Throw ->
+	    Throw;
 	E:R ->
+	    ?ERROR_MSG("unknown ~p:~p", [E,R]),
 	    {error, DomainName, saving}
     end.
 
@@ -441,46 +455,38 @@ get_config_acme() ->
     case ejabberd_config:get_option(acme, undefined) of
 	undefined ->
 	    ?ERROR_MSG("No acme configuration has been specified", []),
-	    {error, configuration};
+	    throw({error, configuration});
         Acme ->
 	    {ok, Acme}
     end.
 
 get_config_contact() ->
-    case get_config_acme() of
-	{ok, Acme} ->
-	    case lists:keyfind(contact, 1, Acme) of
-		{contact, Contact} ->
-		    {ok, Contact};
-		false ->
-		    ?ERROR_MSG("No contact has been specified", []),
-		    {error, configuration_contact}
-	    end;
-	{error, Reason} ->
-	    {error, Reason}
+    {ok, Acme} = get_config_acme(),
+    case lists:keyfind(contact, 1, Acme) of
+	{contact, Contact} ->
+	    {ok, Contact};
+	false ->
+	    ?ERROR_MSG("No contact has been specified", []),
+	    throw({error, configuration_contact})
     end.
 
 get_config_hosts() ->
     case ejabberd_config:get_option(hosts, undefined) of
 	undefined ->
 	    ?ERROR_MSG("No hosts have been specified", []),
-	    {error, configuration_hosts};
+	    throw({error, configuration_hosts});
         Hosts ->
 	    {ok, Hosts}
     end.
 
 get_config_cert_dir() ->
-    case get_config_acme() of
-	{ok, Acme} ->
-    	    case lists:keyfind(cert_dir, 1, Acme) of
-		{cert_dir, CertDir} ->
-		    {ok, CertDir};
-		false ->
-		    ?ERROR_MSG("No certificate directory has been specified", []),
-		    {error, configuration_cert_dir}
-	    end;
-	{error, Reason} ->
-	    {error, Reason}
+    {ok, Acme} = get_config_acme(),
+    case lists:keyfind(cert_dir, 1, Acme) of
+	{cert_dir, CertDir} ->
+	    {ok, CertDir};
+	false ->
+	    ?ERROR_MSG("No certificate directory has been specified", []),
+	    {error, configuration_cert_dir}
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
