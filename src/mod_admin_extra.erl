@@ -1002,20 +1002,16 @@ set_presence(User, Host, Resource, Type, Show, Status, Priority0) ->
     Priority = if is_integer(Priority0) -> Priority0;
 		  true -> binary_to_integer(Priority0)
 	       end,
-    case ejabberd_sm:get_session_pid(User, Host, Resource) of
-	none ->
-	    error;
-	Pid ->
-	    From = jid:make(User, Host, Resource),
-	    To = jid:make(User, Host),
-	    Presence = #presence{from = From, to = To,
-				 type = misc:binary_to_atom(Type),
-				 show = misc:binary_to_atom(Show),
-				 status = xmpp:mk_text(Status),
-				 priority = Priority},
-	    Pid ! {route, Presence},
-	    ok
-    end.
+    Pres = #presence{
+        from = jid:make(User, Host, Resource),
+        to = jid:make(User, Host),
+        type = misc:binary_to_atom(Type),
+        status = xmpp:mk_text(Status),
+        show = misc:binary_to_atom(Show),
+        priority = Priority,
+        sub_els = []},
+    Ref = ejabberd_sm:get_session_pid(User, Host, Resource),
+    ejabberd_c2s:set_presence(Ref, Pres).
 
 user_sessions_info(User, Host) ->
     CurrentSec = calendar:datetime_to_gregorian_seconds({date(), time()}),
