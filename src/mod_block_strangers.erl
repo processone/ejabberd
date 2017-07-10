@@ -59,7 +59,10 @@ filter_packet({#message{} = Msg, State} = Acc) ->
     LBFrom = jid:remove_resource(LFrom),
     #{pres_a := PresA, jid := JID, lserver := LServer} = State,
     AllowLocalUsers =
-        gen_mod:get_module_opt(LServer, ?MODULE, allow_local_users, true),
+        gen_mod:get_module_opt(
+          LServer, ?MODULE, allow_local_users,
+          fun(B) when is_boolean(B) -> B end,
+          true),
     case (Msg#message.body == [] andalso
           Msg#message.subject == [])
         orelse (AllowLocalUsers andalso
