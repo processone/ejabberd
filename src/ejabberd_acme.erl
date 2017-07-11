@@ -49,6 +49,7 @@ is_valid_account_opt(_) -> false.
 			      {'error', _}.
 get_certificates(CAUrl, HttpDir, NewAccountOpt) ->
     try
+	?INFO_MSG("Persistent: ~p~n", [file:read_file_info(persistent_file())]),
 	get_certificates0(CAUrl, HttpDir, NewAccountOpt)
     catch
 	throw:Throw ->
@@ -67,22 +68,13 @@ get_certificates0(CAUrl, HttpDir, "old-account") ->
 
     %% Get the current account
     {ok, _AccId, PrivateKey} = ensure_account_exists(Data),
+
     get_certificates1(CAUrl, HttpDir, PrivateKey);
+
 get_certificates0(CAUrl, HttpDir, "new-account") ->
-    %% Get contact from configuration file
-    {ok, Contact} = get_config_contact(),
-
-    %% Generate a Key
-    PrivateKey = generate_key(),
-
-    %% Create a new account
-    {ok, Id} = create_new_account(CAUrl, Contact, PrivateKey),
-
-    %% Write Persistent Data
-    {ok, Data} = read_persistent(),
-    NewData = set_account_persistent(Data, {Id, PrivateKey}),
-    ok = write_persistent(NewData),
-
+    %% Create a new account and save it to disk
+    {ok, _Id, PrivateKey} = create_save_new_account(CAUrl),
+    
     get_certificates1(CAUrl, HttpDir, PrivateKey).
 
 -spec get_certificates1(url(), string(), jose_jwk:key()) -> 
@@ -118,8 +110,28 @@ get_certificate(CAUrl, DomainName, PrivateKey, HttpDir) ->
 	    {error, DomainName, get_certificate}
     end.
 
+-spec create_save_new_account(url()) -> {'ok', string(), jose_jwk:key()} | no_return().
+create_save_new_account(CAUrl) ->
+    %% Get contact from configuration file
+    {ok, Contact} = get_config_contact(),
+
+    %% Generate a Key
+    PrivateKey = generate_key(),
+
+    %% Create a new account
+    {ok, Id} = create_new_account(CAUrl, Contact, PrivateKey),
+
+    %% Write Persistent Data
+    {ok, Data} = read_persistent(),
+    NewData = set_account_persistent(Data, {Id, PrivateKey}),
+    ok = write_persistent(NewData),
+    
+    {ok, Id, PrivateKey}.
+
 %% TODO:
 %% Find a way to ask the user if he accepts the TOS
+-spec create_new_account(url(), bitstring(), jose_jwk:key()) -> {'ok', string()} | 
+								no_return().
 create_new_account(CAUrl, Contact, PrivateKey) ->
     try
 	{ok, Dirs, Nonce0} = ejabberd_acme_comm:directory(CAUrl),
@@ -139,7 +151,8 @@ create_new_account(CAUrl, Contact, PrivateKey) ->
 	    throw({error,create_new_account})
     end.
 
-
+-spec create_new_authorization(url(), bitstring(), jose_jwk:key(), bitstring()) ->
+				      {'ok', proplist()} | no_return().
 create_new_authorization(CAUrl, DomainName, PrivateKey, HttpDir) ->
     try
 	{ok, Dirs, Nonce0} = ejabberd_acme_comm:directory(CAUrl),
@@ -396,11 +409,16 @@ persistent_file() ->
     MnesiaDir = mnesia:system_info(directory),
     filename:join(MnesiaDir, "acme.DAT").
 
+%% The persistent file should be rread and written only by its owner
+persistent_file_mode() ->
+    8#400 + 8#200. 
+
 read_persistent() ->
     case file:read_file(persistent_file()) of
 	{ok, Binary} ->
 	    {ok, binary_to_term(Binary)};
 	{error, enoent} ->
+	    create_persistent(),
 	    {ok, #data{}};
 	{error, Reason} ->
 	    ?ERROR_MSG("Error: ~p reading acme data file", [Reason]),
@@ -415,6 +433,21 @@ write_persistent(Data) ->
 	    ?ERROR_MSG("Error: ~p writing acme data file", [Reason]),
 	    throw({error, Reason})
     end.    
+
+create_persistent() ->
+    Binary = term_to_binary(#data{}),
+    case file:write_file(persistent_file(), Binary) of
+	ok ->
+	    case file:change_mode(persistent_file(), persistent_file_mode()) of
+		ok -> ok;
+		{error, Reason} ->
+		    ?ERROR_MSG("Error: ~p changing acme data file mode", [Reason]),
+		    throw({error, Reason})
+	    end;
+	{error, Reason} ->
+	    ?ERROR_MSG("Error: ~p creating acme data file", [Reason]),
+	    throw({error, Reason})
+    end.        
 
 get_account_persistent(#data{account = Account}) ->
     case Account of
