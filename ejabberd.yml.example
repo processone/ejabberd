@@ -160,6 +160,7 @@ listen:
     request_handlers:
       "/websocket": ejabberd_http_ws
       "/api": mod_http_api
+      "/.well-known": acme_challenge
     ##  "/pub/archive": mod_http_fileserver
     web_admin: true
     http_bind: true
@@ -668,7 +669,8 @@ language: "en"
 acme:
   contact: "mailto:cert-admin-ejabberd@example.com"
   http_dir: "/home/konstantinos/Desktop/Programming/test-server-for-acme/"
-  cert_dir: "/usr/local/var/lib/ejabberd/"
+
+cert_dir: "/usr/local/var/lib/ejabberd/"
 
 ###.  =======
 ###'  MODULES

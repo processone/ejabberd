@@ -1,7 +1,9 @@
 -module(acme_challenge).
 
--export ([ key_authorization/2,
-	   solve_challenge/3
+-export ([key_authorization/2,
+	  solve_challenge/3,
+
+	  process/2
          ]).
 %% Challenge Types
 %% ================
@@ -13,8 +15,18 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
-
+-include("ejabberd_http.hrl").
 -include("ejabberd_acme.hrl").
+
+%% TODO: Maybe validate request here??
+process(LocalPath, Request) ->
+    Result = ets_get_key_authorization(LocalPath),
+    ?INFO_MSG("Trying to serve: ~p at: ~p", [Request, LocalPath]),
+    ?INFO_MSG("Http Response: ~p", [Result]),
+    {200, 
+     [{<<"Content-Type">>, <<"text/plain">>}], 
+     Result}. 
+
 
 -spec key_authorization(bitstring(), jose_jwk:key()) -> bitstring().
 key_authorization(Token, Key) ->
@@ -68,17 +80,49 @@ solve_challenge(ChallengeType, Challenges, Options) ->
 			      {ok, url(), bitstring()} | {error, _}.
 solve_challenge1(Chal = #challenge{type = <<"http-01">>, token=Tkn}, {Key, HttpDir}) ->
     KeyAuthz = key_authorization(Tkn, Key),
+    %% save_key_authorization(Chal, Tkn, KeyAuthz, HttpDir);
+    ets_put_key_authorization(Tkn, KeyAuthz),
+    {ok, Chal#challenge.uri, KeyAuthz};
+solve_challenge1(Challenge, _Key) ->
+    ?INFO_MSG("Challenge: ~p~n", [Challenge]).
+
+
+save_key_authorization(Chal, Tkn, KeyAuthz, HttpDir) ->
     FileLocation = HttpDir ++ "/.well-known/acme-challenge/" ++ bitstring_to_list(Tkn),
     case file:write_file(FileLocation, KeyAuthz) of
 	ok ->
 	    {ok, Chal#challenge.uri, KeyAuthz};
-	{error, _} = Err ->
-	    ?ERROR_MSG("Error writing to file: ~s with reason: ~p~n", [FileLocation, Err]),
+	{error, Reason} = Err ->
+	    ?ERROR_MSG("Error writing to file: ~s with reason: ~p~n", [FileLocation, Reason]),
 	    Err
-    end;
-%% TODO: Fill stub
-solve_challenge1(Challenge, _Key) ->
-    ?INFO_MSG("Challenge: ~p~n", [Challenge]).
+    end.
+
+-spec ets_put_key_authorization(bitstring(), bitstring()) -> ok.
+ets_put_key_authorization(Tkn, KeyAuthz) ->
+    Tab = ets_get_acme_table(),
+    Key = [<<"acme-challenge">>, Tkn],
+    ets:insert(Tab, {Key, KeyAuthz}),
+    ok.
+ 
+-spec ets_get_key_authorization([bitstring()]) -> bitstring().
+ets_get_key_authorization(Key) ->
+    Tab = ets_get_acme_table(),
+    case ets:take(Tab, Key) of
+	[{Key, KeyAuthz}] ->
+	    KeyAuthz;
+	_ ->
+	    ?ERROR_MSG("Unable to serve key authorization in: ~p", [Key]),
+	    <<"">>
+    end.
+
+-spec ets_get_acme_table() -> atom().
+ets_get_acme_table() ->
+    case ets:info(acme) of
+	undefined ->
+	    ets:new(acme, [named_table, public]);
+	_ ->
+	    acme
+    end.
 
 %% Useful functions
 

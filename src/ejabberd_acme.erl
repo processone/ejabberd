@@ -513,13 +513,12 @@ get_config_hosts() ->
     end.
 
 get_config_cert_dir() ->
-    {ok, Acme} = get_config_acme(),
-    case lists:keyfind(cert_dir, 1, Acme) of
-	{cert_dir, CertDir} ->
-	    {ok, CertDir};
-	false ->
-	    ?ERROR_MSG("No certificate directory has been specified", []),
-	    {error, configuration_cert_dir}
+    case ejabberd_config:get_option(cert_dir, undefined) of
+	undefined ->
+	    ?ERROR_MSG("No cert_dir configuration has been specified", []),
+	    throw({error, configuration});
+        CertDir ->
+	    {ok, CertDir}
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

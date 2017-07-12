@@ -32,6 +32,12 @@
 -define(MAX_POLL_REQUESTS, 20).
 -define(POLL_WAIT_TIME, 500). % 500 ms.
 
+%%%
+%%% This module contains functions that implement all necessary http
+%%% requests to the ACME Certificate Authority. Its purpose is to
+%%% facilitate the acme client implementation by separating the
+%%% handling/validating/parsing of all the needed http requests.
+%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
