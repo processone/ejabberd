@@ -241,6 +241,7 @@ handle_info(PingPong, StateName, StateData) when PingPong == ping orelse
      StateData2#state{pong_expected = false}};
 handle_info({timeout, Timer, _}, _StateName,
 	    #state{timer = Timer} = StateData) ->
+    ?DEBUG("Closing websocket connection from hitting inactivity timeout", []),
     {stop, normal, StateData};
 handle_info({timeout, Timer, _}, StateName,
 	    #state{ping_timer = Timer, ws = {_, WsPid}} = StateData) ->
@@ -253,6 +254,7 @@ handle_info({timeout, Timer, _}, StateName,
             {next_state, StateName,
              StateData#state{ping_timer = PingTimer, pong_expected = true}};
         true ->
+	    ?DEBUG("Closing websocket connection from missing pongs", []),
             {stop, normal, StateData}
     end;
 handle_info(_, StateName, StateData) ->
