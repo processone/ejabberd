@@ -351,37 +351,37 @@ gen_param(Name, Type, Desc, HTMLOutput) ->
 gen_doc(#ejabberd_commands{name=Name, tags=_Tags, desc=Desc, longdesc=LongDesc,
                            args=Args, args_desc=ArgsDesc,
                            result=Result, result_desc=ResultDesc}=Cmd, HTMLOutput, Langs) ->
-    LDesc = case LongDesc of
-                "" -> Desc;
-                _ -> LongDesc
-            end,
-    ArgsText = case ArgsDesc of
-                   none ->
-                       [?TAG(ul, "args-list", [gen_param(AName, Type, undefined, HTMLOutput)
-                                               || {AName, Type} <- Args])];
-                   _ ->
-                       [?TAG(dl, "args-list", [gen_param(AName, Type, ADesc, HTMLOutput)
-                                               || {{AName, Type}, ADesc} <- lists:zip(Args, ArgsDesc)])]
-               end,
-    ResultText = case Result of
-                   {res,rescode} ->
-                       [?TAG(dl, [gen_param(res, integer,
-                                            "Status code (0 on success, 1 otherwise)",
-                                            HTMLOutput)])];
-                   {res,restuple} ->
-                       [?TAG(dl, [gen_param(res, string,
-                                            "Raw result string",
-                                            HTMLOutput)])];
-                   {RName, Type} ->
-                       case ResultDesc of
-                         none ->
-                             [?TAG(ul, [gen_param(RName, Type, undefined, HTMLOutput)])];
-                         _ ->
-                             [?TAG(dl, [gen_param(RName, Type, ResultDesc, HTMLOutput)])]
-                       end
-                 end,
-
     try
+        LDesc = case LongDesc of
+                    "" -> Desc;
+                    _ -> LongDesc
+                end,
+        ArgsText = case ArgsDesc of
+                       none ->
+                           [?TAG(ul, "args-list", [gen_param(AName, Type, undefined, HTMLOutput)
+                                                   || {AName, Type} <- Args])];
+                       _ ->
+                           [?TAG(dl, "args-list", [gen_param(AName, Type, ADesc, HTMLOutput)
+                                                   || {{AName, Type}, ADesc} <- lists:zip(Args, ArgsDesc)])]
+                   end,
+        ResultText = case Result of
+                       {res,rescode} ->
+                           [?TAG(dl, [gen_param(res, integer,
+                                                "Status code (0 on success, 1 otherwise)",
+                                                HTMLOutput)])];
+                       {res,restuple} ->
+                           [?TAG(dl, [gen_param(res, string,
+                                                "Raw result string",
+                                                HTMLOutput)])];
+                       {RName, Type} ->
+                           case ResultDesc of
+                             none ->
+                                 [?TAG(ul, [gen_param(RName, Type, undefined, HTMLOutput)])];
+                             _ ->
+                                 [?TAG(dl, [gen_param(RName, Type, ResultDesc, HTMLOutput)])]
+                           end
+                     end,
+
 	[?TAG(h1, [?TAG(strong, atom_to_list(Name)), <<" - ">>, ?RAW(Desc)]),
 	 ?TAG(p, ?RAW(LDesc)),
 	 ?TAG(h2, <<"Arguments:">>), ArgsText,
