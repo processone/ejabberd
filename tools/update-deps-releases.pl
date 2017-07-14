@@ -33,10 +33,13 @@ sub get_deps {
     return \%deps;
 }
 my (%info_updates, %top_deps_updates, %sub_deps_updates, @operations);
+my $epoch = 1;
 
 sub top_deps {
     state %deps;
-    if (not %deps) {
+    state $my_epoch = $epoch;
+    if (not %deps or $my_epoch != $epoch) {
+        $my_epoch = $epoch;
         my $config = slurp "rebar.config";
         croak "Unable to extract floating_deps" unless $config =~ /\{floating_deps, \[(.*?)\]/s;
 
@@ -49,7 +52,9 @@ sub top_deps {
 }
 
 sub update_deps_repos {
+    my ($force) = @_;
     my $deps = top_deps();
+    $epoch++;
     mkdir(".deps-update") unless -d ".deps-update";
     for my $dep (keys %{$deps}) {
         my $dd = ".deps-update/$dep";
@@ -58,7 +63,7 @@ sub update_deps_repos {
             my $repo = $deps->{$dep}->{repo};
             $repo =~ s!^https?://github.com/!git\@github.com:!;
             system("git", "-C", ".deps-update", "clone", $repo);
-        } elsif (time() - stat($dd)->mtime > 24 * 60 * 60) {
+        } elsif (time() - stat($dd)->mtime > 24 * 60 * 60 or $force) {
             say "Updating $dep...";
             system("git", "-C", $dd, "pull");
             touch($dd)
@@ -68,7 +73,9 @@ sub update_deps_repos {
 
 sub sub_deps {
     state %sub_deps;
-    if (not %sub_deps) {
+    state $my_epoch = $epoch;
+    if (not %sub_deps or $my_epoch != $epoch) {
+        $my_epoch = $epoch;
         my $deps = top_deps();
         for my $dep (keys %{$deps}) {
             my $rc = ".deps-update/$dep/rebar.config";
@@ -94,7 +101,9 @@ sub rev_deps_helper {
 
 sub rev_deps {
     state %rev_deps;
-    if (not %rev_deps) {
+    state $deps_epoch = $epoch;
+    if (not %rev_deps or $deps_epoch != $epoch) {
+        $deps_epoch = $epoch;
         my $sub_deps = sub_deps();
         for my $dep (keys %$sub_deps) {
             $rev_deps{$_}->{direct}->{$dep} = 1 for keys %{$sub_deps->{$dep}};
@@ -177,7 +186,9 @@ sub cmp_ver {
 
 sub deps_git_info {
     state %info;
-    if (not %info) {
+    state $my_epoch = $epoch;
+    if (not %info or $my_epoch != $epoch) {
+        $my_epoch = $epoch;
         my $deps = top_deps();
         for my $dep (keys %{$deps}) {
             my $dir = ".deps-update/$dep";
@@ -308,6 +319,7 @@ while (1) {
     my $cmd = show_commands($old_deps ? (U => "Update dependency") : (),
         $changed_deps ? (T => "Tag new release") : (),
         @operations ? (A => "Apply changes") : (),
+        R => "Refresh repositiories",
         E => "Exit");
     last if $cmd eq "E";
 
@@ -333,6 +345,9 @@ while (1) {
         }
     }
 
+    if ($cmd eq "R") {
+        update_deps_repos(1);
+    }
     if ($cmd eq "T") {
         while (1) {
             my @deps_to_tag;
