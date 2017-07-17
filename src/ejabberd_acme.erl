@@ -54,10 +54,39 @@ list_certificates(Verbose) ->
     {ok, Certs} = read_certificates_persistent(),
     case Verbose of
 	"plain" -> 
-	    [{Domain, certificate} || {Domain, _Cert} <- Certs];
+	    [{Domain, certificate_metadata(PemCert)} || {Domain, PemCert} <- Certs];
 	"verbose" ->
 	    Certs
     end.
+
+%% TODO: Make this cleaner and more secure
+certificate_metadata(PemCert) ->
+    PemList = public_key:pem_decode(PemCert),
+    PemEntryCert = lists:keyfind('Certificate', 1, PemList),
+    #'Certificate'{tbsCertificate = #'TBSCertificate'{
+				       subject = {rdnSequence, SubjectList},
+				       validity = Validity}} 
+	= public_key:pem_entry_decode(PemEntryCert),
+    
+    %% Find the commonName
+    %% TODO: Not the best way to find the commonName
+    ?INFO_MSG("Subject List: ~p", [SubjectList]),
+    ShallowSubjectList = [Attribute || [Attribute] <- SubjectList],
+    {_, _, CommonName} = lists:keyfind(attribute_oid(commonName), 2, ShallowSubjectList),
+
+    %% Find the notAfter date
+    %% TODO: Find a library function to decode utc time
+    #'Validity'{notAfter = {utcTime, UtcTime}} = Validity,
+    [Y1,Y2,MO1,MO2,D1,D2,H1,H2,MI1,MI2,S1,S2,$Z] = UtcTime,
+    YEAR = case list_to_integer([Y1,Y2]) >= 50 of
+	       true -> "19" ++ [Y1,Y2];
+	       _ -> "20" ++ [Y1,Y2]
+	   end,
+    NotAfter = lists:flatten(io_lib:format("Valid until: ~s-~s-~s ~s:~s:~s", 
+					   [YEAR, [MO1,MO2], [D1,D2],
+					    [H1,H2], [MI1,MI2], [S1,S2]])), 
+
+    NotAfter.
 
 %%
 %% Get Certificate
@@ -704,8 +733,7 @@ new_user_scenario(CAUrl, HttpDir) ->
     {ok, Authz3, Nonce7} = ejabberd_acme_comm:get_authz_until_valid({CAUrl, AuthzId}),
 
     #{"new-cert" := NewCert} = Dirs,
-    CSRSubject = [{commonName, bitstring_to_list(DomainName)},
-		  {organizationName, "Example Corp"}],
+    CSRSubject = [{commonName, bitstring_to_list(DomainName)}],
     {CSR, CSRKey} = make_csr(CSRSubject),
     {MegS, Sec, MicS} = erlang:timestamp(),
     NotBefore = xmpp_util:encode_timestamp({MegS-1, Sec, MicS}),
