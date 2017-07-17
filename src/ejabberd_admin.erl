@@ -46,6 +46,7 @@
 	 import_file/1, import_dir/1,
          %% Acme
          get_certificate/1,
+	 list_certificates/1,
 	 %% Purge DB
 	 delete_expired_messages/0, delete_old_messages/1,
 	 %% Mnesia
@@ -251,6 +252,15 @@ get_commands_spec() ->
 			args_desc = ["Whether to create a new account or use the existing one"],
 			args = [{option, string}],
 			result = {certificate, string}},
+     #ejabberd_commands{name = list_certificates, tags = [acme],
+			desc = "Lists all curently handled certificates and their respective domains",
+			module = ?MODULE, function = list_certificates,
+			args_desc = ["Whether to print the whole certificate or just some metadata. Possible values: plain | verbose"],
+			args = [{option, string}],
+			result = {certificates, {list, 
+						 {certificate, {tuple, 
+								[{domain, string}, 
+								 {cert, string}]}}}}},
 
      #ejabberd_commands{name = import_piefxis, tags = [mnesia],
 			desc = "Import users data from a PIEFXIS file (XEP-0227)",
@@ -563,6 +573,16 @@ get_certificate(UseNewAccount) ->
 	    String = io_lib:format("Invalid account option: ~p", [UseNewAccount]),
 	    {invalid_option, String}
     end.
+
+list_certificates(Verbose) ->
+    case ejabberd_acme:is_valid_verbose_opt(Verbose) of
+	true ->
+	    ejabberd_acme:list_certificates(Verbose);
+	false ->
+	    String = io_lib:format("Invalid verbose  option: ~p", [Verbose]),
+	    {invalid_option, String}
+    end.
+
 
 %%%
 %%% Purge DB

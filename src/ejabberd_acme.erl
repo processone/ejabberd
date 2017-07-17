@@ -2,8 +2,10 @@
 
 -export([%% Ejabberdctl Commands
 	 get_certificates/2,
+	 list_certificates/1,
 	 %% Command Options Validity
 	 is_valid_account_opt/1,
+	 is_valid_verbose_opt/1,
 	 %% Misc
 	 generate_key/0,
 	 %% Debugging Scenarios
@@ -39,6 +41,23 @@ is_valid_account_opt("old-account") -> true;
 is_valid_account_opt("new-account") -> true;
 is_valid_account_opt(_) -> false.
 
+-spec is_valid_verbose_opt(string()) -> boolean().
+is_valid_verbose_opt("plain") -> true;
+is_valid_verbose_opt("verbose") -> true;
+is_valid_verbose_opt(_) -> false.
+
+%%
+%% List Certificates
+%%
+
+list_certificates(Verbose) ->
+    {ok, Certs} = read_certificates_persistent(),
+    case Verbose of
+	"plain" -> 
+	    [{Domain, certificate} || {Domain, _Cert} <- Certs];
+	"verbose" ->
+	    Certs
+    end.
 
 %%
 %% Get Certificate
