@@ -396,6 +396,28 @@ is_error(_) -> false.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
+%% Handle the persistent data structure
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+data_empty() ->
+    #data{}.
+
+data_get_account(#data{account = Account}) ->
+    case Account of
+	#data_acc{id = AccId, key = PrivateKey} ->
+	    {ok, AccId, PrivateKey};
+	none ->
+	    none
+    end.
+
+data_set_account(Data = #data{}, {AccId, PrivateKey}) -> 
+    NewAcc = #data_acc{id = AccId, key = PrivateKey},
+    Data#data{account = NewAcc}.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
 %% Handle Config and Persistence Files
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -414,7 +436,7 @@ read_persistent() ->
 	    {ok, binary_to_term(Binary)};
 	{error, enoent} ->
 	    create_persistent(),
-	    {ok, #data{}};
+	    {ok, data_empty()};
 	{error, Reason} ->
 	    ?ERROR_MSG("Error: ~p reading acme data file", [Reason]),
 	    throw({error, Reason})
@@ -430,7 +452,7 @@ write_persistent(Data) ->
     end.    
 
 create_persistent() ->
-    Binary = term_to_binary(#data{}),
+    Binary = term_to_binary(data_empty()),
     case file:write_file(persistent_file(), Binary) of
 	ok ->
 	    case file:change_mode(persistent_file(), persistent_file_mode()) of
@@ -444,27 +466,14 @@ create_persistent() ->
 	    throw({error, Reason})
     end.        
 
-get_account_persistent(#data{account = Account}) ->
-    case Account of
-	#data_acc{id = AccId, key = PrivateKey} ->
-	    {ok, AccId, PrivateKey};
-	none ->
-	    none
-    end.
-
-set_account_persistent(Data = #data{}, {AccId, PrivateKey}) -> 
-    NewAcc = #data_acc{id = AccId, key = PrivateKey},
-    Data#data{account = NewAcc}.
-
 write_account_persistent({AccId, PrivateKey}) ->
     {ok, Data} = read_persistent(),
-    NewData = set_account_persistent(Data, {AccId, PrivateKey}),
+    NewData = data_set_account(Data, {AccId, PrivateKey}),
     ok = write_persistent(NewData).
 
 read_account_persistent() ->
     {ok, Data} = read_persistent(),
-    get_account_persistent(Data).
-
+    data_get_account(Data).
 
 save_certificate({error, _, _} = Error) ->
     Error;
