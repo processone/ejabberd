@@ -39,6 +39,7 @@ is_valid_account_opt("old-account") -> true;
 is_valid_account_opt("new-account") -> true;
 is_valid_account_opt(_) -> false.
 
+
 %%
 %% Get Certificate
 %%
@@ -403,6 +404,10 @@ is_error(_) -> false.
 data_empty() ->
     [].
 
+%%
+%% Account
+%%
+
 data_get_account(Data) ->
     case lists:keyfind(account, 1, Data) of
 	{account, #data_acc{id = AccId, key = PrivateKey}} ->
@@ -414,6 +419,27 @@ data_get_account(Data) ->
 data_set_account(Data, {AccId, PrivateKey}) -> 
     NewAcc = {account, #data_acc{id = AccId, key = PrivateKey}},
     lists:keystore(account, 1, Data, NewAcc).
+
+%%
+%% Certificates
+%% 
+
+data_get_certificates(Data) ->
+    case lists:keyfind(certs, 1, Data) of
+	{certs, Certs} ->
+	    {ok, Certs};
+        false ->
+	    {ok, []}
+    end.
+
+data_set_certificates(Data, NewCerts) -> 
+    lists:keystore(certs, 1, Data, {certs, NewCerts}).
+
+%% ATM we preserve one certificate for each domain
+data_add_certificate(Data, {Domain, PemCert}) ->
+    {ok, Certs} = data_get_certificates(Data),
+    NewCerts = lists:keystore(Domain, 1, Certs, {Domain, PemCert}),
+    data_set_certificates(Data, NewCerts).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -475,6 +501,15 @@ read_account_persistent() ->
     {ok, Data} = read_persistent(),
     data_get_account(Data).
 
+read_certificates_persistent() ->
+    {ok, Data} = read_persistent(),
+    data_get_certificates(Data).
+
+add_certificate_persistent({Domain, PemCert}) ->
+    {ok, Data} = read_persistent(),
+    NewData = data_add_certificate(Data, {Domain, PemCert}),
+    ok = write_persistent(NewData).
+
 save_certificate({error, _, _} = Error) ->
     Error;
 save_certificate({ok, DomainName, Cert}) ->
@@ -482,20 +517,28 @@ save_certificate({ok, DomainName, Cert}) ->
 	{ok, CertDir} = get_config_cert_dir(),
 	DomainString = bitstring_to_list(DomainName),
 	CertificateFile = filename:join([CertDir, DomainString ++ "_cert.pem"]),
-	case file:write_file(CertificateFile, Cert) of
-	    ok ->
-		{ok, DomainName, saved};
-	    {error, Reason} ->
-		?ERROR_MSG("Error: ~p saving certificate at file: ~p",
-			   [Reason, CertificateFile]),
-	        throw({error, DomainName, saving})
-	end
+	%% TODO: At some point do the following using a Transaction so
+	%% that there is no certificate saved if it cannot be added in
+	%% certificate persistent storage
+	write_cert(CertificateFile, Cert, DomainName),
+	add_certificate_persistent({DomainName, Cert}),
+	{ok, DomainName, saved}
     catch
 	throw:Throw ->
 	    Throw;
 	E:R ->
-	    ?ERROR_MSG("unknown ~p:~p", [E,R]),
+	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, erlang:get_stacktrace()]), 
 	    {error, DomainName, saving}
+    end.
+
+write_cert(CertificateFile, Cert, DomainName) ->
+    case file:write_file(CertificateFile, Cert) of
+	ok ->
+	    {ok, DomainName, saved};
+	{error, Reason} ->
+	    ?ERROR_MSG("Error: ~p saving certificate at file: ~p",
+		       [Reason, CertificateFile]),
+	    throw({error, DomainName, saving})
     end.
 
 get_config_acme() ->
@@ -534,6 +577,25 @@ get_config_cert_dir() ->
         CertDir ->
 	    {ok, CertDir}
     end.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Transaction Fun
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+transaction([{Fun, Rollback} | Rest]) ->
+    try
+        {ok, Result} = Fun(),
+        [Result | transaction(Rest)]
+    catch Type:Reason ->
+        Rollback(),
+        erlang:raise(Type, Reason, erlang:get_stacktrace())
+    end;
+transaction([Fun | Rest]) ->
+    % not every action require cleanup on error
+    transaction([{Fun, fun () -> ok end} | Rest]);
+transaction([]) -> [].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
