@@ -55,7 +55,7 @@ get_certificates(CAUrl, HttpDir, NewAccountOpt) ->
 	throw:Throw ->
 	    Throw;
 	E:R ->
-	    ?ERROR_MSG("Unknown ~p:~p", [E, R]), 
+	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, erlang:get_stacktrace()]), 
 	    {error, get_certificates}
     end.
 
@@ -63,11 +63,8 @@ get_certificates(CAUrl, HttpDir, NewAccountOpt) ->
 			       [{'ok', bitstring(), 'saved'} | {'error', bitstring(), _}] |
 			       no_return().
 get_certificates0(CAUrl, HttpDir, "old-account") ->
-    %% Read Persistent Data
-    {ok, Data} = read_persistent(),
-
     %% Get the current account
-    {ok, _AccId, PrivateKey} = ensure_account_exists(Data),
+    {ok, _AccId, PrivateKey} = ensure_account_exists(),
 
     get_certificates1(CAUrl, HttpDir, PrivateKey);
 
@@ -106,7 +103,7 @@ get_certificate(CAUrl, DomainName, PrivateKey, HttpDir) ->
 	throw:Throw ->
 	    Throw;
 	E:R ->
-	    ?ERROR_MSG("Unknown ~p:~p", [E, R]), 
+	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, erlang:get_stacktrace()]), 
 	    {error, DomainName, get_certificate}
     end.
 
@@ -122,9 +119,7 @@ create_save_new_account(CAUrl) ->
     {ok, Id} = create_new_account(CAUrl, Contact, PrivateKey),
 
     %% Write Persistent Data
-    {ok, Data} = read_persistent(),
-    NewData = set_account_persistent(Data, {Id, PrivateKey}),
-    ok = write_persistent(NewData),
+    ok = write_account_persistent({Id, PrivateKey}),
     
     {ok, Id, PrivateKey}.
 
@@ -211,11 +206,11 @@ create_new_certificate(CAUrl, DomainName, PrivateKey) ->
 	    throw({error, DomainName, certificate})
     end.
 
-ensure_account_exists(Data) ->
-    case get_account_persistent(Data) of
+ensure_account_exists() ->
+    case read_account_persistent() of
 	none ->
 	    ?ERROR_MSG("No existing account", []),
-	    {error, no_old_account};
+	    throw({error, no_old_account});
 	{ok, AccId, PrivateKey} ->
 	    {ok, AccId, PrivateKey}
     end.
@@ -460,6 +455,16 @@ get_account_persistent(#data{account = Account}) ->
 set_account_persistent(Data = #data{}, {AccId, PrivateKey}) -> 
     NewAcc = #data_acc{id = AccId, key = PrivateKey},
     Data#data{account = NewAcc}.
+
+write_account_persistent({AccId, PrivateKey}) ->
+    {ok, Data} = read_persistent(),
+    NewData = set_account_persistent(Data, {AccId, PrivateKey}),
+    ok = write_persistent(NewData).
+
+read_account_persistent() ->
+    {ok, Data} = read_persistent(),
+    get_account_persistent(Data).
+
 
 save_certificate({error, _, _} = Error) ->
     Error;

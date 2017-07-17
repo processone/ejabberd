@@ -11,9 +11,17 @@
 	  key :: jose_jwk:key()
 	 }).
 
--record(data, {
-	  account = none :: #data_acc{} | 'none' 
+-record(data_cert, {
+	  domain  :: list(),
+	  pem     :: binary()
 	 }).
+
+-record(data, {
+	  account = none :: #data_acc{} | 'none',
+	  certs = []     :: [#data_cert{}]
+	 }).
+
+
 
 
 
