@@ -1,7 +1,7 @@
 -module (ejabberd_acme).
 
 -export([%% Ejabberdctl Commands
-	 get_certificates/3,
+	 get_certificates/2,
 	 %% Command Options Validity
 	 is_valid_account_opt/1,
 	 %% Misc
@@ -45,13 +45,13 @@ is_valid_account_opt(_) -> false.
 %%
 
 %% Needs a hell lot of cleaning
--spec get_certificates(url(), string(), account_opt()) -> 
+-spec get_certificates(url(), account_opt()) -> 
 			      [{'ok', bitstring(), 'saved'} | {'error', bitstring(), _}] | 
 			      {'error', _}.
-get_certificates(CAUrl, HttpDir, NewAccountOpt) ->
+get_certificates(CAUrl, NewAccountOpt) ->
     try
 	?INFO_MSG("Persistent: ~p~n", [file:read_file_info(persistent_file())]),
-	get_certificates0(CAUrl, HttpDir, NewAccountOpt)
+	get_certificates0(CAUrl, NewAccountOpt)
     catch
 	throw:Throw ->
 	    Throw;
@@ -60,30 +60,30 @@ get_certificates(CAUrl, HttpDir, NewAccountOpt) ->
 	    {error, get_certificates}
     end.
 
--spec get_certificates0(url(), string(), account_opt()) -> 
+-spec get_certificates0(url(), account_opt()) -> 
 			       [{'ok', bitstring(), 'saved'} | {'error', bitstring(), _}] |
 			       no_return().
-get_certificates0(CAUrl, HttpDir, "old-account") ->
+get_certificates0(CAUrl, "old-account") ->
     %% Get the current account
     {ok, _AccId, PrivateKey} = ensure_account_exists(),
 
-    get_certificates1(CAUrl, HttpDir, PrivateKey);
+    get_certificates1(CAUrl, PrivateKey);
 
-get_certificates0(CAUrl, HttpDir, "new-account") ->
+get_certificates0(CAUrl, "new-account") ->
     %% Create a new account and save it to disk
     {ok, _Id, PrivateKey} = create_save_new_account(CAUrl),
     
-    get_certificates1(CAUrl, HttpDir, PrivateKey).
+    get_certificates1(CAUrl, PrivateKey).
 
--spec get_certificates1(url(), string(), jose_jwk:key()) -> 
+-spec get_certificates1(url(), jose_jwk:key()) -> 
 			       [{'ok', bitstring(), 'saved'} | {'error', bitstring(), _}] |
 			       no_return().
-get_certificates1(CAUrl, HttpDir, PrivateKey) ->
+get_certificates1(CAUrl, PrivateKey) ->
     %% Read Config
     {ok, Hosts} = get_config_hosts(),
 
     %% Get a certificate for each host
-    PemCertKeys = [get_certificate(CAUrl, Host, PrivateKey, HttpDir) || Host <- Hosts],
+    PemCertKeys = [get_certificate(CAUrl, Host, PrivateKey) || Host <- Hosts],
 
     %% Save Certificates
     SavedCerts = [save_certificate(Cert) || Cert <- PemCertKeys],
@@ -92,13 +92,13 @@ get_certificates1(CAUrl, HttpDir, PrivateKey) ->
     %% Result
     SavedCerts.
 
--spec get_certificate(url(), bitstring(), jose_jwk:key(), string()) -> 
+-spec get_certificate(url(), bitstring(), jose_jwk:key()) -> 
 			     {'ok', bitstring(), pem_certificate()} | 
 			     {'error', bitstring(), _}.
-get_certificate(CAUrl, DomainName, PrivateKey, HttpDir) ->
+get_certificate(CAUrl, DomainName, PrivateKey) ->
     ?INFO_MSG("Getting a Certificate for domain: ~p~n", [DomainName]),
     try
-	{ok, _Authz} = create_new_authorization(CAUrl, DomainName, PrivateKey, HttpDir),
+	{ok, _Authz} = create_new_authorization(CAUrl, DomainName, PrivateKey),
 	create_new_certificate(CAUrl, DomainName, PrivateKey)
     catch
 	throw:Throw ->
@@ -147,9 +147,9 @@ create_new_account(CAUrl, Contact, PrivateKey) ->
 	    throw({error,create_new_account})
     end.
 
--spec create_new_authorization(url(), bitstring(), jose_jwk:key(), bitstring()) ->
+-spec create_new_authorization(url(), bitstring(), jose_jwk:key()) ->
 				      {'ok', proplist()} | no_return().
-create_new_authorization(CAUrl, DomainName, PrivateKey, HttpDir) ->
+create_new_authorization(CAUrl, DomainName, PrivateKey) ->
     try
 	{ok, Dirs, Nonce0} = ejabberd_acme_comm:directory(CAUrl),
 	Req0 = [{<<"identifier">>,
@@ -162,7 +162,7 @@ create_new_authorization(CAUrl, DomainName, PrivateKey, HttpDir) ->
 
 	Challenges = get_challenges(Authz),
 	{ok, ChallengeUrl, KeyAuthz} =
-	    acme_challenge:solve_challenge(<<"http-01">>, Challenges, {PrivateKey, HttpDir}),
+	    acme_challenge:solve_challenge(<<"http-01">>, Challenges, PrivateKey),
 	{ok, ChallengeId} = location_to_id(ChallengeUrl),
 	Req3 = [{<<"type">>, <<"http-01">>},{<<"keyAuthorization">>, KeyAuthz}],
 	{ok, _SolvedChallenge, _Nonce2} = ejabberd_acme_comm:complete_challenge(

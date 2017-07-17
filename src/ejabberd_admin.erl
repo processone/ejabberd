@@ -45,7 +45,7 @@
 	 %% Migration jabberd1.4
 	 import_file/1, import_dir/1,
          %% Acme
-         get_certificate/2,
+         get_certificate/1,
 	 %% Purge DB
 	 delete_expired_messages/0, delete_old_messages/1,
 	 %% Mnesia
@@ -248,9 +248,8 @@ get_commands_spec() ->
      #ejabberd_commands{name = get_certificate, tags = [acme],
 			desc = "Gets a certificate for the specified domain",
 			module = ?MODULE, function = get_certificate,
-			args_desc = ["Full path to the http serving directory", 
-				     "Whether to create a new account or use the existing one"],
-			args = [{dir, string}, {option, string}],
+			args_desc = ["Whether to create a new account or use the existing one"],
+			args = [{option, string}],
 			result = {certificate, string}},
 
      #ejabberd_commands{name = import_piefxis, tags = [mnesia],
@@ -556,10 +555,10 @@ import_dir(Path) ->
 %%% Acme
 %%%
 
-get_certificate(HttpDir, UseNewAccount) ->
+get_certificate(UseNewAccount) ->
     case ejabberd_acme:is_valid_account_opt(UseNewAccount) of
 	true ->
-	    ejabberd_acme:get_certificates("http://localhost:4000", HttpDir, UseNewAccount);
+	    ejabberd_acme:get_certificates("http://localhost:4000", UseNewAccount);
 	false ->
 	    String = io_lib:format("Invalid account option: ~p", [UseNewAccount]),
 	    {invalid_option, String}

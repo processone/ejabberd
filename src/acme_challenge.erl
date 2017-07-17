@@ -78,7 +78,7 @@ solve_challenge(ChallengeType, Challenges, Options) ->
 
 -spec solve_challenge1(acme_challenge(), {jose_jwk:key(), string()}) ->
 			      {ok, url(), bitstring()} | {error, _}.
-solve_challenge1(Chal = #challenge{type = <<"http-01">>, token=Tkn}, {Key, HttpDir}) ->
+solve_challenge1(Chal = #challenge{type = <<"http-01">>, token=Tkn}, Key) ->
     KeyAuthz = key_authorization(Tkn, Key),
     %% save_key_authorization(Chal, Tkn, KeyAuthz, HttpDir);
     ets_put_key_authorization(Tkn, KeyAuthz),
