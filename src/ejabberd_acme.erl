@@ -401,19 +401,19 @@ is_error(_) -> false.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 data_empty() ->
-    #data{}.
+    [].
 
-data_get_account(#data{account = Account}) ->
-    case Account of
-	#data_acc{id = AccId, key = PrivateKey} ->
+data_get_account(Data) ->
+    case lists:keyfind(account, 1, Data) of
+	{account, #data_acc{id = AccId, key = PrivateKey}} ->
 	    {ok, AccId, PrivateKey};
-	none ->
+        false ->
 	    none
     end.
 
-data_set_account(Data = #data{}, {AccId, PrivateKey}) -> 
-    NewAcc = #data_acc{id = AccId, key = PrivateKey},
-    Data#data{account = NewAcc}.
+data_set_account(Data, {AccId, PrivateKey}) -> 
+    NewAcc = {account, #data_acc{id = AccId, key = PrivateKey}},
+    lists:keystore(account, 1, Data, NewAcc).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

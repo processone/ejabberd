@@ -16,12 +16,6 @@
 	  pem     :: binary()
 	 }).
 
--record(data, {
-	  account = none :: #data_acc{} | 'none',
-	  certs = []     :: [#data_cert{}]
-	 }).
-
-
 
 
 
