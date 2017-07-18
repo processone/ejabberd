@@ -54,27 +54,56 @@ list_certificates(Verbose) ->
     {ok, Certs} = read_certificates_persistent(),
     case Verbose of
 	"plain" -> 
-	    [{Domain, certificate_metadata(PemCert)} || {Domain, PemCert} <- Certs];
+	    [format_certificate(DataCert) || {_Key, DataCert} <- Certs];
 	"verbose" ->
 	    Certs
     end.
 
-%% TODO: Make this cleaner and more secure
-certificate_metadata(PemCert) ->
+%% TODO: Make this cleaner and more robust
+format_certificate(DataCert) ->
+    #data_cert{
+       domain = DomainName,
+       pem = PemCert,
+       path = Path
+      } = DataCert,
+    
     PemList = public_key:pem_decode(PemCert),
     PemEntryCert = lists:keyfind('Certificate', 1, PemList),
-    #'Certificate'{tbsCertificate = #'TBSCertificate'{
-				       subject = {rdnSequence, SubjectList},
-				       validity = Validity}} 
-	= public_key:pem_entry_decode(PemEntryCert),
-    
+    Certificate = public_key:pem_entry_decode(PemEntryCert),
+
     %% Find the commonName
-    %% TODO: Not the best way to find the commonName
-    ?INFO_MSG("Subject List: ~p", [SubjectList]),
-    ShallowSubjectList = [Attribute || [Attribute] <- SubjectList],
-    {_, _, CommonName} = lists:keyfind(attribute_oid(commonName), 2, ShallowSubjectList),
+    _CommonName = get_commonName(Certificate),
 
     %% Find the notAfter date
+    NotAfter = get_notAfter(Certificate),
+
+    format_certificate1(DomainName, NotAfter, Path).
+
+format_certificate1(DomainName, NotAfter, Path) ->
+    Result = lists:flatten(io_lib:format(
+			     "  Domain: ~s~n" 
+			     "    Valid until: ~s UTC~n" 
+			     "    Path: ~s", 
+			     [DomainName, NotAfter, Path])),
+    Result.
+
+get_commonName(#'Certificate'{tbsCertificate = TbsCertificate}) ->
+    #'TBSCertificate'{
+       subject = {rdnSequence, SubjectList}
+      } = TbsCertificate, 
+    
+    %% TODO: Not the best way to find the commonName
+    ShallowSubjectList = [Attribute || [Attribute] <- SubjectList],
+    {_, _, CommonName} = lists:keyfind(attribute_oid(commonName), 2, ShallowSubjectList),
+    
+    %% TODO: Remove the length-encoding from the commonName before returning it
+    CommonName.
+
+get_notAfter(#'Certificate'{tbsCertificate = TbsCertificate}) ->
+    #'TBSCertificate'{
+       validity = Validity
+      } = TbsCertificate,
+
     %% TODO: Find a library function to decode utc time
     #'Validity'{notAfter = {utcTime, UtcTime}} = Validity,
     [Y1,Y2,MO1,MO2,D1,D2,H1,H2,MI1,MI2,S1,S2,$Z] = UtcTime,
@@ -82,7 +111,7 @@ certificate_metadata(PemCert) ->
 	       true -> "19" ++ [Y1,Y2];
 	       _ -> "20" ++ [Y1,Y2]
 	   end,
-    NotAfter = lists:flatten(io_lib:format("Valid until: ~s-~s-~s ~s:~s:~s", 
+    NotAfter = lists:flatten(io_lib:format("~s-~s-~s ~s:~s:~s", 
 					   [YEAR, [MO1,MO2], [D1,D2],
 					    [H1,H2], [MI1,MI2], [S1,S2]])), 
 
@@ -484,9 +513,9 @@ data_set_certificates(Data, NewCerts) ->
     lists:keystore(certs, 1, Data, {certs, NewCerts}).
 
 %% ATM we preserve one certificate for each domain
-data_add_certificate(Data, {Domain, PemCert}) ->
+data_add_certificate(Data, DataCert = #data_cert{domain=Domain}) ->
     {ok, Certs} = data_get_certificates(Data),
-    NewCerts = lists:keystore(Domain, 1, Certs, {Domain, PemCert}),
+    NewCerts = lists:keystore(Domain, 1, Certs, {Domain, DataCert}),
     data_set_certificates(Data, NewCerts).
 
 
@@ -553,10 +582,11 @@ read_certificates_persistent() ->
     {ok, Data} = read_persistent(),
     data_get_certificates(Data).
 
-add_certificate_persistent({Domain, PemCert}) ->
+add_certificate_persistent(DataCert) ->
     {ok, Data} = read_persistent(),
-    NewData = data_add_certificate(Data, {Domain, PemCert}),
+    NewData = data_add_certificate(Data, DataCert),
     ok = write_persistent(NewData).
+
 
 save_certificate({error, _, _} = Error) ->
     Error;
@@ -569,7 +599,12 @@ save_certificate({ok, DomainName, Cert}) ->
 	%% that there is no certificate saved if it cannot be added in
 	%% certificate persistent storage
 	write_cert(CertificateFile, Cert, DomainName),
-	add_certificate_persistent({DomainName, Cert}),
+	DataCert = #data_cert{
+		      domain = DomainName,
+		      pem = Cert,
+		      path = CertificateFile
+		     },
+	add_certificate_persistent(DataCert),
 	{ok, DomainName, saved}
     catch
 	throw:Throw ->

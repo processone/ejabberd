@@ -257,10 +257,7 @@ get_commands_spec() ->
 			module = ?MODULE, function = list_certificates,
 			args_desc = ["Whether to print the whole certificate or just some metadata. Possible values: plain | verbose"],
 			args = [{option, string}],
-			result = {certificates, {list, 
-						 {certificate, {tuple, 
-								[{domain, string}, 
-								 {cert, string}]}}}}},
+			result = {certificates, {list,{certificate, string}}}},
 
      #ejabberd_commands{name = import_piefxis, tags = [mnesia],
 			desc = "Import users data from a PIEFXIS file (XEP-0227)",

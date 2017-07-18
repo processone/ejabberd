@@ -11,6 +11,11 @@
 	  key :: jose_jwk:key()
 	 }).
 
+-record(data_cert, {
+	  domain  :: list(),
+	  pem     :: jose_jwk:key(),
+	  path    :: file:filename()
+	 }).
 
 
 
