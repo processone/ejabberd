@@ -249,7 +249,7 @@ json_call(Name, ArgsDesc, Values, ResultDesc, Result, HTMLOutput) ->
                                 {200, json_gen(ResultDesc, Result, Indent, HTMLOutput)};
                             {{Name0, _}, _} ->
                                 {200, [Indent, ?OP_L("{"), ?STR_A(Name0), ?OP_L(": "),
-                                       json_gen(ResultDesc, Result, Indent, HTMLOutput), Indent, ?OP_L("}")]}
+				       json_gen(ResultDesc, Result, Indent, HTMLOutput), ?OP_L("}")]}
                         end,
     CodeStr = case Code of
                   200 -> <<" 200 OK">>;
