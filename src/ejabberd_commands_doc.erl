@@ -87,9 +87,6 @@ md_tag(strong, V) ->
 md_tag(_, V) ->
     V.
 
-unbinarize(binary) -> string;
-unbinarize(Other) -> Other.
-
 perl_gen({Name, integer}, Int, _Indent, HTMLOutput) ->
     [?ARG(Name), ?OP_L(" => "), ?NUM(Int)];
 perl_gen({Name, string}, Str, _Indent, HTMLOutput) ->
@@ -340,12 +337,26 @@ gen_calls(#ejabberd_commands{args_example=Values, args=ArgsDesc,
            end
     end.
 
+format_type({list, {_, {tuple, Els}}}) ->
+    io_lib:format("[~s]", [format_type({tuple, Els})]);
+format_type({list, El}) ->
+    io_lib:format("[~s]", [format_type(El)]);
+format_type({tuple, Els}) ->
+    Args = [format_type(El) || El <- Els],
+    io_lib:format("{~s}", [lists:flatten(lists:join(", ", Args))]);
+format_type({Name, Type}) ->
+    io_lib:format("~s::~s", [Name, format_type(Type)]);
+format_type(binary) ->
+    "string";
+format_type(atom) ->
+    "string";
+format_type(Type) ->
+    io_lib:format("~p", [Type]).
+
 gen_param(Name, Type, undefined, HTMLOutput) ->
-    [?TAG(li, [?TAG_R(strong, atom_to_list(Name)), <<" :: ">>,
-               ?RAW(io_lib:format("~p", [unbinarize(Type)]))])];
+    [?TAG(li, [?TAG_R(strong, atom_to_list(Name)), <<" :: ">>, ?RAW(format_type(Type))])];
 gen_param(Name, Type, Desc, HTMLOutput) ->
-    [?TAG(dt, [?TAG_R(strong, atom_to_list(Name)), <<" :: ">>,
-               ?RAW(io_lib:format("~p", [unbinarize(Type)]))]),
+    [?TAG(dt, [?TAG_R(strong, atom_to_list(Name)), <<" :: ">>, ?RAW(format_type(Type))]),
      ?TAG(dd, ?RAW(Desc))].
 
 gen_doc(#ejabberd_commands{name=Name, tags=_Tags, desc=Desc, longdesc=LongDesc,
