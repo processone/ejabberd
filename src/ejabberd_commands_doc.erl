@@ -343,7 +343,7 @@ format_type({list, El}) ->
     io_lib:format("[~s]", [format_type(El)]);
 format_type({tuple, Els}) ->
     Args = [format_type(El) || El <- Els],
-    io_lib:format("{~s}", [lists:flatten(lists:join(", ", Args))]);
+    io_lib:format("{~s}", [string:join(Args, ", ")]);
 format_type({Name, Type}) ->
     io_lib:format("~s::~s", [Name, format_type(Type)]);
 format_type(binary) ->
