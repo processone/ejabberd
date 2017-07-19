@@ -69,7 +69,7 @@ fi
 if [ "$INET_DIST_INTERFACE" != "" ] ; then
     INET_DIST_INTERFACE2=$("$ERL" -noshell -eval 'case inet:parse_address("'$INET_DIST_INTERFACE'") of {ok,IP} -> io:format("~p",[IP]); _ -> ok end.' -s erlang halt)
     if [ "$INET_DIST_INTERFACE2" != "" ] ; then
-        ERLANG_OPTS="$ERLANG_OPTS -kernel inet_dist_use_interface \"$INET_DIST_INTERFACE2\""
+        ERLANG_OPTS="$ERLANG_OPTS -kernel inet_dist_use_interface $INET_DIST_INTERFACE2"
     fi
 fi
 ERL_LIBS={{libdir}}
