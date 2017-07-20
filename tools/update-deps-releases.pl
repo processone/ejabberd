@@ -122,11 +122,44 @@ sub update_changelog {
     my $reason = join "\n", map {"* $_"} @reasons;
     my $content = slurp($cl);
     if (not $content =~ /^# Version $version/) {
-        $content = "# Version $version\n\n$reason\n\n$content"
+        $content = "# Version $version\n\n$reason\n\n$content";
     } else {
         $content =~ s/(# Version $version\n\n)/$1$reason\n/;
     }
     write_file($cl, $content);
+}
+
+sub edit_changelog {
+    my ($dep, $version) = @_;
+    my $cl = ".deps-update/$dep/CHANGELOG.md";
+
+    return if not -f $cl;
+
+    my $top_deps = top_deps();
+    my $git_info = deps_git_info();
+
+    say color("red"), "$dep", color("reset"), " ($top_deps->{$dep}->{commit}):";
+    say "  $_" for @{$git_info->{$dep}->{new_commits}};
+    say "";
+
+    my $content = slurp($cl);
+    my $old_content = $content;
+
+    if (not $content =~ /^# Version $version/) {
+        $content = "# Version $version\n\n* \n\n$content";
+    } else {
+        $content =~ s/(# Version $version\n\n)/$1* \n/;
+    }
+    write_file($cl, $content);
+
+    system("$ENV{EDITOR} $cl");
+
+    my $new_content = slurp($cl);
+    if ($new_content eq $content) {
+        write_file($cl, $old_content);
+    } else {
+        system("git", "-C", ".deps-update/$dep", "commit", "-a", "-m", "Update changelog");
+    }
 }
 
 sub update_app_src {
@@ -292,6 +325,7 @@ sub git_push {
 
 update_deps_repos();
 
+MAIN:
 while (1) {
     my $top_deps = top_deps();
     my $git_info = deps_git_info();
@@ -371,63 +405,85 @@ while (1) {
         }
     }
 
+    my $changelog_updated = 0;
+
     if ($cmd eq "A") {
-        $top_deps = top_deps();
-        $git_info = deps_git_info();
-        my $sub_deps = sub_deps();
+        APPLY: {
+            $top_deps = top_deps();
+            $git_info = deps_git_info();
+            my $sub_deps = sub_deps();
 
-        for my $dep (keys %$top_deps) {
-            for my $sdep (keys %{$sub_deps->{$dep}}) {
-                next if not defined $top_deps->{$sdep} or
-                    $sub_deps->{$dep}->{$sdep}->{commit} eq $top_deps->{$sdep}->{commit};
-                say "$dep $sdep ",$sub_deps->{$dep}->{$sdep}->{commit}," <=> $sdep ",$top_deps->{$sdep}->{commit};
-                schedule_operation("update", $dep, $git_info->{$dep}->{new_tag},
-                    "Updating $sdep to version $top_deps->{$sdep}->{commit}.", [$sdep, $top_deps->{$sdep}->{commit}]);
-            }
-        }
-
-        %info_updates = ();
-        %top_deps_updates = ();
-        %sub_deps_updates = ();
-
-        $top_deps = top_deps();
-        $git_info = deps_git_info();
-        $sub_deps = sub_deps();
-
-        print color("bold blue"), "List of operations:\n", color("reset");
-        for my $op (@operations) {
-            print color("red"), $op->{dep}, color("reset"), " ($top_deps->{$op->{dep}}->{commit} -> $op->{version})";
-            if (@{$op->{operations}}) {
-                say ":";
-                say "  $_->[0] -> $_->[1]" for @{$op->{operations}};
-            } else {
-                say "";
-            }
-        }
-
-        say "";
-        my $cmd = show_commands(A => "Apply", E => "Exit");
-        if ($cmd eq "A") {
-            my %top_changes;
-            for my $op (@operations) {
-                update_changelog($op->{dep}, $op->{version}, @{$op->{reasons}})
-                    if @{$op->{reasons}};
-                update_deps_versions(".deps-update/$op->{dep}/rebar.config", unpairs(@{$op->{operations}}))
-                    if @{$op->{operations}};
-                if ($git_info->{$op->{dep}}->{last_tag} ne $op->{version}) {
-                    update_app_src($op->{dep}, $op->{version});
-                    git_tag($op->{dep}, $op->{version}, "Release $op->{version}");
-                }
-
-                $top_changes{$op->{dep}} = $op->{version};
-            }
-            update_deps_versions("rebar.config", %top_changes);
-            for my $op (@operations) {
-                if ($git_info->{$op->{dep}}->{last_tag} ne $op->{version}) {
-                    git_push($op->{dep});
+            for my $dep (keys %$top_deps) {
+                for my $sdep (keys %{$sub_deps->{$dep}}) {
+                    next if not defined $top_deps->{$sdep} or
+                        $sub_deps->{$dep}->{$sdep}->{commit} eq $top_deps->{$sdep}->{commit};
+                    say "$dep $sdep ", $sub_deps->{$dep}->{$sdep}->{commit}, " <=> $sdep ",
+                        $top_deps->{$sdep}->{commit};
+                    schedule_operation("update", $dep, $git_info->{$dep}->{new_tag},
+                        "Updating $sdep to version $top_deps->{$sdep}->{commit}.",
+                        [ $sdep, $top_deps->{$sdep}->{commit} ]);
                 }
             }
-            last;
+
+            %info_updates = ();
+            %top_deps_updates = ();
+            %sub_deps_updates = ();
+
+            $top_deps = top_deps();
+            $git_info = deps_git_info();
+            $sub_deps = sub_deps();
+
+            print color("bold blue"), "List of operations:\n", color("reset");
+            for my $op (@operations) {
+                print color("red"), $op->{dep}, color("reset"),
+                    " ($top_deps->{$op->{dep}}->{commit} -> $op->{version})";
+                if (@{$op->{operations}}) {
+                    say ":";
+                    say "  $_->[0] -> $_->[1]" for @{$op->{operations}};
+                }
+                else {
+                    say "";
+                }
+            }
+
+            say "";
+            my %to_tag;
+            if (not $changelog_updated) {
+                for my $op (@operations) {
+                    if ($git_info->{$op->{dep}}->{last_tag} ne $op->{version}) {
+                        $to_tag{$op->{dep}} = $op->{version};
+                    }
+                }
+            }
+            my $cmd = show_commands(A => "Apply", (%to_tag ? (U => "Update Changelogs") : ()), E => "Exit");
+            if ($cmd eq "U") {
+                for my $dep (keys %to_tag) {
+                    edit_changelog($dep, $to_tag{$dep});
+                }
+                redo APPLY;
+            }
+            elsif ($cmd eq "A") {
+                my %top_changes;
+                for my $op (@operations) {
+                    update_changelog($op->{dep}, $op->{version}, @{$op->{reasons}})
+                        if @{$op->{reasons}};
+                    update_deps_versions(".deps-update/$op->{dep}/rebar.config", unpairs(@{$op->{operations}}))
+                        if @{$op->{operations}};
+                    if ($git_info->{$op->{dep}}->{last_tag} ne $op->{version}) {
+                        update_app_src($op->{dep}, $op->{version});
+                        git_tag($op->{dep}, $op->{version}, "Release $op->{version}");
+                    }
+
+                    $top_changes{$op->{dep}} = $op->{version};
+                }
+                update_deps_versions("rebar.config", %top_changes);
+                for my $op (@operations) {
+                    if ($git_info->{$op->{dep}}->{last_tag} ne $op->{version}) {
+                        git_push($op->{dep});
+                    }
+                }
+                last MAIN;
+            }
         }
     }
 }
