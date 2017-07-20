@@ -231,7 +231,10 @@ Welcome to this XMPP server."
       mod_disco: []
       mod_ping: []
       mod_proxy65: []
+      mod_push: []
       mod_s2s_dialback: []
+      mod_stream_mgmt:
+        resume_timeout: 3
       mod_legacy_auth: []
       mod_register: 
         welcome_message: 
@@ -290,7 +293,10 @@ Welcome to this XMPP server."
       mod_disco: []
       mod_ping: []
       mod_proxy65: []
+      mod_push: []
       mod_s2s_dialback: []
+      mod_stream_mgmt:
+        resume_timeout: 3
       mod_legacy_auth: []
       mod_register: 
         welcome_message: 

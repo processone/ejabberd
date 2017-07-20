@@ -431,6 +431,7 @@ db_tests(DB) when DB == mnesia; DB == redis ->
        mam_tests:single_cases(),
        carbons_tests:single_cases(),
        csi_tests:single_cases(),
+       push_tests:single_cases(),
        test_unregister]},
      muc_tests:master_slave_cases(),
      privacy_tests:master_slave_cases(),
@@ -441,7 +442,8 @@ db_tests(DB) when DB == mnesia; DB == redis ->
      vcard_tests:master_slave_cases(),
      announce_tests:master_slave_cases(),
      carbons_tests:master_slave_cases(),
-     csi_tests:master_slave_cases()];
+     csi_tests:master_slave_cases(),
+     push_tests:master_slave_cases()];
 db_tests(_) ->
     [{single_user, [sequence],
       [test_register,
