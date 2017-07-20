@@ -546,25 +546,23 @@ parent_domains(Domain) ->
 
 get_commands_spec() ->
     [#ejabberd_commands{
-        name = incoming_s2s_number,
-			tags = [stats, s2s],
+        name = incoming_s2s_number, tags = [stats, s2s],
         desc = "Number of incoming s2s connections on the node",
-                        policy = admin,
-			module = ?MODULE, function = incoming_s2s_number,
-			args = [], result = {s2s_incoming, integer}},
+	policy = admin,
+	module = ?MODULE, function = incoming_s2s_number,
+	args = [], result = {s2s_incoming, integer}},
      #ejabberd_commands{
-        name = outgoing_s2s_number,
-			tags = [stats, s2s],
+        name = outgoing_s2s_number, tags = [stats, s2s],
         desc = "Number of outgoing s2s connections on the node",
-                        policy = admin,
-			module = ?MODULE, function = outgoing_s2s_number,
-			args = [], result = {s2s_outgoing, integer}},
-     #ejabberd_commands{name = stop_all_connections,
-			tags = [s2s],
-			desc = "Stop all outgoing and incoming connections",
-			policy = admin,
-			module = ?MODULE, function = stop_all_connections,
-			args = [], result = {res, rescode}}].
+	policy = admin,
+	module = ?MODULE, function = outgoing_s2s_number,
+	args = [], result = {s2s_outgoing, integer}},
+     #ejabberd_commands{
+	name = stop_all_connections, tags = [s2s],
+	desc = "Stop all outgoing and incoming connections",
+	policy = admin,
+	module = ?MODULE, function = stop_all_connections,
+	args = [], result = {res, rescode}}].
 
 %% TODO Move those stats commands to ejabberd stats command ?
 incoming_s2s_number() ->
