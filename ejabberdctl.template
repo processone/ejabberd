@@ -13,23 +13,30 @@ ERLANG_NODE=ejabberd@localhost
 ERL="{{erl}}"
 IEX="{{bindir}}/iex"
 EPMD="{{epmd}}"
-INSTALLUSER={{installuser}}
+INSTALLUSER="{{installuser}}"
 
-# check the proper system user is used if defined
-EXEC_CMD="false"
-if [ -n "$INSTALLUSER" ] ; then
-    if [ $(id -g) -eq $(id -g $INSTALLUSER || echo -1) ] ; then
+# check the proper system user is used
+case `id -un` in
+    "$INSTALLUSER")
         EXEC_CMD="as_current_user"
-    else
-        id -Gn | grep -q wheel && EXEC_CMD="as_install_user"
-    fi
-else
-    EXEC_CMD="as_current_user"
-fi
-if [ "$EXEC_CMD" = "false" ] ; then
-    echo "ERROR: This command can only be run by root or the user $INSTALLUSER" >&2
-    exit 7
-fi
+        ;;
+    root)
+        if [ -n "$INSTALLUSER" ] ; then
+            EXEC_CMD="as_install_user"
+        else
+            EXEC_CMD="as_current_user"
+            echo "WARNING: This is not recommended to run ejabberd as root" >&2
+        fi
+        ;;
+    *)
+        if [ -n "$INSTALLUSER" ] ; then
+            echo "ERROR: This command can only be run by root or the user $INSTALLUSER" >&2
+            exit 7
+        else
+            EXEC_CMD="as_current_user"
+        fi
+        ;;
+esac
 
 # parse command line parameters
 for arg; do
@@ -103,7 +110,7 @@ export ERL_LIBS
 exec_cmd()
 {
     case $EXEC_CMD in
-        as_install_user) su -c '"$0" $@"' "$INSTALLUSER" -- "$@" ;;
+        as_install_user) su -c '"$0" "$@"' "$INSTALLUSER" -- "$@" ;;
         as_current_user) "$@" ;;
     esac
 }
@@ -223,12 +230,6 @@ check_start()
                 "$EPMD" -kill >/dev/null
             }
         }
-    } || {
-        [ -d "$SPOOL_DIR" ] || exec_cmd mkdir -p "$SPOOL_DIR"
-        cd "$SPOOL_DIR" || {
-            echo "ERROR: ejabberd can not access directory $SPOOL_DIR"
-            exit 6
-        }
     }
 }
 
@@ -251,6 +252,13 @@ wait_status()
         fi
     done
     [ $timeout -gt 0 ]
+}
+
+# ensure we can change current directory to SPOOL_DIR
+[ -d "$SPOOL_DIR" ] || exec_cmd mkdir -p "$SPOOL_DIR"
+cd "$SPOOL_DIR" || {
+    echo "ERROR: can not access directory $SPOOL_DIR"
+    exit 6
 }
 
 # main
