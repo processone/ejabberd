@@ -77,6 +77,8 @@ master_slave_cases() ->
 sm_master(Config) ->
     ct:comment("Waiting for the slave to close the socket"),
     peer_down = get_event(Config),
+    ct:comment("Waiting a bit in order to test the keepalive feature"),
+    ct:sleep(5000), % Without mod_push_keepalive, the session would time out.
     ct:comment("Sending message to the slave"),
     send_test_message(Config),
     ct:comment("Handling push notification"),

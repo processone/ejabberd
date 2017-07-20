@@ -43,6 +43,9 @@
 %% ejabberd command.
 -export([get_commands_spec/0, delete_old_sessions/1]).
 
+%% API (used by mod_push_keepalive).
+-export([notify/1, notify/3, notify/5]).
+
 -include("ejabberd.hrl").
 -include("ejabberd_commands.hrl").
 -include("logger.hrl").
@@ -393,7 +396,7 @@ remove_user(LUser, LServer) ->
     delete_sessions(LUser, LServer, LookupFun, Mod).
 
 %%--------------------------------------------------------------------
-%% Internal functions.
+%% Generate push notifications.
 %%--------------------------------------------------------------------
 -spec notify(c2s_state()) -> ok.
 notify(#{jid := #jid{luser = LUser, lserver = LServer}, sid := {TS, _}}) ->
@@ -433,6 +436,9 @@ notify(LServer, PushLJID, Node, XData, HandleResponse) ->
     ejabberd_local:route_iq(IQ, HandleResponse),
     ok.
 
+%%--------------------------------------------------------------------
+%% Internal functions.
+%%--------------------------------------------------------------------
 -spec store_session(binary(), binary(), timestamp(), jid(), binary(), xdata())
       -> {ok, push_session()} | error.
 store_session(LUser, LServer, TS, PushJID, Node, XData) ->
