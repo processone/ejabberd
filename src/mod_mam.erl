@@ -1008,6 +1008,9 @@ get_commands_spec() ->
 			longdesc = "Valid message TYPEs: "
 				   "\"chat\", \"groupchat\", \"all\".",
 			module = ?MODULE, function = delete_old_messages,
+			args_desc = ["Type of messages to delete (chat, groupchat, all)",
+                                     "Days to keep messages"],
+			args_example = [<<"all">>, 31],
 			args = [{type, binary}, {days, integer}],
 			result = {res, rescode}}].
 
