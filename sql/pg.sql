@@ -120,12 +120,6 @@ CREATE TABLE vcard (
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
-CREATE TABLE vcard_xupdate (
-    username text PRIMARY KEY,
-    hash text NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT now()
-);
-
 CREATE TABLE vcard_search (
     username text NOT NULL,
     lusername text PRIMARY KEY,

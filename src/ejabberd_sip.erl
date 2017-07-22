@@ -22,6 +22,21 @@
 %%%-------------------------------------------------------------------
 -module(ejabberd_sip).
 
+-ifndef(SIP).
+-include("logger.hrl").
+-export([socket_type/0, start/2, listen_opt_type/1]).
+log_error() ->
+    ?CRITICAL_MSG("ejabberd is not compiled with SIP support", []).
+socket_type() ->
+    log_error(),
+    raw.
+listen_opt_type(_) ->
+    log_error(),
+    [].
+start(_, _) ->
+    log_error(),
+    {error, sip_not_compiled}.
+-else.
 %% API
 -export([tcp_init/2, udp_init/2, udp_recv/5, start/2,
 	 socket_type/0, listen_opt_type/1]).
@@ -59,3 +74,4 @@ listen_opt_type(_) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+-endif.

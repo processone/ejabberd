@@ -43,6 +43,7 @@
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("pubsub.hrl").
+-include("mod_roster.hrl").
 
 -define(STDTREE, <<"tree">>).
 -define(STDNODE, <<"flat">>).
@@ -405,9 +406,19 @@ terminate_plugins(Host, ServerHost, Plugins, TreePlugin) ->
     TreePlugin:terminate(Host, ServerHost),
     ok.
 
+get_subscribed(User, Server) ->
+    Items = ejabberd_hooks:run_fold(roster_get, Server, [], [{User, Server}]),
+    lists:filtermap(
+      fun(#roster{jid = LJID, subscription = Sub})
+	    when Sub == both orelse Sub == from ->
+	      {true, LJID};
+	 (_) ->
+	      false
+      end, Items).
+
 send_loop(State) ->
     receive
-	{presence, JID, Pid} ->
+	{presence, JID, _Pid} ->
 	    Host = State#state.host,
 	    ServerHost = State#state.server_host,
 	    DBType = State#state.db_type,
@@ -429,26 +440,21 @@ send_loop(State) ->
 		State#state.plugins),
 	    if not State#state.ignore_pep_from_offline ->
 		    {User, Server, Resource} = LJID,
-		    case catch ejabberd_c2s:get_subscribed(Pid) of
-			Contacts when is_list(Contacts) ->
-			    lists:foreach(
-				fun({U, S, R}) when S == ServerHost ->
-					case user_resources(U, S) of
-					    [] -> %% offline
-						PeerJID = jid:make(U, S, R),
-						self() !  {presence, User, Server, [Resource], PeerJID};
-					    _ -> %% online
-						% this is already handled by presence probe
-						ok
-					end;
-				    (_) ->
-					% we can not do anything in any cases
-					ok
-				end,
-				Contacts);
-			_ ->
-			    ok
-		    end;
+		    Contacts = get_subscribed(User, Server),
+		    lists:foreach(
+		      fun({U, S, R}) when S == ServerHost ->
+			      case user_resources(U, S) of
+				  [] -> %% offline
+				      PeerJID = jid:make(U, S, R),
+				      self() !  {presence, User, Server, [Resource], PeerJID};
+				  _ -> %% online
+				      %% this is already handled by presence probe
+				      ok
+			      end;
+			 (_) ->
+			      %% we can not do anything in any cases
+			      ok
+		      end, Contacts);
 		true ->
 		    ok
 	    end,
@@ -3003,60 +3009,61 @@ c2s_handle_info(C2SState, _) ->
 
 subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
     NodesToDeliver = fun (Depth, Node, Subs, Acc) ->
-	    NodeName = case Node#pubsub_node.nodeid of
-		{_, N} -> N;
-		Other -> Other
-	    end,
-	    NodeOptions = Node#pubsub_node.options,
-	    lists:foldl(fun({LJID, SubID, SubOptions}, {JIDs, Recipients}) ->
-			case is_to_deliver(LJID, NotifyType, Depth, NodeOptions, SubOptions) of
-			    true ->
-				case state_can_deliver(LJID, SubOptions) of
-				    [] -> {JIDs, Recipients};
-				    JIDsToDeliver ->
-					lists:foldl(
-					    fun(JIDToDeliver, {JIDsAcc, RecipientsAcc}) ->
-						    case lists:member(JIDToDeliver, JIDs) of
-							%% check if the JIDs co-accumulator contains the Subscription Jid,
-							false ->
-							    %%  - if not,
-							    %%  - add the Jid to JIDs list co-accumulator ;
-							    %%  - create a tuple of the Jid, Nidx, and SubID (as list),
-							    %%    and add the tuple to the Recipients list co-accumulator
-							    {[JIDToDeliver | JIDsAcc],
-								[{JIDToDeliver, NodeName, [SubID]}
-								    | RecipientsAcc]};
-							true ->
-							    %% - if the JIDs co-accumulator contains the Jid
-							    %%   get the tuple containing the Jid from the Recipient list co-accumulator
-							    {_, {JIDToDeliver, NodeName1, SubIDs}} =
-								lists:keysearch(JIDToDeliver, 1, RecipientsAcc),
-							    %%   delete the tuple from the Recipients list
-							    % v1 : Recipients1 = lists:keydelete(LJID, 1, Recipients),
-							    % v2 : Recipients1 = lists:keyreplace(LJID, 1, Recipients, {LJID, Nidx1, [SubID | SubIDs]}),
-							    %%   add the SubID to the SubIDs list in the tuple,
-							    %%   and add the tuple back to the Recipients list co-accumulator
-							    % v1.1 : {JIDs, lists:append(Recipients1, [{LJID, Nidx1, lists:append(SubIDs, [SubID])}])}
-							    % v1.2 : {JIDs, [{LJID, Nidx1, [SubID | SubIDs]} | Recipients1]}
-							    % v2: {JIDs, Recipients1}
-							    {JIDsAcc,
-								lists:keyreplace(JIDToDeliver, 1,
-								    RecipientsAcc,
-								    {JIDToDeliver, NodeName1,
-									[SubID | SubIDs]})}
-						    end
-					    end, {JIDs, Recipients}, JIDsToDeliver)
-				end;
-			    false ->
-				{JIDs, Recipients}
-			end
-		end, Acc, Subs)
-    end,
+	NodeName = case Node#pubsub_node.nodeid of
+		       {_, N} -> N;
+		       Other -> Other
+		   end,
+	NodeOptions = Node#pubsub_node.options,
+	lists:foldl(fun({LJID, SubID, SubOptions}, {JIDs, Recipients}) ->
+	    case is_to_deliver(LJID, NotifyType, Depth, NodeOptions, SubOptions) of
+		true ->
+		    case state_can_deliver(LJID, SubOptions) of
+			[] -> {JIDs, Recipients};
+			[LJID] -> {JIDs, [{LJID, NodeName, [SubID]} | Recipients]};
+			JIDsToDeliver ->
+			    lists:foldl(
+				fun(JIDToDeliver, {JIDsAcc, RecipientsAcc}) ->
+					case lists:member(JIDToDeliver, JIDs) of
+					    %% check if the JIDs co-accumulator contains the Subscription Jid,
+					    false ->
+						%%  - if not,
+						%%  - add the Jid to JIDs list co-accumulator ;
+						%%  - create a tuple of the Jid, Nidx, and SubID (as list),
+						%%    and add the tuple to the Recipients list co-accumulator
+						{[JIDToDeliver | JIDsAcc],
+						    [{JIDToDeliver, NodeName, [SubID]}
+							| RecipientsAcc]};
+					    true ->
+						%% - if the JIDs co-accumulator contains the Jid
+						%%   get the tuple containing the Jid from the Recipient list co-accumulator
+						{_, {JIDToDeliver, NodeName1, SubIDs}} =
+						    lists:keysearch(JIDToDeliver, 1, RecipientsAcc),
+						%%   delete the tuple from the Recipients list
+						% v1 : Recipients1 = lists:keydelete(LJID, 1, Recipients),
+						% v2 : Recipients1 = lists:keyreplace(LJID, 1, Recipients, {LJID, Nidx1, [SubID | SubIDs]}),
+						%%   add the SubID to the SubIDs list in the tuple,
+						%%   and add the tuple back to the Recipients list co-accumulator
+						% v1.1 : {JIDs, lists:append(Recipients1, [{LJID, Nidx1, lists:append(SubIDs, [SubID])}])}
+						% v1.2 : {JIDs, [{LJID, Nidx1, [SubID | SubIDs]} | Recipients1]}
+						% v2: {JIDs, Recipients1}
+						{JIDsAcc,
+						    lists:keyreplace(JIDToDeliver, 1,
+							RecipientsAcc,
+							{JIDToDeliver, NodeName1,
+							    [SubID | SubIDs]})}
+					end
+				end, {JIDs, Recipients}, JIDsToDeliver)
+		    end;
+		false ->
+		    {JIDs, Recipients}
+	    end
+	end, Acc, Subs)
+	end,
     DepthsToDeliver = fun({Depth, SubsByNode}, Acc1) ->
-	    lists:foldl(fun({Node, Subs}, Acc2) ->
-			NodesToDeliver(Depth, Node, Subs, Acc2)
-		end, Acc1, SubsByNode)
-    end,
+	lists:foldl(fun({Node, Subs}, Acc2) ->
+			    NodesToDeliver(Depth, Node, Subs, Acc2)
+		    end, Acc1, SubsByNode)
+	end,
     {_, JIDSubs} = lists:foldl(DepthsToDeliver, {[], []}, SubsByDepth),
     JIDSubs.
 

@@ -45,7 +45,7 @@
 -define(ERROR_MSG(Fmt, Args), error_logger:error_msg(Fmt, Args)).
 
 -define(TCP_SEND_TIMEOUT, 32000).
--define(SERVER, ?MODULE). 
+-define(SERVER, ?MODULE).
 
 -record(state, {listener = make_ref() :: reference()}).
 
@@ -122,7 +122,7 @@ accept(ListenSocket, Tree) ->
 process(Socket, Tree) ->
     case gen_tcp:recv(Socket, 0) of
         {ok, B} ->
-            case asn1rt:decode('ELDAPv3', 'LDAPMessage', B) of
+            case 'ELDAPv3':decode('LDAPMessage', B) of
                 {ok, Msg} ->
                     Replies = process_msg(Msg, Tree),
                     Id = Msg#'LDAPMessage'.messageID,
@@ -131,8 +131,8 @@ process(Socket, Tree) ->
                               Reply = #'LDAPMessage'{messageID = Id,
                                                      protocolOp = ReplyOp},
                               %%?DEBUG("sent:~n~p", [Reply]),
-                              {ok, Bytes} = asn1rt:encode(
-                                              'ELDAPv3', 'LDAPMessage', Reply),
+                              {ok, Bytes} = 'ELDAPv3':encode(
+                                              'LDAPMessage', Reply),
                               gen_tcp:send(Socket, Bytes)
                       end, Replies),
                     process(Socket, Tree);

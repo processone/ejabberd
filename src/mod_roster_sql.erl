@@ -30,10 +30,9 @@
 
 %% API
 -export([init/2, read_roster_version/2, write_roster_version/4,
-	 get_roster/2, get_roster_by_jid/3,
-	 roster_subscribe/4, get_roster_by_jid_with_groups/3,
-	 remove_user/2, update_roster/4, del_roster/3, transaction/2,
-	 read_subscription_and_groups/3, get_only_items/2,
+	 get_roster/2, get_roster_item/3, roster_subscribe/4,
+	 read_subscription_and_groups/3, remove_user/2,
+	 update_roster/4, del_roster/3, transaction/2,
 	 import/3, export/1, raw_to_record/2]).
 
 -include("mod_roster.hrl").
@@ -47,27 +46,32 @@ init(_Host, _Opts) ->
     ok.
 
 read_roster_version(LUser, LServer) ->
-    case sql_queries:get_roster_version(LServer, LUser) of
-	{selected, [{Version}]} -> Version;
-	{selected, []} -> error
+    case ejabberd_sql:sql_query(
+	   LServer,
+	   ?SQL("select @(version)s from roster_version"
+		" where username = %(LUser)s")) of
+	{selected, [{Version}]} -> {ok, Version};
+	{selected, []} -> error;
+	_ -> {error, db_failure}
     end.
 
 write_roster_version(LUser, LServer, InTransaction, Ver) ->
     if InTransaction ->
-	    sql_queries:set_roster_version(LUser, Ver);
+	    set_roster_version(LUser, Ver);
        true ->
-	    sql_queries:sql_transaction(
+	    transaction(
 	      LServer,
-	      fun () ->
-		      sql_queries:set_roster_version(LUser, Ver)
-	      end)
+	      fun () -> set_roster_version(LUser, Ver) end)
     end.
 
 get_roster(LUser, LServer) ->
-    case catch sql_queries:get_roster(LServer, LUser) of
+    case ejabberd_sql:sql_query(
+	   LServer,
+	   ?SQL("select @(username)s, @(jid)s, @(nick)s, @(subscription)s, "
+		"@(ask)s, @(askmessage)s, @(server)s, @(subscribe)s, "
+		"@(type)s from rosterusers where username=%(LUser)s")) of
         {selected, Items} when is_list(Items) ->
-            JIDGroups = case catch sql_queries:get_roster_jid_groups(
-                                     LServer, LUser) of
+            JIDGroups = case get_roster_jid_groups(LServer, LUser) of
                             {selected, JGrps} when is_list(JGrps) ->
                                 JGrps;
                             _ ->
@@ -77,104 +81,89 @@ get_roster(LUser, LServer) ->
                                              dict:append(J, G, Acc)
                                      end,
                                      dict:new(), JIDGroups),
-	    lists:flatmap(
-	      fun(I) ->
-		      case raw_to_record(LServer, I) of
-			  %% Bad JID in database:
-			  error -> [];
-			  R ->
-			      SJID = jid:encode(R#roster.jid),
-			      Groups = case dict:find(SJID, GroupsDict) of
-					   {ok, Gs} -> Gs;
-					   error -> []
-				       end,
-			      [R#roster{groups = Groups}]
-		      end
-	      end, Items);
+	    {ok, lists:flatmap(
+		   fun(I) ->
+			   case raw_to_record(LServer, I) of
+			       %% Bad JID in database:
+			       error -> [];
+			       R ->
+				   SJID = jid:encode(R#roster.jid),
+				   Groups = case dict:find(SJID, GroupsDict) of
+						{ok, Gs} -> Gs;
+						error -> []
+					    end,
+				   [R#roster{groups = Groups}]
+			   end
+		   end, Items)};
         _ ->
-	    []
-    end.
-
-get_roster_by_jid(LUser, LServer, LJID) ->
-    {selected, Res} =
-	sql_queries:get_roster_by_jid(LServer, LUser, jid:encode(LJID)),
-    case Res of
-	[] ->
-	    #roster{usj = {LUser, LServer, LJID},
-		    us = {LUser, LServer}, jid = LJID};
-	[I] ->
-	    R = raw_to_record(LServer, I),
-	    case R of
-		%% Bad JID in database:
-		error ->
-		    #roster{usj = {LUser, LServer, LJID},
-			    us = {LUser, LServer}, jid = LJID};
-		_ ->
-		    R#roster{usj = {LUser, LServer, LJID},
-			     us = {LUser, LServer}, jid = LJID, name = <<"">>}
-	    end
-    end.
-
-get_only_items(LUser, LServer) ->
-    case catch sql_queries:get_roster(LServer, LUser) of
-	{selected, Is} when is_list(Is) ->
-	    lists:flatmap(
-	      fun(I) ->
-		      case raw_to_record(LServer, I) of
-			  error -> [];
-			  R -> [R]
-		      end
-	      end, Is);
-	_ -> []
+	    error
     end.
 
 roster_subscribe(_LUser, _LServer, _LJID, Item) ->
     ItemVals = record_to_row(Item),
-    sql_queries:roster_subscribe(ItemVals).
+    roster_subscribe(ItemVals).
 
 transaction(LServer, F) ->
     ejabberd_sql:sql_transaction(LServer, F).
 
-get_roster_by_jid_with_groups(LUser, LServer, LJID) ->
+get_roster_item(LUser, LServer, LJID) ->
     SJID = jid:encode(LJID),
-    case sql_queries:get_roster_by_jid(LServer, LUser, SJID) of
+    case get_roster_by_jid(LServer, LUser, SJID) of
 	{selected, [I]} ->
             case raw_to_record(LServer, I) of
 		error ->
-		    #roster{usj = {LUser, LServer, LJID},
-			    us = {LUser, LServer}, jid = LJID};
+		    error;
 		R ->
-		    Groups =
-			case sql_queries:get_roster_groups(LServer, LUser, SJID) of
-			    {selected, JGrps} when is_list(JGrps) ->
-				[JGrp || {JGrp} <- JGrps];
-			    _ -> []
-			end,
-		    R#roster{groups = Groups}
+		    Groups = case get_roster_groups(LServer, LUser, SJID) of
+				 {selected, JGrps} when is_list(JGrps) ->
+				     [JGrp || {JGrp} <- JGrps];
+				 _ -> []
+			     end,
+		    {ok, R#roster{groups = Groups}}
 	    end;
 	{selected, []} ->
-	    #roster{usj = {LUser, LServer, LJID},
-		    us = {LUser, LServer}, jid = LJID}
+	    error
     end.
 
 remove_user(LUser, LServer) ->
-    sql_queries:del_user_roster_t(LServer, LUser),
-    {atomic, ok}.
+    transaction(
+      LServer,
+      fun () ->
+              ejabberd_sql:sql_query_t(
+                ?SQL("delete from rosterusers where username=%(LUser)s")),
+              ejabberd_sql:sql_query_t(
+                ?SQL("delete from rostergroups where username=%(LUser)s"))
+      end),
+    ok.
 
-update_roster(LUser, LServer, LJID, Item) ->
+update_roster(LUser, _LServer, LJID, Item) ->
     SJID = jid:encode(LJID),
     ItemVals = record_to_row(Item),
     ItemGroups = Item#roster.groups,
-    sql_queries:update_roster(LServer, LUser, SJID, ItemVals,
-                               ItemGroups).
+    roster_subscribe(ItemVals),
+    ejabberd_sql:sql_query_t(
+      ?SQL("delete from rostergroups"
+           " where username=%(LUser)s and jid=%(SJID)s")),
+    lists:foreach(
+      fun(ItemGroup) ->
+              ejabberd_sql:sql_query_t(
+                ?SQL("insert into rostergroups(username, jid, grp) "
+                     "values (%(LUser)s, %(SJID)s, %(ItemGroup)s)"))
+      end,
+      ItemGroups).
 
-del_roster(LUser, LServer, LJID) ->
+del_roster(LUser, _LServer, LJID) ->
     SJID = jid:encode(LJID),
-    sql_queries:del_roster(LServer, LUser, SJID).
+    ejabberd_sql:sql_query_t(
+      ?SQL("delete from rosterusers"
+           " where username=%(LUser)s and jid=%(SJID)s")),
+    ejabberd_sql:sql_query_t(
+      ?SQL("delete from rostergroups"
+           " where username=%(LUser)s and jid=%(SJID)s")).
 
 read_subscription_and_groups(LUser, LServer, LJID) ->
     SJID = jid:encode(LJID),
-    case catch sql_queries:get_subscription(LServer, LUser, SJID) of
+    case get_subscription(LServer, LUser, SJID) of
 	{selected, [{SSubscription}]} ->
 	    Subscription = case SSubscription of
 			       <<"B">> -> both;
@@ -188,13 +177,12 @@ read_subscription_and_groups(LUser, LServer, LJID) ->
 						       {subscription, SSubscription})]),
 				   none
 			   end,
-	    Groups = case catch sql_queries:get_rostergroup_by_jid(
-				  LServer, LUser, SJID) of
+	    Groups = case get_rostergroup_by_jid(LServer, LUser, SJID) of
 			 {selected, JGrps} when is_list(JGrps) ->
 			     [JGrp || {JGrp} <- JGrps];
 			 _ -> []
 		     end,
-	    {Subscription, Groups};
+	    {ok, {Subscription, Groups}};
 	_ ->
 	    error
     end.
@@ -205,7 +193,7 @@ export(_Server) ->
             when LServer == Host ->
               ItemVals = record_to_row(R),
               ItemGroups = R#roster.groups,
-              sql_queries:update_roster_sql(ItemVals, ItemGroups);
+              update_roster_sql(ItemVals, ItemGroups);
         (_Host, _R) ->
               []
       end},
@@ -225,6 +213,78 @@ import(_, _, _) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+set_roster_version(LUser, Version) ->
+    ?SQL_UPSERT_T(
+       "roster_version",
+       ["!username=%(LUser)s",
+        "version=%(Version)s"]).
+
+get_roster_jid_groups(LServer, LUser) ->
+    ejabberd_sql:sql_query(
+      LServer,
+      ?SQL("select @(jid)s, @(grp)s from rostergroups where "
+           "username=%(LUser)s")).
+
+get_roster_groups(_LServer, LUser, SJID) ->
+    ejabberd_sql:sql_query_t(
+      ?SQL("select @(grp)s from rostergroups"
+           " where username=%(LUser)s and jid=%(SJID)s")).
+
+roster_subscribe({LUser, SJID, Name, SSubscription, SAsk, AskMessage}) ->
+    ?SQL_UPSERT_T(
+       "rosterusers",
+       ["!username=%(LUser)s",
+        "!jid=%(SJID)s",
+        "nick=%(Name)s",
+        "subscription=%(SSubscription)s",
+        "ask=%(SAsk)s",
+        "askmessage=%(AskMessage)s",
+        "server='N'",
+        "subscribe=''",
+        "type='item'"]).
+
+get_roster_by_jid(_LServer, LUser, SJID) ->
+    ejabberd_sql:sql_query_t(
+      ?SQL("select @(username)s, @(jid)s, @(nick)s, @(subscription)s,"
+           " @(ask)s, @(askmessage)s, @(server)s, @(subscribe)s,"
+           " @(type)s from rosterusers"
+           " where username=%(LUser)s and jid=%(SJID)s")).
+
+get_rostergroup_by_jid(LServer, LUser, SJID) ->
+    ejabberd_sql:sql_query(
+      LServer,
+      ?SQL("select @(grp)s from rostergroups"
+           " where username=%(LUser)s and jid=%(SJID)s")).
+
+get_subscription(LServer, LUser, SJID) ->
+    ejabberd_sql:sql_query(
+      LServer,
+      ?SQL("select @(subscription)s from rosterusers "
+           "where username=%(LUser)s and jid=%(SJID)s")).
+
+update_roster_sql({LUser, SJID, Name, SSubscription, SAsk, AskMessage},
+		  ItemGroups) ->
+    [?SQL("delete from rosterusers where"
+          " username=%(LUser)s and jid=%(SJID)s;"),
+     ?SQL("insert into rosterusers("
+          " username, jid, nick,"
+          " subscription, ask, askmessage,"
+          " server, subscribe, type) "
+          "values ("
+          "%(LUser)s, "
+          "%(SJID)s, "
+          "%(Name)s, "
+          "%(SSubscription)s, "
+          "%(SAsk)s, "
+          "%(AskMessage)s, "
+          "'N', '', 'item');"),
+     ?SQL("delete from rostergroups where"
+          " username=%(LUser)s and jid=%(SJID)s;")]
+      ++
+      [?SQL("insert into rostergroups(username, jid, grp) "
+            "values (%(LUser)s, %(SJID)s, %(ItemGroup)s);")
+       || ItemGroup <- ItemGroups].
+
 raw_to_record(LServer,
 	      [User, SJID, Nick, SSubscription, SAsk, SAskMessage,
 	       _SServer, _SSubscribe, _SType]) ->

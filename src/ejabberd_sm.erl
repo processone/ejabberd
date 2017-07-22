@@ -321,7 +321,7 @@ get_offline_info(Time, User, Server, Resource) ->
 	[#session{sid = {Time, _}, info = Info}] ->
 	    case proplists:get_bool(offline, Info) of
 		true ->
-	    Info;
+		    Info;
 		false ->
 		    none
 	    end;
@@ -858,7 +858,7 @@ force_update_presence({LUser, LServer}) ->
     Mod = get_sm_backend(LServer),
     Ss = online(get_sessions(Mod, LUser, LServer)),
     lists:foreach(fun (#session{sid = {_, Pid}}) ->
-			  ejabberd_c2s:route(Pid, force_update_presence)
+			  ejabberd_c2s:resend_presence(Pid)
 		  end,
 		  Ss).
 
@@ -957,30 +957,36 @@ cache_nodes(Mod, LServer) ->
 %%% ejabberd commands
 
 get_commands_spec() ->
-    [#ejabberd_commands{name = connected_users,
-			tags = [session],
+    [#ejabberd_commands{name = connected_users, tags = [session],
 			desc = "List all established sessions",
                         policy = admin,
 			module = ?MODULE, function = connected_users, args = [],
+			result_desc = "List of users sessions",
+			result_example = [<<"user1@example.com">>, <<"user2@example.com">>],
 			result = {connected_users, {list, {sessions, string}}}},
-     #ejabberd_commands{name = connected_users_number,
-			tags = [session, stats],
+     #ejabberd_commands{name = connected_users_number, tags = [session, stats],
 			desc = "Get the number of established sessions",
                         policy = admin,
 			module = ?MODULE, function = connected_users_number,
+			result_example = 2,
 			args = [], result = {num_sessions, integer}},
-     #ejabberd_commands{name = user_resources,
-			tags = [session],
+     #ejabberd_commands{name = user_resources, tags = [session],
 			desc = "List user's connected resources",
                         policy = user,
 			module = ?MODULE, function = user_resources,
-			args = [],
+			args = [{user, binary}, {host, binary}],
+			args_desc = ["User name", "Server name"],
+			args_example = [<<"user1">>, <<"example.com">>],
+			result_example = [<<"tka1">>, <<"Gajim">>, <<"mobile-app">>],
 			result = {resources, {list, {resource, string}}}},
-     #ejabberd_commands{name = kick_user,
-			tags = [session],
+     #ejabberd_commands{name = kick_user, tags = [session],
 			desc = "Disconnect user's active sessions",
 			module = ?MODULE, function = kick_user,
 			args = [{user, binary}, {host, binary}],
+			args_desc = ["User name", "Server name"],
+			args_example = [<<"user1">>, <<"example.com">>],
+			result_desc = "Number of resources that were kicked",
+			result_example = 3,
 			result = {num_resources, integer}}].
 
 -spec connected_users() -> [binary()].

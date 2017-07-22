@@ -41,16 +41,20 @@ defmodule EjabberdModAdminExtraTest do
 			:jid.start
 			:stringprep.start
 			:mnesia.start
+			:ejabberd_mnesia.start
 			:p1_sha.load_nif
+			:ejabberd_hooks.start_link
 		rescue
 			_ -> :ok
 		end
-		{:ok, _} = :ejabberd_access_permissions.start_link()
-		:ejabberd_commands.init
-                :ok = :ejabberd_config.start([@domain], [])
+		:acl.start_link
+		:ejabberd_access_permissions.start_link()
+		:ejabberd_commands.start_link
+        :ok = :ejabberd_config.start([@domain], [])
+        :gen_mod.start_link
 		:mod_admin_extra.start(@domain, [])
 		:sel_application.start_app(:moka)
-		{:ok, _pid} = :ejabberd_hooks.start_link
+		:ejabberd_hooks.start_link
 		:ok
 	end
 
@@ -66,9 +70,9 @@ defmodule EjabberdModAdminExtraTest do
 	test "check_account works" do
 		EjabberdAuthMock.create_user @user, @domain, @password
 
-		assert :ejabberd_commands.execute_command(:check_account, [@user, @domain])
-		refute :ejabberd_commands.execute_command(:check_account, [@user, "bad_domain"])
-		refute :ejabberd_commands.execute_command(:check_account, ["bad_user", @domain])
+		assert call_command(:check_account, [@user, @domain])
+		refute call_command(:check_account, [@user, "bad_domain"])
+		refute call_command(:check_account, ["bad_user", @domain])
 
 		assert :meck.validate :ejabberd_auth
 	end
@@ -77,13 +81,13 @@ defmodule EjabberdModAdminExtraTest do
 
 		EjabberdAuthMock.create_user @user, @domain, @password
 
-		assert :ejabberd_commands.execute_command(:check_password,
+		assert call_command(:check_password,
 																							[@user, @domain, @password])
-		refute :ejabberd_commands.execute_command(:check_password,
+		refute call_command(:check_password,
 																							[@user, @domain, "bad_password"])
-		refute :ejabberd_commands.execute_command(:check_password,
+		refute call_command(:check_password,
 																							[@user, "bad_domain", @password])
-		refute :ejabberd_commands.execute_command(:check_password,
+		refute call_command(:check_password,
 																							["bad_user", @domain, @password])
 
 		assert :meck.validate :ejabberd_auth
@@ -95,21 +99,21 @@ defmodule EjabberdModAdminExtraTest do
 		EjabberdAuthMock.create_user @user, @domain, @password
 		hash = "5F4DCC3B5AA765D61D8327DEB882CF99" # echo -n password|md5
 
-		assert :ejabberd_commands.execute_command(:check_password_hash,
+		assert call_command(:check_password_hash,
 																							[@user, @domain, hash, "md5"])
-		refute :ejabberd_commands.execute_command(:check_password_hash,
+		refute call_command(:check_password_hash,
 																							[@user, @domain, "bad_hash", "md5"])
-		refute :ejabberd_commands.execute_command(:check_password_hash,
+		refute call_command(:check_password_hash,
 																							[@user, "bad_domain", hash, "md5"])
-		refute :ejabberd_commands.execute_command(:check_password_hash,
+		refute call_command(:check_password_hash,
 																							["bad_user", @domain, hash, "md5"])
 
 		hash = "5BAA61E4C9B93F3F0682250B6CF8331B7EE68FD8" # echo -n password|shasum
-		assert :ejabberd_commands.execute_command(:check_password_hash,
+		assert call_command(:check_password_hash,
 																							[@user, @domain, hash, "sha"])
 
 		assert :unkown_hash_method ==
-			catch_throw :ejabberd_commands.execute_command(:check_password_hash,
+			catch_throw call_command(:check_password_hash,
 																										 [@user, @domain, hash, "bad_method"])
 
 		assert :meck.validate :ejabberd_auth
@@ -119,14 +123,14 @@ defmodule EjabberdModAdminExtraTest do
 	test "set_password works" do
 		EjabberdAuthMock.create_user @user, @domain, @password
 
-		assert :ejabberd_commands.execute_command(:change_password,
+		assert call_command(:change_password,
 																							[@user, @domain, "new_password"])
-		refute :ejabberd_commands.execute_command(:check_password,
+		refute call_command(:check_password,
 																							[@user, @domain, @password])
-		assert :ejabberd_commands.execute_command(:check_password,
+		assert call_command(:check_password,
 																							[@user, @domain, "new_password"])
 		assert {:not_found, 'unknown_user'} ==
-			catch_throw :ejabberd_commands.execute_command(:change_password,
+			catch_throw call_command(:change_password,
 																										 ["bad_user", @domain,
 																											@password])
 		assert :meck.validate :ejabberd_auth
@@ -135,23 +139,23 @@ defmodule EjabberdModAdminExtraTest do
 	###################### Sessions
 
 	test "num_resources works" do
-		assert 0 == :ejabberd_commands.execute_command(:num_resources,
+		assert 0 == call_command(:num_resources,
 																									 [@user, @domain])
 
 		EjabberdSmMock.connect_resource @user, @domain, @resource
-		assert 1 == :ejabberd_commands.execute_command(:num_resources,
+		assert 1 == call_command(:num_resources,
 																									 [@user, @domain])
 
 		EjabberdSmMock.connect_resource @user, @domain, @resource<>"2"
-		assert 2 == :ejabberd_commands.execute_command(:num_resources,
+		assert 2 == call_command(:num_resources,
 																									 [@user, @domain])
 
 		EjabberdSmMock.connect_resource @user<>"1", @domain, @resource
-		assert 2 == :ejabberd_commands.execute_command(:num_resources,
+		assert 2 == call_command(:num_resources,
 																									 [@user, @domain])
 
 		EjabberdSmMock.disconnect_resource @user, @domain, @resource
-		assert 1 == :ejabberd_commands.execute_command(:num_resources,
+		assert 1 == call_command(:num_resources,
 																									 [@user, @domain])
 
 		assert :meck.validate :ejabberd_sm
@@ -163,14 +167,14 @@ defmodule EjabberdModAdminExtraTest do
 		EjabberdSmMock.connect_resource @user, @domain, @resource<>"1"
 
 		assert :bad_argument ==
-			elem(catch_throw(:ejabberd_commands.execute_command(:resource_num,
+			elem(catch_throw(call_command(:resource_num,
 																													[@user, @domain, 0])), 0)
 		assert @resource<>"1" ==
-			:ejabberd_commands.execute_command(:resource_num, [@user, @domain, 1])
+			call_command(:resource_num, [@user, @domain, 1])
 		assert @resource<>"3" ==
-			:ejabberd_commands.execute_command(:resource_num, [@user, @domain, 3])
+			call_command(:resource_num, [@user, @domain, 3])
 		assert :bad_argument ==
-			elem(catch_throw(:ejabberd_commands.execute_command(:resource_num,
+			elem(catch_throw(call_command(:resource_num,
 																													[@user, @domain, 4])), 0)
 		assert :meck.validate :ejabberd_sm
 	end
@@ -184,7 +188,7 @@ defmodule EjabberdModAdminExtraTest do
 		assert 1 == length EjabberdSmMock.get_session @user, @domain, @resource<>"2"
 
 		assert :ok ==
-			:ejabberd_commands.execute_command(:kick_session,
+			call_command(:kick_session,
 																				 [@user, @domain,
 																					@resource<>"2", "kick"])
 
@@ -199,18 +203,18 @@ defmodule EjabberdModAdminExtraTest do
 	test "get_last works" do
 
 		assert {_, 'NOT FOUND'} =
-			:ejabberd_commands.execute_command(:get_last, [@user, @domain])
+			call_command(:get_last, [@user, @domain])
 
 		EjabberdSmMock.connect_resource @user, @domain, @resource<>"1"
 		EjabberdSmMock.connect_resource @user, @domain, @resource<>"2"
 
 		assert {_, 'ONLINE'} =
-			:ejabberd_commands.execute_command(:get_last, [@user, @domain])
+			call_command(:get_last, [@user, @domain])
 
 		EjabberdSmMock.disconnect_resource @user, @domain, @resource<>"1"
 
 		assert {_, 'ONLINE'} =
-			:ejabberd_commands.execute_command(:get_last, [@user, @domain])
+			call_command(:get_last, [@user, @domain])
 
 		now = {megasecs, secs, _microsecs} = :os.timestamp
 		timestamp = megasecs * 1000000 + secs
@@ -221,7 +225,7 @@ defmodule EjabberdModAdminExtraTest do
 					"~w-~.2.0w-~.2.0wT~.2.0w:~.2.0w:~.2.0wZ",
 					[year, month, day, hour, minute, second]))
 		assert {result, ""} ==
-			:ejabberd_commands.execute_command(:get_last, [@user, @domain])
+			call_command(:get_last, [@user, @domain])
 
 		assert :meck.validate :mod_last
 	end
@@ -238,7 +242,7 @@ defmodule EjabberdModAdminExtraTest do
 		assert [] == ModRosterMock.get_roster(@user, @domain)
 
 		assert :ok ==
-			:ejabberd_commands.execute_command(:add_rosteritem, [@user, @domain,
+			call_command(:add_rosteritem, [@user, @domain,
 																													 @user<>"1", @domain,
 																													 "nick1",
 																													 "group1",
@@ -261,7 +265,7 @@ defmodule EjabberdModAdminExtraTest do
                        {:item, {@user<>"1", @domain, ""}, :both}])
 
 		assert :ok ==
-			:ejabberd_commands.execute_command(:add_rosteritem, [@user, @domain,
+			call_command(:add_rosteritem, [@user, @domain,
 																													 @user<>"2", @domain,
 																													 "nick2",
 																													 "group2",
@@ -278,7 +282,7 @@ defmodule EjabberdModAdminExtraTest do
                        {:item, {@user<>"2", @domain, ""}, :both}])
 
 
-		:ejabberd_commands.execute_command(:delete_rosteritem, [@user, @domain,
+		call_command(:delete_rosteritem, [@user, @domain,
 																														@user<>"1", @domain])
 		result = ModRosterMock.get_roster(@user, @domain)
 		assert 1 == length result
@@ -296,7 +300,7 @@ defmodule EjabberdModAdminExtraTest do
                       [jid,
                        {:item, {@user<>"1", @domain, ""}, :none}])
 
-		:ejabberd_commands.execute_command(:delete_rosteritem, [@user, @domain,
+		call_command(:delete_rosteritem, [@user, @domain,
 																														@user<>"2", @domain])
 
 		# Check that the item roster user2 was pushed with subscription
@@ -321,39 +325,47 @@ defmodule EjabberdModAdminExtraTest do
 
 	test "get_roster works" do
 		assert [] == ModRosterMock.get_roster(@user, @domain)
-		assert [] == :ejabberd_commands.execute_command(:get_roster, [@user, @domain],
+		assert [] == call_command(:get_roster, [@user, @domain],
 																										:admin)
 
 		assert :ok ==
-			:ejabberd_commands.execute_command(:add_rosteritem, [@user, @domain,
+			call_command(:add_rosteritem, [@user, @domain,
 																													 @user<>"1", @domain,
 																													 "nick1",
 																													 "group1",
 																													 "both"])
 		assert [{@user<>"1@"<>@domain, "", 'both', 'none', "group1"}] ==
-			:ejabberd_commands.execute_command(:get_roster, [@user, @domain], :admin)
+			call_command(:get_roster, [@user, @domain], :admin)
 		assert :ok ==
-			:ejabberd_commands.execute_command(:add_rosteritem, [@user, @domain,
+			call_command(:add_rosteritem, [@user, @domain,
 																													 @user<>"2", @domain,
 																													 "nick2",
 																													 "group2",
 																													 "none"])
-		result = :ejabberd_commands.execute_command(:get_roster, [@user, @domain], :admin)
+		result = call_command(:get_roster, [@user, @domain], :admin)
 		assert 2 == length result
 		assert Enum.member?(result, {@user<>"1@"<>@domain, "", 'both', 'none', "group1"})
 		assert Enum.member?(result, {@user<>"2@"<>@domain, "", 'none', 'none', "group2"})
 
 	end
 
+	defp call_command(name, args) do
+	    :ejabberd_commands.execute_command2(name, args, %{:caller_module => :ejabberd_ctl})
+	end
+
+	defp call_command(name, args, mode) do
+	    call_command(name, args)
+	end
+
 # kick_user command is defined in ejabberd_sm, move to extra?
 #	test "kick_user works" do
-#		assert 0 == :ejabberd_commands.execute_command(:num_resources,
+#		assert 0 == call_command(:num_resources,
 #																									 [@user, @domain])
 #		EjabberdSmMock.connect_resource(@user, @domain, @resource<>"1")
 #		EjabberdSmMock.connect_resource(@user, @domain, @resource<>"2")
 #		assert 2 ==
-#			:ejabberd_commands.execute_command(:kick_user, [@user, @domain])
-#		assert 0 == :ejabberd_commands.execute_command(:num_resources,
+#			call_command(:kick_user, [@user, @domain])
+#		assert 0 == call_command(:num_resources,
 #																									 [@user, @domain])
 #		assert :meck.validate :ejabberd_sm
 #	end

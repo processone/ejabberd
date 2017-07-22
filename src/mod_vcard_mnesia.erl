@@ -62,12 +62,8 @@ is_search_supported(_ServerHost) ->
 
 get_vcard(LUser, LServer) ->
     US = {LUser, LServer},
-    F = fun () -> mnesia:read({vcard, US}) end,
-    case mnesia:transaction(F) of
-	{atomic, Rs} ->
-	    lists:map(fun (R) -> R#vcard.vcard end, Rs);
-	{aborted, _Reason} -> error
-    end.
+    Rs = mnesia:dirty_read(vcard, US),
+    {ok, lists:map(fun (R) -> R#vcard.vcard end, Rs)}.
 
 set_vcard(LUser, LServer, VCARD, VCardSearch) ->
     US = {LUser, LServer},

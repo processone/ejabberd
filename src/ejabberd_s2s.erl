@@ -480,9 +480,13 @@ new_connection(MyServer, Server, From, FromTo,
 	end,
     TRes = mnesia:transaction(F),
     case TRes of
-      {atomic, Pid} ->
-	    ejabberd_s2s_out:connect(Pid),
-	    [Pid];
+      {atomic, Pid1} ->
+	    if Pid1 == Pid ->
+		    ejabberd_s2s_out:connect(Pid);
+	       true ->
+		    ejabberd_s2s_out:stop(Pid)
+	    end,
+	    [Pid1];
       {aborted, Reason} ->
 	    ?ERROR_MSG("failed to register connection ~s -> ~s: ~p",
 		       [MyServer, Server, Reason]),
@@ -542,25 +546,23 @@ parent_domains(Domain) ->
 
 get_commands_spec() ->
     [#ejabberd_commands{
-        name = incoming_s2s_number,
-			tags = [stats, s2s],
+        name = incoming_s2s_number, tags = [stats, s2s],
         desc = "Number of incoming s2s connections on the node",
-                        policy = admin,
-			module = ?MODULE, function = incoming_s2s_number,
-			args = [], result = {s2s_incoming, integer}},
+	policy = admin,
+	module = ?MODULE, function = incoming_s2s_number,
+	args = [], result = {s2s_incoming, integer}},
      #ejabberd_commands{
-        name = outgoing_s2s_number,
-			tags = [stats, s2s],
+        name = outgoing_s2s_number, tags = [stats, s2s],
         desc = "Number of outgoing s2s connections on the node",
-                        policy = admin,
-			module = ?MODULE, function = outgoing_s2s_number,
-			args = [], result = {s2s_outgoing, integer}},
-     #ejabberd_commands{name = stop_all_connections,
-			tags = [s2s],
-			desc = "Stop all outgoing and incoming connections",
-			policy = admin,
-			module = ?MODULE, function = stop_all_connections,
-			args = [], result = {res, rescode}}].
+	policy = admin,
+	module = ?MODULE, function = outgoing_s2s_number,
+	args = [], result = {s2s_outgoing, integer}},
+     #ejabberd_commands{
+	name = stop_all_connections, tags = [s2s],
+	desc = "Stop all outgoing and incoming connections",
+	policy = admin,
+	module = ?MODULE, function = stop_all_connections,
+	args = [], result = {res, rescode}}].
 
 %% TODO Move those stats commands to ejabberd stats command ?
 incoming_s2s_number() ->
@@ -710,7 +712,7 @@ opt_type(route_subdomains) ->
 opt_type(s2s_access) ->
     fun acl:access_rules_validator/1;
 opt_type(s2s_certfile) -> fun misc:try_read_file/1;
-opt_type(s2s_ciphers) -> fun misc:try_read_file/1;
+opt_type(s2s_ciphers) -> fun iolist_to_binary/1;
 opt_type(s2s_dhfile) -> fun misc:try_read_file/1;
 opt_type(s2s_cafile) -> fun misc:try_read_file/1;
 opt_type(s2s_protocol_options) ->

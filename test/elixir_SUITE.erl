@@ -85,7 +85,11 @@ undefined_function(Module, Func, Args) ->
 run_elixir_test(Func) ->
     %% Elixir tests can be tagged as follow to be ignored (place before test start)
     %% @tag pending: true
-    'Elixir.ExUnit':start([{exclude, [{pending, true}]}, {formatters, ['Elixir.ExUnit.CLIFormatter', 'Elixir.ExUnit.CTFormatter']}]),
+    'Elixir.ExUnit':start([{exclude, [{pending, true}]},
+			   {formatters,
+			    ['Elixir.ExUnit.CLIFormatter',
+			     'Elixir.ExUnit.CTFormatter']},
+			   {autorun, false}]),
 
     filelib:fold_files(test_dir(), ".*mock\.exs\$", true,
                        fun (File, N) ->
@@ -95,6 +99,7 @@ run_elixir_test(Func) ->
 
     'Elixir.Code':load_file(list_to_binary(filename:join(test_dir(), atom_to_list(Func)))),
     %% I did not use map syntax, so that this file can still be build under R16
+    catch 'Elixir.ExUnit.Server':cases_loaded(),
     ResultMap = 'Elixir.ExUnit':run(),
     case maps:find(failures, ResultMap) of
         {ok, 0} ->

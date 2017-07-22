@@ -158,11 +158,11 @@ listen:
     ip: "::"
     module: ejabberd_http
     request_handlers:
-      "/websocket": ejabberd_http_ws
+      "/ws": ejabberd_http_ws
+      "/bosh": mod_bosh
       "/api": mod_http_api
     ##  "/pub/archive": mod_http_fileserver
     web_admin: true
-    http_bind: true
     ## register: true
     captcha: true
   ##
@@ -265,12 +265,12 @@ listen:
 ## Outgoing S2S options
 ##
 ## Preferred address families (which to try first) and connect timeout
-## in milliseconds.
+## in seconds.
 ##
 ## outgoing_s2s_families:
 ##   - ipv4
 ##   - ipv6
-## outgoing_s2s_timeout: 10000
+## outgoing_s2s_timeout: 190
 
 ###.  ==============
 ###'  AUTHENTICATION
@@ -487,6 +487,8 @@ acl:
   loopback:
     ip:
       - "127.0.0.0/8"
+      - "::1/128"
+      - "::FFFF:127.0.0.1/128"
 
   ##
   ## Bad XMPP servers
@@ -589,14 +591,14 @@ api_permissions:
     who:
       - access:
           - allow:
-            - ip: "127.0.0.1/8"
+            - acl: loopback
             - acl: admin
       - oauth:
         - scope: "ejabberd:admin"
         - access:
           - allow:
-              - ip: "127.0.0.1/8"
-              - acl: admin
+            - acl: loopback
+            - acl: admin
     what:
       - "*"
       - "!stop"

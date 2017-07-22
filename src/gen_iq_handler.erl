@@ -186,7 +186,7 @@ check_type(N) when is_integer(N), N>0 -> N;
 check_type(parallel) -> parallel.
 
 iqdisc(Host) ->
-    ejabberd_config:get_option({iqdisc, Host}, one_queue).
+    ejabberd_config:get_option({iqdisc, Host}, no_queue).
 
 -spec transform_module_options([{atom(), any()}]) -> [{atom(), any()}].
 

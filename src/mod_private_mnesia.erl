@@ -27,8 +27,8 @@
 -behaviour(mod_private).
 
 %% API
--export([init/2, set_data/3, get_data/3, get_all_data/2, remove_user/2,
-	 import/3]).
+-export([init/2, set_data/3, get_data/3, get_all_data/2, del_data/2,
+	 use_cache/1, import/3]).
 -export([need_transform/1, transform/1]).
 
 -include("xmpp.hrl").
@@ -43,6 +43,16 @@ init(_Host, _Opts) ->
 			   [{disc_only_copies, [node()]},
 			    {attributes, record_info(fields, private_storage)}]).
 
+use_cache(Host) ->
+    case mnesia:table_info(private_storage, storage_type) of
+	disc_only_copies ->
+	    gen_mod:get_module_opt(
+	      Host, mod_private, use_cache,
+	      ejabberd_config:use_cache(Host));
+	_ ->
+	    false
+    end.
+
 set_data(LUser, LServer, Data) ->
     F = fun () ->
 		lists:foreach(
@@ -53,7 +63,7 @@ set_data(LUser, LServer, Data) ->
 			       xml = Xmlel})
 		  end, Data)
 	end,
-    mnesia:transaction(F).
+    transaction(F).
 
 get_data(LUser, LServer, XmlNS) ->
     case mnesia:dirty_read(private_storage, {LUser, LServer, XmlNS}) of
@@ -64,13 +74,18 @@ get_data(LUser, LServer, XmlNS) ->
     end.
 
 get_all_data(LUser, LServer) ->
-    lists:flatten(
-      mnesia:dirty_select(private_storage,
-                          [{#private_storage{usns = {LUser, LServer, '_'},
-                                             xml = '$1'},
-                            [], ['$1']}])).
+    case lists:flatten(
+	   mnesia:dirty_select(private_storage,
+			       [{#private_storage{usns = {LUser, LServer, '_'},
+						  xml = '$1'},
+				 [], ['$1']}])) of
+	[] ->
+	    error;
+	Res ->
+	    {ok, Res}
+    end.
 
-remove_user(LUser, LServer) ->
+del_data(LUser, LServer) ->
     F = fun () ->
 		Namespaces = mnesia:select(private_storage,
 					   [{#private_storage{usns =
@@ -86,7 +101,7 @@ remove_user(LUser, LServer) ->
 			      end,
 			      Namespaces)
 	end,
-    mnesia:transaction(F).
+    transaction(F).
 
 import(LServer, <<"private_storage">>,
        [LUser, XMLNS, XML, _TimeStamp]) ->
@@ -110,3 +125,11 @@ transform(#private_storage{usns = {U, S, NS}, xml = El} = R) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+transaction(F) ->
+    case mnesia:transaction(F) of
+	{atomic, Res} ->
+	    Res;
+	{aborted, Reason} ->
+	    ?ERROR_MSG("Mnesia transaction failed: ~p", [Reason]),
+	    {error, db_failure}
+    end.

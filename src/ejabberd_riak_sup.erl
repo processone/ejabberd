@@ -89,16 +89,11 @@ is_riak_configured(Host) ->
 		       ejabberd_auth:auth_modules(Host)),
     SMConfigured = ejabberd_config:get_option({sm_db_type, Host}) == riak,
     RouterConfigured = ejabberd_config:get_option({router_db_type, Host}) == riak,
-    Modules = ejabberd_config:get_option({modules, Host}, []),
-    ModuleWithRiakDBConfigured = lists:any(
-				   fun({Module, Opts}) ->
-					   gen_mod:db_type(Host, Opts, Module) == riak
-				   end, Modules),
     ServerConfigured or PortConfigured or StartIntervalConfigured
 	or PoolConfigured or CacertConfigured
 	or UserConfigured or PassConfigured
 	or SMConfigured or RouterConfigured
-	or AuthConfigured or ModuleWithRiakDBConfigured.
+	or AuthConfigured.
 
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).

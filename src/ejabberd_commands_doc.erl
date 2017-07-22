@@ -69,9 +69,9 @@ list_join_with([El|Tail], M) ->
                               end, [El], Tail)).
 
 md_tag(dt, V) ->
-    [<<"\n">>, V, <<"\n">>];
+    [<<"- ">>, V];
 md_tag(dd, V) ->
-    [<<"\n: ">>, V, <<"\n">>];
+    [<<" : ">>, V, <<"\n">>];
 md_tag(li, V) ->
     [<<"- ">>, V, <<"\n">>];
 md_tag(pre, V) ->
@@ -86,14 +86,6 @@ md_tag(strong, V) ->
     [<<"*">>, V, <<"*">>];
 md_tag(_, V) ->
     V.
-
-
-%% rescode_to_int(ok) ->
-%%     0;
-%% rescode_to_int(true) ->
-%%     0;
-%% rescode_to_int(_) ->
-%%     1.
 
 perl_gen({Name, integer}, Int, _Indent, HTMLOutput) ->
     [?ARG(Name), ?OP_L(" => "), ?NUM(Int)];
@@ -257,7 +249,7 @@ json_call(Name, ArgsDesc, Values, ResultDesc, Result, HTMLOutput) ->
                                 {200, json_gen(ResultDesc, Result, Indent, HTMLOutput)};
                             {{Name0, _}, _} ->
                                 {200, [Indent, ?OP_L("{"), ?STR_A(Name0), ?OP_L(": "),
-                                       json_gen(ResultDesc, Result, Indent, HTMLOutput), Indent, ?OP_L("}")]}
+				       json_gen(ResultDesc, Result, Indent, HTMLOutput), ?OP_L("}")]}
                         end,
     CodeStr = case Code of
                   200 -> <<" 200 OK">>;
@@ -324,55 +316,94 @@ gen_calls(#ejabberd_commands{args_example=Values, args=ArgsDesc,
                    case lists:member(<<"xmlrpc">>, Langs) of true -> ?TAG(li, ?TAG(pre, XML)); _ -> [] end,
                    case lists:member(<<"json">>, Langs) of true -> ?TAG(li, ?TAG(pre, JSON)); _ -> [] end])];
        true ->
-            [<<"\n">>, case lists:member(<<"java">>, Langs) of true -> <<"* Java\n">>; _ -> [] end,
-             case lists:member(<<"perl">>, Langs) of true -> <<"* Perl\n">>; _ -> [] end,
-             case lists:member(<<"xmlrpc">>, Langs) of true -> <<"* XmlRPC\n">>; _ -> [] end,
-             case lists:member(<<"json">>, Langs) of true -> <<"* JSON\n">>; _ -> [] end,
-             <<"{: .code-samples-labels}\n">>,
-             case lists:member(<<"java">>, Langs) of true -> [<<"\n* ">>, ?TAG(pre, Java), <<"~~~\n">>]; _ -> [] end,
-             case lists:member(<<"perl">>, Langs) of true -> [<<"\n* ">>, ?TAG(pre, Perl), <<"~~~\n">>]; _ -> [] end,
-             case lists:member(<<"xmlrpc">>, Langs) of true -> [<<"\n* ">>, ?TAG(pre, XML), <<"~~~\n">>]; _ -> [] end,
-             case lists:member(<<"json">>, Langs) of true -> [<<"\n* ">>, ?TAG(pre, JSON), <<"~~~\n">>]; _ -> [] end,
-             <<"{: .code-samples-tabs}\n\n">>]
+           case Langs of
+               Val when length(Val) == 0 orelse length(Val) == 1 ->
+                   [case lists:member(<<"java">>, Langs) of true -> [<<"\n">>, ?TAG(pre, Java), <<"~~~\n">>]; _ -> [] end,
+                    case lists:member(<<"perl">>, Langs) of true -> [<<"\n">>, ?TAG(pre, Perl), <<"~~~\n">>]; _ -> [] end,
+                    case lists:member(<<"xmlrpc">>, Langs) of true -> [<<"\n">>, ?TAG(pre, XML), <<"~~~\n">>]; _ -> [] end,
+                    case lists:member(<<"json">>, Langs) of true -> [<<"\n">>, ?TAG(pre, JSON), <<"~~~\n">>]; _ -> [] end,
+                    <<"\n\n">>];
+               _ ->
+                   [<<"\n">>, case lists:member(<<"java">>, Langs) of true -> <<"* Java\n">>; _ -> [] end,
+                    case lists:member(<<"perl">>, Langs) of true -> <<"* Perl\n">>; _ -> [] end,
+                    case lists:member(<<"xmlrpc">>, Langs) of true -> <<"* XmlRPC\n">>; _ -> [] end,
+                    case lists:member(<<"json">>, Langs) of true -> <<"* JSON\n">>; _ -> [] end,
+                    <<"{: .code-samples-labels}\n">>,
+                    case lists:member(<<"java">>, Langs) of true -> [<<"\n* ">>, ?TAG(pre, Java), <<"~~~\n">>]; _ -> [] end,
+                    case lists:member(<<"perl">>, Langs) of true -> [<<"\n* ">>, ?TAG(pre, Perl), <<"~~~\n">>]; _ -> [] end,
+                    case lists:member(<<"xmlrpc">>, Langs) of true -> [<<"\n* ">>, ?TAG(pre, XML), <<"~~~\n">>]; _ -> [] end,
+                    case lists:member(<<"json">>, Langs) of true -> [<<"\n* ">>, ?TAG(pre, JSON), <<"~~~\n">>]; _ -> [] end,
+                    <<"{: .code-samples-tabs}\n\n">>]
+           end
     end.
+
+format_type({list, {_, {tuple, Els}}}) ->
+    io_lib:format("[~s]", [format_type({tuple, Els})]);
+format_type({list, El}) ->
+    io_lib:format("[~s]", [format_type(El)]);
+format_type({tuple, Els}) ->
+    Args = [format_type(El) || El <- Els],
+    io_lib:format("{~s}", [string:join(Args, ", ")]);
+format_type({Name, Type}) ->
+    io_lib:format("~s::~s", [Name, format_type(Type)]);
+format_type(binary) ->
+    "string";
+format_type(atom) ->
+    "string";
+format_type(Type) ->
+    io_lib:format("~p", [Type]).
+
+gen_param(Name, Type, undefined, HTMLOutput) ->
+    [?TAG(li, [?TAG_R(strong, atom_to_list(Name)), <<" :: ">>, ?RAW(format_type(Type))])];
+gen_param(Name, Type, Desc, HTMLOutput) ->
+    [?TAG(dt, [?TAG_R(strong, atom_to_list(Name)), <<" :: ">>, ?RAW(format_type(Type))]),
+     ?TAG(dd, ?RAW(Desc))].
 
 gen_doc(#ejabberd_commands{name=Name, tags=_Tags, desc=Desc, longdesc=LongDesc,
                            args=Args, args_desc=ArgsDesc,
                            result=Result, result_desc=ResultDesc}=Cmd, HTMLOutput, Langs) ->
-    LDesc = case LongDesc of
-                "" -> Desc;
-                _ -> LongDesc
-            end,
-    ArgsText = case ArgsDesc of
-                   none ->
-                       [?TAG(ul, "args-list", lists:map(fun({AName, Type}) ->
-                                                                [?TAG(li, [?TAG_R(strong, atom_to_list(AName)), <<" :: ">>,
-                                                                           ?RAW(io_lib:format("~p", [Type]))])]
-                                                        end, Args))];
-                   _ ->
-                       [?TAG(dl, "args-list", lists:map(fun({{AName, Type}, ADesc}) ->
-                                                                [?TAG(dt, [?TAG_R(strong, atom_to_list(AName)), <<" :: ">>,
-                                                                           ?RAW(io_lib:format("~p", [Type]))]),
-                                                                 ?TAG(dd, ?RAW(ADesc))]
-                                                        end, lists:zip(Args, ArgsDesc)))]
-               end,
-    ResultText = case ResultDesc of
-                     none ->
-                         [?RAW(io_lib:format("~p", [Result]))];
-                     _ ->
-                         [?TAG(dl, [
-			       ?TAG(dt, io_lib:format("~p", [Result])),
-			       ?TAG_R(dd, ResultDesc)])]
-                 end,
+    try
+        LDesc = case LongDesc of
+                    "" -> Desc;
+                    _ -> LongDesc
+                end,
+        ArgsText = case ArgsDesc of
+                       none ->
+                           [?TAG(ul, "args-list", [gen_param(AName, Type, undefined, HTMLOutput)
+                                                   || {AName, Type} <- Args])];
+                       _ ->
+                           [?TAG(dl, "args-list", [gen_param(AName, Type, ADesc, HTMLOutput)
+                                                   || {{AName, Type}, ADesc} <- lists:zip(Args, ArgsDesc)])]
+                   end,
+        ResultText = case Result of
+                       {res,rescode} ->
+                           [?TAG(dl, [gen_param(res, integer,
+                                                "Status code (0 on success, 1 otherwise)",
+                                                HTMLOutput)])];
+                       {res,restuple} ->
+                           [?TAG(dl, [gen_param(res, string,
+                                                "Raw result string",
+                                                HTMLOutput)])];
+                       {RName, Type} ->
+                           case ResultDesc of
+                             none ->
+                                 [?TAG(ul, [gen_param(RName, Type, undefined, HTMLOutput)])];
+                             _ ->
+                                 [?TAG(dl, [gen_param(RName, Type, ResultDesc, HTMLOutput)])]
+                           end
+                     end,
 
-    [?TAG(h1, [?TAG(strong, atom_to_list(Name)), <<" - ">>, ?RAW(Desc)]),
-     ?TAG(p, ?RAW(LDesc)),
-     ?TAG(h2, <<"Arguments:">>),
-     ArgsText,
-     ?TAG(h2, <<"Result:">>),
-     ResultText,
-     ?TAG(h2, <<"Examples:">>),
-     gen_calls(Cmd, HTMLOutput, Langs)].
+	[?TAG(h1, [?TAG(strong, atom_to_list(Name)), <<" - ">>, ?RAW(Desc)]),
+	 ?TAG(p, ?RAW(LDesc)),
+	 ?TAG(h2, <<"Arguments:">>), ArgsText,
+	 ?TAG(h2, <<"Result:">>), ResultText,
+	 ?TAG(h2, <<"Examples:">>), gen_calls(Cmd, HTMLOutput, Langs)]
+    catch
+	_:Ex ->
+	    throw(iolist_to_binary(io_lib:format(
+				     <<"Error when generating documentation for command '~p': ~p">>,
+				     [Name, Ex])))
+    end.
 
 find_commands_definitions() ->
     case code:lib_dir(ejabberd, ebin) of

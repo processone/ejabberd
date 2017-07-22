@@ -39,12 +39,6 @@
 
 -include("mod_privacy.hrl").
 
--callback process_blocklist_block(binary(), binary(), function()) -> {atomic, any()}.
--callback unblock_by_filter(binary(), binary(), function()) -> {atomic, any()}.
--callback process_blocklist_get(binary(), binary()) -> [listitem()] | error.
-
--type block_event() :: {block, [jid()]} | {unblock, [jid()]} | unblock_all.
-
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
     ejabberd_hooks:add(disco_local_features, Host, ?MODULE, disco_features, 50),
@@ -142,101 +136,111 @@ listitems_to_jids([_ | Items], JIDs) ->
     listitems_to_jids(Items, JIDs).
 
 -spec process_block(iq(), [ljid()]) -> iq().
-process_block(#iq{from = #jid{luser = LUser, lserver = LServer},
-		  lang = Lang} = IQ, JIDs) ->
-    Filter = fun (List) ->
-		     AlreadyBlocked = listitems_to_jids(List, []),
-		     lists:foldr(fun (JID, List1) ->
-					 case lists:member(JID, AlreadyBlocked)
-					     of
-					   true -> List1;
-					   false ->
-					       [#listitem{type = jid,
-							  value = JID,
-							  action = deny,
-							  order = 0,
-							  match_all = true}
-						| List1]
-					 end
-				 end,
-				 List, JIDs)
-	     end,
-    Mod = db_mod(LServer),
-    case Mod:process_blocklist_block(LUser, LServer, Filter) of
-      {atomic, {ok, Default, List}} ->
-	  UserList = make_userlist(Default, List),
-	    broadcast_list_update(LUser, LServer, UserList, Default),
-	    broadcast_event(LUser, LServer,
-			    #block{items = [jid:make(J) || J <- JIDs]}),
-	    xmpp:make_iq_result(xmpp:put_meta(IQ, privacy_list, UserList));
-      _Err ->
-	    ?ERROR_MSG("Error processing ~p: ~p", [{LUser, LServer, JIDs}, _Err]),
-	    Err = xmpp:err_internal_server_error(<<"Database failure">>, Lang),
-	    xmpp:make_error(IQ, Err)
+process_block(#iq{from = From} = IQ, LJIDs) ->
+    #jid{luser = LUser, lserver = LServer} = From,
+    case mod_privacy:get_user_list(LUser, LServer, default) of
+	{error, _} ->
+	    err_db_failure(IQ);
+	Res ->
+	    {Name, List} = case Res of
+			       error -> {<<"Blocked contacts">>, []};
+			       {ok, NameList} -> NameList
+			   end,
+	    AlreadyBlocked = listitems_to_jids(List, []),
+	    NewList = lists:foldr(
+			fun(LJID, List1) ->
+				case lists:member(LJID, AlreadyBlocked) of
+				    true ->
+					List1;
+				    false ->
+					[#listitem{type = jid,
+						   value = LJID,
+						   action = deny,
+						   order = 0,
+						   match_all = true}|List1]
+				end
+			end, List, LJIDs),
+	    case mod_privacy:set_list(LUser, LServer, Name, NewList) of
+		ok ->
+		    case (if Res == error ->
+				  mod_privacy:set_default_list(
+				    LUser, LServer, Name);
+			     true ->
+				  ok
+			  end) of
+			ok ->
+			    mod_privacy:push_list_update(From, Name),
+			    Items = [jid:make(LJID) || LJID <- LJIDs],
+			    broadcast_event(From, #block{items = Items}),
+			    xmpp:make_iq_result(IQ);
+			{error, notfound} ->
+			    ?ERROR_MSG("Failed to set default list '~s': "
+				       "the list should exist, but not found",
+				       [Name]),
+			    err_db_failure(IQ);
+			{error, _} ->
+			    err_db_failure(IQ)
+		    end;
+		{error, _} ->
+		    err_db_failure(IQ)
+	    end
     end.
 
 -spec process_unblock_all(iq()) -> iq().
-process_unblock_all(#iq{from = #jid{luser = LUser, lserver = LServer},
-			lang = Lang} = IQ) ->
-    Filter = fun (List) ->
-		     lists:filter(fun (#listitem{action = A}) -> A =/= deny
-				  end,
-				  List)
-	     end,
-    Mod = db_mod(LServer),
-    case Mod:unblock_by_filter(LUser, LServer, Filter) of
-	{atomic, ok} ->
+process_unblock_all(#iq{from = From} = IQ) ->
+    #jid{luser = LUser, lserver = LServer} = From,
+    case mod_privacy:get_user_list(LUser, LServer, default) of
+	{ok, {Name, List}} ->
+	    NewList = lists:filter(
+			fun(#listitem{action = A}) ->
+				A /= deny
+			end, List),
+	    case mod_privacy:set_list(LUser, LServer, Name, NewList) of
+		ok ->
+		    mod_privacy:push_list_update(From, Name),
+		    broadcast_event(From, #unblock{}),
+		    xmpp:make_iq_result(IQ);
+		{error, _} ->
+		    err_db_failure(IQ)
+	    end;
+	error ->
+	    broadcast_event(From, #unblock{}),
 	    xmpp:make_iq_result(IQ);
-      {atomic, {ok, Default, List}} ->
-	  UserList = make_userlist(Default, List),
-	    broadcast_list_update(LUser, LServer, UserList, Default),
-	    broadcast_event(LUser, LServer, #unblock{}),
-	    xmpp:make_iq_result(xmpp:put_meta(IQ, privacy_list, UserList));
-      _Err ->
-	    ?ERROR_MSG("Error processing ~p: ~p", [{LUser, LServer}, _Err]),
-	    Err = xmpp:err_internal_server_error(<<"Database failure">>, Lang),
-	    xmpp:make_error(IQ, Err)
+	{error, _} ->
+	    err_db_failure(IQ)
     end.
 
 -spec process_unblock(iq(), [ljid()]) -> iq().
-process_unblock(#iq{from = #jid{luser = LUser, lserver = LServer},
-		    lang = Lang} = IQ, JIDs) ->
-    Filter = fun (List) ->
-		     lists:filter(fun (#listitem{action = deny, type = jid,
-						 value = JID}) ->
-					  not lists:member(JID, JIDs);
-				      (_) -> true
-				  end,
-				  List)
-	     end,
-    Mod = db_mod(LServer),
-    case Mod:unblock_by_filter(LUser, LServer, Filter) of
-	{atomic, ok} ->
+process_unblock(#iq{from = From} = IQ, LJIDs) ->
+    #jid{luser = LUser, lserver = LServer} = From,
+    case mod_privacy:get_user_list(LUser, LServer, default) of
+	{ok, {Name, List}} ->
+	    NewList = lists:filter(
+			fun(#listitem{action = deny, type = jid,
+				      value = LJID}) ->
+				not lists:member(LJID, LJIDs);
+			   (_) ->
+				true
+			end, List),
+	    case mod_privacy:set_list(LUser, LServer, Name, NewList) of
+		ok ->
+		    mod_privacy:push_list_update(From, Name),
+		    Items = [jid:make(LJID) || LJID <- LJIDs],
+		    broadcast_event(From, #unblock{items = Items}),
+		    xmpp:make_iq_result(IQ);
+		{error, _} ->
+		    err_db_failure(IQ)
+	    end;
+	error ->
+	    Items = [jid:make(LJID) || LJID <- LJIDs],
+	    broadcast_event(From, #unblock{items = Items}),
 	    xmpp:make_iq_result(IQ);
-      {atomic, {ok, Default, List}} ->
-	  UserList = make_userlist(Default, List),
-	    broadcast_list_update(LUser, LServer, UserList, Default),
-	    broadcast_event(LUser, LServer,
-			    #unblock{items = [jid:make(J) || J <- JIDs]}),
-	    xmpp:make_iq_result(xmpp:put_meta(IQ, privacy_list, UserList));
-      _Err ->
-	    ?ERROR_MSG("Error processing ~p: ~p", [{LUser, LServer, JIDs}, _Err]),
-	    Err = xmpp:err_internal_server_error(<<"Database failure">>, Lang),
-	    xmpp:make_error(IQ, Err)
+	{error, _} ->
+	    err_db_failure(IQ)
     end.
 
--spec make_userlist(binary(), [listitem()]) -> userlist().
-make_userlist(Name, List) ->
-    NeedDb = mod_privacy:is_list_needdb(List),
-    #userlist{name = Name, list = List, needdb = NeedDb}.
-
--spec broadcast_list_update(binary(), binary(), userlist(), binary()) -> ok.
-broadcast_list_update(LUser, LServer, UserList, Name) ->
-    mod_privacy:push_list_update(jid:make(LUser, LServer), UserList, Name).
-
--spec broadcast_event(binary(), binary(), block_event()) -> ok.
-broadcast_event(LUser, LServer, Event) ->
-    From = jid:make(LUser, LServer),
+-spec broadcast_event(jid(), block() | unblock()) -> ok.
+broadcast_event(#jid{luser = LUser, lserver = LServer} = From, Event) ->
     lists:foreach(
       fun(R) ->
 	      To = jid:replace_resource(From, R),
@@ -247,23 +251,21 @@ broadcast_event(LUser, LServer, Event) ->
       end, ejabberd_sm:get_user_resources(LUser, LServer)).
 
 -spec process_get(iq()) -> iq().
-process_get(#iq{from = #jid{luser = LUser, lserver = LServer},
-		lang = Lang} = IQ) ->
-    Mod = db_mod(LServer),
-    case Mod:process_blocklist_get(LUser, LServer) of
-      error ->
-	    Err = xmpp:err_internal_server_error(<<"Database failure">>, Lang),
-	    xmpp:make_error(IQ, Err);
-      List ->
+process_get(#iq{from = #jid{luser = LUser, lserver = LServer}} = IQ) ->
+    case mod_privacy:get_user_list(LUser, LServer, default) of
+	{ok, {_, List}} ->
 	    LJIDs = listitems_to_jids(List, []),
-	  Items = [jid:make(J) || J <- LJIDs],
-	    xmpp:make_iq_result(IQ, #block_list{items = Items})
+	    Items = [jid:make(J) || J <- LJIDs],
+	    xmpp:make_iq_result(IQ, #block_list{items = Items});
+	error ->
+	    xmpp:make_iq_result(IQ, #block_list{});
+	{error, _} ->
+	    err_db_failure(IQ)
     end.
 
--spec db_mod(binary()) -> module().
-db_mod(LServer) ->
-    DBType = gen_mod:db_type(LServer, mod_privacy),
-    gen_mod:db_mod(DBType, ?MODULE).
+err_db_failure(#iq{lang = Lang} = IQ) ->
+    Txt = <<"Database failure">>,
+    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang)).
 
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(_) -> [iqdisc].

@@ -645,10 +645,10 @@ is_password_scram_valid(Password, Scram) ->
 	    false;
 	_ ->
 	    IterationCount = Scram#scram.iterationcount,
-	    Salt = misc:decode_base64(Scram#scram.salt),
+	    Salt = base64:decode(Scram#scram.salt),
 	    SaltedPassword = scram:salted_password(Password, Salt, IterationCount),
 	    StoredKey =	scram:stored_key(scram:client_key(SaltedPassword)),
-	    misc:decode_base64(Scram#scram.storedkey) == StoredKey
+	    base64:decode(Scram#scram.storedkey) == StoredKey
     end.
 
 password_to_scram(Password) ->
@@ -661,9 +661,9 @@ password_to_scram(Password, IterationCount) ->
     SaltedPassword = scram:salted_password(Password, Salt, IterationCount),
     StoredKey = scram:stored_key(scram:client_key(SaltedPassword)),
     ServerKey = scram:server_key(SaltedPassword),
-    #scram{storedkey = misc:encode_base64(StoredKey),
-	   serverkey = misc:encode_base64(ServerKey),
-	   salt = misc:encode_base64(Salt),
+    #scram{storedkey = base64:encode(StoredKey),
+	   serverkey = base64:encode(ServerKey),
+	   salt = base64:encode(Salt),
 	   iterationcount = IterationCount}.
 
 %%%----------------------------------------------------------------------
@@ -744,7 +744,7 @@ auth_modules(Server) ->
 match_passwords(Password, #scram{} = Scram, <<"">>, undefined) ->
     is_password_scram_valid(Password, Scram);
 match_passwords(Password, #scram{} = Scram, Digest, DigestFun) ->
-    StoredKey = misc:decode_base64(Scram#scram.storedkey),
+    StoredKey = base64:decode(Scram#scram.storedkey),
     DigRes = if Digest /= <<"">> ->
 		     Digest == DigestFun(StoredKey);
 		true -> false

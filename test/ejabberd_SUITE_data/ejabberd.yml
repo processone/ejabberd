@@ -44,8 +44,7 @@ host_config:
         db_type: sql
       mod_vcard: 
         db_type: sql
-      mod_vcard_xupdate:
-        db_type: sql
+      mod_vcard_xupdate: []
       mod_carboncopy:
         ram_db_type: sql
       mod_adhoc: []
@@ -103,8 +102,7 @@ Welcome to this XMPP server."
         db_type: sql
       mod_vcard: 
         db_type: sql
-      mod_vcard_xupdate:
-        db_type: sql
+      mod_vcard_xupdate: []
       mod_carboncopy:
         ram_db_type: sql
       mod_adhoc: []
@@ -167,8 +165,7 @@ Welcome to this XMPP server."
         db_type: sql
       mod_vcard: 
         db_type: sql
-      mod_vcard_xupdate:
-        db_type: sql
+      mod_vcard_xupdate: []
       mod_carboncopy:
         ram_db_type: sql
       mod_adhoc: []
@@ -222,8 +219,7 @@ Welcome to this XMPP server."
         db_type: internal
       mod_vcard: 
         db_type: internal
-      mod_vcard_xupdate:
-        db_type: internal
+      mod_vcard_xupdate: []
       mod_carboncopy:
         ram_db_type: internal
       mod_client_state:
@@ -282,8 +278,7 @@ Welcome to this XMPP server."
         db_type: internal
       mod_vcard: 
         db_type: internal
-      mod_vcard_xupdate:
-        db_type: internal
+      mod_vcard_xupdate: []
       mod_carboncopy:
         ram_db_type: redis
       mod_client_state:
@@ -332,8 +327,7 @@ Welcome to this XMPP server."
         db_type: riak
       mod_vcard: 
         db_type: riak
-      mod_vcard_xupdate:
-        db_type: riak
+      mod_vcard_xupdate: []
       mod_carboncopy:
         ram_db_type: riak
       mod_adhoc: []
@@ -449,7 +443,6 @@ listen:
     tls_verify: true
     shaper: c2s_shaper
     access: c2s
-    resume_timeout: 3
   - 
     port: @@s2s_port@@
     module: ejabberd_s2s_in
@@ -483,6 +476,7 @@ Welcome to this XMPP server."
   mod_legacy_auth: []
   mod_stream_mgmt:
     max_ack_queue: 10
+    resume_timeout: 3
   mod_time: []
   mod_version: []
 registration_timeout: infinity

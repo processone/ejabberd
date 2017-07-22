@@ -43,19 +43,20 @@ get_last(LUser, LServer) ->
 			   {LUser, LServer}) of
         {ok, #last_activity{timestamp = TimeStamp,
                             status = Status}} ->
-            {ok, TimeStamp, Status};
-        {error, notfound} ->
-            not_found;
-        Err ->
-            Err
+            {ok, {TimeStamp, Status}};
+	{error, notfound} ->
+	    error;
+        _Err ->
+	    %% TODO: log error
+	    {error, db_failure}
     end.
 
 store_last_info(LUser, LServer, TimeStamp, Status) ->
     US = {LUser, LServer},
-    {atomic, ejabberd_riak:put(#last_activity{us = US,
-                                              timestamp = TimeStamp,
-                                              status = Status},
-			       last_activity_schema())}.
+    ejabberd_riak:put(#last_activity{us = US,
+				     timestamp = TimeStamp,
+				     status = Status},
+		      last_activity_schema()).
 
 remove_user(LUser, LServer) ->
     {atomic, ejabberd_riak:delete(last_activity, {LUser, LServer})}.

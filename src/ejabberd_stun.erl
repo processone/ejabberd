@@ -27,6 +27,21 @@
 -protocol({rfc, 5766}).
 -protocol({xep, 176, '1.0'}).
 
+-ifndef(STUN).
+-include("logger.hrl").
+-export([socket_type/0, start/2, listen_opt_type/1]).
+log_error() ->
+    ?CRITICAL_MSG("ejabberd is not compiled with STUN/TURN support", []).
+socket_type() ->
+    log_error(),
+    raw.
+listen_opt_type(_) ->
+    log_error(),
+    [].
+start(_, _) ->
+    log_error(),
+    {error, sip_not_compiled}.
+-else.
 -export([tcp_init/2, udp_init/2, udp_recv/5, start/2,
 	 socket_type/0, listen_opt_type/1]).
 
@@ -138,3 +153,4 @@ listen_opt_type(_) ->
     [shaper, auth_type, auth_realm, tls, certfile, turn_min_port,
      turn_max_port, turn_max_allocations, turn_max_permissions,
      server_name].
+-endif.

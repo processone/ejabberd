@@ -1152,13 +1152,13 @@ handle_iq_vcard(ToJID, NewId, #iq{type = Type, sub_els = SubEls} = IQ) ->
 -spec stanzaid_pack(binary(), binary()) -> binary().
 stanzaid_pack(OriginalId, Resource) ->
     <<"berd",
-      (misc:encode_base64(<<"ejab\000",
+      (base64:encode(<<"ejab\000",
 		       OriginalId/binary, "\000",
 		       Resource/binary>>))/binary>>.
 
 -spec stanzaid_unpack(binary()) -> {binary(), binary()}.
 stanzaid_unpack(<<"berd", StanzaIdBase64/binary>>) ->
-    StanzaId = misc:decode_base64(StanzaIdBase64),
+    StanzaId = base64:decode(StanzaIdBase64),
     [<<"ejab">>, OriginalId, Resource] =
 	str:tokens(StanzaId, <<"\000">>),
     {OriginalId, Resource}.
@@ -2608,7 +2608,7 @@ process_item_change(UJID) ->
 -type admin_action() :: {jid(), affiliation | role,
 			 affiliation() | role(), binary()}.
 
--spec process_item_change(admin_action(), state(), jid()) -> state() | {error, stanza_error()}.
+-spec process_item_change(admin_action(), state(), undefined | jid()) -> state() | {error, stanza_error()}.
 process_item_change(Item, SD, UJID) ->
     try case Item of
 	    {JID, affiliation, owner, _} when JID#jid.luser == <<"">> ->
@@ -2658,8 +2658,15 @@ process_item_change(Item, SD, UJID) ->
 		SD1
 	end
     catch E:R ->
-	    ?ERROR_MSG("failed to set item ~p from ~s: ~p",
-		       [Item, jid:encode(UJID),
+		FromSuffix = case UJID of
+			#jid{} ->
+				JidString = jid:encode(UJID),
+				<<" from ", JidString/binary>>;
+			undefined ->
+				<<"">>
+		end,
+		?ERROR_MSG("failed to set item ~p~s: ~p",
+		       [Item, FromSuffix,
 			{E, {R, erlang:get_stacktrace()}}]),
 	    {error, xmpp:err_internal_server_error()}
     end.

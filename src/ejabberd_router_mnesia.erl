@@ -149,7 +149,7 @@ init([]) ->
     lists:foreach(
       fun (Pid) -> erlang:monitor(process, Pid) end,
       mnesia:dirty_select(route,
-			  [{{route, '_', '$1', '_'}, [], ['$1']}])),
+			  [{#route{pid = '$1', _ = '_'}, [], ['$1']}])),
     {ok, #state{}}.
 
 handle_call(_Request, _From, State) ->

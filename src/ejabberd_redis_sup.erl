@@ -108,17 +108,11 @@ is_redis_configured(Host) ->
     PoolSize = ejabberd_config:has_option({redis_pool_size, Host}),
     ConnTimeoutConfigured = ejabberd_config:has_option(
 			      {redis_connect_timeout, Host}),
-    Modules = ejabberd_config:get_option({modules, Host}, []),
     SMConfigured = ejabberd_config:get_option({sm_db_type, Host}) == redis,
     RouterConfigured = ejabberd_config:get_option({router_db_type, Host}) == redis,
-    ModuleWithRedisDBConfigured =
-	lists:any(
-	  fun({Module, Opts}) ->
-		  gen_mod:db_type(Host, Opts, Module) == redis
-	  end, Modules),
     ServerConfigured or PortConfigured or DBConfigured or PassConfigured or
 	PoolSize or ConnTimeoutConfigured or
-	SMConfigured or RouterConfigured or ModuleWithRedisDBConfigured.
+	SMConfigured or RouterConfigured.
 
 get_specs() ->
     lists:map(
