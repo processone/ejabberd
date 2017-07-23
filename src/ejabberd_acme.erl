@@ -51,6 +51,17 @@ is_valid_verbose_opt(_) -> false.
 %%
 
 list_certificates(Verbose) ->
+    try
+	list_certificates0(Verbose)
+    catch
+	throw:Throw ->
+	    Throw;
+	E:R ->
+	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, erlang:get_stacktrace()]), 
+	    {error, get_certificates}
+    end.
+
+list_certificates0(Verbose) ->
     {ok, Certs} = read_certificates_persistent(),
     case Verbose of
 	"plain" -> 
