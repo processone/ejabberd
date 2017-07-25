@@ -321,7 +321,7 @@ terminate(Reason, #{server := LServer, server_host := ServerHost,
     end,
     bounce_queue(State1),
     bounce_message_queue(State1),
-    ejabberd_hooks:run_fold(s2s_out_terminate, ServerHost, State, [Reason]).
+    ejabberd_hooks:run_fold(s2s_out_terminate, ServerHost, State1, [Reason]).
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
