@@ -230,7 +230,7 @@ create_new_account(CAUrl, Contact, PrivateKey) ->
 	{ok, AccId}
     catch
 	E:R ->
-	    ?ERROR_MSG("Error: ~p creating an account for contact", 
+	    ?ERROR_MSG("Error: ~p creating an account for contact: ~p", 
 		       [{E,R}, Contact]),
 	    throw({error,create_new_account})
     end.
@@ -403,19 +403,6 @@ der_encode(Type, Term) ->
 	    {error, der_encode}
     end.
 
-%% TODO: I haven't found a function that does that, but there must exist one
-length_bitstring(Bitstring) ->
-    Size = byte_size(Bitstring),
-    case Size =< 127 of
-	true ->
-	    <<12:8, Size:8, Bitstring/binary>>;
-	false ->
-	    LenOctets = binary:encode_unsigned(Size),
-	    FirstOctet = byte_size(LenOctets),
-	    <<12:8, 1:1, FirstOctet:7, Size:(FirstOctet * 8), Bitstring/binary>>
-    end.
-
-
 %%
 %% Attributes Parser
 %%
@@ -433,7 +420,9 @@ attribute_parser_fun({AttrName, AttrVal}) ->
     try
 	#'AttributeTypeAndValue'{
 	   type = attribute_oid(AttrName),
-	   value = length_bitstring(list_to_bitstring(AttrVal))
+	   %% TODO: Check if every attribute should be encoded as common name
+	   value = public_key:der_encode('X520CommonName', {printableString, AttrVal})
+	   %% value = length_bitstring(list_to_bitstring(AttrVal))
 	  }
     catch
 	_:_ ->
@@ -819,9 +808,17 @@ new_user_scenario(CAUrl, HttpDir) ->
 
     {Account2, Authz3, CSR, Certificate, PrivateKey}.
 
-
+-ifdef(GENERATE_RSA_KEY).
 generate_key() ->
+    ?INFO_MSG("Generate RSA key pair~n", []),
+    Key = public_key:generate_key({rsa, 2048, 65537}),
+    jose_jwk:from_key(Key).
+-else.
+generate_key() ->
+    ?INFO_MSG("Generate EC key pair~n", []),
     jose_jwk:generate_key({ec, secp256r1}).
+-endif.
+
 
 scenario3() ->
     CSRSubject = [{commonName, "my-acme-test-ejabberd.com"},
