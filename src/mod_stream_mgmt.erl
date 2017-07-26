@@ -441,6 +441,7 @@ update_num_stanzas_in(#{mgmt_state := MgmtState,
 update_num_stanzas_in(State, _El) ->
     State.
 
+-spec send_rack(state()) -> state().
 send_rack(#{mgmt_ack_timer := _} = State) ->
     State;
 send_rack(#{mgmt_xmlns := Xmlns,
@@ -450,6 +451,7 @@ send_rack(#{mgmt_xmlns := Xmlns,
     State1 = State#{mgmt_ack_timer => TRef, mgmt_stanzas_req => NumStanzasOut},
     send(State1, #sm_r{xmlns = Xmlns}).
 
+-spec resend_rack(state()) -> state().
 resend_rack(#{mgmt_ack_timer := _,
 	      mgmt_queue := Queue,
 	      mgmt_stanzas_out := NumStanzasOut,

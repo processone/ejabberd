@@ -50,7 +50,7 @@ from_dir(ProsodyDir) ->
 				convert_dir(Path, Host, SubDir)
 			end, ["vcard", "accounts", "roster",
 			      "private", "config", "offline",
-			      "privacy"])
+			      "privacy", "pubsub"])
 	      end, HostDirs);
 	{error, Why} = Err ->
 	    ?ERROR_MSG("failed to list ~s: ~s",
@@ -115,7 +115,7 @@ maybe_get_scram_auth(Data) ->
 	    #scram{
 		storedkey = misc:hex_to_base64(proplists:get_value(<<"stored_key">>, Data, <<"">>)),
 		serverkey = misc:hex_to_base64(proplists:get_value(<<"server_key">>, Data, <<"">>)),
-		salt = misc:hex_to_base64(proplists:get_value(<<"salt">>, Data, <<"">>)),
+		salt = base64:encode(proplists:get_value(<<"salt">>, Data, <<"">>)),
 		iterationcount = round(IC)
 	    };
 	_ -> <<"">>
@@ -212,6 +212,46 @@ convert_data(Host, "privacy", User, [Data]) ->
 				end
 			end, Lists)},
     mod_privacy:set_list(Priv);
+convert_data(PubSub, "pubsub", NodeId, [Data]) ->
+    Host = url_decode(PubSub),
+    Node = url_decode(NodeId),
+    Type = node_type(Host, Node),
+    NodeData = convert_node_config(Host, Data),
+    DefaultConfig = mod_pubsub:config(Host, default_node_config, []),
+    Owner = proplists:get_value(owner, NodeData),
+    Options = lists:foldl(
+		fun({_Opt, undefined}, Acc) ->
+		    Acc;
+		   ({Opt, Val}, Acc) ->
+		    lists:keystore(Opt, 1, Acc, {Opt, Val})
+		end, DefaultConfig, proplists:get_value(options, NodeData)),
+    case mod_pubsub:tree_action(Host, create_node, [Host, Node, Type, Owner, Options, []]) of
+	{ok, Nidx} ->
+	    case mod_pubsub:node_action(Host, Type, create_node, [Nidx, Owner]) of
+		{result, _} ->
+		    Access = open, % always allow subscriptions  proplists:get_value(access_model, Options),
+		    Publish = open, % always allow publications  proplists:get_value(publish_model, Options),
+		    MaxItems = proplists:get_value(max_items, Options),
+		    Affiliations = proplists:get_value(affiliations, NodeData),
+		    Subscriptions = proplists:get_value(subscriptions, NodeData),
+		    Items = proplists:get_value(items, NodeData),
+		    [mod_pubsub:node_action(Host, Type, set_affiliation,
+					    [Nidx, Entity, Aff])
+		     || {Entity, Aff} <- Affiliations, Entity =/= Owner],
+		    [mod_pubsub:node_action(Host, Type, subscribe_node,
+					    [Nidx, jid:make(Entity), Entity, Access, never, [], [], []])
+		     || Entity <- Subscriptions],
+		    [mod_pubsub:node_action(Host, Type, publish_item,
+					    [Nidx, Publisher, Publish, MaxItems, ItemId, Payload, []])
+		     || {ItemId, Publisher, Payload} <- Items];
+		Error ->
+		    Error
+	    end;
+	Error ->
+	    ?ERROR_MSG("failed to import pubsub node ~s on host ~s:~n~p",
+		       [Node, Host, NodeData]),
+	    Error
+    end;
 convert_data(_Host, _Type, _User, _Data) ->
     ok.
 
@@ -332,6 +372,88 @@ convert_privacy_item({_, Item}) ->
 	      match_message = MatchMsg,
 	      match_presence_in = MatchPresIn,
 	      match_presence_out = MatchPresOut}.
+
+url_decode(Encoded) ->
+    url_decode(Encoded, <<>>).
+url_decode(<<$%, Hi, Lo, Tail/binary>>, Acc) ->
+    Hex = list_to_integer([Hi, Lo], 16),
+    url_decode(Tail, <<Acc/binary, Hex>>);
+url_decode(<<H, Tail/binary>>, Acc) ->
+    url_decode(Tail, <<Acc/binary, H>>);
+url_decode(<<>>, Acc) ->
+    Acc.
+
+node_type(_Host, <<"urn:", _Tail/binary>>) -> <<"pep">>;
+node_type(_Host, <<"http:", _Tail/binary>>) -> <<"pep">>;
+node_type(_Host, <<"https:", _Tail/binary>>) -> <<"pep">>;
+node_type(Host, _) -> hd(mod_pubsub:plugins(Host)).
+
+max_items(Config, Default) ->
+    case round(proplists:get_value(<<"max_items">>, Config, Default)) of
+	I when I =< 0 -> Default;
+	I -> I
+    end.
+
+convert_node_affiliations(Data) ->
+    lists:flatmap(
+      fun({J, Aff}) ->
+	      try jid:decode(J) of
+		  JID ->
+		      [{JID, misc:binary_to_atom(Aff)}]
+	      catch _:{bad_jid, _} ->
+		      []
+	      end
+      end, proplists:get_value(<<"affiliations">>, Data, [])).
+
+convert_node_subscriptions(Data) ->
+    lists:flatmap(
+      fun({J, true}) ->
+	      try jid:decode(J) of
+		  JID ->
+		      [jid:tolower(JID)]
+	      catch _:{bad_jid, _} ->
+		      []
+	      end;
+	 (_) ->
+	      []
+      end, proplists:get_value(<<"subscribers">>, Data, [])).
+
+convert_node_items(Host, Data) ->
+    Authors = proplists:get_value(<<"data_author">>, Data, []),
+    lists:flatmap(
+      fun({ItemId, Item}) ->
+	      try catch jid:decode(proplists:get_value(ItemId, Authors, Host)) of
+		  JID ->
+		      [El] = deserialize(Item),
+		      [{ItemId, JID, El#xmlel.children}]
+	      catch _:{bad_jid, _} ->
+		      []
+	      end
+      end, proplists:get_value(<<"data">>, Data, [])).
+
+convert_node_config(Host, Data) ->
+    Config = proplists:get_value(<<"config">>, Data, []),
+    [{affiliations, convert_node_affiliations(Data)},
+     {subscriptions, convert_node_subscriptions(Data)},
+     {owner, jid:decode(proplists:get_value(<<"creator">>, Config, Host))},
+     {items, convert_node_items(Host, Data)},
+     {options, [
+	{deliver_notifications,
+	 proplists:get_value(<<"deliver_notifications">>, Config, true)},
+	{deliver_payloads,
+	 proplists:get_value(<<"deliver_payloads">>, Config, true)},
+	{persist_items,
+	 proplists:get_value(<<"persist_items">>, Config, true)},
+	{max_items,
+	 max_items(Config, 10)},
+	{access_model,
+	 misc:binary_to_atom(proplists:get_value(<<"access_model">>, Config, <<"open">>))},
+	{publish_model,
+	 misc:binary_to_atom(proplists:get_value(<<"publish_model">>, Config, <<"publishers">>))},
+	{title,
+	 proplists:get_value(<<"title">>, Config, <<"">>)}
+	       ]}
+    ].
 
 el_to_offline_msg(LUser, LServer, #xmlel{attrs = Attrs} = El) ->
     try

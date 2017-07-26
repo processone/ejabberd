@@ -45,10 +45,11 @@ defmodule ModHttpApiMockTest do
       :jid.start
       :mnesia.start
       :ejabberd_mnesia.start
-			:stringprep.start
+      :stringprep.start
+      :ejabberd_hooks.start_link
       :ejabberd_config.start([@domain], [])
       {:ok, _} = :ejabberd_access_permissions.start_link()
-      :ejabberd_commands.init
+      :ejabberd_commands.start_link
 		rescue
 			_ -> :ok
 		end
@@ -73,16 +74,10 @@ defmodule ModHttpApiMockTest do
 			fn (@acommand, %{usr: {@user, @domain, _}}, @version) ->
 				{[], {:res, :rescode}}
 			end)
-    :meck.expect(:ejabberd_commands, :get_command_policy_and_scope,
-			fn (@acommand) -> {:ok, :user, [:erlang.atom_to_binary(@acommand,:utf8)]} end)
-		:meck.expect(:ejabberd_commands, :get_exposed_commands,
+    :meck.expect(:ejabberd_commands, :get_exposed_commands,
 			fn () -> [@acommand] end)
 		:meck.expect(:ejabberd_commands, :execute_command2,
 			fn (@acommand, [], %{usr: {@user, @domain, _}}, @version) ->
-				:ok
-			end)
-		:meck.expect(:ejabberd_commands, :execute_command,
-			fn (:undefined, {@user, @domain, @userpass, false}, @acommand, [], @version, _) ->
 				:ok
 			end)
 
@@ -130,9 +125,7 @@ defmodule ModHttpApiMockTest do
 			fn (@acommand, %{usr: {@user, @domain, _}}, @version) ->
 				{[], {:res, :rescode}}
 			end)
-    :meck.expect(:ejabberd_commands, :get_command_policy_and_scope,
-			fn (@acommand) -> {:ok, :user, [:erlang.atom_to_binary(@acommand,:utf8), "ejabberd:user"]} end)
-		:meck.expect(:ejabberd_commands, :get_exposed_commands,
+    :meck.expect(:ejabberd_commands, :get_exposed_commands,
 			fn () -> [@acommand] end)
 		:meck.expect(:ejabberd_commands, :execute_command2,
 			fn (@acommand, [], %{usr: {@user, @domain, _}, oauth_scope: ["ejabberd:user"]}, @version) ->
@@ -141,11 +134,6 @@ defmodule ModHttpApiMockTest do
 					:ok
 				(@acommand, [], %{usr: {@user, @domain, _}, oauth_scope: _}, @version) ->
 					throw({:error, :access_rules_unauthorized})
-			end)
-		:meck.expect(:ejabberd_commands, :execute_command,
-			fn (:undefined, {@user, @domain, {:oauth, _token}, false},
-					@acommand, [], @version, _) ->
-					:ok
 			end)
 
 
@@ -231,15 +219,8 @@ defmodule ModHttpApiMockTest do
 			fn (@acommand, {@user, @domain, {:oauth, _token}, false}, @version) ->
 					{[], {:res, :rescode}}
 			end)
-    :meck.expect(:ejabberd_commands, :get_command_policy_and_scope,
-			fn (@acommand) -> {:ok, :user, [:erlang.atom_to_binary(@acommand,:utf8), "ejabberd:user"]} end)
-		:meck.expect(:ejabberd_commands, :get_exposed_commands,
+    :meck.expect(:ejabberd_commands, :get_exposed_commands,
 			fn () -> [@acommand] end)
-		:meck.expect(:ejabberd_commands, :execute_command,
-			fn (:undefined, {@user, @domain, {:oauth, _token}, false},
-					@acommand, [], @version, _) ->
-					:ok
-			end)
 
    #Mock acl  to allow oauth authorizations
    :meck.expect(:acl, :match_rule, fn(_Server, _Access, _Jid) -> :allow end)

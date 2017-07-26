@@ -199,8 +199,8 @@ c2s_authenticated_packet(C2SState, _) ->
     C2SState.
 
 -spec c2s_copy_session(c2s_state(), c2s_state()) -> c2s_state().
-c2s_copy_session(C2SState, #{csi_state := State, csi_queue := Q}) ->
-    C2SState#{csi_state => State, csi_queue => Q};
+c2s_copy_session(C2SState, #{csi_queue := Q}) ->
+    C2SState#{csi_queue => Q};
 c2s_copy_session(C2SState, _) ->
     C2SState.
 

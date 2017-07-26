@@ -58,9 +58,12 @@ filter_packet({#message{} = Msg, State} = Acc) ->
     LFrom = jid:tolower(From),
     LBFrom = jid:remove_resource(LFrom),
     #{pres_a := PresA, jid := JID, lserver := LServer} = State,
+    AllowLocalUsers =
+        gen_mod:get_module_opt(LServer, ?MODULE, allow_local_users, true),
     case (Msg#message.body == [] andalso
           Msg#message.subject == [])
-        orelse ejabberd_router:is_my_route(From#jid.lserver)
+        orelse (AllowLocalUsers andalso
+                ejabberd_router:is_my_route(From#jid.lserver))
         orelse (?SETS):is_element(LFrom, PresA)
         orelse (?SETS):is_element(LBFrom, PresA)
         orelse sets_bare_member(LBFrom, PresA) of
@@ -128,4 +131,6 @@ mod_opt_type(drop) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(log) ->
     fun (B) when is_boolean(B) -> B end;
-mod_opt_type(_) -> [drop, log].
+mod_opt_type(allow_local_users) ->
+    fun (B) when is_boolean(B) -> B end;
+mod_opt_type(_) -> [drop, log, allow_local_users].

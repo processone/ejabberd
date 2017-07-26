@@ -87,7 +87,7 @@
 %% API
 %%====================================================================
 -spec start(atom(), sockmod(), socket(), [proplists:property()])
-      -> {ok, pid() | independent} | {error, inet:posix() | any()}.
+      -> {ok, pid() | independent} | {error, inet:posix() | any()} | ignore.
 start(Module, SockMod, Socket, Opts) ->
     case Module:socket_type() of
 	independent -> {ok, independent};

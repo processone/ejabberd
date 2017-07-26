@@ -46,7 +46,7 @@
 	 reject_unauthenticated_packet/2, process_closed/2,
 	 process_terminated/2, process_info/2]).
 %% API
--export([get_presence/1, resend_presence/1, resend_presence/2,
+-export([get_presence/1, set_presence/2, resend_presence/1, resend_presence/2,
 	 open_session/1, call/3, send/2, close/1, close/2, stop/1,
 	 reply/2, copy_state/2, set_timeout/2, route/2,
 	 host_up/1, host_down/1]).
@@ -67,7 +67,10 @@
 start(SockData, Opts) ->
     case proplists:get_value(supervisor, Opts, true) of
 	true ->
-	    supervisor:start_child(ejabberd_c2s_sup, [SockData, Opts]);
+	    case supervisor:start_child(ejabberd_c2s_sup, [SockData, Opts]) of
+		{ok, undefined} -> ignore;
+		Res -> Res
+	    end;
 	_ ->
 	    xmpp_stream_in:start(?MODULE, [SockData, Opts],
 				 ejabberd_config:fsm_limit_opts(Opts))
@@ -93,6 +96,10 @@ reply(Ref, Reply) ->
 -spec get_presence(pid()) -> presence().
 get_presence(Ref) ->
     call(Ref, get_presence, 1000).
+
+-spec set_presence(pid(), presence()) -> ok.
+set_presence(Ref, Pres) ->
+    call(Ref, {set_presence, Pres}, 1000).
 
 -spec resend_presence(pid()) -> ok.
 resend_presence(Pid) ->
@@ -522,6 +529,9 @@ handle_call(get_presence, From, #{jid := JID} = State) ->
 	   end,
     reply(From, Pres),
     State;
+handle_call({set_presence, Pres}, From, State) ->
+    reply(From, ok),
+    process_self_presence(State, Pres);
 handle_call(Request, From, #{lserver := LServer} = State) ->
     ejabberd_hooks:run_fold(
       c2s_handle_call, LServer, State, [Request, From]).

@@ -10,26 +10,33 @@ FIREWALL_WINDOW=""
 ERLANG_NODE=ejabberd@localhost
 
 # define default environment variables
-ERL={{erl}}
-IEX={{bindir}}/iex
-EPMD={{epmd}}
-INSTALLUSER={{installuser}}
+ERL="{{erl}}"
+IEX="{{bindir}}/iex"
+EPMD="{{epmd}}"
+INSTALLUSER="{{installuser}}"
 
-# check the proper system user is used if defined
-EXEC_CMD="false"
-if [ -n "$INSTALLUSER" ] ; then
-    if [ $(id -g) -eq $(id -g $INSTALLUSER || echo -1) ] ; then
+# check the proper system user is used
+case `id -un` in
+    "$INSTALLUSER")
         EXEC_CMD="as_current_user"
-    else
-        id -Gn | grep -q wheel && EXEC_CMD="as_install_user"
-    fi
-else
-    EXEC_CMD="as_current_user"
-fi
-if [ "$EXEC_CMD" = "false" ] ; then
-    echo "ERROR: This command can only be run by root or the user $INSTALLUSER" >&2
-    exit 7
-fi
+        ;;
+    root)
+        if [ -n "$INSTALLUSER" ] ; then
+            EXEC_CMD="as_install_user"
+        else
+            EXEC_CMD="as_current_user"
+            echo "WARNING: This is not recommended to run ejabberd as root" >&2
+        fi
+        ;;
+    *)
+        if [ -n "$INSTALLUSER" ] ; then
+            echo "ERROR: This command can only be run by root or the user $INSTALLUSER" >&2
+            exit 7
+        else
+            EXEC_CMD="as_current_user"
+        fi
+        ;;
+esac
 
 # parse command line parameters
 for arg; do
@@ -62,14 +69,14 @@ done
 # define erl parameters
 ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES $ERL_OPTIONS"
 if [ "$FIREWALL_WINDOW" != "" ] ; then
-    ERLANG_OPTS="$ERLANG_OPTS -kernel " \
-        "inet_dist_listen_min ${FIREWALL_WINDOW%-*} " \
-        "inet_dist_listen_max ${FIREWALL_WINDOW#*-}"
+    ERLANG_OPTS="$ERLANG_OPTS -kernel \
+        inet_dist_listen_min ${FIREWALL_WINDOW%-*} \
+        inet_dist_listen_max ${FIREWALL_WINDOW#*-}"
 fi
 if [ "$INET_DIST_INTERFACE" != "" ] ; then
     INET_DIST_INTERFACE2=$("$ERL" -noshell -eval 'case inet:parse_address("'$INET_DIST_INTERFACE'") of {ok,IP} -> io:format("~p",[IP]); _ -> ok end.' -s erlang halt)
     if [ "$INET_DIST_INTERFACE2" != "" ] ; then
-        ERLANG_OPTS="$ERLANG_OPTS -kernel inet_dist_use_interface \"$INET_DIST_INTERFACE2\""
+        ERLANG_OPTS="$ERLANG_OPTS -kernel inet_dist_use_interface $INET_DIST_INTERFACE2"
     fi
 fi
 ERL_LIBS={{libdir}}
@@ -103,19 +110,19 @@ export ERL_LIBS
 exec_cmd()
 {
     case $EXEC_CMD in
-        as_install_user) su -c '"$0" $@"' "$INSTALLUSER" -- "$@" ;;
+        as_install_user) su -c '"$0" "$@"' "$INSTALLUSER" -- "$@" ;;
         as_current_user) "$@" ;;
     esac
 }
 exec_erl()
 {
     NODE=$1; shift
-    exec_cmd $ERL ${S:--}name $NODE $ERLANG_OPTS "$@"
+    exec_cmd "$ERL" ${S:--}name $NODE $ERLANG_OPTS "$@"
 }
 exec_iex()
 {
     NODE=$1; shift
-    exec_cmd $IEX ${S:---}name $NODE --erl "$ERLANG_OPTS" "$@"
+    exec_cmd "$IEX" ${S:---}name $NODE --erl "$ERLANG_OPTS" "$@"
 }
 
 # usage
@@ -223,12 +230,6 @@ check_start()
                 "$EPMD" -kill >/dev/null
             }
         }
-    } || {
-        [ -d "$SPOOL_DIR" ] || exec_cmd mkdir -p "$SPOOL_DIR"
-        cd "$SPOOL_DIR" || {
-            echo "ERROR: ejabberd can not access directory $SPOOL_DIR"
-            exit 6
-        }
     }
 }
 
@@ -251,6 +252,13 @@ wait_status()
         fi
     done
     [ $timeout -gt 0 ]
+}
+
+# ensure we can change current directory to SPOOL_DIR
+[ -d "$SPOOL_DIR" ] || exec_cmd mkdir -p "$SPOOL_DIR"
+cd "$SPOOL_DIR" || {
+    echo "ERROR: can not access directory $SPOOL_DIR"
+    exit 6
 }
 
 # main
@@ -287,7 +295,7 @@ case $1 in
     ping)
         PEER=${2:-$ERLANG_NODE}
         [ "$PEER" = "${PEER%.*}" ] && PS="-s"
-        exec_cmd $ERL ${PS:--}name $(uid ping $(hostname $PS)) $ERLANG_OPTS \
+        exec_cmd "$ERL" ${PS:--}name $(uid ping $(hostname $PS)) $ERLANG_OPTS \
                  -noinput -hidden -eval 'io:format("~p~n",[net_adm:ping('"$PEER"')])' \
                  -s erlang halt -output text
         ;;

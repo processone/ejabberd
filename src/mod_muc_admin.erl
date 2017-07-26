@@ -208,8 +208,11 @@ get_commands_spec() ->
 			module = ?MODULE, function = send_direct_invitation,
 		        args_desc = ["Room name", "MUC service", "Password, or none",
 			 "Reason text, or none", "Users JIDs separated with : characters"],
-		        args_example = ["room1", "muc.example.com", none, none, "user2@localhost:user3@example.com"],
-		        args = [{name, binary}, {service, binary}, {password, binary}, {reason, binary}, {users, binary}],
+			args_example = [<<"room1">>, <<"muc.example.com">>,
+					<<>>, <<"Check this out!">>,
+					"user2@localhost:user3@example.com"],
+			args = [{name, binary}, {service, binary}, {password, binary},
+				{reason, binary}, {users, binary}],
 		        result = {res, rescode}},
 
      #ejabberd_commands{name = change_room_option, tags = [muc_room],
@@ -277,7 +280,7 @@ get_commands_spec() ->
 		        args_desc = ["Room name", "MUC service"],
 		        args_example = ["room1", "muc.example.com"],
 		        result_desc = "The list of affiliations with username, domain, affiliation and reason",
-		        result_example = [{"user1", "example.com", "member"}],
+			result_example = [{"user1", "example.com", member, "member"}],
 			args = [{name, binary}, {service, binary}],
 			result = {affiliations, {list,
 						 {affiliation, {tuple,
@@ -1009,7 +1012,7 @@ set_room_affiliation(Name, Service, JID, AffiliationString) ->
     case mod_muc:find_online_room(Name, Service) of
 	{ok, Pid} ->
 	    %% Get the PID for the online room so we can get the state of the room
-	    {ok, StateData} = gen_fsm:sync_send_all_state_event(Pid, {process_item_change, {jid:decode(JID), affiliation, Affiliation, <<"">>}, <<"">>}),
+	    {ok, StateData} = gen_fsm:sync_send_all_state_event(Pid, {process_item_change, {jid:decode(JID), affiliation, Affiliation, <<"">>}, undefined}),
 	    mod_muc:store_room(StateData#state.server_host, StateData#state.host, StateData#state.room, make_opts(StateData)),
 	    ok;
 	error ->

@@ -25,12 +25,11 @@
 
 -module(ejabberd_app).
 
--behaviour(ejabberd_config).
 -author('alexey@process-one.net').
 
 -behaviour(application).
 
--export([start/2, prep_stop/1, stop/1, opt_type/1]).
+-export([start/2, prep_stop/1, stop/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -49,13 +48,12 @@ start(normal, _Args) ->
     setup_if_elixir_conf_used(),
     ejabberd_config:start(),
     ejabberd_mnesia:start(),
-    set_settings_from_config(),
     file_queue_init(),
     maybe_add_nameservers(),
-    connect_nodes(),
     case ejabberd_sup:start_link() of
 	{ok, SupPid} ->
 	    register_elixir_config_hooks(),
+	    ejabberd_cluster:wait_for_sync(infinity),
 	    {T2, _} = statistics(wall_clock),
 	    ?INFO_MSG("ejabberd ~s is started in the node ~p in ~.2fs",
 		      [?VERSION, node(), (T2-T1)/1000]),
@@ -87,12 +85,6 @@ stop(_State) ->
 %%%
 %%% Internal functions
 %%%
-
-connect_nodes() ->
-    Nodes = ejabberd_config:get_option(cluster_nodes, []),
-    lists:foreach(fun(Node) ->
-                          net_kernel:connect_node(Node)
-                  end, Nodes).
 
 %% If ejabberd is running on some Windows machine, get nameservers and add to Erlang
 maybe_add_nameservers() ->
@@ -136,10 +128,6 @@ delete_pid_file() ->
 	    file:delete(PidFilename)
     end.
 
-set_settings_from_config() ->
-    Ticktime = ejabberd_config:get_option(net_ticktime, 60),
-    net_kernel:set_net_ticktime(Ticktime).
-
 file_queue_init() ->
     QueueDir = case ejabberd_config:queue_dir() of
 		   undefined ->
@@ -159,15 +147,6 @@ start_apps() ->
     ejabberd:start_app(fast_tls),
     ejabberd:start_app(xmpp),
     ejabberd:start_app(cache_tab).
-
--spec opt_type(net_ticktime) -> fun((pos_integer()) -> pos_integer());
-	      (cluster_nodes) -> fun(([node()]) -> [node()]);
-	      (atom()) -> atom().
-opt_type(net_ticktime) ->
-    fun (P) when is_integer(P), P > 0 -> P end;
-opt_type(cluster_nodes) ->
-    fun (Ns) -> true = lists:all(fun is_atom/1, Ns), Ns end;
-opt_type(_) -> [cluster_nodes, net_ticktime].
 
 setup_if_elixir_conf_used() ->
   case ejabberd_config:is_using_elixir_config() of

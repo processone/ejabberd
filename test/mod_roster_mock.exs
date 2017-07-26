@@ -23,6 +23,7 @@ defmodule ModRosterMock do
 
 	require Record
 	Record.defrecord :roster, Record.extract(:roster, from_lib: "ejabberd/include/mod_roster.hrl")
+	Record.defrecord :roster_version, Record.extract(:roster_version, from_lib: "ejabberd/include/mod_roster.hrl")
 
 	@agent __MODULE__
 
@@ -37,6 +38,13 @@ defmodule ModRosterMock do
 
 		mock_with_moka module
 
+		:ejabberd_mnesia.create(:mod_roster_mnesia, :roster,
+			[ram_copies: [node()],
+			 attributes: Keyword.keys(roster(roster())),
+			  index: [:us]])
+		:ejabberd_mnesia.create(:mod_roster_mnesia, :roster_version,
+			[ram_copies: [node()],
+			 attributes: Keyword.keys(roster_version(roster_version()))])
 		#:mod_roster.stop(domain)
 		:mod_roster.start(domain, [])
 	end
@@ -92,6 +100,11 @@ defmodule ModRosterMock do
 			:moka.load(roster_mock0)
 
 			roster_mock = :moka.start(:mod_roster_mnesia)
+			:moka.replace(roster_mock, :init,
+				fn (_host, _opts)  ->
+					:ok
+				end)
+
 			:moka.replace(roster_mock, :gen_mod, :db_type,
 				fn (_host, _opts)  ->
 					{:none}

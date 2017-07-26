@@ -181,6 +181,13 @@ count_messages(LUser, LServer) ->
 
 export(_Server) ->
     [{offline_msg,
+      fun(Host, #offline_msg{us = {LUser, LServer}})
+            when LServer == Host ->
+		      [?SQL("delete from spool where username=%(LUser)s;")];
+         (_Host, _R) ->
+              []
+      end},
+     {offline_msg,
       fun(Host, #offline_msg{us = {LUser, LServer},
                              timestamp = TimeStamp, from = From, to = To,
                              packet = El})
@@ -192,8 +199,7 @@ export(_Server) ->
 				  Packet1, jid:make(LServer),
 				  TimeStamp, <<"Offline Storage">>),
 		      XML = fxml:element_to_binary(xmpp:encode(Packet2)),
-		      [?SQL("delete from spool where username=%(LUser)s;"),
-		       ?SQL("insert into spool(username, xml) values ("
+		      [?SQL("insert into spool(username, xml) values ("
 			    "%(LUser)s, %(XML)s);")]
 	      catch _:{xmpp_codec, Why} ->
 		      ?ERROR_MSG("failed to decode packet ~p of user ~s@~s: ~s",

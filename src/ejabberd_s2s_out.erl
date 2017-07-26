@@ -54,10 +54,13 @@
 %%%===================================================================
 start(From, To, Opts) ->
     case proplists:get_value(supervisor, Opts, true) of
-	   true ->
-	    supervisor:start_child(ejabberd_s2s_out_sup,
-				   [From, To, Opts]);
-		_ ->
+	true ->
+	    case supervisor:start_child(ejabberd_s2s_out_sup,
+					[From, To, Opts]) of
+		{ok, undefined} -> ignore;
+		Res -> Res
+	    end;
+	_ ->
 	    xmpp_stream_out:start(?MODULE, [ejabberd_socket, From, To, Opts],
 				  ejabberd_config:fsm_limit_opts([]))
     end.
