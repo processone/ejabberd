@@ -538,9 +538,21 @@ json_error(HTTPCode, JSONCode, Message) ->
 
 log(Call, Args, {Addr, Port}) ->
     AddrS = misc:ip_to_list({Addr, Port}),
-    ?INFO_MSG("API call ~s ~p from ~s:~p", [Call, Args, AddrS, Port]);
+    Filter = gen_mod:get_module_opt(global, ?MODULE, hide_passwords_in_logfile, false),
+    ?INFO_MSG("API call ~s ~p from ~s:~p", [Call, filter_passwords(Args, Filter), AddrS, Port]);
 log(Call, Args, IP) ->
-    ?INFO_MSG("API call ~s ~p (~p)", [Call, Args, IP]).
+    Filter = gen_mod:get_module_opt(global, ?MODULE, hide_passwords_in_logfile, false),
+    ?INFO_MSG("API call ~s ~p (~p)", [Call, filter_passwords(Args, Filter), IP]).
+
+filter_passwords(_Args, false) ->
+    _Args;
+filter_passwords(Args=[_H|_T], true) ->
+    lists:map( fun({<<"password">>, _}) -> {<<"password">>, <<"[FILTERED]">>};
+         ({<<"newpass">>,_}) -> {<<"newpass">>, <<"[FILTERED]">>};
+         (E) -> E end,
+         Args);
+filter_passwords(NonListArgs, true) ->
+    NonListArgs.
 
 permission_addon() ->
     Access = gen_mod:get_module_opt(global, ?MODULE, admin_ip_access, none),
@@ -569,4 +581,5 @@ permission_addon() ->
     Res.
 
 mod_opt_type(admin_ip_access) -> fun acl:access_rules_validator/1;
-mod_opt_type(_) -> [admin_ip_access].
+mod_opt_type(hide_passwords_in_logfile) -> fun acl:access_rules_validator/1;
+mod_opt_type(_) -> [admin_ip_access, hide_passwords_in_logfile].
