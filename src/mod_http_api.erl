@@ -538,20 +538,16 @@ json_error(HTTPCode, JSONCode, Message) ->
 
 log(Call, Args, {Addr, Port}) ->
     AddrS = misc:ip_to_list({Addr, Port}),
-    Filter = gen_mod:get_module_opt(global, ?MODULE, hide_passwords_in_logfile, false),
-    ?INFO_MSG("API call ~s ~p from ~s:~p", [Call, filter_passwords(Args, Filter), AddrS, Port]);
+    ?INFO_MSG("API call ~s ~p from ~s:~p", [Call, hide_sensitive_args(Args), AddrS, Port]);
 log(Call, Args, IP) ->
-    Filter = gen_mod:get_module_opt(global, ?MODULE, hide_passwords_in_logfile, false),
-    ?INFO_MSG("API call ~s ~p (~p)", [Call, filter_passwords(Args, Filter), IP]).
+    ?INFO_MSG("API call ~s ~p (~p)", [Call, hide_sensitive_args(Args), IP]).
 
-filter_passwords(_Args, false) ->
-    _Args;
-filter_passwords(Args=[_H|_T], true) ->
-    lists:map( fun({<<"password">>, _}) -> {<<"password">>, <<"[FILTERED]">>};
-         ({<<"newpass">>,_}) -> {<<"newpass">>, <<"[FILTERED]">>};
+hide_sensitive_args(Args=[_H|_T]) ->
+    lists:map( fun({<<"password">>, Password}) -> {<<"password">>, ejabberd_config:may_hide_data(Password)};
+         ({<<"newpass">>,NewPassword}) -> {<<"newpass">>, ejabberd_config:may_hide_data(NewPassword)};
          (E) -> E end,
          Args);
-filter_passwords(NonListArgs, true) ->
+hide_sensitive_args(NonListArgs) ->
     NonListArgs.
 
 permission_addon() ->
@@ -581,5 +577,4 @@ permission_addon() ->
     Res.
 
 mod_opt_type(admin_ip_access) -> fun acl:access_rules_validator/1;
-mod_opt_type(hide_passwords_in_logfile) -> fun acl:access_rules_validator/1;
-mod_opt_type(_) -> [admin_ip_access, hide_passwords_in_logfile].
+mod_opt_type(_) -> [admin_ip_access].
