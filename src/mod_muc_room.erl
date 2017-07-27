@@ -4004,6 +4004,7 @@ tab_add_online_user(JID, StateData) ->
     Room = StateData#state.room,
     Host = StateData#state.host,
     ServerHost = StateData#state.server_host,
+    ejabberd_hooks:run(join_room, ServerHost, [ServerHost, Room, Host, JID]),
     mod_muc:register_online_user(ServerHost, jid:tolower(JID), Room, Host).
 
 -spec tab_remove_online_user(jid(), state()) -> any().
@@ -4011,6 +4012,7 @@ tab_remove_online_user(JID, StateData) ->
     Room = StateData#state.room,
     Host = StateData#state.host,
     ServerHost = StateData#state.server_host,
+    ejabberd_hooks:run(leave_room, ServerHost, [ServerHost, Room, Host, JID]),
     mod_muc:unregister_online_user(ServerHost, jid:tolower(JID), Room, Host).
 
 -spec tab_count_user(jid(), state()) -> non_neg_integer().

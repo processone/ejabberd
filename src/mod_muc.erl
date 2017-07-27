@@ -166,7 +166,7 @@ restore_room(ServerHost, Host, Name) ->
 
 forget_room(ServerHost, Host, Name) ->
     LServer = jid:nameprep(ServerHost),
-    ejabberd_hooks:run(remove_room, LServer, [LServer, Name, Host]),
+    ejabberd_hooks:run(destroy_room, LServer, [LServer, Name, Host]),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:forget_room(LServer, Host, Name).
 
@@ -256,6 +256,7 @@ handle_call({create, Room, From, Nick, Opts}, _From,
 		  Nick, NewOpts, QueueType),
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
     RMod:register_online_room(ServerHost, Room, Host, Pid),
+    ejabberd_hooks:run(create_room, ServerHost, [ServerHost, Room, Host]),
     {reply, ok, State}.
 
 handle_cast({reload, ServerHost, NewOpts, OldOpts}, #state{host = OldHost}) ->
