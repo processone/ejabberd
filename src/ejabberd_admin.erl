@@ -47,6 +47,7 @@
          %% Acme
          get_certificate/1,
 	 list_certificates/1,
+	 revoke_certificate/1,
 	 %% Purge DB
 	 delete_expired_messages/0, delete_old_messages/1,
 	 %% Mnesia
@@ -258,6 +259,12 @@ get_commands_spec() ->
 			args_desc = ["Whether to print the whole certificate or just some metadata. Possible values: plain | verbose"],
 			args = [{option, string}],
 			result = {certificates, {list,{certificate, string}}}},
+     #ejabberd_commands{name = revoke_certificate, tags = [acme],
+			desc = "Revokes the selected certificate",
+			module = ?MODULE, function = revoke_certificate,
+			args_desc = ["The domain of the certificate in question"],
+			args = [{domain, string}],
+			result = {res, restuple}},
 
      #ejabberd_commands{name = import_piefxis, tags = [mnesia],
 			desc = "Import users data from a PIEFXIS file (XEP-0227)",
@@ -580,6 +587,8 @@ list_certificates(Verbose) ->
 	    {invalid_option, String}
     end.
 
+revoke_certificate(Domain) ->
+    ejabberd_acme:revoke_certificate("http://localhost:4000", Domain).
 
 %%%
 %%% Purge DB

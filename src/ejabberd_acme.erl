@@ -3,11 +3,13 @@
 -export([%% Ejabberdctl Commands
 	 get_certificates/2,
 	 list_certificates/1,
+	 revoke_certificate/2,
 	 %% Command Options Validity
 	 is_valid_account_opt/1,
 	 is_valid_verbose_opt/1,
 	 %% Misc
 	 generate_key/0,
+	 to_public/1,
 	 %% Debugging Scenarios
 	 scenario/3,
 	 scenario0/2,
@@ -47,6 +49,48 @@ is_valid_verbose_opt("verbose") -> true;
 is_valid_verbose_opt(_) -> false.
 
 %%
+%% Revoke Certificate
+%%
+
+%% Add a try-catch to this stub
+revoke_certificate(CAUrl, Domain) ->
+    revoke_certificate0(CAUrl, Domain).
+
+revoke_certificate0(CAUrl, Domain) ->
+    BinDomain = list_to_bitstring(Domain),
+    case domain_certificate_exists(BinDomain) of
+	{BinDomain, Certificate} ->
+	    ?INFO_MSG("Certificate: ~p found!!", [Certificate]),
+	    ok = revoke_certificate1(CAUrl, Certificate),
+	    {ok, deleted};
+	false ->
+	    {error, not_found}
+    end.
+
+revoke_certificate1(CAUrl, Cert = #data_cert{pem=PemEncodedCert}) ->
+    {ok, _AccId, PrivateKey} = ensure_account_exists(),
+
+    Certificate = prepare_certificate_revoke(PemEncodedCert),
+    
+    {ok, Dirs, Nonce} = ejabberd_acme_comm:directory(CAUrl),
+    
+    Req = [{<<"certificate">>, Certificate}],
+    {ok, [], Nonce1} = ejabberd_acme_comm:revoke_cert(Dirs, PrivateKey, Req, Nonce),
+    ok.
+
+prepare_certificate_revoke(PemEncodedCert) ->
+    PemList = public_key:pem_decode(PemEncodedCert),
+    PemCertEnc = lists:keyfind('Certificate', 1, PemList),
+    PemCert = public_key:pem_entry_decode(PemCertEnc),
+    DerCert = public_key:der_encode('Certificate', PemCert),
+    Base64Cert = base64url:encode(DerCert),
+    Base64Cert.
+    
+domain_certificate_exists(Domain) ->
+    {ok, Certs} = read_certificates_persistent(),
+    lists:keyfind(Domain, 1, Certs).
+
+%%
 %% List Certificates
 %%
 
@@ -58,7 +102,7 @@ list_certificates(Verbose) ->
 	    Throw;
 	E:R ->
 	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, erlang:get_stacktrace()]), 
-	    {error, get_certificates}
+	    {error, list_certificates}
     end.
 
 list_certificates0(Verbose) ->
@@ -321,7 +365,7 @@ ensure_account_exists() ->
 make_csr(Attributes) ->
     Key = generate_key(),
     {_, KeyKey} = jose_jwk:to_key(Key),
-    KeyPub = jose_jwk:to_public(Key),
+    KeyPub = to_public(Key),
     try
 	SubPKInfoAlgo = subject_pk_info_algo(KeyPub),
 	{ok, RawBinPubKey} = raw_binary_public_key(KeyPub),
@@ -420,7 +464,9 @@ attribute_parser_fun({AttrName, AttrVal}) ->
     try
 	#'AttributeTypeAndValue'{
 	   type = attribute_oid(AttrName),
-	   %% TODO: Check if every attribute should be encoded as common name
+	   %% TODO: Check if every attribute should be encoded as
+	   %% common name. Actually it doesn't matter in
+	   %% practice. Only in theory in order to have cleaner code.
 	   value = public_key:der_encode('X520CommonName', {printableString, AttrVal})
 	   %% value = length_bitstring(list_to_bitstring(AttrVal))
 	  }
@@ -468,6 +514,22 @@ not_before_not_after() ->
     NotBefore = xmpp_util:encode_timestamp({MegS-1, Sec, MicS}),
     NotAfter = xmpp_util:encode_timestamp({MegS+1, Sec, MicS}),
     {NotBefore, NotAfter}.
+
+to_public(PrivateKey) ->
+    jose_jwk:to_public(PrivateKey).
+    %% case jose_jwk:to_key(PrivateKey) of
+    %% 	#'RSAPrivateKey'{modulus = Mod, publicExponent = Exp} ->
+    %% 	    Public = #'RSAPublicKey'{modulus = Mod, publicExponent = Exp},
+    %% 	    jose_jwk:from_key(Public);
+    %% 	_ ->
+    %% 	    jose_jwk:to_public(PrivateKey)
+    %% end.
+ 
+%% to_public(#'RSAPrivateKey'{modulus = Mod, publicExponent = Exp}) ->
+%%     #'RSAPublicKey'{modulus = Mod, publicExponent = Exp};
+%% to_public(PrivateKey) ->
+%%     jose_jwk:to_public(PrivateKey).
+
 
 is_error({error, _}) -> true;
 is_error(_) -> false.
@@ -812,7 +874,9 @@ new_user_scenario(CAUrl, HttpDir) ->
 generate_key() ->
     ?INFO_MSG("Generate RSA key pair~n", []),
     Key = public_key:generate_key({rsa, 2048, 65537}),
-    jose_jwk:from_key(Key).
+    Key1 = Key#'RSAPrivateKey'{version = 'two-prime'},
+    jose_jwk:from_key(Key1).
+    %% jose_jwk:generate_key({rsa, 2048}).
 -else.
 generate_key() ->
     ?INFO_MSG("Generate EC key pair~n", []),
