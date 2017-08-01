@@ -612,7 +612,7 @@ disco_items(Host, <<>>, From) ->
 				     jid = jid:make(Host),
 				     name = case get_option(Options, title) of
 						false -> <<>>;
-						[Title] -> Title
+						Title -> Title
 					    end} | Acc];
 		    _ ->
 			Acc
