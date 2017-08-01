@@ -671,16 +671,14 @@ caps_update(#jid{luser = U, lserver = S, lresource = R}, #jid{lserver = Host} = 
     presence(Host, {presence, U, S, [R], JID}).
 
 -spec presence_probe(jid(), jid(), pid()) -> ok.
-presence_probe(#jid{luser = U, lserver = S, lresource = R} = JID, JID, Pid) ->
-    presence(S, {presence, JID, Pid}),
-    presence(S, {presence, U, S, [R], JID});
 presence_probe(#jid{luser = U, lserver = S}, #jid{luser = U, lserver = S}, _Pid) ->
     %% ignore presence_probe from my other ressources
     %% to not get duplicated last items
     ok;
-presence_probe(#jid{luser = U, lserver = S, lresource = R}, #jid{lserver = S} = JID, _Pid) ->
-    presence(S, {presence, U, S, [R], JID});
-presence_probe(_Host, _JID, _Pid) ->
+presence_probe(#jid{lserver = S} = From, #jid{lserver = S} = To, Pid) ->
+    presence(S, {presence, From, Pid}),
+    presence(S, {presence, From#jid.luser, S, [From#jid.lresource], To});
+presence_probe(_From, _To, _Pid) ->
     %% ignore presence_probe from remote contacts,
     %% those are handled via caps_add
     ok.
