@@ -546,14 +546,7 @@ disco_identity(Host, Node, From) ->
 		case get_allowed_items_call(Host, Nidx, From, Type,
 					    Options, Owners) of
 		    {result, _} ->
-			{result, [#identity{category = <<"pubsub">>,
-					    type = <<"pep">>},
-				  #identity{category = <<"pubsub">>,
-					    type = <<"leaf">>,
-					    name = case get_option(Options, title) of
-						       false -> <<>>;
-						       [Title] -> Title
-						   end}]};
+			{result, [#identity{category = <<"pubsub">>, type = <<"pep">>}]};
 		    _ ->
 			{result, []}
 		end
@@ -586,8 +579,7 @@ disco_features(Host, Node, From) ->
 					    Type, Options, Owners) of
 		    {result, _} ->
 			{result,
-			 [?NS_PUBSUB |
-			  [feature(F) || F <- plugin_features(Host, <<"pep">>)]]};
+			 [?NS_PUBSUB | [feature(F) || F <- plugin_features(Host, <<"pep">>)]]};
 		    _ ->
 			{result, []}
 		end
