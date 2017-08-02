@@ -248,16 +248,11 @@ list_certificates(Verbose) ->
 -spec list_certificates0(verbose_opt()) -> [string()] | [any()].
 list_certificates0(Verbose) ->
     Certs = read_certificates_persistent(),
-    case Verbose of
-	"plain" -> 
-	    [format_certificate(DataCert) || {_Key, DataCert} <- Certs];
-	"verbose" ->
-	    Certs
-    end.
+    [format_certificate(DataCert, Verbose) || {_Key, DataCert} <- Certs].
 
 %% TODO: Make this cleaner and more robust
--spec format_certificate(data_cert()) -> string().
-format_certificate(DataCert) ->
+-spec format_certificate(data_cert(), verbose_opt()) -> string().
+format_certificate(DataCert, Verbose) ->
     #data_cert{
        domain = DomainName,
        pem = PemCert,
@@ -274,15 +269,29 @@ format_certificate(DataCert) ->
     %% Find the notAfter date
     NotAfter = get_notAfter(Certificate),
 
-    format_certificate1(DomainName, NotAfter, Path).
+    case Verbose of
+	"plain" ->
+	    format_certificate_plain(DomainName, NotAfter, Path);
+	"verbose" ->
+	    format_certificate_verbose(DomainName, NotAfter, PemCert)
+    end.
 
--spec format_certificate1(bitstring(), string(), string()) -> string().
-format_certificate1(DomainName, NotAfter, Path) ->
+-spec format_certificate_plain(bitstring(), string(), string()) -> string().
+format_certificate_plain(DomainName, NotAfter, Path) ->
     Result = lists:flatten(io_lib:format(
 			     "  Domain: ~s~n" 
 			     "    Valid until: ~s UTC~n" 
 			     "    Path: ~s", 
 			     [DomainName, NotAfter, Path])),
+    Result.
+
+-spec format_certificate_verbose(bitstring(), string(), bitstring()) -> string().
+format_certificate_verbose(DomainName, NotAfter, PemCert) ->
+    Result = lists:flatten(io_lib:format(
+			     "  Domain: ~s~n" 
+			     "    Valid until: ~s UTC~n" 
+			     "    Certificate In PEM format: ~n~s", 
+			     [DomainName, NotAfter, PemCert])),
     Result.
 
 -spec get_commonName(#'Certificate'{}) -> string().
