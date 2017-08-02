@@ -1713,7 +1713,7 @@ delete_node(Host, Node, Owner) ->
 %%<li>The node does not support subscriptions.</li>
 %%<li>The node does not exist.</li>
 %%</ul>
--spec subscribe_node(host(), binary(), jid(), binary(), [{binary(), [binary()]}]) ->
+-spec subscribe_node(host(), binary(), jid(), jid(), [{binary(), [binary()]}]) ->
 			    {result, pubsub()} | {error, stanza_error()}.
 subscribe_node(Host, Node, From, JID, Configuration) ->
     SubModule = subscription_plugin(Host),
