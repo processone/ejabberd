@@ -56,7 +56,9 @@ is_valid_verbose_opt(_) -> false.
 
 %% Needs a hell lot of cleaning
 -spec get_certificates(url(), account_opt()) -> 
-			      [{'ok', bitstring(), 'saved'} | {'error', bitstring(), _}] | 
+			      {'ok', [{'ok', bitstring(), 'saved'}]} |
+			      {'error', 
+			       [{'ok', bitstring(), 'saved'} | {'error', bitstring(), _}]} | 
 			      {'error', _}.
 get_certificates(CAUrl, NewAccountOpt) ->
     try
@@ -71,7 +73,9 @@ get_certificates(CAUrl, NewAccountOpt) ->
     end.
 
 -spec get_certificates0(url(), account_opt()) -> 
-			       [{'ok', bitstring(), 'saved'} | {'error', bitstring(), _}] |
+			       {'ok', [{'ok', bitstring(), 'saved'}]} |
+			       {'error', 
+				[{'ok', bitstring(), 'saved'} | {'error', bitstring(), _}]} |
 			       no_return().
 get_certificates0(CAUrl, "old-account") ->
     %% Get the current account
@@ -86,7 +90,9 @@ get_certificates0(CAUrl, "new-account") ->
     get_certificates1(CAUrl, PrivateKey).
 
 -spec get_certificates1(url(), jose_jwk:key()) -> 
-			       [{'ok', bitstring(), 'saved'} | {'error', bitstring(), _}] |
+			       {'ok', [{'ok', bitstring(), 'saved'}]} |
+			       {'error', 
+				[{'ok', bitstring(), 'saved'} | {'error', bitstring(), _}]} |
 			       no_return().
 get_certificates1(CAUrl, PrivateKey) ->
     %% Read Config
@@ -100,7 +106,33 @@ get_certificates1(CAUrl, PrivateKey) ->
 
     %% Format the result to send back to ejabberdctl
     %% Result
-    SavedCerts.
+    format_get_certificates_result(SavedCerts).
+
+-spec format_get_certificates_result([{'ok', bitstring(), 'saved'} | 
+				      {'error', bitstring(), _}]) ->
+					    string().
+format_get_certificates_result(Certs) ->
+    Cond = lists:all(fun(Cert) ->
+			     not is_error(Cert)
+		     end, Certs),
+    FormattedCerts = lists:join($\n,
+				[format_get_certificate(C) || C <- Certs]),
+    case Cond of
+	true ->
+	    Result = io_lib:format("Success:~n~s", [FormattedCerts]),
+	    lists:flatten(Result); 
+	_ ->
+	    Result = io_lib:format("Error with one or more certificates~n~s", [lists:flatten(FormattedCerts)]),
+	    lists:flatten(Result)
+    end.
+
+-spec format_get_certificate({'ok', bitstring(), 'saved'} | 
+			     {'error', bitstring(), _}) ->
+				    string().
+format_get_certificate({ok, Domain, saved}) ->    
+    io_lib:format("  Certificate for domain: \"~s\" acquired and saved", [Domain]);
+format_get_certificate({error, Domain, Reason}) ->
+    io_lib:format("  Error for domain: \"~s\",  with reason: \'~s\'", [Domain, Reason]).
 
 -spec get_certificate(url(), bitstring(), jose_jwk:key()) -> 
 			     {'ok', bitstring(), pem()} | 
@@ -571,6 +603,7 @@ to_public(PrivateKey) ->
 
 -spec is_error(_) -> boolean().
 is_error({error, _}) -> true;
+is_error({error, _, _}) -> true;
 is_error(_) -> false.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
