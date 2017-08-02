@@ -2142,9 +2142,14 @@ get_allowed_items_call(Host, Nidx, From, Type, Options, Owners, RSM) ->
     node_call(Host, Type, get_items, [Nidx, From, AccessModel, PS, RG, undefined, RSM]).
 
 get_last_items(Host, Type, Nidx, LJID, Count) ->
-    case node_action(Host, Type, get_last_items, [Nidx, LJID, Count]) of
-	{result, Items} -> Items;
-	_ -> []
+    case get_cached_item(Host, Nidx) of
+	undefined ->
+	    case node_action(Host, Type, get_last_items, [Nidx, LJID, Count]) of
+		{result, Items} -> Items;
+	      _ -> []
+	    end;
+	LastItem ->
+	    [LastItem]
     end.
 
 %% @doc <p>Resend the items of a node to the user.</p>
