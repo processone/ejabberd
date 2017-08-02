@@ -53,7 +53,8 @@ single_cases() ->
       single_test(service_vcard),
       single_test(configure_non_existent),
       single_test(cancel_configure_non_existent),
-      single_test(service_subscriptions)]}.
+      single_test(service_subscriptions),
+      single_test(set_room_affiliation)]}.
 
 service_presence_error(Config) ->
     Service = muc_jid(Config),
@@ -241,6 +242,32 @@ service_subscriptions(Config) ->
 	      ok = leave(Config, Room)
       end, Rooms),
     disconnect(Config).
+
+set_room_affiliation(Config) ->
+  #jid{server = RoomService} = muc_jid(Config),
+  RoomName = <<"set_room_affiliation">>,
+  RoomJID = jid:make(RoomName, RoomService),
+  MyJID = my_jid(Config),
+  PeerJID = jid:remove_resource(?config(slave, Config)),
+
+  ct:pal("joining room ~p", [RoomJID]),
+  ok = join_new(Config, RoomJID),
+
+  ct:pal("setting affiliation in room ~p to 'member' for ~p", [RoomJID, PeerJID]),
+  ServerHost = ?config(server_host, Config),
+  WebPort = ct:get_config(web_port, 5280),
+  RequestURL = "http://" ++ ServerHost ++ ":" ++ integer_to_list(WebPort) ++ "/api/set_room_affiliation",
+  Headers = [{"X-Admin", "true"}],
+  ContentType = "application/json",
+  Body = jiffy:encode(#{name => RoomName, service => RoomService, jid => jid:encode(PeerJID), affiliation => member}),
+  {ok, {{_, 200, _}, _, _}} = httpc:request(post, {RequestURL, Headers, ContentType, Body}, [], []),
+
+  #message{id = _, from = RoomJID, to = MyJID, sub_els = [
+    #muc_user{items = [
+      #muc_item{affiliation = member, role = none, jid = PeerJID}]}]} = recv_message(Config),
+
+  ok = leave(Config, RoomJID),
+  disconnect(Config).
 
 %%%===================================================================
 %%% Master-slave tests
