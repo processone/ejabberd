@@ -208,6 +208,8 @@ remove_user(User, Server) ->
 	    {error, db_failure}
     end.
 
+need_transform(#reg_users_counter{}) ->
+    false;
 need_transform(#passwd{us = {U, S}, password = Pass}) ->
     if is_binary(Pass) ->
 	    case store_type(S) of
