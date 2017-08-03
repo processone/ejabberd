@@ -1,10 +1,10 @@
-%{"cache_tab": {:hex, :cache_tab, "1.0.8", "eac8923f0f20c35e630317790c4d4c2629c5bc792753fa48eb5391bd39c80245", [:rebar3], [{:p1_utils, "1.0.9", [hex: :p1_utils, optional: false]}]},
+%{"cache_tab": {:hex, :cache_tab, "1.0.9", "07c82d363eb3660c9d4e178045b285d6fa747ebe177b40e00a6fc2b8e738e084", [:rebar3], [{:p1_utils, "1.0.9", [hex: :p1_utils, optional: false]}]},
   "distillery": {:hex, :distillery, "1.4.0", "d633cd322c8efa0428082b00b7f902daf8caa166d45f9022bbc19a896d2e1e56", [:mix], []},
   "earmark": {:hex, :earmark, "1.2.2", "f718159d6b65068e8daeef709ccddae5f7fdc770707d82e7d126f584cd925b74", [:mix], []},
-  "esip": {:hex, :esip, "1.0.12", "e0505afe74bb362b0ea486e2a64b3c1934b1eb541a7b3e990b23045e4bdc07d4", [:rebar3], [{:fast_tls, "1.0.12", [hex: :fast_tls, optional: false]}, {:p1_utils, "1.0.9", [hex: :p1_utils, optional: false]}, {:stun, "1.0.11", [hex: :stun, optional: false]}]},
+  "esip": {:hex, :esip, "1.0.13", "cc29231eafa434d24ba8c65193fe8769eefec6f606145cd012fc2884425bc4de", [:rebar3], [{:fast_tls, "1.0.13", [hex: :fast_tls, optional: false]}, {:p1_utils, "1.0.9", [hex: :p1_utils, optional: false]}, {:stun, "1.0.12", [hex: :stun, optional: false]}]},
   "ex_doc": {:hex, :ex_doc, "0.16.1", "b4b8a23602b4ce0e9a5a960a81260d1f7b29635b9652c67e95b0c2f7ccee5e81", [:mix], [{:earmark, "~> 1.1", [hex: :earmark, optional: false]}]},
   "ezlib": {:hex, :ezlib, "1.0.2", "22004ecf553a7d831404394d5642712e2aede90522e22bd6ccc089ca410ee098", [:rebar3], []},
-  "fast_tls": {:hex, :fast_tls, "1.0.12", "861b591f23103142782c5b72de8898673a37acd78646c50dbda978e1e1c5b463", [:rebar3], [{:p1_utils, "1.0.9", [hex: :p1_utils, optional: false]}]},
+  "fast_tls": {:hex, :fast_tls, "1.0.13", "a1f56c3257abcaea26b3f94641f034c948bedb87149b7b8019d6f38265508ef9", [:rebar3], [{:p1_utils, "1.0.9", [hex: :p1_utils, optional: false]}]},
   "fast_xml": {:hex, :fast_xml, "1.1.23", "1e7b311d3353806ee832d7630fef57713987cea40a7020669cf057d537de4721", [:rebar3], [{:p1_utils, "1.0.9", [hex: :p1_utils, optional: false]}]},
   "fast_yaml": {:hex, :fast_yaml, "1.0.10", "ce5d52b77cb21968c8b73aa29b39f56a4ffd7e1e11f853d5597e7277858f155e", [:rebar3], [{:p1_utils, "1.0.9", [hex: :p1_utils, optional: false]}]},
   "goldrush": {:hex, :goldrush, "0.1.9", "f06e5d5f1277da5c413e84d5a2924174182fb108dabb39d5ec548b27424cd106", [:rebar3], []},
@@ -14,5 +14,5 @@
   "p1_oauth2": {:hex, :p1_oauth2, "0.6.1", "4e021250cc198c538b097393671a41e7cebf463c248980320e038fe0316eb56b", [:rebar3], []},
   "p1_utils": {:hex, :p1_utils, "1.0.9", "c33c230efbeb4dcc02911161e3cb1a93231a92df15e3fc97de655a9271a26d9f", [:rebar3], []},
   "stringprep": {:hex, :stringprep, "1.0.9", "9182ba39931cd1db528b8883cad0d63530abe2bf21835d26cec2f9af8bc00be0", [:rebar3], [{:p1_utils, "1.0.9", [hex: :p1_utils, optional: false]}]},
-  "stun": {:hex, :stun, "1.0.11", "386cb3e3543e17a6351028a43e047c2172225d035c826a72fcb67672da9874e5", [:rebar3], [{:fast_tls, "1.0.12", [hex: :fast_tls, optional: false]}, {:p1_utils, "1.0.9", [hex: :p1_utils, optional: false]}]},
-  "xmpp": {:hex, :xmpp, "1.1.11", "8c49964d0d48b81080d2c5700fcf6cc19950ae9dc60a71bd3ff3d4620336d052", [:rebar3], [{:fast_xml, "1.1.23", [hex: :fast_xml, optional: false]}, {:p1_utils, "1.0.9", [hex: :p1_utils, optional: false]}, {:stringprep, "1.0.9", [hex: :stringprep, optional: false]}]}}
+  "stun": {:hex, :stun, "1.0.12", "994db8eb640b5913b6df7b40b68550b5e787635868cc241b32360ff93ec347b2", [:rebar3], [{:fast_tls, "1.0.13", [hex: :fast_tls, optional: false]}, {:p1_utils, "1.0.9", [hex: :p1_utils, optional: false]}]},
+  "xmpp": {:hex, :xmpp, "1.1.13", "53a46c2f35c31a904d3c09bcf08c3acc11ded3f6b7f0c77b9a1222fc462a0705", [:rebar3], [{:fast_xml, "1.1.23", [hex: :fast_xml, optional: false]}, {:p1_utils, "1.0.9", [hex: :p1_utils, optional: false]}, {:stringprep, "1.0.9", [hex: :stringprep, optional: false]}]}}

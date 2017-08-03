@@ -9,7 +9,7 @@ defmodule Ejabberd.Mixfile do
      elixirc_paths: ["lib"],
      compile_path: ".",
      compilers: [:asn1] ++ Mix.compilers,
-     erlc_options: erlc_options(),
+     erlc_options: [:debug_info, {:d, :ELIXIR_ENABLED}, {:i, "deps/fast_xml/include"}, {:i, "deps/p1_utils/include"}, {:i, "deps/xmpp/include"}],
      erlc_paths: ["asn1", "src"],
      # Elixir tests are starting the part of ejabberd they need
      aliases: [test: "test --no-start"],
@@ -32,36 +32,22 @@ defmodule Ejabberd.Mixfile do
                          ++ cond_apps()]
   end
 
-  defp erlc_options do
-    # Use our own includes + includes from all dependencies
-    includes = ["include"] ++ deps_include(["fast_xml", "xmpp", "p1_utils"])
-    [:debug_info, {:d, :ELIXIR_ENABLED}] ++ Enum.map(includes, fn(path) -> {:i, path} end)
-  end
-
   defp deps do
     [{:lager, "~> 3.4.0"},
-     {:p1_utils, "~> 1.0"},
-     {:fast_xml, "~> 1.1"},
-     {:xmpp, "~> 1.1"},
-     {:cache_tab, "~> 1.0"},
+     {:p1_utils, "~> 1.0.9"},
+     {:fast_xml, "~> 1.1.23"},
+     {:xmpp, "~> 1.1.13"},
+     {:cache_tab, "~> 1.0.9"},
      {:stringprep, "~> 1.0"},
-     {:fast_yaml, "~> 1.0"},
-     {:fast_tls, "~> 1.0"},
-     {:stun, "~> 1.0"},
-     {:esip, "~> 1.0"},
+     {:fast_yaml, "~> 1.0.10"},
+     {:fast_tls, "~> 1.0.13"},
+     {:stun, "~> 1.0.12"},
+     {:esip, "~> 1.0.13"},
      {:jiffy, "~> 0.14.7"},
      {:p1_oauth2, "~> 0.6.1"},
      {:distillery, "~> 1.0"},
      {:ex_doc, ">= 0.0.0", only: :dev}]
     ++ cond_deps()
-  end
-
-  defp deps_include(deps) do
-    base = case Mix.Project.deps_paths()[:ejabberd] do
-      nil -> "deps"
-      _ -> ".."
-    end
-    Enum.map(deps, fn dep -> base<>"/#{dep}/include" end)
   end
 
   defp cond_deps do
@@ -71,7 +57,7 @@ defmodule Ejabberd.Mixfile do
                          {config(:riak), {:riakc, "~> 2.4"}},
                          {config(:redis), {:eredis, "~> 1.0"}},
                          {config(:zlib), {:ezlib, "~> 1.0"}},
-                         {config(:iconv), {:iconv, "~> 1.0"}},
+                         {config(:iconv), {:iconv, "~> 1.0.5"}},
                          {config(:pam), {:epam, "~> 1.0"}},
                          {config(:tools), {:luerl, github: "rvirding/luerl", tag: "v0.2"}},
                          {config(:tools), {:meck, "~> 0.8.4"}},
