@@ -3933,7 +3933,7 @@ export(_Server) ->
                               owners = Owners,
                               options = Options}) ->
               HOST = case Hostid of
-                    {U,S,R} -> ejabberd_sql:escape(jlib:jid_to_string({U,S,R}));
+                    {U,S,R} -> ejabberd_sql:escape(jid:encode({U,S,R}));
                     _ -> ejabberd_sql:escape(Hostid)
                     end,
               NODE = ejabberd_sql:escape(Nodeid),
@@ -3949,7 +3949,7 @@ export(_Server) ->
                            io_lib:format("~p", [Val]), "');\n"] || {Name,Val} <- Options],
                ?SQL("delete from pubsub_node_owner where nodeid=%(Id)d;"),
                [["insert into pubsub_node_owner(nodeid,owner)\n"
-                 " values (", IdB, ", '", jlib:jid_to_string(Usr), "');\n"] || Usr <- Owners],"\n"];
+                 " values (", IdB, ", '", jid:encode(Usr), "');\n"] || Usr <- Owners],"\n"];
          (_Host, _R) ->
               []
       end}].
