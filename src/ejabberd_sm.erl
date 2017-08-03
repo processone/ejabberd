@@ -972,7 +972,7 @@ get_commands_spec() ->
 			args = [], result = {num_sessions, integer}},
      #ejabberd_commands{name = user_resources, tags = [session],
 			desc = "List user's connected resources",
-                        policy = user,
+                        policy = admin,
 			module = ?MODULE, function = user_resources,
 			args = [{user, binary}, {host, binary}],
 			args_desc = ["User name", "Server name"],
