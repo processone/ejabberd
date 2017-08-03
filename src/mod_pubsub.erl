@@ -546,7 +546,12 @@ disco_identity(Host, Node, From) ->
 		case get_allowed_items_call(Host, Nidx, From, Type,
 					    Options, Owners) of
 		    {result, _} ->
-			{result, [#identity{category = <<"pubsub">>, type = <<"pep">>}]};
+			{result, [#identity{category = <<"pubsub">>, type = <<"pep">>},
+				  #identity{category = <<"pubsub">>, type = <<"leaf">>,
+					    name = case get_option(Options, title) of
+						       false -> <<>>;
+						       Title -> Title
+						   end}]};
 		    _ ->
 			{result, []}
 		end
