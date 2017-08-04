@@ -587,8 +587,14 @@ online(Sessions) ->
 
 -spec is_online(#session{}) -> boolean().
 
-is_online(#session{info = Info}) ->
-    not proplists:get_bool(offline, Info).
+is_online(#session{info = Info, sid = Sid}) ->
+    not proplists:get_bool(offline, Info) andalso is_session_alive(Sid).
+
+-spec is_session_alive(sid()) -> boolean().
+
+is_session_alive(Sid) ->
+	Pid = element(2, Sid),
+	rpc:call(node(Pid), erlang, is_process_alive, [Pid]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec do_route(jid(), term()) -> any().
