@@ -440,7 +440,7 @@ decode_item(Item, R, Managed) ->
 			    end,
 	     groups = Item#roster_item.groups}.
 
-process_iq_set(#iq{from = From, to = To,
+process_iq_set(#iq{from = _From, to = To,
 		   sub_els = [#roster_query{items = [QueryItem]}]} = IQ) ->
     #jid{user = User, luser = LUser, lserver = LServer} = To,
     LJID = jid:tolower(QueryItem#roster_item.jid),
