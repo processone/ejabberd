@@ -297,14 +297,19 @@ process_terminated(State, _Reason) ->
 %%%===================================================================
 %%% xmpp_stream_in callbacks
 %%%===================================================================
-tls_options(#{lserver := LServer, tls_options := DefaultOpts}) ->
-    TLSOpts1 = case ejabberd_config:get_option(
-		      {c2s_certfile, LServer},
-		      ejabberd_config:get_option(
-			{domain_certfile, LServer})) of
-		   undefined -> DefaultOpts;
-		   CertFile -> lists:keystore(certfile, 1, DefaultOpts,
-					      {certfile, CertFile})
+tls_options(#{lserver := LServer, tls_options := DefaultOpts,
+	      stream_encrypted := Encrypted}) ->
+    TLSOpts1 = case {Encrypted, proplists:get_value(certfile, DefaultOpts)} of
+		   {true, CertFile} when CertFile /= undefined -> DefaultOpts;
+		   {_, _} ->
+		       case ejabberd_config:get_option(
+			      {c2s_certfile, LServer},
+			      ejabberd_config:get_option(
+				{domain_certfile, LServer})) of
+			   undefined -> DefaultOpts;
+			   CertFile -> lists:keystore(certfile, 1, DefaultOpts,
+						      {certfile, CertFile})
+		       end
 	       end,
     TLSOpts2 = case ejabberd_config:get_option(
                       {c2s_ciphers, LServer}) of
