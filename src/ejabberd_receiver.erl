@@ -234,7 +234,7 @@ terminate(_Reason,
 	      State) ->
     close_stream(XMLStreamState),
     if C2SPid /= undefined ->
-	   gen_fsm:send_event(C2SPid, closed);
+	   p1_fsm:send_event(C2SPid, closed);
        true -> ok
     end,
     catch (State#state.sock_mod):close(State#state.socket),
@@ -272,7 +272,7 @@ process_data([Element | Els],
 	 element(1, Element) == xmlstreamend ->
     if C2SPid == undefined -> State;
        true ->
-	   catch gen_fsm:send_event(C2SPid,
+	   catch p1_fsm:send_event(C2SPid,
 				    element_wrapper(Element)),
 	   process_data(Els, State)
     end;

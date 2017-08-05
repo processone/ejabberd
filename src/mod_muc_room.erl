@@ -27,7 +27,7 @@
 
 -author('alexey@process-one.net').
 
--behaviour(gen_fsm).
+-behaviour(p1_fsm).
 
 %% External exports
 -export([start_link/10,
@@ -94,23 +94,23 @@
 %%%----------------------------------------------------------------------
 start(Host, ServerHost, Access, Room, HistorySize, RoomShaper,
       Creator, Nick, DefRoomOpts, QueueType) ->
-    gen_fsm:start(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
+    p1_fsm:start(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
 			    RoomShaper, Creator, Nick, DefRoomOpts, QueueType],
 		    ?FSMOPTS).
 
 start(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, QueueType) ->
-    gen_fsm:start(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
+    p1_fsm:start(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
 			    RoomShaper, Opts, QueueType],
 		    ?FSMOPTS).
 
 start_link(Host, ServerHost, Access, Room, HistorySize, RoomShaper,
 	   Creator, Nick, DefRoomOpts, QueueType) ->
-    gen_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
+    p1_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
 				 RoomShaper, Creator, Nick, DefRoomOpts, QueueType],
 		       ?FSMOPTS).
 
 start_link(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, QueueType) ->
-    gen_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
+    p1_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
 				 RoomShaper, Opts, QueueType],
 		       ?FSMOPTS).
 
@@ -703,7 +703,7 @@ terminate(Reason, _StateName, StateData) ->
 -spec route(pid(), stanza()) -> ok.
 route(Pid, Packet) ->
     #jid{lresource = Nick} = xmpp:get_to(Packet),
-    gen_fsm:send_event(Pid, {route, Nick, Packet}).
+    p1_fsm:send_event(Pid, {route, Nick, Packet}).
 
 -spec process_groupchat_message(message(), state()) -> fsm_next().
 process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData) ->

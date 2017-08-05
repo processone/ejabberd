@@ -28,7 +28,7 @@
 
 -author('ecestari@process-one.net').
 
--behaviour(gen_fsm).
+-behaviour(p1_fsm).
 
 -export([start/1, start_link/1, init/1, handle_event/3,
 	 handle_sync_event/4, code_change/4, handle_info/3,
@@ -75,13 +75,13 @@
 -export_type([ws_socket/0]).
 
 start(WS) ->
-    gen_fsm:start(?MODULE, [WS], ?FSMOPTS).
+    p1_fsm:start(?MODULE, [WS], ?FSMOPTS).
 
 start_link(WS) ->
-    gen_fsm:start_link(?MODULE, [WS], ?FSMOPTS).
+    p1_fsm:start_link(?MODULE, [WS], ?FSMOPTS).
 
 send_xml({http_ws, FsmRef, _IP}, Packet) ->
-    case catch gen_fsm:sync_send_all_state_event(FsmRef,
+    case catch p1_fsm:sync_send_all_state_event(FsmRef,
 						    {send_xml, Packet},
 						    15000)
     of
@@ -93,7 +93,7 @@ send_xml({http_ws, FsmRef, _IP}, Packet) ->
 setopts({http_ws, FsmRef, _IP}, Opts) ->
     case lists:member({active, once}, Opts) of
       true ->
-	  gen_fsm:send_all_state_event(FsmRef,
+	  p1_fsm:send_all_state_event(FsmRef,
 				       {activate, self()});
       _ -> ok
     end.
@@ -105,11 +105,11 @@ peername({http_ws, _FsmRef, IP}) -> {ok, IP}.
 controlling_process(_Socket, _Pid) -> ok.
 
 become_controller(FsmRef, C2SPid) ->
-    gen_fsm:send_all_state_event(FsmRef,
+    p1_fsm:send_all_state_event(FsmRef,
 				 {become_controller, C2SPid}).
 
 close({http_ws, FsmRef, _IP}) ->
-    catch gen_fsm:sync_send_all_state_event(FsmRef, close).
+    catch p1_fsm:sync_send_all_state_event(FsmRef, close).
 
 socket_handoff(LocalPath, Request, Socket, SockMod, Buf, Opts) ->
     ejabberd_websocket:socket_handoff(LocalPath, Request, Socket, SockMod,

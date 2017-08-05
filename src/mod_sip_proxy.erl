@@ -27,8 +27,7 @@
 -ifndef(SIP).
 -export([]).
 -else.
--define(GEN_FSM, p1_fsm).
--behaviour(?GEN_FSM).
+-behaviour(p1_fsm).
 
 %% API
 -export([start/2, start_link/2, route/3, route/4]).
@@ -58,10 +57,10 @@ start(LServer, Opts) ->
     supervisor:start_child(mod_sip_proxy_sup, [LServer, Opts]).
 
 start_link(LServer, Opts) ->
-    ?GEN_FSM:start_link(?MODULE, [LServer, Opts], []).
+    p1_fsm:start_link(?MODULE, [LServer, Opts], []).
 
 route(SIPMsg, _SIPSock, TrID, Pid) ->
-    ?GEN_FSM:send_event(Pid, {SIPMsg, TrID}).
+    p1_fsm:send_event(Pid, {SIPMsg, TrID}).
 
 route(#sip{hdrs = Hdrs} = Req, LServer, Opts) ->
     case proplists:get_bool(authenticated, Opts) of

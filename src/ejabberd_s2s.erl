@@ -682,7 +682,7 @@ complete_s2s_info([Connection | T], Type, Result) ->
 -spec get_s2s_state(pid()) -> [{status, open | closed | error} | {s2s_pid, pid()}].
 
 get_s2s_state(S2sPid) ->
-    Infos = case gen_fsm:sync_send_all_state_event(S2sPid,
+    Infos = case p1_fsm:sync_send_all_state_event(S2sPid,
 						   get_state_infos)
 		of
 	      {state_infos, Is} -> [{status, open} | Is];

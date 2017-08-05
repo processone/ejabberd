@@ -63,7 +63,7 @@
 %%%     active_bind - sent bind() request and waiting for response
 %%%----------------------------------------------------------------------
 
--behaviour(gen_fsm).
+-behaviour(p1_fsm).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -148,7 +148,7 @@
 start_link(Name) ->
     Reg_name = misc:binary_to_atom(<<"eldap_",
 				       Name/binary>>),
-    gen_fsm:start_link({local, Reg_name}, ?MODULE, [], []).
+    p1_fsm:start_link({local, Reg_name}, ?MODULE, [], []).
 
 -spec start_link(binary(), [binary()], inet:port_number(), binary(),
                  binary(), tlsopts()) -> any().
@@ -156,7 +156,7 @@ start_link(Name) ->
 start_link(Name, Hosts, Port, Rootdn, Passwd, Opts) ->
     Reg_name = misc:binary_to_atom(<<"eldap_",
 				       Name/binary>>),
-    gen_fsm:start_link({local, Reg_name}, ?MODULE,
+    p1_fsm:start_link({local, Reg_name}, ?MODULE,
 		       [Hosts, Port, Rootdn, Passwd, Opts], []).
 
 -spec get_status(handle()) -> any().
@@ -166,7 +166,7 @@ start_link(Name, Hosts, Port, Rootdn, Passwd, Opts) ->
 %%% --------------------------------------------------------------------
 get_status(Handle) ->
     Handle1 = get_handle(Handle),
-    gen_fsm:sync_send_all_state_event(Handle1, get_status).
+    p1_fsm:sync_send_all_state_event(Handle1, get_status).
 
 %%% --------------------------------------------------------------------
 %%% Shutdown connection (and process) asynchronous.
@@ -175,7 +175,7 @@ get_status(Handle) ->
 
 close(Handle) ->
     Handle1 = get_handle(Handle),
-    gen_fsm:send_all_state_event(Handle1, close).
+    p1_fsm:send_all_state_event(Handle1, close).
 
 %%% --------------------------------------------------------------------
 %%% Add an entry. The entry field MUST NOT exist for the AddRequest
@@ -192,7 +192,7 @@ close(Handle) ->
 %%% --------------------------------------------------------------------
 add(Handle, Entry, Attributes) ->
     Handle1 = get_handle(Handle),
-    gen_fsm:sync_send_event(Handle1,
+    p1_fsm:sync_send_event(Handle1,
 			    {add, Entry, add_attrs(Attributes)}, ?CALL_TIMEOUT).
 
 %%% Do sanity check !
@@ -216,7 +216,7 @@ add_attrs(Attrs) ->
 %%% --------------------------------------------------------------------
 delete(Handle, Entry) ->
     Handle1 = get_handle(Handle),
-    gen_fsm:sync_send_event(Handle1, {delete, Entry},
+    p1_fsm:sync_send_event(Handle1, {delete, Entry},
 			    ?CALL_TIMEOUT).
 
 %%% --------------------------------------------------------------------
@@ -234,7 +234,7 @@ delete(Handle, Entry) ->
 
 modify(Handle, Object, Mods) ->
     Handle1 = get_handle(Handle),
-    gen_fsm:sync_send_event(Handle1, {modify, Object, Mods},
+    p1_fsm:sync_send_event(Handle1, {modify, Object, Mods},
 			    ?CALL_TIMEOUT).
 
 %%%
@@ -274,7 +274,7 @@ m(Operation, Type, Values) ->
 
 modify_dn(Handle, Entry, NewRDN, DelOldRDN, NewSup) ->
     Handle1 = get_handle(Handle),
-    gen_fsm:sync_send_event(Handle1,
+    p1_fsm:sync_send_event(Handle1,
 			    {modify_dn, Entry, NewRDN, bool_p(DelOldRDN),
 			     optional(NewSup)},
 			    ?CALL_TIMEOUT).
@@ -283,7 +283,7 @@ modify_dn(Handle, Entry, NewRDN, DelOldRDN, NewSup) ->
 
 modify_passwd(Handle, DN, Passwd) ->
     Handle1 = get_handle(Handle),
-    gen_fsm:sync_send_event(Handle1,
+    p1_fsm:sync_send_event(Handle1,
 			    {modify_passwd, DN, Passwd}, ?CALL_TIMEOUT).
 
 %%% --------------------------------------------------------------------
@@ -298,7 +298,7 @@ modify_passwd(Handle, DN, Passwd) ->
  
 bind(Handle, RootDN, Passwd) ->
     Handle1 = get_handle(Handle),
-    gen_fsm:sync_send_event(Handle1, {bind, RootDN, Passwd},
+    p1_fsm:sync_send_event(Handle1, {bind, RootDN, Passwd},
 			    ?CALL_TIMEOUT).
 
 %%% Sanity checks !
@@ -356,7 +356,7 @@ search(Handle, L) when is_list(L) ->
 
 call_search(Handle, A) ->
     Handle1 = get_handle(Handle),
-    gen_fsm:sync_send_event(Handle1, {search, A},
+    p1_fsm:sync_send_event(Handle1, {search, A},
 			    ?CALL_TIMEOUT).
 
 -spec parse_search_args(search_args()) -> eldap_search().
@@ -637,7 +637,7 @@ active(Event, From, S) ->
 
 %%----------------------------------------------------------------------
 %% Func: handle_event/3
-%% Called when gen_fsm:send_all_state_event/2 is invoked.
+%% Called when p1_fsm:send_all_state_event/2 is invoked.
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
 %%          {stop, Reason, NewStateData}                         
@@ -680,7 +680,7 @@ handle_info({Tag, _Socket, Data}, StateName, S)
     case catch recvd_packet(Data, S) of
       {response, Response, RequestType} ->
 	  NewS = case Response of
-		   {reply, Reply, To, S1} -> gen_fsm:reply(To, Reply), S1;
+		   {reply, Reply, To, S1} -> p1_fsm:reply(To, Reply), S1;
 		   {ok, S1} -> S1
 		 end,
 	  if StateName == active_bind andalso
@@ -709,7 +709,7 @@ handle_info({timeout, Timer, {cmd_timeout, Id}},
 	    StateName, S) ->
     case cmd_timeout(Timer, Id, S) of
       {reply, To, Reason, NewS} ->
-	  gen_fsm:reply(To, Reason),
+	  p1_fsm:reply(To, Reason),
 	  {next_state, StateName, NewS};
       {error, _Reason} -> {next_state, StateName, S}
     end;

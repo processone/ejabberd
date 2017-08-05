@@ -668,7 +668,7 @@ iq_disco_items(_ServerHost, _Host, _From, Lang, _MaxRoomsDiscoItems, _Node, _RSM
 							   {error, timeout | notfound}.
 get_room_disco_item({Name, Host, Pid}, Query) ->
 	    RoomJID = jid:make(Name, Host),
-	    try gen_fsm:sync_send_all_state_event(Pid, Query, 100) of
+	    try p1_fsm:sync_send_all_state_event(Pid, Query, 100) of
 		{item, Desc} ->
 		    {ok, #disco_item{jid = RoomJID, name = Desc}};
 		false ->
@@ -684,7 +684,7 @@ get_subscribed_rooms(ServerHost, Host, From) ->
     BareFrom = jid:remove_resource(From),
     lists:flatmap(
       fun({Name, _, Pid}) ->
-	      case gen_fsm:sync_send_all_state_event(Pid, {is_subscribed, BareFrom}) of
+	      case p1_fsm:sync_send_all_state_event(Pid, {is_subscribed, BareFrom}) of
 		  true -> [jid:make(Name, Host)];
 		  false -> []
 	      end;
@@ -766,7 +766,7 @@ process_iq_register_set(ServerHost, Host, From,
 broadcast_service_message(ServerHost, Host, Msg) ->
     lists:foreach(
       fun({_, _, Pid}) ->
-		gen_fsm:send_all_state_event(
+		p1_fsm:send_all_state_event(
 		    Pid, {service_message, Msg})
       end, get_online_rooms(ServerHost, Host)).
 

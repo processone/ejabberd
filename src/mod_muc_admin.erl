@@ -597,7 +597,7 @@ muc_create_room(ServerHost, {Name, Host, _}, DefRoomOpts) ->
 destroy_room(Name, Service) ->
     case mod_muc:find_online_room(Name, Service) of
 	{ok, Pid} ->
-	    gen_fsm:send_all_state_event(Pid, destroy),
+	    p1_fsm:send_all_state_event(Pid, destroy),
 	    ok;
 	error ->
 	    error
@@ -716,11 +716,11 @@ get_rooms(ServerHost) ->
       end, Hosts).
 
 get_room_config(Room_pid) ->
-    {ok, R} = gen_fsm:sync_send_all_state_event(Room_pid, get_config),
+    {ok, R} = p1_fsm:sync_send_all_state_event(Room_pid, get_config),
     R.
 
 get_room_state(Room_pid) ->
-    {ok, R} = gen_fsm:sync_send_all_state_event(Room_pid, get_state),
+    {ok, R} = p1_fsm:sync_send_all_state_event(Room_pid, get_state),
     R.
 
 %%---------------
@@ -786,7 +786,7 @@ find_serverhost(Host, ServerHosts) ->
     ServerHost.
 
 act_on_room(destroy, {N, H, Pid}, SH) ->
-    gen_fsm:send_all_state_event(
+    p1_fsm:send_all_state_event(
       Pid, {destroy, <<"Room destroyed by rooms_unused_destroy.">>}),
     mod_muc:room_destroyed(H, N, Pid, SH),
     mod_muc:forget_room(SH, H, N);
@@ -888,7 +888,7 @@ change_room_option(Name, Service, OptionString, ValueString) ->
 	    {Option, Value} = format_room_option(OptionString, ValueString),
 	    Config = get_room_config(Pid),
 	    Config2 = change_option(Option, Value, Config),
-	    {ok, _} = gen_fsm:sync_send_all_state_event(Pid, {change_config, Config2}),
+	    {ok, _} = p1_fsm:sync_send_all_state_event(Pid, {change_config, Config2}),
 	    ok
     end.
 
@@ -983,7 +983,7 @@ get_room_affiliations(Name, Service) ->
     case mod_muc:find_online_room(Name, Service) of
 	{ok, Pid} ->
 	    %% Get the PID of the online room, then request its state
-	    {ok, StateData} = gen_fsm:sync_send_all_state_event(Pid, get_state),
+	    {ok, StateData} = p1_fsm:sync_send_all_state_event(Pid, get_state),
 	    Affiliations = ?DICT:to_list(StateData#state.affiliations),
 	    lists:map(
 	      fun({{Uname, Domain, _Res}, {Aff, Reason}}) when is_atom(Aff)->
@@ -1012,7 +1012,7 @@ set_room_affiliation(Name, Service, JID, AffiliationString) ->
     case mod_muc:find_online_room(Name, Service) of
 	{ok, Pid} ->
 	    %% Get the PID for the online room so we can get the state of the room
-	    {ok, StateData} = gen_fsm:sync_send_all_state_event(Pid, {process_item_change, {jid:decode(JID), affiliation, Affiliation, <<"">>}, undefined}),
+	    {ok, StateData} = p1_fsm:sync_send_all_state_event(Pid, {process_item_change, {jid:decode(JID), affiliation, Affiliation, <<"">>}, undefined}),
 	    mod_muc:store_room(StateData#state.server_host, StateData#state.host, StateData#state.room, make_opts(StateData)),
 	    ok;
 	error ->
@@ -1035,7 +1035,7 @@ subscribe_room(User, Nick, Room, Nodes) ->
 		UserJID ->
 		    case get_room_pid(Name, Host) of
 			Pid when is_pid(Pid) ->
-			    case gen_fsm:sync_send_all_state_event(
+			    case p1_fsm:sync_send_all_state_event(
 				   Pid,
 				   {muc_subscribe, UserJID, Nick, NodeList}) of
 				{ok, SubscribedNodes} ->
@@ -1062,7 +1062,7 @@ unsubscribe_room(User, Room) ->
 		UserJID ->
 		    case get_room_pid(Name, Host) of
 			Pid when is_pid(Pid) ->
-			    case gen_fsm:sync_send_all_state_event(
+			    case p1_fsm:sync_send_all_state_event(
 				   Pid,
 				   {muc_unsubscribe, UserJID}) of
 				ok ->
@@ -1085,7 +1085,7 @@ unsubscribe_room(User, Room) ->
 get_subscribers(Name, Host) ->
     case get_room_pid(Name, Host) of
 	Pid when is_pid(Pid) ->
-	    {ok, JIDList} = gen_fsm:sync_send_all_state_event(Pid, get_subscribers),
+	    {ok, JIDList} = p1_fsm:sync_send_all_state_event(Pid, get_subscribers),
 	    [jid:encode(jid:remove_resource(J)) || J <- JIDList];
 	_ ->
 	    throw({error, "The room does not exist"})
