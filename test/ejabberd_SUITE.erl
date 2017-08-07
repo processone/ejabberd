@@ -750,25 +750,25 @@ test_component_send(Config) ->
     disconnect(Config).
 
 s2s_dialback(Config) ->
-    ejabberd_s2s:stop_all_connections(),
+    ejabberd_s2s:stop_s2s_connections(),
     ejabberd_config:add_option(s2s_use_starttls, false),
     ejabberd_config:add_option(domain_certfile, "self-signed-cert.pem"),
     s2s_ping(Config).
 
 s2s_optional(Config) ->
-    ejabberd_s2s:stop_all_connections(),
+    ejabberd_s2s:stop_s2s_connections(),
     ejabberd_config:add_option(s2s_use_starttls, optional),
     ejabberd_config:add_option(domain_certfile, "self-signed-cert.pem"),
     s2s_ping(Config).
 
 s2s_required(Config) ->
-    ejabberd_s2s:stop_all_connections(),
+    ejabberd_s2s:stop_s2s_connections(),
     ejabberd_config:add_option(s2s_use_starttls, required),
     ejabberd_config:add_option(domain_certfile, "self-signed-cert.pem"),
     s2s_ping(Config).
 
 s2s_required_trusted(Config) ->
-    ejabberd_s2s:stop_all_connections(),
+    ejabberd_s2s:stop_s2s_connections(),
     ejabberd_config:add_option(s2s_use_starttls, required),
     ejabberd_config:add_option(domain_certfile, "cert.pem"),
     s2s_ping(Config).
