@@ -46,6 +46,7 @@
 	 import_file/1, import_dir/1,
          %% Acme
          get_certificate/1,
+	 renew_certificate/0,
 	 list_certificates/1,
 	 revoke_certificate/1,
 	 %% Purge DB
@@ -246,13 +247,17 @@ get_commands_spec() ->
 			args_example = ["/var/lib/ejabberd/jabberd14/"],
 			args = [{file, string}],
 			result = {res, restuple}},
-
      #ejabberd_commands{name = get_certificate, tags = [acme],
 			desc = "Gets a certificate for the specified domain. Can be used with {old-account|new-account}.",
 			module = ?MODULE, function = get_certificate,
 			args_desc = ["Whether to create a new account or use the existing one"],
 			args_example = ["old-account | new-account"],
 			args = [{option, string}],
+			result = {certificates, string}},
+     #ejabberd_commands{name = renew_certificate, tags = [acme],
+			desc = "Renews all certificates that are close to expiring",
+			module = ?MODULE, function = renew_certificate,
+			args = [],
 			result = {certificates, string}},
      #ejabberd_commands{name = list_certificates, tags = [acme],
 			desc = "Lists all curently handled certificates and their respective domains in {plain|verbose} format",
@@ -578,6 +583,9 @@ get_certificate(UseNewAccount) ->
 	    String = io_lib:format("Invalid account option: ~p", [UseNewAccount]),
 	    {invalid_option, String}
     end.
+
+renew_certificate() ->
+    ejabberd_acme:renew_certificates("http://localhost:4000").
 
 list_certificates(Verbose) ->
     case ejabberd_acme:is_valid_verbose_opt(Verbose) of

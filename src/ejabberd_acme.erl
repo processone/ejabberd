@@ -2,6 +2,7 @@
 
 -export([%% Ejabberdctl Commands
 	 get_certificates/2,
+	 renew_certificates/1,
 	 list_certificates/1,
 	 revoke_certificate/2,
 	 %% Command Options Validity
@@ -52,11 +53,7 @@ is_valid_verbose_opt(_) -> false.
 %%
 
 %% Needs a hell lot of cleaning
--spec get_certificates(url(), account_opt()) -> 
-			      {'ok', [{'ok', bitstring(), 'saved'}]} |
-			      {'error', 
-			       [{'ok', bitstring(), 'saved'} | {'error', bitstring(), _}]} | 
-			      {'error', _}.
+-spec get_certificates(url(), account_opt()) -> string() | {'error', _}.
 get_certificates(CAUrl, NewAccountOpt) ->
     try
 	?INFO_MSG("Persistent: ~p~n", [file:read_file_info(persistent_file())]),
@@ -69,11 +66,7 @@ get_certificates(CAUrl, NewAccountOpt) ->
 	    {error, get_certificates}
     end.
 
--spec get_certificates0(url(), account_opt()) -> 
-			       {'ok', [{'ok', bitstring(), 'saved'}]} |
-			       {'error', 
-				[{'ok', bitstring(), 'saved'} | {'error', bitstring(), _}]} |
-			       no_return().
+-spec get_certificates0(url(), account_opt()) -> string().
 get_certificates0(CAUrl, "old-account") ->
     %% Get the current account
     {ok, _AccId, PrivateKey} = ensure_account_exists(),
@@ -83,14 +76,10 @@ get_certificates0(CAUrl, "old-account") ->
 get_certificates0(CAUrl, "new-account") ->
     %% Create a new account and save it to disk
     {ok, _Id, PrivateKey} = create_save_new_account(CAUrl),
-    
+
     get_certificates1(CAUrl, PrivateKey).
 
--spec get_certificates1(url(), jose_jwk:key()) -> 
-			       {'ok', [{'ok', bitstring(), 'saved'}]} |
-			       {'error', 
-				[{'ok', bitstring(), 'saved'} | {'error', bitstring(), _}]} |
-			       no_return().
+-spec get_certificates1(url(), jose_jwk:key()) -> string().
 get_certificates1(CAUrl, PrivateKey) ->
     %% Read Config
     Hosts = get_config_hosts(),
@@ -105,7 +94,7 @@ get_certificates1(CAUrl, PrivateKey) ->
     %% Result
     format_get_certificates_result(SavedCerts).
 
--spec format_get_certificates_result([{'ok', bitstring(), 'saved'} | 
+-spec format_get_certificates_result([{'ok', bitstring(), _} | 
 				      {'error', bitstring(), _}]) ->
 					    string().
 format_get_certificates_result(Certs) ->
@@ -123,11 +112,15 @@ format_get_certificates_result(Certs) ->
 	    lists:flatten(Result)
     end.
 
--spec format_get_certificate({'ok', bitstring(), 'saved'} | 
+-spec format_get_certificate({'ok', bitstring(), _} | 
 			     {'error', bitstring(), _}) ->
 				    string().
 format_get_certificate({ok, Domain, saved}) ->    
     io_lib:format("  Certificate for domain: \"~s\" acquired and saved", [Domain]);
+format_get_certificate({ok, Domain, not_found}) ->    
+    io_lib:format("  Certificate for domain: \"~s\" not found, so it was not renewed", [Domain]);
+format_get_certificate({ok, Domain, exists}) ->    
+    io_lib:format("  Certificate for domain: \"~s\" is not close to expiring", [Domain]);
 format_get_certificate({error, Domain, Reason}) ->
     io_lib:format("  Error for domain: \"~s\",  with reason: \'~s\'", [Domain, Reason]).
 
@@ -160,7 +153,7 @@ create_save_new_account(CAUrl) ->
 
     %% Write Persistent Data
     ok = write_account_persistent({Id, PrivateKey}),
-    
+
     {ok, Id, PrivateKey}.
 
 %% TODO:
@@ -205,7 +198,7 @@ create_new_authorization(CAUrl, DomainName, PrivateKey) ->
 	{ok, ChallengeId} = location_to_id(ChallengeUrl),
 	Req3 = [{<<"type">>, <<"http-01">>},{<<"keyAuthorization">>, KeyAuthz}],
 	{ok, _SolvedChallenge, _Nonce2} = ejabberd_acme_comm:complete_challenge(
-					  {CAUrl, AuthzId, ChallengeId}, PrivateKey, Req3, Nonce1),
+					    {CAUrl, AuthzId, ChallengeId}, PrivateKey, Req3, Nonce1),
 
 	{ok, AuthzValid, _Nonce} = ejabberd_acme_comm:get_authz_until_valid({CAUrl, AuthzId}),
 	{ok, AuthzValid}
@@ -259,6 +252,81 @@ ensure_account_exists() ->
     end.
 
 
+%%
+%% Renew Certificates
+%%
+-spec renew_certificates(url()) -> string() | {'error', _}.
+renew_certificates(CAUrl) ->
+    try
+        renew_certificates0(CAUrl)
+    catch
+	throw:Throw ->
+	    Throw;
+	E:R ->
+	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, erlang:get_stacktrace()]), 
+	    {error, get_certificates}
+    end.
+
+-spec renew_certificates0(url()) -> string().
+renew_certificates0(CAUrl) ->
+    %% Get the current account
+    {ok, _AccId, PrivateKey} = ensure_account_exists(),
+
+    %% Read Config
+    Hosts = get_config_hosts(),
+
+    %% Get a certificate for each host
+    PemCertKeys = [renew_certificate(CAUrl, Host, PrivateKey) || Host <- Hosts],
+
+    %% Save Certificates
+    SavedCerts = [save_renewed_certificate(Cert) || Cert <- PemCertKeys],
+
+    %% Format the result to send back to ejabberdctl
+    %% Result
+    format_get_certificates_result(SavedCerts).
+
+-spec renew_certificate(url(), bitstring(), jose_jwk:key()) -> 
+			       {'ok', bitstring(), _} | 
+			       {'error', bitstring(), _}.
+renew_certificate(CAUrl, DomainName, PrivateKey) ->
+    case cert_to_expire(DomainName) of
+	true ->
+	    get_certificate(CAUrl, DomainName, PrivateKey);
+	{false, not_found} ->
+	    {ok, DomainName, not_found};
+	{false, PemCert} ->
+	    {ok, DomainName, exists}
+    end.
+
+-spec cert_to_expire(bitstring()) -> 'true' | 
+				     {'false', pem()} |
+				     {'false', not_found}.
+cert_to_expire(DomainName) ->
+    Certs = read_certificates_persistent(),
+    case lists:keyfind(DomainName, 1, Certs) of
+	{DomainName, #data_cert{pem = Pem}} ->
+	    Certificate = pem_to_certificate(Pem),
+	    Validity = get_utc_validity(Certificate),
+	    case close_to_expire(Validity) of
+		true ->
+		    true;
+		false ->
+		    {false, Pem}
+	    end;
+	false ->
+	    {false, not_found}
+    end.
+
+-spec close_to_expire(string()) -> boolean().
+close_to_expire(Validity) ->
+    {ValidDate, _ValidTime} = utc_string_to_datetime(Validity),
+    ValidDays = calendar:date_to_gregorian_days(ValidDate),
+
+    {CurrentDate, _CurrentTime} = calendar:universal_time(),
+    CurrentDays = calendar:date_to_gregorian_days(CurrentDate),
+    CurrentDays > ValidDays - 30.
+
+
 
 %%
 %% List Certificates
@@ -288,11 +356,9 @@ format_certificate(DataCert, Verbose) ->
        pem = PemCert,
        path = Path
       } = DataCert,
-    
+
     try
-	PemList = public_key:pem_decode(PemCert),
-	PemEntryCert = lists:keyfind('Certificate', 1, PemList),
-	Certificate = public_key:pem_entry_decode(PemEntryCert),
+	Certificate = pem_to_certificate(PemCert),
 
 	%% Find the commonName
 	_CommonName = get_commonName(Certificate),
@@ -343,11 +409,11 @@ get_commonName(#'Certificate'{tbsCertificate = TbsCertificate}) ->
     #'TBSCertificate'{
        subject = {rdnSequence, SubjectList}
       } = TbsCertificate, 
-    
+
     %% TODO: Not the best way to find the commonName
     ShallowSubjectList = [Attribute || [Attribute] <- SubjectList],
     {_, _, CommonName} = lists:keyfind(attribute_oid(commonName), 2, ShallowSubjectList),
-    
+
     %% TODO: Remove the length-encoding from the commonName before returning it
     CommonName.
 
@@ -409,9 +475,9 @@ revoke_certificate1(CAUrl, Cert = #data_cert{pem=PemEncodedCert}) ->
     {ok, _AccId, PrivateKey} = ensure_account_exists(),
 
     Certificate = prepare_certificate_revoke(PemEncodedCert),
-    
+
     {ok, Dirs, Nonce} = ejabberd_acme_comm:directory(CAUrl),
-    
+
     Req = [{<<"certificate">>, Certificate}],
     {ok, [], Nonce1} = ejabberd_acme_comm:revoke_cert(Dirs, PrivateKey, Req, Nonce),
     ok = remove_certificate_persistent(Cert),
@@ -604,18 +670,43 @@ not_before_not_after() ->
 -spec to_public(jose_jwk:key()) -> jose_jwk:key().
 to_public(PrivateKey) ->
     jose_jwk:to_public(PrivateKey).
-    %% case jose_jwk:to_key(PrivateKey) of
-    %% 	#'RSAPrivateKey'{modulus = Mod, publicExponent = Exp} ->
-    %% 	    Public = #'RSAPublicKey'{modulus = Mod, publicExponent = Exp},
-    %% 	    jose_jwk:from_key(Public);
-    %% 	_ ->
-    %% 	    jose_jwk:to_public(PrivateKey)
-    %% end.
- 
+%% case jose_jwk:to_key(PrivateKey) of
+%% 	#'RSAPrivateKey'{modulus = Mod, publicExponent = Exp} ->
+%% 	    Public = #'RSAPublicKey'{modulus = Mod, publicExponent = Exp},
+%% 	    jose_jwk:from_key(Public);
+%% 	_ ->
+%% 	    jose_jwk:to_public(PrivateKey)
+%% end.
+
 %% to_public(#'RSAPrivateKey'{modulus = Mod, publicExponent = Exp}) ->
 %%     #'RSAPublicKey'{modulus = Mod, publicExponent = Exp};
 %% to_public(PrivateKey) ->
 %%     jose_jwk:to_public(PrivateKey).
+
+-spec pem_to_certificate(pem()) -> #'Certificate'{}.
+pem_to_certificate(Pem) ->
+    PemList = public_key:pem_decode(Pem),
+    PemEntryCert = lists:keyfind('Certificate', 1, PemList),
+    Certificate = public_key:pem_entry_decode(PemEntryCert),
+    Certificate.
+
+%% TODO: Find a better and more robust way to parse the utc string
+-spec utc_string_to_datetime(string()) -> calendar:datetime().
+utc_string_to_datetime(UtcString) ->
+    try
+	[Y1,Y2,MO1,MO2,D1,D2,H1,H2,MI1,MI2,S1,S2,$Z] = UtcString,
+	Year = list_to_integer("20" ++ [Y1,Y2]),
+	Month = list_to_integer([MO1, MO2]),
+	Day = list_to_integer([D1,D2]),
+	Hour = list_to_integer([H1,H2]),
+	Minute = list_to_integer([MI1,MI2]),
+	Second = list_to_integer([S1,S2]),
+	{{Year, Month, Day}, {Hour, Minute, Second}}
+    catch
+	E:R ->
+	    ?ERROR_MSG("Unable to parse UTC string", []),
+	    throw({error, utc_string_to_datetime})
+    end.
 
 -spec is_error(_) -> boolean().
 is_error({error, _}) -> true;
@@ -763,7 +854,8 @@ remove_certificate_persistent(DataCert) ->
     NewData = data_remove_certificate(Data, DataCert),
     ok = write_persistent(NewData).
 
--spec save_certificate({ok, bitstring(), binary()} | {error, _, _}) -> {ok, bitstring(), saved}.
+-spec save_certificate({ok, bitstring(), binary()} | {error, _, _}) -> 
+			      {ok, bitstring(), saved} | {error, bitstring(), _}.
 save_certificate({error, _, _} = Error) ->
     Error;
 save_certificate({ok, DomainName, Cert}) ->
@@ -789,6 +881,17 @@ save_certificate({ok, DomainName, Cert}) ->
 	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, erlang:get_stacktrace()]), 
 	    {error, DomainName, saving}
     end.
+
+-spec save_renewed_certificate({ok, bitstring(), _} | {error, _, _}) -> 
+				      {ok, bitstring(), _} | {error, bitstring(), _}.
+save_renewed_certificate({error, _, _} = Error) ->
+    Error;
+save_renewed_certificate({ok, _, not_found} = Cert) ->
+    Cert;
+save_renewed_certificate({ok, _, exists} = Cert) ->
+    Cert;
+save_renewed_certificate({ok, DomainName, Cert}) ->
+    save_certificate({ok, DomainName, Cert}).
 
 -spec write_cert(file:filename(), binary(), bitstring()) -> {ok, bitstring(), saved}.
 write_cert(CertificateFile, Cert, DomainName) ->
@@ -853,11 +956,11 @@ transaction([{Fun, Rollback} | Rest]) ->
         {ok, Result} = Fun(),
         [Result | transaction(Rest)]
     catch Type:Reason ->
-        Rollback(),
-        erlang:raise(Type, Reason, erlang:get_stacktrace())
+	    Rollback(),
+	    erlang:raise(Type, Reason, erlang:get_stacktrace())
     end;
 transaction([Fun | Rest]) ->
-    % not every action require cleanup on error
+						% not every action require cleanup on error
     transaction([{Fun, fun () -> ok end} | Rest]);
 transaction([]) -> [].
 
@@ -995,7 +1098,7 @@ generate_key() ->
     Key = public_key:generate_key({rsa, 2048, 65537}),
     Key1 = Key#'RSAPrivateKey'{version = 'two-prime'},
     jose_jwk:from_key(Key1).
-    %% jose_jwk:generate_key({rsa, 2048}).
+%% jose_jwk:generate_key({rsa, 2048}).
 -else.
 generate_key() ->
     ?INFO_MSG("Generate EC key pair~n", []),
