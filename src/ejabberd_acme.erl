@@ -259,6 +259,7 @@ ensure_account_exists() ->
     end.
 
 
+
 %%
 %% List Certificates
 %%
@@ -288,21 +289,27 @@ format_certificate(DataCert, Verbose) ->
        path = Path
       } = DataCert,
     
-    PemList = public_key:pem_decode(PemCert),
-    PemEntryCert = lists:keyfind('Certificate', 1, PemList),
-    Certificate = public_key:pem_entry_decode(PemEntryCert),
+    try
+	PemList = public_key:pem_decode(PemCert),
+	PemEntryCert = lists:keyfind('Certificate', 1, PemList),
+	Certificate = public_key:pem_entry_decode(PemEntryCert),
 
-    %% Find the commonName
-    _CommonName = get_commonName(Certificate),
+	%% Find the commonName
+	_CommonName = get_commonName(Certificate),
 
-    %% Find the notAfter date
-    NotAfter = get_notAfter(Certificate),
+	%% Find the notAfter date
+	NotAfter = get_notAfter(Certificate),
 
-    case Verbose of
-	"plain" ->
-	    format_certificate_plain(DomainName, NotAfter, Path);
-	"verbose" ->
-	    format_certificate_verbose(DomainName, NotAfter, PemCert)
+	case Verbose of
+	    "plain" ->
+		format_certificate_plain(DomainName, NotAfter, Path);
+	    "verbose" ->
+		format_certificate_verbose(DomainName, NotAfter, PemCert)
+	end
+    catch
+	E:R ->
+	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, erlang:get_stacktrace()]), 
+	    fail_format_certificate(DomainName)
     end.
 
 -spec format_certificate_plain(bitstring(), string(), string()) -> string().
@@ -323,6 +330,14 @@ format_certificate_verbose(DomainName, NotAfter, PemCert) ->
 			     [DomainName, NotAfter, PemCert])),
     Result.
 
+-spec fail_format_certificate(bitstring()) -> string().
+fail_format_certificate(DomainName) ->
+    Result = lists:flatten(io_lib:format(
+			     "  Domain: ~s~n" 
+			     "    Failed to format Certificate", 
+			     [DomainName])),
+    Result.
+
 -spec get_commonName(#'Certificate'{}) -> string().
 get_commonName(#'Certificate'{tbsCertificate = TbsCertificate}) ->
     #'TBSCertificate'{
@@ -337,13 +352,9 @@ get_commonName(#'Certificate'{tbsCertificate = TbsCertificate}) ->
     CommonName.
 
 -spec get_notAfter(#'Certificate'{}) -> string().
-get_notAfter(#'Certificate'{tbsCertificate = TbsCertificate}) ->
-    #'TBSCertificate'{
-       validity = Validity
-      } = TbsCertificate,
-
+get_notAfter(Certificate) ->
+    UtcTime = get_utc_validity(Certificate),
     %% TODO: Find a library function to decode utc time
-    #'Validity'{notAfter = {utcTime, UtcTime}} = Validity,
     [Y1,Y2,MO1,MO2,D1,D2,H1,H2,MI1,MI2,S1,S2,$Z] = UtcTime,
     YEAR = case list_to_integer([Y1,Y2]) >= 50 of
 	       true -> "19" ++ [Y1,Y2];
@@ -355,6 +366,14 @@ get_notAfter(#'Certificate'{tbsCertificate = TbsCertificate}) ->
 
     NotAfter.
 
+-spec get_utc_validity(#'Certificate'{}) -> string().
+get_utc_validity(#'Certificate'{tbsCertificate = TbsCertificate}) ->
+    #'TBSCertificate'{
+       validity = Validity
+      } = TbsCertificate,
+
+    #'Validity'{notAfter = {utcTime, UtcTime}} = Validity,
+    UtcTime.
 
 %%
 %% Revoke Certificate
