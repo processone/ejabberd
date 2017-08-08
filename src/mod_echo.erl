@@ -43,7 +43,7 @@
 
 -include("xmpp.hrl").
 
--record(state, {host = <<"">> :: binary()}).
+-record(state, {hosts = [] :: [binary()]}).
 
 %%====================================================================
 %% gen_mod API
@@ -62,7 +62,9 @@ depends(_Host, _Opts) ->
     [].
 
 mod_opt_type(host) -> fun iolist_to_binary/1;
-mod_opt_type(_) -> [host].
+mod_opt_type(hosts) ->
+    fun(L) -> lists:map(fun iolist_to_binary/1, L) end;
+mod_opt_type(_) -> [host, hosts].
 
 %%====================================================================
 %% gen_server callbacks
@@ -77,10 +79,13 @@ mod_opt_type(_) -> [host].
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
-    MyHost = gen_mod:get_opt_host(Host, Opts,
+    Hosts = gen_mod:get_opt_hosts(Host, Opts,
 				  <<"echo.@HOST@">>),
-    ejabberd_router:register_route(MyHost, Host),
-    {ok, #state{host = MyHost}}.
+    lists:foreach(
+      fun(H) ->
+	      ejabberd_router:register_route(H, Host)
+      end, Hosts),
+    {ok, #state{hosts = Hosts}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -101,17 +106,19 @@ handle_call(stop, _From, State) ->
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
 handle_cast({reload, Host, NewOpts, OldOpts}, State) ->
-    NewMyHost = gen_mod:get_opt_host(Host, NewOpts,
-				     <<"echo.@HOST@">>),
-    OldMyHost = gen_mod:get_opt_host(Host, OldOpts,
-				     <<"echo.@HOST@">>),
-    if NewMyHost /= OldMyHost ->
-	    ejabberd_router:register_route(NewMyHost, Host),
-	    ejabberd_router:unregister_route(OldMyHost);
-       true ->
-	    ok
-    end,
-    {noreply, State#state{host = NewMyHost}};
+    NewMyHosts = gen_mod:get_opt_hosts(Host, NewOpts,
+				       <<"echo.@HOST@">>),
+    OldMyHosts = gen_mod:get_opt_hosts(Host, OldOpts,
+				       <<"echo.@HOST@">>),
+    lists:foreach(
+      fun(H) ->
+	      ejabberd_router:unregister_route(H)
+      end, OldMyHosts -- NewMyHosts),
+    lists:foreach(
+      fun(H) ->
+	      ejabberd_router:register_route(H, Host)
+      end, NewMyHosts -- OldMyHosts),
+    {noreply, State#state{hosts = NewMyHosts}};
 handle_cast(Msg, State) ->
     ?WARNING_MSG("unexpected cast: ~p", [Msg]),
     {noreply, State}.
@@ -147,7 +154,7 @@ handle_info(_Info, State) -> {noreply, State}.
 %% The return value is ignored.
 %%--------------------------------------------------------------------
 terminate(_Reason, State) ->
-    ejabberd_router:unregister_route(State#state.host), ok.
+    lists:foreach(fun ejabberd_router:unregister_route/1, State#state.hosts).
 
 %%--------------------------------------------------------------------
 %% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}

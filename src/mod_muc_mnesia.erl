@@ -296,7 +296,7 @@ import(_LServer, <<"muc_registered">>,
 %%% gen_server callbacks
 %%%===================================================================
 init([Host, Opts]) ->
-    MyHost = proplists:get_value(host, Opts),
+    MyHosts = proplists:get_value(hosts, Opts),
     case gen_mod:db_mod(Host, Opts, mod_muc) of
 	?MODULE ->
 	    ejabberd_mnesia:create(?MODULE, muc_room,
@@ -318,7 +318,10 @@ init([Host, Opts]) ->
 				    {type, ordered_set},
 				    {attributes, record_info(fields, muc_online_room)}]),
 	    catch ets:new(muc_online_users, [bag, named_table, public, {keypos, 2}]),
-	    clean_table_from_bad_node(node(), MyHost),
+	    lists:foreach(
+	      fun(MyHost) ->
+		      clean_table_from_bad_node(node(), MyHost)
+	      end, MyHosts),
 	    mnesia:subscribe(system);
 	_ ->
 	    ok

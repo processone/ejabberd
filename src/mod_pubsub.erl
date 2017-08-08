@@ -189,7 +189,7 @@
 -record(state,
     {
 	server_host,
-	host,
+	hosts,
 	access,
 	pep_mapping             = [],
 	ignore_pep_from_offline = true,
@@ -205,7 +205,7 @@
 -type(state() ::
     #state{
 	server_host             :: binary(),
-	host                    :: mod_pubsub:hostPubsub(),
+	hosts                   :: [mod_pubsub:hostPubsub()],
 	access                  :: atom(),
 	pep_mapping             :: [{binary(), binary()}],
 	ignore_pep_from_offline :: boolean(),
@@ -243,42 +243,63 @@ stop(Host) ->
 init([ServerHost, Opts]) ->
     process_flag(trap_exit, true),
     ?DEBUG("pubsub init ~p ~p", [ServerHost, Opts]),
-    Host = gen_mod:get_opt_host(ServerHost, Opts, <<"pubsub.@HOST@">>),
-    ejabberd_router:register_route(Host, ServerHost),
+    Hosts = gen_mod:get_opt_hosts(ServerHost, Opts, <<"pubsub.@HOST@">>),
     Access = gen_mod:get_opt(access_createnode, Opts, all),
     PepOffline = gen_mod:get_opt(ignore_pep_from_offline, Opts, true),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(ServerHost)),
     LastItemCache = gen_mod:get_opt(last_item_cache, Opts, false),
     MaxItemsNode = gen_mod:get_opt(max_items_node, Opts, ?MAXITEMS),
     MaxSubsNode = gen_mod:get_opt(max_subscriptions_node, Opts),
-    case gen_mod:db_type(ServerHost, ?MODULE) of
-	mnesia -> pubsub_index:init(Host, ServerHost, Opts);
-	_ -> ok
-    end,
-    {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
-    DefaultModule = plugin(Host, hd(Plugins)),
-    BaseOptions = DefaultModule:options(),
-    DefaultNodeCfg = filter_node_options(
-		       gen_mod:get_opt(default_node_config, Opts, []),
-		       BaseOptions),
     ejabberd_mnesia:create(?MODULE, pubsub_last_item,
-	[{ram_copies, [node()]},
-	    {attributes, record_info(fields, pubsub_last_item)}]),
-    lists:foreach(
-      fun(H) ->
-	      T = gen_mod:get_module_proc(H, config),
-	      ets:new(T, [set, named_table]),
-	      ets:insert(T, {nodetree, NodeTree}),
-	      ets:insert(T, {plugins, Plugins}),
-	      ets:insert(T, {last_item_cache, LastItemCache}),
-	      ets:insert(T, {max_items_node, MaxItemsNode}),
-	      ets:insert(T, {max_subscriptions_node, MaxSubsNode}),
-	      ets:insert(T, {default_node_config, DefaultNodeCfg}),
-	      ets:insert(T, {pep_mapping, PepMapping}),
-	      ets:insert(T, {ignore_pep_from_offline, PepOffline}),
-	      ets:insert(T, {host, Host}),
-	      ets:insert(T, {access, Access})
-      end, [Host, ServerHost]),
+			   [{ram_copies, [node()]},
+			    {attributes, record_info(fields, pubsub_last_item)}]),
+    AllPlugins =
+	lists:flatmap(
+	  fun(Host) ->
+		  ejabberd_router:register_route(Host, ServerHost),
+		  case gen_mod:db_type(ServerHost, ?MODULE) of
+		      mnesia -> pubsub_index:init(Host, ServerHost, Opts);
+		      _ -> ok
+		  end,
+		  {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
+		  DefaultModule = plugin(Host, hd(Plugins)),
+		  BaseOptions = DefaultModule:options(),
+		  DefaultNodeCfg = filter_node_options(
+				     gen_mod:get_opt(default_node_config, Opts, []),
+				     BaseOptions),
+		  lists:foreach(
+		    fun(H) ->
+			    T = gen_mod:get_module_proc(H, config),
+			    try
+				ets:new(T, [set, named_table]),
+				ets:insert(T, {nodetree, NodeTree}),
+				ets:insert(T, {plugins, Plugins}),
+				ets:insert(T, {last_item_cache, LastItemCache}),
+				ets:insert(T, {max_items_node, MaxItemsNode}),
+				ets:insert(T, {max_subscriptions_node, MaxSubsNode}),
+				ets:insert(T, {default_node_config, DefaultNodeCfg}),
+				ets:insert(T, {pep_mapping, PepMapping}),
+				ets:insert(T, {ignore_pep_from_offline, PepOffline}),
+				ets:insert(T, {host, Host}),
+				ets:insert(T, {access, Access})
+			    catch error:badarg when H == ServerHost ->
+				    ok
+			    end
+		    end, [Host, ServerHost]),
+		  gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO,
+						?MODULE, process_disco_info, IQDisc),
+		  gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS,
+						?MODULE, process_disco_items, IQDisc),
+		  gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_PUBSUB,
+						?MODULE, process_pubsub, IQDisc),
+		  gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_PUBSUB_OWNER,
+						?MODULE, process_pubsub_owner, IQDisc),
+		  gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VCARD,
+						?MODULE, process_vcard, IQDisc),
+		  gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_COMMANDS,
+						?MODULE, process_commands, IQDisc),
+		  Plugins
+	  end, Hosts),
     ejabberd_hooks:add(sm_remove_connection_hook, ServerHost,
 	?MODULE, on_user_offline, 75),
     ejabberd_hooks:add(disco_local_identity, ServerHost,
@@ -297,19 +318,7 @@ init([ServerHost, Opts]) ->
 	?MODULE, remove_user, 50),
     ejabberd_hooks:add(c2s_handle_info, ServerHost,
 	?MODULE, c2s_handle_info, 50),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO,
-				  ?MODULE, process_disco_info, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS,
-				  ?MODULE, process_disco_items, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_PUBSUB,
-				  ?MODULE, process_pubsub, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_PUBSUB_OWNER,
-				  ?MODULE, process_pubsub_owner, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VCARD,
-				  ?MODULE, process_vcard, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_COMMANDS,
-				  ?MODULE, process_commands, IQDisc),
-    case lists:member(?PEPNODE, Plugins) of
+    case lists:member(?PEPNODE, AllPlugins) of
 	true ->
 	    ejabberd_hooks:add(caps_add, ServerHost,
 		?MODULE, caps_add, 80),
@@ -328,20 +337,19 @@ init([ServerHost, Opts]) ->
 	false ->
 	    ok
     end,
-    {_, State} = init_send_loop(ServerHost),
+    {_, State} = init_send_loop(ServerHost, Hosts),
     {ok, State}.
 
-init_send_loop(ServerHost) ->
+init_send_loop(ServerHost, Hosts) ->
     NodeTree = config(ServerHost, nodetree),
     Plugins = config(ServerHost, plugins),
     LastItemCache = config(ServerHost, last_item_cache),
     MaxItemsNode = config(ServerHost, max_items_node),
     PepMapping = config(ServerHost, pep_mapping),
     PepOffline = config(ServerHost, ignore_pep_from_offline),
-    Host = config(ServerHost, host),
     Access = config(ServerHost, access),
     DBType = gen_mod:db_type(ServerHost, ?MODULE),
-    State = #state{host = Host, server_host = ServerHost,
+    State = #state{hosts = Hosts, server_host = ServerHost,
 	    access = Access, pep_mapping = PepMapping,
 	    ignore_pep_from_offline = PepOffline,
 	    last_item_cache = LastItemCache,
@@ -419,7 +427,7 @@ get_subscribed(User, Server) ->
 send_loop(State) ->
     receive
 	{presence, JID, _Pid} ->
-	    Host = State#state.host,
+	    Host = State#state.server_host,
 	    ServerHost = State#state.server_host,
 	    DBType = State#state.db_type,
 	    LJID = jid:tolower(JID),
@@ -461,7 +469,7 @@ send_loop(State) ->
 	    send_loop(State);
 	{presence, User, Server, Resources, JID} ->
 	    spawn(fun() ->
-			Host = State#state.host,
+			Host = State#state.server_host,
 			Owner = jid:remove_resource(jid:tolower(JID)),
 			lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, type = Type, id = Nidx, options = Options}) ->
 				    case match_option(Options, send_last_published_item, on_sub_and_presence) of
@@ -689,11 +697,7 @@ presence_probe(_From, _To, _Pid) ->
     ok.
 
 presence(ServerHost, Presence) ->
-    {SendLoop, _} = case whereis(gen_mod:get_module_proc(ServerHost, ?LOOPNAME)) of
-	undefined -> init_send_loop(ServerHost);
-	Pid -> {Pid, undefined}
-    end,
-    SendLoop ! Presence,
+    gen_mod:get_module_proc(ServerHost, ?LOOPNAME) ! Presence,
     ok.
 
 %% -------
@@ -859,7 +863,7 @@ handle_info(_Info, State) ->
 %%--------------------------------------------------------------------
 %% @private
 terminate(_Reason,
-	    #state{host = Host, server_host = ServerHost, nodetree = TreePlugin, plugins = Plugins}) ->
+	    #state{hosts = Hosts, server_host = ServerHost, nodetree = TreePlugin, plugins = Plugins}) ->
     case lists:member(?PEPNODE, Plugins) of
 	true ->
 	    ejabberd_hooks:delete(caps_add, ServerHost,
@@ -897,20 +901,23 @@ terminate(_Reason,
 	?MODULE, remove_user, 50),
     ejabberd_hooks:delete(c2s_handle_info, ServerHost,
 	?MODULE, c2s_handle_info, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_PUBSUB),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_PUBSUB_OWNER),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_COMMANDS),
     case whereis(gen_mod:get_module_proc(ServerHost, ?LOOPNAME)) of
 	undefined ->
 	    ?ERROR_MSG("~s process is dead, pubsub was broken", [?LOOPNAME]);
 	Pid ->
 	    Pid ! stop
     end,
-    terminate_plugins(Host, ServerHost, Plugins, TreePlugin),
-    ejabberd_router:unregister_route(Host).
+    lists:foreach(
+      fun(Host) ->
+	      gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
+	      gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS),
+	      gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_PUBSUB),
+	      gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_PUBSUB_OWNER),
+	      gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
+	      gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_COMMANDS),
+	      terminate_plugins(Host, ServerHost, Plugins, TreePlugin),
+	      ejabberd_router:unregister_route(Host)
+      end, Hosts).
 
 %%--------------------------------------------------------------------
 %% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
@@ -3877,6 +3884,8 @@ export(Server) ->
 mod_opt_type(access_createnode) -> fun acl:access_rules_validator/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(host) -> fun iolist_to_binary/1;
+mod_opt_type(hosts) ->
+    fun (L) -> lists:map(fun iolist_to_binary/1, L) end;
 mod_opt_type(ignore_pep_from_offline) ->
     fun (A) when is_boolean(A) -> A end;
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
@@ -3895,7 +3904,7 @@ mod_opt_type(pep_mapping) ->
 mod_opt_type(plugins) ->
     fun (A) when is_list(A) -> A end;
 mod_opt_type(_) ->
-    [access_createnode, db_type, host,
+    [access_createnode, db_type, host, hosts,
      ignore_pep_from_offline, iqdisc, last_item_cache,
      max_items_node, nodetree, pep_mapping, plugins,
      max_subscriptions_node, default_node_config].

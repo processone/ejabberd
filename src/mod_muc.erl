@@ -75,7 +75,7 @@
 -include("mod_muc.hrl").
 
 -record(state,
-	{host = <<"">> :: binary(),
+	{hosts = [] :: [binary()],
          server_host = <<"">> :: binary(),
          access = {none, none, none, none} :: {atom(), atom(), atom(), atom()},
          history_size = 20 :: non_neg_integer(),
@@ -151,8 +151,9 @@ room_destroyed(Host, Room, Pid, ServerHost) ->
 %% If Opts = default, the default room options are used.
 %% Else use the passed options as defined in mod_muc_room.
 create_room(Host, Name, From, Nick, Opts) ->
-    Proc = gen_mod:get_module_proc(Host, ?MODULE),
-    gen_server:call(Proc, {create, Name, From, Nick, Opts}).
+    ServerHost = ejabberd_router:host_of_route(Host),
+    Proc = gen_mod:get_module_proc(ServerHost, ?MODULE),
+    gen_server:call(Proc, {create, Name, Host, From, Nick, Opts}).
 
 store_room(ServerHost, Host, Name, Opts) ->
     LServer = jid:nameprep(ServerHost),
@@ -225,22 +226,26 @@ get_online_rooms_by_user(ServerHost, LUser, LServer) ->
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
-    #state{access = Access, host = MyHost,
+    #state{access = Access, hosts = MyHosts,
 	   history_size = HistorySize, queue_type = QueueType,
 	   room_shaper = RoomShaper} = State = init_state(Host, Opts),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     RMod = gen_mod:ram_db_mod(Host, Opts, ?MODULE),
-    Mod:init(Host, [{host, MyHost}|Opts]),
-    RMod:init(Host, [{host, MyHost}|Opts]),
-    register_iq_handlers(MyHost, IQDisc),
-    ejabberd_router:register_route(MyHost, Host),
-    load_permanent_rooms(MyHost, Host, Access, HistorySize, RoomShaper, QueueType),
+    Mod:init(Host, [{hosts, MyHosts}|Opts]),
+    RMod:init(Host, [{hosts, MyHosts}|Opts]),
+    lists:foreach(
+      fun(MyHost) ->
+	      register_iq_handlers(MyHost, IQDisc),
+	      ejabberd_router:register_route(MyHost, Host),
+	      load_permanent_rooms(MyHost, Host, Access, HistorySize,
+				   RoomShaper, QueueType)
+      end, MyHosts),
     {ok, State}.
 
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
-handle_call({create, Room, From, Nick, Opts}, _From,
-	    #state{host = Host, server_host = ServerHost,
+handle_call({create, Room, Host, From, Nick, Opts}, _From,
+	    #state{server_host = ServerHost,
 		   access = Access, default_room_opts = DefOpts,
 		   history_size = HistorySize, queue_type = QueueType,
 		   room_shaper = RoomShaper} = State) ->
@@ -259,49 +264,56 @@ handle_call({create, Room, From, Nick, Opts}, _From,
     ejabberd_hooks:run(create_room, ServerHost, [ServerHost, Room, Host]),
     {reply, ok, State}.
 
-handle_cast({reload, ServerHost, NewOpts, OldOpts}, #state{host = OldHost}) ->
+handle_cast({reload, ServerHost, NewOpts, OldOpts}, #state{hosts = OldHosts}) ->
     NewIQDisc = gen_mod:get_opt(iqdisc, NewOpts, gen_iq_handler:iqdisc(ServerHost)),
     OldIQDisc = gen_mod:get_opt(iqdisc, OldOpts, gen_iq_handler:iqdisc(ServerHost)),
     NewMod = gen_mod:db_mod(ServerHost, NewOpts, ?MODULE),
     NewRMod = gen_mod:ram_db_mod(ServerHost, NewOpts, ?MODULE),
     OldMod = gen_mod:db_mod(ServerHost, OldOpts, ?MODULE),
     OldRMod = gen_mod:ram_db_mod(ServerHost, OldOpts, ?MODULE),
-    #state{host = NewHost} = NewState = init_state(ServerHost, NewOpts),
+    #state{hosts = NewHosts} = NewState = init_state(ServerHost, NewOpts),
     if NewMod /= OldMod ->
-	    NewMod:init(ServerHost, [{host, NewHost}|NewOpts]);
+	    NewMod:init(ServerHost, [{hosts, NewHosts}|NewOpts]);
        true ->
 	    ok
     end,
     if NewRMod /= OldRMod ->
-	    NewRMod:init(ServerHost, [{host, NewHost}|NewOpts]);
+	    NewRMod:init(ServerHost, [{hosts, NewHosts}|NewOpts]);
        true ->
 	    ok
     end,
-    if (NewIQDisc /= OldIQDisc) or (NewHost /= OldHost) ->
-	    register_iq_handlers(NewHost, NewIQDisc);
+    if (NewIQDisc /= OldIQDisc) ->
+	    lists:foreach(
+	      fun(NewHost) ->
+		      register_iq_handlers(NewHost, NewIQDisc)
+	      end, NewHosts -- (NewHosts -- OldHosts));
        true ->
 	    ok
     end,
-    if NewHost /= OldHost ->
-	    ejabberd_router:register_route(NewHost, ServerHost),
-	    ejabberd_router:unregister_route(OldHost),
-	    unregister_iq_handlers(OldHost);
-       true ->
-	    ok
-    end,
+    lists:foreach(
+      fun(NewHost) ->
+	      ejabberd_router:register_route(NewHost, ServerHost),
+	      register_iq_handlers(NewHost, NewIQDisc)
+      end, NewHosts -- OldHosts),
+    lists:foreach(
+      fun(OldHost) ->
+	      ejabberd_router:unregister_route(OldHost),
+	      unregister_iq_handlers(OldHost)
+      end, OldHosts -- NewHosts),
     {noreply, NewState};
 handle_cast(Msg, State) ->
     ?WARNING_MSG("unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
 handle_info({route, Packet},
-	    #state{host = Host, server_host = ServerHost,
+	    #state{server_host = ServerHost,
 		   access = Access, default_room_opts = DefRoomOpts,
 		   history_size = HistorySize, queue_type = QueueType,
 		   max_rooms_discoitems = MaxRoomsDiscoItems,
 		   room_shaper = RoomShaper} = State) ->
     From = xmpp:get_from(Packet),
     To = xmpp:get_to(Packet),
+    Host = To#jid.lserver,
     case catch do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
 			From, To, Packet, DefRoomOpts, MaxRoomsDiscoItems,
 			QueueType) of
@@ -320,9 +332,12 @@ handle_info(Info, State) ->
     ?ERROR_MSG("unexpected info: ~p", [Info]),
     {noreply, State}.
 
-terminate(_Reason, #state{host = MyHost}) ->
-    ejabberd_router:unregister_route(MyHost),
-    unregister_iq_handlers(MyHost).
+terminate(_Reason, #state{hosts = MyHosts}) ->
+    lists:foreach(
+      fun(MyHost) ->
+	      ejabberd_router:unregister_route(MyHost),
+	      unregister_iq_handlers(MyHost)
+      end, MyHosts).
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
@@ -330,8 +345,8 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%% Internal functions
 %%--------------------------------------------------------------------
 init_state(Host, Opts) ->
-    MyHost = gen_mod:get_opt_host(Host, Opts,
-				  <<"conference.@HOST@">>),
+    MyHosts = gen_mod:get_opt_hosts(Host, Opts,
+				    <<"conference.@HOST@">>),
     Access = gen_mod:get_opt(access, Opts, all),
     AccessCreate = gen_mod:get_opt(access_create, Opts, all),
     AccessAdmin = gen_mod:get_opt(access_admin, Opts, none),
@@ -342,7 +357,7 @@ init_state(Host, Opts) ->
     QueueType = gen_mod:get_opt(queue_type, Opts,
 				ejabberd_config:default_queue_type(Host)),
     RoomShaper = gen_mod:get_opt(room_shaper, Opts, none),
-    #state{host = MyHost,
+    #state{hosts = MyHosts,
 	   server_host = Host,
 	   access = {Access, AccessCreate, AccessAdmin, AccessPersistent},
 	   default_room_opts = DefRoomOpts,
@@ -851,6 +866,8 @@ mod_opt_type(ram_db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(history_size) ->
     fun (I) when is_integer(I), I >= 0 -> I end;
 mod_opt_type(host) -> fun iolist_to_binary/1;
+mod_opt_type(hosts) ->
+    fun (L) -> lists:map(fun iolist_to_binary/1, L) end;
 mod_opt_type(max_room_desc) ->
     fun (infinity) -> infinity;
 	(I) when is_integer(I), I > 0 -> I
@@ -944,7 +961,7 @@ mod_opt_type({default_room_options, presence_broadcast}) ->
     end;
 mod_opt_type(_) ->
     [access, access_admin, access_create, access_persistent,
-     db_type, ram_db_type, history_size, host,
+     db_type, ram_db_type, history_size, host, hosts,
      max_room_desc, max_room_id, max_room_name,
      max_rooms_discoitems, max_user_conferences, max_users,
      max_users_admin_threshold, max_users_presence,

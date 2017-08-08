@@ -47,7 +47,7 @@
 
 -record(state,
 	{serverhost = <<"">>        :: binary(),
-         myhost = <<"">>            :: binary(),
+         myhosts = []               :: [binary()],
          eldap_id = <<"">>          :: binary(),
          search = false             :: boolean(),
          servers = []               :: [binary()],
@@ -351,8 +351,7 @@ default_search_reported() ->
      {<<"Organization Unit">>, <<"ORGUNIT">>}].
 
 parse_options(Host, Opts) ->
-    MyHost = gen_mod:get_opt_host(Host, Opts,
-				  <<"vjud.@HOST@">>),
+    MyHosts = gen_mod:get_opt_hosts(Host, Opts, <<"vjud.@HOST@">>),
     Search = gen_mod:get_opt(search, Opts, false),
     Matches = gen_mod:get_opt(matches, Opts, 30),
     Eldap_ID = misc:atom_to_binary(gen_mod:get_module_proc(Host, ?PROCNAME)),
@@ -394,7 +393,7 @@ parse_options(Host, Opts) ->
 						    end,
 						    SearchReported)
 					++ UIDAttrs),
-    #state{serverhost = Host, myhost = MyHost,
+    #state{serverhost = Host, myhosts = MyHosts,
 	   eldap_id = Eldap_ID, search = Search,
 	   servers = Cfg#eldap_config.servers,
 	   backups = Cfg#eldap_config.backups,

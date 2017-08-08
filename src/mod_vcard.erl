@@ -67,7 +67,7 @@
 
 -optional_callbacks([use_cache/1, cache_nodes/1]).
 
--record(state, {host :: binary(), server_host :: binary()}).
+-record(state, {hosts :: [binary()], server_host :: binary()}).
 
 %%====================================================================
 %% gen_mod callbacks
@@ -95,37 +95,40 @@ init([Host, Opts]) ->
 				  ?NS_VCARD, ?MODULE, process_sm_iq, IQDisc),
     ejabberd_hooks:add(disco_sm_features, Host, ?MODULE,
 		       get_sm_features, 50),
-    MyHost = gen_mod:get_opt_host(Host, Opts, <<"vjud.@HOST@">>),
+    MyHosts = gen_mod:get_opt_hosts(Host, Opts, <<"vjud.@HOST@">>),
     Search = gen_mod:get_opt(search, Opts, false),
     if Search ->
-	    ejabberd_hooks:add(
-	      disco_local_items, MyHost, ?MODULE, disco_items, 100),
-	    ejabberd_hooks:add(
-	      disco_local_features, MyHost, ?MODULE, disco_features, 100),
-	    ejabberd_hooks:add(
-	      disco_local_identity, MyHost, ?MODULE, disco_identity, 100),
-	    gen_iq_handler:add_iq_handler(
-	      ejabberd_local, MyHost, ?NS_SEARCH, ?MODULE, process_search, IQDisc),
-	    gen_iq_handler:add_iq_handler(
-	      ejabberd_local, MyHost, ?NS_VCARD, ?MODULE, process_vcard, IQDisc),
-	    gen_iq_handler:add_iq_handler(
-	      ejabberd_local, MyHost, ?NS_DISCO_ITEMS, mod_disco,
-	      process_local_iq_items, IQDisc),
-	    gen_iq_handler:add_iq_handler(
-	      ejabberd_local, MyHost, ?NS_DISCO_INFO, mod_disco,
-	      process_local_iq_info, IQDisc),
-	    case Mod:is_search_supported(Host) of
-		false ->
-		    ?WARNING_MSG("vcard search functionality is "
-				 "not implemented for ~s backend",
-				 [gen_mod:db_type(Host, Opts, ?MODULE)]);
-		true ->
-		    ejabberd_router:register_route(MyHost, Host)
-	    end;
+	    lists:foreach(
+	      fun(MyHost) ->
+		      ejabberd_hooks:add(
+			disco_local_items, MyHost, ?MODULE, disco_items, 100),
+		      ejabberd_hooks:add(
+			disco_local_features, MyHost, ?MODULE, disco_features, 100),
+		      ejabberd_hooks:add(
+			disco_local_identity, MyHost, ?MODULE, disco_identity, 100),
+		      gen_iq_handler:add_iq_handler(
+			ejabberd_local, MyHost, ?NS_SEARCH, ?MODULE, process_search, IQDisc),
+		      gen_iq_handler:add_iq_handler(
+			ejabberd_local, MyHost, ?NS_VCARD, ?MODULE, process_vcard, IQDisc),
+		      gen_iq_handler:add_iq_handler(
+			ejabberd_local, MyHost, ?NS_DISCO_ITEMS, mod_disco,
+			process_local_iq_items, IQDisc),
+		      gen_iq_handler:add_iq_handler(
+			ejabberd_local, MyHost, ?NS_DISCO_INFO, mod_disco,
+			process_local_iq_info, IQDisc),
+		      case Mod:is_search_supported(Host) of
+			  false ->
+			      ?WARNING_MSG("vcard search functionality is "
+					   "not implemented for ~s backend",
+					   [gen_mod:db_type(Host, Opts, ?MODULE)]);
+			  true ->
+			      ejabberd_router:register_route(MyHost, Host)
+		      end
+	      end, MyHosts);
        true ->
 	    ok
     end,
-    {ok, #state{host = MyHost, server_host = Host}}.
+    {ok, #state{hosts = MyHosts, server_host = Host}}.
 
 handle_call(_Call, _From, State) ->
     {noreply, State}.
@@ -144,21 +147,24 @@ handle_info(Info, State) ->
     ?WARNING_MSG("unexpected info: ~p", [Info]),
     {noreply, State}.
 
-terminate(_Reason, #state{host = MyHost, server_host = Host}) ->
+terminate(_Reason, #state{hosts = MyHosts, server_host = Host}) ->
     ejabberd_hooks:delete(remove_user, Host, ?MODULE, remove_user, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_VCARD),
     ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
     Mod = gen_mod:db_mod(Host, ?MODULE),
     Mod:stop(Host),
-    ejabberd_router:unregister_route(MyHost),
-    ejabberd_hooks:delete(disco_local_items, MyHost, ?MODULE, disco_items, 100),
-    ejabberd_hooks:delete(disco_local_features, MyHost, ?MODULE, disco_features, 100),
-    ejabberd_hooks:delete(disco_local_identity, MyHost, ?MODULE, disco_identity, 100),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_SEARCH),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_VCARD),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_ITEMS),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_INFO).
+    lists:foreach(
+      fun(MyHost) ->
+	      ejabberd_router:unregister_route(MyHost),
+	      ejabberd_hooks:delete(disco_local_items, MyHost, ?MODULE, disco_items, 100),
+	      ejabberd_hooks:delete(disco_local_features, MyHost, ?MODULE, disco_features, 100),
+	      ejabberd_hooks:delete(disco_local_identity, MyHost, ?MODULE, disco_identity, 100),
+	      gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_SEARCH),
+	      gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_VCARD),
+	      gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_ITEMS),
+	      gen_iq_handler:remove_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_INFO)
+      end, MyHosts).
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
@@ -527,6 +533,8 @@ mod_opt_type(allow_return_all) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(host) -> fun iolist_to_binary/1;
+mod_opt_type(hosts) ->
+    fun (L) -> lists:map(fun iolist_to_binary/1, L) end;
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(matches) ->
     fun (infinity) -> infinity;
@@ -543,6 +551,6 @@ mod_opt_type(O) when O == cache_life_time; O == cache_size ->
 mod_opt_type(O) when O == use_cache; O == cache_missed ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(_) ->
-    [allow_return_all, db_type, host, iqdisc, matches,
+    [allow_return_all, db_type, host, hosts, iqdisc, matches,
      search, search_all_hosts, cache_life_time, cache_size,
      use_cache, cache_missed].
