@@ -14,9 +14,6 @@
 	 scenario/3,
 	 scenario0/2,
 	 new_user_scenario/2
-         %% Not yet implemented
-	 %% key_roll_over/5
-         %% delete_authz/3
 	]).
 
 -include("ejabberd.hrl").
@@ -581,8 +578,8 @@ not_before_not_after() ->
     %% TODO: Make notBefore and notAfter configurable somewhere
     {MegS, Sec, MicS} = erlang:timestamp(),
     NotBefore = xmpp_util:encode_timestamp({MegS, Sec, MicS}),
-    %% The certificate will be valid for 60 Days after today
-    NotAfter = xmpp_util:encode_timestamp({MegS+5, Sec+184000, MicS}),
+    %% The certificate will be valid for 90 Days after today
+    NotAfter = xmpp_util:encode_timestamp({MegS+7, Sec+776000, MicS}),
     {NotBefore, NotAfter}.
 
 -spec to_public(jose_jwk:key()) -> jose_jwk:key().
