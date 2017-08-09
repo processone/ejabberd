@@ -427,8 +427,8 @@ get_subscribed(User, Server) ->
 send_loop(State) ->
     receive
 	{presence, JID, _Pid} ->
-	    Host = State#state.server_host,
 	    ServerHost = State#state.server_host,
+	    Host = host(State#state.server_host),
 	    DBType = State#state.db_type,
 	    LJID = jid:tolower(JID),
 	    BJID = jid:remove_resource(LJID),
@@ -469,7 +469,7 @@ send_loop(State) ->
 	    send_loop(State);
 	{presence, User, Server, Resources, JID} ->
 	    spawn(fun() ->
-			Host = State#state.server_host,
+			Host = host(State#state.server_host),
 			Owner = jid:remove_resource(jid:tolower(JID)),
 			lists:foreach(fun(#pubsub_node{nodeid = {_, Node}, type = Type, id = Nidx, options = Options}) ->
 				    case match_option(Options, send_last_published_item, on_sub_and_presence) of
