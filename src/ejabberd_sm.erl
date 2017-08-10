@@ -489,9 +489,13 @@ host_up(Host) ->
 -spec host_down(binary()) -> ok.
 host_down(Host) ->
     Mod = get_sm_backend(Host),
+    Err = case ejabberd_cluster:get_nodes() of
+	    [Node] when Node == node() -> xmpp:serr_system_shutdown();
+	    _ -> xmpp:serr_reset()
+	  end,
     lists:foreach(
       fun(#session{sid = {_, Pid}}) when node(Pid) == node() ->
-	      ejabberd_c2s:send(Pid, xmpp:serr_system_shutdown()),
+	      ejabberd_c2s:send(Pid, Err),
 	      ejabberd_c2s:stop(Pid);
 	 (_) ->
 	      ok
