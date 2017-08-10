@@ -283,50 +283,35 @@ renew_certificates0(CAUrl) ->
     %% Get the current account
     {ok, _AccId, PrivateKey} = ensure_account_exists(),
 
-    %% Read Config
-    Hosts = get_config_hosts(),
+    %% Find all hosts that we have certificates for
+    Certs = read_certificates_persistent(),
 
     %% Get a certificate for each host
-    PemCertKeys = [renew_certificate(CAUrl, Host, PrivateKey) || Host <- Hosts],
+    PemCertKeys = [renew_certificate(CAUrl, Cert, PrivateKey) || Cert <- Certs],
 
     %% Save Certificates
     SavedCerts = [save_renewed_certificate(Cert) || Cert <- PemCertKeys],
 
     %% Format the result to send back to ejabberdctl
-    %% Result
     format_get_certificates_result(SavedCerts).
 
--spec renew_certificate(url(), bitstring(), jose_jwk:key()) -> 
+-spec renew_certificate(url(), data_cert(), jose_jwk:key()) -> 
 			       {'ok', bitstring(), _} | 
 			       {'error', bitstring(), _}.
-renew_certificate(CAUrl, DomainName, PrivateKey) ->
-    case cert_to_expire(DomainName) of
+renew_certificate(CAUrl, {DomainName, _} = Cert, PrivateKey) ->
+    case cert_to_expire(Cert) of
 	true ->
 	    get_certificate(CAUrl, DomainName, PrivateKey);
-	{false, not_found} ->
-	    {ok, DomainName, not_found};
-	{false, PemCert} ->
-	    {ok, DomainName, exists}
+	false ->
+	    {ok, DomainName, no_expire}
     end.
 
--spec cert_to_expire(bitstring()) -> 'true' | 
-				     {'false', pem()} |
-				     {'false', not_found}.
-cert_to_expire(DomainName) ->
-    Certs = read_certificates_persistent(),
-    case lists:keyfind(DomainName, 1, Certs) of
-	{DomainName, #data_cert{pem = Pem}} ->
-	    Certificate = pem_to_certificate(Pem),
-	    Validity = get_utc_validity(Certificate),
-	    case close_to_expire(Validity) of
-		true ->
-		    true;
-		false ->
-		    {false, Pem}
-	    end;
-	false ->
-	    {false, not_found}
-    end.
+
+-spec cert_to_expire(data_cert()) -> boolean().
+cert_to_expire({DomainName, #data_cert{pem = Pem}}) ->
+    Certificate = pem_to_certificate(Pem),
+    Validity = get_utc_validity(Certificate),
+    close_to_expire(Validity).
 
 -spec close_to_expire(string()) -> boolean().
 close_to_expire(Validity) ->
@@ -933,9 +918,7 @@ save_certificate({ok, DomainName, Cert}) ->
 				      {ok, bitstring(), _} | {error, bitstring(), _}.
 save_renewed_certificate({error, _, _} = Error) ->
     Error;
-save_renewed_certificate({ok, _, not_found} = Cert) ->
-    Cert;
-save_renewed_certificate({ok, _, exists} = Cert) ->
+save_renewed_certificate({ok, _, no_expire} = Cert) ->
     Cert;
 save_renewed_certificate({ok, DomainName, Cert}) ->
     save_certificate({ok, DomainName, Cert}).
