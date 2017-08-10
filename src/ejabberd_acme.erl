@@ -474,7 +474,6 @@ revoke_certificate0(CAUrl, Domain) ->
     BinDomain = list_to_bitstring(Domain),
     case domain_certificate_exists(BinDomain) of
 	{BinDomain, Certificate} ->
-	    ?INFO_MSG("Certificate: ~p found!!", [Certificate]),
 	    ok = revoke_certificate1(CAUrl, Certificate),
 	    {ok, deleted};
 	false ->
@@ -483,14 +482,12 @@ revoke_certificate0(CAUrl, Domain) ->
 
 -spec revoke_certificate1(url(), data_cert()) -> ok.
 revoke_certificate1(CAUrl, Cert = #data_cert{pem=PemEncodedCert}) ->
-    {ok, _AccId, PrivateKey} = ensure_account_exists(),
-
-    Certificate = prepare_certificate_revoke(PemEncodedCert),
+    {Certificate, CertPrivateKey} = prepare_certificate_revoke(PemEncodedCert),
 
     {ok, Dirs, Nonce} = ejabberd_acme_comm:directory(CAUrl),
 
     Req = [{<<"certificate">>, Certificate}],
-    {ok, [], Nonce1} = ejabberd_acme_comm:revoke_cert(Dirs, PrivateKey, Req, Nonce),
+    {ok, [], Nonce1} = ejabberd_acme_comm:revoke_cert(Dirs, CertPrivateKey, Req, Nonce),
     ok = remove_certificate_persistent(Cert),
     ok.
 
@@ -501,7 +498,9 @@ prepare_certificate_revoke(PemEncodedCert) ->
     PemCert = public_key:pem_entry_decode(PemCertEnc),
     DerCert = public_key:der_encode('Certificate', PemCert),
     Base64Cert = base64url:encode(DerCert),
-    Base64Cert.
+
+    Key = find_private_key_in_pem(PemEncodedCert),    
+    {Base64Cert, Key}.
 
 -spec domain_certificate_exists(bitstring()) -> {bitstring(), data_cert()} | false.    
 domain_certificate_exists(Domain) ->
@@ -719,8 +718,42 @@ utc_string_to_datetime(UtcString) ->
 	    throw({error, utc_string_to_datetime})
     end.
 
+-spec find_private_key_in_pem(pem()) -> {ok, jose_jwk:key()} | false.
+find_private_key_in_pem(Pem) ->
+    PemList = public_key:pem_decode(Pem),
+    case find_private_key_in_pem1(private_key_types(), PemList) of
+	false ->
+	    false;
+	PemKey ->
+	    Key = public_key:pem_entry_decode(PemKey),
+	    JoseKey = jose_jwk:from_key(Key),
+	    JoseKey
+    end.
+	    
+
+-spec find_private_key_in_pem1([public_key:pki_asn1_type()],
+			       [public_key:pem_entry()]) ->
+				      public_key:pem_entry() | false.
+find_private_key_in_pem1([], _PemList) ->
+    false;
+find_private_key_in_pem1([Type|Types], PemList) ->
+    case lists:keyfind(Type, 1, PemList) of
+	false ->
+	    find_private_key_in_pem1(Types, PemList);
+	Key ->
+	    Key
+    end.
+
+
+-spec parse_domain_string(string()) -> [string()].
 parse_domain_string(DomainString) ->
     string:tokens(DomainString, ";").
+
+-spec private_key_types() -> [public_key:pki_asn1_type()].
+private_key_types() ->
+    ['RSAPrivateKey',
+     'DSAPrivateKey',
+     'ECPrivateKey'].
 
 -spec is_error(_) -> boolean().
 is_error({error, _}) -> true;
