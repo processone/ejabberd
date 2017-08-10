@@ -45,5 +45,5 @@
 %% Options
 -type account_opt() :: string().
 -type verbose_opt() :: string().
-
+-type domains_opt() :: string().
 

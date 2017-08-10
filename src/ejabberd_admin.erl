@@ -45,7 +45,7 @@
 	 %% Migration jabberd1.4
 	 import_file/1, import_dir/1,
          %% Acme
-         get_certificate/1,
+         get_certificate/2,
 	 renew_certificate/0,
 	 list_certificates/1,
 	 revoke_certificate/1,
@@ -248,11 +248,13 @@ get_commands_spec() ->
 			args = [{file, string}],
 			result = {res, restuple}},
      #ejabberd_commands{name = get_certificate, tags = [acme],
-			desc = "Gets a certificate for the specified domain. Can be used with {old-account|new-account}.",
+			desc = "Gets a certificate for all or the specified domains {all|domain1;domain2;...}. Can be used with {old-account|new-account}.",
 			module = ?MODULE, function = get_certificate,
-			args_desc = ["Whether to create a new account or use the existing one"],
-			args_example = ["old-account | new-account"],
-			args = [{option, string}],
+			args_desc = ["Domains for which to acquire a certificate", 
+				     "Whether to create a new account or use the existing one"],
+			args_example = ["all | www.example.com;www.example1.net", 
+					"old-account | new-account"],
+			args = [{domains, string}, {option, string}],
 			result = {certificates, string}},
      #ejabberd_commands{name = renew_certificate, tags = [acme],
 			desc = "Renews all certificates that are close to expiring",
@@ -575,13 +577,17 @@ import_dir(Path) ->
 %%% Acme
 %%%
 
-get_certificate(UseNewAccount) ->
-    case ejabberd_acme:is_valid_account_opt(UseNewAccount) of
+get_certificate(Domains, UseNewAccount) ->
+    case ejabberd_acme:is_valid_domain_opt(Domains) of 
 	true ->
-	    ejabberd_acme:get_certificates("http://localhost:4000", UseNewAccount);
+	    case ejabberd_acme:is_valid_account_opt(UseNewAccount) of
+		true ->
+		    ejabberd_acme:get_certificates("http://localhost:4000", Domains, UseNewAccount);
+		false ->
+		    io_lib:format("Invalid account option: ~p", [UseNewAccount])
+	    end;
 	false ->
-	    String = io_lib:format("Invalid account option: ~p", [UseNewAccount]),
-	    {invalid_option, String}
+	    String = io_lib:format("Invalid domains: ~p", [Domains])
     end.
 
 renew_certificate() ->

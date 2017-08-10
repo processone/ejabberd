@@ -1,14 +1,15 @@
 -module (ejabberd_acme).
 
 -export([%% Ejabberdctl Commands
-	 get_certificates/2,
+	 get_certificates/3,
 	 renew_certificates/1,
 	 list_certificates/1,
 	 revoke_certificate/2,
 	 %% Command Options Validity
 	 is_valid_account_opt/1,
 	 is_valid_verbose_opt/1,
-	 %% Misc
+	 is_valid_domain_opt/1,
+	 %% Key Related
 	 generate_key/0,
 	 to_public/1
 	]).
@@ -42,18 +43,27 @@ is_valid_verbose_opt("plain") -> true;
 is_valid_verbose_opt("verbose") -> true;
 is_valid_verbose_opt(_) -> false.
 
+%% TODO: Make this check more complicated
+-spec is_valid_domain_opt(string()) -> boolean().
+is_valid_domain_opt("all") -> true;
+is_valid_domain_opt(DomainString) ->
+    case parse_domain_string(DomainString) of
+	[] ->
+	    false;
+	SeparatedDomains ->
+	    true
+    end.
+	    
 
 
 %%
 %% Get Certificate
 %%
 
-%% Needs a hell lot of cleaning
--spec get_certificates(url(), account_opt()) -> string() | {'error', _}.
-get_certificates(CAUrl, NewAccountOpt) ->
+-spec get_certificates(url(), domains_opt(), account_opt()) -> string() | {'error', _}.
+get_certificates(CAUrl, Domains, NewAccountOpt) ->
     try
-	?INFO_MSG("Persistent: ~p~n", [file:read_file_info(persistent_file())]),
-	get_certificates0(CAUrl, NewAccountOpt)
+	get_certificates0(CAUrl, Domains, NewAccountOpt)
     catch
 	throw:Throw ->
 	    Throw;
@@ -62,24 +72,30 @@ get_certificates(CAUrl, NewAccountOpt) ->
 	    {error, get_certificates}
     end.
 
--spec get_certificates0(url(), account_opt()) -> string().
-get_certificates0(CAUrl, "old-account") ->
+-spec get_certificates0(url(), domains_opt(), account_opt()) -> string().
+get_certificates0(CAUrl, Domains, "old-account") ->
     %% Get the current account
     {ok, _AccId, PrivateKey} = ensure_account_exists(),
 
-    get_certificates1(CAUrl, PrivateKey);
+    get_certificates1(CAUrl, Domains, PrivateKey);
 
-get_certificates0(CAUrl, "new-account") ->
+get_certificates0(CAUrl, Domains, "new-account") ->
     %% Create a new account and save it to disk
     {ok, _Id, PrivateKey} = create_save_new_account(CAUrl),
 
-    get_certificates1(CAUrl, PrivateKey).
+    get_certificates1(CAUrl, Domains, PrivateKey).
 
--spec get_certificates1(url(), jose_jwk:key()) -> string().
-get_certificates1(CAUrl, PrivateKey) ->
-    %% Read Config
+-spec get_certificates1(url(), domains_opt(), jose_jwk:key()) -> string().
+get_certificates1(CAUrl, "all", PrivateKey) ->
     Hosts = get_config_hosts(),
+    get_certificates2(CAUrl, PrivateKey, Hosts);
+get_certificates1(CAUrl, DomainString, PrivateKey) ->
+    Domains = parse_domain_string(DomainString),
+    Hosts = [list_to_bitstring(D) || D <- Domains],
+    get_certificates2(CAUrl, PrivateKey, Hosts).
 
+-spec get_certificates2(url(), jose_jwk:key(), [bitstring()]) -> string().
+get_certificates2(CAUrl, PrivateKey, Hosts) ->
     %% Get a certificate for each host
     PemCertKeys = [get_certificate(CAUrl, Host, PrivateKey) || Host <- Hosts],
 
@@ -87,7 +103,6 @@ get_certificates1(CAUrl, PrivateKey) ->
     SavedCerts = [save_certificate(Cert) || Cert <- PemCertKeys],
 
     %% Format the result to send back to ejabberdctl
-    %% Result
     format_get_certificates_result(SavedCerts).
 
 -spec format_get_certificates_result([{'ok', bitstring(), _} | 
@@ -703,6 +718,9 @@ utc_string_to_datetime(UtcString) ->
 	    ?ERROR_MSG("Unable to parse UTC string", []),
 	    throw({error, utc_string_to_datetime})
     end.
+
+parse_domain_string(DomainString) ->
+    string:tokens(DomainString, ";").
 
 -spec is_error(_) -> boolean().
 is_error({error, _}) -> true;
