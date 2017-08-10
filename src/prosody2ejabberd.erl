@@ -422,7 +422,7 @@ convert_node_items(Host, Data) ->
     Authors = proplists:get_value(<<"data_author">>, Data, []),
     lists:flatmap(
       fun({ItemId, Item}) ->
-	      try catch jid:decode(proplists:get_value(ItemId, Authors, Host)) of
+	      try jid:decode(proplists:get_value(ItemId, Authors, Host)) of
 		  JID ->
 		      [El] = deserialize(Item),
 		      [{ItemId, JID, El#xmlel.children}]
