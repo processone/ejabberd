@@ -2870,11 +2870,10 @@ send_items(Host, Node, Nidx, Type, Options, Publisher, SubLJID, ToLJID, Number) 
 	    ok;
 	Items ->
 	    Stanza = items_event_stanza(Node, Options, Items),
-	    send_stanza(Host, Publisher, ToLJID, Node, Stanza)
+	    send_stanza(Publisher, ToLJID, Node, Stanza)
     end.
 
-send_stanza({LUser, LServer, LResource}, Publisher, USR, Node, BaseStanza) ->
-    SenderResource = user_resource(LUser, LServer, LResource),
+send_stanza({LUser, LServer, _} = Publisher, USR, Node, BaseStanza) ->
     Stanza = xmpp:set_from(BaseStanza, jid:make(LUser, LServer)),
     USRs = case USR of
 	       {PUser, PServer, <<>>} ->
@@ -2883,12 +2882,12 @@ send_stanza({LUser, LServer, LResource}, Publisher, USR, Node, BaseStanza) ->
 	       _ ->
 		   [USR]
 	   end,
-    [ejabberd_sm:route(jid:make(LUser, LServer, SenderResource),
+    [ejabberd_sm:route(jid:make(Publisher),
 		      {pep_message, <<((Node))/binary, "+notify">>,
 		       add_extended_headers(
 			 Stanza, extended_headers([Publisher])),
 		       To}) || To <- USRs];
-send_stanza(Host, _Publisher, USR, _Node, Stanza) ->
+send_stanza(Host, USR, _Node, Stanza) ->
     ejabberd_router:route(
       xmpp:set_from_to(Stanza, service_jid(Host), jid:make(USR))).
 
