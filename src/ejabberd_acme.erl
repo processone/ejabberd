@@ -311,16 +311,18 @@ renew_certificate(CAUrl, {DomainName, _} = Cert, PrivateKey) ->
 cert_to_expire({DomainName, #data_cert{pem = Pem}}) ->
     Certificate = pem_to_certificate(Pem),
     Validity = get_utc_validity(Certificate),
-    close_to_expire(Validity).
 
--spec close_to_expire(string()) -> boolean().
-close_to_expire(Validity) ->
+    %% 30 days before expiration
+    close_to_expire(Validity, 30).
+
+-spec close_to_expire(string(), integer()) -> boolean().
+close_to_expire(Validity, Days) ->
     {ValidDate, _ValidTime} = utc_string_to_datetime(Validity),
     ValidDays = calendar:date_to_gregorian_days(ValidDate),
 
     {CurrentDate, _CurrentTime} = calendar:universal_time(),
     CurrentDays = calendar:date_to_gregorian_days(CurrentDate),
-    CurrentDays > ValidDays - 30.
+    CurrentDays > ValidDays - Days.
 
 
 
@@ -378,19 +380,25 @@ format_certificate(DataCert, Verbose) ->
 format_certificate_plain(DomainName, NotAfter, Path) ->
     Result = lists:flatten(io_lib:format(
 			     "  Domain: ~s~n" 
-			     "    Valid until: ~s UTC~n" 
+			     "    ~s~n" 
 			     "    Path: ~s", 
-			     [DomainName, NotAfter, Path])),
+			     [DomainName, format_validity(NotAfter), Path])),
     Result.
 
 -spec format_certificate_verbose(bitstring(), string(), bitstring()) -> string().
 format_certificate_verbose(DomainName, NotAfter, PemCert) ->
     Result = lists:flatten(io_lib:format(
 			     "  Domain: ~s~n" 
-			     "    Valid until: ~s UTC~n" 
+			     "    ~s~n" 
 			     "    Certificate In PEM format: ~n~s", 
-			     [DomainName, NotAfter, PemCert])),
+			     [DomainName, format_validity(NotAfter), PemCert])),
     Result.
+
+-spec format_validity({'expired' | 'ok', string()}) -> string().
+format_validity({expired, NotAfter}) ->
+    io_lib:format("Expired at: ~s UTC", [NotAfter]);
+format_validity({ok, NotAfter}) ->
+    io_lib:format("Valid until: ~s UTC", [NotAfter]).
 
 -spec fail_format_certificate(bitstring()) -> string().
 fail_format_certificate(DomainName) ->
@@ -413,7 +421,7 @@ get_commonName(#'Certificate'{tbsCertificate = TbsCertificate}) ->
     %% TODO: Remove the length-encoding from the commonName before returning it
     CommonName.
 
--spec get_notAfter(#'Certificate'{}) -> string().
+-spec get_notAfter(#'Certificate'{}) -> {expired | ok, string()}.
 get_notAfter(Certificate) ->
     UtcTime = get_utc_validity(Certificate),
     %% TODO: Find a library function to decode utc time
@@ -426,7 +434,12 @@ get_notAfter(Certificate) ->
 					   [YEAR, [MO1,MO2], [D1,D2],
 					    [H1,H2], [MI1,MI2], [S1,S2]])), 
 
-    NotAfter.
+    case close_to_expire(UtcTime, 0) of
+	true ->
+	    {expired, NotAfter};
+	false ->
+	    {ok, NotAfter}
+    end.
 
 -spec get_utc_validity(#'Certificate'{}) -> string().
 get_utc_validity(#'Certificate'{tbsCertificate = TbsCertificate}) ->
