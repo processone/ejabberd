@@ -593,9 +593,10 @@ on_user_online(C2SState) ->
     C2SState.
 
 -spec on_user_offline(ejabberd_c2s:state(), atom()) -> ejabberd_c2s:state().
-on_user_offline(C2SState, _Reason) ->
-    JID = maps:get(jid, C2SState),
+on_user_offline(#{jid := JID} = C2SState, _Reason) ->
     purge_offline(jid:tolower(JID)),
+    C2SState;
+on_user_offline(C2SState, _Reason) ->
     C2SState.
 
 %% -------
