@@ -2901,7 +2901,6 @@ maybe_send_pep_stanza(LServer, USR, Caps, Feature, Packet) ->
     end.
 
 send_last_items(JID) ->
-    ?DEBUG("~s", [jid:to_string(JID)]),
     ServerHost = JID#jid.lserver,
     Host = host(ServerHost),
     DBType = config(ServerHost, db_type),
@@ -2942,7 +2941,6 @@ send_last_items(JID) ->
 %	    ok
 %    end.
 send_last_pep(From, To) ->
-    ?DEBUG("~s -> ~s", [jid:to_string(From), jid:to_string(To)]),
     ServerHost = From#jid.lserver,
     Host = host(ServerHost),
     Publisher = jid:tolower(From),
