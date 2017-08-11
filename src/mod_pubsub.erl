@@ -572,8 +572,7 @@ caps_add(_From, _To, _Feature) ->
     ok.
 
 -spec caps_update(jid(), jid(), [binary()]) -> ok.
-caps_update(#jid{lserver = S1} = From, #jid{lserver = S2} = To, _Features)
-  when S1 =/= S2 ->
+caps_update(From, To, _Features) ->
     send_last_pep(To, From).
 
 -spec presence_probe(jid(), jid(), pid()) -> ok.
