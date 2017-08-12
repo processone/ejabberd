@@ -9,6 +9,7 @@
 	 is_valid_account_opt/1,
 	 is_valid_verbose_opt/1,
 	 is_valid_domain_opt/1,
+	 is_valid_revoke_cert/1,
 	 %% Key Related
 	 generate_key/0,
 	 to_public/1
@@ -53,6 +54,11 @@ is_valid_domain_opt(DomainString) ->
 	SeparatedDomains ->
 	    true
     end.
+
+-spec is_valid_revoke_cert(string()) -> boolean().
+is_valid_revoke_cert(DomainOrFile) ->	    
+    lists:prefix("file:", DomainOrFile) orelse
+	lists:prefix("domain:", DomainOrFile).
 	    
 
 
@@ -457,10 +463,10 @@ get_utc_validity(#'Certificate'{tbsCertificate = TbsCertificate}) ->
 %%
 
 -spec revoke_certificate(string()) -> {ok, deleted} | {error, _}.
-revoke_certificate(Domain) ->
+revoke_certificate(DomainOrFile) ->
     try
 	CAUrl = binary_to_list(get_config_ca_url()),
-	revoke_certificate0(CAUrl, Domain)
+	revoke_certificate0(CAUrl, DomainOrFile)
     catch
 	throw:Throw ->
 	    Throw;
@@ -469,27 +475,49 @@ revoke_certificate(Domain) ->
 	    {error, revoke_certificate}
     end.	
 
--spec revoke_certificate0(url(), string()) -> {ok, deleted} | {error, not_found}.
-revoke_certificate0(CAUrl, Domain) ->
-    BinDomain = list_to_bitstring(Domain),
-    case domain_certificate_exists(BinDomain) of
-	{BinDomain, Certificate} ->
-	    ok = revoke_certificate1(CAUrl, Certificate),
+-spec revoke_certificate0(url(), string()) -> {ok, deleted}.
+revoke_certificate0(CAUrl, DomainOrFile) ->
+    ParsedCert = parse_revoke_cert_argument(DomainOrFile),
+    revoke_certificate1(CAUrl, ParsedCert).
+
+-spec revoke_certificate1(url(), {domain, bitstring()} | {file, file:filename()}) -> 
+				 {ok, deleted}.
+revoke_certificate1(CAUrl, {domain, Domain}) ->
+    case domain_certificate_exists(Domain) of
+	{Domain, Cert = #data_cert{pem=PemCert}} ->
+	    ok = revoke_certificate2(CAUrl, PemCert),
+	    ok = remove_certificate_persistent(Cert),
 	    {ok, deleted};
 	false ->
-	    {error, not_found}
+	    ?ERROR_MSG("Certificate for domain: ~p not found", [Domain]),
+	    throw({error, not_found})
+    end;
+revoke_certificate1(CAUrl, {file, File}) ->
+    case file:read_file(File) of
+	{ok, Pem} ->
+	    ok = revoke_certificate2(CAUrl, Pem),
+	    {ok, deleted};
+	{error, Reason} ->
+	    ?ERROR_MSG("Error: ~p reading pem certificate-key file: ~p", [Reason, File]),
+	    throw({error, Reason})
     end.
+	
 
--spec revoke_certificate1(url(), data_cert()) -> ok.
-revoke_certificate1(CAUrl, Cert = #data_cert{pem=PemEncodedCert}) ->
+-spec revoke_certificate2(url(), data_cert()) -> ok.
+revoke_certificate2(CAUrl, PemEncodedCert) ->
     {Certificate, CertPrivateKey} = prepare_certificate_revoke(PemEncodedCert),
 
     {ok, Dirs, Nonce} = ejabberd_acme_comm:directory(CAUrl),
 
     Req = [{<<"certificate">>, Certificate}],
     {ok, [], Nonce1} = ejabberd_acme_comm:revoke_cert(Dirs, CertPrivateKey, Req, Nonce),
-    ok = remove_certificate_persistent(Cert),
     ok.
+
+-spec parse_revoke_cert_argument(string()) -> {domain, bitstring()} | {file, file:filename()}.
+parse_revoke_cert_argument([$f, $i, $l, $e, $:|File]) ->
+    {file, File};
+parse_revoke_cert_argument([$d, $o, $m, $a, $i, $n, $: | Domain]) ->
+    {domain, list_to_bitstring(Domain)}.
 
 -spec prepare_certificate_revoke(pem()) -> bitstring().
 prepare_certificate_revoke(PemEncodedCert) ->

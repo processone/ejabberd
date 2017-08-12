@@ -270,8 +270,8 @@ get_commands_spec() ->
      #ejabberd_commands{name = revoke_certificate, tags = [acme],
 			desc = "Revokes the selected certificate",
 			module = ?MODULE, function = revoke_certificate,
-			args_desc = ["The domain of the certificate in question"],
-			args = [{domain, string}],
+			args_desc = ["The domain or file (in pem format) of the certificate in question {domain:Domain | file:File}"],
+			args = [{domain_or_file, string}],
 			result = {res, restuple}},
 
      #ejabberd_commands{name = import_piefxis, tags = [mnesia],
@@ -602,8 +602,14 @@ list_certificates(Verbose) ->
 	    {invalid_option, String}
     end.
 
-revoke_certificate(Domain) ->
-    ejabberd_acme:revoke_certificate(Domain).
+revoke_certificate(DomainOrFile) ->
+    case ejabberd_acme:is_valid_revoke_cert(DomainOrFile) of
+	true ->
+	    ejabberd_acme:revoke_certificate(DomainOrFile);
+	false ->
+	    String = io_lib:format("Bad argument: ~s", [DomainOrFile]),
+	    {invalid_argument, String}
+    end.
 
 %%%
 %%% Purge DB
