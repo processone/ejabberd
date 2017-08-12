@@ -664,11 +664,11 @@ language: "en"
 ###'  ACME
 
 ##
-## Must contain a contact and a directory that the Http Challenges can be solved at
+## Must contain a contact and the ACME CA url
 ##
 acme:
   contact: "mailto:cert-admin-ejabberd@example.com"
-  http_dir: "/home/konstantinos/Desktop/Programming/test-server-for-acme/"
+  ca_url: "http://localhost:4000"
 
 cert_dir: "/usr/local/var/lib/ejabberd/"
 

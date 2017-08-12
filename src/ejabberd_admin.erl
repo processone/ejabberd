@@ -582,7 +582,7 @@ get_certificate(Domains, UseNewAccount) ->
 	true ->
 	    case ejabberd_acme:is_valid_account_opt(UseNewAccount) of
 		true ->
-		    ejabberd_acme:get_certificates("http://localhost:4000", Domains, UseNewAccount);
+		    ejabberd_acme:get_certificates(Domains, UseNewAccount);
 		false ->
 		    io_lib:format("Invalid account option: ~p", [UseNewAccount])
 	    end;
@@ -591,7 +591,7 @@ get_certificate(Domains, UseNewAccount) ->
     end.
 
 renew_certificate() ->
-    ejabberd_acme:renew_certificates("http://localhost:4000").
+    ejabberd_acme:renew_certificates().
 
 list_certificates(Verbose) ->
     case ejabberd_acme:is_valid_verbose_opt(Verbose) of
@@ -603,7 +603,7 @@ list_certificates(Verbose) ->
     end.
 
 revoke_certificate(Domain) ->
-    ejabberd_acme:revoke_certificate("http://localhost:4000", Domain).
+    ejabberd_acme:revoke_certificate(Domain).
 
 %%%
 %%% Purge DB

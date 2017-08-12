@@ -1,10 +1,10 @@
 -module (ejabberd_acme).
 
 -export([%% Ejabberdctl Commands
-	 get_certificates/3,
-	 renew_certificates/1,
+	 get_certificates/2,
+	 renew_certificates/0,
 	 list_certificates/1,
-	 revoke_certificate/2,
+	 revoke_certificate/1,
 	 %% Command Options Validity
 	 is_valid_account_opt/1,
 	 is_valid_verbose_opt/1,
@@ -60,9 +60,10 @@ is_valid_domain_opt(DomainString) ->
 %% Get Certificate
 %%
 
--spec get_certificates(url(), domains_opt(), account_opt()) -> string() | {'error', _}.
-get_certificates(CAUrl, Domains, NewAccountOpt) ->
+-spec get_certificates(domains_opt(), account_opt()) -> string() | {'error', _}.
+get_certificates(Domains, NewAccountOpt) ->
     try
+	CAUrl = binary_to_list(get_config_ca_url()),
 	get_certificates0(CAUrl, Domains, NewAccountOpt)
     catch
 	throw:Throw ->
@@ -266,9 +267,10 @@ ensure_account_exists() ->
 %%
 %% Renew Certificates
 %%
--spec renew_certificates(url()) -> string() | {'error', _}.
-renew_certificates(CAUrl) ->
+-spec renew_certificates() -> string() | {'error', _}.
+renew_certificates() ->
     try
+	CAUrl = binary_to_list(get_config_ca_url()),
         renew_certificates0(CAUrl)
     catch
 	throw:Throw ->
@@ -454,10 +456,10 @@ get_utc_validity(#'Certificate'{tbsCertificate = TbsCertificate}) ->
 %% Revoke Certificate
 %%
 
-%% Add a try-catch to this stub
--spec revoke_certificate(url(), string()) -> {ok, deleted} | {error, _}.
-revoke_certificate(CAUrl, Domain) ->
+-spec revoke_certificate(string()) -> {ok, deleted} | {error, _}.
+revoke_certificate(Domain) ->
     try
+	CAUrl = binary_to_list(get_config_ca_url()),
 	revoke_certificate0(CAUrl, Domain)
     catch
 	throw:Throw ->
@@ -967,6 +969,18 @@ get_config_contact() ->
 	    ?ERROR_MSG("No contact has been specified", []),
 	    throw({error, configuration_contact})
     end.
+
+-spec get_config_ca_url() -> bitstring().
+get_config_ca_url() ->
+    Acme = get_config_acme(),
+    case lists:keyfind(ca_url, 1, Acme) of
+	{ca_url, CAUrl} ->
+	    CAUrl;
+	false ->
+	    ?ERROR_MSG("No CA url has been specified", []),
+	    throw({error, configuration_ca_url})
+    end.
+
 
 -spec get_config_hosts() -> [bitstring()].
 get_config_hosts() ->
