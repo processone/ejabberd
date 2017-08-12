@@ -303,7 +303,7 @@ renew_certificates0(CAUrl) ->
     %% Format the result to send back to ejabberdctl
     format_get_certificates_result(SavedCerts).
 
--spec renew_certificate(url(), data_cert(), jose_jwk:key()) -> 
+-spec renew_certificate(url(), {bitstring(), data_cert()}, jose_jwk:key()) -> 
 			       {'ok', bitstring(), _} | 
 			       {'error', bitstring(), _}.
 renew_certificate(CAUrl, {DomainName, _} = Cert, PrivateKey) ->
@@ -315,7 +315,7 @@ renew_certificate(CAUrl, {DomainName, _} = Cert, PrivateKey) ->
     end.
 
 
--spec cert_to_expire(data_cert()) -> boolean().
+-spec cert_to_expire({bitstring(), data_cert()}) -> boolean().
 cert_to_expire({DomainName, #data_cert{pem = Pem}}) ->
     Certificate = pem_to_certificate(Pem),
     Validity = get_utc_validity(Certificate),
@@ -384,7 +384,7 @@ format_certificate(DataCert, Verbose) ->
 	    fail_format_certificate(DomainName)
     end.
 
--spec format_certificate_plain(bitstring(), string(), string()) -> string().
+-spec format_certificate_plain(bitstring(), {expired | ok, string()}, string()) -> string().
 format_certificate_plain(DomainName, NotAfter, Path) ->
     Result = lists:flatten(io_lib:format(
 			     "  Domain: ~s~n" 
@@ -393,7 +393,7 @@ format_certificate_plain(DomainName, NotAfter, Path) ->
 			     [DomainName, format_validity(NotAfter), Path])),
     Result.
 
--spec format_certificate_verbose(bitstring(), string(), bitstring()) -> string().
+-spec format_certificate_verbose(bitstring(), {expired | ok, string()}, bitstring()) -> string().
 format_certificate_verbose(DomainName, NotAfter, PemCert) ->
     Result = lists:flatten(io_lib:format(
 			     "  Domain: ~s~n" 
@@ -503,7 +503,7 @@ revoke_certificate1(CAUrl, {file, File}) ->
     end.
 	
 
--spec revoke_certificate2(url(), data_cert()) -> ok.
+-spec revoke_certificate2(url(), pem()) -> ok.
 revoke_certificate2(CAUrl, PemEncodedCert) ->
     {Certificate, CertPrivateKey} = prepare_certificate_revoke(PemEncodedCert),
 
@@ -519,7 +519,7 @@ parse_revoke_cert_argument([$f, $i, $l, $e, $:|File]) ->
 parse_revoke_cert_argument([$d, $o, $m, $a, $i, $n, $: | Domain]) ->
     {domain, list_to_bitstring(Domain)}.
 
--spec prepare_certificate_revoke(pem()) -> bitstring().
+-spec prepare_certificate_revoke(pem()) -> {bitstring(), jose_jwk:key()}.
 prepare_certificate_revoke(PemEncodedCert) ->
     PemList = public_key:pem_decode(PemEncodedCert),
     PemCertEnc = lists:keyfind('Certificate', 1, PemList),
@@ -527,7 +527,7 @@ prepare_certificate_revoke(PemEncodedCert) ->
     DerCert = public_key:der_encode('Certificate', PemCert),
     Base64Cert = base64url:encode(DerCert),
 
-    Key = find_private_key_in_pem(PemEncodedCert),    
+    {ok, Key} = find_private_key_in_pem(PemEncodedCert),    
     {Base64Cert, Key}.
 
 -spec domain_certificate_exists(bitstring()) -> {bitstring(), data_cert()} | false.    
@@ -755,7 +755,7 @@ find_private_key_in_pem(Pem) ->
 	PemKey ->
 	    Key = public_key:pem_entry_decode(PemKey),
 	    JoseKey = jose_jwk:from_key(Key),
-	    JoseKey
+	    {ok, JoseKey}
     end.
 	    
 
