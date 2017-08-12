@@ -11,7 +11,7 @@
          s2s_out_handle_info/2, s2s_out_closed/2, 
          s2s_out_terminate/2, s2s_out_established/1]).
 %% server part hooks
--export([s2s_in_stream_init/2, s2s_in_stream_features/2,
+-export([s2s_in_stream_started/1, s2s_in_stream_features/2,
          s2s_in_unauthenticated_packet/2, s2s_in_authenticated_packet/2,
          s2s_in_handle_call/3, s2s_in_handle_info/2,
          s2s_in_closed/2, s2s_in_terminate/2]).
@@ -28,6 +28,11 @@
         is_record(Pkt, sm_a) or
         is_record(Pkt, sm_r)).
 
+% replace to separate file
+
+-record(s2s, {fromto = {<<"">>, <<"">>} :: {binary(), binary()} | '_',
+              pid = self()              :: pid() | '_' | '$1'}).
+
 -type state() :: map().
 
 %%%=============================================================================
@@ -35,8 +40,8 @@
 %%%=============================================================================
 start(Host, _Opts) ->
     ejabberd_hooks:add(s2s_out_init, Host, ?MODULE, s2s_out_stream_init, 50),
-    ejabberd_hooks:add(s2s_out_authenticated_features, 
-                       Host, ?MODULE, s2s_out_stream_features, 50),
+    % ejabberd_hooks:add(s2s_out_authenticated_features, 
+    %                    Host, ?MODULE, s2s_out_stream_features, 50),
     ejabberd_hooks:add(s2s_out_packet, Host, ?MODULE, s2s_out_packet, 50),
     ejabberd_hooks:add(s2s_out_handle_recv, 
                        Host, ?MODULE, s2s_out_handle_recv, 50),
@@ -51,7 +56,8 @@ start(Host, _Opts) ->
     ejabberd_hooks:add(s2s_out_established,
                        Host, ?MODULE, s2s_out_established, 50),
     %% server part
-    ejabberd_hooks:add(s2s_in_init, ?MODULE, s2s_in_stream_init, 50),
+    ejabberd_hooks:add(s2s_in_stream_started,
+                       Host, ?MODULE, s2s_in_stream_started, 50),
     ejabberd_hooks:add(s2s_in_post_auth_features,
                        Host, ?MODULE, s2s_in_stream_features, 50),
     ejabberd_hooks:add(s2s_in_unauthenticated_packet,
@@ -86,9 +92,10 @@ stop(Host) ->
     ejabberd_hooks:delete(s2s_out_established,
                           Host, ?MODULE, s2s_out_established, 50),
     %% server part
+    ejabberd_hooks:delete(s2s_in_stream_started,
+                          Host, ?MODULE, s2s_in_stream_started, 50),
     ejabberd_hooks:delete(s2s_in_post_auth_features,
                           Host, ?MODULE, s2s_in_stream_features, 50),
-    % ejabberd_hooks:delete(s2s_in_init, ?MODULE, s2s_in_init),
     ejabberd_hooks:delete(s2s_in_unauthenticated_packet,
                           Host, ?MODULE, s2s_in_unauthenticated_packet, 50),
     ejabberd_hooks:delete(s2s_in_authenticated_packet,
@@ -149,8 +156,8 @@ s2s_out_stream_features(#{mgmt_state := MgmtState,
                             mgmt_queue => p1_queue:new(QueueType)};
                 _ ->
                     #{mgmt_old_state := #{mgmt_previd := Id}} = State,
-                    State1 = send(State, #sm_resume{h = 0, xmlns = Xmlns, previd = Id}),
-                    State1#{mgmt_xmlns => Xmlns, mgmt_state => pending}
+                    send(State#{mgmt_xmlns => Xmlns, mgmt_state => pending},
+                         #sm_resume{h = 0, xmlns = Xmlns, previd = Id})
             end;
         _ ->
             State
@@ -181,6 +188,7 @@ s2s_out_established(State) ->
     State.
 
 s2s_out_packet(#{mgmt_state := pending} = State, #sm_resumed{} = Pkt) ->
+    % нужно исправить
     {stop, handle_resumed(Pkt, State)};
 s2s_out_packet(#{mgmt_state := MgmtState} = State, Pkt)
   when ?is_sm_packet(Pkt) ->
@@ -203,10 +211,10 @@ s2s_out_handle_send(#{mgmt_state := MgmtState, lang := Lang} = State, Pkt, SendR
             case maps:get(mgmt_is_resent, Meta, false) of
                 false ->
                     case mod_stream_mgmt:mgmt_queue_add(State, Pkt) of
-                        % #{mgmt_max_queue := exceeded} = State1 ->
-                        %     Err = xmpp:serr_policy_violation(
-                        %                 <<"Too many unacked stanzas">>, Lang),
-                        %     send(State1, Err);
+                        #{mgmt_max_queue := exceeded} = State1 ->
+                            Err = xmpp:serr_policy_violation(
+                                        <<"Too many unacked stanzas">>, Lang),
+                            send(State1, Err);
                         State1 when MgmtState == active, SendResult == ok ->
                             send_rack(State1);
                         State1 ->
@@ -259,17 +267,6 @@ s2s_out_handle_recv(#{mgmt_state := pending,
                 send(State2, #sm_enable{xmlns = Xmlns})
     end,
     resend_unacked_stanzas(State3, Queue);
-s2s_out_handle_recv(#{lang := Lang} = State, El, {error, Why}) -> % для сервера тоже добавить
-    Xmlns = xmpp:get_ns(El),
-    if Xmlns == ?NS_STREAM_MGMT_2; Xmlns == ?NS_STREAM_MGMT_3 ->
-            Txt = xmpp:io_format_error(Why),
-            Err = #sm_failed{reason = 'bad-request',
-                             text = xmpp:mk_text(Txt, Lang),
-                             xmlns = Xmlns},
-            send(State, Err);
-       true ->
-            State
-    end;
 s2s_out_handle_recv(State, _El, _Pkt) ->
     State.
 
@@ -298,14 +295,14 @@ s2s_out_terminate(State, _Reason) ->
 
 %% server part
 
-s2s_in_stream_init({ok, #{server_host := Host} = State}, _Opts) ->
+s2s_in_stream_started(#{server_host := Host} = State) ->
     Timeout = get_resume_timeout(Host),
     MaxTimeout = get_max_resume_timeout(Host, Timeout),
-    {ok, State#{mgmt_state => inactive,
-                mgmt_timeout => Timeout,
-                mgmt_max_timeout => MaxTimeout,
-                mgmt_stanzas_in => 0}};
-s2s_in_stream_init(State, _Opts) ->
+    State#{mgmt_state => inactive,
+           mgmt_timeout => Timeout,
+           mgmt_max_timeout => MaxTimeout,
+           mgmt_stanzas_in => 0};
+s2s_in_stream_started(State) ->
     State.
 
 s2s_in_stream_features(Acc, _Host) ->
@@ -313,14 +310,15 @@ s2s_in_stream_features(Acc, _Host) ->
      #feature_sm{xmlns = ?NS_STREAM_MGMT_3}| Acc].
 
 s2s_in_unauthenticated_packet(State, Pkt) when ?is_sm_packet(Pkt) ->
-    Err = #sm_failed{reason = 'unexpected-request', xmlns = ?NS_STREAM_MGMT_3},
+    Err = #sm_failed{reason = 'unexpected-request',
+                     xmlns = ?NS_STREAM_MGMT_3},
     {stop, send(State, Err)};
 s2s_in_unauthenticated_packet(State, _Pkt) ->
     State.
 
-s2s_in_authenticated_packet(#{mgmt_state := inactive} = State, #sm_resume{} = Pkt) ->
-    State1 = handle_resume(State, Pkt),
-    {stop, State1};
+s2s_in_authenticated_packet(#{mgmt_state := inactive} = State,
+                            #sm_resume{} = Pkt) ->
+    {stop, handle_resume(State, Pkt)};
 s2s_in_authenticated_packet(#{mgmt_state := MgmtState} = State, Pkt)
   when ?is_sm_packet(Pkt) ->
     if MgmtState == active; MgmtState == pending ->
@@ -349,13 +347,12 @@ s2s_in_handle_info(#{mgmt_state := pending, remote_server := RServer,
 s2s_in_handle_info(State, _Msg) ->
   State.
 
-% Should we filter reasons?
 s2s_in_closed(#{mgmt_state := active} = State, _Reason) ->
     {stop, transition_to_pending(State)};
 s2s_in_closed(State, _Reason) ->
     State.
 
-% it isn't importand: we can delete it and delete from ejabberd_s2s_in module
+% it isn't important: we can delete it and delete from ejabberd_s2s_in module
 % ejabberd_hooks:run_fold(..)
 s2s_in_terminate(#{mgmt_state := resumed,
                    remote_server := RServer} = State, _Reason) ->
@@ -513,17 +510,18 @@ transition_to_resume(#{mgmt_state := active,
     route_unacked_stanzas(State, Queue),
     State;
 transition_to_resume(#{mgmt_state := active,
-                       remote_server := RServer,
                        server_host := Server,
+                       remote_server := RServer,
                        mgmt_connection_timeout := Timeout} = State) ->
     State1 = mod_stream_mgmt:cancel_ack_timer(State),
     ?DEBUG("Try to connect to remote server ~s", [RServer]),
-    {ok, Pid} =
-        ejabberd_s2s:start_connection(jid:make(Server),
-                                      jid:make(RServer),
-                                      [{resume, State1}]),
-    erlang:start_timer(Timeout, Pid, connection_timeout),
-    State1;
+    case resume(Server, RServer, [{resume, State1}]) of
+      {ok, Pid} ->
+        erlang:start_timer(Timeout, Pid, connection_timeout),
+        State1;
+      _ ->
+        State1
+    end;
 transition_to_resume(#{mgmt_state := resume, mod := Mod} = State) ->    
     Mod:connect(self()),
     State;
@@ -542,6 +540,22 @@ transition_to_pending(#{mgmt_state := active,
 transition_to_pending(State) ->
     State.
 
+resume(From, To, Opts) ->
+    {ok, Pid} = ejabberd_s2s_out:start(From, To, Opts),
+    F = fun() ->
+          mnesia:write(#s2s{fromto = {From, To}, pid = Pid}),
+          Pid
+        end,
+    TRes = mnesia:transaction(F),
+    case TRes of
+      {atomic, Pid} ->
+          ejabberd_s2s_out:connect(Pid),
+          {ok, Pid};
+      {aborted, _Reason} ->
+          ejabberd_s2s_out:stop(Pid),
+          error
+    end.
+
 -spec resume_session(pid(), {binary(), integer()}) -> {resume, state()} | error.
 resume_session(Pid, {RServer, UniqueId}) ->
     ejabberd_s2s_in:call(Pid, {resume_session, RServer, UniqueId}, timer:seconds(15)).
@@ -549,7 +563,7 @@ resume_session(Pid, {RServer, UniqueId}) ->
 -spec inherit_session_state({binary(), binary()}, list()) -> {ok, state()}|
                                                              {error, binary()}.
 inherit_session_state(_ResumeId, [])  ->
-    {error, <<"Previous session PID is dead">>};
+    {error, <<"Previous session PID not found">>};
 inherit_session_state({RServer, UniqueId} = ResumeId, [{_, Pid, _, _}|Specs])
   when is_pid(Pid) ->
     try resume_session(Pid, {RServer, UniqueId}) of

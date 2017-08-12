@@ -176,14 +176,16 @@ handle_stream_start(_StreamStart, #{lserver := LServer} = State) ->
 	    send(State, xmpp:serr_host_unknown());
 	true ->
 	    ServerHost = ejabberd_router:host_of_route(LServer),
-	    State#{server_host => ServerHost}
+	    UniqueId = p1_time_compat:unique_integer(),
+	    State1 = State#{server_host => ServerHost,
+	    				unique_id => UniqueId}, % for xep-0198 s2s
+	    ejabberd_hooks:run_fold(s2s_in_stream_started, ServerHost, State1, [])
     end.
 
 handle_stream_end(Reason, #{server_host := LServer} = State) ->
     State1 = State#{stop_reason => Reason},
     ejabberd_hooks:run_fold(s2s_in_closed, LServer, State1, [Reason]).
-
-% unique_id можно заменить в будущем
+    
 handle_stream_established(State) ->
     set_idle_timeout(State#{established => true}).
 
@@ -268,7 +270,6 @@ init([State, Opts]) ->
                    false -> [compression_none | TLSOpts1];
                    true -> TLSOpts1
     end,
-    UniqueId = p1_time_compat:unique_integer(),
     State1 = State#{tls_options => TLSOpts2,
 		    auth_domains => sets:new(),
 		    xmlns => ?NS_SERVER,
@@ -277,8 +278,7 @@ init([State, Opts]) ->
 		    lserver => ?MYNAME,
 		    server_host => ?MYNAME,
 		    established => false,
-		    shaper => Shaper,
-		    unique_id => UniqueId}, % for xep-0198 s2s
+		    shaper => Shaper},
     ejabberd_hooks:run_fold(s2s_in_init, {ok, State1}, [Opts]).
 
 handle_call(Request, From, #{server_host := LServer} = State) ->
