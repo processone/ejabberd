@@ -291,7 +291,7 @@ prepare_get_request(Url, HandleRespFun, ResponseType) ->
 
 -spec sign_json_jose(jose_jwk:key(), bitstring(), nonce()) -> {_, jws()}.
 sign_json_jose(Key, Json, Nonce) ->
-    PubKey = jose_jwk:to_public(Key),
+    PubKey = ejabberd_acme:to_public(Key),
     {_, BinaryPubKey} = jose_jwk:to_binary(PubKey),
     PubKeyJson = jiffy:decode(BinaryPubKey),
     %% TODO: Ensure this works for all cases
@@ -383,11 +383,11 @@ decode(Json) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -spec failed_http_request({ok, _} | {error, _}, url()) -> {error, _}.
-failed_http_request({ok, {{_, Code, _}, _Head, Body}}, Url) ->
+failed_http_request({ok, {{_, Code, Reason}, _Head, Body}}, Url) ->
     ?ERROR_MSG("Got unexpected status code from <~s>: ~B, Body: ~s",
 	       [Url, Code, Body]),
-    {error, unexpected_code};
+    throw({error, {unexpected_code, Code, Reason}});
 failed_http_request({error, Reason}, Url) ->
     ?ERROR_MSG("Error making a request to <~s>: ~p",
 	       [Url, Reason]),
-    {error, Reason}.
+    throw({error, Reason}).
