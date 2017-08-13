@@ -303,9 +303,9 @@ tls_options(#{lserver := LServer, tls_options := DefaultOpts,
 		   {true, CertFile} when CertFile /= undefined -> DefaultOpts;
 		   {_, _} ->
 		       case ejabberd_config:get_option(
-			      {c2s_certfile, LServer},
+			      {domain_certfile, LServer},
 			      ejabberd_config:get_option(
-				{domain_certfile, LServer})) of
+				{c2s_certfile, LServer})) of
 			   undefined -> DefaultOpts;
 			   CertFile -> lists:keystore(certfile, 1, DefaultOpts,
 						      {certfile, CertFile})

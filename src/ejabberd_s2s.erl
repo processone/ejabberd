@@ -199,9 +199,9 @@ dirty_get_connections() ->
 -spec tls_options(binary(), [proplists:property()]) -> [proplists:property()].
 tls_options(LServer, DefaultOpts) ->
     TLSOpts1 = case ejabberd_config:get_option(
-		      {s2s_certfile, LServer},
+		      {domain_certfile, LServer},
 		      ejabberd_config:get_option(
-			{domain_certfile, LServer})) of
+			{s2s_certfile, LServer})) of
 		   undefined -> DefaultOpts;
 		   CertFile -> lists:keystore(certfile, 1, DefaultOpts,
 					      {certfile, CertFile})
