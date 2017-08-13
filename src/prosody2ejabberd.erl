@@ -80,7 +80,8 @@ convert_dir(Path, Host, Type) ->
 			      case eval_file(FilePath) of
 				  {ok, Data} ->
 				      Name = iolist_to_binary(filename:rootname(File)),
-				      convert_data(Host, Type, Name, Data);
+				      convert_data(url_decode(Host), Type,
+						   url_decode(Name), Data);
 				  Err ->
 				      Err
 			      end
@@ -223,12 +224,10 @@ convert_data(Host, "privacy", User, [Data]) ->
 				end
 			end, Lists)},
     mod_privacy:set_list(Priv);
-convert_data(PubSub, "pubsub", NodeId, [Data]) ->
-    HostStr = url_decode(PubSub),
+convert_data(HostStr, "pubsub", Node, [Data]) ->
     case decode_pubsub_host(HostStr) of
 	Host when is_binary(Host);
 		  is_tuple(Host) ->
-	    Node = url_decode(NodeId),
 	    Type = node_type(Host),
 	    NodeData = convert_node_config(HostStr, Data),
 	    DefaultConfig = mod_pubsub:config(Host, default_node_config, []),
