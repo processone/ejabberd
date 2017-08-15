@@ -75,8 +75,8 @@ start(Host, _Opts) ->
 
 stop(Host) ->
     ejabberd_hooks:delete(s2s_out_init, Host, ?MODULE, s2s_out_stream_init, 50),
-    ejabberd_hooks:delete(s2s_out_authenticated_features, 
-                          Host, ?MODULE, s2s_out_stream_features, 50),
+    % ejabberd_hooks:delete(s2s_out_authenticated_features, 
+    %                       Host, ?MODULE, s2s_out_stream_features, 50),
     ejabberd_hooks:delete(s2s_out_packet, Host, ?MODULE, s2s_out_packet, 50),
     ejabberd_hooks:delete(s2s_out_handle_recv, 
                           Host, ?MODULE, s2s_out_handle_recv, 50),
@@ -88,7 +88,6 @@ stop(Host) ->
                           Host, ?MODULE, s2s_out_closed, 50),
     ejabberd_hooks:delete(s2s_out_terminate,
                        Host, ?MODULE, s2s_out_terminate, 50),
-    % delete after implementation of server part
     ejabberd_hooks:delete(s2s_out_established,
                           Host, ?MODULE, s2s_out_established, 50),
     %% server part
@@ -116,8 +115,7 @@ reload(_Host, _NewOpts, _OldOpts) ->
 depends(_Host, _Opts) -> [].
 
 %% client part
-s2s_out_stream_init({ok, #{server_host := ServerHost} = State}, Opts) ->
-    
+s2s_out_stream_init({ok, #{server_host := ServerHost} = State}, Opts) -> 
     State1 = State#{mgmt_timeout => get_resume_timeout(ServerHost),
                     mgmt_queue_type => get_queue_type(ServerHost),
                     mgmt_max_queue => get_max_ack_queue(ServerHost),
@@ -125,39 +123,41 @@ s2s_out_stream_init({ok, #{server_host := ServerHost} = State}, Opts) ->
                     mgmt_connection_timeout => get_connection_timeout(ServerHost),
                     mgmt_stanzas_out => 0,
                     mgmt_stanzas_req => 0},
-
+    
     case proplists:get_value(resume, Opts) of
         OldState when OldState /= undefined ->
-            {ok, State1#{mgmt_old_state => OldState, mgmt_state => resume}};
+            {ok, State1#{mgmt_state => connecting, mgmt_old_state => OldState}};
         _ ->
             {ok, State1#{mgmt_state => inactive}}
     end;            
 s2s_out_stream_init(Acc, _Opts) ->
     Acc.
 
-s2s_out_stream_features(#{mgmt_state := MgmtState,
-                          mgmt_timeout := Resume} = State, 
+s2s_out_stream_features(#{mgmt_timeout := Timeout,
+                          mgmt_queue_type := QueueType} = State, 
                         #stream_features{sub_els = SubEls}) ->
     case check_stream_mgmt_support(SubEls) of
         Xmlns when Xmlns == ?NS_STREAM_MGMT_2; Xmlns == ?NS_STREAM_MGMT_3 ->
-            case MgmtState of
-                inactive -> 
-                    #{mgmt_queue_type := QueueType} = State,
-                    State1 =                   
-                        if Resume > 0 ->
-                                send(State, #sm_enable{xmlns = Xmlns,
-                                                       resume = true,
-                                                       max = Resume});
-                           true ->
-                                send(State, #sm_enable{xmlns = Xmlns})
-                        end,
-                    State1#{mgmt_xmlns => Xmlns,
-                            mgmt_state => wait_for_enabled,
-                            mgmt_queue => p1_queue:new(QueueType)};
+            case State of
+                #{mgmt_old_state := OldState} ->
+                    #{mgmt_previd := Id} = OldState,
+                    State1 = State#{mgmt_state => pending,
+                                    mgmt_xmlns => Xmlns},
+                    send(State1, #sm_resume{h = 0,
+                                            xmlns = Xmlns,
+                                            previd = Id});
                 _ ->
-                    #{mgmt_old_state := #{mgmt_previd := Id}} = State,
-                    send(State#{mgmt_xmlns => Xmlns, mgmt_state => pending},
-                         #sm_resume{h = 0, xmlns = Xmlns, previd = Id})
+                    Res = if Timeout > 0 ->
+                                  #sm_enable{xmlns = Xmlns,
+                                             resume = true,
+                                             max = Timeout};
+                             true ->
+                                  #sm_enable{xmlns = Xmlns}
+                          end,
+                    State1 = State#{mgmt_state => wait_for_enabled,
+                                    mgmt_xmlns => Xmlns,
+                                    mgmt_queue => p1_queue:new(QueueType)},
+                    send(State1, Res)
             end;
         _ ->
             State
@@ -165,30 +165,34 @@ s2s_out_stream_features(#{mgmt_state := MgmtState,
 s2s_out_stream_features(State, _) ->
     State.
 
-s2s_out_established(#{mgmt_state := resume} = State) ->
-    #{mgmt_old_state := #{mgmt_previd := Id}} = State,
-    State1 = send(State, #sm_resume{h = 0, xmlns = ?NS_STREAM_MGMT_3, previd = Id}),
-    State1#{mgmt_xmlns => ?NS_STREAM_MGMT_3, mgmt_state => pending};
-s2s_out_established(#{mgmt_timeout := Resume,
+s2s_out_established(#{mgmt_state := connecting,
+                      mgmt_old_state := OldState} = State) ->
+    #{mgmt_previd := Id} = OldState,
+    State1 = State#{mgmt_state => pending,
+                    mgmt_xmlns => ?NS_STREAM_MGMT_3},
+    send(State1, #sm_resume{h = 0,
+                            xmlns = ?NS_STREAM_MGMT_3,
+                            previd = Id});
+s2s_out_established(#{mgmt_timeout := Timeout,
                       mgmt_queue_type := QueueType} = State) ->
     Xmlns = ?NS_STREAM_MGMT_3,
-    State1 = 
-        if Resume > 0 ->
-                send(State, #sm_enable{xmlns = Xmlns,
-                                       resume = true,
-                                       max = Resume});
+    Res = 
+        if Timeout > 0 ->
+                #sm_enable{xmlns = Xmlns,
+                           resume = true,
+                           max = Timeout};
            true ->
-                send(State, #sm_enable{xmlns = Xmlns})
+                #sm_enable{xmlns = Xmlns}
         end,
 
-    State1#{mgmt_state => wait_for_enabled,
-            mgmt_xmlns => Xmlns,
-            mgmt_queue => p1_queue:new(QueueType)}; 
+    State1 = State#{mgmt_state => wait_for_enabled,
+                    mgmt_xmlns => Xmlns,
+                    mgmt_queue => p1_queue:new(QueueType)},
+    send(State1, Res); 
 s2s_out_established(State) ->
     State.
 
 s2s_out_packet(#{mgmt_state := pending} = State, #sm_resumed{} = Pkt) ->
-    % нужно исправить
     {stop, handle_resumed(Pkt, State)};
 s2s_out_packet(#{mgmt_state := MgmtState} = State, Pkt)
   when ?is_sm_packet(Pkt) ->
@@ -234,9 +238,9 @@ s2s_out_handle_info(#{mgmt_ack_timer := TRef, remote_server := RServer,
     ?DEBUG("Timed out waiting for stream management "
            "acknowledgement of ~s", [RServer]),
     Mod:stop(State);
-s2s_out_handle_info(#{mgmt_state := resume,
+s2s_out_handle_info(#{mgmt_state := connecting,
                       remote_server := RServer, mod := Mod} = State,
-                     {timeout, _TRef, connection_timeout}) ->
+                    {timeout, _TRef, connection_timeout}) ->
     ?DEBUG("Timed out waiting for connection "
            "establishment for resumption previous session with ~s", [RServer]),
     Mod:stop(State#{mgmt_state => timeout});
@@ -249,7 +253,7 @@ s2s_out_handle_recv(#{mgmt_state := wait_for_enabled,
     State#{mgmt_state => inactive};
 s2s_out_handle_recv(#{mgmt_state := pending,
                       remote_server := RServer,
-                      mgmt_timeout := Resume,
+                      mgmt_timeout := Timeout,
                       mgmt_xmlns := Xmlns,
                       mgmt_queue_type := QueueType,
                       mgmt_old_state := OldState} = State, _El, #sm_failed{}) ->
@@ -259,10 +263,10 @@ s2s_out_handle_recv(#{mgmt_state := pending,
                     mgmt_queue => p1_queue:new(QueueType)},
     State2 = maps:remove(mgmt_old_state, State1),
     State3 =
-        if Resume > 0 ->
+        if Timeout > 0 ->
                 send(State2, #sm_enable{xmlns = Xmlns,
                                         resume = true,
-                                        max = Resume});
+                                        max = Timeout});
            true ->
                 send(State2, #sm_enable{xmlns = Xmlns})
     end,
@@ -270,8 +274,7 @@ s2s_out_handle_recv(#{mgmt_state := pending,
 s2s_out_handle_recv(State, _El, _Pkt) ->
     State.
 
-% check reason ?
-s2s_out_closed(#{mgmt_state := resume} = State, _) ->
+s2s_out_closed(#{mgmt_state := connecting} = State, _) ->
     {stop, transition_to_resume(State#{stream_state => connecting})};
 s2s_out_closed(State, _) ->
     State.
@@ -522,7 +525,7 @@ transition_to_resume(#{mgmt_state := active,
       _ ->
         State1
     end;
-transition_to_resume(#{mgmt_state := resume, mod := Mod} = State) ->    
+transition_to_resume(#{mgmt_state := connecting, mod := Mod} = State) ->    
     Mod:connect(self()),
     State;
 transition_to_resume(State) ->
@@ -619,7 +622,8 @@ handle_resume(#{lang := Lang, remote_server := RServer} = State,
 
 -spec handle_resumed(sm_resumed(), state()) -> state().
 handle_resumed(#sm_resumed{h = H, previd = _Id}, 
-               #{remote_server := RServer, mgmt_old_state := OldState} = State) ->
+               #{remote_server := RServer,
+                 mgmt_old_state := OldState} = State) ->
     ResumedState = copy_state(OldState, State),
     #{mgmt_xmlns := Xmlns, mgmt_queue := Queue} = ResumedState, 
     State1 = check_h_attribute(ResumedState, H),
@@ -628,7 +632,7 @@ handle_resumed(#sm_resumed{h = H, previd = _Id},
     send(State2, #sm_r{xmlns = Xmlns}).
 
 resend_unacked_stanzas(#{remote_server := RServer} = State, Queue) 
-    when ?qlen(Queue) > 0 ->
+  when ?qlen(Queue) > 0 ->
     ?DEBUG("Resending ~B unacknowledged stanza(s) to ~s",
            [p1_queue:len(Queue), RServer]),
     p1_queue:foldl(
@@ -640,7 +644,7 @@ resend_unacked_stanzas(State, _) ->
     State.
 
 route_unacked_stanzas(#{remote_server := RServer} = State, Queue)
-    when ?qlen(Queue) > 0 ->
+  when ?qlen(Queue) > 0 ->
     ?DEBUG("Re-rout ~B unacknowledged stanza(s) to ~s",
            [p1_queue:len(Queue), RServer]),
     p1_queue:foreach(
@@ -651,7 +655,7 @@ route_unacked_stanzas(#{remote_server := RServer} = State, Queue)
 route_unacked_stanzas(_State, _Queue) ->
   ok.
 
-bounce_errors(#{mgmt_state := resume}, Queue)
+bounce_errors(_State, Queue)
   when ?qlen(Queue) > 0 ->
     p1_queue:foreach(
         fun({_, _, Pkt}) ->
@@ -662,14 +666,19 @@ bounce_errors(_State, _) ->
     ok.
 
 -spec copy_state(state(), state()) -> state().
-copy_state(#{mgmt_timeout := Timeout,
-             mgmt_xmlns := Xmlns,
+copy_state(#{mgmt_xmlns := Xmlns,
              mgmt_queue := Queue,
              mgmt_stanzas_out := NumStanzasOut,
-             mgmt_previd := Id} = _OldState, NewState) ->
-    NewState#{mgmt_timeout => Timeout,
-              mgmt_xmlns => Xmlns,
-              mgmt_queue => Queue,
+             mgmt_previd := Id} = _OldState,
+           #{mgmt_queue_type := QueueType} = NewState) ->
+
+    Queue1 = case QueueType of
+                 ram -> p1_queue:file_to_ram(Queue);
+                 _ -> p1_queue:ram_to_file(Queue)
+             end,
+
+    NewState#{mgmt_xmlns => Xmlns,
+              mgmt_queue => Queue1,
               mgmt_stanzas_out => NumStanzasOut,
               mgmt_previd => Id}.
 
@@ -749,16 +758,11 @@ get_ack_timeout(Host) ->
         T -> timer:seconds(T)
     end.
 
-% get_max_unacked_stanzas(Host) ->
-%     gen_mod:get_module_opt(Host, ?MODULE, max_unacked_stanzas, 0).
-
 get_connection_timeout(Host) ->
     gen_mod:get_module_opt(Host, ?MODULE, connection_timeout, 120000).
 
 mod_opt_type(connection_timeout) ->
     fun(I) when is_integer(I), I >= 0 -> I end;
-% mod_opt_type(max_unacked_stanzas) ->
-%     fun(I) when is_integer(I), I >= 0 -> I end;
 mod_opt_type(max_ack_queue) ->
     fun(I) when is_integer(I), I > 0 -> I;
        (infinity) -> infinity
@@ -776,4 +780,4 @@ mod_opt_type(queue_type) ->
        (ram) -> ram
     end;
 mod_opt_type(_) -> [max_ack_queue, ack_timeout, resume_timeout, max_resume_timeout,
-                    queue_type, connection_timeout]. %max_unacked_stanzas,
+                    queue_type, connection_timeout].
