@@ -8,6 +8,7 @@ ENV EJABBERD_BRANCH=17.08 \
     EJABBERD_S2S_SSL=true \
     EJABBERD_HOME=/opt/ejabberd \
     EJABBERD_DEBUG_MODE=false \
+    ERLANG_PACKAGE_VERSION=1:17.5.3 \
     HOME=$EJABBERD_HOME \
     PATH=$EJABBERD_HOME/bin:/usr/sbin:/usr/bin:/sbin:/bin \
     DEBIAN_FRONTEND=noninteractive \
@@ -26,7 +27,7 @@ RUN groupadd -r $EJABBERD_USER \
 
 # Install packages and perform cleanup
 RUN set -x \
-    && buildDeps=' \
+    && buildDeps=" \
         git-core \
         build-essential \
         automake \
@@ -35,25 +36,35 @@ RUN set -x \
         libexpat-dev \
         libyaml-dev \
         libsqlite3-dev \
-        erlang-src erlang-dev \
-    ' \
-    && requiredAptPackages=' \
+        erlang-src=$ERLANG_PACKAGE_VERSION erlang-dev=$ERLANG_PACKAGE_VERSION \
+    " \
+    && requiredAptPackages=" \
         locales \
         ldnsutils \
         python2.7 \
         python-jinja2 \
         ca-certificates \
         libyaml-0-2 \
-        erlang-base erlang-snmp erlang-ssl erlang-ssh erlang-webtool \
-        erlang-tools erlang-xmerl erlang-corba erlang-diameter erlang-eldap \
-        erlang-eunit erlang-ic erlang-odbc erlang-os-mon \
-        erlang-parsetools erlang-percept erlang-typer erlang-inets \
+        erlang-base=$ERLANG_PACKAGE_VERSION erlang-snmp=$ERLANG_PACKAGE_VERSION \
+        erlang-ssl=$ERLANG_PACKAGE_VERSION erlang-ssh=$ERLANG_PACKAGE_VERSION \
+        erlang-webtool=$ERLANG_PACKAGE_VERSION erlang-tools=$ERLANG_PACKAGE_VERSION \
+        erlang-xmerl=$ERLANG_PACKAGE_VERSION erlang-corba=$ERLANG_PACKAGE_VERSION \
+        erlang-diameter=$ERLANG_PACKAGE_VERSION erlang-eldap=$ERLANG_PACKAGE_VERSION \
+        erlang-eunit=$ERLANG_PACKAGE_VERSION erlang-ic=$ERLANG_PACKAGE_VERSION \
+        erlang-odbc=$ERLANG_PACKAGE_VERSION erlang-os-mon=$ERLANG_PACKAGE_VERSION \
+        erlang-parsetools=$ERLANG_PACKAGE_VERSION erlang-percept=$ERLANG_PACKAGE_VERSION \
+        erlang-typer=$ERLANG_PACKAGE_VERSION erlang-inets=$ERLANG_PACKAGE_VERSION \
+        erlang-mnesia=$ERLANG_PACKAGE_VERSION erlang-syntax-tools=$ERLANG_PACKAGE_VERSION \
+        erlang-asn1=$ERLANG_PACKAGE_VERSION erlang-crypto=$ERLANG_PACKAGE_VERSION \
+        erlang-dialyzer=$ERLANG_PACKAGE_VERSION erlang-public-key=$ERLANG_PACKAGE_VERSION \
+        erlang-runtime-tools=$ERLANG_PACKAGE_VERSION \
         python-mysqldb \
         imagemagick \
-    ' \
+    " \
     && apt-key adv \
         --keyserver keys.gnupg.net \
         --recv-keys 434975BD900CCBE4F7EE1B1ED208507CA14F4FCA \
+    && echo >> /etc/apt/sources.list deb http://packages.erlang-solutions.com/debian jessie contrib \
     && apt-get update \
     && apt-get install -y $buildDeps $requiredAptPackages --no-install-recommends \
     && dpkg-reconfigure locales && \
