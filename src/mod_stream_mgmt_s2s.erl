@@ -279,7 +279,8 @@ s2s_out_closed(#{mgmt_state := connecting} = State, _) ->
 s2s_out_closed(State, _) ->
     State.
 
-s2s_out_terminate(#{mgmt_state := active} = State, _Reason) ->
+s2s_out_terminate(#{mgmt_state := active, mgmt_queue := Queue} = State, _Reason) 
+  when ?qlen(Queue) > 0 ->
     transition_to_resume(State);
 s2s_out_terminate(#{mgmt_state := timeout,
                     mgmt_old_state := OldState} = State, _Reason) ->
