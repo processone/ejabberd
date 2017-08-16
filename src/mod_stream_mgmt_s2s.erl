@@ -13,7 +13,8 @@
 %% server part hooks
 -export([s2s_in_stream_started/1, s2s_in_stream_features/2,
          s2s_in_unauthenticated_packet/2, s2s_in_authenticated_packet/2,
-         s2s_in_handle_call/3, s2s_in_handle_info/2,
+         s2s_in_handle_info/2,
+         % s2s_in_handle_call/3, s2s_in_handle_info/2,
          s2s_in_closed/2, s2s_in_terminate/2]).
 
 -include("xmpp.hrl").
@@ -64,8 +65,8 @@ start(Host, _Opts) ->
                        Host, ?MODULE, s2s_in_unauthenticated_packet, 50),
     ejabberd_hooks:add(s2s_in_authenticated_packet,
                        Host, ?MODULE, s2s_in_authenticated_packet, 50),
-    ejabberd_hooks:add(s2s_in_handle_call,
-                       Host, ?MODULE, s2s_in_handle_call, 50),
+    % ejabberd_hooks:add(s2s_in_handle_call,
+    %                    Host, ?MODULE, s2s_in_handle_call, 50),
     ejabberd_hooks:add(s2s_in_handle_info,
                        Host, ?MODULE, s2s_in_handle_info, 50),
     ejabberd_hooks:add(s2s_in_closed,
@@ -99,8 +100,8 @@ stop(Host) ->
                           Host, ?MODULE, s2s_in_unauthenticated_packet, 50),
     ejabberd_hooks:delete(s2s_in_authenticated_packet,
                           Host, ?MODULE, s2s_in_authenticated_packet, 50),
-    ejabberd_hooks:delete(s2s_in_handle_call,
-                          Host, ?MODULE, s2s_in_handle_call, 50),
+    % ejabberd_hooks:delete(s2s_in_handle_call,
+    %                       Host, ?MODULE, s2s_in_handle_call, 50),
     ejabberd_hooks:delete(s2s_in_handle_info,
                           Host, ?MODULE, s2s_in_handle_info, 50),
     ejabberd_hooks:delete(s2s_in_closed,
@@ -333,23 +334,20 @@ s2s_in_authenticated_packet(#{mgmt_state := MgmtState} = State, Pkt)
 s2s_in_authenticated_packet(State, Pkt) ->
     mod_stream_mgmt:update_num_stanzas_in(State, Pkt).
 
-s2s_in_handle_call(#{mgmt_state := pending, mod:= Mod,
-                     remote_server := RServer, unique_id := UniqueId} = State,
-                    {resume_session, RServer, UniqueId}, From) ->
-    Mod:reply(From, {resume, State}),
-    {stop, State#{mgmt_state => resumed}};
-s2s_in_handle_call(#{mod := Mod} = State, {resume_session, _, _}, From) ->
-    Mod:reply(From, error),
-    {stop, State};
-s2s_in_handle_call(State, _Call, _From) ->
-    State.
-
 s2s_in_handle_info(#{mgmt_state := pending, remote_server := RServer,
                      mod := Mod} = State, {timeout, _, pending_timeout}) ->
     ?DEBUG("Timed out waiting for resumption of stream for ~s", [RServer]),
     Mod:stop(State);
+s2s_in_handle_info(#{mgmt_state := pending, mod:= Mod,
+                     remote_server := RServer, unique_id := UniqueId} = State,
+                   {_, From, {resume_session, RServer, UniqueId}}) ->
+    Mod:reply(From, {resume, State}),
+    {stop, State#{mgmt_state => resumed}};
+s2s_in_handle_info(#{mod := Mod} = State, {_, From, {resume_session, _, _}}) ->
+    Mod:reply(From, error),
+    {stop, State};
 s2s_in_handle_info(State, _Msg) ->
-  State.
+    State.
 
 s2s_in_closed(#{mgmt_state := active} = State, _Reason) ->
     {stop, transition_to_pending(State)};
@@ -560,34 +558,29 @@ resume(From, To, Opts) ->
           error
     end.
 
--spec resume_session(pid(), {binary(), integer()}) -> {resume, state()} | error.
-resume_session(Pid, {RServer, UniqueId}) ->
-    ejabberd_s2s_in:call(Pid, {resume_session, RServer, UniqueId}, timer:seconds(15)).
-
--spec inherit_session_state({binary(), binary()}, list()) -> {ok, state()}|
-                                                             {error, binary()}.
-inherit_session_state(_ResumeId, [])  ->
+get_old_session_state(_ResumeId, []) ->
     {error, <<"Previous session PID not found">>};
-inherit_session_state({RServer, UniqueId} = ResumeId, [{_, Pid, _, _}|Specs])
-  when is_pid(Pid) ->
-    try resume_session(Pid, {RServer, UniqueId}) of
+get_old_session_state({RServer, UniqueId} = ResumeId, [{_, Pid, _, _}|Specs])
+  when is_pid(Pid), Pid /= self() ->
+    try gen_fsm:sync_send_all_state_event(Pid,
+                    {resume_session, RServer, UniqueId}) of
         {resume, OldState} ->
             ejabberd_s2s_in:stop(Pid),
             {ok, OldState};
         error ->
-            inherit_session_state(ResumeId, Specs)
+            get_old_session_state(ResumeId, Specs)
     catch
         _:_ ->
-            inherit_session_state(ResumeId, Specs)
+            get_old_session_state(ResumeId, Specs)
     end;
-inherit_session_state(ResumeId, [_H|L] ) ->
-    inherit_session_state(ResumeId, L).
+get_old_session_state(ResumeId, [_H|L]) ->
+    get_old_session_state(ResumeId, L).
 
 handle_resume(#{lang := Lang, remote_server := RServer} = State,
               #sm_resume{previd = ResumeId, xmlns = Xmlns}) ->
     case misc:base64_to_term(ResumeId) of
         {term, {RServer, UniqueId}} ->
-            case inherit_session_state({RServer, UniqueId},
+            case get_old_session_state({RServer, UniqueId},
                         supervisor:which_children(ejabberd_s2s_in_sup)) of
                 {ok, OldState} ->
                     #{mgmt_stanzas_in := H,
@@ -619,7 +612,7 @@ handle_resume(#{lang := Lang, remote_server := RServer} = State,
                              text = xmpp:mk_text(Msg, Lang),
                              xmlns = Xmlns},
             send(State, Err)
-    end.                           
+    end.                         
 
 -spec handle_resumed(sm_resumed(), state()) -> state().
 handle_resumed(#sm_resumed{h = H, previd = _Id}, 
@@ -689,12 +682,14 @@ check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut,
   when H > NumStanzasOut ->
     ?DEBUG("~s acknowledged ~B stanzas," 
            "but only ~B were sent ", [RServer, H, NumStanzasOut]),
-    mod_stream_mgmt:mgmt_queue_drop(State#{mgmt_stanzas_out => H}, NumStanzasOut);
+    State;
+    % mod_stream_mgmt:mgmt_queue_drop(State#{mgmt_stanzas_out => H}, NumStanzasOut);
 check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut,
                     remote_server := RServer} = State, H) ->
     ?DEBUG("~s acknowledged ~B of ~B "
            "stanzas", [RServer, H, NumStanzasOut]),
-    mod_stream_mgmt:mgmt_queue_drop(State, H).
+    State.
+    % mod_stream_mgmt:mgmt_queue_drop(State, H).
 
 -spec add_resent_delay_info(state(), stanza(), erlang:timestamp()) -> stanza().
 add_resent_delay_info(#{server_host := LServer}, El, Time) ->
@@ -722,7 +717,7 @@ resend_rack(#{mgmt_ack_timer := _,
               mgmt_queue := Queue,
               mgmt_stanzas_out := NumStanzasOut,
               mgmt_stanzas_req := NumStanzasReq} = State) ->
-    State1 = mod_stream_mgmt:cancel_ack_timer(State),
+    State1 = State, %mod_stream_mgmt:cancel_ack_timer(State),
     case NumStanzasReq < NumStanzasOut andalso not p1_queue:is_empty(Queue) of
         true -> send_rack(State1);
         false -> State1
