@@ -682,14 +682,12 @@ check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut,
   when H > NumStanzasOut ->
     ?DEBUG("~s acknowledged ~B stanzas," 
            "but only ~B were sent ", [RServer, H, NumStanzasOut]),
-    State;
-    % mod_stream_mgmt:mgmt_queue_drop(State#{mgmt_stanzas_out => H}, NumStanzasOut);
+    mod_stream_mgmt:mgmt_queue_drop(State#{mgmt_stanzas_out => H}, NumStanzasOut);
 check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut,
                     remote_server := RServer} = State, H) ->
     ?DEBUG("~s acknowledged ~B of ~B "
            "stanzas", [RServer, H, NumStanzasOut]),
-    State.
-    % mod_stream_mgmt:mgmt_queue_drop(State, H).
+    mod_stream_mgmt:mgmt_queue_drop(State, H).
 
 -spec add_resent_delay_info(state(), stanza(), erlang:timestamp()) -> stanza().
 add_resent_delay_info(#{server_host := LServer}, El, Time) ->
@@ -717,7 +715,7 @@ resend_rack(#{mgmt_ack_timer := _,
               mgmt_queue := Queue,
               mgmt_stanzas_out := NumStanzasOut,
               mgmt_stanzas_req := NumStanzasReq} = State) ->
-    State1 = State, %mod_stream_mgmt:cancel_ack_timer(State),
+    State1 = mod_stream_mgmt:cancel_ack_timer(State),
     case NumStanzasReq < NumStanzasOut andalso not p1_queue:is_empty(Queue) of
         true -> send_rack(State1);
         false -> State1
