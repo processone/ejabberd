@@ -71,7 +71,12 @@ start(Host, _Opts) ->
     ejabberd_hooks:add(c2s_terminated, Host, ?MODULE, c2s_terminated, 50).
 
 stop(Host) ->
-    %% TODO: do something with global 'c2s_init' hook
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+	true ->
+	    ok;
+	false ->
+	    ejabberd_hooks:delete(c2s_init, ?MODULE, c2s_stream_init, 50)
+    end,
     ejabberd_hooks:delete(c2s_stream_started, Host, ?MODULE,
 			  c2s_stream_started, 50),
     ejabberd_hooks:delete(c2s_post_auth_features, Host, ?MODULE,
