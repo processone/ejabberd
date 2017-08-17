@@ -405,8 +405,6 @@ handle_resume(#{user := User, lserver := LServer, sockmod := SockMod,
 					      previd = AttrId}),
 	    State3 = resend_unacked_stanzas(State2),
 	    State4 = send(State3, #sm_r{xmlns = AttrXmlns}),
-	    %% TODO: move this to mod_client_state
-	    %% csi_flush_queue(State4),
 	    State5 = ejabberd_hooks:run_fold(c2s_session_resumed, LServer, State4, []),
 	    ?INFO_MSG("(~s) Resumed session for ~s",
 		      [SockMod:pp(Socket), jid:encode(JID)]),
