@@ -4,6 +4,7 @@ otp_release:
   - 17.5
   - 18.3
   - 19.2
+  - 20.0
 
 services:
   - riak
