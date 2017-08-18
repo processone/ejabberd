@@ -320,10 +320,10 @@ init_per_testcase(TestCase, OrigConfig) ->
             Password = ?config(password, Config),
             ejabberd_auth:try_register(User, Server, Password),
             open_session(bind(auth(connect(Config))));
-	_ when TestGroup == s2s_tests ->
+	_ when TestGroup == s2s_tests; TestGroup == sms2s_single ->
 	    auth(connect(starttls(connect(Config))));
-        _ ->
-            open_session(bind(auth(connect(Config))))
+  _ ->
+      open_session(bind(auth(connect(Config))))
     end.
 
 end_per_testcase(_TestCase, _Config) ->
@@ -520,7 +520,8 @@ s2s_tests() ->
        test_missing_to,
        test_invalid_from,
        bad_nonza,
-       codec_failure]}].
+       codec_failure]},
+      sms2s_tests:single_cases()].
 
 groups() ->
     [{ldap, [sequence], ldap_tests()},

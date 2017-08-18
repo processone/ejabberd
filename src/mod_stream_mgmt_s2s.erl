@@ -725,7 +725,6 @@ send(#{mod := Mod} = State, Pkt) ->
     Mod:send(State, Pkt).
 
 send_rack(#{mgmt_ack_timer := _} = State) ->
-    ?INFO_MSG("can't send request", []),
     State;
 send_rack(#{mgmt_xmlns := Xmlns,
             mgmt_stanzas_out := NumStanzasOut,
