@@ -998,8 +998,10 @@ build_service_limit_record(LimitOpts) ->
      build_limit_record(LimitOptsR, remote)}.
 
 get_from_limitopts(LimitOpts, SenderT) ->
-    {SenderT, Result} = lists:keyfind(SenderT, 1, LimitOpts),
-    Result.
+    case lists:keyfind(SenderT, 1, LimitOpts) of
+	false -> [];
+	{SenderT, Result} -> Result
+    end.
 
 build_remote_limit_record(LimitOpts, SenderT) ->
     build_limit_record(LimitOpts, SenderT).
@@ -1120,10 +1122,10 @@ mod_opt_type(host) -> fun iolist_to_binary/1;
 mod_opt_type({limits, Type}) when (Type == local) or (Type == remote) ->
     fun(L) ->
 	    lists:map(
-		fun ({message, infinite}) -> infinite;
-		    ({presence, infinite}) -> infinite;
-		    ({message, I}) when is_integer(I) -> I;
-		    ({presence, I}) when is_integer(I) -> I
+		fun ({message, infinite} = O) -> O;
+		    ({presence, infinite} = O) -> O;
+		    ({message, I} = O) when is_integer(I) -> O;
+		    ({presence, I} = O) when is_integer(I) -> O
 		end, L)
     end;
 mod_opt_type(_) -> [access, host, {limits, local}, {limits, remote}].
