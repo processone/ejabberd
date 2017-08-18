@@ -13,9 +13,7 @@
 %% server part hooks
 -export([s2s_in_stream_started/1, s2s_in_stream_features/2,
          s2s_in_unauthenticated_packet/2, s2s_in_authenticated_packet/2,
-         s2s_in_handle_info/2,
-         % s2s_in_handle_call/3, s2s_in_handle_info/2,
-         s2s_in_closed/2, s2s_in_terminate/2]).
+         s2s_in_handle_info/2, s2s_in_closed/2, s2s_in_terminate/2]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -65,8 +63,6 @@ start(Host, _Opts) ->
                        Host, ?MODULE, s2s_in_unauthenticated_packet, 50),
     ejabberd_hooks:add(s2s_in_authenticated_packet,
                        Host, ?MODULE, s2s_in_authenticated_packet, 50),
-    % ejabberd_hooks:add(s2s_in_handle_call,
-    %                    Host, ?MODULE, s2s_in_handle_call, 50),
     ejabberd_hooks:add(s2s_in_handle_info,
                        Host, ?MODULE, s2s_in_handle_info, 50),
     ejabberd_hooks:add(s2s_in_closed,
@@ -100,8 +96,6 @@ stop(Host) ->
                           Host, ?MODULE, s2s_in_unauthenticated_packet, 50),
     ejabberd_hooks:delete(s2s_in_authenticated_packet,
                           Host, ?MODULE, s2s_in_authenticated_packet, 50),
-    % ejabberd_hooks:delete(s2s_in_handle_call,
-    %                       Host, ?MODULE, s2s_in_handle_call, 50),
     ejabberd_hooks:delete(s2s_in_handle_info,
                           Host, ?MODULE, s2s_in_handle_info, 50),
     ejabberd_hooks:delete(s2s_in_closed,
@@ -127,7 +121,7 @@ s2s_out_stream_init({ok, #{server_host := ServerHost} = State}, Opts) ->
     
     case proplists:get_value(resume, Opts) of
         OldState when OldState /= undefined ->
-            {ok, State1#{mgmt_state => connecting, mgmt_old_state => OldState}};
+            {ok, State1#{mgmt_state => connecting, mgmt_prev_session => OldState}};
         _ ->
             {ok, State1#{mgmt_state => inactive}}
     end;            
@@ -140,9 +134,10 @@ s2s_out_stream_features(#{mgmt_timeout := Timeout,
     case check_stream_mgmt_support(SubEls) of
         Xmlns when Xmlns == ?NS_STREAM_MGMT_2; Xmlns == ?NS_STREAM_MGMT_3 ->
             case State of
-                #{mgmt_old_state := OldState} ->
+                #{mgmt_prev_session := OldState} ->
                     #{mgmt_previd := Id} = OldState,
                     State1 = State#{mgmt_state => pending,
+                                    mgmt_queue => p1_queue:new(QueueType),
                                     mgmt_xmlns => Xmlns},
                     send(State1, #sm_resume{h = 0,
                                             xmlns = Xmlns,
@@ -156,8 +151,8 @@ s2s_out_stream_features(#{mgmt_timeout := Timeout,
                                   #sm_enable{xmlns = Xmlns}
                           end,
                     State1 = State#{mgmt_state => wait_for_enabled,
-                                    mgmt_xmlns => Xmlns,
-                                    mgmt_queue => p1_queue:new(QueueType)},
+                                    mgmt_queue => p1_queue:new(QueueType),
+                                    mgmt_xmlns => Xmlns},
                     send(State1, Res)
             end;
         _ ->
@@ -167,9 +162,11 @@ s2s_out_stream_features(State, _) ->
     State.
 
 s2s_out_established(#{mgmt_state := connecting,
-                      mgmt_old_state := OldState} = State) ->
+                      mgmt_queue_type := QueueType,
+                      mgmt_prev_session := OldState} = State) ->
     #{mgmt_previd := Id} = OldState,
     State1 = State#{mgmt_state => pending,
+                    mgmt_queue => p1_queue:new(QueueType),
                     mgmt_xmlns => ?NS_STREAM_MGMT_3},
     send(State1, #sm_resume{h = 0,
                             xmlns = ?NS_STREAM_MGMT_3,
@@ -187,8 +184,8 @@ s2s_out_established(#{mgmt_timeout := Timeout,
         end,
 
     State1 = State#{mgmt_state => wait_for_enabled,
-                    mgmt_xmlns => Xmlns,
-                    mgmt_queue => p1_queue:new(QueueType)},
+                    mgmt_queue => p1_queue:new(QueueType),
+                    mgmt_xmlns => Xmlns},
     send(State1, Res); 
 s2s_out_established(State) ->
     State.
@@ -209,7 +206,8 @@ s2s_out_packet(State, _Pkt) ->
 
 s2s_out_handle_send(#{mgmt_state := MgmtState, lang := Lang} = State, Pkt, SendResult)
   when MgmtState == active;
-       MgmtState == wait_for_enabled ->
+       MgmtState == wait_for_enabled;
+       MgmtState == pending ->
     case Pkt of
         _ when ?is_stanza(Pkt) ->
             Meta = xmpp:get_meta(Pkt),
@@ -256,13 +254,24 @@ s2s_out_handle_recv(#{mgmt_state := pending,
                       remote_server := RServer,
                       mgmt_timeout := Timeout,
                       mgmt_xmlns := Xmlns,
-                      mgmt_queue_type := QueueType,
-                      mgmt_old_state := OldState} = State, _El, #sm_failed{}) ->
+                      mgmt_queue := Queue,
+                      mgmt_prev_session := OldState} = State, _El, #sm_failed{}) ->
     ?DEBUG("Remote server ~s can't resume previous session", [RServer]),
-    #{mgmt_queue := Queue} = OldState,
+
+    #{mgmt_queue := OldQueue, mgmt_stanzas_out := OldNumStanzasOut} = OldState,
+
+    {NewNumStanzasOut, NewQueue} =
+        p1_queue:foldl(
+            fun({_, Time, Pkt}, {AccNum, AccQueue}) ->
+                    Num = AccNum + 1,
+                    {Num, p1_queue:in({Num, Time, Pkt}, AccQueue)}
+            end, {OldNumStanzasOut, OldQueue}, Queue),
+
     State1 = State#{mgmt_state => wait_for_enabled,
-                    mgmt_queue => p1_queue:new(QueueType)},
-    State2 = maps:remove(mgmt_old_state, State1),
+                    mgmt_queue => NewQueue,
+                    mgmt_stanzas_out => NewNumStanzasOut},
+
+    State2 = maps:remove(mgmt_prev_session, State1),
     State3 =
         if Timeout > 0 ->
                 send(State2, #sm_enable{xmlns = Xmlns,
@@ -271,7 +280,7 @@ s2s_out_handle_recv(#{mgmt_state := pending,
            true ->
                 send(State2, #sm_enable{xmlns = Xmlns})
     end,
-    resend_unacked_stanzas(State3, Queue);
+    resend_unacked_stanzas(State3, OldNumStanzasOut);
 s2s_out_handle_recv(State, _El, _Pkt) ->
     State.
 
@@ -284,19 +293,17 @@ s2s_out_terminate(#{mgmt_state := active, mgmt_queue := Queue} = State, _Reason)
   when ?qlen(Queue) > 0 ->
     transition_to_resume(State);
 s2s_out_terminate(#{mgmt_state := timeout,
-                    mgmt_old_state := OldState} = State, _Reason) ->
+                    mgmt_prev_session := OldState} = State, _Reason) ->
     #{mgmt_queue := Queue} = OldState,
     bounce_errors(State, Queue),
     State;
 s2s_out_terminate(#{mgmt_state := pending,
-                    mgmt_old_state := OldState} = State, _Reason) ->
+                    mgmt_prev_session := OldState} = State, _Reason) ->
     #{mgmt_queue := Queue} = OldState,
     route_unacked_stanzas(State, Queue),
     State;
 s2s_out_terminate(State, _Reason) ->
     State.
-
-%% client part
 
 %% server part
 
@@ -323,7 +330,7 @@ s2s_in_unauthenticated_packet(State, _Pkt) ->
 
 s2s_in_authenticated_packet(#{mgmt_state := inactive} = State,
                             #sm_resume{} = Pkt) ->
-    {stop, handle_resume(State, Pkt)};
+    {stop, handle_resume(Pkt, State)};
 s2s_in_authenticated_packet(#{mgmt_state := MgmtState} = State, Pkt)
   when ?is_sm_packet(Pkt) ->
     if MgmtState == active; MgmtState == pending ->
@@ -354,16 +361,12 @@ s2s_in_closed(#{mgmt_state := active} = State, _Reason) ->
 s2s_in_closed(State, _Reason) ->
     State.
 
-% it isn't important: we can delete it and delete from ejabberd_s2s_in module
-% ejabberd_hooks:run_fold(..)
 s2s_in_terminate(#{mgmt_state := resumed,
                    remote_server := RServer} = State, _Reason) ->
     ?INFO_MSG("Closing former stream of resumed session for ~s", [RServer]),
     State;
 s2s_in_terminate(State, _Reason) ->
     State.
-
-%% server part end
 
 
 %%%=============================================================================
@@ -576,8 +579,8 @@ get_old_session_state({RServer, UniqueId} = ResumeId, [{_, Pid, _, _}|Specs])
 get_old_session_state(ResumeId, [_H|L]) ->
     get_old_session_state(ResumeId, L).
 
-handle_resume(#{lang := Lang, remote_server := RServer} = State,
-              #sm_resume{previd = ResumeId, xmlns = Xmlns}) ->
+handle_resume(#sm_resume{previd = ResumeId, xmlns = Xmlns},
+              #{lang := Lang, remote_server := RServer} = State) ->
     case misc:base64_to_term(ResumeId) of
         {term, {RServer, UniqueId}} ->
             case get_old_session_state({RServer, UniqueId},
@@ -617,20 +620,39 @@ handle_resume(#{lang := Lang, remote_server := RServer} = State,
 -spec handle_resumed(sm_resumed(), state()) -> state().
 handle_resumed(#sm_resumed{h = H, previd = _Id}, 
                #{remote_server := RServer,
-                 mgmt_old_state := OldState} = State) ->
+                 mgmt_queue := Queue,
+                 mgmt_prev_session := OldState} = State) ->
     ResumedState = copy_state(OldState, State),
-    #{mgmt_xmlns := Xmlns, mgmt_queue := Queue} = ResumedState, 
-    State1 = check_h_attribute(ResumedState, H),
-    State2 = resend_unacked_stanzas(State1#{mgmt_state => active}, Queue),
-    ?DEBUG("Resumed session for ~s", [RServer]),
-    send(State2, #sm_r{xmlns = Xmlns}).
 
-resend_unacked_stanzas(#{remote_server := RServer} = State, Queue) 
+    #{mgmt_xmlns := Xmlns,
+      mgmt_queue := OldQueue,
+      mgmt_stanzas_out := OldNumStanzasOut} = ResumedState,
+
+    State1 = check_h_attribute(ResumedState, H),
+
+    {NewNumStanzasOut, NewQueue} =
+        p1_queue:foldl(
+            fun({_, Time, Pkt}, {AccNum, AccQueue}) ->
+                    Num = AccNum + 1,
+                    {Num, p1_queue:in({Num, Time, Pkt}, AccQueue)}
+            end, {OldNumStanzasOut, OldQueue}, Queue),
+
+    State2 = State1#{mgmt_state => wait_for_enabled,
+                     mgmt_queue => NewQueue,
+                     mgmt_stanzas_out => NewNumStanzasOut},
+
+    State3 = resend_unacked_stanzas(State2#{mgmt_state => active}, 
+                                    OldNumStanzasOut),
+    ?DEBUG("Resumed session for ~s", [RServer]),
+    send(State3, #sm_r{xmlns = Xmlns}).
+
+resend_unacked_stanzas(#{remote_server := RServer,
+                         mgmt_queue := Queue} = State, LastStanzaNum) 
   when ?qlen(Queue) > 0 ->
     ?DEBUG("Resending ~B unacknowledged stanza(s) to ~s",
            [p1_queue:len(Queue), RServer]),
     p1_queue:foldl(
-        fun({_, Time, Pkt}, AccState) ->
+        fun({Num, Time, Pkt}, AccState) when Num =< LastStanzaNum ->
             NewPkt = add_resent_delay_info(AccState, Pkt, Time),
             send(AccState, xmpp:put_meta(NewPkt, mgmt_is_resent, true))
         end, State, Queue);
@@ -682,12 +704,14 @@ check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut,
   when H > NumStanzasOut ->
     ?DEBUG("~s acknowledged ~B stanzas," 
            "but only ~B were sent ", [RServer, H, NumStanzasOut]),
-    mod_stream_mgmt:mgmt_queue_drop(State#{mgmt_stanzas_out => H}, NumStanzasOut);
+    % mod_stream_mgmt:mgmt_queue_drop(State#{mgmt_stanzas_out => H}, NumStanzasOut);
+    State#{mgmt_stanzas_out => H};
 check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut,
                     remote_server := RServer} = State, H) ->
     ?DEBUG("~s acknowledged ~B of ~B "
            "stanzas", [RServer, H, NumStanzasOut]),
-    mod_stream_mgmt:mgmt_queue_drop(State, H).
+    State.
+    % mod_stream_mgmt:mgmt_queue_drop(State, H).
 
 -spec add_resent_delay_info(state(), stanza(), erlang:timestamp()) -> stanza().
 add_resent_delay_info(#{server_host := LServer}, El, Time) ->
@@ -703,6 +727,7 @@ send(#{mod := Mod} = State, Pkt) ->
     Mod:send(State, Pkt).
 
 send_rack(#{mgmt_ack_timer := _} = State) ->
+    ?INFO_MSG("can't send request", []),
     State;
 send_rack(#{mgmt_xmlns := Xmlns,
             mgmt_stanzas_out := NumStanzasOut,
@@ -715,7 +740,7 @@ resend_rack(#{mgmt_ack_timer := _,
               mgmt_queue := Queue,
               mgmt_stanzas_out := NumStanzasOut,
               mgmt_stanzas_req := NumStanzasReq} = State) ->
-    State1 = mod_stream_mgmt:cancel_ack_timer(State),
+    State1 = State, %mod_stream_mgmt:cancel_ack_timer(State),
     case NumStanzasReq < NumStanzasOut andalso not p1_queue:is_empty(Queue) of
         true -> send_rack(State1);
         false -> State1
