@@ -317,8 +317,8 @@ get_session_sids(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     Mod = get_sm_backend(LServer),
-    OnlineSs = online(get_sessions(Mod, LUser, LServer)),
-    [SID || #session{sid = SID} <- OnlineSs].
+    Sessions = online(get_sessions(Mod, LUser, LServer)),
+    [SID || #session{sid = SID} <- Sessions].
 
 -spec set_offline_info(sid(), binary(), binary(), binary(), info()) -> ok.
 

@@ -546,7 +546,6 @@ delete_sessions(LUser, LServer, LookupFun, Mod) ->
       -> [push_session()].
 drop_online_sessions(LUser, LServer, Clients) ->
     SessIDs = ejabberd_sm:get_session_sids(LUser, LServer),
-    ?WARNING_MSG("SessIDs: ~p", [SessIDs]),
     [Client || {TS, _, _, _} = Client <- Clients,
 	       lists:keyfind(TS, 1, SessIDs) == false].
 

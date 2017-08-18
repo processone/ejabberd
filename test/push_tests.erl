@@ -134,6 +134,8 @@ mam_slave(Config) ->
     self_presence(Config, available),
     ct:comment("Receiving message from offline storage"),
     recv_test_message(Config),
+    %% Don't re-enable push notifications, otherwise the notification would be
+    %% suppressed while the slave is online.
     ct:comment("Enabling MAM"),
     ok = enable_mam(Config),
     ct:comment("Letting the master know that we're ready"),
