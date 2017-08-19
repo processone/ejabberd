@@ -568,10 +568,6 @@ certificate_exists(Host) ->
 
 %% For now we accept only generating a key of
 %% specific type for signing the csr
-%% TODO: Make this function handle more signing keys
-%%  1. Derive oid from Key
-%%  2. Derive the whole algo objects from Key
-%% TODO: Encode Strings using length using a library function
 
 -spec make_csr(proplist()) -> {binary(), jose_jwk:key()}.
 make_csr(Attributes) ->
@@ -722,7 +718,6 @@ get_challenges(Body) ->
 
 -spec not_before_not_after() -> {binary(), binary()}.
 not_before_not_after() ->
-    %% TODO: Make notBefore and notAfter configurable somewhere
     {MegS, Sec, MicS} = erlang:timestamp(),
     NotBefore = xmpp_util:encode_timestamp({MegS, Sec, MicS}),
     %% The certificate will be valid for 90 Days after today
