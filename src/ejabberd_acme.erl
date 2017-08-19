@@ -22,6 +22,9 @@
 -include("ejabberd_acme.hrl").
 -include_lib("public_key/include/public_key.hrl").
 
+-export([opt_type/1]).
+
+-behavior(ejabberd_config).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -69,7 +72,7 @@ is_valid_revoke_cert(DomainOrFile) ->
 -spec get_certificates(domains_opt(), account_opt()) -> string() | {'error', _}.
 get_certificates(Domains, NewAccountOpt) ->
     try
-	CAUrl = binary_to_list(get_config_ca_url()),
+	CAUrl = get_config_ca_url(),
 	get_certificates0(CAUrl, Domains, NewAccountOpt)
     catch
 	throw:Throw ->
@@ -276,7 +279,7 @@ ensure_account_exists() ->
 -spec renew_certificates() -> string() | {'error', _}.
 renew_certificates() ->
     try
-	CAUrl = binary_to_list(get_config_ca_url()),
+	CAUrl = get_config_ca_url(),
         renew_certificates0(CAUrl)
     catch
 	throw:Throw ->
@@ -465,7 +468,7 @@ get_utc_validity(#'Certificate'{tbsCertificate = TbsCertificate}) ->
 -spec revoke_certificate(string()) -> {ok, deleted} | {error, _}.
 revoke_certificate(DomainOrFile) ->
     try
-	CAUrl = binary_to_list(get_config_ca_url()),
+	CAUrl = get_config_ca_url(),
 	revoke_certificate0(CAUrl, DomainOrFile)
     catch
 	throw:Throw ->
@@ -998,7 +1001,7 @@ get_config_contact() ->
 	    throw({error, configuration_contact})
     end.
 
--spec get_config_ca_url() -> bitstring().
+-spec get_config_ca_url() -> string().
 get_config_ca_url() ->
     Acme = get_config_acme(),
     case lists:keyfind(ca_url, 1, Acme) of
@@ -1044,3 +1047,32 @@ generate_key() ->
     jose_jwk:generate_key({ec, secp256r1}).
 -endif.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Option Parsing Code
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+parse_acme_opts(AcmeOpt) ->
+    [parse_acme_opt(Opt) || Opt <- AcmeOpt].
+
+
+parse_acme_opt({ca_url, CaUrl}) when is_bitstring(CaUrl) ->
+    {ca_url, binary_to_list(CaUrl)};
+parse_acme_opt({contact, Contact}) when is_bitstring(Contact) ->
+    {contact, Contact}.
+
+parse_cert_dir_opt(Opt) when is_bitstring(Opt) ->
+    true = filelib:is_dir(Opt),
+    Opt.
+
+-spec opt_type(acme) -> fun(([{ca_url, string()} | {contact, bitstring()}]) -> 
+				   ([{ca_url, string()} | {contact, bitstring()}]));
+	      (cert_dir) -> fun((bitstring()) -> (bitstring()));
+	      (atom()) -> [atom()].
+opt_type(acme) ->
+    fun parse_acme_opts/1;
+opt_type(cert_dir) ->
+    fun parse_cert_dir_opt/1;
+opt_type(_) ->
+    [acme, cert_dir].
