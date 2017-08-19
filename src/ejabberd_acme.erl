@@ -155,7 +155,6 @@ format_get_certificate({error, Domain, Reason}) ->
 			     {'ok', bitstring(), pem()} | 
 			     {'error', bitstring(), _}.
 get_certificate(CAUrl, DomainName, PrivateKey) ->
-    ?INFO_MSG("Getting a Certificate for domain: ~p~n", [DomainName]),
     try
 	{ok, _Authz} = create_new_authorization(CAUrl, DomainName, PrivateKey),
 	create_new_certificate(CAUrl, DomainName, PrivateKey)
@@ -1056,14 +1055,12 @@ get_config_cert_dir() ->
 
 -ifdef(GENERATE_RSA_KEY).
 generate_key() ->
-    ?INFO_MSG("Generate RSA key pair~n", []),
     Key = public_key:generate_key({rsa, 2048, 65537}),
     Key1 = Key#'RSAPrivateKey'{version = 'two-prime'},
     jose_jwk:from_key(Key1).
 %% jose_jwk:generate_key({rsa, 2048}).
 -else.
 generate_key() ->
-    ?INFO_MSG("Generate EC key pair~n", []),
     jose_jwk:generate_key({ec, secp256r1}).
 -endif.
 

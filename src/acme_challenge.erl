@@ -21,8 +21,6 @@
 %% TODO: Maybe validate request here??
 process(LocalPath, Request) ->
     Result = ets_get_key_authorization(LocalPath),
-    ?INFO_MSG("Trying to serve: ~p at: ~p", [Request, LocalPath]),
-    ?INFO_MSG("Http Response: ~p", [Result]),
     {200, 
      [{<<"Content-Type">>, <<"text/plain">>}], 
      Result}. 
@@ -31,7 +29,6 @@ process(LocalPath, Request) ->
 -spec key_authorization(bitstring(), jose_jwk:key()) -> bitstring().
 key_authorization(Token, Key) ->
     Thumbprint = jose_jwk:thumbprint(Key),
-    %% ?INFO_MSG("Thumbprint: ~p~n", [Thumbprint]),
     KeyAuthorization = erlang:iolist_to_binary([Token, <<".">>, Thumbprint]),
     KeyAuthorization.
 
@@ -84,7 +81,8 @@ solve_challenge1(Chal = #challenge{type = <<"http-01">>, token=Tkn}, Key) ->
     ets_put_key_authorization(Tkn, KeyAuthz),
     {ok, Chal#challenge.uri, KeyAuthz};
 solve_challenge1(Challenge, _Key) ->
-    ?INFO_MSG("Challenge: ~p~n", [Challenge]).
+    ?ERROR_MSG("Unkown Challenge Type: ~p", [Challenge]),
+    {error, unknown_challenge}.
 
 
 %% Old way of solving challenges
