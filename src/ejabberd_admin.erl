@@ -45,7 +45,7 @@
 	 %% Migration jabberd1.4
 	 import_file/1, import_dir/1,
          %% Acme
-         get_certificate/2,
+         get_certificate/1,
 	 renew_certificate/0,
 	 list_certificates/1,
 	 revoke_certificate/1,
@@ -248,13 +248,11 @@ get_commands_spec() ->
 			args = [{file, string}],
 			result = {res, restuple}},
      #ejabberd_commands{name = get_certificate, tags = [acme],
-			desc = "Gets a certificate for all or the specified domains {all|domain1;domain2;...}. Can be used with {old-account|new-account}.",
+			desc = "Gets a certificate for all or the specified domains {all|domain1;domain2;...}.",
 			module = ?MODULE, function = get_certificate,
-			args_desc = ["Domains for which to acquire a certificate", 
-				     "Whether to create a new account or use the existing one"],
-			args_example = ["all | www.example.com;www.example1.net", 
-					"old-account | new-account"],
-			args = [{domains, string}, {option, string}],
+			args_desc = ["Domains for which to acquire a certificate"],
+			args_example = ["all | www.example.com;www.example1.net"],
+			args = [{domains, string}],
 			result = {certificates, string}},
      #ejabberd_commands{name = renew_certificate, tags = [acme],
 			desc = "Renews all certificates that are close to expiring",
@@ -577,15 +575,10 @@ import_dir(Path) ->
 %%% Acme
 %%%
 
-get_certificate(Domains, UseNewAccount) ->
+get_certificate(Domains) ->
     case ejabberd_acme:is_valid_domain_opt(Domains) of 
 	true ->
-	    case ejabberd_acme:is_valid_account_opt(UseNewAccount) of
-		true ->
-		    ejabberd_acme:get_certificates(Domains, UseNewAccount);
-		false ->
-		    io_lib:format("Invalid account option: ~p", [UseNewAccount])
-	    end;
+	    ejabberd_acme:get_certificates(Domains);
 	false ->
 	    String = io_lib:format("Invalid domains: ~p", [Domains])
     end.

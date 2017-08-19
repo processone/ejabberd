@@ -71,11 +71,11 @@ is_valid_revoke_cert(DomainOrFile) ->
 %% Get Certificate
 %%
 
--spec get_certificates(domains_opt(), account_opt()) -> string() | {'error', _}.
-get_certificates(Domains, NewAccountOpt) ->
+-spec get_certificates(domains_opt()) -> string() | {'error', _}.
+get_certificates(Domains) ->
     try
 	CAUrl = get_config_ca_url(),
-	get_certificates0(CAUrl, Domains, NewAccountOpt)
+	get_certificates0(CAUrl, Domains)
     catch
 	throw:Throw ->
 	    Throw;
@@ -84,18 +84,22 @@ get_certificates(Domains, NewAccountOpt) ->
 	    {error, get_certificates}
     end.
 
--spec get_certificates0(url(), domains_opt(), account_opt()) -> string().
-get_certificates0(CAUrl, Domains, "old-account") ->
-    %% Get the current account
-    {ok, _AccId, PrivateKey} = ensure_account_exists(),
-
-    get_certificates1(CAUrl, Domains, PrivateKey);
-
-get_certificates0(CAUrl, Domains, "new-account") ->
-    %% Create a new account and save it to disk
-    {ok, _Id, PrivateKey} = create_save_new_account(CAUrl),
+-spec get_certificates0(url(), domains_opt()) -> string().
+get_certificates0(CAUrl, Domains) ->
+    %% Check if an account exists or create another one
+    {ok, _AccId, PrivateKey} = retrieve_or_create_account(CAUrl),
 
     get_certificates1(CAUrl, Domains, PrivateKey).
+
+
+retrieve_or_create_account(CAUrl) ->
+    case read_account_persistent() of
+	none ->
+	    create_save_new_account(CAUrl);
+	{ok, AccId, PrivateKey} ->
+	    {ok, AccId, PrivateKey}
+    end.
+
 
 -spec get_certificates1(url(), domains_opt(), jose_jwk:key()) -> string().
 get_certificates1(CAUrl, "all", PrivateKey) ->
