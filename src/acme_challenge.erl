@@ -87,6 +87,7 @@ solve_challenge1(Challenge, _Key) ->
     ?INFO_MSG("Challenge: ~p~n", [Challenge]).
 
 
+%% Old way of solving challenges
 save_key_authorization(Chal, Tkn, KeyAuthz, HttpDir) ->
     FileLocation = HttpDir ++ "/.well-known/acme-challenge/" ++ bitstring_to_list(Tkn),
     case file:write_file(FileLocation, KeyAuthz) of

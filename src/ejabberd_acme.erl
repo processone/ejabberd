@@ -1,7 +1,7 @@
 -module (ejabberd_acme).
 
 -export([%% Ejabberdctl Commands
-	 get_certificates/2,
+	 get_certificates/1,
 	 renew_certificates/0,
 	 list_certificates/1,
 	 revoke_certificate/1,
