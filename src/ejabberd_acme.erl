@@ -10,6 +10,8 @@
 	 is_valid_verbose_opt/1,
 	 is_valid_domain_opt/1,
 	 is_valid_revoke_cert/1,
+	 %% Called by ejabberd_pkix
+	 certificate_exists/1,
 	 %% Key Related
 	 generate_key/0,
 	 to_public/1
@@ -537,6 +539,25 @@ prepare_certificate_revoke(PemEncodedCert) ->
 domain_certificate_exists(Domain) ->
     Certs = read_certificates_persistent(),
     lists:keyfind(Domain, 1, Certs).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% Called by ejabberd_pkix to check
+%% if a certificate exists for a 
+%% specific host
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+-spec certificate_exists(bitstring()) -> {true, file:filename()} | false.
+certificate_exists(Host) ->
+    Certificates = read_certificates_persistent(),
+    case lists:keyfind(Host, 1 , Certificates) of
+	false ->
+	    false;
+	{Host, #data_cert{path=Path}} ->
+	    {true, Path}
+    end.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

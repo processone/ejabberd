@@ -204,15 +204,24 @@ add_certfiles(State) ->
       end, State, ejabberd_config:get_myhosts()).
 
 add_certfiles(Host, State) ->
-    lists:foldl(
-      fun(Opt, AccState) ->
-	      case ejabberd_config:get_option({Opt, Host}) of
-		  undefined -> AccState;
-		  Path ->
-		      {_, NewAccState} = add_certfile(Path, AccState),
-		      NewAccState
-	      end
-      end, State, [c2s_certfile, s2s_certfile, domain_certfile]).
+    NewState =
+	lists:foldl(
+	  fun(Opt, AccState) ->
+		  case ejabberd_config:get_option({Opt, Host}) of
+		      undefined -> AccState;
+		      Path ->
+			  {_, NewAccState} = add_certfile(Path, AccState),
+			  NewAccState
+		  end
+	  end, State, [c2s_certfile, s2s_certfile, domain_certfile]),
+    %% Add acme certificate if it exists
+    case ejabberd_acme:certificate_exists(Host) of
+	{true, Path} ->
+	    {_, FinalState} = add_certfile(Path, NewState),
+	    FinalState;
+	false ->
+	    NewState
+    end.
 
 add_certfile(Path, State) ->
     case maps:get(Path, State#state.certs, undefined) of
