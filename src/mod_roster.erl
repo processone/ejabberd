@@ -35,7 +35,6 @@
 -module(mod_roster).
 
 -protocol({xep, 237, '1.3'}).
--protocol({xep, 321, '0.1'}).
 
 -author('alexey@process-one.net').
 
@@ -441,14 +440,13 @@ decode_item(Item, R, Managed) ->
 			    end,
 	     groups = Item#roster_item.groups}.
 
-process_iq_set(#iq{from = From, to = To,
+process_iq_set(#iq{from = _From, to = To,
 		   sub_els = [#roster_query{items = [QueryItem]}]} = IQ) ->
     #jid{user = User, luser = LUser, lserver = LServer} = To,
-    Managed = {From#jid.luser, From#jid.lserver} /= {LUser, LServer},
     LJID = jid:tolower(QueryItem#roster_item.jid),
     F = fun () ->
 		Item = get_roster_item(LUser, LServer, LJID),
-		Item2 = decode_item(QueryItem, Item, Managed),
+		Item2 = decode_item(QueryItem, Item, false),
 		Item3 = ejabberd_hooks:run_fold(roster_process_item,
 						LServer, Item2,
 						[LServer]),
@@ -1200,8 +1198,6 @@ mod_opt_type(access) ->
     fun acl:access_rules_validator/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
-mod_opt_type(managers) ->
-    fun (B) when is_list(B) -> B end;
 mod_opt_type(store_current_id) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(versioning) ->
@@ -1213,5 +1209,5 @@ mod_opt_type(O) when O == cache_life_time; O == cache_size ->
 mod_opt_type(O) when O == use_cache; O == cache_missed ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(_) ->
-    [access, db_type, iqdisc, managers, store_current_id,
+    [access, db_type, iqdisc, store_current_id,
      versioning, cache_life_time, cache_size, use_cache, cache_missed].

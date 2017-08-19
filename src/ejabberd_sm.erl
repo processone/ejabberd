@@ -66,6 +66,8 @@
 	 user_resources/2,
 	 kick_user/2,
 	 get_session_pid/3,
+	 get_session_sid/3,
+	 get_session_sids/2,
 	 get_user_info/2,
 	 get_user_info/3,
 	 get_user_ip/3,
@@ -292,14 +294,31 @@ close_session_unset_presence(SID, User, Server,
 -spec get_session_pid(binary(), binary(), binary()) -> none | pid().
 
 get_session_pid(User, Server, Resource) ->
+    case get_session_sid(User, Server, Resource) of
+	{_, PID} -> PID;
+	none -> none
+    end.
+
+-spec get_session_sid(binary(), binary(), binary()) -> none | sid().
+
+get_session_sid(User, Server, Resource) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     LResource = jid:resourceprep(Resource),
     Mod = get_sm_backend(LServer),
     case online(get_sessions(Mod, LUser, LServer, LResource)) of
-	[#session{sid = {_, Pid}}] -> Pid;
+	[#session{sid = SID}] -> SID;
 	_ -> none
     end.
+
+-spec get_session_sids(binary(), binary()) -> [sid()].
+
+get_session_sids(User, Server) ->
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
+    Mod = get_sm_backend(LServer),
+    Sessions = online(get_sessions(Mod, LUser, LServer)),
+    [SID || #session{sid = SID} <- Sessions].
 
 -spec set_offline_info(sid(), binary(), binary(), binary(), info()) -> ok.
 
@@ -471,9 +490,13 @@ host_up(Host) ->
 -spec host_down(binary()) -> ok.
 host_down(Host) ->
     Mod = get_sm_backend(Host),
+    Err = case ejabberd_cluster:get_nodes() of
+	    [Node] when Node == node() -> xmpp:serr_system_shutdown();
+	    _ -> xmpp:serr_reset()
+	  end,
     lists:foreach(
       fun(#session{sid = {_, Pid}}) when node(Pid) == node() ->
-	      ejabberd_c2s:send(Pid, xmpp:serr_system_shutdown()),
+	      ejabberd_c2s:send(Pid, Err),
 	      ejabberd_c2s:stop(Pid);
 	 (_) ->
 	      ok
@@ -972,7 +995,7 @@ get_commands_spec() ->
 			args = [], result = {num_sessions, integer}},
      #ejabberd_commands{name = user_resources, tags = [session],
 			desc = "List user's connected resources",
-                        policy = user,
+                        policy = admin,
 			module = ?MODULE, function = user_resources,
 			args = [{user, binary}, {host, binary}],
 			args_desc = ["User name", "Server name"],

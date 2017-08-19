@@ -116,11 +116,14 @@ To compile ejabberd you need:
    needed on systems with GNU Libc.
  - ImageMagick's Convert program. Optional. For CAPTCHA challenges.
 
+If your system splits packages in libraries and development headers, you must
+install the development packages also.
 
 ### 1. Compile and install on *nix systems
 
 To compile ejabberd, execute the following commands.  The first one is only
-necessary if your source tree didn't come with a `configure` script.
+necessary if your source tree didn't come with a `configure` script (In this
+case you need autoconf installed).
 
     ./autogen.sh
     ./configure

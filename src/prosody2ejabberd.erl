@@ -50,7 +50,7 @@ from_dir(ProsodyDir) ->
 				convert_dir(Path, Host, SubDir)
 			end, ["vcard", "accounts", "roster",
 			      "private", "config", "offline",
-			      "privacy", "pubsub"])
+			      "privacy", "pep", "pubsub"])
 	      end, HostDirs);
 	{error, Why} = Err ->
 	    ?ERROR_MSG("failed to list ~s: ~s",
@@ -67,12 +67,24 @@ convert_dir(Path, Host, Type) ->
 	    lists:foreach(
 	      fun(File) ->
 		      FilePath = filename:join(Path, File),
-		      case eval_file(FilePath) of
-			  {ok, Data} ->
-			      Name = iolist_to_binary(filename:rootname(File)),
-			      convert_data(Host, Type, Name, Data);
-			  Err ->
-			      Err
+		      case Type of
+			  "pep" ->
+			      case filelib:is_dir(FilePath) of
+				  true ->
+				      JID = list_to_binary(File ++ "@" ++ Host),
+				      convert_dir(FilePath, JID, "pubsub");
+				  false ->
+				      ok
+			      end;
+			  _ ->
+			      case eval_file(FilePath) of
+				  {ok, Data} ->
+				      Name = iolist_to_binary(filename:rootname(File)),
+				      convert_data(url_decode(Host), Type,
+						   url_decode(Name), Data);
+				  Err ->
+				      Err
+			      end
 		      end
 	      end, Files);
 	{error, enoent} ->
@@ -212,44 +224,49 @@ convert_data(Host, "privacy", User, [Data]) ->
 				end
 			end, Lists)},
     mod_privacy:set_list(Priv);
-convert_data(PubSub, "pubsub", NodeId, [Data]) ->
-    Host = url_decode(PubSub),
-    Node = url_decode(NodeId),
-    Type = node_type(Host, Node),
-    NodeData = convert_node_config(Host, Data),
-    DefaultConfig = mod_pubsub:config(Host, default_node_config, []),
-    Owner = proplists:get_value(owner, NodeData),
-    Options = lists:foldl(
-		fun({_Opt, undefined}, Acc) ->
-		    Acc;
-		   ({Opt, Val}, Acc) ->
-		    lists:keystore(Opt, 1, Acc, {Opt, Val})
-		end, DefaultConfig, proplists:get_value(options, NodeData)),
-    case mod_pubsub:tree_action(Host, create_node, [Host, Node, Type, Owner, Options, []]) of
-	{ok, Nidx} ->
-	    case mod_pubsub:node_action(Host, Type, create_node, [Nidx, Owner]) of
-		{result, _} ->
-		    Access = open, % always allow subscriptions  proplists:get_value(access_model, Options),
-		    Publish = open, % always allow publications  proplists:get_value(publish_model, Options),
-		    MaxItems = proplists:get_value(max_items, Options),
-		    Affiliations = proplists:get_value(affiliations, NodeData),
-		    Subscriptions = proplists:get_value(subscriptions, NodeData),
-		    Items = proplists:get_value(items, NodeData),
-		    [mod_pubsub:node_action(Host, Type, set_affiliation,
-					    [Nidx, Entity, Aff])
-		     || {Entity, Aff} <- Affiliations, Entity =/= Owner],
-		    [mod_pubsub:node_action(Host, Type, subscribe_node,
-					    [Nidx, jid:make(Entity), Entity, Access, never, [], [], []])
-		     || Entity <- Subscriptions],
-		    [mod_pubsub:node_action(Host, Type, publish_item,
-					    [Nidx, Publisher, Publish, MaxItems, ItemId, Payload, []])
-		     || {ItemId, Publisher, Payload} <- Items];
+convert_data(HostStr, "pubsub", Node, [Data]) ->
+    case decode_pubsub_host(HostStr) of
+	Host when is_binary(Host);
+		  is_tuple(Host) ->
+	    Type = node_type(Host),
+	    NodeData = convert_node_config(HostStr, Data),
+	    DefaultConfig = mod_pubsub:config(Host, default_node_config, []),
+	    Owner = proplists:get_value(owner, NodeData),
+	    Options = lists:foldl(
+			fun({_Opt, undefined}, Acc) ->
+			    Acc;
+			   ({Opt, Val}, Acc) ->
+			    lists:keystore(Opt, 1, Acc, {Opt, Val})
+			end, DefaultConfig, proplists:get_value(options, NodeData)),
+	    case mod_pubsub:tree_action(Host, create_node, [Host, Node, Type, Owner, Options, []]) of
+		{ok, Nidx} ->
+		    case mod_pubsub:node_action(Host, Type, create_node, [Nidx, Owner]) of
+			{result, _} ->
+			    Access = open, % always allow subscriptions  proplists:get_value(access_model, Options),
+			    Publish = open, % always allow publications  proplists:get_value(publish_model, Options),
+			    MaxItems = proplists:get_value(max_items, Options),
+			    Affiliations = proplists:get_value(affiliations, NodeData),
+			    Subscriptions = proplists:get_value(subscriptions, NodeData),
+			    Items = proplists:get_value(items, NodeData),
+			    [mod_pubsub:node_action(Host, Type, set_affiliation,
+						    [Nidx, Entity, Aff])
+			     || {Entity, Aff} <- Affiliations, Entity =/= Owner],
+			    [mod_pubsub:node_action(Host, Type, subscribe_node,
+						    [Nidx, jid:make(Entity), Entity, Access, never, [], [], []])
+			     || Entity <- Subscriptions],
+			    [mod_pubsub:node_action(Host, Type, publish_item,
+						    [Nidx, Publisher, Publish, MaxItems, ItemId, Payload, []])
+			     || {ItemId, Publisher, Payload} <- Items];
+			Error ->
+			    Error
+		    end;
 		Error ->
+		    ?ERROR_MSG("failed to import pubsub node ~s on ~p:~n~p",
+			       [Node, Host, NodeData]),
 		    Error
 	    end;
 	Error ->
-	    ?ERROR_MSG("failed to import pubsub node ~s on host ~s:~n~p",
-		       [Node, Host, NodeData]),
+	    ?ERROR_MSG("failed to import pubsub node: ~p", [Error]),
 	    Error
     end;
 convert_data(_Host, _Type, _User, _Data) ->
@@ -383,10 +400,15 @@ url_decode(<<H, Tail/binary>>, Acc) ->
 url_decode(<<>>, Acc) ->
     Acc.
 
-node_type(_Host, <<"urn:", _Tail/binary>>) -> <<"pep">>;
-node_type(_Host, <<"http:", _Tail/binary>>) -> <<"pep">>;
-node_type(_Host, <<"https:", _Tail/binary>>) -> <<"pep">>;
-node_type(Host, _) -> hd(mod_pubsub:plugins(Host)).
+decode_pubsub_host(Host) ->
+    try jid:decode(Host) of
+	#jid{luser = <<>>, lserver = LServer} -> LServer;
+	#jid{luser = LUser, lserver = LServer} -> {LUser, LServer, <<>>}
+    catch _:{bad_jid, _} -> bad_jid
+    end.
+
+node_type({_U, _S, _R}) -> <<"pep">>;
+node_type(Host) -> hd(mod_pubsub:plugins(Host)).
 
 max_items(Config, Default) ->
     case round(proplists:get_value(<<"max_items">>, Config, Default)) of
@@ -422,7 +444,7 @@ convert_node_items(Host, Data) ->
     Authors = proplists:get_value(<<"data_author">>, Data, []),
     lists:flatmap(
       fun({ItemId, Item}) ->
-	      try catch jid:decode(proplists:get_value(ItemId, Authors, Host)) of
+	      try jid:decode(proplists:get_value(ItemId, Authors, Host)) of
 		  JID ->
 		      [El] = deserialize(Item),
 		      [{ItemId, JID, El#xmlel.children}]
@@ -496,5 +518,5 @@ deserialize([{_, S}|T], #xmlel{children = Els} = El, Acc) when is_binary(S) ->
     deserialize(T, El#xmlel{children = [{xmlcdata, S}|Els]}, Acc);
 deserialize([{_, L}|T], #xmlel{children = Els} = El, Acc) when is_list(L) ->
     deserialize(T, El#xmlel{children = deserialize(L) ++ Els}, Acc);
-deserialize([], El, Acc) ->
-    [El|Acc].
+deserialize([], #xmlel{children = Els} = El, Acc) ->
+    [El#xmlel{children = lists:reverse(Els)}|Acc].

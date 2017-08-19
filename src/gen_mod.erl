@@ -34,7 +34,8 @@
 	 stop_child/1, stop_child/2, config_reloaded/0]).
 -export([start_module/2, start_module/3,
 	 stop_module/2, stop_module_keep_config/2,
-	 get_opt/2, get_opt/3, get_opt_host/3, opt_type/1, is_equal_opt/4,
+	 get_opt/2, get_opt/3, get_opt_host/3,
+	 get_opt_hosts/3, opt_type/1, is_equal_opt/4,
 	 get_module_opt/3, get_module_opt/4, get_module_opt_host/3,
 	 loaded_modules/1, loaded_modules_with_opts/1,
 	 get_hosts/2, get_module_proc/2, is_loaded/2, is_loaded_elsewhere/2,
@@ -440,6 +441,20 @@ get_module_opt_host(Host, Module, Default) ->
 get_opt_host(Host, Opts, Default) ->
     Val = get_opt(host, Opts, Default),
     ejabberd_regexp:greplace(Val, <<"@HOST@">>, Host).
+
+-spec get_opt_hosts(binary(), opts(), binary()) -> [binary()].
+
+get_opt_hosts(Host, Opts, Default) ->
+    Vals = case get_opt(host, Opts, undefined) of
+	       undefined ->
+		    case get_opt(hosts, Opts, []) of
+			[] -> [Default];
+			L -> L
+		    end;
+	       Val ->
+		   [Val]
+	   end,
+    [ejabberd_regexp:greplace(V, <<"@HOST@">>, Host) || V <- Vals].
 
 -spec get_validators(binary(), module(), opts()) -> dict:dict() | undef.
 get_validators(Host, Module, Opts) ->

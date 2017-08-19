@@ -94,7 +94,7 @@
 
 -record(state,
 	{server_host            :: binary(),
-	 host                   :: binary(),
+	 hosts                  :: [binary()],
 	 name                   :: binary(),
 	 access                 :: atom(),
 	 max_size               :: pos_integer() | infinity,
@@ -151,6 +151,8 @@ stop(ServerHost) ->
 
 mod_opt_type(host) ->
     fun iolist_to_binary/1;
+mod_opt_type(hosts) ->
+    fun (L) -> lists:map(fun iolist_to_binary/1, L) end;
 mod_opt_type(name) ->
     fun iolist_to_binary/1;
 mod_opt_type(access) ->
@@ -194,7 +196,7 @@ mod_opt_type(rm_on_unregister) ->
 mod_opt_type(thumbnail) ->
     fun(B) when is_boolean(B) -> B end;
 mod_opt_type(_) ->
-    [host, name, access, max_size, secret_length, jid_in_url, file_mode,
+    [host, hosts, name, access, max_size, secret_length, jid_in_url, file_mode,
      dir_mode, docroot, put_url, get_url, service_url, custom_headers,
      rm_on_unregister, thumbnail].
 
@@ -211,7 +213,7 @@ depends(_Host, _Opts) ->
 
 init([ServerHost, Opts]) ->
     process_flag(trap_exit, true),
-    Host = gen_mod:get_opt_host(ServerHost, Opts, <<"upload.@HOST@">>),
+    Hosts = gen_mod:get_opt_hosts(ServerHost, Opts, <<"upload.@HOST@">>),
     Name = gen_mod:get_opt(name, Opts, <<"HTTP File Upload">>),
     Access = gen_mod:get_opt(access, Opts, local),
     MaxSize = gen_mod:get_opt(max_size, Opts, 104857600),
@@ -244,8 +246,11 @@ init([ServerHost, Opts]) ->
 	false ->
 	    ok
     end,
-    ejabberd_router:register_route(Host, ServerHost),
-    {ok, #state{server_host = ServerHost, host = Host, name = Name,
+    lists:foreach(
+      fun(Host) ->
+	      ejabberd_router:register_route(Host, ServerHost)
+      end, Hosts),
+    {ok, #state{server_host = ServerHost, hosts = Hosts, name = Name,
 		access = Access, max_size = MaxSize,
 		secret_length = SecretLength, jid_in_url = JIDinURL,
 		file_mode = FileMode, dir_mode = DirMode,
@@ -324,10 +329,9 @@ handle_info(Info, State) ->
 
 -spec terminate(normal | shutdown | {shutdown, _} | _, state()) -> ok.
 
-terminate(Reason, #state{server_host = ServerHost, host = Host}) ->
+terminate(Reason, #state{server_host = ServerHost, hosts = Hosts}) ->
     ?DEBUG("Stopping HTTP upload process for ~s: ~p", [ServerHost, Reason]),
-    ejabberd_router:unregister_route(Host),
-    ok.
+    lists:foreach(fun ejabberd_router:unregister_route/1, Hosts).
 
 -spec code_change({down, _} | _, state(), _) -> {ok, state()}.
 
@@ -654,7 +658,7 @@ make_rand_string(S, N) -> make_rand_string([make_rand_char() | S], N - 1).
 -spec make_rand_char() -> char().
 
 make_rand_char() ->
-    map_int_to_char(crypto:rand_uniform(0, 62)).
+    map_int_to_char(randoms:uniform(0, 61)).
 
 -spec map_int_to_char(0..61) -> char().
 

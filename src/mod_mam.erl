@@ -434,8 +434,9 @@ message_is_archived(false, #{jid := JID}, Pkt) ->
 delete_old_messages(TypeBin, Days) when TypeBin == <<"chat">>;
 					TypeBin == <<"groupchat">>;
 					TypeBin == <<"all">> ->
+    CurrentTime = p1_time_compat:system_time(micro_seconds),
     Diff = Days * 24 * 60 * 60 * 1000000,
-    TimeStamp = usec_to_now(p1_time_compat:system_time(micro_seconds) - Diff),
+    TimeStamp = misc:usec_to_now(CurrentTime - Diff),
     Type = misc:binary_to_atom(TypeBin),
     DBTypes = lists:usort(
 		lists:map(
@@ -830,7 +831,7 @@ select(_LServer, JidRequestor, JidArchive, Query, RSM,
     Msgs =
 	lists:flatmap(
 	  fun({Nick, Pkt, _HaveSubject, Now, _Size}) ->
-		  TS = now_to_usec(Now),
+		  TS = misc:now_to_usec(Now),
 		  case match_interval(Now, Start, End) and
 		      match_rsm(Now, RSM) of
 		      true ->
@@ -979,23 +980,13 @@ match_interval(Now, Start, End) ->
     (Now >= Start) and (Now =< End).
 
 match_rsm(Now, #rsm_set{'after' = ID}) when is_binary(ID), ID /= <<"">> ->
-    Now1 = (catch usec_to_now(binary_to_integer(ID))),
+    Now1 = (catch misc:usec_to_now(binary_to_integer(ID))),
     Now > Now1;
 match_rsm(Now, #rsm_set{before = ID}) when is_binary(ID), ID /= <<"">> ->
-    Now1 = (catch usec_to_now(binary_to_integer(ID))),
+    Now1 = (catch misc:usec_to_now(binary_to_integer(ID))),
     Now < Now1;
 match_rsm(_Now, _) ->
     true.
-
-now_to_usec({MSec, Sec, USec}) ->
-    (MSec*1000000 + Sec)*1000000 + USec.
-
-usec_to_now(Int) ->
-    Secs = Int div 1000000,
-    USec = Int rem 1000000,
-    MSec = Secs div 1000000,
-    Sec = Secs rem 1000000,
-    {MSec, Sec, USec}.
 
 get_jids(undefined) ->
     [];

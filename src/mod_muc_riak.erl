@@ -60,7 +60,7 @@ restore_room(_LServer, Host, Name) ->
 forget_room(_LServer, Host, Name) ->
     {atomic, ejabberd_riak:delete(muc_room, {Name, Host})}.
 
-can_use_nick(LServer, Host, JID, Nick) ->
+can_use_nick(_LServer, Host, JID, Nick) ->
     {LUser, LServer, _} = jid:tolower(JID),
     LUS = {LUser, LServer},
     case ejabberd_riak:get_by_index(muc_registered,

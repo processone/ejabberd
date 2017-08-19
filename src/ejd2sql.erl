@@ -58,6 +58,7 @@ modules() ->
      mod_offline,
      mod_privacy,
      mod_private,
+     mod_pubsub,
      mod_roster,
      mod_shared_roster,
      mod_vcard].
@@ -80,8 +81,8 @@ export(Server, Output, Module) ->
               case export(LServer, Table, IO, ConvertFun) of
                   {atomic, ok} -> ok;
                   {aborted, Reason} ->
-                      ?ERROR_MSG("Failed export for module ~p: ~p",
-                                 [Module, Reason])
+                      ?ERROR_MSG("Failed export for module ~p and table ~p: ~p",
+                                 [Module, Table, Reason])
               end
       end, Module:export(Server)),
     close_output(Output, IO).

@@ -32,8 +32,8 @@
 	 hex_to_bin/1, hex_to_base64/1, expand_keyword/3,
 	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
 	 l2i/1, i2l/1, i2l/2, expr_to_term/1, term_to_expr/1,
-	 encode_pid/1, decode_pid/2, compile_exprs/2, join_atoms/2,
-	 try_read_file/1]).
+	 now_to_usec/1, usec_to_now/1, encode_pid/1, decode_pid/2,
+	 compile_exprs/2, join_atoms/2, try_read_file/1]).
 
 %% Deprecated functions
 -export([decode_base64/1, encode_base64/1]).
@@ -127,6 +127,18 @@ expr_to_term(Expr) ->
 term_to_expr(Term) ->
     list_to_binary(io_lib:print(Term)).
 
+-spec now_to_usec(erlang:timestamp()) -> non_neg_integer().
+now_to_usec({MSec, Sec, USec}) ->
+    (MSec*1000000 + Sec)*1000000 + USec.
+
+-spec usec_to_now(non_neg_integer()) -> erlang:timestamp().
+usec_to_now(Int) ->
+    Secs = Int div 1000000,
+    USec = Int rem 1000000,
+    MSec = Secs div 1000000,
+    Sec = Secs rem 1000000,
+    {MSec, Sec, USec}.
+
 l2i(I) when is_integer(I) -> I;
 l2i(L) when is_binary(L) -> binary_to_integer(L).
 
@@ -192,22 +204,12 @@ join_atoms(Atoms, Sep) ->
 %%      in configuration validators only.
 -spec try_read_file(file:filename_all()) -> binary().
 try_read_file(Path) ->
-    Res = case file:read_file_info(Path) of
-	      {ok, #file_info{type = Type, access = Access}} ->
-		  case {Type, Access} of
-		      {regular, read} -> ok;
-		      {regular, read_write} -> ok;
-		      {regular, _} -> {error, file:format_error(eaccess)};
-		      _ -> {error, "not a regular file"}
-		  end;
-	      {error, Why} ->
-		  {error, file:format_error(Why)}
-	  end,
-    case Res of
-	ok ->
+    case file:open(Path, [read]) of
+	{ok, Fd} ->
+	    file:close(Fd),
 	    iolist_to_binary(Path);
-	{error, Reason} ->
-	    ?ERROR_MSG("Failed to read ~s: ~s", [Path, Reason]),
+	{error, Why} ->
+	    ?ERROR_MSG("Failed to read ~s: ~s", [Path, file:format_error(Why)]),
 	    erlang:error(badarg)
     end.
 

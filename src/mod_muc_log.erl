@@ -1142,7 +1142,7 @@ get_room_state(RoomName, MucService) ->
 -spec get_room_state(pid()) -> mod_muc_room:state().
 
 get_room_state(RoomPid) ->
-    {ok, R} = gen_fsm:sync_send_all_state_event(RoomPid,
+    {ok, R} = p1_fsm:sync_send_all_state_event(RoomPid,
 						get_state),
     R.
 

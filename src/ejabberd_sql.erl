@@ -29,9 +29,7 @@
 
 -author('alexey@process-one.net').
 
--define(GEN_FSM, p1_fsm).
-
--behaviour(?GEN_FSM).
+-behaviour(p1_fsm).
 
 %% External exports
 -export([start/1, start_link/2,
@@ -113,11 +111,11 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(Host) ->
-    (?GEN_FSM):start(ejabberd_sql, [Host],
+    p1_fsm:start(ejabberd_sql, [Host],
 		     fsm_limit_opts() ++ (?FSMOPTS)).
 
 start_link(Host, StartInterval) ->
-    (?GEN_FSM):start_link(ejabberd_sql,
+    p1_fsm:start_link(ejabberd_sql,
 			  [Host, StartInterval],
 			  fsm_limit_opts() ++ (?FSMOPTS)).
 
@@ -160,7 +158,7 @@ sql_call(Host, Msg) ->
         case ejabberd_sql_sup:get_random_pid(Host) of
           none -> {error, <<"Unknown Host">>};
           Pid ->
-            (?GEN_FSM):sync_send_event(Pid,{sql_cmd, Msg,
+            p1_fsm:sync_send_event(Pid,{sql_cmd, Msg,
                                             p1_time_compat:monotonic_time(milli_seconds)},
                                        query_timeout(Host))
           end;
@@ -168,7 +166,7 @@ sql_call(Host, Msg) ->
     end.
 
 keep_alive(Host, PID) ->
-    (?GEN_FSM):sync_send_event(PID,
+    p1_fsm:sync_send_event(PID,
 			       {sql_cmd, {sql_query, ?KEEPALIVE_QUERY},
                                 p1_time_compat:monotonic_time(milli_seconds)},
 			       query_timeout(Host)).
@@ -280,7 +278,7 @@ init([Host, StartInterval]) ->
                                  keep_alive, [Host, self()])
     end,
     [DBType | _] = db_opts(Host),
-    (?GEN_FSM):send_event(self(), connect),
+    p1_fsm:send_event(self(), connect),
     ejabberd_sql_sup:add_pid(Host, self()),
     QueueType = case ejabberd_config:get_option({sql_queue_type, Host}) of
 		    undefined ->
@@ -313,7 +311,7 @@ connecting(connect, #state{host = Host} = State) ->
 	    PendingRequests =
 		p1_queue:dropwhile(
 		  fun(Req) ->
-			  ?GEN_FSM:send_event(self(), Req),
+			  p1_fsm:send_event(self(), Req),
 			  true
 		  end, State#state.pending_requests),
             State1 = State#state{db_ref = Ref,
@@ -325,7 +323,7 @@ connecting(connect, #state{host = Host} = State) ->
 		    "Retry after: ~p seconds",
 		    [State#state.db_type, Reason,
 		     State#state.start_interval div 1000]),
-	  (?GEN_FSM):send_event_after(State#state.start_interval,
+	  p1_fsm:send_event_after(State#state.start_interval,
 				      connect),
 	  {next_state, connecting, State}
     end;
@@ -337,7 +335,7 @@ connecting(Event, State) ->
 connecting({sql_cmd, {sql_query, ?KEEPALIVE_QUERY},
 	    _Timestamp},
 	   From, State) ->
-    (?GEN_FSM):reply(From,
+    p1_fsm:reply(From,
 		     {error, <<"SQL connection failed">>}),
     {next_state, connecting, State};
 connecting({sql_cmd, Command, Timestamp} = Req, From,
@@ -350,7 +348,7 @@ connecting({sql_cmd, Command, Timestamp} = Req, From,
 	catch error:full ->
 		Q = p1_queue:dropwhile(
 		      fun({sql_cmd, _, To, _Timestamp}) ->
-			      (?GEN_FSM):reply(
+			      p1_fsm:reply(
 				To, {error, <<"SQL connection failed">>}),
 			      true
 		      end, State#state.pending_requests),
@@ -393,7 +391,7 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 %% monitoring the connection)
 handle_info({'DOWN', _MonitorRef, process, _Pid, _Info},
 	    _StateName, State) ->
-    (?GEN_FSM):send_event(self(), connect),
+    p1_fsm:send_event(self(), connect),
     {next_state, connecting, State};
 handle_info(Info, StateName, State) ->
     ?WARNING_MSG("unexpected info in ~p: ~p",
@@ -734,16 +732,16 @@ sql_query_to_iolist(SQLQuery) ->
 abort_on_driver_error({error, <<"query timed out">>} =
 			  Reply,
 		      From) ->
-    (?GEN_FSM):reply(From, Reply),
+    p1_fsm:reply(From, Reply),
     {stop, timeout, get(?STATE_KEY)};
 abort_on_driver_error({error,
 		       <<"Failed sending data on socket", _/binary>>} =
 			  Reply,
 		      From) ->
-    (?GEN_FSM):reply(From, Reply),
+    p1_fsm:reply(From, Reply),
     {stop, closed, get(?STATE_KEY)};
 abort_on_driver_error(Reply, From) ->
-    (?GEN_FSM):reply(From, Reply),
+    p1_fsm:reply(From, Reply),
     {next_state, session_established, get(?STATE_KEY)}.
 
 %% == pure ODBC code

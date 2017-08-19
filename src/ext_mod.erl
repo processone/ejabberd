@@ -146,16 +146,29 @@ get_commands_spec() ->
 %% -- public modules functions
 
 update() ->
-    add_sources(?REPOS),
+    Contrib = maps:put(?REPOS, [], maps:new()),
+    Jungles = lists:foldl(fun({Package, Spec}, Acc) ->
+                Repo = proplists:get_value(url, Spec, ""),
+                Mods = maps:get(Repo, Acc, []),
+                maps:put(Repo, [Package|Mods], Acc)
+        end, Contrib, modules_spec(sources_dir(), "*/*")),
+    Repos = maps:fold(fun(Repo, _Mods, Acc) ->
+                Update = add_sources(Repo),
+                ?INFO_MSG("Update packages from repo ~s: ~p", [Repo, Update]),
+                case Update of
+                    ok -> Acc;
+                    Error -> [{repository, Repo, Error}|Acc]
+                end
+        end, [], Jungles),
     Res = lists:foldl(fun({Package, Spec}, Acc) ->
-                Path = proplists:get_value(url, Spec, ""),
-                Update = add_sources(Package, Path),
+                Repo = proplists:get_value(url, Spec, ""),
+                Update = add_sources(Package, Repo),
                 ?INFO_MSG("Update package ~s: ~p", [Package, Update]),
                 case Update of
                     ok -> Acc;
-                    Error -> [Error|Acc]
+                    Error -> [{Package, Repo, Error}|Acc]
                 end
-        end, [], modules_spec(sources_dir(), "*")),
+        end, Repos, modules_spec(sources_dir(), "*")),
     case Res of
         [] -> ok;
         [Error|_] -> Error
@@ -547,7 +560,9 @@ compile_result(Results) ->
 compile_options() ->
     [verbose, report_errors, report_warnings]
     ++ [{i, filename:join(app_dir(App), "include")}
-        || App <- [fast_xml, xmpp, p1_utils, ejabberd]].
+        || App <- [fast_xml, xmpp, p1_utils, ejabberd]]
+    ++ [{i, filename:join(mod_dir(Mod), "include")}
+        || Mod <- installed()].
 
 app_dir(App) ->
     case code:lib_dir(App) of
@@ -561,6 +576,10 @@ app_dir(App) ->
         Dir ->
             Dir
     end.
+
+mod_dir({Package, Spec}) ->
+    Default = filename:join(modules_dir(), Package),
+    proplists:get_value(path, Spec, Default).
 
 compile_erlang_file(Dest, File) ->
     compile_erlang_file(Dest, File, compile_options()).

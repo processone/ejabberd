@@ -151,6 +151,9 @@ do_start() ->
     application:set_env(lager, crash_log_size, LogRotateSize),
     application:set_env(lager, crash_log_count, LogRotateCount),
     ejabberd:start_app(lager),
+    lists:foreach(fun(Handler) ->
+			  lager:set_loghwm(Handler, LogRateLimit)
+		  end, gen_event:which_handlers(lager_event)),
     ok.
 
 %% @spec () -> ok

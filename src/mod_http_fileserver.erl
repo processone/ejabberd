@@ -59,8 +59,13 @@
 -define(HTTP_ERR_FILE_NOT_FOUND,
 	{-1, 404, [], <<"Not found">>}).
 
+-define(REQUEST_AUTH_HEADERS,
+	[{<<"WWW-Authenticate">>, <<"Basic realm=\"ejabberd\"">>}]).
+
 -define(HTTP_ERR_FORBIDDEN,
 	{-1, 403, [], <<"Forbidden">>}).
+-define(HTTP_ERR_REQUEST_AUTH,
+	{-1, 401, ?REQUEST_AUTH_HEADERS, <<"Unauthorized">>}).
 
 -define(DEFAULT_CONTENT_TYPE,
 	<<"application/octet-stream">>).
@@ -317,12 +322,17 @@ serve(LocalPath, Auth, DocRoot, DirectoryIndices, CustomHeaders, DefaultContentT
 			 false
 		 end,
     case CanProceed of
+	false ->
+	    ?HTTP_ERR_REQUEST_AUTH;
 	true ->
 	    FileName = filename:join(filename:split(DocRoot) ++ LocalPath),
 	    case file:read_file_info(FileName) of
-		{error, enoent}                    -> ?HTTP_ERR_FILE_NOT_FOUND;
-		{error, enotdir}                   -> ?HTTP_ERR_FILE_NOT_FOUND;
-		{error, eacces}                    -> ?HTTP_ERR_FORBIDDEN;
+		{error, enoent} ->
+		    ?HTTP_ERR_FILE_NOT_FOUND;
+		{error, enotdir} ->
+		    ?HTTP_ERR_FILE_NOT_FOUND;
+		{error, eacces} ->
+		    ?HTTP_ERR_FORBIDDEN;
 		{ok, #file_info{type = directory}} -> serve_index(FileName,
 								  DirectoryIndices,
 								  CustomHeaders,

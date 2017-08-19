@@ -58,7 +58,7 @@
 	[<<"koi8-r">>, <<"iso8859-15">>, <<"iso8859-1">>, <<"iso8859-2">>,
 	 <<"utf-8">>, <<"utf-8+latin-1">>]).
 
--record(state, {host = <<"">>        :: binary(),
+-record(state, {hosts = []           :: [binary()],
                 server_host = <<"">> :: binary(),
                 access = all         :: atom()}).
 
@@ -99,8 +99,7 @@ depends(_Host, _Opts) ->
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
     ejabberd:start_app(iconv),
-    MyHost = gen_mod:get_opt_host(Host, Opts,
-				  <<"irc.@HOST@">>),
+    MyHosts = gen_mod:get_opt_hosts(Host, Opts, <<"irc.@HOST@">>),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
     Access = gen_mod:get_opt(access, Opts, all),
@@ -108,10 +107,13 @@ init([Host, Opts]) ->
 		  [named_table, public,
 		   {keypos, #irc_connection.jid_server_host}]),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
-    register_hooks(MyHost, IQDisc),
-    ejabberd_router:register_route(MyHost, Host),
+    lists:foreach(
+      fun(MyHost) ->
+	      register_hooks(MyHost, IQDisc),
+	      ejabberd_router:register_route(MyHost, Host)
+      end, MyHosts),
     {ok,
-     #state{host = MyHost, server_host = Host,
+     #state{hosts = MyHosts, server_host = Host,
 	    access = Access}}.
 
 %%--------------------------------------------------------------------
@@ -133,8 +135,8 @@ handle_call(stop, _From, State) ->
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
 handle_cast({reload, ServerHost, NewOpts, OldOpts}, State) ->
-    NewHost = gen_mod:get_opt_host(ServerHost, NewOpts, <<"irc.@HOST@">>),
-    OldHost = gen_mod:get_opt_host(ServerHost, OldOpts, <<"irc.@HOST@">>),
+    NewHosts = gen_mod:get_opt_hosts(ServerHost, NewOpts, <<"irc.@HOST@">>),
+    OldHosts = gen_mod:get_opt_hosts(ServerHost, OldOpts, <<"irc.@HOST@">>),
     NewIQDisc = gen_mod:get_opt(iqdisc, NewOpts, gen_iq_handler:iqdisc(ServerHost)),
     OldIQDisc = gen_mod:get_opt(iqdisc, OldOpts, gen_iq_handler:iqdisc(ServerHost)),
     NewMod = gen_mod:db_mod(ServerHost, NewOpts, ?MODULE),
@@ -145,20 +147,26 @@ handle_cast({reload, ServerHost, NewOpts, OldOpts}, State) ->
        true ->
 	    ok
     end,
-    if (NewIQDisc /= OldIQDisc) or (NewHost /= OldHost) ->
-	    register_hooks(NewHost, NewIQDisc);
+    if (NewIQDisc /= OldIQDisc) ->
+	    lists:foreach(
+	      fun(NewHost) ->
+		      register_hooks(NewHost, NewIQDisc)
+	      end, NewHosts -- (NewHosts -- OldHosts));
        true ->
 	    ok
     end,
-    if NewHost /= OldHost ->
-	    ejabberd_router:register_route(NewHost, ServerHost),
-	    ejabberd_router:unregister_route(OldHost),
-	    unregister_hooks(OldHost);
-       true ->
-	    ok
-    end,
+    lists:foreach(
+      fun(NewHost) ->
+	      ejabberd_router:register_route(NewHost, ServerHost),
+	      register_hooks(NewHost, NewIQDisc)
+      end, NewHosts -- OldHosts),
+    lists:foreach(
+      fun(OldHost) ->
+	      ejabberd_router:unregister_route(OldHost),
+	      unregister_hooks(OldHost)
+      end, OldHosts -- NewHosts),
     Access = gen_mod:get_opt(access, NewOpts, all),
-    {noreply, State#state{host = NewHost, access = Access}};
+    {noreply, State#state{hosts = NewHosts, access = Access}};
 handle_cast(Msg, State) ->
     ?WARNING_MSG("unexpected cast: ~p", [Msg]),
     {noreply, State}.
@@ -170,9 +178,10 @@ handle_cast(Msg, State) ->
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
 handle_info({route, Packet},
-	    #state{host = Host, server_host = ServerHost,
-		   access = Access} =
+	    #state{server_host = ServerHost, access = Access} =
 		State) ->
+    To = xmpp:get_to(Packet),
+    Host = To#jid.lserver,
     case catch do_route(Host, ServerHost, Access, Packet) of
       {'EXIT', Reason} -> ?ERROR_MSG("~p", [Reason]);
       _ -> ok
@@ -187,9 +196,12 @@ handle_info(_Info, State) -> {noreply, State}.
 %% cleaning up. When it returns, the gen_server terminates with Reason.
 %% The return value is ignored.
 %%--------------------------------------------------------------------
-terminate(_Reason, #state{host = MyHost}) ->
-    ejabberd_router:unregister_route(MyHost),
-    unregister_hooks(MyHost).
+terminate(_Reason, #state{hosts = MyHosts}) ->
+    lists:foreach(
+      fun(MyHost) ->
+	      ejabberd_router:unregister_route(MyHost),
+	      unregister_hooks(MyHost)
+      end, MyHosts).
 
 %%--------------------------------------------------------------------
 %% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
@@ -975,8 +987,10 @@ mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(default_encoding) ->
     fun iolist_to_binary/1;
 mod_opt_type(host) -> fun iolist_to_binary/1;
+mod_opt_type(hosts) ->
+    fun (L) -> lists:map(fun iolist_to_binary/1, L) end;
 mod_opt_type(_) ->
-    [access, db_type, default_encoding, host].
+    [access, db_type, default_encoding, host, hosts].
 
 -spec extract_ident(stanza()) -> binary().
 extract_ident(Packet) ->

@@ -27,7 +27,7 @@
 
 -author('alexey@process-one.net').
 
--behaviour(gen_fsm).
+-behaviour(p1_fsm).
 
 %% External exports
 -export([start_link/12, start/13, route_chan/4,
@@ -91,7 +91,7 @@ start(From, Host, ServerHost, Server, Username,
 
 start_link(From, Host, Server, Username, Encoding, Port,
 	   Password, Ident, RemoteAddr, RealName, WebircPassword, Mod) ->
-    gen_fsm:start_link(?MODULE,
+    p1_fsm:start_link(?MODULE,
 		       [From, Host, Server, Username, Encoding, Port, Password,
 			Ident, RemoteAddr, RealName, WebircPassword, Mod],
 		       ?FSMOPTS).
@@ -109,7 +109,7 @@ start_link(From, Host, Server, Username, Encoding, Port,
 %%----------------------------------------------------------------------
 init([From, Host, Server, Username, Encoding, Port,
       Password, Ident, RemoteAddr, RealName, WebircPassword, Mod]) ->
-    gen_fsm:send_event(self(), init),
+    p1_fsm:send_event(self(), init),
     {ok, open_socket,
      #state{mod = Mod,
 	    encoding = Encoding, port = Port, password = Password,
@@ -628,11 +628,11 @@ handle_info({tcp, _Socket, Data}, StateName,
      StateData#state{inbuf = NewBuf}};
 handle_info({tcp_closed, _Socket}, StateName,
 	    StateData) ->
-    gen_fsm:send_event(self(), closed),
+    p1_fsm:send_event(self(), closed),
     {next_state, StateName, StateData};
 handle_info({tcp_error, _Socket, _Reason}, StateName,
 	    StateData) ->
-    gen_fsm:send_event(self(), closed),
+    p1_fsm:send_event(self(), closed),
     {next_state, StateName, StateData}.
 
 %%----------------------------------------------------------------------

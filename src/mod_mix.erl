@@ -46,7 +46,7 @@
 		?NS_MIX_NODES_CONFIG]).
 
 -record(state, {server_host :: binary(),
-		host :: binary()}).
+		hosts :: [binary()]}).
 
 %%%===================================================================
 %%% API
@@ -124,36 +124,39 @@ process_iq(#iq{lang = Lang} = IQ) ->
 %%%===================================================================
 init([ServerHost, Opts]) ->
     process_flag(trap_exit, true),
-    Host = gen_mod:get_opt_host(ServerHost, Opts, <<"mix.@HOST@">>),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
-    ConfigTab = gen_mod:get_module_proc(Host, config),
-    ets:new(ConfigTab, [named_table]),
-    ets:insert(ConfigTab, {plugins, [<<"mix">>]}),
-    ejabberd_hooks:add(disco_local_items, Host, ?MODULE, disco_items, 100),
-    ejabberd_hooks:add(disco_local_features, Host, ?MODULE, disco_features, 100),
-    ejabberd_hooks:add(disco_local_identity, Host, ?MODULE, disco_identity, 100),
-    ejabberd_hooks:add(disco_sm_items, Host, ?MODULE, disco_items, 100),
-    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, disco_features, 100),
-    ejabberd_hooks:add(disco_sm_identity, Host, ?MODULE, disco_identity, 100),
-    ejabberd_hooks:add(disco_info, Host, ?MODULE, disco_info, 100),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-				  ?NS_DISCO_ITEMS, mod_disco,
-				  process_local_iq_items, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-				  ?NS_DISCO_INFO, mod_disco,
-				  process_local_iq_info, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-				  ?NS_DISCO_ITEMS, mod_disco,
-				  process_local_iq_items, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-				  ?NS_DISCO_INFO, mod_disco,
-				  process_local_iq_info, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-				  ?NS_PUBSUB, mod_pubsub, iq_sm, IQDisc),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-				  ?NS_MIX_0, ?MODULE, process_iq, IQDisc),
-    ejabberd_router:register_route(Host, ServerHost),
-    {ok, #state{server_host = ServerHost, host = Host}}.
+    Hosts = gen_mod:get_opt_hosts(ServerHost, Opts, <<"mix.@HOST@">>),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(ServerHost)),
+    lists:foreach(
+      fun(Host) ->
+	      ConfigTab = gen_mod:get_module_proc(Host, config),
+	      ets:new(ConfigTab, [named_table]),
+	      ets:insert(ConfigTab, {plugins, [<<"mix">>]}),
+	      ejabberd_hooks:add(disco_local_items, Host, ?MODULE, disco_items, 100),
+	      ejabberd_hooks:add(disco_local_features, Host, ?MODULE, disco_features, 100),
+	      ejabberd_hooks:add(disco_local_identity, Host, ?MODULE, disco_identity, 100),
+	      ejabberd_hooks:add(disco_sm_items, Host, ?MODULE, disco_items, 100),
+	      ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, disco_features, 100),
+	      ejabberd_hooks:add(disco_sm_identity, Host, ?MODULE, disco_identity, 100),
+	      ejabberd_hooks:add(disco_info, Host, ?MODULE, disco_info, 100),
+	      gen_iq_handler:add_iq_handler(ejabberd_local, Host,
+					    ?NS_DISCO_ITEMS, mod_disco,
+					    process_local_iq_items, IQDisc),
+	      gen_iq_handler:add_iq_handler(ejabberd_local, Host,
+					    ?NS_DISCO_INFO, mod_disco,
+					    process_local_iq_info, IQDisc),
+	      gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
+					    ?NS_DISCO_ITEMS, mod_disco,
+					    process_local_iq_items, IQDisc),
+	      gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
+					    ?NS_DISCO_INFO, mod_disco,
+					    process_local_iq_info, IQDisc),
+	      gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
+					    ?NS_PUBSUB, mod_pubsub, iq_sm, IQDisc),
+	      gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
+					    ?NS_MIX_0, ?MODULE, process_iq, IQDisc),
+	      ejabberd_router:register_route(Host, ServerHost)
+      end, Hosts),
+    {ok, #state{server_host = ServerHost, hosts = Hosts}}.
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
@@ -180,22 +183,24 @@ handle_info({route, Packet}, State) ->
 handle_info(_Info, State) ->
     {noreply, State}.
 
-terminate(_Reason, #state{host = Host}) ->
-    ejabberd_hooks:delete(disco_local_items, Host, ?MODULE, disco_items, 100),
-    ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, disco_features, 100),
-    ejabberd_hooks:delete(disco_local_identity, Host, ?MODULE, disco_identity, 100),
-    ejabberd_hooks:delete(disco_sm_items, Host, ?MODULE, disco_items, 100),
-    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, disco_features, 100),
-    ejabberd_hooks:delete(disco_sm_identity, Host, ?MODULE, disco_identity, 100),
-    ejabberd_hooks:delete(disco_info, Host, ?MODULE, disco_info, 100),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_DISCO_ITEMS),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_DISCO_INFO),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PUBSUB),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MIX_0),
-    ejabberd_router:unregister_route(Host),
-    ok.
+terminate(_Reason, #state{hosts = Hosts}) ->
+    lists:foreach(
+      fun(Host) ->
+	      ejabberd_hooks:delete(disco_local_items, Host, ?MODULE, disco_items, 100),
+	      ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, disco_features, 100),
+	      ejabberd_hooks:delete(disco_local_identity, Host, ?MODULE, disco_identity, 100),
+	      ejabberd_hooks:delete(disco_sm_items, Host, ?MODULE, disco_items, 100),
+	      ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, disco_features, 100),
+	      ejabberd_hooks:delete(disco_sm_identity, Host, ?MODULE, disco_identity, 100),
+	      ejabberd_hooks:delete(disco_info, Host, ?MODULE, disco_info, 100),
+	      gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS),
+	      gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
+	      gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_DISCO_ITEMS),
+	      gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_DISCO_INFO),
+	      gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PUBSUB),
+	      gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MIX_0),
+	      ejabberd_router:unregister_route(Host)
+      end, Hosts).
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
@@ -316,4 +321,6 @@ depends(_Host, _Opts) ->
 
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(host) -> fun iolist_to_binary/1;
-mod_opt_type(_) -> [host, iqdisc].
+mod_opt_type(hosts) ->
+    fun (L) -> lists:map(fun iolist_to_binary/1, L) end;
+mod_opt_type(_) -> [host, hosts, iqdisc].

@@ -26,7 +26,7 @@
 
 -author('xram@jabber.ru').
 
--behaviour(gen_fsm).
+-behaviour(p1_fsm).
 
 %% gen_fsm callbacks.
 -export([init/1, handle_event/3, handle_sync_event/4,
@@ -75,7 +75,7 @@ start({gen_tcp, Socket}, Opts1) ->
 			   [Socket, Host, Opts]).
 
 start_link(Socket, Host, Opts) ->
-    gen_fsm:start_link(?MODULE, [Socket, Host, Opts], []).
+    p1_fsm:start_link(?MODULE, [Socket, Host, Opts], []).
 
 init([Socket, Host, Opts]) ->
     process_flag(trap_exit, true),
@@ -106,9 +106,9 @@ socket_type() -> raw.
 stop(StreamPid) -> StreamPid ! stop.
 
 activate({P1, J1}, {P2, J2}) ->
-    case catch {gen_fsm:sync_send_all_state_event(P1,
+    case catch {p1_fsm:sync_send_all_state_event(P1,
 						  get_socket),
-		gen_fsm:sync_send_all_state_event(P2, get_socket)}
+		p1_fsm:sync_send_all_state_event(P2, get_socket)}
 	of
       {S1, S2} when is_port(S1), is_port(S2) ->
 	  P1 ! {activate, P2, S2, J1, J2},
@@ -197,7 +197,7 @@ handle_info({tcp, _S, Data}, StateName, StateData)
     when StateName /= wait_for_activation ->
     erlang:cancel_timer(StateData#state.timer),
     TRef = erlang:send_after(?WAIT_TIMEOUT, self(), stop),
-    gen_fsm:send_event(self(), Data),
+    p1_fsm:send_event(self(), Data),
     {next_state, StateName, StateData#state{timer = TRef}};
 %% Activation message.
 handle_info({activate, PeerPid, PeerSocket, IJid, TJid},
