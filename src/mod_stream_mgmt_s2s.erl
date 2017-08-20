@@ -522,7 +522,7 @@ transition_to_resume(#{mgmt_state := active,
     ?DEBUG("Try to connect to remote server ~s", [RServer]),
     case resume(Server, RServer, [{resume, State1}]) of
       {ok, Pid} ->
-        erlang:start_timer(Timeout, Pid, connection_timeout),
+        erlang:start_timer(timer:seconds(Timeout), Pid, connection_timeout),
         State1;
       _ ->
         State1
@@ -717,15 +717,17 @@ add_resent_delay_info(#{server_host := LServer}, El, Time) ->
 add_resent_delay_info(_State, El, _Time) ->
     El.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% todo: import from mod_stream_mgmt.erl
-
 -spec send(state(), xmpp_element()) -> state().
 send(#{mod := Mod} = State, Pkt) ->
     Mod:send(State, Pkt).
 
 send_rack(#{mgmt_ack_timer := _} = State) ->
     State;
+send_rack(#{mgmt_xmlns := Xmlns,
+            mgmt_stanzas_out := NumStanzasOut,
+            mgmt_ack_timeout := infinity} = State) ->
+    State1 = State#{mgmt_stanzas_req => NumStanzasOut},
+    send(State1, #sm_r{xmlns = Xmlns});
 send_rack(#{mgmt_xmlns := Xmlns,
             mgmt_stanzas_out := NumStanzasOut,
             mgmt_ack_timeout := AckTimeout} = State) ->
@@ -769,13 +771,13 @@ get_max_ack_queue(Host) ->
     gen_mod:get_module_opt(Host, ?MODULE, max_ack_queue, 1000).
 
 get_ack_timeout(Host) ->
-    case gen_mod:get_module_opt(Host, ?MODULE, ack_timeout, 60) of % change default
+    case gen_mod:get_module_opt(Host, ?MODULE, ack_timeout, 60) of
         infinity -> infinity;
         T -> timer:seconds(T)
     end.
 
 get_connection_timeout(Host) ->
-    gen_mod:get_module_opt(Host, ?MODULE, connection_timeout, 120000).
+    gen_mod:get_module_opt(Host, ?MODULE, connection_timeout, 300).
 
 mod_opt_type(connection_timeout) ->
     fun(I) when is_integer(I), I >= 0 -> I end;
