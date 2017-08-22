@@ -730,18 +730,6 @@ not_before_not_after() ->
 -spec to_public(jose_jwk:key()) -> jose_jwk:key().
 to_public(PrivateKey) ->
     jose_jwk:to_public(PrivateKey).
-%% case jose_jwk:to_key(PrivateKey) of
-%% 	#'RSAPrivateKey'{modulus = Mod, publicExponent = Exp} ->
-%% 	    Public = #'RSAPublicKey'{modulus = Mod, publicExponent = Exp},
-%% 	    jose_jwk:from_key(Public);
-%% 	_ ->
-%% 	    jose_jwk:to_public(PrivateKey)
-%% end.
-
-%% to_public(#'RSAPrivateKey'{modulus = Mod, publicExponent = Exp}) ->
-%%     #'RSAPublicKey'{modulus = Mod, publicExponent = Exp};
-%% to_public(PrivateKey) ->
-%%     jose_jwk:to_public(PrivateKey).
 
 -spec pem_to_certificate(pem()) -> #'Certificate'{}.
 pem_to_certificate(Pem) ->
@@ -1054,16 +1042,8 @@ get_config_cert_dir() ->
     end.
 
 
--ifdef(GENERATE_RSA_KEY).
-generate_key() ->
-    Key = public_key:generate_key({rsa, 2048, 65537}),
-    Key1 = Key#'RSAPrivateKey'{version = 'two-prime'},
-    jose_jwk:from_key(Key1).
-%% jose_jwk:generate_key({rsa, 2048}).
--else.
 generate_key() ->
     jose_jwk:generate_key({ec, secp256r1}).
--endif.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
