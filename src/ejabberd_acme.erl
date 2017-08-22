@@ -156,8 +156,12 @@ format_get_certificate({error, Domain, Reason}) ->
 			     {'error', bitstring(), _}.
 get_certificate(CAUrl, DomainName, PrivateKey) ->
     try
-	{ok, _Authz} = create_new_authorization(CAUrl, DomainName, PrivateKey),
-	create_new_certificate(CAUrl, DomainName, PrivateKey)
+	AllSubDomains = find_all_sub_domains(DomainName),
+	lists:foreach(
+	  fun(Domain) ->
+		  {ok, _Authz} = create_new_authorization(CAUrl, Domain, PrivateKey)
+	  end, [DomainName|AllSubDomains]),
+	create_new_certificate(CAUrl, {DomainName, AllSubDomains}, PrivateKey)
     catch
 	throw:Throw ->
 	    Throw;
@@ -235,13 +239,14 @@ create_new_authorization(CAUrl, DomainName, PrivateKey) ->
 	    throw({error, DomainName, authorization})
     end.
 
--spec create_new_certificate(url(), bitstring(), jose_jwk:key()) -> 
+-spec create_new_certificate(url(), {bitstring(), [bitstring()]}, jose_jwk:key()) -> 
 				    {ok, bitstring(), pem()}.
-create_new_certificate(CAUrl, DomainName, PrivateKey) ->
+create_new_certificate(CAUrl, {DomainName, AllSubDomains}, PrivateKey) ->
     try
 	{ok, Dirs, Nonce0} = ejabberd_acme_comm:directory(CAUrl),
 	CSRSubject = [{commonName, bitstring_to_list(DomainName)}],
-	{CSR, CSRKey} = make_csr(CSRSubject),
+	SANs = [{dNSName, SAN} || SAN <- AllSubDomains],
+	{CSR, CSRKey} = make_csr(CSRSubject, SANs),
 	{NotBefore, NotAfter} = not_before_not_after(),
 	Req =
 	    [{<<"csr">>, CSR},
@@ -572,8 +577,9 @@ certificate_exists(Host) ->
 %% For now we accept only generating a key of
 %% specific type for signing the csr
 
--spec make_csr(proplist()) -> {binary(), jose_jwk:key()}.
-make_csr(Attributes) ->
+-spec make_csr(proplist(), [{dNSName, bitstring()}]) 
+	      -> {binary(), jose_jwk:key()}.
+make_csr(Attributes, SANs) ->
     Key = generate_key(),
     {_, KeyKey} = jose_jwk:to_key(Key),
     KeyPub = to_public(Key),
@@ -582,7 +588,8 @@ make_csr(Attributes) ->
 	{ok, RawBinPubKey} = raw_binary_public_key(KeyPub),
 	SubPKInfo = subject_pk_info(SubPKInfoAlgo, RawBinPubKey),
 	{ok, Subject} = attributes_from_list(Attributes),
-	CRI = certificate_request_info(SubPKInfo, Subject),
+	ExtensionRequest = extension_request(SANs),
+	CRI = certificate_request_info(SubPKInfo, Subject, ExtensionRequest),
 	{ok, EncodedCRI} = der_encode(
 			     'CertificationRequestInfo',
 			     CRI),
@@ -617,12 +624,27 @@ subject_pk_info(Algo, RawBinPubKey) ->
        subjectPublicKey = RawBinPubKey
       }.
 
-certificate_request_info(SubPKInfo, Subject) ->
+extension(SANs) ->
+    #'Extension'{
+       extnID = attribute_oid(subjectAltName),
+       critical = false,
+       extnValue = public_key:der_encode('SubjectAltName', SANs)}.
+
+extension_request(SANs) ->
+    #'AttributePKCS-10'{
+       type = ?'pkcs-9-at-extensionRequest',
+       values = [{'asn1_OPENTYPE', 
+		  public_key:der_encode(
+		    'ExtensionRequest', 
+		    [extension(SANs)])}]
+      }.
+
+certificate_request_info(SubPKInfo, Subject, ExtensionRequest) ->
     #'CertificationRequestInfo'{
        version = 0,
        subject = Subject,
        subjectPKInfo = SubPKInfo,
-       attributes = []
+       attributes = [ExtensionRequest]
       }.
 
 signature_algo(_Key, _Hash) ->
@@ -693,6 +715,7 @@ attribute_oid(countryName) -> ?'id-at-countryName';
 attribute_oid(stateOrProvinceName) -> ?'id-at-stateOrProvinceName';
 attribute_oid(localityName) -> ?'id-at-localityName';
 attribute_oid(organizationName) -> ?'id-at-organizationName';
+attribute_oid(subjectAltName) -> ?'id-ce-subjectAltName';
 attribute_oid(_) -> error(bad_attributes).
 
 
@@ -792,6 +815,15 @@ private_key_types() ->
     ['RSAPrivateKey',
      'DSAPrivateKey',
      'ECPrivateKey'].
+
+-spec find_all_sub_domains(bitstring()) -> [bitstring()].
+find_all_sub_domains(DomainName) ->
+    AllRoutes = ejabberd_router:get_all_routes(),
+    DomainLen = size(DomainName),
+    [Route || Route <- AllRoutes,  
+	      binary:longest_common_suffix([DomainName, Route]) 
+		  =:= DomainLen].
+    
 
 -spec is_error(_) -> boolean().
 is_error({error, _}) -> true;
