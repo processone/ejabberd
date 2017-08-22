@@ -799,31 +799,31 @@ mnesia_change_nodename(FromString, ToString, Source, Target) ->
 							     end,
 Convert =
 fun
-    ({schema, db_nodes, Nodes}, Acc) ->
-	io:format(" +++ db_nodes ~p~n", [Nodes]),
-	{[{schema, db_nodes, lists:map(Switch,Nodes)}], Acc};
-    ({schema, version, Version}, Acc) ->
-	io:format(" +++ version: ~p~n", [Version]),
-	{[{schema, version, Version}], Acc};
-    ({schema, cookie, Cookie}, Acc) ->
-	io:format(" +++ cookie: ~p~n", [Cookie]),
-	{[{schema, cookie, Cookie}], Acc};
-    ({schema, Tab, CreateList}, Acc) ->
-	io:format("~n * Checking table: '~p'~n", [Tab]),
-	Keys = [ram_copies, disc_copies, disc_only_copies],
-	OptSwitch =
-	    fun({Key, Val}) ->
-		    case lists:member(Key, Keys) of
-			true ->
-			    io:format("   + Checking key: '~p'~n", [Key]),
-			    {Key, lists:map(Switch, Val)};
-			false-> {Key, Val}
-		    end
-	    end,
-	Res = {[{schema, Tab, lists:map(OptSwitch, CreateList)}], Acc},
-	Res;
-    (Other, Acc) ->
-	{[Other], Acc}
+({schema, db_nodes, Nodes}, Acc) ->
+    io:format(" +++ db_nodes ~p~n", [Nodes]),
+    {[{schema, db_nodes, lists:map(Switch,Nodes)}], Acc};
+({schema, version, Version}, Acc) ->
+    io:format(" +++ version: ~p~n", [Version]),
+    {[{schema, version, Version}], Acc};
+({schema, cookie, Cookie}, Acc) ->
+    io:format(" +++ cookie: ~p~n", [Cookie]),
+    {[{schema, cookie, Cookie}], Acc};
+({schema, Tab, CreateList}, Acc) ->
+    io:format("~n * Checking table: '~p'~n", [Tab]),
+    Keys = [ram_copies, disc_copies, disc_only_copies],
+    OptSwitch =
+	fun({Key, Val}) ->
+		case lists:member(Key, Keys) of
+		    true ->
+			io:format("   + Checking key: '~p'~n", [Key]),
+			{Key, lists:map(Switch, Val)};
+		    false-> {Key, Val}
+		end
+	end,
+    Res = {[{schema, Tab, lists:map(OptSwitch, CreateList)}], Acc},
+    Res;
+(Other, Acc) ->
+    {[Other], Acc}
 end,
 mnesia:traverse_backup(Source, Target, Convert, switched).
 
