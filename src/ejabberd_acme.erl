@@ -970,6 +970,7 @@ save_certificate({ok, DomainName, Cert}) ->
 		      path = CertificateFile
 		     },
 	add_certificate_persistent(DataCert),
+	ejabberd_pkix:add_certfile(CertificateFile),
 	{ok, DomainName, saved}
     catch
 	throw:Throw ->
