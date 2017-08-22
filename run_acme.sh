@@ -1,9 +1,15 @@
 #!/bin/bash
 
-erl -pa ebin \
-deps/jiffy/ebin \
-deps/fast_tls/ebin \
-deps/jose/ebin \
-deps/base64url/ebin \
-deps/xmpp/ebin \
--noshell -s acme_experimental scenario -s erlang halt
+
+set -v
+sudo ejabberdctl stop
+set -e
+make
+sudo make install
+sudo ejabberdctl start
+sleep 2
+sudo ejabberdctl get_certificate all
+sudo ejabberdctl list_certificates plain
+
+sudo ejabberdctl revoke_certificate domain:my-test-ejabberd-server6.free 
+sudo ejabberdctl list_certificates verbose
