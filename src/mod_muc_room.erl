@@ -492,7 +492,7 @@ handle_event({destroy, Reason}, _StateName,
 handle_event(destroy, StateName, StateData) ->
     ?INFO_MSG("Destroyed MUC room ~s",
 	      [jid:encode(StateData#state.jid)]),
-    handle_event({destroy, undefined}, StateName, StateData);
+    handle_event({destroy, <<"">>}, StateName, StateData);
 handle_event({set_affiliations, Affiliations},
 	     StateName, StateData) ->
     {next_state, StateName,
