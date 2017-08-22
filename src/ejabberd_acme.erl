@@ -385,11 +385,14 @@ format_certificate(DataCert, Verbose) ->
 	%% Find the notAfter date
 	NotAfter = get_notAfter(Certificate),
 
+	%% Find the subjectAltNames
+	SANs = get_subjectAltNames(Certificate),
+
 	case Verbose of
 	    "plain" ->
-		format_certificate_plain(DomainName, NotAfter, Path);
+		format_certificate_plain(DomainName, SANs, NotAfter, Path);
 	    "verbose" ->
-		format_certificate_verbose(DomainName, NotAfter, PemCert)
+		format_certificate_verbose(DomainName, SANs, NotAfter, PemCert)
 	end
     catch
 	E:R ->
@@ -397,22 +400,30 @@ format_certificate(DataCert, Verbose) ->
 	    fail_format_certificate(DomainName)
     end.
 
--spec format_certificate_plain(bitstring(), {expired | ok, string()}, string()) -> string().
-format_certificate_plain(DomainName, NotAfter, Path) ->
+-spec format_certificate_plain(bitstring(), [string()], {expired | ok, string()}, string()) 
+			      -> string().
+format_certificate_plain(DomainName, SANs, NotAfter, Path) ->
     Result = lists:flatten(io_lib:format(
 			     "  Domain: ~s~n" 
+			     "~s"
 			     "    ~s~n" 
 			     "    Path: ~s", 
-			     [DomainName, format_validity(NotAfter), Path])),
+			     [DomainName,
+			      lists:flatten([io_lib:format("    SAN: ~s~n", [SAN]) || SAN <- SANs]),
+			      format_validity(NotAfter), Path])),
     Result.
 
--spec format_certificate_verbose(bitstring(), {expired | ok, string()}, bitstring()) -> string().
-format_certificate_verbose(DomainName, NotAfter, PemCert) ->
+-spec format_certificate_verbose(bitstring(), [string()], {expired | ok, string()}, bitstring()) 
+				-> string().
+format_certificate_verbose(DomainName, SANs, NotAfter, PemCert) ->
     Result = lists:flatten(io_lib:format(
-			     "  Domain: ~s~n" 
+			     "  Domain: ~s~n"
+			     "~s" 
 			     "    ~s~n" 
 			     "    Certificate In PEM format: ~n~s", 
-			     [DomainName, format_validity(NotAfter), PemCert])),
+			     [DomainName, 
+			      lists:flatten([io_lib:format("    SAN: ~s~n", [SAN]) || SAN <- SANs]),
+			      format_validity(NotAfter), PemCert])),
     Result.
 
 -spec format_validity({'expired' | 'ok', string()}) -> string().
@@ -461,6 +472,23 @@ get_notAfter(Certificate) ->
 	false ->
 	    {ok, NotAfter}
     end.
+
+-spec get_subjectAltNames(#'Certificate'{}) -> [string()].
+get_subjectAltNames(#'Certificate'{tbsCertificate = TbsCertificate}) ->
+    #'TBSCertificate'{
+       extensions = Exts
+      } = TbsCertificate,
+
+    EncodedSANs = [Val || #'Extension'{extnID = Oid, extnValue = Val} <- Exts, 
+			  Oid =:= attribute_oid(subjectAltName)],
+
+    lists:flatmap(
+      fun(EncSAN) ->
+	      SANs0 = public_key:der_decode('SubjectAltName', EncSAN),
+	      [Name || {dNSName, Name} <- SANs0]
+      end, EncodedSANs).
+
+    
 
 -spec get_utc_validity(#'Certificate'{}) -> string().
 get_utc_validity(#'Certificate'{tbsCertificate = TbsCertificate}) ->
