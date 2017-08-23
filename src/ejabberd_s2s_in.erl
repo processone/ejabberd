@@ -176,9 +176,7 @@ handle_stream_start(_StreamStart, #{lserver := LServer} = State) ->
 	    send(State, xmpp:serr_host_unknown());
 	true ->
 	    ServerHost = ejabberd_router:host_of_route(LServer),
-	    UniqueId = p1_time_compat:unique_integer(),
-	    State1 = State#{server_host => ServerHost,
-	    				unique_id => UniqueId}, % for xep-0198 s2s
+	    State1 = State#{server_host => ServerHost}, 
 	    ejabberd_hooks:run_fold(s2s_in_stream_started, ServerHost, State1, [])
     end.
 
@@ -187,7 +185,8 @@ handle_stream_end(Reason, #{server_host := LServer} = State) ->
     ejabberd_hooks:run_fold(s2s_in_closed, LServer, State1, [Reason]).
     
 handle_stream_established(State) ->
-    set_idle_timeout(State#{established => true}).
+	UniqueId = p1_time_compat:unique_integer(), % for xep-0198 s2s
+    set_idle_timeout(State#{established => true, unique_id => UniqueId}).
 
 handle_auth_success(RServer, Mech, _AuthModule,
 		    #{sockmod := SockMod,

@@ -27,8 +27,6 @@
         is_record(Pkt, sm_a) or
         is_record(Pkt, sm_r)).
 
-% replace to separate file
-
 -record(s2s, {fromto = {<<"">>, <<"">>} :: {binary(), binary()} | '_',
               pid = self()              :: pid() | '_' | '$1'}).
 
@@ -55,6 +53,7 @@ start(Host, _Opts) ->
     ejabberd_hooks:add(s2s_out_established,
                        Host, ?MODULE, s2s_out_established, 50),
     %% server part
+    ets_cache:new(sm_s2s),
     ejabberd_hooks:add(s2s_in_stream_started,
                        Host, ?MODULE, s2s_in_stream_started, 50),
     ejabberd_hooks:add(s2s_in_post_auth_features,
@@ -204,7 +203,8 @@ s2s_out_packet(#{mgmt_state := MgmtState} = State, Pkt)
 s2s_out_packet(State, _Pkt) ->
     State.
 
-s2s_out_handle_send(#{mgmt_state := MgmtState, lang := Lang} = State, Pkt, SendResult)
+s2s_out_handle_send(#{mgmt_state := MgmtState,
+                      lang := Lang} = State, Pkt, SendResult)
   when MgmtState == active;
        MgmtState == wait_for_enabled;
        MgmtState == pending ->
@@ -255,22 +255,26 @@ s2s_out_handle_recv(#{mgmt_state := pending,
                       mgmt_timeout := Timeout,
                       mgmt_xmlns := Xmlns,
                       mgmt_queue := Queue,
-                      mgmt_prev_session := OldState} = State, _El, #sm_failed{}) ->
+                      mgmt_prev_session := OldState} = State,
+                    _El, #sm_failed{h = H}) ->
     ?DEBUG("Remote server ~s can't resume previous session", [RServer]),
-
-    #{mgmt_queue := OldQueue, mgmt_stanzas_out := OldNumStanzasOut} = OldState,
-
+    #{mgmt_queue := OldQueue,
+      mgmt_stanzas_out := OldNumStanzasOut} =
+        case H of
+          undefined->
+            OldState;
+          _ ->
+            check_h_attribute(OldState, H)
+        end,           
     {NewNumStanzasOut, NewQueue} =
         p1_queue:foldl(
             fun({_, Time, Pkt}, {AccNum, AccQueue}) ->
                     Num = AccNum + 1,
                     {Num, p1_queue:in({Num, Time, Pkt}, AccQueue)}
             end, {OldNumStanzasOut, OldQueue}, Queue),
-
     State1 = State#{mgmt_state => wait_for_enabled,
                     mgmt_queue => NewQueue,
                     mgmt_stanzas_out => NewNumStanzasOut},
-
     State2 = maps:remove(mgmt_prev_session, State1),
     State3 =
         if Timeout > 0 ->
@@ -285,13 +289,13 @@ s2s_out_handle_recv(State, _El, _Pkt) ->
     State.
 
 s2s_out_closed(#{mgmt_state := connecting} = State, _) ->
-    {stop, transition_to_resume(State#{stream_state => connecting})};
+    {stop, transition_to_connecting(State#{stream_state => connecting})};
 s2s_out_closed(State, _) ->
     State.
 
 s2s_out_terminate(#{mgmt_state := active, mgmt_queue := Queue} = State, _Reason) 
   when ?qlen(Queue) > 0 ->
-    transition_to_resume(State);
+    transition_to_connecting(State);
 s2s_out_terminate(#{mgmt_state := timeout,
                     mgmt_prev_session := OldState} = State, _Reason) ->
     #{mgmt_queue := Queue} = OldState,
@@ -365,9 +369,14 @@ s2s_in_terminate(#{mgmt_state := resumed,
                    remote_server := RServer} = State, _Reason) ->
     ?INFO_MSG("Closing former stream of resumed session for ~s", [RServer]),
     State;
+s2s_in_terminate(#{mgmt_state := pending,
+                   server_host := Server,
+                   mgmt_stanzas_in := H} = State, _Reason) ->
+    ResumeId = make_resume_id(State),
+    ets_cache:insert_new(sm_s2s, {Server, ResumeId}, H),
+    State;
 s2s_in_terminate(State, _Reason) ->
     State.
-
 
 %%%=============================================================================
 %%% Internal functions
@@ -450,18 +459,18 @@ handle_enable(#{remote_server := RServer,
            true ->
                 DefaultTimeout
         end,
-    Res = if Timeout > 0 ->
-                  ?INFO_MSG("Stream management with "
-                            "resumption enabled for ~s", [RServer]),
-                  #sm_enabled{resume = true,
-                              id = make_resume_id(State),
-                              max = Timeout, xmlns = Xmlns};
-             true ->
-                  ?INFO_MSG("Stream management enabled for ~s", [RServer]),
-                  #sm_enabled{xmlns = Xmlns}
-          end,
     State1 = State#{mgmt_state => active,
                     mgmt_timeout => Timeout},
+    Res = 
+        if Timeout > 0 ->
+                ?INFO_MSG("Stream management with "
+                          "resumption enabled for ~s", [RServer]),
+                #sm_enabled{resume = true, id = make_resume_id(State),
+                            max = Timeout, xmlns = Xmlns};
+           true ->
+                ?INFO_MSG("Stream management enabled for ~s", [RServer]),
+                #sm_enabled{xmlns = Xmlns}
+        end,
     send(State1, Res).
 
 -spec handle_enabled(state(), sm_enabled()) -> state().
@@ -508,16 +517,16 @@ handle_a(State, #sm_a{h = H}) ->
 make_resume_id(#{remote_server := RServer, unique_id := UniqueId}) ->
     misc:term_to_base64({RServer, UniqueId}).
 
--spec transition_to_resume(state()) -> state().
-transition_to_resume(#{mgmt_state := active,
-                       mgmt_queue := Queue,
-                       mgmt_timeout := 0} = State) ->
+-spec transition_to_connecting(state()) -> state().
+transition_to_connecting(#{mgmt_state := active,
+                           mgmt_queue := Queue,
+                           mgmt_timeout := 0} = State) ->
     route_unacked_stanzas(State, Queue),
     State;
-transition_to_resume(#{mgmt_state := active,
-                       server_host := Server,
-                       remote_server := RServer,
-                       mgmt_connection_timeout := Timeout} = State) ->
+transition_to_connecting(#{mgmt_state := active,
+                           server_host := Server,
+                           remote_server := RServer,
+                           mgmt_connection_timeout := Timeout} = State) ->
     State1 = mod_stream_mgmt:cancel_ack_timer(State),
     ?DEBUG("Try to connect to remote server ~s", [RServer]),
     case resume(Server, RServer, [{resume, State1}]) of
@@ -527,10 +536,10 @@ transition_to_resume(#{mgmt_state := active,
       _ ->
         State1
     end;
-transition_to_resume(#{mgmt_state := connecting, mod := Mod} = State) ->    
+transition_to_connecting(#{mgmt_state := connecting, mod := Mod} = State) ->    
     Mod:connect(self()),
     State;
-transition_to_resume(State) ->
+transition_to_connecting(State) ->
     State.
 
 -spec transition_to_pending(state()) -> state().
@@ -538,7 +547,8 @@ transition_to_pending(#{mgmt_state := active, mod := Mod,
                         mgmt_timeout := 0} = State) ->
     Mod:stop(State);
 transition_to_pending(#{mgmt_state := active,
-                        remote_server := RServer, mgmt_timeout := Timeout} = State) ->
+                        remote_server := RServer, 
+                        mgmt_timeout := Timeout} = State) ->
     ?INFO_MSG("Waiting for resumption of stream for ~s", [RServer]),
     erlang:start_timer(timer:seconds(Timeout), self(), pending_timeout),
     State#{mgmt_state => pending};
@@ -561,61 +571,71 @@ resume(From, To, Opts) ->
           error
     end.
 
-get_old_session_state(_ResumeId, []) ->
-    {error, <<"Previous session PID not found">>};
-get_old_session_state({RServer, UniqueId} = ResumeId, [{_, Pid, _, _}|Specs])
-  when is_pid(Pid), Pid /= self() ->
-    try gen_fsm:sync_send_all_state_event(Pid,
-                    {resume_session, RServer, UniqueId}) of
-        {resume, OldState} ->
-            ejabberd_s2s_in:stop(Pid),
-            {ok, OldState};
-        error ->
-            get_old_session_state(ResumeId, Specs)
-    catch
-        _:_ ->
-            get_old_session_state(ResumeId, Specs)
+get_old_session_state(#{server_host := Server}, ResumeId, []) ->
+    case ets_cache:lookup(sm_s2s,  {Server, ResumeId}) of
+      {ok, H} ->
+          {error, <<"Previous session timed out">>, H};
+      _ ->
+          {error, <<"Previous session PID not found">>}   
     end;
-get_old_session_state(ResumeId, [_H|L]) ->
-    get_old_session_state(ResumeId, L).
-
-handle_resume(#sm_resume{previd = ResumeId, xmlns = Xmlns},
-              #{lang := Lang, remote_server := RServer} = State) ->
+get_old_session_state(State, ResumeId, [{_, Pid, _,_}|Specs])
+  when is_pid(Pid), Pid /= self() ->
     case misc:base64_to_term(ResumeId) of
         {term, {RServer, UniqueId}} ->
-            case get_old_session_state({RServer, UniqueId},
-                        supervisor:which_children(ejabberd_s2s_in_sup)) of
-                {ok, OldState} ->
-                    #{mgmt_stanzas_in := H,
-                      mgmt_timeout := Timeout,
-                      mgmt_xmlns := AttrXmlns} = OldState,
-
-                    State1 = State#{mgmt_state => active,
-                                    mgmt_stanzas_in => H,
-                                    mgmt_timeout => Timeout,
-                                    mgmt_xmlns => AttrXmlns,
-                                    unique_id => UniqueId},
-
-                    State2 = send(State1, #sm_resumed{previd = ResumeId,
-                                                      h = H,
-                                                      xmlns = AttrXmlns}),
-                    ?INFO_MSG("Resumed session for ~s", [RServer]),
-                    State2;
-                {error, Msg} ->
-                    ?INFO_MSG("Cannot resume session for ~s: ~s", [RServer, Msg]),
-                    Err = #sm_failed{reason = 'item-not-found',
-                                     text = xmpp:mk_text(Msg, Lang),
-                                     xmlns = Xmlns},
-                    send(State, Err)
+            try gen_fsm:sync_send_all_state_event(Pid,
+                            {resume_session, RServer, UniqueId}) of
+                {resume, OldState} ->
+                    ejabberd_s2s_in:stop(Pid),
+                    {ok, OldState};
+                error ->
+                    get_old_session_state(State, ResumeId, Specs)
+            catch
+                _:_ ->
+                    get_old_session_state(State, ResumeId, Specs)
             end;
         _ ->
-            Msg = <<"Invalid 'previd' value">>,
+            {error, <<"Invalid 'previd' value">>}
+    end;
+get_old_session_state(State, ResumeId, [_H|L]) ->
+  get_old_session_state(State, ResumeId, L).
+
+handle_resume(#sm_resume{previd = ResumeId, xmlns = Xmlns},
+              #{remote_server := RServer, lang := Lang} = State) ->
+    Res = case get_old_session_state(State, ResumeId,
+                    supervisor:which_children(ejabberd_s2s_in_sup)) of
+              {ok, OldState} ->
+                  {ok, OldState};
+              {error, Err, InH} ->
+                  {error, #sm_failed{reason = 'item-not-found',
+                                     text = xmpp:mk_text(Err, Lang),
+                                     h = InH, xmlns = Xmlns}, Err};
+              {error, Err} ->
+                  {error, #sm_failed{reason = 'item-not-found',
+                                     text = xmpp:mk_text(Err, Lang),
+                                     xmlns = Xmlns}, Err}
+          end,
+    case Res of
+        {ok, OldSessionState} ->
+            #{mgmt_stanzas_in := H,
+              mgmt_timeout := Timeout,
+              mgmt_xmlns := AttrXmlns,
+              unique_id := UniqueId} = OldSessionState,
+
+            State1 = State#{mgmt_state => active,
+                            mgmt_stanzas_in => H,
+                            mgmt_timeout => Timeout,
+                            mgmt_xmlns => AttrXmlns,
+                            unique_id => UniqueId},
+
+            State2 = send(State1, #sm_resumed{previd = ResumeId,
+                                              h = H,
+                                              xmlns = AttrXmlns}),
+            ?INFO_MSG("Resumed session for ~s", [RServer]),
+            State2;
+        {error, El, Msg} ->
             ?INFO_MSG("Cannot resume session for ~s: ~s", [RServer, Msg]),
-            Err = #sm_failed{reason = 'item-not-found',
-                             text = xmpp:mk_text(Msg, Lang),
-                             xmlns = Xmlns},
-            send(State, Err)
-    end.                         
+            send(State, El)
+    end.                      
 
 -spec handle_resumed(sm_resumed(), state()) -> state().
 handle_resumed(#sm_resumed{h = H, previd = _Id}, 
@@ -623,26 +643,20 @@ handle_resumed(#sm_resumed{h = H, previd = _Id},
                  mgmt_queue := Queue,
                  mgmt_prev_session := OldState} = State) ->
     ResumedState = copy_state(OldState, State),
-
     #{mgmt_xmlns := Xmlns,
       mgmt_queue := OldQueue,
       mgmt_stanzas_out := OldNumStanzasOut} = ResumedState,
-
     State1 = check_h_attribute(ResumedState, H),
-
     {NewNumStanzasOut, NewQueue} =
         p1_queue:foldl(
             fun({_, Time, Pkt}, {AccNum, AccQueue}) ->
                     Num = AccNum + 1,
                     {Num, p1_queue:in({Num, Time, Pkt}, AccQueue)}
             end, {OldNumStanzasOut, OldQueue}, Queue),
-
-    State2 = State1#{mgmt_state => wait_for_enabled,
+    State2 = State1#{mgmt_state => active,
                      mgmt_queue => NewQueue,
                      mgmt_stanzas_out => NewNumStanzasOut},
-
-    State3 = resend_unacked_stanzas(State2#{mgmt_state => active}, 
-                                    OldNumStanzasOut),
+    State3 = resend_unacked_stanzas(State2, OldNumStanzasOut),
     ?DEBUG("Resumed session for ~s", [RServer]),
     send(State3, #sm_r{xmlns = Xmlns}).
 
