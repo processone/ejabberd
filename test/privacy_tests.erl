@@ -258,7 +258,8 @@ master_slave_cases() ->
     {privacy_master_slave, [sequence],
      [master_slave_test(deny_bare_jid),
       master_slave_test(deny_full_jid),
-      master_slave_test(deny_server_jid),
+      master_slave_test(deny_server_bare_jid),
+      master_slave_test(deny_server_full_jid),
       master_slave_test(deny_group),
       master_slave_test(deny_sub_both),
       master_slave_test(deny_sub_from),
@@ -285,11 +286,18 @@ deny_full_jid_master(Config) ->
 deny_full_jid_slave(Config) ->
     deny_slave(Config).
 
-deny_server_jid_master(Config) ->
+deny_server_bare_jid_master(Config) ->
     {_, Server, _} = jid:tolower(?config(peer, Config)),
     deny_master(Config, {jid, Server}).
 
-deny_server_jid_slave(Config) ->
+deny_server_bare_jid_slave(Config) ->
+    deny_slave(Config).
+
+deny_server_full_jid_master(Config) ->
+    {_, Server, Resource} = jid:tolower(?config(peer, Config)),
+    deny_master(Config, {jid, jid:encode({<<"">>, Server, Resource})}).
+
+deny_server_full_jid_slave(Config) ->
     deny_slave(Config).
 
 deny_group_master(Config) ->
