@@ -72,7 +72,7 @@ resume_failed(Config) ->
   ct:sleep(30000),
   ct:comment("Trying to resume timed out session"),
   send(Config, #sm_resume{previd = ID, h = 0, xmlns = ?NS_STREAM_MGMT_3}),
-  #sm_failed{reason = 'item-not-found'} = recv(Config),
+  #sm_failed{reason = 'item-not-found', h = 4} = recv(Config),
   disconnect(Config).
 
 
