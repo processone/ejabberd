@@ -29,7 +29,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, reload/3, depends/2, muc_online_rooms/1,
-	 muc_register_nick/3, muc_unregister_nick/1,
+	 muc_register_nick/3, muc_unregister_nick/2,
 	 create_room_with_opts/4, create_room/3, destroy_room/2,
 	 create_rooms_file/1, destroy_rooms_file/1,
 	 rooms_unused_list/2, rooms_unused_destroy/2,
@@ -91,16 +91,18 @@ get_commands_spec() ->
 		       args = [{host, binary}],
 		       result = {rooms, {list, {room, string}}}},
      #ejabberd_commands{name = muc_register_nick, tags = [muc],
-		       desc = "Register a nick in the MUC service",
+		       desc = "Register a nick to a User JID in the MUC service of a server",
 		       module = ?MODULE, function = muc_register_nick,
-		       args_desc = ["Nick", "User JID", "MUC service"],
-		       args_example = [<<"Tim">>, <<"tim@example.org">>, <<"muc.example.org">>],
-		       args = [{nick, binary}, {jid, binary}, {domain, binary}],
+		       args_desc = ["Nick", "User JID", "Server Host"],
+		       args_example = [<<"Tim">>, <<"tim@example.org">>, <<"example.org">>],
+		       args = [{nick, binary}, {jid, binary}, {serverhost, binary}],
 		       result = {res, rescode}},
      #ejabberd_commands{name = muc_unregister_nick, tags = [muc],
-		       desc = "Unregister the nick in the MUC service",
+		       desc = "Unregister the nick registered by that account in the MUC service",
 		       module = ?MODULE, function = muc_unregister_nick,
-		       args = [{nick, binary}],
+		       args_desc = ["User JID", "MUC service"],
+		       args_example = [<<"tim@example.org">>, <<"example.org">>],
+		       args = [{jid, binary}, {serverhost, binary}],
 		       result = {res, rescode}},
 
      #ejabberd_commands{name = create_room, tags = [muc_room],
@@ -305,31 +307,14 @@ muc_online_rooms(ServerHost) ->
 	       || {Name, _, _} <- mod_muc:get_online_rooms(Host)]
       end, Hosts).
 
-muc_register_nick(Nick, JIDBinary, Domain) ->
-    try jid:decode(JIDBinary) of
-	JID ->
-	    F = fun (MHost, MNick) ->
-		    mnesia:write(#muc_registered{us_host=MHost, nick=MNick})
-		end,
-	    case mnesia:transaction(F, [{{JID#jid.luser, JID#jid.lserver},
-					 Domain}, Nick]) of
-		{atomic, ok} -> ok;
-		{aborted, _Error} -> error
-	    end
-    catch _:{bad_jid, _} -> throw({error, "Malformed JID"})
-    end.
+muc_register_nick(Nick, FromBinary, ServerHost) ->
+    Host = find_host(ServerHost),
+    From = jid:decode(FromBinary),
+    Lang = <<"en">>,
+    mod_muc:iq_set_register_info(ServerHost, Host, From, Nick, Lang).
 
-muc_unregister_nick(Nick) ->
-    F2 = fun(N) ->
-		 [{_,Key,_}|_] = mnesia:index_read(muc_registered, N, 3),
-		 mnesia:delete({muc_registered, Key})
-	 end,
-    case mnesia:transaction(F2, [Nick], 1) of
-	{atomic, ok} ->
-	    ok;
-	{aborted, _Error} ->
-	    error
-    end.
+muc_unregister_nick(FromBinary, ServerHost) ->
+    muc_register_nick(<<"">>, FromBinary, ServerHost).
 
 get_user_rooms(LUser, LServer) ->
     lists:flatmap(
