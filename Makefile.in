@@ -123,7 +123,7 @@ FILES_WILDCARD=$(call FILTER_DIRS,$(foreach w,$(1),$(wildcard $(w))))
 
 ifeq ($(MAKECMDGOALS),copy-files-sub)
 
-DEPS:=$(sort $(shell $(REBAR) list-deps|$(SED) -e '/^=/d;s/ .*//'))
+DEPS:=$(sort $(shell $(REBAR) -q list-deps|$(SED) -e '/[a-z0-9_-]+\s/d;s/ .*//'))
 
 DEPS_FILES=$(call FILES_WILDCARD,$(foreach DEP,$(DEPS),deps/$(DEP)/ebin/*.beam deps/$(DEP)/ebin/*.app deps/$(DEP)/priv/* deps/$(DEP)/priv/lib/* deps/$(DEP)/priv/bin/* deps/$(DEP)/include/*.hrl deps/$(DEP)/COPY* deps/$(DEP)/LICENSE* deps/$(DEP)/lib/*/ebin/*.beam deps/$(DEP)/lib/*/ebin/*.app))
 DEPS_FILES_FILTERED=$(filter-out %/epam deps/elixir/ebin/elixir.app,$(DEPS_FILES))
