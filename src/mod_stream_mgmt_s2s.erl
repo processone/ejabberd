@@ -117,7 +117,6 @@ s2s_out_stream_init({ok, #{server_host := ServerHost} = State}, Opts) ->
                     mgmt_connection_timeout => get_connection_timeout(ServerHost),
                     mgmt_stanzas_out => 0,
                     mgmt_stanzas_req => 0},
-    
     case proplists:get_value(resume, Opts) of
         OldState when OldState /= undefined ->
             {ok, State1#{mgmt_state => connecting, mgmt_prev_session => OldState}};
@@ -413,7 +412,6 @@ negotiate_stream_mgmt(Pkt, State) ->
             _ ->
                 {true, xmpp:get_ns(Pkt)}
         end,
-
     case Pkt of
         #sm_enable{} when ServerPart ->
             handle_enable(State#{mgmt_xmlns => Xmlns}, Pkt);
@@ -620,7 +618,6 @@ handle_resume(#sm_resume{previd = ResumeId, xmlns = Xmlns},
               mgmt_timeout := Timeout,
               mgmt_xmlns := AttrXmlns,
               unique_id := UniqueId} = OldSessionState,
-
             State1 = State#{mgmt_state => active,
                             mgmt_stanzas_in => H,
                             mgmt_timeout => Timeout,
@@ -701,12 +698,10 @@ copy_state(#{mgmt_xmlns := Xmlns,
              mgmt_stanzas_out := NumStanzasOut,
              mgmt_previd := Id} = _OldState,
            #{mgmt_queue_type := QueueType} = NewState) ->
-
     Queue1 = case QueueType of
                  ram -> p1_queue:file_to_ram(Queue);
                  _ -> p1_queue:ram_to_file(Queue)
              end,
-
     NewState#{mgmt_xmlns => Xmlns,
               mgmt_queue => Queue1,
               mgmt_stanzas_out => NumStanzasOut,
@@ -718,12 +713,14 @@ check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut,
   when H > NumStanzasOut ->
     ?DEBUG("~s acknowledged ~B stanzas," 
            "but only ~B were sent ", [RServer, H, NumStanzasOut]),
-    mod_stream_mgmt:mgmt_queue_drop(State#{mgmt_stanzas_out => H}, NumStanzasOut);
+    % mod_stream_mgmt:mgmt_queue_drop(State#{mgmt_stanzas_out => H}, NumStanzasOut);
+    State#{mgmt_stanzas_out => H};
 check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut,
                     remote_server := RServer} = State, H) ->
     ?DEBUG("~s acknowledged ~B of ~B "
            "stanzas", [RServer, H, NumStanzasOut]),
-    mod_stream_mgmt:mgmt_queue_drop(State, H).
+    State.
+    % mod_stream_mgmt:mgmt_queue_drop(State, H).
 
 -spec add_resent_delay_info(state(), stanza(), erlang:timestamp()) -> stanza().
 add_resent_delay_info(#{server_host := LServer}, El, Time) ->
@@ -753,7 +750,7 @@ resend_rack(#{mgmt_ack_timer := _,
               mgmt_queue := Queue,
               mgmt_stanzas_out := NumStanzasOut,
               mgmt_stanzas_req := NumStanzasReq} = State) ->
-    State1 = mod_stream_mgmt:cancel_ack_timer(State),
+    State1 = State , %mod_stream_mgmt:cancel_ack_timer(State),
     case NumStanzasReq < NumStanzasOut andalso not p1_queue:is_empty(Queue) of
         true -> send_rack(State1);
         false -> State1
