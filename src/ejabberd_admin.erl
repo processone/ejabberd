@@ -580,7 +580,7 @@ get_certificate(Domains) ->
 	true ->
 	    ejabberd_acme:get_certificates(Domains);
 	false ->
-	    String = io_lib:format("Invalid domains: ~p", [Domains])
+	    io_lib:format("Invalid domains: ~p", [Domains])
     end.
 
 renew_certificate() ->

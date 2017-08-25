@@ -18,8 +18,9 @@
 -include("ejabberd_http.hrl").
 -include("ejabberd_acme.hrl").
 
+
 %% TODO: Maybe validate request here??
-process(LocalPath, Request) ->
+process(LocalPath, _Request) ->
     Result = ets_get_key_authorization(LocalPath),
     {200, 
      [{<<"Content-Type">>, <<"text/plain">>}], 
@@ -84,17 +85,6 @@ solve_challenge1(Challenge, _Key) ->
     ?ERROR_MSG("Unkown Challenge Type: ~p", [Challenge]),
     {error, unknown_challenge}.
 
-
-%% Old way of solving challenges
-save_key_authorization(Chal, Tkn, KeyAuthz, HttpDir) ->
-    FileLocation = HttpDir ++ "/.well-known/acme-challenge/" ++ bitstring_to_list(Tkn),
-    case file:write_file(FileLocation, KeyAuthz) of
-	ok ->
-	    {ok, Chal#challenge.uri, KeyAuthz};
-	{error, Reason} = Err ->
-	    ?ERROR_MSG("Error writing to file: ~s with reason: ~p~n", [FileLocation, Reason]),
-	    Err
-    end.
 
 -spec ets_put_key_authorization(bitstring(), bitstring()) -> ok.
 ets_put_key_authorization(Tkn, KeyAuthz) ->

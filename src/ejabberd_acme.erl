@@ -56,7 +56,7 @@ is_valid_domain_opt(DomainString) ->
     case parse_domain_string(DomainString) of
 	[] ->
 	    false;
-	SeparatedDomains ->
+	_SeparatedDomains ->
 	    true
     end.
 
@@ -128,8 +128,7 @@ format_get_certificates_result(Certs) ->
     Cond = lists:all(fun(Cert) ->
 			     not is_error(Cert)
 		     end, Certs),
-    FormattedCerts = lists:join($\n,
-				[format_get_certificate(C) || C <- Certs]),
+    FormattedCerts = string:join([format_get_certificate(C) || C <- Certs], "\n"),
     case Cond of
 	true ->
 	    Result = io_lib:format("Success:~n~s", [FormattedCerts]),
@@ -329,7 +328,7 @@ renew_certificate(CAUrl, {DomainName, _} = Cert, PrivateKey) ->
 
 
 -spec cert_to_expire({bitstring(), data_cert()}) -> boolean().
-cert_to_expire({DomainName, #data_cert{pem = Pem}}) ->
+cert_to_expire({_DomainName, #data_cert{pem = Pem}}) ->
     Certificate = pem_to_certificate(Pem),
     Validity = get_utc_validity(Certificate),
 
@@ -551,7 +550,7 @@ revoke_certificate2(CAUrl, PemEncodedCert) ->
     {ok, Dirs, Nonce} = ejabberd_acme_comm:directory(CAUrl),
 
     Req = [{<<"certificate">>, Certificate}],
-    {ok, [], Nonce1} = ejabberd_acme_comm:revoke_cert(Dirs, CertPrivateKey, Req, Nonce),
+    {ok, [], _Nonce1} = ejabberd_acme_comm:revoke_cert(Dirs, CertPrivateKey, Req, Nonce),
     ok.
 
 -spec parse_revoke_cert_argument(string()) -> {domain, bitstring()} | {file, file:filename()}.
@@ -802,7 +801,7 @@ utc_string_to_datetime(UtcString) ->
 	Second = list_to_integer([S1,S2]),
 	{{Year, Month, Day}, {Hour, Minute, Second}}
     catch
-	E:R ->
+	_:_ ->
 	    ?ERROR_MSG("Unable to parse UTC string", []),
 	    throw({error, utc_string_to_datetime})
     end.
@@ -910,7 +909,7 @@ data_add_certificate(Data, DataCert = #data_cert{domain=Domain}) ->
     data_set_certificates(Data, NewCerts).
 
 -spec data_remove_certificate(acme_data(), data_cert()) -> acme_data().
-data_remove_certificate(Data, DataCert = #data_cert{domain=Domain}) ->
+data_remove_certificate(Data, _DataCert = #data_cert{domain=Domain}) ->
     Certs = data_get_certificates(Data),
     NewCerts = lists:keydelete(Domain, 1, Certs),
     data_set_certificates(Data, NewCerts).
