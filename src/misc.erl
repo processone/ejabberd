@@ -204,22 +204,12 @@ join_atoms(Atoms, Sep) ->
 %%      in configuration validators only.
 -spec try_read_file(file:filename_all()) -> binary().
 try_read_file(Path) ->
-    Res = case file:read_file_info(Path) of
-	      {ok, #file_info{type = Type, access = Access}} ->
-		  case {Type, Access} of
-		      {regular, read} -> ok;
-		      {regular, read_write} -> ok;
-		      {regular, _} -> {error, file:format_error(eaccess)};
-		      _ -> {error, "not a regular file"}
-		  end;
-	      {error, Why} ->
-		  {error, file:format_error(Why)}
-	  end,
-    case Res of
-	ok ->
+    case file:open(Path, [read]) of
+	{ok, Fd} ->
+	    file:close(Fd),
 	    iolist_to_binary(Path);
-	{error, Reason} ->
-	    ?ERROR_MSG("Failed to read ~s: ~s", [Path, Reason]),
+	{error, Why} ->
+	    ?ERROR_MSG("Failed to read ~s: ~s", [Path, file:format_error(Why)]),
 	    erlang:error(badarg)
     end.
 

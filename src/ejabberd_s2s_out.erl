@@ -374,7 +374,7 @@ mk_bounce_error(_Lang, _State) ->
 -spec get_delay() -> non_neg_integer().
 get_delay() ->
     MaxDelay = ejabberd_config:get_option(s2s_max_retry_delay, 300),
-    crypto:rand_uniform(1, MaxDelay).
+    randoms:uniform(MaxDelay).
 
 -spec set_idle_timeout(state()) -> state().
 set_idle_timeout(#{on_route := send, server := LServer} = State) ->

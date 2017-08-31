@@ -71,7 +71,12 @@ start(Host, _Opts) ->
     ejabberd_hooks:add(c2s_terminated, Host, ?MODULE, c2s_terminated, 50).
 
 stop(Host) ->
-    %% TODO: do something with global 'c2s_init' hook
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+	true ->
+	    ok;
+	false ->
+	    ejabberd_hooks:delete(c2s_init, ?MODULE, c2s_stream_init, 50)
+    end,
     ejabberd_hooks:delete(c2s_stream_started, Host, ?MODULE,
 			  c2s_stream_started, 50),
     ejabberd_hooks:delete(c2s_post_auth_features, Host, ?MODULE,
@@ -405,8 +410,6 @@ handle_resume(#{user := User, lserver := LServer, sockmod := SockMod,
 					      previd = AttrId}),
 	    State3 = resend_unacked_stanzas(State2),
 	    State4 = send(State3, #sm_r{xmlns = AttrXmlns}),
-	    %% TODO: move this to mod_client_state
-	    %% csi_flush_queue(State4),
 	    State5 = ejabberd_hooks:run_fold(c2s_session_resumed, LServer, State4, []),
 	    ?INFO_MSG("(~s) Resumed session for ~s",
 		      [SockMod:pp(Socket), jid:encode(JID)]),

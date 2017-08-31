@@ -658,7 +658,7 @@ make_rand_string(S, N) -> make_rand_string([make_rand_char() | S], N - 1).
 -spec make_rand_char() -> char().
 
 make_rand_char() ->
-    map_int_to_char(crypto:rand_uniform(0, 62)).
+    map_int_to_char(randoms:uniform(0, 61)).
 
 -spec map_int_to_char(0..61) -> char().
 

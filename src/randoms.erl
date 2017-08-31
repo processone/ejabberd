@@ -32,6 +32,20 @@
 
 -define(THRESHOLD, 16#10000000000000000).
 
+-ifdef(RAND_UNIFORM).
+get_string() ->
+    R = rand:uniform(?THRESHOLD),
+    integer_to_binary(R).
+
+uniform() ->
+    rand:uniform().
+
+uniform(N) ->
+    rand:uniform(N).
+
+uniform(N, M) ->
+    rand:uniform(M-N+1) + N-1.
+-else.
 get_string() ->
     R = crypto:rand_uniform(0, ?THRESHOLD),
     integer_to_binary(R).
@@ -44,6 +58,7 @@ uniform(N) ->
 
 uniform(N, M) ->
     crypto:rand_uniform(N, M+1).
+-endif.
 
 -ifdef(STRONG_RAND_BYTES).
 bytes(N) ->

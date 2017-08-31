@@ -706,19 +706,22 @@ user_queue_parse_query(LUser, LServer, Query) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case lists:keysearch(<<"delete">>, 1, Query) of
 	{value, _} ->
-	    case lists:keyfind(<<"selected">>, 1, Query) of
-		{_, Seq} ->
-		    case catch binary_to_integer(Seq) of
-			I when is_integer(I), I>=0 ->
-			    Mod:remove_message(LUser, LServer, I),
-			    ok;
-			_ ->
-			    nothing
-		    end;
-		false ->
-		    nothing
-	    end;
+	    user_queue_parse_query(LUser, LServer, Query, Mod);
 	_ ->
+	    nothing
+    end.
+
+user_queue_parse_query(LUser, LServer, Query, Mod) ->
+    case lists:keytake(<<"selected">>, 1, Query) of
+	{value, {_, Seq}, Query2} ->
+	    case catch binary_to_integer(Seq) of
+		I when is_integer(I), I>=0 ->
+		    Mod:remove_message(LUser, LServer, I);
+		_ ->
+		    nothing
+	    end,
+	    user_queue_parse_query(LUser, LServer, Query2, Mod);
+	false ->
 	    nothing
     end.
 

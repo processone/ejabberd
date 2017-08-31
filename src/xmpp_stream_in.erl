@@ -671,7 +671,7 @@ process_stream_established(#{stream_state := StateName} = State)
   when StateName == disconnected; StateName == established ->
     State;
 process_stream_established(#{mod := Mod} = State) ->
-    State1 = State#{stream_authenticated := true,
+    State1 = State#{stream_authenticated => true,
 		    stream_state => established,
 		    stream_timeout => infinity},
     try Mod:handle_stream_established(State1)

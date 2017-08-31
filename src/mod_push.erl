@@ -547,7 +547,7 @@ delete_sessions(LUser, LServer, LookupFun, Mod) ->
 drop_online_sessions(LUser, LServer, Clients) ->
     SessIDs = ejabberd_sm:get_session_sids(LUser, LServer),
     [Client || {TS, _, _, _} = Client <- Clients,
-	       not lists:keyfind(TS, 1, SessIDs)].
+	       lists:keyfind(TS, 1, SessIDs) == false].
 
 %%--------------------------------------------------------------------
 %% Caching.

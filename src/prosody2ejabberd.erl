@@ -518,5 +518,5 @@ deserialize([{_, S}|T], #xmlel{children = Els} = El, Acc) when is_binary(S) ->
     deserialize(T, El#xmlel{children = [{xmlcdata, S}|Els]}, Acc);
 deserialize([{_, L}|T], #xmlel{children = Els} = El, Acc) when is_list(L) ->
     deserialize(T, El#xmlel{children = deserialize(L) ++ Els}, Acc);
-deserialize([], El, Acc) ->
-    [El|Acc].
+deserialize([], #xmlel{children = Els} = El, Acc) ->
+    [El#xmlel{children = lists:reverse(Els)}|Acc].
