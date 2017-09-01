@@ -210,7 +210,14 @@ process_iq(#iq{type = get, from = From, to = To, id = ID, lang = Lang} = IQ,
     Instr = translate:translate(
 	      Lang, <<"Choose a username and password to register "
 		      "with this server">>),
-    if IsCaptchaEnabled and not IsRegistered ->
+    URL = gen_mod:get_module_opt(Server, ?MODULE, redirect_url, <<"">>),
+    if (URL /= <<"">>) and not IsRegistered ->
+	    Txt = translate:translate(Lang, <<"To register, visit ~s">>),
+	    Desc = str:format(Txt, [URL]),
+	    xmpp:make_iq_result(
+	      IQ, #register{instructions = Desc,
+			    sub_els = [#oob_x{url = URL}]});
+       IsCaptchaEnabled and not IsRegistered ->
 	    TopInstr = translate:translate(
 			 Lang, <<"You need a client that supports x:data "
 				 "and CAPTCHA to register">>),
@@ -614,9 +621,11 @@ mod_opt_type({welcome_message, subject}) ->
     fun iolist_to_binary/1;
 mod_opt_type({welcome_message, body}) ->
     fun iolist_to_binary/1;
+mod_opt_type(redirect_url) ->
+    fun iolist_to_binary/1;
 mod_opt_type(_) ->
     [access, access_from, access_remove, captcha_protected, ip_access,
-     iqdisc, password_strength, registration_watchers,
+     iqdisc, password_strength, registration_watchers, redirect_url,
      {welcome_message, subject}, {welcome_message, body}].
 
 -spec opt_type(registration_timeout) -> fun((timeout()) -> timeout());
