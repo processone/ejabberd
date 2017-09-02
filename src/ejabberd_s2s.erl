@@ -726,7 +726,13 @@ opt_type(s2s_use_starttls) ->
 	(false) -> false;
 	(optional) -> optional;
 	(required) -> required;
-	(required_trusted) -> required_trusted
+	(required_trusted) ->
+	    ?WARNING_MSG("The value 'required_trusted' of option "
+			 "'s2s_use_starttls' is deprected and will be "
+			 "unsupported in future releases. Instead, "
+			 "set it to 'required' and make sure "
+			 "mod_s2s_dialback is *NOT* loaded", []),
+	    required_trusted
     end;
 opt_type(s2s_zlib) ->
     fun(B) when is_boolean(B) -> B end;

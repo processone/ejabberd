@@ -231,7 +231,7 @@ listen:
 
 ##
 ## s2s_use_starttls: Enable STARTTLS for S2S connections.
-## Allowed values are: false optional required required_trusted
+## Allowed values are: false, optional or required
 ## You must specify a certificate file.
 ##
 ## s2s_use_starttls: required
