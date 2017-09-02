@@ -32,7 +32,7 @@
 -export([start/2, stop/1, reload/3,
          depends/2, mod_opt_type/1]).
 
--export([filter_packet/1]).
+-export([filter_packet/1, filter_offline_msg/1]).
 
 -include("xmpp.hrl").
 -include("ejabberd.hrl").
@@ -43,34 +43,54 @@
 start(Host, _Opts) ->
     ejabberd_hooks:add(user_receive_packet, Host,
                        ?MODULE, filter_packet, 25),
-    ok.
+    ejabberd_hooks:add(offline_message_hook, Host,
+		       ?MODULE, filter_offline_msg, 25).
 
 stop(Host) ->
     ejabberd_hooks:delete(user_receive_packet, Host,
                           ?MODULE, filter_packet, 25),
-    ok.
+    ejabberd_hooks:delete(offline_message_hook, Host,
+			  ?MODULE, filter_offline_msg, 25).
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.
 
-filter_packet({#message{} = Msg, State} = Acc) ->
-    From = xmpp:get_from(Msg),
+filter_packet({#message{from = From} = Msg, State} = Acc) ->
     LFrom = jid:tolower(From),
     LBFrom = jid:remove_resource(LFrom),
-    #{pres_a := PresA, jid := JID, lserver := LServer} = State,
+    #{pres_a := PresA} = State,
+    case (?SETS):is_element(LFrom, PresA)
+	orelse (?SETS):is_element(LBFrom, PresA)
+        orelse sets_bare_member(LBFrom, PresA) of
+	false ->
+	    case check_message(Msg) of
+		allow -> Acc;
+		deny -> {stop, {drop, Acc}}
+	    end;
+	true ->
+	    Acc
+    end;
+filter_packet(Acc) ->
+    Acc.
+
+filter_offline_msg({_Action, #message{} = Msg} = Acc) ->
+    case check_message(Msg) of
+	allow -> Acc;
+	deny -> {stop, {drop, Msg}}
+    end.
+
+check_message(#message{from = From, to = To} = Msg) ->
+    LServer = To#jid.lserver,
     AllowLocalUsers =
         gen_mod:get_module_opt(LServer, ?MODULE, allow_local_users, true),
     case (Msg#message.body == [] andalso
           Msg#message.subject == [])
         orelse (AllowLocalUsers andalso
-                ejabberd_router:is_my_route(From#jid.lserver))
-        orelse (?SETS):is_element(LFrom, PresA)
-        orelse (?SETS):is_element(LBFrom, PresA)
-        orelse sets_bare_member(LBFrom, PresA) of
+                ejabberd_router:is_my_route(From#jid.lserver)) of
 	false ->
 	    {Sub, _} = ejabberd_hooks:run_fold(
 			 roster_get_jid_info, LServer,
-			 {none, []}, [JID#jid.luser, LServer, From]),
+			 {none, []}, [To#jid.luser, LServer, From]),
 	    case Sub of
 		none ->
 		    Drop = gen_mod:get_module_opt(LServer, ?MODULE, drop, true),
@@ -85,18 +105,16 @@ filter_packet({#message{} = Msg, State} = Acc) ->
 		    end,
 		    if
 			Drop ->
-			    {stop, {drop, State}};
+			    deny;
 			true ->
-			    Acc
+			    allow
 		    end;
 		_ ->
-		    Acc
+		    allow
 	    end;
 	true ->
-	    Acc
-    end;
-filter_packet(Acc) ->
-    Acc.
+	    allow
+    end.
 
 sets_bare_member({U, S, <<"">>} = LBJID, Set) ->
     case ?SETS:next(sets_iterator_from(LBJID, Set)) of
