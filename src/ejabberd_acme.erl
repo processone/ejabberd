@@ -128,13 +128,14 @@ format_get_certificates_result(Certs) ->
     Cond = lists:all(fun(Cert) ->
 			     not is_error(Cert)
 		     end, Certs),
-    FormattedCerts = string:join([format_get_certificate(C) || C <- Certs], "\n"),
+    %% FormattedCerts = string:join([format_get_certificate(C) || C <- Certs], "\n"),
+    FormattedCerts = str:join([format_get_certificate(C) || C <- Certs], $\n),
     case Cond of
 	true ->
 	    Result = io_lib:format("Success:~n~s", [FormattedCerts]),
 	    lists:flatten(Result); 
 	_ ->
-	    Result = io_lib:format("Error with one or more certificates~n~s", [lists:flatten(FormattedCerts)]),
+	    Result = io_lib:format("Error with one or more certificates~n~s", [FormattedCerts]),
 	    lists:flatten(Result)
     end.
 
@@ -771,10 +772,11 @@ get_challenges(Body) ->
 
 -spec not_before_not_after() -> {binary(), binary()}.
 not_before_not_after() ->
-    {MegS, Sec, MicS} = erlang:timestamp(),
-    NotBefore = xmpp_util:encode_timestamp({MegS, Sec, MicS}),
+    {Date, Time} = calendar:universal_time(),
+    NotBefore = encode_calendar_datetime({Date, Time}),
     %% The certificate will be valid for 90 Days after today
-    NotAfter = xmpp_util:encode_timestamp({MegS+7, Sec+776000, MicS}),
+    AfterDate = add_days_to_date(90, Date),
+    NotAfter = encode_calendar_datetime({AfterDate, Time}),
     {NotBefore, NotAfter}.
 
 -spec to_public(jose_jwk:key()) -> jose_jwk:key().
@@ -787,6 +789,17 @@ pem_to_certificate(Pem) ->
     PemEntryCert = lists:keyfind('Certificate', 1, PemList),
     Certificate = public_key:pem_entry_decode(PemEntryCert),
     Certificate.
+
+-spec add_days_to_date(integer(), calendar:date()) -> calendar:date().
+add_days_to_date(Days, Date) ->
+    Date1 = calendar:date_to_gregorian_days(Date),
+    calendar:gregorian_days_to_date(Date1 + Days).
+
+-spec encode_calendar_datetime(calendar:datetime()) -> binary().
+encode_calendar_datetime({{Year, Month, Day}, {Hour, Minute, Second}}) ->
+    list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0BT"
+				 "~2..0B:~2..0B:~2..0BZ",
+				 [Year, Month, Day, Hour, Minute, Second])).
 
 %% TODO: Find a better and more robust way to parse the utc string
 -spec utc_string_to_datetime(string()) -> calendar:datetime().

@@ -96,8 +96,9 @@ ets_put_key_authorization(Tkn, KeyAuthz) ->
 -spec ets_get_key_authorization([bitstring()]) -> bitstring().
 ets_get_key_authorization(Key) ->
     Tab = ets_get_acme_table(),
-    case ets:take(Tab, Key) of
+    case ets:lookup(Tab, Key) of
 	[{Key, KeyAuthz}] ->
+	    ets:delete(Tab, Key),
 	    KeyAuthz;
 	_ ->
 	    ?ERROR_MSG("Unable to serve key authorization in: ~p", [Key]),
