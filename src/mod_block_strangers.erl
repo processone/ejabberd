@@ -65,7 +65,7 @@ filter_packet({#message{from = From} = Msg, State} = Acc) ->
 	false ->
 	    case check_message(Msg) of
 		allow -> Acc;
-		deny -> {stop, {drop, Acc}}
+		deny -> {stop, {drop, State}}
 	    end;
 	true ->
 	    Acc
@@ -97,9 +97,9 @@ check_message(#message{from = From, to = To} = Msg) ->
 		    Log = gen_mod:get_module_opt(LServer, ?MODULE, log, false),
 		    if
 			Log ->
-			    ?INFO_MSG("Drop packet: ~s",
-				      [fxml:element_to_binary(
-					 xmpp:encode(Msg, ?NS_CLIENT))]);
+			    ?INFO_MSG("Dropping message from ~s to ~s: "
+				      "the sender is not in the roster",
+				      [jid:encode(From), jid:encode(To)]);
 			true ->
 			    ok
 		    end,
