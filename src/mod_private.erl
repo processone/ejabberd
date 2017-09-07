@@ -133,7 +133,7 @@ set_data(LUser, LServer, Data) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case Mod:set_data(LUser, LServer, Data) of
 	ok ->
-	    delete_cache(Mod, LServer, LServer, Data);
+	    delete_cache(Mod, LUser, LServer, Data);
 	{error, _} = Err ->
 	    Err
     end.
