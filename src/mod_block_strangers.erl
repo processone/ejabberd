@@ -85,7 +85,7 @@ check_message(#message{from = From, to = To} = Msg) ->
         gen_mod:get_module_opt(LServer, ?MODULE, allow_local_users, true),
     case (Msg#message.body == [] andalso
           Msg#message.subject == [])
-        orelse (AllowLocalUsers andalso
+        orelse ((AllowLocalUsers orelse From#jid.luser == <<"">>) andalso
                 ejabberd_router:is_my_route(From#jid.lserver)) of
 	false ->
 	    {Sub, _} = ejabberd_hooks:run_fold(
