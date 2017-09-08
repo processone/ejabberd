@@ -86,20 +86,19 @@ check_message(#message{from = From, to = To} = Msg) ->
     case (Msg#message.body == [] andalso
           Msg#message.subject == [])
         orelse ((AllowLocalUsers orelse From#jid.luser == <<"">>) andalso
-                ejabberd_router:is_my_route(From#jid.lserver)) of
+                ejabberd_router:is_my_host(From#jid.lserver)) of
 	false ->
-	    {Sub, _} = ejabberd_hooks:run_fold(
-			 roster_get_jid_info, LServer,
-			 {none, []}, [To#jid.luser, LServer, From]),
-	    case Sub of
+	    case check_subscription(From, To) of
 		none ->
 		    Drop = gen_mod:get_module_opt(LServer, ?MODULE, drop, true),
 		    Log = gen_mod:get_module_opt(LServer, ?MODULE, log, false),
 		    if
 			Log ->
-			    ?INFO_MSG("Dropping message from ~s to ~s: "
-				      "the sender is not in the roster",
-				      [jid:encode(From), jid:encode(To)]);
+			    ?INFO_MSG("~s message from stranger ~s to ~s",
+				      [if Drop -> "Dropping";
+					  true -> "Allow"
+				       end,
+				       jid:encode(From), jid:encode(To)]);
 			true ->
 			    ok
 		    end,
@@ -109,11 +108,39 @@ check_message(#message{from = From, to = To} = Msg) ->
 			true ->
 			    allow
 		    end;
-		_ ->
+		some ->
 		    allow
 	    end;
 	true ->
 	    allow
+    end.
+
+-spec check_subscription(jid(), jid()) -> none | some.
+check_subscription(From, To) ->
+    {LocalUser, LocalServer, _} = jid:tolower(To),
+    {RemoteUser, RemoteServer, _} = jid:tolower(From),
+    case ejabberd_hooks:run_fold(
+	   roster_get_jid_info, LocalServer,
+	   {none, []}, [LocalUser, LocalServer, From]) of
+	{none, _} when RemoteUser == <<"">> ->
+	    none;
+	{none, _} ->
+	    case gen_mod:get_module_opt(LocalServer, ?MODULE,
+					allow_transports, true) of
+		true ->
+		    %% Check if the contact's server is in the roster
+		    case ejabberd_hooks:run_fold(
+			   roster_get_jid_info, LocalServer,
+			   {none, []},
+			   [LocalUser, LocalServer, jid:make(RemoteServer)]) of
+			{none, _} -> none;
+			_ -> some
+		    end;
+		false ->
+		    none
+	    end;
+	_ ->
+	    some
     end.
 
 sets_bare_member({U, S, <<"">>} = LBJID, Set) ->
@@ -151,4 +178,6 @@ mod_opt_type(log) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(allow_local_users) ->
     fun (B) when is_boolean(B) -> B end;
-mod_opt_type(_) -> [drop, log, allow_local_users].
+mod_opt_type(allow_transports) ->
+    fun (B) when is_boolean(B) -> B end;
+mod_opt_type(_) -> [drop, log, allow_local_users, allow_transports].
