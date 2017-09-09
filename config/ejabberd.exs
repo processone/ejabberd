@@ -84,7 +84,7 @@ defmodule Ejabberd.ConfigFile do
 
   module :mod_client_state do
     @opts [
-      drop_chat_states: true,
+      queue_chat_states: true,
       queue_presence: false]
   end
 

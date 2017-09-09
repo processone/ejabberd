@@ -802,7 +802,13 @@ get_room_occupants(Pid) ->
       dict:to_list(S#state.users)).
 
 get_room_occupants_number(Room, Host) ->
-    length(get_room_occupants(Room, Host)).
+    case get_room_pid(Room, Host) of
+	room_not_found ->
+	    throw({error, room_not_found});
+	Pid ->
+	    S = get_room_state(Pid),
+	    dict:size(S#state.users)
+    end.
 
 %%----------------------------
 %% Send Direct Invitation
