@@ -29,7 +29,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, reload/3, depends/2, muc_online_rooms/1,
-	 muc_register_nick/3, muc_unregister_nick/1,
+	 muc_register_nick/3, muc_unregister_nick/2,
 	 create_room_with_opts/4, create_room/3, destroy_room/2,
 	 create_rooms_file/1, destroy_rooms_file/1,
 	 rooms_unused_list/2, rooms_unused_destroy/2,
@@ -91,16 +91,18 @@ get_commands_spec() ->
 		       args = [{host, binary}],
 		       result = {rooms, {list, {room, string}}}},
      #ejabberd_commands{name = muc_register_nick, tags = [muc],
-		       desc = "Register a nick in the MUC service",
+		       desc = "Register a nick to a User JID in the MUC service of a server",
 		       module = ?MODULE, function = muc_register_nick,
-		       args_desc = ["Nick", "User JID", "MUC service"],
-		       args_example = [<<"Tim">>, <<"tim@example.org">>, <<"muc.example.org">>],
-		       args = [{nick, binary}, {jid, binary}, {domain, binary}],
+		       args_desc = ["Nick", "User JID", "Server Host"],
+		       args_example = [<<"Tim">>, <<"tim@example.org">>, <<"example.org">>],
+		       args = [{nick, binary}, {jid, binary}, {serverhost, binary}],
 		       result = {res, rescode}},
      #ejabberd_commands{name = muc_unregister_nick, tags = [muc],
-		       desc = "Unregister the nick in the MUC service",
+		       desc = "Unregister the nick registered by that account in the MUC service",
 		       module = ?MODULE, function = muc_unregister_nick,
-		       args = [{nick, binary}],
+		       args_desc = ["User JID", "MUC service"],
+		       args_example = [<<"tim@example.org">>, <<"example.org">>],
+		       args = [{jid, binary}, {serverhost, binary}],
 		       result = {res, rescode}},
 
      #ejabberd_commands{name = create_room, tags = [muc_room],
@@ -305,31 +307,14 @@ muc_online_rooms(ServerHost) ->
 	       || {Name, _, _} <- mod_muc:get_online_rooms(Host)]
       end, Hosts).
 
-muc_register_nick(Nick, JIDBinary, Domain) ->
-    try jid:decode(JIDBinary) of
-	JID ->
-	    F = fun (MHost, MNick) ->
-		    mnesia:write(#muc_registered{us_host=MHost, nick=MNick})
-		end,
-	    case mnesia:transaction(F, [{{JID#jid.luser, JID#jid.lserver},
-					 Domain}, Nick]) of
-		{atomic, ok} -> ok;
-		{aborted, _Error} -> error
-	    end
-    catch _:{bad_jid, _} -> throw({error, "Malformed JID"})
-    end.
+muc_register_nick(Nick, FromBinary, ServerHost) ->
+    Host = find_host(ServerHost),
+    From = jid:decode(FromBinary),
+    Lang = <<"en">>,
+    mod_muc:iq_set_register_info(ServerHost, Host, From, Nick, Lang).
 
-muc_unregister_nick(Nick) ->
-    F2 = fun(N) ->
-		 [{_,Key,_}|_] = mnesia:index_read(muc_registered, N, 3),
-		 mnesia:delete({muc_registered, Key})
-	 end,
-    case mnesia:transaction(F2, [Nick], 1) of
-	{atomic, ok} ->
-	    ok;
-	{aborted, _Error} ->
-	    error
-    end.
+muc_unregister_nick(FromBinary, ServerHost) ->
+    muc_register_nick(<<"">>, FromBinary, ServerHost).
 
 get_user_rooms(LUser, LServer) ->
     lists:flatmap(
@@ -536,7 +521,8 @@ prepare_room_info(Room_info) ->
 %%       ok | error
 %% @doc Create a room immediately with the default options.
 create_room(Name1, Host1, ServerHost) ->
-    create_room_with_opts(Name1, Host1, ServerHost, []).
+    create_room_with_opts(Name1, Host1, ServerHost, []),
+    change_room_option(Name1, Host1, <<"persistent">>, <<"true">>).
 
 create_room_with_opts(Name1, Host1, ServerHost, CustomRoomOpts) ->
     true = (error /= (Name = jid:nodeprep(Name1))),
@@ -597,7 +583,7 @@ muc_create_room(ServerHost, {Name, Host, _}, DefRoomOpts) ->
 destroy_room(Name, Service) ->
     case mod_muc:find_online_room(Name, Service) of
 	{ok, Pid} ->
-	    gen_fsm:send_all_state_event(Pid, destroy),
+	    p1_fsm:send_all_state_event(Pid, destroy),
 	    ok;
 	error ->
 	    error
@@ -716,11 +702,11 @@ get_rooms(ServerHost) ->
       end, Hosts).
 
 get_room_config(Room_pid) ->
-    {ok, R} = gen_fsm:sync_send_all_state_event(Room_pid, get_config),
+    {ok, R} = p1_fsm:sync_send_all_state_event(Room_pid, get_config),
     R.
 
 get_room_state(Room_pid) ->
-    {ok, R} = gen_fsm:sync_send_all_state_event(Room_pid, get_state),
+    {ok, R} = p1_fsm:sync_send_all_state_event(Room_pid, get_state),
     R.
 
 %%---------------
@@ -786,7 +772,7 @@ find_serverhost(Host, ServerHosts) ->
     ServerHost.
 
 act_on_room(destroy, {N, H, Pid}, SH) ->
-    gen_fsm:send_all_state_event(
+    p1_fsm:send_all_state_event(
       Pid, {destroy, <<"Room destroyed by rooms_unused_destroy.">>}),
     mod_muc:room_destroyed(H, N, Pid, SH),
     mod_muc:forget_room(SH, H, N);
@@ -816,7 +802,13 @@ get_room_occupants(Pid) ->
       dict:to_list(S#state.users)).
 
 get_room_occupants_number(Room, Host) ->
-    length(get_room_occupants(Room, Host)).
+    case get_room_pid(Room, Host) of
+	room_not_found ->
+	    throw({error, room_not_found});
+	Pid ->
+	    S = get_room_state(Pid),
+	    dict:size(S#state.users)
+    end.
 
 %%----------------------------
 %% Send Direct Invitation
@@ -888,7 +880,7 @@ change_room_option(Name, Service, OptionString, ValueString) ->
 	    {Option, Value} = format_room_option(OptionString, ValueString),
 	    Config = get_room_config(Pid),
 	    Config2 = change_option(Option, Value, Config),
-	    {ok, _} = gen_fsm:sync_send_all_state_event(Pid, {change_config, Config2}),
+	    {ok, _} = p1_fsm:sync_send_all_state_event(Pid, {change_config, Config2}),
 	    ok
     end.
 
@@ -983,7 +975,7 @@ get_room_affiliations(Name, Service) ->
     case mod_muc:find_online_room(Name, Service) of
 	{ok, Pid} ->
 	    %% Get the PID of the online room, then request its state
-	    {ok, StateData} = gen_fsm:sync_send_all_state_event(Pid, get_state),
+	    {ok, StateData} = p1_fsm:sync_send_all_state_event(Pid, get_state),
 	    Affiliations = ?DICT:to_list(StateData#state.affiliations),
 	    lists:map(
 	      fun({{Uname, Domain, _Res}, {Aff, Reason}}) when is_atom(Aff)->
@@ -1012,7 +1004,7 @@ set_room_affiliation(Name, Service, JID, AffiliationString) ->
     case mod_muc:find_online_room(Name, Service) of
 	{ok, Pid} ->
 	    %% Get the PID for the online room so we can get the state of the room
-	    {ok, StateData} = gen_fsm:sync_send_all_state_event(Pid, {process_item_change, {jid:decode(JID), affiliation, Affiliation, <<"">>}, undefined}),
+	    {ok, StateData} = p1_fsm:sync_send_all_state_event(Pid, {process_item_change, {jid:decode(JID), affiliation, Affiliation, <<"">>}, undefined}),
 	    mod_muc:store_room(StateData#state.server_host, StateData#state.host, StateData#state.room, make_opts(StateData)),
 	    ok;
 	error ->
@@ -1035,7 +1027,7 @@ subscribe_room(User, Nick, Room, Nodes) ->
 		UserJID ->
 		    case get_room_pid(Name, Host) of
 			Pid when is_pid(Pid) ->
-			    case gen_fsm:sync_send_all_state_event(
+			    case p1_fsm:sync_send_all_state_event(
 				   Pid,
 				   {muc_subscribe, UserJID, Nick, NodeList}) of
 				{ok, SubscribedNodes} ->
@@ -1062,7 +1054,7 @@ unsubscribe_room(User, Room) ->
 		UserJID ->
 		    case get_room_pid(Name, Host) of
 			Pid when is_pid(Pid) ->
-			    case gen_fsm:sync_send_all_state_event(
+			    case p1_fsm:sync_send_all_state_event(
 				   Pid,
 				   {muc_unsubscribe, UserJID}) of
 				ok ->
@@ -1085,7 +1077,7 @@ unsubscribe_room(User, Room) ->
 get_subscribers(Name, Host) ->
     case get_room_pid(Name, Host) of
 	Pid when is_pid(Pid) ->
-	    {ok, JIDList} = gen_fsm:sync_send_all_state_event(Pid, get_subscribers),
+	    {ok, JIDList} = p1_fsm:sync_send_all_state_event(Pid, get_subscribers),
 	    [jid:encode(jid:remove_resource(J)) || J <- JIDList];
 	_ ->
 	    throw({error, "The room does not exist"})

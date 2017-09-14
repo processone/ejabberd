@@ -69,9 +69,7 @@ done
 # define erl parameters
 ERLANG_OPTS="+K $POLL -smp $SMP +P $ERL_PROCESSES $ERL_OPTIONS"
 if [ "$FIREWALL_WINDOW" != "" ] ; then
-    ERLANG_OPTS="$ERLANG_OPTS -kernel \
-        inet_dist_listen_min ${FIREWALL_WINDOW%-*} \
-        inet_dist_listen_max ${FIREWALL_WINDOW#*-}"
+    ERLANG_OPTS="$ERLANG_OPTS -kernel inet_dist_listen_min ${FIREWALL_WINDOW%-*} inet_dist_listen_max ${FIREWALL_WINDOW#*-}"
 fi
 if [ "$INET_DIST_INTERFACE" != "" ] ; then
     INET_DIST_INTERFACE2=$("$ERL" -noshell -eval 'case inet:parse_address("'$INET_DIST_INTERFACE'") of {ok,IP} -> io:format("~p",[IP]); _ -> ok end.' -s erlang halt)

@@ -913,4 +913,12 @@ import(LServer, {sql, _}, DBType, Tab, List) ->
 
 mod_opt_type(access) -> fun acl:access_rules_validator/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
-mod_opt_type(_) -> [access, db_type].
+mod_opt_type(O) when O == cache_life_time; O == cache_size ->
+    fun (I) when is_integer(I), I > 0 -> I;
+        (infinity) -> infinity
+    end;
+mod_opt_type(O) when O == use_cache; O == cache_missed ->
+    fun (B) when is_boolean(B) -> B end;
+mod_opt_type(_) ->
+    [access, db_type, cache_life_time, cache_size,
+     use_cache, cache_missed].

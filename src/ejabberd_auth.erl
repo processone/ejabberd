@@ -261,12 +261,12 @@ try_register(User, Server, Password) ->
 					   ok;
 				      (Mod, _) ->
 					   db_try_register(
-					     User, Server, Password, Mod)
+					     LUser, LServer, Password, Mod)
 				   end, {error, not_allowed},
 				   auth_modules(LServer)) of
 				ok ->
 				    ejabberd_hooks:run(
-				      register_user, Server, [User, Server]);
+				      register_user, LServer, [LUser, LServer]);
 				{error, _} = Err ->
 				    Err
 			    end;

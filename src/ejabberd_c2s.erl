@@ -47,7 +47,7 @@
 	 process_terminated/2, process_info/2]).
 %% API
 -export([get_presence/1, set_presence/2, resend_presence/1, resend_presence/2,
-	 open_session/1, call/3, send/2, close/1, close/2, stop/1,
+	 open_session/1, call/3, cast/2, send/2, close/1, close/2, stop/1,
 	 reply/2, copy_state/2, set_timeout/2, route/2,
 	 host_up/1, host_down/1]).
 
@@ -89,6 +89,10 @@ socket_type() ->
 -spec call(pid(), term(), non_neg_integer() | infinity) -> term().
 call(Ref, Msg, Timeout) ->
     xmpp_stream_in:call(Ref, Msg, Timeout).
+
+-spec cast(pid(), term()) -> ok.
+cast(Ref, Msg) ->
+    xmpp_stream_in:cast(Ref, Msg).
 
 reply(Ref, Reply) ->
     xmpp_stream_in:reply(Ref, Reply).
@@ -293,14 +297,19 @@ process_terminated(State, _Reason) ->
 %%%===================================================================
 %%% xmpp_stream_in callbacks
 %%%===================================================================
-tls_options(#{lserver := LServer, tls_options := DefaultOpts}) ->
-    TLSOpts1 = case ejabberd_config:get_option(
-		      {c2s_certfile, LServer},
-		      ejabberd_config:get_option(
-			{domain_certfile, LServer})) of
-		   undefined -> DefaultOpts;
-		   CertFile -> lists:keystore(certfile, 1, DefaultOpts,
-					      {certfile, CertFile})
+tls_options(#{lserver := LServer, tls_options := DefaultOpts,
+	      stream_encrypted := Encrypted}) ->
+    TLSOpts1 = case {Encrypted, proplists:get_value(certfile, DefaultOpts)} of
+		   {true, CertFile} when CertFile /= undefined -> DefaultOpts;
+		   {_, _} ->
+		       case ejabberd_config:get_option(
+			      {domain_certfile, LServer},
+			      ejabberd_config:get_option(
+				{c2s_certfile, LServer})) of
+			   undefined -> DefaultOpts;
+			   CertFile -> lists:keystore(certfile, 1, DefaultOpts,
+						      {certfile, CertFile})
+		       end
 	       end,
     TLSOpts2 = case ejabberd_config:get_option(
                       {c2s_ciphers, LServer}) of

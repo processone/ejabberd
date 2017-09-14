@@ -33,6 +33,8 @@
 	 c2s_unbinded_packet/2, c2s_closed/2, c2s_terminated/2,
 	 c2s_handle_send/3, c2s_handle_info/2, c2s_handle_call/3,
 	 c2s_handle_recv/3]).
+%% adjust pending session timeout
+-export([get_resume_timeout/1, set_resume_timeout/2]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -69,7 +71,12 @@ start(Host, _Opts) ->
     ejabberd_hooks:add(c2s_terminated, Host, ?MODULE, c2s_terminated, 50).
 
 stop(Host) ->
-    %% TODO: do something with global 'c2s_init' hook
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+	true ->
+	    ok;
+	false ->
+	    ejabberd_hooks:delete(c2s_init, ?MODULE, c2s_stream_init, 50)
+    end,
     ejabberd_hooks:delete(c2s_stream_started, Host, ?MODULE,
 			  c2s_stream_started, 50),
     ejabberd_hooks:delete(c2s_post_auth_features, Host, ?MODULE,
@@ -235,8 +242,9 @@ c2s_handle_info(#{mgmt_ack_timer := TRef, jid := JID, mod := Mod} = State,
 	   [jid:encode(JID)]),
     State1 = Mod:close(State),
     {stop, transition_to_pending(State1)};
-c2s_handle_info(#{mgmt_state := pending, jid := JID, mod := Mod} = State,
-		{timeout, _, pending_timeout}) ->
+c2s_handle_info(#{mgmt_state := pending,
+		  mgmt_pending_timer := TRef, jid := JID, mod := Mod} = State,
+		{timeout, TRef, pending_timeout}) ->
     ?DEBUG("Timed out waiting for resumption of stream for ~s",
 	   [jid:encode(JID)]),
     Mod:stop(State#{mgmt_state => timeout});
@@ -281,6 +289,20 @@ c2s_terminated(#{mgmt_state := MgmtState, mgmt_stanzas_in := In, sid := SID,
     Result;
 c2s_terminated(State, _Reason) ->
     State.
+
+%%%===================================================================
+%%% Adjust pending session timeout
+%%%===================================================================
+-spec get_resume_timeout(state()) -> non_neg_integer().
+get_resume_timeout(#{mgmt_timeout := Timeout}) ->
+    Timeout.
+
+-spec set_resume_timeout(state(), non_neg_integer()) -> state().
+set_resume_timeout(#{mgmt_timeout := Timeout} = State, Timeout) ->
+    State;
+set_resume_timeout(State, Timeout) ->
+    State1 = restart_pending_timer(State, Timeout),
+    State1#{mgmt_timeout => Timeout}.
 
 %%%===================================================================
 %%% Internal functions
@@ -388,8 +410,6 @@ handle_resume(#{user := User, lserver := LServer, sockmod := SockMod,
 					      previd = AttrId}),
 	    State3 = resend_unacked_stanzas(State2),
 	    State4 = send(State3, #sm_r{xmlns = AttrXmlns}),
-	    %% TODO: move this to mod_client_state
-	    %% csi_flush_queue(State4),
 	    State5 = ejabberd_hooks:run_fold(c2s_session_resumed, LServer, State4, []),
 	    ?INFO_MSG("(~s) Resumed session for ~s",
 		      [SockMod:pp(Socket), jid:encode(JID)]),
@@ -408,8 +428,8 @@ transition_to_pending(#{mgmt_state := active, jid := JID,
 			lserver := LServer, mgmt_timeout := Timeout} = State) ->
     State1 = cancel_ack_timer(State),
     ?INFO_MSG("Waiting for resumption of stream for ~s", [jid:encode(JID)]),
-    erlang:start_timer(timer:seconds(Timeout), self(), pending_timeout),
-    State2 = State1#{mgmt_state => pending},
+    TRef = erlang:start_timer(timer:seconds(Timeout), self(), pending_timeout),
+    State2 = State1#{mgmt_state => pending, mgmt_pending_timer => TRef},
     ejabberd_hooks:run_fold(c2s_session_pending, LServer, State2, []);
 transition_to_pending(State) ->
     State.
@@ -648,19 +668,32 @@ add_resent_delay_info(_State, El, _Time) ->
 send(#{mod := Mod} = State, Pkt) ->
     Mod:send(State, Pkt).
 
+-spec restart_pending_timer(state(), non_neg_integer()) -> state().
+restart_pending_timer(#{mgmt_pending_timer := TRef} = State, NewTimeout) ->
+    cancel_timer(TRef),
+    NewTRef = erlang:start_timer(timer:seconds(NewTimeout), self(),
+				 pending_timeout),
+    State#{mgmt_pending_timer => NewTRef};
+restart_pending_timer(State, _NewTimeout) ->
+    State.
+
 -spec cancel_ack_timer(state()) -> state().
 cancel_ack_timer(#{mgmt_ack_timer := TRef} = State) ->
-    case erlang:cancel_timer(TRef) of
-        false -> 
-            receive {timeout, TRef, _} -> ok
-            after 0 -> ok
-            end;
-        _ ->
-            ok
-    end,
+    cancel_timer(TRef),
     maps:remove(mgmt_ack_timer, State);
 cancel_ack_timer(State) ->
     State.
+
+-spec cancel_timer(reference()) -> ok.
+cancel_timer(TRef) ->
+    case erlang:cancel_timer(TRef) of
+	false ->
+	    receive {timeout, TRef, _} -> ok
+	    after 0 -> ok
+	    end;
+	_ ->
+	    ok
+    end.
 
 -spec bounce_message_queue() -> ok.
 bounce_message_queue() ->

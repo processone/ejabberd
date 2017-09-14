@@ -32,7 +32,7 @@
 -export([start/2, stop/1, reload/3,
          depends/2, mod_opt_type/1]).
 
--export([filter_packet/1]).
+-export([filter_packet/1, filter_offline_msg/1]).
 
 -include("xmpp.hrl").
 -include("ejabberd.hrl").
@@ -43,60 +43,105 @@
 start(Host, _Opts) ->
     ejabberd_hooks:add(user_receive_packet, Host,
                        ?MODULE, filter_packet, 25),
-    ok.
+    ejabberd_hooks:add(offline_message_hook, Host,
+		       ?MODULE, filter_offline_msg, 25).
 
 stop(Host) ->
     ejabberd_hooks:delete(user_receive_packet, Host,
                           ?MODULE, filter_packet, 25),
-    ok.
+    ejabberd_hooks:delete(offline_message_hook, Host,
+			  ?MODULE, filter_offline_msg, 25).
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.
 
-filter_packet({#message{} = Msg, State} = Acc) ->
-    From = xmpp:get_from(Msg),
+filter_packet({#message{from = From} = Msg, State} = Acc) ->
     LFrom = jid:tolower(From),
     LBFrom = jid:remove_resource(LFrom),
-    #{pres_a := PresA, jid := JID, lserver := LServer} = State,
-    AllowLocalUsers =
-        gen_mod:get_module_opt(LServer, ?MODULE, allow_local_users, true),
-    case (Msg#message.body == [] andalso
-          Msg#message.subject == [])
-        orelse (AllowLocalUsers andalso
-                ejabberd_router:is_my_route(From#jid.lserver))
-        orelse (?SETS):is_element(LFrom, PresA)
-        orelse (?SETS):is_element(LBFrom, PresA)
+    #{pres_a := PresA} = State,
+    case (?SETS):is_element(LFrom, PresA)
+	orelse (?SETS):is_element(LBFrom, PresA)
         orelse sets_bare_member(LBFrom, PresA) of
 	false ->
-	    {Sub, _} = ejabberd_hooks:run_fold(
-			 roster_get_jid_info, LServer,
-			 {none, []}, [JID#jid.luser, LServer, From]),
-	    case Sub of
-		none ->
-		    Drop = gen_mod:get_module_opt(LServer, ?MODULE, drop, true),
-		    Log = gen_mod:get_module_opt(LServer, ?MODULE, log, false),
-		    if
-			Log ->
-			    ?INFO_MSG("Drop packet: ~s",
-				      [fxml:element_to_binary(
-					 xmpp:encode(Msg, ?NS_CLIENT))]);
-			true ->
-			    ok
-		    end,
-		    if
-			Drop ->
-			    {stop, {drop, State}};
-			true ->
-			    Acc
-		    end;
-		_ ->
-		    Acc
+	    case check_message(Msg) of
+		allow -> Acc;
+		deny -> {stop, {drop, State}}
 	    end;
 	true ->
 	    Acc
     end;
 filter_packet(Acc) ->
     Acc.
+
+filter_offline_msg({_Action, #message{} = Msg} = Acc) ->
+    case check_message(Msg) of
+	allow -> Acc;
+	deny -> {stop, {drop, Msg}}
+    end.
+
+check_message(#message{from = From, to = To} = Msg) ->
+    LServer = To#jid.lserver,
+    AllowLocalUsers =
+        gen_mod:get_module_opt(LServer, ?MODULE, allow_local_users, true),
+    case (Msg#message.body == [] andalso
+          Msg#message.subject == [])
+        orelse ((AllowLocalUsers orelse From#jid.luser == <<"">>) andalso
+                ejabberd_router:is_my_host(From#jid.lserver)) of
+	false ->
+	    case check_subscription(From, To) of
+		none ->
+		    Drop = gen_mod:get_module_opt(LServer, ?MODULE, drop, true),
+		    Log = gen_mod:get_module_opt(LServer, ?MODULE, log, false),
+		    if
+			Log ->
+			    ?INFO_MSG("~s message from stranger ~s to ~s",
+				      [if Drop -> "Dropping";
+					  true -> "Allow"
+				       end,
+				       jid:encode(From), jid:encode(To)]);
+			true ->
+			    ok
+		    end,
+		    if
+			Drop ->
+			    deny;
+			true ->
+			    allow
+		    end;
+		some ->
+		    allow
+	    end;
+	true ->
+	    allow
+    end.
+
+-spec check_subscription(jid(), jid()) -> none | some.
+check_subscription(From, To) ->
+    {LocalUser, LocalServer, _} = jid:tolower(To),
+    {RemoteUser, RemoteServer, _} = jid:tolower(From),
+    case ejabberd_hooks:run_fold(
+	   roster_get_jid_info, LocalServer,
+	   {none, []}, [LocalUser, LocalServer, From]) of
+	{none, _} when RemoteUser == <<"">> ->
+	    none;
+	{none, _} ->
+	    case gen_mod:get_module_opt(LocalServer, ?MODULE,
+					allow_transports, true) of
+		true ->
+		    %% Check if the contact's server is in the roster
+		    case ejabberd_hooks:run_fold(
+			   roster_get_jid_info, LocalServer,
+			   {none, []},
+			   [LocalUser, LocalServer, jid:make(RemoteServer)]) of
+			{none, _} -> none;
+			_ -> some
+		    end;
+		false ->
+		    none
+	    end;
+	_ ->
+	    some
+    end.
 
 sets_bare_member({U, S, <<"">>} = LBJID, Set) ->
     case ?SETS:next(sets_iterator_from(LBJID, Set)) of
@@ -133,4 +178,6 @@ mod_opt_type(log) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(allow_local_users) ->
     fun (B) when is_boolean(B) -> B end;
-mod_opt_type(_) -> [drop, log, allow_local_users].
+mod_opt_type(allow_transports) ->
+    fun (B) when is_boolean(B) -> B end;
+mod_opt_type(_) -> [drop, log, allow_local_users, allow_transports].

@@ -27,9 +27,7 @@
 -protocol({xep, 124, '1.11'}).
 -protocol({xep, 206, '1.4'}).
 
--define(GEN_FSM, p1_fsm).
-
--behaviour(?GEN_FSM).
+-behaviour(p1_fsm).
 
 %% API
 -export([start/2, start/3, start_link/3]).
@@ -137,18 +135,18 @@ start(#body{attrs = Attrs} = Body, IP, SID) ->
     end.
 
 start(StateName, State) ->
-    (?GEN_FSM):start_link(?MODULE, [StateName, State],
+    p1_fsm:start_link(?MODULE, [StateName, State],
 			  ?FSMOPTS).
 
 start_link(Body, IP, SID) ->
-    (?GEN_FSM):start_link(?MODULE, [Body, IP, SID],
+    p1_fsm:start_link(?MODULE, [Body, IP, SID],
 			  ?FSMOPTS).
 
 send({http_bind, FsmRef, IP}, Packet) ->
     send_xml({http_bind, FsmRef, IP}, Packet).
 
 send_xml({http_bind, FsmRef, _IP}, Packet) ->
-    case catch (?GEN_FSM):sync_send_all_state_event(FsmRef,
+    case catch p1_fsm:sync_send_all_state_event(FsmRef,
 						    {send_xml, Packet},
 						    ?SEND_TIMEOUT)
 	of
@@ -160,12 +158,12 @@ send_xml({http_bind, FsmRef, _IP}, Packet) ->
 setopts({http_bind, FsmRef, _IP}, Opts) ->
     case lists:member({active, once}, Opts) of
       true ->
-	  (?GEN_FSM):send_all_state_event(FsmRef,
+	  p1_fsm:send_all_state_event(FsmRef,
 					  {activate, self()});
       _ ->
 	  case lists:member({active, false}, Opts) of
 	    true ->
-		case catch (?GEN_FSM):sync_send_all_state_event(FsmRef,
+		case catch p1_fsm:sync_send_all_state_event(FsmRef,
 								deactivate_socket)
 		    of
 		  {'EXIT', _} -> {error, einval};
@@ -181,7 +179,7 @@ custom_receiver({http_bind, FsmRef, _IP}) ->
     {receiver, ?MODULE, FsmRef}.
 
 become_controller(FsmRef, C2SPid) ->
-    (?GEN_FSM):send_all_state_event(FsmRef,
+    p1_fsm:send_all_state_event(FsmRef,
 				    {become_controller, C2SPid}).
 
 change_controller({http_bind, FsmRef, _IP}, C2SPid) ->
@@ -190,14 +188,14 @@ change_controller({http_bind, FsmRef, _IP}, C2SPid) ->
 reset_stream({http_bind, _FsmRef, _IP}) -> ok.
 
 change_shaper({http_bind, FsmRef, _IP}, Shaper) ->
-    (?GEN_FSM):send_all_state_event(FsmRef,
+    p1_fsm:send_all_state_event(FsmRef,
 				    {change_shaper, Shaper}).
 
 monitor({http_bind, FsmRef, _IP}) ->
     erlang:monitor(process, FsmRef).
 
 close({http_bind, FsmRef, _IP}) ->
-    catch (?GEN_FSM):sync_send_all_state_event(FsmRef,
+    catch p1_fsm:sync_send_all_state_event(FsmRef,
 					       close).
 
 sockname(_Socket) -> {ok, {{0, 0, 0, 0}, 0}}.
@@ -269,7 +267,7 @@ process_request(Data, IP, Type) ->
     end.
 
 process_request(Pid, Req, _IP, Type) ->
-    case catch (?GEN_FSM):sync_send_event(Pid, Req,
+    case catch p1_fsm:sync_send_event(Pid, Req,
 					  infinity)
 	of
       #body{} = Resp -> bosh_response(Resp, Type);
@@ -571,7 +569,7 @@ handle_sync_event({send_xml, El}, _From, StateName,
 		       of
 		     {{value, {TRef, From, Body}}, Q} ->
 			 cancel_timer(TRef),
-			 (?GEN_FSM):send_event(self(), {Body, From}),
+			 p1_fsm:send_event(self(), {Body, From}),
 			 State1#state{shaped_receivers = Q};
 		     _ -> State1
 		   end,
@@ -598,7 +596,7 @@ handle_info({timeout, TRef, shaper_timeout}, StateName,
 	    State) ->
     case p1_queue:out(State#state.shaped_receivers) of
       {{value, {TRef, From, Req}}, Q} ->
-	  (?GEN_FSM):send_event(self(), {Req, From}),
+	  p1_fsm:send_event(self(), {Req, From}),
 	  {next_state, StateName,
 	   State#state{shaped_receivers = Q}};
       {{value, _}, _} ->
@@ -630,7 +628,7 @@ terminate(_Reason, _StateName, State) ->
     mod_bosh:close_session(State#state.sid),
     case State#state.c2s_pid of
       C2SPid when is_pid(C2SPid) ->
-	  (?GEN_FSM):send_event(C2SPid, closed);
+	  p1_fsm:send_event(C2SPid, closed);
       _ -> ok
     end,
     bounce_receivers(State, closed),
@@ -644,7 +642,7 @@ print_state(State) -> State.
 route_els(#state{el_ibuf = Buf, c2s_pid = C2SPid} = State) ->
     NewBuf = p1_queue:dropwhile(
 	       fun(El) ->
-		       ?GEN_FSM:send_event(C2SPid, El),
+		       p1_fsm:send_event(C2SPid, El),
 		       true
 	       end, Buf),
     State#state{el_ibuf = NewBuf}.
@@ -653,7 +651,7 @@ route_els(State, Els) ->
     case State#state.c2s_pid of
       C2SPid when is_pid(C2SPid) ->
 	  lists:foreach(fun (El) ->
-				(?GEN_FSM):send_event(C2SPid, El)
+				p1_fsm:send_event(C2SPid, El)
 			end,
 			Els),
 	  State;
@@ -676,7 +674,7 @@ reply(State, Body, RID, From) ->
     case catch gb_trees:take_smallest(Receivers) of
       {NextRID, {From1, Req}, Receivers1}
 	  when NextRID == RID + 1 ->
-	  (?GEN_FSM):send_event(self(), {Req, From1}),
+	  p1_fsm:send_event(self(), {Req, From1}),
 	  State2#state{receivers = Receivers1};
       _ -> State2#state{receivers = Receivers}
     end.
@@ -715,7 +713,7 @@ do_reply(State, From, Body, RID) ->
     ?DEBUG("send reply:~n** RequestID: ~p~n** Reply: "
 	   "~p~n** To: ~p~n** State: ~p",
 	   [RID, Body, From, State]),
-    (?GEN_FSM):reply(From, Body),
+    p1_fsm:reply(From, Body),
     Responses = gb_trees:delete_any(RID,
 				    State#state.responses),
     Responses1 = case gb_trees:size(Responses) of
@@ -1053,7 +1051,7 @@ buf_out(Buf, I, Els) ->
     end.
 
 cancel_timer(TRef) when is_reference(TRef) ->
-    (?GEN_FSM):cancel_timer(TRef);
+    p1_fsm:cancel_timer(TRef);
 cancel_timer(_) -> false.
 
 restart_timer(TRef, Timeout, Msg) ->

@@ -3,23 +3,27 @@ import struct
 
 def read():
     (pkt_size,) = struct.unpack('>H', sys.stdin.read(2))
-    pkt = sys.stdin.read(pkt_size).split(':')
-    cmd = pkt[0]
-    args_num = len(pkt) - 1
-    if cmd == 'auth' and args_num >= 3:
-        if pkt[1] == "wrong":
+    pkt = sys.stdin.read(pkt_size)
+    cmd = pkt.split(':')[0]
+    if cmd == 'auth':
+        u, s, p = pkt.split(':', 3)[1:]
+        if u == "wrong":
             write(False)
         else:
             write(True)
-    elif cmd == 'isuser' and args_num == 2:
+    elif cmd == 'isuser':
+        u, s = pkt.split(':', 2)[1:]
+    elif cmd == 'setpass':
+        u, s, p = pkt.split(':', 3)[1:]
         write(True)
-    elif cmd == 'setpass' and args_num >= 3:
+    elif cmd == 'tryregister':
+        u, s, p = pkt.split(':', 3)[1:]
         write(True)
-    elif cmd == 'tryregister' and args_num >= 3:
+    elif cmd == 'removeuser':
+        u, s = pkt.split(':', 2)[1:]
         write(True)
-    elif cmd == 'removeuser' and args_num == 2:
-        write(True)
-    elif cmd == 'removeuser3' and args_num >= 3:
+    elif cmd == 'removeuser3':
+        u, s, p = pkt.split(':', 3)[1:]
         write(True)
     else:
         write(False)

@@ -112,6 +112,8 @@ depends(_Host, _Opts) ->
 
 mod_opt_type(access) -> fun acl:access_rules_validator/1;
 mod_opt_type(host) -> fun iolist_to_binary/1;
+mod_opt_type(hosts) ->
+    fun(L) -> lists:map(fun iolist_to_binary/1, L) end;
 mod_opt_type(hostname) -> fun iolist_to_binary/1;
 mod_opt_type(ip) ->
     fun (S) ->
@@ -131,7 +133,7 @@ mod_opt_type(ram_db_type) ->
 mod_opt_type(Opt) ->
     case mod_proxy65_stream:listen_opt_type(Opt) of
 	Opts when is_list(Opts) ->
-	    [access, host, hostname, ip, name, port,
+	    [access, host, hosts, hostname, ip, name, port,
 	     max_connections, ram_db_type] ++ Opts;
 	Fun ->
 	    Fun

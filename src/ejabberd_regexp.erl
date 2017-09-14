@@ -25,7 +25,7 @@
 
 -module(ejabberd_regexp).
 
--compile([export_all]).
+-export([exec/2, run/2, split/2, replace/3, greplace/3, sh_to_awk/1]).
 
 exec({ReM, ReF, ReA}, {RgM, RgF, RgA}) ->
     try apply(ReM, ReF, ReA) catch

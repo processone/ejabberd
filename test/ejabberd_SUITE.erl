@@ -431,6 +431,7 @@ db_tests(DB) when DB == mnesia; DB == redis ->
        mam_tests:single_cases(),
        carbons_tests:single_cases(),
        csi_tests:single_cases(),
+       push_tests:single_cases(),
        test_unregister]},
      muc_tests:master_slave_cases(),
      privacy_tests:master_slave_cases(),
@@ -441,7 +442,8 @@ db_tests(DB) when DB == mnesia; DB == redis ->
      vcard_tests:master_slave_cases(),
      announce_tests:master_slave_cases(),
      carbons_tests:master_slave_cases(),
-     csi_tests:master_slave_cases()];
+     csi_tests:master_slave_cases(),
+     push_tests:master_slave_cases()];
 db_tests(_) ->
     [{single_user, [sequence],
       [test_register,
@@ -748,25 +750,25 @@ test_component_send(Config) ->
     disconnect(Config).
 
 s2s_dialback(Config) ->
-    ejabberd_s2s:stop_all_connections(),
+    ejabberd_s2s:stop_s2s_connections(),
     ejabberd_config:add_option(s2s_use_starttls, false),
     ejabberd_config:add_option(domain_certfile, "self-signed-cert.pem"),
     s2s_ping(Config).
 
 s2s_optional(Config) ->
-    ejabberd_s2s:stop_all_connections(),
+    ejabberd_s2s:stop_s2s_connections(),
     ejabberd_config:add_option(s2s_use_starttls, optional),
     ejabberd_config:add_option(domain_certfile, "self-signed-cert.pem"),
     s2s_ping(Config).
 
 s2s_required(Config) ->
-    ejabberd_s2s:stop_all_connections(),
+    ejabberd_s2s:stop_s2s_connections(),
     ejabberd_config:add_option(s2s_use_starttls, required),
     ejabberd_config:add_option(domain_certfile, "self-signed-cert.pem"),
     s2s_ping(Config).
 
 s2s_required_trusted(Config) ->
-    ejabberd_s2s:stop_all_connections(),
+    ejabberd_s2s:stop_s2s_connections(),
     ejabberd_config:add_option(s2s_use_starttls, required),
     ejabberd_config:add_option(domain_certfile, "cert.pem"),
     s2s_ping(Config).
