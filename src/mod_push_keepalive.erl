@@ -91,7 +91,7 @@ mod_opt_type(O) when O == cache_life_time; O == cache_size ->
 mod_opt_type(O) when O == use_cache; O == cache_missed ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(_) ->
-    [resume_timeout, wake_on_start, wake_on_timeout, db_type, cache_life_time,
+    [resume_timeout, wake_on_start, wake_on_timeout, cache_life_time,
      cache_size, use_cache, cache_missed, iqdisc].
 
 %%--------------------------------------------------------------------
