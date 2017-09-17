@@ -399,6 +399,7 @@ decode_mime_type(MimeType) ->
 	<<"image/jpeg">> -> jpeg;
 	<<"image/png">> -> png;
 	<<"image/webp">> -> webp;
+	<<"image/gif">> -> gif;
 	_ -> unknown
     end.
 
@@ -414,23 +415,33 @@ have_eimp() -> false.
 
 mod_opt_type({convert, png}) ->
     fun(jpeg) -> jpeg;
-       (webp) -> webp
+       (webp) -> webp;
+       (gif) -> gif
     end;
 mod_opt_type({convert, webp}) ->
     fun(jpeg) -> jpeg;
-       (png) -> png
+       (png) -> png;
+       (gif) -> gif
     end;
 mod_opt_type({convert, jpeg}) ->
     fun(png) -> png;
+       (webp) -> webp;
+       (gif) -> gif
+    end;
+mod_opt_type({convert, gif}) ->
+    fun(png) -> png;
+       (jpeg) -> jpeg;
        (webp) -> webp
     end;
 mod_opt_type({convert, default}) ->
     fun(png) -> png;
        (webp) -> webp;
-       (jpeg) -> jpeg
+       (jpeg) -> jpeg;
+       (gif) -> gif
     end;
 mod_opt_type(_) ->
     [{convert, default},
      {convert, webp},
      {convert, png},
+     {convert, gif},
      {convert, jpeg}].
