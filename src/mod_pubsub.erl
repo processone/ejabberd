@@ -1796,8 +1796,6 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, PubOpts, Access
 		broadcast -> Payload;
 		PluginPayload -> PluginPayload
 	    end,
-	    ejabberd_hooks:run(pubsub_publish_item, ServerHost,
-		[ServerHost, Node, Publisher, service_jid(Host), ItemId, BrPayload]),
 	    set_cached_item(Host, Nidx, ItemId, Publisher, BrPayload),
 	    case get_option(Options, deliver_notifications) of
 		true ->
@@ -1806,6 +1804,8 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, PubOpts, Access
 		false ->
 		    ok
 	    end,
+	    ejabberd_hooks:run(pubsub_publish_item, ServerHost,
+		[ServerHost, Node, Publisher, service_jid(Host), ItemId, BrPayload]),
 	    case Result of
 		default -> {result, Reply};
 		_ -> {result, Result}
