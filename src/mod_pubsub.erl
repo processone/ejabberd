@@ -3199,8 +3199,8 @@ set_configure(Host, Node, From, Config, Lang) ->
 			case tree_call(Host,
 				       set_node,
 				       [N#pubsub_node{options = NewOpts}]) of
-			    {result, Nidx} -> {result, ok};
-			    ok -> {result, ok};
+			    {result, Nidx} -> {result, NewOpts};
+			    ok -> {result, NewOpts};
 			    Err -> Err
 			end;
 		    _ ->
@@ -3209,10 +3209,9 @@ set_configure(Host, Node, From, Config, Lang) ->
 		end
 	end,
     case transaction(Host, Node, Action, transaction) of
-	{result, {TNode, ok}} ->
+	{result, {TNode, Options}} ->
 	    Nidx = TNode#pubsub_node.id,
 	    Type = TNode#pubsub_node.type,
-	    Options = TNode#pubsub_node.options,
 	    broadcast_config_notification(Host, Node, Nidx, Type, Options, Lang),
 	    {result, undefined};
 	Other ->
