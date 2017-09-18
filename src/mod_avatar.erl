@@ -267,7 +267,16 @@ publish_avatar(#iq{from = JID} = IQ, Meta, MimeType, Data, ItemID) ->
 	   LBJID, LServer, ?NS_AVATAR_DATA,
 	   JID, ItemID, [Payload]) of
 	{result, _} ->
+	    {W, H} = case eimp:identify(Data) of
+			 {ok, ImgInfo} ->
+			     {proplists:get_value(width, ImgInfo),
+			      proplists:get_value(height, ImgInfo)};
+			 _ ->
+			     {undefined, undefined}
+		     end,
 	    I = #avatar_info{id = ItemID,
+			     width = W,
+			     height = H,
 			     type = MimeType,
 			     bytes = size(Data)},
 	    Meta1 = Meta#avatar_meta{info = [I|Info]},
