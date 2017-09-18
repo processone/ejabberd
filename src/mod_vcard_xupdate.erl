@@ -31,7 +31,7 @@
 -export([start/2, stop/1, reload/3]).
 
 -export([update_presence/1, vcard_set/1, remove_user/2,
-	 mod_opt_type/1, depends/2]).
+	 user_send_packet/1, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -47,6 +47,8 @@ start(Host, Opts) ->
     init_cache(Host, Opts),
     ejabberd_hooks:add(c2s_self_presence, Host, ?MODULE,
 		       update_presence, 100),
+    ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
+		       user_send_packet, 50),
     ejabberd_hooks:add(vcard_iq_set, Host, ?MODULE, vcard_set,
 		       90),
     ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 50).
@@ -54,6 +56,8 @@ start(Host, Opts) ->
 stop(Host) ->
     ejabberd_hooks:delete(c2s_self_presence, Host,
 			  ?MODULE, update_presence, 100),
+    ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
+			  user_send_packet, 50),
     ejabberd_hooks:delete(vcard_iq_set, Host, ?MODULE,
 			  vcard_set, 90),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE, remove_user, 50).
@@ -78,6 +82,18 @@ update_presence({#presence{type = available} = Pres,
     {Pres1, State};
 update_presence(Acc) ->
     Acc.
+
+-spec user_send_packet({presence(), ejabberd_c2s:state()})
+      -> {presence(), ejabberd_c2s:state()}.
+user_send_packet({#presence{type = available,
+			    to = #jid{luser = U, lserver = S,
+				      lresource = <<"">>}},
+		  #{jid := #jid{luser = U, lserver = S}}} = Acc) ->
+    %% This is processed by update_presence/2 explicitly, we don't
+    %% want to call this multiple times for performance reasons
+    Acc;
+user_send_packet(Acc) ->
+    update_presence(Acc).
 
 -spec vcard_set(iq()) -> iq().
 vcard_set(#iq{from = #jid{luser = LUser, lserver = LServer}} = IQ) ->
