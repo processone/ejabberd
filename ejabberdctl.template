@@ -120,7 +120,7 @@ exec_erl()
 exec_iex()
 {
     NODE=$1; shift
-    exec_cmd "$IEX" ${S:---}name $NODE --erl "$ERLANG_OPTS" "$@"
+    exec_cmd "$IEX" -${S:--}name $NODE --erl "$ERLANG_OPTS" "$@"
 }
 
 # usage
