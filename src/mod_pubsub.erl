@@ -3212,7 +3212,7 @@ set_configure(Host, Node, From, Config, Lang) ->
 	{result, {TNode, ok}} ->
 	    Nidx = TNode#pubsub_node.id,
 	    Type = TNode#pubsub_node.type,
-	    Options = TNode#pubsub_node.options,
+            Options = merge_config(Config, TNode#pubsub_node.options),
 	    broadcast_config_notification(Host, Node, Nidx, Type, Options, Lang),
 	    {result, undefined};
 	Other ->
