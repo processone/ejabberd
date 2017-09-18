@@ -294,7 +294,7 @@ case $1 in
         PEER=${2:-$ERLANG_NODE}
         [ "$PEER" = "${PEER%.*}" ] && PS="-s"
         exec_cmd "$ERL" ${PS:--}name $(uid ping $(hostname $PS)) $ERLANG_OPTS \
-                 -noinput -hidden -eval 'io:format("~p~n",[net_adm:ping('"$PEER"')])' \
+                 -noinput -hidden -eval 'io:format("~p~n",[net_adm:ping('"'$PEER'"')])' \
                  -s erlang halt -output text
         ;;
     started)
