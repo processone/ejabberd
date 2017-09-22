@@ -162,7 +162,7 @@ delete_session(LUser, LServer, TS) ->
 	{atomic, ok} ->
 	    ok;
 	{aborted, E} ->
-	    ?ERROR_MSG("Cannot delete push seesion of ~s@~s: ~p",
+	    ?ERROR_MSG("Cannot delete push session of ~s@~s: ~p",
 		       [LUser, LServer, E]),
 	    error
     end.
