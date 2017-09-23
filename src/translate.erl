@@ -29,7 +29,7 @@
 
 -behaviour(gen_server).
 
--export([start_link/0, reload/0, translate/2]).
+-export([start_link/0, reload/0, translate/2, mark/1]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
@@ -218,6 +218,10 @@ translate(Msg) ->
 		end
 	  end
     end.
+
+-spec mark(binary()) -> binary().
+mark(Msg) ->
+    Msg.
 
 ascii_tolower(B) ->
     iolist_to_binary(ascii_tolower_s(binary_to_list(B))).

@@ -324,31 +324,31 @@ default_vcard_map() ->
      {<<"PHOTO">>, <<"%s">>, [<<"jpegPhoto">>]}].
 
 default_search_fields() ->
-    [{<<"User">>, <<"%u">>},
-     {<<"Full Name">>, <<"displayName">>},
-     {<<"Given Name">>, <<"givenName">>},
-     {<<"Middle Name">>, <<"initials">>},
-     {<<"Family Name">>, <<"sn">>},
-     {<<"Nickname">>, <<"%u">>},
-     {<<"Birthday">>, <<"birthDay">>},
-     {<<"Country">>, <<"c">>},
-     {<<"City">>, <<"l">>},
-     {<<"Email">>, <<"mail">>},
-     {<<"Organization Name">>, <<"o">>},
-     {<<"Organization Unit">>, <<"ou">>}].
+    [{translate:mark(<<"User">>), <<"%u">>},
+     {translate:mark(<<"Full Name">>), <<"displayName">>},
+     {translate:mark(<<"Given Name">>), <<"givenName">>},
+     {translate:mark(<<"Middle Name">>), <<"initials">>},
+     {translate:mark(<<"Family Name">>), <<"sn">>},
+     {translate:mark(<<"Nickname">>), <<"%u">>},
+     {translate:mark(<<"Birthday">>), <<"birthDay">>},
+     {translate:mark(<<"Country">>), <<"c">>},
+     {translate:mark(<<"City">>), <<"l">>},
+     {translate:mark(<<"Email">>), <<"mail">>},
+     {translate:mark(<<"Organization Name">>), <<"o">>},
+     {translate:mark(<<"Organization Unit">>), <<"ou">>}].
 
 default_search_reported() ->
-    [{<<"Full Name">>, <<"FN">>},
-     {<<"Given Name">>, <<"FIRST">>},
-     {<<"Middle Name">>, <<"MIDDLE">>},
-     {<<"Family Name">>, <<"LAST">>},
-     {<<"Nickname">>, <<"NICK">>},
-     {<<"Birthday">>, <<"BDAY">>},
-     {<<"Country">>, <<"CTRY">>},
-     {<<"City">>, <<"LOCALITY">>},
-     {<<"Email">>, <<"EMAIL">>},
-     {<<"Organization Name">>, <<"ORGNAME">>},
-     {<<"Organization Unit">>, <<"ORGUNIT">>}].
+    [{translate:mark(<<"Full Name">>), <<"FN">>},
+     {translate:mark(<<"Given Name">>), <<"FIRST">>},
+     {translate:mark(<<"Middle Name">>), <<"MIDDLE">>},
+     {translate:mark(<<"Family Name">>), <<"LAST">>},
+     {translate:mark(<<"Nickname">>), <<"NICK">>},
+     {translate:mark(<<"Birthday">>), <<"BDAY">>},
+     {translate:mark(<<"Country">>), <<"CTRY">>},
+     {translate:mark(<<"City">>), <<"LOCALITY">>},
+     {translate:mark(<<"Email">>), <<"EMAIL">>},
+     {translate:mark(<<"Organization Name">>), <<"ORGNAME">>},
+     {translate:mark(<<"Organization Unit">>), <<"ORGUNIT">>}].
 
 parse_options(Host, Opts) ->
     MyHosts = gen_mod:get_opt_hosts(Host, Opts, <<"vjud.@HOST@">>),

@@ -95,32 +95,32 @@ search(LServer, Data, AllowReturnAll, MaxMatch) ->
     end.
 
 search_fields(_LServer) ->
-    [{<<"User">>, <<"user">>},
-     {<<"Full Name">>, <<"fn">>},
-     {<<"Name">>, <<"first">>},
-     {<<"Middle Name">>, <<"middle">>},
-     {<<"Family Name">>, <<"last">>},
-     {<<"Nickname">>, <<"nick">>},
-     {<<"Birthday">>, <<"bday">>},
-     {<<"Country">>, <<"ctry">>},
-     {<<"City">>, <<"locality">>},
-     {<<"Email">>, <<"email">>},
-     {<<"Organization Name">>, <<"orgname">>},
-     {<<"Organization Unit">>, <<"orgunit">>}].
+    [{translate:mark(<<"User">>), <<"user">>},
+     {translate:mark(<<"Full Name">>), <<"fn">>},
+     {translate:mark(<<"Name">>), <<"first">>},
+     {translate:mark(<<"Middle Name">>), <<"middle">>},
+     {translate:mark(<<"Family Name">>), <<"last">>},
+     {translate:mark(<<"Nickname">>), <<"nick">>},
+     {translate:mark(<<"Birthday">>), <<"bday">>},
+     {translate:mark(<<"Country">>), <<"ctry">>},
+     {translate:mark(<<"City">>), <<"locality">>},
+     {translate:mark(<<"Email">>), <<"email">>},
+     {translate:mark(<<"Organization Name">>), <<"orgname">>},
+     {translate:mark(<<"Organization Unit">>), <<"orgunit">>}].
 
 search_reported(_LServer) ->
-    [{<<"Jabber ID">>, <<"jid">>},
-     {<<"Full Name">>, <<"fn">>},
-     {<<"Name">>, <<"first">>},
-     {<<"Middle Name">>, <<"middle">>},
-     {<<"Family Name">>, <<"last">>},
-     {<<"Nickname">>, <<"nick">>},
-     {<<"Birthday">>, <<"bday">>},
-     {<<"Country">>, <<"ctry">>},
-     {<<"City">>, <<"locality">>},
-     {<<"Email">>, <<"email">>},
-     {<<"Organization Name">>, <<"orgname">>},
-     {<<"Organization Unit">>, <<"orgunit">>}].
+    [{translate:mark(<<"Jabber ID">>), <<"jid">>},
+     {translate:mark(<<"Full Name">>), <<"fn">>},
+     {translate:mark(<<"Name">>), <<"first">>},
+     {translate:mark(<<"Middle Name">>), <<"middle">>},
+     {translate:mark(<<"Family Name">>), <<"last">>},
+     {translate:mark(<<"Nickname">>), <<"nick">>},
+     {translate:mark(<<"Birthday">>), <<"bday">>},
+     {translate:mark(<<"Country">>), <<"ctry">>},
+     {translate:mark(<<"City">>), <<"locality">>},
+     {translate:mark(<<"Email">>), <<"email">>},
+     {translate:mark(<<"Organization Name">>), <<"orgname">>},
+     {translate:mark(<<"Organization Unit">>), <<"orgunit">>}].
 
 remove_user(LUser, LServer) ->
     US = {LUser, LServer},

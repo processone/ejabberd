@@ -436,7 +436,7 @@ process(_Handlers,
               ?INPUT(<<"hidden">>, <<"scope">>, Scope),
               ?INPUT(<<"hidden">>, <<"state">>, State),
               ?BR,
-              ?LABEL(<<"ttl">>, [?CT(<<"Token TTL">>), ?CT(<<": ">>)]),
+              ?LABEL(<<"ttl">>, [?CT(<<"Token TTL">>), ?C(<<": ">>)]),
               ?XAE(<<"select">>, [{<<"name">>, <<"ttl">>}],
                    [
                    ?XAC(<<"option">>, [{<<"value">>, <<"3600">>}],<<"1 Hour">>),
