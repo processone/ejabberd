@@ -42,6 +42,7 @@
 -include("logger.hrl").
 -include("eldap.hrl").
 -include("xmpp.hrl").
+-include("translate.hrl").
 
 -define(PROCNAME, ejabberd_mod_vcard_ldap).
 
@@ -324,31 +325,31 @@ default_vcard_map() ->
      {<<"PHOTO">>, <<"%s">>, [<<"jpegPhoto">>]}].
 
 default_search_fields() ->
-    [{translate:mark(<<"User">>), <<"%u">>},
-     {translate:mark(<<"Full Name">>), <<"displayName">>},
-     {translate:mark(<<"Given Name">>), <<"givenName">>},
-     {translate:mark(<<"Middle Name">>), <<"initials">>},
-     {translate:mark(<<"Family Name">>), <<"sn">>},
-     {translate:mark(<<"Nickname">>), <<"%u">>},
-     {translate:mark(<<"Birthday">>), <<"birthDay">>},
-     {translate:mark(<<"Country">>), <<"c">>},
-     {translate:mark(<<"City">>), <<"l">>},
-     {translate:mark(<<"Email">>), <<"mail">>},
-     {translate:mark(<<"Organization Name">>), <<"o">>},
-     {translate:mark(<<"Organization Unit">>), <<"ou">>}].
+    [{?T("User"), <<"%u">>},
+     {?T("Full Name"), <<"displayName">>},
+     {?T("Given Name"), <<"givenName">>},
+     {?T("Middle Name"), <<"initials">>},
+     {?T("Family Name"), <<"sn">>},
+     {?T("Nickname"), <<"%u">>},
+     {?T("Birthday"), <<"birthDay">>},
+     {?T("Country"), <<"c">>},
+     {?T("City"), <<"l">>},
+     {?T("Email"), <<"mail">>},
+     {?T("Organization Name"), <<"o">>},
+     {?T("Organization Unit"), <<"ou">>}].
 
 default_search_reported() ->
-    [{translate:mark(<<"Full Name">>), <<"FN">>},
-     {translate:mark(<<"Given Name">>), <<"FIRST">>},
-     {translate:mark(<<"Middle Name">>), <<"MIDDLE">>},
-     {translate:mark(<<"Family Name">>), <<"LAST">>},
-     {translate:mark(<<"Nickname">>), <<"NICK">>},
-     {translate:mark(<<"Birthday">>), <<"BDAY">>},
-     {translate:mark(<<"Country">>), <<"CTRY">>},
-     {translate:mark(<<"City">>), <<"LOCALITY">>},
-     {translate:mark(<<"Email">>), <<"EMAIL">>},
-     {translate:mark(<<"Organization Name">>), <<"ORGNAME">>},
-     {translate:mark(<<"Organization Unit">>), <<"ORGUNIT">>}].
+    [{?T("Full Name"), <<"FN">>},
+     {?T("Given Name"), <<"FIRST">>},
+     {?T("Middle Name"), <<"MIDDLE">>},
+     {?T("Family Name"), <<"LAST">>},
+     {?T("Nickname"), <<"NICK">>},
+     {?T("Birthday"), <<"BDAY">>},
+     {?T("Country"), <<"CTRY">>},
+     {?T("City"), <<"LOCALITY">>},
+     {?T("Email"), <<"EMAIL">>},
+     {?T("Organization Name"), <<"ORGNAME">>},
+     {?T("Organization Unit"), <<"ORGUNIT">>}].
 
 parse_options(Host, Opts) ->
     MyHosts = gen_mod:get_opt_hosts(Host, Opts, <<"vjud.@HOST@">>),

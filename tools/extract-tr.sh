@@ -6,25 +6,13 @@ main([Dir]) ->
     Txts =
 	filelib:fold_files(
 	  Dir, ".+\.beam\$", false,
-	  fun(FileIn, Res) ->
-		  case get_forms(FileIn) of
-		      {ok, Forms} ->
-			  Tree = erl_syntax:form_list(Forms),
-			  Mod = mod(FileIn),
-			  erl_syntax_lib:fold_subtrees(
-			    fun(Form, Acc) ->
-				    case erl_syntax:type(Form) of
-					function ->
-					    case map(Form, Mod) of
-						[] ->
-						    Acc;
-						Vars ->
-						    Vars ++ Acc
-					    end;
-					_ ->
-					    Acc
-				    end
-			    end, [], Tree) ++ Res;
+	  fun(BeamFile, Res) ->
+		  Mod = mod(BeamFile),
+		  ErlFile = filename:join("src", Mod ++ ".erl"),
+		  case get_forms(BeamFile, ErlFile) of
+		      {ok, BeamForms, ErlForms} ->
+			  process_forms(BeamForms, Mod, application) ++
+			      process_forms(ErlForms, Mod, macro) ++ Res;
 		      _Err ->
 			  Res
 		  end
@@ -40,12 +28,31 @@ main([Dir]) ->
 	     end, dict:new(), Txts),
     generate_pot(Dict).
 
-map(Tree, Mod) ->
+process_forms(Forms, Mod, Type) ->
+    Tree = erl_syntax:form_list(Forms),
+    erl_syntax_lib:fold_subtrees(
+      fun(Form, Acc) ->
+	      case erl_syntax:type(Form) of
+		  function ->
+		      case map(Form, Mod, Type) of
+			  [] ->
+			      Acc;
+			  Vars ->
+			      Vars ++ Acc
+		      end;
+		  _ ->
+		      Acc
+	      end
+      end, [], Tree).
+
+map(Tree, Mod, Type) ->
     Vars = erl_syntax_lib:fold(
 	     fun(Form, Acc) ->
 		     case erl_syntax:type(Form) of
-			 application ->
+			 Type when Type == application ->
 			     analyze_app(Form, Mod) ++ Acc;
+			 Type when Type == macro ->
+			     analyze_macro(Form, Mod) ++ Acc;
 			 _ ->
 			     Acc
 		     end
@@ -130,8 +137,7 @@ analyze_app(Form, Mod) ->
 		  {xmpp, "err_" ++ _, 2, [T|_]} -> T;
 		  {xmpp, "serr_" ++ _, 2, [T|_]} -> T;
 		  {xmpp, "mk_text", 2, [T|_]} -> T;
-		  {translate, "translate", 2, [_,T|_]} -> T;
-		  {translate, "mark", 1, [T]} -> T
+		  {translate, "translate", 2, [_,T|_]} -> T
 	      end,
 	Pos = erl_syntax:get_pos(Txt),
 	case erl_syntax:type(Txt) of
@@ -162,6 +168,24 @@ analyze_app(Form, Mod) ->
     catch _:{badmatch, _} ->
 	    [];
 	  _:{case_clause, _} ->
+	    []
+    end.
+
+analyze_macro(Form, Mod) ->
+    try
+	Name = erl_syntax:macro_name(Form),
+	variable = erl_syntax:type(Name),
+	'T' = erl_syntax:variable_name(Name),
+	[Txt] = erl_syntax:macro_arguments(Form),
+	string = erl_syntax:type(Txt),
+	Pos = erl_syntax:get_pos(Txt),
+	try [{list_to_binary(erl_syntax:string_value(Txt)), Pos}]
+	catch _:_ ->
+		log("~s:~p: not a binary: ~s~n",
+		    [Mod, Pos, erl_prettypr:format(Txt)]),
+		[]
+	end
+    catch _:{badmatch, _} ->
 	    []
     end.
 
@@ -213,20 +237,64 @@ pot_header() ->
       io_lib:nl()).
 
 mod(Path) ->
-    filename:rootname(filename:basename(Path)) ++ ".erl".
+    filename:rootname(filename:basename(Path)).
 
 log(Format, Args) ->
     io:format(standard_error, Format, Args).
 
-get_forms(File) ->
+get_forms(BeamFile, ErlFile) ->
+    try
+	{ok, BeamForms} = get_beam_forms(BeamFile),
+	{ok, ErlForms} = get_erl_forms(ErlFile),
+	{ok, BeamForms, ErlForms}
+    catch _:{badmatch, error} ->
+	    error
+    end.
+
+get_beam_forms(File) ->
     case beam_lib:chunks(File, [abstract_code]) of
         {ok, {_, List}} ->
             case lists:keyfind(abstract_code, 1, List) of
                 {abstract_code, {raw_abstract_v1, Abstr}} ->
                     {ok, Abstr};
-                _ ->
+                _Err ->
+		    log("failed to get abstract code from ~s~n", [File]),
                     error
             end;
-        _ ->
+        Err ->
+	    log("failed to read chunks from ~s: ~p~n", [File, Err]),
             error
+    end.
+
+get_erl_forms(Path) ->
+    case file:open(Path, [read]) of
+        {ok, Fd} ->
+            parse(Path, Fd, 1, []);
+        {error, Why} ->
+	    log("failed to read ~s: ~s~n", [Path, file:format_error(Why)]),
+            error
+    end.
+
+parse(Path, Fd, Line, Acc) ->
+    {ok, Pos} = file:position(Fd, cur),
+    case epp_dodger:parse_form(Fd, Line) of
+        {ok, Form, NewLine} ->
+	    {ok, NewPos} = file:position(Fd, cur),
+	    {ok, RawForm} = file:pread(Fd, Pos, NewPos - Pos),
+	    file:position(Fd, {bof, NewPos}),
+	    AnnForm = erl_syntax:set_ann(Form, RawForm),
+	    parse(Path, Fd, NewLine, [AnnForm|Acc]);
+        {eof, _} ->
+	    {ok, NewPos} = file:position(Fd, cur),
+	    if NewPos > Pos ->
+		    {ok, RawForm} = file:pread(Fd, Pos, NewPos - Pos),
+		    Form = erl_syntax:text(""),
+		    AnnForm = erl_syntax:set_ann(Form, RawForm),
+		    {ok, lists:reverse([AnnForm|Acc])};
+	       true ->
+		    {ok, lists:reverse(Acc)}
+	    end;
+        Err ->
+	    log("failed to parse ~s: ~p~n", [Path, Err]),
+	    error
     end.

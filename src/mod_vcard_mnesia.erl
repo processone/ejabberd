@@ -36,6 +36,7 @@
 -include("xmpp.hrl").
 -include("mod_vcard.hrl").
 -include("logger.hrl").
+-include("translate.hrl").
 
 %%%===================================================================
 %%% API
@@ -95,32 +96,32 @@ search(LServer, Data, AllowReturnAll, MaxMatch) ->
     end.
 
 search_fields(_LServer) ->
-    [{translate:mark(<<"User">>), <<"user">>},
-     {translate:mark(<<"Full Name">>), <<"fn">>},
-     {translate:mark(<<"Name">>), <<"first">>},
-     {translate:mark(<<"Middle Name">>), <<"middle">>},
-     {translate:mark(<<"Family Name">>), <<"last">>},
-     {translate:mark(<<"Nickname">>), <<"nick">>},
-     {translate:mark(<<"Birthday">>), <<"bday">>},
-     {translate:mark(<<"Country">>), <<"ctry">>},
-     {translate:mark(<<"City">>), <<"locality">>},
-     {translate:mark(<<"Email">>), <<"email">>},
-     {translate:mark(<<"Organization Name">>), <<"orgname">>},
-     {translate:mark(<<"Organization Unit">>), <<"orgunit">>}].
+    [{?T("User"), <<"user">>},
+     {?T("Full Name"), <<"fn">>},
+     {?T("Name"), <<"first">>},
+     {?T("Middle Name"), <<"middle">>},
+     {?T("Family Name"), <<"last">>},
+     {?T("Nickname"), <<"nick">>},
+     {?T("Birthday"), <<"bday">>},
+     {?T("Country"), <<"ctry">>},
+     {?T("City"), <<"locality">>},
+     {?T("Email"), <<"email">>},
+     {?T("Organization Name"), <<"orgname">>},
+     {?T("Organization Unit"), <<"orgunit">>}].
 
 search_reported(_LServer) ->
-    [{translate:mark(<<"Jabber ID">>), <<"jid">>},
-     {translate:mark(<<"Full Name">>), <<"fn">>},
-     {translate:mark(<<"Name">>), <<"first">>},
-     {translate:mark(<<"Middle Name">>), <<"middle">>},
-     {translate:mark(<<"Family Name">>), <<"last">>},
-     {translate:mark(<<"Nickname">>), <<"nick">>},
-     {translate:mark(<<"Birthday">>), <<"bday">>},
-     {translate:mark(<<"Country">>), <<"ctry">>},
-     {translate:mark(<<"City">>), <<"locality">>},
-     {translate:mark(<<"Email">>), <<"email">>},
-     {translate:mark(<<"Organization Name">>), <<"orgname">>},
-     {translate:mark(<<"Organization Unit">>), <<"orgunit">>}].
+    [{?T("Jabber ID"), <<"jid">>},
+     {?T("Full Name"), <<"fn">>},
+     {?T("Name"), <<"first">>},
+     {?T("Middle Name"), <<"middle">>},
+     {?T("Family Name"), <<"last">>},
+     {?T("Nickname"), <<"nick">>},
+     {?T("Birthday"), <<"bday">>},
+     {?T("Country"), <<"ctry">>},
+     {?T("City"), <<"locality">>},
+     {?T("Email"), <<"email">>},
+     {?T("Organization Name"), <<"orgname">>},
+     {?T("Organization Unit"), <<"orgunit">>}].
 
 remove_user(LUser, LServer) ->
     US = {LUser, LServer},
