@@ -863,7 +863,7 @@ select(_LServer, JidRequestor, JidArchive, Query, RSM,
 	    {Msgs, true, L}
     end;
 select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType) ->
-    case might_expose_jid(JidRequestor, Query, MsgType) of
+    case might_expose_jid(Query, MsgType) of
 	true ->
 	    {[], true, 0};
 	false ->
@@ -993,22 +993,11 @@ match_rsm(Now, #rsm_set{before = ID}) when is_binary(ID), ID /= <<"">> ->
 match_rsm(_Now, _) ->
     true.
 
-might_expose_jid(JidRequestor, Query, {groupchat, Role,
-			 #state{config = #config{anonymous = true}}})
+might_expose_jid(Query,
+		 {groupchat, Role, #state{config = #config{anonymous = true}}})
   when Role /= moderator ->
-    case proplists:get_value(with, Query) of
-	undefined ->
-	    false;
-	With ->
-	    case {jid:remove_resource(jid:tolower(With)),
-		  jid:remove_resource(jid:tolower(JidRequestor))} of
-		{J, J} ->
-		    false;
-		_ ->
-		    true
-	    end
-    end;
-might_expose_jid(_JidRequestor, _Query, _MsgType) ->
+    proplists:is_defined(with, Query);
+might_expose_jid(_Query, _MsgType) ->
     false.
 
 get_jids(undefined) ->
