@@ -199,7 +199,7 @@ handle_info({route, Packet}, #{access := Access} = State) ->
 	    xmpp_stream_in:send(State, Packet);
 	deny ->
 	    Lang = xmpp:get_lang(Packet),
-	    Err = xmpp:err_not_allowed(<<"Denied by ACL">>, Lang),
+	    Err = xmpp:err_not_allowed(<<"Access denied by service policy">>, Lang),
 	    ejabberd_router:route_error(Packet, Err),
 	    State
     end;

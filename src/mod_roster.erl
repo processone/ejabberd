@@ -184,7 +184,7 @@ process_local_iq(#iq{type = set, from = From, lang = Lang,
 	    Access = gen_mod:get_module_opt(Server, ?MODULE, access, all),
 	    case acl:match_rule(Server, Access, From) of
 		deny ->
-		    Txt = <<"Denied by ACL">>,
+		    Txt = <<"Access denied by service policy">>,
 		    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 		allow ->
 		    process_iq_set(IQ)

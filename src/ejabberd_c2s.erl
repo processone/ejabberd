@@ -411,7 +411,7 @@ bind(R, #{user := U, server := S, access := Access, lang := Lang,
 		    ejabberd_hooks:run(forbidden_session_hook, LServer, [JID]),
 		    ?INFO_MSG("(~s) Forbidden c2s session for ~s",
 			      [SockMod:pp(Socket), jid:encode(JID)]),
-		    Txt = <<"Denied by ACL">>,
+		    Txt = <<"Access denied by service policy">>,
 		    {error, xmpp:err_not_allowed(Txt, Lang), State}
 	    end
     end.
@@ -658,7 +658,7 @@ process_presence_out(#{user := User, server := Server, lserver := LServer,
 	    MyBareJID = jid:remove_resource(JID),
 	    case acl:match_rule(LServer, Access, MyBareJID) of
 		deny ->
-		    ErrText = <<"Denied by ACL">>,
+		    ErrText = <<"Access denied by service policy">>,
 		    Err = xmpp:err_forbidden(ErrText, Lang),
 		    send_error(State, Pres, Err);
 		allow ->

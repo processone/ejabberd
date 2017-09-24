@@ -192,7 +192,7 @@ get_local_identity(Acc, _From, _To, Node, Lang) ->
 
 -define(INFO_RESULT(Allow, Feats, Lang),
 	case Allow of
-	  deny -> {error, xmpp:err_forbidden(<<"Denied by ACL">>, Lang)};
+	  deny -> {error, xmpp:err_forbidden(<<"Access denied by service policy">>, Lang)};
 	  allow -> {result, Feats}
 	end).
 
@@ -310,7 +310,7 @@ get_sm_items(Acc, From,
 		 Items ++ Nodes ++ get_user_resources(User, Server)};
 	    {allow, <<"config">>} -> {result, []};
 	    {_, <<"config">>} ->
-		  {error, xmpp:err_forbidden(<<"Denied by ACL">>, Lang)};
+		  {error, xmpp:err_forbidden(<<"Access denied by service policy">>, Lang)};
 	    _ -> Acc
 	  end
     end.
@@ -432,7 +432,7 @@ get_local_items(Acc, From, #jid{lserver = LServer} = To,
       _ ->
 	  LNode = tokenize(Node),
 	  Allow = acl:match_rule(LServer, configure, From),
-	  Err = xmpp:err_forbidden(<<"Denied by ACL">>, Lang),
+	  Err = xmpp:err_forbidden(<<"Access denied by service policy">>, Lang),
 	  case LNode of
 	    [<<"config">>] ->
 		?ITEMS_RESULT(Allow, LNode, {error, Err});
@@ -765,7 +765,7 @@ get_stopped_nodes(_Lang) ->
 -define(COMMANDS_RESULT(LServerOrGlobal, From, To,
 			Request, Lang),
 	case acl:match_rule(LServerOrGlobal, configure, From) of
-	  deny -> {error, xmpp:err_forbidden(<<"Denied by ACL">>, Lang)};
+	  deny -> {error, xmpp:err_forbidden(<<"Access denied by service policy">>, Lang)};
 	  allow -> adhoc_local_commands(From, To, Request)
 	end).
 
@@ -1737,7 +1737,7 @@ adhoc_sm_commands(_Acc, From,
 				 action = Action, xdata = XData} = Request) ->
     case acl:match_rule(LServer, configure, From) of
 	deny ->
-	    {error, xmpp:err_forbidden(<<"Denied by ACL">>, Lang)};
+	    {error, xmpp:err_forbidden(<<"Access denied by service policy">>, Lang)};
 	allow ->
 	    ActionIsExecute = Action == execute orelse Action == complete,
 	    if Action == cancel ->

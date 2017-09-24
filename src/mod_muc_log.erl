@@ -1059,7 +1059,7 @@ get_roomconfig_text(allow_visitor_status, Lang) ->
     ?T(<<"Allow visitors to send status text in "
       "presence updates">>);
 get_roomconfig_text(captcha_protected, Lang) ->
-    ?T(<<"Make room captcha protected">>);
+    ?T(<<"Make room CAPTCHA protected">>);
 get_roomconfig_text(description, Lang) ->
     ?T(<<"Room description">>);
 %% get_roomconfig_text(subject, Lang) ->  "Subject";

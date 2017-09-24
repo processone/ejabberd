@@ -133,7 +133,7 @@ authenticate(#{stream_id := StreamID, server := Server,
 	    Err = xmpp:make_error(IQ, xmpp:err_jid_malformed()),
 	    process_auth_failure(State, U, Err, 'jid-malformed');
 	false ->
-	    Txt = <<"Denied by ACL">>,
+	    Txt = <<"Access denied by service policy">>,
 	    Err = xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang)),
 	    process_auth_failure(State, U, Err, 'forbidden')
     end.
