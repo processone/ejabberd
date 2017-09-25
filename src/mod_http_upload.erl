@@ -25,7 +25,7 @@
 
 -module(mod_http_upload).
 -author('holger@zedat.fu-berlin.de').
-
+-compile(export_all).
 -protocol({xep, 363, '0.1'}).
 
 -define(SERVICE_REQUEST_TIMEOUT, 5000). % 5 seconds.
@@ -110,7 +110,7 @@
 	 slots = #{}            :: map()}).
 
 -record(media_info,
-	{type   :: binary(),
+	{type   :: atom(),
 	 height :: integer(),
 	 width  :: integer()}).
 
@@ -236,12 +236,14 @@ init([ServerHost, Opts]) ->
     end,
     case Thumbnail of
 	true ->
-	    case string:str(os:cmd("identify"), "Magick") of
-	      0 ->
-		  ?ERROR_MSG("Cannot find 'identify' command, please install "
-			     "ImageMagick or disable thumbnail creation", []);
-	      _ ->
-		  ok
+	    case misc:have_eimp() of
+		false ->
+		    ?ERROR_MSG("ejabberd is built without graphics support, "
+			       "please rebuild it with --enable-graphics or "
+			       "set 'thumbnail: false' for module '~s' in "
+			       "ejabberd.yml", [?MODULE]);
+		_ ->
+		    ok
 	    end;
 	false ->
 	    ok
@@ -726,15 +728,15 @@ parse_http_request(#request{host = Host, path = Path}) ->
 store_file(Path, Data, FileMode, DirMode, GetPrefix, Slot, Thumbnail) ->
     case do_store_file(Path, Data, FileMode, DirMode) of
 	ok when Thumbnail ->
-	    case identify(Path) of
+	    case identify(Path, Data) of
 		{ok, MediaInfo} ->
-		    case convert(Path, MediaInfo) of
-			{ok, OutPath} ->
+		    case convert(Path, Data, MediaInfo) of
+			{ok, OutPath, OutMediaInfo} ->
 			    [UserDir, RandDir | _] = Slot,
 			    FileName = filename:basename(OutPath),
 			    URL = str:join([GetPrefix, UserDir,
 					    RandDir, FileName], <<$/>>),
-			    ThumbEl = thumb_el(OutPath, URL),
+			    ThumbEl = thumb_el(OutMediaInfo, URL),
 			    {ok,
 			     [{<<"Content-Type">>,
 			       <<"text/xml; charset=utf-8">>}],
@@ -830,59 +832,68 @@ code_to_message(_Code) -> <<"">>.
 %% Image manipulation stuff.
 %%--------------------------------------------------------------------
 
--spec identify(binary()) -> {ok, media_info()} | pass.
+-spec identify(binary(), binary()) -> {ok, media_info()} | pass.
 
-identify(Path) ->
-    Cmd = io_lib:format("identify -format 'ok %m %h %w' ~s", [Path]),
-    Res = string:strip(os:cmd(Cmd), right, $\n),
-    case string:tokens(Res, " ") of
-	["ok", T, H, W] ->
-	    {ok, #media_info{type = list_to_binary(string:to_lower(T)),
-			     height = list_to_integer(H),
-			     width = list_to_integer(W)}};
-	_ ->
-	    ?DEBUG("Cannot identify type of ~s: ~s", [Path, Res]),
+identify(Path, Data) ->
+    case misc:have_eimp() of
+	true ->
+	    case eimp:identify(Data) of
+		{ok, Info} ->
+		    {ok, #media_info{
+			    type = proplists:get_value(type, Info),
+			    width = proplists:get_value(width, Info),
+			    height = proplists:get_value(height, Info)}};
+		{error, Why} ->
+		    ?DEBUG("Cannot identify type of ~s: ~s",
+			   [Path, eimp:format_error(Why)]),
+		    pass
+	    end;
+	false ->
 	    pass
     end.
 
--spec convert(binary(), media_info()) -> {ok, binary()} | pass.
+-spec convert(binary(), binary(), media_info()) -> {ok, binary(), media_info()} | pass.
 
-convert(Path, #media_info{type = T, width = W, height = H}) ->
+convert(Path, Data, #media_info{type = T, width = W, height = H} = Info) ->
     if W * H >= 25000000 ->
 	    ?DEBUG("The image ~s is more than 25 Mpix", [Path]),
 	    pass;
        W =< 300, H =< 300 ->
-	    {ok, Path};
-       T == <<"gif">>; T == <<"jpeg">>; T == <<"png">>; T == <<"webp">> ->
-	    Dir = filename:dirname(Path),
-	    FileName = <<(randoms:get_string())/binary, $., T/binary>>,
-	    OutPath = filename:join(Dir, FileName),
-	    Cmd = io_lib:format("convert -resize 300 ~s ~s", [Path, OutPath]),
-	    case os:cmd(Cmd) of
-		"" ->
-		    {ok, OutPath};
-		Err ->
-		    ?ERROR_MSG("Failed to convert ~s to ~s: ~s",
-			       [Path, OutPath, string:strip(Err, right, $\n)]),
-		    pass
-	    end;
+	    {ok, Path, Info};
        true ->
-	    ?DEBUG("Won't call 'convert' for unknown type ~s", [T]),
-	    pass
+	    Dir = filename:dirname(Path),
+	    Ext = atom_to_binary(T, latin1),
+	    FileName = <<(randoms:get_string())/binary, $., Ext/binary>>,
+	    OutPath = filename:join(Dir, FileName),
+	    {W1, H1} = if W > H -> {300, round(H*300/W)};
+			  H > W -> {round(W*300/H), 300};
+			  true -> {300, 300}
+		       end,
+	    OutInfo = #media_info{type = T, width = W1, height = H1},
+	    case eimp:convert(Data, T, [{scale, {W1, H1}}]) of
+		{ok, OutData} ->
+		    case file:write_file(OutPath, OutData) of
+			ok ->
+			    {ok, OutPath, OutInfo};
+			{error, Why} ->
+			    ?ERROR_MSG("Failed to write to ~s: ~s",
+				       [OutPath, file:format_error(Why)]),
+			    pass
+		    end;
+		{error, Why} ->
+		    ?ERROR_MSG("Failed to convert ~s to ~s: ~s",
+			       [Path, OutPath, eimp:format_error(Why)]),
+		    pass
+	    end
     end.
 
--spec thumb_el(binary(), binary()) -> xmlel().
+-spec thumb_el(media_info(), binary()) -> xmlel().
 
-thumb_el(Path, URI) ->
-    ContentType = guess_content_type(Path),
-    xmpp:encode(
-      case identify(Path) of
-	  {ok, #media_info{height = H, width = W}} ->
-	      #thumbnail{'media-type' = ContentType, uri = URI,
-			 height = H, width = W};
-	  pass ->
-	      #thumbnail{uri = URI, 'media-type' = ContentType}
-      end).
+thumb_el(#media_info{type = T, height = H, width = W}, URI) ->
+    MimeType = <<"image/", (atom_to_binary(T, latin1))/binary>>,
+    Thumb = #thumbnail{'media-type' = MimeType, uri = URI,
+		       height = H, width = W},
+    xmpp:encode(Thumb).
 
 %%--------------------------------------------------------------------
 %% Remove user.

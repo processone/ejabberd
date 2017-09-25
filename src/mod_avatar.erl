@@ -38,7 +38,7 @@
 %%% API
 %%%===================================================================
 start(Host, _Opts) ->
-    case have_eimp() of
+    case misc:have_eimp() of
 	true ->
 	    ejabberd_hooks:add(pubsub_publish_item, Host, ?MODULE,
 			       pubsub_publish_item, 50),
@@ -415,12 +415,6 @@ decode_mime_type(MimeType) ->
 -spec encode_mime_type(eimp:img_type()) -> binary().
 encode_mime_type(Type) ->
     <<"image/", (atom_to_binary(Type, latin1))/binary>>.
-
--ifdef(GRAPHICS).
-have_eimp() -> true.
--else.
-have_eimp() -> false.
--endif.
 
 mod_opt_type({convert, png}) ->
     fun(jpeg) -> jpeg;
