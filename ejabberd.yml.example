@@ -768,6 +768,11 @@ modules:
   mod_time: {}
   mod_vcard:
     search: false
+  mod_vcard_xupdate: {}
+  ## Convert all avatars posted by Android clients from WebP to JPEG
+  mod_avatar:
+    convert:
+      webp: jpeg
   mod_version: {}
   mod_stream_mgmt: {}
   ##   Non-SASL Authentication (XEP-0078) is now disabled by default
