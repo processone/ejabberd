@@ -44,7 +44,7 @@
 	 kick_session/4, status_num/2, status_num/1,
 	 status_list/2, status_list/1, connected_users_info/0,
 	 connected_users_vhost/1, set_presence/7,
-	 get_presence/2, user_sessions_info/2, get_last/2,
+	 get_presence/2, user_sessions_info/2, get_last/2, set_last/4,
 
 	 % Accounts
 	 set_password/3, check_password_hash/4, delete_old_users/1,
@@ -602,9 +602,9 @@ get_commands_spec() ->
 					  ]}}},
      #ejabberd_commands{name = set_last, tags = [last],
 			desc = "Set last activity information",
-			longdesc = "Timestamp is the seconds since"
+			longdesc = "Timestamp is the seconds since "
 			"1970-01-01 00:00:00 UTC, for example: date +%s",
-			module = mod_last, function = store_last_info,
+			module = ?MODULE, function = set_last,
 			args = [{user, binary}, {host, binary}, {timestamp, integer}, {status, binary}],
 			args_example = [<<"user1">>,<<"myserver.com">>, 1500045311, <<"GoSleeping">>],
 			args_desc = ["User name", "Server name", "Number of seconds since epoch", "Status message"],
@@ -1436,6 +1436,12 @@ get_last(User, Server) ->
 	    {p1_time_compat:timestamp(), "ONLINE"}
     end,
     {xmpp_util:encode_timestamp(Now), Status}.
+
+set_last(User, Server, Timestamp, Status) ->
+    case mod_last:store_last_info(User, Server, Timestamp, Status) of
+        {ok, _} -> ok;
+	Error -> Error
+    end.
 
 %%%
 %%% Private Storage
