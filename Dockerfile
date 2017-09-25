@@ -9,7 +9,7 @@ ENV EJABBERD_BRANCH=17.08 \
     EJABBERD_HOME=/opt/ejabberd \
     EJABBERD_DEBUG_MODE=false \
     HOME=$EJABBERD_HOME \
-    PATH=$EJABBERD_HOME/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+    PATH=$EJABBERD_HOME/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/sbin \
     DEBIAN_FRONTEND=noninteractive \
     XMPP_DOMAIN=localhost \
     # Set default locale for the environment
@@ -38,6 +38,7 @@ RUN set -x \
         erlang-src erlang-dev \
     ' \
     && requiredAptPackages=' \
+        wget \
         locales \
         ldnsutils \
         python2.7 \
@@ -47,7 +48,7 @@ RUN set -x \
         erlang-base erlang-snmp erlang-ssl erlang-ssh erlang-webtool \
         erlang-tools erlang-xmerl erlang-corba erlang-diameter erlang-eldap \
         erlang-eunit erlang-ic erlang-odbc erlang-os-mon \
-        erlang-parsetools erlang-percept erlang-typer erlang-inets \
+        erlang-parsetools erlang-percept erlang-typer \
         python-mysqldb \
         imagemagick \
     ' \
@@ -68,7 +69,6 @@ RUN set -x \
     && chmod +x ./autogen.sh \
     && ./autogen.sh \
     && ./configure --enable-user=$EJABBERD_USER \
-        --prefix=/ \
         --enable-all \
         --disable-tools \
         --disable-pam \
@@ -82,11 +82,18 @@ RUN set -x \
     && mkdir $EJABBERD_HOME/module_source \
     && cd $EJABBERD_HOME \
     && rm -rf /tmp/ejabberd \
-    && rm -rf /etc/ejabberd \
-    && ln -sf $EJABBERD_HOME/conf /etc/ejabberd \
+    && rm -rf /usr/local/etc/ejabberd \
+    && ln -sf $EJABBERD_HOME/conf /usr/local/etc/ejabberd \
     && chown -R $EJABBERD_USER: $EJABBERD_HOME \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get purge -y --auto-remove $buildDeps
+
+RUN wget -P /usr/local/share/ca-certificates/cacert.org http://www.cacert.org/certs/root.crt http://www.cacert.org/certs/class3.crt; \
+    update-ca-certificates
+
+# Create logging directories
+RUN mkdir -p /var/log/ejabberd
+RUN touch /var/log/ejabberd/crash.log /var/log/ejabberd/error.log /var/log/ejabberd/erlang.log
 
 # Wrapper for setting config on disk from environment
 # allows setting things like XMPP domain at runtime
