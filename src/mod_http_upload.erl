@@ -107,6 +107,7 @@
 	 get_url                :: binary(),
 	 service_url            :: binary() | undefined,
 	 thumbnail              :: boolean(),
+	 custom_headers         :: [{binary(), binary()}],
 	 slots = #{}            :: map()}).
 
 -record(media_info,
@@ -226,6 +227,7 @@ init([ServerHost, Opts]) ->
     GetURL = gen_mod:get_opt(get_url, Opts, PutURL),
     ServiceURL = gen_mod:get_opt(service_url, Opts),
     Thumbnail = gen_mod:get_opt(thumbnail, Opts, true),
+    CustomHeaders = gen_mod:get_opt(custom_headers, Opts, []),
     DocRoot1 = expand_home(str:strip(DocRoot, right, $/)),
     DocRoot2 = expand_host(DocRoot1, ServerHost),
     case DirMode of
@@ -260,7 +262,8 @@ init([ServerHost, Opts]) ->
 		docroot = DocRoot2,
 		put_url = expand_host(str:strip(PutURL, right, $/), ServerHost),
 		get_url = expand_host(str:strip(GetURL, right, $/), ServerHost),
-		service_url = ServiceURL}}.
+		service_url = ServiceURL,
+		custom_headers = CustomHeaders}}.
 
 -spec handle_call(_, {pid(), _}, state())
       -> {reply, {ok, pos_integer(), binary(),
@@ -268,25 +271,30 @@ init([ServerHost, Opts]) ->
 		      pos_integer() | undefined}, state()} |
 	 {reply, {error, atom()}, state()} | {noreply, state()}.
 
-handle_call({use_slot, Slot, Size}, _From, #state{file_mode = FileMode,
-						  dir_mode = DirMode,
-						  get_url = GetPrefix,
-						  thumbnail = Thumbnail,
-						  docroot = DocRoot} = State) ->
+handle_call({use_slot, Slot, Size}, _From,
+	    #state{file_mode = FileMode,
+		   dir_mode = DirMode,
+		   get_url = GetPrefix,
+		   thumbnail = Thumbnail,
+		   custom_headers = CustomHeaders,
+		   docroot = DocRoot} = State) ->
     case get_slot(Slot, State) of
 	{ok, {Size, Timer}} ->
 	    timer:cancel(Timer),
 	    NewState = del_slot(Slot, State),
 	    Path = str:join([DocRoot | Slot], <<$/>>),
-	    {reply, {ok, Path, FileMode, DirMode, GetPrefix, Thumbnail},
+	    {reply,
+	     {ok, Path, FileMode, DirMode, GetPrefix, Thumbnail, CustomHeaders},
 	     NewState};
 	{ok, {_WrongSize, _Timer}} ->
 	    {reply, {error, size_mismatch}, State};
 	error ->
 	    {reply, {error, invalid_slot}, State}
     end;
-handle_call(get_docroot, _From, #state{docroot = DocRoot} = State) ->
-    {reply, {ok, DocRoot}, State};
+handle_call(get_conf, _From,
+	    #state{docroot = DocRoot,
+	           custom_headers = CustomHeaders} = State) ->
+    {reply, {ok, DocRoot, CustomHeaders}, State};
 handle_call(Request, From, State) ->
     ?ERROR_MSG("Got unexpected request from ~p: ~p", [From, Request]),
     {noreply, State}.
@@ -355,44 +363,44 @@ process(LocalPath, #request{method = Method, host = Host, ip = IP})
 	 Method == 'HEAD' ->
     ?DEBUG("Rejecting ~s request from ~s for ~s: Too few path components",
 	   [Method, ?ADDR_TO_STR(IP), Host]),
-    http_response(Host, 404);
+    http_response(404);
 process(_LocalPath, #request{method = 'PUT', host = Host, ip = IP,
 			     data = Data} = Request) ->
     {Proc, Slot} = parse_http_request(Request),
     case catch gen_server:call(Proc, {use_slot, Slot, byte_size(Data)}) of
-	{ok, Path, FileMode, DirMode, GetPrefix, Thumbnail} ->
+	{ok, Path, FileMode, DirMode, GetPrefix, Thumbnail, CustomHeaders} ->
 	    ?DEBUG("Storing file from ~s for ~s: ~s",
 		   [?ADDR_TO_STR(IP), Host, Path]),
 	    case store_file(Path, Data, FileMode, DirMode,
 			    GetPrefix, Slot, Thumbnail) of
 		ok ->
-		    http_response(Host, 201);
+		    http_response(201, CustomHeaders);
 		{ok, Headers, OutData} ->
-		    http_response(Host, 201, Headers, OutData);
+		    http_response(201, Headers ++ CustomHeaders, OutData);
 		{error, Error} ->
 		    ?ERROR_MSG("Cannot store file ~s from ~s for ~s: ~p",
 			       [Path, ?ADDR_TO_STR(IP), Host, ?FORMAT(Error)]),
-		    http_response(Host, 500)
+		    http_response(500)
 	    end;
 	{error, size_mismatch} ->
 	    ?INFO_MSG("Rejecting file from ~s for ~s: Unexpected size (~B)",
 		      [?ADDR_TO_STR(IP), Host, byte_size(Data)]),
-	    http_response(Host, 413);
+	    http_response(413);
 	{error, invalid_slot} ->
 	    ?INFO_MSG("Rejecting file from ~s for ~s: Invalid slot",
 		      [?ADDR_TO_STR(IP), Host]),
-	    http_response(Host, 403);
+	    http_response(403);
 	Error ->
 	    ?ERROR_MSG("Cannot handle PUT request from ~s for ~s: ~p",
 		       [?ADDR_TO_STR(IP), Host, Error]),
-	    http_response(Host, 500)
+	    http_response(500)
     end;
 process(_LocalPath, #request{method = Method, host = Host, ip = IP} = Request)
     when Method == 'GET';
 	 Method == 'HEAD' ->
     {Proc, [_UserDir, _RandDir, FileName] = Slot} = parse_http_request(Request),
-    case catch gen_server:call(Proc, get_docroot) of
-	{ok, DocRoot} ->
+    case catch gen_server:call(Proc, get_conf) of
+	{ok, DocRoot, CustomHeaders} ->
 	    Path = str:join([DocRoot | Slot], <<$/>>),
 	    case file:read_file(Path) of
 		{ok, Data} ->
@@ -407,37 +415,47 @@ process(_LocalPath, #request{method = Method, host = Host, ip = IP} = Request)
 					 $", FileName/binary, $">>}]
 			       end,
 		    Headers2 = [{<<"Content-Type">>, ContentType} | Headers1],
-		    http_response(Host, 200, Headers2, Data);
+		    Headers3 = Headers2 ++ CustomHeaders,
+		    http_response(200, Headers3, Data);
 		{error, eacces} ->
 		    ?INFO_MSG("Cannot serve ~s to ~s: Permission denied",
 			      [Path, ?ADDR_TO_STR(IP)]),
-		    http_response(Host, 403);
+		    http_response(403);
 		{error, enoent} ->
 		    ?INFO_MSG("Cannot serve ~s to ~s: No such file",
 			      [Path, ?ADDR_TO_STR(IP)]),
-		    http_response(Host, 404);
+		    http_response(404);
 		{error, eisdir} ->
 		    ?INFO_MSG("Cannot serve ~s to ~s: Is a directory",
 			      [Path, ?ADDR_TO_STR(IP)]),
-		    http_response(Host, 404);
+		    http_response(404);
 		{error, Error} ->
 		    ?INFO_MSG("Cannot serve ~s to ~s: ~s",
 			      [Path, ?ADDR_TO_STR(IP), ?FORMAT(Error)]),
-		    http_response(Host, 500)
+		    http_response(500)
 	    end;
 	Error ->
 	    ?ERROR_MSG("Cannot handle ~s request from ~s for ~s: ~p",
 		       [Method, ?ADDR_TO_STR(IP), Host, Error]),
-	    http_response(Host, 500)
+	    http_response(500)
     end;
-process(_LocalPath, #request{method = 'OPTIONS', host = Host, ip = IP}) ->
+process(_LocalPath, #request{method = 'OPTIONS', host = Host,
+			     ip = IP} = Request) ->
     ?DEBUG("Responding to OPTIONS request from ~s for ~s",
 	   [?ADDR_TO_STR(IP), Host]),
-    http_response(Host, 200);
+    {Proc, _Slot} = parse_http_request(Request),
+    case catch gen_server:call(Proc, get_conf) of
+	{ok, _DocRoot, CustomHeaders} ->
+	    http_response(200, CustomHeaders);
+	Error ->
+	    ?ERROR_MSG("Cannot handle OPTIONS request from ~s for ~s: ~p",
+		       [?ADDR_TO_STR(IP), Host, Error]),
+	    http_response(500)
+    end;
 process(_LocalPath, #request{method = Method, host = Host, ip = IP}) ->
     ?DEBUG("Rejecting ~s request from ~s for ~s",
 	   [Method, ?ADDR_TO_STR(IP), Host]),
-    http_response(Host, 405, [{<<"Allow">>, <<"OPTIONS, HEAD, GET, PUT">>}]).
+    http_response(405, [{<<"Allow">>, <<"OPTIONS, HEAD, GET, PUT">>}]).
 
 %%--------------------------------------------------------------------
 %% Exported utility functions.
@@ -792,30 +810,29 @@ guess_content_type(FileName) ->
 				     ?DEFAULT_CONTENT_TYPE,
 				     ?CONTENT_TYPES).
 
--spec http_response(binary(), 100..599)
+-spec http_response(100..599)
       -> {pos_integer(), [{binary(), binary()}], binary()}.
 
-http_response(Host, Code) ->
-    http_response(Host, Code, []).
+http_response(Code) ->
+    http_response(Code, []).
 
--spec http_response(binary(), 100..599, [{binary(), binary()}])
+-spec http_response(100..599, [{binary(), binary()}])
       -> {pos_integer(), [{binary(), binary()}], binary()}.
 
-http_response(Host, Code, ExtraHeaders) ->
+http_response(Code, ExtraHeaders) ->
     Message = <<(code_to_message(Code))/binary, $\n>>,
-    http_response(Host, Code, ExtraHeaders, Message).
+    http_response(Code, ExtraHeaders, Message).
 
--spec http_response(binary(), 100..599, [{binary(), binary()}], binary())
+-spec http_response(100..599, [{binary(), binary()}], binary())
       -> {pos_integer(), [{binary(), binary()}], binary()}.
 
-http_response(Host, Code, ExtraHeaders, Body) ->
-    CustomHeaders = gen_mod:get_module_opt(Host, ?MODULE, custom_headers, []),
+http_response(Code, ExtraHeaders, Body) ->
     Headers = case proplists:is_defined(<<"Content-Type">>, ExtraHeaders) of
 		  true ->
 		      ExtraHeaders;
 		  false ->
 		      [{<<"Content-Type">>, <<"text/plain">>} | ExtraHeaders]
-	      end ++ CustomHeaders,
+	      end,
     {Code, Headers, Body}.
 
 -spec code_to_message(100..599) -> binary().
