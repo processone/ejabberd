@@ -1243,7 +1243,12 @@ expulse_participant(Packet, From, StateData, Reason1) ->
 				    #presence{type = unavailable,
 					      status = xmpp:mk_text(Reason2)},
 				    StateData),
-    send_new_presence(From, NewState, StateData),
+    LJID = jid:tolower(From),
+    {ok, #user{nick = Nick}} = (?DICT):find(LJID, StateData#state.users),
+    case (?DICT):find(Nick, StateData#state.nicks) of
+	{ok, [_, _ | _]} -> ok;
+	_ -> send_new_presence(From, NewState, StateData)
+    end,
     remove_online_user(From, NewState).
 
 -spec set_affiliation(jid(), affiliation(), state()) -> state().
