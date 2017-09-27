@@ -1986,8 +1986,14 @@ get_items(Host, Node, From, SubId, SMaxItems, ItemIds, RSM) ->
 			Owners = node_owners_call(Host, Type, Nidx, O),
 			{PS, RG} = get_presence_and_roster_permissions(
 				     Host, From, Owners, AccessModel, AllowedGroups),
-			node_call(Host, Type, get_items,
-				  [Nidx, From, AccessModel, PS, RG, SubId, RSM])
+			case ItemIds of
+			    [ItemId] ->
+				node_call(Host, Type, get_item,
+					  [Nidx, ItemId, From, AccessModel, PS, RG, undefined]);
+			    _ ->
+				node_call(Host, Type, get_items,
+					  [Nidx, From, AccessModel, PS, RG, SubId, RSM])
+			end
 		end
 	end,
     case transaction(Host, Node, Action, sync_dirty) of
@@ -2005,6 +2011,10 @@ get_items(Host, Node, From, SubId, SMaxItems, ItemIds, RSM) ->
 	     #pubsub{items = #ps_items{node = Node,
 				       items = itemsEls(lists:sublist(SendItems, MaxItems))},
 		     rsm = RsmOut}};
+	{result, {_, Item}} ->
+	    {result,
+	     #pubsub{items = #ps_items{node = Node,
+				       items = itemsEls([Item])}}};
 	Error ->
 	    Error
     end.
