@@ -376,23 +376,26 @@ publish_item(Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload,
 	true ->
 	    if MaxItems > 0 ->
 		    Now = p1_time_compat:timestamp(),
-		    PubId = {Now, SubKey},
-		    Item = case get_item(Nidx, ItemId) of
-			{result, OldItem} ->
-			    OldItem#pubsub_item{modification = PubId,
-				payload = Payload};
+		    case get_item(Nidx, ItemId) of
+			{result, #pubsub_item{creation = {_, GenKey}} = OldItem} ->
+			    set_item(OldItem#pubsub_item{
+					modification = {Now, SubKey},
+					payload = Payload}),
+			    {result, {default, broadcast, []}};
+			{result, _} ->
+			    {error, xmpp:err_forbidden()};
 			_ ->
-			    #pubsub_item{itemid = {ItemId, Nidx},
-				nodeidx = Nidx,
-				creation = {Now, GenKey},
-				modification = PubId,
-				payload = Payload}
-		    end,
-		    Items = [ItemId | GenState#pubsub_state.items -- [ItemId]],
-		    {result, {NI, OI}} = remove_extra_items(Nidx, MaxItems, Items),
-		    set_item(Item),
-		    set_state(GenState#pubsub_state{items = NI}),
-		    {result, {default, broadcast, OI}};
+			    Items = [ItemId | GenState#pubsub_state.items],
+			    {result, {NI, OI}} = remove_extra_items(Nidx, MaxItems, Items),
+			    set_state(GenState#pubsub_state{items = NI}),
+			    set_item(#pubsub_item{
+					itemid = {ItemId, Nidx},
+					nodeidx = Nidx,
+					creation = {Now, GenKey},
+					modification = {Now, SubKey},
+					payload = Payload}),
+			    {result, {default, broadcast, OI}}
+		    end;
 		true ->
 		    {result, {default, broadcast, []}}
 	    end

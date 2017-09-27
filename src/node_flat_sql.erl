@@ -243,20 +243,31 @@ publish_item(Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload,
     if not ((PublishModel == open) or
 		    (PublishModel == publishers) and
 		    ((Affiliation == owner)
-			 or (Affiliation == publisher)
-			 or (Affiliation == publish_only))
+			or (Affiliation == publisher)
+			or (Affiliation == publish_only))
 		    or (Subscribed == true)) ->
 	    {error, xmpp:err_forbidden()};
 	true ->
 	    if MaxItems > 0 ->
-		    PubId = {p1_time_compat:timestamp(), SubKey},
-		    set_item(#pubsub_item{itemid = {ItemId, Nidx},
-			    creation = {p1_time_compat:timestamp(), GenKey},
-			    modification = PubId,
-			    payload = Payload}),
-		    Items = [ItemId | itemids(Nidx, GenKey) -- [ItemId]],
-		    {result, {_, OI}} = remove_extra_items(Nidx, MaxItems, Items),
-		    {result, {default, broadcast, OI}};
+		    Now = p1_time_compat:timestamp(),
+		    case get_item(Nidx, ItemId) of
+			{result, #pubsub_item{creation = {_, GenKey}} = OldItem} ->
+			    set_item(OldItem#pubsub_item{
+					modification = {Now, SubKey},
+					payload = Payload}),
+			    {result, {default, broadcast, []}};
+			{result, _} ->
+			    {error, xmpp:err_forbidden()};
+			_ ->
+			    Items = [ItemId | itemids(Nidx, GenKey)],
+			    {result, {_NI, OI}} = remove_extra_items(Nidx, MaxItems, Items),
+			    set_item(#pubsub_item{
+					itemid = {ItemId, Nidx},
+					creation = {Now, GenKey},
+					modification = {Now, SubKey},
+					payload = Payload}),
+			    {result, {default, broadcast, OI}}
+		    end;
 		true ->
 		    {result, {default, broadcast, []}}
 	    end
@@ -284,9 +295,23 @@ delete_item(Nidx, Publisher, PublishModel, ItemId) ->
     if not Allowed ->
 	    {error, xmpp:err_forbidden()};
 	true ->
-	    case del_item(Nidx, ItemId) of
-		{updated, 1} -> {result, {default, broadcast}};
-		_ -> {error, xmpp:err_item_not_found()}
+	    Items = itemids(Nidx, GenKey),
+	    case lists:member(ItemId, Items) of
+		true ->
+		    case del_item(Nidx, ItemId) of
+			{updated, 1} -> {result, {default, broadcast}};
+			_ -> {error, xmpp:err_item_not_found()}
+		    end;
+		false ->
+		    case Affiliation of
+			owner ->
+			    case del_item(Nidx, ItemId) of
+				{updated, 1} -> {result, {default, broadcast}};
+				_ -> {error, xmpp:err_item_not_found()}
+			    end;
+			_ ->
+			    {error, xmpp:err_forbidden()}
+		    end
 	    end
     end.
 
