@@ -651,7 +651,8 @@ get_items(Nidx, _From, undefined) ->
     SNidx = misc:i2l(Nidx),
     case ejabberd_sql:sql_query_t(
 	   [<<"select itemid, publisher, creation, modification, payload",
-	      " from pubsub_item where nodeid='", SNidx/binary, "'">>]) of
+	      " from pubsub_item where nodeid='", SNidx/binary, "'",
+	      " order by creation asc">>]) of
 	{selected, _, AllItems} ->
 	    Count = length(AllItems),
 	    if Count =< ?MAXITEMS ->
