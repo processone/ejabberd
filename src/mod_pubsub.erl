@@ -259,10 +259,9 @@ init([ServerHost, Opts]) ->
 		  end,
 		  {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
 		  DefaultModule = plugin(Host, hd(Plugins)),
-		  BaseOptions = DefaultModule:options(),
-		  DefaultNodeCfg = filter_node_options(
+		  DefaultNodeCfg = merge_config(
 				     gen_mod:get_opt(default_node_config, Opts, []),
-				     BaseOptions),
+				     DefaultModule:options()),
 		  lists:foreach(
 		    fun(H) ->
 			    T = gen_mod:get_module_proc(H, config),
@@ -3091,10 +3090,10 @@ get_option(Options, Var, Def) ->
 
 -spec node_options(host(), binary()) -> [{atom(), any()}].
 node_options(Host, Type) ->
-    case config(Host, default_node_config) of
-	undefined -> node_plugin_options(Host, Type);
-	[] -> node_plugin_options(Host, Type);
-	Config -> Config
+    DefaultOpts = node_plugin_options(Host, Type),
+    case config(Host, plugins) of
+	[Type|_] -> config(Host, default_node_config, DefaultOpts);
+	_ -> DefaultOpts
     end.
 
 -spec node_plugin_options(host(), binary()) -> [{atom(), any()}].
@@ -3107,13 +3106,6 @@ node_plugin_options(Host, Type) ->
 	Result ->
 	    Result
     end.
-
--spec filter_node_options([{atom(), any()}], [{atom(), any()}]) -> [{atom(), any()}].
-filter_node_options(Options, BaseOptions) ->
-    lists:foldl(fun({Key, Val}, Acc) ->
-		DefaultValue = proplists:get_value(Key, Options, Val),
-		[{Key, DefaultValue}|Acc]
-	end, [], BaseOptions).
 
 -spec node_owners_action(host(), binary(), nodeIdx(), [ljid()]) -> [ljid()].
 node_owners_action(Host, Type, Nidx, []) ->
@@ -3219,11 +3211,11 @@ set_configure(Host, Node, From, Config, Lang) ->
     end.
 
 -spec merge_config([proplists:property()], [proplists:property()]) -> [proplists:property()].
-merge_config(Config1, Config2) ->
+merge_config(CustomConfig, DefaultConfig) ->
     lists:foldl(
       fun({Opt, Val}, Acc) ->
 	      lists:keystore(Opt, 1, Acc, {Opt, Val})
-      end, Config2, Config1).
+      end, DefaultConfig, CustomConfig).
 
 -spec decode_node_config(undefined | xdata(), binary(), binary()) ->
 				pubsub_node_config:result() |
