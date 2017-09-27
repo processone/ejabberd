@@ -102,7 +102,7 @@ xref: all
 
 
 translations:
-	contrib/extract_translations/prepare-translation.sh -updateall
+	tools/prepare-tr.sh
 
 edoc:
 	$(ERL) -noinput +B -eval \
