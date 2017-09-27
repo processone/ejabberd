@@ -1959,15 +1959,11 @@ purge_node(Host, Node, Owner) ->
 -spec get_items(host(), binary(), jid(), binary(),
 		binary(), [binary()], undefined | rsm_set()) ->
 		       {result, pubsub()} | {error, stanza_error()}.
-get_items(Host, Node, From, SubId, SMaxItems, ItemIds, RSM) ->
-    MaxItems = if SMaxItems == undefined ->
-		       case get_max_items_node(Host) of
-			   undefined -> ?MAXITEMS;
-			   Max -> Max
-		       end;
-		  true ->
-		       SMaxItems
-	       end,
+get_items(Host, Node, From, SubId, MaxItems, ItemIds, undefined)
+  when MaxItems =/= undefined ->
+    get_items(Host, Node, From, SubId, MaxItems, ItemIds,
+              #rsm_set{max = MaxItems, before = <<>>});
+get_items(Host, Node, From, SubId, _MaxItems, ItemIds, RSM) ->
     Action =
 	fun(#pubsub_node{options = Options, type = Type,
 			 id = Nidx, owners = O}) ->
@@ -2009,7 +2005,7 @@ get_items(Host, Node, From, SubId, SMaxItems, ItemIds, RSM) ->
 			end,
 	    {result,
 	     #pubsub{items = #ps_items{node = Node,
-				       items = itemsEls(lists:sublist(SendItems, MaxItems))},
+				       items = itemsEls(SendItems)},
 		     rsm = RsmOut}};
 	{result, {_, Item}} ->
 	    {result,
