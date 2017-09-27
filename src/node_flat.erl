@@ -765,7 +765,7 @@ get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId, RSM
 	    get_items(Nidx, JID, RSM)
     end.
 
-get_last_items(Nidx, From, Count) when Count > 0 ->
+get_last_items(Nidx, _From, Count) when Count > 0 ->
     Items = mnesia:index_read(pubsub_item, Nidx, #pubsub_item.nodeidx),
     LastItems = lists:reverse(lists:keysort(#pubsub_item.modification, Items)),
     {result, lists:sublist(LastItems, Count)};
