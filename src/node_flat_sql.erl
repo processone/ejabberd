@@ -1027,12 +1027,12 @@ rsm_page(Count, Index, Offset, Items) ->
 	     last = Last}.
 
 encode_stamp(Stamp) ->
-    case jlib:datetime_string_to_timestamp(Stamp) of
+    case xmpp_utils:decode_timestamp(Stamp) of
 	{MS,S,US} -> encode_now({MS,S,US});
 	_ -> Stamp
     end.
 decode_stamp(Stamp) ->
-    jlib:now_to_utc_string(decode_now(Stamp)).
+    xmpp_utils:encode_timestamp(decode_now(Stamp)).
 
 encode_now({T1, T2, T3}) ->
     <<(misc:i2l(T1, 6))/binary, ":",
