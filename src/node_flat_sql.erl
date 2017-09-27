@@ -1027,12 +1027,15 @@ rsm_page(Count, Index, Offset, Items) ->
 	     last = Last}.
 
 encode_stamp(Stamp) ->
-    case xmpp_utils:decode_timestamp(Stamp) of
+    case catch xmpp_util:decode_timestamp(Stamp) of
 	{MS,S,US} -> encode_now({MS,S,US});
 	_ -> Stamp
     end.
 decode_stamp(Stamp) ->
-    xmpp_utils:encode_timestamp(decode_now(Stamp)).
+    case catch xmpp_util:encode_timestamp(decode_now(Stamp)) of
+	TimeStamp when is_binary(TimeStamp) -> TimeStamp;
+	_ -> Stamp
+    end.
 
 encode_now({T1, T2, T3}) ->
     <<(misc:i2l(T1, 6))/binary, ":",
