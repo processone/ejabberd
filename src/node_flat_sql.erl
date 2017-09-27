@@ -1035,9 +1035,7 @@ rsm_filters(SNidx, undefined, After)  ->
       " order by creation asc">>;
 rsm_filters(SNidx, <<>>, undefined) ->
     %% 2.5 Requesting the Last Page in a Result Set
-    Now = p1_time_compat:timestamp(),
     <<" where nodeid='", SNidx/binary, "'",
-      " and creation<'", (encode_now(Now))/binary, "'",
       " order by creation desc">>;
 rsm_filters(SNidx, Before, undefined) ->
     <<" where nodeid='", SNidx/binary, "'",
