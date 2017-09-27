@@ -25,7 +25,7 @@
 
 -module(mod_http_upload).
 -author('holger@zedat.fu-berlin.de').
--compile(export_all).
+
 -protocol({xep, 363, '0.1'}).
 
 -define(SERVICE_REQUEST_TIMEOUT, 5000). % 5 seconds.
