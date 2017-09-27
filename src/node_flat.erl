@@ -727,7 +727,7 @@ del_state(#pubsub_state{stateid = {Key, Nidx}, items = Items}) ->
 %% relational database), or they can even decide not to persist any items.</p>
 get_items(Nidx, _From, _RSM) ->
     Items = mnesia:index_read(pubsub_item, Nidx, #pubsub_item.nodeidx),
-    {result, {lists:reverse(lists:keysort(#pubsub_item.modification, Items)), undefined}}.
+    {result, {lists:keysort(#pubsub_item.creation, Items), undefined}}.
 
 get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId, RSM) ->
     SubKey = jid:tolower(JID),
@@ -766,8 +766,9 @@ get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId, RSM
     end.
 
 get_last_items(Nidx, From, Count) when Count > 0 ->
-    {result, {Items, _}} = get_items(Nidx, From, undefined),
-    {result, lists:sublist(Items, Count)};
+    Items = mnesia:index_read(pubsub_item, Nidx, #pubsub_item.nodeidx),
+    LastItems = lists:reverse(lists:keysort(#pubsub_item.modification, Items)),
+    {result, lists:sublist(LastItems, Count)};
 get_last_items(_Nidx, _From, _Count) ->
     {result, []}.
 
