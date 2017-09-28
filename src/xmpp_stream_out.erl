@@ -867,16 +867,16 @@ resolve(Host, State) ->
 -spec srv_lookup(string(), state()) -> {{ok, [host_port()]} | network_error(), boolean()}.
 srv_lookup(_Host, #{xmlns := ?NS_COMPONENT}) ->
     %% Do not attempt to lookup SRV for component connections
-    {error, nxdomain};
+    {{error, nxdomain}, false};
 srv_lookup(Host, State) ->
     %% Only perform SRV lookups for FQDN names
     case string:chr(Host, $.) of
 	0 ->
-	    {error, nxdomain};
+	    {{error, nxdomain}, false};
 	_ ->
 	    case inet:parse_address(Host) of
 		{ok, _} ->
-		    {error, nxdomain};
+		    {{error, nxdomain}, false};
 		{error, _} ->
 		    Timeout = get_dns_timeout(State),
 		    Retries = get_dns_retries(State),
