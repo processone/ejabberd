@@ -1028,8 +1028,16 @@ do_process_presence(Nick, #presence{from = From, type = unavailable} = Packet,
 		end,
     NewState = add_user_presence_un(From, NewPacket, StateData),
     case (?DICT):find(Nick, StateData#state.nicks) of
-	{ok, [_, _ | _]} -> ok;
-	_ -> send_new_presence(From, NewState, StateData)
+	{ok, [_, _ | _]} ->
+	    Aff = get_affiliation(From, StateData),
+	    Item = #muc_item{affiliation = Aff, role = none, jid = From},
+	    Pres = xmpp:set_subtag(
+		     Packet, #muc_user{items = [Item],
+				       status_codes = [110]}),
+	    send_wrapped(jid:replace_resource(StateData#state.jid, Nick),
+			 From, Pres, ?NS_MUCSUB_NODES_PRESENCE, StateData);
+	_ ->
+	    send_new_presence(From, NewState, StateData)
     end,
     Reason = xmpp:get_text(NewPacket#presence.status),
     remove_online_user(From, NewState, Reason);
