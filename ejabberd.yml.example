@@ -124,7 +124,7 @@ hosts:
 ## by and what options to start it with.
 ##
 listen:
-  - 
+  -
     port: 5222
     ip: "::"
     module: ejabberd_c2s
@@ -151,11 +151,11 @@ listen:
     max_stanza_size: 65536
     shaper: c2s_shaper
     access: c2s
-  - 
+  -
     port: 5269
     ip: "::"
     module: ejabberd_s2s_in
-  - 
+  -
     port: 5280
     ip: "::"
     module: ejabberd_http
@@ -170,7 +170,7 @@ listen:
   ##
   ## ejabberd_service: Interact with external components (transports, ...)
   ##
-  ## - 
+  ## -
   ##   port: 8888
   ##   ip: "::"
   ##   module: ejabberd_service
@@ -195,7 +195,7 @@ listen:
   ##
   ## ejabberd_stun: Handles STUN Binding requests
   ##
-  ## - 
+  ## -
   ##   port: 3478
   ##   transport: udp
   ##   module: ejabberd_stun
@@ -203,7 +203,7 @@ listen:
   ##
   ## To handle XML-RPC requests that provide admin credentials:
   ##
-  ## - 
+  ## -
   ##   port: 4560
   ##   ip: "::"
   ##   module: ejabberd_xmlrpc
@@ -212,7 +212,7 @@ listen:
   ##
   ## To enable secure http upload
   ##
-  ## - 
+  ## -
   ##   port: 5444
   ##   ip: "::"
   ##   module: ejabberd_http
