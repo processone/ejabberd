@@ -88,7 +88,7 @@ log_rate_limit: 100
 ##
 ## hosts: Domains served by ejabberd.
 ## You can define one or several, for example:
-## hosts: 
+## hosts:
 ##   - "example.net"
 ##   - "example.com"
 ##   - "example.org"
@@ -123,7 +123,7 @@ hosts:
 ## listen: The ports ejabberd will listen on, which service each is handled
 ## by and what options to start it with.
 ##
-listen: 
+listen:
   - 
     port: 5222
     ip: "::"
@@ -177,7 +177,7 @@ listen:
   ##   access: all
   ##   shaper_rule: fast
   ##   ip: "127.0.0.1"
-  ##   privilege_access: 
+  ##   privilege_access:
   ##      roster: "both"
   ##      message: "outgoing"
   ##      presence: "roster"
@@ -467,7 +467,7 @@ acl:
 
   ## Local users: don't modify this.
   ##
-  local: 
+  local:
     user_regexp: ""
 
   ##
@@ -541,24 +541,24 @@ access_rules:
   announce:
     - allow: admin
   ## Only admins can use the configuration interface:
-  configure: 
+  configure:
     - allow: admin
   ## Only accounts of the local ejabberd server can create rooms:
-  muc_create: 
+  muc_create:
     - allow: local
   ## Only accounts on the local ejabberd server can create Pubsub nodes:
-  pubsub_createnode: 
+  pubsub_createnode:
     - allow: local
   ## In-band registration allows registration of any possible username.
   ## To disable in-band registration, replace 'allow' with 'deny'.
-  register: 
+  register:
     - allow
   ## Only allow to register from localhost
-  trusted_network: 
+  trusted_network:
     - allow: loopback
   ## Do not establish S2S connections with bad servers
   ## If you enable this you also have to uncomment "s2s_access: s2s"
-  ## s2s: 
+  ## s2s:
   ##   - deny:
   ##     - ip: "XXX.XXX.XXX.XXX/32"
   ##   - deny:
@@ -667,7 +667,7 @@ language: "en"
 ##
 ## Modules enabled in all ejabberd virtual hosts.
 ##
-modules: 
+modules:
   mod_adhoc: {}
   mod_admin_extra: {}
   mod_announce: # recommends mod_adhoc
@@ -696,7 +696,7 @@ modules:
   ## You might want to setup a SQL backend for MAM because the mnesia database is
   ## limited to 2GB which might be exceeded on large servers
   ## mod_mam: {} # for xep0313, mnesia is limited to 2GB, better use an SQL backend
-  mod_muc: 
+  mod_muc:
     ## host: "conference.@HOST@"
     access:
       - allow
@@ -707,7 +707,7 @@ modules:
   mod_muc_admin: {}
   ## mod_muc_log: {}
   ## mod_multicast: {}
-  mod_offline: 
+  mod_offline:
     access_max_user_messages: max_user_offline_messages
   mod_ping: {}
   ## mod_pres_counter:
@@ -716,14 +716,14 @@ modules:
   mod_privacy: {}
   mod_private: {}
   ## mod_proxy65: {}
-  mod_pubsub: 
+  mod_pubsub:
     access_createnode: pubsub_createnode
     ## reduces resource comsumption, but XEP incompliant
     ignore_pep_from_offline: true
     ## XEP compliant, but increases resource comsumption
     ## ignore_pep_from_offline: false
     last_item_cache: false
-    plugins: 
+    plugins:
       - "flat"
       - "hometree"
       - "pep" # pep requires mod_caps
