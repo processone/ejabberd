@@ -709,7 +709,7 @@ bounce_message_queue() ->
 %%%===================================================================
 get_max_ack_queue(Host, Opts) ->
     gen_mod:get_module_opt(Host, ?MODULE, max_ack_queue,
-			   gen_mod:get_opt(max_ack_queue, Opts, 1000)).
+			   gen_mod:get_opt(max_ack_queue, Opts, 5000)).
 
 get_resume_timeout(Host, Opts) ->
     gen_mod:get_module_opt(Host, ?MODULE, resume_timeout,
