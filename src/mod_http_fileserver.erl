@@ -424,8 +424,7 @@ add_to_log(File, FileSize, Code, Request) ->
     {{Year, Month, Day}, {Hour, Minute, Second}} = calendar:local_time(),
     IP = ip_to_string(element(1, Request#request.ip)),
     Path = join(Request#request.path, "/"),
-    Query = case join(lists:map(fun(E) -> lists:concat([element(1, E), "=", binary_to_list(element(2, E))]) end,
-				Request#request.q), "&") of
+    Query = case stringify_query(Request#request.q) of
 		[] ->
 		    "";
 		String ->
@@ -444,6 +443,13 @@ add_to_log(File, FileSize, Code, Request) ->
     io:format(File, "~s - - [~p/~p/~p:~p:~p:~p] \"~s /~s~s\" ~p ~p ~p ~p~n",
 	      [IP, Day, Month, Year, Hour, Minute, Second, Request#request.method, Path, Query, Code,
                FileSize, Referer, UserAgent]).
+
+stringify_query(Q) ->
+    join(
+	lists:map(fun(E) ->
+		lists:concat([binary_to_list(element(1, E)), "=", binary_to_list(element(2, E))])
+	    end, Q),
+	"&").
 
 find_header(Header, Headers, Default) ->
     case lists:keysearch(Header, 1, Headers) of
