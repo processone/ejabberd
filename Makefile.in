@@ -152,13 +152,13 @@ $(call TO_DEST,deps/epam/priv/bin/epam): $(LIBDIR)/%: deps/epam/priv/bin/epam $(
 	$(INSTALL) -m 750 $(O_USER) $< $@
 
 $(call TO_DEST,deps/eimp/priv/bin/eimp): $(LIBDIR)/%: deps/eimp/priv/bin/eimp $(call TO_DEST,deps/eimp/priv/bin/)
-	$(INSTALL) -m 750 $(O_USER) $< $@
+	$(INSTALL) -m 755 $(O_USER) $< $@
 
 $(call TO_DEST,priv/sql/lite.sql): sql/lite.sql $(call TO_DEST,priv/sql)
 	$(INSTALL) -m 644 $< $@
 
 $(call TO_DEST,priv/bin/captcha.sh): tools/captcha.sh $(call TO_DEST,priv/bin)
-	$(INSTALL) -m 750 $(O_USER) $< $@
+	$(INSTALL) -m 755 $(O_USER) $< $@
 
 copy-files-sub2: $(call TO_DEST,$(DEPS_FILES) $(MAIN_FILES) priv/bin/captcha.sh priv/sql/lite.sql)
 
