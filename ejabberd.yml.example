@@ -444,7 +444,7 @@ shaper:
 ## This option specifies the maximum number of elements in the queue
 ## of the FSM. Refer to the documentation for details.
 ##
-max_fsm_queue: 1000
+max_fsm_queue: 10000
 
 ###.   ====================
 ###'   ACCESS CONTROL LISTS

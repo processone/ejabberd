@@ -45,7 +45,7 @@
 -define(SERVER, ?MODULE).
 -define(PROCNAME, 'ejabberd_redis_client').
 -define(TR_STACK, redis_transaction_stack).
--define(DEFAULT_MAX_QUEUE, 5000).
+-define(DEFAULT_MAX_QUEUE, 10000).
 -define(MAX_RETRIES, 1).
 -define(CALL_TIMEOUT, 60*1000). %% 60 seconds
 
