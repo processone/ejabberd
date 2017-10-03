@@ -1,21 +1,23 @@
 ejabberd container
 
 - [Introduction](#introduction)
+    - [Version](#version)
 - [Quick Start](#quick-start)
 - [Usage](#usage)
     - [Persistence](#persistence)
     - [SSL Certificates](#ssl-certificates)
     - [Base Image](#base-image)
-- [Ejabberd Configuration](#ejabberd-configuration)
+    - [Cluster Example](#cluster-example)
+- [Runtime Configuration](#runtime-configuration)
     - [Served Hostnames](#served-hostnames)
     - [Authentication](#authentication)
     - [Admins](#admins)
     - [Users](#users)
     - [SSL](#ssl)
+    - [Erlang](#erlang)
     - [Modules](#modules)
     - [Logging](#logging)
     - [Mount Configurations](#mount-configurations)
-    - [Erlang Configuration](#erlang-configuration)
 - [Maintenance](#maintenance)
     - [Register Users](#register-users)
     - [Creating Backups](#creating-backups)
@@ -28,11 +30,29 @@ ejabberd container
 
 # Introduction
 
-Dockerfile to build an [ejabberd](https://www.ejabberd.im/) container image.
+This [ejabberd][] docker container is based on the work done by [rroemhild][]. See more [in this blogpost][].
+This container includes the necessary files to build your own containerized ejabberd,
+but *IT IS NOT* used to generate official images on the docker [hub][].
+This container is not maintained by [ProcessOne][].
 
-Docker Tag Names are based on ejabberd versions in git [tags][]. The image tag `:latest` is based on the master branch.
+[ProcessOne][] provides and maintain official containers on the docker [hub][], which targets developers for now and will becomes production ready in a near future.
+These [new containers] allow to build and run ejabberd in a simple and lightweight environment.
 
-[tags]: https://github.com/rroemhild/ejabberd/tags
+[ejabberd]: https://www.ejabberd.im/
+[rroemhild]: https://github.com/rroemhild/docker-ejabberd/
+[in this blogpost]: https://blog.process-one.net/ejabberd-16-12/
+[hub]: https://hub.docker.com/r/ejabberd/ecs/
+[new containers]: https://github.com/processone/docker-ejabberd/
+[ProcessOne]: https://www.process-one.net/
+
+## Version
+
+Current Version: `17.08`
+
+Docker Tag Names are based on ejabberd versions in git [branches][] and [tags][]. The image tag `:latest` is based on the master branch.
+
+[tags]: https://github.com/rroemhild/docker-ejabberd/tags
+[branches]: https://github.com/rroemhild/docker-ejabberd/branches
 
 # Quick Start
 
@@ -46,11 +66,18 @@ docker run -d \
     -p 5280:5280 \
     -h 'xmpp.example.de' \
     -e "XMPP_DOMAIN=example.de" \
-    -e "ERLANG_NODE=nodename" \
+    -e "ERLANG_NODE=ejabberd" \
     -e "EJABBERD_ADMINS=admin@example.de admin2@example.de" \
     -e "EJABBERD_USERS=admin@example.de:password1234 admin2@example.de" \
     -e "TZ=Europe/Berlin" \
     rroemhild/ejabberd
+```
+
+or with the [docker-compose](examples/docker-compose/docker-compose.yml) example
+
+```bash
+wget https://raw.githubusercontent.com/rroemhild/docker-ejabberd/master/examples/docker-compose/docker-compose.yml
+docker-compose up
 ```
 
 # Usage
@@ -100,7 +127,11 @@ ADD ./example.com.pem /opt/ejabberd/ssl/example.com.pem
 
 If you need root privileges switch to `USER root` and go back to `USER ejabberd` when you're done.
 
-# Ejabberd Configuration
+## Cluster Example
+
+The [docker-compose-cluster](examples/docker-compose-cluster) example demonstrates how to extend this container image to setup a multi-master cluster.
+
+# Runtime Configuration
 
 You can additionally provide extra runtime configuration in a downstream image by replacing the config template `ejabberd.yml.tpl` with one based on this image's template and include extra interpolation of environment variables. The template is parsed by Jinja2 with the runtime environment (equivalent to Python's `os.environ` available as `env`).
 
@@ -137,6 +168,26 @@ EJABBERD_EXTAUTH_INSTANCES=3
 EJABBERD_EXTAUTH_CACHE=600
 ```
 **EJABBERD_EXTAUTH_INSTANCES** must be an integer with a minimum value of 1. **EJABBERD_EXTAUTH_CACHE** can be set to "false" or an integer value representing cache time in seconds. Note that caching should not be enabled if internal auth is also enabled.
+
+### Password format
+
+The variable `EJABBERD_AUTH_PASSWORD_FORMAT` controls in which format user passwords are
+stored. Possible values are `plain` and `scram`. The default is to store
+[SCRAM](https://en.wikipedia.org/wiki/Salted_Challenge_Response_Authentication_Mechanism)bled
+passwords, meaning that it is impossible to obtain the original plain password from the
+stored information.
+
+NOTE: SCRAM does not work with SIP/TURN foreign authentication methods. In this case, you
+may have to disable the option. More details can be found here:
+https://docs.ejabberd.im/admin/configuration/#internal
+
+If using SCRAM with an SQL database that has plaintext passwords stored, use the command
+
+```
+ejabberdctl convert_to_scram example.org
+```
+
+to convert all your existing plaintext passwords to scrambled format.
 
 ### MySQL Authentication
 
@@ -215,28 +266,38 @@ EJABBERD_USERS=admin@example.ninja:password1234 user1@test.com user1@xyz.io
 ```
 
 ## SSL
-
+- **EJABBERD_SKIP_MAKE_SSLCERT**: Skip generating ssl certificates. Default: false
 - **EJABBERD_SSLCERT_HOST**: SSL Certificate for the hostname.
 - **EJABBERD_SSLCERT_EXAMPLE_COM**: SSL Certificates for XMPP domains.
-- **EJABBERD_STARTTLS**: Set to `false` to disable StartTLS for client to server connections. Default: `true`.
-- **EJABBERD_S2S_SSL**: Set to `false` to disable SSL in server 2 server connections. Default: `true`.
-- **EJABBERD_HTTPS**: If your proxy terminates SSL you may want to disable HTTPS on port 5280 and 5443. Default: `true`.
-- **EJABBERD_PROTOCOL_OPTIONS_TLSV1**: Allow TLSv1 protocol. Default: `false`.
-- **EJABBERD_PROTOCOL_OPTIONS_TLSV1_1**: Allow TLSv1.1 protocol. Default: `true`.
-- **EJABBERD_CIPHERS**: Cipher suite. Default: `HIGH:!aNULL:!3DES`.
-- **EJABBERD_DHPARAM**: Set to `true` to use or generate custom DH parameters. Default: `false`.
+- **EJABBERD_STARTTLS**: Set to `false` to disable StartTLS for client to server connections. Defaults
+ to `true`.
+- **EJABBERD_S2S_SSL**: Set to `false` to disable SSL in server 2 server connections. Defaults to `true`.
+- **EJABBERD_HTTPS**: If your proxy terminates SSL you may want to disable HTTPS on port 5280 and 5443. Defaults to `true`.
+- **EJABBERD_PROTOCOL_OPTIONS_TLSV1**: Allow TLSv1 protocol. Defaults to `false`.
+- **EJABBERD_PROTOCOL_OPTIONS_TLSV1_1**: Allow TLSv1.1 protocol. Defaults to `true`.
+- **EJABBERD_CIPHERS**: Cipher suite. Defaults to `HIGH:!aNULL:!3DES`.
+- **EJABBERD_DHPARAM**: Set to `true` to use or generate custom DH parameters. Defaults to `false`.
+- **EJABBERD_SKIP_MAKE_DHPARAM**: Skip generating DH params. Default: false
+
+## Erlang
+- **ERLANG_NODE**: Allows to explicitly specify erlang node for ejabberd. Set to `ejabberd` lets erlang add the hostname. Defaults to `ejabberd@localhost`.
+- **ERLANG_COOKIE**: Set erlang cookie. Defaults to auto-generated cookie.
+- **ERLANG_OPTIONS**: Overwrite additional options passed to erlang while starting ejabberd.
 
 ## Modules
-
-- **EJABBERD_SKIP_MODULES_UPDATE**: If you do not need to update ejabberd modules specs, skip the update task and speedup start. Default: `false`.
-- **EJABBERD_MOD_MUC_ADMIN**: Activate the mod_muc_admin module. Default: `false`.
-- **EJABBERD_MOD_ADMIN_EXTRA**: Activate the mod_muc_admin module. Default: `true`.
-- **EJABBERD_REGISTER_TRUSTED_NETWORK_ONLY**: Only allow user registration from the trusted_network access rule. Default: `true`.
-- **EJABBERD_MOD_VERSION**: Activate the mod_version module. Default: `true`.
+- **EJABBERD_SKIP_MODULES_UPDATE**: If you do not need to update ejabberd modules specs, skip the update task and speedup start. Defaults to `false`.
+- **EJABBERD_MOD_MUC_ADMIN**: Activate the mod_muc_admin module. Defaults to `false`.
+- **EJABBERD_MOD_ADMIN_EXTRA**: Activate the mod_muc_admin module. Defaults to `true`.
+- **EJABBERD_REGISTER_TRUSTED_NETWORK_ONLY**: Only allow user registration from the trusted_network access rule. Defaults to `true`.
+- **EJABBERD_MOD_VERSION**: Activate the mod_version module. Defaults to `true`.
+- **EJABBERD_SOURCE_MODULES**: List of modules, which will be installed from sources localized in ${EJABBERD_HOME}/module_source.
+- **EJABBERD_CONTRIB_MODULES**: List of modules, which will be installed from contrib repository.
+- **EJABBERD_RESTART_AFTER_MODULE_INSTALL**: If any modules were installed, restart the server, if the option is enabled.
+- **EJABBERD_CUSTOM_AUTH_MODULE_OVERRIDE**: If a custom module was defined for handling auth, we need to override the pre-defined auth methods in the config.
 
 ## Logging
 
-Use the **EJABBERD_LOGLEVEL** environment variable to set verbosity. Default: `4` (Info).
+Use the **EJABBERD_LOGLEVEL** environment variable to set verbosity. Defaults to `4` (Info).
 
 ```
 loglevel: Verbosity of log files generated by ejabberd.
@@ -275,25 +336,6 @@ Your ```/<host_path>/conf``` folder should look like so:
 Example configuration files can be downloaded from the ejabberd [github](https://github.com/rroemhild/ejabberd) page.
 
 When these files exist in ```/opt/ejabberd/conf```, the run script will ignore the configuration templates.
-
-## Erlang Configuration
-
-With the following environment variables you can configure options that are passed by ejabberdctl to the erlang runtime system when starting ejabberd.
-
-- **POLL**: Set to `false` to disable Kernel polling. Default: `true`.
-- **SMP**: SMP support `enable`, `auto`, `disable`. Default: `auto`.
-- **ERL_MAX_PORTS**: Maximum number of simultaneously open Erlang ports. Default: `32000`.
-- **FIREWALL_WINDOW**: Range of allowed ports to pass through a firewall. Default: `not defined`.
-- **INET_DIST_INTERFACE**: IP address where this Erlang node listens other nodes. Default: `0.0.0.0`.
-- **ERL_EPMD_ADDRESS**: IP addresses where epmd listens for connections. Default: `0.0.0.0`.
-- **ERL_PROCESSES**: Maximum number of Erlang processes. Default: `250000`.
-- **ERL_MAX_ETS_TABLES**: Maximum number of Erlang processes. Default: `1400`.
-- **ERLANG_OPTIONS**: Overwrite additional options passed to erlang while starting ejabberd. Default: `-noshell`
-- **ERLANG_NODE**: Allows to explicitly specify erlang node for ejabberd. Set to `nodename` lets erlang add the hostname. Default: `ejabberd@localhost`.
-- **EJABBERD_CONFIG_PATH**: ejabberd configuration file. Default: `/opt/ejabberd/conf/ejabberd.yml`.
-- **CONTRIB_MODULES_PATH**: contributed ejabberd modules path. Default: `/opt/ejabberd/modules`.
-- **CONTRIB_MODULES_CONF_DIR**: configuration directory for contributed modules. Default: `/opt/ejabberd/modules/conf`.
-- **ERLANG_COOKIE**: Set erlang cookie. Default is to auto-generated cookie.
 
 # Maintenance
 

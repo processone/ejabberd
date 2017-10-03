@@ -320,7 +320,7 @@ check_from_to(From, To) ->
 
 -spec mk_error(term()) -> stanza_error().
 mk_error(forbidden) ->
-    xmpp:err_forbidden(<<"Denied by ACL">>, ?MYLANG);
+    xmpp:err_forbidden(<<"Access denied by service policy">>, ?MYLANG);
 mk_error(host_unknown) ->
     xmpp:err_not_allowed(<<"Host unknown">>, ?MYLANG);
 mk_error({codec_error, Why}) ->

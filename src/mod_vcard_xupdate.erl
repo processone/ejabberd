@@ -30,8 +30,8 @@
 %% gen_mod callbacks
 -export([start/2, stop/1, reload/3]).
 
--export([update_presence/1, vcard_set/3, remove_user/2,
-	 mod_opt_type/1, depends/2]).
+-export([update_presence/1, vcard_set/1, remove_user/2,
+	 user_send_packet/1, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -47,15 +47,19 @@ start(Host, Opts) ->
     init_cache(Host, Opts),
     ejabberd_hooks:add(c2s_self_presence, Host, ?MODULE,
 		       update_presence, 100),
-    ejabberd_hooks:add(vcard_set, Host, ?MODULE, vcard_set,
-		       100),
+    ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
+		       user_send_packet, 50),
+    ejabberd_hooks:add(vcard_iq_set, Host, ?MODULE, vcard_set,
+		       90),
     ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 50).
 
 stop(Host) ->
     ejabberd_hooks:delete(c2s_self_presence, Host,
 			  ?MODULE, update_presence, 100),
-    ejabberd_hooks:delete(vcard_set, Host, ?MODULE,
-			  vcard_set, 100),
+    ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
+			  user_send_packet, 50),
+    ejabberd_hooks:delete(vcard_iq_set, Host, ?MODULE,
+			  vcard_set, 90),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE, remove_user, 50).
 
 reload(Host, NewOpts, _OldOpts) ->
@@ -71,16 +75,33 @@ depends(_Host, _Opts) ->
       -> {presence(), ejabberd_c2s:state()}.
 update_presence({#presence{type = available} = Pres,
 		 #{jid := #jid{luser = LUser, lserver = LServer}} = State}) ->
-    Hash = get_xupdate(LUser, LServer),
-    Pres1 = xmpp:set_subtag(Pres, #vcard_xupdate{hash = Hash}),
+    Pres1 = case get_xupdate(LUser, LServer) of
+		undefined -> xmpp:remove_subtag(Pres, #vcard_xupdate{});
+		XUpdate -> xmpp:set_subtag(Pres, XUpdate)
+	    end,
     {Pres1, State};
 update_presence(Acc) ->
     Acc.
 
--spec vcard_set(binary(), binary(), xmlel()) -> ok.
-vcard_set(LUser, LServer, _VCARD) ->
+-spec user_send_packet({presence(), ejabberd_c2s:state()})
+      -> {presence(), ejabberd_c2s:state()}.
+user_send_packet({#presence{type = available,
+			    to = #jid{luser = U, lserver = S,
+				      lresource = <<"">>}},
+		  #{jid := #jid{luser = U, lserver = S}}} = Acc) ->
+    %% This is processed by update_presence/2 explicitly, we don't
+    %% want to call this multiple times for performance reasons
+    Acc;
+user_send_packet(Acc) ->
+    update_presence(Acc).
+
+-spec vcard_set(iq()) -> iq().
+vcard_set(#iq{from = #jid{luser = LUser, lserver = LServer}} = IQ) ->
     ets_cache:delete(?VCARD_XUPDATE_CACHE, {LUser, LServer}),
-    ejabberd_sm:force_update_presence({LUser, LServer}).
+    ejabberd_sm:force_update_presence({LUser, LServer}),
+    IQ;
+vcard_set(Acc) ->
+    Acc.
 
 -spec remove_user(binary(), binary()) -> ok.
 remove_user(User, Server) ->
@@ -91,7 +112,7 @@ remove_user(User, Server) ->
 %%====================================================================
 %% Storage
 %%====================================================================
--spec get_xupdate(binary(), binary()) -> binary() | undefined.
+-spec get_xupdate(binary(), binary()) -> vcard_xupdate() | undefined.
 get_xupdate(LUser, LServer) ->
     Result = case use_cache(LServer) of
 		 true ->
@@ -102,11 +123,12 @@ get_xupdate(LUser, LServer) ->
 		     db_get_xupdate(LUser, LServer)
 	     end,
     case Result of
-	{ok, Hash} -> Hash;
-	error -> undefined
+	{ok, external} -> undefined;
+	{ok, Hash} -> #vcard_xupdate{hash = Hash};
+	error -> #vcard_xupdate{}
     end.
 
--spec db_get_xupdate(binary(), binary()) -> {ok, binary()} | error.
+-spec db_get_xupdate(binary(), binary()) -> {ok, binary() | external} | error.
 db_get_xupdate(LUser, LServer) ->
     case mod_vcard:get_vcard(LUser, LServer) of
 	[VCard] ->
@@ -147,17 +169,21 @@ use_cache(Host) ->
       Host, ?MODULE, use_cache,
       ejabberd_config:use_cache(Host)).
 
--spec compute_hash(xmlel()) -> binary().
+-spec compute_hash(xmlel()) -> binary() | external.
 compute_hash(VCard) ->
-    case fxml:get_path_s(VCard,
-			 [{elem, <<"PHOTO">>},
-			  {elem, <<"BINVAL">>},
-			  cdata]) of
-	<<>> ->
+    case fxml:get_subtag(VCard, <<"PHOTO">>) of
+	false ->
 	    <<>>;
-	BinVal ->
-	    try str:sha(base64:decode(BinVal))
-	    catch _:badarg -> <<>>
+	Photo ->
+	    try xmpp:decode(Photo, ?NS_VCARD, []) of
+		#vcard_photo{binval = <<_, _/binary>> = BinVal} ->
+		    str:sha(BinVal);
+		#vcard_photo{extval = <<_, _/binary>>} ->
+		    external;
+		_ ->
+		    <<>>
+	    catch _:{xmpp_codec, _} ->
+		    <<>>
 	    end
     end.
 

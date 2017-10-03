@@ -974,10 +974,9 @@ roomconfig_to_string(Options, Lang, FileFormat) ->
     Os2 = lists:sort(Os1),
     Options2 = Title ++ Os2,
     lists:foldl(fun ({Opt, Val}, R) ->
-			case get_roomconfig_text(Opt) of
+			case get_roomconfig_text(Opt, Lang) of
 			  undefined -> R;
-			  OptT ->
-			      OptText = (?T(OptT)),
+			  OptText ->
 			      R2 = case Val of
 				     false ->
 					 <<"<div class=\"rcod\">",
@@ -1025,49 +1024,49 @@ roomconfig_to_string(Options, Lang, FileFormat) ->
 		end,
 		<<"">>, Options2).
 
-get_roomconfig_text(title) -> <<"Room title">>;
-get_roomconfig_text(persistent) ->
-    <<"Make room persistent">>;
-get_roomconfig_text(public) ->
-    <<"Make room public searchable">>;
-get_roomconfig_text(public_list) ->
-    <<"Make participants list public">>;
-get_roomconfig_text(password_protected) ->
-    <<"Make room password protected">>;
-get_roomconfig_text(password) -> <<"Password">>;
-get_roomconfig_text(anonymous) ->
-    <<"This room is not anonymous">>;
-get_roomconfig_text(members_only) ->
-    <<"Make room members-only">>;
-get_roomconfig_text(moderated) ->
-    <<"Make room moderated">>;
-get_roomconfig_text(members_by_default) ->
-    <<"Default users as participants">>;
-get_roomconfig_text(allow_change_subj) ->
-    <<"Allow users to change the subject">>;
-get_roomconfig_text(allow_private_messages) ->
-    <<"Allow users to send private messages">>;
-get_roomconfig_text(allow_private_messages_from_visitors) ->
-    <<"Allow visitors to send private messages to">>;
-get_roomconfig_text(allow_query_users) ->
-    <<"Allow users to query other users">>;
-get_roomconfig_text(allow_user_invites) ->
-    <<"Allow users to send invites">>;
-get_roomconfig_text(logging) -> <<"Enable logging">>;
-get_roomconfig_text(allow_visitor_nickchange) ->
-    <<"Allow visitors to change nickname">>;
-get_roomconfig_text(allow_visitor_status) ->
-    <<"Allow visitors to send status text in "
-      "presence updates">>;
-get_roomconfig_text(captcha_protected) ->
-    <<"Make room captcha protected">>;
-get_roomconfig_text(description) ->
-    <<"Room description">>;
-%% get_roomconfig_text(subject) ->  "Subject";
-%% get_roomconfig_text(subject_author) ->  "Subject author";
-get_roomconfig_text(max_users) ->
-    <<"Maximum Number of Occupants">>;
-get_roomconfig_text(_) -> undefined.
+get_roomconfig_text(title, Lang) -> ?T(<<"Room title">>);
+get_roomconfig_text(persistent, Lang) ->
+    ?T(<<"Make room persistent">>);
+get_roomconfig_text(public, Lang) ->
+    ?T(<<"Make room public searchable">>);
+get_roomconfig_text(public_list, Lang) ->
+    ?T(<<"Make participants list public">>);
+get_roomconfig_text(password_protected, Lang) ->
+    ?T(<<"Make room password protected">>);
+get_roomconfig_text(password, Lang) -> ?T(<<"Password">>);
+get_roomconfig_text(anonymous, Lang) ->
+    ?T(<<"This room is not anonymous">>);
+get_roomconfig_text(members_only, Lang) ->
+    ?T(<<"Make room members-only">>);
+get_roomconfig_text(moderated, Lang) ->
+    ?T(<<"Make room moderated">>);
+get_roomconfig_text(members_by_default, Lang) ->
+    ?T(<<"Default users as participants">>);
+get_roomconfig_text(allow_change_subj, Lang) ->
+    ?T(<<"Allow users to change the subject">>);
+get_roomconfig_text(allow_private_messages, Lang) ->
+    ?T(<<"Allow users to send private messages">>);
+get_roomconfig_text(allow_private_messages_from_visitors, Lang) ->
+    ?T(<<"Allow visitors to send private messages to">>);
+get_roomconfig_text(allow_query_users, Lang) ->
+    ?T(<<"Allow users to query other users">>);
+get_roomconfig_text(allow_user_invites, Lang) ->
+    ?T(<<"Allow users to send invites">>);
+get_roomconfig_text(logging, Lang) -> ?T(<<"Enable logging">>);
+get_roomconfig_text(allow_visitor_nickchange, Lang) ->
+    ?T(<<"Allow visitors to change nickname">>);
+get_roomconfig_text(allow_visitor_status, Lang) ->
+    ?T(<<"Allow visitors to send status text in "
+      "presence updates">>);
+get_roomconfig_text(captcha_protected, Lang) ->
+    ?T(<<"Make room CAPTCHA protected">>);
+get_roomconfig_text(description, Lang) ->
+    ?T(<<"Room description">>);
+%% get_roomconfig_text(subject, Lang) ->  "Subject";
+%% get_roomconfig_text(subject_author, Lang) ->  "Subject author";
+get_roomconfig_text(max_users, Lang) ->
+    ?T(<<"Maximum Number of Occupants">>);
+get_roomconfig_text(_, _) -> undefined.
 
 %% Users = [{JID, Nick, Role}]
 roomoccupants_to_string(Users, _FileFormat) ->

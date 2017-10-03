@@ -42,6 +42,7 @@
 -include("logger.hrl").
 -include("eldap.hrl").
 -include("xmpp.hrl").
+-include("translate.hrl").
 
 -define(PROCNAME, ejabberd_mod_vcard_ldap).
 
@@ -324,31 +325,31 @@ default_vcard_map() ->
      {<<"PHOTO">>, <<"%s">>, [<<"jpegPhoto">>]}].
 
 default_search_fields() ->
-    [{<<"User">>, <<"%u">>},
-     {<<"Full Name">>, <<"displayName">>},
-     {<<"Given Name">>, <<"givenName">>},
-     {<<"Middle Name">>, <<"initials">>},
-     {<<"Family Name">>, <<"sn">>},
-     {<<"Nickname">>, <<"%u">>},
-     {<<"Birthday">>, <<"birthDay">>},
-     {<<"Country">>, <<"c">>},
-     {<<"City">>, <<"l">>},
-     {<<"Email">>, <<"mail">>},
-     {<<"Organization Name">>, <<"o">>},
-     {<<"Organization Unit">>, <<"ou">>}].
+    [{?T("User"), <<"%u">>},
+     {?T("Full Name"), <<"displayName">>},
+     {?T("Given Name"), <<"givenName">>},
+     {?T("Middle Name"), <<"initials">>},
+     {?T("Family Name"), <<"sn">>},
+     {?T("Nickname"), <<"%u">>},
+     {?T("Birthday"), <<"birthDay">>},
+     {?T("Country"), <<"c">>},
+     {?T("City"), <<"l">>},
+     {?T("Email"), <<"mail">>},
+     {?T("Organization Name"), <<"o">>},
+     {?T("Organization Unit"), <<"ou">>}].
 
 default_search_reported() ->
-    [{<<"Full Name">>, <<"FN">>},
-     {<<"Given Name">>, <<"FIRST">>},
-     {<<"Middle Name">>, <<"MIDDLE">>},
-     {<<"Family Name">>, <<"LAST">>},
-     {<<"Nickname">>, <<"NICK">>},
-     {<<"Birthday">>, <<"BDAY">>},
-     {<<"Country">>, <<"CTRY">>},
-     {<<"City">>, <<"LOCALITY">>},
-     {<<"Email">>, <<"EMAIL">>},
-     {<<"Organization Name">>, <<"ORGNAME">>},
-     {<<"Organization Unit">>, <<"ORGUNIT">>}].
+    [{?T("Full Name"), <<"FN">>},
+     {?T("Given Name"), <<"FIRST">>},
+     {?T("Middle Name"), <<"MIDDLE">>},
+     {?T("Family Name"), <<"LAST">>},
+     {?T("Nickname"), <<"NICK">>},
+     {?T("Birthday"), <<"BDAY">>},
+     {?T("Country"), <<"CTRY">>},
+     {?T("City"), <<"LOCALITY">>},
+     {?T("Email"), <<"EMAIL">>},
+     {?T("Organization Name"), <<"ORGNAME">>},
+     {?T("Organization Unit"), <<"ORGUNIT">>}].
 
 parse_options(Host, Opts) ->
     MyHosts = gen_mod:get_opt_hosts(Host, Opts, <<"vjud.@HOST@">>),

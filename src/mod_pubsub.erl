@@ -259,10 +259,9 @@ init([ServerHost, Opts]) ->
 		  end,
 		  {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
 		  DefaultModule = plugin(Host, hd(Plugins)),
-		  BaseOptions = DefaultModule:options(),
-		  DefaultNodeCfg = filter_node_options(
+		  DefaultNodeCfg = merge_config(
 				     gen_mod:get_opt(default_node_config, Opts, []),
-				     BaseOptions),
+				     DefaultModule:options()),
 		  lists:foreach(
 		    fun(H) ->
 			    T = gen_mod:get_module_proc(H, config),
@@ -1796,8 +1795,6 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, PubOpts, Access
 		broadcast -> Payload;
 		PluginPayload -> PluginPayload
 	    end,
-	    ejabberd_hooks:run(pubsub_publish_item, ServerHost,
-		[ServerHost, Node, Publisher, service_jid(Host), ItemId, BrPayload]),
 	    set_cached_item(Host, Nidx, ItemId, Publisher, BrPayload),
 	    case get_option(Options, deliver_notifications) of
 		true ->
@@ -1806,6 +1803,8 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, PubOpts, Access
 		false ->
 		    ok
 	    end,
+	    ejabberd_hooks:run(pubsub_publish_item, ServerHost,
+		[ServerHost, Node, Publisher, service_jid(Host), ItemId, BrPayload]),
 	    case Result of
 		default -> {result, Reply};
 		_ -> {result, Result}
@@ -1960,15 +1959,11 @@ purge_node(Host, Node, Owner) ->
 -spec get_items(host(), binary(), jid(), binary(),
 		binary(), [binary()], undefined | rsm_set()) ->
 		       {result, pubsub()} | {error, stanza_error()}.
-get_items(Host, Node, From, SubId, SMaxItems, ItemIds, RSM) ->
-    MaxItems = if SMaxItems == undefined ->
-		       case get_max_items_node(Host) of
-			   undefined -> ?MAXITEMS;
-			   Max -> Max
-		       end;
-		  true ->
-		       SMaxItems
-	       end,
+get_items(Host, Node, From, SubId, MaxItems, ItemIds, undefined)
+  when MaxItems =/= undefined ->
+    get_items(Host, Node, From, SubId, MaxItems, ItemIds,
+              #rsm_set{max = MaxItems, before = <<>>});
+get_items(Host, Node, From, SubId, _MaxItems, ItemIds, RSM) ->
     Action =
 	fun(#pubsub_node{options = Options, type = Type,
 			 id = Nidx, owners = O}) ->
@@ -1987,8 +1982,14 @@ get_items(Host, Node, From, SubId, SMaxItems, ItemIds, RSM) ->
 			Owners = node_owners_call(Host, Type, Nidx, O),
 			{PS, RG} = get_presence_and_roster_permissions(
 				     Host, From, Owners, AccessModel, AllowedGroups),
-			node_call(Host, Type, get_items,
-				  [Nidx, From, AccessModel, PS, RG, SubId, RSM])
+			case ItemIds of
+			    [ItemId] ->
+				node_call(Host, Type, get_item,
+					  [Nidx, ItemId, From, AccessModel, PS, RG, undefined]);
+			    _ ->
+				node_call(Host, Type, get_items,
+					  [Nidx, From, AccessModel, PS, RG, SubId, RSM])
+			end
 		end
 	end,
     case transaction(Host, Node, Action, sync_dirty) of
@@ -2004,8 +2005,12 @@ get_items(Host, Node, From, SubId, SMaxItems, ItemIds, RSM) ->
 			end,
 	    {result,
 	     #pubsub{items = #ps_items{node = Node,
-				       items = itemsEls(lists:sublist(SendItems, MaxItems))},
+				       items = itemsEls(SendItems)},
 		     rsm = RsmOut}};
+	{result, {_, Item}} ->
+	    {result,
+	     #pubsub{items = #ps_items{node = Node,
+				       items = itemsEls([Item])}}};
 	Error ->
 	    Error
     end.
@@ -3091,10 +3096,10 @@ get_option(Options, Var, Def) ->
 
 -spec node_options(host(), binary()) -> [{atom(), any()}].
 node_options(Host, Type) ->
-    case config(Host, default_node_config) of
-	undefined -> node_plugin_options(Host, Type);
-	[] -> node_plugin_options(Host, Type);
-	Config -> Config
+    DefaultOpts = node_plugin_options(Host, Type),
+    case config(Host, plugins) of
+	[Type|_] -> config(Host, default_node_config, DefaultOpts);
+	_ -> DefaultOpts
     end.
 
 -spec node_plugin_options(host(), binary()) -> [{atom(), any()}].
@@ -3107,13 +3112,6 @@ node_plugin_options(Host, Type) ->
 	Result ->
 	    Result
     end.
-
--spec filter_node_options([{atom(), any()}], [{atom(), any()}]) -> [{atom(), any()}].
-filter_node_options(Options, BaseOptions) ->
-    lists:foldl(fun({Key, Val}, Acc) ->
-		DefaultValue = proplists:get_value(Key, Options, Val),
-		[{Key, DefaultValue}|Acc]
-	end, [], BaseOptions).
 
 -spec node_owners_action(host(), binary(), nodeIdx(), [ljid()]) -> [ljid()].
 node_owners_action(Host, Type, Nidx, []) ->
@@ -3199,8 +3197,8 @@ set_configure(Host, Node, From, Config, Lang) ->
 			case tree_call(Host,
 				       set_node,
 				       [N#pubsub_node{options = NewOpts}]) of
-			    {result, Nidx} -> {result, ok};
-			    ok -> {result, ok};
+			    {result, Nidx} -> {result, NewOpts};
+			    ok -> {result, NewOpts};
 			    Err -> Err
 			end;
 		    _ ->
@@ -3209,10 +3207,9 @@ set_configure(Host, Node, From, Config, Lang) ->
 		end
 	end,
     case transaction(Host, Node, Action, transaction) of
-	{result, {TNode, ok}} ->
+	{result, {TNode, Options}} ->
 	    Nidx = TNode#pubsub_node.id,
 	    Type = TNode#pubsub_node.type,
-	    Options = TNode#pubsub_node.options,
 	    broadcast_config_notification(Host, Node, Nidx, Type, Options, Lang),
 	    {result, undefined};
 	Other ->
@@ -3220,11 +3217,11 @@ set_configure(Host, Node, From, Config, Lang) ->
     end.
 
 -spec merge_config([proplists:property()], [proplists:property()]) -> [proplists:property()].
-merge_config(Config1, Config2) ->
+merge_config(CustomConfig, DefaultConfig) ->
     lists:foldl(
       fun({Opt, Val}, Acc) ->
 	      lists:keystore(Opt, 1, Acc, {Opt, Val})
-      end, Config2, Config1).
+      end, DefaultConfig, CustomConfig).
 
 -spec decode_node_config(undefined | xdata(), binary(), binary()) ->
 				pubsub_node_config:result() |

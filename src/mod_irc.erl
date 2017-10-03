@@ -262,7 +262,7 @@ do_route(Host, ServerHost, Access, Packet) ->
 	    end;
 	deny ->
 	    Lang = xmpp:get_lang(Packet),
-	    Err = xmpp:err_forbidden(<<"Denied by ACL">>, Lang),
+	    Err = xmpp:err_forbidden(<<"Access denied by service policy">>, Lang),
 	    ejabberd_router:route_error(Packet, Err)
     end.
 

@@ -1028,8 +1028,16 @@ do_process_presence(Nick, #presence{from = From, type = unavailable} = Packet,
 		end,
     NewState = add_user_presence_un(From, NewPacket, StateData),
     case (?DICT):find(Nick, StateData#state.nicks) of
-	{ok, [_, _ | _]} -> ok;
-	_ -> send_new_presence(From, NewState, StateData)
+	{ok, [_, _ | _]} ->
+	    Aff = get_affiliation(From, StateData),
+	    Item = #muc_item{affiliation = Aff, role = none, jid = From},
+	    Pres = xmpp:set_subtag(
+		     Packet, #muc_user{items = [Item],
+				       status_codes = [110]}),
+	    send_wrapped(jid:replace_resource(StateData#state.jid, Nick),
+			 From, Pres, ?NS_MUCSUB_NODES_PRESENCE, StateData);
+	_ ->
+	    send_new_presence(From, NewState, StateData)
     end,
     Reason = xmpp:get_text(NewPacket#presence.status),
     remove_online_user(From, NewState, Reason);
@@ -1243,7 +1251,12 @@ expulse_participant(Packet, From, StateData, Reason1) ->
 				    #presence{type = unavailable,
 					      status = xmpp:mk_text(Reason2)},
 				    StateData),
-    send_new_presence(From, NewState, StateData),
+    LJID = jid:tolower(From),
+    {ok, #user{nick = Nick}} = (?DICT):find(LJID, StateData#state.users),
+    case (?DICT):find(Nick, StateData#state.nicks) of
+	{ok, [_, _ | _]} -> ok;
+	_ -> send_new_presence(From, NewState, StateData)
+    end,
     remove_online_user(From, NewState).
 
 -spec set_affiliation(jid(), affiliation(), state()) -> state().
@@ -2697,8 +2710,8 @@ find_changed_items(UJID, UAffiliation, URole,
 	   Nick /= <<"">> ->
 		case find_jids_by_nick(Nick, StateData) of
 		    [] ->
-			ErrText = str:format(<<"Nickname ~s does not exist in the room">>,
-				   [Nick]),
+			ErrText = {<<"Nickname ~s does not exist in the room">>,
+				   [Nick]},
 			throw({error, xmpp:err_not_acceptable(ErrText, Lang)});
 		    JIDList ->
 			JIDList

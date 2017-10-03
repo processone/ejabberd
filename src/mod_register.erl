@@ -127,7 +127,7 @@ process_iq(#iq{from = From, to = To} = IQ, Source) ->
 process_iq(#iq{type = set, lang = Lang,
 	       sub_els = [#register{remove = true}]} = IQ,
 	   _Source, _IsCaptchaEnabled, _AllowRemove = false) ->
-    Txt = <<"Denied by ACL">>,
+    Txt = <<"Access denied by service policy">>,
     xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang));
 process_iq(#iq{type = set, lang = Lang, to = To, from = From,
 	       sub_els = [#register{remove = true,
@@ -270,7 +270,7 @@ try_register_or_set_password(User, Server, Password,
 			    xmpp:make_error(IQ, Error)
 		    end;
 		deny ->
-		    Txt = <<"Denied by ACL">>,
+		    Txt = <<"Access denied by service policy">>,
 		    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang))
 	    end;
 	_ ->
@@ -322,8 +322,8 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 	  case {acl:match_rule(Server, Access, JID),
 		check_ip_access(SourceRaw, IPAccess)}
 	      of
-	    {deny, _} -> {error, xmpp:err_forbidden(<<"Denied by ACL">>, Lang)};
-	    {_, deny} -> {error, xmpp:err_forbidden(<<"Denied by ACL">>, Lang)};
+	    {deny, _} -> {error, xmpp:err_forbidden(<<"Access denied by service policy">>, Lang)};
+	    {_, deny} -> {error, xmpp:err_forbidden(<<"Access denied by service policy">>, Lang)};
 	    {allow, allow} ->
 		Source = may_remove_resource(SourceRaw),
 		case check_timeout(Source) of

@@ -369,7 +369,7 @@ do_route(Packet) ->
 			    <<"Server connections to local "
 			      "subdomains are forbidden">>, Lang);
 		      forbidden ->
-			  xmpp:err_forbidden(<<"Denied by ACL">>, Lang);
+			  xmpp:err_forbidden(<<"Access denied by service policy">>, Lang);
 		      internal_server_error ->
 			  xmpp:err_internal_server_error()
 		  end,

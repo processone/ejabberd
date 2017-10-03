@@ -863,8 +863,13 @@ select(_LServer, JidRequestor, JidArchive, Query, RSM,
 	    {Msgs, true, L}
     end;
 select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType).
+    case might_expose_jid(Query, MsgType) of
+	true ->
+	    {[], true, 0};
+	false ->
+	    Mod = gen_mod:db_mod(LServer, ?MODULE),
+	    Mod:select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType)
+    end.
 
 msg_to_el(#archive_msg{timestamp = TS, packet = El, nick = Nick,
 		       peer = Peer, id = ID},
@@ -987,6 +992,13 @@ match_rsm(Now, #rsm_set{before = ID}) when is_binary(ID), ID /= <<"">> ->
     Now < Now1;
 match_rsm(_Now, _) ->
     true.
+
+might_expose_jid(Query,
+		 {groupchat, Role, #state{config = #config{anonymous = true}}})
+  when Role /= moderator ->
+    proplists:is_defined(with, Query);
+might_expose_jid(_Query, _MsgType) ->
+    false.
 
 get_jids(undefined) ->
     [];

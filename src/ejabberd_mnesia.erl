@@ -68,6 +68,8 @@ init([]) ->
 		_ -> ok
 	    end,
 	    ejabberd:start_app(mnesia, permanent),
+	    ?DEBUG("Waiting for Mnesia tables synchronization...", []),
+	    mnesia:wait_for_tables(mnesia:system_info(local_tables), infinity),
 	    Schema = read_schema_file(),
 	    {ok, #state{schema = Schema}};
 	false ->
