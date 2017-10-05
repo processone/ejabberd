@@ -178,10 +178,15 @@ check_docroot_defined(DocRoot, Host) ->
     end.
 
 check_docroot_exists(DocRoot) ->
-    case file:read_file_info(DocRoot) of
-      {error, Reason} ->
-	  throw({error_access_docroot, DocRoot, Reason});
-      {ok, FI} -> FI
+    case filelib:ensure_dir(filename:join(DocRoot, "foo")) of
+	ok ->
+	    case file:read_file_info(DocRoot) of
+		{error, Reason} ->
+		    throw({error_access_docroot, DocRoot, Reason});
+		{ok, FI} -> FI
+	    end;
+	{error, Reason} ->
+	    throw({error_access_docroot, DocRoot, Reason})
     end.
 
 check_docroot_is_dir(DRInfo, DocRoot) ->
@@ -297,17 +302,19 @@ code_change(_OldVsn, State, _Extra) ->
 %% Returns the page to be sent back to the client and/or HTTP status code.
 process(LocalPath, #request{host = Host, auth = Auth, headers = RHeaders} = Request) ->
     ?DEBUG("Requested ~p", [LocalPath]),
-    try gen_server:call(get_proc_name(Host), {serve, LocalPath, Auth, RHeaders}) of
-	{FileSize, Code, Headers, Contents} ->
-	    add_to_log(FileSize, Code, Request),
-	    {Code, Headers, Contents}
-    catch
-	exit:{noproc, _} ->
-	    ?ERROR_MSG("Received an HTTP request with Host ~p, but couldn't find the related "
-		       "ejabberd virtual host", [Request#request.host]),
+    try
+	VHost = ejabberd_router:host_of_route(Host),
+	{FileSize, Code, Headers, Contents} =
+	    gen_server:call(get_proc_name(VHost),
+			    {serve, LocalPath, Auth, RHeaders}),
+	add_to_log(FileSize, Code, Request#request{host = VHost}),
+	{Code, Headers, Contents}
+    catch _:{Why, _} when Why == noproc; Why == invalid_domain; Why == unregistered_route ->
+	    ?ERROR_MSG("Received an HTTP request with Host: ~s, "
+		       "but couldn't find the related "
+		       "ejabberd virtual host", [Host]),
 	    ejabberd_web:error(not_found)
     end.
-
 
 serve(LocalPath, Auth, DocRoot, DirectoryIndices, CustomHeaders, DefaultContentType,
     ContentTypes, UserAccess, IfModifiedSince) ->
