@@ -313,7 +313,9 @@ process(LocalPath, #request{host = Host, auth = Auth, headers = RHeaders} = Requ
 	    ?DEBUG("Received an HTTP request with Host: ~s, "
 		   "but couldn't find the related "
 		   "ejabberd virtual host", [Host]),
-	    ?HTTP_ERR_FILE_NOT_FOUND
+	    {FileSize1, Code1, Headers1, Contents1} = ?HTTP_ERR_FILE_NOT_FOUND,
+	    add_to_log(FileSize1, Code1, Request),
+	    {Code1, Headers1, Contents1}
     end.
 
 serve(LocalPath, Auth, DocRoot, DirectoryIndices, CustomHeaders, DefaultContentType,
