@@ -310,10 +310,10 @@ process(LocalPath, #request{host = Host, auth = Auth, headers = RHeaders} = Requ
 	add_to_log(FileSize, Code, Request#request{host = VHost}),
 	{Code, Headers, Contents}
     catch _:{Why, _} when Why == noproc; Why == invalid_domain; Why == unregistered_route ->
-	    ?ERROR_MSG("Received an HTTP request with Host: ~s, "
-		       "but couldn't find the related "
-		       "ejabberd virtual host", [Host]),
-	    ejabberd_web:error(not_found)
+	    ?DEBUG("Received an HTTP request with Host: ~s, "
+		   "but couldn't find the related "
+		   "ejabberd virtual host", [Host]),
+	    ?HTTP_ERR_FILE_NOT_FOUND
     end.
 
 serve(LocalPath, Auth, DocRoot, DirectoryIndices, CustomHeaders, DefaultContentType,
