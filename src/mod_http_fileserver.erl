@@ -436,7 +436,7 @@ add_to_log(File, FileSize, Code, Request) ->
     IP = ip_to_string(element(1, Request#request.ip)),
     Path = join(Request#request.path, "/"),
     Query = case stringify_query(Request#request.q) of
-		[] ->
+		<<"">> ->
 		    "";
 		String ->
 		    [$? | String]
@@ -456,11 +456,13 @@ add_to_log(File, FileSize, Code, Request) ->
                FileSize, Referer, UserAgent]).
 
 stringify_query(Q) ->
-    join(
-	lists:map(fun(E) ->
-		lists:concat([binary_to_list(element(1, E)), "=", binary_to_list(element(2, E))])
-	    end, Q),
-	"&").
+    stringify_query(Q, []).
+stringify_query([], Res) ->
+    join(lists:reverse(Res), "&");
+stringify_query([{nokey, _B} | Q], Res) ->
+    stringify_query(Q, Res);
+stringify_query([{A, B} | Q], Res) ->
+    stringify_query(Q, [join([A,B], "=") | Res]).
 
 find_header(Header, Headers, Default) ->
     case lists:keysearch(Header, 1, Headers) of
