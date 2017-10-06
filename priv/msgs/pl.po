@@ -14,7 +14,7 @@ msgstr ""
 "X-Additional-Translator: Marcin Owsiany\n"
 "X-Additional-Translator: Andrzej Smyk\n"
 "X-Additional-Translator: Mateusz Gajewski\n"
-"X-Generator: Poedit 1.8.6\n"
+"X-Generator: Poedit 2.0.4\n"
 
 #: mod_muc_log:413 mod_muc_log:752
 msgid " has set the subject to: "
@@ -156,11 +156,11 @@ msgstr "Sierpień"
 
 #: mod_pubsub:1842
 msgid "Automatic node creation is not enabled"
-msgstr ""
+msgstr "Automatyczne tworzenie węzłów nie zostało włączone"
 
 #: ejabberd_web_admin:1867 mod_configure:148 mod_configure:617
 msgid "Backup"
-msgstr "Wykonaj kopie"
+msgstr "Kopia zapasowa"
 
 #: mod_configure:584
 msgid "Backup Management"
@@ -189,11 +189,11 @@ msgstr "Data urodzenia"
 
 #: mod_legacy_auth:102
 msgid "Both the username and the resource are required"
-msgstr ""
+msgstr "Wymagana jest zarówno nazwa użytkownika jak i zasób"
 
 #: mod_proxy65_service:226
 msgid "Bytestream already activated"
-msgstr ""
+msgstr "Strumień danych został już aktywowany"
 
 #: ejabberd_captcha:135
 msgid "CAPTCHA web page"
@@ -205,11 +205,11 @@ msgstr "Czas CPU:"
 
 #: mod_privacy:334
 msgid "Cannot remove active list"
-msgstr ""
+msgstr "Nie można usunąć aktywnej listy"
 
 #: mod_privacy:341
 msgid "Cannot remove default list"
-msgstr ""
+msgstr "Nie można usunąć domyślnej listy"
 
 #: ejabberd_web_admin:1679 mod_register_web:194 mod_register_web:353
 #: mod_register_web:361 mod_register_web:386
@@ -221,14 +221,12 @@ msgid "Change User Password"
 msgstr "Zmień hasło użytkownika"
 
 #: mod_register:295
-#, fuzzy
 msgid "Changing password is not allowed"
-msgstr "Te znaki są niedozwolone:"
+msgstr "Zmiana hasła jest niedopuszczalna"
 
 #: mod_muc_room:2764
-#, fuzzy
 msgid "Changing role/affiliation is not allowed"
-msgstr "Te znaki są niedozwolone:"
+msgstr "Zmiana roli jest niedopuszczalna"
 
 #: mod_register_web:239
 msgid "Characters not allowed:"
@@ -329,9 +327,8 @@ msgstr "Tabele bazy na ~p"
 #: mod_pubsub:3598 mod_pubsub:3604 mod_pubsub:3607 mod_vcard:226
 #: node_flat_sql:801 nodetree_tree_sql:128 nodetree_tree_sql:142
 #: nodetree_tree_sql:257
-#, fuzzy
 msgid "Database failure"
-msgstr "Baza danych"
+msgstr "Błąd bazy danych"
 
 #: mod_muc_log:484
 msgid "December"
@@ -387,7 +384,7 @@ msgstr "Wykonaj kopie do pliku tekstowego"
 
 #: mod_roster:180
 msgid "Duplicated groups are not allowed by RFC6121"
-msgstr ""
+msgstr "Duplikaty grup nie są dozwolone"
 
 #: mod_configure:1776
 msgid "Edit Properties"
@@ -395,7 +392,7 @@ msgstr "Edytuj właściwości"
 
 #: mod_muc_room:3881
 msgid "Either approve or decline the voice request."
-msgstr "Zatwierdź lub odrzuć żądanie głosowe"
+msgstr "Zatwierdź lub odrzuć żądanie głosowe."
 
 #: ejabberd_web_admin:1953
 msgid "Elements"
@@ -407,9 +404,8 @@ msgid "Email"
 msgstr "Email"
 
 #: mod_register:292
-#, fuzzy
 msgid "Empty password"
-msgstr "hasło to:"
+msgstr "Puste hasło"
 
 #: mod_muc_log:1055
 msgid "Enable logging"
@@ -417,7 +413,7 @@ msgstr "Włącz logowanie"
 
 #: mod_push:252
 msgid "Enabling push without 'node' attribute is not supported"
-msgstr ""
+msgstr "Aktywacja 'push' bez węzła jest nie dostępna"
 
 #: mod_irc:834
 msgid "Encoding for server ~b"
@@ -506,15 +502,15 @@ msgstr ""
 
 #: mod_delegation:275
 msgid "External component failure"
-msgstr ""
+msgstr "Błąd zewnętrznego komponentu"
 
 #: mod_delegation:283
 msgid "External component timeout"
-msgstr ""
+msgstr "Upłynął limit czasu zewnętrznego komponentu"
 
 #: mod_proxy65_service:218
 msgid "Failed to activate bytestream"
-msgstr ""
+msgstr "Nie udało się aktywować strumienia danych"
 
 #: mod_muc_room:910
 msgid "Failed to extract JID from your voice request approval"
@@ -522,19 +518,19 @@ msgstr "Nie udało się wydobyć JID-u z twojego żądania"
 
 #: mod_delegation:257
 msgid "Failed to map delegated namespace to external component"
-msgstr ""
+msgstr "Nie udało się znaleźć zewnętrznego komponentu na podstawie nazwy"
 
 #: mod_http_upload:602
 msgid "Failed to parse HTTP response"
-msgstr ""
+msgstr "Nie udało się zanalizować odpowiedzi HTTP"
 
 #: mod_irc:426
 msgid "Failed to parse chanserv"
-msgstr ""
+msgstr "Nie udało się zanalizować odpowiedzi serwera"
 
 #: mod_muc_room:3297
 msgid "Failed to process option '~s'"
-msgstr ""
+msgstr "Nie udało się przetworzyć opcji '~s'"
 
 #: mod_vcard_ldap:332 mod_vcard_ldap:345 mod_vcard_mnesia:103
 #: mod_vcard_mnesia:117 mod_vcard_sql:158 mod_vcard_sql:172
@@ -547,7 +543,7 @@ msgstr "Luty"
 
 #: mod_http_upload:555
 msgid "File larger than ~w bytes"
-msgstr ""
+msgstr "Plik jest większy niż ~w bajtów"
 
 #: mod_vcard:437
 msgid ""
@@ -595,9 +591,8 @@ msgid "Get User Statistics"
 msgstr "Pobierz statystyki użytkownika"
 
 #: mod_vcard_ldap:330 mod_vcard_ldap:343
-#, fuzzy
 msgid "Given Name"
-msgstr "Drugie imię"
+msgstr "Imię"
 
 #: mod_shared_roster:923
 msgid "Group "
@@ -613,7 +608,7 @@ msgstr "Host"
 
 #: mod_s2s_dialback:325
 msgid "Host unknown"
-msgstr ""
+msgstr "Nieznany host"
 
 #: ejabberd_web_admin:2463
 msgid "IP"
@@ -636,9 +631,8 @@ msgid "IRC channel (don't put the first #)"
 msgstr "Kanał IRC (nie używaj #)"
 
 #: mod_irc:417
-#, fuzzy
 msgid "IRC connection not found"
-msgstr "Węzeł nie został znaleziony"
+msgstr "Połączenie IRC nie zostało znalezione"
 
 #: mod_irc:673
 msgid "IRC server"
@@ -698,19 +692,19 @@ msgstr "Importuj dane użytkowników z pliku w formacie PIEFXIS (XEP-0227):"
 
 #: ejabberd_web_admin:2111
 msgid "Import users data from jabberd14 spool directory:"
-msgstr "Importuj użytkowników z katalogu roboczego serwera jabberd14"
+msgstr "Importuj użytkowników z katalogu roboczego serwera jabberd14:"
 
 #: xmpp_stream_in:983
 msgid "Improper 'from' attribute"
-msgstr ""
+msgstr "Nieprawidłowy atrybut 'from'"
 
 #: xmpp_stream_in:477
 msgid "Improper 'to' attribute"
-msgstr ""
+msgstr "Nieprawidłowy atrybut 'to'"
 
 #: ejabberd_service:189
 msgid "Improper domain part of 'from' attribute"
-msgstr ""
+msgstr "Nieprawidłowa domena atrybutu 'from'"
 
 #: mod_muc_room:260
 msgid "Improper message type"
@@ -722,12 +716,11 @@ msgstr "Przychodzące połączenia s2s:"
 
 #: mod_muc_room:3669 mod_register:187
 msgid "Incorrect CAPTCHA submit"
-msgstr ""
+msgstr "Nieprawidłowa odpowiedz dla CAPTCHA"
 
 #: mod_muc:772 mod_muc_room:3052 mod_pubsub:1194 mod_register:183 mod_vcard:256
-#, fuzzy
 msgid "Incorrect data form"
-msgstr "Nieprawidłowe hasło"
+msgstr "Nieprawidłowe dane w formatce"
 
 #: mod_muc_room:1943 mod_register:300 mod_register:350
 msgid "Incorrect password"
@@ -735,41 +728,40 @@ msgstr "Nieprawidłowe hasło"
 
 #: mod_irc:585
 msgid "Incorrect value in data form"
-msgstr ""
+msgstr "Nieprawidłowe dane w formatce"
 
 #: mod_adhoc:276
 msgid "Incorrect value of 'action' attribute"
-msgstr ""
+msgstr "Nieprawidłowe dane atrybutu 'action'"
 
 #: mod_configure:1806
 msgid "Incorrect value of 'action' in data form"
-msgstr ""
+msgstr "Nieprawidłowe dane atrybutu 'action'"
 
 #: mod_configure:1335 mod_configure:1367 mod_configure:1399 mod_configure:1419
 #: mod_configure:1439
 msgid "Incorrect value of 'path' in data form"
-msgstr ""
+msgstr "Nieprawidłowe dane atrybutu 'path'"
 
 #: mod_irc:331
 msgid "Incorrect value of 'type' attribute"
-msgstr ""
+msgstr "Nieprawidłowe dane atrybutu 'type'"
 
 #: mod_privilege:100
 msgid "Insufficient privilege"
-msgstr ""
+msgstr "Niewystarczające uprawnienia"
 
 #: mod_privilege:286
 msgid "Invalid 'from' attribute in forwarded message"
-msgstr ""
+msgstr "Nieprawidłowy atrybut 'from' w przesyłanej dalej wiadomości"
 
 #: mod_privilege:300
 msgid "Invalid <forwarded/> element"
-msgstr ""
+msgstr "Nieprawidłowy element <forwarded/>"
 
 #: mod_muc_room:3926
-#, fuzzy
 msgid "Invitations are not allowed in this conference"
-msgstr "Głosowe żądania są wyłączone w tym pokoju"
+msgstr "Zaproszenia są wyłączone w tym pokoju"
 
 #: mod_muc_room:233 mod_muc_room:375 mod_muc_room:1046
 msgid ""
@@ -891,9 +883,8 @@ msgid "Make room public searchable"
 msgstr "Pozwól wyszukiwać pokój"
 
 #: mod_register:317
-#, fuzzy
 msgid "Malformed username"
-msgstr "Nazwa użytkownika IRC"
+msgstr "Nieprawidłowa nazwa użytkownika"
 
 #: mod_muc_log:475
 msgid "March"
@@ -934,7 +925,7 @@ msgstr "Treść wiadomości"
 
 #: mod_privilege:291
 msgid "Message not found in forwarded payload"
-msgstr ""
+msgstr "Nie znaleziona wiadomości w przesyłanych dalej danych"
 
 #: mod_vcard_ldap:331 mod_vcard_ldap:344 mod_vcard_mnesia:102
 #: mod_vcard_mnesia:116 mod_vcard_sql:157 mod_vcard_sql:171
@@ -943,15 +934,15 @@ msgstr "Drugie imię"
 
 #: mod_irc:704
 msgid "Missing 'channel' or 'server' in the data form"
-msgstr ""
+msgstr "Brakujące dane dla 'channel' lub 'server'"
 
 #: xmpp_stream_in:990
 msgid "Missing 'from' attribute"
-msgstr ""
+msgstr "Brakujący atrybut 'from'"
 
 #: xmpp_stream_in:472 xmpp_stream_in:993
 msgid "Missing 'to' attribute"
-msgstr ""
+msgstr "Brakujący atrybut 'to'"
 
 #: mod_muc_room:2536 mod_muc_room:3721 mod_muc_room:3765 mod_muc_room:3798
 msgid "Moderator privileges required"
@@ -967,7 +958,7 @@ msgstr "Moduł"
 
 #: gen_iq_handler:153
 msgid "Module failed to handle the query"
-msgstr ""
+msgstr "Moduł nie był wstanie przetworzyć zapytania"
 
 #: ejabberd_web_admin:1885 mod_configure:582 mod_configure:595
 msgid "Modules"
@@ -991,7 +982,7 @@ msgstr "Multicast"
 
 #: mod_roster:195
 msgid "Multiple <item/> elements are not allowed by RFC6121"
-msgstr ""
+msgstr "Dopuszczalny jest wyłącznie pojedynczy <item/> "
 
 #: ejabberd_web_admin:1951 mod_vcard_mnesia:101 mod_vcard_mnesia:115
 #: mod_vcard_sql:156 mod_vcard_sql:170
@@ -1004,11 +995,11 @@ msgstr "Nazwa:"
 
 #: mod_muc_room:2696
 msgid "Neither 'jid' nor 'nick' attribute found"
-msgstr ""
+msgstr "Brak zarówno atrybutu 'jid' jak i 'nick'"
 
 #: mod_muc_room:2518 mod_muc_room:2701
 msgid "Neither 'role' nor 'affiliation' attribute found"
-msgstr ""
+msgstr "Brak zarówno atrybutu 'role' jak i 'affiliation'"
 
 #: ejabberd_web_admin:1506 ejabberd_web_admin:1687 mod_configure:1629
 msgid "Never"
@@ -1033,41 +1024,40 @@ msgstr "Nie ma nicka ~s w tym pokoju"
 
 #: mod_configure:1496
 msgid "No 'access' found in data form"
-msgstr ""
+msgstr "Brak wartości dla 'access'"
 
 #: mod_configure:1455
 msgid "No 'acls' found in data form"
-msgstr ""
+msgstr "Brak wartości dla 'acls'"
 
 #: mod_muc_room:3075
 msgid "No 'affiliation' attribute found"
-msgstr ""
+msgstr "Brak wartości dla 'access'"
 
 #: mod_muc_room:2505
-#, fuzzy
 msgid "No 'item' element found"
-msgstr "Węzeł nie został znaleziony"
+msgstr "Brak wartości dla 'item'"
 
 #: mod_configure:1280
 msgid "No 'modules' found in data form"
-msgstr ""
+msgstr "Brak wartości dla 'modules'"
 
 #: mod_configure:1799
 msgid "No 'password' found in data form"
-msgstr ""
+msgstr "Brak wartości dla 'password'"
 
 #: mod_register:148
 msgid "No 'password' found in this query"
-msgstr ""
+msgstr "Brak wartości dla 'password'"
 
 #: mod_configure:1319 mod_configure:1350 mod_configure:1382 mod_configure:1413
 #: mod_configure:1433
 msgid "No 'path' found in data form"
-msgstr ""
+msgstr "Brak wartości dla 'path'"
 
 #: mod_muc_room:3922
 msgid "No 'to' attribute found in the invitation"
-msgstr ""
+msgstr "Brak wartości dla 'to' w zaproszeniu"
 
 #: ejabberd_web_admin:1767
 msgid "No Data"
@@ -1075,78 +1065,75 @@ msgstr "Brak danych"
 
 #: ejabberd_local:181
 msgid "No available resource found"
-msgstr ""
+msgstr "Brak dostępnych zasobów"
 
 #: mod_announce:575
 msgid "No body provided for announce message"
 msgstr "Brak treści powiadomienia"
 
 #: mod_irc:335 mod_pubsub:1183 mod_pubsub:3289
-#, fuzzy
 msgid "No data form found"
-msgstr "Węzeł nie został znaleziony"
+msgstr "Brak danych dla formatki"
 
 #: mod_disco:224 mod_vcard:282
 msgid "No features available"
-msgstr ""
+msgstr "Brak dostępnych funkcji"
 
 #: mod_adhoc:239
 msgid "No hook has processed this command"
-msgstr ""
+msgstr "Żadna funkcja nie przetworzyła tej komendy"
 
 #: mod_last:218
 msgid "No info about last activity found"
-msgstr ""
+msgstr "Nie znaleziono informacji o ostatniej aktywności"
 
 #: mod_blocking:99
 msgid "No items found in this query"
-msgstr ""
+msgstr "Nie znaleziono żadnych pozycji w tym zapytaniu"
 
 #: ejabberd_local:90 ejabberd_sm:863 mod_blocking:92 mod_blocking:110
 #: mod_http_upload:513 mod_muc:482 mod_muc:534 mod_muc:556 mod_muc:580
 #: mod_offline:303 mod_privacy:168 mod_privacy:285 mod_roster:207
 msgid "No module is handling this query"
-msgstr ""
+msgstr "Żaden moduł nie obsługuje tego zapytania"
 
 #: mod_pubsub:1541
 msgid "No node specified"
-msgstr ""
+msgstr "Nie podano węzła"
 
 #: mod_pubsub:1426
 msgid "No pending subscriptions found"
-msgstr ""
+msgstr "Nie ma żadnych oczekujących subskrypcji"
 
 #: mod_privacy:201 mod_privacy:295 mod_privacy:311 mod_privacy:344
 msgid "No privacy list with this name found"
-msgstr ""
+msgstr "Nie znaleziona żadnych list prywatności z tą nazwą"
 
 #: mod_private:96
 msgid "No private data found in this query"
-msgstr ""
+msgstr "Nie znaleziono danych prywatnych w tym zapytaniu"
 
 #: mod_configure:869 mod_configure:908 mod_configure:1222 mod_configure:1254
 #: mod_configure:1275 mod_configure:1314 mod_configure:1345 mod_configure:1377
 #: mod_configure:1408 mod_configure:1428 mod_stats:93
-#, fuzzy
 msgid "No running node found"
-msgstr "Węzeł nie został znaleziony"
+msgstr "Brak uruchomionych węzłów"
 
 #: mod_disco:252 mod_vcard:265
 msgid "No services available"
-msgstr ""
+msgstr "Usługa nie jest dostępna"
 
 #: mod_stats:101
 msgid "No statistics found for this item"
-msgstr ""
+msgstr "Nie znaleziono statystyk dla tego elementu"
 
 #: nodetree_dag:72 nodetree_tree:181 nodetree_tree_sql:255
 msgid "Node already exists"
-msgstr ""
+msgstr "Węzeł już istnieje"
 
 #: nodetree_tree_sql:99
-#, fuzzy
 msgid "Node index not found"
-msgstr "Węzeł nie został znaleziony"
+msgstr "Indeks węzła już istnieje"
 
 #: ejabberd_web_admin:1046 mod_irc:303 mod_irc:366 mod_muc:532 mod_muc:680
 #: nodetree_dag:78 nodetree_dag:102 nodetree_dag:118 nodetree_dag:142
@@ -1161,7 +1148,7 @@ msgstr "Węzeł ~p"
 
 #: mod_vcard:385
 msgid "Nodeprep has failed"
-msgstr ""
+msgstr "Weryfikacja nazwy nie powiodła się"
 
 #: ejabberd_web_admin:1837
 msgid "Nodes"
@@ -1178,7 +1165,7 @@ msgstr "Nie znaleziono"
 
 #: mod_disco:296 mod_disco:370 mod_last:159
 msgid "Not subscribed"
-msgstr ""
+msgstr "Nie zasubskrybowano"
 
 #: mod_muc_log:483
 msgid "November"
@@ -1229,11 +1216,11 @@ msgstr "Użytkownicy zalogowani:"
 
 #: mod_carboncopy:141
 msgid "Only <enable/> or <disable/> tags are allowed"
-msgstr ""
+msgstr "Dozwolone są wyłącznie elementy <enable/> lub <disable/>"
 
 #: mod_privacy:154
 msgid "Only <list/> element is allowed in this query"
-msgstr ""
+msgstr "Wyłącznie elementy <item/> są dozwolone w tym zapytaniu"
 
 #: mod_mam:379
 msgid "Only members may query archives of this room"
@@ -1299,11 +1286,11 @@ msgstr "Pakiet"
 
 #: mod_irc:578
 msgid "Parse error"
-msgstr ""
+msgstr "Only <enable/> or <disable/> tags are allowed"
 
 #: mod_configure:1299 mod_configure:1468 mod_configure:1513
 msgid "Parse failed"
-msgstr ""
+msgstr "Błąd parsowania"
 
 #: ejabberd_oauth:431 ejabberd_web_admin:1435 mod_configure:1126
 #: mod_configure:1173 mod_configure:1602 mod_configure:1781 mod_muc_log:1036
@@ -1353,7 +1340,7 @@ msgstr "Ping"
 
 #: mod_ping:180
 msgid "Ping query is incorrect"
-msgstr ""
+msgstr "Żądanie 'ping' nie jest prawidłowe"
 
 #: ejabberd_web_admin:1983
 msgid ""
@@ -1383,7 +1370,7 @@ msgstr "Port ~b"
 
 #: mod_roster:173
 msgid "Possessing 'ask' attribute is not allowed by RFC6121"
-msgstr ""
+msgstr "Atrybut 'ask' nie jest dozwolony"
 
 #: ejabberd_web_admin:2464
 msgid "Protocol"
@@ -1399,7 +1386,7 @@ msgstr "PubSub"
 
 #: node_dag:81
 msgid "Publishing items to collection node is not allowed"
-msgstr ""
+msgstr "Publikacja danych w węzłach kolekcji nie jest dozwolona"
 
 #: mod_muc_room:462
 msgid "Queries to the conference members are not allowed in this room"
@@ -1408,7 +1395,7 @@ msgstr "Informacje o członkach konferencji nie są dostępne w tym pokoju"
 #: mod_blocking:85 mod_disco:325 mod_disco:393 mod_offline:270 mod_privacy:146
 #: mod_private:118 mod_roster:163 mod_sic:90
 msgid "Query to another users is forbidden"
-msgstr ""
+msgstr "Zapytanie do innych użytkowników nie są dozwolone"
 
 #: mod_configure:889
 msgid "RAM and disc copy"
@@ -1539,7 +1526,7 @@ msgstr "Lista kontaktów"
 
 #: mod_roster:334
 msgid "Roster module has failed"
-msgstr ""
+msgstr "Moduł list kontaktów zgłosił błąd"
 
 #: mod_roster:968
 msgid "Roster of "
@@ -1555,7 +1542,7 @@ msgstr "Uruchomione węzły"
 
 #: xmpp_stream_in:541 xmpp_stream_in:549
 msgid "SASL negotiation is not allowed in this state"
-msgstr ""
+msgstr "Negocjacja SASL nie jest dopuszczalna w typ stanie"
 
 #: mod_muc_log:468
 msgid "Saturday"
@@ -1563,12 +1550,11 @@ msgstr "Sobota"
 
 #: mod_irc:582
 msgid "Scan error"
-msgstr ""
+msgstr "Błąd skanowania"
 
 #: mod_configure:1303 mod_configure:1472 mod_configure:1517
-#, fuzzy
 msgid "Scan failed"
-msgstr "Captcha jest poprawna."
+msgstr "Błąd skanowania"
 
 #: ejabberd_web_admin:2282
 msgid "Script check"
@@ -1606,11 +1592,11 @@ msgstr "Wrzesień"
 
 #: mod_irc_connection:648
 msgid "Server Connect Failed"
-msgstr ""
+msgstr "Połączenie z serwerem nie było możliwe"
 
 #: ejabberd_s2s:369
 msgid "Server connections to local subdomains are forbidden"
-msgstr ""
+msgstr "Połączenie serwerowe do lokalnej domeny nie jest dopuszczalne"
 
 #: mod_irc:842
 msgid "Server ~b"
@@ -1726,7 +1712,7 @@ msgstr "Subskrypcja"
 
 #: mod_muc_room:3708
 msgid "Subscriptions are not allowed"
-msgstr ""
+msgstr "Subskrypcje nie są dozwolone"
 
 #: mod_muc_log:469
 msgid "Sunday"
@@ -1746,15 +1732,15 @@ msgstr "Captcha jest poprawna."
 
 #: mod_muc_room:653 mod_muc_room:3672 mod_register:190
 msgid "The CAPTCHA verification has failed"
-msgstr "Weryfikacja CAPTCHA nie powiodła się."
+msgstr "Weryfikacja CAPTCHA nie powiodła się"
 
 #: mod_muc_room:302
 msgid "The feature requested is not supported by the conference"
-msgstr ""
+msgstr "Żądana czynność nie jest obsługiwana przez konferencje"
 
 #: mod_register:308 mod_register:366
 msgid "The password contains unacceptable characters"
-msgstr ""
+msgstr "Hasło zawiera niedopuszczalne znaki"
 
 #: mod_register:311 mod_register:370
 msgid "The password is too weak"
@@ -1766,29 +1752,31 @@ msgstr "Hasło do Twojego konta zostało zmienione."
 
 #: mod_register:160 mod_vcard:219
 msgid "The query is only allowed from local users"
-msgstr ""
+msgstr "To żądanie jest dopuszczalne wyłącznie dla lokalnych użytkowników"
 
 #: mod_roster:203
 msgid "The query must not contain <item/> elements"
-msgstr ""
+msgstr "Żądanie nie może zawierać elementów <item/>"
 
 #: mod_privacy:280
 msgid ""
 "The stanza MUST contain only one <active/> element, one <default/> element, "
 "or one <list/> element"
 msgstr ""
+"Żądanie może zawierać wyłącznie jeden z elementów <active/>, <default/> lub "
+"<list/>"
 
 #: mod_register_web:146
 msgid "There was an error changing the password: "
-msgstr "Podczas próby zmiany hasła wystąpił błąd:"
+msgstr "Podczas próby zmiany hasła wystąpił błąd: "
 
 #: mod_register_web:116
 msgid "There was an error creating the account: "
-msgstr "Wystąpił błąd podczas tworzenia konta:"
+msgstr "Wystąpił błąd podczas tworzenia konta: "
 
 #: mod_register_web:130
 msgid "There was an error deleting the account: "
-msgstr "Podczas usuwania konta wystąpił błąd:"
+msgstr "Podczas usuwania konta wystąpił błąd: "
 
 #: mod_register_web:236
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
@@ -1832,7 +1820,7 @@ msgstr "Do"
 
 #: mod_register:215
 msgid "To register, visit ~s"
-msgstr ""
+msgstr "Żeby się zarejestrować odwiedź ~s"
 
 #: mod_configure:709
 msgid "To ~s"
@@ -1840,41 +1828,39 @@ msgstr "Do ~s"
 
 #: ejabberd_oauth:439
 msgid "Token TTL"
-msgstr ""
+msgstr "Limit czasu tokenu"
 
 #: xmpp_stream_in:463
 msgid "Too long value of 'xml:lang' attribute"
-msgstr ""
+msgstr "Zbyt wiele atrybutów 'xml:lang'"
 
 #: mod_muc_room:2541 mod_muc_room:3081
 msgid "Too many <item/> elements"
-msgstr ""
+msgstr "Zbyt wiele elementów <item/>"
 
 #: mod_privacy:164
 msgid "Too many <list/> elements"
-msgstr ""
+msgstr "Zbyt wiele elementów <list/>"
 
 #: mod_muc_room:1924 mod_register:240
 msgid "Too many CAPTCHA requests"
 msgstr "Za dużo żądań CAPTCHA"
 
 #: mod_proxy65_service:223
-#, fuzzy
 msgid "Too many active bytestreams"
-msgstr "Zbyt wiele niepotwierdzonych pakietów"
+msgstr "Zbyt wiele strumieni danych"
 
 #: mod_stream_mgmt:205
 msgid "Too many unacked stanzas"
 msgstr "Zbyt wiele niepotwierdzonych pakietów"
 
 #: mod_muc_room:1802
-#, fuzzy
 msgid "Too many users in this conference"
-msgstr "Głosowe żądania są wyłączone w tym pokoju"
+msgstr "Zbyt wielu użytkowników konferencji"
 
 #: mod_register:355
 msgid "Too many users registered"
-msgstr ""
+msgstr "Zbyt wielu zarejestrowanych użytkowników"
 
 #: mod_muc_admin:368
 msgid "Total rooms"
@@ -1910,7 +1896,7 @@ msgstr "Nie można wygenerować CAPTCHA"
 
 #: ejabberd_service:120
 msgid "Unable to register route on existing local domain"
-msgstr ""
+msgstr "Nie można zarejestrować trasy dla lokalnej domeny"
 
 #: ejabberd_web_admin:209 ejabberd_web_admin:221 ejabberd_web_admin:241
 #: ejabberd_web_admin:253
@@ -1919,7 +1905,7 @@ msgstr "Nie autoryzowano"
 
 #: mod_announce:485 mod_configure:830 mod_configure:1758
 msgid "Unexpected action"
-msgstr ""
+msgstr "Nieoczekiwana akcja"
 
 #: mod_register_web:488
 msgid "Unregister"
@@ -1931,11 +1917,11 @@ msgstr "Usuń konto Jabber"
 
 #: mod_mam:526
 msgid "Unsupported <index/> element"
-msgstr ""
+msgstr "Nieobsługiwany element <index/>"
 
 #: mod_mix:119
 msgid "Unsupported MIX query"
-msgstr ""
+msgstr "Nieobsługiwane żądanie MIX"
 
 #: ejabberd_web_admin:1872 ejabberd_web_admin:2285
 msgid "Update"
@@ -1966,9 +1952,8 @@ msgid "Uptime:"
 msgstr "Czas pracy:"
 
 #: xmpp_stream_out:533
-#, fuzzy
 msgid "Use of STARTTLS forbidden"
-msgstr "Wymagane jest użycie STARTTLS"
+msgstr "Użycie STARTTLS jest zabronione"
 
 #: xmpp_stream_in:573 xmpp_stream_out:527 xmpp_stream_out:603
 msgid "Use of STARTTLS required"
@@ -1981,7 +1966,7 @@ msgstr "Użytkownik"
 
 #: ejabberd_oauth:428
 msgid "User (jid)"
-msgstr ""
+msgstr "Użytkownik (jid)"
 
 #: mod_configure:308 mod_configure:505
 msgid "User Management"
@@ -1989,20 +1974,19 @@ msgstr "Zarządzanie użytkownikami"
 
 #: mod_register:345
 msgid "User already exists"
-msgstr ""
+msgstr "Użytkownik już istnieje"
 
 #: mod_echo:138
 msgid "User part of JID in 'from' is empty"
-msgstr ""
+msgstr "Część użytkownika w 'from' jest pusta"
 
 #: ejabberd_sm:193 ejabberd_sm:662 ejabberd_sm:687 mod_sic:106
-#, fuzzy
 msgid "User session not found"
-msgstr "Węzeł nie został znaleziony"
+msgstr "Sesja użytkownika nie została znaleziona"
 
 #: mod_stream_mgmt:561 mod_stream_mgmt:583
 msgid "User session terminated"
-msgstr ""
+msgstr "Sesja użytkownika została zakończona"
 
 #: ejabberd_web_admin:1700
 msgid "User ~s"
@@ -2031,7 +2015,7 @@ msgstr "Potwierdź"
 #: mod_carboncopy:144 mod_irc:345 mod_muc_room:3662 mod_muc_room:3802
 #: mod_pubsub:895 mod_push:249
 msgid "Value 'get' of 'type' attribute is not allowed"
-msgstr ""
+msgstr "Wartość 'get' dla atrybutu 'type' jest niedozwolona"
 
 #: mod_disco:159 mod_disco:175 mod_disco:279 mod_disco:346 mod_irc:270
 #: mod_irc:285 mod_irc:339 mod_last:118 mod_last:140 mod_muc:479 mod_muc:504
@@ -2040,20 +2024,20 @@ msgstr ""
 #: mod_pubsub:821 mod_pubsub:839 mod_pubsub:877 mod_sic:81 mod_sic:93
 #: mod_stats:55 mod_time:62 mod_vcard:198 mod_vcard:236 mod_version:62
 msgid "Value 'set' of 'type' attribute is not allowed"
-msgstr ""
+msgstr "Wartość 'set' dla atrybutu 'type' jest niedozwolona"
 
 #: pubsub_subscription:237 pubsub_subscription_sql:202
 msgid "Value of '~s' should be boolean"
-msgstr ""
+msgstr "Wartość '~s' powinna być typu logicznego"
 
 #: pubsub_subscription:215 pubsub_subscription_sql:180
 msgid "Value of '~s' should be datetime string"
-msgstr ""
+msgstr "Wartość '~s' powinna być typu daty"
 
 #: pubsub_subscription:209 pubsub_subscription:227 pubsub_subscription_sql:174
 #: pubsub_subscription_sql:192
 msgid "Value of '~s' should be integer"
-msgstr ""
+msgstr "Wartość '~s' powinna być liczbą"
 
 #: ejabberd_web_admin:950
 msgid "Virtual Hosts"
@@ -2089,7 +2073,7 @@ msgstr "Zostałeś wykluczony z tego pokoju"
 
 #: mod_muc_room:1811
 msgid "You have joined too many conferences"
-msgstr ""
+msgstr "Dołączyłeś do zbyt wielu konferencji"
 
 #: mod_muc:777
 msgid "You must fill in field \"Nickname\" in the form"
@@ -2112,9 +2096,8 @@ msgid "You need an x:data capable client to search"
 msgstr "Potrzebujesz klienta obsługującego x:data aby wyszukiwać"
 
 #: mod_pubsub:1504
-#, fuzzy
 msgid "You're not allowed to create nodes"
-msgstr "Wysyłanie prywatnych wiadomości jest zabronione"
+msgstr "Nie masz uprawnień do tworzenia węzłów"
 
 #: mod_register_web:111
 msgid "Your Jabber account was successfully created."
@@ -2126,7 +2109,7 @@ msgstr "Twoje konto zostało usunięte."
 
 #: ejabberd_c2s:651 ejabberd_c2s:811
 msgid "Your active privacy list has denied the routing of this stanza."
-msgstr "Aktualna lista prywatności zabrania przesyłania tej stanzy"
+msgstr "Aktualna lista prywatności zabrania przesyłania tej stanzy."
 
 #: mod_offline:576
 msgid ""
