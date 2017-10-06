@@ -41,7 +41,6 @@
 {"Enter path to text file","Introduza caminho para o ficheiro de texto"}.
 {"Erlang Jabber Server","Servidor Jabber em Erlang"}.
 {"Family Name","Apelido"}.
-{"Fill in fields to search for any matching Jabber User","Preencha os campos para procurar utilizadores Jabber coincidentes"}.
 {"From","De"}.
 {"From ~s","De ~s"}.
 {"Full Name","Nome completo"}.
@@ -53,12 +52,9 @@
 {"Import Users from Dir at ","Importar utilizadores a partir do directório em "}.
 {"Improper message type","Tipo de mensagem incorrecto"}.
 {"Incorrect password","Palavra-chave incorrecta"}.
-{"Invalid affiliation: ~s","Afiliação inválida: ~s"}.
-{"Invalid role: ~s","Papel inválido: ~s"}.
 {"IRC Username","Nome do utilizador de IRC"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Não é permitido enviar mensagens privadas do tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Impedir o envio de mensagens privadas para a sala"}.
-{"Jabber ID ~s is invalid","O Jabber ID ~s não é válido"}.
 {"Last Activity","Última actividade"}.
 {"Listened Ports at ","Portas em escuta em "}.
 {"List of modules to start","Lista de módulos a iniciar"}.
@@ -76,7 +72,6 @@
 {"Node not found","Nodo não encontrado"}.
 {"Nodes","Nodos"}.
 {"None","Nenhum"}.
-{"No resource provided","Não foi passado nenhum recurso"}.
 {"OK","OK"}.
 {"Online","Ligado"}.
 {"Online Users","Utilizadores ligados"}.
@@ -131,5 +126,4 @@
 {"Visitors are not allowed to send messages to all occupants","Os visitantes não podem enviar mensagens para todos os ocupantes"}.
 {"You have been banned from this room","Foi banido desta sala"}.
 {"You need an x:data capable client to configure mod_irc settings","É necessário um cliente com suporte de x:data para configurar as opções do mod_irc"}.
-{"You need an x:data capable client to configure room","É necessário um cliente com suporte de x:data para configurar a sala"}.
 {"You need an x:data capable client to search","É necessário um cliente com suporte de x:data para poder procurar"}.

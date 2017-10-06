@@ -13,9 +13,7 @@
 {"Administration","Administrasi"}.
 {"Administration of ","Administrasi"}.
 {"Administrator privileges required","Hak istimewa Administrator dibutuhkan"}.
-{"A friendly name for the node","Nama yang dikenal untuk node"}.
 {"All activity","Semua aktifitas"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","Izinkan ID Jabber ini untuk berlangganan pada node pubsub ini?"}.
 {"Allow users to change the subject","Perbolehkan pengguna untuk mengganti topik"}.
 {"Allow users to query other users","Perbolehkan pengguna untuk mengetahui pengguna lain"}.
 {"Allow users to send invites","Perbolehkan pengguna mengirimkan undangan"}.
@@ -24,7 +22,6 @@
 {"Allow visitors to send status text in presence updates","Izinkan pengunjung untuk mengirim teks status terbaru"}.
 {"All Users","Semua Pengguna"}.
 {"Announcements","Pengumuman"}.
-{"anyone","Siapapun"}.
 {"A password is required to enter this room","Diperlukan kata sandi untuk masuk ruangan ini"}.
 {"April","April"}.
 {"August","Agustus"}.
@@ -64,8 +61,6 @@
 {"Delete message of the day on all hosts","Hapus pesan harian pada semua host"}.
 {"Delete Selected","Hapus Yang Terpilih"}.
 {"Delete User","Hapus Pengguna"}.
-{"Deliver event notifications","Memberikan pemberitahuan acara"}.
-{"Deliver payloads with event notifications","Memberikan muatan dengan pemberitahuan acara"}.
 {"Description:","Keterangan:"}.
 {"Disc only copy","Hanya salinan dari disc"}.
 {"Displayed Groups:","Tampilkan Grup:"}.
@@ -100,7 +95,6 @@
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Ekspor data pengguna pada sebuah host ke berkas PIEFXIS (XEP-0227):"}.
 {"Family Name","Nama Keluarga (marga)"}.
 {"February","Februari"}.
-{"Fill in fields to search for any matching Jabber User","Isi kolom untuk mencari pengguna Jabber yang sama"}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)","Isi formulir untuk pencarian pengguna Jabber yang cocok (Tambahkan * ke mengakhiri pengisian untuk menyamakan kata)"}.
 {"Friday","Jumat"}.
 {"From","Dari"}.
@@ -132,8 +126,6 @@
 {"Import Users From jabberd14 Spool Files","Impor Pengguna Dari jabberd14 Spool File"}.
 {"Improper message type","Jenis pesan yang tidak benar"}.
 {"Incorrect password","Kata sandi salah"}.
-{"Invalid affiliation: ~s","Afiliasi tidak valid: ~s"}.
-{"Invalid role: ~s","Peran tidak valid: ~s"}.
 {"IP addresses","Alamat IP"}.
 {"IP","IP"}.
 {"IRC channel (don't put the first #)","Channel IRC (tidak perlu menempatkan # sebelumnya)"}.
@@ -148,7 +140,6 @@
 {"It is not allowed to send private messages to the conference","Hal ini tidak diperbolehkan untuk mengirim pesan pribadi ke konferensi"}.
 {"Jabber Account Registration","Pendaftaran Akun Jabber"}.
 {"Jabber ID","Jabber ID"}.
-{"Jabber ID ~s is invalid","Jabber ID ~s tidak valid"}.
 {"January","Januari"}.
 {"Join IRC channel","Gabung channel IRC"}.
 {"joins the room","bergabung ke ruangan"}.
@@ -174,8 +165,6 @@
 {"Make room public searchable","Buat ruangan dapat dicari"}.
 {"March","Maret"}.
 {"Maximum Number of Occupants","Maksimum Jumlah Penghuni"}.
-{"Max # of items to persist","Max item untuk bertahan"}.
-{"Max payload size in bytes","Max kapasitas ukuran dalam bytes"}.
 {"May","Mei"}.
 {"Members:","Anggota:"}.
 {"Membership is required to enter this room","Hanya Member yang dapat masuk ruangan ini"}.
@@ -184,7 +173,6 @@
 {"Message body","Isi Pesan"}.
 {"Middle Name","Nama Tengah"}.
 {"Moderator privileges required","Hak istimewa moderator dibutuhkan"}.
-{"moderators only","Hanya moderator"}.
 {"Modified modules","Modifikasi modul-modul"}.
 {"Module","Modul"}.
 {"Modules","Modul"}.
@@ -198,18 +186,11 @@
 {"Nickname ~s does not exist in the room","Nama Julukan ~s tidak berada di dalam ruangan"}.
 {"No body provided for announce message","Tidak ada isi pesan yang disediakan untuk mengirimkan pesan"}.
 {"No Data","Tidak Ada Data"}.
-{"Node ID","ID Node"}.
 {"Node not found","Node tidak ditemukan"}.
 {"Nodes","Node-node"}.
-{"No limit","Tidak terbatas"}.
 {"None","Tak satupun"}.
-{"No resource provided","Tidak ada sumber daya yang disediakan"}.
 {"Not Found","Tidak Ditemukan"}.
-{"Notify subscribers when items are removed from the node","Beritahu pelanggan ketika item tersebut dikeluarkan dari node"}.
-{"Notify subscribers when the node configuration changes","Beritahu pelanggan ketika ada perubahan konfigurasi node"}.
-{"Notify subscribers when the node is deleted","Beritahu pelanggan ketika node dihapus"}.
 {"November","Nopember"}.
-{"Number of occupants","Jumlah Penghuni"}.
 {"Number of online users","Jumlah pengguna online"}.
 {"Number of registered users","Jumlah pengguna terdaftar"}.
 {"October","Oktober"}.
@@ -220,7 +201,6 @@
 {"Online","Online"}.
 {"Online Users:","Pengguna Online:"}.
 {"Online Users","Pengguna Yang Online"}.
-{"Only deliver notifications to available users","Hanya mengirimkan pemberitahuan kepada pengguna yang tersedia"}.
 {"Only moderators and participants are allowed to change the subject in this room","Hanya moderator dan peserta yang diizinkan untuk mengganti topik pembicaraan di ruangan ini"}.
 {"Only moderators are allowed to change the subject in this room","Hanya moderator yang diperbolehkan untuk mengubah topik dalam ruangan ini"}.
 {"Only occupants are allowed to send messages to the conference","Hanya penghuni yang diizinkan untuk mengirim pesan ke konferensi"}.
@@ -242,18 +222,15 @@
 {"Path to File","Jalur ke File"}.
 {"Pending","Tertunda"}.
 {"Period: ","Periode:"}.
-{"Persist items to storage","Pertahankan item ke penyimpanan"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Harap dicatat bahwa pilihan ini hanya akan membuat cadangan builtin Mnesia database. Jika Anda menggunakan modul ODBC, anda juga perlu untuk membuat cadangan database SQL Anda secara terpisah."}.
 {"Pong","Pong"}.
 {"Port ~b","Port ~b"}.
 {"Port","Port"}.
-{"Present real Jabber IDs to","Tampilkan Jabber ID secara lengkap"}.
 {"private, ","pribadi, "}.
 {"Protocol","Protocol"}.
 {"Publish-Subscribe","Setujui-Pertemanan"}.
 {"PubSub subscriber request","Permintaan pertemanan PubSub"}.
-{"Purge all items when the relevant publisher goes offline","Bersihkan semua item ketika penerbit yang relevan telah offline"}.
 {"Queries to the conference members are not allowed in this room","Permintaan untuk para anggota konferensi tidak diperbolehkan di ruangan ini"}.
 {"RAM and disc copy","RAM dan disc salinan"}.
 {"RAM copy","Salinan RAM"}.
@@ -283,7 +260,6 @@
 {"Room description","Keterangan ruangan"}.
 {"Room Occupants","Penghuni Ruangan"}.
 {"Room title","Nama Ruangan"}.
-{"Roster groups allowed to subscribe","Kelompok kontak yang diizinkan untuk berlangganan"}.
 {"Roster","Kontak"}.
 {"Roster of ","Kontak dari"}.
 {"Roster size","Ukuran Daftar Kontak"}.
@@ -309,9 +285,6 @@
 {"Shut Down Service","Shut Down Layanan"}.
 {"~s invites you to the room ~s","~s mengundang anda ke ruangan ~s"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Beberapa klien Jabber dapat menyimpan password di komputer Anda. Gunakan fitur itu hanya jika Anda mempercayai komputer Anda aman."}.
-{"Specify the access model","Tentukan model akses"}.
-{"Specify the event message type","Tentukan jenis acara pesan"}.
-{"Specify the publisher model","Tentukan model penerbitan"}.
 {"~s's Offline Messages Queue","Antrian Pesan Offline ~s"}.
 {"Start Modules at ","Mulai Modul pada"}.
 {"Start Modules","Memulai Modul"}.
@@ -328,14 +301,12 @@
 {"Subject","Subyek"}.
 {"Submit","Serahkan"}.
 {"Submitted","Ulangi masukan"}.
-{"Subscriber Address","Alamat Pertemanan"}.
 {"Subscription","Berlangganan"}.
 {"Sunday","Minggu"}.
 {"That nickname is already in use by another occupant","Julukan itu sudah digunakan oleh penghuni lain"}.
 {"That nickname is registered by another person","Julukan tersebut telah didaftarkan oleh orang lain"}.
 {"The CAPTCHA is valid.","Captcha ini benar."}.
 {"The CAPTCHA verification has failed","Verifikasi CAPTCHA telah gagal"}.
-{"The collections with which a node is affiliated","Koleksi dengan yang berafiliasi dengan sebuah node"}.
 {"the password is","kata sandi yaitu:"}.
 {"The password is too weak","Kata sandi terlalu lemah"}.
 {"The password of your Jabber account was successfully changed.","Kata sandi pada akun Jabber Anda telah berhasil diubah."}.
@@ -345,6 +316,7 @@
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Pada bagian ini huruf besar dan kecil tidak dibedakan: Misalnya macbeth adalah sama dengan MacBeth juga Macbeth."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Halaman ini memungkinkan untuk membuat akun Jabber di layanan Jabber ini. JID Anda (Jabber Pengenal) akan berbentuk: namapengguna@layanan. Harap baca dengan seksama petunjuk-petunjuk untuk mengisi kolom dengan benar."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Pada bagian ini memungkinkan Anda untuk membatalkan pendaftaran akun Jabber pada layanan Jabber ini."}.
+{"This room is not anonymous","Ruangan ini tidak dikenal"}.
 {"Thursday","Kamis"}.
 {"Time delay","Waktu tunda"}.
 {"Time","Waktu"}.
@@ -379,15 +351,12 @@
 {"Visitors are not allowed to change their nicknames in this room","Visitor tidak diperbolehkan untuk mengubah nama julukan di ruangan ini"}.
 {"Visitors are not allowed to send messages to all occupants","Visitor tidak diperbolehkan untuk mengirim pesan ke semua penghuni"}.
 {"Wednesday","Rabu"}.
-{"When to send the last published item","Ketika untuk mengirim item terakhir yang dipublikasikan"}.
-{"Whether to allow subscriptions","Apakah diperbolehkan untuk berlangganan"}.
 {"You can later change your password using a Jabber client.","Anda dapat mengubah kata sandi anda dilain waktu dengan menggunakan klien Jabber."}.
 {"You have been banned from this room","Anda telah diblokir dari ruangan ini"}.
 {"You must fill in field \"Nickname\" in the form","Anda harus mengisi kolom \"Julukan\" dalam formulir"}.
 {"You need a client that supports x:data and CAPTCHA to register","Anda memerlukan klien yang mendukung x:data dan CAPTCHA untuk mendaftar"}.
 {"You need a client that supports x:data to register the nickname","Anda memerlukan klien yang mendukung x:data untuk mendaftar julukan"}.
 {"You need an x:data capable client to configure mod_irc settings","Anda memerlukan x:data klien untuk mampu mengkonfigurasi pengaturan mod_irc"}.
-{"You need an x:data capable client to configure room","Anda memerlukan x:data klien untuk dapat mengkonfigurasi ruangan"}.
 {"You need an x:data capable client to search","Anda memerlukan x:data klien untuk melakukan pencarian"}.
 {"Your active privacy list has denied the routing of this stanza.","Daftar privasi aktif Anda telah menolak routing ztanza ini"}.
 {"Your contact offline message queue is full. The message has been discarded.","Kontak offline Anda pada antrian pesan sudah penuh. Pesan telah dibuang."}.

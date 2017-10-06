@@ -13,875 +13,457 @@ msgstr ""
 "X-Additional-Translator: Sander Devrieze\n"
 "X-Generator: Poedit 1.6.10\n"
 
-#: ejabberd_c2s.erl:505 ejabberd_c2s.erl:853
-msgid "Use of STARTTLS required"
-msgstr "Gebruik van STARTTLS is vereist"
+#: mod_muc_log:413 mod_muc_log:752
+msgid " has set the subject to: "
+msgstr " veranderde het onderwerp in: "
 
-#: ejabberd_c2s.erl:604
-msgid "No resource provided"
-msgstr "Geen bron opgegeven"
+#: mod_muc_room:1893
+msgid "A password is required to enter this room"
+msgstr "U hebt een wachtwoord nodig om deze chatruimte te kunnen betreden"
 
-#: ejabberd_c2s.erl:1349
-msgid "Replaced by new connection"
-msgstr "Vervangen door een nieuwe verbinding"
-
-#: ejabberd_c2s.erl:1353 mod_configure.erl:1854 mod_muc_log.erl:427
-#: mod_muc_log.erl:430
-msgid "has been kicked"
-msgstr "is weggestuurd"
-
-#: ejabberd_c2s.erl:2114
-msgid "Your active privacy list has denied the routing of this stanza."
-msgstr "Uw actieve privacy-lijst verbied het routeren van dit stanza."
-
-#: ejabberd_c2s.erl:2429
-msgid "Too many unacked stanzas"
-msgstr "Te veel niet-bevestigde stanzas"
-
-#: ejabberd_captcha.erl:122 ejabberd_captcha.erl:245 ejabberd_captcha.erl:284
-msgid "Enter the text you see"
-msgstr "Voer de getoonde tekst in"
-
-#: ejabberd_captcha.erl:147
-msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
-msgstr ""
-"Uw berichten aan ~s worden geblokkeerd. Om ze te deblokkeren, ga naar ~s"
-
-#: ejabberd_captcha.erl:192
-msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr "Als U het CAPTCHA-plaatje niet ziet, bezoek dan de webpagina."
-
-#: ejabberd_captcha.erl:227
-msgid "CAPTCHA web page"
-msgstr "CAPTCHA webpagina."
-
-#: ejabberd_captcha.erl:381
-msgid "The CAPTCHA is valid."
-msgstr "De geautomatiseerde Turing-test is geslaagd."
-
-#: ejabberd_oauth.erl:253 ejabberd_web_admin.erl:1403
-#: ejabberd_web_admin.erl:1458 mod_register.erl:265 mod_vcard.erl:490
-msgid "User"
-msgstr "Gebruiker"
-
-#: ejabberd_oauth.erl:256
-#, fuzzy
-msgid "Server"
-msgstr "Server:"
-
-#: ejabberd_oauth.erl:259 ejabberd_web_admin.erl:1408 mod_configure.erl:1398
-#: mod_configure.erl:1485 mod_configure.erl:1889 mod_configure.erl:2123
-#: mod_muc_room.erl:3383 mod_register.erl:275
-msgid "Password"
-msgstr "Wachtwoord"
-
-#: ejabberd_oauth.erl:267
+#: ejabberd_oauth:448
 msgid "Accept"
 msgstr ""
 
-#: ejabberd_web_admin.erl:202 ejabberd_web_admin.erl:214
-#: ejabberd_web_admin.erl:234 ejabberd_web_admin.erl:246
-msgid "Unauthorized"
-msgstr "Niet geautoriseerd"
-
-#: ejabberd_web_admin.erl:303 ejabberd_web_admin.erl:335
-msgid "ejabberd Web Admin"
-msgstr "ejabberd Webbeheer"
-
-#: ejabberd_web_admin.erl:669 ejabberd_web_admin.erl:680
-msgid "Administration"
-msgstr "Beheer"
-
-#: ejabberd_web_admin.erl:737 ejabberd_web_admin.erl:773 mod_configure.erl:196
-#: mod_configure.erl:532
-msgid "Access Control Lists"
-msgstr "Access control lists"
-
-#: ejabberd_web_admin.erl:741 ejabberd_web_admin.erl:777
-#: ejabberd_web_admin.erl:843 ejabberd_web_admin.erl:876
-#: ejabberd_web_admin.erl:917 ejabberd_web_admin.erl:1394
-#: ejabberd_web_admin.erl:1677 ejabberd_web_admin.erl:1836
-#: ejabberd_web_admin.erl:1870 ejabberd_web_admin.erl:1950
-#: ejabberd_web_admin.erl:2120 ejabberd_web_admin.erl:2149
-#: ejabberd_web_admin.erl:2246 mod_offline.erl:802 mod_roster.erl:1493
-#: mod_shared_roster.erl:1166 mod_shared_roster.erl:1261
-msgid "Submitted"
-msgstr "Verzonden"
-
-#: ejabberd_web_admin.erl:742 ejabberd_web_admin.erl:778
-#: ejabberd_web_admin.erl:844 ejabberd_web_admin.erl:877
-#: ejabberd_web_admin.erl:918 ejabberd_web_admin.erl:1395
-#: ejabberd_web_admin.erl:1678 ejabberd_web_admin.erl:1837
-#: ejabberd_web_admin.erl:2121 ejabberd_web_admin.erl:2150 mod_roster.erl:1494
-#: mod_shared_roster.erl:1167 mod_shared_roster.erl:1262
-msgid "Bad format"
-msgstr "Verkeerd formaat"
-
-#: ejabberd_web_admin.erl:753 ejabberd_web_admin.erl:790
-#: ejabberd_web_admin.erl:855 ejabberd_web_admin.erl:925
-#: ejabberd_web_admin.erl:1939 mod_shared_roster.erl:1269
-msgid "Submit"
-msgstr "Verzenden"
-
-#: ejabberd_web_admin.erl:782 ejabberd_web_admin.erl:881
-msgid "Raw"
-msgstr "Ruw"
-
-#: ejabberd_web_admin.erl:787 ejabberd_web_admin.erl:887 mod_offline.erl:824
-#: mod_shared_roster.erl:1175
-msgid "Delete Selected"
-msgstr "Geselecteerde verwijderen"
-
-#: ejabberd_web_admin.erl:839 ejabberd_web_admin.erl:872 mod_configure.erl:198
-#: mod_configure.erl:533
-msgid "Access Rules"
-msgstr "Access rules"
-
-#: ejabberd_web_admin.erl:913
-msgid "~s access rule configuration"
-msgstr "Access rules op ~s"
-
-#: ejabberd_web_admin.erl:931
-msgid "Virtual Hosts"
-msgstr "Virtuele hosts"
-
-#: ejabberd_web_admin.erl:940 ejabberd_web_admin.erl:948
-msgid "Users"
-msgstr "Gebruikers"
-
-#: ejabberd_web_admin.erl:955 ejabberd_web_admin.erl:1340
-#: mod_configure.erl:524
-msgid "Online Users"
-msgstr "Online gebruikers"
-
-#: ejabberd_web_admin.erl:971
-msgid "Users Last Activity"
-msgstr "Laatste activiteit van gebruikers"
-
-#: ejabberd_web_admin.erl:975
-msgid "Period: "
-msgstr "Periode: "
-
-#: ejabberd_web_admin.erl:988
-msgid "Last month"
-msgstr "Afgelopen maand"
-
-#: ejabberd_web_admin.erl:989
-msgid "Last year"
-msgstr "Afgelopen jaar"
-
-#: ejabberd_web_admin.erl:991
-msgid "All activity"
-msgstr "Alle activiteit"
-
-#: ejabberd_web_admin.erl:994
-msgid "Show Ordinary Table"
-msgstr "Deel van tabel laten zien"
-
-#: ejabberd_web_admin.erl:997
-msgid "Show Integral Table"
-msgstr "Volledige tabel laten zien"
-
-#: ejabberd_web_admin.erl:1004 ejabberd_web_admin.erl:1847
-#: mod_muc_admin.erl:247
-msgid "Statistics"
-msgstr "Statistieken"
-
-#: ejabberd_web_admin.erl:1014
-msgid "Not Found"
-msgstr "Niet gevonden"
-
-#: ejabberd_web_admin.erl:1027
-msgid "Node not found"
-msgstr "Node niet gevonden"
-
-#: ejabberd_web_admin.erl:1250 mod_shared_roster.erl:1161
-msgid "Add New"
-msgstr "Toevoegen"
-
-#: ejabberd_web_admin.erl:1338
-msgid "Host"
-msgstr "Host"
-
-#: ejabberd_web_admin.erl:1339
-msgid "Registered Users"
-msgstr "Geregistreerde gebruikers"
-
-#: ejabberd_web_admin.erl:1417 mod_configure.erl:177 mod_configure.erl:539
-#: mod_configure.erl:1386
-msgid "Add User"
-msgstr "Gebruiker toevoegen"
-
-#: ejabberd_web_admin.erl:1459
-msgid "Offline Messages"
-msgstr "Offline berichten"
-
-#: ejabberd_web_admin.erl:1460 ejabberd_web_admin.erl:1688
-msgid "Last Activity"
-msgstr "Laatste activiteit"
-
-#: ejabberd_web_admin.erl:1478 ejabberd_web_admin.erl:1660
-#: mod_configure.erl:1916
-msgid "Never"
-msgstr "Nooit"
-
-#: ejabberd_web_admin.erl:1496 ejabberd_web_admin.erl:1671
-#: mod_configure.erl:1926
-msgid "Online"
-msgstr "Online"
-
-#: ejabberd_web_admin.erl:1550 ejabberd_web_admin.erl:1569
-msgid "Registered Users:"
-msgstr "Geregistreerde gebruikers:"
-
-#: ejabberd_web_admin.erl:1553 ejabberd_web_admin.erl:1572
-#: ejabberd_web_admin.erl:2187
-msgid "Online Users:"
-msgstr "Online gebruikers:"
-
-#: ejabberd_web_admin.erl:1556
-msgid "Outgoing s2s Connections:"
-msgstr "Uitgaande s2s-verbindingen:"
-
-#: ejabberd_web_admin.erl:1559
-#, fuzzy
-msgid "Incoming s2s Connections:"
-msgstr "Uitgaande s2s-verbindingen:"
-
-#: ejabberd_web_admin.erl:1595 ejabberd_web_admin.erl:1794
-#: ejabberd_web_admin.erl:1804 ejabberd_web_admin.erl:2214 mod_roster.erl:1429
-msgid "None"
-msgstr "Geen"
-
-#: ejabberd_web_admin.erl:1652 mod_register_web.erl:188
-#: mod_register_web.erl:347 mod_register_web.erl:355 mod_register_web.erl:379
-msgid "Change Password"
-msgstr "Wachtwoord wijzigen"
-
-#: ejabberd_web_admin.erl:1673
-msgid "User ~s"
-msgstr "Gebruiker ~s"
-
-#: ejabberd_web_admin.erl:1684
-msgid "Connected Resources:"
-msgstr "Verbonden bronnen:"
-
-#: ejabberd_web_admin.erl:1686 mod_register_web.erl:239
-#: mod_register_web.erl:475
-msgid "Password:"
-msgstr "Wachtwoord:"
-
-#: ejabberd_web_admin.erl:1693 mod_configure.erl:2117
-msgid "Remove User"
-msgstr "Gebruiker verwijderen"
-
-#: ejabberd_web_admin.erl:1740
-msgid "No Data"
-msgstr "Geen gegevens"
-
-#: ejabberd_web_admin.erl:1813
-msgid "Nodes"
-msgstr "Nodes"
-
-#: ejabberd_web_admin.erl:1814 mod_configure.erl:528
-msgid "Running Nodes"
-msgstr "Draaiende nodes"
-
-#: ejabberd_web_admin.erl:1815 mod_configure.erl:529
-msgid "Stopped Nodes"
-msgstr "Gestopte nodes"
-
-#: ejabberd_web_admin.erl:1833 ejabberd_web_admin.erl:1858
-msgid "Node ~p"
-msgstr "Node ~p"
-
-#: ejabberd_web_admin.erl:1842 mod_configure.erl:150 mod_configure.erl:611
-msgid "Database"
-msgstr "Database"
-
-#: ejabberd_web_admin.erl:1843 mod_configure.erl:159 mod_configure.erl:648
-msgid "Backup"
-msgstr "Backup"
-
-#: ejabberd_web_admin.erl:1845
-msgid "Listened Ports"
-msgstr "Openstaande poorten"
-
-#: ejabberd_web_admin.erl:1848 ejabberd_web_admin.erl:2261
-msgid "Update"
-msgstr "Bijwerken"
-
-#: ejabberd_web_admin.erl:1852 ejabberd_web_admin.erl:2469
-#: ejabberd_web_admin.erl:2613
-msgid "Restart"
-msgstr "Herstarten"
-
-#: ejabberd_web_admin.erl:1854 ejabberd_web_admin.erl:2473
-#: ejabberd_web_admin.erl:2617
-msgid "Stop"
-msgstr "Stoppen"
-
-#: ejabberd_web_admin.erl:1861 mod_configure.erl:613 mod_configure.erl:626
-msgid "Modules"
-msgstr "Modules"
-
-#: ejabberd_web_admin.erl:1866
-msgid "RPC Call Error"
-msgstr "RPC-oproepfout"
-
-#: ejabberd_web_admin.erl:1917
-msgid "Database Tables at ~p"
-msgstr "Databasetabellen van ~p"
-
-#: ejabberd_web_admin.erl:1927 mod_vcard.erl:490 mod_vcard.erl:616
-msgid "Name"
-msgstr "Naam"
-
-#: ejabberd_web_admin.erl:1928
-msgid "Storage Type"
-msgstr "Opslagmethode"
-
-#: ejabberd_web_admin.erl:1929
-msgid "Elements"
-msgstr "Elementen"
-
-#: ejabberd_web_admin.erl:1930
-msgid "Memory"
-msgstr "Geheugen"
-
-#: ejabberd_web_admin.erl:1952 ejabberd_web_admin.erl:2123
-msgid "Error"
-msgstr "Fout"
-
-#: ejabberd_web_admin.erl:1955
-msgid "Backup of ~p"
-msgstr "Backup maken van ~p"
-
-#: ejabberd_web_admin.erl:1959
-msgid ""
-"Please note that these options will only backup the builtin Mnesia database. "
-"If you are using the ODBC module, you also need to backup your SQL database "
-"separately."
-msgstr ""
-"Merk op dat volgende opties enkel backups maken van de ingebouwde database "
-"Mnesia. Als U de ODBC module gebruikt dan moeten daarvan afzonderlijke "
-"backups gemaakt worden."
-
-#: ejabberd_web_admin.erl:1969
-msgid "Store binary backup:"
-msgstr "Binaire backup maken:"
-
-#: ejabberd_web_admin.erl:1976 ejabberd_web_admin.erl:1986
-#: ejabberd_web_admin.erl:1997 ejabberd_web_admin.erl:2006
-#: ejabberd_web_admin.erl:2016 ejabberd_web_admin.erl:2029
-#: ejabberd_web_admin.erl:2041 ejabberd_web_admin.erl:2057
-#: ejabberd_web_admin.erl:2073 ejabberd_web_admin.erl:2084
-#: ejabberd_web_admin.erl:2094
-msgid "OK"
-msgstr "OK"
-
-#: ejabberd_web_admin.erl:1979
-msgid "Restore binary backup immediately:"
-msgstr "Binaire backup direct herstellen:"
-
-#: ejabberd_web_admin.erl:1989
-msgid ""
-"Restore binary backup after next ejabberd restart (requires less memory):"
-msgstr ""
-"Binaire backup herstellen na herstart van ejabberd (vereist minder geheugen):"
-
-#: ejabberd_web_admin.erl:1999
-msgid "Store plain text backup:"
-msgstr "Backup naar een tekstbestand schrijven:"
-
-#: ejabberd_web_admin.erl:2009
-msgid "Restore plain text backup immediately:"
-msgstr "Backup in een tekstbestand direct herstellen:"
-
-#: ejabberd_web_admin.erl:2019
-msgid "Import users data from a PIEFXIS file (XEP-0227):"
-msgstr "Importeer gebruikersdata van een PIEFXIS-bestand (XEP-0227):"
-
-#: ejabberd_web_admin.erl:2032
-msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
-msgstr ""
-"Exporteer data van alle gebruikers in de server naar PIEFXIS-bestanden "
-"(XEP-0227):"
-
-#: ejabberd_web_admin.erl:2044
-msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
-msgstr ""
-"Exporteer data van alle gebruikers van een host naar PIEXFIS-bestanden "
-"(XEP-0227):"
-
-#: ejabberd_web_admin.erl:2060
-msgid "Export all tables as SQL queries to a file:"
-msgstr "Exporteer alle tabellen als SQL-queries naar een bestand:"
-
-#: ejabberd_web_admin.erl:2076
-msgid "Import user data from jabberd14 spool file:"
-msgstr "Importeer gebruikersdata via spool-bestanden van jabberd14"
-
-#: ejabberd_web_admin.erl:2087
-msgid "Import users data from jabberd14 spool directory:"
-msgstr "Importeer gebruikersdata via spool-bestanden van jabberd14"
-
-#: ejabberd_web_admin.erl:2115
-msgid "Listened Ports at "
-msgstr "Openstaande poorten op "
-
-#: ejabberd_web_admin.erl:2144
-msgid "Modules at ~p"
-msgstr "Modules op ~p"
-
-#: ejabberd_web_admin.erl:2175
-msgid "Statistics of ~p"
-msgstr "Statistieken van ~p"
-
-#: ejabberd_web_admin.erl:2179
-msgid "Uptime:"
-msgstr "Uptime:"
-
-#: ejabberd_web_admin.erl:2183
-msgid "CPU Time:"
-msgstr "Processortijd:"
-
-#: ejabberd_web_admin.erl:2191
-msgid "Transactions Committed:"
-msgstr "Bevestigde transacties:"
-
-#: ejabberd_web_admin.erl:2195
-msgid "Transactions Aborted:"
-msgstr "Afgebroken transacties:"
-
-#: ejabberd_web_admin.erl:2199
-msgid "Transactions Restarted:"
-msgstr "Herstarte transacties:"
-
-#: ejabberd_web_admin.erl:2203
-msgid "Transactions Logged:"
-msgstr "Gelogde transacties:"
-
-#: ejabberd_web_admin.erl:2243
-msgid "Update ~p"
-msgstr "Opwaarderen van ~p"
-
-#: ejabberd_web_admin.erl:2254
-msgid "Update plan"
-msgstr "Plan voor de opwaardering"
-
-#: ejabberd_web_admin.erl:2255
-msgid "Modified modules"
-msgstr "Gewijzigde modules"
-
-#: ejabberd_web_admin.erl:2256
-msgid "Update script"
-msgstr "Script voor de opwaardering"
-
-#: ejabberd_web_admin.erl:2257
-msgid "Low level update script"
-msgstr "Lowlevel script voor de opwaardering"
-
-#: ejabberd_web_admin.erl:2258
-msgid "Script check"
-msgstr "Controle van script"
-
-#: ejabberd_web_admin.erl:2438
-msgid "IP"
-msgstr "IP"
-
-#: ejabberd_web_admin.erl:2438
-msgid "Port"
-msgstr "Poort"
-
-#: ejabberd_web_admin.erl:2439
-msgid "Protocol"
-msgstr "Protocol"
-
-#: ejabberd_web_admin.erl:2440 ejabberd_web_admin.erl:2595
-msgid "Module"
-msgstr "Module"
-
-#: ejabberd_web_admin.erl:2441 ejabberd_web_admin.erl:2596
-msgid "Options"
-msgstr "Opties"
-
-#: ejabberd_web_admin.erl:2493 ejabberd_web_admin.erl:2629
-msgid "Start"
-msgstr "Starten"
-
-#: mod_adhoc.erl:114 mod_adhoc.erl:148 mod_adhoc.erl:168 mod_adhoc.erl:191
-msgid "Commands"
-msgstr "Commando's"
-
-#: mod_adhoc.erl:176 mod_adhoc.erl:265
-msgid "Ping"
-msgstr "Ping"
-
-#: mod_adhoc.erl:279
-msgid "Pong"
-msgstr "Pong"
-
-#: mod_announce.erl:523
-msgid "Really delete message of the day?"
-msgstr "Wilt u het bericht van de dag verwijderen?"
-
-#: mod_announce.erl:536 mod_configure.erl:1238 mod_configure.erl:1298
-msgid "Subject"
-msgstr "Onderwerp"
-
-#: mod_announce.erl:544 mod_configure.erl:1244 mod_configure.erl:1304
-msgid "Message body"
-msgstr "Bericht"
-
-#: mod_announce.erl:627
-msgid "No body provided for announce message"
-msgstr "De mededeling bevat geen bericht"
-
-#: mod_announce.erl:662
-msgid "Announcements"
-msgstr "Mededelingen"
-
-#: mod_announce.erl:664
-msgid "Send announcement to all users"
-msgstr "Mededeling verzenden naar alle gebruikers"
-
-#: mod_announce.erl:666
-msgid "Send announcement to all users on all hosts"
-msgstr "Stuur aankondiging aan alle gebruikers op alle hosts"
-
-#: mod_announce.erl:668
-msgid "Send announcement to all online users"
-msgstr "Mededeling verzenden naar alle online gebruikers"
-
-#: mod_announce.erl:670 mod_configure.erl:1231 mod_configure.erl:1291
-msgid "Send announcement to all online users on all hosts"
-msgstr ""
-"Mededeling verzenden naar alle online gebruikers op alle virtuele hosts"
-
-#: mod_announce.erl:672
-msgid "Set message of the day and send to online users"
-msgstr "Bericht van de dag instellen en verzenden naar online gebruikers"
-
-#: mod_announce.erl:674
-msgid "Set message of the day on all hosts and send to online users"
-msgstr ""
-"Stel bericht-van-de-dag in op alle hosts en stuur naar aanwezige gebruikers"
-
-#: mod_announce.erl:676
-msgid "Update message of the day (don't send)"
-msgstr "Bericht van de dag bijwerken (niet verzenden)"
-
-#: mod_announce.erl:678
-msgid "Update message of the day on all hosts (don't send)"
-msgstr "Verander bericht-van-de-dag op alle hosts (niet versturen)"
-
-#: mod_announce.erl:680
-msgid "Delete message of the day"
-msgstr "Bericht van de dag verwijderen"
-
-#: mod_announce.erl:682
-msgid "Delete message of the day on all hosts"
-msgstr "Verwijder bericht-van-de-dag op alle hosts"
-
-#: mod_configure.erl:140 mod_configure.erl:296 mod_configure.erl:318
-#: mod_configure.erl:522
-msgid "Configuration"
-msgstr "Instellingen"
-
-#: mod_configure.erl:153 mod_configure.erl:636
-msgid "Start Modules"
-msgstr "Modules starten"
-
-#: mod_configure.erl:156 mod_configure.erl:638
-msgid "Stop Modules"
-msgstr "Modules stoppen"
-
-#: mod_configure.erl:162 mod_configure.erl:650
-msgid "Restore"
-msgstr "Binaire backup direct herstellen"
-
-#: mod_configure.erl:165 mod_configure.erl:652
-msgid "Dump to Text File"
-msgstr "Backup naar een tekstbestand schrijven"
-
-#: mod_configure.erl:168 mod_configure.erl:663
-msgid "Import File"
-msgstr "Bestand importeren"
-
-#: mod_configure.erl:171 mod_configure.erl:665
-msgid "Import Directory"
-msgstr "Directory importeren"
-
-#: mod_configure.erl:173 mod_configure.erl:619 mod_configure.erl:1205
-msgid "Restart Service"
-msgstr "Herstart Service"
-
-#: mod_configure.erl:175 mod_configure.erl:621 mod_configure.erl:1265
-msgid "Shut Down Service"
-msgstr "Stop Service"
-
-#: mod_configure.erl:179 mod_configure.erl:540 mod_configure.erl:1419
-msgid "Delete User"
-msgstr "Verwijder Gebruiker"
-
-#: mod_configure.erl:181 mod_configure.erl:542 mod_configure.erl:1437
-msgid "End User Session"
-msgstr "Verwijder Gebruikers-sessie"
-
-#: mod_configure.erl:183 mod_configure.erl:544 mod_configure.erl:1455
-#: mod_configure.erl:1473
-msgid "Get User Password"
-msgstr "Gebruikerswachtwoord Opvragen"
-
-#: mod_configure.erl:185 mod_configure.erl:546
-msgid "Change User Password"
-msgstr "Verander Gebruikerswachtwoord"
-
-#: mod_configure.erl:187 mod_configure.erl:548 mod_configure.erl:1500
-msgid "Get User Last Login Time"
-msgstr "Tijd van Laatste Aanmelding Opvragen"
-
-#: mod_configure.erl:189 mod_configure.erl:550 mod_configure.erl:1517
-msgid "Get User Statistics"
-msgstr "Gebruikers-statistieken Opvragen"
-
-#: mod_configure.erl:191 mod_configure.erl:552
-msgid "Get Number of Registered Users"
-msgstr "Aantal Geregistreerde Gebruikers Opvragen"
-
-#: mod_configure.erl:194 mod_configure.erl:554
-msgid "Get Number of Online Users"
-msgstr "Aantal Aanwezige Gebruikers Opvragen"
-
-#: mod_configure.erl:320 mod_configure.erl:523
-msgid "User Management"
-msgstr "Gebruikersbeheer"
-
-#: mod_configure.erl:525
-msgid "All Users"
-msgstr "Alle gebruikers"
-
-#: mod_configure.erl:526
-msgid "Outgoing s2s Connections"
-msgstr "Uitgaande s2s-verbindingen"
-
-#: mod_configure.erl:615
-msgid "Backup Management"
-msgstr "Backup"
-
-#: mod_configure.erl:617
-msgid "Import Users From jabberd14 Spool Files"
-msgstr "Importeer gebruikers via spool-bestanden van jabberd14"
-
-#: mod_configure.erl:762
-msgid "To ~s"
-msgstr "Naar ~s"
-
-#: mod_configure.erl:782
-msgid "From ~s"
-msgstr "Van ~s"
-
-#: mod_configure.erl:1002
-msgid "Database Tables Configuration at "
-msgstr "Instellingen van databasetabellen op "
-
-#: mod_configure.erl:1008
-msgid "Choose storage type of tables"
-msgstr "Opslagmethode voor tabellen kiezen"
-
-#: mod_configure.erl:1017 mod_configure.erl:1019
-msgid "Disc only copy"
-msgstr "Harde schijf"
-
-#: mod_configure.erl:1017 mod_configure.erl:1019
-msgid "RAM and disc copy"
-msgstr "RAM en harde schijf"
-
-#: mod_configure.erl:1017 mod_configure.erl:1019
-msgid "RAM copy"
-msgstr "RAM"
-
-#: mod_configure.erl:1017 mod_configure.erl:1019
-msgid "Remote copy"
-msgstr "Op andere nodes in de cluster"
-
-#: mod_configure.erl:1045
-msgid "Stop Modules at "
-msgstr "Modules stoppen op "
-
-#: mod_configure.erl:1051
-msgid "Choose modules to stop"
-msgstr "Selecteer de modules die u wilt stoppen"
-
-#: mod_configure.erl:1072
-msgid "Start Modules at "
-msgstr "Modules starten op "
-
-#: mod_configure.erl:1078
-msgid "Enter list of {Module, [Options]}"
-msgstr "Voer lijst met op te starten modules als volgt in: {Module, [Opties]}"
-
-#: mod_configure.erl:1080
-msgid "List of modules to start"
-msgstr "Lijst met op te starten modules"
-
-#: mod_configure.erl:1094
-msgid "Backup to File at "
-msgstr "Binaire backup maken op "
-
-#: mod_configure.erl:1099 mod_configure.erl:1120
-msgid "Enter path to backup file"
-msgstr "Voer pad naar backupbestand in"
-
-#: mod_configure.erl:1100 mod_configure.erl:1121 mod_configure.erl:1142
-#: mod_configure.erl:1163
-msgid "Path to File"
-msgstr "Pad naar bestand"
-
-#: mod_configure.erl:1115
-msgid "Restore Backup from File at "
-msgstr "Binaire backup direct herstellen op "
-
-#: mod_configure.erl:1136
-msgid "Dump Backup to Text File at "
-msgstr "Backup naar een tekstbestand schrijven op "
-
-#: mod_configure.erl:1141
-msgid "Enter path to text file"
-msgstr "Voer pad naar backupbestand in"
-
-#: mod_configure.erl:1156
-msgid "Import User from File at "
-msgstr "Importeer gebruiker via bestand op "
-
-#: mod_configure.erl:1162
-msgid "Enter path to jabberd14 spool file"
-msgstr "Voer pad naar jabberd14-spool-bestand in"
-
-#: mod_configure.erl:1177
-msgid "Import Users from Dir at "
-msgstr "Gebruikers importeren vanaf directory op "
-
-#: mod_configure.erl:1183
-msgid "Enter path to jabberd14 spool dir"
-msgstr "Voer pad naar jabberd14-spool-directory in"
-
-#: mod_configure.erl:1184
-msgid "Path to Dir"
-msgstr "Pad naar directory"
-
-#: mod_configure.erl:1209 mod_configure.erl:1269
-msgid "Time delay"
-msgstr "Vertraging"
-
-#: mod_configure.erl:1316
-msgid "Access Control List Configuration"
-msgstr "Instellingen van access control lists"
-
-#: mod_configure.erl:1321
-msgid "Access control lists"
-msgstr "Access control lists"
-
-#: mod_configure.erl:1352
+#: mod_configure:1109
 msgid "Access Configuration"
 msgstr "Toegangsinstellingen"
 
-#: mod_configure.erl:1356
-msgid "Access rules"
+#: mod_configure:1091
+msgid "Access Control List Configuration"
+msgstr "Instellingen van access control lists"
+
+#: ejabberd_web_admin:758 ejabberd_web_admin:797 mod_configure:185
+#: mod_configure:514
+msgid "Access Control Lists"
+msgstr "Access control lists"
+
+#: ejabberd_web_admin:863 ejabberd_web_admin:896 mod_configure:187
+#: mod_configure:515
+msgid "Access Rules"
 msgstr "Access rules"
 
-#: mod_configure.erl:1390 mod_configure.erl:1423 mod_configure.erl:1441
-#: mod_configure.erl:1459 mod_configure.erl:1477 mod_configure.erl:1504
-#: mod_configure.erl:1521 mod_configure.erl:1887 mod_configure.erl:1934
-#: mod_configure.erl:1961 mod_roster.erl:1434 mod_vcard.erl:613
-#: mod_vcard_ldap.erl:606
-msgid "Jabber ID"
-msgstr "Jabber ID"
+#: mod_configure:1095
+msgid "Access control lists"
+msgstr "Access control lists"
 
-#: mod_configure.erl:1407
-msgid "Password Verification"
-msgstr "Wachtwoord Bevestiging"
-
-#: mod_configure.erl:1540
-msgid "Number of registered users"
-msgstr "Aantal Geregistreerde Gebruikers"
-
-#: mod_configure.erl:1559
-msgid "Number of online users"
-msgstr "Aantal Aanwezige Gebruikers"
-
-#: mod_configure.erl:1936
-msgid "Last login"
-msgstr "Laatste Aanmelding"
-
-#: mod_configure.erl:1963
-msgid "Roster size"
-msgstr "Contactlijst Groote"
-
-#: mod_configure.erl:1965
-msgid "IP addresses"
-msgstr "IP-adres"
-
-#: mod_configure.erl:1967
-msgid "Resources"
-msgstr "Bronnen"
-
-#: mod_configure.erl:2095
-msgid "Administration of "
-msgstr "Beheer van "
-
-#: mod_configure.erl:2100
-msgid "Action on user"
-msgstr "Actie op gebruiker"
-
-#: mod_configure.erl:2108
-msgid "Edit Properties"
-msgstr "Eigenschappen bewerken"
-
-#: mod_fail2ban.erl:95
-msgid ""
-"Too many (~p) failed authentications from this IP address (~s). The address "
-"will be unblocked at ~s UTC"
-msgstr ""
-"Te veel (~p) mislukte authenticatie-pogingen van dit IP-adres (~s). Dit "
-"adres zal worden gedeblokkeerd om ~s UTC"
-
-#: mod_http_upload.erl:586
-msgid "Please specify file size."
-msgstr ""
-
-#: mod_http_upload.erl:590
-msgid "Please specify file name."
-msgstr ""
-
-#: mod_ip_blacklist.erl:121
-msgid "This IP address is blacklisted in ~s"
-msgstr "Dit IP-adres is geblokkeerd in ~s"
-
-#: mod_irc.erl:220 mod_muc.erl:467
+#: ejabberd_c2s:414 ejabberd_c2s:661 ejabberd_s2s:372 ejabberd_service:202
+#: mod_announce:255 mod_announce:273 mod_announce:275 mod_announce:277
+#: mod_announce:279 mod_announce:281 mod_announce:283 mod_announce:285
+#: mod_announce:287 mod_announce:289 mod_announce:291 mod_announce:351
+#: mod_announce:353 mod_announce:355 mod_announce:357 mod_announce:359
+#: mod_announce:361 mod_announce:363 mod_announce:365 mod_announce:367
+#: mod_announce:369 mod_announce:420 mod_announce:846 mod_configure:206
+#: mod_configure:219 mod_configure:220 mod_configure:221 mod_configure:222
+#: mod_configure:224 mod_configure:225 mod_configure:226 mod_configure:227
+#: mod_configure:229 mod_configure:231 mod_configure:233 mod_configure:235
+#: mod_configure:237 mod_configure:239 mod_configure:241 mod_configure:243
+#: mod_configure:245 mod_configure:247 mod_configure:249 mod_configure:251
+#: mod_configure:253 mod_configure:255 mod_configure:257 mod_configure:259
+#: mod_configure:261 mod_configure:263 mod_configure:265 mod_configure:267
+#: mod_configure:313 mod_configure:435 mod_configure:780 mod_configure:782
+#: mod_configure:784 mod_configure:786 mod_configure:788 mod_configure:790
+#: mod_configure:792 mod_configure:794 mod_configure:1740 mod_http_upload:545
+#: mod_irc:265 mod_legacy_auth:136 mod_muc:401 mod_proxy65_service:186
+#: mod_proxy65_service:235 mod_register:130 mod_register:273 mod_register:325
+#: mod_register:326 mod_roster:187 mod_s2s_dialback:323
 msgid "Access denied by service policy"
 msgstr "De toegang werd geweigerd door het beleid van deze dienst"
 
-#: mod_irc.erl:439
-msgid "IRC Transport"
-msgstr "IRC-transport"
+#: mod_configure:1113
+msgid "Access rules"
+msgstr "Access rules"
 
-#: mod_irc.erl:476
-msgid "ejabberd IRC module"
-msgstr "ejabberd's IRC-module"
+#: mod_configure:1772
+msgid "Action on user"
+msgstr "Actie op gebruiker"
 
-#: mod_irc.erl:644
-msgid "You need an x:data capable client to configure mod_irc settings"
+#: mod_roster:982
+msgid "Add Jabber ID"
+msgstr "Jabber ID toevoegen"
+
+#: ejabberd_web_admin:1277 mod_shared_roster:825
+msgid "Add New"
+msgstr "Toevoegen"
+
+#: ejabberd_web_admin:1444 mod_configure:166 mod_configure:521
+#: mod_configure:1118
+msgid "Add User"
+msgstr "Gebruiker toevoegen"
+
+#: ejabberd_web_admin:687 ejabberd_web_admin:698
+msgid "Administration"
+msgstr "Beheer"
+
+#: mod_configure:1767
+msgid "Administration of "
+msgstr "Beheer van "
+
+#: mod_muc_room:2528
+msgid "Administrator privileges required"
+msgstr "U hebt beheerdersprivileges nodig"
+
+#: mod_configure:507
+msgid "All Users"
+msgstr "Alle gebruikers"
+
+#: ejabberd_web_admin:1010
+msgid "All activity"
+msgstr "Alle activiteit"
+
+#: mod_muc_log:1046
+msgid "Allow users to change the subject"
+msgstr "Sta gebruikers toe het onderwerp te veranderen"
+
+#: mod_muc_log:1052
+msgid "Allow users to query other users"
+msgstr "Gebruikers mogen naar andere gebruikers verzoeken verzenden"
+
+#: mod_muc_log:1054
+msgid "Allow users to send invites"
+msgstr "Gebruikers mogen uitnodigingen verzenden"
+
+#: mod_muc_log:1048
+msgid "Allow users to send private messages"
+msgstr "Gebruikers mogen privéberichten verzenden"
+
+#: mod_muc_log:1057
+msgid "Allow visitors to change nickname"
+msgstr "Sta bezoekers toe hun naam te veranderen"
+
+#: mod_muc_log:1050
+msgid "Allow visitors to send private messages to"
+msgstr "Gebruikers mogen privéberichten verzenden aan"
+
+#: mod_muc_log:1059
+msgid "Allow visitors to send status text in presence updates"
+msgstr "Sta bezoekers toe hun statusbericht in te stellen"
+
+#: mod_announce:611
+msgid "Announcements"
+msgstr "Mededelingen"
+
+#: mod_muc_log:476
+msgid "April"
+msgstr "April"
+
+#: mod_muc_log:480
+msgid "August"
+msgstr "Augustus"
+
+#: mod_pubsub:1842
+msgid "Automatic node creation is not enabled"
 msgstr ""
-"U hebt een client nodig die x:data ondersteunt om dit IRC-transport in te "
-"stellen"
 
-#: mod_irc.erl:653
-msgid "Registration in mod_irc for "
-msgstr "Registratie van "
+#: ejabberd_web_admin:1867 mod_configure:148 mod_configure:617
+msgid "Backup"
+msgstr "Backup"
 
-#: mod_irc.erl:659
+#: mod_configure:584
+msgid "Backup Management"
+msgstr "Backup"
+
+#: ejabberd_web_admin:1979
+msgid "Backup of ~p"
+msgstr "Backup maken van ~p"
+
+#: mod_configure:948
+msgid "Backup to File at "
+msgstr "Binaire backup maken op "
+
+#: ejabberd_web_admin:763 ejabberd_web_admin:802 ejabberd_web_admin:868
+#: ejabberd_web_admin:901 ejabberd_web_admin:937 ejabberd_web_admin:1422
+#: ejabberd_web_admin:1705 ejabberd_web_admin:1861 ejabberd_web_admin:2145
+#: ejabberd_web_admin:2174 mod_roster:972 mod_shared_roster:831
+#: mod_shared_roster:926
+msgid "Bad format"
+msgstr "Verkeerd formaat"
+
+#: mod_vcard_ldap:334 mod_vcard_ldap:347 mod_vcard_mnesia:105
+#: mod_vcard_mnesia:119 mod_vcard_sql:160 mod_vcard_sql:174
+msgid "Birthday"
+msgstr "Geboortedatum"
+
+#: mod_legacy_auth:102
+msgid "Both the username and the resource are required"
+msgstr ""
+
+#: mod_proxy65_service:226
+msgid "Bytestream already activated"
+msgstr ""
+
+#: ejabberd_captcha:135
+msgid "CAPTCHA web page"
+msgstr "CAPTCHA webpagina."
+
+#: ejabberd_web_admin:2207
+msgid "CPU Time:"
+msgstr "Processortijd:"
+
+#: mod_privacy:334
+msgid "Cannot remove active list"
+msgstr ""
+
+#: mod_privacy:341
+msgid "Cannot remove default list"
+msgstr ""
+
+#: ejabberd_web_admin:1679 mod_register_web:194 mod_register_web:353
+#: mod_register_web:361 mod_register_web:386
+msgid "Change Password"
+msgstr "Wachtwoord wijzigen"
+
+#: mod_configure:174 mod_configure:528
+msgid "Change User Password"
+msgstr "Verander Gebruikerswachtwoord"
+
+#: mod_register:295
+#, fuzzy
+msgid "Changing password is not allowed"
+msgstr "Niet-toegestane karakters:"
+
+#: mod_muc_room:2764
+#, fuzzy
+msgid "Changing role/affiliation is not allowed"
+msgstr "Niet-toegestane karakters:"
+
+#: mod_register_web:239
+msgid "Characters not allowed:"
+msgstr "Niet-toegestane karakters:"
+
+#: mod_muc_log:358 mod_muc_log:367
+msgid "Chatroom configuration modified"
+msgstr "De instellingen van de chatruimte werden veranderd"
+
+#: mod_muc_log:453
+msgid "Chatroom is created"
+msgstr "Gespreksruimte gecreëerd"
+
+#: mod_muc_log:455
+msgid "Chatroom is destroyed"
+msgstr "Gespreksruimte vernietigd"
+
+#: mod_muc_log:457
+msgid "Chatroom is started"
+msgstr "Gespreksruimte gestart"
+
+#: mod_muc_log:459
+msgid "Chatroom is stopped"
+msgstr "Gespreksruimte gestopt"
+
+#: mod_muc:525 mod_muc_admin:440
+msgid "Chatrooms"
+msgstr "Groepsgesprekken"
+
+#: mod_register:211
+msgid "Choose a username and password to register with this server"
+msgstr ""
+"Kies een gebruikersnaam en een wachtwoord om u te registreren op deze server"
+
+#: mod_configure:920
+msgid "Choose modules to stop"
+msgstr "Selecteer de modules die u wilt stoppen"
+
+#: mod_configure:881
+msgid "Choose storage type of tables"
+msgstr "Opslagmethode voor tabellen kiezen"
+
+#: mod_pubsub:1338
+msgid "Choose whether to approve this entity's subscription."
+msgstr "Beslis of dit verzoek tot abonneren zal worden goedgekeurd"
+
+#: mod_vcard_ldap:336 mod_vcard_ldap:349 mod_vcard_mnesia:107
+#: mod_vcard_mnesia:121 mod_vcard_sql:162 mod_vcard_sql:176
+msgid "City"
+msgstr "Plaats"
+
+#: mod_adhoc:118 mod_adhoc:147 mod_adhoc:163 mod_adhoc:179
+msgid "Commands"
+msgstr "Commando's"
+
+#: mod_muc:461
+msgid "Conference room does not exist"
+msgstr "De chatruimte bestaat niet"
+
+#: mod_configure:129 mod_configure:286 mod_configure:306 mod_configure:504
+msgid "Configuration"
+msgstr "Instellingen"
+
+#: mod_muc_room:3163
+msgid "Configuration of room ~s"
+msgstr "Instellingen van chatruimte ~s"
+
+#: ejabberd_web_admin:1711
+msgid "Connected Resources:"
+msgstr "Verbonden bronnen:"
+
+#: mod_irc:526
+msgid "Connections parameters"
+msgstr "Verbindingsparameters"
+
+#: mod_vcard_ldap:335 mod_vcard_ldap:348 mod_vcard_mnesia:106
+#: mod_vcard_mnesia:120 mod_vcard_sql:161 mod_vcard_sql:175
+msgid "Country"
+msgstr "Land"
+
+#: ejabberd_web_admin:1866 mod_configure:139 mod_configure:580
+msgid "Database"
+msgstr "Database"
+
+#: mod_configure:879
+msgid "Database Tables Configuration at "
+msgstr "Instellingen van databasetabellen op "
+
+#: ejabberd_web_admin:1941
+msgid "Database Tables at ~p"
+msgstr "Databasetabellen van ~p"
+
+#: mod_blocking:267 mod_carboncopy:137 mod_irc:486 mod_irc:574 mod_irc:739
+#: mod_last:215 mod_mam:501 mod_muc:749 mod_offline:291 mod_offline:582
+#: mod_privacy:186 mod_privacy:204 mod_privacy:298 mod_privacy:314
+#: mod_privacy:347 mod_privacy:364 mod_private:103 mod_private:110
+#: mod_proxy65_service:231 mod_pubsub:3506 mod_pubsub:3513 mod_pubsub:3573
+#: mod_pubsub:3598 mod_pubsub:3604 mod_pubsub:3607 mod_vcard:226
+#: node_flat_sql:801 nodetree_tree_sql:128 nodetree_tree_sql:142
+#: nodetree_tree_sql:257
+#, fuzzy
+msgid "Database failure"
+msgstr "Database"
+
+#: mod_muc_log:484
+msgid "December"
+msgstr "December"
+
+#: mod_muc_log:1044
+msgid "Default users as participants"
+msgstr "Gebruikers standaard instellen als deelnemers"
+
+#: ejabberd_web_admin:811 ejabberd_web_admin:911 mod_offline:703
+#: mod_shared_roster:839
+msgid "Delete Selected"
+msgstr "Geselecteerde verwijderen"
+
+#: mod_configure:168 mod_configure:522 mod_configure:1135
+msgid "Delete User"
+msgstr "Verwijder Gebruiker"
+
+#: mod_announce:629
+msgid "Delete message of the day"
+msgstr "Bericht van de dag verwijderen"
+
+#: mod_announce:631
+msgid "Delete message of the day on all hosts"
+msgstr "Verwijder bericht-van-de-dag op alle hosts"
+
+#: mod_shared_roster:900
+msgid "Description:"
+msgstr "Beschrijving:"
+
+#: mod_configure:889
+msgid "Disc only copy"
+msgstr "Harde schijf"
+
+#: mod_shared_roster:914
+msgid "Displayed Groups:"
+msgstr "Weergegeven groepen:"
+
+#: mod_register_web:251
+msgid ""
+"Don't tell your password to anybody, not even the administrators of the "
+"Jabber server."
+msgstr ""
+"Geef Uw wachtwoord aan niemand, zelfs niet aan de beheerders van deze Jabber-"
+"server."
+
+#: mod_configure:971
+msgid "Dump Backup to Text File at "
+msgstr "Backup naar een tekstbestand schrijven op "
+
+#: mod_configure:154 mod_configure:621
+msgid "Dump to Text File"
+msgstr "Backup naar een tekstbestand schrijven"
+
+#: mod_roster:180
+msgid "Duplicated groups are not allowed by RFC6121"
+msgstr ""
+
+#: mod_configure:1776
+msgid "Edit Properties"
+msgstr "Eigenschappen bewerken"
+
+#: mod_muc_room:3881
+msgid "Either approve or decline the voice request."
+msgstr "Keur stemaanvraag goed of af."
+
+#: ejabberd_web_admin:1953
+msgid "Elements"
+msgstr "Elementen"
+
+#: mod_vcard_ldap:337 mod_vcard_ldap:350 mod_vcard_mnesia:108
+#: mod_vcard_mnesia:122 mod_vcard_sql:163 mod_vcard_sql:177
+msgid "Email"
+msgstr "E-mail"
+
+#: mod_register:292
+#, fuzzy
+msgid "Empty password"
+msgstr "het wachtwoord is"
+
+#: mod_muc_log:1055
+msgid "Enable logging"
+msgstr "Logs aanzetten"
+
+#: mod_push:252
+msgid "Enabling push without 'node' attribute is not supported"
+msgstr ""
+
+#: mod_irc:834
+msgid "Encoding for server ~b"
+msgstr "Karakterset voor server ~b"
+
+#: mod_configure:170 mod_configure:524 mod_configure:1145
+msgid "End User Session"
+msgstr "Verwijder Gebruikers-sessie"
+
+#: mod_configure:938
+msgid "Enter list of {Module, [Options]}"
+msgstr "Voer lijst met op te starten modules als volgt in: {Module, [Opties]}"
+
+#: mod_muc:723
+msgid "Enter nickname you want to register"
+msgstr "Voer de bijnaam in die u wilt registreren"
+
+#: mod_configure:950 mod_configure:962
+msgid "Enter path to backup file"
+msgstr "Voer pad naar backupbestand in"
+
+#: mod_configure:996
+msgid "Enter path to jabberd14 spool dir"
+msgstr "Voer pad naar jabberd14-spool-directory in"
+
+#: mod_configure:985
+msgid "Enter path to jabberd14 spool file"
+msgstr "Voer pad naar jabberd14-spool-bestand in"
+
+#: mod_configure:974
+msgid "Enter path to text file"
+msgstr "Voer pad naar backupbestand in"
+
+#: ejabberd_captcha:70
+msgid "Enter the text you see"
+msgstr "Voer de getoonde tekst in"
+
+#: mod_irc:759
+msgid ""
+"Enter username and encodings you wish to use for connecting to IRC servers.  "
+"Press 'Next' to get more fields to fill in.  Press 'Complete' to save "
+"settings."
+msgstr ""
+"Voer de gebruikersnaam en de coderingen in die u wilt gebruiken voor "
+"verbindingen met IRC-servers. Klik op 'Volgende' om meer velden aan te "
+"maken. Klik op \"Voltooi' om de instellingen op te slaan."
+
+#: mod_irc:540
 msgid ""
 "Enter username, encodings, ports and passwords you wish to use for "
 "connecting to IRC servers"
@@ -889,11 +471,191 @@ msgstr ""
 "Voer de gebruikersnaam, coderingen, poorten en wachtwoorden in die U wilt "
 "gebruiken voor het verbinden met IRC-servers"
 
-#: mod_irc.erl:667
+#: mod_vcard:201
+msgid "Erlang Jabber Server"
+msgstr "Erlang Jabber Server"
+
+#: ejabberd_web_admin:1976 ejabberd_web_admin:2147
+msgid "Error"
+msgstr "Fout"
+
+#: mod_irc:520
+msgid ""
+"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
+"net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
+msgstr ""
+"Voorbeeld: [{\"irc.example.org\", \"koi8-r\", 6667, \"geheim\"}, {\"vendetta."
+"example.net\", \"iso8859-1\", 7000}, {irc,testserver.nl\", \"utf-8\"}]."
+
+#: ejabberd_web_admin:2084
+msgid "Export all tables as SQL queries to a file:"
+msgstr "Exporteer alle tabellen als SQL-queries naar een bestand:"
+
+#: ejabberd_web_admin:2056
+msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
+msgstr ""
+"Exporteer data van alle gebruikers in de server naar PIEFXIS-bestanden "
+"(XEP-0227):"
+
+#: ejabberd_web_admin:2068
+msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
+msgstr ""
+"Exporteer data van alle gebruikers van een host naar PIEXFIS-bestanden "
+"(XEP-0227):"
+
+#: mod_delegation:275
+msgid "External component failure"
+msgstr ""
+
+#: mod_delegation:283
+msgid "External component timeout"
+msgstr ""
+
+#: mod_proxy65_service:218
+msgid "Failed to activate bytestream"
+msgstr ""
+
+#: mod_muc_room:910
+msgid "Failed to extract JID from your voice request approval"
+msgstr "Er kon geen JID worden ontleend uit deze stemaanvraag"
+
+#: mod_delegation:257
+msgid "Failed to map delegated namespace to external component"
+msgstr ""
+
+#: mod_http_upload:602
+msgid "Failed to parse HTTP response"
+msgstr ""
+
+#: mod_irc:426
+msgid "Failed to parse chanserv"
+msgstr ""
+
+#: mod_muc_room:3297
+msgid "Failed to process option '~s'"
+msgstr ""
+
+#: mod_vcard_ldap:332 mod_vcard_ldap:345 mod_vcard_mnesia:103
+#: mod_vcard_mnesia:117 mod_vcard_sql:158 mod_vcard_sql:172
+msgid "Family Name"
+msgstr "Achternaam"
+
+#: mod_muc_log:474
+msgid "February"
+msgstr "Februari"
+
+#: mod_http_upload:555
+msgid "File larger than ~w bytes"
+msgstr ""
+
+#: mod_vcard:437
+msgid ""
+"Fill in the form to search for any matching Jabber User (Add * to the end of "
+"field to match substring)"
+msgstr ""
+"Gebruik de velden om te zoeken (Voeg achteraan het teken * toe om te zoeken "
+"naar alles wat met het eerste deel begint.)."
+
+#: mod_muc_log:467
+msgid "Friday"
+msgstr "Vrijdag"
+
+#: mod_offline:691
+msgid "From"
+msgstr "Van"
+
+#: mod_configure:723
+msgid "From ~s"
+msgstr "Van ~s"
+
+#: mod_vcard_ldap:329 mod_vcard_ldap:342 mod_vcard_mnesia:100
+#: mod_vcard_mnesia:114 mod_vcard_sql:155 mod_vcard_sql:169
+msgid "Full Name"
+msgstr "Volledige naam"
+
+#: mod_configure:183 mod_configure:536
+msgid "Get Number of Online Users"
+msgstr "Aantal Aanwezige Gebruikers Opvragen"
+
+#: mod_configure:180 mod_configure:534
+msgid "Get Number of Registered Users"
+msgstr "Aantal Geregistreerde Gebruikers Opvragen"
+
+#: mod_configure:176 mod_configure:530 mod_configure:1179
+msgid "Get User Last Login Time"
+msgstr "Tijd van Laatste Aanmelding Opvragen"
+
+#: mod_configure:172 mod_configure:526 mod_configure:1155 mod_configure:1165
+msgid "Get User Password"
+msgstr "Gebruikerswachtwoord Opvragen"
+
+#: mod_configure:178 mod_configure:532 mod_configure:1188
+msgid "Get User Statistics"
+msgstr "Gebruikers-statistieken Opvragen"
+
+#: mod_vcard_ldap:330 mod_vcard_ldap:343
+#, fuzzy
+msgid "Given Name"
+msgstr "Tussennaam"
+
+#: mod_shared_roster:923
+msgid "Group "
+msgstr "Groep "
+
+#: mod_roster:916
+msgid "Groups"
+msgstr "Groepen"
+
+#: ejabberd_web_admin:1365
+msgid "Host"
+msgstr "Host"
+
+#: mod_s2s_dialback:325
+msgid "Host unknown"
+msgstr ""
+
+#: ejabberd_web_admin:2463
+msgid "IP"
+msgstr "IP"
+
+#: mod_configure:1673
+msgid "IP addresses"
+msgstr "IP-adres"
+
+#: mod_irc:439
+msgid "IRC Transport"
+msgstr "IRC-transport"
+
+#: mod_irc:496
 msgid "IRC Username"
 msgstr "Gebruikersnaam voor IRC:"
 
-#: mod_irc.erl:682
+#: mod_irc:669
+msgid "IRC channel (don't put the first #)"
+msgstr "IRC kanaal (zonder eerste #)"
+
+#: mod_irc:417
+#, fuzzy
+msgid "IRC connection not found"
+msgstr "Node niet gevonden"
+
+#: mod_irc:673
+msgid "IRC server"
+msgstr "IRC-server"
+
+#: mod_irc:756
+msgid "IRC settings"
+msgstr "IRC instellingen"
+
+#: mod_irc:766
+msgid "IRC username"
+msgstr "Gebruikersnaam voor IRC"
+
+#: ejabberd_captcha:126
+msgid "If you don't see the CAPTCHA image here, visit the web page."
+msgstr "Als U het CAPTCHA-plaatje niet ziet, bezoek dan de webpagina."
+
+#: mod_irc:503
 msgid ""
 "If you want to specify different ports, passwords, encodings for IRC "
 "servers, fill this list with values in format '{\"irc server\", \"encoding"
@@ -905,351 +667,580 @@ msgstr ""
 "\", \"codering\", poort, \"wachtwoord\"}'. Standaard gebruikt deze service "
 "de codering \"~s\", poort ~p, leeg wachtwoord."
 
-#: mod_irc.erl:704
-msgid ""
-"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
-"net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
+#: mod_configure:160 mod_configure:634
+msgid "Import Directory"
+msgstr "Directory importeren"
+
+#: mod_configure:157 mod_configure:632
+msgid "Import File"
+msgstr "Bestand importeren"
+
+#: mod_configure:982
+msgid "Import User from File at "
+msgstr "Importeer gebruiker via bestand op "
+
+#: mod_configure:586
+msgid "Import Users From jabberd14 Spool Files"
+msgstr "Importeer gebruikers via spool-bestanden van jabberd14"
+
+#: mod_configure:993
+msgid "Import Users from Dir at "
+msgstr "Gebruikers importeren vanaf directory op "
+
+#: ejabberd_web_admin:2100
+msgid "Import user data from jabberd14 spool file:"
+msgstr "Importeer gebruikersdata via spool-bestanden van jabberd14"
+
+#: ejabberd_web_admin:2043
+msgid "Import users data from a PIEFXIS file (XEP-0227):"
+msgstr "Importeer gebruikersdata van een PIEFXIS-bestand (XEP-0227):"
+
+#: ejabberd_web_admin:2111
+msgid "Import users data from jabberd14 spool directory:"
+msgstr "Importeer gebruikersdata via spool-bestanden van jabberd14"
+
+#: xmpp_stream_in:983
+msgid "Improper 'from' attribute"
 msgstr ""
-"Voorbeeld: [{\"irc.example.org\", \"koi8-r\", 6667, \"geheim\"}, {\"vendetta."
-"example.net\", \"iso8859-1\", 7000}, {irc,testserver.nl\", \"utf-8\"}]."
 
-#: mod_irc.erl:713
-msgid "Connections parameters"
-msgstr "Verbindingsparameters"
-
-#: mod_irc.erl:886
-msgid "Join IRC channel"
-msgstr "Ga IRC kanaal binnen"
-
-#: mod_irc.erl:893
-msgid "IRC channel (don't put the first #)"
-msgstr "IRC kanaal (zonder eerste #)"
-
-#: mod_irc.erl:903
-msgid "IRC server"
-msgstr "IRC-server"
-
-#: mod_irc.erl:950 mod_irc.erl:958
-msgid "Join the IRC channel here."
-msgstr "Ga het IRC kanaal binnen"
-
-#: mod_irc.erl:967
-msgid "Join the IRC channel in this Jabber ID: ~s"
-msgstr "Ga het IRC kanaal van deze Jabber ID binnen: ~s"
-
-#: mod_irc.erl:1046
-msgid "IRC settings"
-msgstr "IRC instellingen"
-
-#: mod_irc.erl:1051
-msgid ""
-"Enter username and encodings you wish to use for connecting to IRC servers.  "
-"Press 'Next' to get more fields to fill in.  Press 'Complete' to save "
-"settings."
+#: xmpp_stream_in:477
+msgid "Improper 'to' attribute"
 msgstr ""
-"Voer de gebruikersnaam en de coderingen in die u wilt gebruiken voor "
-"verbindingen met IRC-servers. Klik op 'Volgende' om meer velden aan te "
-"maken. Klik op \"Voltooi' om de instellingen op te slaan."
 
-#: mod_irc.erl:1060
-msgid "IRC username"
-msgstr "Gebruikersnaam voor IRC"
+#: ejabberd_service:189
+msgid "Improper domain part of 'from' attribute"
+msgstr ""
 
-#: mod_irc.erl:1126
-msgid "Password ~b"
-msgstr "Wachtwoord ~b"
+#: mod_muc_room:260
+msgid "Improper message type"
+msgstr "Onjuist berichttype"
 
-#: mod_irc.erl:1137
-msgid "Port ~b"
-msgstr "Poort ~b"
-
-#: mod_irc.erl:1150
-msgid "Encoding for server ~b"
-msgstr "Karakterset voor server ~b"
-
-#: mod_irc.erl:1171
-msgid "Server ~b"
-msgstr "Server ~b"
-
-#: mod_mam.erl:541
+#: ejabberd_web_admin:1586
 #, fuzzy
-msgid "Only members may query archives of this room"
-msgstr "Alleen moderators mogen het onderwerp van deze chatruimte veranderen"
+msgid "Incoming s2s Connections:"
+msgstr "Uitgaande s2s-verbindingen:"
 
-#: mod_muc.erl:585
-msgid "Only service administrators are allowed to send service messages"
-msgstr ""
-"Alleen beheerders van deze dienst mogen mededelingen verzenden naar alle "
-"chatruimtes"
-
-#: mod_muc.erl:622
-msgid "Room creation is denied by service policy"
-msgstr ""
-"De aanmaak van de chatruimte is verhinderd door de instellingen van deze "
-"server"
-
-#: mod_muc.erl:629
-msgid "Conference room does not exist"
-msgstr "De chatruimte bestaat niet"
-
-#: mod_muc.erl:740 mod_muc_admin.erl:321
-msgid "Chatrooms"
-msgstr "Groepsgesprekken"
-
-#: mod_muc.erl:781
-msgid "Empty Rooms"
+#: mod_muc_room:3669 mod_register:187
+msgid "Incorrect CAPTCHA submit"
 msgstr ""
 
-#: mod_muc.erl:933
-msgid "You need a client that supports x:data to register the nickname"
+#: mod_muc:772 mod_muc_room:3052 mod_pubsub:1194 mod_register:183 mod_vcard:256
+#, fuzzy
+msgid "Incorrect data form"
+msgstr "Foutief wachtwoord"
+
+#: mod_muc_room:1943 mod_register:300 mod_register:350
+msgid "Incorrect password"
+msgstr "Foutief wachtwoord"
+
+#: mod_irc:585
+msgid "Incorrect value in data form"
 msgstr ""
-"U hebt een client nodig die x:data ondersteunt om een bijnaam te registreren"
 
-#: mod_muc.erl:943
-msgid "Nickname Registration at "
-msgstr "Registratie van een bijnaam op "
-
-#: mod_muc.erl:949
-msgid "Enter nickname you want to register"
-msgstr "Voer de bijnaam in die u wilt registreren"
-
-#: mod_muc.erl:950 mod_muc_room.erl:4353 mod_roster.erl:1435 mod_vcard.erl:490
-#: mod_vcard.erl:621
-msgid "Nickname"
-msgstr "Bijnaam"
-
-#: mod_muc.erl:1062 mod_muc_room.erl:1104 mod_muc_room.erl:1843
-msgid "That nickname is registered by another person"
-msgstr "Deze bijnaam is al geregistreerd door iemand anders"
-
-#: mod_muc.erl:1090
-msgid "You must fill in field \"Nickname\" in the form"
-msgstr "U moet het veld \"bijnaam\" invullen"
-
-#: mod_muc.erl:1113
-msgid "ejabberd MUC module"
-msgstr "ejabberd's MUC module"
-
-#: mod_muc_admin.erl:231 mod_muc_admin.erl:234 mod_muc_admin.erl:246
-#: mod_muc_admin.erl:320
-msgid "Multi-User Chat"
-msgstr "Groepschat"
-
-#: mod_muc_admin.erl:249
-msgid "Total rooms"
-msgstr "Aantal groepsgesprekken"
-
-#: mod_muc_admin.erl:250
-msgid "Permanent rooms"
-msgstr "Permanente groepsgesprekken"
-
-#: mod_muc_admin.erl:251
-msgid "Registered nicknames"
-msgstr "Geregistreerde gebruikersnamen"
-
-#: mod_muc_admin.erl:254
-msgid "List of rooms"
-msgstr "Lijst van groepsgesprekken"
-
-#: mod_muc_log.erl:398 mod_muc_log.erl:407
-msgid "Chatroom configuration modified"
-msgstr "De instellingen van de chatruimte werden veranderd"
-
-#: mod_muc_log.erl:410
-msgid "joins the room"
-msgstr "betrad de chatruimte"
-
-#: mod_muc_log.erl:413 mod_muc_log.erl:416
-msgid "leaves the room"
-msgstr "verliet de chatruimte"
-
-#: mod_muc_log.erl:420 mod_muc_log.erl:423
-msgid "has been banned"
-msgstr "is verbannen"
-
-#: mod_muc_log.erl:435
-msgid "has been kicked because of an affiliation change"
-msgstr "is weggestuurd vanwege een affiliatieverandering"
-
-#: mod_muc_log.erl:440
-msgid "has been kicked because the room has been changed to members-only"
+#: mod_adhoc:276
+msgid "Incorrect value of 'action' attribute"
 msgstr ""
-"is weggestuurd omdat de chatruimte vanaf heden alleen toegankelijk is voor "
-"leden"
 
-#: mod_muc_log.erl:445
-msgid "has been kicked because of a system shutdown"
-msgstr "is weggestuurd omdat het systeem gestopt wordt"
+#: mod_configure:1806
+msgid "Incorrect value of 'action' in data form"
+msgstr ""
 
-#: mod_muc_log.erl:450
-msgid "is now known as"
-msgstr "heet nu"
+#: mod_configure:1335 mod_configure:1367 mod_configure:1399 mod_configure:1419
+#: mod_configure:1439
+msgid "Incorrect value of 'path' in data form"
+msgstr ""
 
-#: mod_muc_log.erl:453 mod_muc_log.erl:792
-msgid " has set the subject to: "
-msgstr " veranderde het onderwerp in: "
+#: mod_irc:331
+msgid "Incorrect value of 'type' attribute"
+msgstr ""
 
-#: mod_muc_log.erl:493
-msgid "Chatroom is created"
-msgstr "Gespreksruimte gecreëerd"
+#: mod_privilege:100
+msgid "Insufficient privilege"
+msgstr ""
 
-#: mod_muc_log.erl:495
-msgid "Chatroom is destroyed"
-msgstr "Gespreksruimte vernietigd"
+#: mod_privilege:286
+msgid "Invalid 'from' attribute in forwarded message"
+msgstr ""
 
-#: mod_muc_log.erl:497
-msgid "Chatroom is started"
-msgstr "Gespreksruimte gestart"
+#: mod_privilege:300
+msgid "Invalid <forwarded/> element"
+msgstr ""
 
-#: mod_muc_log.erl:499
-msgid "Chatroom is stopped"
-msgstr "Gespreksruimte gestopt"
+#: mod_muc_room:3926
+#, fuzzy
+msgid "Invitations are not allowed in this conference"
+msgstr "Stemaanvragen zijn uitgeschakeld voor deze chatruimte"
 
-#: mod_muc_log.erl:503
-msgid "Monday"
-msgstr "Maandag"
-
-#: mod_muc_log.erl:504
-msgid "Tuesday"
-msgstr "Dinsdag"
-
-#: mod_muc_log.erl:505
-msgid "Wednesday"
-msgstr "Woensdag"
-
-#: mod_muc_log.erl:506
-msgid "Thursday"
-msgstr "Donderdag"
-
-#: mod_muc_log.erl:507
-msgid "Friday"
-msgstr "Vrijdag"
-
-#: mod_muc_log.erl:508
-msgid "Saturday"
-msgstr "Zaterdag"
-
-#: mod_muc_log.erl:509
-msgid "Sunday"
-msgstr "Zondag"
-
-#: mod_muc_log.erl:513
-msgid "January"
-msgstr "Januari"
-
-#: mod_muc_log.erl:514
-msgid "February"
-msgstr "Februari"
-
-#: mod_muc_log.erl:515
-msgid "March"
-msgstr "Maart"
-
-#: mod_muc_log.erl:516
-msgid "April"
-msgstr "April"
-
-#: mod_muc_log.erl:517
-msgid "May"
-msgstr "Mei"
-
-#: mod_muc_log.erl:518
-msgid "June"
-msgstr "Juni"
-
-#: mod_muc_log.erl:519
-msgid "July"
-msgstr "Juli"
-
-#: mod_muc_log.erl:520
-msgid "August"
-msgstr "Augustus"
-
-#: mod_muc_log.erl:521
-msgid "September"
-msgstr "September"
-
-#: mod_muc_log.erl:522
-msgid "October"
-msgstr "Oktober"
-
-#: mod_muc_log.erl:523
-msgid "November"
-msgstr "November"
-
-#: mod_muc_log.erl:524
-msgid "December"
-msgstr "December"
-
-#: mod_muc_log.erl:912
-msgid "Room Configuration"
-msgstr "Instellingen van de chatruimte"
-
-#: mod_muc_log.erl:932
-msgid "Room Occupants"
-msgstr "Aantal aanwezigen"
-
-#: mod_muc_room.erl:163
-msgid "Traffic rate limit is exceeded"
-msgstr "Dataverkeerslimiet overschreden"
-
-#: mod_muc_room.erl:230 mod_muc_room.erl:518 mod_muc_room.erl:1059
+#: mod_muc_room:233 mod_muc_room:375 mod_muc_room:1046
 msgid ""
 "It is not allowed to send error messages to the room. The participant (~s) "
 "has sent an error message (~s) and got kicked from the room"
 msgstr ""
 
-#: mod_muc_room.erl:241
-msgid "It is not allowed to send private messages to the conference"
-msgstr "Er mogen geen privéberichten naar de chatruimte worden verzonden"
+#: mod_muc_room:418 mod_muc_room:429
+msgid "It is not allowed to send private messages"
+msgstr "Het is niet toegestaan priveberichten te sturen"
 
-#: mod_muc_room.erl:316
-msgid "Please, wait for a while before sending new voice request"
-msgstr "Wacht s.v.p. met het maken van een nieuwe stemaanvraag."
-
-#: mod_muc_room.erl:329
-msgid "Voice requests are disabled in this conference"
-msgstr "Stemaanvragen zijn uitgeschakeld voor deze chatruimte"
-
-#: mod_muc_room.erl:347
-msgid "Failed to extract JID from your voice request approval"
-msgstr "Er kon geen JID worden ontleend uit deze stemaanvraag"
-
-#: mod_muc_room.erl:377
-msgid "Only moderators can approve voice requests"
-msgstr "Alleen moderators kunnen stemaanvragen goedkeuren"
-
-#: mod_muc_room.erl:389
-msgid "Improper message type"
-msgstr "Onjuist berichttype"
-
-#: mod_muc_room.erl:534
+#: mod_muc_room:388
 msgid "It is not allowed to send private messages of type \"groupchat\""
 msgstr ""
 "Er mogen geen privéberichten van het type \"groupchat\" worden verzonden"
 
-#: mod_muc_room.erl:546 mod_muc_room.erl:621
-msgid "Recipient is not in the conference room"
-msgstr "De ontvanger is niet in de chatruimte"
+#: mod_muc_room:244
+msgid "It is not allowed to send private messages to the conference"
+msgstr "Er mogen geen privéberichten naar de chatruimte worden verzonden"
 
-#: mod_muc_room.erl:576 mod_muc_room.erl:598
-msgid "It is not allowed to send private messages"
-msgstr "Het is niet toegestaan priveberichten te sturen"
+#: mod_register_web:181 mod_register_web:189
+msgid "Jabber Account Registration"
+msgstr "Jabber-account registratie"
 
-#: mod_muc_room.erl:588 mod_muc_room.erl:983 mod_muc_room.erl:4594
-msgid "Only occupants are allowed to send messages to the conference"
-msgstr "Alleen aanwezigen mogen berichten naar de chatruimte verzenden"
+#: mod_configure:1122 mod_configure:1139 mod_configure:1149 mod_configure:1159
+#: mod_configure:1169 mod_configure:1183 mod_configure:1192 mod_configure:1600
+#: mod_configure:1644 mod_configure:1669 mod_roster:912 mod_vcard_mnesia:113
+#: mod_vcard_sql:168
+msgid "Jabber ID"
+msgstr "Jabber ID"
 
-#: mod_muc_room.erl:644
-msgid "Only occupants are allowed to send queries to the conference"
-msgstr "Alleen aanwezigen mogen verzoeken verzenden naar de chatruimte"
+#: mod_muc_log:473
+msgid "January"
+msgstr "Januari"
 
-#: mod_muc_room.erl:657
-msgid "Queries to the conference members are not allowed in this room"
+#: mod_irc:665
+msgid "Join IRC channel"
+msgstr "Ga IRC kanaal binnen"
+
+#: mod_irc:689
+msgid "Join the IRC channel here."
+msgstr "Ga het IRC kanaal binnen"
+
+#: mod_irc:690
+msgid "Join the IRC channel in this Jabber ID: ~s"
+msgstr "Ga het IRC kanaal van deze Jabber ID binnen: ~s"
+
+#: mod_muc_log:479
+msgid "July"
+msgstr "Juli"
+
+#: mod_muc_log:478
+msgid "June"
+msgstr "Juni"
+
+#: ejabberd_web_admin:1488 ejabberd_web_admin:1715
+msgid "Last Activity"
+msgstr "Laatste activiteit"
+
+#: mod_configure:1646
+msgid "Last login"
+msgstr "Laatste Aanmelding"
+
+#: ejabberd_web_admin:1007
+msgid "Last month"
+msgstr "Afgelopen maand"
+
+#: ejabberd_web_admin:1008
+msgid "Last year"
+msgstr "Afgelopen jaar"
+
+#: mod_configure:941
+msgid "List of modules to start"
+msgstr "Lijst met op te starten modules"
+
+#: mod_muc_admin:373
+msgid "List of rooms"
+msgstr "Lijst van groepsgesprekken"
+
+#: ejabberd_web_admin:1869
+msgid "Listened Ports"
+msgstr "Openstaande poorten"
+
+#: ejabberd_web_admin:2139
+msgid "Listened Ports at "
+msgstr "Openstaande poorten op "
+
+#: ejabberd_web_admin:2281
+msgid "Low level update script"
+msgstr "Lowlevel script voor de opwaardering"
+
+#: mod_muc_log:1033
+msgid "Make participants list public"
+msgstr "Deelnemerslijst publiek maken"
+
+#: mod_muc_log:1062
+msgid "Make room CAPTCHA protected"
+msgstr "Chatruimte beveiligen met een geautomatiseerde Turing test"
+
+#: mod_muc_log:1040
+msgid "Make room members-only"
+msgstr "Chatruimte enkel toegankelijk maken voor leden"
+
+#: mod_muc_log:1042
+msgid "Make room moderated"
+msgstr "Chatruimte gemodereerd maken"
+
+#: mod_muc_log:1035
+msgid "Make room password protected"
+msgstr "Chatruimte beveiligen met een wachtwoord"
+
+#: mod_muc_log:1029
+msgid "Make room persistent"
+msgstr "Chatruimte blijvend maken"
+
+#: mod_muc_log:1031
+msgid "Make room public searchable"
+msgstr "Chatruimte doorzoekbaar maken"
+
+#: mod_register:317
+#, fuzzy
+msgid "Malformed username"
+msgstr "Gebruikersnaam voor IRC"
+
+#: mod_muc_log:475
+msgid "March"
+msgstr "Maart"
+
+#: mod_muc_log:1068
+msgid "Maximum Number of Occupants"
+msgstr "Maximum aantal aanwezigen"
+
+#: mod_muc_log:477
+msgid "May"
+msgstr "Mei"
+
+#: mod_shared_roster:907
+msgid "Members:"
+msgstr "Groepsleden:"
+
+#: mod_muc_room:1833
+msgid "Membership is required to enter this room"
+msgstr "U moet lid zijn om deze chatruimte te kunnen betreden"
+
+#: mod_register_web:262
+msgid ""
+"Memorize your password, or write it in a paper placed in a safe place. In "
+"Jabber there isn't an automated way to recover your password if you forget "
+"it."
 msgstr ""
-"Er mogen geen verzoeken verzenden worden naar deelnemers in deze chatruimte"
+"Onthou het wachtwoord, of schrijf het op en bewaar het op een veilige "
+"plaats. Met Jabber is er geen geautomatiseerde manier om het wachtwoord "
+"terug te halen als U het vergeet."
 
-#: mod_muc_room.erl:961
+#: ejabberd_web_admin:1954
+msgid "Memory"
+msgstr "Geheugen"
+
+#: mod_announce:520 mod_configure:1039 mod_configure:1079
+msgid "Message body"
+msgstr "Bericht"
+
+#: mod_privilege:291
+msgid "Message not found in forwarded payload"
+msgstr ""
+
+#: mod_vcard_ldap:331 mod_vcard_ldap:344 mod_vcard_mnesia:102
+#: mod_vcard_mnesia:116 mod_vcard_sql:157 mod_vcard_sql:171
+msgid "Middle Name"
+msgstr "Tussennaam"
+
+#: mod_irc:704
+msgid "Missing 'channel' or 'server' in the data form"
+msgstr ""
+
+#: xmpp_stream_in:990
+msgid "Missing 'from' attribute"
+msgstr ""
+
+#: xmpp_stream_in:472 xmpp_stream_in:993
+msgid "Missing 'to' attribute"
+msgstr ""
+
+#: mod_muc_room:2536 mod_muc_room:3721 mod_muc_room:3765 mod_muc_room:3798
+msgid "Moderator privileges required"
+msgstr "U hebt moderatorprivileges nodig"
+
+#: ejabberd_web_admin:2279
+msgid "Modified modules"
+msgstr "Gewijzigde modules"
+
+#: ejabberd_web_admin:2465 ejabberd_web_admin:2620
+msgid "Module"
+msgstr "Module"
+
+#: gen_iq_handler:153
+msgid "Module failed to handle the query"
+msgstr ""
+
+#: ejabberd_web_admin:1885 mod_configure:582 mod_configure:595
+msgid "Modules"
+msgstr "Modules"
+
+#: ejabberd_web_admin:2168
+msgid "Modules at ~p"
+msgstr "Modules op ~p"
+
+#: mod_muc_log:463
+msgid "Monday"
+msgstr "Maandag"
+
+#: mod_muc_admin:346 mod_muc_admin:349 mod_muc_admin:365 mod_muc_admin:439
+msgid "Multi-User Chat"
+msgstr "Groepschat"
+
+#: mod_multicast:267
+msgid "Multicast"
+msgstr "Multicast"
+
+#: mod_roster:195
+msgid "Multiple <item/> elements are not allowed by RFC6121"
+msgstr ""
+
+#: ejabberd_web_admin:1951 mod_vcard_mnesia:101 mod_vcard_mnesia:115
+#: mod_vcard_sql:156 mod_vcard_sql:170
+msgid "Name"
+msgstr "Naam"
+
+#: mod_shared_roster:896
+msgid "Name:"
+msgstr "Naam:"
+
+#: mod_muc_room:2696
+msgid "Neither 'jid' nor 'nick' attribute found"
+msgstr ""
+
+#: mod_muc_room:2518 mod_muc_room:2701
+msgid "Neither 'role' nor 'affiliation' attribute found"
+msgstr ""
+
+#: ejabberd_web_admin:1506 ejabberd_web_admin:1687 mod_configure:1629
+msgid "Never"
+msgstr "Nooit"
+
+#: mod_register_web:377
+msgid "New Password:"
+msgstr "Nieuw Wachtwoord:"
+
+#: mod_roster:913 mod_vcard_ldap:333 mod_vcard_ldap:346 mod_vcard_mnesia:104
+#: mod_vcard_mnesia:118 mod_vcard_sql:159 mod_vcard_sql:173
+msgid "Nickname"
+msgstr "Bijnaam"
+
+#: mod_muc:722
+msgid "Nickname Registration at "
+msgstr "Registratie van een bijnaam op "
+
+#: mod_muc_room:2713
+msgid "Nickname ~s does not exist in the room"
+msgstr "De bijnaam ~s bestaat niet in deze chatruimte"
+
+#: mod_configure:1496
+msgid "No 'access' found in data form"
+msgstr ""
+
+#: mod_configure:1455
+msgid "No 'acls' found in data form"
+msgstr ""
+
+#: mod_muc_room:3075
+msgid "No 'affiliation' attribute found"
+msgstr ""
+
+#: mod_muc_room:2505
+#, fuzzy
+msgid "No 'item' element found"
+msgstr "Node niet gevonden"
+
+#: mod_configure:1280
+msgid "No 'modules' found in data form"
+msgstr ""
+
+#: mod_configure:1799
+msgid "No 'password' found in data form"
+msgstr ""
+
+#: mod_register:148
+msgid "No 'password' found in this query"
+msgstr ""
+
+#: mod_configure:1319 mod_configure:1350 mod_configure:1382 mod_configure:1413
+#: mod_configure:1433
+msgid "No 'path' found in data form"
+msgstr ""
+
+#: mod_muc_room:3922
+msgid "No 'to' attribute found in the invitation"
+msgstr ""
+
+#: ejabberd_web_admin:1767
+msgid "No Data"
+msgstr "Geen gegevens"
+
+#: ejabberd_local:181
+msgid "No available resource found"
+msgstr ""
+
+#: mod_announce:575
+msgid "No body provided for announce message"
+msgstr "De mededeling bevat geen bericht"
+
+#: mod_irc:335 mod_pubsub:1183 mod_pubsub:3289
+#, fuzzy
+msgid "No data form found"
+msgstr "Node niet gevonden"
+
+#: mod_disco:224 mod_vcard:282
+msgid "No features available"
+msgstr ""
+
+#: mod_adhoc:239
+msgid "No hook has processed this command"
+msgstr ""
+
+#: mod_last:218
+msgid "No info about last activity found"
+msgstr ""
+
+#: mod_blocking:99
+msgid "No items found in this query"
+msgstr ""
+
+#: ejabberd_local:90 ejabberd_sm:863 mod_blocking:92 mod_blocking:110
+#: mod_http_upload:513 mod_muc:482 mod_muc:534 mod_muc:556 mod_muc:580
+#: mod_offline:303 mod_privacy:168 mod_privacy:285 mod_roster:207
+msgid "No module is handling this query"
+msgstr ""
+
+#: mod_pubsub:1541
+msgid "No node specified"
+msgstr ""
+
+#: mod_pubsub:1426
+msgid "No pending subscriptions found"
+msgstr ""
+
+#: mod_privacy:201 mod_privacy:295 mod_privacy:311 mod_privacy:344
+msgid "No privacy list with this name found"
+msgstr ""
+
+#: mod_private:96
+msgid "No private data found in this query"
+msgstr ""
+
+#: mod_configure:869 mod_configure:908 mod_configure:1222 mod_configure:1254
+#: mod_configure:1275 mod_configure:1314 mod_configure:1345 mod_configure:1377
+#: mod_configure:1408 mod_configure:1428 mod_stats:93
+#, fuzzy
+msgid "No running node found"
+msgstr "Node niet gevonden"
+
+#: mod_disco:252 mod_vcard:265
+msgid "No services available"
+msgstr ""
+
+#: mod_stats:101
+msgid "No statistics found for this item"
+msgstr ""
+
+#: nodetree_dag:72 nodetree_tree:181 nodetree_tree_sql:255
+msgid "Node already exists"
+msgstr ""
+
+#: nodetree_tree_sql:99
+#, fuzzy
+msgid "Node index not found"
+msgstr "Node niet gevonden"
+
+#: ejabberd_web_admin:1046 mod_irc:303 mod_irc:366 mod_muc:532 mod_muc:680
+#: nodetree_dag:78 nodetree_dag:102 nodetree_dag:118 nodetree_dag:142
+#: nodetree_dag:229 nodetree_tree:74 nodetree_tree:80 nodetree_tree_sql:130
+#: nodetree_tree_sql:144
+msgid "Node not found"
+msgstr "Node niet gevonden"
+
+#: ejabberd_web_admin:1857 ejabberd_web_admin:1882
+msgid "Node ~p"
+msgstr "Node ~p"
+
+#: mod_vcard:385
+msgid "Nodeprep has failed"
+msgstr ""
+
+#: ejabberd_web_admin:1837
+msgid "Nodes"
+msgstr "Nodes"
+
+#: ejabberd_web_admin:1622 ejabberd_web_admin:1818 ejabberd_web_admin:1828
+#: ejabberd_web_admin:2238 mod_roster:907
+msgid "None"
+msgstr "Geen"
+
+#: ejabberd_web_admin:1033
+msgid "Not Found"
+msgstr "Niet gevonden"
+
+#: mod_disco:296 mod_disco:370 mod_last:159
+msgid "Not subscribed"
+msgstr ""
+
+#: mod_muc_log:483
+msgid "November"
+msgstr "November"
+
+#: mod_configure:1212
+msgid "Number of online users"
+msgstr "Aantal Aanwezige Gebruikers"
+
+#: mod_configure:1202
+msgid "Number of registered users"
+msgstr "Aantal Geregistreerde Gebruikers"
+
+#: ejabberd_web_admin:2000 ejabberd_web_admin:2010 ejabberd_web_admin:2021
+#: ejabberd_web_admin:2030 ejabberd_web_admin:2040 ejabberd_web_admin:2053
+#: ejabberd_web_admin:2065 ejabberd_web_admin:2081 ejabberd_web_admin:2097
+#: ejabberd_web_admin:2108 ejabberd_web_admin:2118
+msgid "OK"
+msgstr "OK"
+
+#: mod_muc_log:482
+msgid "October"
+msgstr "Oktober"
+
+#: ejabberd_web_admin:1487
+msgid "Offline Messages"
+msgstr "Offline berichten"
+
+#: mod_offline:761
+msgid "Offline Messages:"
+msgstr "Offline berichten:"
+
+#: mod_register_web:373
+msgid "Old Password:"
+msgstr "Oud Wachtwoord:"
+
+#: ejabberd_web_admin:1524 ejabberd_web_admin:1698 mod_configure:1639
+msgid "Online"
+msgstr "Online"
+
+#: ejabberd_web_admin:974 ejabberd_web_admin:1367 mod_configure:506
+msgid "Online Users"
+msgstr "Online gebruikers"
+
+#: ejabberd_web_admin:1580 ejabberd_web_admin:1599 ejabberd_web_admin:2211
+msgid "Online Users:"
+msgstr "Online gebruikers:"
+
+#: mod_carboncopy:141
+msgid "Only <enable/> or <disable/> tags are allowed"
+msgstr ""
+
+#: mod_privacy:154
+msgid "Only <list/> element is allowed in this query"
+msgstr ""
+
+#: mod_mam:379
+#, fuzzy
+msgid "Only members may query archives of this room"
+msgstr "Alleen moderators mogen het onderwerp van deze chatruimte veranderen"
+
+#: mod_muc_room:773
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
@@ -1257,452 +1248,560 @@ msgstr ""
 "Alleen moderators en deelnemers mogen het onderwerp van deze chatruimte "
 "veranderen"
 
-#: mod_muc_room.erl:966
+#: mod_muc_room:778
 msgid "Only moderators are allowed to change the subject in this room"
 msgstr "Alleen moderators mogen het onderwerp van deze chatruimte veranderen"
 
-#: mod_muc_room.erl:974
-msgid "Visitors are not allowed to send messages to all occupants"
-msgstr "Bezoekers mogen geen berichten verzenden naar alle aanwezigen"
+#: mod_muc_room:917
+msgid "Only moderators can approve voice requests"
+msgstr "Alleen moderators kunnen stemaanvragen goedkeuren"
 
-#: mod_muc_room.erl:1080
-msgid "Visitors are not allowed to change their nicknames in this room"
-msgstr "Het is bezoekers niet toegestaan hun naam te veranderen in dit kanaal"
+#: mod_muc_room:424 mod_muc_room:792 mod_muc_room:3989
+msgid "Only occupants are allowed to send messages to the conference"
+msgstr "Alleen aanwezigen mogen berichten naar de chatruimte verzenden"
 
-#: mod_muc_room.erl:1093 mod_muc_room.erl:1835
-msgid "That nickname is already in use by another occupant"
-msgstr "Deze bijnaam is al in gebruik door een andere aanwezige"
+#: mod_muc_room:457
+msgid "Only occupants are allowed to send queries to the conference"
+msgstr "Alleen aanwezigen mogen verzoeken verzenden naar de chatruimte"
 
-#: mod_muc_room.erl:1822
-msgid "You have been banned from this room"
-msgstr "U werd verbannen uit deze chatruimte"
+#: mod_muc:422
+msgid "Only service administrators are allowed to send service messages"
+msgstr ""
+"Alleen beheerders van deze dienst mogen mededelingen verzenden naar alle "
+"chatruimtes"
 
-#: mod_muc_room.erl:1826
-msgid "Membership is required to enter this room"
-msgstr "U moet lid zijn om deze chatruimte te kunnen betreden"
+#: ejabberd_web_admin:2466 ejabberd_web_admin:2621
+msgid "Options"
+msgstr "Opties"
 
-#: mod_muc_room.erl:1872
-msgid "A password is required to enter this room"
-msgstr "U hebt een wachtwoord nodig om deze chatruimte te kunnen betreden"
+#: mod_vcard_ldap:338 mod_vcard_ldap:351 mod_vcard_mnesia:109
+#: mod_vcard_mnesia:123 mod_vcard_sql:164 mod_vcard_sql:178
+msgid "Organization Name"
+msgstr "Organisatie"
 
-#: mod_muc_room.erl:1898 mod_register.erl:295
-msgid "Too many CAPTCHA requests"
-msgstr "Te veel CAPTCHA-aanvragen"
+#: mod_vcard_ldap:339 mod_vcard_ldap:352 mod_vcard_mnesia:110
+#: mod_vcard_mnesia:124 mod_vcard_sql:165 mod_vcard_sql:179
+msgid "Organization Unit"
+msgstr "Afdeling"
 
-#: mod_muc_room.erl:1908 mod_register.erl:301
-msgid "Unable to generate a CAPTCHA"
-msgstr "Het generen van een CAPTCHA is mislukt"
+#: mod_configure:508
+msgid "Outgoing s2s Connections"
+msgstr "Uitgaande s2s-verbindingen"
 
-#: mod_muc_room.erl:1919
-msgid "Incorrect password"
-msgstr "Foutief wachtwoord"
+#: ejabberd_web_admin:1583
+msgid "Outgoing s2s Connections:"
+msgstr "Uitgaande s2s-verbindingen:"
 
-#: mod_muc_room.erl:2573
-msgid "Administrator privileges required"
-msgstr "U hebt beheerdersprivileges nodig"
-
-#: mod_muc_room.erl:2586
-msgid "Moderator privileges required"
-msgstr "U hebt moderatorprivileges nodig"
-
-#: mod_muc_room.erl:2758
-msgid "Jabber ID ~s is invalid"
-msgstr "De Jabber ID ~s is ongeldig"
-
-#: mod_muc_room.erl:2772
-msgid "Nickname ~s does not exist in the room"
-msgstr "De bijnaam ~s bestaat niet in deze chatruimte"
-
-#: mod_muc_room.erl:2795 mod_muc_room.erl:3175
-msgid "Invalid affiliation: ~s"
-msgstr "Ongeldige affiliatie: ~s"
-
-#: mod_muc_room.erl:2846
-msgid "Invalid role: ~s"
-msgstr "Ongeldige rol: ~s"
-
-#: mod_muc_room.erl:3155 mod_muc_room.erl:3187 mod_muc_room.erl:4236
+#: mod_muc_room:3023 mod_muc_room:3067 mod_muc_room:3697 mod_pubsub:1302
+#: mod_pubsub:1394 mod_pubsub:1553 mod_pubsub:2118 mod_pubsub:2184
+#: mod_pubsub:2383 mod_pubsub:2464 mod_pubsub:3063 mod_pubsub:3206
 msgid "Owner privileges required"
 msgstr "U hebt eigenaarsprivileges nodig"
 
-#: mod_muc_room.erl:3348
-msgid "Configuration of room ~s"
-msgstr "Instellingen van chatruimte ~s"
-
-#: mod_muc_room.erl:3359
-msgid "Room title"
-msgstr "Naam van de chatruimte"
-
-#: mod_muc_room.erl:3361 mod_muc_room.erl:4190
-msgid "Room description"
-msgstr "Beschrijving"
-
-#: mod_muc_room.erl:3369
-msgid "Make room persistent"
-msgstr "Chatruimte blijvend maken"
-
-#: mod_muc_room.erl:3375
-msgid "Make room public searchable"
-msgstr "Chatruimte doorzoekbaar maken"
-
-#: mod_muc_room.erl:3378
-msgid "Make participants list public"
-msgstr "Deelnemerslijst publiek maken"
-
-#: mod_muc_room.erl:3380
-msgid "Make room password protected"
-msgstr "Chatruimte beveiligen met een wachtwoord"
-
-#: mod_muc_room.erl:3394
-msgid "Maximum Number of Occupants"
-msgstr "Maximum aantal aanwezigen"
-
-#: mod_muc_room.erl:3406
-msgid "No limit"
-msgstr "Geen limiet"
-
-#: mod_muc_room.erl:3436
-msgid "Present real Jabber IDs to"
-msgstr "Jabber ID's kunnen achterhaald worden door"
-
-#: mod_muc_room.erl:3450 mod_muc_room.erl:3560
-msgid "moderators only"
-msgstr "moderators"
-
-#: mod_muc_room.erl:3460 mod_muc_room.erl:3570
-msgid "anyone"
-msgstr "iedereen"
-
-#: mod_muc_room.erl:3471
-msgid "Roles for which Presence is Broadcasted"
-msgstr ""
-
-#: mod_muc_room.erl:3486
-#, fuzzy
-msgid "Moderator"
-msgstr "moderators"
-
-#: mod_muc_room.erl:3496
-msgid "Participant"
-msgstr ""
-
-#: mod_muc_room.erl:3506
-msgid "Visitor"
-msgstr ""
-
-#: mod_muc_room.erl:3513
-msgid "Make room members-only"
-msgstr "Chatruimte enkel toegankelijk maken voor leden"
-
-#: mod_muc_room.erl:3516
-msgid "Make room moderated"
-msgstr "Chatruimte gemodereerd maken"
-
-#: mod_muc_room.erl:3519
-msgid "Default users as participants"
-msgstr "Gebruikers standaard instellen als deelnemers"
-
-#: mod_muc_room.erl:3522
-msgid "Allow users to change the subject"
-msgstr "Sta gebruikers toe het onderwerp te veranderen"
-
-#: mod_muc_room.erl:3525
-msgid "Allow users to send private messages"
-msgstr "Gebruikers mogen privéberichten verzenden"
-
-#: mod_muc_room.erl:3533
-msgid "Allow visitors to send private messages to"
-msgstr "Gebruikers mogen privéberichten verzenden aan"
-
-#: mod_muc_room.erl:3551
-msgid "nobody"
-msgstr "niemand"
-
-#: mod_muc_room.erl:3576
-msgid "Allow users to query other users"
-msgstr "Gebruikers mogen naar andere gebruikers verzoeken verzenden"
-
-#: mod_muc_room.erl:3579
-msgid "Allow users to send invites"
-msgstr "Gebruikers mogen uitnodigingen verzenden"
-
-#: mod_muc_room.erl:3582
-msgid "Allow visitors to send status text in presence updates"
-msgstr "Sta bezoekers toe hun statusbericht in te stellen"
-
-#: mod_muc_room.erl:3586
-msgid "Allow visitors to change nickname"
-msgstr "Sta bezoekers toe hun naam te veranderen"
-
-#: mod_muc_room.erl:3589
-msgid "Allow visitors to send voice requests"
-msgstr "Gebruikers mogen stemaanvragen verzenden"
-
-#: mod_muc_room.erl:3592
-msgid "Minimum interval between voice requests (in seconds)"
-msgstr "Minimale interval tussen stemaanvragen (in seconden)"
-
-#: mod_muc_room.erl:3599
-msgid "Make room CAPTCHA protected"
-msgstr "Chatruimte beveiligen met een geautomatiseerde Turing test"
-
-#: mod_muc_room.erl:3606
-msgid "Enable message archiving"
-msgstr "Zet bericht-archivering aan"
-
-#: mod_muc_room.erl:3612
-msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr "Geen CAPTCHA test voor Jabber IDs"
-
-#: mod_muc_room.erl:3621
-msgid "Enable logging"
-msgstr "Logs aanzetten"
-
-#: mod_muc_room.erl:3631
-msgid "You need an x:data capable client to configure room"
-msgstr ""
-"U hebt een client nodig die x:data ondersteunt om deze chatruimte in te "
-"stellen"
-
-#: mod_muc_room.erl:4192
-msgid "Number of occupants"
-msgstr "Aantal aanwezigen"
-
-#: mod_muc_room.erl:4262
-msgid "private, "
-msgstr "privé, "
-
-#: mod_muc_room.erl:4326
-msgid "Voice request"
-msgstr "Stemaanvraag"
-
-#: mod_muc_room.erl:4331
-msgid "Either approve or decline the voice request."
-msgstr "Keur stemaanvraag goed of af."
-
-#: mod_muc_room.erl:4351
-msgid "User JID"
-msgstr "JID Gebruiker"
-
-#: mod_muc_room.erl:4355
-msgid "Grant voice to this person?"
-msgstr "Stemaanvraag honoreren voor deze persoon?"
-
-#: mod_muc_room.erl:4498
-msgid "~s invites you to the room ~s"
-msgstr "~s nodigt je uit voor het groepsgesprek ~s"
-
-#: mod_muc_room.erl:4509
-msgid "the password is"
-msgstr "het wachtwoord is"
-
-#: mod_multicast.erl:291
-msgid "Multicast"
-msgstr "Multicast"
-
-#: mod_multicast.erl:306
-msgid "ejabberd Multicast service"
-msgstr "ejabberd Multicast service"
-
-#: mod_offline.erl:647
-msgid ""
-"Your contact offline message queue is full. The message has been discarded."
-msgstr ""
-"Te veel offline berichten voor dit contactpersoon. Het bericht is niet "
-"opgeslagen."
-
-#: mod_offline.erl:798
-msgid "~s's Offline Messages Queue"
-msgstr "offline berichten van ~s"
-
-#: mod_offline.erl:811
-msgid "Time"
-msgstr "Tijd"
-
-#: mod_offline.erl:812
-msgid "From"
-msgstr "Van"
-
-#: mod_offline.erl:813
-msgid "To"
-msgstr "Aan"
-
-#: mod_offline.erl:814
+#: mod_offline:693
 msgid "Packet"
 msgstr "Pakket"
 
-#: mod_offline.erl:992
-msgid "Offline Messages:"
-msgstr "Offline berichten:"
+#: mod_irc:578
+msgid "Parse error"
+msgstr ""
 
-#: mod_offline.erl:996
-msgid "Remove All Offline Messages"
-msgstr "Verwijder alle offline berichten"
+#: mod_configure:1299 mod_configure:1468 mod_configure:1513
+msgid "Parse failed"
+msgstr ""
 
-#: mod_proxy65_service.erl:248
-msgid "ejabberd SOCKS5 Bytestreams module"
-msgstr "ejabberd SOCKS5 Bytestreams module"
+#: ejabberd_oauth:431 ejabberd_web_admin:1435 mod_configure:1126
+#: mod_configure:1173 mod_configure:1602 mod_configure:1781 mod_muc_log:1036
+#: mod_register:229
+msgid "Password"
+msgstr "Wachtwoord"
 
-#: mod_pubsub.erl:1102
-msgid "Publish-Subscribe"
-msgstr "Publish-Subscribe"
+#: mod_configure:1130
+msgid "Password Verification"
+msgstr "Wachtwoord Bevestiging"
 
-#: mod_pubsub.erl:1222
-msgid "ejabberd Publish-Subscribe module"
-msgstr "ejabberd Publish-Subscribe module"
+#: mod_register_web:268 mod_register_web:381
+msgid "Password Verification:"
+msgstr "Wachtwoord Bevestiging:"
 
-#: mod_pubsub.erl:1537
+#: mod_irc:822
+msgid "Password ~b"
+msgstr "Wachtwoord ~b"
+
+#: ejabberd_web_admin:1713 mod_register_web:245 mod_register_web:483
+msgid "Password:"
+msgstr "Wachtwoord:"
+
+#: mod_configure:998
+msgid "Path to Dir"
+msgstr "Pad naar directory"
+
+#: mod_configure:952 mod_configure:964 mod_configure:976 mod_configure:987
+msgid "Path to File"
+msgstr "Pad naar bestand"
+
+#: mod_roster:915
+msgid "Pending"
+msgstr "Bezig"
+
+#: ejabberd_web_admin:994
+msgid "Period: "
+msgstr "Periode: "
+
+#: mod_muc_admin:369
+msgid "Permanent rooms"
+msgstr "Permanente groepsgesprekken"
+
+#: mod_adhoc:168 mod_adhoc:259
+msgid "Ping"
+msgstr "Ping"
+
+#: mod_ping:180
+msgid "Ping query is incorrect"
+msgstr ""
+
+#: ejabberd_web_admin:1983
+msgid ""
+"Please note that these options will only backup the builtin Mnesia database. "
+"If you are using the ODBC module, you also need to backup your SQL database "
+"separately."
+msgstr ""
+"Merk op dat volgende opties enkel backups maken van de ingebouwde database "
+"Mnesia. Als U de ODBC module gebruikt dan moeten daarvan afzonderlijke "
+"backups gemaakt worden."
+
+#: mod_muc_room:878
+msgid "Please, wait for a while before sending new voice request"
+msgstr "Wacht s.v.p. met het maken van een nieuwe stemaanvraag."
+
+#: mod_adhoc:274
+msgid "Pong"
+msgstr "Pong"
+
+#: ejabberd_web_admin:2463
+msgid "Port"
+msgstr "Poort"
+
+#: mod_irc:828
+msgid "Port ~b"
+msgstr "Poort ~b"
+
+#: mod_roster:173
+msgid "Possessing 'ask' attribute is not allowed by RFC6121"
+msgstr ""
+
+#: ejabberd_web_admin:2464
+msgid "Protocol"
+msgstr "Protocol"
+
+#: mod_pubsub:1335
 msgid "PubSub subscriber request"
 msgstr "PubSub abonnee verzoek"
 
-#: mod_pubsub.erl:1543
-msgid "Choose whether to approve this entity's subscription."
-msgstr "Beslis of dit verzoek tot abonneren zal worden goedgekeurd"
+#: mod_pubsub:970
+msgid "Publish-Subscribe"
+msgstr "Publish-Subscribe"
 
-#: mod_pubsub.erl:1559
-msgid "Node ID"
-msgstr "Node ID"
-
-#: mod_pubsub.erl:1571
-msgid "Subscriber Address"
-msgstr "Abonnee Adres"
-
-#: mod_pubsub.erl:1584
-msgid "Allow this Jabber ID to subscribe to this pubsub node?"
-msgstr "Deze gebruiker toestaan te abonneren op deze pubsub node?"
-
-#: mod_pubsub.erl:3745
-msgid "Deliver payloads with event notifications"
-msgstr "Berichten bezorgen samen met gebeurtenisnotificaties"
-
-#: mod_pubsub.erl:3747
-msgid "Deliver event notifications"
-msgstr "Gebeurtenisbevestigingen Sturen"
-
-#: mod_pubsub.erl:3749
-msgid "Notify subscribers when the node configuration changes"
-msgstr "Abonnees informeren wanneer de instellingen van de node veranderen"
-
-#: mod_pubsub.erl:3751
-msgid "Notify subscribers when the node is deleted"
-msgstr "Abonnees informeren wanneer de node verwijderd word"
-
-#: mod_pubsub.erl:3753
-msgid "Notify subscribers when items are removed from the node"
-msgstr "Abonnees informeren wanneer items verwijderd worden uit de node"
-
-#: mod_pubsub.erl:3755
-msgid "Persist items to storage"
-msgstr "Items in het geheugen bewaren"
-
-#: mod_pubsub.erl:3757
-msgid "A friendly name for the node"
-msgstr "Bijnaam voor deze knoop"
-
-#: mod_pubsub.erl:3759
-msgid "Max # of items to persist"
-msgstr "Maximum aantal in het geheugen te bewaren items"
-
-#: mod_pubsub.erl:3761
-msgid "Whether to allow subscriptions"
-msgstr "Abonnementsaanvraag toestaan"
-
-#: mod_pubsub.erl:3763
-msgid "Specify the access model"
-msgstr "Geef toegangsmodel"
-
-#: mod_pubsub.erl:3765
-msgid "Roster groups allowed to subscribe"
-msgstr "Contactlijst-groepen die mogen abonneren"
-
-#: mod_pubsub.erl:3767
-msgid "Specify the publisher model"
-msgstr "Publicatietype opgeven"
-
-#: mod_pubsub.erl:3769
-msgid "Purge all items when the relevant publisher goes offline"
-msgstr "Verwijder alle items wanneer de gerelateerde publiceerder offline gaat"
-
-#: mod_pubsub.erl:3771
-msgid "Specify the event message type"
-msgstr "Geef type van eventbericht"
-
-#: mod_pubsub.erl:3773
-msgid "Max payload size in bytes"
-msgstr "Maximumgrootte van bericht in bytes"
-
-#: mod_pubsub.erl:3775
-msgid "When to send the last published item"
-msgstr "Wanneer het laatst gepubliceerde item verzonden moet worden"
-
-#: mod_pubsub.erl:3777
-msgid "Only deliver notifications to available users"
-msgstr "Notificaties alleen verzenden naar online gebruikers"
-
-#: mod_pubsub.erl:3779
-msgid "The collections with which a node is affiliated"
-msgstr "De collecties waar een node mee is gerelateerd"
-
-#: mod_register.erl:209
-msgid "The CAPTCHA verification has failed"
-msgstr "De CAPTCHA-verificatie is mislukt"
-
-#: mod_register.erl:253
-msgid "You need a client that supports x:data and CAPTCHA to register"
+#: node_dag:81
+msgid "Publishing items to collection node is not allowed"
 msgstr ""
-"U hebt een client nodig die x:data en CAPTCHA ondersteunt om een bijnaam te "
-"registreren"
 
-#: mod_register.erl:259 mod_register.erl:320
-msgid "Choose a username and password to register with this server"
+#: mod_muc_room:462
+msgid "Queries to the conference members are not allowed in this room"
 msgstr ""
-"Kies een gebruikersnaam en een wachtwoord om u te registreren op deze server"
+"Er mogen geen verzoeken verzenden worden naar deelnemers in deze chatruimte"
 
-#: mod_register.erl:373 mod_register.erl:421
-msgid "The password is too weak"
-msgstr "Het wachtwoord is te zwak"
+#: mod_blocking:85 mod_disco:325 mod_disco:393 mod_offline:270 mod_privacy:146
+#: mod_private:118 mod_roster:163 mod_sic:90
+msgid "Query to another users is forbidden"
+msgstr ""
 
-#: mod_register.erl:426
-msgid "Users are not allowed to register accounts so quickly"
-msgstr "Het is gebruikers niet toegestaan zo snel achter elkaar te registreren"
+#: mod_configure:889
+msgid "RAM and disc copy"
+msgstr "RAM en harde schijf"
 
-#: mod_register_web.erl:105
-msgid "Your Jabber account was successfully created."
-msgstr "Uw Jabber-account is succesvol gecreeerd."
+#: mod_configure:889
+msgid "RAM copy"
+msgstr "RAM"
 
-#: mod_register_web.erl:110
-msgid "There was an error creating the account: "
-msgstr "Er was een fout bij het creeern van de account:"
+#: ejabberd_web_admin:1890
+msgid "RPC Call Error"
+msgstr "RPC-oproepfout"
 
-#: mod_register_web.erl:119
-msgid "Your Jabber account was successfully deleted."
-msgstr "Uw Jabber-account is succesvol verwijderd."
+#: ejabberd_web_admin:806 ejabberd_web_admin:905
+msgid "Raw"
+msgstr "Ruw"
 
-#: mod_register_web.erl:124
-msgid "There was an error deleting the account: "
-msgstr "Er was een fout bij het verwijderen van de account."
+#: mod_announce:511
+msgid "Really delete message of the day?"
+msgstr "Wilt u het bericht van de dag verwijderen?"
 
-#: mod_register_web.erl:135
-msgid "The password of your Jabber account was successfully changed."
-msgstr "Het wachtwoord van Uw Jabber-account is succesvol veranderd."
+#: mod_muc_room:395 mod_muc_room:443
+msgid "Recipient is not in the conference room"
+msgstr "De ontvanger is niet in de chatruimte"
 
-#: mod_register_web.erl:140
-msgid "There was an error changing the password: "
-msgstr "Er was een fout bij het veranderen van het wachtwoord:"
+#: mod_register_web:275
+msgid "Register"
+msgstr "Registreer"
 
-#: mod_register_web.erl:175 mod_register_web.erl:183
-msgid "Jabber Account Registration"
-msgstr "Jabber-account registratie"
-
-#: mod_register_web.erl:186 mod_register_web.erl:204 mod_register_web.erl:212
+#: mod_register_web:192 mod_register_web:210 mod_register_web:218
 msgid "Register a Jabber account"
 msgstr "Registreer een Jabber-account"
 
-#: mod_register_web.erl:191 mod_register_web.erl:453 mod_register_web.erl:461
-msgid "Unregister a Jabber account"
-msgstr "Opheffen van Jabber-account"
+#: ejabberd_web_admin:1366
+msgid "Registered Users"
+msgstr "Geregistreerde gebruikers"
 
-#: mod_register_web.erl:214
+#: ejabberd_web_admin:1577 ejabberd_web_admin:1596
+msgid "Registered Users:"
+msgstr "Geregistreerde gebruikers:"
+
+#: mod_muc_admin:370
+msgid "Registered nicknames"
+msgstr "Geregistreerde gebruikersnamen"
+
+#: mod_irc:535
+msgid "Registration in mod_irc for "
+msgstr "Registratie van "
+
+#: mod_configure:889
+msgid "Remote copy"
+msgstr "Op andere nodes in de cluster"
+
+#: mod_roster:963
+msgid "Remove"
+msgstr "Verwijderen"
+
+#: mod_offline:765
+msgid "Remove All Offline Messages"
+msgstr "Verwijder alle offline berichten"
+
+#: ejabberd_web_admin:1720 mod_configure:1779
+msgid "Remove User"
+msgstr "Gebruiker verwijderen"
+
+#: ejabberd_sm:404
+msgid "Replaced by new connection"
+msgstr "Vervangen door een nieuwe verbinding"
+
+#: mod_configure:1675
+msgid "Resources"
+msgstr "Bronnen"
+
+#: ejabberd_web_admin:1876 ejabberd_web_admin:2494 ejabberd_web_admin:2638
+msgid "Restart"
+msgstr "Herstarten"
+
+#: mod_configure:162 mod_configure:588 mod_configure:1009
+msgid "Restart Service"
+msgstr "Herstart Service"
+
+#: mod_configure:151 mod_configure:619
+msgid "Restore"
+msgstr "Binaire backup direct herstellen"
+
+#: mod_configure:959
+msgid "Restore Backup from File at "
+msgstr "Binaire backup direct herstellen op "
+
+#: ejabberd_web_admin:2013
+msgid ""
+"Restore binary backup after next ejabberd restart (requires less memory):"
+msgstr ""
+"Binaire backup herstellen na herstart van ejabberd (vereist minder geheugen):"
+
+#: ejabberd_web_admin:2003
+msgid "Restore binary backup immediately:"
+msgstr "Binaire backup direct herstellen:"
+
+#: ejabberd_web_admin:2033
+msgid "Restore plain text backup immediately:"
+msgstr "Backup in een tekstbestand direct herstellen:"
+
+#: mod_muc_log:872
+msgid "Room Configuration"
+msgstr "Instellingen van de chatruimte"
+
+#: mod_muc_log:892
+msgid "Room Occupants"
+msgstr "Aantal aanwezigen"
+
+#: mod_muc:455
+msgid "Room creation is denied by service policy"
+msgstr ""
+"De aanmaak van de chatruimte is verhinderd door de instellingen van deze "
+"server"
+
+#: mod_muc_log:1064
+msgid "Room description"
+msgstr "Beschrijving"
+
+#: mod_muc_log:1027
+msgid "Room title"
+msgstr "Naam van de chatruimte"
+
+#: mod_roster:1082
+msgid "Roster"
+msgstr "Roster"
+
+#: mod_roster:334
+msgid "Roster module has failed"
+msgstr ""
+
+#: mod_roster:968
+msgid "Roster of "
+msgstr "Roster van "
+
+#: mod_configure:1671
+msgid "Roster size"
+msgstr "Contactlijst Groote"
+
+#: ejabberd_web_admin:1838 mod_configure:510
+msgid "Running Nodes"
+msgstr "Draaiende nodes"
+
+#: xmpp_stream_in:541 xmpp_stream_in:549
+msgid "SASL negotiation is not allowed in this state"
+msgstr ""
+
+#: mod_muc_log:468
+msgid "Saturday"
+msgstr "Zaterdag"
+
+#: mod_irc:582
+msgid "Scan error"
+msgstr ""
+
+#: mod_configure:1303 mod_configure:1472 mod_configure:1517
+#, fuzzy
+msgid "Scan failed"
+msgstr "De geautomatiseerde Turing-test is geslaagd."
+
+#: ejabberd_web_admin:2282
+msgid "Script check"
+msgstr "Controle van script"
+
+#: mod_vcard:453
+msgid "Search Results for "
+msgstr "Zoekresultaten voor "
+
+#: mod_vcard:427
+msgid "Search users in "
+msgstr "Gebruikers zoeken in "
+
+#: mod_announce:617
+msgid "Send announcement to all online users"
+msgstr "Mededeling verzenden naar alle online gebruikers"
+
+#: mod_announce:619 mod_configure:1032 mod_configure:1072
+msgid "Send announcement to all online users on all hosts"
+msgstr ""
+"Mededeling verzenden naar alle online gebruikers op alle virtuele hosts"
+
+#: mod_announce:613
+msgid "Send announcement to all users"
+msgstr "Mededeling verzenden naar alle gebruikers"
+
+#: mod_announce:615
+msgid "Send announcement to all users on all hosts"
+msgstr "Stuur aankondiging aan alle gebruikers op alle hosts"
+
+#: mod_muc_log:481
+msgid "September"
+msgstr "September"
+
+#: mod_irc_connection:648
+msgid "Server Connect Failed"
+msgstr ""
+
+#: ejabberd_s2s:369
+msgid "Server connections to local subdomains are forbidden"
+msgstr ""
+
+#: mod_irc:842
+msgid "Server ~b"
+msgstr "Server ~b"
+
+#: mod_register_web:242 mod_register_web:370 mod_register_web:480
+msgid "Server:"
+msgstr "Server:"
+
+#: mod_announce:621
+msgid "Set message of the day and send to online users"
+msgstr "Bericht van de dag instellen en verzenden naar online gebruikers"
+
+#: mod_announce:623
+msgid "Set message of the day on all hosts and send to online users"
+msgstr ""
+"Stel bericht-van-de-dag in op alle hosts en stuur naar aanwezige gebruikers"
+
+#: mod_shared_roster:784 mod_shared_roster:826 mod_shared_roster:920
+msgid "Shared Roster Groups"
+msgstr "Gedeelde rostergroepen"
+
+#: ejabberd_web_admin:1016
+msgid "Show Integral Table"
+msgstr "Volledige tabel laten zien"
+
+#: ejabberd_web_admin:1013
+msgid "Show Ordinary Table"
+msgstr "Deel van tabel laten zien"
+
+#: mod_configure:164 mod_configure:590 mod_configure:1049
+msgid "Shut Down Service"
+msgstr "Stop Service"
+
+#: mod_register_web:258
+msgid ""
+"Some Jabber clients can store your password in the computer, but you should "
+"do this only in your personal computer for safety reasons."
+msgstr ""
+"Sommige Jabber-clienten kunnen het wachtwoord opslaan op Uw computer. "
+"Gebruik deze mogelijkheid alleen als U vertrouwd dat Uw computer afdoende "
+"beveiligd is."
+
+#: ejabberd_web_admin:2518 ejabberd_web_admin:2654
+msgid "Start"
+msgstr "Starten"
+
+#: mod_configure:142 mod_configure:605
+msgid "Start Modules"
+msgstr "Modules starten"
+
+#: mod_configure:936
+msgid "Start Modules at "
+msgstr "Modules starten op "
+
+#: ejabberd_web_admin:1023 ejabberd_web_admin:1871 mod_muc_admin:366
+msgid "Statistics"
+msgstr "Statistieken"
+
+#: ejabberd_web_admin:2199
+msgid "Statistics of ~p"
+msgstr "Statistieken van ~p"
+
+#: ejabberd_web_admin:1878 ejabberd_web_admin:2498 ejabberd_web_admin:2642
+msgid "Stop"
+msgstr "Stoppen"
+
+#: mod_configure:145 mod_configure:607
+msgid "Stop Modules"
+msgstr "Modules stoppen"
+
+#: mod_configure:918
+msgid "Stop Modules at "
+msgstr "Modules stoppen op "
+
+#: ejabberd_web_admin:1839 mod_configure:511
+msgid "Stopped Nodes"
+msgstr "Gestopte nodes"
+
+#: ejabberd_web_admin:1952
+msgid "Storage Type"
+msgstr "Opslagmethode"
+
+#: ejabberd_web_admin:1993
+msgid "Store binary backup:"
+msgstr "Binaire backup maken:"
+
+#: ejabberd_web_admin:2023
+msgid "Store plain text backup:"
+msgstr "Backup naar een tekstbestand schrijven:"
+
+#: mod_announce:516 mod_configure:1036 mod_configure:1076
+msgid "Subject"
+msgstr "Onderwerp"
+
+#: ejabberd_web_admin:774 ejabberd_web_admin:814 ejabberd_web_admin:879
+#: ejabberd_web_admin:944 ejabberd_web_admin:1963 mod_shared_roster:933
+msgid "Submit"
+msgstr "Verzenden"
+
+#: ejabberd_web_admin:762 ejabberd_web_admin:801 ejabberd_web_admin:867
+#: ejabberd_web_admin:900 ejabberd_web_admin:936 ejabberd_web_admin:1421
+#: ejabberd_web_admin:1704 ejabberd_web_admin:1860 ejabberd_web_admin:1894
+#: ejabberd_web_admin:1974 ejabberd_web_admin:2144 ejabberd_web_admin:2173
+#: ejabberd_web_admin:2270 mod_offline:681 mod_roster:971 mod_shared_roster:830
+#: mod_shared_roster:925
+msgid "Submitted"
+msgstr "Verzonden"
+
+#: mod_roster:914
+msgid "Subscription"
+msgstr "Inschrijving"
+
+#: mod_muc_room:3708
+msgid "Subscriptions are not allowed"
+msgstr ""
+
+#: mod_muc_log:469
+msgid "Sunday"
+msgstr "Zondag"
+
+#: mod_muc_room:998 mod_muc_room:1843 mod_muc_room:3737
+msgid "That nickname is already in use by another occupant"
+msgstr "Deze bijnaam is al in gebruik door een andere aanwezige"
+
+#: mod_muc:745 mod_muc_room:1004 mod_muc_room:1852 mod_muc_room:3740
+msgid "That nickname is registered by another person"
+msgstr "Deze bijnaam is al geregistreerd door iemand anders"
+
+#: ejabberd_captcha:256
+msgid "The CAPTCHA is valid."
+msgstr "De geautomatiseerde Turing-test is geslaagd."
+
+#: mod_muc_room:653 mod_muc_room:3672 mod_register:190
+msgid "The CAPTCHA verification has failed"
+msgstr "De CAPTCHA-verificatie is mislukt"
+
+#: mod_muc_room:302
+msgid "The feature requested is not supported by the conference"
+msgstr ""
+
+#: mod_register:308 mod_register:366
+msgid "The password contains unacceptable characters"
+msgstr ""
+
+#: mod_register:311 mod_register:370
+msgid "The password is too weak"
+msgstr "Het wachtwoord is te zwak"
+
+#: mod_register_web:141
+msgid "The password of your Jabber account was successfully changed."
+msgstr "Het wachtwoord van Uw Jabber-account is succesvol veranderd."
+
+#: mod_register:160 mod_vcard:219
+msgid "The query is only allowed from local users"
+msgstr ""
+
+#: mod_roster:203
+msgid "The query must not contain <item/> elements"
+msgstr ""
+
+#: mod_privacy:280
+msgid ""
+"The stanza MUST contain only one <active/> element, one <default/> element, "
+"or one <list/> element"
+msgstr ""
+
+#: mod_register_web:146
+msgid "There was an error changing the password: "
+msgstr "Er was een fout bij het veranderen van het wachtwoord:"
+
+#: mod_register_web:116
+msgid "There was an error creating the account: "
+msgstr "Er was een fout bij het creeern van de account:"
+
+#: mod_register_web:130
+msgid "There was an error deleting the account: "
+msgstr "Er was een fout bij het verwijderen van de account."
+
+#: mod_register_web:236
+msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
+msgstr ""
+"Dit is niet hoofdlettergevoelig: macbeth is hetzelfde als MacBeth en Macbeth."
+
+#: mod_register_web:220
 msgid ""
 "This page allows to create a Jabber account in this Jabber server. Your JID "
 "(Jabber IDentifier) will be of the form: username@server. Please read "
@@ -1713,217 +1812,576 @@ msgstr ""
 "gebruikersnaam@server. Lees de instructies zorgvuldig teneinde de velden "
 "correct in te vullen."
 
-#: mod_register_web.erl:224 mod_register_web.erl:360 mod_register_web.erl:469
-msgid "Username:"
-msgstr "Gebruikersnaam:"
-
-#: mod_register_web.erl:230
-msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
-msgstr ""
-"Dit is niet hoofdlettergevoelig: macbeth is hetzelfde als MacBeth en Macbeth."
-
-#: mod_register_web.erl:233
-msgid "Characters not allowed:"
-msgstr "Niet-toegestane karakters:"
-
-#: mod_register_web.erl:236 mod_register_web.erl:364 mod_register_web.erl:473
-msgid "Server:"
-msgstr "Server:"
-
-#: mod_register_web.erl:245
-msgid ""
-"Don't tell your password to anybody, not even the administrators of the "
-"Jabber server."
-msgstr ""
-"Geef Uw wachtwoord aan niemand, zelfs niet aan de beheerders van deze Jabber-"
-"server."
-
-#: mod_register_web.erl:249
-msgid "You can later change your password using a Jabber client."
-msgstr "U can het wachtwoord later veranderen met een Jabber-client."
-
-#: mod_register_web.erl:252
-msgid ""
-"Some Jabber clients can store your password in the computer, but you should "
-"do this only in your personal computer for safety reasons."
-msgstr ""
-"Sommige Jabber-clienten kunnen het wachtwoord opslaan op Uw computer. "
-"Gebruik deze mogelijkheid alleen als U vertrouwd dat Uw computer afdoende "
-"beveiligd is."
-
-#: mod_register_web.erl:256
-msgid ""
-"Memorize your password, or write it in a paper placed in a safe place. In "
-"Jabber there isn't an automated way to recover your password if you forget "
-"it."
-msgstr ""
-"Onthou het wachtwoord, of schrijf het op en bewaar het op een veilige "
-"plaats. Met Jabber is er geen geautomatiseerde manier om het wachtwoord "
-"terug te halen als U het vergeet."
-
-#: mod_register_web.erl:262 mod_register_web.erl:374
-msgid "Password Verification:"
-msgstr "Wachtwoord Bevestiging:"
-
-#: mod_register_web.erl:269
-msgid "Register"
-msgstr "Registreer"
-
-#: mod_register_web.erl:366
-msgid "Old Password:"
-msgstr "Oud Wachtwoord:"
-
-#: mod_register_web.erl:370
-msgid "New Password:"
-msgstr "Nieuw Wachtwoord:"
-
-#: mod_register_web.erl:463
+#: mod_register_web:470
 msgid "This page allows to unregister a Jabber account in this Jabber server."
 msgstr ""
 "Deze pagina maakt het mogelijk een Jabber-account op deze server op te "
 "heffen."
 
-#: mod_register_web.erl:480
+#: mod_muc_log:1038
+msgid "This room is not anonymous"
+msgstr "Deze chatruimte is niet anoniem"
+
+#: mod_muc_log:466
+msgid "Thursday"
+msgstr "Donderdag"
+
+#: mod_offline:690
+msgid "Time"
+msgstr "Tijd"
+
+#: mod_configure:1014 mod_configure:1054
+msgid "Time delay"
+msgstr "Vertraging"
+
+#: mod_offline:692
+msgid "To"
+msgstr "Aan"
+
+#: mod_register:215
+msgid "To register, visit ~s"
+msgstr ""
+
+#: mod_configure:709
+msgid "To ~s"
+msgstr "Naar ~s"
+
+#: ejabberd_oauth:439
+msgid "Token TTL"
+msgstr ""
+
+#: xmpp_stream_in:463
+msgid "Too long value of 'xml:lang' attribute"
+msgstr ""
+
+#: mod_muc_room:2541 mod_muc_room:3081
+msgid "Too many <item/> elements"
+msgstr ""
+
+#: mod_privacy:164
+msgid "Too many <list/> elements"
+msgstr ""
+
+#: mod_muc_room:1924 mod_register:240
+msgid "Too many CAPTCHA requests"
+msgstr "Te veel CAPTCHA-aanvragen"
+
+#: mod_proxy65_service:223
+#, fuzzy
+msgid "Too many active bytestreams"
+msgstr "Te veel niet-bevestigde stanzas"
+
+#: mod_stream_mgmt:205
+msgid "Too many unacked stanzas"
+msgstr "Te veel niet-bevestigde stanzas"
+
+#: mod_muc_room:1802
+#, fuzzy
+msgid "Too many users in this conference"
+msgstr "Stemaanvragen zijn uitgeschakeld voor deze chatruimte"
+
+#: mod_register:355
+msgid "Too many users registered"
+msgstr ""
+
+#: mod_muc_admin:368
+msgid "Total rooms"
+msgstr "Aantal groepsgesprekken"
+
+#: mod_muc_room:173
+msgid "Traffic rate limit is exceeded"
+msgstr "Dataverkeerslimiet overschreden"
+
+#: ejabberd_web_admin:2219
+msgid "Transactions Aborted:"
+msgstr "Afgebroken transacties:"
+
+#: ejabberd_web_admin:2215
+msgid "Transactions Committed:"
+msgstr "Bevestigde transacties:"
+
+#: ejabberd_web_admin:2227
+msgid "Transactions Logged:"
+msgstr "Gelogde transacties:"
+
+#: ejabberd_web_admin:2223
+msgid "Transactions Restarted:"
+msgstr "Herstarte transacties:"
+
+#: mod_muc_log:464
+msgid "Tuesday"
+msgstr "Dinsdag"
+
+#: mod_muc_room:1933 mod_register:244
+msgid "Unable to generate a CAPTCHA"
+msgstr "Het generen van een CAPTCHA is mislukt"
+
+#: ejabberd_service:120
+msgid "Unable to register route on existing local domain"
+msgstr ""
+
+#: ejabberd_web_admin:209 ejabberd_web_admin:221 ejabberd_web_admin:241
+#: ejabberd_web_admin:253
+msgid "Unauthorized"
+msgstr "Niet geautoriseerd"
+
+#: mod_announce:485 mod_configure:830 mod_configure:1758
+msgid "Unexpected action"
+msgstr ""
+
+#: mod_register_web:488
 msgid "Unregister"
 msgstr "Opheffen"
 
-#: mod_roster.erl:1436
-msgid "Subscription"
-msgstr "Inschrijving"
+#: mod_register_web:197 mod_register_web:460 mod_register_web:468
+msgid "Unregister a Jabber account"
+msgstr "Opheffen van Jabber-account"
 
-#: mod_roster.erl:1437
-msgid "Pending"
-msgstr "Bezig"
+#: mod_mam:526
+msgid "Unsupported <index/> element"
+msgstr ""
 
-#: mod_roster.erl:1438
-msgid "Groups"
-msgstr "Groepen"
+#: mod_mix:119
+msgid "Unsupported MIX query"
+msgstr ""
 
-#: mod_roster.erl:1476
+#: ejabberd_web_admin:1872 ejabberd_web_admin:2285
+msgid "Update"
+msgstr "Bijwerken"
+
+#: mod_announce:625
+msgid "Update message of the day (don't send)"
+msgstr "Bericht van de dag bijwerken (niet verzenden)"
+
+#: mod_announce:627
+msgid "Update message of the day on all hosts (don't send)"
+msgstr "Verander bericht-van-de-dag op alle hosts (niet versturen)"
+
+#: ejabberd_web_admin:2278
+msgid "Update plan"
+msgstr "Plan voor de opwaardering"
+
+#: ejabberd_web_admin:2280
+msgid "Update script"
+msgstr "Script voor de opwaardering"
+
+#: ejabberd_web_admin:2267
+msgid "Update ~p"
+msgstr "Opwaarderen van ~p"
+
+#: ejabberd_web_admin:2203
+msgid "Uptime:"
+msgstr "Uptime:"
+
+#: xmpp_stream_out:533
+#, fuzzy
+msgid "Use of STARTTLS forbidden"
+msgstr "Gebruik van STARTTLS is vereist"
+
+#: xmpp_stream_in:573 xmpp_stream_out:527 xmpp_stream_out:603
+msgid "Use of STARTTLS required"
+msgstr "Gebruik van STARTTLS is vereist"
+
+#: ejabberd_web_admin:1430 ejabberd_web_admin:1486 mod_register:225
+#: mod_vcard_ldap:328 mod_vcard_mnesia:99 mod_vcard_sql:154
+msgid "User"
+msgstr "Gebruiker"
+
+#: ejabberd_oauth:428
+msgid "User (jid)"
+msgstr ""
+
+#: mod_configure:308 mod_configure:505
+msgid "User Management"
+msgstr "Gebruikersbeheer"
+
+#: mod_register:345
+msgid "User already exists"
+msgstr ""
+
+#: mod_echo:138
+msgid "User part of JID in 'from' is empty"
+msgstr ""
+
+#: ejabberd_sm:193 ejabberd_sm:662 ejabberd_sm:687 mod_sic:106
+#, fuzzy
+msgid "User session not found"
+msgstr "Node niet gevonden"
+
+#: mod_stream_mgmt:561 mod_stream_mgmt:583
+msgid "User session terminated"
+msgstr ""
+
+#: ejabberd_web_admin:1700
+msgid "User ~s"
+msgstr "Gebruiker ~s"
+
+#: mod_register_web:230 mod_register_web:366 mod_register_web:476
+msgid "Username:"
+msgstr "Gebruikersnaam:"
+
+#: ejabberd_web_admin:959 ejabberd_web_admin:967
+msgid "Users"
+msgstr "Gebruikers"
+
+#: ejabberd_web_admin:990
+msgid "Users Last Activity"
+msgstr "Laatste activiteit van gebruikers"
+
+#: mod_register:375
+msgid "Users are not allowed to register accounts so quickly"
+msgstr "Het is gebruikers niet toegestaan zo snel achter elkaar te registreren"
+
+#: mod_roster:954
 msgid "Validate"
 msgstr "Bevestigen"
 
-#: mod_roster.erl:1485
-msgid "Remove"
-msgstr "Verwijderen"
-
-#: mod_roster.erl:1490
-msgid "Roster of "
-msgstr "Roster van "
-
-#: mod_roster.erl:1504
-msgid "Add Jabber ID"
-msgstr "Jabber ID toevoegen"
-
-#: mod_roster.erl:1622
-msgid "Roster"
-msgstr "Roster"
-
-#: mod_shared_roster.erl:1120 mod_shared_roster.erl:1162
-#: mod_shared_roster.erl:1256
-msgid "Shared Roster Groups"
-msgstr "Gedeelde rostergroepen"
-
-#: mod_shared_roster.erl:1232
-msgid "Name:"
-msgstr "Naam:"
-
-#: mod_shared_roster.erl:1236
-msgid "Description:"
-msgstr "Beschrijving:"
-
-#: mod_shared_roster.erl:1243
-msgid "Members:"
-msgstr "Groepsleden:"
-
-#: mod_shared_roster.erl:1250
-msgid "Displayed Groups:"
-msgstr "Weergegeven groepen:"
-
-#: mod_shared_roster.erl:1259
-msgid "Group "
-msgstr "Groep "
-
-#: mod_vcard.erl:168 mod_vcard_ldap.erl:225
-msgid "Erlang Jabber Server"
-msgstr "Erlang Jabber Server"
-
-#: mod_vcard.erl:490 mod_vcard.erl:622
-msgid "Birthday"
-msgstr "Geboortedatum"
-
-#: mod_vcard.erl:490 mod_vcard.erl:624
-msgid "City"
-msgstr "Plaats"
-
-#: mod_vcard.erl:490 mod_vcard.erl:623
-msgid "Country"
-msgstr "Land"
-
-#: mod_vcard.erl:490 mod_vcard.erl:625
-msgid "Email"
-msgstr "E-mail"
-
-#: mod_vcard.erl:490 mod_vcard.erl:619
-msgid "Family Name"
-msgstr "Achternaam"
-
-#: mod_vcard.erl:490
-msgid ""
-"Fill in the form to search for any matching Jabber User (Add * to the end of "
-"field to match substring)"
+#: mod_carboncopy:144 mod_irc:345 mod_muc_room:3662 mod_muc_room:3802
+#: mod_pubsub:895 mod_push:249
+msgid "Value 'get' of 'type' attribute is not allowed"
 msgstr ""
-"Gebruik de velden om te zoeken (Voeg achteraan het teken * toe om te zoeken "
-"naar alles wat met het eerste deel begint.)."
 
-#: mod_vcard.erl:490 mod_vcard.erl:615
-msgid "Full Name"
-msgstr "Volledige naam"
+#: mod_disco:159 mod_disco:175 mod_disco:279 mod_disco:346 mod_irc:270
+#: mod_irc:285 mod_irc:339 mod_last:118 mod_last:140 mod_muc:479 mod_muc:504
+#: mod_muc:539 mod_muc:561 mod_muc:571 mod_muc_room:3597 mod_muc_room:3641
+#: mod_proxy65_service:142 mod_proxy65_service:160 mod_proxy65_service:167
+#: mod_pubsub:821 mod_pubsub:839 mod_pubsub:877 mod_sic:81 mod_sic:93
+#: mod_stats:55 mod_time:62 mod_vcard:198 mod_vcard:236 mod_version:62
+msgid "Value 'set' of 'type' attribute is not allowed"
+msgstr ""
 
-#: mod_vcard.erl:490 mod_vcard.erl:617
-msgid "Middle Name"
-msgstr "Tussennaam"
+#: pubsub_subscription:237 pubsub_subscription_sql:202
+msgid "Value of '~s' should be boolean"
+msgstr ""
 
-#: mod_vcard.erl:490 mod_vcard.erl:626
-msgid "Organization Name"
-msgstr "Organisatie"
+#: pubsub_subscription:215 pubsub_subscription_sql:180
+msgid "Value of '~s' should be datetime string"
+msgstr ""
 
-#: mod_vcard.erl:490 mod_vcard.erl:628
-msgid "Organization Unit"
-msgstr "Afdeling"
+#: pubsub_subscription:209 pubsub_subscription:227 pubsub_subscription_sql:174
+#: pubsub_subscription_sql:192
+msgid "Value of '~s' should be integer"
+msgstr ""
 
-#: mod_vcard.erl:490 mod_vcard_ldap.erl:502
-msgid "Search users in "
-msgstr "Gebruikers zoeken in "
+#: ejabberd_web_admin:950
+msgid "Virtual Hosts"
+msgstr "Virtuele hosts"
 
-#: mod_vcard.erl:490 mod_vcard_ldap.erl:502
+#: mod_muc_room:992
+msgid "Visitors are not allowed to change their nicknames in this room"
+msgstr "Het is bezoekers niet toegestaan hun naam te veranderen in dit kanaal"
+
+#: mod_muc_room:785
+msgid "Visitors are not allowed to send messages to all occupants"
+msgstr "Bezoekers mogen geen berichten verzenden naar alle aanwezigen"
+
+#: mod_muc_room:3879
+msgid "Voice request"
+msgstr "Stemaanvraag"
+
+#: mod_muc_room:885
+msgid "Voice requests are disabled in this conference"
+msgstr "Stemaanvragen zijn uitgeschakeld voor deze chatruimte"
+
+#: mod_muc_log:465
+msgid "Wednesday"
+msgstr "Woensdag"
+
+#: mod_register_web:255
+msgid "You can later change your password using a Jabber client."
+msgstr "U can het wachtwoord later veranderen met een Jabber-client."
+
+#: mod_muc_room:1830
+msgid "You have been banned from this room"
+msgstr "U werd verbannen uit deze chatruimte"
+
+#: mod_muc_room:1811
+msgid "You have joined too many conferences"
+msgstr ""
+
+#: mod_muc:777
+msgid "You must fill in field \"Nickname\" in the form"
+msgstr "U moet het veld \"bijnaam\" invullen"
+
+#: mod_register:222
+msgid "You need a client that supports x:data and CAPTCHA to register"
+msgstr ""
+"U hebt een client nodig die x:data en CAPTCHA ondersteunt om een bijnaam te "
+"registreren"
+
+#: mod_muc:731
+msgid "You need a client that supports x:data to register the nickname"
+msgstr ""
+"U hebt een client nodig die x:data ondersteunt om een bijnaam te registreren"
+
+#: mod_irc:547
+msgid "You need an x:data capable client to configure mod_irc settings"
+msgstr ""
+"U hebt een client nodig die x:data ondersteunt om dit IRC-transport in te "
+"stellen"
+
+#: mod_vcard:443
 msgid "You need an x:data capable client to search"
 msgstr "U hebt een client nodig die x:data ondersteunt om te zoeken"
 
-#: mod_vcard.erl:519 mod_vcard_ldap.erl:531
-msgid "vCard User Search"
-msgstr "Gebruikers zoeken"
+#: mod_pubsub:1504
+#, fuzzy
+msgid "You're not allowed to create nodes"
+msgstr "Het is niet toegestaan priveberichten te sturen"
 
-#: mod_vcard.erl:580 mod_vcard_ldap.erl:586
+#: mod_register_web:111
+msgid "Your Jabber account was successfully created."
+msgstr "Uw Jabber-account is succesvol gecreeerd."
+
+#: mod_register_web:125
+msgid "Your Jabber account was successfully deleted."
+msgstr "Uw Jabber-account is succesvol verwijderd."
+
+#: ejabberd_c2s:651 ejabberd_c2s:811
+msgid "Your active privacy list has denied the routing of this stanza."
+msgstr "Uw actieve privacy-lijst verbied het routeren van dit stanza."
+
+#: mod_offline:576
+msgid ""
+"Your contact offline message queue is full. The message has been discarded."
+msgstr ""
+"Te veel offline berichten voor dit contactpersoon. Het bericht is niet "
+"opgeslagen."
+
+#: ejabberd_captcha:103
+msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
+msgstr ""
+"Uw berichten aan ~s worden geblokkeerd. Om ze te deblokkeren, ga naar ~s"
+
+#: mod_irc:455
+msgid "ejabberd IRC module"
+msgstr "ejabberd's IRC-module"
+
+#: mod_muc:473
+msgid "ejabberd MUC module"
+msgstr "ejabberd's MUC module"
+
+#: mod_multicast:272
+msgid "ejabberd Multicast service"
+msgstr "ejabberd Multicast service"
+
+#: mod_pubsub:1067
+msgid "ejabberd Publish-Subscribe module"
+msgstr "ejabberd Publish-Subscribe module"
+
+#: mod_proxy65_service:170
+msgid "ejabberd SOCKS5 Bytestreams module"
+msgstr "ejabberd SOCKS5 Bytestreams module"
+
+#: ejabberd_web_admin:311 ejabberd_web_admin:343
+msgid "ejabberd Web Admin"
+msgstr "ejabberd Webbeheer"
+
+#: mod_vcard:239
 msgid "ejabberd vCard module"
 msgstr "ejabberd's vCard-module"
 
-#: mod_vcard.erl:609 mod_vcard_ldap.erl:602
-msgid "Search Results for "
-msgstr "Zoekresultaten voor "
+#: mod_muc_log:380 mod_muc_log:383
+msgid "has been banned"
+msgstr "is verbannen"
 
-#: mod_vcard_ldap.erl:502
-msgid "Fill in fields to search for any matching Jabber User"
-msgstr "Vul de velden in om te zoeken naar Jabber-gebruikers op deze server"
+#: ejabberd_sm:407 mod_configure:1559 mod_muc_log:387 mod_muc_log:390
+msgid "has been kicked"
+msgstr "is weggestuurd"
+
+#: mod_muc_log:405
+msgid "has been kicked because of a system shutdown"
+msgstr "is weggestuurd omdat het systeem gestopt wordt"
+
+#: mod_muc_log:395
+msgid "has been kicked because of an affiliation change"
+msgstr "is weggestuurd vanwege een affiliatieverandering"
+
+#: mod_muc_log:400
+msgid "has been kicked because the room has been changed to members-only"
+msgstr ""
+"is weggestuurd omdat de chatruimte vanaf heden alleen toegankelijk is voor "
+"leden"
+
+#: mod_muc_log:410
+msgid "is now known as"
+msgstr "heet nu"
+
+#: mod_muc_log:370
+msgid "joins the room"
+msgstr "betrad de chatruimte"
+
+#: mod_muc_log:373 mod_muc_log:376
+msgid "leaves the room"
+msgstr "verliet de chatruimte"
+
+#: mod_muc_room:3856
+msgid "private, "
+msgstr "privé, "
+
+#: mod_muc_room:3955
+msgid "the password is"
+msgstr "het wachtwoord is"
+
+#: mod_vcard:292
+msgid "vCard User Search"
+msgstr "Gebruikers zoeken"
+
+#: ejabberd_web_admin:932
+msgid "~s access rule configuration"
+msgstr "Access rules op ~s"
+
+#: mod_muc_room:3948
+msgid "~s invites you to the room ~s"
+msgstr "~s nodigt je uit voor het groepsgesprek ~s"
+
+#: mod_offline:677
+msgid "~s's Offline Messages Queue"
+msgstr "offline berichten van ~s"
+
+#~ msgid "No resource provided"
+#~ msgstr "Geen bron opgegeven"
+
+#, fuzzy
+#~ msgid "Server"
+#~ msgstr "Server:"
+
+#~ msgid ""
+#~ "Too many (~p) failed authentications from this IP address (~s). The "
+#~ "address will be unblocked at ~s UTC"
+#~ msgstr ""
+#~ "Te veel (~p) mislukte authenticatie-pogingen van dit IP-adres (~s). Dit "
+#~ "adres zal worden gedeblokkeerd om ~s UTC"
+
+#~ msgid "This IP address is blacklisted in ~s"
+#~ msgstr "Dit IP-adres is geblokkeerd in ~s"
+
+#~ msgid "Jabber ID ~s is invalid"
+#~ msgstr "De Jabber ID ~s is ongeldig"
+
+#~ msgid "Invalid affiliation: ~s"
+#~ msgstr "Ongeldige affiliatie: ~s"
+
+#~ msgid "Invalid role: ~s"
+#~ msgstr "Ongeldige rol: ~s"
+
+#~ msgid "No limit"
+#~ msgstr "Geen limiet"
+
+#~ msgid "Present real Jabber IDs to"
+#~ msgstr "Jabber ID's kunnen achterhaald worden door"
+
+#~ msgid "moderators only"
+#~ msgstr "moderators"
+
+#~ msgid "anyone"
+#~ msgstr "iedereen"
+
+#, fuzzy
+#~ msgid "Moderator"
+#~ msgstr "moderators"
+
+#~ msgid "nobody"
+#~ msgstr "niemand"
+
+#~ msgid "Allow visitors to send voice requests"
+#~ msgstr "Gebruikers mogen stemaanvragen verzenden"
+
+#~ msgid "Minimum interval between voice requests (in seconds)"
+#~ msgstr "Minimale interval tussen stemaanvragen (in seconden)"
+
+#~ msgid "Enable message archiving"
+#~ msgstr "Zet bericht-archivering aan"
+
+#~ msgid "Exclude Jabber IDs from CAPTCHA challenge"
+#~ msgstr "Geen CAPTCHA test voor Jabber IDs"
+
+#~ msgid "You need an x:data capable client to configure room"
+#~ msgstr ""
+#~ "U hebt een client nodig die x:data ondersteunt om deze chatruimte in te "
+#~ "stellen"
+
+#~ msgid "Number of occupants"
+#~ msgstr "Aantal aanwezigen"
+
+#~ msgid "User JID"
+#~ msgstr "JID Gebruiker"
+
+#~ msgid "Grant voice to this person?"
+#~ msgstr "Stemaanvraag honoreren voor deze persoon?"
+
+#~ msgid "Node ID"
+#~ msgstr "Node ID"
+
+#~ msgid "Subscriber Address"
+#~ msgstr "Abonnee Adres"
+
+#~ msgid "Allow this Jabber ID to subscribe to this pubsub node?"
+#~ msgstr "Deze gebruiker toestaan te abonneren op deze pubsub node?"
+
+#~ msgid "Deliver payloads with event notifications"
+#~ msgstr "Berichten bezorgen samen met gebeurtenisnotificaties"
+
+#~ msgid "Deliver event notifications"
+#~ msgstr "Gebeurtenisbevestigingen Sturen"
+
+#~ msgid "Notify subscribers when the node configuration changes"
+#~ msgstr "Abonnees informeren wanneer de instellingen van de node veranderen"
+
+#~ msgid "Notify subscribers when the node is deleted"
+#~ msgstr "Abonnees informeren wanneer de node verwijderd word"
+
+#~ msgid "Notify subscribers when items are removed from the node"
+#~ msgstr "Abonnees informeren wanneer items verwijderd worden uit de node"
+
+#~ msgid "Persist items to storage"
+#~ msgstr "Items in het geheugen bewaren"
+
+#~ msgid "A friendly name for the node"
+#~ msgstr "Bijnaam voor deze knoop"
+
+#~ msgid "Max # of items to persist"
+#~ msgstr "Maximum aantal in het geheugen te bewaren items"
+
+#~ msgid "Whether to allow subscriptions"
+#~ msgstr "Abonnementsaanvraag toestaan"
+
+#~ msgid "Specify the access model"
+#~ msgstr "Geef toegangsmodel"
+
+#~ msgid "Roster groups allowed to subscribe"
+#~ msgstr "Contactlijst-groepen die mogen abonneren"
+
+#~ msgid "Specify the publisher model"
+#~ msgstr "Publicatietype opgeven"
+
+#~ msgid "Purge all items when the relevant publisher goes offline"
+#~ msgstr ""
+#~ "Verwijder alle items wanneer de gerelateerde publiceerder offline gaat"
+
+#~ msgid "Specify the event message type"
+#~ msgstr "Geef type van eventbericht"
+
+#~ msgid "Max payload size in bytes"
+#~ msgstr "Maximumgrootte van bericht in bytes"
+
+#~ msgid "When to send the last published item"
+#~ msgstr "Wanneer het laatst gepubliceerde item verzonden moet worden"
+
+#~ msgid "Only deliver notifications to available users"
+#~ msgstr "Notificaties alleen verzenden naar online gebruikers"
+
+#~ msgid "The collections with which a node is affiliated"
+#~ msgstr "De collecties waar een node mee is gerelateerd"
+
+#~ msgid "Fill in fields to search for any matching Jabber User"
+#~ msgstr "Vul de velden in om te zoeken naar Jabber-gebruikers op deze server"
 
 #~ msgid "Outgoing s2s Servers:"
 #~ msgstr "Uitgaande s2s-verbindingen:"
 
 #~ msgid "Delete"
 #~ msgstr "Verwijderen"
-
-#~ msgid "This room is not anonymous"
-#~ msgstr "Deze chatruimte is niet anoniem"
 
 #~ msgid ""
 #~ "This participant is kicked from the room because he sent an error message"
@@ -1943,7 +2401,3 @@ msgstr "Vul de velden in om te zoeken naar Jabber-gebruikers op deze server"
 #~ msgstr ""
 #~ "Deze deelnemer wordt weggestuurd vanwege het sturen van een foutmelding-"
 #~ "aanwezigheid"
-
-#, fuzzy
-#~ msgid "Captcha test failed"
-#~ msgstr "De geautomatiseerde Turing-test is geslaagd."
