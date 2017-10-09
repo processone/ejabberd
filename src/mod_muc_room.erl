@@ -1014,7 +1014,13 @@ do_process_presence(Nick, #presence{from = From, type = available, lang = Lang} 
 			       From, Packet, StateData),
 		    NewState = add_user_presence(From, Stanza,
 						 StateData),
-		    send_new_presence(From, NewState, StateData),
+		    case xmpp:has_subtag(Packet, #muc{}) of
+			true ->
+			    send_initial_presences_and_messages(
+			      From, Nick, Packet, NewState, StateData);
+			false ->
+			    send_new_presence(From, NewState, StateData)
+		    end,
 		    NewState
 	    end
     end;
@@ -1869,11 +1875,8 @@ add_new_user(From, Nick, Packet, StateData) ->
 					   From, Packet,
 					   add_online_user(From, Nick, Role,
 							   StateData)),
-			      send_existing_presences(From, NewState),
-			      send_initial_presence(From, NewState, StateData),
-			      History = get_history(Nick, Packet, NewState),
-			      send_history(From, History, NewState),
-			      send_subject(From, StateData),
+			      send_initial_presences_and_messages(
+				From, Nick, Packet, NewState, StateData),
 			      NewState;
 			 true ->
 			      set_subscriber(From, Nick, Nodes, StateData)
@@ -2067,6 +2070,15 @@ is_room_overcrowded(StateData) ->
 presence_broadcast_allowed(JID, StateData) ->
     Role = get_role(JID, StateData),
     lists:member(Role, (StateData#state.config)#config.presence_broadcast).
+
+-spec send_initial_presences_and_messages(
+	jid(), binary(), presence(), state(), state()) -> ok.
+send_initial_presences_and_messages(From, Nick, Presence, NewState, OldState) ->
+    send_existing_presences(From, NewState),
+    send_initial_presence(From, NewState, OldState),
+    History = get_history(Nick, Presence, NewState),
+    send_history(From, History, NewState),
+    send_subject(From, OldState).
 
 -spec send_initial_presence(jid(), state(), state()) -> ok.
 send_initial_presence(NJID, StateData, OldStateData) ->
