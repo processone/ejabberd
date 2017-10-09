@@ -156,10 +156,14 @@ process(_Path, _Request) ->
 %%%----------------------------------------------------------------------
 
 serve_css() ->
-    {200,
-     [{<<"Content-Type">>, <<"text/css">>}, last_modified(),
-      cache_control_public()],
-     css()}.
+    case css() of
+	{ok, CSS} ->
+	    {200,
+	     [{<<"Content-Type">>, <<"text/css">>}, last_modified(),
+	      cache_control_public()], CSS};
+	error ->
+	    {404, [], "CSS not found"}
+    end.
 
 last_modified() ->
     {<<"Last-Modified">>,
@@ -168,16 +172,30 @@ last_modified() ->
 cache_control_public() ->
     {<<"Cache-Control">>, <<"public">>}.
 
+-spec css() -> {ok, binary()} | error.
 css() ->
-    <<"html,body {\nbackground: white;\nmargin: "
-      "0;\npadding: 0;\nheight: 100%;\n}">>.
+    Dir = misc:css_dir(),
+    File = filename:join(Dir, "register.css"),
+    case file:read_file(File) of
+	{ok, Data} ->
+	    {ok, Data};
+	{error, Why} ->
+	    ?ERROR_MSG("failed to read ~s: ~s", [File, file:format_error(Why)]),
+	    error
+    end.
+
+meta() ->
+    ?XA(<<"meta">>,
+	[{<<"name">>, <<"viewport">>},
+	 {<<"content">>, <<"width=device-width, initial-scale=1">>}]).
 
 %%%----------------------------------------------------------------------
 %%% Index page
 %%%----------------------------------------------------------------------
 
 index_page(Lang) ->
-    HeadEls = [?XCT(<<"title">>,
+    HeadEls = [meta(),
+	       ?XCT(<<"title">>,
 		    <<"Jabber Account Registration">>),
 	       ?XA(<<"link">>,
 		   [{<<"href">>, <<"/register/register.css">>},
@@ -206,7 +224,8 @@ index_page(Lang) ->
 
 form_new_get(Host, Lang, IP) ->
     CaptchaEls = build_captcha_li_list(Lang, IP),
-    HeadEls = [?XCT(<<"title">>,
+    HeadEls = [meta(),
+	       ?XCT(<<"title">>,
 		    <<"Register a Jabber account">>),
 	       ?XA(<<"link">>,
 		   [{<<"href">>, <<"/register/register.css">>},
@@ -350,7 +369,8 @@ build_captcha_li_list2(Lang, IP) ->
 %%%----------------------------------------------------------------------
 
 form_changepass_get(Host, Lang) ->
-    HeadEls = [?XCT(<<"title">>, <<"Change Password">>),
+    HeadEls = [meta(),
+	       ?XCT(<<"title">>, <<"Change Password">>),
 	       ?XA(<<"link">>,
 		   [{<<"href">>, <<"/register/register.css">>},
 		    {<<"type">>, <<"text/css">>},
@@ -456,7 +476,8 @@ check_password(Username, Host, Password) ->
 %%%----------------------------------------------------------------------
 
 form_del_get(Host, Lang) ->
-    HeadEls = [?XCT(<<"title">>,
+    HeadEls = [meta(),
+	       ?XCT(<<"title">>,
 		    <<"Unregister a Jabber account">>),
 	       ?XA(<<"link">>,
 		   [{<<"href">>, <<"/register/register.css">>},
