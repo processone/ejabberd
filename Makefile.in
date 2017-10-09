@@ -49,6 +49,12 @@ MSGSDIR = $(PRIVDIR)/msgs
 # /usr/lib/ejabberd/priv/css
 CSSDIR = $(PRIVDIR)/css
 
+# /usr/lib/ejabberd/priv/img
+IMGDIR = $(PRIVDIR)/img
+
+# /usr/lib/ejabberd/priv/js
+JSDIR = $(PRIVDIR)/js
+
 # /usr/lib/ejabberd/priv/sql
 SQLDIR = $(PRIVDIR)/sql
 
@@ -132,7 +138,7 @@ DEPS_FILES=$(call FILES_WILDCARD,$(foreach DEP,$(DEPS),deps/$(DEP)/ebin/*.beam d
 DEPS_FILES_FILTERED=$(filter-out %/epam %/eimp deps/elixir/ebin/elixir.app,$(DEPS_FILES))
 DEPS_DIRS=$(sort deps/ $(foreach DEP,$(DEPS),deps/$(DEP)/) $(dir $(DEPS_FILES)))
 
-MAIN_FILES=$(filter-out %/configure.beam,$(call FILES_WILDCARD,ebin/*.beam ebin/*.app priv/msgs/*.msg priv/css/*.css priv/lib/* include/*.hrl COPYING))
+MAIN_FILES=$(filter-out %/configure.beam,$(call FILES_WILDCARD,ebin/*.beam ebin/*.app priv/msgs/*.msg priv/css/*.css priv/img/*.png priv/js/*.js priv/lib/* include/*.hrl COPYING))
 MAIN_DIRS=$(sort $(dir $(MAIN_FILES)) priv/bin priv/sql)
 
 define DEP_VERSION_template
@@ -253,10 +259,14 @@ uninstall-binary:
 	rm -fr $(PBINDIR)
 	rm -f  $(SODIR)/*.so
 	rm -fr $(SODIR)
-	rm -f  $(MSGSDIR)/*.msgs
+	rm -f  $(MSGSDIR)/*.msg
 	rm -fr $(MSGSDIR)
 	rm -f  $(CSSDIR)/*.css
 	rm -fr $(CSSDIR)
+	rm -f  $(IMGDIR)/*.png
+	rm -fr $(IMGDIR)
+	rm -f  $(JSDIR)/*.js
+	rm -fr $(JSDIR)
 	rm -f  $(SQLDIR)/*.sql
 	rm -fr $(SQLDIR)
 	rm -fr $(PRIVDIR)

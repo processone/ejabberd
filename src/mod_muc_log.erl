@@ -502,186 +502,22 @@ make_dir_rec(Dir) ->
 %% c("../../ejabberd/src/jlib.erl").
 %% base64:encode(F1b).
 
-image_base64(<<"powered-by-erlang.png">>) ->
-    <<"iVBORw0KGgoAAAANSUhEUgAAAGUAAAAfCAYAAAD+xQNoA"
-      "AADN0lEQVRo3u1aP0waURz+rjGRRQ+nUyRCYmJyDPTapD"
-      "ARaSIbTUjt1gVSh8ZW69aBAR0cWLSxCXWp59LR1jbdqKn"
-      "GxoQuRZZrSYyHEVM6iZMbHewROA7u3fHvkr5vOn737vcu"
-      "33ffu9/vcQz+gef5Cij6CkmSGABgFEH29r5SVvqIsTEOH"
-      "o8HkiQxDBXEOjg9PcHc3BxuUSqsI8jR0REAUFGsCCoKFY"
-      "WCBAN6AxyO0Z7cyMXFb6oGqSgAsIrJut9hMQlvdNbUhKW"
-      "shLd3HtTF4jihShgVpRaBxKKmIGX5HL920/hz/BM2+zAm"
-      "pn2YioQaxnECj0BiEYcrG0Tzzc8/rfudSm02jaVSm9Vr1"
-      "MdG8rSKKXlJ7lHrfjouCut2IrC82BDPbe/gc+xlXez7Kx"
-      "Ez63H4lmIN473Rh8Si1BKhRY6aEJI8pLmbjSPN0xOnBBI"
-      "Lmg5RC6Lg28preKOzsNmHG8R1Bf0o7GdMucUslDy1pJLG"
-      "2sndVVG0lq3c9vum4zmBR1kuwiYMN5ybmCYXxQg57ThFO"
-      "TYznzpPO+IQi+IK+jXjg/YhuIJ+cIIHg+wQJoJ+2N3jYN"
-      "3Olvk4ge/IU98spne+FfGtlslm16nna8fduntfDscoVjG"
-      "JqUgIjz686ViFUdjP4N39x9Xq638viZVtlq2tLXKncLf5"
-      "ticuZSWU5XOUshJKxxKtfdtdvs4OyNb/68urKvlluYizg"
-      "wwu5SLK8jllu1t9ihYOlzdwdpBBKSvh+vKKzHkCj1JW3y"
-      "1m+hSj13WjqOiJKK0qpXKhSFxJAYBvKYaZ9TjWRu4SiWi"
-      "2LyDtb6wghGmn5HfTml16ILGA/G5al2DW7URYTFYrOU7g"
-      "icQ020sYqYDM9CbdgqFd4vzHL03JfvLjk6ZgADAVCSEsJ"
-      "vHsdL+utNYrm2ufZDVZSkzPKaQkW8kthpyS297BvRdRzR"
-      "6DdTurJbPy9Ov1K6xr3HBPQuIMowR3asegUyDuU9SuUG+"
-      "dmIGyZ0b7FBN9St3WunyC5yMsrVv7uXzRP58s/qKn6C4q"
-      "lQoVxVIvd4YBwzBUFKs6ZaD27U9hEdcAN98Sx2IxykafI"
-      "YrizbfESoB+dd9/KF/d/wX3cJvREzl1vAAAAABJRU5Erk"
-      "Jggg==">>;
-image_base64(<<"valid-xhtml10.png">>) ->
-    <<"iVBORw0KGgoAAAANSUhEUgAAAFgAAAAfCAMAAAEjEcpEA"
-      "AACiFBMVEUAAADe5+fOezmtra3ejEKlhELvvWO9WlrehE"
-      "LOe3vepaWclHvetVLGc3PerVKcCAj3vVqUjHOUe1JjlL0"
-      "xOUpjjL2UAAC91ueMrc7vrVKlvdbW3u+EpcbO3ufO1ucY"
-      "WpSMKQi9SiF7e3taWkoQEAiMczkQSoxaUkpzc3O1lEoIC"
-      "ACEazEhGAgIAACEYzFra2utjELWcznGnEr/7+9jY2POaz"
-      "HOYzGta2NShLVrlL05OUqctdacCADGa2ucAADGpVqUtc6"
-      "1ORg5OTmlUikYGAiUezl7YzEYEAiUczkxMTG9nEqtIRDe"
-      "3t4AMXu9lEoQCACMazEAKXspKSmljFrW1ta1jELOzs7n7"
-      "/fGxsa9pVqEOSkpY5xznL29tZxahLXOpVr/99ZrY1L/79"
-      "ZjUiljSikAOYTvxmMAMYScezmchFqUczGtlFp7c2utjFq"
-      "UlJStxt73///39/9Ce61CSkq9xsZznMbW5+9Cc62MjIxC"
-      "Qkrv9/fv7/fOzsbnlErWjIz/3mtCORhza1IpIRBzWjH/1"
-      "mtCMRhzY1L/zmvnvVpSQiHOpVJrUinntVr3zmOEc1L3xm"
-      "NaWlq1nFo5QkrGWim1lFoISpRSUlK1zt4hWpwASoz////"
-      "///8xa6WUaykAQoxKe61KSkp7nMbWtWPe5+9jWlL39/f3"
-      "9/fWrWNCQkLera3nvWPv7+85MRjntWPetVp7c1IxKRCUl"
-      "HtKORh7a1IxIRCUjHtaSiHWrVIpIQhzWinvvVpaQiH/1m"
-      "PWpVKMe1L/zmP/xmNrUiGErc4YGBj/73PG1ucQWpT/53O"
-      "9nFoQUpS1SiEQEBC9zt69vb05c6UISoxSUko5a6UICAhS"
-      "SkohUpS1tbXetWMAQoSUgD+kAAAA2HRSTlP/////////i"
-      "P9sSf//dP////////////////////////////////////"
-      "////////////8M////////////ef/////////////////"
-      "/////////////////////////////////////////////"
-      "//////////////////////9d/////////////////////"
-      "///////////////AP//////////////CP//RP////////"
-      "/////////////////////////////////////////////"
-      "///////9xPp1gAAAFvUlEQVR42pVWi18URRwfy7vsYUba"
-      "iqBRBFmICUQGVKcZckQeaRJQUCLeycMSfKGH0uo5NELpI"
-      "vGQGzokvTTA85VHKTpbRoeJnPno/p1+M7t3txj20e/Nzu"
-      "7Ofve7v/k9Zg4Vc+wRQMW0eyLx1ZSANeBDxVmxZZSwEUY"
-      "kGAewm1eIBOMRvhv1UA+q8KXIVuxGdCelFYwxAnxOrxgb"
-      "Y8Ti1t4VA0QHYz4x3FnVC8OVLXv9fkKGSWDoW/4lG6Vbd"
-      "tBblesOs+MjmEmzJKNIJWFEfEQTCWNPFKvcKEymjLO1b8"
-      "bwYQd1hCiiDCl5KsrDCIlhj4fSuvcpfSpgJmyv6dzeZv+"
-      "nMPx3dhbt94II07/JZliEtm1N2RIYPkTYshwYm245a/zk"
-      "WjJwcyFh6ZIcYxxmqiaDSYxhOhFUsqngi3Fzcj3ljdYDN"
-      "E9uzA1YD/5MhnzW1KRqF7mYG8jFYXLcfLpjOe2LA0fuGq"
-      "QrQHl10sdK0sFcFSOSlzF0BgXQH9h3QZDBI0ccNEhftjX"
-      "uippBDD2/eMRiETmwwNEYHyqhdDyo22w+3QHuNbdve5a7"
-      "eOkHmDVJ0ixNmfbz1h0qo/Q6GuSB2wQJQbpOjOQAl7woW"
-      "SRJ0m2ewhvAOUiYYtZtaZL0CZZmtmVOQttLfr/dbveLZo"
-      "drfrL7W75wG/JjqkQxoNTtNsTKELQpQL6/D5loaSmyTT8"
-      "TUhsmi8iFA0hZiyltf7OiNKdarRm5w2So2lTNdPLuIzR+"
-      "AiLj8VTRJaj0LmX4VhJ27f/VJV/yycilWPOrk8NkXi7Qq"
-      "mj5bHqVZlJKZIRk1wFzKrt0WUbnXMPJ1fk4TJ5oWBA61p"
-      "1V76DeIs0MX+s3GxRlA1vtw83KhgNphc1nyErLO5zcvbO"
-      "srq+scbZnpzc6QVFPenLwGxmC+BOfYI+DN55QYddh4Q/N"
-      "E/yGYYj4TOGNngQavAZnzzTovEA+kcMJ+247uYexNA+4F"
-      "svjmuv662jsWxPZx2xg890bYMYnTgya7bjmCiEY0qgJ0v"
-      "MF3c+NoFdPyzxz6V3Uxs3AOWCDchRvOsQtBrbFsrT2fhH"
-      "Ec7ByGzu/dA4IO0A3HdfeP9yMqAwP6NPEb6cbwn0PWVU1"
-      "7/FDBQh/CPIrbfcg027IZrsAT/Bf3FNWyn9RSR4cvvwn3"
-      "e4HFmYPDl/thYcRVi8qPEoXVUWBl6FTBFTtnqmKKg5wnl"
-      "F4wZ1yeLv7TiwXKektE+iDBNicWEyLpnFhfDkpJc3q2kh"
-      "SPyQBbE0dMJnOoDzTwGsI7cdyMkL5gWqUjCF6Txst/twx"
-      "Cv1WzzHoy21ZDQ1xnuDzdPDWR4knr14v0tYn3IxaMFFdi"
-      "MOlEOJHw1jOQ4sWt5rQopRkXZhMEi7pmeDCVWBlfUKwhM"
-      "Z7rsF6elKsvbwiKxgxIdewa3ErsaYomCVZFYJb0GUu3Jq"
-      "GUNoplBxYiYby8vLBFWef+Cri4/I1sbQ/1OtYTrNtdXS+"
-      "rSe7kQ52eSObL99/iErCWUjCy5W4JLygmCouGfG9x9fmx"
-      "17XhBuDCaOerbt538erta7TFktLvdHghZcCbcPQO33zIJ"
-      "G9kxF5hoVXnzTzRz0r5js8oTj6uyPkGRf346HOLcasgFe"
-      "xueNUWFPtuFKzjoSFYYedhwVlhsRVYWWJpltv1XPQT1Rl"
-      "0bjZIBlb1XujVDzY/Kj4k6Ku3+Z0jo1owjVzDpFTXe1ju"
-      "vBSWNFmNWGZy8LvzUl5PN4JCwyNDzbQ0aAj4Zrjz0FatG"
-      "JJYhvq4j7mGSpvytGFlZtHf2C4o/28Zu8z7wo7eYPfXys"
-      "nF0i9NnPh1t1zR7VBb9GqaOXhtTmHQdgMFXE+Z608cnpO"
-      "DdZdjL+TuDY44Q38kJXHhccWLoOd9uv1AwwvO+48uu+fa"
-      "CSJPJ1bmy6ThyvpivBmYWgjxPDPAp7JTemY/yGKFEiRt/"
-      "jG/2P79s8KCwoLCgoLC/khUBA5F0SfQZ+RYfpNE/4Xosm"
-      "q7jsZAJsAAAAASUVORK5CYII=">>;
-image_base64(<<"vcss.png">>) ->
-    <<"iVBORw0KGgoAAAANSUhEUgAAAFgAAAAfCAMAAABUFvrSA"
-      "AABKVBMVEUAAAAjIx8MR51ZVUqAdlmdnZ3ejEWLDAuNjY"
-      "1kiMG0n2d9fX19Ghfrp1FtbW3y39+3Ph6lIRNdXV2qJBF"
-      "cVUhcVUhPT0/dsmpUfLr57+/u7u4/PDWZAACZAADOp1Gd"
-      "GxG+SyTgvnNdSySzk16+mkuxw+BOS0BOS0DOzs7MzMy4T"
-      "09RRDwsJBG+vr73wV6fkG6eCQRFcLSurq6/X1+ht9nXfz"
-      "5sepHuwV59ZTHetFjQ2+wMCQQ2ZK5tWCsmWajsz8+Sq9N"
-      "MPh4hVaY8MRj///////////////////////9MTEyOp9Lu"
-      "8vhXU1A8PDyjOSTBz+YLRJ2rLy8sLCwXTaKujEUcHByDn"
-      "82dfz7/zGafDw+fDw+zRSlzlMcMDAyNcji1tbXf5vIcFg"
-      "vATJOjAAAAY3RSTlP/8/////////////////8A//////P"
-      "/////ov//8//////////////z///T//////////+i////"
-      "//////////8w/////6IA/xAgMP//////////8////////"
-      "/8w0/////////+zehebAAACkUlEQVR42u2VfVPTQBDG19"
-      "VqC6LY+lKrRIxFQaFSBPuSvhBPF8SIUZK2J5Yav/+HcO8"
-      "uZdLqTCsU/nKnyWwvk1/unnt2D9ZmH+8/cMAaTRFy+ng6"
-      "9/yiwC/+gy8R3McGv5zHvGJEGAdR4eBgi1IbZwevIEZE2"
-      "4pFtBtzG1Q4AoD5zvw5pEDcJvIQV/TE3/l+H9GnNJwcdA"
-      "BS5wAbFQLMqI98/UReoAaOTlaJsp0zaHx7LwZvY0BUR2x"
-      "pWTzqam0gzY8KGzG4MhBCNGucha4QbpETy+Yk/BP85nt7"
-      "34AjpQLTsE4ZFpf/dnkUCglXVNYB+OfUZJHvAqAoa45Oe"
-      "uPgm4+Xjtv7xm4N7PMV4C61+Mrz3H2WImm3ATiWrAiwZR"
-      "WcUA5Ej4dgIEMxDv6yxHHcNuAutnjv2HZ1NeuycoVPh0m"
-      "wC834zZC9Ao5dkZZKwLVGwT+WdLw0YOZ1saEkUDoT+QGW"
-      "KZ0E2xpcrPakVW2KXwyUtYEtlEAj3GXD/fYwrryAdeiyG"
-      "qidQSw1eqtJcA8cZq4zXqhPuCBYE1fKJjh/5X6MwRm9c2"
-      "xf7WVdLf5oSdt64esVIwVAKC1HJ2oli8vj3L0YzC4zjkM"
-      "agt+arDAs6bApbL1RVlWIqrJbreqKZmh4y6VR7rAJeUYD"
-      "VRj9VqRXkErpJ9lbEwtE83KlIfeG4p52t7zWIMO1XcaGz"
-      "54uUyet+hBM7BXXDS8Xc5+8Gmmbu1xwSoGIokA3oTptQe"
-      "cQ4Iimm/Ew7jwbPfMi3TM91T9XVIGo+W9xC8oWpugVCXL"
-      "uwXijjxJ3r/6PjX7nlFua8QmyM+TO/Gja2TTc2Z95C5ua"
-      "ewGH6cJi6bJO6Z+TY276eH3tbgy+/3ly3Js+rj66osG/A"
-      "V5htgaQ9SeRAAAAAElFTkSuQmCC">>;
-image_base64(<<"powered-by-ejabberd.png">>) ->
-    <<"iVBORw0KGgoAAAANSUhEUgAAAGUAAAAfCAMAAADJG/NaA"
-      "AAAw1BMVEUAAAAjBgYtBAM5AwFCAAAYGAJNAABcAABIDQ"
-      "5qAAAoJRV7AACFAAAoKSdJHByLAAAwLwk1NQA1MzFJKyo"
-      "4NxtDQQBEQT5KSCxSTgBSUBlgQ0JYSEpZWQJPUU5hYABb"
-      "W0ZiYClcW1poaCVwbQRpaDhzYWNsakhuZ2VrbFZ8dwCEg"
-      "AB3dnd4d2+OjACDhYKcmACJi4iQkpWspgCYmJm5swCmqa"
-      "zEwACwsbS4ub3X0QLExsPLyszW1Nnc3ODm5ugMBwAWAwP"
-      "Hm1IFAAAAAXRSTlMAQObYZgAAAAFiS0dEAIgFHUgAAAAJ"
-      "cEhZcwAACxMAAAsTAQCanBgAAAAHdElNRQfVCRQOBA7VB"
-      "kCMAAACcElEQVRIx72WjXKiMBSFQalIFbNiy1pdrJZaRV"
-      "YR5deGwPs/VRNBSBB2OjvQO0oYjPfj5J6bCcdx8i2Uldx"
-      "KcDhk1HbIPwFBF/kHKJfjPSVAyIRHF9rRZ4sUX3EDdWOv"
-      "1+u2tESaavpnYTbv9zvd0WwDy3/QcGQXlH5uTxB1l07MJ"
-      "lRpsUei0JF6Qi+OHyGK7ijXxPklHe/umIllim3iUBMJDI"
-      "EULxxPP0TVWhhKJoN9fUpdmQLteV8aDgEAg9gIcTjL4F4"
-      "L+r4WVKEF+rbJdwYYAoQHY+oQjnGootyKwxapoi73WkyF"
-      "FySQBv988naEEp4+YMMec5VUCQDJTscEy7Kc0HsLmqNE7"
-      "rovDjMpIHHGYeidXn4TQcaxMYqP3RV3C8oCl2WvrlSPaN"
-      "pGZadRnmPGCk8ylM2okAJ4i9TEe1KersXxSl6jUt5uayi"
-      "IodirtcKLOaWblj50wiyMv1F9lm9TUDArGAD0FmEpvCUs"
-      "VoZy6dW81Fg0aDaHogQa36ekAPG5DDGsbdZrGsrzZUnzv"
-      "Bo1I2tLmuL69kSitAweyHKN9b3leDfQMnu3nIIKWfmXnq"
-      "GVKedJT6QpICbJvf2f8aOsvn68v+k7/cwUQdPoxaMoRTn"
-      "KFHNlKsKQphCTOa84u64vpi8bH31CqsbF6lSONRTkTyQG"
-      "Arq49/fEvjBwz4eDS2/JpaXRNOoXRD/VmOrDVTJJRIZCT"
-      "Lav3VrqbPvP3vdduGEhQJzilncbpSA4F3vsihErO+dayv"
-      "/sY5/yRE0GDEXCu2VoNiMlo5i+P2KlgMEvTNk2eYa5XEy"
-      "h12Ex17Z8vzQUR3KEPbYd6XG87eC4Ly75RneS5ZYHAAAA"
-      "AElFTkSuQmCC">>.
-
 create_image_files(Images_dir) ->
+    ?INFO_MSG("here = ~p", [Images_dir]),
     Filenames = [<<"powered-by-ejabberd.png">>,
 		 <<"powered-by-erlang.png">>, <<"valid-xhtml10.png">>,
 		 <<"vcss.png">>],
-    lists:foreach(fun (Filename) ->
-			  Filename_full = fjoin([Images_dir, Filename]),
-			  {ok, F} = file:open(Filename_full, [write]),
-			  Image = base64:decode(image_base64(Filename)),
-			  io:format(F, <<"~s">>, [Image]),
-			  file:close(F)
-		  end,
-		  Filenames),
-    ok.
+    lists:foreach(
+      fun(Filename) ->
+	      Src = filename:join([misc:img_dir(), Filename]),
+	      Dst = fjoin([Images_dir, Filename]),
+	      case file:copy(Src, Dst) of
+		  {ok, _} -> ok;
+		  {error, Why} ->
+		      ?ERROR_MSG("Failed to copy ~s to ~s",
+				 [Src, Dst, file:format_error(Why)])
+	      end
+      end, Filenames).
 
 fw(F, S) -> fw(F, S, [], html).
 
@@ -768,77 +604,10 @@ put_header(F, Room, Date, CSSFile, Lang, Hour_offset,
 put_header_css(F, false) ->
     fw(F, <<"<style type=\"text/css\">">>),
     fw(F, <<"<!--">>),
-    fw(F,
-       <<".ts {color: #AAAAAA; text-decoration: "
-	 "none;}">>),
-    fw(F,
-       <<".mrcm {color: #009900; font-style: italic; "
-	 "font-weight: bold;}">>),
-    fw(F,
-       <<".msc {color: #009900; font-style: italic; "
-	 "font-weight: bold;}">>),
-    fw(F,
-       <<".msm {color: #000099; font-style: italic; "
-	 "font-weight: bold;}">>),
-    fw(F, <<".mj {color: #009900; font-style: italic;}">>),
-    fw(F, <<".ml {color: #009900; font-style: italic;}">>),
-    fw(F, <<".mk {color: #009900; font-style: italic;}">>),
-    fw(F, <<".mb {color: #009900; font-style: italic;}">>),
-    fw(F, <<".mnc {color: #009900; font-style: italic;}">>),
-    fw(F, <<".mn {color: #0000AA;}">>),
-    fw(F, <<".mne {color: #AA0099;}">>),
-    fw(F,
-       <<"a.nav {color: #AAAAAA; font-family: "
-	 "monospace; letter-spacing: 3px; text-decorati"
-	 "on: none;}">>),
-    fw(F,
-       <<"div.roomtitle {border-bottom: #224466 "
-	 "solid 3pt; margin-left: 20pt;}">>),
-    fw(F,
-       <<"div.roomtitle {color: #336699; font-size: "
-	 "24px; font-weight: bold; font-family: "
-	 "sans-serif; letter-spacing: 3px; text-decorat"
-	 "ion: none;}">>),
-    fw(F,
-       <<"a.roomjid {color: #336699; font-size: "
-	 "24px; font-weight: bold; font-family: "
-	 "sans-serif; letter-spacing: 3px; margin-left: "
-	 "20pt; text-decoration: none;}">>),
-    fw(F,
-       <<"div.logdate {color: #663399; font-size: "
-	 "20px; font-weight: bold; font-family: "
-	 "sans-serif; letter-spacing: 2px; border-botto"
-	 "m: #224466 solid 1pt; margin-left:80pt; "
-	 "margin-top:20px;}">>),
-    fw(F,
-       <<"div.roomsubject {color: #336699; font-size: "
-	 "18px; font-family: sans-serif; margin-left: "
-	 "80pt; margin-bottom: 10px;}">>),
-    fw(F,
-       <<"div.rc {color: #336699; font-size: 12px; "
-	 "font-family: sans-serif; margin-left: "
-	 "50%; text-align: right; background: "
-	 "#f3f6f9; border-bottom: 1px solid #336699; "
-	 "border-right: 4px solid #336699;}">>),
-    fw(F,
-       <<"div.rct {font-weight: bold; background: "
-	 "#e3e6e9; padding-right: 10px;}">>),
-    fw(F, <<"div.rcos {padding-right: 10px;}">>),
-    fw(F, <<"div.rcoe {color: green;}">>),
-    fw(F, <<"div.rcod {color: red;}">>),
-    fw(F, <<"div.rcoe:after {content: \": v\";}">>),
-    fw(F, <<"div.rcod:after {content: \": x\";}">>),
-    fw(F, <<"div.rcot:after {}">>),
-    fw(F,
-       <<".legend {width: 100%; margin-top: 30px; "
-	 "border-top: #224466 solid 1pt;  padding: "
-	 "10px 0px 10px 0px; text-align: left; "
-	 "font-family: monospace; letter-spacing: "
-	 "2px;}">>),
-    fw(F,
-       <<".w3c {position: absolute; right: 10px; "
-	 "width: 60%; text-align: right; font-family: "
-	 "monospace; letter-spacing: 1px;}">>),
+    case misc:read_css("muc.css") of
+	{ok, Data} -> fw(F, Data);
+	{error, _} -> ok
+    end,
     fw(F, <<"//-->">>),
     fw(F, <<"</style>">>);
 put_header_css(F, CSSFile) ->
@@ -849,16 +618,10 @@ put_header_css(F, CSSFile) ->
 
 put_header_script(F) ->
     fw(F, <<"<script type=\"text/javascript\">">>),
-    fw(F, <<"function sh(e) // Show/Hide an element">>),
-    fw(F,
-       <<"{if(document.getElementById(e).style.display="
-	 "='none')">>),
-    fw(F,
-       <<"{document.getElementById(e).style.display='bl"
-	 "ock';}">>),
-    fw(F,
-       <<"else {document.getElementById(e).style.displa"
-	 "y='none';}}">>),
+    case misc:read_js("muc.js") of
+	{ok, Data} -> fw(F, Data);
+	{error, _} -> ok
+    end,
     fw(F, <<"</script>">>).
 
 put_room_config(_F, _RoomConfig, _Lang, plaintext) ->
