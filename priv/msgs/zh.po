@@ -182,11 +182,11 @@ msgstr "出生日期"
 
 #: mod_legacy_auth:102
 msgid "Both the username and the resource are required"
-msgstr ""
+msgstr "用户名和资源均为必填项"
 
 #: mod_proxy65_service:226
 msgid "Bytestream already activated"
-msgstr ""
+msgstr "字节流已经被激活"
 
 #: ejabberd_captcha:135
 msgid "CAPTCHA web page"
@@ -198,11 +198,11 @@ msgstr "CPU时间："
 
 #: mod_privacy:334
 msgid "Cannot remove active list"
-msgstr ""
+msgstr "无法移除活跃列表"
 
 #: mod_privacy:341
 msgid "Cannot remove default list"
-msgstr ""
+msgstr "无法移除缺省列表"
 
 #: ejabberd_web_admin:1679 mod_register_web:194 mod_register_web:353
 #: mod_register_web:361 mod_register_web:386
@@ -214,18 +214,16 @@ msgid "Change User Password"
 msgstr "更改用户密码"
 
 #: mod_register:295
-#, fuzzy
 msgid "Changing password is not allowed"
-msgstr "禁用字符:"
+msgstr "不允许修改密码"
 
 #: mod_muc_room:2764
-#, fuzzy
 msgid "Changing role/affiliation is not allowed"
-msgstr "禁用字符:"
+msgstr "不允许修改角色/单位"
 
 #: mod_register_web:239
 msgid "Characters not allowed:"
-msgstr "禁用字符:"
+msgstr "不允许字符："
 
 #: mod_muc_log:358 mod_muc_log:367
 msgid "Chatroom configuration modified"
@@ -321,9 +319,9 @@ msgstr "位于~p的数据库表"
 #: mod_pubsub:3598 mod_pubsub:3604 mod_pubsub:3607 mod_vcard:226
 #: node_flat_sql:801 nodetree_tree_sql:128 nodetree_tree_sql:142
 #: nodetree_tree_sql:257
-#, fuzzy
 msgid "Database failure"
-msgstr "数据库"
+msgid "Database failure"
+msgstr "数据库失败"
 
 #: mod_muc_log:484
 msgid "December"
@@ -378,7 +376,7 @@ msgstr "转储到文本文件"
 
 #: mod_roster:180
 msgid "Duplicated groups are not allowed by RFC6121"
-msgstr ""
+msgstr "按照RFC6121，不允许有重复组"
 
 #: mod_configure:1776
 msgid "Edit Properties"
@@ -398,9 +396,8 @@ msgid "Email"
 msgstr "电子邮件"
 
 #: mod_register:292
-#, fuzzy
 msgid "Empty password"
-msgstr "密码是"
+msgstr "空密码"
 
 #: mod_muc_log:1055
 msgid "Enable logging"
@@ -408,7 +405,7 @@ msgstr "启用服务器端聊天记录"
 
 #: mod_push:252
 msgid "Enabling push without 'node' attribute is not supported"
-msgstr ""
+msgstr "不支持未使用'node'属性就开启推送"
 
 #: mod_irc:834
 msgid "Encoding for server ~b"
@@ -491,15 +488,15 @@ msgstr "将某主机的用户数据导出到 PIEFXIS 文件 (XEP-0227):"
 
 #: mod_delegation:275
 msgid "External component failure"
-msgstr ""
+msgstr "外部组件失败"
 
 #: mod_delegation:283
 msgid "External component timeout"
-msgstr ""
+msgstr "外部组件超时"
 
 #: mod_proxy65_service:218
 msgid "Failed to activate bytestream"
-msgstr ""
+msgstr "激活字节流失败"
 
 #: mod_muc_room:910
 msgid "Failed to extract JID from your voice request approval"
@@ -507,19 +504,19 @@ msgstr "无法从你的声音请求确认信息中提取JID"
 
 #: mod_delegation:257
 msgid "Failed to map delegated namespace to external component"
-msgstr ""
+msgstr "未能将代理命名空间映射到外部组件"
 
 #: mod_http_upload:602
 msgid "Failed to parse HTTP response"
-msgstr ""
+msgstr "HTTP响应解析失败"
 
 #: mod_irc:426
 msgid "Failed to parse chanserv"
-msgstr ""
+msgstr "chanserv机器人解析失败"
 
 #: mod_muc_room:3297
 msgid "Failed to process option '~s'"
-msgstr ""
+msgstr "选项'~s'处理失败"
 
 #: mod_vcard_ldap:332 mod_vcard_ldap:345 mod_vcard_mnesia:103
 #: mod_vcard_mnesia:117 mod_vcard_sql:158 mod_vcard_sql:172
@@ -532,7 +529,7 @@ msgstr "二月"
 
 #: mod_http_upload:555
 msgid "File larger than ~w bytes"
-msgstr ""
+msgstr "文件大于 ~w 字节"
 
 #: mod_vcard:437
 msgid ""
@@ -578,7 +575,6 @@ msgid "Get User Statistics"
 msgstr "获取用户统计"
 
 #: mod_vcard_ldap:330 mod_vcard_ldap:343
-#, fuzzy
 msgid "Given Name"
 msgstr "中间名"
 
@@ -596,7 +592,7 @@ msgstr "主机"
 
 #: mod_s2s_dialback:325
 msgid "Host unknown"
-msgstr ""
+msgstr "主人未知"
 
 #: ejabberd_web_admin:2463
 msgid "IP"
@@ -684,15 +680,15 @@ msgstr "从jabberd14 Spool目录导入用户数据:"
 
 #: xmpp_stream_in:983
 msgid "Improper 'from' attribute"
-msgstr ""
+msgstr "不恰当的'from'属性"
 
 #: xmpp_stream_in:477
 msgid "Improper 'to' attribute"
-msgstr ""
+msgstr "不恰当的'to'属性"
 
 #: ejabberd_service:189
 msgid "Improper domain part of 'from' attribute"
-msgstr ""
+msgstr "不恰当的'from'属性域名部分"
 
 #: mod_muc_room:260
 msgid "Improper message type"
@@ -704,12 +700,11 @@ msgstr "入站 s2s 连接:"
 
 #: mod_muc_room:3669 mod_register:187
 msgid "Incorrect CAPTCHA submit"
-msgstr ""
+msgstr "提交的验证码不正确"
 
 #: mod_muc:772 mod_muc_room:3052 mod_pubsub:1194 mod_register:183 mod_vcard:256
-#, fuzzy
 msgid "Incorrect data form"
-msgstr "密码不正确"
+msgstr "数据形式不正确"
 
 #: mod_muc_room:1943 mod_register:300 mod_register:350
 msgid "Incorrect password"
@@ -746,12 +741,11 @@ msgstr ""
 
 #: mod_privilege:300
 msgid "Invalid <forwarded/> element"
-msgstr ""
+msgstr "无效的 <forwarded/> 元素"
 
 #: mod_muc_room:3926
-#, fuzzy
 msgid "Invitations are not allowed in this conference"
-msgstr "该会议的声音请求以被禁用"
+msgstr "此会议不允许邀请"
 
 #: mod_muc_room:233 mod_muc_room:375 mod_muc_room:1046
 msgid ""
@@ -1379,7 +1373,7 @@ msgstr "发行-订阅"
 
 #: node_dag:81
 msgid "Publishing items to collection node is not allowed"
-msgstr ""
+msgstr "不允许"
 
 #: mod_muc_room:462
 msgid "Queries to the conference members are not allowed in this room"
@@ -1388,7 +1382,7 @@ msgstr "本房间不可以查询会议成员信息"
 #: mod_blocking:85 mod_disco:325 mod_disco:393 mod_offline:270 mod_privacy:146
 #: mod_private:118 mod_roster:163 mod_sic:90
 msgid "Query to another users is forbidden"
-msgstr ""
+msgstr "禁止查询其他用户"
 
 #: mod_configure:889
 msgid "RAM and disc copy"
@@ -1517,7 +1511,7 @@ msgstr "花名册"
 
 #: mod_roster:334
 msgid "Roster module has failed"
-msgstr ""
+msgstr "花名册模块已失效"
 
 #: mod_roster:968
 msgid "Roster of "
@@ -1533,7 +1527,7 @@ msgstr "运行中的节点"
 
 #: xmpp_stream_in:541 xmpp_stream_in:549
 msgid "SASL negotiation is not allowed in this state"
-msgstr ""
+msgstr "此状态下不允许SASL协商"
 
 #: mod_muc_log:468
 msgid "Saturday"
@@ -1541,12 +1535,11 @@ msgstr "星期六"
 
 #: mod_irc:582
 msgid "Scan error"
-msgstr ""
+msgstr "扫描错误"
 
 #: mod_configure:1303 mod_configure:1472 mod_configure:1517
-#, fuzzy
 msgid "Scan failed"
-msgstr "验证码检测失败."
+msgstr "扫描失败."
 
 #: ejabberd_web_admin:2282
 msgid "Script check"
@@ -1582,11 +1575,11 @@ msgstr "九月"
 
 #: mod_irc_connection:648
 msgid "Server Connect Failed"
-msgstr ""
+msgstr "服务器连接失败"
 
 #: ejabberd_s2s:369
 msgid "Server connections to local subdomains are forbidden"
-msgstr ""
+msgstr "禁止服务器连接到本地子域"
 
 #: mod_irc:842
 msgid "Server ~b"
@@ -1700,7 +1693,7 @@ msgstr "订阅"
 
 #: mod_muc_room:3708
 msgid "Subscriptions are not allowed"
-msgstr ""
+msgstr "不允许订阅"
 
 #: mod_muc_log:469
 msgid "Sunday"
@@ -1724,11 +1717,11 @@ msgstr "验证码检查失败"
 
 #: mod_muc_room:302
 msgid "The feature requested is not supported by the conference"
-msgstr ""
+msgstr "会议不支持所请求的特征"
 
 #: mod_register:308 mod_register:366
 msgid "The password contains unacceptable characters"
-msgstr ""
+msgstr "密码包含不可接受的字符"
 
 #: mod_register:311 mod_register:370
 msgid "The password is too weak"
@@ -1740,17 +1733,17 @@ msgstr "你的Jabber帐户密码已成功更新."
 
 #: mod_register:160 mod_vcard:219
 msgid "The query is only allowed from local users"
-msgstr ""
+msgstr "仅本地用户可以查询"
 
 #: mod_roster:203
 msgid "The query must not contain <item/> elements"
-msgstr ""
+msgstr "查询不能包含 <item/> 元素"
 
 #: mod_privacy:280
 msgid ""
 "The stanza MUST contain only one <active/> element, one <default/> element, "
 "or one <list/> element"
-msgstr ""
+msgstr "本节必须只含一个 <active/> 元素， <default/> 元素，或 <list/> 元素"
 
 #: mod_register_web:146
 msgid "There was an error changing the password: "
@@ -1803,7 +1796,7 @@ msgstr "到"
 
 #: mod_register:215
 msgid "To register, visit ~s"
-msgstr ""
+msgstr "要注册，请访问 ~s"
 
 #: mod_configure:709
 msgid "To ~s"
@@ -1811,41 +1804,39 @@ msgstr "发送给~s"
 
 #: ejabberd_oauth:439
 msgid "Token TTL"
-msgstr ""
+msgstr "TTL令牌"
 
 #: xmpp_stream_in:463
 msgid "Too long value of 'xml:lang' attribute"
-msgstr ""
+msgstr "'xml:lang'的值太长"
 
 #: mod_muc_room:2541 mod_muc_room:3081
 msgid "Too many <item/> elements"
-msgstr ""
+msgstr "太多 <item/> 元素"
 
 #: mod_privacy:164
 msgid "Too many <list/> elements"
-msgstr ""
+msgstr "太多 <list/> 元素"
 
 #: mod_muc_room:1924 mod_register:240
 msgid "Too many CAPTCHA requests"
 msgstr "验证码请求太多"
 
 #: mod_proxy65_service:223
-#, fuzzy
 msgid "Too many active bytestreams"
-msgstr "未被确认的节太多"
+msgstr "活跃的字节流太多"
 
 #: mod_stream_mgmt:205
 msgid "Too many unacked stanzas"
 msgstr "未被确认的节太多"
 
 #: mod_muc_room:1802
-#, fuzzy
 msgid "Too many users in this conference"
-msgstr "该会议的声音请求以被禁用"
+msgstr "该会议的用户太多"
 
 #: mod_register:355
 msgid "Too many users registered"
-msgstr ""
+msgstr "注册用户太多"
 
 #: mod_muc_admin:368
 msgid "Total rooms"
@@ -1881,7 +1872,7 @@ msgstr "无法生成验证码"
 
 #: ejabberd_service:120
 msgid "Unable to register route on existing local domain"
-msgstr ""
+msgstr "在已存在的本地域上无法注册路由"
 
 #: ejabberd_web_admin:209 ejabberd_web_admin:221 ejabberd_web_admin:241
 #: ejabberd_web_admin:253
@@ -1890,7 +1881,7 @@ msgstr "未认证的"
 
 #: mod_announce:485 mod_configure:830 mod_configure:1758
 msgid "Unexpected action"
-msgstr ""
+msgstr "意外行为"
 
 #: mod_register_web:488
 msgid "Unregister"
@@ -1902,11 +1893,11 @@ msgstr "注销Jabber帐户"
 
 #: mod_mam:526
 msgid "Unsupported <index/> element"
-msgstr ""
+msgstr "不支持的 <index/> 元素"
 
 #: mod_mix:119
 msgid "Unsupported MIX query"
-msgstr ""
+msgstr "不支持的 MIX 查询"
 
 #: ejabberd_web_admin:1872 ejabberd_web_admin:2285
 msgid "Update"
@@ -1937,9 +1928,8 @@ msgid "Uptime:"
 msgstr "正常运行时间:"
 
 #: xmpp_stream_out:533
-#, fuzzy
 msgid "Use of STARTTLS forbidden"
-msgstr "要求使用 STARTTLS"
+msgstr "禁止使用 STARTTLS"
 
 #: xmpp_stream_in:573 xmpp_stream_out:527 xmpp_stream_out:603
 msgid "Use of STARTTLS required"
@@ -1952,7 +1942,7 @@ msgstr "用户"
 
 #: ejabberd_oauth:428
 msgid "User (jid)"
-msgstr ""
+msgstr "用户 (jid)"
 
 #: mod_configure:308 mod_configure:505
 msgid "User Management"
@@ -1960,20 +1950,19 @@ msgstr "用户管理"
 
 #: mod_register:345
 msgid "User already exists"
-msgstr ""
+msgstr "用户已存在"
 
 #: mod_echo:138
 msgid "User part of JID in 'from' is empty"
-msgstr ""
+msgstr "'from' 中 JID 值的用户部分为空"
 
 #: ejabberd_sm:193 ejabberd_sm:662 ejabberd_sm:687 mod_sic:106
-#, fuzzy
 msgid "User session not found"
-msgstr "没有找到节点"
+msgstr "用户会话未找到"
 
 #: mod_stream_mgmt:561 mod_stream_mgmt:583
 msgid "User session terminated"
-msgstr ""
+msgstr "用户会话已终止"
 
 #: ejabberd_web_admin:1700
 msgid "User ~s"
@@ -2002,7 +1991,7 @@ msgstr "确认"
 #: mod_carboncopy:144 mod_irc:345 mod_muc_room:3662 mod_muc_room:3802
 #: mod_pubsub:895 mod_push:249
 msgid "Value 'get' of 'type' attribute is not allowed"
-msgstr ""
+msgstr "不允许 'type' 属性的 'get' 值"
 
 #: mod_disco:159 mod_disco:175 mod_disco:279 mod_disco:346 mod_irc:270
 #: mod_irc:285 mod_irc:339 mod_last:118 mod_last:140 mod_muc:479 mod_muc:504
@@ -2011,20 +2000,20 @@ msgstr ""
 #: mod_pubsub:821 mod_pubsub:839 mod_pubsub:877 mod_sic:81 mod_sic:93
 #: mod_stats:55 mod_time:62 mod_vcard:198 mod_vcard:236 mod_version:62
 msgid "Value 'set' of 'type' attribute is not allowed"
-msgstr ""
+msgstr "不允许 'type' 属性的 'set' 值"
 
 #: pubsub_subscription:237 pubsub_subscription_sql:202
 msgid "Value of '~s' should be boolean"
-msgstr ""
+msgstr "'~s' 的值应为布尔型"
 
 #: pubsub_subscription:215 pubsub_subscription_sql:180
 msgid "Value of '~s' should be datetime string"
-msgstr ""
+msgstr "'~s' 的值应为日期时间字符串"
 
 #: pubsub_subscription:209 pubsub_subscription:227 pubsub_subscription_sql:174
 #: pubsub_subscription_sql:192
 msgid "Value of '~s' should be integer"
-msgstr ""
+msgstr "'~s' 的值应为整数"
 
 #: ejabberd_web_admin:950
 msgid "Virtual Hosts"
@@ -2044,7 +2033,7 @@ msgstr "声音请求"
 
 #: mod_muc_room:885
 msgid "Voice requests are disabled in this conference"
-msgstr "该会议的声音请求以被禁用"
+msgstr "该会议的声音请求已被禁用"
 
 #: mod_muc_log:465
 msgid "Wednesday"
@@ -2060,7 +2049,7 @@ msgstr "您已被禁止进入该房间"
 
 #: mod_muc_room:1811
 msgid "You have joined too many conferences"
-msgstr ""
+msgstr "您加入的会议太多"
 
 #: mod_muc:777
 msgid "You must fill in field \"Nickname\" in the form"
