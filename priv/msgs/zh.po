@@ -149,7 +149,7 @@ msgstr "八月"
 
 #: mod_pubsub:1842
 msgid "Automatic node creation is not enabled"
-msgstr ""
+msgstr "未启用自动节点创建"
 
 #: ejabberd_web_admin:1867 mod_configure:148 mod_configure:617
 msgid "Backup"
@@ -712,32 +712,32 @@ msgstr "密码不正确"
 
 #: mod_irc:585
 msgid "Incorrect value in data form"
-msgstr ""
+msgstr "数据表单中有不正确的值"
 
 #: mod_adhoc:276
 msgid "Incorrect value of 'action' attribute"
-msgstr ""
+msgstr "'action' 属性的值不正确"
 
 #: mod_configure:1806
 msgid "Incorrect value of 'action' in data form"
-msgstr ""
+msgstr "数据表单中 'action' 的值不正确"
 
 #: mod_configure:1335 mod_configure:1367 mod_configure:1399 mod_configure:1419
 #: mod_configure:1439
 msgid "Incorrect value of 'path' in data form"
-msgstr ""
+msgstr "数据表单中 'path' 的值不正确"
 
 #: mod_irc:331
 msgid "Incorrect value of 'type' attribute"
-msgstr ""
+msgstr "'type' 属性的值不正确"
 
 #: mod_privilege:100
 msgid "Insufficient privilege"
-msgstr ""
+msgstr "权限不足"
 
 #: mod_privilege:286
 msgid "Invalid 'from' attribute in forwarded message"
-msgstr ""
+msgstr "转发的信息中 'from' 属性的值无效"
 
 #: mod_privilege:300
 msgid "Invalid <forwarded/> element"
@@ -866,9 +866,8 @@ msgid "Make room public searchable"
 msgstr "使房间可被公开搜索"
 
 #: mod_register:317
-#, fuzzy
 msgid "Malformed username"
-msgstr "IRC用户名"
+msgstr "用户名无效"
 
 #: mod_muc_log:475
 msgid "March"
@@ -918,15 +917,15 @@ msgstr "中间名"
 
 #: mod_irc:704
 msgid "Missing 'channel' or 'server' in the data form"
-msgstr ""
+msgstr "数据表单中缺少 'channel' 或 'server'"
 
 #: xmpp_stream_in:990
 msgid "Missing 'from' attribute"
-msgstr ""
+msgstr "缺少 'from' 属性"
 
 #: xmpp_stream_in:472 xmpp_stream_in:993
 msgid "Missing 'to' attribute"
-msgstr ""
+msgstr "缺少 'to' 属性"
 
 #: mod_muc_room:2536 mod_muc_room:3721 mod_muc_room:3765 mod_muc_room:3798
 msgid "Moderator privileges required"
@@ -942,7 +941,7 @@ msgstr "模块"
 
 #: gen_iq_handler:153
 msgid "Module failed to handle the query"
-msgstr ""
+msgstr "模块未能处理查询"
 
 #: ejabberd_web_admin:1885 mod_configure:582 mod_configure:595
 msgid "Modules"
@@ -966,7 +965,7 @@ msgstr "多重映射"
 
 #: mod_roster:195
 msgid "Multiple <item/> elements are not allowed by RFC6121"
-msgstr ""
+msgstr "按照 RFC6121，多个 <item/> 元素是不允许的"
 
 #: ejabberd_web_admin:1951 mod_vcard_mnesia:101 mod_vcard_mnesia:115
 #: mod_vcard_sql:156 mod_vcard_sql:170
@@ -979,11 +978,11 @@ msgstr "姓名:"
 
 #: mod_muc_room:2696
 msgid "Neither 'jid' nor 'nick' attribute found"
-msgstr ""
+msgstr "属性 'jid' 或 'nick' 均未发现"
 
 #: mod_muc_room:2518 mod_muc_room:2701
 msgid "Neither 'role' nor 'affiliation' attribute found"
-msgstr ""
+msgstr "属性 'role' 或 'affiliation' 均未发现"
 
 #: ejabberd_web_admin:1506 ejabberd_web_admin:1687 mod_configure:1629
 msgid "Never"
@@ -1008,41 +1007,40 @@ msgstr "昵称~s不在该房间"
 
 #: mod_configure:1496
 msgid "No 'access' found in data form"
-msgstr ""
+msgstr "数据表单中未发现 'access'"
 
 #: mod_configure:1455
 msgid "No 'acls' found in data form"
-msgstr ""
+msgstr "数据表单中未发现 'acls'"
 
 #: mod_muc_room:3075
 msgid "No 'affiliation' attribute found"
-msgstr ""
+msgstr "未发现 'affiliation' 属性"
 
 #: mod_muc_room:2505
-#, fuzzy
 msgid "No 'item' element found"
-msgstr "没有找到节点"
+msgstr "没有找到 'item' 元素"
 
 #: mod_configure:1280
 msgid "No 'modules' found in data form"
-msgstr ""
+msgstr "数据表单中未发现 'module'"
 
 #: mod_configure:1799
 msgid "No 'password' found in data form"
-msgstr ""
+msgstr "数据表单中未发现 'password'"
 
 #: mod_register:148
 msgid "No 'password' found in this query"
-msgstr ""
+msgstr "此查询中未发现 'password'"
 
 #: mod_configure:1319 mod_configure:1350 mod_configure:1382 mod_configure:1413
 #: mod_configure:1433
 msgid "No 'path' found in data form"
-msgstr ""
+msgstr "数据表单中未发现 'path'"
 
 #: mod_muc_room:3922
 msgid "No 'to' attribute found in the invitation"
-msgstr ""
+msgstr "邀请中未发现 'to' 标签"
 
 #: ejabberd_web_admin:1767
 msgid "No Data"
@@ -1050,78 +1048,75 @@ msgstr "没有数据"
 
 #: ejabberd_local:181
 msgid "No available resource found"
-msgstr ""
+msgstr "没发现可用资源"
 
 #: mod_announce:575
 msgid "No body provided for announce message"
 msgstr "通知消息无正文内容"
 
 #: mod_irc:335 mod_pubsub:1183 mod_pubsub:3289
-#, fuzzy
 msgid "No data form found"
-msgstr "没有找到节点"
+msgstr "没有找到数据表单"
 
 #: mod_disco:224 mod_vcard:282
 msgid "No features available"
-msgstr ""
+msgstr "没有可用特征"
 
 #: mod_adhoc:239
 msgid "No hook has processed this command"
-msgstr ""
+msgstr "没有任何钩子已处理此命令"
 
 #: mod_last:218
 msgid "No info about last activity found"
-msgstr ""
+msgstr "未找到上次活动的信息"
 
 #: mod_blocking:99
 msgid "No items found in this query"
-msgstr ""
+msgstr "此查询中没发现任何项"
 
 #: ejabberd_local:90 ejabberd_sm:863 mod_blocking:92 mod_blocking:110
 #: mod_http_upload:513 mod_muc:482 mod_muc:534 mod_muc:556 mod_muc:580
 #: mod_offline:303 mod_privacy:168 mod_privacy:285 mod_roster:207
 msgid "No module is handling this query"
-msgstr ""
+msgstr "没有正在处理此查询的模块"
 
 #: mod_pubsub:1541
 msgid "No node specified"
-msgstr ""
+msgstr "无指定节点"
 
 #: mod_pubsub:1426
 msgid "No pending subscriptions found"
-msgstr ""
+msgstr "未发现挂起的订阅"
 
 #: mod_privacy:201 mod_privacy:295 mod_privacy:311 mod_privacy:344
 msgid "No privacy list with this name found"
-msgstr ""
+msgstr "未找到带此名称的隐私列表"
 
 #: mod_private:96
 msgid "No private data found in this query"
-msgstr ""
+msgstr "此查询中未发现私有数据"
 
 #: mod_configure:869 mod_configure:908 mod_configure:1222 mod_configure:1254
 #: mod_configure:1275 mod_configure:1314 mod_configure:1345 mod_configure:1377
 #: mod_configure:1408 mod_configure:1428 mod_stats:93
-#, fuzzy
 msgid "No running node found"
-msgstr "没有找到节点"
+msgstr "没有找到运行中的节点"
 
 #: mod_disco:252 mod_vcard:265
 msgid "No services available"
-msgstr ""
+msgstr "无可用服务"
 
 #: mod_stats:101
 msgid "No statistics found for this item"
-msgstr ""
+msgstr "未找到此项的统计数据"
 
 #: nodetree_dag:72 nodetree_tree:181 nodetree_tree_sql:255
 msgid "Node already exists"
-msgstr ""
+msgstr "节点已存在"
 
 #: nodetree_tree_sql:99
-#, fuzzy
 msgid "Node index not found"
-msgstr "没有找到节点"
+msgstr "没有找到节点索引"
 
 #: ejabberd_web_admin:1046 mod_irc:303 mod_irc:366 mod_muc:532 mod_muc:680
 #: nodetree_dag:78 nodetree_dag:102 nodetree_dag:118 nodetree_dag:142
@@ -1136,7 +1131,7 @@ msgstr "节点~p"
 
 #: mod_vcard:385
 msgid "Nodeprep has failed"
-msgstr ""
+msgstr "Nodeprep 已失效"
 
 #: ejabberd_web_admin:1837
 msgid "Nodes"
@@ -1153,7 +1148,7 @@ msgstr "没有找到"
 
 #: mod_disco:296 mod_disco:370 mod_last:159
 msgid "Not subscribed"
-msgstr ""
+msgstr "未订阅"
 
 #: mod_muc_log:483
 msgid "November"
@@ -1204,11 +1199,11 @@ msgstr "在线用户:"
 
 #: mod_carboncopy:141
 msgid "Only <enable/> or <disable/> tags are allowed"
-msgstr ""
+msgstr "仅允许 <enable/> 或 <disable/> 标签"
 
 #: mod_privacy:154
 msgid "Only <list/> element is allowed in this query"
-msgstr ""
+msgstr "此查询中只允许 <list/> 元素"
 
 #: mod_mam:379
 msgid "Only members may query archives of this room"
@@ -1274,11 +1269,11 @@ msgstr "数据包"
 
 #: mod_irc:578
 msgid "Parse error"
-msgstr ""
+msgstr "解析错误"
 
 #: mod_configure:1299 mod_configure:1468 mod_configure:1513
 msgid "Parse failed"
-msgstr ""
+msgstr "解析失败"
 
 #: ejabberd_oauth:431 ejabberd_web_admin:1435 mod_configure:1126
 #: mod_configure:1173 mod_configure:1602 mod_configure:1781 mod_muc_log:1036
@@ -1328,7 +1323,7 @@ msgstr "Ping"
 
 #: mod_ping:180
 msgid "Ping query is incorrect"
-msgstr ""
+msgstr "Ping 查询不正确"
 
 #: ejabberd_web_admin:1983
 msgid ""
@@ -2072,9 +2067,8 @@ msgid "You need an x:data capable client to search"
 msgstr "您需要一个兼容 x:data 的客户端来搜索"
 
 #: mod_pubsub:1504
-#, fuzzy
 msgid "You're not allowed to create nodes"
-msgstr "不可以发送私聊消息"
+msgstr "您不可以创建节点"
 
 #: mod_register_web:111
 msgid "Your Jabber account was successfully created."
