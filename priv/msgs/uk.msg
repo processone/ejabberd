@@ -14,9 +14,7 @@
 {"Administration of ","Адміністрування "}.
 {"Administration","Адміністрування"}.
 {"Administrator privileges required","Необхідні права адміністратора"}.
-{"A friendly name for the node","Псевдонім для вузла"}.
 {"All activity","Вся статистика"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","Чи дозволити цьому Jabber ID підписатись новини наданого вузла"}.
 {"Allow users to change the subject","Дозволити користувачам змінювати тему"}.
 {"Allow users to query other users","Дозволити iq-запити до користувачів"}.
 {"Allow users to send invites","Дозволити користувачам надсилати запрошення"}.
@@ -24,10 +22,8 @@
 {"Allow visitors to change nickname","Дозволити відвідувачам змінювати псевдонім"}.
 {"Allow visitors to send private messages to","Дозволити відвідувачам відсилати приватні повідомлення"}.
 {"Allow visitors to send status text in presence updates","Дозволити відвідувачам відсилати текст статусу в оновленнях присутності"}.
-{"Allow visitors to send voice requests","Дозволити відвідувачам надсилати голосові запрошення"}.
 {"All Users","Всі користувачі"}.
 {"Announcements","Сповіщення"}.
-{"anyone","всім учасникам"}.
 {"A password is required to enter this room","Щоб зайти в цю конференцію, необхідно ввести пароль"}.
 {"April","квітня"}.
 {"August","серпня"}.
@@ -69,8 +65,6 @@
 {"Delete message of the day","Видалити повідомлення дня"}.
 {"Delete Selected","Видалити виділені"}.
 {"Delete User","Видалити Користувача"}.
-{"Deliver event notifications","Доставляти сповіщення про події"}.
-{"Deliver payloads with event notifications","Доставляти разом з повідомленнями про публікації самі публікації"}.
 {"Description:","Опис:"}.
 {"Disc only copy","Тільки диск"}.
 {"Displayed Groups:","Видимі групи:"}.
@@ -88,9 +82,7 @@
 {"ejabberd Web Admin","Веб-інтерфейс Адміністрування ejabberd"}.
 {"Elements","Елементи"}.
 {"Email","Електронна пошта"}.
-{"Empty Rooms","Порожні кімнати"}.
 {"Enable logging","Включити журнал роботи"}.
-{"Enable message archiving","Ввімкнути архівацію повідомлень"}.
 {"Encoding for server ~b","Кодування для сервера ~b"}.
 {"End User Session","Закінчити Сеанс Користувача"}.
 {"Enter list of {Module, [Options]}","Введіть перелік такого виду {Module, [Options]}"}.
@@ -105,14 +97,12 @@
 {"Erlang Jabber Server","Erlang Jabber Server"}.
 {"Error","Помилка"}.
 {"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","Приклад:  [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."}.
-{"Exclude Jabber IDs from CAPTCHA challenge","Пропускати ці Jabber ID без CAPTCHA-запиту"}.
 {"Export all tables as SQL queries to a file:","Експорт усіх таблиць, як SQL запити, у файл"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Експорт даних всіх користувачів сервера до файлу PIEFXIS (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Експорт даних користувачів домена до файлу PIEFXIS (XEP-0227):"}.
 {"Failed to extract JID from your voice request approval","Помилка витягнення JID з вашого схвалення голосового запиту"}.
 {"Family Name","Прізвище"}.
 {"February","лютого"}.
-{"Fill in fields to search for any matching Jabber User","Заповніть поля для пошуку користувача Jabber"}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)","Заповніть поля для пошуку користувача Jabber (Додайте * в кінець поля для пошуку підрядка)"}.
 {"Friday","П'ятниця"}.
 {"From ~s","Від ~s"}.
@@ -123,7 +113,6 @@
 {"Get User Last Login Time","Отримати Час Останнього Підключення Користувача"}.
 {"Get User Password","Отримати Пароль Користувача"}.
 {"Get User Statistics","Отримати Статистику по Користувачу"}.
-{"Grant voice to this person?","Надати голос персоні?"}.
 {"Groups","Групи"}.
 {"Group ","Група "}.
 {"has been banned","заборонили вхід в кімнату"}.
@@ -146,8 +135,6 @@
 {"Improper message type","Неправильний тип повідомлення"}.
 {"Incoming s2s Connections:","Вхідні s2s-з'єднання:"}.
 {"Incorrect password","Неправильний пароль"}.
-{"Invalid affiliation: ~s","Недопустимий ранг: ~s"}.
-{"Invalid role: ~s","Недопустима роль: ~s"}.
 {"IP addresses","IP адреси"}.
 {"IP","IP"}.
 {"IRC channel (don't put the first #)","Канал IRC (не включаючи #)"}.
@@ -163,7 +150,6 @@
 {"It is not allowed to send private messages","Приватні повідомлення не дозволені"}.
 {"Jabber Account Registration","Реєстрація Jabber-акаунту"}.
 {"Jabber ID","Jabber ID"}.
-{"Jabber ID ~s is invalid","Jabber ID ~s недопустимий"}.
 {"January","січня"}.
 {"Join IRC channel","Приєднатися до каналу IRC"}.
 {"joins the room","увійшов(ла) в кімнату"}.
@@ -190,8 +176,6 @@
 {"Make room public searchable","Зробити кімнату видимою всім"}.
 {"March","березня"}.
 {"Maximum Number of Occupants","Максимальна кількість учасників"}.
-{"Max # of items to persist","Максимальне число збережених публікацій"}.
-{"Max payload size in bytes","Максимальний розмір корисного навантаження в байтах"}.
 {"May","травня"}.
 {"Membership is required to enter this room","В цю конференцію можуть входити тільки її члени"}.
 {"Members:","Члени:"}.
@@ -199,10 +183,7 @@
 {"Memory","Пам'ять"}.
 {"Message body","Тіло повідомлення"}.
 {"Middle Name","По-батькові"}.
-{"Minimum interval between voice requests (in seconds)","Мінімальний інтервал між голосовими запитами (в секундах)"}.
 {"Moderator privileges required","Необхідні права модератора"}.
-{"moderators only","тільки модераторам"}.
-{"Moderator","Модератор"}.
 {"Modified modules","Змінені модулі"}.
 {"Modules at ~p","Модулі на ~p"}.
 {"Modules","Модулі"}.
@@ -218,21 +199,13 @@
 {"Nickname ~s does not exist in the room","Псевдонім ~s в кімнаті відсутній"}.
 {"Nickname","Псевдонім"}.
 {"No body provided for announce message","Тіло оголошення має бути непустим"}.
-{"nobody","ніхто"}.
 {"No Data","Немає даних"}.
-{"Node ID","ID вузла"}.
 {"Node not found","Вузол не знайдено"}.
 {"Node ~p","Вузол ~p"}.
 {"Nodes","Вузли"}.
-{"No limit","Без обмежень"}.
 {"None","Немає"}.
-{"No resource provided","Не вказаний ресурс"}.
 {"Not Found","не знайдено"}.
-{"Notify subscribers when items are removed from the node","Повідомляти абонентів про видалення публікацій із збірника"}.
-{"Notify subscribers when the node configuration changes","Повідомляти абонентів про зміни в конфігурації збірника"}.
-{"Notify subscribers when the node is deleted","Повідомляти абонентів про видалення збірника"}.
 {"November","листопада"}.
-{"Number of occupants","Кількість присутніх"}.
 {"Number of online users","Кількість підключених користувачів"}.
 {"Number of registered users","Кількість зареєстрованих користувачів"}.
 {"October","грудня"}.
@@ -243,7 +216,6 @@
 {"Online Users:","Підключені користувачі:"}.
 {"Online Users","Підключені користувачі"}.
 {"Online","Підключений"}.
-{"Only deliver notifications to available users","Доставляти повідомленнями тільки доступним користувачам"}.
 {"Only members may query archives of this room","Тільки модератори можуть запитувати архіви цієї кімнати"}.
 {"Only moderators and participants are allowed to change the subject in this room","Тільки модератори та учасники можуть змінювати тему в цій кімнаті"}.
 {"Only moderators are allowed to change the subject in this room","Тільки модератори можуть змінювати тему в цій кімнаті"}.
@@ -258,7 +230,6 @@
 {"Outgoing s2s Connections","Вихідні s2s-з'єднання"}.
 {"Owner privileges required","Необхідні права власника"}.
 {"Packet","Пакет"}.
-{"Participant","Учасник"}.
 {"Password ~b","Пароль ~b"}.
 {"Password Verification:","Перевірка Пароля:"}.
 {"Password Verification","Перевірка Пароля"}.
@@ -269,21 +240,16 @@
 {"Pending","Очікування"}.
 {"Period: ","Період"}.
 {"Permanent rooms","Постійні кімнати"}.
-{"Persist items to storage","Зберегати публікації до сховища"}.
 {"Ping","Пінг"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Зауважте, що ця опція відповідає за резервне копіювання тільки вбудованної бази даних Mnesia. Якщо Ви також використовуєте інше сховище для даних (наприклад за допомогою модуля ODBC), то його резервне копіювання потрібно робити окремо."}.
-{"Please specify file name.","Будь ласка вкажіть ім'я файлу."}.
-{"Please specify file size.","Будь ласка вкажіть розмір файлу."}.
 {"Please, wait for a while before sending new voice request","Будь ласка, почекайте деякий час перед тим, як знову відправляти голосовий запит"}.
 {"Pong","Понг"}.
 {"Port ~b","Порт ~b"}.
 {"Port","Порт"}.
-{"Present real Jabber IDs to","Зробити реальні Jabber ID учасників видимими"}.
 {"private, ","приватна, "}.
 {"Protocol","Протокол"}.
 {"Publish-Subscribe","Публікація-Підписка"}.
 {"PubSub subscriber request","Запит на підписку PubSub"}.
-{"Purge all items when the relevant publisher goes offline","Видалити всі елементи, коли особа, що їх опублікувала, вимикається від мережі"}.
 {"Queries to the conference members are not allowed in this room","Запити до користувачів в цій конференції заборонені"}.
 {"RAM and disc copy","ОЗП та диск"}.
 {"RAM copy","ОЗП"}.
@@ -309,13 +275,11 @@
 {"Restore binary backup immediately:","Відновити з бінарної резервної копії негайно:"}.
 {"Restore plain text backup immediately:","Відновити з текстової резервної копії негайно:"}.
 {"Restore","Відновлення з резервної копії"}.
-{"Roles for which Presence is Broadcasted","Ролі для яких поширюється наявність"}.
 {"Room Configuration","Конфігурація кімнати"}.
 {"Room creation is denied by service policy","Створювати конференцію заборонено політикою служби"}.
 {"Room description","Опис кімнати"}.
 {"Room Occupants","Учасники кімнати"}.
 {"Room title","Назва кімнати"}.
-{"Roster groups allowed to subscribe","Дозволені для підписки групи ростера"}.
 {"Roster of ","Ростер користувача "}.
 {"Roster size","Кількість контактів"}.
 {"Roster","Ростер"}.
@@ -333,7 +297,6 @@
 {"September","вересня"}.
 {"Server ~b","Сервер ~b"}.
 {"Server:","Сервер:"}.
-{"Server","Сервер:"}.
 {"Set message of the day and send to online users","Встановити повідомлення дня та надіслати його підключеним користувачам"}.
 {"Set message of the day on all hosts and send to online users","Встановити повідомлення дня на всіх хостах та надійслати його підключеним користувачам"}.
 {"Shared Roster Groups","Спільні групи контактів"}.
@@ -342,9 +305,6 @@
 {"Shut Down Service","Вимкнути Сервіс"}.
 {"~s invites you to the room ~s","~s запрошує вас до кімнати ~s"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Деякі Jabber-клієнти можуть зберігати пароль на вашому комп'ютері. Користуйтесь цією функцією тільки у тому випадку, якщо вважаєте її безпечною."}.
-{"Specify the access model","Визначити модель доступу"}.
-{"Specify the event message type","Вкажіть тип повідомлень зі сповіщеннями про події"}.
-{"Specify the publisher model","Умови публікації"}.
 {"~s's Offline Messages Queue","Черга офлайнових повідомлень ~s"}.
 {"Start Modules at ","Запуск модулів на "}.
 {"Start Modules","Запуск модулів"}.
@@ -361,29 +321,26 @@
 {"Subject","Тема"}.
 {"Submitted","Відправлено"}.
 {"Submit","Відправити"}.
-{"Subscriber Address","Адреса абонента"}.
 {"Subscription","Підписка"}.
 {"Sunday","Неділя"}.
 {"That nickname is already in use by another occupant","Псевдонім зайнято кимось з присутніх"}.
 {"That nickname is registered by another person","Псевдонім зареєстровано кимось іншим"}.
 {"The CAPTCHA is valid.","Перевірку капчею закінчено успішно"}.
 {"The CAPTCHA verification has failed","Перевірку капчею не пройдено"}.
-{"The collections with which a node is affiliated","Колекція, до якої входить вузол"}.
 {"The password is too weak","Пароль надто простий"}.
 {"the password is","пароль:"}.
 {"The password of your Jabber account was successfully changed.","Пароль вашого Jabber-акаунту був успішно змінений."}.
 {"There was an error changing the password: ","Помилка при зміні пароля: "}.
 {"There was an error creating the account: ","Помилка при створенні акаунту:"}.
 {"There was an error deleting the account: ","Помилка при видаленні акаунту: "}.
-{"This IP address is blacklisted in ~s","Ця IP адреса у чорному списку ~s"}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Регістр не має значення: \"МАША\" та \"маша\" буде сприйматися як одне й те саме ім'я."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Тут ви можете зареєструвати обліковий запис Jabber на цьому сервері. Ваш JID (ідентифікатор Jabber) матиме вигляд \"користувач@сервер\". Щоб вірно заповнити поля нижче, будь ласка, уважно читайте інструкції до них."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Ця сторінка дозволяє видалити свій акаунт з Jabber-сервера."}.
+{"This room is not anonymous","Ця кімната не анонімна"}.
 {"Thursday","Четвер"}.
 {"Time delay","Час затримки"}.
 {"Time","Час"}.
 {"Too many CAPTCHA requests","Надто багато CAPTCHA-запитів"}.
-{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Забагато  (~p) помилок авторизації з цієї IP адреси (~s). Адресу буде розблоковано о ~s UTC"}.
 {"Too many unacked stanzas","Занадто багато пакетів без відповідей"}.
 {"To ~s","До ~s"}.
 {"Total rooms","Всього кімнат"}.
@@ -406,7 +363,6 @@
 {"Update","Обновити"}.
 {"Uptime:","Час роботи:"}.
 {"Use of STARTTLS required","Ви мусите використовувати STARTTLS"}.
-{"User JID","JID Користувача"}.
 {"User Management","Управління Користувачами"}.
 {"Username:","Ім'я користувача:"}.
 {"Users are not allowed to register accounts so quickly","Користувачам не дозволено так часто реєструвати облікові записи"}.
@@ -419,19 +375,15 @@
 {"Virtual Hosts","віртуальні хости"}.
 {"Visitors are not allowed to change their nicknames in this room","Відвідувачам не дозволяється змінювати псевдонім в цій кімнаті"}.
 {"Visitors are not allowed to send messages to all occupants","Відвідувачам не дозволяється надсилати повідомлення всім присутнім"}.
-{"Visitor","Відвідувач"}.
 {"Voice requests are disabled in this conference","Голосові запити відключені в цій конференції"}.
 {"Voice request","Голосовий запит"}.
 {"Wednesday","Середа"}.
-{"When to send the last published item","Коли надсилати останній опублікований елемент"}.
-{"Whether to allow subscriptions","Дозволяти підписку"}.
 {"You can later change your password using a Jabber client.","Пізніше можна змінити пароль через Jabber-клієнт."}.
 {"You have been banned from this room","Вам заборонено входити в цю конференцію"}.
 {"You must fill in field \"Nickname\" in the form","Вам необхідно заповнити поле \"Псевдонім\" у формі"}.
 {"You need a client that supports x:data and CAPTCHA to register","Для реєстрації псевдоніму необхідно використовувати клієнт з підтримкою x:data"}.
 {"You need a client that supports x:data to register the nickname","Для реєстрації псевдоніму необхідно використовувати клієнт з підтримкою x:data"}.
 {"You need an x:data capable client to configure mod_irc settings","Для налагодження параметрів mod_irc необхідно використовувати клієнт, що має підтримку x:data"}.
-{"You need an x:data capable client to configure room","Для конфігурування кімнати потрібно використовувати клієнт з підтримкою x:data"}.
 {"You need an x:data capable client to search","Для пошуку необхідний клієнт із підтримкою x:data"}.
 {"Your active privacy list has denied the routing of this stanza.","Маршрутизація цієї строфи була відмінена активним списком приватності."}.
 {"Your contact offline message queue is full. The message has been discarded.","Черга повідомлень, що не були доставлені, переповнена. Повідомлення не було збережено."}.

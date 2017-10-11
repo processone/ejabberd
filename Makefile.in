@@ -46,6 +46,15 @@ SODIR = $(PRIVDIR)/lib
 # /usr/lib/ejabberd/priv/msgs
 MSGSDIR = $(PRIVDIR)/msgs
 
+# /usr/lib/ejabberd/priv/css
+CSSDIR = $(PRIVDIR)/css
+
+# /usr/lib/ejabberd/priv/img
+IMGDIR = $(PRIVDIR)/img
+
+# /usr/lib/ejabberd/priv/js
+JSDIR = $(PRIVDIR)/js
+
 # /usr/lib/ejabberd/priv/sql
 SQLDIR = $(PRIVDIR)/sql
 
@@ -102,7 +111,7 @@ xref: all
 
 
 translations:
-	contrib/extract_translations/prepare-translation.sh -updateall
+	tools/prepare-tr.sh
 
 edoc:
 	$(ERL) -noinput +B -eval \
@@ -126,10 +135,10 @@ ifeq ($(MAKECMDGOALS),copy-files-sub)
 DEPS:=$(sort $(shell $(REBAR) -q list-deps|$(SED) -e '/[a-z0-9_-]+\s/d;s/ .*//'))
 
 DEPS_FILES=$(call FILES_WILDCARD,$(foreach DEP,$(DEPS),deps/$(DEP)/ebin/*.beam deps/$(DEP)/ebin/*.app deps/$(DEP)/priv/* deps/$(DEP)/priv/lib/* deps/$(DEP)/priv/bin/* deps/$(DEP)/include/*.hrl deps/$(DEP)/COPY* deps/$(DEP)/LICENSE* deps/$(DEP)/lib/*/ebin/*.beam deps/$(DEP)/lib/*/ebin/*.app))
-DEPS_FILES_FILTERED=$(filter-out %/epam deps/elixir/ebin/elixir.app,$(DEPS_FILES))
+DEPS_FILES_FILTERED=$(filter-out %/epam %/eimp deps/elixir/ebin/elixir.app,$(DEPS_FILES))
 DEPS_DIRS=$(sort deps/ $(foreach DEP,$(DEPS),deps/$(DEP)/) $(dir $(DEPS_FILES)))
 
-MAIN_FILES=$(filter-out %/configure.beam,$(call FILES_WILDCARD,ebin/*.beam ebin/*.app priv/msgs/*.msg priv/lib/* include/*.hrl COPYING))
+MAIN_FILES=$(filter-out %/configure.beam,$(call FILES_WILDCARD,ebin/*.beam ebin/*.app priv/msgs/*.msg priv/css/*.css priv/img/*.png priv/js/*.js priv/lib/* include/*.hrl COPYING))
 MAIN_DIRS=$(sort $(dir $(MAIN_FILES)) priv/bin priv/sql)
 
 define DEP_VERSION_template
@@ -151,11 +160,14 @@ $(sort $(call TO_DEST,$(MAIN_DIRS) $(DEPS_DIRS))):
 $(call TO_DEST,deps/epam/priv/bin/epam): $(LIBDIR)/%: deps/epam/priv/bin/epam $(call TO_DEST,deps/epam/priv/bin/)
 	$(INSTALL) -m 750 $(O_USER) $< $@
 
+$(call TO_DEST,deps/eimp/priv/bin/eimp): $(LIBDIR)/%: deps/eimp/priv/bin/eimp $(call TO_DEST,deps/eimp/priv/bin/)
+	$(INSTALL) -m 755 $(O_USER) $< $@
+
 $(call TO_DEST,priv/sql/lite.sql): sql/lite.sql $(call TO_DEST,priv/sql)
 	$(INSTALL) -m 644 $< $@
 
 $(call TO_DEST,priv/bin/captcha.sh): tools/captcha.sh $(call TO_DEST,priv/bin)
-	$(INSTALL) -m 750 $(O_USER) $< $@
+	$(INSTALL) -m 755 $(O_USER) $< $@
 
 copy-files-sub2: $(call TO_DEST,$(DEPS_FILES) $(MAIN_FILES) priv/bin/captcha.sh priv/sql/lite.sql)
 
@@ -247,8 +259,14 @@ uninstall-binary:
 	rm -fr $(PBINDIR)
 	rm -f  $(SODIR)/*.so
 	rm -fr $(SODIR)
-	rm -f  $(MSGSDIR)/*.msgs
+	rm -f  $(MSGSDIR)/*.msg
 	rm -fr $(MSGSDIR)
+	rm -f  $(CSSDIR)/*.css
+	rm -fr $(CSSDIR)
+	rm -f  $(IMGDIR)/*.png
+	rm -fr $(IMGDIR)
+	rm -f  $(JSDIR)/*.js
+	rm -fr $(JSDIR)
 	rm -f  $(SQLDIR)/*.sql
 	rm -fr $(SQLDIR)
 	rm -fr $(PRIVDIR)

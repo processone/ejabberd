@@ -51,13 +51,15 @@
 -type host_port() :: {inet:hostname(), inet:port_number()}.
 -type ip_port() :: {inet:ip_address(), inet:port_number()}.
 -type network_error() :: {error, inet:posix() | inet_res:res_error()}.
+-type tls_error_reason() :: inet:posix() | atom() | binary().
+-type socket_error_reason() :: inet:posix() | atom().
 -type stop_reason() :: {idna, bad_string} |
 		       {dns, inet:posix() | inet_res:res_error()} |
 		       {stream, reset | {in | out, stream_error()}} |
-		       {tls, inet:posix() | atom() | binary()} |
+		       {tls, tls_error_reason()} |
 		       {pkix, binary()} |
 		       {auth, atom() | binary() | string()} |
-		       {socket, inet:posix() | atom()} |
+		       {socket, socket_error_reason()} |
 		       internal_failure.
 -export_type([state/0, stop_reason/0]).
 -callback init(list()) -> {ok, state()} | {error, term()} | ignore.
@@ -276,19 +278,20 @@ handle_cast(connect, #{remote_server := RemoteServer,
 	      process_stream_end({idna, bad_string}, State);
 	  ASCIIName ->
 	      case resolve(binary_to_list(ASCIIName), State) of
-		  {ok, AddrPorts} ->
-		      case connect(AddrPorts, State) of
+		  {{ok, AddrPorts}, Encrypted} ->
+		      case connect(AddrPorts, State, Encrypted) of
 			  {ok, Socket, AddrPort} ->
 			      SocketMonitor = SockMod:monitor(Socket),
 			      State1 = State#{ip => AddrPort,
 					      socket => Socket,
+					      stream_encrypted => Encrypted,
 					      socket_monitor => SocketMonitor},
 			      State2 = State1#{stream_state => wait_for_stream},
 			      send_header(State2);
-			  {error, Why} ->
-			      process_stream_end({socket, Why}, State)
+			  {error, {Class, Why}} ->
+			      process_stream_end({Class, Why}, State)
 		      end;
-		  {error, Why} ->
+		  {{error, Why}, _} ->
 		      process_stream_end({dns, Why}, State)
 	      end
       end);
@@ -578,11 +581,8 @@ process_sasl_mechanisms(Mechs, #{user := User, server := Server} = State) ->
     end.
 
 -spec process_starttls(state()) -> state().
-process_starttls(#{sockmod := SockMod, socket := Socket, mod := Mod} = State) ->
-    TLSOpts = try Mod:tls_options(State)
-	      catch _:undef -> []
-	      end,
-    case SockMod:starttls(Socket, [connect|TLSOpts]) of
+process_starttls(#{socket := Socket} = State) ->
+    case starttls(Socket, State) of
 	{ok, TLSSocket} ->
 	    State1 = State#{socket => TLSSocket,
 			    stream_id => new_id(),
@@ -770,6 +770,19 @@ close_socket(State) ->
     State#{stream_timeout => infinity,
 	   stream_state => disconnected}.
 
+-spec starttls(term(), state()) -> {ok, term()} | {error, tls_error_reason()}.
+starttls(Socket, #{sockmod := SockMod, mod := Mod,
+		   xmlns := NS, remote_server := RemoteServer} = State) ->
+    TLSOpts = try Mod:tls_options(State)
+	      catch _:undef -> []
+	      end,
+    SNI = idna_to_ascii(RemoteServer),
+    ALPN = case NS of
+	       ?NS_SERVER -> <<"xmpp-server">>;
+	       ?NS_CLIENT -> <<"xmpp-client">>
+	   end,
+    SockMod:starttls(Socket, [connect, {sni, SNI}, {alpn, [ALPN]}|TLSOpts]).
+
 -spec select_lang(binary(), binary()) -> binary().
 select_lang(Lang, <<"">>) -> Lang;
 select_lang(_, Lang) -> Lang.
@@ -841,47 +854,61 @@ idna_to_ascii(Host) ->
 	{error, _} -> ejabberd_idna:domain_utf8_to_ascii(Host)
     end.
 
--spec resolve(string(), state()) -> {ok, [ip_port()]} | network_error().
+-spec resolve(string(), state()) -> {{ok, [ip_port()]} | network_error(), boolean()}.
 resolve(Host, State) ->
     case srv_lookup(Host, State) of
-	{error, _Reason} ->
+	{{error, _Reason}, _} ->
 	    DefaultPort = get_default_port(State),
-	    a_lookup([{Host, DefaultPort}], State);
-	{ok, HostPorts} ->
-	    a_lookup(HostPorts, State)
+	    {a_lookup([{Host, DefaultPort}], State), false};
+	{{ok, HostPorts}, TLS} ->
+	    {a_lookup(HostPorts, State), TLS}
     end.
 
--spec srv_lookup(string(), state()) -> {ok, [host_port()]} | network_error().
+-spec srv_lookup(string(), state()) -> {{ok, [host_port()]} | network_error(), boolean()}.
 srv_lookup(_Host, #{xmlns := ?NS_COMPONENT}) ->
     %% Do not attempt to lookup SRV for component connections
-    {error, nxdomain};
+    {{error, nxdomain}, false};
 srv_lookup(Host, State) ->
     %% Only perform SRV lookups for FQDN names
     case string:chr(Host, $.) of
 	0 ->
-	    {error, nxdomain};
+	    {{error, nxdomain}, false};
 	_ ->
 	    case inet:parse_address(Host) of
 		{ok, _} ->
-		    {error, nxdomain};
+		    {{error, nxdomain}, false};
 		{error, _} ->
 		    Timeout = get_dns_timeout(State),
 		    Retries = get_dns_retries(State),
-		    srv_lookup(Host, Timeout, Retries)
+		    case is_starttls_available(State) of
+			true ->
+			    case srv_lookup("_xmpps-server._tcp." ++ Host,
+					    Timeout, Retries) of
+				{error, _} ->
+				    {srv_lookup("_xmpp-server._tcp." ++ Host,
+						Timeout, Retries),
+				     false};
+				{ok, Res} ->
+				    {{ok, Res}, true}
+			    end;
+			false ->
+			    {srv_lookup("_xmpp-server._tcp." ++ Host,
+					Timeout, Retries),
+			     false}
+		    end
 	    end
     end.
 
 -spec srv_lookup(string(), timeout(), integer()) ->
 			{ok, [host_port()]} | network_error().
-srv_lookup(_Host, _Timeout, Retries) when Retries < 1 ->
+srv_lookup(_SRVName, _Timeout, Retries) when Retries < 1 ->
     {error, timeout};
-srv_lookup(Host, Timeout, Retries) ->
-    SRVName = "_xmpp-server._tcp." ++ Host,
+srv_lookup(SRVName, Timeout, Retries) ->
     case inet_res:getbyname(SRVName, srv, Timeout) of
 	{ok, HostEntry} ->
 	    host_entry_to_host_ports(HostEntry);
 	{error, timeout} ->
-	    srv_lookup(Host, Timeout, Retries - 1);
+	    srv_lookup(SRVName, Timeout, Retries - 1);
 	{error, _} = Err ->
 	    Err
     end.
@@ -971,10 +998,22 @@ host_entry_to_addr_ports(#hostent{h_addr_list = AddrList}, Port) ->
 	_ -> {ok, AddrPorts}
     end.
 
--spec connect([ip_port()], state()) -> {ok, term(), ip_port()} | network_error().
-connect(AddrPorts, #{sockmod := SockMod} = State) ->
+-spec connect([ip_port()], state(), boolean()) -> {ok, term(), ip_port()} |
+						  {error, {socket, socket_error_reason()}} |
+						  {error, {tls, tls_error_reason()}}.
+connect(AddrPorts, #{sockmod := SockMod} = State, TLS) ->
     Timeout = get_connect_timeout(State),
-    connect(AddrPorts, SockMod, Timeout, {error, nxdomain}).
+    case connect(AddrPorts, SockMod, Timeout, {error, nxdomain}) of
+	{ok, Socket, AddrPort} when TLS ->
+	    case starttls(Socket, State) of
+		{ok, TLSSocket} -> {ok, TLSSocket, AddrPort};
+		{error, Why} -> {error, {tls, Why}}
+	    end;
+	{ok, _Socket, _AddrPort} = OK ->
+	    OK;
+	{error, Why} ->
+	    {error, {socket, Why}}
+    end.
 
 -spec connect([ip_port()], module(), timeout(), network_error()) ->
 		     {ok, term(), ip_port()} | network_error().

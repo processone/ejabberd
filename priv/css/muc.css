@@ -1,0 +1,27 @@
+.ts {color: #AAAAAA; text-decoration: none;}
+.mrcm {color: #009900; font-style: italic; font-weight: bold;}
+.msc {color: #009900; font-style: italic; font-weight: bold;}
+.msm {color: #000099; font-style: italic; font-weight: bold;}
+.mj {color: #009900; font-style: italic;}
+.ml {color: #009900; font-style: italic;}
+.mk {color: #009900; font-style: italic;}
+.mb {color: #009900; font-style: italic;}
+.mnc {color: #009900; font-style: italic;}
+.mn {color: #0000AA;}
+.mne {color: #AA0099;}
+a.nav {color: #AAAAAA; font-family: monospace; letter-spacing: 3px; text-decoration: none;}
+div.roomtitle {border-bottom: #224466 solid 3pt; margin-left: 20pt;}
+div.roomtitle {color: #336699; font-size: 24px; font-weight: bold; font-family: sans-serif; letter-spacing: 3px; text-decoration: none;}
+a.roomjid {color: #336699; font-size: 24px; font-weight: bold; font-family: sans-serif; letter-spacing: 3px; margin-left: 20pt; text-decoration: none;}
+div.logdate {color: #663399; font-size: 20px; font-weight: bold; font-family: sans-serif; letter-spacing: 2px; border-bottom: #224466 solid 1pt; margin-left:80pt; margin-top:20px;}
+div.roomsubject {color: #336699; font-size: 18px; font-family: sans-serif; margin-left: 80pt; margin-bottom: 10px;}
+div.rc {color: #336699; font-size: 12px; font-family: sans-serif; margin-left: 50%; text-align: right; background: #f3f6f9; border-bottom: 1px solid #336699; border-right: 4px solid #336699;}
+div.rct {font-weight: bold; background: #e3e6e9; padding-right: 10px;}
+div.rcos {padding-right: 10px;}
+div.rcoe {color: green;}
+div.rcod {color: red;}
+div.rcoe:after {content: ": v";}
+div.rcod:after {content: ": x";}
+div.rcot:after {}
+.legend {width: 100%; margin-top: 30px; border-top: #224466 solid 1pt;  padding: 10px 0px 10px 0px; text-align: left; font-family: monospace; letter-spacing: 2px;}
+.w3c {position: absolute; right: 10px; width: 60%; text-align: right; font-family: monospace; letter-spacing: 1px;}

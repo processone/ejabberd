@@ -183,7 +183,7 @@ process_bytestreams(#iq{type = get, from = JID, to = To, lang = Lang} = IQ) ->
 	    StreamHost = get_streamhost(Host, ServerHost),
 	    xmpp:make_iq_result(IQ, #bytestreams{hosts = [StreamHost]});
 	deny ->
-	    xmpp:make_error(IQ, xmpp:err_forbidden(<<"Denied by ACL">>, Lang))
+	    xmpp:make_error(IQ, xmpp:err_forbidden(<<"Access denied by service policy">>, Lang))
     end;
 process_bytestreams(#iq{type = set, lang = Lang,
 			sub_els = [#bytestreams{sid = SID}]} = IQ)
@@ -232,7 +232,7 @@ process_bytestreams(#iq{type = set, lang = Lang, from = InitiatorJID, to = To,
 		    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
 	    end;
 	deny ->
-	    Txt = <<"Denied by ACL">>,
+	    Txt = <<"Access denied by service policy">>,
 	    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang))
     end.
 

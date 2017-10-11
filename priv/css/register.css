@@ -1,0 +1,65 @@
+@viewport {
+  width: device-width;
+  zoom: 1.0;
+}
+
+html,body {
+  font-family: sans-serif;
+  background: white;
+
+  padding: 0.5em;
+  margin: auto;
+  max-width: 800px;
+  height: 100%;
+}
+
+form {
+  padding: 0.5em 0;
+}
+
+ul {
+  list-style: none;
+}
+  ul > li {
+    margin-bottom: 2em;
+  }
+
+ol {
+  list-style: none;
+  padding: 0;
+}
+  ol > li {
+    margin-bottom: 2em;
+    font-weight: bold;
+    font-size: 0.75em;
+  }
+  ol > li > ul {
+    list-style: decimal;
+    font-weight: normal;
+    font-style: italic;
+  }
+  ol > li > ul > li {
+    margin-bottom: auto;
+  }
+
+input {
+  display: block;
+  padding: 0.25em;
+  font-size: 1.5em;
+  border: 1px solid #ccc;
+  border-radius: 0;
+
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+  input:focus {
+    border-color: #428bca;
+  }
+  input[type=submit] {
+    padding: 0.33em 1em;
+    background-color: #428bca;
+    border-radius: 2px;
+    cursor: pointer;
+    border: none;
+    color: #fff;
+  }

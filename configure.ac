@@ -236,6 +236,14 @@ AC_ARG_ENABLE(sip,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-sip) ;;
 esac],[if test "x$sip" = "x"; then sip=false; fi])
 
+AC_ARG_ENABLE(graphics,
+[AC_HELP_STRING([--enable-graphics], [enable support for graphic images manipulation (default: yes)])],
+[case "${enableval}" in
+  yes) graphics=true ;;
+  no)  graphics=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-graphics) ;;
+esac],[if test "x$graphics" = "x"; then graphics=true; fi])
+
 AC_CONFIG_FILES([Makefile
 		 vars.config
 		 src/ejabberd.app.src])
@@ -280,6 +288,7 @@ AC_SUBST(iconv)
 AC_SUBST(stun)
 AC_SUBST(sip)
 AC_SUBST(debug)
+AC_SUBST(graphics)
 AC_SUBST(tools)
 AC_SUBST(latest_deps)
 AC_SUBST(system_deps)

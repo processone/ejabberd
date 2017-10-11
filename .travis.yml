@@ -4,7 +4,6 @@ otp_release:
   - 17.5
   - 18.3
   - 19.2
-  - 20.0
 
 services:
   - riak
@@ -28,7 +27,7 @@ before_install:
   - pip install --user coveralls-merge
 
 install:
-  - sudo apt-get -qq install libexpat1-dev libyaml-dev libpam0g-dev libsqlite3-dev
+  - sudo apt-get -qq install libexpat1-dev libyaml-dev libpam0g-dev libsqlite3-dev libgd-dev libwebp-dev
 
 before_script:
   # Ulimit: See Travis-CI issue report: https://github.com/travis-ci/travis-ci/issues/3328

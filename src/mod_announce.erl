@@ -237,7 +237,7 @@ disco_identity(Acc, _From, _To, Node, Lang) ->
 -define(INFO_RESULT(Allow, Feats, Lang),
 	case Allow of
 	    deny ->
-		{error, xmpp:err_forbidden(<<"Denied by ACL">>, Lang)};
+		{error, xmpp:err_forbidden(<<"Access denied by service policy">>, Lang)};
 	    allow ->
 		{result, Feats}
 	end).
@@ -252,7 +252,7 @@ disco_features(Acc, From, #jid{lserver = LServer} = _To, <<"announce">>, Lang) -
 	    case {acl:match_rule(LServer, Access1, From),
 		  acl:match_rule(global, Access2, From)} of
 		{deny, deny} ->
-		    Txt = <<"Denied by ACL">>,
+		    Txt = <<"Access denied by service policy">>,
 		    {error, xmpp:err_forbidden(Txt, Lang)};
 		_ ->
 		    {result, []}
@@ -303,7 +303,7 @@ disco_features(Acc, From, #jid{lserver = LServer} = _To, Node, Lang) ->
 -define(ITEMS_RESULT(Allow, Items, Lang),
 	case Allow of
 	    deny ->
-		{error, xmpp:err_forbidden(<<"Denied by ACL">>, Lang)};
+		{error, xmpp:err_forbidden(<<"Access denied by service policy">>, Lang)};
 	    allow ->
 		{result, Items}
 	end).
@@ -417,7 +417,7 @@ commands_result(Allow, From, To, Request) ->
     case Allow of
 	deny ->
 	    Lang = Request#adhoc_command.lang,
-	    {error, xmpp:err_forbidden(<<"Denied by ACL">>, Lang)};
+	    {error, xmpp:err_forbidden(<<"Access denied by service policy">>, Lang)};
 	allow ->
 	    announce_commands(From, To, Request)
     end.
@@ -843,7 +843,7 @@ add_store_hint(El) ->
 -spec route_forbidden_error(stanza()) -> ok.
 route_forbidden_error(Packet) ->
     Lang = xmpp:get_lang(Packet),
-    Err = xmpp:err_forbidden(<<"Denied by ACL">>, Lang),
+    Err = xmpp:err_forbidden(<<"Access denied by service policy">>, Lang),
     ejabberd_router:route_error(Packet, Err).
 
 -spec init_cache(module(), binary(), gen_mod:opts()) -> ok.

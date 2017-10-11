@@ -123,8 +123,10 @@ auth_method:
   - {{ auth_method }}
 {%- endfor %}
 
+auth_password_format: {{ env.get('EJABBERD_AUTH_PASSWORD_FORMAT', 'scram') }}
+
 {%- if 'anonymous' in env.get('EJABBERD_AUTH_METHOD', 'internal').split() %}
-anonymous_protocol: login_anon
+anonymous_protocol: both
 allow_multiple_connections: true
 {%- endif %}
 
@@ -347,6 +349,8 @@ modules:
       - "flat"
       - "hometree"
       - "pep" # pep requires mod_caps
+  mod_push: {}
+  mod_push_keepalive: {}
   mod_register:
     ##
     ## Protect In-Band account registrations with CAPTCHA.
@@ -432,5 +436,6 @@ redis_port: {{ env['EJABBERD_REDIS_PORT'] or 6379 }}
 redis_password: {{ env['EJABBERD_REDIS_PASSWORD'] }}
 {% endif %}
 redis_db: {{ env['EJABBERD_REDIS_DB'] or 0}}
+redis_reconnect_timeout: {{ env['EJABBERD_REDIS_RECONNECT_TIMEOUT'] or 1 }}
 redis_connect_timeout: {{ env['EJABBERD_REDIS_CONNECT_TIMEOUT'] or 1 }}
 {% endif %}

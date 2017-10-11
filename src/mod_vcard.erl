@@ -38,7 +38,7 @@
 	 remove_user/2, export/1, import_info/0, import/5, import_start/2,
 	 depends/2, process_search/1, process_vcard/1, get_vcard/2,
 	 disco_items/5, disco_features/5, disco_identity/5,
-	 decode_iq_subel/1, mod_opt_type/1, set_vcard/3, make_vcard_search/4]).
+	 vcard_iq_set/1, mod_opt_type/1, set_vcard/3, make_vcard_search/4]).
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
 
@@ -95,6 +95,7 @@ init([Host, Opts]) ->
 				  ?NS_VCARD, ?MODULE, process_sm_iq, IQDisc),
     ejabberd_hooks:add(disco_sm_features, Host, ?MODULE,
 		       get_sm_features, 50),
+    ejabberd_hooks:add(vcard_iq_set, Host, ?MODULE, vcard_iq_set, 50),
     MyHosts = gen_mod:get_opt_hosts(Host, Opts, <<"vjud.@HOST@">>),
     Search = gen_mod:get_opt(search, Opts, false),
     if Search ->
@@ -152,6 +153,7 @@ terminate(_Reason, #state{hosts = MyHosts, server_host = Host}) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VCARD),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_VCARD),
     ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
+    ejabberd_hooks:delete(vcard_iq_set, Host, ?MODULE, vcard_iq_set, 50),
     Mod = gen_mod:db_mod(Host, ?MODULE),
     Mod:stop(Host),
     lists:foreach(
@@ -191,14 +193,6 @@ get_sm_features(Acc, _From, _To, Node, _Lang) ->
       _ -> Acc
     end.
 
--spec decode_iq_subel(xmpp_element() | xmlel()) -> xmpp_element() | xmlel().
-%% Tell gen_iq_handler not to decode vcard elements
-decode_iq_subel(El) ->
-    case xmpp:get_ns(El) of
-	?NS_VCARD -> xmpp:encode(El);
-	_ -> xmpp:decode(El)
-    end.
-
 -spec process_local_iq(iq()) -> iq().
 process_local_iq(#iq{type = set, lang = Lang} = IQ) ->
     Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
@@ -212,13 +206,15 @@ process_local_iq(#iq{type = get, lang = Lang} = IQ) ->
 		      bday = <<"2002-11-16">>}).
 
 -spec process_sm_iq(iq()) -> iq().
-process_sm_iq(#iq{type = set, lang = Lang, from = From,
-		  sub_els = [SubEl]} = IQ) ->
-    #jid{user = User, lserver = LServer} = From,
+process_sm_iq(#iq{type = set, lang = Lang, from = From} = IQ) ->
+    #jid{lserver = LServer} = From,
     case lists:member(LServer, ?MYHOSTS) of
 	true ->
-	    set_vcard(User, LServer, SubEl),
-	    xmpp:make_iq_result(IQ);
+	    case ejabberd_hooks:run_fold(vcard_iq_set, LServer, IQ, []) of
+		drop -> ignore;
+		#stanza_error{} = Err -> xmpp:make_error(IQ, Err);
+		_ -> xmpp:make_iq_result(IQ)
+	    end;
 	false ->
 	    Txt = <<"The query is only allowed from local users">>,
 	    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang))
@@ -380,19 +376,33 @@ make_vcard_search(User, LUser, LServer, VCARD) ->
 		  orgunit = OrgUnit,
 		  lorgunit = LOrgUnit}.
 
--spec set_vcard(binary(), binary(), xmlel()) -> {error, badarg} | ok.
+-spec vcard_iq_set(iq()) -> iq() | {stop, stanza_error()}.
+vcard_iq_set(#iq{from = From, lang = Lang, sub_els = [VCard]} = IQ) ->
+    #jid{user = User, lserver = LServer} = From,
+    case set_vcard(User, LServer, VCard) of
+	{error, badarg} ->
+	    %% Should not be here?
+	    Txt = <<"Nodeprep has failed">>,
+	    {stop, xmpp:err_internal_server_error(Txt, Lang)};
+	ok ->
+	    IQ
+    end;
+vcard_iq_set(Acc) ->
+    Acc.
+
+-spec set_vcard(binary(), binary(), xmlel() | vcard_temp()) -> {error, badarg} | ok.
 set_vcard(User, LServer, VCARD) ->
     case jid:nodeprep(User) of
 	error ->
 	    {error, badarg};
 	LUser ->
-	    VCardSearch = make_vcard_search(User, LUser, LServer, VCARD),
+	    VCardEl = xmpp:encode(VCARD),
+	    VCardSearch = make_vcard_search(User, LUser, LServer, VCardEl),
 	    Mod = gen_mod:db_mod(LServer, ?MODULE),
-	    Mod:set_vcard(LUser, LServer, VCARD, VCardSearch),
+	    Mod:set_vcard(LUser, LServer, VCardEl, VCardSearch),
 	    ets_cache:delete(?VCARD_CACHE, {LUser, LServer},
 			     cache_nodes(Mod, LServer)),
-	    ejabberd_hooks:run(vcard_set, LServer,
-			       [LUser, LServer, VCARD])
+	    ok
     end.
 
 -spec string2lower(binary()) -> binary().

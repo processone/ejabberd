@@ -11,887 +11,463 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Language: Greek (ελληνικά)\n"
 
-#: ejabberd_c2s.erl:505 ejabberd_c2s.erl:853
-msgid "Use of STARTTLS required"
-msgstr "Απαιτείται χρήση STARTTLS "
+#: mod_muc_log:413 mod_muc_log:752
+msgid " has set the subject to: "
+msgstr " έχει θέσει το θέμα σε: "
 
-#: ejabberd_c2s.erl:604
-msgid "No resource provided"
-msgstr "Δεν προμηθεύτικε πόρος"
+#: mod_muc_room:1893
+msgid "A password is required to enter this room"
+msgstr "Απαιτείται κωδικός πρόσβασης για είσοδο σε αυτή την αίθουσα"
 
-#: ejabberd_c2s.erl:1349
-msgid "Replaced by new connection"
-msgstr "Αντικαταστάθικε από νέα σύνδεση"
-
-#: ejabberd_c2s.erl:1353 mod_configure.erl:1854 mod_muc_log.erl:427
-#: mod_muc_log.erl:430
-msgid "has been kicked"
-msgstr "αποβλήθηκε "
-
-#: ejabberd_c2s.erl:2114
-msgid "Your active privacy list has denied the routing of this stanza."
-msgstr ""
-"Ο ενεργός κατάλογος απορρήτου, έχει αρνηθεί τη δρομολόγηση αυτής της στροφής "
-"(stanza)."
-
-#: ejabberd_c2s.erl:2429
-msgid "Too many unacked stanzas"
-msgstr ""
-
-#: ejabberd_captcha.erl:122 ejabberd_captcha.erl:245 ejabberd_captcha.erl:284
-msgid "Enter the text you see"
-msgstr "Πληκτρολογήστε το κείμενο που βλέπετε"
-
-#: ejabberd_captcha.erl:147
-msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
-msgstr ""
-"Τα μηνύματά σας πρως ~s είναι αποκλεισμένα. Για αποδεσμεύση, επισκεφθείτε ~s"
-
-#: ejabberd_captcha.erl:192
-msgid "If you don't see the CAPTCHA image here, visit the web page."
-msgstr "Εάν δεν βλέπετε την εικόνα CAPTCHA εδώ, επισκεφθείτε την ιστοσελίδα."
-
-#: ejabberd_captcha.erl:227
-msgid "CAPTCHA web page"
-msgstr "Ιστοσελίδα CAPTCHA "
-
-#: ejabberd_captcha.erl:381
-msgid "The CAPTCHA is valid."
-msgstr "Το CAPTCHA είναι έγκυρο."
-
-#: ejabberd_oauth.erl:253 ejabberd_web_admin.erl:1403
-#: ejabberd_web_admin.erl:1458 mod_register.erl:265 mod_vcard.erl:490
-msgid "User"
-msgstr "Χρήστης"
-
-#: ejabberd_oauth.erl:256
-#, fuzzy
-msgid "Server"
-msgstr "Διακομιστής:"
-
-#: ejabberd_oauth.erl:259 ejabberd_web_admin.erl:1408 mod_configure.erl:1398
-#: mod_configure.erl:1485 mod_configure.erl:1889 mod_configure.erl:2123
-#: mod_muc_room.erl:3383 mod_register.erl:275
-msgid "Password"
-msgstr "Κωδικός Πρόσβασης"
-
-#: ejabberd_oauth.erl:267
+#: ejabberd_oauth:448
 msgid "Accept"
 msgstr ""
 
-#: ejabberd_web_admin.erl:202 ejabberd_web_admin.erl:214
-#: ejabberd_web_admin.erl:234 ejabberd_web_admin.erl:246
-msgid "Unauthorized"
-msgstr "Χορίς Εξουσιοδότηση"
+#: mod_configure:1109
+msgid "Access Configuration"
+msgstr "Διαμόρφωση Πρόσβασης"
 
-#: ejabberd_web_admin.erl:303 ejabberd_web_admin.erl:335
-msgid "ejabberd Web Admin"
-msgstr "ejabberd Web Admin"
+#: mod_configure:1091
+msgid "Access Control List Configuration"
+msgstr "Διαχείριση στις Λίστες Ελέγχου Πρόσβασης"
 
-#: ejabberd_web_admin.erl:669 ejabberd_web_admin.erl:680
-msgid "Administration"
-msgstr "Διαχείριση"
-
-#: ejabberd_web_admin.erl:737 ejabberd_web_admin.erl:773 mod_configure.erl:196
-#: mod_configure.erl:532
+#: ejabberd_web_admin:758 ejabberd_web_admin:797 mod_configure:185
+#: mod_configure:514
 msgid "Access Control Lists"
 msgstr "Λίστες Ελέγχου Πρόσβασης"
 
-#: ejabberd_web_admin.erl:741 ejabberd_web_admin.erl:777
-#: ejabberd_web_admin.erl:843 ejabberd_web_admin.erl:876
-#: ejabberd_web_admin.erl:917 ejabberd_web_admin.erl:1394
-#: ejabberd_web_admin.erl:1677 ejabberd_web_admin.erl:1836
-#: ejabberd_web_admin.erl:1870 ejabberd_web_admin.erl:1950
-#: ejabberd_web_admin.erl:2120 ejabberd_web_admin.erl:2149
-#: ejabberd_web_admin.erl:2246 mod_offline.erl:802 mod_roster.erl:1493
-#: mod_shared_roster.erl:1166 mod_shared_roster.erl:1261
-msgid "Submitted"
-msgstr "Υποβλήθηκε"
-
-#: ejabberd_web_admin.erl:742 ejabberd_web_admin.erl:778
-#: ejabberd_web_admin.erl:844 ejabberd_web_admin.erl:877
-#: ejabberd_web_admin.erl:918 ejabberd_web_admin.erl:1395
-#: ejabberd_web_admin.erl:1678 ejabberd_web_admin.erl:1837
-#: ejabberd_web_admin.erl:2121 ejabberd_web_admin.erl:2150 mod_roster.erl:1494
-#: mod_shared_roster.erl:1167 mod_shared_roster.erl:1262
-msgid "Bad format"
-msgstr "Ακατάλληλη μορφή"
-
-#: ejabberd_web_admin.erl:753 ejabberd_web_admin.erl:790
-#: ejabberd_web_admin.erl:855 ejabberd_web_admin.erl:925
-#: ejabberd_web_admin.erl:1939 mod_shared_roster.erl:1269
-msgid "Submit"
-msgstr "Υποβοβολή"
-
-#: ejabberd_web_admin.erl:782 ejabberd_web_admin.erl:881
-msgid "Raw"
-msgstr "Ακατέργαστο"
-
-#: ejabberd_web_admin.erl:787 ejabberd_web_admin.erl:887 mod_offline.erl:824
-#: mod_shared_roster.erl:1175
-msgid "Delete Selected"
-msgstr "Διαγραφή επιλεγμένων"
-
-#: ejabberd_web_admin.erl:839 ejabberd_web_admin.erl:872 mod_configure.erl:198
-#: mod_configure.erl:533
+#: ejabberd_web_admin:863 ejabberd_web_admin:896 mod_configure:187
+#: mod_configure:515
 msgid "Access Rules"
 msgstr "Κανόνες Πρόσβασης"
 
-#: ejabberd_web_admin.erl:913
-msgid "~s access rule configuration"
-msgstr "~s διαμόρφωση κανόνα πρόσβασης"
+#: mod_configure:1095
+msgid "Access control lists"
+msgstr "Λίστες Ελέγχου Πρόσβασης"
 
-#: ejabberd_web_admin.erl:931
-msgid "Virtual Hosts"
-msgstr "εικονικοί κεντρικοί υπολογιστές"
+#: ejabberd_c2s:414 ejabberd_c2s:661 ejabberd_s2s:372 ejabberd_service:202
+#: mod_announce:255 mod_announce:273 mod_announce:275 mod_announce:277
+#: mod_announce:279 mod_announce:281 mod_announce:283 mod_announce:285
+#: mod_announce:287 mod_announce:289 mod_announce:291 mod_announce:351
+#: mod_announce:353 mod_announce:355 mod_announce:357 mod_announce:359
+#: mod_announce:361 mod_announce:363 mod_announce:365 mod_announce:367
+#: mod_announce:369 mod_announce:420 mod_announce:846 mod_configure:206
+#: mod_configure:219 mod_configure:220 mod_configure:221 mod_configure:222
+#: mod_configure:224 mod_configure:225 mod_configure:226 mod_configure:227
+#: mod_configure:229 mod_configure:231 mod_configure:233 mod_configure:235
+#: mod_configure:237 mod_configure:239 mod_configure:241 mod_configure:243
+#: mod_configure:245 mod_configure:247 mod_configure:249 mod_configure:251
+#: mod_configure:253 mod_configure:255 mod_configure:257 mod_configure:259
+#: mod_configure:261 mod_configure:263 mod_configure:265 mod_configure:267
+#: mod_configure:313 mod_configure:435 mod_configure:780 mod_configure:782
+#: mod_configure:784 mod_configure:786 mod_configure:788 mod_configure:790
+#: mod_configure:792 mod_configure:794 mod_configure:1740 mod_http_upload:545
+#: mod_irc:265 mod_legacy_auth:136 mod_muc:401 mod_proxy65_service:186
+#: mod_proxy65_service:235 mod_register:130 mod_register:273 mod_register:325
+#: mod_register:326 mod_roster:187 mod_s2s_dialback:323
+msgid "Access denied by service policy"
+msgstr "Άρνηση πρόσβασης, λόγω τακτικής παροχής υπηρεσιών"
 
-#: ejabberd_web_admin.erl:940 ejabberd_web_admin.erl:948
-msgid "Users"
-msgstr "Χρήστες"
+#: mod_configure:1113
+msgid "Access rules"
+msgstr "Κανόνες Πρόσβασης"
 
-#: ejabberd_web_admin.erl:955 ejabberd_web_admin.erl:1340
-#: mod_configure.erl:524
-msgid "Online Users"
-msgstr "Συνδεμένοι χρήστες"
+#: mod_configure:1772
+msgid "Action on user"
+msgstr "Eνέργεια για το χρήστη"
 
-#: ejabberd_web_admin.erl:971
-msgid "Users Last Activity"
-msgstr "Τελευταία Δραστηριότητα Χρήστη"
+#: mod_roster:982
+msgid "Add Jabber ID"
+msgstr "Προσθήκη Jabber Ταυτότητας"
 
-#: ejabberd_web_admin.erl:975
-msgid "Period: "
-msgstr "Περίοδος: "
-
-#: ejabberd_web_admin.erl:988
-msgid "Last month"
-msgstr "Περασμένο μήνα"
-
-#: ejabberd_web_admin.erl:989
-msgid "Last year"
-msgstr "Πέρυσι"
-
-#: ejabberd_web_admin.erl:991
-msgid "All activity"
-msgstr "Όλες οι δραστηριότητες"
-
-#: ejabberd_web_admin.erl:994
-msgid "Show Ordinary Table"
-msgstr "Δείτε Κοινό Πίνακα"
-
-#: ejabberd_web_admin.erl:997
-msgid "Show Integral Table"
-msgstr "Δείτε Ολοκληρωτικό Πίνακα"
-
-#: ejabberd_web_admin.erl:1004 ejabberd_web_admin.erl:1847
-#: mod_muc_admin.erl:247
-msgid "Statistics"
-msgstr "Στατιστικές"
-
-#: ejabberd_web_admin.erl:1014
-msgid "Not Found"
-msgstr "Δεν Βρέθηκε"
-
-#: ejabberd_web_admin.erl:1027
-msgid "Node not found"
-msgstr "Κόμβος δεν βρέθηκε"
-
-#: ejabberd_web_admin.erl:1250 mod_shared_roster.erl:1161
+#: ejabberd_web_admin:1277 mod_shared_roster:825
 msgid "Add New"
 msgstr "Προσθήκη νέου"
 
-#: ejabberd_web_admin.erl:1338
-msgid "Host"
-msgstr "Κεντρικός Υπολογιστής"
-
-#: ejabberd_web_admin.erl:1339
-msgid "Registered Users"
-msgstr "Εγγεγραμμένοι Χρήστες"
-
-#: ejabberd_web_admin.erl:1417 mod_configure.erl:177 mod_configure.erl:539
-#: mod_configure.erl:1386
+#: ejabberd_web_admin:1444 mod_configure:166 mod_configure:521
+#: mod_configure:1118
 msgid "Add User"
 msgstr "Προσθήκη Χρήστη"
 
-#: ejabberd_web_admin.erl:1459
-msgid "Offline Messages"
-msgstr "Χωρίς Σύνδεση Μηνύματα"
+#: ejabberd_web_admin:687 ejabberd_web_admin:698
+msgid "Administration"
+msgstr "Διαχείριση"
 
-#: ejabberd_web_admin.erl:1460 ejabberd_web_admin.erl:1688
-msgid "Last Activity"
-msgstr "Τελευταία Δραστηριότητα"
+#: mod_configure:1767
+msgid "Administration of "
+msgstr "Διαχείριση του"
 
-#: ejabberd_web_admin.erl:1478 ejabberd_web_admin.erl:1660
-#: mod_configure.erl:1916
-msgid "Never"
-msgstr "Ποτέ"
+#: mod_muc_room:2528
+msgid "Administrator privileges required"
+msgstr "Aπαιτούνται προνόμια διαχειριστή"
 
-#: ejabberd_web_admin.erl:1496 ejabberd_web_admin.erl:1671
-#: mod_configure.erl:1926
-msgid "Online"
-msgstr "Συνδεδεμένο"
+#: mod_configure:507
+msgid "All Users"
+msgstr "Όλοι οι χρήστες"
 
-#: ejabberd_web_admin.erl:1550 ejabberd_web_admin.erl:1569
-msgid "Registered Users:"
-msgstr "Εγγεγραμμένοι Χρήστες:"
+#: ejabberd_web_admin:1010
+msgid "All activity"
+msgstr "Όλες οι δραστηριότητες"
 
-#: ejabberd_web_admin.erl:1553 ejabberd_web_admin.erl:1572
-#: ejabberd_web_admin.erl:2187
-msgid "Online Users:"
-msgstr "Online Χρήστες:"
+#: mod_muc_log:1046
+msgid "Allow users to change the subject"
+msgstr "Επιτρέψετε στους χρήστες να αλλάζουν το θέμα"
 
-#: ejabberd_web_admin.erl:1556
-msgid "Outgoing s2s Connections:"
-msgstr "Εξερχόμενες S2S Συνδέσεις:"
+#: mod_muc_log:1052
+msgid "Allow users to query other users"
+msgstr "Επιτρέπστε στους χρήστες να ερωτούν άλλους χρήστες"
 
-#: ejabberd_web_admin.erl:1559
-#, fuzzy
-msgid "Incoming s2s Connections:"
-msgstr "Εξερχόμενες S2S Συνδέσεις:"
+#: mod_muc_log:1054
+msgid "Allow users to send invites"
+msgstr "Επιτρέψετε στους χρήστες να αποστέλλουν προσκλήσεις"
 
-#: ejabberd_web_admin.erl:1595 ejabberd_web_admin.erl:1794
-#: ejabberd_web_admin.erl:1804 ejabberd_web_admin.erl:2214 mod_roster.erl:1429
-msgid "None"
-msgstr "Κανένα"
+#: mod_muc_log:1048
+msgid "Allow users to send private messages"
+msgstr "Επιτρέψετε στους χρήστες να αποστέλλουν ιδιωτικά μηνύματα"
 
-#: ejabberd_web_admin.erl:1652 mod_register_web.erl:188
-#: mod_register_web.erl:347 mod_register_web.erl:355 mod_register_web.erl:379
-msgid "Change Password"
-msgstr "Αλλαγή κωδικού"
+#: mod_muc_log:1057
+msgid "Allow visitors to change nickname"
+msgstr "Επιτρέψετε στους επισκέπτες να αλλάζου ψευδώνυμο"
 
-#: ejabberd_web_admin.erl:1673
-#, fuzzy
-msgid "User ~s"
-msgstr "Χρήστης"
+#: mod_muc_log:1050
+msgid "Allow visitors to send private messages to"
+msgstr "Επιτρέψετε στους χρήστες να αποστέλλουν ιδιωτικά μηνύματα σε"
 
-#: ejabberd_web_admin.erl:1684
-msgid "Connected Resources:"
-msgstr "Συνδεδεμένοι Πόροι:"
+#: mod_muc_log:1059
+msgid "Allow visitors to send status text in presence updates"
+msgstr ""
+"Επιτρέψτε στους επισκέπτες να αποστέλλουν κατάσταση στις ενημερώσεις "
+"παρουσίας"
 
-#: ejabberd_web_admin.erl:1686 mod_register_web.erl:239
-#: mod_register_web.erl:475
-msgid "Password:"
-msgstr "Κωδικός πρόσβασης:"
+#: mod_announce:611
+msgid "Announcements"
+msgstr "Ανακοινώσεις"
 
-#: ejabberd_web_admin.erl:1693 mod_configure.erl:2117
-msgid "Remove User"
-msgstr "Αφαίρεση χρήστη"
+#: mod_muc_log:476
+msgid "April"
+msgstr "Απρίλιος"
 
-#: ejabberd_web_admin.erl:1740
-msgid "No Data"
-msgstr "Κανένα στοιχείο"
+#: mod_muc_log:480
+msgid "August"
+msgstr "Αύγουστος"
 
-#: ejabberd_web_admin.erl:1813
-msgid "Nodes"
-msgstr "Κόμβοι"
+#: mod_pubsub:1842
+msgid "Automatic node creation is not enabled"
+msgstr ""
 
-#: ejabberd_web_admin.erl:1814 mod_configure.erl:528
-msgid "Running Nodes"
-msgstr "Ενεργοί Κόμβοι"
-
-#: ejabberd_web_admin.erl:1815 mod_configure.erl:529
-msgid "Stopped Nodes"
-msgstr "Σταματημένοι Κόμβοι"
-
-#: ejabberd_web_admin.erl:1833 ejabberd_web_admin.erl:1858
-#, fuzzy
-msgid "Node ~p"
-msgstr "Κόμβος"
-
-#: ejabberd_web_admin.erl:1842 mod_configure.erl:150 mod_configure.erl:611
-msgid "Database"
-msgstr "Βάση δεδομένων"
-
-#: ejabberd_web_admin.erl:1843 mod_configure.erl:159 mod_configure.erl:648
+#: ejabberd_web_admin:1867 mod_configure:148 mod_configure:617
 msgid "Backup"
 msgstr "Αποθήκευση Αντιγράφου Ασφαλείας"
 
-#: ejabberd_web_admin.erl:1845
-msgid "Listened Ports"
-msgstr "Παρακολουθούμενες Θύρες"
+#: mod_configure:584
+msgid "Backup Management"
+msgstr "Διαχείριση Αντιγράφου Ασφαλείας"
 
-#: ejabberd_web_admin.erl:1848 ejabberd_web_admin.erl:2261
-msgid "Update"
-msgstr "Ενημέρωση"
-
-#: ejabberd_web_admin.erl:1852 ejabberd_web_admin.erl:2469
-#: ejabberd_web_admin.erl:2613
-msgid "Restart"
-msgstr "Επανεκκίνηση"
-
-#: ejabberd_web_admin.erl:1854 ejabberd_web_admin.erl:2473
-#: ejabberd_web_admin.erl:2617
-msgid "Stop"
-msgstr "Σταμάτημα"
-
-#: ejabberd_web_admin.erl:1861 mod_configure.erl:613 mod_configure.erl:626
-msgid "Modules"
-msgstr "Modules"
-
-#: ejabberd_web_admin.erl:1866
-msgid "RPC Call Error"
-msgstr "Σφάλμα RPC Κλήσης"
-
-#: ejabberd_web_admin.erl:1917
-#, fuzzy
-msgid "Database Tables at ~p"
-msgstr "Πίνακες βάσης δεδομένων στο "
-
-#: ejabberd_web_admin.erl:1927 mod_vcard.erl:490 mod_vcard.erl:616
-msgid "Name"
-msgstr "Όνομα"
-
-#: ejabberd_web_admin.erl:1928
-msgid "Storage Type"
-msgstr "Τύπος Αποθήκευσης"
-
-#: ejabberd_web_admin.erl:1929
-msgid "Elements"
-msgstr "Στοιχεία"
-
-#: ejabberd_web_admin.erl:1930
-msgid "Memory"
-msgstr "Μνήμη"
-
-#: ejabberd_web_admin.erl:1952 ejabberd_web_admin.erl:2123
-msgid "Error"
-msgstr "Σφάλμα"
-
-#: ejabberd_web_admin.erl:1955
+#: ejabberd_web_admin:1979
 #, fuzzy
 msgid "Backup of ~p"
 msgstr "Αντιγράφο Ασφαλείας του "
 
-#: ejabberd_web_admin.erl:1959
-msgid ""
-"Please note that these options will only backup the builtin Mnesia database. "
-"If you are using the ODBC module, you also need to backup your SQL database "
-"separately."
-msgstr ""
-"Παρακαλώ σημειώστε ότι οι επιλογές αυτές θα αποθήκευσουν Αντιγράφο Ασφαλείας "
-"μόνο της ενσωματωμένης βάσης δεδομένων Mnesia. Εάν χρησιμοποιείτε το module "
-"ODBC, θα πρέπει επίσης να κάνετε χωριστά Αντιγράφο Ασφαλείας της SQL βάση "
-"δεδομένων σας ."
-
-#: ejabberd_web_admin.erl:1969
-msgid "Store binary backup:"
-msgstr "Αποθηκεύση δυαδικού αντιγράφου ασφαλείας:"
-
-#: ejabberd_web_admin.erl:1976 ejabberd_web_admin.erl:1986
-#: ejabberd_web_admin.erl:1997 ejabberd_web_admin.erl:2006
-#: ejabberd_web_admin.erl:2016 ejabberd_web_admin.erl:2029
-#: ejabberd_web_admin.erl:2041 ejabberd_web_admin.erl:2057
-#: ejabberd_web_admin.erl:2073 ejabberd_web_admin.erl:2084
-#: ejabberd_web_admin.erl:2094
-msgid "OK"
-msgstr "Όλλα Καλά"
-
-#: ejabberd_web_admin.erl:1979
-msgid "Restore binary backup immediately:"
-msgstr "Επαναφορά δυαδικού αντιγράφου ασφαλείας αμέσως:"
-
-#: ejabberd_web_admin.erl:1989
-msgid ""
-"Restore binary backup after next ejabberd restart (requires less memory):"
-msgstr ""
-"Επαναφορά δυαδικού αντιγράφου ασφαλείας μετά την επόμενη επανεκκίνηση του "
-"ejabberd (απαιτεί λιγότερη μνήμη):"
-
-#: ejabberd_web_admin.erl:1999
-msgid "Store plain text backup:"
-msgstr "Αποθηκεύση αντιγράφου ασφαλείας σε αρχείο κειμένου:"
-
-#: ejabberd_web_admin.erl:2009
-msgid "Restore plain text backup immediately:"
-msgstr "Επαναφορά αντιγράφου ασφαλείας από αρχείο κειμένου αμέσως:"
-
-#: ejabberd_web_admin.erl:2019
-msgid "Import users data from a PIEFXIS file (XEP-0227):"
-msgstr "Εισαγωγή δεδομένων χρηστών από ένα αρχείο PIEFXIS (XEP-0227):"
-
-#: ejabberd_web_admin.erl:2032
-msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
-msgstr ""
-"Εξαγωγή δεδομένων όλων των χρηστών του διακομιστή σε PIEFXIS αρχεία "
-"(XEP-0227):"
-
-#: ejabberd_web_admin.erl:2044
-msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
-msgstr ""
-"Εξαγωγή δεδομένων των χρηστών κεντρικού υπολογιστή σε PIEFXIS αρχεία "
-"(XEP-0227):"
-
-#: ejabberd_web_admin.erl:2060
-msgid "Export all tables as SQL queries to a file:"
-msgstr ""
-
-#: ejabberd_web_admin.erl:2076
-msgid "Import user data from jabberd14 spool file:"
-msgstr "Εισαγωγή δεδομένων χρήστη από το αρχείο σειράς jabberd14:"
-
-#: ejabberd_web_admin.erl:2087
-msgid "Import users data from jabberd14 spool directory:"
-msgstr "Εισαγωγή δεδομένων χρηστών από κατάλογο αρχείων σειράς jabberd14:"
-
-#: ejabberd_web_admin.erl:2115
-msgid "Listened Ports at "
-msgstr "Παρακολουθούμενες Θύρες στο "
-
-#: ejabberd_web_admin.erl:2144
-#, fuzzy
-msgid "Modules at ~p"
-msgstr "Modules στο "
-
-#: ejabberd_web_admin.erl:2175
-msgid "Statistics of ~p"
-msgstr "Στατιστικές του ~p"
-
-#: ejabberd_web_admin.erl:2179
-msgid "Uptime:"
-msgstr "Uptime:"
-
-#: ejabberd_web_admin.erl:2183
-msgid "CPU Time:"
-msgstr "Ώρα CPU:"
-
-#: ejabberd_web_admin.erl:2191
-msgid "Transactions Committed:"
-msgstr "Παραδοθείς συναλλαγές:"
-
-#: ejabberd_web_admin.erl:2195
-msgid "Transactions Aborted:"
-msgstr "Αποτυχημένες συναλλαγές:"
-
-#: ejabberd_web_admin.erl:2199
-msgid "Transactions Restarted:"
-msgstr "Επανειλημμένες συναλλαγές:"
-
-#: ejabberd_web_admin.erl:2203
-msgid "Transactions Logged:"
-msgstr "Καταγραμμένες συναλλαγές:"
-
-#: ejabberd_web_admin.erl:2243
-#, fuzzy
-msgid "Update ~p"
-msgstr "Ενημέρωση"
-
-#: ejabberd_web_admin.erl:2254
-msgid "Update plan"
-msgstr "Σχέδιο ενημέρωσης"
-
-#: ejabberd_web_admin.erl:2255
-msgid "Modified modules"
-msgstr "Τροποποιημένα modules"
-
-#: ejabberd_web_admin.erl:2256
-msgid "Update script"
-msgstr "Προγράμα ενημέρωσης"
-
-#: ejabberd_web_admin.erl:2257
-msgid "Low level update script"
-msgstr "Προγράμα ενημέρωσης χαμηλού επίπεδου "
-
-#: ejabberd_web_admin.erl:2258
-msgid "Script check"
-msgstr "Script ελέγχου"
-
-#: ejabberd_web_admin.erl:2438
-msgid "IP"
-msgstr "IP"
-
-#: ejabberd_web_admin.erl:2438
-msgid "Port"
-msgstr "Θύρα"
-
-#: ejabberd_web_admin.erl:2439
-msgid "Protocol"
-msgstr "Πρωτόκολλο"
-
-#: ejabberd_web_admin.erl:2440 ejabberd_web_admin.erl:2595
-msgid "Module"
-msgstr "Module"
-
-#: ejabberd_web_admin.erl:2441 ejabberd_web_admin.erl:2596
-msgid "Options"
-msgstr "Επιλογές"
-
-#: ejabberd_web_admin.erl:2493 ejabberd_web_admin.erl:2629
-msgid "Start"
-msgstr "Εκκίνηση"
-
-#: mod_adhoc.erl:114 mod_adhoc.erl:148 mod_adhoc.erl:168 mod_adhoc.erl:191
-msgid "Commands"
-msgstr "Εντολές"
-
-#: mod_adhoc.erl:176 mod_adhoc.erl:265
-msgid "Ping"
-msgstr "Πινγκ"
-
-#: mod_adhoc.erl:279
-msgid "Pong"
-msgstr "Πονγκ"
-
-#: mod_announce.erl:523
-msgid "Really delete message of the day?"
-msgstr "Πραγματικά να διαγράψετε το μήνυμα της ημέρας;"
-
-#: mod_announce.erl:536 mod_configure.erl:1238 mod_configure.erl:1298
-msgid "Subject"
-msgstr "Θέμα"
-
-#: mod_announce.erl:544 mod_configure.erl:1244 mod_configure.erl:1304
-msgid "Message body"
-msgstr "Περιεχόμενο μηνυμάτως"
-
-#: mod_announce.erl:627
-msgid "No body provided for announce message"
-msgstr "Δεν προμηθεύτικε περιεχόμενο ανακοινώσης"
-
-#: mod_announce.erl:662
-msgid "Announcements"
-msgstr "Ανακοινώσεις"
-
-#: mod_announce.erl:664
-msgid "Send announcement to all users"
-msgstr "Αποστολή ανακοίνωσης σε όλους τους χρήστες"
-
-#: mod_announce.erl:666
-msgid "Send announcement to all users on all hosts"
-msgstr ""
-"Αποστολή ανακοίνωσης σε όλους τους χρήστες σε όλους τους κεντρικούς "
-"υπολογιστές"
-
-#: mod_announce.erl:668
-msgid "Send announcement to all online users"
-msgstr "Αποστολή ανακοίνωσης σε όλους τους συνδεδεμένους χρήστες"
-
-#: mod_announce.erl:670 mod_configure.erl:1231 mod_configure.erl:1291
-msgid "Send announcement to all online users on all hosts"
-msgstr ""
-"Αποστολή ανακοίνωσης σε όλους τους συνδεδεμένους χρήστες σε όλους τους "
-"κεντρικούς υπολογιστές"
-
-#: mod_announce.erl:672
-msgid "Set message of the day and send to online users"
-msgstr "Ορίστε μήνυμα ημέρας και αποστολή στους συνδεδεμένους χρήστες"
-
-#: mod_announce.erl:674
-msgid "Set message of the day on all hosts and send to online users"
-msgstr ""
-"Ορίστε μήνυμα ημέρας και άμεση αποστολή στους συνδεδεμένους χρήστες σε όλους "
-"τους κεντρικούς υπολογιστές"
-
-#: mod_announce.erl:676
-msgid "Update message of the day (don't send)"
-msgstr "Ενημέρωση μηνύματως ημέρας (χωρίς άμεση αποστολή)"
-
-#: mod_announce.erl:678
-msgid "Update message of the day on all hosts (don't send)"
-msgstr ""
-"Ενημέρωση μηνύματως ημέρας σε όλους τους κεντρικούς υπολογιστές (χωρίς άμεση "
-"αποστολή)"
-
-#: mod_announce.erl:680
-msgid "Delete message of the day"
-msgstr "Διαγράψτε το μήνυμα της ημέρας"
-
-#: mod_announce.erl:682
-msgid "Delete message of the day on all hosts"
-msgstr "Διαγράψτε το μήνυμα της ημέρας σε όλους τους κεντρικούς υπολογιστές"
-
-#: mod_configure.erl:140 mod_configure.erl:296 mod_configure.erl:318
-#: mod_configure.erl:522
-msgid "Configuration"
-msgstr "Διαμόρφωση"
-
-#: mod_configure.erl:153 mod_configure.erl:636
-msgid "Start Modules"
-msgstr "Εκκίνηση Modules"
-
-#: mod_configure.erl:156 mod_configure.erl:638
-msgid "Stop Modules"
-msgstr "ΠαύσηModules"
-
-#: mod_configure.erl:162 mod_configure.erl:650
-msgid "Restore"
-msgstr "Επαναφορά Αντιγράφου Ασφαλείας"
-
-#: mod_configure.erl:165 mod_configure.erl:652
-msgid "Dump to Text File"
-msgstr "Αποθήκευση σε αρχείο κειμένου"
-
-#: mod_configure.erl:168 mod_configure.erl:663
-msgid "Import File"
-msgstr "Εισαγωγή αρχείων"
-
-#: mod_configure.erl:171 mod_configure.erl:665
-msgid "Import Directory"
-msgstr "Εισαγωγή κατάλογου αρχείων"
-
-#: mod_configure.erl:173 mod_configure.erl:619 mod_configure.erl:1205
-msgid "Restart Service"
-msgstr "Επανεκκίνηση Υπηρεσίας"
-
-#: mod_configure.erl:175 mod_configure.erl:621 mod_configure.erl:1265
-msgid "Shut Down Service"
-msgstr "Κλείσιμο Υπηρεσίας"
-
-#: mod_configure.erl:179 mod_configure.erl:540 mod_configure.erl:1419
-msgid "Delete User"
-msgstr "Διαγραφή Χρήστη"
-
-#: mod_configure.erl:181 mod_configure.erl:542 mod_configure.erl:1437
-msgid "End User Session"
-msgstr "Τερματισμός Συνεδρίας Χρήστη"
-
-#: mod_configure.erl:183 mod_configure.erl:544 mod_configure.erl:1455
-#: mod_configure.erl:1473
-msgid "Get User Password"
-msgstr "Έκθεση Κωδικού Πρόσβασης Χρήστη"
-
-#: mod_configure.erl:185 mod_configure.erl:546
-msgid "Change User Password"
-msgstr "Αλλαγή Κωδικού Πρόσβασης Χρήστη"
-
-#: mod_configure.erl:187 mod_configure.erl:548 mod_configure.erl:1500
-msgid "Get User Last Login Time"
-msgstr "Έκθεση Τελευταίας Ώρας Σύνδεσης Χρήστη"
-
-#: mod_configure.erl:189 mod_configure.erl:550 mod_configure.erl:1517
-msgid "Get User Statistics"
-msgstr "Έκθεση Στατιστικών Χρήστη"
-
-#: mod_configure.erl:191 mod_configure.erl:552
-msgid "Get Number of Registered Users"
-msgstr "Έκθεση αριθμού εγγεγραμμένων χρηστών"
-
-#: mod_configure.erl:194 mod_configure.erl:554
-msgid "Get Number of Online Users"
-msgstr "Έκθεση αριθμού συνδεδεμένων χρηστών"
-
-#: mod_configure.erl:320 mod_configure.erl:523
-msgid "User Management"
-msgstr "Διαχείριση χρηστών"
-
-#: mod_configure.erl:525
-msgid "All Users"
-msgstr "Όλοι οι χρήστες"
-
-#: mod_configure.erl:526
-msgid "Outgoing s2s Connections"
-msgstr "Εξερχόμενες S2S Συνδέσεις"
-
-#: mod_configure.erl:615
-msgid "Backup Management"
-msgstr "Διαχείριση Αντιγράφου Ασφαλείας"
-
-#: mod_configure.erl:617
-msgid "Import Users From jabberd14 Spool Files"
-msgstr "Εισαγωγή Χρηστών από αρχεία σειράς jabberd14"
-
-#: mod_configure.erl:762
-msgid "To ~s"
-msgstr "Πρώς ~s"
-
-#: mod_configure.erl:782
-msgid "From ~s"
-msgstr "Από ~s"
-
-#: mod_configure.erl:1002
-msgid "Database Tables Configuration at "
-msgstr "Διαμόρφωση Πίνακων βάσης δεδομένων στο "
-
-#: mod_configure.erl:1008
-msgid "Choose storage type of tables"
-msgstr "Επιλέξτε τύπο αποθήκευσης των πινάκων"
-
-#: mod_configure.erl:1017 mod_configure.erl:1019
-msgid "Disc only copy"
-msgstr "Αντίγραφο μόνο σε δίσκο"
-
-#: mod_configure.erl:1017 mod_configure.erl:1019
-msgid "RAM and disc copy"
-msgstr "Αντίγραφο μόνο σε RAM καί δίσκο"
-
-#: mod_configure.erl:1017 mod_configure.erl:1019
-msgid "RAM copy"
-msgstr "Αντίγραφο σε RAM"
-
-#: mod_configure.erl:1017 mod_configure.erl:1019
-msgid "Remote copy"
-msgstr "Απομεμακρυσμένο αντίγραφο"
-
-#: mod_configure.erl:1045
-msgid "Stop Modules at "
-msgstr "Παύση Modules στο "
-
-#: mod_configure.erl:1051
-msgid "Choose modules to stop"
-msgstr "Επιλέξτε modules για να σταματήσουν"
-
-#: mod_configure.erl:1072
-msgid "Start Modules at "
-msgstr "Εκκίνηση Modules στο "
-
-#: mod_configure.erl:1078
-msgid "Enter list of {Module, [Options]}"
-msgstr "Εισάγετε κατάλογο των (Module, [Επιλογές])"
-
-#: mod_configure.erl:1080
-msgid "List of modules to start"
-msgstr "Λίστα των Module για Εκκίνηση"
-
-#: mod_configure.erl:1094
+#: mod_configure:948
 msgid "Backup to File at "
 msgstr "Αποθήκευση Αντιγράφου Ασφαλείας σε Αρχείο στο "
 
-#: mod_configure.erl:1099 mod_configure.erl:1120
-msgid "Enter path to backup file"
-msgstr "Εισάγετε τοποθεσία αρχείου αντιγράφου ασφαλείας"
+#: ejabberd_web_admin:763 ejabberd_web_admin:802 ejabberd_web_admin:868
+#: ejabberd_web_admin:901 ejabberd_web_admin:937 ejabberd_web_admin:1422
+#: ejabberd_web_admin:1705 ejabberd_web_admin:1861 ejabberd_web_admin:2145
+#: ejabberd_web_admin:2174 mod_roster:972 mod_shared_roster:831
+#: mod_shared_roster:926
+msgid "Bad format"
+msgstr "Ακατάλληλη μορφή"
 
-#: mod_configure.erl:1100 mod_configure.erl:1121 mod_configure.erl:1142
-#: mod_configure.erl:1163
-msgid "Path to File"
-msgstr "Τοποθεσία Αρχείου"
+#: mod_vcard_ldap:334 mod_vcard_ldap:347 mod_vcard_mnesia:105
+#: mod_vcard_mnesia:119 mod_vcard_sql:160 mod_vcard_sql:174
+msgid "Birthday"
+msgstr "Γενέθλια"
 
-#: mod_configure.erl:1115
-msgid "Restore Backup from File at "
-msgstr "Επαναφορά Αντιγράφου Ασφαλείας από αρχείο στο "
+#: mod_legacy_auth:102
+msgid "Both the username and the resource are required"
+msgstr ""
 
-#: mod_configure.erl:1136
+#: mod_proxy65_service:226
+msgid "Bytestream already activated"
+msgstr ""
+
+#: ejabberd_captcha:135
+msgid "CAPTCHA web page"
+msgstr "Ιστοσελίδα CAPTCHA "
+
+#: ejabberd_web_admin:2207
+msgid "CPU Time:"
+msgstr "Ώρα CPU:"
+
+#: mod_privacy:334
+msgid "Cannot remove active list"
+msgstr ""
+
+#: mod_privacy:341
+msgid "Cannot remove default list"
+msgstr ""
+
+#: ejabberd_web_admin:1679 mod_register_web:194 mod_register_web:353
+#: mod_register_web:361 mod_register_web:386
+msgid "Change Password"
+msgstr "Αλλαγή κωδικού"
+
+#: mod_configure:174 mod_configure:528
+msgid "Change User Password"
+msgstr "Αλλαγή Κωδικού Πρόσβασης Χρήστη"
+
+#: mod_register:295
+#, fuzzy
+msgid "Changing password is not allowed"
+msgstr "Χαρακτήρες δεν επιτρέπονται:"
+
+#: mod_muc_room:2764
+#, fuzzy
+msgid "Changing role/affiliation is not allowed"
+msgstr "Χαρακτήρες δεν επιτρέπονται:"
+
+#: mod_register_web:239
+msgid "Characters not allowed:"
+msgstr "Χαρακτήρες δεν επιτρέπονται:"
+
+#: mod_muc_log:358 mod_muc_log:367
+msgid "Chatroom configuration modified"
+msgstr "Διαμόρφωση Αίθουσaς σύνεδριασης τροποποιηθηκε"
+
+#: mod_muc_log:453
+msgid "Chatroom is created"
+msgstr "Η αίθουσα σύνεδριασης  δημιουργήθηκε"
+
+#: mod_muc_log:455
+msgid "Chatroom is destroyed"
+msgstr "Η αίθουσα σύνεδριασης διαγράφηκε"
+
+#: mod_muc_log:457
+msgid "Chatroom is started"
+msgstr "Η αίθουσα σύνεδριασης έχει ξεκινήσει"
+
+#: mod_muc_log:459
+msgid "Chatroom is stopped"
+msgstr "Η αίθουσα σύνεδριασης έχει σταματήσει"
+
+#: mod_muc:525 mod_muc_admin:440
+msgid "Chatrooms"
+msgstr "Αίθουσες σύνεδριασης"
+
+#: mod_register:211
+msgid "Choose a username and password to register with this server"
+msgstr ""
+"Επιλέξτε ένα όνομα χρήστη και κωδικό πρόσβασης για να εγγραφείτε σε αυτό τον "
+"διακομιστή"
+
+#: mod_configure:920
+msgid "Choose modules to stop"
+msgstr "Επιλέξτε modules για να σταματήσουν"
+
+#: mod_configure:881
+msgid "Choose storage type of tables"
+msgstr "Επιλέξτε τύπο αποθήκευσης των πινάκων"
+
+#: mod_pubsub:1338
+msgid "Choose whether to approve this entity's subscription."
+msgstr "Επιλέξτε αν θα εγκρίθεί η εγγραφή αυτής της οντότητας."
+
+#: mod_vcard_ldap:336 mod_vcard_ldap:349 mod_vcard_mnesia:107
+#: mod_vcard_mnesia:121 mod_vcard_sql:162 mod_vcard_sql:176
+msgid "City"
+msgstr "Πόλη"
+
+#: mod_adhoc:118 mod_adhoc:147 mod_adhoc:163 mod_adhoc:179
+msgid "Commands"
+msgstr "Εντολές"
+
+#: mod_muc:461
+msgid "Conference room does not exist"
+msgstr "Αίθουσα σύνεδριασης δεν υπάρχει"
+
+#: mod_configure:129 mod_configure:286 mod_configure:306 mod_configure:504
+msgid "Configuration"
+msgstr "Διαμόρφωση"
+
+#: mod_muc_room:3163
+msgid "Configuration of room ~s"
+msgstr "Διαμόρφωση Αίθουσας σύνεδριασης ~s"
+
+#: ejabberd_web_admin:1711
+msgid "Connected Resources:"
+msgstr "Συνδεδεμένοι Πόροι:"
+
+#: mod_irc:526
+msgid "Connections parameters"
+msgstr "Παράμετροι Συνδέσης"
+
+#: mod_vcard_ldap:335 mod_vcard_ldap:348 mod_vcard_mnesia:106
+#: mod_vcard_mnesia:120 mod_vcard_sql:161 mod_vcard_sql:175
+msgid "Country"
+msgstr "Χώρα"
+
+#: ejabberd_web_admin:1866 mod_configure:139 mod_configure:580
+msgid "Database"
+msgstr "Βάση δεδομένων"
+
+#: mod_configure:879
+msgid "Database Tables Configuration at "
+msgstr "Διαμόρφωση Πίνακων βάσης δεδομένων στο "
+
+#: ejabberd_web_admin:1941
+#, fuzzy
+msgid "Database Tables at ~p"
+msgstr "Πίνακες βάσης δεδομένων στο "
+
+#: mod_blocking:267 mod_carboncopy:137 mod_irc:486 mod_irc:574 mod_irc:739
+#: mod_last:215 mod_mam:501 mod_muc:749 mod_offline:291 mod_offline:582
+#: mod_privacy:186 mod_privacy:204 mod_privacy:298 mod_privacy:314
+#: mod_privacy:347 mod_privacy:364 mod_private:103 mod_private:110
+#: mod_proxy65_service:231 mod_pubsub:3506 mod_pubsub:3513 mod_pubsub:3573
+#: mod_pubsub:3598 mod_pubsub:3604 mod_pubsub:3607 mod_vcard:226
+#: node_flat_sql:801 nodetree_tree_sql:128 nodetree_tree_sql:142
+#: nodetree_tree_sql:257
+#, fuzzy
+msgid "Database failure"
+msgstr "Βάση δεδομένων"
+
+#: mod_muc_log:484
+msgid "December"
+msgstr "Δεκέμβριος"
+
+#: mod_muc_log:1044
+msgid "Default users as participants"
+msgstr "Προεπιλογη χρήστων ως συμμετέχοντες"
+
+#: ejabberd_web_admin:811 ejabberd_web_admin:911 mod_offline:703
+#: mod_shared_roster:839
+msgid "Delete Selected"
+msgstr "Διαγραφή επιλεγμένων"
+
+#: mod_configure:168 mod_configure:522 mod_configure:1135
+msgid "Delete User"
+msgstr "Διαγραφή Χρήστη"
+
+#: mod_announce:629
+msgid "Delete message of the day"
+msgstr "Διαγράψτε το μήνυμα της ημέρας"
+
+#: mod_announce:631
+msgid "Delete message of the day on all hosts"
+msgstr "Διαγράψτε το μήνυμα της ημέρας σε όλους τους κεντρικούς υπολογιστές"
+
+#: mod_shared_roster:900
+msgid "Description:"
+msgstr "Περιγραφή:"
+
+#: mod_configure:889
+msgid "Disc only copy"
+msgstr "Αντίγραφο μόνο σε δίσκο"
+
+#: mod_shared_roster:914
+msgid "Displayed Groups:"
+msgstr "Εμφανίσμενες Ομάδες:"
+
+#: mod_register_web:251
+msgid ""
+"Don't tell your password to anybody, not even the administrators of the "
+"Jabber server."
+msgstr ""
+"Μην πείτε τον κωδικό πρόσβασής σας σε κανέναν, ακόμη και στους διαχειριστές "
+"του διακομιστή Jabber."
+
+#: mod_configure:971
 msgid "Dump Backup to Text File at "
 msgstr "Αποθήκευση Αντιγράφου Ασφαλείας σε αρχείο κειμένου στο "
 
-#: mod_configure.erl:1141
-msgid "Enter path to text file"
-msgstr "Εισάγετε Τοποθεσία Αρχείου Κειμένου"
+#: mod_configure:154 mod_configure:621
+msgid "Dump to Text File"
+msgstr "Αποθήκευση σε αρχείο κειμένου"
 
-#: mod_configure.erl:1156
-msgid "Import User from File at "
-msgstr "Εισαγωγή χρηστών από αρχείο στο "
+#: mod_roster:180
+msgid "Duplicated groups are not allowed by RFC6121"
+msgstr ""
 
-#: mod_configure.erl:1162
-msgid "Enter path to jabberd14 spool file"
-msgstr "Εισάγετε τοποθεσία αρχείου σειράς jabberd14"
-
-#: mod_configure.erl:1177
-msgid "Import Users from Dir at "
-msgstr "Εισαγωγή χρηστών από κατάλογο αρχείων στο "
-
-#: mod_configure.erl:1183
-msgid "Enter path to jabberd14 spool dir"
-msgstr "Εισάγετε κατάλογο αρχείων σειράς jabberd14"
-
-#: mod_configure.erl:1184
-msgid "Path to Dir"
-msgstr "Τοποθεσία κατάλογου αρχείων"
-
-#: mod_configure.erl:1209 mod_configure.erl:1269
-msgid "Time delay"
-msgstr "Χρόνος καθυστέρησης"
-
-#: mod_configure.erl:1316
-msgid "Access Control List Configuration"
-msgstr "Διαχείριση στις Λίστες Ελέγχου Πρόσβασης"
-
-#: mod_configure.erl:1321
-msgid "Access control lists"
-msgstr "Λίστες Ελέγχου Πρόσβασης"
-
-#: mod_configure.erl:1352
-msgid "Access Configuration"
-msgstr "Διαμόρφωση Πρόσβασης"
-
-#: mod_configure.erl:1356
-msgid "Access rules"
-msgstr "Κανόνες Πρόσβασης"
-
-#: mod_configure.erl:1390 mod_configure.erl:1423 mod_configure.erl:1441
-#: mod_configure.erl:1459 mod_configure.erl:1477 mod_configure.erl:1504
-#: mod_configure.erl:1521 mod_configure.erl:1887 mod_configure.erl:1934
-#: mod_configure.erl:1961 mod_roster.erl:1434 mod_vcard.erl:613
-#: mod_vcard_ldap.erl:606
-msgid "Jabber ID"
-msgstr "Ταυτότητα Jabber"
-
-#: mod_configure.erl:1407
-msgid "Password Verification"
-msgstr "Επαλήθευση κωδικού πρόσβασης"
-
-#: mod_configure.erl:1540
-msgid "Number of registered users"
-msgstr "Αριθμός εγγεγραμμένων χρηστών"
-
-#: mod_configure.erl:1559
-msgid "Number of online users"
-msgstr "Αριθμός συνδεδεμένων χρηστών"
-
-#: mod_configure.erl:1936
-msgid "Last login"
-msgstr "Τελευταία σύνδεση"
-
-#: mod_configure.erl:1963
-msgid "Roster size"
-msgstr "Μέγεθος Καταλόγου Επαφών"
-
-#: mod_configure.erl:1965
-msgid "IP addresses"
-msgstr "Διευθύνσεις IP"
-
-#: mod_configure.erl:1967
-msgid "Resources"
-msgstr "Πόροι"
-
-#: mod_configure.erl:2095
-msgid "Administration of "
-msgstr "Διαχείριση του"
-
-#: mod_configure.erl:2100
-msgid "Action on user"
-msgstr "Eνέργεια για το χρήστη"
-
-#: mod_configure.erl:2108
+#: mod_configure:1776
 msgid "Edit Properties"
 msgstr "Επεξεργασία ιδιοτήτων"
 
-#: mod_fail2ban.erl:95
+#: mod_muc_room:3881
+msgid "Either approve or decline the voice request."
+msgstr "Είτε εγκρίνετε ή απορρίψτε το αίτημα φωνής."
+
+#: ejabberd_web_admin:1953
+msgid "Elements"
+msgstr "Στοιχεία"
+
+#: mod_vcard_ldap:337 mod_vcard_ldap:350 mod_vcard_mnesia:108
+#: mod_vcard_mnesia:122 mod_vcard_sql:163 mod_vcard_sql:177
+msgid "Email"
+msgstr "Email"
+
+#: mod_register:292
+#, fuzzy
+msgid "Empty password"
+msgstr "ο κωδικός πρόσβασης είναι"
+
+#: mod_muc_log:1055
+msgid "Enable logging"
+msgstr "Ενεργοποίηση καταγραφής"
+
+#: mod_push:252
+msgid "Enabling push without 'node' attribute is not supported"
+msgstr ""
+
+#: mod_irc:834
+msgid "Encoding for server ~b"
+msgstr "Κωδικοποίηση για διακομιστή ~b"
+
+#: mod_configure:170 mod_configure:524 mod_configure:1145
+msgid "End User Session"
+msgstr "Τερματισμός Συνεδρίας Χρήστη"
+
+#: mod_configure:938
+msgid "Enter list of {Module, [Options]}"
+msgstr "Εισάγετε κατάλογο των (Module, [Επιλογές])"
+
+#: mod_muc:723
+msgid "Enter nickname you want to register"
+msgstr "Πληκτρολογήστε το ψευδώνυμο που θέλετε να εγγραφείτε"
+
+#: mod_configure:950 mod_configure:962
+msgid "Enter path to backup file"
+msgstr "Εισάγετε τοποθεσία αρχείου αντιγράφου ασφαλείας"
+
+#: mod_configure:996
+msgid "Enter path to jabberd14 spool dir"
+msgstr "Εισάγετε κατάλογο αρχείων σειράς jabberd14"
+
+#: mod_configure:985
+msgid "Enter path to jabberd14 spool file"
+msgstr "Εισάγετε τοποθεσία αρχείου σειράς jabberd14"
+
+#: mod_configure:974
+msgid "Enter path to text file"
+msgstr "Εισάγετε Τοποθεσία Αρχείου Κειμένου"
+
+#: ejabberd_captcha:70
+msgid "Enter the text you see"
+msgstr "Πληκτρολογήστε το κείμενο που βλέπετε"
+
+#: mod_irc:759
 msgid ""
-"Too many (~p) failed authentications from this IP address (~s). The address "
-"will be unblocked at ~s UTC"
+"Enter username and encodings you wish to use for connecting to IRC servers.  "
+"Press 'Next' to get more fields to fill in.  Press 'Complete' to save "
+"settings."
 msgstr ""
+"Πληκτρολογήστε το όνομα χρήστη και κωδικοποιήσεις που θέλετε να "
+"χρησιμοποιήσετε για τη σύνδεση με διακομιστές IRC. Πατήστε 'Next' για να "
+"πάρετε περισσότερα πεδία να συμπληρώσετε. Πατήστε 'Complete' για να "
+"αποθηκεύσετε ρυθμίσεις."
 
-#: mod_http_upload.erl:586
-msgid "Please specify file size."
-msgstr ""
-
-#: mod_http_upload.erl:590
-msgid "Please specify file name."
-msgstr ""
-
-#: mod_ip_blacklist.erl:121
-msgid "This IP address is blacklisted in ~s"
-msgstr ""
-
-#: mod_irc.erl:220 mod_muc.erl:467
-msgid "Access denied by service policy"
-msgstr "Άρνηση πρόσβασης, λόγω τακτικής παροχής υπηρεσιών"
-
-#: mod_irc.erl:439
-msgid "IRC Transport"
-msgstr "IRC Διαβιβάσεις"
-
-#: mod_irc.erl:476
-msgid "ejabberd IRC module"
-msgstr "ejabberd IRC module"
-
-#: mod_irc.erl:644
-msgid "You need an x:data capable client to configure mod_irc settings"
-msgstr "Χρειάζεστε ένα x:data ικανό πελάτη για να ρυθμίσετε το mod_irc"
-
-#: mod_irc.erl:653
-msgid "Registration in mod_irc for "
-msgstr "Εγγραφή στο mod_irc για "
-
-#: mod_irc.erl:659
+#: mod_irc:540
 msgid ""
 "Enter username, encodings, ports and passwords you wish to use for "
 "connecting to IRC servers"
@@ -899,11 +475,192 @@ msgstr ""
 "Εισάγετε το όνομα χρήστη, κωδικοποιήσεις, τις θύρες και τους κωδικούς "
 "πρόσβασης που θέλετε να χρησιμοποιήσετε για σύνδεση με IRC διακομιστή"
 
-#: mod_irc.erl:667
+#: mod_vcard:201
+msgid "Erlang Jabber Server"
+msgstr "Erlang Jabber Διακομιστής"
+
+#: ejabberd_web_admin:1976 ejabberd_web_admin:2147
+msgid "Error"
+msgstr "Σφάλμα"
+
+#: mod_irc:520
+msgid ""
+"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
+"net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
+msgstr ""
+"Παράδειγμα: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta."
+"fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
+
+#: ejabberd_web_admin:2084
+msgid "Export all tables as SQL queries to a file:"
+msgstr ""
+
+#: ejabberd_web_admin:2056
+msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
+msgstr ""
+"Εξαγωγή δεδομένων όλων των χρηστών του διακομιστή σε PIEFXIS αρχεία "
+"(XEP-0227):"
+
+#: ejabberd_web_admin:2068
+msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
+msgstr ""
+"Εξαγωγή δεδομένων των χρηστών κεντρικού υπολογιστή σε PIEFXIS αρχεία "
+"(XEP-0227):"
+
+#: mod_delegation:275
+msgid "External component failure"
+msgstr ""
+
+#: mod_delegation:283
+msgid "External component timeout"
+msgstr ""
+
+#: mod_proxy65_service:218
+msgid "Failed to activate bytestream"
+msgstr ""
+
+#: mod_muc_room:910
+msgid "Failed to extract JID from your voice request approval"
+msgstr "Απέτυχε η εξαγωγή JID από την έγκριση του αιτήματος φωνής σας"
+
+#: mod_delegation:257
+msgid "Failed to map delegated namespace to external component"
+msgstr ""
+
+#: mod_http_upload:602
+msgid "Failed to parse HTTP response"
+msgstr ""
+
+#: mod_irc:426
+msgid "Failed to parse chanserv"
+msgstr ""
+
+#: mod_muc_room:3297
+msgid "Failed to process option '~s'"
+msgstr ""
+
+#: mod_vcard_ldap:332 mod_vcard_ldap:345 mod_vcard_mnesia:103
+#: mod_vcard_mnesia:117 mod_vcard_sql:158 mod_vcard_sql:172
+msgid "Family Name"
+msgstr "Επώνυμο"
+
+#: mod_muc_log:474
+msgid "February"
+msgstr "Φεβρουάριος"
+
+#: mod_http_upload:555
+msgid "File larger than ~w bytes"
+msgstr ""
+
+#: mod_vcard:437
+msgid ""
+"Fill in the form to search for any matching Jabber User (Add * to the end of "
+"field to match substring)"
+msgstr ""
+"Συμπληρώστε τη φόρμα για να αναζητήσετε οποιαδήποτε Jabber χρήστη που "
+"ταιριάζει (Προσθέστε * στο τέλος τού πεδίου για να ταιριάξει σε μεγαλύτερες "
+"γραμματοσηρές)"
+
+#: mod_muc_log:467
+msgid "Friday"
+msgstr "Παρασκευή"
+
+#: mod_offline:691
+msgid "From"
+msgstr "Από"
+
+#: mod_configure:723
+msgid "From ~s"
+msgstr "Από ~s"
+
+#: mod_vcard_ldap:329 mod_vcard_ldap:342 mod_vcard_mnesia:100
+#: mod_vcard_mnesia:114 mod_vcard_sql:155 mod_vcard_sql:169
+msgid "Full Name"
+msgstr "Ονοματεπώνυμο"
+
+#: mod_configure:183 mod_configure:536
+msgid "Get Number of Online Users"
+msgstr "Έκθεση αριθμού συνδεδεμένων χρηστών"
+
+#: mod_configure:180 mod_configure:534
+msgid "Get Number of Registered Users"
+msgstr "Έκθεση αριθμού εγγεγραμμένων χρηστών"
+
+#: mod_configure:176 mod_configure:530 mod_configure:1179
+msgid "Get User Last Login Time"
+msgstr "Έκθεση Τελευταίας Ώρας Σύνδεσης Χρήστη"
+
+#: mod_configure:172 mod_configure:526 mod_configure:1155 mod_configure:1165
+msgid "Get User Password"
+msgstr "Έκθεση Κωδικού Πρόσβασης Χρήστη"
+
+#: mod_configure:178 mod_configure:532 mod_configure:1188
+msgid "Get User Statistics"
+msgstr "Έκθεση Στατιστικών Χρήστη"
+
+#: mod_vcard_ldap:330 mod_vcard_ldap:343
+#, fuzzy
+msgid "Given Name"
+msgstr "Πατρώνυμο"
+
+#: mod_shared_roster:923
+msgid "Group "
+msgstr "Ομάδα"
+
+#: mod_roster:916
+msgid "Groups"
+msgstr "Ομάδες"
+
+#: ejabberd_web_admin:1365
+msgid "Host"
+msgstr "Κεντρικός Υπολογιστής"
+
+#: mod_s2s_dialback:325
+msgid "Host unknown"
+msgstr ""
+
+#: ejabberd_web_admin:2463
+msgid "IP"
+msgstr "IP"
+
+#: mod_configure:1673
+msgid "IP addresses"
+msgstr "Διευθύνσεις IP"
+
+#: mod_irc:439
+msgid "IRC Transport"
+msgstr "IRC Διαβιβάσεις"
+
+#: mod_irc:496
 msgid "IRC Username"
 msgstr "IRC Όνομα χρήστη"
 
-#: mod_irc.erl:682
+#: mod_irc:669
+msgid "IRC channel (don't put the first #)"
+msgstr "IRC κανάλι (μην τεθεί το πρώτο #)"
+
+#: mod_irc:417
+#, fuzzy
+msgid "IRC connection not found"
+msgstr "Κόμβος δεν βρέθηκε"
+
+#: mod_irc:673
+msgid "IRC server"
+msgstr "Διακομιστής IRC"
+
+#: mod_irc:756
+msgid "IRC settings"
+msgstr "IRC Ρυθμίσεις"
+
+#: mod_irc:766
+msgid "IRC username"
+msgstr "IRC όνομα χρήστη"
+
+#: ejabberd_captcha:126
+msgid "If you don't see the CAPTCHA image here, visit the web page."
+msgstr "Εάν δεν βλέπετε την εικόνα CAPTCHA εδώ, επισκεφθείτε την ιστοσελίδα."
+
+#: mod_irc:503
 msgid ""
 "If you want to specify different ports, passwords, encodings for IRC "
 "servers, fill this list with values in format '{\"irc server\", \"encoding"
@@ -916,349 +673,581 @@ msgstr ""
 "Προεπιλεγμενα αυτή η υπηρεσία χρησιμοποιεί \"~s\" κωδικοποιήση, θύρα ~p, "
 "κενό κωδικό πρόσβασης."
 
-#: mod_irc.erl:704
-msgid ""
-"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef."
-"net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
+#: mod_configure:160 mod_configure:634
+msgid "Import Directory"
+msgstr "Εισαγωγή κατάλογου αρχείων"
+
+#: mod_configure:157 mod_configure:632
+msgid "Import File"
+msgstr "Εισαγωγή αρχείων"
+
+#: mod_configure:982
+msgid "Import User from File at "
+msgstr "Εισαγωγή χρηστών από αρχείο στο "
+
+#: mod_configure:586
+msgid "Import Users From jabberd14 Spool Files"
+msgstr "Εισαγωγή Χρηστών από αρχεία σειράς jabberd14"
+
+#: mod_configure:993
+msgid "Import Users from Dir at "
+msgstr "Εισαγωγή χρηστών από κατάλογο αρχείων στο "
+
+#: ejabberd_web_admin:2100
+msgid "Import user data from jabberd14 spool file:"
+msgstr "Εισαγωγή δεδομένων χρήστη από το αρχείο σειράς jabberd14:"
+
+#: ejabberd_web_admin:2043
+msgid "Import users data from a PIEFXIS file (XEP-0227):"
+msgstr "Εισαγωγή δεδομένων χρηστών από ένα αρχείο PIEFXIS (XEP-0227):"
+
+#: ejabberd_web_admin:2111
+msgid "Import users data from jabberd14 spool directory:"
+msgstr "Εισαγωγή δεδομένων χρηστών από κατάλογο αρχείων σειράς jabberd14:"
+
+#: xmpp_stream_in:983
+msgid "Improper 'from' attribute"
 msgstr ""
-"Παράδειγμα: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta."
-"fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."
 
-#: mod_irc.erl:713
-msgid "Connections parameters"
-msgstr "Παράμετροι Συνδέσης"
-
-#: mod_irc.erl:886
-msgid "Join IRC channel"
-msgstr "Είσοδος  στο IRC κανάλι"
-
-#: mod_irc.erl:893
-msgid "IRC channel (don't put the first #)"
-msgstr "IRC κανάλι (μην τεθεί το πρώτο #)"
-
-#: mod_irc.erl:903
-msgid "IRC server"
-msgstr "Διακομιστής IRC"
-
-#: mod_irc.erl:950 mod_irc.erl:958
-msgid "Join the IRC channel here."
-msgstr "Είσοδος  στο κανάλι IRC εδώ."
-
-#: mod_irc.erl:967
-msgid "Join the IRC channel in this Jabber ID: ~s"
-msgstr "Είσοδος στο κανάλι IRC αυτής της Jabber Ταυτότητας: ~s"
-
-#: mod_irc.erl:1046
-msgid "IRC settings"
-msgstr "IRC Ρυθμίσεις"
-
-#: mod_irc.erl:1051
-msgid ""
-"Enter username and encodings you wish to use for connecting to IRC servers.  "
-"Press 'Next' to get more fields to fill in.  Press 'Complete' to save "
-"settings."
+#: xmpp_stream_in:477
+msgid "Improper 'to' attribute"
 msgstr ""
-"Πληκτρολογήστε το όνομα χρήστη και κωδικοποιήσεις που θέλετε να "
-"χρησιμοποιήσετε για τη σύνδεση με διακομιστές IRC. Πατήστε 'Next' για να "
-"πάρετε περισσότερα πεδία να συμπληρώσετε. Πατήστε 'Complete' για να "
-"αποθηκεύσετε ρυθμίσεις."
 
-#: mod_irc.erl:1060
-msgid "IRC username"
-msgstr "IRC όνομα χρήστη"
+#: ejabberd_service:189
+msgid "Improper domain part of 'from' attribute"
+msgstr ""
 
-#: mod_irc.erl:1126
-msgid "Password ~b"
-msgstr "Κωδικός πρόσβασης ~b"
+#: mod_muc_room:260
+msgid "Improper message type"
+msgstr "Ακατάλληλο είδος μηνύματος"
 
-#: mod_irc.erl:1137
-msgid "Port ~b"
-msgstr "Θύρα ~b"
-
-#: mod_irc.erl:1150
-msgid "Encoding for server ~b"
-msgstr "Κωδικοποίηση για διακομιστή ~b"
-
-#: mod_irc.erl:1171
-msgid "Server ~b"
-msgstr "Διακομιστής  ~b"
-
-#: mod_mam.erl:541
+#: ejabberd_web_admin:1586
 #, fuzzy
-msgid "Only members may query archives of this room"
-msgstr "Μόνο οι συντονιστές μπορούν να αλλάξουν το θέμα αυτής της αίθουσας"
+msgid "Incoming s2s Connections:"
+msgstr "Εξερχόμενες S2S Συνδέσεις:"
 
-#: mod_muc.erl:585
-msgid "Only service administrators are allowed to send service messages"
-msgstr ""
-"Μόνο οι διαχειριστές των υπηρεσιών επιτρέπεται να στείλουν υπηρεσιακά "
-"μηνύματα"
-
-#: mod_muc.erl:622
-msgid "Room creation is denied by service policy"
-msgstr "Άρνηση δημιουργίας αίθουσας , λόγω τακτικής παροχής υπηρεσιών"
-
-#: mod_muc.erl:629
-msgid "Conference room does not exist"
-msgstr "Αίθουσα σύνεδριασης δεν υπάρχει"
-
-#: mod_muc.erl:740 mod_muc_admin.erl:321
-msgid "Chatrooms"
-msgstr "Αίθουσες σύνεδριασης"
-
-#: mod_muc.erl:781
-msgid "Empty Rooms"
+#: mod_muc_room:3669 mod_register:187
+msgid "Incorrect CAPTCHA submit"
 msgstr ""
 
-#: mod_muc.erl:933
-msgid "You need a client that supports x:data to register the nickname"
-msgstr "Χρειάζεστε ένα x:data ικανό πελάτη για εγγραφή με ψευδώνυμο"
-
-#: mod_muc.erl:943
-msgid "Nickname Registration at "
-msgstr "Εγγραφή με Ψευδώνυμο στο "
-
-#: mod_muc.erl:949
-msgid "Enter nickname you want to register"
-msgstr "Πληκτρολογήστε το ψευδώνυμο που θέλετε να εγγραφείτε"
-
-#: mod_muc.erl:950 mod_muc_room.erl:4353 mod_roster.erl:1435 mod_vcard.erl:490
-#: mod_vcard.erl:621
-msgid "Nickname"
-msgstr "Ψευδώνυμο"
-
-#: mod_muc.erl:1062 mod_muc_room.erl:1104 mod_muc_room.erl:1843
-msgid "That nickname is registered by another person"
-msgstr "Αυτό το ψευδώνυμο είναι καταχωρημένο από άλλο πρόσωπο"
-
-#: mod_muc.erl:1090
-msgid "You must fill in field \"Nickname\" in the form"
-msgstr "Θα πρέπει να συμπληρώσετε το πεδίο \"Ψευδώνυμο\" στη φόρμα"
-
-#: mod_muc.erl:1113
-msgid "ejabberd MUC module"
-msgstr "ejabberd MUC module"
-
-#: mod_muc_admin.erl:231 mod_muc_admin.erl:234 mod_muc_admin.erl:246
-#: mod_muc_admin.erl:320
-msgid "Multi-User Chat"
-msgstr ""
-
-#: mod_muc_admin.erl:249
+#: mod_muc:772 mod_muc_room:3052 mod_pubsub:1194 mod_register:183 mod_vcard:256
 #, fuzzy
-msgid "Total rooms"
-msgstr "Αίθουσες σύνεδριασης"
+msgid "Incorrect data form"
+msgstr "Εσφαλμένος κωδικός πρόσβασης"
 
-#: mod_muc_admin.erl:250
-#, fuzzy
-msgid "Permanent rooms"
-msgstr "εγκαταλείπει την αίθουσα"
+#: mod_muc_room:1943 mod_register:300 mod_register:350
+msgid "Incorrect password"
+msgstr "Εσφαλμένος κωδικός πρόσβασης"
 
-#: mod_muc_admin.erl:251
-#, fuzzy
-msgid "Registered nicknames"
-msgstr "Εγγεγραμμένοι Χρήστες"
-
-#: mod_muc_admin.erl:254
-msgid "List of rooms"
+#: mod_irc:585
+msgid "Incorrect value in data form"
 msgstr ""
 
-#: mod_muc_log.erl:398 mod_muc_log.erl:407
-msgid "Chatroom configuration modified"
-msgstr "Διαμόρφωση Αίθουσaς σύνεδριασης τροποποιηθηκε"
+#: mod_adhoc:276
+msgid "Incorrect value of 'action' attribute"
+msgstr ""
 
-#: mod_muc_log.erl:410
-msgid "joins the room"
-msgstr "συνδέετε στην αίθουσα"
+#: mod_configure:1806
+msgid "Incorrect value of 'action' in data form"
+msgstr ""
 
-#: mod_muc_log.erl:413 mod_muc_log.erl:416
-msgid "leaves the room"
-msgstr "εγκαταλείπει την αίθουσα"
+#: mod_configure:1335 mod_configure:1367 mod_configure:1399 mod_configure:1419
+#: mod_configure:1439
+msgid "Incorrect value of 'path' in data form"
+msgstr ""
 
-#: mod_muc_log.erl:420 mod_muc_log.erl:423
-msgid "has been banned"
-msgstr "έχει απαγορευθεί"
+#: mod_irc:331
+msgid "Incorrect value of 'type' attribute"
+msgstr ""
 
-#: mod_muc_log.erl:435
-msgid "has been kicked because of an affiliation change"
-msgstr "Έχει αποβληθεί λόγω αλλαγής υπαγωγής"
+#: mod_privilege:100
+msgid "Insufficient privilege"
+msgstr ""
 
-#: mod_muc_log.erl:440
-msgid "has been kicked because the room has been changed to members-only"
-msgstr "αποβλήθηκε επειδή η αίθουσα αλλάξε γιά μέλη μόνο"
+#: mod_privilege:286
+msgid "Invalid 'from' attribute in forwarded message"
+msgstr ""
 
-#: mod_muc_log.erl:445
-msgid "has been kicked because of a system shutdown"
-msgstr "αποβλήθηκε λόγω τερματισμού συστήματος"
+#: mod_privilege:300
+msgid "Invalid <forwarded/> element"
+msgstr ""
 
-#: mod_muc_log.erl:450
-msgid "is now known as"
-msgstr "είναι τώρα γνωστή ως"
+#: mod_muc_room:3926
+#, fuzzy
+msgid "Invitations are not allowed in this conference"
+msgstr "Τα αιτήματα φωνής είναι απενεργοποιημένα, σε αυτό το συνέδριο"
 
-#: mod_muc_log.erl:453 mod_muc_log.erl:792
-msgid " has set the subject to: "
-msgstr " έχει θέσει το θέμα σε: "
-
-#: mod_muc_log.erl:493
-msgid "Chatroom is created"
-msgstr "Η αίθουσα σύνεδριασης  δημιουργήθηκε"
-
-#: mod_muc_log.erl:495
-msgid "Chatroom is destroyed"
-msgstr "Η αίθουσα σύνεδριασης διαγράφηκε"
-
-#: mod_muc_log.erl:497
-msgid "Chatroom is started"
-msgstr "Η αίθουσα σύνεδριασης έχει ξεκινήσει"
-
-#: mod_muc_log.erl:499
-msgid "Chatroom is stopped"
-msgstr "Η αίθουσα σύνεδριασης έχει σταματήσει"
-
-#: mod_muc_log.erl:503
-msgid "Monday"
-msgstr "Δευτέρα"
-
-#: mod_muc_log.erl:504
-msgid "Tuesday"
-msgstr "Τρίτη"
-
-#: mod_muc_log.erl:505
-msgid "Wednesday"
-msgstr "Τετάρτη"
-
-#: mod_muc_log.erl:506
-msgid "Thursday"
-msgstr "Πέμπτη"
-
-#: mod_muc_log.erl:507
-msgid "Friday"
-msgstr "Παρασκευή"
-
-#: mod_muc_log.erl:508
-msgid "Saturday"
-msgstr "Σάββατο"
-
-#: mod_muc_log.erl:509
-msgid "Sunday"
-msgstr "Κυριακή"
-
-#: mod_muc_log.erl:513
-msgid "January"
-msgstr "Ιανουάριος"
-
-#: mod_muc_log.erl:514
-msgid "February"
-msgstr "Φεβρουάριος"
-
-#: mod_muc_log.erl:515
-msgid "March"
-msgstr "Μάρτιος"
-
-#: mod_muc_log.erl:516
-msgid "April"
-msgstr "Απρίλιος"
-
-#: mod_muc_log.erl:517
-msgid "May"
-msgstr "Μάιος"
-
-#: mod_muc_log.erl:518
-msgid "June"
-msgstr "Ιούνιος"
-
-#: mod_muc_log.erl:519
-msgid "July"
-msgstr "Ιούλιος"
-
-#: mod_muc_log.erl:520
-msgid "August"
-msgstr "Αύγουστος"
-
-#: mod_muc_log.erl:521
-msgid "September"
-msgstr "Σεπτέμβριος"
-
-#: mod_muc_log.erl:522
-msgid "October"
-msgstr "Οκτώβριος"
-
-#: mod_muc_log.erl:523
-msgid "November"
-msgstr "Νοέμβριος"
-
-#: mod_muc_log.erl:524
-msgid "December"
-msgstr "Δεκέμβριος"
-
-#: mod_muc_log.erl:912
-msgid "Room Configuration"
-msgstr "Διαμόρφωση Αίθουσας σύνεδριασης"
-
-#: mod_muc_log.erl:932
-msgid "Room Occupants"
-msgstr "Συμετεχόντες Αίθουσας σύνεδριασης"
-
-#: mod_muc_room.erl:163
-msgid "Traffic rate limit is exceeded"
-msgstr "Υπέρφορτωση"
-
-#: mod_muc_room.erl:230 mod_muc_room.erl:518 mod_muc_room.erl:1059
+#: mod_muc_room:233 mod_muc_room:375 mod_muc_room:1046
 msgid ""
 "It is not allowed to send error messages to the room. The participant (~s) "
 "has sent an error message (~s) and got kicked from the room"
 msgstr ""
 
-#: mod_muc_room.erl:241
-msgid "It is not allowed to send private messages to the conference"
-msgstr "Δεν επιτρέπεται να στείλει προσωπικά μηνύματα για τη διάσκεψη"
-
-#: mod_muc_room.erl:316
-msgid "Please, wait for a while before sending new voice request"
-msgstr "Παρακαλώ, περιμένετε για λίγο πριν την αποστολή νέου αιτήματος φωνής"
-
-#: mod_muc_room.erl:329
-msgid "Voice requests are disabled in this conference"
-msgstr "Τα αιτήματα φωνής είναι απενεργοποιημένα, σε αυτό το συνέδριο"
-
-#: mod_muc_room.erl:347
-msgid "Failed to extract JID from your voice request approval"
-msgstr "Απέτυχε η εξαγωγή JID από την έγκριση του αιτήματος φωνής σας"
-
-#: mod_muc_room.erl:377
-msgid "Only moderators can approve voice requests"
-msgstr "Μόνο οι συντονιστές μπορούν να εγκρίνουν τις αιτήσεις φωνής"
-
-#: mod_muc_room.erl:389
-msgid "Improper message type"
-msgstr "Ακατάλληλο είδος μηνύματος"
-
-#: mod_muc_room.erl:534
-msgid "It is not allowed to send private messages of type \"groupchat\""
-msgstr "Δεν επιτρέπεται να στείλει προσωπικά μηνύματα του τύπου \"groupchat\""
-
-#: mod_muc_room.erl:546 mod_muc_room.erl:621
-msgid "Recipient is not in the conference room"
-msgstr "Παραλήπτης δεν είναι στην αίθουσα συνεδριάσεων"
-
-#: mod_muc_room.erl:576 mod_muc_room.erl:598
+#: mod_muc_room:418 mod_muc_room:429
 msgid "It is not allowed to send private messages"
 msgstr "Δεν επιτρέπεται η αποστολή προσωπικών μηνυμάτων"
 
-#: mod_muc_room.erl:588 mod_muc_room.erl:983 mod_muc_room.erl:4594
-msgid "Only occupants are allowed to send messages to the conference"
-msgstr "Μόνο οι συμμετέχωντες  μπορούν να στέλνουν μηνύματα στο συνέδριο"
+#: mod_muc_room:388
+msgid "It is not allowed to send private messages of type \"groupchat\""
+msgstr "Δεν επιτρέπεται να στείλει προσωπικά μηνύματα του τύπου \"groupchat\""
 
-#: mod_muc_room.erl:644
-msgid "Only occupants are allowed to send queries to the conference"
-msgstr "Μόνο οι συμετεχόντες  μπορούν να στείλουν ερωτήματα στη διάσκεψη"
+#: mod_muc_room:244
+msgid "It is not allowed to send private messages to the conference"
+msgstr "Δεν επιτρέπεται να στείλει προσωπικά μηνύματα για τη διάσκεψη"
 
-#: mod_muc_room.erl:657
-msgid "Queries to the conference members are not allowed in this room"
+#: mod_register_web:181 mod_register_web:189
+msgid "Jabber Account Registration"
+msgstr "Εγγραφή λογαριασμού Jabber"
+
+#: mod_configure:1122 mod_configure:1139 mod_configure:1149 mod_configure:1159
+#: mod_configure:1169 mod_configure:1183 mod_configure:1192 mod_configure:1600
+#: mod_configure:1644 mod_configure:1669 mod_roster:912 mod_vcard_mnesia:113
+#: mod_vcard_sql:168
+msgid "Jabber ID"
+msgstr "Ταυτότητα Jabber"
+
+#: mod_muc_log:473
+msgid "January"
+msgstr "Ιανουάριος"
+
+#: mod_irc:665
+msgid "Join IRC channel"
+msgstr "Είσοδος  στο IRC κανάλι"
+
+#: mod_irc:689
+msgid "Join the IRC channel here."
+msgstr "Είσοδος  στο κανάλι IRC εδώ."
+
+#: mod_irc:690
+msgid "Join the IRC channel in this Jabber ID: ~s"
+msgstr "Είσοδος στο κανάλι IRC αυτής της Jabber Ταυτότητας: ~s"
+
+#: mod_muc_log:479
+msgid "July"
+msgstr "Ιούλιος"
+
+#: mod_muc_log:478
+msgid "June"
+msgstr "Ιούνιος"
+
+#: ejabberd_web_admin:1488 ejabberd_web_admin:1715
+msgid "Last Activity"
+msgstr "Τελευταία Δραστηριότητα"
+
+#: mod_configure:1646
+msgid "Last login"
+msgstr "Τελευταία σύνδεση"
+
+#: ejabberd_web_admin:1007
+msgid "Last month"
+msgstr "Περασμένο μήνα"
+
+#: ejabberd_web_admin:1008
+msgid "Last year"
+msgstr "Πέρυσι"
+
+#: mod_configure:941
+msgid "List of modules to start"
+msgstr "Λίστα των Module για Εκκίνηση"
+
+#: mod_muc_admin:373
+msgid "List of rooms"
 msgstr ""
-"Ερωτήματα πρώς τα μέλη της διασκέψεως δεν επιτρέπονται σε αυτήν την αίθουσα"
 
-#: mod_muc_room.erl:961
+#: ejabberd_web_admin:1869
+msgid "Listened Ports"
+msgstr "Παρακολουθούμενες Θύρες"
+
+#: ejabberd_web_admin:2139
+msgid "Listened Ports at "
+msgstr "Παρακολουθούμενες Θύρες στο "
+
+#: ejabberd_web_admin:2281
+msgid "Low level update script"
+msgstr "Προγράμα ενημέρωσης χαμηλού επίπεδου "
+
+#: mod_muc_log:1033
+msgid "Make participants list public"
+msgstr "Κάντε κοινό τον κατάλογο συμμετεχόντων"
+
+#: mod_muc_log:1062
+msgid "Make room CAPTCHA protected"
+msgstr "Κάντε την αίθουσα CAPTCHA προστατεύονομενη"
+
+#: mod_muc_log:1040
+msgid "Make room members-only"
+msgstr "Κάντε την αίθουσα μόνο για μέλη"
+
+#: mod_muc_log:1042
+msgid "Make room moderated"
+msgstr "Κάντε την αίθουσα εποπτεύονομενη"
+
+#: mod_muc_log:1035
+msgid "Make room password protected"
+msgstr "Κάντε την αίθουσα προστατεύομενη με κωδικό πρόσβασης"
+
+#: mod_muc_log:1029
+msgid "Make room persistent"
+msgstr "Κάντε αίθουσα μόνιμη"
+
+#: mod_muc_log:1031
+msgid "Make room public searchable"
+msgstr "Κάντε την δημόσια αναζήτηση δυνατή για αυτή την αίθουσα"
+
+#: mod_register:317
+#, fuzzy
+msgid "Malformed username"
+msgstr "IRC όνομα χρήστη"
+
+#: mod_muc_log:475
+msgid "March"
+msgstr "Μάρτιος"
+
+#: mod_muc_log:1068
+msgid "Maximum Number of Occupants"
+msgstr "Μέγιστος αριθμός συμετεχόντων"
+
+#: mod_muc_log:477
+msgid "May"
+msgstr "Μάιος"
+
+#: mod_shared_roster:907
+msgid "Members:"
+msgstr "Μέλη:"
+
+#: mod_muc_room:1833
+msgid "Membership is required to enter this room"
+msgstr "Απαιτείται αίτηση συμετοχής για είσοδο σε αυτή την αίθουσα"
+
+#: mod_register_web:262
+msgid ""
+"Memorize your password, or write it in a paper placed in a safe place. In "
+"Jabber there isn't an automated way to recover your password if you forget "
+"it."
+msgstr ""
+"Απομνημονεύστε τον κωδικό πρόσβασής σας, ή γράψετε τον σε ένα χαρτί που είχε "
+"τοποθετηθεί σε ασφαλές μέρος. Στο Jabber δεν υπάρχει αυτοματοποιημένος "
+"τρόπος για να ανακτήσετε τον κωδικό σας αν τον ξεχάσετε."
+
+#: ejabberd_web_admin:1954
+msgid "Memory"
+msgstr "Μνήμη"
+
+#: mod_announce:520 mod_configure:1039 mod_configure:1079
+msgid "Message body"
+msgstr "Περιεχόμενο μηνυμάτως"
+
+#: mod_privilege:291
+msgid "Message not found in forwarded payload"
+msgstr ""
+
+#: mod_vcard_ldap:331 mod_vcard_ldap:344 mod_vcard_mnesia:102
+#: mod_vcard_mnesia:116 mod_vcard_sql:157 mod_vcard_sql:171
+msgid "Middle Name"
+msgstr "Πατρώνυμο"
+
+#: mod_irc:704
+msgid "Missing 'channel' or 'server' in the data form"
+msgstr ""
+
+#: xmpp_stream_in:990
+msgid "Missing 'from' attribute"
+msgstr ""
+
+#: xmpp_stream_in:472 xmpp_stream_in:993
+msgid "Missing 'to' attribute"
+msgstr ""
+
+#: mod_muc_room:2536 mod_muc_room:3721 mod_muc_room:3765 mod_muc_room:3798
+msgid "Moderator privileges required"
+msgstr "Aπαιτούνται προνόμια συντονιστή"
+
+#: ejabberd_web_admin:2279
+msgid "Modified modules"
+msgstr "Τροποποιημένα modules"
+
+#: ejabberd_web_admin:2465 ejabberd_web_admin:2620
+msgid "Module"
+msgstr "Module"
+
+#: gen_iq_handler:153
+msgid "Module failed to handle the query"
+msgstr ""
+
+#: ejabberd_web_admin:1885 mod_configure:582 mod_configure:595
+msgid "Modules"
+msgstr "Modules"
+
+#: ejabberd_web_admin:2168
+#, fuzzy
+msgid "Modules at ~p"
+msgstr "Modules στο "
+
+#: mod_muc_log:463
+msgid "Monday"
+msgstr "Δευτέρα"
+
+#: mod_muc_admin:346 mod_muc_admin:349 mod_muc_admin:365 mod_muc_admin:439
+msgid "Multi-User Chat"
+msgstr ""
+
+#: mod_multicast:267
+msgid "Multicast"
+msgstr ""
+
+#: mod_roster:195
+msgid "Multiple <item/> elements are not allowed by RFC6121"
+msgstr ""
+
+#: ejabberd_web_admin:1951 mod_vcard_mnesia:101 mod_vcard_mnesia:115
+#: mod_vcard_sql:156 mod_vcard_sql:170
+msgid "Name"
+msgstr "Όνομα"
+
+#: mod_shared_roster:896
+msgid "Name:"
+msgstr "Όνομα:"
+
+#: mod_muc_room:2696
+msgid "Neither 'jid' nor 'nick' attribute found"
+msgstr ""
+
+#: mod_muc_room:2518 mod_muc_room:2701
+msgid "Neither 'role' nor 'affiliation' attribute found"
+msgstr ""
+
+#: ejabberd_web_admin:1506 ejabberd_web_admin:1687 mod_configure:1629
+msgid "Never"
+msgstr "Ποτέ"
+
+#: mod_register_web:377
+msgid "New Password:"
+msgstr "Νέος κωδικός πρόσβασης:"
+
+#: mod_roster:913 mod_vcard_ldap:333 mod_vcard_ldap:346 mod_vcard_mnesia:104
+#: mod_vcard_mnesia:118 mod_vcard_sql:159 mod_vcard_sql:173
+msgid "Nickname"
+msgstr "Ψευδώνυμο"
+
+#: mod_muc:722
+msgid "Nickname Registration at "
+msgstr "Εγγραφή με Ψευδώνυμο στο "
+
+#: mod_muc_room:2713
+msgid "Nickname ~s does not exist in the room"
+msgstr "Ψευδώνυμο ~s δεν υπάρχει σε αυτή την αίθουσα"
+
+#: mod_configure:1496
+msgid "No 'access' found in data form"
+msgstr ""
+
+#: mod_configure:1455
+msgid "No 'acls' found in data form"
+msgstr ""
+
+#: mod_muc_room:3075
+msgid "No 'affiliation' attribute found"
+msgstr ""
+
+#: mod_muc_room:2505
+#, fuzzy
+msgid "No 'item' element found"
+msgstr "Κόμβος δεν βρέθηκε"
+
+#: mod_configure:1280
+msgid "No 'modules' found in data form"
+msgstr ""
+
+#: mod_configure:1799
+msgid "No 'password' found in data form"
+msgstr ""
+
+#: mod_register:148
+msgid "No 'password' found in this query"
+msgstr ""
+
+#: mod_configure:1319 mod_configure:1350 mod_configure:1382 mod_configure:1413
+#: mod_configure:1433
+msgid "No 'path' found in data form"
+msgstr ""
+
+#: mod_muc_room:3922
+msgid "No 'to' attribute found in the invitation"
+msgstr ""
+
+#: ejabberd_web_admin:1767
+msgid "No Data"
+msgstr "Κανένα στοιχείο"
+
+#: ejabberd_local:181
+msgid "No available resource found"
+msgstr ""
+
+#: mod_announce:575
+msgid "No body provided for announce message"
+msgstr "Δεν προμηθεύτικε περιεχόμενο ανακοινώσης"
+
+#: mod_irc:335 mod_pubsub:1183 mod_pubsub:3289
+#, fuzzy
+msgid "No data form found"
+msgstr "Κόμβος δεν βρέθηκε"
+
+#: mod_disco:224 mod_vcard:282
+msgid "No features available"
+msgstr ""
+
+#: mod_adhoc:239
+msgid "No hook has processed this command"
+msgstr ""
+
+#: mod_last:218
+msgid "No info about last activity found"
+msgstr ""
+
+#: mod_blocking:99
+msgid "No items found in this query"
+msgstr ""
+
+#: ejabberd_local:90 ejabberd_sm:863 mod_blocking:92 mod_blocking:110
+#: mod_http_upload:513 mod_muc:482 mod_muc:534 mod_muc:556 mod_muc:580
+#: mod_offline:303 mod_privacy:168 mod_privacy:285 mod_roster:207
+msgid "No module is handling this query"
+msgstr ""
+
+#: mod_pubsub:1541
+msgid "No node specified"
+msgstr ""
+
+#: mod_pubsub:1426
+msgid "No pending subscriptions found"
+msgstr ""
+
+#: mod_privacy:201 mod_privacy:295 mod_privacy:311 mod_privacy:344
+msgid "No privacy list with this name found"
+msgstr ""
+
+#: mod_private:96
+msgid "No private data found in this query"
+msgstr ""
+
+#: mod_configure:869 mod_configure:908 mod_configure:1222 mod_configure:1254
+#: mod_configure:1275 mod_configure:1314 mod_configure:1345 mod_configure:1377
+#: mod_configure:1408 mod_configure:1428 mod_stats:93
+#, fuzzy
+msgid "No running node found"
+msgstr "Κόμβος δεν βρέθηκε"
+
+#: mod_disco:252 mod_vcard:265
+msgid "No services available"
+msgstr ""
+
+#: mod_stats:101
+msgid "No statistics found for this item"
+msgstr ""
+
+#: nodetree_dag:72 nodetree_tree:181 nodetree_tree_sql:255
+msgid "Node already exists"
+msgstr ""
+
+#: nodetree_tree_sql:99
+#, fuzzy
+msgid "Node index not found"
+msgstr "Κόμβος δεν βρέθηκε"
+
+#: ejabberd_web_admin:1046 mod_irc:303 mod_irc:366 mod_muc:532 mod_muc:680
+#: nodetree_dag:78 nodetree_dag:102 nodetree_dag:118 nodetree_dag:142
+#: nodetree_dag:229 nodetree_tree:74 nodetree_tree:80 nodetree_tree_sql:130
+#: nodetree_tree_sql:144
+msgid "Node not found"
+msgstr "Κόμβος δεν βρέθηκε"
+
+#: ejabberd_web_admin:1857 ejabberd_web_admin:1882
+#, fuzzy
+msgid "Node ~p"
+msgstr "Κόμβος"
+
+#: mod_vcard:385
+msgid "Nodeprep has failed"
+msgstr ""
+
+#: ejabberd_web_admin:1837
+msgid "Nodes"
+msgstr "Κόμβοι"
+
+#: ejabberd_web_admin:1622 ejabberd_web_admin:1818 ejabberd_web_admin:1828
+#: ejabberd_web_admin:2238 mod_roster:907
+msgid "None"
+msgstr "Κανένα"
+
+#: ejabberd_web_admin:1033
+msgid "Not Found"
+msgstr "Δεν Βρέθηκε"
+
+#: mod_disco:296 mod_disco:370 mod_last:159
+msgid "Not subscribed"
+msgstr ""
+
+#: mod_muc_log:483
+msgid "November"
+msgstr "Νοέμβριος"
+
+#: mod_configure:1212
+msgid "Number of online users"
+msgstr "Αριθμός συνδεδεμένων χρηστών"
+
+#: mod_configure:1202
+msgid "Number of registered users"
+msgstr "Αριθμός εγγεγραμμένων χρηστών"
+
+#: ejabberd_web_admin:2000 ejabberd_web_admin:2010 ejabberd_web_admin:2021
+#: ejabberd_web_admin:2030 ejabberd_web_admin:2040 ejabberd_web_admin:2053
+#: ejabberd_web_admin:2065 ejabberd_web_admin:2081 ejabberd_web_admin:2097
+#: ejabberd_web_admin:2108 ejabberd_web_admin:2118
+msgid "OK"
+msgstr "Όλλα Καλά"
+
+#: mod_muc_log:482
+msgid "October"
+msgstr "Οκτώβριος"
+
+#: ejabberd_web_admin:1487
+msgid "Offline Messages"
+msgstr "Χωρίς Σύνδεση Μηνύματα"
+
+#: mod_offline:761
+msgid "Offline Messages:"
+msgstr "Χωρίς Σύνδεση Μηνύματα:"
+
+#: mod_register_web:373
+msgid "Old Password:"
+msgstr "Παλαιός κωδικός πρόσβασης:"
+
+#: ejabberd_web_admin:1524 ejabberd_web_admin:1698 mod_configure:1639
+msgid "Online"
+msgstr "Συνδεδεμένο"
+
+#: ejabberd_web_admin:974 ejabberd_web_admin:1367 mod_configure:506
+msgid "Online Users"
+msgstr "Συνδεμένοι χρήστες"
+
+#: ejabberd_web_admin:1580 ejabberd_web_admin:1599 ejabberd_web_admin:2211
+msgid "Online Users:"
+msgstr "Online Χρήστες:"
+
+#: mod_carboncopy:141
+msgid "Only <enable/> or <disable/> tags are allowed"
+msgstr ""
+
+#: mod_privacy:154
+msgid "Only <list/> element is allowed in this query"
+msgstr ""
+
+#: mod_mam:379
+#, fuzzy
+msgid "Only members may query archives of this room"
+msgstr "Μόνο οι συντονιστές μπορούν να αλλάξουν το θέμα αυτής της αίθουσας"
+
+#: mod_muc_room:773
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
@@ -1266,456 +1255,567 @@ msgstr ""
 "Μόνο οι συντονιστές και οι συμμετέχοντες μπορούν να αλλάξουν το θέμα αυτής "
 "της αίθουσας"
 
-#: mod_muc_room.erl:966
+#: mod_muc_room:778
 msgid "Only moderators are allowed to change the subject in this room"
 msgstr "Μόνο οι συντονιστές μπορούν να αλλάξουν το θέμα αυτής της αίθουσας"
 
-#: mod_muc_room.erl:974
-msgid "Visitors are not allowed to send messages to all occupants"
+#: mod_muc_room:917
+msgid "Only moderators can approve voice requests"
+msgstr "Μόνο οι συντονιστές μπορούν να εγκρίνουν τις αιτήσεις φωνής"
+
+#: mod_muc_room:424 mod_muc_room:792 mod_muc_room:3989
+msgid "Only occupants are allowed to send messages to the conference"
+msgstr "Μόνο οι συμμετέχωντες  μπορούν να στέλνουν μηνύματα στο συνέδριο"
+
+#: mod_muc_room:457
+msgid "Only occupants are allowed to send queries to the conference"
+msgstr "Μόνο οι συμετεχόντες  μπορούν να στείλουν ερωτήματα στη διάσκεψη"
+
+#: mod_muc:422
+msgid "Only service administrators are allowed to send service messages"
 msgstr ""
-"Οι επισκέπτες δεν επιτρέπεται να στείλουν μηνύματα σε όλους τους "
-"συμμετέχωντες"
+"Μόνο οι διαχειριστές των υπηρεσιών επιτρέπεται να στείλουν υπηρεσιακά "
+"μηνύματα"
 
-#: mod_muc_room.erl:1080
-msgid "Visitors are not allowed to change their nicknames in this room"
-msgstr ""
-"Οι επισκέπτες δεν επιτρέπεται να αλλάξουν τα ψευδώνυμα τους σε αυτή την "
-"αίθουσα"
+#: ejabberd_web_admin:2466 ejabberd_web_admin:2621
+msgid "Options"
+msgstr "Επιλογές"
 
-#: mod_muc_room.erl:1093 mod_muc_room.erl:1835
-msgid "That nickname is already in use by another occupant"
-msgstr "Αυτό το ψευδώνυμο είναι ήδη σε χρήση από άλλον συμμετέχων"
+#: mod_vcard_ldap:338 mod_vcard_ldap:351 mod_vcard_mnesia:109
+#: mod_vcard_mnesia:123 mod_vcard_sql:164 mod_vcard_sql:178
+msgid "Organization Name"
+msgstr "Όνομα Οργανισμού"
 
-#: mod_muc_room.erl:1822
-msgid "You have been banned from this room"
-msgstr "Σας έχει απαγορευθεί η είσοδος σε αυτή την αίθουσα"
+#: mod_vcard_ldap:339 mod_vcard_ldap:352 mod_vcard_mnesia:110
+#: mod_vcard_mnesia:124 mod_vcard_sql:165 mod_vcard_sql:179
+msgid "Organization Unit"
+msgstr "Μονάδα Οργανισμού"
 
-#: mod_muc_room.erl:1826
-msgid "Membership is required to enter this room"
-msgstr "Απαιτείται αίτηση συμετοχής για είσοδο σε αυτή την αίθουσα"
+#: mod_configure:508
+msgid "Outgoing s2s Connections"
+msgstr "Εξερχόμενες S2S Συνδέσεις"
 
-#: mod_muc_room.erl:1872
-msgid "A password is required to enter this room"
-msgstr "Απαιτείται κωδικός πρόσβασης για είσοδο σε αυτή την αίθουσα"
+#: ejabberd_web_admin:1583
+msgid "Outgoing s2s Connections:"
+msgstr "Εξερχόμενες S2S Συνδέσεις:"
 
-#: mod_muc_room.erl:1898 mod_register.erl:295
-msgid "Too many CAPTCHA requests"
-msgstr "Πάρα πολλά αιτήματα CAPTCHA"
-
-#: mod_muc_room.erl:1908 mod_register.erl:301
-msgid "Unable to generate a CAPTCHA"
-msgstr "Αδήνατο να δημιουργηθεί CAPTCHA"
-
-#: mod_muc_room.erl:1919
-msgid "Incorrect password"
-msgstr "Εσφαλμένος κωδικός πρόσβασης"
-
-#: mod_muc_room.erl:2573
-msgid "Administrator privileges required"
-msgstr "Aπαιτούνται προνόμια διαχειριστή"
-
-#: mod_muc_room.erl:2586
-msgid "Moderator privileges required"
-msgstr "Aπαιτούνται προνόμια συντονιστή"
-
-#: mod_muc_room.erl:2758
-msgid "Jabber ID ~s is invalid"
-msgstr "Η Jabber Ταυτότητα ~s είναι άκυρη"
-
-#: mod_muc_room.erl:2772
-msgid "Nickname ~s does not exist in the room"
-msgstr "Ψευδώνυμο ~s δεν υπάρχει σε αυτή την αίθουσα"
-
-#: mod_muc_room.erl:2795 mod_muc_room.erl:3175
-msgid "Invalid affiliation: ~s"
-msgstr "Άκυρη υπαγωγή: ~s"
-
-#: mod_muc_room.erl:2846
-msgid "Invalid role: ~s"
-msgstr "Άκυρος ρόλο: ~s"
-
-#: mod_muc_room.erl:3155 mod_muc_room.erl:3187 mod_muc_room.erl:4236
+#: mod_muc_room:3023 mod_muc_room:3067 mod_muc_room:3697 mod_pubsub:1302
+#: mod_pubsub:1394 mod_pubsub:1553 mod_pubsub:2118 mod_pubsub:2184
+#: mod_pubsub:2383 mod_pubsub:2464 mod_pubsub:3063 mod_pubsub:3206
 msgid "Owner privileges required"
 msgstr "Aπαιτούνται προνόμια ιδιοκτήτη"
 
-#: mod_muc_room.erl:3348
-msgid "Configuration of room ~s"
-msgstr "Διαμόρφωση Αίθουσας σύνεδριασης ~s"
-
-#: mod_muc_room.erl:3359
-msgid "Room title"
-msgstr "Τίτλος Αίθουσας "
-
-#: mod_muc_room.erl:3361 mod_muc_room.erl:4190
-msgid "Room description"
-msgstr "Περιγραφή Αίθουσας"
-
-#: mod_muc_room.erl:3369
-msgid "Make room persistent"
-msgstr "Κάντε αίθουσα μόνιμη"
-
-#: mod_muc_room.erl:3375
-msgid "Make room public searchable"
-msgstr "Κάντε την δημόσια αναζήτηση δυνατή για αυτή την αίθουσα"
-
-#: mod_muc_room.erl:3378
-msgid "Make participants list public"
-msgstr "Κάντε κοινό τον κατάλογο συμμετεχόντων"
-
-#: mod_muc_room.erl:3380
-msgid "Make room password protected"
-msgstr "Κάντε την αίθουσα προστατεύομενη με κωδικό πρόσβασης"
-
-#: mod_muc_room.erl:3394
-msgid "Maximum Number of Occupants"
-msgstr "Μέγιστος αριθμός συμετεχόντων"
-
-#: mod_muc_room.erl:3406
-msgid "No limit"
-msgstr "Χωρίς όριο"
-
-#: mod_muc_room.erl:3436
-msgid "Present real Jabber IDs to"
-msgstr "Παρούσιαση πραγματικών ταυτοτήτων Jabber σε"
-
-#: mod_muc_room.erl:3450 mod_muc_room.erl:3560
-msgid "moderators only"
-msgstr "συντονιστές μόνο"
-
-#: mod_muc_room.erl:3460 mod_muc_room.erl:3570
-msgid "anyone"
-msgstr "οποιοσδήποτε"
-
-#: mod_muc_room.erl:3471
-msgid "Roles for which Presence is Broadcasted"
-msgstr ""
-
-#: mod_muc_room.erl:3486
-#, fuzzy
-msgid "Moderator"
-msgstr "συντονιστές μόνο"
-
-#: mod_muc_room.erl:3496
-msgid "Participant"
-msgstr ""
-
-#: mod_muc_room.erl:3506
-msgid "Visitor"
-msgstr ""
-
-#: mod_muc_room.erl:3513
-msgid "Make room members-only"
-msgstr "Κάντε την αίθουσα μόνο για μέλη"
-
-#: mod_muc_room.erl:3516
-msgid "Make room moderated"
-msgstr "Κάντε την αίθουσα εποπτεύονομενη"
-
-#: mod_muc_room.erl:3519
-msgid "Default users as participants"
-msgstr "Προεπιλογη χρήστων ως συμμετέχοντες"
-
-#: mod_muc_room.erl:3522
-msgid "Allow users to change the subject"
-msgstr "Επιτρέψετε στους χρήστες να αλλάζουν το θέμα"
-
-#: mod_muc_room.erl:3525
-msgid "Allow users to send private messages"
-msgstr "Επιτρέψετε στους χρήστες να αποστέλλουν ιδιωτικά μηνύματα"
-
-#: mod_muc_room.erl:3533
-msgid "Allow visitors to send private messages to"
-msgstr "Επιτρέψετε στους χρήστες να αποστέλλουν ιδιωτικά μηνύματα σε"
-
-#: mod_muc_room.erl:3551
-msgid "nobody"
-msgstr "κανείς"
-
-#: mod_muc_room.erl:3576
-msgid "Allow users to query other users"
-msgstr "Επιτρέπστε στους χρήστες να ερωτούν άλλους χρήστες"
-
-#: mod_muc_room.erl:3579
-msgid "Allow users to send invites"
-msgstr "Επιτρέψετε στους χρήστες να αποστέλλουν προσκλήσεις"
-
-#: mod_muc_room.erl:3582
-msgid "Allow visitors to send status text in presence updates"
-msgstr ""
-"Επιτρέψτε στους επισκέπτες να αποστέλλουν κατάσταση στις ενημερώσεις "
-"παρουσίας"
-
-#: mod_muc_room.erl:3586
-msgid "Allow visitors to change nickname"
-msgstr "Επιτρέψετε στους επισκέπτες να αλλάζου ψευδώνυμο"
-
-#: mod_muc_room.erl:3589
-msgid "Allow visitors to send voice requests"
-msgstr "Επιτρέψτε στους επισκέπτες να στέλνουν αιτήματα φωνής"
-
-#: mod_muc_room.erl:3592
-msgid "Minimum interval between voice requests (in seconds)"
-msgstr "Ελάχιστο χρονικό διάστημα μεταξύ αιτημάτων φωνής (σε δευτερόλεπτα)"
-
-#: mod_muc_room.erl:3599
-msgid "Make room CAPTCHA protected"
-msgstr "Κάντε την αίθουσα CAPTCHA προστατεύονομενη"
-
-#: mod_muc_room.erl:3606
-msgid "Enable message archiving"
-msgstr ""
-
-#: mod_muc_room.erl:3612
-msgid "Exclude Jabber IDs from CAPTCHA challenge"
-msgstr "Εξαίρεση από τις ταυτότητες Jabber, ή CAPTCHA πρόκληση"
-
-#: mod_muc_room.erl:3621
-msgid "Enable logging"
-msgstr "Ενεργοποίηση καταγραφής"
-
-#: mod_muc_room.erl:3631
-msgid "You need an x:data capable client to configure room"
-msgstr "Χρειάζεστε ένα x:data ικανό πελάτη για να ρυθμίσετε την αίθουσα "
-
-#: mod_muc_room.erl:4192
-msgid "Number of occupants"
-msgstr "Αριθμός συμετεχόντων"
-
-#: mod_muc_room.erl:4262
-msgid "private, "
-msgstr "ιδιωτικό,"
-
-#: mod_muc_room.erl:4326
-msgid "Voice request"
-msgstr "Αίτημα φωνής"
-
-#: mod_muc_room.erl:4331
-msgid "Either approve or decline the voice request."
-msgstr "Είτε εγκρίνετε ή απορρίψτε το αίτημα φωνής."
-
-#: mod_muc_room.erl:4351
-msgid "User JID"
-msgstr "JID Χρήστη"
-
-#: mod_muc_room.erl:4355
-msgid "Grant voice to this person?"
-msgstr "Παραχώρηση φωνής σε αυτό το άτομο;"
-
-#: mod_muc_room.erl:4498
-msgid "~s invites you to the room ~s"
-msgstr "~s σας προσκαλεί στην αίθουσα ~s"
-
-#: mod_muc_room.erl:4509
-msgid "the password is"
-msgstr "ο κωδικός πρόσβασης είναι"
-
-#: mod_multicast.erl:291
-msgid "Multicast"
-msgstr ""
-
-#: mod_multicast.erl:306
-msgid "ejabberd Multicast service"
-msgstr ""
-
-#: mod_offline.erl:647
-msgid ""
-"Your contact offline message queue is full. The message has been discarded."
-msgstr ""
-"Η μνήμη χωρίς σύνδεση μήνυματών είναι πλήρης. Το μήνυμα έχει απορριφθεί."
-
-#: mod_offline.erl:798
-msgid "~s's Offline Messages Queue"
-msgstr "Η Σειρά Χωρίς Σύνδεση Μηνύματων τού ~s"
-
-#: mod_offline.erl:811
-msgid "Time"
-msgstr "Χρόνος"
-
-#: mod_offline.erl:812
-msgid "From"
-msgstr "Από"
-
-#: mod_offline.erl:813
-msgid "To"
-msgstr "Πρώς"
-
-#: mod_offline.erl:814
+#: mod_offline:693
 msgid "Packet"
 msgstr "Πακέτο"
 
-#: mod_offline.erl:992
-msgid "Offline Messages:"
-msgstr "Χωρίς Σύνδεση Μηνύματα:"
+#: mod_irc:578
+msgid "Parse error"
+msgstr ""
 
-#: mod_offline.erl:996
-msgid "Remove All Offline Messages"
-msgstr "Αφαίρεση Όλων των Χωρίς Σύνδεση Μηνύματων"
+#: mod_configure:1299 mod_configure:1468 mod_configure:1513
+msgid "Parse failed"
+msgstr ""
 
-#: mod_proxy65_service.erl:248
-msgid "ejabberd SOCKS5 Bytestreams module"
-msgstr "ejabberd SOCKS5 Bytestreams module"
+#: ejabberd_oauth:431 ejabberd_web_admin:1435 mod_configure:1126
+#: mod_configure:1173 mod_configure:1602 mod_configure:1781 mod_muc_log:1036
+#: mod_register:229
+msgid "Password"
+msgstr "Κωδικός Πρόσβασης"
 
-#: mod_pubsub.erl:1102
-msgid "Publish-Subscribe"
-msgstr "Δημοσίευση-Εγγραφή"
+#: mod_configure:1130
+msgid "Password Verification"
+msgstr "Επαλήθευση κωδικού πρόσβασης"
 
-#: mod_pubsub.erl:1222
-msgid "ejabberd Publish-Subscribe module"
-msgstr "ejabberd module Δημοσίευσης-Εγγραφής"
+#: mod_register_web:268 mod_register_web:381
+msgid "Password Verification:"
+msgstr "Επαλήθευση κωδικού πρόσβασης:"
 
-#: mod_pubsub.erl:1537
+#: mod_irc:822
+msgid "Password ~b"
+msgstr "Κωδικός πρόσβασης ~b"
+
+#: ejabberd_web_admin:1713 mod_register_web:245 mod_register_web:483
+msgid "Password:"
+msgstr "Κωδικός πρόσβασης:"
+
+#: mod_configure:998
+msgid "Path to Dir"
+msgstr "Τοποθεσία κατάλογου αρχείων"
+
+#: mod_configure:952 mod_configure:964 mod_configure:976 mod_configure:987
+msgid "Path to File"
+msgstr "Τοποθεσία Αρχείου"
+
+#: mod_roster:915
+msgid "Pending"
+msgstr "Εκκρεμεί"
+
+#: ejabberd_web_admin:994
+msgid "Period: "
+msgstr "Περίοδος: "
+
+#: mod_muc_admin:369
+#, fuzzy
+msgid "Permanent rooms"
+msgstr "εγκαταλείπει την αίθουσα"
+
+#: mod_adhoc:168 mod_adhoc:259
+msgid "Ping"
+msgstr "Πινγκ"
+
+#: mod_ping:180
+msgid "Ping query is incorrect"
+msgstr ""
+
+#: ejabberd_web_admin:1983
+msgid ""
+"Please note that these options will only backup the builtin Mnesia database. "
+"If you are using the ODBC module, you also need to backup your SQL database "
+"separately."
+msgstr ""
+"Παρακαλώ σημειώστε ότι οι επιλογές αυτές θα αποθήκευσουν Αντιγράφο Ασφαλείας "
+"μόνο της ενσωματωμένης βάσης δεδομένων Mnesia. Εάν χρησιμοποιείτε το module "
+"ODBC, θα πρέπει επίσης να κάνετε χωριστά Αντιγράφο Ασφαλείας της SQL βάση "
+"δεδομένων σας ."
+
+#: mod_muc_room:878
+msgid "Please, wait for a while before sending new voice request"
+msgstr "Παρακαλώ, περιμένετε για λίγο πριν την αποστολή νέου αιτήματος φωνής"
+
+#: mod_adhoc:274
+msgid "Pong"
+msgstr "Πονγκ"
+
+#: ejabberd_web_admin:2463
+msgid "Port"
+msgstr "Θύρα"
+
+#: mod_irc:828
+msgid "Port ~b"
+msgstr "Θύρα ~b"
+
+#: mod_roster:173
+msgid "Possessing 'ask' attribute is not allowed by RFC6121"
+msgstr ""
+
+#: ejabberd_web_admin:2464
+msgid "Protocol"
+msgstr "Πρωτόκολλο"
+
+#: mod_pubsub:1335
 msgid "PubSub subscriber request"
 msgstr "Αίτηση συνδρομητή Δημοσίευσης-Εγγραφής"
 
-#: mod_pubsub.erl:1543
-msgid "Choose whether to approve this entity's subscription."
-msgstr "Επιλέξτε αν θα εγκρίθεί η εγγραφή αυτής της οντότητας."
+#: mod_pubsub:970
+msgid "Publish-Subscribe"
+msgstr "Δημοσίευση-Εγγραφή"
 
-#: mod_pubsub.erl:1559
-msgid "Node ID"
-msgstr "Ταυτότητα Κόμβου"
-
-#: mod_pubsub.erl:1571
-msgid "Subscriber Address"
-msgstr "Διεύθυνση Συνδρομητή"
-
-#: mod_pubsub.erl:1584
-msgid "Allow this Jabber ID to subscribe to this pubsub node?"
+#: node_dag:81
+msgid "Publishing items to collection node is not allowed"
 msgstr ""
-"Επιτρέπετε σε αυτή την Jabber Ταυτότητα να εγγραφεί σε αυτό τον κόμβο "
-"Δημοσίευσης-Εγγραφής;"
 
-#: mod_pubsub.erl:3745
-msgid "Deliver payloads with event notifications"
-msgstr "Κοινοποιήσεις με την παράδοση φορτίων"
-
-#: mod_pubsub.erl:3747
-msgid "Deliver event notifications"
-msgstr "Κοινοποιήσεις παράδοσης"
-
-#: mod_pubsub.erl:3749
-msgid "Notify subscribers when the node configuration changes"
-msgstr "Ειδοποιηση στους συνδρομητές όταν αλλάζει η διαμόρφωση κόμβου"
-
-#: mod_pubsub.erl:3751
-msgid "Notify subscribers when the node is deleted"
-msgstr "Ειδοποιηση στους συνδρομητές όταν ο κόμβος διαγράφεται"
-
-#: mod_pubsub.erl:3753
-msgid "Notify subscribers when items are removed from the node"
-msgstr "Ειδοποιηση στους συνδρομητές  όταν αφαίρούντε στοιχεία από τον κόμβο"
-
-#: mod_pubsub.erl:3755
-msgid "Persist items to storage"
-msgstr "Μονιμη αποθήκευση στοιχείων"
-
-#: mod_pubsub.erl:3757
-msgid "A friendly name for the node"
-msgstr "Ένα φιλικό όνομα για τον κόμβο"
-
-#: mod_pubsub.erl:3759
-msgid "Max # of items to persist"
-msgstr "Μέγιστος αριθμός μόνιμων στοιχείων"
-
-#: mod_pubsub.erl:3761
-msgid "Whether to allow subscriptions"
-msgstr "Εάν επιτρέποντε συνδρομές"
-
-#: mod_pubsub.erl:3763
-msgid "Specify the access model"
-msgstr "Καθορίστε το μοντέλο πρόσβασης"
-
-#: mod_pubsub.erl:3765
-msgid "Roster groups allowed to subscribe"
-msgstr "Ομάδες Καταλόγου Επαφών μπορούν να εγγραφούν"
-
-#: mod_pubsub.erl:3767
-msgid "Specify the publisher model"
-msgstr "Καθορίστε το μοντέλο εκδότη"
-
-#: mod_pubsub.erl:3769
-msgid "Purge all items when the relevant publisher goes offline"
-msgstr "Διαγραφή όλων των στοιχείων όταν ο σχετικός εκδότης αποσυνδέεται"
-
-#: mod_pubsub.erl:3771
-msgid "Specify the event message type"
-msgstr "Καθορίστε τον τύπο μηνύματος συμβάντος"
-
-#: mod_pubsub.erl:3773
-msgid "Max payload size in bytes"
-msgstr "Μέγιστο μέγεθος φορτίου σε bytes"
-
-#: mod_pubsub.erl:3775
-msgid "When to send the last published item"
-msgstr "Πότε να αποσταλθεί το τελευταίο στοιχείο που δημοσιεύθηκε"
-
-#: mod_pubsub.erl:3777
-msgid "Only deliver notifications to available users"
-msgstr "Παράδωση κοινοποιήσεων μόνο σε διαθέσιμους χρήστες"
-
-#: mod_pubsub.erl:3779
-msgid "The collections with which a node is affiliated"
-msgstr "Οι συλλογές με την οποία είναι ένας κόμβος συνδέεται"
-
-#: mod_register.erl:209
-msgid "The CAPTCHA verification has failed"
-msgstr "Η επαλήθευση της εικόνας CAPTCHA απέτυχε"
-
-#: mod_register.erl:253
-msgid "You need a client that supports x:data and CAPTCHA to register"
-msgstr "Χρειάζεστε ένα x:data και CAPTCHA ικανό πελάτη για εγγραφή"
-
-#: mod_register.erl:259 mod_register.erl:320
-msgid "Choose a username and password to register with this server"
+#: mod_muc_room:462
+msgid "Queries to the conference members are not allowed in this room"
 msgstr ""
-"Επιλέξτε ένα όνομα χρήστη και κωδικό πρόσβασης για να εγγραφείτε σε αυτό τον "
-"διακομιστή"
+"Ερωτήματα πρώς τα μέλη της διασκέψεως δεν επιτρέπονται σε αυτήν την αίθουσα"
 
-#: mod_register.erl:373 mod_register.erl:421
-msgid "The password is too weak"
-msgstr "Ο κωδικός πρόσβασης είναι πολύ ασθενές"
+#: mod_blocking:85 mod_disco:325 mod_disco:393 mod_offline:270 mod_privacy:146
+#: mod_private:118 mod_roster:163 mod_sic:90
+msgid "Query to another users is forbidden"
+msgstr ""
 
-#: mod_register.erl:426
-msgid "Users are not allowed to register accounts so quickly"
-msgstr "Οι χρήστες δεν επιτρέπεται να εγγραφούν λογαριασμούς τόσο γρήγορα"
+#: mod_configure:889
+msgid "RAM and disc copy"
+msgstr "Αντίγραφο μόνο σε RAM καί δίσκο"
 
-#: mod_register_web.erl:105
-msgid "Your Jabber account was successfully created."
-msgstr "Ο Jabber λογαριασμός σας δημιουργήθηκε με επιτυχία."
+#: mod_configure:889
+msgid "RAM copy"
+msgstr "Αντίγραφο σε RAM"
 
-#: mod_register_web.erl:110
-msgid "There was an error creating the account: "
-msgstr "Υπήρξε ένα σφάλμα κατά τη δημιουργία του λογαριασμού:"
+#: ejabberd_web_admin:1890
+msgid "RPC Call Error"
+msgstr "Σφάλμα RPC Κλήσης"
 
-#: mod_register_web.erl:119
-msgid "Your Jabber account was successfully deleted."
-msgstr "Ο Jabber λογαριασμός σας διαγράφηκε με επιτυχία."
+#: ejabberd_web_admin:806 ejabberd_web_admin:905
+msgid "Raw"
+msgstr "Ακατέργαστο"
 
-#: mod_register_web.erl:124
-msgid "There was an error deleting the account: "
-msgstr "Υπήρξε ένα σφάλμα κατά τη διαγραφή του λογαριασμού:"
+#: mod_announce:511
+msgid "Really delete message of the day?"
+msgstr "Πραγματικά να διαγράψετε το μήνυμα της ημέρας;"
 
-#: mod_register_web.erl:135
-msgid "The password of your Jabber account was successfully changed."
-msgstr "Ο κωδικός  πρόσβασης του Jabber λογαριασμού σας έχει αλλάξει επιτυχώς."
+#: mod_muc_room:395 mod_muc_room:443
+msgid "Recipient is not in the conference room"
+msgstr "Παραλήπτης δεν είναι στην αίθουσα συνεδριάσεων"
 
-#: mod_register_web.erl:140
-msgid "There was an error changing the password: "
-msgstr "Υπήρξε ένα σφάλμα κατά την αλλαγή του κωδικού πρόσβασης:"
+#: mod_register_web:275
+msgid "Register"
+msgstr "Καταχωρήστε"
 
-#: mod_register_web.erl:175 mod_register_web.erl:183
-msgid "Jabber Account Registration"
-msgstr "Εγγραφή λογαριασμού Jabber"
-
-#: mod_register_web.erl:186 mod_register_web.erl:204 mod_register_web.erl:212
+#: mod_register_web:192 mod_register_web:210 mod_register_web:218
 msgid "Register a Jabber account"
 msgstr "Καταχωρήστε έναν λογαριασμό Jabber"
 
-#: mod_register_web.erl:191 mod_register_web.erl:453 mod_register_web.erl:461
-msgid "Unregister a Jabber account"
-msgstr "Καταργήστε την εγγραφή ενός λογαριασμού Jabber"
+#: ejabberd_web_admin:1366
+msgid "Registered Users"
+msgstr "Εγγεγραμμένοι Χρήστες"
 
-#: mod_register_web.erl:214
+#: ejabberd_web_admin:1577 ejabberd_web_admin:1596
+msgid "Registered Users:"
+msgstr "Εγγεγραμμένοι Χρήστες:"
+
+#: mod_muc_admin:370
+#, fuzzy
+msgid "Registered nicknames"
+msgstr "Εγγεγραμμένοι Χρήστες"
+
+#: mod_irc:535
+msgid "Registration in mod_irc for "
+msgstr "Εγγραφή στο mod_irc για "
+
+#: mod_configure:889
+msgid "Remote copy"
+msgstr "Απομεμακρυσμένο αντίγραφο"
+
+#: mod_roster:963
+msgid "Remove"
+msgstr "Αφαίρεστε"
+
+#: mod_offline:765
+msgid "Remove All Offline Messages"
+msgstr "Αφαίρεση Όλων των Χωρίς Σύνδεση Μηνύματων"
+
+#: ejabberd_web_admin:1720 mod_configure:1779
+msgid "Remove User"
+msgstr "Αφαίρεση χρήστη"
+
+#: ejabberd_sm:404
+msgid "Replaced by new connection"
+msgstr "Αντικαταστάθικε από νέα σύνδεση"
+
+#: mod_configure:1675
+msgid "Resources"
+msgstr "Πόροι"
+
+#: ejabberd_web_admin:1876 ejabberd_web_admin:2494 ejabberd_web_admin:2638
+msgid "Restart"
+msgstr "Επανεκκίνηση"
+
+#: mod_configure:162 mod_configure:588 mod_configure:1009
+msgid "Restart Service"
+msgstr "Επανεκκίνηση Υπηρεσίας"
+
+#: mod_configure:151 mod_configure:619
+msgid "Restore"
+msgstr "Επαναφορά Αντιγράφου Ασφαλείας"
+
+#: mod_configure:959
+msgid "Restore Backup from File at "
+msgstr "Επαναφορά Αντιγράφου Ασφαλείας από αρχείο στο "
+
+#: ejabberd_web_admin:2013
+msgid ""
+"Restore binary backup after next ejabberd restart (requires less memory):"
+msgstr ""
+"Επαναφορά δυαδικού αντιγράφου ασφαλείας μετά την επόμενη επανεκκίνηση του "
+"ejabberd (απαιτεί λιγότερη μνήμη):"
+
+#: ejabberd_web_admin:2003
+msgid "Restore binary backup immediately:"
+msgstr "Επαναφορά δυαδικού αντιγράφου ασφαλείας αμέσως:"
+
+#: ejabberd_web_admin:2033
+msgid "Restore plain text backup immediately:"
+msgstr "Επαναφορά αντιγράφου ασφαλείας από αρχείο κειμένου αμέσως:"
+
+#: mod_muc_log:872
+msgid "Room Configuration"
+msgstr "Διαμόρφωση Αίθουσας σύνεδριασης"
+
+#: mod_muc_log:892
+msgid "Room Occupants"
+msgstr "Συμετεχόντες Αίθουσας σύνεδριασης"
+
+#: mod_muc:455
+msgid "Room creation is denied by service policy"
+msgstr "Άρνηση δημιουργίας αίθουσας , λόγω τακτικής παροχής υπηρεσιών"
+
+#: mod_muc_log:1064
+msgid "Room description"
+msgstr "Περιγραφή Αίθουσας"
+
+#: mod_muc_log:1027
+msgid "Room title"
+msgstr "Τίτλος Αίθουσας "
+
+#: mod_roster:1082
+msgid "Roster"
+msgstr "Καταλόγος Επαφών"
+
+#: mod_roster:334
+msgid "Roster module has failed"
+msgstr ""
+
+#: mod_roster:968
+msgid "Roster of "
+msgstr "Καταλόγος Επαφών τού"
+
+#: mod_configure:1671
+msgid "Roster size"
+msgstr "Μέγεθος Καταλόγου Επαφών"
+
+#: ejabberd_web_admin:1838 mod_configure:510
+msgid "Running Nodes"
+msgstr "Ενεργοί Κόμβοι"
+
+#: xmpp_stream_in:541 xmpp_stream_in:549
+msgid "SASL negotiation is not allowed in this state"
+msgstr ""
+
+#: mod_muc_log:468
+msgid "Saturday"
+msgstr "Σάββατο"
+
+#: mod_irc:582
+msgid "Scan error"
+msgstr ""
+
+#: mod_configure:1303 mod_configure:1472 mod_configure:1517
+#, fuzzy
+msgid "Scan failed"
+msgstr "Το CAPTCHA είναι έγκυρο."
+
+#: ejabberd_web_admin:2282
+msgid "Script check"
+msgstr "Script ελέγχου"
+
+#: mod_vcard:453
+msgid "Search Results for "
+msgstr "Αποτελέσματα αναζήτησης για "
+
+#: mod_vcard:427
+msgid "Search users in "
+msgstr "Αναζήτηση χρηστών στο"
+
+#: mod_announce:617
+msgid "Send announcement to all online users"
+msgstr "Αποστολή ανακοίνωσης σε όλους τους συνδεδεμένους χρήστες"
+
+#: mod_announce:619 mod_configure:1032 mod_configure:1072
+msgid "Send announcement to all online users on all hosts"
+msgstr ""
+"Αποστολή ανακοίνωσης σε όλους τους συνδεδεμένους χρήστες σε όλους τους "
+"κεντρικούς υπολογιστές"
+
+#: mod_announce:613
+msgid "Send announcement to all users"
+msgstr "Αποστολή ανακοίνωσης σε όλους τους χρήστες"
+
+#: mod_announce:615
+msgid "Send announcement to all users on all hosts"
+msgstr ""
+"Αποστολή ανακοίνωσης σε όλους τους χρήστες σε όλους τους κεντρικούς "
+"υπολογιστές"
+
+#: mod_muc_log:481
+msgid "September"
+msgstr "Σεπτέμβριος"
+
+#: mod_irc_connection:648
+msgid "Server Connect Failed"
+msgstr ""
+
+#: ejabberd_s2s:369
+msgid "Server connections to local subdomains are forbidden"
+msgstr ""
+
+#: mod_irc:842
+msgid "Server ~b"
+msgstr "Διακομιστής  ~b"
+
+#: mod_register_web:242 mod_register_web:370 mod_register_web:480
+msgid "Server:"
+msgstr "Διακομιστής:"
+
+#: mod_announce:621
+msgid "Set message of the day and send to online users"
+msgstr "Ορίστε μήνυμα ημέρας και αποστολή στους συνδεδεμένους χρήστες"
+
+#: mod_announce:623
+msgid "Set message of the day on all hosts and send to online users"
+msgstr ""
+"Ορίστε μήνυμα ημέρας και άμεση αποστολή στους συνδεδεμένους χρήστες σε όλους "
+"τους κεντρικούς υπολογιστές"
+
+#: mod_shared_roster:784 mod_shared_roster:826 mod_shared_roster:920
+msgid "Shared Roster Groups"
+msgstr "Κοινές Ομάδες Καταλόγων Επαφών"
+
+#: ejabberd_web_admin:1016
+msgid "Show Integral Table"
+msgstr "Δείτε Ολοκληρωτικό Πίνακα"
+
+#: ejabberd_web_admin:1013
+msgid "Show Ordinary Table"
+msgstr "Δείτε Κοινό Πίνακα"
+
+#: mod_configure:164 mod_configure:590 mod_configure:1049
+msgid "Shut Down Service"
+msgstr "Κλείσιμο Υπηρεσίας"
+
+#: mod_register_web:258
+msgid ""
+"Some Jabber clients can store your password in the computer, but you should "
+"do this only in your personal computer for safety reasons."
+msgstr ""
+"Μερικοί πελάτες Jabber μπορεί να αποθηκεύσουν τον κωδικό πρόσβασής σας στον "
+"υπολογιστή σας. Χρησιμοποιήστε αυτό το χαρακτηριστικό μόνο εάν εμπιστεύεστε "
+"την ασφάλεια του υπολογιστή σας."
+
+#: ejabberd_web_admin:2518 ejabberd_web_admin:2654
+msgid "Start"
+msgstr "Εκκίνηση"
+
+#: mod_configure:142 mod_configure:605
+msgid "Start Modules"
+msgstr "Εκκίνηση Modules"
+
+#: mod_configure:936
+msgid "Start Modules at "
+msgstr "Εκκίνηση Modules στο "
+
+#: ejabberd_web_admin:1023 ejabberd_web_admin:1871 mod_muc_admin:366
+msgid "Statistics"
+msgstr "Στατιστικές"
+
+#: ejabberd_web_admin:2199
+msgid "Statistics of ~p"
+msgstr "Στατιστικές του ~p"
+
+#: ejabberd_web_admin:1878 ejabberd_web_admin:2498 ejabberd_web_admin:2642
+msgid "Stop"
+msgstr "Σταμάτημα"
+
+#: mod_configure:145 mod_configure:607
+msgid "Stop Modules"
+msgstr "ΠαύσηModules"
+
+#: mod_configure:918
+msgid "Stop Modules at "
+msgstr "Παύση Modules στο "
+
+#: ejabberd_web_admin:1839 mod_configure:511
+msgid "Stopped Nodes"
+msgstr "Σταματημένοι Κόμβοι"
+
+#: ejabberd_web_admin:1952
+msgid "Storage Type"
+msgstr "Τύπος Αποθήκευσης"
+
+#: ejabberd_web_admin:1993
+msgid "Store binary backup:"
+msgstr "Αποθηκεύση δυαδικού αντιγράφου ασφαλείας:"
+
+#: ejabberd_web_admin:2023
+msgid "Store plain text backup:"
+msgstr "Αποθηκεύση αντιγράφου ασφαλείας σε αρχείο κειμένου:"
+
+#: mod_announce:516 mod_configure:1036 mod_configure:1076
+msgid "Subject"
+msgstr "Θέμα"
+
+#: ejabberd_web_admin:774 ejabberd_web_admin:814 ejabberd_web_admin:879
+#: ejabberd_web_admin:944 ejabberd_web_admin:1963 mod_shared_roster:933
+msgid "Submit"
+msgstr "Υποβοβολή"
+
+#: ejabberd_web_admin:762 ejabberd_web_admin:801 ejabberd_web_admin:867
+#: ejabberd_web_admin:900 ejabberd_web_admin:936 ejabberd_web_admin:1421
+#: ejabberd_web_admin:1704 ejabberd_web_admin:1860 ejabberd_web_admin:1894
+#: ejabberd_web_admin:1974 ejabberd_web_admin:2144 ejabberd_web_admin:2173
+#: ejabberd_web_admin:2270 mod_offline:681 mod_roster:971 mod_shared_roster:830
+#: mod_shared_roster:925
+msgid "Submitted"
+msgstr "Υποβλήθηκε"
+
+#: mod_roster:914
+msgid "Subscription"
+msgstr "Συνδρομή"
+
+#: mod_muc_room:3708
+msgid "Subscriptions are not allowed"
+msgstr ""
+
+#: mod_muc_log:469
+msgid "Sunday"
+msgstr "Κυριακή"
+
+#: mod_muc_room:998 mod_muc_room:1843 mod_muc_room:3737
+msgid "That nickname is already in use by another occupant"
+msgstr "Αυτό το ψευδώνυμο είναι ήδη σε χρήση από άλλον συμμετέχων"
+
+#: mod_muc:745 mod_muc_room:1004 mod_muc_room:1852 mod_muc_room:3740
+msgid "That nickname is registered by another person"
+msgstr "Αυτό το ψευδώνυμο είναι καταχωρημένο από άλλο πρόσωπο"
+
+#: ejabberd_captcha:256
+msgid "The CAPTCHA is valid."
+msgstr "Το CAPTCHA είναι έγκυρο."
+
+#: mod_muc_room:653 mod_muc_room:3672 mod_register:190
+msgid "The CAPTCHA verification has failed"
+msgstr "Η επαλήθευση της εικόνας CAPTCHA απέτυχε"
+
+#: mod_muc_room:302
+msgid "The feature requested is not supported by the conference"
+msgstr ""
+
+#: mod_register:308 mod_register:366
+msgid "The password contains unacceptable characters"
+msgstr ""
+
+#: mod_register:311 mod_register:370
+msgid "The password is too weak"
+msgstr "Ο κωδικός πρόσβασης είναι πολύ ασθενές"
+
+#: mod_register_web:141
+msgid "The password of your Jabber account was successfully changed."
+msgstr "Ο κωδικός  πρόσβασης του Jabber λογαριασμού σας έχει αλλάξει επιτυχώς."
+
+#: mod_register:160 mod_vcard:219
+msgid "The query is only allowed from local users"
+msgstr ""
+
+#: mod_roster:203
+msgid "The query must not contain <item/> elements"
+msgstr ""
+
+#: mod_privacy:280
+msgid ""
+"The stanza MUST contain only one <active/> element, one <default/> element, "
+"or one <list/> element"
+msgstr ""
+
+#: mod_register_web:146
+msgid "There was an error changing the password: "
+msgstr "Υπήρξε ένα σφάλμα κατά την αλλαγή του κωδικού πρόσβασης:"
+
+#: mod_register_web:116
+msgid "There was an error creating the account: "
+msgstr "Υπήρξε ένα σφάλμα κατά τη δημιουργία του λογαριασμού:"
+
+#: mod_register_web:130
+msgid "There was an error deleting the account: "
+msgstr "Υπήρξε ένα σφάλμα κατά τη διαγραφή του λογαριασμού:"
+
+#: mod_register_web:236
+msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
+msgstr ""
+"Ανεξαρτήτως με πεζά ή κεφαλαία: 'μιαλεξη' είναι το ίδιο με 'ΜιαΛέξη' και "
+"'Μιαλέξη'."
+
+#: mod_register_web:220
 msgid ""
 "This page allows to create a Jabber account in this Jabber server. Your JID "
 "(Jabber IDentifier) will be of the form: username@server. Please read "
@@ -1726,222 +1826,569 @@ msgstr ""
 "όνομα_χρήστη@διακομιστής_Jabber. Παρακαλώ διαβάστε προσεκτικά τις οδηγίες "
 "για να συμπληρώσετε σωστά τα πεδία."
 
-#: mod_register_web.erl:224 mod_register_web.erl:360 mod_register_web.erl:469
-msgid "Username:"
-msgstr "Όνομα χρήστη"
-
-#: mod_register_web.erl:230
-msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
-msgstr ""
-"Ανεξαρτήτως με πεζά ή κεφαλαία: 'μιαλεξη' είναι το ίδιο με 'ΜιαΛέξη' και "
-"'Μιαλέξη'."
-
-#: mod_register_web.erl:233
-msgid "Characters not allowed:"
-msgstr "Χαρακτήρες δεν επιτρέπονται:"
-
-#: mod_register_web.erl:236 mod_register_web.erl:364 mod_register_web.erl:473
-msgid "Server:"
-msgstr "Διακομιστής:"
-
-#: mod_register_web.erl:245
-msgid ""
-"Don't tell your password to anybody, not even the administrators of the "
-"Jabber server."
-msgstr ""
-"Μην πείτε τον κωδικό πρόσβασής σας σε κανέναν, ακόμη και στους διαχειριστές "
-"του διακομιστή Jabber."
-
-#: mod_register_web.erl:249
-msgid "You can later change your password using a Jabber client."
-msgstr ""
-"Μπορείτε αργότερα να αλλάξετε τον κωδικό πρόσβασής σας χρησιμοποιώντας έναν "
-"πελάτη Jabber."
-
-#: mod_register_web.erl:252
-msgid ""
-"Some Jabber clients can store your password in the computer, but you should "
-"do this only in your personal computer for safety reasons."
-msgstr ""
-"Μερικοί πελάτες Jabber μπορεί να αποθηκεύσουν τον κωδικό πρόσβασής σας στον "
-"υπολογιστή σας. Χρησιμοποιήστε αυτό το χαρακτηριστικό μόνο εάν εμπιστεύεστε "
-"την ασφάλεια του υπολογιστή σας."
-
-#: mod_register_web.erl:256
-msgid ""
-"Memorize your password, or write it in a paper placed in a safe place. In "
-"Jabber there isn't an automated way to recover your password if you forget "
-"it."
-msgstr ""
-"Απομνημονεύστε τον κωδικό πρόσβασής σας, ή γράψετε τον σε ένα χαρτί που είχε "
-"τοποθετηθεί σε ασφαλές μέρος. Στο Jabber δεν υπάρχει αυτοματοποιημένος "
-"τρόπος για να ανακτήσετε τον κωδικό σας αν τον ξεχάσετε."
-
-#: mod_register_web.erl:262 mod_register_web.erl:374
-msgid "Password Verification:"
-msgstr "Επαλήθευση κωδικού πρόσβασης:"
-
-#: mod_register_web.erl:269
-msgid "Register"
-msgstr "Καταχωρήστε"
-
-#: mod_register_web.erl:366
-msgid "Old Password:"
-msgstr "Παλαιός κωδικός πρόσβασης:"
-
-#: mod_register_web.erl:370
-msgid "New Password:"
-msgstr "Νέος κωδικός πρόσβασης:"
-
-#: mod_register_web.erl:463
+#: mod_register_web:470
 msgid "This page allows to unregister a Jabber account in this Jabber server."
 msgstr ""
 "Η σελίδα αυτή δίνει τη δυνατότητα να καταργήσετε την καταχώρηση ενός "
 "λογαριασμό Jabber σε αυτόν το διακομιστή Jabber."
 
-#: mod_register_web.erl:480
+#: mod_muc_log:1038
+msgid "This room is not anonymous"
+msgstr "Η αίθουσα αυτή δεν είναι ανώνυμη"
+
+#: mod_muc_log:466
+msgid "Thursday"
+msgstr "Πέμπτη"
+
+#: mod_offline:690
+msgid "Time"
+msgstr "Χρόνος"
+
+#: mod_configure:1014 mod_configure:1054
+msgid "Time delay"
+msgstr "Χρόνος καθυστέρησης"
+
+#: mod_offline:692
+msgid "To"
+msgstr "Πρώς"
+
+#: mod_register:215
+msgid "To register, visit ~s"
+msgstr ""
+
+#: mod_configure:709
+msgid "To ~s"
+msgstr "Πρώς ~s"
+
+#: ejabberd_oauth:439
+msgid "Token TTL"
+msgstr ""
+
+#: xmpp_stream_in:463
+msgid "Too long value of 'xml:lang' attribute"
+msgstr ""
+
+#: mod_muc_room:2541 mod_muc_room:3081
+msgid "Too many <item/> elements"
+msgstr ""
+
+#: mod_privacy:164
+msgid "Too many <list/> elements"
+msgstr ""
+
+#: mod_muc_room:1924 mod_register:240
+msgid "Too many CAPTCHA requests"
+msgstr "Πάρα πολλά αιτήματα CAPTCHA"
+
+#: mod_proxy65_service:223
+msgid "Too many active bytestreams"
+msgstr ""
+
+#: mod_stream_mgmt:205
+msgid "Too many unacked stanzas"
+msgstr ""
+
+#: mod_muc_room:1802
+#, fuzzy
+msgid "Too many users in this conference"
+msgstr "Τα αιτήματα φωνής είναι απενεργοποιημένα, σε αυτό το συνέδριο"
+
+#: mod_register:355
+msgid "Too many users registered"
+msgstr ""
+
+#: mod_muc_admin:368
+#, fuzzy
+msgid "Total rooms"
+msgstr "Αίθουσες σύνεδριασης"
+
+#: mod_muc_room:173
+msgid "Traffic rate limit is exceeded"
+msgstr "Υπέρφορτωση"
+
+#: ejabberd_web_admin:2219
+msgid "Transactions Aborted:"
+msgstr "Αποτυχημένες συναλλαγές:"
+
+#: ejabberd_web_admin:2215
+msgid "Transactions Committed:"
+msgstr "Παραδοθείς συναλλαγές:"
+
+#: ejabberd_web_admin:2227
+msgid "Transactions Logged:"
+msgstr "Καταγραμμένες συναλλαγές:"
+
+#: ejabberd_web_admin:2223
+msgid "Transactions Restarted:"
+msgstr "Επανειλημμένες συναλλαγές:"
+
+#: mod_muc_log:464
+msgid "Tuesday"
+msgstr "Τρίτη"
+
+#: mod_muc_room:1933 mod_register:244
+msgid "Unable to generate a CAPTCHA"
+msgstr "Αδήνατο να δημιουργηθεί CAPTCHA"
+
+#: ejabberd_service:120
+msgid "Unable to register route on existing local domain"
+msgstr ""
+
+#: ejabberd_web_admin:209 ejabberd_web_admin:221 ejabberd_web_admin:241
+#: ejabberd_web_admin:253
+msgid "Unauthorized"
+msgstr "Χορίς Εξουσιοδότηση"
+
+#: mod_announce:485 mod_configure:830 mod_configure:1758
+msgid "Unexpected action"
+msgstr ""
+
+#: mod_register_web:488
 msgid "Unregister"
 msgstr "Καταργήση εγγραφής"
 
-#: mod_roster.erl:1436
-msgid "Subscription"
-msgstr "Συνδρομή"
+#: mod_register_web:197 mod_register_web:460 mod_register_web:468
+msgid "Unregister a Jabber account"
+msgstr "Καταργήστε την εγγραφή ενός λογαριασμού Jabber"
 
-#: mod_roster.erl:1437
-msgid "Pending"
-msgstr "Εκκρεμεί"
+#: mod_mam:526
+msgid "Unsupported <index/> element"
+msgstr ""
 
-#: mod_roster.erl:1438
-msgid "Groups"
-msgstr "Ομάδες"
+#: mod_mix:119
+msgid "Unsupported MIX query"
+msgstr ""
 
-#: mod_roster.erl:1476
+#: ejabberd_web_admin:1872 ejabberd_web_admin:2285
+msgid "Update"
+msgstr "Ενημέρωση"
+
+#: mod_announce:625
+msgid "Update message of the day (don't send)"
+msgstr "Ενημέρωση μηνύματως ημέρας (χωρίς άμεση αποστολή)"
+
+#: mod_announce:627
+msgid "Update message of the day on all hosts (don't send)"
+msgstr ""
+"Ενημέρωση μηνύματως ημέρας σε όλους τους κεντρικούς υπολογιστές (χωρίς άμεση "
+"αποστολή)"
+
+#: ejabberd_web_admin:2278
+msgid "Update plan"
+msgstr "Σχέδιο ενημέρωσης"
+
+#: ejabberd_web_admin:2280
+msgid "Update script"
+msgstr "Προγράμα ενημέρωσης"
+
+#: ejabberd_web_admin:2267
+#, fuzzy
+msgid "Update ~p"
+msgstr "Ενημέρωση"
+
+#: ejabberd_web_admin:2203
+msgid "Uptime:"
+msgstr "Uptime:"
+
+#: xmpp_stream_out:533
+#, fuzzy
+msgid "Use of STARTTLS forbidden"
+msgstr "Απαιτείται χρήση STARTTLS "
+
+#: xmpp_stream_in:573 xmpp_stream_out:527 xmpp_stream_out:603
+msgid "Use of STARTTLS required"
+msgstr "Απαιτείται χρήση STARTTLS "
+
+#: ejabberd_web_admin:1430 ejabberd_web_admin:1486 mod_register:225
+#: mod_vcard_ldap:328 mod_vcard_mnesia:99 mod_vcard_sql:154
+msgid "User"
+msgstr "Χρήστης"
+
+#: ejabberd_oauth:428
+msgid "User (jid)"
+msgstr ""
+
+#: mod_configure:308 mod_configure:505
+msgid "User Management"
+msgstr "Διαχείριση χρηστών"
+
+#: mod_register:345
+msgid "User already exists"
+msgstr ""
+
+#: mod_echo:138
+msgid "User part of JID in 'from' is empty"
+msgstr ""
+
+#: ejabberd_sm:193 ejabberd_sm:662 ejabberd_sm:687 mod_sic:106
+#, fuzzy
+msgid "User session not found"
+msgstr "Κόμβος δεν βρέθηκε"
+
+#: mod_stream_mgmt:561 mod_stream_mgmt:583
+msgid "User session terminated"
+msgstr ""
+
+#: ejabberd_web_admin:1700
+#, fuzzy
+msgid "User ~s"
+msgstr "Χρήστης"
+
+#: mod_register_web:230 mod_register_web:366 mod_register_web:476
+msgid "Username:"
+msgstr "Όνομα χρήστη"
+
+#: ejabberd_web_admin:959 ejabberd_web_admin:967
+msgid "Users"
+msgstr "Χρήστες"
+
+#: ejabberd_web_admin:990
+msgid "Users Last Activity"
+msgstr "Τελευταία Δραστηριότητα Χρήστη"
+
+#: mod_register:375
+msgid "Users are not allowed to register accounts so quickly"
+msgstr "Οι χρήστες δεν επιτρέπεται να εγγραφούν λογαριασμούς τόσο γρήγορα"
+
+#: mod_roster:954
 msgid "Validate"
 msgstr "Επαληθεύστε"
 
-#: mod_roster.erl:1485
-msgid "Remove"
-msgstr "Αφαίρεστε"
-
-#: mod_roster.erl:1490
-msgid "Roster of "
-msgstr "Καταλόγος Επαφών τού"
-
-#: mod_roster.erl:1504
-msgid "Add Jabber ID"
-msgstr "Προσθήκη Jabber Ταυτότητας"
-
-#: mod_roster.erl:1622
-msgid "Roster"
-msgstr "Καταλόγος Επαφών"
-
-#: mod_shared_roster.erl:1120 mod_shared_roster.erl:1162
-#: mod_shared_roster.erl:1256
-msgid "Shared Roster Groups"
-msgstr "Κοινές Ομάδες Καταλόγων Επαφών"
-
-#: mod_shared_roster.erl:1232
-msgid "Name:"
-msgstr "Όνομα:"
-
-#: mod_shared_roster.erl:1236
-msgid "Description:"
-msgstr "Περιγραφή:"
-
-#: mod_shared_roster.erl:1243
-msgid "Members:"
-msgstr "Μέλη:"
-
-#: mod_shared_roster.erl:1250
-msgid "Displayed Groups:"
-msgstr "Εμφανίσμενες Ομάδες:"
-
-#: mod_shared_roster.erl:1259
-msgid "Group "
-msgstr "Ομάδα"
-
-#: mod_vcard.erl:168 mod_vcard_ldap.erl:225
-msgid "Erlang Jabber Server"
-msgstr "Erlang Jabber Διακομιστής"
-
-#: mod_vcard.erl:490 mod_vcard.erl:622
-msgid "Birthday"
-msgstr "Γενέθλια"
-
-#: mod_vcard.erl:490 mod_vcard.erl:624
-msgid "City"
-msgstr "Πόλη"
-
-#: mod_vcard.erl:490 mod_vcard.erl:623
-msgid "Country"
-msgstr "Χώρα"
-
-#: mod_vcard.erl:490 mod_vcard.erl:625
-msgid "Email"
-msgstr "Email"
-
-#: mod_vcard.erl:490 mod_vcard.erl:619
-msgid "Family Name"
-msgstr "Επώνυμο"
-
-#: mod_vcard.erl:490
-msgid ""
-"Fill in the form to search for any matching Jabber User (Add * to the end of "
-"field to match substring)"
+#: mod_carboncopy:144 mod_irc:345 mod_muc_room:3662 mod_muc_room:3802
+#: mod_pubsub:895 mod_push:249
+msgid "Value 'get' of 'type' attribute is not allowed"
 msgstr ""
-"Συμπληρώστε τη φόρμα για να αναζητήσετε οποιαδήποτε Jabber χρήστη που "
-"ταιριάζει (Προσθέστε * στο τέλος τού πεδίου για να ταιριάξει σε μεγαλύτερες "
-"γραμματοσηρές)"
 
-#: mod_vcard.erl:490 mod_vcard.erl:615
-msgid "Full Name"
-msgstr "Ονοματεπώνυμο"
+#: mod_disco:159 mod_disco:175 mod_disco:279 mod_disco:346 mod_irc:270
+#: mod_irc:285 mod_irc:339 mod_last:118 mod_last:140 mod_muc:479 mod_muc:504
+#: mod_muc:539 mod_muc:561 mod_muc:571 mod_muc_room:3597 mod_muc_room:3641
+#: mod_proxy65_service:142 mod_proxy65_service:160 mod_proxy65_service:167
+#: mod_pubsub:821 mod_pubsub:839 mod_pubsub:877 mod_sic:81 mod_sic:93
+#: mod_stats:55 mod_time:62 mod_vcard:198 mod_vcard:236 mod_version:62
+msgid "Value 'set' of 'type' attribute is not allowed"
+msgstr ""
 
-#: mod_vcard.erl:490 mod_vcard.erl:617
-msgid "Middle Name"
-msgstr "Πατρώνυμο"
+#: pubsub_subscription:237 pubsub_subscription_sql:202
+msgid "Value of '~s' should be boolean"
+msgstr ""
 
-#: mod_vcard.erl:490 mod_vcard.erl:626
-msgid "Organization Name"
-msgstr "Όνομα Οργανισμού"
+#: pubsub_subscription:215 pubsub_subscription_sql:180
+msgid "Value of '~s' should be datetime string"
+msgstr ""
 
-#: mod_vcard.erl:490 mod_vcard.erl:628
-msgid "Organization Unit"
-msgstr "Μονάδα Οργανισμού"
+#: pubsub_subscription:209 pubsub_subscription:227 pubsub_subscription_sql:174
+#: pubsub_subscription_sql:192
+msgid "Value of '~s' should be integer"
+msgstr ""
 
-#: mod_vcard.erl:490 mod_vcard_ldap.erl:502
-msgid "Search users in "
-msgstr "Αναζήτηση χρηστών στο"
+#: ejabberd_web_admin:950
+msgid "Virtual Hosts"
+msgstr "εικονικοί κεντρικοί υπολογιστές"
 
-#: mod_vcard.erl:490 mod_vcard_ldap.erl:502
+#: mod_muc_room:992
+msgid "Visitors are not allowed to change their nicknames in this room"
+msgstr ""
+"Οι επισκέπτες δεν επιτρέπεται να αλλάξουν τα ψευδώνυμα τους σε αυτή την "
+"αίθουσα"
+
+#: mod_muc_room:785
+msgid "Visitors are not allowed to send messages to all occupants"
+msgstr ""
+"Οι επισκέπτες δεν επιτρέπεται να στείλουν μηνύματα σε όλους τους "
+"συμμετέχωντες"
+
+#: mod_muc_room:3879
+msgid "Voice request"
+msgstr "Αίτημα φωνής"
+
+#: mod_muc_room:885
+msgid "Voice requests are disabled in this conference"
+msgstr "Τα αιτήματα φωνής είναι απενεργοποιημένα, σε αυτό το συνέδριο"
+
+#: mod_muc_log:465
+msgid "Wednesday"
+msgstr "Τετάρτη"
+
+#: mod_register_web:255
+msgid "You can later change your password using a Jabber client."
+msgstr ""
+"Μπορείτε αργότερα να αλλάξετε τον κωδικό πρόσβασής σας χρησιμοποιώντας έναν "
+"πελάτη Jabber."
+
+#: mod_muc_room:1830
+msgid "You have been banned from this room"
+msgstr "Σας έχει απαγορευθεί η είσοδος σε αυτή την αίθουσα"
+
+#: mod_muc_room:1811
+msgid "You have joined too many conferences"
+msgstr ""
+
+#: mod_muc:777
+msgid "You must fill in field \"Nickname\" in the form"
+msgstr "Θα πρέπει να συμπληρώσετε το πεδίο \"Ψευδώνυμο\" στη φόρμα"
+
+#: mod_register:222
+msgid "You need a client that supports x:data and CAPTCHA to register"
+msgstr "Χρειάζεστε ένα x:data και CAPTCHA ικανό πελάτη για εγγραφή"
+
+#: mod_muc:731
+msgid "You need a client that supports x:data to register the nickname"
+msgstr "Χρειάζεστε ένα x:data ικανό πελάτη για εγγραφή με ψευδώνυμο"
+
+#: mod_irc:547
+msgid "You need an x:data capable client to configure mod_irc settings"
+msgstr "Χρειάζεστε ένα x:data ικανό πελάτη για να ρυθμίσετε το mod_irc"
+
+#: mod_vcard:443
 msgid "You need an x:data capable client to search"
 msgstr "Χρειάζεστε ένα  x:data ικανό πελάτη για αναζήτηση"
 
-#: mod_vcard.erl:519 mod_vcard_ldap.erl:531
-msgid "vCard User Search"
-msgstr "vCard Αναζήτηση χρηστών"
+#: mod_pubsub:1504
+#, fuzzy
+msgid "You're not allowed to create nodes"
+msgstr "Δεν επιτρέπεται η αποστολή προσωπικών μηνυμάτων"
 
-#: mod_vcard.erl:580 mod_vcard_ldap.erl:586
+#: mod_register_web:111
+msgid "Your Jabber account was successfully created."
+msgstr "Ο Jabber λογαριασμός σας δημιουργήθηκε με επιτυχία."
+
+#: mod_register_web:125
+msgid "Your Jabber account was successfully deleted."
+msgstr "Ο Jabber λογαριασμός σας διαγράφηκε με επιτυχία."
+
+#: ejabberd_c2s:651 ejabberd_c2s:811
+msgid "Your active privacy list has denied the routing of this stanza."
+msgstr ""
+"Ο ενεργός κατάλογος απορρήτου, έχει αρνηθεί τη δρομολόγηση αυτής της στροφής "
+"(stanza)."
+
+#: mod_offline:576
+msgid ""
+"Your contact offline message queue is full. The message has been discarded."
+msgstr ""
+"Η μνήμη χωρίς σύνδεση μήνυματών είναι πλήρης. Το μήνυμα έχει απορριφθεί."
+
+#: ejabberd_captcha:103
+msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
+msgstr ""
+"Τα μηνύματά σας πρως ~s είναι αποκλεισμένα. Για αποδεσμεύση, επισκεφθείτε ~s"
+
+#: mod_irc:455
+msgid "ejabberd IRC module"
+msgstr "ejabberd IRC module"
+
+#: mod_muc:473
+msgid "ejabberd MUC module"
+msgstr "ejabberd MUC module"
+
+#: mod_multicast:272
+msgid "ejabberd Multicast service"
+msgstr ""
+
+#: mod_pubsub:1067
+msgid "ejabberd Publish-Subscribe module"
+msgstr "ejabberd module Δημοσίευσης-Εγγραφής"
+
+#: mod_proxy65_service:170
+msgid "ejabberd SOCKS5 Bytestreams module"
+msgstr "ejabberd SOCKS5 Bytestreams module"
+
+#: ejabberd_web_admin:311 ejabberd_web_admin:343
+msgid "ejabberd Web Admin"
+msgstr "ejabberd Web Admin"
+
+#: mod_vcard:239
 msgid "ejabberd vCard module"
 msgstr "ejabberd vCard module"
 
-#: mod_vcard.erl:609 mod_vcard_ldap.erl:602
-msgid "Search Results for "
-msgstr "Αποτελέσματα αναζήτησης για "
+#: mod_muc_log:380 mod_muc_log:383
+msgid "has been banned"
+msgstr "έχει απαγορευθεί"
 
-#: mod_vcard_ldap.erl:502
-msgid "Fill in fields to search for any matching Jabber User"
-msgstr ""
-"Συμπληρώστε τα πεδία για να αναζητήσετε οποιαδήποτε ταιριάζοντα Jabber χρήστη"
+#: ejabberd_sm:407 mod_configure:1559 mod_muc_log:387 mod_muc_log:390
+msgid "has been kicked"
+msgstr "αποβλήθηκε "
+
+#: mod_muc_log:405
+msgid "has been kicked because of a system shutdown"
+msgstr "αποβλήθηκε λόγω τερματισμού συστήματος"
+
+#: mod_muc_log:395
+msgid "has been kicked because of an affiliation change"
+msgstr "Έχει αποβληθεί λόγω αλλαγής υπαγωγής"
+
+#: mod_muc_log:400
+msgid "has been kicked because the room has been changed to members-only"
+msgstr "αποβλήθηκε επειδή η αίθουσα αλλάξε γιά μέλη μόνο"
+
+#: mod_muc_log:410
+msgid "is now known as"
+msgstr "είναι τώρα γνωστή ως"
+
+#: mod_muc_log:370
+msgid "joins the room"
+msgstr "συνδέετε στην αίθουσα"
+
+#: mod_muc_log:373 mod_muc_log:376
+msgid "leaves the room"
+msgstr "εγκαταλείπει την αίθουσα"
+
+#: mod_muc_room:3856
+msgid "private, "
+msgstr "ιδιωτικό,"
+
+#: mod_muc_room:3955
+msgid "the password is"
+msgstr "ο κωδικός πρόσβασης είναι"
+
+#: mod_vcard:292
+msgid "vCard User Search"
+msgstr "vCard Αναζήτηση χρηστών"
+
+#: ejabberd_web_admin:932
+msgid "~s access rule configuration"
+msgstr "~s διαμόρφωση κανόνα πρόσβασης"
+
+#: mod_muc_room:3948
+msgid "~s invites you to the room ~s"
+msgstr "~s σας προσκαλεί στην αίθουσα ~s"
+
+#: mod_offline:677
+msgid "~s's Offline Messages Queue"
+msgstr "Η Σειρά Χωρίς Σύνδεση Μηνύματων τού ~s"
+
+#~ msgid "No resource provided"
+#~ msgstr "Δεν προμηθεύτικε πόρος"
+
+#, fuzzy
+#~ msgid "Server"
+#~ msgstr "Διακομιστής:"
+
+#~ msgid "Jabber ID ~s is invalid"
+#~ msgstr "Η Jabber Ταυτότητα ~s είναι άκυρη"
+
+#~ msgid "Invalid affiliation: ~s"
+#~ msgstr "Άκυρη υπαγωγή: ~s"
+
+#~ msgid "Invalid role: ~s"
+#~ msgstr "Άκυρος ρόλο: ~s"
+
+#~ msgid "No limit"
+#~ msgstr "Χωρίς όριο"
+
+#~ msgid "Present real Jabber IDs to"
+#~ msgstr "Παρούσιαση πραγματικών ταυτοτήτων Jabber σε"
+
+#~ msgid "moderators only"
+#~ msgstr "συντονιστές μόνο"
+
+#~ msgid "anyone"
+#~ msgstr "οποιοσδήποτε"
+
+#, fuzzy
+#~ msgid "Moderator"
+#~ msgstr "συντονιστές μόνο"
+
+#~ msgid "nobody"
+#~ msgstr "κανείς"
+
+#~ msgid "Allow visitors to send voice requests"
+#~ msgstr "Επιτρέψτε στους επισκέπτες να στέλνουν αιτήματα φωνής"
+
+#~ msgid "Minimum interval between voice requests (in seconds)"
+#~ msgstr "Ελάχιστο χρονικό διάστημα μεταξύ αιτημάτων φωνής (σε δευτερόλεπτα)"
+
+#~ msgid "Exclude Jabber IDs from CAPTCHA challenge"
+#~ msgstr "Εξαίρεση από τις ταυτότητες Jabber, ή CAPTCHA πρόκληση"
+
+#~ msgid "You need an x:data capable client to configure room"
+#~ msgstr "Χρειάζεστε ένα x:data ικανό πελάτη για να ρυθμίσετε την αίθουσα "
+
+#~ msgid "Number of occupants"
+#~ msgstr "Αριθμός συμετεχόντων"
+
+#~ msgid "User JID"
+#~ msgstr "JID Χρήστη"
+
+#~ msgid "Grant voice to this person?"
+#~ msgstr "Παραχώρηση φωνής σε αυτό το άτομο;"
+
+#~ msgid "Node ID"
+#~ msgstr "Ταυτότητα Κόμβου"
+
+#~ msgid "Subscriber Address"
+#~ msgstr "Διεύθυνση Συνδρομητή"
+
+#~ msgid "Allow this Jabber ID to subscribe to this pubsub node?"
+#~ msgstr ""
+#~ "Επιτρέπετε σε αυτή την Jabber Ταυτότητα να εγγραφεί σε αυτό τον κόμβο "
+#~ "Δημοσίευσης-Εγγραφής;"
+
+#~ msgid "Deliver payloads with event notifications"
+#~ msgstr "Κοινοποιήσεις με την παράδοση φορτίων"
+
+#~ msgid "Deliver event notifications"
+#~ msgstr "Κοινοποιήσεις παράδοσης"
+
+#~ msgid "Notify subscribers when the node configuration changes"
+#~ msgstr "Ειδοποιηση στους συνδρομητές όταν αλλάζει η διαμόρφωση κόμβου"
+
+#~ msgid "Notify subscribers when the node is deleted"
+#~ msgstr "Ειδοποιηση στους συνδρομητές όταν ο κόμβος διαγράφεται"
+
+#~ msgid "Notify subscribers when items are removed from the node"
+#~ msgstr ""
+#~ "Ειδοποιηση στους συνδρομητές  όταν αφαίρούντε στοιχεία από τον κόμβο"
+
+#~ msgid "Persist items to storage"
+#~ msgstr "Μονιμη αποθήκευση στοιχείων"
+
+#~ msgid "A friendly name for the node"
+#~ msgstr "Ένα φιλικό όνομα για τον κόμβο"
+
+#~ msgid "Max # of items to persist"
+#~ msgstr "Μέγιστος αριθμός μόνιμων στοιχείων"
+
+#~ msgid "Whether to allow subscriptions"
+#~ msgstr "Εάν επιτρέποντε συνδρομές"
+
+#~ msgid "Specify the access model"
+#~ msgstr "Καθορίστε το μοντέλο πρόσβασης"
+
+#~ msgid "Roster groups allowed to subscribe"
+#~ msgstr "Ομάδες Καταλόγου Επαφών μπορούν να εγγραφούν"
+
+#~ msgid "Specify the publisher model"
+#~ msgstr "Καθορίστε το μοντέλο εκδότη"
+
+#~ msgid "Purge all items when the relevant publisher goes offline"
+#~ msgstr "Διαγραφή όλων των στοιχείων όταν ο σχετικός εκδότης αποσυνδέεται"
+
+#~ msgid "Specify the event message type"
+#~ msgstr "Καθορίστε τον τύπο μηνύματος συμβάντος"
+
+#~ msgid "Max payload size in bytes"
+#~ msgstr "Μέγιστο μέγεθος φορτίου σε bytes"
+
+#~ msgid "When to send the last published item"
+#~ msgstr "Πότε να αποσταλθεί το τελευταίο στοιχείο που δημοσιεύθηκε"
+
+#~ msgid "Only deliver notifications to available users"
+#~ msgstr "Παράδωση κοινοποιήσεων μόνο σε διαθέσιμους χρήστες"
+
+#~ msgid "The collections with which a node is affiliated"
+#~ msgstr "Οι συλλογές με την οποία είναι ένας κόμβος συνδέεται"
+
+#~ msgid "Fill in fields to search for any matching Jabber User"
+#~ msgstr ""
+#~ "Συμπληρώστε τα πεδία για να αναζητήσετε οποιαδήποτε ταιριάζοντα Jabber "
+#~ "χρήστη"
 
 #~ msgid "Outgoing s2s Servers:"
 #~ msgstr "Εξερχόμενοι S2S διακομιστές:"
 
 #~ msgid "Delete"
 #~ msgstr "Διαγραφή"
-
-#~ msgid "This room is not anonymous"
-#~ msgstr "Η αίθουσα αυτή δεν είναι ανώνυμη"
 
 #~ msgid ""
 #~ "This participant is kicked from the room because he sent an error message"
@@ -1961,7 +2408,3 @@ msgstr ""
 #~ msgstr ""
 #~ "Αυτός ο συμμετέχων αποβλήθηκε από την αίθουσα, επειδή έστειλε σφάλμα "
 #~ "παρουσίας "
-
-#, fuzzy
-#~ msgid "Captcha test failed"
-#~ msgstr "Το CAPTCHA είναι έγκυρο."

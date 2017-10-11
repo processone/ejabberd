@@ -66,6 +66,8 @@
 	{-1, 403, [], <<"Forbidden">>}).
 -define(HTTP_ERR_REQUEST_AUTH,
 	{-1, 401, ?REQUEST_AUTH_HEADERS, <<"Unauthorized">>}).
+-define(HTTP_ERR_HOST_UNKNOWN,
+	{-1, 410, [], <<"Host unknown">>}).
 
 -define(DEFAULT_CONTENT_TYPE,
 	<<"application/octet-stream">>).
@@ -178,10 +180,15 @@ check_docroot_defined(DocRoot, Host) ->
     end.
 
 check_docroot_exists(DocRoot) ->
-    case file:read_file_info(DocRoot) of
-      {error, Reason} ->
-	  throw({error_access_docroot, DocRoot, Reason});
-      {ok, FI} -> FI
+    case filelib:ensure_dir(filename:join(DocRoot, "foo")) of
+	ok ->
+	    case file:read_file_info(DocRoot) of
+		{error, Reason} ->
+		    throw({error_access_docroot, DocRoot, Reason});
+		{ok, FI} -> FI
+	    end;
+	{error, Reason} ->
+	    throw({error_access_docroot, DocRoot, Reason})
     end.
 
 check_docroot_is_dir(DRInfo, DocRoot) ->
@@ -297,17 +304,21 @@ code_change(_OldVsn, State, _Extra) ->
 %% Returns the page to be sent back to the client and/or HTTP status code.
 process(LocalPath, #request{host = Host, auth = Auth, headers = RHeaders} = Request) ->
     ?DEBUG("Requested ~p", [LocalPath]),
-    try gen_server:call(get_proc_name(Host), {serve, LocalPath, Auth, RHeaders}) of
-	{FileSize, Code, Headers, Contents} ->
-	    add_to_log(FileSize, Code, Request),
-	    {Code, Headers, Contents}
-    catch
-	exit:{noproc, _} ->
-	    ?ERROR_MSG("Received an HTTP request with Host ~p, but couldn't find the related "
-		       "ejabberd virtual host", [Request#request.host]),
-	    ejabberd_web:error(not_found)
+    try
+	VHost = ejabberd_router:host_of_route(Host),
+	{FileSize, Code, Headers, Contents} =
+	    gen_server:call(get_proc_name(VHost),
+			    {serve, LocalPath, Auth, RHeaders}),
+	add_to_log(FileSize, Code, Request#request{host = VHost}),
+	{Code, Headers, Contents}
+    catch _:{Why, _} when Why == noproc; Why == invalid_domain; Why == unregistered_route ->
+	    ?DEBUG("Received an HTTP request with Host: ~s, "
+		   "but couldn't find the related "
+		   "ejabberd virtual host", [Host]),
+	    {FileSize1, Code1, Headers1, Contents1} = ?HTTP_ERR_HOST_UNKNOWN,
+	    add_to_log(FileSize1, Code1, Request#request{host = ?MYNAME}),
+	    {Code1, Headers1, Contents1}
     end.
-
 
 serve(LocalPath, Auth, DocRoot, DirectoryIndices, CustomHeaders, DefaultContentType,
     ContentTypes, UserAccess, IfModifiedSince) ->
@@ -424,9 +435,8 @@ add_to_log(File, FileSize, Code, Request) ->
     {{Year, Month, Day}, {Hour, Minute, Second}} = calendar:local_time(),
     IP = ip_to_string(element(1, Request#request.ip)),
     Path = join(Request#request.path, "/"),
-    Query = case join(lists:map(fun(E) -> lists:concat([element(1, E), "=", binary_to_list(element(2, E))]) end,
-				Request#request.q), "&") of
-		[] ->
+    Query = case stringify_query(Request#request.q) of
+		<<"">> ->
 		    "";
 		String ->
 		    [$? | String]
@@ -444,6 +454,15 @@ add_to_log(File, FileSize, Code, Request) ->
     io:format(File, "~s - - [~p/~p/~p:~p:~p:~p] \"~s /~s~s\" ~p ~p ~p ~p~n",
 	      [IP, Day, Month, Year, Hour, Minute, Second, Request#request.method, Path, Query, Code,
                FileSize, Referer, UserAgent]).
+
+stringify_query(Q) ->
+    stringify_query(Q, []).
+stringify_query([], Res) ->
+    join(lists:reverse(Res), "&");
+stringify_query([{nokey, _B} | Q], Res) ->
+    stringify_query(Q, Res);
+stringify_query([{A, B} | Q], Res) ->
+    stringify_query(Q, [join([A,B], "=") | Res]).
 
 find_header(Header, Headers, Default) ->
     case lists:keysearch(Header, 1, Headers) of

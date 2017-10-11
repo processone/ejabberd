@@ -111,8 +111,10 @@ hosts:
 ##   'CERTFILE': "/path/to/xmpp.pem"
 ##   'CIPHERS': "ECDH:DH:!3DES:!aNULL:!eNULL:!MEDIUM@STRENGTH"
 ##   'TLSOPTS':
+##     - "no_sslv2"
 ##     - "no_sslv3"
 ##     - "no_tlsv1"
+##     - "no_tlsv1_1"
 ##     - "cipher_server_preference"
 ##     - "no_compression"
 ##   'DHFILE': "/path/to/dhparams.pem" # generated with: openssl dhparam -out dhparams.pem 2048
@@ -766,6 +768,11 @@ modules:
   mod_time: {}
   mod_vcard:
     search: false
+  mod_vcard_xupdate: {}
+  ## Convert all avatars posted by Android clients from WebP to JPEG
+  mod_avatar:
+    convert:
+      webp: jpeg
   mod_version: {}
   mod_stream_mgmt: {}
   ##   Non-SASL Authentication (XEP-0078) is now disabled by default
