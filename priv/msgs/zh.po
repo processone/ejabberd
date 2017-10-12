@@ -1,13 +1,18 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
 "Last-Translator: Shelley Shyan - shelleyshyan AT gmail DOT com\n"
+"Language-Team: \n"
+"Language: zh\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Language: Chinese (中文)\n"
 "X-Additional-Translator: Zhan Caibao - zhancaibao AT gmail DOT com\n"
 "X-Additional-Translator: Mike Wang\n"
+"X-Generator: Poedit 1.8.7.1\n"
 
 #: mod_muc_log:413 mod_muc_log:752
 msgid " has set the subject to: "
@@ -319,7 +324,6 @@ msgstr "位于~p的数据库表"
 #: mod_pubsub:3598 mod_pubsub:3604 mod_pubsub:3607 mod_vcard:226
 #: node_flat_sql:801 nodetree_tree_sql:128 nodetree_tree_sql:142
 #: nodetree_tree_sql:257
-msgid "Database failure"
 msgid "Database failure"
 msgstr "数据库失败"
 
