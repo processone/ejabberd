@@ -615,9 +615,8 @@ msgid "IRC channel (don't put the first #)"
 msgstr "IRC频道 (不要输入第一个#号)"
 
 #: mod_irc:417
-#, fuzzy
 msgid "IRC connection not found"
-msgstr "没有找到节点"
+msgstr "没有找到 IRC 连接"
 
 #: mod_irc:673
 msgid "IRC server"
@@ -908,7 +907,7 @@ msgstr "消息主体"
 
 #: mod_privilege:291
 msgid "Message not found in forwarded payload"
-msgstr ""
+msgstr "转发的有效载荷中找不到消息"
 
 #: mod_vcard_ldap:331 mod_vcard_ldap:344 mod_vcard_mnesia:102
 #: mod_vcard_mnesia:116 mod_vcard_sql:157 mod_vcard_sql:171
@@ -1352,7 +1351,7 @@ msgstr "~b的端口"
 
 #: mod_roster:173
 msgid "Possessing 'ask' attribute is not allowed by RFC6121"
-msgstr ""
+msgstr "按照 RFC6121， 不允许有 'ask' 属性"
 
 #: ejabberd_web_admin:2464
 msgid "Protocol"
