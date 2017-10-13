@@ -1260,8 +1260,16 @@ expulse_participant(Packet, From, StateData, Reason1) ->
     LJID = jid:tolower(From),
     {ok, #user{nick = Nick}} = (?DICT):find(LJID, StateData#state.users),
     case (?DICT):find(Nick, StateData#state.nicks) of
-	{ok, [_, _ | _]} -> ok;
-	_ -> send_new_presence(From, NewState, StateData)
+	{ok, [_, _ | _]} ->
+	    Aff = get_affiliation(From, StateData),
+	    Item = #muc_item{affiliation = Aff, role = none, jid = From},
+	    Pres = xmpp:set_subtag(
+		     Packet, #muc_user{items = [Item],
+				       status_codes = [110]}),
+	    send_wrapped(jid:replace_resource(StateData#state.jid, Nick),
+			 From, Pres, ?NS_MUCSUB_NODES_PRESENCE, StateData);
+	_ ->
+	    send_new_presence(From, NewState, StateData)
     end,
     remove_online_user(From, NewState).
 
