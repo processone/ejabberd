@@ -1241,7 +1241,7 @@ get_error_condition(undefined) ->
 
 -spec get_error_text(stanza_error()) -> binary().
 get_error_text(#stanza_error{text = Txt}) ->
-    xmpp:get_text([Txt]).
+    xmpp:get_text(Txt).
 
 -spec make_reason(stanza(), jid(), state(), binary()) -> binary().
 make_reason(Packet, From, StateData, Reason1) ->

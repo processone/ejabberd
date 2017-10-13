@@ -1117,17 +1117,17 @@ format_inet_error(Reason) ->
 	Txt -> Txt
     end.
 
--spec format_stream_error(atom() | 'see-other-host'(), undefined | text()) -> string().
+-spec format_stream_error(atom() | 'see-other-host'(), [text()]) -> string().
 format_stream_error(Reason, Txt) ->
     Slogan = case Reason of
 		 undefined -> "no reason";
 		 #'see-other-host'{} -> "see-other-host";
 		 _ -> atom_to_list(Reason)
 	     end,
-    case Txt of
-	undefined -> Slogan;
-	#text{data = <<"">>} -> Slogan;
-	#text{data = Data} ->
+    case xmpp:get_text(Txt) of
+	<<"">> ->
+	    Slogan;
+	Data ->
 	    binary_to_list(Data) ++ " (" ++ Slogan ++ ")"
     end.
 
