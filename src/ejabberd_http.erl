@@ -266,10 +266,11 @@ process_header(State, Data) ->
 			  add_header(Name, Value, State)};
       {ok, http_eoh}
 	  when State#state.request_host == undefined ->
-	  ?WARNING_MSG("An HTTP request without 'Host' HTTP "
-		       "header was received.",
-		       []),
-	  throw(http_request_no_host_header);
+	    ?DEBUG("An HTTP request without 'Host' HTTP "
+		   "header was received.", []),
+	    {State1, Out} = process_request(State),
+	    send_text(State1, Out),
+	    process_header(State, {ok, {http_error, <<>>}});
       {ok, http_eoh} ->
 	  ?DEBUG("(~w) http query: ~w ~p~n",
 		 [State#state.socket, State#state.request_method,
@@ -418,6 +419,10 @@ extract_path_query(#state{request_method = Method,
 extract_path_query(State) ->
     {State, false}.
 
+process_request(#state{request_host = undefined,
+		       custom_headers = CustomHeaders} = State) ->
+    {State, make_text_output(State, 400, CustomHeaders,
+			     <<"Missing Host header">>)};
 process_request(#state{request_method = Method,
 		       request_auth = Auth,
 		       request_lang = Lang,

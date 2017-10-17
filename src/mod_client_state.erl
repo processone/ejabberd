@@ -187,7 +187,7 @@ unregister_hooks(Host) ->
 %%--------------------------------------------------------------------
 -spec c2s_stream_started(c2s_state(), stream_start()) -> c2s_state().
 c2s_stream_started(State, _) ->
-    State#{csi_state => active, csi_queue => queue_new()}.
+    init_csi_state(State).
 
 -spec c2s_authenticated_packet(c2s_state(), xmpp_element()) -> c2s_state().
 c2s_authenticated_packet(C2SState, #csi{type = active}) ->
@@ -265,7 +265,10 @@ filter_other({Stanza, #{jid := JID} = C2SState} = Acc) when ?is_stanza(Stanza) -
 	    Acc;
 	_ ->
 	    ?DEBUG("Won't add stanza for ~s to CSI queue", [jid:encode(JID)]),
-	    From = xmpp:get_from(Stanza),
+	    From = case xmpp:get_from(Stanza) of
+		       undefined -> JID;
+		       F -> F
+		   end,
 	    C2SState1 = dequeue_sender(From, C2SState),
 	    {Stanza, C2SState1}
     end;
@@ -284,6 +287,10 @@ add_stream_feature(Features, Host) ->
 %%--------------------------------------------------------------------
 %% Internal functions.
 %%--------------------------------------------------------------------
+-spec init_csi_state(c2s_state()) -> c2s_state().
+init_csi_state(C2SState) ->
+    C2SState#{csi_state => active, csi_queue => queue_new()}.
+
 -spec enqueue_stanza(csi_type(), stanza(), c2s_state()) -> filter_acc().
 enqueue_stanza(Type, Stanza, #{csi_state := inactive,
 			       csi_queue := Q} = C2SState) ->
@@ -302,12 +309,18 @@ enqueue_stanza(_Type, Stanza, State) ->
 
 -spec dequeue_sender(jid(), c2s_state()) -> c2s_state().
 dequeue_sender(#jid{luser = U, lserver = S} = Sender,
-	       #{csi_queue := Q, jid := JID} = C2SState) ->
-    ?DEBUG("Flushing packets of ~s@~s from CSI queue of ~s",
-	   [U, S, jid:encode(JID)]),
-    {Elems, Q1} = queue_take(Sender, Q),
-    C2SState1 = flush_stanzas(C2SState, Elems),
-    C2SState1#{csi_queue => Q1}.
+	       #{jid := JID} = C2SState) ->
+    case maps:get(csi_queue, C2SState, undefined) of
+	undefined ->
+	    %% This may happen when the module is (re)loaded in runtime
+	    init_csi_state(C2SState);
+	Q ->
+	    ?DEBUG("Flushing packets of ~s@~s from CSI queue of ~s",
+		   [U, S, jid:encode(JID)]),
+	    {Elems, Q1} = queue_take(Sender, Q),
+	    C2SState1 = flush_stanzas(C2SState, Elems),
+	    C2SState1#{csi_queue => Q1}
+    end.
 
 -spec flush_queue(c2s_state()) -> c2s_state().
 flush_queue(#{csi_queue := Q, jid := JID} = C2SState) ->

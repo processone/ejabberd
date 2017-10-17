@@ -1,0 +1,279 @@
+html,body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #f9f9f9;
+  font-family: sans-serif;
+}
+body {
+  min-width: 990px;
+}
+a {
+  text-decoration: none;
+  color: #3eaffa;
+}
+a:hover,
+a:active {
+  text-decoration: underline;
+}
+#container {
+  position: relative;
+  padding: 0;
+  margin: 0 auto;
+  max-width: 1280px;
+  min-height: 100%;
+  height: 100%;
+  margin-bottom: -30px;
+  z-index: 1;
+}
+html>body #container {
+  height: auto;
+}
+#header h1 {
+  width: 100%;
+  height: 50px;
+  padding: 0;
+  margin: 0;
+  background-color: #49cbc1;
+}
+#header h1 a {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50px;
+  padding: 0;
+  margin: 0;
+  background: url('@BASE@logo.png') 10px center no-repeat transparent;
+  background-size: auto 25px;
+  display: block;
+  text-indent: -9999px;
+}
+#clearcopyright {
+  display: block;
+  width: 100%;
+  height: 30px;
+}
+#copyrightouter {
+  position: relative;
+  display: table;
+  width: 100%;
+  height: 30px;
+  z-index: 2;
+}
+#copyright {
+  display: table-cell;
+  vertical-align: bottom;
+  width: 100%;
+  height: 30px;
+}
+#copyright a {
+  font-weight: bold;
+  color: #fff;
+}
+#copyright p {
+  margin-left: 0;
+  margin-right: 0;
+  margin-top: 5px;
+  margin-bottom: 0;
+  padding-left: 0;
+  padding-right: 0;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  width: 100%;
+  color: #fff;
+  background-color: #30353E;
+  font-size: 0.75em;
+  text-align: center;
+}
+#navigation {
+  display: inline-block;
+  vertical-align: top;
+  width: 30%;
+}
+#navigation ul {
+  padding: 0;
+  margin: 0;
+  width: 90%;
+  background: #fff;
+}
+#navigation ul li {
+  list-style: none;
+  margin: 0;
+
+  border-bottom: 1px solid #f9f9f9;
+  text-align: left;
+}
+#navigation ul li a {
+  margin: 0;
+  display: inline-block;
+  padding: 10px;
+  color: #333;
+}
+ul li #navhead a, ul li #navheadsub a, ul li #navheadsubsub a {
+  font-size: 1.5em;
+  color: inherit;
+}
+#navitemsub {
+  border-left: 0.5em solid #424a55;
+}
+#navitemsubsub {
+  border-left: 2em solid #424a55;
+}
+#navheadsub,
+#navheadsubsub {
+  padding-left: 0.5em;
+}
+#navhead,
+#navheadsub,
+#navheadsubsub {
+  border-top: 3px solid #49cbc1;
+  background: #424a55;
+  color: #fff;
+}
+#lastactivity li {
+  padding: 2px;
+  margin-bottom: -1px;
+}
+thead tr td {
+  background: #3eaffa;
+  color: #fff;
+}
+thead tr td a {
+  color: #fff;
+}
+td.copy {
+  text-align: center;
+}
+tr.head {
+  color: #fff;
+  background-color: #3b547a;
+  text-align: center;
+}
+tr.oddraw {
+  color: #412c75;
+  background-color: #ccd4df;
+  text-align: center;
+}
+tr.evenraw {
+  color: #412c75;
+  background-color: #dbe0e8;
+  text-align: center;
+}
+td.leftheader {
+  color: #412c75;
+  background-color: #ccccc1;
+  padding-left: 5px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+td.leftcontent {
+  color: #000044;
+  background-color: #e6e6df;
+  padding-left: 5px;
+  padding-right: 5px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+td.rightcontent {
+  color: #000044;
+  text-align: justify;
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-bottom: 5px;
+}
+
+h1 {
+  color: #000044;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+h2 {
+  color: #000044;
+  text-align: center;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+h3 {
+  color: #000044;
+  text-align: left;
+  padding-top: 20px;
+  padding-bottom: 2px;
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+#content ul {
+  padding-left: 1.1em;
+  margin-top: 1em;
+}
+#content ul li {
+  list-style-type: disc;
+  padding: 5px;
+}
+#content ul.nolistyle>li {
+  list-style-type: none;
+}
+#content {
+  display: inline-block;
+  vertical-align: top;
+  padding-top: 25px;
+  width: 70%;
+}
+div.guidelink,
+p[dir=ltr] {
+  display: inline-block;
+  float: right;
+
+  margin: 0;
+  margin-right: 1em;
+}
+div.guidelink a,
+p[dir=ltr] a {
+  display: inline-block;
+  border-radius: 3px;
+  padding: 3px;
+
+  background: #3eaffa;
+
+  text-transform: uppercase;
+  font-size: 0.75em;
+  color: #fff;
+}
+table {
+  margin-top: 1em;
+}
+table tr td {
+  padding: 0.5em;
+}
+table tr:nth-child(odd) {
+  background: #fff;
+}
+table.withtextareas>tbody>tr>td {
+  vertical-align: top;
+}
+textarea {
+  margin-bottom: 1em;
+}
+input,
+select {
+  font-size: 1em;
+}
+p.result {
+  border: 1px;
+  border-style: dashed;
+  border-color: #FE8A02;
+  padding: 1em;
+  margin-right: 1em;
+  background: #FFE3C9;
+}
+*.alignright {
+  text-align: right;
+}

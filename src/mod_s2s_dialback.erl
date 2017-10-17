@@ -353,9 +353,9 @@ format_stanza_error(#stanza_error{reason = Reason, text = Txt}) ->
 		 #redirect{} -> <<"redirect">>;
 		 _ -> erlang:atom_to_binary(Reason, latin1)
 	     end,
-    case Txt of
-	undefined -> Slogan;
-	#text{data = <<"">>} -> Slogan;
-	#text{data = Data} ->
+    case xmpp:get_text(Txt) of
+	<<"">> ->
+	    Slogan;
+	Data ->
 	    <<Data/binary, " (", Slogan/binary, ")">>
     end.

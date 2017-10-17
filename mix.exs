@@ -132,7 +132,12 @@ defmodule Mix.Tasks.Compile.Asn1 do
     mappings     = Enum.zip(source_paths, dest_paths)
     options      = project[:asn1_options] || []
 
-    Erlang.compile(manifest(), mappings, :asn1, :erl, opts[:force], fn
+    force = case opts[:force] do
+        :true -> [force: true]
+        _ -> [force: false]
+    end
+
+    Erlang.compile(manifest(), mappings, :asn1, :erl, force, fn
       input, output ->
         options = options ++ [:noobj, outdir: Erlang.to_erl_file(Path.dirname(output))]
         case :asn1ct.compile(Erlang.to_erl_file(input), options) do
