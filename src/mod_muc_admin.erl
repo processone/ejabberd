@@ -535,7 +535,8 @@ make_rooms_page(Host, Lang, {Sort_direction, Sort_column}) ->
 	      ?T("Persistent"),
 	      ?T("Logging"),
 	      ?T("Just created"),
-	      ?T("Room title")],
+	      ?T("Room title"),
+	      ?T("Node")],
     {Titles_TR, _} =
 	lists:mapfoldl(
 	  fun(Title, Num_column) ->
@@ -581,6 +582,7 @@ build_info_room({Name, Host, _ServerHost, Pid}) ->
     S = get_room_state(Pid),
     Just_created = S#state.just_created,
     Num_participants = maps:size(S#state.users),
+    Node = node(Pid),
 
     History = (S#state.history)#lqueue.queue,
     Ts_last_message =
@@ -600,7 +602,8 @@ build_info_room({Name, Host, _ServerHost, Pid}) ->
      Persistent,
      Logging,
      Just_created,
-     Title}.
+     Title,
+     Node}.
 
 get_queue_last(Queue) ->
     List = p1_queue:to_list(Queue),
@@ -616,7 +619,8 @@ prepare_room_info(Room_info) ->
      Persistent,
      Logging,
      Just_created,
-     Title} = Room_info,
+     Title,
+     Node} = Room_info,
     [NameHost,
      integer_to_binary(Num_participants),
      Ts_last_message,
@@ -624,7 +628,8 @@ prepare_room_info(Room_info) ->
      misc:atom_to_binary(Persistent),
      misc:atom_to_binary(Logging),
      justcreated_to_binary(Just_created),
-     Title].
+     Title,
+     misc:atom_to_binary(Node)].
 
 justcreated_to_binary(J) when is_integer(J) ->
     JNow = misc:usec_to_now(J),
