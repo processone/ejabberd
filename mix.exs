@@ -35,7 +35,12 @@ defmodule Ejabberd.Mixfile do
   defp erlc_options do
     # Use our own includes + includes from all dependencies
     includes = ["include"] ++ deps_include(["fast_xml", "xmpp", "p1_utils"])
-    [:debug_info, {:d, :ELIXIR_ENABLED}] ++ Enum.map(includes, fn(path) -> {:i, path} end)
+    [:debug_info, {:d, :ELIXIR_ENABLED}] ++ cond_options() ++ Enum.map(includes, fn(path) -> {:i, path} end)
+  end
+
+  defp cond_options do
+    for {:true, option} <- [{config(:graphics), {:d, :GRAPHICS}}], do:
+    option
   end
 
   defp deps do
@@ -75,7 +80,8 @@ defmodule Ejabberd.Mixfile do
                          {config(:pam), {:epam, "~> 1.0"}},
                          {config(:tools), {:luerl, github: "rvirding/luerl", tag: "v0.2"}},
                          {config(:tools), {:meck, "~> 0.8.4"}},
-                         {config(:tools), {:moka, github: "processone/moka", tag: "1.0.5c"}}], do:
+                         {config(:tools), {:moka, github: "processone/moka", tag: "1.0.5c"}},
+                         {config(:graphics), {:eimp, github: "processone/eimp", tag: "1.0.1"}}], do:
       dep
   end
 
@@ -85,7 +91,8 @@ defmodule Ejabberd.Mixfile do
                          {config(:pgsql), :p1_pgsql},
                          {config(:sqlite), :sqlite3},
                          {config(:zlib), :ezlib},
-                         {config(:iconv), :iconv}], do:
+                         {config(:iconv), :iconv},
+                         {config(:graphics), :eimp}], do:
       app
   end
 
