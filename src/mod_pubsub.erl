@@ -3789,7 +3789,7 @@ purge_offline(Host, LJID, Node) ->
     Nidx = Node#pubsub_node.id,
     Type = Node#pubsub_node.type,
     Options = Node#pubsub_node.options,
-    case node_action(Host, Type, get_items, [Nidx, service_jid(Host), none]) of
+    case node_action(Host, Type, get_items, [Nidx, service_jid(Host), undefined]) of
 	{result, {[], _}} ->
 	    ok;
 	{result, {Items, _}} ->
