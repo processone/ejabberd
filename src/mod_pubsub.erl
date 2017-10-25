@@ -829,7 +829,8 @@ process_disco_info(#iq{from = From, to = To, lang = Lang, type = get,
 				   [ServerHost, ?MODULE, <<>>, <<>>]),
     case iq_disco_info(Host, Node, From, Lang) of
 	{result, IQRes} ->
-	    xmpp:make_iq_result(IQ, IQRes#disco_info{node = Node, xdata = Info});
+	    XData = IQRes#disco_info.xdata ++ Info,
+	    xmpp:make_iq_result(IQ, IQRes#disco_info{node = Node, xdata = XData});
 	{error, Error} ->
 	    xmpp:make_error(IQ, Error)
     end.
@@ -938,14 +939,25 @@ node_disco_info(Host, Node, From) ->
 			     {result, disco_info()} | {error, stanza_error()}.
 node_disco_info(Host, Node, _From, _Identity, _Features) ->
     Action =
-	fun(#pubsub_node{type = Type, options = Options}) ->
+	fun(#pubsub_node{id = Nidx, type = Type, options = Options}) ->
 		NodeType = case get_option(Options, node_type) of
 			       collection -> <<"collection">>;
 			       _ -> <<"leaf">>
 			   end,
+		Affs = case node_call(Host, Type, get_node_affiliations, [Nidx]) of
+			  {result, Result} -> Result;
+			  _ -> []
+		       end,
+		Meta = [{title, get_option(Options, title, <<>>)},
+			{description, get_option(Options, description, <<>>)},
+			{owner, [LJID || {LJID, Aff} <- Affs, Aff =:= owner]},
+			{publisher, [LJID || {LJID, Aff} <- Affs, Aff =:= publisher]},
+			{num_subscribers, length([LJID || {LJID, Aff} <- Affs, Aff =:= subscriber])}],
+		XData = #xdata{type = result,
+			       fields = pubsub_meta_data:encode(Meta)},
 		Is = [#identity{category = <<"pubsub">>, type = NodeType}],
 		Fs = [?NS_PUBSUB | [feature(F) || F <- plugin_features(Host, Type)]],
-		{result, #disco_info{identities = Is, features = Fs}}
+		{result, #disco_info{identities = Is, features = Fs, xdata = [XData]}}
 	end,
     case transaction(Host, Node, Action, sync_dirty) of
 	{result, {_, Result}} -> {result, Result};
