@@ -73,7 +73,12 @@ export(Server, Output) ->
       end, Modules),
     close_output(Output, IO).
 
-export(Server, Output, Module) ->
+export(Server, Output, Module1) ->
+    Module = case Module1 of
+		 mod_pubsub -> pubsub_db;
+		 _ -> Module1
+	     end,
+    SQLMod = gen_mod:db_mod(sql, Module),
     LServer = jid:nameprep(iolist_to_binary(Server)),
     IO = prepare_output(Output),
     lists:foreach(
@@ -84,7 +89,7 @@ export(Server, Output, Module) ->
                       ?ERROR_MSG("Failed export for module ~p and table ~p: ~p",
                                  [Module, Table, Reason])
               end
-      end, Module:export(Server)),
+      end, SQLMod:export(Server)),
     close_output(Output, IO).
 
 delete(Server) ->

@@ -89,7 +89,7 @@
 %% API and gen_server callbacks
 -export([start/2, stop/1, init/1,
     handle_call/3, handle_cast/2, handle_info/2,
-    terminate/2, code_change/3, depends/2, export/1, mod_opt_type/1]).
+    terminate/2, code_change/3, depends/2, mod_opt_type/1]).
 
 %%====================================================================
 %% API
@@ -3824,9 +3824,6 @@ purge_offline(Host, LJID, Node) ->
 	Error ->
 	    Error
     end.
-
-export(Server) ->
-    pubsub_db_sql:export(Server).
 
 mod_opt_type(access_createnode) -> fun acl:access_rules_validator/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
