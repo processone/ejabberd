@@ -447,10 +447,7 @@ disco_identity(Host, Node, From) ->
 		    {result, _} ->
 			{result, [#identity{category = <<"pubsub">>, type = <<"pep">>},
 				  #identity{category = <<"pubsub">>, type = <<"leaf">>,
-					    name = case get_option(Options, title) of
-						       false -> <<>>;
-						       Title -> Title
-						   end}]};
+					    name = get_option(Options, title, <<>>)}]};
 		    _ ->
 			{result, []}
 		end
@@ -514,10 +511,7 @@ disco_items(Host, <<>>, From) ->
 		    {result, _} ->
 			[#disco_item{node = Node,
 				     jid = jid:make(Host),
-				     name = case get_option(Options, title) of
-						false -> <<>>;
-						Title -> Title
-					    end} | Acc];
+				     name = get_option(Options, title, <<>>)} | Acc];
 		    _ ->
 			Acc
 		end
