@@ -25,6 +25,7 @@
 
 -protocol({rfc, 6120}).
 -protocol({xep, 114, '1.6'}).
+-protocol({xep, 368, '1.0.0'}).
 
 %% API
 -export([start/3, start_link/3, call/3, cast/2, reply/2, connect/1,
