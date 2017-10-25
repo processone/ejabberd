@@ -886,7 +886,7 @@ srv_lookup(Host, State) ->
 			{ok, AddrList} ->
 			    h_addr_list_to_host_ports(AddrList);
 			{error, _} = Err ->
-			    {Err, false}
+			    Err
 		    end
 	    end
     end.
