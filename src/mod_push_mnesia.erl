@@ -36,13 +36,7 @@
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
-
--record(push_session,
-	{us = {<<"">>, <<"">>}                  :: {binary(), binary()},
-	 timestamp = p1_time_compat:timestamp() :: erlang:timestamp(),
-	 service = {<<"">>, <<"">>, <<"">>}     :: ljid(),
-	 node = <<"">>                          :: binary(),
-	 xdata = #xdata{}                       :: xdata()}).
+-include("mod_push.hrl").
 
 %%%-------------------------------------------------------------------
 %%% API

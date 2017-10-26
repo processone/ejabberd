@@ -23,11 +23,12 @@
 %% API
 -export([init/2, store_session/6, lookup_session/4, lookup_session/3,
 	 lookup_sessions/3, lookup_sessions/2, lookup_sessions/1,
-	 delete_session/3, delete_old_sessions/2]).
+	 delete_session/3, delete_old_sessions/2, export/1]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
+-include("mod_push.hrl").
 
 %%%===================================================================
 %%% API
@@ -36,10 +37,7 @@ init(_Host, _Opts) ->
     ok.
 
 store_session(LUser, LServer, NowTS, PushJID, Node, XData) ->
-    XML = case XData of
-	      undefined -> <<>>;
-	      _ -> fxml:element_to_binary(xmpp:encode(XData))
-	  end,
+    XML = encode_xdata(XData),
     TS = misc:now_to_usec(NowTS),
     PushLJID = jid:tolower(PushJID),
     Service = jid:encode(PushLJID),
@@ -173,6 +171,28 @@ delete_old_sessions(LServer, Time) ->
 	    {error, db_failure}
     end.
 
+export(_Server) ->
+    [{push_session,
+      fun(Host, #push_session{us = {LUser, LServer},
+			      timestamp = NowTS,
+			      service = PushLJID,
+			      node = Node,
+			      xdata = XData})
+	    when LServer == Host ->
+	      TS = misc:now_to_usec(NowTS),
+	      Service = jid:encode(PushLJID),
+	      XML = encode_xdata(XData),
+	      [?SQL("delete from push_session where "
+		    "username=%(LUser)s and timestamp=%(TS)d and "
+		    "service=%(Service)s and node=%(Node)s and "
+		    "xml=%(XML)s;"),
+	       ?SQL("insert into push_session(username, timestamp, "
+		    "service, node, xml) values ("
+		    "%(LUser)s, %(TS)d, %(Service)s, %(Node)s, %(XML)s);")];
+	 (_Host, _R) ->
+	      []
+      end}].
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
@@ -194,3 +214,8 @@ decode_xdata(XML, LUser, LServer) ->
 		       [XML, LUser, LServer, Err]),
 	    undefined
     end.
+
+encode_xdata(undefined) ->
+    <<>>;
+encode_xdata(XData) ->
+    fxml:element_to_binary(xmpp:encode(XData)).
