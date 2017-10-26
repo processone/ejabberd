@@ -75,7 +75,7 @@ store_session(LUser, LServer, TS, PushJID, Node, XData) ->
 	{aborted, E} ->
 	    ?ERROR_MSG("Cannot store push session for ~s@~s: ~p",
 		       [LUser, LServer, E]),
-	    error
+	    {error, db_failure}
     end.
 
 lookup_session(LUser, LServer, PushJID, Node) ->
@@ -91,7 +91,7 @@ lookup_session(LUser, LServer, PushJID, Node) ->
     case mnesia:dirty_select(push_session, MatchSpec) of
 	[#push_session{timestamp = TS, xdata = XData}] ->
 	    {ok, {TS, PushLJID, Node, XData}};
-	_ ->
+	[] ->
 	    ?DEBUG("No push session found for ~s@~s (~p, ~s)",
 		   [LUser, LServer, PushJID, Node]),
 	    error
@@ -108,7 +108,7 @@ lookup_session(LUser, LServer, TS) ->
     case mnesia:dirty_select(push_session, MatchSpec) of
 	[#push_session{service = PushLJID, node = Node, xdata = XData}] ->
 	    {ok, {TS, PushLJID, Node, XData}};
-	_ ->
+	[] ->
 	    ?DEBUG("No push session found for ~s@~s (~p)",
 		   [LUser, LServer, TS]),
 	    error
@@ -164,7 +164,7 @@ delete_session(LUser, LServer, TS) ->
 	{aborted, E} ->
 	    ?ERROR_MSG("Cannot delete push session of ~s@~s: ~p",
 		       [LUser, LServer, E]),
-	    error
+	    {error, db_failure}
     end.
 
 delete_old_sessions(_LServer, Time) ->
@@ -181,7 +181,7 @@ delete_old_sessions(_LServer, Time) ->
 	    ok;
 	{aborted, E} ->
 	    ?ERROR_MSG("Cannot delete old push sessions: ~p", [E]),
-	    error
+	    {error, db_failure}
     end.
 
 %%--------------------------------------------------------------------

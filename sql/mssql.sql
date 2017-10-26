@@ -541,3 +541,17 @@ WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW
 
 CREATE INDEX [carboncopy_user] ON [carboncopy] (username)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
+
+CREATE TABLE [dbo].[push_session] (
+    [username] [varchar] (255) NOT NULL,
+    [timestamp] [bigint] NOT NULL,
+    [service] [varchar] (255) NOT NULL,
+    [node] [varchar] (255) NOT NULL,
+    [xml] [varchar] (255) NOT NULL
+);
+
+CREATE UNIQUE CLUSTERED INDEX [i_push_usn] ON [push_session] (username, service, node)
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
+
+CREATE UNIQUE CLUSTERED INDEX [i_push_ut] ON [push_session] (username, timestamp)
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);

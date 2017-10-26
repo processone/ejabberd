@@ -375,3 +375,14 @@ CREATE TABLE proxy65 (
 
 CREATE UNIQUE INDEX i_proxy65_sid ON proxy65 (sid);
 CREATE INDEX i_proxy65_jid ON proxy65 (jid_i);
+
+CREATE TABLE push_session (
+    username text NOT NULL,
+    timestamp bigint NOT NULL,
+    service text NOT NULL,
+    node text NOT NULL,
+    xml text NOT NULL
+);
+
+CREATE UNIQUE INDEX i_push_usn ON push_session (username, service, node);
+CREATE UNIQUE INDEX i_push_ut ON push_session (username, timestamp);
