@@ -86,6 +86,11 @@ export(Server, Output, Module1) ->
       fun({Table, ConvertFun}) ->
               case export(LServer, Table, IO, ConvertFun) of
                   {atomic, ok} -> ok;
+		  {aborted, {no_exists, _}} ->
+		      ?WARNING_MSG("Ignoring export for module ~s: "
+				   "Mnesia table ~s doesn't exist (most likely "
+				   "because the module is unused)",
+				   [Module1, Table]);
                   {aborted, Reason} ->
                       ?ERROR_MSG("Failed export for module ~p and table ~p: ~p",
                                  [Module, Table, Reason])
