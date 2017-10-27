@@ -97,7 +97,7 @@ CREATE TABLE archive (
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX i_username ON archive(username);
+CREATE INDEX i_username_timestamp ON archive(username, timestamp);
 CREATE INDEX i_timestamp ON archive(timestamp);
 CREATE INDEX i_peer ON archive(peer);
 CREATE INDEX i_bare_peer ON archive(bare_peer);

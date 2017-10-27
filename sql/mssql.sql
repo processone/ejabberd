@@ -38,7 +38,7 @@ CREATE TABLE [dbo].[archive] (
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
 ) TEXTIMAGE_ON [PRIMARY];
 
-CREATE INDEX [archive_username] ON [archive] (username)
+CREATE INDEX [archive_username_timestamp] ON [archive] (username, timestamp)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
 CREATE INDEX [archive_timestamp] ON [archive] (timestamp)

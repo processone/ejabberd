@@ -101,7 +101,7 @@ CREATE TABLE archive (
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
-CREATE INDEX i_username ON archive USING btree (username);
+CREATE INDEX i_username_timestamp ON archive USING btree (username, timestamp);
 CREATE INDEX i_timestamp ON archive USING btree (timestamp);
 CREATE INDEX i_peer ON archive USING btree (peer);
 CREATE INDEX i_bare_peer ON archive USING btree (bare_peer);
