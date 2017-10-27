@@ -177,7 +177,7 @@ export(_Server) ->
 			      timestamp = NowTS,
 			      service = PushLJID,
 			      node = Node,
-			      xdata = XData})
+			      xml = XData})
 	    when LServer == Host ->
 	      TS = misc:now_to_usec(NowTS),
 	      Service = jid:encode(PushLJID),
