@@ -261,7 +261,7 @@ process_iq(#iq{from = #jid{lserver = LServer} = JID,
 	ok ->
 	    xmpp:make_iq_result(IQ);
 	{error, db_failure} ->
-	    Txt = <<"Database, failure">>,
+	    Txt = <<"Database failure">>,
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang));
 	{error, notfound} ->
 	    Txt = <<"User session not found">>,
@@ -276,7 +276,7 @@ process_iq(#iq{from = #jid{lserver = LServer} = JID,
 	ok ->
 	    xmpp:make_iq_result(IQ);
 	{error, db_failure} ->
-	    Txt = <<"Database, failure">>,
+	    Txt = <<"Database failure">>,
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang));
 	{error, notfound} ->
 	    Txt = <<"Push record not found">>,
