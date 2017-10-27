@@ -88,7 +88,7 @@ lookup_session(LUser, LServer, PushJID, Node) ->
 	[] ->
 	    ?DEBUG("No push session found for ~s@~s (~p, ~s)",
 		   [LUser, LServer, PushJID, Node]),
-	    error
+	    {error, notfound}
     end.
 
 lookup_session(LUser, LServer, TS) ->
@@ -105,17 +105,19 @@ lookup_session(LUser, LServer, TS) ->
 	[] ->
 	    ?DEBUG("No push session found for ~s@~s (~p)",
 		   [LUser, LServer, TS]),
-	    error
+	    {error, notfound}
     end.
 
 lookup_sessions(LUser, LServer, PushJID) ->
     PushLJID = jid:tolower(PushJID),
     MatchSpec = ets:fun2ms(
-		  fun(#push_session{us = {U, S}, service = P, node = N} = Rec)
+		  fun(#push_session{us = {U, S}, service = P,
+				    node = Node, timestamp = TS,
+				    xdata = XData} = Rec)
 			when U == LUser,
 			     S == LServer,
 			     P == PushLJID ->
-			  Rec
+			  {TS, PushLJID, Node, XData}
 		  end),
     {ok, mnesia:dirty_select(push_session, MatchSpec)}.
 

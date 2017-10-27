@@ -67,7 +67,7 @@ lookup_session(LUser, LServer, PushJID, Node) ->
 	    XData = decode_xdata(XML, LUser, LServer),
 	    {ok, {NowTS, PushLJID, Node, XData}};
 	{selected, []} ->
-	    error;
+	    {error, notfound};
 	Err ->
 	    ?ERROR_MSG("Failed to select from 'push_session' table: ~p", [Err]),
 	    {error, db_failure}
@@ -85,7 +85,7 @@ lookup_session(LUser, LServer, NowTS) ->
 	    XData = decode_xdata(XML, LUser, LServer),
 	    {ok, {NowTS, PushLJID, Node, XData}};
 	{selected, []} ->
-	    error;
+	    {error, notfound};
 	Err ->
 	    ?ERROR_MSG("Failed to select from 'push_session' table: ~p", [Err]),
 	    {error, db_failure}
