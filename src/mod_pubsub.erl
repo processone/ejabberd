@@ -1568,6 +1568,7 @@ delete_node(Host, Node, Owner) ->
 			RNidx = RNode#pubsub_node.id,
 			RType = RNode#pubsub_node.type,
 			ROptions = RNode#pubsub_node.options,
+			unset_cached_item(RH, RNidx),
 			broadcast_removed_node(RH, RN, RNidx, RType, ROptions, SubsByDepth),
 			ejabberd_hooks:run(pubsub_delete_node,
 			    ServerHost,
@@ -1582,6 +1583,7 @@ delete_node(Host, Node, Owner) ->
 	    lists:foreach(fun ({RNode, _RSubs}) ->
 			{RH, RN} = RNode#pubsub_node.nodeid,
 			RNidx = RNode#pubsub_node.id,
+			unset_cached_item(RH, RNidx),
 			ejabberd_hooks:run(pubsub_delete_node,
 			    ServerHost,
 			    [ServerHost, RH, RN, RNidx])
@@ -1593,6 +1595,7 @@ delete_node(Host, Node, Owner) ->
 	    end;
 	{result, {TNode, {_, Result}}} ->
 	    Nidx = TNode#pubsub_node.id,
+	    unset_cached_item(Host, Nidx),
 	    ejabberd_hooks:run(pubsub_delete_node, ServerHost,
 		[ServerHost, Host, Node, Nidx]),
 	    case Result of
