@@ -108,7 +108,7 @@ test_configure(Config) ->
 			    [{title, NodeTitle}]),
     set_node_config(Config, Node, MyNodeConfig),
     NewNodeConfig = get_node_config(Config, Node),
-    NodeTitle = proplists:get_value(title, NewNodeConfig),
+    NodeTitle = proplists:get_value(title, NewNodeConfig, <<>>),
     disconnect(Config).
 
 test_default(Config) ->
@@ -122,7 +122,7 @@ test_create_configure(Config) ->
 				[{title, NodeTitle}]),
     Node = create_node(Config, <<>>, CustomNodeConfig),
     NodeConfig = get_node_config(Config, Node),
-    NodeTitle = proplists:get_value(title, NodeConfig),
+    NodeTitle = proplists:get_value(title, NodeConfig, <<>>),
     delete_node(Config, Node),
     disconnect(Config).
 

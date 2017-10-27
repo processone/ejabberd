@@ -35,11 +35,12 @@
 -export([start/1, stop/1, set_password/3, try_register/3,
 	 get_users/2, count_users/2, get_password/2,
 	 remove_user/2, store_type/1, plain_password_required/1,
-	 convert_to_scram/1, opt_type/1]).
+	 convert_to_scram/1, opt_type/1, export/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
+-include("ejabberd_auth.hrl").
 
 -define(SALT_LENGTH, 16).
 
@@ -287,6 +288,29 @@ convert_to_scram(Server) ->
                 Error -> Error
             end
     end.
+
+export(_Server) ->
+    [{passwd,
+      fun(Host, #passwd{us = {LUser, LServer}, password = Password})
+            when LServer == Host,
+                 is_binary(Password) ->
+              [?SQL("delete from users where username=%(LUser)s;"),
+               ?SQL("insert into users(username, password) "
+                    "values (%(LUser)s, %(Password)s);")];
+         (Host, #passwd{us = {LUser, LServer}, password = #scram{} = Scram})
+            when LServer == Host ->
+              StoredKey = Scram#scram.storedkey,
+              ServerKey = Scram#scram.serverkey,
+              Salt = Scram#scram.salt,
+              IterationCount = Scram#scram.iterationcount,
+              [?SQL("delete from users where username=%(LUser)s;"),
+               ?SQL("insert into users(username, password, serverkey, salt, "
+                    "iterationcount) "
+                    "values (%(LUser)s, %(StoredKey)s, %(ServerKey)s,"
+                    " %(Salt)s, %(IterationCount)d);")];
+         (_Host, _R) ->
+              []
+      end}].
 
 -spec opt_type(pgsql_users_number_estimate) -> fun((boolean()) -> boolean());
 	      (atom()) -> [atom()].

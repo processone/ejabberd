@@ -31,18 +31,12 @@
 %% API
 -export([init/2, store_session/6, lookup_session/4, lookup_session/3,
 	 lookup_sessions/3, lookup_sessions/2, lookup_sessions/1,
-	 delete_session/3, delete_old_sessions/2]).
+	 delete_session/3, delete_old_sessions/2, transform/1]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
-
--record(push_session,
-	{us = {<<"">>, <<"">>}                  :: {binary(), binary()},
-	 timestamp = p1_time_compat:timestamp() :: erlang:timestamp(),
-	 service = {<<"">>, <<"">>, <<"">>}     :: ljid(),
-	 node = <<"">>                          :: binary(),
-	 xdata = #xdata{}                       :: xdata()}).
+-include("mod_push.hrl").
 
 %%%-------------------------------------------------------------------
 %%% API
@@ -67,7 +61,7 @@ store_session(LUser, LServer, TS, PushJID, Node, XData) ->
 					   timestamp = TS,
 					   service = PushLJID,
 					   node = Node,
-					   xdata = XData})
+					   xml = encode_xdata(XData)})
 	end,
     case mnesia:transaction(F) of
 	{atomic, ok} ->
@@ -75,7 +69,7 @@ store_session(LUser, LServer, TS, PushJID, Node, XData) ->
 	{aborted, E} ->
 	    ?ERROR_MSG("Cannot store push session for ~s@~s: ~p",
 		       [LUser, LServer, E]),
-	    error
+	    {error, db_failure}
     end.
 
 lookup_session(LUser, LServer, PushJID, Node) ->
@@ -89,12 +83,12 @@ lookup_session(LUser, LServer, PushJID, Node) ->
 			  Rec
 		  end),
     case mnesia:dirty_select(push_session, MatchSpec) of
-	[#push_session{timestamp = TS, xdata = XData}] ->
-	    {ok, {TS, PushLJID, Node, XData}};
-	_ ->
+	[#push_session{timestamp = TS, xml = El}] ->
+	    {ok, {TS, PushLJID, Node, decode_xdata(El)}};
+	[] ->
 	    ?DEBUG("No push session found for ~s@~s (~p, ~s)",
 		   [LUser, LServer, PushJID, Node]),
-	    error
+	    {error, notfound}
     end.
 
 lookup_session(LUser, LServer, TS) ->
@@ -106,33 +100,31 @@ lookup_session(LUser, LServer, TS) ->
 			  Rec
 		  end),
     case mnesia:dirty_select(push_session, MatchSpec) of
-	[#push_session{service = PushLJID, node = Node, xdata = XData}] ->
-	    {ok, {TS, PushLJID, Node, XData}};
-	_ ->
+	[#push_session{service = PushLJID, node = Node, xml = El}] ->
+	    {ok, {TS, PushLJID, Node, decode_xdata(El)}};
+	[] ->
 	    ?DEBUG("No push session found for ~s@~s (~p)",
 		   [LUser, LServer, TS]),
-	    error
+	    {error, notfound}
     end.
 
 lookup_sessions(LUser, LServer, PushJID) ->
     PushLJID = jid:tolower(PushJID),
     MatchSpec = ets:fun2ms(
-		  fun(#push_session{us = {U, S}, service = P, node = N} = Rec)
+		  fun(#push_session{us = {U, S}, service = P,
+				    node = Node, timestamp = TS,
+				    xml = El} = Rec)
 			when U == LUser,
 			     S == LServer,
 			     P == PushLJID ->
 			  Rec
 		  end),
-    {ok, mnesia:dirty_select(push_session, MatchSpec)}.
+    Records = mnesia:dirty_select(push_session, MatchSpec),
+    {ok, records_to_sessions(Records)}.
 
 lookup_sessions(LUser, LServer) ->
     Records = mnesia:dirty_read(push_session, {LUser, LServer}),
-    Clients = [{TS, PushLJID, Node, XData}
-	       || #push_session{timestamp = TS,
-				service = PushLJID,
-				node = Node,
-				xdata = XData} <- Records],
-    {ok, Clients}.
+    {ok, records_to_sessions(Records)}.
 
 lookup_sessions(LServer) ->
     MatchSpec = ets:fun2ms(
@@ -140,11 +132,12 @@ lookup_sessions(LServer) ->
 				    timestamp = TS,
 				    service = PushLJID,
 				    node = Node,
-				    xdata = XData})
+				    xml = El})
 			when S == LServer ->
-			  {TS, PushLJID, Node, XData}
+			  {TS, PushLJID, Node, El}
 		  end),
-    {ok, mnesia:dirty_select(push_session, MatchSpec)}.
+    Records = mnesia:dirty_select(push_session, MatchSpec),
+    {ok, records_to_sessions(Records)}.
 
 delete_session(LUser, LServer, TS) ->
     MatchSpec = ets:fun2ms(
@@ -164,7 +157,7 @@ delete_session(LUser, LServer, TS) ->
 	{aborted, E} ->
 	    ?ERROR_MSG("Cannot delete push session of ~s@~s: ~p",
 		       [LUser, LServer, E]),
-	    error
+	    {error, db_failure}
     end.
 
 delete_old_sessions(_LServer, Time) ->
@@ -181,8 +174,13 @@ delete_old_sessions(_LServer, Time) ->
 	    ok;
 	{aborted, E} ->
 	    ?ERROR_MSG("Cannot delete old push sessions: ~p", [E]),
-	    error
+	    {error, db_failure}
     end.
+
+transform({push_session, US, TS, Service, Node, XData}) ->
+    ?INFO_MSG("Transforming push_session Mnesia table", []),
+    #push_session{us = US, timestamp = TS, service = Service,
+		  node = Node, xml = encode_xdata(XData)}.
 
 %%--------------------------------------------------------------------
 %% Internal functions.
@@ -202,3 +200,20 @@ enforce_max_sessions({U, S} = US, Max) ->
        true ->
 	    ok
     end.
+
+decode_xdata(undefined) ->
+    undefined;
+decode_xdata(El) ->
+    xmpp:decode(El).
+
+encode_xdata(undefined) ->
+    undefined;
+encode_xdata(XData) ->
+    xmpp:encode(XData).
+
+records_to_sessions(Records) ->
+    [{TS, PushLJID, Node, decode_xdata(El)}
+     || #push_session{timestamp = TS,
+		      service = PushLJID,
+		      node = Node,
+		      xml = El} <- Records].

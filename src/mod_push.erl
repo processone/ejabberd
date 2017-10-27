@@ -56,26 +56,27 @@
 -type c2s_state() :: ejabberd_c2s:state().
 -type timestamp() :: erlang:timestamp().
 -type push_session() :: {timestamp(), ljid(), binary(), xdata()}.
+-type err_reason() :: notfound | db_failure.
 
 -callback init(binary(), gen_mod:opts())
 	  -> any().
 -callback store_session(binary(), binary(), timestamp(), jid(), binary(),
 			xdata())
-	  -> {ok, push_session()} | error.
+	  -> {ok, push_session()} | {error, err_reason()}.
 -callback lookup_session(binary(), binary(), jid(), binary())
-	  -> {ok, push_session()} | error.
+	  -> {ok, push_session()} | {error, err_reason()}.
 -callback lookup_session(binary(), binary(), timestamp())
-	  -> {ok, push_session()} | error.
+	  -> {ok, push_session()} | {error, err_reason()}.
 -callback lookup_sessions(binary(), binary(), jid())
-	  -> {ok, [push_session()]} | error.
+	  -> {ok, [push_session()]} | {error, err_reason()}.
 -callback lookup_sessions(binary(), binary())
-	  -> {ok, [push_session()]} | error.
+	  -> {ok, [push_session()]} | {error, err_reason()}.
 -callback lookup_sessions(binary())
-	  -> {ok, [push_session()]} | error.
+	  -> {ok, [push_session()]} | {error, err_reason()}.
 -callback delete_session(binary(), binary(), timestamp())
-	  -> ok | error.
+	  -> ok | {error, err_reason()}.
 -callback delete_old_sessions(binary() | global, erlang:timestamp())
-	  -> any().
+	  -> ok | {error, err_reason()}.
 -callback use_cache(binary())
 	  -> boolean().
 -callback cache_nodes(binary())
@@ -253,29 +254,39 @@ process_iq(#iq{lang = Lang, sub_els = [#push_enable{node = <<>>}]} = IQ) ->
     xmpp:make_error(IQ, xmpp:err_feature_not_implemented(Txt, Lang));
 process_iq(#iq{from = #jid{lserver = LServer} = JID,
 	       to = #jid{lserver = LServer},
+	       lang = Lang,
 	       sub_els = [#push_enable{jid = PushJID,
 				       node = Node,
 				       xdata = XData}]} = IQ) ->
     case enable(JID, PushJID, Node, XData) of
 	ok ->
 	    xmpp:make_iq_result(IQ);
-	error ->
-	    xmpp:make_error(IQ, xmpp:err_internal_server_error())
+	{error, db_failure} ->
+	    Txt = <<"Database failure">>,
+	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang));
+	{error, notfound} ->
+	    Txt = <<"User session not found">>,
+	    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang))
     end;
 process_iq(#iq{from = #jid{lserver = LServer} = JID,
 	       to = #jid{lserver = LServer},
+	       lang = Lang,
 	       sub_els = [#push_disable{jid = PushJID,
 					node = Node}]} = IQ) ->
     case disable(JID, PushJID, Node) of
 	ok ->
 	    xmpp:make_iq_result(IQ);
-	error ->
-	    xmpp:make_error(IQ, xmpp:err_item_not_found())
+	{error, db_failure} ->
+	    Txt = <<"Database failure">>,
+	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang));
+	{error, notfound} ->
+	    Txt = <<"Push record not found">>,
+	    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang))
     end;
 process_iq(IQ) ->
     xmpp:make_error(IQ, xmpp:err_not_allowed()).
 
--spec enable(jid(), jid(), binary(), xdata()) -> ok | error.
+-spec enable(jid(), jid(), binary(), xdata()) -> ok | {error, err_reason()}.
 enable(#jid{luser = LUser, lserver = LServer, lresource = LResource} = JID,
        PushJID, Node, XData) ->
     case ejabberd_sm:get_session_sid(LUser, LServer, LResource) of
@@ -285,18 +296,18 @@ enable(#jid{luser = LUser, lserver = LServer, lresource = LResource} = JID,
 		    ?INFO_MSG("Enabling push notifications for ~s",
 			      [jid:encode(JID)]),
 		    ejabberd_c2s:cast(PID, push_enable);
-		error ->
+		{error, _} = Err ->
 		    ?ERROR_MSG("Cannot enable push for ~s: database error",
 			       [jid:encode(JID)]),
-		    error
+		    Err
 	    end;
 	none ->
 	    ?WARNING_MSG("Cannot enable push for ~s: session not found",
 			 [jid:encode(JID)]),
-	    error
+	    {error, notfound}
     end.
 
--spec disable(jid(), jid(), binary() | undefined) -> ok | error.
+-spec disable(jid(), jid(), binary() | undefined) -> ok | {error, err_reason()}.
 disable(#jid{luser = LUser, lserver = LServer, lresource = LResource} = JID,
        PushJID, Node) ->
     case ejabberd_sm:get_session_sid(LUser, LServer, LResource) of
@@ -308,7 +319,7 @@ disable(#jid{luser = LUser, lserver = LServer, lresource = LResource} = JID,
 	    ?WARNING_MSG("Session not found while disabling push for ~s",
 			 [jid:encode(JID)])
     end,
-    if Node /= undefined ->
+    if Node /= <<>> ->
 	   delete_session(LUser, LServer, PushJID, Node);
        true ->
 	   delete_sessions(LUser, LServer, PushJID)
@@ -388,7 +399,7 @@ c2s_handle_cast(State, push_disable) ->
 c2s_handle_cast(State, _Msg) ->
     State.
 
--spec remove_user(binary(), binary()) -> ok | error.
+-spec remove_user(binary(), binary()) -> ok | {error, err_reason()}.
 remove_user(LUser, LServer) ->
     ?INFO_MSG("Removing any push sessions of ~s@~s", [LUser, LServer]),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
@@ -403,7 +414,7 @@ notify(#{jid := #jid{luser = LUser, lserver = LServer}, sid := {TS, _}}) ->
     case lookup_session(LUser, LServer, TS) of
 	{ok, Client} ->
 	    notify(LUser, LServer, [Client]);
-	error ->
+	_Err ->
 	    ok
     end.
 
@@ -440,7 +451,7 @@ notify(LServer, PushLJID, Node, XData, HandleResponse) ->
 %% Internal functions.
 %%--------------------------------------------------------------------
 -spec store_session(binary(), binary(), timestamp(), jid(), binary(), xdata())
-      -> {ok, push_session()} | error.
+      -> {ok, push_session()} | {error, err_reason()}.
 store_session(LUser, LServer, TS, PushJID, Node, XData) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     delete_session(LUser, LServer, PushJID, Node),
@@ -460,7 +471,7 @@ store_session(LUser, LServer, TS, PushJID, Node, XData) ->
     end.
 
 -spec lookup_session(binary(), binary(), timestamp())
-      -> {ok, push_session()} | error.
+      -> {ok, push_session()} | error | {error, err_reason()}.
 lookup_session(LUser, LServer, TS) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case use_cache(Mod, LServer) of
@@ -472,7 +483,7 @@ lookup_session(LUser, LServer, TS) ->
 	    Mod:lookup_session(LUser, LServer, TS)
     end.
 
--spec lookup_sessions(binary(), binary()) -> {ok, [push_session()]} | error.
+-spec lookup_sessions(binary(), binary()) -> {ok, [push_session()]} | {error, err_reason()}.
 lookup_sessions(LUser, LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case use_cache(Mod, LServer) of
@@ -484,40 +495,48 @@ lookup_sessions(LUser, LServer) ->
 	    Mod:lookup_sessions(LUser, LServer)
     end.
 
--spec delete_session(binary(), binary(), timestamp()) -> ok | error.
+-spec delete_session(binary(), binary(), timestamp()) -> ok | {error, db_failure}.
 delete_session(LUser, LServer, TS) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    ok = Mod:delete_session(LUser, LServer, TS),
-    case use_cache(Mod, LServer) of
-	true ->
-	    ets_cache:delete(?PUSH_CACHE, {LUser, LServer},
-			     cache_nodes(Mod, LServer)),
-	    ets_cache:delete(?PUSH_CACHE, {LUser, LServer, TS},
-			     cache_nodes(Mod, LServer));
-	false ->
-	    ok
+    case Mod:delete_session(LUser, LServer, TS) of
+	ok ->
+	    case use_cache(Mod, LServer) of
+		true ->
+		    ets_cache:delete(?PUSH_CACHE, {LUser, LServer},
+				     cache_nodes(Mod, LServer)),
+		    ets_cache:delete(?PUSH_CACHE, {LUser, LServer, TS},
+				     cache_nodes(Mod, LServer));
+		false ->
+		    ok
+	    end;
+	{error, _} = Err ->
+	    Err
     end.
 
--spec delete_session(binary(), binary(), jid(), binary()) -> ok | error.
+-spec delete_session(binary(), binary(), jid(), binary()) -> ok | {error, err_reason()}.
 delete_session(LUser, LServer, PushJID, Node) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case Mod:lookup_session(LUser, LServer, PushJID, Node) of
 	{ok, {TS, _, _, _}} ->
 	    delete_session(LUser, LServer, TS);
 	error ->
-	    error
+	    {error, notfound};
+	{error, _} = Err ->
+	    Err
     end.
 
--spec delete_sessions(binary(), binary(), jid()) -> ok | error.
+-spec delete_sessions(binary(), binary(), jid()) -> ok | {error, err_reason()}.
 delete_sessions(LUser, LServer, PushJID) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     LookupFun = fun() -> Mod:lookup_sessions(LUser, LServer, PushJID) end,
     delete_sessions(LUser, LServer, LookupFun, Mod).
 
--spec delete_sessions(binary(), binary(), fun(() -> ok | error), module())
-      -> ok | error.
+-spec delete_sessions(binary(), binary(), fun(() -> any()), module())
+      -> ok | {error, err_reason()}.
 delete_sessions(LUser, LServer, LookupFun, Mod) ->
     case LookupFun() of
+	{ok, []} ->
+	    {error, notfound};
 	{ok, Clients} ->
 	    case use_cache(Mod, LServer) of
 		true ->
@@ -538,8 +557,8 @@ delete_sessions(LUser, LServer, LookupFun, Mod) ->
 			      ok
 		      end
 	      end, Clients);
-	error ->
-	    error
+	{error, _} = Err ->
+	    Err
     end.
 
 -spec drop_online_sessions(binary(), binary(), [push_session()])

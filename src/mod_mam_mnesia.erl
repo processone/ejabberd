@@ -91,10 +91,10 @@ delete_old_user_messages(User, TimeStamp, Type) ->
 			ok
 		end
 	end,
+    NextRecord = mnesia:dirty_next(archive_msg, User),
     case mnesia:transaction(F) of
 	{atomic, ok} ->
-	    delete_old_user_messages(mnesia:dirty_next(archive_msg, User),
-				     TimeStamp, Type);
+	    delete_old_user_messages(NextRecord, TimeStamp, Type);
 	{aborted, Err} ->
 	    ?ERROR_MSG("Cannot delete old MAM messages: ~s", [Err]),
 	    Err

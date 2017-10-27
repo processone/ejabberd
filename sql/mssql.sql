@@ -38,7 +38,7 @@ CREATE TABLE [dbo].[archive] (
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
 ) TEXTIMAGE_ON [PRIMARY];
 
-CREATE INDEX [archive_username] ON [archive] (username)
+CREATE INDEX [archive_username_timestamp] ON [archive] (username, timestamp)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
 CREATE INDEX [archive_timestamp] ON [archive] (timestamp)
@@ -540,4 +540,18 @@ CREATE UNIQUE CLUSTERED INDEX [carboncopy_ur] ON [carboncopy] (username, resourc
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
 CREATE INDEX [carboncopy_user] ON [carboncopy] (username)
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
+
+CREATE TABLE [dbo].[push_session] (
+    [username] [varchar] (255) NOT NULL,
+    [timestamp] [bigint] NOT NULL,
+    [service] [varchar] (255) NOT NULL,
+    [node] [varchar] (255) NOT NULL,
+    [xml] [varchar] (255) NOT NULL
+);
+
+CREATE UNIQUE CLUSTERED INDEX [i_push_usn] ON [push_session] (username, service, node)
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
+
+CREATE UNIQUE CLUSTERED INDEX [i_push_ut] ON [push_session] (username, timestamp)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);

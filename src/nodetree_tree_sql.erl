@@ -287,7 +287,7 @@ raw_to_node(Host, {Node, Parent, Type, Nidx}) ->
 	    Module = misc:binary_to_atom(<<"node_", Type/binary, "_sql">>),
 	    StdOpts = Module:options(),
 	    lists:foldl(fun ({Key, Value}, Acc) ->
-			lists:keyreplace(Key, 1, Acc, {Key, Value})
+			lists:keystore(Key, 1, Acc, {Key, Value})
 		end,
 		StdOpts, DbOpts);
 	_ ->

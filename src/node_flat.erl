@@ -88,7 +88,6 @@ options() ->
 	{max_payload_size, ?MAX_PAYLOAD_SIZE},
 	{send_last_published_item, on_sub_and_presence},
 	{deliver_notifications, true},
-        {title, <<>>},
 	{presence_based_delivery, false},
 	{itemreply, none}].
 
@@ -446,21 +445,30 @@ delete_item(Nidx, Publisher, PublishModel, ItemId) ->
 		    case Affiliation of
 			owner ->
 			    {result, States} = get_states(Nidx),
+			    Records = States ++ mnesia:read({pubsub_orphan, Nidx}),
 			    lists:foldl(fun
-				    (#pubsub_state{items = PI} = S, Res) ->
-					case lists:member(ItemId, PI) of
+				    (#pubsub_state{items = RI} = S, Res) ->
+					case lists:member(ItemId, RI) of
 					    true ->
-						Nitems = lists:delete(ItemId, PI),
+						NI = lists:delete(ItemId, RI),
 						del_item(Nidx, ItemId),
-						set_state(S#pubsub_state{items = Nitems}),
+						mnesia:write(S#pubsub_state{items = NI}),
 						{result, {default, broadcast}};
 					    false ->
 						Res
 					end;
-				    (_, Res) ->
-					Res
+				    (#pubsub_orphan{items = RI} = S, Res) ->
+					case lists:member(ItemId, RI) of
+					    true ->
+						NI = lists:delete(ItemId, RI),
+						del_item(Nidx, ItemId),
+						mnesia:write(S#pubsub_orphan{items = NI}),
+						{result, {default, broadcast}};
+					    false ->
+						Res
+					end
 				end,
-				{error, xmpp:err_item_not_found()}, States);
+				{error, xmpp:err_item_not_found()}, Records);
 			_ ->
 			    {error, xmpp:err_forbidden()}
 		    end

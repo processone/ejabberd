@@ -460,6 +460,7 @@ db_tests(_) ->
        muc_tests:single_cases(),
        offline_tests:single_cases(),
        mam_tests:single_cases(),
+       push_tests:single_cases(),
        test_unregister]},
      muc_tests:master_slave_cases(),
      privacy_tests:master_slave_cases(),
@@ -469,7 +470,8 @@ db_tests(_) ->
      mam_tests:master_slave_cases(),
      vcard_tests:master_slave_cases(),
      announce_tests:master_slave_cases(),
-     carbons_tests:master_slave_cases()].
+     carbons_tests:master_slave_cases(),
+     push_tests:master_slave_cases()].
 
 ldap_tests() ->
     [{ldap_tests, [sequence],

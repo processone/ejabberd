@@ -89,7 +89,7 @@
 %% API and gen_server callbacks
 -export([start/2, stop/1, init/1,
     handle_call/3, handle_cast/2, handle_info/2,
-    terminate/2, code_change/3, depends/2, export/1, mod_opt_type/1]).
+    terminate/2, code_change/3, depends/2, mod_opt_type/1]).
 
 %%====================================================================
 %% API
@@ -447,10 +447,7 @@ disco_identity(Host, Node, From) ->
 		    {result, _} ->
 			{result, [#identity{category = <<"pubsub">>, type = <<"pep">>},
 				  #identity{category = <<"pubsub">>, type = <<"leaf">>,
-					    name = case get_option(Options, title) of
-						       false -> <<>>;
-						       Title -> Title
-						   end}]};
+					    name = get_option(Options, title, <<>>)}]};
 		    _ ->
 			{result, []}
 		end
@@ -514,10 +511,7 @@ disco_items(Host, <<>>, From) ->
 		    {result, _} ->
 			[#disco_item{node = Node,
 				     jid = jid:make(Host),
-				     name = case get_option(Options, title) of
-						false -> <<>>;
-						Title -> Title
-					    end} | Acc];
+				     name = get_option(Options, title, <<>>)} | Acc];
 		    _ ->
 			Acc
 		end
@@ -829,7 +823,8 @@ process_disco_info(#iq{from = From, to = To, lang = Lang, type = get,
 				   [ServerHost, ?MODULE, <<>>, <<>>]),
     case iq_disco_info(Host, Node, From, Lang) of
 	{result, IQRes} ->
-	    xmpp:make_iq_result(IQ, IQRes#disco_info{node = Node, xdata = Info});
+	    XData = IQRes#disco_info.xdata ++ Info,
+	    xmpp:make_iq_result(IQ, IQRes#disco_info{node = Node, xdata = XData});
 	{error, Error} ->
 	    xmpp:make_error(IQ, Error)
     end.
@@ -938,14 +933,25 @@ node_disco_info(Host, Node, From) ->
 			     {result, disco_info()} | {error, stanza_error()}.
 node_disco_info(Host, Node, _From, _Identity, _Features) ->
     Action =
-	fun(#pubsub_node{type = Type, options = Options}) ->
+	fun(#pubsub_node{id = Nidx, type = Type, options = Options}) ->
 		NodeType = case get_option(Options, node_type) of
 			       collection -> <<"collection">>;
 			       _ -> <<"leaf">>
 			   end,
+		Affs = case node_call(Host, Type, get_node_affiliations, [Nidx]) of
+			  {result, Result} -> Result;
+			  _ -> []
+		       end,
+		Meta = [{title, get_option(Options, title, <<>>)},
+			{description, get_option(Options, description, <<>>)},
+			{owner, [jid:make(LJID) || {LJID, Aff} <- Affs, Aff =:= owner]},
+			{publisher, [jid:make(LJID) || {LJID, Aff} <- Affs, Aff =:= publisher]},
+			{num_subscribers, length([LJID || {LJID, Aff} <- Affs, Aff =:= subscriber])}],
+		XData = #xdata{type = result,
+			       fields = pubsub_meta_data:encode(Meta)},
 		Is = [#identity{category = <<"pubsub">>, type = NodeType}],
 		Fs = [?NS_PUBSUB | [feature(F) || F <- plugin_features(Host, Type)]],
-		{result, #disco_info{identities = Is, features = Fs}}
+		{result, #disco_info{identities = Is, features = Fs, xdata = [XData]}}
 	end,
     case transaction(Host, Node, Action, sync_dirty) of
 	{result, {_, Result}} -> {result, Result};
@@ -1562,6 +1568,7 @@ delete_node(Host, Node, Owner) ->
 			RNidx = RNode#pubsub_node.id,
 			RType = RNode#pubsub_node.type,
 			ROptions = RNode#pubsub_node.options,
+			unset_cached_item(RH, RNidx),
 			broadcast_removed_node(RH, RN, RNidx, RType, ROptions, SubsByDepth),
 			ejabberd_hooks:run(pubsub_delete_node,
 			    ServerHost,
@@ -1576,6 +1583,7 @@ delete_node(Host, Node, Owner) ->
 	    lists:foreach(fun ({RNode, _RSubs}) ->
 			{RH, RN} = RNode#pubsub_node.nodeid,
 			RNidx = RNode#pubsub_node.id,
+			unset_cached_item(RH, RNidx),
 			ejabberd_hooks:run(pubsub_delete_node,
 			    ServerHost,
 			    [ServerHost, RH, RN, RNidx])
@@ -1587,6 +1595,7 @@ delete_node(Host, Node, Owner) ->
 	    end;
 	{result, {TNode, {_, Result}}} ->
 	    Nidx = TNode#pubsub_node.id,
+	    unset_cached_item(Host, Nidx),
 	    ejabberd_hooks:run(pubsub_delete_node, ServerHost,
 		[ServerHost, Host, Node, Nidx]),
 	    case Result of
@@ -3789,7 +3798,7 @@ purge_offline(Host, LJID, Node) ->
     Nidx = Node#pubsub_node.id,
     Type = Node#pubsub_node.type,
     Options = Node#pubsub_node.options,
-    case node_action(Host, Type, get_items, [Nidx, service_jid(Host), none]) of
+    case node_action(Host, Type, get_items, [Nidx, service_jid(Host), undefined]) of
 	{result, {[], _}} ->
 	    ok;
 	{result, {Items, _}} ->
@@ -3818,9 +3827,6 @@ purge_offline(Host, LJID, Node) ->
 	Error ->
 	    Error
     end.
-
-export(Server) ->
-    pubsub_db_sql:export(Server).
 
 mod_opt_type(access_createnode) -> fun acl:access_rules_validator/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;

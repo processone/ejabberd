@@ -101,7 +101,7 @@ CREATE TABLE archive (
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
-CREATE INDEX i_username ON archive USING btree (username);
+CREATE INDEX i_username_timestamp ON archive USING btree (username, timestamp);
 CREATE INDEX i_timestamp ON archive USING btree (timestamp);
 CREATE INDEX i_peer ON archive USING btree (peer);
 CREATE INDEX i_bare_peer ON archive USING btree (bare_peer);
@@ -395,3 +395,14 @@ CREATE TABLE proxy65 (
 
 CREATE UNIQUE INDEX i_proxy65_sid ON proxy65 USING btree (sid);
 CREATE INDEX i_proxy65_jid ON proxy65 USING btree (jid_i);
+
+CREATE TABLE push_session (
+    username text NOT NULL,
+    timestamp bigint NOT NULL,
+    service text NOT NULL,
+    node text NOT NULL,
+    xml text NOT NULL
+);
+
+CREATE UNIQUE INDEX i_push_usn ON push_session USING btree (username, service, node);
+CREATE UNIQUE INDEX i_push_ut ON push_session USING btree (username, timestamp);

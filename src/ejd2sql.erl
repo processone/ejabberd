@@ -59,6 +59,7 @@ modules() ->
      mod_privacy,
      mod_private,
      mod_pubsub,
+     mod_push,
      mod_roster,
      mod_shared_roster,
      mod_vcard].
@@ -73,18 +74,28 @@ export(Server, Output) ->
       end, Modules),
     close_output(Output, IO).
 
-export(Server, Output, Module) ->
+export(Server, Output, Module1) ->
+    Module = case Module1 of
+		 mod_pubsub -> pubsub_db;
+		 _ -> Module1
+	     end,
+    SQLMod = gen_mod:db_mod(sql, Module),
     LServer = jid:nameprep(iolist_to_binary(Server)),
     IO = prepare_output(Output),
     lists:foreach(
       fun({Table, ConvertFun}) ->
               case export(LServer, Table, IO, ConvertFun) of
                   {atomic, ok} -> ok;
+		  {aborted, {no_exists, _}} ->
+		      ?WARNING_MSG("Ignoring export for module ~s: "
+				   "Mnesia table ~s doesn't exist (most likely "
+				   "because the module is unused)",
+				   [Module1, Table]);
                   {aborted, Reason} ->
                       ?ERROR_MSG("Failed export for module ~p and table ~p: ~p",
                                  [Module, Table, Reason])
               end
-      end, Module:export(Server)),
+      end, SQLMod:export(Server)),
     close_output(Output, IO).
 
 delete(Server) ->

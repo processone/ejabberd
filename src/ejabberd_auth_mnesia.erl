@@ -34,16 +34,14 @@
 -export([start/1, stop/1, set_password/3, try_register/3,
 	 get_users/2, init_db/0,
 	 count_users/2, get_password/2,
-	 remove_user/2, store_type/1, export/1, import/2,
+	 remove_user/2, store_type/1, import/2,
 	 plain_password_required/1, use_cache/1]).
 -export([need_transform/1, transform/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
-
--record(passwd, {us = {<<"">>, <<"">>} :: {binary(), binary()} | '$1',
-                 password = <<"">> :: binary() | scram() | '_'}).
+-include("ejabberd_auth.hrl").
 
 -record(reg_users_counter, {vhost = <<"">> :: binary(),
                             count = 0 :: integer() | '$1'}).
@@ -271,29 +269,6 @@ transform(#passwd{us = {U, S}, password = Password} = P)
 transform(#passwd{password = Password} = P)
   when is_record(Password, scram) ->
     P.
-
-export(_Server) ->
-    [{passwd,
-      fun(Host, #passwd{us = {LUser, LServer}, password = Password})
-            when LServer == Host,
-                 is_binary(Password) ->
-              [?SQL("delete from users where username=%(LUser)s;"),
-               ?SQL("insert into users(username, password) "
-                    "values (%(LUser)s, %(Password)s);")];
-         (Host, #passwd{us = {LUser, LServer}, password = #scram{} = Scram})
-            when LServer == Host ->
-              StoredKey = Scram#scram.storedkey,
-              ServerKey = Scram#scram.serverkey,
-              Salt = Scram#scram.salt,
-              IterationCount = Scram#scram.iterationcount,
-              [?SQL("delete from users where username=%(LUser)s;"),
-               ?SQL("insert into users(username, password, serverkey, salt, "
-                    "iterationcount) "
-                    "values (%(LUser)s, %(StoredKey)s, %(ServerKey)s,"
-                    " %(Salt)s, %(IterationCount)d);")];
-         (_Host, _R) ->
-              []
-      end}].
 
 import(LServer, [LUser, Password, _TimeStamp]) ->
     mnesia:dirty_write(

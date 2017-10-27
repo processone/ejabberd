@@ -40,9 +40,7 @@
 
 -include("ejabberd.hrl").
 -include("ejabberd_sql_pt.hrl").
-
--record(passwd, {us = {<<"">>, <<"">>} :: {binary(), binary()} | '$1',
-                 password = <<"">> :: binary() | scram() | '_'}).
+-include("ejabberd_auth.hrl").
 
 start(_Host) ->
     ok.
