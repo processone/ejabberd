@@ -1627,8 +1627,7 @@ set_subscriber(JID, Nick, Nodes, StateData) ->
     store_room(NewStateData),
     case not ?DICT:is_key(LBareJID, StateData#state.subscribers) of
 	true ->
-	    send_subscriptions_change_notifications(jid:replace_resource(StateData#state.jid, Nick),
-						    Nick, subscribe, NewStateData);
+	    send_subscriptions_change_notifications(BareJID, Nick, subscribe, NewStateData);
 	_ ->
 	    ok
     end,
@@ -3802,8 +3801,7 @@ process_iq_mucsub(From, #iq{type = set, sub_els = [#muc_unsubscribe{}]},
 	    NewStateData = StateData#state{subscribers = Subscribers,
 					   subscriber_nicks = Nicks},
 	    store_room(NewStateData),
-	    send_subscriptions_change_notifications(jid:replace_resource(StateData#state.jid, Nick),
-						    Nick, unsubscribe, StateData),
+	    send_subscriptions_change_notifications(LBareJID, Nick, unsubscribe, StateData),
 	    NewStateData2 = case close_room_if_temporary_and_empty(NewStateData) of
 		{stop, normal, _} -> stop;
 		{next_state, normal_state, SD} -> SD
