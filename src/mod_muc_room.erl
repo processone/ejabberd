@@ -1625,6 +1625,13 @@ set_subscriber(JID, Nick, Nodes, StateData) ->
     NewStateData = StateData#state{subscribers = Subscribers,
 				   subscriber_nicks = Nicks},
     store_room(NewStateData),
+    case not ?DICT:is_key(LBareJID, StateData#state.subscribers) of
+	true ->
+	    send_subscriptions_change_notifications(jid:replace_resource(StateData#state.jid, Nick),
+						    Nick, subscribe, NewStateData);
+	_ ->
+	    ok
+    end,
     NewStateData.
 
 -spec add_online_user(jid(), binary(), role(), state()) -> state().
@@ -3795,6 +3802,8 @@ process_iq_mucsub(From, #iq{type = set, sub_els = [#muc_unsubscribe{}]},
 	    NewStateData = StateData#state{subscribers = Subscribers,
 					   subscriber_nicks = Nicks},
 	    store_room(NewStateData),
+	    send_subscriptions_change_notifications(jid:replace_resource(StateData#state.jid, Nick),
+						    Nick, unsubscribe, StateData),
 	    NewStateData2 = case close_room_if_temporary_and_empty(NewStateData) of
 		{stop, normal, _} -> stop;
 		{next_state, normal_state, SD} -> SD
@@ -3839,7 +3848,8 @@ get_subscription_nodes(#iq{sub_els = [#muc_subscribe{events = Nodes}]}) ->
 				  ?NS_MUCSUB_NODES_AFFILIATIONS,
 				  ?NS_MUCSUB_NODES_SUBJECT,
 				  ?NS_MUCSUB_NODES_CONFIG,
-				  ?NS_MUCSUB_NODES_PARTICIPANTS])
+				  ?NS_MUCSUB_NODES_PARTICIPANTS,
+				  ?NS_MUCSUB_NODES_SUBSCRIBERS])
       end, Nodes);
 get_subscription_nodes(_) ->
     [].
@@ -4067,6 +4077,34 @@ store_room(StateData) ->
        true ->
 	    ok
     end.
+
+-spec send_subscriptions_change_notifications(jid(), binary(), subscribe|unsubscribe, state()) -> ok.
+send_subscriptions_change_notifications(From, Nick, Type, State) ->
+    ?DICT:fold(fun(_, #subscriber{nodes = Nodes, jid = JID}, _) ->
+		    case lists:member(?NS_MUCSUB_NODES_SUBSCRIBERS, Nodes) of
+			true ->
+			    ShowJid = case (State#state.config)#config.anonymous == false orelse
+					   get_role(JID, State) == moderator orelse
+					   get_default_role(get_affiliation(JID, State), State) == moderator of
+					  true -> true;
+					  _ -> false
+				      end,
+			    Packet = case {Type, ShowJid} of
+					 {subscribe, true} ->
+					     #muc_subscribe{jid = From, nick = Nick};
+					 {subscribe, _} ->
+					     #muc_subscribe{nick = Nick};
+					 {unsubscribe, true} ->
+					     #muc_unsubscribe{jid = From, nick = Nick};
+					 {unsubscribe, _} ->
+					     #muc_unsubscribe{nick = Nick}
+				     end,
+			    NewPacket = wrap(From, JID, Packet, ?NS_MUCSUB_NODES_SUBSCRIBERS),
+			    ejabberd_router:route(xmpp:set_from_to(NewPacket, From, JID));
+			false ->
+			    ok
+		    end
+	       end, ok, State#state.subscribers).
 
 -spec send_wrapped(jid(), jid(), stanza(), binary(), state()) -> ok.
 send_wrapped(From, To, Packet, Node, State) ->
