@@ -2731,7 +2731,7 @@ find_changed_items(UJID, UAffiliation, URole,
 		   [#muc_item{jid = J, nick = Nick, reason = Reason,
 			      role = Role, affiliation = Affiliation}|Items],
 		   Lang, StateData, Res) ->
-    [JID | _] = JIDs = 
+    [JID | _] = JIDs =
 	if J /= undefined ->
 		[J];
 	   Nick /= <<"">> ->
@@ -4089,7 +4089,7 @@ send_subscriptions_change_notifications(From, Nick, Type, State) ->
 					  true -> true;
 					  _ -> false
 				      end,
-			    Packet = case {Type, ShowJid} of
+			    Payload = case {Type, ShowJid} of
 					 {subscribe, true} ->
 					     #muc_subscribe{jid = From, nick = Nick};
 					 {subscribe, _} ->
@@ -4099,8 +4099,14 @@ send_subscriptions_change_notifications(From, Nick, Type, State) ->
 					 {unsubscribe, _} ->
 					     #muc_unsubscribe{nick = Nick}
 				     end,
-			    NewPacket = wrap(From, JID, Packet, ?NS_MUCSUB_NODES_SUBSCRIBERS),
-			    ejabberd_router:route(xmpp:set_from_to(NewPacket, From, JID));
+			    Packet = #message{
+				sub_els = [#ps_event{
+				    items = #ps_items{
+					node = ?NS_MUCSUB_NODES_SUBSCRIBERS,
+					items = [#ps_item{
+					    id = randoms:get_string(),
+					    xml_els = [xmpp:encode(Payload)]}]}}]},
+			    ejabberd_router:route(xmpp:set_from_to(Packet, From, JID));
 			false ->
 			    ok
 		    end
