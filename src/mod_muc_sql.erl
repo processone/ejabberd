@@ -82,8 +82,8 @@ store_room(LServer, Host, Name, Opts, ChangesHints) ->
     ejabberd_sql:sql_transaction(LServer, F).
 
 change_room(Host, Room, {add_subscription, JID, Nick, Nodes}) ->
-    SJID = jid:to_string(JID),
-    SNodes = jlib:term_to_expr(Nodes),
+    SJID = jid:encode(JID),
+    SNodes = misc:term_to_expr(Nodes),
     ?SQL_UPSERT_T(
        "muc_room_subscribers",
        ["!jid=%(SJID)s",
@@ -92,7 +92,7 @@ change_room(Host, Room, {add_subscription, JID, Nick, Nodes}) ->
 	"nick=%(Nick)s",
 	"nodes=%(SNodes)s"]);
 change_room(Host, Room, {del_subscription, JID}) ->
-    SJID = jid:to_string(JID),
+    SJID = jid:encode(JID),
     ejabberd_sql:sql_query_t(?SQL("delete from muc_room_subscribers where "
 				  "room=%(Room)s and host=%(Host)s and jid=%(SJID)s"));
 change_room(Host, Room, Change) ->
@@ -121,7 +121,7 @@ restore_room(LServer, Host, Name) ->
 		{selected, Subs} ->
 		    SubData = lists:map(
 			     fun({Jid, Nick, Nodes}) ->
-				 {jid:from_string(Jid), Nick, ejabberd_sql:decode_term(Nodes)}
+				 {jid:decode(Jid), Nick, ejabberd_sql:decode_term(Nodes)}
 			     end, Subs),
 		    Opts2 = lists:keystore(subscribers, 1, OptsD, {subscribers, SubData}),
 		    mod_muc:opts_to_binary(Opts2);
@@ -167,7 +167,7 @@ get_rooms(LServer, Host) ->
 		{selected, Subs} ->
 		    SubsD = lists:foldl(
 			fun({Room, Jid, Nick, Nodes}, Dict) ->
-			    dict:append(Room, {jid:from_string(Jid),
+			    dict:append(Room, {jid:decode(Jid),
 					       Nick, ejabberd_sql:decode_term(Nodes)}, Dict)
 			end, dict:new(), Subs),
 	    lists:map(
@@ -406,7 +406,7 @@ import(_, _, _) ->
     ok.
 
 get_subscribed_rooms(LServer, Host, Jid) ->
-    JidS = jid:to_string(Jid),
+    JidS = jid:encode(Jid),
     case catch ejabberd_sql:sql_query(
 	LServer,
 	?SQL("select @(room)s from muc_room_subscribers where jid=%(JidS)s"
