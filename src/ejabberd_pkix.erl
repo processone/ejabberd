@@ -348,8 +348,8 @@ build_chain_and_check(State) ->
 	    lists:foreach(
 	      fun({Cert, Why}) ->
 		      Path = maps:get(Cert, State#state.certs),
-		      ?ERROR_MSG("Failed to validate certificate from ~s: ~s",
-				 [Path, format_error(Why)])
+		      ?WARNING_MSG("Failed to validate certificate from ~s: ~s",
+				   [Path, format_error(Why)])
 	      end, Errors);
 	{error, Cert, Why} ->
 	    Path = maps:get(Cert, State#state.certs),
