@@ -299,8 +299,8 @@ CREATE TABLE muc_room_subscribers (
    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX i_muc_room_subscribers_host_jid USING BTREE ON muc_room_subscribers(host, jid);
-CREATE UNIQUE INDEX i_muc_room_subscribers_host_room_jid USING BTREE ON muc_room_subscribers(host, room, jid);
+CREATE INDEX i_muc_room_subscribers_host_jid ON muc_room_subscribers(host, jid);
+CREATE UNIQUE INDEX i_muc_room_subscribers_host_room_jid ON muc_room_subscribers(host, room, jid);
 
 CREATE TABLE irc_custom (
     jid text NOT NULL,
