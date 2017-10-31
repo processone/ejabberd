@@ -412,7 +412,7 @@ get_subscribed_rooms(LServer, Host, Jid) ->
 	?SQL("select @(room)s from muc_room_subscribers where jid=%(JidS)s"
 	     " and host=%(Host)s")) of
 	{selected, Subs} ->
-	    [jid:make(Room, Host, <<>>) || Room<-Subs];
+	    [jid:make(Room, Host, <<>>) || {Room} <- Subs];
 	Error ->
 	    ?ERROR_MSG("Error when fetching subscribed rooms ~p", [Error]),
 	    []
