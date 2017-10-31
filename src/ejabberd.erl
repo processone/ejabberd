@@ -149,7 +149,7 @@ get_module_file(App, Mod) ->
             filename:join([Dir, BaseName ++ ".beam"])
     end.
 
-module_name([Dir, _, <<H,T/binary>> | _] = Mod) when H >= 65, H =< 90 ->
+module_name([Dir, _, <<H,_/binary>> | _] = Mod) when H >= 65, H =< 90 ->
     Module = str:join([elixir_name(M) || M<-tl(Mod)], <<>>),
     Prefix = case elixir_name(Dir) of
 	<<"Ejabberd">> -> <<"Elixir.Ejabberd.">>;
