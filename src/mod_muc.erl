@@ -706,17 +706,17 @@ get_subscribed_rooms(ServerHost, Host, From) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     BareFrom = jid:remove_resource(From),
     case Mod:get_subscribed_rooms(LServer, Host, BareFrom) of
-	not_implmented ->
+	not_implemented ->
 	    Rooms = get_online_rooms(ServerHost, Host),
-    lists:flatmap(
-      fun({Name, _, Pid}) ->
-	      case p1_fsm:sync_send_all_state_event(Pid, {is_subscribed, BareFrom}) of
-		  true -> [jid:make(Name, Host)];
-		  false -> []
-	      end;
-	 (_) ->
-	      []
-		end, Rooms);
+	    lists:flatmap(
+	      fun({Name, _, Pid}) ->
+		      case p1_fsm:sync_send_all_state_event(Pid, {is_subscribed, BareFrom}) of
+			  true -> [jid:make(Name, Host)];
+			  false -> []
+		      end;
+		 (_) ->
+		      []
+	      end, Rooms);
 	V ->
 	    V
     end.
