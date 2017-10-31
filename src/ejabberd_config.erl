@@ -1417,8 +1417,11 @@ opt_type(cache_life_time) ->
        (infinity) -> infinity;
        (unlimited) -> infinity
     end;
-opt_type(domain_certfile) ->
-    fun misc:try_read_file/1;
+opt_type(domain_certfile = Opt) ->
+    fun(File) ->
+	    ?WARNING_MSG("option '~s' is deprecated, use 'certfiles' instead", [Opt]),
+	    misc:try_read_file(File)
+    end;
 opt_type(shared_key) ->
     fun iolist_to_binary/1;
 opt_type(node_start) ->

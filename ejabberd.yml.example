@@ -108,7 +108,6 @@ hosts:
 
 ## Define common macros used by listeners
 ## define_macro:
-##   'CERTFILE': "/path/to/xmpp.pem"
 ##   'CIPHERS': "ECDH:DH:!3DES:!aNULL:!eNULL:!MEDIUM@STRENGTH"
 ##   'TLSOPTS':
 ##     - "no_sslv2"
@@ -130,11 +129,9 @@ listen:
     module: ejabberd_c2s
     ##
     ## If TLS is compiled in and you installed a SSL
-    ## certificate, specify the full path to the
-    ## file and uncomment these lines:
+    ## certificate, uncomment these lines:
     ##
     ## starttls: true
-    ## certfile: 'CERTFILE'
     ## protocol_options: 'TLSOPTS'
     ## dhfile: 'DHFILE'
     ## ciphers: 'CIPHERS'
@@ -219,7 +216,7 @@ listen:
   ##   request_handlers:
   ##     "": mod_http_upload
   ##   tls: true
-  ##   certfile: 'CERTFILE'
+  ##   certfile: "/path/to/xmpp.pem"
   ##   protocol_options: 'TLSOPTS'
   ##   dhfile: 'DHFILE'
   ##   ciphers: 'CIPHERS'
@@ -228,33 +225,30 @@ listen:
 ## password storage (see auth_password_format option).
 ## disable_sasl_mechanisms: "digest-md5"
 
+###.  ============
+###'  Certificates
+
+## List all available PEM files containing certificates for your domains,
+## chains of certificates or certificate keys. Full chains will be built
+## automatically by ejabberd.
+##
+## certfiles:
+##   - "/etc/letsencrypt/live/example.org/*.pem"
+##   - "/etc/letsencrypt/live/example.com/*.pem"
+
 ###.  ==================
 ###'  S2S GLOBAL OPTIONS
 
 ##
 ## s2s_use_starttls: Enable STARTTLS for S2S connections.
 ## Allowed values are: false, optional or required
-## You must specify a certificate file.
+## You must specify 'certfiles' option
 ##
 ## s2s_use_starttls: required
-
-##
-## s2s_certfile: Specify a certificate file.
-##
-## s2s_certfile: 'CERTFILE'
 
 ## Custom OpenSSL options
 ##
 ## s2s_protocol_options: 'TLSOPTS'
-
-##
-## domain_certfile: Specify a different certificate for each served hostname.
-##
-## host_config:
-##   "example.org":
-##     domain_certfile: "/path/to/example_org.pem"
-##   "example.com":
-##     domain_certfile: "/path/to/example_com.pem"
 
 ##
 ## S2S whitelist or blacklist
