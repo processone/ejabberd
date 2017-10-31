@@ -3402,7 +3402,7 @@ subscription_plugin(Host) ->
 submodule(Host, Type, Name) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
 	mnesia -> ejabberd:module_name([<<"pubsub">>, Type, Name]);
-	Db -> ejabberd:module_name([<<"pubsub">>, Type, Name, Db])
+	Db -> ejabberd:module_name([<<"pubsub">>, Type, Name, misc:atom_to_binary(Db)])
     end.
 
 -spec config(binary(), any()) -> any().
