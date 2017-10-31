@@ -157,11 +157,20 @@ module_name([Dir, _, <<H,_/binary>> | _] = Mod) when H >= 65, H =< 90 ->
     end,
     misc:binary_to_atom(<<Prefix/binary, Module/binary>>);
 module_name([<<"ejabberd">> | _] = Mod) ->
-    misc:binary_to_atom(str:join(Mod,$_));
+    Module = str:join([erlang_name(M) || M<-Mod], $_),
+    misc:binary_to_atom(Module);
 module_name(Mod) when is_list(Mod) ->
-    misc:binary_to_atom(str:join(tl(Mod),$_)).
+    Module = str:join([erlang_name(M) || M<-tl(Mod)], $_),
+    misc:binary_to_atom(Module).
 
+elixir_name(Atom) when is_atom(Atom) ->
+    elixir_name(misc:atom_to_binary(Atom));
 elixir_name(<<H,T/binary>>) when H >= 65, H =< 90 ->
     <<H, T/binary>>;
 elixir_name(<<H,T/binary>>) ->
     <<(H-32), T/binary>>.
+
+erlang_name(Atom) when is_atom(Atom) ->
+    misc:atom_to_binary(Atom);
+erlang_name(Bin) when is_binary(Bin) ->
+    Bin.
