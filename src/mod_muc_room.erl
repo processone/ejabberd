@@ -3335,8 +3335,7 @@ change_config(Config, StateData) ->
 	  Config#config.persistent}
 	of
       {_, true} ->
-	  mod_muc:store_room(NSD#state.server_host,
-			     NSD#state.host, NSD#state.room, make_opts(NSD));
+            store_room(NSD);
       {true, false} ->
 	  mod_muc:forget_room(NSD#state.server_host,
 			      NSD#state.host, NSD#state.room);
