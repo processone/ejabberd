@@ -3380,11 +3380,11 @@ tree(Host) ->
 tree(_Host, <<"virtual">>) ->
     nodetree_virtual;   % special case, virtual does not use any backend
 tree(Host, Name) ->
-    submodule(Host, <<"nodetree_", Name/binary>>).
+    submodule(Host, <<"nodetree">>, Name).
 
 -spec plugin(host(), binary()) -> atom().
 plugin(Host, Name) ->
-    submodule(Host, <<"node_", Name/binary>>).
+    submodule(Host, <<"node">>, Name).
 
 -spec plugins(host()) -> [binary()].
 plugins(Host) ->
@@ -3396,14 +3396,13 @@ plugins(Host) ->
 
 -spec subscription_plugin(host()) -> atom().
 subscription_plugin(Host) ->
-    submodule(Host, <<"pubsub_subscription">>).
+    submodule(Host, <<"pubsub">>, <<"subscription">>).
 
--spec submodule(host(), binary()) -> atom().
-submodule(Host, Name) ->
+-spec submodule(host(), binary(), binary()) -> atom().
+submodule(Host, Type, Name) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
-	mnesia -> misc:binary_to_atom(Name);
-	Type -> misc:binary_to_atom(<<Name/binary, "_",
-		    (misc:atom_to_binary(Type))/binary>>)
+	mnesia -> ejabberd:module_name([<<"pubsub">>, Type, Name]);
+	Db -> ejabberd:module_name([<<"pubsub">>, Type, Name, Db])
     end.
 
 -spec config(binary(), any()) -> any().

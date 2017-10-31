@@ -735,8 +735,8 @@ auth_modules(Server) ->
     LServer = jid:nameprep(Server),
     Default = ejabberd_config:default_db(LServer, ?MODULE),
     Methods = ejabberd_config:get_option({auth_method, LServer}, [Default]),
-    [misc:binary_to_atom(<<"ejabberd_auth_",
-			   (misc:atom_to_binary(M))/binary>>)
+    [ejabberd:module_name([<<"ejabberd">>, <<"auth">>,
+			   misc:atom_to_binary(M)])
      || M <- Methods].
 
 -spec match_passwords(password(), password(),
