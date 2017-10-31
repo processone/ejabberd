@@ -28,12 +28,13 @@
 -behaviour(mod_muc_room).
 
 %% API
--export([init/2, import/3, store_room/4, restore_room/3, forget_room/3,
+-export([init/2, import/3, store_room/5, restore_room/3, forget_room/3,
 	 can_use_nick/4, get_rooms/2, get_nick/3, set_nick/4]).
 -export([register_online_room/4, unregister_online_room/4, find_online_room/3,
 	 get_online_rooms/3, count_online_rooms/2, rsm_supported/0,
 	 register_online_user/4, unregister_online_user/4,
-	 count_online_rooms_by_user/3, get_online_rooms_by_user/3]).
+	 count_online_rooms_by_user/3, get_online_rooms_by_user/3,
+	 get_subscribed_rooms/3]).
 -export([set_affiliation/6, set_affiliations/4, get_affiliation/5,
 	 get_affiliations/3, search_affiliation/4]).
 
@@ -46,7 +47,7 @@
 init(_Host, _Opts) ->
     ok.
 
-store_room(_LServer, Host, Name, Opts) ->
+store_room(_LServer, Host, Name, Opts, _) ->
     {atomic, ejabberd_riak:put(#muc_room{name_host = {Name, Host},
                                          opts = Opts},
 			       muc_room_schema())}.
@@ -182,6 +183,9 @@ import(_LServer, <<"muc_registered">>,
     R = #muc_registered{us_host = {{U, S}, RoomHost}, nick = Nick},
     ejabberd_riak:put(R, muc_registered_schema(),
 		      [{'2i', [{<<"nick_host">>, {Nick, RoomHost}}]}]).
+
+get_subscribed_rooms(_, _, _) ->
+    not_implemented.
 
 %%%===================================================================
 %%% Internal functions

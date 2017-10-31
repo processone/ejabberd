@@ -1624,7 +1624,7 @@ set_subscriber(JID, Nick, Nodes, StateData) ->
     Nicks = ?DICT:store(Nick, [LBareJID], StateData#state.subscriber_nicks),
     NewStateData = StateData#state{subscribers = Subscribers,
 				   subscriber_nicks = Nicks},
-    store_room(NewStateData),
+    store_room(NewStateData, [{add_subscription, BareJID, Nick, Nodes}]),
     case not ?DICT:is_key(LBareJID, StateData#state.subscribers) of
 	true ->
 	    send_subscriptions_change_notifications(BareJID, Nick, subscribe, NewStateData);
@@ -3800,7 +3800,7 @@ process_iq_mucsub(From, #iq{type = set, sub_els = [#muc_unsubscribe{}]},
 	    Subscribers = ?DICT:erase(LBareJID, StateData#state.subscribers),
 	    NewStateData = StateData#state{subscribers = Subscribers,
 					   subscriber_nicks = Nicks},
-	    store_room(NewStateData),
+	    store_room(NewStateData, [{del_subscription, LBareJID}]),
 	    send_subscriptions_change_notifications(LBareJID, Nick, unsubscribe, StateData),
 	    NewStateData2 = case close_room_if_temporary_and_empty(NewStateData) of
 		{stop, normal, _} -> stop;
@@ -4068,10 +4068,13 @@ element_size(El) ->
 
 -spec store_room(state()) -> ok.
 store_room(StateData) ->
+    store_room(StateData, []).
+store_room(StateData, ChangesHints) ->
     if (StateData#state.config)#config.persistent ->
 	    mod_muc:store_room(StateData#state.server_host,
 			       StateData#state.host, StateData#state.room,
-			       make_opts(StateData));
+			       make_opts(StateData),
+			       ChangesHints);
        true ->
 	    ok
     end.
