@@ -35,7 +35,6 @@
 
 -include_lib("public_key/include/public_key.hrl").
 -include("logger.hrl").
--include("jid.hrl").
 
 -record(state, {validate = true :: boolean(),
 		notify = false :: boolean(),
