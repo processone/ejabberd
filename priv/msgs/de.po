@@ -1,11 +1,11 @@
-# Jack Frey <maximilian@trummer.xyz>, 2017.
+# Maximilian Trummer <maximilian@trummer.xyz>, 2017.
 msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2017-10-11 16:55+0100\n"
+"PO-Revision-Date: 2017-11-01 18:22+0100\n"
 "Last-Translator: Maximilian Trummer <maximilian@trummer.xyz>\n"
-"Language-Team: German <kde-i18n-de@kde.org>\n"
+"Language-Team: German <>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -728,9 +728,8 @@ msgid "Incorrect CAPTCHA submit"
 msgstr "Falsche CAPTCHA-Eingabe"
 
 #: mod_muc:772 mod_muc_room:3052 mod_pubsub:1194 mod_register:183 mod_vcard:256
-#, fuzzy
 msgid "Incorrect data form"
-msgstr "Falsches Passwort"
+msgstr "Falsches Datenformular"
 
 #: mod_muc_room:1943 mod_register:300 mod_register:350
 msgid "Incorrect password"
@@ -738,7 +737,7 @@ msgstr "Falsches Passwort"
 
 #: mod_irc:585
 msgid "Incorrect value in data form"
-msgstr ""
+msgstr "Falscher Wert in Datenformular"
 
 #: mod_adhoc:276
 msgid "Incorrect value of 'action' attribute"
@@ -746,12 +745,12 @@ msgstr "Falscher Wert des 'action'-Attributs"
 
 #: mod_configure:1806
 msgid "Incorrect value of 'action' in data form"
-msgstr ""
+msgstr "Falscher Wert von 'action' in Datenformular"
 
 #: mod_configure:1335 mod_configure:1367 mod_configure:1399 mod_configure:1419
 #: mod_configure:1439
 msgid "Incorrect value of 'path' in data form"
-msgstr ""
+msgstr "Falscher Wert von 'path' in Datenformular"
 
 #: mod_irc:331
 msgid "Incorrect value of 'type' attribute"
@@ -937,7 +936,7 @@ msgstr "Nachrichtentext"
 
 #: mod_privilege:291
 msgid "Message not found in forwarded payload"
-msgstr ""
+msgstr "Nachricht nicht in weitergeleiteten Nutzdaten gefunden"
 
 #: mod_vcard_ldap:331 mod_vcard_ldap:344 mod_vcard_mnesia:102
 #: mod_vcard_mnesia:116 mod_vcard_sql:157 mod_vcard_sql:171
@@ -946,7 +945,7 @@ msgstr "Zweiter Vorname"
 
 #: mod_irc:704
 msgid "Missing 'channel' or 'server' in the data form"
-msgstr ""
+msgstr "Im Datenformular fehlt 'channel' oder 'server'"
 
 #: xmpp_stream_in:990
 msgid "Missing 'from' attribute"
@@ -1036,11 +1035,11 @@ msgstr "Der Benutzername ~s existiert im Raum nicht"
 
 #: mod_configure:1496
 msgid "No 'access' found in data form"
-msgstr ""
+msgstr "Kein 'access' in Datenformular gefunden"
 
 #: mod_configure:1455
 msgid "No 'acls' found in data form"
-msgstr ""
+msgstr "Kein 'acls' in Datenformular gefunden"
 
 #: mod_muc_room:3075
 msgid "No 'affiliation' attribute found"
@@ -1052,11 +1051,11 @@ msgstr "Kein 'item'-Element gefunden"
 
 #: mod_configure:1280
 msgid "No 'modules' found in data form"
-msgstr ""
+msgstr "Kein 'modules' in Datenformular gefunden"
 
 #: mod_configure:1799
 msgid "No 'password' found in data form"
-msgstr ""
+msgstr "Kein 'password' in Datenformular gefunden"
 
 #: mod_register:148
 msgid "No 'password' found in this query"
@@ -1065,7 +1064,7 @@ msgstr "Kein 'password' in dieser Anfrage gefunden"
 #: mod_configure:1319 mod_configure:1350 mod_configure:1382 mod_configure:1413
 #: mod_configure:1433
 msgid "No 'path' found in data form"
-msgstr ""
+msgstr "Kein 'path' in Datenformular gefunden"
 
 #: mod_muc_room:3922
 msgid "No 'to' attribute found in the invitation"
@@ -1084,17 +1083,16 @@ msgid "No body provided for announce message"
 msgstr "Kein Text für die Ankündigungsnachricht angegeben"
 
 #: mod_irc:335 mod_pubsub:1183 mod_pubsub:3289
-#, fuzzy
 msgid "No data form found"
-msgstr "Knoten nicht gefunden"
+msgstr "Kein Datenformular gefunden"
 
 #: mod_disco:224 mod_vcard:282
 msgid "No features available"
-msgstr ""
+msgstr "Keine Eigenschaften verfügbar"
 
 #: mod_adhoc:239
 msgid "No hook has processed this command"
-msgstr ""
+msgstr "Kein Hook hat diesen Befehl verarbeitet"
 
 #: mod_last:218
 msgid "No info about last activity found"
@@ -1116,11 +1114,11 @@ msgstr "Kein Knoten angegeben"
 
 #: mod_pubsub:1426
 msgid "No pending subscriptions found"
-msgstr ""
+msgstr "Keine ausstehenden Abonnements gefunden"
 
 #: mod_privacy:201 mod_privacy:295 mod_privacy:311 mod_privacy:344
 msgid "No privacy list with this name found"
-msgstr ""
+msgstr "Keine Privacy-Liste mit diesem Namen gefunden"
 
 #: mod_private:96
 msgid "No private data found in this query"
@@ -1161,7 +1159,7 @@ msgstr "Knoten ~p"
 
 #: mod_vcard:385
 msgid "Nodeprep has failed"
-msgstr ""
+msgstr "Nodeprep schlug fehl"
 
 #: ejabberd_web_admin:1837
 msgid "Nodes"
@@ -1178,7 +1176,7 @@ msgstr "Nicht gefunden"
 
 #: mod_disco:296 mod_disco:370 mod_last:159
 msgid "Not subscribed"
-msgstr ""
+msgstr "Nicht abonniert"
 
 #: mod_muc_log:483
 msgid "November"
@@ -1300,11 +1298,11 @@ msgstr "Paket"
 
 #: mod_irc:578
 msgid "Parse error"
-msgstr ""
+msgstr "Parse-Fehler"
 
 #: mod_configure:1299 mod_configure:1468 mod_configure:1513
 msgid "Parse failed"
-msgstr ""
+msgstr "Parsen fehlgeschlagen"
 
 #: ejabberd_oauth:431 ejabberd_web_admin:1435 mod_configure:1126
 #: mod_configure:1173 mod_configure:1602 mod_configure:1781 mod_muc_log:1036
@@ -1402,7 +1400,7 @@ msgstr "Publish-Subscribe"
 
 #: node_dag:81
 msgid "Publishing items to collection node is not allowed"
-msgstr ""
+msgstr "Es ist nicht erlaubt Elemente auf dem Sammelknoten zu veröffentlichen"
 
 #: mod_muc_room:462
 msgid "Queries to the conference members are not allowed in this room"
@@ -1542,7 +1540,7 @@ msgstr "Kontaktliste"
 
 #: mod_roster:334
 msgid "Roster module has failed"
-msgstr ""
+msgstr "Roster-Modul schlug fehl"
 
 #: mod_roster:968
 msgid "Roster of "
@@ -1636,10 +1634,9 @@ msgstr "Gruppen der gemeinsamen Kontaktliste"
 
 #: ejabberd_web_admin:1016
 msgid "Show Integral Table"
-msgstr "Integrale Tabelle anzeigen"
+msgstr "Integral-Tabelle anzeigen"
 
 #: ejabberd_web_admin:1013
-#, fuzzy
 msgid "Show Ordinary Table"
 msgstr "Gewöhnliche Tabelle anzeigen"
 
@@ -1751,7 +1748,7 @@ msgstr "Die CAPTCHA-Verifizierung schlug fehl"
 
 #: mod_muc_room:302
 msgid "The feature requested is not supported by the conference"
-msgstr ""
+msgstr "Die gewünschte Eigenschaft wird von der Konferenz nicht unterstützt"
 
 #: mod_register:308 mod_register:366
 msgid "The password contains unacceptable characters"
@@ -1778,6 +1775,8 @@ msgid ""
 "The stanza MUST contain only one <active/> element, one <default/> element, "
 "or one <list/> element"
 msgstr ""
+"Das Stanza darf nur ein <active/>-Element, ein <default/>-Element oder ein <"
+"list/>-Element enthalten."
 
 #: mod_register_web:146
 msgid "There was an error changing the password: "
@@ -1843,7 +1842,7 @@ msgstr "An ~s"
 
 #: ejabberd_oauth:439
 msgid "Token TTL"
-msgstr ""
+msgstr "Token TTL"
 
 #: xmpp_stream_in:463
 msgid "Too long value of 'xml:lang' attribute"
@@ -2043,11 +2042,11 @@ msgstr "Wert 'set' des 'type'-Attributs ist nicht erlaubt"
 
 #: pubsub_subscription:237 pubsub_subscription_sql:202
 msgid "Value of '~s' should be boolean"
-msgstr ""
+msgstr "Wert von '~s' sollte boolesch sein"
 
 #: pubsub_subscription:215 pubsub_subscription_sql:180
 msgid "Value of '~s' should be datetime string"
-msgstr ""
+msgstr "Wert von '~s' sollte datetime-String sein"
 
 #: pubsub_subscription:209 pubsub_subscription:227 pubsub_subscription_sql:174
 #: pubsub_subscription_sql:192
