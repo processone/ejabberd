@@ -201,7 +201,11 @@ handle_call({route_registered, Host}, _, State) ->
 		error ->
 		    ?WARNING_MSG("No certificate found matching '~s': strictly "
 				 "configured clients or servers will reject "
-				 "connections with this host", [Host])
+				 "connections with this host; obtain "
+				 "a certificate for this (sub)domain from any "
+				 "trusted CA such as Let's Encrypt "
+				 "(www.letsencrypt.org)",
+				 [Host])
 	    end,
 	    {reply, ok, NewState};
 	{error, _} ->
@@ -703,7 +707,10 @@ start_fs() ->
 	{error, {already_loaded, _}} -> true;
 	{error, Reason} ->
 	    ?ERROR_MSG("Failed to load 'fs' Erlang application: ~p; "
-		       "certificates change detection will be disabled",
+		       "certificates change detection will be disabled. "
+		       "You should now manually run `ejabberdctl "
+		       "reload_config` whenever certificates are changed "
+		       "on disc",
 		       [Reason]),
 	    false
     end.
