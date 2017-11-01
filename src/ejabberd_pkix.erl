@@ -38,6 +38,7 @@
 -include("jid.hrl").
 
 -record(state, {validate = true :: boolean(),
+		notify = false :: boolean(),
 		paths = [] :: [file:filename()],
 		certs = #{} :: map(),
 		keys = [] :: [public_key:private_key()]}).
@@ -158,9 +159,7 @@ opt_type(_) ->
 %%% gen_server callbacks
 %%%===================================================================
 init([]) ->
-    application:load(fs),
-    application:set_env(fs, backwards_compatible, false),
-    ejabberd:start_app(fs),
+    Notify = start_fs(),
     process_flag(trap_exit, true),
     ets:new(?MODULE, [named_table, public, bag]),
     ejabberd_hooks:add(route_registered, ?MODULE, route_registered, 50),
@@ -175,7 +174,7 @@ init([]) ->
     if Validate -> check_ca_dir();
        true -> ok
     end,
-    State = #state{validate = Validate},
+    State = #state{validate = Validate, notify = Notify},
     case filelib:ensure_dir(filename:join(certs_dir(), "foo")) of
 	ok ->
 	    clean_dir(certs_dir()),
@@ -679,7 +678,7 @@ short_name_hash(_) ->
 -endif.
 
 -spec subscribe(state()) -> ok.
-subscribe(State) ->
+subscribe(#state{notify = true} = State) ->
     lists:foreach(
       fun(Path) ->
 	      Dir = filename:dirname(Path),
@@ -691,4 +690,20 @@ subscribe(State) ->
 		  {error, _} ->
 		      ok
 	      end
-      end, State#state.paths).
+      end, State#state.paths);
+subscribe(_) ->
+    ok.
+
+-spec start_fs() -> boolean().
+start_fs() ->
+    application:load(fs),
+    application:set_env(fs, backwards_compatible, false),
+    case application:ensure_all_started(fs) of
+	{ok, _} -> true;
+	{error, {already_loaded, _}} -> true;
+	{error, Reason} ->
+	    ?ERROR_MSG("Failed to load 'fs' Erlang application: ~p; "
+		       "certificates change detection will be disabled",
+		       [Reason]),
+	    false
+    end.
