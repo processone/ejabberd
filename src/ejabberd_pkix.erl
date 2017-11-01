@@ -161,7 +161,7 @@ opt_type(_) ->
 init([]) ->
     Notify = start_fs(),
     process_flag(trap_exit, true),
-    ets:new(?MODULE, [named_table, public, bag]),
+    ets:new(?MODULE, [named_table, public]),
     ejabberd_hooks:add(route_registered, ?MODULE, route_registered, 50),
     ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 30),
     Validate = case os:type() of
