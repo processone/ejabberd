@@ -476,7 +476,7 @@ validate(Paths, true) ->
 	      end
       end, Paths);
 validate(_, _) ->
-    ok.
+    [].
 
 -spec validate_path([cert()]) -> ok | {error, cert(), bad_cert()}.
 validate_path([Cert|_] = Certs) ->
