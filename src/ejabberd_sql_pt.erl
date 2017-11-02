@@ -701,8 +701,17 @@ filter_upsert_sh(Table, ParseRes) ->
               end, ParseRes)
     end.
 
+-ifdef(ENABLE_PT_WARNINGS).
+
 add_warning(Pos, Warning) ->
     Marker = erl_syntax:revert(
                erl_syntax:warning_marker({Pos, ?MODULE, Warning})),
     put(warnings, [Marker | get(warnings)]),
     ok.
+
+-else.
+
+add_warning(_Pos, _Warning) ->
+    ok.
+
+-endif.
