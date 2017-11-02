@@ -43,6 +43,7 @@ store_session(LUser, LServer, NowTS, PushJID, Node, XData) ->
     Service = jid:encode(PushLJID),
     case ?SQL_UPSERT(LServer, "push_session",
 		     ["!username=%(LUser)s",
+                      "!server_host=%(LServer)s",
 		      "!timestamp=%(TS)d",
 		      "!service=%(Service)s",
 		      "!node=%(Node)s",
@@ -60,7 +61,8 @@ lookup_session(LUser, LServer, PushJID, Node) ->
     case ejabberd_sql:sql_query(
 	   LServer,
 	   ?SQL("select @(timestamp)d, @(xml)s from push_session "
-		"where username=%(LUser)s and service=%(Service)s "
+		"where username=%(LUser)s and %(LServer)H "
+                "and service=%(Service)s "
 		"and node=%(Node)s")) of
 	{selected, [{TS, XML}]} ->
 	    NowTS = misc:usec_to_now(TS),
@@ -78,7 +80,7 @@ lookup_session(LUser, LServer, NowTS) ->
     case ejabberd_sql:sql_query(
 	   LServer,
 	   ?SQL("select @(service)s, @(node)s, @(xml)s "
-		"from push_session where username=%(LUser)s "
+		"from push_session where username=%(LUser)s and %(LServer)H "
 		"and timestamp=%(TS)d")) of
 	{selected, [{Service, Node, XML}]} ->
 	    PushLJID = jid:tolower(jid:decode(Service)),
@@ -97,7 +99,8 @@ lookup_sessions(LUser, LServer, PushJID) ->
     case ejabberd_sql:sql_query(
 	   LServer,
 	   ?SQL("select @(timestamp)d, @(xml)s, @(node)s from push_session "
-		"where username=%(LUser)s and service=%(Service)s")) of
+		"where username=%(LUser)s and %(LServer)H "
+                "and service=%(Service)s")) of
 	{selected, Rows} ->
 	    {ok, lists:map(
 		   fun({TS, XML, Node}) ->
@@ -114,7 +117,8 @@ lookup_sessions(LUser, LServer) ->
     case ejabberd_sql:sql_query(
 	   LServer,
 	   ?SQL("select @(timestamp)d, @(xml)s, @(node)s, @(service)s "
-		"from push_session where username=%(LUser)s")) of
+		"from push_session "
+                "where username=%(LUser)s and %(LServer)H")) of
 	{selected, Rows} ->
 	    {ok, lists:map(
 		   fun({TS, XML, Node, Service}) ->
@@ -132,7 +136,8 @@ lookup_sessions(LServer) ->
     case ejabberd_sql:sql_query(
 	   LServer,
 	   ?SQL("select @(username)s, @(timestamp)d, @(xml)s, "
-		"@(node)s, @(service)s from push_session")) of
+		"@(node)s, @(service)s from push_session "
+                "where %(LServer)H")) of
 	{selected, Rows} ->
 	    {ok, lists:map(
 		   fun({LUser, TS, XML, Node, Service}) ->
@@ -151,7 +156,7 @@ delete_session(LUser, LServer, NowTS) ->
     case ejabberd_sql:sql_query(
 	   LServer,
 	   ?SQL("delete from push_session where "
-		"username=%(LUser)s and timestamp=%(TS)d")) of
+		"username=%(LUser)s and %(LServer)H and timestamp=%(TS)d")) of
 	{updated, _} ->
 	    ok;
 	Err ->
@@ -163,7 +168,8 @@ delete_old_sessions(LServer, Time) ->
     TS = misc:now_to_usec(Time),
     case ejabberd_sql:sql_query(
 	   LServer,
-	   ?SQL("delete from push_session where timestamp<%(TS)d")) of
+	   ?SQL("delete from push_session where timestamp<%(TS)d "
+                "and %(LServer)H")) of
 	{updated, _} ->
 	    ok;
 	Err ->
@@ -183,12 +189,18 @@ export(_Server) ->
 	      Service = jid:encode(PushLJID),
 	      XML = encode_xdata(XData),
 	      [?SQL("delete from push_session where "
-		    "username=%(LUser)s and timestamp=%(TS)d and "
+		    "username=%(LUser)s and %(LServer)H and "
+                    "timestamp=%(TS)d and "
 		    "service=%(Service)s and node=%(Node)s and "
 		    "xml=%(XML)s;"),
-	       ?SQL("insert into push_session(username, timestamp, "
-		    "service, node, xml) values ("
-		    "%(LUser)s, %(TS)d, %(Service)s, %(Node)s, %(XML)s);")];
+	       ?SQL_INSERT(
+                  "push_session",
+                  ["username=%(LUser)s",
+                   "server_host=%(LServer)s",
+                   "timestamp=%(TS)d",
+                   "service=%(Service)s",
+                   "node=%(Node)s",
+                   "xml=%(XML)s"])];
 	 (_Host, _R) ->
 	      []
       end}].

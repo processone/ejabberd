@@ -74,6 +74,7 @@ set_session(#session{sid = {Now, Pid}, usr = {U, LServer, R},
                       "!pid=%(PidS)s",
                       "node=%(Node)s",
                       "username=%(U)s",
+                      "server_host=%(LServer)s",
                       "resource=%(R)s",
                       "priority=%(PrioS)s",
                       "info=%(InfoS)s"]) of
@@ -107,7 +108,8 @@ get_sessions(LServer) ->
     case ejabberd_sql:sql_query(
 	   LServer,
            ?SQL("select @(usec)d, @(pid)s, @(node)s, @(username)s,"
-                " @(resource)s, @(priority)s, @(info)s from sm")) of
+                " @(resource)s, @(priority)s, @(info)s from sm"
+                " where %(LServer)H")) of
 	{selected, Rows} ->
 	    lists:flatmap(
 	      fun(Row) ->
@@ -125,7 +127,7 @@ get_sessions(LUser, LServer) ->
 	   LServer,
            ?SQL("select @(usec)d, @(pid)s, @(node)s, @(username)s,"
                 " @(resource)s, @(priority)s, @(info)s from sm"
-                " where username=%(LUser)s")) of
+                " where username=%(LUser)s and %(LServer)H")) of
 	{selected, Rows} ->
 	    {ok, lists:flatmap(
 		   fun(Row) ->

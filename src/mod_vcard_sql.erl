@@ -39,6 +39,12 @@
 -include("ejabberd_sql_pt.hrl").
 -include("translate.hrl").
 
+-ifdef(NEW_SQL_SCHEMA).
+-define(USE_NEW_SCHEMA, true).
+-else.
+-define(USE_NEW_SCHEMA, false).
+-endif.
+
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -54,7 +60,8 @@ is_search_supported(_LServer) ->
 get_vcard(LUser, LServer) ->
     case ejabberd_sql:sql_query(
 	   LServer,
-	   ?SQL("select @(vcard)s from vcard where username=%(LUser)s")) of
+	   ?SQL("select @(vcard)s from vcard"
+                " where username=%(LUser)s and %(LServer)H")) of
 	{selected, [{SVCARD}]} ->
 	    case fxml_stream:parse_element(SVCARD) of
 		{error, _Reason} -> error;
@@ -94,10 +101,12 @@ set_vcard(LUser, LServer, VCARD,
       fun() ->
               ?SQL_UPSERT(LServer, "vcard",
                           ["!username=%(LUser)s",
+                           "!server_host=%(LServer)s",
                            "vcard=%(SVCARD)s"]),
               ?SQL_UPSERT(LServer, "vcard_search",
                           ["username=%(User)s",
                            "!lusername=%(LUser)s",
+                           "!server_host=%(LServer)s",
                            "fn=%(FN)s",
                            "lfn=%(LFN)s",
                            "family=%(Family)s",
@@ -183,9 +192,11 @@ remove_user(LUser, LServer) ->
       LServer,
       fun() ->
               ejabberd_sql:sql_query_t(
-                ?SQL("delete from vcard where username=%(LUser)s")),
+                ?SQL("delete from vcard"
+                     " where username=%(LUser)s and %(LServer)H")),
               ejabberd_sql:sql_query_t(
-                ?SQL("delete from vcard_search where lusername=%(LUser)s"))
+                ?SQL("delete from vcard_search"
+                     " where lusername=%(LUser)s and %(LServer)H"))
       end).
 
 export(_Server) ->   
@@ -193,9 +204,12 @@ export(_Server) ->
       fun(Host, #vcard{us = {LUser, LServer}, vcard = VCARD})
             when LServer == Host ->
               SVCARD = fxml:element_to_binary(VCARD),
-              [?SQL("delete from vcard where username=%(LUser)s;"),
-               ?SQL("insert into vcard(username, vcard) values ("
-                    "%(LUser)s, %(SVCARD)s);")];
+              [?SQL("delete from vcard"
+                    " where username=%(LUser)s and %(LServer)H;"),
+               ?SQL_INSERT("vcard",
+                           ["username=%(LUser)s",
+                            "server_host=%(LServer)s",
+                            "vcard=%(SVCARD)s"])];
          (_Host, _R) ->
               []
       end},
@@ -212,26 +226,34 @@ export(_Server) ->
                               orgname = OrgName, lorgname = LOrgName,
                               orgunit = OrgUnit, lorgunit = LOrgUnit})
             when LServer == Host ->
-              [?SQL("delete from vcard_search where lusername=%(LUser)s;"),
-               ?SQL("insert into vcard_search(username,"
-                    " lusername, fn, lfn, family, lfamily,"
-                    " given, lgiven, middle, lmiddle,"
-                    " nickname, lnickname, bday, lbday,"
-                    " ctry, lctry, locality, llocality,"
-                    " email, lemail, orgname, lorgname,"
-                    " orgunit, lorgunit) values ("
-                    " %(LUser)s, %(User)s,"
-                    " %(FN)s, %(LFN)s,"
-                    " %(Family)s, %(LFamily)s,"
-                    " %(Given)s, %(LGiven)s,"
-                    " %(Middle)s, %(LMiddle)s,"
-                    " %(Nickname)s, %(LNickname)s,"
-                    " %(BDay)s, %(LBDay)s,"
-                    " %(CTRY)s, %(LCTRY)s,"
-                    " %(Locality)s, %(LLocality)s,"
-                    " %(EMail)s, %(LEMail)s,"
-                    " %(OrgName)s, %(LOrgName)s,"
-                    " %(OrgUnit)s, %(LOrgUnit)s);")];
+              [?SQL("delete from vcard_search"
+                    " where lusername=%(LUser)s and %(LServer)H;"),
+               ?SQL_INSERT("vcard_search",
+                           ["username=%(User)s",
+                            "lusername=%(LUser)s",
+                            "server_host=%(LServer)s",
+                            "fn=%(FN)s",
+                            "lfn=%(LFN)s",
+                            "family=%(Family)s",
+                            "lfamily=%(LFamily)s",
+                            "given=%(Given)s",
+                            "lgiven=%(LGiven)s",
+                            "middle=%(Middle)s",
+                            "lmiddle=%(LMiddle)s",
+                            "nickname=%(Nickname)s",
+                            "lnickname=%(LNickname)s",
+                            "bday=%(BDay)s",
+                            "lbday=%(LBDay)s",
+                            "ctry=%(CTRY)s",
+                            "lctry=%(LCTRY)s",
+                            "locality=%(Locality)s",
+                            "llocality=%(LLocality)s",
+                            "email=%(EMail)s",
+                            "lemail=%(LEMail)s",
+                            "orgname=%(OrgName)s",
+                            "lorgname=%(LOrgName)s",
+                            "orgunit=%(OrgUnit)s",
+                            "lorgunit=%(LOrgUnit)s"])];
          (_Host, _R) ->
               []
       end}].
@@ -245,10 +267,19 @@ import(_, _, _) ->
 make_matchspec(LServer, Data) ->
     filter_fields(Data, <<"">>, LServer).
 
-filter_fields([], Match, _LServer) ->
-    case Match of
-	<<"">> -> <<"">>;
-	_ -> [<<" where ">>, Match]
+filter_fields([], Match, LServer) ->
+    case ?USE_NEW_SCHEMA of
+        true ->
+            SServer = ejabberd_sql:escape(LServer),
+            case Match of
+                <<"">> -> [<<"where server_host='">>, SServer, <<"'">>];
+                _ -> [<<" where server_host='">>, SServer, <<"' and ">>, Match]
+            end;
+        false ->
+            case Match of
+                <<"">> -> <<"">>;
+                _ -> [<<" where ">>, Match]
+            end
     end;
 filter_fields([{SVar, [Val]} | Ds], Match, LServer)
   when is_binary(Val) and (Val /= <<"">>) ->

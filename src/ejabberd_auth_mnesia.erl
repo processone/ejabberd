@@ -40,7 +40,6 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
--include("ejabberd_sql_pt.hrl").
 -include("ejabberd_auth.hrl").
 
 -record(reg_users_counter, {vhost = <<"">> :: binary(),

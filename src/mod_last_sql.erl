@@ -46,7 +46,7 @@ get_last(LUser, LServer) ->
     case ejabberd_sql:sql_query(
 	   LServer,
 	   ?SQL("select @(seconds)d, @(state)s from last"
-		" where username=%(LUser)s")) of
+		" where username=%(LUser)s and %(LServer)H")) of
         {selected, []} ->
 	    error;
         {selected, [{TimeStamp, Status}]} ->
@@ -60,6 +60,7 @@ get_last(LUser, LServer) ->
 store_last_info(LUser, LServer, TimeStamp, Status) ->
     case ?SQL_UPSERT(LServer, "last",
 		     ["!username=%(LUser)s",
+                      "!server_host=%(LServer)s",
 		      "seconds=%(TimeStamp)d",
 		      "state=%(Status)s"]) of
 	ok ->
@@ -73,16 +74,19 @@ store_last_info(LUser, LServer, TimeStamp, Status) ->
 remove_user(LUser, LServer) ->
     ejabberd_sql:sql_query(
       LServer,
-      ?SQL("delete from last where username=%(LUser)s")).
+      ?SQL("delete from last where username=%(LUser)s and %(LServer)H")).
 
 export(_Server) ->
     [{last_activity,
       fun(Host, #last_activity{us = {LUser, LServer},
                                timestamp = TimeStamp, status = Status})
             when LServer == Host ->
-              [?SQL("delete from last where username=%(LUser)s;"),
-               ?SQL("insert into last(username, seconds, state)"
-                    " values (%(LUser)s, %(TimeStamp)d, %(Status)s);")];
+              [?SQL("delete from last where username=%(LUser)s and %(LServer)H;"),
+               ?SQL_INSERT("last",
+                           ["username=%(LUser)s",
+                            "server_host=%(LServer)s",
+                            "seconds=%(TimeStamp)d",
+                            "state=%(Status)s"])];
          (_Host, _R) ->
               []
       end}].

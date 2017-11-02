@@ -46,7 +46,7 @@ get_data(LServer, Host, From) ->
     case catch ejabberd_sql:sql_query(
                  LServer,
                  ?SQL("select @(data)s from irc_custom"
-                      " where jid=%(SJID)s and host=%(Host)s")) of
+                      " where jid=%(SJID)s and host=%(Host)s and %(LServer)H")) of
         {selected, [{SData}]} ->
             mod_irc:data_to_binary(From, ejabberd_sql:decode_term(SData));
         {'EXIT', _} -> error;
@@ -61,6 +61,7 @@ set_data(LServer, Host, From, Data) ->
                    "irc_custom",
                    ["!jid=%(SJID)s",
                     "!host=%(Host)s",
+                    "server_host=%(LServer)s",
                     "data=%(SData)s"]),
 		ok
 	end,
@@ -73,11 +74,16 @@ export(_Server) ->
               case str:suffix(Host, IRCHost) of
                   true ->
                       SJID = jid:encode(jid:make(U, S)),
+                      LServer = ejabberd_router:host_of_route(IRCHost),
                       SData = misc:term_to_expr(Data),
                       [?SQL("delete from irc_custom"
-                            " where jid=%(SJID)s and host=%(IRCHost)s;"),
-                       ?SQL("insert into irc_custom(jid, host, data)"
-                            " values (%(SJID)s, %(IRCHost)s, %(SData)s);")];
+                            " where jid=%(SJID)s and host=%(IRCHost)s and %(LServer)H;"),
+                       ?SQL_INSERT(
+                          "irc_custom",
+                          ["jid=%(SJID)s",
+                           "host=%(Host)s",
+                           "server_host=%(LServer)s",
+                           "data=%(SData)s"])];
                   false ->
                       []
               end

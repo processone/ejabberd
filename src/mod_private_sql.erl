@@ -49,6 +49,7 @@ set_data(LUser, LServer, Data) ->
 			  ?SQL_UPSERT_T(
 			     "private_storage",
 			     ["!username=%(LUser)s",
+                              "!server_host=%(LServer)s",
 			      "!namespace=%(XMLNS)s",
 			      "data=%(SData)s"])
 		  end, Data)
@@ -64,7 +65,8 @@ get_data(LUser, LServer, XMLNS) ->
     case ejabberd_sql:sql_query(
 	   LServer,
 	   ?SQL("select @(data)s from private_storage"
-		" where username=%(LUser)s and namespace=%(XMLNS)s")) of
+		" where username=%(LUser)s and %(LServer)H"
+                " and namespace=%(XMLNS)s")) of
 	{selected, [{SData}]} ->
 	    parse_element(LUser, LServer, SData);
 	{selected, []} ->
@@ -77,7 +79,7 @@ get_all_data(LUser, LServer) ->
     case ejabberd_sql:sql_query(
 	   LServer,
 	   ?SQL("select @(namespace)s, @(data)s from private_storage"
-		" where username=%(LUser)s")) of
+		" where username=%(LUser)s and %(LServer)H")) of
 	{selected, []} ->
 	    error;
         {selected, Res} ->
@@ -95,7 +97,8 @@ get_all_data(LUser, LServer) ->
 del_data(LUser, LServer) ->
     case ejabberd_sql:sql_query(
 	   LServer,
-	   ?SQL("delete from private_storage where username=%(LUser)s")) of
+	   ?SQL("delete from private_storage"
+                " where username=%(LUser)s and %(LServer)H")) of
 	{updated, _} ->
 	    ok;
 	_ ->
@@ -109,10 +112,13 @@ export(_Server) ->
             when LServer == Host ->
               SData = fxml:element_to_binary(Data),
 	      [?SQL("delete from private_storage where"
-		    " username=%(LUser)s and namespace=%(XMLNS)s;"),
-	       ?SQL("insert into private_storage(username, "
-		    "namespace, data) values ("
-		    "%(LUser)s, %(XMLNS)s, %(SData)s);")];
+		    " username=%(LUser)s and %(LServer)H and namespace=%(XMLNS)s;"),
+               ?SQL_INSERT(
+                  "private_storage",
+                  ["username=%(LUser)s",
+                   "server_host=%(LServer)s",
+                   "namespace=%(XMLNS)s",
+                   "data=%(SData)s"])];
          (_Host, _R) ->
               []
       end}].
