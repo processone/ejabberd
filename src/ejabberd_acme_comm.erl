@@ -151,7 +151,7 @@ revoke_cert(Dirs, PrivateKey, Req, Nonce) ->
 get_dirs({ok, Head, Return}) ->
     NewNonce = get_nonce(Head),
     StrDirectories = [{bitstring_to_list(X), bitstring_to_list(Y)} ||
-			 {X, Y} <- Return],
+			 {X, Y} <- Return, is_bitstring(X) andalso is_bitstring(Y)],
     NewDirs = maps:from_list(StrDirectories),
     {ok, NewDirs, NewNonce}.
 
