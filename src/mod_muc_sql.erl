@@ -109,7 +109,7 @@ restore_room(LServer, Host, Name) ->
 	    OptsD = ejabberd_sql:decode_term(Opts),
 	    case catch ejabberd_sql:sql_query(
 		LServer,
-		?SQL("select @(jid)s, @(nick)s, @(nodes)s from muc_room_subscribers where name=%(Name)s"
+		?SQL("select @(jid)s, @(nick)s, @(nodes)s from muc_room_subscribers where room=%(Name)s"
 		     " and host=%(Host)s")) of
 		{selected, []} ->
 		    OptsR = mod_muc:opts_to_binary(OptsD),
