@@ -359,8 +359,10 @@ change_shaper(#{shaper := ShaperName, server_host := ServerHost} = State,
 		     (max_fsm_queue) -> fun((pos_integer()) -> pos_integer());
 		     (atom()) -> [atom()].
 listen_opt_type(shaper) -> fun acl:shaper_rules_validator/1;
-listen_opt_type(certfile) ->
+listen_opt_type(certfile = Opt) ->
     fun(S) ->
+	    ?WARNING_MSG("Listening option '~s' for ~s is deprecated, use "
+			 "'certfiles' global option instead", [Opt, ?MODULE]),
 	    ejabberd_pkix:add_certfile(S),
 	    iolist_to_binary(S)
     end;

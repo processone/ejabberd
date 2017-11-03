@@ -998,8 +998,10 @@ opt_type(_) ->
 		     (atom()) -> [atom()].
 listen_opt_type(access) -> fun acl:access_rules_validator/1;
 listen_opt_type(shaper) -> fun acl:shaper_rules_validator/1;
-listen_opt_type(certfile) ->
+listen_opt_type(certfile = Opt) ->
     fun(S) ->
+	    ?WARNING_MSG("Listening option '~s' for ~s is deprecated, use "
+			 "'certfiles' global option instead", [Opt, ?MODULE]),
 	    ejabberd_pkix:add_certfile(S),
 	    iolist_to_binary(S)
     end;
