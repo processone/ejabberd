@@ -40,7 +40,8 @@
                 res = [],
                 res_vars = [],
                 res_pos = 0,
-                server_host_used = false}).
+                server_host_used = false,
+                used_vars = []}).
 
 -define(QUERY_RECORD, "sql_query").
 
@@ -90,13 +91,23 @@ transform(Form) ->
                                     S = erl_syntax:string_value(Arg),
                                     Pos = erl_syntax:get_pos(Arg),
                                     ParseRes = parse(S, Pos),
-                                    if
-                                        ParseRes#state.server_host_used ->
-                                            ok;
-                                        true ->
-                                            add_warning(Pos, no_server_host)
-                                    end,
-                                    set_pos(make_sql_query(ParseRes), Pos);
+                                    UnusedVars =
+                                        case ParseRes#state.server_host_used of
+                                            {true, SHVar} ->
+                                                case ?USE_NEW_SCHEMA of
+                                                    true -> [];
+                                                    false -> [SHVar]
+                                                end;
+                                            false ->
+                                                add_warning(
+                                                  Pos, no_server_host),
+                                                []
+                                        end,
+                                    set_pos(
+                                      add_unused_vars(
+                                        make_sql_query(ParseRes),
+                                        UnusedVars),
+                                      Pos);
                                 _ ->
                                     throw({error, erl_syntax:get_pos(Form),
                                            "?SQL argument must be "
@@ -124,10 +135,13 @@ transform(Form) ->
                                         false ->
                                             add_warning(Pos, no_server_host)
                                     end,
-                                    ParseRes2 =
+                                    {ParseRes2, UnusedVars} =
                                         filter_upsert_sh(Table, ParseRes),
                                     set_pos(
-                                      make_sql_upsert(Table, ParseRes2, Pos),
+                                      add_unused_vars(
+                                        make_sql_upsert(Table, ParseRes2, Pos),
+                                        UnusedVars
+                                       ),
                                       Pos);
                                 _ ->
                                     throw({error, erl_syntax:get_pos(Form),
@@ -156,10 +170,13 @@ transform(Form) ->
                                         false ->
                                             add_warning(Pos, no_server_host)
                                     end,
-                                    ParseRes2 =
+                                    {ParseRes2, UnusedVars} =
                                         filter_upsert_sh(Table, ParseRes),
                                     set_pos(
-                                      make_sql_insert(Table, ParseRes2),
+                                      add_unused_vars(
+                                        make_sql_insert(Table, ParseRes2),
+                                        UnusedVars
+                                       ),
                                       Pos);
                                 _ ->
                                     throw({error, erl_syntax:get_pos(Form),
@@ -254,7 +271,9 @@ parse1([$%, $( | S], Acc, State) ->
     State4 =
         case Type of
             host ->
-                State3 = State2#state{server_host_used = true},
+                State3 =
+                    State2#state{server_host_used = {true, Name},
+                                 used_vars = [Name | State2#state.used_vars]},
                 case ?USE_NEW_SCHEMA of
                     true ->
                         Convert =
@@ -284,7 +303,8 @@ parse1([$%, $( | S], Acc, State) ->
                 State2#state{'query' = [{var, Var} | State2#state.'query'],
                              args = [Convert | State2#state.args],
                              params = [Var | State2#state.params],
-                             param_pos = State2#state.param_pos + 1}
+                             param_pos = State2#state.param_pos + 1,
+                             used_vars = [Name | State2#state.used_vars]}
         end,
     parse1(S1, [], State4);
 parse1([C | S], Acc, State) ->
@@ -695,11 +715,22 @@ filter_upsert_sh(Table, ParseRes) ->
         true ->
             ParseRes;
         false ->
-            lists:filter(
-              fun({Field, _Match, _ST}) ->
-                      Field /= "server_host" orelse Table == "route"
-              end, ParseRes)
+            lists:foldr(
+              fun({Field, _Match, ST} = P, {Acc, Vars}) ->
+                      if
+                          Field /= "server_host" orelse Table == "route" ->
+                              {[P | Acc], Vars};
+                          true ->
+                              {Acc, ST#state.used_vars ++ Vars}
+                      end
+              end, {[], []}, ParseRes)
     end.
+
+add_unused_vars(Tree, []) ->
+    Tree;
+add_unused_vars(Tree, Vars) ->
+    erl_syntax:block_expr(
+      lists:map(fun erl_syntax:variable/1, Vars) ++ [Tree]).
 
 -ifdef(ENABLE_PT_WARNINGS).
 
