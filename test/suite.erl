@@ -71,7 +71,6 @@ init_config(Config) ->
                                                     {pgsql_pass, <<"ejabberd_test">>}
 						   ]),
     Backends = get_config_backends(),
-    io:format(standard_error, "BACKENT ~p~n", [Backends]),
     HostTypes = re:split(CfgContent, "(\\s*- \"(.*)\\.localhost\")",
 			   [group, {return, binary}]),
     CfgContent2 = lists:foldl(fun([Pre, Frag, Type], Acc) ->
