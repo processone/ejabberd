@@ -195,7 +195,7 @@ register_hooks(Host) ->
     ejabberd_hooks:add(store_mam_message, Host, ?MODULE,
 		       mam_message, 50),
     ejabberd_hooks:add(offline_message_hook, Host, ?MODULE,
-		       offline_message, 50),
+		       offline_message, 30),
     ejabberd_hooks:add(remove_user, Host, ?MODULE,
 		       remove_user, 50).
 
@@ -214,7 +214,7 @@ unregister_hooks(Host) ->
     ejabberd_hooks:delete(store_mam_message, Host, ?MODULE,
 			  mam_message, 50),
     ejabberd_hooks:delete(offline_message_hook, Host, ?MODULE,
-			  offline_message, 50),
+			  offline_message, 30),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE,
 			  remove_user, 50).
 
@@ -354,13 +354,11 @@ mam_message(#message{} = Pkt, LUser, LServer, _Peer, chat, _Dir) ->
 	_ ->
 	    ok
     end,
-    xmpp:put_meta(Pkt, push_notified, true);
+    Pkt;
 mam_message(Pkt, _LUser, _LServer, _Peer, _Type, _Dir) ->
     Pkt.
 
 -spec offline_message({any(), message()}) -> {any(), message()}.
-offline_message({_Action, #message{meta = #{push_notified := true}}} = Acc) ->
-    Acc;
 offline_message({Action, #message{to = #jid{luser = LUser,
 					    lserver = LServer}} = Pkt}) ->
     case lookup_sessions(LUser, LServer) of
