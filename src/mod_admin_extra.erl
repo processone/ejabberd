@@ -93,8 +93,13 @@
 start(_Host, _Opts) ->
     ejabberd_commands:register_commands(get_commands_spec()).
 
-stop(_Host) ->
-    ejabberd_commands:unregister_commands(get_commands_spec()).
+stop(Host) ->
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+	false ->
+	    ejabberd_commands:unregister_commands(get_commands_spec());
+	true ->
+	    ok
+    end.
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.

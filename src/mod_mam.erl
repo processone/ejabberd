@@ -169,8 +169,12 @@ stop(Host) ->
 	false ->
 	    ok
     end,
-    ejabberd_commands:unregister_commands(get_commands_spec()),
-    ok.
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+        false ->
+            ejabberd_commands:unregister_commands(get_commands_spec());
+        true ->
+            ok
+    end.
 
 reload(Host, NewOpts, OldOpts) ->
     NewMod = gen_mod:db_mod(Host, NewOpts, ?MODULE),

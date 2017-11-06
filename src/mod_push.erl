@@ -101,7 +101,12 @@ start(Host, Opts) ->
 stop(Host) ->
     unregister_hooks(Host),
     unregister_iq_handlers(Host),
-    ejabberd_commands:unregister_commands(get_commands_spec()).
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+        false ->
+            ejabberd_commands:unregister_commands(get_commands_spec());
+        true ->
+            ok
+    end.
 
 -spec reload(binary(), gen_mod:opts(), gen_mod:opts()) -> ok.
 reload(Host, NewOpts, OldOpts) ->
