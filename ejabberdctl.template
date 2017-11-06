@@ -11,6 +11,7 @@ INET_DIST_INTERFACE=""
 ERLANG_NODE=ejabberd@localhost
 
 # define default environment variables
+SCRIPT_DIR=$(cd "${0%/*}" && pwd)
 ERL="{{erl}}"
 IEX="{{bindir}}/iex"
 EPMD="{{epmd}}"
