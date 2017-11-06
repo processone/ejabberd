@@ -32,10 +32,23 @@ defmodule Ejabberd.Mixfile do
                          ++ cond_apps()]
   end
 
+  defp if_function_exported(mod, fun, arity, okResult) do
+    :code.ensure_loaded(mod)
+    if :erlang.function_exported(mod, fun, arity) do
+      okResult
+    else
+      []
+    end
+  end
+
   defp erlc_options do
     # Use our own includes + includes from all dependencies
     includes = ["include"] ++ deps_include(["fast_xml", "xmpp", "p1_utils"])
-    [:debug_info, {:d, :ELIXIR_ENABLED}] ++ cond_options() ++ Enum.map(includes, fn(path) -> {:i, path} end)
+    [:debug_info, {:d, :ELIXIR_ENABLED}] ++ cond_options() ++ Enum.map(includes, fn(path) -> {:i, path} end) ++
+    if_function_exported(:crypto, :strong_rand_bytes, 1, [{:d, :STRONG_RAND_BYTES}]) ++
+    if_function_exported(:rand, :uniform, 1, [{:d, :RAND_UNIFORM}]) ++
+    if_function_exported(:gb_sets, :iterator_from, 2, [{:d, :GB_SETS_ITERATOR_FROM}]) ++
+    if_function_exported(:public_key, :short_name_hash, 1, [{:d, :SHORT_NAME_HASH}])
   end
 
   defp cond_options do
