@@ -245,7 +245,8 @@ handle_info(_Info, State) ->
 
 terminate(_Reason, _State) ->
     ejabberd_hooks:delete(route_registered, ?MODULE, route_registered, 50),
-    ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 30).
+    ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 30),
+    clean_dir(certs_dir()).
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
