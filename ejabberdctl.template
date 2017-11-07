@@ -145,7 +145,7 @@ debugwarning()
         echo "To bypass permanently this warning, add to ejabberdctl.cfg the line:"
         echo "  EJABBERD_BYPASS_WARNINGS=true"
         echo "Press return to continue"
-        read -r
+        read -r input
         echo ""
     fi
 }
@@ -168,7 +168,7 @@ livewarning()
         echo "To bypass permanently this warning, add to ejabberdctl.cfg the line:"
         echo "  EJABBERD_BYPASS_WARNINGS=true"
         echo "Press return to continue"
-        read -r
+        read -r input
         echo ""
     fi
 }
