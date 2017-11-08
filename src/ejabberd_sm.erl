@@ -137,10 +137,17 @@ route(To, Term) ->
 
 -spec route(stanza()) -> ok.
 route(Packet) ->
-    try do_route(Packet), ok
-    catch E:R ->
-            ?ERROR_MSG("failed to route packet:~n~s~nReason = ~p",
-                       [xmpp:pp(Packet), {E, {R, erlang:get_stacktrace()}}])
+    #jid{lserver = LServer} = xmpp:get_to(Packet),
+    case ejabberd_hooks:run_fold(sm_receive_packet, LServer, Packet, []) of
+	drop ->
+	    ?DEBUG("hook dropped stanza:~n~s", [xmpp:pp(Packet)]);
+	Packet1 ->
+	    try do_route(Packet1), ok
+	    catch E:R ->
+		    ?ERROR_MSG("failed to route packet:~n~s~nReason = ~p",
+			       [xmpp:pp(Packet1),
+				{E, {R, erlang:get_stacktrace()}}])
+	    end
     end.
 
 -spec open_session(sid(), binary(), binary(), binary(), prio(), info()) -> ok.
