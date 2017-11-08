@@ -280,9 +280,9 @@ sm_receive_packet(#message{from = Peer, to = JID} = Pkt) ->
 sm_receive_packet(Acc) ->
     Acc.
 
--spec user_send_packet({stanza(), c2s_state()}) -> {stanza(), c2s_state()}.
-user_send_packet({Pkt, #{jid := JID} = C2SState}) ->
-    Peer = xmpp:get_to(Pkt),
+-spec user_send_packet({stanza(), c2s_state()})
+      -> {stanza(), c2s_state()}.
+user_send_packet({#message{to = Peer} = Pkt, #{jid := JID} = C2SState}) ->
     LUser = JID#jid.luser,
     LServer = JID#jid.lserver,
     Pkt2 = case should_archive(Pkt, LServer) of
@@ -298,19 +298,23 @@ user_send_packet({Pkt, #{jid := JID} = C2SState}) ->
 	false ->
 	    Pkt
 	   end,
-    {Pkt2, C2SState}.
+    {Pkt2, C2SState};
+user_send_packet(Acc) ->
+    Acc.
 
 -spec user_send_packet_strip_tag({stanza(), c2s_state()}) ->
 					{stanza(), c2s_state()}.
-user_send_packet_strip_tag({Pkt, #{jid := JID} = C2SState}) ->
+user_send_packet_strip_tag({#message{} = Pkt, #{jid := JID} = C2SState}) ->
     LServer = JID#jid.lserver,
-    {strip_my_archived_tag(Pkt, LServer), C2SState}.
+    {strip_my_archived_tag(Pkt, LServer), C2SState};
+user_send_packet_strip_tag(Acc) ->
+    Acc.
 
 -spec muc_filter_message(message(), mod_muc_room:state(),
 			 binary()) -> message().
-muc_filter_message(Pkt, #state{config = Config, jid = RoomJID} = MUCState,
+muc_filter_message(#message{from = From} = Pkt,
+		   #state{config = Config, jid = RoomJID} = MUCState,
 		   FromNick) ->
-    From = xmpp:get_from(Pkt),
     if Config#config.mam ->
 	    LServer = RoomJID#jid.lserver,
 	    NewPkt = strip_my_archived_tag(Pkt, LServer),
@@ -323,7 +327,9 @@ muc_filter_message(Pkt, #state{config = Config, jid = RoomJID} = MUCState,
 	    end;
 	true ->
 	    Pkt
-    end.
+    end;
+muc_filter_message(Acc, _MUCState, _FromNick) ->
+    Acc.
 
 set_stanza_id(Pkt, JID, ID) ->
     BareJID = jid:remove_resource(JID),
@@ -695,7 +701,7 @@ may_enter_room(From,
 may_enter_room(From, MUCState) ->
     mod_muc_room:is_occupant_or_admin(From, MUCState).
 
--spec store_msg(stanza(),
+-spec store_msg(message(),
 		binary(), binary(), jid(), send | recv) ->
 		       {ok, binary()} | pass.
 store_msg(Pkt, LUser, LServer, Peer, Dir) ->
