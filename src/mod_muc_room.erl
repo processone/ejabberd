@@ -3643,7 +3643,7 @@ process_iq_disco_info(_From, #iq{type = get, lang = Lang}, StateData) ->
 	++ case {gen_mod:is_loaded(StateData#state.server_host, mod_mam),
 		 Config#config.mam} of
 	       {true, true} ->
-		   [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1];
+		   [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1, ?NS_MAM_2];
 	       _ ->
 		   []
 	   end,

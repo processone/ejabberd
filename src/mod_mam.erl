@@ -24,7 +24,7 @@
 %%%-------------------------------------------------------------------
 -module(mod_mam).
 
--protocol({xep, 313, '0.5.1'}).
+-protocol({xep, 313, '0.6.1'}).
 -protocol({xep, 334, '0.2'}).
 
 -behaviour(gen_mod).
@@ -218,6 +218,10 @@ register_iq_handlers(Host, IQDisc) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MAM_1,
 				  ?MODULE, process_iq_v0_3, IQDisc),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MAM_1,
+				  ?MODULE, process_iq_v0_3, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MAM_2,
+				  ?MODULE, process_iq_v0_3, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MAM_2,
 				  ?MODULE, process_iq_v0_3, IQDisc).
 
 -spec unregister_iq_handlers(binary()) -> ok.
@@ -227,7 +231,9 @@ unregister_iq_handlers(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_MAM_0),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MAM_0),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_MAM_1),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MAM_1).
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MAM_1),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_MAM_2),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MAM_2).
 
 -spec remove_user(binary(), binary()) -> ok.
 remove_user(User, Server) ->
@@ -372,7 +378,7 @@ muc_process_iq(#iq{type = T, lang = Lang,
 		   from = From,
 		   sub_els = [#mam_query{xmlns = NS}]} = IQ,
 	       MUCState)
-  when (T == set andalso (NS == ?NS_MAM_0 orelse NS == ?NS_MAM_1)) orelse
+  when (T == set andalso (NS /= ?NS_MAM_TMP)) orelse
        (T == get andalso NS == ?NS_MAM_TMP) ->
     case may_enter_room(From, MUCState) of
 	true ->
@@ -385,7 +391,7 @@ muc_process_iq(#iq{type = T, lang = Lang,
     end;
 muc_process_iq(#iq{type = get,
 		   sub_els = [#mam_query{xmlns = NS}]} = IQ,
-	       MUCState) when NS == ?NS_MAM_0; NS == ?NS_MAM_1 ->
+	       MUCState) when NS /= ?NS_MAM_TMP ->
     LServer = MUCState#state.server_host,
     process_iq(LServer, IQ);
 muc_process_iq(IQ, _MUCState) ->
@@ -415,7 +421,7 @@ disco_sm_features(empty, From, To, Node, Lang) ->
 disco_sm_features({result, OtherFeatures},
 		  #jid{luser = U, lserver = S},
 		  #jid{luser = U, lserver = S}, <<"">>, _Lang) ->
-    {result, [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1 | OtherFeatures]};
+    {result, [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1, ?NS_MAM_2 | OtherFeatures]};
 disco_sm_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
@@ -940,13 +946,13 @@ send(Msgs, Count, IsComplete,
 		     #mam_fin{xmlns = NS, id = QID, rsm = RSMOut,
 			      complete = IsComplete}
 	     end,
-    if NS == ?NS_MAM_TMP; NS == ?NS_MAM_1 ->
+    if NS /= ?NS_MAM_0 ->
 	    lists:foreach(
 	      fun(El) ->
 		      ejabberd_router:route(El)
 	      end, Els),
 	    xmpp:make_iq_result(IQ, Result);
-       NS == ?NS_MAM_0 ->
+       true ->
 	    ejabberd_router:route(xmpp:make_iq_result(IQ)),
 	    lists:foreach(
 	      fun(El) ->
