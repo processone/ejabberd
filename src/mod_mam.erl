@@ -82,7 +82,7 @@ start(Host, Opts) ->
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
 		       user_send_packet, 88),
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
-               user_send_packet_strip_tag, 500),
+		       user_send_packet_strip_tag, 500),
     ejabberd_hooks:add(muc_filter_message, Host, ?MODULE,
 		       muc_filter_message, 50),
     ejabberd_hooks:add(muc_process_iq, Host, ?MODULE,
@@ -267,12 +267,12 @@ sm_receive_packet(#message{from = Peer, to = JID} = Pkt) ->
     LServer = JID#jid.lserver,
     case should_archive(Pkt, LServer) of
 	true ->
-		   Pkt1 = strip_my_archived_tag(Pkt, LServer),
-		   case store_msg(Pkt1, LUser, LServer, Peer, recv) of
+	    Pkt1 = strip_my_archived_tag(Pkt, LServer),
+	    case store_msg(Pkt1, LUser, LServer, Peer, recv) of
 		{ok, ID} ->
-			   set_stanza_id(Pkt1, JID, ID);
+		    set_stanza_id(Pkt1, JID, ID);
 		_ ->
-			   Pkt1
+		    Pkt1
 	    end;
 	_ ->
 	    Pkt
@@ -286,24 +286,24 @@ user_send_packet({#message{to = Peer} = Pkt, #{jid := JID} = C2SState}) ->
     LUser = JID#jid.luser,
     LServer = JID#jid.lserver,
     Pkt2 = case should_archive(Pkt, LServer) of
-	true ->
+	       true ->
 		   Pkt1 = strip_my_archived_tag(Pkt, LServer),
 		   case store_msg(xmpp:set_from_to(Pkt1, JID, Peer),
-		      LUser, LServer, Peer, send) of
-              {ok, ID} ->
+				  LUser, LServer, Peer, send) of
+		       {ok, ID} ->
 			   set_stanza_id(Pkt1, JID, ID);
-            _ ->
+		       _ ->
 			   Pkt1
-        end;
-	false ->
-	    Pkt
+		   end;
+	       false ->
+		   Pkt
 	   end,
     {Pkt2, C2SState};
 user_send_packet(Acc) ->
     Acc.
 
--spec user_send_packet_strip_tag({stanza(), c2s_state()}) ->
-					{stanza(), c2s_state()}.
+-spec user_send_packet_strip_tag({stanza(), c2s_state()})
+      -> {stanza(), c2s_state()}.
 user_send_packet_strip_tag({#message{} = Pkt, #{jid := JID} = C2SState}) ->
     LServer = JID#jid.lserver,
     {strip_my_archived_tag(Pkt, LServer), C2SState};
