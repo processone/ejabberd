@@ -265,9 +265,9 @@ set_room_option(Acc, _Property, _Lang) ->
 sm_receive_packet(#message{from = Peer, to = JID} = Pkt) ->
     LUser = JID#jid.luser,
     LServer = JID#jid.lserver,
-    case should_archive(Pkt, LServer) of
+    Pkt1 = strip_my_archived_tag(Pkt, LServer),
+    case should_archive(Pkt1, LServer) of
 	true ->
-	    Pkt1 = strip_my_archived_tag(Pkt, LServer),
 	    case store_msg(Pkt1, LUser, LServer, Peer, recv) of
 		{ok, ID} ->
 		    set_stanza_id(Pkt1, JID, ID);
@@ -275,7 +275,7 @@ sm_receive_packet(#message{from = Peer, to = JID} = Pkt) ->
 		    Pkt1
 	    end;
 	_ ->
-	    Pkt
+	    Pkt1
     end;
 sm_receive_packet(Acc) ->
     Acc.
@@ -285,9 +285,9 @@ sm_receive_packet(Acc) ->
 user_send_packet({#message{to = Peer} = Pkt, #{jid := JID} = C2SState}) ->
     LUser = JID#jid.luser,
     LServer = JID#jid.lserver,
-    Pkt2 = case should_archive(Pkt, LServer) of
+    Pkt1 = strip_my_archived_tag(Pkt, LServer),
+    Pkt2 = case should_archive(Pkt1, LServer) of
 	       true ->
-		   Pkt1 = strip_my_archived_tag(Pkt, LServer),
 		   case store_msg(xmpp:set_from_to(Pkt1, JID, Peer),
 				  LUser, LServer, Peer, send) of
 		       {ok, ID} ->
@@ -296,7 +296,7 @@ user_send_packet({#message{to = Peer} = Pkt, #{jid := JID} = C2SState}) ->
 			   Pkt1
 		   end;
 	       false ->
-		   Pkt
+		   Pkt1
 	   end,
     {Pkt2, C2SState};
 user_send_packet(Acc) ->
@@ -315,9 +315,9 @@ user_send_packet_strip_tag(Acc) ->
 muc_filter_message(#message{from = From} = Pkt,
 		   #state{config = Config, jid = RoomJID} = MUCState,
 		   FromNick) ->
+    LServer = RoomJID#jid.lserver,
+    NewPkt = strip_my_archived_tag(Pkt, LServer),
     if Config#config.mam ->
-	    LServer = RoomJID#jid.lserver,
-	    NewPkt = strip_my_archived_tag(Pkt, LServer),
 	    StorePkt = strip_x_jid_tags(NewPkt),
 	    case store_muc(MUCState, StorePkt, RoomJID, From, FromNick) of
 		{ok, ID} ->
@@ -326,7 +326,7 @@ muc_filter_message(#message{from = From} = Pkt,
 		    NewPkt
 	    end;
 	true ->
-	    Pkt
+	    NewPkt
     end;
 muc_filter_message(Acc, _MUCState, _FromNick) ->
     Acc.
