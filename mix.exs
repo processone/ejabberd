@@ -70,7 +70,8 @@ defmodule Ejabberd.Mixfile do
      {:jiffy, "~> 0.14.7"},
      {:p1_oauth2, "~> 0.6.1"},
      {:distillery, "~> 1.0"},
-     {:ex_doc, ">= 0.0.0", only: :dev}]
+     {:ex_doc, ">= 0.0.0", only: :dev},
+     {:fs, "~> 2.12.0"}]
     ++ cond_deps()
   end
 
