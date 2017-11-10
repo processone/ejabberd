@@ -1,10 +1,23 @@
 %%%-------------------------------------------------------------------
-%%% @author xram <xram@debian.zinid.ru>
-%%% @copyright (C) 2017, xram
-%%% @doc
+%%% Created : 10 Nov 2017 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
-%%% @end
-%%% Created : 10 Nov 2017 by xram <xram@debian.zinid.ru>
+%%%
+%%% ejabberd, Copyright (C) 2002-2017   ProcessOne
+%%%
+%%% This program is free software; you can redistribute it and/or
+%%% modify it under the terms of the GNU General Public License as
+%%% published by the Free Software Foundation; either version 2 of the
+%%% License, or (at your option) any later version.
+%%%
+%%% This program is distributed in the hope that it will be useful,
+%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%%% General Public License for more details.
+%%%
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+%%%
 %%%-------------------------------------------------------------------
 -module(ejabberd_iq).
 
@@ -21,6 +34,7 @@
 -include("logger.hrl").
 
 -record(state, {expire = infinity :: timeout()}).
+-type state() :: #state{}.
 
 %%%===================================================================
 %%% API
@@ -28,6 +42,7 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
+-spec route(iq(), atom() | pid(), term(), non_neg_integer()) -> ok.
 route(#iq{type = T} = IQ, Proc, Ctx, Timeout) when T == set; T == get ->
     Expire = current_time() + Timeout,
     Rnd = randoms:get_string(),
@@ -89,9 +104,12 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+-spec current_time() -> non_neg_integer().
 current_time() ->
     p1_time_compat:system_time(milli_seconds).
 
+-spec clean({non_neg_integer(), binary()} | '$end_of_table')
+	   -> non_neg_integer() | infinity.
 clean({Expire, _} = Key) ->
     case current_time() of
 	Time when Time >= Expire ->
@@ -109,6 +127,7 @@ clean({Expire, _} = Key) ->
 clean('$end_of_table') ->
     infinity.
 
+-spec noreply(state()) -> {noreply, state()} | {noreply, state(), non_neg_integer()}.
 noreply(#state{expire = Expire} = State) ->
     case Expire of
 	infinity ->
@@ -118,12 +137,14 @@ noreply(#state{expire = Expire} = State) ->
 	    {noreply, State, Timeout}
     end.
 
+-spec encode_id(non_neg_integer(), binary()) -> binary().
 encode_id(Expire, Rnd) ->
     ExpireBin = integer_to_binary(Expire),
     Node = atom_to_binary(node(), utf8),
     CheckSum = calc_checksum(<<ExpireBin/binary, Rnd/binary, Node/binary>>),
     <<"rr-", ExpireBin/binary, $-, Rnd/binary, $-, CheckSum/binary, $-, Node/binary>>.
 
+-spec decode_id(binary()) -> {ok, non_neg_integer(), binary(), atom()} | error.
 decode_id(<<"rr-", ID/binary>>) ->
     try
 	[ExpireBin, Tail] = binary:split(ID, <<"-">>),
@@ -139,10 +160,12 @@ decode_id(<<"rr-", ID/binary>>) ->
 decode_id(_) ->
     error.
 
+-spec calc_checksum(binary()) -> binary().
 calc_checksum(Data) ->
     Key = ejabberd_config:get_option(shared_key),
     base64:encode(crypto:hash(sha, <<Data/binary, Key/binary>>)).
 
+-spec callback(atom() | pid(), #iq{}, term()) -> any().
 callback(undefined, IQRes, Fun) ->
     Fun(IQRes);
 callback(Proc, IQRes, Ctx) ->
