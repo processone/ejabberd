@@ -1,4 +1,7 @@
 %%%-------------------------------------------------------------------
+%%% File    : ejabberd_iq.erl
+%%% Author  : Evgeny Khramtsov <ekhramtsov@process-one.net>
+%%% Purpose : 
 %%% Created : 10 Nov 2017 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
@@ -19,6 +22,7 @@
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%-------------------------------------------------------------------
+
 -module(ejabberd_iq).
 
 -behaviour(gen_server).

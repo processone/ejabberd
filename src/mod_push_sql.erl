@@ -1,5 +1,11 @@
 %%%----------------------------------------------------------------------
-%%% ejabberd, Copyright (C) 2017   ProcessOne
+%%% File    : mod_push_sql.erl
+%%% Author  : Evgeniy Khramtsov <ekhramtsov@process-one.net>
+%%% Purpose : 
+%%% Created : 26 Oct 2017 by Evgeny Khramtsov <ekhramtsov@process-one.net>
+%%%
+%%%
+%%% ejabberd, Copyright (C) 2017-2017   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -16,6 +22,7 @@
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
+
 -module(mod_push_sql).
 -behaviour(mod_push).
 -compile([{parse_transform, ejabberd_sql_pt}]).

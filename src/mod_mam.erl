@@ -22,6 +22,7 @@
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%-------------------------------------------------------------------
+
 -module(mod_mam).
 
 -protocol({xep, 313, '0.6.1'}).
