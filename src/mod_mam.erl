@@ -270,7 +270,8 @@ sm_receive_packet(#message{from = Peer, to = JID} = Pkt) ->
 	true ->
 	    case store_msg(Pkt1, LUser, LServer, Peer, recv) of
 		{ok, ID} ->
-		    set_stanza_id(Pkt1, JID, ID);
+		    xmpp:put_meta(set_stanza_id(Pkt1, JID, ID),
+				  mam_archived, true);
 		_ ->
 		    Pkt1
 	    end;
@@ -291,7 +292,8 @@ user_send_packet({#message{to = Peer} = Pkt, #{jid := JID} = C2SState}) ->
 		   case store_msg(xmpp:set_from_to(Pkt1, JID, Peer),
 				  LUser, LServer, Peer, send) of
 		       {ok, ID} ->
-			   set_stanza_id(Pkt1, JID, ID);
+			   xmpp:put_meta(set_stanza_id(Pkt1, JID, ID),
+					 mam_archived, true);
 		       _ ->
 			   Pkt1
 		   end;
@@ -321,7 +323,8 @@ muc_filter_message(#message{from = From} = Pkt,
 	    StorePkt = strip_x_jid_tags(NewPkt),
 	    case store_muc(MUCState, StorePkt, RoomJID, From, FromNick) of
 		{ok, ID} ->
-		    set_stanza_id(NewPkt, RoomJID, ID);
+		    xmpp:put_meta(set_stanza_id(NewPkt, RoomJID, ID),
+				  mam_archived, true);
 		_ ->
 		    NewPkt
 	    end;

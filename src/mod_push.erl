@@ -199,8 +199,8 @@ register_hooks(Host) ->
 		       c2s_stanza, 50),
     ejabberd_hooks:add(store_mam_message, Host, ?MODULE,
 		       mam_message, 50),
-    ejabberd_hooks:add(offline_message_hook, Host, ?MODULE,
-		       offline_message, 30),
+    ejabberd_hooks:add(store_offline_message, Host, ?MODULE,
+		       offline_message, 50),
     ejabberd_hooks:add(remove_user, Host, ?MODULE,
 		       remove_user, 50).
 
@@ -218,8 +218,8 @@ unregister_hooks(Host) ->
 			  c2s_stanza, 50),
     ejabberd_hooks:delete(store_mam_message, Host, ?MODULE,
 			  mam_message, 50),
-    ejabberd_hooks:delete(offline_message_hook, Host, ?MODULE,
-			  offline_message, 30),
+    ejabberd_hooks:delete(store_offline_message, Host, ?MODULE,
+			  offline_message, 50),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE,
 			  remove_user, 50).
 
@@ -343,9 +343,6 @@ c2s_stanza(State, _Pkt, _SendResult) ->
 
 -spec mam_message(message() | drop, binary(), binary(), jid(),
 		  chat | groupchat, recv | send) -> message().
-mam_message(#message{meta = #{push_notified := true}} = Pkt,
-	    _LUser, _LServer, _Peer, _Type, _Dir) ->
-    Pkt;
 mam_message(#message{} = Pkt, LUser, LServer, _Peer, chat, _Dir) ->
     case lookup_sessions(LUser, LServer) of
 	{ok, [_|_] = Clients} ->
@@ -363,9 +360,10 @@ mam_message(#message{} = Pkt, LUser, LServer, _Peer, chat, _Dir) ->
 mam_message(Pkt, _LUser, _LServer, _Peer, _Type, _Dir) ->
     Pkt.
 
--spec offline_message({any(), message()}) -> {any(), message()}.
-offline_message({Action, #message{to = #jid{luser = LUser,
-					    lserver = LServer}} = Pkt}) ->
+-spec offline_message(message()) -> message().
+offline_message(#message{meta = #{mam_archived := true}} = Pkt) ->
+    Pkt; % Push notification was triggered via MAM.
+offline_message(#message{to = #jid{luser = LUser, lserver = LServer}} = Pkt) ->
     case lookup_sessions(LUser, LServer) of
 	{ok, [_|_] = Clients} ->
 	    ?DEBUG("Notifying ~s@~s of offline message", [LUser, LServer]),
@@ -373,7 +371,7 @@ offline_message({Action, #message{to = #jid{luser = LUser,
 	_ ->
 	    ok
     end,
-    {Action, xmpp:put_meta(Pkt, push_notified, true)}.
+    Pkt.
 
 -spec c2s_session_pending(c2s_state()) -> c2s_state().
 c2s_session_pending(#{push_enabled := true, mgmt_queue := Queue} = State) ->
