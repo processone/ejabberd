@@ -920,12 +920,12 @@ presence_broadcast(Config) ->
     %% 2) welcome message
     %% 3) presence broadcast
     IQ = #iq{type = get,
-	     from = ServerJID,
+	     from = JID,
 	     sub_els = [#disco_info{node = Node}]} = recv_iq(Config),
     #message{type = normal} = recv_message(Config),
     #presence{from = JID, to = JID} = recv_presence(Config),
     send(Config, #iq{type = result, id = IQ#iq.id,
-		     to = ServerJID, sub_els = [Info]}),
+		     to = JID, sub_els = [Info]}),
     %% We're trying to read our feature from ejabberd database
     %% with exponential back-off as our IQ response may be delayed.
     [Feature] =
