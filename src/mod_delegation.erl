@@ -47,6 +47,7 @@
 -type disco_acc() :: {error, stanza_error()} | {result, [binary()]} | empty.
 -record(state, {server_host = <<"">> :: binary(),
 		delegations = dict:new() :: ?TDICT}).
+-type state() :: #state{}.
 
 %%%===================================================================
 %%% API
@@ -161,27 +162,6 @@ handle_cast({component_connected, Host}, State) ->
 	      end
       end, NSAttrsAccessList),
     {noreply, State};
-handle_cast({disco_info, Type, Host, NS, Info}, State) ->
-    From = jid:make(State#state.server_host),
-    To = jid:make(Host),
-    case dict:find({NS, Type}, State#state.delegations) of
-	error ->
-	    Msg = #message{from = From, to = To,
-			   sub_els = [#delegation{delegated = [#delegated{ns = NS}]}]},
-	    Delegations = dict:store({NS, Type}, {Host, Info}, State#state.delegations),
-	    gen_iq_handler:add_iq_handler(Type, State#state.server_host, NS,
-					  ?MODULE, Type, gen_iq_handler:iqdisc(Host)),
-	    ejabberd_router:route(Msg),
-	    ?INFO_MSG("Namespace '~s' is delegated to external component '~s'",
-		      [NS, Host]),
-	    {noreply, State#state{delegations = Delegations}};
-	{ok, {AnotherHost, _}} ->
-	    ?WARNING_MSG("Failed to delegate namespace '~s' to "
-			 "external component '~s' because it's already "
-			 "delegated to '~s'",
-			 [NS, Host, AnotherHost]),
-	    {noreply, State}
-    end;
 handle_cast({component_disconnected, Host}, State) ->
     ServerHost = State#state.server_host,
     Delegations =
@@ -199,7 +179,24 @@ handle_cast({component_disconnected, Host}, State) ->
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-handle_info(_Info, State) ->
+handle_info({iq_reply, ResIQ, {disco_info, Type, Host, NS}}, State) ->
+    {noreply,
+     case ResIQ of
+	 #iq{type = result, sub_els = [SubEl]} ->
+	     try xmpp:decode(SubEl) of
+		 #disco_info{} = Info ->
+		     process_disco_info(State, Type, Host, NS, Info)
+		 catch _:{xmpp_codec, _} ->
+			 State
+		 end;
+	 _ ->
+	     State
+     end};
+handle_info({iq_reply, ResIQ, #iq{} = IQ}, State) ->
+    process_iq_result(IQ, ResIQ),
+    {noreply, State};
+handle_info(Info, State) ->
+    ?WARNING_MSG("unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, State) ->
@@ -246,12 +243,12 @@ process_iq(#iq{to = To, lang = Lang, sub_els = [SubEl]} = IQ, Type) ->
 			    forwarded = #forwarded{xml_els = [xmpp:encode(IQ)]}},
 	    NewFrom = jid:make(LServer),
 	    NewTo = jid:make(Host),
-	    ejabberd_local:route_iq(
+	    ejabberd_router:route_iq(
 	      #iq{type = set,
 		  from = NewFrom,
 		  to = NewTo,
 		  sub_els = [Delegation]},
-	      fun(Result) -> process_iq_result(IQ, Result) end),
+	      IQ, gen_mod:get_module_proc(LServer, ?MODULE)),
 	    ignore;
 	error ->
 	    Txt = <<"Failed to map delegated namespace to external component">>,
@@ -284,29 +281,41 @@ process_iq_result(#iq{lang = Lang} = IQ, timeout) ->
     Err = xmpp:err_internal_server_error(Txt, Lang),
     ejabberd_router:route_error(IQ, Err).
 
+-spec process_disco_info(state(), ejabberd_local | ejabberd_sm,
+			 binary(), binary(), disco_info()) -> state().
+process_disco_info(State, Type, Host, NS, Info) ->
+    From = jid:make(State#state.server_host),
+    To = jid:make(Host),
+    case dict:find({NS, Type}, State#state.delegations) of
+	error ->
+	    Msg = #message{from = From, to = To,
+			   sub_els = [#delegation{delegated = [#delegated{ns = NS}]}]},
+	    Delegations = dict:store({NS, Type}, {Host, Info}, State#state.delegations),
+	    gen_iq_handler:add_iq_handler(Type, State#state.server_host, NS,
+					  ?MODULE, Type, gen_iq_handler:iqdisc(Host)),
+	    ejabberd_router:route(Msg),
+	    ?INFO_MSG("Namespace '~s' is delegated to external component '~s'",
+		      [NS, Host]),
+	    State#state{delegations = Delegations};
+	{ok, {AnotherHost, _}} ->
+	    ?WARNING_MSG("Failed to delegate namespace '~s' to "
+			 "external component '~s' because it's already "
+			 "delegated to '~s'",
+			 [NS, Host, AnotherHost]),
+	    State
+    end.
+
 -spec send_disco_queries(binary(), binary(), binary()) -> ok.
 send_disco_queries(LServer, Host, NS) ->
     From = jid:make(LServer),
     To = jid:make(Host),
     lists:foreach(
       fun({Type, Node}) ->
-	      ejabberd_local:route_iq(
+	      ejabberd_router:route_iq(
 		#iq{type = get, from = From, to = To,
 		    sub_els = [#disco_info{node = Node}]},
-		fun(#iq{type = result, sub_els = [SubEl]}) ->
-			try xmpp:decode(SubEl) of
-			    #disco_info{} = Info->
-				Proc = gen_mod:get_module_proc(LServer, ?MODULE),
-				gen_server:cast(
-				  Proc, {disco_info, Type, Host, NS, Info});
-			    _ ->
-				ok
-			catch _:{xmpp_codec, _} ->
-				ok
-			end;
-		   (_) ->
-			ok
-		end)
+		{disco_info, Type, Host, NS},
+		gen_mod:get_module_proc(LServer, ?MODULE))
       end, [{ejabberd_local, <<(?NS_DELEGATION)/binary, "::", NS/binary>>},
 	    {ejabberd_sm, <<(?NS_DELEGATION)/binary, ":bare:", NS/binary>>}]).
 

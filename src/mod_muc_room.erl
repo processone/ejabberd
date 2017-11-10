@@ -433,27 +433,31 @@ normal_state({route, ToNick,
 	  {next_state, normal_state, StateData}
     end;
 normal_state({route, ToNick,
-	      #iq{from = From, id = StanzaId, lang = Lang} = Packet},
+	      #iq{from = From, type = Type, lang = Lang} = Packet},
 	     StateData) ->
     case {(StateData#state.config)#config.allow_query_users,
-	  is_user_online_iq(StanzaId, From, StateData)} of
-	{true, {true, NewId, FromFull}} ->
+	  (?DICT):find(jid:tolower(From), StateData#state.users)} of
+	{true, {ok, #user{nick = FromNick}}} ->
 	    case find_jid_by_nick(ToNick, StateData) of
 		false ->
 		    ErrText = <<"Recipient is not in the conference room">>,
 		    Err = xmpp:err_item_not_found(ErrText, Lang),
 		    ejabberd_router:route_error(Packet, Err);
-		ToJID ->
-		    {ok, #user{nick = FromNick}} =
-			(?DICT):find(jid:tolower(FromFull), StateData#state.users),
-		    {ToJID2, Packet2} = handle_iq_vcard(ToJID, NewId, Packet),
-		    ejabberd_router:route(
-		      xmpp:set_from_to(
-			Packet2,
-			jid:replace_resource(StateData#state.jid, FromNick),
-			ToJID2))
+		To ->
+		    FromJID = jid:replace_resource(StateData#state.jid, FromNick),
+		    if Type == get; Type == set ->
+			    ToJID = case is_vcard_request(Packet) of
+					true -> jid:remove_resource(To);
+					false -> To
+				    end,
+			    ejabberd_router:route_iq(
+			      xmpp:set_from_to(Packet, FromJID, ToJID), Packet, self());
+		       true ->
+			    ejabberd_router:route(
+			      xmpp:set_from_to(Packet, FromJID, To))
+		    end
 	    end;
-	{_, {false, _, _}} ->
+	{true, error} ->
 	    ErrText = <<"Only occupants are allowed to send queries "
 			"to the conference">>,
 	    Err = xmpp:err_not_acceptable(ErrText, Lang),
@@ -660,6 +664,18 @@ handle_info({captcha_failed, From}, normal_state,
     {next_state, normal_state, NewState};
 handle_info(shutdown, _StateName, StateData) ->
     {stop, shutdown, StateData};
+handle_info({iq_reply, #iq{type = Type, sub_els = Els},
+	     #iq{from = From, to = To} = IQ}, StateName, StateData) ->
+    ejabberd_router:route(
+      xmpp:set_from_to(
+	IQ#iq{type = Type, sub_els = Els},
+	To, From)),
+    {next_state, StateName, StateData};
+handle_info({iq_reply, timeout, IQ}, StateName, StateData) ->
+    Txt = <<"iq response timed out">>,
+    Err = xmpp:err_recipient_unavailable(Txt, IQ#iq.lang),
+    ejabberd_router:route_error(IQ, Err),
+    {next_state, StateName, StateData};
 handle_info(_Info, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -920,6 +936,12 @@ process_voice_approval(From, Pkt, VoiceApproval, StateData) ->
 	    StateData
     end.
 
+-spec is_vcard_request(iq()) -> boolean().
+is_vcard_request(#iq{type = T, sub_els = [El]}) ->
+    (T == get orelse T == set) andalso xmpp:get_ns(El) == ?NS_VCARD;
+is_vcard_request(_) ->
+    false.
+
 %% @doc Check if this non participant can send message to room.
 %%
 %% XEP-0045 v1.23:
@@ -1128,59 +1150,6 @@ is_occupant_or_admin(JID, StateData) ->
       true -> true;
       _ -> false
     end.
-
-%%%
-%%% Handle IQ queries of vCard
-%%%
--spec is_user_online_iq(binary(), jid(), state()) ->
-			       {boolean(), binary(), jid()}.
-is_user_online_iq(StanzaId, JID, StateData)
-    when JID#jid.lresource /= <<"">> ->
-    {is_user_online(JID, StateData), StanzaId, JID};
-is_user_online_iq(StanzaId, JID, StateData)
-    when JID#jid.lresource == <<"">> ->
-    try stanzaid_unpack(StanzaId) of
-      {OriginalId, Resource} ->
-	  JIDWithResource = jid:replace_resource(JID, Resource),
-	  {is_user_online(JIDWithResource, StateData), OriginalId,
-	   JIDWithResource}
-    catch
-      _:_ -> {is_user_online(JID, StateData), StanzaId, JID}
-    end.
-
--spec handle_iq_vcard(jid(), binary(), iq()) -> {jid(), iq()}.
-handle_iq_vcard(ToJID, NewId, #iq{type = Type, sub_els = SubEls} = IQ) ->
-    ToBareJID = jid:remove_resource(ToJID),
-    case SubEls of
-	[SubEl] when Type == get, ToBareJID /= ToJID ->
-	    case xmpp:get_ns(SubEl) of
-		?NS_VCARD ->
-		    {ToBareJID, change_stanzaid(ToJID, IQ)};
-		_ ->
-		    {ToJID, xmpp:set_id(IQ, NewId)}
-	    end;
-	_ ->
-	    {ToJID, xmpp:set_id(IQ, NewId)}
-    end.
-
--spec stanzaid_pack(binary(), binary()) -> binary().
-stanzaid_pack(OriginalId, Resource) ->
-    <<"berd",
-      (base64:encode(<<"ejab\000",
-		       OriginalId/binary, "\000",
-		       Resource/binary>>))/binary>>.
-
--spec stanzaid_unpack(binary()) -> {binary(), binary()}.
-stanzaid_unpack(<<"berd", StanzaIdBase64/binary>>) ->
-    StanzaId = base64:decode(StanzaIdBase64),
-    [<<"ejab">>, OriginalId, Resource] =
-	str:tokens(StanzaId, <<"\000">>),
-    {OriginalId, Resource}.
-
--spec change_stanzaid(jid(), iq()) -> iq().
-change_stanzaid(ToJID, #iq{id = PreviousId} = Packet) ->
-    NewId = stanzaid_pack(PreviousId, ToJID#jid.lresource),
-    xmpp:set_id(Packet, NewId).
 
 %% Decide the fate of the message and its sender
 %% Returns: continue_delivery | forget_message | {expulse_sender, Reason}

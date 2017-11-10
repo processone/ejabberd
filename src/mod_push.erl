@@ -46,6 +46,9 @@
 %% API (used by mod_push_keepalive).
 -export([notify/1, notify/3, notify/5]).
 
+%% For IQ callbacks
+-export([delete_session/3]).
+
 -include("ejabberd.hrl").
 -include("ejabberd_commands.hrl").
 -include("logger.hrl").
@@ -426,7 +429,8 @@ notify(LUser, LServer, Clients) ->
 	      HandleResponse = fun(#iq{type = result}) ->
 				       ok;
 				  (#iq{type = error}) ->
-				       delete_session(LUser, LServer, TS);
+				       spawn(?MODULE, delete_session,
+					     [LUser, LServer, TS]);
 				  (timeout) ->
 				       ok % Hmm.
 			       end,
@@ -445,8 +449,7 @@ notify(LServer, PushLJID, Node, XData, HandleResponse) ->
 	     to = jid:make(PushLJID),
 	     id = randoms:get_string(),
 	     sub_els = [PubSub]},
-    ejabberd_local:route_iq(IQ, HandleResponse),
-    ok.
+    ejabberd_router:route_iq(IQ, HandleResponse).
 
 %%--------------------------------------------------------------------
 %% Internal functions.
