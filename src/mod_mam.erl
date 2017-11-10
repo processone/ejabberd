@@ -38,7 +38,7 @@
 	 remove_user/2, remove_room/3, mod_opt_type/1, muc_process_iq/2,
 	 muc_filter_message/3, message_is_archived/3, delete_old_messages/2,
 	 get_commands_spec/0, msg_to_el/4, get_room_config/4, set_room_option/3,
-	 export/1]).
+	 offline_message/1, export/1]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -84,6 +84,8 @@ start(Host, Opts) ->
 		       user_send_packet, 88),
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
 		       user_send_packet_strip_tag, 500),
+    ejabberd_hooks:add(offline_message_hook, Host, ?MODULE,
+		       offline_message, 50),
     ejabberd_hooks:add(muc_filter_message, Host, ?MODULE,
 		       muc_filter_message, 50),
     ejabberd_hooks:add(muc_process_iq, Host, ?MODULE,
@@ -145,6 +147,8 @@ stop(Host) ->
 			  user_send_packet, 88),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
 			  user_send_packet_strip_tag, 500),
+    ejabberd_hooks:delete(offline_message_hook, Host, ?MODULE,
+			  offline_message, 50),
     ejabberd_hooks:delete(muc_filter_message, Host, ?MODULE,
 			  muc_filter_message, 50),
     ejabberd_hooks:delete(muc_process_iq, Host, ?MODULE,
@@ -311,6 +315,12 @@ user_send_packet_strip_tag({#message{} = Pkt, #{jid := JID} = C2SState}) ->
     LServer = JID#jid.lserver,
     {strip_my_archived_tag(Pkt, LServer), C2SState};
 user_send_packet_strip_tag(Acc) ->
+    Acc.
+
+-spec offline_message({any(), message()}) -> {any(), message()}.
+offline_message({_Action, #message{meta = #{mam_archived := true}} = Pkt}) ->
+    {archived, Pkt};
+offline_message(Acc) ->
     Acc.
 
 -spec muc_filter_message(message(), mod_muc_room:state(),
