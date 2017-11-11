@@ -142,9 +142,9 @@ route_error(From, To, Packet, #stanza_error{} = Err) ->
 	    route(From, To, xmpp:make_error(Packet, Err))
     end.
 
--spec route_iq(iq(), term()) -> ok.
-route_iq(IQ, State) ->
-    route_iq(IQ, State, undefined, ?IQ_TIMEOUT).
+-spec route_iq(iq(), fun((iq() | timeout) -> any())) -> ok.
+route_iq(IQ, Fun) ->
+    route_iq(IQ, Fun, undefined, ?IQ_TIMEOUT).
 
 -spec route_iq(iq(), term(), pid() | atom()) -> ok.
 route_iq(IQ, State, Proc) ->

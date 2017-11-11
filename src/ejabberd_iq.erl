@@ -169,7 +169,7 @@ calc_checksum(Data) ->
     Key = ejabberd_config:get_option(shared_key),
     base64:encode(crypto:hash(sha, <<Data/binary, Key/binary>>)).
 
--spec callback(atom() | pid(), #iq{}, term()) -> any().
+-spec callback(atom() | pid(), #iq{} | timeout, term()) -> any().
 callback(undefined, IQRes, Fun) ->
     Fun(IQRes);
 callback(Proc, IQRes, Ctx) ->
