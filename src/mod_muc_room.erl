@@ -672,7 +672,7 @@ handle_info({iq_reply, #iq{type = Type, sub_els = Els},
 	To, From)),
     {next_state, StateName, StateData};
 handle_info({iq_reply, timeout, IQ}, StateName, StateData) ->
-    Txt = <<"iq response timed out">>,
+    Txt = <<"Request has timed out">>,
     Err = xmpp:err_recipient_unavailable(Txt, IQ#iq.lang),
     ejabberd_router:route_error(IQ, Err),
     {next_state, StateName, StateData};
