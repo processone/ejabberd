@@ -663,18 +663,22 @@ language: "en"
 ###.  ====
 ###'  ACME
 
-##
-## A contact with which it will create an ACME account
-## The ACME Certificate Authority URL.
-## This could either be:
-##   - https://acme-v01.api.letsencrypt.org - for the production CA
-##   - https://acme-staging.api.letsencrypt.org - for the staging CA
-##   - http://localhost:4000 - for a local version of the CA
-##
 acme:
-  contact: "mailto:cert-admin-ejabberd@example.com"
-  ca_url: "http://localhost:4000"
 
+   ## A contact mail that the ACME Certificate Authority can contact in case of
+   ## an authorization issue, such as a server-initiated certificate revocation.
+   ## It is not mandatory to provide an email address but it is highly suggested.
+   contact: "mailto:example-admin@example.com"
+
+
+   ## The ACME Certificate Authority URL.
+   ## This could either be:
+   ##   - https://acme-v01.api.letsencrypt.org - (Default) for the production CA
+   ##   - https://acme-staging.api.letsencrypt.org - for the staging CA
+   ##   - http://localhost:4000 - for a local version of the CA
+   ca_url: "https://acme-v01.api.letsencrypt.org"
+
+## The directory in which certificates will be saved
 cert_dir: "/usr/local/var/lib/ejabberd/"
 
 ###.  =======
