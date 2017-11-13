@@ -715,7 +715,7 @@ get_room_info(RoomJID, Opts) ->
 	      false -> <<"">>
 	    end,
     Subject = case lists:keysearch(subject, 1, Opts) of
-		{value, {_, S}} -> S;
+		{value, {_, S}} -> xmpp:get_text(S);
 		false -> <<"">>
 	      end,
     SubjectAuthor = case lists:keysearch(subject_author, 1,

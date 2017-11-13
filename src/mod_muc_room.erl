@@ -733,7 +733,7 @@ process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData
 	       ((StateData#state.config)#config.moderated == false) ->
 		 Subject = check_subject(Packet),
 		 {NewStateData1, IsAllowed} = case Subject of
-						false -> {StateData, true};
+						[] -> {StateData, true};
 						_ ->
 						    case
 						      can_change_subject(Role,
@@ -765,7 +765,7 @@ process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData
 			     {next_state, normal_state, StateData};
 			 NewPacket1 ->
 			     NewPacket = xmpp:remove_subtag(NewPacket1, #nick{}),
-			     Node = if Subject == false -> ?NS_MUCSUB_NODES_MESSAGES;
+			     Node = if Subject == [] -> ?NS_MUCSUB_NODES_MESSAGES;
 				       true -> ?NS_MUCSUB_NODES_SUBJECT
 				    end,
 			     send_wrapped_multiple(
@@ -2428,7 +2428,7 @@ lqueue_cut(Q, N) ->
 add_message_to_history(FromNick, FromJID, Packet, StateData) ->
     add_to_log(text, {FromNick, Packet}, StateData),
     case check_subject(Packet) of
-	false ->
+	[] ->
 	    TimeStamp = p1_time_compat:timestamp(),
 	    AddrPacket = case (StateData#state.config)#config.anonymous of
 			     true -> Packet;
@@ -2467,19 +2467,19 @@ send_history(JID, History, StateData) ->
 -spec send_subject(jid(), state()) -> ok.
 send_subject(JID, #state{subject_author = Nick} = StateData) ->
     Subject = case StateData#state.subject of
-		  <<"">> -> [#text{}];
-		  Subj -> xmpp:mk_text(Subj)
+		  [] -> [#text{}];
+		  [_|_] = S -> S
 	      end,
     Packet = #message{from = jid:replace_resource(StateData#state.jid, Nick),
 		      to = JID, type = groupchat, subject = Subject},
     ejabberd_router:route(Packet).
 
--spec check_subject(message()) -> false | binary().
+-spec check_subject(message()) -> [text()].
 check_subject(#message{subject = [_|_] = Subj, body = [],
 		       thread = undefined}) ->
-    xmpp:get_text(Subj);
+    Subj;
 check_subject(_) ->
-    false.
+    [].
 
 -spec can_change_subject(role(), boolean(), state()) -> boolean().
 can_change_subject(Role, IsSubscriber, StateData) ->
@@ -3502,7 +3502,12 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 				  subscriber_nicks = Nicks};
 	    affiliations ->
 		StateData#state{affiliations = (?DICT):from_list(Val)};
-	    subject -> StateData#state{subject = Val};
+	    subject ->
+		  Subj = if Val == <<"">> -> [];
+			    is_binary(Val) -> [#text{data = Val}];
+			    is_list(Val) -> Val
+			 end,
+		  StateData#state{subject = Subj};
 	    subject_author -> StateData#state{subject_author = Val};
 	    _ -> StateData
 	  end,
