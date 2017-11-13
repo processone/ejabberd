@@ -160,15 +160,26 @@ get_nodes(Host) ->
 	    []
     end.
 
-get_parentnodes(_Host, _Node, _From) ->
-    [].
+get_parentnodes(Host, Node, _From) ->
+    case get_node(Host, Node) of
+	Record when is_record(Record, pubsub_node) ->
+	    Record#pubsub_node.parents;
+	_ ->
+	    []
+    end.
 
-%% @doc <p>Default node tree does not handle parents, return a list
-%% containing just this node.</p>
-get_parentnodes_tree(Host, Node, From) ->
-    case get_node(Host, Node, From) of
-	{error, _} -> [];
-	Record -> [{0, [Record]}]
+get_parentnodes_tree(Host, Node, _From) ->
+    get_parentnodes_tree(Host, Node, 0, []).
+get_parentnodes_tree(Host, Node, Level, Acc) ->
+    case get_node(Host, Node) of
+	Record when is_record(Record, pubsub_node) ->
+	    Tree = [{Level, [Record]}|Acc],
+	    case Record#pubsub_node.parents of
+		[Parent] -> get_parentnodes_tree(Host, Parent, Level+1, Tree);
+		_ -> Tree
+	    end;
+	_ ->
+	    Acc
     end.
 
 get_subnodes(Host, Node, _From) ->
