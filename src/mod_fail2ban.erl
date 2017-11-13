@@ -104,7 +104,8 @@ c2s_stream_started(#{ip := {Addr, _}} = State, _) ->
 %% gen_mod callbacks
 %%====================================================================
 start(Host, Opts) ->
-    catch ets:new(failed_auth, [named_table, public]),
+    catch ets:new(failed_auth, [named_table, public,
+				{heir, erlang:group_leader(), none}]),
     gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
