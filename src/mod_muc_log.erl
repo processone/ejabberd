@@ -503,7 +503,6 @@ make_dir_rec(Dir) ->
 %% base64:encode(F1b).
 
 create_image_files(Images_dir) ->
-    ?INFO_MSG("here = ~p", [Images_dir]),
     Filenames = [<<"powered-by-ejabberd.png">>,
 		 <<"powered-by-erlang.png">>, <<"valid-xhtml10.png">>,
 		 <<"vcss.png">>],
