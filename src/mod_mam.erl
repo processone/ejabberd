@@ -755,12 +755,12 @@ may_enter_room(From, MUCState) ->
 
 -spec store_msg(message(), binary(), binary(), jid(), send | recv)
       -> ok | pass | any().
-store_msg(#message{meta = #{sm_copy := true}}, _LUser, _LServer, _Peer, _Dir) ->
-    ok; % Already stored.
 store_msg(Pkt, LUser, LServer, Peer, Dir) ->
     Prefs = get_prefs(LUser, LServer),
-    case should_archive_peer(LUser, LServer, Prefs, Peer) of
-	true ->
+    case {should_archive_peer(LUser, LServer, Prefs, Peer), Pkt} of
+	{true, #message{meta = #{sm_copy := true}}} ->
+	    ok; % Already stored.
+	{true, _} ->
 	    case ejabberd_hooks:run_fold(store_mam_message, LServer, Pkt,
 					 [LUser, LServer, Peer, chat, Dir]) of
 		drop ->
@@ -772,7 +772,7 @@ store_msg(Pkt, LUser, LServer, Peer, Dir) ->
 		    Mod = gen_mod:db_mod(LServer, ?MODULE),
 		    Mod:store(El, LServer, US, chat, Peer, <<"">>, Dir, ID)
 	    end;
-	false ->
+	{false, _} ->
 	    pass
     end.
 
