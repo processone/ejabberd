@@ -251,7 +251,7 @@ normal_state({route, <<"">>,
 	     try xmpp:decode_els(Packet) of
 		 Pkt -> process_normal_message(From, Pkt, StateData)
 	     catch _:{xmpp_codec, Why} ->
-		     Txt = xmpp:format_error(Why),
+		     Txt = xmpp:io_format_error(Why),
 		     Err = xmpp:err_bad_request(Txt, Lang),
 		     ejabberd_router:route_error(Packet, Err),
 		     StateData
@@ -329,7 +329,7 @@ normal_state({route, <<"">>,
 		end
 	end
     catch _:{xmpp_codec, Why} ->
-	    ErrTxt = xmpp:format_error(Why),
+	    ErrTxt = xmpp:io_format_error(Why),
 	    Err = xmpp:err_bad_request(ErrTxt, Lang),
 	    ejabberd_router:route_error(IQ0, Err)
     end;

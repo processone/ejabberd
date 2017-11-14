@@ -491,7 +491,7 @@ process_iq(LServer, #iq{sub_els = [#mam_query{xmlns = NS}]} = IQ) ->
 process_iq(#iq{type = set, lang = Lang,
 	       sub_els = [#mam_prefs{default = undefined, xmlns = NS}]} = IQ) ->
     Why = {missing_attr, <<"default">>, <<"prefs">>, NS},
-    ErrTxt = xmpp:format_error(Why),
+    ErrTxt = xmpp:io_format_error(Why),
     xmpp:make_error(IQ, xmpp:err_bad_request(ErrTxt, Lang));
 process_iq(#iq{from = #jid{luser = LUser, lserver = LServer},
 	       to = #jid{lserver = LServer},

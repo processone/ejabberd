@@ -189,12 +189,12 @@ process_bytestreams(#iq{type = set, lang = Lang,
 			sub_els = [#bytestreams{sid = SID}]} = IQ)
   when SID == <<"">> orelse size(SID) > 128 ->
     Why = {bad_attr_value, <<"sid">>, <<"query">>, ?NS_BYTESTREAMS},
-    Txt = xmpp:format_error(Why),
+    Txt = xmpp:io_format_error(Why),
     xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
 process_bytestreams(#iq{type = set, lang = Lang, 
 			sub_els = [#bytestreams{activate = undefined}]} = IQ) ->
     Why = {missing_cdata, <<"">>, <<"activate">>, ?NS_BYTESTREAMS},
-    Txt = xmpp:format_error(Why),
+    Txt = xmpp:io_format_error(Why),
     xmpp:make_error(IQ, xmpp:err_jid_malformed(Txt, Lang));
 process_bytestreams(#iq{type = set, lang = Lang, from = InitiatorJID, to = To,
 			sub_els = [#bytestreams{activate = TargetJID,

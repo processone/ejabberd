@@ -240,7 +240,7 @@ handle_iq(Packet, State) ->
 	end
     catch _:{xmpp_codec, Why} ->
 	    Lang = xmpp:get_lang(Packet),
-	    Err = xmpp:err_bad_request(xmpp:format_error(Why), Lang),
+	    Err = xmpp:err_bad_request(xmpp:io_format_error(Why), Lang),
 	    ejabberd_router:route_error(Packet, Err)
     end.
 
