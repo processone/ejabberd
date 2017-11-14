@@ -462,15 +462,10 @@ disco_sm_features(Acc, _From, _To, _Node, _Lang) ->
 -spec message_is_archived(boolean(), c2s_state(), message()) -> boolean().
 message_is_archived(true, _C2SState, _Pkt) ->
     true;
-message_is_archived(false, #{jid := JID}, Pkt) ->
-    #jid{luser = LUser, lserver = LServer} = JID,
-    Peer = xmpp:get_from(Pkt),
+message_is_archived(false, #{lserver := LServer}, Pkt) ->
     case gen_mod:get_module_opt(LServer, ?MODULE, assume_mam_usage, false) of
 	true ->
-	    should_archive(strip_my_stanza_id(Pkt, LServer), LServer)
-		andalso should_archive_peer(LUser, LServer,
-					    get_prefs(LUser, LServer),
-					    Peer);
+	    is_archived(Pkt, LServer);
 	false ->
 	    false
     end.
@@ -586,7 +581,7 @@ should_archive(#message{meta = #{from_offline := true}}, _LServer) ->
     false;
 should_archive(#message{body = Body, subject = Subject,
 			type = Type} = Pkt, LServer) ->
-    case is_resent(Pkt, LServer) of
+    case is_archived(Pkt, LServer) of
 	true ->
 	    false;
 	false ->
@@ -737,8 +732,8 @@ has_no_store_hint(Message) ->
     xmpp:has_subtag(Message, #hint{type = 'no-permanent-store'}) orelse
     xmpp:has_subtag(Message, #hint{type = 'no-permanent-storage'}).
 
--spec is_resent(message(), binary()) -> boolean().
-is_resent(Pkt, LServer) ->
+-spec is_archived(message(), binary()) -> boolean().
+is_archived(Pkt, LServer) ->
     case xmpp:get_subtag(Pkt, #stanza_id{by = #jid{}}) of
 	#stanza_id{by = #jid{lserver = LServer}} ->
 	    true;
