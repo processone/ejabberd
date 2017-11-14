@@ -28,6 +28,12 @@
 
 -behavior(ejabberd_config).
 
+%%
+%% Default ACME configuration
+%%
+
+-define(DEFAULT_CONFIG_CONTACT, <<"mailto:example-admin@example.com">>).
+-define(DEFAULT_CONFIG_CA_URL, "https://acme-v01.api.letsencrypt.org").
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
@@ -91,13 +97,16 @@ get_certificates0(CAUrl, Domains) ->
 
     get_certificates1(CAUrl, Domains, PrivateKey).
 
-
+-spec retrieve_or_create_account(url()) -> {'ok', string(), jose_jwk:key()}.
 retrieve_or_create_account(CAUrl) ->
     case read_account_persistent() of
 	none ->
 	    create_save_new_account(CAUrl);
-	{ok, AccId, PrivateKey} ->
-	    {ok, AccId, PrivateKey}
+	
+	{ok, AccId, CAUrl, PrivateKey} ->
+	    {ok, AccId, PrivateKey};
+	{ok, _AccId, _, _PrivateKey} ->
+	    create_save_new_account(CAUrl)
     end.
 
 
@@ -182,7 +191,7 @@ create_save_new_account(CAUrl) ->
     {ok, Id} = create_new_account(CAUrl, Contact, PrivateKey),
 
     %% Write Persistent Data
-    ok = write_account_persistent({Id, PrivateKey}),
+    ok = write_account_persistent({Id, CAUrl, PrivateKey}),
 
     {ok, Id, PrivateKey}.
 
@@ -272,14 +281,17 @@ create_new_certificate(CAUrl, {DomainName, AllSubDomains}, PrivateKey) ->
 	    throw({error, DomainName, certificate})
     end.
 
--spec ensure_account_exists() -> {ok, string(), jose_jwk:key()}.
-ensure_account_exists() ->
+-spec ensure_account_exists(url()) -> {ok, string(), jose_jwk:key()}.
+ensure_account_exists(CAUrl) ->
     case read_account_persistent() of
 	none ->
 	    ?ERROR_MSG("No existing account", []),
 	    throw({error, no_old_account});
-	{ok, AccId, PrivateKey} ->
-	    {ok, AccId, PrivateKey}
+	{ok, AccId, CAUrl, PrivateKey} ->
+	    {ok, AccId, PrivateKey};
+	{ok, _AccId, OtherCAUrl, _PrivateKey} ->
+	    ?ERROR_MSG("Account is connected to another CA: ~s", [OtherCAUrl]),
+	    throw({error, account_in_other_CA})
     end.
 
 
@@ -302,7 +314,7 @@ renew_certificates() ->
 -spec renew_certificates0(url()) -> string().
 renew_certificates0(CAUrl) ->
     %% Get the current account
-    {ok, _AccId, PrivateKey} = ensure_account_exists(),
+    {ok, _AccId, PrivateKey} = ensure_account_exists(CAUrl),
 
     %% Find all hosts that we have certificates for
     Certs = read_certificates_persistent(),
@@ -883,18 +895,18 @@ data_empty() ->
 %% Account
 %%
 
--spec data_get_account(acme_data()) -> {ok, list(), jose_jwk:key()} | none.
+-spec data_get_account(acme_data()) -> {ok, list(), url(), jose_jwk:key()} | none.
 data_get_account(Data) ->
     case lists:keyfind(account, 1, Data) of
-	{account, #data_acc{id = AccId, key = PrivateKey}} ->
-	    {ok, AccId, PrivateKey};
+	{account, #data_acc{id = AccId, ca_url = CAUrl, key = PrivateKey}} ->
+	    {ok, AccId, CAUrl,  PrivateKey};
         false ->
 	    none
     end.
 
--spec data_set_account(acme_data(), {list(), jose_jwk:key()}) -> acme_data().
-data_set_account(Data, {AccId, PrivateKey}) -> 
-    NewAcc = {account, #data_acc{id = AccId, key = PrivateKey}},
+-spec data_set_account(acme_data(), {list(), url(), jose_jwk:key()}) -> acme_data().
+data_set_account(Data, {AccId, CAUrl, PrivateKey}) -> 
+    NewAcc = {account, #data_acc{id = AccId, ca_url = CAUrl, key = PrivateKey}},
     lists:keystore(account, 1, Data, NewAcc).
 
 %%
@@ -983,13 +995,13 @@ create_persistent() ->
 	    throw({error, Reason})
     end.        
 
--spec write_account_persistent({list(), jose_jwk:key()}) -> ok | no_return().
-write_account_persistent({AccId, PrivateKey}) ->
+-spec write_account_persistent({list(), url(), jose_jwk:key()}) -> ok | no_return().
+write_account_persistent({AccId, CAUrl, PrivateKey}) ->
     {ok, Data} = read_persistent(),
-    NewData = data_set_account(Data, {AccId, PrivateKey}),
+    NewData = data_set_account(Data, {AccId, CAUrl, PrivateKey}),
     ok = write_persistent(NewData).
 
--spec read_account_persistent() -> {ok, list(), jose_jwk:key()} | none.
+-spec read_account_persistent() -> {ok, list(), url(), jose_jwk:key()} | none.
 read_account_persistent() ->
     {ok, Data} = read_persistent(),
     data_get_account(Data).
@@ -1060,12 +1072,13 @@ write_cert(CertificateFile, Cert, DomainName) ->
 	    throw({error, DomainName, saving})
     end.
 
--spec get_config_acme() -> [{atom(), bitstring()}].
+-spec get_config_acme() -> acme_config().
 get_config_acme() ->
     case ejabberd_config:get_option(acme, undefined) of
 	undefined ->
-	    ?ERROR_MSG("No acme configuration has been specified", []),
-	    throw({error, configuration});
+	    ?WARNING_MSG("No acme configuration has been specified", []),
+	    %% throw({error, configuration});
+	    [];
         Acme ->
 	    Acme
     end.
@@ -1077,19 +1090,21 @@ get_config_contact() ->
 	{contact, Contact} ->
 	    Contact;
 	false ->
-	    ?ERROR_MSG("No contact has been specified", []),
-	    throw({error, configuration_contact})
+	    ?WARNING_MSG("No contact has been specified in configuration", []),
+	    ?DEFAULT_CONFIG_CONTACT
+	    %% throw({error, configuration_contact})
     end.
 
--spec get_config_ca_url() -> string().
+-spec get_config_ca_url() -> url().
 get_config_ca_url() ->
     Acme = get_config_acme(),
     case lists:keyfind(ca_url, 1, Acme) of
 	{ca_url, CAUrl} ->
 	    CAUrl;
 	false ->
-	    ?ERROR_MSG("No CA url has been specified", []),
-	    throw({error, configuration_ca_url})
+	    ?ERROR_MSG("No CA url has been specified in configuration", []),
+	    ?DEFAULT_CONFIG_CA_URL
+	    %% throw({error, configuration_ca_url})
     end.
 
 
@@ -1097,7 +1112,7 @@ get_config_ca_url() ->
 get_config_hosts() ->
     case ejabberd_config:get_option(hosts, undefined) of
 	undefined ->
-	    ?ERROR_MSG("No hosts have been specified", []),
+	    ?ERROR_MSG("No hosts have been specified in configuration", []),
 	    throw({error, configuration_hosts});
         Hosts ->
 	    Hosts
@@ -1107,8 +1122,9 @@ get_config_hosts() ->
 get_config_cert_dir() ->
     case ejabberd_config:get_option(cert_dir, undefined) of
 	undefined ->
-	    ?ERROR_MSG("No cert_dir configuration has been specified", []),
-	    throw({error, configuration});
+	    ?WARNING_MSG("No cert_dir configuration has been specified in configuration", []),
+	    mnesia:system_info(directory);
+	    %% throw({error, configuration});
         CertDir ->
 	    CertDir
     end.
@@ -1136,8 +1152,7 @@ parse_cert_dir_opt(Opt) when is_bitstring(Opt) ->
     true = filelib:is_dir(Opt),
     Opt.
 
--spec opt_type(acme) -> fun(([{ca_url, string()} | {contact, bitstring()}]) -> 
-				   ([{ca_url, string()} | {contact, bitstring()}]));
+-spec opt_type(acme) -> fun((acme_config()) -> (acme_config()));
 	      (cert_dir) -> fun((bitstring()) -> (bitstring()));
 	      (atom()) -> [atom()].
 opt_type(acme) ->

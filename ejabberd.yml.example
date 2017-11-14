@@ -161,7 +161,6 @@ listen:
       "/ws": ejabberd_http_ws
       "/bosh": mod_bosh
       "/api": mod_http_api
-      "/.well-known": acme_challenge
     ##  "/pub/archive": mod_http_fileserver
     web_admin: true
     ## register: true
@@ -662,6 +661,17 @@ language: "en"
 
 ###.  ====
 ###'  ACME
+##
+## In order to use the acme certificate acquiring through "Let's Encrypt"
+## an http listener has to be configured to listen to port 80 so that
+## the authorization challenges posed by "Let's Encrypt" can be solved.
+## 
+## A simple way of doing this would be to add the following in the listen
+## configuration field:
+##   - 
+##    port: 80
+##    ip: "::"
+##    module: ejabberd_http
 
 acme:
 

@@ -2,8 +2,8 @@
 
 -export ([key_authorization/2,
 	  solve_challenge/3,
-
-	  process/2
+	  process/2,
+	  acme_handler/0
          ]).
 %% Challenge Types
 %% ================
@@ -18,6 +18,10 @@
 -include("ejabberd_http.hrl").
 -include("ejabberd_acme.hrl").
 
+%% This is the default endpoint for the http challenge
+%% This function is called by the http_listener
+acme_handler() ->
+    {[<<".well-known">>],acme_challenge}.
 
 %% TODO: Maybe validate request here??
 process(LocalPath, _Request) ->

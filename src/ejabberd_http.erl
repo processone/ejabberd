@@ -136,8 +136,9 @@ init({SockMod, Socket}, Opts) ->
 		 true -> [{[], ejabberd_xmlrpc}];
 		 false -> []
 	     end,
+    Acme = [acme_challenge:acme_handler()],
     DefinedHandlers = proplists:get_value(request_handlers, Opts, []),
-    RequestHandlers = DefinedHandlers ++ Captcha ++ Register ++
+    RequestHandlers = Acme ++ DefinedHandlers ++ Captcha ++ Register ++
         Admin ++ Bind ++ XMLRPC,
     ?DEBUG("S: ~p~n", [RequestHandlers]),
 

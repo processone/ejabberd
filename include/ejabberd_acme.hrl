@@ -7,8 +7,9 @@
 	 }).
 
 -record(data_acc, {
-	  id  :: list(),
-	  key :: jose_jwk:key()
+	  id     :: list(),
+	  ca_url :: url(),
+	  key    :: jose_jwk:key()
 	 }).
 -type data_acc() :: #data_acc{}.
 
@@ -22,6 +23,9 @@
 %%
 %% Types
 %%
+
+%% Acme configuration
+-type acme_config() :: [{ca_url, url()} | {contact, bitstring()}].
 
 %% The main data type that ejabberd_acme keeps
 -type acme_data() :: proplist().
