@@ -372,6 +372,7 @@ init_stanza_id(Pkt, LServer) ->
     Pkt1 = strip_my_stanza_id(Pkt, LServer),
     xmpp:put_meta(Pkt1, stanza_id, ID).
 
+-spec set_stanza_id(stanza(), jid(), integer()) -> stanza().
 set_stanza_id(Pkt, JID, ID) ->
     BareJID = jid:remove_resource(JID),
     Archived = #mam_archived{by = BareJID, id = ID},
@@ -576,6 +577,7 @@ process_iq(LServer, #iq{from = #jid{luser = LUser}, lang = Lang,
 	    end
     end.
 
+-spec should_archive(message(), binary()) -> boolean().
 should_archive(#message{type = error}, _LServer) ->
     false;
 should_archive(#message{meta = #{from_offline := true}}, _LServer) ->
@@ -684,6 +686,7 @@ should_archive_peer(LUser, LServer,
 	    end
     end.
 
+-spec should_archive_muc(message()) -> boolean().
 should_archive_muc(#message{type = groupchat,
 			    body = Body, subject = Subj} = Pkt) ->
     case check_store_hint(Pkt) of
@@ -707,6 +710,7 @@ should_archive_muc(#message{type = groupchat,
 should_archive_muc(_) ->
     false.
 
+-spec check_store_hint(message()) -> store | no_store | none.
 check_store_hint(Pkt) ->
     case has_store_hint(Pkt) of
 	true ->
@@ -740,6 +744,7 @@ is_resent(Pkt, LServer) ->
 	    false
     end.
 
+-spec may_enter_room(jid(), mod_muc_room:state()) -> boolean().
 may_enter_room(From,
 	       #state{config = #config{members_only = false}} = MUCState) ->
     mod_muc_room:get_affiliation(From, MUCState) /= outcast;
@@ -769,6 +774,8 @@ store_msg(Pkt, LUser, LServer, Peer, Dir) ->
 	    pass
     end.
 
+-spec store_muc(mod_muc_room:state(), message(), jid(), jid(), binary())
+      -> ok | pass | any().
 store_muc(MUCState, Pkt, RoomJID, Peer, Nick) ->
     case should_archive_muc(Pkt) of
 	true ->
