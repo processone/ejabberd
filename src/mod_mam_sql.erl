@@ -30,7 +30,7 @@
 
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
-	 extended_fields/0, store/7, write_prefs/4, get_prefs/2, select/6, export/1]).
+	 extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/6, export/1]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("xmpp.hrl").
@@ -84,9 +84,7 @@ delete_old_messages(ServerHost, TimeStamp, Type) ->
 extended_fields() ->
     [{withtext, <<"">>}].
 
-store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir) ->
-    TSinteger = p1_time_compat:system_time(micro_seconds),
-    ID = integer_to_binary(TSinteger),
+store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir, TS) ->
     SUser = case Type of
 		chat -> LUser;
 		groupchat -> jid:encode({LUser, LHost, <<>>})
@@ -105,7 +103,7 @@ store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir) ->
               "archive",
               ["username=%(SUser)s",
                "server_host=%(LServer)s",
-               "timestamp=%(TSinteger)d",
+               "timestamp=%(TS)d",
                "peer=%(LPeer)s",
                "bare_peer=%(BarePeer)s",
                "xml=%(XML)s",
@@ -113,7 +111,7 @@ store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir) ->
                "kind=%(SType)s",
                "nick=%(Nick)s"])) of
 	{updated, _} ->
-	    {ok, ID};
+	    ok;
 	Err ->
 	    Err
     end.
