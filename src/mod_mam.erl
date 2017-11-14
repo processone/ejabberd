@@ -321,7 +321,7 @@ user_send_packet(Acc) ->
       -> {stanza(), c2s_state()}.
 user_send_packet_strip_tag({#message{} = Pkt, #{jid := JID} = C2SState}) ->
     LServer = JID#jid.lserver,
-    {strip_my_archived_tag(Pkt, LServer), C2SState};
+    {strip_my_stanza_id(Pkt, LServer), C2SState};
 user_send_packet_strip_tag(Acc) ->
     Acc.
 
@@ -347,17 +347,17 @@ muc_filter_message(#message{from = From} = Pkt,
 		   #state{config = Config, jid = RoomJID} = MUCState,
 		   FromNick) ->
     LServer = RoomJID#jid.lserver,
-    NewPkt = init_stanza_id(Pkt, LServer),
+    Pkt1 = init_stanza_id(Pkt, LServer),
     if Config#config.mam ->
-	    StorePkt = strip_x_jid_tags(NewPkt),
+	    StorePkt = strip_x_jid_tags(Pkt1),
 	    case store_muc(MUCState, StorePkt, RoomJID, From, FromNick) of
 		ok ->
-		    mark_stored_msg(NewPkt, RoomJID);
+		    mark_stored_msg(Pkt1, RoomJID);
 		_ ->
-		    NewPkt
+		    Pkt1
 	    end;
 	true ->
-	    NewPkt
+	    Pkt1
     end;
 muc_filter_message(Acc, _MUCState, _FromNick) ->
     Acc.
@@ -369,7 +369,7 @@ get_stanza_id(#message{meta = #{stanza_id := ID}}) ->
 -spec init_stanza_id(stanza(), binary()) -> stanza().
 init_stanza_id(Pkt, LServer) ->
     ID = p1_time_compat:system_time(micro_seconds),
-    Pkt1 = strip_my_archived_tag(Pkt, LServer),
+    Pkt1 = strip_my_stanza_id(Pkt, LServer),
     xmpp:put_meta(Pkt1, stanza_id, ID).
 
 set_stanza_id(Pkt, JID, ID) ->
@@ -464,7 +464,7 @@ message_is_archived(false, #{jid := JID}, Pkt) ->
     Peer = xmpp:get_from(Pkt),
     case gen_mod:get_module_opt(LServer, ?MODULE, assume_mam_usage, false) of
 	true ->
-	    should_archive(strip_my_archived_tag(Pkt, LServer), LServer)
+	    should_archive(strip_my_stanza_id(Pkt, LServer), LServer)
 		andalso should_archive_peer(LUser, LServer,
 					    get_prefs(LUser, LServer),
 					    Peer);
@@ -601,8 +601,8 @@ should_archive(#message{body = Body, subject = Subject,
 should_archive(_, _LServer) ->
     false.
 
--spec strip_my_archived_tag(stanza(), binary()) -> stanza().
-strip_my_archived_tag(Pkt, LServer) ->
+-spec strip_my_stanza_id(stanza(), binary()) -> stanza().
+strip_my_stanza_id(Pkt, LServer) ->
     Els = xmpp:get_els(Pkt),
     NewEls = lists:filter(
 	       fun(El) ->
@@ -720,7 +720,6 @@ check_store_hint(Pkt) ->
 	    end
     end.
 
-
 -spec has_store_hint(message()) -> boolean().
 has_store_hint(Message) ->
     xmpp:has_subtag(Message, #hint{type = 'store'}).
@@ -755,15 +754,15 @@ store_msg(Pkt, LUser, LServer, Peer, Dir) ->
     Prefs = get_prefs(LUser, LServer),
     case should_archive_peer(LUser, LServer, Prefs, Peer) of
 	true ->
-	    US = {LUser, LServer},
 	    case ejabberd_hooks:run_fold(store_mam_message, LServer, Pkt,
 					 [LUser, LServer, Peer, chat, Dir]) of
 		drop ->
 		    pass;
-		NewPkt ->
+		Pkt1 ->
+		    US = {LUser, LServer},
+		    ID = get_stanza_id(Pkt1),
+		    El = xmpp:encode(Pkt1),
 		    Mod = gen_mod:db_mod(LServer, ?MODULE),
-		    ID = get_stanza_id(NewPkt),
-		    El = xmpp:encode(NewPkt),
 		    Mod:store(El, LServer, US, chat, Peer, <<"">>, Dir, ID)
 	    end;
 	false ->
@@ -779,11 +778,12 @@ store_muc(MUCState, Pkt, RoomJID, Peer, Nick) ->
 					 [U, S, Peer, groupchat, recv]) of
 		drop ->
 		    pass;
-		NewPkt ->
+		Pkt1 ->
+		    US = {U, S},
+		    ID = get_stanza_id(Pkt1),
+		    El = xmpp:encode(Pkt1),
 		    Mod = gen_mod:db_mod(LServer, ?MODULE),
-		    ID = get_stanza_id(NewPkt),
-		    El = xmpp:encode(NewPkt),
-		    Mod:store(El, LServer, {U, S}, groupchat, Peer, Nick, recv, ID)
+		    Mod:store(El, LServer, US, groupchat, Peer, Nick, recv, ID)
 	    end;
 	false ->
 	    pass
