@@ -27,6 +27,7 @@
 
 -protocol({xep, 313, '0.6.1'}).
 -protocol({xep, 334, '0.2'}).
+-protocol({xep, 359, '0.5.0'}).
 
 -behaviour(gen_mod).
 
@@ -453,7 +454,8 @@ disco_sm_features(empty, From, To, Node, Lang) ->
 disco_sm_features({result, OtherFeatures},
 		  #jid{luser = U, lserver = S},
 		  #jid{luser = U, lserver = S}, <<"">>, _Lang) ->
-    {result, [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1, ?NS_MAM_2 | OtherFeatures]};
+    {result, [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1, ?NS_MAM_2, ?NS_SID_0 |
+	      OtherFeatures]};
 disco_sm_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
