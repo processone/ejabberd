@@ -662,10 +662,11 @@ language: "en"
 ## an http listener has to be configured to listen to port 80 so that
 ## the authorization challenges posed by "Let's Encrypt" can be solved.
 ## 
-## A simple way of doing this would be to add the following in the listen
-## configuration field:
+## A simple way of doing this would be to add the following in the listening
+## section and to configure port forwarding from 80 to 5280 either via NAT
+## (for ipv4 only) or using frontends such as haproxy/nginx/sslh/etc.
 ##   - 
-##    port: 80
+##    port: 5280
 ##    ip: "::"
 ##    module: ejabberd_http
 
