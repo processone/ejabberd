@@ -655,6 +655,38 @@ language: "en"
 ##
 ## captcha_limit: 5
 
+###.  ====
+###'  ACME
+##
+## In order to use the acme certificate acquiring through "Let's Encrypt"
+## an http listener has to be configured to listen to port 80 so that
+## the authorization challenges posed by "Let's Encrypt" can be solved.
+## 
+## A simple way of doing this would be to add the following in the listen
+## configuration field:
+##   - 
+##    port: 80
+##    ip: "::"
+##    module: ejabberd_http
+
+acme:
+
+   ## A contact mail that the ACME Certificate Authority can contact in case of
+   ## an authorization issue, such as a server-initiated certificate revocation.
+   ## It is not mandatory to provide an email address but it is highly suggested.
+   contact: "mailto:example-admin@example.com"
+
+
+   ## The ACME Certificate Authority URL.
+   ## This could either be:
+   ##   - https://acme-v01.api.letsencrypt.org - (Default) for the production CA
+   ##   - https://acme-staging.api.letsencrypt.org - for the staging CA
+   ##   - http://localhost:4000 - for a local version of the CA
+   ca_url: "https://acme-v01.api.letsencrypt.org"
+
+## The directory in which certificates will be saved
+cert_dir: "/usr/local/var/lib/ejabberd/"
+
 ###.  =======
 ###'  MODULES
 

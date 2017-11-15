@@ -301,7 +301,14 @@ add_certfiles(Host, State) ->
 			       NewAccState
 		       end
 	       end, State, certfiles_from_config_options()),
-    if State /= State1 ->
+    State2 = case ejabberd_acme:certificate_exists(Host) of
+		 {true, Path} ->
+		     {_, State3} = add_certfile(Path, State1),
+		     State3;
+		 false ->
+		     State1
+	     end,
+    if State /= State2 ->
 	    case build_chain_and_check(State1) of
 		ok -> {ok, State1};
 		{error, _} = Err -> Err

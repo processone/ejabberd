@@ -465,7 +465,9 @@ process_request(#state{request_method = Method,
 			       opts = Options,
                                headers = RequestHeaders,
                                ip = IP},
-	    Res = case process(RequestHandlers, Request, Socket, SockMod, Trail) of
+	    RequestHandlers1 = ejabberd_hooks:run_fold(
+				http_request_handlers, RequestHandlers, [Host, Request]),
+	    Res = case process(RequestHandlers1, Request, Socket, SockMod, Trail) of
 		      El when is_record(El, xmlel) ->
 			  make_xhtml_output(State, 200, CustomHeaders, El);
 		      {Status, Headers, El}

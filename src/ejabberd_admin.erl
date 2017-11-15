@@ -44,6 +44,11 @@
 	 registered_users/1,
 	 %% Migration jabberd1.4
 	 import_file/1, import_dir/1,
+         %% Acme
+         get_certificate/1,
+	 renew_certificate/0,
+	 list_certificates/1,
+	 revoke_certificate/1,
 	 %% Purge DB
 	 delete_expired_messages/0, delete_old_messages/1,
 	 %% Mnesia
@@ -104,7 +109,7 @@ get_commands_spec() ->
 			module = ?MODULE, function = status,
 			result_desc = "Result tuple",
 			result_example = {ok, <<"The node ejabberd@localhost is started with status: started"
-			    "ejabberd X.X is running in that node">>},
+						"ejabberd X.X is running in that node">>},
 			args = [], result = {res, restuple}},
      #ejabberd_commands{name = stop, tags = [server],
 			desc = "Stop ejabberd gracefully",
@@ -126,9 +131,9 @@ get_commands_spec() ->
      #ejabberd_commands{name = stop_kindly, tags = [server],
 			desc = "Inform users and rooms, wait, and stop the server",
 			longdesc = "Provide the delay in seconds, and the "
-			    "announcement quoted, for example: \n"
-			    "ejabberdctl stop_kindly 60 "
-			    "\\\"The server will stop in one minute.\\\"",
+			"announcement quoted, for example: \n"
+			"ejabberdctl stop_kindly 60 "
+			"\\\"The server will stop in one minute.\\\"",
 			module = ?MODULE, function = stop_kindly,
 			args_desc = ["Seconds to wait", "Announcement to send, with quotes"],
 			args_example = [60, <<"Server will stop now.">>],
@@ -192,7 +197,7 @@ get_commands_spec() ->
 			result_example = [<<"user1">>, <<"user2">>],
 			args = [{host, binary}],
 			result = {users, {list, {username, string}}}},
-	 #ejabberd_commands{name = registered_vhosts, tags = [server],
+     #ejabberd_commands{name = registered_vhosts, tags = [server],
 			desc = "List all registered vhosts in SERVER",
 			module = ?MODULE, function = registered_vhosts,
 			result_desc = "List of available vhosts",
@@ -215,7 +220,7 @@ get_commands_spec() ->
      #ejabberd_commands{name = leave_cluster, tags = [cluster],
 			desc = "Remove and shutdown Node from the running cluster",
 			longdesc = "This command can be run from any running node of the cluster, "
-			    "even the node to be removed.",
+			"even the node to be removed.",
 			module = ?MODULE, function = leave_cluster,
 			args_desc = ["Nodename of the node to kick from the cluster"],
 			args_example = [<<"ejabberd1@machine8">>],
@@ -241,6 +246,30 @@ get_commands_spec() ->
 			args_desc = ["Full path to the jabberd14 spool directory"],
 			args_example = ["/var/lib/ejabberd/jabberd14/"],
 			args = [{file, string}],
+			result = {res, restuple}},
+     #ejabberd_commands{name = get_certificate, tags = [acme],
+			desc = "Gets a certificate for all or the specified domains {all|domain1;domain2;...}.",
+			module = ?MODULE, function = get_certificate,
+			args_desc = ["Domains for which to acquire a certificate"],
+			args_example = ["all | www.example.com;www.example1.net"],
+			args = [{domains, string}],
+			result = {certificates, string}},
+     #ejabberd_commands{name = renew_certificate, tags = [acme],
+			desc = "Renews all certificates that are close to expiring",
+			module = ?MODULE, function = renew_certificate,
+			args = [],
+			result = {certificates, string}},
+     #ejabberd_commands{name = list_certificates, tags = [acme],
+			desc = "Lists all curently handled certificates and their respective domains in {plain|verbose} format",
+			module = ?MODULE, function = list_certificates,
+			args_desc = ["Whether to print the whole certificate or just some metadata. Possible values: plain | verbose"],
+			args = [{option, string}],
+			result = {certificates, {list, {certificate, string}}}},
+     #ejabberd_commands{name = revoke_certificate, tags = [acme],
+			desc = "Revokes the selected certificate",
+			module = ?MODULE, function = revoke_certificate,
+			args_desc = ["The domain or file (in pem format) of the certificate in question {domain:Domain | file:File}"],
+			args = [{domain_or_file, string}],
 			result = {res, restuple}},
 
      #ejabberd_commands{name = import_piefxis, tags = [mnesia],
@@ -321,9 +350,9 @@ get_commands_spec() ->
 			desc = "Change the erlang node name in a backup file",
 			module = ?MODULE, function = mnesia_change_nodename,
 			args_desc = ["Name of the old erlang node", "Name of the new node",
-			    "Path to old backup file", "Path to the new backup file"],
+				     "Path to old backup file", "Path to the new backup file"],
 			args_example = ["ejabberd@machine1", "ejabberd@machine2",
-			    "/var/lib/ejabberd/old.backup", "/var/lib/ejabberd/new.backup"],
+					"/var/lib/ejabberd/old.backup", "/var/lib/ejabberd/new.backup"],
 			args = [{oldnodename, string}, {newnodename, string},
 				{oldbackup, string}, {newbackup, string}],
 			result = {res, restuple}},
@@ -421,7 +450,7 @@ stop_kindly(DelaySeconds, AnnouncementTextString) ->
 	     {"Stopping ejabberd", application, stop, [ejabberd]},
 	     {"Stopping Mnesia", mnesia, stop, []},
 	     {"Stopping Erlang node", init, stop, []}
-    ],
+	    ],
     NumberLast = length(Steps),
     TimestampStart = calendar:datetime_to_gregorian_seconds({date(), time()}),
     lists:foldl(
@@ -469,8 +498,8 @@ update_module(ModuleNameBin) when is_binary(ModuleNameBin) ->
 update_module(ModuleNameString) ->
     ModuleName = list_to_atom(ModuleNameString),
     case ejabberd_update:update([ModuleName]) of
-          {ok, _Res} -> {ok, []};
-          {error, Reason} -> {error, Reason}
+	{ok, _Res} -> {ok, []};
+	{error, Reason} -> {error, Reason}
     end.
 
 %%%
@@ -500,7 +529,7 @@ registered_users(Host) ->
     lists:map(fun({U, _S}) -> U end, SUsers).
 
 registered_vhosts() ->
-	?MYHOSTS.
+    ?MYHOSTS.
 
 reload_config() ->
     ejabberd_config:reload_file().
@@ -542,6 +571,38 @@ import_dir(Path) ->
 	    {cannot_import_dir, String}
     end.
 
+%%%
+%%% Acme
+%%%
+
+get_certificate(Domains) ->
+    case ejabberd_acme:is_valid_domain_opt(Domains) of 
+	true ->
+	    ejabberd_acme:get_certificates(Domains);
+	false ->
+	    io_lib:format("Invalid domains: ~p", [Domains])
+    end.
+
+renew_certificate() ->
+    ejabberd_acme:renew_certificates().
+
+list_certificates(Verbose) ->
+    case ejabberd_acme:is_valid_verbose_opt(Verbose) of
+	true ->
+	    ejabberd_acme:list_certificates(Verbose);
+	false ->
+	    String = io_lib:format("Invalid verbose  option: ~p", [Verbose]),
+	    {invalid_option, String}
+    end.
+
+revoke_certificate(DomainOrFile) ->
+    case ejabberd_acme:is_valid_revoke_cert(DomainOrFile) of
+	true ->
+	    ejabberd_acme:revoke_certificate(DomainOrFile);
+	false ->
+	    String = io_lib:format("Bad argument: ~s", [DomainOrFile]),
+	    {invalid_argument, String}
+    end.
 
 %%%
 %%% Purge DB
