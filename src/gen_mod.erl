@@ -526,11 +526,19 @@ validate_opts(Host, Module, Opts, Validators) when is_list(Opts) ->
 			      end
 		      end;
 		  false ->
-		      ?ERROR_MSG("unknown option '~s' for module '~s' will be"
-				 " likely ignored, available options are: ~s",
-				 [Opt, Module,
-				  misc:join_atoms([K || {K, _} <- Validators],
-						  <<", ">>)]),
+		      case Validators of
+			  [] ->
+			      ?ERROR_MSG("unknown option '~s' for module '~s' "
+					 "will be likely ignored because the "
+					 "module doesn't have any options",
+					 [Opt, Module]);
+			  _ ->
+			      ?ERROR_MSG("unknown option '~s' for module '~s' will be"
+					 " likely ignored, available options are: ~s",
+					 [Opt, Module,
+					  misc:join_atoms([K || {K, _} <- Validators],
+							  <<", ">>)])
+		      end,
 		      [{Opt, Val}]
 	      end;
 	 (_) ->
