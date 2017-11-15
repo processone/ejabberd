@@ -975,7 +975,7 @@ opt_type(disable_sasl_mechanisms) ->
 	(V) -> [str:to_upper(V)]
     end;
 opt_type(_) ->
-    [c2s_certfile, c2s_ciphers, c2s_cafile,
+    [c2s_certfile, c2s_ciphers, c2s_cafile, c2s_dhfile,
      c2s_protocol_options, c2s_tls_compression, resource_conflict,
      disable_sasl_mechanisms].
 
