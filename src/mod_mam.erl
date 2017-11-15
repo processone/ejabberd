@@ -190,7 +190,7 @@ reload(Host, NewOpts, OldOpts) ->
        true ->
 	    ok
     end,
-    ets_cache:setopts(archive_prefs_cache, NewOpts),
+    ets_cache:setopts(archive_prefs_cache, cache_opts(Host, NewOpts)),
     case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
 	{false, IQDisc, _} ->
 	    register_iq_handlers(Host, IQDisc);
