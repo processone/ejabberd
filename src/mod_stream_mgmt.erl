@@ -36,6 +36,7 @@
 %% adjust pending session timeout
 -export([get_resume_timeout/1, set_resume_timeout/2]).
 
+-include("ejabberd.hrl").
 -include("xmpp.hrl").
 -include("logger.hrl").
 -include("p1_queue.hrl").
@@ -247,7 +248,10 @@ c2s_handle_info(#{mgmt_state := pending,
 		{timeout, TRef, pending_timeout}) ->
     ?DEBUG("Timed out waiting for resumption of stream for ~s",
 	   [jid:encode(JID)]),
-    Mod:stop(State#{mgmt_state => timeout});
+    Txt = <<"Timed out waiting for stream resumption">>,
+    Err = xmpp:serr_connection_timeout(Txt, ?MYLANG),
+    Mod:stop(State#{mgmt_state => timeout,
+		    stop_reason => {stream, {out, Err}}});
 c2s_handle_info(#{jid := JID} = State, {_Ref, {resume, OldState}}) ->
     %% This happens if the resume_session/1 request timed out; the new session
     %% now receives the late response.
