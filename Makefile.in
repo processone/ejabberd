@@ -93,7 +93,7 @@ deps: deps/.got
 deps/.got:
 	rm -rf deps/.got
 	rm -rf deps/.built
-	mkdir deps
+	mkdir -p deps
 	$(REBAR) get-deps && :> deps/.got
 
 deps/.built: deps/.got
