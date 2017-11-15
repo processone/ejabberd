@@ -53,12 +53,10 @@
     path_to_node/1,
     get_entity_subscriptions_for_send_last/2, get_last_items/3]).
 
--export([decode_jid/1, encode_jid/1,
-         encode_jid_like/1,
-    decode_affiliation/1, decode_subscriptions/1,
-    encode_affiliation/1, encode_subscriptions/1,
-         encode_host/1,
-         encode_host_like/1]).
+-export([decode_jid/1, encode_jid/1, encode_jid_like/1,
+         decode_affiliation/1, decode_subscriptions/1,
+         encode_affiliation/1, encode_subscriptions/1,
+         encode_host/1, encode_host_like/1]).
 
 init(_Host, _ServerHost, _Opts) ->
     %%pubsub_subscription_sql:init(Host, ServerHost, Opts),
@@ -387,25 +385,21 @@ get_entity_subscriptions(Host, Owner) ->
     SubKey = jid:tolower(Owner),
     GenKey = jid:remove_resource(SubKey),
     H = encode_host(Host),
-    SJ = encode_jid(SubKey),
     GJ = encode_jid(GenKey),
-    GJLike = <<(encode_jid_like(GenKey))/binary, "/%">>,
-    Query =
-        case SubKey of
-            GenKey ->
-                ?SQL("select @(node)s, @(type)s, @(i.nodeid)d,"
-                     " @(jid)s, @(subscriptions)s "
-                     "from pubsub_state i, pubsub_node n "
-                     "where i.nodeid = n.nodeid and "
-                     "(jid=%(GJ)s or jid like %(GJLike)s escape '^')"
-                     " and host=%(H)s");
-            _ ->
-                ?SQL("select @(node)s, @(type)s, @(i.nodeid)d,"
-                     " @(jid)s, @(subscriptions)s "
-                     "from pubsub_state i, pubsub_node n "
-                     "where i.nodeid = n.nodeid and"
-                     " jid in (%(SJ)s, %(GJ)s) and host=%(H)s")
-        end,
+    Query = case SubKey of
+	      GenKey ->
+		GJLike = <<(encode_jid_like(GenKey))/binary, "/%">>,
+		?SQL("select @(node)s, @(type)s, @(i.nodeid)d, @(jid)s, @(subscriptions)s "
+		     "from pubsub_state i, pubsub_node n "
+		     "where i.nodeid = n.nodeid and "
+		     "(jid=%(GJ)s or jid like %(GJLike)s escape '^') and host=%(H)s");
+	      _ ->
+		SJ = encode_jid(SubKey),
+		?SQL("select @(node)s, @(type)s, @(i.nodeid)d, @(jid)s, @(subscriptions)s "
+		     "from pubsub_state i, pubsub_node n "
+		     "where i.nodeid = n.nodeid and "
+		     "jid in (%(SJ)s, %(GJ)s) and host=%(H)s")
+	    end,
     {result,
      case ejabberd_sql:sql_query_t(Query) of
 	 {selected, RItems} ->
@@ -413,15 +407,10 @@ get_entity_subscriptions(Host, Owner) ->
 	       fun({N, T, I, J, S}, Acc) ->
 		       Node = nodetree_tree_sql:raw_to_node(Host, {N, <<"">>, T, I}),
 		       Jid = decode_jid(J),
-		       case decode_subscriptions(S) of
-			   [] ->
-			       [{Node, none, Jid} | Acc];
-			   Subs ->
-			       lists:foldl(
-				 fun({Sub, SubId}, Acc2) ->
-					 [{Node, Sub, SubId, Jid} | Acc2]
-				 end, Acc, Subs)
-		       end
+		       lists:foldl(
+			 fun({Sub, SubId}, Acc2) ->
+			     [{Node, Sub, SubId, Jid} | Acc2]
+			 end, Acc, decode_subscriptions(S))
 	       end, [], RItems);
 	 _ ->
 	     []
@@ -438,27 +427,23 @@ get_entity_subscriptions_for_send_last(Host, Owner) ->
     SubKey = jid:tolower(Owner),
     GenKey = jid:remove_resource(SubKey),
     H = encode_host(Host),
-    SJ = encode_jid(SubKey),
     GJ = encode_jid(GenKey),
-    GJLike = <<(encode_jid_like(GenKey))/binary, "/%">>,
-    Query =
-        case SubKey of
-            GenKey ->
-                ?SQL("select @(node)s, @(type)s, @(i.nodeid)d,"
-                     " @(jid)s, @(subscriptions)s "
-                     "from pubsub_state i, pubsub_node n, pubsub_node_option o "
-                     "where i.nodeid = n.nodeid and n.nodeid = o.nodeid and name='send_last_published_item' "
-                     "and val='on_sub_and_presence' and "
-                     "(jid=%(GJ)s or jid like %(GJLike)s escape '^')"
-                     " and host=%(H)s");
-            _ ->
-                ?SQL("select @(node)s, @(type)s, @(i.nodeid)d,"
-                     " @(jid)s, @(subscriptions)s "
-                     "from pubsub_state i, pubsub_node n, pubsub_node_option o "
-                     "where i.nodeid = n.nodeid and n.nodeid = o.nodeid and name='send_last_published_item' "
-                     "and val='on_sub_and_presence' and"
-                     " jid in (%(SJ)s, %(GJ)s) and host=%(H)s")
-    end,
+    Query = case SubKey of
+	      GenKey ->
+		GJLike = <<(encode_jid_like(GenKey))/binary, "/%">>,
+		?SQL("select @(node)s, @(type)s, @(i.nodeid)d, @(jid)s, @(subscriptions)s "
+		     "from pubsub_state i, pubsub_node n, pubsub_node_option o "
+		     "where i.nodeid = n.nodeid and n.nodeid = o.nodeid and "
+		     "name='send_last_published_item' and val='on_sub_and_presence' and "
+		     "(jid=%(GJ)s or jid like %(GJLike)s escape '^') and host=%(H)s");
+	      _ ->
+		SJ = encode_jid(SubKey),
+		?SQL("select @(node)s, @(type)s, @(i.nodeid)d, @(jid)s, @(subscriptions)s "
+		     "from pubsub_state i, pubsub_node n, pubsub_node_option o "
+		     "where i.nodeid = n.nodeid and n.nodeid = o.nodeid and "
+		     "name='send_last_published_item' and val='on_sub_and_presence' and "
+		     "jid in (%(SJ)s, %(GJ)s) and host=%(H)s")
+	    end,
     {result,
      case ejabberd_sql:sql_query_t(Query) of
 	 {selected, RItems} ->
@@ -466,15 +451,10 @@ get_entity_subscriptions_for_send_last(Host, Owner) ->
 	       fun ({N, T, I, J, S}, Acc) ->
 		       Node = nodetree_tree_sql:raw_to_node(Host, {N, <<"">>, T, I}),
 		       Jid = decode_jid(J),
-		       case decode_subscriptions(S) of
-			   [] ->
-			       [{Node, none, Jid} | Acc];
-			   Subs ->
-			       lists:foldl(
-				 fun ({Sub, SubId}, Acc2) ->
-					 [{Node, Sub, SubId, Jid}| Acc2]
-				 end, Acc, Subs)
-		       end
+		       lists:foldl(
+			 fun ({Sub, SubId}, Acc2) ->
+			     [{Node, Sub, SubId, Jid}| Acc2]
+			 end, Acc, decode_subscriptions(S))
 	       end, [], RItems);
 	 _ ->
 	     []
@@ -489,15 +469,10 @@ get_node_subscriptions(Nidx) ->
 	     lists:foldl(
 	       fun ({J, S}, Acc) ->
 		       Jid = decode_jid(J),
-		       case decode_subscriptions(S) of
-			   [] ->
-			       [{Jid, none} | Acc];
-			   Subs ->
-			       lists:foldl(
-				 fun ({Sub, SubId}, Acc2) ->
-					 [{Jid, Sub, SubId} | Acc2]
-				 end, Acc, Subs)
-		       end
+		       lists:foldl(
+			 fun ({Sub, SubId}, Acc2) ->
+			     [{Jid, Sub, SubId} | Acc2]
+			 end, Acc, decode_subscriptions(S))
 	       end, [], RItems);
 	 _ ->
 	     []

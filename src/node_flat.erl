@@ -573,17 +573,10 @@ get_entity_subscriptions(Host, Owner) ->
 get_node_subscriptions(Nidx) ->
     {result, States} = get_states(Nidx),
     Tr = fun (#pubsub_state{stateid = {J, _}, subscriptions = Subscriptions}) ->
-	    case Subscriptions of
-		[_ | _] ->
-		    lists:foldl(fun ({S, SubId}, Acc) ->
-				[{J, S, SubId} | Acc]
-			end,
-			[], Subscriptions);
-		[] ->
-		    [];
-		_ ->
-		    [{J, none}]
-	    end
+	    lists:foldl(fun ({S, SubId}, Acc) ->
+			[{J, S, SubId} | Acc]
+		end,
+		[], Subscriptions)
     end,
     {result, lists:flatmap(Tr, States)}.
 

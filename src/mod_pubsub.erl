@@ -2333,8 +2333,6 @@ get_subscriptions(Host, Node, JID, Plugins) when is_list(Plugins) ->
     case Result of
 	{ok, Subs} ->
 	    Entities = lists:flatmap(fun
-			({_, none}) ->
-			    [];
 			({#pubsub_node{nodeid = {_, SubsNode}}, Sub}) ->
 			    case Node of
 				<<>> ->
@@ -2344,8 +2342,6 @@ get_subscriptions(Host, Node, JID, Plugins) when is_list(Plugins) ->
 				_ ->
 				    []
 			    end;
-			({_, none, _}) ->
-			    [];
 			({#pubsub_node{nodeid = {_, SubsNode}}, Sub, SubId, SubJID}) ->
 			    case Node of
 				<<>> ->
