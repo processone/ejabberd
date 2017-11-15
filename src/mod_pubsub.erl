@@ -3075,7 +3075,7 @@ get_configure(Host, ServerHost, Node, From, Lang) ->
 
 -spec get_default(host(), binary(), jid(), binary()) -> {result, pubsub_owner()}.
 get_default(Host, Node, _From, Lang) ->
-    Type = select_type(Host, Host, Node),
+    Type = select_type(serverhost(Host), Host, Node),
     Options = node_options(Host, Type),
     Fs = get_configure_xfields(Type, Options, Lang, []),
     {result, #pubsub_owner{default = {<<>>, #xdata{type = form, fields = Fs}}}}.
@@ -3415,20 +3415,20 @@ config(ServerHost, Key, Default) ->
     end.
 
 -spec select_type(binary(), host(), binary(), binary()) -> binary().
-select_type(ServerHost, Host, Node, Type) ->
-    SelectedType = case Host of
-	{_User, _Server, _Resource} ->
-	    case config(ServerHost, pep_mapping) of
-		undefined -> ?PEPNODE;
-		Mapping -> proplists:get_value(Node, Mapping, ?PEPNODE)
-	    end;
-	_ ->
-	    Type
-    end,
-    ConfiguredTypes = plugins(Host),
-    case lists:member(SelectedType, ConfiguredTypes) of
-	true -> SelectedType;
-	false -> hd(ConfiguredTypes)
+select_type(ServerHost, {_User, _Server, _Resource}, Node, _Type) ->
+    case config(ServerHost, pep_mapping) of
+	undefined -> ?PEPNODE;
+	Mapping -> proplists:get_value(Node, Mapping, ?PEPNODE)
+    end;
+select_type(ServerHost, _Host, _Node, Type) ->
+    case config(ServerHost, plugins) of
+	undefined ->
+	    Type;
+	Plugins ->
+	    case lists:member(Type, Plugins) of
+		true -> Type;
+		false -> hd(Plugins)
+	    end
     end.
 
 -spec select_type(binary(), host(), binary()) -> binary().
