@@ -215,7 +215,7 @@ CREATE TABLE pubsub_node (
   host text NOT NULL,
   node text NOT NULL,
   parent VARCHAR(191) NOT NULL DEFAULT '',
-  type text NOT NULL,
+  plugin text NOT NULL,
   nodeid bigint auto_increment primary key
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE INDEX i_pubsub_node_parent ON pubsub_node(parent(120));

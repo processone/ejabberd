@@ -279,7 +279,7 @@ CREATE TABLE [dbo].[pubsub_node] (
         [host] [varchar] (255) NOT NULL,
         [node] [varchar] (255) NOT NULL,
         [parent] [varchar] (255) NOT NULL DEFAULT '',
-        [type] [text] NOT NULL,
+        [plugin] [text] NOT NULL,
         [nodeid] [bigint] IDENTITY(1,1) NOT NULL,
  CONSTRAINT [pubsub_node_PRIMARY] PRIMARY KEY CLUSTERED 
 (

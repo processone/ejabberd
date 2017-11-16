@@ -337,7 +337,7 @@ get_entity_affiliations(Host, Owner) ->
     J = encode_jid(GenKey),
     {result,
      case ejabberd_sql:sql_query_t(
-	    ?SQL("select @(node)s, @(type)s, @(i.nodeid)d, @(affiliation)s "
+	    ?SQL("select @(node)s, @(plugin)s, @(i.nodeid)d, @(affiliation)s "
 		 "from pubsub_state i, pubsub_node n where "
 		 "i.nodeid = n.nodeid and jid=%(J)s and host=%(H)s")) of
 	 {selected, RItems} ->
@@ -389,13 +389,13 @@ get_entity_subscriptions(Host, Owner) ->
     Query = case SubKey of
 	      GenKey ->
 		GJLike = <<(encode_jid_like(GenKey))/binary, "/%">>,
-		?SQL("select @(node)s, @(type)s, @(i.nodeid)d, @(jid)s, @(subscriptions)s "
+		?SQL("select @(node)s, @(plugin)s, @(i.nodeid)d, @(jid)s, @(subscriptions)s "
 		     "from pubsub_state i, pubsub_node n "
 		     "where i.nodeid = n.nodeid and "
 		     "(jid=%(GJ)s or jid like %(GJLike)s escape '^') and host=%(H)s");
 	      _ ->
 		SJ = encode_jid(SubKey),
-		?SQL("select @(node)s, @(type)s, @(i.nodeid)d, @(jid)s, @(subscriptions)s "
+		?SQL("select @(node)s, @(plugin)s, @(i.nodeid)d, @(jid)s, @(subscriptions)s "
 		     "from pubsub_state i, pubsub_node n "
 		     "where i.nodeid = n.nodeid and "
 		     "jid in (%(SJ)s, %(GJ)s) and host=%(H)s")
@@ -431,14 +431,14 @@ get_entity_subscriptions_for_send_last(Host, Owner) ->
     Query = case SubKey of
 	      GenKey ->
 		GJLike = <<(encode_jid_like(GenKey))/binary, "/%">>,
-		?SQL("select @(node)s, @(type)s, @(i.nodeid)d, @(jid)s, @(subscriptions)s "
+		?SQL("select @(node)s, @(plugin)s, @(i.nodeid)d, @(jid)s, @(subscriptions)s "
 		     "from pubsub_state i, pubsub_node n, pubsub_node_option o "
 		     "where i.nodeid = n.nodeid and n.nodeid = o.nodeid and "
 		     "name='send_last_published_item' and val='on_sub_and_presence' and "
 		     "(jid=%(GJ)s or jid like %(GJLike)s escape '^') and host=%(H)s");
 	      _ ->
 		SJ = encode_jid(SubKey),
-		?SQL("select @(node)s, @(type)s, @(i.nodeid)d, @(jid)s, @(subscriptions)s "
+		?SQL("select @(node)s, @(plugin)s, @(i.nodeid)d, @(jid)s, @(subscriptions)s "
 		     "from pubsub_state i, pubsub_node n, pubsub_node_option o "
 		     "where i.nodeid = n.nodeid and n.nodeid = o.nodeid and "
 		     "name='send_last_published_item' and val='on_sub_and_presence' and "

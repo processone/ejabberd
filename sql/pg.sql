@@ -221,7 +221,7 @@ CREATE TABLE pubsub_node (
   host text NOT NULL,
   node text NOT NULL,
   parent text NOT NULL DEFAULT '',
-  "type" text NOT NULL,
+  plugin text NOT NULL,
   nodeid SERIAL UNIQUE
 );
 CREATE INDEX i_pubsub_node_parent ON pubsub_node USING btree (parent);
