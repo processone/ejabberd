@@ -2843,16 +2843,16 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, Nidx, Type, NodeO
     %% Handles implicit presence subscriptions
     SenderResource = user_resource(LUser, LServer, LResource),
     NotificationType = get_option(NodeOptions, notification_type, headline),
-    Stanza = add_message_type(
-	       xmpp:set_from(BaseStanza, jid:make(LUser, LServer)),
-	       NotificationType),
     %% set the from address on the notification to the bare JID of the account owner
     %% Also, add "replyto" if entity has presence subscription to the account owner
     %% See XEP-0163 1.1 section 4.3.1
+    FromBareJid = xmpp:set_from(BaseStanza, jid:make(LUser, LServer)),
+    Stanza = add_extended_headers(
+	       add_message_type(FromBareJid, NotificationType),
+	       extended_headers([Publisher])),
     ejabberd_sm:route(jid:make(LUser, LServer, SenderResource),
-		      {pep_message, <<((Node))/binary, "+notify">>,
-		       add_extended_headers(
-			 Stanza, extended_headers([Publisher]))});
+		      {pep_message, <<((Node))/binary, "+notify">>, Stanza}),
+    ejabberd_router:route(xmpp:set_to(Stanza, jid:make(LUser, LServer)));
 broadcast_stanza(Host, _Publisher, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
     broadcast_stanza(Host, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM).
 
