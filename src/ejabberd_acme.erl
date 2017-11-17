@@ -112,9 +112,9 @@ get_commands_spec() ->
 			args_example = ["all | www.example.com;www.example1.net"],
 			args = [{domains, string}],
 			result = {certificates, string}},
-     #ejabberd_commands{name = renew_certificate, tags = [acme],
+     #ejabberd_commands{name = renew_certificates, tags = [acme],
 			desc = "Renews all certificates that are close to expiring",
-			module = ?MODULE, function = renew_certificate,
+			module = ?MODULE, function = renew_certificates,
 			args = [],
 			result = {certificates, string}},
      #ejabberd_commands{name = list_certificates, tags = [acme],
@@ -221,7 +221,7 @@ format_get_certificate({ok, Domain, saved}) ->
     io_lib:format("  Certificate for domain: \"~s\" acquired and saved", [Domain]);
 format_get_certificate({ok, Domain, not_found}) ->    
     io_lib:format("  Certificate for domain: \"~s\" not found, so it was not renewed", [Domain]);
-format_get_certificate({ok, Domain, exists}) ->    
+format_get_certificate({ok, Domain, no_expire}) ->
     io_lib:format("  Certificate for domain: \"~s\" is not close to expiring", [Domain]);
 format_get_certificate({error, Domain, Reason}) ->
     io_lib:format("  Error for domain: \"~s\",  with reason: \'~s\'", [Domain, Reason]).
