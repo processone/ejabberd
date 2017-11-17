@@ -321,13 +321,13 @@ muc_register_nick(Nick, FromBinary, ServerHost) ->
 muc_unregister_nick(FromBinary, ServerHost) ->
     muc_register_nick(<<"">>, FromBinary, ServerHost).
 
-get_user_rooms(LUser, LServer) ->
+get_user_rooms(User, Server) ->
     lists:flatmap(
       fun(ServerHost) ->
 	      case gen_mod:is_loaded(ServerHost, mod_muc) of
 		  true ->
 		      Rooms = mod_muc:get_online_rooms_by_user(
-				ServerHost, LUser, LServer),
+				ServerHost, jid:nodeprep(User), jid:nodeprep(Server)),
 		      [<<Name/binary, "@", Host/binary>>
 			   || {Name, Host} <- Rooms];
 		  false ->
