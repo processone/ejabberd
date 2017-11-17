@@ -34,6 +34,8 @@ before_script:
   - echo 'ulimit -n 4096' > riak
   - sudo mv riak /etc/default/riak
   - mkdir "$PWD/ebin"
+  - sed 's/^storage_backend.*/storage_backend = leveldb/' /etc/riak/riak.conf > riak.conf
+  - sudo mv riak.conf /etc/riak/riak.conf
   - echo "[{riak_kv, [{add_paths, [\"$PWD/ebin/\"]}]}]." > advanced.config
   - sudo mv advanced.config /etc/riak/advanced.config
   - sudo service riak restart
