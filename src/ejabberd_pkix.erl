@@ -28,7 +28,7 @@
 %% API
 -export([start_link/0, add_certfile/1, format_error/1, opt_type/1,
 	 get_certfile/1, try_certfile/1, route_registered/1,
-	 config_reloaded/0]).
+	 config_reloaded/0, certs_dir/0]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
@@ -190,8 +190,17 @@ init([]) ->
     end.
 
 handle_call({add_certfile, Path}, _, State) ->
-    {Result, NewState} = add_certfile(Path, State),
-    {reply, Result, NewState};
+    case add_certfile(Path, State) of
+	{ok, State1} ->
+	    case build_chain_and_check(State1) of
+		{ok, State2} ->
+		    {reply, ok, State2};
+		Err ->
+		    {reply, Err, State}
+	    end;
+	{Err, State1} ->
+	    {reply, Err, State1}
+    end;
 handle_call({route_registered, Host}, _, State) ->
     case add_certfiles(Host, State) of
 	{ok, NewState} ->
@@ -301,14 +310,7 @@ add_certfiles(Host, State) ->
 			       NewAccState
 		       end
 	       end, State, certfiles_from_config_options()),
-    State2 = case ejabberd_acme:certificate_exists(Host) of
-		 {true, Path} ->
-		     {_, State3} = add_certfile(Path, State1),
-		     State3;
-		 false ->
-		     State1
-	     end,
-    if State /= State2 ->
+    if State /= State1 ->
 	    case build_chain_and_check(State1) of
 		ok -> {ok, State1};
 		{error, _} = Err -> Err
