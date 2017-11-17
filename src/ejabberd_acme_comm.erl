@@ -15,7 +15,8 @@
 	 %% Certificate
 	 new_cert/4,
          get_cert/1,
-         revoke_cert/4
+         revoke_cert/4,
+	 get_issuer_cert/1
          %% Not yet implemented
 	 %% key_roll_over/5
          %% delete_authz/3
@@ -124,7 +125,7 @@ complete_challenge({CAUrl, AuthzId, ChallId}, PrivateKey, Req, Nonce) ->
 new_cert(Dirs, PrivateKey, Req, Nonce) ->
     #{"new-cert" := Url} = Dirs,
     EJson = {[{<<"resource">>, <<"new-cert">>}] ++ Req},
-    prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response_location/1,
+    prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response_link_up/1,
 			 "application/pkix-cert").
 
 -spec get_cert({url(), string()}) -> {ok, list(), nonce()} | {error, _}.
@@ -140,6 +141,9 @@ revoke_cert(Dirs, PrivateKey, Req, Nonce) ->
     prepare_post_request(Url, PrivateKey, EJson, Nonce, fun get_response/1,
                          "application/pkix-cert").
 
+-spec get_issuer_cert(url()) -> {ok, list(), nonce()} | {error, _}.
+get_issuer_cert(IssuerCertUrl) ->
+    prepare_get_request(IssuerCertUrl, fun get_response/1, "application/pkix-cert").
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
@@ -172,7 +176,11 @@ get_response_location({ok, Head, Return}) ->
     NewNonce = get_nonce(Head),
     {ok, {Location, Return}, NewNonce}.
 
-
+-spec get_response_link_up({ok, proplist(), proplist()}) -> {ok, {url(), proplist()}, nonce()}.
+get_response_link_up({ok, Head, Return}) ->
+    LinkUp = get_link_up(Head),
+    NewNonce = get_nonce(Head),
+    {ok, {LinkUp, Return}, NewNonce}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
@@ -332,14 +340,21 @@ get_location(Head) ->
 	none -> none
     end.
 
-%% Very bad way to extract this
-%% TODO: Find a better way
 -spec get_tos(proplist()) -> url() | 'none'.
 get_tos(Head) ->
+    get_header_link(Head, "\"terms-of-service\"").
+
+-spec get_link_up(proplist()) -> url() | 'none'.
+get_link_up(Head) ->
+    get_header_link(Head, "rel=\"up\"").
+
+%% TODO: Find a more reliable way to extract this
+-spec get_header_link(proplist(), string()) -> url() | 'none'.
+get_header_link(Head, Suffix) ->
     try
 	[{_, Link}] = [{K, V} || {K, V} <- Head,
 				 K =:= "link" andalso
-				     lists:suffix("\"terms-of-service\"", V)],
+				     lists:suffix(Suffix, V)],
 	[Link1, _] = string:tokens(Link, ";"),
 	Link2 = string:strip(Link1, left, $<),
 	string:strip(Link2, right, $>)

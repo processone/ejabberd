@@ -331,16 +331,20 @@ create_new_certificate(CAUrl, {DomainName, AllSubDomains}, PrivateKey) ->
 	     {<<"notBefore">>, NotBefore},
 	     {<<"NotAfter">>, NotAfter}
 	    ],
-	{ok, {_CertUrl, Certificate}, _Nonce1} = 
+	{ok, {IssuerCertLink, Certificate}, _Nonce1} =
 	    ejabberd_acme_comm:new_cert(Dirs, PrivateKey, Req, Nonce0),
 
 	DecodedCert = public_key:pkix_decode_cert(list_to_binary(Certificate), plain),	
 	PemEntryCert = public_key:pem_entry_encode('Certificate', DecodedCert),
 
+	{ok, IssuerCert, _Nonce2} = ejabberd_acme_comm:get_issuer_cert(IssuerCertLink),
+	DecodedIssuerCert = public_key:pkix_decode_cert(list_to_binary(IssuerCert), plain),
+	PemEntryIssuerCert = public_key:pem_entry_encode('Certificate', DecodedIssuerCert),
+
 	{_, CSRKeyKey} = jose_jwk:to_key(CSRKey),
 	PemEntryKey = public_key:pem_entry_encode('ECPrivateKey', CSRKeyKey),
 
-	PemCertKey = public_key:pem_encode([PemEntryKey, PemEntryCert]),
+	PemCertKey = public_key:pem_encode([PemEntryKey, PemEntryCert, PemEntryIssuerCert]),
 
 	{ok, DomainName, PemCertKey}
     catch		     
@@ -1100,13 +1104,13 @@ save_certificate({ok, DomainName, Cert}) ->
 	%% that there is no certificate saved if it cannot be added in
 	%% certificate persistent storage
 	write_cert(CertificateFile, Cert, DomainName),
+	ok = ejabberd_pkix:add_certfile(CertificateFile),
 	DataCert = #data_cert{
 		      domain = DomainName,
 		      pem = Cert,
 		      path = CertificateFile
 		     },
 	add_certificate_persistent(DataCert),
-	ok = ejabberd_pkix:add_certfile(CertificateFile),
 	{ok, DomainName, saved}
     catch
 	throw:Throw ->
