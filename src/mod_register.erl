@@ -334,6 +334,10 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 							    Password)
 				of
 			      ok ->
+				  ?INFO_MSG("The account ~s was registered "
+					    "from IP address ~s",
+					    [jid:encode({User, Server, <<"">>}),
+					     ip_to_string(Source)]),
 				  send_welcome_message(JID),
 				  send_registration_notifications(
                                     ?MODULE, JID, Source),
@@ -492,6 +496,8 @@ remove_timeout(Source) ->
        true -> ok
     end.
 
+ip_to_string({_, _, _} = USR) ->
+    jid:encode(USR);
 ip_to_string(Source) when is_tuple(Source) ->
     misc:ip_to_list(Source);
 ip_to_string(undefined) -> <<"undefined">>;
