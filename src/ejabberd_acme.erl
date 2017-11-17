@@ -1211,11 +1211,11 @@ opt_type(acme) ->
 	      fun({ca_url, URL}) ->
 		      URL1 = binary_to_list(URL),
 		      {ok, _} = http_uri:parse(URL1),
-		      URL1;
+		      {ca_url, URL1};
 		 ({contact, Contact}) ->
 		      [<<_, _/binary>>, <<_, _/binary>>] =
 			  binary:split(Contact, <<":">>),
-		      Contact
+		      {contact, Contact}
 	      end, L)
     end;
 opt_type(_) ->
