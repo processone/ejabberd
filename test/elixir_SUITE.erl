@@ -39,6 +39,9 @@ init_per_suite(Config) ->
     code:add_pathz(filename:join(test_dir(), "../include")),
     Config.
 
+end_per_suite(_Config) ->
+    ok.
+
 init_per_testcase(_TestCase, Config) ->
     process_flag(error_handler, ?MODULE),
     Config.
