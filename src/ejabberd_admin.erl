@@ -44,11 +44,6 @@
 	 registered_users/1,
 	 %% Migration jabberd1.4
 	 import_file/1, import_dir/1,
-         %% Acme
-         get_certificate/1,
-	 renew_certificate/0,
-	 list_certificates/1,
-	 revoke_certificate/1,
 	 %% Purge DB
 	 delete_expired_messages/0, delete_old_messages/1,
 	 %% Mnesia
@@ -247,31 +242,6 @@ get_commands_spec() ->
 			args_example = ["/var/lib/ejabberd/jabberd14/"],
 			args = [{file, string}],
 			result = {res, restuple}},
-     #ejabberd_commands{name = get_certificate, tags = [acme],
-			desc = "Gets a certificate for all or the specified domains {all|domain1;domain2;...}.",
-			module = ?MODULE, function = get_certificate,
-			args_desc = ["Domains for which to acquire a certificate"],
-			args_example = ["all | www.example.com;www.example1.net"],
-			args = [{domains, string}],
-			result = {certificates, string}},
-     #ejabberd_commands{name = renew_certificate, tags = [acme],
-			desc = "Renews all certificates that are close to expiring",
-			module = ?MODULE, function = renew_certificate,
-			args = [],
-			result = {certificates, string}},
-     #ejabberd_commands{name = list_certificates, tags = [acme],
-			desc = "Lists all curently handled certificates and their respective domains in {plain|verbose} format",
-			module = ?MODULE, function = list_certificates,
-			args_desc = ["Whether to print the whole certificate or just some metadata. Possible values: plain | verbose"],
-			args = [{option, string}],
-			result = {certificates, {list, {certificate, string}}}},
-     #ejabberd_commands{name = revoke_certificate, tags = [acme],
-			desc = "Revokes the selected certificate",
-			module = ?MODULE, function = revoke_certificate,
-			args_desc = ["The domain or file (in pem format) of the certificate in question {domain:Domain | file:File}"],
-			args = [{domain_or_file, string}],
-			result = {res, restuple}},
-
      #ejabberd_commands{name = import_piefxis, tags = [mnesia],
 			desc = "Import users data from a PIEFXIS file (XEP-0227)",
 			module = ejabberd_piefxis, function = import_file,
@@ -569,39 +539,6 @@ import_dir(Path) ->
             String = io_lib:format("Can't import jabberd14 spool dir ~p at node ~p: ~p",
 				   [filename:absname(Path), node(), Reason]),
 	    {cannot_import_dir, String}
-    end.
-
-%%%
-%%% Acme
-%%%
-
-get_certificate(Domains) ->
-    case ejabberd_acme:is_valid_domain_opt(Domains) of 
-	true ->
-	    ejabberd_acme:get_certificates(Domains);
-	false ->
-	    io_lib:format("Invalid domains: ~p", [Domains])
-    end.
-
-renew_certificate() ->
-    ejabberd_acme:renew_certificates().
-
-list_certificates(Verbose) ->
-    case ejabberd_acme:is_valid_verbose_opt(Verbose) of
-	true ->
-	    ejabberd_acme:list_certificates(Verbose);
-	false ->
-	    String = io_lib:format("Invalid verbose  option: ~p", [Verbose]),
-	    {invalid_option, String}
-    end.
-
-revoke_certificate(DomainOrFile) ->
-    case ejabberd_acme:is_valid_revoke_cert(DomainOrFile) of
-	true ->
-	    ejabberd_acme:revoke_certificate(DomainOrFile);
-	false ->
-	    String = io_lib:format("Bad argument: ~s", [DomainOrFile]),
-	    {invalid_argument, String}
     end.
 
 %%%

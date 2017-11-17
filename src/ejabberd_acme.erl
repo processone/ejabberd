@@ -22,7 +22,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
-
+-include("ejabberd_commands.hrl").
 -include("ejabberd_acme.hrl").
 -include_lib("public_key/include/public_key.hrl").
 
@@ -40,6 +40,7 @@ start_link() ->
 init([]) ->
     case filelib:ensure_dir(filename:join(acme_certs_dir(), "foo")) of
 	ok ->
+	    ejabberd_commands:register_commands(get_commands_spec()),
 	    register_certfiles(),
 	    {ok, #state{}};
 	{error, Why} ->
@@ -60,7 +61,7 @@ handle_info(_Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
-    ok.
+    ejabberd_commands:unregister_commands(get_commands_spec()).
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
@@ -101,23 +102,58 @@ is_valid_revoke_cert(DomainOrFile) ->
     lists:prefix("file:", DomainOrFile) orelse
 	lists:prefix("domain:", DomainOrFile).
 	    
-
+%% Commands
+get_commands_spec() ->
+    [#ejabberd_commands{name = get_certificates, tags = [acme],
+			desc = "Gets certificates for all or the specified "
+			       "domains {all|domain1;domain2;...}.",
+			module = ?MODULE, function = get_certificates,
+			args_desc = ["Domains for which to acquire a certificate"],
+			args_example = ["all | www.example.com;www.example1.net"],
+			args = [{domains, string}],
+			result = {certificates, string}},
+     #ejabberd_commands{name = renew_certificate, tags = [acme],
+			desc = "Renews all certificates that are close to expiring",
+			module = ?MODULE, function = renew_certificate,
+			args = [],
+			result = {certificates, string}},
+     #ejabberd_commands{name = list_certificates, tags = [acme],
+			desc = "Lists all curently handled certificates and "
+			       "their respective domains in {plain|verbose} format",
+			module = ?MODULE, function = list_certificates,
+			args_desc = ["Whether to print the whole certificate "
+				     "or just some metadata. "
+				     "Possible values: plain | verbose"],
+			args = [{option, string}],
+			result = {certificates, {list, {certificate, string}}}},
+     #ejabberd_commands{name = revoke_certificate, tags = [acme],
+			desc = "Revokes the selected certificate",
+			module = ?MODULE, function = revoke_certificate,
+			args_desc = ["The domain or file (in pem format) of "
+				     "the certificate in question "
+				     "{domain:Domain | file:File}"],
+			args = [{domain_or_file, string}],
+			result = {res, restuple}}].
 
 %%
 %% Get Certificate
 %%
-
 -spec get_certificates(domains_opt()) -> string() | {'error', _}.
 get_certificates(Domains) ->
-    try
-	CAUrl = get_config_ca_url(),
-	get_certificates0(CAUrl, Domains)
-    catch
-	throw:Throw ->
-	    Throw;
-	E:R ->
-	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, erlang:get_stacktrace()]), 
-	    {error, get_certificates}
+    case is_valid_domain_opt(Domains) of 
+	true ->
+	    try
+		CAUrl = get_config_ca_url(),
+		get_certificates0(CAUrl, Domains)
+	    catch
+		throw:Throw ->
+		    Throw;
+		E:R ->
+		    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, erlang:get_stacktrace()]), 
+		    {error, get_certificates}
+	    end;
+	false ->
+	    io_lib:format("Invalid domains: ~p", [Domains])
     end.
 
 -spec get_certificates0(url(), domains_opt()) -> string().
@@ -397,14 +433,20 @@ close_to_expire(Validity, Days) ->
 %%
 -spec list_certificates(verbose_opt()) -> [string()] | [any()] | {error, _}.
 list_certificates(Verbose) ->
-    try
-	list_certificates0(Verbose)
-    catch
-	throw:Throw ->
-	    Throw;
-	E:R ->
-	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, erlang:get_stacktrace()]), 
-	    {error, list_certificates}
+    case is_valid_verbose_opt(Verbose) of
+	true ->
+	    try
+		list_certificates0(Verbose)
+	    catch
+		throw:Throw ->
+		    Throw;
+		E:R ->
+		    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, erlang:get_stacktrace()]), 
+		    {error, list_certificates}
+	    end;
+	false ->
+	    String = io_lib:format("Invalid verbose  option: ~p", [Verbose]),
+	    {invalid_option, String}
     end.
 
 -spec list_certificates0(verbose_opt()) -> [string()] | [any()].
@@ -548,8 +590,17 @@ get_utc_validity(#'Certificate'{tbsCertificate = TbsCertificate}) ->
 %% Revoke Certificate
 %%
 
--spec revoke_certificate(string()) -> {ok, deleted} | {error, _}.
 revoke_certificate(DomainOrFile) ->
+    case is_valid_revoke_cert(DomainOrFile) of
+	true ->
+	    revoke_certificates(DomainOrFile);
+	false ->
+	    String = io_lib:format("Bad argument: ~s", [DomainOrFile]),
+	    {invalid_argument, String}
+    end.
+
+-spec revoke_certificates(string()) -> {ok, deleted} | {error, _}.
+revoke_certificates(DomainOrFile) ->
     try
 	CAUrl = get_config_ca_url(),
 	revoke_certificate0(CAUrl, DomainOrFile)
