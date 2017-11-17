@@ -1203,19 +1203,20 @@ generate_key() ->
 %% Option Parsing Code
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-parse_acme_opts(AcmeOpt) ->
-    [parse_acme_opt(Opt) || Opt <- AcmeOpt].
-
-
-parse_acme_opt({ca_url, CaUrl}) when is_bitstring(CaUrl) ->
-    {ca_url, binary_to_list(CaUrl)};
-parse_acme_opt({contact, Contact}) when is_bitstring(Contact) ->
-    {contact, Contact}.
-
 -spec opt_type(acme) -> fun((acme_config()) -> (acme_config()));
 	      (atom()) -> [atom()].
 opt_type(acme) ->
-    fun parse_acme_opts/1;
+    fun(L) ->
+	    lists:map(
+	      fun({ca_url, URL}) ->
+		      URL1 = binary_to_list(URL),
+		      {ok, _} = http_uri:parse(URL1),
+		      URL1;
+		 ({contact, Contact}) ->
+		      [<<_, _/binary>>, <<_, _/binary>>] =
+			  binary:split(Contact, <<":">>),
+		      Contact
+	      end, L)
+    end;
 opt_type(_) ->
     [acme].
