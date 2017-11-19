@@ -143,7 +143,7 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 config_reloaded() ->
-    gen_server:cast(?MODULE, config_reloaded).
+    gen_server:call(?MODULE, config_reloaded, 60000).
 
 opt_type(ca_path) ->
     fun(Path) -> iolist_to_binary(Path) end;
@@ -219,18 +219,18 @@ handle_call({route_registered, Host}, _, State) ->
 	{error, _} ->
 	    {reply, ok, State}
     end;
+handle_call(config_reloaded, _From, State) ->
+    State1 = State#state{paths = [], certs = #{}, keys = []},
+    case add_certfiles(State1) of
+	{ok, State2} ->
+	    {reply, ok, State2};
+	{error, _} = Err ->
+	    {reply, Err, State}
+    end;
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
 
-handle_cast(config_reloaded, State) ->
-    State1 = State#state{paths = [], certs = #{}, keys = []},
-    case add_certfiles(State1) of
-	{ok, State2} ->
-	    {noreply, State2};
-	{error, _} ->
-	    {noreply, State}
-    end;
 handle_cast(_Msg, State) ->
     {noreply, State}.
 

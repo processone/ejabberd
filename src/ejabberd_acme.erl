@@ -17,7 +17,7 @@
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
--export([start_link/0, opt_type/1]).
+-export([start_link/0, opt_type/1, register_certfiles/0]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -40,6 +40,7 @@ start_link() ->
 init([]) ->
     case filelib:ensure_dir(filename:join(acme_certs_dir(), "foo")) of
 	ok ->
+	    ejabberd_hooks:add(config_reloaded, ?MODULE, register_certfiles, 40),
 	    ejabberd_commands:register_commands(get_commands_spec()),
 	    register_certfiles(),
 	    {ok, #state{}};
@@ -61,6 +62,7 @@ handle_info(_Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
+    ejabberd_hooks:delete(config_reloaded, ?MODULE, register_certfiles, 40),
     ejabberd_commands:unregister_commands(get_commands_spec()).
 
 code_change(_OldVsn, State, _Extra) ->
