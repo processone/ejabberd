@@ -1022,9 +1022,9 @@ persistent_file() ->
     filename:join(AcmeDir, "acme.DAT").
 
 %% The persistent file should be read and written only by its owner
--spec persistent_file_mode() -> 384.
-persistent_file_mode() ->
-    8#400 + 8#200. 
+-spec file_mode() -> 384.
+file_mode() ->
+    8#600.
 
 -spec read_persistent() -> {ok, acme_data()} | no_return().
 read_persistent() ->
@@ -1054,7 +1054,7 @@ create_persistent() ->
     Binary = term_to_binary(data_empty()),
     case file:write_file(persistent_file(), Binary) of
 	ok ->
-	    case file:change_mode(persistent_file(), persistent_file_mode()) of
+	    case file:change_mode(persistent_file(), file_mode()) of
 		ok -> ok;
 		{error, Reason} ->
 		    ?ERROR_MSG("Error: ~p changing acme data file mode", [Reason]),
@@ -1144,6 +1144,12 @@ register_certfiles() ->
 write_cert(CertificateFile, Cert, DomainName) ->
     case file:write_file(CertificateFile, Cert) of
 	ok ->
+	    case file:change_mode(CertificateFile, file_mode()) of
+		ok -> ok;
+		{error, Why} ->
+		    ?WARNING_MSG("Failed to change mode of file ~s: ~s",
+				 [CertificateFile, file:format_error(Why)])
+	    end,
 	    {ok, DomainName, saved};
 	{error, Reason} ->
 	    ?ERROR_MSG("Error: ~p saving certificate at file: ~p",
