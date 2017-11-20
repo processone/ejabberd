@@ -113,6 +113,9 @@ hosts:
 ## certfiles:
 ##   - "/etc/letsencrypt/live/example.org/*.pem"
 ##   - "/etc/letsencrypt/live/example.com/*.pem"
+##
+## If your system provides only a single CA file (CentOS/FreeBSD):
+## s2s_cafile: "/etc/ssl/certs/ca-bundle.pem"
 
 ###.  =================
 ###'  TLS configuration
