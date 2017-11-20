@@ -978,7 +978,19 @@ default_db(Opt, Host, Module) ->
 get_modules() ->
     {ok, Mods} = application:get_key(ejabberd, modules),
     ExtMods = [Name || {Name, _Details} <- ext_mod:installed()],
-    ExtMods ++ Mods.
+    case application:get_env(ejabberd, external_beams) of
+	{ok, Path} ->
+	    case lists:member(Path, code:get_path()) of
+		true -> ok;
+		false -> code:add_patha(Path)
+	    end,
+	    Beams = filelib:wildcard(filename:join(Path, "*\.beam")),
+	    CustMods = [list_to_atom(filename:rootname(filename:basename(Beam)))
+			|| Beam <- Beams],
+	    CustMods ++ ExtMods ++ Mods;
+	_ ->
+	    ExtMods ++ Mods
+    end.
 
 get_modules_with_options(Modules) ->
     lists:foldl(
@@ -1417,8 +1429,11 @@ opt_type(cache_life_time) ->
        (infinity) -> infinity;
        (unlimited) -> infinity
     end;
-opt_type(domain_certfile) ->
-    fun misc:try_read_file/1;
+opt_type(domain_certfile = Opt) ->
+    fun(File) ->
+	    ?WARNING_MSG("option '~s' is deprecated, use 'certfiles' instead", [Opt]),
+	    misc:try_read_file(File)
+    end;
 opt_type(shared_key) ->
     fun iolist_to_binary/1;
 opt_type(node_start) ->

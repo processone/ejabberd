@@ -229,13 +229,22 @@ TestConfig = case file:read_file_info(TestConfigFile) of
 		     ""
 	     end,
 
-ResolveDepPath = case IsRebar3 of
-		     true ->
+ResolveDepPath = case {SystemDeps, IsRebar3} of
+		     {true, _} ->
 			 fun("deps/" ++ Rest) ->
 				 Slash = string:str(Rest, "/"),
-				 Dir = "_build/default/lib/" ++
-				     string:sub_string(Rest, 1, Slash - 1),
-				 Dir ++ string:sub_string(Rest, Slash);
+				 code:lib_dir(
+				   string:sub_string(Rest, 1, Slash -1)) ++
+				     string:sub_string(Rest, Slash);
+			    (Path) ->
+				 Path
+			 end;
+		     {_, true} ->
+			 fun("deps/" ++ Rest) ->
+				 Slash = string:str(Rest, "/"),
+				 "_build/default/lib/" ++
+				     string:sub_string(Rest, 1, Slash - 1) ++
+				     string:sub_string(Rest, Slash);
 			    (Path) ->
 				 Path
 			 end;
@@ -326,7 +335,7 @@ Rules = [
 	  AppendList([{coveralls, ".*", {git, "https://github.com/markusn/coveralls-erl.git", "master"}}]), []},
 	 {[post_hooks], [cover_enabled], os:getenv("TRAVIS") == "true",
 	  AppendList2(TravisPostHooks), [], false},
-	 {[overrides], [post_hook_configure], true,
+	 {[overrides], [post_hook_configure], SystemDeps == false,
 	  AppendList2(GenDepsConfigure), [], []},
 	 {[ct_extra_params], [eunit_compile_opts], true,
 	  AppendStr2(CtParams), "", []},

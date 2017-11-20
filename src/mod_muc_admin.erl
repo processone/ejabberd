@@ -62,7 +62,12 @@ start(Host, _Opts) ->
     ejabberd_hooks:add(webadmin_page_host, Host, ?MODULE, web_page_host, 50).
 
 stop(Host) ->
-    ejabberd_commands:unregister_commands(get_commands_spec()),
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+        false ->
+            ejabberd_commands:unregister_commands(get_commands_spec());
+        true ->
+            ok
+    end,
     ejabberd_hooks:delete(webadmin_menu_main, ?MODULE, web_menu_main, 50),
     ejabberd_hooks:delete(webadmin_menu_host, Host, ?MODULE, web_menu_host, 50),
     ejabberd_hooks:delete(webadmin_page_main, ?MODULE, web_page_main, 50),
@@ -316,13 +321,13 @@ muc_register_nick(Nick, FromBinary, ServerHost) ->
 muc_unregister_nick(FromBinary, ServerHost) ->
     muc_register_nick(<<"">>, FromBinary, ServerHost).
 
-get_user_rooms(LUser, LServer) ->
+get_user_rooms(User, Server) ->
     lists:flatmap(
       fun(ServerHost) ->
 	      case gen_mod:is_loaded(ServerHost, mod_muc) of
 		  true ->
 		      Rooms = mod_muc:get_online_rooms_by_user(
-				ServerHost, LUser, LServer),
+				ServerHost, jid:nodeprep(User), jid:nodeprep(Server)),
 		      [<<Name/binary, "@", Host/binary>>
 			   || {Name, Host} <- Rooms];
 		  false ->

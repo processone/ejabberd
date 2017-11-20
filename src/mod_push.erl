@@ -46,6 +46,9 @@
 %% API (used by mod_push_keepalive).
 -export([notify/1, notify/3, notify/5]).
 
+%% For IQ callbacks
+-export([delete_session/3]).
+
 -include("ejabberd.hrl").
 -include("ejabberd_commands.hrl").
 -include("logger.hrl").
@@ -101,7 +104,12 @@ start(Host, Opts) ->
 stop(Host) ->
     unregister_hooks(Host),
     unregister_iq_handlers(Host),
-    ejabberd_commands:unregister_commands(get_commands_spec()).
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+        false ->
+            ejabberd_commands:unregister_commands(get_commands_spec());
+        true ->
+            ok
+    end.
 
 -spec reload(binary(), gen_mod:opts(), gen_mod:opts()) -> ok.
 reload(Host, NewOpts, OldOpts) ->
@@ -194,7 +202,7 @@ register_hooks(Host) ->
 		       c2s_stanza, 50),
     ejabberd_hooks:add(store_mam_message, Host, ?MODULE,
 		       mam_message, 50),
-    ejabberd_hooks:add(offline_message_hook, Host, ?MODULE,
+    ejabberd_hooks:add(store_offline_message, Host, ?MODULE,
 		       offline_message, 50),
     ejabberd_hooks:add(remove_user, Host, ?MODULE,
 		       remove_user, 50).
@@ -213,7 +221,7 @@ unregister_hooks(Host) ->
 			  c2s_stanza, 50),
     ejabberd_hooks:delete(store_mam_message, Host, ?MODULE,
 			  mam_message, 50),
-    ejabberd_hooks:delete(offline_message_hook, Host, ?MODULE,
+    ejabberd_hooks:delete(store_offline_message, Host, ?MODULE,
 			  offline_message, 50),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE,
 			  remove_user, 50).
@@ -338,9 +346,6 @@ c2s_stanza(State, _Pkt, _SendResult) ->
 
 -spec mam_message(message() | drop, binary(), binary(), jid(),
 		  chat | groupchat, recv | send) -> message().
-mam_message(#message{meta = #{push_notified := true}} = Pkt,
-	    _LUser, _LServer, _Peer, _Type, _Dir) ->
-    Pkt;
 mam_message(#message{} = Pkt, LUser, LServer, _Peer, chat, _Dir) ->
     case lookup_sessions(LUser, LServer) of
 	{ok, [_|_] = Clients} ->
@@ -354,15 +359,14 @@ mam_message(#message{} = Pkt, LUser, LServer, _Peer, chat, _Dir) ->
 	_ ->
 	    ok
     end,
-    xmpp:put_meta(Pkt, push_notified, true);
+    Pkt;
 mam_message(Pkt, _LUser, _LServer, _Peer, _Type, _Dir) ->
     Pkt.
 
--spec offline_message({any(), message()}) -> {any(), message()}.
-offline_message({_Action, #message{meta = #{push_notified := true}}} = Acc) ->
-    Acc;
-offline_message({Action, #message{to = #jid{luser = LUser,
-					    lserver = LServer}} = Pkt}) ->
+-spec offline_message(message()) -> message().
+offline_message(#message{meta = #{mam_archived := true}} = Pkt) ->
+    Pkt; % Push notification was triggered via MAM.
+offline_message(#message{to = #jid{luser = LUser, lserver = LServer}} = Pkt) ->
     case lookup_sessions(LUser, LServer) of
 	{ok, [_|_] = Clients} ->
 	    ?DEBUG("Notifying ~s@~s of offline message", [LUser, LServer]),
@@ -370,7 +374,7 @@ offline_message({Action, #message{to = #jid{luser = LUser,
 	_ ->
 	    ok
     end,
-    {Action, xmpp:put_meta(Pkt, push_notified, true)}.
+    Pkt.
 
 -spec c2s_session_pending(c2s_state()) -> c2s_state().
 c2s_session_pending(#{push_enabled := true, mgmt_queue := Queue} = State) ->
@@ -425,7 +429,8 @@ notify(LUser, LServer, Clients) ->
 	      HandleResponse = fun(#iq{type = result}) ->
 				       ok;
 				  (#iq{type = error}) ->
-				       delete_session(LUser, LServer, TS);
+				       spawn(?MODULE, delete_session,
+					     [LUser, LServer, TS]);
 				  (timeout) ->
 				       ok % Hmm.
 			       end,
@@ -444,8 +449,7 @@ notify(LServer, PushLJID, Node, XData, HandleResponse) ->
 	     to = jid:make(PushLJID),
 	     id = randoms:get_string(),
 	     sub_els = [PubSub]},
-    ejabberd_local:route_iq(IQ, HandleResponse),
-    ok.
+    ejabberd_router:route_iq(IQ, HandleResponse).
 
 %%--------------------------------------------------------------------
 %% Internal functions.

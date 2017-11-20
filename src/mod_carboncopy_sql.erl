@@ -42,6 +42,7 @@ enable(LUser, LServer, LResource, NS) ->
     NodeS = erlang:atom_to_binary(node(), latin1),
     case ?SQL_UPSERT(LServer, "carboncopy",
 		     ["!username=%(LUser)s",
+                      "!server_host=%(LServer)s",
 		      "!resource=%(LResource)s",
 		      "namespace=%(NS)s",
 		      "node=%(NodeS)s"]) of
@@ -56,7 +57,7 @@ disable(LUser, LServer, LResource) ->
     case ejabberd_sql:sql_query(
 	   LServer,
 	   ?SQL("delete from carboncopy where username=%(LUser)s "
-		"and resource=%(LResource)s")) of
+		"and %(LServer)H and resource=%(LResource)s")) of
 	{updated, _} ->
 	    ok;
 	Err ->
@@ -68,7 +69,7 @@ list(LUser, LServer) ->
     case ejabberd_sql:sql_query(
 	   LServer,
 	   ?SQL("select @(resource)s, @(namespace)s, @(node)s from carboncopy "
-		"where username=%(LUser)s")) of
+		"where username=%(LUser)s and %(LServer)H")) of
 	{selected, Rows} ->
 	    {ok, [{Resource, NS, binary_to_atom(Node, latin1)}
 		  || {Resource, NS, Node} <- Rows]};

@@ -215,7 +215,7 @@ CREATE TABLE pubsub_node (
   host text NOT NULL,
   node text NOT NULL,
   parent VARCHAR(191) NOT NULL DEFAULT '',
-  type text NOT NULL,
+  plugin text NOT NULL,
   nodeid bigint auto_increment primary key
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE INDEX i_pubsub_node_parent ON pubsub_node(parent(120));
@@ -305,6 +305,18 @@ CREATE TABLE muc_online_users (
 
 CREATE UNIQUE INDEX i_muc_online_users USING BTREE ON muc_online_users(username(75), server(75), resource(75), name(75), host(75));
 CREATE INDEX i_muc_online_users_us USING BTREE ON muc_online_users(username(75), server(75));
+
+CREATE TABLE muc_room_subscribers (
+   room varchar(191) NOT NULL,
+   host varchar(191) NOT NULL,
+   jid varchar(191) NOT NULL,
+   nick text NOT NULL,
+   nodes text NOT NULL,
+   created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY i_muc_room_subscribers_host_room_jid (host, room, jid)
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE INDEX i_muc_room_subscribers_host_jid USING BTREE ON muc_room_subscribers(host, jid);
 
 CREATE TABLE irc_custom (
     jid text NOT NULL,

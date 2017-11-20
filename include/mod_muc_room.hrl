@@ -112,7 +112,7 @@
     nicks                   = (?DICT):new() :: ?TDICT,
     affiliations            = (?DICT):new() :: ?TDICT,
     history                 :: lqueue(),
-    subject                 = <<"">> :: binary(),
+    subject                 = [] :: [text()],
     subject_author          = <<"">> :: binary(),
     just_created            = false :: boolean(),
     activity                = treap:empty() :: treap:treap(),

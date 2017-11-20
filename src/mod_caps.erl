@@ -118,11 +118,11 @@ user_send_packet({#presence{type = available,
 			    from = #jid{luser = U, lserver = LServer} = From,
 			    to = #jid{luser = U, lserver = LServer,
 				      lresource = <<"">>}} = Pkt,
-		  State}) ->
+		  #{jid := To} = State}) ->
     case read_caps(Pkt) of
 	nothing -> ok;
 	#caps{version = Version, exts = Exts} = Caps ->
-	    feature_request(LServer, From, Caps, [Version | Exts])
+	    feature_request(LServer, From, To, Caps, [Version | Exts])
     end,
     {Pkt, State};
 user_send_packet(Acc) ->
@@ -130,13 +130,13 @@ user_send_packet(Acc) ->
 
 -spec user_receive_packet({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
 user_receive_packet({#presence{from = From, type = available} = Pkt,
-		     #{lserver := LServer} = State}) ->
+		     #{lserver := LServer, jid := To} = State}) ->
     IsRemote = not ejabberd_router:is_my_host(From#jid.lserver),
     if IsRemote ->
 	   case read_caps(Pkt) of
 	     nothing -> ok;
 	     #caps{version = Version, exts = Exts} = Caps ->
-		    feature_request(LServer, From, Caps, [Version | Exts])
+		    feature_request(LServer, From, To, Caps, [Version | Exts])
 	   end;
        true -> ok
     end,
@@ -298,7 +298,12 @@ handle_call(_Req, _From, State) ->
 
 handle_cast(_Msg, State) -> {noreply, State}.
 
-handle_info(_Info, State) -> {noreply, State}.
+handle_info({iq_reply, IQReply, {Host, From, To, Caps, SubNodes}}, State) ->
+    feature_response(IQReply, Host, From, To, Caps, SubNodes),
+    {noreply, State};
+handle_info(Info, State) ->
+    ?WARNING_MSG("unexpected info: ~p", [Info]),
+    {noreply, State}.
 
 terminate(_Reason, State) ->
     Host = State#state.host,
@@ -322,39 +327,37 @@ terminate(_Reason, State) ->
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
--spec feature_request(binary(), jid(), caps(), [binary()]) -> any().
-feature_request(Host, From, Caps,
+-spec feature_request(binary(), jid(), jid(), caps(), [binary()]) -> any().
+feature_request(Host, From, To, Caps,
 		[SubNode | Tail] = SubNodes) ->
     Node = Caps#caps.node,
     NodePair = {Node, SubNode},
     case ets_cache:lookup(caps_features_cache, NodePair,
 			  caps_read_fun(Host, NodePair)) of
 	{ok, Fs} when is_list(Fs) ->
-	    feature_request(Host, From, Caps, Tail);
+	    feature_request(Host, From, To, Caps, Tail);
 	_ ->
-	    LFrom = jid:tolower(From),
-	    case ets_cache:insert_new(caps_requests_cache, {LFrom, NodePair}, ok) of
+	    LTo = jid:tolower(To),
+	    case ets_cache:insert_new(caps_requests_cache, {LTo, NodePair}, ok) of
 		true ->
 		    IQ = #iq{type = get,
-			     from = jid:make(Host),
-			     to = From,
+			     from = From,
+			     to = To,
 			     sub_els = [#disco_info{node = <<Node/binary, "#",
 							     SubNode/binary>>}]},
-		    F = fun (IQReply) ->
-				feature_response(IQReply, Host, From, Caps,
-						 SubNodes)
-			end,
-		    ejabberd_local:route_iq(IQ, F);
+		    ejabberd_router:route_iq(
+		      IQ, {Host, From, To, Caps, SubNodes},
+		      gen_mod:get_module_proc(Host, ?MODULE));
 		false ->
 		    ok
 	    end,
-	    feature_request(Host, From, Caps, Tail)
+	    feature_request(Host, From, To, Caps, Tail)
     end;
-feature_request(_Host, _From, _Caps, []) -> ok.
+feature_request(_Host, _From, _To, _Caps, []) -> ok.
 
--spec feature_response(iq(), binary(), ljid(), caps(), [binary()]) -> any().
+-spec feature_response(iq(), binary(), jid(), jid(), caps(), [binary()]) -> any().
 feature_response(#iq{type = result, sub_els = [El]},
-		 Host, From, Caps, [SubNode | SubNodes]) ->
+		 Host, From, To, Caps, [SubNode | SubNodes]) ->
     NodePair = {Caps#caps.node, SubNode},
     try
 	DiscoInfo = xmpp:decode(El),
@@ -374,10 +377,10 @@ feature_response(#iq{type = result, sub_els = [El]},
     catch _:{xmpp_codec, _Why} ->
 	    ok
     end,
-    feature_request(Host, From, Caps, SubNodes);
-feature_response(_IQResult, Host, From, Caps,
+    feature_request(Host, From, To, Caps, SubNodes);
+feature_response(_IQResult, Host, From, To, Caps,
 		 [_SubNode | SubNodes]) ->
-    feature_request(Host, From, Caps, SubNodes).
+    feature_request(Host, From, To, Caps, SubNodes).
 
 -spec caps_read_fun(binary(), {binary(), binary()})
       -> fun(() -> {ok, [binary()] | non_neg_integer()} | error).

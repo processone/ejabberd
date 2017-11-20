@@ -11,6 +11,7 @@ INET_DIST_INTERFACE=""
 ERLANG_NODE=ejabberd@localhost
 
 # define default environment variables
+SCRIPT_DIR=$(cd "${0%/*}" && pwd)
 ERL="{{erl}}"
 IEX="{{bindir}}/iex"
 EPMD="{{epmd}}"
@@ -144,7 +145,7 @@ debugwarning()
         echo "To bypass permanently this warning, add to ejabberdctl.cfg the line:"
         echo "  EJABBERD_BYPASS_WARNINGS=true"
         echo "Press return to continue"
-        read -r
+        read -r input
         echo ""
     fi
 }
@@ -167,7 +168,7 @@ livewarning()
         echo "To bypass permanently this warning, add to ejabberdctl.cfg the line:"
         echo "  EJABBERD_BYPASS_WARNINGS=true"
         echo "Press return to continue"
-        read -r
+        read -r input
         echo ""
     fi
 }

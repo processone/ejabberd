@@ -51,6 +51,7 @@ set_motd_users(LServer, USRs) ->
                           ?SQL_UPSERT_T(
                              "motd",
                              ["!username=%(U)s",
+                              "!server_host=%(LServer)s",
                               "xml=''"])
 		  end, USRs)
 	end,
@@ -62,20 +63,23 @@ set_motd(LServer, Packet) ->
                 ?SQL_UPSERT_T(
                    "motd",
                    ["!username=''",
+                    "!server_host=%(LServer)s",
                     "xml=%(XML)s"])
 	end,
     transaction(LServer, F).
 
 delete_motd(LServer) ->
     F = fun() ->
-                ejabberd_sql:sql_query_t(?SQL("delete from motd"))
+                ejabberd_sql:sql_query_t(
+                  ?SQL("delete from motd where %(LServer)H"))
 	end,
     transaction(LServer, F).
 
 get_motd(LServer) ->
     case catch ejabberd_sql:sql_query(
                  LServer,
-                 ?SQL("select @(xml)s from motd where username=''")) of
+                 ?SQL("select @(xml)s from motd"
+                      " where username='' and %(LServer)H")) of
         {selected, [{XML}]} ->
 	    parse_element(XML);
 	{selected, []} ->
@@ -88,7 +92,7 @@ is_motd_user(LUser, LServer) ->
     case catch ejabberd_sql:sql_query(
                  LServer,
                  ?SQL("select @(username)s from motd"
-                      " where username=%(LUser)s")) of
+                      " where username=%(LUser)s and %(LServer)H")) of
         {selected, [_|_]} ->
 	    {ok, true};
 	{selected, []} ->
@@ -102,6 +106,7 @@ set_motd_user(LUser, LServer) ->
                 ?SQL_UPSERT_T(
                    "motd",
                    ["!username=%(LUser)s",
+                    "!server_host=%(LServer)s",
                     "xml=''"])
         end,
     transaction(LServer, F).
@@ -111,16 +116,24 @@ export(_Server) ->
       fun(Host, #motd{server = LServer, packet = El})
             when LServer == Host ->
               XML = fxml:element_to_binary(El),
-              [?SQL("delete from motd where username='';"),
-               ?SQL("insert into motd(username, xml) values ('', %(XML)s);")];
+              [?SQL("delete from motd where username='' and %(LServer)H;"),
+               ?SQL_INSERT(
+                  "motd",
+                  ["username=''",
+                   "server_host=%(LServer)s",
+                   "xml=%(XML)s"])];
          (_Host, _R) ->
               []
       end},
      {motd_users,
       fun(Host, #motd_users{us = {LUser, LServer}})
             when LServer == Host, LUser /= <<"">> ->
-              [?SQL("delete from motd where username=%(LUser)s;"),
-               ?SQL("insert into motd(username, xml) values (%(LUser)s, '');")];
+              [?SQL("delete from motd where username=%(LUser)s and %(LServer)H;"),
+               ?SQL_INSERT(
+                  "motd",
+                  ["username=%(LUser)s",
+                   "server_host=%(LServer)s",
+                   "xml=''"])];
          (_Host, _R) ->
               []
       end}].

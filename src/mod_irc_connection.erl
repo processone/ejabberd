@@ -418,7 +418,7 @@ handle_info({route_chan, Channel, Resource,
 	    end
     catch _:{xmpp_codec, Why} ->
 	    Err = xmpp:err_bad_request(
-		    xmpp:format_error(Why), xmpp:get_lang(Packet)),
+		    xmpp:io_format_error(Why), xmpp:get_lang(Packet)),
 	    ejabberd_router:route_error(Packet, Err)
     end,
     {next_state, StateName, StateData};

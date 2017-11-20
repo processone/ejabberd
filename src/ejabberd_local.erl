@@ -32,16 +32,20 @@
 %% API
 -export([start/0, start_link/0]).
 
--export([route/1, route_iq/2, route_iq/3, process_iq/1,
-	 process_iq_reply/1, get_features/1,
-	 register_iq_handler/5, register_iq_response_handler/4,
-	 register_iq_response_handler/5, unregister_iq_handler/2,
-	 unregister_iq_response_handler/2, bounce_resource_packet/1,
+-export([route/1, process_iq/1,
+	 get_features/1,
+	 register_iq_handler/5,
+	 unregister_iq_handler/2,
+	 bounce_resource_packet/1,
 	 host_up/1, host_down/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
+
+%% deprecated functions: use ejabberd_router:route_iq/3,4
+-export([route_iq/2, route_iq/3]).
+-deprecated([{route_iq, 2}, {route_iq, 3}]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -50,17 +54,7 @@
 
 -record(state, {}).
 
--record(iq_response, {id = <<"">> :: binary(),
-                      module :: atom(),
-                      function :: atom() | fun(),
-                      timer = make_ref() :: reference()}).
-
 -define(IQTABLE, local_iqtable).
-
-%% This value is used in SIP and Megaco for a transaction lifetime.
--define(IQ_TIMEOUT, 32000).
-
--type ping_timeout() :: non_neg_integer() | undefined.
 
 %%====================================================================
 %% API
@@ -99,17 +93,8 @@ process_iq(#iq{type = T, lang = Lang, sub_els = SubEls} = Packet)
 	  end,
     Err = xmpp:err_bad_request(Txt, Lang),
     ejabberd_router:route_error(Packet, Err);
-process_iq(#iq{type = T} = Packet) when T == result; T == error ->
-    process_iq_reply(Packet).
-
--spec process_iq_reply(iq()) -> any().
-process_iq_reply(#iq{id = ID} = IQ) ->
-    case get_iq_callback(ID) of
-      {ok, undefined, Function} -> Function(IQ), ok;
-      {ok, Module, Function} ->
-	  Module:Function(IQ), ok;
-      _ -> nothing
-    end.
+process_iq(#iq{type = T}) when T == result; T == error ->
+    ok.
 
 -spec route(stanza()) -> any().
 route(Packet) ->
@@ -119,53 +104,19 @@ route(Packet) ->
 		       [xmpp:pp(Packet), {E, {R, erlang:get_stacktrace()}}])
     end.
 
--spec route_iq(iq(), function()) -> any().
-route_iq(IQ, F) ->
-    route_iq(IQ, F, undefined).
+-spec route_iq(iq(), function()) -> ok.
+route_iq(IQ, Fun) ->
+    route_iq(IQ, Fun, undefined).
 
--spec route_iq(iq(), function(), ping_timeout()) -> any().
-route_iq(#iq{from = From, type = Type} = IQ, F, Timeout)
-    when is_function(F) ->
-    Packet = if Type == set; Type == get ->
-		     ID = randoms:get_string(),
-		     Host = From#jid.lserver,
-		     register_iq_response_handler(Host, ID, undefined, F, Timeout),
-		     IQ#iq{id = ID};
-		true ->
-		     IQ
-	     end,
-    ejabberd_router:route(Packet).
-
--spec register_iq_response_handler(binary(), binary(), module(),
-				   atom() | function()) -> any().
-register_iq_response_handler(Host, ID, Module,
-			     Function) ->
-    register_iq_response_handler(Host, ID, Module, Function,
-				 undefined).
-
--spec register_iq_response_handler(binary(), binary(), module(),
-				   atom() | function(), ping_timeout()) -> any().
-register_iq_response_handler(_Host, ID, Module,
-			     Function, Timeout0) ->
-    Timeout = case Timeout0 of
-		undefined -> ?IQ_TIMEOUT;
-		N when is_integer(N), N > 0 -> N
-	      end,
-    TRef = erlang:start_timer(Timeout, ?MODULE, ID),
-    mnesia:dirty_write(#iq_response{id = ID,
-				    module = Module,
-				    function = Function,
-				    timer = TRef}).
+-spec route_iq(iq(), function(), undefined | non_neg_integer()) -> ok.
+route_iq(IQ, Fun, Timeout) ->
+    ejabberd_router:route_iq(IQ, Fun, undefined, Timeout).
 
 -spec register_iq_handler(binary(), binary(), module(), function(),
 			  gen_iq_handler:opts()) -> ok.
 register_iq_handler(Host, XMLNS, Module, Fun, Opts) ->
     gen_server:cast(?MODULE,
 		    {register_iq_handler, Host, XMLNS, Module, Fun, Opts}).
-
--spec unregister_iq_response_handler(binary(), binary()) -> ok.
-unregister_iq_response_handler(_Host, ID) ->
-    catch get_iq_callback(ID), ok.
 
 -spec unregister_iq_handler(binary(), binary()) -> ok.
 unregister_iq_handler(Host, XMLNS) ->
@@ -204,9 +155,6 @@ init([]) ->
     catch ets:new(?IQTABLE, [named_table, public, ordered_set,
 			     {read_concurrency, true}]),
     update_table(),
-    ejabberd_mnesia:create(?MODULE, iq_response,
-			[{ram_copies, [node()]},
-			 {attributes, record_info(fields, iq_response)}]),
     {ok, #state{}}.
 
 handle_call(_Request, _From, State) ->
@@ -231,9 +179,6 @@ handle_cast(_Msg, State) -> {noreply, State}.
 
 handle_info({route, Packet}, State) ->
     route(Packet),
-    {noreply, State};
-handle_info({timeout, _TRef, ID}, State) ->
-    process_iq_timeout(ID),
     {noreply, State};
 handle_info(Info, State) ->
     ?WARNING_MSG("unexpected info: ~p", [Info]),
@@ -269,15 +214,8 @@ do_route(Packet) ->
 
 -spec update_table() -> ok.
 update_table() ->
-    case catch mnesia:table_info(iq_response, attributes) of
-	[id, module, function] ->
-	    mnesia:delete_table(iq_response),
-	    ok;
-	[id, module, function, timer] ->
-	    ok;
-	{'EXIT', _} ->
-	    ok
-    end.
+    catch mnesia:delete_table(iq_response),
+    ok.
 
 host_up(Host) ->
     Owner = case whereis(?MODULE) of
@@ -296,41 +234,3 @@ host_down(Host) ->
     ejabberd_router:unregister_route(Host, Owner),
     ejabberd_hooks:delete(local_send_to_resource_hook, Host,
 			  ?MODULE, bounce_resource_packet, 100).
-
--spec get_iq_callback(binary()) -> {ok, module(), atom() | function()} | error.
-get_iq_callback(ID) ->
-    case mnesia:dirty_read(iq_response, ID) of
-	[#iq_response{module = Module, timer = TRef,
-		      function = Function}] ->
-	    cancel_timer(TRef),
-	    mnesia:dirty_delete(iq_response, ID),
-	    {ok, Module, Function};
-	_ ->
-	    error
-    end.
-
--spec process_iq_timeout(binary()) -> any().
-process_iq_timeout(ID) ->
-    spawn(fun process_iq_timeout/0) ! ID.
-
--spec process_iq_timeout() -> any().
-process_iq_timeout() ->
-    receive
-	ID ->
-	    case get_iq_callback(ID) of
-		{ok, undefined, Function} ->
-		    Function(timeout);
-		_ ->
-		    ok
-	    end
-    after 5000 ->
-	    ok
-    end.
-
--spec cancel_timer(reference()) -> ok.
-cancel_timer(TRef) ->
-    case erlang:cancel_timer(TRef) of
-      false ->
-	  receive {timeout, TRef, _} -> ok after 0 -> ok end;
-      _ -> ok
-    end.

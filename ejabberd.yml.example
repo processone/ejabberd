@@ -108,7 +108,6 @@ hosts:
 
 ## Define common macros used by listeners
 ## define_macro:
-##   'CERTFILE': "/path/to/xmpp.pem"
 ##   'CIPHERS': "ECDH:DH:!3DES:!aNULL:!eNULL:!MEDIUM@STRENGTH"
 ##   'TLSOPTS':
 ##     - "no_sslv2"
@@ -130,11 +129,9 @@ listen:
     module: ejabberd_c2s
     ##
     ## If TLS is compiled in and you installed a SSL
-    ## certificate, specify the full path to the
-    ## file and uncomment these lines:
+    ## certificate, uncomment these lines:
     ##
     ## starttls: true
-    ## certfile: 'CERTFILE'
     ## protocol_options: 'TLSOPTS'
     ## dhfile: 'DHFILE'
     ## ciphers: 'CIPHERS'
@@ -219,7 +216,7 @@ listen:
   ##   request_handlers:
   ##     "": mod_http_upload
   ##   tls: true
-  ##   certfile: 'CERTFILE'
+  ##   certfile: "/path/to/xmpp.pem"
   ##   protocol_options: 'TLSOPTS'
   ##   dhfile: 'DHFILE'
   ##   ciphers: 'CIPHERS'
@@ -228,33 +225,30 @@ listen:
 ## password storage (see auth_password_format option).
 ## disable_sasl_mechanisms: "digest-md5"
 
+###.  ============
+###'  Certificates
+
+## List all available PEM files containing certificates for your domains,
+## chains of certificates or certificate keys. Full chains will be built
+## automatically by ejabberd.
+##
+## certfiles:
+##   - "/etc/letsencrypt/live/example.org/*.pem"
+##   - "/etc/letsencrypt/live/example.com/*.pem"
+
 ###.  ==================
 ###'  S2S GLOBAL OPTIONS
 
 ##
 ## s2s_use_starttls: Enable STARTTLS for S2S connections.
 ## Allowed values are: false, optional or required
-## You must specify a certificate file.
+## You must specify 'certfiles' option
 ##
 ## s2s_use_starttls: required
-
-##
-## s2s_certfile: Specify a certificate file.
-##
-## s2s_certfile: 'CERTFILE'
 
 ## Custom OpenSSL options
 ##
 ## s2s_protocol_options: 'TLSOPTS'
-
-##
-## domain_certfile: Specify a different certificate for each served hostname.
-##
-## host_config:
-##   "example.org":
-##     domain_certfile: "/path/to/example_org.pem"
-##   "example.com":
-##     domain_certfile: "/path/to/example_com.pem"
 
 ##
 ## S2S whitelist or blacklist
@@ -444,7 +438,7 @@ shaper:
 ## This option specifies the maximum number of elements in the queue
 ## of the FSM. Refer to the documentation for details.
 ##
-max_fsm_queue: 1000
+max_fsm_queue: 10000
 
 ###.   ====================
 ###'   ACCESS CONTROL LISTS
@@ -660,6 +654,39 @@ language: "en"
 ## Limit CAPTCHA calls per minute for JID/IP to avoid DoS.
 ##
 ## captcha_limit: 5
+
+###.  ====
+###'  ACME
+##
+## In order to use the acme certificate acquiring through "Let's Encrypt"
+## an http listener has to be configured to listen to port 80 so that
+## the authorization challenges posed by "Let's Encrypt" can be solved.
+## 
+## A simple way of doing this would be to add the following in the listening
+## section and to configure port forwarding from 80 to 5280 either via NAT
+## (for ipv4 only) or using frontends such as haproxy/nginx/sslh/etc.
+##   - 
+##    port: 5280
+##    ip: "::"
+##    module: ejabberd_http
+
+acme:
+
+   ## A contact mail that the ACME Certificate Authority can contact in case of
+   ## an authorization issue, such as a server-initiated certificate revocation.
+   ## It is not mandatory to provide an email address but it is highly suggested.
+   contact: "mailto:example-admin@example.com"
+
+
+   ## The ACME Certificate Authority URL.
+   ## This could either be:
+   ##   - https://acme-v01.api.letsencrypt.org - (Default) for the production CA
+   ##   - https://acme-staging.api.letsencrypt.org - for the staging CA
+   ##   - http://localhost:4000 - for a local version of the CA
+   ca_url: "https://acme-v01.api.letsencrypt.org"
+
+## The directory in which certificates will be saved
+cert_dir: "/usr/local/var/lib/ejabberd/"
 
 ###.  =======
 ###'  MODULES

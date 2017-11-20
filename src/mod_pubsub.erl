@@ -2333,8 +2333,6 @@ get_subscriptions(Host, Node, JID, Plugins) when is_list(Plugins) ->
     case Result of
 	{ok, Subs} ->
 	    Entities = lists:flatmap(fun
-			({_, none}) ->
-			    [];
 			({#pubsub_node{nodeid = {_, SubsNode}}, Sub}) ->
 			    case Node of
 				<<>> ->
@@ -2344,8 +2342,6 @@ get_subscriptions(Host, Node, JID, Plugins) when is_list(Plugins) ->
 				_ ->
 				    []
 			    end;
-			({_, none, _}) ->
-			    [];
 			({#pubsub_node{nodeid = {_, SubsNode}}, Sub, SubId, SubJID}) ->
 			    case Node of
 				<<>> ->
@@ -2847,16 +2843,16 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, Nidx, Type, NodeO
     %% Handles implicit presence subscriptions
     SenderResource = user_resource(LUser, LServer, LResource),
     NotificationType = get_option(NodeOptions, notification_type, headline),
-    Stanza = add_message_type(
-	       xmpp:set_from(BaseStanza, jid:make(LUser, LServer)),
-	       NotificationType),
     %% set the from address on the notification to the bare JID of the account owner
     %% Also, add "replyto" if entity has presence subscription to the account owner
     %% See XEP-0163 1.1 section 4.3.1
+    FromBareJid = xmpp:set_from(BaseStanza, jid:make(LUser, LServer)),
+    Stanza = add_extended_headers(
+	       add_message_type(FromBareJid, NotificationType),
+	       extended_headers([Publisher])),
     ejabberd_sm:route(jid:make(LUser, LServer, SenderResource),
-		      {pep_message, <<((Node))/binary, "+notify">>,
-		       add_extended_headers(
-			 Stanza, extended_headers([Publisher]))});
+		      {pep_message, <<((Node))/binary, "+notify">>, Stanza}),
+    ejabberd_router:route(xmpp:set_to(Stanza, jid:make(LUser, LServer)));
 broadcast_stanza(Host, _Publisher, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
     broadcast_stanza(Host, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM).
 
@@ -3079,7 +3075,7 @@ get_configure(Host, ServerHost, Node, From, Lang) ->
 
 -spec get_default(host(), binary(), jid(), binary()) -> {result, pubsub_owner()}.
 get_default(Host, Node, _From, Lang) ->
-    Type = select_type(Host, Host, Node),
+    Type = select_type(serverhost(Host), Host, Node),
     Options = node_options(Host, Type),
     Fs = get_configure_xfields(Type, Options, Lang, []),
     {result, #pubsub_owner{default = {<<>>, #xdata{type = form, fields = Fs}}}}.
@@ -3380,11 +3376,11 @@ tree(Host) ->
 tree(_Host, <<"virtual">>) ->
     nodetree_virtual;   % special case, virtual does not use any backend
 tree(Host, Name) ->
-    submodule(Host, <<"nodetree_", Name/binary>>).
+    submodule(Host, <<"nodetree">>, Name).
 
 -spec plugin(host(), binary()) -> atom().
 plugin(Host, Name) ->
-    submodule(Host, <<"node_", Name/binary>>).
+    submodule(Host, <<"node">>, Name).
 
 -spec plugins(host()) -> [binary()].
 plugins(Host) ->
@@ -3396,14 +3392,13 @@ plugins(Host) ->
 
 -spec subscription_plugin(host()) -> atom().
 subscription_plugin(Host) ->
-    submodule(Host, <<"pubsub_subscription">>).
+    submodule(Host, <<"pubsub">>, <<"subscription">>).
 
--spec submodule(host(), binary()) -> atom().
-submodule(Host, Name) ->
+-spec submodule(host(), binary(), binary()) -> atom().
+submodule(Host, Type, Name) ->
     case gen_mod:db_type(serverhost(Host), ?MODULE) of
-	mnesia -> misc:binary_to_atom(Name);
-	Type -> misc:binary_to_atom(<<Name/binary, "_",
-		    (misc:atom_to_binary(Type))/binary>>)
+	mnesia -> ejabberd:module_name([<<"pubsub">>, Type, Name]);
+	Db -> ejabberd:module_name([<<"pubsub">>, Type, Name, misc:atom_to_binary(Db)])
     end.
 
 -spec config(binary(), any()) -> any().
@@ -3420,20 +3415,20 @@ config(ServerHost, Key, Default) ->
     end.
 
 -spec select_type(binary(), host(), binary(), binary()) -> binary().
-select_type(ServerHost, Host, Node, Type) ->
-    SelectedType = case Host of
-	{_User, _Server, _Resource} ->
-	    case config(ServerHost, pep_mapping) of
-		undefined -> ?PEPNODE;
-		Mapping -> proplists:get_value(Node, Mapping, ?PEPNODE)
-	    end;
-	_ ->
-	    Type
-    end,
-    ConfiguredTypes = plugins(Host),
-    case lists:member(SelectedType, ConfiguredTypes) of
-	true -> SelectedType;
-	false -> hd(ConfiguredTypes)
+select_type(ServerHost, {_User, _Server, _Resource}, Node, _Type) ->
+    case config(ServerHost, pep_mapping) of
+	undefined -> ?PEPNODE;
+	Mapping -> proplists:get_value(Node, Mapping, ?PEPNODE)
+    end;
+select_type(ServerHost, _Host, _Node, Type) ->
+    case config(ServerHost, plugins) of
+	undefined ->
+	    Type;
+	Plugins ->
+	    case lists:member(Type, Plugins) of
+		true -> Type;
+		false -> hd(Plugins)
+	    end
     end.
 
 -spec select_type(binary(), host(), binary()) -> binary().

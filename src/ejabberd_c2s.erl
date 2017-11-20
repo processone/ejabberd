@@ -302,10 +302,7 @@ tls_options(#{lserver := LServer, tls_options := DefaultOpts,
     TLSOpts1 = case {Encrypted, proplists:get_value(certfile, DefaultOpts)} of
 		   {true, CertFile} when CertFile /= undefined -> DefaultOpts;
 		   {_, _} ->
-		       case ejabberd_config:get_option(
-			      {domain_certfile, LServer},
-			      ejabberd_config:get_option(
-				{c2s_certfile, LServer})) of
+		       case get_certfile(LServer) of
 			   undefined -> DefaultOpts;
 			   CertFile -> lists:keystore(certfile, 1, DefaultOpts,
 						      {certfile, CertFile})
@@ -928,6 +925,17 @@ format_reason(_, {shutdown, _}) ->
 format_reason(_, _) ->
     <<"internal server error">>.
 
+-spec get_certfile(binary()) -> file:filename_all().
+get_certfile(LServer) ->
+    case ejabberd_pkix:get_certfile(LServer) of
+	{ok, CertFile} ->
+	    CertFile;
+	error ->
+	    ejabberd_config:get_option(
+	      {domain_certfile, LServer},
+	      ejabberd_config:get_option({c2s_certfile, LServer}))
+    end.
+
 transform_listen_option(Opt, Opts) ->
     [Opt|Opts].
 
@@ -941,7 +949,11 @@ transform_listen_option(Opt, Opts) ->
 	      (resource_conflict) -> fun((resource_conflict()) -> resource_conflict());
 	      (disable_sasl_mechanisms) -> fun((binary() | [binary()]) -> [binary()]);
 	      (atom()) -> [atom()].
-opt_type(c2s_certfile) -> fun misc:try_read_file/1;
+opt_type(c2s_certfile = Opt) ->
+    fun(File) ->
+	    ?WARNING_MSG("option '~s' is deprecated, use 'certfiles' instead", [Opt]),
+	    misc:try_read_file(File)
+    end;
 opt_type(c2s_ciphers) -> fun iolist_to_binary/1;
 opt_type(c2s_dhfile) -> fun misc:try_read_file/1;
 opt_type(c2s_cafile) -> fun misc:try_read_file/1;
@@ -963,7 +975,7 @@ opt_type(disable_sasl_mechanisms) ->
 	(V) -> [str:to_upper(V)]
     end;
 opt_type(_) ->
-    [c2s_certfile, c2s_ciphers, c2s_cafile,
+    [c2s_certfile, c2s_ciphers, c2s_cafile, c2s_dhfile,
      c2s_protocol_options, c2s_tls_compression, resource_conflict,
      disable_sasl_mechanisms].
 
@@ -986,8 +998,10 @@ opt_type(_) ->
 		     (atom()) -> [atom()].
 listen_opt_type(access) -> fun acl:access_rules_validator/1;
 listen_opt_type(shaper) -> fun acl:shaper_rules_validator/1;
-listen_opt_type(certfile) ->
+listen_opt_type(certfile = Opt) ->
     fun(S) ->
+	    ?WARNING_MSG("Listening option '~s' for ~s is deprecated, use "
+			 "'certfiles' global option instead", [Opt, ?MODULE]),
 	    ejabberd_pkix:add_certfile(S),
 	    iolist_to_binary(S)
     end;

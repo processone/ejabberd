@@ -37,7 +37,7 @@
 -protocol({xep, 270, '1.0'}).
 
 -export([start/0, stop/0, start_app/1, start_app/2,
-	 get_pid_file/0, check_app/1]).
+	 get_pid_file/0, check_app/1, module_name/1]).
 
 -include("logger.hrl").
 
@@ -148,3 +148,29 @@ get_module_file(App, Mod) ->
         Dir ->
             filename:join([Dir, BaseName ++ ".beam"])
     end.
+
+module_name([Dir, _, <<H,_/binary>> | _] = Mod) when H >= 65, H =< 90 ->
+    Module = str:join([elixir_name(M) || M<-tl(Mod)], <<>>),
+    Prefix = case elixir_name(Dir) of
+	<<"Ejabberd">> -> <<"Elixir.Ejabberd.">>;
+	Lib -> <<"Elixir.Ejabberd.", Lib/binary, ".">>
+    end,
+    misc:binary_to_atom(<<Prefix/binary, Module/binary>>);
+module_name([<<"ejabberd">> | _] = Mod) ->
+    Module = str:join([erlang_name(M) || M<-Mod], $_),
+    misc:binary_to_atom(Module);
+module_name(Mod) when is_list(Mod) ->
+    Module = str:join([erlang_name(M) || M<-tl(Mod)], $_),
+    misc:binary_to_atom(Module).
+
+elixir_name(Atom) when is_atom(Atom) ->
+    elixir_name(misc:atom_to_binary(Atom));
+elixir_name(<<H,T/binary>>) when H >= 65, H =< 90 ->
+    <<H, T/binary>>;
+elixir_name(<<H,T/binary>>) ->
+    <<(H-32), T/binary>>.
+
+erlang_name(Atom) when is_atom(Atom) ->
+    misc:atom_to_binary(Atom);
+erlang_name(Bin) when is_binary(Bin) ->
+    Bin.

@@ -292,7 +292,7 @@ forward_message(#message{to = To} = Msg) ->
 		    Err = xmpp:err_bad_request(Txt, Lang),
 		    ejabberd_router:route_error(Msg, Err)
 	    catch _:{xmpp_codec, Why} ->
-		    Txt = xmpp:format_error(Why),
+		    Txt = xmpp:io_format_error(Why),
 		    Err = xmpp:err_bad_request(Txt, Lang),
 		    ejabberd_router:route_error(Msg, Err)
 	    end;

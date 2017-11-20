@@ -503,7 +503,6 @@ make_dir_rec(Dir) ->
 %% base64:encode(F1b).
 
 create_image_files(Images_dir) ->
-    ?INFO_MSG("here = ~p", [Images_dir]),
     Filenames = [<<"powered-by-ejabberd.png">>,
 		 <<"powered-by-erlang.png">>, <<"valid-xhtml10.png">>,
 		 <<"vcss.png">>],
@@ -715,7 +714,7 @@ get_room_info(RoomJID, Opts) ->
 	      false -> <<"">>
 	    end,
     Subject = case lists:keysearch(subject, 1, Opts) of
-		{value, {_, S}} -> S;
+		{value, {_, S}} -> xmpp:get_text(S);
 		false -> <<"">>
 	      end,
     SubjectAuthor = case lists:keysearch(subject_author, 1,

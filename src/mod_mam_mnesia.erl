@@ -28,7 +28,7 @@
 
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
-	 extended_fields/0, store/7, write_prefs/4, get_prefs/2, select/6]).
+	 extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/6]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("xmpp.hrl").
@@ -103,7 +103,7 @@ delete_old_user_messages(User, TimeStamp, Type) ->
 extended_fields() ->
     [].
 
-store(Pkt, _, {LUser, LServer}, Type, Peer, Nick, _Dir) ->
+store(Pkt, _, {LUser, LServer}, Type, Peer, Nick, _Dir, TS) ->
     case {mnesia:table_info(archive_msg, disc_only_copies),
 	  mnesia:table_info(archive_msg, memory)} of
 	{[_|_], TableSize} when TableSize > ?TABLE_SIZE_LIMIT ->
@@ -112,13 +112,11 @@ store(Pkt, _, {LUser, LServer}, Type, Peer, Nick, _Dir) ->
 	    {error, overflow};
 	_ ->
 	    LPeer = {PUser, PServer, _} = jid:tolower(Peer),
-	    TS = p1_time_compat:timestamp(),
-	    ID = integer_to_binary(now_to_usec(TS)),
 	    F = fun() ->
 			mnesia:write(
 			  #archive_msg{us = {LUser, LServer},
-				       id = ID,
-				       timestamp = TS,
+				       id = integer_to_binary(TS),
+				       timestamp = misc:usec_to_now(TS),
 				       peer = LPeer,
 				       bare_peer = {PUser, PServer, <<>>},
 				       type = Type,
@@ -127,7 +125,7 @@ store(Pkt, _, {LUser, LServer}, Type, Peer, Nick, _Dir) ->
 		end,
 	    case mnesia:transaction(F) of
 		{atomic, ok} ->
-		    {ok, ID};
+		    ok;
 		{aborted, Err} ->
 		    ?ERROR_MSG("Cannot add message to MAM archive of ~s@~s: ~s",
 			       [LUser, LServer, Err]),
@@ -178,9 +176,6 @@ select(_LServer, JidRequestor,
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-now_to_usec({MSec, Sec, USec}) ->
-    (MSec*1000000 + Sec)*1000000 + USec.
-
 make_matchspec(LUser, LServer, Start, undefined, With) ->
     %% List is always greater than a tuple
     make_matchspec(LUser, LServer, Start, [], With);

@@ -69,9 +69,22 @@ init_config(Config) ->
                                                     {pgsql_db, <<"ejabberd_test">>},
                                                     {pgsql_user, <<"ejabberd_test">>},
                                                     {pgsql_pass, <<"ejabberd_test">>}
-                                                   ]),
+						   ]),
+    Backends = get_config_backends(),
+    HostTypes = re:split(CfgContent, "(\\s*- \"(.*)\\.localhost\")",
+			   [group, {return, binary}]),
+    CfgContent2 = lists:foldl(fun([Pre, Frag, Type], Acc) ->
+				      case Backends == all orelse lists:member(binary_to_list(Type), Backends) of
+					  true ->
+					      <<Acc/binary, Pre/binary, Frag/binary>>;
+					  _ ->
+					      <<Acc/binary, Pre/binary>>
+				      end;
+				 ([Rest], Acc) ->
+				      <<Acc/binary, Rest/binary>>
+			      end, <<>>, HostTypes),
     ConfigPath = filename:join([CWD, "ejabberd.yml"]),
-    ok = file:write_file(ConfigPath, CfgContent),
+    ok = file:write_file(ConfigPath, CfgContent2),
     setup_ejabberd_lib_path(Config),
     ok = application:load(sasl),
     ok = application:load(mnesia),
@@ -111,7 +124,7 @@ init_config(Config) ->
      {master_resource, <<"master_resource!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {slave_resource, <<"slave_resource!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>},
      {password, Password},
-     {backends, get_config_backends()}
+     {backends, Backends}
      |Config].
 
 find_top_dir(Dir) ->

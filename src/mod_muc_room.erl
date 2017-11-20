@@ -251,7 +251,7 @@ normal_state({route, <<"">>,
 	     try xmpp:decode_els(Packet) of
 		 Pkt -> process_normal_message(From, Pkt, StateData)
 	     catch _:{xmpp_codec, Why} ->
-		     Txt = xmpp:format_error(Why),
+		     Txt = xmpp:io_format_error(Why),
 		     Err = xmpp:err_bad_request(Txt, Lang),
 		     ejabberd_router:route_error(Packet, Err),
 		     StateData
@@ -329,7 +329,7 @@ normal_state({route, <<"">>,
 		end
 	end
     catch _:{xmpp_codec, Why} ->
-	    ErrTxt = xmpp:format_error(Why),
+	    ErrTxt = xmpp:io_format_error(Why),
 	    Err = xmpp:err_bad_request(ErrTxt, Lang),
 	    ejabberd_router:route_error(IQ0, Err)
     end;
@@ -433,27 +433,31 @@ normal_state({route, ToNick,
 	  {next_state, normal_state, StateData}
     end;
 normal_state({route, ToNick,
-	      #iq{from = From, id = StanzaId, lang = Lang} = Packet},
+	      #iq{from = From, type = Type, lang = Lang} = Packet},
 	     StateData) ->
     case {(StateData#state.config)#config.allow_query_users,
-	  is_user_online_iq(StanzaId, From, StateData)} of
-	{true, {true, NewId, FromFull}} ->
+	  (?DICT):find(jid:tolower(From), StateData#state.users)} of
+	{true, {ok, #user{nick = FromNick}}} ->
 	    case find_jid_by_nick(ToNick, StateData) of
 		false ->
 		    ErrText = <<"Recipient is not in the conference room">>,
 		    Err = xmpp:err_item_not_found(ErrText, Lang),
 		    ejabberd_router:route_error(Packet, Err);
-		ToJID ->
-		    {ok, #user{nick = FromNick}} =
-			(?DICT):find(jid:tolower(FromFull), StateData#state.users),
-		    {ToJID2, Packet2} = handle_iq_vcard(ToJID, NewId, Packet),
-		    ejabberd_router:route(
-		      xmpp:set_from_to(
-			Packet2,
-			jid:replace_resource(StateData#state.jid, FromNick),
-			ToJID2))
+		To ->
+		    FromJID = jid:replace_resource(StateData#state.jid, FromNick),
+		    if Type == get; Type == set ->
+			    ToJID = case is_vcard_request(Packet) of
+					true -> jid:remove_resource(To);
+					false -> To
+				    end,
+			    ejabberd_router:route_iq(
+			      xmpp:set_from_to(Packet, FromJID, ToJID), Packet, self());
+		       true ->
+			    ejabberd_router:route(
+			      xmpp:set_from_to(Packet, FromJID, To))
+		    end
 	    end;
-	{_, {false, _, _}} ->
+	{true, error} ->
 	    ErrText = <<"Only occupants are allowed to send queries "
 			"to the conference">>,
 	    Err = xmpp:err_not_acceptable(ErrText, Lang),
@@ -660,6 +664,18 @@ handle_info({captcha_failed, From}, normal_state,
     {next_state, normal_state, NewState};
 handle_info(shutdown, _StateName, StateData) ->
     {stop, shutdown, StateData};
+handle_info({iq_reply, #iq{type = Type, sub_els = Els},
+	     #iq{from = From, to = To} = IQ}, StateName, StateData) ->
+    ejabberd_router:route(
+      xmpp:set_from_to(
+	IQ#iq{type = Type, sub_els = Els},
+	To, From)),
+    {next_state, StateName, StateData};
+handle_info({iq_reply, timeout, IQ}, StateName, StateData) ->
+    Txt = <<"Request has timed out">>,
+    Err = xmpp:err_recipient_unavailable(Txt, IQ#iq.lang),
+    ejabberd_router:route_error(IQ, Err),
+    {next_state, StateName, StateData};
 handle_info(_Info, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -717,7 +733,7 @@ process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData
 	       ((StateData#state.config)#config.moderated == false) ->
 		 Subject = check_subject(Packet),
 		 {NewStateData1, IsAllowed} = case Subject of
-						false -> {StateData, true};
+						[] -> {StateData, true};
 						_ ->
 						    case
 						      can_change_subject(Role,
@@ -749,7 +765,7 @@ process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData
 			     {next_state, normal_state, StateData};
 			 NewPacket1 ->
 			     NewPacket = xmpp:remove_subtag(NewPacket1, #nick{}),
-			     Node = if Subject == false -> ?NS_MUCSUB_NODES_MESSAGES;
+			     Node = if Subject == [] -> ?NS_MUCSUB_NODES_MESSAGES;
 				       true -> ?NS_MUCSUB_NODES_SUBJECT
 				    end,
 			     send_wrapped_multiple(
@@ -919,6 +935,12 @@ process_voice_approval(From, Pkt, VoiceApproval, StateData) ->
 	    ejabberd_router:route_error(Pkt, Err),
 	    StateData
     end.
+
+-spec is_vcard_request(iq()) -> boolean().
+is_vcard_request(#iq{type = T, sub_els = [El]}) ->
+    (T == get orelse T == set) andalso xmpp:get_ns(El) == ?NS_VCARD;
+is_vcard_request(_) ->
+    false.
 
 %% @doc Check if this non participant can send message to room.
 %%
@@ -1128,59 +1150,6 @@ is_occupant_or_admin(JID, StateData) ->
       true -> true;
       _ -> false
     end.
-
-%%%
-%%% Handle IQ queries of vCard
-%%%
--spec is_user_online_iq(binary(), jid(), state()) ->
-			       {boolean(), binary(), jid()}.
-is_user_online_iq(StanzaId, JID, StateData)
-    when JID#jid.lresource /= <<"">> ->
-    {is_user_online(JID, StateData), StanzaId, JID};
-is_user_online_iq(StanzaId, JID, StateData)
-    when JID#jid.lresource == <<"">> ->
-    try stanzaid_unpack(StanzaId) of
-      {OriginalId, Resource} ->
-	  JIDWithResource = jid:replace_resource(JID, Resource),
-	  {is_user_online(JIDWithResource, StateData), OriginalId,
-	   JIDWithResource}
-    catch
-      _:_ -> {is_user_online(JID, StateData), StanzaId, JID}
-    end.
-
--spec handle_iq_vcard(jid(), binary(), iq()) -> {jid(), iq()}.
-handle_iq_vcard(ToJID, NewId, #iq{type = Type, sub_els = SubEls} = IQ) ->
-    ToBareJID = jid:remove_resource(ToJID),
-    case SubEls of
-	[SubEl] when Type == get, ToBareJID /= ToJID ->
-	    case xmpp:get_ns(SubEl) of
-		?NS_VCARD ->
-		    {ToBareJID, change_stanzaid(ToJID, IQ)};
-		_ ->
-		    {ToJID, xmpp:set_id(IQ, NewId)}
-	    end;
-	_ ->
-	    {ToJID, xmpp:set_id(IQ, NewId)}
-    end.
-
--spec stanzaid_pack(binary(), binary()) -> binary().
-stanzaid_pack(OriginalId, Resource) ->
-    <<"berd",
-      (base64:encode(<<"ejab\000",
-		       OriginalId/binary, "\000",
-		       Resource/binary>>))/binary>>.
-
--spec stanzaid_unpack(binary()) -> {binary(), binary()}.
-stanzaid_unpack(<<"berd", StanzaIdBase64/binary>>) ->
-    StanzaId = base64:decode(StanzaIdBase64),
-    [<<"ejab">>, OriginalId, Resource] =
-	str:tokens(StanzaId, <<"\000">>),
-    {OriginalId, Resource}.
-
--spec change_stanzaid(jid(), iq()) -> iq().
-change_stanzaid(ToJID, #iq{id = PreviousId} = Packet) ->
-    NewId = stanzaid_pack(PreviousId, ToJID#jid.lresource),
-    xmpp:set_id(Packet, NewId).
 
 %% Decide the fate of the message and its sender
 %% Returns: continue_delivery | forget_message | {expulse_sender, Reason}
@@ -1624,7 +1593,13 @@ set_subscriber(JID, Nick, Nodes, StateData) ->
     Nicks = ?DICT:store(Nick, [LBareJID], StateData#state.subscriber_nicks),
     NewStateData = StateData#state{subscribers = Subscribers,
 				   subscriber_nicks = Nicks},
-    store_room(NewStateData),
+    store_room(NewStateData, [{add_subscription, BareJID, Nick, Nodes}]),
+    case not ?DICT:is_key(LBareJID, StateData#state.subscribers) of
+	true ->
+	    send_subscriptions_change_notifications(BareJID, Nick, subscribe, NewStateData);
+	_ ->
+	    ok
+    end,
     NewStateData.
 
 -spec add_online_user(jid(), binary(), role(), state()) -> state().
@@ -2453,7 +2428,7 @@ lqueue_cut(Q, N) ->
 add_message_to_history(FromNick, FromJID, Packet, StateData) ->
     add_to_log(text, {FromNick, Packet}, StateData),
     case check_subject(Packet) of
-	false ->
+	[] ->
 	    TimeStamp = p1_time_compat:timestamp(),
 	    AddrPacket = case (StateData#state.config)#config.anonymous of
 			     true -> Packet;
@@ -2492,19 +2467,19 @@ send_history(JID, History, StateData) ->
 -spec send_subject(jid(), state()) -> ok.
 send_subject(JID, #state{subject_author = Nick} = StateData) ->
     Subject = case StateData#state.subject of
-		  <<"">> -> [#text{}];
-		  Subj -> xmpp:mk_text(Subj)
+		  [] -> [#text{}];
+		  [_|_] = S -> S
 	      end,
     Packet = #message{from = jid:replace_resource(StateData#state.jid, Nick),
 		      to = JID, type = groupchat, subject = Subject},
     ejabberd_router:route(Packet).
 
--spec check_subject(message()) -> false | binary().
+-spec check_subject(message()) -> [text()].
 check_subject(#message{subject = [_|_] = Subj, body = [],
 		       thread = undefined}) ->
-    xmpp:get_text(Subj);
+    Subj;
 check_subject(_) ->
-    false.
+    [].
 
 -spec can_change_subject(role(), boolean(), state()) -> boolean().
 can_change_subject(Role, IsSubscriber, StateData) ->
@@ -2724,7 +2699,7 @@ find_changed_items(UJID, UAffiliation, URole,
 		   [#muc_item{jid = J, nick = Nick, reason = Reason,
 			      role = Role, affiliation = Affiliation}|Items],
 		   Lang, StateData, Res) ->
-    [JID | _] = JIDs = 
+    [JID | _] = JIDs =
 	if J /= undefined ->
 		[J];
 	   Nick /= <<"">> ->
@@ -3329,8 +3304,7 @@ change_config(Config, StateData) ->
 	  Config#config.persistent}
 	of
       {_, true} ->
-	  mod_muc:store_room(NSD#state.server_host,
-			     NSD#state.host, NSD#state.room, make_opts(NSD));
+            store_room(NSD);
       {true, false} ->
 	  mod_muc:forget_room(NSD#state.server_host,
 			      NSD#state.host, NSD#state.room);
@@ -3528,7 +3502,12 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 				  subscriber_nicks = Nicks};
 	    affiliations ->
 		StateData#state{affiliations = (?DICT):from_list(Val)};
-	    subject -> StateData#state{subject = Val};
+	    subject ->
+		  Subj = if Val == <<"">> -> [];
+			    is_binary(Val) -> [#text{data = Val}];
+			    is_list(Val) -> Val
+			 end,
+		  StateData#state{subject = Subj};
 	    subject_author -> StateData#state{subject_author = Val};
 	    _ -> StateData
 	  end,
@@ -3638,7 +3617,7 @@ process_iq_disco_info(_From, #iq{type = get, lang = Lang}, StateData) ->
 	++ case {gen_mod:is_loaded(StateData#state.server_host, mod_mam),
 		 Config#config.mam} of
 	       {true, true} ->
-		   [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1];
+		   [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1, ?NS_MAM_2, ?NS_SID_0];
 	       _ ->
 		   []
 	   end,
@@ -3794,7 +3773,8 @@ process_iq_mucsub(From, #iq{type = set, sub_els = [#muc_unsubscribe{}]},
 	    Subscribers = ?DICT:erase(LBareJID, StateData#state.subscribers),
 	    NewStateData = StateData#state{subscribers = Subscribers,
 					   subscriber_nicks = Nicks},
-	    store_room(NewStateData),
+	    store_room(NewStateData, [{del_subscription, LBareJID}]),
+	    send_subscriptions_change_notifications(LBareJID, Nick, unsubscribe, StateData),
 	    NewStateData2 = case close_room_if_temporary_and_empty(NewStateData) of
 		{stop, normal, _} -> stop;
 		{next_state, normal_state, SD} -> SD
@@ -3839,7 +3819,8 @@ get_subscription_nodes(#iq{sub_els = [#muc_subscribe{events = Nodes}]}) ->
 				  ?NS_MUCSUB_NODES_AFFILIATIONS,
 				  ?NS_MUCSUB_NODES_SUBJECT,
 				  ?NS_MUCSUB_NODES_CONFIG,
-				  ?NS_MUCSUB_NODES_PARTICIPANTS])
+				  ?NS_MUCSUB_NODES_PARTICIPANTS,
+				  ?NS_MUCSUB_NODES_SUBSCRIBERS])
       end, Nodes);
 get_subscription_nodes(_) ->
     [].
@@ -4060,13 +4041,50 @@ element_size(El) ->
 
 -spec store_room(state()) -> ok.
 store_room(StateData) ->
+    store_room(StateData, []).
+store_room(StateData, ChangesHints) ->
     if (StateData#state.config)#config.persistent ->
 	    mod_muc:store_room(StateData#state.server_host,
 			       StateData#state.host, StateData#state.room,
-			       make_opts(StateData));
+			       make_opts(StateData),
+			       ChangesHints);
        true ->
 	    ok
     end.
+
+-spec send_subscriptions_change_notifications(jid(), binary(), subscribe|unsubscribe, state()) -> ok.
+send_subscriptions_change_notifications(From, Nick, Type, State) ->
+    ?DICT:fold(fun(_, #subscriber{nodes = Nodes, jid = JID}, _) ->
+		    case lists:member(?NS_MUCSUB_NODES_SUBSCRIBERS, Nodes) of
+			true ->
+			    ShowJid = case (State#state.config)#config.anonymous == false orelse
+					   get_role(JID, State) == moderator orelse
+					   get_default_role(get_affiliation(JID, State), State) == moderator of
+					  true -> true;
+					  _ -> false
+				      end,
+			    Payload = case {Type, ShowJid} of
+					 {subscribe, true} ->
+					     #muc_subscribe{jid = From, nick = Nick};
+					 {subscribe, _} ->
+					     #muc_subscribe{nick = Nick};
+					 {unsubscribe, true} ->
+					     #muc_unsubscribe{jid = From, nick = Nick};
+					 {unsubscribe, _} ->
+					     #muc_unsubscribe{nick = Nick}
+				     end,
+			    Packet = #message{
+				sub_els = [#ps_event{
+				    items = #ps_items{
+					node = ?NS_MUCSUB_NODES_SUBSCRIBERS,
+					items = [#ps_item{
+					    id = randoms:get_string(),
+					    xml_els = [xmpp:encode(Payload)]}]}}]},
+			    ejabberd_router:route(xmpp:set_from_to(Packet, From, JID));
+			false ->
+			    ok
+		    end
+	       end, ok, State#state.subscribers).
 
 -spec send_wrapped(jid(), jid(), stanza(), binary(), state()) -> ok.
 send_wrapped(From, To, Packet, Node, State) ->

@@ -61,11 +61,11 @@ set_password(User, Server, Password) ->
     F = fun() ->
 		if is_record(Password, scram) ->
 			set_password_scram_t(
-			  User,
+			  User, Server,
 			  Password#scram.storedkey, Password#scram.serverkey,
 			  Password#scram.salt, Password#scram.iterationcount);
 		   true ->
-			set_password_t(User, Password)
+			set_password_t(User, Server, Password)
 		end
 	end,
     case ejabberd_sql:sql_transaction(Server, F) of
@@ -133,20 +133,22 @@ remove_user(User, Server) ->
 
 -define(BATCH_SIZE, 1000).
 
-set_password_scram_t(LUser,
+set_password_scram_t(LUser, LServer,
                      StoredKey, ServerKey, Salt, IterationCount) ->
     ?SQL_UPSERT_T(
        "users",
        ["!username=%(LUser)s",
+        "!server_host=%(LServer)s",
         "password=%(StoredKey)s",
         "serverkey=%(ServerKey)s",
         "salt=%(Salt)s",
         "iterationcount=%(IterationCount)d"]).
 
-set_password_t(LUser, Password) ->
+set_password_t(LUser, LServer, Password) ->
     ?SQL_UPSERT_T(
        "users",
        ["!username=%(LUser)s",
+        "!server_host=%(LServer)s",
 	"password=%(Password)s"]).
 
 get_password_scram(LServer, LUser) ->
@@ -154,32 +156,39 @@ get_password_scram(LServer, LUser) ->
       LServer,
       ?SQL("select @(password)s, @(serverkey)s, @(salt)s, @(iterationcount)d"
            " from users"
-           " where username=%(LUser)s")).
+           " where username=%(LUser)s and %(LServer)H")).
 
 add_user_scram(LServer, LUser,
                StoredKey, ServerKey, Salt, IterationCount) ->
     ejabberd_sql:sql_query(
       LServer,
-      ?SQL("insert into users(username, password, serverkey, salt, "
-           "iterationcount) "
-           "values (%(LUser)s, %(StoredKey)s, %(ServerKey)s,"
-           " %(Salt)s, %(IterationCount)d)")).
+      ?SQL_INSERT(
+         "users",
+         ["username=%(LUser)s",
+          "server_host=%(LServer)s",
+          "password=%(StoredKey)s",
+          "serverkey=%(ServerKey)s",
+          "salt=%(Salt)s",
+          "iterationcount=%(IterationCount)d"])).
 
 add_user(LServer, LUser, Password) ->
     ejabberd_sql:sql_query(
       LServer,
-      ?SQL("insert into users(username, password) "
-           "values (%(LUser)s, %(Password)s)")).
+      ?SQL_INSERT(
+         "users",
+         ["username=%(LUser)s",
+          "server_host=%(LServer)s",
+          "password=%(Password)s"])).
 
 del_user(LServer, LUser) ->
     ejabberd_sql:sql_query(
       LServer,
-      ?SQL("delete from users where username=%(LUser)s")).
+      ?SQL("delete from users where username=%(LUser)s and %(LServer)H")).
 
 list_users(LServer, []) ->
     ejabberd_sql:sql_query(
       LServer,
-      ?SQL("select @(username)s from users"));
+      ?SQL("select @(username)s from users where %(LServer)H"));
 list_users(LServer, [{from, Start}, {to, End}])
     when is_integer(Start) and is_integer(End) ->
     list_users(LServer,
@@ -196,6 +205,7 @@ list_users(LServer, [{limit, Limit}, {offset, Offset}])
     ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(username)s from users "
+           "where %(LServer)H "
            "order by username "
            "limit %(Limit)d offset %(Offset)d"));
 list_users(LServer,
@@ -207,7 +217,7 @@ list_users(LServer,
     ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(username)s from users "
-           "where username like %(SPrefix2)s escape '^' "
+           "where username like %(SPrefix2)s escape '^' and %(LServer)H "
            "order by username "
            "limit %(Limit)d offset %(Offset)d")).
 
@@ -224,11 +234,11 @@ users_number(LServer) ->
                              " where oid = 'users'::regclass::oid"));
                   _ ->
                       ejabberd_sql:sql_query_t(
-                        ?SQL("select @(count(*))d from users"))
+                        ?SQL("select @(count(*))d from users where %(LServer)H"))
 	  end;
          (_Type, _) ->
               ejabberd_sql:sql_query_t(
-                ?SQL("select @(count(*))d from users"))
+                ?SQL("select @(count(*))d from users where %(LServer)H"))
       end).
 
 users_number(LServer, [{prefix, Prefix}])
@@ -238,7 +248,7 @@ users_number(LServer, [{prefix, Prefix}])
     ejabberd_sql:sql_query(
       LServer,
       ?SQL("select @(count(*))d from users "
-           "where username like %(SPrefix2)s escape '^'"));
+           "where username like %(SPrefix2)s escape '^' and %(LServer)H"));
 users_number(LServer, []) ->
     users_number(LServer).
 
@@ -254,7 +264,7 @@ convert_to_scram(Server) ->
                         case ejabberd_sql:sql_query_t(
                                ?SQL("select @(username)s, @(password)s"
                                     " from users"
-                                    " where iterationcount=0"
+                                    " where iterationcount=0 and %(LServer)H"
                                     " limit %(BatchSize)d")) of
                             {selected, []} ->
                                 ok;
@@ -270,7 +280,7 @@ convert_to_scram(Server) ->
 					      _ ->
 						  Scram = ejabberd_auth:password_to_scram(Password),
 						  set_password_scram_t(
-						    LUser,
+						    LUser, LServer,
 						    Scram#scram.storedkey,
 						    Scram#scram.serverkey,
 						    Scram#scram.salt,
@@ -294,20 +304,27 @@ export(_Server) ->
       fun(Host, #passwd{us = {LUser, LServer}, password = Password})
             when LServer == Host,
                  is_binary(Password) ->
-              [?SQL("delete from users where username=%(LUser)s;"),
-               ?SQL("insert into users(username, password) "
-                    "values (%(LUser)s, %(Password)s);")];
+              [?SQL("delete from users where username=%(LUser)s and %(LServer)H;"),
+               ?SQL_INSERT(
+                  "users",
+                  ["username=%(LUser)s",
+                   "server_host=%(LServer)s",
+                   "password=%(Password)s"])];
          (Host, #passwd{us = {LUser, LServer}, password = #scram{} = Scram})
             when LServer == Host ->
               StoredKey = Scram#scram.storedkey,
               ServerKey = Scram#scram.serverkey,
               Salt = Scram#scram.salt,
               IterationCount = Scram#scram.iterationcount,
-              [?SQL("delete from users where username=%(LUser)s;"),
-               ?SQL("insert into users(username, password, serverkey, salt, "
-                    "iterationcount) "
-                    "values (%(LUser)s, %(StoredKey)s, %(ServerKey)s,"
-                    " %(Salt)s, %(IterationCount)d);")];
+              [?SQL("delete from users where username=%(LUser)s and %(LServer)H;"),
+               ?SQL_INSERT(
+                  "users",
+                  ["username=%(LUser)s",
+                   "server_host=%(LServer)s",
+                   "password=%(StoredKey)s",
+                   "serverkey=%(ServerKey)s",
+                   "salt=%(Salt)s",
+                   "iterationcount=%(IterationCount)d"])];
          (_Host, _R) ->
               []
       end}].

@@ -20,8 +20,9 @@
 %%% You should have received a copy of the GNU General Public License along
 %%% with this program; if not, write to the Free Software Foundation, Inc.,
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
+%%%
 %%%-------------------------------------------------------------------
+
 -module(mod_fail2ban).
 
 -behaviour(gen_mod).
@@ -103,7 +104,8 @@ c2s_stream_started(#{ip := {Addr, _}} = State, _) ->
 %% gen_mod callbacks
 %%====================================================================
 start(Host, Opts) ->
-    catch ets:new(failed_auth, [named_table, public]),
+    catch ets:new(failed_auth, [named_table, public,
+				{heir, erlang:group_leader(), none}]),
     gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->

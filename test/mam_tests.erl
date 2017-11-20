@@ -31,7 +31,7 @@
 		muc_jid/1, is_feature_advertised/3, get_event/1, put_event/2]).
 
 -include("suite.hrl").
--define(VERSIONS, [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1]).
+-define(VERSIONS, [?NS_MAM_TMP, ?NS_MAM_0, ?NS_MAM_1, ?NS_MAM_2]).
 
 %%%===================================================================
 %%% API
@@ -58,6 +58,7 @@ feature_enabled(Config) ->
     true = sets:is_subset(RequiredFeatures, UserFeatures),
     ct:comment("Checking if all MAM conference service features are enabled"),
     true = lists:member(?NS_MAM_1, MUCFeatures),
+    true = lists:member(?NS_MAM_2, MUCFeatures),
     clean(disconnect(Config)).
 
 fake_by(Config) ->
@@ -259,6 +260,7 @@ muc_master(Config) ->
     %% MAM feature should not be advertised at this point,
     %% because MAM is not enabled so far
     false = is_feature_advertised(Config, ?NS_MAM_1, Room),
+    false = is_feature_advertised(Config, ?NS_MAM_2, Room),
     %% Fill in some history
     send_messages_to_room(Config, lists:seq(1, 21)),
     %% We now should be able to retrieve those via MAM, even though
@@ -284,6 +286,7 @@ muc_master(Config) ->
 	     sub_els = [#muc_user{status_codes = [104]}]} = recv_message(Config),
     %% Check if MAM has been enabled
     true = is_feature_advertised(Config, ?NS_MAM_1, Room),
+    true = is_feature_advertised(Config, ?NS_MAM_2, Room),
     %% We now sending some messages again
     send_messages_to_room(Config, lists:seq(1, 5)),
     %% And retrieve them via MAM again.
@@ -377,7 +380,7 @@ send_query(Config, #mam_query{xmlns = NS} = Query) ->
     maybe_recv_iq_result(Config, NS, I),
     I.
 
-recv_fin(Config, I, QueryID, ?NS_MAM_1 = NS, IsComplete) ->
+recv_fin(Config, I, QueryID, NS, IsComplete) when NS == ?NS_MAM_1; NS == ?NS_MAM_2 ->
     ct:comment("Receiving fin iq for namespace '~s'", [NS]),
     #iq{type = result, id = I,
 	sub_els = [#mam_fin{xmlns = NS,
@@ -427,7 +430,7 @@ recv_messages_from_room(Config, Range) ->
     QID = randoms:get_string(),
     Count = length(Range),
     I = send(Config, #iq{type = set, to = Room,
-			 sub_els = [#mam_query{xmlns = ?NS_MAM_1, id = QID}]}),
+			 sub_els = [#mam_query{xmlns = ?NS_MAM_2, id = QID}]}),
     lists:foreach(
       fun(N) ->
 	      Body = xmpp:mk_text(integer_to_binary(N)),
@@ -435,7 +438,7 @@ recv_messages_from_room(Config, Range) ->
 		 to = MyJID, from = Room,
 		 sub_els =
 		     [#mam_result{
-			 xmlns = ?NS_MAM_1,
+			 xmlns = ?NS_MAM_2,
 			 queryid = QID,
 			 sub_els =
 			     [#forwarded{
@@ -446,7 +449,7 @@ recv_messages_from_room(Config, Range) ->
 		       body = Body} = xmpp:decode(El)
       end, Range),
     #iq{from = Room, id = I, type = result,
-	sub_els = [#mam_fin{xmlns = ?NS_MAM_1,
+	sub_els = [#mam_fin{xmlns = ?NS_MAM_2,
 			    id = QID,
 			    rsm = #rsm_set{count = Count},
 			    complete = true}]} = recv_iq(Config).

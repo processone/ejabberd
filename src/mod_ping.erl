@@ -132,7 +132,7 @@ handle_cast({start_ping, JID}, State) ->
 handle_cast({stop_ping, JID}, State) ->
     Timers = del_timer(JID, State#state.timers),
     {noreply, State#state{timers = Timers}};
-handle_cast({iq_pong, JID, timeout}, State) ->
+handle_cast({iq_reply, timeout, JID}, State) ->
     Timers = del_timer(JID, State#state.timers),
     ejabberd_hooks:run(user_ping_timeout, State#state.host,
 		       [JID]),
@@ -149,20 +149,19 @@ handle_cast({iq_pong, JID, timeout}, State) ->
       _ -> ok
     end,
     {noreply, State#state{timers = Timers}};
-handle_cast({iq_pong, _JID, _}, State) ->
+handle_cast({iq_reply, #iq{}, _JID}, State) ->
     {noreply, State};
 handle_cast(Msg, State) ->
     ?WARNING_MSG("unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
 handle_info({timeout, _TRef, {ping, JID}}, State) ->
-    From = jid:make(State#state.host),
+    Host = State#state.host,
+    From = jid:remove_resource(JID),
     IQ = #iq{from = From, to = JID, type = get, sub_els = [#ping{}]},
-    Pid = self(),
-    F = fun (Response) ->
-		gen_server:cast(Pid, {iq_pong, JID, Response})
-	end,
-    ejabberd_local:route_iq(IQ, F, State#state.ping_ack_timeout),
+    ejabberd_router:route_iq(IQ, JID,
+			     gen_mod:get_module_proc(Host, ?MODULE),
+			     State#state.ping_ack_timeout),
     Timers = add_timer(JID, State#state.ping_interval,
 		       State#state.timers),
     {noreply, State#state{timers = Timers}};

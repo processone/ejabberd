@@ -232,6 +232,7 @@ defmodule EjabberdModAdminExtraTest do
 
 	###################### Roster
 
+  @tag :skip
 	test "add_rosteritem and delete_rosteritem work" do
 		# Connect user
 		# Add user1 & user2 to user's roster

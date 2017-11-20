@@ -60,7 +60,9 @@ start(normal, _Args) ->
 	    lists:foreach(fun erlang:garbage_collect/1, processes()),
 	    {ok, SupPid};
 	Err ->
-	    Err
+	    ?CRITICAL_MSG("Failed to start ejabberd application: ~p", [Err]),
+	    timer:sleep(1000),
+	    halt("Refer to ejabberd log files to diagnose the problem")
     end;
 start(_, _) ->
     {error, badarg}.

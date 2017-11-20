@@ -606,6 +606,11 @@ validate_module_option(Module, Opt, Val) ->
 			       [Opt, Val]),
 		    error
 	    end;
+	[] ->
+	    ?ERROR_MSG("unknown listen option '~s' for '~s' will be likely "
+		       "ignored because the listening module doesn't have "
+		       "any options", [Opt, Module]),
+	    {ok, Val};
 	KnownOpts when is_list(KnownOpts) ->
 	    ?ERROR_MSG("unknown listen option '~s' for '~s' will be likely "
 		       "ignored, available options are: ~s",

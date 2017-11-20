@@ -198,13 +198,11 @@ dirty_get_connections() ->
 
 -spec tls_options(binary(), [proplists:property()]) -> [proplists:property()].
 tls_options(LServer, DefaultOpts) ->
-    TLSOpts1 = case ejabberd_config:get_option(
-		      {domain_certfile, LServer},
-		      ejabberd_config:get_option(
-			{s2s_certfile, LServer})) of
+    TLSOpts1 = case get_certfile(LServer) of
 		   undefined -> DefaultOpts;
-		   CertFile -> lists:keystore(certfile, 1, DefaultOpts,
-					      {certfile, CertFile})
+		   CertFile ->
+		       lists:keystore(certfile, 1, DefaultOpts,
+				      {certfile, CertFile})
 	       end,
     TLSOpts2 = case ejabberd_config:get_option(
 		      {s2s_ciphers, LServer}) of
@@ -268,6 +266,17 @@ queue_type(LServer) ->
     ejabberd_config:get_option(
       {s2s_queue_type, LServer},
       ejabberd_config:default_queue_type(LServer)).
+
+-spec get_certfile(binary()) -> file:filename_all().
+get_certfile(LServer) ->
+    case ejabberd_pkix:get_certfile(LServer) of
+	{ok, CertFile} ->
+	    CertFile;
+	error ->
+	    ejabberd_config:get_option(
+	      {domain_certfile, LServer},
+	      ejabberd_config:get_option({s2s_certfile, LServer}))
+    end.
 
 %%====================================================================
 %% gen_server callbacks
@@ -711,7 +720,11 @@ opt_type(route_subdomains) ->
     end;
 opt_type(s2s_access) ->
     fun acl:access_rules_validator/1;
-opt_type(s2s_certfile) -> fun misc:try_read_file/1;
+opt_type(s2s_certfile = Opt) ->
+    fun(File) ->
+	    ?WARNING_MSG("option '~s' is deprecated, use 'certfiles' instead", [Opt]),
+	    misc:try_read_file(File)
+    end;
 opt_type(s2s_ciphers) -> fun iolist_to_binary/1;
 opt_type(s2s_dhfile) -> fun misc:try_read_file/1;
 opt_type(s2s_cafile) -> fun misc:try_read_file/1;

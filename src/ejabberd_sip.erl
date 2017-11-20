@@ -1,5 +1,7 @@
 %%%-------------------------------------------------------------------
-%%% @author Evgeny Khramtsov <ekhramtsov@process-one.net>
+%%% File    : ejabberd_sip.erl
+%%% Author  : Evgeny Khramtsov <ekhramtsov@process-one.net>
+%%% Purpose : 
 %%% Created : 30 Apr 2017 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
@@ -20,6 +22,7 @@
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%-------------------------------------------------------------------
+
 -module(ejabberd_sip).
 
 -ifndef(SIP).

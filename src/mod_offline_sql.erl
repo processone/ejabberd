@@ -56,8 +56,11 @@ store_message(#offline_msg{us = {LUser, LServer}} = M) ->
 	    xmpp:encode(NewPacket)),
     case ejabberd_sql:sql_query(
 	   LServer,
-	   ?SQL("insert into spool(username, xml) values "
-		"(%(LUser)s, %(XML)s)")) of
+           ?SQL_INSERT(
+              "spool",
+              ["username=%(LUser)s",
+               "server_host=%(LServer)s",
+               "xml=%(XML)s"])) of
 	{updated, _} ->
 	    ok;
 	_ ->
@@ -87,10 +90,8 @@ remove_expired_messages(_LServer) ->
 remove_old_messages(Days, LServer) ->
     case ejabberd_sql:sql_query(
 	   LServer,
-	   [<<"DELETE FROM spool"
-	      " WHERE created_at < "
-	      "NOW() - INTERVAL '">>,
-	    integer_to_list(Days), <<"' DAY;">>]) of
+	   ?SQL("DELETE FROM spool"
+                " WHERE created_at < NOW() - INTERVAL %(Days)d DAY")) of
 	{updated, N} ->
 	    ?INFO_MSG("~p message(s) deleted from offline spool", [N]);
 	_Error ->
@@ -101,13 +102,13 @@ remove_old_messages(Days, LServer) ->
 remove_user(LUser, LServer) ->
     ejabberd_sql:sql_query(
       LServer,
-      ?SQL("delete from spool where username=%(LUser)s")).
+      ?SQL("delete from spool where username=%(LUser)s and %(LServer)H")).
 
 read_message_headers(LUser, LServer) ->
     case ejabberd_sql:sql_query(
 	   LServer,
 	   ?SQL("select @(xml)s, @(seq)d from spool"
-		" where username=%(LUser)s order by seq")) of
+		" where username=%(LUser)s and %(LServer)H order by seq")) of
 	{selected, Rows} ->
 	    lists:flatmap(
 	      fun({XML, Seq}) ->
@@ -129,6 +130,7 @@ read_message(LUser, LServer, Seq) ->
     case ejabberd_sql:sql_query(
 	   LServer,
 	   ?SQL("select @(xml)s from spool where username=%(LUser)s"
+                " and %(LServer)H"
                 " and seq=%(Seq)d")) of
 	{selected, [{RawXML}|_]} ->
 	    case xml_to_offline_msg(RawXML) of
@@ -144,7 +146,7 @@ read_message(LUser, LServer, Seq) ->
 remove_message(LUser, LServer, Seq) ->
     ejabberd_sql:sql_query(
       LServer,
-      ?SQL("delete from spool where username=%(LUser)s"
+      ?SQL("delete from spool where username=%(LUser)s and %(LServer)H"
            " and seq=%(Seq)d")),
     ok.
 
@@ -152,7 +154,7 @@ read_all_messages(LUser, LServer) ->
     case ejabberd_sql:sql_query(
 	   LServer,
 	   ?SQL("select @(xml)s from spool where "
-		"username=%(LUser)s order by seq")) of
+		"username=%(LUser)s and %(LServer)H order by seq")) of
         {selected, Rs} ->
             lists:flatmap(
               fun({XML}) ->
@@ -173,7 +175,7 @@ count_messages(LUser, LServer) ->
     case catch ejabberd_sql:sql_query(
                  LServer,
                  ?SQL("select @(count(*))d from spool "
-                      "where username=%(LUser)s")) of
+                      "where username=%(LUser)s and %(LServer)H")) of
         {selected, [{Res}]} ->
             Res;
         _ -> 0
@@ -183,7 +185,8 @@ export(_Server) ->
     [{offline_msg,
       fun(Host, #offline_msg{us = {LUser, LServer}})
             when LServer == Host ->
-		      [?SQL("delete from spool where username=%(LUser)s;")];
+		      [?SQL("delete from spool where username=%(LUser)s"
+                            " and %(LServer)H;")];
          (_Host, _R) ->
               []
       end},
@@ -199,8 +202,11 @@ export(_Server) ->
 				  Packet1, jid:make(LServer),
 				  TimeStamp, <<"Offline Storage">>),
 		      XML = fxml:element_to_binary(xmpp:encode(Packet2)),
-		      [?SQL("insert into spool(username, xml) values ("
-			    "%(LUser)s, %(XML)s);")]
+		      [?SQL_INSERT(
+                          "spool",
+                          ["username=%(LUser)s",
+                           "server_host=%(LServer)s",
+                           "xml=%(XML)s"])]
 	      catch _:{xmpp_codec, Why} ->
 		      ?ERROR_MSG("failed to decode packet ~p of user ~s@~s: ~s",
 				 [El, LUser, LServer, xmpp:format_error(Why)]),
@@ -249,9 +255,10 @@ get_and_del_spool_msg_t(LServer, LUser) ->
 		Result =
 		    ejabberd_sql:sql_query_t(
                       ?SQL("select @(username)s, @(xml)s from spool where "
-                           "username=%(LUser)s order by seq;")),
+                           "username=%(LUser)s and %(LServer)H order by seq;")),
 		ejabberd_sql:sql_query_t(
-                  ?SQL("delete from spool where username=%(LUser)s;")),
+                  ?SQL("delete from spool where"
+                       " username=%(LUser)s and %(LServer)H;")),
 		Result
 	end,
     ejabberd_sql:sql_transaction(LServer, F).

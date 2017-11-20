@@ -164,7 +164,7 @@ process_iq(Module, Function, #iq{lang = Lang, sub_els = [El]} = IQ) ->
 	      end,
 	Module:Function(IQ#iq{sub_els = [Pkt]})
     catch error:{xmpp_codec, Why} ->
-	    Txt = xmpp:format_error(Why),
+	    Txt = xmpp:io_format_error(Why),
 	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang))
     end.
 

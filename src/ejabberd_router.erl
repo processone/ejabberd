@@ -37,6 +37,9 @@
 %% API
 -export([route/1,
 	 route_error/2,
+	 route_iq/2,
+	 route_iq/3,
+	 route_iq/4,
 	 register_route/2,
 	 register_route/3,
 	 register_route/4,
@@ -61,6 +64,9 @@
 %% Deprecated functions
 -export([route/3, route_error/4]).
 -deprecated([{route, 3}, {route_error, 4}]).
+
+%% This value is used in SIP and Megaco for a transaction lifetime.
+-define(IQ_TIMEOUT, 32000).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -135,6 +141,20 @@ route_error(From, To, Packet, #stanza_error{} = Err) ->
        true ->
 	    route(From, To, xmpp:make_error(Packet, Err))
     end.
+
+-spec route_iq(iq(), fun((iq() | timeout) -> any())) -> ok.
+route_iq(IQ, Fun) ->
+    route_iq(IQ, Fun, undefined, ?IQ_TIMEOUT).
+
+-spec route_iq(iq(), term(), pid() | atom()) -> ok.
+route_iq(IQ, State, Proc) ->
+    route_iq(IQ, State, Proc, ?IQ_TIMEOUT).
+
+-spec route_iq(iq(), term(), pid() | atom(), undefined | non_neg_integer()) -> ok.
+route_iq(IQ, State, Proc, undefined) ->
+    route_iq(IQ, State, Proc, ?IQ_TIMEOUT);
+route_iq(IQ, State, Proc, Timeout) ->
+    ejabberd_iq:route(IQ, Proc, State, Timeout).
 
 -spec register_route(binary(), binary()) -> ok.
 register_route(Domain, ServerHost) ->
@@ -339,18 +359,23 @@ do_route(OrigPacket) ->
 	drop ->
 	    ok;
 	Packet ->
-	    To = xmpp:get_to(Packet),
-	    LDstDomain = To#jid.lserver,
-	    case find_routes(LDstDomain) of
-		[] ->
-		    ejabberd_s2s:route(Packet);
-		[Route] ->
-		    do_route(Packet, Route);
-		Routes ->
-		    From = xmpp:get_from(Packet),
-		    balancing_route(From, To, Packet, Routes)
-	    end,
-	    ok
+	    case ejabberd_iq:dispatch(Packet) of
+		true ->
+		    ok;
+		false ->
+		    To = xmpp:get_to(Packet),
+		    LDstDomain = To#jid.lserver,
+		    case find_routes(LDstDomain) of
+			[] ->
+			    ejabberd_s2s:route(Packet);
+			[Route] ->
+			    do_route(Packet, Route);
+			Routes ->
+			    From = xmpp:get_from(Packet),
+			    balancing_route(From, To, Packet, Routes)
+		    end,
+		    ok
+	    end
     end.
 
 -spec do_route(stanza(), #route{}) -> any().

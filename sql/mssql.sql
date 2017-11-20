@@ -149,6 +149,18 @@ WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW
 CREATE UNIQUE CLUSTERED INDEX [muc_online_users_us] ON [muc_online_users] (username, server);
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
+CREATE TABLE [dbo].[muc_room_subscribers] (
+        [room] [varchar] (191) NOT NULL,
+        [host] [varchar] (191) NOT NULL,
+        [jid] [varchar] (191) NOT NULL,
+        [nick] [text] NOT NULL,
+        [nodes] [text] NOT NULL,
+        [created_at] [datetime] NOT NULL DEFAULT GETDATE()
+);
+
+CREATE UNIQUE CLUSTERED INDEX [muc_room_subscribers_host_room_jid] ON [muc_room_subscribers] (host, room, jid);
+CREATE INDEX [muc_room_subscribers_host_jid] ON [muc_room_subscribers] (host, jid);
+
 CREATE TABLE [dbo].[privacy_default_list] (
         [username] [varchar] (250) NOT NULL,
         [name] [varchar] (250) NOT NULL,
@@ -267,7 +279,7 @@ CREATE TABLE [dbo].[pubsub_node] (
         [host] [varchar] (255) NOT NULL,
         [node] [varchar] (255) NOT NULL,
         [parent] [varchar] (255) NOT NULL DEFAULT '',
-        [type] [text] NOT NULL,
+        [plugin] [text] NOT NULL,
         [nodeid] [bigint] IDENTITY(1,1) NOT NULL,
  CONSTRAINT [pubsub_node_PRIMARY] PRIMARY KEY CLUSTERED 
 (
