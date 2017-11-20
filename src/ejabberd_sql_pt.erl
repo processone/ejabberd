@@ -713,7 +713,7 @@ set_pos(Tree, Pos) ->
 filter_upsert_sh(Table, ParseRes) ->
     case ?USE_NEW_SCHEMA of
         true ->
-            ParseRes;
+            {ParseRes, []};
         false ->
             lists:foldr(
               fun({Field, _Match, ST} = P, {Acc, Vars}) ->
