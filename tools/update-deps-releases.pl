@@ -11,7 +11,7 @@ use Data::Dumper qw(Dumper);
 use Carp;
 use Term::ANSIColor;
 use Term::ReadKey;
-use List::Util qw(first unpairs);
+use List::Util qw(first);
 use Clone qw(clone);
 
 sub get_deps {
@@ -467,7 +467,7 @@ while (1) {
                 for my $op (@operations) {
                     update_changelog($op->{dep}, $op->{version}, @{$op->{reasons}})
                         if @{$op->{reasons}};
-                    update_deps_versions(".deps-update/$op->{dep}/rebar.config", unpairs(@{$op->{operations}}))
+                    update_deps_versions(".deps-update/$op->{dep}/rebar.config", map {@{$_}[0,1] } @{$op->{operations}})
                         if @{$op->{operations}};
                     if ($git_info->{$op->{dep}}->{last_tag} ne $op->{version}) {
                         update_app_src($op->{dep}, $op->{version});
