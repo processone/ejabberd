@@ -1541,6 +1541,7 @@ send_message(Type, From, To, Subject, Body) ->
 build_packet(Type, Subject, Body) ->
     #message{type = misc:binary_to_atom(Type),
 	     body = xmpp:mk_text(Body),
+	     id = randoms:get_string(),
 	     subject = xmpp:mk_text(Subject)}.
 
 send_stanza(FromString, ToString, Stanza) ->
