@@ -703,7 +703,6 @@ get_s2s_state(S2sPid) ->
 -type use_starttls() :: boolean() | optional | required | required_trusted.
 -spec opt_type(route_subdomains) -> fun((s2s | local) -> s2s | local);
 	      (s2s_access) -> fun((any()) -> any());
-	      (s2s_certfile) -> fun((binary()) -> binary());
 	      (s2s_ciphers) -> fun((binary()) -> binary());
 	      (s2s_dhfile) -> fun((binary()) -> binary());
 	      (s2s_cafile) -> fun((binary()) -> binary());
@@ -720,11 +719,6 @@ opt_type(route_subdomains) ->
     end;
 opt_type(s2s_access) ->
     fun acl:access_rules_validator/1;
-opt_type(s2s_certfile = Opt) ->
-    fun(File) ->
-	    ?WARNING_MSG("option '~s' is deprecated, use 'certfiles' instead", [Opt]),
-	    misc:try_read_file(File)
-    end;
 opt_type(s2s_ciphers) -> fun iolist_to_binary/1;
 opt_type(s2s_dhfile) -> fun misc:try_read_file/1;
 opt_type(s2s_cafile) -> fun misc:try_read_file/1;
@@ -757,6 +751,6 @@ opt_type(s2s_timeout) ->
 opt_type(s2s_queue_type) ->
     fun(ram) -> ram; (file) -> file end;
 opt_type(_) ->
-    [route_subdomains, s2s_access,  s2s_certfile, s2s_zlib,
+    [route_subdomains, s2s_access, s2s_zlib,
      s2s_ciphers, s2s_dhfile, s2s_cafile, s2s_protocol_options,
      s2s_tls_compression, s2s_use_starttls, s2s_timeout, s2s_queue_type].

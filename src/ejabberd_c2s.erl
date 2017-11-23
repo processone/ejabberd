@@ -940,8 +940,7 @@ transform_listen_option(Opt, Opts) ->
     [Opt|Opts].
 
 -type resource_conflict() :: setresource | closeold | closenew | acceptnew.
--spec opt_type(c2s_certfile) -> fun((binary()) -> binary());
-	      (c2s_ciphers) -> fun((binary()) -> binary());
+-spec opt_type(c2s_ciphers) -> fun((binary()) -> binary());
 	      (c2s_dhfile) -> fun((binary()) -> binary());
 	      (c2s_cafile) -> fun((binary()) -> binary());
 	      (c2s_protocol_options) -> fun(([binary()]) -> binary());
@@ -949,11 +948,6 @@ transform_listen_option(Opt, Opts) ->
 	      (resource_conflict) -> fun((resource_conflict()) -> resource_conflict());
 	      (disable_sasl_mechanisms) -> fun((binary() | [binary()]) -> [binary()]);
 	      (atom()) -> [atom()].
-opt_type(c2s_certfile = Opt) ->
-    fun(File) ->
-	    ?WARNING_MSG("option '~s' is deprecated, use 'certfiles' instead", [Opt]),
-	    misc:try_read_file(File)
-    end;
 opt_type(c2s_ciphers) -> fun iolist_to_binary/1;
 opt_type(c2s_dhfile) -> fun misc:try_read_file/1;
 opt_type(c2s_cafile) -> fun misc:try_read_file/1;
@@ -975,7 +969,7 @@ opt_type(disable_sasl_mechanisms) ->
 	(V) -> [str:to_upper(V)]
     end;
 opt_type(_) ->
-    [c2s_certfile, c2s_ciphers, c2s_cafile, c2s_dhfile,
+    [c2s_ciphers, c2s_cafile, c2s_dhfile,
      c2s_protocol_options, c2s_tls_compression, resource_conflict,
      disable_sasl_mechanisms].
 

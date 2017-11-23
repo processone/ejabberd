@@ -151,8 +151,13 @@ opt_type(certfiles) ->
     fun(CertList) ->
 	    [binary_to_list(Path) || Path <- CertList]
     end;
+opt_type(O) when O == c2s_certfile; O == s2s_certfile; O == domain_certfile ->
+    fun(File) ->
+	    ?WARNING_MSG("option '~s' is deprecated, use 'certfiles' instead", [O]),
+	    misc:try_read_file(File)
+    end;
 opt_type(_) ->
-    [ca_path, certfiles].
+    [ca_path, certfiles, c2s_certfile, s2s_certfile, domain_certfile].
 
 %%%===================================================================
 %%% gen_server callbacks
