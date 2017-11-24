@@ -126,7 +126,7 @@ hosts:
 ##      - "no_sslv3"
 ##      - "cipher_server_preference"
 ##      - "no_compression"
-##   'DHFILE': "/path/to/dhparams.pem" # generated with: openssl dhparam -out dhparams.pem 2048
+##   'DH_FILE': "/path/to/dhparams.pem" # generated with: openssl dhparam -out dhparams.pem 2048
 ##
 ## c2s_dhfile: 'DH_FILE'
 ## s2s_dhfile: 'DH_FILE'
