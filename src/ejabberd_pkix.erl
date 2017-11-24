@@ -273,7 +273,7 @@ certfiles_from_config_options() ->
     [c2s_certfile, s2s_certfile, domain_certfile].
 
 -spec get_certfiles_from_config_options(state()) -> [binary()].
-get_certfiles_from_config_options(State) ->
+get_certfiles_from_config_options(_State) ->
     Global = case ejabberd_config:get_option(certfiles) of
 		 undefined ->
 		     [];
