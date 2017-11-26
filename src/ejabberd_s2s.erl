@@ -222,8 +222,7 @@ tls_options(LServer, DefaultOpts) ->
                    DHFile -> lists:keystore(dhfile, 1, TLSOpts3,
 					    {dhfile, DHFile})
                end,
-    TLSOpts5 = case ejabberd_config:get_option(
-		      {s2s_cafile, LServer}) of
+    TLSOpts5 = case get_cafile(LServer) of
 		   undefined -> TLSOpts4;
 		   CAFile -> lists:keystore(cafile, 1, TLSOpts4,
 					    {cafile, CAFile})
@@ -267,7 +266,7 @@ queue_type(LServer) ->
       {s2s_queue_type, LServer},
       ejabberd_config:default_queue_type(LServer)).
 
--spec get_certfile(binary()) -> file:filename_all().
+-spec get_certfile(binary()) -> file:filename_all() | undefined.
 get_certfile(LServer) ->
     case ejabberd_pkix:get_certfile(LServer) of
 	{ok, CertFile} ->
@@ -276,6 +275,15 @@ get_certfile(LServer) ->
 	    ejabberd_config:get_option(
 	      {domain_certfile, LServer},
 	      ejabberd_config:get_option({s2s_certfile, LServer}))
+    end.
+
+-spec get_cafile(binary()) -> file:filename_all() | undefined.
+get_cafile(LServer) ->
+    case ejabberd_config:get_option({s2s_cafile, LServer}) of
+	undefined ->
+	    ejabberd_pkix:ca_file();
+	File ->
+	    File
     end.
 
 %%====================================================================
