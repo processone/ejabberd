@@ -100,10 +100,11 @@ delete_old_user_messages(User, TimeStamp, Type) ->
 	    Err
     end.
 
-delete_old_user_messages(_, TimeStamp, Type, User) ->
+delete_old_user_messages(Host, TimeStamp, Type, User) ->
 	mnesia:change_table_copy_type(archive_msg, node(), disc_copies),
 	F = fun() ->
-		Msgs = mnesia:read(archive_msg, User),
+		Msgs = mnesia:read(archive_msg, {User, Host}),
+		?INFO_MSG("Msgs:~s", [Msgs]),
 		Keep = lists:filter(
 			fun(#archive_msg{timestamp = MsgTS,
 				type = MsgType}) ->
@@ -111,7 +112,7 @@ delete_old_user_messages(_, TimeStamp, Type, User) ->
 					Type /= MsgType)
 			end, Msgs),
 		if length(Keep) < length(Msgs) ->
-			mnesia:delete({archive_msg, User}),
+			mnesia:delete({archive_msg, {User, Host}}),
 			lists:foreach(fun(Msg) -> mnesia:write(Msg) end, Keep);
 			true ->
 				ok
