@@ -562,7 +562,7 @@ test_connect_bad_xml(Config) ->
     send_text(Config0, <<"<'/>">>),
     Version = ?config(stream_version, Config0),
     ?recv1(#stream_start{version = Version}),
-    ?recv1(#stream_error{reason = 'not-well-formed'}),
+    ?recv1(#stream_error{reason = 'invalid-xml'}),
     ?recv1({xmlstreamend, <<"stream:stream">>}),
     close_socket(Config0).
 
