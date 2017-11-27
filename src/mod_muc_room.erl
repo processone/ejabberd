@@ -1242,6 +1242,17 @@ expulse_participant(Packet, From, StateData, Reason1) ->
     end,
     remove_online_user(From, NewState).
 
+-spec get_owners(state()) -> [jid:jid()].
+get_owners(StateData) ->
+    ?DICT:fold(
+       fun(LJID, owner, Acc) ->
+	       [jid:make(LJID)|Acc];
+	  (LJID, {owner, _}, Acc) ->
+	       [jid:make(LJID)|Acc];
+	  (_, _, Acc) ->
+	       Acc
+       end, [], StateData#state.affiliations).
+
 -spec set_affiliation(jid(), affiliation(), state()) -> state().
 set_affiliation(JID, Affiliation, StateData) ->
     set_affiliation(JID, Affiliation, StateData, <<"">>).
@@ -3196,7 +3207,8 @@ get_config(Lang, StateData, From) ->
 	 {allow_visitor_nickchange, Config#config.allow_visitor_nickchange},
 	 {allow_voice_requests, Config#config.allow_voice_requests},
 	 {allow_subscription, Config#config.allow_subscription},
-	 {voice_request_min_interval, Config#config.voice_request_min_interval}]
+	 {voice_request_min_interval, Config#config.voice_request_min_interval},
+	 {pubsub, Config#config.pubsub}]
 	++
 	case ejabberd_captcha:is_feature_available() of
 	    true -> [{captcha_protected, Config#config.captcha_protected}];
@@ -3278,6 +3290,7 @@ set_config(Opts, Config, ServerHost, Lang) ->
 	 ({whois, anyone}, C) -> C#config{anonymous = false};
 	 ({maxusers, V}, C) -> C#config{max_users = V};
 	 ({enablelogging, V}, C) -> C#config{logging = V};
+	 ({pubsub, V}, C) -> C#config{pubsub = V};
 	 ({captcha_whitelist, Js}, C) ->
 	      LJIDs = [jid:tolower(J) || J <- Js],
 	      C#config{captcha_whitelist = ?SETS:from_list(LJIDs)};
@@ -3482,6 +3495,9 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 		StateData#state{config =
 				    (StateData#state.config)#config{vcard =
 									Val}};
+	    pubsub ->
+		StateData#state{config =
+				    (StateData#state.config)#config{pubsub = Val}};
 	    allow_subscription ->
 		StateData#state{config =
 				    (StateData#state.config)#config{allow_subscription = Val}};
@@ -3548,6 +3564,7 @@ make_opts(StateData) ->
      ?MAKE_CONFIG_OPT(#config.presence_broadcast),
      ?MAKE_CONFIG_OPT(#config.voice_request_min_interval),
      ?MAKE_CONFIG_OPT(#config.vcard),
+     ?MAKE_CONFIG_OPT(#config.pubsub),
      {captcha_whitelist,
       (?SETS):to_list((StateData#state.config)#config.captcha_whitelist)},
      {affiliations,
@@ -3629,10 +3646,17 @@ process_iq_disco_info(_From, #iq{type = get, lang = Lang}, StateData) ->
 
 -spec iq_disco_info_extras(binary(), state()) -> xdata().
 iq_disco_info_extras(Lang, StateData) ->
-    Fs = [{description, (StateData#state.config)#config.description},
-	  {occupants, ?DICT:size(StateData#state.users)}],
+    Fs1 = [{description, (StateData#state.config)#config.description},
+	   {occupants, ?DICT:size(StateData#state.users)},
+	   {contactjid, get_owners(StateData)}],
+    Fs2 = case (StateData#state.config)#config.pubsub of
+	      Node when is_binary(Node), Node /= <<"">> ->
+		  [{pubsub, Node}|Fs1];
+	      _ ->
+		  Fs1
+	  end,
     #xdata{type = result,
-	   fields = muc_roominfo:encode(Fs, Lang)}.
+	   fields = muc_roominfo:encode(Fs2, Lang)}.
 
 -spec process_iq_disco_items(jid(), iq(), state()) ->
 				    {error, stanza_error()} | {result, disco_items()}.
