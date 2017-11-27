@@ -30,7 +30,7 @@
 
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
-	 extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/6, export/1]).
+	extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/6, export/1, delete_user_old_messages/4]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("xmpp.hrl").
@@ -80,6 +80,26 @@ delete_old_messages(ServerHost, TimeStamp, Type) ->
                    " and %(ServerHost)H"))
     end,
     ok.
+
+delete_user_old_messages(Host, TimeStamp, Type, User) ->
+	TS = now_to_usec(TimeStamp),
+	case Type of
+		all ->
+			ejabberd_sql:sql_query(
+				Host,
+				?SQL("delete from archive"
+				" where timestamp < %(TS)d and %(Host)H and username=%(User)s"));
+		_ ->
+			SType = misc:atom_to_binary(Type),
+			ejabberd_sql:sql_query(
+				Host,
+				?SQL("delete from archive"
+				" where timestamp < %(TS)d"
+				" and kind=%(SType)s"
+				" and %(Host)H"
+				" and username=%(User)s"))
+	end,
+	ok.
 
 extended_fields() ->
     [{withtext, <<"">>}].
