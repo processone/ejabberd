@@ -39,7 +39,7 @@
 	 disco_sm_features/5, remove_user/2, remove_room/3, mod_opt_type/1,
 	 muc_process_iq/2, muc_filter_message/3, message_is_archived/3,
 	 delete_old_messages/2, get_commands_spec/0, msg_to_el/4,
-	 get_room_config/4, set_room_option/3, offline_message/1, export/1]).
+	 get_room_config/4, set_room_option/3, offline_message/1, export/1, delete_old_user_messages/4]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -67,6 +67,9 @@
 		 #rsm_set{} | undefined, chat | groupchat) ->
     {[{binary(), non_neg_integer(), xmlel()}], boolean(), non_neg_integer()}.
 -callback use_cache(binary(), gen_mod:opts()) -> boolean().
+-callback delete_old_user_messages(binary() | global,
+						erlang:timestamp(),
+						all | chat | groupchat, binary()) -> any().
 
 -optional_callbacks([use_cache/2]).
 
@@ -500,6 +503,19 @@ delete_old_messages(_TypeBin, _Days) ->
 export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:export(LServer).
+
+delete_old_user_messages(TypeBin, Days, User, Host) when TypeBin == <<"chat">>;
+	TypeBin == <<"groupchat">>;
+	TypeBin == <<"all">> ->
+	CurrentTime = p1_time_compat:system_time(micro_seconds),
+	Diff = Days * 24 * 60 * 60 * 1000000,
+	TimeStamp = misc:usec_to_now(CurrentTime - Diff),
+	Type = misc:binary_to_atom(TypeBin),
+	DBType = gen_mod:db_type(Host, ?MODULE),
+	Mod = gen_mod:db_mod(DBType, ?MODULE),
+	Mod:delete_old_user_messages(Host, TimeStamp, Type, User);
+delete_old_user_messages(_TypeBin, _Days, _User, _Host) ->
+	unsupported_type.
 
 %%%===================================================================
 %%% Internal functions
@@ -1052,16 +1068,26 @@ get_jids(Js) ->
     [jid:tolower(jid:remove_resource(J)) || J <- Js].
 
 get_commands_spec() ->
-    [#ejabberd_commands{name = delete_old_mam_messages, tags = [purge],
-			desc = "Delete MAM messages older than DAYS",
-			longdesc = "Valid message TYPEs: "
-				   "\"chat\", \"groupchat\", \"all\".",
-			module = ?MODULE, function = delete_old_messages,
-			args_desc = ["Type of messages to delete (chat, groupchat, all)",
-                                     "Days to keep messages"],
-			args_example = [<<"all">>, 31],
-			args = [{type, binary}, {days, integer}],
-			result = {res, rescode}}].
+    [
+			#ejabberd_commands{name = delete_old_mam_messages, tags = [purge],
+				desc = "Delete MAM messages older than DAYS",
+				longdesc = "Valid message TYPEs: "
+						 "\"chat\", \"groupchat\", \"all\".",
+				module = ?MODULE, function = delete_old_messages,
+				args_desc = ["Type of messages to delete (chat, groupchat, all)", "Days to keep messages"],
+				args_example = [<<"all">>, 31],
+				args = [{type, binary}, {days, integer}],
+				result = {res, rescode}},
+			#ejabberd_commands{name = delete_old_user_mam_messages, tags = [purge],
+				desc = "Delete user MAM messages older than DAYS",
+				longdesc = "Valid message TYPEs: "
+				"\"chat\", \"groupchat\", \"all\".",
+				module = ?MODULE, function = delete_old_user_messages,
+				args_desc = ["Type of messages to delete (chat, groupchat, all)", "Days to keep messages", "User", "Host"],
+				args_example = [<<"all">>, 31, <<"juliet">>, <<"capulet.lit">>],
+				args = [{type, binary}, {days, integer}, {user, binary}, {host, binary}],
+				result = {res, rescode}}
+		].
 
 mod_opt_type(assume_mam_usage) ->
     fun (B) when is_boolean(B) -> B end;

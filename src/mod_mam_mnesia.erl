@@ -28,7 +28,7 @@
 
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
-	 extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/6]).
+	extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/6, delete_old_user_messages/4]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("xmpp.hrl").
@@ -99,6 +99,33 @@ delete_old_user_messages(User, TimeStamp, Type) ->
 	    ?ERROR_MSG("Cannot delete old MAM messages: ~s", [Err]),
 	    Err
     end.
+
+delete_old_user_messages(_, TimeStamp, Type, User) ->
+	mnesia:change_table_copy_type(archive_msg, node(), disc_copies),
+	F = fun() ->
+		Msgs = mnesia:read(archive_msg, User),
+		Keep = lists:filter(
+			fun(#archive_msg{timestamp = MsgTS,
+				type = MsgType}) ->
+				MsgTS >= TimeStamp orelse (Type /= all andalso
+					Type /= MsgType)
+			end, Msgs),
+		if length(Keep) < length(Msgs) ->
+			mnesia:delete({archive_msg, User}),
+			lists:foreach(fun(Msg) -> mnesia:write(Msg) end, Keep);
+			true ->
+				ok
+		end
+			end,
+	case mnesia:transaction(F) of
+		{atomic, ok} ->
+			Result = ok;
+		{aborted, Err} ->
+			?ERROR_MSG("Cannot delete old MAM messages: ~s", [Err]),
+			Result = Err
+	end,
+	mnesia:change_table_copy_type(archive_msg, node(), disc_only_copies),
+	Result.
 
 extended_fields() ->
     [].
