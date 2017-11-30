@@ -939,14 +939,18 @@ node_disco_info(Host, Node, _From, _Identity, _Features) ->
 			       _ -> <<"leaf">>
 			   end,
 		Affs = case node_call(Host, Type, get_node_affiliations, [Nidx]) of
-			  {result, Result} -> Result;
+			  {result, As} -> As;
+			  _ -> []
+		       end,
+		Subs = case node_call(Host, Type, get_node_subscriptions, [Nidx]) of
+			  {result, Ss} -> Ss;
 			  _ -> []
 		       end,
 		Meta = [{title, get_option(Options, title, <<>>)},
 			{description, get_option(Options, description, <<>>)},
 			{owner, [jid:make(LJID) || {LJID, Aff} <- Affs, Aff =:= owner]},
 			{publisher, [jid:make(LJID) || {LJID, Aff} <- Affs, Aff =:= publisher]},
-			{num_subscribers, length([LJID || {LJID, Aff} <- Affs, Aff =:= subscriber])}],
+			{num_subscribers, length(Subs)}],
 		XData = #xdata{type = result,
 			       fields = pubsub_meta_data:encode(Meta)},
 		Is = [#identity{category = <<"pubsub">>, type = NodeType}],
