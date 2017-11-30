@@ -693,7 +693,7 @@ terminate(Reason, _StateName, StateData) ->
 		sub_els = [#muc_user{items = [#muc_item{affiliation = none,
 							reason = ReasonT,
 							role = none}],
-				     status_codes = [332]}]},
+				     status_codes = [332|110]}]},
     (?DICT):fold(fun (LJID, Info, _) ->
 			 Nick = Info#user.nick,
 			 case Reason of
