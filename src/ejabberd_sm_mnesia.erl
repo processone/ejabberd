@@ -111,12 +111,18 @@ handle_cast(_Msg, State) ->
     {noreply, State}.
 
 handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
-    ets:select_delete(
-      session,
-      ets:fun2ms(
-	fun(#session{sid = {_, Pid}}) ->
-		node(Pid) == Node
-	end)),
+    Sessions =
+        ets:select(
+          session,
+          ets:fun2ms(
+            fun(#session{sid = {_, Pid}} = S)
+               when node(Pid) == Node ->
+                    S
+            end)),
+    lists:foreach(
+      fun(S) ->
+              mnesia:dirty_delete_object(S)
+      end, Sessions),
     {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
