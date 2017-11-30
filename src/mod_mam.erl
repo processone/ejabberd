@@ -577,6 +577,8 @@ process_iq(LServer, #iq{from = #jid{luser = LUser}, lang = Lang,
 -spec should_archive(message(), binary()) -> boolean().
 should_archive(#message{type = error}, _LServer) ->
     false;
+should_archive(#message{type = groupchat}, _LServer) ->
+    false;
 should_archive(#message{meta = #{from_offline := true}}, _LServer) ->
     false;
 should_archive(#message{body = Body, subject = Subject,
@@ -590,7 +592,7 @@ should_archive(#message{body = Body, subject = Subject,
 		    true;
 		no_store ->
 		    false;
-		none when Type == groupchat; Type == headline ->
+		none when Type == headline ->
 		    false;
 		none ->
 		    xmpp:get_text(Body) /= <<>> orelse
