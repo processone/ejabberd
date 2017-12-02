@@ -375,6 +375,7 @@ remove_msg_by_node(To, Seq) ->
 
 -spec need_to_store(binary(), message()) -> boolean().
 need_to_store(_LServer, #message{type = error}) -> false;
+need_to_store(_LServer, #message{type = groupchat}) -> false;
 need_to_store(LServer, #message{type = Type} = Packet) ->
     case xmpp:has_subtag(Packet, #offline{}) of
 	false ->
@@ -383,7 +384,7 @@ need_to_store(LServer, #message{type = Type} = Packet) ->
 		    true;
 		no_store ->
 		    false;
-		none when Type == headline; Type == groupchat ->
+		none when Type == headline ->
 		    false;
 		none ->
 		    case gen_mod:get_module_opt(
