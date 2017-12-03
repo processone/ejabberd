@@ -1391,7 +1391,6 @@ now_to_seconds({MegaSecs, Secs, _MicroSecs}) ->
 	      (cache_size) -> fun((timeout()) -> timeout());
 	      (cache_missed) -> fun((boolean()) -> boolean());
 	      (cache_life_time) -> fun((timeout()) -> timeout());
-	      (domain_certfile) -> fun((binary()) -> binary());
 	      (shared_key) -> fun((binary()) -> binary());
 	      (node_start) -> fun((non_neg_integer()) -> non_neg_integer());
 	      (atom()) -> [atom()].
@@ -1429,11 +1428,6 @@ opt_type(cache_life_time) ->
        (infinity) -> infinity;
        (unlimited) -> infinity
     end;
-opt_type(domain_certfile = Opt) ->
-    fun(File) ->
-	    ?WARNING_MSG("option '~s' is deprecated, use 'certfiles' instead", [Opt]),
-	    misc:try_read_file(File)
-    end;
 opt_type(shared_key) ->
     fun iolist_to_binary/1;
 opt_type(node_start) ->
@@ -1442,7 +1436,7 @@ opt_type(_) ->
     [hide_sensitive_log_data, hosts, language, max_fsm_queue,
      default_db, default_ram_db, queue_type, queue_dir, loglevel,
      use_cache, cache_size, cache_missed, cache_life_time,
-     domain_certfile, shared_key, node_start].
+     shared_key, node_start].
 
 -spec may_hide_data(any()) -> any().
 may_hide_data(Data) ->

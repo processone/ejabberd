@@ -531,6 +531,7 @@ CREATE TABLE sm (
     pid text NOT NULL,
     node text NOT NULL,
     username text NOT NULL,
+    server_host text NOT NULL,
     resource text NOT NULL,
     priority text NOT NULL,
     info text NOT NULL,

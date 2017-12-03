@@ -28,7 +28,7 @@
 %% API
 -export([start_link/0, add_certfile/1, format_error/1, opt_type/1,
 	 get_certfile/1, try_certfile/1, route_registered/1,
-	 config_reloaded/0, certs_dir/0]).
+	 config_reloaded/0, certs_dir/0, ca_file/0]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
@@ -146,13 +146,22 @@ config_reloaded() ->
     gen_server:call(?MODULE, config_reloaded, 60000).
 
 opt_type(ca_path) ->
-    fun(Path) -> iolist_to_binary(Path) end;
+    fun(Path) -> binary_to_list(Path) end;
+opt_type(ca_file) ->
+    fun(Path) ->
+	    binary_to_list(misc:try_read_file(Path))
+    end;
 opt_type(certfiles) ->
     fun(CertList) ->
 	    [binary_to_list(Path) || Path <- CertList]
     end;
+opt_type(O) when O == c2s_certfile; O == s2s_certfile; O == domain_certfile ->
+    fun(File) ->
+	    ?WARNING_MSG("option '~s' is deprecated, use 'certfiles' instead", [O]),
+	    misc:try_read_file(File)
+    end;
 opt_type(_) ->
-    [ca_path, certfiles].
+    [ca_path, ca_file, certfiles, c2s_certfile, s2s_certfile, domain_certfile].
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -170,7 +179,7 @@ init([]) ->
 		       erlang:function_exported(
 			 public_key, short_name_hash, 1)
 	       end,
-    if Validate -> check_ca_dir();
+    if Validate -> check_ca();
        true -> ok
     end,
     State = #state{validate = Validate, notify = Notify},
@@ -268,12 +277,12 @@ certfiles_from_config_options() ->
     [c2s_certfile, s2s_certfile, domain_certfile].
 
 -spec get_certfiles_from_config_options(state()) -> [binary()].
-get_certfiles_from_config_options(State) ->
+get_certfiles_from_config_options(_State) ->
     Global = case ejabberd_config:get_option(certfiles) of
 		 undefined ->
 		     [];
 		 Paths ->
-		     lists:flatmap(fun filelib:wildcard/1, Paths)
+		     lists:flatmap(fun wildcard/1, Paths)
 	     end,
     Local = lists:flatmap(
 	      fun(OptHost) ->
@@ -519,6 +528,10 @@ validate_path([Cert|_] = Certs) ->
 ca_dir() ->
     ejabberd_config:get_option(ca_path, "/etc/ssl/certs").
 
+-spec ca_file() -> string() | undefined.
+ca_file() ->
+    ejabberd_config:get_option(ca_file).
+
 -spec certs_dir() -> string().
 certs_dir() ->
     MnesiaDir = mnesia:system_info(directory),
@@ -527,7 +540,7 @@ certs_dir() ->
 -spec clean_dir(file:filename_all()) -> ok.
 clean_dir(Dir) ->
     ?DEBUG("Cleaning directory ~s", [Dir]),
-    Files = filelib:wildcard(filename:join(Dir, "*")),
+    Files = wildcard(filename:join(Dir, "*")),
     lists:foreach(
       fun(Path) ->
 	      case filelib:is_file(Path) of
@@ -538,11 +551,12 @@ clean_dir(Dir) ->
 	      end
       end, Files).
 
--spec check_ca_dir() -> ok.
-check_ca_dir() ->
-    case filelib:wildcard(filename:join(ca_dir(), "*.0")) of
-	[] ->
-	    Hint = "configuring 'ca_path' option might help",
+-spec check_ca() -> ok.
+check_ca() ->
+    CAFile = ca_file(),
+    case wildcard(filename:join(ca_dir(), "*.0")) of
+	[] when CAFile == undefined ->
+	    Hint = "configuring 'ca_path' or 'ca_file' options might help",
 	    case file:list_dir(ca_dir()) of
 		{error, Why} ->
 		    ?WARNING_MSG("failed to read CA directory ~s: ~s; ~s",
@@ -558,10 +572,23 @@ check_ca_dir() ->
 
 -spec find_local_issuer(cert()) -> {ok, cert()} | {error, {bad_cert, unknown_ca}}.
 find_local_issuer(Cert) ->
+    case find_issuer_in_dir(Cert, ca_dir()) of
+	{ok, IssuerCert} ->
+	    {ok, IssuerCert};
+	{error, _} = Err ->
+	    case ca_file() of
+		undefined -> Err;
+		CAFile -> find_issuer_in_file(Cert, CAFile)
+	    end
+    end.
+
+-spec find_issuer_in_dir(cert(), file:filename_all())
+      -> {ok, cert()} | {error, {bad_cert, unknown_ca}}.
+find_issuer_in_dir(Cert, CADir) ->
     {ok, {_, IssuerID}} = public_key:pkix_issuer_id(Cert, self),
     Hash = short_name_hash(IssuerID),
     filelib:fold_files(
-      ca_dir(), Hash ++ "\\.[0-9]+", false,
+      CADir, Hash ++ "\\.[0-9]+", false,
       fun(_, {ok, IssuerCert}) ->
 	      {ok, IssuerCert};
 	 (CertFile, Acc) ->
@@ -580,6 +607,29 @@ find_local_issuer(Cert) ->
 		      Acc
 	      end
       end, {error, {bad_cert, unknown_ca}}).
+
+-spec find_issuer_in_file(cert(), file:filename_all() | undefined)
+      -> {ok, cert()} | {error, {bad_cert, unknown_ca}}.
+find_issuer_in_file(_Cert, undefined) ->
+    {error, {bad_cert, unknown_ca}};
+find_issuer_in_file(Cert, CAFile) ->
+    try
+	{ok, Data} = file:read_file(CAFile),
+	{ok, IssuerCerts, _} = pem_decode(Data),
+	lists:foldl(
+	  fun(_, {ok, _} = Res) ->
+		  Res;
+	     (IssuerCert, Err) ->
+		  case public_key:pkix_is_issuer(Cert, IssuerCert) of
+		      true -> {ok, IssuerCert};
+		      false -> Err
+		  end
+	  end, {error, {bad_cert, unknown_ca}}, IssuerCerts)
+    catch _:{badmatch, {error, Why}} ->
+	    ?ERROR_MSG("failed to read CA certificates from \"~s\": ~s",
+		       [CAFile, format_error(Why)]),
+	    {error, {bad_cert, unknown_ca}}
+    end.
 
 -spec match_cert_keys([{path, [cert()]}], [priv_key()])
       -> {ok, [{cert(), priv_key()}]} | {error, {bad_cert, missing_priv_key}}.
@@ -723,3 +773,8 @@ start_fs() ->
 		       [Reason]),
 	    false
     end.
+
+wildcard(Path) when is_binary(Path) ->
+    wildcard(binary_to_list(Path));
+wildcard(Path) ->
+    filelib:wildcard(Path).

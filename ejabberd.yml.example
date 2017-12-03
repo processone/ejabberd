@@ -103,20 +103,40 @@ hosts:
 ##
 ## route_subdomains: s2s
 
+###.  ============
+###'  Certificates
+
+## List all available PEM files containing certificates for your domains,
+## chains of certificates or certificate keys. Full chains will be built
+## automatically by ejabberd.
+##
+## certfiles:
+##   - "/etc/letsencrypt/live/example.org/*.pem"
+##   - "/etc/letsencrypt/live/example.com/*.pem"
+##
+## If your system provides only a single CA file (CentOS/FreeBSD):
+## s2s_cafile: "/etc/ssl/certs/ca-bundle.pem"
+
+###.  =================
+###'  TLS configuration
+
+## define_macro:
+##   'TLS_CIPHERS': "HIGH:!aNULL:!eNULL:!3DES:@STRENGTH"
+##   'TLS_OPTIONS':
+##      - "no_sslv3"
+##      - "cipher_server_preference"
+##      - "no_compression"
+##   'DH_FILE': "/path/to/dhparams.pem" # generated with: openssl dhparam -out dhparams.pem 2048
+##
+## c2s_dhfile: 'DH_FILE'
+## s2s_dhfile: 'DH_FILE'
+## c2s_ciphers: 'TLS_CIPHERS'
+## s2s_ciphers: 'TLS_CIPHERS'
+## c2s_protocol_options: 'TLS_OPTIONS'
+## s2s_protocol_options: 'TLS_OPTIONS'
+
 ###.  ===============
 ###'  LISTENING PORTS
-
-## Define common macros used by listeners
-## define_macro:
-##   'CIPHERS': "ECDH:DH:!3DES:!aNULL:!eNULL:!MEDIUM@STRENGTH"
-##   'TLSOPTS':
-##     - "no_sslv2"
-##     - "no_sslv3"
-##     - "no_tlsv1"
-##     - "no_tlsv1_1"
-##     - "cipher_server_preference"
-##     - "no_compression"
-##   'DHFILE': "/path/to/dhparams.pem" # generated with: openssl dhparam -out dhparams.pem 2048
 
 ##
 ## listen: The ports ejabberd will listen on, which service each is handled
@@ -129,12 +149,9 @@ listen:
     module: ejabberd_c2s
     ##
     ## If TLS is compiled in and you installed a SSL
-    ## certificate, uncomment these lines:
+    ## certificate, uncomment this line:
     ##
     ## starttls: true
-    ## protocol_options: 'TLSOPTS'
-    ## dhfile: 'DHFILE'
-    ## ciphers: 'CIPHERS'
     ##
     ## To enforce TLS encryption for client connections,
     ## use this instead of the "starttls" option:
@@ -225,17 +242,6 @@ listen:
 ## password storage (see auth_password_format option).
 ## disable_sasl_mechanisms: "digest-md5"
 
-###.  ============
-###'  Certificates
-
-## List all available PEM files containing certificates for your domains,
-## chains of certificates or certificate keys. Full chains will be built
-## automatically by ejabberd.
-##
-## certfiles:
-##   - "/etc/letsencrypt/live/example.org/*.pem"
-##   - "/etc/letsencrypt/live/example.com/*.pem"
-
 ###.  ==================
 ###'  S2S GLOBAL OPTIONS
 
@@ -245,10 +251,6 @@ listen:
 ## You must specify 'certfiles' option
 ##
 ## s2s_use_starttls: required
-
-## Custom OpenSSL options
-##
-## s2s_protocol_options: 'TLSOPTS'
 
 ##
 ## S2S whitelist or blacklist
@@ -685,9 +687,6 @@ acme:
    ##   - http://localhost:4000 - for a local version of the CA
    ca_url: "https://acme-v01.api.letsencrypt.org"
 
-## The directory in which certificates will be saved
-cert_dir: "/usr/local/var/lib/ejabberd/"
-
 ###.  =======
 ###'  MODULES
 
@@ -810,7 +809,7 @@ modules:
   ##   rely solely on dialback if you want to federate with other servers,
   ##   because a lot of servers have dialback disabled and instead rely on
   ##   PKIX authentication. Make sure you have proper certificates installed
-  ##   and check your accessibility at https://xmpp.net/
+  ##   and check your accessibility at https://check.messaging.one/
   mod_s2s_dialback: {}
   mod_http_api: {}
 

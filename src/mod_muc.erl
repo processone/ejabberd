@@ -822,7 +822,7 @@ opts_to_binary(Opts) ->
               {description, iolist_to_binary(Desc)};
          ({password, Pass}) ->
               {password, iolist_to_binary(Pass)};
-         ({subject, Subj}) ->
+         ({subject, [C|_] = Subj}) when is_integer(C), C >= 0, C =< 255 ->
               {subject, iolist_to_binary(Subj)};
          ({subject_author, Author}) ->
               {subject_author, iolist_to_binary(Author)};

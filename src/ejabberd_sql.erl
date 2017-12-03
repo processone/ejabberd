@@ -1053,7 +1053,10 @@ init_mssql(Host) ->
     end.
 
 tmp_dir() ->
-    filename:join(["/tmp", "ejabberd"]).
+    case os:type() of
+	{win32, _} -> filename:join([os:getenv("HOME"), "conf"]);
+	_ -> filename:join(["/tmp", "ejabberd"])
+    end.
 
 odbc_config() ->
     filename:join(tmp_dir(), "odbc.ini").

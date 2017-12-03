@@ -146,7 +146,6 @@ init({SockMod, Socket}, Opts) ->
 
     CustomHeaders = proplists:get_value(custom_headers, Opts, []),
 
-    ?INFO_MSG("started: ~p", [{SockMod1, Socket1}]),
     State = #state{sockmod = SockMod1,
                    socket = Socket1,
                    default_host = DefaultHost,

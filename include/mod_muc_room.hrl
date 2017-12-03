@@ -64,7 +64,8 @@
     logging                              = false :: boolean(),
     vcard                                = <<"">> :: binary(),
     captcha_whitelist                    = (?SETS):empty() :: ?TGB_SET,
-    mam                                  = false :: boolean()
+    mam                                  = false :: boolean(),
+    pubsub                               = <<"">> :: binary()
 }).
 
 -type config() :: #config{}.

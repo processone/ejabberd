@@ -314,6 +314,16 @@ handle_info({'$gen_event', {xmlstreamstart, Name, Attrs}},
 		      send_pkt(State1, Err)
 	      end
       end);
+handle_info({'$gen_event', El}, #{stream_state := wait_for_stream} = State) ->
+    %% TODO: find and fix this in fast_xml
+    error_logger:error_msg("unexpected event from receiver: ~p; "
+			   "xmlstreamstart was expected", [El]),
+    State1 = send_header(State),
+    noreply(
+      case is_disconnected(State1) of
+	  true -> State1;
+	  false -> send_pkt(State1, xmpp:serr_invalid_xml())
+      end);
 handle_info({'$gen_event', {xmlstreamerror, Reason}}, #{lang := Lang}= State) ->
     State1 = send_header(State),
     noreply(
