@@ -689,11 +689,16 @@ get_cert_paths(Certs) ->
       end, Certs),
     lists:foreach(
       fun({Cert1, Cert2}) when Cert1 /= Cert2 ->
-	      case public_key:pkix_is_issuer(Cert1, Cert2) of
+	      case public_key:pkix_is_self_signed(Cert1) of
 		  true ->
-		      digraph:add_edge(G, Cert1, Cert2);
+		      ok;
 		  false ->
-		      ok
+		      case public_key:pkix_is_issuer(Cert1, Cert2) of
+			  true ->
+			      digraph:add_edge(G, Cert1, Cert2);
+			  false ->
+			      ok
+		      end
 	      end;
 	 (_) ->
 	      ok
