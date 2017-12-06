@@ -146,10 +146,9 @@ send_error(#{lserver := LServer} = State, Pkt, Err) ->
 	{Pkt1, State1} -> xmpp_stream_in:send_error(State1, Pkt1, Err)
     end.
 
--spec route(pid(), term()) -> ok.
+-spec route(pid(), term()) -> boolean().
 route(Pid, Term) ->
-    Pid ! Term,
-    ok.
+    ejabberd_cluster:send(Pid, Term).
 
 -spec set_timeout(state(), timeout()) -> state().
 set_timeout(State, Timeout) ->
