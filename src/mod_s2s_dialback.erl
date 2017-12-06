@@ -334,9 +334,8 @@ mk_error(_) ->
 -spec format_error(db_result()) -> binary().
 format_error(#db_result{type = invalid}) ->
     <<"invalid dialback key">>;
-format_error(#db_result{type = error, sub_els = Els}) ->
-    %% TODO: improve xmpp.erl
-    case xmpp:get_error(#message{sub_els = Els}) of
+format_error(#db_result{type = error} = Result) ->
+    case xmpp:get_error(Result) of
 	#stanza_error{} = Err ->
 	    format_stanza_error(Err);
 	undefined ->
