@@ -767,22 +767,22 @@ get_cert_paths(Certs, G) ->
       end, Certs).
 
 add_edges(G, [Cert1|T], L) ->
-    lists:foreach(
-      fun(Cert2) when Cert1 /= Cert2 ->
-	      case public_key:pkix_is_self_signed(Cert1) of
-		  true ->
-		      ok;
-		  false ->
+    case public_key:pkix_is_self_signed(Cert1) of
+	true ->
+	    ok;
+	false ->
+	    lists:foreach(
+	      fun(Cert2) when Cert1 /= Cert2 ->
 		      case public_key:pkix_is_issuer(Cert1, Cert2) of
 			  true ->
 			      digraph:add_edge(G, Cert1, Cert2);
 			  false ->
 			      ok
-		      end
-	      end;
-	 (_) ->
-	      ok
-      end, L),
+		      end;
+		 (_) ->
+		      ok
+	      end, L)
+    end,
     add_edges(G, T, L);
 add_edges(_, [], _) ->
     ok.
