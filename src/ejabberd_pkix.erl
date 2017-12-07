@@ -753,11 +753,22 @@ get_cert_paths(Certs, G) ->
 			  false
 		  end
 	  end, Certs),
-    CertPairs = [{C1, C2} || C1 <- NewCerts, C2 <- OldCerts] ++
-	        [{C1, C2} || C1 <- OldCerts, C2 <- NewCerts] ++
-	        [{C1, C2} || C1 <- NewCerts, C2 <- NewCerts],
+    add_edges(G, NewCerts, OldCerts),
+    add_edges(G, OldCerts, NewCerts),
+    add_edges(G, NewCerts, NewCerts),
+    lists:flatmap(
+      fun(Cert) ->
+	      case digraph:in_degree(G, Cert) of
+		  0 ->
+		      get_cert_path(G, [Cert]);
+		  _ ->
+		      []
+	      end
+      end, Certs).
+
+add_edges(G, [Cert1|T], L) ->
     lists:foreach(
-      fun({Cert1, Cert2}) when Cert1 /= Cert2 ->
+      fun(Cert2) when Cert1 /= Cert2 ->
 	      case public_key:pkix_is_self_signed(Cert1) of
 		  true ->
 		      ok;
@@ -771,16 +782,10 @@ get_cert_paths(Certs, G) ->
 	      end;
 	 (_) ->
 	      ok
-      end, CertPairs),
-    lists:flatmap(
-      fun(Cert) ->
-	      case digraph:in_degree(G, Cert) of
-		  0 ->
-		      get_cert_path(G, [Cert]);
-		  _ ->
-		      []
-	      end
-      end, Certs).
+      end, L),
+    add_edges(G, T, L);
+add_edges(_, [], _) ->
+    ok.
 
 get_cert_path(G, [Root|_] = Acc) ->
     case digraph:out_edges(G, Root) of
