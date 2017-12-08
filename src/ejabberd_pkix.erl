@@ -295,7 +295,20 @@ get_certfiles_from_config_options(_State) ->
 		 undefined ->
 		     [];
 		 Paths ->
-		     lists:flatmap(fun wildcard/1, Paths)
+		     lists:flatmap(
+		       fun(Path) ->
+			       case wildcard(Path) of
+				   [] ->
+				       ?WARNING_MSG(
+					  "Path ~s is empty, please "
+					  "make sure ejabberd has "
+					  "sufficient rights to read it",
+					  [Path]),
+				       [];
+				   Fs ->
+				       Fs
+			       end
+		       end, Paths)
 	     end,
     Local = lists:flatmap(
 	      fun(OptHost) ->
