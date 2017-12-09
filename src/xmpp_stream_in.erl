@@ -614,8 +614,8 @@ process_authenticated_packet(Pkt, #{mod := Mod} = State) ->
 
 -spec process_bind(xmpp_element(), state()) -> state().
 process_bind(#iq{type = set, sub_els = [_]} = Pkt,
-	     #{xmlns := ?NS_CLIENT, mod := Mod} = State) ->
-    case xmpp:get_subtag(Pkt, #bind{}) of
+	     #{xmlns := ?NS_CLIENT, mod := Mod, lang := MyLang} = State) ->
+    try xmpp:try_subtag(Pkt, #bind{}) of
 	#bind{resource = R} ->
 	    case Mod:bind(R, State) of
 		{ok, #{user := U, server := S, resource := NewR} = State1}
@@ -632,6 +632,11 @@ process_bind(#iq{type = set, sub_els = [_]} = Pkt,
 		    Err = xmpp:err_not_authorized(),
 		    send_error(State, Pkt, Err)
 	    end
+    catch _:{xmpp_codec, Why} ->
+	    Txt = xmpp:io_format_error(Why),
+	    Lang = select_lang(MyLang, xmpp:get_lang(Pkt)),
+	    Err = xmpp:err_bad_request(Txt, Lang),
+	    send_error(State, Pkt, Err)
     end;
 process_bind(Pkt, #{mod := Mod} = State) ->
     try Mod:handle_unbinded_packet(Pkt, State)

@@ -468,11 +468,16 @@ handle_authenticated_packet(Pkt, #{lserver := LServer, jid := JID,
 	drop ->
 	    State2;
 	#iq{type = set, sub_els = [_]} ->
-	    case xmpp:get_subtag(Pkt2, #xmpp_session{}) of
+	    try xmpp:try_subtag(Pkt2, #xmpp_session{}) of
 		#xmpp_session{} ->
 		    send(State2, xmpp:make_iq_result(Pkt2));
 		_ ->
 		    check_privacy_then_route(State2, Pkt2)
+	    catch _:{xmpp_codec, Why} ->
+		    Txt = xmpp:io_format_error(Why),
+		    Lang = maps:get(lang, State),
+		    Err = xmpp:err_bad_request(Txt, Lang),
+		    send_error(State2, Pkt2, Err)
 	    end;
 	#presence{to = #jid{luser = LUser, lserver = LServer,
 			    lresource = <<"">>}} ->

@@ -522,7 +522,7 @@ process_features(StreamFeatures,
 	false ->
 	    TLSRequired = is_starttls_required(State1),
 	    TLSAvailable = is_starttls_available(State1),
-	    case xmpp:get_subtag(StreamFeatures, #starttls{}) of
+	    try xmpp:try_subtag(StreamFeatures, #starttls{}) of
 		false when TLSRequired and not Encrypted ->
 		    Txt = <<"Use of STARTTLS required">>,
 		    send_pkt(State1, xmpp:serr_policy_violation(Txt, Lang));
@@ -543,14 +543,20 @@ process_features(StreamFeatures,
 		    case is_disconnected(State2) of
 			true -> State2;
 			false ->
-			    case xmpp:get_subtag(StreamFeatures, #sasl_mechanisms{}) of
+			    try xmpp:try_subtag(StreamFeatures, #sasl_mechanisms{}) of
 				#sasl_mechanisms{list = Mechs} ->
 				    process_sasl_mechanisms(Mechs, State2);
 				false ->
 				    process_sasl_failure(
 				      <<"Peer provided no SASL mechanisms">>, State2)
+			    catch _:{xmpp_codec, Why} ->
+				    Txt = xmpp:io_format_error(Why),
+				    process_sasl_failure(Txt, State1)
 			    end
 		    end
+	    catch _:{xmpp_codec, Why} ->
+		    Txt = xmpp:io_format_error(Why),
+		    process_sasl_failure(Txt, State1)
 	    end
     end.
 
