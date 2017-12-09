@@ -1011,22 +1011,25 @@ do_process_presence(Nick, #presence{from = From, type = available, lang = Lang} 
 			  {(StateData#state.config)#config.allow_visitor_nickchange,
 			   is_visitor(From, StateData)}} of
 			{_, _, {false, true}} ->
+			    Packet1 = Packet#presence{sub_els = [#muc{}]},
 			    ErrText = <<"Visitors are not allowed to change their "
 					"nicknames in this room">>,
 			    Err = xmpp:err_not_allowed(ErrText, Lang),
-			    ejabberd_router:route_error(Packet, Err),
+			    ejabberd_router:route_error(Packet1, Err),
 			    StateData;
 			{true, _, _} ->
+			    Packet1 = Packet#presence{sub_els = [#muc{}]},
 			    ErrText = <<"That nickname is already in use by another "
 					"occupant">>,
 			    Err = xmpp:err_conflict(ErrText, Lang),
-			    ejabberd_router:route_error(Packet, Err),
+			    ejabberd_router:route_error(Packet1, Err),
 			    StateData;
 			{_, false, _} ->
+			    Packet1 = Packet#presence{sub_els = [#muc{}]},
 			    ErrText = <<"That nickname is registered by another "
 					"person">>,
 			    Err = xmpp:err_conflict(ErrText, Lang),
-			    ejabberd_router:route_error(Packet, Err),
+			    ejabberd_router:route_error(Packet1, Err),
 			    StateData;
 			_ ->
 				    change_nick(From, Nick, StateData)
