@@ -69,7 +69,7 @@ c2s_unauthenticated_packet(State, #iq{type = T, sub_els = [_]} = IQ)
     catch _:{xmpp_codec, Why} ->
 	    Txt = xmpp:io_format_error(Why),
 	    Lang = maps:get(lang, State),
-	    Err = xmpp:make_error(IQ, xmpp:error_bad_request(Txt, Lang)),
+	    Err = xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang)),
 	    {stop, ejabberd_c2s:send(State, Err)}
     end;
 c2s_unauthenticated_packet(State, _) ->
