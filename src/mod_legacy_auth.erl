@@ -61,11 +61,16 @@ mod_opt_type(_) ->
       c2s_state() | {stop, c2s_state()}.
 c2s_unauthenticated_packet(State, #iq{type = T, sub_els = [_]} = IQ)
   when T == get; T == set ->
-    case xmpp:get_subtag(IQ, #legacy_auth{}) of
+    try xmpp:try_subtag(IQ, #legacy_auth{}) of
 	#legacy_auth{} = Auth ->
 	    {stop, authenticate(State, xmpp:set_els(IQ, [Auth]))};
 	false ->
 	    State
+    catch _:{xmpp_codec, Why} ->
+	    Txt = xmpp:io_format_error(Why),
+	    Lang = maps:get(lang, State),
+	    Err = xmpp:make_error(IQ, xmpp:error_bad_request(Txt, Lang)),
+	    {stop, ejabberd_c2s:send(State, Err)}
     end;
 c2s_unauthenticated_packet(State, _) ->
     State.

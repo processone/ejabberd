@@ -274,7 +274,7 @@ get_permissions(ServerHost) ->
 forward_message(#message{to = To} = Msg) ->
     ServerHost = To#jid.lserver,
     Lang = xmpp:get_lang(Msg),
-    case xmpp:get_subtag(Msg, #privilege{}) of
+    try xmpp:try_subtag(Msg, #privilege{}) of
 	#privilege{forwarded = #forwarded{xml_els = [SubEl]}} ->
 	    try xmpp:decode(SubEl, ?NS_CLIENT, [ignore_els]) of
 		#message{} = NewMsg ->
@@ -297,7 +297,11 @@ forward_message(#message{to = To} = Msg) ->
 		    ejabberd_router:route_error(Msg, Err)
 	    end;
 	_ ->
-	    Txt = <<"Invalid <forwarded/> element">>,
+	    Txt = <<"No <forwarded/> element found">>,
+	    Err = xmpp:err_bad_request(Txt, Lang),
+	    ejabberd_router:route_error(Msg, Err)
+    catch _:{xmpp_codec, Why} ->
+	    Txt = xmpp:io_format_error(Why),
 	    Err = xmpp:err_bad_request(Txt, Lang),
 	    ejabberd_router:route_error(Msg, Err)
     end.

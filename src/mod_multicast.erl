@@ -402,7 +402,7 @@ strip_addresses_element(Packet) ->
 	#addresses{list = Addrs} ->
 	    PacketStripped = xmpp:remove_subtag(Packet, #addresses{}),
 	    {ok, PacketStripped, Addrs};
-	undefined ->
+	false ->
 	    throw(eadsele)
     end.
 

@@ -95,7 +95,7 @@ stream_feature_register(Acc, Host) ->
 c2s_unauthenticated_packet(#{ip := IP, server := Server} = State,
 			   #iq{type = T, sub_els = [_]} = IQ)
   when T == set; T == get ->
-    case xmpp:get_subtag(IQ, #register{}) of
+    try xmpp:try_subtag(IQ, #register{}) of
 	#register{} = Register ->
 	    {Address, _} = IP,
 	    IQ1 = xmpp:set_els(IQ, [Register]),
@@ -105,6 +105,11 @@ c2s_unauthenticated_packet(#{ip := IP, server := Server} = State,
 	    {stop, ejabberd_c2s:send(State, ResIQ1)};
 	false ->
 	    State
+    catch _:{xmpp_codec, Why} ->
+	    Txt = xmpp:io_format_error(Why),
+	    Lang = maps:get(lang, State),
+	    Err = xmpp:make_error(IQ, xmpp:error_bad_request(Txt, Lang)),
+	    {stop, ejabberd_c2s:send(State, Err)}
     end;
 c2s_unauthenticated_packet(State, _) ->
     State.
