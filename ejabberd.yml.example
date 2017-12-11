@@ -238,6 +238,10 @@ listen:
   ##   request_handlers:
   ##     "": mod_http_upload
   ##   tls: true
+  ##   certfile: "/path/to/xmpp.pem"
+  ##   protocol_options: 'TLSOPTS'
+  ##   dhfile: 'DHFILE'
+  ##   ciphers: 'CIPHERS'
 
 ## Disabling digest-md5 SASL authentication. digest-md5 requires plain-text
 ## password storage (see auth_password_format option).
