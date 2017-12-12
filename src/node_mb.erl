@@ -93,6 +93,7 @@ features() ->
 	<<"outcast-affiliation">>,
 	<<"persistent-items">>,
 	<<"publish">>,
+	<<"publish-options">>,
 	<<"purge-nodes">>,
 	<<"retract-items">>,
 	<<"retrieve-affiliations">>,

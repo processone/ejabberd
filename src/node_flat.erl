@@ -105,6 +105,7 @@ features() ->
 	<<"persistent-items">>,
 	<<"publish">>,
 	<<"publish-only-affiliation">>,
+	<<"publish-options">>,
 	<<"purge-nodes">>,
 	<<"retract-items">>,
 	<<"retrieve-affiliations">>,
