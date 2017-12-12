@@ -82,8 +82,9 @@
 	 err_jid_required/0, err_max_items_exceeded/0, err_max_nodes_exceeded/0,
 	 err_nodeid_required/0, err_not_in_roster_group/0, err_not_subscribed/0,
 	 err_payload_too_big/0, err_payload_required/0,
-	 err_pending_subscription/0, err_presence_subscription_required/0,
-	 err_subid_required/0, err_too_many_subscriptions/0, err_unsupported/1,
+	 err_pending_subscription/0, err_precondition_not_met/0,
+	 err_presence_subscription_required/0, err_subid_required/0,
+	 err_too_many_subscriptions/0, err_unsupported/1,
 	 err_unsupported_access_model/0]).
 
 %% API and gen_server callbacks
@@ -1773,9 +1774,13 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, PubOpts, Access
 	    PayloadCount = payload_xmlelements(Payload),
 	    PayloadSize = byte_size(term_to_binary(Payload)) - 2,
 	    PayloadMaxSize = get_option(Options, max_payload_size),
+	    PreconditionsMet = preconditions_met(PubOpts, Options),
 	    if not PublishFeature ->
 		    {error, extended_error(xmpp:err_feature_not_implemented(),
 					   err_unsupported(publish))};
+	        not PreconditionsMet ->
+		    {error, extended_error(xmpp:err_conflict(),
+					   err_precondition_not_met())};
 		PayloadSize > PayloadMaxSize ->
 		    {error, extended_error(xmpp:err_not_acceptable(),
 					   err_payload_too_big())};
@@ -1844,7 +1849,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, PubOpts, Access
 	    Type = select_type(ServerHost, Host, Node),
 	    case lists:member(<<"auto-create">>, plugin_features(Host, Type)) of
 		true ->
-		    case create_node(Host, ServerHost, Node, Publisher, Type, Access, []) of
+		    case create_node(Host, ServerHost, Node, Publisher, Type, Access, PubOpts) of
 			{result, #pubsub{create = NewNode}} ->
 			    publish_item(Host, ServerHost, NewNode, Publisher, ItemId,
 					 Payload, PubOpts, Access);
@@ -2512,6 +2517,11 @@ get_roster_info(OwnerUser, OwnerServer, {SubscriberUser, SubscriberServer, _}, A
     {PresenceSubscription, RosterGroup};
 get_roster_info(OwnerUser, OwnerServer, JID, AllowedGroups) ->
     get_roster_info(OwnerUser, OwnerServer, jid:tolower(JID), AllowedGroups).
+
+-spec preconditions_met(pubsub_publish_options:result(),
+			pubsub_node_config:result()) -> boolean().
+preconditions_met(PubOpts, NodeOpts) ->
+    lists:all(fun(Opt) -> lists:member(Opt, NodeOpts) end, PubOpts).
 
 -spec service_jid(jid() | ljid() | binary()) -> jid().
 service_jid(#jid{} = Jid) -> Jid;
@@ -3459,6 +3469,7 @@ features() ->
      <<"presence-subscribe">>,   % RECOMMENDED
      <<"publisher-affiliation">>,   % RECOMMENDED
      <<"publish-only-affiliation">>,   % OPTIONAL
+     <<"publish-options">>,   % OPTIONAL
      <<"retrieve-default">>,
      <<"shim">>].   % RECOMMENDED
 
@@ -3689,6 +3700,10 @@ err_payload_required() ->
 -spec err_pending_subscription() -> ps_error().
 err_pending_subscription() ->
     #ps_error{type = 'pending-subscription'}.
+
+-spec err_precondition_not_met() -> ps_error().
+err_precondition_not_met() ->
+    #ps_error{type = 'precondition-not-met'}.
 
 -spec err_presence_subscription_required() -> ps_error().
 err_presence_subscription_required() ->
