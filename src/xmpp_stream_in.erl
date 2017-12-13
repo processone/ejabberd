@@ -565,8 +565,6 @@ process_element(Pkt, #{stream_state := StateName, lang := Lang} = State) ->
 	    send_pkt(State, #sasl_failure{reason = 'aborted'});
 	#sasl_success{} ->
 	    State;
-	#compress{} when StateName == wait_for_sasl_response ->
-	    send_pkt(State, #compress_failure{reason = 'setup-failed'});
 	#compress{} ->
 	    process_compress(Pkt, State);
 	#handshake{} when StateName == wait_for_handshake ->
@@ -694,7 +692,10 @@ process_stream_established(#{mod := Mod} = State) ->
     end.
 
 -spec process_compress(compress(), state()) -> state().
-process_compress(#compress{}, #{stream_compressed := true} = State) ->
+process_compress(#compress{},
+		 #{stream_compressed := Compressed,
+		   stream_authenticated := Authenticated} = State)
+  when Compressed or not Authenticated ->
     send_pkt(State, #compress_failure{reason = 'setup-failed'});
 process_compress(#compress{methods = HisMethods},
 		 #{socket := Socket, sockmod := SockMod, mod := Mod} = State) ->
@@ -913,7 +914,8 @@ get_sasl_feature(_) ->
     [].
 
 -spec get_compress_feature(state()) -> [compression()].
-get_compress_feature(#{stream_compressed := false, mod := Mod} = State) ->
+get_compress_feature(#{stream_compressed := false, mod := Mod,
+		       stream_authenticated := true} = State) ->
     try Mod:compress_methods(State) of
 	[] -> [];
 	Ms -> [#compression{methods = Ms}]
