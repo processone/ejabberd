@@ -550,6 +550,9 @@ disco_items(Host, Node, From) ->
 %%
 
 -spec caps_add(jid(), jid(), [binary()]) -> ok.
+caps_add(JID, JID, _Features) ->
+    %% Send the owner his last PEP items.
+    send_last_pep(JID, JID);
 caps_add(#jid{lserver = S1} = From, #jid{lserver = S2} = To, _Features)
   when S1 =/= S2 ->
     %% When a remote contact goes online while the local user is offline, the
