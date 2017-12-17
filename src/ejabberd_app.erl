@@ -50,6 +50,7 @@ start(normal, _Args) ->
     ejabberd_mnesia:start(),
     file_queue_init(),
     maybe_add_nameservers(),
+    ejabberd_system_monitor:start(),
     case ejabberd_sup:start_link() of
 	{ok, SupPid} ->
 	    register_elixir_config_hooks(),
