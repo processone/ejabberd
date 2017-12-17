@@ -310,11 +310,8 @@ is_item_not_found({error, #stanza_error{reason = 'item-not-found'}}) -> true;
 is_item_not_found({error, _}) -> false.
 
 -spec is_not_subscribed({error, stanza_error()}) -> boolean().
-is_not_subscribed({error, #stanza_error{sub_els = Els}}) ->
-    %% TODO: make xmpp:get_els function working for any XMPP element
-    %% with sub_els field
-    xmpp:has_subtag(#message{sub_els = Els},
-		    #ps_error{type = 'not-subscribed'}).
+is_not_subscribed({error, StanzaError}) ->
+    xmpp:has_subtag(StanzaError, #ps_error{type = 'not-subscribed'}).
 
 depends(_Host, _Opts) ->
     [{mod_pubsub, hard}].

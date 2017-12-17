@@ -565,8 +565,6 @@ process_element(Pkt, #{stream_state := StateName, lang := Lang} = State) ->
 	    send_pkt(State, #sasl_failure{reason = 'aborted'});
 	#sasl_success{} ->
 	    State;
-	#compress{} when StateName == wait_for_sasl_response ->
-	    send_pkt(State, #compress_failure{reason = 'setup-failed'});
 	#compress{} ->
 	    process_compress(Pkt, State);
 	#handshake{} when StateName == wait_for_handshake ->
@@ -614,8 +612,8 @@ process_authenticated_packet(Pkt, #{mod := Mod} = State) ->
 
 -spec process_bind(xmpp_element(), state()) -> state().
 process_bind(#iq{type = set, sub_els = [_]} = Pkt,
-	     #{xmlns := ?NS_CLIENT, mod := Mod} = State) ->
-    case xmpp:get_subtag(Pkt, #bind{}) of
+	     #{xmlns := ?NS_CLIENT, mod := Mod, lang := MyLang} = State) ->
+    try xmpp:try_subtag(Pkt, #bind{}) of
 	#bind{resource = R} ->
 	    case Mod:bind(R, State) of
 		{ok, #{user := U, server := S, resource := NewR} = State1}
@@ -632,6 +630,11 @@ process_bind(#iq{type = set, sub_els = [_]} = Pkt,
 		    Err = xmpp:err_not_authorized(),
 		    send_error(State, Pkt, Err)
 	    end
+    catch _:{xmpp_codec, Why} ->
+	    Txt = xmpp:io_format_error(Why),
+	    Lang = select_lang(MyLang, xmpp:get_lang(Pkt)),
+	    Err = xmpp:err_bad_request(Txt, Lang),
+	    send_error(State, Pkt, Err)
     end;
 process_bind(Pkt, #{mod := Mod} = State) ->
     try Mod:handle_unbinded_packet(Pkt, State)
@@ -689,7 +692,10 @@ process_stream_established(#{mod := Mod} = State) ->
     end.
 
 -spec process_compress(compress(), state()) -> state().
-process_compress(#compress{}, #{stream_compressed := true} = State) ->
+process_compress(#compress{},
+		 #{stream_compressed := Compressed,
+		   stream_authenticated := Authenticated} = State)
+  when Compressed or not Authenticated ->
     send_pkt(State, #compress_failure{reason = 'setup-failed'});
 process_compress(#compress{methods = HisMethods},
 		 #{socket := Socket, sockmod := SockMod, mod := Mod} = State) ->
@@ -908,7 +914,8 @@ get_sasl_feature(_) ->
     [].
 
 -spec get_compress_feature(state()) -> [compression()].
-get_compress_feature(#{stream_compressed := false, mod := Mod} = State) ->
+get_compress_feature(#{stream_compressed := false, mod := Mod,
+		       stream_authenticated := true} = State) ->
     try Mod:compress_methods(State) of
 	[] -> [];
 	Ms -> [#compression{methods = Ms}]

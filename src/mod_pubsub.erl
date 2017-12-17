@@ -52,7 +52,7 @@
 %% exports for hooks
 -export([presence_probe/3, caps_add/3, caps_update/3,
     in_subscription/6, out_subscription/4,
-    on_user_online/1, on_user_offline/2, remove_user/2,
+    on_self_presence/1, on_user_offline/2, remove_user/2,
     disco_local_identity/5, disco_local_features/5,
     disco_local_items/5, disco_sm_identity/5,
     disco_sm_features/5, disco_sm_items/5,
@@ -82,8 +82,9 @@
 	 err_jid_required/0, err_max_items_exceeded/0, err_max_nodes_exceeded/0,
 	 err_nodeid_required/0, err_not_in_roster_group/0, err_not_subscribed/0,
 	 err_payload_too_big/0, err_payload_required/0,
-	 err_pending_subscription/0, err_presence_subscription_required/0,
-	 err_subid_required/0, err_too_many_subscriptions/0, err_unsupported/1,
+	 err_pending_subscription/0, err_precondition_not_met/0,
+	 err_presence_subscription_required/0, err_subid_required/0,
+	 err_too_many_subscriptions/0, err_unsupported/1,
 	 err_unsupported_access_model/0]).
 
 %% API and gen_server callbacks
@@ -295,8 +296,8 @@ init([ServerHost, Opts]) ->
 						?MODULE, process_commands, IQDisc),
 		  Plugins
 	  end, Hosts),
-    ejabberd_hooks:add(c2s_session_opened, ServerHost,
-	?MODULE, on_user_online, 75),
+    ejabberd_hooks:add(c2s_self_presence, ServerHost,
+	?MODULE, on_self_presence, 75),
     ejabberd_hooks:add(c2s_terminated, ServerHost,
 	?MODULE, on_user_offline, 75),
     ejabberd_hooks:add(disco_local_identity, ServerHost,
@@ -549,6 +550,9 @@ disco_items(Host, Node, From) ->
 %%
 
 -spec caps_add(jid(), jid(), [binary()]) -> ok.
+caps_add(JID, JID, _Features) ->
+    %% Send the owner his last PEP items.
+    send_last_pep(JID, JID);
 caps_add(#jid{lserver = S1} = From, #jid{lserver = S2} = To, _Features)
   when S1 =/= S2 ->
     %% When a remote contact goes online while the local user is offline, the
@@ -578,11 +582,15 @@ presence_probe(_From, _To, _Pid) ->
     %% ignore presence_probe from remote contacts, those are handled via caps_add
     ok.
 
--spec on_user_online(ejabberd_c2s:state()) -> ejabberd_c2s:state().
-on_user_online(C2SState) ->
-    JID = maps:get(jid, C2SState),
+-spec on_self_presence({presence(), ejabberd_c2s:state()})
+		    -> {presence(), ejabberd_c2s:state()}.
+on_self_presence({_, #{pres_last := _}} = Acc) -> % Just a presence update.
+    Acc;
+on_self_presence({#presence{type = available}, #{jid := JID}} = Acc) ->
     send_last_items(JID),
-    C2SState.
+    Acc;
+on_self_presence(Acc) ->
+    Acc.
 
 -spec on_user_offline(ejabberd_c2s:state(), atom()) -> ejabberd_c2s:state().
 on_user_offline(#{jid := JID} = C2SState, _Reason) ->
@@ -768,8 +776,8 @@ terminate(_Reason,
 	false ->
 	    ok
     end,
-    ejabberd_hooks:delete(c2s_session_opened, ServerHost,
-	?MODULE, on_user_online, 75),
+    ejabberd_hooks:delete(c2s_self_presence, ServerHost,
+	?MODULE, on_self_presence, 75),
     ejabberd_hooks:delete(c2s_terminated, ServerHost,
 	?MODULE, on_user_offline, 75),
     ejabberd_hooks:delete(disco_local_identity, ServerHost,
@@ -1773,9 +1781,13 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, PubOpts, Access
 	    PayloadCount = payload_xmlelements(Payload),
 	    PayloadSize = byte_size(term_to_binary(Payload)) - 2,
 	    PayloadMaxSize = get_option(Options, max_payload_size),
+	    PreconditionsMet = preconditions_met(PubOpts, Options),
 	    if not PublishFeature ->
 		    {error, extended_error(xmpp:err_feature_not_implemented(),
 					   err_unsupported(publish))};
+	        not PreconditionsMet ->
+		    {error, extended_error(xmpp:err_conflict(),
+					   err_precondition_not_met())};
 		PayloadSize > PayloadMaxSize ->
 		    {error, extended_error(xmpp:err_not_acceptable(),
 					   err_payload_too_big())};
@@ -1844,7 +1856,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, PubOpts, Access
 	    Type = select_type(ServerHost, Host, Node),
 	    case lists:member(<<"auto-create">>, plugin_features(Host, Type)) of
 		true ->
-		    case create_node(Host, ServerHost, Node, Publisher, Type, Access, []) of
+		    case create_node(Host, ServerHost, Node, Publisher, Type, Access, PubOpts) of
 			{result, #pubsub{create = NewNode}} ->
 			    publish_item(Host, ServerHost, NewNode, Publisher, ItemId,
 					 Payload, PubOpts, Access);
@@ -2512,6 +2524,11 @@ get_roster_info(OwnerUser, OwnerServer, {SubscriberUser, SubscriberServer, _}, A
     {PresenceSubscription, RosterGroup};
 get_roster_info(OwnerUser, OwnerServer, JID, AllowedGroups) ->
     get_roster_info(OwnerUser, OwnerServer, jid:tolower(JID), AllowedGroups).
+
+-spec preconditions_met(pubsub_publish_options:result(),
+			pubsub_node_config:result()) -> boolean().
+preconditions_met(PubOpts, NodeOpts) ->
+    lists:all(fun(Opt) -> lists:member(Opt, NodeOpts) end, PubOpts).
 
 -spec service_jid(jid() | ljid() | binary()) -> jid().
 service_jid(#jid{} = Jid) -> Jid;
@@ -3459,6 +3476,7 @@ features() ->
      <<"presence-subscribe">>,   % RECOMMENDED
      <<"publisher-affiliation">>,   % RECOMMENDED
      <<"publish-only-affiliation">>,   % OPTIONAL
+     <<"publish-options">>,   % OPTIONAL
      <<"retrieve-default">>,
      <<"shim">>].   % RECOMMENDED
 
@@ -3689,6 +3707,10 @@ err_payload_required() ->
 -spec err_pending_subscription() -> ps_error().
 err_pending_subscription() ->
     #ps_error{type = 'pending-subscription'}.
+
+-spec err_precondition_not_met() -> ps_error().
+err_precondition_not_met() ->
+    #ps_error{type = 'precondition-not-met'}.
 
 -spec err_presence_subscription_required() -> ps_error().
 err_presence_subscription_required() ->

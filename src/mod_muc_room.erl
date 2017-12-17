@@ -693,7 +693,7 @@ terminate(Reason, _StateName, StateData) ->
 		sub_els = [#muc_user{items = [#muc_item{affiliation = none,
 							reason = ReasonT,
 							role = none}],
-				     status_codes = [332|110]}]},
+				     status_codes = [332,110]}]},
     (?DICT):fold(fun (LJID, Info, _) ->
 			 Nick = Info#user.nick,
 			 case Reason of
@@ -1011,22 +1011,25 @@ do_process_presence(Nick, #presence{from = From, type = available, lang = Lang} 
 			  {(StateData#state.config)#config.allow_visitor_nickchange,
 			   is_visitor(From, StateData)}} of
 			{_, _, {false, true}} ->
+			    Packet1 = Packet#presence{sub_els = [#muc{}]},
 			    ErrText = <<"Visitors are not allowed to change their "
 					"nicknames in this room">>,
 			    Err = xmpp:err_not_allowed(ErrText, Lang),
-			    ejabberd_router:route_error(Packet, Err),
+			    ejabberd_router:route_error(Packet1, Err),
 			    StateData;
 			{true, _, _} ->
+			    Packet1 = Packet#presence{sub_els = [#muc{}]},
 			    ErrText = <<"That nickname is already in use by another "
 					"occupant">>,
 			    Err = xmpp:err_conflict(ErrText, Lang),
-			    ejabberd_router:route_error(Packet, Err),
+			    ejabberd_router:route_error(Packet1, Err),
 			    StateData;
 			{_, false, _} ->
+			    Packet1 = Packet#presence{sub_els = [#muc{}]},
 			    ErrText = <<"That nickname is registered by another "
 					"person">>,
 			    Err = xmpp:err_conflict(ErrText, Lang),
-			    ejabberd_router:route_error(Packet, Err),
+			    ejabberd_router:route_error(Packet1, Err),
 			    StateData;
 			_ ->
 				    change_nick(From, Nick, StateData)
@@ -4003,7 +4006,7 @@ route_invitation(From, Invitation, Lang, StateData) ->
 %% Otherwise, an error message is sent to the sender.
 -spec handle_roommessage_from_nonparticipant(message(), state(), jid()) -> ok.
 handle_roommessage_from_nonparticipant(Packet, StateData, From) ->
-    case xmpp:get_subtag(Packet, #muc_user{}) of
+    try xmpp:try_subtag(Packet, #muc_user{}) of
 	#muc_user{decline = #muc_decline{to = #jid{} = To} = Decline} = XUser ->
 	    NewDecline = Decline#muc_decline{to = undefined, from = From},
 	    NewXUser = XUser#muc_user{decline = NewDecline},
@@ -4014,6 +4017,10 @@ handle_roommessage_from_nonparticipant(Packet, StateData, From) ->
 	    ErrText = <<"Only occupants are allowed to send messages "
 			"to the conference">>,
 	    Err = xmpp:err_not_acceptable(ErrText, xmpp:get_lang(Packet)),
+	    ejabberd_router:route_error(Packet, Err)
+    catch _:{xmpp_codec, Why} ->
+	    Txt = xmpp:io_format_error(Why),
+	    Err = xmpp:err_bad_request(Txt, xmpp:get_lang(Packet)),
 	    ejabberd_router:route_error(Packet, Err)
     end.
 

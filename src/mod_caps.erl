@@ -206,8 +206,10 @@ c2s_presence_in(C2SState,
     {Subscription, _} = ejabberd_hooks:run_fold(
 			  roster_get_jid_info, To#jid.lserver,
 			  {none, []}, [To#jid.luser, To#jid.lserver, From]),
+    ToSelf = (From#jid.luser == To#jid.luser)
+	       and (From#jid.lserver == To#jid.lserver),
     Insert = (Type == available)
-	       and ((Subscription == both) or (Subscription == to)),
+	       and ((Subscription == both) or (Subscription == to) or ToSelf),
     Delete = (Type == unavailable) or (Type == error),
     if Insert or Delete ->
 	   LFrom = jid:tolower(From),

@@ -115,7 +115,7 @@ hosts:
 ##   - "/etc/letsencrypt/live/example.com/*.pem"
 ##
 ## If your system provides only a single CA file (CentOS/FreeBSD):
-## s2s_cafile: "/etc/ssl/certs/ca-bundle.pem"
+## ca_file: "/etc/ssl/certs/ca-bundle.pem"
 
 ###.  =================
 ###'  TLS configuration
@@ -221,7 +221,12 @@ listen:
   ##   port: 4560
   ##   ip: "::"
   ##   module: ejabberd_xmlrpc
-  ##   access_commands: {}
+  ##   maxsessions: 10
+  ##   timeout: 5000
+  ##   access_commands:
+  ##     admin:
+  ##       commands: all
+  ##       options: []
 
   ##
   ## To enable secure http upload
@@ -250,7 +255,7 @@ listen:
 ## Allowed values are: false, optional or required
 ## You must specify 'certfiles' option
 ##
-## s2s_use_starttls: required
+## s2s_use_starttls: optional
 
 ##
 ## S2S whitelist or blacklist
@@ -796,9 +801,9 @@ modules:
     search: false
   mod_vcard_xupdate: {}
   ## Convert all avatars posted by Android clients from WebP to JPEG
-  mod_avatar:
-    convert:
-      webp: jpeg
+  ## mod_avatar:  # this module needs compile option --enable-graphics
+  ##   convert:
+  ##     webp: jpeg
   mod_version: {}
   mod_stream_mgmt: {}
   ##   Non-SASL Authentication (XEP-0078) is now disabled by default
