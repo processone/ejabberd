@@ -68,11 +68,7 @@ start() ->
     ejabberd:start_app(os_mon).
 
 excluded_apps() ->
-    %% FIXME: lager gets overloaded very often, but
-    %% it fails to get recovered after brutal kill,
-    %% so it's better to make it tolerate crashes
-    %% rather than ignoring the overload
-    [os_mon, mnesia, sasl, stdlib, kernel, lager].
+    [os_mon, mnesia, sasl, stdlib, kernel].
 
 %%%===================================================================
 %%% gen_event callbacks
@@ -270,8 +266,11 @@ do_kill(Stats, Threshold) ->
 			       false;
 			   false ->
 			       case kill_proc(Name) of
-				   false -> false;
-				   Pid -> {true, Pid}
+				   false ->
+				       false;
+				   Pid ->
+				       maybe_restart_app(App),
+				       {true, Pid}
 			       end
 		       end;
 		  (_) ->
@@ -294,6 +293,12 @@ kill_proc(Name) when is_atom(Name) ->
 kill_proc(Pid) ->
     exit(Pid, kill),
     Pid.
+
+-spec maybe_restart_app(atom()) -> any().
+maybe_restart_app(lager) ->
+    ejabberd_logger:restart();
+maybe_restart_app(_) ->
+    ok.
 
 -spec opt_type(oom_killer) -> fun((boolean()) -> boolean());
 	      (atom()) -> [atom()].
