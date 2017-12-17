@@ -314,16 +314,10 @@ handle_info({'$gen_event', {xmlstreamstart, Name, Attrs}},
 		      send_pkt(State1, Err)
 	      end
       end);
-handle_info({'$gen_event', El}, #{stream_state := wait_for_stream} = State) ->
-    %% TODO: find and fix this in fast_xml
-    error_logger:error_msg("unexpected event from receiver: ~p; "
-			   "xmlstreamstart was expected", [El]),
-    State1 = send_header(State),
-    noreply(
-      case is_disconnected(State1) of
-	  true -> State1;
-	  false -> send_pkt(State1, xmpp:serr_invalid_xml())
-      end);
+handle_info({'$gen_event', {xmlstreamend, _}}, State) ->
+    noreply(process_stream_end({stream, reset}, State));
+handle_info({'$gen_event', closed}, State) ->
+    noreply(process_stream_end({socket, closed}, State));
 handle_info({'$gen_event', {xmlstreamerror, Reason}}, #{lang := Lang}= State) ->
     State1 = send_header(State),
     noreply(
@@ -337,6 +331,16 @@ handle_info({'$gen_event', {xmlstreamerror, Reason}}, #{lang := Lang}= State) ->
 			    xmpp:serr_not_well_formed(Txt, Lang)
 		    end,
 	      send_pkt(State1, Err)
+      end);
+handle_info({'$gen_event', El}, #{stream_state := wait_for_stream} = State) ->
+    %% TODO: find and fix this in fast_xml
+    error_logger:error_msg("unexpected event from receiver: ~p; "
+			   "xmlstreamstart was expected", [El]),
+    State1 = send_header(State),
+    noreply(
+      case is_disconnected(State1) of
+	  true -> State1;
+	  false -> send_pkt(State1, xmpp:serr_invalid_xml())
       end);
 handle_info({'$gen_event', {xmlstreamelement, El}},
 	    #{xmlns := NS, mod := Mod} = State) ->
@@ -364,10 +368,6 @@ handle_info({'$gen_all_state_event', {xmlstreamcdata, Data}},
     noreply(try Mod:handle_cdata(Data, State)
 	    catch _:undef -> State
 	    end);
-handle_info({'$gen_event', {xmlstreamend, _}}, State) ->
-    noreply(process_stream_end({stream, reset}, State));
-handle_info({'$gen_event', closed}, State) ->
-    noreply(process_stream_end({socket, closed}, State));
 handle_info(timeout, #{mod := Mod} = State) ->
     Disconnected = is_disconnected(State),
     noreply(try Mod:handle_timeout(State)
