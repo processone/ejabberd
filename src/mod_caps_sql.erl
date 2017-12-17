@@ -63,9 +63,7 @@ caps_write(LServer, NodePair, Features) ->
 	   sql_write_features_t(NodePair, Features)) of
 	{atomic, _} ->
 	    ok;
-	{aborted, Reason} ->
-	    ?ERROR_MSG("Failed to write to SQL 'caps_features' table: ~p",
-		       [Reason]),
+	{aborted, _Reason} ->
 	    {error, db_failure}
     end.
 

@@ -187,12 +187,10 @@ get_rooms(LServer, Host) ->
 		      #muc_room{name_host = {Room, Host},
 				      opts = mod_muc:opts_to_binary(OptsD2)}
 	      end, RoomOpts);
-	Err ->
-		    ?ERROR_MSG("failed to get rooms subscribers: ~p", [Err]),
+	_Err ->
 		    []
 	    end;
-	Err ->
-	    ?ERROR_MSG("failed to get rooms: ~p", [Err]),
+	_Err ->
 	    []
     end.
 
@@ -266,7 +264,6 @@ register_online_room(ServerHost, Room, Host, Pid) ->
 	ok ->
 	    ok;
 	Err ->
-	    ?ERROR_MSG("failed to update 'muc_online_room': ~p", [Err]),
 	    Err
     end.
 
@@ -290,8 +287,7 @@ find_online_room(ServerHost, Room, Host) ->
 	    end;
 	{selected, []} ->
 	    error;
-	Err ->
-	    ?ERROR_MSG("failed to select 'muc_online_room': ~p", [Err]),
+	_Err ->
 	    error
     end.
 
@@ -302,8 +298,7 @@ count_online_rooms(ServerHost, Host) ->
 		"where host=%(Host)s")) of
 	{selected, [{Num}]} ->
 	    Num;
-	Err ->
-	    ?ERROR_MSG("failed to select 'muc_online_room': ~p", [Err]),
+	_Err ->
 	    0
     end.
 
@@ -319,8 +314,7 @@ get_online_rooms(ServerHost, Host, _RSM) ->
 		      catch _:{bad_node, _} -> []
 		      end
 	      end, Rows);
-	Err ->
-	    ?ERROR_MSG("failed to select 'muc_online_room': ~p", [Err]),
+	_Err ->
 	    []
     end.
 
@@ -340,7 +334,6 @@ register_online_user(ServerHost, {U, S, R}, Room, Host) ->
 	ok ->
 	    ok;
 	Err ->
-	    ?ERROR_MSG("failed to update 'muc_online_users': ~p", [Err]),
 	    Err
     end.
 
@@ -359,8 +352,7 @@ count_online_rooms_by_user(ServerHost, U, S) ->
 		"username=%(U)s and server=%(S)s")) of
 	{selected, [{Num}]} ->
 	    Num;
-	Err ->
-	    ?ERROR_MSG("failed to select 'muc_online_users': ~p", [Err]),
+	_Err ->
 	    0
     end.
 
@@ -371,8 +363,7 @@ get_online_rooms_by_user(ServerHost, U, S) ->
 		"username=%(U)s and server=%(S)s")) of
 	{selected, Rows} ->
 	    Rows;
-	Err ->
-	    ?ERROR_MSG("failed to select 'muc_online_users': ~p", [Err]),
+	_Err ->
 	    []
     end.
 
@@ -424,8 +415,7 @@ get_subscribed_rooms(LServer, Host, Jid) ->
 	     " and host=%(Host)s")) of
 	{selected, Subs} ->
 	    [jid:make(Room, Host, <<>>) || {Room} <- Subs];
-	Error ->
-	    ?ERROR_MSG("Error when fetching subscribed rooms ~p", [Error]),
+	_Error ->
 	    []
     end.
 

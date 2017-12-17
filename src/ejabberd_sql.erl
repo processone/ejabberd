@@ -158,18 +158,24 @@ sql_call(Host, Msg) ->
         case ejabberd_sql_sup:get_random_pid(Host) of
           none -> {error, <<"Unknown Host">>};
           Pid ->
-            p1_fsm:sync_send_event(Pid,{sql_cmd, Msg,
-                                            p1_time_compat:monotonic_time(milli_seconds)},
-                                       query_timeout(Host))
+		sync_send_event(Pid,{sql_cmd, Msg,
+				     p1_time_compat:monotonic_time(milli_seconds)},
+				query_timeout(Host))
           end;
       _State -> nested_op(Msg)
     end.
 
 keep_alive(Host, PID) ->
-    p1_fsm:sync_send_event(PID,
-			       {sql_cmd, {sql_query, ?KEEPALIVE_QUERY},
-                                p1_time_compat:monotonic_time(milli_seconds)},
-			       query_timeout(Host)).
+    sync_send_event(PID,
+		    {sql_cmd, {sql_query, ?KEEPALIVE_QUERY},
+		     p1_time_compat:monotonic_time(milli_seconds)},
+		    query_timeout(Host)).
+
+sync_send_event(Pid, Msg, Timeout) ->
+    try p1_fsm:sync_send_event(Pid, Msg, Timeout)
+    catch _:{Reason, {p1_fsm, _, _}} ->
+	    {error, Reason}
+    end.
 
 -spec sql_query_t(sql_query()) -> sql_query_result().
 
@@ -270,6 +276,7 @@ sqlite_file(Host) ->
 %%% Callback functions from gen_fsm
 %%%----------------------------------------------------------------------
 init([Host, StartInterval]) ->
+    process_flag(trap_exit, true),
     case ejabberd_config:get_option({sql_keepalive_interval, Host}) of
         undefined ->
             ok;
@@ -1077,6 +1084,8 @@ query_timeout(LServer) ->
     timer:seconds(
       ejabberd_config:get_option({sql_query_timeout, LServer}, 60)).
 
+check_error({error, Why} = Err, _Query) when Why == killed ->
+    Err;
 check_error({error, Why} = Err, #sql_query{} = Query) ->
     ?ERROR_MSG("SQL query '~s' at ~p failed: ~p",
                [Query#sql_query.hash, Query#sql_query.loc, Why]),

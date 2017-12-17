@@ -71,8 +71,7 @@ set_password(User, Server, Password) ->
     case ejabberd_sql:sql_transaction(Server, F) of
 	{atomic, _} ->
 	    ok;
-	{aborted, Reason} ->
-	    ?ERROR_MSG("failed to write to SQL table: ~p", [Reason]),
+	{aborted, _} ->
 	    {error, db_failure}
     end.
 
@@ -115,9 +114,7 @@ get_password(User, Server) ->
 			iterationcount = IterationCount}};
 	{selected, []} ->
 	    error;
-	Err ->
-	    ?ERROR_MSG("Failed to read password for user ~s@~s: ~p",
-		       [User, Server, Err]),
+	_ ->
 	    error
     end.
 
@@ -125,9 +122,7 @@ remove_user(User, Server) ->
     case del_user(Server, User) of
 	{updated, _} ->
 	    ok;
-	Err ->
-	    ?ERROR_MSG("failed to delete user ~s@~s: ~p",
-		       [User, Server, Err]),
+	_ ->
 	    {error, db_failure}
     end.
 

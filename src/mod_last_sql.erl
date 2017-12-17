@@ -51,9 +51,7 @@ get_last(LUser, LServer) ->
 	    error;
         {selected, [{TimeStamp, Status}]} ->
             {ok, {TimeStamp, Status}};
-        Reason ->
-	    ?ERROR_MSG("failed to get last for user ~s@~s: ~p",
-		       [LUser, LServer, Reason]),
+        _Reason ->
 	    {error, db_failure}
     end.
 
@@ -65,9 +63,7 @@ store_last_info(LUser, LServer, TimeStamp, Status) ->
 		      "state=%(Status)s"]) of
 	ok ->
 	    ok;
-	Err ->
-	    ?ERROR_MSG("failed to store last activity for ~s@~s: ~p",
-		       [LUser, LServer, Err]),
+	_Err ->
 	    {error, db_failure}
     end.
 

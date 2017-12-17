@@ -80,8 +80,7 @@ set_session(#session{sid = {Now, Pid}, usr = {U, LServer, R},
                       "info=%(InfoS)s"]) of
 	ok ->
 	    ok;
-	Err ->
-	    ?ERROR_MSG("failed to update 'sm' table: ~p", [Err]),
+	_Err ->
 	    {error, db_failure}
     end.
 
@@ -93,8 +92,7 @@ delete_session(#session{usr = {_, LServer, _}, sid = {Now, Pid}}) ->
 	   ?SQL("delete from sm where usec=%(TS)d and pid=%(PidS)s")) of
 	{updated, _} ->
 	    ok;
-	Err ->
-	    ?ERROR_MSG("failed to delete from 'sm' table: ~p", [Err]),
+	_Err ->
 	    {error, db_failure}
     end.
 
@@ -117,8 +115,7 @@ get_sessions(LServer) ->
 		      catch _:{bad_node, _} -> []
 		      end
 	      end, Rows);
-	Err ->
-	    ?ERROR_MSG("failed to select from 'sm' table: ~p", [Err]),
+	_Err ->
 	    []
     end.
 
@@ -135,8 +132,7 @@ get_sessions(LUser, LServer) ->
 			   catch _:{bad_node, _} -> []
 			   end
 		   end, Rows)};
-	Err ->
-	    ?ERROR_MSG("failed to select from 'sm' table: ~p", [Err]),
+	_Err ->
 	    {error, db_failure}
     end.
 

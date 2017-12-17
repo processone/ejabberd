@@ -59,8 +59,7 @@ open_session(SID, Pid) ->
 		      "pid=%(PidS)s"]) of
 	ok ->
 	    ok;
-	Err ->
-	    ?ERROR_MSG("failed to update 'bosh' table: ~p", [Err]),
+	_Err ->
 	    {error, db_failure}
     end.
 
@@ -69,8 +68,7 @@ close_session(SID) ->
 	   ?MYNAME, ?SQL("delete from bosh where sid=%(SID)s")) of
 	{updated, _} ->
 	    ok;
-	Err ->
-	    ?ERROR_MSG("failed to delete from 'bosh' table: ~p", [Err]),
+	_Err ->
 	    {error, db_failure}
     end.
 
@@ -84,8 +82,7 @@ find_session(SID) ->
 	    end;
 	{selected, []} ->
 	    {error, notfound};
-	Err ->
-	    ?ERROR_MSG("failed to select 'bosh' table: ~p", [Err]),
+	_Err ->
 	    {error, db_failure}
     end.
 

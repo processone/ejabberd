@@ -57,8 +57,7 @@ store_session(LUser, LServer, NowTS, PushJID, Node, XData) ->
 		      "xml=%(XML)s"]) of
 	ok ->
 	    {ok, {NowTS, PushLJID, Node, XData}};
-	Err ->
-	    ?ERROR_MSG("Failed to update 'push_session' table: ~p", [Err]),
+	_Err ->
 	    {error, db_failure}
     end.
 
@@ -77,8 +76,7 @@ lookup_session(LUser, LServer, PushJID, Node) ->
 	    {ok, {NowTS, PushLJID, Node, XData}};
 	{selected, []} ->
 	    {error, notfound};
-	Err ->
-	    ?ERROR_MSG("Failed to select from 'push_session' table: ~p", [Err]),
+	_Err ->
 	    {error, db_failure}
     end.
 
@@ -95,8 +93,7 @@ lookup_session(LUser, LServer, NowTS) ->
 	    {ok, {NowTS, PushLJID, Node, XData}};
 	{selected, []} ->
 	    {error, notfound};
-	Err ->
-	    ?ERROR_MSG("Failed to select from 'push_session' table: ~p", [Err]),
+	_Err ->
 	    {error, db_failure}
     end.
 
@@ -115,8 +112,7 @@ lookup_sessions(LUser, LServer, PushJID) ->
 			   XData = decode_xdata(XML, LUser, LServer),
 			   {NowTS, PushLJID, Node, XData}
 		   end, Rows)};
-	Err ->
-	    ?ERROR_MSG("Failed to select from 'push_session' table: ~p", [Err]),
+	_Err ->
 	    {error, db_failure}
     end.
 
@@ -134,8 +130,7 @@ lookup_sessions(LUser, LServer) ->
 			   PushLJID = jid:tolower(jid:decode(Service)),
 			   {NowTS, PushLJID,Node, XData}
 		   end, Rows)};
-	Err ->
-	    ?ERROR_MSG("Failed to select from 'push_session' table: ~p", [Err]),
+	_Err ->
 	    {error, db_failure}
     end.
 
@@ -153,8 +148,7 @@ lookup_sessions(LServer) ->
 			   PushLJID = jid:tolower(jid:decode(Service)),
 			   {NowTS, PushLJID, Node, XData}
 		   end, Rows)};
-	Err ->
-	    ?ERROR_MSG("Failed to select from 'push_session' table: ~p", [Err]),
+	_Err ->
 	    {error, db_failure}
     end.
 
@@ -166,8 +160,7 @@ delete_session(LUser, LServer, NowTS) ->
 		"username=%(LUser)s and %(LServer)H and timestamp=%(TS)d")) of
 	{updated, _} ->
 	    ok;
-	Err ->
-	    ?ERROR_MSG("failed to delete from 'push_session' table: ~p", [Err]),
+	_Err ->
 	    {error, db_failure}
     end.
 
@@ -179,8 +172,7 @@ delete_old_sessions(LServer, Time) ->
                 "and %(LServer)H")) of
 	{updated, _} ->
 	    ok;
-	Err ->
-	    ?ERROR_MSG("failed to delete from 'push_session' table: ~p", [Err]),
+	_Err ->
 	    {error, db_failure}
     end.
 

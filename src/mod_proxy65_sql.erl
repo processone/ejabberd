@@ -69,7 +69,6 @@ register_stream(SID, Pid) ->
 	{atomic, _} ->
 	    ok;
 	{aborted, Reason} ->
-	    ?ERROR_MSG("failed to register stream: ~p", [Reason]),
 	    {error, Reason}
     end.
 
@@ -82,7 +81,6 @@ unregister_stream(SID) ->
 	{atomic, _} ->
 	    ok;
 	{aborted, Reason} ->
-	    ?ERROR_MSG("failed to unregister stream: ~p", [Reason]),
 	    {error, Reason}
     end.
 
@@ -133,7 +131,6 @@ activate_stream(SID, IJID, MaxConnections, _Node) ->
 	{aborted, {limit, _, _} = Limit} ->
 	    {error, Limit};
 	{aborted, Reason} ->
-	    ?ERROR_MSG("failed to activate bytestream: ~p", [Reason]),
 	    {error, Reason}
     end.
 

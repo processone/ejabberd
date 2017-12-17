@@ -48,8 +48,7 @@ enable(LUser, LServer, LResource, NS) ->
 		      "node=%(NodeS)s"]) of
 	ok ->
 	    ok;
-	Err ->
-	    ?ERROR_MSG("failed to update 'carboncopy' table: ~p", [Err]),
+	_Err ->
 	    {error, db_failure}
     end.
 
@@ -60,8 +59,7 @@ disable(LUser, LServer, LResource) ->
 		"and %(LServer)H and resource=%(LResource)s")) of
 	{updated, _} ->
 	    ok;
-	Err ->
-	    ?ERROR_MSG("failed to delete from 'carboncopy' table: ~p", [Err]),
+	_Err ->
 	    {error, db_failure}
     end.
 
@@ -73,8 +71,7 @@ list(LUser, LServer) ->
 	{selected, Rows} ->
 	    {ok, [{Resource, NS, binary_to_atom(Node, latin1)}
 		  || {Resource, NS, Node} <- Rows]};
-	Err ->
-	    ?ERROR_MSG("failed to select from 'carboncopy' table: ~p", [Err]),
+	_Err ->
 	    {error, db_failure}
     end.
 

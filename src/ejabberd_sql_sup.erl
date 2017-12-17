@@ -86,7 +86,7 @@ init([Host]) ->
 
 get_pids(Host) ->
     Rs = mnesia:dirty_read(sql_pool, Host),
-    [R#sql_pool.pid || R <- Rs].
+    [R#sql_pool.pid || R <- Rs, is_process_alive(R#sql_pool.pid)].
 
 get_random_pid(Host) ->
     case get_pids(Host) of
