@@ -47,13 +47,6 @@ init([]) ->
 	       5000,
 	       worker,
 	       [ejabberd_cluster]},
-    SystemMonitor =
-	{ejabberd_system_monitor,
-	 {ejabberd_system_monitor, start_link, []},
-	 permanent,
-	 brutal_kill,
-	 worker,
-	 [ejabberd_system_monitor]},
     S2S =
 	{ejabberd_s2s,
 	 {ejabberd_s2s, start_link, []},
@@ -172,7 +165,6 @@ init([]) ->
 	   PKIX,
 	   ACME,
 	   Listener,
-	   SystemMonitor,
 	   S2S,
 	   Captcha,
 	   S2SInSupervisor,

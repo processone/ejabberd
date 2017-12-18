@@ -61,8 +61,7 @@ register_route(Domain, ServerHost, LocalHint, _, Pid) ->
 		      "local_hint=%(LocalHintS)s"]) of
 	ok ->
 	    ok;
-	Err ->
-	    ?ERROR_MSG("failed to update 'route' table: ~p", [Err]),
+	_ ->
 	    {error, db_failure}
     end.
 
@@ -75,8 +74,7 @@ unregister_route(Domain, _, Pid) ->
 		"and pid=%(PidS)s and node=%(Node)s")) of
 	{updated, _} ->
 	    ok;
-	Err ->
-	    ?ERROR_MSG("failed to delete from 'route' table: ~p", [Err]),
+	_ ->
 	    {error, db_failure}
     end.
 
@@ -90,8 +88,7 @@ find_routes(Domain) ->
 		   fun(Row) ->
 			   row_to_route(Domain, Row)
 		   end, Rows)};
-	Err ->
-	    ?ERROR_MSG("failed to select from 'route' table: ~p", [Err]),
+	_ ->
 	    {error, db_failure}
     end.
 
@@ -101,8 +98,7 @@ get_all_routes() ->
 	   ?SQL("select @(domain)s from route where domain <> server_host")) of
 	{selected, Domains} ->
 	    {ok, [Domain || {Domain} <- Domains]};
-	Err ->
-	    ?ERROR_MSG("failed to select from 'route' table: ~p", [Err]),
+	_ ->
 	    {error, db_failure}
     end.
 

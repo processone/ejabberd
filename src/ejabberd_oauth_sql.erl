@@ -57,9 +57,7 @@ store(R) ->
 	     "expire=%(Expire)d"]) of
 	ok ->
 	    ok;
-	Err ->
-	    ?ERROR_MSG("Failed to write to SQL 'oauth_token' table: ~p",
-		       [Err]),
+	_ ->
 	    {error, db_failure}
     end.
 
