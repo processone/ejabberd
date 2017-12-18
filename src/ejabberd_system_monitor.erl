@@ -60,6 +60,7 @@
 -spec start() -> ok.
 start() ->
     gen_event:add_handler(alarm_handler, ?MODULE, []),
+    gen_event:swap_handler(alarm_handler, {alarm_handler, swap}, {?MODULE, []}),
     application:load(os_mon),
     application:set_env(os_mon, start_cpu_sup, false),
     application:set_env(os_mon, start_disksup, false),
