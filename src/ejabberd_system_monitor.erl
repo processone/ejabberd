@@ -80,13 +80,27 @@ handle_event({set_alarm, {system_memory_high_watermark, _}}, State) ->
     error_logger:warning_msg(
       "More than 80% of OS memory is allocated, "
       "starting OOM watchdog", []),
-    {ok, handle_overload(State)};
+    handle_overload(State),
+    {ok, restart_timer(State)};
 handle_event({clear_alarm, system_memory_high_watermark}, State) ->
     cancel_timer(State#state.tref),
     error_logger:info_msg(
       "Memory consumption is back to normal, "
       "stopping OOM watchdog", []),
     {ok, State#state{tref = undefined}};
+handle_event({set_alarm, {process_memory_high_watermark, Pid}}, State) ->
+    case proc_stat(Pid, get_app_pids()) of
+	#proc_stat{name = Name} = ProcStat ->
+	    error_logger:warning_msg(
+	      "Process ~p consumes more than 5% of OS memory (~s)",
+	      [Name, format_proc(ProcStat)]),
+	    handle_overload(State),
+	    {ok, State};
+	_ ->
+	    {ok, State}
+    end;
+handle_event({clear_alarm, process_memory_high_watermark}, State) ->
+    {ok, State};
 handle_event(Event, State) ->
     error_logger:warning_msg("unexpected event: ~p", [Event]),
     {ok, State}.
@@ -95,7 +109,8 @@ handle_call(_Request, State) ->
     {ok, {error, badarg}, State}.
 
 handle_info({timeout, _TRef, handle_overload}, State) ->
-    {ok, handle_overload(State)};
+    handle_overload(State),
+    {ok, restart_timer(State)};
 handle_info(Info, State) ->
     error_logger:warning_msg("unexpected info: ~p", [Info]),
     {ok, State}.
@@ -109,11 +124,14 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
--spec handle_overload(state()) -> state().
+-spec handle_overload(state()) -> ok.
 handle_overload(State) ->
-    AllProcs = processes(),
+    handle_overload(State, processes()).
+
+-spec handle_overload(state(), [pid()]) -> ok.
+handle_overload(_State, Procs) ->
     AppPids = get_app_pids(),
-    {TotalMsgs, ProcsNum, Apps, Stats} = overloaded_procs(AppPids, AllProcs),
+    {TotalMsgs, ProcsNum, Apps, Stats} = overloaded_procs(AppPids, Procs),
     if TotalMsgs >= 10000 ->
 	    SortedStats = lists:reverse(lists:keysort(#proc_stat.qlen, Stats)),
 	    error_logger:warning_msg(
@@ -122,15 +140,14 @@ handle_overload(State) ->
 	      "from the following applications: ~s; "
 	      "the top processes are:~n~s",
 	      [TotalMsgs, ProcsNum,
-	       round(ProcsNum*100/length(AllProcs)),
+	       round(ProcsNum*100/length(Procs)),
 	       format_apps(Apps),
 	       format_top_procs(SortedStats)]),
 	    kill(SortedStats, round(TotalMsgs/ProcsNum));
        true ->
 	    ok
     end,
-    lists:foreach(fun erlang:garbage_collect/1, AllProcs),
-    restart_timer(State).
+    lists:foreach(fun erlang:garbage_collect/1, Procs).
 
 -spec get_app_pids() -> map().
 get_app_pids() ->
@@ -227,16 +244,21 @@ format_apps(Apps) ->
 -spec format_top_procs([proc_stat()]) -> io:data().
 format_top_procs(Stats) ->
     Stats1 = lists:sublist(Stats, 5),
-    string:join(lists:map(fun format_proc/1, Stats1), io_lib:nl()).
+    string:join(
+      lists:map(
+	fun(#proc_stat{name = Name} = Stat) ->
+		[io_lib:format("** ~w: ", [Name]), format_proc(Stat)]
+	end,Stats1),
+      io_lib:nl()).
 
 -spec format_proc(proc_stat()) -> io:data().
 format_proc(#proc_stat{qlen = Len, memory = Mem, initial_call = InitCall,
 		       current_function = CurrFun, ancestors = Ancs,
-		       application = App, name = Name}) ->
+		       application = App}) ->
     io_lib:format(
-      "** ~w: msgs = ~b, memory = ~b, initial_call = ~s, "
+      "msgs = ~b, memory = ~b, initial_call = ~s, "
       "current_function = ~s, ancestors = ~w, application = ~w",
-      [Name, Len, Mem, format_mfa(InitCall), format_mfa(CurrFun), Ancs, App]).
+      [Len, Mem, format_mfa(InitCall), format_mfa(CurrFun), Ancs, App]).
 
 -spec format_mfa(mfa()) -> io:data().
 format_mfa({M, F, A}) when is_atom(M), is_atom(F), is_integer(A) ->
