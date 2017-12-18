@@ -63,7 +63,6 @@ start() ->
     gen_event:swap_handler(alarm_handler, {alarm_handler, swap}, {?MODULE, []}),
     application:load(os_mon),
     application:set_env(os_mon, start_cpu_sup, false),
-    application:set_env(os_mon, start_disksup, false),
     application:set_env(os_mon, start_os_sup, false),
     application:set_env(os_mon, start_memsup, true),
     ejabberd:start_app(os_mon).
@@ -101,6 +100,12 @@ handle_event({set_alarm, {process_memory_high_watermark, Pid}}, State) ->
 	    {ok, State}
     end;
 handle_event({clear_alarm, process_memory_high_watermark}, State) ->
+    {ok, State};
+handle_event({set_alarm, {{disk_almost_full, MountPoint}, _}}, State) ->
+    error_logger:warning_msg("Disk is almost full on ~p", [MountPoint]),
+    {ok, State};
+handle_event({clear_alarm, {disk_almost_full, MountPoint}}, State) ->
+    error_logger:info_msg("Disk usage is back to normal on ~p", [MountPoint]),
     {ok, State};
 handle_event(Event, State) ->
     error_logger:warning_msg("unexpected event: ~p", [Event]),
