@@ -823,9 +823,9 @@ get_room_occupants_number(Room, Host) ->
 send_direct_invitation(RoomName, RoomService, Password, Reason, UsersString) ->
     RoomJid = jid:make(RoomName, RoomService),
     XmlEl = build_invitation(Password, Reason, RoomJid),
-    UsersStrings = get_users_to_invite(RoomJid, UsersString),
-    [send_direct_invitation(RoomJid, UserStrings, XmlEl)
-     || UserStrings <- UsersStrings],
+    Users = get_users_to_invite(RoomJid, UsersString),
+    [send_direct_invitation(RoomJid, UserJid, XmlEl)
+     || UserJid <- Users],
     timer:sleep(1000),
     ok.
 
@@ -843,8 +843,9 @@ get_users_to_invite(RoomJid, UsersString) ->
 					  orelse UserJid#jid.lserver /= OccupantJid#jid.lserver
 			      end,
 			      OccupantsJids),
-	      case Val of
-		  true -> {true, UserJid};
+	      case {UserJid#jid.luser, Val} of
+		  {<<>>, _} -> false;
+		  {_, true} -> {true, UserJid};
 		  _ -> false
 	      end
       end,
