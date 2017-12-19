@@ -331,7 +331,8 @@ normal_state({route, <<"">>,
     catch _:{xmpp_codec, Why} ->
 	    ErrTxt = xmpp:io_format_error(Why),
 	    Err = xmpp:err_bad_request(ErrTxt, Lang),
-	    ejabberd_router:route_error(IQ0, Err)
+	    ejabberd_router:route_error(IQ0, Err),
+	    {next_state, normal_state, StateData}
     end;
 normal_state({route, <<"">>, #iq{} = IQ}, StateData) ->
     Err = xmpp:err_bad_request(),
