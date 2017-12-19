@@ -314,8 +314,11 @@ get_session_sid(User, Server, Resource) ->
     LResource = jid:resourceprep(Resource),
     Mod = get_sm_backend(LServer),
     case online(get_sessions(Mod, LUser, LServer, LResource)) of
-	[#session{sid = SID}] -> SID;
-	_ -> none
+	[] ->
+	    none;
+	Ss ->
+	    #session{sid = SID} = lists:max(Ss),
+	    SID
     end.
 
 -spec get_session_sids(binary(), binary()) -> [sid()].
