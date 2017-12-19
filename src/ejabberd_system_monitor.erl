@@ -42,6 +42,8 @@
 %%-include("logger.hrl").
 
 -define(CHECK_INTERVAL, timer:seconds(30)).
+-define(DISK_FULL_THRES, 0.99).
+
 -record(state, {tref :: reference(),
 		mref :: reference()}).
 -record(proc_stat, {qlen :: non_neg_integer(),
@@ -65,6 +67,8 @@ start() ->
     application:set_env(os_mon, start_cpu_sup, false),
     application:set_env(os_mon, start_os_sup, false),
     application:set_env(os_mon, start_memsup, true),
+    application:set_env(os_mon, start_disksup, true),
+    application:set_env(os_mon, disk_almost_full_threshold, ?DISK_FULL_THRES),
     ejabberd:start_app(os_mon).
 
 excluded_apps() ->
