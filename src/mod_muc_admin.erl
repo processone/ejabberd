@@ -28,7 +28,8 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, reload/3, depends/2, muc_online_rooms/1,
+-export([start/2, stop/1, reload/3, depends/2, 
+	 muc_online_rooms/1, muc_online_rooms_by_regex/2,
 	 muc_register_nick/3, muc_unregister_nick/2,
 	 create_room_with_opts/4, create_room/3, destroy_room/2,
 	 create_rooms_file/1, destroy_rooms_file/1,
@@ -95,6 +96,22 @@ get_commands_spec() ->
 		       result_example = ["room1@muc.example.com", "room2@muc.example.com"],
 		       args = [{host, binary}],
 		       result = {rooms, {list, {room, string}}}},
+	#ejabberd_commands{name = muc_online_rooms_by_regex, tags = [muc],
+		       desc = "List existing rooms ('global' to get all vhosts) by regex",
+                       policy = admin,
+		       module = ?MODULE, function = muc_online_rooms_by_regex,
+		       args_desc = ["Server domain where the MUC service is, or 'global' for all", 
+			   				"Regex pattern for room name"],
+		       args_example = ["example.com", "^prefix"],
+		       result_desc = "List of rooms with summary",
+		       result_example = [{"room1@muc.example.com", "true", 10}, 
+			   					 {"room2@muc.example.com", "false", 10}],
+		       args = [{host, binary}, {regex, binary}],
+		       result = {rooms, {list, {room, {tuple,
+							  [{jid, string},
+							   {public, string},
+							   {participants, integer}
+							  ]}}}}},			   
      #ejabberd_commands{name = muc_register_nick, tags = [muc],
 		       desc = "Register a nick to a User JID in the MUC service of a server",
 		       module = ?MODULE, function = muc_register_nick,
@@ -311,6 +328,32 @@ muc_online_rooms(ServerHost) ->
 	      [<<Name/binary, "@", Host/binary>>
 	       || {Name, _, _} <- mod_muc:get_online_rooms(Host)]
       end, Hosts).
+
+muc_online_rooms_by_regex(ServerHost, Regex) ->
+	{_, P} = re:compile(Regex),
+    Hosts = find_hosts(ServerHost),
+    lists:flatmap(
+      fun(Host) ->
+	      [build_summary_room(Name, RoomHost, Pid)
+	       || {Name, RoomHost, Pid} <- mod_muc:get_online_rooms(Host),
+		   is_name_match(Name, P)]
+      end, Hosts).
+
+is_name_match(Name, P) ->
+	case re:run(Name, P) of
+		{match, _} -> true;
+		nomatch -> false
+	end.
+
+build_summary_room(Name, Host, Pid) ->
+    C = get_room_config(Pid),
+    Public = C#config.public,
+    S = get_room_state(Pid),
+    Participants = dict:size(S#state.users),
+    {<<Name/binary, "@", Host/binary>>,
+	 misc:atom_to_binary(Public),
+     Participants
+    }.	  
 
 muc_register_nick(Nick, FromBinary, ServerHost) ->
     Host = find_host(ServerHost),
