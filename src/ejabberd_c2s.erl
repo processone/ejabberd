@@ -287,8 +287,8 @@ process_terminated(#{sid := SID, sockmod := SockMod, socket := Socket,
     State1;
 process_terminated(#{sockmod := SockMod, socket := Socket,
 		     stop_reason := {tls, _}} = State, Reason) ->
-    ?ERROR_MSG("(~s) Failed to secure c2s connection: ~s",
-	       [SockMod:pp(Socket), format_reason(State, Reason)]),
+    ?WARNING_MSG("(~s) Failed to secure c2s connection: ~s",
+		 [SockMod:pp(Socket), format_reason(State, Reason)]),
     State;
 process_terminated(State, _Reason) ->
     State.

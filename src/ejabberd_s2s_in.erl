@@ -289,8 +289,8 @@ terminate(Reason, #{auth_domains := AuthDomains,
 		    sockmod := SockMod, socket := Socket} = State) ->
     case maps:get(stop_reason, State, undefined) of
 	{tls, _} = Err ->
-	    ?ERROR_MSG("(~s) Failed to secure inbound s2s connection: ~s",
-		       [SockMod:pp(Socket), xmpp_stream_in:format_error(Err)]);
+	    ?WARNING_MSG("(~s) Failed to secure inbound s2s connection: ~s",
+			 [SockMod:pp(Socket), xmpp_stream_in:format_error(Err)]);
 	_ ->
 	    ok
     end,
