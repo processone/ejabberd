@@ -103,6 +103,7 @@ features() ->
 	<<"modify-affiliations">>,
 	<<"outcast-affiliation">>,
 	<<"persistent-items">>,
+	<<"multi-items">>,
 	<<"publish">>,
 	<<"publish-only-affiliation">>,
 	<<"publish-options">>,

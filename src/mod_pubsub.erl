@@ -35,7 +35,7 @@
 -behaviour(gen_mod).
 -behaviour(gen_server).
 -author('christophe.romain@process-one.net').
--protocol({xep, 60, '1.13-1'}).
+-protocol({xep, 60, '1.14'}).
 -protocol({xep, 163, '1.2'}).
 -protocol({xep, 248, '0.2'}).
 
