@@ -710,23 +710,19 @@ create_rooms_file(Filename) ->
 %%---------------
 %% Control
 
-rooms_unused_list(Host, Days) ->
-    rooms_unused_report(list, Host, Days).
-rooms_unused_destroy(Host, Days) ->
-    rooms_unused_report(destroy, Host, Days).
+rooms_unused_list(ServerHost, Days) ->
+    rooms_unused_report(list, ServerHost, Days).
+rooms_unused_destroy(ServerHost, Days) ->
+    rooms_unused_report(destroy, ServerHost, Days).
 
-rooms_unused_report(Action, Host, Days) ->
-    {NA, NP, RP} = muc_unused(Action, Host, Days),
+rooms_unused_report(Action, ServerHost, Days) ->
+    {NA, NP, RP} = muc_unused(Action, ServerHost, Days),
     io:format("Unused rooms: ~p out of ~p~n", [NP, NA]),
     [<<R/binary, "@", H/binary>> || {R, H, _P} <- RP].
 
-muc_unused(Action, ServerHost, Days) ->
-    Host = find_host(ServerHost),
-    muc_unused2(Action, ServerHost, Host, Days).
-
-muc_unused2(Action, ServerHost, Host, Last_allowed) ->
+muc_unused(Action, ServerHost, Last_allowed) ->
     %% Get all required info about all existing rooms
-    Rooms_all = get_rooms(Host),
+    Rooms_all = get_rooms(ServerHost),
 
     %% Decide which ones pass the requirements
     Rooms_pass = decide_rooms(Rooms_all, Last_allowed),
@@ -781,7 +777,7 @@ decide_room({_Room_name, _Host, Room_pid}, Last_allowed) ->
 			   true ->
 			       {false, Ts_uptime};
 			   false ->
-			       Last_message = get_queue_last(History),
+			       Last_message = calendar:now_to_universal_time(get_queue_last(History)),
 			       {_, _, _, Ts_last, _} = Last_message,
 			       Ts_diff =
 				   calendar:datetime_to_gregorian_seconds(Ts_now)
@@ -1203,8 +1199,7 @@ find_hosts(Global) when Global == global;
       fun(ServerHost) ->
 	      case gen_mod:is_loaded(ServerHost, mod_muc) of
 		  true ->
-		      [gen_mod:get_module_opt_host(
-			 ServerHost, mod_muc, <<"conference.@HOST@">>)];
+		      [find_host(ServerHost)];
 		  false ->
 		      []
 	      end
@@ -1214,8 +1209,7 @@ find_hosts(ServerHost) when is_list(ServerHost) ->
 find_hosts(ServerHost) ->
     case gen_mod:is_loaded(ServerHost, mod_muc) of
 	true ->
-	    [gen_mod:get_module_opt_host(
-	       ServerHost, mod_muc, <<"conference.@HOST@">>)];
+	    [find_host(ServerHost)];
 	false ->
 	    []
     end.
