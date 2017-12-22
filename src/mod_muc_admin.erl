@@ -777,8 +777,9 @@ decide_room({_Room_name, _Host, Room_pid}, Last_allowed) ->
 			   true ->
 			       {false, Ts_uptime};
 			   false ->
-			       Last_message = calendar:now_to_universal_time(get_queue_last(History)),
-			       {_, _, _, Ts_last, _} = Last_message,
+			       Last_message = get_queue_last(History),
+			       Ts_last = calendar:now_to_universal_time(
+					   element(4, Last_message)),
 			       Ts_diff =
 				   calendar:datetime_to_gregorian_seconds(Ts_now)
 				   - calendar:datetime_to_gregorian_seconds(Ts_last),
