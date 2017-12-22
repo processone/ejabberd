@@ -35,6 +35,9 @@
 	 c2s_handle_recv/3]).
 %% adjust pending session timeout
 -export([get_resume_timeout/1, set_resume_timeout/2]).
+%% API (used by mod_stream_mgmt_s2s)
+-export ([mgmt_queue_drop/2, mgmt_queue_add/2, cancel_ack_timer/1,
+	  update_num_stanzas_in/2]).
 
 -include("ejabberd.hrl").
 -include("xmpp.hrl").

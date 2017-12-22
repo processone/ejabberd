@@ -41,7 +41,7 @@
 -export([handle_unexpected_info/2, handle_unexpected_cast/2,
 	 reject_unauthenticated_packet/2, process_closed/2]).
 %% API
--export([stop/1, close/1, close/2, send/2, update_state/2, establish/1,
+-export([stop/1, close/1, close/2, send/2, call/3, reply/2, update_state/2, establish/1,
 	 host_up/1, host_down/1]).
 
 -include("ejabberd.hrl").
@@ -95,6 +95,13 @@ establish(State) ->
 		   {module(), atom(), list()}) -> ok.
 update_state(Ref, Callback) ->
     xmpp_stream_in:cast(Ref, {update_state, Callback}).
+
+-spec call(pid(), term(), non_neg_integer() | infinity) -> term().
+call(Ref, Msg, Timeout) ->
+	xmpp_stream_in:call(Ref, Msg, Timeout).
+
+reply(Ref, Reply) ->
+	xmpp_stream_in:reply(Ref, Reply).
 
 -spec host_up(binary()) -> ok.
 host_up(Host) ->
@@ -169,15 +176,17 @@ handle_stream_start(_StreamStart, #{lserver := LServer} = State) ->
 	    send(State, xmpp:serr_host_unknown());
 	true ->
 	    ServerHost = ejabberd_router:host_of_route(LServer),
-	    State#{server_host => ServerHost}
+	    State1 = State#{server_host => ServerHost}, 
+	    ejabberd_hooks:run_fold(s2s_in_stream_started, ServerHost, State1, [])
     end.
 
 handle_stream_end(Reason, #{server_host := LServer} = State) ->
     State1 = State#{stop_reason => Reason},
     ejabberd_hooks:run_fold(s2s_in_closed, LServer, State1, [Reason]).
-
+    
 handle_stream_established(State) ->
-    set_idle_timeout(State#{established => true}).
+	UniqueId = p1_time_compat:unique_integer(), % for xep-0198 s2s
+    set_idle_timeout(State#{established => true, unique_id => UniqueId}).
 
 handle_auth_success(RServer, Mech, _AuthModule,
 		    #{sockmod := SockMod,
@@ -286,7 +295,7 @@ handle_info(Info, #{server_host := LServer} = State) ->
     ejabberd_hooks:run_fold(s2s_in_handle_info, LServer, State, [Info]).
 
 terminate(Reason, #{auth_domains := AuthDomains,
-		    sockmod := SockMod, socket := Socket} = State) ->
+		    sockmod := SockMod, socket := Socket, server_host := LServer} = State) ->
     case maps:get(stop_reason, State, undefined) of
 	{tls, _} = Err ->
 	    ?WARNING_MSG("(~s) Failed to secure inbound s2s connection: ~s",
@@ -302,7 +311,8 @@ terminate(Reason, #{auth_domains := AuthDomains,
 	      end, ok, AuthDomains);
 	_ ->
 	    ok
-    end.
+    end,
+    ejabberd_hooks:run_fold(s2s_in_terminate, LServer, State, [Reason]).
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.

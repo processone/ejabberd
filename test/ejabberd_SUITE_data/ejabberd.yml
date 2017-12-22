@@ -503,6 +503,8 @@ Welcome to this XMPP server."
   mod_stream_mgmt:
     max_ack_queue: 10
     resume_timeout: 3
+  mod_stream_mgmt_s2s:
+    resume_timeout: 3
   mod_time: []
   mod_version: []
 registration_timeout: infinity
