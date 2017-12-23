@@ -646,35 +646,39 @@ route_probe_reply(_, _) ->
 process_presence_out(#{user := User, server := Server, lserver := LServer,
 		       jid := JID, lang := Lang, pres_a := PresA} = State,
 		     #presence{from = From, to = To, type = Type} = Pres) ->
-    LTo = jid:tolower(To),
-    case privacy_check_packet(State, Pres, out) of
-	deny ->
-            ErrText = <<"Your active privacy list has denied "
-			"the routing of this stanza.">>,
-	    Err = xmpp:err_not_acceptable(ErrText, Lang),
-	    send_error(State, Pres, Err);
-	allow when Type == subscribe; Type == subscribed;
-		   Type == unsubscribe; Type == unsubscribed ->
+    if Type == subscribe; Type == subscribed;
+       Type == unsubscribe; Type == unsubscribed ->
 	    Access = gen_mod:get_module_opt(LServer, mod_roster, access, all),
 	    MyBareJID = jid:remove_resource(JID),
 	    case acl:match_rule(LServer, Access, MyBareJID) of
 		deny ->
-		    ErrText = <<"Access denied by service policy">>,
-		    Err = xmpp:err_forbidden(ErrText, Lang),
-		    send_error(State, Pres, Err);
+		    AccessErrTxt = <<"Access denied by service policy">>,
+		    AccessErr = xmpp:err_forbidden(AccessErrTxt, Lang),
+		    send_error(State, Pres, AccessErr);
 		allow ->
 		    ejabberd_hooks:run(roster_out_subscription,
 				       LServer,
-				       [User, Server, To, Type]),
-		    BareFrom = jid:remove_resource(From),
-		    ejabberd_router:route(xmpp:set_from_to(Pres, BareFrom, To)),
-		    State
+				       [User, Server, To, Type])
 	    end;
+	true -> ok
+    end,
+    case privacy_check_packet(State, Pres, out) of
+	deny ->
+	    PrivErrTxt = <<"Your active privacy list has denied "
+			   "the routing of this stanza.">>,
+	    PrivErr = xmpp:err_not_acceptable(PrivErrTxt, Lang),
+	    send_error(State, Pres, PrivErr);
+	allow when Type == subscribe; Type == subscribed;
+		   Type == unsubscribe; Type == unsubscribed ->
+	    BareFrom = jid:remove_resource(From),
+	    ejabberd_router:route(xmpp:set_from_to(Pres, BareFrom, To)),
+	    State;
 	allow when Type == error; Type == probe ->
 	    ejabberd_router:route(Pres),
 	    State;
 	allow ->
 	    ejabberd_router:route(Pres),
+	    LTo = jid:tolower(To),
 	    LBareTo = jid:remove_resource(LTo),
 	    LBareFrom = jid:remove_resource(jid:tolower(From)),
 	    if LBareTo /= LBareFrom ->
