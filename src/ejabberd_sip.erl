@@ -87,7 +87,7 @@ set_certfile(Opts) ->
 listen_opt_type(certfile) ->
     fun(S) ->
 	    %% We cannot deprecate the option for now:
-	    %% I think STUN/TURN clients are too stupid to set SNI
+	    %% I think SIP clients are too stupid to set SNI
 	    ejabberd_pkix:add_certfile(S),
 	    iolist_to_binary(S)
     end;
