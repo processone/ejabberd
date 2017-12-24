@@ -77,7 +77,7 @@ prepare_turn_opts(Opts) ->
     prepare_turn_opts(Opts, UseTurn).
 
 prepare_turn_opts(Opts, _UseTurn = false) ->
-    Opts;
+    set_certfile(Opts);
 prepare_turn_opts(Opts, _UseTurn = true) ->
     NumberOfMyHosts = length(?MYHOSTS),
     case proplists:get_value(turn_ip, Opts) of
@@ -109,8 +109,28 @@ prepare_turn_opts(Opts, _UseTurn = true) ->
 		    []
 	    end,
     MaxRate = shaper:get_max_rate(Shaper),
-    Realm ++ [{auth_fun, AuthFun},{shaper, MaxRate} |
-	      lists:keydelete(shaper, 1, Opts)].
+    Opts1 = Realm ++ [{auth_fun, AuthFun},{shaper, MaxRate} |
+		      lists:keydelete(shaper, 1, Opts)],
+    set_certfile(Opts1).
+
+set_certfile(Opts) ->
+    case lists:keymember(certfile, 1, Opts) of
+	true ->
+	    Opts;
+	false ->
+	    Realm = proplists:get_value(auth_realm, Opts, ?MYNAME),
+	    case ejabberd_pkix:get_certfile(Realm) of
+		{ok, CertFile} ->
+		    [{certfile, CertFile}|Opts];
+		error ->
+		    case ejabberd_config:get_option({domain_certfile, Realm}) of
+			undefined ->
+			    Opts;
+			CertFile ->
+			    [{certfile, CertFile}|Opts]
+		    end
+	    end
+    end.
 
 listen_opt_type(use_turn) ->
     fun(B) when is_boolean(B) -> B end;
@@ -131,6 +151,8 @@ listen_opt_type(tls) ->
     fun(B) when is_boolean(B) -> B end;
 listen_opt_type(certfile) ->
     fun(S) ->
+	    %% We cannot deprecate the option for now:
+	    %% I think STUN/TURN clients are too stupid to set SNI
 	    ejabberd_pkix:add_certfile(S),
 	    iolist_to_binary(S)
     end;

@@ -390,6 +390,7 @@ build_chain_and_check(State) ->
 	    ets:delete_all_objects(?MODULE),
 	    lists:foreach(
 	      fun({Path, Domain}) ->
+		      fast_tls:add_certfile(Domain, Path),
 		      ets:insert(?MODULE, {Domain, Path})
 	      end, CertFilesWithDomains),
 	    ?DEBUG("Validating certificates", []),
