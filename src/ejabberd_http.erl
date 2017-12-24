@@ -891,8 +891,8 @@ normalize_path([Part | Path], Norm) ->
 -spec get_certfile([proplists:property()]) -> binary() | undefined.
 get_certfile(Opts) ->
     case lists:keyfind(certfile, 1, Opts) of
-	{_, CertFile} ->
-	    CertFile;
+	{_, _CertFile} ->
+	    undefined;
 	false ->
 	    case ejabberd_pkix:get_certfile(?MYNAME) of
 		{ok, CertFile} ->
