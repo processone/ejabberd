@@ -61,12 +61,12 @@ start(From, To, Opts) ->
 		Res -> Res
 	    end;
 	_ ->
-	    xmpp_stream_out:start(?MODULE, [ejabberd_socket, From, To, Opts],
+	    xmpp_stream_out:start(?MODULE, [xmpp_socket, From, To, Opts],
 				  ejabberd_config:fsm_limit_opts([]))
     end.
 
 start_link(From, To, Opts) ->
-    xmpp_stream_out:start_link(?MODULE, [ejabberd_socket, From, To, Opts],
+    xmpp_stream_out:start_link(?MODULE, [xmpp_socket, From, To, Opts],
 			       ejabberd_config:fsm_limit_opts([])).
 
 -spec connect(pid()) -> ok.
@@ -210,24 +210,22 @@ dns_retries(#{server := LServer}) ->
 dns_timeout(#{server := LServer}) ->
     ejabberd_config:get_option({s2s_dns_timeout, LServer}, timer:seconds(10)).
 
-handle_auth_success(Mech, #{sockmod := SockMod,
-			    socket := Socket, ip := IP,
+handle_auth_success(Mech, #{socket := Socket, ip := IP,
 			    remote_server := RServer,
 			    server_host := ServerHost,
 			    server := LServer} = State) ->
     ?INFO_MSG("(~s) Accepted outbound s2s ~s authentication ~s -> ~s (~s)",
-	      [SockMod:pp(Socket), Mech, LServer, RServer,
+	      [xmpp_socket:pp(Socket), Mech, LServer, RServer,
 	       ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
     ejabberd_hooks:run_fold(s2s_out_auth_result, ServerHost, State, [true]).
 
 handle_auth_failure(Mech, Reason,
-		    #{sockmod := SockMod,
-		      socket := Socket, ip := IP,
+		    #{socket := Socket, ip := IP,
 		      remote_server := RServer,
 		      server_host := ServerHost,
 		      server := LServer} = State) ->
     ?INFO_MSG("(~s) Failed outbound s2s ~s authentication ~s -> ~s (~s): ~s",
-	      [SockMod:pp(Socket), Mech, LServer, RServer,
+	      [xmpp_socket:pp(Socket), Mech, LServer, RServer,
 	       ejabberd_config:may_hide_data(misc:ip_to_list(IP)),
 	       xmpp_stream_out:format_error(Reason)]),
     ejabberd_hooks:run_fold(s2s_out_auth_result, ServerHost, State, [{false, Reason}]).

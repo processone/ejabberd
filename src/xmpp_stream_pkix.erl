@@ -40,10 +40,10 @@ authenticate(State) ->
 
 -spec authenticate(xmpp_stream_in:state() | xmpp_stream_out:state(), binary())
       -> {ok, binary()} | {error, atom(), binary()}.
-authenticate(#{xmlns := ?NS_SERVER, sockmod := SockMod,
+authenticate(#{xmlns := ?NS_SERVER,
 	       socket := Socket} = State, Authzid) ->
     Peer = maps:get(remote_server, State, Authzid),
-    case verify_cert(SockMod, Socket) of
+    case verify_cert(Socket) of
 	{ok, Cert} ->
 	    case ejabberd_idna:domain_utf8_to_ascii(Peer) of
 		false ->
@@ -61,7 +61,7 @@ authenticate(#{xmlns := ?NS_SERVER, sockmod := SockMod,
 	{error, Reason} ->
 	    {error, Reason, Peer}
     end;
-authenticate(#{xmlns := ?NS_CLIENT, sockmod := SockMod,
+authenticate(#{xmlns := ?NS_CLIENT,
 	       socket := Socket, lserver := LServer}, Authzid) ->
     JID = try jid:decode(Authzid)
 	  catch _:{bad_jid, <<>>} -> jid:make(LServer);
@@ -69,7 +69,7 @@ authenticate(#{xmlns := ?NS_CLIENT, sockmod := SockMod,
 	  end,
     case JID of
 	#jid{user = User} ->
-	    case verify_cert(SockMod, Socket) of
+	    case verify_cert(Socket) of
 		{ok, Cert} ->
 		    JIDs = get_xmpp_addrs(Cert),
 		    get_username(JID, JIDs, LServer);
@@ -104,11 +104,11 @@ get_cert_domains(Cert) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
--spec verify_cert(module(), ejabberd_socket:socket()) -> {ok, cert()} | {error, atom()}.
-verify_cert(SockMod, Socket) ->
-    case SockMod:get_peer_certificate(Socket, otp) of
+-spec verify_cert(xmpp_socket:socket()) -> {ok, cert()} | {error, atom()}.
+verify_cert(Socket) ->
+    case xmpp_socket:get_peer_certificate(Socket, otp) of
 	{ok, Cert} ->
-	    case SockMod:get_verify_result(Socket) of
+	    case xmpp_socket:get_verify_result(Socket) of
 		0 ->
 		    {ok, Cert};
 		VerifyRes ->

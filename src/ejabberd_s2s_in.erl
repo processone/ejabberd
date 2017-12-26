@@ -21,9 +21,9 @@
 %%%-------------------------------------------------------------------
 -module(ejabberd_s2s_in).
 -behaviour(xmpp_stream_in).
--behaviour(ejabberd_socket).
+-behaviour(xmpp_socket).
 
-%% ejabberd_socket callbacks
+%% xmpp_socket callbacks
 -export([start/2, start_link/2, socket_type/0]).
 %% ejabberd_listener callbacks
 -export([listen_opt_type/1]).
@@ -180,31 +180,29 @@ handle_stream_established(State) ->
     set_idle_timeout(State#{established => true}).
 
 handle_auth_success(RServer, Mech, _AuthModule,
-		    #{sockmod := SockMod,
-		      socket := Socket, ip := IP,
+		    #{socket := Socket, ip := IP,
 		      auth_domains := AuthDomains,
 		      server_host := ServerHost,
 		      lserver := LServer} = State) ->
     ?INFO_MSG("(~s) Accepted inbound s2s ~s authentication ~s -> ~s (~s)",
-	      [SockMod:pp(Socket), Mech, RServer, LServer,
+	      [xmpp_socket:pp(Socket), Mech, RServer, LServer,
 	       ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
     State1 = case ejabberd_s2s:allow_host(ServerHost, RServer) of
 		 true ->
 		     AuthDomains1 = sets:add_element(RServer, AuthDomains),
-		     change_shaper(State, RServer),
-		     State#{auth_domains => AuthDomains1};
+		     State0 = change_shaper(State, RServer),
+		     State0#{auth_domains => AuthDomains1};
 		 false ->
 		     State
 	   end,
     ejabberd_hooks:run_fold(s2s_in_auth_result, ServerHost, State1, [true, RServer]).
 
 handle_auth_failure(RServer, Mech, Reason,
-		    #{sockmod := SockMod,
-		      socket := Socket, ip := IP,
+		    #{socket := Socket, ip := IP,
 		      server_host := ServerHost,
 		      lserver := LServer} = State) ->
     ?INFO_MSG("(~s) Failed inbound s2s ~s authentication ~s -> ~s (~s): ~s",
-	      [SockMod:pp(Socket), Mech, RServer, LServer,
+	      [xmpp_socket:pp(Socket), Mech, RServer, LServer,
 	       ejabberd_config:may_hide_data(misc:ip_to_list(IP)), Reason]),
     ejabberd_hooks:run_fold(s2s_in_auth_result,
 			    ServerHost, State, [false, RServer]).
@@ -286,11 +284,11 @@ handle_info(Info, #{server_host := LServer} = State) ->
     ejabberd_hooks:run_fold(s2s_in_handle_info, LServer, State, [Info]).
 
 terminate(Reason, #{auth_domains := AuthDomains,
-		    sockmod := SockMod, socket := Socket} = State) ->
+		    socket := Socket} = State) ->
     case maps:get(stop_reason, State, undefined) of
 	{tls, _} = Err ->
 	    ?WARNING_MSG("(~s) Failed to secure inbound s2s connection: ~s",
-			 [SockMod:pp(Socket), xmpp_stream_in:format_error(Err)]);
+			 [xmpp_socket:pp(Socket), xmpp_stream_in:format_error(Err)]);
 	_ ->
 	    ok
     end,
@@ -340,7 +338,7 @@ set_idle_timeout(#{server_host := LServer,
 set_idle_timeout(State) ->
     State.
 
--spec change_shaper(state(), binary()) -> ok.
+-spec change_shaper(state(), binary()) -> state().
 change_shaper(#{shaper := ShaperName, server_host := ServerHost} = State,
 	      RServer) ->
     Shaper = acl:match_rule(ServerHost, ShaperName, jid:make(RServer)),
