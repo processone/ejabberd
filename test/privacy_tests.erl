@@ -709,7 +709,7 @@ check_other_blocked(Config, Reason) ->
 	      #presence{type = error} = Err =
 		  send_recv(Config, #presence{type = Type, to = PeerJID}),
 	      #stanza_error{reason = Reason} = xmpp:get_error(Err)
-      end, [subscribe, subscribed, unsubscribe, unsubscribed]).
+      end, [subscribed, unsubscribe, unsubscribed]).
 
 send_presences(Config) ->
     PeerJID = ?config(peer, Config),
