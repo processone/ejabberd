@@ -6,8 +6,8 @@
   "esip": {:hex, :esip, "1.0.16", "16ab569bd192ead1e89b4f78020fa348fec78ad99a7ce5ca6d510da9ec3748d6", [:rebar3], [{:fast_tls, "1.0.16", [hex: :fast_tls, repo: "hexpm", optional: false]}, {:p1_utils, "1.0.10", [hex: :p1_utils, repo: "hexpm", optional: false]}, {:stun, "1.0.15", [hex: :stun, repo: "hexpm", optional: false]}], "hexpm"},
   "ex_doc": {:hex, :ex_doc, "0.18.1", "37c69d2ef62f24928c1f4fdc7c724ea04aecfdf500c4329185f8e3649c915baf", [], [{:earmark, "~> 1.1", [hex: :earmark, repo: "hexpm", optional: false]}], "hexpm"},
   "ezlib": {:git, "https://github.com/processone/ezlib.git", "ec6491d788436bb096022843e6ec7f58d2973ae3", [tag: "1.0.3"]},
-  "fast_tls": {:git, "https://github.com/processone/fast_tls.git", "3d4bcc9923c71f4bbdf6619a7c23c02df95c30f7", [tag: "1.0.17"]},
-  "fast_xml": {:git, "https://github.com/processone/fast_xml.git", "f22a56d25535baf75df62340415ed7e38890cec2", [branch: "master"]},
+  "fast_tls": {:git, "https://github.com/processone/fast_tls.git", "b6a52a5c96f771213ed5d4569d8453a6a5e907ae", [tag: "1.0.18"]},
+  "fast_xml": {:git, "https://github.com/processone/fast_xml.git", "1c01a411831e5e4b9561a46e77e3163449a958f1", [tag: "1.1.26"]},
   "fast_yaml": {:git, "https://github.com/processone/fast_yaml.git", "739d1de538529bf30fbf45c9ebd9435f3840c5fd", [tag: "1.0.12"]},
   "fs": {:hex, :fs, "2.12.0", "ad631efacc9a5683c8eaa1b274e24fa64a1b8eb30747e9595b93bec7e492e25e", [:rebar3], [], "hexpm"},
   "goldrush": {:hex, :goldrush, "0.1.9", "f06e5d5f1277da5c413e84d5a2924174182fb108dabb39d5ec548b27424cd106", [:rebar3], [], "hexpm"},
@@ -24,4 +24,4 @@
   "sqlite3": {:hex, :sqlite3, "1.1.5", "794738b6d07b6d36ec6d42492cb9d629bad9cf3761617b8b8d728e765db19840", [:rebar3], [], "hexpm"},
   "stringprep": {:hex, :stringprep, "1.0.10", "552d784eb60652220fce9131f8bb0ebc62fdffd6482c4f08f2e7d61300227c28", [:rebar3], [{:p1_utils, "1.0.10", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "stun": {:hex, :stun, "1.0.15", "51f287c9dfba61a7e5b99f398e6fe1c74d6a4c50f74a66bcce592c23291da116", [:rebar3], [{:fast_tls, "1.0.16", [hex: :fast_tls, repo: "hexpm", optional: false]}, {:p1_utils, "1.0.10", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
-  "xmpp": {:git, "https://github.com/processone/xmpp.git", "4abf985e0df60055bf0cc12eb3b09c6bab3726b0", [branch: "master"]}}
+  "xmpp": {:git, "https://github.com/processone/xmpp.git", "96f4322b9fde1f028da63ad4e32d88823f5c4b61", [tag: "1.1.17"]}}
