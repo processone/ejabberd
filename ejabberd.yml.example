@@ -238,7 +238,6 @@ listen:
   ##   request_handlers:
   ##     "": mod_http_upload
   ##   tls: true
-  ##   certfile: "/path/to/xmpp.pem"
   ##   protocol_options: 'TLSOPTS'
   ##   dhfile: 'DHFILE'
   ##   ciphers: 'CIPHERS'
