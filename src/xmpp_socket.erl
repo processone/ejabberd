@@ -183,8 +183,8 @@ compress(#socket_state{receiver = undefined,
     end.
 
 reset_stream(#socket_state{xml_stream = XMLStream,
-			   max_stanza_size = MaxStanzaSize} = SocketData)
-  when XMLStream /= undefined ->
+			   receiver = undefined,
+			   max_stanza_size = MaxStanzaSize} = SocketData) ->
     XMLStream1 = try fxml_stream:reset(XMLStream)
 		 catch error:_ ->
 			 close_stream(XMLStream),
