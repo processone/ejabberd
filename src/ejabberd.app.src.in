@@ -5,7 +5,7 @@
   {vsn, "@PACKAGE_VERSION@"},
   {modules, []},
   {registered, []},
-  {applications, [kernel, stdlib, os_mon]},
+  {applications, [kernel, stdlib]},
   {env, []},
   {mod, {ejabberd_app, []}}]}.
 
