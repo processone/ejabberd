@@ -120,6 +120,15 @@ format_error(Why) ->
 
 -spec get_certfile(binary()) -> {ok, binary()} | error.
 get_certfile(Domain) ->
+    case get_certfile_no_default(Domain) of
+	{ok, Path} ->
+	    {ok, Path};
+	error ->
+	    get_default_certfile()
+    end.
+
+-spec get_certfile_no_default(binary()) -> {ok, binary()} | error.
+get_certfile_no_default(Domain) ->
     case ejabberd_idna:domain_utf8_to_ascii(Domain) of
 	false ->
 	    error;
@@ -132,10 +141,10 @@ get_certfile(Domain) ->
 				[{_, Path}|_] ->
 				    {ok, Path};
 				[] ->
-				    get_default_certfile()
+				    error
 			    end;
 			_ ->
-			    get_default_certfile()
+			    error
 		    end;
 		[{_, Path}|_] ->
 		    {ok, Path}
@@ -240,7 +249,7 @@ handle_call({add_certfile, Path}, _, State) ->
 handle_call({route_registered, Host}, _, State) ->
     case add_certfiles(Host, State) of
 	{ok, NewState} ->
-	    case get_certfile(Host) of
+	    case get_certfile_no_default(Host) of
 		{ok, _} -> ok;
 		error ->
 		    ?WARNING_MSG("No certificate found matching '~s': strictly "
