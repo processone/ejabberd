@@ -3315,6 +3315,8 @@ decode_get_pending(undefined, Lang) ->
     {error, xmpp:err_bad_request(<<"No data form found">>, Lang)}.
 
 -spec check_opt_range(atom(), [proplists:property()], non_neg_integer()) -> boolean().
+check_opt_range(_Opt, _Opts, undefined) ->
+    true;
 check_opt_range(Opt, Opts, Max) ->
     Val = proplists:get_value(Opt, Opts, Max),
     Val =< Max.
