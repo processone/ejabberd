@@ -28,7 +28,7 @@
 %% API
 -export([start_link/0, add_certfile/1, format_error/1, opt_type/1,
 	 get_certfile/1, try_certfile/1, route_registered/1,
-	 config_reloaded/0, certs_dir/0, ca_file/0]).
+	 config_reloaded/0, certs_dir/0, ca_file/0, get_default_certfile/0]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
@@ -132,13 +132,27 @@ get_certfile(Domain) ->
 				[{_, Path}|_] ->
 				    {ok, Path};
 				[] ->
-				    error
+				    get_default_certfile()
 			    end;
 			_ ->
-			    error
+			    get_default_certfile()
 		    end;
 		[{_, Path}|_] ->
 		    {ok, Path}
+	    end
+    end.
+
+-spec get_default_certfile() -> {ok, binary()} | error.
+get_default_certfile() ->
+    case ets:first(?MODULE) of
+	'$end_of_table' ->
+	    error;
+	Domain ->
+	    case ets:lookup(?MODULE, Domain) of
+		[{_, Path}|_] ->
+		    {ok, Path};
+		[] ->
+		    error
 	    end
     end.
 
