@@ -655,14 +655,7 @@ get_items(Nidx, _From, undefined) ->
 	      " from pubsub_item where nodeid='", SNidx/binary, "'",
 	      " order by creation asc">>]) of
 	{selected, _, AllItems} ->
-	    Count = length(AllItems),
-	    if Count =< ?MAXITEMS ->
-		{result, {[raw_to_item(Nidx, RItem) || RItem <- AllItems], undefined}};
-	       true ->
-		RItems = lists:sublist(AllItems, ?MAXITEMS),
-		Rsm = rsm_page(Count, 0, 0, RItems),
-		{result, {[raw_to_item(Nidx, RItem) || RItem <- RItems], Rsm}}
-	    end;
+	    {result, {[raw_to_item(Nidx, RItem) || RItem <- AllItems], undefined}};
 	_ ->
 	    {result, {[], undefined}}
     end;
