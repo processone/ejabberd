@@ -801,8 +801,8 @@ receiver(NS, Owner, Socket, MRef) ->
 	    Owner ! {Ref, ok},
 	    receiver(NS, Owner, ZlibSocket, MRef);
 	{Ref, {send_text, Text}} ->
-	    ok = xmpp_socket:send(Socket, Text),
-	    Owner ! {Ref, ok},
+	    Ret = xmpp_socket:send(Socket, Text),
+	    Owner ! {Ref, Ret},
 	    receiver(NS, Owner, Socket, MRef);
 	{Ref, close} ->
 	    xmpp_socket:close(Socket),
