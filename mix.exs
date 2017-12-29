@@ -67,6 +67,8 @@ defmodule Ejabberd.Mixfile do
      {:fast_tls, "~> 1.0"},
      {:stun, github: "processone/stun", tag: "1.0.17", override: true, manager: :rebar},
      {:esip, github: "processone/esip", tag: "1.0.18", override: true, manager: :rebar},
+     {:p1_mysql, "~> 1.0"},
+     {:p1_pgsql, "~> 1.1"},
      {:jiffy, "~> 0.14.7"},
      {:p1_oauth2, "~> 0.6.1"},
      {:distillery, "~> 1.0"},
@@ -84,9 +86,7 @@ defmodule Ejabberd.Mixfile do
   end
 
   defp cond_deps do
-    for {:true, dep} <- [{config(:mysql), {:p1_mysql, "~> 1.0"}},
-                         {config(:pgsql), {:p1_pgsql, "~> 1.1"}},
-                         {config(:sqlite), {:sqlite3, "~> 1.1"}},
+    for {:true, dep} <- [{config(:sqlite), {:sqlite3, "~> 1.1"}},
                          {config(:riak), {:riakc, "~> 2.4"}},
                          {config(:redis), {:eredis, "~> 1.0"}},
                          {config(:zlib), {:ezlib, github: "processone/ezlib", tag: "1.0.3", override: true, manager: :rebar}},
