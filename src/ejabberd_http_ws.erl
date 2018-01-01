@@ -34,7 +34,8 @@
 	 handle_sync_event/4, code_change/4, handle_info/3,
 	 terminate/3, send_xml/2, setopts/2, sockname/1,
 	 peername/1, controlling_process/2, become_controller/2,
-	 close/1, socket_handoff/6, opt_type/1]).
+	 monitor/1, reset_stream/1, close/1, change_shaper/2,
+	 socket_handoff/6, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -105,11 +106,20 @@ peername({http_ws, _FsmRef, IP}) -> {ok, IP}.
 controlling_process(_Socket, _Pid) -> ok.
 
 become_controller(FsmRef, C2SPid) ->
-    p1_fsm:send_all_state_event(FsmRef,
-				 {become_controller, C2SPid}).
+    p1_fsm:send_all_state_event(FsmRef, {activate, C2SPid}).
 
 close({http_ws, FsmRef, _IP}) ->
     catch p1_fsm:sync_send_all_state_event(FsmRef, close).
+
+monitor({http_ws, FsmRef, _IP}) ->
+    erlang:monitor(process, FsmRef).
+
+reset_stream({http_ws, _FsmRef, _IP} = Socket) ->
+    Socket.
+
+change_shaper({http_ws, _FsmRef, _IP}, _Shaper) ->
+    %% TODO???
+    ok.
 
 socket_handoff(LocalPath, Request, Socket, SockMod, Buf, Opts) ->
     ejabberd_websocket:socket_handoff(LocalPath, Request, Socket, SockMod,
@@ -136,8 +146,8 @@ init([{#ws{ip = IP, http_opts = HOpts}, _} = WS]) ->
     Socket = {http_ws, self(), IP},
     ?DEBUG("Client connected through websocket ~p",
 	   [Socket]),
-    ejabberd_socket:start(ejabberd_c2s, ?MODULE, Socket,
-			  Opts),
+    xmpp_socket:start(ejabberd_c2s, ?MODULE, Socket,
+		      [{receiver, self()}|Opts]),
     Timer = erlang:start_timer(WSTimeout, self(), []),
     {ok, loop,
      #state{socket = Socket, timeout = WSTimeout,

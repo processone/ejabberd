@@ -33,7 +33,7 @@
 -export([start/2, start/3, start_link/3]).
 
 -export([send_xml/2, setopts/2, controlling_process/2,
-	 migrate/3, custom_receiver/1, become_controller/2,
+	 migrate/3, become_controller/2,
 	 reset_stream/1, change_shaper/2, monitor/1, close/1,
 	 sockname/1, peername/1, process_request/3, send/2,
 	 change_controller/2]).
@@ -175,9 +175,6 @@ setopts({http_bind, FsmRef, _IP}, Opts) ->
 
 controlling_process(_Socket, _Pid) -> ok.
 
-custom_receiver({http_bind, FsmRef, _IP}) ->
-    {receiver, ?MODULE, FsmRef}.
-
 become_controller(FsmRef, C2SPid) ->
     p1_fsm:send_all_state_event(FsmRef,
 				    {become_controller, C2SPid}).
@@ -185,11 +182,11 @@ become_controller(FsmRef, C2SPid) ->
 change_controller({http_bind, FsmRef, _IP}, C2SPid) ->
     become_controller(FsmRef, C2SPid).
 
-reset_stream({http_bind, _FsmRef, _IP}) -> ok.
+reset_stream({http_bind, _FsmRef, _IP} = Socket) ->
+    Socket.
 
 change_shaper({http_bind, FsmRef, _IP}, Shaper) ->
-    p1_fsm:send_all_state_event(FsmRef,
-				    {change_shaper, Shaper}).
+    p1_fsm:send_all_state_event(FsmRef, {change_shaper, Shaper}).
 
 monitor({http_bind, FsmRef, _IP}) ->
     erlang:monitor(process, FsmRef).
@@ -306,8 +303,8 @@ init([#body{attrs = Attrs}, IP, SID]) ->
                                     buf_new(XMPPDomain)),
                              Opts2}
 		    end,
-    ejabberd_socket:start(ejabberd_c2s, ?MODULE, Socket,
-			  Opts),
+    xmpp_socket:start(ejabberd_c2s, ?MODULE, Socket,
+		      [{receiver, self()}|Opts]),
     Inactivity = gen_mod:get_module_opt(XMPPDomain,
 					mod_bosh, max_inactivity,
 					?DEFAULT_INACTIVITY),

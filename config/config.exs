@@ -7,4 +7,4 @@ config :ejabberd,
 
 # Customize Mnesia directory:
 config :mnesia,
-  dir: 'mnesiadb/'
+  dir: 'database/'

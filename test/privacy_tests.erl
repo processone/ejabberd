@@ -311,19 +311,19 @@ deny_sub_both_master(Config) ->
     deny_master(Config, {subscription, <<"both">>}).
 
 deny_sub_both_slave(Config) ->
-    deny_slave(Config).
+    deny_slave(Config, 2).
 
 deny_sub_from_master(Config) ->
     deny_master(Config, {subscription, <<"from">>}).
 
 deny_sub_from_slave(Config) ->
-    deny_slave(Config).
+    deny_slave(Config, 1).
 
 deny_sub_to_master(Config) ->
     deny_master(Config, {subscription, <<"to">>}).
 
 deny_sub_to_slave(Config) ->
-    deny_slave(Config).
+    deny_slave(Config, 2).
 
 deny_sub_none_master(Config) ->
     deny_master(Config, {subscription, <<"none">>}).
@@ -389,7 +389,8 @@ deny_master(Config, {Type, Value}) ->
 		  false -> send_messages(Config)
 	      end,
 	      case is_other_blocked(Opts) of
-		  true -> check_other_blocked(Config, 'not-acceptable');
+		  true ->
+		      check_other_blocked(Config, 'not-acceptable', Value);
 		  false -> ok
 	      end,
 	      ct:comment("Waiting for slave to finish processing our stanzas"),
@@ -401,12 +402,16 @@ deny_master(Config, {Type, Value}) ->
     clean_up(disconnect(Config)).
 
 deny_slave(Config) ->
-    set_roster(Config, both, []),
-    deny_slave(Config, get_event(Config)).
+    deny_slave(Config, 0).
 
-deny_slave(Config, disconnect) ->
+deny_slave(Config, RosterPushesCount) ->
+    set_roster(Config, both, []),
+    deny_slave(Config, RosterPushesCount, get_event(Config)).
+
+deny_slave(Config, RosterPushesCount, disconnect) ->
+    recv_roster_pushes(Config, RosterPushesCount),
     clean_up(disconnect(Config));
-deny_slave(Config, Opts) ->
+deny_slave(Config, RosterPushesCount, Opts) ->
     send_presences(Config),
     case is_iq_in_blocked(Opts) of
 	true -> check_iq_blocked(Config, 'service-unavailable');
@@ -426,7 +431,7 @@ deny_slave(Config, Opts) ->
 	false -> recv_messages(Config)
     end,
     put_event(Config, done),
-    deny_slave(Config, get_event(Config)).
+    deny_slave(Config, RosterPushesCount, get_event(Config)).
 
 deny_offline_master(Config) ->
     set_roster(Config, both, []),
@@ -457,7 +462,7 @@ block_master(Config) ->
     check_presence_blocked(Config, 'not-acceptable'),
     check_iq_blocked(Config, 'not-acceptable'),
     check_message_blocked(Config, 'not-acceptable'),
-    check_other_blocked(Config, 'not-acceptable'),
+    check_other_blocked(Config, 'not-acceptable', other),
     %% We should always be able to communicate with our home server
     server_send_iqs(Config),
     server_recv_iqs(Config),
@@ -700,16 +705,52 @@ check_presence_blocked(Config, Reason) ->
 	      #stanza_error{reason = Reason} = xmpp:get_error(Err)
       end, [available, unavailable]).
 
-check_other_blocked(Config, Reason) ->
+recv_roster_pushes(Config, 0) ->
+    ok;
+recv_roster_pushes(Config, Count) ->
+    receive
+	#iq{type = set, sub_els = [#roster_query{}]} ->
+	    recv_roster_pushes(Config, Count - 1)
+    end.
+
+recv_err_and_roster_pushes(Config, Count) ->
+    PeerJID = ?config(master, Config),
+    recv_roster_pushes(Config, Count),
+    recv_presence(Config).
+
+check_other_blocked(Config, Reason, Subscription) ->
     PeerJID = ?config(peer, Config),
     ct:comment("Checking if subscriptions and presence-errors are blocked"),
     send(Config, #presence{type = error, to = PeerJID}),
+    {ErrorFor, PushFor} = case Subscription of
+			      <<"both">> ->
+				  {[subscribe, subscribed],
+				   [unsubscribe, unsubscribed]};
+			      <<"from">> ->
+				  {[subscribe, subscribed, unsubscribe],
+				   [subscribe, unsubscribe, unsubscribed]};
+			      <<"to">> ->
+				  {[unsubscribe],
+				   [subscribed, unsubscribe, unsubscribed]};
+			      <<"none">> ->
+				  {[subscribe, subscribed, unsubscribe, unsubscribed],
+				   [subscribe, unsubscribe]};
+			      _ ->
+				  {[subscribe, subscribed, unsubscribe, unsubscribed],
+				   [unsubscribe, unsubscribed]}
+			  end,
     lists:foreach(
-      fun(Type) ->
-	      #presence{type = error} = Err =
-		  send_recv(Config, #presence{type = Type, to = PeerJID}),
-	      #stanza_error{reason = Reason} = xmpp:get_error(Err)
-      end, [subscribe, subscribed, unsubscribe, unsubscribed]).
+	fun(Type) ->
+	    send(Config, #presence{type = Type, to = PeerJID}),
+	    Count = case lists:member(Type, PushFor) of true -> 1; _ -> 0 end,
+	    case lists:member(Type, ErrorFor) of
+		true ->
+		    Err = recv_err_and_roster_pushes(Config, Count),
+		    #stanza_error{reason = Reason} = xmpp:get_error(Err);
+		_ ->
+		    recv_roster_pushes(Config, Count)
+	    end
+	end, [subscribe, subscribed, unsubscribe, unsubscribed]).
 
 send_presences(Config) ->
     PeerJID = ?config(peer, Config),
@@ -770,7 +811,7 @@ is_message_in_blocked(Opts) ->
 is_message_out_blocked(Opts) ->
     match_all(Opts).
 
-is_iq_in_blocked(Opts) ->    
+is_iq_in_blocked(Opts) ->
     proplists:get_bool(iq, Opts) or match_all(Opts).
 
 is_iq_out_blocked(Opts) ->

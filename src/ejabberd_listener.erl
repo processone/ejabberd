@@ -294,7 +294,7 @@ accept(ListenSocket, Module, Opts, Interval) ->
 	{ok, Socket} ->
 	    case {inet:sockname(Socket), inet:peername(Socket)} of
 		{{ok, {Addr, Port}}, {ok, {PAddr, PPort}}} ->
-		    Receiver = case ejabberd_socket:start(Module,
+		    Receiver = case xmpp_socket:start(Module,
 							  gen_tcp, Socket, Opts) of
 				   {ok, RecvPid} -> RecvPid;
 				   _ -> none

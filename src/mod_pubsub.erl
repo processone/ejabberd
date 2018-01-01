@@ -35,7 +35,7 @@
 -behaviour(gen_mod).
 -behaviour(gen_server).
 -author('christophe.romain@process-one.net').
--protocol({xep, 60, '1.13-1'}).
+-protocol({xep, 60, '1.14'}).
 -protocol({xep, 163, '1.2'}).
 -protocol({xep, 248, '0.2'}).
 
@@ -3315,6 +3315,8 @@ decode_get_pending(undefined, Lang) ->
     {error, xmpp:err_bad_request(<<"No data form found">>, Lang)}.
 
 -spec check_opt_range(atom(), [proplists:property()], non_neg_integer()) -> boolean().
+check_opt_range(_Opt, _Opts, undefined) ->
+    true;
 check_opt_range(Opt, Opts, Max) ->
     Val = proplists:get_value(Opt, Opts, Max),
     Val =< Max.

@@ -571,7 +571,7 @@ process_subscription(Direction, User, Server, JID1,
 		     Type, Reason) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
-    LJID = jid:tolower(JID1),
+    LJID = jid:tolower(jid:remove_resource(JID1)),
     F = fun () ->
 		Item = get_roster_item(LUser, LServer, LJID),
 		NewState = case Direction of

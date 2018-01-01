@@ -32,9 +32,9 @@
 
 -export([add_access/3, clear/0]).
 -export([start_link/0, add/3, add_list/3, add_local/3, add_list_local/3,
-	 load_from_config/0, match_rule/3, any_rules_allowed/3,
-	 transform_options/1, opt_type/1, acl_rule_matches/3,
-	 acl_rule_verify/1, access_matches/3,
+	 load_from_config/0, reload_from_config/0, match_rule/3,
+	 any_rules_allowed/3, transform_options/1, opt_type/1,
+	 acl_rule_matches/3, acl_rule_verify/1, access_matches/3,
 	 transform_access_rules_config/1,
 	 parse_ip_netmask/1,
 	 access_rules_validator/1, shaper_rules_validator/1,
@@ -92,7 +92,7 @@ init([]) ->
                         [{ram_copies, [node()]},
                          {local_content, true},
 			 {attributes, record_info(fields, access)}]),
-    ejabberd_hooks:add(config_reloaded, ?MODULE, load_from_config, 20),
+    ejabberd_hooks:add(config_reloaded, ?MODULE, reload_from_config, 20),
     load_from_config(),
     {ok, #state{}}.
 
@@ -235,6 +235,12 @@ load_from_config() ->
                         add_access(Host, Access, Rules)
                 end, ShaperRules)
       end, Hosts).
+
+-spec reload_from_config() -> ok.
+
+reload_from_config() ->
+    clear(),
+    load_from_config().
 
 %% Delete all previous set ACLs and Access rules
 clear() ->

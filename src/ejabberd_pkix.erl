@@ -28,7 +28,7 @@
 %% API
 -export([start_link/0, add_certfile/1, format_error/1, opt_type/1,
 	 get_certfile/1, try_certfile/1, route_registered/1,
-	 config_reloaded/0, certs_dir/0, ca_file/0]).
+	 config_reloaded/0, certs_dir/0, ca_file/0, get_default_certfile/0]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
@@ -120,6 +120,15 @@ format_error(Why) ->
 
 -spec get_certfile(binary()) -> {ok, binary()} | error.
 get_certfile(Domain) ->
+    case get_certfile_no_default(Domain) of
+	{ok, Path} ->
+	    {ok, Path};
+	error ->
+	    get_default_certfile()
+    end.
+
+-spec get_certfile_no_default(binary()) -> {ok, binary()} | error.
+get_certfile_no_default(Domain) ->
     case ejabberd_idna:domain_utf8_to_ascii(Domain) of
 	false ->
 	    error;
@@ -139,6 +148,20 @@ get_certfile(Domain) ->
 		    end;
 		[{_, Path}|_] ->
 		    {ok, Path}
+	    end
+    end.
+
+-spec get_default_certfile() -> {ok, binary()} | error.
+get_default_certfile() ->
+    case ets:first(?MODULE) of
+	'$end_of_table' ->
+	    error;
+	Domain ->
+	    case ets:lookup(?MODULE, Domain) of
+		[{_, Path}|_] ->
+		    {ok, Path};
+		[] ->
+		    error
 	    end
     end.
 
@@ -226,7 +249,7 @@ handle_call({add_certfile, Path}, _, State) ->
 handle_call({route_registered, Host}, _, State) ->
     case add_certfiles(Host, State) of
 	{ok, NewState} ->
-	    case get_certfile(Host) of
+	    case get_certfile_no_default(Host) of
 		{ok, _} -> ok;
 		error ->
 		    ?WARNING_MSG("No certificate found matching '~s': strictly "
@@ -390,6 +413,7 @@ build_chain_and_check(State) ->
 	    ets:delete_all_objects(?MODULE),
 	    lists:foreach(
 	      fun({Path, Domain}) ->
+		      fast_tls:add_certfile(Domain, Path),
 		      ets:insert(?MODULE, {Domain, Path})
 	      end, CertFilesWithDomains),
 	    ?DEBUG("Validating certificates", []),

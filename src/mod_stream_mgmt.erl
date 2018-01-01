@@ -389,7 +389,7 @@ handle_a(State, #sm_a{h = H}) ->
     resend_rack(State1).
 
 -spec handle_resume(state(), sm_resume()) -> {ok, state()} | {error, state()}.
-handle_resume(#{user := User, lserver := LServer, sockmod := SockMod,
+handle_resume(#{user := User, lserver := LServer,
 		lang := Lang, socket := Socket} = State,
 	      #sm_resume{h = H, previd = PrevID, xmlns = Xmlns}) ->
     R = case inherit_session_state(State, PrevID) of
@@ -416,7 +416,7 @@ handle_resume(#{user := User, lserver := LServer, sockmod := SockMod,
 	    State4 = send(State3, #sm_r{xmlns = AttrXmlns}),
 	    State5 = ejabberd_hooks:run_fold(c2s_session_resumed, LServer, State4, []),
 	    ?INFO_MSG("(~s) Resumed session for ~s",
-		      [SockMod:pp(Socket), jid:encode(JID)]),
+		      [xmpp_socket:pp(Socket), jid:encode(JID)]),
 	    {ok, State5};
 	{error, El, Msg} ->
 	    ?INFO_MSG("Cannot resume session for ~s@~s: ~s",

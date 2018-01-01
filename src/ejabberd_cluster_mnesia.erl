@@ -60,16 +60,15 @@ join(Node) ->
             application:stop(mnesia),
             mnesia:delete_schema([node()]),
             application:start(mnesia),
-            mnesia:change_config(extra_db_nodes, [Node]),
-            mnesia:change_table_copy_type(schema, node(), disc_copies),
-            spawn(fun()  ->
-                lists:foreach(fun(Table) ->
-                            Type = ejabberd_cluster:call(
-				     Node, mnesia, table_info, [Table, storage_type]),
-                            mnesia:add_table_copy(Table, node(), Type)
-                    end, mnesia:system_info(tables)--[schema])
-                end),
-            application:start(ejabberd);
+            case mnesia:change_config(extra_db_nodes, [Node]) of
+                {ok, _} ->
+                    replicate_database(Node),
+                    wait_for_sync(infinity),
+                    application:stop(mnesia),
+                    application:start(ejabberd);
+                {error, Reason} ->
+                    {error, Reason}
+            end;
         _ ->
             {error, {no_ping, Node}}
     end.
@@ -94,11 +93,11 @@ leave([], Node) ->
 leave([Master|_], Node) ->
     application:stop(ejabberd),
     application:stop(mnesia),
-    ejabberd_cluster:call(Master, mnesia, del_table_copy, [schema, Node]),
     spawn(fun() ->
-                mnesia:delete_schema([node()]),
-                erlang:halt(0)
-        end),
+              rpc:call(Master, mnesia, del_table_copy, [schema, Node]),
+              mnesia:delete_schema([node()]),
+              erlang:halt(0)
+          end),
     ok.
 
 -spec node_id() -> binary().
@@ -130,6 +129,15 @@ subscribe(_) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
+replicate_database(Node) ->
+    mnesia:change_table_copy_type(schema, node(), disc_copies),
+    lists:foreach(
+        fun(Table) ->
+            Type = ejabberd_cluster:call(Node, mnesia, table_info, [Table, storage_type]),
+            mnesia:add_table_copy(Table, node(), Type)
+        end, mnesia:system_info(tables)--[schema]).
+
 -spec match_node_id(integer()) -> node().
 match_node_id(I) ->
     match_node_id(I, get_nodes()).

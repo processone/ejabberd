@@ -81,6 +81,7 @@ features() ->
 	<<"instant-nodes">>,
 	<<"outcast-affiliation">>,
 	<<"persistent-items">>,
+	<<"multi-items">>,
 	<<"publish">>,
 	<<"retrieve-items">>].
 

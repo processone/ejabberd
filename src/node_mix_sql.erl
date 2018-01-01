@@ -53,41 +53,10 @@ terminate(Host, ServerHost) ->
     node_flat_sql:terminate(Host, ServerHost).
 
 options() ->
-    [{deliver_payloads, true},
-	{notify_config, false},
-	{notify_delete, false},
-	{notify_retract, true},
-	{purge_offline, false},
-	{persist_items, true},
-	{max_items, ?MAXITEMS},
-	{subscribe, true},
-	{access_model, open},
-	{roster_groups_allowed, []},
-	{publish_model, open},
-	{notification_type, headline},
-	{max_payload_size, ?MAX_PAYLOAD_SIZE},
-	{send_last_published_item, never},
-	{deliver_notifications, true},
-        {broadcast_all_resources, true},
-	{presence_based_delivery, false},
-	{itemreply, none}].
+    [{sql, true}, {rsm, true} | node_mix:options()].
 
 features() ->
-    [<<"create-nodes">>,
-	<<"delete-nodes">>,
-	<<"delete-items">>,
-	<<"instant-nodes">>,
-	<<"item-ids">>,
-	<<"outcast-affiliation">>,
-	<<"persistent-items">>,
-	<<"publish">>,
-	<<"purge-nodes">>,
-	<<"retract-items">>,
-	<<"retrieve-affiliations">>,
-	<<"retrieve-items">>,
-	<<"retrieve-subscriptions">>,
-	<<"subscribe">>,
-	<<"subscription-notifications">>].
+    [<<"rsm">> | node_mix:features()].
 
 create_node_permission(Host, ServerHost, Node, ParentNode, Owner, Access) ->
     node_flat_sql:create_node_permission(Host, ServerHost, Node, ParentNode, Owner, Access).

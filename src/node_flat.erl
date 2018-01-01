@@ -103,6 +103,7 @@ features() ->
 	<<"modify-affiliations">>,
 	<<"outcast-affiliation">>,
 	<<"persistent-items">>,
+	<<"multi-items">>,
 	<<"publish">>,
 	<<"publish-only-affiliation">>,
 	<<"publish-options">>,
@@ -733,14 +734,7 @@ del_state(#pubsub_state{stateid = {Key, Nidx}, items = Items}) ->
 get_items(Nidx, _From, undefined) ->
     RItems = lists:keysort(#pubsub_item.creation,
 			   mnesia:index_read(pubsub_item, Nidx, #pubsub_item.nodeidx)),
-    Count = length(RItems),
-    if Count =< ?MAXITEMS ->
-	 {result, {RItems, undefined}};
-       true ->
-	 ItemsPage = lists:sublist(RItems, ?MAXITEMS),
-	 Rsm = rsm_page(Count, 0, 0, ItemsPage),
-	 {result, {ItemsPage, Rsm}}
-    end;
+    {result, {RItems, undefined}};
 
 get_items(Nidx, _From, #rsm_set{max = Max, index = IncIndex,
 				'after' = After, before = Before}) ->
