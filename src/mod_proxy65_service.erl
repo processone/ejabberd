@@ -252,8 +252,9 @@ transform_module_options(Opts) ->
 -spec get_streamhost(binary(), binary()) -> streamhost().
 get_streamhost(Host, ServerHost) ->
     {Port, IP} = get_port_ip(ServerHost),
-    HostName = gen_mod:get_module_opt(ServerHost, mod_proxy65, hostname,
+    HostName0 = gen_mod:get_module_opt(ServerHost, mod_proxy65, hostname,
 				      misc:ip_to_list(IP)),
+    HostName = misc:expand_keyword(<<"@HOST@">>, HostName0, ServerHost),
     Resource = ejabberd_cluster:node_id(),
     #streamhost{jid = jid:make(<<"">>, Host, Resource),
 		host = HostName,
