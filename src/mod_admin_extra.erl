@@ -1575,14 +1575,13 @@ send_stanza_c2s(Username, Host, Resource, Stanza) ->
     end.
 
 privacy_set(Username, Host, QueryS) ->
-    From = jid:make(Username, Host),
-    To = jid:make(Host),
+    Jid = jid:make(Username, Host),
     QueryEl = fxml_stream:parse_element(QueryS),
     SubEl = xmpp:decode(QueryEl),
     IQ = #iq{type = set, id = <<"push">>, sub_els = [SubEl],
-	     from = From, to = To},
-    mod_privacy:process_iq(IQ),
-    ok.
+	     from = Jid, to = Jid},
+    Result = mod_privacy:process_iq(IQ),
+    Result#iq.type == result.
 
 %%%
 %%% Stats
