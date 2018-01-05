@@ -114,7 +114,10 @@ get_node_by_id(Hash) ->
 
 -spec send({atom(), node()}, term()) -> boolean().
 send(Dst, Msg) ->
-    erlang:send(Dst, Msg).
+    case erlang:send(Dst, Msg, [nosuspend, noconnect]) of
+	ok -> true;
+	_ -> false
+    end.
 
 -spec wait_for_sync(timeout()) -> ok.
 wait_for_sync(Timeout) ->
