@@ -120,6 +120,10 @@ hosts:
 ###.  =================
 ###'  TLS configuration
 
+## Note that the following configuration is the default
+## configuration of the TLS driver, so you don't need to
+## uncomment it.
+##
 ## define_macro:
 ##   'TLS_CIPHERS': "HIGH:!aNULL:!eNULL:!3DES:@STRENGTH"
 ##   'TLS_OPTIONS':
