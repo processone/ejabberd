@@ -39,7 +39,7 @@
 
 -define(EJABBERD_URI, <<"http://www.process-one.net/en/ejabberd/">>).
 
--define(COPYRIGHT, "Copyright (c) 2002-2017 ProcessOne").
+-define(COPYRIGHT, "Copyright (c) ProcessOne").
 
 %%-define(DBGFSM, true).
 
