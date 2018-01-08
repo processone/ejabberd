@@ -40,6 +40,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
+-include("translate.hrl").
 
 -define(PROCNAME, ejabberd_mod_proxy65_service).
 
@@ -144,7 +145,7 @@ process_disco_info(#iq{type = set, lang = Lang} = IQ) ->
 process_disco_info(#iq{type = get, to = To, lang = Lang} = IQ) ->
     Host = ejabberd_router:host_of_route(To#jid.lserver),
     Name = gen_mod:get_module_opt(Host, mod_proxy65, name,
-				  <<"SOCKS5 Bytestreams">>),
+				  ?T("SOCKS5 Bytestreams")),
     Info = ejabberd_hooks:run_fold(disco_info, Host,
 				   [], [Host, ?MODULE, <<"">>, <<"">>]),
     xmpp:make_iq_result(

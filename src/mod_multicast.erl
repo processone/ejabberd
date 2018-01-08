@@ -44,7 +44,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
-
+-include("translate.hrl").
 -include("xmpp.hrl").
 
 -record(state,
@@ -261,10 +261,12 @@ process_iq(_, _) ->
 -define(FEATURE(Feat), Feat).
 
 iq_disco_info(From, Lang, State) ->
+    Name = gen_mod:get_module_opt(State#state.lserver, ?MODULE,
+				  name, ?T("Multicast")),
     #disco_info{
        identities = [#identity{category = <<"service">>,
 			       type = <<"multicast">>,
-			       name = translate:translate(Lang, <<"Multicast">>)}],
+			       name = translate:translate(Lang, Name)}],
        features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS, ?NS_VCARD, ?NS_ADDRESS],
        xdata = iq_disco_info_extras(From, State)}.
 
@@ -1119,6 +1121,7 @@ depends(_Host, _Opts) ->
 mod_opt_type(access) ->
     fun acl:access_rules_validator/1;
 mod_opt_type(host) -> fun iolist_to_binary/1;
+mod_opt_type(name) -> fun iolist_to_binary/1;
 mod_opt_type({limits, Type}) when (Type == local) or (Type == remote) ->
     fun(L) ->
 	    lists:map(
@@ -1128,4 +1131,4 @@ mod_opt_type({limits, Type}) when (Type == local) or (Type == remote) ->
 		    ({presence, I} = O) when is_integer(I) -> O
 		end, L)
     end;
-mod_opt_type(_) -> [access, host, {limits, local}, {limits, remote}].
+mod_opt_type(_) -> [access, host, {limits, local}, {limits, remote}, name].
