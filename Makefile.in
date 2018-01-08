@@ -136,7 +136,10 @@ ifeq ($(MAKECMDGOALS),copy-files-sub)
 DEPS:=$(sort $(shell $(REBAR) -q list-deps|$(SED) -ne '/ TAG / s/ .*// p; / REV / s/ .*// p; / BRANCH / s/ .*// p'))
 
 DEPS_FILES=$(call FILES_WILDCARD,$(foreach DEP,$(DEPS),deps/$(DEP)/ebin/*.beam deps/$(DEP)/ebin/*.app deps/$(DEP)/priv/* deps/$(DEP)/priv/lib/* deps/$(DEP)/priv/bin/* deps/$(DEP)/include/*.hrl deps/$(DEP)/COPY* deps/$(DEP)/LICENSE* deps/$(DEP)/lib/*/ebin/*.beam deps/$(DEP)/lib/*/ebin/*.app))
-DEPS_FILES_FILTERED=$(filter-out %/epam %/eimp %/mac_listener deps/elixir/ebin/elixir.app,$(DEPS_FILES))
+
+BINARIES=deps/epam/priv/bin/epam deps/eimp/priv/bin/eimp deps/fs/priv/mac_listener
+
+DEPS_FILES_FILTERED=$(filter-out $(BINARIES) deps/elixir/ebin/elixir.app,$(DEPS_FILES))
 DEPS_DIRS=$(sort deps/ $(foreach DEP,$(DEPS),deps/$(DEP)/) $(dir $(DEPS_FILES)))
 
 MAIN_FILES=$(filter-out %/configure.beam,$(call FILES_WILDCARD,ebin/*.beam ebin/*.app priv/msgs/*.msg priv/css/*.css priv/img/*.png priv/js/*.js priv/lib/* include/*.hrl COPYING))
@@ -153,19 +156,16 @@ define COPY_template
 $(call TO_DEST,$(1)): $(1) $(call TO_DEST,$(dir $(1))) ; $$(INSTALL) -m 644 $(1) $(call TO_DEST,$(1))
 endef
 
+define COPY_BINARY_template
+$(call TO_DEST,$(1)): $(1) $(call TO_DEST,$(dir $(1))) ; $$(INSTALL) -m 755 $$(O_USER) $(1) $(call TO_DEST,$(1))
+endef
+
 $(foreach file,$(DEPS_FILES_FILTERED) $(MAIN_FILES),$(eval $(call COPY_template,$(file))))
+
+$(foreach file,$(BINARIES),$(eval $(call COPY_BINARY_template,$(file))))
 
 $(sort $(call TO_DEST,$(MAIN_DIRS) $(DEPS_DIRS))):
 	$(INSTALL) -d $@
-
-$(call TO_DEST,deps/epam/priv/bin/epam): $(LIBDIR)/%: deps/epam/priv/bin/epam $(call TO_DEST,deps/epam/priv/bin/)
-	$(INSTALL) -m 750 $(O_USER) $< $@
-
-$(call TO_DEST,deps/eimp/priv/bin/eimp): $(LIBDIR)/%: deps/eimp/priv/bin/eimp $(call TO_DEST,deps/eimp/priv/bin/)
-	$(INSTALL) -m 755 $(O_USER) $< $@
-
-$(call TO_DEST,deps/fs/priv/mac_listener): $(LIBDIR)/%: deps/fs/priv/mac_listener $(call TO_DEST,deps/fs/priv/)
-	$(INSTALL) -m 755 $(O_USER) $< $@
 
 $(call TO_DEST,priv/sql/lite.sql): sql/lite.sql $(call TO_DEST,priv/sql)
 	$(INSTALL) -m 644 $< $@
