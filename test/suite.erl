@@ -522,7 +522,7 @@ decode(El, NS, Opts) ->
     end.
 
 send_text(Config, Text) ->
-    ok = recv_call(Config, {send_text, Text}).
+    recv_call(Config, {send_text, Text}).
 
 send(State, Pkt) ->
     {NewID, NewPkt} = case Pkt of
