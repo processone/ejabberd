@@ -210,7 +210,7 @@ handle_cast({component_connected, Host}, State) ->
     RosterPerm = get_roster_permission(ServerHost, Host),
     PresencePerm = get_presence_permission(ServerHost, Host),
     MessagePerm = get_message_permission(ServerHost, Host),
-    if RosterPerm /= none, PresencePerm /= none, MessagePerm /= none ->
+    if RosterPerm /= none; PresencePerm /= none; MessagePerm /= none ->
 	    Priv = #privilege{perms = [#privilege_perm{access = message,
 						       type = MessagePerm},
 				       #privilege_perm{access = roster,
