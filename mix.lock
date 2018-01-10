@@ -7,7 +7,7 @@
   "ex_doc": {:hex, :ex_doc, "0.18.1", "37c69d2ef62f24928c1f4fdc7c724ea04aecfdf500c4329185f8e3649c915baf", [], [{:earmark, "~> 1.1", [hex: :earmark, repo: "hexpm", optional: false]}], "hexpm"},
   "ezlib": {:git, "https://github.com/processone/ezlib.git", "ec6491d788436bb096022843e6ec7f58d2973ae3", [tag: "1.0.3"]},
   "fast_tls": {:hex, :fast_tls, "1.0.19", "1d9364799a373a6457feed56f1817a769d52cb53fca2264b293645d9399d982a", [], [{:p1_utils, "1.0.10", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
-  "fast_xml": {:hex, :fast_xml, "1.1.28", "31ce5cf44d20e900e1a499009f886ff74b589324d532ed0ed7a432e4f498beb1", [], [{:p1_utils, "1.0.10", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
+  "fast_xml": {:hex, :fast_xml, "1.1.28", "31ce5cf44d20e900e1a499009f886ff74b589324d532ed0ed7a432e4f498beb1", [:rebar3], [{:p1_utils, "1.0.10", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "fast_yaml": {:hex, :fast_yaml, "1.0.12", "ee8527d388255cf7a24fc1e6cb2d09dca4e506966dd9d86e61d3d90f236a3e2e", [], [{:p1_utils, "1.0.10", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "fs": {:hex, :fs, "3.4.0", "6d18575c250b415b3cad559e6f97a4c822516c7bc2c10bfbb2493a8f230f5132", [], [], "hexpm"},
   "goldrush": {:hex, :goldrush, "0.1.9", "f06e5d5f1277da5c413e84d5a2924174182fb108dabb39d5ec548b27424cd106", [], [], "hexpm"},
