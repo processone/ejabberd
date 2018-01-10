@@ -3,11 +3,11 @@
   "earmark": {:hex, :earmark, "1.2.4", "99b637c62a4d65a20a9fb674b8cffb8baa771c04605a80c911c4418c69b75439", [:mix], [], "hexpm"},
   "eimp": {:git, "https://github.com/processone/eimp.git", "23796118176be98195db9f831f17dde74d1553e1", [tag: "1.0.1"]},
   "eredis": {:hex, :eredis, "1.1.0", "8d8d74496f35216679b97726b75fb1c8715e99dd7f3ef9f9824a2264c3e0aac0", [:rebar3], [], "hexpm"},
-  "esip": {:git, "https://github.com/processone/esip.git", "2a23f2808668b160d2aee107b019b3d03b692733", [tag: "1.0.19"]},
+  "esip": {:git, "https://github.com/processone/esip.git", "043299870aa4d318523b1443fb80cb67d09fa9a5", [tag: "1.0.20"]},
   "ex_doc": {:hex, :ex_doc, "0.18.1", "37c69d2ef62f24928c1f4fdc7c724ea04aecfdf500c4329185f8e3649c915baf", [:mix], [{:earmark, "~> 1.1", [hex: :earmark, repo: "hexpm", optional: false]}], "hexpm"},
   "ezlib": {:git, "https://github.com/processone/ezlib.git", "ec6491d788436bb096022843e6ec7f58d2973ae3", [tag: "1.0.3"]},
   "fast_tls": {:git, "https://github.com/processone/fast_tls.git", "ca285d06ccb64746e54c8db4fbaedd9289dfd417", [tag: "1.0.19"]},
-  "fast_xml": {:git, "https://github.com/processone/fast_xml.git", "b4b46d840f25a9a47c71e0aefc6cd1c55f846699", [tag: "1.1.27"]},
+  "fast_xml": {:git, "https://github.com/processone/fast_xml.git", "54d751cb3e8bbd755db14024de4174ade2ee4364", [tag: "1.1.28"]},
   "fast_yaml": {:hex, :fast_yaml, "1.0.12", "ee8527d388255cf7a24fc1e6cb2d09dca4e506966dd9d86e61d3d90f236a3e2e", [:rebar3], [{:p1_utils, "1.0.10", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "fs": {:git, "https://github.com/synrc/fs.git", "bed946700628541d65c64aa779e01490d9842f5f", [ref: "bed9467"]},
   "goldrush": {:hex, :goldrush, "0.1.9", "f06e5d5f1277da5c413e84d5a2924174182fb108dabb39d5ec548b27424cd106", [:rebar3], [], "hexpm"},
@@ -23,5 +23,5 @@
   "riakc": {:hex, :riakc, "2.5.3", "6132d9e687a0dfd314b2b24c4594302ca8b55568a5d733c491d8fb6cd4004763", [:make, :mix, :rebar3], [{:riak_pb, "~> 2.3", [hex: :riak_pb, repo: "hexpm", optional: false]}], "hexpm"},
   "sqlite3": {:hex, :sqlite3, "1.1.5", "794738b6d07b6d36ec6d42492cb9d629bad9cf3761617b8b8d728e765db19840", [:rebar3], [], "hexpm"},
   "stringprep": {:hex, :stringprep, "1.0.10", "552d784eb60652220fce9131f8bb0ebc62fdffd6482c4f08f2e7d61300227c28", [:rebar3], [{:p1_utils, "1.0.10", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
-  "stun": {:git, "https://github.com/processone/stun.git", "78d65a3068c8a6a630a0452155920309d85bcca4", [tag: "1.0.18"]},
-  "xmpp": {:git, "https://github.com/processone/xmpp.git", "2d5b646cb5602f76ecd8f8609a8382b1e0dca8bf", [tag: "1.1.18"]}}
+  "stun": {:git, "https://github.com/processone/stun.git", "b2099c34ea82c72732d4ce9930649107cfb0418c", [tag: "1.0.19"]},
+  "xmpp": {:git, "https://github.com/processone/xmpp.git", "76863da371eab5c50509ab282104e2f140bef665", [tag: "1.1.19"]}}
