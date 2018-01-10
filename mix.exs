@@ -59,21 +59,21 @@ defmodule Ejabberd.Mixfile do
   defp deps do
     [{:lager, "~> 3.4.0"},
      {:p1_utils, "~> 1.0"},
-     {:fast_xml, github: "processone/fast_xml", tag: "1.1.28", override: true, manager: :rebar},
-     {:xmpp, github: "processone/xmpp", tag: "1.1.19", override: true, manager: :rebar},
+     {:fast_xml, "~> 1.1"},
+     {:xmpp, "~> 1.1"},
      {:cache_tab, "~> 1.0"},
      {:stringprep, "~> 1.0"},
      {:fast_yaml, "~> 1.0"},
-     {:fast_tls, github: "processone/fast_tls", tag: "1.0.19", override: true, manager: :rebar},
-     {:stun, github: "processone/stun", tag: "1.0.19", override: true, manager: :rebar},
-     {:esip, github: "processone/esip", tag: "1.0.20", override: true, manager: :rebar},
+     {:fast_tls, "~> 1.0"},
+     {:stun, "~> 1.0"},
+     {:esip, "~> 1.0"},
      {:p1_mysql, "~> 1.0"},
      {:p1_pgsql, "~> 1.1"},
      {:jiffy, "~> 0.14.7"},
      {:p1_oauth2, "~> 0.6.1"},
      {:distillery, "~> 1.0"},
      {:ex_doc, ">= 0.0.0", only: :dev},
-     {:fs, github: "synrc/fs", ref: "bed9467", override: true, manager: :rebar}]
+     {:fs, "~> 3.4"}]
     ++ cond_deps()
   end
 
