@@ -59,21 +59,21 @@ defmodule Ejabberd.Mixfile do
   defp deps do
     [{:lager, "~> 3.4.0"},
      {:p1_utils, "~> 1.0"},
-     {:fast_xml, "~> 1.1", manager: :rebar},
-     {:xmpp, "~> 1.1"},
+     {:fast_xml, github: "processone/fast_xml", tag: "1.1.27", override: true, manager: :rebar},
+     {:xmpp, github: "processone/xmpp", tag: "1.1.18", override: true, manager: :rebar},
      {:cache_tab, "~> 1.0"},
      {:stringprep, "~> 1.0"},
      {:fast_yaml, "~> 1.0"},
-     {:fast_tls, "~> 1.0"},
-     {:stun, github: "processone/stun", tag: "1.0.17", override: true, manager: :rebar},
-     {:esip, github: "processone/esip", tag: "1.0.18", override: true, manager: :rebar},
+     {:fast_tls, github: "processone/fast_tls", tag: "1.0.19", override: true, manager: :rebar},
+     {:stun, github: "processone/stun", tag: "1.0.18", override: true, manager: :rebar},
+     {:esip, github: "processone/esip", tag: "1.0.19", override: true, manager: :rebar},
      {:p1_mysql, "~> 1.0"},
      {:p1_pgsql, "~> 1.1"},
      {:jiffy, "~> 0.14.7"},
      {:p1_oauth2, "~> 0.6.1"},
      {:distillery, "~> 1.0"},
      {:ex_doc, ">= 0.0.0", only: :dev},
-     {:fs, "~> 2.12.0"}]
+     {:fs, github: "synrc/fs", ref: "bed9467", override: true, manager: :rebar}]
     ++ cond_deps()
   end
 
