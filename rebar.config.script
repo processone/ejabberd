@@ -233,9 +233,10 @@ ResolveDepPath = case {SystemDeps, IsRebar3} of
 		     {true, _} ->
 			 fun("deps/" ++ Rest) ->
 				 Slash = string:str(Rest, "/"),
-				 code:lib_dir(
-				   string:sub_string(Rest, 1, Slash -1)) ++
-				     string:sub_string(Rest, Slash);
+				 case code:lib_dir(string:sub_string(Rest, 1, Slash -1)) of
+				     {error, _} -> Rest;
+				     V -> V ++ string:sub_string(Rest, Slash)
+				 end;
 			    (Path) ->
 				 Path
 			 end;
