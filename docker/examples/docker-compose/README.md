@@ -1,1 +1,0 @@
-# simple docker-compose example
