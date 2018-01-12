@@ -17,7 +17,6 @@
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
-
 Vars = case file:consult(filename:join([filename:dirname(SCRIPT),"vars.config"])) of
 	   {ok, Terms} ->
 	       Terms;
@@ -205,15 +204,35 @@ fun(DepsList) ->
 		  end, DepsList)
 end,
 
+DepAlts = fun("esip") -> ["esip", "p1_sip"];
+	     ("xmpp") -> ["xmpp", "p1_xmpp"];
+	     ("fast_xml") -> ["fast_xml", "p1_xml"];
+	     (Val) -> [Val]
+	  end,
+
+LibDirInt = fun([Dep|Rest], Suffix, F) ->
+		 case code:lib_dir(Dep) of
+		     {error, _} ->
+			 F(Rest, Suffix, F);
+		     V -> V ++ Suffix
+		 end;
+	    ([], _, _) ->
+		 error
+	 end,
+
+LibDir = fun(Name, Suffix) ->
+		 LibDirInt(DepAlts(Name), Suffix, LibDirInt)
+	 end,
+
 GlobalDepsFilter =
 fun(Deps) ->
 	DepNames = lists:map(fun({DepName, _, _}) -> DepName;
 				({DepName, _}) -> DepName
 			     end, Deps),
 	lists:filtermap(fun(Dep) ->
-				case code:lib_dir(Dep) of
-				    {error, _} ->
-					{true, "Unable to locate dep '" ++ atom_to_list(Dep) ++ "' in system deps."};
+				case LibDir(atom_to_list(Dep), "") of
+				    error ->
+					exit("Unable to locate dep '" ++ atom_to_list(Dep) ++ "' in system deps.");
 				    _ ->
 					false
 				end
@@ -233,9 +252,9 @@ ResolveDepPath = case {SystemDeps, IsRebar3} of
 		     {true, _} ->
 			 fun("deps/" ++ Rest) ->
 				 Slash = string:str(Rest, "/"),
-				 case code:lib_dir(string:sub_string(Rest, 1, Slash -1)) of
-				     {error, _} -> Rest;
-				     V -> V ++ string:sub_string(Rest, Slash)
+				 case LibDir(string:sub_string(Rest, 1, Slash -1), string:sub_string(Rest, Slash)) of
+				     error -> Rest;
+				     V -> V
 				 end;
 			    (Path) ->
 				 Path
@@ -258,7 +277,7 @@ ResolveDepPath = case {SystemDeps, IsRebar3} of
 CtParams = fun(CompileOpts) ->
 		   ["-ct_hooks cth_surefire ",
 		    lists:map(fun({i, IncPath}) ->
-				      [" -include ", filename:join([Cwd, ResolveDepPath(IncPath)])]
+				      [" -include ", filename:absname(ResolveDepPath(IncPath), Cwd)]
 			      end, CompileOpts),
 		    TestConfig]
 	   end,
