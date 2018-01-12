@@ -73,6 +73,8 @@ defmodule Ejabberd.Mixfile do
      {:p1_oauth2, "~> 0.6.1"},
      {:distillery, "~> 1.0"},
      {:ex_doc, ">= 0.0.0", only: :dev},
+     {:base64url, "~> 0.0.1"},
+     {:jose, "~> 1.8"},
      {:fs, "~> 3.4"}]
     ++ cond_deps()
   end
