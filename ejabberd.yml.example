@@ -257,9 +257,9 @@ listen:
   ##   request_handlers:
   ##     "": mod_http_upload
   ##   tls: true
-  ##   protocol_options: 'TLSOPTS'
-  ##   dhfile: 'DHFILE'
-  ##   ciphers: 'CIPHERS'
+  ##   protocol_options: 'TLS_OPTIONS'
+  ##   dhfile: 'DH_FILE'
+  ##   ciphers: 'TLS_CIPHERS'
 
 ## Disabling digest-md5 SASL authentication. digest-md5 requires plain-text
 ## password storage (see auth_password_format option).
