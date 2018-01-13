@@ -561,8 +561,10 @@ process_features(StreamFeatures,
 				#sasl_mechanisms{list = Mechs} ->
 				    process_sasl_mechanisms(Mechs, State2);
 				false ->
-				    process_sasl_failure(
-				      <<"Peer provided no SASL mechanisms">>, State2)
+				    Txt = <<"Peer provided no SASL mechanisms; "
+					    "most likely it doesn't accept "
+					    "our certificate">>,
+				    process_sasl_failure(Txt, State2)
 			    catch _:{xmpp_codec, Why} ->
 				    Txt = xmpp:io_format_error(Why),
 				    process_sasl_failure(Txt, State1)
