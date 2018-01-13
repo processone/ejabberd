@@ -5,7 +5,7 @@
 %%% Created :  2 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2017   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2018   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -46,6 +46,7 @@
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("mod_vcard.hrl").
+-include("translate.hrl").
 
 -define(JUD_MATCHES, 30).
 -define(VCARD_CACHE, vcard_cache).
@@ -286,10 +287,12 @@ disco_features(Acc, _From, _To, _Node, _Lang) ->
 
 -spec disco_identity([identity()], jid(), jid(),
 		     binary(),  binary()) -> [identity()].
-disco_identity(Acc, _From, _To, <<"">>, Lang) ->
+disco_identity(Acc, _From, To, <<"">>, Lang) ->
+    Host = ejabberd_router:host_of_route(To#jid.lserver),
+    Name = gen_mod:get_module_opt(Host, ?MODULE, name, ?T("vCard User Search")),
     [#identity{category = <<"directory">>,
 	       type = <<"user">>,
-	       name = translate:translate(Lang, <<"vCard User Search">>)}|Acc];
+	       name = translate:translate(Lang, Name)}|Acc];
 disco_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
@@ -542,6 +545,7 @@ depends(_Host, _Opts) ->
 mod_opt_type(allow_return_all) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
+mod_opt_type(name) -> fun iolist_to_binary/1;
 mod_opt_type(host) -> fun iolist_to_binary/1;
 mod_opt_type(hosts) ->
     fun (L) -> lists:map(fun iolist_to_binary/1, L) end;
@@ -563,4 +567,4 @@ mod_opt_type(O) when O == use_cache; O == cache_missed ->
 mod_opt_type(_) ->
     [allow_return_all, db_type, host, hosts, iqdisc, matches,
      search, search_all_hosts, cache_life_time, cache_size,
-     use_cache, cache_missed].
+     use_cache, cache_missed, name].

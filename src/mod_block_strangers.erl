@@ -5,7 +5,7 @@
 %%% Created : 25 Dec 2016 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2017   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2018   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -79,7 +79,7 @@ filter_offline_msg({_Action, #message{} = Msg} = Acc) ->
 	deny -> {stop, {drop, Msg}}
     end.
 
-check_message(#message{from = From, to = To} = Msg) ->
+check_message(#message{from = From, to = To, lang = Lang} = Msg) ->
     LServer = To#jid.lserver,
     AllowLocalUsers =
         gen_mod:get_module_opt(LServer, ?MODULE, allow_local_users, true),
@@ -95,7 +95,7 @@ check_message(#message{from = From, to = To} = Msg) ->
 		    if
 			Log ->
 			    ?INFO_MSG("~s message from stranger ~s to ~s",
-				      [if Drop -> "Dropping";
+				      [if Drop -> "Rejecting";
 					  true -> "Allow"
 				       end,
 				       jid:encode(From), jid:encode(To)]);
@@ -104,6 +104,9 @@ check_message(#message{from = From, to = To} = Msg) ->
 		    end,
 		    if
 			Drop ->
+			    Txt = <<"Messages from strangers are rejected">>,
+			    Err = xmpp:err_policy_violation(Txt, Lang),
+			    ejabberd_router:route_error(Msg, Err),
 			    deny;
 			true ->
 			    allow

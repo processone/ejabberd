@@ -5,7 +5,7 @@
 %%% Created : 19 Mar 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2017   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2018   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -75,6 +75,7 @@
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("mod_muc.hrl").
+-include("translate.hrl").
 
 -record(state,
 	{hosts = [] :: [binary()],
@@ -526,9 +527,10 @@ process_disco_info(#iq{type = get, to = To, lang = Lang,
     Features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
 		?NS_REGISTER, ?NS_MUC, ?NS_VCARD, ?NS_MUCSUB, ?NS_MUC_UNIQUE
 		| RSMFeatures ++ MAMFeatures],
+    Name = gen_mod:get_module_opt(ServerHost, ?MODULE, name, ?T("Chatrooms")),
     Identity = #identity{category = <<"conference">>,
 			 type = <<"text">>,
-			 name = translate:translate(Lang, <<"Chatrooms">>)},
+			 name = translate:translate(Lang, Name)},
     xmpp:make_iq_result(
       IQ, #disco_info{features = Features,
 		      identities = [Identity],
@@ -880,6 +882,7 @@ mod_opt_type(ram_db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(history_size) ->
     fun (I) when is_integer(I), I >= 0 -> I end;
 mod_opt_type(host) -> fun iolist_to_binary/1;
+mod_opt_type(name) -> fun iolist_to_binary/1;
 mod_opt_type(hosts) ->
     fun (L) -> lists:map(fun iolist_to_binary/1, L) end;
 mod_opt_type(max_room_desc) ->
@@ -975,7 +978,7 @@ mod_opt_type({default_room_options, presence_broadcast}) ->
     end;
 mod_opt_type(_) ->
     [access, access_admin, access_create, access_persistent,
-     db_type, ram_db_type, history_size, host, hosts,
+     db_type, ram_db_type, history_size, host, hosts, name,
      max_room_desc, max_room_id, max_room_name,
      max_rooms_discoitems, max_user_conferences, max_users,
      max_users_admin_threshold, max_users_presence,

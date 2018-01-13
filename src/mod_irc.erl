@@ -5,7 +5,7 @@
 %%% Created : 15 Feb 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2017   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2018   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -45,6 +45,7 @@
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("mod_irc.hrl").
+-include("translate.hrl").
 
 -define(DEFAULT_IRC_ENCODING, <<"iso8859-15">>).
 
@@ -432,11 +433,12 @@ sm_route(Host, ServerHost, Packet) ->
 closed_connection(Host, From, Server) ->
     ets:delete(irc_connection, {From, Server, Host}).
 
-iq_disco(_ServerHost, <<"">>, Lang) ->
+iq_disco(ServerHost, <<"">>, Lang) ->
+    Name = gen_mod:get_module_opt(ServerHost, ?MODULE, name, ?T("IRC Transport")),
     #disco_info{
        identities = [#identity{category = <<"conference">>,
 			       type = <<"irc">>,
-			       name = translate:translate(Lang, <<"IRC Transport">>)}],
+			       name = translate:translate(Lang, Name)}],
        features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS, ?NS_MUC,
 		   ?NS_REGISTER, ?NS_VCARD, ?NS_COMMANDS]};
 iq_disco(ServerHost, Node, Lang) ->
@@ -986,11 +988,13 @@ mod_opt_type(access) ->
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(default_encoding) ->
     fun iolist_to_binary/1;
+mod_opt_type(name) ->
+    fun iolist_to_binary/1;
 mod_opt_type(host) -> fun iolist_to_binary/1;
 mod_opt_type(hosts) ->
     fun (L) -> lists:map(fun iolist_to_binary/1, L) end;
 mod_opt_type(_) ->
-    [access, db_type, default_encoding, host, hosts].
+    [access, db_type, default_encoding, host, hosts, name].
 
 -spec extract_ident(stanza()) -> binary().
 extract_ident(Packet) ->

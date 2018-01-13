@@ -5,7 +5,7 @@
 %%% Created :  1 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2017   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2018   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -41,7 +41,7 @@
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
-
+-include("translate.hrl").
 -include("xmpp.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("mod_roster.hrl").
@@ -195,10 +195,12 @@ process_local_iq_info(#iq{type = get, lang = Lang,
 
 -spec get_local_identity([identity()], jid(), jid(),
 			 binary(), binary()) ->	[identity()].
-get_local_identity(Acc, _From, _To, <<"">>, _Lang) ->
+get_local_identity(Acc, _From, To, <<"">>, _Lang) ->
+    Host = To#jid.lserver,
+    Name = gen_mod:get_module_opt(Host, ?MODULE, name, ?T("ejabberd")),
     Acc ++ [#identity{category = <<"server">>,
 		      type = <<"im">>,
-		      name = <<"ejabberd">>}];
+		      name = Name}];
 get_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
@@ -456,6 +458,7 @@ depends(_Host, _Opts) ->
 mod_opt_type(extra_domains) ->
     fun (Hs) -> [iolist_to_binary(H) || H <- Hs] end;
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
+mod_opt_type(name) -> fun iolist_to_binary/1;
 mod_opt_type(server_info) ->
     fun (L) ->
 	    lists:map(fun (Opts) ->
@@ -466,4 +469,4 @@ mod_opt_type(server_info) ->
 		      end,
 		      L)
     end;
-mod_opt_type(_) -> [extra_domains, iqdisc, server_info].
+mod_opt_type(_) -> [extra_domains, iqdisc, server_info, name].

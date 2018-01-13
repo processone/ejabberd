@@ -5,7 +5,7 @@
 %%% Created : 7 Oct 2015 by Christophe Romain <christophe.romain@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2017   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2018   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -114,7 +114,10 @@ get_node_by_id(Hash) ->
 
 -spec send({atom(), node()}, term()) -> boolean().
 send(Dst, Msg) ->
-    erlang:send(Dst, Msg).
+    case erlang:send(Dst, Msg, [nosuspend, noconnect]) of
+	ok -> true;
+	_ -> false
+    end.
 
 -spec wait_for_sync(timeout()) -> ok.
 wait_for_sync(Timeout) ->

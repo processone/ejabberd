@@ -3,7 +3,7 @@ defmodule Ejabberd.Mixfile do
 
   def project do
     [app: :ejabberd,
-     version: "17.12.0",
+     version: "18.1.0",
      description: description(),
      elixir: "~> 1.4",
      elixirc_paths: ["lib"],
@@ -59,21 +59,23 @@ defmodule Ejabberd.Mixfile do
   defp deps do
     [{:lager, "~> 3.4.0"},
      {:p1_utils, "~> 1.0"},
-     {:fast_xml, "~> 1.1", manager: :rebar},
+     {:fast_xml, "~> 1.1"},
      {:xmpp, "~> 1.1"},
      {:cache_tab, "~> 1.0"},
      {:stringprep, "~> 1.0"},
      {:fast_yaml, "~> 1.0"},
      {:fast_tls, "~> 1.0"},
-     {:stun, github: "processone/stun", tag: "1.0.17", override: true, manager: :rebar},
-     {:esip, github: "processone/esip", tag: "1.0.18", override: true, manager: :rebar},
+     {:stun, "~> 1.0"},
+     {:esip, "~> 1.0"},
      {:p1_mysql, "~> 1.0"},
      {:p1_pgsql, "~> 1.1"},
      {:jiffy, "~> 0.14.7"},
      {:p1_oauth2, "~> 0.6.1"},
      {:distillery, "~> 1.0"},
      {:ex_doc, ">= 0.0.0", only: :dev},
-     {:fs, "~> 2.12.0"}]
+     {:base64url, "~> 0.0.1"},
+     {:jose, "~> 1.8"},
+     {:fs, "~> 3.4"}]
     ++ cond_deps()
   end
 

@@ -5,7 +5,7 @@
 %%% Created : 20 Aug 2015 by Holger Weiss <holger@zedat.fu-berlin.de>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2015-2017   ProcessOne
+%%% ejabberd, Copyright (C) 2015-2018   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -91,6 +91,7 @@
 -include("ejabberd_http.hrl").
 -include("xmpp.hrl").
 -include("logger.hrl").
+-include("translate.hrl").
 
 -record(state,
 	{server_host            :: binary(),
@@ -215,7 +216,7 @@ depends(_Host, _Opts) ->
 init([ServerHost, Opts]) ->
     process_flag(trap_exit, true),
     Hosts = gen_mod:get_opt_hosts(ServerHost, Opts, <<"upload.@HOST@">>),
-    Name = gen_mod:get_opt(name, Opts, <<"HTTP File Upload">>),
+    Name = gen_mod:get_opt(name, Opts, ?T("HTTP File Upload")),
     Access = gen_mod:get_opt(access, Opts, local),
     MaxSize = gen_mod:get_opt(max_size, Opts, 104857600),
     SecretLength = gen_mod:get_opt(secret_length, Opts, 40),

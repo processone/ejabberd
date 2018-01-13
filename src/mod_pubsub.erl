@@ -5,7 +5,7 @@
 %%% Created :  1 Dec 2007 by Christophe Romain <christophe.romain@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2017   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2018   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -44,6 +44,7 @@
 -include("xmpp.hrl").
 -include("pubsub.hrl").
 -include("mod_roster.hrl").
+-include("translate.hrl").
 
 -define(STDTREE, <<"tree">>).
 -define(STDNODE, <<"flat">>).
@@ -829,7 +830,7 @@ process_disco_info(#iq{from = From, to = To, lang = Lang, type = get,
     Info = ejabberd_hooks:run_fold(disco_info, ServerHost,
 				   [],
 				   [ServerHost, ?MODULE, <<>>, <<>>]),
-    case iq_disco_info(Host, Node, From, Lang) of
+    case iq_disco_info(ServerHost, Host, Node, From, Lang) of
 	{result, IQRes} ->
 	    XData = IQRes#disco_info.xdata ++ Info,
 	    xmpp:make_iq_result(IQ, IQRes#disco_info{node = Node, xdata = XData});
@@ -970,22 +971,23 @@ node_disco_info(Host, Node, _From, _Identity, _Features) ->
 	Other -> Other
     end.
 
--spec iq_disco_info(binary(), binary(), jid(), binary())
+-spec iq_disco_info(binary(), binary(), binary(), jid(), binary())
 		   -> {result, disco_info()} | {error, stanza_error()}.
-iq_disco_info(Host, SNode, From, Lang) ->
+iq_disco_info(ServerHost, Host, SNode, From, Lang) ->
     [Node | _] = case SNode of
 		     <<>> -> [<<>>];
 		     _ -> str:tokens(SNode, <<"!">>)
 		 end,
     case Node of
 	<<>> ->
+	    Name = gen_mod:get_module_opt(ServerHost, ?MODULE, name,
+					  ?T("Publish-Subscribe")),
 	    {result,
 	     #disco_info{
 		identities = [#identity{
 				 category = <<"pubsub">>,
 				 type = <<"service">>,
-				 name = translate:translate(
-					  Lang, <<"Publish-Subscribe">>)}],
+				 name = translate:translate(Lang, Name)}],
 		features = [?NS_DISCO_INFO,
 			    ?NS_DISCO_ITEMS,
 			    ?NS_PUBSUB,
@@ -3853,6 +3855,7 @@ purge_offline(Host, LJID, Node) ->
 
 mod_opt_type(access_createnode) -> fun acl:access_rules_validator/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
+mod_opt_type(name) -> fun iolist_to_binary/1;
 mod_opt_type(host) -> fun iolist_to_binary/1;
 mod_opt_type(hosts) ->
     fun (L) -> lists:map(fun iolist_to_binary/1, L) end;
@@ -3874,7 +3877,7 @@ mod_opt_type(pep_mapping) ->
 mod_opt_type(plugins) ->
     fun (A) when is_list(A) -> A end;
 mod_opt_type(_) ->
-    [access_createnode, db_type, host, hosts,
+    [access_createnode, db_type, host, hosts, name,
      ignore_pep_from_offline, iqdisc, last_item_cache,
      max_items_node, nodetree, pep_mapping, plugins,
      max_subscriptions_node, default_node_config].
