@@ -407,18 +407,30 @@ decode_mime_type(MimeType) ->
 encode_mime_type(Type) ->
     <<"image/", (atom_to_binary(Type, latin1))/binary>>.
 
-warn(Format) ->
-    ?WARNING_MSG("ejabberd is not compiled with ~p support", [Format]).
+-spec fail(atom()) -> no_return().
+fail(Format) ->
+    FormatS = case Format of
+		  webp -> "WebP";
+		  png -> "PNG";
+		  jpeg -> "JPEG";
+		  gif -> "GIF";
+		  _ -> ""
+	      end,
+    if FormatS /= "" ->
+	    ?WARNING_MSG("ejabberd is not compiled with ~s support", [FormatS]);
+       true ->
+	    ok
+    end,
+    erlang:error(badarg).
 
-mod_opt_type({convert, From}) when From == webp; From == jpeg;
-				   From == png; From == gif ->
+mod_opt_type({convert, From}) ->
     fun(To) when is_atom(To), To /= From ->
-	    case eimp:is_supported(From) of
+	    case eimp:is_supported(From) orelse From == default of
 		false ->
-		    warn(From);
+		    fail(From);
 		true ->
 		    case eimp:is_supported(To) of
-			false -> warn(To);
+			false -> fail(To);
 			true -> To
 		    end
 	    end
