@@ -196,7 +196,19 @@ mod_opt_type(custom_headers) ->
 mod_opt_type(rm_on_unregister) ->
     fun(B) when is_boolean(B) -> B end;
 mod_opt_type(thumbnail) ->
-    fun(B) when is_boolean(B) -> B end;
+    fun(true) ->
+	    case eimp:supported_formats() of
+		[] ->
+		    ?WARNING_MSG("ejabberd is built without image converter "
+				 "support, option '~s' is ignored",
+				 [thumbnail]),
+		    erlang:error(badarg);
+		_ ->
+		    true
+	    end;
+       (false) ->
+	    false
+    end;
 mod_opt_type(_) ->
     [host, hosts, name, access, max_size, secret_length, jid_in_url, file_mode,
      dir_mode, docroot, put_url, get_url, service_url, custom_headers,
@@ -236,20 +248,6 @@ init([ServerHost, Opts]) ->
 	    ok;
 	Mode ->
 	    file:change_mode(DocRoot2, Mode)
-    end,
-    case Thumbnail of
-	true ->
-	    case misc:have_eimp() of
-		false ->
-		    ?ERROR_MSG("ejabberd is built without graphics support, "
-			       "please rebuild it with --enable-graphics or "
-			       "set 'thumbnail: false' for module '~s' in "
-			       "ejabberd.yml", [?MODULE]);
-		_ ->
-		    ok
-	    end;
-	false ->
-	    ok
     end,
     lists:foreach(
       fun(Host) ->

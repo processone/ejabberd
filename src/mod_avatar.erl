@@ -38,21 +38,12 @@
 %%% API
 %%%===================================================================
 start(Host, _Opts) ->
-    case misc:have_eimp() of
-	true ->
-	    ejabberd_hooks:add(pubsub_publish_item, Host, ?MODULE,
-			       pubsub_publish_item, 50),
-	    ejabberd_hooks:add(vcard_iq_set, Host, ?MODULE,
-			       vcard_iq_convert, 30),
-	    ejabberd_hooks:add(vcard_iq_set, Host, ?MODULE,
-			       vcard_iq_publish, 100);
-	false ->
-	    ?CRITICAL_MSG("ejabberd is built without "
-			  "graphics support: reconfigure it with "
-			  "--enable-graphics or disable '~s'",
-			  [?MODULE]),
-	    {error, graphics_not_compiled}
-    end.
+    ejabberd_hooks:add(pubsub_publish_item, Host, ?MODULE,
+		       pubsub_publish_item, 50),
+    ejabberd_hooks:add(vcard_iq_set, Host, ?MODULE,
+		       vcard_iq_convert, 30),
+    ejabberd_hooks:add(vcard_iq_set, Host, ?MODULE,
+		       vcard_iq_publish, 100).
 
 stop(Host) ->
     ejabberd_hooks:delete(pubsub_publish_item, Host, ?MODULE,
@@ -416,35 +407,21 @@ decode_mime_type(MimeType) ->
 encode_mime_type(Type) ->
     <<"image/", (atom_to_binary(Type, latin1))/binary>>.
 
-mod_opt_type({convert, png}) ->
-    fun(jpeg) -> jpeg;
-       (webp) -> webp;
-       (gif) -> gif
-    end;
-mod_opt_type({convert, webp}) ->
-    fun(jpeg) -> jpeg;
-       (png) -> png;
-       (gif) -> gif
-    end;
-mod_opt_type({convert, jpeg}) ->
-    fun(png) -> png;
-       (webp) -> webp;
-       (gif) -> gif
-    end;
-mod_opt_type({convert, gif}) ->
-    fun(png) -> png;
-       (jpeg) -> jpeg;
-       (webp) -> webp
-    end;
-mod_opt_type({convert, default}) ->
-    fun(png) -> png;
-       (webp) -> webp;
-       (jpeg) -> jpeg;
-       (gif) -> gif
+warn(Format) ->
+    ?WARNING_MSG("ejabberd is not compiled with ~p support", [Format]).
+
+mod_opt_type({convert, From}) when From == webp; From == jpeg;
+				   From == png; From == gif ->
+    fun(To) when is_atom(To), To /= From ->
+	    case eimp:is_supported(From) of
+		false ->
+		    warn(From);
+		true ->
+		    case eimp:is_supported(To) of
+			false -> warn(To);
+			true -> To
+		    end
+	    end
     end;
 mod_opt_type(_) ->
-    [{convert, default},
-     {convert, webp},
-     {convert, png},
-     {convert, gif},
-     {convert, jpeg}].
+    [{convert, T} || T <- [default|eimp:supported_formats()]].

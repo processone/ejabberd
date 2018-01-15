@@ -33,7 +33,7 @@
 	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
 	 l2i/1, i2l/1, i2l/2, expr_to_term/1, term_to_expr/1,
 	 now_to_usec/1, usec_to_now/1, encode_pid/1, decode_pid/2,
-	 compile_exprs/2, join_atoms/2, try_read_file/1, have_eimp/0,
+	 compile_exprs/2, join_atoms/2, try_read_file/1,
 	 css_dir/0, img_dir/0, js_dir/0, read_css/1, read_img/1, read_js/1]).
 
 %% Deprecated functions
@@ -213,12 +213,6 @@ try_read_file(Path) ->
 	    ?ERROR_MSG("Failed to read ~s: ~s", [Path, file:format_error(Why)]),
 	    erlang:error(badarg)
     end.
-
--ifdef(GRAPHICS).
-have_eimp() -> true.
--else.
-have_eimp() -> false.
--endif.
 
 -spec css_dir() -> file:filename().
 css_dir() ->

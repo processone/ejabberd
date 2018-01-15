@@ -43,7 +43,6 @@
 {iconv, @iconv@}.
 {stun, @stun@}.
 {sip, @sip@}.
-{graphics, @graphics@}.
 
 %% Version
 {vsn, "@PACKAGE_VERSION@"}.
