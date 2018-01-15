@@ -851,20 +851,15 @@ code_to_message(_Code) -> <<"">>.
 -spec identify(binary(), binary()) -> {ok, media_info()} | pass.
 
 identify(Path, Data) ->
-    case misc:have_eimp() of
-	true ->
-	    case eimp:identify(Data) of
-		{ok, Info} ->
-		    {ok, #media_info{
-			    type = proplists:get_value(type, Info),
-			    width = proplists:get_value(width, Info),
-			    height = proplists:get_value(height, Info)}};
-		{error, Why} ->
-		    ?DEBUG("Cannot identify type of ~s: ~s",
-			   [Path, eimp:format_error(Why)]),
-		    pass
-	    end;
-	false ->
+    case eimp:identify(Data) of
+	{ok, Info} ->
+	    {ok, #media_info{
+		    type = proplists:get_value(type, Info),
+		    width = proplists:get_value(width, Info),
+		    height = proplists:get_value(height, Info)}};
+	{error, Why} ->
+	    ?DEBUG("Cannot identify type of ~s: ~s",
+		   [Path, eimp:format_error(Why)]),
 	    pass
     end.
 
