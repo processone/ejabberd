@@ -28,7 +28,8 @@ defmodule Ejabberd.Mixfile do
      applications: [:ssl, :os_mon],
      included_applications: [:lager, :mnesia, :inets, :p1_utils, :cache_tab,
                              :fast_tls, :stringprep, :fast_xml, :xmpp,
-                             :stun, :fast_yaml, :esip, :jiffy, :p1_oauth2, :fs]
+                             :stun, :fast_yaml, :esip, :jiffy, :p1_oauth2,
+                             :fs, :base64url, :jose]
                          ++ cond_apps()]
   end
 
