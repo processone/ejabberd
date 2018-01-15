@@ -298,8 +298,8 @@ GenDepsConfigure =
 fun(Hooks) ->
 	lists:map(fun({Pkg, Flags}) ->
 			  DepPath = ResolveDepPath("deps/" ++ Pkg ++ "/"),
-			  {add, list_to_atom(Pkg), [{pre_hooks, [{'compile',
-			   lists:flatten(GenDepConfigureLine(DepPath, Flags))}]}]}
+			  Line = lists:flatten(GenDepConfigureLine(DepPath, Flags)),
+			  {add, list_to_atom(Pkg), [{pre_hooks, [{'compile', Line}, {'configure-deps', Line}]}]}
 		  end, Hooks)
 end,
 
