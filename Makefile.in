@@ -97,7 +97,7 @@ deps/.got:
 	$(REBAR) get-deps && :> deps/.got
 
 deps/.built: deps/.got
-	$(REBAR) recursive-deps
+	$(REBAR) configure-deps
 	$(REBAR) compile && :> deps/.built
 
 src: deps/.built
