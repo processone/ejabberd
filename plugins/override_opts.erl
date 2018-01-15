@@ -2,11 +2,11 @@
 -export([preprocess/2]).
 
 override_opts(override, Config, Opts) ->
-    lists:foldl(fun({Opt, Value}, Conf) ->
+    lists:foldl(fun({Opt, [Value]}, Conf) ->
 			rebar_config:set(Conf, Opt, Value)
 		end, Config, Opts);
 override_opts(add, Config, Opts) ->
-    lists:foldl(fun({Opt, Value}, Conf) ->
+    lists:foldl(fun({Opt, [Value]}, Conf) ->
 			V = rebar_config:get_local(Conf, Opt, []),
 			rebar_config:set(Conf, Opt, [Value | V])
 		end, Config, Opts).
