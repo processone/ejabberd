@@ -365,6 +365,7 @@ parse(#socket_state{xml_stream = XMLStream,
 		    socket = Socket,
 		    shaper = ShaperState} = SocketData, Data)
   when is_binary(Data) ->
+    ?DEBUG("(~s) Received XML on stream = ~p", [pp(SocketData), Data]),
     XMLStream1 = fxml_stream:parse(XMLStream, Data),
     {ShaperState1, Pause} = shaper:update(ShaperState, byte_size(Data)),
     Ret = if Pause > 0 ->
