@@ -576,6 +576,7 @@ transform_options(Opt, Opts) ->
 validate_module_options(Module, Opts) ->
     try Module:listen_opt_type('') of
 	_ ->
+	    maybe_start_zlib(Opts),
 	    lists:filtermap(
 	      fun({Opt, Val}) ->
 		      case validate_module_option(Module, Opt, Val) of
@@ -662,6 +663,14 @@ all_zero_ip(Opts) ->
     case proplists:get_bool(inet6, Opts) of
 	true -> {0,0,0,0,0,0,0,0};
 	false -> {0,0,0,0}
+    end.
+
+maybe_start_zlib(Opts) ->
+    case proplists:get_bool(zlib, Opts) of
+	true ->
+	    ejabberd:start_app(ezlib);
+	false ->
+	    ok
     end.
 
 opt_type(listen) -> fun validate_cfg/1;

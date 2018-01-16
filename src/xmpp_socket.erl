@@ -166,7 +166,6 @@ compress(SocketData) -> compress(SocketData, undefined).
 compress(#socket_state{receiver = undefined,
 		       sockmod = SockMod,
 		       socket = Socket} = SocketData, Data) ->
-    ejabberd:start_app(ezlib),
     {ok, ZlibSocket} = ezlib:enable_zlib(SockMod, Socket),
     case Data of
 	undefined -> ok;
