@@ -159,7 +159,7 @@ export(_Server) ->
              ?SQL("delete from pubsub_node_owner where nodeid=%(Nidx)d;"),
              ?SQL("delete from pubsub_state where nodeid=%(Nidx)d;"),
              ?SQL("delete from pubsub_item where nodeid=%(Nidx)d;"),
-             ?SQL("insert into pubsub_node(host,node,nodeid,parent,type)"
+             ?SQL("insert into pubsub_node(host,node,nodeid,parent,plugin)"
                   " values (%(H)s, %(Node)s, %(Nidx)d, %(Parent)s, %(Type)s);")]
             ++ lists:map(
                  fun ({Key, Value}) ->
