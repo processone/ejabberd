@@ -27,7 +27,7 @@ case $(id -un) in
             EXEC_CMD="as_install_user"
         else
             EXEC_CMD="as_current_user"
-            echo "WARNING: This is not recommended to run ejabberd as root" >&2
+            echo "WARNING: It is not recommended to run ejabberd as root" >&2
         fi
         ;;
     *)
