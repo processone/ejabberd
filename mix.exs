@@ -93,10 +93,10 @@ defmodule Ejabberd.Mixfile do
     for {:true, dep} <- [{config(:sqlite), {:sqlite3, "~> 1.1"}},
                          {config(:riak), {:riakc, "~> 2.4"}},
                          {config(:redis), {:eredis, "~> 1.0"}},
-                         {config(:zlib), {:ezlib, github: "processone/ezlib", tag: "1.0.3", override: true, manager: :rebar}},
+                         {config(:zlib), {:ezlib, "~> 1.0"}},
                          {config(:iconv), {:iconv, "~> 1.0"}},
                          {config(:pam), {:epam, "~> 1.0"}},
-                         {config(:tools), {:luerl, github: "rvirding/luerl", tag: "v0.2"}},
+                         {config(:tools), {:luerl, "~> 0.3.1"}},
                          {config(:tools), {:meck, "~> 0.8.4"}},
                          {config(:tools), {:moka, github: "processone/moka", tag: "1.0.5c"}}], do:
       dep
