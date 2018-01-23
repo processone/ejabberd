@@ -37,7 +37,8 @@
 	 get_local_features/5, get_local_services/5,
 	 process_sm_iq_items/1, process_sm_iq_info/1,
 	 get_sm_identity/5, get_sm_features/5, get_sm_items/5,
-	 get_info/5, transform_module_options/1, mod_opt_type/1, depends/2]).
+	 get_info/5, transform_module_options/1, mod_opt_type/1,
+	 mod_options/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -50,7 +51,7 @@
 -type items_acc() :: {error, stanza_error()} | {result, [disco_item()]} | empty.
 
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
 				  ?NS_DISCO_ITEMS, ?MODULE,
 				  process_local_iq_items, IQDisc),
@@ -66,7 +67,7 @@ start(Host, Opts) ->
     catch ets:new(disco_extra_domains,
 		  [named_table, ordered_set, public,
 		   {heir, erlang:group_leader(), none}]),
-    ExtraDomains = gen_mod:get_opt(extra_domains, Opts, []),
+    ExtraDomains = gen_mod:get_opt(extra_domains, Opts),
     lists:foreach(fun (Domain) ->
 			  register_extra_domain(Host, Domain)
 		  end,
@@ -115,7 +116,7 @@ stop(Host) ->
     ok.
 
 reload(Host, NewOpts, OldOpts) ->
-    case gen_mod:is_equal_opt(extra_domains, NewOpts, OldOpts, []) of
+    case gen_mod:is_equal_opt(extra_domains, NewOpts, OldOpts) of
 	{false, NewDomains, OldDomains} ->
 	    lists:foreach(
 	      fun(Domain) ->
@@ -128,7 +129,7 @@ reload(Host, NewOpts, OldOpts) ->
 	true ->
 	    ok
     end,
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts) of
 	{false, IQDisc, _} ->
 	    gen_iq_handler:add_iq_handler(ejabberd_local, Host,
 					  ?NS_DISCO_ITEMS, ?MODULE,
@@ -197,7 +198,7 @@ process_local_iq_info(#iq{type = get, lang = Lang,
 			 binary(), binary()) ->	[identity()].
 get_local_identity(Acc, _From, To, <<"">>, _Lang) ->
     Host = To#jid.lserver,
-    Name = gen_mod:get_module_opt(Host, ?MODULE, name, ?T("ejabberd")),
+    Name = gen_mod:get_module_opt(Host, ?MODULE, name),
     Acc ++ [#identity{category = <<"server">>,
 		      type = <<"im">>,
 		      name = Name}];
@@ -440,7 +441,7 @@ get_info(Acc, _, _, _Node, _) -> Acc.
 
 -spec get_fields(binary(), module()) -> [xdata_field()].
 get_fields(Host, Module) ->
-    Fields = gen_mod:get_module_opt(Host, ?MODULE, server_info, []),
+    Fields = gen_mod:get_module_opt(Host, ?MODULE, server_info),
     Fields1 = lists:filter(fun ({Modules, _, _}) ->
 				   case Modules of
 				       all -> true;
@@ -468,5 +469,10 @@ mod_opt_type(server_info) ->
 			      {Mods, Name, URLs}
 		      end,
 		      L)
-    end;
-mod_opt_type(_) -> [extra_domains, iqdisc, server_info, name].
+    end.
+
+mod_options(Host) ->
+    [{extra_domains, []},
+     {iqdisc, gen_iq_handler:iqdisc(Host)},
+     {server_info, []},
+     {name, ?T("ejabberd")}].

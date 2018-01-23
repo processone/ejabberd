@@ -25,7 +25,7 @@
 -protocol({xep, 78, '2.5'}).
 
 %% gen_mod API
--export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1]).
+-export([start/2, stop/1, reload/3, depends/2, mod_options/1]).
 %% hooks
 -export([c2s_unauthenticated_packet/2, c2s_stream_features/2]).
 
@@ -54,7 +54,7 @@ reload(_Host, _NewOpts, _OldOpts) ->
 depends(_Host, _Opts) ->
     [].
 
-mod_opt_type(_) ->
+mod_options(_) ->
     [].
 
 -spec c2s_unauthenticated_packet(c2s_state(), iq()) ->

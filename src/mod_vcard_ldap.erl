@@ -31,7 +31,7 @@
 -export([start_link/2]).
 -export([init/2, stop/1, get_vcard/2, set_vcard/4, search/4,
 	 remove_user/2, import/3, search_fields/1, search_reported/1,
-	 mod_opt_type/1]).
+	 mod_opt_type/1, mod_options/1]).
 -export([is_search_supported/1]).
 
 %% gen_server callbacks
@@ -303,26 +303,26 @@ process_pattern(Str, {User, Domain}, AttrValues) ->
 			  [{<<"%s">>, V, 1} || V <- AttrValues]).
 
 default_vcard_map() ->
-    [{<<"NICKNAME">>, <<"%u">>, []},
-     {<<"FN">>, <<"%s">>, [<<"displayName">>]},
-     {<<"FAMILY">>, <<"%s">>, [<<"sn">>]},
-     {<<"GIVEN">>, <<"%s">>, [<<"givenName">>]},
-     {<<"MIDDLE">>, <<"%s">>, [<<"initials">>]},
-     {<<"ORGNAME">>, <<"%s">>, [<<"o">>]},
-     {<<"ORGUNIT">>, <<"%s">>, [<<"ou">>]},
-     {<<"CTRY">>, <<"%s">>, [<<"c">>]},
-     {<<"LOCALITY">>, <<"%s">>, [<<"l">>]},
-     {<<"STREET">>, <<"%s">>, [<<"street">>]},
-     {<<"REGION">>, <<"%s">>, [<<"st">>]},
-     {<<"PCODE">>, <<"%s">>, [<<"postalCode">>]},
-     {<<"TITLE">>, <<"%s">>, [<<"title">>]},
-     {<<"URL">>, <<"%s">>, [<<"labeleduri">>]},
-     {<<"DESC">>, <<"%s">>, [<<"description">>]},
-     {<<"TEL">>, <<"%s">>, [<<"telephoneNumber">>]},
-     {<<"EMAIL">>, <<"%s">>, [<<"mail">>]},
-     {<<"BDAY">>, <<"%s">>, [<<"birthDay">>]},
-     {<<"ROLE">>, <<"%s">>, [<<"employeeType">>]},
-     {<<"PHOTO">>, <<"%s">>, [<<"jpegPhoto">>]}].
+    [{<<"NICKNAME">>, [{<<"%u">>, []}]},
+     {<<"FN">>, [{<<"%s">>, [<<"displayName">>]}]},
+     {<<"FAMILY">>, [{<<"%s">>, [<<"sn">>]}]},
+     {<<"GIVEN">>, [{<<"%s">>, [<<"givenName">>]}]},
+     {<<"MIDDLE">>, [{<<"%s">>, [<<"initials">>]}]},
+     {<<"ORGNAME">>, [{<<"%s">>, [<<"o">>]}]},
+     {<<"ORGUNIT">>, [{<<"%s">>, [<<"ou">>]}]},
+     {<<"CTRY">>, [{<<"%s">>, [<<"c">>]}]},
+     {<<"LOCALITY">>, [{<<"%s">>, [<<"l">>]}]},
+     {<<"STREET">>, [{<<"%s">>, [<<"street">>]}]},
+     {<<"REGION">>, [{<<"%s">>, [<<"st">>]}]},
+     {<<"PCODE">>, [{<<"%s">>, [<<"postalCode">>]}]},
+     {<<"TITLE">>, [{<<"%s">>, [<<"title">>]}]},
+     {<<"URL">>, [{<<"%s">>, [<<"labeleduri">>]}]},
+     {<<"DESC">>, [{<<"%s">>, [<<"description">>]}]},
+     {<<"TEL">>, [{<<"%s">>, [<<"telephoneNumber">>]}]},
+     {<<"EMAIL">>, [{<<"%s">>, [<<"mail">>]}]},
+     {<<"BDAY">>, [{<<"%s">>, [<<"birthDay">>]}]},
+     {<<"ROLE">>, [{<<"%s">>, [<<"employeeType">>]}]},
+     {<<"PHOTO">>, [{<<"%s">>, [<<"jpegPhoto">>]}]}].
 
 default_search_fields() ->
     [{?T("User"), <<"%u">>},
@@ -352,16 +352,15 @@ default_search_reported() ->
      {?T("Organization Unit"), <<"ORGUNIT">>}].
 
 parse_options(Host, Opts) ->
-    MyHosts = gen_mod:get_opt_hosts(Host, Opts, <<"vjud.@HOST@">>),
-    Search = gen_mod:get_opt(search, Opts, false),
-    Matches = gen_mod:get_opt(matches, Opts, 30),
+    MyHosts = gen_mod:get_opt_hosts(Host, Opts),
+    Search = gen_mod:get_opt(search, Opts),
+    Matches = gen_mod:get_opt(matches, Opts),
     Eldap_ID = misc:atom_to_binary(gen_mod:get_module_proc(Host, ?PROCNAME)),
     Cfg = eldap_utils:get_config(Host, Opts),
-    UIDsTemp = gen_mod:get_opt({ldap_uids, Host}, Opts,
-			       [{<<"uid">>, <<"%u">>}]),
+    UIDsTemp = gen_mod:get_opt(ldap_uids, Opts),
     UIDs = eldap_utils:uids_domain_subst(Host, UIDsTemp),
     SubFilter = eldap_utils:generate_subfilter(UIDs),
-    UserFilter = case gen_mod:get_opt({ldap_filter, Host}, Opts, <<"">>) of
+    UserFilter = case gen_mod:get_opt(ldap_filter, Opts) of
                      <<"">> ->
 			 SubFilter;
                      F ->
@@ -370,11 +369,9 @@ parse_options(Host, Opts) ->
     {ok, SearchFilter} =
 	eldap_filter:parse(eldap_filter:do_sub(UserFilter,
 					       [{<<"%u">>, <<"*">>}])),
-    VCardMap = gen_mod:get_opt(ldap_vcard_map, Opts, default_vcard_map()),
-    SearchFields = gen_mod:get_opt(ldap_search_fields, Opts,
-                                   default_search_fields()),
-    SearchReported = gen_mod:get_opt(ldap_search_reported, Opts,
-                                     default_search_reported()),
+    VCardMap = gen_mod:get_opt(ldap_vcard_map, Opts),
+    SearchFields = gen_mod:get_opt(ldap_search_fields, Opts),
+    SearchReported = gen_mod:get_opt(ldap_search_reported, Opts),
     UIDAttrs = [UAttr || {UAttr, _} <- UIDs],
     VCardMapAttrs = lists:usort(lists:append([A
 					      || {_, _, A} <- VCardMap])
@@ -412,7 +409,6 @@ parse_options(Host, Opts) ->
 	   search_reported_attrs = SearchReportedAttrs,
 	   matches = Matches}.
 
-mod_opt_type(ldap_filter) -> fun eldap_utils:check_filter/1;
 mod_opt_type(ldap_search_fields) ->
     fun (Ls) ->
 	    [{iolist_to_binary(S), iolist_to_binary(P)}
@@ -423,15 +419,6 @@ mod_opt_type(ldap_search_reported) ->
 	    [{iolist_to_binary(S), iolist_to_binary(P)}
 	     || {S, P} <- Ls]
     end;
-mod_opt_type(ldap_uids) ->
-    fun (Us) ->
-	    lists:map(fun ({U, P}) ->
-			      {iolist_to_binary(U), iolist_to_binary(P)};
-			  ({U}) -> {iolist_to_binary(U)};
-			  (U) -> {iolist_to_binary(U)}
-		      end,
-		      lists:flatten(Us))
-    end;
 mod_opt_type(ldap_vcard_map) ->
     fun (Ls) ->
 	    lists:map(fun ({S, [{P, L}]}) ->
@@ -440,48 +427,14 @@ mod_opt_type(ldap_vcard_map) ->
 		      end,
 		      Ls)
     end;
-mod_opt_type(deref_aliases) ->
-    fun (never) -> never;
-	(searching) -> searching;
-	(finding) -> finding;
-	(always) -> always
-    end;
-mod_opt_type(ldap_backups) ->
-    fun (L) -> [iolist_to_binary(H) || H <- L] end;
-mod_opt_type(ldap_base) -> fun iolist_to_binary/1;
-mod_opt_type(ldap_deref_aliases) ->
-    fun (never) -> never;
-	(searching) -> searching;
-	(finding) -> finding;
-	(always) -> always
-    end;
-mod_opt_type(ldap_encrypt) ->
-    fun (tls) -> tls;
-	(starttls) -> starttls;
-	(none) -> none
-    end;
-mod_opt_type(ldap_password) -> fun iolist_to_binary/1;
-mod_opt_type(ldap_port) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
-mod_opt_type(ldap_rootdn) -> fun iolist_to_binary/1;
-mod_opt_type(ldap_servers) ->
-    fun (L) -> [iolist_to_binary(H) || H <- L] end;
-mod_opt_type(ldap_tls_cacertfile) ->
-    fun misc:try_read_file/1;
-mod_opt_type(ldap_tls_certfile) ->
-    fun ejabberd_pkix:try_certfile/1;
-mod_opt_type(ldap_tls_depth) ->
-    fun (I) when is_integer(I), I >= 0 -> I end;
-mod_opt_type(ldap_tls_verify) ->
-    fun (hard) -> hard;
-	(soft) -> soft;
-	(false) -> false
-    end;
-mod_opt_type(_) ->
-    [ldap_filter, ldap_search_fields,
-     ldap_search_reported, ldap_uids, ldap_vcard_map,
-     deref_aliases, ldap_backups, ldap_base,
-     ldap_deref_aliases, ldap_encrypt, ldap_password,
-     ldap_port, ldap_rootdn, ldap_servers,
-     ldap_tls_cacertfile, ldap_tls_certfile, ldap_tls_depth,
-     ldap_tls_verify].
+mod_opt_type(Opt) ->
+    eldap_utils:opt_type(Opt).
+
+mod_options(Host) ->
+    [{ldap_search_fields, default_search_fields()},
+     {ldap_search_reported, default_search_reported()},
+     {ldap_vcard_map, default_vcard_map()}
+     | lists:map(
+	 fun({Opt, Default}) ->
+		 {Opt, ejabberd_config:get_option({Opt, Host}, Default)}
+	 end, eldap_utils:options(Host))].

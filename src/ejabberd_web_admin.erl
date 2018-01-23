@@ -74,26 +74,20 @@ get_acl_rule([<<"vhosts">>], _) ->
 %% The pages of a vhost are only accesible if the user is admin of that vhost:
 get_acl_rule([<<"server">>, VHost | _RPath], Method)
     when Method =:= 'GET' orelse Method =:= 'HEAD' ->
-    AC = gen_mod:get_module_opt(VHost, ejabberd_web_admin,
-				access, configure),
-    ACR = gen_mod:get_module_opt(VHost, ejabberd_web_admin,
-				 access_readonly, webadmin_view),
+    AC = ejabberd_config:get_option({access, VHost}, configure),
+    ACR = ejabberd_config:get_option({access_readonly, VHost}, webadmin_view),
     {VHost, [AC, ACR]};
 get_acl_rule([<<"server">>, VHost | _RPath], 'POST') ->
-    AC = gen_mod:get_module_opt(VHost, ejabberd_web_admin,
-				access, configure),
+    AC = ejabberd_config:get_option({access, VHost}, configure),
     {VHost, [AC]};
 %% Default rule: only global admins can access any other random page
 get_acl_rule(_RPath, Method)
     when Method =:= 'GET' orelse Method =:= 'HEAD' ->
-    AC = gen_mod:get_module_opt(global, ejabberd_web_admin,
-				access, configure),
-    ACR = gen_mod:get_module_opt(global, ejabberd_web_admin,
-				 access_readonly, webadmin_view),
+    AC = ejabberd_config:get_option(access, configure),
+    ACR = ejabberd_config:get_option(access_readonly, webadmin_view),
     {global, [AC, ACR]};
 get_acl_rule(_RPath, 'POST') ->
-    AC = gen_mod:get_module_opt(global, ejabberd_web_admin,
-				access, configure),
+    AC = ejabberd_config:get_option(access, configure),
     {global, [AC]}.
 
 %%%==================================
@@ -1274,7 +1268,7 @@ get_offlinemsg_module(Server) ->
     end.
 
 get_lastactivity_menuitem_list(Server) ->
-    case gen_mod:db_type(Server, mod_last) of
+    case gen_mod:get_module_opt(Server, mod_last, db_type) of
       mnesia -> [{<<"last-activity">>, <<"Last Activity">>}];
       _ -> []
     end.

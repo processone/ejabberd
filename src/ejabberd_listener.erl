@@ -572,9 +572,16 @@ transform_options({listen, LOpts}, Opts) ->
 transform_options(Opt, Opts) ->
     [Opt|Opts].
 
+known_listen_options(Module) ->
+    try Module:listen_options() of
+	Opts -> [element(1, Opt) || Opt <- Opts]
+    catch _:undef ->
+	    Module:listen_opt_type('')
+    end.
+
 -spec validate_module_options(module(), [{atom(), any()}]) -> [{atom(), any()}].
 validate_module_options(Module, Opts) ->
-    try Module:listen_opt_type('') of
+    try known_listen_options(Module) of
 	_ ->
 	    maybe_start_zlib(Opts),
 	    lists:filtermap(

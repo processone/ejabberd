@@ -28,7 +28,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, reload/3, mod_opt_type/1,
+-export([start/2, stop/1, reload/3, mod_options/1,
          get_commands_spec/0, depends/2]).
 
 % Commands API
@@ -362,4 +362,4 @@ sql_query(Host, Query) ->
             ok
     end.
 
-mod_opt_type(_) -> [].
+mod_options(_) -> [].

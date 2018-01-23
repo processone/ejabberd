@@ -49,7 +49,8 @@
 	 get_jid_info/4, encode_item/1, webadmin_page/3,
 	 webadmin_user/4, get_versioning_feature/2,
 	 roster_versioning_enabled/1, roster_version/2,
-	 mod_opt_type/1, set_roster/1, del_roster/3, depends/2]).
+	 mod_opt_type/1, mod_options/1, set_roster/1, del_roster/3,
+	 depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -87,7 +88,7 @@
 -optional_callbacks([use_cache/2, cache_nodes/1]).
 
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
     init_cache(Mod, Host, Opts),
@@ -142,7 +143,7 @@ reload(Host, NewOpts, OldOpts) ->
        true ->
 	    ok
     end,
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts) of
 	{false, IQDisc, _} ->
 	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_ROSTER,
 					  ?MODULE, process_iq, IQDisc);
@@ -181,7 +182,7 @@ process_local_iq(#iq{type = set, from = From, lang = Lang,
 	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
 	false ->
 	    #jid{server = Server} = From,
-	    Access = gen_mod:get_module_opt(Server, ?MODULE, access, all),
+	    Access = gen_mod:get_module_opt(Server, ?MODULE, access),
 	    case acl:match_rule(Server, Access, From) of
 		deny ->
 		    Txt = <<"Access denied by service policy">>,
@@ -214,10 +215,10 @@ roster_hash(Items) ->
 					      <- Items]))).
 
 roster_versioning_enabled(Host) ->
-    gen_mod:get_module_opt(Host, ?MODULE, versioning, false).
+    gen_mod:get_module_opt(Host, ?MODULE, versioning).
 
 roster_version_on_db(Host) ->
-    gen_mod:get_module_opt(Host, ?MODULE, store_current_id, false).
+    gen_mod:get_module_opt(Host, ?MODULE, store_current_id).
 
 %% Returns a list that may contain an xmlelement with the XEP-237 feature if it's enabled.
 -spec get_versioning_feature([xmpp_element()], binary()) -> [xmpp_element()].
@@ -1088,7 +1089,7 @@ has_duplicated_groups(Groups) ->
 
 -spec init_cache(module(), binary(), gen_mod:opts()) -> ok.
 init_cache(Mod, Host, Opts) ->
-    CacheOpts = cache_opts(Host, Opts),
+    CacheOpts = cache_opts(Opts),
     case use_cache(Mod, Host, roster_version) of
 	true ->
 	    ets_cache:new(?ROSTER_VERSION_CACHE, CacheOpts);
@@ -1104,17 +1105,11 @@ init_cache(Mod, Host, Opts) ->
 	    ets_cache:delete(?ROSTER_ITEM_CACHE)
     end.
 
--spec cache_opts(binary(), gen_mod:opts()) -> [proplists:property()].
-cache_opts(Host, Opts) ->
-    MaxSize = gen_mod:get_opt(
-		cache_size, Opts,
-		ejabberd_config:cache_size(Host)),
-    CacheMissed = gen_mod:get_opt(
-		    cache_missed, Opts,
-		    ejabberd_config:cache_missed(Host)),
-    LifeTime = case gen_mod:get_opt(
-		      cache_life_time, Opts,
-		      ejabberd_config:cache_life_time(Host)) of
+-spec cache_opts(gen_mod:opts()) -> [proplists:property()].
+cache_opts(Opts) ->
+    MaxSize = gen_mod:get_opt(cache_size, Opts),
+    CacheMissed = gen_mod:get_opt(cache_missed, Opts),
+    LifeTime = case gen_mod:get_opt(cache_life_time, Opts) of
 		   infinity -> infinity;
 		   I -> timer:seconds(I)
 	       end,
@@ -1124,10 +1119,7 @@ cache_opts(Host, Opts) ->
 use_cache(Mod, Host, Table) ->
     case erlang:function_exported(Mod, use_cache, 2) of
 	true -> Mod:use_cache(Host, Table);
-	false ->
-	    gen_mod:get_module_opt(
-	      Host, ?MODULE, use_cache,
-	      ejabberd_config:use_cache(Host))
+	false -> gen_mod:get_module_opt(Host, ?MODULE, use_cache)
     end.
 
 -spec cache_nodes(module(), binary()) -> [node()].
@@ -1213,7 +1205,15 @@ mod_opt_type(O) when O == cache_life_time; O == cache_size ->
         (infinity) -> infinity
     end;
 mod_opt_type(O) when O == use_cache; O == cache_missed ->
-    fun (B) when is_boolean(B) -> B end;
-mod_opt_type(_) ->
-    [access, db_type, iqdisc, store_current_id,
-     versioning, cache_life_time, cache_size, use_cache, cache_missed].
+    fun (B) when is_boolean(B) -> B end.
+
+mod_options(Host) ->
+    [{access, all},
+     {store_current_id, false},
+     {versioning, false},
+     {iqdisc, gen_iq_handler:iqdisc(Host)},
+     {db_type, ejabberd_config:default_db(Host, ?MODULE)},
+     {use_cache, ejabberd_config:use_cache(Host)},
+     {cache_size, ejabberd_config:cache_size(Host)},
+     {cache_missed, ejabberd_config:cache_missed(Host)},
+     {cache_life_time, ejabberd_config:cache_life_time(Host)}].

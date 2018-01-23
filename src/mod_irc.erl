@@ -39,7 +39,7 @@
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
-	 mod_opt_type/1, depends/2]).
+	 mod_opt_type/1, mod_options/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -47,13 +47,7 @@
 -include("mod_irc.hrl").
 -include("translate.hrl").
 
--define(DEFAULT_IRC_ENCODING, <<"iso8859-15">>).
-
 -define(DEFAULT_IRC_PORT, 6667).
-
--define(DEFAULT_REALNAME, <<"WebIRC-User">>).
-
--define(DEFAULT_WEBIRC_PASSWORD, <<"">>).
 
 -define(POSSIBLE_ENCODINGS,
 	[<<"koi8-r">>, <<"iso8859-15">>, <<"iso8859-1">>, <<"iso8859-2">>,
@@ -100,14 +94,14 @@ depends(_Host, _Opts) ->
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
     ejabberd:start_app(iconv),
-    MyHosts = gen_mod:get_opt_hosts(Host, Opts, <<"irc.@HOST@">>),
+    MyHosts = gen_mod:get_opt_hosts(Host, Opts),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
-    Access = gen_mod:get_opt(access, Opts, all),
+    Access = gen_mod:get_opt(access, Opts),
     catch ets:new(irc_connection,
 		  [named_table, public,
 		   {keypos, #irc_connection.jid_server_host}]),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     lists:foreach(
       fun(MyHost) ->
 	      register_hooks(MyHost, IQDisc),
@@ -136,13 +130,13 @@ handle_call(stop, _From, State) ->
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
 handle_cast({reload, ServerHost, NewOpts, OldOpts}, State) ->
-    NewHosts = gen_mod:get_opt_hosts(ServerHost, NewOpts, <<"irc.@HOST@">>),
-    OldHosts = gen_mod:get_opt_hosts(ServerHost, OldOpts, <<"irc.@HOST@">>),
-    NewIQDisc = gen_mod:get_opt(iqdisc, NewOpts, gen_iq_handler:iqdisc(ServerHost)),
-    OldIQDisc = gen_mod:get_opt(iqdisc, OldOpts, gen_iq_handler:iqdisc(ServerHost)),
+    NewHosts = gen_mod:get_opt_hosts(ServerHost, NewOpts),
+    OldHosts = gen_mod:get_opt_hosts(ServerHost, OldOpts),
+    NewIQDisc = gen_mod:get_opt(iqdisc, NewOpts),
+    OldIQDisc = gen_mod:get_opt(iqdisc, OldOpts),
     NewMod = gen_mod:db_mod(ServerHost, NewOpts, ?MODULE),
     OldMod = gen_mod:db_mod(ServerHost, OldOpts, ?MODULE),
-    Access = gen_mod:get_opt(access, NewOpts, all),
+    Access = gen_mod:get_opt(access, NewOpts),
     if NewMod /= OldMod ->
 	    NewMod:init(ServerHost, NewOpts);
        true ->
@@ -166,7 +160,7 @@ handle_cast({reload, ServerHost, NewOpts, OldOpts}, State) ->
 	      ejabberd_router:unregister_route(OldHost),
 	      unregister_hooks(OldHost)
       end, OldHosts -- NewHosts),
-    Access = gen_mod:get_opt(access, NewOpts, all),
+    Access = gen_mod:get_opt(access, NewOpts),
     {noreply, State#state{hosts = NewHosts, access = Access}};
 handle_cast(Msg, State) ->
     ?WARNING_MSG("unexpected cast: ~p", [Msg]),
@@ -434,7 +428,7 @@ closed_connection(Host, From, Server) ->
     ets:delete(irc_connection, {From, Server, Host}).
 
 iq_disco(ServerHost, <<"">>, Lang) ->
-    Name = gen_mod:get_module_opt(ServerHost, ?MODULE, name, ?T("IRC Transport")),
+    Name = gen_mod:get_module_opt(ServerHost, ?MODULE, name),
     #disco_info{
        identities = [#identity{category = <<"conference">>,
 			       type = <<"irc">>,
@@ -595,18 +589,17 @@ get_connection_params(Host, From, IRCServer) ->
 			  IRCServer).
 
 get_default_encoding(ServerHost) ->
-    Result = gen_mod:get_module_opt(ServerHost, ?MODULE, default_encoding,
-                                    ?DEFAULT_IRC_ENCODING),
+    Result = gen_mod:get_module_opt(ServerHost, ?MODULE, default_encoding),
     ?INFO_MSG("The default_encoding configured for "
 	      "host ~p is: ~p~n",
 	      [ServerHost, Result]),
     Result.
 
 get_realname(ServerHost) ->
-    gen_mod:get_module_opt(ServerHost, ?MODULE, realname, ?DEFAULT_REALNAME).
+    gen_mod:get_module_opt(ServerHost, ?MODULE, realname).
 
 get_webirc_password(ServerHost) ->
-    gen_mod:get_module_opt(ServerHost, ?MODULE, webirc_password, ?DEFAULT_WEBIRC_PASSWORD).
+    gen_mod:get_module_opt(ServerHost, ?MODULE, webirc_password).
 
 get_connection_params(Host, ServerHost, From,
 		      IRCServer) ->
@@ -993,8 +986,22 @@ mod_opt_type(name) ->
 mod_opt_type(host) -> fun iolist_to_binary/1;
 mod_opt_type(hosts) ->
     fun (L) -> lists:map(fun iolist_to_binary/1, L) end;
-mod_opt_type(_) ->
-    [access, db_type, default_encoding, host, hosts, name].
+mod_opt_type(realname) ->
+    fun iolist_to_binary/1;
+mod_opt_type(webirc_password) ->
+    fun iolist_to_binary/1;
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1.
+
+mod_options(Host) ->
+    [{access, all},
+     {db_type, ejabberd_config:default_db(Host, ?MODULE)},
+     {iqdisc, gen_iq_handler:iqdisc(Host)},
+     {default_encoding, <<"iso8859-15">>},
+     {host, <<"irc.@HOST@">>},
+     {hosts, []},
+     {realname, <<"WebIRC-User">>},
+     {webirc_password, <<"">>},
+     {name, ?T("IRC Transport")}].
 
 -spec extract_ident(stanza()) -> binary().
 extract_ident(Packet) ->
