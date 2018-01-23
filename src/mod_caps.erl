@@ -136,7 +136,7 @@ user_receive_packet({#presence{from = From, type = available} = Pkt,
 	   case read_caps(Pkt) of
 	     nothing -> ok;
 	     #caps{version = Version, exts = Exts} = Caps ->
-		    feature_request(LServer, From, To, Caps, [Version | Exts])
+		    feature_request(LServer, To, From, Caps, [Version | Exts])
 	   end;
        true -> ok
     end,
