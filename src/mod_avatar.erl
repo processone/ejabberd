@@ -24,7 +24,7 @@
 -behaviour(gen_mod).
 
 %% gen_mod API
--export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1]).
+-export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1, mod_options/1]).
 %% Hooks
 -export([pubsub_publish_item/6, vcard_iq_convert/1, vcard_iq_publish/1]).
 
@@ -375,7 +375,7 @@ stop_with_error(Lang, Reason) ->
 
 -spec get_converting_rules(binary()) -> convert_rules().
 get_converting_rules(LServer) ->
-    gen_mod:get_module_opt(LServer, ?MODULE, convert, []).
+    gen_mod:get_module_opt(LServer, ?MODULE, convert).
 
 -spec get_type(binary()) -> eimp:img_type() | unknown.
 get_type(Data) ->
@@ -429,11 +429,13 @@ mod_opt_type({convert, From}) ->
 		false ->
 		    fail(From);
 		true ->
-		    case eimp:is_supported(To) of
+		    case eimp:is_supported(To) orelse To == undefined of
 			false -> fail(To);
 			true -> To
 		    end
 	    end
-    end;
-mod_opt_type(_) ->
-    [{convert, T} || T <- [default|eimp:supported_formats()]].
+    end.
+
+mod_options(_) ->
+    [{convert,
+      [{T, undefined} || T <- [default|eimp:supported_formats()]]}].

@@ -55,7 +55,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, reload/3, process/2, mod_opt_type/1, depends/2]).
+-export([start/2, stop/1, reload/3, process/2, mod_options/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -517,7 +517,7 @@ form_del_get(Host, Lang) ->
 %%                                    {error, not_allowed} |
 %%                                    {error, invalid_jid}
 register_account(Username, Host, Password) ->
-    Access = gen_mod:get_module_opt(Host, mod_register, access, all),
+    Access = gen_mod:get_module_opt(Host, mod_register, access),
     case jid:make(Username, Host) of
       error -> {error, invalid_jid};
       JID ->
@@ -602,4 +602,5 @@ get_error_text({error, passwords_not_identical}) ->
 get_error_text({error, wrong_parameters}) ->
     <<"Wrong parameters in the web formulary">>.
 
-mod_opt_type(_) -> [].
+mod_options(_) ->
+    [].

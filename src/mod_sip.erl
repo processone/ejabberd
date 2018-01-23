@@ -29,7 +29,7 @@
 -include("logger.hrl").
 
 -ifndef(SIP).
--export([start/2, stop/1, depends/2, mod_opt_type/1]).
+-export([start/2, stop/1, depends/2, mod_options/1]).
 start(_, _) ->
     ?CRITICAL_MSG("ejabberd is not compiled with SIP support", []),
     {error, sip_not_compiled}.
@@ -37,7 +37,7 @@ stop(_) ->
     ok.
 depends(_, _) ->
     [].
-mod_opt_type(_) ->
+mod_options(_) ->
     [].
 -else.
 -behaviour(gen_mod).
@@ -49,7 +49,7 @@ mod_opt_type(_) ->
 
 -export([data_in/2, data_out/2, message_in/2,
 	 message_out/2, request/2, request/3, response/2,
-	 locate/1, mod_opt_type/1, depends/2]).
+	 locate/1, mod_opt_type/1, mod_options/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include_lib("esip/include/esip.hrl").
@@ -360,9 +360,15 @@ mod_opt_type(via) ->
 			      {Type, {Host, Port}}
 		      end,
 		      L)
-    end;
-mod_opt_type(_) ->
-    [always_record_route, flow_timeout_tcp,
-     flow_timeout_udp, record_route, routes, via].
+    end.
+
+mod_options(Host) ->
+    Route = <<"sip:", Host/binary, ";lr">>,
+    [{always_record_route, true},
+     {flow_timeout_tcp, 120},
+     {flow_timeout_udp, 29},
+     {record_route, Route},
+     {routes, [Route]},
+     {via, []}].
 
 -endif.

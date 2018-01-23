@@ -48,7 +48,7 @@
 	 handle_cast/2, terminate/2, code_change/3]).
 
 -export([user_send_packet/1, user_receive_packet/1,
-	 c2s_presence_in/2, mod_opt_type/1]).
+	 c2s_presence_in/2, mod_opt_type/1, mod_options/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -250,16 +250,14 @@ reload(Host, NewOpts, OldOpts) ->
        true ->
 	    ok
     end,
-    case gen_mod:is_equal_opt(cache_size, NewOpts, OldOpts,
-			      ejabberd_config:cache_size(Host)) of
+    case gen_mod:is_equal_opt(cache_size, NewOpts, OldOpts) of
 	{false, MaxSize, _} ->
 	    ets_cache:setopts(caps_features_cache, [{max_size, MaxSize}]),
 	    ets_cache:setopts(caps_requests_cache, [{max_size, MaxSize}]);
 	true ->
 	    ok
     end,
-    case gen_mod:is_equal_opt(cache_life_time, NewOpts, OldOpts,
-			      ejabberd_config:cache_life_time(Host)) of
+    case gen_mod:is_equal_opt(cache_life_time, NewOpts, OldOpts) of
 	{false, Time, _} ->
 	    LifeTime = case Time of
 			   infinity -> infinity;
@@ -273,7 +271,7 @@ reload(Host, NewOpts, OldOpts) ->
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
-    init_cache(Host, Opts),
+    init_cache(Opts),
     Mod:init(Host, Opts),
     ejabberd_hooks:add(c2s_presence_in, Host, ?MODULE,
 		       c2s_presence_in, 75),
@@ -478,9 +476,9 @@ is_valid_node(Node) ->
             false
     end.
 
-init_cache(Host, Opts) ->
-    CacheOpts = cache_opts(Host, Opts),
-    case use_cache(Host, Opts) of
+init_cache(Opts) ->
+    CacheOpts = cache_opts(Opts),
+    case use_cache(Opts) of
 	true ->
 	    ets_cache:new(caps_features_cache, CacheOpts);
 	false ->
@@ -491,16 +489,13 @@ init_cache(Host, Opts) ->
 		  [{max_size, CacheSize},
 		   {life_time, timer:seconds(?BAD_HASH_LIFETIME)}]).
 
-use_cache(Host, Opts) ->
-    gen_mod:get_opt(use_cache, Opts, ejabberd_config:use_cache(Host)).
+use_cache(Opts) ->
+    gen_mod:get_opt(use_cache, Opts).
 
-cache_opts(Host, Opts) ->
-    MaxSize = gen_mod:get_opt(cache_size, Opts,
-			      ejabberd_config:cache_size(Host)),
-    CacheMissed = gen_mod:get_opt(cache_missed, Opts,
-				  ejabberd_config:cache_missed(Host)),
-    LifeTime = case gen_mod:get_opt(cache_life_time, Opts,
-				    ejabberd_config:cache_life_time(Host)) of
+cache_opts(Opts) ->
+    MaxSize = gen_mod:get_opt(cache_size, Opts),
+    CacheMissed = gen_mod:get_opt(cache_missed, Opts),
+    LifeTime = case gen_mod:get_opt(cache_life_time, Opts) of
 		   infinity -> infinity;
 		   I -> timer:seconds(I)
 	       end,
@@ -547,6 +542,11 @@ mod_opt_type(O) when O == cache_life_time; O == cache_size ->
     end;
 mod_opt_type(O) when O == use_cache; O == cache_missed ->
     fun (B) when is_boolean(B) -> B end;
-mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
-mod_opt_type(_) ->
-    [cache_life_time, cache_size, use_cache, cache_missed, db_type].
+mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end.
+
+mod_options(Host) ->
+    [{db_type, ejabberd_config:default_db(Host, ?MODULE)},
+     {use_cache, ejabberd_config:use_cache(Host)},
+     {cache_size, ejabberd_config:cache_size(Host)},
+     {cache_missed, ejabberd_config:cache_missed(Host)},
+     {cache_life_time, ejabberd_config:cache_life_time(Host)}].

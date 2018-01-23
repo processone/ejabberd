@@ -30,7 +30,7 @@
 
 %% API
 -export([start/2, stop/1, reload/3,
-         depends/2, mod_opt_type/1]).
+         depends/2, mod_opt_type/1, mod_options/1]).
 
 -export([filter_packet/1, filter_offline_msg/1]).
 
@@ -82,7 +82,7 @@ filter_offline_msg({_Action, #message{} = Msg} = Acc) ->
 check_message(#message{from = From, to = To, lang = Lang} = Msg) ->
     LServer = To#jid.lserver,
     AllowLocalUsers =
-        gen_mod:get_module_opt(LServer, ?MODULE, allow_local_users, true),
+        gen_mod:get_module_opt(LServer, ?MODULE, allow_local_users),
     case (Msg#message.body == [] andalso
           Msg#message.subject == [])
         orelse ((AllowLocalUsers orelse From#jid.luser == <<"">>) andalso
@@ -90,8 +90,8 @@ check_message(#message{from = From, to = To, lang = Lang} = Msg) ->
 	false ->
 	    case check_subscription(From, To) of
 		none ->
-		    Drop = gen_mod:get_module_opt(LServer, ?MODULE, drop, true),
-		    Log = gen_mod:get_module_opt(LServer, ?MODULE, log, false),
+		    Drop = gen_mod:get_module_opt(LServer, ?MODULE, drop),
+		    Log = gen_mod:get_module_opt(LServer, ?MODULE, log),
 		    if
 			Log ->
 			    ?INFO_MSG("~s message from stranger ~s to ~s",
@@ -129,7 +129,7 @@ check_subscription(From, To) ->
 	    none;
 	{none, _} ->
 	    case gen_mod:get_module_opt(LocalServer, ?MODULE,
-					allow_transports, true) of
+					allow_transports) of
 		true ->
 		    %% Check if the contact's server is in the roster
 		    case ejabberd_hooks:run_fold(
@@ -182,5 +182,10 @@ mod_opt_type(log) ->
 mod_opt_type(allow_local_users) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(allow_transports) ->
-    fun (B) when is_boolean(B) -> B end;
-mod_opt_type(_) -> [drop, log, allow_local_users, allow_transports].
+    fun (B) when is_boolean(B) -> B end.
+
+mod_options(_) ->
+    [{drop, true},
+     {log, false},
+     {allow_local_users, true},
+     {allow_transports, true}].

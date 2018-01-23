@@ -33,7 +33,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, reload/3, process_local_iq/1,
-	 mod_opt_type/1, depends/2]).
+	 mod_opt_type/1, mod_options/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -41,7 +41,7 @@
 -include("xmpp.hrl").
 
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
 				  ?NS_TIME, ?MODULE, process_local_iq, IQDisc).
 
@@ -50,7 +50,7 @@ stop(Host) ->
 				     ?NS_TIME).
 
 reload(Host, NewOpts, OldOpts) ->
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts) of
 	{false, IQDisc, _} ->
 	    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_TIME,
 					  ?MODULE, process_local_iq, IQDisc);
@@ -74,5 +74,7 @@ process_local_iq(#iq{type = get} = IQ) ->
 depends(_Host, _Opts) ->
     [].
 
-mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
-mod_opt_type(_) -> [iqdisc].
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1.
+
+mod_options(Host) ->
+    [{iqdisc, gen_iq_handler:iqdisc(Host)}].

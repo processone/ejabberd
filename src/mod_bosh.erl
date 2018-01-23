@@ -36,7 +36,7 @@
 -export([start/2, stop/1, reload/3, process/2, open_session/2,
 	 close_session/1, find_session/1, clean_cache/1]).
 
--export([depends/2, mod_opt_type/1]).
+-export([depends/2, mod_opt_type/1, mod_options/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -144,7 +144,7 @@ reload(_Host, NewOpts, _OldOpts) ->
 %%% Internal functions
 %%%===================================================================
 start_jiffy(Opts) ->
-    case gen_mod:get_opt(json, Opts, false) of
+    case gen_mod:get_opt(json, Opts) of
         false ->
             ok;
         true ->
@@ -194,10 +194,20 @@ mod_opt_type(O) when O == cache_size; O == cache_life_time ->
     fun(I) when is_integer(I), I>0 -> I;
        (unlimited) -> infinity;
        (infinity) -> infinity
-    end;
-mod_opt_type(_) ->
-    [json, max_concat, max_inactivity, max_pause, prebind, ram_db_type,
-     queue_type, use_cache, cache_size, cache_missed, cache_life_time].
+    end.
+
+mod_options(Host) ->
+    [{json, false},
+     {max_concat, unlimited},
+     {max_inactivity, 30},
+     {max_pause, 120},
+     {prebind, false},
+     {ram_db_type, ejabberd_config:default_ram_db(Host, ?MODULE)},
+     {queue_type, ejabberd_config:default_queue_type(Host)},
+     {use_cache, ejabberd_config:use_cache(Host)},
+     {cache_size, ejabberd_config:cache_size(Host)},
+     {cache_missed, ejabberd_config:cache_missed(Host)},
+     {cache_life_time, ejabberd_config:cache_life_time(Host)}].
 
 %%%----------------------------------------------------------------------
 %%% Cache stuff
@@ -215,10 +225,7 @@ init_cache(Mod) ->
 use_cache(Mod) ->
     case erlang:function_exported(Mod, use_cache, 0) of
 	true -> Mod:use_cache();
-	false ->
-	    gen_mod:get_module_opt(
-	      global, ?MODULE, use_cache,
-	      ejabberd_config:use_cache(global))
+	false -> gen_mod:get_module_opt(global, ?MODULE, use_cache)
     end.
 
 -spec cache_nodes(module()) -> [node()].
@@ -239,15 +246,9 @@ delete_cache(Mod, SID) ->
 
 -spec cache_opts() -> [proplists:property()].
 cache_opts() ->
-    MaxSize = gen_mod:get_module_opt(
-		global, ?MODULE, cache_size,
-		ejabberd_config:cache_size(global)),
-    CacheMissed = gen_mod:get_module_opt(
-		    global, ?MODULE, cache_missed,
-		    ejabberd_config:cache_missed(global)),
-    LifeTime = case gen_mod:get_module_opt(
-		      global, ?MODULE, cache_life_time,
-		      ejabberd_config:cache_life_time(global)) of
+    MaxSize = gen_mod:get_module_opt(global, ?MODULE, cache_size),
+    CacheMissed = gen_mod:get_module_opt(global, ?MODULE, cache_missed),
+    LifeTime = case gen_mod:get_module_opt(global, ?MODULE, cache_life_time) of
 		   infinity -> infinity;
 		   I -> timer:seconds(I)
 	       end,

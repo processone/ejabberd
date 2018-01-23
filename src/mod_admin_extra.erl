@@ -30,7 +30,7 @@
 
 -include("logger.hrl").
 
--export([start/2, stop/1, reload/3, mod_opt_type/1,
+-export([start/2, stop/1, reload/3, mod_options/1,
 	 get_commands_spec/0, depends/2]).
 
 % Commands API
@@ -846,7 +846,7 @@ get_sha(AccountPass) ->
 		      || X <- binary_to_list(crypto:hash(sha, AccountPass))]).
 
 num_active_users(Host, Days) ->
-    DB_Type = gen_mod:db_type(Host, mod_last),
+    DB_Type = gen_mod:get_module_opt(Host, mod_last, db_type),
     list_last_activity(Host, true, Days, DB_Type).
 
 %% Code based on ejabberd/src/web/ejabberd_web_admin.erl
@@ -1761,4 +1761,4 @@ is_glob_match(String, <<"!", Glob/binary>>) ->
 is_glob_match(String, Glob) ->
     is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob)).
 
-mod_opt_type(_) -> [].
+mod_options(_) -> [].

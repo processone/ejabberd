@@ -46,9 +46,7 @@ init(_Host, _Opts) ->
 use_cache(Host) ->
     case mnesia:table_info(private_storage, storage_type) of
 	disc_only_copies ->
-	    gen_mod:get_module_opt(
-	      Host, mod_private, use_cache,
-	      ejabberd_config:use_cache(Host));
+	    gen_mod:get_module_opt(Host, mod_private, use_cache);
 	_ ->
 	    false
     end.

@@ -74,7 +74,8 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, reload/3, process/2, mod_opt_type/1, depends/2]).
+-export([start/2, stop/1, reload/3, process/2, mod_opt_type/1, depends/2,
+	 mod_options/1]).
 
 -include("ejabberd.hrl").
 -include("xmpp.hrl").
@@ -551,7 +552,7 @@ hide_sensitive_args(NonListArgs) ->
     NonListArgs.
 
 permission_addon() ->
-    Access = gen_mod:get_module_opt(global, ?MODULE, admin_ip_access, none),
+    Access = gen_mod:get_module_opt(global, ?MODULE, admin_ip_access),
     Rules = acl:resolve_access(Access, global),
     R = case Rules of
 	    all ->
@@ -576,5 +577,5 @@ permission_addon() ->
 		 end, {1, []}, R),
     Res.
 
-mod_opt_type(admin_ip_access) -> fun acl:access_rules_validator/1;
-mod_opt_type(_) -> [admin_ip_access].
+mod_opt_type(admin_ip_access) -> fun acl:access_rules_validator/1.
+mod_options(_) -> [{admin_ip_access, none}].

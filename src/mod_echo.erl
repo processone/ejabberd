@@ -36,7 +36,7 @@
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
-	 mod_opt_type/1, depends/2]).
+	 mod_opt_type/1, depends/2, mod_options/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -63,8 +63,10 @@ depends(_Host, _Opts) ->
 
 mod_opt_type(host) -> fun iolist_to_binary/1;
 mod_opt_type(hosts) ->
-    fun(L) -> lists:map(fun iolist_to_binary/1, L) end;
-mod_opt_type(_) -> [host, hosts].
+    fun(L) -> lists:map(fun iolist_to_binary/1, L) end.
+
+mod_options(_Host) ->
+    [{host, <<"echo.@HOST@">>}, {hosts, []}].
 
 %%====================================================================
 %% gen_server callbacks
@@ -79,8 +81,7 @@ mod_opt_type(_) -> [host, hosts].
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
-    Hosts = gen_mod:get_opt_hosts(Host, Opts,
-				  <<"echo.@HOST@">>),
+    Hosts = gen_mod:get_opt_hosts(Host, Opts),
     lists:foreach(
       fun(H) ->
 	      ejabberd_router:register_route(H, Host)
@@ -106,10 +107,8 @@ handle_call(stop, _From, State) ->
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
 handle_cast({reload, Host, NewOpts, OldOpts}, State) ->
-    NewMyHosts = gen_mod:get_opt_hosts(Host, NewOpts,
-				       <<"echo.@HOST@">>),
-    OldMyHosts = gen_mod:get_opt_hosts(Host, OldOpts,
-				       <<"echo.@HOST@">>),
+    NewMyHosts = gen_mod:get_opt_hosts(Host, NewOpts),
+    OldMyHosts = gen_mod:get_opt_hosts(Host, OldOpts),
     lists:foreach(
       fun(H) ->
 	      ejabberd_router:unregister_route(H)

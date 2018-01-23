@@ -31,7 +31,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start/2, stop/1, reload/3, mod_opt_type/1, depends/2]).
+-export([start/2, stop/1, reload/3, mod_opt_type/1, mod_options/1, depends/2]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
@@ -60,10 +60,12 @@ reload(_Host, _NewOpts, _OldOpts) ->
 
 mod_opt_type({roster, _}) -> fun acl:access_rules_validator/1;
 mod_opt_type({message, _}) -> fun acl:access_rules_validator/1;
-mod_opt_type({presence, _}) -> fun acl:access_rules_validator/1;
-mod_opt_type(_) ->
-    [{roster, both}, {roster, get}, {roster, set},
-     {message, outgoing}, {presence, managed_entity}, {presence, roster}].
+mod_opt_type({presence, _}) -> fun acl:access_rules_validator/1.
+
+mod_options(_) ->
+    [{roster, [{both, none}, {get, none}, {set, none}]},
+     {presence, [{managed_entity, none}, {roster, none}]},
+     {message, [{outgoing,none}]}].
 
 depends(_, _) ->
     [].
@@ -307,7 +309,7 @@ forward_message(#message{to = To} = Msg) ->
     end.
 
 get_roster_permission(ServerHost, Host) ->
-    Perms = gen_mod:get_module_opt(ServerHost, ?MODULE, roster, []),
+    Perms = gen_mod:get_module_opt(ServerHost, ?MODULE, roster),
     case match_rule(ServerHost, Host, Perms, both) of
 	allow ->
 	    both;
@@ -322,14 +324,14 @@ get_roster_permission(ServerHost, Host) ->
     end.
 
 get_message_permission(ServerHost, Host) ->
-    Perms = gen_mod:get_module_opt(ServerHost, ?MODULE, message, []),
+    Perms = gen_mod:get_module_opt(ServerHost, ?MODULE, message),
     case match_rule(ServerHost, Host, Perms, outgoing) of
 	allow -> outgoing;
 	deny -> none
     end.
 
 get_presence_permission(ServerHost, Host) ->
-    Perms = gen_mod:get_module_opt(ServerHost, ?MODULE, presence, []),
+    Perms = gen_mod:get_module_opt(ServerHost, ?MODULE, presence),
     case match_rule(ServerHost, Host, Perms, roster) of
 	allow ->
 	    roster;

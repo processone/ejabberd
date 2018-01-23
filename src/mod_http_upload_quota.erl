@@ -37,7 +37,8 @@
 -export([start/2,
 	 stop/1,
 	 depends/2,
-	 mod_opt_type/1]).
+	 mod_opt_type/1,
+	 mod_options/1]).
 
 %% gen_server callbacks.
 -export([init/1,
@@ -89,9 +90,12 @@ mod_opt_type(access_hard_quota) ->
 mod_opt_type(max_days) ->
     fun(I) when is_integer(I), I > 0 -> I;
        (infinity) -> infinity
-    end;
-mod_opt_type(_) ->
-    [access_soft_quota, access_hard_quota, max_days].
+    end.
+
+mod_options(_) ->
+    [{access_soft_quota, soft_upload_quota},
+     {access_hard_quota, hard_upload_quota},
+     {max_days, infinity}].
 
 -spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
 
@@ -104,13 +108,10 @@ depends(_Host, _Opts) ->
 
 init([ServerHost, Opts]) ->
     process_flag(trap_exit, true),
-    AccessSoftQuota = gen_mod:get_opt(access_soft_quota, Opts,
-				      soft_upload_quota),
-    AccessHardQuota = gen_mod:get_opt(access_hard_quota, Opts,
-				      hard_upload_quota),
-    MaxDays = gen_mod:get_opt(max_days, Opts, infinity),
-    DocRoot1 = gen_mod:get_module_opt(ServerHost, mod_http_upload, docroot,
-				      <<"@HOME@/upload">>),
+    AccessSoftQuota = gen_mod:get_opt(access_soft_quota, Opts),
+    AccessHardQuota = gen_mod:get_opt(access_hard_quota, Opts),
+    MaxDays = gen_mod:get_opt(max_days, Opts),
+    DocRoot1 = gen_mod:get_module_opt(ServerHost, mod_http_upload, docroot),
     DocRoot2 = mod_http_upload:expand_home(str:strip(DocRoot1, right, $/)),
     DocRoot3 = mod_http_upload:expand_host(DocRoot2, ServerHost),
     Timers = if MaxDays == infinity -> [];

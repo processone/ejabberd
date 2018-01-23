@@ -39,7 +39,7 @@
 	 delete_group/2, get_group_opts/2, set_group_opts/3,
 	 get_group_users/2, get_group_explicit_users/2,
 	 is_user_in_group/3, add_user_to_group/3, opts_to_binary/1,
-	 remove_user_from_group/3, mod_opt_type/1, depends/2]).
+	 remove_user_from_group/3, mod_opt_type/1, mod_options/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -1071,5 +1071,7 @@ import(LServer, {sql, _}, DBType, Tab, L) ->
     Mod = gen_mod:db_mod(DBType, ?MODULE),
     Mod:import(LServer, Tab, L).
 
-mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
-mod_opt_type(_) -> [db_type].
+mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end.
+
+mod_options(Host) ->
+    [{db_type, ejabberd_config:default_db(Host, ?MODULE)}].
