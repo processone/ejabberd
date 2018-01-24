@@ -333,8 +333,8 @@ handle_info({'$gen_event', {xmlstreamerror, Reason}}, #{lang := Lang}= State) ->
 	      send_pkt(State1, Err)
       end);
 handle_info({'$gen_event', El}, #{stream_state := wait_for_stream} = State) ->
-    error_logger:error_msg("unexpected event from XML driver: ~p; "
-			   "xmlstreamstart was expected", [El]),
+    error_logger:warning_msg("unexpected event from XML driver: ~p; "
+			     "xmlstreamstart was expected", [El]),
     State1 = send_header(State),
     noreply(
       case is_disconnected(State1) of
