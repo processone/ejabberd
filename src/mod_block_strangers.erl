@@ -106,7 +106,8 @@ check_message(#message{from = From, to = To, lang = Lang} = Msg) ->
 			Drop ->
 			    Txt = <<"Messages from strangers are rejected">>,
 			    Err = xmpp:err_policy_violation(Txt, Lang),
-			    ejabberd_router:route_error(Msg, Err),
+			    Msg1 = maybe_adjust_from(Msg),
+			    ejabberd_router:route_error(Msg1, Err),
 			    deny;
 			true ->
 			    allow
@@ -117,6 +118,12 @@ check_message(#message{from = From, to = To, lang = Lang} = Msg) ->
 	true ->
 	    allow
     end.
+
+-spec maybe_adjust_from(message()) -> message().
+maybe_adjust_from(#message{type = groupchat, from = From} = Msg) ->
+    Msg#message{from = jid:remove_resource(From)};
+maybe_adjust_from(#message{} = Msg) ->
+    Msg.
 
 -spec check_subscription(jid(), jid()) -> none | some.
 check_subscription(From, To) ->
