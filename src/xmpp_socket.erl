@@ -117,9 +117,13 @@ start(Module, SockMod, Socket, Opts) ->
 		ok = SockMod:controlling_process(Socket, Pid),
 		{ok, Pid}
 	end
-    catch _:{badmatch, {error, _} = Err} ->
+    catch
+	_:{badmatch, {error, _} = Err} ->
 	    SockMod:close(Socket),
-	    Err
+	    Err;
+	_:{badmatch, ignore} ->
+	    SockMod:close(Socket),
+	    ignore
     end.
 
 connect(Addr, Port, Opts) ->
