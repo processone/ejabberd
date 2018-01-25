@@ -4102,7 +4102,7 @@ send_subscriptions_change_notifications(From, Nick, Type, State) ->
 					node = ?NS_MUCSUB_NODES_SUBSCRIBERS,
 					items = [#ps_item{
 					    id = randoms:get_string(),
-					    xml_els = [xmpp:encode(Payload)]}]}}]},
+					    sub_els = [Payload]}]}}]},
 			    ejabberd_router:route(xmpp:set_from_to(Packet, From, JID));
 			false ->
 			    ok
@@ -4138,14 +4138,14 @@ send_wrapped(From, To, Packet, Node, State) ->
 
 -spec wrap(jid(), jid(), stanza(), binary()) -> message().
 wrap(From, To, Packet, Node) ->
-    El = xmpp:encode(xmpp:set_from_to(Packet, From, To)),
+    El = xmpp:set_from_to(Packet, From, To),
     #message{
        sub_els = [#ps_event{
 		     items = #ps_items{
 				node = Node,
 				items = [#ps_item{
 					    id = randoms:get_string(),
-					    xml_els = [El]}]}}]}.
+					    sub_els = [El]}]}}]}.
 
 %% -spec send_multiple(jid(), binary(), [#user{}], stanza()) -> ok.
 %% send_multiple(From, Server, Users, Packet) ->

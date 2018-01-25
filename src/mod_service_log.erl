@@ -72,7 +72,7 @@ log_packet(Packet, Host) ->
     ForwardedMsg = #message{from = jid:make(Host),
 			    id = randoms:get_string(),
 			    sub_els = [#forwarded{
-					  xml_els = [xmpp:encode(Packet)]}]},
+					  sub_els = [Packet]}]},
     lists:foreach(
       fun(Logger) ->
 	      ejabberd_router:route(xmpp:set_to(ForwardedMsg, jid:make(Logger)))

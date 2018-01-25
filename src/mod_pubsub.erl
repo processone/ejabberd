@@ -1113,7 +1113,7 @@ iq_pubsub(Host, Access, #iq{from = From, type = IQType, lang = Lang,
 		      publish_options = XData, configure = _, _ = undefined}} ->
 	    ServerHost = serverhost(Host),
 	    case Items of
-		[#ps_item{id = ItemId, xml_els = Payload}] ->
+		[#ps_item{id = ItemId, sub_els = Payload}] ->
 		    case decode_publish_options(XData, Lang) of
 			{error, _} = Err ->
 			    Err;
@@ -2659,7 +2659,7 @@ broadcast_publish_item(Host, Node, Nidx, Type, NodeOptions, ItemId, From, Payloa
     case get_collection_subscriptions(Host, Node) of
 	SubsByDepth when is_list(SubsByDepth) ->
 	    EventItem0 = case get_option(NodeOptions, deliver_payloads) of
-			     true -> #ps_item{xml_els = Payload, id = ItemId};
+			     true -> #ps_item{sub_els = Payload, id = ItemId};
 			     false -> #ps_item{id = ItemId}
 			 end,
 	    EventItem = case get_option(NodeOptions, itemreply, none) of
@@ -3743,7 +3743,7 @@ uniqid() ->
 
 -spec itemsEls([#pubsub_item{}]) -> [ps_item()].
 itemsEls(Items) ->
-    [#ps_item{id = ItemId, xml_els = Payload}
+    [#ps_item{id = ItemId, sub_els = Payload}
      || #pubsub_item{itemid = {ItemId, _}, payload = Payload} <- Items].
 
 -spec add_message_type(message(), message_type()) -> message().

@@ -446,7 +446,7 @@ notify(LUser, LServer, Clients) ->
 	     fun((iq() | timeout) -> any())) -> ok.
 notify(LServer, PushLJID, Node, XData, HandleResponse) ->
     From = jid:make(LServer),
-    Item = #ps_item{xml_els = [xmpp:encode(#push_notification{})]},
+    Item = #ps_item{sub_els = [#push_notification{}]},
     PubSub = #pubsub{publish = #ps_publish{node = Node, items = [Item]},
 		     publish_options = XData},
     IQ = #iq{type = set,

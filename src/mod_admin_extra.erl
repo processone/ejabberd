@@ -1461,7 +1461,7 @@ private_get(Username, Host, Element, Ns) ->
     ElementXml = #xmlel{name = Element, attrs = [{<<"xmlns">>, Ns}]},
     Els = mod_private:get_data(jid:nodeprep(Username), jid:nameprep(Host),
 			       [{Ns, ElementXml}]),
-    binary_to_list(fxml:element_to_binary(xmpp:encode(#private{xml_els = Els}))).
+    binary_to_list(fxml:element_to_binary(xmpp:encode(#private{sub_els = Els}))).
 
 private_set(Username, Host, ElementString) ->
     case fxml_stream:parse_element(ElementString) of

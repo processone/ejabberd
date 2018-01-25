@@ -277,7 +277,7 @@ forward_message(#message{to = To} = Msg) ->
     ServerHost = To#jid.lserver,
     Lang = xmpp:get_lang(Msg),
     try xmpp:try_subtag(Msg, #privilege{}) of
-	#privilege{forwarded = #forwarded{xml_els = [SubEl]}} ->
+	#privilege{forwarded = #forwarded{sub_els = [SubEl]}} ->
 	    try xmpp:decode(SubEl, ?NS_CLIENT, [ignore_els]) of
 		#message{} = NewMsg ->
 		    case NewMsg#message.from of

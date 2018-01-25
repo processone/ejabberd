@@ -277,7 +277,7 @@ get_roster(User, Server) ->
 get_private(User, Server) ->
     case mod_private:get_data(User, Server) of
         [_|_] = Els ->
-	    [xmpp:encode(#private{xml_els = Els})];
+	    [xmpp:encode(#private{sub_els = Els})];
         _ ->
             []
     end.

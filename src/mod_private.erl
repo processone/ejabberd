@@ -91,7 +91,7 @@ reload(Host, NewOpts, OldOpts) ->
 process_sm_iq(#iq{type = Type, lang = Lang,
 		  from = #jid{luser = LUser, lserver = LServer},
 		  to = #jid{luser = LUser, lserver = LServer},
-		  sub_els = [#private{xml_els = Els0}]} = IQ) ->
+		  sub_els = [#private{sub_els = Els0}]} = IQ) ->
     case filter_xmlels(Els0) of
 	[] ->
 	    Txt = <<"No private data found in this query">>,
@@ -112,7 +112,7 @@ process_sm_iq(#iq{type = Type, lang = Lang,
 		    Err = xmpp:err_internal_server_error(Txt, Lang),
 		    xmpp:make_error(IQ, Err);
 		Els ->
-		    xmpp:make_iq_result(IQ, #private{xml_els = Els})
+		    xmpp:make_iq_result(IQ, #private{sub_els = Els})
 	    end
     end;
 process_sm_iq(#iq{lang = Lang} = IQ) ->
