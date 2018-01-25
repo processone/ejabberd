@@ -997,17 +997,17 @@ private(Config) ->
     WrongEl = #xmlel{name = <<"wrong">>},
     #iq{type = error} =
         send_recv(Config, #iq{type = get,
-			      sub_els = [#private{xml_els = [WrongEl]}]}),
+			      sub_els = [#private{sub_els = [WrongEl]}]}),
     #iq{type = result, sub_els = []} =
         send_recv(
           Config, #iq{type = set,
-                      sub_els = [#private{xml_els = [WrongEl, StorageXMLOut]}]}),
+                      sub_els = [#private{sub_els = [WrongEl, StorageXMLOut]}]}),
     #iq{type = result,
-        sub_els = [#private{xml_els = [StorageXMLIn]}]} =
+        sub_els = [#private{sub_els = [StorageXMLIn]}]} =
         send_recv(
           Config,
           #iq{type = get,
-              sub_els = [#private{xml_els = [xmpp:encode(
+              sub_els = [#private{sub_els = [xmpp:encode(
                                                #bookmark_storage{})]}]}),
     Storage = xmpp:decode(StorageXMLIn),
     disconnect(Config).
