@@ -85,7 +85,7 @@ all_master(Config) ->
 				node = ?NS_MIX_NODES_PARTICIPANTS,
 				items = [#ps_item{
 					    id = ParticipantID,
-					    xml_els = [PXML]}]}}]} =
+					    sub_els = [PXML]}]}}]} =
 	recv_message(Config),
     #mix_participant{jid = MyBareJID} = xmpp:decode(PXML),
     %% Coming online
@@ -106,7 +106,7 @@ all_master(Config) ->
 				   node = ?NS_MIX_NODES_PRESENCE,
 				   items = [#ps_item{
 					       id = PresenceID,
-					       xml_els = [Presence]}]}}]}),
+					       sub_els = [Presence]}]}}]}),
     #message{from = Room,
 	     sub_els =
 		 [#ps_event{
@@ -114,7 +114,7 @@ all_master(Config) ->
 				node = ?NS_MIX_NODES_PRESENCE,
 				items = [#ps_item{
 					    id = PresenceID,
-					    xml_els = [Presence]}]}}]} =
+					    sub_els = [Presence]}]}}]} =
 	recv_message(Config),
     %% Coming offline
     send(Config, #presence{type = unavailable, to = Room}),

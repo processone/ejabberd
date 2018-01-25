@@ -361,7 +361,7 @@ recv_archived_messages(Config, From, To, QID, Range) ->
                                sub_els =
                                    [#forwarded{
                                        delay = #delay{},
-                                       xml_els = [El]}]}]} = recv_message(Config),
+                                       sub_els = [El]}]}]} = recv_message(Config),
 	      #message{from = From, to = To,
 		       body = Body} = xmpp:decode(El)
       end, Range).
@@ -443,7 +443,7 @@ recv_messages_from_room(Config, Range) ->
 			 sub_els =
 			     [#forwarded{
 				 delay = #delay{},
-				 xml_els = [El]}]}]} = recv_message(Config),
+				 sub_els = [El]}]}]} = recv_message(Config),
 	      #message{from = MyNickJID,
 		       type = groupchat,
 		       body = Body} = xmpp:decode(El)
