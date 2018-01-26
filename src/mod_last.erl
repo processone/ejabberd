@@ -142,9 +142,9 @@ process_sm_iq(#iq{type = set, lang = Lang} = IQ) ->
 process_sm_iq(#iq{from = From, to = To, lang = Lang} = IQ) ->
     User = To#jid.luser,
     Server = To#jid.lserver,
-    {Subscription, _Groups} =
+    {Subscription, _Ask, _Groups} =
 	ejabberd_hooks:run_fold(roster_get_jid_info, Server,
-				{none, []}, [User, Server, From]),
+				{none, none, []}, [User, Server, From]),
     if (Subscription == both) or (Subscription == from) or
        (From#jid.luser == To#jid.luser) and
        (From#jid.lserver == To#jid.lserver) ->

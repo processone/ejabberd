@@ -643,8 +643,8 @@ route_probe_reply(_, _) ->
     ok.
 
 -spec process_presence_out(state(), presence()) -> state().
-process_presence_out(#{user := User, server := Server, lserver := LServer,
-		       jid := JID, lang := Lang, pres_a := PresA} = State,
+process_presence_out(#{lserver := LServer, jid := JID,
+		       lang := Lang, pres_a := PresA} = State,
 		     #presence{from = From, to = To, type = Type} = Pres) ->
     if Type == subscribe; Type == subscribed;
        Type == unsubscribe; Type == unsubscribed ->
@@ -656,9 +656,7 @@ process_presence_out(#{user := User, server := Server, lserver := LServer,
 		    AccessErr = xmpp:err_forbidden(AccessErrTxt, Lang),
 		    send_error(State, Pres, AccessErr);
 		allow ->
-		    ejabberd_hooks:run(roster_out_subscription,
-				       LServer,
-				       [User, Server, To, Type])
+		    ejabberd_hooks:run(roster_out_subscription, LServer, [Pres])
 	    end;
 	true -> ok
     end,
@@ -839,9 +837,9 @@ route_multiple(#{lserver := LServer}, JIDs, Pkt) ->
     ejabberd_router_multicast:route_multicast(From, LServer, JIDs, Pkt).
 
 get_subscription(#jid{luser = LUser, lserver = LServer}, JID) ->
-    {Subscription, _} = ejabberd_hooks:run_fold(
-			  roster_get_jid_info, LServer, {none, []},
-			  [LUser, LServer, JID]),
+    {Subscription, _, _} = ejabberd_hooks:run_fold(
+			     roster_get_jid_info, LServer, {none, none, []},
+			     [LUser, LServer, JID]),
     Subscription.
 
 -spec resource_conflict_action(binary(), binary(), binary()) ->

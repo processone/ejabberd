@@ -203,9 +203,10 @@ disco_info(Acc, _, _, _Node, _Lang) ->
 -spec c2s_presence_in(ejabberd_c2s:state(), presence()) -> ejabberd_c2s:state().
 c2s_presence_in(C2SState,
 		#presence{from = From, to = To, type = Type} = Presence) ->
-    {Subscription, _} = ejabberd_hooks:run_fold(
-			  roster_get_jid_info, To#jid.lserver,
-			  {none, []}, [To#jid.luser, To#jid.lserver, From]),
+    {Subscription, _, _} = ejabberd_hooks:run_fold(
+			     roster_get_jid_info, To#jid.lserver,
+			     {none, none, []},
+			     [To#jid.luser, To#jid.lserver, From]),
     ToSelf = (From#jid.luser == To#jid.luser)
 	       and (From#jid.lserver == To#jid.lserver),
     Insert = (Type == available)

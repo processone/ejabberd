@@ -32,7 +32,7 @@
 -export([start/2, stop/1, reload/3,
          depends/2, mod_opt_type/1, mod_options/1]).
 
--export([filter_packet/1, filter_offline_msg/1]).
+-export([filter_packet/1, filter_offline_msg/1, filter_subscription/2]).
 
 -include("xmpp.hrl").
 -include("ejabberd.hrl").
@@ -40,15 +40,22 @@
 
 -define(SETS, gb_sets).
 
+%%%===================================================================
+%%% Callbacks and hooks
+%%%===================================================================
 start(Host, _Opts) ->
     ejabberd_hooks:add(user_receive_packet, Host,
                        ?MODULE, filter_packet, 25),
+    ejabberd_hooks:add(roster_in_subscription, Host,
+		       ?MODULE, filter_subscription, 25),
     ejabberd_hooks:add(offline_message_hook, Host,
 		       ?MODULE, filter_offline_msg, 25).
 
 stop(Host) ->
     ejabberd_hooks:delete(user_receive_packet, Host,
                           ?MODULE, filter_packet, 25),
+    ejabberd_hooks:delete(roster_in_subscription, Host,
+			  ?MODULE, filter_subscription, 25),
     ejabberd_hooks:delete(offline_message_hook, Host,
 			  ?MODULE, filter_offline_msg, 25).
 
@@ -79,17 +86,72 @@ filter_offline_msg({_Action, #message{} = Msg} = Acc) ->
 	deny -> {stop, {drop, Msg}}
     end.
 
+filter_subscription(Acc, #presence{meta = #{captcha := passed}}) ->
+    Acc;
+filter_subscription(Acc, #presence{from = From, to = To, lang = Lang,
+				   id = SID, type = subscribe} = Pres) ->
+    LServer = To#jid.lserver,
+    case gen_mod:get_module_opt(LServer, ?MODULE, drop) andalso
+	 gen_mod:get_module_opt(LServer, ?MODULE, captcha) andalso
+	 need_check(Pres) of
+	true ->
+	    case check_subscription(From, To) of
+		false ->
+		    BFrom = jid:remove_resource(From),
+		    BTo = jid:remove_resource(To),
+		    Limiter = jid:tolower(BFrom),
+		    case ejabberd_captcha:create_captcha(
+			   SID, BFrom, BTo, Lang, Limiter,
+			   fun(Res) -> handle_captcha_result(Res, Pres) end) of
+			{ok, ID, Body, CaptchaEls} ->
+			    Msg = #message{from = BTo, to = From,
+					   id = ID, body = Body,
+					   sub_els = CaptchaEls},
+			    case gen_mod:get_module_opt(LServer, ?MODULE, log) of
+				true ->
+				    ?INFO_MSG("Challenge subscription request "
+					      "from stranger ~s to ~s with "
+					      "CAPTCHA",
+					      [jid:encode(From), jid:encode(To)]);
+				false ->
+				    ok
+			    end,
+			    ejabberd_router:route(Msg);
+			{error, limit} ->
+			    ErrText = <<"Too many CAPTCHA requests">>,
+			    Err = xmpp:err_resource_constraint(ErrText, Lang),
+			    ejabberd_router:route_error(Pres, Err);
+			_ ->
+			    ErrText = <<"Unable to generate a CAPTCHA">>,
+			    Err = xmpp:err_internal_server_error(ErrText, Lang),
+			    ejabberd_router:route_error(Pres, Err)
+		    end,
+		    {stop, false};
+		true ->
+		    Acc
+	    end;
+	false ->
+	    Acc
+    end;
+filter_subscription(Acc, _) ->
+    Acc.
+
+handle_captcha_result(captcha_succeed, Pres) ->
+    Pres1 = xmpp:put_meta(Pres, captcha, passed),
+    ejabberd_router:route(Pres1);
+handle_captcha_result(captcha_failed, #presence{lang = Lang} = Pres) ->
+    Txt = <<"The CAPTCHA verification has failed">>,
+    ejabberd_router:route_error(Pres, xmpp:err_not_allowed(Txt, Lang)).
+
+%%%===================================================================
+%%% Internal functions
+%%%===================================================================
 check_message(#message{from = From, to = To, lang = Lang} = Msg) ->
     LServer = To#jid.lserver,
-    AllowLocalUsers =
-        gen_mod:get_module_opt(LServer, ?MODULE, allow_local_users),
-    case (Msg#message.body == [] andalso
-          Msg#message.subject == [])
-        orelse ((AllowLocalUsers orelse From#jid.luser == <<"">>) andalso
-                ejabberd_router:is_my_host(From#jid.lserver)) of
-	false ->
+    case need_check(Msg) of
+	true ->
 	    case check_subscription(From, To) of
-		none ->
+		false ->
 		    Drop = gen_mod:get_module_opt(LServer, ?MODULE, drop),
 		    Log = gen_mod:get_module_opt(LServer, ?MODULE, log),
 		    if
@@ -112,10 +174,10 @@ check_message(#message{from = From, to = To, lang = Lang} = Msg) ->
 			true ->
 			    allow
 		    end;
-		some ->
+		true ->
 		    allow
 	    end;
-	true ->
+	false ->
 	    allow
     end.
 
@@ -125,33 +187,45 @@ maybe_adjust_from(#message{type = groupchat, from = From} = Msg) ->
 maybe_adjust_from(#message{} = Msg) ->
     Msg.
 
--spec check_subscription(jid(), jid()) -> none | some.
+-spec need_check(presence() | message()) -> boolean().
+need_check(Pkt) ->
+    To = xmpp:get_to(Pkt),
+    From = xmpp:get_from(Pkt),
+    LServer = To#jid.lserver,
+    IsEmpty = case Pkt of
+		  #message{body = [], subject = []} ->
+		      true;
+		  _ ->
+		      false
+	      end,
+    AllowLocalUsers = gen_mod:get_module_opt(LServer, ?MODULE, allow_local_users),
+    not (IsEmpty orelse ((AllowLocalUsers orelse From#jid.luser == <<"">>)
+			 andalso ejabberd_router:is_my_host(From#jid.lserver))).
+
+-spec check_subscription(jid(), jid()) -> boolean().
 check_subscription(From, To) ->
     {LocalUser, LocalServer, _} = jid:tolower(To),
     {RemoteUser, RemoteServer, _} = jid:tolower(From),
-    case ejabberd_hooks:run_fold(
-	   roster_get_jid_info, LocalServer,
-	   {none, []}, [LocalUser, LocalServer, From]) of
-	{none, _} when RemoteUser == <<"">> ->
-	    none;
-	{none, _} ->
-	    case gen_mod:get_module_opt(LocalServer, ?MODULE,
-					allow_transports) of
-		true ->
-		    %% Check if the contact's server is in the roster
-		    case ejabberd_hooks:run_fold(
-			   roster_get_jid_info, LocalServer,
-			   {none, []},
-			   [LocalUser, LocalServer, jid:make(RemoteServer)]) of
-			{none, _} -> none;
-			_ -> some
-		    end;
-		false ->
-		    none
-	    end;
-	_ ->
-	    some
+    case has_subscription(LocalUser, LocalServer, From) of
+	false when RemoteUser == <<"">> ->
+	    false;
+	false ->
+	    %% Check if the contact's server is in the roster
+	    gen_mod:get_module_opt(LocalServer, ?MODULE, allow_transports)
+		andalso has_subscription(LocalUser, LocalServer,
+					 jid:make(RemoteServer));
+	true ->
+	    true
     end.
+
+-spec has_subscription(binary(), binary(), jid()) -> boolean().
+has_subscription(User, Server, JID) ->
+    {Sub, Ask, _} = ejabberd_hooks:run_fold(
+		      roster_get_jid_info, Server,
+		      {none, none, []},
+		      [User, Server, JID]),
+    (Sub /= none) orelse (Ask == subscribe)
+	orelse (Ask == out) orelse (Ask == both).
 
 sets_bare_member({U, S, <<"">>} = LBJID, Set) ->
     case ?SETS:next(sets_iterator_from(LBJID, Set)) of
@@ -189,10 +263,13 @@ mod_opt_type(log) ->
 mod_opt_type(allow_local_users) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(allow_transports) ->
+    fun (B) when is_boolean(B) -> B end;
+mod_opt_type(captcha) ->
     fun (B) when is_boolean(B) -> B end.
 
 mod_options(_) ->
     [{drop, true},
      {log, false},
+     {captcha, false},
      {allow_local_users, true},
      {allow_transports, true}].

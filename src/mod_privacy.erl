@@ -589,9 +589,10 @@ do_check_packet(#jid{luser = LUser, lserver = LServer}, List, Packet, Dir) ->
 		   in -> jid:tolower(From);
 		   out -> jid:tolower(To)
 		 end,
-	  {Subscription, Groups} = ejabberd_hooks:run_fold(
-				     roster_get_jid_info, LServer,
-				     {none, []}, [LUser, LServer, LJID]),
+	  {Subscription, _Ask, Groups} = ejabberd_hooks:run_fold(
+					   roster_get_jid_info, LServer,
+					   {none, none, []},
+					   [LUser, LServer, LJID]),
 	  check_packet_aux(List, PType2, LJID, Subscription, Groups)
     end.
 

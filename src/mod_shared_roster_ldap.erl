@@ -40,8 +40,8 @@
 	 handle_info/2, terminate/2, code_change/3]).
 
 -export([get_user_roster/2,
-	 get_jid_info/4, process_item/2, in_subscription/6,
-	 out_subscription/4, mod_opt_type/1, mod_options/1,
+	 get_jid_info/4, process_item/2, in_subscription/2,
+	 out_subscription/1, mod_opt_type/1, mod_options/1,
 	 opt_type/1, depends/2, transform_module_options/1]).
 
 -include("ejabberd.hrl").
@@ -159,9 +159,9 @@ process_item(RosterItem, _Host) ->
       _ -> RosterItem#roster{subscription = both, ask = none}
     end.
 
--spec get_jid_info({subscription(), [binary()]}, binary(), binary(), jid())
-      -> {subscription(), [binary()]}.
-get_jid_info({Subscription, Groups}, User, Server,
+-spec get_jid_info({subscription(), ask(), [binary()]}, binary(), binary(), jid())
+      -> {subscription(), ask(), [binary()]}.
+get_jid_info({Subscription, Ask, Groups}, User, Server,
 	     JID) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
@@ -174,23 +174,19 @@ get_jid_info({Subscription, Groups}, User, Server,
 	  NewGroups = if Groups == [] -> GroupNames;
 			 true -> Groups
 		      end,
-	  {both, NewGroups};
-      error -> {Subscription, Groups}
+	  {both, none, NewGroups};
+      error -> {Subscription, Ask, Groups}
     end.
 
--spec in_subscription(boolean(), binary(), binary(), jid(),
-		      subscribe | subscribed | unsubscribe | unsubscribed,
-		      binary()) -> boolean().
-in_subscription(Acc, User, Server, JID, Type,
-		_Reason) ->
+-spec in_subscription(boolean(), presence()) -> boolean().
+in_subscription(Acc, #presence{to = To, from = JID, type = Type}) ->
+    #jid{user = User, server = Server} = To,
     process_subscription(in, User, Server, JID, Type, Acc).
 
--spec out_subscription(
-	binary(), binary(), jid(),
-	subscribed | unsubscribed | subscribe | unsubscribe) -> boolean().
-out_subscription(User, Server, JID, Type) ->
-    process_subscription(out, User, Server, JID, Type,
-			 false).
+-spec out_subscription(presence()) -> boolean().
+out_subscription(#presence{from = From, to = JID, type = Type}) ->
+    #jid{user = User, server = Server} = From,
+    process_subscription(out, User, Server, JID, Type, false).
 
 process_subscription(Direction, User, Server, JID,
 		     _Type, Acc) ->

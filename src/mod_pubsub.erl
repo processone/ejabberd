@@ -52,7 +52,7 @@
 
 %% exports for hooks
 -export([presence_probe/3, caps_add/3, caps_update/3,
-    in_subscription/6, out_subscription/4,
+    in_subscription/2, out_subscription/1,
     on_self_presence/1, on_user_offline/2, remove_user/2,
     disco_local_identity/5, disco_local_features/5,
     disco_local_items/5, disco_sm_identity/5,
@@ -605,22 +605,17 @@ on_user_offline(C2SState, _Reason) ->
 %% subscription hooks handling functions
 %%
 
--spec out_subscription(
-	binary(), binary(), jid(),
-	subscribed | unsubscribed | subscribe | unsubscribe) -> boolean().
-out_subscription(User, Server, To, subscribed) ->
-    send_last_pep(jid:make(User, Server), To),
-    true;
-out_subscription(_, _, _, _) ->
-    true.
+-spec out_subscription(presence()) -> any().
+out_subscription(#presence{type = subscribed, from = From, to = To}) ->
+    send_last_pep(jid:remove_resource(From), To);
+out_subscription(_) ->
+    ok.
 
--spec in_subscription(boolean(), binary(), binary(), jid(),
-		      subscribe | subscribed | unsubscribe | unsubscribed,
-		      binary()) -> true.
-in_subscription(_, User, Server, Owner, unsubscribed, _) ->
-    unsubscribe_user(jid:make(User, Server), Owner),
+-spec in_subscription(boolean(), presence()) -> true.
+in_subscription(_, #presence{to = To, from = Owner, type = unsubscribed}) ->
+    unsubscribe_user(jid:remove_resource(To), Owner),
     true;
-in_subscription(_, _, _, _, _, _) ->
+in_subscription(_, _) ->
     true.
 
 unsubscribe_user(Entity, Owner) ->
@@ -2513,8 +2508,8 @@ get_roster_info(_, _, {<<>>, <<>>, _}, _) ->
     {false, false};
 get_roster_info(OwnerUser, OwnerServer, {SubscriberUser, SubscriberServer, _}, AllowedGroups) ->
     LJID = {SubscriberUser, SubscriberServer, <<>>},
-    {Subscription, Groups} = ejabberd_hooks:run_fold(roster_get_jid_info,
-	    OwnerServer, {none, []},
+    {Subscription, _Ask, Groups} = ejabberd_hooks:run_fold(roster_get_jid_info,
+	    OwnerServer, {none, none, []},
 	    [OwnerUser, OwnerServer, LJID]),
     PresenceSubscription = Subscription == both orelse
 	Subscription == from orelse

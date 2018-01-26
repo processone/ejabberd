@@ -33,7 +33,7 @@
 	 import_info/0, webadmin_menu/3, webadmin_page/3,
 	 get_user_roster/2,
 	 get_jid_info/4, import/5, process_item/2, import_start/2,
-	 in_subscription/6, out_subscription/4, c2s_self_presence/1,
+	 in_subscription/2, out_subscription/1, c2s_self_presence/1,
 	 unset_presence/4, register_user/2, remove_user/2,
 	 list_groups/1, create_group/2, create_group/3,
 	 delete_group/2, get_group_opts/2, set_group_opts/3,
@@ -235,12 +235,11 @@ process_item(RosterItem, Host) ->
 	    %% If it doesn't, then remove this user from any
 	    %% existing roster groups.
 	    [] ->
-		mod_roster:out_subscription(UserTo, ServerTo,
-					    jid:make(UserFrom, ServerFrom),
-					    unsubscribe),
-		mod_roster:in_subscription(false, UserFrom, ServerFrom,
-					   jid:make(UserTo, ServerTo),
-					   unsubscribe, <<"">>),
+		Pres = #presence{from = jid:make(UserTo, ServerTo),
+				 to = jid:make(UserFrom, ServerFrom),
+				 type = unsubscribe},
+		mod_roster:out_subscription(Pres),
+		mod_roster:in_subscription(false, Pres),
 		RosterItem#roster{subscription = both, ask = none};
 	    %% If so, it means the user wants to add that contact
 	    %% to his personal roster
@@ -268,22 +267,22 @@ set_new_rosteritems(UserFrom, ServerFrom, UserTo,
     RITo = build_roster_record(UserTo, ServerTo, UserFrom,
 			       ServerFrom, UserFrom, []),
     set_item(UserTo, ServerTo, <<"">>, RITo),
-    mod_roster:out_subscription(UserFrom, ServerFrom, JIDTo,
-				subscribe),
-    mod_roster:in_subscription(false, UserTo, ServerTo,
-			       JIDFrom, subscribe, <<"">>),
-    mod_roster:out_subscription(UserTo, ServerTo, JIDFrom,
-				subscribed),
-    mod_roster:in_subscription(false, UserFrom, ServerFrom,
-			       JIDTo, subscribed, <<"">>),
-    mod_roster:out_subscription(UserTo, ServerTo, JIDFrom,
-				subscribe),
-    mod_roster:in_subscription(false, UserFrom, ServerFrom,
-			       JIDTo, subscribe, <<"">>),
-    mod_roster:out_subscription(UserFrom, ServerFrom, JIDTo,
-				subscribed),
-    mod_roster:in_subscription(false, UserTo, ServerTo,
-			       JIDFrom, subscribed, <<"">>),
+    mod_roster:out_subscription(
+      #presence{from = JIDFrom, to = JIDTo, type = subscribe}),
+    mod_roster:in_subscription(
+      false, #presence{to = JIDTo, from = JIDFrom, type = subscribe}),
+    mod_roster:out_subscription(
+      #presence{from = JIDTo, to = JIDFrom, type = subscribed}),
+    mod_roster:in_subscription(
+      false, #presence{to = JIDFrom, from = JIDTo, type = subscribed}),
+    mod_roster:out_subscription(
+      #presence{from = JIDTo, to = JIDFrom, type = subscribe}),
+    mod_roster:in_subscription(
+      false, #presence{to = JIDFrom, from = JIDTo, type = subscribe}),
+    mod_roster:out_subscription(
+      #presence{from = JIDFrom, to = JIDTo, type = subscribed}),
+    mod_roster:in_subscription(
+      false, #presence{to = JIDTo, from = JIDFrom, type = subscribed}),
     RIFrom.
 
 set_item(User, Server, Resource, Item) ->
@@ -294,9 +293,9 @@ set_item(User, Server, Resource, Item) ->
 			      items = [mod_roster:encode_item(Item)]}]},
     ejabberd_router:route(ResIQ).
 
--spec get_jid_info({subscription(), [binary()]}, binary(), binary(), jid())
-      -> {subscription(), [binary()]}.
-get_jid_info({Subscription, Groups}, User, Server,
+-spec get_jid_info({subscription(), ask(), [binary()]}, binary(), binary(), jid())
+      -> {subscription(), ask(), [binary()]}.
+get_jid_info({Subscription, Ask, Groups}, User, Server,
 	     JID) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
@@ -320,33 +319,26 @@ get_jid_info({Subscription, Groups}, User, Server,
 	  NewGroups = if Groups == [] -> GroupNames;
 			 true -> Groups
 		      end,
-	  {both, NewGroups};
-      error -> {Subscription, Groups}
+	  {both, none, NewGroups};
+      error -> {Subscription, Ask, Groups}
     end.
 
--spec in_subscription(boolean(), binary(), binary(), jid(),
-		      subscribe | subscribed | unsubscribe | unsubscribed,
-		      binary()) -> boolean().
-in_subscription(Acc, User, Server, JID, Type,
-		_Reason) ->
+-spec in_subscription(boolean(), presence()) -> boolean().
+in_subscription(Acc, #presence{to = To, from = JID, type = Type}) ->
+    #jid{user = User, server = Server} = To,
     process_subscription(in, User, Server, JID, Type, Acc).
 
--spec out_subscription(
-	binary(), binary(), jid(),
-	subscribed | unsubscribed | subscribe | unsubscribe) -> boolean().
-out_subscription(UserFrom, ServerFrom, JIDTo,
-		 unsubscribed) ->
-    #jid{luser = UserTo, lserver = ServerTo} = JIDTo,
-    JIDFrom = jid:make(UserFrom, ServerFrom),
-    mod_roster:out_subscription(UserTo, ServerTo, JIDFrom,
-				unsubscribe),
-    mod_roster:in_subscription(false, UserFrom, ServerFrom,
-			       JIDTo, unsubscribe, <<"">>),
-    process_subscription(out, UserFrom, ServerFrom, JIDTo,
-			 unsubscribed, false);
-out_subscription(User, Server, JID, Type) ->
-    process_subscription(out, User, Server, JID, Type,
-			 false).
+-spec out_subscription(presence()) -> boolean().
+out_subscription(#presence{from = From, to = To, type = unsubscribed} = Pres) ->
+    #jid{user = User, server = Server} = From,
+    mod_roster:out_subscription(Pres#presence{type = unsubscribe}),
+    mod_roster:in_subscription(false, xmpp:set_from_to(
+					Pres#presence{type = unsubscribe},
+					To, From)),
+    process_subscription(out, User, Server, To, unsubscribed, false);
+out_subscription(#presence{from = From, to = To, type = Type}) ->
+    #jid{user = User, server = Server} = From,
+    process_subscription(out, User, Server, To, Type, false).
 
 process_subscription(Direction, User, Server, JID,
 		     _Type, Acc) ->

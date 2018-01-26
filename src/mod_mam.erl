@@ -672,10 +672,10 @@ should_archive_peer(LUser, LServer,
 			always -> true;
 			never -> false;
 			roster ->
-			    {Sub, _} = ejabberd_hooks:run_fold(
-					 roster_get_jid_info,
-					 LServer, {none, []},
-					 [LUser, LServer, Peer]),
+			    {Sub, _, _} = ejabberd_hooks:run_fold(
+					    roster_get_jid_info,
+					    LServer, {none, none, []},
+					    [LUser, LServer, Peer]),
 			    Sub == both orelse Sub == from orelse Sub == to
 		    end
 	    end

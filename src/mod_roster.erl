@@ -44,8 +44,8 @@
 	 import_info/0, process_local_iq/1, get_user_roster/2,
 	 import/5, get_roster/2,
 	 import_start/2, import_stop/2,
-	 c2s_self_presence/1, in_subscription/6,
-	 out_subscription/4, set_items/3, remove_user/2,
+	 c2s_self_presence/1, in_subscription/2,
+	 out_subscription/1, set_items/3, remove_user/2,
 	 get_jid_info/4, encode_item/1, webadmin_page/3,
 	 webadmin_user/4, get_versioning_feature/2,
 	 roster_versioning_enabled/1, roster_version/2,
@@ -76,7 +76,7 @@
 -callback get_roster(binary(), binary()) -> {ok, [#roster{}]} | error.
 -callback get_roster_item(binary(), binary(), ljid()) -> {ok, #roster{}} | error.
 -callback read_subscription_and_groups(binary(), binary(), ljid())
-          -> {ok, {subscription(), [binary()]}} | error.
+          -> {ok, {subscription(), ask(), [binary()]}} | error.
 -callback roster_subscribe(binary(), binary(), ljid(), #roster{}) -> any().
 -callback transaction(binary(), function()) -> {atomic, any()} | {aborted, any()}.
 -callback remove_user(binary(), binary()) -> any().
@@ -383,20 +383,28 @@ get_subscription_and_groups(LUser, LServer, LJID) ->
 		    fun() ->
 			    Items = get_roster(LUser, LServer),
 			    case lists:keyfind(LBJID, #roster.jid, Items) of
-				#roster{subscription = Sub, groups = Groups} ->
-				    {ok, {Sub, Groups}};
+				#roster{subscription = Sub,
+					ask = Ask,
+					groups = Groups} ->
+				    {ok, {Sub, Ask, Groups}};
 				false ->
 				    error
 			    end
 		    end);
 	      false ->
-		  Mod:read_subscription_and_groups(LUser, LServer, LBJID)
+		  case Mod:read_subscription_and_groups(LUser, LServer, LBJID) of
+		      {ok, {Sub, Groups}} ->
+			  %% Backward compatibility for third-party backends
+			  {ok, {Sub, none, Groups}};
+		      Other ->
+			  Other
+		  end
 	  end,
     case Res of
 	{ok, SubAndGroups} ->
 	    SubAndGroups;
 	error ->
-	    {none, []}
+	    {none, none, []}
     end.
 
 set_roster(#roster{us = {LUser, LServer}, jid = LJID} = Item) ->
@@ -555,17 +563,19 @@ transaction(LUser, LServer, LJIDs, F) ->
 	    Err
     end.
 
--spec in_subscription(boolean(), binary(), binary(), jid(),
-		      subscribe | subscribed | unsubscribe | unsubscribed,
-		      binary()) -> boolean().
-in_subscription(_, User, Server, JID, Type, Reason) ->
+-spec in_subscription(boolean(), presence()) -> boolean().
+in_subscription(_, #presence{from = JID, to = To,
+			     type = Type, status = Status}) ->
+    #jid{user = User, server = Server} = To,
+    Reason = if Type == subscribe -> xmpp:get_text(Status);
+		true -> <<"">>
+	     end,
     process_subscription(in, User, Server, JID, Type,
 			 Reason).
 
--spec out_subscription(
-	binary(), binary(), jid(),
-	subscribed | unsubscribed | subscribe | unsubscribe) -> boolean().
-out_subscription(User, Server, JID, Type) ->
+-spec out_subscription(presence()) -> boolean().
+out_subscription(#presence{from = From, to = JID, type = Type}) ->
+    #jid{user = User, server = Server} = From,
     process_subscription(out, User, Server, JID, Type, <<"">>).
 
 process_subscription(Direction, User, Server, JID1,
@@ -878,8 +888,8 @@ get_priority_from_presence(#presence{priority = Prio}) ->
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec get_jid_info({subscription(), [binary()]}, binary(), binary(), jid())
-      -> {subscription(), [binary()]}.
+-spec get_jid_info({subscription(), ask(), [binary()]}, binary(), binary(), jid())
+      -> {subscription(), ask(), [binary()]}.
 get_jid_info(_, User, Server, JID) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
@@ -1029,9 +1039,10 @@ user_roster_parse_query(User, Server, Items, Query) ->
     end.
 
 user_roster_subscribe_jid(User, Server, JID) ->
-    out_subscription(User, Server, JID, subscribe),
     UJID = jid:make(User, Server),
-    ejabberd_router:route(#presence{from = UJID, to = JID, type = subscribe}).
+    Presence = #presence{from = UJID, to = JID, type = subscribe},
+    out_subscription(Presence),
+    ejabberd_router:route(Presence).
 
 user_roster_item_parse_query(User, Server, Items,
 			     Query) ->
@@ -1043,12 +1054,11 @@ user_roster_item_parse_query(User, Server, Items,
 			      of
 			    {value, _} ->
 				JID1 = jid:make(JID),
-				out_subscription(User, Server, JID1,
-						 subscribed),
 				UJID = jid:make(User, Server),
-				ejabberd_router:route(
-				  #presence{from = UJID, to = JID1,
-					    type = subscribed}),
+				Pres = #presence{from = UJID, to = JID1,
+						 type = subscribed},
+				out_subscription(Pres),
+				ejabberd_router:route(Pres),
 				throw(submitted);
 			    false ->
 				case lists:keysearch(<<"remove",

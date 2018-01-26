@@ -88,8 +88,9 @@ del_roster(LUser, LServer, LJID) ->
 read_subscription_and_groups(LUser, LServer, LJID) ->
     case ejabberd_riak:get(roster, roster_schema(), {LUser, LServer, LJID}) of
 	{ok, #roster{subscription = Subscription,
+		     ask = Ask,
 		     groups = Groups}} ->
-	    {ok, {Subscription, Groups}};
+	    {ok, {Subscription, Ask, Groups}};
 	_ ->
 	    error
     end.
