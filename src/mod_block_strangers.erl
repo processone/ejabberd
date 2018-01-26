@@ -101,7 +101,7 @@ filter_subscription(Acc, #presence{from = From, to = To, lang = Lang,
 		    BTo = jid:remove_resource(To),
 		    Limiter = jid:tolower(BFrom),
 		    case ejabberd_captcha:create_captcha(
-			   SID, BFrom, BTo, Lang, Limiter,
+			   SID, BTo, BFrom, Lang, Limiter,
 			   fun(Res) -> handle_captcha_result(Res, Pres) end) of
 			{ok, ID, Body, CaptchaEls} ->
 			    Msg = #message{from = BTo, to = From,
