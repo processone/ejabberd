@@ -160,10 +160,10 @@ delete_node(Nodes) ->
 %% can decide to:<ul>
 %%  <li>reject the subscription;</li>
 %%  <li>allow it as is, letting the main module perform the database
-%%  persistance;</li>
+%%  persistence;</li>
 %%  <li>allow it, modifying the record. The main module will store the
 %%  modified record;</li>
-%%  <li>allow it, but perform the needed persistance operations.</li></ul>
+%%  <li>allow it, but perform the needed persistence operations.</li></ul>
 %% </li></ul></p>
 %% <p>The selected behaviour depends on the return parameter:
 %%  <ul>
@@ -177,9 +177,9 @@ delete_node(Nodes) ->
 %%   passed in parameter <tt>SubscribeResult</tt>.</li>
 %%   <li><tt>{true, done}</tt>: Subscribe operation is allowed, but the
 %%   {@link mod_pubsub:pubsubState()} will be considered as already stored and
-%%   no further persistance operation will be performed. This case is used,
-%%   when the plugin module is doing the persistance by itself or when it want
-%%   to completly disable persistance.</li></ul>
+%%   no further persistence operation will be performed. This case is used,
+%%   when the plugin module is doing the persistence by itself or when it want
+%%   to completly disable persistence.</li></ul>
 %% </p>
 %% <p>In the default plugin module, the record is unchanged.</p>
 subscribe_node(Nidx, Sender, Subscriber, AccessModel,
@@ -329,9 +329,9 @@ delete_subscriptions(SubState, Subscriptions) ->
 %% result of the preparation as a {@link mod_pubsub:pubsubItem()} record.</li>
 %% <li>This function gets the prepared record and several other parameters and can decide to:<ul>
 %%  <li>reject the publication;</li>
-%%  <li>allow the publication as is, letting the main module perform the database persistance;</li>
+%%  <li>allow the publication as is, letting the main module perform the database persistence;</li>
 %%  <li>allow the publication, modifying the record. The main module will store the modified record;</li>
-%%  <li>allow it, but perform the needed persistance operations.</li></ul>
+%%  <li>allow it, but perform the needed persistence operations.</li></ul>
 %% </li></ul></p>
 %% <p>The selected behaviour depends on the return parameter:
 %%  <ul>
@@ -343,13 +343,13 @@ delete_subscriptions(SubState, Subscriptions) ->
 %%   performed.</li>
 %%   <li><tt>{true, Item}</tt>: Publication operation is allowed, but the
 %%   {@link mod_pubsub:pubsubItem()} record returned replaces the value passed
-%%   in parameter <tt>Item</tt>. The persistance will be performed by the main
+%%   in parameter <tt>Item</tt>. The persistence will be performed by the main
 %%   module.</li>
 %%   <li><tt>{true, done}</tt>: Publication operation is allowed, but the
 %%   {@link mod_pubsub:pubsubItem()} will be considered as already stored and
-%%   no further persistance operation will be performed. This case is used,
-%%   when the plugin module is doing the persistance by itself or when it want
-%%   to completly disable persistance.</li></ul>
+%%   no further persistence operation will be performed. This case is used,
+%%   when the plugin module is doing the persistence by itself or when it want
+%%   to completly disable persistence.</li></ul>
 %% </p>
 %% <p>In the default plugin module, the record is unchanged.</p>
 publish_item(Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload,

@@ -651,7 +651,7 @@ parse_lang(Langs) ->
     end.
 
 % Code below is taken (with some modifications) from the yaws webserver, which
-% is distributed under the folowing license:
+% is distributed under the following license:
 %
 % This software (the yaws webserver) is free software.
 % Parts of this software is Copyright (c) Claes Wikstrom <klacke@hyber.org>

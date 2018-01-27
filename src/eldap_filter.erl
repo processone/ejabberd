@@ -64,7 +64,7 @@ parse(L) ->
 %%%           RFC2254_Filter = RegExp = Value = string(),
 %%%           N = integer().
 %%%
-%%% Description: The same as parse/1, but substitutes N or all occurences
+%%% Description: The same as parse/1, but substitutes N or all occurrences
 %%%              of RegExp with Value *after* parsing.
 %%%
 %%% Example:

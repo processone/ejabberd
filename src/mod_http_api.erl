@@ -43,7 +43,7 @@
 %% add_commands allow exporting a class of commands, from
 %%   open: methods is not risky and can be called by without any access check
 %%   restricted (default): the same, but will appear only in ejabberdctl list.
-%%   admin – auth is required with XMLRPC and HTTP API and checked for admin priviledges, works as usual in ejabberdctl.
+%%   admin – auth is required with XMLRPC and HTTP API and checked for admin privileges, works as usual in ejabberdctl.
 %%   user - can be used through XMLRPC and HTTP API, even by user. Only admin can use the commands for other users.
 %%
 %% Then to perform an action, send a POST request to the following URL:
@@ -301,7 +301,7 @@ handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
 		  throw:{not_allowed, Msg} ->
 		    {401, iolist_to_binary(Msg)};
                   throw:{error, account_unprivileged} ->
-        {403, 31, <<"Command need to be run with admin priviledge.">>};
+        {403, 31, <<"Command need to be run with admin privilege.">>};
       throw:{error, access_rules_unauthorized} ->
         {403, 32, <<"AccessRules: Account does not have the right to perform the operation.">>};
 		  throw:{invalid_parameter, Msg} ->

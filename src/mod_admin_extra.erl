@@ -1025,7 +1025,7 @@ get_status_list(Host, Status_required) ->
     Sessions2 = [ {Session#session.usr, Session#session.sid, Session#session.priority} || Session <- Sessions],
     Fhost = case Host of
 		<<"all">> ->
-		    %% All hosts are requested, so dont filter at all
+		    %% All hosts are requested, so don't filter at all
 		    fun(_, _) -> true end;
 		_ ->
 		    %% Filter the list, only Host is interesting

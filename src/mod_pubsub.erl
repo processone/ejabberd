@@ -2826,7 +2826,7 @@ get_options_for_subs(Host, Nidx, Subs, true) ->
 
 broadcast_stanza(Host, _Node, _Nidx, _Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
     NotificationType = get_option(NodeOptions, notification_type, headline),
-    BroadcastAll = get_option(NodeOptions, broadcast_all_resources), %% XXX this is not standard, but usefull
+    BroadcastAll = get_option(NodeOptions, broadcast_all_resources), %% XXX this is not standard, but useful
     Stanza = add_message_type(
 	       xmpp:set_from(BaseStanza, service_jid(Host)),
 	       NotificationType),

@@ -273,8 +273,8 @@ write_roster_version(LUser, LServer, InTransaction) ->
     end,
     Ver.
 
-%% Load roster from DB only if neccesary.
-%% It is neccesary if
+%% Load roster from DB only if necessary.
+%% It is necessary if
 %%     - roster versioning is disabled in server OR
 %%     - roster versioning is not used by the client OR
 %%     - roster versioning is used by server and client, BUT the server isn't storing versions on db OR

@@ -133,7 +133,7 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 %%-----------------------------
-%% ejabberdctl Command managment
+%% ejabberdctl Command management
 %%-----------------------------
 
 register_commands(CmdDescs, Module, Function) ->
@@ -866,7 +866,7 @@ print(Format, Args) ->
     io:format(lists:flatten(Format), Args).
 
 %%-----------------------------
-%% Command managment
+%% Command management
 %%-----------------------------
 
 %%+++

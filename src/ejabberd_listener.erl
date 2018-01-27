@@ -107,7 +107,7 @@ init_udp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
 			     {reuseaddr, true} |
 			     SockOpts]) of
 	{ok, Socket} ->
-	    %% Inform my parent that this port was opened succesfully
+	    %% Inform my parent that this port was opened successfully
 	    proc_lib:init_ack({ok, self()}),
 	    application:ensure_started(ejabberd),
 	    start_module_sup(Port, Module),
@@ -133,7 +133,7 @@ init_udp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
 
 init_tcp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
     ListenSocket = listen_tcp(PortIP, Module, SockOpts, Port, IPS),
-    %% Inform my parent that this port was opened succesfully
+    %% Inform my parent that this port was opened successfully
     proc_lib:init_ack({ok, self()}),
     application:ensure_started(ejabberd),
     start_module_sup(Port, Module),
