@@ -145,16 +145,15 @@ user_receive_packet(Acc) ->
     Acc.
 
 -spec caps_stream_features([xmpp_element()], binary()) -> [xmpp_element()].
-
 caps_stream_features(Acc, MyHost) ->
     case gen_mod:is_loaded(MyHost, ?MODULE) of
 	true ->
-    case make_my_disco_hash(MyHost) of
+	    case make_my_disco_hash(MyHost) of
 		<<"">> ->
 		    Acc;
-      Hash ->
+		Hash ->
 		    [#caps{hash = <<"sha-1">>, node = ?EJABBERD_URI,
-			   version = Hash}|Acc]
+			   version = Hash} | Acc]
 	    end;
 	false ->
 	    Acc
