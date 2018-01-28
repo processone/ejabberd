@@ -376,11 +376,12 @@ handle_info({'$gen_event', {xmlstreamend, _}}, State) ->
     noreply(process_stream_end({stream, reset}, State));
 handle_info({'$gen_event', closed}, State) ->
     noreply(process_stream_end({socket, closed}, State));
-handle_info(timeout, #{mod := Mod} = State) ->
+handle_info(timeout, #{mod := Mod, lang := Lang} = State) ->
     Disconnected = is_disconnected(State),
     noreply(try Mod:handle_timeout(State)
 	    catch _:undef when not Disconnected ->
-		    send_pkt(State, xmpp:serr_connection_timeout());
+		    Txt = <<"Idle connection">>,
+		    send_pkt(State, xmpp:serr_connection_timeout(Txt, Lang));
 		  _:undef ->
 		    stop(State)
 	    end);
