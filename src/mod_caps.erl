@@ -209,7 +209,7 @@ c2s_presence_in(C2SState,
     ToSelf = (From#jid.luser == To#jid.luser)
 	       and (From#jid.lserver == To#jid.lserver),
     Insert = (Type == available)
-	       and ((Subscription == both) or (Subscription == to) or ToSelf),
+	       and ((Subscription == both) or (Subscription == from) or ToSelf),
     Delete = (Type == unavailable) or (Type == error),
     if Insert or Delete ->
 	   LFrom = jid:tolower(From),
