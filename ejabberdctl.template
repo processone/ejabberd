@@ -263,7 +263,7 @@ cd "$SPOOL_DIR" || {
 case $1 in
     start)
         check_start
-        exec_erl "$ERLANG_NODE" $EJABBERD_OPTS -noinput -detached
+        exec_erl "$ERLANG_NODE" $EJABBERD_OPTS -detached
         ;;
     foreground)
         check_start
