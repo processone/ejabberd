@@ -1057,7 +1057,12 @@ get_version() ->
 -spec get_myhosts() -> [binary()].
 
 get_myhosts() ->
-    get_option(hosts).
+    case get_option(hosts) of
+	V when is_list(V) ->
+	    V;
+	_ ->
+	    []
+    end.
 
 -spec get_mylang() -> binary().
 
