@@ -575,7 +575,11 @@ mod_opt_type(ldap_memberattr_format) ->
     fun iolist_to_binary/1;
 mod_opt_type(ldap_memberattr_format_re) ->
     fun (S) ->
-	    Re = iolist_to_binary(S), {ok, MP} = re:compile(Re), MP
+	    Re = iolist_to_binary(S),
+	    case Re of
+		<<>> -> <<>>;
+		_ -> {ok, MP} = re:compile(Re), MP
+	    end
     end;
 mod_opt_type(ldap_rfilter) ->
     opt_type(ldap_rfilter);
