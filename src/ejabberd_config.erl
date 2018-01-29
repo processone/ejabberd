@@ -110,7 +110,17 @@ start(Hosts, Opts) ->
 		  [named_table, public, {read_concurrency, true}]),
     catch ets:new(ejabberd_db_modules,
 		  [named_table, public, {read_concurrency, true}]),
-    set_opts(set_hosts_in_options(Hosts, #state{opts = Opts})),
+    UnixTime = p1_time_compat:system_time(seconds),
+    SharedKey = case erlang:get_cookie() of
+		    nocookie ->
+			str:sha(randoms:get_string());
+		    Cookie ->
+			str:sha(misc:atom_to_binary(Cookie))
+		end,
+    State1 = #state{opts = Opts},
+    State2 = set_option({node_start, global}, UnixTime, State1),
+    State3 = set_option({shared_key, global}, SharedKey, State2),
+    set_opts(set_hosts_in_options(Hosts, State3)),
     ok.
 
 %% @doc Get the filename of the ejabberd configuration file.
@@ -1057,12 +1067,7 @@ get_version() ->
 -spec get_myhosts() -> [binary()].
 
 get_myhosts() ->
-    case get_option(hosts) of
-	V when is_list(V) ->
-	    V;
-	_ ->
-	    []
-    end.
+    get_option(hosts).
 
 -spec get_mylang() -> binary().
 
