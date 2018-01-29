@@ -29,7 +29,7 @@ Vars = case file:consult(filename:join([filename:dirname(SCRIPT),"vars.config"])
 {ldflags, LDFlags} = lists:keyfind(ldflags, 1, Vars),
 {system_deps, SystemDeps}  = lists:keyfind(system_deps, 1, Vars),
 
-GetCfg0 = fun(F, Cfg, [Key | Tail], Default) ->
+GetCfg = fun GetCfg(Cfg, [Key | Tail], Default) ->
 		  Val = case lists:keyfind(Key, 1, Cfg) of
 			    {Key, V1} -> V1;
 			    false -> Default
@@ -38,10 +38,10 @@ GetCfg0 = fun(F, Cfg, [Key | Tail], Default) ->
 		      [] ->
 			  Val;
 		      _ ->
-			  F(F, Val, Tail, Default)
+			  GetCfg(Val, Tail, Default)
 		  end
 	  end,
-ModCfg0 = fun(F, Cfg, [Key | Tail], Op, Default) ->
+ModCfg = fun ModCfg(Cfg, [Key | Tail], Op, Default) ->
 		  {OldVal, PartCfg} = case lists:keytake(Key, 1, Cfg) of
 					  {value, {_, V1}, V2} -> {V1, V2};
 					  false -> {if Tail == [] -> Default; true -> [] end, Cfg}
@@ -50,19 +50,19 @@ ModCfg0 = fun(F, Cfg, [Key | Tail], Op, Default) ->
 		      [] ->
 			  [{Key, Op(OldVal)} | PartCfg];
 		      _ ->
-			  [{Key, F(F, OldVal, Tail, Op, Default)} | PartCfg]
+			  [{Key, ModCfg(OldVal, Tail, Op, Default)} | PartCfg]
 		  end
 	  end,
 
-FilterConfig = fun(F, Cfg, [{Path, true, ModFun, Default} | Tail]) ->
-		       F(F, ModCfg0(ModCfg0, Cfg, Path, ModFun, Default), Tail);
-		  (F, Cfg, [{Path, SourcePath, true, ModFun, Default, SourceDefault} | Tail]) ->
-		       SourceVal = GetCfg0(GetCfg0, Cfg, SourcePath, SourceDefault),
+FilterConfig = fun FilterConfig(Cfg, [{Path, true, ModFun, Default} | Tail]) ->
+		       FilterConfig(ModCfg(Cfg, Path, ModFun, Default), Tail);
+		   FilterConfig(Cfg, [{Path, SourcePath, true, ModFun, Default, SourceDefault} | Tail]) ->
+		       SourceVal = GetCfg(Cfg, SourcePath, SourceDefault),
 		       ModFun2 = fun(V) -> ModFun(V, SourceVal) end,
-		       F(F, ModCfg0(ModCfg0, Cfg, Path, ModFun2, Default), Tail);
-		  (F, Cfg, [_ | Tail]) ->
-		       F(F, Cfg, Tail);
-		  (_, Cfg, []) ->
+		       FilterConfig(ModCfg(Cfg, Path, ModFun2, Default), Tail);
+		   FilterConfig(Cfg, [_ | Tail]) ->
+		       FilterConfig(Cfg, Tail);
+		   FilterConfig(Cfg, []) ->
 		       Cfg
 	       end,
 
@@ -78,15 +78,15 @@ IsRebar3 = case application:get_key(rebar, vsn) of
 SysVer = erlang:system_info(otp_release),
 
 ProcessSingleVar = fun(F, Var, Tail) ->
-			   case F(F, [Var], []) of
+			   case F([Var], []) of
 			       [] -> Tail;
 			       [Val] -> [Val | Tail]
 			   end
 		   end,
 
-ProcessVars = fun(_F, [], Acc) ->
+ProcessVars = fun F([], Acc) ->
 		      lists:reverse(Acc);
-		 (F, [{Type, Ver, Value} | Tail], Acc) when
+		 F([{Type, Ver, Value} | Tail], Acc) when
 			Type == if_version_above orelse
 			Type == if_version_below ->
 		      SysVer = erlang:system_info(otp_release),
@@ -96,11 +96,11 @@ ProcessVars = fun(_F, [], Acc) ->
 					SysVer < Ver
 				end,
 		      if Include ->
-			      F(F, Tail, ProcessSingleVar(F, Value, Acc));
+			      F(Tail, ProcessSingleVar(F, Value, Acc));
 			 true ->
-			      F(F, Tail, Acc)
+			      F(Tail, Acc)
 		      end;
-		 (F, [{Type, Ver, Value, ElseValue} | Tail], Acc) when
+		  F([{Type, Ver, Value, ElseValue} | Tail], Acc) when
 			Type == if_version_above orelse
 			Type == if_version_below ->
 		      Include = if Type == if_version_above ->
@@ -109,53 +109,53 @@ ProcessVars = fun(_F, [], Acc) ->
 					SysVer < Ver
 				end,
 		      if Include ->
-			      F(F, Tail, ProcessSingleVar(F, Value, Acc));
+			      F(Tail, ProcessSingleVar(F, Value, Acc));
 			 true ->
-			      F(F, Tail, ProcessSingleVar(F, ElseValue, Acc))
+			      F(Tail, ProcessSingleVar(F, ElseValue, Acc))
 		      end;
-		 (F, [{Type, Var, Value} | Tail], Acc) when
+		  F([{Type, Var, Value} | Tail], Acc) when
 			Type == if_var_true orelse
 			Type == if_var_false ->
 		      Flag = Type == if_var_true,
 		      case proplists:get_bool(Var, Vars) of
 			  V when V == Flag ->
-			      F(F, Tail, ProcessSingleVar(F, Value, Acc));
+			      F(Tail, ProcessSingleVar(F, Value, Acc));
 			  _ ->
-			      F(F, Tail, Acc)
+			      F(Tail, Acc)
 		      end;
-		 (F, [{Type, Value} | Tail], Acc) when
+		  F([{Type, Value} | Tail], Acc) when
 			Type == if_rebar3 orelse
 			Type == if_not_rebar3 ->
 		      Flag = Type == if_rebar3,
 		      case IsRebar3 == Flag of
 			  true ->
-			      F(F, Tail, ProcessSingleVar(F, Value, Acc));
+			      F(Tail, ProcessSingleVar(F, Value, Acc));
 			  _ ->
-			      F(F, Tail, Acc)
+			      F(Tail, Acc)
 		      end;
-		 (F, [{Type, Var, Match, Value} | Tail], Acc) when
+		  F([{Type, Var, Match, Value} | Tail], Acc) when
 			Type == if_var_match orelse
 			Type == if_var_no_match ->
 		      case proplists:get_value(Var, Vars) of
 			  V when V == Match ->
-			      F(F, Tail, ProcessSingleVar(F, Value, Acc));
+			      F(Tail, ProcessSingleVar(F, Value, Acc));
 			  _ ->
-			      F(F, Tail, Acc)
+			      F(Tail, Acc)
 		      end;
-		 (F, [{if_have_fun, MFA, Value} | Tail], Acc) ->
+		  F([{if_have_fun, MFA, Value} | Tail], Acc) ->
 		      {Mod, Fun, Arity} = MFA,
 		      code:ensure_loaded(Mod),
 		      case erlang:function_exported(Mod, Fun, Arity) of
 			  true ->
-			      F(F, Tail, ProcessSingleVar(F, Value, Acc));
+			      F(Tail, ProcessSingleVar(F, Value, Acc));
 			  false ->
-			      F(F, Tail, Acc)
+			      F(Tail, Acc)
 		      end;
-		 (F, [Other1 | Tail1], Acc) ->
-		      F(F, Tail1, [F(F, Other1, []) | Acc]);
-		 (F, Val, Acc) when is_tuple(Val) ->
-		      list_to_tuple(F(F, tuple_to_list(Val), Acc));
-		 (_F, Other2, _Acc) ->
+		  F([Other1 | Tail1], Acc) ->
+		      F(Tail1, [F(Other1, []) | Acc]);
+		  F(Val, Acc) when is_tuple(Val) ->
+		      list_to_tuple(F(tuple_to_list(Val), Acc));
+		  F(Other2, _Acc) ->
 		      Other2
 	      end,
 
@@ -210,18 +210,18 @@ DepAlts = fun("esip") -> ["esip", "p1_sip"];
 	     (Val) -> [Val]
 	  end,
 
-LibDirInt = fun([Dep|Rest], Suffix, F) ->
+LibDirInt = fun F([Dep|Rest], Suffix) ->
 		 case code:lib_dir(Dep) of
 		     {error, _} ->
-			 F(Rest, Suffix, F);
+			 F(Rest, Suffix);
 		     V -> V ++ Suffix
 		 end;
-	    ([], _, _) ->
+	    F([], _) ->
 		 error
 	 end,
 
 LibDir = fun(Name, Suffix) ->
-		 LibDirInt(DepAlts(Name), Suffix, LibDirInt)
+		 LibDirInt(DepAlts(Name), Suffix)
 	 end,
 
 GlobalDepsFilter =
@@ -372,7 +372,7 @@ Rules = [
 	],
 
 Config = [{plugin_dir, filename:join([filename:dirname(SCRIPT),"plugins"])}]++
-FilterConfig(FilterConfig, ProcessVars(ProcessVars, CONFIG, []), Rules),
+FilterConfig(ProcessVars(CONFIG, []), Rules),
 
 %io:format("ejabberd configuration:~n  ~p~n", [Config]),
 
