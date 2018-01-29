@@ -782,7 +782,8 @@ add_local_option(Opt, Val) ->
 add_option(Opt, Val) when is_atom(Opt) ->
     add_option({Opt, global}, Val);
 add_option({Opt, Host}, Val) ->
-    ets:insert(ejabberd_options, {{Opt, Host}, Val}).
+    ets:insert(ejabberd_options, {{Opt, Host}, Val}),
+    ok.
 
 -spec prepare_opt_val(any(), any(), check_fun(), any()) -> any().
 
