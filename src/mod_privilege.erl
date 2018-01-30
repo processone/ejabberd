@@ -98,7 +98,7 @@ process_message(#message{from = #jid{luser = <<"">>, lresource = <<"">>} = From,
 	    case proplists:get_value(message, Access, none) of
 		outgoing ->
 		    forward_message(Msg);
-		none ->
+		_ ->
 		    Txt = <<"Insufficient privilege">>,
 		    Err = xmpp:err_forbidden(Txt, Lang),
 		    ejabberd_router:route_error(Msg, Err)
@@ -172,7 +172,7 @@ process_presence_in({#presence{
 			 true ->
 			      ok
 		      end;
-		 none ->
+		 _ ->
 		      ok
 	      end
       end, dict:to_list(Permissions)),
