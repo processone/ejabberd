@@ -133,7 +133,7 @@ start_modules() ->
 	end, ?MYHOSTS).
 
 get_modules_options(Host) ->
-    sort_modules(Host, ejabberd_config:get_option({modules, Host})).
+    sort_modules(Host, ejabberd_config:get_option({modules, Host}, [])).
 
 sort_modules(Host, ModOpts) ->
     G = digraph:new([acyclic]),
@@ -232,7 +232,7 @@ start_module(Host, Module, Opts0, NeedValidation) ->
 
 -spec reload_modules(binary()) -> ok.
 reload_modules(Host) ->
-    NewMods = ejabberd_config:get_option({modules, Host}),
+    NewMods = ejabberd_config:get_option({modules, Host}, []),
     OldMods = ets:select(
 		ejabberd_modules,
 		ets:fun2ms(
