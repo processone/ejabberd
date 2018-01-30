@@ -172,7 +172,7 @@ process_presence_in({#presence{
 			 true ->
 			      ok
 		      end;
-		 true ->
+		 none ->
 		      ok
 	      end
       end, dict:to_list(Permissions)),
