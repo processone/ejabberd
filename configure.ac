@@ -282,8 +282,6 @@ for backend in odbc mysql pgsql sqlite riak redis; do
     fi
 done
 
-echo "EB: $enabled_backends"
-
 AC_SUBST(hipe)
 AC_SUBST(roster_gateway_workaround)
 AC_SUBST(new_sql_schema)
