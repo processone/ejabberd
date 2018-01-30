@@ -18,6 +18,8 @@
 -export([max_room_desc/1]).
 -export([max_room_id/1]).
 -export([max_room_name/1]).
+-export([max_password/1]).
+-export([max_captcha_whitelist/1]).
 -export([max_rooms_discoitems/1]).
 -export([max_user_conferences/1]).
 -export([max_users/1]).
@@ -124,6 +126,18 @@ max_room_name(Opts) when is_map(Opts) ->
     gen_mod:get_opt(max_room_name, Opts);
 max_room_name(Host) ->
     gen_mod:get_module_opt(Host, mod_muc, max_room_name).
+
+-spec max_password(gen_mod:opts() | global | binary()) -> 'infinity' | pos_integer().
+max_password(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(max_password, Opts);
+max_password(Host) ->
+    gen_mod:get_module_opt(Host, mod_muc, max_password).
+
+-spec max_captcha_whitelist(gen_mod:opts() | global | binary()) -> 'infinity' | pos_integer().
+max_captcha_whitelist(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(max_captcha_whitelist, Opts);
+max_captcha_whitelist(Host) ->
+    gen_mod:get_module_opt(Host, mod_muc, max_captcha_whitelist).
 
 -spec max_rooms_discoitems(gen_mod:opts() | global | binary()) -> non_neg_integer().
 max_rooms_discoitems(Opts) when is_map(Opts) ->
