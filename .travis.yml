@@ -6,7 +6,6 @@ otp_release:
   - 19.2
 
 services:
-  - riak
   - redis-server
 
 before_install:
@@ -31,16 +30,6 @@ install:
 
 before_script:
   # Ulimit: See Travis-CI issue report: https://github.com/travis-ci/travis-ci/issues/3328
-  - echo 'ulimit -n 4096' > riak
-  - sudo mv riak /etc/default/riak
-  - mkdir "$PWD/ebin"
-  - sed 's/^storage_backend.*/storage_backend = leveldb/' /etc/riak/riak.conf > riak.conf
-  - sudo mv riak.conf /etc/riak/riak.conf
-  - echo "[{riak_kv, [{add_paths, [\"$PWD/ebin/\"]}]}]." > advanced.config
-  - sudo mv advanced.config /etc/riak/advanced.config
-  - sudo service riak restart
-  - sudo riak-admin wait-for-service riak_kv 'riak@127.0.0.1'
-  - sudo riak-admin test
   - mysql -u root -e "CREATE USER 'ejabberd_test'@'localhost' IDENTIFIED BY 'ejabberd_test';"
   - mysql -u root -e "CREATE DATABASE ejabberd_test;"
   - mysql -u root -e "GRANT ALL ON ejabberd_test.* TO 'ejabberd_test'@'localhost';"
@@ -50,7 +39,7 @@ before_script:
 
 script:
   - ./autogen.sh
-  - ./configure --prefix=/tmp/ejabberd --enable-all --disable-odbc
+  - ./configure --prefix=/tmp/ejabberd --enable-all --disable-odbc --disable-riak
   - make
   - make install
   - make xref
@@ -65,7 +54,6 @@ after_script:
 after_failure:
   - find logs -name exunit.log -exec cat '{}' ';'
   # Try checking Riak database logs
-  - tail -n 100000 /var/log/riak/*.log
   - find logs -name ejabberd.log -exec cat '{}' ';'
 
 after_success:
