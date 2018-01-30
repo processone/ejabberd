@@ -271,6 +271,19 @@ if test "$sqlite" = "true"; then
    fi
 fi
 
+enabled_backends=""
+for backend in odbc mysql pgsql sqlite riak redis; do
+    if eval test x\${$backend} = xtrue; then
+       if test "x$enabled_backends" = "x"; then
+          enabled_backends=$backend
+       else
+          enabled_backends="$enabled_backends, $backend"
+       fi
+    fi
+done
+
+echo "EB: $enabled_backends"
+
 AC_SUBST(hipe)
 AC_SUBST(roster_gateway_workaround)
 AC_SUBST(new_sql_schema)
@@ -295,5 +308,6 @@ AC_SUBST(system_deps)
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
+AC_SUBST(enabled_backends)
 
 AC_OUTPUT

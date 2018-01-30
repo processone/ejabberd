@@ -6,7 +6,7 @@
   {modules, []},
   {registered, []},
   {applications, [kernel, stdlib]},
-  {env, []},
+  {env, [{enabled_backends, [@enabled_backends@]}]},
   {mod, {ejabberd_app, []}}]}.
 
 
