@@ -27,7 +27,8 @@ defmodule EjabberdAdminTest do
 		:mnesia.start
 		:ejabberd_mnesia.start
 		# For some myterious reason, :ejabberd_commands.init mays
-		# sometimes fails if module is not loaded before
+    # sometimes fails if module is not loaded before
+    :ejabberd_config.start(["domain"], [])
 		{:module, :ejabberd_commands} = Code.ensure_loaded(:ejabberd_commands)
 		:ejabberd_hooks.start_link
 		{:ok, _} = :acl.start_link
