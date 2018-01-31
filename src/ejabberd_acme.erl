@@ -1,6 +1,6 @@
 -module (ejabberd_acme).
 -behaviour(gen_server).
--behavior(ejabberd_config).
+-behaviour(ejabberd_config).
 
 %% ejabberdctl commands
 -export([get_certificates/1,

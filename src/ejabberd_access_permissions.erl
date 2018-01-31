@@ -29,7 +29,7 @@
 -include("logger.hrl").
 
 -behaviour(gen_server).
--behavior(ejabberd_config).
+-behaviour(ejabberd_config).
 
 %% API
 -export([start_link/0,

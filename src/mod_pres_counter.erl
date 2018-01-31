@@ -25,7 +25,7 @@
 
 -module(mod_pres_counter).
 
--behavior(gen_mod).
+-behaviour(gen_mod).
 
 -export([start/2, stop/1, reload/3, check_packet/4,
 	 mod_opt_type/1, mod_options/1, depends/2]).

@@ -28,7 +28,7 @@
 -protocol({xep, 85, '2.1'}).
 -protocol({xep, 352, '0.1'}).
 
--behavior(gen_mod).
+-behaviour(gen_mod).
 
 %% gen_mod callbacks.
 -export([start/2, stop/1, reload/3, mod_opt_type/1, depends/2, mod_options/1]).

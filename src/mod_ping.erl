@@ -29,9 +29,9 @@
 
 -protocol({xep, 199, '2.0'}).
 
--behavior(gen_mod).
+-behaviour(gen_mod).
 
--behavior(gen_server).
+-behaviour(gen_server).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").

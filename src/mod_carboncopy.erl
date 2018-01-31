@@ -29,7 +29,7 @@
 -author ('ecestari@process-one.net').
 -protocol({xep, 280, '0.8'}).
 
--behavior(gen_mod).
+-behaviour(gen_mod).
 
 %% API:
 -export([start/2, stop/1, reload/3]).
