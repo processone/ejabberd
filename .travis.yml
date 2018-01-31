@@ -46,7 +46,7 @@ script:
   - sed -i -e 's/ct:pal/ct:log/' test/suite.erl
   - ln -sf ../sql priv/
   - echo "" >> rebar.config
-  - echo "{ct_extra_params, "-verbosity 20"}." >> rebar.config
+  - echo '{ct_extra_params, "-verbosity 20"}.' >> rebar.config
   - escript ./rebar skip_deps=true ct -v
   - grep -q 'TEST COMPLETE, \([[:digit:]]*\) ok, .* of \1 ' logs/raw.log
 
