@@ -41,14 +41,14 @@ script:
   - ./autogen.sh
   - ./configure --prefix=/tmp/ejabberd --enable-all --disable-odbc --disable-riak
   - make
-  - make install
+  - make install -s
   - make xref
   - sed -i -e 's/ct:pal/ct:log/' test/suite.erl
   - ln -sf ../sql priv/
   - echo "" >> rebar.config
   - echo '{ct_extra_params, "-verbosity 20"}.' >> rebar.config
   - escript ./rebar skip_deps=true ct -v
-  - grep -q 'TEST COMPLETE, \([[:digit:]]*\) ok, .* of \1 ' logs/raw.log
+  - grep -q 'TEST COMPLETE,.* 0 failed' logs/raw.log
 
 after_script:
   - find logs -name suite.log -exec cat '{}' ';'
@@ -56,7 +56,7 @@ after_script:
 after_failure:
   - find logs -name exunit.log -exec cat '{}' ';'
   - find logs -name ejabberd.log -exec cat '{}' ';'
-  - find logs -name suite.log -exec cat '{}' ';'
+  - find logs -name suite.log -exec cat '{}' ';' | awk 'BEGIN{RS="\n=case";FS="\n"} /=result\s*failed/ {print "=case" $0}
 
 after_success:
   - coveralls-merge erlang.json
