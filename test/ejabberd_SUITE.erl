@@ -210,6 +210,7 @@ init_per_testcase(stop_ejabberd, Config) ->
 			set_opt(anonymous, true, Config)),
     open_session(bind(auth(connect(NewConfig))));
 init_per_testcase(TestCase, OrigConfig) ->
+    ct:print(80, "Testcase '~p' starting", [TestCase]),
     Test = atom_to_list(TestCase),
     IsMaster = lists:suffix("_master", Test),
     IsSlave = lists:suffix("_slave", Test),

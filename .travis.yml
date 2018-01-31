@@ -45,7 +45,9 @@ script:
   - make xref
   - sed -i -e 's/ct:pal/ct:log/' test/suite.erl
   - ln -sf ../sql priv/
-  - escript ./rebar skip_deps=true ct
+  - echo "" >> rebar.config
+  - echo "{ct_extra_params, "-verbosity 20"}." >> rebar.config
+  - escript ./rebar skip_deps=true ct -v
   - grep -q 'TEST COMPLETE, \([[:digit:]]*\) ok, .* of \1 ' logs/raw.log
 
 after_script:
@@ -53,8 +55,8 @@ after_script:
 
 after_failure:
   - find logs -name exunit.log -exec cat '{}' ';'
-  # Try checking Riak database logs
   - find logs -name ejabberd.log -exec cat '{}' ';'
+  - find logs -name suite.log -exec cat '{}' ';'
 
 after_success:
   - coveralls-merge erlang.json
