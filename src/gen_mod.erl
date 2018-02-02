@@ -218,10 +218,23 @@ start_module(Host, Module, Opts0, NeedValidation) ->
 	    catch Class:Reason ->
 		    ets:delete(ejabberd_modules, {Module, Host}),
 		    ErrorText =
-			io_lib:format("Problem starting the module ~s for host "
-				      "~s ~n options: ~p~n ~p: ~p~n~p",
-				      [Module, Host, Opts, Class, Reason,
-				       erlang:get_stacktrace()]),
+			case Reason == undef andalso
+			     code:ensure_loaded(Module) /= {module, Module} of
+			    true ->
+				io_lib:format("Failed to load unknown module "
+					      "~s for host ~s: make sure "
+					      "there is no typo and ~s.beam "
+					      "exists inside either ~s or ~s "
+					      "directory",
+					      [Module, Host, Module,
+					       filename:dirname(code:which(?MODULE)),
+					       ext_mod:modules_dir()]);
+			    false ->
+				io_lib:format("Problem starting the module ~s for host "
+					      "~s ~n options: ~p~n ~p: ~p~n~p",
+					      [Module, Host, Opts, Class, Reason,
+					       erlang:get_stacktrace()])
+			end,
 		    ?CRITICAL_MSG(ErrorText, []),
 		    maybe_halt_ejabberd(ErrorText),
 		    erlang:raise(Class, Reason, erlang:get_stacktrace())
