@@ -66,7 +66,8 @@
 -export([start/2,
 	 stop/1,
 	 depends/2,
-	 mod_opt_type/1]).
+	 mod_opt_type/1,
+	 mod_options/1]).
 
 %% gen_server callbacks.
 -export([init/1,
@@ -126,7 +127,7 @@
 -spec start(binary(), gen_mod:opts()) -> {ok, pid()}.
 
 start(ServerHost, Opts) ->
-    case gen_mod:get_opt(rm_on_unregister, Opts, true) of
+    case gen_mod:get_opt(rm_on_unregister, Opts) of
 	true ->
 	    ejabberd_hooks:add(remove_user, ServerHost, ?MODULE,
 			       remove_user, 50);
@@ -139,7 +140,7 @@ start(ServerHost, Opts) ->
 -spec stop(binary()) -> ok | {error, any()}.
 
 stop(ServerHost) ->
-    case gen_mod:get_module_opt(ServerHost, ?MODULE, rm_on_unregister, true) of
+    case gen_mod:get_module_opt(ServerHost, ?MODULE, rm_on_unregister) of
 	true ->
 	    ejabberd_hooks:delete(remove_user, ServerHost, ?MODULE,
 				  remove_user, 50);
@@ -170,9 +171,13 @@ mod_opt_type(jid_in_url) ->
        (node) -> node
     end;
 mod_opt_type(file_mode) ->
-    fun(Mode) -> ?STR_TO_INT(Mode, 8) end;
+    fun(undefined) -> undefined;
+       (Mode) -> ?STR_TO_INT(Mode, 8)
+    end;
 mod_opt_type(dir_mode) ->
-    fun(Mode) -> ?STR_TO_INT(Mode, 8) end;
+    fun(undefined) -> undefined;
+       (Mode) -> ?STR_TO_INT(Mode, 8)
+    end;
 mod_opt_type(docroot) ->
     fun iolist_to_binary/1;
 mod_opt_type(put_url) ->
@@ -181,11 +186,13 @@ mod_opt_type(put_url) ->
     end;
 mod_opt_type(get_url) ->
     fun(<<"http://", _/binary>> = URL) -> URL;
-       (<<"https://", _/binary>> = URL) -> URL
+       (<<"https://", _/binary>> = URL) -> URL;
+       (undefined) -> undefined
     end;
 mod_opt_type(service_url) ->
     fun(<<"http://", _/binary>> = URL) -> URL;
-       (<<"https://", _/binary>> = URL) -> URL
+       (<<"https://", _/binary>> = URL) -> URL;
+       (undefined) -> undefined
     end;
 mod_opt_type(custom_headers) ->
     fun(Headers) ->
@@ -196,11 +203,37 @@ mod_opt_type(custom_headers) ->
 mod_opt_type(rm_on_unregister) ->
     fun(B) when is_boolean(B) -> B end;
 mod_opt_type(thumbnail) ->
-    fun(B) when is_boolean(B) -> B end;
-mod_opt_type(_) ->
-    [host, hosts, name, access, max_size, secret_length, jid_in_url, file_mode,
-     dir_mode, docroot, put_url, get_url, service_url, custom_headers,
-     rm_on_unregister, thumbnail].
+    fun(true) ->
+	    case eimp:supported_formats() of
+		[] ->
+		    ?WARNING_MSG("ejabberd is built without image converter "
+				 "support, option '~s' is ignored",
+				 [thumbnail]),
+		    erlang:error(badarg);
+		_ ->
+		    true
+	    end;
+       (false) ->
+	    false
+    end.
+
+mod_options(_Host) ->
+    [{host, <<"upload.@HOST@">>},
+     {hosts, []},
+     {name, ?T("HTTP File Upload")},
+     {access, local},
+     {max_size, 104857600},
+     {secret_length, 40},
+     {jid_in_url, sha1},
+     {file_mode, undefined},
+     {dir_mode, undefined},
+     {docroot, <<"@HOME@/upload">>},
+     {put_url, <<"http://@HOST@:5444">>},
+     {get_url, undefined},
+     {service_url, undefined},
+     {custom_headers, []},
+     {rm_on_unregister, true},
+     {thumbnail, true}].
 
 -spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
 
@@ -215,20 +248,23 @@ depends(_Host, _Opts) ->
 
 init([ServerHost, Opts]) ->
     process_flag(trap_exit, true),
-    Hosts = gen_mod:get_opt_hosts(ServerHost, Opts, <<"upload.@HOST@">>),
-    Name = gen_mod:get_opt(name, Opts, ?T("HTTP File Upload")),
-    Access = gen_mod:get_opt(access, Opts, local),
-    MaxSize = gen_mod:get_opt(max_size, Opts, 104857600),
-    SecretLength = gen_mod:get_opt(secret_length, Opts, 40),
-    JIDinURL = gen_mod:get_opt(jid_in_url, Opts, sha1),
-    DocRoot = gen_mod:get_opt(docroot, Opts, <<"@HOME@/upload">>),
+    Hosts = gen_mod:get_opt_hosts(ServerHost, Opts),
+    Name = gen_mod:get_opt(name, Opts),
+    Access = gen_mod:get_opt(access, Opts),
+    MaxSize = gen_mod:get_opt(max_size, Opts),
+    SecretLength = gen_mod:get_opt(secret_length, Opts),
+    JIDinURL = gen_mod:get_opt(jid_in_url, Opts),
+    DocRoot = gen_mod:get_opt(docroot, Opts),
     FileMode = gen_mod:get_opt(file_mode, Opts),
     DirMode = gen_mod:get_opt(dir_mode, Opts),
-    PutURL = gen_mod:get_opt(put_url, Opts, <<"http://@HOST@:5444">>),
-    GetURL = gen_mod:get_opt(get_url, Opts, PutURL),
+    PutURL = gen_mod:get_opt(put_url, Opts),
+    GetURL = case gen_mod:get_opt(get_url, Opts) of
+		 undefined -> PutURL;
+		 URL -> URL
+	     end,
     ServiceURL = gen_mod:get_opt(service_url, Opts),
-    Thumbnail = gen_mod:get_opt(thumbnail, Opts, true),
-    CustomHeaders = gen_mod:get_opt(custom_headers, Opts, []),
+    Thumbnail = gen_mod:get_opt(thumbnail, Opts),
+    CustomHeaders = gen_mod:get_opt(custom_headers, Opts),
     DocRoot1 = expand_home(str:strip(DocRoot, right, $/)),
     DocRoot2 = expand_host(DocRoot1, ServerHost),
     case DirMode of
@@ -236,20 +272,6 @@ init([ServerHost, Opts]) ->
 	    ok;
 	Mode ->
 	    file:change_mode(DocRoot2, Mode)
-    end,
-    case Thumbnail of
-	true ->
-	    case misc:have_eimp() of
-		false ->
-		    ?ERROR_MSG("ejabberd is built without graphics support, "
-			       "please rebuild it with --enable-graphics or "
-			       "set 'thumbnail: false' for module '~s' in "
-			       "ejabberd.yml", [?MODULE]);
-		_ ->
-		    ok
-	    end;
-	false ->
-	    ok
     end,
     lists:foreach(
       fun(Host) ->
@@ -465,8 +487,7 @@ process(_LocalPath, #request{method = Method, host = Host, ip = IP}) ->
 -spec get_proc_name(binary(), atom()) -> atom().
 
 get_proc_name(ServerHost, ModuleName) ->
-    PutURL = gen_mod:get_module_opt(ServerHost, ?MODULE, put_url,
-				    <<"http://@HOST@">>),
+    PutURL = gen_mod:get_module_opt(ServerHost, ?MODULE, put_url),
     {ok, {_Scheme, _UserInfo, Host, _Port, Path, _Query}} =
 	http_uri:parse(binary_to_list(expand_host(PutURL, ServerHost))),
     ProcPrefix = list_to_binary(string:strip(Host ++ Path, right, $/)),
@@ -695,7 +716,7 @@ yield_content_type(Type) -> Type.
 -spec iq_disco_info(binary(), binary(), binary(), [xdata()]) -> disco_info().
 
 iq_disco_info(Host, Lang, Name, AddInfo) ->
-    Form = case gen_mod:get_module_opt(Host, ?MODULE, max_size, 104857600) of
+    Form = case gen_mod:get_module_opt(Host, ?MODULE, max_size) of
 	       infinity ->
 		   AddInfo;
 	       MaxSize ->
@@ -853,20 +874,15 @@ code_to_message(_Code) -> <<"">>.
 -spec identify(binary(), binary()) -> {ok, media_info()} | pass.
 
 identify(Path, Data) ->
-    case misc:have_eimp() of
-	true ->
-	    case eimp:identify(Data) of
-		{ok, Info} ->
-		    {ok, #media_info{
-			    type = proplists:get_value(type, Info),
-			    width = proplists:get_value(width, Info),
-			    height = proplists:get_value(height, Info)}};
-		{error, Why} ->
-		    ?DEBUG("Cannot identify type of ~s: ~s",
-			   [Path, eimp:format_error(Why)]),
-		    pass
-	    end;
-	false ->
+    case eimp:identify(Data) of
+	{ok, Info} ->
+	    {ok, #media_info{
+		    type = proplists:get_value(type, Info),
+		    width = proplists:get_value(width, Info),
+		    height = proplists:get_value(height, Info)}};
+	{error, Why} ->
+	    ?DEBUG("Cannot identify type of ~s: ~s",
+		   [Path, eimp:format_error(Why)]),
 	    pass
     end.
 
@@ -921,9 +937,8 @@ thumb_el(#media_info{type = T, height = H, width = W}, URI) ->
 
 remove_user(User, Server) ->
     ServerHost = jid:nameprep(Server),
-    DocRoot = gen_mod:get_module_opt(ServerHost, ?MODULE, docroot,
-				     <<"@HOME@/upload">>),
-    JIDinURL = gen_mod:get_module_opt(ServerHost, ?MODULE, jid_in_url, sha1),
+    DocRoot = gen_mod:get_module_opt(ServerHost, ?MODULE, docroot),
+    JIDinURL = gen_mod:get_module_opt(ServerHost, ?MODULE, jid_in_url),
     DocRoot1 = expand_host(expand_home(DocRoot), ServerHost),
     UserStr = make_user_string(jid:make(User, Server), JIDinURL),
     UserDir = str:join([DocRoot1, UserStr], <<$/>>),

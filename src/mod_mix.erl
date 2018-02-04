@@ -30,7 +30,7 @@
 %% API
 -export([start/2, stop/1, process_iq/1,
 	 disco_items/5, disco_identity/5, disco_info/5,
-	 disco_features/5, mod_opt_type/1, depends/2]).
+	 disco_features/5, mod_opt_type/1, mod_options/1, depends/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -124,8 +124,8 @@ process_iq(#iq{lang = Lang} = IQ) ->
 %%%===================================================================
 init([ServerHost, Opts]) ->
     process_flag(trap_exit, true),
-    Hosts = gen_mod:get_opt_hosts(ServerHost, Opts, <<"mix.@HOST@">>),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(ServerHost)),
+    Hosts = gen_mod:get_opt_hosts(ServerHost, Opts),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     lists:foreach(
       fun(Host) ->
 	      ConfigTab = gen_mod:get_module_proc(Host, config),
@@ -319,5 +319,9 @@ depends(_Host, _Opts) ->
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(host) -> fun iolist_to_binary/1;
 mod_opt_type(hosts) ->
-    fun (L) -> lists:map(fun iolist_to_binary/1, L) end;
-mod_opt_type(_) -> [host, hosts, iqdisc].
+    fun (L) -> lists:map(fun iolist_to_binary/1, L) end.
+
+mod_options(Host) ->
+    [{iqdisc, gen_iq_handler:iqdisc(Host)},
+     {host, <<"mix.@HOST@">>},
+     {hosts, []}].

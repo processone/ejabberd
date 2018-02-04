@@ -29,7 +29,7 @@
 -include("logger.hrl").
 
 -behaviour(gen_server).
--behavior(ejabberd_config).
+-behaviour(ejabberd_config).
 
 %% API
 -export([start_link/0,
@@ -393,7 +393,7 @@ parse_who(Name, Defs, ParseOauth) when is_list(Defs) ->
 			       {oauth, lists:foldl(fun({scope, S}, A) -> S ++ A end, [], Scopes), Rest}
 		       end;
 		   scope ->
-		       report_error(<<"Oauth rule can't be embeded inside other oauth rule in 'who' section for api_permission '~s'">>,
+		       report_error(<<"Oauth rule can't be embedded inside other oauth rule in 'who' section for api_permission '~s'">>,
 				    [Name])
 	       end;
 	   ({scope, ScopeList}) ->

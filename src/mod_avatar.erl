@@ -24,7 +24,7 @@
 -behaviour(gen_mod).
 
 %% gen_mod API
--export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1]).
+-export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1, mod_options/1]).
 %% Hooks
 -export([pubsub_publish_item/6, vcard_iq_convert/1, vcard_iq_publish/1]).
 
@@ -38,21 +38,12 @@
 %%% API
 %%%===================================================================
 start(Host, _Opts) ->
-    case misc:have_eimp() of
-	true ->
-	    ejabberd_hooks:add(pubsub_publish_item, Host, ?MODULE,
-			       pubsub_publish_item, 50),
-	    ejabberd_hooks:add(vcard_iq_set, Host, ?MODULE,
-			       vcard_iq_convert, 30),
-	    ejabberd_hooks:add(vcard_iq_set, Host, ?MODULE,
-			       vcard_iq_publish, 100);
-	false ->
-	    ?CRITICAL_MSG("ejabberd is built without "
-			  "graphics support: reconfigure it with "
-			  "--enable-graphics or disable '~s'",
-			  [?MODULE]),
-	    {error, graphics_not_compiled}
-    end.
+    ejabberd_hooks:add(pubsub_publish_item, Host, ?MODULE,
+		       pubsub_publish_item, 50),
+    ejabberd_hooks:add(vcard_iq_set, Host, ?MODULE,
+		       vcard_iq_convert, 30),
+    ejabberd_hooks:add(vcard_iq_set, Host, ?MODULE,
+		       vcard_iq_publish, 100).
 
 stop(Host) ->
     ejabberd_hooks:delete(pubsub_publish_item, Host, ?MODULE,
@@ -384,7 +375,7 @@ stop_with_error(Lang, Reason) ->
 
 -spec get_converting_rules(binary()) -> convert_rules().
 get_converting_rules(LServer) ->
-    gen_mod:get_module_opt(LServer, ?MODULE, convert, []).
+    gen_mod:get_module_opt(LServer, ?MODULE, convert).
 
 -spec get_type(binary()) -> eimp:img_type() | unknown.
 get_type(Data) ->
@@ -416,35 +407,35 @@ decode_mime_type(MimeType) ->
 encode_mime_type(Type) ->
     <<"image/", (atom_to_binary(Type, latin1))/binary>>.
 
-mod_opt_type({convert, png}) ->
-    fun(jpeg) -> jpeg;
-       (webp) -> webp;
-       (gif) -> gif
-    end;
-mod_opt_type({convert, webp}) ->
-    fun(jpeg) -> jpeg;
-       (png) -> png;
-       (gif) -> gif
-    end;
-mod_opt_type({convert, jpeg}) ->
-    fun(png) -> png;
-       (webp) -> webp;
-       (gif) -> gif
-    end;
-mod_opt_type({convert, gif}) ->
-    fun(png) -> png;
-       (jpeg) -> jpeg;
-       (webp) -> webp
-    end;
-mod_opt_type({convert, default}) ->
-    fun(png) -> png;
-       (webp) -> webp;
-       (jpeg) -> jpeg;
-       (gif) -> gif
-    end;
-mod_opt_type(_) ->
-    [{convert, default},
-     {convert, webp},
-     {convert, png},
-     {convert, gif},
-     {convert, jpeg}].
+-spec fail(atom()) -> no_return().
+fail(Format) ->
+    FormatS = case Format of
+		  webp -> "WebP";
+		  png -> "PNG";
+		  jpeg -> "JPEG";
+		  gif -> "GIF";
+		  _ -> ""
+	      end,
+    if FormatS /= "" ->
+	    ?WARNING_MSG("ejabberd is not compiled with ~s support", [FormatS]);
+       true ->
+	    ok
+    end,
+    erlang:error(badarg).
+
+mod_opt_type({convert, From}) ->
+    fun(To) when is_atom(To), To /= From ->
+	    case eimp:is_supported(From) orelse From == default of
+		false ->
+		    fail(From);
+		true ->
+		    case eimp:is_supported(To) orelse To == undefined of
+			false -> fail(To);
+			true -> To
+		    end
+	    end
+    end.
+
+mod_options(_) ->
+    [{convert,
+      [{T, undefined} || T <- [default|eimp:supported_formats()]]}].

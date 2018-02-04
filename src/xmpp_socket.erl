@@ -117,9 +117,13 @@ start(Module, SockMod, Socket, Opts) ->
 		ok = SockMod:controlling_process(Socket, Pid),
 		{ok, Pid}
 	end
-    catch _:{badmatch, {error, _} = Err} ->
+    catch
+	_:{badmatch, {error, _} = Err} ->
 	    SockMod:close(Socket),
-	    Err
+	    Err;
+	_:{badmatch, ignore} ->
+	    SockMod:close(Socket),
+	    ignore
     end.
 
 connect(Addr, Port, Opts) ->
@@ -166,7 +170,6 @@ compress(SocketData) -> compress(SocketData, undefined).
 compress(#socket_state{receiver = undefined,
 		       sockmod = SockMod,
 		       socket = Socket} = SocketData, Data) ->
-    ejabberd:start_app(ezlib),
     {ok, ZlibSocket} = ezlib:enable_zlib(SockMod, Socket),
     case Data of
 	undefined -> ok;
@@ -365,6 +368,7 @@ parse(#socket_state{xml_stream = XMLStream,
 		    socket = Socket,
 		    shaper = ShaperState} = SocketData, Data)
   when is_binary(Data) ->
+    ?DEBUG("(~s) Received XML on stream = ~p", [pp(SocketData), Data]),
     XMLStream1 = fxml_stream:parse(XMLStream, Data),
     {ShaperState1, Pause} = shaper:update(ShaperState, byte_size(Data)),
     Ret = if Pause > 0 ->

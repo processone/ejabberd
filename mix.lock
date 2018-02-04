@@ -1,13 +1,14 @@
-%{"base64url": {:hex, :base64url, "0.0.1", "36a90125f5948e3afd7be97662a1504b934dd5dac78451ca6e9abf85a10286be", [:rebar], [], "hexpm"},
+%{
+  "base64url": {:hex, :base64url, "0.0.1", "36a90125f5948e3afd7be97662a1504b934dd5dac78451ca6e9abf85a10286be", [:rebar], [], "hexpm"},
   "cache_tab": {:hex, :cache_tab, "1.0.12", "a06a4ffbd4da8469791ba941512a6a45ed8c11865b4606a368e21b332da3638a", [:rebar3], [{:p1_utils, "1.0.10", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "distillery": {:hex, :distillery, "1.5.2", "eec18b2d37b55b0bcb670cf2bcf64228ed38ce8b046bb30a9b636a6f5a4c0080", [:mix], [], "hexpm"},
   "earmark": {:hex, :earmark, "1.2.4", "99b637c62a4d65a20a9fb674b8cffb8baa771c04605a80c911c4418c69b75439", [:mix], [], "hexpm"},
-  "eimp": {:git, "https://github.com/processone/eimp.git", "23796118176be98195db9f831f17dde74d1553e1", [tag: "1.0.1"]},
+  "eimp": {:git, "https://github.com/processone/eimp.git", "c7201d18c360b89faf2c827bf3ab2acc1c10b812", [ref: "c7201d18"]},
   "epam": {:hex, :epam, "1.0.3", "3adcc148cdbaaa2bbe15dd661f0d74284e5749a815b4e480dbf94e8e023361b9", [:rebar3], [], "hexpm"},
   "eredis": {:hex, :eredis, "1.1.0", "8d8d74496f35216679b97726b75fb1c8715e99dd7f3ef9f9824a2264c3e0aac0", [:rebar3], [], "hexpm"},
   "esip": {:hex, :esip, "1.0.21", "711c704337d434db6d7c70bd0da868aaacd91b252c0bb63b4580e6c896164f1f", [:rebar3], [{:fast_tls, "1.0.20", [hex: :fast_tls, repo: "hexpm", optional: false]}, {:p1_utils, "1.0.10", [hex: :p1_utils, repo: "hexpm", optional: false]}, {:stun, "1.0.20", [hex: :stun, repo: "hexpm", optional: false]}], "hexpm"},
   "ex_doc": {:hex, :ex_doc, "0.18.1", "37c69d2ef62f24928c1f4fdc7c724ea04aecfdf500c4329185f8e3649c915baf", [:mix], [{:earmark, "~> 1.1", [hex: :earmark, repo: "hexpm", optional: false]}], "hexpm"},
-  "ezlib": {:git, "https://github.com/processone/ezlib.git", "ec6491d788436bb096022843e6ec7f58d2973ae3", [tag: "1.0.3"]},
+  "ezlib": {:hex, :ezlib, "1.0.3", "c402c839ff5eab5b8a69efd9f60885c3ab3ca2489a6758bf8a67c914297597c5", [:rebar3], [], "hexpm"},
   "fast_tls": {:hex, :fast_tls, "1.0.20", "edd241961ab20b71ec1e9f75a2a2c043128ff117adf3efd42e6cec94f1937539", [:rebar3], [{:p1_utils, "1.0.10", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "fast_xml": {:hex, :fast_xml, "1.1.28", "31ce5cf44d20e900e1a499009f886ff74b589324d532ed0ed7a432e4f498beb1", [:rebar3], [{:p1_utils, "1.0.10", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "fast_yaml": {:hex, :fast_yaml, "1.0.12", "ee8527d388255cf7a24fc1e6cb2d09dca4e506966dd9d86e61d3d90f236a3e2e", [:rebar3], [{:p1_utils, "1.0.10", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
@@ -31,4 +32,5 @@
   "sqlite3": {:hex, :sqlite3, "1.1.5", "794738b6d07b6d36ec6d42492cb9d629bad9cf3761617b8b8d728e765db19840", [:rebar3], [], "hexpm"},
   "stringprep": {:hex, :stringprep, "1.0.10", "552d784eb60652220fce9131f8bb0ebc62fdffd6482c4f08f2e7d61300227c28", [:rebar3], [{:p1_utils, "1.0.10", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "stun": {:hex, :stun, "1.0.20", "6b156fa11606bebb6086d02cb2f6532c84effb59c95ba93d0e2d8e2510970253", [:rebar3], [{:fast_tls, "1.0.20", [hex: :fast_tls, repo: "hexpm", optional: false]}, {:p1_utils, "1.0.10", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
-  "xmpp": {:hex, :xmpp, "1.1.19", "ca0a89c567e972d119204b1296ffe58ad5d3237738950ae2c61043fbaf5e150e", [:rebar3], [{:fast_xml, "1.1.28", [hex: :fast_xml, repo: "hexpm", optional: false]}, {:p1_utils, "1.0.10", [hex: :p1_utils, repo: "hexpm", optional: false]}, {:stringprep, "1.0.10", [hex: :stringprep, repo: "hexpm", optional: false]}], "hexpm"}}
+  "xmpp": {:hex, :xmpp, "1.1.19", "ca0a89c567e972d119204b1296ffe58ad5d3237738950ae2c61043fbaf5e150e", [:rebar3], [{:fast_xml, "1.1.28", [hex: :fast_xml, repo: "hexpm", optional: false]}, {:p1_utils, "1.0.10", [hex: :p1_utils, repo: "hexpm", optional: false]}, {:stringprep, "1.0.10", [hex: :stringprep, repo: "hexpm", optional: false]}], "hexpm"},
+}

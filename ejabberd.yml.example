@@ -257,9 +257,9 @@ listen:
   ##   request_handlers:
   ##     "": mod_http_upload
   ##   tls: true
-  ##   protocol_options: 'TLSOPTS'
-  ##   dhfile: 'DHFILE'
-  ##   ciphers: 'CIPHERS'
+  ##   protocol_options: 'TLS_OPTIONS'
+  ##   dhfile: 'DH_FILE'
+  ##   ciphers: 'TLS_CIPHERS'
 
 ## Disabling digest-md5 SASL authentication. digest-md5 requires plain-text
 ## password storage (see auth_password_format option).
@@ -818,10 +818,7 @@ modules:
   mod_vcard:
     search: false
   mod_vcard_xupdate: {}
-  ## Convert all avatars posted by Android clients from WebP to JPEG
-  ## mod_avatar:  # this module needs compile option --enable-graphics
-  ##   convert:
-  ##     webp: jpeg
+  mod_avatar: {}
   mod_version: {}
   mod_stream_mgmt: {}
   ##   Non-SASL Authentication (XEP-0078) is now disabled by default

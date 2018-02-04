@@ -63,7 +63,7 @@
 	 webadmin_user/4,
 	 webadmin_user_parse_query/5]).
 
--export([mod_opt_type/1, depends/2]).
+-export([mod_opt_type/1, mod_options/1, depends/2]).
 
 -deprecated({get_queue_length,2}).
 
@@ -108,7 +108,7 @@ depends(_Host, _Opts) ->
 start(Host, Opts) ->
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     ejabberd_hooks:add(offline_message_hook, Host, ?MODULE,
 		       store_packet, 50),
     ejabberd_hooks:add(c2s_self_presence, Host, ?MODULE, c2s_self_presence, 50),
@@ -163,7 +163,7 @@ reload(Host, NewOpts, OldOpts) ->
        true ->
 	    ok
     end,
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts) of
 	{false, IQDisc, _} ->
 	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_FLEX_OFFLINE,
 					  ?MODULE, handle_offline_query, IQDisc);
@@ -187,8 +187,7 @@ store_offline_msg(#offline_msg{us = {User, Server}} = Msg) ->
     end.
 
 get_max_user_messages(User, Server) ->
-    Access = gen_mod:get_module_opt(Server, ?MODULE, access_max_user_messages,
-				    max_user_offline_messages),
+    Access = gen_mod:get_module_opt(Server, ?MODULE, access_max_user_messages),
     case acl:match_rule(Server, Access, jid:make(User, Server)) of
 	Max when is_integer(Max) -> Max;
 	infinity -> infinity;
@@ -388,8 +387,7 @@ need_to_store(LServer, #message{type = Type} = Packet) ->
 		    false;
 		none ->
 		    case gen_mod:get_module_opt(
-			   LServer, ?MODULE, store_empty_body,
-			   unless_chat_state) of
+			   LServer, ?MODULE, store_empty_body) of
 			true ->
 			    true;
 			false ->
@@ -850,5 +848,10 @@ mod_opt_type(store_empty_body) ->
     fun (V) when is_boolean(V) -> V;
         (unless_chat_state) -> unless_chat_state
     end;
-mod_opt_type(_) ->
-    [access_max_user_messages, db_type, store_empty_body].
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1.
+
+mod_options(Host) ->
+    [{db_type, ejabberd_config:default_db(Host, ?MODULE)},
+     {iqdisc, gen_iq_handler:iqdisc(Host)},
+     {access_max_user_messages, max_user_offline_messages},
+     {store_empty_body, unless_chat_state}].

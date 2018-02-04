@@ -29,14 +29,15 @@
 -author ('ecestari@process-one.net').
 -protocol({xep, 280, '0.8'}).
 
--behavior(gen_mod).
+-behaviour(gen_mod).
 
 %% API:
 -export([start/2, stop/1, reload/3]).
 
 -export([user_send_packet/1, user_receive_packet/1,
 	 iq_handler/1, remove_connection/4, disco_features/5,
-	 is_carbon_copy/1, mod_opt_type/1, depends/2, clean_cache/1]).
+	 is_carbon_copy/1, mod_opt_type/1, depends/2, clean_cache/1,
+	 mod_options/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -61,7 +62,7 @@ is_carbon_copy(_) ->
     false.
 
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     ejabberd_hooks:add(disco_local_features, Host, ?MODULE, disco_features, 50),
     Mod = gen_mod:ram_db_mod(Host, ?MODULE),
     init_cache(Mod, Host, Opts),
@@ -91,11 +92,11 @@ reload(Host, NewOpts, OldOpts) ->
     end,
     case use_cache(NewMod, Host) of
 	true ->
-	    ets_cache:new(?CARBONCOPY_CACHE, cache_opts(Host, NewOpts));
+	    ets_cache:new(?CARBONCOPY_CACHE, cache_opts(NewOpts));
 	false ->
 	    ok
     end,
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts) of
 	{false, IQDisc, _} ->
 	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_CARBONS_2,
 					  ?MODULE, iq_handler, IQDisc);
@@ -246,7 +247,7 @@ send_copies(JID, To, Packet, Direction)->
 
 -spec build_forward_packet(jid(), message(), jid(), jid(), direction()) -> message().
 build_forward_packet(JID, #message{type = T} = Msg, Sender, Dest, Direction) ->
-    Forwarded = #forwarded{xml_els = [xmpp:encode(complete_packet(JID, Msg, Direction))]},
+    Forwarded = #forwarded{sub_els = [complete_packet(JID, Msg, Direction)]},
     Carbon = case Direction of
 		 sent -> #carbons_sent{forwarded = Forwarded};
 		 received -> #carbons_received{forwarded = Forwarded}
@@ -321,22 +322,16 @@ list(User, Server) ->
 init_cache(Mod, Host, Opts) ->
     case use_cache(Mod, Host) of
 	true ->
-	    ets_cache:new(?CARBONCOPY_CACHE, cache_opts(Host, Opts));
+	    ets_cache:new(?CARBONCOPY_CACHE, cache_opts(Opts));
 	false ->
 	    ets_cache:delete(?CARBONCOPY_CACHE)
     end.
 
--spec cache_opts(binary(), gen_mod:opts()) -> [proplists:property()].
-cache_opts(Host, Opts) ->
-    MaxSize = gen_mod:get_opt(
-		cache_size, Opts,
-		ejabberd_config:cache_size(Host)),
-    CacheMissed = gen_mod:get_opt(
-		    cache_missed, Opts,
-		    ejabberd_config:cache_missed(Host)),
-    LifeTime = case gen_mod:get_opt(
-		      cache_life_time, Opts,
-		      ejabberd_config:cache_life_time(Host)) of
+-spec cache_opts(gen_mod:opts()) -> [proplists:property()].
+cache_opts(Opts) ->
+    MaxSize = gen_mod:get_opt(cache_size, Opts),
+    CacheMissed = gen_mod:get_opt(cache_missed, Opts),
+    LifeTime = case gen_mod:get_opt(cache_life_time, Opts) of
 		   infinity -> infinity;
 		   I -> timer:seconds(I)
 	       end,
@@ -346,10 +341,7 @@ cache_opts(Host, Opts) ->
 use_cache(Mod, Host) ->
     case erlang:function_exported(Mod, use_cache, 1) of
 	true -> Mod:use_cache(Host);
-	false ->
-	    gen_mod:get_module_opt(
-	      Host, ?MODULE, use_cache,
-	      ejabberd_config:use_cache(Host))
+	false -> gen_mod:get_module_opt(Host, ?MODULE, use_cache)
     end.
 
 -spec cache_nodes(module(), binary()) -> [node()].
@@ -394,6 +386,12 @@ mod_opt_type(O) when O == cache_size; O == cache_life_time ->
     fun(I) when is_integer(I), I>0 -> I;
        (unlimited) -> infinity;
        (infinity) -> infinity
-    end;
-mod_opt_type(_) ->
-    [ram_db_type, iqdisc, use_cache, cache_size, cache_missed, cache_life_time].
+    end.
+
+mod_options(Host) ->
+    [{iqdisc, gen_iq_handler:iqdisc(Host)},
+     {ram_db_type, ejabberd_config:default_ram_db(Host, ?MODULE)},
+     {use_cache, ejabberd_config:use_cache(Host)},
+     {cache_size, ejabberd_config:cache_size(Host)},
+     {cache_missed, ejabberd_config:cache_missed(Host)},
+     {cache_life_time, ejabberd_config:cache_life_time(Host)}].

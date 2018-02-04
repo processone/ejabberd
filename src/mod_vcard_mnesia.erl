@@ -31,6 +31,7 @@
 	 search_fields/1, search_reported/1, remove_user/2]).
 -export([is_search_supported/1]).
 -export([need_transform/1, transform/1]).
+-export([mod_opt_type/1, mod_options/1]).
 
 -include("ejabberd.hrl").
 -include("xmpp.hrl").
@@ -193,8 +194,7 @@ filter_fields([{SVar, [Val]} | Ds], Match, LServer)
     NewMatch = case SVar of
 		   <<"user">> ->
 		       case gen_mod:get_module_opt(LServer, ?MODULE,
-						   search_all_hosts,
-						   true) of
+						   search_all_hosts) of
 			   true -> Match#vcard_search{luser = make_val(LVal)};
 			   false ->
 			       Host = find_my_host(LServer),
@@ -265,3 +265,9 @@ record_to_item(R) ->
      {<<"email">>, (R#vcard_search.email)},
      {<<"orgname">>, (R#vcard_search.orgname)},
      {<<"orgunit">>, (R#vcard_search.orgunit)}].
+
+mod_opt_type(search_all_hosts) ->
+    fun (B) when is_boolean(B) -> B end.
+
+mod_options(_) ->
+    [{search_all_hosts, true}].

@@ -25,10 +25,10 @@
 
 -module(mod_pres_counter).
 
--behavior(gen_mod).
+-behaviour(gen_mod).
 
 -export([start/2, stop/1, reload/3, check_packet/4,
-	 mod_opt_type/1, depends/2]).
+	 mod_opt_type/1, mod_options/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -79,8 +79,8 @@ check_packet(Acc, _, _, _) ->
     Acc.
 
 update(Server, JID, Dir) ->
-    StormCount = gen_mod:get_module_opt(Server, ?MODULE, count, 5),
-    TimeInterval = gen_mod:get_module_opt(Server, ?MODULE, interval, 60),
+    StormCount = gen_mod:get_module_opt(Server, ?MODULE, count),
+    TimeInterval = gen_mod:get_module_opt(Server, ?MODULE, interval),
     TimeStamp = p1_time_compat:system_time(seconds),
     case read(Dir) of
       undefined ->
@@ -126,5 +126,7 @@ write(K, V) -> put({pres_counter, K}, V).
 mod_opt_type(count) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 mod_opt_type(interval) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
-mod_opt_type(_) -> [count, interval].
+    fun (I) when is_integer(I), I > 0 -> I end.
+
+mod_options(_) ->
+    [{count, 5}, {interval, 60}].

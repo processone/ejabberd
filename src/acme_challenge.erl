@@ -100,7 +100,7 @@ solve_challenge1(Chal = #challenge{type = <<"http-01">>, token=Tkn}, Key) ->
     ets_put_key_authorization(Tkn, KeyAuthz),
     {ok, Chal#challenge.uri, KeyAuthz};
 solve_challenge1(Challenge, _Key) ->
-    ?ERROR_MSG("Unkown Challenge Type: ~p", [Challenge]),
+    ?ERROR_MSG("Unknown Challenge Type: ~p", [Challenge]),
     {error, unknown_challenge}.
 
 

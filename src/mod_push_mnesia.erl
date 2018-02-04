@@ -26,7 +26,7 @@
 -module(mod_push_mnesia).
 -author('holger@zedat.fu-berlin.de').
 
--behavior(mod_push).
+-behaviour(mod_push).
 
 %% API
 -export([init/2, store_session/6, lookup_session/4, lookup_session/3,

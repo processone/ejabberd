@@ -26,7 +26,7 @@
 -protocol({xep, 185, '1.0'}).
 
 %% gen_mod API
--export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1]).
+-export([start/2, stop/1, reload/3, depends/2, mod_options/1]).
 %% Hooks
 -export([s2s_out_auth_result/2, s2s_out_downgraded/2,
 	 s2s_in_packet/2, s2s_out_packet/2, s2s_in_recv/3,
@@ -97,7 +97,7 @@ reload(Host, NewOpts, _OldOpts) ->
 depends(_Host, _Opts) ->
     [].
 
-mod_opt_type(_) ->
+mod_options(_Host) ->
     [].
 
 s2s_in_features(Acc, _) ->

@@ -29,18 +29,14 @@
 
 -protocol({xep, 199, '2.0'}).
 
--behavior(gen_mod).
+-behaviour(gen_mod).
 
--behavior(gen_server).
+-behaviour(gen_server).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
 
 -include("xmpp.hrl").
-
--define(DEFAULT_SEND_PINGS, false).
-
--define(DEFAULT_PING_INTERVAL, 60).
 
 %% API
 -export([start_ping/2, stop_ping/2]).
@@ -53,14 +49,14 @@
 	 handle_cast/2, handle_info/2, code_change/3]).
 
 -export([iq_ping/1, user_online/3, user_offline/3,
-	 user_send/1, mod_opt_type/1, depends/2]).
+	 user_send/1, mod_opt_type/1, mod_options/1, depends/2]).
 
 -record(state,
-	{host = <<"">>,
-         send_pings = ?DEFAULT_SEND_PINGS :: boolean(),
-	 ping_interval = ?DEFAULT_PING_INTERVAL :: non_neg_integer(),
-	 ping_ack_timeout = undefined :: non_neg_integer(),
-	 timeout_action = none :: none | kill,
+	{host = <<"">>       :: binary(),
+         send_pings          :: boolean(),
+	 ping_interval       :: non_neg_integer(),
+	 ping_ack_timeout    :: undefined | non_neg_integer(),
+	 timeout_action      ::none | kill,
          timers = maps:new() :: map()}).
 
 %%====================================================================
@@ -95,7 +91,7 @@ reload(Host, NewOpts, OldOpts) ->
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
     State = init_state(Host, Opts),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     register_iq_handlers(Host, IQDisc),
     case State#state.send_pings of
 	true -> register_hooks(Host);
@@ -114,7 +110,7 @@ handle_call(_Req, _From, State) ->
 
 handle_cast({reload, Host, NewOpts, OldOpts},
 	    #state{timers = Timers} = OldState) ->
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts) of
 	{false, IQDisc, _} -> register_iq_handlers(Host, IQDisc);
 	true -> ok
     end,
@@ -196,10 +192,10 @@ user_send({Packet, #{jid := JID} = C2SState}) ->
 %% Internal functions
 %%====================================================================
 init_state(Host, Opts) ->
-    SendPings = gen_mod:get_opt(send_pings, Opts, ?DEFAULT_SEND_PINGS),
-    PingInterval = gen_mod:get_opt(ping_interval, Opts, ?DEFAULT_PING_INTERVAL),
+    SendPings = gen_mod:get_opt(send_pings, Opts),
+    PingInterval = gen_mod:get_opt(ping_interval, Opts),
     PingAckTimeout = gen_mod:get_opt(ping_ack_timeout, Opts),
-    TimeoutAction = gen_mod:get_opt(timeout_action, Opts, none),
+    TimeoutAction = gen_mod:get_opt(timeout_action, Opts),
     #state{host = Host,
 	   send_pings = SendPings,
 	   ping_interval = PingInterval,
@@ -271,12 +267,19 @@ mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(ping_interval) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 mod_opt_type(ping_ack_timeout) ->
-    fun(I) when is_integer(I), I>0 -> timer:seconds(I) end;
+    fun(undefined) -> undefined;
+       (I) when is_integer(I), I>0 -> timer:seconds(I)
+    end;
 mod_opt_type(send_pings) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(timeout_action) ->
     fun (none) -> none;
 	(kill) -> kill
-    end;
-mod_opt_type(_) ->
-    [iqdisc, ping_interval, ping_ack_timeout, send_pings, timeout_action].
+    end.
+
+mod_options(Host) ->
+    [{iqdisc, gen_iq_handler:iqdisc(Host)},
+     {ping_interval, 60},
+     {ping_ack_timeout, undefined},
+     {send_pings, false},
+     {timeout_action, none}].

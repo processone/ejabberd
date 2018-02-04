@@ -150,7 +150,7 @@ start_apps() ->
     ejabberd:start_app(fast_tls),
     ejabberd:start_app(xmpp),
     ejabberd:start_app(cache_tab),
-    start_eimp().
+    ejabberd:start_app(eimp).
 
 setup_if_elixir_conf_used() ->
   case ejabberd_config:is_using_elixir_config() of
@@ -174,11 +174,3 @@ start_elixir_application() ->
 	_ ->
 	    ok
     end.
-
--ifdef(GRAPHICS).
-start_eimp() ->
-    ejabberd:start_app(eimp).
--else.
-start_eimp() ->
-    ok.
--endif.

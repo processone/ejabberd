@@ -39,7 +39,7 @@
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
-	 mod_opt_type/1, depends/2]).
+	 mod_opt_type/1, mod_options/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -138,16 +138,16 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%% Internal functions
 %%--------------------------------------------------------------------
 init_state(Host, Opts) ->
-    OutDir = gen_mod:get_opt(outdir, Opts, <<"www/muc">>),
-    DirType = gen_mod:get_opt(dirtype, Opts, subdirs),
-    DirName = gen_mod:get_opt(dirname, Opts, room_jid),
-    FileFormat = gen_mod:get_opt(file_format, Opts, html),
-    FilePermissions = gen_mod:get_opt(file_permissions, Opts, {644, 33}),
-    CSSFile = gen_mod:get_opt(cssfile, Opts, false),
-    AccessLog = gen_mod:get_opt(access_log, Opts, muc_admin),
-    Timezone = gen_mod:get_opt(timezone, Opts, local),
-    Top_link = gen_mod:get_opt(top_link, Opts, {<<"/">>, <<"Home">>}),
-    NoFollow = gen_mod:get_opt(spam_prevention, Opts, true),
+    OutDir = gen_mod:get_opt(outdir, Opts),
+    DirType = gen_mod:get_opt(dirtype, Opts),
+    DirName = gen_mod:get_opt(dirname, Opts),
+    FileFormat = gen_mod:get_opt(file_format, Opts),
+    FilePermissions = gen_mod:get_opt(file_permissions, Opts),
+    CSSFile = gen_mod:get_opt(cssfile, Opts),
+    AccessLog = gen_mod:get_opt(access_log, Opts),
+    Timezone = gen_mod:get_opt(timezone, Opts),
+    Top_link = gen_mod:get_opt(top_link, Opts),
+    NoFollow = gen_mod:get_opt(spam_prevention, Opts),
     Lang = ejabberd_config:get_lang(Host),
     #logstate{host = Host, out_dir = OutDir,
 	      dir_type = DirType, dir_name = DirName,
@@ -931,7 +931,10 @@ has_no_permanent_store_hint(Packet) ->
 
 mod_opt_type(access_log) ->
     fun acl:access_rules_validator/1;
-mod_opt_type(cssfile) -> fun misc:try_read_file/1;
+mod_opt_type(cssfile) ->
+    fun(false) -> false;
+       (File) -> misc:try_read_file(File)
+    end;
 mod_opt_type(dirname) ->
     fun (room_jid) -> room_jid;
 	(room_name) -> room_name
@@ -963,8 +966,18 @@ mod_opt_type(timezone) ->
 mod_opt_type(top_link) ->
     fun ([{S1, S2}]) ->
 	    {iolist_to_binary(S1), iolist_to_binary(S2)}
-    end;
-mod_opt_type(_) ->
-    [access_log, cssfile, dirname, dirtype, file_format,
-     {file_permissions, mode}, {file_permissions, group},
-     outdir, spam_prevention, timezone, top_link].
+    end.
+
+mod_options(_) ->
+    [{access_log, muc_admin},
+     {cssfile, false},
+     {dirname, room_jid},
+     {dirtype, subdirs},
+     {file_format, html},
+     {file_permissions,
+      [{mode, 644},
+       {group, 33}]},
+     {outdir, <<"www/muc">>},
+     {spam_prevention, true},
+     {timezone, local},
+     {top_link, [{<<"/">>, <<"Home">>}]}].

@@ -1046,8 +1046,6 @@ polish([], Res, Ref) -> {Res, Ref}.
 %%-----------------------------------------------------------------------
 connect_bind(S) ->
     Host = next_host(S#eldap.host, S#eldap.hosts),
-    ?INFO_MSG("LDAP connection on ~s:~p",
-	      [Host, S#eldap.port]),
     Opts = if S#eldap.tls == tls ->
 		  [{packet, asn1}, {active, true}, {keepalive, true},
 		   binary
@@ -1056,6 +1054,8 @@ connect_bind(S) ->
 		  [{packet, asn1}, {active, true}, {keepalive, true},
 		   {send_timeout, ?SEND_TIMEOUT}, binary]
 	   end,
+    ?DEBUG("Connecting to LDAP server at ~s:~p with options ~p",
+	   [Host, S#eldap.port, Opts]),
     HostS = binary_to_list(Host),
     SocketData = case S#eldap.tls of
 		   tls ->
@@ -1080,9 +1080,8 @@ connect_bind(S) ->
 		{ok, connecting, NewS#eldap{host = Host}}
 	  end;
       {error, Reason} ->
-	  ?ERROR_MSG("LDAP connection failed:~n** Server: "
-		     "~s:~p~n** Reason: ~p~n** Socket options: ~p",
-		     [Host, S#eldap.port, Reason, Opts]),
+	  ?ERROR_MSG("LDAP connection to ~s:~b failed: ~s",
+		     [Host, S#eldap.port, format_error(SockMod, Reason)]),
 	  NewS = close_and_retry(S),
 	  {ok, connecting, NewS#eldap{host = Host}}
     end.
@@ -1121,3 +1120,15 @@ bump_id(#eldap{id = Id})
     when Id > (?MAX_TRANSACTION_ID) ->
     ?MIN_TRANSACTION_ID;
 bump_id(#eldap{id = Id}) -> Id + 1.
+
+format_error(SockMod, Reason) ->
+    Txt = case SockMod of
+	      ssl -> ssl:format_error(Reason);
+	      gen_tcp -> inet:format_error(Reason)
+	  end,
+    case Txt of
+	"unknown POSIX error" ->
+	    lists:flatten(io_lib:format("~p", [Reason]));
+	_ ->
+	    Txt
+    end.

@@ -171,25 +171,15 @@ del_roster(LUser, LServer, LJID) ->
 read_subscription_and_groups(LUser, LServer, LJID) ->
     SJID = jid:encode(LJID),
     case get_subscription(LServer, LUser, SJID) of
-	{selected, [{SSubscription}]} ->
-	    Subscription = case SSubscription of
-			       <<"B">> -> both;
-			       <<"T">> -> to;
-			       <<"F">> -> from;
-			       <<"N">> -> none;
-			       <<"">> -> none;
-			       _ ->
-				   ?ERROR_MSG("~s", [format_row_error(
-						       LUser, LServer,
-						       {subscription, SSubscription})]),
-				   none
-			   end,
+	{selected, [{SSubscription, SAsk}]} ->
+	    Subscription = decode_subscription(LUser, LServer, SSubscription),
+	    Ask = decode_ask(LUser, LServer, SAsk),
 	    Groups = case get_rostergroup_by_jid(LServer, LUser, SJID) of
 			 {selected, JGrps} when is_list(JGrps) ->
 			     [JGrp || {JGrp} <- JGrps];
 			 _ -> []
 		     end,
-	    {ok, {Subscription, Groups}};
+	    {ok, {Subscription, Ask, Groups}};
 	_ ->
 	    error
     end.
@@ -272,7 +262,7 @@ get_rostergroup_by_jid(LServer, LUser, SJID) ->
 get_subscription(LServer, LUser, SJID) ->
     ejabberd_sql:sql_query(
       LServer,
-      ?SQL("select @(subscription)s from rosterusers "
+      ?SQL("select @(subscription)s, @(ask)s from rosterusers "
            "where username=%(LUser)s and %(LServer)H and jid=%(SJID)s")).
 
 update_roster_sql({LUser, LServer, SJID, Name, SSubscription, SAsk, AskMessage},
@@ -320,30 +310,8 @@ raw_to_record(LServer,
     try jid:decode(SJID) of
       JID ->
 	  LJID = jid:tolower(JID),
-	  Subscription = case SSubscription of
-			     <<"B">> -> both;
-			     <<"T">> -> to;
-			     <<"F">> -> from;
-			     <<"N">> -> none;
-			     <<"">> -> none;
-			     _ ->
-				 ?ERROR_MSG("~s", [format_row_error(
-						     User, LServer,
-						     {subscription, SSubscription})]),
-				 none
-			 end,
-	  Ask = case SAsk of
-		    <<"S">> -> subscribe;
-		    <<"U">> -> unsubscribe;
-		    <<"B">> -> both;
-		    <<"O">> -> out;
-		    <<"I">> -> in;
-		    <<"N">> -> none;
-		    <<"">> -> none;
-		    _ ->
-			?ERROR_MSG("~s", [format_row_error(User, LServer, {ask, SAsk})]),
-			none
-		end,
+	  Subscription = decode_subscription(User, LServer, SSubscription),
+	  Ask = decode_ask(User, LServer, SAsk),
 	  #roster{usj = {User, LServer, LJID},
 		  us = {User, LServer}, jid = LJID, name = Nick,
 		  subscription = Subscription, ask = Ask,
@@ -373,6 +341,32 @@ record_to_row(
 	     none -> <<"N">>
 	   end,
     {LUser, LServer, SJID, Name, SSubscription, SAsk, AskMessage}.
+
+decode_subscription(User, Server, S) ->
+    case S of
+	<<"B">> -> both;
+	<<"T">> -> to;
+	<<"F">> -> from;
+	<<"N">> -> none;
+	<<"">> -> none;
+	_ ->
+	    ?ERROR_MSG("~s", [format_row_error(User, Server, {subscription, S})]),
+	    none
+    end.
+
+decode_ask(User, Server, A) ->
+    case A of
+	<<"S">> -> subscribe;
+	<<"U">> -> unsubscribe;
+	<<"B">> -> both;
+	<<"O">> -> out;
+	<<"I">> -> in;
+	<<"N">> -> none;
+	<<"">> -> none;
+	_ ->
+	    ?ERROR_MSG("~s", [format_row_error(User, Server, {ask, A})]),
+	    none
+    end.
 
 format_row_error(User, Server, Why) ->
     [case Why of

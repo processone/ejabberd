@@ -43,7 +43,7 @@
 %% add_commands allow exporting a class of commands, from
 %%   open: methods is not risky and can be called by without any access check
 %%   restricted (default): the same, but will appear only in ejabberdctl list.
-%%   admin – auth is required with XMLRPC and HTTP API and checked for admin priviledges, works as usual in ejabberdctl.
+%%   admin – auth is required with XMLRPC and HTTP API and checked for admin privileges, works as usual in ejabberdctl.
 %%   user - can be used through XMLRPC and HTTP API, even by user. Only admin can use the commands for other users.
 %%
 %% Then to perform an action, send a POST request to the following URL:
@@ -74,7 +74,8 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, reload/3, process/2, mod_opt_type/1, depends/2]).
+-export([start/2, stop/1, reload/3, process/2, mod_opt_type/1, depends/2,
+	 mod_options/1]).
 
 -include("ejabberd.hrl").
 -include("xmpp.hrl").
@@ -300,7 +301,7 @@ handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
 		  throw:{not_allowed, Msg} ->
 		    {401, iolist_to_binary(Msg)};
                   throw:{error, account_unprivileged} ->
-        {403, 31, <<"Command need to be run with admin priviledge.">>};
+        {403, 31, <<"Command need to be run with admin privilege.">>};
       throw:{error, access_rules_unauthorized} ->
         {403, 32, <<"AccessRules: Account does not have the right to perform the operation.">>};
 		  throw:{invalid_parameter, Msg} ->
@@ -551,7 +552,7 @@ hide_sensitive_args(NonListArgs) ->
     NonListArgs.
 
 permission_addon() ->
-    Access = gen_mod:get_module_opt(global, ?MODULE, admin_ip_access, none),
+    Access = gen_mod:get_module_opt(global, ?MODULE, admin_ip_access),
     Rules = acl:resolve_access(Access, global),
     R = case Rules of
 	    all ->
@@ -576,5 +577,5 @@ permission_addon() ->
 		 end, {1, []}, R),
     Res.
 
-mod_opt_type(admin_ip_access) -> fun acl:access_rules_validator/1;
-mod_opt_type(_) -> [admin_ip_access].
+mod_opt_type(admin_ip_access) -> fun acl:access_rules_validator/1.
+mod_options(_) -> [{admin_ip_access, none}].

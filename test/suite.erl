@@ -70,11 +70,14 @@ init_config(Config) ->
                                                     {pgsql_user, <<"ejabberd_test">>},
                                                     {pgsql_pass, <<"ejabberd_test">>}
 						   ]),
-    Backends = get_config_backends(),
+    HostTypes = re:split(CfgContent, "(\\s*- \"(.*)\\.localhost\")",
+			 [group, {return, binary}]),
+    Types = [binary_to_list(Type) || [_, _, Type] <- HostTypes],
+    Backends = get_config_backends(Types),
     HostTypes = re:split(CfgContent, "(\\s*- \"(.*)\\.localhost\")",
 			   [group, {return, binary}]),
     CfgContent2 = lists:foldl(fun([Pre, Frag, Type], Acc) ->
-				      case Backends == all orelse lists:member(binary_to_list(Type), Backends) of
+				      case lists:member(binary_to_list(Type), Backends) of
 					  true ->
 					      <<Acc/binary, Pre/binary, Frag/binary>>;
 					  _ ->
@@ -88,7 +91,10 @@ init_config(Config) ->
     setup_ejabberd_lib_path(Config),
     ok = application:load(sasl),
     ok = application:load(mnesia),
-    ok = application:load(ejabberd),
+    case application:load(ejabberd) of
+	ok -> ok;
+	{error, {already_loaded, _}} -> ok
+    end,
     application:set_env(ejabberd, config, ConfigPath),
     application:set_env(ejabberd, log_path, LogPath),
     application:set_env(sasl, sasl_error_logger, {file, SASLPath}),
@@ -151,13 +157,29 @@ setup_ejabberd_lib_path(Config) ->
 %% Read environment variable CT_DB=riak,mysql to limit the backends to test.
 %% You can thus limit the backend you want to test with:
 %%  CT_BACKENDS=riak,mysql rebar ct suites=ejabberd
-get_config_backends() ->
-    case os:getenv("CT_BACKENDS") of
-        false  -> all;
-        String ->
-            Backends0 = string:tokens(String, ","),
-            lists:map(fun(Backend) -> string:strip(Backend, both, $ ) end, Backends0)
-    end.
+get_config_backends(Types) ->
+    EnvBackends = case os:getenv("CT_BACKENDS") of
+		      false  -> Types;
+		      String ->
+			  Backends0 = string:tokens(String, ","),
+			  lists:map(fun(Backend) -> string:strip(Backend, both, $ ) end, Backends0)
+		  end,
+    application:load(ejabberd),
+    EnabledBackends = lists:map(fun(V) when is_atom(V) ->
+					atom_to_list(V);
+				   (V) ->
+					V
+				end,
+			       application:get_env(ejabberd, enabled_backends, Types)),
+    lists:foldl(fun(Backend, Backends) ->
+			case lists:member(Backend, EnabledBackends) of
+			    false ->
+				lists:delete(Backend, Backends);
+			    _ ->
+				Backends
+			end
+		end, EnvBackends, ["odbc", "mysql", "pgsql",
+				   "sqlite", "riak", "redis"]).
 
 process_config_tpl(Content, []) ->
     Content;

@@ -169,11 +169,11 @@ recv_carbons(Config) ->
 		  recv_message(Config),
 	      case Dir of
 		  send ->
-		      #carbons_sent{forwarded = #forwarded{xml_els = [El]}} =
+		      #carbons_sent{forwarded = #forwarded{sub_els = [El]}} =
 			  xmpp:get_subtag(CarbonMsg, #carbons_sent{}),
 		      #message{body = Body} = xmpp:decode(El);
 		  recv ->
-		      #carbons_received{forwarded = #forwarded{xml_els = [El]}}=
+		      #carbons_received{forwarded = #forwarded{sub_els = [El]}}=
 			  xmpp:get_subtag(CarbonMsg, #carbons_received{}),
 		      #message{body = Body} = xmpp:decode(El)
 	      end;

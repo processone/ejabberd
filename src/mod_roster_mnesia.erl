@@ -53,9 +53,7 @@ init(_Host, _Opts) ->
 use_cache(Host, Table) ->
     case mnesia:table_info(Table, storage_type) of
 	disc_only_copies ->
-	    gen_mod:get_module_opt(
-	      Host, mod_roster, use_cache,
-	      ejabberd_config:use_cache(Host));
+	    gen_mod:get_module_opt(Host, mod_roster, use_cache);
 	_ ->
 	    false
     end.
@@ -104,8 +102,8 @@ del_roster(LUser, LServer, LJID) ->
 
 read_subscription_and_groups(LUser, LServer, LJID) ->
     case mnesia:dirty_read(roster, {LUser, LServer, LJID}) of
-	[#roster{subscription = Subscription, groups = Groups}] ->
-	    {ok, {Subscription, Groups}};
+	[#roster{subscription = Subscription, ask = Ask, groups = Groups}] ->
+	    {ok, {Subscription, Ask, Groups}};
 	_ ->
 	    error
     end.

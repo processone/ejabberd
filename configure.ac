@@ -244,14 +244,6 @@ AC_ARG_ENABLE(sip,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-sip) ;;
 esac],[if test "x$sip" = "x"; then sip=false; fi])
 
-AC_ARG_ENABLE(graphics,
-[AC_HELP_STRING([--enable-graphics], [enable support for graphic images manipulation (default: yes)])],
-[case "${enableval}" in
-  yes) graphics=true ;;
-  no)  graphics=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-graphics) ;;
-esac],[if test "x$graphics" = "x"; then graphics=true; fi])
-
 AC_CONFIG_FILES([Makefile
 		 vars.config
 		 src/ejabberd.app.src])
@@ -292,6 +284,17 @@ if test "$sqlite" = "true"; then
    fi
 fi
 
+enabled_backends=""
+for backend in odbc mysql pgsql sqlite riak redis; do
+    if eval test x\${$backend} = xtrue; then
+       if test "x$enabled_backends" = "x"; then
+          enabled_backends=$backend
+       else
+          enabled_backends="$enabled_backends, $backend"
+       fi
+    fi
+done
+
 AC_SUBST(hipe)
 AC_SUBST(roster_gateway_workaround)
 AC_SUBST(new_sql_schema)
@@ -310,12 +313,12 @@ AC_SUBST(iconv)
 AC_SUBST(stun)
 AC_SUBST(sip)
 AC_SUBST(debug)
-AC_SUBST(graphics)
 AC_SUBST(tools)
 AC_SUBST(latest_deps)
 AC_SUBST(system_deps)
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
+AC_SUBST(enabled_backends)
 
 AC_OUTPUT

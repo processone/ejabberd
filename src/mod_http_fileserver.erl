@@ -43,7 +43,7 @@
 %% utility for other http modules
 -export([content_type/3]).
 
--export([reopen_log/0, mod_opt_type/1, depends/2]).
+-export([reopen_log/0, mod_opt_type/1, mod_options/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -68,9 +68,6 @@
 	{-1, 401, ?REQUEST_AUTH_HEADERS, <<"Unauthorized">>}).
 -define(HTTP_ERR_HOST_UNKNOWN,
 	{-1, 410, [], <<"Host unknown">>}).
-
--define(DEFAULT_CONTENT_TYPE,
-	<<"application/octet-stream">>).
 
 -define(DEFAULT_CONTENT_TYPES,
 	[{<<".css">>, <<"text/css">>},
@@ -126,24 +123,19 @@ init([Host, Opts]) ->
 
 initialize(Host, Opts) ->
     DocRoot = gen_mod:get_opt(docroot, Opts),
-    check_docroot_defined(DocRoot, Host),
-    DRInfo = check_docroot_exists(DocRoot),
-    check_docroot_is_dir(DRInfo, DocRoot),
-    check_docroot_is_readable(DRInfo, DocRoot),
     AccessLog = gen_mod:get_opt(accesslog, Opts),
     AccessLogFD = try_open_log(AccessLog, Host),
-    DirectoryIndices = gen_mod:get_opt(directory_indices, Opts, []),
-    CustomHeaders = gen_mod:get_opt(custom_headers, Opts, []),
-    DefaultContentType = gen_mod:get_opt(default_content_type, Opts,
-					 ?DEFAULT_CONTENT_TYPE),
-    UserAccess0 = gen_mod:get_opt(must_authenticate_with, Opts, []),
+    DirectoryIndices = gen_mod:get_opt(directory_indices, Opts),
+    CustomHeaders = gen_mod:get_opt(custom_headers, Opts),
+    DefaultContentType = gen_mod:get_opt(default_content_type, Opts),
+    UserAccess0 = gen_mod:get_opt(must_authenticate_with, Opts),
     UserAccess = case UserAccess0 of
 		     [] -> none;
 		     _ ->
 			 dict:from_list(UserAccess0)
 		 end,
     ContentTypes = build_list_content_types(
-                     gen_mod:get_opt(content_types, Opts, []),
+                     gen_mod:get_opt(content_types, Opts),
                      ?DEFAULT_CONTENT_TYPES),
     ?DEBUG("known content types: ~s",
 	   [str:join([[$*, K, " -> ", V] || {K, V} <- ContentTypes],
@@ -172,37 +164,6 @@ build_list_content_types(AdminCTsUnsorted, DefaultCTsUnsorted) ->
     [{Extension, Value}
      || {Extension, Value} <- CTsUnfiltered,
 	Value /= undefined].
-
-check_docroot_defined(DocRoot, Host) ->
-    case DocRoot of
-      undefined -> throw({undefined_docroot_option, Host});
-      _ -> ok
-    end.
-
-check_docroot_exists(DocRoot) ->
-    case filelib:ensure_dir(filename:join(DocRoot, "foo")) of
-	ok ->
-	    case file:read_file_info(DocRoot) of
-		{error, Reason} ->
-		    throw({error_access_docroot, DocRoot, Reason});
-		{ok, FI} -> FI
-	    end;
-	{error, Reason} ->
-	    throw({error_access_docroot, DocRoot, Reason})
-    end.
-
-check_docroot_is_dir(DRInfo, DocRoot) ->
-    case DRInfo#file_info.type of
-      directory -> ok;
-      _ -> throw({docroot_not_directory, DocRoot})
-    end.
-
-check_docroot_is_readable(DRInfo, DocRoot) ->
-    case DRInfo#file_info.access of
-      read -> ok;
-      read_write -> ok;
-      _ -> throw({docroot_not_readable, DocRoot})
-    end.
 
 try_open_log(undefined, _Host) ->
     undefined;
@@ -504,7 +465,10 @@ ip_to_string(Address) when size(Address) == 8 ->
     Parts = lists:map(fun (Int) -> io_lib:format("~.16B", [Int]) end, tuple_to_list(Address)),
     string:to_lower(lists:flatten(join(Parts, ":"))).
 
-mod_opt_type(accesslog) -> fun iolist_to_binary/1;
+mod_opt_type(accesslog) ->
+    fun(undefined) -> undefined;
+       (File) -> iolist_to_binary(File)
+    end;
 mod_opt_type(content_types) ->
     fun(L) when is_list(L) ->
 	    lists:map(
@@ -519,15 +483,32 @@ mod_opt_type(default_content_type) ->
     fun iolist_to_binary/1;
 mod_opt_type(directory_indices) ->
     fun (L) when is_list(L) -> L end;
-mod_opt_type(docroot) -> fun (A) -> A end;
+mod_opt_type(docroot) ->
+    fun(S) ->
+	    Path = iolist_to_binary(S),
+	    case filelib:ensure_dir(filename:join(Path, "foo")) of
+		ok ->
+		    Path;
+		{error, Why} ->
+		    ?ERROR_MSG("Failed to create directory ~s: ~s",
+			       [Path, file:format_error(Why)]),
+		    erlang:error(badarg)
+	    end
+    end;
 mod_opt_type(must_authenticate_with) ->
     fun (L) when is_list(L) ->
 	    lists:map(fun(UP) when is_binary(UP) ->
 			      [K, V] = binary:split(UP, <<":">>),
 			      {K, V}
 		      end, L)
-    end;
-mod_opt_type(_) ->
-    [accesslog, content_types, custom_headers,
-     default_content_type, directory_indices, docroot,
-     must_authenticate_with].
+    end.
+
+mod_options(_) ->
+    [{accesslog, undefined},
+     {content_types, []},
+     {default_content_type, <<"application/octet-stream">>},
+     {custom_headers, []},
+     {directory_indices, []},
+     {must_authenticate_with, []},
+     %% Required option
+     docroot].

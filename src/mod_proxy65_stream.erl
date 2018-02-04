@@ -38,7 +38,8 @@
 	 stream_established/2]).
 
 -export([start/2, stop/1, start_link/3, activate/2,
-	 relay/3, socket_type/0, listen_opt_type/1]).
+	 relay/3, socket_type/0, listen_opt_type/1,
+	 listen_options/0]).
 
 -include("mod_proxy65.hrl").
 
@@ -79,10 +80,10 @@ start_link(Socket, Host, Opts) ->
 
 init([Socket, Host, Opts]) ->
     process_flag(trap_exit, true),
-    AuthType = gen_mod:get_opt(auth_type, Opts, anonymous),
-    Shaper = gen_mod:get_opt(shaper, Opts, none),
-    RecvBuf = gen_mod:get_opt(recbuf, Opts, 8192),
-    SendBuf = gen_mod:get_opt(sndbuf, Opts, 8192),
+    AuthType = gen_mod:get_opt(auth_type, Opts),
+    Shaper = gen_mod:get_opt(shaper, Opts),
+    RecvBuf = gen_mod:get_opt(recbuf, Opts),
+    SendBuf = gen_mod:get_opt(sndbuf, Opts),
     TRef = erlang:send_after(?WAIT_TIMEOUT, self(), stop),
     inet:setopts(Socket,
 		 [{active, true}, {recbuf, RecvBuf}, {sndbuf, SendBuf}]),
@@ -293,6 +294,10 @@ listen_opt_type(recbuf) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 listen_opt_type(shaper) -> fun acl:shaper_rules_validator/1;
 listen_opt_type(sndbuf) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
-listen_opt_type(_) ->
-    [auth_type, recbuf, sndbuf, shaper].
+    fun (I) when is_integer(I), I > 0 -> I end.
+
+listen_options() ->
+    [{auth_type, anonymous},
+     {recbuf, 8192},
+     {sndbuf, 8192},
+     {shaper, none}].

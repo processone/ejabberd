@@ -102,6 +102,7 @@ deps/.got:
 	$(REBAR) get-deps && :> deps/.got
 
 deps/.built: deps/.got
+	$(REBAR) configure-deps
 	$(REBAR) compile && :> deps/.built
 
 src: deps/.built
@@ -154,7 +155,7 @@ define DEP_VERSION_template
 DEP_$(1)_VERSION:=$(shell $(SED) -e '/vsn/!d;s/.*, *"/$(1)-/;s/".*//' $(2) 2>/dev/null)
 endef
 
-DELETE_TARGET_SO=$(if $(subst X.soX,,X$(suffix $(1))X),,rm $(call TO_DEST,$(1));)
+DELETE_TARGET_SO=$(if $(subst X.soX,,X$(suffix $(1))X),,rm -f $(call TO_DEST,$(1));)
 
 $(foreach DEP,$(DEPS),$(eval $(call DEP_VERSION_template,$(DEP),deps/$(DEP)/ebin/$(DEP).app)))
 $(eval $(call DEP_VERSION_template,ejabberd,ebin/ejabberd.app))
@@ -164,7 +165,7 @@ $(call TO_DEST,$(1)): $(1) $(call TO_DEST,$(dir $(1))) ; $(call DELETE_TARGET_SO
 endef
 
 define COPY_BINARY_template
-$(call TO_DEST,$(1)): $(1) $(call TO_DEST,$(dir $(1))) ; rm $(call TO_DEST,$(1)); $$(INSTALL) -m 755 $$(O_USER) $(1) $(call TO_DEST,$(1))
+$(call TO_DEST,$(1)): $(1) $(call TO_DEST,$(dir $(1))) ; rm -f $(call TO_DEST,$(1)); $$(INSTALL) -m 755 $$(O_USER) $(1) $(call TO_DEST,$(1))
 endef
 
 $(foreach file,$(DEPS_FILES_FILTERED) $(MAIN_FILES),$(eval $(call COPY_template,$(file))))

@@ -26,7 +26,7 @@
 -protocol({xep, 198, '1.5.2'}).
 
 %% gen_mod API
--export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1]).
+-export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1, mod_options/1]).
 %% hooks
 -export([c2s_stream_init/2, c2s_stream_started/2, c2s_stream_features/2,
 	 c2s_authenticated_packet/2, c2s_unauthenticated_packet/2,
@@ -117,18 +117,17 @@ c2s_stream_init({ok, State}, Opts) ->
 c2s_stream_init(Acc, _Opts) ->
     Acc.
 
-c2s_stream_started(#{lserver := LServer, mgmt_options := Opts} = State,
-		   _StreamStart) ->
+c2s_stream_started(#{lserver := LServer} = State, _StreamStart) ->
     State1 = maps:remove(mgmt_options, State),
-    ResumeTimeout = get_resume_timeout(LServer, Opts),
-    MaxResumeTimeout = get_max_resume_timeout(LServer, Opts, ResumeTimeout),
+    ResumeTimeout = get_configured_resume_timeout(LServer),
+    MaxResumeTimeout = get_max_resume_timeout(LServer, ResumeTimeout),
     State1#{mgmt_state => inactive,
-	    mgmt_queue_type => get_queue_type(LServer, Opts),
-	    mgmt_max_queue => get_max_ack_queue(LServer, Opts),
+	    mgmt_queue_type => get_queue_type(LServer),
+	    mgmt_max_queue => get_max_ack_queue(LServer),
 	    mgmt_timeout => ResumeTimeout,
 	    mgmt_max_timeout => MaxResumeTimeout,
-	    mgmt_ack_timeout => get_ack_timeout(LServer, Opts),
-	    mgmt_resend => get_resend_on_timeout(LServer, Opts),
+	    mgmt_ack_timeout => get_ack_timeout(LServer),
+	    mgmt_resend => get_resend_on_timeout(LServer),
 	    mgmt_stanzas_in => 0,
 	    mgmt_stanzas_out => 0,
 	    mgmt_stanzas_req => 0};
@@ -711,39 +710,30 @@ bounce_message_queue() ->
 %%%===================================================================
 %%% Configuration processing
 %%%===================================================================
-get_max_ack_queue(Host, Opts) ->
-    gen_mod:get_module_opt(Host, ?MODULE, max_ack_queue,
-			   gen_mod:get_opt(max_ack_queue, Opts, 5000)).
+get_max_ack_queue(Host) ->
+    gen_mod:get_module_opt(Host, ?MODULE, max_ack_queue).
 
-get_resume_timeout(Host, Opts) ->
-    gen_mod:get_module_opt(Host, ?MODULE, resume_timeout,
-			   gen_mod:get_opt(resume_timeout, Opts, 300)).
+get_configured_resume_timeout(Host) ->
+    gen_mod:get_module_opt(Host, ?MODULE, resume_timeout).
 
-get_max_resume_timeout(Host, Opts, ResumeTimeout) ->
-    case gen_mod:get_module_opt(Host, ?MODULE, max_resume_timeout,
-				gen_mod:get_opt(max_resume_timeout, Opts)) of
+get_max_resume_timeout(Host, ResumeTimeout) ->
+    case gen_mod:get_module_opt(Host, ?MODULE, max_resume_timeout) of
 	undefined -> ResumeTimeout;
 	Max when Max >= ResumeTimeout -> Max;
 	_ -> ResumeTimeout
     end.
 
-get_ack_timeout(Host, Opts) ->
-    case gen_mod:get_module_opt(Host, ?MODULE, ack_timeout,
-				gen_mod:get_opt(ack_timeout, Opts, 60)) of
+get_ack_timeout(Host) ->
+    case gen_mod:get_module_opt(Host, ?MODULE, ack_timeout) of
 	infinity -> infinity;
 	T -> timer:seconds(T)
     end.
 
-get_resend_on_timeout(Host, Opts) ->
-    gen_mod:get_module_opt(Host, ?MODULE, resend_on_timeout,
-			   gen_mod:get_opt(resend_on_timeout, Opts, false)).
+get_resend_on_timeout(Host) ->
+    gen_mod:get_module_opt(Host, ?MODULE, resend_on_timeout).
 
-get_queue_type(Host, Opts) ->
-    case gen_mod:get_module_opt(Host, ?MODULE, queue_type,
-				gen_mod:get_opt(queue_type, Opts)) of
-	undefined -> ejabberd_config:default_queue_type(Host);
-	Type -> Type
-    end.
+get_queue_type(Host) ->
+    gen_mod:get_module_opt(Host, ?MODULE, queue_type).
 
 mod_opt_type(max_ack_queue) ->
     fun(I) when is_integer(I), I > 0 -> I;
@@ -752,7 +742,9 @@ mod_opt_type(max_ack_queue) ->
 mod_opt_type(resume_timeout) ->
     fun(I) when is_integer(I), I >= 0 -> I end;
 mod_opt_type(max_resume_timeout) ->
-    fun(I) when is_integer(I), I >= 0 -> I end;
+    fun(I) when is_integer(I), I >= 0 -> I;
+       (undefined) -> undefined
+    end;
 mod_opt_type(ack_timeout) ->
     fun(I) when is_integer(I), I > 0 -> I;
        (infinity) -> infinity
@@ -762,7 +754,12 @@ mod_opt_type(resend_on_timeout) ->
        (if_offline) -> if_offline
     end;
 mod_opt_type(queue_type) ->
-    fun(ram) -> ram; (file) -> file end;
-mod_opt_type(_) ->
-    [max_ack_queue, resume_timeout, max_resume_timeout, ack_timeout,
-     resend_on_timeout, queue_type].
+    fun(ram) -> ram; (file) -> file end.
+
+mod_options(Host) ->
+    [{max_ack_queue, 5000},
+     {resume_timeout, 300},
+     {max_resume_timeout, undefined},
+     {ack_timeout, 60},
+     {resend_on_timeout, false},
+     {queue_type, ejabberd_config:default_queue_type(Host)}].

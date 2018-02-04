@@ -26,10 +26,10 @@
 -module(mod_push_keepalive).
 -author('holger@zedat.fu-berlin.de').
 
--behavior(gen_mod).
+-behaviour(gen_mod).
 
 %% gen_mod callbacks.
--export([start/2, stop/1, reload/3, mod_opt_type/1, depends/2]).
+-export([start/2, stop/1, reload/3, mod_opt_type/1, mod_options/1, depends/2]).
 
 %% ejabberd_hooks callbacks.
 -export([c2s_session_pending/1, c2s_session_resumed/1, c2s_copy_session/2,
@@ -47,7 +47,7 @@
 %%--------------------------------------------------------------------
 -spec start(binary(), gen_mod:opts()) -> ok.
 start(Host, Opts) ->
-    case gen_mod:get_opt(wake_on_start, Opts, false) of
+    case gen_mod:get_opt(wake_on_start, Opts) of
 	true ->
 	    wake_all(Host);
 	false ->
@@ -61,7 +61,7 @@ stop(Host) ->
 
 -spec reload(binary(), gen_mod:opts(), gen_mod:opts()) -> ok.
 reload(Host, NewOpts, OldOpts) ->
-    case gen_mod:is_equal_opt(wake_on_start, NewOpts, OldOpts, false) of
+    case gen_mod:is_equal_opt(wake_on_start, NewOpts, OldOpts) of
 	{false, true, _} ->
 	    wake_all(Host);
 	_ ->
@@ -83,16 +83,12 @@ mod_opt_type(resume_timeout) ->
 mod_opt_type(wake_on_start) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(wake_on_timeout) ->
-    fun (B) when is_boolean(B) -> B end;
-mod_opt_type(O) when O == cache_life_time; O == cache_size ->
-    fun(I) when is_integer(I), I > 0 -> I;
-       (infinity) -> infinity
-    end;
-mod_opt_type(O) when O == use_cache; O == cache_missed ->
-    fun (B) when is_boolean(B) -> B end;
-mod_opt_type(_) ->
-    [resume_timeout, wake_on_start, wake_on_timeout, cache_life_time,
-     cache_size, use_cache, cache_missed, iqdisc].
+    fun (B) when is_boolean(B) -> B end.
+
+mod_options(_Host) ->
+    [{resume_timeout, 86400},
+     {wake_on_start, false},
+     {wake_on_timeout, true}].
 
 %%--------------------------------------------------------------------
 %% Register/unregister hooks.
@@ -168,10 +164,8 @@ c2s_copy_session(State, _) ->
 
 -spec c2s_handle_cast(c2s_state(), any()) -> c2s_state().
 c2s_handle_cast(#{lserver := LServer} = State, push_enable) ->
-    ResumeTimeout = gen_mod:get_module_opt(LServer, ?MODULE,
-					   resume_timeout, 86400),
-    WakeOnTimeout = gen_mod:get_module_opt(LServer, ?MODULE,
-					   wake_on_timeout, true),
+    ResumeTimeout = gen_mod:get_module_opt(LServer, ?MODULE, resume_timeout),
+    WakeOnTimeout = gen_mod:get_module_opt(LServer, ?MODULE, wake_on_timeout),
     State#{push_resume_timeout => ResumeTimeout,
 	   push_wake_on_timeout => WakeOnTimeout};
 c2s_handle_cast(State, push_disable) ->

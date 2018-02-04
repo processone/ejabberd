@@ -599,7 +599,7 @@ set_node_config(Config, Node, Options) ->
 publish_item(Config, Node) ->
     PJID = pubsub_jid(Config),
     ItemID = randoms:get_string(),
-    Item = #ps_item{id = ItemID, xml_els = [xmpp:encode(#presence{id = ItemID})]},
+    Item = #ps_item{id = ItemID, sub_els = [xmpp:encode(#presence{id = ItemID})]},
     case send_recv(Config,
 		   #iq{type = set, to = PJID,
 		       sub_els = [#pubsub{publish = #ps_publish{

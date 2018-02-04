@@ -33,7 +33,8 @@
 
 -export([start/2, stop/1, reload/3, process_sm_iq/1, import_info/0,
 	 remove_user/2, get_data/2, get_data/3, export/1,
-	 import/5, import_start/2, mod_opt_type/1, set_data/3, depends/2]).
+	 import/5, import_start/2, mod_opt_type/1, set_data/3,
+	 mod_options/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -54,7 +55,7 @@
 -optional_callbacks([use_cache/1, cache_nodes/1]).
 
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
     init_cache(Mod, Host, Opts),
@@ -78,7 +79,7 @@ reload(Host, NewOpts, OldOpts) ->
 	    ok
     end,
     init_cache(NewMod, Host, NewOpts),
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts) of
 	{false, IQDisc, _} ->
 	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PRIVATE,
 					  ?MODULE, process_sm_iq, IQDisc);
@@ -90,7 +91,7 @@ reload(Host, NewOpts, OldOpts) ->
 process_sm_iq(#iq{type = Type, lang = Lang,
 		  from = #jid{luser = LUser, lserver = LServer},
 		  to = #jid{luser = LUser, lserver = LServer},
-		  sub_els = [#private{xml_els = Els0}]} = IQ) ->
+		  sub_els = [#private{sub_els = Els0}]} = IQ) ->
     case filter_xmlels(Els0) of
 	[] ->
 	    Txt = <<"No private data found in this query">>,
@@ -111,7 +112,7 @@ process_sm_iq(#iq{type = Type, lang = Lang,
 		    Err = xmpp:err_internal_server_error(Txt, Lang),
 		    xmpp:make_error(IQ, Err);
 		Els ->
-		    xmpp:make_iq_result(IQ, #private{xml_els = Els})
+		    xmpp:make_iq_result(IQ, #private{sub_els = Els})
 	    end
     end;
 process_sm_iq(#iq{lang = Lang} = IQ) ->
@@ -208,23 +209,17 @@ delete_cache(Mod, LUser, LServer, Data) ->
 init_cache(Mod, Host, Opts) ->
     case use_cache(Mod, Host) of
 	true ->
-	    CacheOpts = cache_opts(Host, Opts),
+	    CacheOpts = cache_opts(Opts),
 	    ets_cache:new(?PRIVATE_CACHE, CacheOpts);
 	false ->
 	    ets_cache:delete(?PRIVATE_CACHE)
     end.
 
--spec cache_opts(binary(), gen_mod:opts()) -> [proplists:property()].
-cache_opts(Host, Opts) ->
-    MaxSize = gen_mod:get_opt(
-		cache_size, Opts,
-		ejabberd_config:cache_size(Host)),
-    CacheMissed = gen_mod:get_opt(
-		    cache_missed, Opts,
-		    ejabberd_config:cache_missed(Host)),
-    LifeTime = case gen_mod:get_opt(
-		      cache_life_time, Opts,
-		      ejabberd_config:cache_life_time(Host)) of
+-spec cache_opts(gen_mod:opts()) -> [proplists:property()].
+cache_opts(Opts) ->
+    MaxSize = gen_mod:get_opt(cache_size, Opts),
+    CacheMissed = gen_mod:get_opt(cache_missed, Opts),
+    LifeTime = case gen_mod:get_opt(cache_life_time, Opts) of
 		   infinity -> infinity;
 		   I -> timer:seconds(I)
 	       end,
@@ -234,10 +229,7 @@ cache_opts(Host, Opts) ->
 use_cache(Mod, Host) ->
     case erlang:function_exported(Mod, use_cache, 1) of
 	true -> Mod:use_cache(Host);
-	false ->
-	    gen_mod:get_module_opt(
-	      Host, ?MODULE, use_cache,
-	      ejabberd_config:use_cache(Host))
+	false -> gen_mod:get_module_opt(Host, ?MODULE, use_cache)
     end.
 
 -spec cache_nodes(module(), binary()) -> [node()].
@@ -272,6 +264,12 @@ mod_opt_type(O) when O == cache_life_time; O == cache_size ->
         (infinity) -> infinity
     end;
 mod_opt_type(O) when O == use_cache; O == cache_missed ->
-    fun (B) when is_boolean(B) -> B end;
-mod_opt_type(_) ->
-    [db_type, iqdisc, cache_life_time, cache_size, use_cache, cache_missed].
+    fun (B) when is_boolean(B) -> B end.
+
+mod_options(Host) ->
+    [{iqdisc, gen_iq_handler:iqdisc(Host)},
+     {db_type, ejabberd_config:default_db(Host, ?MODULE)},
+     {use_cache, ejabberd_config:use_cache(Host)},
+     {cache_size, ejabberd_config:cache_size(Host)},
+     {cache_missed, ejabberd_config:cache_missed(Host)},
+     {cache_life_time, ejabberd_config:cache_life_time(Host)}].

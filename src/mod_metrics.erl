@@ -32,7 +32,7 @@
 -include("logger.hrl").
 -include("xmpp.hrl").
 
--export([start/2, stop/1, mod_opt_type/1, depends/2, reload/3]).
+-export([start/2, stop/1, mod_opt_type/1, mod_options/1, depends/2, reload/3]).
 
 -export([offline_message_hook/1,
          sm_register_connection_hook/3, sm_remove_connection_hook/3,
@@ -127,8 +127,8 @@ register_user(_User, Server) ->
 %%====================================================================
 
 push(Host, Probe) ->
-    IP = gen_mod:get_module_opt(Host, ?MODULE, ip, {127,0,0,1}),
-    Port = gen_mod:get_module_opt(Host, ?MODULE, port, 11111),
+    IP = gen_mod:get_module_opt(Host, ?MODULE, ip),
+    Port = gen_mod:get_module_opt(Host, ?MODULE, port),
     send_metrics(Host, Probe, IP, Port).
 
 send_metrics(Host, Probe, Peer, Port) ->
@@ -184,6 +184,7 @@ mod_opt_type(ip) ->
 	    IP
     end;
 mod_opt_type(port) ->
-    fun(I) when is_integer(I), I>0, I<65536 -> I end;
-mod_opt_type(_) ->
-    [ip, port].
+    fun(I) when is_integer(I), I>0, I<65536 -> I end.
+
+mod_options(_) ->
+    [{ip, <<"127.0.0.1">>}, {port, 11111}].

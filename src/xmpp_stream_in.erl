@@ -333,8 +333,8 @@ handle_info({'$gen_event', {xmlstreamerror, Reason}}, #{lang := Lang}= State) ->
 	      send_pkt(State1, Err)
       end);
 handle_info({'$gen_event', El}, #{stream_state := wait_for_stream} = State) ->
-    error_logger:error_msg("unexpected event from XML driver: ~p; "
-			   "xmlstreamstart was expected", [El]),
+    error_logger:warning_msg("unexpected event from XML driver: ~p; "
+			     "xmlstreamstart was expected", [El]),
     State1 = send_header(State),
     noreply(
       case is_disconnected(State1) of
@@ -367,11 +367,12 @@ handle_info({'$gen_all_state_event', {xmlstreamcdata, Data}},
     noreply(try Mod:handle_cdata(Data, State)
 	    catch _:undef -> State
 	    end);
-handle_info(timeout, #{mod := Mod} = State) ->
+handle_info(timeout, #{mod := Mod, lang := Lang} = State) ->
     Disconnected = is_disconnected(State),
     noreply(try Mod:handle_timeout(State)
 	    catch _:undef when not Disconnected ->
-		    send_pkt(State, xmpp:serr_connection_timeout());
+		    Txt = <<"Idle connection">>,
+		    send_pkt(State, xmpp:serr_connection_timeout(Txt, Lang));
 		  _:undef ->
 		    stop(State)
 	    end);

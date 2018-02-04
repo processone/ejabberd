@@ -27,7 +27,7 @@ case $(id -un) in
             EXEC_CMD="as_install_user"
         else
             EXEC_CMD="as_current_user"
-            echo "WARNING: This is not recommended to run ejabberd as root" >&2
+            echo "WARNING: It is not recommended to run ejabberd as root" >&2
         fi
         ;;
     *)
@@ -263,7 +263,7 @@ cd "$SPOOL_DIR" || {
 case $1 in
     start)
         check_start
-        exec_erl "$ERLANG_NODE" $EJABBERD_OPTS -noinput -detached
+        exec_erl "$ERLANG_NODE" $EJABBERD_OPTS -detached
         ;;
     foreground)
         check_start

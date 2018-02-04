@@ -6,7 +6,6 @@ otp_release:
   - 19.2
 
 services:
-  - riak
   - redis-server
 
 before_install:
@@ -31,16 +30,6 @@ install:
 
 before_script:
   # Ulimit: See Travis-CI issue report: https://github.com/travis-ci/travis-ci/issues/3328
-  - echo 'ulimit -n 4096' > riak
-  - sudo mv riak /etc/default/riak
-  - mkdir "$PWD/ebin"
-  - sed 's/^storage_backend.*/storage_backend = leveldb/' /etc/riak/riak.conf > riak.conf
-  - sudo mv riak.conf /etc/riak/riak.conf
-  - echo "[{riak_kv, [{add_paths, [\"$PWD/ebin/\"]}]}]." > advanced.config
-  - sudo mv advanced.config /etc/riak/advanced.config
-  - sudo service riak restart
-  - sudo riak-admin wait-for-service riak_kv 'riak@127.0.0.1'
-  - sudo riak-admin test
   - mysql -u root -e "CREATE USER 'ejabberd_test'@'localhost' IDENTIFIED BY 'ejabberd_test';"
   - mysql -u root -e "CREATE DATABASE ejabberd_test;"
   - mysql -u root -e "GRANT ALL ON ejabberd_test.* TO 'ejabberd_test'@'localhost';"
@@ -50,23 +39,24 @@ before_script:
 
 script:
   - ./autogen.sh
-  - ./configure --prefix=/tmp/ejabberd --enable-all --disable-odbc
+  - ./configure --prefix=/tmp/ejabberd --enable-all --disable-odbc --disable-riak
   - make
-  - make install
+  - make install -s
   - make xref
   - sed -i -e 's/ct:pal/ct:log/' test/suite.erl
   - ln -sf ../sql priv/
+  - echo "" >> rebar.config
+  - echo '{ct_extra_params, "-verbosity 20"}.' >> rebar.config
   - escript ./rebar skip_deps=true ct -v
-  - grep -q 'TEST COMPLETE, \([[:digit:]]*\) ok, .* of \1 ' logs/raw.log
+  - grep -q 'TEST COMPLETE,.* 0 failed' logs/raw.log
 
 after_script:
   - find logs -name suite.log -exec cat '{}' ';'
 
 after_failure:
   - find logs -name exunit.log -exec cat '{}' ';'
-  # Try checking Riak database logs
-  - tail -n 100000 /var/log/riak/*.log
   - find logs -name ejabberd.log -exec cat '{}' ';'
+  - find logs -name suite.log -exec cat '{}' ';' | awk 'BEGIN{RS="\n=case";FS="\n"} /=result\s*failed/ {print "=case" $0}
 
 after_success:
   - coveralls-merge erlang.json

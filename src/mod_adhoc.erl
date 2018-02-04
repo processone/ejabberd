@@ -35,14 +35,15 @@
 	 process_sm_iq/1, get_local_commands/5,
 	 get_local_identity/5, get_local_features/5,
 	 get_sm_commands/5, get_sm_identity/5, get_sm_features/5,
-	 ping_item/4, ping_command/4, mod_opt_type/1, depends/2]).
+	 ping_item/4, ping_command/4, mod_opt_type/1, depends/2,
+	 mod_options/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
 				  ?NS_COMMANDS, ?MODULE, process_local_iq,
 				  IQDisc),
@@ -88,7 +89,7 @@ stop(Host) ->
 				     ?NS_COMMANDS).
 
 reload(Host, NewOpts, OldOpts) ->
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts) of
 	{false, IQDisc, _} ->
 	    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_COMMANDS,
 					  ?MODULE, process_local_iq, IQDisc),
@@ -104,8 +105,7 @@ get_local_commands(Acc, _From,
 		   #jid{server = Server, lserver = LServer} = _To, <<"">>,
 		   Lang) ->
     Display = gen_mod:get_module_opt(LServer, ?MODULE,
-				     report_commands_node,
-                                     false),
+				     report_commands_node),
     case Display of
       false -> Acc;
       _ ->
@@ -133,8 +133,7 @@ get_local_commands(Acc, _From, _To, _Node, _Lang) ->
 get_sm_commands(Acc, _From,
 		#jid{lserver = LServer} = To, <<"">>, Lang) ->
     Display = gen_mod:get_module_opt(LServer, ?MODULE,
-				     report_commands_node,
-                                     false),
+				     report_commands_node),
     case Display of
       false -> Acc;
       _ ->
@@ -283,5 +282,8 @@ depends(_Host, _Opts) ->
 
 mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(report_commands_node) ->
-    fun (B) when is_boolean(B) -> B end;
-mod_opt_type(_) -> [iqdisc, report_commands_node].
+    fun (B) when is_boolean(B) -> B end.
+
+mod_options(Host) ->
+    [{iqdisc, gen_iq_handler:iqdisc(Host)},
+     {report_commands_node, false}].

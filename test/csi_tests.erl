@@ -69,7 +69,7 @@ all_master(Config) ->
 			       items =
 				   [#ps_item{
 				       id = <<"pep-1">>,
-				       xml_els = [PepPayload]}]}}]},
+				       sub_els = [PepPayload]}]}}]},
     PepTwo = #message{
 		to = Peer,
 		sub_els =
@@ -80,7 +80,7 @@ all_master(Config) ->
 			       items =
 				   [#ps_item{
 				       id = <<"pep-2">>,
-				       xml_els = [PepPayload]}]}}]},
+				       sub_els = [PepPayload]}]}}]},
     %% Wait for the slave to become inactive.
     wait_for_slave(Config),
     %% Should be queued (but see below):

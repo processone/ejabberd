@@ -643,12 +643,12 @@ route_probe_reply(_, _) ->
     ok.
 
 -spec process_presence_out(state(), presence()) -> state().
-process_presence_out(#{user := User, server := Server, lserver := LServer,
-		       jid := JID, lang := Lang, pres_a := PresA} = State,
+process_presence_out(#{lserver := LServer, jid := JID,
+		       lang := Lang, pres_a := PresA} = State,
 		     #presence{from = From, to = To, type = Type} = Pres) ->
     if Type == subscribe; Type == subscribed;
        Type == unsubscribe; Type == unsubscribed ->
-	    Access = gen_mod:get_module_opt(LServer, mod_roster, access, all),
+	    Access = gen_mod:get_module_opt(LServer, mod_roster, access),
 	    MyBareJID = jid:remove_resource(JID),
 	    case acl:match_rule(LServer, Access, MyBareJID) of
 		deny ->
@@ -656,9 +656,7 @@ process_presence_out(#{user := User, server := Server, lserver := LServer,
 		    AccessErr = xmpp:err_forbidden(AccessErrTxt, Lang),
 		    send_error(State, Pres, AccessErr);
 		allow ->
-		    ejabberd_hooks:run(roster_out_subscription,
-				       LServer,
-				       [User, Server, To, Type])
+		    ejabberd_hooks:run(roster_out_subscription, LServer, [Pres])
 	    end;
 	true -> ok
     end,
@@ -839,9 +837,9 @@ route_multiple(#{lserver := LServer}, JIDs, Pkt) ->
     ejabberd_router_multicast:route_multicast(From, LServer, JIDs, Pkt).
 
 get_subscription(#jid{luser = LUser, lserver = LServer}, JID) ->
-    {Subscription, _} = ejabberd_hooks:run_fold(
-			  roster_get_jid_info, LServer, {none, []},
-			  [LUser, LServer, JID]),
+    {Subscription, _, _} = ejabberd_hooks:run_fold(
+			     roster_get_jid_info, LServer, {none, none, []},
+			     [LUser, LServer, JID]),
     Subscription.
 
 -spec resource_conflict_action(binary(), binary(), binary()) ->
@@ -1025,20 +1023,19 @@ listen_opt_type(max_stanza_size) ->
     end;
 listen_opt_type(max_fsm_queue) ->
     fun(I) when is_integer(I), I>0 -> I end;
-%% The following hack should be removed in future releases: it is intended
-%% for backward compatibility with ejabberd 17.01 or older
 listen_opt_type(stream_management) ->
-    ?WARNING_MSG("listening option 'stream_management' is deprecated: "
-		 "use mod_stream_mgmt module", []),
+    ?ERROR_MSG("listening option 'stream_management' is ignored: "
+	       "use mod_stream_mgmt module", []),
     fun(B) when is_boolean(B) -> B end;
 listen_opt_type(O) ->
-    case mod_stream_mgmt:mod_opt_type(O) of
-	L when is_list(L) ->
+    StreamOpts = mod_stream_mgmt:mod_options(?MYNAME),
+    case lists:keyfind(O, 1, StreamOpts) of
+	false ->
 	    [access, shaper, certfile, ciphers, dhfile, cafile,
 	     protocol_options, tls, tls_compression, starttls,
 	     starttls_required, tls_verify, zlib, max_fsm_queue];
-	VFun ->
-	    ?WARNING_MSG("listening option '~s' is deprecated: use '~s' "
-			 "option from mod_stream_mgmt module", [O, O]),
-	    VFun
+	_ ->
+	    ?ERROR_MSG("Listening option '~s' is ignored: use '~s' "
+		       "option from mod_stream_mgmt module", [O, O]),
+	    mod_stream_mgmt:mod_opt_type(O)
     end.

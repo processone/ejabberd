@@ -321,7 +321,7 @@ is_request_within_dialog(#sip{hdrs = Hdrs}) ->
     esip:has_param(<<"tag">>, Params).
 
 need_record_route(LServer) ->
-    gen_mod:get_module_opt(LServer, mod_sip, always_record_route, true).
+    gen_mod:get_module_opt(LServer, mod_sip, always_record_route).
 
 make_sign(TS, Hdrs) ->
     {_, #uri{user = FUser, host = FServer}, FParams} = esip:get_hdr('from', Hdrs),
@@ -348,17 +348,13 @@ is_signed_by_me(TS_Sign, Hdrs) ->
     end.
 
 get_configured_vias(LServer) ->
-    gen_mod:get_module_opt(LServer, mod_sip, via, []).
+    gen_mod:get_module_opt(LServer, mod_sip, via).
 
 get_configured_record_route(LServer) ->
-    gen_mod:get_module_opt(
-      LServer, mod_sip, record_route,
-      #uri{host = LServer, params = [{<<"lr">>, <<"">>}]}).
+    gen_mod:get_module_opt(LServer, mod_sip, record_route).
 
 get_configured_routes(LServer) ->
-    gen_mod:get_module_opt(
-      LServer, mod_sip, routes,
-      [#uri{host = LServer, params = [{<<"lr">>, <<"">>}]}]).
+    gen_mod:get_module_opt(LServer, mod_sip, routes).
 
 mark_transaction_as_complete(TrID, State) ->
     NewTrIDs = lists:delete(TrID, State#state.tr_ids),

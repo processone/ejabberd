@@ -30,7 +30,7 @@
 -protocol({xep, 191, '1.2'}).
 
 -export([start/2, stop/1, reload/3, process_iq/1, mod_opt_type/1, depends/2,
-	 disco_features/5]).
+	 disco_features/5, mod_options/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -40,7 +40,7 @@
 -include("mod_privacy.hrl").
 
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts, gen_iq_handler:iqdisc(Host)),
+    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     ejabberd_hooks:add(disco_local_features, Host, ?MODULE, disco_features, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
 				  ?NS_BLOCKING, ?MODULE, process_iq, IQDisc).
@@ -50,7 +50,7 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_BLOCKING).
 
 reload(Host, NewOpts, OldOpts) ->
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts, gen_iq_handler:iqdisc(Host)) of
+    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts) of
 	{false, IQDisc, _} ->
 	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_BLOCKING,
 					  ?MODULE, process_iq, IQDisc);
@@ -267,5 +267,7 @@ err_db_failure(#iq{lang = Lang} = IQ) ->
     Txt = <<"Database failure">>,
     xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang)).
 
-mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
-mod_opt_type(_) -> [iqdisc].
+mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1.
+
+mod_options(Host) ->
+    [{iqdisc, gen_iq_handler:iqdisc(Host)}].

@@ -46,8 +46,6 @@
 
 -define(CALL_TIMEOUT, timer:seconds(30)).
 -define(DEFAULT_EXPIRES, 3600).
--define(FLOW_TIMEOUT_UDP, 29).
--define(FLOW_TIMEOUT_TCP, 120).
 
 -record(sip_session, {us = {<<"">>, <<"">>} :: {binary(), binary()},
 		      socket = #sip_socket{} :: #sip_socket{},
@@ -497,12 +495,10 @@ get_flow_timeout(LServer, #sip_socket{type = Type}) ->
     case Type of
 	udp ->
 	    gen_mod:get_module_opt(
-	      LServer, mod_sip, flow_timeout_udp,
-	      ?FLOW_TIMEOUT_UDP);
+	      LServer, mod_sip, flow_timeout_udp);
 	_ ->
 	    gen_mod:get_module_opt(
-	      LServer, mod_sip, flow_timeout_tcp,
-	      ?FLOW_TIMEOUT_TCP)
+	      LServer, mod_sip, flow_timeout_tcp)
     end.
 
 update_table() ->

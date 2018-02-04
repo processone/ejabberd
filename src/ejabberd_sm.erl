@@ -43,7 +43,7 @@
 	 open_session/5,
 	 open_session/6,
 	 close_session/4,
-	 check_in_subscription/6,
+	 check_in_subscription/2,
 	 bounce_offline_message/1,
 	 disconnect_removed_user/2,
 	 get_user_resources/2,
@@ -183,10 +183,9 @@ close_session(SID, User, Server, Resource) ->
     ejabberd_hooks:run(sm_remove_connection_hook,
 		       JID#jid.lserver, [SID, JID, Info]).
 
--spec check_in_subscription(boolean(), binary(), binary(), jid(),
-			    subscribe | subscribed | unsubscribe | unsubscribed,
-			    binary()) -> boolean() | {stop, false}.
-check_in_subscription(Acc, User, Server, _JID, _Type, _Reason) ->
+-spec check_in_subscription(boolean(), presence()) -> boolean() | {stop, false}.
+check_in_subscription(Acc, #presence{to = To}) ->
+    #jid{user = User, server = Server} = To,
     case ejabberd_auth:user_exists(User, Server) of
       true -> Acc;
       false -> {stop, false}
@@ -627,19 +626,14 @@ do_route(To, Term) ->
     end.
 
 -spec do_route(stanza()) -> any().
-do_route(#presence{from = From, to = To, type = T, status = Status} = Packet)
+do_route(#presence{to = To, type = T} = Packet)
   when T == subscribe; T == subscribed; T == unsubscribe; T == unsubscribed ->
     ?DEBUG("processing subscription:~n~s", [xmpp:pp(Packet)]),
-    #jid{user = User, server = Server,
-	 luser = LUser, lserver = LServer} = To,
-    Reason = if T == subscribe -> xmpp:get_text(Status);
-		true -> <<"">>
-	     end,
+    #jid{luser = LUser, lserver = LServer} = To,
     case is_privacy_allow(Packet) andalso
 	ejabberd_hooks:run_fold(
 	  roster_in_subscription,
-	  LServer, false,
-	  [User, Server, From, T, Reason]) of
+	  LServer, false, [Packet]) of
 	true ->
 	    Mod = get_sm_backend(LServer),
 	    lists:foreach(

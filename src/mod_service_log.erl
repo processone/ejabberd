@@ -29,7 +29,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, log_user_send/1,
+-export([start/2, stop/1, log_user_send/1, mod_options/1,
 	 log_user_receive/1, mod_opt_type/1, depends/2]).
 
 -include("ejabberd.hrl").
@@ -68,11 +68,11 @@ log_user_receive({Packet, C2SState}) ->
 
 -spec log_packet(stanza(), binary()) -> ok.
 log_packet(Packet, Host) ->
-    Loggers = gen_mod:get_module_opt(Host, ?MODULE, loggers, []),
+    Loggers = gen_mod:get_module_opt(Host, ?MODULE, loggers),
     ForwardedMsg = #message{from = jid:make(Host),
 			    id = randoms:get_string(),
 			    sub_els = [#forwarded{
-					  xml_els = [xmpp:encode(Packet)]}]},
+					  sub_els = [Packet]}]},
     lists:foreach(
       fun(Logger) ->
 	      ejabberd_router:route(xmpp:set_to(ForwardedMsg, jid:make(Logger)))
@@ -86,5 +86,7 @@ mod_opt_type(loggers) ->
 			      if N /= error -> N end
 		      end,
 		      L)
-    end;
-mod_opt_type(_) -> [loggers].
+    end.
+
+mod_options(_) ->
+    [{loggers, []}].

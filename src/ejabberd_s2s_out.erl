@@ -254,10 +254,12 @@ handle_recv(El, Pkt, #{server_host := ServerHost} = State) ->
 handle_send(El, Pkt, #{server_host := ServerHost} = State) ->
     ejabberd_hooks:run_fold(s2s_out_handle_send, ServerHost, State, [El, Pkt]).
 
-handle_timeout(#{on_route := Action} = State) ->
+handle_timeout(#{on_route := Action, lang := Lang} = State) ->
     case Action of
 	bounce -> stop(State);
-	_ -> send(State, xmpp:serr_connection_timeout())
+	_ ->
+	    Txt = <<"Idle connection">>,
+	    send(State, xmpp:serr_connection_timeout(Txt, Lang))
     end.
 
 init([#{server := LServer, remote_server := RServer} = State, Opts]) ->
