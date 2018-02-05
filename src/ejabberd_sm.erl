@@ -80,7 +80,8 @@
 	 host_down/1,
 	 make_sid/0,
 	 clean_cache/1,
-	 config_reloaded/0
+	 config_reloaded/0,
+	 is_online/1
 	]).
 
 -export([init/1, handle_call/3, handle_cast/2,
