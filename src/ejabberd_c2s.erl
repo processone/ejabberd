@@ -109,7 +109,7 @@ set_presence(Ref, Pres) ->
 resend_presence(Pid) ->
     resend_presence(Pid, undefined).
 
--spec resend_presence(pid(), jid() | undefined) -> ok.
+-spec resend_presence(pid(), jid() | undefined) -> boolean().
 resend_presence(Pid, To) ->
     route(Pid, {resend_presence, To}).
 
