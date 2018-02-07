@@ -458,9 +458,10 @@ generate_md_output(File, RegExp, Languages) ->
     Cmds3 = lists:sort(fun(#ejabberd_commands{name=N1}, #ejabberd_commands{name=N2}) ->
                                N1 =< N2
                        end, Cmds2),
+    Cmds4 = [maybe_add_policy_arguments(Cmd) || Cmd <- Cmds3],
     Langs = binary:split(Languages, <<",">>, [global]),
     Header = <<"---\ntitle: Administration API reference\nbodyclass: nocomment\n---">>,
-    Out = lists:map(fun(C) -> gen_doc(C, false, Langs) end, Cmds3),
+    Out = lists:map(fun(C) -> gen_doc(C, false, Langs) end, Cmds4),
     {ok, Fh} = file:open(File, [write]),
     io:format(Fh, "~s~s", [Header, Out]),
     file:close(Fh),
