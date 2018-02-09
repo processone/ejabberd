@@ -596,7 +596,8 @@ get_offline_els(LUser, LServer) ->
 -spec offline_msg_to_route(binary(), #offline_msg{}) ->
 				  {route, message()} | error.
 offline_msg_to_route(LServer, #offline_msg{from = From, to = To} = R) ->
-    try xmpp:decode(R#offline_msg.packet, ?NS_CLIENT, [ignore_els]) of
+    CodecOpts = ejabberd_config:codec_options(LServer),
+    try xmpp:decode(R#offline_msg.packet, ?NS_CLIENT, CodecOpts) of
 	Pkt ->
 	    Pkt1 = xmpp:set_from_to(Pkt, From, To),
 	    Pkt2 = add_delay_info(Pkt1, LServer, R#offline_msg.timestamp),
@@ -611,10 +612,11 @@ offline_msg_to_route(LServer, #offline_msg{from = From, to = To} = R) ->
 -spec read_messages(binary(), binary()) -> [{binary(), message()}].
 read_messages(LUser, LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
+    CodecOpts = ejabberd_config:codec_options(LServer),
     lists:flatmap(
       fun({Seq, From, To, TS, El}) ->
 	      Node = integer_to_binary(Seq),
-	      try xmpp:decode(El, ?NS_CLIENT, [ignore_els]) of
+	      try xmpp:decode(El, ?NS_CLIENT, CodecOpts) of
 		  Pkt ->
 		      Node = integer_to_binary(Seq),
 		      Pkt1 = add_delay_info(Pkt, LServer, TS),

@@ -918,7 +918,8 @@ select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType) ->
 msg_to_el(#archive_msg{timestamp = TS, packet = El, nick = Nick,
 		       peer = Peer, id = ID},
 	  MsgType, JidRequestor, #jid{lserver = LServer} = JidArchive) ->
-    try xmpp:decode(El, ?NS_CLIENT, [ignore_els]) of
+    CodecOpts = ejabberd_config:codec_options(LServer),
+    try xmpp:decode(El, ?NS_CLIENT, CodecOpts) of
 	Pkt1 ->
 	    Pkt2 = set_stanza_id(Pkt1, JidArchive, ID),
 	    Pkt3 = maybe_update_from_to(

@@ -715,7 +715,8 @@ send_motd({#presence{type = available},
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case get_motd(Mod, LServer) of
 	{ok, Packet} ->
-	    try xmpp:decode(Packet, ?NS_CLIENT, [ignore_els]) of
+	    CodecOpts = ejabberd_config:codec_options(LServer),
+	    try xmpp:decode(Packet, ?NS_CLIENT, CodecOpts) of
 		Msg ->
 		    case is_motd_user(Mod, LUser, LServer) of
 			false ->
@@ -806,7 +807,8 @@ get_stored_motd(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case get_motd(Mod, LServer) of
         {ok, Packet} ->
-	    try xmpp:decode(Packet, ?NS_CLIENT, [ignore_els]) of
+	    CodecOpts = ejabberd_config:codec_options(LServer),
+	    try xmpp:decode(Packet, ?NS_CLIENT, CodecOpts) of
 		#message{body = Body, subject = Subject} ->
 		    {xmpp:get_text(Subject), xmpp:get_text(Body)}
 	    catch _:{xmpp_codec, Why} ->

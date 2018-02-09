@@ -36,7 +36,8 @@
 	 is_elixir_enabled/0, v_dbs/1, v_dbs_mods/1,
 	 default_db/1, default_db/2, default_ram_db/1, default_ram_db/2,
 	 default_queue_type/1, queue_dir/0, fsm_limit_opts/1,
-	 use_cache/1, cache_size/1, cache_missed/1, cache_life_time/1]).
+	 use_cache/1, cache_size/1, cache_missed/1, cache_life_time/1,
+	 codec_options/1]).
 
 -export([start/2]).
 
@@ -1418,11 +1419,13 @@ opt_type(shared_key) ->
     fun iolist_to_binary/1;
 opt_type(node_start) ->
     fun(I) when is_integer(I), I>=0 -> I end;
+opt_type(validate_stream) ->
+    fun(B) when is_boolean(B) -> B end;
 opt_type(_) ->
     [hide_sensitive_log_data, hosts, language, max_fsm_queue,
      default_db, default_ram_db, queue_type, queue_dir, loglevel,
      use_cache, cache_size, cache_missed, cache_life_time,
-     shared_key, node_start].
+     shared_key, node_start, validate_stream].
 
 -spec may_hide_data(any()) -> any().
 may_hide_data(Data) ->
@@ -1469,3 +1472,10 @@ cache_missed(Host) ->
 %% NOTE: the integer value returned is in *seconds*
 cache_life_time(Host) ->
     get_option({cache_life_time, Host}, 3600).
+
+-spec codec_options(binary() | global) -> [xmpp:decode_option()].
+codec_options(Host) ->
+    case get_option({validate_stream, Host}, false) of
+	true -> [];
+	false -> [ignore_els]
+    end.

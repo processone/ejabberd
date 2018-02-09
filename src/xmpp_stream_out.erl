@@ -244,6 +244,7 @@ init([Mod, _SockMod, From, To, Opts]) ->
 	      lang => <<"">>,
 	      remote_server => To,
 	      xmlns => ?NS_SERVER,
+	      codec_options => [ignore_els],
 	      stream_direction => out,
 	      stream_timeout => {timer:seconds(30), Time},
 	      stream_id => new_id(),
@@ -347,9 +348,9 @@ handle_info({'$gen_event', {xmlstreamerror, Reason}}, #{lang := Lang}= State) ->
 	      send_pkt(State1, Err)
       end);
 handle_info({'$gen_event', {xmlstreamelement, El}},
-	    #{xmlns := NS, mod := Mod} = State) ->
+	    #{xmlns := NS, mod := Mod, codec_options := Opts} = State) ->
     noreply(
-      try xmpp:decode(El, NS, [ignore_els]) of
+      try xmpp:decode(El, NS, Opts) of
 	  Pkt ->
 	      State1 = try Mod:handle_recv(El, Pkt, State)
 		       catch _:undef -> State

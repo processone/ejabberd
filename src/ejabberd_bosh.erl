@@ -739,9 +739,10 @@ bounce_receivers(State, Reason) ->
 		State, Receivers ++ ShapedReceivers).
 
 bounce_els_from_obuf(State) ->
+    Opts = ejabberd_config:codec_options(State#state.host),
     p1_queue:foreach(
       fun({xmlstreamelement, El}) ->
-	      try xmpp:decode(El, ?NS_CLIENT, [ignore_els]) of
+	      try xmpp:decode(El, ?NS_CLIENT, Opts) of
 		  Pkt when ?is_stanza(Pkt) ->
 		      case {xmpp:get_from(Pkt), xmpp:get_to(Pkt)} of
 			  {#jid{}, #jid{}} ->

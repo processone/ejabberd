@@ -261,9 +261,10 @@ process_iq(#iq{to = To, lang = Lang, sub_els = [SubEl]} = IQ, Type) ->
 process_iq_result(#iq{from = From, to = To, id = ID, lang = Lang} = IQ,
 		  #iq{type = result} = ResIQ) ->
     try
+	CodecOpts = ejabberd_config:codec_options(To#jid.lserver),
 	#delegation{forwarded = #forwarded{sub_els = [SubEl]}} =
 	    xmpp:get_subtag(ResIQ, #delegation{}),
-	case xmpp:decode(SubEl, ?NS_CLIENT, [ignore_els]) of
+	case xmpp:decode(SubEl, ?NS_CLIENT, CodecOpts) of
 	    #iq{from = To, to = From, type = Type, id = ID} = Reply
 	      when Type == error; Type == result ->
 		ejabberd_router:route(Reply)

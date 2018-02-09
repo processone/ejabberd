@@ -1549,7 +1549,8 @@ send_stanza(FromString, ToString, Stanza) ->
 	#xmlel{} = El = fxml_stream:parse_element(Stanza),
 	From = jid:decode(FromString),
 	To = jid:decode(ToString),
-	Pkt = xmpp:decode(El, ?NS_CLIENT, [ignore_els]),
+	CodecOpts = ejabberd_config:codec_options(From#jid.lserver),
+	Pkt = xmpp:decode(El, ?NS_CLIENT, CodecOpts),
 	ejabberd_router:route(xmpp:set_from_to(Pkt, From, To))
     catch _:{xmpp_codec, Why} ->
 	    io:format("incorrect stanza: ~s~n", [xmpp:format_error(Why)]),
