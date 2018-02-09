@@ -438,11 +438,15 @@ transition_to_pending(State) ->
     State.
 
 -spec check_h_attribute(state(), non_neg_integer()) -> state().
-check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut, jid := JID} = State, H)
+check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut, jid := JID,
+		    lang := Lang} = State, H)
   when H > NumStanzasOut ->
-    ?DEBUG("~s acknowledged ~B stanzas, but only ~B were sent",
-	   [jid:encode(JID), H, NumStanzasOut]),
-    mgmt_queue_drop(State#{mgmt_stanzas_out => H}, NumStanzasOut);
+    ?WARNING_MSG("~s acknowledged ~B stanzas, but only ~B were sent",
+		 [jid:encode(JID), H, NumStanzasOut]),
+    State1 = State#{mgmt_resend => false},
+    Err = xmpp:serr_undefined_condition(
+	    <<"Client acknowledged more stanzas than sent by server">>, Lang),
+    send(State1, Err);
 check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut, jid := JID} = State, H) ->
     ?DEBUG("~s acknowledged ~B of ~B stanzas",
 	   [jid:encode(JID), H, NumStanzasOut]),
