@@ -66,6 +66,9 @@
     {ok, non_neg_integer() | [binary()]} | error.
 -callback caps_write(binary(), {binary(), binary()},
 		     non_neg_integer() | [binary()]) -> any().
+-callback use_cache(binary()) -> boolean().
+
+-optional_callbacks([use_cache/1]).
 
 start(Host, Opts) ->
     gen_mod:start_child(?MODULE, Host, Opts).
@@ -78,17 +81,23 @@ get_features(_Host, nothing) -> [];
 get_features(Host, #caps{node = Node, version = Version,
 		   exts = Exts}) ->
     SubNodes = [Version | Exts],
-    lists:foldl(fun (SubNode, Acc) ->
-			NodePair = {Node, SubNode},
-			case ets_cache:lookup(caps_features_cache, NodePair,
-					      caps_read_fun(Host, NodePair))
-			    of
-			  {ok, Features} when is_list(Features) ->
-			      Features ++ Acc;
-			  _ -> Acc
-			end
-		end,
-		[], SubNodes).
+    Mod = gen_mod:db_mod(Host, ?MODULE),
+    lists:foldl(
+      fun(SubNode, Acc) ->
+	      NodePair = {Node, SubNode},
+	      Res = case use_cache(Mod, Host) of
+			true ->
+			    ets_cache:lookup(caps_features_cache, NodePair,
+					     caps_read_fun(Host, NodePair));
+			false ->
+			    Mod:caps_read(Host, NodePair)
+		    end,
+	      case Res of
+		  {ok, Features} when is_list(Features) ->
+		      Features ++ Acc;
+		  _ -> Acc
+	      end
+      end, [], SubNodes).
 
 -spec list_features(ejabberd_c2s:state()) -> [{ljid(), caps()}].
 list_features(C2SState) ->
@@ -250,28 +259,12 @@ reload(Host, NewOpts, OldOpts) ->
        true ->
 	    ok
     end,
-    case gen_mod:is_equal_opt(cache_size, NewOpts, OldOpts) of
-	{false, MaxSize, _} ->
-	    ets_cache:setopts(caps_features_cache, [{max_size, MaxSize}]),
-	    ets_cache:setopts(caps_requests_cache, [{max_size, MaxSize}]);
-	true ->
-	    ok
-    end,
-    case gen_mod:is_equal_opt(cache_life_time, NewOpts, OldOpts) of
-	{false, Time, _} ->
-	    LifeTime = case Time of
-			   infinity -> infinity;
-			   _ -> timer:seconds(Time)
-		       end,
-	    ets_cache:setopts(caps_features_cache, [{life_time, LifeTime}]);
-	true ->
-	    ok
-    end.
+    init_cache(NewMod, Host, NewOpts).
 
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
-    init_cache(Opts),
+    init_cache(Mod, Host, Opts),
     Mod:init(Host, Opts),
     ejabberd_hooks:add(c2s_presence_in, Host, ?MODULE,
 		       c2s_presence_in, 75),
@@ -332,8 +325,15 @@ feature_request(Host, From, To, Caps,
 		[SubNode | Tail] = SubNodes) ->
     Node = Caps#caps.node,
     NodePair = {Node, SubNode},
-    case ets_cache:lookup(caps_features_cache, NodePair,
-			  caps_read_fun(Host, NodePair)) of
+    Mod = gen_mod:db_mod(Host, ?MODULE),
+    Res = case use_cache(Mod, Host) of
+	      true ->
+		  ets_cache:lookup(caps_features_cache, NodePair,
+				   caps_read_fun(Host, NodePair));
+	      false ->
+		  Mod:caps_read(Host, NodePair)
+	  end,
+    case Res of
 	{ok, Fs} when is_list(Fs) ->
 	    feature_request(Host, From, To, Caps, Tail);
 	_ ->
@@ -368,7 +368,12 @@ feature_response(#iq{type = result, sub_els = [El]},
 		Mod = gen_mod:db_mod(LServer, ?MODULE),
 		case Mod:caps_write(LServer, NodePair, Features) of
 		    ok ->
-			ets_cache:delete(caps_features_cache, NodePair);
+			case use_cache(Mod, LServer) of
+			    true ->
+				ets_cache:delete(caps_features_cache, NodePair);
+			    false ->
+				ok
+			end;
 		    {error, _} ->
 			ok
 		end;
@@ -476,21 +481,24 @@ is_valid_node(Node) ->
             false
     end.
 
-init_cache(Opts) ->
+init_cache(Mod, Host, Opts) ->
     CacheOpts = cache_opts(Opts),
-    case use_cache(Opts) of
+    case use_cache(Mod, Host) of
 	true ->
 	    ets_cache:new(caps_features_cache, CacheOpts);
 	false ->
-	    ok
+	    ets_cache:delete(caps_features_cache)
     end,
     CacheSize = proplists:get_value(max_size, CacheOpts),
     ets_cache:new(caps_requests_cache,
 		  [{max_size, CacheSize},
 		   {life_time, timer:seconds(?BAD_HASH_LIFETIME)}]).
 
-use_cache(Opts) ->
-    gen_mod:get_opt(use_cache, Opts).
+use_cache(Mod, Host) ->
+    case erlang:function_exported(Mod, use_cache, 1) of
+	true -> Mod:use_cache(Host);
+	false -> gen_mod:get_module_opt(Host, ?MODULE, use_cache)
+    end.
 
 cache_opts(Opts) ->
     MaxSize = gen_mod:get_opt(cache_size, Opts),
