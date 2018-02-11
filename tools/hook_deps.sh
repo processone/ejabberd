@@ -34,7 +34,8 @@ main([Dir]) ->
 						{ejabberd_hooks, {add, N}}
 						  when N == 4; N == 5 ->
 						    analyze_run_fun(Form, Acc);
-						{gen_iq_handler, {add_iq_handler, 6}} ->
+						{gen_iq_handler, {add_iq_handler, N}}
+						  when N == 5; N == 6 ->
 						    analyze_iq_handler(Form, Acc);
 						_ ->
 						    Acc
@@ -136,7 +137,7 @@ analyze_run_fun(Form, State) ->
     end.
 
 analyze_iq_handler(Form, State) ->
-    [_Component, _Host, _NS, Module, Function, _IQDisc] =
+    [_Component, _Host, _NS, Module, Function|_] =
 	erl_syntax:application_arguments(Form),
     Mod = module_name(Module, State),
     Fun = atom_value(Function, State),

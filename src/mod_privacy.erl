@@ -70,7 +70,6 @@
 -optional_callbacks([use_cache/1, cache_nodes/1]).
 
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
     init_cache(Mod, Host, Opts),
@@ -87,7 +86,7 @@ start(Host, Opts) ->
     ejabberd_hooks:add(remove_user, Host, ?MODULE,
 		       remove_user, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-				  ?NS_PRIVACY, ?MODULE, process_iq, IQDisc).
+				  ?NS_PRIVACY, ?MODULE, process_iq).
 
 stop(Host) ->
     ejabberd_hooks:delete(disco_local_features, Host, ?MODULE,
@@ -113,14 +112,7 @@ reload(Host, NewOpts, OldOpts) ->
        true ->
 	    ok
     end,
-    init_cache(NewMod, Host, NewOpts),
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts) of
-	{false, IQDisc, _} ->
-	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PRIVACY,
-					  ?MODULE, process_iq, IQDisc);
-	true ->
-	    ok
-    end.
+    init_cache(NewMod, Host, NewOpts).
 
 -spec disco_features({error, stanza_error()} | {result, [binary()]} | empty,
 		     jid(), jid(), binary(), binary()) ->
@@ -837,7 +829,6 @@ depends(_Host, _Opts) ->
     [].
 
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
-mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(O) when O == cache_life_time; O == cache_size ->
     fun (I) when is_integer(I), I > 0 -> I;
         (infinity) -> infinity
@@ -846,8 +837,7 @@ mod_opt_type(O) when O == use_cache; O == cache_missed ->
     fun (B) when is_boolean(B) -> B end.
 
 mod_options(Host) ->
-    [{iqdisc, gen_iq_handler:iqdisc(Host)},
-     {db_type, ejabberd_config:default_db(Host, ?MODULE)},
+    [{db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {use_cache, ejabberd_config:use_cache(Host)},
      {cache_size, ejabberd_config:cache_size(Host)},
      {cache_missed, ejabberd_config:cache_missed(Host)},

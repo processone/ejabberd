@@ -42,13 +42,11 @@
 -include("logger.hrl").
 -include("xmpp.hrl").
 
-start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts),
+start(Host, _Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-				  ?NS_COMMANDS, ?MODULE, process_local_iq,
-				  IQDisc),
+				  ?NS_COMMANDS, ?MODULE, process_local_iq),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-				  ?NS_COMMANDS, ?MODULE, process_sm_iq, IQDisc),
+				  ?NS_COMMANDS, ?MODULE, process_sm_iq),
     ejabberd_hooks:add(disco_local_identity, Host, ?MODULE,
 		       get_local_identity, 99),
     ejabberd_hooks:add(disco_local_features, Host, ?MODULE,
@@ -88,16 +86,8 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host,
 				     ?NS_COMMANDS).
 
-reload(Host, NewOpts, OldOpts) ->
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts) of
-	{false, IQDisc, _} ->
-	    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_COMMANDS,
-					  ?MODULE, process_local_iq, IQDisc),
-	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_COMMANDS,
-					  ?MODULE, process_sm_iq, IQDisc);
-	true ->
-	    ok
-    end.
+reload(_Host, _NewOpts, _OldOpts) ->
+    ok.
 
 %-------------------------------------------------------------------------
 
@@ -280,10 +270,8 @@ ping_command(Acc, _From, _To, _Request) -> Acc.
 depends(_Host, _Opts) ->
     [].
 
-mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(report_commands_node) ->
     fun (B) when is_boolean(B) -> B end.
 
-mod_options(Host) ->
-    [{iqdisc, gen_iq_handler:iqdisc(Host)},
-     {report_commands_node, false}].
+mod_options(_Host) ->
+    [{report_commands_node, false}].

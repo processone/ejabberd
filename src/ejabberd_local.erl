@@ -34,7 +34,7 @@
 
 -export([route/1, process_iq/1,
 	 get_features/1,
-	 register_iq_handler/5,
+	 register_iq_handler/4,
 	 unregister_iq_handler/2,
 	 bounce_resource_packet/1,
 	 host_up/1, host_down/1]).
@@ -78,8 +78,8 @@ process_iq(#iq{to = To, type = T, lang = Lang, sub_els = [El]} = Packet)
     XMLNS = xmpp:get_ns(El),
     Host = To#jid.lserver,
     case ets:lookup(?IQTABLE, {Host, XMLNS}) of
-	[{_, Module, Function, Opts}] ->
-	    gen_iq_handler:handle(Host, Module, Function, Opts, Packet);
+	[{_, Module, Function}] ->
+	    gen_iq_handler:handle(Host, Module, Function, Packet);
 	[] ->
 	    Txt = <<"No module is handling this query">>,
 	    Err = xmpp:err_service_unavailable(Txt, Lang),
@@ -112,11 +112,10 @@ route_iq(IQ, Fun) ->
 route_iq(IQ, Fun, Timeout) ->
     ejabberd_router:route_iq(IQ, Fun, undefined, Timeout).
 
--spec register_iq_handler(binary(), binary(), module(), function(),
-			  gen_iq_handler:opts()) -> ok.
-register_iq_handler(Host, XMLNS, Module, Fun, Opts) ->
+-spec register_iq_handler(binary(), binary(), module(), function()) -> ok.
+register_iq_handler(Host, XMLNS, Module, Fun) ->
     gen_server:cast(?MODULE,
-		    {register_iq_handler, Host, XMLNS, Module, Fun, Opts}).
+		    {register_iq_handler, Host, XMLNS, Module, Fun}).
 
 -spec unregister_iq_handler(binary(), binary()) -> ok.
 unregister_iq_handler(Host, XMLNS) ->
@@ -160,19 +159,13 @@ init([]) ->
 handle_call(_Request, _From, State) ->
     Reply = ok, {reply, Reply, State}.
 
-handle_cast({register_iq_handler, Host, XMLNS, Module,
-	     Function, Opts},
+handle_cast({register_iq_handler, Host, XMLNS, Module, Function},
 	    State) ->
     ets:insert(?IQTABLE,
-	       {{Host, XMLNS}, Module, Function, Opts}),
+	       {{Host, XMLNS}, Module, Function}),
     {noreply, State};
 handle_cast({unregister_iq_handler, Host, XMLNS},
 	    State) ->
-    case ets:lookup(?IQTABLE, {Host, XMLNS}) of
-      [{_, Module, Function, Opts}] ->
-	  gen_iq_handler:stop_iq_handler(Module, Function, Opts);
-      _ -> ok
-    end,
     ets:delete(?IQTABLE, {Host, XMLNS}),
     {noreply, State};
 handle_cast(_Msg, State) -> {noreply, State}.

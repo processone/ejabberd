@@ -31,17 +31,16 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, reload/3, process_iq/1, mod_opt_type/1,
+-export([start/2, stop/1, reload/3, process_iq/1,
 	 mod_options/1, depends/2]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 
-start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts),
+start(Host, _Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_STATS,
-				  ?MODULE, process_iq, IQDisc).
+				  ?MODULE, process_iq).
 
 stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_STATS).
@@ -234,7 +233,5 @@ search_running_node(SNode, [Node | Nodes]) ->
       _ -> search_running_node(SNode, Nodes)
     end.
 
-mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1.
-
-mod_options(Host) ->
-    [{iqdisc, gen_iq_handler:iqdisc(Host)}].
+mod_options(_Host) ->
+    [].

@@ -75,11 +75,10 @@
 %%% API
 %%%===================================================================
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
     init_cache(Host, Opts),
-    register_iq_handlers(Host, IQDisc),
+    register_iq_handlers(Host),
     ejabberd_hooks:add(sm_receive_packet, Host, ?MODULE,
 		       sm_receive_packet, 50),
     ejabberd_hooks:add(user_receive_packet, Host, ?MODULE,
@@ -187,12 +186,6 @@ reload(Host, NewOpts, OldOpts) ->
 	    ok
     end,
     ets_cache:setopts(archive_prefs_cache, cache_opts(NewOpts)),
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts) of
-	{false, IQDisc, _} ->
-	    register_iq_handlers(Host, IQDisc);
-	true ->
-	    ok
-    end,
     case gen_mod:is_equal_opt(assume_mam_usage, NewOpts, OldOpts) of
 	{false, true, _} ->
 	    ejabberd_hooks:add(message_is_archived, Host, ?MODULE,
@@ -207,24 +200,24 @@ reload(Host, NewOpts, OldOpts) ->
 depends(_Host, _Opts) ->
     [].
 
--spec register_iq_handlers(binary(), gen_iq_handler:type()) -> ok.
-register_iq_handlers(Host, IQDisc) ->
+-spec register_iq_handlers(binary()) -> ok.
+register_iq_handlers(Host) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MAM_TMP,
-				  ?MODULE, process_iq_v0_2, IQDisc),
+				  ?MODULE, process_iq_v0_2),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MAM_TMP,
-				  ?MODULE, process_iq_v0_2, IQDisc),
+				  ?MODULE, process_iq_v0_2),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MAM_0,
-				  ?MODULE, process_iq_v0_3, IQDisc),
+				  ?MODULE, process_iq_v0_3),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MAM_0, ?MODULE,
-				  process_iq_v0_3, IQDisc),
+				  process_iq_v0_3),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MAM_1,
-				  ?MODULE, process_iq_v0_3, IQDisc),
+				  ?MODULE, process_iq_v0_3),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MAM_1,
-				  ?MODULE, process_iq_v0_3, IQDisc),
+				  ?MODULE, process_iq_v0_3),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MAM_2,
-				  ?MODULE, process_iq_v0_3, IQDisc),
+				  ?MODULE, process_iq_v0_3),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MAM_2,
-				  ?MODULE, process_iq_v0_3, IQDisc).
+				  ?MODULE, process_iq_v0_3).
 
 -spec unregister_iq_handlers(binary()) -> ok.
 unregister_iq_handlers(Host) ->
@@ -1076,7 +1069,6 @@ mod_opt_type(default) ->
 	(never) -> never;
 	(roster) -> roster
     end;
-mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(request_activates_archiving) ->
     fun (B) when is_boolean(B) -> B end.
 
@@ -1084,7 +1076,6 @@ mod_options(Host) ->
     [{assume_mam_usage, false},
      {default, never},
      {request_activates_archiving, false},
-     {iqdisc, gen_iq_handler:iqdisc(Host)},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {use_cache, ejabberd_config:use_cache(Host)},
      {cache_size, ejabberd_config:cache_size(Host)},

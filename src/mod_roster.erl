@@ -88,7 +88,6 @@
 -optional_callbacks([use_cache/2, cache_nodes/1]).
 
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
     init_cache(Mod, Host, Opts),
@@ -111,7 +110,7 @@ start(Host, Opts) ->
     ejabberd_hooks:add(webadmin_user, Host, ?MODULE,
 		       webadmin_user, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-				  ?NS_ROSTER, ?MODULE, process_iq, IQDisc).
+				  ?NS_ROSTER, ?MODULE, process_iq).
 
 stop(Host) ->
     ejabberd_hooks:delete(roster_get, Host, ?MODULE,
@@ -141,13 +140,6 @@ reload(Host, NewOpts, OldOpts) ->
     if NewMod /= OldMod ->
 	    NewMod:init(Host, NewOpts);
        true ->
-	    ok
-    end,
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts) of
-	{false, IQDisc, _} ->
-	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_ROSTER,
-					  ?MODULE, process_iq, IQDisc);
-	true ->
 	    ok
     end.
 
@@ -1205,7 +1197,6 @@ import(LServer, {sql, _}, DBType, <<"roster_version">>, [LUser, Ver]) ->
 mod_opt_type(access) ->
     fun acl:access_rules_validator/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
-mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(store_current_id) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(versioning) ->
@@ -1221,7 +1212,6 @@ mod_options(Host) ->
     [{access, all},
      {store_current_id, false},
      {versioning, false},
-     {iqdisc, gen_iq_handler:iqdisc(Host)},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {use_cache, ejabberd_config:use_cache(Host)},
      {cache_size, ejabberd_config:cache_size(Host)},

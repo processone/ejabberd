@@ -137,14 +137,11 @@ mod_opt_type(max_connections) ->
     end;
 mod_opt_type(ram_db_type) ->
     fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
-mod_opt_type(iqdisc) ->
-    fun gen_iq_handler:check_type/1;
 mod_opt_type(Opt) ->
     mod_proxy65_stream:listen_opt_type(Opt).
 
 mod_options(Host) ->
     [{ram_db_type, ejabberd_config:default_ram_db(Host, ?MODULE)},
-     {iqdisc, gen_iq_handler:iqdisc(Host)},
      {access, all},
      {host, <<"proxy.@HOST@">>},
      {hosts, []},

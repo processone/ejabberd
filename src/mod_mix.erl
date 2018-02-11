@@ -125,7 +125,6 @@ process_iq(#iq{lang = Lang} = IQ) ->
 init([ServerHost, Opts]) ->
     process_flag(trap_exit, true),
     Hosts = gen_mod:get_opt_hosts(ServerHost, Opts),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     lists:foreach(
       fun(Host) ->
 	      ConfigTab = gen_mod:get_module_proc(Host, config),
@@ -140,20 +139,20 @@ init([ServerHost, Opts]) ->
 	      ejabberd_hooks:add(disco_info, Host, ?MODULE, disco_info, 100),
 	      gen_iq_handler:add_iq_handler(ejabberd_local, Host,
 					    ?NS_DISCO_ITEMS, mod_disco,
-					    process_local_iq_items, IQDisc),
+					    process_local_iq_items),
 	      gen_iq_handler:add_iq_handler(ejabberd_local, Host,
 					    ?NS_DISCO_INFO, mod_disco,
-					    process_local_iq_info, IQDisc),
+					    process_local_iq_info),
 	      gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
 					    ?NS_DISCO_ITEMS, mod_disco,
-					    process_local_iq_items, IQDisc),
+					    process_local_iq_items),
 	      gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
 					    ?NS_DISCO_INFO, mod_disco,
-					    process_local_iq_info, IQDisc),
+					    process_local_iq_info),
 	      gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-					    ?NS_PUBSUB, mod_pubsub, iq_sm, IQDisc),
+					    ?NS_PUBSUB, mod_pubsub, iq_sm),
 	      gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-					    ?NS_MIX_0, ?MODULE, process_iq, IQDisc),
+					    ?NS_MIX_0, ?MODULE, process_iq),
 	      ejabberd_router:register_route(Host, ServerHost)
       end, Hosts),
     {ok, #state{server_host = ServerHost, hosts = Hosts}}.
@@ -316,12 +315,10 @@ is_not_subscribed({error, StanzaError}) ->
 depends(_Host, _Opts) ->
     [{mod_pubsub, hard}].
 
-mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(host) -> fun iolist_to_binary/1;
 mod_opt_type(hosts) ->
     fun (L) -> lists:map(fun iolist_to_binary/1, L) end.
 
-mod_options(Host) ->
-    [{iqdisc, gen_iq_handler:iqdisc(Host)},
-     {host, <<"mix.@HOST@">>},
+mod_options(_Host) ->
+    [{host, <<"mix.@HOST@">>},
      {hosts, []}].

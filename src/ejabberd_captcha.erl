@@ -283,9 +283,8 @@ process(_Handlers, _Request) ->
     ejabberd_web:error(not_found).
 
 host_up(Host) ->
-    IQDisc = gen_iq_handler:iqdisc(Host),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_CAPTCHA,
-				  ?MODULE, process_iq, IQDisc).
+				  ?MODULE, process_iq).
 
 host_down(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_CAPTCHA).

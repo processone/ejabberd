@@ -39,24 +39,16 @@
 
 -include("xmpp.hrl").
 
-start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts),
+start(Host, _Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-				  ?NS_VERSION, ?MODULE, process_local_iq,
-				  IQDisc).
+				  ?NS_VERSION, ?MODULE, process_local_iq).
 
 stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host,
 				     ?NS_VERSION).
 
-reload(Host, NewOpts, OldOpts) ->
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts) of
-	{false, IQDisc, _} ->
-	    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VERSION,
-					  ?MODULE, process_local_iq, IQDisc);
-	true ->
-	    ok
-    end.
+reload(_Host, _NewOpts, _OldOpts) ->
+    ok.
 
 process_local_iq(#iq{type = set, lang = Lang} = IQ) ->
     Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
@@ -85,10 +77,8 @@ get_os() ->
 depends(_Host, _Opts) ->
     [].
 
-mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(show_os) ->
     fun (B) when is_boolean(B) -> B end.
 
-mod_options(Host) ->
-    [{iqdisc, gen_iq_handler:iqdisc(Host)},
-     {show_os, true}].
+mod_options(_Host) ->
+    [{show_os, true}].

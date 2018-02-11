@@ -88,11 +88,10 @@ init([Host, Opts]) ->
     init_cache(Mod, Host, Opts),
     ejabberd_hooks:add(remove_user, Host, ?MODULE,
 		       remove_user, 50),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-				  ?NS_VCARD, ?MODULE, process_local_iq, IQDisc),
+				  ?NS_VCARD, ?MODULE, process_local_iq),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-				  ?NS_VCARD, ?MODULE, process_sm_iq, IQDisc),
+				  ?NS_VCARD, ?MODULE, process_sm_iq),
     ejabberd_hooks:add(disco_sm_features, Host, ?MODULE,
 		       get_sm_features, 50),
     ejabberd_hooks:add(vcard_iq_set, Host, ?MODULE, vcard_iq_set, 50),
@@ -108,15 +107,15 @@ init([Host, Opts]) ->
 		      ejabberd_hooks:add(
 			disco_local_identity, MyHost, ?MODULE, disco_identity, 100),
 		      gen_iq_handler:add_iq_handler(
-			ejabberd_local, MyHost, ?NS_SEARCH, ?MODULE, process_search, IQDisc),
+			ejabberd_local, MyHost, ?NS_SEARCH, ?MODULE, process_search),
 		      gen_iq_handler:add_iq_handler(
-			ejabberd_local, MyHost, ?NS_VCARD, ?MODULE, process_vcard, IQDisc),
+			ejabberd_local, MyHost, ?NS_VCARD, ?MODULE, process_vcard),
 		      gen_iq_handler:add_iq_handler(
 			ejabberd_local, MyHost, ?NS_DISCO_ITEMS, mod_disco,
-			process_local_iq_items, IQDisc),
+			process_local_iq_items),
 		      gen_iq_handler:add_iq_handler(
 			ejabberd_local, MyHost, ?NS_DISCO_INFO, mod_disco,
-			process_local_iq_info, IQDisc),
+			process_local_iq_info),
 		      case Mod:is_search_supported(Host) of
 			  false ->
 			      ?WARNING_MSG("vcard search functionality is "
@@ -538,7 +537,6 @@ mod_opt_type(name) -> fun iolist_to_binary/1;
 mod_opt_type(host) -> fun iolist_to_binary/1;
 mod_opt_type(hosts) ->
     fun (L) -> lists:map(fun iolist_to_binary/1, L) end;
-mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(matches) ->
     fun (infinity) -> infinity;
 	(I) when is_integer(I), I > 0 -> I
@@ -559,7 +557,6 @@ mod_options(Host) ->
      {matches, 30},
      {search, false},
      {name, ?T("vCard User Search")},
-     {iqdisc, gen_iq_handler:iqdisc(Host)},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {use_cache, ejabberd_config:use_cache(Host)},
      {cache_size, ejabberd_config:cache_size(Host)},

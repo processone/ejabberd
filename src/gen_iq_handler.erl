@@ -27,110 +27,38 @@
 
 -author('alexey@process-one.net').
 
--ifndef(GEN_SERVER).
--define(GEN_SERVER, gen_server).
--endif.
--behaviour(?GEN_SERVER).
 -behaviour(ejabberd_config).
 
 %% API
--export([start_link/3, add_iq_handler/6,
-	 remove_iq_handler/3, stop_iq_handler/3, handle/5,
+-export([add_iq_handler/5, remove_iq_handler/3, handle/4,
 	 process_iq/4, check_type/1, transform_module_options/1,
-	 opt_type/1, iqdisc/1]).
-
-%% gen_server callbacks
--export([init/1, handle_call/3, handle_cast/2,
-	 handle_info/2, terminate/2, code_change/3]).
+	 opt_type/1]).
+%% Deprecated functions
+-export([add_iq_handler/6, handle/5, iqdisc/1]).
+-deprecated([{add_iq_handler, 6}, {handle, 5}, {iqdisc, 1}]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 
--record(state, {host, module, function}).
-
 -type component() :: ejabberd_sm | ejabberd_local.
--type type() :: no_queue | one_queue | pos_integer() | parallel.
--type opts() :: no_queue | {one_queue, pid()} | {queues, [pid()]} | parallel.
--export_type([opts/0, type/0]).
 
 %%====================================================================
 %% API
 %%====================================================================
-%%--------------------------------------------------------------------
-%% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
-%% Description: Starts the server
-%%--------------------------------------------------------------------
-start_link(Host, Module, Function) ->
-    ?GEN_SERVER:start_link(?MODULE, [Host, Module, Function],
-			  []).
-
--spec add_iq_handler(module(), binary(), binary(), module(), atom(), type()) -> ok.
-
-add_iq_handler(Component, Host, NS, Module, Function,
-	       Type) ->
-    case Type of
-	no_queue ->
-	    Component:register_iq_handler(Host, NS, Module,
-		Function, no_queue);
-	one_queue ->
-	    {ok, Pid} = supervisor:start_child(ejabberd_iq_sup,
-		    [Host, Module, Function]),
-	    Component:register_iq_handler(Host, NS, Module,
-		Function, {one_queue, Pid});
-	N when is_integer(N) ->
-	    Pids = lists:map(fun (_) ->
-			    {ok, Pid} =
-				supervisor:start_child(ejabberd_iq_sup,
-				    [Host, Module,
-					Function]),
-			    Pid
-		    end,
-		    lists:seq(1, N)),
-	    Component:register_iq_handler(Host, NS, Module,
-		Function, {queues, Pids});
-	parallel ->
-	    Component:register_iq_handler(Host, NS, Module,
-		Function, parallel)
-    end.
+-spec add_iq_handler(module(), binary(), binary(), module(), atom()) -> ok.
+add_iq_handler(Component, Host, NS, Module, Function) ->
+    Component:register_iq_handler(Host, NS, Module, Function).
 
 -spec remove_iq_handler(component(), binary(), binary()) -> ok.
-
 remove_iq_handler(Component, Host, NS) ->
     Component:unregister_iq_handler(Host, NS).
 
--spec stop_iq_handler(atom(), atom(), [pid()]) -> any().
-
-stop_iq_handler(_Module, _Function, Opts) ->
-    case Opts of
-      {one_queue, Pid} -> ?GEN_SERVER:call(Pid, stop);
-      {queues, Pids} ->
-	  lists:foreach(fun (Pid) ->
-				catch ?GEN_SERVER:call(Pid, stop)
-			end,
-			Pids);
-      _ -> ok
-    end.
-
--spec handle(binary(), atom(), atom(), opts(), iq()) -> any().
-
-handle(Host, Module, Function, Opts, IQ) ->
-    case Opts of
-	no_queue ->
-	    process_iq(Host, Module, Function, IQ);
-	{one_queue, Pid} ->
-	    Pid ! {process_iq, IQ};
-	{queues, Pids} ->
-	    Pid = lists:nth(erlang:phash(p1_time_compat:unique_integer(),
-                                         length(Pids)), Pids),
-	    Pid ! {process_iq, IQ};
-	parallel ->
-	    spawn(?MODULE, process_iq, [Host, Module, Function, IQ]);
-	_ -> todo
-    end.
+-spec handle(binary(), atom(), atom(), iq()) -> any().
+handle(Host, Module, Function, IQ) ->
+    process_iq(Host, Module, Function, IQ).
 
 -spec process_iq(binary(), atom(), atom(), iq()) -> any().
-
 process_iq(_Host, Module, Function, IQ) ->
     try
 	ResIQ = case erlang:function_exported(Module, Function, 1) of
@@ -178,15 +106,14 @@ process_iq(Module, Function, From, To, IQ) ->
 	      To, From)
     end.
 
--spec check_type(type()) -> type().
+-spec check_type(any()) -> no_queue.
+check_type(_Type) ->
+    ?WARNING_MSG("Option 'iqdisc' is deprecated and has no effect anymore", []),
+    no_queue.
 
-check_type(no_queue) -> no_queue;
-check_type(one_queue) -> one_queue;
-check_type(N) when is_integer(N), N>0 -> N;
-check_type(parallel) -> parallel.
-
-iqdisc(Host) ->
-    ejabberd_config:get_option({iqdisc, Host}, no_queue).
+-spec iqdisc(binary() | global) -> no_queue.
+iqdisc(_Host) ->
+    no_queue.
 
 -spec transform_module_options([{atom(), any()}]) -> [{atom(), any()}].
 
@@ -198,37 +125,18 @@ transform_module_options(Opts) ->
               Opt
       end, Opts).
 
--spec opt_type(iqdisc) -> fun((type()) -> type());
+-spec opt_type(iqdisc) -> fun((any()) -> no_queue);
 	      (atom()) -> [atom()].
 opt_type(iqdisc) -> fun check_type/1;
 opt_type(_) -> [iqdisc].
 
 %%====================================================================
-%% gen_server callbacks
+%% Deprecated API
 %%====================================================================
+-spec add_iq_handler(module(), binary(), binary(), module(), atom(), any()) -> ok.
+add_iq_handler(Component, Host, NS, Module, Function, _Type) ->
+    add_iq_handler(Component, Host, NS, Module, Function).
 
-init([Host, Module, Function]) ->
-    {ok,
-     #state{host = Host, module = Module,
-	    function = Function}}.
-
-handle_call(stop, _From, State) ->
-    Reply = ok, {stop, normal, Reply, State}.
-
-handle_cast(_Msg, State) -> {noreply, State}.
-
-handle_info({process_iq, IQ},
-	    #state{host = Host, module = Module,
-		   function = Function} =
-		State) ->
-    process_iq(Host, Module, Function, IQ),
-    {noreply, State};
-handle_info(_Info, State) -> {noreply, State}.
-
-terminate(_Reason, _State) -> ok.
-
-code_change(_OldVsn, State, _Extra) -> {ok, State}.
-
-%%--------------------------------------------------------------------
-%%% Internal functions
-%%--------------------------------------------------------------------
+-spec handle(binary(), atom(), atom(), any(), iq()) -> any().
+handle(Host, Module, Function, _Opts, IQ) ->
+    handle(Host, Module, Function, IQ).

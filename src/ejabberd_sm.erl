@@ -58,7 +58,7 @@
 	 get_vh_session_list/1,
 	 get_vh_session_number/1,
 	 get_vh_by_backend/1,
-	 register_iq_handler/5,
+	 register_iq_handler/4,
 	 unregister_iq_handler/2,
 	 force_update_presence/1,
 	 connected_users/0,
@@ -397,11 +397,11 @@ get_vh_session_number(Server) ->
     Mod = get_sm_backend(LServer),
     length(online(get_sessions(Mod, LServer))).
 
--spec register_iq_handler(binary(), binary(), atom(), atom(), list()) -> ok.
+-spec register_iq_handler(binary(), binary(), atom(), atom()) -> ok.
 
-register_iq_handler(Host, XMLNS, Module, Fun, Opts) ->
+register_iq_handler(Host, XMLNS, Module, Fun) ->
     ?GEN_SERVER:cast(?MODULE,
-		    {register_iq_handler, Host, XMLNS, Module, Fun, Opts}).
+		    {register_iq_handler, Host, XMLNS, Module, Fun}).
 
 -spec unregister_iq_handler(binary(), binary()) -> ok.
 
@@ -448,19 +448,13 @@ init([]) ->
 handle_call(_Request, _From, State) ->
     Reply = ok, {reply, Reply, State}.
 
-handle_cast({register_iq_handler, Host, XMLNS, Module,
-	     Function, Opts},
+handle_cast({register_iq_handler, Host, XMLNS, Module, Function},
 	    State) ->
     ets:insert(sm_iqtable,
-	       {{Host, XMLNS}, Module, Function, Opts}),
+	       {{Host, XMLNS}, Module, Function}),
     {noreply, State};
 handle_cast({unregister_iq_handler, Host, XMLNS},
 	    State) ->
-    case ets:lookup(sm_iqtable, {Host, XMLNS}) of
-      [{_, Module, Function, Opts}] ->
-	  gen_iq_handler:stop_iq_handler(Module, Function, Opts);
-      _ -> ok
-    end,
     ets:delete(sm_iqtable, {Host, XMLNS}),
     {noreply, State};
 handle_cast(_Msg, State) -> {noreply, State}.
@@ -862,8 +856,8 @@ process_iq(#iq{to = To, type = T, lang = Lang, sub_els = [El]} = Packet)
     XMLNS = xmpp:get_ns(El),
     Host = To#jid.lserver,
     case ets:lookup(sm_iqtable, {Host, XMLNS}) of
-	[{_, Module, Function, Opts}] ->
-	    gen_iq_handler:handle(Host, Module, Function, Opts, Packet);
+	[{_, Module, Function}] ->
+	    gen_iq_handler:handle(Host, Module, Function, Packet);
 	[] ->
 	    Txt = <<"No module is handling this query">>,
 	    Err = xmpp:err_service_unavailable(Txt, Lang),

@@ -92,11 +92,10 @@
 %%--------------------------------------------------------------------
 -spec start(binary(), gen_mod:opts()) -> ok.
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
     init_cache(Mod, Host, Opts),
-    register_iq_handlers(Host, IQDisc),
+    register_iq_handlers(Host),
     register_hooks(Host),
     ejabberd_commands:register_commands(get_commands_spec()).
 
@@ -119,12 +118,6 @@ reload(Host, NewOpts, OldOpts) ->
 	    NewMod:init(Host, NewOpts);
        true ->
 	    ok
-    end,
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts) of
-	{false, IQDisc, _} ->
-	    register_iq_handlers(Host, IQDisc);
-	true ->
-	    ok
     end.
 
 -spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
@@ -139,13 +132,10 @@ mod_opt_type(O) when O == cache_life_time; O == cache_size ->
        (infinity) -> infinity
     end;
 mod_opt_type(O) when O == use_cache; O == cache_missed ->
-    fun (B) when is_boolean(B) -> B end;
-mod_opt_type(iqdisc) ->
-    fun gen_iq_handler:check_type/1.
+    fun (B) when is_boolean(B) -> B end.
 
 mod_options(Host) ->
-    [{iqdisc, gen_iq_handler:iqdisc(Host)},
-     {db_type, ejabberd_config:default_db(Host, ?MODULE)},
+    [{db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {use_cache, ejabberd_config:use_cache(Host)},
      {cache_size, ejabberd_config:cache_size(Host)},
      {cache_missed, ejabberd_config:cache_missed(Host)},
@@ -249,10 +239,10 @@ disco_sm_features(Acc, _From, _To, _Node, _Lang) ->
 %%--------------------------------------------------------------------
 %% IQ handlers.
 %%--------------------------------------------------------------------
--spec register_iq_handlers(binary(), gen_iq_handler:type()) -> ok.
-register_iq_handlers(Host, IQDisc) ->
+-spec register_iq_handlers(binary()) -> ok.
+register_iq_handlers(Host) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PUSH_0,
-				  ?MODULE, process_iq, IQDisc).
+				  ?MODULE, process_iq).
 
 -spec unregister_iq_handlers(binary()) -> ok.
 unregister_iq_handlers(Host) ->
