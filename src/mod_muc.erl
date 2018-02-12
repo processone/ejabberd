@@ -107,8 +107,7 @@
 -callback unregister_online_user(binary(), ljid(), binary(), binary()) -> any().
 -callback count_online_rooms_by_user(binary(), binary(), binary()) -> non_neg_integer().
 -callback get_online_rooms_by_user(binary(), binary(), binary()) -> [{binary(), binary()}].
--callback get_subscribed_rooms(binary(), binary(), jid()) ->
-    {ok, [{ljid(), binary(), [binary()]}]} | {error, any()}.
+-callback get_subscribed_rooms(binary(), binary(), jid()) -> [ljid()] | [].
 
 %%====================================================================
 %% API
@@ -727,7 +726,7 @@ iq_get_register_info(ServerHost, Host, From, Lang) ->
 	       instructions = [Inst], fields = Fields},
     #register{nick = Nick,
 	      registered = Registered,
-	      instructions = 
+	      instructions =
 		  translate:translate(
 		    Lang, <<"You need a client that supports x:data "
 			    "to register the nickname">>),
