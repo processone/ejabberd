@@ -288,7 +288,7 @@ normal_state({route, <<"">>,
 			       process_iq_admin(From, IQ, StateData);
 			   ?NS_MUC_OWNER ->
 			       process_iq_owner(From, IQ, StateData);
-			   ?NS_DISCO_INFO when SubEl#disco_info.node == <<>> ->
+			   ?NS_DISCO_INFO ->
 			       process_iq_disco_info(From, IQ, StateData);
 			   ?NS_DISCO_ITEMS ->
 			       process_iq_disco_items(From, IQ, StateData);
@@ -2066,11 +2066,29 @@ presence_broadcast_allowed(JID, StateData) ->
 -spec send_initial_presences_and_messages(
 	jid(), binary(), presence(), state(), state()) -> ok.
 send_initial_presences_and_messages(From, Nick, Presence, NewState, OldState) ->
+    send_self_presence(From, NewState),
     send_existing_presences(From, NewState),
     send_initial_presence(From, NewState, OldState),
     History = get_history(Nick, Presence, NewState),
     send_history(From, History, NewState),
     send_subject(From, OldState).
+
+-spec send_self_presence(jid(), state()) -> ok.
+send_self_presence(JID, State) ->
+    AvatarHash = (State#state.config)#config.vcard_xupdate,
+    DiscoInfo = make_disco_info(JID, State),
+    DiscoHash = mod_caps:compute_disco_hash(DiscoInfo, sha),
+    Els1 = [#caps{hash = <<"sha-1">>,
+		  node = ?EJABBERD_URI,
+		  version = DiscoHash}],
+    Els2 = if is_binary(AvatarHash) ->
+		   [#vcard_xupdate{hash = AvatarHash}|Els1];
+	      true ->
+		   Els1
+	   end,
+    ejabberd_router:route(#presence{from = State#state.jid, to = JID,
+				    id = randoms:get_string(),
+				    sub_els = Els2}).
 
 -spec send_initial_presence(jid(), state(), state()) -> ok.
 send_initial_presence(NJID, StateData, OldStateData) ->
@@ -3342,12 +3360,15 @@ send_config_change_info(New, #state{config = Old} = StateData) ->
 	      end
 		++
 		case Old#config{anonymous = New#config.anonymous,
-				vcard = New#config.vcard,
 				logging = New#config.logging} of
 		  New -> [];
 		  _ -> [104]
 		end,
     if Codes /= [] ->
+	    lists:foreach(
+	      fun({_LJID, #user{jid = JID}}) ->
+		      send_self_presence(JID, StateData#state{config = New})
+	      end, ?DICT:to_list(StateData#state.users)),
 	    Message = #message{type = groupchat,
 			       id = randoms:get_string(),
 			       sub_els = [#muc_user{status_codes = Codes}]},
@@ -3375,7 +3396,8 @@ remove_nonmembers(StateData) ->
 		StateData, (?DICT):to_list(get_users_and_subscribers(StateData))).
 
 -spec set_opts([{atom(), any()}], state()) -> state().
-set_opts([], StateData) -> StateData;
+set_opts([], StateData) ->
+    set_vcard_xupdate(StateData);
 set_opts([{Opt, Val} | Opts], StateData) ->
     NSD = case Opt of
 	    title ->
@@ -3490,6 +3512,10 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 		StateData#state{config =
 				    (StateData#state.config)#config{vcard =
 									Val}};
+	    vcard_xupdate ->
+		StateData#state{config =
+				    (StateData#state.config)#config{vcard_xupdate =
+									Val}};
 	    pubsub ->
 		StateData#state{config =
 				    (StateData#state.config)#config{pubsub = Val}};
@@ -3523,6 +3549,20 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 	    _ -> StateData
 	  end,
     set_opts(Opts, NSD).
+
+set_vcard_xupdate(#state{config =
+			     #config{vcard = VCardRaw,
+				     vcard_xupdate = undefined} = Config} = State)
+  when VCardRaw /= <<"">> ->
+    case fxml_stream:parse_element(VCardRaw) of
+	{error, _} ->
+	    State;
+	El ->
+	    Hash = mod_vcard_xupdate:compute_hash(El),
+	    State#state{config = Config#config{vcard_xupdate = Hash}}
+    end;
+set_vcard_xupdate(State) ->
+    State.
 
 -define(MAKE_CONFIG_OPT(Opt),
 	{get_config_opt_name(Opt), element(Opt, Config)}).
@@ -3559,6 +3599,7 @@ make_opts(StateData) ->
      ?MAKE_CONFIG_OPT(#config.presence_broadcast),
      ?MAKE_CONFIG_OPT(#config.voice_request_min_interval),
      ?MAKE_CONFIG_OPT(#config.vcard),
+     ?MAKE_CONFIG_OPT(#config.vcard_xupdate),
      ?MAKE_CONFIG_OPT(#config.pubsub),
      {captcha_whitelist,
       (?SETS):to_list((StateData#state.config)#config.captcha_whitelist)},
@@ -3602,12 +3643,8 @@ destroy_room(DEl, StateData) ->
 	  false -> Fiffalse
 	end).
 
--spec process_iq_disco_info(jid(), iq(), state()) ->
-				   {result, disco_info()} | {error, stanza_error()}.
-process_iq_disco_info(_From, #iq{type = set, lang = Lang}, _StateData) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
-    {error, xmpp:err_not_allowed(Txt, Lang)};
-process_iq_disco_info(_From, #iq{type = get, lang = Lang}, StateData) ->
+-spec make_disco_info(jid(), state()) -> disco_info().
+make_disco_info(_From, StateData) ->
     Config = StateData#state.config,
     Feats = [?NS_VCARD, ?NS_MUC,
 	     ?CONFIG_OPT_TO_FEATURE((Config#config.public),
@@ -3633,11 +3670,35 @@ process_iq_disco_info(_From, #iq{type = get, lang = Lang}, StateData) ->
 	       _ ->
 		   []
 	   end,
-    {result, #disco_info{xdata = [iq_disco_info_extras(Lang, StateData)],
-			 identities = [#identity{category = <<"conference">>,
-						 type = <<"text">>,
-						 name = get_title(StateData)}],
-			 features = Feats}}.
+    #disco_info{identities = [#identity{category = <<"conference">>,
+					type = <<"text">>,
+					name = get_title(StateData)}],
+		features = Feats}.
+
+-spec process_iq_disco_info(jid(), iq(), state()) ->
+				   {result, disco_info()} | {error, stanza_error()}.
+process_iq_disco_info(_From, #iq{type = set, lang = Lang}, _StateData) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    {error, xmpp:err_not_allowed(Txt, Lang)};
+process_iq_disco_info(From, #iq{type = get, lang = Lang,
+				sub_els = [#disco_info{node = <<>>}]},
+		      StateData) ->
+    DiscoInfo = make_disco_info(From, StateData),
+    Extras = iq_disco_info_extras(Lang, StateData),
+    {result, DiscoInfo#disco_info{xdata = [Extras]}};
+process_iq_disco_info(From, #iq{type = get, lang = Lang,
+				sub_els = [#disco_info{node = Node}]},
+		      StateData) ->
+    try
+	true = mod_caps:is_valid_node(Node),
+	DiscoInfo = make_disco_info(From, StateData),
+	Hash = mod_caps:compute_disco_hash(DiscoInfo, sha),
+	Node = <<(?EJABBERD_URI)/binary, $#, Hash/binary>>,
+	{result, DiscoInfo#disco_info{node = Node}}
+    catch _:{badmatch, _} ->
+	    Txt = <<"Invalid node name">>,
+	    {error, xmpp:err_item_not_found(Txt, Lang)}
+    end.
 
 -spec iq_disco_info_extras(binary(), state()) -> xdata().
 iq_disco_info_extras(Lang, StateData) ->
@@ -3703,13 +3764,15 @@ process_iq_vcard(_From, #iq{type = get}, StateData) ->
 	{error, _} ->
 	    {error, xmpp:err_item_not_found()}
     end;
-process_iq_vcard(From, #iq{type = set, lang = Lang, sub_els = [SubEl]},
+process_iq_vcard(From, #iq{type = set, lang = Lang, sub_els = [Pkt]},
 		 StateData) ->
     case get_affiliation(From, StateData) of
 	owner ->
-	    VCardRaw = fxml:element_to_binary(xmpp:encode(SubEl)),
+	    SubEl = xmpp:encode(Pkt),
+	    VCardRaw = fxml:element_to_binary(SubEl),
+	    Hash = mod_vcard_xupdate:compute_hash(SubEl),
 	    Config = StateData#state.config,
-	    NewConfig = Config#config{vcard = VCardRaw},
+	    NewConfig = Config#config{vcard = VCardRaw, vcard_xupdate = Hash},
 	    change_config(NewConfig, StateData);
 	_ ->
 	    ErrText = <<"Owner privileges required">>,
@@ -4133,6 +4196,28 @@ send_wrapped(From, To, Packet, Node, State) ->
 		    ok
 	    end;
        true ->
+	    case Packet of
+		#presence{type = unavailable} ->
+		    case xmpp:get_subtag(Packet, #muc_user{}) of
+			#muc_user{destroy = Destroy,
+				  status_codes = Codes} ->
+			    case Destroy /= undefined orelse
+				 (lists:member(110,Codes) andalso
+				  not lists:member(303, Codes)) of
+				true ->
+				    ejabberd_router:route(
+				      #presence{from = State#state.jid, to = To,
+						id = randoms:get_string(),
+						type = unavailable});
+				false ->
+				    ok
+			    end;
+			_ ->
+			    false
+		    end;
+		_ ->
+		    ok
+	    end,
 	    ejabberd_router:route(xmpp:set_from_to(Packet, From, To))
     end.
 
