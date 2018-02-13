@@ -67,19 +67,19 @@
 -callback select(binary(), jid(), jid(), mam_query:result(),
 		 #rsm_set{} | undefined, chat | groupchat) ->
     {[{binary(), non_neg_integer(), xmlel()}], boolean(), non_neg_integer()}.
--callback use_cache(binary(), gen_mod:opts()) -> boolean().
+-callback use_cache(binary()) -> boolean().
+-callback cache_nodes(binary()) -> [node()].
 
--optional_callbacks([use_cache/2]).
+-optional_callbacks([use_cache/1, cache_nodes/1]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
-    init_cache(Host, Opts),
-    register_iq_handlers(Host, IQDisc),
+    init_cache(Mod, Host, Opts),
+    register_iq_handlers(Host),
     ejabberd_hooks:add(sm_receive_packet, Host, ?MODULE,
 		       sm_receive_packet, 50),
     ejabberd_hooks:add(user_receive_packet, Host, ?MODULE,
@@ -114,19 +114,24 @@ start(Host, Opts) ->
     ejabberd_commands:register_commands(get_commands_spec()),
     ok.
 
-use_cache(Host, Opts) ->
-    Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
+use_cache(Mod, Host) ->
     case erlang:function_exported(Mod, use_cache, 2) of
-	true -> Mod:use_cache(Host, Opts);
-	false -> gen_mod:get_opt(use_cache, Opts)
+	true -> Mod:use_cache(Host);
+	false -> gen_mod:get_module_opt(Host, ?MODULE, use_cache)
     end.
 
-init_cache(Host, Opts) ->
-    case use_cache(Host, Opts) of
+cache_nodes(Mod, Host) ->
+    case erlang:function_exported(Mod, cache_nodes, 1) of
+	true -> Mod:cache_nodes(Host);
+	false -> ejabberd_cluster:get_nodes()
+    end.
+
+init_cache(Mod, Host, Opts) ->
+    case use_cache(Mod, Host) of
 	true ->
 	    ets_cache:new(archive_prefs_cache, cache_opts(Opts));
 	false ->
-	    ok
+	    ets_cache:delete(archive_prefs_cache)
     end.
 
 cache_opts(Opts) ->
@@ -186,13 +191,7 @@ reload(Host, NewOpts, OldOpts) ->
        true ->
 	    ok
     end,
-    ets_cache:setopts(archive_prefs_cache, cache_opts(NewOpts)),
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts) of
-	{false, IQDisc, _} ->
-	    register_iq_handlers(Host, IQDisc);
-	true ->
-	    ok
-    end,
+    init_cache(NewMod, Host, NewOpts),
     case gen_mod:is_equal_opt(assume_mam_usage, NewOpts, OldOpts) of
 	{false, true, _} ->
 	    ejabberd_hooks:add(message_is_archived, Host, ?MODULE,
@@ -207,24 +206,24 @@ reload(Host, NewOpts, OldOpts) ->
 depends(_Host, _Opts) ->
     [].
 
--spec register_iq_handlers(binary(), gen_iq_handler:type()) -> ok.
-register_iq_handlers(Host, IQDisc) ->
+-spec register_iq_handlers(binary()) -> ok.
+register_iq_handlers(Host) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MAM_TMP,
-				  ?MODULE, process_iq_v0_2, IQDisc),
+				  ?MODULE, process_iq_v0_2),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MAM_TMP,
-				  ?MODULE, process_iq_v0_2, IQDisc),
+				  ?MODULE, process_iq_v0_2),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MAM_0,
-				  ?MODULE, process_iq_v0_3, IQDisc),
+				  ?MODULE, process_iq_v0_3),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MAM_0, ?MODULE,
-				  process_iq_v0_3, IQDisc),
+				  process_iq_v0_3),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MAM_1,
-				  ?MODULE, process_iq_v0_3, IQDisc),
+				  ?MODULE, process_iq_v0_3),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MAM_1,
-				  ?MODULE, process_iq_v0_3, IQDisc),
+				  ?MODULE, process_iq_v0_3),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MAM_2,
-				  ?MODULE, process_iq_v0_3, IQDisc),
+				  ?MODULE, process_iq_v0_3),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MAM_2,
-				  ?MODULE, process_iq_v0_3, IQDisc).
+				  ?MODULE, process_iq_v0_3).
 
 -spec unregister_iq_handlers(binary()) -> ok.
 unregister_iq_handlers(Host) ->
@@ -243,8 +242,13 @@ remove_user(User, Server) ->
     LServer = jid:nameprep(Server),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:remove_user(LUser, LServer),
-    ets_cache:delete(archive_prefs_cache, {LUser, LServer},
-		     ejabberd_cluster:get_nodes()).
+    case use_cache(Mod, LServer) of
+	true ->
+	    ets_cache:delete(archive_prefs_cache, {LUser, LServer},
+			     cache_nodes(Mod, LServer));
+	false ->
+	    ok
+    end.
 
 -spec remove_room(binary(), binary(), binary()) -> ok.
 remove_room(LServer, Name, Host) ->
@@ -799,16 +803,26 @@ write_prefs(LUser, LServer, Host, Default, Always, Never) ->
     Mod = gen_mod:db_mod(Host, ?MODULE),
     case Mod:write_prefs(LUser, LServer, Prefs, Host) of
 	ok ->
-	    ets_cache:delete(archive_prefs_cache, {LUser, LServer},
-			     ejabberd_cluster:get_nodes());
+	    case use_cache(Mod, LServer) of
+		true ->
+		    ets_cache:delete(archive_prefs_cache, {LUser, LServer},
+				     cache_nodes(Mod, LServer));
+		false ->
+		    ok
+	    end;
 	_Err ->
 	    {error, db_failure}
     end.
 
 get_prefs(LUser, LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Res = ets_cache:lookup(archive_prefs_cache, {LUser, LServer},
-			   fun() -> Mod:get_prefs(LUser, LServer) end),
+    Res = case use_cache(Mod, LServer) of
+	      true ->
+		  ets_cache:lookup(archive_prefs_cache, {LUser, LServer},
+				   fun() -> Mod:get_prefs(LUser, LServer) end);
+	      false ->
+		  Mod:get_prefs(LUser, LServer)
+	  end,
     case Res of
 	{ok, Prefs} ->
 	    Prefs;
@@ -838,10 +852,16 @@ maybe_activate_mam(LUser, LServer) ->
     case ActivateOpt of
 	true ->
 	    Mod = gen_mod:db_mod(LServer, ?MODULE),
-	    Res = ets_cache:lookup(archive_prefs_cache, {LUser, LServer},
-				   fun() ->
-					   Mod:get_prefs(LUser, LServer)
-				   end),
+	    Res = case use_cache(Mod, LServer) of
+		      true ->
+			  ets_cache:lookup(archive_prefs_cache,
+					   {LUser, LServer},
+					   fun() ->
+						   Mod:get_prefs(LUser, LServer)
+					   end);
+		      false ->
+			  Mod:get_prefs(LUser, LServer)
+		  end,
 	    case Res of
 		{ok, _Prefs} ->
 		    ok;
@@ -918,7 +938,8 @@ select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType) ->
 msg_to_el(#archive_msg{timestamp = TS, packet = El, nick = Nick,
 		       peer = Peer, id = ID},
 	  MsgType, JidRequestor, #jid{lserver = LServer} = JidArchive) ->
-    try xmpp:decode(El, ?NS_CLIENT, [ignore_els]) of
+    CodecOpts = ejabberd_config:codec_options(LServer),
+    try xmpp:decode(El, ?NS_CLIENT, CodecOpts) of
 	Pkt1 ->
 	    Pkt2 = set_stanza_id(Pkt1, JidArchive, ID),
 	    Pkt3 = maybe_update_from_to(
@@ -1075,7 +1096,6 @@ mod_opt_type(default) ->
 	(never) -> never;
 	(roster) -> roster
     end;
-mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(request_activates_archiving) ->
     fun (B) when is_boolean(B) -> B end.
 
@@ -1083,7 +1103,6 @@ mod_options(Host) ->
     [{assume_mam_usage, false},
      {default, never},
      {request_activates_archiving, false},
-     {iqdisc, gen_iq_handler:iqdisc(Host)},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {use_cache, ejabberd_config:use_cache(Host)},
      {cache_size, ejabberd_config:cache_size(Host)},

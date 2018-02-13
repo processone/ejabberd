@@ -61,18 +61,17 @@ reload(Host, NewOpts, OldOpts) ->
 
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     MyHosts = gen_mod:get_opt_hosts(Host, Opts),
     lists:foreach(
       fun(MyHost) ->
 	      gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_INFO,
-					    ?MODULE, process_disco_info, IQDisc),
+					    ?MODULE, process_disco_info),
 	      gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_ITEMS,
-					    ?MODULE, process_disco_items, IQDisc),
+					    ?MODULE, process_disco_items),
 	      gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_VCARD,
-					    ?MODULE, process_vcard, IQDisc),
+					    ?MODULE, process_vcard),
 	      gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_BYTESTREAMS,
-					    ?MODULE, process_bytestreams, IQDisc),
+					    ?MODULE, process_bytestreams),
 	      ejabberd_router:register_route(MyHost, Host)
       end, MyHosts),
     {ok, #state{myhosts = MyHosts}}.
@@ -95,20 +94,10 @@ handle_call(_Request, _From, State) ->
 handle_cast({reload, ServerHost, NewOpts, OldOpts}, State) ->
     NewHosts = gen_mod:get_opt_hosts(ServerHost, NewOpts),
     OldHosts = gen_mod:get_opt_hosts(ServerHost, OldOpts),
-    NewIQDisc = gen_mod:get_opt(iqdisc, NewOpts),
-    OldIQDisc = gen_mod:get_opt(iqdisc, OldOpts),
-    if (NewIQDisc /= OldIQDisc) ->
-	    lists:foreach(
-	      fun(NewHost) ->
-		      register_handlers(NewHost, NewIQDisc)
-	      end, NewHosts -- (NewHosts -- OldHosts));
-       true ->
-	    ok
-    end,
     lists:foreach(
       fun(NewHost) ->
 	      ejabberd_router:register_route(NewHost, ServerHost),
-	      register_handlers(NewHost, NewIQDisc)
+	      register_handlers(NewHost)
       end, NewHosts -- OldHosts),
     lists:foreach(
       fun(OldHost) ->
@@ -282,15 +271,15 @@ get_my_ip() ->
 max_connections(ServerHost) ->
     gen_mod:get_module_opt(ServerHost, mod_proxy65, max_connections).
 
-register_handlers(Host, IQDisc) ->
+register_handlers(Host) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO,
-				  ?MODULE, process_disco_info, IQDisc),
+				  ?MODULE, process_disco_info),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS,
-				  ?MODULE, process_disco_items, IQDisc),
+				  ?MODULE, process_disco_items),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VCARD,
-				  ?MODULE, process_vcard, IQDisc),
+				  ?MODULE, process_vcard),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_BYTESTREAMS,
-				  ?MODULE, process_bytestreams, IQDisc).
+				  ?MODULE, process_bytestreams).
 
 unregister_handlers(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),

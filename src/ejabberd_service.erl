@@ -116,22 +116,23 @@ handle_stream_start(_StreamStart,
 		      lang := Lang,
 		      host_opts := HostOpts} = State) ->
     case ejabberd_router:is_my_host(RemoteServer) of
-			   true ->
+	true ->
 	    Txt = <<"Unable to register route on existing local domain">>,
 	    xmpp_stream_in:send(State, xmpp:serr_conflict(Txt, Lang));
-			   false ->
+	false ->
 	    NewHostOpts = case dict:is_key(RemoteServer, HostOpts) of
 			      true ->
 				  HostOpts;
 			      false ->
 				  case dict:find(global, HostOpts) of
-				   {ok, GlobalPass} ->
+				      {ok, GlobalPass} ->
 					  dict:from_list([{RemoteServer, GlobalPass}]);
-				   error ->
+				      error ->
 					  HostOpts
-			       end
-		       end,
-	    State#{host_opts => NewHostOpts}
+				  end
+			  end,
+	    CodecOpts = ejabberd_config:codec_options(global),
+	    State#{host_opts => NewHostOpts, codec_options => CodecOpts}
     end.
 
 get_password_fun(#{remote_server := RemoteServer,

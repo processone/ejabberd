@@ -244,7 +244,6 @@ init([ServerHost, Opts]) ->
     Hosts = gen_mod:get_opt_hosts(ServerHost, Opts),
     Access = gen_mod:get_opt(access_createnode, Opts),
     PepOffline = gen_mod:get_opt(ignore_pep_from_offline, Opts),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     LastItemCache = gen_mod:get_opt(last_item_cache, Opts),
     MaxItemsNode = gen_mod:get_opt(max_items_node, Opts),
     MaxSubsNode = gen_mod:get_opt(max_subscriptions_node, Opts),
@@ -284,17 +283,17 @@ init([ServerHost, Opts]) ->
 			    end
 		    end, [Host, ServerHost]),
 		  gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO,
-						?MODULE, process_disco_info, IQDisc),
+						?MODULE, process_disco_info),
 		  gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS,
-						?MODULE, process_disco_items, IQDisc),
+						?MODULE, process_disco_items),
 		  gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_PUBSUB,
-						?MODULE, process_pubsub, IQDisc),
+						?MODULE, process_pubsub),
 		  gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_PUBSUB_OWNER,
-						?MODULE, process_pubsub_owner, IQDisc),
+						?MODULE, process_pubsub_owner),
 		  gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VCARD,
-						?MODULE, process_vcard, IQDisc),
+						?MODULE, process_vcard),
 		  gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_COMMANDS,
-						?MODULE, process_commands, IQDisc),
+						?MODULE, process_commands),
 		  Plugins
 	  end, Hosts),
     ejabberd_hooks:add(c2s_self_presence, ServerHost,
@@ -330,9 +329,9 @@ init([ServerHost, Opts]) ->
 	    ejabberd_hooks:add(disco_sm_items, ServerHost,
 		?MODULE, disco_sm_items, 75),
 	    gen_iq_handler:add_iq_handler(ejabberd_sm, ServerHost,
-		?NS_PUBSUB, ?MODULE, iq_sm, IQDisc),
+		?NS_PUBSUB, ?MODULE, iq_sm),
 	    gen_iq_handler:add_iq_handler(ejabberd_sm, ServerHost,
-		?NS_PUBSUB_OWNER, ?MODULE, iq_sm, IQDisc);
+		?NS_PUBSUB_OWNER, ?MODULE, iq_sm);
 	false ->
 	    ok
     end,
@@ -3856,7 +3855,6 @@ mod_opt_type(hosts) ->
     fun (L) -> lists:map(fun iolist_to_binary/1, L) end;
 mod_opt_type(ignore_pep_from_offline) ->
     fun (A) when is_boolean(A) -> A end;
-mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(last_item_cache) ->
     fun (A) when is_boolean(A) -> A end;
 mod_opt_type(max_items_node) ->
@@ -3881,7 +3879,6 @@ mod_options(Host) ->
      {hosts, []},
      {name, ?T("Publish-Subscribe")},
      {ignore_pep_from_offline, true},
-     {iqdisc, gen_iq_handler:iqdisc(Host)},
      {last_item_cache, false},
      {max_items_node, ?MAXITEMS},
      {nodetree, ?STDTREE},

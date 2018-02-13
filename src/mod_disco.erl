@@ -51,19 +51,16 @@
 -type items_acc() :: {error, stanza_error()} | {result, [disco_item()]} | empty.
 
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
 				  ?NS_DISCO_ITEMS, ?MODULE,
-				  process_local_iq_items, IQDisc),
+				  process_local_iq_items),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
 				  ?NS_DISCO_INFO, ?MODULE,
-				  process_local_iq_info, IQDisc),
+				  process_local_iq_info),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-				  ?NS_DISCO_ITEMS, ?MODULE, process_sm_iq_items,
-				  IQDisc),
+				  ?NS_DISCO_ITEMS, ?MODULE, process_sm_iq_items),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-				  ?NS_DISCO_INFO, ?MODULE, process_sm_iq_info,
-				  IQDisc),
+				  ?NS_DISCO_INFO, ?MODULE, process_sm_iq_info),
     catch ets:new(disco_extra_domains,
 		  [named_table, ordered_set, public,
 		   {heir, erlang:group_leader(), none}]),
@@ -126,23 +123,6 @@ reload(Host, NewOpts, OldOpts) ->
 	      fun(Domain) ->
 		      unregister_extra_domain(Host, Domain)
 	      end, OldDomains -- NewDomains);
-	true ->
-	    ok
-    end,
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts) of
-	{false, IQDisc, _} ->
-	    gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-					  ?NS_DISCO_ITEMS, ?MODULE,
-					  process_local_iq_items, IQDisc),
-	    gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-					  ?NS_DISCO_INFO, ?MODULE,
-					  process_local_iq_info, IQDisc),
-	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-					  ?NS_DISCO_ITEMS, ?MODULE, process_sm_iq_items,
-					  IQDisc),
-	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-					  ?NS_DISCO_INFO, ?MODULE, process_sm_iq_info,
-					  IQDisc);
 	true ->
 	    ok
     end.
@@ -458,7 +438,6 @@ depends(_Host, _Opts) ->
 
 mod_opt_type(extra_domains) ->
     fun (Hs) -> [iolist_to_binary(H) || H <- Hs] end;
-mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(name) -> fun iolist_to_binary/1;
 mod_opt_type(server_info) ->
     fun (L) ->
@@ -471,8 +450,7 @@ mod_opt_type(server_info) ->
 		      L)
     end.
 
-mod_options(Host) ->
+mod_options(_Host) ->
     [{extra_domains, []},
-     {iqdisc, gen_iq_handler:iqdisc(Host)},
      {server_info, []},
      {name, ?T("ejabberd")}].

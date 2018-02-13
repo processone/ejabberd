@@ -316,7 +316,10 @@ convert_avatar(LUser, LServer, Data, Rules) ->
        true ->
 	    ?DEBUG("Converting avatar of ~s@~s: ~s -> ~s",
 		   [LUser, LServer, Type, NewType]),
-	    case eimp:convert(Data, NewType) of
+	    RateLimit = gen_mod:get_module_opt(LServer, ?MODULE, rate_limit),
+	    Opts = [{limit_by, {LUser, LServer}},
+		    {rate_limit, RateLimit}],
+	    case eimp:convert(Data, NewType, Opts) of
 		{ok, NewData} ->
 		    {ok, encode_mime_type(NewType), NewData};
 		{error, Reason} = Err ->
@@ -434,8 +437,11 @@ mod_opt_type({convert, From}) ->
 			true -> To
 		    end
 	    end
-    end.
+    end;
+mod_opt_type(rate_limit) ->
+    fun(I) when is_integer(I), I > 0 -> I end.
 
 mod_options(_) ->
-    [{convert,
+    [{rate_limit, 10},
+     {convert,
       [{T, undefined} || T <- [default|eimp:supported_formats()]]}].

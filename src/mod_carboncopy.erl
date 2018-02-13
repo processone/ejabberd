@@ -62,7 +62,6 @@ is_carbon_copy(_) ->
     false.
 
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     ejabberd_hooks:add(disco_local_features, Host, ?MODULE, disco_features, 50),
     Mod = gen_mod:ram_db_mod(Host, ?MODULE),
     init_cache(Mod, Host, Opts),
@@ -72,7 +71,7 @@ start(Host, Opts) ->
     %% why priority 89: to define clearly that we must run BEFORE mod_logdb hook (90)
     ejabberd_hooks:add(user_send_packet,Host, ?MODULE, user_send_packet, 89),
     ejabberd_hooks:add(user_receive_packet,Host, ?MODULE, user_receive_packet, 89),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_CARBONS_2, ?MODULE, iq_handler, IQDisc).
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_CARBONS_2, ?MODULE, iq_handler).
 
 stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_CARBONS_2),
@@ -94,13 +93,6 @@ reload(Host, NewOpts, OldOpts) ->
 	true ->
 	    ets_cache:new(?CARBONCOPY_CACHE, cache_opts(NewOpts));
 	false ->
-	    ok
-    end,
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts) of
-	{false, IQDisc, _} ->
-	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_CARBONS_2,
-					  ?MODULE, iq_handler, IQDisc);
-	true ->
 	    ok
     end.
 
@@ -378,7 +370,6 @@ delete_cache(Mod, User, Server) ->
 depends(_Host, _Opts) ->
     [].
 
-mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(ram_db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(O) when O == use_cache; O == cache_missed ->
     fun(B) when is_boolean(B) -> B end;
@@ -389,8 +380,7 @@ mod_opt_type(O) when O == cache_size; O == cache_life_time ->
     end.
 
 mod_options(Host) ->
-    [{iqdisc, gen_iq_handler:iqdisc(Host)},
-     {ram_db_type, ejabberd_config:default_ram_db(Host, ?MODULE)},
+    [{ram_db_type, ejabberd_config:default_ram_db(Host, ?MODULE)},
      {use_cache, ejabberd_config:use_cache(Host)},
      {cache_size, ejabberd_config:cache_size(Host)},
      {cache_missed, ejabberd_config:cache_missed(Host)},

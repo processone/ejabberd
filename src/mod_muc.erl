@@ -107,8 +107,7 @@
 -callback unregister_online_user(binary(), ljid(), binary(), binary()) -> any().
 -callback count_online_rooms_by_user(binary(), binary(), binary()) -> non_neg_integer().
 -callback get_online_rooms_by_user(binary(), binary(), binary()) -> [{binary(), binary()}].
--callback get_subscribed_rooms(binary(), binary(), jid()) ->
-    {ok, [{ljid(), binary(), [binary()]}]} | {error, any()}.
+-callback get_subscribed_rooms(binary(), binary(), jid()) -> [ljid()] | [].
 
 %%====================================================================
 %% API
@@ -233,7 +232,6 @@ get_online_rooms_by_user(ServerHost, LUser, LServer) ->
 
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     #state{access = Access, hosts = MyHosts,
 	   history_size = HistorySize, queue_type = QueueType,
 	   room_shaper = RoomShaper} = State = init_state(Host, Opts),
@@ -243,7 +241,7 @@ init([Host, Opts]) ->
     RMod:init(Host, [{hosts, MyHosts}|Opts]),
     lists:foreach(
       fun(MyHost) ->
-	      register_iq_handlers(MyHost, IQDisc),
+	      register_iq_handlers(MyHost),
 	      ejabberd_router:register_route(MyHost, Host),
 	      load_permanent_rooms(MyHost, Host, Access, HistorySize,
 				   RoomShaper, QueueType)
@@ -273,8 +271,6 @@ handle_call({create, Room, Host, From, Nick, Opts}, _From,
     {reply, ok, State}.
 
 handle_cast({reload, ServerHost, NewOpts, OldOpts}, #state{hosts = OldHosts}) ->
-    NewIQDisc = gen_mod:get_opt(iqdisc, NewOpts),
-    OldIQDisc = gen_mod:get_opt(iqdisc, OldOpts),
     NewMod = gen_mod:db_mod(ServerHost, NewOpts, ?MODULE),
     NewRMod = gen_mod:ram_db_mod(ServerHost, NewOpts, ?MODULE),
     OldMod = gen_mod:db_mod(ServerHost, OldOpts, ?MODULE),
@@ -290,18 +286,10 @@ handle_cast({reload, ServerHost, NewOpts, OldOpts}, #state{hosts = OldHosts}) ->
        true ->
 	    ok
     end,
-    if (NewIQDisc /= OldIQDisc) ->
-	    lists:foreach(
-	      fun(NewHost) ->
-		      register_iq_handlers(NewHost, NewIQDisc)
-	      end, NewHosts -- (NewHosts -- OldHosts));
-       true ->
-	    ok
-    end,
     lists:foreach(
       fun(NewHost) ->
 	      ejabberd_router:register_route(NewHost, ServerHost),
-	      register_iq_handlers(NewHost, NewIQDisc)
+	      register_iq_handlers(NewHost)
       end, NewHosts -- OldHosts),
     lists:foreach(
       fun(OldHost) ->
@@ -372,19 +360,19 @@ init_state(Host, Opts) ->
 	   max_rooms_discoitems = MaxRoomsDiscoItems,
 	   room_shaper = RoomShaper}.
 
-register_iq_handlers(Host, IQDisc) ->
+register_iq_handlers(Host) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_REGISTER,
-				  ?MODULE, process_register, IQDisc),
+				  ?MODULE, process_register),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VCARD,
-				  ?MODULE, process_vcard, IQDisc),
+				  ?MODULE, process_vcard),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MUCSUB,
-				  ?MODULE, process_mucsub, IQDisc),
+				  ?MODULE, process_mucsub),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MUC_UNIQUE,
-				  ?MODULE, process_muc_unique, IQDisc),
+				  ?MODULE, process_muc_unique),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO,
-				  ?MODULE, process_disco_info, IQDisc),
+				  ?MODULE, process_disco_info),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS,
-				  ?MODULE, process_disco_items, IQDisc).
+				  ?MODULE, process_disco_items).
 
 unregister_iq_handlers(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_REGISTER),
@@ -738,7 +726,7 @@ iq_get_register_info(ServerHost, Host, From, Lang) ->
 	       instructions = [Inst], fields = Fields},
     #register{nick = Nick,
 	      registered = Registered,
-	      instructions = 
+	      instructions =
 		  translate:translate(
 		    Lang, <<"You need a client that supports x:data "
 			    "to register the nickname">>),
@@ -972,8 +960,7 @@ mod_opt_type({default_room_options, presence_broadcast}) ->
 		 (participant) -> participant;
 		 (visitor) -> visitor
 	      end, L)
-    end;
-mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1.
+    end.
 
 mod_options(Host) ->
     [{access, all},
@@ -982,7 +969,6 @@ mod_options(Host) ->
      {access_persistent, all},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {ram_db_type, ejabberd_config:default_ram_db(Host, ?MODULE)},
-     {iqdisc, gen_iq_handler:iqdisc(Host)},
      {history_size, 20},
      {host, <<"conference.@HOST@">>},
      {hosts, []},

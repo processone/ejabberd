@@ -230,6 +230,7 @@ init([Module, {_SockMod, Socket}, Opts]) ->
 		      stream_encrypted => Encrypted,
 		      stream_version => {1,0},
 		      stream_authenticated => false,
+		      codec_options => [ignore_els],
 		      xmlns => ?NS_CLIENT,
 		      lang => <<"">>,
 		      user => <<"">>,
@@ -342,9 +343,9 @@ handle_info({'$gen_event', El}, #{stream_state := wait_for_stream} = State) ->
 	  false -> send_pkt(State1, xmpp:serr_invalid_xml())
       end);
 handle_info({'$gen_event', {xmlstreamelement, El}},
-	    #{xmlns := NS, mod := Mod} = State) ->
+	    #{xmlns := NS, mod := Mod, codec_options := Opts} = State) ->
     noreply(
-      try xmpp:decode(El, NS, [ignore_els]) of
+      try xmpp:decode(El, NS, Opts) of
 	  Pkt ->
 	      State1 = try Mod:handle_recv(El, Pkt, State)
 		       catch _:undef -> State

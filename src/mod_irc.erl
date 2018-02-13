@@ -101,10 +101,9 @@ init([Host, Opts]) ->
     catch ets:new(irc_connection,
 		  [named_table, public,
 		   {keypos, #irc_connection.jid_server_host}]),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     lists:foreach(
       fun(MyHost) ->
-	      register_hooks(MyHost, IQDisc),
+	      register_hooks(MyHost),
 	      ejabberd_router:register_route(MyHost, Host)
       end, MyHosts),
     {ok,
@@ -132,8 +131,6 @@ handle_call(stop, _From, State) ->
 handle_cast({reload, ServerHost, NewOpts, OldOpts}, State) ->
     NewHosts = gen_mod:get_opt_hosts(ServerHost, NewOpts),
     OldHosts = gen_mod:get_opt_hosts(ServerHost, OldOpts),
-    NewIQDisc = gen_mod:get_opt(iqdisc, NewOpts),
-    OldIQDisc = gen_mod:get_opt(iqdisc, OldOpts),
     NewMod = gen_mod:db_mod(ServerHost, NewOpts, ?MODULE),
     OldMod = gen_mod:db_mod(ServerHost, OldOpts, ?MODULE),
     Access = gen_mod:get_opt(access, NewOpts),
@@ -142,18 +139,10 @@ handle_cast({reload, ServerHost, NewOpts, OldOpts}, State) ->
        true ->
 	    ok
     end,
-    if (NewIQDisc /= OldIQDisc) ->
-	    lists:foreach(
-	      fun(NewHost) ->
-		      register_hooks(NewHost, NewIQDisc)
-	      end, NewHosts -- (NewHosts -- OldHosts));
-       true ->
-	    ok
-    end,
     lists:foreach(
       fun(NewHost) ->
 	      ejabberd_router:register_route(NewHost, ServerHost),
-	      register_hooks(NewHost, NewIQDisc)
+	      register_hooks(NewHost)
       end, NewHosts -- OldHosts),
     lists:foreach(
       fun(OldHost) ->
@@ -207,17 +196,17 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
-register_hooks(Host, IQDisc) ->
+register_hooks(Host) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO,
-				  ?MODULE, process_disco_info, IQDisc),
+				  ?MODULE, process_disco_info),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS,
-				  ?MODULE, process_disco_items, IQDisc),
+				  ?MODULE, process_disco_items),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_REGISTER,
-				  ?MODULE, process_register, IQDisc),
+				  ?MODULE, process_register),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VCARD,
-				  ?MODULE, process_vcard, IQDisc),
+				  ?MODULE, process_vcard),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_COMMANDS,
-				  ?MODULE, process_command, IQDisc).
+				  ?MODULE, process_command).
 
 unregister_hooks(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
@@ -989,13 +978,11 @@ mod_opt_type(hosts) ->
 mod_opt_type(realname) ->
     fun iolist_to_binary/1;
 mod_opt_type(webirc_password) ->
-    fun iolist_to_binary/1;
-mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1.
+    fun iolist_to_binary/1.
 
 mod_options(Host) ->
     [{access, all},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
-     {iqdisc, gen_iq_handler:iqdisc(Host)},
      {default_encoding, <<"iso8859-15">>},
      {host, <<"irc.@HOST@">>},
      {hosts, []},

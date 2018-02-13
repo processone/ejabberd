@@ -276,9 +276,10 @@ get_permissions(ServerHost) ->
 forward_message(#message{to = To} = Msg) ->
     ServerHost = To#jid.lserver,
     Lang = xmpp:get_lang(Msg),
+    CodecOpts = ejabberd_config:codec_options(ServerHost),
     try xmpp:try_subtag(Msg, #privilege{}) of
 	#privilege{forwarded = #forwarded{sub_els = [SubEl]}} ->
-	    try xmpp:decode(SubEl, ?NS_CLIENT, [ignore_els]) of
+	    try xmpp:decode(SubEl, ?NS_CLIENT, CodecOpts) of
 		#message{} = NewMsg ->
 		    case NewMsg#message.from of
 			#jid{lresource = <<"">>, lserver = ServerHost} ->

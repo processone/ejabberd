@@ -62,7 +62,7 @@ defmodule ModRosterMock do
 
 			roster_mock0 = :moka.start(:mod_roster)
 			:moka.replace(roster_mock0, :gen_iq_handler, :add_iq_handler,
-				fn (_module, _host, _ns, _m, _f, _iqdisc)  ->
+				fn (_module, _host, _ns, _m, _f)  ->
 					:ok
 				end)
 

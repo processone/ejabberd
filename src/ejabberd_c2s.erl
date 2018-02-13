@@ -109,7 +109,7 @@ set_presence(Ref, Pres) ->
 resend_presence(Pid) ->
     resend_presence(Pid, undefined).
 
--spec resend_presence(pid(), jid() | undefined) -> ok.
+-spec resend_presence(pid(), jid() | undefined) -> boolean().
 resend_presence(Pid, To) ->
     route(Pid, {resend_presence, To}).
 
@@ -418,8 +418,10 @@ handle_stream_start(StreamStart, #{lserver := LServer} = State) ->
 	    send(State#{lserver => ?MYNAME}, xmpp:serr_host_unknown());
 	true ->
 	    State1 = change_shaper(State),
+	    Opts = ejabberd_config:codec_options(LServer),
+	    State2 = State1#{codec_options => Opts},
 	    ejabberd_hooks:run_fold(
-	      c2s_stream_started, LServer, State1, [StreamStart])
+	      c2s_stream_started, LServer, State2, [StreamStart])
     end.
 
 handle_stream_end(Reason, #{lserver := LServer} = State) ->

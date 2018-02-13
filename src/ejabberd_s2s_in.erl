@@ -169,7 +169,8 @@ handle_stream_start(_StreamStart, #{lserver := LServer} = State) ->
 	    send(State, xmpp:serr_host_unknown());
 	true ->
 	    ServerHost = ejabberd_router:host_of_route(LServer),
-	    State#{server_host => ServerHost}
+	    Opts = ejabberd_config:codec_options(LServer),
+	    State#{server_host => ServerHost, codec_options => Opts}
     end.
 
 handle_stream_end(Reason, #{server_host := LServer} = State) ->

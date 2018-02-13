@@ -363,10 +363,6 @@ gen_doc(#ejabberd_commands{name=Name, tags=_Tags, desc=Desc, longdesc=LongDesc,
                            args=Args, args_desc=ArgsDesc,
                            result=Result, result_desc=ResultDesc}=Cmd, HTMLOutput, Langs) ->
     try
-        LDesc = case LongDesc of
-                    "" -> Desc;
-                    _ -> LongDesc
-                end,
         ArgsText = case ArgsDesc of
                        none ->
                            [?TAG(ul, "args-list", [gen_param(AName, Type, undefined, HTMLOutput)
@@ -393,11 +389,15 @@ gen_doc(#ejabberd_commands{name=Name, tags=_Tags, desc=Desc, longdesc=LongDesc,
                            end
                      end,
 
-	[?TAG(h1, [?TAG(strong, atom_to_list(Name)), <<" - ">>, ?RAW(Desc)]),
-	 ?TAG(p, ?RAW(LDesc)),
-	 ?TAG(h2, <<"Arguments:">>), ArgsText,
-	 ?TAG(h2, <<"Result:">>), ResultText,
-	 ?TAG(h2, <<"Examples:">>), gen_calls(Cmd, HTMLOutput, Langs)]
+        [?TAG(h1, atom_to_list(Name)),
+         ?TAG(p, ?RAW(Desc)),
+         case LongDesc of
+             "" -> [];
+             _ -> ?TAG(p, ?RAW(LongDesc))
+         end,
+         ?TAG(h2, <<"Arguments:">>), ArgsText,
+         ?TAG(h2, <<"Result:">>), ResultText,
+         ?TAG(h2, <<"Examples:">>), gen_calls(Cmd, HTMLOutput, Langs)]
     catch
 	_:Ex ->
 	    throw(iolist_to_binary(io_lib:format(
@@ -458,9 +458,10 @@ generate_md_output(File, RegExp, Languages) ->
     Cmds3 = lists:sort(fun(#ejabberd_commands{name=N1}, #ejabberd_commands{name=N2}) ->
                                N1 =< N2
                        end, Cmds2),
+    Cmds4 = [maybe_add_policy_arguments(Cmd) || Cmd <- Cmds3],
     Langs = binary:split(Languages, <<",">>, [global]),
     Header = <<"---\ntitle: Administration API reference\nbodyclass: nocomment\n---">>,
-    Out = lists:map(fun(C) -> gen_doc(C, false, Langs) end, Cmds3),
+    Out = lists:map(fun(C) -> gen_doc(C, false, Langs) end, Cmds4),
     {ok, Fh} = file:open(File, [write]),
     io:format(Fh, "~s~s", [Header, Out]),
     file:close(Fh),

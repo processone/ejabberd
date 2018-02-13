@@ -108,7 +108,6 @@ depends(_Host, _Opts) ->
 start(Host, Opts) ->
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     ejabberd_hooks:add(offline_message_hook, Host, ?MODULE,
 		       store_packet, 50),
     ejabberd_hooks:add(c2s_self_presence, Host, ?MODULE, c2s_self_presence, 50),
@@ -132,7 +131,7 @@ start(Host, Opts) ->
     ejabberd_hooks:add(webadmin_user_parse_query, Host,
 		       ?MODULE, webadmin_user_parse_query, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_FLEX_OFFLINE,
-				  ?MODULE, handle_offline_query, IQDisc).
+				  ?MODULE, handle_offline_query).
 
 stop(Host) ->
     ejabberd_hooks:delete(offline_message_hook, Host,
@@ -161,13 +160,6 @@ reload(Host, NewOpts, OldOpts) ->
     if NewMod /= OldMod ->
 	    NewMod:init(Host, NewOpts);
        true ->
-	    ok
-    end,
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts) of
-	{false, IQDisc, _} ->
-	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_FLEX_OFFLINE,
-					  ?MODULE, handle_offline_query, IQDisc);
-	true ->
 	    ok
     end.
 
@@ -596,7 +588,8 @@ get_offline_els(LUser, LServer) ->
 -spec offline_msg_to_route(binary(), #offline_msg{}) ->
 				  {route, message()} | error.
 offline_msg_to_route(LServer, #offline_msg{from = From, to = To} = R) ->
-    try xmpp:decode(R#offline_msg.packet, ?NS_CLIENT, [ignore_els]) of
+    CodecOpts = ejabberd_config:codec_options(LServer),
+    try xmpp:decode(R#offline_msg.packet, ?NS_CLIENT, CodecOpts) of
 	Pkt ->
 	    Pkt1 = xmpp:set_from_to(Pkt, From, To),
 	    Pkt2 = add_delay_info(Pkt1, LServer, R#offline_msg.timestamp),
@@ -611,10 +604,11 @@ offline_msg_to_route(LServer, #offline_msg{from = From, to = To} = R) ->
 -spec read_messages(binary(), binary()) -> [{binary(), message()}].
 read_messages(LUser, LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
+    CodecOpts = ejabberd_config:codec_options(LServer),
     lists:flatmap(
       fun({Seq, From, To, TS, El}) ->
 	      Node = integer_to_binary(Seq),
-	      try xmpp:decode(El, ?NS_CLIENT, [ignore_els]) of
+	      try xmpp:decode(El, ?NS_CLIENT, CodecOpts) of
 		  Pkt ->
 		      Node = integer_to_binary(Seq),
 		      Pkt1 = add_delay_info(Pkt, LServer, TS),
@@ -847,11 +841,9 @@ mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(store_empty_body) ->
     fun (V) when is_boolean(V) -> V;
         (unless_chat_state) -> unless_chat_state
-    end;
-mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1.
+    end.
 
 mod_options(Host) ->
     [{db_type, ejabberd_config:default_db(Host, ?MODULE)},
-     {iqdisc, gen_iq_handler:iqdisc(Host)},
      {access_max_user_messages, max_user_offline_messages},
      {store_empty_body, unless_chat_state}].

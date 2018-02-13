@@ -59,14 +59,13 @@
 -optional_callbacks([use_cache/1, cache_nodes/1]).
 
 start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts),
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
     init_cache(Mod, Host, Opts),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-				  ?NS_LAST, ?MODULE, process_local_iq, IQDisc),
+				  ?NS_LAST, ?MODULE, process_local_iq),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-				  ?NS_LAST, ?MODULE, process_sm_iq, IQDisc),
+				  ?NS_LAST, ?MODULE, process_sm_iq),
     ejabberd_hooks:add(privacy_check_packet, Host, ?MODULE,
 		       privacy_check_packet, 30),
     ejabberd_hooks:add(register_user, Host, ?MODULE,
@@ -98,16 +97,7 @@ reload(Host, NewOpts, OldOpts) ->
        true ->
 	    ok
     end,
-    init_cache(NewMod, Host, NewOpts),
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts) of
-	{false, IQDisc, _} ->
-	    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_LAST,
-					  ?MODULE, process_local_iq, IQDisc),
-	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_LAST,
-					  ?MODULE, process_sm_iq, IQDisc);
-	true ->
-	    ok
-    end.
+    init_cache(NewMod, Host, NewOpts).
 
 %%%
 %%% Uptime of ejabberd node
@@ -331,7 +321,6 @@ depends(_Host, _Opts) ->
     [].
 
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
-mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(O) when O == cache_life_time; O == cache_size ->
     fun (I) when is_integer(I), I > 0 -> I;
         (infinity) -> infinity
@@ -340,8 +329,7 @@ mod_opt_type(O) when O == use_cache; O == cache_missed ->
     fun (B) when is_boolean(B) -> B end.
 
 mod_options(Host) ->
-    [{iqdisc, gen_iq_handler:iqdisc(Host)},
-     {db_type, ejabberd_config:default_db(Host, ?MODULE)},
+    [{db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {use_cache, ejabberd_config:use_cache(Host)},
      {cache_size, ejabberd_config:cache_size(Host)},
      {cache_missed, ejabberd_config:cache_missed(Host)},

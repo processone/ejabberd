@@ -91,8 +91,7 @@ reload(Host, NewOpts, OldOpts) ->
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
     State = init_state(Host, Opts),
-    IQDisc = gen_mod:get_opt(iqdisc, Opts),
-    register_iq_handlers(Host, IQDisc),
+    register_iq_handlers(Host),
     case State#state.send_pings of
 	true -> register_hooks(Host);
 	false -> ok
@@ -108,12 +107,8 @@ handle_call(stop, _From, State) ->
 handle_call(_Req, _From, State) ->
     {reply, {error, badarg}, State}.
 
-handle_cast({reload, Host, NewOpts, OldOpts},
+handle_cast({reload, Host, NewOpts, _OldOpts},
 	    #state{timers = Timers} = OldState) ->
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts) of
-	{false, IQDisc, _} -> register_iq_handlers(Host, IQDisc);
-	true -> ok
-    end,
     NewState = init_state(Host, NewOpts),
     case {NewState#state.send_pings, OldState#state.send_pings} of
 	{true, false} -> register_hooks(Host);
@@ -219,11 +214,11 @@ unregister_hooks(Host) ->
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
 			  user_send, 100).
 
-register_iq_handlers(Host, IQDisc) ->
+register_iq_handlers(Host) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PING,
-				  ?MODULE, iq_ping, IQDisc),
+				  ?MODULE, iq_ping),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_PING,
-				  ?MODULE, iq_ping, IQDisc).
+				  ?MODULE, iq_ping).
 
 unregister_iq_handlers(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_PING),
@@ -263,7 +258,6 @@ cancel_timer(TRef) ->
 depends(_Host, _Opts) ->
     [].
 
-mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(ping_interval) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 mod_opt_type(ping_ack_timeout) ->
@@ -277,9 +271,8 @@ mod_opt_type(timeout_action) ->
 	(kill) -> kill
     end.
 
-mod_options(Host) ->
-    [{iqdisc, gen_iq_handler:iqdisc(Host)},
-     {ping_interval, 60},
+mod_options(_Host) ->
+    [{ping_interval, 60},
      {ping_ack_timeout, undefined},
      {send_pings, false},
      {timeout_action, none}].

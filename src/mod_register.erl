@@ -43,12 +43,11 @@
 -include("logger.hrl").
 -include("xmpp.hrl").
 
-start(Host, Opts) ->
-    IQDisc = gen_mod:get_opt(iqdisc, Opts),
+start(Host, _Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-				  ?NS_REGISTER, ?MODULE, process_iq, IQDisc),
+				  ?NS_REGISTER, ?MODULE, process_iq),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-				  ?NS_REGISTER, ?MODULE, process_iq, IQDisc),
+				  ?NS_REGISTER, ?MODULE, process_iq),
     ejabberd_hooks:add(c2s_pre_auth_features, Host, ?MODULE,
 		       stream_feature_register, 50),
     ejabberd_hooks:add(c2s_unauthenticated_packet, Host,
@@ -68,16 +67,8 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
 				     ?NS_REGISTER).
 
-reload(Host, NewOpts, OldOpts) ->
-    case gen_mod:is_equal_opt(iqdisc, NewOpts, OldOpts) of
-	{false, IQDisc, _} ->
-	    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_REGISTER,
-					  ?MODULE, process_iq, IQDisc),
-	    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_REGISTER,
-					  ?MODULE, process_iq, IQDisc);
-	true ->
-	    ok
-    end.
+reload(_Host, _NewOpts, _OldOpts) ->
+    ok.
 
 depends(_Host, _Opts) ->
     [].
@@ -608,7 +599,6 @@ mod_opt_type(access_remove) -> fun acl:access_rules_validator/1;
 mod_opt_type(captcha_protected) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(ip_access) -> fun acl:access_rules_validator/1;
-mod_opt_type(iqdisc) -> fun gen_iq_handler:check_type/1;
 mod_opt_type(password_strength) ->
     fun (N) when is_number(N), N >= 0 -> N end;
 mod_opt_type(registration_watchers) ->
@@ -627,13 +617,12 @@ mod_opt_type({welcome_message, body}) ->
 mod_opt_type(redirect_url) ->
     fun iolist_to_binary/1.
 
-mod_options(Host) ->
+mod_options(_Host) ->
     [{access, all},
      {access_from, none},
      {access_remove, all},
      {captcha_protected, false},
      {ip_access, all},
-     {iqdisc, gen_iq_handler:iqdisc(Host)},
      {password_strength, 0},
      {registration_watchers, []},
      {redirect_url, <<"">>},
