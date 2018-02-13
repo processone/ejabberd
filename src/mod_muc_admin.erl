@@ -569,8 +569,10 @@ prepare_room_info(Room_info) ->
 %%       ok | error
 %% @doc Create a room immediately with the default options.
 create_room(Name1, Host1, ServerHost) ->
-    create_room_with_opts(Name1, Host1, ServerHost, []),
-    change_room_option(Name1, Host1, <<"persistent">>, <<"true">>).
+    case create_room_with_opts(Name1, Host1, ServerHost, []) of
+        ok -> change_room_option(Name1, Host1, <<"persistent">>, <<"true">>);
+        Error -> Error
+    end.
 
 create_room_with_opts(Name1, Host1, ServerHost, CustomRoomOpts) ->
     true = (error /= (Name = jid:nodeprep(Name1))),
