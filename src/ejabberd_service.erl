@@ -213,17 +213,27 @@ handle_info(Info, State) ->
     ?ERROR_MSG("Unexpected info: ~p", [Info]),
     State.
 
-terminate(Reason, #{stream_state := StreamState, host_opts := HostOpts}) ->
+terminate(Reason, #{stream_state := StreamState,
+		    host_opts := HostOpts,
+		    remote_server := RemoteServer,
+		    global_routes := GlobalRoutes}) ->
     case StreamState of
 	established ->
+	    Routes = if GlobalRoutes ->
+			     dict:fetch_keys(HostOpts);
+			true ->
+			     [RemoteServer]
+		     end,
 	    lists:foreach(
 	      fun(H) ->
 		      ejabberd_router:unregister_route(H),
 		      ejabberd_hooks:run(component_disconnected, [H, Reason])
-	      end, dict:fetch_keys(HostOpts));
+	      end, Routes);
 	_ ->
 	    ok
-    end.
+    end;
+terminate(_Reason, _State) ->
+    ok.
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
