@@ -100,6 +100,7 @@ init([State, Opts]) ->
 		  false -> [compression_none | TLSOpts1];
 		  true -> TLSOpts1
 	      end,
+    GlobalRoutes = proplists:get_value(global_routes, Opts, true),
     State1 = xmpp_stream_in:change_shaper(State, Shaper),
     State2 = State1#{access => Access,
 		     xmlns => ?NS_COMPONENT,
@@ -108,6 +109,7 @@ init([State, Opts]) ->
 		     host_opts => dict:from_list(HostOpts1),
 		     stream_version => undefined,
 		     tls_options => TLSOpts,
+		     global_routes => GlobalRoutes,
 		     check_from => CheckFrom},
     ejabberd_hooks:run_fold(component_init, {ok, State2}, [Opts]).
 
@@ -153,16 +155,22 @@ get_password_fun(#{remote_server := RemoteServer,
 
 handle_auth_success(_, Mech, _,
 		    #{remote_server := RemoteServer, host_opts := HostOpts,
-		      socket := Socket, ip := IP} = State) ->
+		      socket := Socket, ip := IP,
+		      global_routes := GlobalRoutes} = State) ->
     ?INFO_MSG("(~s) Accepted external component ~s authentication "
 	      "for ~s from ~s",
 	      [xmpp_socket:pp(Socket), Mech, RemoteServer,
 	       ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
+    Routes = if GlobalRoutes ->
+		     dict:fetch_keys(HostOpts);
+		true ->
+		     [RemoteServer]
+	     end,
     lists:foreach(
       fun(H) ->
 	      ejabberd_router:register_route(H, ?MYNAME),
 	      ejabberd_hooks:run(component_connected, [H])
-      end, dict:fetch_keys(HostOpts)),
+      end, Routes),
     State.
 
 handle_auth_failure(_, Mech, Reason,
@@ -299,6 +307,8 @@ listen_opt_type(hosts) ->
 		      {iolist_to_binary(Host), Password}
 	      end, HostOpts)
     end;
+listen_opt_type(global_routes) ->
+    fun(B) when is_boolean(B) -> B end;
 listen_opt_type(max_stanza_size) ->
     fun(I) when is_integer(I) -> I;
        (unlimited) -> infinity;
@@ -309,4 +319,4 @@ listen_opt_type(max_fsm_queue) ->
 listen_opt_type(_) ->
     [access, shaper_rule, certfile, ciphers, dhfile, cafile, tls,
      protocol_options, tls_compression, password, hosts, check_from,
-     max_fsm_queue].
+     max_fsm_queue, global_routes].
