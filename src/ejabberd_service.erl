@@ -102,13 +102,13 @@ init([State, Opts]) ->
 	      end,
     State1 = xmpp_stream_in:change_shaper(State, Shaper),
     State2 = State1#{access => Access,
-		    xmlns => ?NS_COMPONENT,
-		    lang => ?MYLANG,
-		    server => ?MYNAME,
-		    host_opts => dict:from_list(HostOpts1),
-		    stream_version => undefined,
-		    tls_options => TLSOpts,
-		    check_from => CheckFrom},
+		     xmlns => ?NS_COMPONENT,
+		     lang => ?MYLANG,
+		     server => ?MYNAME,
+		     host_opts => dict:from_list(HostOpts1),
+		     stream_version => undefined,
+		     tls_options => TLSOpts,
+		     check_from => CheckFrom},
     ejabberd_hooks:run_fold(component_init, {ok, State2}, [Opts]).
 
 handle_stream_start(_StreamStart,
@@ -140,7 +140,7 @@ get_password_fun(#{remote_server := RemoteServer,
 		   host_opts := HostOpts}) ->
     fun(_) ->
 	    case dict:find(RemoteServer, HostOpts) of
-    	{ok, Password} ->
+		{ok, Password} ->
 		    {Password, undefined};
 		error ->
 		    ?INFO_MSG("(~s) Domain ~s is unconfigured for "
@@ -158,10 +158,10 @@ handle_auth_success(_, Mech, _,
 	      "for ~s from ~s",
 	      [xmpp_socket:pp(Socket), Mech, RemoteServer,
 	       ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
-    		    lists:foreach(
-    		      fun (H) ->
-    			      ejabberd_router:register_route(H, ?MYNAME),
-    			      ejabberd_hooks:run(component_connected, [H])
+    lists:foreach(
+      fun(H) ->
+	      ejabberd_router:register_route(H, ?MYNAME),
+	      ejabberd_hooks:run(component_connected, [H])
       end, dict:fetch_keys(HostOpts)),
     State.
 
@@ -180,11 +180,11 @@ handle_authenticated_packet(Pkt0, #{ip := {IP, _}, lang := Lang} = State)
     Pkt = xmpp:put_meta(Pkt0, ip, IP),
     From = xmpp:get_from(Pkt),
     case check_from(From, State) of
-		true ->
+	true ->
 	    ejabberd_router:route(Pkt),
 	    State;
-		false ->
-		    Txt = <<"Improper domain part of 'from' attribute">>,
+	false ->
+	    Txt = <<"Improper domain part of 'from' attribute">>,
 	    Err = xmpp:serr_invalid_from(Txt, Lang),
 	    xmpp_stream_in:send(State, Err)
     end;
@@ -193,7 +193,7 @@ handle_authenticated_packet(_Pkt, State) ->
 
 handle_info({route, Packet}, #{access := Access} = State) ->
     case acl:match_rule(global, Access, xmpp:get_from(Packet)) of
-      allow ->
+	allow ->
 	    xmpp_stream_in:send(State, Packet);
 	deny ->
 	    Lang = xmpp:get_lang(Packet),
@@ -210,11 +210,11 @@ terminate(Reason, #{stream_state := StreamState, host_opts := HostOpts}) ->
 	established ->
 	    lists:foreach(
 	      fun(H) ->
-				ejabberd_router:unregister_route(H),
+		      ejabberd_router:unregister_route(H),
 		      ejabberd_hooks:run(component_disconnected, [H, Reason])
 	      end, dict:fetch_keys(HostOpts));
 	_ ->
-                    ok
+	    ok
     end.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -268,7 +268,7 @@ transform_listen_option(Opt, Opts) ->
 		     (check_from) -> fun((boolean()) -> boolean());
 		     (password) -> fun((boolean()) -> boolean());
 		     (hosts) -> fun(([{binary(), [{password, binary()}]}]) ->
-				     [{binary(), binary() | undefined}]);
+					   [{binary(), binary() | undefined}]);
 		     (max_stanza_type) -> fun((timeout()) -> timeout());
 		     (max_fsm_queue) -> fun((pos_integer()) -> pos_integer());
 		     (atom()) -> [atom()].
