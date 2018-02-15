@@ -192,7 +192,7 @@ c2s_handle_recv(#{mgmt_state := MgmtState,
 		<<"result">> -> State1;
 		<<"error">> -> State1;
 		_ ->
-		    State1#{mgmt_is_resent => false}
+		    State1#{mgmt_force_enqueue => true}
 	    end;
        true ->
 	    State
@@ -206,7 +206,7 @@ c2s_handle_send(#{mgmt_state := MgmtState, mod := Mod,
     IsStanza = xmpp:is_stanza(Pkt),
     case Pkt of
 	_ when IsStanza ->
-	    case need_to_queue(State, Pkt) of
+	    case need_to_enqueue(State, Pkt) of
 		{true, State1} ->
 		    case mgmt_queue_add(State1, Pkt) of
 			#{mgmt_max_queue := exceeded} = State2 ->
@@ -727,12 +727,12 @@ bounce_message_queue() ->
 	    ok
     end.
 
--spec need_to_queue(state(), xmlel() | stanza()) -> {boolean(), state()}.
-need_to_queue(State, Pkt) when ?is_stanza(Pkt) ->
+-spec need_to_enqueue(state(), xmlel() | stanza()) -> {boolean(), state()}.
+need_to_enqueue(State, Pkt) when ?is_stanza(Pkt) ->
     {not xmpp:get_meta(Pkt, mgmt_is_resent, false), State};
-need_to_queue(#{mgmt_is_resent := false} = State, #xmlel{}) ->
+need_to_enqueue(#{mgmt_force_enqueue := true} = State, #xmlel{}) ->
     {true, maps:remove(mgmt_is_resent, State)};
-need_to_queue(State, _) ->
+need_to_enqueue(State, _) ->
     {false, State}.
 
 %%%===================================================================
