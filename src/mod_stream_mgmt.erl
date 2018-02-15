@@ -176,7 +176,8 @@ c2s_authenticated_packet(#{mgmt_state := MgmtState} = State, Pkt)
 c2s_authenticated_packet(State, Pkt) ->
     update_num_stanzas_in(State, Pkt).
 
-c2s_handle_recv(#{lang := Lang} = State, El, {error, Why}) ->
+c2s_handle_recv(#{mgmt_state := MgmtState,
+		  lang := Lang} = State, El, {error, Why}) ->
     Xmlns = xmpp:get_ns(El),
     IsStanza = xmpp:is_stanza(El),
     if Xmlns == ?NS_STREAM_MGMT_2; Xmlns == ?NS_STREAM_MGMT_3 ->
@@ -185,12 +186,13 @@ c2s_handle_recv(#{lang := Lang} = State, El, {error, Why}) ->
 			     text = xmpp:mk_text(Txt, Lang),
 			     xmlns = Xmlns},
 	    send(State, Err);
-       IsStanza ->
+       IsStanza andalso (MgmtState == pending orelse MgmtState == active) ->
+	    State1 = update_num_stanzas_in(State, El),
 	    case xmpp:get_type(El) of
-		<<"result">> -> State;
-		<<"error">> -> State;
+		<<"result">> -> State1;
+		<<"error">> -> State1;
 		_ ->
-		    State#{mgmt_is_resent => false}
+		    State1#{mgmt_is_resent => false}
 	    end;
        true ->
 	    State
