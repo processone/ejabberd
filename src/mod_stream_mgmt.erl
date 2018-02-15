@@ -190,15 +190,7 @@ c2s_handle_recv(#{lang := Lang} = State, El, {error, Why}) ->
 		<<"result">> -> State;
 		<<"error">> -> State;
 		_ ->
-		    Txt = xmpp:io_format_error(Why),
-		    Lang1 = select_lang(Lang, xmpp:get_lang(El)),
-		    Err = xmpp:err_bad_request(Txt, Lang1),
-		    case mgmt_queue_add(State, Err) of
-			#{mgmt_max_queue := exceeded} = State1 ->
-			    send_policy_violation(State1);
-			State1 ->
-			    State1
-		    end
+		    State#{mgmt_is_resent => false}
 	    end;
        true ->
 	    State
@@ -206,24 +198,27 @@ c2s_handle_recv(#{lang := Lang} = State, El, {error, Why}) ->
 c2s_handle_recv(State, _, _) ->
     State.
 
-c2s_handle_send(#{mgmt_state := MgmtState, mod := Mod} = State,
-		Pkt, SendResult)
+c2s_handle_send(#{mgmt_state := MgmtState, mod := Mod,
+		  lang := Lang} = State, Pkt, SendResult)
   when MgmtState == pending; MgmtState == active ->
+    IsStanza = xmpp:is_stanza(Pkt),
     case Pkt of
-	_ when ?is_stanza(Pkt) ->
-	    Meta = xmpp:get_meta(Pkt),
-	    case maps:get(mgmt_is_resent, Meta, false) of
-		false ->
-		    case mgmt_queue_add(State, Pkt) of
-			#{mgmt_max_queue := exceeded} = State1 ->
-			    send_policy_violation(State1);
-			State1 when SendResult == ok ->
-			    send_rack(State1);
-			State1 ->
-			    State1
+	_ when IsStanza ->
+	    case need_to_queue(State, Pkt) of
+		{true, State1} ->
+		    case mgmt_queue_add(State1, Pkt) of
+			#{mgmt_max_queue := exceeded} = State2 ->
+			    State3 = State2#{mgmt_resend => false},
+			    Err = xmpp:serr_policy_violation(
+				    <<"Too many unacked stanzas">>, Lang),
+			    send(State3, Err);
+			State2 when SendResult == ok ->
+			    send_rack(State2);
+			State2 ->
+			    State2
 		    end;
-		true ->
-		    State
+		{false, State1} ->
+		    State1
 	    end;
 	#stream_error{} ->
 	    case MgmtState of
@@ -730,15 +725,13 @@ bounce_message_queue() ->
 	    ok
     end.
 
--spec send_policy_violation(state()) -> state().
-send_policy_violation(#{lang := Lang} = State) ->
-    State1 = State#{mgmt_resend => false},
-    Err = xmpp:serr_policy_violation(<<"Too many unacked stanzas">>, Lang),
-    send(State1, Err).
-
--spec select_lang(binary(), binary()) -> binary().
-select_lang(Lang, <<"">>) -> Lang;
-select_lang(_, Lang) -> Lang.
+-spec need_to_queue(state(), xmlel() | stanza()) -> {boolean(), state()}.
+need_to_queue(State, Pkt) when ?is_stanza(Pkt) ->
+    {not xmpp:get_meta(Pkt, mgmt_is_resent, false), State};
+need_to_queue(#{mgmt_is_resent := false} = State, #xmlel{}) ->
+    {true, maps:remove(mgmt_is_resent, State)};
+need_to_queue(State, _) ->
+    {false, State}.
 
 %%%===================================================================
 %%% Configuration processing
