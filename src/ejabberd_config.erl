@@ -37,7 +37,7 @@
 	 default_db/1, default_db/2, default_ram_db/1, default_ram_db/2,
 	 default_queue_type/1, queue_dir/0, fsm_limit_opts/1,
 	 use_cache/1, cache_size/1, cache_missed/1, cache_life_time/1,
-	 codec_options/1]).
+	 codec_options/1, get_plain_terms_file/2]).
 
 -export([start/2]).
 
