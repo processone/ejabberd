@@ -59,6 +59,7 @@
 	 add_rosteritem/7, delete_rosteritem/4,
 	 process_rosteritems/5, get_roster/2, push_roster/3,
 	 push_roster_all/1, push_alltoall/2,
+	 push_roster_item/5, build_roster_item/3,
 
 	 % Private storage
 	 private_get/4, private_set/3,
