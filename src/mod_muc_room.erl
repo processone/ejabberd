@@ -37,7 +37,9 @@
 	 get_role/2,
 	 get_affiliation/2,
 	 is_occupant_or_admin/2,
-	 route/2]).
+	 route/2,
+	 expand_opts/1,
+	 config_fields/0]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -3567,6 +3569,35 @@ make_opts(StateData) ->
      {subject, StateData#state.subject},
      {subject_author, StateData#state.subject_author},
      {subscribers, Subscribers}].
+
+expand_opts(CompactOpts) ->
+    DefConfig = #config{},
+    Fields = record_info(fields, config),
+    {_, Opts1} =
+        lists:foldl(
+          fun(Field, {Pos, Opts}) ->
+                  case lists:keyfind(Field, 1, CompactOpts) of
+                      false ->
+                          DefV = element(Pos, DefConfig),
+                          DefVal = case (?SETS):is_set(DefV) of
+                                       true -> (?SETS):to_list(DefV);
+                                       false -> DefV
+                                   end,
+                          {Pos+1, [{Field, DefVal}|Opts]};
+                      {_, Val} ->
+                          {Pos+1, [{Field, Val}|Opts]}
+                  end
+          end, {2, []}, Fields),
+    SubjectAuthor = proplists:get_value(subject_author, CompactOpts, <<"">>),
+    Subject = proplists:get_value(subject, CompactOpts, <<"">>),
+    Subscribers = proplists:get_value(subscribers, CompactOpts, []),
+    [{subject, Subject},
+     {subject_author, SubjectAuthor},
+     {subscribers, Subscribers}
+     | lists:reverse(Opts1)].
+
+config_fields() ->
+    [subject, subject_author, subscribers | record_info(fields, config)].
 
 -spec destroy_room(muc_destroy(), state()) -> {result, undefined, stop}.
 destroy_room(DEl, StateData) ->
