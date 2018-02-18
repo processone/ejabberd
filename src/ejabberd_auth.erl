@@ -547,15 +547,15 @@ db_user_exists(User, Server, Mod) ->
 	error ->
 	    case Mod:store_type(Server) of
 		external ->
-		    case ets_cache:update(
-			   ?AUTH_CACHE, {User, Server}, {ok, exists},
+		    case ets_cache:lookup(
+			   ?AUTH_CACHE, {User, Server},
 			   fun() ->
 				   case Mod:user_exists(User, Server) of
 				       true -> {ok, exists};
 				       false -> error;
 				       {error, _} = Err -> Err
 				   end
-			   end, cache_nodes(Mod, Server)) of
+			   end) of
 			{ok, _} ->
 			    true;
 			error ->
@@ -584,7 +584,7 @@ db_check_password(User, AuthzId, Server, ProvidedPassword,
 				       false ->
 					   error
 				   end
-			   end, cache_nodes(Mod, Server)) of
+			   end) of
 			{ok, _} ->
 			    true;
 			error ->
