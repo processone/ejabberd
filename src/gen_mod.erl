@@ -516,9 +516,16 @@ get_validators(Host, {Module, SubMods}) ->
 	[] ->
 	    case have_validators(Module) of
 		false ->
-		    ?WARNING_MSG("Third-party module '~s' doesn't export "
-				 "options validator; consider to upgrade "
-				 "the module", [Module]),
+		    case code:ensure_loaded(Module) of
+			{module, _} ->
+			    ?WARNING_MSG("Third-party module '~s' doesn't export "
+					 "options validator; consider to upgrade "
+					 "the module", [Module]);
+			_ ->
+			    %% Silently ignore this, the error will be
+			    %% generated later
+			    ok
+		    end,
 		    undef;
 		true ->
 		    []
