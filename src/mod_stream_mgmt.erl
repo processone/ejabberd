@@ -252,13 +252,13 @@ c2s_handle_info(#{mgmt_ack_timer := TRef, jid := JID, mod := Mod} = State,
 	   [jid:encode(JID)]),
     State1 = Mod:close(State),
     {stop, transition_to_pending(State1)};
-c2s_handle_info(#{mgmt_state := pending,
+c2s_handle_info(#{mgmt_state := pending, lang := Lang,
 		  mgmt_pending_timer := TRef, jid := JID, mod := Mod} = State,
 		{timeout, TRef, pending_timeout}) ->
     ?DEBUG("Timed out waiting for resumption of stream for ~s",
 	   [jid:encode(JID)]),
     Txt = <<"Timed out waiting for stream resumption">>,
-    Err = xmpp:serr_connection_timeout(Txt, ?MYLANG),
+    Err = xmpp:serr_connection_timeout(Txt, Lang),
     Mod:stop(State#{mgmt_state => timeout,
 		    stop_reason => {stream, {out, Err}}});
 c2s_handle_info(#{jid := JID} = State, {_Ref, {resume, OldState}}) ->
