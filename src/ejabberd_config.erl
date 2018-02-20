@@ -37,7 +37,7 @@
 	 default_db/1, default_db/2, default_ram_db/1, default_ram_db/2,
 	 default_queue_type/1, queue_dir/0, fsm_limit_opts/1,
 	 use_cache/1, cache_size/1, cache_missed/1, cache_life_time/1,
-	 codec_options/1, get_plain_terms_file/2]).
+	 codec_options/1, get_plain_terms_file/2, negotiation_timeout/0]).
 
 -export([start/2]).
 
@@ -1415,6 +1415,8 @@ opt_type(cache_life_time) ->
        (infinity) -> infinity;
        (unlimited) -> infinity
     end;
+opt_type(negotiation_timeout) ->
+    fun(T) when T > 0 -> T end;
 opt_type(shared_key) ->
     fun iolist_to_binary/1;
 opt_type(node_start) ->
@@ -1479,3 +1481,7 @@ codec_options(Host) ->
 	true -> [];
 	false -> [ignore_els]
     end.
+
+-spec negotiation_timeout() -> pos_integer().
+negotiation_timeout() ->
+    timer:seconds(get_option(negotiation_timeout, 30)).

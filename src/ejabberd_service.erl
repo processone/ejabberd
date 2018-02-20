@@ -101,8 +101,10 @@ init([State, Opts]) ->
 		  true -> TLSOpts1
 	      end,
     GlobalRoutes = proplists:get_value(global_routes, Opts, true),
+    Timeout = ejabberd_config:negotiation_timeout(),
     State1 = xmpp_stream_in:change_shaper(State, Shaper),
-    State2 = State1#{access => Access,
+    State2 = xmpp_stream_in:set_timeout(State1, Timeout),
+    State3 = State2#{access => Access,
 		     xmlns => ?NS_COMPONENT,
 		     lang => ?MYLANG,
 		     server => ?MYNAME,
@@ -111,7 +113,7 @@ init([State, Opts]) ->
 		     tls_options => TLSOpts,
 		     global_routes => GlobalRoutes,
 		     check_from => CheckFrom},
-    ejabberd_hooks:run_fold(component_init, {ok, State2}, [Opts]).
+    ejabberd_hooks:run_fold(component_init, {ok, State3}, [Opts]).
 
 handle_stream_start(_StreamStart,
 		    #{remote_server := RemoteServer,

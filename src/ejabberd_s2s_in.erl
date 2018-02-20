@@ -259,6 +259,7 @@ init([State, Opts]) ->
                    false -> [compression_none | TLSOpts1];
                    true -> TLSOpts1
     end,
+    Timeout = ejabberd_config:negotiation_timeout(),
     State1 = State#{tls_options => TLSOpts2,
 		    auth_domains => sets:new(),
 		    xmlns => ?NS_SERVER,
@@ -268,7 +269,8 @@ init([State, Opts]) ->
 		    server_host => ?MYNAME,
 		    established => false,
 		    shaper => Shaper},
-    ejabberd_hooks:run_fold(s2s_in_init, {ok, State1}, [Opts]).
+    State2 = xmpp_stream_in:set_timeout(State1, Timeout),
+    ejabberd_hooks:run_fold(s2s_in_init, {ok, State2}, [Opts]).
 
 handle_call(Request, From, #{server_host := LServer} = State) ->
     ejabberd_hooks:run_fold(s2s_in_handle_call, LServer, State, [Request, From]).

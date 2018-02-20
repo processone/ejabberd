@@ -519,6 +519,7 @@ init([State, Opts]) ->
     TLSRequired = proplists:get_bool(starttls_required, Opts),
     TLSVerify = proplists:get_bool(tls_verify, Opts),
     Zlib = proplists:get_bool(zlib, Opts),
+    Timeout = ejabberd_config:negotiation_timeout(),
     State1 = State#{tls_options => TLSOpts2,
 		    tls_required => TLSRequired,
 		    tls_enabled => TLSEnabled,
@@ -530,7 +531,8 @@ init([State, Opts]) ->
 		    lserver => ?MYNAME,
 		    access => Access,
 		    shaper => Shaper},
-    ejabberd_hooks:run_fold(c2s_init, {ok, State1}, [Opts]).
+    State2 = xmpp_stream_in:set_timeout(State1, Timeout),
+    ejabberd_hooks:run_fold(c2s_init, {ok, State2}, [Opts]).
 
 handle_call(get_presence, From, #{jid := JID} = State) ->
     Pres = case maps:get(pres_last, State, error) of
