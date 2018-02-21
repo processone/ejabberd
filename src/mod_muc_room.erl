@@ -508,7 +508,7 @@ handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
 handle_sync_event({get_disco_item, Filter, JID, Lang}, _From, StateName, StateData) ->
-    Len = ?DICT:size(StateData#state.users),
+    Len = ?DICT:size(StateData#state.nicks),
     Reply = case (Filter == all) or (Filter == Len) or ((Filter /= 0) and (Len /= 0)) of
 	true ->
 	    get_roomdesc_reply(JID, StateData,
@@ -3673,7 +3673,7 @@ process_iq_disco_info(_From, #iq{type = get, lang = Lang}, StateData) ->
 -spec iq_disco_info_extras(binary(), state()) -> xdata().
 iq_disco_info_extras(Lang, StateData) ->
     Fs1 = [{description, (StateData#state.config)#config.description},
-	   {occupants, ?DICT:size(StateData#state.users)},
+	   {occupants, ?DICT:size(StateData#state.nicks)},
 	   {contactjid, get_owners(StateData)}],
     Fs2 = case (StateData#state.config)#config.pubsub of
 	      Node when is_binary(Node), Node /= <<"">> ->
@@ -3906,20 +3906,18 @@ get_roomdesc_tail(StateData, Lang) ->
 	     true -> <<"">>;
 	     _ -> translate:translate(Lang, <<"private, ">>)
 	   end,
-    Len = (?DICT):size(StateData#state.users),
+    Len = (?DICT):size(StateData#state.nicks),
     <<" (", Desc/binary, (integer_to_binary(Len))/binary, ")">>.
 
 -spec get_mucroom_disco_items(state()) -> disco_items().
 get_mucroom_disco_items(StateData) ->
-    Items = lists:map(
-	      fun({_LJID, Info}) ->
-		      Nick = Info#user.nick,
-		      #disco_item{jid = jid:make(StateData#state.room,
-						 StateData#state.host,
-						 Nick),
-				  name = Nick}
-	      end,
-	      (?DICT):to_list(StateData#state.users)),
+    Items = ?DICT:fold(
+	       fun(Nick, _, Acc) ->
+		       [#disco_item{jid = jid:make(StateData#state.room,
+						   StateData#state.host,
+						   Nick),
+				    name = Nick}|Acc]
+	       end, [], StateData#state.nicks),
     #disco_items{items = Items}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
