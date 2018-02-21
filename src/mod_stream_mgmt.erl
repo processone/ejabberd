@@ -279,8 +279,8 @@ c2s_closed(State, _Reason) ->
     State.
 
 c2s_terminated(#{mgmt_state := resumed, jid := JID} = State, _Reason) ->
-    ?INFO_MSG("Closing former stream of resumed session for ~s",
-	      [jid:encode(JID)]),
+    ?DEBUG("Closing former stream of resumed session for ~s",
+	   [jid:encode(JID)]),
     bounce_message_queue(),
     {stop, State};
 c2s_terminated(#{mgmt_state := MgmtState, mgmt_stanzas_in := In, sid := SID,
@@ -371,15 +371,15 @@ handle_enable(#{mgmt_timeout := DefaultTimeout,
 		      DefaultTimeout
 	      end,
     Res = if Timeout > 0 ->
-		  ?INFO_MSG("Stream management with resumption enabled for ~s",
-			    [jid:encode(JID)]),
+		  ?DEBUG("Stream management with resumption enabled for ~s",
+			 [jid:encode(JID)]),
 		  #sm_enabled{xmlns = Xmlns,
 			      id = make_resume_id(State),
 			      resume = true,
 			      max = Timeout};
 	     true ->
-		  ?INFO_MSG("Stream management without resumption enabled for ~s",
-			    [jid:encode(JID)]),
+		  ?DEBUG("Stream management without resumption enabled for ~s",
+			 [jid:encode(JID)]),
 		  #sm_enabled{xmlns = Xmlns}
 	  end,
     State1 = State#{mgmt_state => active,

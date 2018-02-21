@@ -115,10 +115,10 @@ iq_handler(#iq{type = set, lang = Lang, from = From,
     {U, S, R} = jid:tolower(From),
     Result = case El of
 		 #carbons_enable{} ->
-		     ?INFO_MSG("carbons enabled for user ~s@~s/~s", [U,S,R]),
+		     ?DEBUG("Carbons enabled for user ~s@~s/~s", [U,S,R]),
 		     enable(S, U, R, ?NS_CARBONS_2);
 		 #carbons_disable{} ->
-		     ?INFO_MSG("carbons disabled for user ~s@~s/~s", [U,S,R]),
+		     ?DEBUG("Carbons disabled for user ~s@~s/~s", [U,S,R]),
 		     disable(S, U, R)
 	     end,
     case Result of
