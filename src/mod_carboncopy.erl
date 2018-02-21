@@ -164,7 +164,7 @@ user_receive_packet({Packet, #{jid := JID} = C2SState}) ->
 			       stanza() | {stop, stanza()}.
 check_and_forward(JID, To, Packet, Direction)->
     case is_chat_message(Packet) andalso
-	not is_muc_pm(To, Packet) andalso
+	not is_received_muc_pm(To, Packet, Direction) andalso
 	xmpp:has_subtag(Packet, #carbons_private{}) == false andalso
 	xmpp:has_subtag(Packet, #hint{type = 'no-copy'}) == false of
 	true ->
@@ -282,9 +282,12 @@ is_chat_message(#message{type = normal, body = [_|_]}) ->
 is_chat_message(_) ->
     false.
 
-is_muc_pm(#jid{lresource = <<>>}, _Packet) ->
+-spec is_received_muc_pm(jid(), message(), direction()) -> boolean().
+is_received_muc_pm(#jid{lresource = <<>>}, _Packet, _Direction) ->
     false;
-is_muc_pm(_To, Packet) ->
+is_received_muc_pm(_To, _Packet, sent) ->
+    false;
+is_received_muc_pm(_To, Packet, received) ->
     xmpp:has_subtag(Packet, #muc_user{}).
 
 -spec list(binary(), binary()) -> [{Resource :: binary(), Namespace :: binary()}].
