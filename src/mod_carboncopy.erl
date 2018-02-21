@@ -165,8 +165,8 @@ user_receive_packet({Packet, #{jid := JID} = C2SState}) ->
 check_and_forward(JID, To, Packet, Direction)->
     case is_chat_message(Packet) andalso
 	not is_received_muc_pm(To, Packet, Direction) andalso
-	xmpp:has_subtag(Packet, #carbons_private{}) == false andalso
-	xmpp:has_subtag(Packet, #hint{type = 'no-copy'}) == false of
+	not xmpp:has_subtag(Packet, #carbons_private{}) andalso
+	not xmpp:has_subtag(Packet, #hint{type = 'no-copy'}) of
 	true ->
 	    case is_carbon_copy(Packet) of
 		false ->
