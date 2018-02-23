@@ -102,10 +102,10 @@ CREATE TABLE archive (
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE FULLTEXT INDEX i_text ON archive(txt);
-CREATE INDEX i_username_timestamp USING BTREE ON archive(username,timestamp);
+CREATE INDEX i_username_timestamp USING BTREE ON archive(username, timestamp);
+CREATE INDEX i_username_peer USING BTREE ON archive(username, peer);
+CREATE INDEX i_username_bare_peer USING BTREE ON archive(username, bare_peer);
 CREATE INDEX i_timestamp USING BTREE ON archive(timestamp);
-CREATE INDEX i_peer USING BTREE ON archive(peer);
-CREATE INDEX i_bare_peer USING BTREE ON archive(bare_peer);
 
 CREATE TABLE archive_prefs (
     username varchar(191) NOT NULL PRIMARY KEY,
