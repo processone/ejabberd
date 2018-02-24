@@ -661,6 +661,8 @@ inherit_session_state(#{user := U, server := S,
 			    {error, Msg}
 		    catch exit:{noproc, _} ->
 			    {error, <<"Previous session PID is dead">>};
+			  exit:{normal, _} ->
+			    {error, <<"Previous session PID has exited">>};
 			  exit:{timeout, _} ->
 			    {error, <<"Session state copying timed out">>}
 		    end
