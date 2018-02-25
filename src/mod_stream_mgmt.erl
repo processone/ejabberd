@@ -176,14 +176,24 @@ c2s_authenticated_packet(#{mgmt_state := MgmtState} = State, Pkt)
 c2s_authenticated_packet(State, Pkt) ->
     update_num_stanzas_in(State, Pkt).
 
-c2s_handle_recv(#{lang := Lang} = State, El, {error, Why}) ->
+c2s_handle_recv(#{mgmt_state := MgmtState,
+		  lang := Lang} = State, El, {error, Why}) ->
     Xmlns = xmpp:get_ns(El),
+    IsStanza = xmpp:is_stanza(El),
     if Xmlns == ?NS_STREAM_MGMT_2; Xmlns == ?NS_STREAM_MGMT_3 ->
 	    Txt = xmpp:io_format_error(Why),
 	    Err = #sm_failed{reason = 'bad-request',
 			     text = xmpp:mk_text(Txt, Lang),
 			     xmlns = Xmlns},
 	    send(State, Err);
+       IsStanza andalso (MgmtState == pending orelse MgmtState == active) ->
+	    State1 = update_num_stanzas_in(State, El),
+	    case xmpp:get_type(El) of
+		<<"result">> -> State1;
+		<<"error">> -> State1;
+		_ ->
+		    State1#{mgmt_force_enqueue => true}
+	    end;
        true ->
 	    State
     end;
@@ -193,24 +203,24 @@ c2s_handle_recv(State, _, _) ->
 c2s_handle_send(#{mgmt_state := MgmtState, mod := Mod,
 		  lang := Lang} = State, Pkt, SendResult)
   when MgmtState == pending; MgmtState == active ->
+    IsStanza = xmpp:is_stanza(Pkt),
     case Pkt of
-	_ when ?is_stanza(Pkt) ->
-	    Meta = xmpp:get_meta(Pkt),
-	    case maps:get(mgmt_is_resent, Meta, false) of
-		false ->
-		    case mgmt_queue_add(State, Pkt) of
-			#{mgmt_max_queue := exceeded} = State1 ->
-			    State2 = State1#{mgmt_resend => false},
+	_ when IsStanza ->
+	    case need_to_enqueue(State, Pkt) of
+		{true, State1} ->
+		    case mgmt_queue_add(State1, Pkt) of
+			#{mgmt_max_queue := exceeded} = State2 ->
+			    State3 = State2#{mgmt_resend => false},
 			    Err = xmpp:serr_policy_violation(
 				    <<"Too many unacked stanzas">>, Lang),
-			    send(State2, Err);
-			State1 when SendResult == ok ->
-			    send_rack(State1);
-			State1 ->
-			    State1
+			    send(State3, Err);
+			State2 when SendResult == ok ->
+			    send_rack(State2);
+			State2 ->
+			    State2
 		    end;
-		true ->
-		    State
+		{false, State1} ->
+		    State1
 	    end;
 	#stream_error{} ->
 	    case MgmtState of
@@ -242,13 +252,13 @@ c2s_handle_info(#{mgmt_ack_timer := TRef, jid := JID, mod := Mod} = State,
 	   [jid:encode(JID)]),
     State1 = Mod:close(State),
     {stop, transition_to_pending(State1)};
-c2s_handle_info(#{mgmt_state := pending,
+c2s_handle_info(#{mgmt_state := pending, lang := Lang,
 		  mgmt_pending_timer := TRef, jid := JID, mod := Mod} = State,
 		{timeout, TRef, pending_timeout}) ->
     ?DEBUG("Timed out waiting for resumption of stream for ~s",
 	   [jid:encode(JID)]),
     Txt = <<"Timed out waiting for stream resumption">>,
-    Err = xmpp:serr_connection_timeout(Txt, ?MYLANG),
+    Err = xmpp:serr_connection_timeout(Txt, Lang),
     Mod:stop(State#{mgmt_state => timeout,
 		    stop_reason => {stream, {out, Err}}});
 c2s_handle_info(#{jid := JID} = State, {_Ref, {resume, OldState}}) ->
@@ -269,8 +279,8 @@ c2s_closed(State, _Reason) ->
     State.
 
 c2s_terminated(#{mgmt_state := resumed, jid := JID} = State, _Reason) ->
-    ?INFO_MSG("Closing former stream of resumed session for ~s",
-	      [jid:encode(JID)]),
+    ?DEBUG("Closing former stream of resumed session for ~s",
+	   [jid:encode(JID)]),
     bounce_message_queue(),
     {stop, State};
 c2s_terminated(#{mgmt_state := MgmtState, mgmt_stanzas_in := In, sid := SID,
@@ -361,15 +371,15 @@ handle_enable(#{mgmt_timeout := DefaultTimeout,
 		      DefaultTimeout
 	      end,
     Res = if Timeout > 0 ->
-		  ?INFO_MSG("Stream management with resumption enabled for ~s",
-			    [jid:encode(JID)]),
+		  ?DEBUG("Stream management with resumption enabled for ~s",
+			 [jid:encode(JID)]),
 		  #sm_enabled{xmlns = Xmlns,
 			      id = make_resume_id(State),
 			      resume = true,
 			      max = Timeout};
 	     true ->
-		  ?INFO_MSG("Stream management without resumption enabled for ~s",
-			    [jid:encode(JID)]),
+		  ?DEBUG("Stream management without resumption enabled for ~s",
+			 [jid:encode(JID)]),
 		  #sm_enabled{xmlns = Xmlns}
 	  end,
     State1 = State#{mgmt_state => active,
@@ -491,7 +501,7 @@ resend_rack(#{mgmt_ack_timer := _,
 resend_rack(State) ->
     State.
 
--spec mgmt_queue_add(state(), xmpp_element()) -> state().
+-spec mgmt_queue_add(state(), xmlel() | xmpp_element()) -> state().
 mgmt_queue_add(#{mgmt_stanzas_out := NumStanzasOut,
 		 mgmt_queue := Queue} = State, Pkt) ->
     NewNum = case NumStanzasOut of
@@ -531,8 +541,13 @@ resend_unacked_stanzas(#{mgmt_state := MgmtState,
 	   [p1_queue:len(Queue), jid:encode(JID)]),
     p1_queue:foldl(
       fun({_, Time, Pkt}, AccState) ->
-	      NewPkt = add_resent_delay_info(AccState, Pkt, Time),
-	      send(AccState, xmpp:put_meta(NewPkt, mgmt_is_resent, true))
+	      Pkt1 = add_resent_delay_info(AccState, Pkt, Time),
+	      Pkt2 = if ?is_stanza(Pkt1) ->
+			     xmpp:put_meta(Pkt1, mgmt_is_resent, true);
+			true ->
+			     Pkt1
+		     end,
+	      send(AccState, Pkt2)
       end, State, Queue);
 resend_unacked_stanzas(State) ->
     State.
@@ -646,6 +661,8 @@ inherit_session_state(#{user := U, server := S,
 			    {error, Msg}
 		    catch exit:{noproc, _} ->
 			    {error, <<"Previous session PID is dead">>};
+			  exit:{normal, _} ->
+			    {error, <<"Previous session PID has exited">>};
 			  exit:{timeout, _} ->
 			    {error, <<"Session state copying timed out">>}
 		    end
@@ -669,6 +686,7 @@ add_resent_delay_info(#{lserver := LServer}, El, Time)
   when is_record(El, message); is_record(El, presence) ->
     xmpp_util:add_delay_info(El, jid:make(LServer), Time, <<"Resent">>);
 add_resent_delay_info(_State, El, _Time) ->
+    %% TODO
     El.
 
 -spec send(state(), xmpp_element()) -> state().
@@ -710,6 +728,14 @@ bounce_message_queue() ->
     after 0 ->
 	    ok
     end.
+
+-spec need_to_enqueue(state(), xmlel() | stanza()) -> {boolean(), state()}.
+need_to_enqueue(State, Pkt) when ?is_stanza(Pkt) ->
+    {not xmpp:get_meta(Pkt, mgmt_is_resent, false), State};
+need_to_enqueue(#{mgmt_force_enqueue := true} = State, #xmlel{}) ->
+    {true, maps:remove(mgmt_is_resent, State)};
+need_to_enqueue(State, _) ->
+    {false, State}.
 
 %%%===================================================================
 %%% Configuration processing

@@ -102,9 +102,9 @@ CREATE TABLE archive (
 );
 
 CREATE INDEX i_username_timestamp ON archive USING btree (username, timestamp);
+CREATE INDEX i_username_peer ON archive USING btree (username, peer);
+CREATE INDEX i_username_bare_peer ON archive USING btree (username, bare_peer);
 CREATE INDEX i_timestamp ON archive USING btree (timestamp);
-CREATE INDEX i_peer ON archive USING btree (peer);
-CREATE INDEX i_bare_peer ON archive USING btree (bare_peer);
 
 CREATE TABLE archive_prefs (
     username text NOT NULL PRIMARY KEY,

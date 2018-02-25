@@ -59,6 +59,7 @@
 	 add_rosteritem/7, delete_rosteritem/4,
 	 process_rosteritems/5, get_roster/2, push_roster/3,
 	 push_roster_all/1, push_alltoall/2,
+	 push_roster_item/5, build_roster_item/3,
 
 	 % Private storage
 	 private_get/4, private_set/3,
@@ -1506,11 +1507,12 @@ srg_get_info(Group, Host) ->
 	Os when is_list(Os) -> Os;
 	error -> []
     end,
-    [{misc:atom_to_binary(Title), btl(Value)} || {Title, Value} <- Opts].
+    [{misc:atom_to_binary(Title), to_list(Value)} || {Title, Value} <- Opts].
 
-btl([]) -> [];
-btl([B|L]) -> [btl(B)|btl(L)];
-btl(B) -> binary_to_list(B).
+to_list([]) -> [];
+to_list([H|T]) -> [to_list(H)|to_list(T)];
+to_list(E) when is_atom(E) -> atom_to_list(E);
+to_list(E) -> binary_to_list(E).
 
 srg_get_members(Group, Host) ->
     Members = mod_shared_roster:get_group_explicit_users(Host,Group),

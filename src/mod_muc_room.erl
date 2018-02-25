@@ -37,7 +37,9 @@
 	 get_role/2,
 	 get_affiliation/2,
 	 is_occupant_or_admin/2,
-	 route/2]).
+	 route/2,
+	 expand_opts/1,
+	 config_fields/0]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -506,7 +508,7 @@ handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
 handle_sync_event({get_disco_item, Filter, JID, Lang}, _From, StateName, StateData) ->
-    Len = ?DICT:size(StateData#state.users),
+    Len = ?DICT:size(StateData#state.nicks),
     Reply = case (Filter == all) or (Filter == Len) or ((Filter /= 0) and (Len /= 0)) of
 	true ->
 	    get_roomdesc_reply(JID, StateData,
@@ -3568,6 +3570,35 @@ make_opts(StateData) ->
      {subject_author, StateData#state.subject_author},
      {subscribers, Subscribers}].
 
+expand_opts(CompactOpts) ->
+    DefConfig = #config{},
+    Fields = record_info(fields, config),
+    {_, Opts1} =
+        lists:foldl(
+          fun(Field, {Pos, Opts}) ->
+                  case lists:keyfind(Field, 1, CompactOpts) of
+                      false ->
+                          DefV = element(Pos, DefConfig),
+                          DefVal = case (?SETS):is_set(DefV) of
+                                       true -> (?SETS):to_list(DefV);
+                                       false -> DefV
+                                   end,
+                          {Pos+1, [{Field, DefVal}|Opts]};
+                      {_, Val} ->
+                          {Pos+1, [{Field, Val}|Opts]}
+                  end
+          end, {2, []}, Fields),
+    SubjectAuthor = proplists:get_value(subject_author, CompactOpts, <<"">>),
+    Subject = proplists:get_value(subject, CompactOpts, <<"">>),
+    Subscribers = proplists:get_value(subscribers, CompactOpts, []),
+    [{subject, Subject},
+     {subject_author, SubjectAuthor},
+     {subscribers, Subscribers}
+     | lists:reverse(Opts1)].
+
+config_fields() ->
+    [subject, subject_author, subscribers | record_info(fields, config)].
+
 -spec destroy_room(muc_destroy(), state()) -> {result, undefined, stop}.
 destroy_room(DEl, StateData) ->
     Destroy = DEl#muc_destroy{xmlns = ?NS_MUC_USER},
@@ -3642,7 +3673,7 @@ process_iq_disco_info(_From, #iq{type = get, lang = Lang}, StateData) ->
 -spec iq_disco_info_extras(binary(), state()) -> xdata().
 iq_disco_info_extras(Lang, StateData) ->
     Fs1 = [{description, (StateData#state.config)#config.description},
-	   {occupants, ?DICT:size(StateData#state.users)},
+	   {occupants, ?DICT:size(StateData#state.nicks)},
 	   {contactjid, get_owners(StateData)}],
     Fs2 = case (StateData#state.config)#config.pubsub of
 	      Node when is_binary(Node), Node /= <<"">> ->
@@ -3875,20 +3906,18 @@ get_roomdesc_tail(StateData, Lang) ->
 	     true -> <<"">>;
 	     _ -> translate:translate(Lang, <<"private, ">>)
 	   end,
-    Len = (?DICT):size(StateData#state.users),
+    Len = (?DICT):size(StateData#state.nicks),
     <<" (", Desc/binary, (integer_to_binary(Len))/binary, ")">>.
 
 -spec get_mucroom_disco_items(state()) -> disco_items().
 get_mucroom_disco_items(StateData) ->
-    Items = lists:map(
-	      fun({_LJID, Info}) ->
-		      Nick = Info#user.nick,
-		      #disco_item{jid = jid:make(StateData#state.room,
-						 StateData#state.host,
-						 Nick),
-				  name = Nick}
-	      end,
-	      (?DICT):to_list(StateData#state.users)),
+    Items = ?DICT:fold(
+	       fun(Nick, _, Acc) ->
+		       [#disco_item{jid = jid:make(StateData#state.room,
+						   StateData#state.host,
+						   Nick),
+				    name = Nick}|Acc]
+	       end, [], StateData#state.nicks),
     #disco_items{items = Items}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

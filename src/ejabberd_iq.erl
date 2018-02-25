@@ -144,7 +144,7 @@ noreply(#state{expire = Expire} = State) ->
 -spec encode_id(non_neg_integer(), binary()) -> binary().
 encode_id(Expire, Rnd) ->
     ExpireBin = integer_to_binary(Expire),
-    Node = atom_to_binary(node(), utf8),
+    Node = ejabberd_cluster:node_id(),
     CheckSum = calc_checksum(<<ExpireBin/binary, Rnd/binary, Node/binary>>),
     <<"rr-", ExpireBin/binary, $-, Rnd/binary, $-, CheckSum/binary, $-, Node/binary>>.
 
@@ -155,7 +155,7 @@ decode_id(<<"rr-", ID/binary>>) ->
 	[Rnd, Rest] = binary:split(Tail, <<"-">>),
 	[CheckSum, NodeBin] = binary:split(Rest, <<"-">>),
 	CheckSum = calc_checksum(<<ExpireBin/binary, Rnd/binary, NodeBin/binary>>),
-	Node = erlang:binary_to_existing_atom(NodeBin, utf8),
+	Node = ejabberd_cluster:get_node_by_id(NodeBin),
 	Expire = binary_to_integer(ExpireBin),
 	{ok, Expire, Rnd, Node}
     catch _:{badmatch, _} ->

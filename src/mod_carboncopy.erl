@@ -115,10 +115,10 @@ iq_handler(#iq{type = set, lang = Lang, from = From,
     {U, S, R} = jid:tolower(From),
     Result = case El of
 		 #carbons_enable{} ->
-		     ?INFO_MSG("carbons enabled for user ~s@~s/~s", [U,S,R]),
+		     ?DEBUG("Carbons enabled for user ~s@~s/~s", [U,S,R]),
 		     enable(S, U, R, ?NS_CARBONS_2);
 		 #carbons_disable{} ->
-		     ?INFO_MSG("carbons disabled for user ~s@~s/~s", [U,S,R]),
+		     ?DEBUG("Carbons disabled for user ~s@~s/~s", [U,S,R]),
 		     disable(S, U, R)
 	     end,
     case Result of
@@ -164,9 +164,9 @@ user_receive_packet({Packet, #{jid := JID} = C2SState}) ->
 			       stanza() | {stop, stanza()}.
 check_and_forward(JID, To, Packet, Direction)->
     case is_chat_message(Packet) andalso
-	not is_muc_pm(To, Packet) andalso
-	xmpp:has_subtag(Packet, #carbons_private{}) == false andalso
-	xmpp:has_subtag(Packet, #hint{type = 'no-copy'}) == false of
+	not is_received_muc_pm(To, Packet, Direction) andalso
+	not xmpp:has_subtag(Packet, #carbons_private{}) andalso
+	not xmpp:has_subtag(Packet, #hint{type = 'no-copy'}) of
 	true ->
 	    case is_carbon_copy(Packet) of
 		false ->
@@ -282,9 +282,12 @@ is_chat_message(#message{type = normal, body = [_|_]}) ->
 is_chat_message(_) ->
     false.
 
-is_muc_pm(#jid{lresource = <<>>}, _Packet) ->
+-spec is_received_muc_pm(jid(), message(), direction()) -> boolean().
+is_received_muc_pm(#jid{lresource = <<>>}, _Packet, _Direction) ->
     false;
-is_muc_pm(_To, Packet) ->
+is_received_muc_pm(_To, _Packet, sent) ->
+    false;
+is_received_muc_pm(_To, Packet, received) ->
     xmpp:has_subtag(Packet, #muc_user{}).
 
 -spec list(binary(), binary()) -> [{Resource :: binary(), Namespace :: binary()}].

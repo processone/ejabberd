@@ -526,7 +526,10 @@ db_get_password(User, Server, Mod) ->
     UseCache = use_cache(Mod, Server),
     case erlang:function_exported(Mod, get_password, 2) of
 	false when UseCache ->
-	    ets_cache:lookup(?AUTH_CACHE, {User, Server});
+	    case ets_cache:lookup(?AUTH_CACHE, {User, Server}) of
+		{ok, exists} -> error;
+		Other -> Other
+	    end;
 	false ->
 	    error;
 	true when UseCache ->
@@ -544,7 +547,20 @@ db_user_exists(User, Server, Mod) ->
 	error ->
 	    case Mod:store_type(Server) of
 		external ->
-		    Mod:user_exists(User, Server);
+		    case ets_cache:lookup(
+			   ?AUTH_CACHE, {User, Server},
+			   fun() ->
+				   case Mod:user_exists(User, Server) of
+				       true -> {ok, exists};
+				       false -> error;
+				       {error, _} = Err -> Err
+				   end
+			   end) of
+			{ok, _} ->
+			    true;
+			error ->
+			    false
+		    end;
 		_ ->
 		    false
 	    end
@@ -568,7 +584,7 @@ db_check_password(User, AuthzId, Server, ProvidedPassword,
 				       false ->
 					   error
 				   end
-			   end, cache_nodes(Mod, Server)) of
+			   end) of
 			{ok, _} ->
 			    true;
 			error ->

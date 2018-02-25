@@ -156,9 +156,9 @@ privacy_check_packet(allow, C2SState,
     case xmpp:has_subtag(IQ, #last{}) of
 	true ->
 	    #jid{luser = LUser, lserver = LServer} = To,
-	    {Sub, _} = ejabberd_hooks:run_fold(
-			 roster_get_jid_info, LServer,
-			 {none, []}, [LUser, LServer, From]),
+	    {Sub, _, _} = ejabberd_hooks:run_fold(
+			    roster_get_jid_info, LServer,
+			    {none, none, []}, [LUser, LServer, From]),
 	    if Sub == from; Sub == both ->
 		    Pres = #presence{from = To, to = From},
 		    case ejabberd_hooks:run_fold(

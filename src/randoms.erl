@@ -28,7 +28,7 @@
 -author('alexey@process-one.net').
 
 -export([get_string/0, uniform/0, uniform/1, uniform/2, bytes/1,
-	 round_robin/1]).
+	 round_robin/1, get_alphanum_string/1]).
 
 -define(THRESHOLD, 16#10000000000000000).
 
@@ -71,3 +71,21 @@ bytes(N) ->
 -spec round_robin(pos_integer()) -> non_neg_integer().
 round_robin(N) ->
     p1_time_compat:unique_integer([monotonic, positive]) rem N.
+
+-spec get_alphanum_string(non_neg_integer()) -> binary().
+get_alphanum_string(Length) ->
+    list_to_binary(get_alphanum_string([], Length)).
+
+-spec get_alphanum_string(string(), non_neg_integer()) -> string().
+get_alphanum_string(S, 0) -> S;
+get_alphanum_string(S, N) ->
+    get_alphanum_string([make_rand_char() | S], N - 1).
+
+-spec make_rand_char() -> char().
+make_rand_char() ->
+    map_int_to_char(uniform(0, 61)).
+
+-spec map_int_to_char(0..61) -> char().
+map_int_to_char(N) when N =<  9 -> N + 48; % Digit.
+map_int_to_char(N) when N =< 35 -> N + 55; % Upper-case character.
+map_int_to_char(N) when N =< 61 -> N + 61. % Lower-case character.
