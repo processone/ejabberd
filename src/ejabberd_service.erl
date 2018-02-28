@@ -291,6 +291,9 @@ transform_listen_option(Opt, Opts) ->
 					   [{binary(), binary() | undefined}]);
 		     (max_stanza_type) -> fun((timeout()) -> timeout());
 		     (max_fsm_queue) -> fun((pos_integer()) -> pos_integer());
+		     (inet) -> fun((boolean()) -> boolean());
+		     (inet6) -> fun((boolean()) -> boolean());
+		     (backlog) -> fun((timeout()) -> timeout());
 		     (atom()) -> [atom()].
 listen_opt_type(access) -> fun acl:access_rules_validator/1;
 listen_opt_type(shaper_rule) -> fun acl:shaper_rules_validator/1;
@@ -328,7 +331,11 @@ listen_opt_type(max_stanza_size) ->
     end;
 listen_opt_type(max_fsm_queue) ->
     fun(I) when is_integer(I), I>0 -> I end;
+listen_opt_type(inet) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(inet6) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(backlog) ->
+    fun(I) when is_integer(I), I>0 -> I end;
 listen_opt_type(_) ->
     [access, shaper_rule, certfile, ciphers, dhfile, cafile, tls,
      protocol_options, tls_compression, password, hosts, check_from,
-     max_fsm_queue, global_routes].
+     max_fsm_queue, global_routes, backlog, inet, inet6].

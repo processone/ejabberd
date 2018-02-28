@@ -358,6 +358,9 @@ change_shaper(#{shaper := ShaperName, server_host := ServerHost} = State,
 		     (supervisor) -> fun((boolean()) -> boolean());
 		     (max_stanza_type) -> fun((timeout()) -> timeout());
 		     (max_fsm_queue) -> fun((pos_integer()) -> pos_integer());
+		     (inet) -> fun((boolean()) -> boolean());
+		     (inet6) -> fun((boolean()) -> boolean());
+		     (backlog) -> fun((timeout()) -> timeout());
 		     (atom()) -> [atom()].
 listen_opt_type(shaper) -> fun acl:shaper_rules_validator/1;
 listen_opt_type(certfile = Opt) ->
@@ -381,6 +384,10 @@ listen_opt_type(max_stanza_size) ->
     end;
 listen_opt_type(max_fsm_queue) ->
     fun(I) when is_integer(I), I>0 -> I end;
+listen_opt_type(inet) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(inet6) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(backlog) ->
+    fun(I) when is_integer(I), I>0 -> I end;
 listen_opt_type(_) ->
     [shaper, certfile, ciphers, dhfile, cafile, protocol_options,
-     tls_compression, tls, max_fsm_queue].
+     tls_compression, tls, max_fsm_queue, backlog, inet, inet6].
