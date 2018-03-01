@@ -320,9 +320,9 @@ get_commands_spec() ->
 			args_desc = ["Room name", "MUC service", "User JID"],
 			args_example = ["room1", "muc.example.com", "user1@example.com"],
 			result_desc = "Affiliation of the user",
-			result_example = {member},
+			result_example = member,
 			args = [{name, binary}, {service, binary}, {jid, binary}],
-			result = {affiliation, {tuple, [{affiliation, atom}]}}}
+			result = {affiliation, atom}}
 	].
 
 
@@ -1057,8 +1057,7 @@ get_room_affiliation(Name, Service, JID) ->
 		%% Get the PID of the online room, then request its state
 		{ok, StateData} = p1_fsm:sync_send_all_state_event(Pid, get_state),
 		UserJID = jid:decode(JID),
-		Affiliation = mod_muc_room:get_affiliation(UserJID, StateData),
-		{Affiliation};
+		mod_muc_room:get_affiliation(UserJID, StateData);
 	error ->
 		throw({error, "The room does not exist."})
 	end.
