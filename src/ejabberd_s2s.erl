@@ -227,10 +227,15 @@ tls_options(LServer, DefaultOpts) ->
 		   CAFile -> lists:keystore(cafile, 1, TLSOpts4,
 					    {cafile, CAFile})
 	       end,
+    TLSOpts6 = case get_client_cafile(LServer) of
+		   undefined -> TLSOpts5;
+		   ClientCAFile -> lists:keystore(client_cafile, 1, TLSOpts5,
+					    {client_cafile, ClientCAFile})
+	       end,
     case ejabberd_config:get_option({s2s_tls_compression, LServer}) of
 	undefined -> TLSOpts5;
-	false -> [compression_none | TLSOpts5];
-	true -> lists:delete(compression_none, TLSOpts5)
+	false -> [compression_none | TLSOpts6];
+	true -> lists:delete(compression_none, TLSOpts6)
     end.
 
 -spec tls_required(binary()) -> boolean().
@@ -282,6 +287,15 @@ get_cafile(LServer) ->
     case ejabberd_config:get_option({s2s_cafile, LServer}) of
 	undefined ->
 	    ejabberd_pkix:ca_file();
+	File ->
+	    File
+    end.
+
+-spec get_client_cafile(binary()) -> file:filename_all() | undefined.
+get_client_cafile(LServer) ->
+    case ejabberd_config:get_option({s2s_client_cafile, LServer}) of
+	undefined ->
+	    ejabberd_pkix:client_ca_file();
 	File ->
 	    File
     end.

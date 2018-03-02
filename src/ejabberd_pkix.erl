@@ -28,7 +28,8 @@
 %% API
 -export([start_link/0, add_certfile/1, format_error/1, opt_type/1,
 	 get_certfile/1, try_certfile/1, route_registered/1,
-	 config_reloaded/0, certs_dir/0, ca_file/0, get_default_certfile/0]).
+	 config_reloaded/0, certs_dir/0, ca_file/0, client_ca_file/0,
+	 get_default_certfile/0]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
@@ -181,6 +182,10 @@ opt_type(ca_file) ->
     fun(Path) ->
 	    binary_to_list(misc:try_read_file(Path))
     end;
+opt_type(client_ca_file) ->
+    fun(Path) ->
+	    binary_to_list(misc:try_read_file(Path))
+    end;
 opt_type(certfiles) ->
     fun(CertList) ->
 	    [binary_to_list(Path) || Path <- CertList]
@@ -191,7 +196,7 @@ opt_type(O) when O == c2s_certfile; O == s2s_certfile; O == domain_certfile ->
 	    misc:try_read_file(File)
     end;
 opt_type(_) ->
-    [ca_path, ca_file, certfiles, c2s_certfile, s2s_certfile, domain_certfile].
+    [ca_path, ca_file, client_ca_file, certfiles, c2s_certfile, s2s_certfile, domain_certfile].
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -607,6 +612,10 @@ ca_dir() ->
 -spec ca_file() -> string() | undefined.
 ca_file() ->
     ejabberd_config:get_option(ca_file).
+
+-spec client_ca_file() -> string() | undefined.
+client_ca_file() ->
+    ejabberd_config:get_option(client_ca_file).
 
 -spec certs_dir() -> string().
 certs_dir() ->

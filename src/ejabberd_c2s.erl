@@ -331,10 +331,16 @@ tls_options(#{lserver := LServer, tls_options := DefaultOpts,
 		   CAFile -> lists:keystore(cafile, 1, TLSOpts4,
 					    {cafile, CAFile})
 	       end,
+    TLSOpts6 = case ejabberd_config:get_option(
+		      {c2s_client_cafile, LServer}) of
+		   undefined -> TLSOpts5;
+		   ClientCAFile -> lists:keystore(client_cafile, 1, TLSOpts5,
+					    {client_cafile, ClientCAFile})
+	       end,
     case ejabberd_config:get_option({c2s_tls_compression, LServer}) of
-	undefined -> TLSOpts5;
-	false -> [compression_none | TLSOpts5];
-	true -> lists:delete(compression_none, TLSOpts5)
+	undefined -> TLSOpts6;
+	false -> [compression_none | TLSOpts6];
+	true -> lists:delete(compression_none, TLSOpts6)
     end.
 
 tls_required(#{tls_required := TLSRequired}) ->
@@ -508,6 +514,7 @@ init([State, Opts]) ->
 		    ({ciphers, _}) -> true;
 		    ({dhfile, _}) -> true;
 		    ({cafile, _}) -> true;
+		    ({client_cafile, _}) -> true;
 		    ({protocol_options, _}) -> true;
 		    (_) -> false
 		 end, Opts),
@@ -953,6 +960,7 @@ transform_listen_option(Opt, Opts) ->
 -spec opt_type(c2s_ciphers) -> fun((binary()) -> binary());
 	      (c2s_dhfile) -> fun((binary()) -> binary());
 	      (c2s_cafile) -> fun((binary()) -> binary());
+	      (c2s_client_cafile) -> fun((binary()) -> binary());
 	      (c2s_protocol_options) -> fun(([binary()]) -> binary());
 	      (c2s_tls_compression) -> fun((boolean()) -> boolean());
 	      (resource_conflict) -> fun((resource_conflict()) -> resource_conflict());
@@ -961,6 +969,7 @@ transform_listen_option(Opt, Opts) ->
 opt_type(c2s_ciphers) -> fun iolist_to_binary/1;
 opt_type(c2s_dhfile) -> fun misc:try_read_file/1;
 opt_type(c2s_cafile) -> fun misc:try_read_file/1;
+opt_type(c2s_client_cafile) -> fun misc:try_read_file/1;
 opt_type(c2s_protocol_options) ->
     fun (Options) -> str:join(Options, <<"|">>) end;
 opt_type(c2s_tls_compression) ->
@@ -979,7 +988,7 @@ opt_type(disable_sasl_mechanisms) ->
 	(V) -> [str:to_upper(V)]
     end;
 opt_type(_) ->
-    [c2s_ciphers, c2s_cafile, c2s_dhfile,
+    [c2s_ciphers, c2s_cafile, c2s_client_cafile, c2s_dhfile,
      c2s_protocol_options, c2s_tls_compression, resource_conflict,
      disable_sasl_mechanisms].
 
@@ -989,6 +998,7 @@ opt_type(_) ->
 		     (ciphers) -> fun((binary()) -> binary());
 		     (dhfile) -> fun((binary()) -> binary());
 		     (cafile) -> fun((binary()) -> binary());
+		     (client_cafile) -> fun((binary()) -> binary());
 		     (protocol_options) -> fun(([binary()]) -> binary());
 		     (tls_compression) -> fun((boolean()) -> boolean());
 		     (tls) -> fun((boolean()) -> boolean());
@@ -1015,6 +1025,7 @@ listen_opt_type(certfile = Opt) ->
 listen_opt_type(ciphers) -> opt_type(c2s_ciphers);
 listen_opt_type(dhfile) -> opt_type(c2s_dhfile);
 listen_opt_type(cafile) -> opt_type(c2s_cafile);
+listen_opt_type(client_cafile) -> opt_type(c2s_client_cafile);
 listen_opt_type(protocol_options) -> opt_type(c2s_protocol_options);
 listen_opt_type(tls_compression) -> opt_type(c2s_tls_compression);
 listen_opt_type(tls) -> fun(B) when is_boolean(B) -> B end;
@@ -1042,7 +1053,7 @@ listen_opt_type(O) ->
     StreamOpts = mod_stream_mgmt:mod_options(?MYNAME),
     case lists:keyfind(O, 1, StreamOpts) of
 	false ->
-	    [access, shaper, certfile, ciphers, dhfile, cafile,
+	    [access, shaper, certfile, ciphers, dhfile, cafile, client_cafile,
 	     protocol_options, tls, tls_compression, starttls,
 	     starttls_required, tls_verify, zlib, max_fsm_queue,
 	     backlog, inet, inet6];
