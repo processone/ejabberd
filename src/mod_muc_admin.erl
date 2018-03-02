@@ -37,7 +37,7 @@
 	 get_user_rooms/2, get_room_occupants/2,
 	 get_room_occupants_number/2, send_direct_invitation/5,
 	 change_room_option/4, get_room_options/2,
-	 set_room_affiliation/4, get_room_affiliations/2,
+	 set_room_affiliation/4, get_room_affiliations/2, get_room_affiliation/3,
 	 web_menu_main/2, web_page_main/2, web_menu_host/3,
 	 subscribe_room/4, unsubscribe_room/2, get_subscribers/2,
 	 web_page_host/3, mod_options/1, get_commands_spec/0]).
@@ -313,8 +313,17 @@ get_commands_spec() ->
 								 {affiliation, atom},
 								 {reason, string}
 								]}}
-						}}}
-    ].
+						}}},
+	 #ejabberd_commands{name = get_room_affiliation, tags = [muc_room],
+			desc = "Get affiliation of a user in MUC room",
+			module = ?MODULE, function = get_room_affiliation,
+			args_desc = ["Room name", "MUC service", "User JID"],
+			args_example = ["room1", "muc.example.com", "user1@example.com"],
+			result_desc = "Affiliation of the user",
+			result_example = member,
+			args = [{name, binary}, {service, binary}, {jid, binary}],
+			result = {affiliation, atom}}
+	].
 
 
 %%%
@@ -1033,6 +1042,25 @@ get_room_affiliations(Name, Service) ->
 	error ->
 	    throw({error, "The room does not exist."})
     end.
+
+%%----------------------------
+%% Get Room Affiliation
+%%----------------------------
+
+%% @spec(Name::binary(), Service::binary(), JID::binary()) ->
+%%    {Affiliation::string()}
+%% @doc Get affiliation of a user in the room Name@Service.
+
+get_room_affiliation(Name, Service, JID) ->
+	case mod_muc:find_online_room(Name, Service) of
+	{ok, Pid} ->
+		%% Get the PID of the online room, then request its state
+		{ok, StateData} = p1_fsm:sync_send_all_state_event(Pid, get_state),
+		UserJID = jid:decode(JID),
+		mod_muc_room:get_affiliation(UserJID, StateData);
+	error ->
+		throw({error, "The room does not exist."})
+	end.
 
 %%----------------------------
 %% Change Room Affiliation
