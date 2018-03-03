@@ -589,7 +589,7 @@ create_slot(#state{service_url = undefined,
     case ejabberd_hooks:run_fold(http_upload_slot_request, ServerHost, allow,
 				 [JID, UserDir, Size, Lang]) of
 	allow ->
-	    RandStr = make_rand_string(SecretLength),
+	    RandStr = randoms:get_alphanum_string(SecretLength),
 	    FileStr = make_file_string(File),
 	    ?INFO_MSG("Got HTTP upload slot for ~s (file: ~s)",
 		      [jid:encode(JID), File]),
@@ -686,27 +686,6 @@ make_user_string(#jid{luser = U}, node) ->
 
 make_file_string(File) ->
     re:replace(File, <<"[^a-zA-Z0-9_.-]">>, <<$_>>, [global, {return, binary}]).
-
--spec make_rand_string(non_neg_integer()) -> binary().
-
-make_rand_string(Length) ->
-    list_to_binary(make_rand_string([], Length)).
-
--spec make_rand_string(string(), non_neg_integer()) -> string().
-
-make_rand_string(S, 0) -> S;
-make_rand_string(S, N) -> make_rand_string([make_rand_char() | S], N - 1).
-
--spec make_rand_char() -> char().
-
-make_rand_char() ->
-    map_int_to_char(randoms:uniform(0, 61)).
-
--spec map_int_to_char(0..61) -> char().
-
-map_int_to_char(N) when N =<  9 -> N + 48; % Digit.
-map_int_to_char(N) when N =< 35 -> N + 55; % Upper-case character.
-map_int_to_char(N) when N =< 61 -> N + 61. % Lower-case character.
 
 -spec yield_content_type(binary()) -> binary().
 

@@ -81,15 +81,8 @@ prepare(ClientIn) ->
       _ -> error
     end.
 
-parse(S) -> parse1(binary_to_list(S), "", []).
-
-parse1([0 | Cs], S, T) ->
-    parse1(Cs, "", [list_to_binary(lists:reverse(S)) | T]);
-parse1([C | Cs], S, T) -> parse1(Cs, [C | S], T);
-%parse1([], [], T) ->
-%    lists:reverse(T);
-parse1([], S, T) ->
-    lists:reverse([list_to_binary(lists:reverse(S)) | T]).
+parse(S) ->
+    binary:split(S, <<0>>, [global]).
 
 parse_domain(S) -> parse_domain1(binary_to_list(S), "", []).
 

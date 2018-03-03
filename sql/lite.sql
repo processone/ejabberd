@@ -98,9 +98,9 @@ CREATE TABLE archive (
 );
 
 CREATE INDEX i_username_timestamp ON archive(username, timestamp);
+CREATE INDEX i_archive_username_peer ON archive (username, peer);
+CREATE INDEX i_archive_username_bare_peer ON archive (username, bare_peer);
 CREATE INDEX i_timestamp ON archive(timestamp);
-CREATE INDEX i_peer ON archive(peer);
-CREATE INDEX i_bare_peer ON archive(bare_peer);
 
 CREATE TABLE archive_prefs (
     username text NOT NULL PRIMARY KEY,

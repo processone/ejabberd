@@ -199,8 +199,10 @@ need_check(Pkt) ->
 		      false
 	      end,
     AllowLocalUsers = gen_mod:get_module_opt(LServer, ?MODULE, allow_local_users),
-    not (IsEmpty orelse ((AllowLocalUsers orelse From#jid.luser == <<"">>)
-			 andalso ejabberd_router:is_my_host(From#jid.lserver))).
+    Access = gen_mod:get_module_opt(LServer, ?MODULE, access),
+    not (IsEmpty orelse acl:match_rule(LServer, Access, From) == allow
+	 orelse ((AllowLocalUsers orelse From#jid.luser == <<"">>)
+		 andalso ejabberd_router:is_my_host(From#jid.lserver))).
 
 -spec check_subscription(jid(), jid()) -> boolean().
 check_subscription(From, To) ->
@@ -265,10 +267,14 @@ mod_opt_type(allow_local_users) ->
 mod_opt_type(allow_transports) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(captcha) ->
-    fun (B) when is_boolean(B) -> B end.
+    fun (B) when is_boolean(B) -> B end;
+mod_opt_type(access) ->
+    fun acl:access_rules_validator/1.
+
 
 mod_options(_) ->
-    [{drop, true},
+    [{access, none},
+     {drop, true},
      {log, false},
      {captcha, false},
      {allow_local_users, true},

@@ -89,8 +89,14 @@ init_config(Config) ->
     ConfigPath = filename:join([CWD, "ejabberd.yml"]),
     ok = file:write_file(ConfigPath, CfgContent2),
     setup_ejabberd_lib_path(Config),
-    ok = application:load(sasl),
-    ok = application:load(mnesia),
+    case application:load(sasl) of
+	ok -> ok;
+	{error, {already_loaded, _}} -> ok
+    end,
+    case application:load(mnesia) of
+	ok -> ok;
+	{error, {already_loaded, _}} -> ok
+    end,
     case application:load(ejabberd) of
 	ok -> ok;
 	{error, {already_loaded, _}} -> ok

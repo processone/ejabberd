@@ -259,6 +259,7 @@ init([State, Opts]) ->
                    false -> [compression_none | TLSOpts1];
                    true -> TLSOpts1
     end,
+    Timeout = ejabberd_config:negotiation_timeout(),
     State1 = State#{tls_options => TLSOpts2,
 		    auth_domains => sets:new(),
 		    xmlns => ?NS_SERVER,
@@ -268,7 +269,8 @@ init([State, Opts]) ->
 		    server_host => ?MYNAME,
 		    established => false,
 		    shaper => Shaper},
-    ejabberd_hooks:run_fold(s2s_in_init, {ok, State1}, [Opts]).
+    State2 = xmpp_stream_in:set_timeout(State1, Timeout),
+    ejabberd_hooks:run_fold(s2s_in_init, {ok, State2}, [Opts]).
 
 handle_call(Request, From, #{server_host := LServer} = State) ->
     ejabberd_hooks:run_fold(s2s_in_handle_call, LServer, State, [Request, From]).
@@ -356,6 +358,9 @@ change_shaper(#{shaper := ShaperName, server_host := ServerHost} = State,
 		     (supervisor) -> fun((boolean()) -> boolean());
 		     (max_stanza_type) -> fun((timeout()) -> timeout());
 		     (max_fsm_queue) -> fun((pos_integer()) -> pos_integer());
+		     (inet) -> fun((boolean()) -> boolean());
+		     (inet6) -> fun((boolean()) -> boolean());
+		     (backlog) -> fun((timeout()) -> timeout());
 		     (atom()) -> [atom()].
 listen_opt_type(shaper) -> fun acl:shaper_rules_validator/1;
 listen_opt_type(certfile = Opt) ->
@@ -379,6 +384,10 @@ listen_opt_type(max_stanza_size) ->
     end;
 listen_opt_type(max_fsm_queue) ->
     fun(I) when is_integer(I), I>0 -> I end;
+listen_opt_type(inet) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(inet6) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(backlog) ->
+    fun(I) when is_integer(I), I>0 -> I end;
 listen_opt_type(_) ->
     [shaper, certfile, ciphers, dhfile, cafile, protocol_options,
-     tls_compression, tls, max_fsm_queue].
+     tls_compression, tls, max_fsm_queue, backlog, inet, inet6].

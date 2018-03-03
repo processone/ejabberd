@@ -109,9 +109,9 @@ CREATE TABLE archive (
 );
 
 CREATE INDEX i_archive_sh_username_timestamp ON archive (server_host, username, timestamp);
+CREATE INDEX i_archive_sh_username_peer ON archive (server_host, username, peer);
+CREATE INDEX i_archive_sh_username_bare_peer ON archive (server_host, username, bare_peer);
 CREATE INDEX i_archive_sh_timestamp ON archive (server_host, timestamp);
-CREATE INDEX i_archive_sh_peer ON archive (server_host, peer);
-CREATE INDEX i_archive_sh_bare_peer ON archive (server_host, bare_peer);
 
 CREATE TABLE archive_prefs (
     username text NOT NULL,

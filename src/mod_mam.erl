@@ -67,9 +67,10 @@
 -callback select(binary(), jid(), jid(), mam_query:result(),
 		 #rsm_set{} | undefined, chat | groupchat) ->
     {[{binary(), non_neg_integer(), xmlel()}], boolean(), non_neg_integer()}.
--callback use_cache(binary(), gen_mod:opts()) -> boolean().
+-callback use_cache(binary()) -> boolean().
+-callback cache_nodes(binary()) -> [node()].
 
--optional_callbacks([use_cache/2]).
+-optional_callbacks([use_cache/1, cache_nodes/1]).
 
 %%%===================================================================
 %%% API
@@ -77,7 +78,7 @@
 start(Host, Opts) ->
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
-    init_cache(Host, Opts),
+    init_cache(Mod, Host, Opts),
     register_iq_handlers(Host),
     ejabberd_hooks:add(sm_receive_packet, Host, ?MODULE,
 		       sm_receive_packet, 50),
@@ -113,19 +114,24 @@ start(Host, Opts) ->
     ejabberd_commands:register_commands(get_commands_spec()),
     ok.
 
-use_cache(Host, Opts) ->
-    Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
+use_cache(Mod, Host) ->
     case erlang:function_exported(Mod, use_cache, 2) of
-	true -> Mod:use_cache(Host, Opts);
-	false -> gen_mod:get_opt(use_cache, Opts)
+	true -> Mod:use_cache(Host);
+	false -> gen_mod:get_module_opt(Host, ?MODULE, use_cache)
     end.
 
-init_cache(Host, Opts) ->
-    case use_cache(Host, Opts) of
+cache_nodes(Mod, Host) ->
+    case erlang:function_exported(Mod, cache_nodes, 1) of
+	true -> Mod:cache_nodes(Host);
+	false -> ejabberd_cluster:get_nodes()
+    end.
+
+init_cache(Mod, Host, Opts) ->
+    case use_cache(Mod, Host) of
 	true ->
 	    ets_cache:new(archive_prefs_cache, cache_opts(Opts));
 	false ->
-	    ok
+	    ets_cache:delete(archive_prefs_cache)
     end.
 
 cache_opts(Opts) ->
@@ -185,7 +191,7 @@ reload(Host, NewOpts, OldOpts) ->
        true ->
 	    ok
     end,
-    ets_cache:setopts(archive_prefs_cache, cache_opts(NewOpts)),
+    init_cache(NewMod, Host, NewOpts),
     case gen_mod:is_equal_opt(assume_mam_usage, NewOpts, OldOpts) of
 	{false, true, _} ->
 	    ejabberd_hooks:add(message_is_archived, Host, ?MODULE,
@@ -236,8 +242,13 @@ remove_user(User, Server) ->
     LServer = jid:nameprep(Server),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:remove_user(LUser, LServer),
-    ets_cache:delete(archive_prefs_cache, {LUser, LServer},
-		     ejabberd_cluster:get_nodes()).
+    case use_cache(Mod, LServer) of
+	true ->
+	    ets_cache:delete(archive_prefs_cache, {LUser, LServer},
+			     cache_nodes(Mod, LServer));
+	false ->
+	    ok
+    end.
 
 -spec remove_room(binary(), binary(), binary()) -> ok.
 remove_room(LServer, Name, Host) ->
@@ -792,16 +803,26 @@ write_prefs(LUser, LServer, Host, Default, Always, Never) ->
     Mod = gen_mod:db_mod(Host, ?MODULE),
     case Mod:write_prefs(LUser, LServer, Prefs, Host) of
 	ok ->
-	    ets_cache:delete(archive_prefs_cache, {LUser, LServer},
-			     ejabberd_cluster:get_nodes());
+	    case use_cache(Mod, LServer) of
+		true ->
+		    ets_cache:delete(archive_prefs_cache, {LUser, LServer},
+				     cache_nodes(Mod, LServer));
+		false ->
+		    ok
+	    end;
 	_Err ->
 	    {error, db_failure}
     end.
 
 get_prefs(LUser, LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Res = ets_cache:lookup(archive_prefs_cache, {LUser, LServer},
-			   fun() -> Mod:get_prefs(LUser, LServer) end),
+    Res = case use_cache(Mod, LServer) of
+	      true ->
+		  ets_cache:lookup(archive_prefs_cache, {LUser, LServer},
+				   fun() -> Mod:get_prefs(LUser, LServer) end);
+	      false ->
+		  Mod:get_prefs(LUser, LServer)
+	  end,
     case Res of
 	{ok, Prefs} ->
 	    Prefs;
@@ -831,10 +852,16 @@ maybe_activate_mam(LUser, LServer) ->
     case ActivateOpt of
 	true ->
 	    Mod = gen_mod:db_mod(LServer, ?MODULE),
-	    Res = ets_cache:lookup(archive_prefs_cache, {LUser, LServer},
-				   fun() ->
-					   Mod:get_prefs(LUser, LServer)
-				   end),
+	    Res = case use_cache(Mod, LServer) of
+		      true ->
+			  ets_cache:lookup(archive_prefs_cache,
+					   {LUser, LServer},
+					   fun() ->
+						   Mod:get_prefs(LUser, LServer)
+					   end);
+		      false ->
+			  Mod:get_prefs(LUser, LServer)
+		  end,
 	    case Res of
 		{ok, _Prefs} ->
 		    ok;

@@ -201,8 +201,10 @@ convert_data(Host, "offline", User, [Data]) ->
       fun({_, RawXML}) ->
 	      case deserialize(RawXML) of
 		  [El] ->
-		      Msg = el_to_offline_msg(LUser, LServer, El),
-		      ok = mod_offline:store_offline_msg(Msg);
+		      case el_to_offline_msg(LUser, LServer, El) of
+			  [Msg] -> ok = mod_offline:store_offline_msg(Msg);
+			  [] -> ok
+		      end;
 		  _ ->
 		      ok
 	      end

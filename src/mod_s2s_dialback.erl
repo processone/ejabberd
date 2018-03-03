@@ -121,13 +121,14 @@ s2s_out_init(Acc, _Opts) ->
 
 s2s_out_closed(#{server := LServer,
 		 remote_server := RServer,
+		 lang := Lang,
 		 db_verify := {StreamID, _Key, _Pid}} = State, Reason) ->
     %% Outbound s2s verificating connection (created at step 1) is
     %% closed suddenly without receiving the response.
     %% Building a response on our own
     Response = #db_verify{from = RServer, to = LServer,
 			  id = StreamID, type = error,
-			  sub_els = [mk_error(Reason)]},
+			  sub_els = [mk_error(Reason, Lang)]},
     s2s_out_packet(State, Response);
 s2s_out_closed(State, _Reason) ->
     State.
@@ -171,7 +172,7 @@ s2s_out_downgraded(#{db_enabled := true,
 s2s_out_downgraded(State, _) ->
     State.
 
-s2s_in_packet(#{stream_id := StreamID} = State,
+s2s_in_packet(#{stream_id := StreamID, lang := Lang} = State,
 	      #db_result{from = From, to = To, key = Key, type = undefined}) ->
     %% Received dialback request, section 2.2.1, step 1
     try
@@ -186,7 +187,7 @@ s2s_in_packet(#{stream_id := StreamID} = State,
 	    {stop,
 	     send_db_result(State,
 			    #db_verify{from = From, to = To, type = error,
-				       sub_els = [mk_error(Reason)]})}
+				       sub_els = [mk_error(Reason, Lang)]})}
     end;
 s2s_in_packet(State, #db_verify{to = To, from = From, key = Key,
 				id = StreamID, type = undefined}) ->
@@ -204,7 +205,7 @@ s2s_in_packet(State, Pkt) when is_record(Pkt, db_result);
 s2s_in_packet(State, _) ->
     State.
 
-s2s_in_recv(State, El, {error, Why}) ->
+s2s_in_recv(#{lang := Lang} = State, El, {error, Why}) ->
     case xmpp:get_name(El) of
 	Tag when Tag == <<"db:result">>;
 		 Tag == <<"db:verify">> ->
@@ -212,7 +213,7 @@ s2s_in_recv(State, El, {error, Why}) ->
 		T when T /= <<"valid">>,
 		       T /= <<"invalid">>,
 		       T /= <<"error">> ->
-		    Err = xmpp:make_error(El, mk_error({codec_error, Why})),
+		    Err = xmpp:make_error(El, mk_error({codec_error, Why}, Lang)),
 		    {stop, ejabberd_s2s_in:send(State, Err)};
 		_ ->
 		    State
@@ -316,17 +317,17 @@ check_from_to(From, To) ->
     	    end
     end.
 
--spec mk_error(term()) -> stanza_error().
-mk_error(forbidden) ->
-    xmpp:err_forbidden(<<"Access denied by service policy">>, ?MYLANG);
-mk_error(host_unknown) ->
-    xmpp:err_not_allowed(<<"Host unknown">>, ?MYLANG);
-mk_error({codec_error, Why}) ->
-    xmpp:err_bad_request(xmpp:io_format_error(Why), ?MYLANG);
-mk_error({_Class, _Reason} = Why) ->
+-spec mk_error(term(), binary()) -> stanza_error().
+mk_error(forbidden, Lang) ->
+    xmpp:err_forbidden(<<"Access denied by service policy">>, Lang);
+mk_error(host_unknown, Lang) ->
+    xmpp:err_not_allowed(<<"Host unknown">>, Lang);
+mk_error({codec_error, Why}, Lang) ->
+    xmpp:err_bad_request(xmpp:io_format_error(Why), Lang);
+mk_error({_Class, _Reason} = Why, Lang) ->
     Txt = xmpp_stream_out:format_error(Why),
-    xmpp:err_remote_server_not_found(Txt, ?MYLANG);
-mk_error(_) ->
+    xmpp:err_remote_server_not_found(Txt, Lang);
+mk_error(_, _) ->
     xmpp:err_internal_server_error().
 
 -spec format_error(db_result()) -> binary().

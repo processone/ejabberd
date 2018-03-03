@@ -61,15 +61,14 @@
 -- ALTER TABLE spool ALTER COLUMN server_host DROP DEFAULT;
 
 -- ALTER TABLE archive ADD COLUMN server_host text NOT NULL DEFAULT '<HOST>';
--- DROP INDEX i_username;
 -- DROP INDEX i_username_timestamp;
+-- DROP INDEX i_username_peer;
+-- DROP INDEX i_username_bare_peer;
 -- DROP INDEX i_timestamp;
--- DROP INDEX i_peer;
--- DROP INDEX i_bare_peer;
 -- CREATE INDEX i_archive_sh_username_timestamp ON archive USING btree (server_host, username, timestamp);
+-- CREATE INDEX i_archive_sh_username_peer ON archive USING btree (server_host, username, peer);
+-- CREATE INDEX i_archive_sh_username_bare_peer ON archive USING btree (server_host, username, bare_peer);
 -- CREATE INDEX i_archive_sh_timestamp ON archive USING btree (server_host, timestamp);
--- CREATE INDEX i_archive_sh_peer ON archive USING btree (server_host, peer);
--- CREATE INDEX i_archive_sh_bare_peer ON archive USING btree (server_host, bare_peer);
 -- ALTER TABLE archive ALTER COLUMN server_host DROP DEFAULT;
 
 -- ALTER TABLE archive_prefs ADD COLUMN server_host text NOT NULL DEFAULT '<HOST>';
@@ -265,9 +264,9 @@ CREATE TABLE archive (
 );
 
 CREATE INDEX i_archive_sh_username_timestamp ON archive USING btree (server_host, username, timestamp);
+CREATE INDEX i_archive_sh_username_peer ON archive USING btree (server_host, username, peer);
+CREATE INDEX i_archive_sh_username_bare_peer ON archive USING btree (server_host, username, bare_peer);
 CREATE INDEX i_archive_sh_timestamp ON archive USING btree (server_host, timestamp);
-CREATE INDEX i_archive_sh_peer ON archive USING btree (server_host, peer);
-CREATE INDEX i_archive_sh_bare_peer ON archive USING btree (server_host, bare_peer);
 
 CREATE TABLE archive_prefs (
     username text NOT NULL,

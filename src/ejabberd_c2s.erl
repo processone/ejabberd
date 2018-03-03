@@ -519,6 +519,7 @@ init([State, Opts]) ->
     TLSRequired = proplists:get_bool(starttls_required, Opts),
     TLSVerify = proplists:get_bool(tls_verify, Opts),
     Zlib = proplists:get_bool(zlib, Opts),
+    Timeout = ejabberd_config:negotiation_timeout(),
     State1 = State#{tls_options => TLSOpts2,
 		    tls_required => TLSRequired,
 		    tls_enabled => TLSEnabled,
@@ -530,7 +531,8 @@ init([State, Opts]) ->
 		    lserver => ?MYNAME,
 		    access => Access,
 		    shaper => Shaper},
-    ejabberd_hooks:run_fold(c2s_init, {ok, State1}, [Opts]).
+    State2 = xmpp_stream_in:set_timeout(State1, Timeout),
+    ejabberd_hooks:run_fold(c2s_init, {ok, State2}, [Opts]).
 
 handle_call(get_presence, From, #{jid := JID} = State) ->
     Pres = case maps:get(pres_last, State, error) of
@@ -997,6 +999,9 @@ opt_type(_) ->
 		     (max_stanza_size) -> fun((timeout()) -> timeout());
 		     (max_fsm_queue) -> fun((timeout()) -> timeout());
 		     (stream_management) -> fun((boolean()) -> boolean());
+		     (inet) -> fun((boolean()) -> boolean());
+		     (inet6) -> fun((boolean()) -> boolean());
+		     (backlog) -> fun((timeout()) -> timeout());
 		     (atom()) -> [atom()].
 listen_opt_type(access) -> fun acl:access_rules_validator/1;
 listen_opt_type(shaper) -> fun acl:shaper_rules_validator/1;
@@ -1029,13 +1034,18 @@ listen_opt_type(stream_management) ->
     ?ERROR_MSG("listening option 'stream_management' is ignored: "
 	       "use mod_stream_mgmt module", []),
     fun(B) when is_boolean(B) -> B end;
+listen_opt_type(inet) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(inet6) -> fun(B) when is_boolean(B) -> B end;
+listen_opt_type(backlog) ->
+    fun(I) when is_integer(I), I>0 -> I end;
 listen_opt_type(O) ->
     StreamOpts = mod_stream_mgmt:mod_options(?MYNAME),
     case lists:keyfind(O, 1, StreamOpts) of
 	false ->
 	    [access, shaper, certfile, ciphers, dhfile, cafile,
 	     protocol_options, tls, tls_compression, starttls,
-	     starttls_required, tls_verify, zlib, max_fsm_queue];
+	     starttls_required, tls_verify, zlib, max_fsm_queue,
+	     backlog, inet, inet6];
 	_ ->
 	    ?ERROR_MSG("Listening option '~s' is ignored: use '~s' "
 		       "option from mod_stream_mgmt module", [O, O]),
