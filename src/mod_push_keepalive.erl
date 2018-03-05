@@ -156,9 +156,15 @@ c2s_session_resumed(State) ->
 -spec c2s_copy_session(c2s_state(), c2s_state()) -> c2s_state().
 c2s_copy_session(State, #{push_enabled := true,
 			  push_resume_timeout := ResumeTimeout,
-			  push_wake_on_timeout := WakeOnTimeout}) ->
-    State#{push_resume_timeout => ResumeTimeout,
-	   push_wake_on_timeout => WakeOnTimeout};
+			  push_wake_on_timeout := WakeOnTimeout} = OldState) ->
+    State1 = case maps:find(push_resume_timeout_orig, OldState) of
+		 {ok, Val} ->
+		     State#{push_resume_timeout_orig => Val};
+		 error ->
+		     State
+	     end,
+    State1#{push_resume_timeout => ResumeTimeout,
+	    push_wake_on_timeout => WakeOnTimeout};
 c2s_copy_session(State, _) ->
     State.
 
