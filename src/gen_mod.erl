@@ -555,7 +555,8 @@ validate_opts(Host, Module, Opts0) ->
 		 undef ->
 		     Opts;
 		 Validators ->
-		     validate_opts(Host, Module, Opts, Required, Validators)
+		     Opts1 = validate_opts(Host, Module, Opts, Required, Validators),
+		     remove_duplicated_opts(Opts1)
 	     end}
     catch _:{missing_required_option, Opt} ->
 	    ErrTxt = io_lib:format("Module '~s' is missing required option '~s'",
@@ -679,6 +680,16 @@ merge_opts(Opts, DefaultOpts) ->
 		  false -> [{Opt, Val}|Acc]
 	      end
       end, Result, Opts).
+
+remove_duplicated_opts([{Opt, Val}, {Opt, _Default}|Opts]) ->
+    [{Opt, Val}|remove_duplicated_opts(Opts)];
+remove_duplicated_opts([{Opt, [{SubOpt, _}|_] = SubOpts}|Opts])
+  when is_atom(SubOpt) ->
+    [{Opt, remove_duplicated_opts(SubOpts)}|remove_duplicated_opts(Opts)];
+remove_duplicated_opts([OptVal|Opts]) ->
+    [OptVal|remove_duplicated_opts(Opts)];
+remove_duplicated_opts([]) ->
+    [].
 
 -spec get_submodules(binary(), module(), opts()) -> [module()].
 get_submodules(Host, Module, Opts) ->
