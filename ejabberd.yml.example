@@ -832,6 +832,7 @@ modules:
   ##   and check your accessibility at https://check.messaging.one/
   mod_s2s_dialback: {}
   mod_http_api: {}
+  mod_fail2ban: {}
 
 ##
 ## Enable modules with custom options in a specific virtual host
