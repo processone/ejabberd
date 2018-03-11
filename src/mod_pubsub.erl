@@ -261,8 +261,8 @@ init([ServerHost, Opts]) ->
 		  {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
 		  DefaultModule = plugin(Host, hd(Plugins)),
 		  DefaultNodeCfg = merge_config(
-				     gen_mod:get_opt(default_node_config, Opts),
-				     DefaultModule:options()),
+				     [gen_mod:get_opt(default_node_config, Opts),
+				      DefaultModule:options()]),
 		  lists:foreach(
 		    fun(H) ->
 			    T = gen_mod:get_module_proc(H, config),
@@ -1480,7 +1480,9 @@ create_node(Host, ServerHost, <<>>, Owner, Type, Access, Configuration) ->
     end;
 create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
     Type = select_type(ServerHost, Host, Node, GivenType),
-    NodeOptions = merge_config(Configuration, node_options(Host, Type)),
+    NodeOptions = merge_config(
+		    [node_config(Node, ServerHost),
+		     Configuration, node_options(Host, Type)]),
     CreateNode =
 	fun() ->
 		Parent = case node_call(Host, Type, node_to_path, [Node]) of
@@ -3153,6 +3155,20 @@ node_owners_call(Host, Type, Nidx, []) ->
 node_owners_call(_Host, _Type, _Nidx, Owners) ->
     Owners.
 
+node_config(Node, ServerHost) ->
+    Opts = gen_mod:get_module_opt(ServerHost, ?MODULE, force_node_config),
+    node_config(Node, ServerHost, Opts).
+
+node_config(Node, ServerHost, [{RE, Opts}|NodeOpts]) ->
+    case re:run(Node, RE) of
+	{match, _} ->
+	    Opts;
+	nomatch ->
+	    node_config(Node, ServerHost, NodeOpts)
+    end;
+node_config(_, _, []) ->
+    [].
+
 %% @spec (Host, Options) -> MaxItems
 %%         Host = host()
 %%         Options = [Option]
@@ -3215,7 +3231,9 @@ set_configure(Host, Node, From, Config, Lang) ->
 				      [] -> node_options(Host, Type);
 				      _ -> Options
 				  end,
-			NewOpts = merge_config(Config, OldOpts),
+			NewOpts = merge_config(
+				    [node_config(Node, serverhost(Host)),
+				     Config, OldOpts]),
 			case tree_call(Host,
 				       set_node,
 				       [N#pubsub_node{options = NewOpts}]) of
@@ -3238,12 +3256,9 @@ set_configure(Host, Node, From, Config, Lang) ->
 	    Other
     end.
 
--spec merge_config([proplists:property()], [proplists:property()]) -> [proplists:property()].
-merge_config(CustomConfig, DefaultConfig) ->
-    lists:foldl(
-      fun({Opt, Val}, Acc) ->
-	      lists:keystore(Opt, 1, Acc, {Opt, Val})
-      end, DefaultConfig, CustomConfig).
+-spec merge_config([[proplists:property()]]) -> [proplists:property()].
+merge_config(ListOfConfigs) ->
+    lists:ukeysort(1, lists:flatten(ListOfConfigs)).
 
 -spec decode_node_config(undefined | xdata(), binary(), binary()) ->
 				pubsub_node_config:result() |
@@ -3863,6 +3878,15 @@ mod_opt_type(max_subscriptions_node) ->
     fun(A) when is_integer(A) andalso A >= 0 -> A;
        (undefined) -> undefined
     end;
+mod_opt_type(force_node_config) ->
+    fun(NodeOpts) ->
+	    lists:map(
+	      fun({Node, Opts}) ->
+		      {ok, RE} = re:compile(
+				   ejabberd_regexp:sh_to_awk(Node)),
+		      {RE, lists:keysort(1, Opts)}
+	      end, NodeOpts)
+    end;
 mod_opt_type(default_node_config) ->
     fun (A) when is_list(A) -> A end;
 mod_opt_type(nodetree) ->
@@ -3885,4 +3909,9 @@ mod_options(Host) ->
      {pep_mapping, []},
      {plugins, [?STDNODE]},
      {max_subscriptions_node, undefined},
-     {default_node_config, []}].
+     {default_node_config, []},
+     %% Avoid using OMEMO by default because it
+     %% introduces a lot of hard-to-track problems
+     {force_node_config,
+      [{<<"eu.siacs.conversations.axolotl.*">>,
+	[{access_model, whitelist}]}]}].
