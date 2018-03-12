@@ -225,7 +225,7 @@ get_commands_spec() ->
 			result_desc = "Status code: 0 on success, 1 otherwise"},
      #ejabberd_commands{name = check_password_hash, tags = [accounts],
 			desc = "Check if the password hash is correct",
-			longdesc = "Allowed hash methods: md5, sha.",
+			longdesc = "Allows hash methods from crypto application",
 			module = ?MODULE, function = check_password_hash,
 			args = [{user, binary}, {host, binary}, {passwordhash, binary},
 				{hashmethod, binary}],
@@ -822,13 +822,15 @@ check_password(User, Host, Password) ->
 %% Copied some code from ejabberd_commands.erl
 check_password_hash(User, Host, PasswordHash, HashMethod) ->
     AccountPass = ejabberd_auth:get_password_s(User, Host),
-    AccountPassHash = case {AccountPass, HashMethod} of
+    Methods = lists:map(fun(A) -> atom_to_binary(A, latin1) end,
+                   proplists:get_value(hashs, crypto:supports())),
+    MethodAllowed = lists:member(HashMethod, Methods),
+    AccountPassHash = case {AccountPass, MethodAllowed} of
 			  {A, _} when is_tuple(A) -> scrammed;
-			  {_, <<"md5">>} -> get_md5(AccountPass);
-			  {_, <<"sha">>} -> get_sha(AccountPass);
-			  {_, Method} ->
+			  {_, true} -> get_hash(AccountPass, HashMethod);
+			  {_, false} ->
 			      ?ERROR_MSG("check_password_hash called "
-					 "with hash method: ~p", [Method]),
+					 "with hash method: ~p", [HashMethod]),
 			      undefined
 		      end,
     case AccountPassHash of
@@ -839,12 +841,11 @@ check_password_hash(User, Host, PasswordHash, HashMethod) ->
 	PasswordHash -> ok;
 	_ -> false
     end.
-get_md5(AccountPass) ->
+
+get_hash(AccountPass, Method) ->
     iolist_to_binary([io_lib:format("~2.16.0B", [X])
-                      || X <- binary_to_list(erlang:md5(AccountPass))]).
-get_sha(AccountPass) ->
-    iolist_to_binary([io_lib:format("~2.16.0B", [X])
-		      || X <- binary_to_list(crypto:hash(sha, AccountPass))]).
+          || X <- binary_to_list(
+              crypto:hash(binary_to_atom(Method, latin1), AccountPass))]).
 
 num_active_users(Host, Days) ->
     DB_Type = gen_mod:get_module_opt(Host, mod_last, db_type),
