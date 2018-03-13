@@ -786,24 +786,23 @@ get_cookie() ->
 restart_module(Host, Module) when is_binary(Module) ->
     restart_module(Host, misc:binary_to_atom(Module));
 restart_module(Host, Module) when is_atom(Module) ->
-    List = gen_mod:loaded_modules_with_opts(Host),
-    case proplists:get_value(Module, List) of
-	undefined ->
+    case gen_mod:is_loaded(Host, Module) of
+	false ->
 	    % not a running module, force code reload anyway
 	    code:purge(Module),
 	    code:delete(Module),
 	    code:load_file(Module),
 	    1;
-	Opts ->
+	true ->
 	    gen_mod:stop_module(Host, Module),
 	    case code:soft_purge(Module) of
 		true ->
 		    code:delete(Module),
 		    code:load_file(Module),
-		    gen_mod:start_module(Host, Module, Opts),
+		    gen_mod:start_module(Host, Module),
 		    0;
 		false ->
-		    gen_mod:start_module(Host, Module, Opts),
+		    gen_mod:start_module(Host, Module),
 		    2
 	    end
     end.
