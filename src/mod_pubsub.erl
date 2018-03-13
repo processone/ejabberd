@@ -373,13 +373,9 @@ init_plugins(Host, ServerHost, Opts) ->
     PluginsOK = lists:foldl(
 	    fun (Name, Acc) ->
 		    Plugin = plugin(Host, Name),
-		    case catch apply(Plugin, init, [Host, ServerHost, Opts]) of
-			{'EXIT', _Error} ->
-			    Acc;
-			_ ->
-			    ?DEBUG("** init ~s plugin", [Name]),
-			    [Name | Acc]
-		    end
+		    apply(Plugin, init, [Host, ServerHost, Opts]),
+		    ?DEBUG("** init ~s plugin", [Name]),
+		    [Name | Acc]
 	    end,
 	    [], Plugins),
     {lists:reverse(PluginsOK), TreePlugin, PepMapping}.
@@ -3527,7 +3523,7 @@ tree_call({_User, Server, _Resource}, Function, Args) ->
 tree_call(Host, Function, Args) ->
     Tree = tree(Host),
     ?DEBUG("tree_call apply(~s, ~s, ~p) @ ~s", [Tree, Function, Args, Host]),
-    catch apply(Tree, Function, Args).
+    apply(Tree, Function, Args).
 
 tree_action(Host, Function, Args) ->
     ?DEBUG("tree_action ~p ~p ~p", [Host, Function, Args]),
@@ -3535,9 +3531,9 @@ tree_action(Host, Function, Args) ->
     Fun = fun () -> tree_call(Host, Function, Args) end,
     case gen_mod:get_module_opt(ServerHost, ?MODULE, db_type) of
 	mnesia ->
-	    catch mnesia:sync_dirty(Fun);
+	    mnesia:sync_dirty(Fun);
 	sql ->
-	    case catch ejabberd_sql:sql_bloc(ServerHost, Fun) of
+	    case ejabberd_sql:sql_bloc(ServerHost, Fun) of
 		{atomic, Result} ->
 		    Result;
 		{aborted, Reason} ->
@@ -3545,15 +3541,8 @@ tree_action(Host, Function, Args) ->
 		    ErrTxt = <<"Database failure">>,
 		    {error, xmpp:err_internal_server_error(ErrTxt, ?MYLANG)}
 	    end;
-	Other ->
-	    case catch Fun() of
-		{'EXIT', _} ->
-		    ?ERROR_MSG("unsupported backend: ~p~n", [Other]),
-		    ErrTxt = <<"Database failure">>,
-		    {error, xmpp:err_internal_server_error(ErrTxt, ?MYLANG)};
-		Result ->
-		    Result
-	    end
+	_ ->
+	    Fun()
     end.
 
 %% @doc <p>node plugin call.</p>
@@ -3602,26 +3591,20 @@ transaction(Host, Node, Action, Trans) ->
 transaction(Host, Fun, Trans) ->
     ServerHost = serverhost(Host),
     DBType = gen_mod:get_module_opt(ServerHost, ?MODULE, db_type),
-    Retry = case DBType of
-	sql -> 2;
-	_ -> 1
-    end,
-    transaction_retry(Host, ServerHost, Fun, Trans, DBType, Retry).
+    do_transaction(ServerHost, Fun, Trans, DBType).
 
-transaction_retry(_Host, _ServerHost, _Fun, _Trans, _DBType, 0) ->
-    {error, xmpp:err_internal_server_error(<<"Database failure">>, ?MYLANG)};
-transaction_retry(Host, ServerHost, Fun, Trans, DBType, Count) ->
+do_transaction(ServerHost, Fun, Trans, DBType) ->
     Res = case DBType of
 	mnesia ->
-	    catch mnesia:Trans(Fun);
+	    mnesia:Trans(Fun);
 	sql ->
 	    SqlFun = case Trans of
 		transaction -> sql_transaction;
 		_ -> sql_bloc
 	    end,
-	    catch ejabberd_sql:SqlFun(ServerHost, Fun);
+	    ejabberd_sql:SqlFun(ServerHost, Fun);
 	_ ->
-	    catch Fun()
+	    Fun()
     end,
     case Res of
 	{result, Result} ->
@@ -3634,12 +3617,6 @@ transaction_retry(Host, ServerHost, Fun, Trans, DBType, Count) ->
 	    {error, Error};
 	{aborted, Reason} ->
 	    ?ERROR_MSG("transaction return internal error: ~p~n", [{aborted, Reason}]),
-	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ?MYLANG)};
-	{'EXIT', {timeout, _} = Reason} ->
-	    ?ERROR_MSG("transaction return internal error: ~p~n", [Reason]),
-	    transaction_retry(Host, ServerHost, Fun, Trans, DBType, Count - 1);
-	{'EXIT', Reason} ->
-	    ?ERROR_MSG("transaction return internal error: ~p~n", [{'EXIT', Reason}]),
 	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ?MYLANG)};
 	Other ->
 	    ?ERROR_MSG("transaction return internal error: ~p~n", [Other]),
