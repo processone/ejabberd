@@ -39,12 +39,6 @@
 -include("ejabberd_sql_pt.hrl").
 -include("translate.hrl").
 
--ifdef(NEW_SQL_SCHEMA).
--define(USE_NEW_SCHEMA, true).
--else.
--define(USE_NEW_SCHEMA, false).
--endif.
-
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -268,7 +262,7 @@ make_matchspec(LServer, Data) ->
     filter_fields(Data, <<"">>, LServer).
 
 filter_fields([], Match, LServer) ->
-    case ?USE_NEW_SCHEMA of
+    case ejabberd_sql:use_new_schema() of
         true ->
             SServer = ejabberd_sql:escape(LServer),
             case Match of

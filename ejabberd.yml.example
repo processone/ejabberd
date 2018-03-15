@@ -445,6 +445,11 @@ auth_method: internal
 ##
 ## sql_keepalive_interval: undefined
 
+##
+## Use the new SQL schema
+##
+## new_sql_schema: true
+
 ###.  ===============
 ###'  TRAFFIC SHAPERS
 

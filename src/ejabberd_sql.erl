@@ -39,6 +39,7 @@
 	 sql_bloc/2,
          abort/1,
          restart/1,
+         use_new_schema/0,
          sql_query_to_iolist/1,
 	 escape/1,
          standard_escape/1,
@@ -94,6 +95,12 @@
 -define(KEEPALIVE_QUERY, [<<"SELECT 1;">>]).
 
 -define(PREPARE_KEY, ejabberd_sql_prepare).
+
+-ifdef(NEW_SQL_SCHEMA).
+-define(USE_NEW_SCHEMA_DEFAULT, true).
+-else.
+-define(USE_NEW_SCHEMA_DEFAULT, false).
+-endif.
 
 %%-define(DBGFSM, true).
 
@@ -271,6 +278,9 @@ sqlite_file(Host) ->
 	File ->
 	    binary_to_list(File)
     end.
+
+use_new_schema() ->
+    ejabberd_config:get_option(new_sql_schema, ?USE_NEW_SCHEMA_DEFAULT).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -1133,9 +1143,11 @@ opt_type(sql_connect_timeout) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 opt_type(sql_queue_type) ->
     fun(ram) -> ram; (file) -> file end;
+opt_type(new_sql_schema) -> fun(B) when is_boolean(B) -> B end;
 opt_type(_) ->
     [sql_database, sql_keepalive_interval,
      sql_password, sql_port, sql_server,
      sql_username, sql_ssl, sql_ssl_verify, sql_ssl_certfile,
      sql_ssl_cafile, sql_queue_type, sql_query_timeout,
-     sql_connect_timeout].
+     sql_connect_timeout,
+     new_sql_schema].

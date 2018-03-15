@@ -1174,18 +1174,18 @@ import_stop(_LServer, _DBType) ->
     ets:delete(rostergroups_tmp),
     ok.
 
--ifdef(NEW_SQL_SCHEMA).
--define(ROW_LENGTH, 10).
--else.
--define(ROW_LENGTH, 9).
--endif.
+row_length() ->
+    case ejabberd_sql:use_new_schema() of
+        true -> 10;
+        false -> 9
+    end.
 
 import(LServer, {sql, _}, _DBType, <<"rostergroups">>, [LUser, SJID, Group]) ->
     LJID = jid:tolower(jid:decode(SJID)),
     ets:insert(rostergroups_tmp, {{LUser, LServer, LJID}, Group}),
     ok;
 import(LServer, {sql, _}, DBType, <<"rosterusers">>, Row) ->
-    I = mod_roster_sql:raw_to_record(LServer, lists:sublist(Row, ?ROW_LENGTH)),
+    I = mod_roster_sql:raw_to_record(LServer, lists:sublist(Row, row_length())),
     Groups = [G || {_, G} <- ets:lookup(rostergroups_tmp, I#roster.usj)],
     RosterItem = I#roster{groups = Groups},
     Mod = gen_mod:db_mod(DBType, ?MODULE),
