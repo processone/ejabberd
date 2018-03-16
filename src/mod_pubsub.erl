@@ -2026,8 +2026,10 @@ get_items(Host, Node, From, SubId, _MaxItems, ItemIds, RSM) ->
 	    {result,
 	     #pubsub{items = #ps_items{node = Node,
 				       items = itemsEls([Item])}}};
-	Error ->
-	    Error
+	_ ->
+	    {result,
+	     #pubsub{items = #ps_items{node = Node,
+				       items = itemsEls([])}}}
     end.
 
 get_items(Host, Node) ->
