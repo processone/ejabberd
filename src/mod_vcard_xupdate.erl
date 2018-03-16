@@ -24,8 +24,9 @@
 %%%----------------------------------------------------------------------
 
 -module(mod_vcard_xupdate).
-
 -behaviour(gen_mod).
+
+-protocol({xep, 398, '0.2.0'}).
 
 %% gen_mod callbacks
 -export([start/2, stop/1, reload/3]).
@@ -75,11 +76,18 @@ depends(_Host, _Opts) ->
       -> {presence(), ejabberd_c2s:state()}.
 update_presence({#presence{type = available} = Pres,
 		 #{jid := #jid{luser = LUser, lserver = LServer}} = State}) ->
-    Pres1 = case get_xupdate(LUser, LServer) of
-		undefined -> xmpp:remove_subtag(Pres, #vcard_xupdate{});
-		XUpdate -> xmpp:set_subtag(Pres, XUpdate)
-	    end,
-    {Pres1, State};
+    case xmpp:get_subtag(Pres, #vcard_xupdate{}) of
+	#vcard_xupdate{hash = <<>>} ->
+	    %% XEP-0398 forbids overwriting vcard:x:update
+	    %% tags with empty <photo/> element
+	    {Pres, State};
+	_ ->
+	    Pres1 = case get_xupdate(LUser, LServer) of
+			undefined -> xmpp:remove_subtag(Pres, #vcard_xupdate{});
+			XUpdate -> xmpp:set_subtag(Pres, XUpdate)
+		    end,
+	    {Pres1, State}
+    end;
 update_presence(Acc) ->
     Acc.
 
