@@ -1112,7 +1112,7 @@ iq_pubsub(Host, Access, #iq{from = From, type = IQType, lang = Lang,
 					 Payload, PubOpts, Access)
 		    end;
 		[] ->
-		    {error, extended_error(xmpp:err_bad_request(), err_item_required())};
+		    publish_item(Host, ServerHost, Node, From, <<>>, [], [], Access);
 		_ ->
 		    {error, extended_error(xmpp:err_bad_request(), err_invalid_payload())}
 	    end;
@@ -1785,19 +1785,15 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, PubOpts, Access
 		PayloadSize > PayloadMaxSize ->
 		    {error, extended_error(xmpp:err_not_acceptable(),
 					   err_payload_too_big())};
-		(PayloadCount == 0) and (Payload == []) ->
-		    {error, extended_error(xmpp:err_bad_request(),
-					   err_payload_required())};
-		(PayloadCount > 1) or (PayloadCount == 0) ->
-		    {error, extended_error(xmpp:err_bad_request(),
-					   err_invalid_payload())};
-		(DeliverPayloads == false) and (PersistItems == false) and
-			(PayloadSize > 0) ->
-		    {error, extended_error(xmpp:err_bad_request(),
-					   err_item_forbidden())};
-		((DeliverPayloads == true) or (PersistItems == true)) and (PayloadSize == 0) ->
+		(DeliverPayloads or PersistItems) and (PayloadCount == 0) ->
 		    {error, extended_error(xmpp:err_bad_request(),
 					   err_item_required())};
+		(DeliverPayloads or PersistItems) and (PayloadCount > 1) ->
+		    {error, extended_error(xmpp:err_bad_request(),
+					   err_invalid_payload())};
+		(not DeliverPayloads) and (PayloadCount > 0) ->
+		    {error, extended_error(xmpp:err_bad_request(),
+					   err_item_forbidden())};
 		true ->
 		    node_call(Host, Type, publish_item,
 			[Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload, PubOpts])
