@@ -32,8 +32,7 @@
 
 -export([init/1, start_link/0, start_child/3, start_child/4,
 	 stop_child/1, stop_child/2, config_reloaded/0]).
--export([start_module/2, start_module/3,
-	 stop_module/2, stop_module_keep_config/2,
+-export([start_module/2, stop_module/2, stop_module_keep_config/2,
 	 get_opt/2, get_opt_hosts/2, opt_type/1, is_equal_opt/3,
 	 get_module_opt/3, get_module_opt_host/3,
 	 loaded_modules/1, loaded_modules_with_opts/1,
@@ -63,7 +62,8 @@
 
 -record(ejabberd_module,
         {module_host = {undefined, <<"">>} :: {atom(), binary()},
-         opts = [] :: opts() | '_' | '$2'}).
+         opts = [] :: opts() | '_' | '$2',
+	 order = 0 :: integer()}).
 
 -type opts() :: [{atom(), any()}].
 -type db_type() :: atom().
@@ -171,7 +171,11 @@ sort_modules(Host, ModOpts) ->
 			end
 		end, Deps)
       end, ModOpts),
-    Result = [digraph:vertex(G, V) || V <- digraph_utils:topsort(G)],
+    {Result, _} = lists:mapfoldl(
+		    fun(V, Order) ->
+			    {M, O} = digraph:vertex(G, V),
+			    {{M, O, Order}, Order+1}
+		    end, 1, digraph_utils:topsort(G)),
     digraph:delete(G),
     Result.
 
@@ -180,8 +184,8 @@ sort_modules(Host, ModOpts) ->
 start_modules(Host) ->
     Modules = get_modules_options(Host),
     lists:foreach(
-	fun({Module, Opts}) ->
-	    start_module(Host, Module, Opts)
+	fun({Module, Opts, Order}) ->
+	    start_module(Host, Module, Opts, Order)
 	end, Modules).
 
 -spec start_module(binary(), atom()) -> ok | {ok, pid()} | {error, not_found_in_config}.
@@ -189,18 +193,18 @@ start_modules(Host) ->
 start_module(Host, Module) ->
     Modules = get_modules_options(Host),
     case lists:keyfind(Module, 1, Modules) of
-	{_, Opts} ->
-	    start_module(Host, Module, Opts);
+	{_, Opts, Order} ->
+	    start_module(Host, Module, Opts, Order);
 	false ->
 	    {error, not_found_in_config}
     end.
 
--spec start_module(binary(), atom(), opts()) -> ok | {ok, pid()}.
-start_module(Host, Module, Opts) ->
-    start_module(Host, Module, Opts, true).
+-spec start_module(binary(), atom(), opts(), integer()) -> ok | {ok, pid()}.
+start_module(Host, Module, Opts, Order) ->
+    start_module(Host, Module, Opts, Order, true).
 
--spec start_module(binary(), atom(), opts(), boolean()) -> ok | {ok, pid()}.
-start_module(Host, Module, Opts0, NeedValidation) ->
+-spec start_module(binary(), atom(), opts(), integer(), boolean()) -> ok | {ok, pid()}.
+start_module(Host, Module, Opts0, Order, NeedValidation) ->
     ?DEBUG("Loading ~s at ~s", [Module, Host]),
     Res = if NeedValidation ->
 		  validate_opts(Host, Module, Opts0);
@@ -209,7 +213,7 @@ start_module(Host, Module, Opts0, NeedValidation) ->
 	  end,
     case Res of
 	{ok, Opts} ->
-	    store_options(Host, Module, Opts),
+	    store_options(Host, Module, Opts, Order),
 	    try case Module:start(Host, Opts) of
 		    ok -> ok;
 		    {ok, Pid} when is_pid(Pid) -> {ok, Pid};
@@ -245,13 +249,8 @@ start_module(Host, Module, Opts0, NeedValidation) ->
 
 -spec reload_modules(binary()) -> ok.
 reload_modules(Host) ->
-    NewMods = ejabberd_config:get_option({modules, Host}, []),
-    OldMods = ets:select(
-		ejabberd_modules,
-		ets:fun2ms(
-		  fun(#ejabberd_module{module_host = {M, H}, opts = O})
-			when H == Host -> {M, O}
-		  end)),
+    NewMods = get_modules_options(Host),
+    OldMods = lists:reverse(loaded_modules_with_opts(Host)),
     lists:foreach(
       fun({Mod, _Opts}) ->
 	      case lists:keymember(Mod, 1, NewMods) of
@@ -262,10 +261,10 @@ reload_modules(Host) ->
 	      end
       end, OldMods),
     lists:foreach(
-      fun({Mod, Opts}) ->
+      fun({Mod, Opts, Order}) ->
 	      case lists:keymember(Mod, 1, OldMods) of
 		  false ->
-		      start_module(Host, Mod, Opts);
+		      start_module(Host, Mod, Opts, Order);
 		  true ->
 		      ok
 	      end
@@ -273,12 +272,12 @@ reload_modules(Host) ->
     lists:foreach(
       fun({Mod, OldOpts}) ->
 	      case lists:keyfind(Mod, 1, NewMods) of
-		  {_, NewOpts0} ->
+		  {_, NewOpts0, Order} ->
 		      case validate_opts(Host, Mod, NewOpts0) of
 			  {ok, OldOpts} ->
 			      ok;
 			  {ok, NewOpts} ->
-			      reload_module(Host, Mod, NewOpts, OldOpts);
+			      reload_module(Host, Mod, NewOpts, OldOpts, Order);
 			  {error, _} ->
 			      ok
 		      end;
@@ -287,12 +286,12 @@ reload_modules(Host) ->
 	      end
       end, OldMods).
 
--spec reload_module(binary(), module(), opts(), opts()) -> ok | {ok, pid()}.
-reload_module(Host, Module, NewOpts, OldOpts) ->
+-spec reload_module(binary(), module(), opts(), opts(), integer()) -> ok | {ok, pid()}.
+reload_module(Host, Module, NewOpts, OldOpts, Order) ->
     case erlang:function_exported(Module, reload, 3) of
 	true ->
 	    ?DEBUG("Reloading ~s at ~s", [Module, Host]),
-	    store_options(Host, Module, NewOpts),
+	    store_options(Host, Module, NewOpts, Order),
 	    try case Module:reload(Host, NewOpts, OldOpts) of
 		    ok -> ok;
 		    {ok, Pid} when is_pid(Pid) -> {ok, Pid};
@@ -310,14 +309,14 @@ reload_module(Host, Module, NewOpts, OldOpts) ->
 	    ?WARNING_MSG("Module ~s doesn't support reloading "
 			 "and will be restarted", [Module]),
 	    stop_module(Host, Module),
-	    start_module(Host, Module, NewOpts, false)
+	    start_module(Host, Module, NewOpts, Order, false)
     end.
 
--spec store_options(binary(), module(), opts()) -> true.
-store_options(Host, Module, Opts) ->
+-spec store_options(binary(), module(), opts(), integer()) -> true.
+store_options(Host, Module, Opts, Order) ->
     ets:insert(ejabberd_modules,
 	       #ejabberd_module{module_host = {Module, Host},
-				opts = Opts}).
+				opts = Opts, order = Order}).
 
 maybe_halt_ejabberd(ErrorText) ->
     case is_app_running(ejabberd) of
@@ -347,7 +346,7 @@ stop_modules() ->
 -spec stop_modules(binary()) -> ok.
 
 stop_modules(Host) ->
-    Modules = lists:reverse(get_modules_options(Host)),
+    Modules = lists:reverse(loaded_modules_with_opts(Host)),
     lists:foreach(
 	fun({Module, _Args}) ->
 		stop_module_keep_config(Host, Module)
@@ -555,7 +554,8 @@ validate_opts(Host, Module, Opts0) ->
 		 undef ->
 		     Opts;
 		 Validators ->
-		     validate_opts(Host, Module, Opts, Required, Validators)
+		     Opts1 = validate_opts(Host, Module, Opts, Required, Validators),
+		     remove_duplicated_opts(Opts1)
 	     end}
     catch _:{missing_required_option, Opt} ->
 	    ErrTxt = io_lib:format("Module '~s' is missing required option '~s'",
@@ -680,6 +680,16 @@ merge_opts(Opts, DefaultOpts) ->
 	      end
       end, Result, Opts).
 
+remove_duplicated_opts([{Opt, Val}, {Opt, _Default}|Opts]) ->
+    [{Opt, Val}|remove_duplicated_opts(Opts)];
+remove_duplicated_opts([{Opt, [{SubOpt, _}|_] = SubOpts}|Opts])
+  when is_atom(SubOpt) ->
+    [{Opt, remove_duplicated_opts(SubOpts)}|remove_duplicated_opts(Opts)];
+remove_duplicated_opts([OptVal|Opts]) ->
+    [OptVal|remove_duplicated_opts(Opts)];
+remove_duplicated_opts([]) ->
+    [].
+
 -spec get_submodules(binary(), module(), opts()) -> [module()].
 get_submodules(Host, Module, Opts) ->
     try Module:mod_options(Host) of
@@ -788,17 +798,26 @@ is_db_configured(Type, Host) ->
 -spec loaded_modules(binary()) -> [atom()].
 
 loaded_modules(Host) ->
-    ets:select(ejabberd_modules,
-	       [{#ejabberd_module{_ = '_', module_host = {'$1', Host}},
-		 [], ['$1']}]).
+    Mods = ets:select(
+	     ejabberd_modules,
+	     ets:fun2ms(
+	       fun(#ejabberd_module{module_host = {Mod, H},
+				    order = Order}) when H == Host ->
+		       {Mod, Order}
+	       end)),
+    [Mod || {Mod, _} <- lists:keysort(2, Mods)].
 
 -spec loaded_modules_with_opts(binary()) -> [{atom(), opts()}].
 
 loaded_modules_with_opts(Host) ->
-    ets:select(ejabberd_modules,
-	       [{#ejabberd_module{_ = '_', module_host = {'$1', Host},
-				  opts = '$2'},
-		 [], [{{'$1', '$2'}}]}]).
+    Mods = ets:select(
+	     ejabberd_modules,
+	     ets:fun2ms(
+	       fun(#ejabberd_module{module_host = {Mod, H}, opts = Opts,
+				    order = Order}) when H == Host ->
+		       {Mod, Opts, Order}
+	       end)),
+    [{Mod, Opts} || {Mod, Opts, _} <- lists:keysort(3, Mods)].
 
 -spec get_hosts(opts(), binary()) -> [binary()].
 

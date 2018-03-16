@@ -38,12 +38,6 @@
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
 
--ifdef(NEW_SQL_SCHEMA).
--define(USE_NEW_SCHEMA, true).
--else.
--define(USE_NEW_SCHEMA, false).
--endif.
-
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -332,7 +326,7 @@ make_sql_query(User, LServer, MAMQuery, RSM) ->
     SServer = Escape(LServer),
 
     Query =
-        case ?USE_NEW_SCHEMA of
+        case ejabberd_sql:use_new_schema() of
             true ->
                 [<<"SELECT ">>, TopClause,
                  <<" timestamp, xml, peer, kind, nick"
@@ -361,7 +355,7 @@ make_sql_query(User, LServer, MAMQuery, RSM) ->
 		[Query, <<" ORDER BY timestamp ASC ">>,
 		 LimitClause, <<";">>]
 	end,
-    case ?USE_NEW_SCHEMA of
+    case ejabberd_sql:use_new_schema() of
         true ->
             {QueryPage,
              [<<"SELECT COUNT(*) FROM archive WHERE username='">>,

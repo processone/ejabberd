@@ -3378,8 +3378,6 @@ remove_nonmembers(StateData) ->
 
 -spec set_opts([{atom(), any()}], state()) -> state().
 set_opts([], StateData) -> StateData;
-set_opts([{Opt, Val}, {Opt, _DefaultVal} | Opts], StateData) ->
-    set_opts([{Opt, Val} | Opts], StateData);
 set_opts([{Opt, Val} | Opts], StateData) ->
     NSD = case Opt of
 	    title ->

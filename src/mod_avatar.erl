@@ -26,7 +26,8 @@
 %% gen_mod API
 -export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1, mod_options/1]).
 %% Hooks
--export([pubsub_publish_item/6, vcard_iq_convert/1, vcard_iq_publish/1]).
+-export([pubsub_publish_item/6, vcard_iq_convert/1, vcard_iq_publish/1,
+	 get_sm_features/5]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -43,13 +44,17 @@ start(Host, _Opts) ->
     ejabberd_hooks:add(vcard_iq_set, Host, ?MODULE,
 		       vcard_iq_convert, 30),
     ejabberd_hooks:add(vcard_iq_set, Host, ?MODULE,
-		       vcard_iq_publish, 100).
+		       vcard_iq_publish, 100),
+    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE,
+		       get_sm_features, 50).
 
 stop(Host) ->
     ejabberd_hooks:delete(pubsub_publish_item, Host, ?MODULE,
 			  pubsub_publish_item, 50),
     ejabberd_hooks:delete(vcard_iq_set, Host, ?MODULE, vcard_iq_convert, 30),
-    ejabberd_hooks:delete(vcard_iq_set, Host, ?MODULE, vcard_iq_publish, 100).
+    ejabberd_hooks:delete(vcard_iq_set, Host, ?MODULE, vcard_iq_publish, 100),
+    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE,
+			  get_sm_features, 50).
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.
@@ -142,6 +147,20 @@ vcard_iq_publish(#iq{sub_els = [#vcard_temp{
 	    publish_avatar(IQ, #avatar_meta{}, MimeType, Data, SHA1)
     end;
 vcard_iq_publish(Acc) ->
+    Acc.
+
+-spec get_sm_features({error, stanza_error()} | empty | {result, [binary()]},
+		      jid(), jid(), binary(), binary()) ->
+			     {error, stanza_error()} | empty | {result, [binary()]}.
+get_sm_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
+    Acc;
+get_sm_features(Acc, _From, _To, <<"">>, _Lang) ->
+    {result, [?NS_DISCO_INFO, ?NS_PEP_VCARD_CONVERSION_0 |
+	      case Acc of
+		  {result, Features} -> Features;
+		  empty -> []
+	      end]};
+get_sm_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
 %%%===================================================================

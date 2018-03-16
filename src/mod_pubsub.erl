@@ -261,8 +261,8 @@ init([ServerHost, Opts]) ->
 		  {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
 		  DefaultModule = plugin(Host, hd(Plugins)),
 		  DefaultNodeCfg = merge_config(
-				     gen_mod:get_opt(default_node_config, Opts),
-				     DefaultModule:options()),
+				     [gen_mod:get_opt(default_node_config, Opts),
+				      DefaultModule:options()]),
 		  lists:foreach(
 		    fun(H) ->
 			    T = gen_mod:get_module_proc(H, config),
@@ -373,13 +373,9 @@ init_plugins(Host, ServerHost, Opts) ->
     PluginsOK = lists:foldl(
 	    fun (Name, Acc) ->
 		    Plugin = plugin(Host, Name),
-		    case catch apply(Plugin, init, [Host, ServerHost, Opts]) of
-			{'EXIT', _Error} ->
-			    Acc;
-			_ ->
-			    ?DEBUG("** init ~s plugin", [Name]),
-			    [Name | Acc]
-		    end
+		    apply(Plugin, init, [Host, ServerHost, Opts]),
+		    ?DEBUG("** init ~s plugin", [Name]),
+		    [Name | Acc]
 	    end,
 	    [], Plugins),
     {lists:reverse(PluginsOK), TreePlugin, PepMapping}.
@@ -1116,7 +1112,7 @@ iq_pubsub(Host, Access, #iq{from = From, type = IQType, lang = Lang,
 					 Payload, PubOpts, Access)
 		    end;
 		[] ->
-		    {error, extended_error(xmpp:err_bad_request(), err_item_required())};
+		    publish_item(Host, ServerHost, Node, From, <<>>, [], [], Access);
 		_ ->
 		    {error, extended_error(xmpp:err_bad_request(), err_invalid_payload())}
 	    end;
@@ -1480,7 +1476,9 @@ create_node(Host, ServerHost, <<>>, Owner, Type, Access, Configuration) ->
     end;
 create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
     Type = select_type(ServerHost, Host, Node, GivenType),
-    NodeOptions = merge_config(Configuration, node_options(Host, Type)),
+    NodeOptions = merge_config(
+		    [node_config(Node, ServerHost),
+		     Configuration, node_options(Host, Type)]),
     CreateNode =
 	fun() ->
 		Parent = case node_call(Host, Type, node_to_path, [Node]) of
@@ -1787,19 +1785,15 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, PubOpts, Access
 		PayloadSize > PayloadMaxSize ->
 		    {error, extended_error(xmpp:err_not_acceptable(),
 					   err_payload_too_big())};
-		(PayloadCount == 0) and (Payload == []) ->
-		    {error, extended_error(xmpp:err_bad_request(),
-					   err_payload_required())};
-		(PayloadCount > 1) or (PayloadCount == 0) ->
-		    {error, extended_error(xmpp:err_bad_request(),
-					   err_invalid_payload())};
-		(DeliverPayloads == false) and (PersistItems == false) and
-			(PayloadSize > 0) ->
-		    {error, extended_error(xmpp:err_bad_request(),
-					   err_item_forbidden())};
-		((DeliverPayloads == true) or (PersistItems == true)) and (PayloadSize == 0) ->
+		(DeliverPayloads or PersistItems) and (PayloadCount == 0) ->
 		    {error, extended_error(xmpp:err_bad_request(),
 					   err_item_required())};
+		(DeliverPayloads or PersistItems) and (PayloadCount > 1) ->
+		    {error, extended_error(xmpp:err_bad_request(),
+					   err_invalid_payload())};
+		(not (DeliverPayloads or PersistItems)) and (PayloadCount > 0) ->
+		    {error, extended_error(xmpp:err_bad_request(),
+					   err_item_forbidden())};
 		true ->
 		    node_call(Host, Type, publish_item,
 			[Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload, PubOpts])
@@ -2032,8 +2026,10 @@ get_items(Host, Node, From, SubId, _MaxItems, ItemIds, RSM) ->
 	    {result,
 	     #pubsub{items = #ps_items{node = Node,
 				       items = itemsEls([Item])}}};
-	Error ->
-	    Error
+	_ ->
+	    {result,
+	     #pubsub{items = #ps_items{node = Node,
+				       items = itemsEls([])}}}
     end.
 
 get_items(Host, Node) ->
@@ -3153,6 +3149,20 @@ node_owners_call(Host, Type, Nidx, []) ->
 node_owners_call(_Host, _Type, _Nidx, Owners) ->
     Owners.
 
+node_config(Node, ServerHost) ->
+    Opts = gen_mod:get_module_opt(ServerHost, ?MODULE, force_node_config),
+    node_config(Node, ServerHost, Opts).
+
+node_config(Node, ServerHost, [{RE, Opts}|NodeOpts]) ->
+    case re:run(Node, RE) of
+	{match, _} ->
+	    Opts;
+	nomatch ->
+	    node_config(Node, ServerHost, NodeOpts)
+    end;
+node_config(_, _, []) ->
+    [].
+
 %% @spec (Host, Options) -> MaxItems
 %%         Host = host()
 %%         Options = [Option]
@@ -3215,7 +3225,9 @@ set_configure(Host, Node, From, Config, Lang) ->
 				      [] -> node_options(Host, Type);
 				      _ -> Options
 				  end,
-			NewOpts = merge_config(Config, OldOpts),
+			NewOpts = merge_config(
+				    [node_config(Node, serverhost(Host)),
+				     Config, OldOpts]),
 			case tree_call(Host,
 				       set_node,
 				       [N#pubsub_node{options = NewOpts}]) of
@@ -3238,12 +3250,9 @@ set_configure(Host, Node, From, Config, Lang) ->
 	    Other
     end.
 
--spec merge_config([proplists:property()], [proplists:property()]) -> [proplists:property()].
-merge_config(CustomConfig, DefaultConfig) ->
-    lists:foldl(
-      fun({Opt, Val}, Acc) ->
-	      lists:keystore(Opt, 1, Acc, {Opt, Val})
-      end, DefaultConfig, CustomConfig).
+-spec merge_config([[proplists:property()]]) -> [proplists:property()].
+merge_config(ListOfConfigs) ->
+    lists:ukeysort(1, lists:flatten(ListOfConfigs)).
 
 -spec decode_node_config(undefined | xdata(), binary(), binary()) ->
 				pubsub_node_config:result() |
@@ -3512,7 +3521,7 @@ tree_call({_User, Server, _Resource}, Function, Args) ->
 tree_call(Host, Function, Args) ->
     Tree = tree(Host),
     ?DEBUG("tree_call apply(~s, ~s, ~p) @ ~s", [Tree, Function, Args, Host]),
-    catch apply(Tree, Function, Args).
+    apply(Tree, Function, Args).
 
 tree_action(Host, Function, Args) ->
     ?DEBUG("tree_action ~p ~p ~p", [Host, Function, Args]),
@@ -3520,9 +3529,9 @@ tree_action(Host, Function, Args) ->
     Fun = fun () -> tree_call(Host, Function, Args) end,
     case gen_mod:get_module_opt(ServerHost, ?MODULE, db_type) of
 	mnesia ->
-	    catch mnesia:sync_dirty(Fun);
+	    mnesia:sync_dirty(Fun);
 	sql ->
-	    case catch ejabberd_sql:sql_bloc(ServerHost, Fun) of
+	    case ejabberd_sql:sql_bloc(ServerHost, Fun) of
 		{atomic, Result} ->
 		    Result;
 		{aborted, Reason} ->
@@ -3530,15 +3539,8 @@ tree_action(Host, Function, Args) ->
 		    ErrTxt = <<"Database failure">>,
 		    {error, xmpp:err_internal_server_error(ErrTxt, ?MYLANG)}
 	    end;
-	Other ->
-	    case catch Fun() of
-		{'EXIT', _} ->
-		    ?ERROR_MSG("unsupported backend: ~p~n", [Other]),
-		    ErrTxt = <<"Database failure">>,
-		    {error, xmpp:err_internal_server_error(ErrTxt, ?MYLANG)};
-		Result ->
-		    Result
-	    end
+	_ ->
+	    Fun()
     end.
 
 %% @doc <p>node plugin call.</p>
@@ -3587,26 +3589,20 @@ transaction(Host, Node, Action, Trans) ->
 transaction(Host, Fun, Trans) ->
     ServerHost = serverhost(Host),
     DBType = gen_mod:get_module_opt(ServerHost, ?MODULE, db_type),
-    Retry = case DBType of
-	sql -> 2;
-	_ -> 1
-    end,
-    transaction_retry(Host, ServerHost, Fun, Trans, DBType, Retry).
+    do_transaction(ServerHost, Fun, Trans, DBType).
 
-transaction_retry(_Host, _ServerHost, _Fun, _Trans, _DBType, 0) ->
-    {error, xmpp:err_internal_server_error(<<"Database failure">>, ?MYLANG)};
-transaction_retry(Host, ServerHost, Fun, Trans, DBType, Count) ->
+do_transaction(ServerHost, Fun, Trans, DBType) ->
     Res = case DBType of
 	mnesia ->
-	    catch mnesia:Trans(Fun);
+	    mnesia:Trans(Fun);
 	sql ->
 	    SqlFun = case Trans of
 		transaction -> sql_transaction;
 		_ -> sql_bloc
 	    end,
-	    catch ejabberd_sql:SqlFun(ServerHost, Fun);
+	    ejabberd_sql:SqlFun(ServerHost, Fun);
 	_ ->
-	    catch Fun()
+	    Fun()
     end,
     case Res of
 	{result, Result} ->
@@ -3619,12 +3615,6 @@ transaction_retry(Host, ServerHost, Fun, Trans, DBType, Count) ->
 	    {error, Error};
 	{aborted, Reason} ->
 	    ?ERROR_MSG("transaction return internal error: ~p~n", [{aborted, Reason}]),
-	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ?MYLANG)};
-	{'EXIT', {timeout, _} = Reason} ->
-	    ?ERROR_MSG("transaction return internal error: ~p~n", [Reason]),
-	    transaction_retry(Host, ServerHost, Fun, Trans, DBType, Count - 1);
-	{'EXIT', Reason} ->
-	    ?ERROR_MSG("transaction return internal error: ~p~n", [{'EXIT', Reason}]),
 	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ?MYLANG)};
 	Other ->
 	    ?ERROR_MSG("transaction return internal error: ~p~n", [Other]),
@@ -3863,6 +3853,15 @@ mod_opt_type(max_subscriptions_node) ->
     fun(A) when is_integer(A) andalso A >= 0 -> A;
        (undefined) -> undefined
     end;
+mod_opt_type(force_node_config) ->
+    fun(NodeOpts) ->
+	    lists:map(
+	      fun({Node, Opts}) ->
+		      {ok, RE} = re:compile(
+				   ejabberd_regexp:sh_to_awk(Node)),
+		      {RE, lists:keysort(1, Opts)}
+	      end, NodeOpts)
+    end;
 mod_opt_type(default_node_config) ->
     fun (A) when is_list(A) -> A end;
 mod_opt_type(nodetree) ->
@@ -3885,4 +3884,9 @@ mod_options(Host) ->
      {pep_mapping, []},
      {plugins, [?STDNODE]},
      {max_subscriptions_node, undefined},
-     {default_node_config, []}].
+     {default_node_config, []},
+     %% Avoid using OMEMO by default because it
+     %% introduces a lot of hard-to-track problems
+     {force_node_config,
+      [{<<"eu.siacs.conversations.axolotl.*">>,
+	[{access_model, whitelist}]}]}].

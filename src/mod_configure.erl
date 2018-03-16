@@ -1528,8 +1528,11 @@ set_form(From, Host, ?NS_ADMINL(<<"add-user">>), _Lang,
     true = lists:member(Server, ?MYHOSTS),
     true = Server == Host orelse
 	     get_permission_level(From) == global,
-    ejabberd_auth:try_register(User, Server, Password),
-    {result, undefined};
+    case ejabberd_auth:try_register(User, Server, Password) of
+	ok -> {result, undefined};
+	{error, exists} -> {error, xmpp:err_conflict()};
+	{error, not_allowed} -> {error, xmpp:err_not_allowed()}
+    end;
 set_form(From, Host, ?NS_ADMINL(<<"delete-user">>),
 	 _Lang, XData) ->
     AccountStringList = get_values(<<"accountjids">>,
