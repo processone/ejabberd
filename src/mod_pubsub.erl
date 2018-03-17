@@ -1999,8 +1999,12 @@ get_items(Host, Node, From, SubId, _MaxItems, ItemIds, RSM) ->
 				     Host, From, Owners, AccessModel, AllowedGroups),
 			case ItemIds of
 			    [ItemId] ->
-				node_call(Host, Type, get_item,
-					  [Nidx, ItemId, From, AccessModel, PS, RG, undefined]);
+				case node_call(Host, Type, get_item,
+					       [Nidx, ItemId, From, AccessModel, PS, RG, undefined])
+				of
+				    {error, _} -> {result, {[], undefined}};
+				    Result -> Result
+				end;
 			    _ ->
 				node_call(Host, Type, get_items,
 					  [Nidx, From, AccessModel, PS, RG, SubId, RSM])
@@ -2026,10 +2030,8 @@ get_items(Host, Node, From, SubId, _MaxItems, ItemIds, RSM) ->
 	    {result,
 	     #pubsub{items = #ps_items{node = Node,
 				       items = itemsEls([Item])}}};
-	_ ->
-	    {result,
-	     #pubsub{items = #ps_items{node = Node,
-				       items = itemsEls([])}}}
+	Error ->
+	    Error
     end.
 
 get_items(Host, Node) ->
