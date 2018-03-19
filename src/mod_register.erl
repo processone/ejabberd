@@ -326,7 +326,8 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 				  ?INFO_MSG("The account ~s was registered "
 					    "from IP address ~s",
 					    [jid:encode({User, Server, <<"">>}),
-					     ip_to_string(Source)]),
+					     ejabberd_config:may_hide_data(
+					       ip_to_string(Source))]),
 				  send_welcome_message(JID),
 				  send_registration_notifications(
                                     ?MODULE, JID, Source),
@@ -395,8 +396,9 @@ send_registration_notifications(Mod, UJID, Source) ->
                                                "IP address ~s on node ~w using ~p.",
                                                [get_time_string(),
                                                 jid:encode(UJID),
-                                                ip_to_string(Source), node(),
-                                                Mod])),
+						ejabberd_config:may_hide_data(
+						  ip_to_string(Source)),
+						node(), Mod])),
             lists:foreach(
               fun(JID) ->
                       ejabberd_router:route(
