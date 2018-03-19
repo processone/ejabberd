@@ -74,21 +74,15 @@ get_acl_rule([<<"vhosts">>], _) ->
 %% The pages of a vhost are only accesible if the user is admin of that vhost:
 get_acl_rule([<<"server">>, VHost | _RPath], Method)
     when Method =:= 'GET' orelse Method =:= 'HEAD' ->
-    AC = ejabberd_config:get_option({access, VHost}, configure),
-    ACR = ejabberd_config:get_option({access_readonly, VHost}, webadmin_view),
-    {VHost, [AC, ACR]};
+    {VHost, [configure, webadmin_view]};
 get_acl_rule([<<"server">>, VHost | _RPath], 'POST') ->
-    AC = ejabberd_config:get_option({access, VHost}, configure),
-    {VHost, [AC]};
+    {VHost, [configure]};
 %% Default rule: only global admins can access any other random page
 get_acl_rule(_RPath, Method)
     when Method =:= 'GET' orelse Method =:= 'HEAD' ->
-    AC = ejabberd_config:get_option(access, configure),
-    ACR = ejabberd_config:get_option(access_readonly, webadmin_view),
-    {global, [AC, ACR]};
+    {global, [configure, webadmin_view]};
 get_acl_rule(_RPath, 'POST') ->
-    AC = ejabberd_config:get_option(access, configure),
-    {global, [AC]}.
+    {global, [configure]}.
 
 %%%==================================
 %%%% Menu Items Access
@@ -269,7 +263,7 @@ get_auth_account(HostOfRule, AccessRule, User, Server,
     case ejabberd_auth:check_password(User, <<"">>, Server, Pass) of
       true ->
 	  case acl:any_rules_allowed(HostOfRule, AccessRule,
-			    jid:make(User, Server))
+				     jid:make(User, Server))
 	      of
 	    false -> {unauthorized, <<"unprivileged-account">>};
 	    true -> {ok, {User, Server}}
