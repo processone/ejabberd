@@ -42,7 +42,7 @@
 
 -export([start/2, stop/1, reload/3, process_iq/1, export/1,
 	 import_info/0, process_local_iq/1, get_user_roster/2,
-	 import/5, get_roster/2,
+	 import/5, get_roster/2, push_item/3,
 	 import_start/2, import_stop/2,
 	 c2s_self_presence/1, in_subscription/2,
 	 out_subscription/1, set_items/3, remove_user/2,
@@ -443,7 +443,7 @@ decode_item(Item, R, Managed) ->
 
 process_iq_set(#iq{from = _From, to = To,
 		   sub_els = [#roster_query{items = [QueryItem]}]} = IQ) ->
-    #jid{user = User, luser = LUser, lserver = LServer} = To,
+    #jid{luser = LUser, lserver = LServer} = To,
     LJID = jid:tolower(QueryItem#roster_item.jid),
     F = fun () ->
 		Item = get_roster_item(LUser, LServer, LJID),
@@ -463,7 +463,7 @@ process_iq_set(#iq{from = _From, to = To,
 	end,
     case transaction(LUser, LServer, [LJID], F) of
 	{atomic, {OldItem, Item}} ->
-	    push_item(User, LServer, To, OldItem, Item),
+	    push_item(To, OldItem, Item),
 	    case Item#roster.subscription of
 		remove ->
 		    send_unsubscribing_presence(To, OldItem);
@@ -477,36 +477,26 @@ process_iq_set(#iq{from = _From, to = To,
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error())
     end.
 
-push_item(User, Server, From, OldItem, NewItem) ->
-    case roster_versioning_enabled(Server) of
-	true ->
-	    push_item_version(Server, User, From, OldItem, NewItem,
-			      roster_version(Server, User));
-	false ->
-	    lists:foreach(
-	      fun(Resource) ->
-		      push_item(User, Server, Resource, From, OldItem, NewItem)
-	      end, ejabberd_sm:get_user_resources(User, Server))
-    end.
-
-push_item(User, Server, Resource, From, OldItem, NewItem) ->
-    push_item(User, Server, Resource, From, OldItem, NewItem, undefined).
-
-push_item(User, Server, Resource, From, OldItem, NewItem, Ver) ->
-    To = jid:make(User, Server, Resource),
-    route_presence_change(To, OldItem, NewItem),
-    ResIQ = #iq{type = set, from = From, to = To,
-		id = <<"push", (randoms:get_string())/binary>>,
-		sub_els = [#roster_query{ver = Ver,
-					 items = [encode_item(NewItem)]}]},
-    ejabberd_router:route(ResIQ).
-
-push_item_version(Server, User, From, OldItem, NewItem, RosterVersion) ->
+push_item(To, OldItem, NewItem) ->
+    #jid{luser = LUser, lserver = LServer} = To,
+    Ver = case roster_versioning_enabled(LServer) of
+	      true -> roster_version(LServer, LUser);
+	      false -> undefined
+	  end,
     lists:foreach(
       fun(Resource) ->
-	      push_item(User, Server, Resource, From,
-			OldItem, NewItem, RosterVersion)
-      end, ejabberd_sm:get_user_resources(User, Server)).
+	      To1 = jid:replace_resource(To, Resource),
+	      push_item(To1, OldItem, NewItem, Ver)
+      end, ejabberd_sm:get_user_resources(LUser, LServer)).
+
+push_item(To, OldItem, NewItem, Ver) ->
+    route_presence_change(To, OldItem, NewItem),
+    IQ = #iq{type = set, to = To,
+	     from = jid:remove_resource(To),
+	     id = <<"push", (randoms:get_string())/binary>>,
+	     sub_els = [#roster_query{ver = Ver,
+				      items = [encode_item(NewItem)]}]},
+    ejabberd_router:route(IQ).
 
 -spec route_presence_change(jid(), #roster{}, #roster{}) -> ok.
 route_presence_change(From, OldItem, NewItem) ->
@@ -630,8 +620,7 @@ process_subscription(Direction, User, Server, JID1,
 		       NewItem#roster.ask == in ->
 			    ok;
 		       true ->
-			    push_item(User, Server,
-				      jid:make(User, Server), OldItem, NewItem)
+			    push_item(jid:make(User, Server), OldItem, NewItem)
 		    end,
 		    true;
 		none ->

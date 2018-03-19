@@ -553,8 +553,6 @@ add_user_to_group(Host, US, Group) ->
 	  DisplayedGroups = get_displayed_groups(Group, LServer),
 	  push_user_to_displayed(LUser, LServer, Group, Host, both, DisplayedToGroups),
 	  push_displayed_to_user(LUser, LServer, Host, both, DisplayedGroups),
-	  broadcast_user_to_displayed(LUser, LServer, Host, both, DisplayedToGroups),
-	  broadcast_displayed_to_user(LUser, LServer, Host, both, DisplayedGroups),
 	  Mod = gen_mod:db_mod(Host, ?MODULE),
 	  Mod:add_user_to_group(Host, US, Group)
     end.
@@ -563,11 +561,6 @@ get_displayed_groups(Group, LServer) ->
     GroupsOpts = groups_with_opts(LServer),
     GroupOpts = proplists:get_value(Group, GroupsOpts, []),
     proplists:get_value(displayed_groups, GroupOpts, []).
-
-broadcast_displayed_to_user(LUser, LServer, Host, Subscription, DisplayedGroups) ->
-    [broadcast_members_to_user(LUser, LServer, DGroup, Host,
-			  Subscription)
-	 || DGroup <- DisplayedGroups].
 
 push_displayed_to_user(LUser, LServer, Host, Subscription, DisplayedGroups) ->
     [push_members_to_user(LUser, LServer, DGroup, Host,
@@ -611,13 +604,6 @@ push_members_to_user(LUser, LServer, Group, Host,
 					   Subscription)
 		  end,
 		  Members).
-
-broadcast_members_to_user(LUser, LServer, Group, Host, Subscription) ->
-    Members = get_group_users(Host, Group),
-    lists:foreach(
-      fun({U, S}) ->
-	      broadcast_subscription(U, S, {LUser, LServer, <<"">>}, Subscription)
-      end, Members).
 
 -spec register_user(binary(), binary()) -> ok.
 register_user(User, Server) ->
@@ -665,10 +651,6 @@ push_user_to_displayed(LUser, LServer, Group, Host, Subscription, DisplayedToGro
 			GroupName, Subscription)
      || GroupD <- DisplayedToGroupsOpts].
 
-broadcast_user_to_displayed(LUser, LServer, Host, Subscription, DisplayedToGroupsOpts) ->
-    [broadcast_user_to_group(LUser, LServer, GroupD, Host, Subscription)
-	|| GroupD <- DisplayedToGroupsOpts].
-
 push_user_to_group(LUser, LServer, Group, Host,
 		   GroupName, Subscription) ->
     lists:foreach(fun ({U, S})
@@ -679,13 +661,6 @@ push_user_to_group(LUser, LServer, Group, Host,
 					   Subscription)
 		  end,
 		  get_group_users(Host, Group)).
-
-broadcast_user_to_group(LUser, LServer, Group, Host, Subscription) ->
-    lists:foreach(
-      fun({U, S})  when (U == LUser) and (S == LServer) -> ok;
-         ({U, S}) ->
-	      broadcast_subscription(LUser, LServer, {U, S, <<"">>}, Subscription)
-      end, get_group_users(Host, Group)).
 
 %% Get list of groups to which this group is displayed
 displayed_to_groups(GroupName, LServer) ->
@@ -699,15 +674,9 @@ displayed_to_groups(GroupName, LServer) ->
     [Name || {Name, _} <- Gs].
 
 push_item(User, Server, Item) ->
-    Stanza = #iq{type = set, id = <<"push", (randoms:get_string())/binary>>,
-		 sub_els = [#roster_query{
-			       items = [mod_roster:encode_item(Item)]}]},
-    lists:foreach(fun (Resource) ->
-			  JID = jid:make(User, Server, Resource),
-			  ejabberd_router:route(
-			    xmpp:set_from_to(Stanza, jid:remove_resource(JID), JID))
-		  end,
-		  ejabberd_sm:get_user_resources(User, Server)).
+    mod_roster:push_item(jid:make(User, Server),
+			 Item#roster{subscription = none},
+			 Item).
 
 push_roster_item(User, Server, ContactU, ContactS,
 		 GroupName, Subscription) ->
@@ -720,31 +689,6 @@ push_roster_item(User, Server, ContactU, ContactS,
 
 -spec c2s_self_presence({presence(), ejabberd_c2s:state()})
       -> {presence(), ejabberd_c2s:state()}.
-c2s_self_presence({_, #{pres_last := _}} = Acc) ->
-    %% This is just a presence update, nothing to do
-    Acc;
-c2s_self_presence({#presence{type = available}, #{jid := New}} = Acc) ->
-    LUser = New#jid.luser,
-    LServer = New#jid.lserver,
-    Resources = ejabberd_sm:get_user_resources(LUser, LServer),
-    ?DEBUG("user_available for ~p @ ~p (~p resources)",
-	   [LUser, LServer, length(Resources)]),
-    case length(Resources) of
-      %% first session for this user
-      1 ->
-	  UserGroups = get_user_groups({LUser, LServer}),
-	  lists:foreach(fun (OG) ->
-				?DEBUG("user_available: pushing  ~p @ ~p grp ~p",
-				       [LUser, LServer, OG]),
-			  DisplayedToGroups = displayed_to_groups(OG, LServer),
-			  DisplayedGroups = get_displayed_groups(OG, LServer),
-			  broadcast_displayed_to_user(LUser, LServer, LServer, both, DisplayedGroups),
-			  broadcast_user_to_displayed(LUser, LServer, LServer, both, DisplayedToGroups)
-			end,
-			UserGroups);
-      _ -> ok
-    end,
-    Acc;
 c2s_self_presence(Acc) ->
     Acc.
 
@@ -1020,21 +964,11 @@ split_grouphost(Host, Group) ->
       [_] -> {Host, Group}
     end.
 
-broadcast_subscription(User, Server, ContactJid, Subscription) ->
-    ejabberd_sm:route(jid:make(User, Server),
-                      {item, ContactJid, Subscription}).
-
 displayed_groups_update(Members, DisplayedGroups, Subscription) ->
-    lists:foreach(fun({U, S}) ->
-	push_displayed_to_user(U, S, S, Subscription, DisplayedGroups),
-	    case Subscription of
-		both ->
-		    broadcast_displayed_to_user(U, S, S, to, DisplayedGroups),
-		    broadcast_displayed_to_user(U, S, S, from, DisplayedGroups);
-		Subscr ->
-		    broadcast_displayed_to_user(U, S, S, Subscr, DisplayedGroups)
-	    end
-	end, Members).
+    lists:foreach(
+      fun({U, S}) ->
+	      push_displayed_to_user(U, S, S, Subscription, DisplayedGroups)
+      end, Members).
 
 opts_to_binary(Opts) ->
     lists:map(
