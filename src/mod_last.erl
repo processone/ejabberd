@@ -188,7 +188,9 @@ get_last(LUser, LServer) ->
 		    ?LAST_CACHE, {LUser, LServer},
 		    fun() -> Mod:get_last(LUser, LServer) end);
 	      false ->
-		  Mod:get_last(LUser, LServer)
+		  Mod:get_last(LUser, LServer);
+	      undefined ->
+		  error
 	  end,
     case Res of
 	{ok, {TimeStamp, Status}} -> {ok, TimeStamp, Status};
