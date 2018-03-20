@@ -261,6 +261,19 @@ if test "$ENABLEUSER" != ""; then
   echo "allow this system user to start ejabberd: $ENABLEUSER"
   AC_SUBST([INSTALLUSER], [$ENABLEUSER])
 fi
+ENABLEGROUP=""
+AC_ARG_ENABLE(group,
+  [AS_HELP_STRING([--enable-group[[[[=GROUP]]]]], [allow this system group to start ejabberd (default: no)])],
+  [case "${enableval}" in
+     yes) ENABLEGROUP=`groups |head -n 1` ;;
+     no) ENABLEGROUP="" ;;
+     *) ENABLEGROUP=$enableval
+   esac],
+  [])
+if test "$ENABLEGROUP" != ""; then
+  echo "allow this system group to start ejabberd: $ENABLEGROUP"
+  AC_SUBST([INSTALLGROUP], [$ENABLEGROUP])
+fi
 
 ERLANG_DEPRECATED_TYPES_CHECK
 

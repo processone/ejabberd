@@ -85,6 +85,11 @@ else
   CHOWN_OUTPUT=&1
   INIT_USER=$(INSTALLUSER)
 endif
+# if no group was enabled, don't set privileges or ownership
+INSTALLGROUP=@INSTALLGROUP@
+ifneq ($(INSTALLGROUP),)
+  G_USER=-g $(INSTALLGROUP)
+endif
 
 all: deps src
 
