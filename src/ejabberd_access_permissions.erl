@@ -492,6 +492,8 @@ parse_single_what(Binary) when is_binary(Binary) ->
 	_ ->
 	    {error, <<"Invalid value">>}
     end;
+parse_single_what(Atom) when is_atom(Atom) ->
+    parse_single_what(atom_to_binary(Atom, latin1));
 parse_single_what(_) ->
     {error, <<"Invalid value">>}.
 
@@ -502,7 +504,9 @@ is_valid_command_name(Val) ->
 
 is_valid_command_name2(<<>>) ->
     true;
-is_valid_command_name2(<<K:8, Rest/binary>>) when K >= $a andalso K =< $z orelse K == $_ ->
+is_valid_command_name2(<<K:8, Rest/binary>>) when (K >= $a andalso K =< $z)
+						  orelse (K >= $0 andalso K =< $9)
+						  orelse K == $_ ->
     is_valid_command_name2(Rest);
 is_valid_command_name2(_) ->
     false.
