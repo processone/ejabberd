@@ -742,7 +742,7 @@ modules:
   ## mod_http_upload:
   ##   # docroot: "@HOME@/upload"
   ##   put_url: "https://@HOST@:5444"
-  ##   thumbnail: false # otherwise needs the identify command from ImageMagick installed
+  ##   thumbnail: false # otherwise needs ejabberd to be compiled with libgd support
   ## mod_http_upload_quota:
   ##   max_days: 30
   mod_last: {}
