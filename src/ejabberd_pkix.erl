@@ -37,7 +37,6 @@
 -include("logger.hrl").
 
 -record(state, {validate = true :: boolean(),
-		notify = false :: boolean(),
 		paths = [] :: [file:filename()],
 		certs = #{} :: map(),
 		graph :: digraph:graph(),
@@ -197,7 +196,6 @@ opt_type(_) ->
 %%% gen_server callbacks
 %%%===================================================================
 init([]) ->
-    Notify = start_fs(),
     process_flag(trap_exit, true),
     ets:new(?MODULE, [named_table, public]),
     ejabberd_hooks:add(route_registered, ?MODULE, route_registered, 50),
@@ -214,7 +212,7 @@ init([]) ->
     end,
     G = digraph:new([acyclic]),
     init_cache(),
-    State = #state{validate = Validate, notify = Notify, graph = G},
+    State = #state{validate = Validate, graph = G},
     case filelib:ensure_dir(filename:join(certs_dir(), "foo")) of
 	ok ->
 	    clean_dir(certs_dir()),
@@ -279,20 +277,6 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-handle_info({_, {fs, file_event}, {File, Events}}, State) ->
-    ?DEBUG("got FS events for ~s: ~p", [File, Events]),
-    Path = iolist_to_binary(File),
-    case lists:member(modified, Events) of
-	true ->
-	    case lists:member(Path, State#state.paths) of
-		true ->
-		    handle_cast(config_reloaded, State);
-		false ->
-		    {noreply, State}
-	    end;
-	false ->
-	    {noreply, State}
-    end;
 handle_info(_Info, State) ->
     ?WARNING_MSG("unexpected info: ~p", [_Info]),
     {noreply, State}.
@@ -419,7 +403,6 @@ build_chain_and_check(State) ->
 	    ?DEBUG("Validating certificates", []),
 	    Errors = validate(CertPaths, State#state.validate),
 	    ?DEBUG("Subscribing to file events", []),
-	    subscribe(State),
 	    lists:foreach(
 	      fun({Cert, Why}) ->
 		      Path = maps:get(Cert, State#state.certs),
@@ -853,40 +836,6 @@ short_name_hash(IssuerID) ->
 short_name_hash(_) ->
     "".
 -endif.
-
--spec subscribe(state()) -> ok.
-subscribe(#state{notify = true} = State) ->
-    lists:foreach(
-      fun(Path) ->
-	      Dir = filename:dirname(Path),
-	      Name = list_to_atom(integer_to_list(erlang:phash2(Dir))),
-	      case fs:start_link(Name, Dir) of
-		  {ok, _} ->
-		      ?DEBUG("Subscribed to FS events from ~s", [Dir]),
-		      fs:subscribe(Name);
-		  {error, _} ->
-		      ok
-	      end
-      end, State#state.paths);
-subscribe(_) ->
-    ok.
-
--spec start_fs() -> boolean().
-start_fs() ->
-    application:load(fs),
-    application:set_env(fs, backwards_compatible, false),
-    case application:ensure_all_started(fs) of
-	{ok, _} -> true;
-	{error, {already_loaded, _}} -> true;
-	{error, Reason} ->
-	    ?ERROR_MSG("Failed to load 'fs' Erlang application: ~p; "
-		       "certificates change detection will be disabled. "
-		       "You should now manually run `ejabberdctl "
-		       "reload_config` whenever certificates are changed "
-		       "on disc",
-		       [Reason]),
-	    false
-    end.
 
 wildcard(Path) when is_binary(Path) ->
     wildcard(binary_to_list(Path));
