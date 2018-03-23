@@ -29,7 +29,7 @@ defmodule Ejabberd.Mixfile do
      included_applications: [:lager, :mnesia, :inets, :p1_utils, :cache_tab,
                              :fast_tls, :stringprep, :fast_xml, :xmpp,
                              :stun, :fast_yaml, :esip, :jiffy, :p1_oauth2,
-                             :eimp, :fs, :base64url, :jose]
+                             :eimp, :base64url, :jose]
                          ++ cond_apps()]
   end
 
@@ -76,8 +76,7 @@ defmodule Ejabberd.Mixfile do
      {:ex_doc, ">= 0.0.0", only: :dev},
      {:eimp, "~> 1.0"},
      {:base64url, "~> 0.0.1"},
-     {:jose, "~> 1.8"},
-     {:fs, "~> 3.4"}]
+     {:jose, "~> 1.8"}]
     ++ cond_deps()
   end
 

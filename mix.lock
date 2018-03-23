@@ -12,7 +12,6 @@
   "fast_tls": {:hex, :fast_tls, "1.0.21", "7005fe030c0472643314c9c31e7627bb296dcb96a9ce0b5dd8ccb34273f4c1ff", [:rebar3], [{:p1_utils, "1.0.11", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "fast_xml": {:hex, :fast_xml, "1.1.29", "c6356d28f0f76ffefc68b5eb65916f0b8ca513bab71db8ad95bd8577c47e30e2", [:rebar3], [{:p1_utils, "1.0.11", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "fast_yaml": {:hex, :fast_yaml, "1.0.13", "adcb8db20bb96d4e56b63b48c75d47ca15a6bd409da0200ffbd32db382131e22", [:rebar3], [{:p1_utils, "1.0.11", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
-  "fs": {:hex, :fs, "3.4.0", "6d18575c250b415b3cad559e6f97a4c822516c7bc2c10bfbb2493a8f230f5132", [:rebar3], [], "hexpm"},
   "goldrush": {:hex, :goldrush, "0.1.9", "f06e5d5f1277da5c413e84d5a2924174182fb108dabb39d5ec548b27424cd106", [:rebar3], [], "hexpm"},
   "hamcrest": {:hex, :basho_hamcrest, "0.4.1", "fb7b2c92d252a1e9db936750b86089addaebeb8f87967fb4bbdda61e8863338e", [:make, :mix, :rebar3], [], "hexpm"},
   "iconv": {:hex, :iconv, "1.0.7", "f81eb6b8c977b1fd078515937fdce64292d64c6102353fbbfe57db580f4689d1", [:rebar3], [{:p1_utils, "1.0.11", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
