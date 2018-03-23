@@ -74,7 +74,7 @@ defmodule Ejabberd.Mixfile do
      {:p1_oauth2, "~> 0.6.1"},
      {:distillery, "~> 1.0"},
      {:ex_doc, ">= 0.0.0", only: :dev},
-     {:eimp, github: "processone/eimp", ref: "c7201d18"},
+     {:eimp, "~> 1.0"},
      {:base64url, "~> 0.0.1"},
      {:jose, "~> 1.8"},
      {:fs, "~> 3.4"}]
