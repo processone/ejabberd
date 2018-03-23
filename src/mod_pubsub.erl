@@ -3891,4 +3891,5 @@ mod_options(Host) ->
      {pep_mapping, []},
      {plugins, [?STDNODE]},
      {max_subscriptions_node, undefined},
-     {default_node_config, []}].
+     {default_node_config, []},
+     {force_node_config, []}].
