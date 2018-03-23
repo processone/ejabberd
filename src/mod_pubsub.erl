@@ -3891,9 +3891,4 @@ mod_options(Host) ->
      {pep_mapping, []},
      {plugins, [?STDNODE]},
      {max_subscriptions_node, undefined},
-     {default_node_config, []},
-     %% Avoid using OMEMO by default because it
-     %% introduces a lot of hard-to-track problems
-     {force_node_config,
-      [{<<"eu.siacs.conversations.axolotl.*">>,
-	[{access_model, whitelist}]}]}].
+     {default_node_config, []}].

@@ -781,6 +781,11 @@ modules:
       - "flat"
       - "hometree"
       - "pep" # pep requires mod_caps
+    ## Avoid using OMEMO by default because it
+    ## introduces a lot of hard-to-track problems
+    force_node_config:
+      "eu.siacs.conversations.axolotl.*":
+        access_model: whitelist
   mod_push: {}
   mod_push_keepalive: {}
   ## mod_register:
