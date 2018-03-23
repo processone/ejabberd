@@ -388,7 +388,7 @@ send_welcome_message(JID) ->
 
 send_registration_notifications(Mod, UJID, Source) ->
     Host = UJID#jid.lserver,
-    case gen_mod:get_module_opt(Host, Mod, registration_watchers) of
+    case gen_mod:get_module_opt(Host, ?MODULE, registration_watchers) of
         [] -> ok;
         JIDs when is_list(JIDs) ->
             Body =
