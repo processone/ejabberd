@@ -143,7 +143,7 @@ search_items(Entries, State) ->
 				   #eldap_entry{attributes = Attrs} = E, Attrs
 			   end,
 			   Entries),
-    lists:flatmap(
+    lists:filtermap(
       fun(Attrs) ->
 	      case eldap_utils:find_ldap_attrs(UIDs, Attrs) of
 		  {U, UIDAttrFormat} ->
@@ -163,15 +163,15 @@ search_items(Entries, State) ->
 						  end,
 						  SearchReported),
 				      J = <<Username/binary, $@, LServer/binary>>,
-				      [{<<"jid">>, J} | RFields];
+				      {true, [{<<"jid">>, J} | RFields]};
 				  _ ->
-				      []
+				      false
 			      end;
 			  _ ->
-			      []
+			      false
 		      end;
 		  <<"">> ->
-		      []
+		      false
 	      end
       end, Attributes).
 
