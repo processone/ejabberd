@@ -78,6 +78,7 @@
          ufilter = <<"">>                             :: binary(),
          rfilter = <<"">>                             :: binary(),
          gfilter = <<"">>                             :: binary(),
+         user_jid_attr = <<"">>                       :: binary(),
 	 auth_check = true                            :: boolean()}).
 
 -record(group_info, {desc, members}).
@@ -317,6 +318,32 @@ get_user_displayed_groups({User, Host}) ->
 			  Entries),
     lists:usort(Reply).
 
+get_member_jid(UID, Host) ->
+    {ok, State} = eldap_utils:get_state(Host, ?MODULE),
+    UserJIDAttr = State#state.user_jid_attr,
+    UIDAttr = State#state.user_uid,
+    Entries = eldap_search(State,
+                           [eldap_filter:do_sub(<<"(", UIDAttr/binary, "=%u)">>,
+                                                [{<<"%u">>, UID}])],
+                           [UserJIDAttr]),
+    Results = case Entries of
+        [] -> error;
+        [#eldap_entry{attributes = Attrs} | _] ->
+        case Attrs of
+            [{UserJIDAttr, ValuesList}] -> ValuesList;
+            _ -> []
+        end
+    end,
+    case Results of
+        error -> {error, error};
+        _ ->
+            MemberJID = lists:nth(1,Results),
+            MemberUIDHost = binary:split(MemberJID, <<"@">>),
+            MemberUID = lists:nth(1,MemberUIDHost),
+            MemberHost = lists:nth(2,MemberUIDHost),
+            {MemberUID, MemberHost}
+    end.
+
 get_group_users(Host, Group) ->
     {ok, State} = eldap_utils:get_state(Host, ?MODULE),
     case ets_cache:lookup(?GROUP_CACHE,
@@ -391,14 +418,26 @@ extract_members(State, Extractor, AuthChecker, #eldap_entry{attributes = Attrs},
         {ID, Desc, {value, {GroupMemberAttr, Members}}} when ID /= <<"">>,
                                                              GroupMemberAttr == State#state.uid ->
             JIDs = lists:foldl(fun({ok, UID}, L) ->
-                                       PUID = jid:nodeprep(UID),
+                                       case State#state.user_jid_attr of
+                                           <<"">> ->
+                                               MemberUID = UID,
+                                               MemberHost = Host;
+                                           _ ->
+                                               {MemberUID,MemberHost} = get_member_jid(UID, Host)
+                                       end,
+                                       case MemberUID of
+                                           error ->
+                                               ?ERROR_MSG("The member UID '~s' could not be found for the Host '~s'.", [UID,Host]);
+                                           _ -> ok
+                                       end,
+                                       PUID = jlib:nodeprep(MemberUID),
                                        case PUID of
                                            error ->
                                                L;
                                            _ ->
-                                               case AuthChecker(PUID, Host) of
+                                               case AuthChecker(PUID, MemberHost) of
                                                    true ->
-                                                       [{PUID, Host} | L];
+                                                       [{PUID, MemberHost} | L];
                                                    _ ->
                                                        L
                                                end
@@ -452,6 +491,7 @@ parse_options(Host, Opts) ->
     UIDAttr = gen_mod:get_opt(ldap_memberattr, Opts),
     UIDAttrFormat = gen_mod:get_opt(ldap_memberattr_format, Opts),
     UIDAttrFormatRe = gen_mod:get_opt(ldap_memberattr_format_re, Opts),
+    JIDAttr = gen_mod:get_opt(ldap_userjidattr, Opts),
     AuthCheck = gen_mod:get_opt(ldap_auth_check, Opts),
     ConfigFilter = gen_mod:get_opt(ldap_filter, Opts),
     ConfigUserFilter = gen_mod:get_opt(ldap_ufilter, Opts),
@@ -496,6 +536,7 @@ parse_options(Host, Opts) ->
            base = Cfg#eldap_config.base,
            deref_aliases = Cfg#eldap_config.deref_aliases,
 	   uid = UIDAttr,
+           user_jid_attr = JIDAttr,
 	   group_attr = GroupAttr, group_desc = GroupDesc,
 	   user_desc = UserDesc, user_uid = UserUID,
 	   uid_format = UIDAttrFormat,
@@ -587,6 +628,7 @@ mod_opt_type(ldap_ufilter) ->
     opt_type(ldap_ufilter);
 mod_opt_type(ldap_userdesc) -> fun iolist_to_binary/1;
 mod_opt_type(ldap_useruid) -> fun iolist_to_binary/1;
+mod_opt_type(ldap_userjidattr) -> fun iolist_to_binary/1;
 mod_opt_type(Opt) ->
     eldap_utils:opt_type(Opt).
 
@@ -602,6 +644,7 @@ mod_options(Host) ->
      {ldap_ufilter, ejabberd_config:get_option({ldap_ufilter, Host}, <<"">>)},
      {ldap_userdesc, <<"cn">>},
      {ldap_useruid, <<"cn">>},
+     {ldap_userjidattr, <<"">>},
      {use_cache, ejabberd_config:use_cache(Host)},
      {cache_size, ejabberd_config:cache_size(Host)},
      {cache_missed, ejabberd_config:cache_missed(Host)},
