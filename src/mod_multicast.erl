@@ -784,8 +784,9 @@ process_discoitems_result(From, LServiceS, #disco_items{items = Items}) ->
         {found_waiter, Waiter} ->
             List = lists:flatmap(
 		     fun(#disco_item{jid = #jid{luser = <<"">>,
+						lserver = LServer,
 						lresource = <<"">>} = J}) ->
-			     [J];
+			     [LServer];
 			(_) ->
 			     []
 		     end, Items),
