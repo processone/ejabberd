@@ -46,6 +46,6 @@
 	 buf                     :: binary(),
          http_opts = []          :: list()}).
 
--type method() :: 'GET' | 'HEAD' | 'DELETE' | 'OPTIONS' | 'PUT' | 'POST' | 'TRACE'.
+-type method() :: 'GET' | 'HEAD' | 'DELETE' | 'OPTIONS' | 'PUT' | 'POST' | 'TRACE' | 'PATCH'.
 -type protocol() :: http | https.
 -type http_request() :: #request{}.
