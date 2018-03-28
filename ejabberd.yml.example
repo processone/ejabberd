@@ -169,6 +169,20 @@ listen:
     max_stanza_size: 65536
     shaper: c2s_shaper
     access: c2s
+  ##
+  ## Direct-TLS for C2S (XEP-0368). A good practice is to forward
+  ## traffic from port 443 to this port, possibly multiplexing it
+  ## with HTTP using e.g. sslh [https://wiki.xmpp.org/web/Tech_pages/XEP-0368],
+  ## so modern clients can bypass restrictive firewalls (in airports, hotels, etc.).
+  ##
+  ## -
+  ##   port: 5223
+  ##   ip: "::"
+  ##   module: ejabberd_c2s
+  ##   tls: true
+  ##   max_stanza_size: 65536
+  ##   shaper: c2s_shaper
+  ##   access: c2s
   -
     port: 5269
     ip: "::"
@@ -185,20 +199,6 @@ listen:
     web_admin: true
     ## register: true
     captcha: true
-  ##
-  ## Direct-TLS for C2S (XEP-0368). A good practice is to forward
-  ## traffic from port 443 to this port, possibly multiplexing it
-  ## with HTTP using e.g. sslh [https://wiki.xmpp.org/web/Tech_pages/XEP-0368],
-  ## so modern clients can bypass restrictive firewalls (in airports, hotels, etc.).
-  ##
-  ## -
-  ##   port: 5223
-  ##   ip: "::"
-  ##   module: ejabberd_c2s
-  ##   tls: true
-  ##   max_stanza_size: 65536
-  ##   shaper: c2s_shaper
-  ##   access: c2s
 
   ##
   ## ejabberd_service: Interact with external components (transports, ...)
