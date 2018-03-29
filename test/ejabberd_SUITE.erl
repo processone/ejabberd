@@ -1083,9 +1083,21 @@ create_sql_tables(sqlite, _BaseDir) ->
 create_sql_tables(Type, BaseDir) ->
     {VHost, File} = case Type of
                         mysql ->
-                            {?MYSQL_VHOST, "mysql.sql"};
+                            Path = case ejabberd_sql:use_new_schema() of
+                                true ->
+                                    "mysql.new.sql";
+                                false ->
+                                    "mysql.sql"
+                            end,
+                            {?MYSQL_VHOST, Path};
                         pgsql ->
-                            {?PGSQL_VHOST, "pg.sql"}
+                            Path = case ejabberd_sql:use_new_schema() of
+                                true ->
+                                    "pg.new.sql";
+                                false ->
+                                    "pg.sql"
+                            end,
+                            {?PGSQL_VHOST, Path}
                     end,
     SQLFile = filename:join([BaseDir, "sql", File]),
     CreationQueries = read_sql_queries(SQLFile),
