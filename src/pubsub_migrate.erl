@@ -529,5 +529,4 @@ report_and_stop(Tab, Err) ->
                  "Failed to convert '~s' table to binary: ~p",
                  [Tab, Err])),
     ?CRITICAL_MSG(ErrTxt, []),
-    timer:sleep(1000),
-    halt(string:substr(ErrTxt, 1, 199)).
+    ejabberd:halt().

@@ -152,7 +152,7 @@ sort_modules(Host, ModOpts) ->
 					   [Mod, DepMod]),
 				?ERROR_MSG(ErrTxt, []),
 				digraph:del_vertex(G, Mod),
-				maybe_halt_ejabberd(ErrTxt);
+				maybe_halt_ejabberd();
 			    false when Type == soft ->
 				?WARNING_MSG("Module '~s' is recommended for "
 					     "module '~s' but is not found in "
@@ -240,11 +240,11 @@ start_module(Host, Module, Opts0, Order, NeedValidation) ->
 					       erlang:get_stacktrace()])
 			end,
 		    ?CRITICAL_MSG(ErrorText, []),
-		    maybe_halt_ejabberd(ErrorText),
+		    maybe_halt_ejabberd(),
 		    erlang:raise(Class, Reason, erlang:get_stacktrace())
 	    end;
-	{error, ErrorText} ->
-	    maybe_halt_ejabberd(ErrorText)
+	{error, _ErrorText} ->
+	    maybe_halt_ejabberd()
     end.
 
 -spec reload_modules(binary()) -> ok.
@@ -318,14 +318,13 @@ store_options(Host, Module, Opts, Order) ->
 	       #ejabberd_module{module_host = {Module, Host},
 				opts = Opts, order = Order}).
 
-maybe_halt_ejabberd(ErrorText) ->
+maybe_halt_ejabberd() ->
     case is_app_running(ejabberd) of
 	false ->
 	    ?CRITICAL_MSG("ejabberd initialization was aborted "
 			  "because a module start failed.",
 			  []),
-	    timer:sleep(3000),
-	    erlang:halt(string:substr(lists:flatten(ErrorText), 1, 199));
+	    ejabberd:halt();
 	true ->
 	    ok
     end.
