@@ -194,10 +194,12 @@ c2s_stream_started(State, _) ->
     init_csi_state(State).
 
 -spec c2s_authenticated_packet(c2s_state(), xmpp_element()) -> c2s_state().
-c2s_authenticated_packet(C2SState, #csi{type = active}) ->
+c2s_authenticated_packet(#{jid := Jid}=C2SState, #csi{type = active}) ->
+    ejabberd_hooks:run(csi_activity, [Jid, active]),
     C2SState1 = C2SState#{csi_state => active},
     flush_queue(C2SState1);
-c2s_authenticated_packet(C2SState, #csi{type = inactive}) ->
+c2s_authenticated_packet(#{jid := Jid}=C2SState, #csi{type = inactive}) ->
+    ejabberd_hooks:run(csi_activity, [Jid, inactive]),
     C2SState#{csi_state => inactive};
 c2s_authenticated_packet(C2SState, _) ->
     C2SState.
