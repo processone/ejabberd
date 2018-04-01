@@ -37,8 +37,8 @@
 -export([filter_presence/1, filter_chat_states/1,
 	 filter_pep/1, filter_other/1,
 	 c2s_stream_started/2, add_stream_feature/2,
-	 c2s_copy_session/2, c2s_authenticated_packet/2,
-	 c2s_session_resumed/1]).
+	 c2s_authenticated_packet/2, csi_activity/2,
+	 c2s_copy_session/2, c2s_session_resumed/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -164,6 +164,8 @@ register_hooks(Host) ->
 		       add_stream_feature, 50),
     ejabberd_hooks:add(c2s_authenticated_packet, Host, ?MODULE,
 		       c2s_authenticated_packet, 50),
+    ejabberd_hooks:add(csi_activity, Host, ?MODULE,
+		       csi_activity, 50),
     ejabberd_hooks:add(c2s_copy_session, Host, ?MODULE,
 		       c2s_copy_session, 50),
     ejabberd_hooks:add(c2s_session_resumed, Host, ?MODULE,
@@ -179,6 +181,8 @@ unregister_hooks(Host) ->
 			  add_stream_feature, 50),
     ejabberd_hooks:delete(c2s_authenticated_packet, Host, ?MODULE,
 			  c2s_authenticated_packet, 50),
+    ejabberd_hooks:delete(csi_activity, Host, ?MODULE,
+			  csi_activity, 50),
     ejabberd_hooks:delete(c2s_copy_session, Host, ?MODULE,
 			  c2s_copy_session, 50),
     ejabberd_hooks:delete(c2s_session_resumed, Host, ?MODULE,
@@ -194,13 +198,19 @@ c2s_stream_started(State, _) ->
     init_csi_state(State).
 
 -spec c2s_authenticated_packet(c2s_state(), xmpp_element()) -> c2s_state().
-c2s_authenticated_packet(C2SState, #csi{type = active}) ->
-    C2SState1 = C2SState#{csi_state => active},
-    flush_queue(C2SState1);
-c2s_authenticated_packet(C2SState, #csi{type = inactive}) ->
-    C2SState#{csi_state => inactive};
+c2s_authenticated_packet(#{lserver := LServer} = C2SState, #csi{type = active}) ->
+    ejabberd_hooks:run_fold(csi_activity, LServer, C2SState, [active]);
+c2s_authenticated_packet(#{lserver := LServer} = C2SState, #csi{type = inactive}) ->
+    ejabberd_hooks:run_fold(csi_activity, LServer, C2SState, [inactive]);
 c2s_authenticated_packet(C2SState, _) ->
     C2SState.
+
+-spec csi_activity(c2s_state(), active | inactive) -> c2s_state().
+csi_activity(C2SState, active) ->
+    C2SState1 = C2SState#{csi_state => active},
+    flush_queue(C2SState1);
+csi_activity(C2SState, inactive) ->
+    C2SState#{csi_state => inactive}.
 
 -spec c2s_copy_session(c2s_state(), c2s_state()) -> c2s_state().
 c2s_copy_session(C2SState, #{csi_queue := Q}) ->
