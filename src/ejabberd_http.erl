@@ -679,7 +679,7 @@ url_decode_q_split(<<>>, Ack) ->
 path_decode(Path) -> path_decode(Path, <<>>).
 
 path_decode(<<$%, Hi, Lo, Tail/binary>>, Acc) ->
-    Hex = hex_to_integer([Hi, Lo]),
+    Hex = list_to_integer([Hi, Lo], 16),
     if Hex == 0 -> exit(badurl);
        true -> ok
     end,
@@ -715,22 +715,6 @@ expand_custom_headers(Headers) ->
     lists:map(fun({K, V}) ->
 		      {K, misc:expand_keyword(<<"@VERSION@">>, V, ?VERSION)}
 	      end, Headers).
-
-%% hex_to_integer
-
-hex_to_integer(Hex) ->
-    case catch list_to_integer(Hex, 16) of
-      {'EXIT', _} -> old_hex_to_integer(Hex);
-      X -> X
-    end.
-
-old_hex_to_integer(Hex) ->
-    DEHEX = fun (H) when H >= $a, H =< $f -> H - $a + 10;
-		(H) when H >= $A, H =< $F -> H - $A + 10;
-		(H) when H >= $0, H =< $9 -> H - $0
-	    end,
-    lists:foldl(fun (E, Acc) -> Acc * 16 + DEHEX(E) end, 0,
-		Hex).
 
 code_to_phrase(100) -> <<"Continue">>;
 code_to_phrase(101) -> <<"Switching Protocols ">>;
@@ -802,7 +786,7 @@ parse_urlencoded(S) ->
 
 parse_urlencoded(<<$%, Hi, Lo, Tail/binary>>, Last, Cur,
 		 State) ->
-    Hex = hex_to_integer([Hi, Lo]),
+    Hex = list_to_integer([Hi, Lo], 16),
     parse_urlencoded(Tail, Last, <<Cur/binary, Hex>>, State);
 parse_urlencoded(<<$&, Tail/binary>>, _Last, Cur, key) ->
     [{Cur, <<"">>} | parse_urlencoded(Tail,
