@@ -172,7 +172,7 @@ url(Server, Path, Params) ->
     Base = base_url(Server, Path),
     [<<$&, ParHead/binary>> | ParTail] =
         [<<"&", (iolist_to_binary(Key))/binary, "=",
-	  (ejabberd_http:url_encode(Value))/binary>>
+	  (misc:url_encode(Value))/binary>>
             || {Key, Value} <- Params],
     Tail = iolist_to_binary([ParHead | ParTail]),
     binary_to_list(<<Base/binary, $?, Tail/binary>>).

@@ -1240,7 +1240,7 @@ list_given_users(Host, Users, Prefix, Lang, URLFunc) ->
 				?XE(<<"tr">>,
 				    [?XE(<<"td">>,
 					 [?AC((URLFunc({user, Prefix,
-							ejabberd_http:url_encode(User),
+							misc:url_encode(User),
 							Server})),
 					      (us_to_list(US)))]),
 				     ?XE(<<"td">>, FQueueLen),
@@ -1319,7 +1319,7 @@ list_online_users(Host, _Lang) ->
     SUsers = lists:usort(Users),
     lists:flatmap(fun ({_S, U} = SU) ->
 			  [?AC(<<"../user/",
-				 (ejabberd_http:url_encode(U))/binary, "/">>,
+				 (misc:url_encode(U))/binary, "/">>,
 			       (su_to_list(SU))),
 			   ?BR]
 		  end,

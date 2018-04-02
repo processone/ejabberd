@@ -29,7 +29,7 @@
 
 %% API
 -export([tolower/1, term_to_base64/1, base64_to_term/1, ip_to_list/1,
-	 hex_to_bin/1, hex_to_base64/1, expand_keyword/3,
+	 hex_to_bin/1, hex_to_base64/1, url_encode/1, expand_keyword/3,
 	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
 	 l2i/1, i2l/1, i2l/2, expr_to_term/1, term_to_expr/1,
 	 now_to_usec/1, usec_to_now/1, encode_pid/1, decode_pid/2,
@@ -104,6 +104,10 @@ hex_to_bin([H1, H2 | T], Acc) ->
 -spec hex_to_base64(binary()) -> binary().
 hex_to_base64(Hex) ->
     base64:encode(hex_to_bin(Hex)).
+
+-spec url_encode(binary()) -> binary().
+url_encode(A) ->
+    url_encode(A, <<>>).
 
 -spec expand_keyword(binary(), binary(), binary()) -> binary().
 expand_keyword(Keyword, Input, Replacement) ->
@@ -262,6 +266,37 @@ read_js(File) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+-spec url_encode(binary(), binary()) -> binary().
+url_encode(<<H:8, T/binary>>, Acc) when
+  (H >= $a andalso H =< $z) orelse
+  (H >= $A andalso H =< $Z) orelse
+  (H >= $0 andalso H =< $9) orelse
+  H == $_ orelse
+  H == $. orelse
+  H == $- orelse
+  H == $/ orelse
+  H == $: ->
+    url_encode(T, <<Acc/binary, H>>);
+url_encode(<<H:8, T/binary>>, Acc) ->
+    case integer_to_hex(H) of
+	[X, Y] -> url_encode(T, <<Acc/binary, $%, X, Y>>);
+	[X] -> url_encode(T, <<Acc/binary, $%, $0, X>>)
+    end;
+url_encode(<<>>, Acc) ->
+    Acc.
+
+integer_to_hex(I) ->
+    case catch erlang:integer_to_list(I, 16) of
+      {'EXIT', _} -> old_integer_to_hex(I);
+      Int -> Int
+    end.
+
+old_integer_to_hex(I) when I < 10 -> integer_to_list(I);
+old_integer_to_hex(I) when I < 16 -> [I - 10 + $A];
+old_integer_to_hex(I) when I >= 16 ->
+    N = trunc(I / 16),
+    old_integer_to_hex(N) ++ old_integer_to_hex(I rem 16).
+
 -spec set_node_id(string(), binary()) -> pid().
 set_node_id(PidStr, NodeBin) ->
     ExtPidStr = erlang:pid_to_list(

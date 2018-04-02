@@ -31,7 +31,7 @@
 
 %% External exports
 -export([start/2, start_link/2, become_controller/1,
-	 socket_type/0, receive_headers/1, url_encode/1,
+	 socket_type/0, receive_headers/1,
          transform_listen_option/2, listen_opt_type/1]).
 
 -export([init/2, opt_type/1]).
@@ -821,41 +821,6 @@ parse_urlencoded(<<H, Tail/binary>>, Last, Cur, State) ->
 parse_urlencoded(<<>>, Last, Cur, _State) ->
     [{Last, Cur}];
 parse_urlencoded(undefined, _, _, _) -> [].
-
-
-url_encode(A) ->
-    url_encode(A, <<>>).
-
-url_encode(<<H:8, T/binary>>, Acc) when
-      (H >= $a andalso H =< $z) orelse
-      (H >= $A andalso H =< $Z) orelse
-      (H >= $0 andalso H =< $9) orelse
-      H == $_ orelse
-      H == $. orelse
-      H == $- orelse
-      H == $/ orelse
-      H == $: ->
-    url_encode(T, <<Acc/binary, H>>);
-url_encode(<<H:8, T/binary>>, Acc) ->
-    case integer_to_hex(H) of
-        [X, Y] -> url_encode(T, <<Acc/binary, $%, X, Y>>);
-        [X] -> url_encode(T, <<Acc/binary, $%, $0, X>>)
-    end;
-url_encode(<<>>, Acc) ->
-    Acc.
-
-
-integer_to_hex(I) ->
-    case catch erlang:integer_to_list(I, 16) of
-      {'EXIT', _} -> old_integer_to_hex(I);
-      Int -> Int
-    end.
-
-old_integer_to_hex(I) when I < 10 -> integer_to_list(I);
-old_integer_to_hex(I) when I < 16 -> [I - 10 + $A];
-old_integer_to_hex(I) when I >= 16 ->
-    N = trunc(I / 16),
-    old_integer_to_hex(N) ++ old_integer_to_hex(I rem 16).
 
 % The following code is mostly taken from yaws_ssl.erl
 
