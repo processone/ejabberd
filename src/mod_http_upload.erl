@@ -671,21 +671,31 @@ mk_slot(Slot, #state{put_url = PutPrefix, get_url = GetPrefix}, XMLNS) ->
     GetURL = str:join([GetPrefix | Slot], <<$/>>),
     mk_slot(PutURL, GetURL, XMLNS);
 mk_slot(PutURL, GetURL, ?NS_HTTP_UPLOAD_0) ->
-    #upload_slot_0{get = GetURL, put = PutURL, xmlns = ?NS_HTTP_UPLOAD_0};
+    #upload_slot_0{get = misc:url_encode(GetURL),
+		   put = misc:url_encode(PutURL),
+		   xmlns = ?NS_HTTP_UPLOAD_0};
 mk_slot(PutURL, GetURL, XMLNS) ->
-    #upload_slot{get = GetURL, put = PutURL, xmlns = XMLNS}.
+    #upload_slot{get = misc:url_encode(GetURL),
+		 put = misc:url_encode(PutURL),
+		 xmlns = XMLNS}.
 
 -spec make_user_string(jid(), sha1 | node) -> binary().
 
 make_user_string(#jid{luser = U, lserver = S}, sha1) ->
     str:sha(<<U/binary, $@, S/binary>>);
 make_user_string(#jid{luser = U}, node) ->
-    re:replace(U, <<"[^a-zA-Z0-9_.-]">>, <<$_>>, [global, {return, binary}]).
+    replace_special_chars(U).
 
 -spec make_file_string(binary()) -> binary().
 
 make_file_string(File) ->
-    re:replace(File, <<"[^a-zA-Z0-9_.-]">>, <<$_>>, [global, {return, binary}]).
+    replace_special_chars(File).
+
+-spec replace_special_chars(binary()) -> binary().
+
+replace_special_chars(S) ->
+    re:replace(S, <<"[^\\p{Xan}_.-]">>, <<$_>>,
+	       [unicode, global, {return, binary}]).
 
 -spec yield_content_type(binary()) -> binary().
 
