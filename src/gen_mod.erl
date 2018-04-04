@@ -833,7 +833,9 @@ get_hosts(Opts, Prefix) ->
             Hosts
     end.
 
--spec get_module_proc(binary(), atom()) -> atom().
+-spec get_module_proc(binary() | global, atom()) -> atom().
+get_module_proc(global, Base) ->
+    get_module_proc(<<"global">>, Base);
 get_module_proc(Host, Base) ->
     binary_to_atom(
       <<(erlang:atom_to_binary(Base, latin1))/binary, "_", Host/binary>>,
