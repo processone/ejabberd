@@ -139,13 +139,15 @@ iq_handler(#iq{type = get, lang = Lang} = IQ)->
 
 -spec user_send_packet({stanza(), ejabberd_c2s:state()})
       -> {stanza(), ejabberd_c2s:state()} | {stop, {stanza(), ejabberd_c2s:state()}}.
-user_send_packet({Packet, C2SState}) ->
+user_send_packet({Packet, C2SState}) when Packet =/= drop ->
     From = xmpp:get_from(Packet),
     To = xmpp:get_to(Packet),
     case check_and_forward(From, To, Packet, sent) of
 	{stop, Pkt} -> {stop, {Pkt, C2SState}};
 	Pkt -> {Pkt, C2SState}
-    end.
+    end;
+user_send_packet(Acc) ->
+    Acc.
 
 -spec user_receive_packet({stanza(), ejabberd_c2s:state()})
       -> {stanza(), ejabberd_c2s:state()} | {stop, {stanza(), ejabberd_c2s:state()}}.

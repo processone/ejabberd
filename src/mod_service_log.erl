@@ -55,10 +55,12 @@ depends(_Host, _Opts) ->
     [].
 
 -spec log_user_send({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
-log_user_send({Packet, C2SState}) ->
+log_user_send({Packet, C2SState}) when Packet =/= drop ->
     From = xmpp:get_from(Packet),
     log_packet(Packet, From#jid.lserver),
-    {Packet, C2SState}.
+    {Packet, C2SState};
+log_user_send(Acc) ->
+    Acc.
 
 -spec log_user_receive({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
 log_user_receive({Packet, C2SState}) ->
