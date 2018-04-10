@@ -2004,10 +2004,11 @@ get_items(Host, Node, From, SubId, _MaxItems, ItemIds, RSM) ->
 				     Host, From, Owners, AccessModel, AllowedGroups),
 			case ItemIds of
 			    [ItemId] ->
+				NotFound = xmpp:err_item_not_found(),
 				case node_call(Host, Type, get_item,
 					       [Nidx, ItemId, From, AccessModel, PS, RG, undefined])
 				of
-				    {error, xmpp:err_item_not_found()} -> {result, {[], undefined}};
+				    {error, NotFound} -> {result, {[], undefined}};
 				    Result -> Result
 				end;
 			    _ ->
