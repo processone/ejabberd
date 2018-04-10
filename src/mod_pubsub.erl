@@ -2007,7 +2007,7 @@ get_items(Host, Node, From, SubId, _MaxItems, ItemIds, RSM) ->
 				case node_call(Host, Type, get_item,
 					       [Nidx, ItemId, From, AccessModel, PS, RG, undefined])
 				of
-				    {error, _} -> {result, {[], undefined}};
+				    {error, xmpp:err_item_not_found()} -> {result, {[], undefined}};
 				    Result -> Result
 				end;
 			    _ ->
