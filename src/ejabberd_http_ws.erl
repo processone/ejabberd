@@ -134,6 +134,7 @@ init([{#ws{ip = IP, http_opts = HOpts}, _} = WS]) ->
                                ({resume_timeout, _}) -> true;
                                ({max_resume_timeout, _}) -> true;
                                ({resend_on_timeout, _}) -> true;
+                               ({access, _}) -> true;
                                (_) -> false
                             end, HOpts),
     Opts = ejabberd_c2s_config:get_c2s_limits() ++ SOpts,
