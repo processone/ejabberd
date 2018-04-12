@@ -55,7 +55,7 @@ master_slave_cases() ->
 all_master(Config) ->
     Peer = ?config(peer, Config),
     Presence = #presence{to = Peer},
-    ChatState = #message{to = Peer, thread = <<"1">>,
+    ChatState = #message{to = Peer, thread = #message_thread{data = <<"1">>},
 			 sub_els = [#chatstate{type = active}]},
     Message = ChatState#message{body = [#text{data = <<"body">>}]},
     PepPayload = xmpp:encode(#presence{}),
@@ -133,15 +133,15 @@ all_slave(Config) ->
 			  [#ps_item{
 			      id = <<"pep-2">>}]}},
 	    #delay{}]} = recv_message(Config),
-    #message{from = Peer, thread = <<"1">>,
+    #message{from = Peer, thread = #message_thread{data = <<"1">>},
 	     sub_els = [#chatstate{type = composing},
 			#delay{}]} = recv_message(Config),
-    #message{from = Peer, thread = <<"1">>,
+    #message{from = Peer, thread = #message_thread{data = <<"1">>},
 	     body = [#text{data = <<"body">>}],
 	     sub_els = [#chatstate{type = active}]} = recv_message(Config),
     change_client_state(Config, active),
     wait_for_master(Config),
-    #message{from = Peer, thread = <<"1">>,
+    #message{from = Peer, thread = #message_thread{data = <<"1">>},
 	     sub_els = [#chatstate{type = active}]} = recv_message(Config),
     disconnect(Config).
 
