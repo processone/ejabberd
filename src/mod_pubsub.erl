@@ -2656,11 +2656,11 @@ broadcast_publish_item(Host, Node, Nidx, Type, NodeOptions, ItemId, From, Payloa
 	SubsByDepth when is_list(SubsByDepth) ->
 	    ItemPublisher = case get_option(NodeOptions, itemreply) of
 				publisher -> jid:encode(From);
-				_ -> undefined
+				_ -> <<>>
 			    end,
 	    ItemPayload = case get_option(NodeOptions, deliver_payloads) of
 			      true -> Payload;
-			      false -> undefined
+			      false -> []
 			  end,
 	    ItemsEls = #ps_items{node = Node,
 				 items = [#ps_item{id = ItemId,
