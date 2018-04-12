@@ -1704,7 +1704,7 @@ subscribe_node(Host, Node, From, JID, Configuration) ->
 	    Nidx = TNode#pubsub_node.id,
 	    Type = TNode#pubsub_node.type,
 	    Options = TNode#pubsub_node.options,
-	    send_items(Host, Node, Nidx, Type, Options, Subscriber, 1),
+	    send_items(Host, Node, Nidx, Type, Options, Subscriber, last),
 	    ServerHost = serverhost(Host),
 	    ejabberd_hooks:run(pubsub_subscribe_node, ServerHost,
 		[ServerHost, Host, Node, Subscriber, SubId]),
@@ -2018,7 +2018,7 @@ get_items(Host, Node, From, SubId, _MaxItems, ItemIds, RSM) ->
 		end
 	end,
     case transaction(Host, Node, Action, sync_dirty) of
-	{result, {_, {Items, RsmOut}}} ->
+	{result, {TNode, {Items, RsmOut}}} ->
 	    SendItems = case ItemIds of
 			    [] ->
 				Items;
@@ -2028,14 +2028,12 @@ get_items(Host, Node, From, SubId, _MaxItems, ItemIds, RSM) ->
 					  lists:member(ItemId, ItemIds)
 				  end, Items)
 			end,
-	    {result,
-	     #pubsub{items = #ps_items{node = Node,
-				       items = itemsEls(SendItems)},
-		     rsm = RsmOut}};
-	{result, {_, Item}} ->
-	    {result,
-	     #pubsub{items = #ps_items{node = Node,
-				       items = itemsEls([Item])}}};
+	    Options = TNode#pubsub_node.options,
+	    {result, #pubsub{items = items_els(Node, Options, SendItems),
+			     rsm = RsmOut}};
+	{result, {TNode, Item}} ->
+	    Options = TNode#pubsub_node.options,
+	    {result, #pubsub{items = items_els(Node, Options, [Item])}};
 	Error ->
 	    Error
     end.
@@ -2069,6 +2067,9 @@ get_allowed_items_call(Host, Nidx, From, Type, Options, Owners, RSM) ->
     {PS, RG} = get_presence_and_roster_permissions(Host, From, Owners, AccessModel, AllowedGroups),
     node_call(Host, Type, get_items, [Nidx, From, AccessModel, PS, RG, undefined, RSM]).
 
+get_last_items(Host, Type, Nidx, LJID, last) ->
+    % hack to handle section 6.1.7 of XEP-0060
+    get_last_items(Host, Type, Nidx, LJID, 1);
 get_last_items(Host, Type, Nidx, LJID, 1) ->
     case get_cached_item(Host, Nidx) of
 	undefined ->
@@ -2635,45 +2636,37 @@ payload_xmlelements([#xmlel{} | Tail], Count) ->
 payload_xmlelements([_ | Tail], Count) ->
     payload_xmlelements(Tail, Count).
 
-items_event_stanza(Node, Options, Items) ->
-    MoreEls = case Items of
-	[LastItem] ->
-	    {ModifNow, ModifUSR} = LastItem#pubsub_item.modification,
-	    [#delay{stamp = ModifNow, from = jid:make(ModifUSR)}];
+items_els(Node, Options, Items) ->
+    Els = case get_option(Options, itemreply) of
+	publisher ->
+	    [#ps_item{id = ItemId, sub_els = Payload, publisher = jid:encode(USR)}
+	     || #pubsub_item{itemid = {ItemId, _}, payload = Payload, modification = {_, USR}}
+		<- Items];
 	_ ->
-	    []
+	    [#ps_item{id = ItemId, sub_els = Payload}
+	     || #pubsub_item{itemid = {ItemId, _}, payload = Payload}
+		<- Items]
     end,
-    BaseStanza = #message{
-		    sub_els = [#ps_event{items = #ps_items{
-						    node = Node,
-						    items = itemsEls(Items)}}
-			       | MoreEls]},
-    NotificationType = get_option(Options, notification_type, headline),
-    add_message_type(BaseStanza, NotificationType).
+    #ps_items{node = Node, items = Els}.
 
 %%%%%% broadcast functions
 
 broadcast_publish_item(Host, Node, Nidx, Type, NodeOptions, ItemId, From, Payload, Removed) ->
     case get_collection_subscriptions(Host, Node) of
 	SubsByDepth when is_list(SubsByDepth) ->
-	    EventItem0 = case get_option(NodeOptions, deliver_payloads) of
-			     true -> #ps_item{sub_els = Payload, id = ItemId};
-			     false -> #ps_item{id = ItemId}
-			 end,
-	    EventItem = case get_option(NodeOptions, itemreply, none) of
-			    owner -> %% owner not supported
-				EventItem0;
-			    publisher ->
-				EventItem0#ps_item{
-				  publisher = jid:encode(From)};
-			    none ->
-				EventItem0
-			end,
-	    Stanza = #message{
-			sub_els =
-			    [#ps_event{items =
-					   #ps_items{node = Node,
-						     items = [EventItem]}}]},
+	    ItemPublisher = case get_option(NodeOptions, itemreply) of
+				publisher -> jid:encode(From);
+				_ -> undefined
+			    end,
+	    ItemPayload = case get_option(NodeOptions, deliver_payloads) of
+			      true -> Payload;
+			      false -> undefined
+			  end,
+	    ItemsEls = #ps_items{node = Node,
+				 items = [#ps_item{id = ItemId,
+						   publisher = ItemPublisher,
+						   sub_els = ItemPayload}]},
+	    Stanza = #message{ sub_els = [#ps_event{items = ItemsEls}]},
 	    broadcast_stanza(Host, From, Node, Nidx, Type,
 			     NodeOptions, SubsByDepth, items, Stanza, true),
 	    case Removed of
@@ -2900,8 +2893,20 @@ send_items(Host, Node, Nidx, Type, Options, Publisher, SubLJID, ToLJID, Number) 
 	[] ->
 	    ok;
 	Items ->
-	    Stanza = items_event_stanza(Node, Options, Items),
-	    send_stanza(Publisher, ToLJID, Node, Stanza)
+	    Delay = case Number of
+		last -> % handle section 6.1.7 of XEP-0060
+		    [Last] = Items,
+		    {Stamp, _USR} = Last#pubsub_item.modification,
+		    [#delay{stamp = Stamp}];
+		_ ->
+		    []
+	    end,
+	    Stanza = #message{
+			sub_els = [#ps_event{items = items_els(Node, Options, Items)}
+				   | Delay]},
+	    NotificationType = get_option(Options, notification_type, headline),
+	    send_stanza(Publisher, ToLJID, Node,
+			add_message_type(Stanza, NotificationType))
     end.
 
 send_stanza({LUser, LServer, _} = Publisher, USR, Node, BaseStanza) ->
@@ -3732,11 +3737,6 @@ err_unsupported_access_model() ->
 uniqid() ->
     {T1, T2, T3} = p1_time_compat:timestamp(),
     (str:format("~.16B~.16B~.16B", [T1, T2, T3])).
-
--spec itemsEls([#pubsub_item{}]) -> [ps_item()].
-itemsEls(Items) ->
-    [#ps_item{id = ItemId, sub_els = Payload}
-     || #pubsub_item{itemid = {ItemId, _}, payload = Payload} <- Items].
 
 -spec add_message_type(message(), message_type()) -> message().
 add_message_type(#message{} = Message, Type) ->
