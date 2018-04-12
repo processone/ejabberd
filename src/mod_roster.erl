@@ -173,9 +173,9 @@ process_local_iq(#iq{type = set, from = From, lang = Lang,
 	    Txt = <<"Duplicated groups are not allowed by RFC6121">>,
 	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
 	false ->
-	    #jid{server = Server} = From,
-	    Access = gen_mod:get_module_opt(Server, ?MODULE, access),
-	    case acl:match_rule(Server, Access, From) of
+	    #jid{lserver = LServer} = From,
+	    Access = gen_mod:get_module_opt(LServer, ?MODULE, access),
+	    case acl:match_rule(LServer, Access, From) of
 		deny ->
 		    Txt = <<"Access denied by service policy">>,
 		    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
