@@ -172,6 +172,7 @@ config_reloaded() ->
 	true -> init_cache();
 	false -> delete_cache()
     end,
+    fast_tls:clear_cache(),
     gen_server:call(?MODULE, config_reloaded, 60000).
 
 opt_type(ca_path) ->
