@@ -33,6 +33,8 @@
 
 -export([update_presence/1, vcard_set/1, remove_user/2,
 	 user_send_packet/1, mod_opt_type/1, mod_options/1, depends/2]).
+%% API
+-export([compute_hash/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").

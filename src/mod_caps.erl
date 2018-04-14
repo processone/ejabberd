@@ -38,7 +38,8 @@
 -export([read_caps/1, list_features/1, caps_stream_features/2,
 	 disco_features/5, disco_identity/5, disco_info/5,
 	 get_features/2, export/1, import_info/0, import/5,
-         get_user_caps/2, import_start/2, import_stop/2]).
+         get_user_caps/2, import_start/2, import_stop/2,
+	 compute_disco_hash/2, is_valid_node/1]).
 
 %% gen_mod callbacks
 -export([start/2, stop/1, reload/3, depends/2]).
@@ -412,13 +413,13 @@ make_my_disco_hash(Host) ->
 	  DiscoInfo = #disco_info{identities = Identities,
 				  features = Feats,
 				  xdata = Info},
-	  make_disco_hash(DiscoInfo, sha);
+	  compute_disco_hash(DiscoInfo, sha);
       _Err -> <<"">>
     end.
 
 -type digest_type() :: md5 | sha | sha224 | sha256 | sha384 | sha512.
--spec make_disco_hash(disco_info(), digest_type()) -> binary().
-make_disco_hash(DiscoInfo, Algo) ->
+-spec compute_disco_hash(disco_info(), digest_type()) -> binary().
+compute_disco_hash(DiscoInfo, Algo) ->
     Concat = list_to_binary([concat_identities(DiscoInfo),
                              concat_features(DiscoInfo), concat_info(DiscoInfo)]),
     base64:encode(case Algo of
@@ -434,17 +435,17 @@ make_disco_hash(DiscoInfo, Algo) ->
 check_hash(Caps, DiscoInfo) ->
     case Caps#caps.hash of
       <<"md5">> ->
-	  Caps#caps.version == make_disco_hash(DiscoInfo, md5);
+	  Caps#caps.version == compute_disco_hash(DiscoInfo, md5);
       <<"sha-1">> ->
-	  Caps#caps.version == make_disco_hash(DiscoInfo, sha);
+	  Caps#caps.version == compute_disco_hash(DiscoInfo, sha);
       <<"sha-224">> ->
-	  Caps#caps.version == make_disco_hash(DiscoInfo, sha224);
+	  Caps#caps.version == compute_disco_hash(DiscoInfo, sha224);
       <<"sha-256">> ->
-	  Caps#caps.version == make_disco_hash(DiscoInfo, sha256);
+	  Caps#caps.version == compute_disco_hash(DiscoInfo, sha256);
       <<"sha-384">> ->
-	  Caps#caps.version == make_disco_hash(DiscoInfo, sha384);
+	  Caps#caps.version == compute_disco_hash(DiscoInfo, sha384);
       <<"sha-512">> ->
-	  Caps#caps.version == make_disco_hash(DiscoInfo, sha512);
+	  Caps#caps.version == compute_disco_hash(DiscoInfo, sha512);
       _ -> true
     end.
 
