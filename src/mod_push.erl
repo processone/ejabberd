@@ -332,6 +332,8 @@ disable(#jid{luser = LUser, lserver = LServer, lresource = LResource} = JID,
 %% Hook callbacks.
 %%--------------------------------------------------------------------
 -spec c2s_stanza(c2s_state(), xmpp_element() | xmlel(), term()) -> c2s_state().
+c2s_stanza(State, #stream_error{}, _SendResult) ->
+    State;
 c2s_stanza(#{push_enabled := true, mgmt_state := pending} = State,
 	   _Pkt, _SendResult) ->
     notify(State),
