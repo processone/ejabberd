@@ -217,6 +217,8 @@ mod_opt_type(thumbnail) ->
 	    false
     end.
 
+-spec mod_options(binary()) -> [{atom(), any()}].
+
 mod_options(_Host) ->
     [{host, <<"upload.@HOST@">>},
      {hosts, []},

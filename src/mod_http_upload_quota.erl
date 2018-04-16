@@ -92,6 +92,8 @@ mod_opt_type(max_days) ->
        (infinity) -> infinity
     end.
 
+-spec mod_options(binary()) -> [{atom(), any()}].
+
 mod_options(_) ->
     [{access_soft_quota, soft_upload_quota},
      {access_hard_quota, hard_upload_quota},
@@ -105,6 +107,8 @@ depends(_Host, _Opts) ->
 %%--------------------------------------------------------------------
 %% gen_server callbacks.
 %%--------------------------------------------------------------------
+
+-spec init(list()) -> {ok, state()}.
 
 init([ServerHost, Opts]) ->
     process_flag(trap_exit, true),
