@@ -44,7 +44,7 @@
 -export([get_commands_spec/0, delete_old_sessions/1]).
 
 %% API (used by mod_push_keepalive).
--export([notify/2, notify/4, notify/6]).
+-export([notify/2, notify/4, notify/6, is_message_with_body/1]).
 
 %% For IQ callbacks
 -export([delete_session/3]).
@@ -388,7 +388,7 @@ c2s_session_pending(#{push_enabled := true, mgmt_queue := Queue} = State) ->
     case p1_queue:len(Queue) of
 	Len when Len > 0 ->
 	    ?DEBUG("Notifying client of unacknowledged stanza(s)", []),
-	    Pkt = queue_find(fun is_message_with_body/1, Queue),
+	    Pkt = mod_stream_mgmt:queue_find(fun is_message_with_body/1, Queue),
 	    notify(State, Pkt),
 	    State;
 	0 ->
@@ -461,6 +461,15 @@ notify(LServer, PushLJID, Node, XData, Pkt, HandleResponse) ->
 	     id = randoms:get_string(),
 	     sub_els = [PubSub]},
     ejabberd_router:route_iq(IQ, HandleResponse).
+
+%%--------------------------------------------------------------------
+%% Miscellaneous.
+%%--------------------------------------------------------------------
+-spec is_message_with_body(stanza()) -> boolean().
+is_message_with_body(#message{} = Msg) ->
+    get_body_text(Msg) /= none;
+is_message_with_body(_Stanza) ->
+    false.
 
 %%--------------------------------------------------------------------
 %% Internal functions.
@@ -583,21 +592,6 @@ drop_online_sessions(LUser, LServer, Clients) ->
     [Client || {TS, _, _, _} = Client <- Clients,
 	       lists:keyfind(TS, 1, SessIDs) == false].
 
--spec queue_find(fun((stanza()) -> boolean()), p1_queue:queue())
-      -> stanza() | none.
-queue_find(Pred, Queue) ->
-    case p1_queue:out(Queue) of
-	{{value, {_, _, Pkt}}, Queue1} ->
-	    case Pred(Pkt) of
-		true ->
-		    Pkt;
-		false ->
-		    queue_find(Pred, Queue1)
-	    end;
-	{empty, _Queue1} ->
-	    none
-    end.
-
 -spec make_summary(binary(), xmpp_element() | xmlel() | none)
       -> xdata() | undefined.
 make_summary(Host, #message{from = From} = Pkt) ->
@@ -629,12 +623,6 @@ make_summary(Host, #message{from = From} = Pkt) ->
     end;
 make_summary(_Host, _Pkt) ->
     undefined.
-
--spec is_message_with_body(stanza()) -> boolean().
-is_message_with_body(#message{} = Msg) ->
-    get_body_text(Msg) /= none;
-is_message_with_body(_Stanza) ->
-    false.
 
 -spec get_body_text(message()) -> binary() | none.
 get_body_text(#message{body = Body} = Msg) ->

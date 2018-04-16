@@ -33,8 +33,8 @@
 	 c2s_unbinded_packet/2, c2s_closed/2, c2s_terminated/2,
 	 c2s_handle_send/3, c2s_handle_info/2, c2s_handle_call/3,
 	 c2s_handle_recv/3]).
-%% adjust pending session timeout
--export([get_resume_timeout/1, set_resume_timeout/2]).
+%% adjust pending session timeout / access queue
+-export([get_resume_timeout/1, set_resume_timeout/2, queue_find/2]).
 
 -include("ejabberd.hrl").
 -include("xmpp.hrl").
@@ -304,7 +304,7 @@ c2s_terminated(State, _Reason) ->
     State.
 
 %%%===================================================================
-%%% Adjust pending session timeout
+%%% Adjust pending session timeout / access queue
 %%%===================================================================
 -spec get_resume_timeout(state()) -> non_neg_integer().
 get_resume_timeout(#{mgmt_timeout := Timeout}) ->
@@ -316,6 +316,21 @@ set_resume_timeout(#{mgmt_timeout := Timeout} = State, Timeout) ->
 set_resume_timeout(State, Timeout) ->
     State1 = restart_pending_timer(State, Timeout),
     State1#{mgmt_timeout => Timeout}.
+
+-spec queue_find(fun((stanza()) -> boolean()), p1_queue:queue())
+      -> stanza() | none.
+queue_find(Pred, Queue) ->
+    case p1_queue:out(Queue) of
+	{{value, {_, _, Pkt}}, Queue1} ->
+	    case Pred(Pkt) of
+		true ->
+		    Pkt;
+		false ->
+		    queue_find(Pred, Queue1)
+	    end;
+	{empty, _Queue1} ->
+	    none
+    end.
 
 %%%===================================================================
 %%% Internal functions

@@ -130,18 +130,24 @@ unregister_hooks(Host) ->
 %%--------------------------------------------------------------------
 -spec c2s_stanza(c2s_state(), xmpp_element() | xmlel(), term()) -> c2s_state().
 c2s_stanza(#{push_enabled := true, mgmt_state := pending} = State,
-	   _Pkt, _SendResult) ->
-    maybe_restore_resume_timeout(State);
+	   Pkt, _SendResult) ->
+    case mod_push:is_message_with_body(Pkt) of
+	true ->
+	    maybe_restore_resume_timeout(State);
+	false ->
+	    State
+    end;
 c2s_stanza(State, _Pkt, _SendResult) ->
     State.
 
 -spec c2s_session_pending(c2s_state()) -> c2s_state().
 c2s_session_pending(#{push_enabled := true, mgmt_queue := Queue} = State) ->
-    case p1_queue:len(Queue) of
-	0 ->
+    case mod_stream_mgmt:queue_find(fun mod_push:is_message_with_body/1,
+				    Queue) of
+	none ->
 	    State1 = maybe_adjust_resume_timeout(State),
 	    maybe_start_wakeup_timer(State1);
-	_ ->
+	_Msg ->
 	    State
     end;
 c2s_session_pending(State) ->
