@@ -70,19 +70,16 @@
 %% gen_mod/supervisor callbacks.
 %%--------------------------------------------------------------------
 -spec start(binary(), gen_mod:opts()) -> {ok, pid()}.
-
 start(ServerHost, Opts) ->
     Proc = mod_http_upload:get_proc_name(ServerHost, ?MODULE),
     gen_mod:start_child(?MODULE, ServerHost, Opts, Proc).
 
 -spec stop(binary()) -> ok | {error, any()}.
-
 stop(ServerHost) ->
     Proc = mod_http_upload:get_proc_name(ServerHost, ?MODULE),
     gen_mod:stop_child(Proc).
 
 -spec mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
-
 mod_opt_type(access_soft_quota) ->
     fun acl:shaper_rules_validator/1;
 mod_opt_type(access_hard_quota) ->
@@ -93,23 +90,19 @@ mod_opt_type(max_days) ->
     end.
 
 -spec mod_options(binary()) -> [{atom(), any()}].
-
 mod_options(_) ->
     [{access_soft_quota, soft_upload_quota},
      {access_hard_quota, hard_upload_quota},
      {max_days, infinity}].
 
 -spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
-
 depends(_Host, _Opts) ->
     [{mod_http_upload, hard}].
 
 %%--------------------------------------------------------------------
 %% gen_server callbacks.
 %%--------------------------------------------------------------------
-
 -spec init(list()) -> {ok, state()}.
-
 init([ServerHost, Opts]) ->
     process_flag(trap_exit, true),
     AccessSoftQuota = gen_mod:get_opt(access_soft_quota, Opts),
@@ -134,13 +127,11 @@ init([ServerHost, Opts]) ->
 		timers = Timers}}.
 
 -spec handle_call(_, {pid(), _}, state()) -> {noreply, state()}.
-
 handle_call(Request, From, State) ->
     ?ERROR_MSG("Got unexpected request from ~p: ~p", [From, Request]),
     {noreply, State}.
 
 -spec handle_cast(_, state()) -> {noreply, state()}.
-
 handle_cast({handle_slot_request, #jid{user = U, server = S} = JID, Path, Size},
 	    #state{server_host = ServerHost,
 		   access_soft_quota = AccessSoftQuota,
@@ -198,7 +189,6 @@ handle_cast(Request, State) ->
     {noreply, State}.
 
 -spec handle_info(_, state()) -> {noreply, state()}.
-
 handle_info(sweep, #state{server_host = ServerHost,
 			  docroot = DocRoot,
 			  max_days = MaxDays} = State)
@@ -225,7 +215,6 @@ handle_info(Info, State) ->
     {noreply, State}.
 
 -spec terminate(normal | shutdown | {shutdown, _} | _, state()) -> ok.
-
 terminate(Reason, #state{server_host = ServerHost, timers = Timers}) ->
     ?DEBUG("Stopping upload quota process for ~s: ~p", [ServerHost, Reason]),
     ejabberd_hooks:delete(http_upload_slot_request, ServerHost, ?MODULE,
@@ -233,7 +222,6 @@ terminate(Reason, #state{server_host = ServerHost, timers = Timers}) ->
     lists:foreach(fun timer:cancel/1, Timers).
 
 -spec code_change({down, _} | _, state(), _) -> {ok, state()}.
-
 code_change(_OldVsn, #state{server_host = ServerHost} = State, _Extra) ->
     ?DEBUG("Updating upload quota process for ~s", [ServerHost]),
     {ok, State}.
@@ -241,10 +229,8 @@ code_change(_OldVsn, #state{server_host = ServerHost} = State, _Extra) ->
 %%--------------------------------------------------------------------
 %% ejabberd_hooks callback.
 %%--------------------------------------------------------------------
-
 -spec handle_slot_request(allow | deny, jid(), binary(),
 			  non_neg_integer(), binary()) -> allow | deny.
-
 handle_slot_request(allow, #jid{lserver = ServerHost} = JID, Path, Size,
 		    _Lang) ->
     Proc = mod_http_upload:get_proc_name(ServerHost, ?MODULE),
@@ -255,12 +241,10 @@ handle_slot_request(Acc, _JID, _Path, _Size, _Lang) -> Acc.
 %%--------------------------------------------------------------------
 %% Internal functions.
 %%--------------------------------------------------------------------
-
 -spec enforce_quota(file:filename_all(), non_neg_integer(),
 		    non_neg_integer() | undefined, non_neg_integer(),
 		    non_neg_integer())
       -> non_neg_integer().
-
 enforce_quota(_UserDir, SlotSize, OldSize, _MinSize, MaxSize)
     when is_integer(OldSize), OldSize + SlotSize =< MaxSize ->
     OldSize + SlotSize;
@@ -286,7 +270,6 @@ enforce_quota(UserDir, SlotSize, _OldSize, MinSize, MaxSize) ->
     end.
 
 -spec delete_old_files(file:filename_all(), integer()) -> ok.
-
 delete_old_files(UserDir, CutOff) ->
     FileInfo = gather_file_info(UserDir),
     case [Path || {Path, _Size, Time} <- FileInfo, Time < CutOff] of
@@ -299,7 +282,6 @@ delete_old_files(UserDir, CutOff) ->
 
 -spec gather_file_info(file:filename_all())
       -> [{binary(), non_neg_integer(), non_neg_integer()}].
-
 gather_file_info(Dir) when is_binary(Dir) ->
     gather_file_info(binary_to_list(Dir));
 gather_file_info(Dir) ->
@@ -334,7 +316,6 @@ gather_file_info(Dir) ->
     end.
 
 -spec del_file_and_dir(file:name_all()) -> ok.
-
 del_file_and_dir(File) ->
     case file:delete(File) of
 	ok ->
@@ -351,7 +332,6 @@ del_file_and_dir(File) ->
     end.
 
 -spec secs_since_epoch() -> non_neg_integer().
-
 secs_since_epoch() ->
     {MegaSecs, Secs, _MicroSecs} = os:timestamp(),
     MegaSecs * 1000000 + Secs.
