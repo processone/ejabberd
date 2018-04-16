@@ -268,22 +268,11 @@ muc_master(Config) ->
     recv_messages_from_room(Config, lists:seq(2, 21)),
     %% Now enable MAM for the conference
     %% Retrieve config first
-    #iq{type = result, sub_els = [#muc_owner{config = #xdata{} = RoomCfg}]} =
-        send_recv(Config, #iq{type = get, sub_els = [#muc_owner{}],
-                              to = Room}),
-    %% Find the MAM field in the config and enable it
-    NewFields = lists:flatmap(
-		  fun(#xdata_field{var = <<"mam">> = Var}) ->
-			  [#xdata_field{var = Var, values = [<<"1">>]}];
-		     (_) ->
-			  []
-		  end, RoomCfg#xdata.fields),
-    NewRoomCfg = #xdata{type = submit, fields = NewFields},
-    #iq{type = result, sub_els = []} =
-	send_recv(Config, #iq{type = set, to = Room,
-			      sub_els = [#muc_owner{config = NewRoomCfg}]}),
-    #message{from = Room, type = groupchat,
-	     sub_els = [#muc_user{status_codes = [104]}]} = recv_message(Config),
+    CfgOpts = muc_tests:get_config(Config),
+    %% Find the MAM field in the config
+    true = proplists:is_defined(mam, CfgOpts),
+    %% Enable MAM
+    [104] = muc_tests:set_config(Config, [{mam, true}]),
     %% Check if MAM has been enabled
     true = is_feature_advertised(Config, ?NS_MAM_1, Room),
     true = is_feature_advertised(Config, ?NS_MAM_2, Room),
