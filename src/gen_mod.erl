@@ -548,7 +548,7 @@ validate_opts(Host, Module, Opts0) ->
 		    end, [Module|SubMods]),
     Required = lists:filter(fun is_atom/1, DefaultOpts),
     try
-	Opts = merge_opts(Opts0, DefaultOpts),
+	Opts = merge_opts(Opts0, DefaultOpts, Module),
 	{ok, case get_validators(Host, {Module, SubMods}) of
 		 undef ->
 		     Opts;
@@ -645,8 +645,8 @@ list_known_opts(Host, Module) ->
 	    Module:mod_opt_type('')
     end.
 
--spec merge_opts(opts(), opts()) -> opts().
-merge_opts(Opts, DefaultOpts) ->
+-spec merge_opts(opts(), opts(), module()) -> opts().
+merge_opts(Opts, DefaultOpts, Module) ->
     Result =
 	lists:foldr(
 	  fun({Opt, Default}, Acc) ->
@@ -654,7 +654,17 @@ merge_opts(Opts, DefaultOpts) ->
 		      {_, Val} ->
 			  case Default of
 			      [{A, _}|_] when is_atom(A) andalso is_list(Val) ->
-				  [{Opt, merge_opts(Val, Default)}|Acc];
+				  VFun = opt_type(modules),
+				  try VFun(Val) of
+				      NewVal ->
+					  [{Opt, merge_opts(NewVal, Default, Module)}|Acc]
+				  catch _:_ ->
+					  ?ERROR_MSG(
+					     "Ignoring invalid value '~p' for "
+					     "option '~s' of module '~s'",
+					     [Val, Opt, Module]),
+					  [{Opt, Default}|Acc]
+				  end;
 			      Val ->
 				  [{Opt, Default}|Acc];
 			      _ ->
