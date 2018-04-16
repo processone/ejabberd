@@ -44,7 +44,7 @@
 -export([get_commands_spec/0, delete_old_sessions/1]).
 
 %% API (used by mod_push_keepalive).
--export([notify/1, notify/3, notify/5]).
+-export([notify/2, notify/4, notify/6]).
 
 %% For IQ callbacks
 -export([delete_session/3]).
@@ -125,6 +125,12 @@ depends(_Host, _Opts) ->
     [].
 
 -spec mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
+mod_opt_type(include_sender) ->
+    fun (B) when is_boolean(B) -> B end;
+mod_opt_type(include_body) ->
+    fun (B) when is_boolean(B) -> B;
+        (S) -> iolist_to_binary(S)
+    end;
 mod_opt_type(db_type) ->
     fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(O) when O == cache_life_time; O == cache_size ->
@@ -136,7 +142,9 @@ mod_opt_type(O) when O == use_cache; O == cache_missed ->
 
 -spec mod_options(binary()) -> [{atom(), any()}].
 mod_options(Host) ->
-    [{db_type, ejabberd_config:default_db(Host, ?MODULE)},
+    [{include_sender, false},
+     {include_body, false},
+     {db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {use_cache, ejabberd_config:use_cache(Host)},
      {cache_size, ejabberd_config:cache_size(Host)},
      {cache_missed, ejabberd_config:cache_missed(Host)},
@@ -336,9 +344,9 @@ disable(#jid{luser = LUser, lserver = LServer, lresource = LResource} = JID,
 c2s_stanza(State, #stream_error{}, _SendResult) ->
     State;
 c2s_stanza(#{push_enabled := true, mgmt_state := pending} = State,
-	   _Pkt, _SendResult) ->
+	   Pkt, _SendResult) ->
     ?DEBUG("Notifying client of stanza", []),
-    notify(State),
+    notify(State, Pkt),
     State;
 c2s_stanza(State, _Pkt, _SendResult) ->
     State.
@@ -351,7 +359,7 @@ mam_message(#message{} = Pkt, LUser, LServer, _Peer, chat, _Dir) ->
 	    case drop_online_sessions(LUser, LServer, Clients) of
 		[_|_] = Clients1 ->
 		    ?DEBUG("Notifying ~s@~s of MAM message", [LUser, LServer]),
-		    notify(LUser, LServer, Clients1);
+		    notify(LUser, LServer, Clients1, Pkt);
 		[] ->
 		    ok
 	    end;
@@ -369,7 +377,7 @@ offline_message(#message{to = #jid{luser = LUser, lserver = LServer}} = Pkt) ->
     case lookup_sessions(LUser, LServer) of
 	{ok, [_|_] = Clients} ->
 	    ?DEBUG("Notifying ~s@~s of offline message", [LUser, LServer]),
-	    notify(LUser, LServer, Clients);
+	    notify(LUser, LServer, Clients, Pkt);
 	_ ->
 	    ok
     end,
@@ -380,7 +388,8 @@ c2s_session_pending(#{push_enabled := true, mgmt_queue := Queue} = State) ->
     case p1_queue:len(Queue) of
 	Len when Len > 0 ->
 	    ?DEBUG("Notifying client of unacknowledged stanza(s)", []),
-	    notify(State),
+	    Pkt = queue_find(fun is_message_with_body/1, Queue),
+	    notify(State, Pkt),
 	    State;
 	0 ->
 	    State
@@ -412,17 +421,18 @@ remove_user(LUser, LServer) ->
 %%--------------------------------------------------------------------
 %% Generate push notifications.
 %%--------------------------------------------------------------------
--spec notify(c2s_state()) -> ok.
-notify(#{jid := #jid{luser = LUser, lserver = LServer}, sid := {TS, _}}) ->
+-spec notify(c2s_state(), xmpp_element() | xmlel() | none) -> ok.
+notify(#{jid := #jid{luser = LUser, lserver = LServer}, sid := {TS, _}}, Pkt) ->
     case lookup_session(LUser, LServer, TS) of
 	{ok, Client} ->
-	    notify(LUser, LServer, [Client]);
+	    notify(LUser, LServer, [Client], Pkt);
 	_Err ->
 	    ok
     end.
 
--spec notify(binary(), binary(), [push_session()]) -> ok.
-notify(LUser, LServer, Clients) ->
+-spec notify(binary(), binary(), [push_session()],
+	     xmpp_element() | xmlel() | none) -> ok.
+notify(LUser, LServer, Clients, Pkt) ->
     lists:foreach(
       fun({TS, PushLJID, Node, XData}) ->
 	      HandleResponse = fun(#iq{type = result}) ->
@@ -433,14 +443,16 @@ notify(LUser, LServer, Clients) ->
 				  (timeout) ->
 				       ok % Hmm.
 			       end,
-	      notify(LServer, PushLJID, Node, XData, HandleResponse)
+	      notify(LServer, PushLJID, Node, XData, Pkt, HandleResponse)
       end, Clients).
 
 -spec notify(binary(), ljid(), binary(), xdata(),
+	     xmpp_element() | xmlel() | none,
 	     fun((iq() | timeout) -> any())) -> ok.
-notify(LServer, PushLJID, Node, XData, HandleResponse) ->
+notify(LServer, PushLJID, Node, XData, Pkt, HandleResponse) ->
     From = jid:make(LServer),
-    Item = #ps_item{sub_els = [#push_notification{}]},
+    Summary = make_summary(LServer, Pkt),
+    Item = #ps_item{sub_els = [#push_notification{xdata = Summary}]},
     PubSub = #pubsub{publish = #ps_publish{node = Node, items = [Item]},
 		     publish_options = XData},
     IQ = #iq{type = set,
@@ -570,6 +582,77 @@ drop_online_sessions(LUser, LServer, Clients) ->
     SessIDs = ejabberd_sm:get_session_sids(LUser, LServer),
     [Client || {TS, _, _, _} = Client <- Clients,
 	       lists:keyfind(TS, 1, SessIDs) == false].
+
+-spec queue_find(fun((stanza()) -> boolean()), p1_queue:queue())
+      -> stanza() | none.
+queue_find(Pred, Queue) ->
+    case p1_queue:out(Queue) of
+	{{value, {_, _, Pkt}}, Queue1} ->
+	    case Pred(Pkt) of
+		true ->
+		    Pkt;
+		false ->
+		    queue_find(Pred, Queue1)
+	    end;
+	{empty, _Queue1} ->
+	    none
+    end.
+
+-spec make_summary(binary(), xmpp_element() | xmlel() | none)
+      -> xdata() | undefined.
+make_summary(Host, #message{from = From} = Pkt) ->
+    case {gen_mod:get_module_opt(Host, ?MODULE, include_sender),
+	  gen_mod:get_module_opt(Host, ?MODULE, include_body)} of
+	{false, false} ->
+	    undefined;
+	{IncludeSender, IncludeBody} ->
+	    case get_body_text(Pkt) of
+		none ->
+		    undefined;
+		Text ->
+		    Fields1 = case IncludeBody of
+				  StaticText when is_binary(StaticText) ->
+				      [{'last-message-body', StaticText}];
+				  true ->
+				      [{'last-message-body', Text}];
+				  false ->
+				      []
+			      end,
+		    Fields2 = case IncludeSender of
+				  true ->
+				      [{'last-message-sender', From} | Fields1];
+				  false ->
+				      Fields1
+			      end,
+		    #xdata{type = submit, fields = push_summary:encode(Fields2)}
+	    end
+    end;
+make_summary(_Host, _Pkt) ->
+    undefined.
+
+-spec is_message_with_body(stanza()) -> boolean().
+is_message_with_body(#message{} = Msg) ->
+    get_body_text(Msg) /= none;
+is_message_with_body(_Stanza) ->
+    false.
+
+-spec get_body_text(message()) -> binary() | none.
+get_body_text(#message{body = Body} = Msg) ->
+    case xmpp:get_text(Body) of
+	Text when byte_size(Text) > 0 ->
+	    Text;
+	<<>> ->
+	    case body_is_encrypted(Msg) of
+		true ->
+		    <<"(encrypted)">>;
+		false ->
+		    none
+	    end
+    end.
+
+-spec body_is_encrypted(message()) -> boolean().
+body_is_encrypted(#message{sub_els = SubEls}) ->
+    lists:keyfind(<<"encrypted">>, #xmlel.name, SubEls) /= false.
 
 %%--------------------------------------------------------------------
 %% Caching.

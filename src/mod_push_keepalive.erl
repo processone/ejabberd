@@ -184,7 +184,7 @@ c2s_handle_cast(State, _Msg) ->
 c2s_handle_info(#{push_enabled := true, mgmt_state := pending,
 		  jid := JID} = State, {timeout, _, push_keepalive}) ->
     ?INFO_MSG("Waking ~s before session times out", [jid:encode(JID)]),
-    mod_push:notify(State),
+    mod_push:notify(State, none),
     {stop, State};
 c2s_handle_info(State, _) ->
     State.
@@ -229,7 +229,7 @@ wake_all(LServer) ->
 	    IgnoreResponse = fun(_) -> ok end,
 	    lists:foreach(fun({_, PushLJID, Node, XData}) ->
 				  mod_push:notify(LServer, PushLJID, Node,
-						  XData, IgnoreResponse)
+						  XData, none, IgnoreResponse)
 			  end, Sessions);
 	error ->
 	    error
