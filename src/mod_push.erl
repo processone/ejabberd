@@ -336,6 +336,7 @@ c2s_stanza(State, #stream_error{}, _SendResult) ->
     State;
 c2s_stanza(#{push_enabled := true, mgmt_state := pending} = State,
 	   _Pkt, _SendResult) ->
+    ?DEBUG("Notifying client of stanza", []),
     notify(State),
     State;
 c2s_stanza(State, _Pkt, _SendResult) ->
@@ -377,7 +378,7 @@ offline_message(#message{to = #jid{luser = LUser, lserver = LServer}} = Pkt) ->
 c2s_session_pending(#{push_enabled := true, mgmt_queue := Queue} = State) ->
     case p1_queue:len(Queue) of
 	Len when Len > 0 ->
-	    ?DEBUG("Notifying client of unacknowledged messages", []),
+	    ?DEBUG("Notifying client of unacknowledged stanza(s)", []),
 	    notify(State),
 	    State;
 	0 ->
