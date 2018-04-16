@@ -134,6 +134,7 @@ mod_opt_type(O) when O == cache_life_time; O == cache_size ->
 mod_opt_type(O) when O == use_cache; O == cache_missed ->
     fun (B) when is_boolean(B) -> B end.
 
+-spec mod_options(binary()) -> [{atom(), any()}].
 mod_options(Host) ->
     [{db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {use_cache, ejabberd_config:use_cache(Host)},
