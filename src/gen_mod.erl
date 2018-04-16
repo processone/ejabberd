@@ -654,11 +654,10 @@ merge_opts(Opts, DefaultOpts, Module) ->
 		      {_, Val} ->
 			  case Default of
 			      [{A, _}|_] when is_atom(A) andalso is_list(Val) ->
-				  VFun = opt_type(modules),
-				  try VFun(Val) of
-				      NewVal ->
-					  [{Opt, merge_opts(NewVal, Default, Module)}|Acc]
-				  catch _:_ ->
+				  case is_opt_list(Val) of
+				      true ->
+					  [{Opt, merge_opts(Val, Default, Module)}|Acc];
+				      false ->
 					  ?ERROR_MSG(
 					     "Ignoring invalid value '~p' for "
 					     "option '~s' of module '~s'",
@@ -883,12 +882,24 @@ is_equal_opt(Opt, NewOpts, OldOpts) ->
 	    true
     end.
 
+-spec is_opt_list(term()) -> boolean().
+is_opt_list([]) ->
+    true;
+is_opt_list(L) when is_list(L) ->
+    lists:all(
+      fun({Opt, _Val}) -> is_atom(Opt);
+	 (_) -> false
+      end, L);
+is_opt_list(_) ->
+    false.
+
 -spec opt_type(modules) -> fun(([{atom(), list()}]) -> [{atom(), list()}]);
 	      (atom()) -> [atom()].
 opt_type(modules) ->
     fun(Mods) ->
 	    lists:map(
-	      fun({M, A}) when is_atom(M), is_list(A) ->
+	      fun({M, A}) when is_atom(M) ->
+		      true = is_opt_list(A),
 		      {M, A}
 	      end, Mods)
     end;
