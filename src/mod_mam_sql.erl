@@ -30,7 +30,7 @@
 
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
-	 extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/6, export/1]).
+	 extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/6, export/1, remove_from_archive/3]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("xmpp.hrl").
@@ -55,6 +55,20 @@ remove_user(LUser, LServer) ->
 remove_room(LServer, LName, LHost) ->
     LUser = jid:encode({LName, LHost, <<>>}),
     remove_user(LUser, LServer).
+
+remove_from_archive(LUser, LServer, none) ->
+    case ejabberd_sql:sql_query(LServer,
+				?SQL("delete from archive where username=%(LUser)s and %(LServer)H")) of
+	{error, Reason} -> {error, Reason};
+	_ -> ok
+    end;
+remove_from_archive(LUser, LServer, WithJid) ->
+    Peer = jid:encode(jid:remove_resource(WithJid)),
+    case ejabberd_sql:sql_query(LServer,
+				?SQL("delete from archive where username=%(LUser)s and %(LServer)H and bare_peer=%(Peer)s")) of
+	{error, Reason} -> {error, Reason};
+	_ -> ok
+    end.
 
 delete_old_messages(ServerHost, TimeStamp, Type) ->
     TS = now_to_usec(TimeStamp),

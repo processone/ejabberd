@@ -28,7 +28,7 @@
 
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
-	 extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/6]).
+	 extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/6, remove_from_archive/3]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("xmpp.hrl").
@@ -66,6 +66,25 @@ remove_user(LUser, LServer) ->
 
 remove_room(_LServer, LName, LHost) ->
     remove_user(LName, LHost).
+
+remove_from_archive(LUser, LServer, none) ->
+    US = {LUser, LServer},
+    case mnesia:transaction(fun () -> mnesia:delete({archive_msg, US}) end) of
+	{atomic, _} -> ok;
+	{aborted, Reason} -> {error, Reason}
+    end;
+remove_from_archive(LUser, LServer, WithJid) ->
+    US = {LUser, LServer},
+    Peer = jid:remove_resource(jid:split(WithJid)),
+    F = fun () ->
+	    Msgs = mnesia:match_object(archive_msg,
+				       #archive_msg{us = US, bare_peer = Peer, _ = '_'}),
+	    lists:foreach(fun mnesia:delete_object/1, Msgs)
+	end,
+    case mnesia:transaction(F) of
+	{atomic, _} -> ok;
+	{aborted, Reason} -> {error, Reason}
+    end.
 
 delete_old_messages(global, TimeStamp, Type) ->
     mnesia:change_table_copy_type(archive_msg, node(), disc_copies),
