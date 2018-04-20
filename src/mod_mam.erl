@@ -281,7 +281,7 @@ remove_mam_for_user_with_peer(User, Server, Peer) ->
     LServer = jid:nameprep(Server),
     try jid:decode(Peer) of
 	Jid ->
-	    Mod = gen_mod:db_mod(LUser, ?MODULE),
+	    Mod = gen_mod:db_mod(LServer, ?MODULE),
 	    case Mod:remove_from_archive(LUser, LServer, Jid) of
 		ok ->
 		    {ok, <<"MAM archive removed">>};
