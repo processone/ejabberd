@@ -77,8 +77,7 @@ remove_from_archive(LUser, LServer, WithJid) ->
     US = {LUser, LServer},
     Peer = jid:remove_resource(jid:split(WithJid)),
     F = fun () ->
-	    Msgs = mnesia:match_object(archive_msg,
-				       #archive_msg{us = US, bare_peer = Peer, _ = '_'}),
+	    Msgs = mnesia:match_object(#archive_msg{us = US, bare_peer = Peer, _ = '_'}),
 	    lists:foreach(fun mnesia:delete_object/1, Msgs)
 	end,
     case mnesia:transaction(F) of

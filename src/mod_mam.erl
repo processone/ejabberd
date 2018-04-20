@@ -259,6 +259,8 @@ remove_room(LServer, Name, Host) ->
     Mod:remove_room(LServer, LName, LHost),
     ok.
 
+-spec remove_mam_for_user(binary(), binary()) ->
+    {ok, binary()} | {error, binary()}.
 remove_mam_for_user(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
@@ -272,6 +274,8 @@ remove_mam_for_user(User, Server) ->
 	    {error, <<"Db returned error">>}
     end.
 
+-spec remove_mam_for_user_with_peer(binary(), binary(), binary()) ->
+    {ok, binary()} | {error, binary()}.
 remove_mam_for_user_with_peer(User, Server, Peer) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
