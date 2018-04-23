@@ -58,32 +58,32 @@ with_retry(Method, Args, Retries, MaxRetries, Backoff) ->
     end.
 
 get(Server, Path) ->
-    request(Server, get, Path, [], "application/json", <<>>).
+    request(Server, get, Path, [], <<"application/json">>, <<>>).
 get(Server, Path, Params) ->
-    request(Server, get, Path, Params, "application/json", <<>>).
+    request(Server, get, Path, Params, <<"application/json">>, <<>>).
 
 delete(Server, Path) ->
-    request(Server, delete, Path, [], "application/json", <<>>).
+    request(Server, delete, Path, [], <<"application/json">>, <<>>).
 
 post(Server, Path, Params, Content) ->
     Data = encode_json(Content),
-    request(Server, post, Path, Params, "application/json", Data).
+    request(Server, post, Path, Params, <<"application/json">>, Data).
 
 put(Server, Path, Params, Content) ->
     Data = encode_json(Content),
-    request(Server, put, Path, Params, "application/json", Data).
+    request(Server, put, Path, Params, <<"application/json">>, Data).
 
 patch(Server, Path, Params, Content) ->
     Data = encode_json(Content),
-    request(Server, patch, Path, Params, "application/json", Data).
+    request(Server, patch, Path, Params, <<"application/json">>, Data).
 
 request(Server, Method, Path, Params, Mime, Data) ->
     URI = url(Server, Path, Params),
     Opts = [{connect_timeout, ?CONNECT_TIMEOUT},
             {timeout, ?HTTP_TIMEOUT}],
-    Hdrs = [{"connection", "keep-alive"},
-            {"content-type", Mime},
-            {"User-Agent", "ejabberd"}],
+    Hdrs = [{<<"connection">>, <<"keep-alive">>},
+	    {<<"content-type">>, Mime},
+	    {<<"User-Agent">>, <<"ejabberd">>}],
     Begin = os:timestamp(),
     Result = case catch p1_http:request(Method, URI, Hdrs, Data, Opts) of
         {ok, Code, _, <<>>} ->
@@ -174,13 +174,13 @@ base_url(Server, Path) ->
     end.
 
 url(Url, []) ->
-    binary_to_list(Url);
+    Url;
 url(Url, Params) ->
     L = [<<"&", (iolist_to_binary(Key))/binary, "=",
           (misc:url_encode(Value))/binary>>
             || {Key, Value} <- Params],
     <<$&, Encoded/binary>> = iolist_to_binary(L),
-    binary_to_list(<<Url/binary, $?, Encoded/binary>>).
+    <<Url/binary, $?, Encoded/binary>>.
 url(Server, Path, Params) ->
     case binary:split(base_url(Server, Path), <<"?">>) of
         [Url] ->
