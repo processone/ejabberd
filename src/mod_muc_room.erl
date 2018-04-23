@@ -502,8 +502,8 @@ handle_event(destroy, StateName, StateData) ->
     handle_event({destroy, <<"">>}, StateName, StateData);
 handle_event({set_affiliations, Affiliations},
 	     StateName, StateData) ->
-    {next_state, StateName,
-     StateData#state{affiliations = Affiliations}};
+    NewStateData = set_affiliations(Affiliations, StateData),
+    {next_state, StateName, NewStateData};
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
@@ -1264,57 +1264,129 @@ set_affiliation(JID, Affiliation, StateData) ->
     set_affiliation(JID, Affiliation, StateData, <<"">>).
 
 -spec set_affiliation(jid(), affiliation(), state(), binary()) -> state().
+set_affiliation(JID, Affiliation,
+		#state{config = #config{persistent = false}} = StateData,
+		Reason) ->
+    set_affiliation_fallback(JID, Affiliation, StateData, Reason);
 set_affiliation(JID, Affiliation, StateData, Reason) ->
+    ServerHost = StateData#state.server_host,
+    Room = StateData#state.room,
+    Host = StateData#state.host,
+    Mod = gen_mod:db_mod(ServerHost, mod_muc),
+    case Mod:set_affiliation(ServerHost, Room, Host, JID, Affiliation, Reason) of
+	ok ->
+	    StateData;
+	{error, _} ->
+	    set_affiliation_fallback(JID, Affiliation, StateData, Reason)
+    end.
+
+-spec set_affiliation_fallback(jid(), affiliation(), state(), binary()) -> state().
+set_affiliation_fallback(JID, Affiliation, StateData, Reason) ->
     LJID = jid:remove_resource(jid:tolower(JID)),
     Affiliations = case Affiliation of
-		     none ->
-			 (?DICT):erase(LJID, StateData#state.affiliations);
-		     _ ->
-			 (?DICT):store(LJID, {Affiliation, Reason},
-				       StateData#state.affiliations)
+		       none ->
+			   (?DICT):erase(LJID, StateData#state.affiliations);
+		       _ ->
+			   (?DICT):store(LJID, {Affiliation, Reason},
+					 StateData#state.affiliations)
 		   end,
+    StateData#state{affiliations = Affiliations}.
+
+-spec set_affiliations(?TDICT, state()) -> state().
+set_affiliations(Affiliations,
+                 #state{config = #config{persistent = false}} = StateData) ->
+    set_affiliations_fallback(Affiliations, StateData);
+set_affiliations(Affiliations, StateData) ->
+    Room = StateData#state.room,
+    Host = StateData#state.host,
+    ServerHost = StateData#state.server_host,
+    Mod = gen_mod:db_mod(ServerHost, mod_muc),
+    case Mod:set_affiliations(ServerHost, Room, Host, Affiliations) of
+	ok ->
+	    StateData;
+	{error, _} ->
+	    set_affiliations_fallback(Affiliations, StateData)
+    end.
+
+-spec set_affiliations_fallback(?TDICT, state()) -> state().
+set_affiliations_fallback(Affiliations, StateData) ->
     StateData#state{affiliations = Affiliations}.
 
 -spec get_affiliation(jid(), state()) -> affiliation().
 get_affiliation(JID, StateData) ->
-    {_AccessRoute, _AccessCreate, AccessAdmin,
-     _AccessPersistent} =
-	StateData#state.access,
-    Res = case acl:match_rule(StateData#state.server_host,
-			      AccessAdmin, JID)
-	      of
-	    allow -> owner;
-	    _ ->
-		LJID = jid:tolower(JID),
-		case (?DICT):find(LJID, StateData#state.affiliations) of
-		  {ok, Affiliation} -> Affiliation;
-		  _ ->
-		      LJID1 = jid:remove_resource(LJID),
-		      case (?DICT):find(LJID1, StateData#state.affiliations)
-			  of
-			{ok, Affiliation} -> Affiliation;
-			_ ->
-			    LJID2 = setelement(1, LJID, <<"">>),
-			    case (?DICT):find(LJID2,
-					      StateData#state.affiliations)
-				of
-			      {ok, Affiliation} -> Affiliation;
-			      _ ->
-				  LJID3 = jid:remove_resource(LJID2),
-				  case (?DICT):find(LJID3,
-						    StateData#state.affiliations)
-				      of
-				    {ok, Affiliation} -> Affiliation;
-				    _ -> none
-				  end
-			    end
-		      end
-		end
-	  end,
-    case Res of
-      {A, _Reason} -> A;
-      _ -> Res
+    case get_service_affiliation(JID, StateData) of
+        owner ->
+            owner;
+        none ->
+            case do_get_affiliation(JID, StateData) of
+                {Affiliation, _Reason} -> Affiliation;
+                Affiliation -> Affiliation
+            end
     end.
+
+-spec do_get_affiliation(jid(), state()) -> affiliation().
+do_get_affiliation(JID, #state{config = #config{persistent = false}} = StateData) ->
+    do_get_affiliation_fallback(JID, StateData);
+do_get_affiliation(JID, StateData) ->
+    Room = StateData#state.room,
+    Host = StateData#state.host,
+    LServer = JID#jid.lserver,
+    LUser = JID#jid.luser,
+    ServerHost = StateData#state.server_host,
+    Mod = gen_mod:db_mod(ServerHost, mod_muc),
+    case Mod:get_affiliation(ServerHost, Room, Host, LUser, LServer) of
+	{error, _} ->
+	    do_get_affiliation_fallback(JID, StateData);
+	{ok, Affiliation} ->
+	    Affiliation
+    end.
+
+-spec do_get_affiliation_fallback(jid(), state()) -> affiliation().
+do_get_affiliation_fallback(JID, StateData) ->
+    LJID = jid:tolower(JID),
+    case (?DICT):find(LJID, StateData#state.affiliations) of
+        {ok, Affiliation} -> Affiliation;
+        _ ->
+            LJID1 = jid:remove_resource(LJID),
+            case (?DICT):find(LJID1, StateData#state.affiliations)
+            of
+                {ok, Affiliation} -> Affiliation;
+                _ ->
+                    LJID2 = setelement(1, LJID, <<"">>),
+                    case (?DICT):find(LJID2,
+                                      StateData#state.affiliations)
+                    of
+                        {ok, Affiliation} -> Affiliation;
+                        _ ->
+                            LJID3 = jid:remove_resource(LJID2),
+                            case (?DICT):find(LJID3,
+                                              StateData#state.affiliations)
+                            of
+                                {ok, Affiliation} -> Affiliation;
+                                _ -> none
+                            end
+                    end
+            end
+    end.
+
+-spec get_affiliations(state()) -> ?TDICT.
+get_affiliations(#state{config = #config{persistent = false}} = StateData) ->
+    get_affiliations_callback(StateData);
+get_affiliations(StateData) ->
+    Room = StateData#state.room,
+    Host = StateData#state.host,
+    ServerHost = StateData#state.server_host,
+    Mod = gen_mod:db_mod(ServerHost, mod_muc),
+    case Mod:get_affiliations(ServerHost, Room, Host) of
+	{error, _} ->
+	    get_affiliations_callback(StateData);
+	{ok, Affiliations} ->
+	    Affiliations
+    end.
+
+-spec get_affiliations_callback(state()) -> ?TDICT.
+get_affiliations_callback(StateData) ->
+    StateData#state.affiliations.
 
 -spec get_service_affiliation(jid(), state()) -> owner | none.
 get_service_affiliation(JID, StateData) ->
@@ -2598,16 +2670,35 @@ search_role(Role, StateData) ->
 		 (?DICT):to_list(StateData#state.users)).
 
 -spec search_affiliation(affiliation(), state()) ->
-				[{ljid(),
-				  affiliation() | {affiliation(), binary()}}].
+			 [{ljid(),
+			   affiliation() | {affiliation(), binary()}}].
+search_affiliation(Affiliation,
+                   #state{config = #config{persistent = false}} = StateData) ->
+    search_affiliation_fallback(Affiliation, StateData);
 search_affiliation(Affiliation, StateData) ->
-    lists:filter(fun ({_, A}) ->
-			 case A of
-			   {A1, _Reason} -> Affiliation == A1;
-			   _ -> Affiliation == A
-			 end
-		 end,
-		 (?DICT):to_list(StateData#state.affiliations)).
+    Room = StateData#state.room,
+    Host = StateData#state.host,
+    ServerHost = StateData#state.server_host,
+    Mod = gen_mod:db_mod(ServerHost, mod_muc),
+    case Mod:search_affiliation(ServerHost, Room, Host, Affiliation) of
+	{ok, AffiliationList} ->
+	    AffiliationList;
+	{error, _} ->
+	    search_affiliation_fallback(Affiliation, StateData)
+    end.
+
+-spec search_affiliation_fallback(affiliation(), state()) ->
+				  [{ljid(),
+				    affiliation() | {affiliation(), binary()}}].
+search_affiliation_fallback(Affiliation, StateData) ->
+    lists:filter(
+      fun({_, A}) ->
+	      case A of
+		  {A1, _Reason} -> Affiliation == A1;
+		  _ -> Affiliation == A
+	      end
+      end,
+      (?DICT):to_list(StateData#state.affiliations)).
 
 -spec process_admin_items_set(jid(), [muc_item()], binary(),
 			      #state{}) -> {result, undefined, #state{}} |
@@ -3327,23 +3418,36 @@ set_config(Opts, Config, ServerHost, Lang) ->
 -spec change_config(#config{}, state()) -> {result, undefined, state()}.
 change_config(Config, StateData) ->
     send_config_change_info(Config, StateData),
-    NSD = remove_subscriptions(StateData#state{config = Config}),
-    case {(StateData#state.config)#config.persistent,
-	  Config#config.persistent}
-	of
-      {_, true} ->
-            store_room(NSD);
-      {true, false} ->
-	  mod_muc:forget_room(NSD#state.server_host,
-			      NSD#state.host, NSD#state.room);
-      {false, false} -> ok
-    end,
+    StateData0 = StateData#state{config = Config},
+    StateData1 = remove_subscriptions(StateData0),
+    StateData2 =
+        case {(StateData#state.config)#config.persistent,
+              Config#config.persistent} of
+            {WasPersistent, true} ->
+                if not WasPersistent ->
+                        set_affiliations(StateData1#state.affiliations,
+                                         StateData1);
+                   true ->
+                        ok
+                end,
+                store_room(StateData1),
+                StateData1;
+            {true, false} ->
+                Affiliations = get_affiliations(StateData),
+                mod_muc:forget_room(StateData1#state.server_host,
+                                    StateData1#state.host,
+                                    StateData1#state.room),
+                StateData1#state{affiliations = Affiliations};
+            {false, false} ->
+                StateData1
+        end,
     case {(StateData#state.config)#config.members_only,
-	  Config#config.members_only}
-	of
-      {false, true} ->
-	  NSD1 = remove_nonmembers(NSD), {result, undefined, NSD1};
-      _ -> {result, undefined, NSD}
+	  Config#config.members_only} of
+        {false, true} ->
+            StateData3 = remove_nonmembers(StateData2),
+            {result, undefined, StateData3};
+        _ ->
+            {result, undefined, StateData2}
     end.
 
 -spec send_config_change_info(#config{}, state()) -> ok.
