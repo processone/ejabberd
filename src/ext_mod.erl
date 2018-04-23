@@ -56,7 +56,8 @@ init([]) ->
     process_flag(trap_exit, true),
     [code:add_patha(module_ebin_dir(Module))
      || {Module, _} <- installed()],
-    p1_http:start(),
+    application:start(inets),
+    inets:start(httpc, [{profile, ext_mod}]),
     ejabberd_commands:register_commands(get_commands_spec()),
     {ok, #state{}}.
 
@@ -313,23 +314,22 @@ check(Package) when is_binary(Package) ->
 %% -- archives and variables functions
 
 geturl(Url) ->
-    geturl(Url, []).
-geturl(Url, UsrOpts) ->
-    geturl(Url, [], UsrOpts).
-geturl(Url, Hdrs, UsrOpts) ->
-    Host = case getenv("PROXY_SERVER", "", ":") of
-        [H, Port] -> [{proxy_host, H}, {proxy_port, list_to_integer(Port)}];
-        [H] -> [{proxy_host, H}, {proxy_port, 8080}];
-        _ -> []
+    case getenv("PROXY_SERVER", "", ":") of
+        [H, Port] ->
+            httpc:set_options([{proxy, {{H, list_to_integer(Port)}, []}}], ext_mod);
+        [H] ->
+            httpc:set_options([{proxy, {{H, 8080}, []}}], ext_mod);
+        _ ->
+            ok
     end,
     User = case getenv("PROXY_USER", "", [4]) of
-        [U, Pass] -> [{proxy_user, U}, {proxy_password, Pass}];
+        [U, Pass] -> [{proxy_auth, {U, Pass}}];
         _ -> []
     end,
-    case p1_http:request(get, Url, Hdrs, [], Host++User++UsrOpts++[{version, "HTTP/1.0"}]) of
-        {ok, 200, Headers, Response} ->
+    case httpc:request(get, {Url, []}, User, [{body_format, binary}], ext_mod) of
+        {ok, {{_, 200, _}, Headers, Response}} ->
             {ok, Headers, Response};
-        {ok, Code, _Headers, Response} ->
+        {ok, {{_, Code, _}, _Headers, Response}} ->
             {error, {Code, Response}};
         {error, Reason} ->
             {error, Reason}
