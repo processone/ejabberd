@@ -65,7 +65,7 @@ term_to_base64(Term) ->
 base64_to_term(Base64) ->
     try binary_to_term(base64:decode(Base64), [safe]) of
 	Term -> {term, Term}
-    catch _:badarg ->
+    catch _:_ ->
 	    error
     end.
 
