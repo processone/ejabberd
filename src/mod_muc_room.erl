@@ -1312,8 +1312,8 @@ set_affiliations(Affiliations, StateData) ->
 set_affiliations_fallback(Affiliations, StateData) ->
     StateData#state{affiliations = Affiliations}.
 
--spec get_affiliation(jid(), state()) -> affiliation().
-get_affiliation(JID, StateData) ->
+-spec get_affiliation(ljid() | jid(), state()) -> affiliation().
+get_affiliation(#jid{} = JID, StateData) ->
     case get_service_affiliation(JID, StateData) of
         owner ->
             owner;
@@ -1322,7 +1322,9 @@ get_affiliation(JID, StateData) ->
                 {Affiliation, _Reason} -> Affiliation;
                 Affiliation -> Affiliation
             end
-    end.
+    end;
+get_affiliation(LJID, StateData) ->
+    get_affiliation(jid:make(LJID), StateData).
 
 -spec do_get_affiliation(jid(), state()) -> affiliation().
 do_get_affiliation(JID, #state{config = #config{persistent = false}} = StateData) ->
