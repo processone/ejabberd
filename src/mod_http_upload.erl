@@ -43,6 +43,7 @@
 	 {<<".gz">>, <<"application/x-gzip">>},
 	 {<<".jpeg">>, <<"image/jpeg">>},
 	 {<<".jpg">>, <<"image/jpeg">>},
+	 {<<".m4a">>, <<"audio/mp4">>},
 	 {<<".mp3">>, <<"audio/mpeg">>},
 	 {<<".mp4">>, <<"video/mp4">>},
 	 {<<".mpeg">>, <<"video/mpeg">>},
