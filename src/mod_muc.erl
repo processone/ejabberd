@@ -476,19 +476,28 @@ process_vcard(#iq{lang = Lang} = IQ) ->
     xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
 -spec process_register(iq()) -> iq().
-process_register(#iq{type = get, from = From, to = To, lang = Lang,
-		     sub_els = [#register{}]} = IQ) ->
+process_register(#iq{type = Type, from = From, to = To, lang = Lang,
+		     sub_els = [El = #register{}]} = IQ) ->
     Host = To#jid.lserver,
     ServerHost = ejabberd_router:host_of_route(Host),
-    xmpp:make_iq_result(IQ, iq_get_register_info(ServerHost, Host, From, Lang));
-process_register(#iq{type = set, from = From, to = To,
-		     lang = Lang, sub_els = [El = #register{}]} = IQ) ->
-    Host = To#jid.lserver,
-    ServerHost = ejabberd_router:host_of_route(Host),
-    case process_iq_register_set(ServerHost, Host, From, El, Lang) of
-	{result, Result} ->
-	    xmpp:make_iq_result(IQ, Result);
-	{error, Err} ->
+    AccessRegister = gen_mod:get_module_opt(ServerHost, ?MODULE, access_register),
+    case acl:match_rule(ServerHost, AccessRegister, From) of
+	allow ->
+	    case Type of
+		get ->
+		    xmpp:make_iq_result(
+		      IQ, iq_get_register_info(ServerHost, Host, From, Lang));
+		set ->
+		    case process_iq_register_set(ServerHost, Host, From, El, Lang) of
+			{result, Result} ->
+			    xmpp:make_iq_result(IQ, Result);
+			{error, Err} ->
+			    xmpp:make_error(IQ, Err)
+		    end
+	    end;
+	deny ->
+	    ErrText = <<"Access denied by service policy">>,
+	    Err = xmpp:err_forbidden(ErrText, Lang),
 	    xmpp:make_error(IQ, Err)
     end.
 
@@ -496,10 +505,11 @@ process_register(#iq{type = set, from = From, to = To,
 process_disco_info(#iq{type = set, lang = Lang} = IQ) ->
     Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
-process_disco_info(#iq{type = get, to = To, lang = Lang,
+process_disco_info(#iq{type = get, from = From, to = To, lang = Lang,
 		       sub_els = [#disco_info{node = <<"">>}]} = IQ) ->
     ServerHost = ejabberd_router:host_of_route(To#jid.lserver),
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
+    AccessRegister = gen_mod:get_module_opt(ServerHost, ?MODULE, access_register),
     X = ejabberd_hooks:run_fold(disco_info, ServerHost, [],
 				[ServerHost, ?MODULE, <<"">>, Lang]),
     MAMFeatures = case gen_mod:is_loaded(ServerHost, mod_mam) of
@@ -510,9 +520,13 @@ process_disco_info(#iq{type = get, to = To, lang = Lang,
 		      true -> [?NS_RSM];
 		      false -> []
 		  end,
+    RegisterFeatures = case acl:match_rule(ServerHost, AccessRegister, From) of
+			   allow -> [?NS_REGISTER];
+			   deny -> []
+		       end,
     Features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
-		?NS_REGISTER, ?NS_MUC, ?NS_VCARD, ?NS_MUCSUB, ?NS_MUC_UNIQUE
-		| RSMFeatures ++ MAMFeatures],
+		?NS_MUC, ?NS_VCARD, ?NS_MUCSUB, ?NS_MUC_UNIQUE
+		| RegisterFeatures ++ RSMFeatures ++ MAMFeatures],
     Name = gen_mod:get_module_opt(ServerHost, ?MODULE, name),
     Identity = #identity{category = <<"conference">>,
 			 type = <<"text">>,
@@ -862,6 +876,8 @@ mod_opt_type(access_create) ->
     fun acl:access_rules_validator/1;
 mod_opt_type(access_persistent) ->
     fun acl:access_rules_validator/1;
+mod_opt_type(access_register) ->
+    fun acl:access_rules_validator/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(ram_db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(history_size) ->
@@ -967,6 +983,7 @@ mod_options(Host) ->
      {access_admin, none},
      {access_create, all},
      {access_persistent, all},
+     {access_register, all},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {ram_db_type, ejabberd_config:default_ram_db(Host, ?MODULE)},
      {history_size, 20},
