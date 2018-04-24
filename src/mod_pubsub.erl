@@ -1954,7 +1954,7 @@ purge_node(Host, Node, Owner) ->
 	    end
     end,
     Reply = undefined,
-    case transaction(Host, Node, Action, sync_dirty) of
+    case transaction(Host, Node, Action, transaction) of
 	{result, {TNode, {Result, broadcast}}} ->
 	    Nidx = TNode#pubsub_node.id,
 	    Type = TNode#pubsub_node.type,
