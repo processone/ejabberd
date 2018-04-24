@@ -42,7 +42,6 @@
 %%-include("logger.hrl").
 
 -define(CHECK_INTERVAL, timer:seconds(30)).
--define(DISK_FULL_THRES, 0.99).
 
 -record(state, {tref :: reference(),
 		mref :: reference()}).
@@ -67,8 +66,7 @@ start() ->
     application:set_env(os_mon, start_cpu_sup, false),
     application:set_env(os_mon, start_os_sup, false),
     application:set_env(os_mon, start_memsup, true),
-    application:set_env(os_mon, start_disksup, true),
-    application:set_env(os_mon, disk_almost_full_threshold, ?DISK_FULL_THRES),
+    application:set_env(os_mon, start_disksup, false),
     ejabberd:start_app(os_mon).
 
 excluded_apps() ->
@@ -81,16 +79,10 @@ init([]) ->
     {ok, #state{}}.
 
 handle_event({set_alarm, {system_memory_high_watermark, _}}, State) ->
-    error_logger:warning_msg(
-      "More than 80% of OS memory is allocated, "
-      "starting OOM watchdog", []),
     handle_overload(State),
     {ok, restart_timer(State)};
 handle_event({clear_alarm, system_memory_high_watermark}, State) ->
     cancel_timer(State#state.tref),
-    error_logger:info_msg(
-      "Memory consumption is back to normal, "
-      "stopping OOM watchdog", []),
     {ok, State#state{tref = undefined}};
 handle_event({set_alarm, {process_memory_high_watermark, Pid}}, State) ->
     case proc_stat(Pid, get_app_pids()) of
@@ -104,12 +96,6 @@ handle_event({set_alarm, {process_memory_high_watermark, Pid}}, State) ->
 	    {ok, State}
     end;
 handle_event({clear_alarm, process_memory_high_watermark}, State) ->
-    {ok, State};
-handle_event({set_alarm, {{disk_almost_full, MountPoint}, _}}, State) ->
-    error_logger:warning_msg("Disk is almost full on ~p", [MountPoint]),
-    {ok, State};
-handle_event({clear_alarm, {disk_almost_full, MountPoint}}, State) ->
-    error_logger:info_msg("Disk usage is back to normal on ~p", [MountPoint]),
     {ok, State};
 handle_event(Event, State) ->
     error_logger:warning_msg("unexpected event: ~p", [Event]),
