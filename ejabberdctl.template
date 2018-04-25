@@ -41,19 +41,17 @@ case $(id -un) in
 esac
 
 # parse command line parameters
-for arg; do
-    case $arg in
-        -n|--node) ERLANG_NODE_ARG=$2; shift;;
-        -s|--spool) SPOOL_DIR=$2; shift;;
-        -l|--logs) LOGS_DIR=$2; shift;;
-        -f|--config) EJABBERD_CONFIG_PATH=$2; shift;;
-        -c|--ctl-config) EJABBERDCTL_CONFIG_PATH=$2; shift;;
-        -d|--config-dir) ETC_DIR=$2; shift;;
-        -t|--no-timeout) NO_TIMEOUT="--no-timeout";;
-        --) :;;
+while [ $# -gt 0 ]; do
+    case $1 in
+        -n|--node) ERLANG_NODE_ARG=$2; shift 2;;
+        -s|--spool) SPOOL_DIR=$2; shift 2;;
+        -l|--logs) LOGS_DIR=$2; shift 2;;
+        -f|--config) EJABBERD_CONFIG_PATH=$2; shift 2;;
+        -c|--ctl-config) EJABBERDCTL_CONFIG_PATH=$2; shift 2;;
+        -d|--config-dir) ETC_DIR=$2; shift 2;;
+        -t|--no-timeout) NO_TIMEOUT="--no-timeout"; shift;;
         *) break;;
     esac
-    shift
 done
 
 # define ejabberd variables if not already defined from the command line
