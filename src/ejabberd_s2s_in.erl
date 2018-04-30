@@ -388,6 +388,9 @@ listen_opt_type(inet) -> fun(B) when is_boolean(B) -> B end;
 listen_opt_type(inet6) -> fun(B) when is_boolean(B) -> B end;
 listen_opt_type(backlog) ->
     fun(I) when is_integer(I), I>0 -> I end;
+listen_opt_type(accept_interval) ->
+    fun(I) when is_integer(I), I>=0 -> I end;
 listen_opt_type(_) ->
     [shaper, certfile, ciphers, dhfile, cafile, protocol_options,
-     tls_compression, tls, max_fsm_queue, backlog, inet, inet6].
+     tls_compression, tls, max_fsm_queue, backlog, inet, inet6,
+     accept_interval].

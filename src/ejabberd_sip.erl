@@ -93,8 +93,10 @@ listen_opt_type(certfile) ->
     end;
 listen_opt_type(tls) ->
     fun(B) when is_boolean(B) -> B end;
+listen_opt_type(accept_interval) ->
+    fun(I) when is_integer(I), I>=0 -> I end;
 listen_opt_type(_) ->
-    [tls, certfile].
+    [tls, certfile, accept_interval].
 
 %%%===================================================================
 %%% Internal functions

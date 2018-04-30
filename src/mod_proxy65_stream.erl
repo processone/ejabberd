@@ -294,10 +294,13 @@ listen_opt_type(recbuf) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 listen_opt_type(shaper) -> fun acl:shaper_rules_validator/1;
 listen_opt_type(sndbuf) ->
-    fun (I) when is_integer(I), I > 0 -> I end.
+    fun (I) when is_integer(I), I > 0 -> I end;
+listen_opt_type(accept_interval) ->
+    fun(I) when is_integer(I), I>=0 -> I end.
 
 listen_options() ->
     [{auth_type, anonymous},
      {recbuf, 8192},
      {sndbuf, 8192},
+     {accept_interval, 0},
      {shaper, none}].

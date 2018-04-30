@@ -1038,6 +1038,8 @@ listen_opt_type(inet) -> fun(B) when is_boolean(B) -> B end;
 listen_opt_type(inet6) -> fun(B) when is_boolean(B) -> B end;
 listen_opt_type(backlog) ->
     fun(I) when is_integer(I), I>0 -> I end;
+listen_opt_type(accept_interval) ->
+    fun(I) when is_integer(I), I>=0 -> I end;
 listen_opt_type(O) ->
     StreamOpts = mod_stream_mgmt:mod_options(?MYNAME),
     case lists:keyfind(O, 1, StreamOpts) of
@@ -1045,7 +1047,7 @@ listen_opt_type(O) ->
 	    [access, shaper, certfile, ciphers, dhfile, cafile,
 	     protocol_options, tls, tls_compression, starttls,
 	     starttls_required, tls_verify, zlib, max_fsm_queue,
-	     backlog, inet, inet6];
+	     backlog, inet, inet6, accept_interval];
 	_ ->
 	    ?ERROR_MSG("Listening option '~s' is ignored: use '~s' "
 		       "option from mod_stream_mgmt module", [O, O]),

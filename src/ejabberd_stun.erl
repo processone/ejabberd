@@ -174,8 +174,10 @@ listen_opt_type(server_name) ->
     fun iolist_to_binary/1;
 listen_opt_type(backlog) ->
     fun(I) when is_integer(I), I>0 -> I end;
+listen_opt_type(accept_interval) ->
+    fun(I) when is_integer(I), I>=0 -> I end;
 listen_opt_type(_) ->
     [shaper, auth_type, auth_realm, tls, certfile, turn_min_port,
      turn_max_port, turn_max_allocations, turn_max_permissions,
-     server_name, backlog].
+     server_name, backlog, accept_interval].
 -endif.
