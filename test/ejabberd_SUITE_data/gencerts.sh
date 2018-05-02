@@ -6,6 +6,8 @@ mkdir -p ssl/newcerts
 touch ssl/index.txt
 echo 01 > ssl/serial
 echo 1000 > ssl/crlnumber
+openssl genrsa -out ca.key 2048
+openssl req -new -x509 -key ca.key -out ca.pem -batch
 openssl genrsa -out ssl/client.key
 openssl req -new -key ssl/client.key -out ssl/client.csr -config openssl.cnf -batch -subj /C=AU/ST=Some-State/O=Internet\ Widgits\ Pty\ Ltd/CN=localhost
 openssl ca -keyfile ca.key -cert ca.pem -in ssl/client.csr -out ssl/client.crt -config openssl.cnf -days 10000 -batch -notext
