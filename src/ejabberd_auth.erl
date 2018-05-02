@@ -545,8 +545,8 @@ db_user_exists(User, Server, Mod) ->
 	{ok, _} ->
 	    true;
 	error ->
-	    case Mod:store_type(Server) of
-		external ->
+	    case {Mod:store_type(Server), use_cache(Mod, Server)} of
+		{external, true} ->
 		    case ets_cache:lookup(
 			   ?AUTH_CACHE, {User, Server},
 			   fun() ->
@@ -561,6 +561,8 @@ db_user_exists(User, Server, Mod) ->
 			error ->
 			    false
 		    end;
+		{external, false} ->
+		    Mod:user_exists(User, Server);
 		_ ->
 		    false
 	    end
