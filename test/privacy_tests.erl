@@ -203,6 +203,7 @@ malformed_iq_query(Config) ->
 
 malformed_get(Config) ->
     JID = jid:make(randoms:get_string()),
+    Item = #block_item{jid = JID},
     lists:foreach(
       fun(SubEl) ->
 	      #iq{type = error} =
@@ -211,7 +212,7 @@ malformed_get(Config) ->
 	    #privacy_query{default = none},
 	    #privacy_query{lists = [#privacy_list{name = <<"1">>},
 				    #privacy_list{name = <<"2">>}]},
-	    #block{items = [JID]}, #unblock{items = [JID]},
+	    #block{items = [Item]}, #unblock{items = [Item]},
 	    #block{}, #unblock{}]),
     disconnect(Config).
 
@@ -225,7 +226,9 @@ malformed_set(Config) ->
 				    #privacy_list{name = <<"2">>}]},
 	    #block{},
 	    #block_list{},
-	    #block_list{items = [jid:make(randoms:get_string())]}]),
+	    #block_list{
+	       items = [#block_item{
+			   jid = jid:make(randoms:get_string())}]}]),
     disconnect(Config).
 
 malformed_type_value(Config) ->
@@ -609,24 +612,25 @@ set_default(Config, Name) ->
 
 get_block(Config) ->
     case send_recv(Config, #iq{type = get, sub_els = [#block_list{}]}) of
-	#iq{type = result, sub_els = [#block_list{items = JIDs}]} ->
-	    lists:sort(JIDs);
+	#iq{type = result, sub_els = [#block_list{items = Items}]} ->
+	    lists:sort([JID || #block_item{jid = JID} <- Items]);
 	#iq{type = error} = Err ->
 	    xmpp:get_error(Err)
     end.
 
 set_block(Config, JIDs) ->
+    Items = [#block_item{jid = JID} || JID <- JIDs],
     case send_recv(Config, #iq{type = set,
-			       sub_els = [#block{items = JIDs}]}) of
+			       sub_els = [#block{items = Items}]}) of
 	#iq{type = result, sub_els = []} ->
-	    {#iq{id = I1, sub_els = [#block{items = Items}]},
+	    {#iq{id = I1, sub_els = [#block{items = Items1}]},
 	     #iq{id = I2, sub_els = [#privacy_query{lists = Lists}]}} =
 		?recv2(#iq{type = set, sub_els = [#block{}]},
 		       #iq{type = set, sub_els = [#privacy_query{}]}),
 	    send(Config, #iq{type = result, id = I1}),
 	    send(Config, #iq{type = result, id = I2}),
 	    ct:comment("Checking if all JIDs present in the push"),
-	    true = lists:sort(JIDs) == lists:sort(Items),
+	    true = lists:sort(Items) == lists:sort(Items1),
 	    ct:comment("Getting name of the corresponding privacy list"),
 	    [#privacy_list{name = Name}] = Lists,
 	    {ok, Name};
@@ -636,17 +640,18 @@ set_block(Config, JIDs) ->
 
 set_unblock(Config, JIDs) ->
     ct:comment("Unblocking ~p", [JIDs]),
+    Items = [#block_item{jid = JID} || JID <- JIDs],
     case send_recv(Config, #iq{type = set,
-			       sub_els = [#unblock{items = JIDs}]}) of
+			       sub_els = [#unblock{items = Items}]}) of
 	#iq{type = result, sub_els = []} ->
-	    {#iq{id = I1, sub_els = [#unblock{items = Items}]},
+	    {#iq{id = I1, sub_els = [#unblock{items = Items1}]},
 	     #iq{id = I2, sub_els = [#privacy_query{lists = Lists}]}} =
 		?recv2(#iq{type = set, sub_els = [#unblock{}]},
 		       #iq{type = set, sub_els = [#privacy_query{}]}),
 	    send(Config, #iq{type = result, id = I1}),
 	    send(Config, #iq{type = result, id = I2}),
 	    ct:comment("Checking if all JIDs present in the push"),
-	    true = lists:sort(JIDs) == lists:sort(Items),
+	    true = lists:sort(Items) == lists:sort(Items1),
 	    ct:comment("Getting name of the corresponding privacy list"),
 	    [#privacy_list{name = Name}] = Lists,
 	    {ok, Name};

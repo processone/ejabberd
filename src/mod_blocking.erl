@@ -92,12 +92,12 @@ process_iq_set(#iq{lang = Lang, sub_els = [SubEl]} = IQ) ->
 	    Txt = <<"No items found in this query">>,
 	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
 	#block{items = Items} ->
-	    JIDs = [jid:tolower(Item) || Item <- Items],
+	    JIDs = [jid:tolower(JID) || #block_item{jid = JID} <- Items],
 	    process_block(IQ, JIDs);
 	#unblock{items = []} ->
 	    process_unblock_all(IQ);
 	#unblock{items = Items} ->
-	    JIDs = [jid:tolower(Item) || Item <- Items],
+	    JIDs = [jid:tolower(JID) || #block_item{jid = JID} <- Items],
 	    process_unblock(IQ, JIDs);
 	_ ->
 	    Txt = <<"No module is handling this query">>,
@@ -163,7 +163,8 @@ process_block(#iq{from = From} = IQ, LJIDs) ->
 			  end) of
 			ok ->
 			    mod_privacy:push_list_update(From, Name),
-			    Items = [jid:make(LJID) || LJID <- LJIDs],
+			    Items = [#block_item{jid = jid:make(LJID)}
+				     || LJID <- LJIDs],
 			    broadcast_event(From, #block{items = Items}),
 			    xmpp:make_iq_result(IQ);
 			{error, notfound} ->
@@ -218,14 +219,16 @@ process_unblock(#iq{from = From} = IQ, LJIDs) ->
 	    case mod_privacy:set_list(LUser, LServer, Name, NewList) of
 		ok ->
 		    mod_privacy:push_list_update(From, Name),
-		    Items = [jid:make(LJID) || LJID <- LJIDs],
+		    Items = [#block_item{jid = jid:make(LJID)}
+			     || LJID <- LJIDs],
 		    broadcast_event(From, #unblock{items = Items}),
 		    xmpp:make_iq_result(IQ);
 		{error, _} ->
 		    err_db_failure(IQ)
 	    end;
 	error ->
-	    Items = [jid:make(LJID) || LJID <- LJIDs],
+	    Items = [#block_item{jid = jid:make(LJID)}
+		     || LJID <- LJIDs],
 	    broadcast_event(From, #unblock{items = Items}),
 	    xmpp:make_iq_result(IQ);
 	{error, _} ->
@@ -249,7 +252,7 @@ process_get(#iq{from = #jid{luser = LUser, lserver = LServer}} = IQ) ->
     case mod_privacy:get_user_list(LUser, LServer, default) of
 	{ok, {_, List}} ->
 	    LJIDs = listitems_to_jids(List, []),
-	    Items = [jid:make(J) || J <- LJIDs],
+	    Items = [#block_item{jid = jid:make(J)} || J <- LJIDs],
 	    xmpp:make_iq_result(IQ, #block_list{items = Items});
 	error ->
 	    xmpp:make_iq_result(IQ, #block_list{});
