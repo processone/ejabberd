@@ -519,9 +519,21 @@ analyze_ip_xff({IPLast, Port}, XFF, Host) ->
 	       end,
     {IPClient, Port}.
 
+is_ipchain_trusted([], _) -> false;
 is_ipchain_trusted(_UserIPs, all) -> true;
-is_ipchain_trusted(UserIPs, TrustedIPs) ->
-    [] == UserIPs -- [<<"127.0.0.1">> | TrustedIPs].
+is_ipchain_trusted(UserIPs, Masks) ->
+    lists:all(
+	fun(IP) ->
+	    case inet:parse_address(binary_to_list(IP)) of
+		{ok, IP2} ->
+		    lists:any(
+			fun({Mask, MaskLen}) ->
+			    acl:ip_matches_mask(IP2, Mask, MaskLen)
+			end, [{{127,0,0,1}, 8} | Masks]);
+		_ ->
+		    false
+	    end
+	end, UserIPs).
 
 recv_data(State, Len) -> recv_data(State, Len, <<>>).
 
@@ -877,7 +889,14 @@ transform_listen_option(Opt, Opts) ->
 	      (atom()) -> [atom()].
 opt_type(trusted_proxies) ->
     fun (all) -> all;
-        (TPs) -> [iolist_to_binary(TP) || TP <- TPs] end;
+        (TPs) -> lists:filtermap(
+	    fun(TP) ->
+		case acl:parse_ip_netmask(iolist_to_binary(TP)) of
+		    {ok, Ip, Mask} -> {true, {Ip, Mask}};
+		    _ -> false
+		end
+	    end, TPs)
+    end;
 opt_type(_) -> [trusted_proxies].
 
 -spec listen_opt_type(tls) -> fun((boolean()) -> boolean());
