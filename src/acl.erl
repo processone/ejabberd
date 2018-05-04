@@ -36,7 +36,7 @@
 	 any_rules_allowed/3, transform_options/1, opt_type/1,
 	 acl_rule_matches/3, acl_rule_verify/1, access_matches/3,
 	 transform_access_rules_config/1,
-	 parse_ip_netmask/1,
+	 parse_ip_netmask/1, ip_matches_mask/3,
 	 access_rules_validator/1, shaper_rules_validator/1,
 	 normalize_spec/1, resolve_access/2]).
 %% gen_server callbacks
@@ -447,9 +447,9 @@ acl_rule_matches({acl, Name}, Data, Host) ->
     RawACLs = lists:map(fun(#acl{aclspec = R}) -> R end, ACLs),
     any_acl_rules_matches(RawACLs, Data, Host);
 acl_rule_matches({ip, {Net, Mask}}, #{ip := {IP, _Port}}, _Host) ->
-    is_ip_match(IP, Net, Mask);
+    ip_matches_mask(IP, Net, Mask);
 acl_rule_matches({ip, {Net, Mask}}, #{ip := IP}, _Host) ->
-    is_ip_match(IP, Net, Mask);
+    ip_matches_mask(IP, Net, Mask);
 acl_rule_matches({user, {U, S}}, #{usr := {U, S, _}}, _Host) ->
     true;
 acl_rule_matches({user, U}, #{usr := {U, S, _}}, _Host) ->
@@ -549,18 +549,30 @@ is_glob_match(String, Glob) ->
     is_regexp_match(String,
 		    ejabberd_regexp:sh_to_awk(Glob)).
 
-is_ip_match({_, _, _, _} = IP, {_, _, _, _} = Net, Mask) ->
+ip_matches_mask({_, _, _, _} = IP, {_, _, _, _} = Net, Mask) ->
     IPInt = ip_to_integer(IP),
     NetInt = ip_to_integer(Net),
     M = bnot (1 bsl (32 - Mask) - 1),
     IPInt band M =:= NetInt band M;
-is_ip_match({_, _, _, _, _, _, _, _} = IP,
-            {_, _, _, _, _, _, _, _} = Net, Mask) ->
+ip_matches_mask({_, _, _, _, _, _, _, _} = IP,
+		{_, _, _, _, _, _, _, _} = Net, Mask) ->
     IPInt = ip_to_integer(IP),
     NetInt = ip_to_integer(Net),
     M = bnot (1 bsl (128 - Mask) - 1),
     IPInt band M =:= NetInt band M;
-is_ip_match(_, _, _) ->
+ip_matches_mask({_, _, _, _} = IP,
+		{0, 0, 0, 0, 0, 16#FFFF, _, _} = Net, Mask) ->
+    IPInt = ip_to_integer({0, 0, 0, 0, 0, 16#FFFF, 0, 0}) + ip_to_integer(IP),
+    NetInt = ip_to_integer(Net),
+    M = bnot (1 bsl (128 - Mask) - 1),
+    IPInt band M =:= NetInt band M;
+ip_matches_mask({0, 0, 0, 0, 0, 16#FFFF, _, _} = IP,
+		{_, _, _, _} = Net, Mask) ->
+    IPInt = ip_to_integer(IP) - ip_to_integer({0, 0, 0, 0, 0, 16#FFFF, 0, 0}),
+    NetInt = ip_to_integer(Net),
+    M = bnot (1 bsl (32 - Mask) - 1),
+    IPInt band M =:= NetInt band M;
+ip_matches_mask(_, _, _) ->
     false.
 
 ip_to_integer({IP1, IP2, IP3, IP4}) ->
