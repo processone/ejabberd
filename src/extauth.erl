@@ -1,8 +1,5 @@
-%%%----------------------------------------------------------------------
-%%% File    : extauth.erl
-%%% Author  : Leif Johansson <leifj@it.su.se>
-%%% Purpose : External authentication using a simple port-driver
-%%% Created : 30 Jul 2004 by Leif Johansson <leifj@it.su.se>
+%%%-------------------------------------------------------------------
+%%% Created : 7 May 2018 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
 %%% ejabberd, Copyright (C) 2002-2018   ProcessOne
@@ -21,54 +18,45 @@
 %%% with this program; if not, write to the Free Software Foundation, Inc.,
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
-%%%----------------------------------------------------------------------
-
+%%%-------------------------------------------------------------------
 -module(extauth).
 
--behaviour(ejabberd_config).
+-ifndef(GEN_SERVER).
+-define(GEN_SERVER, gen_server).
+-endif.
+-behaviour(?GEN_SERVER).
 
--author('leifj@it.su.se').
+-define(CALL_TIMEOUT, timer:seconds(30)).
 
--export([start/2, stop/1, init/2, check_password/3,
-	 set_password/3, try_register/3, remove_user/2,
-	 remove_user/3, user_exists/2, opt_type/1]).
+%% API
+-export([start/1, stop/1, reload/1, start_link/2]).
+-export([check_password/3, set_password/3, try_register/3, remove_user/2,
+	 remove_user/3, user_exists/2]).
+-export([prog_name/1, pool_name/1, worker_name/2, pool_size/1]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+	 terminate/2, code_change/3]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
--define(INIT_TIMEOUT, 60000).
+-record(state, {port :: port(),
+		prog :: string(),
+		start_time :: integer(),
+		os_pid :: integer() | undefined}).
 
--define(CALL_TIMEOUT, 10000).
-
-start(Host, ExtPrg) ->
-    lists:foreach(fun (This) ->
-			  start_instance(get_process_name(Host, This), ExtPrg)
-		  end,
-		  lists:seq(0, get_instances(Host) - 1)).
-
-start_instance(ProcessName, ExtPrg) ->
-    spawn(?MODULE, init, [ProcessName, ExtPrg]).
-
-restart_instance(ProcessName, ExtPrg) ->
-    unregister(ProcessName),
-    start_instance(ProcessName, ExtPrg).
-
-init(ProcessName, ExtPrg) ->
-    register(ProcessName, self()),
-    process_flag(trap_exit, true),
-    Port = open_port({spawn, ExtPrg}, [{packet, 2}]),
-    loop(Port, ?INIT_TIMEOUT, ProcessName, ExtPrg).
+%%%===================================================================
+%%% API
+%%%===================================================================
+start(Host) ->
+    extauth_sup:start(Host).
 
 stop(Host) ->
-    lists:foreach(fun (This) ->
-			  get_process_name(Host, This) ! stop
-		  end,
-		  lists:seq(0, get_instances(Host) - 1)).
+    extauth_sup:stop(Host).
 
-get_process_name(Host, Integer) ->
-    gen_mod:get_module_proc(iolist_to_binary([Host,
-                                              integer_to_list(Integer)]),
-			    eauth).
+reload(Host) ->
+    extauth_sup:reload(Host).
+
+start_link(Name, Prog) ->
+    ?GEN_SERVER:start_link({local, Name}, ?MODULE, [Prog], []).
 
 check_password(User, Server, Password) ->
     call_port(Server, [<<"auth">>, User, Server, Password]).
@@ -80,82 +68,144 @@ set_password(User, Server, Password) ->
     call_port(Server, [<<"setpass">>, User, Server, Password]).
 
 try_register(User, Server, Password) ->
-    case call_port(Server,
-		   [<<"tryregister">>, User, Server, Password])
-	of
-      true -> ok;
-      false -> {error, not_allowed}
-    end.
+    call_port(Server, [<<"tryregister">>, User, Server, Password]).
 
 remove_user(User, Server) ->
     call_port(Server, [<<"removeuser">>, User, Server]).
 
 remove_user(User, Server, Password) ->
-    call_port(Server,
-	      [<<"removeuser3">>, User, Server, Password]).
+    call_port(Server, [<<"removeuser3">>, User, Server, Password]).
 
-call_port(Server, Msg) ->
-    LServer = jid:nameprep(Server),
-    ProcessName = get_process_name(LServer,
-				   random_instance(get_instances(LServer))),
-    ProcessName ! {call, self(), Msg},
-    receive {eauth, Result} -> Result end.
+-spec prog_name(binary()) -> string() | undefined.
+prog_name(Host) ->
+    ejabberd_config:get_option({extauth_program, Host}).
 
-random_instance(MaxNum) ->
-    randoms:uniform(MaxNum) - 1.
+-spec pool_name(binary()) -> atom().
+pool_name(Host) ->
+    list_to_atom("extauth_pool_" ++ binary_to_list(Host)).
 
-get_instances(Server) ->
-    ejabberd_config:get_option({extauth_instances, Server}, 1).
+-spec worker_name(atom(), integer()) -> atom().
+worker_name(Pool, N) ->
+    list_to_atom(atom_to_list(Pool) ++ "_" ++ integer_to_list(N)).
 
-loop(Port, Timeout, ProcessName, ExtPrg) ->
-    receive
-      {call, Caller, Msg} ->
-	  port_command(Port, encode(Msg)),
-	  receive
-	    {Port, {data, Data}} ->
-		?DEBUG("extauth call '~p' received data response:~n~p",
-		       [Msg, Data]),
-		Caller ! {eauth, decode(Data)},
-		loop(Port, ?CALL_TIMEOUT, ProcessName, ExtPrg);
-	    {Port, Other} ->
-		?ERROR_MSG("extauth call '~p' received strange response:~n~p",
-			   [Msg, Other]),
-		Caller ! {eauth, false},
-		loop(Port, ?CALL_TIMEOUT, ProcessName, ExtPrg)
+-spec pool_size(binary()) -> pos_integer().
+pool_size(Host) ->
+    case ejabberd_config:get_option({extauth_pool_size, Host}) of
+	undefined ->
+	    try erlang:system_info(logical_processors)
+	    catch _:_ -> 1
+	    end;
+	Size ->
+	    Size
+    end.
+
+%%%===================================================================
+%%% gen_server callbacks
+%%%===================================================================
+init([Prog]) ->
+    process_flag(trap_exit, true),
+    {Port, OSPid} = start_port(Prog),
+    Time = curr_time(),
+    {ok, #state{port = Port, start_time = Time,
+		prog = Prog, os_pid = OSPid}}.
+
+handle_call({cmd, Cmd, EndTime}, _From, State) ->
+    Timeout = EndTime - curr_time(),
+    if Timeout > 0 ->
+	    Port = State#state.port,
+	    port_command(Port, Cmd),
+	    receive
+		{Port, {data, [0, N] = Data}} when N == 0; N == 1 ->
+		    ?DEBUG("Received response from external authentication "
+			   "program: ~p", [Data]),
+		    {reply, decode_bool(N), State};
+		{Port, Data} ->
+		    ?ERROR_MSG("Received unexpected response from external "
+			       "authentication program '~s': ~p "
+			       "(port = ~p, pid = ~w)",
+			       [State#state.prog, Data, Port, State#state.os_pid]),
+		    {reply, {error, unexpected_response}, State};
+		{'EXIT', Port, Reason} ->
+		    handle_info({'EXIT', Port, Reason}, State)
 	    after Timeout ->
-		      ?ERROR_MSG("extauth call '~p' didn't receive response",
-				 [Msg]),
-		      Caller ! {eauth, false},
-		      Pid = restart_instance(ProcessName, ExtPrg),
-		      flush_buffer_and_forward_messages(Pid),
-		      exit(port_terminated)
-	  end;
-      stop ->
-	  Port ! {self(), close},
-	  receive {Port, closed} -> exit(normal) end;
-      {'EXIT', Port, Reason} ->
-	  ?CRITICAL_MSG("extauth script has exitted abruptly "
-			"with reason '~p'",
-			[Reason]),
-	  Pid = restart_instance(ProcessName, ExtPrg),
-	  flush_buffer_and_forward_messages(Pid),
-	  exit(port_terminated)
+		    {stop, extauth_program_timeout, State}
+	    end;
+       true ->
+	    {stop, extauth_program_timeout, State}
     end.
 
-flush_buffer_and_forward_messages(Pid) ->
-    receive
-      Message ->
-	  Pid ! Message, flush_buffer_and_forward_messages(Pid)
-      after 0 -> true
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+handle_info({'EXIT', Port, _Reason}, #state{port = Port,
+					    start_time = Time} = State) ->
+    case curr_time() - Time of
+	Diff when Diff < 1000 ->
+	    ?ERROR_MSG("Failed to start external authentication program '~s'",
+		       [State#state.prog]),
+	    {stop, normal, State};
+	_ ->
+	    ?ERROR_MSG("External authentication program '~s' has terminated "
+		       "unexpectedly (pid=~w), restarting via supervisor...",
+		       [State#state.prog, State#state.os_pid]),
+	    {stop, extauth_program_failure, State}
+    end;
+handle_info(Info, State) ->
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
+    {noreply, State}.
+
+terminate(_Reason, State) ->
+    catch port_close(State#state.port),
+    ok.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
+
+%%%===================================================================
+%%% Internal functions
+%%%===================================================================
+-spec curr_time() -> non_neg_integer().
+curr_time() ->
+    p1_time_compat:monotonic_time(milli_seconds).
+
+-spec start_port(string()) -> {port(), integer() | undefined}.
+start_port(Path) ->
+    Port = open_port({spawn, Path}, [{packet, 2}]),
+    link(Port),
+    case erlang:port_info(Port, os_pid) of
+	{os_pid, OSPid} ->
+	    {Port, OSPid};
+	undefined ->
+	    {Port, undefined}
     end.
 
-encode(L) -> str:join(L, <<":">>).
+call_port(Server, Args) ->
+    call_port(Server, Args, ?CALL_TIMEOUT).
 
-decode([0, 0]) -> false;
-decode([0, 1]) -> true.
+call_port(Server, Args, Timeout) ->
+    StartTime = p1_time_compat:monotonic_time(milli_seconds),
+    Pool = pool_name(Server),
+    PoolSize = pool_size(Server),
+    I = randoms:round_robin(PoolSize),
+    Cmd = str:join(Args, <<":">>),
+    do_call(Cmd, I, I + PoolSize, Pool, PoolSize,
+	    StartTime + Timeout, StartTime).
 
--spec opt_type(extauth_instances) -> fun((pos_integer()) -> pos_integer());
-	      (atom()) -> [atom()].
-opt_type(extauth_instances) ->
-    fun (V) when is_integer(V), V > 0 -> V end;
-opt_type(_) -> [extauth_instances].
+do_call(_, Max, Max, _, _, _, _) ->
+    {error, disconnected};
+do_call(Cmd, I, Max, Pool, PoolSize, EndTime, CurrTime) ->
+    Timeout = EndTime - CurrTime,
+    if Timeout > 0 ->
+	    Proc = worker_name(Pool, (I rem PoolSize) + 1),
+	    try ?GEN_SERVER:call(Proc, {cmd, Cmd, EndTime}, Timeout)
+	    catch exit:{timeout, {?GEN_SERVER, call, _}} ->
+		    {error, timeout};
+		  exit:{_, {?GEN_SERVER, call, _}} ->
+		    do_call(Cmd, I+1, Max, Pool, PoolSize, EndTime, curr_time())
+	    end;
+       true ->
+	    {error, timeout}
+    end.
+
+decode_bool(0) -> false;
+decode_bool(1) -> true.

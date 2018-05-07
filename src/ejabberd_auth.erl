@@ -69,6 +69,7 @@
 
 -callback start(binary()) -> any().
 -callback stop(binary()) -> any().
+-callback reload(binary()) -> any().
 -callback plain_password_required(binary()) -> boolean().
 -callback store_type(binary()) -> plain | external | scram.
 -callback set_password(binary(), binary(), binary()) -> ok | {error, atom()}.
@@ -82,7 +83,8 @@
 -callback use_cache(binary()) -> boolean().
 -callback cache_nodes(binary()) -> boolean().
 
--optional_callbacks([set_password/3,
+-optional_callbacks([reload/1,
+		     set_password/3,
 		     remove_user/2,
 		     user_exists/2,
 		     check_password/4,
@@ -130,14 +132,16 @@ handle_cast({host_down, Host}, #state{host_modules = HostModules} = State) ->
     init_cache(NewHostModules),
     {noreply, State#state{host_modules = NewHostModules}};
 handle_cast(config_reloaded, #state{host_modules = HostModules} = State) ->
-    NewHostModules = lists:foldl(
-		       fun(Host, Acc) ->
-			       OldModules = maps:get(Host, HostModules, []),
-			       NewModules = auth_modules(Host),
-			       start(Host, NewModules -- OldModules),
-			       stop(Host, OldModules -- NewModules),
-			       maps:put(Host, NewModules, Acc)
-		       end, HostModules, ?MYHOSTS),
+    NewHostModules =
+	lists:foldl(
+	  fun(Host, Acc) ->
+		  OldModules = maps:get(Host, HostModules, []),
+		  NewModules = auth_modules(Host),
+		  start(Host, NewModules -- OldModules),
+		  stop(Host, OldModules -- NewModules),
+		  reload(Host, lists_intersection(OldModules, NewModules)),
+		  maps:put(Host, NewModules, Acc)
+	  end, HostModules, ?MYHOSTS),
     init_cache(NewHostModules),
     {noreply, State#state{host_modules = NewHostModules}};
 handle_cast(Msg, State) ->
@@ -164,6 +168,15 @@ start(Host, Modules) ->
 
 stop(Host, Modules) ->
     lists:foreach(fun(M) -> M:stop(Host) end, Modules).
+
+reload(Host, Modules) ->
+    lists:foreach(
+      fun(M) ->
+	      case erlang:function_exported(M, reload, 1) of
+		  true -> M:reload(Host);
+		  false -> ok
+	      end
+      end, Modules).
 
 host_up(Host) ->
     gen_server:cast(?MODULE, {host_up, Host}).
@@ -559,7 +572,9 @@ db_user_exists(User, Server, Mod) ->
 			{ok, _} ->
 			    true;
 			error ->
-			    false
+			    false;
+			{error, _} = Err ->
+			    Err
 		    end;
 		{external, false} ->
 		    Mod:user_exists(User, Server);
@@ -815,6 +830,12 @@ validate_credentials(User, Server, Password) ->
 		    end
 	    end
     end.
+
+lists_intersection(L1, L2) ->
+    lists:filter(
+      fun(E) ->
+              lists:member(E, L2)
+      end, L1).
 
 import_info() ->
     [{<<"users">>, 3}].

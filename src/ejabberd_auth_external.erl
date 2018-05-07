@@ -31,7 +31,7 @@
 
 -behaviour(ejabberd_auth).
 
--export([start/1, stop/1, set_password/3, check_password/4,
+-export([start/1, stop/1, reload/1, set_password/3, check_password/4,
 	 try_register/3, user_exists/2, remove_user/2,
 	 store_type/1, plain_password_required/1, opt_type/1]).
 
@@ -42,11 +42,13 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(Host) ->
-    Cmd = ejabberd_config:get_option({extauth_program, Host}, "extauth"),
-    extauth:start(Host, Cmd).
+    extauth:start(Host).
 
 stop(Host) ->
     extauth:stop(Host).
+
+reload(Host) ->
+    extauth:reload(Host).
 
 plain_password_required(_) -> true.
 
@@ -61,37 +63,47 @@ check_password(User, AuthzId, Server, Password) ->
 
 set_password(User, Server, Password) ->
     case extauth:set_password(User, Server, Password) of
-	true -> ok;
-	_ -> {error, db_failure}
+	Res when is_boolean(Res) -> ok;
+	{error, Reason} -> failure(Reason)
     end.
 
 try_register(User, Server, Password) ->
-    extauth:try_register(User, Server, Password).
+    case extauth:try_register(User, Server, Password) of
+	true -> ok;
+	false -> {error, not_allowed};
+	{error, Reason} -> failure(Reason)
+    end.
 
 user_exists(User, Server) ->
-    try extauth:user_exists(User, Server) of
-	Res -> Res
-    catch
-	_:Error ->
-	    ?ERROR_MSG("external authentication program failure: ~p",
-		       [Error]),
-	    {error, db_failure}
+    case extauth:user_exists(User, Server) of
+	Res when is_boolean(Res) -> Res;
+	{error, Reason} -> failure(Reason)
     end.
 
 remove_user(User, Server) ->
     case extauth:remove_user(User, Server) of
 	false -> {error, not_allowed};
-	true -> ok
+	true -> ok;
+	{error, Reason} -> failure(Reason)
     end.
 
 check_password_extauth(User, _AuthzId, Server, Password) ->
-    extauth:check_password(User, Server, Password) andalso
-      Password /= <<"">>.
+    if Password /= <<"">> ->
+	    case extauth:check_password(User, Server, Password) of
+		Res when is_boolean(Res) -> Res;
+		{error, Reason} ->
+		    failure(Reason),
+		    false
+	    end;
+       true ->
+	    false
+    end.
 
--spec opt_type(extauth_cache) -> fun((false | non_neg_integer()) ->
-				      false | non_neg_integer());
-	      (extauth_program) -> fun((binary()) -> string());
-	      (atom()) -> [atom()].
+-spec failure(any()) -> {error, db_failure}.
+failure(Reason) ->
+    ?ERROR_MSG("External authentication program failure: ~p", [Reason]),
+    {error, db_failure}.
+
 opt_type(extauth_cache) ->
     ?WARNING_MSG("option 'extauth_cache' is deprecated and has no effect, "
 		 "use authentication or global cache configuration "
@@ -100,6 +112,15 @@ opt_type(extauth_cache) ->
     fun (false) -> false;
 	(I) when is_integer(I), I >= 0 -> I
     end;
+opt_type(extauth_instances) ->
+    ?WARNING_MSG("option 'extauth_instances' is deprecated and has no effect, "
+		 "use 'extauth_pool_size'", []),
+    fun (V) when is_integer(V), V > 0 -> V end;
 opt_type(extauth_program) ->
     fun (V) -> binary_to_list(iolist_to_binary(V)) end;
-opt_type(_) -> [extauth_cache, extauth_program].
+opt_type(extauth_pool_size) ->
+    fun(I) when is_integer(I), I>0 -> I end;
+opt_type(_) ->
+    [extauth_program, extauth_pool_size,
+     %% Deprecated:
+     extauth_cache, extauth_instances].
