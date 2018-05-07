@@ -404,6 +404,8 @@ process_user(#xmlel{name = <<"user">>, attrs = Attrs, children = Els},
             case ejabberd_auth:try_register(LUser, LServer, Pass) of
                 ok ->
                     process_user_els(Els, State#state{user = LUser});
+                {error, invalid_password} when (Password == <<>>) ->
+                    process_user_els(Els, State#state{user = LUser});
                 {error, Err} ->
                     stop("Failed to create user '~s': ~p", [Name, Err])
             end
