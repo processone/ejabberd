@@ -131,7 +131,7 @@ handle_call({cmd, Cmd, EndTime}, _From, State) ->
 		    {stop, extauth_program_timeout, State}
 	    end;
        true ->
-	    {stop, extauth_program_timeout, State}
+	    {noreply, State}
     end.
 
 handle_cast(_Msg, State) ->
