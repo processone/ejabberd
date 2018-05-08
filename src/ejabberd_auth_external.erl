@@ -64,27 +64,27 @@ check_password(User, AuthzId, Server, Password) ->
 set_password(User, Server, Password) ->
     case extauth:set_password(User, Server, Password) of
 	Res when is_boolean(Res) -> ok;
-	{error, Reason} -> failure(User, Server, ?FUNCTION_NAME, Reason)
+	{error, Reason} -> failure(User, Server, set_password, Reason)
     end.
 
 try_register(User, Server, Password) ->
     case extauth:try_register(User, Server, Password) of
 	true -> ok;
 	false -> {error, not_allowed};
-	{error, Reason} -> failure(User, Server, ?FUNCTION_NAME, Reason)
+	{error, Reason} -> failure(User, Server, try_register, Reason)
     end.
 
 user_exists(User, Server) ->
     case extauth:user_exists(User, Server) of
 	Res when is_boolean(Res) -> Res;
-	{error, Reason} -> failure(User, Server, ?FUNCTION_NAME, Reason)
+	{error, Reason} -> failure(User, Server, user_exists, Reason)
     end.
 
 remove_user(User, Server) ->
     case extauth:remove_user(User, Server) of
 	false -> {error, not_allowed};
 	true -> ok;
-	{error, Reason} -> failure(User, Server, ?FUNCTION_NAME, Reason)
+	{error, Reason} -> failure(User, Server, remove_user, Reason)
     end.
 
 check_password_extauth(User, _AuthzId, Server, Password) ->
@@ -92,7 +92,7 @@ check_password_extauth(User, _AuthzId, Server, Password) ->
 	    case extauth:check_password(User, Server, Password) of
 		Res when is_boolean(Res) -> Res;
 		{error, Reason} ->
-		    failure(User, Server, ?FUNCTION_NAME, Reason),
+		    failure(User, Server, check_password, Reason),
 		    false
 	    end;
        true ->
