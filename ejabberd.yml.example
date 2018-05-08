@@ -64,14 +64,6 @@ log_rotate_count: 1
 ## 100 is ejabberd's default.
 log_rate_limit: 100
 
-##
-## watchdog_admins: Only useful for developers: if an ejabberd process
-## consumes a lot of memory, send live notifications to these XMPP
-## accounts.
-##
-## watchdog_admins:
-##   - "bob@example.com"
-
 ###.  ===============
 ###'  NODE PARAMETERS
 
