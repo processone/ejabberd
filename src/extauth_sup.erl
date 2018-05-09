@@ -41,7 +41,7 @@ start(Host) ->
 	Prog ->
 	    Pool = extauth:pool_name(Host),
 	    ChildSpec = {Pool, {?MODULE, start_link, [Host, Prog, Pool]},
-			 transient, infinity, supervisor, [?MODULE]},
+			 permanent, infinity, supervisor, [?MODULE]},
 	    supervisor:start_child(ejabberd_backend_sup, ChildSpec)
     end.
 
@@ -107,4 +107,4 @@ init([Host, Prog, Pool]) ->
 worker_spec(Pool, Prog, I) ->
     Worker = extauth:worker_name(Pool, I),
     {Worker, {extauth, start_link, [Worker, Prog]},
-     permanent, 5000, worker, [extauth]}.
+     transient, 5000, worker, [extauth]}.
