@@ -306,12 +306,8 @@ is_my_host(Domain) ->
     end.
 
 -spec process_iq(iq()) -> any().
-process_iq(#iq{to = To} = IQ) ->
-    if To#jid.luser == <<"">> ->
-	    ejabberd_local:process_iq(IQ);
-       true ->
-	    ejabberd_sm:process_iq(IQ)
-    end.
+process_iq(IQ) ->
+    gen_iq_handler:handle(IQ).
 
 -spec config_reloaded() -> ok.
 config_reloaded() ->

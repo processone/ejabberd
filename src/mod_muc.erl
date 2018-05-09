@@ -399,7 +399,7 @@ do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
 do_route1(_Host, _ServerHost, _Access, _HistorySize, _RoomShaper,
 	  _From, #jid{luser = <<"">>, lresource = <<"">>} = _To,
 	  #iq{} = IQ, _DefRoomOpts, _QueueType) ->
-    ejabberd_local:process_iq(IQ);
+    ejabberd_router:process_iq(IQ);
 do_route1(Host, ServerHost, Access, _HistorySize, _RoomShaper,
 	  From, #jid{luser = <<"">>, lresource = <<"">>} = _To,
 	  #message{lang = Lang, body = Body, type = Type} = Packet, _, _) ->

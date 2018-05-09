@@ -39,7 +39,6 @@
 	 stop/0,
 	 route/1,
 	 route/2,
-	 process_iq/1,
 	 open_session/5,
 	 open_session/6,
 	 close_session/4,
@@ -58,8 +57,6 @@
 	 get_vh_session_list/1,
 	 get_vh_session_number/1,
 	 get_vh_by_backend/1,
-	 register_iq_handler/4,
-	 unregister_iq_handler/2,
 	 force_update_presence/1,
 	 connected_users/0,
 	 connected_users_number/0,
@@ -397,17 +394,6 @@ get_vh_session_number(Server) ->
     Mod = get_sm_backend(LServer),
     length(online(get_sessions(Mod, LServer))).
 
--spec register_iq_handler(binary(), binary(), atom(), atom()) -> ok.
-
-register_iq_handler(Host, XMLNS, Module, Fun) ->
-    ?GEN_SERVER:cast(?MODULE,
-		    {register_iq_handler, Host, XMLNS, Module, Fun}).
-
--spec unregister_iq_handler(binary(), binary()) -> ok.
-
-unregister_iq_handler(Host, XMLNS) ->
-    ?GEN_SERVER:cast(?MODULE, {unregister_iq_handler, Host, XMLNS}).
-
 %% Why the hell do we have so many similar kicks?
 c2s_handle_info(#{lang := Lang} = State, replaced) ->
     State1 = State#{replaced => true},
@@ -437,7 +423,7 @@ init([]) ->
     init_cache(),
     lists:foreach(fun(Mod) -> Mod:init() end, get_sm_backends()),
     clean_cache(),
-    ets:new(sm_iqtable, [named_table, public, {read_concurrency, true}]),
+    gen_iq_handler:start(?MODULE),
     ejabberd_hooks:add(host_up, ?MODULE, host_up, 50),
     ejabberd_hooks:add(host_down, ?MODULE, host_down, 60),
     ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),
@@ -448,15 +434,6 @@ init([]) ->
 handle_call(_Request, _From, State) ->
     Reply = ok, {reply, Reply, State}.
 
-handle_cast({register_iq_handler, Host, XMLNS, Module, Function},
-	    State) ->
-    ets:insert(sm_iqtable,
-	       {{Host, XMLNS}, Module, Function}),
-    {noreply, State};
-handle_cast({unregister_iq_handler, Host, XMLNS},
-	    State) ->
-    ets:delete(sm_iqtable, {Host, XMLNS}),
-    {noreply, State};
 handle_cast(_Msg, State) -> {noreply, State}.
 
 handle_info({route, Packet}, State) ->
@@ -664,7 +641,7 @@ do_route(#message{to = #jid{lresource = <<"">>}, type = T} = Packet) ->
     end;
 do_route(#iq{to = #jid{lresource = <<"">>}} = Packet) ->
     ?DEBUG("processing IQ to bare JID:~n~s", [xmpp:pp(Packet)]),
-    process_iq(Packet);
+    gen_iq_handler:handle(?MODULE, Packet);
 do_route(Packet) ->
     ?DEBUG("processing packet to full JID:~n~s", [xmpp:pp(Packet)]),
     To = xmpp:get_to(Packet),
@@ -849,31 +826,6 @@ get_max_user_sessions(LUser, Host) ->
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
--spec process_iq(iq()) -> any().
-process_iq(#iq{to = To, type = T, lang = Lang, sub_els = [El]} = Packet)
-  when T == get; T == set ->
-    XMLNS = xmpp:get_ns(El),
-    Host = To#jid.lserver,
-    case ets:lookup(sm_iqtable, {Host, XMLNS}) of
-	[{_, Module, Function}] ->
-	    gen_iq_handler:handle(Host, Module, Function, Packet);
-	[] ->
-	    Txt = <<"No module is handling this query">>,
-	    Err = xmpp:err_service_unavailable(Txt, Lang),
-	    ejabberd_router:route_error(Packet, Err)
-    end;
-process_iq(#iq{type = T, lang = Lang, sub_els = SubEls} = Packet)
-  when T == get; T == set ->
-    Txt = case SubEls of
-	      [] -> <<"No child elements found">>;
-	      _ -> <<"Too many child elements">>
-	  end,
-    Err = xmpp:err_bad_request(Txt, Lang),
-    ejabberd_router:route_error(Packet, Err);
-process_iq(#iq{}) ->
-    ok.
-
 -spec force_update_presence({binary(), binary()}) -> ok.
 
 force_update_presence({LUser, LServer}) ->
