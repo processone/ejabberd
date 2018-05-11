@@ -88,7 +88,7 @@
 -export_type([filter/0]).
 
 -include("ELDAPv3.hrl").
-
+-include_lib("kernel/include/inet.hrl").
 -include("eldap.hrl").
 
 -define(LDAP_VERSION, 3).
@@ -1057,15 +1057,11 @@ connect_bind(S) ->
     ?DEBUG("Connecting to LDAP server at ~s:~p with options ~p",
 	   [Host, S#eldap.port, Opts]),
     HostS = binary_to_list(Host),
-    SocketData = case S#eldap.tls of
-		   tls ->
-		       SockMod = ssl, ssl:connect(HostS, S#eldap.port, Opts);
-		   %% starttls -> %% TODO: Implement STARTTLS;
-		   _ ->
-		       SockMod = gen_tcp,
-		       gen_tcp:connect(HostS, S#eldap.port, Opts)
-		 end,
-    case SocketData of
+    SockMod = case S#eldap.tls of
+		  tls -> ssl;
+		  _ -> gen_tcp
+	      end,
+    case connect(HostS, S#eldap.port, SockMod, Opts) of
       {ok, Socket} ->
 	  case bind_request(Socket, S#eldap{sockmod = SockMod}) of
 	    {ok, NewS} ->
@@ -1132,3 +1128,66 @@ format_error(SockMod, Reason) ->
 	_ ->
 	    Txt
     end.
+
+%%--------------------------------------------------------------------
+%% Connecting stuff
+%%--------------------------------------------------------------------
+-define(CONNECT_TIMEOUT, timer:seconds(15)).
+-define(DNS_TIMEOUT, timer:seconds(5)).
+
+connect(Host, Port, Mod, Opts) ->
+    case lookup(Host) of
+	{ok, AddrsFamilies} ->
+	    do_connect(AddrsFamilies, Port, Mod, Opts, {error, nxdomain});
+	{error, _} = Err ->
+	    Err
+    end.
+
+do_connect([{IP, Family}|AddrsFamilies], Port, Mod, Opts, _Err) ->
+    case Mod:connect(IP, Port, [Family|Opts], ?CONNECT_TIMEOUT) of
+	{ok, Sock} ->
+	    {ok, Sock};
+	{error, _} = Err ->
+	    do_connect(AddrsFamilies, Port, Mod, Opts, Err)
+    end;
+do_connect([], _Port, _Mod, _Opts, Err) ->
+    Err.
+
+lookup(Host) ->
+    case inet:parse_address(Host) of
+	{ok, IP} ->
+	    {ok, [{IP, get_addr_type(IP)}]};
+	{error, _} ->
+	    do_lookup([{Host, Family} || Family <- [inet6, inet]],
+		      [], {error, nxdomain})
+    end.
+
+do_lookup([{Host, Family}|HostFamilies], AddrFamilies, Err) ->
+    case inet:gethostbyname(Host, Family, ?DNS_TIMEOUT) of
+	{ok, HostEntry} ->
+	    Addrs = host_entry_to_addrs(HostEntry),
+	    AddrFamilies1 = [{Addr, Family} || Addr <- Addrs],
+	    do_lookup(HostFamilies,
+		      AddrFamilies ++ AddrFamilies1,
+		      Err);
+	{error, _} = Err1 ->
+	    do_lookup(HostFamilies, AddrFamilies, Err1)
+    end;
+do_lookup([], [], Err) ->
+    Err;
+do_lookup([], AddrFamilies, _Err) ->
+    {ok, AddrFamilies}.
+
+host_entry_to_addrs(#hostent{h_addr_list = AddrList}) ->
+    lists:filter(
+      fun(Addr) ->
+	      try get_addr_type(Addr) of
+		  _ -> true
+	      catch _:badarg ->
+		      false
+	      end
+      end, AddrList).
+
+get_addr_type({_, _, _, _}) -> inet;
+get_addr_type({_, _, _, _, _, _, _, _}) -> inet6;
+get_addr_type(_) -> erlang:error(badarg).
