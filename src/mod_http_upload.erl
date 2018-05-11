@@ -232,7 +232,7 @@ mod_options(_Host) ->
      {service_url, undefined},
      {custom_headers, []},
      {rm_on_unregister, true},
-     {thumbnail, true}].
+     {thumbnail, false}].
 
 -spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
 depends(_Host, _Opts) ->
