@@ -506,7 +506,7 @@ is_valid_command_name2(<<>>) ->
     true;
 is_valid_command_name2(<<K:8, Rest/binary>>) when (K >= $a andalso K =< $z)
 						  orelse (K >= $0 andalso K =< $9)
-						  orelse K == $_ ->
+						  orelse K == $_ orelse K == $- ->
     is_valid_command_name2(Rest);
 is_valid_command_name2(_) ->
     false.
