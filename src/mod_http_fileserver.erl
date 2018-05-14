@@ -351,13 +351,12 @@ serve_file(FileInfo, FileName, CustomHeaders, DefaultContentType, ContentTypes) 
     ?DEBUG("Delivering: ~s", [FileName]),
     ContentType = content_type(FileName, DefaultContentType,
 			       ContentTypes),
-    {ok, FileContents} = file:read_file(FileName),
     {FileInfo#file_info.size, 200,
      [{<<"Server">>, <<"ejabberd">>},
       {<<"Last-Modified">>, last_modified(FileInfo)},
       {<<"Content-Type">>, ContentType}
       | CustomHeaders],
-     FileContents}.
+     {file, FileName}}.
 
 %%----------------------------------------------------------------------
 %% Log file

@@ -377,13 +377,13 @@ process(LocalPath, #request{method = Method, host = Host, ip = IP})
 	   [Method, ?ADDR_TO_STR(IP), Host]),
     http_response(404);
 process(_LocalPath, #request{method = 'PUT', host = Host, ip = IP,
-			     data = Data} = Request) ->
+			     length = Length} = Request) ->
     {Proc, Slot} = parse_http_request(Request),
-    case catch gen_server:call(Proc, {use_slot, Slot, byte_size(Data)}) of
+    case catch gen_server:call(Proc, {use_slot, Slot, Length}) of
 	{ok, Path, FileMode, DirMode, GetPrefix, Thumbnail, CustomHeaders} ->
 	    ?DEBUG("Storing file from ~s for ~s: ~s",
 		   [?ADDR_TO_STR(IP), Host, Path]),
-	    case store_file(Path, Data, FileMode, DirMode,
+	    case store_file(Path, Request, FileMode, DirMode,
 			    GetPrefix, Slot, Thumbnail) of
 		ok ->
 		    http_response(201, CustomHeaders);
@@ -396,7 +396,7 @@ process(_LocalPath, #request{method = 'PUT', host = Host, ip = IP,
 	    end;
 	{error, size_mismatch} ->
 	    ?INFO_MSG("Rejecting file from ~s for ~s: Unexpected size (~B)",
-		      [?ADDR_TO_STR(IP), Host, byte_size(Data)]),
+		      [?ADDR_TO_STR(IP), Host, Length]),
 	    http_response(413);
 	{error, invalid_slot} ->
 	    ?INFO_MSG("Rejecting file from ~s for ~s: Invalid slot",
@@ -414,8 +414,9 @@ process(_LocalPath, #request{method = Method, host = Host, ip = IP} = Request)
     case catch gen_server:call(Proc, get_conf) of
 	{ok, DocRoot, CustomHeaders} ->
 	    Path = str:join([DocRoot | Slot], <<$/>>),
-	    case file:read_file(Path) of
-		{ok, Data} ->
+	    case file:read(Path, [read]) of
+		{ok, Fd} ->
+		    file:close(Fd),
 		    ?INFO_MSG("Serving ~s to ~s", [Path, ?ADDR_TO_STR(IP)]),
 		    ContentType = guess_content_type(FileName),
 		    Headers1 = case ContentType of
@@ -428,7 +429,7 @@ process(_LocalPath, #request{method = Method, host = Host, ip = IP} = Request)
 			       end,
 		    Headers2 = [{<<"Content-Type">>, ContentType} | Headers1],
 		    Headers3 = Headers2 ++ CustomHeaders,
-		    http_response(200, Headers3, Data);
+		    http_response(200, Headers3, {file, Path});
 		{error, eacces} ->
 		    ?INFO_MSG("Cannot serve ~s to ~s: Permission denied",
 			      [Path, ?ADDR_TO_STR(IP)]),
@@ -720,17 +721,17 @@ parse_http_request(#request{host = Host, path = Path}) ->
 		      end,
     {gen_mod:get_module_proc(ProcURL, ?MODULE), Slot}.
 
--spec store_file(binary(), binary(),
+-spec store_file(binary(), http_request(),
 		 integer() | undefined,
 		 integer() | undefined,
 		 binary(), slot(), boolean())
       -> ok | {ok, [{binary(), binary()}], binary()} | {error, term()}.
-store_file(Path, Data, FileMode, DirMode, GetPrefix, Slot, Thumbnail) ->
-    case do_store_file(Path, Data, FileMode, DirMode) of
+store_file(Path, Request, FileMode, DirMode, GetPrefix, Slot, Thumbnail) ->
+    case do_store_file(Path, Request, FileMode, DirMode) of
 	ok when Thumbnail ->
-	    case identify(Path, Data) of
+	    case identify(Path) of
 		{ok, MediaInfo} ->
-		    case convert(Path, Data, MediaInfo) of
+		    case convert(Path, MediaInfo) of
 			{ok, OutPath, OutMediaInfo} ->
 			    [UserDir, RandDir | _] = Slot,
 			    FileName = filename:basename(OutPath),
@@ -753,16 +754,14 @@ store_file(Path, Data, FileMode, DirMode, GetPrefix, Slot, Thumbnail) ->
 	    Err
     end.
 
--spec do_store_file(file:filename_all(), binary(),
+-spec do_store_file(file:filename_all(), http_request(),
 		    integer() | undefined,
 		    integer() | undefined)
       -> ok | {error, term()}.
-do_store_file(Path, Data, FileMode, DirMode) ->
+do_store_file(Path, Request, FileMode, DirMode) ->
     try
 	ok = filelib:ensure_dir(Path),
-	{ok, Io} = file:open(Path, [write, exclusive, raw]),
-	Ok = file:write(Io, Data),
-	ok = file:close(Io),
+	ok = ejabberd_http:recv_file(Request, Path),
 	if is_integer(FileMode) ->
 		ok = file:change_mode(Path, FileMode);
 	   FileMode == undefined ->
@@ -775,8 +774,7 @@ do_store_file(Path, Data, FileMode, DirMode) ->
 		ok = file:change_mode(UserDir, DirMode);
 	   DirMode == undefined ->
 		ok
-	end,
-	ok = Ok % Raise an exception if file:write/2 failed.
+	end
     catch
 	_:{badmatch, {error, Error}} ->
 	    {error, Error};
@@ -801,7 +799,8 @@ http_response(Code, ExtraHeaders) ->
     Message = <<(code_to_message(Code))/binary, $\n>>,
     http_response(Code, ExtraHeaders, Message).
 
--spec http_response(100..599, [{binary(), binary()}], binary())
+-type http_body() :: binary() | {file, file:filename()}.
+-spec http_response(100..599, [{binary(), binary()}], http_body())
       -> {pos_integer(), [{binary(), binary()}], binary()}.
 http_response(Code, ExtraHeaders, Body) ->
     Headers = case proplists:is_defined(<<"Content-Type">>, ExtraHeaders) of
@@ -824,22 +823,30 @@ code_to_message(_Code) -> <<"">>.
 %%--------------------------------------------------------------------
 %% Image manipulation stuff.
 %%--------------------------------------------------------------------
--spec identify(binary(), binary()) -> {ok, media_info()} | pass.
-identify(Path, Data) ->
-    case eimp:identify(Data) of
-	{ok, Info} ->
-	    {ok, #media_info{
-		    type = proplists:get_value(type, Info),
-		    width = proplists:get_value(width, Info),
-		    height = proplists:get_value(height, Info)}};
-	{error, Why} ->
-	    ?DEBUG("Cannot identify type of ~s: ~s",
-		   [Path, eimp:format_error(Why)]),
+-spec identify(binary()) -> {ok, media_info()} | pass.
+identify(Path) ->
+    try
+	{ok, Fd} = file:open(Path, [read, raw]),
+	{ok, Data} = file:read(Fd, 1024),
+	case eimp:identify(Data) of
+	    {ok, Info} ->
+		{ok, #media_info{
+			type = proplists:get_value(type, Info),
+			width = proplists:get_value(width, Info),
+			height = proplists:get_value(height, Info)}};
+	    {error, Why} ->
+		?DEBUG("Cannot identify type of ~s: ~s",
+		       [Path, eimp:format_error(Why)]),
+		pass
+	end
+    catch _:{badmatch, {error, Reason}} ->
+	    ?DEBUG("Failed to read file ~s: ~s",
+		   [Path, file:format_error(Reason)]),
 	    pass
     end.
 
--spec convert(binary(), binary(), media_info()) -> {ok, binary(), media_info()} | pass.
-convert(Path, Data, #media_info{type = T, width = W, height = H} = Info) ->
+-spec convert(binary(), media_info()) -> {ok, binary(), media_info()} | pass.
+convert(Path, #media_info{type = T, width = W, height = H} = Info) ->
     if W * H >= 25000000 ->
 	    ?DEBUG("The image ~s is more than 25 Mpix", [Path]),
 	    pass;
@@ -855,19 +862,26 @@ convert(Path, Data, #media_info{type = T, width = W, height = H} = Info) ->
 			  true -> {300, 300}
 		       end,
 	    OutInfo = #media_info{type = T, width = W1, height = H1},
-	    case eimp:convert(Data, T, [{scale, {W1, H1}}]) of
-		{ok, OutData} ->
-		    case file:write_file(OutPath, OutData) of
-			ok ->
-			    {ok, OutPath, OutInfo};
+	    case file:read_file(Path) of
+		{ok, Data} ->
+		    case eimp:convert(Data, T, [{scale, {W1, H1}}]) of
+			{ok, OutData} ->
+			    case file:write_file(OutPath, OutData) of
+				ok ->
+				    {ok, OutPath, OutInfo};
+				{error, Why} ->
+				    ?ERROR_MSG("Failed to write to ~s: ~s",
+					       [OutPath, file:format_error(Why)]),
+				    pass
+			    end;
 			{error, Why} ->
-			    ?ERROR_MSG("Failed to write to ~s: ~s",
-				       [OutPath, file:format_error(Why)]),
+			    ?ERROR_MSG("Failed to convert ~s to ~s: ~s",
+				       [Path, OutPath, eimp:format_error(Why)]),
 			    pass
 		    end;
 		{error, Why} ->
-		    ?ERROR_MSG("Failed to convert ~s to ~s: ~s",
-			       [Path, OutPath, eimp:format_error(Why)]),
+		    ?ERROR_MSG("Failed to read file ~s: ~s",
+			       [Path, file:format_error(Why)]),
 		    pass
 	    end
     end.

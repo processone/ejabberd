@@ -31,7 +31,10 @@
 	 port = 5280       :: inet:port_number(),
 	 opts = []         :: list(),
 	 tp = http         :: protocol(),
-	 headers = []      :: [{atom() | binary(), binary()}]}).
+	 headers = []      :: [{atom() | binary(), binary()}],
+	 length = 0        :: non_neg_integer(),
+	 sockmod           :: gen_tcp | fast_tls,
+	 socket            :: inet:socket() | fast_tls:tls_socket()}).
 
 -record(ws,
 	{socket                  :: inet:socket() | fast_tls:tls_socket(),

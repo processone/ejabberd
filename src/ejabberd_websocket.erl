@@ -42,7 +42,7 @@
 
 -author('ecestari@process-one.net').
 
--export([check/2, socket_handoff/8]).
+-export([check/2, socket_handoff/5]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -89,8 +89,9 @@ check(_Path, Headers) ->
 
 socket_handoff(LocalPath, #request{method = 'GET', ip = IP, q = Q, path = Path,
                                    headers = Headers, host = Host, port = Port,
-                                   opts = HOpts},
-               Socket, SockMod, Buf, _Opts, HandlerModule, InfoMsgFun) ->
+				   socket = Socket, sockmod = SockMod,
+				   data = Buf, opts = HOpts},
+               _Opts, HandlerModule, InfoMsgFun) ->
     case check(LocalPath, Headers) of
         true ->
             WS = #ws{socket = Socket,
@@ -109,11 +110,11 @@ socket_handoff(LocalPath, #request{method = 'GET', ip = IP, q = Q, path = Path,
         _ ->
             {200, ?HEADER, InfoMsgFun()}
     end;
-socket_handoff(_, #request{method = 'OPTIONS'}, _, _, _, _, _, _) ->
+socket_handoff(_, #request{method = 'OPTIONS'}, _, _, _) ->
     {200, ?OPTIONS_HEADER, []};
-socket_handoff(_, #request{method = 'HEAD'}, _, _, _, _, _, _) ->
+socket_handoff(_, #request{method = 'HEAD'}, _, _, _) ->
     {200, ?HEADER, []};
-socket_handoff(_, _, _, _, _, _, _, _) ->
+socket_handoff(_, _, _, _, _) ->
     {400, ?HEADER, #xmlel{name = <<"h1">>,
                           children = [{xmlcdata, <<"400 Bad Request">>}]}}.
 

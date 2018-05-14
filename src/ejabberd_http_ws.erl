@@ -35,7 +35,7 @@
 	 terminate/3, send_xml/2, setopts/2, sockname/1,
 	 peername/1, controlling_process/2, become_controller/2,
 	 monitor/1, reset_stream/1, close/1, change_shaper/2,
-	 socket_handoff/6, opt_type/1]).
+	 socket_handoff/3, opt_type/1]).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -121,9 +121,8 @@ change_shaper({http_ws, _FsmRef, _IP}, _Shaper) ->
     %% TODO???
     ok.
 
-socket_handoff(LocalPath, Request, Socket, SockMod, Buf, Opts) ->
-    ejabberd_websocket:socket_handoff(LocalPath, Request, Socket, SockMod,
-                                      Buf, Opts, ?MODULE, fun get_human_html_xmlel/0).
+socket_handoff(LocalPath, Request, Opts) ->
+    ejabberd_websocket:socket_handoff(LocalPath, Request, Opts, ?MODULE, fun get_human_html_xmlel/0).
 
 %%% Internal
 
