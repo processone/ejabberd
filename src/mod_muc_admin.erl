@@ -368,7 +368,10 @@ muc_register_nick(Nick, FromBinary, ServerHost) ->
     Host = find_host(ServerHost),
     From = jid:decode(FromBinary),
     Lang = <<"en">>,
-    mod_muc:iq_set_register_info(ServerHost, Host, From, Nick, Lang).
+    case mod_muc:iq_set_register_info(ServerHost, Host, From, Nick, Lang) of
+	{result, undefined} -> ok;
+	E -> E
+    end.
 
 muc_unregister_nick(FromBinary, ServerHost) ->
     muc_register_nick(<<"">>, FromBinary, ServerHost).
