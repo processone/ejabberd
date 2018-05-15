@@ -528,7 +528,7 @@ process_request(#state{request_method = Method,
 		      _ ->
 			  none
 		  end,
-	    {State2, Res}
+	    {State2#state{trail = <<>>}, Res}
     end.
 
 make_bad_request(State) ->
