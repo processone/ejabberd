@@ -28,12 +28,14 @@
 -behaviour(ejabberd_config).
 
 -export([start/1, stop/1, get/2, get/3, post/4, delete/2,
-         put/4, patch/4, request/6, with_retry/4, opt_type/1]).
+         put/4, patch/4, request/6, with_retry/4,
+         encode_json/1, opt_type/1]).
 
 -include("logger.hrl").
 
 -define(HTTP_TIMEOUT, 10000).
 -define(CONNECT_TIMEOUT, 8000).
+-define(CONTENT_TYPE, "application/json").
 
 start(Host) ->
     application:start(inets),
@@ -58,31 +60,32 @@ with_retry(Method, Args, Retries, MaxRetries, Backoff) ->
     end.
 
 get(Server, Path) ->
-    request(Server, get, Path, [], "application/json", <<>>).
+    request(Server, get, Path, [], ?CONTENT_TYPE, <<>>).
 get(Server, Path, Params) ->
-    request(Server, get, Path, Params, "application/json", <<>>).
+    request(Server, get, Path, Params, ?CONTENT_TYPE, <<>>).
 
 delete(Server, Path) ->
-    request(Server, delete, Path, [], "application/json", <<>>).
+    request(Server, delete, Path, [], ?CONTENT_TYPE, <<>>).
 
 post(Server, Path, Params, Content) ->
     Data = encode_json(Content),
-    request(Server, post, Path, Params, "application/json", Data).
+    request(Server, post, Path, Params, ?CONTENT_TYPE, Data).
 
 put(Server, Path, Params, Content) ->
     Data = encode_json(Content),
-    request(Server, put, Path, Params, "application/json", Data).
+    request(Server, put, Path, Params, ?CONTENT_TYPE, Data).
 
 patch(Server, Path, Params, Content) ->
     Data = encode_json(Content),
-    request(Server, patch, Path, Params, "application/json", Data).
+    request(Server, patch, Path, Params, ?CONTENT_TYPE, Data).
 
 request(Server, Method, Path, Params, Mime, Data) ->
     URI = to_list(url(Server, Path, Params)),
     Opts = [{connect_timeout, ?CONNECT_TIMEOUT},
             {timeout, ?HTTP_TIMEOUT}],
     Hdrs = [{"connection", "keep-alive"},
-	    {"User-Agent", "ejabberd"}],
+	    {"User-Agent", "ejabberd"}]
+	   ++ custom_headers(Server),
     Req = if
               (Method =:= post) orelse (Method =:= patch) orelse (Method =:= put) orelse (Method =:= delete) ->
                   {URI, Hdrs, to_list(Mime), Data};
@@ -149,7 +152,7 @@ request(Server, Method, Path, Params, Mime, Data) ->
 
 to_list(V) when is_binary(V) ->
     binary_to_list(V);
-to_list(V) ->
+to_list(V) when is_list(V) ->
     V.
 
 encode_json(Content) ->
@@ -162,6 +165,20 @@ encode_json(Content) ->
             <<>>;
         Encoded ->
             Encoded
+    end.
+
+custom_headers(Server) ->
+  case ejabberd_config:get_option({ext_api_headers, Server},
+                                  <<>>) of
+        <<>> ->
+            [];
+        Hdrs ->
+            lists:foldr(fun(Hdr, Acc) ->
+                case binary:split(Hdr, <<":">>) of
+                    [K, V] -> [{binary_to_list(K), binary_to_list(V)}|Acc];
+                    _ -> Acc
+                end
+            end, [], binary:split(Hdrs, <<",">>))
     end.
 
 base_url(Server, Path) ->
@@ -209,4 +226,6 @@ opt_type(ext_api_http_pool_size) ->
     fun (X) when is_integer(X), X > 0 -> X end;
 opt_type(ext_api_url) ->
     fun (X) -> iolist_to_binary(X) end;
-opt_type(_) -> [ext_api_http_pool_size, ext_api_url].
+opt_type(ext_api_headers) ->
+    fun (X) -> iolist_to_binary(X) end;
+opt_type(_) -> [ext_api_http_pool_size, ext_api_url, ext_api_headers].
