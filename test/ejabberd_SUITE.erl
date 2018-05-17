@@ -388,7 +388,8 @@ no_db_tests() ->
      muc_tests:master_slave_cases(),
      proxy65_tests:single_cases(),
      proxy65_tests:master_slave_cases(),
-     replaced_tests:master_slave_cases()].
+     replaced_tests:master_slave_cases(),
+     upload_tests:single_cases()].
 
 db_tests(riak) ->
     %% No support for mod_pubsub

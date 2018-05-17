@@ -68,7 +68,8 @@ init_config(Config) ->
                                                     {pgsql_port, 5432},
                                                     {pgsql_db, <<"ejabberd_test">>},
                                                     {pgsql_user, <<"ejabberd_test">>},
-                                                    {pgsql_pass, <<"ejabberd_test">>}
+                                                    {pgsql_pass, <<"ejabberd_test">>},
+						    {priv_dir, PrivDir}
 						   ]),
     HostTypes = re:split(CfgContent, "(\\s*- \"(.*)\\.localhost\")",
 			 [group, {return, binary}]),
@@ -191,12 +192,12 @@ process_config_tpl(Content, []) ->
     Content;
 process_config_tpl(Content, [{Name, DefaultValue} | Rest]) ->
     Val = case ct:get_config(Name, DefaultValue) of
-              V1 when is_integer(V1) ->
-                  integer_to_binary(V1);
-              V2 when is_atom(V2) ->
-                  atom_to_binary(V2, latin1);
-              V3 ->
-                  V3
+              V when is_integer(V) ->
+                  integer_to_binary(V);
+              V when is_atom(V) ->
+                  atom_to_binary(V, latin1);
+              V ->
+                  iolist_to_binary(V)
           end,
     NewContent = binary:replace(Content,
 				<<"@@",(atom_to_binary(Name,latin1))/binary, "@@">>,
@@ -680,6 +681,10 @@ pubsub_jid(Config) ->
 proxy_jid(Config) ->
     Server = ?config(server, Config),
     jid:make(<<>>, <<"proxy.", Server/binary>>, <<>>).
+
+upload_jid(Config) ->
+    Server = ?config(server, Config),
+    jid:make(<<>>, <<"upload.", Server/binary>>, <<>>).
 
 muc_jid(Config) ->
     Server = ?config(server, Config),

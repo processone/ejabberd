@@ -475,6 +475,7 @@ listen:
     captcha: true
     request_handlers:
       "/api": mod_http_api
+      "/upload": mod_http_upload
   - 
     port: @@component_port@@
     module: ejabberd_service
@@ -505,6 +506,11 @@ Welcome to this XMPP server."
     resume_timeout: 3
   mod_time: []
   mod_version: []
+  mod_http_upload:
+    docroot: "@@priv_dir@@"
+    put_url: "http://upload.@HOST@:@@web_port@@/upload"
+    get_url: "http://upload.@HOST@:@@web_port@@/upload"
+    max_size: 10000
 registration_timeout: infinity
 route_subdomains: s2s
 domain_certfile: CERTFILE
