@@ -414,7 +414,7 @@ process(_LocalPath, #request{method = Method, host = Host, ip = IP} = Request)
     case catch gen_server:call(Proc, get_conf) of
 	{ok, DocRoot, CustomHeaders} ->
 	    Path = str:join([DocRoot | Slot], <<$/>>),
-	    case file:read(Path, [read]) of
+	    case file:open(Path, [read]) of
 		{ok, Fd} ->
 		    file:close(Fd),
 		    ?INFO_MSG("Serving ~s to ~s", [Path, ?ADDR_TO_STR(IP)]),
