@@ -617,7 +617,7 @@ do_recv_file(Len, SockMod, Socket, Fd) ->
     try
 	{ok, Data} = SockMod:recv(Socket, ChunkLen, timer:seconds(30)),
 	ok = file:write(Fd, Data),
-	do_recv_file(Len-ChunkLen, SockMod, Socket, Fd)
+	do_recv_file(Len-size(Data), SockMod, Socket, Fd)
     catch _:{badmatch, {error, _} = Err} ->
 	    file:close(Fd),
 	    Err
