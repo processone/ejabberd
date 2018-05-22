@@ -10,7 +10,7 @@
   "ex_doc": {:hex, :ex_doc, "0.18.3", "f4b0e4a2ec6f333dccf761838a4b253d75e11f714b85ae271c9ae361367897b7", [:mix], [{:earmark, "~> 1.1", [hex: :earmark, repo: "hexpm", optional: false]}], "hexpm"},
   "ezlib": {:hex, :ezlib, "1.0.4", "2434e4bb549cb060d5ac02261ba48fbe1a69b2ae4e1bf7485a3b27b3f3ec618d", [:rebar3], [], "hexpm"},
   "fast_tls": {:hex, :fast_tls, "1.0.21", "7005fe030c0472643314c9c31e7627bb296dcb96a9ce0b5dd8ccb34273f4c1ff", [:rebar3], [{:p1_utils, "1.0.11", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
-  "fast_xml": {:hex, :fast_xml, "1.1.29", "c6356d28f0f76ffefc68b5eb65916f0b8ca513bab71db8ad95bd8577c47e30e2", [:rebar3], [{:p1_utils, "1.0.11", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
+  "fast_xml": {:hex, :fast_xml, "1.1.30", "1d49de2b27ee36703422aad3e24e3e0cd569dc706bdc4e535cd299fd72a90ed3", [:rebar3], [{:p1_utils, "1.0.11", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "fast_yaml": {:hex, :fast_yaml, "1.0.13", "adcb8db20bb96d4e56b63b48c75d47ca15a6bd409da0200ffbd32db382131e22", [:rebar3], [{:p1_utils, "1.0.11", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "goldrush": {:hex, :goldrush, "0.1.9", "f06e5d5f1277da5c413e84d5a2924174182fb108dabb39d5ec548b27424cd106", [:rebar3], [], "hexpm"},
   "hamcrest": {:hex, :basho_hamcrest, "0.4.1", "fb7b2c92d252a1e9db936750b86089addaebeb8f87967fb4bbdda61e8863338e", [:make, :mix, :rebar3], [], "hexpm"},
@@ -31,5 +31,5 @@
   "sqlite3": {:hex, :sqlite3, "1.1.6", "4ea71af0b45908b5f02c9b09e4c87177039ef404f20accb35049cd8924cc417c", [:rebar3], [], "hexpm"},
   "stringprep": {:hex, :stringprep, "1.0.11", "002e6972ab36c35f3dd88c11725014e62608c45a00399c083681879973fa8026", [:rebar3], [{:p1_utils, "1.0.11", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "stun": {:hex, :stun, "1.0.21", "087fb20497081927690ef9d70b5bd6f9f4bea256ad758c500842722c0b6bb6ab", [:rebar3], [{:fast_tls, "1.0.21", [hex: :fast_tls, repo: "hexpm", optional: false]}, {:p1_utils, "1.0.11", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
-  "xmpp": {:hex, :xmpp, "1.1.20", "33ddcc698518061f5051b98a6f731eef9342799f0c276a9debdfffe85c32fe6d", [:rebar3], [{:fast_xml, "1.1.29", [hex: :fast_xml, repo: "hexpm", optional: false]}, {:p1_utils, "1.0.11", [hex: :p1_utils, repo: "hexpm", optional: false]}, {:stringprep, "1.0.11", [hex: :stringprep, repo: "hexpm", optional: false]}], "hexpm"},
+  "xmpp": {:git, "https://github.com/processone/xmpp.git", "d9582063d89c39a631a32d864ffde3f52bef5b80", [tag: "d958206"]},
 }
