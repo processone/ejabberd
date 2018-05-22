@@ -33,7 +33,7 @@
          available_command/0, available/0, available/1,
          installed_command/0, installed/0, installed/1,
          install/1, uninstall/1, upgrade/0, upgrade/1,
-         add_sources/2, del_sources/1, modules_dir/0,
+         add_sources/1, add_sources/2, del_sources/1, modules_dir/0,
          config_dir/0, opt_type/1, get_commands_spec/0]).
 
 -export([compile_erlang_file/2, compile_elixir_file/2]).
