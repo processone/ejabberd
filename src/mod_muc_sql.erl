@@ -378,7 +378,7 @@ export(_Server) ->
                        ?SQL_INSERT(
                           "muc_room",
                           ["name=%(Name)s",
-                           "host=%(Host)s",
+                           "host=%(RoomHost)s",
                            "server_host=%(Host)s",
                            "opts=%(SOpts)s"])];
                   false ->
@@ -396,7 +396,7 @@ export(_Server) ->
                        ?SQL_INSERT(
                           "muc_registered",
                           ["jid=%(SJID)s",
-                           "host=%(Host)s",
+                           "host=%(RoomHost)s",
                            "server_host=%(Host)s",
                            "nick=%(Nick)s"])];
                   false ->
