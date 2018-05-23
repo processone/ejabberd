@@ -52,11 +52,7 @@ store_session(LUser, LServer, TS, PushJID, Node, XData) ->
     PushLJID = jid:tolower(PushJID),
     MaxSessions = ejabberd_sm:get_max_user_sessions(LUser, LServer),
     F = fun() ->
-		if is_integer(MaxSessions) ->
-			enforce_max_sessions(US, MaxSessions - 1);
-		   MaxSessions == infinity ->
-			ok
-		end,
+		enforce_max_sessions(US, MaxSessions),
 		mnesia:write(#push_session{us = US,
 					   timestamp = TS,
 					   service = PushLJID,
@@ -185,19 +181,21 @@ transform({push_session, US, TS, Service, Node, XData}) ->
 %%--------------------------------------------------------------------
 %% Internal functions.
 %%--------------------------------------------------------------------
--spec enforce_max_sessions({binary(), binary()}, non_neg_integer()) -> ok.
-enforce_max_sessions({U, S} = US, Max) ->
-    Recs = mnesia:wread({push_session, US}),
-    NumRecs = length(Recs),
-    if NumRecs > Max ->
-	    NumOldRecs = NumRecs - Max,
-	    Recs1 = lists:keysort(#push_session.timestamp, Recs),
-	    Recs2 = lists:reverse(Recs1),
-	    OldRecs = lists:sublist(Recs2, Max + 1, NumOldRecs),
-	    ?INFO_MSG("Disabling ~B old push session(s) of ~s@~s",
-		      [NumOldRecs, U, S]),
+-spec enforce_max_sessions({binary(), binary()}, non_neg_integer() | infinity)
+      -> ok.
+enforce_max_sessions(_US, infinity) ->
+    ok;
+enforce_max_sessions({U, S} = US, MaxSessions) ->
+    case mnesia:wread({push_session, US}) of
+	Recs when length(Recs) >= MaxSessions ->
+	    Recs1 = lists:sort(fun(#push_session{timestamp = TS1},
+				   #push_session{timestamp = TS2}) ->
+				       TS1 >= TS2
+			       end, Recs),
+	    OldRecs = lists:nthtail(MaxSessions - 1, Recs1),
+	    ?INFO_MSG("Disabling old push session(s) of ~s@~s", [U, S]),
 	    lists:foreach(fun(Rec) -> mnesia:delete_object(Rec) end, OldRecs);
-       true ->
+	_ ->
 	    ok
     end.
 
