@@ -462,6 +462,7 @@ process_request(#state{request_host = undefined,
 process_request(#state{request_method = Method,
 		       request_auth = Auth,
 		       request_lang = Lang,
+		       request_version = Version,
 		       sockmod = SockMod,
 		       socket = Socket,
 		       options = Options,
@@ -472,6 +473,12 @@ process_request(#state{request_method = Method,
 		       request_headers = RequestHeaders,
 		       request_handlers = RequestHandlers,
 		       custom_headers = CustomHeaders} = State) ->
+    case proplists:get_value(<<"Expect">>, RequestHeaders, <<>>) of
+	<<"100-", _/binary>> when Version == {1, 1} ->
+	    send_text(State, <<"HTTP/1.1 100 Continue\r\n\r\n">>);
+	_ ->
+	    ok
+    end,
     case extract_path_query(State) of
 	{State2, false} ->
 	    {State2, make_bad_request(State)};
