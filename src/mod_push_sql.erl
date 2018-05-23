@@ -48,6 +48,8 @@ store_session(LUser, LServer, NowTS, PushJID, Node, XData) ->
     TS = misc:now_to_usec(NowTS),
     PushLJID = jid:tolower(PushJID),
     Service = jid:encode(PushLJID),
+    MaxSessions = ejabberd_sm:get_max_user_sessions(LUser, LServer),
+    enforce_max_sessions(LUser, LServer, MaxSessions),
     case ?SQL_UPSERT(LServer, "push_session",
 		     ["!username=%(LUser)s",
                       "!server_host=%(LServer)s",
@@ -207,6 +209,24 @@ export(_Server) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+enforce_max_sessions(_LUser, _LServer, infinity) ->
+    ok;
+enforce_max_sessions(LUser, LServer, MaxSessions) ->
+    case lookup_sessions(LUser, LServer) of
+	{ok, Sessions} when length(Sessions) >= MaxSessions ->
+	    ?INFO_MSG("Disabling old push session(s) of ~s@~s",
+		      [LUser, LServer]),
+	    Sessions1 = lists:sort(fun({TS1, _, _, _}, {TS2, _, _, _}) ->
+					   TS1 >= TS2
+				   end, Sessions),
+	    OldSessions = lists:nthtail(MaxSessions - 1, Sessions1),
+	    lists:foreach(fun({TS, _, _, _}) ->
+				  delete_session(LUser, LServer, TS)
+			  end, OldSessions);
+	_ ->
+	    ok
+    end.
+
 decode_xdata(<<>>, _LUser, _LServer) ->
     undefined;
 decode_xdata(XML, LUser, LServer) ->
