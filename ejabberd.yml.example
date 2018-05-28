@@ -442,6 +442,14 @@ auth_method: internal
 ##
 ## new_sql_schema: true
 
+##
+## A database can also can be used to store information from several
+## modules. To enable storage to the database, just make sure it is 
+## setup above and set default_db: sql if you want to use SQL for
+## all modules.
+##
+## default_db: sql
+
 ###.  ===============
 ###'  TRAFFIC SHAPERS
 
