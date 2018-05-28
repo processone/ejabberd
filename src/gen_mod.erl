@@ -217,28 +217,13 @@ start_module(Host, Module, Opts0, Order, NeedValidation) ->
 	    try case Module:start(Host, Opts) of
 		    ok -> ok;
 		    {ok, Pid} when is_pid(Pid) -> {ok, Pid};
-		    Err -> erlang:error(Err)
+		    Err -> erlang:error({bad_return, Module, Err})
 		end
 	    catch Class:Reason ->
 		    ets:delete(ejabberd_modules, {Module, Host}),
-		    ErrorText =
-			case Reason == undef andalso
-			     code:ensure_loaded(Module) /= {module, Module} of
-			    true ->
-				io_lib:format("Failed to load unknown module "
-					      "~s for host ~s: make sure "
-					      "there is no typo and ~s.beam "
-					      "exists inside either ~s or ~s "
-					      "directory",
-					      [Module, Host, Module,
-					       filename:dirname(code:which(?MODULE)),
-					       ext_mod:modules_dir()]);
-			    false ->
-				io_lib:format("Problem starting the module ~s for host "
-					      "~s ~n options: ~p~n ~p: ~p~n~p",
-					      [Module, Host, Opts, Class, Reason,
-					       erlang:get_stacktrace()])
-			end,
+		    ErrorText = format_start_error(
+				  Module, Opts, Class, Reason,
+				  erlang:get_stacktrace()),
 		    ?CRITICAL_MSG(ErrorText, []),
 		    maybe_halt_ejabberd(),
 		    erlang:raise(Class, Reason, erlang:get_stacktrace())
@@ -720,6 +705,40 @@ get_submodules(Host, Module, Opts) ->
 	    Mod1 ++ Mod2
     catch _:undef ->
 	    []
+    end.
+
+-spec format_start_error(atom(), opts(),
+			 error | exit | throw, any(),
+			 [erlang:stack_item()]) -> iolist().
+format_start_error(Module, Opts, Class, Reason, St) ->
+    IsLoaded = code:ensure_loaded(Module) == {module, Module},
+    IsStartExported = erlang:function_exported(Module, start, 2),
+    case {Class, Reason} of
+	{error, undef} when not IsLoaded ->
+	    io_lib:format("Failed to load unknown module ~s: "
+			  "make sure there is no typo and ~s.beam "
+			  "exists inside either ~s or ~s "
+			  "directory",
+			  [Module, Module,
+			   filename:dirname(code:which(?MODULE)),
+			   ext_mod:modules_dir()]);
+	{error, undef} when not IsStartExported ->
+	    io_lib:format("Failed to load module ~s because "
+			  "it doesn't export start/2 callback: "
+			  "is it really an ejabberd module?", [Module]);
+	{error, {bad_return, Module, Ret}} ->
+	    io_lib:format("Module ~s returned unexpected value during "
+			  "startup: ~p; this is either not an ejabberd "
+			  "module or it implements ejabbed API incorrectly",
+			  [Module, Ret]);
+	_ ->
+	    io_lib:format("Internal error of module ~s has "
+			  "occured during startup:~n"
+			  "** Options: ~p~n"
+			  "** Class: ~p~n"
+			  "** Reason: ~p~n"
+			  "** Stacktrace: ~p",
+			  [Module, Opts, Class, Reason, St])
     end.
 
 -spec db_type(binary() | global, module()) -> db_type();
