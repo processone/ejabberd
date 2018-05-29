@@ -430,7 +430,9 @@ get_fields(Host, Module) ->
 				   end
 			   end,
 			   Fields),
-    [#xdata_field{var = Var, values = Values} || {_, Var, Values} <- Fields1].
+    [#xdata_field{var = Var,
+		  type = 'list-multi',
+		  values = Values} || {_, Var, Values} <- Fields1].
 
 -spec depends(binary(), gen_mod:opts()) -> [].
 depends(_Host, _Opts) ->
