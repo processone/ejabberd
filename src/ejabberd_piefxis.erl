@@ -475,25 +475,55 @@ process_roster(RosterQuery, State = #state{user = U, server = S}) ->
 -spec process_privacy(privacy_query(), state()) -> {ok, state()} | {error, _}.
 process_privacy(#privacy_query{lists = Lists,
 			       default = Default,
-			       active = Active} = PrivacyQuery,
+			       active = Active},
 		State = #state{user = U, server = S}) ->
     JID = jid:make(U, S),
-    IQ = #iq{type = set, id = p1_rand:get_string(),
-	     from = JID, to = JID, sub_els = [PrivacyQuery]},
-    case mod_privacy:process_iq(IQ) of
-	#iq{type = error} = ResIQ ->
-	    #stanza_error{reason = Reason} = xmpp:get_error(ResIQ),
-	    if Reason == 'item-not-found', Lists == [],
-	       Active == undefined, Default /= undefined ->
+    if Lists /= undefined ->
+        case mod_privacy:process_iq(#iq{type = set, id = p1_rand:get_string(),
+                                from = JID, to = JID,
+                                sub_els = [#privacy_query{lists = Lists}]}) of
+            #iq{type = error} = ResIQ1 ->
+	        #stanza_error{reason = Reason1} = xmpp:get_error(ResIQ1),
+                stop("Failed to write privacy lists: ~p", [Reason1]);
+            _ ->
+                ok
+        end;
+    true ->
+        ok
+    end,
+    if Active /= undefined ->
+        case mod_privacy:process_iq(#iq{type = set, id = p1_rand:get_string(),
+                                from = JID, to = JID,
+                                sub_els = [#privacy_query{active = Active}]}) of
+	    #iq{type = error} = ResIQ2 ->
+	        #stanza_error{reason = Reason2} = xmpp:get_error(ResIQ2),
+                stop("Failed to write active privacy: ~p", [Reason2]);
+            _ ->
+                ok
+        end;
+    true ->
+        ok
+    end,
+    if Default /= undefined ->
+        case mod_privacy:process_iq(#iq{type = set, id = p1_rand:get_string(),
+                                from = JID, to = JID,
+                                sub_els = [#privacy_query{default = Default}]}) of
+	    #iq{type = error} = ResIQ3 ->
+	        #stanza_error{reason = Reason3} = xmpp:get_error(ResIQ3),
+	        if Reason3 /= 'item-not-found' ->
 		    %% Failed to set default list because there is no
 		    %% list with such name. We shouldn't stop here.
-		    {ok, State};
-	       true ->
-		    stop("Failed to write privacy: ~p", [Reason])
-            end;
-        _ ->
-            {ok, State}
-    end.
+		    stop("Failed to write default privacy: ~p", [Reason3]);
+                true ->
+                   ok
+                end;
+            _ ->
+                ok
+        end;
+    true ->
+        ok
+    end,
+    {ok, State}.
 
 -spec process_private(private(), state()) -> {ok, state()} | {error, _}.
 process_private(Private, State = #state{user = U, server = S}) ->
