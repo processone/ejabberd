@@ -230,19 +230,22 @@ check_password_with_authmodule(User, AuthzId, Server, Password) ->
 check_password_with_authmodule(User, AuthzId, Server, Password, Digest, DigestGen) ->
     case validate_credentials(User, Server) of
 	{ok, LUser, LServer} ->
-	    lists:foldl(
-	      fun(Mod, false) ->
-		      case db_check_password(
-			     LUser, AuthzId, LServer, Password,
+	    case jid:nodeprep(AuthzId) of
+		error ->
+		    false;
+	    LAuthzId ->
+		lists:foldl(
+		  fun(Mod, false) ->
+			case db_check_password(
+			     LUser, LAuthzId, LServer, Password,
 			     Digest, DigestGen, Mod) of
 			  true -> {true, Mod};
 			  false -> false
-		      end;
-		 (_, Acc) ->
-		      Acc
-	      end, false, auth_modules(LServer));
-	_ ->
-	    false
+			end;
+			(_, Acc) ->
+			    Acc
+		  end, false, auth_modules(LServer))
+	    end
     end.
 
 -spec set_password(binary(), binary(), password()) -> ok | {error, atom()}.
