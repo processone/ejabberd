@@ -1552,39 +1552,17 @@ set_form(From, Host, ?NS_ADMINL(<<"delete-user">>),
      || {User, Server} <- ASL2],
     {result, undefined};
 set_form(From, Host, ?NS_ADMINL(<<"end-user-session">>),
-	 Lang, XData) ->
+	 _Lang, XData) ->
     AccountString = get_value(<<"accountjid">>, XData),
     JID = jid:decode(AccountString),
-    LUser = JID#jid.luser,
     LServer = JID#jid.lserver,
     true = LServer == Host orelse
 	     get_permission_level(From) == global,
-    Xmlelement = xmpp:serr_policy_violation(<<"has been kicked">>, Lang),
     case JID#jid.lresource of
-      <<>> ->
-	  SIs = mnesia:dirty_select(session,
-				    [{#session{usr = {LUser, LServer, '_'},
-					       sid = '$1',
-					       info = '$2',
-						_ = '_'},
-				      [], [{{'$1', '$2'}}]}]),
-	  Pids = [P || {{_, P}, Info} <- SIs,
-		       not proplists:get_bool(offline, Info)],
-	  lists:foreach(fun(Pid) ->
-				Pid ! {kick, kicked_by_admin, Xmlelement}
-			end, Pids);
-      R ->
-	  [{{_, Pid}, Info}] = mnesia:dirty_select(
-				 session,
-				 [{#session{usr = {LUser, LServer, R},
-					    sid = '$1',
-					    info = '$2',
-						      _ = '_'},
-				   [], [{{'$1', '$2'}}]}]),
-	  case proplists:get_bool(offline, Info) of
-	    true -> ok;
-	    false -> Pid ! {kick, kicked_by_admin, Xmlelement}
-	  end
+	<<>> ->
+	    ejabberd_sm:kick_user(JID#jid.luser, JID#jid.lserver);
+	R ->
+	    ejabberd_sm:kick_user(JID#jid.luser, JID#jid.lserver, R)
     end,
     {result, undefined};
 set_form(From, Host,

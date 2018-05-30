@@ -62,6 +62,7 @@
 	 connected_users_number/0,
 	 user_resources/2,
 	 kick_user/2,
+	 kick_user/3,
 	 get_session_pid/3,
 	 get_session_sid/3,
 	 get_session_sids/2,
@@ -978,14 +979,23 @@ user_resources(User, Server) ->
     Resources = get_user_resources(User, Server),
     lists:sort(Resources).
 
+-spec kick_user(binary(), binary()) -> non_neg_integer().
 kick_user(User, Server) ->
     Resources = get_user_resources(User, Server),
-    lists:foreach(
-	fun(Resource) ->
-		PID = get_session_pid(User, Server, Resource),
-		ejabberd_c2s:route(PID, kick)
-	end, Resources),
-    length(Resources).
+    lists:foldl(
+      fun(Resource, Acc) ->
+	      case kick_user(User, Server, Resource) of
+		  false -> Acc;
+		  true -> Acc + 1
+	      end
+      end, 0, Resources).
+
+-spec kick_user(binary(), binary(), binary()) -> boolean().
+kick_user(User, Server, Resource) ->
+    case get_session_pid(User, Server, Resource) of
+	none -> false;
+	Pid -> ejabberd_c2s:route(Pid, kick)
+    end.
 
 make_sid() ->
     {p1_time_compat:unique_timestamp(), self()}.
