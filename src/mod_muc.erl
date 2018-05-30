@@ -976,7 +976,9 @@ mod_opt_type({default_room_options, presence_broadcast}) ->
 		 (participant) -> participant;
 		 (visitor) -> visitor
 	      end, L)
-    end.
+    end;
+mod_opt_type({default_room_options, lang}) ->
+    fun iolist_to_binary/1.
 
 mod_options(Host) ->
     [{access, all},
@@ -1014,6 +1016,7 @@ mod_options(Host) ->
        {allow_visitor_status,true},
        {anonymous,true},
        {captcha_protected,false},
+       {lang, ?MYLANG},
        {logging,false},
        {members_by_default,true},
        {members_only,false},

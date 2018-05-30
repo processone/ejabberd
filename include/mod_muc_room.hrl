@@ -66,7 +66,8 @@
     vcard_xupdate                        = undefined :: undefined | external | binary(),
     captcha_whitelist                    = (?SETS):empty() :: ?TGB_SET,
     mam                                  = false :: boolean(),
-    pubsub                               = <<"">> :: binary()
+    pubsub                               = <<"">> :: binary(),
+    lang                                 = ?MYLANG :: binary()
 }).
 
 -type config() :: #config{}.

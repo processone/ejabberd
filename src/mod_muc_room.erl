@@ -3277,7 +3277,8 @@ get_config(Lang, StateData, From) ->
 	      translate:translate(Lang, <<"Configuration of room ~s">>),
 	      [jid:encode(StateData#state.jid)]),
     Fs = [{roomname, Config#config.title},
-	  {roomdesc, Config#config.description}] ++
+	  {roomdesc, Config#config.description},
+	  {lang, Config#config.lang}] ++
 	case acl:match_rule(StateData#state.server_host, AccessPersistent, From) of
 	    allow -> [{persistentroom, Config#config.persistent}];
 	    deny -> []
@@ -3399,6 +3400,7 @@ set_config(Opts, Config, ServerHost, Lang) ->
 	 ({maxusers, V}, C) -> C#config{max_users = V};
 	 ({enablelogging, V}, C) -> C#config{logging = V};
 	 ({pubsub, V}, C) -> C#config{pubsub = V};
+	 ({lang, L}, C) -> C#config{lang = L};
 	 ({captcha_whitelist, Js}, C) ->
 	      LJIDs = [jid:tolower(J) || J <- Js],
 	      C#config{captcha_whitelist = ?SETS:from_list(LJIDs)};
@@ -3630,6 +3632,9 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 	    allow_subscription ->
 		StateData#state{config =
 				    (StateData#state.config)#config{allow_subscription = Val}};
+	    lang ->
+		StateData#state{config =
+				    (StateData#state.config)#config{lang = Val}};
 	    subscribers ->
 		  {Subscribers, Nicks} =
 		      lists:foldl(
@@ -3709,6 +3714,7 @@ make_opts(StateData) ->
      ?MAKE_CONFIG_OPT(#config.vcard),
      ?MAKE_CONFIG_OPT(#config.vcard_xupdate),
      ?MAKE_CONFIG_OPT(#config.pubsub),
+     ?MAKE_CONFIG_OPT(#config.lang),
      {captcha_whitelist,
       (?SETS):to_list((StateData#state.config)#config.captcha_whitelist)},
      {affiliations,
@@ -3841,7 +3847,8 @@ process_iq_disco_info(From, #iq{type = get, lang = Lang,
 iq_disco_info_extras(Lang, StateData) ->
     Fs1 = [{description, (StateData#state.config)#config.description},
 	   {occupants, ?DICT:size(StateData#state.nicks)},
-	   {contactjid, get_owners(StateData)}],
+	   {contactjid, get_owners(StateData)},
+	   {lang, (StateData#state.config)#config.lang}],
     Fs2 = case (StateData#state.config)#config.pubsub of
 	      Node when is_binary(Node), Node /= <<"">> ->
 		  [{pubsub, Node}|Fs1];
