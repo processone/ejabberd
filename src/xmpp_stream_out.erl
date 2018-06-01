@@ -459,8 +459,7 @@ process_invalid_xml(#{lang := MyLang} = State, El, Reason) ->
 process_stream_end(_, #{stream_state := disconnected} = State) ->
     State;
 process_stream_end(Reason, State) ->
-    State1 = State#{stream_timeout => infinity,
-		    stream_state => disconnected},
+    State1 = send_trailer(State),
     try callback(handle_stream_end, Reason, State1)
     catch _:{?MODULE, undef} -> stop(State1)
     end.
