@@ -3848,6 +3848,7 @@ iq_disco_info_extras(Lang, StateData) ->
     Fs1 = [{description, (StateData#state.config)#config.description},
 	   {occupants, ?DICT:size(StateData#state.nicks)},
 	   {contactjid, get_owners(StateData)},
+	   {changesubject, (StateData#state.config)#config.allow_change_subj},
 	   {lang, (StateData#state.config)#config.lang}],
     Fs2 = case (StateData#state.config)#config.pubsub of
 	      Node when is_binary(Node), Node /= <<"">> ->
