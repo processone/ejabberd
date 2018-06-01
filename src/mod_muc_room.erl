@@ -3827,7 +3827,7 @@ process_iq_disco_info(From, #iq{type = get, lang = Lang,
 				sub_els = [#disco_info{node = <<>>}]},
 		      StateData) ->
     DiscoInfo = make_disco_info(From, StateData),
-    Extras = iq_disco_info_extras(Lang, StateData),
+    Extras = iq_disco_info_extras(Lang, StateData, false),
     {result, DiscoInfo#disco_info{xdata = [Extras]}};
 process_iq_disco_info(From, #iq{type = get, lang = Lang,
 				sub_els = [#disco_info{node = Node}]},
@@ -3837,16 +3837,16 @@ process_iq_disco_info(From, #iq{type = get, lang = Lang,
 	DiscoInfo = make_disco_info(From, StateData),
 	Hash = mod_caps:compute_disco_hash(DiscoInfo, sha),
 	Node = <<(?EJABBERD_URI)/binary, $#, Hash/binary>>,
-	{result, DiscoInfo#disco_info{node = Node}}
+	Extras = iq_disco_info_extras(Lang, StateData, true),
+	{result, DiscoInfo#disco_info{node = Node, xdata = [Extras]}}
     catch _:{badmatch, _} ->
 	    Txt = <<"Invalid node name">>,
 	    {error, xmpp:err_item_not_found(Txt, Lang)}
     end.
 
--spec iq_disco_info_extras(binary(), state()) -> xdata().
-iq_disco_info_extras(Lang, StateData) ->
+-spec iq_disco_info_extras(binary(), state(), boolean()) -> xdata().
+iq_disco_info_extras(Lang, StateData, Static) ->
     Fs1 = [{description, (StateData#state.config)#config.description},
-	   {occupants, ?DICT:size(StateData#state.nicks)},
 	   {contactjid, get_owners(StateData)},
 	   {changesubject, (StateData#state.config)#config.allow_change_subj},
 	   {lang, (StateData#state.config)#config.lang}],
@@ -3856,8 +3856,14 @@ iq_disco_info_extras(Lang, StateData) ->
 	      _ ->
 		  Fs1
 	  end,
+    Fs3 = case Static of
+	      false ->
+		  [{occupants, ?DICT:size(StateData#state.nicks)}|Fs2];
+	      true ->
+		  Fs2
+	  end,
     #xdata{type = result,
-	   fields = muc_roominfo:encode(Fs2, Lang)}.
+	   fields = muc_roominfo:encode(Fs3, Lang)}.
 
 -spec process_iq_disco_items(jid(), iq(), state()) ->
 				    {error, stanza_error()} | {result, disco_items()}.
