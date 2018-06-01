@@ -688,7 +688,7 @@ reply_stop(State, Body, From, RID) ->
     {stop, normal, do_reply(State, From, Body, RID)}.
 
 drop_holding_receiver(State) ->
-    drop_holding_receiver(State#state.prev_rid).
+    drop_holding_receiver(State, State#state.prev_rid).
 drop_holding_receiver(State, RID) ->
     case gb_trees:lookup(RID, State#state.receivers) of
 	{value, {From, Body}} ->
