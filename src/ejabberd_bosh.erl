@@ -452,7 +452,7 @@ active1(#body{attrs = Attrs} = Req, From, State) ->
                     {next_state, active,
                      do_reply(State, From, PrevBody, RID)};
                 none ->
-                    State1 = drop_holding_receiver(State),
+                    State1 = drop_holding_receiver(State, RID),
                     State2 = stop_inactivity_timer(State1),
                     State3 = restart_wait_timer(State2),
                     Receivers = gb_trees:insert(RID, {From, Req},
@@ -688,15 +688,16 @@ reply_stop(State, Body, From, RID) ->
     {stop, normal, do_reply(State, From, Body, RID)}.
 
 drop_holding_receiver(State) ->
-    RID = State#state.prev_rid,
+    drop_holding_receiver(State#state.prev_rid).
+drop_holding_receiver(State, RID) ->
     case gb_trees:lookup(RID, State#state.receivers) of
-      {value, {From, Body}} ->
-	  State1 = restart_inactivity_timer(State),
-	  Receivers = gb_trees:delete_any(RID,
-					  State1#state.receivers),
-	  State2 = State1#state{receivers = Receivers},
-	  do_reply(State2, From, Body, RID);
-      none -> State
+	{value, {From, Body}} ->
+	    State1 = restart_inactivity_timer(State),
+	    Receivers = gb_trees:delete_any(RID,
+					    State1#state.receivers),
+	    State2 = State1#state{receivers = Receivers},
+	    do_reply(State2, From, Body, RID);
+	none -> State
     end.
 
 do_reply(State, From, Body, RID) ->
