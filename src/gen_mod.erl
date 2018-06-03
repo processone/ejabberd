@@ -220,13 +220,15 @@ start_module(Host, Module, Opts0, Order, NeedValidation) ->
 		    Err -> erlang:error({bad_return, Module, Err})
 		end
 	    catch Class:Reason ->
+		    StackTrace = erlang:get_stacktrace(),
 		    ets:delete(ejabberd_modules, {Module, Host}),
-		    ErrorText = format_start_error(
-				  Module, Opts, Class, Reason,
-				  erlang:get_stacktrace()),
+		    ErrorText = format_module_error(
+				  Module, start, 2,
+				  Opts, Class, Reason,
+				  StackTrace),
 		    ?CRITICAL_MSG(ErrorText, []),
 		    maybe_halt_ejabberd(),
-		    erlang:raise(Class, Reason, erlang:get_stacktrace())
+		    erlang:raise(Class, Reason, StackTrace)
 	    end;
 	{error, _ErrorText} ->
 	    maybe_halt_ejabberd()
@@ -280,14 +282,15 @@ reload_module(Host, Module, NewOpts, OldOpts, Order) ->
 	    try case Module:reload(Host, NewOpts, OldOpts) of
 		    ok -> ok;
 		    {ok, Pid} when is_pid(Pid) -> {ok, Pid};
-		    Err -> erlang:error(Err)
+		    Err -> erlang:error({bad_return, Module, Err})
 		end
 	    catch Class:Reason ->
 		    StackTrace = erlang:get_stacktrace(),
-		    ?CRITICAL_MSG("Failed to reload module ~s at ~s:~n"
-				  "** Reason = ~p",
-				  [Module, Host,
-				   {Class, {Reason, StackTrace}}]),
+		    ErrorText = format_module_error(
+                                  Module, reload, 3,
+                                  NewOpts, Class, Reason,
+				  StackTrace),
+                    ?CRITICAL_MSG(ErrorText, []),
 		    erlang:raise(Class, Reason, StackTrace)
 	    end;
 	false ->
@@ -707,38 +710,39 @@ get_submodules(Host, Module, Opts) ->
 	    []
     end.
 
--spec format_start_error(atom(), opts(),
-			 error | exit | throw, any(),
-			 [erlang:stack_item()]) -> iolist().
-format_start_error(Module, Opts, Class, Reason, St) ->
+-spec format_module_error(atom(), start | reload, non_neg_integer(), opts(),
+			  error | exit | throw, any(),
+			  [erlang:stack_item()]) -> iolist().
+format_module_error(Module, Fun, Arity, Opts, Class, Reason, St) ->
     IsLoaded = code:ensure_loaded(Module) == {module, Module},
-    IsStartExported = erlang:function_exported(Module, start, 2),
+    IsCallbackExported = erlang:function_exported(Module, Fun, Arity),
     case {Class, Reason} of
 	{error, undef} when not IsLoaded ->
-	    io_lib:format("Failed to load unknown module ~s: "
+	    io_lib:format("Failed to ~s unknown module ~s: "
 			  "make sure there is no typo and ~s.beam "
 			  "exists inside either ~s or ~s "
 			  "directory",
-			  [Module, Module,
+			  [Fun, Module, Module,
 			   filename:dirname(code:which(?MODULE)),
 			   ext_mod:modules_dir()]);
-	{error, undef} when not IsStartExported ->
-	    io_lib:format("Failed to load module ~s because "
-			  "it doesn't export start/2 callback: "
-			  "is it really an ejabberd module?", [Module]);
+	{error, undef} when not IsCallbackExported ->
+	    io_lib:format("Failed to ~s module ~s because "
+			  "it doesn't export ~s/~B callback: "
+			  "is it really an ejabberd module?",
+			  [Fun, Module, Fun, Arity]);
 	{error, {bad_return, Module, Ret}} ->
-	    io_lib:format("Module ~s returned unexpected value during "
-			  "startup: ~p; this is either not an ejabberd "
+	    io_lib:format("Module ~s returned unexpected value from "
+			  "~s/~B: ~p; this is either not an ejabberd "
 			  "module or it implements ejabbed API incorrectly",
-			  [Module, Ret]);
+			  [Module, Fun, Arity, Ret]);
 	_ ->
 	    io_lib:format("Internal error of module ~s has "
-			  "occured during startup:~n"
+			  "occured during ~s:~n"
 			  "** Options: ~p~n"
 			  "** Class: ~p~n"
 			  "** Reason: ~p~n"
 			  "** Stacktrace: ~p",
-			  [Module, Opts, Class, Reason, St])
+			  [Module, Fun, Opts, Class, Reason, St])
     end.
 
 -spec db_type(binary() | global, module()) -> db_type();
