@@ -531,7 +531,8 @@ process_slot_request(#iq{lang = Lang, from = From} = IQ,
     case acl:match_rule(ServerHost, Access, From) of
 	allow ->
 	    ContentType = yield_content_type(CType),
-	    case create_slot(State, From, File, Size, ContentType, Lang) of
+	    case create_slot(State, From, File, Size, ContentType, XMLNS,
+			     Lang) of
 		{ok, Slot} ->
 		    {ok, Timer} = timer:send_after(?SLOT_TIMEOUT,
 						   {slot_timed_out,
@@ -552,21 +553,28 @@ process_slot_request(#iq{lang = Lang, from = From} = IQ,
 	    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang))
     end.
 
--spec create_slot(state(), jid(), binary(), pos_integer(), binary(), binary())
+-spec create_slot(state(), jid(), binary(), pos_integer(), binary(), binary(),
+		  binary())
       -> {ok, slot()} | {ok, binary(), binary()} | {error, xmlel()}.
 create_slot(#state{service_url = undefined, max_size = MaxSize},
-	    JID, File, Size, _ContentType, Lang) when MaxSize /= infinity,
-						      Size > MaxSize ->
+	    JID, File, Size, _ContentType, XMLNS, Lang)
+  when MaxSize /= infinity,
+       Size > MaxSize ->
     Text = {<<"File larger than ~w bytes">>, [MaxSize]},
     ?INFO_MSG("Rejecting file ~s from ~s (too large: ~B bytes)",
 	      [File, jid:encode(JID), Size]),
-    {error, xmpp:err_not_acceptable(Text, Lang)};
+    Error = xmpp:err_not_acceptable(Text, Lang),
+    Els = xmpp:get_els(Error),
+    Els1 = [#upload_file_too_large{'max-file-size' = MaxSize,
+				   xmlns = XMLNS} | Els],
+    Error1 = xmpp:set_els(Error, Els1),
+    {error, Error1};
 create_slot(#state{service_url = undefined,
 		   jid_in_url = JIDinURL,
 		   secret_length = SecretLength,
 		   server_host = ServerHost,
 		   docroot = DocRoot},
-	    JID, File, Size, _ContentType, Lang) ->
+	    JID, File, Size, _ContentType, _XMLNS, Lang) ->
     UserStr = make_user_string(JID, JIDinURL),
     UserDir = <<DocRoot/binary, $/, UserStr/binary>>,
     case ejabberd_hooks:run_fold(http_upload_slot_request, ServerHost, allow,
@@ -583,8 +591,8 @@ create_slot(#state{service_url = undefined,
 	    {error, Error}
     end;
 create_slot(#state{service_url = ServiceURL},
-	    #jid{luser = U, lserver = S} = JID, File, Size, ContentType,
-	    Lang) ->
+	    #jid{luser = U, lserver = S} = JID,
+	    File, Size, ContentType, _XMLNS, Lang) ->
     Options = [{body_format, binary}, {full_result, false}],
     HttpOptions = [{timeout, ?SERVICE_REQUEST_TIMEOUT}],
     SizeStr = integer_to_binary(Size),

@@ -188,11 +188,14 @@ max_size_exceed(Config, NS) ->
 						'content-type' = <<?CONTENT_TYPE>>,
 						xmlns = NS}]})
 	end,
-    check_size_error(IQErr).
+    check_size_error(IQErr, Size, NS).
 
-check_size_error(IQErr) ->
+check_size_error(IQErr, Size, NS) ->
     Err = xmpp:get_error(IQErr),
-    #stanza_error{reason = 'not-acceptable'} = Err.
+    FileTooLarge = xmpp:get_subtag(Err, #upload_file_too_large{xmlns = NS}),
+    #stanza_error{reason = 'not-acceptable'} = Err,
+    #upload_file_too_large{'max-file-size' = MaxSize} = FileTooLarge,
+    Size > MaxSize.
 
 namespaces() ->
     [?NS_HTTP_UPLOAD_0, ?NS_HTTP_UPLOAD, ?NS_HTTP_UPLOAD_OLD].
