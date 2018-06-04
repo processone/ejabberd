@@ -195,7 +195,7 @@ check_size_error(IQErr, Size, NS) ->
     FileTooLarge = xmpp:get_subtag(Err, #upload_file_too_large{xmlns = NS}),
     #stanza_error{reason = 'not-acceptable'} = Err,
     #upload_file_too_large{'max-file-size' = MaxSize} = FileTooLarge,
-    Size > MaxSize.
+    true = Size > MaxSize.
 
 namespaces() ->
     [?NS_HTTP_UPLOAD_0, ?NS_HTTP_UPLOAD, ?NS_HTTP_UPLOAD_OLD].
