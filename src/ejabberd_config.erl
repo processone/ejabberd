@@ -1070,9 +1070,16 @@ is_file_readable(Path) ->
     end.
 
 get_version() ->
-    case application:get_key(ejabberd, vsn) of
-        undefined -> "";
-        {ok, Vsn} -> list_to_binary(Vsn)
+    case application:get_env(ejabberd, custom_vsn) of
+	{ok, Vsn0} when is_list(Vsn0) ->
+	    list_to_binary(Vsn0);
+	{ok, Vsn1} when is_binary(Vsn1) ->
+	    Vsn1;
+	_ ->
+	    case application:get_key(ejabberd, vsn) of
+		undefined -> "";
+		{ok, Vsn} -> list_to_binary(Vsn)
+	    end
     end.
 
 -spec get_myhosts() -> [binary()].
