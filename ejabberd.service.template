@@ -13,6 +13,7 @@ ExecStart=/bin/sh -c '@ctlscriptpath@/ejabberdctl start && @ctlscriptpath@/ejabb
 ExecStop=/bin/sh -c '@ctlscriptpath@/ejabberdctl stop && @ctlscriptpath@/ejabberdctl stopped'
 ExecReload=@ctlscriptpath@/ejabberdctl reload_config
 PrivateDevices=true
+TimeoutSec=300
 
 [Install]
 WantedBy=multi-user.target
