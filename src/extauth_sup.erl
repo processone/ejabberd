@@ -107,4 +107,4 @@ init([Host, Prog, Pool]) ->
 worker_spec(Pool, Prog, I) ->
     Worker = extauth:worker_name(Pool, I),
     {Worker, {extauth, start_link, [Worker, Prog]},
-     transient, 5000, worker, [extauth]}.
+     permanent, 5000, worker, [extauth]}.

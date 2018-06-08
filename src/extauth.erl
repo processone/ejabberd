@@ -128,7 +128,7 @@ handle_call({cmd, Cmd, EndTime}, _From, State) ->
 		{'EXIT', Port, Reason} ->
 		    handle_info({'EXIT', Port, Reason}, State)
 	    after Timeout ->
-		    {stop, extauth_program_timeout, State}
+		    {stop, normal, State}
 	    end;
        true ->
 	    {noreply, State}
@@ -148,7 +148,7 @@ handle_info({'EXIT', Port, _Reason}, #state{port = Port,
 	    ?ERROR_MSG("External authentication program '~s' has terminated "
 		       "unexpectedly (pid=~w), restarting via supervisor...",
 		       [State#state.prog, State#state.os_pid]),
-	    {stop, extauth_program_failure, State}
+	    {stop, normal, State}
     end;
 handle_info(Info, State) ->
     ?WARNING_MSG("Unexpected info: ~p", [Info]),
