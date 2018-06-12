@@ -389,7 +389,7 @@ c2s_session_pending(#{push_enabled := true, mgmt_queue := Queue} = State) ->
 	Len when Len > 0 ->
 	    ?DEBUG("Notifying client of unacknowledged stanza(s)", []),
 	    Pkt = mod_stream_mgmt:queue_find(fun is_message_with_body/1, Queue),
-	    notify(State, Pkt),
+	    notify(State, xmpp_util:unwrap_carbon(Pkt)),
 	    State;
 	0 ->
 	    State
@@ -467,7 +467,8 @@ notify(LServer, PushLJID, Node, XData, Pkt, HandleResponse) ->
 %%--------------------------------------------------------------------
 -spec is_message_with_body(stanza()) -> boolean().
 is_message_with_body(#message{} = Msg) ->
-    get_body_text(Msg) /= none;
+    Msg1 = xmpp_util:unwrap_carbon(Msg),
+    get_body_text(Msg1) /= none;
 is_message_with_body(_Stanza) ->
     false.
 
