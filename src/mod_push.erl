@@ -346,7 +346,7 @@ c2s_stanza(State, #stream_error{}, _SendResult) ->
 c2s_stanza(#{push_enabled := true, mgmt_state := pending} = State,
 	   Pkt, _SendResult) ->
     ?DEBUG("Notifying client of stanza", []),
-    notify(State, Pkt),
+    notify(State, xmpp_util:unwrap_carbon(Pkt)),
     State;
 c2s_stanza(State, _Pkt, _SendResult) ->
     State.
