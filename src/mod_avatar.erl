@@ -157,7 +157,7 @@ vcard_iq_publish(Acc) ->
 get_sm_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
 get_sm_features(Acc, _From, _To, <<"">>, _Lang) ->
-    {result, [?NS_DISCO_INFO, ?NS_PEP_VCARD_CONVERSION_0 |
+    {result, [?NS_PEP_VCARD_CONVERSION_0 |
 	      case Acc of
 		  {result, Features} -> Features;
 		  empty -> []

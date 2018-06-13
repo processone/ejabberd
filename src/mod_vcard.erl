@@ -186,8 +186,8 @@ get_sm_features(Acc, _From, _To, Node, _Lang) ->
       <<"">> ->
 	  case Acc of
 	    {result, Features} ->
-		{result, [?NS_DISCO_INFO, ?NS_VCARD | Features]};
-	    empty -> {result, [?NS_DISCO_INFO, ?NS_VCARD]}
+		{result, [?NS_VCARD | Features]};
+	    empty -> {result, [?NS_VCARD]}
 	  end;
       _ -> Acc
     end.
