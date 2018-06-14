@@ -22,7 +22,7 @@ defmodule ModLastMock do
 
 	require Record
 	Record.defrecord :session, Record.extract(:session, from_lib: "ejabberd/include/ejabberd_sm.hrl")
-	Record.defrecord :jid, Record.extract(:jid, from_lib: "ejabberd/include/jlib.hrl")
+	Record.defrecord :jid, Record.extract(:jid, from_lib: "xmpp/include/jid.hrl")
 
   @author "jsautret@process-one.net"
 	@agent __MODULE__

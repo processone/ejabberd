@@ -363,7 +363,6 @@ no_db_tests() ->
        unsupported_query,
        bad_nonza,
        invalid_from,
-       legacy_iq,
        ping,
        version,
        time,
@@ -939,14 +938,6 @@ presence_broadcast(Config) ->
 	     (_, Acc) ->
 		  Acc
 	  end, [], [0, 100, 200, 2000, 5000, 10000]),
-    disconnect(Config).
-
-legacy_iq(Config) ->
-    true = is_feature_advertised(Config, ?NS_EVENT),
-    ServerJID = server_jid(Config),
-    #iq{type = result, sub_els = []} =
-	send_recv(Config, #iq{to = ServerJID, type = get,
-			      sub_els = [#xevent{}]}),
     disconnect(Config).
 
 ping(Config) ->

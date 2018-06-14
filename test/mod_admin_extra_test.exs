@@ -34,7 +34,7 @@ defmodule EjabberdModAdminExtraTest do
 	@resource "resource"
 
 	require Record
-	Record.defrecord :jid, Record.extract(:jid, from_lib: "ejabberd/include/jlib.hrl")
+	Record.defrecord :jid, Record.extract(:jid, from_lib: "xmpp/include/jid.hrl")
 
 	setup_all do
 		try do

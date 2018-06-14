@@ -490,7 +490,6 @@ modules:
   mod_disco: []
   mod_ping: []
   mod_proxy65: []
-  mod_legacy: []
   mod_muc: []
   mod_muc_admin: []
   mod_register: 

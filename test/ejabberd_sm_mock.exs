@@ -23,7 +23,7 @@ defmodule EjabberdSmMock do
 
 	require Record
 	Record.defrecord :session, Record.extract(:session, from_lib: "ejabberd/include/ejabberd_sm.hrl")
-	Record.defrecord :jid, Record.extract(:jid, from_lib: "ejabberd/include/jlib.hrl")
+	Record.defrecord :jid, Record.extract(:jid, from_lib: "xmpp/include/jid.hrl")
 
 	@agent __MODULE__
 
