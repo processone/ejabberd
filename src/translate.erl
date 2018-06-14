@@ -34,7 +34,6 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include_lib("kernel/include/file.hrl").
 
@@ -196,7 +195,7 @@ translate(Lang, Msg) ->
     end.
 
 translate(Msg) ->
-    case ?MYLANG of
+    case ejabberd_config:get_mylang() of
       <<"en">> -> Msg;
       Lang ->
 	  LLang = ascii_tolower(Lang),
@@ -229,14 +228,7 @@ ascii_tolower_s([]) -> [].
 
 -spec get_msg_dir() -> {calendar:datetime(), file:filename()}.
 get_msg_dir() ->
-    Dir = case os:getenv("EJABBERD_MSGS_PATH") of
-	      false ->
-		  case code:priv_dir(ejabberd) of
-		      {error, _} -> ?MSGS_DIR;
-		      Path -> filename:join([Path, "msgs"])
-		  end;
-	      Path -> Path
-	  end,
+    Dir = misc:msgs_dir(),
     case file:read_file_info(Dir) of
 	{ok, #file_info{mtime = MTime}} ->
 	    {MTime, Dir};

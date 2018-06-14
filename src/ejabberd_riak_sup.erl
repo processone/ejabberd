@@ -33,7 +33,6 @@
 	 transform_options/1, get_random_pid/0,
 	 host_up/1, config_reloaded/0, opt_type/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -define(DEFAULT_POOL_SIZE, 10).
@@ -74,7 +73,7 @@ config_reloaded() ->
     end.
 
 is_riak_configured() ->
-    lists:any(fun is_riak_configured/1, ?MYHOSTS).
+    lists:any(fun is_riak_configured/1, ejabberd_config:get_myhosts()).
 
 is_riak_configured(Host) ->
     ServerConfigured = ejabberd_config:has_option({riak_server, Host}),

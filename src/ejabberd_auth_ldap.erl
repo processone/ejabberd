@@ -42,7 +42,6 @@
 	 store_type/1, plain_password_required/1,
 	 opt_type/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -include("eldap.hrl").

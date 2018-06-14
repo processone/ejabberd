@@ -58,7 +58,6 @@
 
 -include("ejabberd_ctl.hrl").
 -include("ejabberd_commands.hrl").
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -define(DEFAULT_VERSION, 1000000).

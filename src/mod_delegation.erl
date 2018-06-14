@@ -40,7 +40,7 @@
 	 disco_local_features/5, disco_sm_features/5,
 	 disco_local_identity/5, disco_sm_identity/5]).
 
--include("ejabberd.hrl").
+-include("type_compat.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 
@@ -88,7 +88,7 @@ component_connected(Host) ->
       fun(ServerHost) ->
 	      Proc = gen_mod:get_module_proc(ServerHost, ?MODULE),
 	      gen_server:cast(Proc, {component_connected, Host})
-      end, ?MYHOSTS).
+      end, ejabberd_config:get_myhosts()).
 
 -spec component_disconnected(binary(), binary()) -> ok.
 component_disconnected(Host, _Reason) ->
@@ -96,7 +96,7 @@ component_disconnected(Host, _Reason) ->
       fun(ServerHost) ->
 	      Proc = gen_mod:get_module_proc(ServerHost, ?MODULE),
 	      gen_server:cast(Proc, {component_disconnected, Host})
-      end, ?MYHOSTS).
+      end, ejabberd_config:get_myhosts()).
 
 -spec ejabberd_local(iq()) -> iq().
 ejabberd_local(IQ) ->

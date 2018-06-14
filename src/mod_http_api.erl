@@ -77,7 +77,6 @@
 -export([start/2, stop/1, reload/3, process/2, mod_opt_type/1, depends/2,
 	 mod_options/1]).
 
--include("ejabberd.hrl").
 -include("xmpp.hrl").
 -include("logger.hrl").
 -include("ejabberd_http.hrl").

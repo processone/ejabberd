@@ -22,7 +22,6 @@
          %% delete_authz/3
 	]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 

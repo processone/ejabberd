@@ -42,7 +42,6 @@
 -export([start/3, start_link/3, connect/1, close/1, close/2, stop/1, send/2,
 	 route/2, establish/1, update_state/2, host_up/1, host_down/1]).
 
--include("ejabberd.hrl").
 -include("xmpp.hrl").
 -include("logger.hrl").
 
@@ -274,7 +273,7 @@ init([#{server := LServer, remote_server := RServer} = State, Opts]) ->
     State1 = State#{on_route => queue,
 		    queue => p1_queue:new(QueueType, QueueLimit),
 		    xmlns => ?NS_SERVER,
-		    lang => ?MYLANG,
+		    lang => ejabberd_config:get_mylang(),
 		    server_host => ServerHost,
 		    shaper => none},
     State2 = xmpp_stream_out:set_timeout(State1, Timeout),

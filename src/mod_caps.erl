@@ -51,7 +51,6 @@
 -export([user_send_packet/1, user_receive_packet/1,
 	 c2s_presence_in/2, mod_opt_type/1, mod_options/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -include("xmpp.hrl").
@@ -162,7 +161,7 @@ caps_stream_features(Acc, MyHost) ->
 		<<"">> ->
 		    Acc;
 		Hash ->
-		    [#caps{hash = <<"sha-1">>, node = ?EJABBERD_URI,
+		    [#caps{hash = <<"sha-1">>, node = ejabberd_config:get_uri(),
 			   version = Hash} | Acc]
 	    end;
 	false ->
@@ -476,9 +475,9 @@ concat_xdata_fields(#xdata{fields = Fields} = X) ->
 -spec is_valid_node(binary()) -> boolean().
 is_valid_node(Node) ->
     case str:tokens(Node, <<"#">>) of
-        [?EJABBERD_URI|_] ->
-            true;
-        _ ->
+	[H|_] ->
+	    H == ejabberd_config:get_uri();
+        [] ->
             false
     end.
 

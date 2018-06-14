@@ -89,7 +89,6 @@
 	 expand_home/1,
 	 expand_host/2]).
 
--include("ejabberd.hrl").
 -include("ejabberd_http.hrl").
 -include("xmpp.hrl").
 -include("logger.hrl").

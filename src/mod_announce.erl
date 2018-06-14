@@ -50,7 +50,6 @@
 	 announce_motd_delete/1,
 	 announce_all_hosts_motd_delete/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("mod_announce.hrl").
@@ -670,7 +669,7 @@ announce_motd(#message{to = To} = Packet) ->
     announce_motd(To#jid.lserver, Packet).
 
 announce_all_hosts_motd(Packet) ->
-    Hosts = ?MYHOSTS,
+    Hosts = ejabberd_config:get_myhosts(),
     [announce_motd(Host, Packet) || Host <- Hosts].
 
 announce_motd(Host, Packet) ->
@@ -685,7 +684,7 @@ announce_motd_update(#message{to = To} = Packet) ->
     announce_motd_update(To#jid.lserver, Packet).
 
 announce_all_hosts_motd_update(Packet) ->
-    Hosts = ?MYHOSTS,
+    Hosts = ejabberd_config:get_myhosts(),
     [announce_motd_update(Host, Packet) || Host <- Hosts].
 
 announce_motd_update(LServer, Packet) ->
@@ -703,7 +702,7 @@ announce_all_hosts_motd_delete(_Packet) ->
       fun(Host) ->
 	      Mod = gen_mod:db_mod(Host, ?MODULE),
 	      delete_motd(Mod, Host)
-      end, ?MYHOSTS).
+      end, ejabberd_config:get_myhosts()).
 
 -spec send_motd({presence(), ejabberd_c2s:state()}) -> {presence(), ejabberd_c2s:state()}.
 send_motd({_, #{pres_last := _}} = Acc) ->

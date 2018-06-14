@@ -34,7 +34,6 @@
 -export([start/2, stop/1, reload/3, process_iq/1,
 	 mod_options/1, depends/2]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 
@@ -137,7 +136,7 @@ get_local_stat(_Server, [], Name)
 				   ejabberd_auth:count_users(Host)
 				     + Total
 			   end,
-			   0, ?MYHOSTS),
+			   0, ejabberd_config:get_myhosts()),
     ?STATVAL((integer_to_binary(NumUsers)),
 	     <<"users">>);
 get_local_stat(_Server, _, Name) ->

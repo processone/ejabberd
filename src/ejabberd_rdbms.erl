@@ -33,7 +33,6 @@
 -export([start_link/0, init/1, opt_type/1,
 	 config_reloaded/0, start_host/1, stop_host/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 start_link() ->
@@ -56,7 +55,7 @@ get_specs() ->
 		  {ok, Spec} -> [Spec];
 		  undefined -> []
 	      end
-      end, ?MYHOSTS).
+      end, ejabberd_config:get_myhosts()).
 
 -spec get_spec(binary()) -> {ok, supervisor:child_spec()} | undefined.
 get_spec(Host) ->
@@ -72,7 +71,7 @@ get_spec(Host) ->
 
 -spec config_reloaded() -> ok.
 config_reloaded() ->
-    lists:foreach(fun start_host/1, ?MYHOSTS).
+    lists:foreach(fun start_host/1, ejabberd_config:get_myhosts()).
 
 -spec start_host(binary()) -> ok.
 start_host(Host) ->

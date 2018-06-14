@@ -40,7 +40,7 @@
 
 -define(CHUNK_SIZE, 1024*20). %20k
 
--include("ejabberd.hrl").
+-include("scram.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("mod_privacy.hrl").
@@ -92,7 +92,7 @@ import_file(FileName, State) ->
 
 -spec export_server(binary()) -> any().
 export_server(Dir) ->
-    export_hosts(?MYHOSTS, Dir).
+    export_hosts(ejabberd_config:get_myhosts(), Dir).
 
 -spec export_host(binary(), binary()) -> any().
 export_host(Dir, Host) ->

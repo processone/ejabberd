@@ -31,7 +31,6 @@
 
 -export([start/2, prep_stop/1, stop/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 %%%
@@ -58,7 +57,8 @@ start(normal, _Args) ->
 		    ejabberd_cluster:wait_for_sync(infinity),
 		    {T2, _} = statistics(wall_clock),
 		    ?INFO_MSG("ejabberd ~s is started in the node ~p in ~.2fs",
-			      [?VERSION, node(), (T2-T1)/1000]),
+			      [ejabberd_config:get_version(),
+			       node(), (T2-T1)/1000]),
 		    lists:foreach(fun erlang:garbage_collect/1, processes()),
 		    {ok, SupPid};
 		Err ->
@@ -83,7 +83,8 @@ prep_stop(State) ->
 
 %% All the processes were killed when this function is called
 stop(_State) ->
-    ?INFO_MSG("ejabberd ~s is stopped in the node ~p", [?VERSION, node()]),
+    ?INFO_MSG("ejabberd ~s is stopped in the node ~p",
+	      [ejabberd_config:get_version(), node()]),
     delete_pid_file(),
     %%ejabberd_debug:stop(),
     ok.

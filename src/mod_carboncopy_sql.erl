@@ -28,7 +28,6 @@
 %% API
 -export([init/2, enable/4, disable/3, list/2]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
 

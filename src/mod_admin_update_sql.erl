@@ -36,7 +36,6 @@
 
 
 -include("logger.hrl").
--include("ejabberd.hrl").
 -include("ejabberd_commands.hrl").
 -include("xmpp.hrl").
 -include("ejabberd_sql_pt.hrl").
@@ -82,7 +81,7 @@ update_sql() ->
                   _ ->
                       update_sql(Host)
               end
-      end, ?MYHOSTS),
+      end, ejabberd_config:get_myhosts()),
     ok.
 
 -record(state, {host :: binary(),

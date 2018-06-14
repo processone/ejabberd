@@ -66,7 +66,6 @@
 	 session_established/2, session_established/3,
 	 opt_type/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
 

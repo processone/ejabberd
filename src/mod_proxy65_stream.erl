@@ -43,7 +43,6 @@
 
 -include("mod_proxy65.hrl").
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -define(WAIT_TIMEOUT, 60000).

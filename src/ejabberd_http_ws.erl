@@ -37,7 +37,6 @@
 	 monitor/1, reset_stream/1, close/1, change_shaper/2,
 	 socket_handoff/3, opt_type/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -include("xmpp.hrl").
@@ -138,10 +137,10 @@ init([{#ws{ip = IP, http_opts = HOpts}, _} = WS]) ->
                             end, HOpts),
     Opts = ejabberd_c2s_config:get_c2s_limits() ++ SOpts,
     PingInterval = ejabberd_config:get_option(
-                     {websocket_ping_interval, ?MYNAME},
+                     {websocket_ping_interval, ejabberd_config:get_myname()},
                      ?PING_INTERVAL) * 1000,
     WSTimeout = ejabberd_config:get_option(
-                  {websocket_timeout, ?MYNAME},
+                  {websocket_timeout, ejabberd_config:get_myname()},
                   ?WEBSOCKET_TIMEOUT) * 1000,
     Socket = {http_ws, self(), IP},
     ?DEBUG("Client connected through websocket ~p",

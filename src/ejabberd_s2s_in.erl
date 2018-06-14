@@ -44,7 +44,6 @@
 -export([stop/1, close/1, close/2, send/2, update_state/2, establish/1,
 	 host_up/1, host_down/1]).
 
--include("ejabberd.hrl").
 -include("xmpp.hrl").
 -include("logger.hrl").
 
@@ -263,10 +262,10 @@ init([State, Opts]) ->
     State1 = State#{tls_options => TLSOpts2,
 		    auth_domains => sets:new(),
 		    xmlns => ?NS_SERVER,
-		    lang => ?MYLANG,
-		    server => ?MYNAME,
-		    lserver => ?MYNAME,
-		    server_host => ?MYNAME,
+		    lang => ejabberd_config:get_mylang(),
+		    server => ejabberd_config:get_myname(),
+		    lserver => ejabberd_config:get_myname(),
+		    server_host => ejabberd_config:get_myname(),
 		    established => false,
 		    shaper => Shaper},
     State2 = xmpp_stream_in:set_timeout(State1, Timeout),

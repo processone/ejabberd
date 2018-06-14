@@ -36,7 +36,6 @@
 %% API
 -export([compute_hash/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 

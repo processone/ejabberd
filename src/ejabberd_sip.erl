@@ -44,7 +44,6 @@ start(_, _) ->
 -export([tcp_init/2, udp_init/2, udp_recv/5, start/2,
 	 socket_type/0, listen_opt_type/1]).
 
--include("ejabberd.hrl").
 
 %%%===================================================================
 %%% API
@@ -71,11 +70,11 @@ set_certfile(Opts) ->
 	true ->
 	    Opts;
 	false ->
-	    case ejabberd_pkix:get_certfile(?MYNAME) of
+	    case ejabberd_pkix:get_certfile(ejabberd_config:get_myname()) of
 		{ok, CertFile} ->
 		    [{certfile, CertFile}|Opts];
 		error ->
-		    case ejabberd_config:get_option({domain_certfile, ?MYNAME}) of
+		    case ejabberd_config:get_option({domain_certfile, ejabberd_config:get_myname()}) of
 			undefined ->
 			    Opts;
 			CertFile ->

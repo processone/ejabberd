@@ -37,7 +37,7 @@
 	 remove_user/2, store_type/1, plain_password_required/1,
 	 convert_to_scram/1, opt_type/1, export/1]).
 
--include("ejabberd.hrl").
+-include("scram.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
 -include("ejabberd_auth.hrl").

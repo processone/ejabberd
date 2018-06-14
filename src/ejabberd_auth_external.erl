@@ -35,7 +35,6 @@
 	 try_register/3, user_exists/2, remove_user/2,
 	 store_type/1, plain_password_required/1, opt_type/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 %%%----------------------------------------------------------------------

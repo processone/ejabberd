@@ -29,7 +29,6 @@
 -export([init/0, register_route/5, unregister_route/3, find_routes/1,
 	 get_all_routes/0]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
 -include("ejabberd_router.hrl").
@@ -41,7 +40,7 @@ init() ->
     Node = erlang:atom_to_binary(node(), latin1),
     ?DEBUG("Cleaning SQL 'route' table...", []),
     case ejabberd_sql:sql_query(
-	   ?MYNAME, ?SQL("delete from route where node=%(Node)s")) of
+	   ejabberd_config:get_myname(), ?SQL("delete from route where node=%(Node)s")) of
 	{updated, _} ->
 	    ok;
 	Err ->
@@ -53,7 +52,7 @@ register_route(Domain, ServerHost, LocalHint, _, Pid) ->
     PidS = misc:encode_pid(Pid),
     LocalHintS = enc_local_hint(LocalHint),
     Node = erlang:atom_to_binary(node(Pid), latin1),
-    case ?SQL_UPSERT(?MYNAME, "route",
+    case ?SQL_UPSERT(ejabberd_config:get_myname(), "route",
 		     ["!domain=%(Domain)s",
 		      "!server_host=%(ServerHost)s",
 		      "!node=%(Node)s",
@@ -69,7 +68,7 @@ unregister_route(Domain, _, Pid) ->
     PidS = misc:encode_pid(Pid),
     Node = erlang:atom_to_binary(node(Pid), latin1),
     case ejabberd_sql:sql_query(
-	   ?MYNAME,
+	   ejabberd_config:get_myname(),
 	   ?SQL("delete from route where domain=%(Domain)s "
 		"and pid=%(PidS)s and node=%(Node)s")) of
 	{updated, _} ->
@@ -80,7 +79,7 @@ unregister_route(Domain, _, Pid) ->
 
 find_routes(Domain) ->
     case ejabberd_sql:sql_query(
-	   ?MYNAME,
+	   ejabberd_config:get_myname(),
 	   ?SQL("select @(server_host)s, @(node)s, @(pid)s, @(local_hint)s "
 		"from route where domain=%(Domain)s")) of
 	{selected, Rows} ->
@@ -94,7 +93,7 @@ find_routes(Domain) ->
 
 get_all_routes() ->
     case ejabberd_sql:sql_query(
-	   ?MYNAME,
+	   ejabberd_config:get_myname(),
 	   ?SQL("select @(domain)s from route where domain <> server_host")) of
 	{selected, Domains} ->
 	    {ok, [Domain || {Domain} <- Domains]};

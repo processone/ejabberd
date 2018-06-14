@@ -34,13 +34,12 @@
          clean/1,
          opt_type/1]).
 
--include("ejabberd.hrl").
 -include("ejabberd_oauth.hrl").
 -include("logger.hrl").
 -include("jid.hrl").
 
 init() ->
-    rest:start(?MYNAME),
+    rest:start(ejabberd_config:get_myname()),
     ok.
 
 store(R) ->
@@ -50,7 +49,7 @@ store(R) ->
     SJID = jid:encode({User, Server, <<"">>}),
     case rest:with_retry(
            post,
-           [?MYNAME, Path, [],
+           [ejabberd_config:get_myname(), Path, [],
             {[{<<"token">>, R#oauth_token.token},
               {<<"user">>, SJID},
               {<<"scope">>, R#oauth_token.scope},
@@ -65,7 +64,7 @@ store(R) ->
 
 lookup(Token) ->
     Path = path(<<"lookup">>),
-    case rest:with_retry(post, [?MYNAME, Path, [],
+    case rest:with_retry(post, [ejabberd_config:get_myname(), Path, [],
                                 {[{<<"token">>, Token}]}],
                          2, 500) of
         {ok, 200, {Data}} ->

@@ -49,7 +49,6 @@
 %% For IQ callbacks
 -export([delete_session/3]).
 
--include("ejabberd.hrl").
 -include("ejabberd_commands.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
@@ -174,7 +173,7 @@ delete_old_sessions(Days) ->
 			      sql -> {sql, Host};
 			      Other -> {Other, global}
 			  end
-		  end, ?MYHOSTS)),
+		  end, ejabberd_config:get_myhosts())),
     Results = lists:map(
 		fun({DBType, Host}) ->
 			Mod = gen_mod:db_mod(DBType, ?MODULE),

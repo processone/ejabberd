@@ -37,7 +37,6 @@
 -export([start/2, handler/2, process/2, socket_type/0,
 	 transform_listen_option/2, listen_opt_type/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
 -include("mod_roster.hrl").

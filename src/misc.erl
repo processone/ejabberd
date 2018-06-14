@@ -33,8 +33,9 @@
 	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
 	 l2i/1, i2l/1, i2l/2, expr_to_term/1, term_to_expr/1,
 	 now_to_usec/1, usec_to_now/1, encode_pid/1, decode_pid/2,
-	 compile_exprs/2, join_atoms/2, try_read_file/1,
-	 css_dir/0, img_dir/0, js_dir/0, read_css/1, read_img/1, read_js/1]).
+	 compile_exprs/2, join_atoms/2, try_read_file/1, get_descr/2,
+	 css_dir/0, img_dir/0, js_dir/0, msgs_dir/0, sql_dir/0,
+	 read_css/1, read_img/1, read_js/1]).
 
 %% Deprecated functions
 -export([decode_base64/1, encode_base64/1]).
@@ -220,36 +221,23 @@ try_read_file(Path) ->
 
 -spec css_dir() -> file:filename().
 css_dir() ->
-    case os:getenv("EJABBERD_CSS_PATH") of
-	false ->
-	    case code:priv_dir(ejabberd) of
-		{error, _} -> filename:join(["priv", "css"]);
-		Path -> filename:join([Path, "css"])
-	    end;
-	Path -> Path
-    end.
+    get_dir("css").
 
 -spec img_dir() -> file:filename().
 img_dir() ->
-    case os:getenv("EJABBERD_IMG_PATH") of
-	false ->
-	    case code:priv_dir(ejabberd) of
-		{error, _} -> filename:join(["priv", "img"]);
-		Path -> filename:join([Path, "img"])
-	    end;
-	Path -> Path
-    end.
+    get_dir("img").
 
 -spec js_dir() -> file:filename().
 js_dir() ->
-    case os:getenv("EJABBERD_JS_PATH") of
-	false ->
-	    case code:priv_dir(ejabberd) of
-		{error, _} -> filename:join(["priv", "js"]);
-		Path -> filename:join([Path, "js"])
-	    end;
-	Path -> Path
-    end.
+    get_dir("js").
+
+-spec msgs_dir() -> file:filename().
+msgs_dir() ->
+    get_dir("msgs").
+
+-spec sql_dir() -> file:filename().
+sql_dir() ->
+    get_dir("sql").
 
 -spec read_css(file:filename()) -> {ok, binary()} | {error, file:posix()}.
 read_css(File) ->
@@ -262,6 +250,12 @@ read_img(File) ->
 -spec read_js(file:filename()) -> {ok, binary()} | {error, file:posix()}.
 read_js(File) ->
     read_file(filename:join(js_dir(), File)).
+
+-spec get_descr(binary(), binary()) -> binary().
+get_descr(Lang, Text) ->
+    Desc = translate:translate(Lang, Text),
+    Copyright = ejabberd_config:get_copyright(),
+    <<Desc/binary, $\n, Copyright/binary>>.
 
 %%%===================================================================
 %%% Internal functions
@@ -303,4 +297,17 @@ read_file(Path) ->
 	    ?ERROR_MSG("Failed to read file ~s: ~s",
 		       [Path, file:format_error(Why)]),
 	    Err
+    end.
+
+-spec get_dir(string()) -> file:filename().
+get_dir(Type) ->
+    Env = "EJABBERD_" ++ string:to_upper(Type) ++ "_PATH",
+    case os:getenv(Env) of
+	false ->
+	    case code:priv_dir(ejabberd) of
+		{error, _} -> filename:join(["priv", Type]);
+		Path -> filename:join([Path, Type])
+	    end;
+	Path ->
+	    Path
     end.

@@ -45,7 +45,6 @@
 	 config_reloaded/0, process_iq/1]).
 
 -include("xmpp.hrl").
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
 
@@ -365,12 +364,12 @@ terminate(_Reason, #state{enabled = Enabled}) ->
 register_handlers() ->
     ejabberd_hooks:add(host_up, ?MODULE, host_up, 50),
     ejabberd_hooks:add(host_down, ?MODULE, host_down, 50),
-    lists:foreach(fun host_up/1, ?MYHOSTS).
+    lists:foreach(fun host_up/1, ejabberd_config:get_myhosts()).
 
 unregister_handlers() ->
     ejabberd_hooks:delete(host_up, ?MODULE, host_up, 50),
     ejabberd_hooks:delete(host_down, ?MODULE, host_down, 50),
-    lists:foreach(fun host_down/1, ?MYHOSTS).
+    lists:foreach(fun host_down/1, ejabberd_config:get_myhosts()).
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
@@ -445,7 +444,7 @@ get_url(Str) ->
 	  <<TransferProt/binary, ":", Host/binary, ":",
 	    PortString/binary, "/captcha/", Str/binary>>;
       _ ->
-	  <<"http://", (?MYNAME)/binary, "/captcha/", Str/binary>>
+	  <<"http://", (ejabberd_config:get_myname())/binary, "/captcha/", Str/binary>>
     end.
 
 get_transfer_protocol(PortString) ->

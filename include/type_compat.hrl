@@ -18,30 +18,18 @@
 %%%
 %%%----------------------------------------------------------------------
 
--define(PRINT(Format, Args), io:format(Format, Args)).
--compile([{parse_transform, lager_transform}]).
+-ifdef(ERL_DEPRECATED_TYPES).
 
--define(DEBUG(Format, Args),
-	lager:debug(Format, Args)).
+-define(TDICT, dict()).
+-define(TGB_TREE, gb_tree()).
+-define(TGB_SET, gb_set()).
+-define(TQUEUE, queue()).
 
--define(INFO_MSG(Format, Args),
-	lager:info(Format, Args)).
+-else.
 
--define(WARNING_MSG(Format, Args),
-	lager:warning(Format, Args)).
+-define(TDICT, dict:dict()).
+-define(TGB_TREE, gb_trees:tree()).
+-define(TGB_SET, gb_sets:set()).
+-define(TQUEUE, queue:queue()).
 
--define(ERROR_MSG(Format, Args),
-	lager:error(Format, Args)).
-
--define(CRITICAL_MSG(Format, Args),
-	lager:critical(Format, Args)).
-
-%% Use only when trying to troubleshoot test problem with ExUnit
--define(EXUNIT_LOG(Format, Args),
-        case lists:keyfind(logger, 1, application:loaded_applications()) of
-            false -> ok;
-            _ -> 'Elixir.Logger':bare_log(error, io_lib:format(Format, Args), [?MODULE])
-        end).
-
-%% Uncomment if you want to debug p1_fsm/gen_fsm
-%%-define(DBGFSM, true).
+-endif.

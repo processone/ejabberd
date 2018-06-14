@@ -38,8 +38,8 @@
 	 plain_password_required/1]).
 -export([passwd_schema/0]).
 
--include("ejabberd.hrl").
 -include("ejabberd_sql_pt.hrl").
+-include("scram.hrl").
 -include("ejabberd_auth.hrl").
 
 start(_Host) ->

@@ -50,7 +50,6 @@
 -define(CALL_TIMEOUT, 60*1000). %% 60 seconds
 
 -include("logger.hrl").
--include("ejabberd.hrl").
 
 -record(state, {connection :: pid() | undefined,
 		num :: pos_integer(),

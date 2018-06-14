@@ -19,7 +19,6 @@
 	 terminate/2, code_change/3]).
 -export([start_link/0, opt_type/1, register_certfiles/0]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("ejabberd_commands.hrl").

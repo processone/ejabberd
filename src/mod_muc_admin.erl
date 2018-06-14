@@ -42,7 +42,6 @@
 	 subscribe_room/4, unsubscribe_room/2, get_subscribers/2,
 	 web_page_host/3, mod_options/1, get_commands_spec/0]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("mod_muc.hrl").
@@ -388,7 +387,7 @@ get_user_rooms(User, Server) ->
 		  false ->
 		      []
 	      end
-      end, ?MYHOSTS).
+      end, ejabberd_config:get_myhosts()).
 
 %%----------------------------
 %% Ad-hoc commands
@@ -710,9 +709,9 @@ create_rooms_file(Filename) ->
     Rooms = read_rooms(F, RJID, []),
     file:close(F),
     %% Read the default room options defined for the first virtual host
-    DefRoomOpts = gen_mod:get_module_opt(?MYNAME, mod_muc,
+    DefRoomOpts = gen_mod:get_module_opt(ejabberd_config:get_myname(), mod_muc,
 					 default_room_options),
-    [muc_create_room(?MYNAME, A, DefRoomOpts) || A <- Rooms],
+    [muc_create_room(ejabberd_config:get_myname(), A, DefRoomOpts) || A <- Rooms],
 	ok.
 
 
@@ -814,7 +813,7 @@ seconds_to_days(S) ->
 %% Act
 
 act_on_rooms(Action, Rooms, ServerHost) ->
-    ServerHosts = [ {A, find_host(A)} || A <- ?MYHOSTS ],
+    ServerHosts = [ {A, find_host(A)} || A <- ejabberd_config:get_myhosts() ],
     Delete = fun({_N, H, _Pid} = Room) ->
 		     SH = case ServerHost of
 			      global -> find_serverhost(H, ServerHosts);
@@ -1236,7 +1235,7 @@ find_hosts(Global) when Global == global;
 		  false ->
 		      []
 	      end
-      end, ?MYHOSTS);
+      end, ejabberd_config:get_myhosts());
 find_hosts(ServerHost) when is_list(ServerHost) ->
     find_hosts(list_to_binary(ServerHost));
 find_hosts(ServerHost) ->

@@ -14,7 +14,6 @@
 %% 3. tls-sni-01: https://tools.ietf.org/html/draft-ietf-acme-acme-05#section-7.4
 %% 4. (?) oob-01:  https://tools.ietf.org/html/draft-ietf-acme-acme-05#section-7.5
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("ejabberd_http.hrl").

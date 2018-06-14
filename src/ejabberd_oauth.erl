@@ -54,7 +54,6 @@
 
 -include("xmpp.hrl").
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -include("ejabberd_http.hrl").

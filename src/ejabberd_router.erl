@@ -68,7 +68,6 @@
 %% This value is used in SIP and Megaco for a transaction lifetime.
 -define(IQ_TIMEOUT, 32000).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("ejabberd_router.hrl").
 -include("xmpp.hrl").

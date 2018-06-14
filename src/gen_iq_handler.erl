@@ -37,7 +37,6 @@
 -export([add_iq_handler/6, handle/5, iqdisc/1]).
 -deprecated([{add_iq_handler, 6}, {handle, 5}, {iqdisc, 1}]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 

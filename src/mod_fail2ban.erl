@@ -37,7 +37,6 @@
 	 mod_opt_type/1, mod_options/1, depends/2]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 

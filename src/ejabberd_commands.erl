@@ -240,7 +240,6 @@
 	 terminate/2, code_change/3]).
 
 -include("ejabberd_commands.hrl").
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 

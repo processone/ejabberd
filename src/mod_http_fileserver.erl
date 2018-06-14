@@ -45,7 +45,6 @@
 
 -export([reopen_log/0, mod_opt_type/1, mod_options/1, depends/2]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
 -include_lib("kernel/include/file.hrl").
@@ -277,7 +276,7 @@ process(LocalPath, #request{host = Host, auth = Auth, headers = RHeaders} = Requ
 		   "but couldn't find the related "
 		   "ejabberd virtual host", [Host]),
 	    {FileSize1, Code1, Headers1, Contents1} = ?HTTP_ERR_HOST_UNKNOWN,
-	    add_to_log(FileSize1, Code1, Request#request{host = ?MYNAME}),
+	    add_to_log(FileSize1, Code1, Request#request{host = ejabberd_config:get_myname()}),
 	    {Code1, Headers1, Contents1}
     end.
 
@@ -383,7 +382,7 @@ reopen_log() ->
     lists:foreach(
       fun(Host) ->
 	      gen_server:cast(get_proc_name(Host), reopen_log)
-      end, ?MYHOSTS).
+      end, ejabberd_config:get_myhosts()).
 
 add_to_log(FileSize, Code, Request) ->
     gen_server:cast(get_proc_name(Request#request.host),

@@ -43,7 +43,6 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("jid.hrl").
 
@@ -195,7 +194,7 @@ add_access(Host, Access, Rules) ->
 -spec load_from_config() -> ok.
 
 load_from_config() ->
-    Hosts = [global|?MYHOSTS],
+    Hosts = [global|ejabberd_config:get_myhosts()],
     lists:foreach(
       fun(Host) ->
               ACLs = ejabberd_config:get_option(
@@ -453,7 +452,7 @@ acl_rule_matches({ip, {Net, Mask}}, #{ip := IP}, _Host) ->
 acl_rule_matches({user, {U, S}}, #{usr := {U, S, _}}, _Host) ->
     true;
 acl_rule_matches({user, U}, #{usr := {U, S, _}}, _Host) ->
-    lists:member(S, ?MYHOSTS);
+    lists:member(S, ejabberd_config:get_myhosts());
 acl_rule_matches({server, S}, #{usr := {_, S, _}}, _Host) ->
     true;
 acl_rule_matches({resource, R}, #{usr := {_, _, R}}, _Host) ->
@@ -467,7 +466,7 @@ acl_rule_matches({shared_group, G}, #{usr := {U, S, _}}, Host) ->
 acl_rule_matches({user_regexp, {UR, S}}, #{usr := {U, S, _}}, _Host) ->
     is_regexp_match(U, UR);
 acl_rule_matches({user_regexp, UR}, #{usr := {U, S, _}}, _Host) ->
-    lists:member(S, ?MYHOSTS) andalso is_regexp_match(U, UR);
+    lists:member(S, ejabberd_config:get_myhosts()) andalso is_regexp_match(U, UR);
 acl_rule_matches({server_regexp, SR}, #{usr := {_, S, _}}, _Host) ->
     is_regexp_match(S, SR);
 acl_rule_matches({resource_regexp, RR}, #{usr := {_, _, R}}, _Host) ->
@@ -477,7 +476,7 @@ acl_rule_matches({node_regexp, {UR, SR}}, #{usr := {U, S, _}}, _Host) ->
 acl_rule_matches({user_glob, {UR, S}}, #{usr := {U, S, _}}, _Host) ->
     is_glob_match(U, UR);
 acl_rule_matches({user_glob, UR}, #{usr := {U, S, _}}, _Host) ->
-    lists:member(S, ?MYHOSTS) andalso is_glob_match(U, UR);
+    lists:member(S, ejabberd_config:get_myhosts()) andalso is_glob_match(U, UR);
 acl_rule_matches({server_glob, SR}, #{usr := {_, S, _}}, _Host) ->
     is_glob_match(S, SR);
 acl_rule_matches({resource_glob, RR}, #{usr := {_, _, R}}, _Host) ->

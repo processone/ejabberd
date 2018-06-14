@@ -37,7 +37,6 @@
 	 process_disco_items/1, process_vcard/1, process_bytestreams/1,
 	 transform_module_options/1, delete_listener/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("translate.hrl").
@@ -156,11 +155,10 @@ process_vcard(#iq{type = set, lang = Lang} = IQ) ->
     Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_vcard(#iq{type = get, lang = Lang} = IQ) ->
-    Desc = translate:translate(Lang, <<"ejabberd SOCKS5 Bytestreams module">>),
     xmpp:make_iq_result(
       IQ, #vcard_temp{fn = <<"ejabberd/mod_proxy65">>,
-		      url = ?EJABBERD_URI,
-		      desc = <<Desc/binary, $\n, ?COPYRIGHT>>}).
+		      url = ejabberd_config:get_uri(),
+		      desc = misc:get_descr(Lang, <<"ejabberd SOCKS5 Bytestreams module">>)}).
 
 -spec process_bytestreams(iq()) -> iq().
 process_bytestreams(#iq{type = get, from = JID, to = To, lang = Lang} = IQ) ->

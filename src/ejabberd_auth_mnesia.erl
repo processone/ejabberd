@@ -38,8 +38,8 @@
 	 plain_password_required/1, use_cache/1]).
 -export([need_transform/1, transform/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
+-include("scram.hrl").
 -include("ejabberd_auth.hrl").
 
 -record(reg_users_counter, {vhost = <<"">> :: binary(),

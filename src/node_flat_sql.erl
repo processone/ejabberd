@@ -767,7 +767,7 @@ get_item(Nidx, ItemId) ->
 	{selected, []} ->
 	    {error, xmpp:err_item_not_found()};
 	{'EXIT', _} ->
-	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ?MYLANG)}
+	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ejabberd_config:get_mylang())}
     end.
 
 get_item(Nidx, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId) ->

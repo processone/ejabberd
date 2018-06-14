@@ -41,7 +41,6 @@
 	 handle_info/2, terminate/2, code_change/3,
 	 mod_opt_type/1, mod_options/1, depends/2]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("mod_irc.hrl").
@@ -437,10 +436,9 @@ iq_disco(ServerHost, Node, Lang) ->
     end.
 
 iq_get_vcard(Lang) ->
-    Desc = translate:translate(Lang, <<"ejabberd IRC module">>),
     #vcard_temp{fn = <<"ejabberd/mod_irc">>,
-		url = ?EJABBERD_URI,
-		desc = <<Desc/binary, $\n, ?COPYRIGHT>>}.
+		url = ejabberd_config:get_uri(),
+		desc = misc:get_descr(Lang, <<"ejabberd IRC module">>)}.
 
 command_items(ServerHost, Host, Lang) ->
     lists:map(fun({Node, Name, _Function}) ->

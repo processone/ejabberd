@@ -33,7 +33,6 @@
 -export([need_transform/1, transform/1]).
 -export([mod_opt_type/1, mod_options/1]).
 
--include("ejabberd.hrl").
 -include("xmpp.hrl").
 -include("mod_vcard.hrl").
 -include("logger.hrl").
@@ -235,9 +234,9 @@ make_val(Val) ->
 
 find_my_host(LServer) ->
     Parts = str:tokens(LServer, <<".">>),
-    find_my_host(Parts, ?MYHOSTS).
+    find_my_host(Parts, ejabberd_config:get_myhosts()).
 
-find_my_host([], _Hosts) -> ?MYNAME;
+find_my_host([], _Hosts) -> ejabberd_config:get_myname();
 find_my_host([_ | Tail] = Parts, Hosts) ->
     Domain = parts_to_string(Parts),
     case lists:member(Domain, Hosts) of

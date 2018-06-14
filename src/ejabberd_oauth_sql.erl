@@ -34,7 +34,6 @@
          clean/1]).
 
 -include("ejabberd_oauth.hrl").
--include("ejabberd.hrl").
 -include("ejabberd_sql_pt.hrl").
 -include("jid.hrl").
 -include("logger.hrl").
@@ -49,7 +48,7 @@ store(R) ->
     Scope = str:join(R#oauth_token.scope, <<" ">>),
     Expire = R#oauth_token.expire,
     case ?SQL_UPSERT(
-	    ?MYNAME,
+	    ejabberd_config:get_myname(),
 	    "oauth_token",
 	    ["!token=%(Token)s",
 	     "jid=%(SJID)s",
@@ -63,7 +62,7 @@ store(R) ->
 
 lookup(Token) ->
     case ejabberd_sql:sql_query(
-           ?MYNAME,
+           ejabberd_config:get_myname(),
            ?SQL("select @(jid)s, @(scope)s, @(expire)d"
                 " from oauth_token where token=%(Token)s")) of
         {selected, [{SJID, Scope, Expire}]} ->
@@ -79,6 +78,6 @@ lookup(Token) ->
 
 clean(TS) ->
     ejabberd_sql:sql_query(
-      ?MYNAME,
+      ejabberd_config:get_myname(),
       ?SQL("delete from oauth_token where expire < %(TS)d")).
 

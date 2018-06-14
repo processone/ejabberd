@@ -36,7 +36,6 @@
 	 get_sessions/1,
 	 get_sessions/2]).
 
--include("ejabberd.hrl").
 -include("ejabberd_sm.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").

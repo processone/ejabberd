@@ -35,7 +35,6 @@
 -export([start/2, stop/1, reload/3, process_local_iq/1,
 	 mod_options/1, depends/2]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -include("xmpp.hrl").

@@ -38,7 +38,6 @@
 
 -export([depends/2, mod_opt_type/1, mod_options/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("xmpp.hrl").

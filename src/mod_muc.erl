@@ -71,7 +71,6 @@
 	 handle_info/2, terminate/2, code_change/3,
 	 mod_opt_type/1, mod_options/1, depends/2]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("mod_muc.hrl").
@@ -463,11 +462,10 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 
 -spec process_vcard(iq()) -> iq().
 process_vcard(#iq{type = get, lang = Lang, sub_els = [#vcard_temp{}]} = IQ) ->
-    Desc = translate:translate(Lang, <<"ejabberd MUC module">>),
     xmpp:make_iq_result(
       IQ, #vcard_temp{fn = <<"ejabberd/mod_muc">>,
-		      url = ?EJABBERD_URI,
-		      desc = <<Desc/binary, $\n, ?COPYRIGHT>>});
+		      url = ejabberd_config:get_uri(),
+		      desc = misc:get_descr(Lang, <<"ejabberd MUC module">>)});
 process_vcard(#iq{type = set, lang = Lang} = IQ) ->
     Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
@@ -1016,7 +1014,7 @@ mod_options(Host) ->
        {allow_visitor_status,true},
        {anonymous,true},
        {captcha_protected,false},
-       {lang, ?MYLANG},
+       {lang, ejabberd_config:get_mylang()},
        {logging,false},
        {members_by_default,true},
        {members_only,false},

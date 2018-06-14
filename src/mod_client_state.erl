@@ -40,7 +40,6 @@
 	 c2s_authenticated_packet/2, csi_activity/2,
 	 c2s_copy_session/2, c2s_session_resumed/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 

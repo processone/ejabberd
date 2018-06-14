@@ -44,7 +44,6 @@
 	 out_subscription/1, mod_opt_type/1, mod_options/1,
 	 opt_type/1, depends/2, transform_module_options/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("mod_roster.hrl").

@@ -32,7 +32,6 @@
 -export([start/1, stop/0, mech_new/4, mech_step/2,
 	 parse/1, format_error/1, opt_type/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -behaviour(cyrsasl).

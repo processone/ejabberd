@@ -18,55 +18,11 @@
 %%%
 %%%----------------------------------------------------------------------
 
--ifndef(EJABBERD_HRL).
--define(EJABBERD_HRL, true).
-
--define(VERSION, ejabberd_config:get_version()).
-
--define(MYHOSTS, ejabberd_config:get_myhosts()).
-
--define(MYNAME, hd(ejabberd_config:get_myhosts())).
-
--define(MYLANG, ejabberd_config:get_mylang()).
-
--define(MSGS_DIR, filename:join(["priv", "msgs"])).
-
--define(SQL_DIR, filename:join(["priv", "sql"])).
-
--define(CONFIG_PATH, <<"ejabberd.yml">>).
-
--define(LOG_PATH, "ejabberd.log").
-
--define(EJABBERD_URI, <<"http://www.process-one.net/en/ejabberd/">>).
-
--define(COPYRIGHT, "Copyright (c) ProcessOne").
-
-%%-define(DBGFSM, true).
-
--record(scram,
-	{storedkey = <<"">>,
-         serverkey = <<"">>,
-         salt = <<"">>,
-         iterationcount = 0 :: integer()}).
+-record(scram, {storedkey = <<"">> :: binary(),
+		serverkey = <<"">> :: binary(),
+		salt = <<"">>      :: binary(),
+		iterationcount = 0 :: integer()}).
 
 -type scram() :: #scram{}.
 
 -define(SCRAM_DEFAULT_ITERATION_COUNT, 4096).
-
--ifdef(ERL_DEPRECATED_TYPES).
-
--define(TDICT, dict()).
--define(TGB_TREE, gb_tree()).
--define(TGB_SET, gb_set()).
--define(TQUEUE, queue()).
-
--else.
-
--define(TDICT, dict:dict()).
--define(TGB_TREE, gb_trees:tree()).
--define(TGB_SET, gb_sets:set()).
--define(TQUEUE, queue:queue()).
-
--endif.
-
--endif.

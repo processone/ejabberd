@@ -27,7 +27,7 @@
 %% API
 -export([from_dir/1]).
 
--include("ejabberd.hrl").
+-include("scram.hrl").
 -include("xmpp.hrl").
 -include("logger.hrl").
 -include("mod_roster.hrl").
@@ -196,7 +196,7 @@ convert_data(_Host, "config", _User, [Data]) ->
     RoomCfg = convert_room_config(Data),
     case proplists:get_bool(<<"persistent">>, Config) of
 	true when RoomJID /= error ->
-	    mod_muc:store_room(?MYNAME, RoomJID#jid.lserver,
+	    mod_muc:store_room(ejabberd_config:get_myname(), RoomJID#jid.lserver,
 			       RoomJID#jid.luser, RoomCfg);
 	_ ->
 	    ok

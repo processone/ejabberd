@@ -46,7 +46,6 @@ start(_, _) ->
 -export([tcp_init/2, udp_init/2, udp_recv/5, start/2,
 	 socket_type/0, listen_opt_type/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 %%%===================================================================
@@ -79,7 +78,7 @@ prepare_turn_opts(Opts) ->
 prepare_turn_opts(Opts, _UseTurn = false) ->
     set_certfile(Opts);
 prepare_turn_opts(Opts, _UseTurn = true) ->
-    NumberOfMyHosts = length(?MYHOSTS),
+    NumberOfMyHosts = length(ejabberd_config:get_myhosts()),
     case proplists:get_value(turn_ip, Opts) of
 	undefined ->
 	    ?WARNING_MSG("option 'turn_ip' is undefined, "
@@ -100,11 +99,11 @@ prepare_turn_opts(Opts, _UseTurn = true) ->
 					 "'auth_type' is set to 'user', "
 					 "more likely the TURN relay won't "
 					 "be working properly. Using ~s as "
-					 "a fallback", [?MYNAME]);
+					 "a fallback", [ejabberd_config:get_myname()]);
 		       true ->
 			    ok
 		    end,
-		    [{auth_realm, ?MYNAME}];
+		    [{auth_realm, ejabberd_config:get_myname()}];
 		_ ->
 		    []
 	    end,
@@ -118,7 +117,7 @@ set_certfile(Opts) ->
 	true ->
 	    Opts;
 	false ->
-	    Realm = proplists:get_value(auth_realm, Opts, ?MYNAME),
+	    Realm = proplists:get_value(auth_realm, Opts, ejabberd_config:get_myname()),
 	    case ejabberd_pkix:get_certfile(Realm) of
 		{ok, CertFile} ->
 		    [{certfile, CertFile}|Opts];

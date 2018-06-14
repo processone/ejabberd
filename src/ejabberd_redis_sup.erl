@@ -32,7 +32,6 @@
 %% Supervisor callbacks
 -export([init/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -define(DEFAULT_POOL_SIZE, 10).
@@ -98,7 +97,7 @@ init([]) ->
 %%% Internal functions
 %%%===================================================================
 is_redis_configured() ->
-    lists:any(fun is_redis_configured/1, ?MYHOSTS).
+    lists:any(fun is_redis_configured/1, ejabberd_config:get_myhosts()).
 
 is_redis_configured(Host) ->
     ServerConfigured = ejabberd_config:has_option({redis_server, Host}),

@@ -40,7 +40,6 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3, start_link/0]).
 
--include("ejabberd.hrl").
 -include("ejabberd_sm.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 

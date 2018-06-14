@@ -65,7 +65,7 @@
 
 -behaviour(p1_fsm).
 
--include("ejabberd.hrl").
+-include("type_compat.hrl").
 -include("logger.hrl").
 
 %% External exports

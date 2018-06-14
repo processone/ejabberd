@@ -42,7 +42,6 @@
 
 -export([purge_loop/1, mod_opt_type/1, mod_options/1, depends/2]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("translate.hrl").
 -include("xmpp.hrl").
@@ -254,10 +253,9 @@ iq_disco_info(From, Lang, State) ->
        xdata = iq_disco_info_extras(From, State)}.
 
 iq_vcard(Lang) ->
-    Desc = translate:translate(Lang, <<"ejabberd Multicast service">>),
     #vcard_temp{fn = <<"ejabberd/mod_multicast">>,
-		url = ?EJABBERD_URI,
-		desc = <<Desc/binary, $\n, ?COPYRIGHT>>}.
+		url = ejabberd_config:get_uri(),
+		desc = misc:get_descr(Lang, <<"ejabberd Multicast service">>)}.
 
 %%%-------------------------
 %%% Route
@@ -1034,7 +1032,7 @@ iq_disco_info_extras(From, State) ->
     end.
 
 sender_type(From) ->
-    Local_hosts = (?MYHOSTS),
+    Local_hosts = ejabberd_config:get_myhosts(),
     case lists:member(From#jid.lserver, Local_hosts) of
       true -> local;
       false -> remote

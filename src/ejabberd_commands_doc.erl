@@ -30,7 +30,6 @@
 -export([generate_md_output/3]).
 
 -include("ejabberd_commands.hrl").
--include("ejabberd.hrl").
 
 -define(RAW(V), if HTMLOutput -> fxml:crypt(iolist_to_binary(V)); true -> iolist_to_binary(V) end).
 -define(TAG(N), if HTMLOutput -> [<<"<", ??N, "/>">>]; true -> md_tag(N, <<"">>) end).

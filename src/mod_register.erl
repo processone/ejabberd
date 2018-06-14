@@ -39,7 +39,6 @@
 	 transform_options/1, transform_module_options/1,
 	 mod_opt_type/1, mod_options/1, opt_type/1, depends/2]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 

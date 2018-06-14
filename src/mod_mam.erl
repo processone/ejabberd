@@ -520,7 +520,7 @@ delete_old_messages(TypeBin, Days) when TypeBin == <<"chat">>;
 			      sql -> {sql, Host};
 			      Other -> {Other, global}
 			  end
-		  end, ?MYHOSTS)),
+		  end, ejabberd_config:get_myhosts())),
     Results = lists:map(
 		fun({DBType, ServerHost}) ->
 			Mod = gen_mod:db_mod(DBType, ?MODULE),

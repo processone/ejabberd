@@ -67,7 +67,6 @@
 
 -deprecated({get_queue_length,2}).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -include("xmpp.hrl").

@@ -39,7 +39,7 @@
 	 handle_sync_event/4, handle_info/3, terminate/3,
 	 code_change/4]).
 
--include("ejabberd.hrl").
+-include("type_compat.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 
@@ -645,7 +645,7 @@ terminate(_Reason, _StateName, FullStateData) ->
 			   {error, SError, SStateData} -> {SError, SStateData};
 			   _ ->
 			       {xmpp:err_internal_server_error(
-				  <<"Server Connect Failed">>, ?MYLANG),
+				  <<"Server Connect Failed">>, ejabberd_config:get_mylang()),
 				FullStateData}
 			 end,
     (StateData#state.mod):closed_connection(StateData#state.host,
@@ -804,7 +804,7 @@ error_nick_in_use(_StateData, String) ->
     Msg = ejabberd_regexp:replace(String,
 				  <<".*433 +[^ ]* +">>, <<"">>),
     Msg1 = filter_message(Msg),
-    xmpp:err_conflict(Msg1, ?MYLANG).
+    xmpp:err_conflict(Msg1, ejabberd_config:get_mylang()).
 
 process_nick_in_use(StateData, String) ->
     Error = error_nick_in_use(StateData, String),
@@ -950,7 +950,7 @@ process_version(StateData, _Nick, From) ->
     send_text(StateData,
 	      io_lib:format("NOTICE ~s :\001VERSION ejabberd IRC "
 			    "transport ~s (c) Alexey Shchepin\001\r\n",
-			    [FromUser, ?VERSION])
+			    [FromUser, ejabberd_config:get_version()])
 		++
 		io_lib:format("NOTICE ~s :\001VERSION http://ejabberd.jabber"
 			      "studio.org/\001\r\n",
@@ -1128,14 +1128,14 @@ process_error(StateData, String) ->
 				   StateData#state.nick),
 		   to = StateData#state.user,
 		   type = error,
-		   sub_els = [xmpp:err_internal_server_error(String, ?MYLANG)]})
+		   sub_els = [xmpp:err_internal_server_error(String, ejabberd_config:get_mylang())]})
       end, dict:fetch_keys(StateData#state.channels)).
 
 error_unknown_num(_StateData, String, Type) ->
     Msg = ejabberd_regexp:replace(String,
 				  <<".*[45][0-9][0-9] +[^ ]* +">>, <<"">>),
     Msg1 = filter_message(Msg),
-    xmpp:err_undefined_condition(Type, Msg1, ?MYLANG).
+    xmpp:err_undefined_condition(Type, Msg1, ejabberd_config:get_mylang()).
 
 remove_element(E, Set) ->
     case (?SETS):is_element(E, Set) of

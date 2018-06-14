@@ -28,7 +28,8 @@
 
 -export([start/0, load_file/1, reload_file/0, read_file/1,
 	 get_option/1, get_option/2, add_option/2, has_option/1,
-	 get_version/0, get_myhosts/0, get_mylang/0, get_lang/1,
+	 get_version/0, get_myhosts/0, get_myname/0,
+	 get_mylang/0, get_lang/1, get_uri/0, get_copyright/0,
 	 get_ejabberd_config_path/0, is_using_elixir_config/0,
 	 prepare_opt_val/4, transform_options/1, collect_options/1,
 	 convert_to_yaml/1, convert_to_yaml/2, v_db/2,
@@ -53,7 +54,6 @@
 	     {get_global_option, 3}, {get_local_option, 3},
 	     {get_option, 3}, {is_file_readable, 1}]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("ejabberd_config.hrl").
 -include_lib("kernel/include/file.hrl").
@@ -136,7 +136,7 @@ get_ejabberd_config_path() ->
 	undefined ->
 	    case os:getenv("EJABBERD_CONFIG_PATH") of
 		false ->
-		    ?CONFIG_PATH;
+		    "ejabberd.yml";
 		Path ->
 		    Path
 	    end
@@ -1087,6 +1087,11 @@ get_version() ->
 get_myhosts() ->
     get_option(hosts).
 
+-spec get_myname() -> binary().
+
+get_myname() ->
+    hd(get_myhosts()).
+
 -spec get_mylang() -> binary().
 
 get_mylang() ->
@@ -1095,6 +1100,14 @@ get_mylang() ->
 -spec get_lang(global | binary()) -> binary().
 get_lang(Host) ->
     get_option({language, Host}, <<"en">>).
+
+-spec get_uri() -> binary().
+get_uri() ->
+    <<"http://www.process-one.net/en/ejabberd/">>.
+
+-spec get_copyright() -> binary().
+get_copyright() ->
+    <<"Copyright (c) ProcessOne">>.
 
 replace_module(mod_announce_odbc) -> {mod_announce, sql};
 replace_module(mod_blocking_odbc) -> {mod_blocking, sql};

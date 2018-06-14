@@ -39,7 +39,6 @@
 -protocol({xep, 163, '1.2'}).
 -protocol({xep, 248, '0.2'}).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("pubsub.hrl").
@@ -1079,10 +1078,10 @@ iq_sm(#iq{to = To, sub_els = [SubEl]} = IQ) ->
 
 -spec iq_get_vcard(binary()) -> vcard_temp().
 iq_get_vcard(Lang) ->
-    Desc = translate:translate(Lang, <<"ejabberd Publish-Subscribe module">>),
+    Desc = misc:get_descr(Lang, <<"ejabberd Publish-Subscribe module">>),
     #vcard_temp{fn = <<"ejabberd/mod_pubsub">>,
-		url = ?EJABBERD_URI,
-		desc = <<Desc/binary, $\n, ?COPYRIGHT>>}.
+		url = ejabberd_config:get_uri(),
+		desc = Desc}.
 
 -spec iq_pubsub(binary() | ljid(), atom(), iq()) ->
 		       {result, pubsub()} | {error, stanza_error()}.
@@ -1439,7 +1438,7 @@ update_auth(Host, Node, Type, Nidx, Subscriber, Allow, Subs) ->
 	    {result, ok};
 	_ ->
 	    Txt = <<"No pending subscriptions found">>,
-	    {error, xmpp:err_unexpected_request(Txt, ?MYLANG)}
+	    {error, xmpp:err_unexpected_request(Txt, ejabberd_config:get_mylang())}
     end.
 
 %% @doc <p>Create new pubsub nodes</p>
@@ -1519,7 +1518,7 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 			end;
 		    _ ->
 			Txt = <<"You're not allowed to create nodes">>,
-			{error, xmpp:err_forbidden(Txt, ?MYLANG)}
+			{error, xmpp:err_forbidden(Txt, ejabberd_config:get_mylang())}
 		end
 	end,
     Reply = #pubsub{create = Node},
@@ -1555,7 +1554,7 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 %%</ul>
 -spec delete_node(host(), binary(), jid()) -> {result, pubsub_owner()} | {error, stanza_error()}.
 delete_node(_Host, <<>>, _Owner) ->
-    {error, xmpp:err_not_allowed(<<"No node specified">>, ?MYLANG)};
+    {error, xmpp:err_not_allowed(<<"No node specified">>, ejabberd_config:get_mylang())};
 delete_node(Host, Node, Owner) ->
     Action = fun (#pubsub_node{type = Type, id = Nidx}) ->
 	    case node_call(Host, Type, get_affiliation, [Nidx, Owner]) of
@@ -1567,7 +1566,7 @@ delete_node(Host, Node, Owner) ->
 			Error -> Error
 		    end;
 		_ ->
-		    {error, xmpp:err_forbidden(<<"Owner privileges required">>, ?MYLANG)}
+		    {error, xmpp:err_forbidden(<<"Owner privileges required">>, ejabberd_config:get_mylang())}
 	    end
     end,
     Reply = undefined,
@@ -1860,7 +1859,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, PubOpts, Access
 		    end;
 		false ->
 		    Txt = <<"Automatic node creation is not enabled">>,
-		    {error, xmpp:err_item_not_found(Txt, ?MYLANG)}
+		    {error, xmpp:err_item_not_found(Txt, ejabberd_config:get_mylang())}
 	    end;
 	Error ->
 	    Error
@@ -2141,7 +2140,7 @@ get_affiliations(Host, Node, JID) ->
 			{error, extended_error(xmpp:err_feature_not_implemented(),
 					       err_unsupported('modify-affiliations'))};
 		   Affiliation /= owner ->
-			{error, xmpp:err_forbidden(<<"Owner privileges required">>, ?MYLANG)};
+			{error, xmpp:err_forbidden(<<"Owner privileges required">>, ejabberd_config:get_mylang())};
 		   true ->
 			node_call(Host, Type, get_node_affiliations, [Nidx])
 		end
@@ -2207,7 +2206,7 @@ set_affiliations(Host, Node, From, Affs) ->
 			{result, undefined};
 		    _ ->
 			{error, xmpp:err_forbidden(
-				  <<"Owner privileges required">>, ?MYLANG)}
+				  <<"Owner privileges required">>, ejabberd_config:get_mylang())}
 		end
 	end,
     case transaction(Host, Node, Action, sync_dirty) of
@@ -2402,7 +2401,7 @@ get_subscriptions(Host, Node, JID) ->
 		    {error, extended_error(xmpp:err_feature_not_implemented(),
 					   err_unsupported('manage-subscriptions'))};
 		Affiliation /= owner ->
-		    {error, xmpp:err_forbidden(<<"Owner privileges required">>, ?MYLANG)};
+		    {error, xmpp:err_forbidden(<<"Owner privileges required">>, ejabberd_config:get_mylang())};
 		true ->
 		    node_call(Host, Type, get_node_subscriptions, [Nidx])
 	    end
@@ -2483,7 +2482,7 @@ set_subscriptions(Host, Node, From, Entities) ->
 			end;
 		    _ ->
 			{error, xmpp:err_forbidden(
-				  <<"Owner privileges required">>, ?MYLANG)}
+				  <<"Owner privileges required">>, ejabberd_config:get_mylang())}
 			    
 		end
 	end,
@@ -3550,7 +3549,7 @@ tree_action(Host, Function, Args) ->
 		{aborted, Reason} ->
 		    ?ERROR_MSG("transaction return internal error: ~p~n", [{aborted, Reason}]),
 		    ErrTxt = <<"Database failure">>,
-		    {error, xmpp:err_internal_server_error(ErrTxt, ?MYLANG)}
+		    {error, xmpp:err_internal_server_error(ErrTxt, ejabberd_config:get_mylang())}
 	    end;
 	_ ->
 	    Fun()
@@ -3628,10 +3627,10 @@ do_transaction(ServerHost, Fun, Trans, DBType) ->
 	    {error, Error};
 	{aborted, Reason} ->
 	    ?ERROR_MSG("transaction return internal error: ~p~n", [{aborted, Reason}]),
-	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ?MYLANG)};
+	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ejabberd_config:get_mylang())};
 	Other ->
 	    ?ERROR_MSG("transaction return internal error: ~p~n", [Other]),
-	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ?MYLANG)}
+	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ejabberd_config:get_mylang())}
     end.
 
 %%%% helpers

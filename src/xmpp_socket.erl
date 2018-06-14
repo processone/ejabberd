@@ -53,7 +53,6 @@
 	 pp/1,
 	 sockname/1, peername/1]).
 
--include("ejabberd.hrl").
 -include("xmpp.hrl").
 -include("logger.hrl").
 

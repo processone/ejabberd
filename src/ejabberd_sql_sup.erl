@@ -33,7 +33,6 @@
 	 get_pids/1, get_random_pid/1, transform_options/1,
 	 opt_type/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -define(PGSQL_PORT, 5432).
@@ -172,12 +171,7 @@ check_sqlite_db(Host) ->
     end.
 
 create_sqlite_tables(DB) ->
-    SqlDir = case code:priv_dir(ejabberd) of
-                 {error, _} ->
-                     ?SQL_DIR;
-                 PrivDir ->
-                     filename:join(PrivDir, "sql")
-             end,
+    SqlDir = misc:sql_dir(),
     File = filename:join(SqlDir, "lite.sql"),
     case file:open(File, [read, binary]) of
         {ok, Fd} ->

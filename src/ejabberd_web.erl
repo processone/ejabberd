@@ -31,7 +31,6 @@
 %% External exports
 -export([make_xhtml/1, make_xhtml/2, error/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -include("xmpp.hrl").

@@ -37,7 +37,6 @@
 	 remove_user/2, mod_opt_type/1, mod_options/1,
 	 register_user/2, depends/2, privacy_check_packet/4]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -include("xmpp.hrl").

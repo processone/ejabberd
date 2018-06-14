@@ -44,13 +44,10 @@
 	 handle_sync_event/4, handle_info/3, terminate/3,
 	 code_change/4]).
 
--include("ejabberd.hrl").
+-include("type_compat.hrl").
 -include("logger.hrl").
-
 -include("xmpp.hrl").
-
 -include("ejabberd_http.hrl").
-
 -include("bosh.hrl").
 
 %%-define(DBGFSM, true).

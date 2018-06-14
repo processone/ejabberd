@@ -30,7 +30,6 @@
 -export([start/0, restart/0, reopen_log/0, rotate_log/0, get/0, set/1,
 	 get_log_path/0, opt_type/1]).
 
--include("ejabberd.hrl").
 
 -type loglevel() :: 0 | 1 | 2 | 3 | 4 | 5.
 
@@ -59,7 +58,7 @@ get_log_path() ->
 	undefined ->
 	    case os:getenv("EJABBERD_LOG_PATH") of
 		false ->
-		    ?LOG_PATH;
+		    "ejabberd.log";
 		Path ->
 		    Path
 	    end

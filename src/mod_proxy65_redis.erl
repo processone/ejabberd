@@ -26,7 +26,6 @@
 %% API
 -export([init/0, register_stream/2, unregister_stream/1, activate_stream/4]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -record(proxy65, {pid_t :: pid(),

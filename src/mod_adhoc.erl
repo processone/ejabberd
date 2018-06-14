@@ -38,7 +38,6 @@
 	 ping_item/4, ping_command/4, mod_opt_type/1, depends/2,
 	 mod_options/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 

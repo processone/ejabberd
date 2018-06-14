@@ -31,7 +31,6 @@
 -export([start_link/7, bind/3, search/2,
 	 modify_passwd/3]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 %%====================================================================

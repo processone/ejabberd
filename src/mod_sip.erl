@@ -51,7 +51,6 @@ mod_options(_) ->
 	 message_out/2, request/2, request/3, response/2,
 	 locate/1, mod_opt_type/1, mod_options/1, depends/2]).
 
--include("ejabberd.hrl").
 -include_lib("esip/include/esip.hrl").
 
 %%%===================================================================
@@ -61,7 +60,8 @@ start(_Host, _Opts) ->
     ejabberd:start_app(esip),
     esip:set_config_value(max_server_transactions, 10000),
     esip:set_config_value(max_client_transactions, 10000),
-    esip:set_config_value(software, <<"ejabberd ", (?VERSION)/binary>>),
+    esip:set_config_value(
+      software, <<"ejabberd ", (ejabberd_config:get_version())/binary>>),
     esip:set_config_value(module, ?MODULE),
     Spec = {mod_sip_registrar, {mod_sip_registrar, start_link, []},
 	    transient, 2000, worker, [mod_sip_registrar]},

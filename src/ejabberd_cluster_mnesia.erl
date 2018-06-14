@@ -31,7 +31,6 @@
 	 get_known_nodes/0, node_id/0, get_node_by_id/1,
 	 send/2, wait_for_sync/1, subscribe/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -spec init() -> ok.

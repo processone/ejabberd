@@ -44,7 +44,6 @@
 
 -export([check/2, socket_handoff/5]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -include("xmpp.hrl").

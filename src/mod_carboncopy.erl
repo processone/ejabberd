@@ -39,7 +39,6 @@
 	 is_carbon_copy/1, mod_opt_type/1, depends/2, clean_cache/1,
 	 mod_options/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("mod_carboncopy.hrl").

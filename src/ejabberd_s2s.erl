@@ -54,7 +54,6 @@
 -export([get_info_s2s_connections/1,
 	 transform_options/1, opt_type/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -include("xmpp.hrl").
@@ -303,7 +302,7 @@ init([]) ->
 			 {attributes, record_info(fields, temporarily_blocked)}]),
     ejabberd_hooks:add(host_up, ?MODULE, host_up, 50),
     ejabberd_hooks:add(host_down, ?MODULE, host_down, 60),
-    lists:foreach(fun host_up/1, ?MYHOSTS),
+    lists:foreach(fun host_up/1, ejabberd_config:get_myhosts()),
     {ok, #state{}}.
 
 handle_call(_Request, _From, State) ->
@@ -322,7 +321,7 @@ handle_info(_Info, State) -> {noreply, State}.
 
 terminate(_Reason, _State) ->
     ejabberd_commands:unregister_commands(get_commands_spec()),
-    lists:foreach(fun host_down/1, ?MYHOSTS),
+    lists:foreach(fun host_down/1, ejabberd_config:get_myhosts()),
     ejabberd_hooks:delete(host_up, ?MODULE, host_up, 50),
     ejabberd_hooks:delete(host_down, ?MODULE, host_down, 60),
     ok.
@@ -544,7 +543,7 @@ is_service(From, To) ->
       s2s -> % bypass RFC 3920 10.3
 	  false;
       local ->
-	  Hosts = (?MYHOSTS),
+	  Hosts = ejabberd_config:get_myhosts(),
 	  P = fun (ParentDomain) ->
 		      lists:member(ParentDomain, Hosts)
 	      end,

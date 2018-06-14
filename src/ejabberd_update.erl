@@ -29,7 +29,6 @@
 %% API
 -export([update/0, update/1, update_info/0]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 %%====================================================================

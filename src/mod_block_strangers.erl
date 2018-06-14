@@ -35,7 +35,6 @@
 -export([filter_packet/1, filter_offline_msg/1, filter_subscription/2]).
 
 -include("xmpp.hrl").
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -define(SETS, gb_sets).

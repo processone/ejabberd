@@ -41,7 +41,6 @@
 	 is_user_in_group/3, add_user_to_group/3, opts_to_binary/1,
 	 remove_user_from_group/3, mod_opt_type/1, mod_options/1, depends/2]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -include("xmpp.hrl").

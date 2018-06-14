@@ -50,7 +50,6 @@
 	 terminate/3,
 	 code_change/4]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -include("xmpp.hrl").
@@ -2155,7 +2154,7 @@ send_self_presence(JID, State) ->
     DiscoInfo = make_disco_info(JID, State),
     DiscoHash = mod_caps:compute_disco_hash(DiscoInfo, sha),
     Els1 = [#caps{hash = <<"sha-1">>,
-		  node = ?EJABBERD_URI,
+		  node = ejabberd_config:get_uri(),
 		  version = DiscoHash}],
     Els2 = if is_binary(AvatarHash) ->
 		   [#vcard_xupdate{hash = AvatarHash}|Els1];
@@ -3836,7 +3835,7 @@ process_iq_disco_info(From, #iq{type = get, lang = Lang,
 	true = mod_caps:is_valid_node(Node),
 	DiscoInfo = make_disco_info(From, StateData),
 	Hash = mod_caps:compute_disco_hash(DiscoInfo, sha),
-	Node = <<(?EJABBERD_URI)/binary, $#, Hash/binary>>,
+	Node = <<(ejabberd_config:get_uri())/binary, $#, Hash/binary>>,
 	Extras = iq_disco_info_extras(Lang, StateData, true),
 	{result, DiscoInfo#disco_info{node = Node, xdata = [Extras]}}
     catch _:{badmatch, _} ->

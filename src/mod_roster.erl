@@ -52,7 +52,6 @@
 	 mod_opt_type/1, mod_options/1, set_roster/1, del_roster/3,
 	 depends/2]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -include("xmpp.hrl").
@@ -980,7 +979,7 @@ build_contact_jid_td(RosterJID) ->
 		 of
 	       {<<"">>, _} -> <<"">>;
 	       {CUser, CServer} ->
-		   case lists:member(CServer, ?MYHOSTS) of
+		   case lists:member(CServer, ejabberd_config:get_myhosts()) of
 		     false -> <<"">>;
 		     true ->
 			 <<"/admin/server/", CServer/binary, "/user/",

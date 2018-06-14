@@ -38,7 +38,6 @@
 	 adhoc_sm_items/4, adhoc_sm_commands/4, mod_options/1,
 	 depends/2]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("ejabberd_sm.hrl").
@@ -753,7 +752,7 @@ get_stopped_nodes(_Lang) ->
 	  lists:map(
 	    fun (N) ->
 		    S = iolist_to_binary(atom_to_list(N)),
-		    #disco_item{jid = jid:make(?MYNAME),
+		    #disco_item{jid = jid:make(ejabberd_config:get_myname()),
 				node = <<"stopped nodes/", S/binary>>,
 				name = S}
 	    end,
@@ -1525,7 +1524,7 @@ set_form(From, Host, ?NS_ADMINL(<<"add-user">>), _Lang,
     AccountJID = jid:decode(AccountString),
     User = AccountJID#jid.luser,
     Server = AccountJID#jid.lserver,
-    true = lists:member(Server, ?MYHOSTS),
+    true = lists:member(Server, ejabberd_config:get_myhosts()),
     true = Server == Host orelse
 	     get_permission_level(From) == global,
     case ejabberd_auth:try_register(User, Server, Password) of

@@ -30,7 +30,6 @@
 -export([start/2, stop/1, reload/3, check_packet/4,
 	 mod_opt_type/1, mod_options/1, depends/2]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -include("xmpp.hrl").

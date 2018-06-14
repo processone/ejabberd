@@ -42,7 +42,6 @@
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("mod_vcard.hrl").
@@ -197,17 +196,16 @@ process_local_iq(#iq{type = set, lang = Lang} = IQ) ->
     Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_local_iq(#iq{type = get, lang = Lang} = IQ) ->
-    Desc = translate:translate(Lang, <<"Erlang Jabber Server">>),
     xmpp:make_iq_result(
       IQ, #vcard_temp{fn = <<"ejabberd">>,
-		      url = ?EJABBERD_URI,
-		      desc = <<Desc/binary, $\n, ?COPYRIGHT>>,
+		      url = ejabberd_config:get_uri(),
+		      desc = misc:get_descr(Lang, <<"Erlang Jabber Server">>),
 		      bday = <<"2002-11-16">>}).
 
 -spec process_sm_iq(iq()) -> iq().
 process_sm_iq(#iq{type = set, lang = Lang, from = From} = IQ) ->
     #jid{lserver = LServer} = From,
-    case lists:member(LServer, ?MYHOSTS) of
+    case lists:member(LServer, ejabberd_config:get_myhosts()) of
 	true ->
 	    case ejabberd_hooks:run_fold(vcard_iq_set, LServer, IQ, []) of
 		drop -> ignore;
@@ -235,11 +233,10 @@ process_vcard(#iq{type = set, lang = Lang} = IQ) ->
     Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_vcard(#iq{type = get, lang = Lang} = IQ) ->
-    Desc = translate:translate(Lang, <<"ejabberd vCard module">>),
     xmpp:make_iq_result(
       IQ, #vcard_temp{fn = <<"ejabberd/mod_vcard">>,
-		      url = ?EJABBERD_URI,
-		      desc = <<Desc/binary, $\n, ?COPYRIGHT>>}).
+		      url = ejabberd_config:get_uri(),
+		      desc = misc:get_descr(Lang, <<"ejabberd vCard module">>)}).
 
 -spec process_search(iq()) -> iq().
 process_search(#iq{type = get, to = To, lang = Lang} = IQ) ->

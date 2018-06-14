@@ -33,7 +33,6 @@
 
 -behaviour(gen_server).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -include("xmpp.hrl").

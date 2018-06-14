@@ -48,7 +48,7 @@
 
 -export([auth_modules/1, opt_type/1]).
 
--include("ejabberd.hrl").
+-include("scram.hrl").
 -include("logger.hrl").
 
 -define(AUTH_CACHE, auth_cache).
@@ -107,7 +107,7 @@ init([]) ->
 		    fun(Host, Acc) ->
 			    Modules = auth_modules(Host),
 			    maps:put(Host, Modules, Acc)
-		    end, #{}, ?MYHOSTS),
+		    end, #{}, ejabberd_config:get_myhosts()),
     lists:foreach(
       fun({Host, Modules}) ->
 	      start(Host, Modules)
@@ -141,7 +141,7 @@ handle_cast(config_reloaded, #state{host_modules = HostModules} = State) ->
 		  stop(Host, OldModules -- NewModules),
 		  reload(Host, lists_intersection(OldModules, NewModules)),
 		  maps:put(Host, NewModules, Acc)
-	  end, HostModules, ?MYHOSTS),
+	  end, HostModules, ejabberd_config:get_myhosts()),
     init_cache(NewHostModules),
     {noreply, State#state{host_modules = NewHostModules}};
 handle_cast(Msg, State) ->
@@ -764,7 +764,7 @@ auth_modules() ->
     lists:flatmap(
       fun(Host) ->
 	      [{Host, Mod} || Mod <- auth_modules(Host)]
-      end, ?MYHOSTS).
+      end, ejabberd_config:get_myhosts()).
 
 -spec auth_modules(binary()) -> [module()].
 auth_modules(Server) ->

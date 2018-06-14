@@ -28,7 +28,6 @@
 -author('christophe.romain@process-one.net').
 -behaviour(gen_mod).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 

@@ -51,7 +51,6 @@
 	 reply/2, copy_state/2, set_timeout/2, route/2,
 	 host_up/1, host_down/1]).
 
--include("ejabberd.hrl").
 -include("xmpp.hrl").
 -include("logger.hrl").
 -include("mod_roster.hrl").
@@ -415,7 +414,7 @@ bind(R, #{user := U, server := S, access := Access, lang := Lang,
 handle_stream_start(StreamStart, #{lserver := LServer} = State) ->
     case ejabberd_router:is_my_host(LServer) of
 	false ->
-	    send(State#{lserver => ?MYNAME}, xmpp:serr_host_unknown());
+	    send(State#{lserver => ejabberd_config:get_myname()}, xmpp:serr_host_unknown());
 	true ->
 	    State1 = change_shaper(State),
 	    Opts = ejabberd_config:codec_options(LServer),
@@ -526,9 +525,9 @@ init([State, Opts]) ->
 		    tls_verify => TLSVerify,
 		    pres_a => ?SETS:new(),
 		    zlib => Zlib,
-		    lang => ?MYLANG,
-		    server => ?MYNAME,
-		    lserver => ?MYNAME,
+		    lang => ejabberd_config:get_mylang(),
+		    server => ejabberd_config:get_myname(),
+		    lserver => ejabberd_config:get_myname(),
 		    access => Access,
 		    shaper => Shaper},
     State2 = xmpp_stream_in:set_timeout(State1, Timeout),
@@ -1041,7 +1040,7 @@ listen_opt_type(backlog) ->
 listen_opt_type(accept_interval) ->
     fun(I) when is_integer(I), I>=0 -> I end;
 listen_opt_type(O) ->
-    StreamOpts = mod_stream_mgmt:mod_options(?MYNAME),
+    StreamOpts = mod_stream_mgmt:mod_options(ejabberd_config:get_myname()),
     case lists:keyfind(O, 1, StreamOpts) of
 	false ->
 	    [access, shaper, certfile, ciphers, dhfile, cafile,

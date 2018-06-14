@@ -26,7 +26,6 @@
 -module(win32_dns).
 -export([get_nameservers/0]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -define(IF_KEY, "\\hklm\\system\\CurrentControlSet\\Services\\TcpIp\\Parameters\\Interfaces").

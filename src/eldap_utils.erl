@@ -34,7 +34,6 @@
 	 decode_octet_string/3, uids_domain_subst/2, opt_type/1,
 	 options/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("eldap.hrl").
 

@@ -36,7 +36,6 @@
 %% API
 -export([send/2]).
 
--include("ejabberd.hrl").
 -include("xmpp.hrl").
 -include("logger.hrl").
 
@@ -106,8 +105,8 @@ init([State, Opts]) ->
     State2 = xmpp_stream_in:set_timeout(State1, Timeout),
     State3 = State2#{access => Access,
 		     xmlns => ?NS_COMPONENT,
-		     lang => ?MYLANG,
-		     server => ?MYNAME,
+		     lang => ejabberd_config:get_mylang(),
+		     server => ejabberd_config:get_myname(),
 		     host_opts => dict:from_list(HostOpts1),
 		     stream_version => undefined,
 		     tls_options => TLSOpts,
@@ -170,7 +169,7 @@ handle_auth_success(_, Mech, _,
 	     end,
     lists:foreach(
       fun(H) ->
-	      ejabberd_router:register_route(H, ?MYNAME),
+	      ejabberd_router:register_route(H, ejabberd_config:get_myname()),
 	      ejabberd_hooks:run(component_connected, [H])
       end, Routes),
     State.

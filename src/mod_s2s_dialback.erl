@@ -32,7 +32,6 @@
 	 s2s_in_packet/2, s2s_out_packet/2, s2s_in_recv/3,
 	 s2s_in_features/2, s2s_out_init/2, s2s_out_closed/2]).
 
--include("ejabberd.hrl").
 -include("xmpp.hrl").
 -include("logger.hrl").
 

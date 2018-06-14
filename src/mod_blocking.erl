@@ -32,7 +32,6 @@
 -export([start/2, stop/1, reload/3, process_iq/1, depends/2,
 	 disco_features/5, mod_options/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -include("xmpp.hrl").

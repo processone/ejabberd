@@ -34,7 +34,6 @@
 	 add_listener/3, delete_listener/2, transform_options/1,
 	 validate_cfg/1, opt_type/1, config_reloaded/0]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 %% We do not block on send anymore.

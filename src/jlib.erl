@@ -131,7 +131,6 @@
 	     {expr_to_term, 1},
 	     {term_to_expr, 1}]).
 
--include("ejabberd.hrl").
 -include("jlib.hrl").
 
 %send_iq(From, To, ID, SubTags) ->

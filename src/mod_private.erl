@@ -36,7 +36,6 @@
 	 import/5, import_start/2, mod_opt_type/1, set_data/3,
 	 mod_options/1, depends/2]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("mod_private.hrl").

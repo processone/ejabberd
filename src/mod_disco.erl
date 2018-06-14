@@ -40,7 +40,6 @@
 	 get_info/5, transform_module_options/1, mod_opt_type/1,
 	 mod_options/1, depends/2]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("translate.hrl").
 -include("xmpp.hrl").
@@ -239,7 +238,7 @@ get_vh_services(Host) ->
     Hosts = lists:sort(fun (H1, H2) ->
 			       byte_size(H1) >= byte_size(H2)
 		       end,
-		       ?MYHOSTS),
+		       ejabberd_config:get_myhosts()),
     lists:filter(fun (H) ->
 			 case lists:dropwhile(fun (VH) ->
 						      not

@@ -36,7 +36,6 @@
 
 -export([init/2, opt_type/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("ejabberd_http.hrl").
@@ -787,7 +786,8 @@ rest_dir(N, Path, <<_H, T/binary>>) -> rest_dir(N, Path, T).
 
 expand_custom_headers(Headers) ->
     lists:map(fun({K, V}) ->
-		      {K, misc:expand_keyword(<<"@VERSION@">>, V, ?VERSION)}
+		      {K, misc:expand_keyword(<<"@VERSION@">>, V,
+					      ejabberd_config:get_version())}
 	      end, Headers).
 
 code_to_phrase(100) -> <<"Continue">>;
@@ -917,11 +917,11 @@ get_certfile(Opts) ->
 	{_, CertFile} ->
 	    CertFile;
 	false ->
-	    case ejabberd_pkix:get_certfile(?MYNAME) of
+	    case ejabberd_pkix:get_certfile(ejabberd_config:get_myname()) of
 		{ok, CertFile} ->
 		    CertFile;
 		error ->
-		    ejabberd_config:get_option({domain_certfile, ?MYNAME})
+		    ejabberd_config:get_option({domain_certfile, ejabberd_config:get_myname()})
 	    end
     end.
 

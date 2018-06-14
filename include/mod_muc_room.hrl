@@ -18,7 +18,7 @@
 %%%
 %%%----------------------------------------------------------------------
 
--include("ejabberd.hrl").
+-include("type_compat.hrl").
 
 -define(MAX_USERS_DEFAULT, 200).
 
@@ -67,7 +67,7 @@
     captcha_whitelist                    = (?SETS):empty() :: ?TGB_SET,
     mam                                  = false :: boolean(),
     pubsub                               = <<"">> :: binary(),
-    lang                                 = ?MYLANG :: binary()
+    lang                                 = ejabberd_config:get_mylang() :: binary()
 }).
 
 -type config() :: #config{}.

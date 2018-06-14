@@ -35,7 +35,6 @@
 	 list_users_in_diapason/4, pretty_print_xml/1,
 	 term_to_id/1, opt_type/1]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 
 -include("xmpp.hrl").
@@ -1062,7 +1061,7 @@ parse_access_rule(Text) ->
 %%%% list_vhosts
 
 list_vhosts(Lang, JID) ->
-    Hosts = (?MYHOSTS),
+    Hosts = ejabberd_config:get_myhosts(),
     HostsAllowed = lists:filter(fun (Host) ->
 					acl:any_rules_allowed(Host,
 						     [configure, webadmin_view],
@@ -1282,7 +1281,7 @@ get_stats(global, Lang) ->
 					  ejabberd_auth:count_users(Host)
 					    + Total
 				  end,
-				  0, ?MYHOSTS),
+				  0, ejabberd_config:get_myhosts()),
     OutS2SNumber = ejabberd_s2s:outgoing_s2s_number(),
     InS2SNumber = ejabberd_s2s:incoming_s2s_number(),
     [?XAE(<<"table">>, [],
@@ -1784,7 +1783,7 @@ get_node(global, Node, [<<"backup">>], Query, Lang) ->
 				    ?C(<<" ">>),
 				    ?INPUT(<<"text">>,
 					   <<"export_piefxis_host_dirhost">>,
-					   (?MYNAME))]),
+					   (ejabberd_config:get_myname()))]),
 			       ?XE(<<"td">>,
 				   [?INPUT(<<"text">>,
 					   <<"export_piefxis_host_dirpath">>,
@@ -1800,7 +1799,7 @@ get_node(global, Node, [<<"backup">>], Query, Lang) ->
                                     ?C(<<" ">>),
                                     ?INPUT(<<"text">>,
                                            <<"export_sql_filehost">>,
-                                           (?MYNAME))]),
+                                           (ejabberd_config:get_myname()))]),
                                ?XE(<<"td">>,
 				   [?INPUT(<<"text">>,
                                            <<"export_sql_filepath">>,

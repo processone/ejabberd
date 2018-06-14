@@ -61,7 +61,6 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
--include("ejabberd.hrl").
 -include("logger.hrl").
 -include("ejabberd_commands.hrl").
 
@@ -412,7 +411,7 @@ stop_kindly(DelaySeconds, AnnouncementTextString) ->
 	      ejabberd_listener, stop_listeners, []},
 	     {"Sending announcement to connected users",
 	      mod_announce, send_announcement_to_all,
-	      [?MYNAME, Subject, AnnouncementText]},
+	      [ejabberd_config:get_myname(), Subject, AnnouncementText]},
 	     {"Sending service message to MUC rooms",
 	      ejabberd_admin, send_service_message_all_mucs,
 	      [Subject, AnnouncementText]},
@@ -446,7 +445,7 @@ send_service_message_all_mucs(Subject, AnnouncementText) ->
 			  ServerHost, mod_muc, <<"conference.@HOST@">>),
 	      mod_muc:broadcast_service_message(ServerHost, MUCHost, Message)
       end,
-      ?MYHOSTS).
+      ejabberd_config:get_myhosts()).
 
 %%%
 %%% ejabberd_update
@@ -499,7 +498,7 @@ registered_users(Host) ->
     lists:map(fun({U, _S}) -> U end, SUsers).
 
 registered_vhosts() ->
-    ?MYHOSTS.
+    ejabberd_config:get_myhosts().
 
 reload_config() ->
     ejabberd_config:reload_file().
@@ -549,13 +548,13 @@ delete_expired_messages() ->
     lists:foreach(
       fun(Host) ->
               {atomic, ok} = mod_offline:remove_expired_messages(Host)
-      end, ?MYHOSTS).
+      end, ejabberd_config:get_myhosts()).
 
 delete_old_messages(Days) ->
     lists:foreach(
       fun(Host) ->
               {atomic, _} = mod_offline:remove_old_messages(Days, Host)
-      end, ?MYHOSTS).
+      end, ejabberd_config:get_myhosts()).
 
 %%%
 %%% Mnesia management
@@ -622,7 +621,7 @@ keep_tables() ->
 %% loaded modules
 keep_modules_tables() ->
     lists:map(fun(Module) -> module_tables(Module) end,
-	      gen_mod:loaded_modules(?MYNAME)).
+	      gen_mod:loaded_modules(ejabberd_config:get_myname())).
 
 %% TODO: This mapping should probably be moved to a callback function in each
 %% module.
