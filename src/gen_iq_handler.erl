@@ -105,7 +105,7 @@ get_features(Component, {Host, XMLNS}, Host, XMLNSs) ->
 get_features(_, _, _, XMLNSs) ->
     XMLNSs.
 
--spec process_iq(binary(), atom(), atom(), iq()) -> any().
+-spec process_iq(binary(), atom(), atom(), iq()) -> ok.
 process_iq(_Host, Module, Function, IQ) ->
     try process_iq(Module, Function, IQ) of
 	#iq{} = ResIQ ->
