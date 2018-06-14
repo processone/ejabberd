@@ -39,7 +39,6 @@
 	 handle_sync_event/4, handle_info/3, terminate/3,
 	 code_change/4]).
 
--include("type_compat.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 
@@ -57,7 +56,7 @@
 	 ident = <<"">>        :: binary(),
 	 realname = <<"">>        :: binary(),
          nick = <<"">>         :: binary(),
-         channels = dict:new() :: ?TDICT,
+         channels = dict:new() :: dict:dict(),
          nickchannel           :: binary() | undefined,
 	 webirc_password       :: binary(),
          mod = mod_irc         :: atom(),

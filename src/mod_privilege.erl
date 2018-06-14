@@ -39,12 +39,11 @@
 	 roster_access/2, process_message/1,
 	 process_presence_out/1, process_presence_in/1]).
 
--include("type_compat.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 
 -record(state, {server_host = <<"">> :: binary(),
-		permissions = dict:new() :: ?TDICT}).
+		permissions = dict:new() :: dict:dict()}).
 
 %%%===================================================================
 %%% API

@@ -83,10 +83,10 @@
 -callback set_affiliation(binary(), binary(), binary(), jid(), affiliation(),
 			  binary()) -> ok | {error, any()}.
 -callback set_affiliations(binary(), binary(), binary(),
-			   ?TDICT) -> ok | {error, any()}.
+			   dict:dict()) -> ok | {error, any()}.
 -callback get_affiliation(binary(), binary(), binary(),
 			  binary(), binary()) -> {ok, affiliation()} | {error, any()}.
--callback get_affiliations(binary(), binary(), binary()) -> {ok, ?TDICT} | {error, any()}.
+-callback get_affiliations(binary(), binary(), binary()) -> {ok, dict:dict()} | {error, any()}.
 -callback search_affiliation(binary(), binary(), binary(), affiliation()) ->
     {ok, [{ljid(), {affiliation(), binary()}}]} | {error, any()}.
 
@@ -1106,7 +1106,7 @@ close_room_if_temporary_and_empty(StateData1) ->
       _ -> {next_state, normal_state, StateData1}
     end.
 
--spec get_users_and_subscribers(state()) -> ?TDICT.
+-spec get_users_and_subscribers(state()) -> dict:dict().
 get_users_and_subscribers(StateData) ->
     OnlineSubscribers = ?DICT:fold(
 			   fun(LJID, _, Acc) ->
@@ -1291,7 +1291,7 @@ set_affiliation_fallback(JID, Affiliation, StateData, Reason) ->
 		   end,
     StateData#state{affiliations = Affiliations}.
 
--spec set_affiliations(?TDICT, state()) -> state().
+-spec set_affiliations(dict:dict(), state()) -> state().
 set_affiliations(Affiliations,
                  #state{config = #config{persistent = false}} = StateData) ->
     set_affiliations_fallback(Affiliations, StateData);
@@ -1307,7 +1307,7 @@ set_affiliations(Affiliations, StateData) ->
 	    set_affiliations_fallback(Affiliations, StateData)
     end.
 
--spec set_affiliations_fallback(?TDICT, state()) -> state().
+-spec set_affiliations_fallback(dict:dict(), state()) -> state().
 set_affiliations_fallback(Affiliations, StateData) ->
     StateData#state{affiliations = Affiliations}.
 
@@ -1370,7 +1370,7 @@ do_get_affiliation_fallback(JID, StateData) ->
             end
     end.
 
--spec get_affiliations(state()) -> ?TDICT.
+-spec get_affiliations(state()) -> dict:dict().
 get_affiliations(#state{config = #config{persistent = false}} = StateData) ->
     get_affiliations_callback(StateData);
 get_affiliations(StateData) ->
@@ -1385,7 +1385,7 @@ get_affiliations(StateData) ->
 	    Affiliations
     end.
 
--spec get_affiliations_callback(state()) -> ?TDICT.
+-spec get_affiliations_callback(state()) -> dict:dict().
 get_affiliations_callback(StateData) ->
     StateData#state.affiliations.
 
@@ -4385,7 +4385,7 @@ wrap(From, To, Packet, Node) ->
 %%     JIDs = [ User#user.jid || {_, User} <- ?DICT:to_list(Users)],
 %%     ejabberd_router_multicast:route_multicast(From, Server, JIDs, Packet).
 
--spec send_wrapped_multiple(jid(), ?TDICT, stanza(), binary(), state()) -> ok.
+-spec send_wrapped_multiple(jid(), dict:dict(), stanza(), binary(), state()) -> ok.
 send_wrapped_multiple(From, Users, Packet, Node, State) ->
     lists:foreach(
       fun({_, #user{jid = To}}) ->

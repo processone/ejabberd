@@ -65,7 +65,6 @@
 
 -behaviour(p1_fsm).
 
--include("type_compat.hrl").
 -include("logger.hrl").
 
 %% External exports
@@ -139,8 +138,8 @@
          passwd = <<"">>         :: binary(),
          id = 0                  :: non_neg_integer(),
          bind_timer = make_ref() :: reference(),
-	 dict = dict:new()       :: ?TDICT,
-         req_q = queue:new()     :: ?TQUEUE}).
+	 dict = dict:new()       :: dict:dict(),
+         req_q = queue:new()     :: queue:queue()}).
 
 %%%----------------------------------------------------------------------
 %%% API

@@ -40,13 +40,12 @@
 	 disco_local_features/5, disco_sm_features/5,
 	 disco_local_identity/5, disco_sm_identity/5]).
 
--include("type_compat.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 
 -type disco_acc() :: {error, stanza_error()} | {result, [binary()]} | empty.
 -record(state, {server_host = <<"">> :: binary(),
-		delegations = dict:new() :: ?TDICT}).
+		delegations = dict:new() :: dict:dict()}).
 -type state() :: #state{}.
 
 %%%===================================================================
@@ -222,7 +221,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
--spec get_delegations(binary()) -> ?TDICT.
+-spec get_delegations(binary()) -> dict:dict().
 get_delegations(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?MODULE),
     try gen_server:call(Proc, get_delegations) of
