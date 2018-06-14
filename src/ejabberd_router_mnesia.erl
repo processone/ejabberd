@@ -56,7 +56,30 @@ start_link() ->
 use_cache() ->
     false.
 
-register_route(Domain, ServerHost, LocalHint, undefined, Pid) ->
+register_route(Domain, ServerHost, LocalHint, N, Pid) ->
+	Algorithm = ejabberd_router:get_domain_balancing_algorithm(Domain),
+	register_route(Domain, ServerHost, LocalHint, N, Pid, Algorithm).
+
+register_route(Domain, ServerHost, _LocalHint, undefined, Pid, consistent_hashing) ->
+	F = fun () ->
+		case mnesia:wread({route, Domain}) of
+			[] ->
+				mnesia:write(#route{domain = Domain,
+					server_host = ServerHost,
+					pid = Pid,
+					local_hint = 1});
+			Rs ->
+				SRs = lists:ukeysort(#route.local_hint, Rs),
+				R = lists:last(SRs),
+				I = R#route.local_hint,
+				mnesia:write(#route{domain = Domain,
+					server_host = ServerHost,
+					pid = Pid,
+					local_hint = I + 1})
+		end
+			end,
+	transaction(F);
+register_route(Domain, ServerHost, LocalHint, undefined, Pid, dynamic) ->
     F = fun () ->
 		mnesia:write(#route{domain = Domain,
 				    pid = Pid,
@@ -64,7 +87,7 @@ register_route(Domain, ServerHost, LocalHint, undefined, Pid) ->
 				    local_hint = LocalHint})
 	end,
     transaction(F);
-register_route(Domain, ServerHost, _LocalHint, N, Pid) ->
+register_route(Domain, ServerHost, _LocalHint, N, Pid, fix_number) ->
     F = fun () ->
 		case mnesia:wread({route, Domain}) of
 		    [] ->
@@ -99,27 +122,31 @@ register_route(Domain, ServerHost, _LocalHint, N, Pid) ->
 	end,
     transaction(F).
 
-unregister_route(Domain, undefined, Pid) ->
+unregister_route(Domain, LocalHint, Pid) ->
+	Algorithm = ejabberd_router:get_domain_balancing_algorithm(Domain),
+	unregister_route(Domain, LocalHint, Pid, Algorithm).
+
+unregister_route(Domain, _, Pid, fix_number) ->
+	F = fun () ->
+		case mnesia:match_object(
+			#route{domain = Domain, pid = Pid, _ = '_'}) of
+			[R] ->
+				I = R#route.local_hint,
+				ServerHost = R#route.server_host,
+				mnesia:write(#route{domain = Domain,
+					server_host = ServerHost,
+					pid = undefined,
+					local_hint = I}),
+				mnesia:delete_object(R);
+			_ -> ok
+		end
+			end,
+	transaction(F);
+unregister_route(Domain, _, Pid, _) ->
     F = fun () ->
 		case mnesia:match_object(
 		       #route{domain = Domain, pid = Pid, _ = '_'}) of
 		    [R] -> mnesia:delete_object(R);
-		    _ -> ok
-		end
-	end,
-    transaction(F);
-unregister_route(Domain, _, Pid) ->
-    F = fun () ->
-		case mnesia:match_object(
-		       #route{domain = Domain, pid = Pid, _ = '_'}) of
-		    [R] ->
-			I = R#route.local_hint,
-			ServerHost = R#route.server_host,
-			mnesia:write(#route{domain = Domain,
-					    server_host = ServerHost,
-					    pid = undefined,
-					    local_hint = I}),
-			mnesia:delete_object(R);
 		    _ -> ok
 		end
 	end,
@@ -166,23 +193,13 @@ handle_info({mnesia_table_event,
 handle_info({mnesia_table_event, _}, State) ->
     {noreply, State};
 handle_info({'DOWN', _Ref, _Type, Pid, _Info}, State) ->
+		?DEBUG("Process down: ~p", [Pid]),
     F = fun () ->
 		Es = mnesia:select(route,
 				   [{#route{pid = Pid, _ = '_'}, [], ['$_']}]),
 		lists:foreach(
 		  fun(E) ->
-			  if is_integer(E#route.local_hint) ->
-				  LDomain = E#route.domain,
-				  I = E#route.local_hint,
-				  ServerHost = E#route.server_host,
-				  mnesia:write(#route{domain = LDomain,
-						      server_host = ServerHost,
-						      pid = undefined,
-						      local_hint = I}),
-				  mnesia:delete_object(E);
-			     true ->
-				  mnesia:delete_object(E)
-			  end
+				unregister_route(E#route.domain, E#route.local_hint, Pid)
 		  end, Es)
 	end,
     transaction(F),

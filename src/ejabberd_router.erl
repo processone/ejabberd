@@ -54,7 +54,8 @@
 	 is_my_host/1,
 	 clean_cache/1,
 	 config_reloaded/0,
-	 get_backend/0]).
+	 get_backend/0,
+	 get_domain_balancing_algorithm/1]).
 
 -export([start_link/0]).
 
@@ -67,6 +68,8 @@
 
 %% This value is used in SIP and Megaco for a transaction lifetime.
 -define(IQ_TIMEOUT, 32000).
+
+-define(MAX_PHASH_RANGE, 4294967296).
 
 -include("ejabberd.hrl").
 -include("logger.hrl").
@@ -390,8 +393,9 @@ do_route(_Pkt, _Route) ->
 balancing_route(From, To, Packet, Rs) ->
     LDstDomain = To#jid.lserver,
     Value = get_domain_balancing(From, To, LDstDomain),
-    case get_component_number(LDstDomain) of
-	undefined ->
+
+    case get_domain_balancing_algorithm(LDstDomain) of
+	dynamic ->
 	    case [R || R <- Rs, node(R#route.pid) == node()] of
 		[] ->
 		    R = lists:nth(erlang:phash(Value, length(Rs)), Rs),
@@ -400,10 +404,15 @@ balancing_route(From, To, Packet, Rs) ->
 		    R = lists:nth(erlang:phash(Value, length(LRs)), LRs),
 		    do_route(Packet, R)
 	    end;
-	_ ->
+	fix_number ->
 	    SRs = lists:ukeysort(#route.local_hint, Rs),
 	    R = lists:nth(erlang:phash(Value, length(SRs)), SRs),
-	    do_route(Packet, R)
+	    do_route(Packet, R);
+	consistent_hashing ->
+		  SRs = lists:ukeysort(#route.local_hint, Rs),
+			Rn = jch:ch(erlang:phash(Value, ?MAX_PHASH_RANGE), length(SRs)),
+			R = lists:nth(Rn + 1, SRs),
+			do_route(Packet, R)
     end.
 
 -spec get_component_number(binary()) -> pos_integer() | undefined.
@@ -420,6 +429,18 @@ get_domain_balancing(From, To, LDomain) ->
 	bare_source -> jid:remove_resource(jid:tolower(From));
 	bare_destination -> jid:remove_resource(jid:tolower(To))
     end.
+
+-spec get_domain_balancing_algorithm(binary()) -> balancing_algorithm().
+get_domain_balancing_algorithm(LDomain) ->
+	case ejabberd_config:get_option({domain_balancing_algorithm, LDomain}) of
+		AlgorithmName when  AlgorithmName == undefined; AlgorithmName == fix_number ->
+			case get_component_number(LDomain) of
+				undefined -> dynamic;
+				_ -> fix_number
+			end;
+		AlgorithmName ->
+			AlgorithmName
+	end.
 
 -spec get_backend() -> module().
 get_backend() ->
