@@ -18,8 +18,6 @@
 %%%
 %%%----------------------------------------------------------------------
 
--include("type_compat.hrl").
-
 -define(MAX_USERS_DEFAULT, 200).
 
 -define(SETS, gb_sets).
@@ -64,7 +62,7 @@
     logging                              = false :: boolean(),
     vcard                                = <<"">> :: binary(),
     vcard_xupdate                        = undefined :: undefined | external | binary(),
-    captcha_whitelist                    = (?SETS):empty() :: ?TGB_SET,
+    captcha_whitelist                    = (?SETS):empty() :: gb_sets:set(),
     mam                                  = false :: boolean(),
     pubsub                               = <<"">> :: binary(),
     lang                                 = ejabberd_config:get_mylang() :: binary()
@@ -107,13 +105,13 @@
     access                  = {none,none,none,none} :: {atom(), atom(), atom(), atom()},
     jid                     = #jid{} :: jid(),
     config                  = #config{} :: config(),
-    users                   = (?DICT):new() :: ?TDICT,
-    subscribers             = (?DICT):new() :: ?TDICT,
-    subscriber_nicks        = (?DICT):new() :: ?TDICT,
+    users                   = (?DICT):new() :: dict:dict(),
+    subscribers             = (?DICT):new() :: dict:dict(),
+    subscriber_nicks        = (?DICT):new() :: dict:dict(),
     last_voice_request_time = treap:empty() :: treap:treap(),
-    robots                  = (?DICT):new() :: ?TDICT,
-    nicks                   = (?DICT):new() :: ?TDICT,
-    affiliations            = (?DICT):new() :: ?TDICT,
+    robots                  = (?DICT):new() :: dict:dict(),
+    nicks                   = (?DICT):new() :: dict:dict(),
+    affiliations            = (?DICT):new() :: dict:dict(),
     history                 :: lqueue(),
     subject                 = [] :: [text()],
     subject_author          = <<"">> :: binary(),
