@@ -107,21 +107,11 @@ get_features(_, _, _, XMLNSs) ->
 
 -spec process_iq(binary(), atom(), atom(), iq()) -> any().
 process_iq(_Host, Module, Function, IQ) ->
-    try
-	ResIQ = case erlang:function_exported(Module, Function, 1) of
-		    true ->
-			process_iq(Module, Function, IQ);
-		    false ->
-			From = xmpp:get_from(IQ),
-			To = xmpp:get_to(IQ),
-			process_iq(Module, Function, From, To,
-				   jlib:iq_query_info(xmpp:encode(IQ)))
-		end,
-	if ResIQ /= ignore ->
-		ejabberd_router:route(ResIQ);
-	   true ->
-		ok
-	end
+    try process_iq(Module, Function, IQ) of
+	#iq{} = ResIQ ->
+	    ejabberd_router:route(ResIQ);
+	ignore ->
+	    ok
     catch E:R ->
 	    ?ERROR_MSG("failed to process iq:~n~s~nReason = ~p",
 		       [xmpp:pp(IQ), {E, {R, erlang:get_stacktrace()}}]),
@@ -141,16 +131,6 @@ process_iq(Module, Function, #iq{lang = Lang, sub_els = [El]} = IQ) ->
     catch error:{xmpp_codec, Why} ->
 	    Txt = xmpp:io_format_error(Why),
 	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang))
-    end.
-
--spec process_iq(module(), atom(), jid(), jid(), term()) -> iq().
-process_iq(Module, Function, From, To, IQ) ->
-    case Module:Function(From, To, IQ) of
-	ignore -> ignore;
-	ResIQ ->
-	    xmpp:set_from_to(
-	      xmpp:decode(jlib:iq_to_xml(ResIQ), ?NS_CLIENT, [ignore_els]),
-	      To, From)
     end.
 
 -spec check_type(any()) -> no_queue.
