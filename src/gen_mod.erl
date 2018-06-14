@@ -127,10 +127,9 @@ stop_child(Proc) ->
 
 %% Start all the modules in all the hosts
 start_modules() ->
-    lists:foreach(
-	fun(Host) ->
-	    start_modules(Host)
-	end, ?MYHOSTS).
+    Hosts = ?MYHOSTS,
+    ?INFO_MSG("Loading modules for ~s", [format_hosts_list(Hosts)]),
+    lists:foreach(fun start_modules/1, Hosts).
 
 get_modules_options(Host) ->
     sort_modules(Host, ejabberd_config:get_option({modules, Host}, [])).
@@ -744,6 +743,16 @@ format_module_error(Module, Fun, Arity, Opts, Class, Reason, St) ->
 			  "** Stacktrace: ~p",
 			  [Module, Fun, Opts, Class, Reason, St])
     end.
+
+format_hosts_list([Host]) ->
+    Host;
+format_hosts_list([H1, H2]) ->
+    [H1, " and ", H2];
+format_hosts_list([H1, H2, H3]) ->
+    [H1, ", ", H2, " and ", H3];
+format_hosts_list([H1, H2|Hs]) ->
+    io_lib:format("~s, ~s and ~B more hosts",
+		  [H1, H2, length(Hs)]).
 
 -spec db_type(binary() | global, module()) -> db_type();
 	     (opts(), module()) -> db_type().
