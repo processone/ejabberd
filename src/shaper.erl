@@ -30,7 +30,7 @@
 
 -author('alexey@process-one.net').
 
--export([start_link/0, new/1, new1/1, update/2,
+-export([start_link/0, new/1, update/2,
 	 get_max_rate/1, transform_options/1, load_from_config/0,
 	 opt_type/1]).
 %% gen_server callbacks
@@ -39,12 +39,14 @@
 
 -include("logger.hrl").
 
--record(maxrate, {maxrate  = 0   :: integer(),
-                  lastrate = 0.0 :: float(),
-                  lasttime = 0   :: integer()}).
+-record(maxrate, {maxrate = 0 :: integer(),
+		  burst_size = 0 :: integer(),
+		  acquired_credit = 0 :: integer(),
+		  lasttime = 0 :: integer()}).
 
--record(shaper, {name    :: {atom(), global},
-                 maxrate :: integer()}).
+-record(shaper, {name :: {atom(), global},
+		 maxrate :: integer(),
+		 burst_size :: integer()}).
 
 -record(state, {}).
 
@@ -58,9 +60,9 @@ start_link() ->
 
 init([]) ->
     ejabberd_mnesia:create(?MODULE, shaper,
-                        [{ram_copies, [node()]},
-                         {local_content, true},
-			 {attributes, record_info(fields, shaper)}]),
+			   [{ram_copies, [node()]},
+			    {local_content, true},
+			    {attributes, record_info(fields, shaper)}]),
     ejabberd_hooks:add(config_reloaded, ?MODULE, load_from_config, 20),
     load_from_config(),
     {ok, #state{}}.
@@ -86,17 +88,20 @@ code_change(_OldVsn, State, _Extra) ->
 load_from_config() ->
     Shapers = ejabberd_config:get_option(shaper, []),
     case mnesia:transaction(
-           fun() ->
-                   lists:foreach(
-                     fun({Name, MaxRate}) ->
-                             mnesia:write(#shaper{name = {Name, global},
-                                                  maxrate = MaxRate})
-                     end, Shapers)
-           end) of
-        {atomic, ok} ->
-            ok;
-        Err ->
-            {error, Err}
+	fun() ->
+	    lists:foreach(
+		fun({Name, MaxRate, BurstSize}) ->
+		    mnesia:write(
+			#shaper{name = {Name, global},
+				maxrate = MaxRate,
+				burst_size = BurstSize})
+		end,
+		Shapers)
+	end) of
+	{atomic, ok} ->
+	    ok;
+	Err ->
+	    {error, Err}
     end.
 
 -spec get_max_rate(atom()) -> none | non_neg_integer().
@@ -112,62 +117,56 @@ get_max_rate(Name) ->
     end.
 
 -spec new(atom()) -> shaper().
-
 new(none) ->
     none;
 new(Name) ->
-    MaxRate = case ets:lookup(shaper, {Name, global}) of
-                  [#shaper{maxrate = R}] ->
-                      R;
-                  [] ->
-                      none
-              end,
-    new1(MaxRate).
+    case ets:lookup(shaper, {Name, global}) of
+	[#shaper{maxrate = R, burst_size = B}] ->
 
--spec new1(none | integer()) -> shaper().
-
-new1(none) -> none;
-new1(MaxRate) ->
-    #maxrate{maxrate = MaxRate, lastrate = 0.0,
-	     lasttime = p1_time_compat:system_time(micro_seconds)}.
+	    #maxrate{maxrate = R, burst_size = B,
+		     acquired_credit = B,
+		     lasttime = p1_time_compat:system_time(micro_seconds)};
+	[] ->
+	    none
+    end.
 
 -spec update(shaper(), integer()) -> {shaper(), integer()}.
 
 update(none, _Size) -> {none, 0};
-update(#maxrate{} = State, Size) ->
-    MinInterv = 1000 * Size /
-		  (2 * State#maxrate.maxrate - State#maxrate.lastrate),
-    Interv = (p1_time_compat:system_time(micro_seconds) - State#maxrate.lasttime) /
-	       1000,
-    ?DEBUG("State: ~p, Size=~p~nM=~p, I=~p~n",
-	   [State, Size, MinInterv, Interv]),
-    Pause = if MinInterv > Interv ->
-		   1 + trunc(MinInterv - Interv);
-	       true -> 0
+update(#maxrate{maxrate = MR, burst_size = BS,
+		acquired_credit = AC, lasttime = L} = State, Size) ->
+    Now = p1_time_compat:system_time(micro_seconds),
+    AC2 = min(BS, AC + (MR*(Now - L) div 1000000) - Size),
+
+    Pause = if AC2 >= 0 -> 0;
+		true -> -1000*AC2 div MR
 	    end,
-    NextNow = p1_time_compat:system_time(micro_seconds) + Pause * 1000,
-    Div = case NextNow - State#maxrate.lasttime of
-        0 -> 1;
-        V -> V
-    end,
-    {State#maxrate{lastrate =
-		       (State#maxrate.lastrate +
-			  1000000 * Size / Div)
-			 / 2,
-		   lasttime = NextNow},
+    ?DEBUG("MaxRate=~p, BurstSize=~p, AcquiredCredit=~p, Size=~p, NewAcquiredCredit=~p, Pause=~p",
+	   [MR, BS, AC, Size, AC2, Pause]),
+    {State#maxrate{acquired_credit = AC2, lasttime = Now},
      Pause}.
 
 transform_options(Opts) ->
     lists:foldl(fun transform_options/2, [], Opts).
 
-transform_options({OptName, Name, {maxrate, N}}, Opts) when OptName == shaper ->
-    [{shaper, [{Name, N}]}|Opts];
-transform_options({OptName, Name, none}, Opts) when OptName == shaper ->
-    [{shaper, [{Name, none}]}|Opts];
+transform_options({shaper, Name, {maxrate, N}}, Opts) ->
+    [{shaper, [{Name, N}]} | Opts];
+transform_options({shaper, Name, none}, Opts) ->
+    [{shaper, [{Name, none}]} | Opts];
+transform_options({shaper, List}, Opts) when is_list(List) ->
+    R = lists:map(
+	fun({Name, Args}) when is_list(Args) ->
+	    MaxRate = proplists:get_value(rate, Args, 1000),
+	    BurstSize = proplists:get_value(burst_size, Args, MaxRate),
+	    {Name, MaxRate, BurstSize};
+	   ({Name, Val}) ->
+	       {Name, Val, Val}
+	end, List),
+    [{shaper, R} | Opts];
 transform_options(Opt, Opts) ->
-    [Opt|Opts].
+    [Opt | Opts].
 
 -spec opt_type(shaper) -> fun((any()) -> any());
 	      (atom()) -> [atom()].
-opt_type(shaper) -> fun (V) -> V end;
+opt_type(shaper) -> fun(V) -> V end;
 opt_type(_) -> [shaper].
