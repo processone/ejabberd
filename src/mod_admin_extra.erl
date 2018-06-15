@@ -166,7 +166,7 @@ get_commands_spec() ->
 				      " - 1: error: module not loaded\n"
 				      " - 2: code not reloaded, but module restarted"},
      #ejabberd_commands{name = num_active_users, tags = [accounts, stats],
-			desc = "Get number of users active in the last days",
+			desc = "Get number of users active in the last days (only Mnesia)",
 			policy = admin,
 			module = ?MODULE, function = num_active_users,
 			args = [{host, binary}, {days, integer}],
@@ -341,20 +341,25 @@ get_commands_spec() ->
 			desc = "List all established sessions and their information",
 			module = ?MODULE, function = connected_users_info,
 			args = [],
-			result_example = [{"user1@myserver.com/tka", "c2s", "127.0.0.1",
-                                           40092, 8, "ejabberd@localhost", 28}],
+			result_example = [{"user1@myserver.com/tka",
+					    "c2s", "127.0.0.1", 42656,8, "ejabberd@localhost",
+                                           231, <<"dnd">>, <<"tka">>, <<>>}],
 			result = {connected_users_info,
 				  {list,
-				   {sessions, {tuple,
-					       [{jid, string},
-						{connection, string},
-						{ip, string},
-						{port, integer},
-						{priority, integer},
-						{node, string},
-						{uptime, integer}
-					       ]}}
+				   {session, {tuple,
+					      [{jid, string},
+					       {connection, string},
+					       {ip, string},
+					       {port, integer},
+					       {priority, integer},
+					       {node, string},
+					       {uptime, integer},
+					       {status, string},
+					       {resource, string},
+					       {statustext, string}
+					      ]}}
 				  }}},
+
      #ejabberd_commands{name = connected_users_vhost,
 			tags = [session],
 			desc = "Get the list of established sessions in a vhost",
@@ -1046,40 +1051,17 @@ get_status_list(Host, Status_required) ->
 	apply(Fstatus, [Status, Status_required])].
 
 connected_users_info() ->
-    USRIs = dirty_get_sessions_list2(),
-    CurrentSec = calendar:datetime_to_gregorian_seconds({date(), time()}),
     lists:map(
-      fun([{U, S, R}, {Now, Pid}, Priority, Info]) ->
-	      Conn = proplists:get_value(conn, Info),
-	      {Ip, Port} = proplists:get_value(ip, Info),
-	      IPS = inet_parse:ntoa(Ip),
-	      NodeS = atom_to_list(node(Pid)),
-	      Uptime = CurrentSec - calendar:datetime_to_gregorian_seconds(
-				      calendar:now_to_local_time(Now)),
-	      PriorityI = case Priority of
-			      PI when is_integer(PI) -> PI;
-			      _ -> nil
-			  end,
-	      {binary_to_list(<<U/binary, $@, S/binary, $/, R/binary>>),
-	       atom_to_list(Conn), IPS, Port, PriorityI, NodeS, Uptime}
+      fun({U, S, R}) ->
+	    Info = user_session_info(U, S, R),
+	    Jid = jid:encode(jid:make(U, S, R)),
+	    erlang:insert_element(1, Info, Jid)
       end,
-      USRIs).
+      ejabberd_sm:dirty_get_sessions_list()).
 
 connected_users_vhost(Host) ->
     USRs = ejabberd_sm:get_vh_session_list(Host),
     [ jid:encode(jid:make(USR)) || USR <- USRs].
-
-%% Code copied from ejabberd_sm.erl and customized
-dirty_get_sessions_list2() ->
-    Ss = mnesia:dirty_select(
-      session,
-	   [{#session{usr = '$1', sid = '$2', priority = '$3', info = '$4',
-		 _ = '_'},
-	     [],
-	     [['$1', '$2', '$3', '$4']]}]),
-    lists:filter(fun([_USR, _SID, _Priority, Info]) ->
-			 not proplists:get_bool(offline, Info)
-		 end, Ss).
 
 %% Make string more print-friendly
 stringize(String) ->
@@ -1129,32 +1111,23 @@ set_presence(User, Host, Resource, Type, Show, Status, Priority0) ->
     ejabberd_c2s:set_presence(Ref, Pres).
 
 user_sessions_info(User, Host) ->
+    [user_session_info(User, Host, Resource) ||
+    Resource <- ejabberd_sm:get_user_resources(User, Host)].
+
+user_session_info(User, Host, Resource) ->
     CurrentSec = calendar:datetime_to_gregorian_seconds({date(), time()}),
-    US = {User, Host},
-    Sessions = case catch mnesia:dirty_index_read(session, US, #session.us) of
-		   {'EXIT', _Reason} ->
-		       [];
-		   Ss ->
-		       lists:filter(fun(#session{info = Info}) ->
-					    not proplists:get_bool(offline, Info)
-				    end, Ss)
-	       end,
-    lists:map(
-      fun(Session) ->
-	      {_U, _S, Resource} = Session#session.usr,
-	      {Now, Pid} = Session#session.sid,
-	      {_U, _Resource, Status, StatusText} = get_presence(Pid),
-	      Info = Session#session.info,
-	      Priority = Session#session.priority,
-	      Conn = proplists:get_value(conn, Info),
-	      {Ip, Port} = proplists:get_value(ip, Info),
-	      IPS = inet_parse:ntoa(Ip),
-	      NodeS = atom_to_list(node(Pid)),
-	      Uptime = CurrentSec - calendar:datetime_to_gregorian_seconds(
-				      calendar:now_to_local_time(Now)),
-	      {atom_to_list(Conn), IPS, Port, Priority, NodeS, Uptime, Status, Resource, StatusText}
-      end,
-      Sessions).
+    Info = ejabberd_sm:get_user_info(User, Host, Resource),
+    Now = proplists:get_value(ts, Info),
+    Pid = proplists:get_value(pid, Info),
+    {_U, _Resource, Status, StatusText} = get_presence(Pid),
+    Priority = proplists:get_value(priority, Info),
+    Conn = proplists:get_value(conn, Info),
+    {Ip, Port} = proplists:get_value(ip, Info),
+    IPS = inet_parse:ntoa(Ip),
+    NodeS = atom_to_list(node(Pid)),
+    Uptime = CurrentSec - calendar:datetime_to_gregorian_seconds(
+	    calendar:now_to_local_time(Now)),
+    {atom_to_list(Conn), IPS, Port, Priority, NodeS, Uptime, Status, Resource, StatusText}.
 
 
 %%%

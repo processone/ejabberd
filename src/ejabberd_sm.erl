@@ -242,10 +242,12 @@ get_user_info(User, Server) ->
     LServer = jid:nameprep(Server),
     Mod = get_sm_backend(LServer),
     Ss = online(get_sessions(Mod, LUser, LServer)),
-    [{LResource, [{node, node(Pid)}|Info]}
+    [{LResource, [{node, node(Pid)}, {ts, Ts}, {pid, Pid},
+		  {priority, Priority} | Info]}
      || #session{usr = {_, _, LResource},
+		 priority = Priority,
 		 info = Info,
-		 sid = {_, Pid}} <- clean_session_list(Ss)].
+		 sid = {Ts, Pid}} <- clean_session_list(Ss)].
 
 -spec get_user_info(binary(), binary(), binary()) -> info() | offline.
 
@@ -259,8 +261,11 @@ get_user_info(User, Server, Resource) ->
 	    offline;
 	Ss ->
 	    Session = lists:max(Ss),
-	    Node = node(element(2, Session#session.sid)),
-	    [{node, Node}|Session#session.info]
+	    {Ts, Pid} = Session#session.sid,
+	    Node = node(Pid),
+	    Priority = Session#session.priority,
+	    [{node, Node}, {ts, Ts}, {pid, Pid}, {priority, Priority}
+	     |Session#session.info]
     end.
 
 -spec set_presence(sid(), binary(), binary(), binary(),
