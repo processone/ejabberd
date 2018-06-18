@@ -107,9 +107,7 @@ lookup_session(LUser, LServer, TS) ->
 lookup_sessions(LUser, LServer, PushJID) ->
     PushLJID = jid:tolower(PushJID),
     MatchSpec = ets:fun2ms(
-		  fun(#push_session{us = {U, S}, service = P,
-				    node = Node, timestamp = TS,
-				    xml = El} = Rec)
+		  fun(#push_session{us = {U, S}, service = P} = Rec)
 			when U == LUser,
 			     S == LServer,
 			     P == PushLJID ->
@@ -124,11 +122,7 @@ lookup_sessions(LUser, LServer) ->
 
 lookup_sessions(LServer) ->
     MatchSpec = ets:fun2ms(
-		  fun(#push_session{us = {_U, S},
-				    timestamp = TS,
-				    service = PushLJID,
-				    node = Node,
-				    xml = El} = Rec)
+		  fun(#push_session{us = {_U, S}} = Rec)
 			when S == LServer ->
 			  Rec
 		  end),
