@@ -128,9 +128,9 @@ lookup_sessions(LServer) ->
 				    timestamp = TS,
 				    service = PushLJID,
 				    node = Node,
-				    xml = El})
+				    xml = El} = Rec)
 			when S == LServer ->
-			  {TS, PushLJID, Node, El}
+			  Rec
 		  end),
     Records = mnesia:dirty_select(push_session, MatchSpec),
     {ok, records_to_sessions(Records)}.
