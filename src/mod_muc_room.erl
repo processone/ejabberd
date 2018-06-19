@@ -3845,11 +3845,23 @@ process_iq_disco_info(From, #iq{type = get, lang = Lang,
 
 -spec iq_disco_info_extras(binary(), state(), boolean()) -> xdata().
 iq_disco_info_extras(Lang, StateData, Static) ->
-    Fs1 = [{description, (StateData#state.config)#config.description},
+    Config = StateData#state.config,
+    AllowPM = case Config#config.allow_private_messages of
+		  false -> none;
+		  true ->
+		      case Config#config.allow_private_messages_from_visitors of
+			  nobody -> participants;
+			  _ -> anyone
+		      end
+	      end,
+    Fs1 = [{roomname, Config#config.title},
+	   {description, Config#config.description},
 	   {contactjid, get_owners(StateData)},
-	   {changesubject, (StateData#state.config)#config.allow_change_subj},
-	   {lang, (StateData#state.config)#config.lang}],
-    Fs2 = case (StateData#state.config)#config.pubsub of
+	   {changesubject, Config#config.allow_change_subj},
+	   {allowinvites, Config#config.allow_user_invites},
+	   {allowpm, AllowPM},
+	   {lang, Config#config.lang}],
+    Fs2 = case Config#config.pubsub of
 	      Node when is_binary(Node), Node /= <<"">> ->
 		  [{pubsub, Node}|Fs1];
 	      _ ->
