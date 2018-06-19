@@ -54,6 +54,7 @@ host_config:
       mod_proxy65: []
       mod_push:
         db_type: sql
+        include_body: false
       mod_push_keepalive: []
       mod_s2s_dialback: []
       mod_stream_mgmt:
@@ -117,6 +118,7 @@ Welcome to this XMPP server."
       mod_proxy65: []
       mod_push:
         db_type: sql
+        include_body: false
       mod_push_keepalive: []
       mod_s2s_dialback: []
       mod_stream_mgmt:
@@ -185,6 +187,7 @@ Welcome to this XMPP server."
       mod_proxy65: []
       mod_push:
         db_type: sql
+        include_body: false
       mod_push_keepalive: []
       mod_s2s_dialback: []
       mod_stream_mgmt:
@@ -246,7 +249,8 @@ Welcome to this XMPP server."
       mod_disco: []
       mod_ping: []
       mod_proxy65: []
-      mod_push: []
+      mod_push:
+        include_body: false
       mod_push_keepalive: []
       mod_s2s_dialback: []
       mod_stream_mgmt:
@@ -309,7 +313,8 @@ Welcome to this XMPP server."
       mod_disco: []
       mod_ping: []
       mod_proxy65: []
-      mod_push: []
+      mod_push:
+        include_body: false
       mod_push_keepalive: []
       mod_s2s_dialback: []
       mod_stream_mgmt:
