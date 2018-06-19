@@ -143,7 +143,7 @@ mod_opt_type(O) when O == use_cache; O == cache_missed ->
 -spec mod_options(binary()) -> [{atom(), any()}].
 mod_options(Host) ->
     [{include_sender, false},
-     {include_body, false},
+     {include_body, <<"New message">>},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {use_cache, ejabberd_config:use_cache(Host)},
      {cache_size, ejabberd_config:cache_size(Host)},
