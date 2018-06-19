@@ -185,17 +185,21 @@ compress(#socket_state{receiver = undefined,
     end.
 
 reset_stream(#socket_state{xml_stream = XMLStream,
-			   receiver = undefined,
+			   receiver = Receiver,
+			   sockmod = SockMod, socket = Socket,
 			   max_stanza_size = MaxStanzaSize} = SocketData) ->
     XMLStream1 = try fxml_stream:reset(XMLStream)
 		 catch error:_ ->
 			 close_stream(XMLStream),
 			 fxml_stream:new(self(), MaxStanzaSize)
 		 end,
-    SocketData#socket_state{xml_stream = XMLStream1};
-reset_stream(#socket_state{sockmod = SockMod, socket = Socket} = SocketData) ->
-    Socket1 = SockMod:reset_stream(Socket),
-    SocketData#socket_state{socket = Socket1}.
+    case Receiver of
+	undefined ->
+	    SocketData#socket_state{xml_stream = XMLStream1};
+	_ ->
+	    Socket1 = SockMod:reset_stream(Socket),
+	    SocketData#socket_state{xml_stream = XMLStream1, socket = Socket1}
+    end.
 
 -spec send_element(socket_state(), fxml:xmlel()) -> ok | {error, inet:posix()}.
 send_element(SocketData, El) when ?is_http_socket(SocketData) ->
