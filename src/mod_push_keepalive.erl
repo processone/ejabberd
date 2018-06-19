@@ -86,7 +86,7 @@ mod_opt_type(wake_on_timeout) ->
     fun (B) when is_boolean(B) -> B end.
 
 mod_options(_Host) ->
-    [{resume_timeout, 86400},
+    [{resume_timeout, 259200},
      {wake_on_start, false},
      {wake_on_timeout, true}].
 
