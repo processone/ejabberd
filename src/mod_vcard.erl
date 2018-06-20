@@ -199,7 +199,7 @@ process_local_iq(#iq{type = get, lang = Lang} = IQ) ->
     xmpp:make_iq_result(
       IQ, #vcard_temp{fn = <<"ejabberd">>,
 		      url = ejabberd_config:get_uri(),
-		      desc = misc:get_descr(Lang, <<"Erlang Jabber Server">>),
+		      desc = misc:get_descr(Lang, ?T("Erlang Jabber Server")),
 		      bday = <<"2002-11-16">>}).
 
 -spec process_sm_iq(iq()) -> iq().
@@ -236,7 +236,7 @@ process_vcard(#iq{type = get, lang = Lang} = IQ) ->
     xmpp:make_iq_result(
       IQ, #vcard_temp{fn = <<"ejabberd/mod_vcard">>,
 		      url = ejabberd_config:get_uri(),
-		      desc = misc:get_descr(Lang, <<"ejabberd vCard module">>)}).
+		      desc = misc:get_descr(Lang, ?T("ejabberd vCard module"))}).
 
 -spec process_search(iq()) -> iq().
 process_search(#iq{type = get, to = To, lang = Lang} = IQ) ->

@@ -255,7 +255,7 @@ iq_disco_info(From, Lang, State) ->
 iq_vcard(Lang) ->
     #vcard_temp{fn = <<"ejabberd/mod_multicast">>,
 		url = ejabberd_config:get_uri(),
-		desc = misc:get_descr(Lang, <<"ejabberd Multicast service">>)}.
+		desc = misc:get_descr(Lang, ?T("ejabberd Multicast service"))}.
 
 %%%-------------------------
 %%% Route

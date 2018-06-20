@@ -465,7 +465,7 @@ process_vcard(#iq{type = get, lang = Lang, sub_els = [#vcard_temp{}]} = IQ) ->
     xmpp:make_iq_result(
       IQ, #vcard_temp{fn = <<"ejabberd/mod_muc">>,
 		      url = ejabberd_config:get_uri(),
-		      desc = misc:get_descr(Lang, <<"ejabberd MUC module">>)});
+		      desc = misc:get_descr(Lang, ?T("ejabberd MUC module"))});
 process_vcard(#iq{type = set, lang = Lang} = IQ) ->
     Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));

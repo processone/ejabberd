@@ -1078,7 +1078,7 @@ iq_sm(#iq{to = To, sub_els = [SubEl]} = IQ) ->
 
 -spec iq_get_vcard(binary()) -> vcard_temp().
 iq_get_vcard(Lang) ->
-    Desc = misc:get_descr(Lang, <<"ejabberd Publish-Subscribe module">>),
+    Desc = misc:get_descr(Lang, ?T("ejabberd Publish-Subscribe module")),
     #vcard_temp{fn = <<"ejabberd/mod_pubsub">>,
 		url = ejabberd_config:get_uri(),
 		desc = Desc}.

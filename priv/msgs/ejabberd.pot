@@ -544,6 +544,10 @@ msgstr ""
 msgid "Enter the text you see"
 msgstr ""
 
+#: mod_vcard:202
+msgid "Erlang Jabber Server"
+msgstr ""
+
 #: ejabberd_web_admin:1689 ejabberd_web_admin:1860
 msgid "Error"
 msgstr ""
@@ -2531,8 +2535,28 @@ msgstr ""
 msgid "ejabberd"
 msgstr ""
 
+#: mod_muc:468
+msgid "ejabberd MUC module"
+msgstr ""
+
+#: mod_multicast:258
+msgid "ejabberd Multicast service"
+msgstr ""
+
+#: mod_pubsub:1081
+msgid "ejabberd Publish-Subscribe module"
+msgstr ""
+
+#: mod_proxy65_service:161
+msgid "ejabberd SOCKS5 Bytestreams module"
+msgstr ""
+
 #: ejabberd_web_admin:298 ejabberd_web_admin:330
 msgid "ejabberd Web Admin"
+msgstr ""
+
+#: mod_vcard:239
+msgid "ejabberd vCard module"
 msgstr ""
 
 #: mod_muc_log:379 mod_muc_log:382

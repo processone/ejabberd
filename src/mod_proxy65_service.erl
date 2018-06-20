@@ -158,7 +158,7 @@ process_vcard(#iq{type = get, lang = Lang} = IQ) ->
     xmpp:make_iq_result(
       IQ, #vcard_temp{fn = <<"ejabberd/mod_proxy65">>,
 		      url = ejabberd_config:get_uri(),
-		      desc = misc:get_descr(Lang, <<"ejabberd SOCKS5 Bytestreams module">>)}).
+		      desc = misc:get_descr(Lang, ?T("ejabberd SOCKS5 Bytestreams module"))}).
 
 -spec process_bytestreams(iq()) -> iq().
 process_bytestreams(#iq{type = get, from = JID, to = To, lang = Lang} = IQ) ->
