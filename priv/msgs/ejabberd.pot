@@ -188,7 +188,8 @@ msgstr ""
 msgid "Announcements"
 msgstr ""
 
-#: muc_roomconfig:1240 muc_roomconfig:1287 muc_roominfo:594
+#: muc_roomconfig:1240 muc_roomconfig:1287 muc_roomconfig:1691
+#: muc_roominfo:594
 msgid "Anyone"
 msgstr ""
 
@@ -1004,12 +1005,9 @@ msgstr ""
 msgid "Moderator privileges required"
 msgstr ""
 
-#: muc_roomconfig:1246 muc_roominfo:600
+#: muc_roomconfig:1246 muc_roomconfig:1285 muc_roomconfig:1689
+#: muc_roominfo:600
 msgid "Moderators Only"
-msgstr ""
-
-#: muc_roomconfig:1285
-msgid "Moderators only"
 msgstr ""
 
 #: ejabberd_web_admin:1992
@@ -2527,10 +2525,6 @@ msgstr ""
 msgid "Your messages to ~s are being blocked. To unblock them, visit ~s"
 msgstr ""
 
-#: muc_roomconfig:1691
-msgid "anyone"
-msgstr ""
-
 #: mod_disco:463
 msgid "ejabberd"
 msgstr ""
@@ -2589,10 +2583,6 @@ msgstr ""
 
 #: mod_muc_log:372 mod_muc_log:375
 msgid "leaves the room"
-msgstr ""
-
-#: muc_roomconfig:1689
-msgid "moderators only"
 msgstr ""
 
 #: mod_muc_room:4101
