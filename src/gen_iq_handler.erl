@@ -39,6 +39,7 @@
 
 -include("logger.hrl").
 -include("xmpp.hrl").
+-include("translate.hrl").
 
 -type component() :: ejabberd_sm | ejabberd_local.
 
@@ -87,8 +88,8 @@ handle(Component,
 handle(_, #iq{type = T, lang = Lang, sub_els = SubEls} = Packet)
   when T == get; T == set ->
     Txt = case SubEls of
-	      [] -> <<"No child elements found">>;
-	      _ -> <<"Too many child elements">>
+	      [] -> ?T("No child elements found");
+	      _ -> ?T("Too many child elements")
 	  end,
     Err = xmpp:err_bad_request(Txt, Lang),
     ejabberd_router:route_error(Packet, Err);

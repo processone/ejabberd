@@ -2,21 +2,26 @@
 %% -*- erlang -*-
 %%! -pa ebin
 
-main([Dir]) ->
+main(Dirs) ->
     Txts =
-	filelib:fold_files(
-	  Dir, ".+\.beam\$", false,
-	  fun(BeamFile, Res) ->
-		  Mod = mod(BeamFile),
-		  ErlFile = filename:join("src", Mod ++ ".erl"),
-		  case get_forms(BeamFile, ErlFile) of
-		      {ok, BeamForms, ErlForms} ->
-			  process_forms(BeamForms, Mod, application) ++
-			      process_forms(ErlForms, Mod, macro) ++ Res;
-		      _Err ->
-			  Res
-		  end
-	  end, []),
+	lists:foldl(
+	  fun(Dir, Acc) ->
+		  EbinDir = filename:join(Dir, "ebin"),
+		  SrcDir = filename:join(Dir, "src"),
+		  filelib:fold_files(
+		    EbinDir, ".+\.beam\$", false,
+		    fun(BeamFile, Res) ->
+			    Mod = mod(BeamFile),
+			    ErlFile = filename:join(SrcDir, Mod ++ ".erl"),
+			    case get_forms(BeamFile, ErlFile) of
+				{ok, BeamForms, ErlForms} ->
+				    process_forms(BeamForms, Mod, application) ++
+					process_forms(ErlForms, Mod, macro) ++ Res;
+				_Err ->
+				    Res
+			    end
+		    end, Acc)
+	  end, [], Dirs),
     Dict = lists:foldl(
 	     fun({B, Meta}, Acc) ->
 		     dict:update(
@@ -137,6 +142,7 @@ analyze_app(Form, Mod) ->
 		  {xmpp, "err_" ++ _, 2, [T|_]} -> T;
 		  {xmpp, "serr_" ++ _, 2, [T|_]} -> T;
 		  {xmpp, "mk_text", 2, [T|_]} -> T;
+		  {xmpp_tr, "tr", 2, [_,T|_]} -> T;
 		  {translate, "translate", 2, [_,T|_]} -> T
 	      end,
 	Pos = erl_syntax:get_pos(Txt),

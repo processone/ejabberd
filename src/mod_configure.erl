@@ -1091,7 +1091,7 @@ get_form(Host, [<<"config">>, <<"acls">>], Lang) ->
 	    type = form,
 	    fields = [?HFIELD(),
 		      #xdata_field{type = 'text-multi',
-				   label = ?T(Lang, <<"Access control lists">>),
+				   label = ?T(Lang, <<"Access Control Lists">>),
 				   var = <<"acls">>,
 				   values = ACLs}]}};
 get_form(Host, [<<"config">>, <<"access">>], Lang) ->
@@ -1109,7 +1109,7 @@ get_form(Host, [<<"config">>, <<"access">>], Lang) ->
 	    type = form,
 	    fields = [?HFIELD(),
 		      #xdata_field{type = 'text-multi',
-				   label = ?T(Lang, <<"Access rules">>),
+				   label = ?T(Lang, <<"Access Rules">>),
 				   var = <<"access">>,
 				   values = Accs}]}};
 get_form(_Host, ?NS_ADMINL(<<"add-user">>), Lang) ->
