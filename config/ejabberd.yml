@@ -565,7 +565,6 @@ modules:
   mod_configure: {} # requires mod_adhoc
   mod_disco: {}
   ## mod_echo: {}
-  mod_irc: {}
   mod_http_bind: {}
   ## mod_http_fileserver:
   ##   docroot: "/var/www"

@@ -241,9 +241,6 @@ update_tables(State) ->
     add_sh_column(State, "muc_online_users"),
     drop_sh_default(State, "muc_online_users"),
 
-    add_sh_column(State, "irc_custom"),
-    drop_sh_default(State, "irc_custom"),
-
     add_sh_column(State, "motd"),
     drop_pkey(State, "motd"),
     add_pkey(State, "motd", ["server_host", "username"]),

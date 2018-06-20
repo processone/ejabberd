@@ -734,7 +734,6 @@ modules:
   ## mod_delegation: {} # for xep0356
   mod_disco: {}
   mod_echo: {}
-  mod_irc: {}
   mod_bosh: {}
   ## mod_http_fileserver:
   ##   docroot: "/var/www"

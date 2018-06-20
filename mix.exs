@@ -125,7 +125,7 @@ defmodule Ejabberd.Mixfile do
   defp vars do
     case :file.consult("vars.config") do
       {:ok,config} -> config
-      _ -> [zlib: true, iconv: true]
+      _ -> [zlib: true, iconv: false]
     end
   end
 

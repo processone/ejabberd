@@ -627,7 +627,6 @@ keep_modules_tables() ->
 %% module.
 %% Mapping between modules and their tables
 module_tables(mod_announce) -> [motd, motd_users];
-module_tables(mod_irc) -> [irc_custom];
 module_tables(mod_last) -> [last_activity];
 module_tables(mod_muc) -> [muc_room, muc_registered];
 module_tables(mod_offline) -> [offline_msg];

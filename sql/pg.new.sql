@@ -144,9 +144,6 @@
 -- ALTER TABLE muc_online_users ADD COLUMN server_host text NOT NULL DEFAULT '<HOST>';
 -- ALTER TABLE muc_online_users ALTER COLUMN server_host DROP DEFAULT;
 
--- ALTER TABLE irc_custom ADD COLUMN server_host text NOT NULL DEFAULT '<HOST>';
--- ALTER TABLE irc_custom ALTER COLUMN server_host DROP DEFAULT;
-
 -- ALTER TABLE motd ADD COLUMN server_host text NOT NULL DEFAULT '<HOST>';
 -- ALTER TABLE motd DROP CONSTRAINT motd_pkey;
 -- ALTER TABLE motd ADD PRIMARY KEY (server_host, username);
@@ -497,16 +494,6 @@ CREATE TABLE muc_room_subscribers (
 
 CREATE INDEX i_muc_room_subscribers_host_jid ON muc_room_subscribers USING btree (host, jid);
 CREATE UNIQUE INDEX i_muc_room_subscribers_host_room_jid ON muc_room_subscribers USING btree (host, room, jid);
-
-CREATE TABLE irc_custom (
-    jid text NOT NULL,
-    host text NOT NULL,
-    server_host text NOT NULL,
-    data text NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT now()
-);
-
-CREATE UNIQUE INDEX i_irc_custom_jid_host ON irc_custom USING btree (jid, host);
 
 CREATE TABLE motd (
     username text NOT NULL,

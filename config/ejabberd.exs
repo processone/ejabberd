@@ -94,9 +94,6 @@ defmodule Ejabberd.ConfigFile do
   module :mod_disco do
   end
 
-  module :mod_irc do
-  end
-
   module :mod_http_bind do
   end
 

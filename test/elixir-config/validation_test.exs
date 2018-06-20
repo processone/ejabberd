@@ -19,7 +19,7 @@ defmodule Ejabberd.Config.ValidationTest do
   end
 
   test "validates correctly the modules" do
-    [mod_irc, mod_configure, mod_time] = Store.get(:modules)
+    [mod_configure, mod_time] = Store.get(:modules)
 
     [{:error, _mod, errors}] = Validation.validate(mod_configure)
     assert %{dependency: [mod_adhoc: :not_found]} == errors
@@ -27,6 +27,5 @@ defmodule Ejabberd.Config.ValidationTest do
     [{:error, _mod, errors}] = Validation.validate(mod_time)
     assert %{attribute: [{{:attr_not_supported, true}, :attr_not_supported}]} == errors
 
-    [{:ok, _mod}] = Validation.validate(mod_irc)
   end
 end

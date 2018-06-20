@@ -93,7 +93,6 @@ Moreover, ejabberd comes with a wide range of other state-of-the-art features:
   - Users Directory based on users vCards.
   - Publish-Subscribe component with support for Personal Eventing.
   - Support for web clients: HTTP Polling and HTTP Binding (BOSH).
-  - IRC transport.
   - Component support: interface with networks such as AIM, ICQ and MSN.
 
 
@@ -112,8 +111,6 @@ To compile ejabberd you need:
  - OpenSSL 1.0.0 or higher, for STARTTLS, SASL and SSL encryption.
  - Zlib 1.2.3 or higher, for Stream Compression support (XEP-0138). Optional.
  - PAM library. Optional. For Pluggable Authentication Modules (PAM).
- - GNU Iconv 1.8 or higher, for the IRC Transport (mod_irc). Optional. Not
-   needed on systems with GNU Libc.
  - ImageMagick's Convert program. Optional. For CAPTCHA challenges.
 
 If your system splits packages in libraries and development headers, you must

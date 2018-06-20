@@ -345,16 +345,6 @@ CREATE TABLE muc_room_subscribers (
 
 CREATE INDEX i_muc_room_subscribers_host_jid USING BTREE ON muc_room_subscribers(host, jid);
 
-CREATE TABLE irc_custom (
-    jid text NOT NULL,
-    host text NOT NULL,
-    server_host text NOT NULL,
-    data text NOT NULL,
-    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-CREATE UNIQUE INDEX i_irc_custom_jid_host USING BTREE ON irc_custom(jid(75), host(75));
-
 CREATE TABLE motd (
     username varchar(191) NOT NULL,
     server_host text NOT NULL,

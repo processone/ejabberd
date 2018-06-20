@@ -72,16 +72,6 @@ CREATE TABLE [dbo].[caps_features] (
 CREATE CLUSTERED INDEX [caps_features_node_subnode] ON [caps_features] (node, subnode)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
-CREATE TABLE [dbo].[irc_custom] (
-        [jid] [varchar] (255) NOT NULL,
-        [host] [varchar] (255) NOT NULL,
-        [data] [text] NOT NULL,
-        [created_at] [datetime] NOT NULL DEFAULT GETDATE()
-) TEXTIMAGE_ON [PRIMARY];
-
-CREATE UNIQUE CLUSTERED INDEX [irc_custom_jid_host] ON [irc_custom] (jid, host)
-WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
-
 CREATE TABLE [dbo].[last] (
         [username] [varchar] (250) NOT NULL,
         [seconds] [text] NOT NULL,

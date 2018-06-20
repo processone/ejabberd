@@ -320,15 +320,6 @@ CREATE TABLE muc_room_subscribers (
 CREATE INDEX i_muc_room_subscribers_host_jid ON muc_room_subscribers USING btree (host, jid);
 CREATE UNIQUE INDEX i_muc_room_subscribers_host_room_jid ON muc_room_subscribers USING btree (host, room, jid);
 
-CREATE TABLE irc_custom (
-    jid text NOT NULL,
-    host text NOT NULL,
-    data text NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT now()
-);
-
-CREATE UNIQUE INDEX i_irc_custom_jid_host ON irc_custom USING btree (jid, host);
-
 CREATE TABLE motd (
     username text PRIMARY KEY,
     xml text,

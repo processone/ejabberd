@@ -329,16 +329,6 @@ CREATE TABLE muc_room_subscribers (
 CREATE INDEX i_muc_room_subscribers_host_jid ON muc_room_subscribers(host, jid);
 CREATE UNIQUE INDEX i_muc_room_subscribers_host_room_jid ON muc_room_subscribers(host, room, jid);
 
-CREATE TABLE irc_custom (
-    jid text NOT NULL,
-    host text NOT NULL,
-    server_host text NOT NULL,
-    data text NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE UNIQUE INDEX i_irc_custom_jid_host ON irc_custom (jid, host);
-
 CREATE TABLE motd (
     username text NOT NULL,
     server_host text NOT NULL,

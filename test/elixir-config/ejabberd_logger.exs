@@ -24,7 +24,7 @@ defmodule Ejabberd.Config.EjabberdLoggerTest do
   test "outputs correctly when attr is not supported" do
     error_msg = "[ WARN ] Annotation @attr_not_supported is not supported.\n"
 
-    [_mod_irc, _mod_configure, mod_time] = Store.get(:modules)
+    [_mod_configure, mod_time] = Store.get(:modules)
     fun = fn ->
       mod_time
       |> Validation.validate
@@ -37,7 +37,7 @@ defmodule Ejabberd.Config.EjabberdLoggerTest do
   test "outputs correctly when dependency is not found" do
     error_msg = "[ WARN ] Module :mod_adhoc was not found, but is required as a dependency.\n"
 
-    [_mod_irc, mod_configure, _mod_time] = Store.get(:modules)
+    [mod_configure, _mod_time] = Store.get(:modules)
     fun = fn ->
       mod_configure
       |> Validation.validate

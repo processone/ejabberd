@@ -197,12 +197,12 @@ AC_ARG_ENABLE(elixir,
 esac],[if test "x$elixir" = "x"; then elixir=false; fi])
 
 AC_ARG_ENABLE(iconv,
-[AC_HELP_STRING([--enable-iconv], [enable iconv support (default: yes)])],
+[AC_HELP_STRING([--enable-iconv], [enable iconv support (default: no)])],
 [case "${enableval}" in
   yes) iconv=true ;;
   no)  iconv=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-iconv) ;;
-esac],[if test "x$iconv" = "x"; then iconv=true; fi])
+esac],[if test "x$iconv" = "x"; then iconv=false; fi])
 
 AC_ARG_ENABLE(debug,
 [AC_HELP_STRING([--enable-debug], [enable debug information (default: yes)])],

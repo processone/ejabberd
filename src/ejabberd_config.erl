@@ -1112,7 +1112,6 @@ get_copyright() ->
 replace_module(mod_announce_odbc) -> {mod_announce, sql};
 replace_module(mod_blocking_odbc) -> {mod_blocking, sql};
 replace_module(mod_caps_odbc) -> {mod_caps, sql};
-replace_module(mod_irc_odbc) -> {mod_irc, sql};
 replace_module(mod_last_odbc) -> {mod_last, sql};
 replace_module(mod_muc_odbc) -> {mod_muc, sql};
 replace_module(mod_offline_odbc) -> {mod_offline, sql};
