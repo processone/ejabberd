@@ -31,7 +31,7 @@
 -author('ekhramtsov@process-one.net').
 
 %% API
--export([start/0, opt_type/1]).
+-export([start/0, opt_type/1, config_reloaded/0]).
 
 %% gen_event callbacks
 -export([init/1, handle_event/2, handle_call/2,
@@ -67,15 +67,21 @@ start() ->
     application:set_env(os_mon, start_os_sup, false),
     application:set_env(os_mon, start_memsup, true),
     application:set_env(os_mon, start_disksup, false),
-    ejabberd:start_app(os_mon).
+    ejabberd:start_app(os_mon),
+    set_oom_watermark().
 
 excluded_apps() ->
     [os_mon, mnesia, sasl, stdlib, kernel].
+
+-spec config_reloaded() -> ok.
+config_reloaded() ->
+    set_oom_watermark().
 
 %%%===================================================================
 %%% gen_event callbacks
 %%%===================================================================
 init([]) ->
+    ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),
     {ok, #state{}}.
 
 handle_event({set_alarm, {system_memory_high_watermark, _}}, State) ->
@@ -112,7 +118,7 @@ handle_info(Info, State) ->
     {ok, State}.
 
 terminate(_Reason, _State) ->
-    ok.
+    ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 50).
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
@@ -128,7 +134,8 @@ handle_overload(State) ->
 handle_overload(_State, Procs) ->
     AppPids = get_app_pids(),
     {TotalMsgs, ProcsNum, Apps, Stats} = overloaded_procs(AppPids, Procs),
-    if TotalMsgs >= 10000 ->
+    MaxMsgs = ejabberd_config:get_option(oom_queue, 10000),
+    if TotalMsgs >= MaxMsgs ->
 	    SortedStats = lists:reverse(lists:keysort(#proc_stat.qlen, Stats)),
 	    error_logger:warning_msg(
 	      "The system is overloaded with ~b messages "
@@ -312,14 +319,21 @@ kill_proc(Pid) ->
     exit(Pid, kill),
     Pid.
 
+-spec set_oom_watermark() -> ok.
+set_oom_watermark() ->
+    WaterMark = ejabberd_config:get_option(oom_watermark, 80),
+    memsup:set_sysmem_high_watermark(WaterMark/100).
+
 -spec maybe_restart_app(atom()) -> any().
 maybe_restart_app(lager) ->
     ejabberd_logger:restart();
 maybe_restart_app(_) ->
     ok.
 
--spec opt_type(oom_killer) -> fun((boolean()) -> boolean());
-	      (atom()) -> [atom()].
 opt_type(oom_killer) ->
     fun(B) when is_boolean(B) -> B end;
-opt_type(_) -> [oom_killer].
+opt_type(oom_watermark) ->
+    fun(I) when is_integer(I), I>0, I<100 -> I end;
+opt_type(oom_queue) ->
+    fun(I) when is_integer(I)>0 -> I end;
+opt_type(_) -> [oom_killer, oom_watermark, oom_queue].
