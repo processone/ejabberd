@@ -335,5 +335,5 @@ opt_type(oom_killer) ->
 opt_type(oom_watermark) ->
     fun(I) when is_integer(I), I>0, I<100 -> I end;
 opt_type(oom_queue) ->
-    fun(I) when is_integer(I)>0 -> I end;
+    fun(I) when is_integer(I), I>0 -> I end;
 opt_type(_) -> [oom_killer, oom_watermark, oom_queue].
