@@ -528,7 +528,7 @@ process_features(StreamFeatures,
     process_stream_established(State1);
 process_features(StreamFeatures,
 		 #{stream_encrypted := Encrypted,
-		   lang := Lang} = State) ->
+		   lang := Lang, xmlns := NS} = State) ->
     State1 = try callback(handle_unauthenticated_features, StreamFeatures, State)
 	     catch _:{?MODULE, undef} -> State
 	     end,
@@ -541,7 +541,7 @@ process_features(StreamFeatures,
 		false when TLSRequired and not Encrypted ->
 		    Txt = <<"Use of STARTTLS required">>,
 		    send_pkt(State1, xmpp:serr_policy_violation(Txt, Lang));
-		false when not Encrypted ->
+		false when NS == ?NS_SERVER andalso not Encrypted ->
 		    process_sasl_failure(
 		      <<"Peer doesn't support STARTTLS">>, State1);
 		#starttls{required = true} when not TLSAvailable and not Encrypted ->
@@ -550,7 +550,7 @@ process_features(StreamFeatures,
 		#starttls{} when TLSAvailable and not Encrypted ->
 		    State2 = State1#{stream_state => wait_for_starttls_response},
 		    send_pkt(State2, #starttls{});
-		#starttls{} when not Encrypted ->
+		#starttls{} when NS == ?NS_SERVER andalso not Encrypted ->
 		    process_sasl_failure(
 		      <<"STARTTLS is disabled in local configuration">>, State1);
 		_ ->
