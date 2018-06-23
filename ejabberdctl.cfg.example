@@ -33,10 +33,10 @@
 # from a client or from another Jabber server. So take this into
 # account when setting this limit.
 #
-# Default: 32000
+# Default: 65536 (or 8196 on Windows)
 # Maximum: 268435456
 #
-#ERL_MAX_PORTS=32000
+#ERL_MAX_PORTS=65536
 
 #.
 #' FIREWALL_WINDOW: Range of allowed ports to pass through a firewall
@@ -85,10 +85,10 @@
 # Erlang, and therefore not related to the operating system processes, you do
 # not have to worry about allowing a huge number of them.
 #
-# Default: 250000
+# Default: 262144
 # Maximum: 268435456
 #
-#ERL_PROCESSES=250000
+#ERL_PROCESSES=262144
 
 #.
 #' ERL_MAX_ETS_TABLES: Maximum number of ETS and Mnesia tables
@@ -99,9 +99,9 @@
 # You can safely increase this limit when starting ejabberd. It impacts memory
 # consumption but the difference will be quite small.
 #
-# Default: 1400
+# Default: 2053
 #
-#ERL_MAX_ETS_TABLES=1400
+#ERL_MAX_ETS_TABLES=2053
 
 #.
 #' ERL_OPTIONS: Additional Erlang options
