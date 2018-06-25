@@ -196,10 +196,10 @@ format_error({socket, Reason}) ->
     format("Connection failed: ~s", [format_inet_error(Reason)]);
 format_error({stream, reset}) ->
     <<"Stream reset by peer">>;
-format_error({stream, {in, #stream_error{reason = Reason, text = Txt}}}) ->
-    format("Stream closed by peer: ~s", [format_stream_error(Reason, Txt)]);
-format_error({stream, {out, #stream_error{reason = Reason, text = Txt}}}) ->
-    format("Stream closed by us: ~s", [format_stream_error(Reason, Txt)]);
+format_error({stream, {in, #stream_error{} = Err}}) ->
+    format("Stream closed by peer: ~s", [xmpp:format_stream_error(Err)]);
+format_error({stream, {out, #stream_error{} = Err}}) ->
+    format("Stream closed by us: ~s", [xmpp:format_stream_error(Err)]);
 format_error({tls, Reason}) ->
     format("TLS failed: ~s", [format_tls_error(Reason)]);
 format_error(internal_failure) ->
@@ -1154,20 +1154,6 @@ format_inet_error(Reason) ->
     case inet:format_error(Reason) of
 	"unknown POSIX error" -> atom_to_list(Reason);
 	Txt -> Txt
-    end.
-
--spec format_stream_error(atom() | 'see-other-host'(), [text()]) -> string().
-format_stream_error(Reason, Txt) ->
-    Slogan = case Reason of
-		 undefined -> "no reason";
-		 #'see-other-host'{} -> "see-other-host";
-		 _ -> atom_to_list(Reason)
-	     end,
-    case xmpp:get_text(Txt) of
-	<<"">> ->
-	    Slogan;
-	Data ->
-	    binary_to_list(Data) ++ " (" ++ Slogan ++ ")"
     end.
 
 -spec format_sasl_error(cyrsasl:mechanism(), atom()) -> {atom(), binary()}.

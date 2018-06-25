@@ -217,10 +217,10 @@ format_error({pkix, Reason}) ->
     format("Peer certificate rejected: ~s", [ErrTxt]);
 format_error({stream, reset}) ->
     <<"Stream reset by peer">>;
-format_error({stream, {in, #stream_error{reason = Reason, text = Txt}}}) ->
-    format("Stream closed by peer: ~s", [format_stream_error(Reason, Txt)]);
-format_error({stream, {out, #stream_error{reason = Reason, text = Txt}}}) ->
-    format("Stream closed by us: ~s", [format_stream_error(Reason, Txt)]);
+format_error({stream, {in, #stream_error{} = Err}}) ->
+    format("Stream closed by peer: ~s", [xmpp:format_stream_error(Err)]);
+format_error({stream, {out, #stream_error{} = Err}}) ->
+    format("Stream closed by us: ~s", [xmpp:format_stream_error(Err)]);
 format_error({tls, Reason}) ->
     format("TLS failed: ~s", [format_tls_error(Reason)]);
 format_error({auth, Reason}) ->
@@ -672,7 +672,7 @@ process_sasl_success(#{socket := Socket} = State) ->
 -spec process_sasl_failure(sasl_failure() | binary(), state()) -> state().
 process_sasl_failure(#sasl_failure{} = Failure, State) ->
     Reason = format("Peer responded with error: ~s",
-		    [format_sasl_failure(Failure)]),
+		    [xmpp:format_sasl_error(Failure)]),
     process_sasl_failure(Reason, State);
 process_sasl_failure(Reason, State) ->
     try callback(handle_auth_failure, <<"EXTERNAL">>, {auth, Reason}, State)
@@ -817,37 +817,12 @@ format_inet_error(Reason) ->
 	Txt -> Txt
     end.
 
--spec format_stream_error(atom() | 'see-other-host'(), [text()]) -> string().
-format_stream_error(Reason, Txt) ->
-    Slogan = case Reason of
-		 undefined -> "no reason";
-		 #'see-other-host'{} -> "see-other-host";
-		 _ -> atom_to_list(Reason)
-	     end,
-    case xmpp:get_text(Txt) of
-	<<"">> ->
-	    Slogan;
-	Data ->
-	    binary_to_list(Data) ++ " (" ++ Slogan ++ ")"
-    end.
-
 -spec format_tls_error(atom() | binary()) -> list().
 format_tls_error(Reason) when is_atom(Reason) ->
     format_inet_error(Reason);
 format_tls_error(Reason) ->
     binary_to_list(Reason).
 
-format_sasl_failure(#sasl_failure{reason = Reason, text = Txt}) ->
-    Slogan = case Reason of
-		 undefined -> "no reason";
-		 _ -> atom_to_list(Reason)
-	     end,
-    case xmpp:get_text(Txt) of
-	<<"">> -> Slogan;
-	Data ->
-	    binary_to_list(Data) ++ " (" ++ Slogan ++ ")"
-    end.
-		      
 -spec format(io:format(), list()) -> binary().
 format(Fmt, Args) ->
     iolist_to_binary(io_lib:format(Fmt, Args)).

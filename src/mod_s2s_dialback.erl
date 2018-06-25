@@ -335,24 +335,9 @@ format_error(#db_result{type = invalid}) ->
 format_error(#db_result{type = error} = Result) ->
     case xmpp:get_error(Result) of
 	#stanza_error{} = Err ->
-	    format_stanza_error(Err);
+	    xmpp:format_stanza_error(Err);
 	undefined ->
 	    <<"unrecognized error">>
     end;
 format_error(_) ->
     <<"unexpected dialback result">>.
-
--spec format_stanza_error(stanza_error()) -> binary().
-format_stanza_error(#stanza_error{reason = Reason, text = Txt}) ->
-    Slogan = case Reason of
-		 undefined -> <<"no reason">>;
-		 #gone{} -> <<"gone">>;
-		 #redirect{} -> <<"redirect">>;
-		 _ -> erlang:atom_to_binary(Reason, latin1)
-	     end,
-    case xmpp:get_text(Txt) of
-	<<"">> ->
-	    Slogan;
-	Data ->
-	    <<Data/binary, " (", Slogan/binary, ")">>
-    end.
