@@ -415,6 +415,8 @@ handle_info({tcp_closed, _}, State) ->
     handle_info({'$gen_event', closed}, State);
 handle_info({tcp_error, _, Reason}, State) ->
     noreply(process_stream_end({socket, Reason}, State));
+handle_info({'EXIT', _, Reason}, State) ->
+    {stop, Reason, State};
 handle_info(Info, State) ->
     noreply(try callback(handle_info, Info, State)
 	    catch _:{?MODULE, undef} -> State
