@@ -253,7 +253,7 @@ format_error(Err) ->
 %%% gen_server callbacks
 %%%===================================================================
 -spec init(list()) -> {ok, state(), timeout()} | {stop, term()} | ignore.
-init([Mod, _SockMod, From, To, Opts]) ->
+init([Mod, From, To, Opts]) ->
     Time = p1_time_compat:monotonic_time(milli_seconds),
     State = #{owner => self(),
 	      mod => Mod,

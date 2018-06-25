@@ -60,12 +60,12 @@ start(From, To, Opts) ->
 		Res -> Res
 	    end;
 	_ ->
-	    xmpp_stream_out:start(?MODULE, [xmpp_socket, From, To, Opts],
+	    xmpp_stream_out:start(?MODULE, [From, To, Opts],
 				  ejabberd_config:fsm_limit_opts([]))
     end.
 
 start_link(From, To, Opts) ->
-    xmpp_stream_out:start_link(?MODULE, [xmpp_socket, From, To, Opts],
+    xmpp_stream_out:start_link(?MODULE, [From, To, Opts],
 			       ejabberd_config:fsm_limit_opts([])).
 
 -spec connect(pid()) -> ok.
