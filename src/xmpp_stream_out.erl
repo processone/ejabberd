@@ -308,6 +308,17 @@ handle_cast(connect, #{remote_server := RemoteServer,
 		      process_stream_end({dns, Why}, State)
 	      end
       end);
+handle_cast(connect, #{stream_state := disconnected} = State) ->
+    State1 = State#{stream_id => new_id(),
+		    stream_encrypted => false,
+		    stream_verified => false,
+		    stream_authenticated => false,
+		    stream_restarted => false,
+		    stream_state => connecting},
+    State2 = maps:remove(ip, State1),
+    State3 = maps:remove(socket, State2),
+    State4 = maps:remove(socket_monitor, State3),
+    handle_cast(connect, State4);
 handle_cast(connect, State) ->
     %% Ignoring connection attempts in other states
     noreply(State);
