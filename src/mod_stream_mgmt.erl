@@ -142,13 +142,15 @@ c2s_stream_features(Acc, Host) ->
 	    Acc
     end.
 
-c2s_unauthenticated_packet(State, Pkt) when ?is_sm_packet(Pkt) ->
+c2s_unauthenticated_packet(#{lang := Lang} = State, Pkt) when ?is_sm_packet(Pkt) ->
     %% XEP-0198 says: "For client-to-server connections, the client MUST NOT
     %% attempt to enable stream management until after it has completed Resource
     %% Binding unless it is resuming a previous session".  However, it also
     %% says: "Stream management errors SHOULD be considered recoverable", so we
     %% won't bail out.
-    Err = #sm_failed{reason = 'unexpected-request', xmlns = ?NS_STREAM_MGMT_3},
+    Err = #sm_failed{reason = 'not-authorized',
+		     text = xmpp:mk_text(<<"Unauthorized">>, Lang),
+		     xmlns = ?NS_STREAM_MGMT_3},
     {stop, send(State, Err)};
 c2s_unauthenticated_packet(State, _Pkt) ->
     State.
@@ -351,7 +353,7 @@ negotiate_stream_mgmt(Pkt, State) ->
     end.
 
 -spec perform_stream_mgmt(xmpp_element(), state()) -> state().
-perform_stream_mgmt(Pkt, #{mgmt_xmlns := Xmlns} = State) ->
+perform_stream_mgmt(Pkt, #{mgmt_xmlns := Xmlns, lang := Lang} = State) ->
     case xmpp:get_ns(Pkt) of
 	Xmlns ->
 	    case Pkt of
@@ -368,7 +370,10 @@ perform_stream_mgmt(Pkt, #{mgmt_xmlns := Xmlns} = State) ->
 					   xmlns = Xmlns})
 	    end;
 	_ ->
-	    send(State, #sm_failed{reason = 'unsupported-version', xmlns = Xmlns})
+	    Txt = <<"Unsupported version">>,
+	    send(State, #sm_failed{reason = 'unexpected-request',
+				   text = xmpp:mk_text(Txt, Lang),
+				   xmlns = Xmlns})
     end.
 
 -spec handle_enable(state(), sm_enable()) -> state().
