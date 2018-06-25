@@ -130,9 +130,13 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
+start({local, Mod}, Args, Opts) ->
+    ?GEN_SERVER:start({local, Mod}, ?MODULE, [Mod|Args], Opts ++ ?FSMOPTS);
 start(Mod, Args, Opts) ->
     ?GEN_SERVER:start(?MODULE, [Mod|Args], Opts ++ ?FSMOPTS).
 
+start_link({local, Mod}, Args, Opts) ->
+    ?GEN_SERVER:start_link({local, Mod}, ?MODULE, [Mod|Args], Opts ++ ?FSMOPTS);
 start_link(Mod, Args, Opts) ->
     ?GEN_SERVER:start_link(?MODULE, [Mod|Args], Opts ++ ?FSMOPTS).
 
