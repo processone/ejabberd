@@ -30,7 +30,6 @@
 
 -define(SERVICE_REQUEST_TIMEOUT, 5000). % 5 seconds.
 -define(SLOT_TIMEOUT, 18000000). % 5 hours.
--define(FORMAT(Error), file:format_error(Error)).
 -define(URL_ENC(URL), binary_to_list(misc:url_encode(URL))).
 -define(ADDR_TO_STR(IP), ejabberd_config:may_hide_data(misc:ip_to_list(IP))).
 -define(STR_TO_INT(Str, B), binary_to_integer(iolist_to_binary(Str), B)).
@@ -389,8 +388,8 @@ process(_LocalPath, #request{method = 'PUT', host = Host, ip = IP,
 		{ok, Headers, OutData} ->
 		    http_response(201, Headers ++ CustomHeaders, OutData);
 		{error, Error} ->
-		    ?ERROR_MSG("Cannot store file ~s from ~s for ~s: ~p",
-			       [Path, ?ADDR_TO_STR(IP), Host, ?FORMAT(Error)]),
+		    ?INFO_MSG("Cannot store file ~s from ~s for ~s: ~s",
+			      [Path, ?ADDR_TO_STR(IP), Host, format_error(Error)]),
 		    http_response(500)
 	    end;
 	{error, size_mismatch} ->
@@ -443,7 +442,7 @@ process(_LocalPath, #request{method = Method, host = Host, ip = IP} = Request)
 		    http_response(404);
 		{error, Error} ->
 		    ?INFO_MSG("Cannot serve ~s to ~s: ~s",
-			      [Path, ?ADDR_TO_STR(IP), ?FORMAT(Error)]),
+			      [Path, ?ADDR_TO_STR(IP), format_error(Error)]),
 		    http_response(500)
 	    end;
 	Error ->
@@ -827,6 +826,20 @@ code_to_message(413) -> <<"File size doesn't match requested size.">>;
 code_to_message(500) -> <<"Internal server error.">>;
 code_to_message(_Code) -> <<"">>.
 
+-spec format_error(atom()) -> string().
+format_error(Reason) ->
+    case file:format_error(Reason) of
+	"unknown POSIX error" ->
+	    case inet:format_error(Reason) of
+		"unknown POSIX error" ->
+		    atom_to_list(Reason);
+		Txt ->
+		    Txt
+	    end;
+	Txt ->
+	    Txt
+    end.
+
 %%--------------------------------------------------------------------
 %% Image manipulation stuff.
 %%--------------------------------------------------------------------
@@ -848,7 +861,7 @@ identify(Path) ->
 	end
     catch _:{badmatch, {error, Reason}} ->
 	    ?DEBUG("Failed to read file ~s: ~s",
-		   [Path, file:format_error(Reason)]),
+		   [Path, format_error(Reason)]),
 	    pass
     end.
 
@@ -878,7 +891,7 @@ convert(Path, #media_info{type = T, width = W, height = H} = Info) ->
 				    {ok, OutPath, OutInfo};
 				{error, Why} ->
 				    ?ERROR_MSG("Failed to write to ~s: ~s",
-					       [OutPath, file:format_error(Why)]),
+					       [OutPath, format_error(Why)]),
 				    pass
 			    end;
 			{error, Why} ->
@@ -888,7 +901,7 @@ convert(Path, #media_info{type = T, width = W, height = H} = Info) ->
 		    end;
 		{error, Why} ->
 		    ?ERROR_MSG("Failed to read file ~s: ~s",
-			       [Path, file:format_error(Why)]),
+			       [Path, format_error(Why)]),
 		    pass
 	    end
     end.
@@ -917,8 +930,8 @@ remove_user(User, Server) ->
 	{error, enoent} ->
 	    ?DEBUG("Found no HTTP upload directory of ~s@~s", [User, Server]);
 	{error, Error} ->
-	    ?ERROR_MSG("Cannot remove HTTP upload directory of ~s@~s: ~p",
-		       [User, Server, ?FORMAT(Error)])
+	    ?ERROR_MSG("Cannot remove HTTP upload directory of ~s@~s: ~s",
+		       [User, Server, format_error(Error)])
     end,
     ok.
 
