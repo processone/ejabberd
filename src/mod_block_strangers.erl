@@ -190,6 +190,8 @@ maybe_adjust_from(#message{} = Msg) ->
 need_check(Pkt) ->
     To = xmpp:get_to(Pkt),
     From = xmpp:get_from(Pkt),
+    IsSelf = To#jid.luser == From#jid.luser andalso
+	     To#jid.lserver == From#jid.lserver,
     LServer = To#jid.lserver,
     IsEmpty = case Pkt of
 		  #message{body = [], subject = []} ->
@@ -199,7 +201,8 @@ need_check(Pkt) ->
 	      end,
     AllowLocalUsers = gen_mod:get_module_opt(LServer, ?MODULE, allow_local_users),
     Access = gen_mod:get_module_opt(LServer, ?MODULE, access),
-    not (IsEmpty orelse acl:match_rule(LServer, Access, From) == allow
+    not (IsSelf orelse IsEmpty
+	 orelse acl:match_rule(LServer, Access, From) == allow
 	 orelse ((AllowLocalUsers orelse From#jid.luser == <<"">>)
 		 andalso ejabberd_router:is_my_host(From#jid.lserver))).
 
