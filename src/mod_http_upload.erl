@@ -689,13 +689,12 @@ iq_disco_info(Host, Lang, Name, AddInfo) ->
 	       infinity ->
 		   AddInfo;
 	       MaxSize ->
-		   XData = lists:map(
-			     fun(NS) ->
-				     Fs = http_upload:encode(
-					    [{'max-file-size', MaxSize}], NS, Lang),
-				     #xdata{type = result, fields = Fs}
-			     end, [?NS_HTTP_UPLOAD, ?NS_HTTP_UPLOAD_0]),
-		   XData ++ AddInfo
+		   lists:foldl(
+		     fun(NS, Acc) ->
+			     Fs = http_upload:encode(
+				    [{'max-file-size', MaxSize}], NS, Lang),
+			     [#xdata{type = result, fields = Fs}|Acc]
+		     end, AddInfo, [?NS_HTTP_UPLOAD_0, ?NS_HTTP_UPLOAD])
 	   end,
     #disco_info{identities = [#identity{category = <<"store">>,
 					type = <<"file">>,
