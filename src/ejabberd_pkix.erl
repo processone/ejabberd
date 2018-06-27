@@ -395,7 +395,7 @@ build_chain_and_check(State) ->
 	{ok, Chains} ->
 	    InvalidCerts = validate(CertPaths, State),
 	    SortedChains = sort_chains(Chains, InvalidCerts),
-	    store_certs(SortedChains);
+	    store_certs(SortedChains, State);
 	{error, Cert, Why} ->
 	    Path = maps:get(Cert, State#state.certs),
 	    ?ERROR_MSG("Failed to build certificate chain for ~s: ~s",
@@ -403,14 +403,14 @@ build_chain_and_check(State) ->
 	    {error, Why}
     end.
 
--spec store_certs([{[cert()], priv_key()}]) -> ok | {error, file:posix()}.
-store_certs(Chains) ->
+-spec store_certs([{[cert()], priv_key()}], state()) -> ok | {error, file:posix()}.
+store_certs(Chains, State) ->
     ?DEBUG("Storing certificate chains", []),
     Res = lists:foldl(
 	    fun(_, {error, _} = Err) ->
 		    Err;
 	       ({Certs, Key}, Acc) ->
-		    case store_cert(Certs, Key) of
+		    case store_cert(Certs, Key, State) of
 			{ok, FileDoms} ->
 			    Acc ++ FileDoms;
 			{error, _} = Err ->
@@ -429,9 +429,9 @@ store_certs(Chains) ->
 	      end, FileDomains)
     end.
 
--spec store_cert([cert()], priv_key()) -> {ok, [{binary(), binary()}]} |
-					  {error, file:posix()}.
-store_cert(Certs, Key) ->
+-spec store_cert([cert()], priv_key(), state()) -> {ok, [{binary(), binary()}]} |
+						   {error, file:posix()}.
+store_cert(Certs, Key, State) ->
     CertPEMs = public_key:pem_encode(
 		 lists:map(
 		   fun(Cert) ->
@@ -445,12 +445,19 @@ store_cert(Certs, Key) ->
 		 not_encrypted}]),
     PEMs = <<CertPEMs/binary, KeyPEM/binary>>,
     Cert = hd(Certs),
-    Domains = xmpp_stream_pkix:get_cert_domains(Cert),
     FileName = filename:join(certs_dir(), str:sha(PEMs)),
     case file:write_file(FileName, PEMs) of
 	ok ->
 	    file:change_mode(FileName, 8#600),
-	    {ok, [{FileName, Domain} || Domain <- Domains]};
+	    case xmpp_stream_pkix:get_cert_domains(Cert) of
+		[] ->
+		    Path = maps:get(Cert, State#state.certs),
+		    ?WARNING_MSG("Certificate from ~s doesn't define "
+				 "any domain names", [Path]),
+		    {ok, [{FileName, <<"">>}]};
+		Domains ->
+		    {ok, [{FileName, Domain} || Domain <- Domains]}
+	    end;
 	{error, Why} = Err ->
 	    ?ERROR_MSG("Failed to write to ~s: ~s",
 		       [FileName, file:format_error(Why)]),
