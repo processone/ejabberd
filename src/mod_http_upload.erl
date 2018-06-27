@@ -689,17 +689,11 @@ iq_disco_info(Host, Lang, Name, AddInfo) ->
 	       infinity ->
 		   AddInfo;
 	       MaxSize ->
-		   MaxSizeStr = integer_to_binary(MaxSize),
 		   XData = lists:map(
 			     fun(NS) ->
-				     Fields = [#xdata_field{
-						  type = hidden,
-						  var = <<"FORM_TYPE">>,
-						  values = [NS]},
-					       #xdata_field{
-						  var = <<"max-file-size">>,
-						  values = [MaxSizeStr]}],
-				     #xdata{type = result, fields = Fields}
+				     Fs = http_upload:encode(
+					    [{'max-file-size', MaxSize}], NS, Lang),
+				     #xdata{type = result, fields = Fs}
 			     end, [?NS_HTTP_UPLOAD, ?NS_HTTP_UPLOAD_0]),
 		   XData ++ AddInfo
 	   end,
