@@ -208,28 +208,18 @@ need_check(Pkt) ->
 
 -spec check_subscription(jid(), jid()) -> boolean().
 check_subscription(From, To) ->
-    {LocalUser, LocalServer, _} = jid:tolower(To),
+    LocalServer = To#jid.lserver,
     {RemoteUser, RemoteServer, _} = jid:tolower(From),
-    case has_subscription(LocalUser, LocalServer, From) of
+    case mod_roster:is_subscribed(From, To) of
 	false when RemoteUser == <<"">> ->
 	    false;
 	false ->
 	    %% Check if the contact's server is in the roster
 	    gen_mod:get_module_opt(LocalServer, ?MODULE, allow_transports)
-		andalso has_subscription(LocalUser, LocalServer,
-					 jid:make(RemoteServer));
+		andalso mod_roster:is_subscribed(jid:make(RemoteServer), To);
 	true ->
 	    true
     end.
-
--spec has_subscription(binary(), binary(), jid()) -> boolean().
-has_subscription(User, Server, JID) ->
-    {Sub, Ask, _} = ejabberd_hooks:run_fold(
-		      roster_get_jid_info, Server,
-		      {none, none, []},
-		      [User, Server, JID]),
-    (Sub /= none) orelse (Ask == subscribe)
-	orelse (Ask == out) orelse (Ask == both).
 
 sets_bare_member({U, S, <<"">>} = LBJID, Set) ->
     case ?SETS:next(sets_iterator_from(LBJID, Set)) of

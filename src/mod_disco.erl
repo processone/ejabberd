@@ -263,7 +263,7 @@ process_sm_iq_items(#iq{type = set, lang = Lang} = IQ) ->
 process_sm_iq_items(#iq{type = get, lang = Lang,
 			from = From, to = To,
 			sub_els = [#disco_items{node = Node}]} = IQ) ->
-    case is_presence_subscribed(From, To) of
+    case mod_roster:is_subscribed(From, To) of
 	true ->
 	    Host = To#jid.lserver,
 	    case ejabberd_hooks:run_fold(disco_sm_items, Host,
@@ -290,7 +290,7 @@ get_sm_items(Acc, From,
 	      {result, Its} -> Its;
 	      empty -> []
 	    end,
-    Items1 = case is_presence_subscribed(From, To) of
+    Items1 = case mod_roster:is_subscribed(From, To) of
 	       true -> get_user_resources(User, Server);
 	       _ -> []
 	     end,
@@ -308,21 +308,6 @@ get_sm_items(empty, From, To, _Node, Lang) ->
 	    {error, xmpp:err_not_allowed(Txt, Lang)}
     end.
 
--spec is_presence_subscribed(jid(), jid()) -> boolean().
-is_presence_subscribed(#jid{luser = User, lserver = Server},
-		       #jid{luser = User, lserver = Server}) -> true;
-is_presence_subscribed(#jid{luser = FromUser, lserver = FromServer},
-		       #jid{luser = ToUser, lserver = ToServer}) ->
-    lists:any(fun (#roster{jid = {SubUser, SubServer, _}, subscription = Sub})
-		      when FromUser == SubUser, FromServer == SubServer,
-			   Sub /= none ->
-		      true;
-		  (_RosterEntry) ->
-		      false
-	      end,
-	      ejabberd_hooks:run_fold(roster_get, ToServer, [],
-				      [{ToUser, ToServer}])).
-
 -spec process_sm_iq_info(iq()) -> iq().
 process_sm_iq_info(#iq{type = set, lang = Lang} = IQ) ->
     Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
@@ -330,7 +315,7 @@ process_sm_iq_info(#iq{type = set, lang = Lang} = IQ) ->
 process_sm_iq_info(#iq{type = get, lang = Lang,
 		       from = From, to = To,
 		       sub_els = [#disco_info{node = Node}]} = IQ) ->
-    case is_presence_subscribed(From, To) of
+    case mod_roster:is_subscribed(From, To) of
 	true ->
 	    Host = To#jid.lserver,
 	    Identity = ejabberd_hooks:run_fold(disco_sm_identity,

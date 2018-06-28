@@ -43,7 +43,7 @@
 -export([start/2, stop/1, reload/3, process_iq/1, export/1,
 	 import_info/0, process_local_iq/1, get_user_roster/2,
 	 import/5, get_roster/2, push_item/3,
-	 import_start/2, import_stop/2,
+	 import_start/2, import_stop/2, is_subscribed/2,
 	 c2s_self_presence/1, in_subscription/2,
 	 out_subscription/1, set_items/3, remove_user/2,
 	 get_jid_info/4, encode_item/1, webadmin_page/3,
@@ -875,6 +875,23 @@ get_jid_info(_, User, Server, JID) ->
     LServer = jid:nameprep(Server),
     LJID = jid:tolower(JID),
     get_subscription_and_groups(LUser, LServer, LJID).
+
+%% Check if `From` is subscriberd to `To`s presence
+%% note 1: partial subscriptions are also considered, i.e.
+%%         `To` has already sent a subscription request to `From`
+%% note 2: it's assumed a user is subscribed to self
+%% note 3: `To` MUST be a local user, `From` can be any user
+-spec is_subscribed(jid(), jid()) -> boolean().
+is_subscribed(#jid{luser = LUser, lserver = LServer},
+	      #jid{luser = LUser, lserver = LServer}) ->
+    true;
+is_subscribed(From, #jid{luser = LUser, lserver = LServer}) ->
+    {Sub, Ask, _} = ejabberd_hooks:run_fold(
+		      roster_get_jid_info, LServer,
+		      {none, none, []},
+		      [LUser, LServer, From]),
+    (Sub /= none) orelse (Ask == subscribe)
+	orelse (Ask == out) orelse (Ask == both).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
