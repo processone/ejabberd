@@ -29,6 +29,7 @@
 -protocol({xep, 363, '0.1'}).
 
 -define(SERVICE_REQUEST_TIMEOUT, 5000). % 5 seconds.
+-define(CALL_TIMEOUT, 60000). % 1 minute.
 -define(SLOT_TIMEOUT, 18000000). % 5 hours.
 -define(URL_ENC(URL), binary_to_list(misc:url_encode(URL))).
 -define(ADDR_TO_STR(IP), ejabberd_config:may_hide_data(misc:ip_to_list(IP))).
@@ -377,7 +378,7 @@ process(LocalPath, #request{method = Method, host = Host, ip = IP})
 process(_LocalPath, #request{method = 'PUT', host = Host, ip = IP,
 			     length = Length} = Request) ->
     {Proc, Slot} = parse_http_request(Request),
-    case catch gen_server:call(Proc, {use_slot, Slot, Length}) of
+    case catch gen_server:call(Proc, {use_slot, Slot, Length}, ?CALL_TIMEOUT) of
 	{ok, Path, FileMode, DirMode, GetPrefix, Thumbnail, CustomHeaders} ->
 	    ?DEBUG("Storing file from ~s for ~s: ~s",
 		   [?ADDR_TO_STR(IP), Host, Path]),
@@ -409,7 +410,7 @@ process(_LocalPath, #request{method = Method, host = Host, ip = IP} = Request)
     when Method == 'GET';
 	 Method == 'HEAD' ->
     {Proc, [_UserDir, _RandDir, FileName] = Slot} = parse_http_request(Request),
-    case catch gen_server:call(Proc, get_conf) of
+    case catch gen_server:call(Proc, get_conf, ?CALL_TIMEOUT) of
 	{ok, DocRoot, CustomHeaders} ->
 	    Path = str:join([DocRoot | Slot], <<$/>>),
 	    case file:open(Path, [read]) of
@@ -455,7 +456,7 @@ process(_LocalPath, #request{method = 'OPTIONS', host = Host,
     ?DEBUG("Responding to OPTIONS request from ~s for ~s",
 	   [?ADDR_TO_STR(IP), Host]),
     {Proc, _Slot} = parse_http_request(Request),
-    case catch gen_server:call(Proc, get_conf) of
+    case catch gen_server:call(Proc, get_conf, ?CALL_TIMEOUT) of
 	{ok, _DocRoot, CustomHeaders} ->
 	    http_response(200, CustomHeaders);
 	Error ->
