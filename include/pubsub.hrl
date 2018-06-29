@@ -129,13 +129,13 @@
     id                  ,% :: mod_pubsub:nodeIdx(),
     parents = []        ,% :: [mod_pubsub:nodeId(),...],
     type    = <<"flat">>,% :: binary(),
-    owners  = []        ,% :: [jlib:ljid(),...],
+    owners  = []        ,% :: [jid:ljid(),...],
     options = []        % :: mod_pubsub:nodeOptions()
 }).
 
 -record(pubsub_state,
 {
-    stateid               ,% :: {jlib:ljid(), mod_pubsub:nodeIdx()},
+    stateid               ,% :: {jid:ljid(), mod_pubsub:nodeIdx()},
     nodeidx               ,% :: mod_pubsub:nodeIdx(),
     items         = []    ,% :: [mod_pubsub:itemId(),...],
     affiliation   = 'none',% :: mod_pubsub:affiliation(),
@@ -146,8 +146,8 @@
 {
     itemid                           ,% :: {mod_pubsub:itemId(), mod_pubsub:nodeIdx()},
     nodeidx                          ,% :: mod_pubsub:nodeIdx(),
-    creation     = {unknown, unknown},% :: {erlang:timestamp(), jlib:ljid()},
-    modification = {unknown, unknown},% :: {erlang:timestamp(), jlib:ljid()},
+    creation     = {unknown, unknown},% :: {erlang:timestamp(), jid:ljid()},
+    modification = {unknown, unknown},% :: {erlang:timestamp(), jid:ljid()},
     payload      = []                % :: mod_pubsub:payload()
 }).
 
@@ -161,7 +161,7 @@
 {
     nodeid   ,% :: {binary(), mod_pubsub:nodeIdx()},
     itemid   ,% :: mod_pubsub:itemId(),
-    creation ,% :: {erlang:timestamp(), jlib:ljid()},
+    creation ,% :: {erlang:timestamp(), jid:ljid()},
     payload  % :: mod_pubsub:payload()
 }).
 
