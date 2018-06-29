@@ -35,7 +35,7 @@
 	 now_to_usec/1, usec_to_now/1, encode_pid/1, decode_pid/2,
 	 compile_exprs/2, join_atoms/2, try_read_file/1, get_descr/2,
 	 css_dir/0, img_dir/0, js_dir/0, msgs_dir/0, sql_dir/0,
-	 read_css/1, read_img/1, read_js/1]).
+	 read_css/1, read_img/1, read_js/1, try_url/1]).
 
 %% Deprecated functions
 -export([decode_base64/1, encode_base64/1]).
@@ -216,6 +216,25 @@ try_read_file(Path) ->
 	    iolist_to_binary(Path);
 	{error, Why} ->
 	    ?ERROR_MSG("Failed to read ~s: ~s", [Path, file:format_error(Why)]),
+	    erlang:error(badarg)
+    end.
+
+%% @doc Checks if the URL is valid HTTP(S) URL and converts its name to binary.
+%%      Fails with `badarg` otherwise. The function is intended for usage
+%%      in configuration validators only.
+-spec try_url(binary() | string()) -> binary().
+try_url(URL) ->
+    case http_uri:parse(URL) of
+	{ok, {Scheme, _, _, _, _, _}} when Scheme /= http, Scheme /= https ->
+	    ?ERROR_MSG("Unsupported URI scheme: ~s", [URL]),
+	    erlang:error(badarg);
+	{ok, {_, _, Host, _, _, _}} when Host == ""; Host == <<"">> ->
+	    ?ERROR_MSG("Invalid URL: ~s", [URL]),
+	    erlang:error(badarg);
+	{ok, _} ->
+	    iolist_to_binary(URL);
+	{error, _} ->
+	    ?ERROR_MSG("Invalid URL: ~s", [URL]),
 	    erlang:error(badarg)
     end.
 

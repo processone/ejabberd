@@ -178,18 +178,14 @@ mod_opt_type(dir_mode) ->
 mod_opt_type(docroot) ->
     fun iolist_to_binary/1;
 mod_opt_type(put_url) ->
-    fun(<<"http://", _/binary>> = URL) -> URL;
-       (<<"https://", _/binary>> = URL) -> URL
-    end;
+    fun misc:try_url/1;
 mod_opt_type(get_url) ->
-    fun(<<"http://", _/binary>> = URL) -> URL;
-       (<<"https://", _/binary>> = URL) -> URL;
-       (undefined) -> undefined
+    fun(undefined) -> undefined;
+       (URL) -> misc:try_url(URL)
     end;
 mod_opt_type(service_url) ->
-    fun(<<"http://", _/binary>> = URL) -> URL;
-       (<<"https://", _/binary>> = URL) -> URL;
-       (undefined) -> undefined
+    fun(undefined) -> undefined;
+       (URL) -> misc:try_url(URL)
     end;
 mod_opt_type(custom_headers) ->
     fun(Headers) ->

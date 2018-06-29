@@ -1220,9 +1220,7 @@ opt_type(acme) ->
     fun(L) ->
 	    lists:map(
 	      fun({ca_url, URL}) ->
-		      URL1 = binary_to_list(URL),
-		      {ok, _} = http_uri:parse(URL1),
-		      {ca_url, URL1};
+		      {ca_url, misc:try_url(URL)};
 		 ({contact, Contact}) ->
 		      [<<_, _/binary>>, <<_, _/binary>>] =
 			  binary:split(Contact, <<":">>),

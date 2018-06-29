@@ -616,7 +616,9 @@ mod_opt_type({welcome_message, subject}) ->
 mod_opt_type({welcome_message, body}) ->
     fun iolist_to_binary/1;
 mod_opt_type(redirect_url) ->
-    fun iolist_to_binary/1.
+    fun(<<>>) -> <<>>;
+       (URL) -> misc:try_url(URL)
+    end.
 
 mod_options(_Host) ->
     [{access, all},
