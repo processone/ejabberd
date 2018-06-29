@@ -36,7 +36,7 @@ defmodule ModRosterMock do
 
 		{:ok, _pid} = Agent.start_link(fn -> %{} end, name: @agent)
 
-		mock_with_moka module
+    mock_with_meck
 
 		:ejabberd_mnesia.create(:mod_roster_mnesia, :roster,
 			[ram_copies: [node()],
@@ -48,85 +48,6 @@ defmodule ModRosterMock do
     #:mod_roster.stop(domain)
     :gen_mod.start_module(domain, :mod_roster)
   end
-
-	def mock_with_moka(module) do
-		try do
-
-			module_mock = :moka.start(module)
-			:moka.replace(module_mock, :mod_roster_mnesia, :invalidate_roster_cache,
-				fn (_user, _server)  ->
-					:ok
-				end)
-
-			:moka.load(module_mock)
-
-			roster_mock0 = :moka.start(:mod_roster)
-			:moka.replace(roster_mock0, :gen_iq_handler, :add_iq_handler,
-				fn (_module, _host, _ns, _m, _f)  ->
-					:ok
-				end)
-
-			:moka.replace(roster_mock0, :gen_iq_handler, :remove_iq_handler,
-				fn (_module, _host, _ns)  ->
-					:ok
-				end)
-			:moka.replace(roster_mock0, :gen_mod, :db_mod,
-				fn (_host, _mod)  ->
-					:mod_roster_mnesia
-				end)
-			:moka.replace(roster_mock0, :gen_mod, :db_mod,
-				fn (_host, _opts, _mod)  ->
-					:mod_roster_mnesia
-				end)
-			:moka.replace(roster_mock0, :update_roster_t,
-				fn (user, domain, {u, d, _r}, item)  ->
-					add_roster_item(user, domain, u<>"@"<>d,
-													roster(item, :name),
-													roster(item, :subscription),
-													roster(item, :groups),
-													roster(item, :ask),
-													roster(item, :askmessage))
-				end)
-
-			:moka.replace(roster_mock0, :del_roster_t,
-				fn (user, domain, jid)  ->
-					remove_roster_item(user, domain, :jid.to_string(jid))
-				end)
-			:moka.replace(roster_mock0, :get_roster,
-				fn (user, domain)  ->
-					to_records(get_roster(user, domain))
-				end)
-
-			:moka.load(roster_mock0)
-
-			roster_mock = :moka.start(:mod_roster_mnesia)
-			:moka.replace(roster_mock, :init,
-				fn (_host, _opts)  ->
-					:ok
-				end)
-
-			:moka.replace(roster_mock, :gen_mod, :db_type,
-				fn (_host, _opts)  ->
-					{:none}
-				end)
-
-			:moka.replace(roster_mock, :transaction,
-				fn (_server, function)  ->
-					{:atomic, function.()}
-				end)
-
-			:moka.replace(roster_mock, :update_tables,
-				fn ()  ->
-          :ok
-				end)
-
-			:moka.load(roster_mock)
-
-		catch
-			{:already_started, _pid} -> :ok
-		end
-
-	end
 
 	def	mock_with_meck do
 #		mock(:gen_mod, :db_type,
