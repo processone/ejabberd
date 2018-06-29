@@ -393,12 +393,12 @@ process(_LocalPath, #request{method = 'PUT', host = Host, ip = IP,
 		    http_response(500)
 	    end;
 	{error, size_mismatch} ->
-	    ?INFO_MSG("Rejecting file from ~s for ~s: Unexpected size (~B)",
-		      [?ADDR_TO_STR(IP), Host, Length]),
+	    ?INFO_MSG("Rejecting file ~s from ~s for ~s: Unexpected size (~B)",
+		      [lists:last(Slot), ?ADDR_TO_STR(IP), Host, Length]),
 	    http_response(413);
 	{error, invalid_slot} ->
-	    ?INFO_MSG("Rejecting file from ~s for ~s: Invalid slot",
-		      [?ADDR_TO_STR(IP), Host]),
+	    ?INFO_MSG("Rejecting file ~s from ~s for ~s: Invalid slot",
+		      [lists:last(Slot), ?ADDR_TO_STR(IP), Host]),
 	    http_response(403);
 	Error ->
 	    ?ERROR_MSG("Cannot handle PUT request from ~s for ~s: ~p",
@@ -580,8 +580,8 @@ create_slot(#state{service_url = undefined,
 	allow ->
 	    RandStr = randoms:get_alphanum_string(SecretLength),
 	    FileStr = make_file_string(File),
-	    ?INFO_MSG("Got HTTP upload slot for ~s (file: ~s)",
-		      [jid:encode(JID), File]),
+	    ?INFO_MSG("Got HTTP upload slot for ~s (file: ~s, size: ~B)",
+		      [jid:encode(JID), File, Size]),
 	    {ok, [UserStr, RandStr, FileStr]};
 	deny ->
 	    {error, xmpp:err_service_unavailable()};
@@ -604,8 +604,8 @@ create_slot(#state{service_url = ServiceURL},
 	    case binary:split(Body, <<$\n>>, [global, trim]) of
 		[<<"http", _/binary>> = PutURL,
 		 <<"http", _/binary>> = GetURL] ->
-		    ?INFO_MSG("Got HTTP upload slot for ~s (file: ~s)",
-			      [jid:encode(JID), File]),
+		    ?INFO_MSG("Got HTTP upload slot for ~s (file: ~s, size: ~B)",
+			      [jid:encode(JID), File, Size]),
 		    {ok, PutURL, GetURL};
 		Lines ->
 		    ?ERROR_MSG("Can't parse data received for ~s from <~s>: ~p",
