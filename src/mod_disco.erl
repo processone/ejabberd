@@ -196,7 +196,7 @@ get_local_features(Acc, _From, To, <<"">>, _Lang) ->
 	    end,
     {result, lists:usort(
 	       lists:flatten(
-		 [<<"iq">>, <<"presence">>,
+		 [?NS_FEATURE_IQ, ?NS_FEATURE_PRESENCE,
 		  ?NS_DISCO_INFO, ?NS_DISCO_ITEMS, Feats,
 		  ejabberd_local:get_features(To#jid.lserver)]))};
 get_local_features(Acc, _From, _To, _Node, Lang) ->
