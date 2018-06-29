@@ -223,7 +223,11 @@ try_read_file(Path) ->
 %%      Fails with `badarg` otherwise. The function is intended for usage
 %%      in configuration validators only.
 -spec try_url(binary() | string()) -> binary().
-try_url(URL) ->
+try_url(URL0) ->
+    URL = case URL0 of
+	V when is_binary(V) -> binary_to_list(V);
+	_ -> URL0
+    end,
     case http_uri:parse(URL) of
 	{ok, {Scheme, _, _, _, _, _}} when Scheme /= http, Scheme /= https ->
 	    ?ERROR_MSG("Unsupported URI scheme: ~s", [URL]),
