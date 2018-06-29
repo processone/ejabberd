@@ -599,20 +599,20 @@ put_header(F, Room, Date, CSSFile, Lang, Hour_offset,
     fw(F, <<"<br/><a class=\"ts\">GMT~s</a><br/>">>,
        [Time_offset_str]).
 
-put_header_css(F, false) ->
+put_header_css(F, {file, Path}) ->
     fw(F, <<"<style type=\"text/css\">">>),
     fw(F, <<"<!--">>),
-    case misc:read_css("muc.css") of
+    case file:read_file(Path) of
 	{ok, Data} -> fw(F, Data);
 	{error, _} -> ok
     end,
     fw(F, <<"//-->">>),
     fw(F, <<"</style>">>);
-put_header_css(F, CSSFile) ->
+put_header_css(F, {url, URL}) ->
     fw(F,
        <<"<link rel=\"stylesheet\" type=\"text/css\" "
 	 "href=\"~s\" media=\"all\">">>,
-       [CSSFile]).
+       [URL]).
 
 put_header_script(F) ->
     fw(F, <<"<script type=\"text/javascript\">">>),
@@ -931,8 +931,12 @@ has_no_permanent_store_hint(Packet) ->
 mod_opt_type(access_log) ->
     fun acl:access_rules_validator/1;
 mod_opt_type(cssfile) ->
-    fun(false) -> false;
-       (File) -> misc:try_read_file(File)
+    fun(S) ->
+	    case str:to_lower(S) of
+		<<"http:/", _/binary>> -> {url, misc:try_url(S)};
+		<<"https:/", _/binary>> -> {url, misc:try_url(S)};
+		_ -> {file, misc:try_read_file(S)}
+	    end
     end;
 mod_opt_type(dirname) ->
     fun (room_jid) -> room_jid;
@@ -969,7 +973,7 @@ mod_opt_type(top_link) ->
 
 mod_options(_) ->
     [{access_log, muc_admin},
-     {cssfile, false},
+     {cssfile, filename:join(misc:css_dir(), "muc.css")},
      {dirname, room_jid},
      {dirtype, subdirs},
      {file_format, html},
