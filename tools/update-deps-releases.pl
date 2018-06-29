@@ -7,6 +7,8 @@ use warnings;
 use File::Slurp qw(slurp write_file);
 use File::stat;
 use File::Touch;
+use File::chdir;
+use File::Spec;
 use Data::Dumper qw(Dumper);
 use Carp;
 use Term::ANSIColor;
@@ -323,6 +325,44 @@ sub git_push {
     system("git", "-C", ".deps-update/$dep", "push", "--tags");
 }
 
+sub check_hex_files {
+    my ($dep) = @_;
+    my $app = ".deps-update/$dep/src/$dep.app.src";
+    return if not -f $app;
+    my $content = slurp($app);
+    my @paths;
+    if ($content =~ /{\s*files\s*,\s*\[([^\]]+)\]/) {
+        my $list = $1;
+        push @paths, $1 while $list =~ /"([^"]*?)"/g;
+    } else {
+        @paths = (
+            "src", "c_src", "include", "rebar.config.script", "priv",
+            "rebar.config", "rebar.lock", "README*", "readme*", "LICENSE*",
+            "license*", "NOTICE");
+    }
+    local $CWD = ".deps-update/$dep";
+    my @interesting_files = map {File::Spec->canonpath($_)} glob("rebar.config* src/*.erl src/*.app.src c_src/*.c c_src/*.cpp \
+        c_src/*.h c_src/*.hpp include/*.hrl");
+
+    my @matching_files;
+    for my $path (@paths) {
+        if (-d $path) {
+            push @matching_files, map {File::Spec->canonpath($_)} glob("$path/*");
+        } else {
+            push @matching_files, map {File::Spec->canonpath($_)} glob($path);
+        }
+    }
+    my %diff;
+    @diff{ @interesting_files } = undef;
+    delete @diff{ @matching_files };
+    my @diff = keys %diff;
+    if (@diff) {
+        print color("red"), "Dependency ", color("bold red"), $dep, color("reset"), color("red"), " files section doesn't match: ",
+            join(" ", @diff), color("reset"), "\n";
+
+    }
+}
+
 update_deps_repos();
 
 MAIN:
@@ -349,6 +389,10 @@ while (1) {
     }
     say "(none)" if not $changed_deps;
     say "";
+
+    for my $dep (sort keys %$top_deps) {
+        check_hex_files($dep);
+    }
 
     my $cmd = show_commands($old_deps ? (U => "Update dependency") : (),
         $changed_deps ? (T => "Tag new release") : (),
