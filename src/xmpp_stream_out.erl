@@ -49,7 +49,7 @@
 
 -type state() :: map().
 -type noreply() :: {noreply, state(), timeout()}.
--type host_port() :: {inet:hostname(), inet:port_number(), boolean()}.
+-type host_port() :: {inet:hostname(), inet:port_number(), boolean()} | ip_port().
 -type ip_port() :: {inet:ip_address(), inet:port_number(), boolean()}.
 -type h_addr_list() :: {{integer(), integer(), inet:port_number(), string()}, boolean()}.
 -type network_error() :: {error, inet:posix() | inet_res:res_error()}.
@@ -1115,8 +1115,19 @@ a_lookup(HostPorts, State) ->
 			   Family <- get_address_families(State)],
     a_lookup(HostPortFamilies, State, [], {error, nxdomain}).
 
--spec a_lookup([{inet:hostname(), inet:port_number(), boolean(), inet:address_family()}],
+-spec a_lookup([{inet:hostname() | inet:ip_address(), inet:port_number(),
+		 boolean(), inet:address_family()}],
 	       state(), [ip_port()], network_error()) -> {ok, [ip_port()]} | network_error().
+a_lookup([{Addr, Port, TLS, Family}|HostPortFamilies], State, Acc, Err)
+  when is_tuple(Addr) ->
+    Acc1 = if tuple_size(Addr) == 4 andalso Family == inet ->
+		   [{Addr, Port, TLS}|Acc];
+	      tuple_size(Addr) == 8 andalso Family == inet6 ->
+		   [{Addr, Port, TLS}|Acc];
+	      true ->
+		   Acc
+	   end,
+    a_lookup(HostPortFamilies, State, Acc1, Err);
 a_lookup([{Host, Port, TLS, Family}|HostPortFamilies], State, Acc, Err) ->
     Timeout = get_dns_timeout(State),
     Retries = get_dns_retries(State),
@@ -1136,35 +1147,24 @@ a_lookup([], _State, Acc, _) ->
 a_lookup(_Host, _Port, _TLS, _Family, _Timeout, Retries) when Retries < 1 ->
     {error, timeout};
 a_lookup(Host, Port, TLS, Family, Timeout, Retries) ->
-    case inet:parse_address(Host) of
-	{ok, Addr} ->
-	    if tuple_size(Addr) == 4 andalso Family == inet ->
-		    {ok, [{Addr, Port, TLS}]};
-	       tuple_size(Addr) == 8 andalso Family == inet6 ->
-		    {ok, [{Addr, Port, TLS}]};
+    Start = p1_time_compat:monotonic_time(milli_seconds),
+    case inet:gethostbyname(Host, Family, Timeout) of
+	{error, nxdomain} = Err ->
+	    %% inet:gethostbyname/3 doesn't return {error, timeout},
+	    %% so we should check if 'nxdomain' is in fact a result
+	    %% of a timeout.
+	    %% We also cannot use inet_res:gethostbyname/3 because
+	    %% it ignores DNS configuration settings (/etc/hosts, etc)
+	    End = p1_time_compat:monotonic_time(milli_seconds),
+	    if (End - Start) >= Timeout ->
+		    a_lookup(Host, Port, TLS, Family, Timeout, Retries - 1);
 	       true ->
-		    {error, nxdomain}
+		    Err
 	    end;
-	{error, _} ->
-	    Start = p1_time_compat:monotonic_time(milli_seconds),
-	    case inet:gethostbyname(Host, Family, Timeout) of
-		{error, nxdomain} = Err ->
-		    %% inet:gethostbyname/3 doesn't return {error, timeout},
-		    %% so we should check if 'nxdomain' is in fact a result
-		    %% of a timeout.
-		    %% We also cannot use inet_res:gethostbyname/3 because
-		    %% it ignores DNS configuration settings (/etc/hosts, etc)
-		    End = p1_time_compat:monotonic_time(milli_seconds),
-		    if (End - Start) >= Timeout ->
-			    a_lookup(Host, Port, TLS, Family, Timeout, Retries - 1);
-		       true ->
-			    Err
-		    end;
-		{error, _} = Err ->
-		    Err;
-		{ok, HostEntry} ->
-		    host_entry_to_addr_ports(HostEntry, Port, TLS)
-	    end
+	{error, _} = Err ->
+	    Err;
+	{ok, HostEntry} ->
+	    host_entry_to_addr_ports(HostEntry, Port, TLS)
     end.
 
 -spec h_addr_list_to_host_ports(h_addr_list()) -> {ok, [host_port()]} |
