@@ -645,7 +645,7 @@ api_permissions:
 ##
 ## host_config:
 ##   "localhost":
-##     access:
+##     access_rules:
 ##       c2s:
 ##         - allow: admin
 ##         - deny
