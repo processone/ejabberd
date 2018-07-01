@@ -97,7 +97,7 @@ defmodule Ejabberd.Mixfile do
                          {config(:pam), {:epam, "~> 1.0"}},
                          {config(:tools), {:luerl, "~> 0.3.1"}},
                          {config(:tools), {:meck, "~> 0.8.4"}},
-                         {config(:tools), {:moka, github: "processone/moka", tag: "1.0.5c"}}], do:
+                         {config(:tools), {:moka, github: "processone/moka", tag: "1.0.5d"}}], do:
       dep
   end
 
