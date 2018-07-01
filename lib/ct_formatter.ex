@@ -1,7 +1,7 @@
 defmodule ExUnit.CTFormatter do
   @moduledoc false
 
-  use GenEvent
+  @behaviour :gen_event
 
   import ExUnit.Formatter, only: [format_time: 2, format_test_failure: 5,
                                   format_test_case_failure: 5]
@@ -22,6 +22,10 @@ defmodule ExUnit.CTFormatter do
       invalids_counter: 0
     }
     {:ok, config}
+  end
+
+  def handle_call(_, config) do
+    {:ok, :ok, config}
   end
 
   def handle_event({:suite_started, _opts}, config) do
