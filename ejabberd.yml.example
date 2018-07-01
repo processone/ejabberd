@@ -195,7 +195,8 @@ modules:
     ## address. See the Jabber SPAM Manifesto for details:
     ## https://github.com/ge0rg/jabber-spam-fighting-manifesto
     ip_access: trusted_network
-  mod_roster: {}
+  mod_roster:
+    versioning: true
   mod_s2s_dialback: {}
   mod_shared_roster: {}
   mod_stats: {}
