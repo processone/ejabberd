@@ -77,6 +77,17 @@
 %%% API
 %%%===================================================================
 start(Host, Opts) ->
+    case gen_mod:get_opt(db_type, Opts) of
+	mnesia ->
+	    ?WARNING_MSG("Mnesia backend for ~s is not recommended: "
+			 "it's limited to 2GB and often gets corrupted "
+			 "when reaching this limit. SQL backend is "
+			 "recommended. Namely, for small servers SQLite "
+			 "is a preferred choice because it's very easy "
+			 "to configure.", [?MODULE]);
+	_ ->
+	    ok
+    end,
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
     Mod:init(Host, Opts),
     init_cache(Mod, Host, Opts),
