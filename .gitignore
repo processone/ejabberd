@@ -13,6 +13,7 @@
 /aclocal.m4
 /contrib/extract_translations/extract_translations.beam
 /*.cache
+/database/
 /deps/
 /doc/*.aux
 /doc/*.haux
@@ -41,6 +42,8 @@ XmppAddr.hrl
 /dialyzer/
 /test/*.beam
 /test/*.ctc
+/test/elixir-config/shared/log/
+/log/
 /logs/
 /priv/sql
 /rel/ejabberd
