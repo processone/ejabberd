@@ -31,6 +31,7 @@ defmodule ModHttpApiTest do
     :ok = :mnesia.start
     :ejabberd_mnesia.start
     :stringprep.start
+    :ejabberd_config.start
     :ejabberd_hooks.start_link
     :ok = :ejabberd_config.start(["localhost"], [])
     :acl.start_link
