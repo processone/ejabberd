@@ -4,6 +4,8 @@ otp_release:
   - 17.5
   - 18.3
   - 19.2
+  - 20.3
+  - 21.0
 
 services:
   - redis-server
