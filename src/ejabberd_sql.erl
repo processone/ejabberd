@@ -580,8 +580,13 @@ sql_query_internal(#sql_query{} = Query) ->
                 sqlite ->
                     sqlite_sql_query(Query)
             end
-        catch
-            Class:Reason ->
+        catch exit:{timeout, _} ->
+		{error, <<"timed out">>};
+	      exit:{killed, _} ->
+		{error, <<"killed">>};
+	      exit:{normal, _} ->
+		{error, <<"terminated unexpectedly">>};
+	      Class:Reason ->
                 ST = erlang:get_stacktrace(),
                 ?ERROR_MSG("Internal error while processing SQL query: ~p",
                            [{Class, Reason, ST}]),

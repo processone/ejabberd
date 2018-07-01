@@ -682,6 +682,8 @@ inherit_session_state(#{user := U, server := S,
 			    {error, <<"Previous session PID is dead">>};
 			  exit:{normal, _} ->
 			    {error, <<"Previous session PID has exited">>};
+			  exit:{killed, _} ->
+			    {error, <<"Previous session PID has been killed">>};
 			  exit:{timeout, _} ->
 			    ejabberd_sm:close_session(OldSID, U, S, R),
 			    ejabberd_c2s:stop(OldPID),
