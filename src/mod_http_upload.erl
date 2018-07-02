@@ -110,7 +110,8 @@
 	 service_url            :: binary() | undefined,
 	 thumbnail              :: boolean(),
 	 custom_headers         :: [{binary(), binary()}],
-	 slots = #{}            :: map()}).
+	 slots = #{}            :: map(),
+	 external_secret        :: binary()}).
 
 -record(media_info,
 	{type   :: atom(),
@@ -208,7 +209,9 @@ mod_opt_type(thumbnail) ->
 	    end;
        (false) ->
 	    false
-    end.
+    end;
+mod_opt_type(external_secret) ->
+    fun iolist_to_binary/1.
 
 -spec mod_options(binary()) -> [{atom(), any()}].
 mod_options(_Host) ->
@@ -225,6 +228,7 @@ mod_options(_Host) ->
      {put_url, <<"http://@HOST@:5444">>},
      {get_url, undefined},
      {service_url, undefined},
+     {external_secret, <<"">>},
      {custom_headers, []},
      {rm_on_unregister, true},
      {thumbnail, false}].
@@ -255,6 +259,7 @@ init([ServerHost, Opts]) ->
 	     end,
     ServiceURL = gen_mod:get_opt(service_url, Opts),
     Thumbnail = gen_mod:get_opt(thumbnail, Opts),
+    ExternalSecret = gen_mod:get_opt(external_secret, Opts),
     CustomHeaders = gen_mod:get_opt(custom_headers, Opts),
     DocRoot1 = expand_home(str:strip(DocRoot, right, $/)),
     DocRoot2 = expand_host(DocRoot1, ServerHost),
@@ -277,6 +282,7 @@ init([ServerHost, Opts]) ->
 		put_url = expand_host(str:strip(PutURL, right, $/), ServerHost),
 		get_url = expand_host(str:strip(GetURL, right, $/), ServerHost),
 		service_url = ServiceURL,
+		external_secret = ExternalSecret,
 		custom_headers = CustomHeaders}}.
 
 -spec handle_call(_, {pid(), _}, state())
@@ -532,11 +538,12 @@ process_slot_request(#iq{lang = Lang, from = From} = IQ,
 		    {ok, Timer} = timer:send_after(?SLOT_TIMEOUT,
 						   {slot_timed_out,
 						    Slot}),
+		    Query = make_query_string(Slot, Size, State),
 		    NewState = add_slot(Slot, Size, Timer, State),
-		    NewSlot = mk_slot(Slot, State, XMLNS),
+		    NewSlot = mk_slot(Slot, State, XMLNS, Query),
 		    {xmpp:make_iq_result(IQ, NewSlot), NewState};
 		{ok, PutURL, GetURL} ->
-		    Slot = mk_slot(PutURL, GetURL, XMLNS),
+		    Slot = mk_slot(PutURL, GetURL, XMLNS, <<"">>),
 		    xmpp:make_iq_result(IQ, Slot);
 		{error, Error} ->
 		    xmpp:make_error(IQ, Error)
@@ -646,20 +653,21 @@ del_slot(Slot, #state{slots = Slots} = State) ->
     NewSlots = maps:remove(Slot, Slots),
     State#state{slots = NewSlots}.
 
--spec mk_slot(slot(), state(), binary()) -> upload_slot();
-	     (binary(), binary(), binary()) -> upload_slot().
-mk_slot(Slot, #state{put_url = PutPrefix, get_url = GetPrefix}, XMLNS) ->
+-spec mk_slot(slot(), state(), binary(), binary()) -> upload_slot();
+	     (binary(), binary(), binary(), binary()) -> upload_slot().
+mk_slot(Slot, #state{put_url = PutPrefix, get_url = GetPrefix}, XMLNS, Query) ->
     PutURL = str:join([PutPrefix | Slot], <<$/>>),
     GetURL = str:join([GetPrefix | Slot], <<$/>>),
-    mk_slot(PutURL, GetURL, XMLNS);
-mk_slot(PutURL, GetURL, ?NS_HTTP_UPLOAD_0) ->
-    #upload_slot_0{get = misc:url_encode(GetURL),
-		   put = misc:url_encode(PutURL),
-		   xmlns = ?NS_HTTP_UPLOAD_0};
-mk_slot(PutURL, GetURL, XMLNS) ->
-    #upload_slot{get = misc:url_encode(GetURL),
-		 put = misc:url_encode(PutURL),
-		 xmlns = XMLNS}.
+    mk_slot(PutURL, GetURL, XMLNS, Query);
+mk_slot(PutURL, GetURL, XMLNS, Query) ->
+    PutURL1 = <<(misc:url_encode(PutURL))/binary, Query/binary>>,
+    GetURL1 = misc:url_encode(GetURL),
+    case XMLNS of
+	?NS_HTTP_UPLOAD_0 ->
+	    #upload_slot_0{get = GetURL1, put = PutURL1, xmlns = XMLNS};
+	_ ->
+	    #upload_slot{get = GetURL1, put = PutURL1, xmlns = XMLNS}
+    end.
 
 -spec make_user_string(jid(), sha1 | node) -> binary().
 make_user_string(#jid{luser = U, lserver = S}, sha1) ->
@@ -670,6 +678,16 @@ make_user_string(#jid{luser = U}, node) ->
 -spec make_file_string(binary()) -> binary().
 make_file_string(File) ->
     replace_special_chars(File).
+
+-spec make_query_string(slot(), non_neg_integer(), state()) -> binary().
+make_query_string(Slot, Size, #state{external_secret = Key}) when Key /= <<>> ->
+    UrlPath = str:join(Slot, <<$/>>),
+    SizeStr = integer_to_binary(Size),
+    Data = <<UrlPath/binary, " ", SizeStr/binary>>,
+    HMAC = str:to_hexlist(crypto:hmac(sha256, Data, Key)),
+    <<"?v=", HMAC/binary>>;
+make_query_string(_Slot, _Size, _State) ->
+    <<>>.
 
 -spec replace_special_chars(binary()) -> binary().
 replace_special_chars(S) ->
