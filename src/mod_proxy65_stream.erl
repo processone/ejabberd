@@ -299,7 +299,7 @@ listen_opt_type(accept_interval) ->
 
 listen_options() ->
     [{auth_type, anonymous},
-     {recbuf, 8192},
-     {sndbuf, 8192},
+     {recbuf, 65536},
+     {sndbuf, 65536},
      {accept_interval, 0},
      {shaper, none}].
