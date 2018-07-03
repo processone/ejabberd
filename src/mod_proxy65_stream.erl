@@ -245,14 +245,19 @@ handle_sync_event(_Event, _From, StateName,
 %%%-------------------------------------------------
 relay(MySocket, PeerSocket, Shaper) ->
     case gen_tcp:recv(MySocket, 0) of
-      {ok, Data} ->
-	  gen_tcp:send(PeerSocket, Data),
-	  {NewShaper, Pause} = shaper:update(Shaper, byte_size(Data)),
-	  if Pause > 0 -> timer:sleep(Pause);
-	     true -> pass
-	  end,
-	  relay(MySocket, PeerSocket, NewShaper);
-      _ -> stopped
+	{ok, Data} ->
+	    case gen_tcp:send(PeerSocket, Data) of
+		ok ->
+		    {NewShaper, Pause} = shaper:update(Shaper, byte_size(Data)),
+		    if Pause > 0 -> timer:sleep(Pause);
+		       true -> pass
+		    end,
+		    relay(MySocket, PeerSocket, NewShaper);
+		{error, _} = Err ->
+		    Err
+	    end;
+	{error, _} = Err ->
+	    Err
     end.
 
 %%%------------------------
