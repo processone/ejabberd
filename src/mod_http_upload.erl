@@ -390,9 +390,13 @@ process(_LocalPath, #request{method = 'PUT', host = Host, ip = IP,
 		    http_response(201, CustomHeaders);
 		{ok, Headers, OutData} ->
 		    http_response(201, Headers ++ CustomHeaders, OutData);
+		{error, closed} ->
+		    ?DEBUG("Cannot store file ~s from ~s for ~s: connection closed",
+			   [Path, ?ADDR_TO_STR(IP), Host]),
+		    http_response(404);
 		{error, Error} ->
-		    ?INFO_MSG("Cannot store file ~s from ~s for ~s: ~s",
-			      [Path, ?ADDR_TO_STR(IP), Host, format_error(Error)]),
+		    ?ERROR_MSG("Cannot store file ~s from ~s for ~s: ~s",
+			       [Path, ?ADDR_TO_STR(IP), Host, format_error(Error)]),
 		    http_response(500)
 	    end;
 	{error, size_mismatch} ->

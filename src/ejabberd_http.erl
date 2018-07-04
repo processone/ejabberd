@@ -598,35 +598,37 @@ recv_file(#request{length = Len, data = Trail,
 		   sockmod = SockMod, socket = Socket}, Path) ->
     case file:open(Path, [write, exclusive, raw]) of
 	{ok, Fd} ->
-	    case file:write(Fd, Trail) of
-		ok ->
-		    NewLen = max(0, Len - byte_size(Trail)),
-		    case do_recv_file(NewLen, SockMod, Socket, Fd) of
-			ok ->
-			    ok;
-			{error, _} = Err ->
-			    file:delete(Path),
-			    Err
-		    end;
-		{error, _} = Err ->
-		    file:delete(Path),
-		    Err
-	    end;
+	    Res = case file:write(Fd, Trail) of
+		      ok ->
+			  NewLen = max(0, Len - byte_size(Trail)),
+			  do_recv_file(NewLen, SockMod, Socket, Fd);
+		      {error, _} = Err ->
+			  Err
+		  end,
+	    file:close(Fd),
+	    case Res of
+		ok -> ok;
+		{error, _} -> file:delete(Path)
+	    end,
+	    Res;
 	{error, _} = Err ->
 	    Err
     end.
 
-do_recv_file(0, _SockMod, _Socket, Fd) ->
-    file:close(Fd);
+do_recv_file(0, _SockMod, _Socket, _Fd) ->
+    ok;
 do_recv_file(Len, SockMod, Socket, Fd) ->
     ChunkLen = min(Len, ?RECV_BUF),
-    try
-	{ok, Data} = SockMod:recv(Socket, ChunkLen, timer:seconds(30)),
-	ok = file:write(Fd, Data),
-	do_recv_file(Len-size(Data), SockMod, Socket, Fd)
-    catch _:{badmatch, {error, _} = Err} ->
-	    file:close(Fd),
-	    Err
+    case SockMod:recv(Socket, ChunkLen, timer:seconds(30)) of
+	{ok, Data} ->
+	    case file:write(Fd, Data) of
+		ok ->
+		    do_recv_file(Len-size(Data), SockMod, Socket, Fd);
+		{error, _} = Err ->
+		    Err
+	    end;
+	{error, _} ->
+	    {error, closed}
     end.
 
 make_headers(State, Status, Reason, Headers, Data) ->
