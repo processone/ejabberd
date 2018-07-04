@@ -790,7 +790,8 @@ process_bind_response(Pkt, State) ->
 
 -spec process_packet(xmpp_element(), state()) -> state().
 process_packet(Pkt, State) ->
-    try callback(handle_packet, Pkt, State)
+    Pkt1 = fix_from(Pkt, State),
+    try callback(handle_packet, Pkt1, State)
     catch _:{?MODULE, undef} -> State
     end.
 
@@ -957,6 +958,23 @@ make_sasl_authzid(Mech, #{user := User, server := Server,
 	    JID = jid:encode(jid:make(User, Server)),
 	    <<JID/binary, 0, User/binary, 0, Password/binary>>
     end.
+-spec fix_from(xmpp_element(), state()) -> xmpp_element().
+fix_from(Pkt, #{xmlns := ?NS_CLIENT} = State) ->
+    case xmpp:is_stanza(Pkt) of
+	true ->
+	    case xmpp:get_from(Pkt) of
+		undefined ->
+		    #{user := U, server := S, resource := R} = State,
+		    From = jid:make(U, S, R),
+		    xmpp:set_from(Pkt, From);
+		_ ->
+		    Pkt
+	    end;
+	false ->
+	    Pkt
+    end;
+fix_from(Pkt, _State) ->
+    Pkt.
 
 %%%===================================================================
 %%% State resets
