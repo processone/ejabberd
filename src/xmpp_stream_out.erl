@@ -739,15 +739,13 @@ process_sasl_failure(Reason, State) ->
 
 -spec process_bind(stream_features(), state()) -> state().
 process_bind(StreamFeatures, #{lang := Lang, xmlns := ?NS_CLIENT,
-			       user := U, server := S, resource := R,
+			       resource := R,
 			       stream_state := StateName} = State)
   when StateName /= established, StateName /= disconnected ->
     case xmpp:has_subtag(StreamFeatures, #bind{}) of
 	true ->
-	    JID = jid:make(U, S, R),
 	    ID = new_id(),
-	    Pkt = #iq{from = JID, to = jid:remove_resource(JID),
-		      id = ID, type = set,
+	    Pkt = #iq{id = ID, type = set,
 		      sub_els = [#bind{resource = R}]},
 	    State1 = State#{stream_state => wait_for_bind_response,
 			    bind_id => ID},
