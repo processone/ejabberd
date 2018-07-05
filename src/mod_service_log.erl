@@ -69,7 +69,7 @@ log_user_receive({Packet, C2SState}) ->
 log_packet(Packet, Host) ->
     Loggers = gen_mod:get_module_opt(Host, ?MODULE, loggers),
     ForwardedMsg = #message{from = jid:make(Host),
-			    id = randoms:get_string(),
+			    id = p1_rand:get_string(),
 			    sub_els = [#forwarded{
 					  sub_els = [Packet]}]},
     lists:foreach(

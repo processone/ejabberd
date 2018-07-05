@@ -693,7 +693,7 @@ password_to_scram(Password) ->
 password_to_scram(#scram{} = Password, _IterationCount) ->
     Password;
 password_to_scram(Password, IterationCount) ->
-    Salt = randoms:bytes(?SALT_LENGTH),
+    Salt = p1_rand:bytes(?SALT_LENGTH),
     SaltedPassword = scram:salted_password(Password, Salt, IterationCount),
     StoredKey = scram:stored_key(scram:client_key(SaltedPassword)),
     ServerKey = scram:server_key(SaltedPassword),

@@ -241,7 +241,7 @@ broadcast_event(#jid{luser = LUser, lserver = LServer} = From, Event) ->
       fun(R) ->
 	      To = jid:replace_resource(From, R),
 	      IQ = #iq{type = set, from = BFrom, to = To,
-		       id = <<"push", (randoms:get_string())/binary>>,
+		       id = <<"push", (p1_rand:get_string())/binary>>,
 		       sub_els = [Event]},
 	      ejabberd_router:route(IQ)
       end, ejabberd_sm:get_user_resources(LUser, LServer)).

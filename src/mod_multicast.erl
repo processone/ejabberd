@@ -715,7 +715,7 @@ process_discoinfo_result2(From, FromS, LServiceS,
 	false ->
 	    case ST of
 		{wait_for_info, _ID} ->
-		    Random = randoms:get_string(),
+		    Random = p1_rand:get_string(),
 		    ID = <<RServer/binary, $/, Random/binary>>,
 		    send_query_items(FromS, LServiceS, ID),
 		    add_response(RServer, Response, {wait_for_items, ID});
@@ -784,7 +784,7 @@ process_discoitems_result(From, LServiceS, ID, #disco_items{items = Items}) ->
                         [] ->
                             add_response(RServer, not_supported, cached);
                         _ ->
-                            Random = randoms:get_string(),
+                            Random = p1_rand:get_string(),
                             ID2 = <<RServer/binary, $/, Random/binary>>,
                             [send_query_info(Item, LServiceS, ID2) || Item <- List],
                             add_response(RServer, Response,
@@ -859,7 +859,7 @@ search_server_on_cache(RServer, _LServerS, LServiceS, Maxmins) ->
     end.
 
 query_info(RServer, LServiceS, Response) ->
-    Random = randoms:get_string(),
+    Random = p1_rand:get_string(),
     ID = <<RServer/binary, $/, Random/binary>>,
     send_query_info(RServer, LServiceS, ID),
     add_response(RServer, Response, {wait_for_info, ID}).

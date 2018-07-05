@@ -49,7 +49,7 @@ start_link() ->
 -spec route(iq(), atom() | pid(), term(), non_neg_integer()) -> ok.
 route(#iq{type = T} = IQ, Proc, Ctx, Timeout) when T == set; T == get ->
     Expire = current_time() + Timeout,
-    Rnd = randoms:get_string(),
+    Rnd = p1_rand:get_string(),
     ID = encode_id(Expire, Rnd),
     ets:insert(?MODULE, {{Expire, Rnd}, Proc, Ctx}),
     gen_server:cast(?MODULE, {restart_timer, Expire}),

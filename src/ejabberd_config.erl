@@ -75,7 +75,7 @@ start() ->
 	    UnixTime = p1_time_compat:system_time(seconds),
 	    SharedKey = case erlang:get_cookie() of
 			    nocookie ->
-				str:sha(randoms:get_string());
+				str:sha(p1_rand:get_string());
 			    Cookie ->
 				str:sha(misc:atom_to_binary(Cookie))
 			end,
@@ -115,7 +115,7 @@ start(Hosts, Opts) ->
     UnixTime = p1_time_compat:system_time(seconds),
     SharedKey = case erlang:get_cookie() of
 		    nocookie ->
-			str:sha(randoms:get_string());
+			str:sha(p1_rand:get_string());
 		    Cookie ->
 			str:sha(misc:atom_to_binary(Cookie))
 		end,

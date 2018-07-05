@@ -118,7 +118,7 @@ mech_step(#state{step = 2} = State, ClientIn) ->
 					       Pass#scram.iterationcount};
 					 true ->
 					     TempSalt =
-						 randoms:bytes(?SALT_LENGTH),
+						 p1_rand:bytes(?SALT_LENGTH),
 					     SaltedPassword =
 						 scram:salted_password(Pass,
 								       TempSalt,
@@ -132,7 +132,7 @@ mech_step(#state{step = 2} = State, ClientIn) ->
 				      str:substr(ClientIn,
                                                  str:str(ClientIn, <<"n=">>)),
 				  ServerNonce =
-				      base64:encode(randoms:bytes(?NONCE_LENGTH)),
+				      base64:encode(p1_rand:bytes(?NONCE_LENGTH)),
 				  ServerFirstMessage =
                                         iolist_to_binary(
                                           ["r=",

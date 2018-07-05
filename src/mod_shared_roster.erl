@@ -287,7 +287,7 @@ set_new_rosteritems(UserFrom, ServerFrom, UserTo,
 set_item(User, Server, Resource, Item) ->
     ResIQ = #iq{from = jid:make(User, Server, Resource),
 		to = jid:make(Server),
-		type = set, id = <<"push", (randoms:get_string())/binary>>,
+		type = set, id = <<"push", (p1_rand:get_string())/binary>>,
 		sub_els = [#roster_query{
 			      items = [mod_roster:encode_item(Item)]}]},
     ejabberd_router:route(ResIQ).

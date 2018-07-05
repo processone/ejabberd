@@ -428,7 +428,7 @@ noreply(#{stream_timeout := {MSecs, StartTime}} = State) ->
 
 -spec new_id() -> binary().
 new_id() ->
-    randoms:get_string().
+    p1_rand:get_string().
 
 -spec is_disconnected(state()) -> boolean().
 is_disconnected(#{stream_state := StreamState}) ->

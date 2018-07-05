@@ -364,7 +364,7 @@ push_list_update(From, Name) ->
       fun(R) ->
 	      To = jid:replace_resource(From, R),
 	      IQ = #iq{type = set, from = BareFrom, to = To,
-		       id = <<"push", (randoms:get_string())/binary>>,
+		       id = <<"push", (p1_rand:get_string())/binary>>,
 		       sub_els = [#privacy_query{
 				     lists = [#privacy_list{name = Name}]}]},
 	      ejabberd_router:route(IQ)

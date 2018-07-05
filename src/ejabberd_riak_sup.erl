@@ -162,7 +162,7 @@ get_pids() ->
     [ejabberd_riak:get_proc(I) || I <- lists:seq(1, get_pool_size())].
 
 get_random_pid() ->
-    I = randoms:round_robin(get_pool_size()) + 1,
+    I = p1_rand:round_robin(get_pool_size()) + 1,
     ejabberd_riak:get_proc(I).
 
 transform_options(Opts) ->

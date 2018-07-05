@@ -188,12 +188,12 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 do_client_version(disabled, _From, _To) -> ok;
 do_client_version(enabled, From, To) ->
-    Random_resource = randoms:get_string(),
+    Random_resource = p1_rand:get_string(),
     From2 = From#jid{resource = Random_resource,
 		     lresource = Random_resource},
-    ID = randoms:get_string(),
+    ID = p1_rand:get_string(),
     Packet = #iq{from = From2, to = To, type = get,
-		 id = randoms:get_string(),
+		 id = p1_rand:get_string(),
 		 sub_els = [#version{}]},
     ejabberd_router:route(Packet),
     receive

@@ -91,7 +91,7 @@ get_random_pid(Host) ->
     case get_pids(Host) of
       [] -> none;
       Pids ->
-	    I = randoms:round_robin(length(Pids)) + 1,
+	    I = p1_rand:round_robin(length(Pids)) + 1,
 	    lists:nth(I, Pids)
     end.
 

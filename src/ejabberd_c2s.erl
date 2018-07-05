@@ -881,7 +881,7 @@ bounce_message_queue() ->
 -spec new_uniq_id() -> binary().
 new_uniq_id() ->
     iolist_to_binary(
-      [randoms:get_string(),
+      [p1_rand:get_string(),
        integer_to_binary(p1_time_compat:unique_integer([positive]))]).
 
 -spec get_conn_type(state()) -> c2s | c2s_tls | c2s_compressed | websocket |

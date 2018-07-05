@@ -464,7 +464,7 @@ noreply(#{stream_timeout := {MSecs, OldTime}} = State) ->
 
 -spec new_id() -> binary().
 new_id() ->
-    randoms:get_string().
+    p1_rand:get_string().
 
 -spec is_disconnected(state()) -> boolean().
 is_disconnected(#{stream_state := StreamState}) ->
@@ -1190,7 +1190,7 @@ h_addr_list_to_host_ports(AddrList) ->
 		      fun({{Priority, Weight, Port, Host}, TLS}) ->
 			      N = case Weight of
 				      0 -> 0;
-				      _ -> (Weight + 1) * randoms:uniform()
+				      _ -> (Weight + 1) * p1_rand:uniform()
 				  end,
 			      [{Priority * 65536 - N, Host, Port, TLS}];
 			 (_) ->

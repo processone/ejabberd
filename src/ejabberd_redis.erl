@@ -437,7 +437,7 @@ connect(#state{num = Num}) ->
 		erlang:error(Why)
 	end
     catch _:Reason ->
-	    Timeout = randoms:uniform(
+	    Timeout = p1_rand:uniform(
 			min(10, ejabberd_redis_sup:get_pool_size())),
 	    ?ERROR_MSG("Redis connection #~p at ~s:~p has failed: ~p; "
 		       "reconnecting in ~p seconds",
@@ -502,7 +502,7 @@ log_error(Cmd, Reason) ->
 
 -spec get_rnd_id() -> pos_integer().
 get_rnd_id() ->
-    randoms:round_robin(ejabberd_redis_sup:get_pool_size() - 1) + 2.
+    p1_rand:round_robin(ejabberd_redis_sup:get_pool_size() - 1) + 2.
 
 -spec get_result([{error, atom() | binary()} | {ok, iodata()}]) ->
 			{ok, [redis_reply()]} | {error, binary()}.

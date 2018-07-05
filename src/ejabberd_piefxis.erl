@@ -478,7 +478,7 @@ process_privacy(#privacy_query{lists = Lists,
 			       active = Active} = PrivacyQuery,
 		State = #state{user = U, server = S}) ->
     JID = jid:make(U, S),
-    IQ = #iq{type = set, id = randoms:get_string(),
+    IQ = #iq{type = set, id = p1_rand:get_string(),
 	     from = JID, to = JID, sub_els = [PrivacyQuery]},
     case mod_privacy:process_iq(IQ) of
 	#iq{type = error} = ResIQ ->
@@ -498,7 +498,7 @@ process_privacy(#privacy_query{lists = Lists,
 -spec process_private(private(), state()) -> {ok, state()} | {error, _}.
 process_private(Private, State = #state{user = U, server = S}) ->
     JID = jid:make(U, S),
-    IQ = #iq{type = set, id = randoms:get_string(),
+    IQ = #iq{type = set, id = p1_rand:get_string(),
 	     from = JID, to = JID, sub_els = [Private]},
     case mod_private:process_sm_iq(IQ) of
         #iq{type = result} ->
@@ -510,7 +510,7 @@ process_private(Private, State = #state{user = U, server = S}) ->
 -spec process_vcard(xmlel(), state()) -> {ok, state()} | {error, _}.
 process_vcard(El, State = #state{user = U, server = S}) ->
     JID = jid:make(U, S),
-    IQ = #iq{type = set, id = randoms:get_string(),
+    IQ = #iq{type = set, id = p1_rand:get_string(),
 	     from = JID, to = JID, sub_els = [El]},
     case mod_vcard:process_sm_iq(IQ) of
         #iq{type = result} ->

@@ -43,7 +43,7 @@ mech_new(Host, _GetPassword, _CheckPassword, _CheckPasswordDigest) ->
     {ok, #state{server = Host}}.
 
 mech_step(#state{}, _ClientIn) ->
-    User = iolist_to_binary([randoms:get_string(),
+    User = iolist_to_binary([p1_rand:get_string(),
                              integer_to_binary(p1_time_compat:unique_integer([positive]))]),
     {ok, [{username, User},
 	  {authzid, User},

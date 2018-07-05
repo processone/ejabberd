@@ -984,7 +984,7 @@ http_error(Status, Reason, Type) ->
             end,
     {Status, Reason, ?HEADER(CType), <<"">>}.
 
-make_sid() -> str:sha(randoms:get_string()).
+make_sid() -> str:sha(p1_rand:get_string()).
 
 -compile({no_auto_import, [{min, 2}]}).
 
@@ -1075,7 +1075,7 @@ start_shaper_timer(Timeout) ->
     erlang:start_timer(Timeout, self(), shaper_timeout).
 
 make_random_jid(Host) ->
-    User = randoms:get_string(),
-    jid:make(User, Host, randoms:get_string()).
+    User = p1_rand:get_string(),
+    jid:make(User, Host, p1_rand:get_string()).
 
 make_socket(Pid, IP) -> {http_bind, Pid, IP}.

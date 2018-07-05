@@ -546,7 +546,7 @@ handle_sync_event(get_subscribers, _From, StateName, StateData) ->
     {reply, {ok, JIDs}, StateName, StateData};
 handle_sync_event({muc_subscribe, From, Nick, Nodes}, _From,
 		  StateName, StateData) ->
-    IQ = #iq{type = set, id = randoms:get_string(),
+    IQ = #iq{type = set, id = p1_rand:get_string(),
 	     from = From, sub_els = [#muc_subscribe{nick = Nick,
 						    events = Nodes}]},
     Config = StateData#state.config,
@@ -572,7 +572,7 @@ handle_sync_event({muc_subscribe, From, Nick, Nodes}, _From,
 	    {reply, {error, get_error_text(Err)}, StateName, StateData}
     end;
 handle_sync_event({muc_unsubscribe, From}, _From, StateName, StateData) ->
-    IQ = #iq{type = set, id = randoms:get_string(),
+    IQ = #iq{type = set, id = p1_rand:get_string(),
 	     from = From, sub_els = [#muc_unsubscribe{}]},
     case process_iq_mucsub(From, IQ, StateData) of
 	{result, _, NewState} ->
@@ -2162,7 +2162,7 @@ send_self_presence(JID, State) ->
 		   Els1
 	   end,
     ejabberd_router:route(#presence{from = State#state.jid, to = JID,
-				    id = randoms:get_string(),
+				    id = p1_rand:get_string(),
 				    sub_els = Els2}).
 
 -spec send_initial_presence(jid(), state(), state()) -> ok.
@@ -2465,7 +2465,7 @@ send_affiliation(JID, Affiliation, StateData) ->
     Item = #muc_item{jid = JID,
 		     affiliation = Affiliation,
 		     role = none},
-    Message = #message{id = randoms:get_string(),
+    Message = #message{id = p1_rand:get_string(),
 		       sub_els = [#muc_user{items = [Item]}]},
     Users = get_users_and_subscribers(StateData),
     Recipients = case (StateData#state.config)#config.anonymous of
@@ -3479,7 +3479,7 @@ send_config_change_info(New, #state{config = Old} = StateData) ->
 		      send_self_presence(JID, StateData#state{config = New})
 	      end, ?DICT:to_list(StateData#state.users)),
 	    Message = #message{type = groupchat,
-			       id = randoms:get_string(),
+			       id = p1_rand:get_string(),
 			       sub_els = [#muc_user{status_codes = Codes}]},
 	    send_wrapped_multiple(StateData#state.jid,
 			  get_users_and_subscribers(StateData),
@@ -4324,7 +4324,7 @@ send_subscriptions_change_notifications(From, Nick, Type, State) ->
 				    items = #ps_items{
 					node = ?NS_MUCSUB_NODES_SUBSCRIBERS,
 					items = [#ps_item{
-					    id = randoms:get_string(),
+					    id = p1_rand:get_string(),
 					    sub_els = [Payload]}]}}]},
 			    ejabberd_router:route(xmpp:set_from_to(Packet, From, JID));
 			false ->
@@ -4367,7 +4367,7 @@ send_wrapped(From, To, Packet, Node, State) ->
 				true ->
 				    ejabberd_router:route(
 				      #presence{from = State#state.jid, to = To,
-						id = randoms:get_string(),
+						id = p1_rand:get_string(),
 						type = unavailable});
 				false ->
 				    ok
@@ -4389,7 +4389,7 @@ wrap(From, To, Packet, Node) ->
 		     items = #ps_items{
 				node = Node,
 				items = [#ps_item{
-					    id = randoms:get_string(),
+					    id = p1_rand:get_string(),
 					    sub_els = [El]}]}}]}.
 
 %% -spec send_multiple(jid(), binary(), [#user{}], stanza()) -> ok.

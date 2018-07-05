@@ -464,7 +464,7 @@ notify(LServer, PushLJID, Node, XData, Pkt, Dir, HandleResponse) ->
     IQ = #iq{type = set,
 	     from = From,
 	     to = jid:make(PushLJID),
-	     id = randoms:get_string(),
+	     id = p1_rand:get_string(),
 	     sub_els = [PubSub]},
     ejabberd_router:route_iq(IQ, HandleResponse).
 

@@ -143,7 +143,7 @@ exit_or_halt(Reason, StartFlag) ->
     end.
 
 sleep(N) ->
-    timer:sleep(randoms:uniform(N)).
+    timer:sleep(p1_rand:uniform(N)).
 
 get_module_file(App, Mod) ->
     BaseName = atom_to_list(Mod),

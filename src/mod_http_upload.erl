@@ -586,7 +586,7 @@ create_slot(#state{service_url = undefined,
     case ejabberd_hooks:run_fold(http_upload_slot_request, ServerHost, allow,
 				 [JID, UserDir, Size, Lang]) of
 	allow ->
-	    RandStr = randoms:get_alphanum_string(SecretLength),
+	    RandStr = p1_rand:get_alphanum_string(SecretLength),
 	    FileStr = make_file_string(File),
 	    ?INFO_MSG("Got HTTP upload slot for ~s (file: ~s, size: ~B)",
 		      [jid:encode(JID), File, Size]),
@@ -887,7 +887,7 @@ convert(Path, #media_info{type = T, width = W, height = H} = Info) ->
        true ->
 	    Dir = filename:dirname(Path),
 	    Ext = atom_to_binary(T, latin1),
-	    FileName = <<(randoms:get_string())/binary, $., Ext/binary>>,
+	    FileName = <<(p1_rand:get_string())/binary, $., Ext/binary>>,
 	    OutPath = filename:join(Dir, FileName),
 	    {W1, H1} = if W > H -> {300, round(H*300/W)};
 			  H > W -> {round(W*300/H), 300};

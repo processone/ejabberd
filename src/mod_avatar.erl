@@ -359,7 +359,7 @@ set_vcard_avatar(JID, VCardPhoto, Meta) ->
 	    ok;
 	{ok, VCard} ->
 	    VCard1 = VCard#vcard_temp{photo = VCardPhoto},
-	    IQ = #iq{from = JID, to = JID, id = randoms:get_string(),
+	    IQ = #iq{from = JID, to = JID, id = p1_rand:get_string(),
 		     type = set, sub_els = [VCard1], meta = Meta},
 	    LServer = JID#jid.lserver,
 	    ejabberd_hooks:run_fold(vcard_iq_set, LServer, IQ, []),

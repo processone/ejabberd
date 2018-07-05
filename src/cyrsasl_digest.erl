@@ -78,7 +78,7 @@ format_error(unexpected_response) ->
 mech_new(Host, GetPassword, _CheckPassword,
 	 CheckPasswordDigest) ->
     {ok,
-     #state{step = 1, nonce = randoms:get_string(),
+     #state{step = 1, nonce = p1_rand:get_string(),
 	    host = Host, hostfqdn = get_local_fqdn(),
 	    get_password = GetPassword,
 	    check_password = CheckPasswordDigest}}.

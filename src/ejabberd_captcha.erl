@@ -89,7 +89,7 @@ mk_field(Type, Var, Value) ->
 create_captcha(SID, From, To, Lang, Limiter, Args) ->
     case create_image(Limiter) of
       {ok, Type, Key, Image} ->
-	  Id = <<(randoms:get_string())/binary>>,
+	  Id = <<(p1_rand:get_string())/binary>>,
 	  JID = jid:encode(From),
 	  CID = <<"sha1+", (str:sha(Image))/binary, "@bob.xmpp.org">>,
 	  Data = #bob_data{cid = CID, 'max-age' = 0, type = Type,
@@ -120,7 +120,7 @@ create_captcha(SID, From, To, Lang, Limiter, Args) ->
 create_captcha_x(SID, To, Lang, Limiter, #xdata{fields = Fs} = X) ->
     case create_image(Limiter) of
       {ok, Type, Key, Image} ->
-	  Id = <<(randoms:get_string())/binary>>,
+	  Id = <<(p1_rand:get_string())/binary>>,
 	  CID = <<"sha1+", (str:sha(Image))/binary, "@bob.xmpp.org">>,
 	  Data = #bob_data{cid = CID, 'max-age' = 0, type = Type, data = Image},
 	  HelpTxt = translate:translate(Lang,
@@ -376,7 +376,7 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 create_image() -> create_image(undefined).
 
 create_image(Limiter) ->
-    Key = str:substr(randoms:get_string(), 1, 6),
+    Key = str:substr(p1_rand:get_string(), 1, 6),
     create_image(Limiter, Key).
 
 create_image(Limiter, Key) ->

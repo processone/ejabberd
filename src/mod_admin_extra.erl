@@ -974,7 +974,7 @@ build_random_password(Reason) ->
     {{Year, Month, Day}, {Hour, Minute, Second}} = calendar:universal_time(),
     Date = str:format("~4..0B~2..0B~2..0BT~2..0B:~2..0B:~2..0B",
 		      [Year, Month, Day, Hour, Minute, Second]),
-    RandomString = randoms:get_string(),
+    RandomString = p1_rand:get_string(),
     <<"BANNED_ACCOUNT--", Date/binary, "--", RandomString/binary, "--", Reason/binary>>.
 
 set_password_auth(User, Server, Password) ->
@@ -1515,7 +1515,7 @@ send_message(Type, From, To, Subject, Body) ->
 build_packet(Type, Subject, Body) ->
     #message{type = misc:binary_to_atom(Type),
 	     body = xmpp:mk_text(Body),
-	     id = randoms:get_string(),
+	     id = p1_rand:get_string(),
 	     subject = xmpp:mk_text(Subject)}.
 
 send_stanza(FromString, ToString, Stanza) ->

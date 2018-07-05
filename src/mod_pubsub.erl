@@ -1468,7 +1468,7 @@ create_node(Host, ServerHost, Node, Owner, Type) ->
 create_node(Host, ServerHost, <<>>, Owner, Type, Access, Configuration) ->
     case lists:member(<<"instant-nodes">>, plugin_features(Host, Type)) of
 	true ->
-	    Node = randoms:get_string(),
+	    Node = p1_rand:get_string(),
 	    case create_node(Host, ServerHost, Node, Owner, Type, Access, Configuration) of
 		{result, _} ->
 		    {result, #pubsub{create = Node}};

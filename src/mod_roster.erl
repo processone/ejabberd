@@ -492,7 +492,7 @@ push_item(To, OldItem, NewItem, Ver) ->
     route_presence_change(To, OldItem, NewItem),
     IQ = #iq{type = set, to = To,
 	     from = jid:remove_resource(To),
-	     id = <<"push", (randoms:get_string())/binary>>,
+	     id = <<"push", (p1_rand:get_string())/binary>>,
 	     sub_els = [#roster_query{ver = Ver,
 				      items = [encode_item(NewItem)]}]},
     ejabberd_router:route(IQ).
@@ -1071,7 +1071,7 @@ user_roster_item_parse_query(User, Server, Items,
 					#iq{type = set,
 					    from = UJID,
 					    to = UJID,
-					    id = randoms:get_string(),
+					    id = p1_rand:get_string(),
 					    sub_els = [#roster_query{
 							  items = [RosterItem]}]}),
 				      throw(submitted);
