@@ -93,7 +93,7 @@ iq_set_many_items(Config) ->
 
 iq_set_duplicated_groups(Config) ->
     JID = jid:decode(<<"nurse@example.com">>),
-    G = randoms:get_string(),
+    G = p1_rand:get_string(),
     ct:comment("Trying to send roster-set with duplicated groups"),
     Item = #roster_item{jid = JID, groups = [G, G]},
     #stanza_error{reason = 'bad-request'} = set_items(Config, [Item]),

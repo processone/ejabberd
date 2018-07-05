@@ -58,7 +58,7 @@ single_cases() ->
 
 service_presence_error(Config) ->
     Service = muc_jid(Config),
-    ServiceResource = jid:replace_resource(Service, randoms:get_string()),
+    ServiceResource = jid:replace_resource(Service, p1_rand:get_string()),
     lists:foreach(
       fun(To) ->
 	      send(Config, #presence{type = error, to = To}),
@@ -81,7 +81,7 @@ service_message_error(Config) ->
 		  send_recv(Config, #message{type = Type, to = Service}),
 	      #stanza_error{reason = 'forbidden'} = xmpp:get_error(Err1)
       end, [chat, normal, headline, groupchat]),
-    ServiceResource = jid:replace_resource(Service, randoms:get_string()),
+    ServiceResource = jid:replace_resource(Service, p1_rand:get_string()),
     send(Config, #message{type = error, to = ServiceResource}),
     lists:foreach(
       fun(Type) ->
@@ -93,7 +93,7 @@ service_message_error(Config) ->
 
 service_unknown_ns_iq_error(Config) ->
     Service = muc_jid(Config),
-    ServiceResource = jid:replace_resource(Service, randoms:get_string()),
+    ServiceResource = jid:replace_resource(Service, p1_rand:get_string()),
     lists:foreach(
       fun(To) ->
 	      send(Config, #iq{type = result, to = To}),
@@ -162,7 +162,7 @@ service_features(Config) ->
 
 service_disco_info_node_error(Config) ->
     MUC = muc_jid(Config),
-    Node = randoms:get_string(),
+    Node = p1_rand:get_string(),
     #iq{type = error} = Err =
 	send_recv(Config, #iq{type = get, to = MUC,
 			      sub_els = [#disco_info{node = Node}]}),
@@ -594,7 +594,7 @@ invite_members_only_slave(Config) ->
 invite_password_protected_master(Config) ->
     Room = muc_room_jid(Config),
     PeerJID = ?config(slave, Config),
-    Password = randoms:get_string(),
+    Password = p1_rand:get_string(),
     ok = join_new(Config),
     [104] = set_config(Config, [{passwordprotectedroom, true},
                                     {roomsecret, Password}]),
@@ -695,7 +695,7 @@ change_role_master(Config) ->
 		  [] ->
 		      ok
 	      end,
-	      Reason = randoms:get_string(),
+	      Reason = p1_rand:get_string(),
 	      put_event(Config, {Role, Reason}),
 	      ok = set_role(Config, Role, Reason),
 	      ct:comment("Receiving role change to ~s", [Role]),
@@ -759,7 +759,7 @@ change_affiliation_master(Config) ->
 		  [] ->
 		      ok
 	      end,
-	      Reason = randoms:get_string(),
+	      Reason = p1_rand:get_string(),
 	      put_event(Config, {Aff, Role, Status, Reason}),
 	      ok = set_affiliation(Config, Aff, Reason),
 	      ct:comment("Receiving affiliation change to ~s", [Aff]),
@@ -926,7 +926,7 @@ vcard_master(Config) ->
     Room = muc_room_jid(Config),
     PeerNick = ?config(slave_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
-    FN = randoms:get_string(),
+    FN = p1_rand:get_string(),
     VCard = #vcard_temp{fn = FN},
     ok = join_new(Config),
     ct:comment("Waiting for slave to join"),
@@ -956,7 +956,7 @@ vcard_slave(Config) ->
     disconnect(Config).
 
 nick_change_master(Config) ->
-    NewNick = randoms:get_string(),
+    NewNick = p1_rand:get_string(),
     PeerJID = ?config(peer, Config),
     PeerNickJID = peer_muc_jid(Config),
     ok = master_join(Config),
@@ -1006,8 +1006,8 @@ nick_change_slave(Config) ->
     disconnect(NewConfig).
 
 config_title_desc_master(Config) ->
-    Title = randoms:get_string(),
-    Desc = randoms:get_string(),
+    Title = p1_rand:get_string(),
+    Desc = p1_rand:get_string(),
     Room = muc_room_jid(Config),
     PeerNick = ?config(slave_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
@@ -1059,7 +1059,7 @@ config_public_list_slave(Config) ->
     disconnect(Config).
 
 config_password_master(Config) ->
-    Password = randoms:get_string(),
+    Password = p1_rand:get_string(),
     Room = muc_room_jid(Config),
     PeerNick = ?config(slave_nick, Config),
     PeerNickJID = jid:replace_resource(Room, PeerNick),
@@ -1078,7 +1078,7 @@ config_password_slave(Config) ->
     Password = get_event(Config),
     #stanza_error{reason = 'not-authorized'} = join(Config),
     #stanza_error{reason = 'not-authorized'} =
-	join(Config, #muc{password = randoms:get_string()}),
+	join(Config, #muc{password = p1_rand:get_string()}),
     {[], _, _} = join(Config, #muc{password = Password}),
     ok = leave(Config),
     disconnect(Config).
@@ -1137,7 +1137,7 @@ config_members_only_master(Config) ->
     lists:member(<<"muc_membersonly">>, get_features(Config, Room)),
     ct:comment("Waiting for slave to fail joining the room"),
     set_member = get_event(Config),
-    ok = set_affiliation(Config, member, randoms:get_string()),
+    ok = set_affiliation(Config, member, p1_rand:get_string()),
     #message{from = Room, type = normal} = Msg = recv_message(Config),
     #muc_user{items = [#muc_item{jid = PeerBareJID,
 				 affiliation = member}]} =
@@ -1146,7 +1146,7 @@ config_members_only_master(Config) ->
     put_event(Config, join),
     ct:comment("Waiting for peer to join"),
     recv_muc_presence(Config, PeerNickJID, available),
-    ok = set_affiliation(Config, none, randoms:get_string()),
+    ok = set_affiliation(Config, none, p1_rand:get_string()),
     ct:comment("Waiting for peer to be kicked"),
     #muc_user{status_codes = NewCodes,
 	      items = [#muc_item{affiliation = none,
@@ -1199,7 +1199,7 @@ config_moderated_master(Config) ->
     PeerNickJID = peer_muc_jid(Config),
     ok = master_join(Config),
     lists:member(<<"muc_moderated">>, get_features(Config, Room)),
-    ok = set_role(Config, visitor, randoms:get_string()),
+    ok = set_role(Config, visitor, p1_rand:get_string()),
     #muc_user{items = [#muc_item{role = visitor}]} =
 	recv_muc_presence(Config, PeerNickJID, available),
     set_unmoderated = get_event(Config),
@@ -1371,7 +1371,7 @@ config_allow_invites_slave(Config) ->
 
 config_visitor_status_master(Config) ->
     PeerNickJID = peer_muc_jid(Config),
-    Status = xmpp:mk_text(randoms:get_string()),
+    Status = xmpp:mk_text(p1_rand:get_string()),
     ok = join_new(Config),
     [104] = set_config(Config, [{members_by_default, false}]),
     ct:comment("Asking the slave to join as a visitor"),
@@ -1500,7 +1500,7 @@ config_visitor_nickchange_master(Config) ->
     disconnect(Config).
 
 config_visitor_nickchange_slave(Config) ->
-    NewNick = randoms:get_string(),
+    NewNick = p1_rand:get_string(),
     MyNickJID = my_muc_jid(Config),
     MyNewNickJID = jid:replace_resource(MyNickJID, NewNick),
     ct:comment("Waiting for 'join' command from the master"),

@@ -76,11 +76,11 @@ send_non_existent(Config) ->
     disconnect(Config).
 
 view_non_existent(Config) ->
-    #stanza_error{reason = 'item-not-found'} = view(Config, [randoms:get_string()], false),
+    #stanza_error{reason = 'item-not-found'} = view(Config, [p1_rand:get_string()], false),
     disconnect(Config).
 
 remove_non_existent(Config) ->
-    ok = remove(Config, [randoms:get_string()]),
+    ok = remove(Config, [p1_rand:get_string()]),
     disconnect(Config).
 
 view_non_integer(Config) ->
@@ -92,7 +92,7 @@ remove_non_integer(Config) ->
     disconnect(Config).
 
 malformed_iq(Config) ->
-    Item = #offline_item{node = randoms:get_string()},
+    Item = #offline_item{node = p1_rand:get_string()},
     Range = [{Type, SubEl} || Type <- [set, get],
 			      SubEl <- [#offline{items = [], _ = false},
 					#offline{items = [Item], _ = true}]]
@@ -111,7 +111,7 @@ malformed_iq(Config) ->
 wrong_user(Config) ->
     Server = ?config(server, Config),
     To = jid:make(<<"foo">>, Server),
-    Item = #offline_item{node = randoms:get_string()},
+    Item = #offline_item{node = p1_rand:get_string()},
     Range = [{Type, Items, Purge, Fetch} ||
 		Type <- [set, get],
 		Items <- [[], [Item]],
@@ -129,7 +129,7 @@ wrong_user(Config) ->
     disconnect(Config).
 
 unsupported_iq(Config) ->
-    Item = #offline_item{node = randoms:get_string()},
+    Item = #offline_item{node = p1_rand:get_string()},
     lists:foreach(
       fun(Type) ->
 	      #iq{type = error} = Err =
@@ -399,7 +399,7 @@ message_iterator(Config) ->
     Offline = [[#offline{}]],
     Hints = [[#hint{type = T}] || T <- [store, 'no-store']],
     XEvent = [[#xevent{id = ID, offline = OfflineFlag}]
-	      || ID <- [undefined, randoms:get_string()],
+	      || ID <- [undefined, p1_rand:get_string()],
 		 OfflineFlag <- [false, true]],
     Delay = [[#delay{stamp = p1_time_compat:timestamp(), from = ServerJID}]],
     AllEls = [Els1 ++ Els2 || Els1 <- [[]] ++ ChatStates ++ Delay ++ Hints ++ Offline,

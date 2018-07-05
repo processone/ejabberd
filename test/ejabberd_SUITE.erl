@@ -57,7 +57,7 @@ init_per_suite(Config) ->
     inet_db:add_host({127,0,0,1}, [binary_to_list(?S2S_VHOST),
 				   binary_to_list(?MNESIA_VHOST),
 				   binary_to_list(?UPLOAD_VHOST)]),
-    inet_db:set_domain(binary_to_list(randoms:get_string())),
+    inet_db:set_domain(binary_to_list(p1_rand:get_string())),
     inet_db:set_lookup([file, native]),
     start_ejabberd(NewConfig),
     NewConfig.
@@ -227,7 +227,7 @@ init_per_testcase(TestCase, OrigConfig) ->
 		   anonymous ->
 		       <<"">>;
 		   legacy_auth ->
-		       randoms:get_string();
+		       p1_rand:get_string();
 		   _ ->
 		       ?config(resource, OrigConfig)
 	       end,
@@ -718,7 +718,7 @@ bad_nonza(Config) ->
     disconnect(Config).
 
 invalid_from(Config) ->
-    send(Config, #message{from = jid:make(randoms:get_string())}),
+    send(Config, #message{from = jid:make(p1_rand:get_string())}),
     ?recv1(#stream_error{reason = 'invalid-from'}),
     ?recv1({xmlstreamend, <<"stream:stream">>}),
     close_socket(Config).
@@ -738,8 +738,8 @@ test_missing_to(Config) ->
     close_socket(Config).
 
 test_invalid_from(Config) ->
-    From = jid:make(randoms:get_string()),
-    To = jid:make(randoms:get_string()),
+    From = jid:make(p1_rand:get_string()),
+    To = jid:make(p1_rand:get_string()),
     send(Config, #message{from = From, to = To}),
     ?recv1(#stream_error{reason = 'invalid-from'}),
     ?recv1({xmlstreamend, <<"stream:stream">>}),
@@ -780,7 +780,7 @@ s2s_required_trusted(Config) ->
 s2s_ping(Config) ->
     From = my_jid(Config),
     To = jid:make(?MNESIA_VHOST),
-    ID = randoms:get_string(),
+    ID = p1_rand:get_string(),
     ejabberd_s2s:route(#iq{from = From, to = To, id = ID,
 			   type = get, sub_els = [#ping{}]}),
     #iq{type = result, id = ID, sub_els = []} = recv_iq(Config),
@@ -901,7 +901,7 @@ presence(Config) ->
     disconnect(Config).
 
 presence_broadcast(Config) ->
-    Feature = <<"p1:tmp:", (randoms:get_string())/binary>>,
+    Feature = <<"p1:tmp:", (p1_rand:get_string())/binary>>,
     Ver = crypto:hash(sha, ["client", $/, "bot", $/, "en", $/,
                             "ejabberd_ct", $<, Feature, $<]),
     B64Ver = base64:encode(Ver),

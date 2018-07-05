@@ -133,7 +133,7 @@ test_publish(Config) ->
     disconnect(Config).
 
 test_auto_create(Config) ->
-    Node = randoms:get_string(),
+    Node = p1_rand:get_string(),
     publish_item(Config, Node),
     delete_node(Config, Node),
     disconnect(Config).
@@ -287,7 +287,7 @@ affiliations_master(Config) ->
     lists:foreach(
       fun(Aff) ->
 	      Node = <<(atom_to_binary(Aff, utf8))/binary,
-		       $-, (randoms:get_string())/binary>>,
+		       $-, (p1_rand:get_string())/binary>>,
 	      create_node(Config, Node, default_node_config(Config)),
 	      #ps_item{id = I} = publish_item(Config, Node),
 	      ok = set_affiliations(Config, Node, [{Peer, Aff}]),
@@ -598,7 +598,7 @@ set_node_config(Config, Node, Options) ->
 
 publish_item(Config, Node) ->
     PJID = pubsub_jid(Config),
-    ItemID = randoms:get_string(),
+    ItemID = p1_rand:get_string(),
     Item = #ps_item{id = ItemID, sub_els = [xmpp:encode(#presence{id = ItemID})]},
     case send_recv(Config,
 		   #iq{type = set, to = PJID,

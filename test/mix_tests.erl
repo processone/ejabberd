@@ -89,7 +89,7 @@ all_master(Config) ->
 	recv_message(Config),
     #mix_participant{jid = MyBareJID} = xmpp:decode(PXML),
     %% Coming online
-    PresenceID = randoms:get_string(),
+    PresenceID = p1_rand:get_string(),
     Presence = xmpp:encode(#presence{}),
     #iq{type = result,
 	sub_els =

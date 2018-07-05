@@ -63,18 +63,18 @@ feature_enabled(Config) ->
 
 fake_by(Config) ->
     BareServerJID = server_jid(Config),
-    FullServerJID = jid:replace_resource(BareServerJID, randoms:get_string()),
+    FullServerJID = jid:replace_resource(BareServerJID, p1_rand:get_string()),
     FullMyJID = my_jid(Config),
     BareMyJID = jid:remove_resource(FullMyJID),
     Fakes = lists:flatmap(
 	      fun(JID) ->
-		      [#mam_archived{id = randoms:get_string(), by = JID},
-		       #stanza_id{id = randoms:get_string(), by = JID}]
+		      [#mam_archived{id = p1_rand:get_string(), by = JID},
+		       #stanza_id{id = p1_rand:get_string(), by = JID}]
 	      end, [BareServerJID, FullServerJID, BareMyJID, FullMyJID]),
     Body = xmpp:mk_text(<<"body">>),
-    ForeignJID = jid:make(randoms:get_string()),
-    Archived = #mam_archived{id = randoms:get_string(), by = ForeignJID},
-    StanzaID = #stanza_id{id = randoms:get_string(), by = ForeignJID},
+    ForeignJID = jid:make(p1_rand:get_string()),
+    Archived = #mam_archived{id = p1_rand:get_string(), by = ForeignJID},
+    StanzaID = #stanza_id{id = p1_rand:get_string(), by = ForeignJID},
     #message{body = Body, sub_els = SubEls} =
 	send_recv(Config, #message{to = FullMyJID,
 				   body = Body,
@@ -416,7 +416,7 @@ recv_messages_from_room(Config, Range) ->
     Room = muc_room_jid(Config),
     MyNickJID = jid:replace_resource(Room, MyNick),
     MyJID = my_jid(Config),
-    QID = randoms:get_string(),
+    QID = p1_rand:get_string(),
     Count = length(Range),
     I = send(Config, #iq{type = set, to = Room,
 			 sub_els = [#mam_query{xmlns = ?NS_MAM_2, id = QID}]}),
@@ -450,7 +450,7 @@ query_all(Config, From, To) ->
       end, ?VERSIONS).
 
 query_all(Config, From, To, NS) ->
-    QID = randoms:get_string(),
+    QID = p1_rand:get_string(),
     Range = lists:seq(1, 5),
     ID = send_query(Config, #mam_query{xmlns = NS, id = QID}),
     recv_archived_messages(Config, From, To, QID, Range),
@@ -465,7 +465,7 @@ query_with(Config, From, To) ->
 query_with(Config, From, To, NS) ->
     Peer = ?config(peer, Config),
     BarePeer = jid:remove_resource(Peer),
-    QID = randoms:get_string(),
+    QID = p1_rand:get_string(),
     Range = lists:seq(1, 5),
     lists:foreach(
       fun(JID) ->
@@ -492,7 +492,7 @@ query_rsm_max(Config, From, To) ->
 query_rsm_max(Config, From, To, NS) ->
     lists:foreach(
       fun(Max) ->
-	      QID = randoms:get_string(),
+	      QID = p1_rand:get_string(),
 	      Range = lists:sublist(lists:seq(1, Max), 5),
 	      Query = #mam_query{xmlns = NS, id = QID, rsm = #rsm_set{max = Max}},
 	      ID = send_query(Config, Query),
@@ -512,7 +512,7 @@ query_rsm_after(Config, From, To, NS) ->
       fun(Range, #rsm_first{data = After}) ->
 	      ct:comment("Retrieving ~p messages after '~s'",
 			 [length(Range), After]),
-	      QID = randoms:get_string(),
+	      QID = p1_rand:get_string(),
 	      Query = #mam_query{xmlns = NS, id = QID,
 				 rsm = #rsm_set{'after' = After}},
 	      ID = send_query(Config, Query),
@@ -534,7 +534,7 @@ query_rsm_before(Config, From, To, NS) ->
       fun(Range, Before) ->
 	      ct:comment("Retrieving ~p messages before '~s'",
 			 [length(Range), Before]),
-	      QID = randoms:get_string(),
+	      QID = p1_rand:get_string(),
 	      Query = #mam_query{xmlns = NS, id = QID,
 				 rsm = #rsm_set{before = Before}},
 	      ID = send_query(Config, Query),

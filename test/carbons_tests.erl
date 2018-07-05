@@ -135,7 +135,7 @@ prepare_slave(Config) ->
 send_messages(Config) ->
     Server = ?config(server, Config),
     MyJID = my_jid(Config),
-    JID = jid:make(randoms:get_string(), Server),
+    JID = jid:make(p1_rand:get_string(), Server),
     lists:foreach(
       fun({send, #message{type = Type} = Msg}) ->
 	      I = send(Config, Msg#message{to = JID}),

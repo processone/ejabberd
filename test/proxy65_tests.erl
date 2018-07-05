@@ -70,8 +70,8 @@ all_master(Config) ->
         send_recv(
           Config,
           #iq{type = get, sub_els = [#bytestreams{}], to = Proxy}),
-    SID = randoms:get_string(),
-    Data = randoms:bytes(1024),
+    SID = p1_rand:get_string(),
+    Data = p1_rand:bytes(1024),
     put_event(Config, {StreamHost, SID, Data}),
     Socks5 = socks5_connect(StreamHost, {SID, MyJID, Peer}),
     wait_for_slave(Config),

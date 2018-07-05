@@ -720,7 +720,7 @@ id() ->
     id(<<>>).
 
 id(<<>>) ->
-    randoms:get_string();
+    p1_rand:get_string();
 id(ID) ->
     ID.
 

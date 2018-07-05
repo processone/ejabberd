@@ -202,7 +202,7 @@ malformed_iq_query(Config) ->
     disconnect(Config).
 
 malformed_get(Config) ->
-    JID = jid:make(randoms:get_string()),
+    JID = jid:make(p1_rand:get_string()),
     Item = #block_item{jid = JID},
     lists:foreach(
       fun(SubEl) ->
@@ -228,7 +228,7 @@ malformed_set(Config) ->
 	    #block_list{},
 	    #block_list{
 	       items = [#block_item{
-			   jid = jid:make(randoms:get_string())}]}]),
+			   jid = jid:make(p1_rand:get_string())}]}]),
     disconnect(Config).
 
 malformed_type_value(Config) ->
@@ -245,8 +245,8 @@ malformed_type_value(Config) ->
     disconnect(Config).
 
 set_get_block(Config) ->
-    J1 = jid:make(randoms:get_string(), randoms:get_string()),
-    J2 = jid:make(randoms:get_string(), randoms:get_string()),
+    J1 = jid:make(p1_rand:get_string(), p1_rand:get_string()),
+    J2 = jid:make(p1_rand:get_string(), p1_rand:get_string()),
     {ok, ListName} = set_block(Config, [J1, J2]),
     JIDs = get_block(Config),
     JIDs = lists:sort([J1, J2]),
@@ -304,7 +304,7 @@ deny_server_full_jid_slave(Config) ->
     deny_slave(Config).
 
 deny_group_master(Config) ->
-    Group = randoms:get_string(),
+    Group = p1_rand:get_string(),
     deny_master(Config, {group, Group}).
 
 deny_group_slave(Config) ->
@@ -353,7 +353,7 @@ deny_master(Config, {Type, Value}) ->
     lists:foreach(
       fun(Opts) ->
 	      ct:pal("Set list for ~s, ~s, ~w", [Type, Value, Opts]),
-	      ListName = randoms:get_string(),
+	      ListName = p1_rand:get_string(),
 	      Item = #privacy_item{order = 0,
 				   action = deny,
 				   iq = proplists:get_bool(iq, Opts),
