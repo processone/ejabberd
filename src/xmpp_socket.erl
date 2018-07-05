@@ -70,7 +70,7 @@
                        socket            :: socket(),
 		       max_stanza_size = infinity :: timeout(),
 		       xml_stream :: undefined | fxml_stream:xml_stream_state(),
-		       shaper = none :: none | shaper:shaper(),
+		       shaper = none :: none | ejabberd_shaper:shaper(),
                        receiver :: receiver()}).
 
 -type socket_state() :: #socket_state{}.
@@ -263,7 +263,7 @@ recv(#socket_state{sockmod = SockMod, socket = Socket} = SocketData, Data) ->
     end.
 
 change_shaper(#socket_state{receiver = undefined} = SocketData, Shaper) ->
-    ShaperState = shaper:new(Shaper),
+    ShaperState = ejabberd_shaper:new(Shaper),
     SocketData#socket_state{shaper = ShaperState};
 change_shaper(#socket_state{sockmod = SockMod,
 			    socket = Socket} = SocketData, Shaper) ->
@@ -373,7 +373,7 @@ parse(#socket_state{xml_stream = XMLStream,
   when is_binary(Data) ->
     ?DEBUG("(~s) Received XML on stream = ~p", [pp(SocketData), Data]),
     XMLStream1 = fxml_stream:parse(XMLStream, Data),
-    {ShaperState1, Pause} = shaper:update(ShaperState, byte_size(Data)),
+    {ShaperState1, Pause} = ejabberd_shaper:update(ShaperState, byte_size(Data)),
     Ret = if Pause > 0 ->
 		  activate_after(Socket, self(), Pause);
 	     true ->

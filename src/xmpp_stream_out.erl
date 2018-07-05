@@ -216,7 +216,7 @@ get_transport(#{socket := Socket, owner := Owner})
 get_transport(_) ->
     erlang:error(badarg).
 
--spec change_shaper(state(), shaper:shaper()) -> state().
+-spec change_shaper(state(), ejabberd_shaper:shaper()) -> state().
 change_shaper(#{socket := Socket, owner := Owner} = State, Shaper)
   when Owner == self() ->
     Socket1 = xmpp_socket:change_shaper(Socket, Shaper),

@@ -1245,7 +1245,7 @@ transform_terms(Terms) ->
             ejabberd_s2s,
             ejabberd_listener,
             ejabberd_sql_sup,
-            shaper,
+            ejabberd_shaper,
             ejabberd_s2s_out,
             acl,
             ejabberd_config],

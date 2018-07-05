@@ -122,7 +122,7 @@ start_link(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, QueueT
 init([Host, ServerHost, Access, Room, HistorySize,
       RoomShaper, Creator, _Nick, DefRoomOpts, QueueType]) ->
     process_flag(trap_exit, true),
-    Shaper = shaper:new(RoomShaper),
+    Shaper = ejabberd_shaper:new(RoomShaper),
     RoomQueue = room_queue_new(ServerHost, Shaper, QueueType),
     State = set_affiliation(Creator, owner,
 	    #state{host = Host, server_host = ServerHost,
@@ -141,7 +141,7 @@ init([Host, ServerHost, Access, Room, HistorySize,
     {ok, normal_state, State1};
 init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, QueueType]) ->
     process_flag(trap_exit, true),
-    Shaper = shaper:new(RoomShaper),
+    Shaper = ejabberd_shaper:new(RoomShaper),
     RoomQueue = room_queue_new(ServerHost, Shaper, QueueType),
     State = set_opts(Opts, #state{host = Host,
 				  server_host = ServerHost,
@@ -169,7 +169,7 @@ normal_state({route, <<"">>,
 				       * 1000000),
 	    Size = element_size(Packet),
 	    {MessageShaper, MessageShaperInterval} =
-		shaper:update(Activity#activity.message_shaper, Size),
+		ejabberd_shaper:update(Activity#activity.message_shaper, Size),
 	    if Activity#activity.message /= undefined ->
 		    ErrText = <<"Traffic rate limit is exceeded">>,
 		    Err = xmpp:err_resource_constraint(ErrText, Lang),
@@ -178,7 +178,7 @@ normal_state({route, <<"">>,
 	       Now >= Activity#activity.message_time + MinMessageInterval,
 	       MessageShaperInterval == 0 ->
 		    {RoomShaper, RoomShaperInterval} =
-			shaper:update(StateData#state.room_shaper, Size),
+			ejabberd_shaper:update(StateData#state.room_shaper, Size),
 		    RoomQueueEmpty = case StateData#state.room_queue of
 					 undefined -> true;
 					 RQ -> p1_queue:is_empty(RQ)
@@ -1503,7 +1503,7 @@ get_max_users_admin_threshold(StateData) ->
     gen_mod:get_module_opt(StateData#state.server_host,
 			   mod_muc, max_users_admin_threshold).
 
--spec room_queue_new(binary(), shaper:shaper(), _) -> p1_queue:queue().
+-spec room_queue_new(binary(), ejabberd_shaper:shaper(), _) -> p1_queue:queue().
 room_queue_new(ServerHost, Shaper, QueueType) ->
     HaveRoomShaper = Shaper /= none,
     HaveMessageShaper = gen_mod:get_module_opt(
@@ -1533,10 +1533,10 @@ get_user_activity(JID, StateData) ->
       {ok, _P, A} -> A;
       error ->
 	  MessageShaper =
-	      shaper:new(gen_mod:get_module_opt(StateData#state.server_host,
+	      ejabberd_shaper:new(gen_mod:get_module_opt(StateData#state.server_host,
 						mod_muc, user_message_shaper)),
 	  PresenceShaper =
-	      shaper:new(gen_mod:get_module_opt(StateData#state.server_host,
+	      ejabberd_shaper:new(gen_mod:get_module_opt(StateData#state.server_host,
 						mod_muc, user_presence_shaper)),
 	  #activity{message_shaper = MessageShaper,
 		    presence_shaper = PresenceShaper}
@@ -1575,10 +1575,10 @@ store_user_activity(JID, UserActivity, StateData) ->
 			   of
 			 true ->
 			     {_, MessageShaperInterval} =
-				 shaper:update(UserActivity#activity.message_shaper,
+				 ejabberd_shaper:update(UserActivity#activity.message_shaper,
 					       100000),
 			     {_, PresenceShaperInterval} =
-				 shaper:update(UserActivity#activity.presence_shaper,
+				 ejabberd_shaper:update(UserActivity#activity.presence_shaper,
 					       100000),
 			     Delay = lists:max([MessageShaperInterval,
 						PresenceShaperInterval,
@@ -1620,7 +1620,7 @@ prepare_room_queue(StateData) ->
 	  Packet = Activity#activity.message,
 	  Size = element_size(Packet),
 	  {RoomShaper, RoomShaperInterval} =
-	      shaper:update(StateData#state.room_shaper, Size),
+	      ejabberd_shaper:update(StateData#state.room_shaper, Size),
 	  erlang:send_after(RoomShaperInterval, self(),
 			    process_room_queue),
 	  StateData#state{room_shaper = RoomShaper};
@@ -1629,7 +1629,7 @@ prepare_room_queue(StateData) ->
 	  {_Nick, Packet} = Activity#activity.presence,
 	  Size = element_size(Packet),
 	  {RoomShaper, RoomShaperInterval} =
-	      shaper:update(StateData#state.room_shaper, Size),
+	      ejabberd_shaper:update(StateData#state.room_shaper, Size),
 	  erlang:send_after(RoomShaperInterval, self(),
 			    process_room_queue),
 	  StateData#state{room_shaper = RoomShaper};

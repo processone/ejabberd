@@ -1,5 +1,5 @@
 %%%----------------------------------------------------------------------
-%%% File    : shaper.erl
+%%% File    : ejabberd_shaper.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
 %%% Purpose : Functions to control connections traffic
 %%% Created :  9 Feb 2003 by Alexey Shchepin <alexey@process-one.net>
@@ -23,7 +23,7 @@
 %%%
 %%%----------------------------------------------------------------------
 
--module(shaper).
+-module(ejabberd_shaper).
 
 -behaviour(gen_server).
 -behaviour(ejabberd_config).
@@ -39,19 +39,13 @@
 
 -include("logger.hrl").
 
--record(maxrate, {maxrate = 0 :: integer(),
-		  burst_size = 0 :: integer(),
-		  acquired_credit = 0 :: integer(),
-		  lasttime = 0 :: integer()}).
-
 -record(shaper, {name :: {atom(), global},
 		 maxrate :: integer(),
 		 burst_size :: integer()}).
 
 -record(state, {}).
 
--type shaper() :: none | #maxrate{}.
-
+-type shaper() :: none | p1_shaper:state().
 -export_type([shaper/0]).
 
 -spec start_link() -> {ok, pid()} | {error, any()}.
@@ -84,7 +78,6 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 -spec load_from_config() -> ok | {error, any()}.
-
 load_from_config() ->
     Shapers = ejabberd_config:get_option(shaper, []),
     case mnesia:transaction(
@@ -105,7 +98,6 @@ load_from_config() ->
     end.
 
 -spec get_max_rate(atom()) -> none | non_neg_integer().
-
 get_max_rate(none) ->
     none;
 get_max_rate(Name) ->
@@ -122,29 +114,18 @@ new(none) ->
 new(Name) ->
     case ets:lookup(shaper, {Name, global}) of
 	[#shaper{maxrate = R, burst_size = B}] ->
-
-	    #maxrate{maxrate = R, burst_size = B,
-		     acquired_credit = B,
-		     lasttime = p1_time_compat:system_time(micro_seconds)};
+	    p1_shaper:new(R, B);
 	[] ->
 	    none
     end.
 
 -spec update(shaper(), integer()) -> {shaper(), integer()}.
-
 update(none, _Size) -> {none, 0};
-update(#maxrate{maxrate = MR, burst_size = BS,
-		acquired_credit = AC, lasttime = L} = State, Size) ->
-    Now = p1_time_compat:system_time(micro_seconds),
-    AC2 = min(BS, AC + (MR*(Now - L) div 1000000) - Size),
-
-    Pause = if AC2 >= 0 -> 0;
-		true -> -1000*AC2 div MR
-	    end,
-    ?DEBUG("MaxRate=~p, BurstSize=~p, AcquiredCredit=~p, Size=~p, NewAcquiredCredit=~p, Pause=~p",
-	   [MR, BS, AC, Size, AC2, Pause]),
-    {State#maxrate{acquired_credit = AC2, lasttime = Now},
-     Pause}.
+update(Shaper, Size) ->
+    Result = p1_shaper:update(Shaper, Size),
+    ?DEBUG("Shaper update:~n~s =>~n~s",
+	   [p1_shaper:pp(Shaper), p1_shaper:pp(Result)]),
+    Result.
 
 transform_options(Opts) ->
     lists:foldl(fun transform_options/2, [], Opts).

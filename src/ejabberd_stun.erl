@@ -107,7 +107,7 @@ prepare_turn_opts(Opts, _UseTurn = true) ->
 		_ ->
 		    []
 	    end,
-    MaxRate = shaper:get_max_rate(Shaper),
+    MaxRate = ejabberd_shaper:get_max_rate(Shaper),
     Opts1 = Realm ++ [{auth_fun, AuthFun},{shaper, MaxRate} |
 		      lists:keydelete(shaper, 1, Opts)],
     set_certfile(Opts1).

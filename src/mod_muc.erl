@@ -84,7 +84,7 @@
          max_rooms_discoitems = 100 :: non_neg_integer(),
 	 queue_type = ram :: ram | file,
          default_room_opts = [] :: list(),
-         room_shaper = none :: shaper:shaper()}).
+         room_shaper = none :: ejabberd_shaper:shaper()}).
 
 -type muc_room_opts() :: [{atom(), any()}].
 -callback init(binary(), gen_mod:opts()) -> any().

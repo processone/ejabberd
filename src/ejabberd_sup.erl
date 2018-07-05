@@ -53,7 +53,7 @@ init([]) ->
 	   simple_supervisor(ejabberd_s2s_out),
 	   simple_supervisor(ejabberd_service),
 	   worker(acl),
-	   worker(shaper),
+	   worker(ejabberd_shaper),
 	   supervisor(ejabberd_backend_sup),
 	   supervisor(ejabberd_rdbms),
 	   supervisor(ejabberd_riak_sup),

@@ -88,7 +88,7 @@
          sid = <<"">>                             :: binary(),
          el_ibuf                                  :: p1_queue:queue(),
          el_obuf                                  :: p1_queue:queue(),
-         shaper_state = none                      :: shaper:shaper(),
+         shaper_state = none                      :: ejabberd_shaper:shaper(),
          c2s_pid                                  :: pid() | undefined,
 	 xmpp_ver = <<"">>                        :: binary(),
          inactivity_timer                         :: reference() | undefined,
@@ -281,7 +281,7 @@ init([#body{attrs = Attrs}, IP, SID]) ->
     Opts1 = ejabberd_c2s_config:get_c2s_limits(),
     Opts2 = [{xml_socket, true} | Opts1],
     Shaper = none,
-    ShaperState = shaper:new(Shaper),
+    ShaperState = ejabberd_shaper:new(Shaper),
     Socket = make_socket(self(), IP),
     XMPPVer = get_attr('xmpp:version', Attrs),
     XMPPDomain = get_attr(to, Attrs),
@@ -355,7 +355,7 @@ wait_for_session(#body{attrs = Attrs} = Req, From,
 		      {'xmlns:stream', ?NS_STREAM}, {from, State#state.host}
 		      | Polling]},
     {ShaperState, _} =
-	shaper:update(State#state.shaper_state, Req#body.size),
+	ejabberd_shaper:update(State#state.shaper_state, Req#body.size),
     State1 = State#state{wait_timeout = Wait,
 			 prev_rid = RID, prev_key = NewKey,
 			 prev_poll = PollTime, shaper_state = ShaperState,
@@ -393,7 +393,7 @@ active(#body{attrs = Attrs, size = Size} = Req, From,
 	   "~p~n** State: ~p",
 	   [Req, From, State]),
     {ShaperState, Pause} =
-	shaper:update(State#state.shaper_state, Size),
+	ejabberd_shaper:update(State#state.shaper_state, Size),
     State1 = State#state{shaper_state = ShaperState},
     if Pause > 0 ->
 	    TRef = start_shaper_timer(Pause),
@@ -524,7 +524,7 @@ handle_event({become_controller, C2SPid}, StateName,
     {next_state, StateName, State1};
 handle_event({change_shaper, Shaper}, StateName,
 	     State) ->
-    NewShaperState = shaper:new(Shaper),
+    NewShaperState = ejabberd_shaper:new(Shaper),
     {next_state, StateName,
      State#state{shaper_state = NewShaperState}};
 handle_event(_Event, StateName, State) ->
