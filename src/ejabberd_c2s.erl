@@ -33,9 +33,9 @@
 %% xmpp_stream_in callbacks
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
--export([tls_options/1, tls_required/1, tls_verify/1, tls_enabled/1,
+-export([tls_options/1, tls_required/1, tls_enabled/1,
 	 compress_methods/1, bind/2, sasl_mechanisms/2,
-	 get_password_fun/1, check_password_fun/1, check_password_digest_fun/1,
+	 get_password_fun/2, check_password_fun/2, check_password_digest_fun/2,
 	 unauthenticated_stream_features/1, authenticated_stream_features/1,
 	 handle_stream_start/2, handle_stream_end/2,
 	 handle_unauthenticated_packet/2, handle_authenticated_packet/2,
@@ -339,9 +339,6 @@ tls_options(#{lserver := LServer, tls_options := DefaultOpts,
 tls_required(#{tls_required := TLSRequired}) ->
     TLSRequired.
 
-tls_verify(#{tls_verify := TLSVerify}) ->
-    TLSVerify.
-
 tls_enabled(#{tls_enabled := TLSEnabled,
 	      tls_required := TLSRequired,
 	      tls_verify := TLSVerify}) ->
@@ -358,25 +355,41 @@ unauthenticated_stream_features(#{lserver := LServer}) ->
 authenticated_stream_features(#{lserver := LServer}) ->
     ejabberd_hooks:run_fold(c2s_post_auth_features, LServer, [], [LServer]).
 
-sasl_mechanisms(Mechs, #{lserver := LServer}) ->
+sasl_mechanisms(Mechs, #{lserver := LServer} = State) ->
+    Type = ejabberd_auth:store_type(LServer),
     Mechs1 = ejabberd_config:get_option({disable_sasl_mechanisms, LServer}, []),
-    Mechs2 = case ejabberd_auth_anonymous:is_sasl_anonymous_enabled(LServer) of
-		 true -> Mechs1;
-		 false -> [<<"ANONYMOUS">>|Mechs1]
-	     end,
-    Mechs -- Mechs2.
+    %% I re-created it from cyrsasl ets magic, but I think it's wrong
+    %% TODO: need to check before 18.09 release
+    lists:filter(
+      fun(<<"ANONYMOUS">>) ->
+	      ejabberd_auth_anonymous:is_sasl_anonymous_enabled(LServer);
+	 (<<"DIGEST-MD5">>) -> Type == plain;
+	 (<<"SCRAM-SHA-1">>) -> Type /= external;
+	 (<<"PLAIN">>) -> true;
+	 (<<"X-OAUTH2">>) -> true;
+	 (<<"EXTERNAL">>) -> maps:get(tls_verify, State, false);
+	 (_) -> false
+      end, Mechs -- Mechs1).
 
-get_password_fun(#{lserver := LServer}) ->
+get_password_fun(_Mech, #{lserver := LServer}) ->
     fun(U) ->
 	    ejabberd_auth:get_password_with_authmodule(U, LServer)
     end.
 
-check_password_fun(#{lserver := LServer}) ->
+check_password_fun(<<"X-OAUTH2">>, #{lserver := LServer}) ->
+    fun(User, _AuthzId, Token) ->
+	    case ejabberd_oauth:check_token(
+		   User, LServer, [<<"sasl_auth">>], Token) of
+		true -> {true, ejabberd_oauth};
+		_ -> {false, ejabberd_oauth}
+	    end
+    end;
+check_password_fun(_Mech, #{lserver := LServer}) ->
     fun(U, AuthzId, P) ->
 	    ejabberd_auth:check_password_with_authmodule(U, AuthzId, LServer, P)
     end.
 
-check_password_digest_fun(#{lserver := LServer}) ->
+check_password_digest_fun(_Mech, #{lserver := LServer}) ->
     fun(U, AuthzId, P, D, DG) ->
 	    ejabberd_auth:check_password_with_authmodule(U, AuthzId, LServer, P, D, DG)
     end.
@@ -920,7 +933,7 @@ change_shaper(#{shaper := ShaperName, ip := IP, lserver := LServer,
     Shaper = acl:access_matches(ShaperName,
 				#{usr => jid:split(JID), ip => IP},
 				LServer),
-    xmpp_stream_in:change_shaper(State, Shaper).
+    xmpp_stream_in:change_shaper(State, ejabberd_shaper:new(Shaper)).
 
 -spec format_reason(state(), term()) -> binary().
 format_reason(#{stop_reason := Reason}, _) ->

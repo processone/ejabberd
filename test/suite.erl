@@ -599,7 +599,7 @@ sasl_new(<<"ANONYMOUS">>, _) ->
 sasl_new(<<"DIGEST-MD5">>, {User, Server, Password}) ->
     {<<"">>,
      fun (ServerIn) ->
-	     case cyrsasl_digest:parse(ServerIn) of
+	     case xmpp_sasl_digest:parse(ServerIn) of
 	       bad -> {error, <<"Invalid SASL challenge">>};
 	       KeyVals ->
 		   Nonce = fxml:get_attr_s(<<"nonce">>, KeyVals),
@@ -625,7 +625,7 @@ sasl_new(<<"DIGEST-MD5">>, {User, Server, Password}) ->
 			    MyResponse/binary, "\"">>,
 		   {Resp,
 		    fun (ServerIn2) ->
-			    case cyrsasl_digest:parse(ServerIn2) of
+			    case xmpp_sasl_digest:parse(ServerIn2) of
 			      bad -> {error, <<"Invalid SASL challenge">>};
 			      _KeyVals2 ->
                                     {<<"">>,

@@ -32,32 +32,32 @@ defmodule EjabberdCyrsaslTest do
     start_module(:jid)
     :ejabberd_hooks.start_link
     :ok = :ejabberd_config.start(["domain1"], [])
-    {:ok, _} = :cyrsasl.start_link
-    cyrstate = :cyrsasl.server_new("domain1", "domain1", "domain1", :ok, &get_password/1,
+    {:ok, _} = :xmpp_sasl.start_link
+    cyrstate = :xmpp_sasl.server_new("domain1", "domain1", "domain1", :ok, &get_password/1,
                                    &check_password/3, &check_password_digest/5)
     setup_anonymous_mocks()
     {:ok, cyrstate: cyrstate}
   end
 
   test "Plain text (correct user and pass)", context do
-    step1 = :cyrsasl.server_start(context[:cyrstate], "PLAIN", <<0,"user1",0,"pass">>)
+    step1 = :xmpp_sasl.server_start(context[:cyrstate], "PLAIN", <<0,"user1",0,"pass">>)
     assert {:ok, _} = step1
     {:ok, kv} = step1
     assert kv[:authzid] == "user1", "got correct user"
   end
 
   test "Plain text (correct user wrong pass)", context do
-    step1 = :cyrsasl.server_start(context[:cyrstate], "PLAIN", <<0,"user1",0,"badpass">>)
+    step1 = :xmpp_sasl.server_start(context[:cyrstate], "PLAIN", <<0,"user1",0,"badpass">>)
     assert step1 == {:error, :not_authorized, "user1"}
   end
 
   test "Plain text (wrong user wrong pass)", context do
-    step1 = :cyrsasl.server_start(context[:cyrstate], "PLAIN", <<0,"nouser1",0,"badpass">>)
+    step1 = :xmpp_sasl.server_start(context[:cyrstate], "PLAIN", <<0,"nouser1",0,"badpass">>)
     assert step1 == {:error, :not_authorized, "nouser1"}
   end
 
   test "Anonymous", context do
-    step1 = :cyrsasl.server_start(context[:cyrstate], "ANONYMOUS", "domain1")
+    step1 = :xmpp_sasl.server_start(context[:cyrstate], "ANONYMOUS", "domain1")
     assert {:ok, _} = step1
   end
 
@@ -78,7 +78,7 @@ defmodule EjabberdCyrsaslTest do
   end
 
   defp process_digest_md5(cyrstate, user, domain, pass) do
-    assert {:continue, init_str, state1} = :cyrsasl.server_start(cyrstate, "DIGEST-MD5", "")
+    assert {:continue, init_str, state1} = :xmpp_sasl.server_start(cyrstate, "DIGEST-MD5", "")
     assert [_, nonce] = Regex.run(~r/nonce="(.*?)"/, init_str)
     digest_uri = "xmpp/#{domain}"
     cnonce = "abcd"
@@ -87,8 +87,8 @@ defmodule EjabberdCyrsaslTest do
     response = "username=\"#{user}\",realm=\"#{domain}\",nonce=\"#{nonce}\",cnonce=\"#{cnonce}\"," <>
       "nc=\"#{nc}\",qop=auth,digest-uri=\"#{digest_uri}\",response=\"#{response_hash}\"," <>
       "charset=utf-8,algorithm=md5-sess"
-    case :cyrsasl.server_step(state1, response) do
-      {:continue, _calc_str, state2} -> :cyrsasl.server_step(state2, "")
+    case :xmpp_sasl.server_step(state1, response) do
+      {:continue, _calc_str, state2} -> :xmpp_sasl.server_step(state2, "")
       other -> other
     end
   end

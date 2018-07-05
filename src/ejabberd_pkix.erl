@@ -133,7 +133,7 @@ get_certfile(Domain) ->
 
 -spec get_certfile_no_default(binary()) -> {ok, binary()} | error.
 get_certfile_no_default(Domain) ->
-    case ejabberd_idna:domain_utf8_to_ascii(Domain) of
+    case xmpp_idna:domain_utf8_to_ascii(Domain) of
 	false ->
 	    error;
 	ASCIIDomain ->

@@ -214,6 +214,10 @@ set(LogLevel) when is_integer(LogLevel) ->
                       ok
               end, gen_event:which_handlers(lager_event))
     end,
+    case LogLevel of
+	5 -> xmpp:set_config([{debug, true}]);
+	_ -> ok
+    end,
     {module, lager};
 set({_LogLevel, _}) ->
     error_logger:error_msg("custom loglevels are not supported for 'lager'"),

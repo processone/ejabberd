@@ -524,9 +524,7 @@ handle_event({become_controller, C2SPid}, StateName,
     {next_state, StateName, State1};
 handle_event({change_shaper, Shaper}, StateName,
 	     State) ->
-    NewShaperState = ejabberd_shaper:new(Shaper),
-    {next_state, StateName,
-     State#state{shaper_state = NewShaperState}};
+    {next_state, StateName, State#state{shaper_state = Shaper}};
 handle_event(_Event, StateName, State) ->
     ?ERROR_MSG("unexpected event in '~s': ~p",
 	       [StateName, _Event]),

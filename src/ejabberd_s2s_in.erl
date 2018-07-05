@@ -30,8 +30,8 @@
 %% xmpp_stream_in callbacks
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
--export([tls_options/1, tls_required/1, tls_verify/1, tls_enabled/1,
-	 compress_methods/1,
+-export([tls_options/1, tls_required/1, tls_enabled/1,
+	 compress_methods/1, sasl_mechanisms/2,
 	 unauthenticated_stream_features/1, authenticated_stream_features/1,
 	 handle_stream_start/2, handle_stream_end/2,
 	 handle_stream_established/1, handle_auth_success/4,
@@ -144,11 +144,14 @@ tls_options(#{tls_options := TLSOpts, server_host := LServer}) ->
 tls_required(#{server_host := LServer}) ->
     ejabberd_s2s:tls_required(LServer).
 
-tls_verify(#{server_host := LServer}) ->
-    ejabberd_s2s:tls_verify(LServer).
-
 tls_enabled(#{server_host := LServer}) ->
     ejabberd_s2s:tls_enabled(LServer).
+
+sasl_mechanisms(Mechs, #{server_host := LServer}) ->
+    lists:filter(
+      fun(<<"EXTERNAL">>) -> ejabberd_s2s:tls_verify(LServer);
+	 (_) -> false
+      end, Mechs).
 
 compress_methods(#{server_host := LServer}) ->
     case ejabberd_s2s:zlib_enabled(LServer) of
@@ -344,7 +347,7 @@ set_idle_timeout(State) ->
 change_shaper(#{shaper := ShaperName, server_host := ServerHost} = State,
 	      RServer) ->
     Shaper = acl:match_rule(ServerHost, ShaperName, jid:make(RServer)),
-    xmpp_stream_in:change_shaper(State, Shaper).
+    xmpp_stream_in:change_shaper(State, ejabberd_shaper:new(Shaper)).
 
 -spec listen_opt_type(shaper) -> fun((any()) -> any());
 		     (certfile) -> fun((binary()) -> binary());

@@ -782,7 +782,12 @@ set_opts(State) ->
 	fun(#local_config{key = Key, value = Val}) ->
 		{Key, Val}
 	end, Opts)),
+    set_fqdn(),
     set_log_level().
+
+set_fqdn() ->
+    FQDNs = get_option(fqdn, []),
+    xmpp:set_config([{fqdn, FQDNs}]).
 
 set_log_level() ->
     Level = get_option(loglevel, 4),
@@ -1452,10 +1457,16 @@ opt_type(node_start) ->
     fun(I) when is_integer(I), I>=0 -> I end;
 opt_type(validate_stream) ->
     fun(B) when is_boolean(B) -> B end;
+opt_type(fqdn) ->
+    fun(Domain) when is_binary(Domain) ->
+	    [Domain];
+       (Domains) ->
+	    [iolist_to_binary(Domain) || Domain <- Domains]
+    end;
 opt_type(_) ->
     [hide_sensitive_log_data, hosts, language, max_fsm_queue,
      default_db, default_ram_db, queue_type, queue_dir, loglevel,
-     use_cache, cache_size, cache_missed, cache_life_time,
+     use_cache, cache_size, cache_missed, cache_life_time, fqdn,
      shared_key, node_start, validate_stream, negotiation_timeout].
 
 -spec may_hide_data(any()) -> any().

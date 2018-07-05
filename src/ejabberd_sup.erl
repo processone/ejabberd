@@ -39,7 +39,6 @@ init([]) ->
     {ok, {{one_for_one, 10, 1},
 	  [worker(ejabberd_hooks),
 	   worker(ejabberd_cluster),
-	   worker(cyrsasl),
 	   worker(translate),
 	   worker(ejabberd_access_permissions),
 	   worker(ejabberd_ctl),
