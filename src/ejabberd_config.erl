@@ -57,6 +57,7 @@
 -include("logger.hrl").
 -include("ejabberd_config.hrl").
 -include_lib("kernel/include/file.hrl").
+-include_lib("kernel/include/inet.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 
 -callback opt_type(atom()) -> function() | [atom()].
@@ -786,7 +787,18 @@ set_opts(State) ->
     set_log_level().
 
 set_fqdn() ->
-    FQDNs = get_option(fqdn, []),
+    FQDNs = case get_option(fqdn, []) of
+		[] ->
+		    {ok, Hostname} = inet:gethostname(),
+		    case inet:gethostbyname(Hostname) of
+			{ok, #hostent{h_name = FQDN}} ->
+			    [iolist_to_binary(FQDN)];
+			{error, _} ->
+			    []
+		    end;
+		Domains ->
+		    Domains
+	      end,
     xmpp:set_config([{fqdn, FQDNs}]).
 
 set_log_level() ->
