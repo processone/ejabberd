@@ -199,10 +199,8 @@ modules:
     versioning: true
   mod_s2s_dialback: {}
   mod_shared_roster: {}
-  mod_stats: {}
   mod_stream_mgmt:
     resend_on_timeout: if_offline
-  mod_time: {}
   mod_vcard:
     search: false
   mod_vcard_xupdate: {}
