@@ -688,7 +688,7 @@ make_query_string(Slot, Size, #state{external_secret = Key}) when Key /= <<>> ->
     UrlPath = str:join(Slot, <<$/>>),
     SizeStr = integer_to_binary(Size),
     Data = <<UrlPath/binary, " ", SizeStr/binary>>,
-    HMAC = str:to_hexlist(crypto:hmac(sha256, Data, Key)),
+    HMAC = str:to_hexlist(crypto:hmac(sha256, Key, Data)),
     <<"?v=", HMAC/binary>>;
 make_query_string(_Slot, _Size, _State) ->
     <<>>.
