@@ -35,7 +35,7 @@
 	 now_to_usec/1, usec_to_now/1, encode_pid/1, decode_pid/2,
 	 compile_exprs/2, join_atoms/2, try_read_file/1, get_descr/2,
 	 css_dir/0, img_dir/0, js_dir/0, msgs_dir/0, sql_dir/0,
-	 read_css/1, read_img/1, read_js/1, try_url/1]).
+	 read_css/1, read_img/1, read_js/1, try_url/1, intersection/2]).
 
 %% Deprecated functions
 -export([decode_base64/1, encode_base64/1]).
@@ -279,6 +279,13 @@ get_descr(Lang, Text) ->
     Desc = translate:translate(Lang, Text),
     Copyright = ejabberd_config:get_copyright(),
     <<Desc/binary, $\n, Copyright/binary>>.
+
+-spec intersection(list(), list()) -> list().
+intersection(L1, L2) ->
+    lists:filter(
+      fun(E) ->
+              lists:member(E, L2)
+      end, L1).
 
 %%%===================================================================
 %%% Internal functions

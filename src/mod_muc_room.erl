@@ -678,6 +678,19 @@ handle_info({iq_reply, timeout, IQ}, StateName, StateData) ->
     Err = xmpp:err_recipient_unavailable(Txt, IQ#iq.lang),
     ejabberd_router:route_error(IQ, Err),
     {next_state, StateName, StateData};
+handle_info(config_reloaded, StateName, StateData) ->
+    Max = gen_mod:get_module_opt(StateData#state.server_host,
+				 mod_muc, history_size),
+    History1 = StateData#state.history,
+    Q1 = History1#lqueue.queue,
+    Q2 = case p1_queue:len(Q1) of
+	     Len when Len > Max ->
+		 lqueue_cut(Q1, Len-Max);
+	     _ ->
+		 Q1
+	 end,
+    History2 = History1#lqueue{queue = Q2, max = Max},
+    {next_state, StateName, StateData#state{history = History2}};
 handle_info(_Info, StateName, StateData) ->
     {next_state, StateName, StateData}.
 

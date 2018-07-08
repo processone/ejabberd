@@ -295,6 +295,15 @@ handle_cast({reload, ServerHost, NewOpts, OldOpts}, #state{hosts = OldHosts}) ->
 	      ejabberd_router:unregister_route(OldHost),
 	      unregister_iq_handlers(OldHost)
       end, OldHosts -- NewHosts),
+    lists:foreach(
+      fun(Host) ->
+	      lists:foreach(
+		fun({_, _, Pid}) when node(Pid) == node() ->
+			Pid ! config_reloaded;
+		   (_) ->
+			ok
+		end, get_online_rooms(ServerHost, Host))
+      end, misc:intersection(NewHosts, OldHosts)),
     {noreply, NewState};
 handle_cast(Msg, State) ->
     ?WARNING_MSG("unexpected cast: ~p", [Msg]),

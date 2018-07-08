@@ -139,7 +139,7 @@ handle_cast(config_reloaded, #state{host_modules = HostModules} = State) ->
 		  NewModules = auth_modules(Host),
 		  start(Host, NewModules -- OldModules),
 		  stop(Host, OldModules -- NewModules),
-		  reload(Host, lists_intersection(OldModules, NewModules)),
+		  reload(Host, misc:intersection(OldModules, NewModules)),
 		  maps:put(Host, NewModules, Acc)
 	  end, HostModules, ejabberd_config:get_myhosts()),
     init_cache(NewHostModules),
@@ -833,12 +833,6 @@ validate_credentials(User, Server, Password) ->
 		    end
 	    end
     end.
-
-lists_intersection(L1, L2) ->
-    lists:filter(
-      fun(E) ->
-              lists:member(E, L2)
-      end, L1).
 
 import_info() ->
     [{<<"users">>, 3}].
