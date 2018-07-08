@@ -34,7 +34,7 @@
 	 prepare_opt_val/4, transform_options/1, collect_options/1,
 	 convert_to_yaml/1, convert_to_yaml/2, v_db/2,
 	 env_binary_to_list/2, opt_type/1, may_hide_data/1,
-	 is_elixir_enabled/0, v_dbs/1, v_dbs_mods/1,
+	 is_elixir_enabled/0, v_dbs/1, v_dbs_mods/1, v_host/1, v_hosts/1,
 	 default_db/1, default_db/2, default_ram_db/1, default_ram_db/2,
 	 default_queue_type/1, queue_dir/0, fsm_limit_opts/1,
 	 use_cache/1, cache_size/1, cache_missed/1, cache_life_time/1,
@@ -970,6 +970,33 @@ v_dbs_mods(Mod) ->
 		      binary_to_atom(<<(atom_to_binary(Mod, utf8))/binary, "_",
 				       (atom_to_binary(M, utf8))/binary>>, utf8)
 	      end, v_dbs(Mod)).
+
+-spec v_host(binary()) -> binary().
+v_host(Host) ->
+    hd(v_hosts([Host])).
+
+-spec v_hosts([binary()]) -> [binary()].
+v_hosts(Hosts) ->
+    ServerHosts = get_myhosts(),
+    lists:foldr(
+      fun(Host, Acc) ->
+	      case lists:member(Host, ServerHosts) of
+		  true ->
+		      ?ERROR_MSG("Failed to reuse route ~s because it's "
+				 "already registered on a virtual host",
+				 [Host]),
+		      erlang:error(badarg);
+		  false ->
+		      case lists:member(Host, Acc) of
+			  true ->
+			      ?ERROR_MSG("Host ~s is defined multiple times",
+					 [Host]),
+			      erlang:error(badarg);
+			  false ->
+			      [Host|Acc]
+		      end
+	      end
+      end, [], Hosts).
 
 -spec default_db(module()) -> atom().
 default_db(Module) ->

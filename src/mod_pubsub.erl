@@ -3847,9 +3847,8 @@ purge_offline(Host, LJID, Node) ->
 mod_opt_type(access_createnode) -> fun acl:access_rules_validator/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(name) -> fun iolist_to_binary/1;
-mod_opt_type(host) -> fun iolist_to_binary/1;
-mod_opt_type(hosts) ->
-    fun (L) -> lists:map(fun iolist_to_binary/1, L) end;
+mod_opt_type(host) -> fun ejabberd_config:v_host/1;
+mod_opt_type(hosts) -> fun ejabberd_config:v_hosts/1;
 mod_opt_type(ignore_pep_from_offline) ->
     fun (A) when is_boolean(A) -> A end;
 mod_opt_type(last_item_cache) ->

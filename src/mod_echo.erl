@@ -60,9 +60,8 @@ reload(Host, NewOpts, OldOpts) ->
 depends(_Host, _Opts) ->
     [].
 
-mod_opt_type(host) -> fun iolist_to_binary/1;
-mod_opt_type(hosts) ->
-    fun(L) -> lists:map(fun iolist_to_binary/1, L) end.
+mod_opt_type(host) -> fun ejabberd_config:v_host/1;
+mod_opt_type(hosts) -> fun ejabberd_config:v_hosts/1.
 
 mod_options(_Host) ->
     [{host, <<"echo.@HOST@">>}, {hosts, []}].

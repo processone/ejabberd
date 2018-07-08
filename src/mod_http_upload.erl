@@ -151,9 +151,9 @@ stop(ServerHost) ->
 
 -spec mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
 mod_opt_type(host) ->
-    fun iolist_to_binary/1;
+    fun ejabberd_config:v_host/1;
 mod_opt_type(hosts) ->
-    fun (L) -> lists:map(fun iolist_to_binary/1, L) end;
+    fun ejabberd_config:v_hosts/1;
 mod_opt_type(name) ->
     fun iolist_to_binary/1;
 mod_opt_type(access) ->

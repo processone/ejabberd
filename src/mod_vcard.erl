@@ -531,9 +531,8 @@ mod_opt_type(allow_return_all) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(name) -> fun iolist_to_binary/1;
-mod_opt_type(host) -> fun iolist_to_binary/1;
-mod_opt_type(hosts) ->
-    fun (L) -> lists:map(fun iolist_to_binary/1, L) end;
+mod_opt_type(host) -> fun ejabberd_config:v_host/1;
+mod_opt_type(hosts) -> fun ejabberd_config:v_hosts/1;
 mod_opt_type(matches) ->
     fun (infinity) -> infinity;
 	(I) when is_integer(I), I > 0 -> I
