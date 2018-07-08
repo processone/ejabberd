@@ -546,12 +546,14 @@ validate_opts(Host, Module, Opts0) ->
 				   [Module, Opt]),
 	    module_error(ErrTxt);
 	  _:{invalid_option, Opt, Val} ->
-	    ErrTxt = io_lib:format("Invalid value '~p' for option '~s' of "
-				   "module '~s'", [Val, Opt, Module]),
+	    ErrTxt = io_lib:format("Invalid value for option '~s' of "
+				   "module ~s: ~s",
+				   [Opt, Module, misc:format_val(Val)]),
 	    module_error(ErrTxt);
 	  _:{invalid_option, Opt, Val, Reason} ->
-	    ErrTxt = io_lib:format("Invalid value '~p' for option '~s' of "
-				   "module '~s': ~s", [Val, Opt, Module, Reason]),
+	    ErrTxt = io_lib:format("Invalid value for option '~s' of "
+				   "module ~s (~s): ~s",
+				   [Opt, Module, Reason, misc:format_val(Val)]),
 	    module_error(ErrTxt);
 	  _:{unknown_option, Opt, []} ->
 	    ErrTxt = io_lib:format("Unknown option '~s' of module '~s': "

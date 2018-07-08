@@ -1078,14 +1078,15 @@ validate_opts(#state{opts = Opts} = State, ModOpts) ->
 					NewVal ->
 					    In#local_config{value = NewVal}
 				    catch {invalid_syntax, Error} ->
-					    ?ERROR_MSG("Invalid value '~p' for "
-						       "option '~s': ~s",
-						       [Val, Opt, Error]),
+					    ?ERROR_MSG("Invalid value for "
+						       "option '~s' (~s): ~s",
+						       [Opt, Error,
+							misc:format_val(Val)]),
 					    erlang:error(invalid_option);
 					  _:_ ->
-					    ?ERROR_MSG("Invalid value '~p' for "
-						       "option '~s'",
-						       [Val, Opt]),
+					    ?ERROR_MSG("Invalid value for "
+						       "option '~s': ~s",
+						       [Opt, misc:format_val(Val)]),
 					    erlang:error(invalid_option)
 				    end;
 				_ ->

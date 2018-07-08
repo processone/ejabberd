@@ -35,7 +35,8 @@
 	 now_to_usec/1, usec_to_now/1, encode_pid/1, decode_pid/2,
 	 compile_exprs/2, join_atoms/2, try_read_file/1, get_descr/2,
 	 css_dir/0, img_dir/0, js_dir/0, msgs_dir/0, sql_dir/0,
-	 read_css/1, read_img/1, read_js/1, try_url/1, intersection/2]).
+	 read_css/1, read_img/1, read_js/1, try_url/1, intersection/2,
+	 format_val/1]).
 
 %% Deprecated functions
 -export([decode_base64/1, encode_base64/1]).
@@ -286,6 +287,18 @@ intersection(L1, L2) ->
       fun(E) ->
               lists:member(E, L2)
       end, L1).
+
+-spec format_val(any()) -> iodata().
+format_val(I) when is_integer(I) ->
+    integer_to_list(I);
+format_val(S) when is_binary(S) ->
+    S;
+format_val(B) when is_atom(B) ->
+    erlang:atom_to_binary(B, utf8);
+format_val(YAML) ->
+    try [io_lib:nl(), fast_yaml:encode(YAML)]
+    catch _:_ -> io_lib:format("~p", [YAML])
+    end.
 
 %%%===================================================================
 %%% Internal functions
