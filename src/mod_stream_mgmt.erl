@@ -349,9 +349,6 @@ negotiate_stream_mgmt(Pkt, #{lang := Lang} = State) ->
 	    Err = #sm_failed{reason = 'unexpected-request',
 			     text = xmpp:mk_text(Txt, Lang),
 			     xmlns = Xmlns},
-	    send(State, Err);
-	_ ->
-	    Err = #sm_failed{reason = 'bad-request', xmlns = Xmlns},
 	    send(State, Err)
     end.
 
@@ -369,9 +366,6 @@ perform_stream_mgmt(Pkt, #{mgmt_xmlns := Xmlns, lang := Lang} = State) ->
 		    Txt = <<"Stream management is already enabled">>,
 		    send(State, #sm_failed{reason = 'unexpected-request',
 					   text = xmpp:mk_text(Txt, Lang),
-					   xmlns = Xmlns});
-		_ ->
-		    send(State, #sm_failed{reason = 'bad-request',
 					   xmlns = Xmlns})
 	    end;
 	_ ->
