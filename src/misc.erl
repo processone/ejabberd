@@ -292,7 +292,7 @@ intersection(L1, L2) ->
 format_val(I) when is_integer(I) ->
     integer_to_list(I);
 format_val(S) when is_binary(S) ->
-    S;
+    <<$", S/binary, $">>;
 format_val(B) when is_atom(B) ->
     erlang:atom_to_binary(B, utf8);
 format_val(YAML) ->
