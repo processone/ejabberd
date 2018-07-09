@@ -175,8 +175,8 @@ process(["status"], _Version) ->
 		   "Check for error messages: ~s~n"
 		   "or other files in that directory.~n", [EjabberdLogPath]),
             ?STATUS_ERROR;
-        {value, {_, _, Version}} ->
-            print("ejabberd ~s is running in that node~n", [Version]),
+        {value, {_, _, _Version}} ->
+            print("ejabberd ~s is running in that node~n", [ejabberd_config:get_version()]),
             ?STATUS_SUCCESS
     end;
 
