@@ -337,7 +337,7 @@ queue_find(Pred, Queue) ->
 %%% Internal functions
 %%%===================================================================
 -spec negotiate_stream_mgmt(xmpp_element(), state()) -> state().
-negotiate_stream_mgmt(Pkt, State) ->
+negotiate_stream_mgmt(Pkt, #{lang := Lang} = State) ->
     Xmlns = xmpp:get_ns(Pkt),
     case Pkt of
 	#sm_enable{} ->
@@ -345,7 +345,10 @@ negotiate_stream_mgmt(Pkt, State) ->
 	_ when is_record(Pkt, sm_a);
 	       is_record(Pkt, sm_r);
 	       is_record(Pkt, sm_resume) ->
-	    Err = #sm_failed{reason = 'unexpected-request', xmlns = Xmlns},
+	    Txt = <<"Stream management is not enabled">>,
+	    Err = #sm_failed{reason = 'unexpected-request',
+			     text = xmpp:mk_text(Txt, Lang),
+			     xmlns = Xmlns},
 	    send(State, Err);
 	_ ->
 	    Err = #sm_failed{reason = 'bad-request', xmlns = Xmlns},
@@ -363,7 +366,9 @@ perform_stream_mgmt(Pkt, #{mgmt_xmlns := Xmlns, lang := Lang} = State) ->
 		    handle_a(State, Pkt);
 		_ when is_record(Pkt, sm_enable);
 		       is_record(Pkt, sm_resume) ->
+		    Txt = <<"Stream management is already enabled">>,
 		    send(State, #sm_failed{reason = 'unexpected-request',
+					   text = xmpp:mk_text(Txt, Lang),
 					   xmlns = Xmlns});
 		_ ->
 		    send(State, #sm_failed{reason = 'bad-request',
