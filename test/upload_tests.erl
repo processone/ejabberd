@@ -149,13 +149,13 @@ slot_request(Config, NS) ->
 	    {GetURL, PutURL, Filename, Size}
     end.
 
-put_request(Config, URL0, Data) ->
+put_request(_Config, URL0, Data) ->
     ct:comment("Putting ~B bytes to ~s", [size(Data), URL0]),
     URL = binary_to_list(URL0),
     {ok, {{"HTTP/1.1", 201, _}, _, _}} =
 	httpc:request(put, {URL, [], ?CONTENT_TYPE, Data}, [], []).
 
-get_request(Config, URL0, Data) ->
+get_request(_Config, URL0, Data) ->
     ct:comment("Getting ~B bytes from ~s", [size(Data), URL0]),
     URL = binary_to_list(URL0),
     {ok, {{"HTTP/1.1", 200, _}, _, Body}} =

@@ -710,7 +710,7 @@ check_presence_blocked(Config, Reason) ->
 	      #stanza_error{reason = Reason} = xmpp:get_error(Err)
       end, [available, unavailable]).
 
-recv_roster_pushes(Config, 0) ->
+recv_roster_pushes(_Config, 0) ->
     ok;
 recv_roster_pushes(Config, Count) ->
     receive
@@ -719,7 +719,6 @@ recv_roster_pushes(Config, Count) ->
     end.
 
 recv_err_and_roster_pushes(Config, Count) ->
-    PeerJID = ?config(master, Config),
     recv_roster_pushes(Config, Count),
     recv_presence(Config).
 

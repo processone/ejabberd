@@ -907,7 +907,6 @@ presence_broadcast(Config) ->
     B64Ver = base64:encode(Ver),
     Node = <<(?EJABBERD_CT_URI)/binary, $#, B64Ver/binary>>,
     Server = ?config(server, Config),
-    ServerJID = server_jid(Config),
     Info = #disco_info{identities =
 			   [#identity{category = <<"client">>,
 				      type = <<"bot">>,
