@@ -30,8 +30,7 @@
 %% xmpp_stream_in callbacks
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
--export([tls_options/1, tls_required/1, tls_enabled/1,
-	 compress_methods/1, sasl_mechanisms/2,
+-export([tls_options/1, tls_required/1, tls_enabled/1, compress_methods/1,
 	 unauthenticated_stream_features/1, authenticated_stream_features/1,
 	 handle_stream_start/2, handle_stream_end/2,
 	 handle_stream_established/1, handle_auth_success/4,
@@ -146,12 +145,6 @@ tls_required(#{server_host := LServer}) ->
 
 tls_enabled(#{server_host := LServer}) ->
     ejabberd_s2s:tls_enabled(LServer).
-
-sasl_mechanisms(Mechs, #{server_host := LServer}) ->
-    lists:filter(
-      fun(<<"EXTERNAL">>) -> ejabberd_s2s:tls_verify(LServer);
-	 (_) -> false
-      end, Mechs).
 
 compress_methods(#{server_host := LServer}) ->
     case ejabberd_s2s:zlib_enabled(LServer) of
