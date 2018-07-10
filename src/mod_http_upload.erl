@@ -584,7 +584,7 @@ create_slot(#state{service_url = undefined,
     UserStr = make_user_string(JID, JIDinURL),
     UserDir = <<DocRoot/binary, $/, UserStr/binary>>,
     case ejabberd_hooks:run_fold(http_upload_slot_request, ServerHost, allow,
-				 [JID, UserDir, Size, Lang]) of
+				 [ServerHost, JID, UserDir, Size, Lang]) of
 	allow ->
 	    RandStr = p1_rand:get_alphanum_string(SecretLength),
 	    FileStr = make_file_string(File),

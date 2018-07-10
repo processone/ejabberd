@@ -49,7 +49,7 @@
 	 code_change/3]).
 
 %% ejabberd_hooks callback.
--export([handle_slot_request/5]).
+-export([handle_slot_request/6]).
 
 -include("jid.hrl").
 -include("logger.hrl").
@@ -229,14 +229,13 @@ code_change(_OldVsn, #state{server_host = ServerHost} = State, _Extra) ->
 %%--------------------------------------------------------------------
 %% ejabberd_hooks callback.
 %%--------------------------------------------------------------------
--spec handle_slot_request(allow | deny, jid(), binary(),
+-spec handle_slot_request(allow | deny, binary(), jid(), binary(),
 			  non_neg_integer(), binary()) -> allow | deny.
-handle_slot_request(allow, #jid{lserver = ServerHost} = JID, Path, Size,
-		    _Lang) ->
+handle_slot_request(allow, ServerHost, JID, Path, Size, _Lang) ->
     Proc = mod_http_upload:get_proc_name(ServerHost, ?MODULE),
     gen_server:cast(Proc, {handle_slot_request, JID, Path, Size}),
     allow;
-handle_slot_request(Acc, _JID, _Path, _Size, _Lang) -> Acc.
+handle_slot_request(Acc, _ServerHost, _JID, _Path, _Size, _Lang) -> Acc.
 
 %%--------------------------------------------------------------------
 %% Internal functions.
