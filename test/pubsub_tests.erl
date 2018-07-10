@@ -217,7 +217,7 @@ master_slave_cases() ->
 publish_master(Config) ->
     Node = create_node(Config, <<>>),
     put_event(Config, Node),
-    wait_for_slave(Config),
+    ready = get_event(Config),
     #ps_item{id = ID} = publish_item(Config, Node),
     #ps_item{id = ID} = get_event(Config),
     delete_node(Config, Node),
@@ -226,7 +226,7 @@ publish_master(Config) ->
 publish_slave(Config) ->
     Node = get_event(Config),
     subscribe_node(Config, Node),
-    wait_for_master(Config),
+    put_event(Config, ready),
     #message{
        sub_els =
 	   [#ps_event{
