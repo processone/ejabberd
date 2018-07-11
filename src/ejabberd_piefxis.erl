@@ -475,25 +475,42 @@ process_roster(RosterQuery, State = #state{user = U, server = S}) ->
 -spec process_privacy(privacy_query(), state()) -> {ok, state()} | {error, _}.
 process_privacy(#privacy_query{lists = Lists,
 			       default = Default,
-			       active = Active} = PrivacyQuery,
+			       active = Active},
 		State = #state{user = U, server = S}) ->
     JID = jid:make(U, S),
-    IQ = #iq{type = set, id = p1_rand:get_string(),
-	     from = JID, to = JID, sub_els = [PrivacyQuery]},
-    case mod_privacy:process_iq(IQ) of
-	#iq{type = error} = ResIQ ->
-	    #stanza_error{reason = Reason} = xmpp:get_error(ResIQ),
-	    if Reason == 'item-not-found', Lists == [],
-	       Active == undefined, Default /= undefined ->
+    if Lists /= undefined ->
+	    process_privacy2(JID, #privacy_query{lists = Lists});
+	true ->
+	    ok
+    end,
+    if Active /= undefined ->
+	    process_privacy2(JID, #privacy_query{active = Active});
+	true ->
+	    ok
+    end,
+    if Default /= undefined ->
+	    process_privacy2(JID, #privacy_query{default = Default});
+	true ->
+	    ok
+    end,
+    {ok, State}.
+
+process_privacy2(JID, PQ) ->
+        case mod_privacy:process_iq(#iq{type = set, id = p1_rand:get_string(),
+                                from = JID, to = JID,
+                                sub_els = [PQ]}) of
+	    #iq{type = error} = ResIQ ->
+	        #stanza_error{reason = Reason} = xmpp:get_error(ResIQ),
+	        if Reason /= 'item-not-found' ->
 		    %% Failed to set default list because there is no
 		    %% list with such name. We shouldn't stop here.
-		    {ok, State};
-	       true ->
-		    stop("Failed to write privacy: ~p", [Reason])
-            end;
-        _ ->
-            {ok, State}
-    end.
+		    stop("Failed to write default privacy: ~p", [Reason]);
+                true ->
+                   ok
+                end;
+            _ ->
+                ok
+        end.
 
 -spec process_private(private(), state()) -> {ok, state()} | {error, _}.
 process_private(Private, State = #state{user = U, server = S}) ->
