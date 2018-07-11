@@ -2242,8 +2242,9 @@ make_netprot_html(NetProt) ->
 		    [<<"tcp">>, <<"udp">>]))).
 
 get_port_data(PortIP, Opts) ->
-    {Port, IPT, IPS, _IPV, NetProt, OptsClean} =
+    {Port, IPT, _IPV, NetProt, OptsClean} =
 	ejabberd_listener:parse_listener_portip(PortIP, Opts),
+    IPS = misc:ip_to_list(IPT),
     SPort = integer_to_binary(Port),
     SSPort = list_to_binary(
                lists:map(fun (N) ->

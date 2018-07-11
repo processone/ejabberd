@@ -350,7 +350,7 @@ stop_listener({_, _, Transport} = PortIP, Module) ->
     end.
 
 add_listener(PortIP, Module, Opts) ->
-    {Port, IPT, _, _, Proto, _} = parse_listener_portip(PortIP, Opts),
+    {Port, IPT, _, Proto, _} = parse_listener_portip(PortIP, Opts),
     PortIP1 = {Port, IPT, Proto},
     case start_listener(PortIP1, Module, Opts) of
 	{ok, _Pid} ->
@@ -373,7 +373,7 @@ delete_listener(PortIP, Module) ->
 %%      Module = atom()
 %%      Opts = [term()]
 delete_listener(PortIP, Module, Opts) ->
-    {Port, IPT, _, _, Proto, _} = parse_listener_portip(PortIP, Opts),
+    {Port, IPT, _, Proto, _} = parse_listener_portip(PortIP, Opts),
     PortIP1 = {Port, IPT, Proto},
     stop_listener(PortIP1, Module).
 
