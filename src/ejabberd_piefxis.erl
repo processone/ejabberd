@@ -435,7 +435,7 @@ process_user_el(#xmlel{name = Name, attrs = Attrs, children = Els} = El,
 	    {<<"query">>, ?NS_PRIVATE} ->
 		process_private(xmpp:decode(El), State);
 	    {<<"vCard">>, ?NS_VCARD} ->
-		process_vcard(El, State);
+		process_vcard(xmpp:decode(El), State);
 	    {<<"offline-messages">>, NS} ->
 		Msgs = [xmpp:decode(E, NS, [ignore_els]) || E <- Els],
 		process_offline_msgs(Msgs, State);
