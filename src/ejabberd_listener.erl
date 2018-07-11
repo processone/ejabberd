@@ -92,15 +92,15 @@ start_dependent(Port, Module, Opts) ->
     proc_lib:start_link(?MODULE, init, [Port, Module, Opts]).
 
 init(PortIP, Module, RawOpts) ->
-    {Port, IPT, IPS, IPV, Proto, OptsClean} = parse_listener_portip(PortIP, RawOpts),
+    {Port, IPT, IPV, Proto, OptsClean} = parse_listener_portip(PortIP, RawOpts),
     {Opts, SockOpts} = prepare_opts(IPT, IPV, OptsClean),
     if Proto == udp ->
-	    init_udp(PortIP, Module, Opts, SockOpts, Port, IPS);
+	    init_udp(PortIP, Module, Opts, SockOpts, Port);
        true ->
-	    init_tcp(PortIP, Module, Opts, SockOpts, Port, IPS)
+	    init_tcp(PortIP, Module, Opts, SockOpts, Port)
     end.
 
-init_udp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
+init_udp(PortIP, Module, Opts, SockOpts, Port) ->
     case gen_udp:open(Port, [binary,
 			     {active, false},
 			     {reuseaddr, true} |
@@ -126,34 +126,38 @@ init_udp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
 			    udp_recv(Socket, Module, NewOpts)
 		    end
 	    end;
-	{error, Reason} ->
-	    socket_error(Reason, PortIP, Module, SockOpts, Port, IPS)
+	{error, Reason} = Err ->
+	    report_socket_error(Reason, PortIP, Module),
+	    proc_lib:init_ack(Err)
     end.
 
-init_tcp(PortIP, Module, Opts, SockOpts, Port, IPS) ->
-    ListenSocket = listen_tcp(PortIP, Module, SockOpts, Port, IPS),
-    %% Inform my parent that this port was opened successfully
-    proc_lib:init_ack({ok, self()}),
-    application:ensure_started(ejabberd),
-    start_module_sup(Port, Module),
-    ?INFO_MSG("Start accepting TCP connections at ~s for ~p",
-	      [format_portip(PortIP), Module]),
-    case erlang:function_exported(Module, tcp_init, 2) of
-	false ->
-	    accept(ListenSocket, Module, Opts);
-	true ->
-	    case catch Module:tcp_init(ListenSocket, Opts) of
-		{'EXIT', _} = Err ->
-		    ?ERROR_MSG("failed to process callback function "
-			       "~p:~s(~p, ~p): ~p",
-			       [Module, tcp_init, ListenSocket, Opts, Err]),
+init_tcp(PortIP, Module, Opts, SockOpts, Port) ->
+    case listen_tcp(PortIP, Module, SockOpts, Port) of
+	{ok, ListenSocket} ->
+	    proc_lib:init_ack({ok, self()}),
+	    application:ensure_started(ejabberd),
+	    start_module_sup(Port, Module),
+	    ?INFO_MSG("Start accepting TCP connections at ~s for ~p",
+		      [format_portip(PortIP), Module]),
+	    case erlang:function_exported(Module, tcp_init, 2) of
+		false ->
 		    accept(ListenSocket, Module, Opts);
-		NewOpts ->
-		    accept(ListenSocket, Module, NewOpts)
-	    end
+		true ->
+		    case catch Module:tcp_init(ListenSocket, Opts) of
+			{'EXIT', _} = Err ->
+			    ?ERROR_MSG("failed to process callback function "
+				       "~p:~s(~p, ~p): ~p",
+				       [Module, tcp_init, ListenSocket, Opts, Err]),
+			    accept(ListenSocket, Module, Opts);
+			NewOpts ->
+			    accept(ListenSocket, Module, NewOpts)
+		    end
+	    end;
+	{error, _} = Err ->
+	    proc_lib:init_ack(Err)
     end.
 
-listen_tcp(PortIP, Module, SockOpts, Port, IPS) ->
+listen_tcp(PortIP, Module, SockOpts, Port) ->
     Res = gen_tcp:listen(Port, [binary,
 				{packet, 0},
 				{active, false},
@@ -165,52 +169,34 @@ listen_tcp(PortIP, Module, SockOpts, Port, IPS) ->
 				SockOpts]),
     case Res of
 	{ok, ListenSocket} ->
-	    ListenSocket;
-	{error, Reason} ->
-	    socket_error(Reason, PortIP, Module, SockOpts, Port, IPS)
+	    {ok, ListenSocket};
+	{error, Reason} = Err ->
+	    report_socket_error(Reason, PortIP, Module),
+	    Err
     end.
 
-%% @spec (PortIP, Opts) -> {Port, IPT, IPS, IPV, OptsClean}
-%% where
-%%      PortIP = Port | {Port, IPT | IPS}
-%%      Port = integer()
-%%      IPT = tuple()
-%%      IPS = string()
-%%      IPV = inet | inet6
-%%      Opts = [IPV | {ip, IPT} | atom() | tuple()]
-%%      OptsClean = [atom() | tuple()]
-%% @doc Parse any kind of ejabberd listener specification.
-%% The parsed options are returned in several formats.
-%% OptsClean does not include inet/inet6 or ip options.
-%% Opts can include the options inet6 and {ip, Tuple},
-%% but they are only used when no IP address was specified in the PortIP.
-%% The IP version (either IPv4 or IPv6) is inferred from the IP address type,
-%% so the option inet/inet6 is only used when no IP is specified at all.
 parse_listener_portip(PortIP, Opts) ->
     {IPOpt, Opts2} = strip_ip_option(Opts),
     {IPVOpt, OptsClean} = case proplists:get_bool(inet6, Opts2) of
 			      true -> {inet6, proplists:delete(inet6, Opts2)};
 			      false -> {inet, Opts2}
 			  end,
-    {Port, IPT, IPS, Proto} =
+    {Port, IPT, Proto} =
 	case add_proto(PortIP, Opts) of
 	    {P, Prot} ->
 		T = get_ip_tuple(IPOpt, IPVOpt),
-		S = misc:ip_to_list(T),
-		{P, T, S, Prot};
+		{P, T, Prot};
 	    {P, T, Prot} when is_integer(P) and is_tuple(T) ->
-		S = misc:ip_to_list(T),
-		{P, T, S, Prot};
+		{P, T, Prot};
 	    {P, S, Prot} when is_integer(P) and is_binary(S) ->
-		[S | _] = str:tokens(S, <<"/">>),
 		{ok, T} = inet_parse:address(binary_to_list(S)),
-		{P, T, S, Prot}
+		{P, T, Prot}
 	end,
     IPV = case tuple_size(IPT) of
 	      4 -> inet;
 	      8 -> inet6
 	  end,
-    {Port, IPT, IPS, IPV, Proto, OptsClean}.
+    {Port, IPT, IPV, Proto, OptsClean}.
 
 prepare_opts(IPT, IPV, OptsClean) ->
     %% The first inet|inet6 and the last {ip, _} work,
@@ -437,19 +423,9 @@ normalize_proto(UnknownProto) ->
 		 [UnknownProto]),
     tcp.
 
-socket_error(Reason, PortIP, Module, SockOpts, Port, IPS) ->
-    ReasonT = case Reason of
-		  eaddrnotavail ->
-		      "IP address not available: " ++ binary_to_list(IPS);
-		  eaddrinuse ->
-		      "IP address and port number already used: "
-			  ++binary_to_list(IPS)++" "++integer_to_list(Port);
-		  _ ->
-		      format_error(Reason)
-	      end,
-    ?ERROR_MSG("Failed to open socket:~n  ~p~nReason: ~s",
-	       [{Port, Module, SockOpts}, ReasonT]),
-    throw({Reason, PortIP}).
+report_socket_error(Reason, PortIP, Module) ->
+    ?ERROR_MSG("Failed to open socket at ~s for ~s: ~s",
+	       [format_portip(PortIP), Module, format_error(Reason)]).
 
 format_error(Reason) ->
     case inet:format_error(Reason) of
