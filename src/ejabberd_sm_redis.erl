@@ -27,16 +27,17 @@
 -define(GEN_SERVER, p1_server).
 -endif.
 -behaviour(?GEN_SERVER).
-
+-define(DELETION_CURSOR_TIMEOUT_SEC, "30").
 -behaviour(ejabberd_sm).
 
 -export([init/0, set_session/1, delete_session/1,
 	 get_sessions/0, get_sessions/1, get_sessions/2,
-	 cache_nodes/1]).
+	 cache_nodes/1, clean_table/1, clean_table/0]).
 %% gen_server callbacks
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2,
 	 terminate/2, code_change/3, start_link/0]).
 
+-include("ejabberd.hrl").
 -include("ejabberd_sm.hrl").
 -include("logger.hrl").
 
@@ -70,10 +71,12 @@ set_session(Session) ->
     SIDKey = sid_to_key(Session#session.sid),
     ServKey = server_to_key(element(2, Session#session.us)),
     USSIDKey = us_sid_to_key(Session#session.us, Session#session.sid),
+    NodeHostKey = node_host_to_key(node(), element(2, Session#session.us)),
     case ejabberd_redis:multi(
 	   fun() ->
 		   ejabberd_redis:hset(USKey, SIDKey, T),
 		   ejabberd_redis:hset(ServKey, USSIDKey, T),
+           ejabberd_redis:hset(NodeHostKey , <<USKey/binary, "||", SIDKey/binary>>, USSIDKey),
 		   ejabberd_redis:publish(
 		     ?SM_KEY, term_to_binary({delete, Session#session.us}))
 	   end) of
@@ -89,10 +92,12 @@ delete_session(#session{sid = SID} = Session) ->
     SIDKey = sid_to_key(SID),
     ServKey = server_to_key(element(2, Session#session.us)),
     USSIDKey = us_sid_to_key(Session#session.us, SID),
+    NodeHostKey = node_host_to_key(node(), element(2, Session#session.us)),
     case ejabberd_redis:multi(
 	   fun() ->
 		   ejabberd_redis:hdel(USKey, [SIDKey]),
 		   ejabberd_redis:hdel(ServKey, [USSIDKey]),
+           ejabberd_redis:hdel(NodeHostKey, [<<USKey/binary, "||", SIDKey/binary>>]),
 		   ejabberd_redis:publish(
 		     ?SM_KEY,
 		     term_to_binary({delete, Session#session.us}))
@@ -155,7 +160,7 @@ handle_info({redis_message, ?SM_KEY, Data}, State) ->
     end,
     {noreply, State};
 handle_info(Info, State) ->
-    ?ERROR_MSG("unexpected info: ~p", [Info]),
+    ?ERROR_MSG("unexpected info: ~p in cluster server", [Info]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->
@@ -168,10 +173,12 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 us_to_key({LUser, LServer}) ->
-    <<"ejabberd:sm:", LUser/binary, "@", LServer/binary>>.
+    SMPrefixKey = ?SM_KEY, 
+    <<SMPrefixKey/binary, ":", LUser/binary, "@", LServer/binary>>.
 
 server_to_key(LServer) ->
-    <<"ejabberd:sm:", LServer/binary>>.
+    SMPrefixKey = ?SM_KEY, 
+    <<SMPrefixKey/binary, ":", LServer/binary>>.
 
 us_sid_to_key(US, SID) ->
     term_to_binary({US, SID}).
@@ -179,33 +186,88 @@ us_sid_to_key(US, SID) ->
 sid_to_key(SID) ->
     term_to_binary(SID).
 
+node_session_deletion_cursor(Node, Host) when is_binary(Host) and is_binary(Node)  ->
+    NodeName = node_host_to_key(Node, Host),
+    <<NodeName/binary, ":deletioncursor">>.
+
+node_host_to_key(Node, Host) when is_atom(Node) and is_binary(Host) ->
+    NodeBin = atom_to_binary(node(), utf8),
+    node_host_to_key(NodeBin, Host);
+node_host_to_key(NodeBin, Host) when is_binary(NodeBin) and is_binary(Host) ->
+    HostKey = server_to_key(Host),
+    <<HostKey/binary, ":node:", NodeBin/binary>>;
+node_host_to_key(_NodeBin, _Host) ->
+    ?ERROR_MSG("Invalid node type ", []).
+
 decode_session_list(Vals) ->
   [binary_to_term(Val) || {_, Val} <- Vals].
 
 clean_table() ->
-    ?DEBUG("Cleaning Redis SM table...", []),
+    clean_table(node()).
+
+clean_table(Node) when is_atom(Node) ->
+    clean_table(atom_to_binary(Node, utf8));
+
+clean_table(Node) when is_binary(Node) ->
+    ?DEBUG("Cleaning Redis SM table... ", []),
     try
-	lists:foreach(
-	  fun(LServer) ->
-		  ServKey = server_to_key(LServer),
-		  {ok, Vals} = ejabberd_redis:hkeys(ServKey),
-		  {ok, _} =
-		      ejabberd_redis:multi(
-			fun() ->
-				lists:foreach(
-				  fun(USSIDKey) ->
-					  {US, SID} = binary_to_term(USSIDKey),
-					  if node(element(2, SID)) == node() ->
-						  USKey = us_to_key(US),
-						  SIDKey = sid_to_key(SID),
-						  ejabberd_redis:hdel(ServKey, [USSIDKey]),
-						  ejabberd_redis:hdel(USKey, [SIDKey]);
-					     true ->
-						  ok
-					  end
-				  end, Vals)
-			end)
-	  end, ejabberd_sm:get_vh_by_backend(?MODULE))
-    catch _:{badmatch, {error, _}} ->
-	    ?ERROR_MSG("failed to clean redis c2s sessions", [])
+        lists:foreach(
+            fun(Host) -> clean_node_sessions(Node, Host) end, 
+            ejabberd_sm:get_vh_by_backend(?MODULE)
+        ),
+        ok
+    catch E:R ->
+	    ?ERROR_MSG("failed to clean redis c2s sessions due to ~p: ~p", [E, R]),
+        {error, R}
+    end;
+
+clean_table(_) ->
+    ?ERROR_MSG("Wrong node data type in clean table call ", []).
+
+clean_node_sessions(Node, Host) ->
+    case load_script() of 
+        {ok , SHA} -> 
+            clean_node_sessions(Node, Host, SHA);
+        Error ->
+            ?ERROR_MSG("Failure in generating the SHA ~p", [Error])
     end.
+
+clean_node_sessions(Node, Host, SHA) ->
+    ?INFO_MSG("Cleaning node sessions for node ~p with host ~p ", [Node, Host]),
+    case ejabberd_redis:q(["EVALSHA", SHA,
+        3,
+        node_host_to_key(Node, Host),
+        server_to_key(Host), 
+        node_session_deletion_cursor(Node, Host),
+        1000
+        ]) of 
+            {ok, <<"0">>} ->
+                ?DEBUG("Cleaned node sessions for node ~p with host ~p ", [Node, Host]);
+            {ok, Cursor} ->
+                ?DEBUG("Cleaning redis sessions with cursor ~p ", [Cursor]),
+                clean_node_sessions(Node, Host, SHA);
+            Error ->
+                ?INFO_MSG("Error in redis clean up: ~p", [Error]),
+                throw(Error)
+    end.
+
+load_script() ->
+    ejabberd_redis:q(["SCRIPT", "LOAD", 
+        ["redis.replicate_commands() ",
+        "local cursor = redis.call('GET', KEYS[3]) or 0 ",
+        "local scan_result = redis.call('HSCAN', KEYS[1], cursor, 'COUNT', ARGV[1]) ",
+        "local newcursor = scan_result[1] ",
+        "local cursor = redis.call('SET', KEYS[3], newcursor) ",
+        "redis.call('EXPIRE', KEYS[3], ", ?DELETION_CURSOR_TIMEOUT_SEC , ") ",
+        "for key,value in ipairs(scan_result[2]) do ",
+            "local uskey, sidkey = string.match(value, '(.*)||(.*)') ",
+            "if uskey and sidkey then ",
+                "redis.call('HDEL', uskey, sidkey) ",
+                "redis.call('HDEL', KEYS[1], value) ",
+            "else ", 
+                "redis.call('HDEL', KEYS[2], value) ",
+            "end ",
+        "end ",
+        " return newcursor "
+        ]
+    ]).
