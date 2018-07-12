@@ -37,7 +37,6 @@
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2,
 	 terminate/2, code_change/3, start_link/0]).
 
--include("ejabberd.hrl").
 -include("ejabberd_sm.hrl").
 -include("logger.hrl").
 
@@ -160,7 +159,7 @@ handle_info({redis_message, ?SM_KEY, Data}, State) ->
     end,
     {noreply, State};
 handle_info(Info, State) ->
-    ?ERROR_MSG("unexpected info: ~p in cluster server", [Info]),
+    ?ERROR_MSG("unexpected info: ~p ", [Info]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->
