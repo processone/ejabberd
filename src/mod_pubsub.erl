@@ -1138,8 +1138,17 @@ iq_pubsub(Host, Access, #iq{from = From, type = IQType, lang = Lang,
 	{set, #pubsub{subscribe = #ps_subscribe{node = Node, jid = JID},
 		      options = Options, _ = undefined}} ->
 	    Config = case Options of
-			 #ps_options{xdata = XData} ->
+			 #ps_options{xdata = XData, jid = undefined, node = <<>>} ->
 			     decode_subscribe_options(XData, Lang);
+			 #ps_options{xdata = _XData, jid = _JID, node = <<>>} ->
+			     Txt = <<"jid not allowed here">>,
+			     {error, xmpp:err_bad_request(Txt, Lang)};
+			 #ps_options{xdata = _XData, jid = undefined, node = _NodeID} ->
+			     Txt = <<"node not allowed here">>,
+			     {error, xmpp:err_bad_request(Txt, Lang)};
+			 #ps_options{xdata = _XData, jid = _JID, node = _NodeID} ->
+			     Txt = <<"jid and node not allowed here">>,
+			     {error, xmpp:err_bad_request(Txt, Lang)};
 			 _ ->
 			     []
 		     end,
@@ -1165,6 +1174,12 @@ iq_pubsub(Host, Access, #iq{from = From, type = IQType, lang = Lang,
 	{get, #pubsub{affiliations = {Node, _}, _ = undefined}} ->
 	    Plugins = config(serverhost(Host), plugins),
 	    get_affiliations(Host, Node, From, Plugins);
+	{_, #pubsub{options = #ps_options{jid = undefined}, _ = undefined}} ->
+	    Txt = <<"jid required">>,
+	    {error, extended_error(xmpp:err_bad_request(Txt, Lang), err_jid_required())};
+	{_, #pubsub{options = #ps_options{node = <<>>}, _ = undefined}} ->
+	    Txt = <<"nodeid required">>,
+	    {error, extended_error(xmpp:err_bad_request(Txt, Lang), err_nodeid_required())};
 	{get, #pubsub{options = #ps_options{node = Node, subid = SubId, jid = JID},
 		      _ = undefined}} ->
 	    get_options(Host, Node, JID, SubId, Lang);
