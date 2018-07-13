@@ -1018,7 +1018,7 @@ status_num(Status) ->
     status_num(<<"all">>, Status).
 status_list(Host, Status) ->
     Res = get_status_list(Host, Status),
-    [{U, S, R, P, St} || {U, S, R, P, St} <- Res].
+    [{U, S, R, num_prio(P), St} || {U, S, R, P, St} <- Res].
 status_list(Status) ->
     status_list(<<"all">>, Status).
 
@@ -1046,7 +1046,7 @@ get_status_list(Host, Status_required) ->
 		  _ ->
 		      fun(A, B) -> A == B end
 	      end,
-    [{User, Server, Resource, Priority, stringize(Status_text)}
+    [{User, Server, Resource, num_prio(Priority), stringize(Status_text)}
      || {{User, Resource, Status, Status_text}, Server, Priority} <- Sessions4,
 	apply(Fstatus, [Status, Status_required])].
 
@@ -1127,7 +1127,7 @@ user_session_info(User, Host, Resource) ->
     NodeS = atom_to_list(node(Pid)),
     Uptime = CurrentSec - calendar:datetime_to_gregorian_seconds(
 	    calendar:now_to_local_time(Now)),
-    {atom_to_list(Conn), IPS, Port, Priority, NodeS, Uptime, Status, Resource, StatusText}.
+    {atom_to_list(Conn), IPS, Port, num_prio(Priority), NodeS, Uptime, Status, Resource, StatusText}.
 
 
 %%%
@@ -1735,5 +1735,10 @@ is_glob_match(String, <<"!", Glob/binary>>) ->
     not is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob));
 is_glob_match(String, Glob) ->
     is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob)).
+
+num_prio(Priority) when is_integer(Priority) ->
+    Priority;
+num_prio(_) ->
+    -1.
 
 mod_options(_) -> [].
