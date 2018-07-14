@@ -58,6 +58,9 @@ JSDIR = $(PRIVDIR)/js
 # /usr/lib/ejabberd/priv/sql
 SQLDIR = $(PRIVDIR)/sql
 
+# /usr/lib/ejabberd/priv/lua
+LUADIR = $(PRIVDIR)/lua
+
 # /var/lib/ejabberd/
 SPOOLDIR = $(DESTDIR)@localstatedir@/lib/ejabberd
 
@@ -283,6 +286,8 @@ uninstall-binary:
 	rm -fr $(JSDIR)
 	rm -f  $(SQLDIR)/*.sql
 	rm -fr $(SQLDIR)
+	rm -fr $(LUADIR)/*.lua
+	rm -fr $(LUADIR)
 	rm -fr $(PRIVDIR)
 	rm -fr $(EJABBERDDIR)
 
