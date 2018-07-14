@@ -168,14 +168,14 @@ process(["status"], _Version) ->
     {InternalStatus, ProvidedStatus} = init:get_status(),
     print("The node ~p is ~p with status: ~p~n",
 	   [node(), InternalStatus, ProvidedStatus]),
-    case lists:keysearch(ejabberd, 1, application:which_applications()) of
+    case lists:keymember(ejabberd, 1, application:which_applications()) of
         false ->
             EjabberdLogPath = ejabberd_logger:get_log_path(),
             print("ejabberd is not running in that node~n"
 		   "Check for error messages: ~s~n"
 		   "or other files in that directory.~n", [EjabberdLogPath]),
             ?STATUS_ERROR;
-        {value, {_, _, _Version}} ->
+        true ->
             print("ejabberd ~s is running in that node~n", [ejabberd_config:get_version()]),
             ?STATUS_SUCCESS
     end;
