@@ -1002,7 +1002,7 @@ mod_options(Host) ->
      {max_room_id, infinity},
      {max_room_name, infinity},
      {max_rooms_discoitems, 100},
-     {max_user_conferences, 10},
+     {max_user_conferences, 100},
      {max_users, 200},
      {max_users_admin_threshold, 5},
      {max_users_presence, 1000},
