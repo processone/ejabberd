@@ -36,7 +36,7 @@
 -export([multi/1, get/1, set/2, del/1,
 	 sadd/2, srem/2, smembers/1, sismember/2, scard/1,
 	 hget/2, hset/3, hdel/2, hlen/1, hgetall/1, hkeys/1,
-	 subscribe/1, publish/2]).
+	 subscribe/1, publish/2, script_load/1, evalsha/3]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -314,6 +314,24 @@ publish(Channel, Data) ->
 	    end;
 	Stack ->
 	    tr_enq(Cmd, Stack)
+    end.
+
+-spec script_load(iodata()) -> {ok, binary()} | redis_error().
+script_load(Data) ->
+    case erlang:get(?TR_STACK) of
+	undefined ->
+	    q([<<"SCRIPT">>, <<"LOAD">>, Data]);
+	_ ->
+	    erlang:error(transaction_unsupported)
+    end.
+
+-spec evalsha(binary(), [iodata()], [iodata()]) -> {ok, binary()} | redis_error().
+evalsha(SHA, Keys, Args) ->
+    case erlang:get(?TR_STACK) of
+	undefined ->
+	    q([<<"EVALSHA">>, SHA, length(Keys)|Keys ++ Args]);
+	_ ->
+	    erlang:error(transaction_unsupported)
     end.
 
 %%%===================================================================
