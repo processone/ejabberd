@@ -30,7 +30,7 @@
 
 -define(SERVICE_REQUEST_TIMEOUT, 5000). % 5 seconds.
 -define(CALL_TIMEOUT, 60000). % 1 minute.
--define(SLOT_TIMEOUT, 18000000). % 5 hours.
+-define(SLOT_TIMEOUT, timer:hours(5)).
 -define(URL_ENC(URL), binary_to_list(misc:url_encode(URL))).
 -define(ADDR_TO_STR(IP), ejabberd_config:may_hide_data(misc:ip_to_list(IP))).
 -define(STR_TO_INT(Str, B), binary_to_integer(iolist_to_binary(Str), B)).
@@ -298,14 +298,14 @@ handle_call({use_slot, Slot, Size}, _From,
 		   custom_headers = CustomHeaders,
 		   docroot = DocRoot} = State) ->
     case get_slot(Slot, State) of
-	{ok, {Size, Timer}} ->
-	    timer:cancel(Timer),
+	{ok, {Size, TRef}} ->
+	    cancel_timer(TRef),
 	    NewState = del_slot(Slot, State),
 	    Path = str:join([DocRoot | Slot], <<$/>>),
 	    {reply,
 	     {ok, Path, FileMode, DirMode, GetPrefix, Thumbnail, CustomHeaders},
 	     NewState};
-	{ok, {_WrongSize, _Timer}} ->
+	{ok, {_WrongSize, _TRef}} ->
 	    {reply, {error, size_mismatch}, State};
 	error ->
 	    {reply, {error, invalid_slot}, State}
@@ -347,7 +347,7 @@ handle_info({route, #iq{lang = Lang} = Packet}, State) ->
 	    ejabberd_router:route_error(Packet, Err),
 	    {noreply, State}
     end;
-handle_info({slot_timed_out, Slot}, State) ->
+handle_info({timeout, _TRef, Slot}, State) ->
     NewState = del_slot(Slot, State),
     {noreply, NewState};
 handle_info(Info, State) ->
@@ -642,13 +642,13 @@ create_slot(#state{service_url = ServiceURL},
 
 -spec add_slot(slot(), pos_integer(), state()) -> state().
 add_slot(Slot, Size, #state{external_secret = <<>>, slots = Slots} = State) ->
-    {ok, Timer} = timer:send_after(?SLOT_TIMEOUT, {slot_timed_out, Slot}),
-    NewSlots = maps:put(Slot, {Size, Timer}, Slots),
+    TRef = erlang:start_timer(?SLOT_TIMEOUT, self(), Slot),
+    NewSlots = maps:put(Slot, {Size, TRef}, Slots),
     State#state{slots = NewSlots};
 add_slot(_Slot, _Size, State) ->
     State.
 
--spec get_slot(slot(), state()) -> {ok, {pos_integer(), timer:tref()}} | error.
+-spec get_slot(slot(), state()) -> {ok, {pos_integer(), reference()}} | error.
 get_slot(Slot, #state{slots = Slots}) ->
     maps:find(Slot, Slots).
 
@@ -701,6 +701,17 @@ replace_special_chars(S) ->
 -spec yield_content_type(binary()) -> binary().
 yield_content_type(<<"">>) -> ?DEFAULT_CONTENT_TYPE;
 yield_content_type(Type) -> Type.
+
+-spec cancel_timer(reference()) -> ok.
+cancel_timer(TRef) ->
+    case erlang:cancel_timer(TRef) of
+	false ->
+	    receive {timeout, TRef, _} -> ok
+	    after 0 -> ok
+	    end;
+	_ ->
+	    ok
+    end.
 
 -spec iq_disco_info(binary(), binary(), binary(), [xdata()]) -> disco_info().
 iq_disco_info(Host, Lang, Name, AddInfo) ->
