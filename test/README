@@ -1,6 +1,7 @@
-You need MySQL, PostgreSQL and Riak up and running.
+You need MySQL, PostgreSQL, Redis and Riak up and running.
 MySQL should be accepting TCP connections on localhost:3306.
 PostgreSQL should be accepting TCP connections on localhost:5432.
+Redis should be accepting TCP connections on localhost:6379.
 Riak should be accepting TCP connections on localhost:8087.
 MySQL and PostgreSQL should grant full access to user 'ejabberd_test' with
 password 'ejabberd_test' on database 'ejabberd_test'.
