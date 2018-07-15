@@ -55,7 +55,7 @@ init() ->
 		      ok;
 		  Err ->
 		      ?ERROR_MSG("failed to clean 'sm' table: ~p", [Err]),
-		      Err
+		      {error, db_failure}
 	      end;
 	 (_, Err) ->
 	      Err

@@ -40,6 +40,7 @@
 -include("logger.hrl").
 
 -define(SM_KEY, <<"ejabberd:sm">>).
+-define(MIN_REDIS_VERSION, <<"3.2.0">>).
 -record(state, {}).
 
 %%%===================================================================
@@ -142,8 +143,10 @@ get_sessions(LUser, LServer) ->
 %%%===================================================================
 init([]) ->
     ejabberd_redis:subscribe([?SM_KEY]),
-    clean_table(),
-    {ok, #state{}}.
+    case clean_table() of
+	ok -> {ok, #state{}};
+	{error, Why} -> {stop, Why}
+    end.
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
@@ -240,7 +243,20 @@ clean_node_sessions(Node, Host, SHA) ->
 load_script() ->
     case misc:read_lua("redis_sm.lua") of
 	{ok, Data} ->
-	    ejabberd_redis:script_load(Data);
+	    case ejabberd_redis:info(server) of
+		{ok, Info} ->
+		    case proplists:get_value(redis_version, Info) of
+			V when V >= ?MIN_REDIS_VERSION ->
+			    ejabberd_redis:script_load(Data);
+			V ->
+			    ?CRITICAL_MSG("Unsupported Redis version: ~s. "
+					  "The version must be ~s or above",
+					  [V, ?MIN_REDIS_VERSION]),
+			    {error, unsupported_redis_version}
+		    end;
+		{error, _} = Err ->
+		    Err
+	    end;
 	{error, _} = Err ->
 	    Err
     end.

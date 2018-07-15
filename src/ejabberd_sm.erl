@@ -426,15 +426,22 @@ config_reloaded() ->
 init([]) ->
     process_flag(trap_exit, true),
     init_cache(),
-    lists:foreach(fun(Mod) -> Mod:init() end, get_sm_backends()),
-    clean_cache(),
-    gen_iq_handler:start(?MODULE),
-    ejabberd_hooks:add(host_up, ?MODULE, host_up, 50),
-    ejabberd_hooks:add(host_down, ?MODULE, host_down, 60),
-    ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),
-    lists:foreach(fun host_up/1, ejabberd_config:get_myhosts()),
-    ejabberd_commands:register_commands(get_commands_spec()),
-    {ok, #state{}}.
+    case lists:foldl(
+	   fun(Mod, ok) -> Mod:init();
+	      (_, Err) -> Err
+	   end, ok, get_sm_backends()) of
+	ok ->
+	    clean_cache(),
+	    gen_iq_handler:start(?MODULE),
+	    ejabberd_hooks:add(host_up, ?MODULE, host_up, 50),
+	    ejabberd_hooks:add(host_down, ?MODULE, host_down, 60),
+	    ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),
+	    lists:foreach(fun host_up/1, ejabberd_config:get_myhosts()),
+	    ejabberd_commands:register_commands(get_commands_spec()),
+	    {ok, #state{}};
+	{error, Why} ->
+	    {stop, Why}
+    end.
 
 handle_call(_Request, _From, State) ->
     Reply = ok, {reply, Reply, State}.
