@@ -539,11 +539,8 @@ process_slot_request(#iq{lang = Lang, from = From} = IQ,
 	    case create_slot(State, From, File, Size, ContentType, XMLNS,
 			     Lang) of
 		{ok, Slot} ->
-		    {ok, Timer} = timer:send_after(?SLOT_TIMEOUT,
-						   {slot_timed_out,
-						    Slot}),
 		    Query = make_query_string(Slot, Size, State),
-		    NewState = add_slot(Slot, Size, Timer, State),
+		    NewState = add_slot(Slot, Size, State),
 		    NewSlot = mk_slot(Slot, State, XMLNS, Query),
 		    {xmpp:make_iq_result(IQ, NewSlot), NewState};
 		{ok, PutURL, GetURL} ->
@@ -643,10 +640,13 @@ create_slot(#state{service_url = ServiceURL},
 	    {error, xmpp:err_service_unavailable()}
     end.
 
--spec add_slot(slot(), pos_integer(), timer:tref(), state()) -> state().
-add_slot(Slot, Size, Timer, #state{slots = Slots} = State) ->
+-spec add_slot(slot(), pos_integer(), state()) -> state().
+add_slot(Slot, Size, #state{external_secret = <<>>, slots = Slots} = State) ->
+    {ok, Timer} = timer:send_after(?SLOT_TIMEOUT, {slot_timed_out, Slot}),
     NewSlots = maps:put(Slot, {Size, Timer}, Slots),
-    State#state{slots = NewSlots}.
+    State#state{slots = NewSlots};
+add_slot(_Slot, _Size, State) ->
+    State.
 
 -spec get_slot(slot(), state()) -> {ok, {pos_integer(), timer:tref()}} | error.
 get_slot(Slot, #state{slots = Slots}) ->
