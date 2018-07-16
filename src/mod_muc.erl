@@ -1022,7 +1022,7 @@ mod_options(Host) ->
        {allow_visitor_status,true},
        {anonymous,true},
        {captcha_protected,false},
-       {lang, ejabberd_config:get_mylang()},
+       {lang,<<>>},
        {logging,false},
        {members_by_default,true},
        {members_only,false},
