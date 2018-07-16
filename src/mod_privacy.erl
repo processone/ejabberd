@@ -584,30 +584,47 @@ do_check_packet(#jid{luser = LUser, lserver = LServer}, List, Packet, Dir) ->
 					   roster_get_jid_info, LServer,
 					   {none, none, []},
 					   [LUser, LServer, LJID]),
-	  check_packet_aux(List, PType2, LJID, Subscription, Groups)
+	  {Action, _Order} = check_packet_aux(allow, last, List, PType2, LJID,
+					   Subscription, Groups),
+	  Action
     end.
 
--spec check_packet_aux([listitem()],
+-spec check_packet_aux(allow | deny, last | integer(), [listitem()],
 		       message | iq | presence_in | presence_out | other,
 		       ljid(), none | both | from | to, [binary()]) ->
 			      allow | deny.
 %% Ptype = mesage | iq | presence_in | presence_out | other
-check_packet_aux([], _PType, _JID, _Subscription,
+check_packet_aux(Lastaction, Lastorder, [], _PType, _JID, _Subscription,
 		 _Groups) ->
-    allow;
-check_packet_aux([Item | List], PType, JID,
+    ?DEBUG("Finally: ~p", [{Lastaction, Lastorder}]),
+    {Lastaction, Lastorder};
+check_packet_aux(Lastaction, Lastorder, [Item | List], PType, JID,
 		 Subscription, Groups) ->
-    #listitem{type = Type, value = Value, action = Action} =
+    ?DEBUG("Check packet ~p against rule ~p, previously ~p",
+           [{PType, JID, Subscription, Groups}, Item, {Lastaction, Lastorder}]),
+    #listitem{type = Type, value = Value, action = Action, order = Order} =
 	Item,
-    case is_ptype_match(Item, PType) of
-      true ->
-	    case is_type_match(Type, Value, JID, Subscription, Groups) of
-		true -> Action;
-		false ->
-		    check_packet_aux(List, PType, JID, Subscription, Groups)
-	    end;
-      false ->
-	  check_packet_aux(List, PType, JID, Subscription, Groups)
+    Higherprio = case Lastorder of
+	last -> true;
+	_ when Lastorder > Order -> true;
+	_ -> false
+    end,
+    ?DEBUG("Higher priority rule? ~p", [Higherprio]),
+    case Higherprio of
+        true ->
+	    Ptypematch = is_ptype_match(Item, PType),
+            Typematch = is_type_match(Type, Value, JID, Subscription, Groups),
+            ?DEBUG("ptype match? ~p, type match? ~p", [Ptypematch, Typematch]),
+            case Ptypematch and Typematch of
+                true ->
+                    ?DEBUG("Using action ~p from this rule", [Action]),
+	            check_packet_aux(Action, Order, List, PType, JID,
+                                             Subscription, Groups);
+	        false -> check_packet_aux(Lastaction, Lastorder, List,
+                                              PType, JID, Subscription, Groups)
+            end;
+	false -> check_packet_aux(Lastaction, Lastorder, List, PType, JID,
+                                  Subscription, Groups)
     end.
 
 -spec is_ptype_match(listitem(),
