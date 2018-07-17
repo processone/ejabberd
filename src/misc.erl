@@ -36,7 +36,7 @@
 	 compile_exprs/2, join_atoms/2, try_read_file/1, get_descr/2,
 	 css_dir/0, img_dir/0, js_dir/0, msgs_dir/0, sql_dir/0, lua_dir/0,
 	 read_css/1, read_img/1, read_js/1, read_lua/1, try_url/1,
-	 intersection/2, format_val/1]).
+	 intersection/2, format_val/1, cancel_timer/1]).
 
 %% Deprecated functions
 -export([decode_base64/1, encode_base64/1]).
@@ -307,6 +307,19 @@ format_val(YAML) ->
     try [io_lib:nl(), fast_yaml:encode(YAML)]
     catch _:_ -> io_lib:format("~p", [YAML])
     end.
+
+-spec cancel_timer(reference()) -> ok.
+cancel_timer(TRef) when is_reference(TRef) ->
+    case erlang:cancel_timer(TRef) of
+	false ->
+	    receive {timeout, TRef, _} -> ok
+	    after 0 -> ok
+	    end;
+	_ ->
+	    ok
+    end;
+cancel_timer(_) ->
+    ok.
 
 %%%===================================================================
 %%% Internal functions

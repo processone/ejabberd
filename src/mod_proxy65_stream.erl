@@ -195,7 +195,7 @@ stream_established(_Data, StateData) ->
 %% SOCKS5 packets.
 handle_info({tcp, _S, Data}, StateName, StateData)
     when StateName /= wait_for_activation ->
-    erlang:cancel_timer(StateData#state.timer),
+    misc:cancel_timer(StateData#state.timer),
     TRef = erlang:send_after(?WAIT_TIMEOUT, self(), stop),
     p1_fsm:send_event(self(), Data),
     {next_state, StateName, StateData#state{timer = TRef}};
@@ -203,7 +203,7 @@ handle_info({tcp, _S, Data}, StateName, StateData)
 handle_info({activate, PeerPid, PeerSocket, IJid, TJid},
 	    wait_for_activation, StateData) ->
     erlang:monitor(process, PeerPid),
-    erlang:cancel_timer(StateData#state.timer),
+    misc:cancel_timer(StateData#state.timer),
     MySocket = StateData#state.socket,
     Shaper = StateData#state.shaper,
     Host = StateData#state.host,

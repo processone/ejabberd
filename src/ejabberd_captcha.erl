@@ -517,11 +517,7 @@ recv_data(Port, TRef, Buf) ->
     end.
 
 return(Port, TRef, Result) ->
-    case erlang:cancel_timer(TRef) of
-      false ->
-	  receive {timeout, TRef, _} -> ok after 0 -> ok end;
-      _ -> ok
-    end,
+    misc:cancel_timer(TRef),
     catch port_close(Port),
     Result.
 
@@ -561,7 +557,7 @@ check_captcha(Id, ProvidedKey) ->
     case ets:lookup(captcha, Id) of
 	[#captcha{pid = Pid, args = Args, key = ValidKey, tref = Tref}] ->
 	    ets:delete(captcha, Id),
-	    erlang:cancel_timer(Tref),
+	    misc:cancel_timer(Tref),
 	    if ValidKey == ProvidedKey ->
 		    callback(captcha_succeed, Pid, Args),
 		    captcha_valid;

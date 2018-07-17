@@ -659,7 +659,7 @@ handle_info({Tag, _Socket, Data}, connecting, S)
     {next_state, connecting, S};
 handle_info({Tag, _Socket, Data}, wait_bind_response, S)
     when Tag == tcp; Tag == ssl ->
-    cancel_timer(S#eldap.bind_timer),
+    misc:cancel_timer(S#eldap.bind_timer),
     case catch recvd_wait_bind_response(Data, S) of
       bound -> dequeue_commands(S);
       {fail_bind, Reason} ->
@@ -847,14 +847,14 @@ recvd_packet(Pkt, S) ->
 			 if Reason == success; Reason == sizeLimitExceeded ->
 				{Res, Ref} = polish(Result_so_far),
 				New_dict = dict:erase(Id, Dict),
-				cancel_timer(Timer),
+				misc:cancel_timer(Timer),
 				{reply,
 				 #eldap_search_result{entries = Res,
 						      referrals = Ref},
 				 From, S#eldap{dict = New_dict}};
 			    true ->
 				New_dict = dict:erase(Id, Dict),
-				cancel_timer(Timer),
+				misc:cancel_timer(Timer),
 				{reply, {error, Reason}, From,
 				 S#eldap{dict = New_dict}}
 			 end;
@@ -863,37 +863,37 @@ recvd_packet(Pkt, S) ->
 			 {ok, S#eldap{dict = New_dict}};
 		     {addRequest, {addResponse, Result}} ->
 			 New_dict = dict:erase(Id, Dict),
-			 cancel_timer(Timer),
+			 misc:cancel_timer(Timer),
 			 Reply = check_reply(Result, From),
 			 {reply, Reply, From, S#eldap{dict = New_dict}};
 		     {delRequest, {delResponse, Result}} ->
 			 New_dict = dict:erase(Id, Dict),
-			 cancel_timer(Timer),
+			 misc:cancel_timer(Timer),
 			 Reply = check_reply(Result, From),
 			 {reply, Reply, From, S#eldap{dict = New_dict}};
 		     {modifyRequest, {modifyResponse, Result}} ->
 			 New_dict = dict:erase(Id, Dict),
-			 cancel_timer(Timer),
+			 misc:cancel_timer(Timer),
 			 Reply = check_reply(Result, From),
 			 {reply, Reply, From, S#eldap{dict = New_dict}};
 		     {modDNRequest, {modDNResponse, Result}} ->
 			 New_dict = dict:erase(Id, Dict),
-			 cancel_timer(Timer),
+			 misc:cancel_timer(Timer),
 			 Reply = check_reply(Result, From),
 			 {reply, Reply, From, S#eldap{dict = New_dict}};
 		     {bindRequest, {bindResponse, Result}} ->
 			 New_dict = dict:erase(Id, Dict),
-			 cancel_timer(Timer),
+			 misc:cancel_timer(Timer),
 			 Reply = check_bind_reply(Result, From),
 			 {reply, Reply, From, S#eldap{dict = New_dict}};
 		     {extendedReq, {extendedResp, Result}} ->
 			 New_dict = dict:erase(Id, Dict),
-			 cancel_timer(Timer),
+			 misc:cancel_timer(Timer),
 			 Reply = check_extended_reply(Result, From),
 			 {reply, Reply, From, S#eldap{dict = New_dict}};
 		     {OtherName, OtherResult} ->
 			 New_dict = dict:erase(Id, Dict),
-			 cancel_timer(Timer),
+			 misc:cancel_timer(Timer),
 			 {reply,
 			  {error, {invalid_result, OtherName, OtherResult}},
 			  From, S#eldap{dict = New_dict}}
@@ -968,16 +968,11 @@ check_id(_, _) -> throw({error, wrong_bind_id}).
 %% General Helpers
 %%-----------------------------------------------------------------------
 
-cancel_timer(Timer) ->
-    erlang:cancel_timer(Timer),
-    receive {timeout, Timer, _} -> ok after 0 -> ok end.
-
-
 close_and_retry(S, Timeout) ->
     catch (S#eldap.sockmod):close(S#eldap.fd),
     Queue = dict:fold(fun (_Id,
 			   [{Timer, Command, From, _Name} | _], Q) ->
-			      cancel_timer(Timer),
+			      misc:cancel_timer(Timer),
 			      queue:in_r({Command, From}, Q);
 			  (_, _, Q) -> Q
 		      end,

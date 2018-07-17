@@ -88,7 +88,7 @@ handle_event({set_alarm, {system_memory_high_watermark, _}}, State) ->
     handle_overload(State),
     {ok, restart_timer(State)};
 handle_event({clear_alarm, system_memory_high_watermark}, State) ->
-    cancel_timer(State#state.tref),
+    misc:cancel_timer(State#state.tref),
     {ok, State#state{tref = undefined}};
 handle_event({set_alarm, {process_memory_high_watermark, Pid}}, State) ->
     case proc_stat(Pid, get_app_pids()) of
@@ -220,22 +220,9 @@ proc_stat(Pid, AppPids) ->
 
 -spec restart_timer(#state{}) -> #state{}.
 restart_timer(State) ->
-    cancel_timer(State#state.tref),
+    misc:cancel_timer(State#state.tref),
     TRef = erlang:start_timer(?CHECK_INTERVAL, self(), handle_overload),
     State#state{tref = TRef}.
-
--spec cancel_timer(reference()) -> ok.
-cancel_timer(undefined) ->
-    ok;
-cancel_timer(TRef) ->
-    case erlang:cancel_timer(TRef) of
-        false ->
-            receive {timeout, TRef, _} -> ok
-            after 0 -> ok
-            end;
-        _ ->
-            ok
-    end.
 
 -spec format_apps(dict:dict()) -> io:data().
 format_apps(Apps) ->

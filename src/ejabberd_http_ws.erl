@@ -256,7 +256,7 @@ handle_info({timeout, Timer, _}, StateName,
 	    #state{ping_timer = Timer, ws = {_, WsPid}} = StateData) ->
     case StateData#state.pong_expected of
         false ->
-            cancel_timer(StateData#state.ping_timer),
+            misc:cancel_timer(StateData#state.ping_timer),
             PingTimer = erlang:start_timer(StateData#state.ping_interval,
                                            self(), []),
             WsPid ! {ping, <<>>},
@@ -282,20 +282,16 @@ terminate(_Reason, _StateName, StateData) ->
     ok.
 
 setup_timers(StateData) ->
-    cancel_timer(StateData#state.timer),
+    misc:cancel_timer(StateData#state.timer),
     Timer = erlang:start_timer(StateData#state.timeout,
                                self(), []),
-    cancel_timer(StateData#state.ping_timer),
+    misc:cancel_timer(StateData#state.ping_timer),
     PingTimer = case StateData#state.ping_interval of
                     0 -> StateData#state.ping_timer;
                     V -> erlang:start_timer(V, self(), [])
                 end,
      StateData#state{timer = Timer, ping_timer = PingTimer,
                      pong_expected = false}.
-
-cancel_timer(Timer) ->
-    erlang:cancel_timer(Timer),
-    receive {timeout, Timer, _} -> ok after 0 -> ok end.
 
 get_human_html_xmlel() ->
     Heading = <<"ejabberd ", (misc:atom_to_binary(?MODULE))/binary>>,

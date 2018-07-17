@@ -299,7 +299,7 @@ handle_call({use_slot, Slot, Size}, _From,
 		   docroot = DocRoot} = State) ->
     case get_slot(Slot, State) of
 	{ok, {Size, TRef}} ->
-	    cancel_timer(TRef),
+	    misc:cancel_timer(TRef),
 	    NewState = del_slot(Slot, State),
 	    Path = str:join([DocRoot | Slot], <<$/>>),
 	    {reply,
@@ -702,17 +702,6 @@ replace_special_chars(S) ->
 -spec yield_content_type(binary()) -> binary().
 yield_content_type(<<"">>) -> ?DEFAULT_CONTENT_TYPE;
 yield_content_type(Type) -> Type.
-
--spec cancel_timer(reference()) -> ok.
-cancel_timer(TRef) ->
-    case erlang:cancel_timer(TRef) of
-	false ->
-	    receive {timeout, TRef, _} -> ok
-	    after 0 -> ok
-	    end;
-	_ ->
-	    ok
-    end.
 
 -spec iq_disco_info(binary(), binary(), binary(), [xdata()]) -> disco_info().
 iq_disco_info(Host, Lang, Name, AddInfo) ->

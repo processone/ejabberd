@@ -550,8 +550,8 @@ close_socket(#sip_session{socket = SIPSocket}) ->
 delete_session(#sip_session{reg_tref = RegTRef,
 			    flow_tref = FlowTRef,
 			    conn_mref = MRef} = Session) ->
-    erlang:cancel_timer(RegTRef),
-    catch erlang:cancel_timer(FlowTRef),
+    misc:cancel_timer(RegTRef),
+    misc:cancel_timer(FlowTRef),
     catch erlang:demonitor(MRef, [flush]),
     mnesia:dirty_delete_object(Session).
 

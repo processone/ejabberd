@@ -717,7 +717,7 @@ send(#{mod := Mod} = State, Pkt) ->
 
 -spec restart_pending_timer(state(), non_neg_integer()) -> state().
 restart_pending_timer(#{mgmt_pending_timer := TRef} = State, NewTimeout) ->
-    cancel_timer(TRef),
+    misc:cancel_timer(TRef),
     NewTRef = erlang:start_timer(timer:seconds(NewTimeout), self(),
 				 pending_timeout),
     State#{mgmt_pending_timer => NewTRef};
@@ -726,21 +726,10 @@ restart_pending_timer(State, _NewTimeout) ->
 
 -spec cancel_ack_timer(state()) -> state().
 cancel_ack_timer(#{mgmt_ack_timer := TRef} = State) ->
-    cancel_timer(TRef),
+    misc:cancel_timer(TRef),
     maps:remove(mgmt_ack_timer, State);
 cancel_ack_timer(State) ->
     State.
-
--spec cancel_timer(reference()) -> ok.
-cancel_timer(TRef) ->
-    case erlang:cancel_timer(TRef) of
-	false ->
-	    receive {timeout, TRef, _} -> ok
-	    after 0 -> ok
-	    end;
-	_ ->
-	    ok
-    end.
 
 -spec bounce_message_queue() -> ok.
 bounce_message_queue() ->

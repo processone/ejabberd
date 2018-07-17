@@ -404,7 +404,7 @@ active(#body{attrs = Attrs, size = Size} = Req, From,
 		    {next_state, active,
 		     State2#state{shaped_receivers = Q}}
 	    catch error:full ->
-		  cancel_timer(TRef),
+		  misc:cancel_timer(TRef),
 		  RID = get_attr(rid, Attrs),
 		  reply_stop(State1,
 			     #body{http_reason = <<"Too many requests">>,
@@ -552,7 +552,7 @@ handle_sync_event({send_xml, El}, _From, StateName,
 	  State2 = case p1_queue:out(State1#state.shaped_receivers)
 		       of
 		     {{value, {TRef, From, Body}}, Q} ->
-			 cancel_timer(TRef),
+			 misc:cancel_timer(TRef),
 			 p1_fsm:send_event(self(), {Body, From}),
 			 State1#state{shaped_receivers = Q};
 		     _ -> State1
@@ -1035,12 +1035,8 @@ buf_out(Buf, I, Els) ->
       {empty, _} -> buf_out(Buf, 0, Els)
     end.
 
-cancel_timer(TRef) when is_reference(TRef) ->
-    p1_fsm:cancel_timer(TRef);
-cancel_timer(_) -> false.
-
 restart_timer(TRef, Timeout, Msg) ->
-    cancel_timer(TRef),
+    misc:cancel_timer(TRef),
     erlang:start_timer(timer:seconds(Timeout), self(), Msg).
 
 restart_inactivity_timer(#state{inactivity_timeout =
@@ -1057,7 +1053,7 @@ restart_inactivity_timer(#state{inactivity_timer =
 
 stop_inactivity_timer(#state{inactivity_timer = TRef} =
 			  State) ->
-    cancel_timer(TRef),
+    misc:cancel_timer(TRef),
     State#state{inactivity_timer = undefined}.
 
 restart_wait_timer(#state{wait_timer = TRef,
@@ -1067,7 +1063,7 @@ restart_wait_timer(#state{wait_timer = TRef,
     State#state{wait_timer = NewTRef}.
 
 stop_wait_timer(#state{wait_timer = TRef} = State) ->
-    cancel_timer(TRef), State#state{wait_timer = undefined}.
+    misc:cancel_timer(TRef), State#state{wait_timer = undefined}.
 
 start_shaper_timer(Timeout) ->
     erlang:start_timer(Timeout, self(), shaper_timeout).
