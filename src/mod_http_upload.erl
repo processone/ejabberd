@@ -464,7 +464,8 @@ process(_LocalPath, #request{method = 'OPTIONS', host = Host,
     {Proc, _Slot} = parse_http_request(Request),
     case catch gen_server:call(Proc, get_conf, ?CALL_TIMEOUT) of
 	{ok, _DocRoot, CustomHeaders} ->
-	    http_response(200, CustomHeaders);
+	    AllowHeader = {<<"Allow">>, <<"OPTIONS, HEAD, GET, PUT">>},
+	    http_response(200, [AllowHeader | CustomHeaders]);
 	Error ->
 	    ?ERROR_MSG("Cannot handle OPTIONS request from ~s for ~s: ~p",
 		       [?ADDR_TO_STR(IP), Host, Error]),
