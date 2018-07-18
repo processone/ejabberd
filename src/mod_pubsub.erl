@@ -249,6 +249,7 @@ init([ServerHost, Opts]) ->
     ejabberd_mnesia:create(?MODULE, pubsub_last_item,
 			   [{ram_copies, [node()]},
 			    {attributes, record_info(fields, pubsub_last_item)}]),
+    load_sql_schema(ServerHost, Opts),
     AllPlugins =
 	lists:flatmap(
 	  fun(Host) ->
@@ -3641,6 +3642,16 @@ do_transaction(ServerHost, Fun, Trans, DBType) ->
 	Other ->
 	    ?ERROR_MSG("transaction return internal error: ~p~n", [Other]),
 	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ejabberd_config:get_mylang())}
+    end.
+
+-spec load_sql_schema(binary(), gen_mod:opts()) -> ok | {error, atom()}.
+load_sql_schema(Host, Opts) ->
+    case gen_mod:get_opt(db_type, Opts) of
+	sql ->
+	    %% TODO: check result and stop at error
+	    ejabberd_sql:load_schema(Host, ?MODULE);
+	_ ->
+	    ok
     end.
 
 %%%% helpers

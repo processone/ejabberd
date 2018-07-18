@@ -40,8 +40,8 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-init(_Host, _Opts) ->
-    ok.
+init(Host, _Opts) ->
+    ejabberd_sql:load_schema(Host, mod_push).
 
 store_session(LUser, LServer, NowTS, PushJID, Node, XData) ->
     XML = encode_xdata(XData),

@@ -41,8 +41,8 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-init(_Host, _Opts) ->
-    ok.
+init(Host, _Opts) ->
+    ejabberd_sql:load_schema(Host, mod_offline).
 
 store_message(#offline_msg{us = {LUser, LServer}} = M) ->
     From = M#offline_msg.from,

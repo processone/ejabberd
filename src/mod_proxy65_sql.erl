@@ -35,16 +35,22 @@
 %%% API
 %%%===================================================================
 init() ->
-    NodeS = erlang:atom_to_binary(node(), latin1),
-    ?DEBUG("Cleaning SQL 'proxy65' table...", []),
-    case ejabberd_sql:sql_query(
-	   ejabberd_config:get_myname(),
-	   ?SQL("delete from proxy65 where "
-		"node_i=%(NodeS)s or node_t=%(NodeS)s")) of
-	{updated, _} ->
-	    ok;
+    Host = ejabberd_config:get_myname(),
+    case ejabberd_sql:load_schema(Host, mod_proxy65) of
+	ok ->
+	    NodeS = erlang:atom_to_binary(node(), latin1),
+	    ?DEBUG("Cleaning SQL 'proxy65' table...", []),
+	    case ejabberd_sql:sql_query(
+		   Host,
+		   ?SQL("delete from proxy65 where "
+			"node_i=%(NodeS)s or node_t=%(NodeS)s")) of
+		{updated, _} ->
+		    ok;
+		Err ->
+		    ?ERROR_MSG("failed to clean 'proxy65' table: ~p", [Err]),
+		    Err
+	    end;
 	Err ->
-	    ?ERROR_MSG("failed to clean 'proxy65' table: ~p", [Err]),
 	    Err
     end.
 

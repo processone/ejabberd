@@ -38,8 +38,8 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-init(_Host, _Opts) ->
-    ok.
+init(Host, _Opts) ->
+    ejabberd_sql:load_schema(Host, mod_caps).
 
 caps_read(LServer, {Node, SubNode}) ->
     case ejabberd_sql:sql_query(

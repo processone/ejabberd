@@ -43,8 +43,8 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-init(_Host, _Opts) ->
-    ok.
+init(Host, _Opts) ->
+    ejabberd_sql:load_schema(Host, mod_privacy).
 
 unset_default(LUser, LServer) ->
     case unset_default_privacy_list(LUser, LServer) of

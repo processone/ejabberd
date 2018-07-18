@@ -39,7 +39,7 @@
 -include("logger.hrl").
 
 init() ->
-    ok.
+    ejabberd_sql:load_schema(ejabberd_config:get_myname(), ejabberd_oauth).
 
 store(R) ->
     Token = R#oauth_token.token,

@@ -35,7 +35,12 @@
 %%% API
 %%%===================================================================
 init(Host, _Opts) ->
-    clean_table(Host).
+    case ejabberd_sql:load_schema(Host, mod_carboncopy) of
+	ok ->
+	    clean_table(Host);
+	Err ->
+	    Err
+    end.
 
 enable(LUser, LServer, LResource, NS) ->
     NodeS = erlang:atom_to_binary(node(), latin1),

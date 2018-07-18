@@ -37,14 +37,21 @@
 %%% API
 %%%===================================================================
 init() ->
-    Node = erlang:atom_to_binary(node(), latin1),
-    ?DEBUG("Cleaning SQL 'route' table...", []),
-    case ejabberd_sql:sql_query(
-	   ejabberd_config:get_myname(), ?SQL("delete from route where node=%(Node)s")) of
-	{updated, _} ->
-	    ok;
+    Host = ejabberd_config:get_myname(),
+    case ejabberd_sql:load_schema(Host, ejabberd_router) of
+	ok ->
+	    Node = erlang:atom_to_binary(node(), latin1),
+	    ?DEBUG("Cleaning SQL 'route' table...", []),
+	    case ejabberd_sql:sql_query(
+		   Host,
+		   ?SQL("delete from route where node=%(Node)s")) of
+		{updated, _} ->
+		    ok;
+		Err ->
+		    ?ERROR_MSG("failed to clean 'route' table: ~p", [Err]),
+		    Err
+	    end;
 	Err ->
-	    ?ERROR_MSG("failed to clean 'route' table: ~p", [Err]),
 	    Err
     end.
 

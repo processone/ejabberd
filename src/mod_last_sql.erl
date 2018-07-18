@@ -39,8 +39,8 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-init(_Host, _Opts) ->
-    ok.
+init(Host, _Opts) ->
+    ejabberd_sql:load_schema(Host, mod_last).
 
 get_last(LUser, LServer) ->
     case ejabberd_sql:sql_query(

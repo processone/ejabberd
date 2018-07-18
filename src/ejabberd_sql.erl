@@ -55,6 +55,7 @@
 	 freetds_config/0,
 	 odbcinst_config/0,
 	 init_mssql/1,
+	 load_schema/2,
 	 keep_alive/2]).
 
 %% gen_fsm callbacks
@@ -189,13 +190,19 @@ sync_send_event(Pid, Msg, Timeout) ->
 sql_query_t(Query) ->
     QRes = sql_query_internal(Query),
     case QRes of
-      {error, Reason} -> throw({aborted, Reason});
-      Rs when is_list(Rs) ->
-	  case lists:keysearch(error, 1, Rs) of
-	    {value, {error, Reason}} -> throw({aborted, Reason});
-	    _ -> QRes
-	  end;
-      _ -> QRes
+	{error, Reason} ->
+	    put(failed_sql_query, Query),
+	    restart(Reason);
+	Rs when is_list(Rs) ->
+	    case lists:keyfind(error, 1, Rs) of
+		{error, Reason} ->
+		    put(failed_sql_query, Query),
+		    restart(Reason);
+		_ ->
+		    QRes
+	    end;
+	_ ->
+	    QRes
     end.
 
 abort(Reason) ->
@@ -280,6 +287,10 @@ sqlite_file(Host) ->
 
 use_new_schema() ->
     ejabberd_config:get_option(new_sql_schema, ?USE_NEW_SCHEMA_DEFAULT).
+
+load_schema(Host, Mod) ->
+    Type = ejabberd_config:get_option({sql_type, Host}, odbc),
+    ejabberd_sql_schema:load(Host, Mod, Type).
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -510,11 +521,12 @@ outer_transaction(F, NRestarts, _Reason) ->
 	  sql_query_internal([<<"rollback;">>]),
 	  outer_transaction(F, NRestarts - 1, Reason);
       {aborted, Reason} when NRestarts =:= 0 ->
+	  FailedQuery = erase(failed_sql_query),
 	  ?ERROR_MSG("SQL transaction restarts exceeded~n** "
-		     "Restarts: ~p~n** Last abort reason: "
+		     "Restarts: ~p~n** Query: ~p~n** Last abort reason: "
 		     "~p~n** Stacktrace: ~p~n** When State "
 		     "== ~p",
-		     [?MAX_TRANSACTION_RESTARTS, Reason,
+		     [?MAX_TRANSACTION_RESTARTS, FailedQuery, Reason,
 		      erlang:get_stacktrace(), get(?STATE_KEY)]),
 	  sql_query_internal([<<"rollback;">>]),
 	  {aborted, Reason};

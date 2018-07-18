@@ -489,6 +489,7 @@ listen:
 loglevel: @@loglevel@@
 max_fsm_queue: 1000
 queue_type: file
+new_sql_schema: true
 modules: 
   mod_adhoc: []
   mod_configure: []

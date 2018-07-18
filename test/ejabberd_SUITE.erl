@@ -113,7 +113,7 @@ do_init_per_group(mysql, Config) ->
     case catch ejabberd_sql:sql_query(?MYSQL_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?MYSQL_VHOST),
-            create_sql_tables(mysql, ?config(base_dir, Config)),
+            clear_sql_tables(mysql, ?MYSQL_VHOST),
             set_opt(server, ?MYSQL_VHOST, Config);
         Err ->
             {skip, {mysql_not_available, Err}}
@@ -122,7 +122,7 @@ do_init_per_group(pgsql, Config) ->
     case catch ejabberd_sql:sql_query(?PGSQL_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?PGSQL_VHOST),
-            create_sql_tables(pgsql, ?config(base_dir, Config)),
+            clear_sql_tables(pgsql, ?PGSQL_VHOST),
             set_opt(server, ?PGSQL_VHOST, Config);
         Err ->
             {skip, {pgsql_not_available, Err}}
@@ -131,6 +131,7 @@ do_init_per_group(sqlite, Config) ->
     case catch ejabberd_sql:sql_query(?SQLITE_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
             mod_muc:shutdown_rooms(?SQLITE_VHOST),
+	    clear_sql_tables(sqlite, ?SQLITE_VHOST),
             set_opt(server, ?SQLITE_VHOST, Config);
         Err ->
             {skip, {sqlite_not_available, Err}}
@@ -1070,91 +1071,25 @@ bookmark_conference() ->
 %%%===================================================================
 %%% SQL stuff
 %%%===================================================================
-create_sql_tables(sqlite, _BaseDir) ->
-    ok;
-create_sql_tables(Type, BaseDir) ->
-    {VHost, File} = case Type of
-                        mysql ->
-                            Path = case ejabberd_sql:use_new_schema() of
-                                true ->
-                                    "mysql.new.sql";
-                                false ->
-                                    "mysql.sql"
-                            end,
-                            {?MYSQL_VHOST, Path};
-                        pgsql ->
-                            Path = case ejabberd_sql:use_new_schema() of
-                                true ->
-                                    "pg.new.sql";
-                                false ->
-                                    "pg.sql"
-                            end,
-                            {?PGSQL_VHOST, Path}
-                    end,
-    SQLFile = filename:join([BaseDir, "sql", File]),
-    CreationQueries = read_sql_queries(SQLFile),
-    DropTableQueries = drop_table_queries(CreationQueries),
-    case ejabberd_sql:sql_transaction(
-           VHost, DropTableQueries ++ CreationQueries) of
-        {atomic, ok} ->
-            ok;
-        Err ->
-            ct:fail({failed_to_create_sql_tables, Type, Err})
+clear_sql_tables(Type, Host) ->
+    case ejabberd_sql_schema:list_tables(Host, Type) of
+	{ok, Tabs} ->
+	    F = fun() ->
+			lists:foreach(
+			  fun(Tab) ->
+				  ejabberd_sql:sql_query_t(
+				    <<"DELETE FROM ", Tab/binary>>)
+			  end, Tabs)
+		end,
+	    case ejabberd_sql:sql_transaction(Host, F) of
+		{atomic, ok} ->
+		    ok;
+		Err ->
+		    ct:fail({failed_to_clear_sql_tables, Type, Err})
+	    end;
+	{error, _} = Err ->
+	    ct:fail({failed_to_list_sql_tables, Type, Err})
     end.
-
-read_sql_queries(File) ->
-    case file:open(File, [read, binary]) of
-        {ok, Fd} ->
-            read_lines(Fd, File, []);
-        Err ->
-            ct:fail({open_file_failed, File, Err})
-    end.
-
-drop_table_queries(Queries) ->
-    lists:foldl(
-      fun(Query, Acc) ->
-              case split(str:to_lower(Query)) of
-                  [<<"create">>, <<"table">>, Table|_] ->
-                      [<<"DROP TABLE IF EXISTS ", Table/binary, ";">>|Acc];
-                  _ ->
-                      Acc
-              end
-      end, [], Queries).
-
-read_lines(Fd, File, Acc) ->
-    case file:read_line(Fd) of
-        {ok, Line} ->
-            NewAcc = case str:strip(str:strip(Line, both, $\r), both, $\n) of
-                         <<"--", _/binary>> ->
-                             Acc;
-                         <<>> ->
-                             Acc;
-                         _ ->
-                             [Line|Acc]
-                     end,
-            read_lines(Fd, File, NewAcc);
-        eof ->
-            QueryList = str:tokens(list_to_binary(lists:reverse(Acc)), <<";">>),
-            lists:flatmap(
-              fun(Query) ->
-                      case str:strip(str:strip(Query, both, $\r), both, $\n) of
-                          <<>> ->
-                              [];
-                          Q ->
-                              [<<Q/binary, $;>>]
-                      end
-              end, QueryList);
-        {error, _} = Err ->
-            ct:fail({read_file_failed, File, Err})
-    end.
-
-split(Data) ->
-    lists:filter(
-      fun(<<>>) ->
-              false;
-         (_) ->
-              true
-      end, re:split(Data, <<"\s">>)).
 
 clear_riak_tables(Config) ->
     User = ?config(user, Config),

@@ -42,8 +42,8 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-init(_Host, _Opts) ->
-    ok.
+init(Host, _Opts) ->
+    ejabberd_sql:load_schema(Host, mod_roster).
 
 read_roster_version(LUser, LServer) ->
     case ejabberd_sql:sql_query(

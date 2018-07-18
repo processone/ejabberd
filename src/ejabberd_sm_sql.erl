@@ -49,13 +49,19 @@ init() ->
     ?DEBUG("Cleaning SQL SM table...", []),
     lists:foldl(
       fun(Host, ok) ->
-	      case ejabberd_sql:sql_query(
-		     Host, ?SQL("delete from sm where node=%(Node)s")) of
-		  {updated, _} ->
-		      ok;
+	      case ejabberd_sql:load_schema(Host, ejabberd_sm) of
+		  ok ->
+		      case ejabberd_sql:sql_query(
+			     Host,
+			     ?SQL("delete from sm where node=%(Node)s")) of
+			  {updated, _} ->
+			      ok;
+			  Err ->
+			      ?ERROR_MSG("failed to clean 'sm' table: ~p", [Err]),
+			      {error, db_failure}
+		      end;
 		  Err ->
-		      ?ERROR_MSG("failed to clean 'sm' table: ~p", [Err]),
-		      {error, db_failure}
+		      Err
 	      end;
 	 (_, Err) ->
 	      Err

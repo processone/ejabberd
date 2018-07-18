@@ -52,7 +52,12 @@
 init(Host, Opts) ->
     case gen_mod:ram_db_mod(Host, Opts, mod_muc) of
 	?MODULE ->
-	    clean_tables(Host);
+	    case ejabberd_sql:load_schema(Host, mod_muc) of
+		ok ->
+		    clean_tables(Host);
+		Err ->
+		    Err
+	    end;
 	_ ->
 	    ok
     end.

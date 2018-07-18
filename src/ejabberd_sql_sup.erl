@@ -157,59 +157,9 @@ check_sqlite_db(Host) ->
 	  end,
     case Ret of
         ok ->
-	    sqlite3:sql_exec(DB, "pragma foreign_keys = on"),
-            case sqlite3:list_tables(DB) of
-                [] ->
-                    create_sqlite_tables(DB),
-                    sqlite3:close(DB),
-                    ok;
-                [_H | _] ->
-                    ok
-            end;
+	    sqlite3:sql_exec(DB, "pragma foreign_keys = on");
         {error, Reason} ->
             ?INFO_MSG("Failed open sqlite database, reason ~p", [Reason])
-    end.
-
-create_sqlite_tables(DB) ->
-    SqlDir = misc:sql_dir(),
-    File = filename:join(SqlDir, "lite.sql"),
-    case file:open(File, [read, binary]) of
-        {ok, Fd} ->
-            Qs = read_lines(Fd, File, []),
-            ok = sqlite3:sql_exec(DB, "begin"),
-            [ok = sqlite3:sql_exec(DB, Q) || Q <- Qs],
-            ok = sqlite3:sql_exec(DB, "commit");
-        {error, Reason} ->
-            ?INFO_MSG("Failed to read SQLite schema file: ~s",
-		      [file:format_error(Reason)])
-    end.
-
-read_lines(Fd, File, Acc) ->
-    case file:read_line(Fd) of
-        {ok, Line} ->
-            NewAcc = case str:strip(str:strip(Line, both, $\r), both, $\n) of
-                         <<"--", _/binary>> ->
-                             Acc;
-                         <<>> ->
-                             Acc;
-                         _ ->
-                             [Line|Acc]
-                     end,
-            read_lines(Fd, File, NewAcc);
-        eof ->
-            QueryList = str:tokens(list_to_binary(lists:reverse(Acc)), <<";">>),
-            lists:flatmap(
-              fun(Query) ->
-                      case str:strip(str:strip(Query, both, $\r), both, $\n) of
-                          <<>> ->
-                              [];
-                          Q ->
-                              [<<Q/binary, $;>>]
-                      end
-              end, QueryList);
-        {error, _} = Err ->
-            ?ERROR_MSG("Failed read from lite.sql, reason: ~p", [Err]),
-            []
     end.
 
 -spec opt_type(sql_pool_size) -> fun((pos_integer()) -> pos_integer());

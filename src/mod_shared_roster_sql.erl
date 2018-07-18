@@ -44,8 +44,8 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-init(_Host, _Opts) ->
-    ok.
+init(Host, _Opts) ->
+    ejabberd_sql:load_schema(Host, mod_shared_roster).
 
 list_groups(Host) ->
     case ejabberd_sql:sql_query(

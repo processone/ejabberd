@@ -38,8 +38,8 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-init(_Host, _Opts) ->
-    ok.
+init(Host, _Opts) ->
+    ejabberd_sql:load_schema(Host, mod_private).
 
 set_data(LUser, LServer, Data) ->
     F = fun() ->

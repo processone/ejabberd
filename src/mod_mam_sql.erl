@@ -41,8 +41,8 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-init(_Host, _Opts) ->
-    ok.
+init(Host, _Opts) ->
+    ejabberd_sql:load_schema(Host, mod_mam).
 
 remove_user(LUser, LServer) ->
     ejabberd_sql:sql_query(
