@@ -46,12 +46,13 @@ listen:
     max_stanza_size: 65536
     shaper: c2s_shaper
     access: c2s
+    starttls_required: true
   -
     port: 5269
     ip: "::"
     module: ejabberd_s2s_in
   -
-    port: 5280
+    port: 5443
     ip: "::"
     module: ejabberd_http
     request_handlers:
@@ -61,6 +62,9 @@ listen:
       "/ws": ejabberd_http_ws
     web_admin: true
     captcha: true
+    tls: true
+
+s2s_use_starttls: optional
 
 acl:
   local:
@@ -149,7 +153,7 @@ modules:
   mod_fail2ban: {}
   mod_http_api: {}
   mod_http_upload:
-    put_url: "http://@HOST@:5280/upload"
+    put_url: "https://@HOST@:5443/upload"
   mod_last: {}
   mod_mam:
     ## Mnesia is limited to 2GB, better to use an SQL backend
