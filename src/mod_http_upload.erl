@@ -225,7 +225,7 @@ mod_options(_Host) ->
      {file_mode, undefined},
      {dir_mode, undefined},
      {docroot, <<"@HOME@/upload">>},
-     {put_url, <<"http://@HOST@:5444">>},
+     {put_url, <<"https://@HOST@:5443/upload">>},
      {get_url, undefined},
      {service_url, undefined},
      {external_secret, <<"">>},
