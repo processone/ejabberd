@@ -134,9 +134,9 @@ CREATE TABLE [dbo].[muc_online_users] (
     node text NOT NULL
 );
 
-CREATE UNIQUE CLUSTERED INDEX [muc_online_users_i] ON [muc_online_users] (username, server, resource, name, host)
+CREATE UNIQUE INDEX [muc_online_users_i] ON [muc_online_users] (username, server, resource, name, host)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
-CREATE UNIQUE CLUSTERED INDEX [muc_online_users_us] ON [muc_online_users] (username, server);
+CREATE UNIQUE CLUSTERED INDEX [muc_online_users_us] ON [muc_online_users] (username, server)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
 CREATE TABLE [dbo].[muc_room_subscribers] (
@@ -529,7 +529,7 @@ CREATE TABLE [dbo].[bosh] (
 (
         [sid] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
-) TEXTIMAGE_ON [PRIMARY];
+);
 
 CREATE TABLE [dbo].[carboncopy] (
     [username] [varchar] (255) NOT NULL,
@@ -555,5 +555,5 @@ CREATE TABLE [dbo].[push_session] (
 CREATE UNIQUE CLUSTERED INDEX [i_push_usn] ON [push_session] (username, service, node)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
 
-CREATE UNIQUE CLUSTERED INDEX [i_push_ut] ON [push_session] (username, timestamp)
+CREATE UNIQUE INDEX [i_push_ut] ON [push_session] (username, timestamp)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
