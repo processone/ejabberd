@@ -183,7 +183,10 @@ mod_opt_type(get_url) ->
     end;
 mod_opt_type(service_url) ->
     fun(undefined) -> undefined;
-       (URL) -> misc:try_url(URL)
+       (URL) ->
+	   ?WARNING_MSG("option 'service_url' is deprecated, consider unsing "
+	                "the 'external_secret' interface instead", []),
+	   misc:try_url(URL)
     end;
 mod_opt_type(custom_headers) ->
     fun(Headers) ->
