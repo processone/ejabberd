@@ -114,7 +114,7 @@ exec_queries(Host, Mod, Type, Map) ->
 			  case table_exists(Type, Tab) of
 			      {true, OldCols} ->
 				  alter_table(Host, Type, Tab, Escape,
-					      NewCols, OldCols);
+					      NewCols, OldCols, Queries);
 			      false ->
 				  ?INFO_MSG("Creating SQL table: ~s", [Tab]),
 				  lists:foreach(
@@ -161,33 +161,59 @@ table_exists_query(sqlite, T) ->
 table_columns_query(_, T) ->
     ["SELECT * FROM ", T, " where 0=1"].
 
-alter_table(Host, Type, Tab, Escape, NewCols, OldCols) ->
-    Add = NewCols -- OldCols,
-    alter_server_host(Host, Type, Tab, Escape, Add).
+sql_query(Query) ->
+    ejabberd_sql:sql_query_t(iolist_to_binary(Query)).
 
-alter_server_host(Host, Type, Tab, Escape, Add) ->
-    case lists:member(<<"server_host">>, Add) of
-	true ->
-	    ?WARNING_MSG("Upgrading table ~s to multi-domain schema", [Tab]),
-	    add_server_host(binary_to_list(Tab), Type, Host, Escape);
-	false ->
-	    ok
-    end.
+alter_table(Host, Type, Tab, Escape, NewCols, OldCols, Queries) ->
+    alter_server_host(Host, Type, Tab, Escape, NewCols, OldCols, Queries).
 
 %%%===================================================================
 %%% SQL queries to upgrade to the New(R)(TM) Schema
 %%%===================================================================
-add_server_host("users", Type , Host, Escape) ->
+alter_server_host(Host, Type, Tab, Escape, NewCols, OldCols, Queries) ->
+    Add = NewCols -- OldCols,
+    case lists:member(<<"server_host">>, Add) of
+	true ->
+	    Keep = misc:intersection(NewCols, OldCols),
+	    ?WARNING_MSG("Upgrading table ~s to multi-domain schema", [Tab]),
+	    add_server_host(
+	      binary_to_list(Tab), Type, Host, Escape, Keep, Queries);
+	false ->
+	    Del = OldCols -- NewCols,
+	    case lists:member(<<"server_host">>, Del) of
+		true ->
+		    ?ERROR_MSG("Cannot downgrade table ~s from multi-domain "
+			       "schema", [Tab]),
+		    ejabberd_sql:abort(schema_downgrade_unsupported);
+		false ->
+		    ok
+	    end
+    end.
+
+add_server_host(Table, sqlite, _Host, _Escape, Cols, [TabQuery|IdxQueries]) ->
+    %% We cannot alter an SQLite table in any significant way
+    %% So we create a new table and copy old content there
+    %% Then we delete old table, recreate indexes, and rename new table
+    TmpTable = Table ++ "_tmp",
+    TabQuery1 = re:replace(TabQuery, Table, TmpTable, [{return, binary}]),
+    sql_query(TabQuery1),
+    SCols = str:join(Cols, <<", ">>),
+    sql_query(["INSERT INTO ", TmpTable, " (", SCols, ") ",
+	       "SELECT ", SCols, " FROM ", Table]),
+    sql_query(["DROP TABLE ", Table]),
+    sql_query(["ALTER TABLE ", TmpTable, " RENAME TO ", Table]),
+    lists:foreach(fun sql_query/1, IdxQueries);
+add_server_host("users", Type , Host, Escape, _, _) ->
     add_sh_column(Type, "users", Host, Escape),
     drop_pkey(Type, "users"),
     add_pkey(Type, "users", ["server_host", "username"]),
-    set_sh(Type, "users", Host, Escape);
-add_server_host("last", Type, Host, Escape) ->
+    drop_sh_default(Type, "users", Host, Escape);
+add_server_host("last", Type, Host, Escape, _, _) ->
     add_sh_column(Type, "last", Host, Escape),
     drop_pkey(Type, "last"),
     add_pkey(Type, "last", ["server_host", "username"]),
-    set_sh(Type, "last", Host, Escape);
-add_server_host("rosterusers", Type, Host, Escape) ->
+    drop_sh_default(Type, "last", Host, Escape);
+add_server_host("rosterusers", Type, Host, Escape, _, _) ->
     add_sh_column(Type, "rosterusers", Host, Escape),
     drop_index(Type, "i_rosteru_user_jid"),
     drop_index(Type, "i_rosteru_username"),
@@ -195,22 +221,22 @@ add_server_host("rosterusers", Type, Host, Escape) ->
     create_unique_index(Type, "rosterusers", "i_rosteru_sh_user_jid", ["server_host", "username", "jid"]),
     create_index(Type, "rosterusers", "i_rosteru_sh_username", ["server_host", "username"]),
     create_index(Type, "rosterusers", "i_rosteru_sh_jid", ["server_host", "jid"]),
-    set_sh(Type, "rosterusers", Host, Escape);
-add_server_host("rostergroups", Type, Host, Escape) ->
+    drop_sh_default(Type, "rosterusers", Host, Escape);
+add_server_host("rostergroups", Type, Host, Escape, _, _) ->
     add_sh_column(Type, "rostergroups", Host, Escape),
     drop_index(Type, "pk_rosterg_user_jid"),
     create_index(Type, "rostergroups", "i_rosterg_sh_user_jid", ["server_host", "username", "jid"]),
-    set_sh(Type, "rostergroups", Host, Escape);
-add_server_host("roster_version", Type, Host, Escape) ->
+    drop_sh_default(Type, "rostergroups", Host, Escape);
+add_server_host("roster_version", Type, Host, Escape, _, _) ->
     add_sh_column(Type, "roster_version", Host, Escape),
     drop_pkey(Type, "roster_version"),
     add_pkey(Type, "roster_version", ["server_host", "username"]),
-    set_sh(Type, "roster_version", Host, Escape);
-add_server_host("sr_group", Type, Host, Escape) ->
+    drop_sh_default(Type, "roster_version", Host, Escape);
+add_server_host("sr_group", Type, Host, Escape, _, _) ->
     add_sh_column(Type, "sr_group", Host, Escape),
     add_pkey(Type, "sr_group", ["server_host", "name"]),
-    set_sh(Type, "sr_group", Host, Escape);
-add_server_host("sr_user", Type, Host, Escape) ->
+    drop_sh_default(Type, "sr_group", Host, Escape);
+add_server_host("sr_user", Type, Host, Escape, _, _) ->
     add_sh_column(Type, "sr_user", Host, Escape),
     drop_index(Type, "i_sr_user_jid_grp"),
     drop_index(Type, "i_sr_user_jid"),
@@ -218,13 +244,13 @@ add_server_host("sr_user", Type, Host, Escape) ->
     add_pkey(Type, "sr_user", ["server_host", "jid", "grp"]),
     create_index(Type, "sr_user", "i_sr_user_sh_jid", ["server_host", "jid"]),
     create_index(Type, "sr_user", "i_sr_user_sh_grp", ["server_host", "grp"]),
-    set_sh(Type, "sr_user", Host, Escape);
-add_server_host("spool", Type, Host, Escape) ->
+    drop_sh_default(Type, "sr_user", Host, Escape);
+add_server_host("spool", Type, Host, Escape, _, _) ->
     add_sh_column(Type, "spool", Host, Escape),
     drop_index(Type, "i_despool"),
     create_index(Type, "spool", "i_spool_sh_username", ["server_host", "username"]),
-    set_sh(Type, "spool", Host, Escape);
-add_server_host("archive", Type, Host, Escape) ->
+    drop_sh_default(Type, "spool", Host, Escape);
+add_server_host("archive", Type, Host, Escape, _, _) ->
     add_sh_column(Type, "archive", Host, Escape),
     drop_index(Type, "i_username"),
     drop_index(Type, "i_username_timestamp"),
@@ -235,18 +261,18 @@ add_server_host("archive", Type, Host, Escape) ->
     create_index(Type, "archive", "i_archive_sh_timestamp", ["server_host", "timestamp"]),
     create_index(Type, "archive", "i_archive_sh_peer", ["server_host", "peer"]),
     create_index(Type, "archive", "i_archive_sh_bare_peer", ["server_host", "bare_peer"]),
-    set_sh(Type, "archive", Host, Escape);
-add_server_host("archive_prefs", Type, Host, Escape) ->
+    drop_sh_default(Type, "archive", Host, Escape);
+add_server_host("archive_prefs", Type, Host, Escape, _, _) ->
     add_sh_column(Type, "archive_prefs", Host, Escape),
     drop_pkey(Type, "archive_prefs"),
     add_pkey(Type, "archive_prefs", ["server_host", "username"]),
-    set_sh(Type, "archive_prefs", Host, Escape);
-add_server_host("vcard", Type, Host, Escape) ->
+    drop_sh_default(Type, "archive_prefs", Host, Escape);
+add_server_host("vcard", Type, Host, Escape, _, _) ->
     add_sh_column(Type, "vcard", Host, Escape),
     drop_pkey(Type, "vcard"),
     add_pkey(Type, "vcard", ["server_host", "username"]),
-    set_sh(Type, "vcard", Host, Escape);
-add_server_host("vcard_search", Type, Host, Escape) ->
+    drop_sh_default(Type, "vcard", Host, Escape);
+add_server_host("vcard_search", Type, Host, Escape, _, _) ->
     add_sh_column(Type, "vcard_search", Host, Escape),
     drop_pkey(Type, "vcard_search"),
     drop_index(Type, "i_vcard_search_lfn"),
@@ -272,60 +298,60 @@ add_server_host("vcard_search", Type, Host, Escape) ->
     create_index(Type, "vcard_search", "i_vcard_search_sh_lemail",    ["server_host", "lemail"]),
     create_index(Type, "vcard_search", "i_vcard_search_sh_lorgname",  ["server_host", "lorgname"]),
     create_index(Type, "vcard_search", "i_vcard_search_sh_lorgunit",  ["server_host", "lorgunit"]),
-    set_sh(Type, "vcard_search", Host, Escape);
-add_server_host("privacy_default_list", Type, Host, Escape) ->
+    drop_sh_default(Type, "vcard_search", Host, Escape);
+add_server_host("privacy_default_list", Type, Host, Escape, _, _) ->
     add_sh_column(Type, "privacy_default_list", Host, Escape),
     drop_pkey(Type, "privacy_default_list"),
     add_pkey(Type, "privacy_default_list", ["server_host", "username"]),
-    set_sh(Type, "privacy_default_list", Host, Escape);
-add_server_host("privacy_list", Type, Host, Escape) ->
+    drop_sh_default(Type, "privacy_default_list", Host, Escape);
+add_server_host("privacy_list", Type, Host, Escape, _, _) ->
     add_sh_column(Type, "privacy_list", Host, Escape),
     drop_index(Type, "i_privacy_list_username"),
     drop_index(Type, "i_privacy_list_username_name"),
     create_index(Type, "privacy_list", "i_privacy_list_sh_username", ["server_host", "username"]),
     create_unique_index(Type, "privacy_list", "i_privacy_list_sh_username_name",
 			["server_host", "username", "name"]),
-    set_sh(Type, "privacy_list", Host, Escape);
-add_server_host("private_storage", Type, Host, Escape) ->
+    drop_sh_default(Type, "privacy_list", Host, Escape);
+add_server_host("private_storage", Type, Host, Escape, _, _) ->
     add_sh_column(Type, "private_storage", Host, Escape),
     drop_index(Type, "i_private_storage_username"),
     drop_index(Type, "i_private_storage_username_namespace"),
     add_pkey(Type, "private_storage", ["server_host", "username", "namespace"]),
     create_index(Type, "private_storage", "i_private_storage_sh_username", ["server_host", "username"]),
-    set_sh(Type, "private_storage", Host, Escape);
-add_server_host(Tab, Type, Host, Escape) when Tab == "muc_room";
-						   Tab == "muc_registered";
-						   Tab == "muc_online_room";
-						   Tab == "muc_online_users" ->
+    drop_sh_default(Type, "private_storage", Host, Escape);
+add_server_host(Tab, Type, Host, Escape, _, _) when Tab == "muc_room";
+						    Tab == "muc_registered";
+						    Tab == "muc_online_room";
+						    Tab == "muc_online_users" ->
     add_sh_column(Type, Tab, Host, Escape),
-    set_sh(Type, Tab, Host, Escape);
-add_server_host("motd", Type, Host, Escape) ->
+    drop_sh_default(Type, Tab, Host, Escape);
+add_server_host("motd", Type, Host, Escape, _, _) ->
     add_sh_column(Type, "motd", Host, Escape),
     drop_pkey(Type, "motd"),
     add_pkey(Type, "motd", ["server_host", "username"]),
-    set_sh(Type, "motd", Host, Escape);
-add_server_host("sm", Type, Host, Escape) ->
+    drop_sh_default(Type, "motd", Host, Escape);
+add_server_host("sm", Type, Host, Escape, _, _) ->
     add_sh_column(Type, "sm", Host, Escape),
     drop_index(Type, "i_sm_sid"),
     drop_index(Type, "i_sm_username"),
     add_pkey(Type, "sm", ["usec", "pid"]),
     create_index(Type, "sm", "i_sm_sh_username", ["server_host", "username"]),
-    set_sh(Type, "sm", Host, Escape);
-add_server_host("carboncopy", Type, Host, Escape) ->
+    drop_sh_default(Type, "sm", Host, Escape);
+add_server_host("carboncopy", Type, Host, Escape, _, _) ->
     add_sh_column(Type, "carboncopy", Host, Escape),
     drop_index(Type, "i_carboncopy_ur"),
     drop_index(Type, "i_carboncopy_user"),
     add_pkey(Type, "carboncopy", ["server_host", "username", "resource"]),
     create_index(Type, "carboncopy", "i_carboncopy_sh_user", ["server_host", "username"]),
-    set_sh(Type, "carboncopy", Host, Escape);
-add_server_host("push_session", Type, Host, Escape) ->
+    drop_sh_default(Type, "carboncopy", Host, Escape);
+add_server_host("push_session", Type, Host, Escape, _, _) ->
     add_sh_column(Type, "push_session", Host, Escape),
     drop_index(Type, "i_push_usn"),
     drop_index(Type, "i_push_ut"),
     add_pkey(Type, "push_session", ["server_host", "username", "timestamp"]),
     create_index(Type, "push_session", "i_push_session_susn", ["server_host", "username", "service", "node"]),
-    set_sh(Type, "push_session", Host, Escape);
-add_server_host(Tab, _, _, _) ->
+    drop_sh_default(Type, "push_session", Host, Escape);
+add_server_host(Tab, _, _, _, _, _) ->
     ?WARNING_MSG("Unknown table to convert: ~s", [Tab]).
 
 add_sh_column(mysql, Table, Host, Escape) ->
@@ -335,42 +361,33 @@ add_sh_column(mysql, Table, Host, Escape) ->
 add_sh_column(pgsql, Table, Host, Escape) ->
     sql_query(
       ["ALTER TABLE ", Table, " ADD COLUMN server_host text NOT NULL DEFAULT '",
-       Escape(Host), "'"]);
-add_sh_column(sqlite, Table, _Host, _Escape) ->
-    sql_query(
-      ["ALTER TABLE ", Table, " ADD COLUMN server_host text NOT NULL DEFAULT ''"]).
+       Escape(Host), "'"]).
 
 drop_pkey(mysql, Table) ->
     sql_query(["ALTER TABLE ", Table, " DROP PRIMARY KEY"]);
 drop_pkey(pgsql, Table) ->
-    sql_query(["ALTER TABLE ", Table, " DROP CONSTRAINT ", Table, "_pkey"]);
-drop_pkey(sqlite, Table) ->
-    sql_query(["ALTER TABLE ", Table, " DROP PRIMARY KEY"]).
+    sql_query(["ALTER TABLE ", Table, " DROP CONSTRAINT ", Table, "_pkey"]).
 
 add_pkey(mysql, Table, Cols) ->
     SCols = string:join(Cols, ", "),
     sql_query(["ALTER TABLE ", Table, " ADD PRIMARY KEY (", SCols, ")"]);
 add_pkey(pgsql, Table, Cols) ->
     SCols = string:join(Cols, ", "),
-    sql_query(["ALTER TABLE ", Table, " ADD PRIMARY KEY (", SCols, ")"]);
-add_pkey(sqlite, Table, Cols) ->
-    create_unique_index(sqlite, Table, string:join(["i"|Cols], "_"), Cols).
+    sql_query(["ALTER TABLE ", Table, " ADD PRIMARY KEY (", SCols, ")"]).
 
-set_sh(sqlite, Table, Host, Escape) ->
-    sql_query(["UPDATE ", Table, " SET server_host='", Escape(Host), "'"]);
-set_sh(_, Table, _Host, _Escape) ->
+drop_sh_default(_, Table, _Host, _Escape) ->
     sql_query(["ALTER TABLE ", Table, " ALTER COLUMN server_host DROP DEFAULT"]).
 
 drop_index(mysql, Index) ->
     sql_query(["DROP INDEX IF EXISTS ", Index]);
-drop_index(_pgsql, Index) ->
+drop_index(pgsql, Index) ->
     sql_query(["DROP INDEX IF EXISTS ", Index]).
 
 create_unique_index(mysql, Table, Index, Cols) ->
     Cols2 = [C ++ "(75)" || C <- Cols],
     SCols = string:join(Cols2, ", "),
     sql_query(["CREATE UNIQUE INDEX ", Index, " ON ", Table, "(", SCols, ")"]);
-create_unique_index(_pgsql, Table, Index, Cols) ->
+create_unique_index(pgsql, Table, Index, Cols) ->
     SCols = string:join(Cols, ", "),
     sql_query(["CREATE UNIQUE INDEX ", Index, " ON ", Table, " (", SCols, ")"]).
 
@@ -378,9 +395,6 @@ create_index(mysql, Table, Index, Cols) ->
     Cols2 = [C ++ "(75)" || C <- Cols],
     SCols = string:join(Cols2, ", "),
     sql_query(["CREATE INDEX ", Index, " ON ", Table, "(", SCols, ")"]);
-create_index(_pgsql, Table, Index, Cols) ->
+create_index(pgsql, Table, Index, Cols) ->
     SCols = string:join(Cols, ", "),
     sql_query(["CREATE INDEX ", Index, " ON ", Table, " (", SCols, ")"]).
-
-sql_query(Query) ->
-    ejabberd_sql:sql_query_t(iolist_to_binary(Query)).
