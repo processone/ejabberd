@@ -192,7 +192,7 @@ filter_fields([{SVar, [Val]} | Ds], Match, LServer)
     LVal = mod_vcard:string2lower(Val),
     NewMatch = case SVar of
 		   <<"user">> ->
-		       case gen_mod:get_module_opt(LServer, ?MODULE,
+		       case gen_mod:get_module_opt(LServer, mod_vcard,
 						   search_all_hosts) of
 			   true -> Match#vcard_search{luser = make_val(LVal)};
 			   false ->
