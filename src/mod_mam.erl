@@ -369,7 +369,9 @@ user_send_packet(Acc) ->
       -> {stanza(), c2s_state()}.
 user_send_packet_strip_tag({#message{} = Pkt, #{jid := JID} = C2SState}) ->
     LServer = JID#jid.lserver,
-    {strip_my_stanza_id(Pkt, LServer), C2SState};
+    Pkt1 = xmpp:del_meta(Pkt, stanza_id),
+    Pkt2 = strip_my_stanza_id(Pkt1, LServer),
+    {Pkt2, C2SState};
 user_send_packet_strip_tag(Acc) ->
     Acc.
 
