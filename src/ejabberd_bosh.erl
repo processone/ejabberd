@@ -692,7 +692,8 @@ drop_holding_receiver(State, RID) ->
 					    State1#state.receivers),
 	    State2 = State1#state{receivers = Receivers},
 	    do_reply(State2, From, Body, RID);
-	none -> State
+	none ->
+	    restart_inactivity_timer(State)
     end.
 
 do_reply(State, From, Body, RID) ->
