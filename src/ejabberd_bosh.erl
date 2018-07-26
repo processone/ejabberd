@@ -572,7 +572,8 @@ handle_sync_event(_Event, _From, StateName, State) ->
 
 handle_info({timeout, TRef, wait_timeout}, StateName,
 	    #state{wait_timer = TRef} = State) ->
-    {next_state, StateName, drop_holding_receiver(State)};
+    State2 = State#state{wait_timer = undefined},
+    {next_state, StateName, drop_holding_receiver(State2)};
 handle_info({timeout, TRef, inactive}, _StateName,
 	    #state{inactivity_timer = TRef} = State) ->
     {stop, normal, State};
