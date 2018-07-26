@@ -245,7 +245,9 @@ check_password_with_authmodule(User, AuthzId, Server, Password, Digest, DigestGe
 			 (_, Acc) ->
 			      Acc
 		      end, false, auth_modules(LServer))
-	    end
+	    end;
+	_ ->
+	    false
     end.
 
 -spec set_password(binary(), binary(), password()) -> ok | {error, atom()}.
