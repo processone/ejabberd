@@ -533,6 +533,9 @@ handle_sync_event({change_config, Config}, _From,
 handle_sync_event({change_state, NewStateData}, _From,
 		  StateName, _StateData) ->
     {reply, {ok, NewStateData}, StateName, NewStateData};
+handle_sync_event(check_tombstone, _From,
+		  StateName, StateData) ->
+    {reply, check_tombstone(StateData), StateName, StateData};
 handle_sync_event({process_item_change, Item, UJID}, _From, StateName, StateData) ->
     case process_item_change(Item, StateData, UJID) of
 	{error, _} = Err ->
@@ -3784,10 +3787,51 @@ destroy_room(DEl, StateData) ->
     case (StateData#state.config)#config.persistent of
       true ->
 	  mod_muc:forget_room(StateData#state.server_host,
-			      StateData#state.host, StateData#state.room);
+			      StateData#state.host, StateData#state.room),
+	  maybe_create_tombstone(DEl, StateData);
       false -> ok
     end,
     {result, undefined, stop}.
+
+-define(TOMBSTONE_NAME, <<"Room tombstone">>).
+-define(TOMBSTONE_REASON, <<"Expiring tombstone">>).
+
+maybe_create_tombstone(DEl, StateData) ->
+    case DEl#muc_destroy.reason of
+	?TOMBSTONE_REASON ->
+	    ok;
+	_ ->
+	    TombstoneExpiry = gen_mod:get_module_opt(StateData#state.server_host,
+					 mod_muc, tombstone_expiry),
+	    create_tombstone(TombstoneExpiry, StateData)
+    end.
+
+create_tombstone(TombstoneExpiry, _) when TombstoneExpiry =< 0 ->
+    ok;
+create_tombstone(TombstoneExpiry, #state{server_host = Server, host = Host, room = Room}) ->
+    ?INFO_MSG("Creating tombstone for room ~s@~s", [Room, Host]),
+    Password = integer_to_binary(misc:now_to_usec(now()) + TombstoneExpiry*1000000),
+    Opts1 = gen_mod:get_module_opt(Server, mod_muc, default_room_options),
+    {_, Opts2} = proplists:split(Opts1, [title, password, persistent, public]),
+    Opts3 = [{title, ?TOMBSTONE_NAME}, {password, Password}, {persistent, true}, {public, false} | Opts2],
+    mod_muc:create_room(
+	    Host,
+	    Room,
+	    jid:make(<<"tombstone">>, <<"">>),
+	    <<"">>,
+	    Opts3).
+
+check_tombstone(#state{config = Config}) ->
+    case Config#config.title of
+        ?TOMBSTONE_NAME ->
+            case binary_to_integer(Config#config.password) < misc:now_to_usec(now()) of
+                true ->
+                    expired;
+                false ->
+                    locked
+            end;
+        _ -> not_tombstone
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Disco

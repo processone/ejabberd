@@ -435,7 +435,7 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
     {_AccessRoute, AccessCreate, _AccessAdmin, _AccessPersistent} = Access,
     {Room, _, Nick} = jid:tolower(To),
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
-    case RMod:find_online_room(ServerHost, Room, Host) of
+    case find_online_available_room(RMod, ServerHost, Room, Host) of
 	error ->
 	    case is_create_request(Packet) of
 		true ->
@@ -463,10 +463,36 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 		    Err = xmpp:err_item_not_found(ErrText, Lang),
 		    ejabberd_router:route_error(Packet, Err)
 	    end;
+	locked_room ->
+	    Lang = xmpp:get_lang(Packet),
+	    ErrText = <<"Conference room was destroyed">>,
+	    Err = xmpp:err_item_not_found(ErrText, Lang),
+	    ejabberd_router:route_error(Packet, Err);
 	{ok, Pid} ->
 	    ?DEBUG("MUC: send to process ~p~n", [Pid]),
 	    mod_muc_room:route(Pid, Packet),
 	    ok
+    end.
+
+find_online_available_room(RMod, ServerHost, Room, Host) ->
+    case RMod:find_online_room(ServerHost, Room, Host) of
+	error ->
+	    error;
+	{ok, Pid} ->
+	    check_tombstone(Pid)
+    end.
+
+-define(TOMBSTONE_REASON, <<"Expiring tombstone">>).
+
+check_tombstone(Pid) ->
+    case p1_fsm:sync_send_all_state_event(Pid, check_tombstone) of
+	not_tombstone ->
+	    {ok, Pid};
+	locked ->
+	    locked_room;
+	expired ->
+	    p1_fsm:send_all_state_event(Pid, {destroy, ?TOMBSTONE_REASON}),
+	    error
     end.
 
 -spec process_vcard(iq()) -> iq().
@@ -922,6 +948,8 @@ mod_opt_type(min_presence_interval) ->
     fun (I) when is_number(I), I >= 0 -> I end;
 mod_opt_type(room_shaper) ->
     fun (A) when is_atom(A) -> A end;
+mod_opt_type(tombstone_expiry) ->
+    fun (I) when is_integer(I) -> I end;
 mod_opt_type(user_message_shaper) ->
     fun (A) when is_atom(A) -> A end;
 mod_opt_type(user_presence_shaper) ->
@@ -1011,6 +1039,7 @@ mod_options(Host) ->
      {queue_type, ejabberd_config:default_queue_type(Host)},
      {regexp_room_id, <<"">>},
      {room_shaper, none},
+     {tombstone_expiry, 0},
      {user_message_shaper, none},
      {user_presence_shaper, none},
      {default_room_options,
