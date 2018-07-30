@@ -118,9 +118,11 @@ opt_type(extauth_instances) ->
     fun (V) when is_integer(V), V > 0 -> V end;
 opt_type(extauth_program) ->
     fun (V) -> binary_to_list(iolist_to_binary(V)) end;
+opt_type(extauth_pool_name) ->
+    fun (V) -> iolist_to_binary(V) end;
 opt_type(extauth_pool_size) ->
     fun(I) when is_integer(I), I>0 -> I end;
 opt_type(_) ->
-    [extauth_program, extauth_pool_size,
+    [extauth_program, extauth_pool_size, extauth_pool_name,
      %% Deprecated:
      extauth_cache, extauth_instances].
