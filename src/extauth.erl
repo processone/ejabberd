@@ -82,7 +82,12 @@ prog_name(Host) ->
 
 -spec pool_name(binary()) -> atom().
 pool_name(Host) ->
-    list_to_atom("extauth_pool_" ++ binary_to_list(Host)).
+    case ejabberd_config:get_option({extauth_pool_name, Host}) of
+	undefined ->
+	    list_to_atom("extauth_pool_" ++ binary_to_list(Host));
+	Name ->
+	    list_to_atom("extauth_pool_" ++ binary_to_list(Name))
+    end.
 
 -spec worker_name(atom(), integer()) -> atom().
 worker_name(Pool, N) ->
