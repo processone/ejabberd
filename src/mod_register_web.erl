@@ -222,7 +222,16 @@ index_page(Lang) ->
 %%%----------------------------------------------------------------------
 
 form_new_get(Host, Lang, IP) ->
-    CaptchaEls = build_captcha_li_list(Lang, IP),
+    try build_captcha_li_list(Lang, IP) of
+	CaptchaEls ->
+	    form_new_get2(Host, Lang, CaptchaEls)
+	catch
+	    throw:Result ->
+		?DEBUG("Unexpected result when creating a captcha: ~p", [Result]),
+		ejabberd_web:error(not_allowed)
+    end.
+
+form_new_get2(Host, Lang, CaptchaEls) ->
     HeadEls = [meta(),
 	       ?XCT(<<"title">>,
 		    <<"Register a Jabber account">>),
@@ -360,7 +369,7 @@ build_captcha_li_list2(Lang, IP) ->
 	      ejabberd_captcha:build_captcha_html(Id, Lang),
 	  [?XE(<<"li">>,
 	       [CText, ?C(<<" ">>), CId, CKey, ?BR, CImg])];
-      _ -> []
+      Error -> throw(Error)
     end.
 
 %%%----------------------------------------------------------------------
