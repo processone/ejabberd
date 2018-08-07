@@ -275,6 +275,8 @@ get_commands_spec() ->
 
      #ejabberd_commands{name = import_prosody, tags = [mnesia, sql, riak],
 			desc = "Import data from Prosody",
+			longdesc = "Note: this method requires ejabberd compiled with optional tools support "
+				"and package must provide optional luerl dependency.",
 			module = prosody2ejabberd, function = from_dir,
 			args_desc = ["Full path to the Prosody data directory"],
 			args_example = ["/var/lib/prosody/datadump/"],
