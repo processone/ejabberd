@@ -3,7 +3,8 @@
 -behaviour(ejabberd_config).
 
 %% ejabberdctl commands
--export([get_certificates/1,
+-export([get_commands_spec/0,
+	 get_certificates/1,
 	 renew_certificates/0,
 	 list_certificates/1,
 	 revoke_certificate/1]).

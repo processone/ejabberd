@@ -50,7 +50,8 @@
 	 config_reloaded/0,
          opt_type/1]).
 
--export([oauth_issue_token/3, oauth_list_tokens/0, oauth_revoke_token/1]).
+-export([get_commands_spec/0,
+	 oauth_issue_token/3, oauth_list_tokens/0, oauth_revoke_token/1]).
 
 -include("xmpp.hrl").
 
