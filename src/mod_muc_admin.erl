@@ -424,9 +424,7 @@ web_page_main(_, #request{path=[<<"muc">>], lang = Lang} = _Request) ->
     Res = [?XCT(<<"h1">>, <<"Multi-User Chat">>),
 	   ?XCT(<<"h3">>, <<"Statistics">>),
 	   ?XAE(<<"table">>, [],
-		[?XE(<<"tbody">>, [?TDTD(<<"Total rooms">>, OnlineRoomsNumber),
-				   ?TDTD(<<"Permanent rooms">>, mnesia:table_info(muc_room, size)),
-				   ?TDTD(<<"Registered nicknames">>, mnesia:table_info(muc_registered, size))
+		[?XE(<<"tbody">>, [?TDTD(<<"Total rooms">>, OnlineRoomsNumber)
 				  ])
 		]),
 	   ?XE(<<"ul">>, [?LI([?ACT(<<"rooms">>, <<"List of rooms">>)])])
