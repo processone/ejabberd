@@ -106,7 +106,7 @@
 -callback unregister_online_user(binary(), ljid(), binary(), binary()) -> any().
 -callback count_online_rooms_by_user(binary(), binary(), binary()) -> non_neg_integer().
 -callback get_online_rooms_by_user(binary(), binary(), binary()) -> [{binary(), binary()}].
--callback get_subscribed_rooms(binary(), binary(), jid()) -> [ljid()] | [].
+-callback get_subscribed_rooms(binary(), binary(), jid()) -> [{ljid(), [binary()]}] | [].
 
 %%====================================================================
 %% API
@@ -614,8 +614,8 @@ process_mucsub(#iq{type = get, from = From, to = To,
 		   sub_els = [#muc_subscriptions{}]} = IQ) ->
     Host = To#jid.lserver,
     ServerHost = ejabberd_router:host_of_route(Host),
-    RoomJIDs = get_subscribed_rooms(ServerHost, Host, From),
-    xmpp:make_iq_result(IQ, #muc_subscriptions{list = RoomJIDs});
+    Subs = get_subscribed_rooms(ServerHost, Host, From),
+    xmpp:make_iq_result(IQ, #muc_subscriptions{list = Subs});
 process_mucsub(#iq{lang = Lang} = IQ) ->
     Txt = <<"No module is handling this query">>,
     xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
@@ -745,14 +745,15 @@ get_subscribed_rooms(ServerHost, Host, From) ->
 	    lists:flatmap(
 	      fun({Name, _, Pid}) ->
 		      case p1_fsm:sync_send_all_state_event(Pid, {is_subscribed, BareFrom}) of
-			  true -> [jid:make(Name, Host)];
+			  {true, Nodes} ->
+				[#muc_subscription{jid = jid:make(Name, Host), events = Nodes}];
 			  false -> []
 		      end;
 		 (_) ->
 		      []
 	      end, Rooms);
 	V ->
-	    V
+	    [#muc_subscription{jid = Jid, events = Nodes} || {Jid, Nodes} <- V]
     end.
 
 get_nick(ServerHost, Host, From) ->

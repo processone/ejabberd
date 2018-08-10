@@ -586,7 +586,12 @@ handle_sync_event({muc_unsubscribe, From}, _From, StateName, StateData) ->
 	    {reply, {error, get_error_text(Err)}, StateName, StateData}
     end;
 handle_sync_event({is_subscribed, From}, _From, StateName, StateData) ->
-    IsSubs = ?DICT:is_key(jid:split(From), StateData#state.subscribers),
+    IsSubs = case (?DICT):find(jid:split(From), StateData#state.subscribers) of
+	{ok, #subscriber{nodes = Nodes}} ->
+	    {true, Nodes};
+	error ->
+	    false
+    end,
     {reply, IsSubs, StateName, StateData};
 handle_sync_event(_Event, _From, StateName,
 		  StateData) ->
@@ -4090,11 +4095,11 @@ process_iq_mucsub(From, #iq{type = get, lang = Lang,
     FAffiliation = get_affiliation(From, StateData),
     FRole = get_role(From, StateData),
     if FRole == moderator; FAffiliation == owner; FAffiliation == admin ->
-	    JIDs = dict:fold(
-		     fun(_, #subscriber{jid = J}, Acc) ->
-			     [J|Acc]
+	    Subs = dict:fold(
+		     fun(_, #subscriber{jid = J, nodes = Nodes}, Acc) ->
+			     [#muc_subscription{jid = J, events = Nodes}|Acc]
 		     end, [], StateData#state.subscribers),
-	    {result, #muc_subscriptions{list = JIDs}, StateData};
+	    {result, #muc_subscriptions{list = Subs}, StateData};
        true ->
 	    Txt = <<"Moderator privileges required">>,
 	    {error, xmpp:err_forbidden(Txt, Lang)}

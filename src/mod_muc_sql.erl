@@ -411,10 +411,10 @@ get_subscribed_rooms(LServer, Host, Jid) ->
     JidS = jid:encode(Jid),
     case catch ejabberd_sql:sql_query(
 	LServer,
-	?SQL("select @(room)s from muc_room_subscribers where jid=%(JidS)s"
+	?SQL("select @(room)s, @(nodes)s from muc_room_subscribers where jid=%(JidS)s"
 	     " and host=%(Host)s")) of
 	{selected, Subs} ->
-	    [jid:make(Room, Host, <<>>) || {Room} <- Subs];
+	    [{jid:make(Room, Host, <<>>), ejabberd_sql:decode_term(Nodes)} || {Room, Nodes} <- Subs];
 	_Error ->
 	    []
     end.
