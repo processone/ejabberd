@@ -216,6 +216,10 @@ prepare_output(FileName, normal) when is_list(FileName) ->
     case file:open(FileName, [write, raw]) of
         {ok, Fd} ->
             Fd;
+        {error, eacces} ->
+            exit({"Not enough permission to the file or path", FileName});
+        {error, enoent} ->
+            exit({"Path does not exist", FileName});
         Err ->
             exit(Err)
     end;
