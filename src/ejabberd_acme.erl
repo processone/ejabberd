@@ -120,7 +120,7 @@ get_commands_spec() ->
 			args = [],
 			result = {certificates, string}},
      #ejabberd_commands{name = list_certificates, tags = [acme],
-			desc = "Lists all curently handled certificates and "
+			desc = "Lists all currently handled certificates and "
 			       "their respective domains in {plain|verbose} format",
 			module = ?MODULE, function = list_certificates,
 			args_desc = ["Whether to print the whole certificate "
