@@ -1003,6 +1003,13 @@ stringize(String) ->
     ejabberd_regexp:greplace(String, <<"\n">>, <<"\\n">>).
 
 get_presence(Pid) ->
+    try get_presence2(Pid) of
+	{_, _, _, _} = Res ->
+	    Res
+    catch
+	_:_ -> {<<"">>, <<"">>, <<"offline">>, <<"">>}
+    end.
+get_presence2(Pid) ->
     Pres = #presence{from = From} = ejabberd_c2s:get_presence(Pid),
     Show = case Pres of
 	       #presence{type = unavailable} -> <<"unavailable">>;
