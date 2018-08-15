@@ -235,7 +235,7 @@ service_subscriptions(Config) ->
     #iq{type = result, sub_els = [#muc_subscriptions{list = JIDs}]} =
 	send_recv(Config, #iq{type = get, to = MUC,
 			      sub_els = [#muc_subscriptions{}]}),
-    Rooms = lists:sort([J || #muc_subscription{jid = J, events = []} <- Jids]),
+    Rooms = lists:sort([J || #muc_subscription{jid = J, events = []} <- JIDs]),
     lists:foreach(
       fun(Room) ->
 	      ok = unsubscribe(Config, Room),
