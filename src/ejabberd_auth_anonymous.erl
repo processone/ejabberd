@@ -31,6 +31,7 @@
 
 -export([start/1,
 	 stop/1,
+         use_cache/1,
 	 allow_anonymous/1,
 	 is_sasl_anonymous_enabled/1,
 	 is_login_anonymous_enabled/1,
@@ -59,6 +60,9 @@ stop(Host) ->
 			  ?MODULE, register_connection, 100),
     ejabberd_hooks:delete(sm_remove_connection_hook, Host,
 			  ?MODULE, unregister_connection, 100).
+
+use_cache(_) ->
+    false.
 
 %% Return true if anonymous is allowed for host or false otherwise
 allow_anonymous(Host) ->
