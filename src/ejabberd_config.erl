@@ -1130,7 +1130,7 @@ get_version() ->
 -spec get_myhosts() -> [binary()].
 
 get_myhosts() ->
-    get_option(hosts).
+    get_option(hosts, [<<"localhost">>]).
 
 -spec get_myname() -> binary().
 
