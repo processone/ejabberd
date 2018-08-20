@@ -263,12 +263,13 @@ unregister_online_user(_ServerHost, {U, S, R}, Room, Host) ->
 		      #muc_online_users{us = {U, S}, resource = R,
 					room = Room, host = Host}).
 
-count_online_rooms_by_user(_ServerHost, U, S) ->
+count_online_rooms_by_user(ServerHost, U, S) ->
+    MucHost = gen_mod:get_module_opt_host(ServerHost, mod_muc, <<"conference.@HOST@">>),
     ets:select_count(
       muc_online_users,
       ets:fun2ms(
-	fun(#muc_online_users{us = {U1, S1}}) ->
-		U == U1 andalso S == S1
+	fun(#muc_online_users{us = {U1, S1}, host = Host}) ->
+		U == U1 andalso S == S1 andalso MucHost == Host
 	end)).
 
 get_online_rooms_by_user(ServerHost, U, S) ->
