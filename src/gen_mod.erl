@@ -731,9 +731,10 @@ format_module_error(Module, Fun, Arity, Opts, Class, Reason, St) ->
 			  "is it really an ejabberd module?",
 			  [Fun, Module, Fun, Arity]);
 	{error, {bad_return, Module, Ret}} ->
-	    io_lib:format("Module ~s returned unexpected value from "
-			  "~s/~B: ~p; this is either not an ejabberd "
-			  "module or it implements ejabbed API incorrectly",
+	    io_lib:format("Module ~s returned unexpected value from ~s/~B:~n"
+                          "** Error: ~p~n"
+                          "** Hint: this is either not an ejabberd module "
+			  "or it implements ejabbed API incorrectly",
 			  [Module, Fun, Arity, Ret]);
 	_ ->
 	    io_lib:format("Internal error of module ~s has "
