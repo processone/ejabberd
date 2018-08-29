@@ -131,7 +131,15 @@ reject_unauthenticated_packet(State, _Pkt) ->
     Err = xmpp:serr_not_authorized(),
     send(State, Err).
 
-process_closed(State, _Reason) ->
+process_closed(#{server := LServer} = State, Reason) ->
+    RServer = case State of
+		  #{remote_server := Name} ->
+		      Name;
+		  #{ip := IP} ->
+		      ejabberd_config:may_hide_data(misc:ip_to_list(IP))
+	      end,
+    ?INFO_MSG("Closing inbound s2s connection ~s -> ~s: ~s",
+	      [RServer, LServer, xmpp_stream_out:format_error(Reason)]),
     stop(State).
 
 %%%===================================================================
