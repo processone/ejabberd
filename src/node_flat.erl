@@ -738,39 +738,43 @@ get_items(Nidx, _From, undefined) ->
 
 get_items(Nidx, _From, #rsm_set{max = Max, index = IncIndex,
 				'after' = After, before = Before}) ->
-    RItems = lists:keysort(#pubsub_item.creation,
-			   mnesia:index_read(pubsub_item, Nidx, #pubsub_item.nodeidx)),
-    Count = length(RItems),
-    Limit = case Max of
-		undefined -> ?MAXITEMS;
-		_ -> Max
-	    end,
-    {Offset, ItemsPage} =
-	case {IncIndex, Before, After} of
-	    {I, undefined, undefined} ->
-		SubList = lists:nthtail(I, RItems),
-		{I, lists:sublist(SubList, Limit)};
-	    {_, <<>>, undefined} ->
-		%% 2.5 Requesting the Last Page in a Result Set
-		SubList = lists:reverse(RItems),
-		{0, lists:sublist(SubList, Limit)};
-	    {_, Stamp, undefined} ->
-		BeforeNow = encode_stamp(Stamp),
-		SubList = lists:dropwhile(
-			   fun(#pubsub_item{creation = {Now, _}}) ->
-			      Now >= BeforeNow
-			   end, lists:reverse(RItems)),
-		{0, lists:sublist(SubList, Limit)};
-	    {_, undefined, Stamp} ->
-		AfterNow = encode_stamp(Stamp),
-		SubList = lists:dropwhile(
-			   fun(#pubsub_item{creation = {Now, _}}) ->
-			      Now =< AfterNow
-			   end, RItems),
-		{0, lists:sublist(SubList, Limit)}
-	end,
-    Rsm = rsm_page(Count, IncIndex, Offset, ItemsPage),
-    {result, {ItemsPage, Rsm}}.
+    case lists:keysort(#pubsub_item.creation,
+                       mnesia:index_read(pubsub_item, Nidx, #pubsub_item.nodeidx)) of
+        [] ->
+            {result, {[], #rsm_set{count = 0}}};
+        RItems ->
+            Count = length(RItems),
+            Limit = case Max of
+                        undefined -> ?MAXITEMS;
+                        _ -> Max
+                    end,
+            {Offset, ItemsPage} =
+                case {IncIndex, Before, After} of
+                    {I, undefined, undefined} ->
+                        SubList = lists:nthtail(I, RItems),
+                        {I, lists:sublist(SubList, Limit)};
+                    {_, <<>>, undefined} ->
+                        %% 2.5 Requesting the Last Page in a Result Set
+                        SubList = lists:reverse(RItems),
+                        {0, lists:sublist(SubList, Limit)};
+                    {_, Stamp, undefined} ->
+                        BeforeNow = encode_stamp(Stamp),
+                        SubList = lists:dropwhile(
+                                    fun(#pubsub_item{creation = {Now, _}}) ->
+                                            Now >= BeforeNow
+                                    end, lists:reverse(RItems)),
+                        {0, lists:sublist(SubList, Limit)};
+                    {_, undefined, Stamp} ->
+                        AfterNow = encode_stamp(Stamp),
+                        SubList = lists:dropwhile(
+                                    fun(#pubsub_item{creation = {Now, _}}) ->
+                                            Now =< AfterNow
+                                    end, RItems),
+                        {0, lists:sublist(SubList, Limit)}
+                end,
+            Rsm = rsm_page(Count, IncIndex, Offset, ItemsPage),
+            {result, {ItemsPage, Rsm}}
+    end.
 
 get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId, RSM) ->
     SubKey = jid:tolower(JID),
@@ -920,6 +924,8 @@ first_in_list(Pred, [H | T]) ->
 	_ -> first_in_list(Pred, T)
     end.
 
+rsm_page(Count, _, _, []) ->
+    #rsm_set{count = Count};
 rsm_page(Count, Index, Offset, Items) ->
     FirstItem = hd(Items),
     LastItem = lists:last(Items),
