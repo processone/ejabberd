@@ -380,11 +380,12 @@ safe_apply(Hook, Module, Function, Args) ->
 		apply(Module, Function, Args)
 	end
     catch E:R when E /= exit; R /= normal ->
+            St = get_stacktrace(),
 	    ?ERROR_MSG("Hook ~p crashed when running ~p:~p/~p:~n"
 		       "** Reason = ~p~n"
 		       "** Arguments = ~p",
 		       [Hook, Module, Function, length(Args),
-			{E, R, get_stacktrace()}, Args]),
+			{E, R, St}, Args]),
 	    'EXIT'
     end.
 

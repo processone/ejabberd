@@ -151,7 +151,8 @@ get_certificates(Domains) ->
 		throw:Throw ->
 		    Throw;
 		E:R ->
-		    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, erlang:get_stacktrace()]), 
+                    St = erlang:get_stacktrace(),
+		    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, St]),
 		    {error, get_certificates}
 	    end;
 	false ->
@@ -243,7 +244,8 @@ get_certificate(CAUrl, DomainName, PrivateKey) ->
 	throw:Throw ->
 	    Throw;
 	E:R ->
-	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, erlang:get_stacktrace()]), 
+            St = erlang:get_stacktrace(),
+	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, St]),
 	    {error, DomainName, get_certificate}
     end.
 
@@ -382,7 +384,8 @@ renew_certificates() ->
 	throw:Throw ->
 	    Throw;
 	E:R ->
-	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, erlang:get_stacktrace()]), 
+            St = erlang:get_stacktrace(),
+	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, St]),
 	    {error, get_certificates}
     end.
 
@@ -447,7 +450,8 @@ list_certificates(Verbose) ->
 		throw:Throw ->
 		    Throw;
 		E:R ->
-		    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, erlang:get_stacktrace()]), 
+                    St = erlang:get_stacktrace(),
+		    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, St]),
 		    {error, list_certificates}
 	    end;
 	false ->
@@ -489,7 +493,8 @@ format_certificate(DataCert, Verbose) ->
 	end
     catch
 	E:R ->
-	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, erlang:get_stacktrace()]), 
+            St = erlang:get_stacktrace(),
+	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, St]),
 	    fail_format_certificate(DomainName)
     end.
 
@@ -614,7 +619,8 @@ revoke_certificates(DomainOrFile) ->
 	throw:Throw ->
 	    Throw;
 	E:R ->
-	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, erlang:get_stacktrace()]), 
+            St = erlang:get_stacktrace(),
+	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, St]),
 	    {error, revoke_certificate}
     end.	
 
@@ -1118,7 +1124,8 @@ save_certificate({ok, DomainName, Cert}) ->
 	throw:Throw ->
 	    Throw;
 	E:R ->
-	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, erlang:get_stacktrace()]), 
+            St = erlang:get_stacktrace(),
+	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, St]),
 	    {error, DomainName, saving}
     end.
 

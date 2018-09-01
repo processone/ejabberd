@@ -114,8 +114,9 @@ process_iq(_Host, Module, Function, IQ) ->
 	ignore ->
 	    ok
     catch E:R ->
+            St = erlang:get_stacktrace(),
 	    ?ERROR_MSG("failed to process iq:~n~s~nReason = ~p",
-		       [xmpp:pp(IQ), {E, {R, erlang:get_stacktrace()}}]),
+		       [xmpp:pp(IQ), {E, {R, St}}]),
 	    Txt = <<"Module failed to handle the query">>,
 	    Err = xmpp:err_internal_server_error(Txt, IQ#iq.lang),
 	    ejabberd_router:route_error(IQ, Err)

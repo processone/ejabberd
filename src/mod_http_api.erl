@@ -193,7 +193,8 @@ process([Call], #request{method = 'POST', data = Data, ip = IPPort} = Req) ->
 	    ?DEBUG("Bad Request: ~p", [_Err]),
 	    badrequest_response(<<"Invalid JSON input">>);
 	  _:_Error ->
-            ?DEBUG("Bad Request: ~p ~p", [_Error, erlang:get_stacktrace()]),
+            St = erlang:get_stacktrace(),
+            ?DEBUG("Bad Request: ~p ~p", [_Error, St]),
             badrequest_response()
     end;
 process([Call], #request{method = 'GET', q = Data, ip = {IP, _}} = Req) ->
@@ -210,9 +211,9 @@ process([Call], #request{method = 'GET', q = Data, ip = {IP, _}} = Req) ->
         throw:{error, unknown_command} ->
             json_format({404, 44, <<"Command not found.">>});
         _:_Error ->
-
-        ?DEBUG("Bad Request: ~p ~p", [_Error, erlang:get_stacktrace()]),
-        badrequest_response()
+            St = erlang:get_stacktrace(),
+            ?DEBUG("Bad Request: ~p ~p", [_Error, St]),
+            badrequest_response()
     end;
 process([_Call], #request{method = 'OPTIONS', data = <<>>}) ->
     {200, ?OPTIONS_HEADER, []};
@@ -314,7 +315,8 @@ handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
 		  throw:Msg when is_list(Msg); is_binary(Msg) ->
 		    {400, iolist_to_binary(Msg)};
 		  _Error ->
-		    ?ERROR_MSG("REST API Error: ~p ~p", [_Error, erlang:get_stacktrace()]),
+                    St = erlang:get_stacktrace(),
+		    ?ERROR_MSG("REST API Error: ~p ~p", [_Error, St]),
 		    {500, <<"internal_error">>}
 	    end;
         {error, Msg} ->

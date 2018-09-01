@@ -142,9 +142,10 @@ route(Packet) ->
 	Packet1 ->
 	    try do_route(Packet1), ok
 	    catch E:R ->
+                    St = erlang:get_stacktrace(),
 		    ?ERROR_MSG("failed to route packet:~n~s~nReason = ~p",
 			       [xmpp:pp(Packet1),
-				{E, {R, erlang:get_stacktrace()}}])
+				{E, {R, St}}])
 	    end
     end.
 

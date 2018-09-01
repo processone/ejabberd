@@ -91,8 +91,9 @@ start_link() ->
 route(Packet) ->
     try do_route(Packet)
     catch E:R ->
+            St = erlang:get_stacktrace(),
 	    ?ERROR_MSG("failed to route packet:~n~s~nReason = ~p",
-		       [xmpp:pp(Packet), {E, {R, erlang:get_stacktrace()}}])
+		       [xmpp:pp(Packet), {E, {R, St}}])
     end.
 
 -spec route(jid(), jid(), xmlel() | stanza()) -> ok.

@@ -2815,9 +2815,9 @@ process_item_change(Item, SD, UJID) ->
 			undefined ->
 				<<"">>
 		end,
+                St = erlang:get_stacktrace(),
 		?ERROR_MSG("failed to set item ~p~s: ~p",
-		       [Item, FromSuffix,
-			{E, {R, erlang:get_stacktrace()}}]),
+		       [Item, FromSuffix, {E, {R, St}}]),
 	    {error, xmpp:err_internal_server_error()}
     end.
 
