@@ -272,7 +272,6 @@ process_terminated(#{sid := SID, socket := Socket,
     State1 = case maps:is_key(pres_last, State) of
 		 true ->
 		     Pres = #presence{type = unavailable,
-				      status = xmpp:mk_text(Status),
 				      from = JID,
 				      to = jid:remove_resource(JID)},
 		     ejabberd_sm:close_session_unset_presence(SID, U, S, R,
