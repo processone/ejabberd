@@ -787,7 +787,8 @@ process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData
 			 drop ->
 			     {next_state, normal_state, StateData};
 			 NewPacket1 ->
-			     NewPacket = xmpp:remove_subtag(NewPacket1, #nick{}),
+			     NewPacket = xmpp:put_meta(xmpp:remove_subtag(NewPacket1, #nick{}),
+				 muc_sender_real_jid, From),
 			     Node = if Subject == [] -> ?NS_MUCSUB_NODES_MESSAGES;
 				       true -> ?NS_MUCSUB_NODES_SUBJECT
 				    end,
