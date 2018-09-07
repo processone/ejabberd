@@ -1034,6 +1034,7 @@ init_mssql(Host) ->
     FreeTDS = io_lib:fwrite("[~s]~n"
 			    "\thost = ~s~n"
 			    "\tport = ~p~n"
+			    "\tclient charset = UTF-8~n"
 			    "\ttds version = 7.1~n",
 			    [Host, Server, Port]),
     ODBCINST = io_lib:fwrite("[freetds]~n"
