@@ -898,7 +898,7 @@ cache_opts() ->
 	       end,
     [{max_size, MaxSize}, {cache_missed, CacheMissed}, {life_time, LifeTime}].
 
--spec clean_cache(node()) -> ok.
+-spec clean_cache(node()) -> non_neg_integer().
 clean_cache(Node) ->
     ets_cache:filter(
       ?SM_CACHE,
@@ -1012,12 +1012,7 @@ kick_user(User, Server, Resource) ->
 make_sid() ->
     {p1_time_compat:unique_timestamp(), self()}.
 
--spec opt_type(sm_db_type) -> fun((atom()) -> atom());
-	      (sm_use_cache) -> fun((boolean()) -> boolean());
-	      (sm_cache_missed) -> fun((boolean()) -> boolean());
-	      (sm_cache_size) -> fun((timeout()) -> timeout());
-	      (sm_cache_life_time) -> fun((timeout()) -> timeout());
-	      (atom()) -> [atom()].
+-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(sm_db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 opt_type(O) when O == sm_use_cache; O == sm_cache_missed ->
     fun(B) when is_boolean(B) -> B end;

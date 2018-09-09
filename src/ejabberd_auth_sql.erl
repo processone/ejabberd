@@ -324,8 +324,7 @@ export(_Server) ->
               []
       end}].
 
--spec opt_type(pgsql_users_number_estimate) -> fun((boolean()) -> boolean());
-	      (atom()) -> [atom()].
+-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(pgsql_users_number_estimate) ->
     fun (V) when is_boolean(V) -> V end;
 opt_type(_) -> [pgsql_users_number_estimate].

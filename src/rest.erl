@@ -219,9 +219,7 @@ url(Server, Path, Params) ->
             url(Url, Custom++Params)
     end.
 
--spec opt_type(ext_api_http_pool_size) -> fun((pos_integer()) -> pos_integer());
-              (ext_api_url) -> fun((binary()) -> binary());
-              (atom()) -> [atom()].
+-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(ext_api_http_pool_size) ->
     fun (X) when is_integer(X), X > 0 -> X end;
 opt_type(ext_api_url) ->

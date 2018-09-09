@@ -633,8 +633,7 @@ mod_options(_Host) ->
       [{subject, <<"">>},
        {body, <<"">>}]}].
 
--spec opt_type(registration_timeout) -> fun((timeout()) -> timeout());
-	      (atom()) -> [atom()].
+-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(registration_timeout) ->
     fun (TO) when is_integer(TO), TO > 0 -> TO;
 	(infinity) -> infinity;

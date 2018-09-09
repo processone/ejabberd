@@ -646,14 +646,7 @@ logo() ->
 	    <<>>
     end.
 
--spec opt_type(oauth_expire) -> fun((non_neg_integer()) -> non_neg_integer());
-	      (oauth_access) -> fun((any()) -> any());
-	      (oauth_db_type) -> fun((atom()) -> atom());
-	      (oauth_cache_life_time) -> fun((timeout()) -> timeout());
-	      (oauth_cache_size) -> fun((timeout()) -> timeout());
-	      (oauth_use_cache) -> fun((boolean()) -> boolean());
-	      (oauth_cache_misse) -> fun((boolean()) -> boolean());
-	      (atom()) -> [atom()].
+-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(oauth_expire) ->
     fun(I) when is_integer(I), I >= 0 -> I end;
 opt_type(oauth_access) ->

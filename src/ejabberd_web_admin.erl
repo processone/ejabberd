@@ -2695,8 +2695,7 @@ make_menu_item(item, 3, URI, Name, Lang) ->
 %%%==================================
 
 
--spec opt_type(access_readonly) -> fun((any()) -> any());
-	      (atom()) -> [atom()].
+-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(access_readonly) -> fun acl:access_rules_validator/1;
 opt_type(_) -> [access_readonly].
 

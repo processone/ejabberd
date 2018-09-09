@@ -253,7 +253,7 @@ cache_opts() ->
 	       end,
     [{max_size, MaxSize}, {cache_missed, CacheMissed}, {life_time, LifeTime}].
 
--spec clean_cache(node()) -> ok.
+-spec clean_cache(node()) -> non_neg_integer().
 clean_cache(Node) ->
     ets_cache:filter(
       ?BOSH_CACHE,

@@ -173,14 +173,7 @@ transform_options({riak_server, {S, P}}, Opts) ->
 transform_options(Opt, Opts) ->
     [Opt|Opts].
 
--spec opt_type(riak_pool_size) -> fun((pos_integer()) -> pos_integer());
-	      (riak_port) -> fun((0..65535) -> 0..65535);
-	      (riak_server) -> fun((binary()) -> binary());
-	      (riak_start_interval) -> fun((pos_integer()) -> pos_integer());
-	      (riak_cacertfile) -> fun((binary()) -> binary());
-	      (riak_username) -> fun((binary()) -> binary());
-	      (riak_password) -> fun((binary()) -> binary());
-	      (atom()) -> [atom()].
+-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(riak_pool_size) ->
     fun (N) when is_integer(N), N >= 1 -> N end;
 opt_type(riak_port) ->

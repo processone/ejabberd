@@ -874,8 +874,7 @@ print(Format, Args) ->
 %%    ["aaaa bbb ccc"].
 
 
--spec opt_type(ejabberdctl_access_commands) -> fun((list()) -> list());
-	      (atom()) -> [atom()].
+-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(ejabberdctl_access_commands) ->
     fun (V) when is_list(V) -> V end;
 opt_type(_) -> [ejabberdctl_access_commands].

@@ -126,14 +126,7 @@ get_pool_size() ->
 iolist_to_list(IOList) ->
     binary_to_list(iolist_to_binary(IOList)).
 
--spec opt_type(redis_connect_timeout) -> fun((pos_integer()) -> pos_integer());
-	      (redis_db) -> fun((non_neg_integer()) -> non_neg_integer());
-	      (redis_password) -> fun((binary()) -> binary());
-	      (redis_port) -> fun((0..65535) -> 0..65535);
-	      (redis_server) -> fun((binary()) -> binary());
-	      (redis_pool_size) -> fun((pos_integer()) -> pos_integer());
-	      (redis_queue_type) -> fun((ram | file) -> ram | file);
-	      (atom()) -> [atom()].
+-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(redis_connect_timeout) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 opt_type(redis_db) ->

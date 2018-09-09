@@ -362,10 +362,7 @@ parse_options(Host) ->
 	   sfilter = SearchFilter, lfilter = LocalFilter,
 	   dn_filter = DNFilter, dn_filter_attrs = DNFilterAttrs}.
 
--spec opt_type(ldap_dn_filter) -> fun(([{binary(), binary()}]) ->
-				       [{binary(), binary()}]);
-	      (ldap_local_filter) -> fun((any()) -> any());
-	      (atom()) -> [atom()].
+-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(ldap_dn_filter) ->
     fun ([{DNF, DNFA}]) ->
 	    NewDNFA = case DNFA of

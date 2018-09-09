@@ -851,13 +851,7 @@ import(Server, {sql, _}, riak, <<"users">>, Fields) ->
 import(_LServer, {sql, _}, sql, <<"users">>, _) ->
     ok.
 
--spec opt_type(auth_method) -> fun((atom() | [atom()]) -> [atom()]);
-	      (auth_password_format) -> fun((plain | scram) -> plain | scram);
-	      (auth_use_cache) -> fun((boolean()) -> boolean());
-	      (auth_cache_missed) -> fun((boolean()) -> boolean());
-	      (auth_cache_life_time) -> fun((timeout()) -> timeout());
-	      (auth_cache_size) -> fun((timeout()) -> timeout());
-	      (atom()) -> [atom()].
+-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(auth_method) ->
     fun (V) when is_list(V) ->
 	    lists:map(fun(M) -> ejabberd_config:v_db(?MODULE, M) end, V);

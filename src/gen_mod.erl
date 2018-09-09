@@ -928,8 +928,7 @@ is_opt_list(L) when is_list(L) ->
 is_opt_list(_) ->
     false.
 
--spec opt_type(modules) -> fun(([{atom(), list()}]) -> [{atom(), list()}]);
-	      (atom()) -> [atom()].
+-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(modules) ->
     fun(Mods) ->
 	    lists:map(

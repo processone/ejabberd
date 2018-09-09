@@ -345,7 +345,7 @@ cache_nodes(Mod, Host) ->
 	false -> ejabberd_cluster:get_nodes()
     end.
 
--spec clean_cache(node()) -> ok.
+-spec clean_cache(node()) -> non_neg_integer().
 clean_cache(Node) ->
     ets_cache:filter(
       ?CARBONCOPY_CACHE,

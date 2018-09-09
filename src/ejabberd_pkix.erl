@@ -60,12 +60,12 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
--spec add_certfile(filename:filename())
+-spec add_certfile(file:filename())
       -> ok | {error, cert_error() | file:posix()}.
 add_certfile(Path) ->
     gen_server:call(?MODULE, {add_certfile, prep_path(Path)}).
 
--spec try_certfile(filename:filename()) -> binary().
+-spec try_certfile(file:filename()) -> binary().
 try_certfile(Path0) ->
     Path = prep_path(Path0),
     case load_certfile(Path) of
@@ -885,7 +885,7 @@ get_cert_path(G, [Root|_] = Acc) ->
 	      end, Es)
     end.
 
--spec prep_path(filename:filename()) -> binary().
+-spec prep_path(file:filename()) -> binary().
 prep_path(Path0) ->
     case filename:pathtype(Path0) of
 	relative ->

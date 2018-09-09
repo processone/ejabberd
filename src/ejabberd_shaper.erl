@@ -147,7 +147,6 @@ transform_options({shaper, List}, Opts) when is_list(List) ->
 transform_options(Opt, Opts) ->
     [Opt | Opts].
 
--spec opt_type(shaper) -> fun((any()) -> any());
-	      (atom()) -> [atom()].
+-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(shaper) -> fun(V) -> V end;
 opt_type(_) -> [shaper].

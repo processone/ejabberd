@@ -51,7 +51,7 @@
 		     ts :: integer()}).
 
 -record(dest, {jid_string :: binary() | none,
-	       jid_jid :: xmpp:jid(),
+	       jid_jid :: jid(),
 	       type :: to | cc | bcc,
 	       address :: address()}).
 
@@ -536,7 +536,7 @@ decide_action_groups(Groups) ->
 %%% Route packet
 %%%-------------------------
 
--spec route_packet(jid(), #dest{}, xmpp:stanza(), [addresses()], [addresses()]) -> 'ok'.
+-spec route_packet(jid(), #dest{}, stanza(), [addresses()], [addresses()]) -> 'ok'.
 route_packet(From, ToDest, Packet, Others, Addresses) ->
     Dests = case ToDest#dest.type of
 	      bcc -> [];
@@ -545,7 +545,7 @@ route_packet(From, ToDest, Packet, Others, Addresses) ->
     route_packet2(From, ToDest#dest.jid_string, Dests,
 		  Packet, {Others, Addresses}).
 
--spec route_packet_multicast(jid(), binary(), xmpp:stanza(), [#dest{}], [address()], #limits{}) -> 'ok'.
+-spec route_packet_multicast(jid(), binary(), stanza(), [#dest{}], [address()], #limits{}) -> 'ok'.
 route_packet_multicast(From, ToS, Packet, Dests,
 		       Addresses, Limits) ->
     Type_of_stanza = type_of_stanza(Packet),
@@ -557,7 +557,7 @@ route_packet_multicast(From, ToS, Packet, Dests,
 		      Addresses)
 	end, Fragmented_dests).
 
--spec route_packet2(jid(), binary(), [#dest{}], xmpp:stanza(), {[address()], [address()]} | [address()]) -> 'ok'.
+-spec route_packet2(jid(), binary(), [#dest{}], stanza(), {[address()], [address()]} | [address()]) -> 'ok'.
 route_packet2(From, ToS, Dests, Packet, Addresses) ->
     Els = case append_dests(Dests, Addresses) of
 	      [] ->

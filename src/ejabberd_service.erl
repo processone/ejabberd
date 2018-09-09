@@ -281,25 +281,7 @@ transform_listen_option({host, Host, Os}, Opts) ->
 transform_listen_option(Opt, Opts) ->
     [Opt|Opts].
 
--spec listen_opt_type(access) -> fun((any()) -> any());
-		     (shaper_rule) -> fun((any()) -> any());
-		     (certfile) -> fun((binary()) -> binary());
-		     (ciphers) -> fun((binary()) -> binary());
-		     (dhfile) -> fun((binary()) -> binary());
-		     (cafile) -> fun((binary()) -> binary());
-		     (protocol_options) -> fun(([binary()]) -> binary());
-		     (tls_compression) -> fun((boolean()) -> boolean());
-		     (tls) -> fun((boolean()) -> boolean());
-		     (check_from) -> fun((boolean()) -> boolean());
-		     (password) -> fun((boolean()) -> boolean());
-		     (hosts) -> fun(([{binary(), [{password, binary()}]}]) ->
-					   [{binary(), binary() | undefined}]);
-		     (max_stanza_type) -> fun((timeout()) -> timeout());
-		     (max_fsm_queue) -> fun((pos_integer()) -> pos_integer());
-		     (inet) -> fun((boolean()) -> boolean());
-		     (inet6) -> fun((boolean()) -> boolean());
-		     (backlog) -> fun((timeout()) -> timeout());
-		     (atom()) -> [atom()].
+-spec listen_opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 listen_opt_type(access) -> fun acl:access_rules_validator/1;
 listen_opt_type(shaper_rule) -> fun acl:shaper_rules_validator/1;
 listen_opt_type(certfile) ->

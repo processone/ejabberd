@@ -104,7 +104,7 @@ get_presence(Ref) ->
 set_presence(Ref, Pres) ->
     call(Ref, {set_presence, Pres}, 1000).
 
--spec resend_presence(pid()) -> ok.
+-spec resend_presence(pid()) -> boolean().
 resend_presence(Pid) ->
     resend_presence(Pid, undefined).
 
@@ -946,7 +946,7 @@ format_reason(_, {shutdown, _}) ->
 format_reason(_, _) ->
     <<"internal server error">>.
 
--spec get_certfile(binary()) -> file:filename_all().
+-spec get_certfile(binary()) -> file:filename_all() | undefined.
 get_certfile(LServer) ->
     case ejabberd_pkix:get_certfile(LServer) of
 	{ok, CertFile} ->
@@ -960,15 +960,7 @@ get_certfile(LServer) ->
 transform_listen_option(Opt, Opts) ->
     [Opt|Opts].
 
--type resource_conflict() :: setresource | closeold | closenew | acceptnew.
--spec opt_type(c2s_ciphers) -> fun((binary()) -> binary());
-	      (c2s_dhfile) -> fun((binary()) -> binary());
-	      (c2s_cafile) -> fun((binary()) -> binary());
-	      (c2s_protocol_options) -> fun(([binary()]) -> binary());
-	      (c2s_tls_compression) -> fun((boolean()) -> boolean());
-	      (resource_conflict) -> fun((resource_conflict()) -> resource_conflict());
-	      (disable_sasl_mechanisms) -> fun((binary() | [binary()]) -> [binary()]);
-	      (atom()) -> [atom()].
+-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(c2s_ciphers) -> fun iolist_to_binary/1;
 opt_type(c2s_dhfile) -> fun misc:try_read_file/1;
 opt_type(c2s_cafile) -> fun misc:try_read_file/1;
@@ -994,26 +986,7 @@ opt_type(_) ->
      c2s_protocol_options, c2s_tls_compression, resource_conflict,
      disable_sasl_mechanisms].
 
--spec listen_opt_type(access) -> fun((any()) -> any());
-		     (shaper) -> fun((any()) -> any());
-		     (certfile) -> fun((binary()) -> binary());
-		     (ciphers) -> fun((binary()) -> binary());
-		     (dhfile) -> fun((binary()) -> binary());
-		     (cafile) -> fun((binary()) -> binary());
-		     (protocol_options) -> fun(([binary()]) -> binary());
-		     (tls_compression) -> fun((boolean()) -> boolean());
-		     (tls) -> fun((boolean()) -> boolean());
-		     (starttls) -> fun((boolean()) -> boolean());
-		     (tls_verify) -> fun((boolean()) -> boolean());
-		     (zlib) -> fun((boolean()) -> boolean());
-		     (supervisor) -> fun((boolean()) -> boolean());
-		     (max_stanza_size) -> fun((timeout()) -> timeout());
-		     (max_fsm_queue) -> fun((timeout()) -> timeout());
-		     (stream_management) -> fun((boolean()) -> boolean());
-		     (inet) -> fun((boolean()) -> boolean());
-		     (inet6) -> fun((boolean()) -> boolean());
-		     (backlog) -> fun((timeout()) -> timeout());
-		     (atom()) -> [atom()].
+-spec listen_opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 listen_opt_type(access) -> fun acl:access_rules_validator/1;
 listen_opt_type(shaper) -> fun acl:shaper_rules_validator/1;
 listen_opt_type(certfile = Opt) ->

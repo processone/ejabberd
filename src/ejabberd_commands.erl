@@ -619,9 +619,7 @@ permission_addon() ->
       [{access, ejabberd_config:get_option(commands_admin_access, none)}],
       {get_exposed_commands(), []}}}].
 
--spec opt_type(commands_admin_access) -> fun((any()) -> any());
-	      (commands) -> fun((list()) -> list());
-	      (atom()) -> [atom()].
+-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(commands_admin_access) -> fun acl:access_rules_validator/1;
 opt_type(commands) ->
     fun(V) when is_list(V) -> V end;

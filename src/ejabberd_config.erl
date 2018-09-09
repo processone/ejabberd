@@ -60,7 +60,7 @@
 -include_lib("kernel/include/inet.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 
--callback opt_type(atom()) -> function() | [atom()].
+-callback opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 -type bad_option() :: invalid_option | unknown_option.
 
 -spec start() -> ok | {error, bad_option()}.
@@ -1439,22 +1439,7 @@ emit_deprecation_warning(Module, NewModule) ->
 now_to_seconds({MegaSecs, Secs, _MicroSecs}) ->
     MegaSecs * 1000000 + Secs.
 
--spec opt_type(hide_sensitive_log_data) -> fun((boolean()) -> boolean());
-	      (hosts) -> fun(([binary()]) -> [binary()]);
-	      (language) -> fun((binary()) -> binary());
-	      (max_fsm_queue) -> fun((pos_integer()) -> pos_integer());
-	      (default_db) -> fun((atom()) -> atom());
-	      (default_ram_db) -> fun((atom()) -> atom());
-	      (loglevel) -> fun((0..5) -> 0..5);
-	      (queue_dir) -> fun((binary()) -> binary());
-	      (queue_type) -> fun((ram | file) -> ram | file);
-	      (use_cache) -> fun((boolean()) -> boolean());
-	      (cache_size) -> fun((timeout()) -> timeout());
-	      (cache_missed) -> fun((boolean()) -> boolean());
-	      (cache_life_time) -> fun((timeout()) -> timeout());
-	      (shared_key) -> fun((binary()) -> binary());
-	      (node_start) -> fun((non_neg_integer()) -> non_neg_integer());
-	      (atom()) -> [atom()].
+-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(hide_sensitive_log_data) ->
     fun (H) when is_boolean(H) -> H end;
 opt_type(hosts) ->

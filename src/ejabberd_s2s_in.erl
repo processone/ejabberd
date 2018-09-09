@@ -350,21 +350,7 @@ change_shaper(#{shaper := ShaperName, server_host := ServerHost} = State,
     Shaper = acl:match_rule(ServerHost, ShaperName, jid:make(RServer)),
     xmpp_stream_in:change_shaper(State, ejabberd_shaper:new(Shaper)).
 
--spec listen_opt_type(shaper) -> fun((any()) -> any());
-		     (certfile) -> fun((binary()) -> binary());
-		     (ciphers) -> fun((binary()) -> binary());
-		     (dhfile) -> fun((binary()) -> binary());
-		     (cafile) -> fun((binary()) -> binary());
-		     (protocol_options) -> fun(([binary()]) -> binary());
-		     (tls_compression) -> fun((boolean()) -> boolean());
-		     (tls) -> fun((boolean()) -> boolean());
-		     (supervisor) -> fun((boolean()) -> boolean());
-		     (max_stanza_type) -> fun((timeout()) -> timeout());
-		     (max_fsm_queue) -> fun((pos_integer()) -> pos_integer());
-		     (inet) -> fun((boolean()) -> boolean());
-		     (inet6) -> fun((boolean()) -> boolean());
-		     (backlog) -> fun((timeout()) -> timeout());
-		     (atom()) -> [atom()].
+-spec listen_opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 listen_opt_type(shaper) -> fun acl:shaper_rules_validator/1;
 listen_opt_type(certfile = Opt) ->
     fun(S) ->

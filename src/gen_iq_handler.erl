@@ -154,8 +154,7 @@ transform_module_options(Opts) ->
               Opt
       end, Opts).
 
--spec opt_type(iqdisc) -> fun((any()) -> no_queue);
-	      (atom()) -> [atom()].
+-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(iqdisc) -> fun check_type/1;
 opt_type(_) -> [iqdisc].
 

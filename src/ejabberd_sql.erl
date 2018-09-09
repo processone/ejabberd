@@ -1116,20 +1116,7 @@ check_error({error, Why} = Err, Query) ->
 check_error(Result, _Query) ->
     Result.
 
--spec opt_type(sql_database) -> fun((binary()) -> binary());
-	      (sql_keepalive_interval) -> fun((pos_integer()) -> pos_integer());
-	      (sql_password) -> fun((binary()) -> binary());
-	      (sql_port) -> fun((0..65535) -> 0..65535);
-	      (sql_server) -> fun((binary()) -> binary());
-	      (sql_username) -> fun((binary()) -> binary());
-	      (sql_ssl) -> fun((boolean()) -> boolean());
-	      (sql_ssl_verify) -> fun((boolean()) -> boolean());
-	      (sql_ssl_certfile) -> fun((boolean()) -> boolean());
-	      (sql_ssl_cafile) -> fun((boolean()) -> boolean());
-	      (sql_query_timeout) -> fun((pos_integer()) -> pos_integer());
-	      (sql_connect_timeout) -> fun((pos_integer()) -> pos_integer());
-	      (sql_queue_type) -> fun((ram | file) -> ram | file);
-	      (atom()) -> [atom()].
+-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(sql_database) -> fun iolist_to_binary/1;
 opt_type(sql_keepalive_interval) ->
     fun (I) when is_integer(I), I > 0 -> I end;

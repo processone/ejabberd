@@ -333,24 +333,7 @@ collect_parts_bit([{?N_BIT_STRING,<<Unused,Bits/binary>>}|Rest],Acc,Uacc) ->
 collect_parts_bit([],Acc,Uacc) ->
     list_to_binary([Uacc|lists:reverse(Acc)]).
 
--type deref_aliases() :: never | searching | finding | always.
--type uids() :: binary() | {binary()} | {binary(), binary()}.
--spec opt_type(deref_aliases) -> fun((deref_aliases()) -> deref_aliases());
-	      (ldap_backups) -> fun(([binary()]) -> [binary()]);
-	      (ldap_base) -> fun((binary()) -> binary());
-	      (ldap_deref_aliases) -> fun((deref_aliases()) -> deref_aliases());
-	      (ldap_encrypt) -> fun((tls | starttls | none) -> tls | starttls | none);
-	      (ldap_password) -> fun((binary()) -> binary());
-	      (ldap_port) -> fun((0..65535) -> 0..65535);
-	      (ldap_rootdn) -> fun((binary()) -> binary());
-	      (ldap_servers) -> fun(([binary()]) -> [binary()]);
-	      (ldap_tls_certfile) -> fun((binary()) -> string());
-	      (ldap_tls_cacertfile) -> fun((binary()) -> string());
-	      (ldap_tls_depth) -> fun((non_neg_integer()) -> non_neg_integer());
-	      (ldap_tls_verify) -> fun((hard | soft | false) -> hard | soft | false);
-	      (ldap_filter) -> fun((binary()) -> binary());
-	      (ldap_uids) -> fun((uids()) -> uids());
-	      (atom()) -> [atom()].
+-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(deref_aliases) ->
     fun(unspecified) -> unspecified;
        (never) -> never;

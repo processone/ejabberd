@@ -1222,8 +1222,7 @@ generate_key() ->
 %% Option Parsing Code
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec opt_type(acme) -> fun((acme_config()) -> (acme_config()));
-	      (atom()) -> [atom()].
+-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(acme) ->
     fun(L) ->
 	    lists:map(

@@ -480,7 +480,7 @@ cache_opts() ->
 	       end,
     [{max_size, MaxSize}, {cache_missed, CacheMissed}, {life_time, LifeTime}].
 
--spec clean_cache(node()) -> ok.
+-spec clean_cache(node()) -> non_neg_integer().
 clean_cache(Node) ->
     ets_cache:filter(
       ?ROUTES_CACHE,
@@ -499,16 +499,7 @@ clean_cache(Node) ->
 clean_cache() ->
     ejabberd_cluster:eval_everywhere(?MODULE, clean_cache, [node()]).
 
--type domain_balancing() :: random | source | destination |
-			    bare_source | bare_destination.
--spec opt_type(domain_balancing) -> fun((domain_balancing()) -> domain_balancing());
-	      (domain_balancing_component_number) -> fun((pos_integer()) -> pos_integer());
-	      (router_db_type) -> fun((atom()) -> atom());
-	      (router_use_cache) -> fun((boolean()) -> boolean());
-	      (router_cache_missed) -> fun((boolean()) -> boolean());
-	      (router_cache_size) -> fun((timeout()) -> timeout());
-	      (router_cache_life_time) -> fun((timeout()) -> timeout());
-	      (atom()) -> [atom()].
+-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(domain_balancing) ->
     fun (random) -> random;
 	(source) -> source;

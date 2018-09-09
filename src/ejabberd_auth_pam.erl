@@ -82,9 +82,7 @@ get_pam_service(Host) ->
 get_pam_userinfotype(Host) ->
     ejabberd_config:get_option({pam_userinfotype, Host}, username).
 
--spec opt_type(pam_service) -> fun((binary()) -> binary());
-	      (pam_userinfotype) -> fun((username | jid) -> username | jid);
-	      (atom()) -> [atom()].
+-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(pam_service) -> fun iolist_to_binary/1;
 opt_type(pam_userinfotype) ->
     fun (username) -> username;
