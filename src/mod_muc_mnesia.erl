@@ -340,6 +340,8 @@ handle_cast(_Msg, State) ->
 handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
     clean_table_from_bad_node(Node),
     {noreply, State};
+handle_info({mnesia_system_event, {mnesia_up, _Node}}, State) ->
+    {noreply, State};
 handle_info(Info, State) ->
     ?ERROR_MSG("unexpected info: ~p", [Info]),
     {noreply, State}.
