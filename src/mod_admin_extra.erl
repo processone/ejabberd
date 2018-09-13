@@ -1450,12 +1450,17 @@ srg_user_del(User, Host, Group, GroupHost) ->
 send_message(Type, From, To, Subject, Body) ->
     FromJID = jid:decode(From),
     ToJID = jid:decode(To),
-    Packet = build_packet(Type, Subject, Body),
+    Packet = build_packet(Type, Subject, Body, FromJID, ToJID),
+    State1 = #{jid => FromJID},
+    {Pkt2, State2} = ejabberd_hooks:run_fold(
+                       user_send_packet, FromJID#jid.lserver, {Packet, State1}, []),
     ejabberd_router:route(xmpp:set_from_to(Packet, FromJID, ToJID)).
 
-build_packet(Type, Subject, Body) ->
+build_packet(Type, Subject, Body, FromJID, ToJID) ->
     #message{type = misc:binary_to_atom(Type),
 	     body = xmpp:mk_text(Body),
+	     from = FromJID,
+	     to = ToJID,
 	     id = p1_rand:get_string(),
 	     subject = xmpp:mk_text(Subject)}.
 
