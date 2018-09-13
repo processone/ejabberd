@@ -344,9 +344,6 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 					{error, xmpp:err_not_allowed(Txt, Lang)};
 				    {error, not_allowed} ->
 					{error, xmpp:err_not_allowed()};
-				    {error, too_many_users} ->
-					Txt = <<"Too many users registered">>,
-					{error, xmpp:err_resource_constraint(Txt, Lang)};
 				    {error, _} ->
 					?ERROR_MSG("failed to register user "
 						   "~s@~s: ~p",
