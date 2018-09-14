@@ -66,12 +66,14 @@
          end)()).
 
 -define(match(Pattern, Result),
+    (fun() ->
 	case Result of
 	    Pattern ->
-		Pattern;
+		ok;
 	    Mismatch ->
 		suite:match_failure([Mismatch], [??Pattern])
-	end).
+	end
+    end)()).
 
 -define(COMMON_VHOST, <<"localhost">>).
 -define(MNESIA_VHOST, <<"mnesia.localhost">>).

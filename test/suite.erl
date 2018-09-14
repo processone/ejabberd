@@ -471,9 +471,7 @@ wait_auth_SASL_result(Config, ShouldFail) ->
 	    NS = if Type == client -> ?NS_CLIENT;
 		    Type == server -> ?NS_SERVER
 		 end,
-	    Config2 = receive #stream_start{id = ID, xmlns = NS, version = {1,0}} ->
-		set_opt(stream_id, ID, Config)
-	    end,
+	    receive #stream_start{xmlns = NS, version = {1,0}} -> ok end,
             receive #stream_features{sub_els = Fs} ->
 		    if Type == client ->
 			    #xmpp_session{optional = true} =
@@ -490,7 +488,7 @@ wait_auth_SASL_result(Config, ShouldFail) ->
 			      set_opt(rosterver, true, ConfigAcc);
 			 (_, ConfigAcc) ->
 			      ConfigAcc
-		      end, Config2, Fs)
+		      end, Config, Fs)
 	    end;
         #sasl_challenge{text = ClientIn} ->
             {Response, SASL} = (?config(sasl, Config))(ClientIn),
