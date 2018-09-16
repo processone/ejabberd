@@ -80,7 +80,7 @@ CREATE INDEX i_sr_user_grp ON sr_user(grp);
 
 CREATE TABLE spool (
     username varchar(191) NOT NULL,
-    xml BLOB NOT NULL,
+    xml mediumtext NOT NULL,
     seq BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE,
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -93,8 +93,8 @@ CREATE TABLE archive (
     timestamp BIGINT UNSIGNED NOT NULL,
     peer varchar(191) NOT NULL,
     bare_peer varchar(191) NOT NULL,
-    xml text NOT NULL,
-    txt text,
+    xml mediumtext NOT NULL,
+    txt mediumtext,
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE,
     kind varchar(10),
     nick varchar(191),
