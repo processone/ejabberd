@@ -297,15 +297,24 @@ intersection(L1, L2) ->
       end, L1).
 
 -spec format_val(any()) -> iodata().
+format_val({yaml, S}) when is_integer(S); is_binary(S); is_atom(S) ->
+    format_val(S);
+format_val({yaml, YAML}) ->
+    S = try fast_yaml:encode(YAML)
+	catch _:_ -> YAML
+	end,
+    format_val(S);
 format_val(I) when is_integer(I) ->
     integer_to_list(I);
-format_val(S) when is_binary(S) ->
-    <<$", S/binary, $">>;
 format_val(B) when is_atom(B) ->
     erlang:atom_to_binary(B, utf8);
-format_val(YAML) ->
-    try [io_lib:nl(), fast_yaml:encode(YAML)]
-    catch _:_ -> io_lib:format("~p", [YAML])
+format_val(Term) ->
+    S = try iolist_to_binary(Term)
+	catch _:_ -> list_to_binary(io_lib:format("~p", [Term]))
+	end,
+    case binary:match(S, <<"\n">>) of
+	nomatch -> S;
+	_ -> [io_lib:nl(), S]
     end.
 
 -spec cancel_timer(reference()) -> ok.

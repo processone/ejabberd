@@ -67,7 +67,7 @@
 -type opts() :: [{atom(), any()}].
 -type db_type() :: atom().
 
--callback start(binary(), opts()) -> ok | {ok, pid()}.
+-callback start(binary(), opts()) -> ok | {ok, pid()} | {error, term()}.
 -callback stop(binary()) -> any().
 -callback reload(binary(), opts(), opts()) -> ok | {ok, pid()}.
 -callback mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
@@ -548,12 +548,12 @@ validate_opts(Host, Module, Opts0) ->
 	  _:{invalid_option, Opt, Val} ->
 	    ErrTxt = io_lib:format("Invalid value for option '~s' of "
 				   "module ~s: ~s",
-				   [Opt, Module, misc:format_val(Val)]),
+				   [Opt, Module, misc:format_val({yaml, Val})]),
 	    module_error(ErrTxt);
 	  _:{invalid_option, Opt, Val, Reason} ->
 	    ErrTxt = io_lib:format("Invalid value for option '~s' of "
 				   "module ~s (~s): ~s",
-				   [Opt, Module, Reason, misc:format_val(Val)]),
+				   [Opt, Module, Reason, misc:format_val({yaml, Val})]),
 	    module_error(ErrTxt);
 	  _:{unknown_option, Opt, []} ->
 	    ErrTxt = io_lib:format("Unknown option '~s' of module '~s': "
@@ -730,6 +730,9 @@ format_module_error(Module, Fun, Arity, Opts, Class, Reason, St) ->
 			  "it doesn't export ~s/~B callback: "
 			  "is it really an ejabberd module?",
 			  [Fun, Module, Fun, Arity]);
+	{error, {bad_return, Module, {error, _} = Err}} ->
+	    io_lib:format("Failed to ~s module ~s: ~s",
+			  [Fun, Module, misc:format_val(Err)]);
 	{error, {bad_return, Module, Ret}} ->
 	    io_lib:format("Module ~s returned unexpected value from ~s/~B:~n"
                           "** Error: ~p~n"

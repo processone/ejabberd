@@ -1081,12 +1081,12 @@ validate_opts(#state{opts = Opts} = State, ModOpts) ->
 					    ?ERROR_MSG("Invalid value for "
 						       "option '~s' (~s): ~s",
 						       [Opt, Error,
-							misc:format_val(Val)]),
+							misc:format_val({yaml, Val})]),
 					    erlang:error(invalid_option);
 					  _:_ ->
 					    ?ERROR_MSG("Invalid value for "
 						       "option '~s': ~s",
-						       [Opt, misc:format_val(Val)]),
+						       [Opt, misc:format_val({yaml, Val})]),
 					    erlang:error(invalid_option)
 				    end;
 				_ ->
