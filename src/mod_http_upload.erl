@@ -122,7 +122,7 @@
 %%--------------------------------------------------------------------
 %% gen_mod/supervisor callbacks.
 %%--------------------------------------------------------------------
--spec start(binary(), gen_mod:opts()) -> {ok, pid()}.
+-spec start(binary(), gen_mod:opts()) -> {ok, pid()} | {error, already_started}.
 start(ServerHost, Opts) ->
     case gen_mod:get_opt(rm_on_unregister, Opts) of
 	true ->
@@ -132,7 +132,14 @@ start(ServerHost, Opts) ->
 	    ok
     end,
     Proc = get_proc_name(ServerHost, ?MODULE),
-    gen_mod:start_child(?MODULE, ServerHost, Opts, Proc).
+    case whereis(Proc) of
+	undefined ->
+	    gen_mod:start_child(?MODULE, ServerHost, Opts, Proc);
+	_Pid ->
+	    ?ERROR_MSG("Multiple virtual hosts can't use a single 'put_url' "
+		       "without the @HOST@ keyword", []),
+	    {error, already_started}
+    end.
 
 -spec stop(binary()) -> ok | {error, any()}.
 stop(ServerHost) ->
