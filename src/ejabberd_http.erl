@@ -24,14 +24,14 @@
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_http).
-
+-behaviour(ejabberd_listener).
 -behaviour(ejabberd_config).
 
 -author('alexey@process-one.net').
 
 %% External exports
--export([start/2, start_link/2, become_controller/1,
-	 socket_type/0, receive_headers/1, recv_file/2,
+-export([start/2, start_link/2,
+	 accept/1, receive_headers/1, recv_file/2,
          transform_listen_option/2, listen_opt_type/1]).
 
 -export([init/2, opt_type/1]).
@@ -164,11 +164,8 @@ init({SockMod, Socket}, Opts) ->
         {error, _} -> State
     end.
 
-become_controller(_Pid) ->
+accept(_Pid) ->
     ok.
-
-socket_type() ->
-    raw.
 
 send_text(_State, none) ->
     ok;

@@ -99,15 +99,7 @@ init([Host, Opts]) ->
     Service = {mod_proxy65_service,
 	       {mod_proxy65_service, start_link, [Host, Opts]},
 	       transient, 5000, worker, [mod_proxy65_service]},
-    StreamSupervisor = {ejabberd_mod_proxy65_sup,
-			{ejabberd_tmp_sup, start_link,
-			 [gen_mod:get_module_proc(Host,
-						  ejabberd_mod_proxy65_sup),
-			  mod_proxy65_stream]},
-			transient, infinity, supervisor, [ejabberd_tmp_sup]},
-    {ok,
-     {{one_for_one, 10, 1},
-      [StreamSupervisor, Service]}}.
+    {ok, {{one_for_one, 10, 1}, [Service]}}.
 
 depends(_Host, _Opts) ->
     [].

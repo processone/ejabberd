@@ -31,10 +31,11 @@
 %%% TODO: commands strings should be strings without ~n
 
 -module(ejabberd_xmlrpc).
+-behaviour(ejabberd_listener).
 
 -author('badlop@process-one.net').
 
--export([start/2, handler/2, process/2, socket_type/0,
+-export([start/2, start_link/2, handler/2, process/2, accept/1,
 	 transform_listen_option/2, listen_opt_type/1]).
 
 -include("logger.hrl").
@@ -190,7 +191,11 @@
 start({gen_tcp = _SockMod, Socket}, Opts) ->
     ejabberd_http:start({gen_tcp, Socket}, [{xmlrpc, true}|Opts]).
 
-socket_type() -> raw.
+start_link({gen_tcp = _SockMod, Socket}, Opts) ->
+    ejabberd_http:start_link({gen_tcp, Socket}, [{xmlrpc, true}|Opts]).
+
+accept(Pid) ->
+    ejabberd_http:accept(Pid).
 
 %% -----------------------------
 %% HTTP interface

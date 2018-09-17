@@ -22,14 +22,14 @@
 -module(ejabberd_c2s).
 -behaviour(xmpp_stream_in).
 -behaviour(ejabberd_config).
--behaviour(xmpp_socket).
+-behaviour(ejabberd_listener).
 
 -protocol({rfc, 6121}).
 
-%% xmpp_socket callbacks
--export([start/2, start_link/2, socket_type/0]).
+%% ejabberd_listener callbacks
+-export([start/2, start_link/2, accept/1, listen_opt_type/1]).
 %% ejabberd_config callbacks
--export([opt_type/1, listen_opt_type/1, transform_listen_option/2]).
+-export([opt_type/1, transform_listen_option/2]).
 %% xmpp_stream_in callbacks
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
@@ -61,26 +61,18 @@
 -export_type([state/0]).
 
 %%%===================================================================
-%%% xmpp_socket API
+%%% ejabberd_listener API
 %%%===================================================================
 start(SockData, Opts) ->
-    case proplists:get_value(supervisor, Opts, true) of
-	true ->
-	    case supervisor:start_child(ejabberd_c2s_sup, [SockData, Opts]) of
-		{ok, undefined} -> ignore;
-		Res -> Res
-	    end;
-	_ ->
-	    xmpp_stream_in:start(?MODULE, [SockData, Opts],
-				 ejabberd_config:fsm_limit_opts(Opts))
-    end.
+    xmpp_stream_in:start(?MODULE, [SockData, Opts],
+			 ejabberd_config:fsm_limit_opts(Opts)).
 
 start_link(SockData, Opts) ->
     xmpp_stream_in:start_link(?MODULE, [SockData, Opts],
 			      ejabberd_config:fsm_limit_opts(Opts)).
 
-socket_type() ->
-    xml_stream.
+accept(Ref) ->
+    xmpp_stream_in:accept(Ref).
 
 %%%===================================================================
 %%% Common API

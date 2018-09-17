@@ -24,25 +24,29 @@
 %%%-------------------------------------------------------------------
 
 -module(ejabberd_sip).
+-behaviour(ejabberd_listener).
 
 -ifndef(SIP).
 -include("logger.hrl").
--export([socket_type/0, start/2, listen_opt_type/1]).
+-export([accept/1, start/2, start_link/2, listen_opt_type/1]).
 log_error() ->
     ?CRITICAL_MSG("ejabberd is not compiled with SIP support", []).
-socket_type() ->
+accept(_) ->
     log_error(),
-    raw.
+    ok.
 listen_opt_type(_) ->
     log_error(),
     [].
 start(_, _) ->
     log_error(),
     {error, sip_not_compiled}.
+start_link(_, _) ->
+    log_error(),
+    {error, sip_not_compiled}.
 -else.
 %% API
 -export([tcp_init/2, udp_init/2, udp_recv/5, start/2,
-	 socket_type/0, listen_opt_type/1]).
+	 start_link/2, accept/1, listen_opt_type/1]).
 
 
 %%%===================================================================
@@ -62,8 +66,11 @@ udp_recv(Sock, Addr, Port, Data, Opts) ->
 start(Opaque, Opts) ->
     esip_socket:start(Opaque, Opts).
 
-socket_type() ->
-    raw.
+start_link({gen_tcp, Sock}, Opts) ->
+    esip_socket:start_link(Sock, Opts).
+
+accept(_) ->
+    ok.
 
 set_certfile(Opts) ->
     case lists:keymember(certfile, 1, Opts) of

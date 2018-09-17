@@ -27,18 +27,19 @@
 -author('xram@jabber.ru').
 
 -behaviour(p1_fsm).
+-behaviour(ejabberd_listener).
 
 %% gen_fsm callbacks.
 -export([init/1, handle_event/3, handle_sync_event/4,
 	 code_change/4, handle_info/3, terminate/3]).
 
 %% gen_fsm states.
--export([wait_for_init/2, wait_for_auth/2,
+-export([accepting/2, wait_for_init/2, wait_for_auth/2,
 	 wait_for_request/2, wait_for_activation/2,
 	 stream_established/2]).
 
--export([start/2, stop/1, start_link/3, activate/2,
-	 relay/3, socket_type/0, listen_opt_type/1,
+-export([start/2, stop/1, start_link/2, start_link/3, activate/2,
+	 relay/3, accept/1, listen_opt_type/1,
 	 listen_options/0]).
 
 -include("mod_proxy65.hrl").
@@ -69,10 +70,14 @@ start({gen_tcp, Socket}, Opts1) ->
 				      fun({server_host, _}) -> true;
 					 (_) -> false
 				      end, Opts1),
-    Supervisor = gen_mod:get_module_proc(Host,
-					 ejabberd_mod_proxy65_sup),
-    supervisor:start_child(Supervisor,
-			   [Socket, Host, Opts]).
+    p1_fsm:start(?MODULE, [Socket, Host, Opts], []).
+
+start_link({gen_tcp, Socket}, Opts1) ->
+    {[{server_host, Host}], Opts} = lists:partition(
+				      fun({server_host, _}) -> true;
+					 (_) -> false
+				      end, Opts1),
+    start_link(Socket, Host, Opts).
 
 start_link(Socket, Host, Opts) ->
     p1_fsm:start_link(?MODULE, [Socket, Host, Opts], []).
@@ -84,9 +89,8 @@ init([Socket, Host, Opts]) ->
     RecvBuf = gen_mod:get_opt(recbuf, Opts),
     SendBuf = gen_mod:get_opt(sndbuf, Opts),
     TRef = erlang:send_after(?WAIT_TIMEOUT, self(), stop),
-    inet:setopts(Socket,
-		 [{active, true}, {recbuf, RecvBuf}, {sndbuf, SendBuf}]),
-    {ok, wait_for_init,
+    inet:setopts(Socket, [{recbuf, RecvBuf}, {sndbuf, SendBuf}]),
+    {ok, accepting,
      #state{host = Host, auth_type = AuthType,
 	    socket = Socket, shaper = Shaper, timer = TRef}}.
 
@@ -101,7 +105,8 @@ terminate(_Reason, StateName, #state{sha1 = SHA1}) ->
 %%%------------------------------
 %%% API.
 %%%------------------------------
-socket_type() -> raw.
+accept(StreamPid) ->
+    p1_fsm:send_event(StreamPid, accept).
 
 stop(StreamPid) -> StreamPid ! stop.
 
@@ -125,6 +130,10 @@ activate({P1, J1}, {P2, J2}) ->
 %%%-----------------------
 %%% States
 %%%-----------------------
+accepting(accept, State) ->
+    inet:setopts(State#state.socket, [{active, true}]),
+    {next_state, wait_for_init, State}.
+
 wait_for_init(Packet,
 	      #state{socket = Socket, auth_type = AuthType} =
 		  StateData) ->

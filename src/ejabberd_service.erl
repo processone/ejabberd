@@ -21,20 +21,19 @@
 %%%-------------------------------------------------------------------
 -module(ejabberd_service).
 -behaviour(xmpp_stream_in).
--behaviour(xmpp_socket).
+-behaviour(ejabberd_listener).
 
 -protocol({xep, 114, '1.6'}).
 
-%% xmpp_socket callbacks
--export([start/2, start_link/2, socket_type/0, close/1, close/2]).
 %% ejabberd_listener callbacks
+-export([start/2, start_link/2, accept/1]).
 -export([listen_opt_type/1, transform_listen_option/2]).
 %% xmpp_stream_in callbacks
 -export([init/1, handle_info/2, terminate/2, code_change/3]).
 -export([handle_stream_start/2, handle_auth_success/4, handle_auth_failure/4,
 	 handle_authenticated_packet/2, get_password_fun/1, tls_options/1]).
 %% API
--export([send/2]).
+-export([send/2, close/1, close/2]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -53,8 +52,8 @@ start_link(SockData, Opts) ->
     xmpp_stream_in:start_link(?MODULE, [SockData, Opts],
 			      ejabberd_config:fsm_limit_opts(Opts)).
 
-socket_type() ->
-    xml_stream.
+accept(Ref) ->
+    xmpp_stream_in:accept(Ref).
 
 -spec send(pid(), xmpp_element()) -> ok;
 	  (state(), xmpp_element()) -> state().

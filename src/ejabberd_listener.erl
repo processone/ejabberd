@@ -36,6 +36,13 @@
 
 -include("logger.hrl").
 
+-callback start({gen_tcp, inet:socket()}, [proplists:property()]) ->
+    {ok, pid()} | {error, any()} | ignore.
+-callback start_link({gen_tcp, inet:socket()}, [proplists:property()]) ->
+    {ok, pid()} | {error, any()} | ignore.
+-callback accept(pid()) -> any().
+-callback listen_opt_type(atom()) -> fun((atom()) -> term()) | [atom()].
+
 %% We do not block on send anymore.
 -define(TCP_SEND_TIMEOUT, 15000).
 
@@ -81,11 +88,7 @@ report_duplicated_portips(L) ->
 
 start(Port, Module, Opts) ->
     NewOpts = validate_module_options(Module, Opts),
-    %% Check if the module is an ejabberd listener or an independent listener
-    case Module:socket_type() of
-	independent -> Module:start_listener(Port, NewOpts);
-	_ -> start_dependent(Port, Module, NewOpts)
-    end.
+    start_dependent(Port, Module, NewOpts).
 
 %% @spec(Port, Module, Opts) -> {ok, Pid} | {error, ErrorMessage}
 start_dependent(Port, Module, Opts) ->
@@ -109,7 +112,6 @@ init_udp(PortIP, Module, Opts, SockOpts, Port) ->
 	    %% Inform my parent that this port was opened successfully
 	    proc_lib:init_ack({ok, self()}),
 	    application:ensure_started(ejabberd),
-	    start_module_sup(Port, Module),
 	    ?INFO_MSG("Start accepting UDP connections at ~s for ~p",
 		      [format_portip(PortIP), Module]),
 	    case erlang:function_exported(Module, udp_init, 2) of
@@ -136,21 +138,21 @@ init_tcp(PortIP, Module, Opts, SockOpts, Port) ->
 	{ok, ListenSocket} ->
 	    proc_lib:init_ack({ok, self()}),
 	    application:ensure_started(ejabberd),
-	    start_module_sup(Port, Module),
+	    Sup = start_module_sup(Module, Opts),
 	    ?INFO_MSG("Start accepting TCP connections at ~s for ~p",
 		      [format_portip(PortIP), Module]),
 	    case erlang:function_exported(Module, tcp_init, 2) of
 		false ->
-		    accept(ListenSocket, Module, Opts);
+		    accept(ListenSocket, Module, Opts, Sup);
 		true ->
 		    case catch Module:tcp_init(ListenSocket, Opts) of
 			{'EXIT', _} = Err ->
 			    ?ERROR_MSG("failed to process callback function "
 				       "~p:~s(~p, ~p): ~p",
 				       [Module, tcp_init, ListenSocket, Opts, Err]),
-			    accept(ListenSocket, Module, Opts);
+			    accept(ListenSocket, Module, Opts, Sup);
 			NewOpts ->
-			    accept(ListenSocket, Module, NewOpts)
+			    accept(ListenSocket, Module, NewOpts, Sup)
 		    end
 	    end;
 	{error, _} = Err ->
@@ -240,20 +242,22 @@ get_ip_tuple(no_ip_option, inet6) ->
 get_ip_tuple(IPOpt, _IPVOpt) ->
     IPOpt.
 
-accept(ListenSocket, Module, Opts) ->
+accept(ListenSocket, Module, Opts, Sup) ->
     Interval = proplists:get_value(accept_interval, Opts, 0),
-    accept(ListenSocket, Module, Opts, Interval).
+    accept(ListenSocket, Module, Opts, Sup, Interval).
 
-accept(ListenSocket, Module, Opts, Interval) ->
+accept(ListenSocket, Module, Opts, Sup, Interval) ->
     NewInterval = check_rate_limit(Interval),
     case gen_tcp:accept(ListenSocket) of
 	{ok, Socket} ->
 	    case {inet:sockname(Socket), inet:peername(Socket)} of
 		{{ok, {Addr, Port}}, {ok, {PAddr, PPort}}} ->
-		    Receiver = case xmpp_socket:start(Module,
-							  gen_tcp, Socket, Opts) of
-				   {ok, RecvPid} -> RecvPid;
-				   _ -> none
+		    Receiver = case start_connection(Module, Socket, Opts, Sup) of
+				   {ok, RecvPid} ->
+				       RecvPid;
+				   _ ->
+				       gen_tcp:close(Socket),
+				       none
 			       end,
 		    ?INFO_MSG("(~p) Accepted connection ~s:~p -> ~s:~p",
 			      [Receiver,
@@ -262,11 +266,11 @@ accept(ListenSocket, Module, Opts, Interval) ->
 		_ ->
 		    gen_tcp:close(Socket)
 	    end,
-	    accept(ListenSocket, Module, Opts, NewInterval);
+	    accept(ListenSocket, Module, Opts, Sup, NewInterval);
 	{error, Reason} ->
 	    ?ERROR_MSG("(~w) Failed TCP accept: ~s",
                        [ListenSocket, inet:format_error(Reason)]),
-	    accept(ListenSocket, Module, Opts, NewInterval)
+	    accept(ListenSocket, Module, Opts, Sup, NewInterval)
     end.
 
 udp_recv(Socket, Module, Opts) ->
@@ -285,6 +289,25 @@ udp_recv(Socket, Module, Opts) ->
 	{error, Reason} ->
 	    ?ERROR_MSG("unexpected UDP error: ~s", [format_error(Reason)]),
 	    throw({error, Reason})
+    end.
+
+start_connection(Module, Socket, Opts, Sup) ->
+    Res = case Sup of
+	      undefined -> Module:start({gen_tcp, Socket}, Opts);
+	      _ -> supervisor:start_child(Sup, [{gen_tcp, Socket}, Opts])
+	  end,
+    case Res of
+	{ok, Pid} ->
+	    case gen_tcp:controlling_process(Socket, Pid) of
+		ok ->
+		    Module:accept(Pid),
+		    {ok, Pid};
+		Err ->
+		    exit(Pid, kill),
+		    Err
+	    end;
+	Err ->
+	    Err
     end.
 
 %% @spec (Port, Module, Opts) -> {ok, Pid} | {error, Error}
@@ -309,16 +332,21 @@ start_listener2(Port, Module, Opts) ->
     %% So, it's normal (and harmless) that in most cases this call returns: {error, {already_started, pid()}}
     start_listener_sup(Port, Module, Opts).
 
-start_module_sup(_Port, Module) ->
-    Proc1 = gen_mod:get_module_proc(<<"sup">>, Module),
-    ChildSpec1 =
-	{Proc1,
-	 {ejabberd_tmp_sup, start_link, [Proc1, Module]},
-	 permanent,
-	 infinity,
-	 supervisor,
-	 [ejabberd_tmp_sup]},
-    supervisor:start_child(ejabberd_sup, ChildSpec1).
+-spec start_module_sup(module(), [proplists:property()]) -> atom().
+start_module_sup(Module, Opts) ->
+    case proplists:get_value(supervisor, Opts, true) of
+	true ->
+	    Proc = list_to_atom(atom_to_list(Module) ++ "_sup"),
+	    ChildSpec =	{Proc, {ejabberd_tmp_sup, start_link, [Proc, Module]},
+			 permanent,
+			 infinity,
+			 supervisor,
+			 [ejabberd_tmp_sup]},
+	    supervisor:start_child(ejabberd_sup, ChildSpec),
+	    Proc;
+	false ->
+	    undefined
+    end.
 
 start_listener_sup(Port, Module, Opts) ->
     ChildSpec = {Port,

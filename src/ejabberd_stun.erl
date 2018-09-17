@@ -24,27 +24,30 @@
 %%%-------------------------------------------------------------------
 
 -module(ejabberd_stun).
-
+-behaviour(ejabberd_listener).
 -protocol({rfc, 5766}).
 -protocol({xep, 176, '1.0'}).
 
 -ifndef(STUN).
 -include("logger.hrl").
--export([socket_type/0, start/2, listen_opt_type/1]).
+-export([accept/1, start/2, start_link/2, listen_opt_type/1]).
 log_error() ->
     ?CRITICAL_MSG("ejabberd is not compiled with STUN/TURN support", []).
-socket_type() ->
+accept(_) ->
     log_error(),
-    raw.
+    ok.
 listen_opt_type(_) ->
     log_error(),
     [].
 start(_, _) ->
     log_error(),
     {error, sip_not_compiled}.
+start_link(_, _) ->
+    log_error(),
+    {error, sip_not_compiled}.
 -else.
 -export([tcp_init/2, udp_init/2, udp_recv/5, start/2,
-	 socket_type/0, listen_opt_type/1]).
+	 start_link/2, accept/1, listen_opt_type/1]).
 
 -include("logger.hrl").
 
@@ -65,8 +68,11 @@ udp_recv(Socket, Addr, Port, Packet, Opts) ->
 start(Opaque, Opts) ->
     stun:start(Opaque, Opts).
 
-socket_type() ->
-    raw.
+start_link({gen_tcp, Sock}, Opts) ->
+    stun:start_link(Sock, Opts).
+
+accept(_Pid) ->
+    ok.
 
 %%%===================================================================
 %%% Internal functions
