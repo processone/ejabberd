@@ -55,6 +55,7 @@ init_config(Config) ->
     CfgContent = process_config_tpl(CfgContentTpl, [
                                                     {c2s_port, 5222},
                                                     {loglevel, 4},
+                                                    {new_schema, false},
                                                     {s2s_port, 5269},
 						    {component_port, 5270},
                                                     {web_port, 5280},

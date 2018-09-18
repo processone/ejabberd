@@ -525,6 +525,8 @@ shaper:
   fast: 50000
   normal: 10000
 
+new_sql_schema: @@new_schema@@
+
 api_permissions:
   "public commands":
     who: all
