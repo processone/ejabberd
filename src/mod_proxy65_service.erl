@@ -115,8 +115,10 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%%------------------------
 
 add_listener(Host, Opts) ->
-    NewOpts = [{server_host, Host} | Opts],
-    ejabberd_listener:add_listener(get_endpoint(Host), mod_proxy65_stream, NewOpts).
+    {_, IP, _} = EndPoint = get_endpoint(Host),
+    Opts1 = [{server_host, Host} | Opts],
+    Opts2 = lists:keystore(ip, 1, Opts1, {ip, IP}),
+    ejabberd_listener:add_listener(EndPoint, mod_proxy65_stream, Opts2).
 
 delete_listener(Host) ->
     ejabberd_listener:delete_listener(get_endpoint(Host), mod_proxy65_stream).

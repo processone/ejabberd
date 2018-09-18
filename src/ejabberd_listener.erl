@@ -104,57 +104,70 @@ init({Port, _, udp} = EndPoint, Module, Opts, SockOpts) ->
 			     {reuseaddr, true} |
 			     SockOpts]) of
 	{ok, Socket} ->
-	    proc_lib:init_ack({ok, self()}),
-	    application:ensure_started(ejabberd),
-	    ?INFO_MSG("Start accepting UDP connections at ~s for ~p",
-		      [format_endpoint(EndPoint), Module]),
-	    case erlang:function_exported(Module, udp_init, 2) of
-		false ->
-		    udp_recv(Socket, Module, Opts);
-		true ->
-		    case catch Module:udp_init(Socket, Opts) of
-			{'EXIT', _} = Err ->
-			    ?ERROR_MSG("failed to process callback function "
-				       "~p:~s(~p, ~p): ~p",
-				       [Module, udp_init, Socket, Opts, Err]),
+	    case inet:sockname(Socket) of
+		{ok, {Addr, Port1}} ->
+		    proc_lib:init_ack({ok, self()}),
+		    application:ensure_started(ejabberd),
+		    ?INFO_MSG("Start accepting UDP connections at ~s for ~p",
+			      [format_endpoint({Port1, Addr, udp}), Module]),
+		    case erlang:function_exported(Module, udp_init, 2) of
+			false ->
 			    udp_recv(Socket, Module, Opts);
-			NewOpts ->
-			    udp_recv(Socket, Module, NewOpts)
-		    end
+			true ->
+			    case catch Module:udp_init(Socket, Opts) of
+				{'EXIT', _} = Err ->
+				    ?ERROR_MSG("failed to process callback function "
+					       "~p:~s(~p, ~p): ~p",
+					       [Module, udp_init, Socket, Opts, Err]),
+				    udp_recv(Socket, Module, Opts);
+				NewOpts ->
+				    udp_recv(Socket, Module, NewOpts)
+			    end
+		    end;
+		{error, Reason} = Err ->
+		    report_socket_error(Reason, EndPoint, Module),
+		    proc_lib:init_ack(Err)
 	    end;
 	{error, Reason} = Err ->
 	    report_socket_error(Reason, EndPoint, Module),
 	    proc_lib:init_ack(Err)
     end;
-init({_, _, tcp} = EndPoint, Module, Opts, SockOpts) ->
-    case listen_tcp(EndPoint, Module, SockOpts) of
+init({Port, _, tcp} = EndPoint, Module, Opts, SockOpts) ->
+    case listen_tcp(Port, SockOpts) of
 	{ok, ListenSocket} ->
-	    proc_lib:init_ack({ok, self()}),
-	    application:ensure_started(ejabberd),
-	    Sup = start_module_sup(Module, Opts),
-	    ?INFO_MSG("Start accepting TCP connections at ~s for ~p",
-		      [format_endpoint(EndPoint), Module]),
-	    case erlang:function_exported(Module, tcp_init, 2) of
-		false ->
-		    accept(ListenSocket, Module, Opts, Sup);
-		true ->
-		    case catch Module:tcp_init(ListenSocket, Opts) of
-			{'EXIT', _} = Err ->
-			    ?ERROR_MSG("failed to process callback function "
-				       "~p:~s(~p, ~p): ~p",
-				       [Module, tcp_init, ListenSocket, Opts, Err]),
+	    case inet:sockname(ListenSocket) of
+		{ok, {Addr, Port1}} ->
+		    proc_lib:init_ack({ok, self()}),
+		    application:ensure_started(ejabberd),
+		    Sup = start_module_sup(Module, Opts),
+		    ?INFO_MSG("Start accepting TCP connections at ~s for ~p",
+			      [format_endpoint({Port1, Addr, tcp}), Module]),
+		    case erlang:function_exported(Module, tcp_init, 2) of
+			false ->
 			    accept(ListenSocket, Module, Opts, Sup);
-			NewOpts ->
-			    accept(ListenSocket, Module, NewOpts, Sup)
-		    end
+			true ->
+			    case catch Module:tcp_init(ListenSocket, Opts) of
+				{'EXIT', _} = Err ->
+				    ?ERROR_MSG("failed to process callback function "
+					       "~p:~s(~p, ~p): ~p",
+					       [Module, tcp_init, ListenSocket, Opts, Err]),
+				    accept(ListenSocket, Module, Opts, Sup);
+				NewOpts ->
+				    accept(ListenSocket, Module, NewOpts, Sup)
+			    end
+		    end;
+		{error, Reason} = Err ->
+		    report_socket_error(Reason, EndPoint, Module),
+		    Err
 	    end;
-	{error, _} = Err ->
+	{error, Reason} = Err ->
+	    report_socket_error(Reason, EndPoint, Module),
 	    proc_lib:init_ack(Err)
     end.
 
--spec listen_tcp(endpoint(), module(), [gen_tcp:option()]) ->
+-spec listen_tcp(inet:port_number(), [gen_tcp:option()]) ->
 	        {ok, inet:socket()} | {error, system_limit | inet:posix()}.
-listen_tcp({Port, _, _} = EndPoint, Module, SockOpts) ->
+listen_tcp(Port, SockOpts) ->
     Res = gen_tcp:listen(Port, [binary,
 				{packet, 0},
 				{active, false},
@@ -167,8 +180,7 @@ listen_tcp({Port, _, _} = EndPoint, Module, SockOpts) ->
     case Res of
 	{ok, ListenSocket} ->
 	    {ok, ListenSocket};
-	{error, Reason} = Err ->
-	    report_socket_error(Reason, EndPoint, Module),
+	{error, _} = Err ->
 	    Err
     end.
 
