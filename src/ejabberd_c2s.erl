@@ -978,7 +978,6 @@ opt_type(_) ->
      c2s_protocol_options, c2s_tls_compression, resource_conflict,
      disable_sasl_mechanisms].
 
--spec listen_opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 listen_opt_type(certfile = Opt) ->
     fun(S) ->
 	    ?WARNING_MSG("Listening option '~s' for ~s is deprecated, use "

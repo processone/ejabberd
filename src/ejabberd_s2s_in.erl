@@ -340,7 +340,6 @@ change_shaper(#{shaper := ShaperName, server_host := ServerHost} = State,
     Shaper = acl:match_rule(ServerHost, ShaperName, jid:make(RServer)),
     xmpp_stream_in:change_shaper(State, ejabberd_shaper:new(Shaper)).
 
--spec listen_opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 listen_opt_type(certfile = Opt) ->
     fun(S) ->
 	    ?WARNING_MSG("Listening option '~s' for ~s is deprecated, use "

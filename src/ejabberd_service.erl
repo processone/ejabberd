@@ -281,7 +281,6 @@ transform_listen_option({host, Host, Os}, Opts) ->
 transform_listen_option(Opt, Opts) ->
     [Opt|Opts].
 
--spec listen_opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 listen_opt_type(shaper_rule) ->
     fun(V) ->
 	    ?WARNING_MSG("Listening option 'shaper_rule' of module ~s "
