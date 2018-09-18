@@ -63,7 +63,12 @@
 -spec add_certfile(file:filename())
       -> ok | {error, cert_error() | file:posix()}.
 add_certfile(Path) ->
-    gen_server:call(?MODULE, {add_certfile, prep_path(Path)}).
+    try gen_server:call(?MODULE, {add_certfile, prep_path(Path)})
+    catch exit:{noproc, {gen_server, call, _}} ->
+	    %% This hack will be removed after moving
+	    %% the code into a separate repo
+	    ok
+    end.
 
 -spec try_certfile(file:filename()) -> binary().
 try_certfile(Path0) ->

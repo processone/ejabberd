@@ -738,7 +738,12 @@ opt_type(s2s_use_starttls) ->
 	    required_trusted
     end;
 opt_type(s2s_zlib) ->
-    fun(B) when is_boolean(B) -> B end;
+    fun(true) ->
+	    ejabberd:start_app(ezlib),
+	    true;
+       (false) ->
+	    false
+    end;
 opt_type(s2s_timeout) ->
     fun(I) when is_integer(I), I >= 0 -> timer:seconds(I);
        (infinity) -> infinity;

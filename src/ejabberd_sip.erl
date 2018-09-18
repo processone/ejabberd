@@ -28,13 +28,13 @@
 
 -ifndef(SIP).
 -include("logger.hrl").
--export([accept/1, start/2, start_link/2, listen_opt_type/1]).
+-export([accept/1, start/2, start_link/2, listen_options/0]).
 log_error() ->
     ?CRITICAL_MSG("ejabberd is not compiled with SIP support", []).
 accept(_) ->
     log_error(),
     ok.
-listen_opt_type(_) ->
+listen_options() ->
     log_error(),
     [].
 start(_, _) ->
@@ -46,7 +46,7 @@ start_link(_, _) ->
 -else.
 %% API
 -export([tcp_init/2, udp_init/2, udp_recv/5, start/2,
-	 start_link/2, accept/1, listen_opt_type/1]).
+	 start_link/2, accept/1, listen_options/0]).
 
 
 %%%===================================================================
@@ -90,19 +90,9 @@ set_certfile(Opts) ->
 	    end
     end.
 
-listen_opt_type(certfile) ->
-    fun(S) ->
-	    %% We cannot deprecate the option for now:
-	    %% I think SIP clients are too stupid to set SNI
-	    ejabberd_pkix:add_certfile(S),
-	    iolist_to_binary(S)
-    end;
-listen_opt_type(tls) ->
-    fun(B) when is_boolean(B) -> B end;
-listen_opt_type(accept_interval) ->
-    fun(I) when is_integer(I), I>=0 -> I end;
-listen_opt_type(_) ->
-    [tls, certfile, accept_interval].
+listen_options() ->
+    [{tls, false},
+     {certfile, undefined}].
 
 %%%===================================================================
 %%% Internal functions

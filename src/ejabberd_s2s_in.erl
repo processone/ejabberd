@@ -24,7 +24,7 @@
 -behaviour(ejabberd_listener).
 
 %% ejabberd_listener callbacks
--export([start/2, start_link/2, accept/1, listen_opt_type/1]).
+-export([start/2, start_link/2, accept/1, listen_opt_type/1, listen_options/0]).
 %% xmpp_stream_in callbacks
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
@@ -341,35 +341,22 @@ change_shaper(#{shaper := ShaperName, server_host := ServerHost} = State,
     xmpp_stream_in:change_shaper(State, ejabberd_shaper:new(Shaper)).
 
 -spec listen_opt_type(atom()) -> fun((any()) -> any()) | [atom()].
-listen_opt_type(shaper) -> fun acl:shaper_rules_validator/1;
 listen_opt_type(certfile = Opt) ->
     fun(S) ->
 	    ?WARNING_MSG("Listening option '~s' for ~s is deprecated, use "
 			 "'certfiles' global option instead", [Opt, ?MODULE]),
-	    ejabberd_pkix:add_certfile(S),
+	    ok = ejabberd_pkix:add_certfile(S),
 	    iolist_to_binary(S)
-    end;
-listen_opt_type(ciphers) -> ejabberd_s2s:opt_type(s2s_ciphers);
-listen_opt_type(dhfile) -> ejabberd_s2s:opt_type(s2s_dhfile);
-listen_opt_type(cafile) -> ejabberd_s2s:opt_type(s2s_cafile);
-listen_opt_type(protocol_options) -> ejabberd_s2s:opt_type(s2s_protocol_options);
-listen_opt_type(tls_compression) -> ejabberd_s2s:opt_type(s2s_tls_compression);
-listen_opt_type(tls) -> fun(B) when is_boolean(B) -> B end;
-listen_opt_type(supervisor) -> fun(B) when is_boolean(B) -> B end;
-listen_opt_type(max_stanza_size) ->
-    fun(I) when is_integer(I), I>0 -> I;
-       (unlimited) -> infinity;
-       (infinity) -> infinity
-    end;
-listen_opt_type(max_fsm_queue) ->
-    fun(I) when is_integer(I), I>0 -> I end;
-listen_opt_type(inet) -> fun(B) when is_boolean(B) -> B end;
-listen_opt_type(inet6) -> fun(B) when is_boolean(B) -> B end;
-listen_opt_type(backlog) ->
-    fun(I) when is_integer(I), I>0 -> I end;
-listen_opt_type(accept_interval) ->
-    fun(I) when is_integer(I), I>=0 -> I end;
-listen_opt_type(_) ->
-    [shaper, certfile, ciphers, dhfile, cafile, protocol_options,
-     tls_compression, tls, max_fsm_queue, backlog, inet, inet6,
-     accept_interval].
+    end.
+
+listen_options() ->
+    [{shaper, none},
+     {certfile, undefined},
+     {ciphers, undefined},
+     {dhfile, undefined},
+     {cafile, undefined},
+     {protocol_options, undefined},
+     {tls, false},
+     {tls_compression, false},
+     {max_stanza_size, infinity},
+     {max_fsm_queue, 5000}].

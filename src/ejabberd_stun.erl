@@ -30,15 +30,15 @@
 
 -ifndef(STUN).
 -include("logger.hrl").
--export([accept/1, start/2, start_link/2, listen_opt_type/1]).
+-export([accept/1, start/2, start_link/2, listen_options/0]).
 log_error() ->
     ?CRITICAL_MSG("ejabberd is not compiled with STUN/TURN support", []).
 accept(_) ->
     log_error(),
     ok.
-listen_opt_type(_) ->
+listen_options() ->
     log_error(),
-    [].
+    [];
 start(_, _) ->
     log_error(),
     {error, sip_not_compiled}.
@@ -47,7 +47,7 @@ start_link(_, _) ->
     {error, sip_not_compiled}.
 -else.
 -export([tcp_init/2, udp_init/2, udp_recv/5, start/2,
-	 start_link/2, accept/1, listen_opt_type/1]).
+	 start_link/2, accept/1, listen_opt_type/1, listen_options/0]).
 
 -include("logger.hrl").
 
@@ -144,27 +144,16 @@ listen_opt_type(turn_ip) ->
 	    {ok, Addr} = inet_parse:ipv4_address(binary_to_list(S)),
 	    Addr
     end;
-listen_opt_type(shaper) ->
-    fun acl:shaper_rules_validator/1;
 listen_opt_type(auth_type) ->
     fun(anonymous) -> anonymous;
        (user) -> user
     end;
 listen_opt_type(auth_realm) ->
     fun iolist_to_binary/1;
-listen_opt_type(tls) ->
-    fun(B) when is_boolean(B) -> B end;
-listen_opt_type(certfile) ->
-    fun(S) ->
-	    %% We cannot deprecate the option for now:
-	    %% I think STUN/TURN clients are too stupid to set SNI
-	    ejabberd_pkix:add_certfile(S),
-	    iolist_to_binary(S)
-    end;
 listen_opt_type(turn_min_port) ->
-    fun(P) when is_integer(P), P > 0, P =< 65535 -> P end;
+    fun(P) when is_integer(P), P > 1024, P < 65536 -> P end;
 listen_opt_type(turn_max_port) ->
-    fun(P) when is_integer(P), P > 0, P =< 65535 -> P end;
+    fun(P) when is_integer(P), P > 1024, P < 65536 -> P end;
 listen_opt_type(turn_max_allocations) ->
     fun(I) when is_integer(I), I>0 -> I;
        (unlimited) -> infinity;
@@ -176,13 +165,17 @@ listen_opt_type(turn_max_permissions) ->
        (infinity) -> infinity
     end;
 listen_opt_type(server_name) ->
-    fun iolist_to_binary/1;
-listen_opt_type(backlog) ->
-    fun(I) when is_integer(I), I>0 -> I end;
-listen_opt_type(accept_interval) ->
-    fun(I) when is_integer(I), I>=0 -> I end;
-listen_opt_type(_) ->
-    [shaper, auth_type, auth_realm, tls, certfile, turn_min_port,
-     turn_max_port, turn_max_allocations, turn_max_permissions,
-     server_name, backlog, accept_interval].
+    fun iolist_to_binary/1.
+
+listen_options() ->
+    [{shaper, none},
+     {auth_type, user},
+     {auth_realm, undefined},
+     {tls, false},
+     {certfile, undefined},
+     {turn_min_port, 49152},
+     {turn_max_port, 65535},
+     {turn_max_allocations, 10},
+     {turn_max_permissions, 10},
+     {server_name, <<"ejabberd">>}].
 -endif.

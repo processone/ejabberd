@@ -36,7 +36,7 @@
 -author('badlop@process-one.net').
 
 -export([start/2, start_link/2, handler/2, process/2, accept/1,
-	 transform_listen_option/2, listen_opt_type/1]).
+	 transform_listen_option/2, listen_opt_type/1, listen_options/0]).
 
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
@@ -580,17 +580,7 @@ listen_opt_type(access_commands) ->
 		      {<<"ejabberd_xmlrpc compatibility shim">>,
 		       {[?MODULE], [{access, Ac}], Commands}}
 	      end, lists:flatten(Opts))
-    end;
-listen_opt_type(maxsessions) ->
-    fun(I) when is_integer(I), I>0 -> I end;
-listen_opt_type(timeout) ->
-    fun(I) when is_integer(I), I>0 -> I end;
-listen_opt_type(inet) -> fun(B) when is_boolean(B) -> B end;
-listen_opt_type(inet6) -> fun(B) when is_boolean(B) -> B end;
-listen_opt_type(backlog) ->
-    fun(I) when is_integer(I), I>0 -> I end;
-listen_opt_type(accept_interval) ->
-    fun(I) when is_integer(I), I>=0 -> I end;
-listen_opt_type(_) ->
-    [access_commands, maxsessions, timeout, backlog, inet, inet6,
-     accept_interval].
+    end.
+
+listen_options() ->
+    [{access_commands, []}].

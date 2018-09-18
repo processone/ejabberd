@@ -116,12 +116,10 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 add_listener(Host, Opts) ->
     NewOpts = [{server_host, Host} | Opts],
-    ejabberd_listener:add_listener(get_port_ip(Host),
-				   mod_proxy65_stream, NewOpts).
+    ejabberd_listener:add_listener(get_endpoint(Host), mod_proxy65_stream, NewOpts).
 
 delete_listener(Host) ->
-    catch ejabberd_listener:delete_listener(get_port_ip(Host),
-					    mod_proxy65_stream).
+    ejabberd_listener:delete_listener(get_endpoint(Host), mod_proxy65_stream).
 
 %%%------------------------
 %%% IQ Processing
@@ -238,7 +236,7 @@ transform_module_options(Opts) ->
 
 -spec get_streamhost(binary(), binary()) -> streamhost().
 get_streamhost(Host, ServerHost) ->
-    {Port, IP} = get_port_ip(ServerHost),
+    {Port, IP, _} = get_endpoint(ServerHost),
     HostName0 = case gen_mod:get_module_opt(ServerHost, mod_proxy65, hostname) of
 		    undefined -> misc:ip_to_list(IP);
 		    Val -> Val
@@ -249,14 +247,14 @@ get_streamhost(Host, ServerHost) ->
 		host = HostName,
 		port = Port}.
 
--spec get_port_ip(binary()) -> {pos_integer(), inet:ip_address()}.
-get_port_ip(Host) ->
+-spec get_endpoint(binary()) -> {inet:port_number(), inet:ip_address(), tcp}.
+get_endpoint(Host) ->
     Port = gen_mod:get_module_opt(Host, mod_proxy65, port),
     IP = case gen_mod:get_module_opt(Host, mod_proxy65, ip) of
 	     undefined -> get_my_ip();
 	     Addr -> Addr
 	 end,
-    {Port, IP}.
+    {Port, IP, tcp}.
 
 -spec get_my_ip() -> inet:ip_address().
 get_my_ip() ->

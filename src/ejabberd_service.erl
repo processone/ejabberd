@@ -27,7 +27,7 @@
 
 %% ejabberd_listener callbacks
 -export([start/2, start_link/2, accept/1]).
--export([listen_opt_type/1, transform_listen_option/2]).
+-export([listen_opt_type/1, listen_options/0, transform_listen_option/2]).
 %% xmpp_stream_in callbacks
 -export([init/1, handle_info/2, terminate/2, code_change/3]).
 -export([handle_stream_start/2, handle_auth_success/4, handle_auth_failure/4,
@@ -78,7 +78,8 @@ tls_options(#{tls_options := TLSOptions}) ->
 
 init([State, Opts]) ->
     Access = proplists:get_value(access, Opts, all),
-    Shaper = proplists:get_value(shaper_rule, Opts, none),
+    Shaper = proplists:get_value(shaper, Opts,
+				 proplists:get_value(shaper_rule, Opts, none)),
     GlobalPassword = proplists:get_value(password, Opts, random_password()),
     HostOpts = proplists:get_value(hosts, Opts, [{global, GlobalPassword}]),
     HostOpts1 = lists:map(
@@ -281,20 +282,12 @@ transform_listen_option(Opt, Opts) ->
     [Opt|Opts].
 
 -spec listen_opt_type(atom()) -> fun((any()) -> any()) | [atom()].
-listen_opt_type(access) -> fun acl:access_rules_validator/1;
-listen_opt_type(shaper_rule) -> fun acl:shaper_rules_validator/1;
-listen_opt_type(certfile) ->
-    fun(S) ->
-	    ejabberd_pkix:add_certfile(S),
-	    iolist_to_binary(S)
+listen_opt_type(shaper_rule) ->
+    fun(V) ->
+	    ?WARNING_MSG("Listening option 'shaper_rule' of module ~s "
+			 "is renamed to 'shaper'", [?MODULE]),
+	    acl:shaper_rules_validator(V)
     end;
-listen_opt_type(ciphers) -> fun iolist_to_binary/1;
-listen_opt_type(dhfile) -> fun misc:try_read_file/1;
-listen_opt_type(cafile) -> fun misc:try_read_file/1;
-listen_opt_type(protocol_options) ->
-    fun(Options) -> str:join(Options, <<"|">>) end;
-listen_opt_type(tls_compression) -> fun(B) when is_boolean(B) -> B end;
-listen_opt_type(tls) -> fun(B) when is_boolean(B) -> B end;
 listen_opt_type(check_from) -> fun(B) when is_boolean(B) -> B end;
 listen_opt_type(password) -> fun iolist_to_binary/1;
 listen_opt_type(hosts) ->
@@ -309,21 +302,22 @@ listen_opt_type(hosts) ->
 	      end, HostOpts)
     end;
 listen_opt_type(global_routes) ->
-    fun(B) when is_boolean(B) -> B end;
-listen_opt_type(max_stanza_size) ->
-    fun(I) when is_integer(I) -> I;
-       (unlimited) -> infinity;
-       (infinity) -> infinity
-    end;
-listen_opt_type(max_fsm_queue) ->
-    fun(I) when is_integer(I), I>0 -> I end;
-listen_opt_type(inet) -> fun(B) when is_boolean(B) -> B end;
-listen_opt_type(inet6) -> fun(B) when is_boolean(B) -> B end;
-listen_opt_type(backlog) ->
-    fun(I) when is_integer(I), I>0 -> I end;
-listen_opt_type(accept_interval) ->
-    fun(I) when is_integer(I), I>=0 -> I end;
-listen_opt_type(_) ->
-    [access, shaper_rule, certfile, ciphers, dhfile, cafile, tls,
-     protocol_options, tls_compression, password, hosts, check_from,
-     max_fsm_queue, global_routes, backlog, inet, inet6, accept_interval].
+    fun(B) when is_boolean(B) -> B end.
+
+listen_options() ->
+    [{access, all},
+     {shaper, none},
+     {shaper_rule, none},
+     {certfile, undefined},
+     {ciphers, undefined},
+     {dhfile, undefined},
+     {cafile, undefined},
+     {protocol_options, undefined},
+     {tls, false},
+     {tls_compression, false},
+     {max_stanza_size, infinity},
+     {max_fsm_queue, 5000},
+     {password, undefined},
+     {hosts, []},
+     {check_from, true},
+     {global_routes, true}].
