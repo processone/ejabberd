@@ -586,7 +586,7 @@ validate_module_opt(Module, Opt, Val) ->
 	   catch _:_ -> listen_opt_type(Opt)
 	   end,
     try {Opt, VFun(Val)}
-    catch _:_ ->
+    catch _:R when R /= undef ->
 	    ?ERROR_MSG("Invalid value of listening option ~s: ~s",
 		       [Opt, misc:format_val({yaml, Val})]),
 	    erlang:error(badarg)

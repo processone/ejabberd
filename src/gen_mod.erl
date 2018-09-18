@@ -620,7 +620,7 @@ validate_opt(Opt, Val, VFun) ->
 	NewVal -> [{Opt, NewVal}]
     catch {invalid_syntax, Error} ->
 	    err_invalid_option(Opt, Val, Error);
-	  _:_ ->
+	  _:R when R /= undef ->
 	    err_invalid_option(Opt, Val)
     end.
 
