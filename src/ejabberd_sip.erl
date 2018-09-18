@@ -29,20 +29,19 @@
 -ifndef(SIP).
 -include("logger.hrl").
 -export([accept/1, start/2, start_link/2, listen_options/0]).
-log_error() ->
-    ?CRITICAL_MSG("ejabberd is not compiled with SIP support", []).
+fail() ->
+    ?CRITICAL_MSG("Listening module ~s is not available: "
+		  "ejabberd is not compiled with SIP support",
+		  [?MODULE]),
+    erlang:error(sip_not_compiled).
 accept(_) ->
-    log_error(),
-    ok.
+    fail().
 listen_options() ->
-    log_error(),
-    [].
+    fail().
 start(_, _) ->
-    log_error(),
-    {error, sip_not_compiled}.
+    fail().
 start_link(_, _) ->
-    log_error(),
-    {error, sip_not_compiled}.
+    fail().
 -else.
 %% API
 -export([tcp_init/2, udp_init/2, udp_recv/5, start/2,
