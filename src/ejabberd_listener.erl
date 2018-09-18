@@ -62,33 +62,31 @@ start_link() ->
 init(_) ->
     ets:new(?MODULE, [named_table, public]),
     ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),
-    case listeners_childspec() of
-	{ok, Specs} -> {ok, {{one_for_one, 10, 1}, Specs}};
-	{error, _} = Err -> Err
-    end.
-
--spec listeners_childspec() -> {ok, [supervisor:child_spec()]} | {error, any()}.
-listeners_childspec() ->
-    Ls = ejabberd_config:get_option(listen, []),
-    case add_certfiles(Ls) of
+    Listeners = ejabberd_config:get_option(listen, []),
+    case add_certfiles(Listeners) of
 	ok ->
-	    {ok, lists:map(
-		   fun({EndPoint, Module, Opts}) ->
-			   ets:insert(?MODULE, {EndPoint, Module, Opts}),
-			   {EndPoint,
-			    {?MODULE, start, [EndPoint, Module, Opts]},
-			    transient, brutal_kill, worker, [?MODULE]}
-		   end, Ls)};
+	    {ok, {{one_for_one, 10, 1}, listeners_childspec(Listeners)}};
 	{error, _} = Err ->
 	    Err
     end.
 
+-spec listeners_childspec([listener()]) -> [supervisor:child_spec()].
+listeners_childspec(Listeners) ->
+    lists:map(
+      fun({EndPoint, Module, Opts}) ->
+	      ets:insert(?MODULE, {EndPoint, Module, Opts}),
+	      {EndPoint,
+	       {?MODULE, start, [EndPoint, Module, Opts]},
+	       transient, brutal_kill, worker, [?MODULE]}
+      end, Listeners).
+
 -spec start_listeners() -> ok.
 start_listeners() ->
+    Listeners = ejabberd_config:get_option(listen, []),
     lists:foreach(
       fun(Spec) ->
 	      supervisor:start_child(?MODULE, Spec)
-      end, listeners_childspec()).
+      end, listeners_childspec(Listeners)).
 
 -spec start(endpoint(), module(), listen_opts()) -> term().
 start(EndPoint, Module, Opts) ->
