@@ -349,7 +349,6 @@ delete_listener(EndPoint, Module) ->
 -spec config_reloaded() -> ok.
 config_reloaded() ->
     New = ejabberd_config:get_option(listen, []),
-    ?INFO_MSG("New = ~p", [New]),
     Old = ets:tab2list(?MODULE),
     lists:foreach(
       fun({EndPoint, Module, _Opts}) ->
