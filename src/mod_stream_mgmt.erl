@@ -446,8 +446,8 @@ handle_resume(#{user := User, lserver := LServer,
 		      [xmpp_socket:pp(Socket), jid:encode(JID)]),
 	    {ok, State5};
 	{error, El, Msg} ->
-	    ?INFO_MSG("Cannot resume session for ~s@~s: ~s",
-		      [User, LServer, Msg]),
+	    ?WARNING_MSG("Cannot resume session for ~s@~s: ~s",
+			 [User, LServer, Msg]),
 	    {error, send(State, El)}
     end.
 

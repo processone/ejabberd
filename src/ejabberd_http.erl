@@ -201,8 +201,8 @@ send_file(State, Fd, Size, FileName) ->
 	end
     catch _:{case_clause, {error, Why}} ->
 	    if Why /= closed ->
-		    ?INFO_MSG("Failed to read ~s: ~s",
-			      [FileName, file_format_error(Why)]),
+		    ?WARNING_MSG("Failed to read ~s: ~s",
+				 [FileName, file_format_error(Why)]),
 		    exit(normal);
 	       true ->
 		    ok

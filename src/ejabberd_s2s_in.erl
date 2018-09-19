@@ -195,9 +195,9 @@ handle_auth_failure(RServer, Mech, Reason,
 		    #{socket := Socket, ip := IP,
 		      server_host := ServerHost,
 		      lserver := LServer} = State) ->
-    ?INFO_MSG("(~s) Failed inbound s2s ~s authentication ~s -> ~s (~s): ~s",
-	      [xmpp_socket:pp(Socket), Mech, RServer, LServer,
-	       ejabberd_config:may_hide_data(misc:ip_to_list(IP)), Reason]),
+    ?WARNING_MSG("(~s) Failed inbound s2s ~s authentication ~s -> ~s (~s): ~s",
+		 [xmpp_socket:pp(Socket), Mech, RServer, LServer,
+		  ejabberd_config:may_hide_data(misc:ip_to_list(IP)), Reason]),
     ejabberd_hooks:run_fold(s2s_in_auth_result,
 			    ServerHost, State, [false, RServer]).
 

@@ -57,7 +57,7 @@ start_link(Name, Hosts, Backups, Port, Rootdn, Passwd,
 			      of
 			    {ok, Pid} -> pg2:join(PoolName, Pid);
 			    Err ->
-                                  ?INFO_MSG("Err = ~p", [Err]),
+                                  ?ERROR_MSG("Err = ~p", [Err]),
                                   error
 			  end
 		  end,

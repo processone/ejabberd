@@ -407,11 +407,11 @@ process(_LocalPath, #request{method = 'PUT', host = Host, ip = IP,
 		    http_response(500)
 	    end;
 	{error, size_mismatch} ->
-	    ?INFO_MSG("Rejecting file ~s from ~s for ~s: Unexpected size (~B)",
+	    ?WARNING_MSG("Rejecting file ~s from ~s for ~s: Unexpected size (~B)",
 		      [lists:last(Slot), encode_addr(IP), Host, Length]),
 	    http_response(413);
 	{error, invalid_slot} ->
-	    ?INFO_MSG("Rejecting file ~s from ~s for ~s: Invalid slot",
+	    ?WARNING_MSG("Rejecting file ~s from ~s for ~s: Invalid slot",
 		      [lists:last(Slot), encode_addr(IP), Host]),
 	    http_response(403);
 	Error ->
@@ -443,19 +443,19 @@ process(_LocalPath, #request{method = Method, host = Host, ip = IP} = Request)
 		    Headers3 = Headers2 ++ CustomHeaders,
 		    http_response(200, Headers3, {file, Path});
 		{error, eacces} ->
-		    ?INFO_MSG("Cannot serve ~s to ~s: Permission denied",
+		    ?WARNING_MSG("Cannot serve ~s to ~s: Permission denied",
 			      [Path, encode_addr(IP)]),
 		    http_response(403);
 		{error, enoent} ->
-		    ?INFO_MSG("Cannot serve ~s to ~s: No such file",
+		    ?WARNING_MSG("Cannot serve ~s to ~s: No such file",
 			      [Path, encode_addr(IP)]),
 		    http_response(404);
 		{error, eisdir} ->
-		    ?INFO_MSG("Cannot serve ~s to ~s: Is a directory",
+		    ?WARNING_MSG("Cannot serve ~s to ~s: Is a directory",
 			      [Path, encode_addr(IP)]),
 		    http_response(404);
 		{error, Error} ->
-		    ?INFO_MSG("Cannot serve ~s to ~s: ~s",
+		    ?WARNING_MSG("Cannot serve ~s to ~s: ~s",
 			      [Path, encode_addr(IP), format_error(Error)]),
 		    http_response(500)
 	    end;
@@ -572,7 +572,7 @@ create_slot(#state{service_url = undefined, max_size = MaxSize},
   when MaxSize /= infinity,
        Size > MaxSize ->
     Text = {<<"File larger than ~w bytes">>, [MaxSize]},
-    ?INFO_MSG("Rejecting file ~s from ~s (too large: ~B bytes)",
+    ?WARNING_MSG("Rejecting file ~s from ~s (too large: ~B bytes)",
 	      [File, jid:encode(JID), Size]),
     Error = xmpp:err_not_acceptable(Text, Lang),
     Els = xmpp:get_els(Error),
@@ -629,15 +629,15 @@ create_slot(#state{service_url = ServiceURL},
 		    {error, xmpp:err_service_unavailable(Txt, Lang)}
 	    end;
 	{ok, {402, _Body}} ->
-	    ?INFO_MSG("Got status code 402 for ~s from <~s>",
+	    ?WARNING_MSG("Got status code 402 for ~s from <~s>",
 		      [jid:encode(JID), ServiceURL]),
 	    {error, xmpp:err_resource_constraint()};
 	{ok, {403, _Body}} ->
-	    ?INFO_MSG("Got status code 403 for ~s from <~s>",
+	    ?WARNING_MSG("Got status code 403 for ~s from <~s>",
 		      [jid:encode(JID), ServiceURL]),
 	    {error, xmpp:err_not_allowed()};
 	{ok, {413, _Body}} ->
-	    ?INFO_MSG("Got status code 413 for ~s from <~s>",
+	    ?WARNING_MSG("Got status code 413 for ~s from <~s>",
 		      [jid:encode(JID), ServiceURL]),
 	    {error, xmpp:err_not_acceptable()};
 	{ok, {Code, _Body}} ->

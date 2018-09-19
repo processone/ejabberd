@@ -312,7 +312,7 @@ normalize_spec(Spec) ->
                 {ok, Net, Mask} ->
                     {ip, {Net, Mask}};
                 error ->
-                    ?INFO_MSG("Invalid network address: ~p", [S]),
+                    ?WARNING_MSG("Invalid network address: ~p", [S]),
                     none
 	    end;
 	BadVal ->

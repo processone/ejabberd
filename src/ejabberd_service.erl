@@ -146,10 +146,10 @@ get_password_fun(#{remote_server := RemoteServer,
 		{ok, Password} ->
 		    {Password, undefined};
 		error ->
-		    ?INFO_MSG("(~s) Domain ~s is unconfigured for "
-			      "external component from ~s",
-			      [xmpp_socket:pp(Socket), RemoteServer,
-			       ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
+		    ?WARNING_MSG("(~s) Domain ~s is unconfigured for "
+				 "external component from ~s",
+				 [xmpp_socket:pp(Socket), RemoteServer,
+				  ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
 		    {false, undefined}
 	    end
     end.
@@ -177,11 +177,11 @@ handle_auth_success(_, Mech, _,
 handle_auth_failure(_, Mech, Reason,
 		    #{remote_server := RemoteServer,
 		      socket := Socket, ip := IP} = State) ->
-    ?INFO_MSG("(~s) Failed external component ~s authentication "
-	      "for ~s from ~s: ~s",
-	      [xmpp_socket:pp(Socket), Mech, RemoteServer,
-	       ejabberd_config:may_hide_data(misc:ip_to_list(IP)),
-	       Reason]),
+    ?WARNING_MSG("(~s) Failed external component ~s authentication "
+		 "for ~s from ~s: ~s",
+		 [xmpp_socket:pp(Socket), Mech, RemoteServer,
+		  ejabberd_config:may_hide_data(misc:ip_to_list(IP)),
+		  Reason]),
     State.
 
 handle_authenticated_packet(Pkt0, #{ip := {IP, _}, lang := Lang} = State)

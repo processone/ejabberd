@@ -151,7 +151,7 @@ request(Req, SIPSock, TrID, Action) ->
                     mod_sip_proxy:route(Req, SIPSock, TrID, Pid),
                     {mod_sip_proxy, route, [Pid]};
                 Err ->
-		    ?INFO_MSG("failed to proxy request ~p: ~p", [Req, Err]),
+		    ?WARNING_MSG("Failed to proxy request ~p: ~p", [Req, Err]),
                     Err
             end;
         {proxy_auth, LServer} ->

@@ -408,8 +408,8 @@ bind(R, #{user := U, server := S, access := Access, lang := Lang,
 		    {ok, State2};
 		deny ->
 		    ejabberd_hooks:run(forbidden_session_hook, LServer, [JID]),
-		    ?INFO_MSG("(~s) Forbidden c2s session for ~s",
-			      [xmpp_socket:pp(Socket), jid:encode(JID)]),
+		    ?WARNING_MSG("(~s) Forbidden c2s session for ~s",
+				 [xmpp_socket:pp(Socket), jid:encode(JID)]),
 		    Txt = <<"Access denied by service policy">>,
 		    {error, xmpp:err_not_allowed(Txt, Lang), State}
 	    end
@@ -444,12 +444,12 @@ handle_auth_success(User, Mech, AuthModule,
 handle_auth_failure(User, Mech, Reason,
 		    #{socket := Socket,
 		      ip := IP, lserver := LServer} = State) ->
-    ?INFO_MSG("(~s) Failed c2s ~s authentication ~sfrom ~s: ~s",
-	      [xmpp_socket:pp(Socket), Mech,
-	       if User /= <<"">> -> ["for ", User, "@", LServer, " "];
-		  true -> ""
-	       end,
-	       ejabberd_config:may_hide_data(misc:ip_to_list(IP)), Reason]),
+    ?WARNING_MSG("(~s) Failed c2s ~s authentication ~sfrom ~s: ~s",
+		 [xmpp_socket:pp(Socket), Mech,
+		  if User /= <<"">> -> ["for ", User, "@", LServer, " "];
+		     true -> ""
+		  end,
+		  ejabberd_config:may_hide_data(misc:ip_to_list(IP)), Reason]),
     ejabberd_hooks:run_fold(c2s_auth_result, LServer, State, [false, User]).
 
 handle_unbinded_packet(Pkt, #{lserver := LServer} = State) ->

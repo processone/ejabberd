@@ -60,8 +60,8 @@ from_dir(ProsodyDir) ->
 		    Err
 	    end;
 	{error, _} = Err ->
-	    ?INFO_MSG("The file 'luerl.beam' is not found: maybe "
-		      "ejabberd is not compiled with Lua support", []),
+	    ?ERROR_MSG("The file 'luerl.beam' is not found: maybe "
+		       "ejabberd is not compiled with Lua support", []),
 	    Err
     end.
 

@@ -335,10 +335,10 @@ connecting(connect, #state{host = Host} = State) ->
             State2 = get_db_version(State1),
             {next_state, session_established, State2};
       {error, Reason} ->
-	  ?INFO_MSG("~p connection failed:~n** Reason: ~p~n** "
-		    "Retry after: ~p seconds",
-		    [State#state.db_type, Reason,
-		     State#state.start_interval div 1000]),
+	  ?WARNING_MSG("~p connection failed:~n** Reason: ~p~n** "
+		       "Retry after: ~p seconds",
+		       [State#state.db_type, Reason,
+			State#state.start_interval div 1000]),
 	  p1_fsm:send_event_after(State#state.start_interval,
 				      connect),
 	  {next_state, connecting, State}
@@ -621,7 +621,6 @@ sql_query_internal(Query) ->
 						   [Query], self(),
 						   [{timeout, QueryTimeout - 1000},
 						    {result_type, binary}])),
-		%% ?INFO_MSG("MySQL, Received result~n~p~n", [R]),
 		  R;
 	      sqlite ->
 		  Host = State#state.host,
