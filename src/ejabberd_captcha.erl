@@ -230,7 +230,6 @@ process_iq(#iq{type = get, lang = Lang} = IQ) ->
     Txt = <<"Value 'get' of 'type' attribute is not allowed">>,
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_iq(#iq{lang = Lang} = IQ) ->
-    ?INFO_MSG("IQ = ~p", [IQ]),
     Txt = <<"No module is handling this query">>,
     xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
