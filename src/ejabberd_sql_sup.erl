@@ -31,21 +31,19 @@
 
 -export([start_link/1, init/1, add_pid/2, remove_pid/2,
 	 get_pids/1, get_random_pid/1, transform_options/1,
-	 opt_type/1]).
+	 reload/1, opt_type/1]).
 
 -include("logger.hrl").
+-include_lib("stdlib/include/ms_transform.hrl").
 
 -define(PGSQL_PORT, 5432).
-
 -define(MYSQL_PORT, 3306).
-
 -define(DEFAULT_POOL_SIZE, 10).
-
 -define(DEFAULT_SQL_START_INTERVAL, 30).
-
 -define(CONNECT_TIMEOUT, 500).
 
--record(sql_pool, {host, pid}).
+-record(sql_pool, {host :: binary(),
+		   pid  :: pid()}).
 
 start_link(Host) ->
     ejabberd_mnesia:create(?MODULE, sql_pool,
@@ -59,9 +57,6 @@ start_link(Host) ->
 			  ?MODULE, [Host]).
 
 init([Host]) ->
-    StartInterval = ejabberd_config:get_option(
-                      {sql_start_interval, Host},
-                      ?DEFAULT_SQL_START_INTERVAL),
     Type = ejabberd_config:get_option({sql_type, Host}, odbc),
     PoolSize = get_pool_size(Type, Host),
     case Type of
@@ -72,16 +67,37 @@ init([Host]) ->
         _ ->
             ok
     end,
+    {ok, {{one_for_one, PoolSize * 10, 1},
+	  [child_spec(I, Host) || I <- lists:seq(1, PoolSize)]}}.
 
-    {ok,
-     {{one_for_one, PoolSize * 10, 1},
-      lists:map(fun (I) ->
-			{I,
-			 {ejabberd_sql, start_link,
-			  [Host, StartInterval * 1000]},
-			 transient, 2000, worker, [?MODULE]}
-		end,
-		lists:seq(1, PoolSize))}}.
+reload(Host) ->
+    Type = ejabberd_config:get_option({sql_type, Host}, odbc),
+    NewPoolSize = get_pool_size(Type, Host),
+    OldPoolSize = ets:select_count(
+		    sql_pool,
+		    ets:fun2ms(
+		      fun(#sql_pool{host = H}) when H == Host ->
+			      true
+		      end)),
+    reload(Host, NewPoolSize, OldPoolSize).
+
+reload(Host, NewPoolSize, OldPoolSize) ->
+    Sup = gen_mod:get_module_proc(Host, ?MODULE),
+    if NewPoolSize == OldPoolSize ->
+	    ok;
+       NewPoolSize > OldPoolSize ->
+	    lists:foreach(
+	      fun(I) ->
+		      Spec = child_spec(I, Host),
+		      supervisor:start_child(Sup, Spec)
+	      end, lists:seq(OldPoolSize+1, NewPoolSize));
+       OldPoolSize > NewPoolSize ->
+	    lists:foreach(
+	      fun(I) ->
+		      supervisor:terminate_child(Sup, I),
+		      supervisor:delete_child(Sup, I)
+	      end, lists:seq(NewPoolSize+1, OldPoolSize))
+    end.
 
 get_pids(Host) ->
     Rs = mnesia:dirty_read(sql_pool, Host),
@@ -122,6 +138,13 @@ get_pool_size(SQLType, Host) ->
 	    ok
     end,
     PoolSize.
+
+child_spec(I, Host) ->
+    StartInterval = ejabberd_config:get_option(
+                      {sql_start_interval, Host},
+                      ?DEFAULT_SQL_START_INTERVAL),
+    {I, {ejabberd_sql, start_link, [Host, timer:seconds(StartInterval)]},
+     transient, 2000, worker, [?MODULE]}.
 
 transform_options(Opts) ->
     lists:foldl(fun transform_options/2, [], Opts).

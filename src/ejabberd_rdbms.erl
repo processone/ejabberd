@@ -71,7 +71,7 @@ get_spec(Host) ->
 
 -spec config_reloaded() -> ok.
 config_reloaded() ->
-    lists:foreach(fun start_host/1, ejabberd_config:get_myhosts()).
+    lists:foreach(fun reload_host/1, ejabberd_config:get_myhosts()).
 
 -spec start_host(binary()) -> ok.
 start_host(Host) ->
@@ -95,6 +95,10 @@ stop_host(Host) ->
     supervisor:terminate_child(?MODULE, SupName),
     supervisor:delete_child(?MODULE, SupName),
     ok.
+
+-spec reload_host(binary()) -> ok.
+reload_host(Host) ->
+    ejabberd_sql_sup:reload(Host).
 
 %% Returns {true, App} if we have configured sql for the given host
 needs_sql(Host) ->
