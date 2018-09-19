@@ -168,8 +168,8 @@ log_and_disconnect(#{ip := {Addr, _}, lang := Lang} = State, Attempts, UnbanTS) 
 	       "from this IP address (~s). The address "
 	       "will be unblocked at ~s UTC">>,
     Args = [Attempts, IP, UnbanDate],
-    ?INFO_MSG("Connection attempt from blacklisted IP ~s: ~s",
-	      [IP, io_lib:fwrite(Format, Args)]),
+    ?WARNING_MSG("Connection attempt from blacklisted IP ~s: ~s",
+		 [IP, io_lib:fwrite(Format, Args)]),
     Err = xmpp:serr_policy_violation({Format, Args}, Lang),
     {stop, ejabberd_c2s:send(State, Err)}.
 
