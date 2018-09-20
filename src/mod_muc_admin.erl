@@ -361,7 +361,7 @@ build_summary_room(Name, Host, Pid) ->
     {<<Name/binary, "@", Host/binary>>,
 	 misc:atom_to_binary(Public),
      Participants
-    }.	  
+    }.
 
 muc_register_nick(Nick, FromBinary, ServerHost) ->
     Host = find_host(ServerHost),
@@ -950,6 +950,13 @@ format_room_option(OptionString, ValueString) ->
 		subject_author ->ValueString;
 		presence_broadcast ->misc:expr_to_term(ValueString);
 		max_users -> binary_to_integer(ValueString);
+		voice_request_min_interval -> binary_to_integer(ValueString);
+		vcard -> ValueString;
+		vcard_xupdate when ValueString /= <<"undefined">>,
+				   ValueString /= <<"external">> ->
+		    ValueString;
+		lang -> ValueString;
+		pubsub -> ValueString;
 		_ -> misc:binary_to_atom(ValueString)
 	    end,
     {Option, Value}.
