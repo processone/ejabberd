@@ -2862,8 +2862,13 @@ find_changed_items(UJID, UAffiliation, URole,
     TAffiliation = get_affiliation(JID, StateData),
     TRole = get_role(JID, StateData),
     ServiceAf = get_service_affiliation(JID, StateData),
+    UIsSubscriber = is_subscriber(UJID, StateData),
+    URole1 = case {URole, UIsSubscriber} of
+	{none, true} -> subscriber;
+	{UR, _} -> UR
+    end,
     CanChangeRA = case can_change_ra(UAffiliation,
-				     URole,
+				     URole1,
 				     TAffiliation,
 				     TRole, RoleOrAff, RoleOrAffValue,
 				     ServiceAf) of
@@ -2986,6 +2991,11 @@ can_change_ra(_FAffiliation, moderator, _TAffiliation,
 can_change_ra(_FAffiliation, moderator, _TAffiliation,
 	      visitor, role, participant, _ServiceAf) ->
     true;
+can_change_ra(FAffiliation, subscriber, _TAffiliation,
+	      visitor, role, participant, _ServiceAf)
+    when (FAffiliation == owner) or
+	   (FAffiliation == admin) ->
+    true;
 can_change_ra(FAffiliation, _FRole, _TAffiliation,
 	      visitor, role, moderator, _ServiceAf)
     when (FAffiliation == owner) or
@@ -2996,6 +3006,11 @@ can_change_ra(_FAffiliation, moderator, _TAffiliation,
     true;
 can_change_ra(_FAffiliation, moderator, _TAffiliation,
 	      participant, role, visitor, _ServiceAf) ->
+    true;
+can_change_ra(FAffiliation, subscriber, _TAffiliation,
+	      participant, role, visitor, _ServiceAf)
+    when (FAffiliation == owner) or
+	   (FAffiliation == admin) ->
     true;
 can_change_ra(FAffiliation, _FRole, _TAffiliation,
 	      participant, role, moderator, _ServiceAf)
