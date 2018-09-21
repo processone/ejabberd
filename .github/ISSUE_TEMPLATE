@@ -1,15 +1,20 @@
-> What version of ejabberd are you using?
+Environment
+-----------
+- ejabberd version: 18.06
+- OS: Linux (Debian)
+- Installed from: source | distro package | official deb/rpm | official binary installer | other
 
+Configuration (only if needed): grep -Ev '^$|^\s*#' ejabberd.yml
+---------------------------------------------------------------------------
+```yaml
+loglevel: 4
+...
+```
 
+Errors from error.log/crash.log
+-------------------------------
+No errors
 
-> What operating system (version) are you using?
-
-
-
-> How did you install ejabberd (source, package, distribution)?
-
-
-
-> What did not work as expected? Are there error messages in the log? What
-> was the unexpected behavior? What was the expected result?
-
+Bug description
+---------------
+Nothing works, plz halp :(
