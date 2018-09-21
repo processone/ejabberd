@@ -860,7 +860,7 @@ process_normal_message(From, #message{lang = Lang} = Pkt, StateData) ->
 	{ok, [#muc_invite{}|_] = Invitations} ->
 	    lists:foldl(
 	      fun(Invitation, AccState) ->
-		      process_invitation(From, Invitation, Lang, AccState)
+		      process_invitation(From, Pkt, Invitation, Lang, AccState)
 	      end, StateData, Invitations);
 	{ok, [{role, participant}]} ->
 	    process_voice_request(From, Pkt, StateData);
@@ -873,9 +873,9 @@ process_normal_message(From, #message{lang = Lang} = Pkt, StateData) ->
 	    StateData
     end.
 
--spec process_invitation(jid(), muc_invite(), binary(), state()) -> state().
-process_invitation(From, Invitation, Lang, StateData) ->
-    IJID = route_invitation(From, Invitation, Lang, StateData),
+-spec process_invitation(jid(), message(), muc_invite(), binary(), state()) -> state().
+process_invitation(From, Pkt, Invitation, Lang, StateData) ->
+    IJID = route_invitation(From, Pkt, Invitation, Lang, StateData),
     Config = StateData#state.config,
     case Config#config.members_only of
 	true ->
@@ -4192,8 +4192,8 @@ check_invitation(From, Invitations, Lang, StateData) ->
 	    {error, xmpp:err_not_allowed(Txt, Lang)}
     end.
 
--spec route_invitation(jid(), muc_invite(), binary(), state()) -> jid().
-route_invitation(From, Invitation, Lang, StateData) ->
+-spec route_invitation(jid(), message(), muc_invite(), binary(), state()) -> jid().
+route_invitation(From, Pkt, Invitation, Lang, StateData) ->
     #muc_invite{to = JID, reason = Reason} = Invitation,
     Invite = Invitation#muc_invite{to = undefined, from = From},
     Password = case (StateData#state.config)#config.password_protected of
@@ -4232,10 +4232,12 @@ route_invitation(From, Invitation, Lang, StateData) ->
 		   type = normal,
 		   body = xmpp:mk_text(Body),
 		   sub_els = [XUser, XConference]},
-    ejabberd_hooks:run(muc_invite, StateData#state.server_host,
-		       [StateData#state.jid, StateData#state.config,
-			From, JID, Reason]),
-    ejabberd_router:route(Msg),
+    Msg2 = ejabberd_hooks:run_fold(muc_invite,
+				   StateData#state.server_host,
+				   Msg,
+				   [StateData#state.jid, StateData#state.config,
+				    From, JID, Reason, Pkt]),
+    ejabberd_router:route(Msg2),
     JID.
 
 %% Handle a message sent to the room by a non-participant.
