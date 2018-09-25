@@ -3051,6 +3051,15 @@ can_change_ra(_FAffiliation, _FRole, admin, moderator,
 can_change_ra(admin, _FRole, _TAffiliation, moderator,
 	      role, participant, _ServiceAf) ->
     true;
+can_change_ra(owner, moderator, TAffiliation,
+	      moderator, role, none, _ServiceAf)
+    when TAffiliation /= owner ->
+    true;
+can_change_ra(admin, moderator, TAffiliation,
+	      moderator, role, none, _ServiceAf)
+    when (TAffiliation /= owner) and
+         (TAffiliation /= admin) ->
+    true;
 can_change_ra(_FAffiliation, _FRole, _TAffiliation,
 	      _TRole, role, _Value, _ServiceAf) ->
     false.
