@@ -36,7 +36,7 @@ exec({ReM, ReF, ReA}, {RgM, RgF, RgA}) ->
 -spec run(binary(), binary()) -> match | nomatch | {error, any()}.
 
 run(String, Regexp) ->
-    case exec({re, run, [String, Regexp, [{capture, none}]]},
+    case exec({re, run, [String, Regexp, [{capture, none}, unicode]]},
 	      {regexp, first_match, [binary_to_list(String),
                                      binary_to_list(Regexp)]})
 	of
