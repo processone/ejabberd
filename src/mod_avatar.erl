@@ -302,6 +302,10 @@ publish_avatar(#iq{from = JID} = IQ, Meta, MimeType, Data, ItemID) ->
 			       [jid:encode(JID), StanzaErr]),
 		    {stop, StanzaErr}
 	    end;
+	{error, #stanza_error{reason = 'not-acceptable'} = StanzaErr} ->
+	    ?WARNING_MSG("Failed to publish avatar data for ~s: ~p",
+			 [jid:encode(JID), StanzaErr]),
+	    {stop, StanzaErr};
 	{error, StanzaErr} ->
 	    ?ERROR_MSG("Failed to publish avatar data for ~s: ~p",
 		       [jid:encode(JID), StanzaErr]),
