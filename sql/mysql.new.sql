@@ -276,7 +276,7 @@ CREATE TABLE pubsub_item (
   publisher text NOT NULL,
   creation varchar(32) NOT NULL,
   modification varchar(32) NOT NULL,
-  payload text NOT NULL
+  payload mediumtext NOT NULL
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE INDEX i_pubsub_item_itemid ON pubsub_item(itemid(36));
 CREATE UNIQUE INDEX i_pubsub_item_tuple ON pubsub_item(nodeid, itemid(36));
