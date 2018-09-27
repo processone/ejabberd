@@ -63,12 +63,7 @@ init(_) ->
     ets:new(?MODULE, [named_table, public]),
     ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),
     Listeners = ejabberd_config:get_option(listen, []),
-    case add_certfiles(Listeners) of
-	ok ->
-	    {ok, {{one_for_one, 10, 1}, listeners_childspec(Listeners)}};
-	{error, _} = Err ->
-	    Err
-    end.
+    {ok, {{one_for_one, 10, 1}, listeners_childspec(Listeners)}}.
 
 -spec listeners_childspec([listener()]) -> [supervisor:child_spec()].
 listeners_childspec(Listeners) ->
@@ -432,20 +427,6 @@ check_rate_limit(Interval) ->
     end,
     NewInterval.
 
--spec add_certfiles([listener()]) -> ok | {error, any()}.
-add_certfiles([{_, _, Opts}|Listeners]) ->
-    case lists:keyfind(certfile, 1, Opts) of
-	{_, Path} ->
-	    case ejabberd_pkix:add_certfile(Path) of
-		ok -> add_certfiles(Listeners);
-		{error, _} = Err -> Err
-	    end;
-	false ->
-	    add_certfiles(Listeners)
-    end;
-add_certfiles([]) ->
-    ok.
-
 transform_option({{Port, IP, Transport}, Mod, Opts}) ->
     IPStr = if is_tuple(IP) ->
                     list_to_binary(inet_parse:ntoa(IP));
@@ -652,12 +633,12 @@ listen_opt_type(supervisor) ->
     fun(B) when is_boolean(B) -> B end;
 listen_opt_type(certfile) ->
     fun(S) ->
-	    ok = ejabberd_pkix:add_certfile(S),
-	    iolist_to_binary(S)
+	    {ok, File} = ejabberd_pkix:add_certfile(S),
+	    File
     end;
 listen_opt_type(ciphers) -> fun iolist_to_binary/1;
 listen_opt_type(dhfile) -> fun misc:try_read_file/1;
-listen_opt_type(cafile) -> fun misc:try_read_file/1;
+listen_opt_type(cafile) -> fun ejabberd_pkix:try_certfile/1;
 listen_opt_type(protocol_options) ->
     fun (Options) -> str:join(Options, <<"|">>) end;
 listen_opt_type(tls_compression) ->

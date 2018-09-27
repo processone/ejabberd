@@ -982,8 +982,8 @@ listen_opt_type(certfile = Opt) ->
     fun(S) ->
 	    ?WARNING_MSG("Listening option '~s' for ~s is deprecated, use "
 			 "'certfiles' global option instead", [Opt, ?MODULE]),
-	    ok = ejabberd_pkix:add_certfile(S),
-	    iolist_to_binary(S)
+	    {ok, File} = ejabberd_pkix:add_certfile(S),
+	    File
     end;
 listen_opt_type(starttls) -> fun(B) when is_boolean(B) -> B end;
 listen_opt_type(starttls_required) -> fun(B) when is_boolean(B) -> B end;

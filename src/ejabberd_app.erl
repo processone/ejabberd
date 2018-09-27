@@ -59,6 +59,7 @@ start(normal, _Args) ->
 		    ?INFO_MSG("ejabberd ~s is started in the node ~p in ~.2fs",
 			      [ejabberd_config:get_version(),
 			       node(), (T2-T1)/1000]),
+		    ejabberd_hooks:run(ejabberd_started, []),
 		    lists:foreach(fun erlang:garbage_collect/1, processes()),
 		    {ok, SupPid};
 		Err ->
@@ -150,6 +151,7 @@ start_apps() ->
     crypto:start(),
     ejabberd:start_app(sasl),
     ejabberd:start_app(ssl),
+    ejabberd:start_app(pkix),
     ejabberd:start_app(p1_utils),
     ejabberd:start_app(fast_yaml),
     ejabberd:start_app(fast_tls),

@@ -1112,7 +1112,7 @@ save_certificate({ok, DomainName, Cert}) ->
 	%% that there is no certificate saved if it cannot be added in
 	%% certificate persistent storage
 	write_cert(CertificateFile, Cert, DomainName),
-	ok = ejabberd_pkix:add_certfile(CertificateFile),
+	{ok, _} = ejabberd_pkix:add_certfile(CertificateFile),
 	DataCert = #data_cert{
 		      domain = DomainName,
 		      pem = Cert,

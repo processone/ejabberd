@@ -1162,7 +1162,7 @@ opt_type(sql_username) -> fun iolist_to_binary/1;
 opt_type(sql_ssl) -> fun(B) when is_boolean(B) -> B end;
 opt_type(sql_ssl_verify) -> fun(B) when is_boolean(B) -> B end;
 opt_type(sql_ssl_certfile) -> fun ejabberd_pkix:try_certfile/1;
-opt_type(sql_ssl_cafile) -> fun misc:try_read_file/1;
+opt_type(sql_ssl_cafile) -> fun ejabberd_pkix:try_certfile/1;
 opt_type(sql_query_timeout) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 opt_type(sql_connect_timeout) ->

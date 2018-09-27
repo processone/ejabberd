@@ -38,7 +38,7 @@
 -protocol({xep, 270, '1.0'}).
 
 -export([start/0, stop/0, halt/0, start_app/1, start_app/2,
-	 get_pid_file/0, check_app/1, module_name/1]).
+	 get_pid_file/0, check_app/1, module_name/1, is_loaded/0]).
 
 -include("logger.hrl").
 
