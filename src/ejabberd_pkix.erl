@@ -52,7 +52,13 @@ start_link() ->
 -spec add_certfile(file:filename_all()) -> {ok, filename()} | {error, pkix:error_reason()}.
 add_certfile(Path0) ->
     Path = prep_path(Path0),
-    gen_server:call(?MODULE, {add_certfile, Path}, ?CALL_TIMEOUT).
+    try gen_server:call(?MODULE, {add_certfile, Path}, ?CALL_TIMEOUT)
+    catch exit:{noproc, _} ->
+	    case add_file(Path) of
+		ok -> {ok, Path};
+		Err -> Err
+	    end
+    end.
 
 -spec try_certfile(file:filename_all()) -> filename().
 try_certfile(Path0) ->
@@ -140,10 +146,12 @@ init([]) ->
 	{Files, []} ->
 	    {ok, #state{files = Files}};
 	{Files, [_|_]} ->
-	    del_files(Files),
 	    case ejabberd:is_loaded() of
-		true -> {stop, bad_certfiles};
-		false -> stop_ejabberd()
+		true ->
+		    {ok, #state{files = Files}};
+		false ->
+		    del_files(Files),
+		    stop_ejabberd()
 	    end
     end.
 
@@ -159,28 +167,24 @@ handle_call({add_certfile, Path}, _From, State) ->
     end;
 handle_call(ejabberd_started, _From, State) ->
     case commit() of
-	ok ->
+	{ok, []} ->
 	    check_domain_certfiles(),
 	    {reply, ok, State};
-	{error, _} ->
+	_ ->
 	    stop_ejabberd()
     end;
 handle_call(config_reloaded, _From, State) ->
     Old = State#state.files,
     New = get_certfiles_from_config_options(),
     del_files(sets:subtract(Old, New)),
-    {_, Errs1} = add_files(New),
-    State1 = case commit() of
-		 ok ->
-		     State#state{files = New};
-		 {error, Errs2} ->
-		     New1 = lists:foldl(
-			      fun sets:del_element/2, New,
-			      [File || {File, _} <- Errs1 ++ Errs2]),
-		     State#state{files = New1}
-	     end,
-    check_domain_certfiles(),
-    {reply, ok, State1};
+    add_files(New),
+    case commit() of
+	{ok, _} ->
+	    check_domain_certfiles(),
+	    {reply, ok, State#state{files = New}};
+	error ->
+	    {reply, ok, State}
+    end;
 handle_call(Request, _From, State) ->
     ?WARNING_MSG("Unexpected call: ~p", [Request]),
     {noreply, State}.
@@ -252,7 +256,7 @@ add_file(File) ->
 del_files(Files) ->
     lists:foreach(fun pkix:del_file/1, sets:to_list(Files)).
 
--spec commit() -> ok | {error, [{filename(), pkix:error_reason()}]}.
+-spec commit() -> {ok, [{filename(), pkix:error_reason()}]} | error.
 commit() ->
     Opts = case ca_file() of
 	       undefined -> [];
@@ -264,14 +268,11 @@ commit() ->
 	    log_cafile_error(CAError),
 	    log_warnings(Warnings),
 	    fast_tls_add_certfiles(),
-	    case Errors of
-		[] -> ok;
-		[_|_] -> {error, Errors}
-	    end;
+	    {ok, Errors};
 	{error, File, Reason} ->
 	    ?CRITICAL_MSG("Failed to write to ~s: ~s",
 			  [File, file:format_error(Reason)]),
-	    {error, [{File, Reason}]}
+	    error
     end.
 
 -spec check_domain_certfiles() -> ok.
@@ -331,7 +332,8 @@ local_certfiles() ->
 get_certfiles_from_config_options() ->
     Global = global_certfiles(),
     Local = local_certfiles(),
-    sets:union(Global, Local).
+    Listen = sets:from_list(ejabberd_listener:get_certfiles()),
+    sets:union([Global, Local, Listen]).
 
 -spec prep_path(file:filename_all()) -> filename().
 prep_path(Path0) ->

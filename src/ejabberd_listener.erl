@@ -33,7 +33,7 @@
 	 start_listeners/0, start_listener/3, stop_listeners/0,
 	 stop_listener/2, add_listener/3, delete_listener/2,
 	 transform_options/1, validate_cfg/1, opt_type/1,
-	 config_reloaded/0]).
+	 config_reloaded/0, get_certfiles/0]).
 %% Legacy API
 -export([parse_listener_portip/2]).
 
@@ -378,6 +378,16 @@ config_reloaded() ->
 		      start_listener(EndPoint, Module, Opts)
 	      end
       end, New).
+
+-spec get_certfiles() -> [binary()].
+get_certfiles() ->
+    lists:filtermap(
+      fun({_, _, Opts}) ->
+	      case proplists:get_value(certfile, Opts) of
+		  undefined -> false;
+		  Cert -> {true, Cert}
+	      end
+      end, ets:tab2list(?MODULE)).
 
 -spec report_socket_error(inet:posix(), endpoint(), module()) -> ok.
 report_socket_error(Reason, EndPoint, Module) ->
