@@ -55,11 +55,11 @@ start(normal, _Args) ->
 		    ejabberd_system_monitor:start(),
 		    register_elixir_config_hooks(),
 		    ejabberd_cluster:wait_for_sync(infinity),
+		    ejabberd_hooks:run(ejabberd_started, []),
 		    {T2, _} = statistics(wall_clock),
 		    ?INFO_MSG("ejabberd ~s is started in the node ~p in ~.2fs",
 			      [ejabberd_config:get_version(),
 			       node(), (T2-T1)/1000]),
-		    ejabberd_hooks:run(ejabberd_started, []),
 		    lists:foreach(fun erlang:garbage_collect/1, processes()),
 		    {ok, SupPid};
 		Err ->
