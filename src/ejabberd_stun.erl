@@ -168,6 +168,8 @@ listen_opt_type(server_name) ->
 
 listen_options() ->
     [{shaper, none},
+     {use_turn, false},
+     {turn_ip, undefined},
      {auth_type, user},
      {auth_realm, undefined},
      {tls, false},
