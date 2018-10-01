@@ -2149,15 +2149,15 @@ presence_broadcast_allowed(JID, StateData) ->
 -spec send_initial_presences_and_messages(
 	jid(), binary(), presence(), state(), state()) -> ok.
 send_initial_presences_and_messages(From, Nick, Presence, NewState, OldState) ->
-    send_self_presence(From, NewState),
+    advertise_entity_capabilities(From, NewState),
     send_existing_presences(From, NewState),
-    send_initial_presence(From, NewState, OldState),
+    send_self_presence(From, NewState, OldState),
     History = get_history(Nick, Presence, NewState),
     send_history(From, History, NewState),
     send_subject(From, OldState).
 
--spec send_self_presence(jid(), state()) -> ok.
-send_self_presence(JID, State) ->
+-spec advertise_entity_capabilities(jid(), state()) -> ok.
+advertise_entity_capabilities(JID, State) ->
     AvatarHash = (State#state.config)#config.vcard_xupdate,
     DiscoInfo = make_disco_info(JID, State),
     Extras = iq_disco_info_extras(<<"en">>, State, true),
@@ -2175,8 +2175,8 @@ send_self_presence(JID, State) ->
 				    id = p1_rand:get_string(),
 				    sub_els = Els2}).
 
--spec send_initial_presence(jid(), state(), state()) -> ok.
-send_initial_presence(NJID, StateData, OldStateData) ->
+-spec send_self_presence(jid(), state(), state()) -> ok.
+send_self_presence(NJID, StateData, OldStateData) ->
     send_new_presence(NJID, <<"">>, true, StateData, OldStateData).
 
 -spec send_update_presence(jid(), state(), state()) -> ok.
@@ -3513,7 +3513,7 @@ send_config_change_info(New, #state{config = Old} = StateData) ->
     if Codes /= [] ->
 	    maps:fold(
 	      fun(_LJID, #user{jid = JID}, _) ->
-		      send_self_presence(JID, StateData#state{config = New})
+		      advertise_entity_capabilities(JID, StateData#state{config = New})
 	      end, ok, StateData#state.users),
 	    Message = #message{type = groupchat,
 			       id = p1_rand:get_string(),
