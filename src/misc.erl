@@ -204,7 +204,7 @@ compile_exprs(Mod, Exprs) ->
 
 -spec join_atoms([atom()], binary()) -> binary().
 join_atoms(Atoms, Sep) ->
-    str:join([io_lib:format("~p", [A]) || A <- Atoms], Sep).
+    str:join([io_lib:format("~p", [A]) || A <- lists:sort(Atoms)], Sep).
 
 %% @doc Checks if the file is readable and converts its name to binary.
 %%      Fails with `badarg` otherwise. The function is intended for usage
