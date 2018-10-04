@@ -1,6 +1,6 @@
 Environment
 -----------
-- ejabberd version: 18.06
+- ejabberd version: 18.09
 - Erlang version: `erl +V`
 - OS: Linux (Debian)
 - Installed from: source | distro package | official deb/rpm | official binary installer | other
