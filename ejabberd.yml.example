@@ -36,7 +36,8 @@ log_rotate_count: 1
 log_rate_limit: 100
 
 certfiles:
-  - "/etc/letsencrypt/live/*/*.pem"
+  - "/etc/letsencrypt/live/localhost/fullchain.pem"
+  - "/etc/letsencrypt/live/localhost/privkey.pem"
 
 listen:
   -
