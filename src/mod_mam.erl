@@ -649,7 +649,8 @@ should_archive(#message{body = Body, subject = Subject,
 		    false;
 		none ->
 		    xmpp:get_text(Body) /= <<>> orelse
-			xmpp:get_text(Subject) /= <<>>
+		    xmpp:get_text(Subject) /= <<>> orelse
+		    xmpp:has_subtag(Pkt, #ps_event{})
 	    end
     end;
 should_archive(_, _LServer) ->
