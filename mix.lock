@@ -25,6 +25,7 @@
   "p1_oauth2": {:hex, :p1_oauth2, "0.6.3", "fbd91ba86bd7f03d2a4f6e62affa86bab9930abfd6b473d61eefb148f246cd46", [:rebar3], [], "hexpm"},
   "p1_pgsql": {:hex, :p1_pgsql, "1.1.6", "631004602b06ca6f55d759001f180185685c7097e583f3b0f7dd9b8e05ba5db1", [:rebar3], [], "hexpm"},
   "p1_utils": {:hex, :p1_utils, "1.0.13", "176577cafb54a8c2fdc0a7fc62b9a21ab0f66588f4062792cd9e65f3e500bfdb", [:rebar3], [], "hexpm"},
+  "pkix": {:git, "https://github.com/processone/pkix.git", "58856450e84f69c66b28c8807e898a30e1959680", []},
   "riak_pb": {:hex, :riak_pb, "2.3.2", "48ffbf66dbb3f136ab9a7134bac4e496754baa5ef58c4f50a61326736d996390", [:make, :mix, :rebar3], [{:hamcrest, "~> 0.4.1", [hex: :basho_hamcrest, repo: "hexpm", optional: false]}], "hexpm"},
   "riakc": {:hex, :riakc, "2.5.3", "6132d9e687a0dfd314b2b24c4594302ca8b55568a5d733c491d8fb6cd4004763", [:make, :mix, :rebar3], [{:riak_pb, "~> 2.3", [hex: :riak_pb, repo: "hexpm", optional: false]}], "hexpm"},
   "samerlib": {:git, "https://github.com/processone/samerlib", "fbbba035b1548ac4e681df00d61bf609645333a0", [tag: "0.8.0c"]},
