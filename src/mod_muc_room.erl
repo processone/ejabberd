@@ -39,7 +39,8 @@
 	 is_occupant_or_admin/2,
 	 route/2,
 	 expand_opts/1,
-	 config_fields/0]).
+	 config_fields/0,
+	 unwrap_mucsub_message/1]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -4458,6 +4459,24 @@ wrap(From, To, Packet, Node) ->
 				items = [#ps_item{
 					    id = p1_rand:get_string(),
 					    sub_els = [El]}]}}]}.
+
+-spec unwrap_mucsub_message(xmpp_element()) -> message() | false.
+unwrap_mucsub_message(#message{} = Packet) ->
+    case xmpp:get_subtag(Packet, #ps_event{}) of
+	#ps_event{
+	    items = #ps_items{
+		node = Node,
+		items = [
+		    #ps_item{
+			sub_els = [#message{} = Message]} | _]}}
+	    when Node == ?NS_MUCSUB_NODES_MESSAGES;
+		 Node == ?NS_MUCSUB_NODES_SUBJECT ->
+	    Message;
+	_ ->
+	    false
+    end;
+unwrap_mucsub_message(_Packet) ->
+    false.
 
 %% -spec send_multiple(jid(), binary(), [#user{}], stanza()) -> ok.
 %% send_multiple(From, Server, Users, Packet) ->

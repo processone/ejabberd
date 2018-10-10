@@ -648,9 +648,20 @@ should_archive(#message{body = Body, subject = Subject,
 		none when Type == headline ->
 		    false;
 		none ->
-		    xmpp:get_text(Body) /= <<>> orelse
-		    xmpp:get_text(Subject) /= <<>> orelse
-		    xmpp:has_subtag(Pkt, #ps_event{})
+		    case xmpp:get_text(Body) /= <<>> orelse
+			 xmpp:get_text(Subject) /= <<>> of
+			true ->
+			    true;
+			_ ->
+			    case mod_muc_room:unwrap_mucsub_message(Pkt) of
+				#message{type = groupchat} = Msg ->
+				    should_archive(Msg#message{type = chat}, LServer);
+				#message{} = Msg ->
+				    should_archive(Msg, LServer);
+				_ ->
+				    false
+			    end
+		    end
 	    end
     end;
 should_archive(_, _LServer) ->
