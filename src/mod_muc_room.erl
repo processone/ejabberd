@@ -264,8 +264,7 @@ normal_state({route, <<"">>,
 	    ejabberd_router:route_error(Packet, Err),
 	    {next_state, normal_state, StateData};
 	false when Type /= error ->
-	    handle_roommessage_from_nonparticipant(Packet, StateData, From),
-	    {next_state, normal_state, StateData};
+	    {next_state, normal_state, handle_roommessage_from_nonparticipant(Packet, StateData, From)};
 	false ->
 	    {next_state, normal_state, StateData}
     end;
@@ -4287,24 +4286,42 @@ route_invitation(From, Pkt, Invitation, Lang, StateData) ->
 %% Handle a message sent to the room by a non-participant.
 %% If it is a decline, send to the inviter.
 %% Otherwise, an error message is sent to the sender.
--spec handle_roommessage_from_nonparticipant(message(), state(), jid()) -> ok.
+-spec handle_roommessage_from_nonparticipant(message(), state(), jid()) -> state().
 handle_roommessage_from_nonparticipant(Packet, StateData, From) ->
     try xmpp:try_subtag(Packet, #muc_user{}) of
 	#muc_user{decline = #muc_decline{to = #jid{} = To} = Decline} = XUser ->
+		Config = StateData#state.config,
+		NewStateData = case Config#config.members_only of
+			true ->
+				case get_affiliation(From, StateData) of
+				member ->
+					NSD = set_affiliation(From, none, StateData),
+					send_affiliation(From, none, StateData),
+					store_room(NSD),
+					NSD;
+				_ ->
+					StateData
+				end;
+			false ->
+				StateData
+		end,
 	    NewDecline = Decline#muc_decline{to = undefined, from = From},
 	    NewXUser = XUser#muc_user{decline = NewDecline},
 	    NewPacket = xmpp:set_subtag(Packet, NewXUser),
 	    ejabberd_router:route(
-	      xmpp:set_from_to(NewPacket, StateData#state.jid, To));
+		  xmpp:set_from_to(NewPacket, NewStateData#state.jid, To)),
+		NewStateData;
 	_ ->
 	    ErrText = <<"Only occupants are allowed to send messages "
 			"to the conference">>,
 	    Err = xmpp:err_not_acceptable(ErrText, xmpp:get_lang(Packet)),
-	    ejabberd_router:route_error(Packet, Err)
+		ejabberd_router:route_error(Packet, Err),
+		StateData
     catch _:{xmpp_codec, Why} ->
 	    Txt = xmpp:io_format_error(Why),
 	    Err = xmpp:err_bad_request(Txt, xmpp:get_lang(Packet)),
-	    ejabberd_router:route_error(Packet, Err)
+		ejabberd_router:route_error(Packet, Err),
+		StateData
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
