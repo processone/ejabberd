@@ -179,6 +179,9 @@ modules:
   mod_ping: {}
   mod_privacy: {}
   mod_private: {}
+  mod_proxy65:
+    access: local
+    max_connections: 5
   mod_pubsub:
     access_createnode: pubsub_createnode
     plugins:
