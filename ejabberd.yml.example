@@ -188,7 +188,7 @@ modules:
       - "flat"
       - "pep"
     force_node_config:
-      ## Comment out the following lines to enable OMEMO support
+      ## Change from "whitelist" to "open" to enable OMEMO support
       ## See https://github.com/processone/ejabberd/issues/2425
       "eu.siacs.conversations.axolotl.*":
         access_model: whitelist
