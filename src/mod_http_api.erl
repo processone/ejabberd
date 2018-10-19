@@ -301,9 +301,9 @@ handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
 		  throw:{not_allowed, Msg} ->
 		    {401, iolist_to_binary(Msg)};
                   throw:{error, account_unprivileged} ->
-        {403, 31, <<"Command need to be run with admin privilege.">>};
-      throw:{error, access_rules_unauthorized} ->
-        {403, 32, <<"AccessRules: Account does not have the right to perform the operation.">>};
+		      {403, 31, <<"Command need to be run with admin privilege.">>};
+		throw:{error, access_rules_unauthorized} ->
+		    {403, 32, <<"AccessRules: Account does not have the right to perform the operation.">>};
 		  throw:{invalid_parameter, Msg} ->
 		    {400, iolist_to_binary(Msg)};
 		  throw:{error, Why} when is_atom(Why) ->
@@ -504,6 +504,8 @@ format_result(404, {_Name, _}) ->
 
 format_error_result(conflict, Code, Msg) ->
     {409, Code, iolist_to_binary(Msg)};
+format_error_result(not_exists, Code, Msg) ->
+    {404, Code, iolist_to_binary(Msg)};
 format_error_result(_ErrorAtom, Code, Msg) ->
     {500, Code, iolist_to_binary(Msg)}.
 
