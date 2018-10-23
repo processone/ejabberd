@@ -39,6 +39,10 @@ certfiles:
   - "/etc/letsencrypt/live/localhost/fullchain.pem"
   - "/etc/letsencrypt/live/localhost/privkey.pem"
 
+## If you're getting s2s errors such as "unable to get local issuer certificate",
+## uncomment this option and point it to the proper path for ca-certificates.crt 
+## ca_file: /etc/ssl/certs/ca-certificates.crt
+
 listen:
   -
     port: 5222
