@@ -653,7 +653,7 @@ should_archive(#message{body = Body, subject = Subject,
 			true ->
 			    true;
 			_ ->
-			    case mod_muc_room:unwrap_mucsub_message(Pkt) of
+			    case misc:unwrap_mucsub_message(Pkt) of
 				#message{type = groupchat} = Msg ->
 				    should_archive(Msg#message{type = chat}, LServer);
 				#message{} = Msg ->

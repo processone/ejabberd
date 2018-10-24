@@ -29,7 +29,7 @@
 
 %% API
 -export([add_delay_info/3, add_delay_info/4,
-	 unwrap_carbon/1, is_standalone_chat_state/1,
+	 unwrap_carbon/1, unwrap_mucsub_message/1, is_standalone_chat_state/1,
 	 tolower/1, term_to_base64/1, base64_to_term/1, ip_to_list/1,
 	 hex_to_bin/1, hex_to_base64/1, url_encode/1, expand_keyword/3,
 	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
@@ -90,6 +90,24 @@ unwrap_carbon(#message{} = Msg) ->
 	    Msg
     end;
 unwrap_carbon(Stanza) -> Stanza.
+
+-spec unwrap_mucsub_message(xmpp_element()) -> message() | false.
+unwrap_mucsub_message(#message{} = OuterMsg) ->
+    case xmpp:get_subtag(OuterMsg, #ps_event{}) of
+	#ps_event{
+	    items = #ps_items{
+		node = Node,
+		items = [
+		    #ps_item{
+			sub_els = [#message{} = InnerMsg]} | _]}}
+	    when Node == ?NS_MUCSUB_NODES_MESSAGES;
+		 Node == ?NS_MUCSUB_NODES_SUBJECT ->
+	    InnerMsg;
+	_ ->
+	    false
+    end;
+unwrap_mucsub_message(_Packet) ->
+    false.
 
 -spec is_standalone_chat_state(stanza()) -> boolean().
 is_standalone_chat_state(Stanza) ->
