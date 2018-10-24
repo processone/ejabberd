@@ -573,7 +573,7 @@ is_ipchain_trusted(UserIPs, Masks) ->
 		    lists:any(
 			fun({Mask, MaskLen}) ->
 			    acl:ip_matches_mask(IP2, Mask, MaskLen)
-			end, [{{127,0,0,1}, 8} | Masks]);
+			end, Masks);
 		_ ->
 		    false
 	    end
