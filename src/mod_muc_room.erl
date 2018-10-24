@@ -2562,7 +2562,7 @@ add_message_to_history(FromNick, FromJID, Packet, StateData) ->
 								 jid = FromJID}]},
 				 xmpp:set_subtag(Packet, Addresses)
 			 end,
-	    TSPacket = xmpp_util:add_delay_info(
+	    TSPacket = misc:add_delay_info(
 			 AddrPacket, StateData#state.jid, TimeStamp),
 	    SPacket = xmpp:set_from_to(
 			TSPacket,

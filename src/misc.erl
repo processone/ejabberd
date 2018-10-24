@@ -28,7 +28,9 @@
 -module(misc).
 
 %% API
--export([tolower/1, term_to_base64/1, base64_to_term/1, ip_to_list/1,
+-export([add_delay_info/3, add_delay_info/4,
+	 unwrap_carbon/1, is_standalone_chat_state/1,
+	 tolower/1, term_to_base64/1, base64_to_term/1, ip_to_list/1,
 	 hex_to_bin/1, hex_to_base64/1, url_encode/1, expand_keyword/3,
 	 atom_to_binary/1, binary_to_atom/1, tuple_to_binary/1,
 	 l2i/1, i2l/1, i2l/2, expr_to_term/1, term_to_expr/1,
@@ -44,11 +46,63 @@
 	     {encode_base64, 1}]).
 
 -include("logger.hrl").
+-include("xmpp.hrl").
 -include_lib("kernel/include/file.hrl").
 
 %%%===================================================================
 %%% API
 %%%===================================================================
+-spec add_delay_info(stanza(), jid(), erlang:timestamp()) -> stanza().
+add_delay_info(Stz, From, Time) ->
+    add_delay_info(Stz, From, Time, <<"">>).
+
+-spec add_delay_info(stanza(), jid(), erlang:timestamp(), binary()) -> stanza().
+add_delay_info(Stz, From, Time, Desc) ->
+    NewDelay = #delay{stamp = Time, from = From, desc = Desc},
+    case xmpp:get_subtag(Stz, #delay{stamp = {0,0,0}}) of
+	#delay{from = OldFrom} when is_record(OldFrom, jid) ->
+	    case jid:tolower(From) == jid:tolower(OldFrom) of
+		true ->
+		    Stz;
+		false ->
+		    xmpp:append_subtags(Stz, [NewDelay])
+	    end;
+	_ ->
+	    xmpp:append_subtags(Stz, [NewDelay])
+    end.
+
+-spec unwrap_carbon(stanza()) -> xmpp_element().
+unwrap_carbon(#message{} = Msg) ->
+    try
+	case xmpp:get_subtag(Msg, #carbons_sent{forwarded = #forwarded{}}) of
+	    #carbons_sent{forwarded = #forwarded{sub_els = [El]}} ->
+		xmpp:decode(El, ?NS_CLIENT, [ignore_els]);
+	    _ ->
+		case xmpp:get_subtag(Msg, #carbons_received{
+					      forwarded = #forwarded{}}) of
+		    #carbons_received{forwarded = #forwarded{sub_els = [El]}} ->
+			xmpp:decode(El, ?NS_CLIENT, [ignore_els]);
+		    _ ->
+			Msg
+		end
+	end
+    catch _:{xmpp_codec, _} ->
+	    Msg
+    end;
+unwrap_carbon(Stanza) -> Stanza.
+
+-spec is_standalone_chat_state(stanza()) -> boolean().
+is_standalone_chat_state(Stanza) ->
+    case unwrap_carbon(Stanza) of
+	#message{body = [], subject = [], sub_els = Els} ->
+	    IgnoreNS = [?NS_CHATSTATES, ?NS_DELAY, ?NS_EVENT],
+	    Stripped = [El || El <- Els,
+			      not lists:member(xmpp:get_ns(El), IgnoreNS)],
+	    Stripped == [];
+	_ ->
+	    false
+    end.
+
 -spec tolower(binary()) -> binary().
 tolower(B) ->
     iolist_to_binary(tolower_s(binary_to_list(B))).

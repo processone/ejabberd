@@ -384,7 +384,7 @@ need_to_store(LServer, #message{type = Type} = Packet) ->
 			false ->
 			    Packet#message.body /= [];
 			unless_chat_state ->
-			    not xmpp_util:is_standalone_chat_state(Packet)
+			    not misc:is_standalone_chat_state(Packet)
 		    end
 	    end;
 	true ->
@@ -795,8 +795,8 @@ add_delay_info(Packet, LServer, TS) ->
 		_ -> TS
 	    end,
     Packet1 = xmpp:put_meta(Packet, from_offline, true),
-    xmpp_util:add_delay_info(Packet1, jid:make(LServer), NewTS,
-			     <<"Offline storage">>).
+    misc:add_delay_info(Packet1, jid:make(LServer), NewTS,
+			<<"Offline storage">>).
 
 -spec get_priority_from_presence(presence()) -> integer().
 get_priority_from_presence(#presence{priority = Prio}) ->

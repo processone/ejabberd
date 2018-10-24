@@ -635,7 +635,7 @@ make_summary(_Host, _Pkt, _Dir) ->
 
 -spec unwrap_carbon(stanza()) -> stanza().
 unwrap_carbon(#message{meta = #{carbon_copy := true}} = Msg) ->
-    xmpp_util:unwrap_carbon(Msg);
+    misc:unwrap_carbon(Msg);
 unwrap_carbon(Stanza) ->
     Stanza.
 

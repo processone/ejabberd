@@ -237,7 +237,7 @@ filter_chat_states({#message{meta = #{csi_resend := true}}, _} = Acc) ->
     Acc;
 filter_chat_states({#message{from = From, to = To} = Msg,
 		    #{csi_state := inactive} = C2SState} = Acc) ->
-    case xmpp_util:is_standalone_chat_state(Msg) of
+    case misc:is_standalone_chat_state(Msg) of
 	true ->
 	    case {From, To} of
 		{#jid{luser = U, lserver = S}, #jid{luser = U, lserver = S}} ->
@@ -352,7 +352,7 @@ flush_stanzas(#{lserver := LServer} = C2SState, Elems) ->
 
 -spec add_delay_info(stanza(), binary(), csi_timestamp()) -> stanza().
 add_delay_info(Stanza, LServer, {_Seq, TimeStamp}) ->
-    Stanza1 = xmpp_util:add_delay_info(
+    Stanza1 = misc:add_delay_info(
 		Stanza, jid:make(LServer), TimeStamp,
 		<<"Client Inactive">>),
     xmpp:put_meta(Stanza1, csi_resend, true).

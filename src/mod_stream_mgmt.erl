@@ -706,7 +706,7 @@ make_resume_id(#{sid := {Time, _}, resource := Resource}) ->
 			   (state(), xmlel(), erlang:timestamp()) -> xmlel().
 add_resent_delay_info(#{lserver := LServer}, El, Time)
   when is_record(El, message); is_record(El, presence) ->
-    xmpp_util:add_delay_info(El, jid:make(LServer), Time, <<"Resent">>);
+    misc:add_delay_info(El, jid:make(LServer), Time, <<"Resent">>);
 add_resent_delay_info(_State, El, _Time) ->
     %% TODO
     El.

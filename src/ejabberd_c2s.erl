@@ -633,7 +633,7 @@ route_probe_reply(From, #{jid := To,
     Subscription = get_subscription(To, From),
     if IsAnotherResource orelse
        Subscription == both orelse Subscription == from ->
-	    Packet = xmpp_util:add_delay_info(LastPres, To, TS),
+	    Packet = misc:add_delay_info(LastPres, To, TS),
 	    case privacy_check_packet(State, Packet, out) of
 		deny ->
 		    ok;
