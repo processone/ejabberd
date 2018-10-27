@@ -419,6 +419,27 @@ user_send_packet({#iq{type = Type,
 		false -> IQ
 	    end,
     {NewIQ, State};
+
+user_send_packet({#iq{type = Type,
+          from = #jid{luser = U, lserver = S},
+          to = #jid{luser = U, lserver = S},
+          sub_els = [_]} = IQ,
+        State})
+  when Type == set ->
+    case xmpp:get_subtag(IQ, #privacy_query{}) of
+      #privacy_query{active = undefined} -> {IQ, State};
+      #privacy_query{default = undefined, active = Active} ->
+        case get_user_list(U, S, Active) of
+          {ok, _} ->
+            % Adjust the client's state directly, so the next to-be-processed
+            % packet will take the active list into account.
+            {IQ, State#{privacy_active_list => Active}};
+          true ->
+            {IQ, State}
+        end;
+      _ -> {IQ, State}
+    end;
+
 user_send_packet(Acc) ->
     Acc.
 
