@@ -49,7 +49,7 @@
 -export([get_presence/1, set_presence/2, resend_presence/1, resend_presence/2,
 	 open_session/1, call/3, cast/2, send/2, close/1, close/2, stop/1,
 	 reply/2, copy_state/2, set_timeout/2, route/2,
-	 host_up/1, host_down/1]).
+	 host_up/1, host_down/1, send_ws_ping/1]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -136,6 +136,11 @@ send_error(#{lserver := LServer} = State, Pkt, Err) ->
 	{drop, State1} -> State1;
 	{Pkt1, State1} -> xmpp_stream_in:send_error(State1, Pkt1, Err)
     end.
+
+-spec send_ws_ping(pid()) -> ok;
+		  (state()) -> state().
+send_ws_ping(Ref) ->
+    xmpp_stream_in:send_ws_ping(Ref).
 
 -spec route(pid(), term()) -> boolean().
 route(Pid, Term) ->
