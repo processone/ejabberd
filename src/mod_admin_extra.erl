@@ -1152,8 +1152,7 @@ set_vcard_content(User, Server, Data, SomeContent) ->
 	 end,
     %% Build new vcard
     SubEl = {xmlel, <<"vCard">>, [{<<"xmlns">>,<<"vcard-temp">>}], A4},
-    mod_vcard:set_vcard(User, jid:nameprep(Server), SubEl),
-    ok.
+    mod_vcard:set_vcard(User, jid:nameprep(Server), SubEl).
 
 take_vcard_tel(TelType, [{xmlel, <<"TEL">>, _, SubEls}=OldEl | OldEls], NewEls, Taken) ->
     {Taken2, NewEls2} = case lists:keymember(TelType, 2, SubEls) of
@@ -1390,8 +1389,7 @@ private_set(Username, Host, ElementString) ->
 private_set2(Username, Host, Xml) ->
     NS = fxml:get_tag_attr_s(<<"xmlns">>, Xml),
     mod_private:set_data(jid:nodeprep(Username), jid:nameprep(Host),
-			 [{NS, Xml}]),
-    ok.
+			 [{NS, Xml}]).
 
 %%%
 %%% Shared Roster Groups
