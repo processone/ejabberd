@@ -274,20 +274,8 @@ handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
     case ejabberd_commands:get_command_format(Call, Auth, Version) of
         {ArgsSpec, _} when is_list(ArgsSpec) ->
             Args2 = [{misc:binary_to_atom(Key), Value} || {Key, Value} <- Args],
-            Spec = lists:foldr(
-                    fun ({Key, binary}, Acc) ->
-                            [{Key, <<>>}|Acc];
-                        ({Key, string}, Acc) ->
-			    [{Key, ""}|Acc];
-                        ({Key, integer}, Acc) ->
-                            [{Key, 0}|Acc];
-                        ({Key, {list, _}}, Acc) ->
-                            [{Key, []}|Acc];
-                        ({Key, atom}, Acc) ->
-                            [{Key, undefined}|Acc]
-                    end, [], ArgsSpec),
 	    try
-          handle2(Call, Auth, match(Args2, Spec), Version)
+          handle2(Call, Auth, Args2, Version)
 	    catch throw:not_found ->
 		    {404, <<"not_found">>};
 		  throw:{not_found, Why} when is_atom(Why) ->
@@ -430,9 +418,6 @@ process_unicode_codepoints(Str) ->
 %% ----------------
 %% internal helpers
 %% ----------------
-
-match(Args, Spec) ->
-    [{Key, proplists:get_value(Key, Args, Default)} || {Key, Default} <- Spec].
 
 format_command_result(Cmd, Auth, Result, Version) ->
     {_, ResultFormat} = ejabberd_commands:get_command_format(Cmd, Auth, Version),
