@@ -220,7 +220,7 @@ set(LogLevel) when is_integer(LogLevel) ->
     end,
     case LogLevel of
 	5 -> xmpp:set_config([{debug, true}]);
-	_ -> ok
+	_ -> xmpp:set_config([{debug, false}])
     end,
     {module, lager};
 set({_LogLevel, _}) ->
