@@ -152,7 +152,7 @@ DEPS_FILES_FILTERED=$(filter-out $(BINARIES) deps/elixir/ebin/elixir.app,$(DEPS_
 DEPS_DIRS=$(sort deps/ $(foreach DEP,$(DEPS),deps/$(DEP)/) $(dir $(DEPS_FILES)))
 
 MAIN_FILES=$(filter-out %/configure.beam,$(call FILES_WILDCARD,ebin/*.beam ebin/*.app priv/msgs/*.msg priv/css/*.css priv/img/*.png priv/js/*.js priv/lib/* include/*.hrl COPYING))
-MAIN_DIRS=$(sort $(dir $(MAIN_FILES)) priv/bin priv/sql)
+MAIN_DIRS=$(sort $(dir $(MAIN_FILES)) priv/bin priv/sql priv/lua)
 
 define DEP_VERSION_template
 DEP_$(1)_VERSION:=$(shell $(SED) -e '/vsn/!d;s/.*, *"/$(1)-/;s/".*//' $(2) 2>/dev/null)
@@ -184,7 +184,10 @@ $(call TO_DEST,priv/sql/lite.sql): sql/lite.sql $(call TO_DEST,priv/sql)
 $(call TO_DEST,priv/bin/captcha.sh): tools/captcha.sh $(call TO_DEST,priv/bin)
 	$(INSTALL) -m 755 $(O_USER) $< $@
 
-copy-files-sub2: $(call TO_DEST,$(DEPS_FILES) $(MAIN_FILES) priv/bin/captcha.sh priv/sql/lite.sql)
+$(call TO_DEST,priv/lua/redis_sm.lua): priv/lua/redis_sm.lua $(call TO_DEST,priv/lua)
+	$(INSTALL) -m 644 $< $@
+
+copy-files-sub2: $(call TO_DEST,$(DEPS_FILES) $(MAIN_FILES) priv/bin/captcha.sh priv/sql/lite.sql priv/lua/redis_sm.lua)
 
 .PHONY: $(call TO_DEST,$(DEPS_FILES) $(MAIN_DIRS) $(DEPS_DIRS))
 
