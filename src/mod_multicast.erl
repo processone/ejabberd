@@ -826,7 +826,7 @@ add_response(RServer, Response, State) ->
 search_server_on_cache(RServer, LServerS, _LServiceS, _Maxmins)
     when RServer == LServerS ->
     route_single;
-search_server_on_cache(RServer, LServerS, LServiceS, _Maxmins)
+search_server_on_cache(RServer, _LServerS, LServiceS, _Maxmins)
     when RServer == LServiceS ->
     route_single;
 search_server_on_cache(RServer, _LServerS, LServiceS, Maxmins) ->
