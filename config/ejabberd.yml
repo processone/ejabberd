@@ -588,7 +588,7 @@ modules:
   ## mod_proxy65: {}
   mod_pubsub:
     access_createnode: pubsub_createnode
-    ## reduces resource comsumption, but XEP incompliant
+    ## reduces resource consumption, but XEP incompliant
     ignore_pep_from_offline: true
     ## XEP compliant, but increases resource comsumption
     ## ignore_pep_from_offline: false
