@@ -61,15 +61,15 @@ defmodule ModHttpApiTest do
   test "Attempting to access a command that is not exposed as HTTP API returns 403" do
     setup_mocks()
     assert :ok == :ejabberd_commands.expose_commands([])
-    request = request(method: :POST, ip: {{127,0,0,1},50000}, data: "[]")
+    request = request(method: :POST, ip: {{127,0,0,1},50000}, data: "{}")
     {403, _, _} = :mod_http_api.process(["open_cmd"], request)
   end
 
   test "Call to user, admin or restricted commands without authentication are rejected" do
     setup_mocks()
     assert :ok == :ejabberd_commands.expose_commands([:user_cmd, :admin_cmd, :restricted])
-    request = request(method: :POST, ip: {{127,0,0,1},50000}, data: "[]")
-    {403, _, _} = :mod_http_api.process(["user_cmd"], request)
+    request = request(method: :POST, ip: {{127,0,0,1},50000}, data: "{}")
+    {400, _, _} = :mod_http_api.process(["user_cmd"], request)
     {403, _, _} = :mod_http_api.process(["admin_cmd"], request)
     {403, _, _} = :mod_http_api.process(["restricted_cmd"], request)
   end
