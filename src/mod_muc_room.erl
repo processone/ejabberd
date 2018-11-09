@@ -1658,6 +1658,7 @@ prepare_room_queue(StateData) ->
 -spec update_online_user(jid(), #user{}, state()) -> state().
 update_online_user(JID, #user{nick = Nick} = User, StateData) ->
     LJID = jid:tolower(JID),
+    add_to_log(join, Nick, StateData),
     Nicks1 = case (?DICT):find(LJID, StateData#state.users) of
 		 {ok, #user{nick = OldNick}} ->
 		     case lists:delete(
