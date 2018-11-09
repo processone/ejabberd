@@ -138,7 +138,7 @@ user_send_packet({#presence{} = Packet, C2SState} = Acc) ->
                               undefined ->
                                   St
                           end
-                  end, C2SState, Addresses),
+                  end, C2SState, ToDeliver),
             {Packet, NewState};
 	false ->
 	    Acc
