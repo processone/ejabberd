@@ -34,7 +34,8 @@
 -behaviour(gen_mod).
 
 %% API
--export([start/2, stop/1, reload/3]).
+-export([start/2, stop/1, reload/3,
+         user_send_packet/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_info/2, handle_call/3,
@@ -111,6 +112,40 @@ reload(LServerS, NewOpts, OldOpts) ->
     Proc = gen_mod:get_module_proc(LServerS, ?MODULE),
     gen_server:cast(Proc, {reload, NewOpts, OldOpts}).
 
+-define(SETS, gb_sets).
+
+user_send_packet({#presence{} = Packet, C2SState} = Acc) ->
+    case xmpp:get_subtag(Packet, #addresses{}) of
+        #addresses{list = Addresses} ->
+            {ToDeliver, _Delivereds} = split_addresses_todeliver(Addresses),
+            NewState =
+                lists:foldl(
+                  fun(Address, St) ->
+                          case Address#address.jid of
+                              #jid{} = JID ->
+                                  LJID = jid:tolower(JID),
+                                  #{pres_a := PresA} = St,
+                                  A =
+                                      case Packet#presence.type of
+                                          available ->
+                                              ?SETS:add_element(LJID, PresA);
+                                          unavailable ->
+                                              ?SETS:del_element(LJID, PresA);
+                                          _ ->
+                                              PresA
+                                      end,
+                                  St#{pres_a => A};
+                              undefined ->
+                                  St
+                          end
+                  end, C2SState, Addresses),
+            {Packet, NewState};
+	false ->
+	    Acc
+    end;
+user_send_packet(Acc) ->
+    Acc.
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
@@ -125,6 +160,8 @@ init([LServerS, Opts]) ->
     try_start_loop(),
     ejabberd_router_multicast:register_route(LServerS),
     ejabberd_router:register_route(LServiceS, LServerS),
+    ejabberd_hooks:add(user_send_packet, LServerS, ?MODULE,
+		       user_send_packet, 50),
     {ok,
      #state{lservice = LServiceS, lserver = LServerS,
 	    access = Access, service_limits = SLimits}}.
@@ -189,6 +226,8 @@ handle_info({get_host, Pid}, State) ->
 handle_info(_Info, State) -> {noreply, State}.
 
 terminate(_Reason, State) ->
+    ejabberd_hooks:delete(user_send_packet, State#state.lserver, ?MODULE,
+			  user_send_packet, 50),
     ejabberd_router_multicast:unregister_route(State#state.lserver),
     ejabberd_router:unregister_route(State#state.lservice),
     ok.
