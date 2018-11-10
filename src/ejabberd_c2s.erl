@@ -638,15 +638,16 @@ route_probe_reply(From, #{jid := To,
     Subscription = get_subscription(To, From),
     if IsAnotherResource orelse
        Subscription == both orelse Subscription == from ->
-	    Packet = misc:add_delay_info(LastPres, To, TS),
-	    case privacy_check_packet(State, Packet, out) of
+	    Packet = xmpp:set_from_to(LastPres, To, From),
+	    Packet2 = misc:add_delay_info(Packet, To, TS),
+	    case privacy_check_packet(State, Packet2, out) of
 		deny ->
 		    ok;
 		allow ->
 		    ejabberd_hooks:run(presence_probe_hook,
 				       LServer,
 				       [From, To, self()]),
-		    ejabberd_router:route(xmpp:set_from_to(Packet, To, From))
+		    ejabberd_router:route(Packet2)
 	    end;
        true ->
 	    ok
