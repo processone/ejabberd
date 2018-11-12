@@ -61,7 +61,6 @@ defmodule Ejabberd.ConfigFile do
     @opts [
       port: 5280,
       web_admin: true,
-      http_poll: true,
       http_bind: true,
       captcha: true]
   end
