@@ -128,10 +128,10 @@ create_captcha_x(SID, To, Lang, Limiter, #xdata{fields = Fs} = X) ->
 					  "visit the web page.">>),
 	  Imageurl = get_url(<<Id/binary, "/image">>),
 	  NewFs = [mk_field(hidden, <<"FORM_TYPE">>, ?NS_CAPTCHA)|Fs] ++
-		[#xdata_field{type = fixed, values = [HelpTxt]},
+		[#xdata_field{type = fixed, var = <<"captcha-fallback-text">>, values = [HelpTxt]},
 		 #xdata_field{type = hidden, var = <<"captchahidden">>,
 			      values = [<<"workaround-for-psi">>]},
-		 #xdata_field{type = 'text-single', var = <<"url">>,
+		 #xdata_field{type = 'text-single', var = <<"captcha-fallback-url">>,
 			      label = translate:translate(
 					Lang, <<"CAPTCHA web page">>),
 			      values = [Imageurl]},
