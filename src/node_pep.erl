@@ -118,8 +118,7 @@ create_node(Nidx, Owner) ->
     node_flat:create_node(Nidx, Owner).
 
 delete_node(Nodes) ->
-    {result, {_, _, Result}} = node_flat:delete_node(Nodes),
-    {result, {default, Result}}.
+    node_flat:delete_node(Nodes).
 
 subscribe_node(Nidx, Sender, Subscriber, AccessModel,
 	    SendLast, PresenceSubscription, RosterGroup, Options) ->
