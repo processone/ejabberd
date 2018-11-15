@@ -585,7 +585,7 @@ handle_sync_event({muc_unsubscribe, From}, _From, StateName, StateData) ->
 handle_sync_event({is_subscribed, From}, _From, StateName, StateData) ->
     IsSubs = try maps:get(jid:split(From), StateData#state.subscribers) of
 		 #subscriber{nodes = Nodes} -> {true, Nodes}
-	     catch _:_ -> false
+	     catch _:{badkey, _} -> false
 	     end,
     {reply, IsSubs, StateName, StateData};
 handle_sync_event(_Event, _From, StateName,
@@ -979,12 +979,12 @@ get_participant_data(From, StateData) ->
     try maps:get(jid:tolower(From), StateData#state.users) of
 	#user{nick = FromNick, role = Role} ->
 	    {FromNick, Role}
-    catch _:_ ->
+    catch _:{badkey, _} ->
 	    try maps:get(jid:tolower(jid:remove_resource(From)),
 			 StateData#state.subscribers) of
 		#subscriber{nick = FromNick} ->
 		    {FromNick, none}
-	    catch _:_ ->
+	    catch _:{badkey, _} ->
 		    {<<"">>, moderator}
 	    end
     end.
@@ -1357,16 +1357,16 @@ do_get_affiliation(JID, StateData) ->
 do_get_affiliation_fallback(JID, StateData) ->
     LJID = jid:tolower(JID),
     try maps:get(LJID, StateData#state.affiliations)
-    catch _:_ ->
+    catch _:{badkey, _} ->
             BareLJID = jid:remove_resource(LJID),
             try maps:get(BareLJID, StateData#state.affiliations)
-	    catch _:_ ->
+	    catch _:{badkey, _} ->
                     DomainLJID = setelement(1, LJID, <<"">>),
                     try maps:get(DomainLJID, StateData#state.affiliations)
-		    catch _:_ ->
+		    catch _:{badkey, _} ->
                             DomainBareLJID = jid:remove_resource(DomainLJID),
                             try maps:get(DomainBareLJID, StateData#state.affiliations)
-			    catch _:_ -> none
+			    catch _:{badkey, _} -> none
                             end
                     end
             end
@@ -1428,7 +1428,7 @@ set_role(JID, Role, StateData) ->
 			  NewNs = try maps:get(J, Us) of
 				      #user{nick = Nick} ->
 					  maps:remove(Nick, Ns)
-				  catch _:_ ->
+				  catch _:{badkey, _} ->
 					  Ns
 				  end,
 			  {maps:remove(J, Us), NewNs}
@@ -1453,7 +1453,7 @@ get_role(JID, StateData) ->
     LJID = jid:tolower(JID),
     try maps:get(LJID, StateData#state.users) of
 	#user{role = Role} -> Role
-    catch _:_ -> none
+    catch _:{badkey, _} -> none
     end.
 
 -spec get_default_role(affiliation(), state()) -> role().
@@ -1647,7 +1647,7 @@ update_online_user(JID, #user{nick = Nick} = User, StateData) ->
 			 LJIDs ->
 			     maps:put(OldNick, LJIDs, StateData#state.nicks)
 		     end
-	     catch _:_ ->
+	     catch _:{badkey, _} ->
 		     StateData#state.nicks
 	     end,
     Nicks = maps:update_with(Nick,
@@ -1709,7 +1709,7 @@ remove_online_user(JID, StateData, Reason) ->
 		    maps:remove(Nick, StateData#state.nicks);
 		U ->
 		    maps:put(Nick, U -- [LJID], StateData#state.nicks)
-	    catch _:_ ->
+	    catch _:{badkey, _} ->
 		    StateData#state.nicks
 	    end,
     StateData#state{users = Users, nicks = Nicks}.
@@ -1780,7 +1780,7 @@ find_jid_by_nick(Nick, StateData) ->
 				  end
 			  end, {FirstUser, FirstPresence}, Users),
 	    jid:make(LJID)
-    catch _:_ ->
+    catch _:{badkey, _} ->
 	    false
     end.
 
@@ -1822,7 +1822,7 @@ nick_collision(User, Nick, StateData) ->
 		     false ->
 			 try maps:get(Nick, StateData#state.subscriber_nicks) of
 			     [J] -> J
-			 catch _:_ -> false
+			 catch _:{badkey, _} -> false
 			 end;
 		     J -> J
 		 end,
@@ -3099,7 +3099,7 @@ get_actor_nick(undefined, _StateData) ->
 get_actor_nick(MJID, StateData) ->
     try maps:get(jid:tolower(MJID), StateData#state.users) of
 	#user{nick = ActorNick} -> ActorNick
-    catch _:_ -> <<"">>
+    catch _:{badkey, _} -> <<"">>
     end.
 
 convert_legacy_fields(Fs) ->
@@ -3992,7 +3992,7 @@ process_iq_mucsub(From,
 	    Nodes = get_subscription_nodes(Packet),
 	    NewStateData = set_subscriber(From, Nick, Nodes, StateData),
 	    {result, subscribe_result(Packet), NewStateData}
-    catch _:_ ->
+    catch _:{badkey, _} ->
 	    SD2 = StateData#state{config = (StateData#state.config)#config{allow_subscription = true}},
 	    add_new_user(From, Nick, Packet, SD2)
     end;
@@ -4026,7 +4026,7 @@ process_iq_mucsub(From, #iq{type = set, sub_els = [#muc_unsubscribe{}]},
 		{next_state, normal_state, SD} -> SD
 	    end,
 	    {result, undefined, NewStateData2}
-	catch _:_ ->
+	catch _:{badkey, _} ->
 	    {result, undefined, StateData}
     end;
 process_iq_mucsub(From, #iq{type = get, lang = Lang,
@@ -4357,7 +4357,7 @@ send_wrapped(From, To, Packet, Node, State) ->
 			false ->
 			    ok
 		    end
-	    catch _:_ ->
+	    catch _:{badkey, _} ->
 		    ok
 	    end;
        true ->
