@@ -357,7 +357,7 @@ build_summary_room(Name, Host, Pid) ->
     C = get_room_config(Pid),
     Public = C#config.public,
     S = get_room_state(Pid),
-    Participants = dict:size(S#state.users),
+    Participants = maps:size(S#state.users),
     {<<Name/binary, "@", Host/binary>>,
 	 misc:atom_to_binary(Public),
      Participants
@@ -523,7 +523,7 @@ build_info_room({Name, Host, Pid}) ->
 
     S = get_room_state(Pid),
     Just_created = S#state.just_created,
-    Num_participants = length(dict:fetch_keys(S#state.users)),
+    Num_participants = maps:size(S#state.users),
 
     History = (S#state.history)#lqueue.queue,
     Ts_last_message =
@@ -778,7 +778,7 @@ decide_room({_Room_name, _Host, Room_pid}, Last_allowed) ->
     Just_created = S#state.just_created,
 
     Room_users = S#state.users,
-    Num_users = length(?DICT:to_list(Room_users)),
+    Num_users = maps:size(Room_users),
 
     History = (S#state.history)#lqueue.queue,
     Ts_now = calendar:universal_time(),
@@ -854,7 +854,7 @@ get_room_occupants(Pid) ->
 	       Info#user.nick,
 	       atom_to_list(Info#user.role)}
       end,
-      dict:to_list(S#state.users)).
+      maps:to_list(S#state.users)).
 
 get_room_occupants_number(Room, Host) ->
     case get_room_pid(Room, Host) of
@@ -862,7 +862,7 @@ get_room_occupants_number(Room, Host) ->
 	    throw({error, room_not_found});
 	Pid ->
 	    S = get_room_state(Pid),
-	    dict:size(S#state.users)
+	    maps:size(S#state.users)
     end.
 
 %%----------------------------
@@ -1039,7 +1039,7 @@ get_room_affiliations(Name, Service) ->
 	{ok, Pid} ->
 	    %% Get the PID of the online room, then request its state
 	    {ok, StateData} = p1_fsm:sync_send_all_state_event(Pid, get_state),
-	    Affiliations = ?DICT:to_list(StateData#state.affiliations),
+	    Affiliations = maps:to_list(StateData#state.affiliations),
 	    lists:map(
 	      fun({{Uname, Domain, _Res}, {Aff, Reason}}) when is_atom(Aff)->
 		      {Uname, Domain, Aff, Reason};
@@ -1173,7 +1173,7 @@ get_config_opt_name(Pos) ->
         {get_config_opt_name(Opt), element(Opt, Config)}).
 make_opts(StateData) ->
     Config = StateData#state.config,
-    Subscribers = (?DICT):fold(
+    Subscribers = maps:fold(
                     fun(_LJID, Sub, Acc) ->
                             [{Sub#subscriber.jid,
                               Sub#subscriber.nick,
@@ -1205,7 +1205,7 @@ make_opts(StateData) ->
      {captcha_whitelist,
       (?SETS):to_list((StateData#state.config)#config.captcha_whitelist)},
      {affiliations,
-      (?DICT):to_list(StateData#state.affiliations)},
+      maps:to_list(StateData#state.affiliations)},
      {subject, StateData#state.subject},
      {subject_author, StateData#state.subject_author},
      {subscribers, Subscribers}].

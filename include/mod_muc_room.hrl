@@ -22,8 +22,6 @@
 
 -define(SETS, gb_sets).
 
--define(DICT, dict).
-
 -record(lqueue,
 {
     queue   :: p1_queue:queue(),
@@ -105,13 +103,13 @@
     access                  = {none,none,none,none} :: {atom(), atom(), atom(), atom()},
     jid                     = #jid{} :: jid(),
     config                  = #config{} :: config(),
-    users                   = (?DICT):new() :: dict:dict(),
-    subscribers             = (?DICT):new() :: dict:dict(),
-    subscriber_nicks        = (?DICT):new() :: dict:dict(),
+    users                   = #{} :: map(),
+    subscribers             = #{} :: map(),
+    subscriber_nicks        = #{} :: map(),
     last_voice_request_time = treap:empty() :: treap:treap(),
-    robots                  = (?DICT):new() :: dict:dict(),
-    nicks                   = (?DICT):new() :: dict:dict(),
-    affiliations            = (?DICT):new() :: dict:dict(),
+    robots                  = #{} :: map(),
+    nicks                   = #{} :: map(),
+    affiliations            = #{} :: map(),
     history                 :: lqueue(),
     subject                 = [] :: [text()],
     subject_author          = <<"">> :: binary(),

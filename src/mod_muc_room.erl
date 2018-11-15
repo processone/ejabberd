@@ -83,10 +83,10 @@
 -callback set_affiliation(binary(), binary(), binary(), jid(), affiliation(),
 			  binary()) -> ok | {error, any()}.
 -callback set_affiliations(binary(), binary(), binary(),
-			   dict:dict()) -> ok | {error, any()}.
+			   map()) -> ok | {error, any()}.
 -callback get_affiliation(binary(), binary(), binary(),
 			  binary(), binary()) -> {ok, affiliation()} | {error, any()}.
--callback get_affiliations(binary(), binary(), binary()) -> {ok, dict:dict()} | {error, any()}.
+-callback get_affiliations(binary(), binary(), binary()) -> {ok, map()} | {error, any()}.
 -callback search_affiliation(binary(), binary(), binary(), affiliation()) ->
     {ok, [{ljid(), {affiliation(), binary()}}]} | {error, any()}.
 
@@ -438,8 +438,8 @@ normal_state({route, ToNick,
 	      #iq{from = From, type = Type, lang = Lang} = Packet},
 	     StateData) ->
     case {(StateData#state.config)#config.allow_query_users,
-	  (?DICT):find(jid:tolower(From), StateData#state.users)} of
-	{true, {ok, #user{nick = FromNick}}} ->
+	  maps:get(jid:tolower(From), StateData#state.users, error)} of
+	{true, #user{nick = FromNick}} ->
 	    case find_jid_by_nick(ToNick, StateData) of
 		false ->
 		    ErrText = <<"Recipient is not in the conference room">>,
@@ -507,7 +507,7 @@ handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
 handle_sync_event({get_disco_item, Filter, JID, Lang}, _From, StateName, StateData) ->
-    Len = ?DICT:size(StateData#state.nicks),
+    Len = maps:size(StateData#state.nicks),
     Reply = case (Filter == all) or (Filter == Len) or ((Filter /= 0) and (Len /= 0)) of
 	true ->
 	    get_roomdesc_reply(JID, StateData,
@@ -542,7 +542,7 @@ handle_sync_event({process_item_change, Item, UJID}, _From, StateName, StateData
     end;
 handle_sync_event(get_subscribers, _From, StateName, StateData) ->
     JIDs = lists:map(fun jid:make/1,
-		     ?DICT:fetch_keys(StateData#state.subscribers)),
+		     maps:keys(StateData#state.subscribers)),
     {reply, {ok, JIDs}, StateName, StateData};
 handle_sync_event({muc_subscribe, From, Nick, Nodes}, _From,
 		  StateName, StateData) ->
@@ -583,12 +583,10 @@ handle_sync_event({muc_unsubscribe, From}, _From, StateName, StateData) ->
 	    {reply, {error, get_error_text(Err)}, StateName, StateData}
     end;
 handle_sync_event({is_subscribed, From}, _From, StateName, StateData) ->
-    IsSubs = case (?DICT):find(jid:split(From), StateData#state.subscribers) of
-	{ok, #subscriber{nodes = Nodes}} ->
-	    {true, Nodes};
-	error ->
-	    false
-    end,
+    IsSubs = try maps:get(jid:split(From), StateData#state.subscribers) of
+		 #subscriber{nodes = Nodes} -> {true, Nodes}
+	     catch _:_ -> false
+	     end,
     {reply, IsSubs, StateName, StateData};
 handle_sync_event(_Event, _From, StateName,
 		  StateData) ->
@@ -643,30 +641,27 @@ handle_info(process_room_queue,
     end;
 handle_info({captcha_succeed, From}, normal_state,
 	    StateData) ->
-    NewState = case (?DICT):find(From,
-				 StateData#state.robots)
-		   of
-		 {ok, {Nick, Packet}} ->
-		     Robots = (?DICT):store(From, passed,
-					    StateData#state.robots),
-		     add_new_user(From, Nick, Packet,
-				  StateData#state{robots = Robots});
-		 _ -> StateData
+    NewState = case maps:get(From, StateData#state.robots, passed) of
+		   {Nick, Packet} ->
+		       Robots = maps:put(From, passed, StateData#state.robots),
+		       add_new_user(From, Nick, Packet,
+				    StateData#state{robots = Robots});
+		   passed ->
+		       StateData
 	       end,
     {next_state, normal_state, NewState};
 handle_info({captcha_failed, From}, normal_state,
 	    StateData) ->
-    NewState = case (?DICT):find(From,
-				 StateData#state.robots)
-		   of
-		 {ok, {_Nick, Packet}} ->
-		     Robots = (?DICT):erase(From, StateData#state.robots),
-		     Txt = <<"The CAPTCHA verification has failed">>,
-		     Lang = xmpp:get_lang(Packet),
-		     Err = xmpp:err_not_authorized(Txt, Lang),
-		     ejabberd_router:route_error(Packet, Err),
-		     StateData#state{robots = Robots};
-		 _ -> StateData
+    NewState = case maps:get(From, StateData#state.robots, passed) of
+		   {_Nick, Packet} ->
+		       Robots = maps:remove(From, StateData#state.robots),
+		       Txt = <<"The CAPTCHA verification has failed">>,
+		       Lang = xmpp:get_lang(Packet),
+		       Err = xmpp:err_not_authorized(Txt, Lang),
+		       ejabberd_router:route_error(Packet, Err),
+		       StateData#state{robots = Robots};
+		   passed ->
+		       StateData
 	       end,
     {next_state, normal_state, NewState};
 handle_info(shutdown, _StateName, StateData) ->
@@ -714,20 +709,19 @@ terminate(Reason, _StateName, StateData) ->
 							reason = ReasonT,
 							role = none}],
 				     status_codes = [332,110]}]},
-    (?DICT):fold(fun (LJID, Info, _) ->
-			 Nick = Info#user.nick,
-			 case Reason of
-			   shutdown ->
-			       send_wrapped(jid:replace_resource(StateData#state.jid,
-								 Nick),
-					    Info#user.jid, Packet,
-					    ?NS_MUCSUB_NODES_PARTICIPANTS,
-					    StateData);
-			   _ -> ok
-			 end,
-			 tab_remove_online_user(LJID, StateData)
-		 end,
-		 [], get_users_and_subscribers(StateData)),
+    maps:fold(
+      fun(LJID, Info, _) ->
+	      Nick = Info#user.nick,
+	      case Reason of
+		  shutdown ->
+		      send_wrapped(jid:replace_resource(StateData#state.jid, Nick),
+				   Info#user.jid, Packet,
+				   ?NS_MUCSUB_NODES_PARTICIPANTS,
+				   StateData);
+		  _ -> ok
+	      end,
+	      tab_remove_online_user(LJID, StateData)
+      end, [], get_users_and_subscribers(StateData)),
     add_to_log(room_existence, stopped, StateData),
     mod_muc:room_destroyed(StateData#state.host, StateData#state.room, self(),
 			   StateData#state.server_host),
@@ -982,17 +976,15 @@ is_user_allowed_message_nonparticipant(JID,
 %% If the JID is not a participant, return values for a service message.
 -spec get_participant_data(jid(), state()) -> {binary(), role()}.
 get_participant_data(From, StateData) ->
-    case (?DICT):find(jid:tolower(From),
-		      StateData#state.users)
-	of
-      {ok, #user{nick = FromNick, role = Role}} ->
-	  {FromNick, Role};
-      error ->
-	    case ?DICT:find(jid:tolower(jid:remove_resource(From)),
-			    StateData#state.subscribers) of
-		{ok, #subscriber{nick = FromNick}} ->
-		    {FromNick, none};
-		error ->
+    try maps:get(jid:tolower(From), StateData#state.users) of
+	#user{nick = FromNick, role = Role} ->
+	    {FromNick, Role}
+    catch _:_ ->
+	    try maps:get(jid:tolower(jid:remove_resource(From)),
+			 StateData#state.subscribers) of
+		#subscriber{nick = FromNick} ->
+		    {FromNick, none}
+	    catch _:_ ->
 		    {<<"">>, moderator}
 	    end
     end.
@@ -1079,8 +1071,8 @@ do_process_presence(Nick, #presence{from = From, type = unavailable} = Packet,
 		    _ -> Packet
 		end,
     NewState = add_user_presence_un(From, NewPacket, StateData),
-    case (?DICT):find(Nick, StateData#state.nicks) of
-	{ok, [_, _ | _]} ->
+    case maps:get(Nick, StateData#state.nicks, []) of
+	[_, _ | _] ->
 	    Aff = get_affiliation(From, StateData),
 	    Item = #muc_item{affiliation = Aff, role = none, jid = From},
 	    Pres = xmpp:set_subtag(
@@ -1114,8 +1106,8 @@ maybe_strip_status_from_presence(From, Packet, StateData) ->
 -spec close_room_if_temporary_and_empty(state()) -> fsm_transition().
 close_room_if_temporary_and_empty(StateData1) ->
     case not (StateData1#state.config)#config.persistent
-	andalso (?DICT):size(StateData1#state.users) == 0
-	andalso (?DICT):size(StateData1#state.subscribers) == 0 of
+	andalso maps:size(StateData1#state.users) == 0
+	andalso maps:size(StateData1#state.subscribers) == 0 of
       true ->
 	  ?INFO_MSG("Destroyed MUC room ~s because it's temporary "
 		    "and empty",
@@ -1125,9 +1117,9 @@ close_room_if_temporary_and_empty(StateData1) ->
       _ -> {next_state, normal_state, StateData1}
     end.
 
--spec get_users_and_subscribers(state()) -> dict:dict().
+-spec get_users_and_subscribers(state()) -> map().
 get_users_and_subscribers(StateData) ->
-    OnlineSubscribers = ?DICT:fold(
+    OnlineSubscribers = maps:fold(
 			   fun(LJID, _, Acc) ->
 				   LBareJID = jid:remove_resource(LJID),
 				   case is_subscriber(LBareJID, StateData) of
@@ -1137,16 +1129,16 @@ get_users_and_subscribers(StateData) ->
 					   Acc
 				   end
 			   end, ?SETS:new(), StateData#state.users),
-    ?DICT:fold(
+    maps:fold(
        fun(LBareJID, #subscriber{nick = Nick}, Acc) ->
 	       case ?SETS:is_element(LBareJID, OnlineSubscribers) of
 		   false ->
-		       ?DICT:store(LBareJID,
-				   #user{jid = jid:make(LBareJID),
-					 nick = Nick,
-					 role = none,
-					 last_presence = undefined},
-				   Acc);
+		       maps:put(LBareJID,
+				#user{jid = jid:make(LBareJID),
+				      nick = Nick,
+				      role = none,
+				      last_presence = undefined},
+				Acc);
 		   true ->
 		       Acc
 	       end
@@ -1155,12 +1147,12 @@ get_users_and_subscribers(StateData) ->
 -spec is_user_online(jid(), state()) -> boolean().
 is_user_online(JID, StateData) ->
     LJID = jid:tolower(JID),
-    (?DICT):is_key(LJID, StateData#state.users).
+    maps:is_key(LJID, StateData#state.users).
 
 -spec is_subscriber(jid(), state()) -> boolean().
 is_subscriber(JID, StateData) ->
     LJID = jid:tolower(jid:remove_resource(JID)),
-    (?DICT):is_key(LJID, StateData#state.subscribers).
+    maps:is_key(LJID, StateData#state.subscribers).
 
 %% Check if the user is occupant of the room, or at least is an admin or owner.
 -spec is_occupant_or_admin(jid(), state()) -> boolean().
@@ -1238,7 +1230,7 @@ get_error_text(#stanza_error{text = Txt}) ->
 
 -spec make_reason(stanza(), jid(), state(), binary()) -> binary().
 make_reason(Packet, From, StateData, Reason1) ->
-    {ok, #user{nick = FromNick}} = (?DICT):find(jid:tolower(From), StateData#state.users),
+    #user{nick = FromNick} = maps:get(jid:tolower(From), StateData#state.users),
     Condition = get_error_condition(xmpp:get_error(Packet)),
     str:format(Reason1, [FromNick, Condition]).
 
@@ -1251,9 +1243,9 @@ expulse_participant(Packet, From, StateData, Reason1) ->
 					      status = xmpp:mk_text(Reason2)},
 				    StateData),
     LJID = jid:tolower(From),
-    {ok, #user{nick = Nick}} = (?DICT):find(LJID, StateData#state.users),
-    case (?DICT):find(Nick, StateData#state.nicks) of
-	{ok, [_, _ | _]} ->
+    #user{nick = Nick} = maps:get(LJID, StateData#state.users),
+    case maps:get(Nick, StateData#state.nicks, []) of
+	[_, _ | _] ->
 	    Aff = get_affiliation(From, StateData),
 	    Item = #muc_item{affiliation = Aff, role = none, jid = From},
 	    Pres = xmpp:set_subtag(
@@ -1268,7 +1260,7 @@ expulse_participant(Packet, From, StateData, Reason1) ->
 
 -spec get_owners(state()) -> [jid:jid()].
 get_owners(StateData) ->
-    ?DICT:fold(
+    maps:fold(
        fun(LJID, owner, Acc) ->
 	       [jid:make(LJID)|Acc];
 	  (LJID, {owner, _}, Acc) ->
@@ -1303,14 +1295,14 @@ set_affiliation_fallback(JID, Affiliation, StateData, Reason) ->
     LJID = jid:remove_resource(jid:tolower(JID)),
     Affiliations = case Affiliation of
 		       none ->
-			   (?DICT):erase(LJID, StateData#state.affiliations);
+			   maps:remove(LJID, StateData#state.affiliations);
 		       _ ->
-			   (?DICT):store(LJID, {Affiliation, Reason},
-					 StateData#state.affiliations)
+			   maps:put(LJID, {Affiliation, Reason},
+				    StateData#state.affiliations)
 		   end,
     StateData#state{affiliations = Affiliations}.
 
--spec set_affiliations(dict:dict(), state()) -> state().
+-spec set_affiliations(map(), state()) -> state().
 set_affiliations(Affiliations,
                  #state{config = #config{persistent = false}} = StateData) ->
     set_affiliations_fallback(Affiliations, StateData);
@@ -1326,7 +1318,7 @@ set_affiliations(Affiliations, StateData) ->
 	    set_affiliations_fallback(Affiliations, StateData)
     end.
 
--spec set_affiliations_fallback(dict:dict(), state()) -> state().
+-spec set_affiliations_fallback(map(), state()) -> state().
 set_affiliations_fallback(Affiliations, StateData) ->
     StateData#state{affiliations = Affiliations}.
 
@@ -1364,32 +1356,23 @@ do_get_affiliation(JID, StateData) ->
 -spec do_get_affiliation_fallback(jid(), state()) -> affiliation().
 do_get_affiliation_fallback(JID, StateData) ->
     LJID = jid:tolower(JID),
-    case (?DICT):find(LJID, StateData#state.affiliations) of
-        {ok, Affiliation} -> Affiliation;
-        _ ->
-            LJID1 = jid:remove_resource(LJID),
-            case (?DICT):find(LJID1, StateData#state.affiliations)
-            of
-                {ok, Affiliation} -> Affiliation;
-                _ ->
-                    LJID2 = setelement(1, LJID, <<"">>),
-                    case (?DICT):find(LJID2,
-                                      StateData#state.affiliations)
-                    of
-                        {ok, Affiliation} -> Affiliation;
-                        _ ->
-                            LJID3 = jid:remove_resource(LJID2),
-                            case (?DICT):find(LJID3,
-                                              StateData#state.affiliations)
-                            of
-                                {ok, Affiliation} -> Affiliation;
-                                _ -> none
+    try maps:get(LJID, StateData#state.affiliations)
+    catch _:_ ->
+            BareLJID = jid:remove_resource(LJID),
+            try maps:get(BareLJID, StateData#state.affiliations)
+	    catch _:_ ->
+                    DomainLJID = setelement(1, LJID, <<"">>),
+                    try maps:get(DomainLJID, StateData#state.affiliations)
+		    catch _:_ ->
+                            DomainBareLJID = jid:remove_resource(DomainLJID),
+                            try maps:get(DomainBareLJID, StateData#state.affiliations)
+			    catch _:_ -> none
                             end
                     end
             end
     end.
 
--spec get_affiliations(state()) -> dict:dict().
+-spec get_affiliations(state()) -> map().
 get_affiliations(#state{config = #config{persistent = false}} = StateData) ->
     get_affiliations_callback(StateData);
 get_affiliations(StateData) ->
@@ -1404,7 +1387,7 @@ get_affiliations(StateData) ->
 	    Affiliations
     end.
 
--spec get_affiliations_callback(state()) -> dict:dict().
+-spec get_affiliations_callback(state()) -> map().
 get_affiliations_callback(StateData) ->
     StateData#state.affiliations.
 
@@ -1425,56 +1408,52 @@ set_role(JID, Role, StateData) ->
     LJID = jid:tolower(JID),
     LJIDs = case LJID of
 	      {U, S, <<"">>} ->
-		  (?DICT):fold(fun (J, _, Js) ->
-				       case J of
-					 {U, S, _} -> [J | Js];
-					 _ -> Js
-				       end
-			       end,
-			       [], StateData#state.users);
+		  maps:fold(fun (J, _, Js) ->
+				    case J of
+					{U, S, _} -> [J | Js];
+					_ -> Js
+				    end
+			    end, [], StateData#state.users);
 	      _ ->
-		  case (?DICT):is_key(LJID, StateData#state.users) of
+		  case maps:is_key(LJID, StateData#state.users) of
 		    true -> [LJID];
 		    _ -> []
 		  end
 	    end,
-    {Users, Nicks} = case Role of
-		       none ->
-			   lists:foldl(fun (J, {Us, Ns}) ->
-					       NewNs = case (?DICT):find(J, Us)
-							   of
-							 {ok,
-							  #user{nick = Nick}} ->
-							     (?DICT):erase(Nick,
-									   Ns);
-							 _ -> Ns
-						       end,
-					       {(?DICT):erase(J, Us), NewNs}
-				       end,
-				       {StateData#state.users,
-					StateData#state.nicks},
-				       LJIDs);
-		       _ ->
-			   {lists:foldl(
-			      fun (J, Us) ->
-				      {ok, User} = (?DICT):find(J, Us),
-				      if User#user.last_presence == undefined ->
-					      Us;
-					 true ->
-					      (?DICT):store(J, User#user{role = Role}, Us)
-				      end
-			      end,
-			      StateData#state.users, LJIDs),
-			    StateData#state.nicks}
-		     end,
+    {Users, Nicks} =
+	case Role of
+	    none ->
+		lists:foldl(
+		  fun (J, {Us, Ns}) ->
+			  NewNs = try maps:get(J, Us) of
+				      #user{nick = Nick} ->
+					  maps:remove(Nick, Ns)
+				  catch _:_ ->
+					  Ns
+				  end,
+			  {maps:remove(J, Us), NewNs}
+		  end,
+		  {StateData#state.users, StateData#state.nicks}, LJIDs);
+	    _ ->
+		{lists:foldl(
+		   fun (J, Us) ->
+			   User = maps:get(J, Us),
+			   if User#user.last_presence == undefined ->
+				   Us;
+			      true ->
+				   maps:put(J, User#user{role = Role}, Us)
+			   end
+		   end, StateData#state.users, LJIDs),
+		 StateData#state.nicks}
+	end,
     StateData#state{users = Users, nicks = Nicks}.
 
 -spec get_role(jid(), state()) -> role().
 get_role(JID, StateData) ->
     LJID = jid:tolower(JID),
-    case (?DICT):find(LJID, StateData#state.users) of
-      {ok, #user{role = Role}} -> Role;
-      _ -> none
+    try maps:get(LJID, StateData#state.users) of
+	#user{role = Role} -> Role
+    catch _:_ -> none
     end.
 
 -spec get_default_role(affiliation(), state()) -> role().
@@ -1659,29 +1638,29 @@ prepare_room_queue(StateData) ->
 update_online_user(JID, #user{nick = Nick} = User, StateData) ->
     LJID = jid:tolower(JID),
     add_to_log(join, Nick, StateData),
-    Nicks1 = case (?DICT):find(LJID, StateData#state.users) of
-		 {ok, #user{nick = OldNick}} ->
+    Nicks1 = try maps:get(LJID, StateData#state.users) of
+		 #user{nick = OldNick} ->
 		     case lists:delete(
-			    LJID, ?DICT:fetch(OldNick, StateData#state.nicks)) of
+			    LJID, maps:get(OldNick, StateData#state.nicks)) of
 			 [] ->
-			     ?DICT:erase(OldNick, StateData#state.nicks);
+			     maps:remove(OldNick, StateData#state.nicks);
 			 LJIDs ->
-			     ?DICT:store(OldNick, LJIDs, StateData#state.nicks)
-		     end;
-		 error ->
+			     maps:put(OldNick, LJIDs, StateData#state.nicks)
+		     end
+	     catch _:_ ->
 		     StateData#state.nicks
 	     end,
-    Nicks = (?DICT):update(Nick,
-			   fun (LJIDs) -> [LJID|LJIDs -- [LJID]] end,
-			   [LJID], Nicks1),
-    Users = (?DICT):update(LJID,
-			   fun(U) ->
-				   U#user{nick = Nick}
-			   end, User, StateData#state.users),
+    Nicks = maps:update_with(Nick,
+			     fun (LJIDs) -> [LJID|LJIDs -- [LJID]] end,
+			     [LJID], Nicks1),
+    Users = maps:update_with(LJID,
+			     fun(U) ->
+				     U#user{nick = Nick}
+			     end, User, StateData#state.users),
     NewStateData = StateData#state{users = Users, nicks = Nicks},
-    case {?DICT:find(LJID, StateData#state.users),
-	  ?DICT:find(LJID, NewStateData#state.users)} of
-	{{ok, #user{nick = Old}}, {ok, #user{nick = New}}} when Old /= New ->
+    case {maps:get(LJID, StateData#state.users, error),
+	  maps:get(LJID, NewStateData#state.users, error)} of
+	{#user{nick = Old}, #user{nick = New}} when Old /= New ->
 	    send_nick_changing(JID, Old, NewStateData, true, true);
 	_ ->
 	    ok
@@ -1691,16 +1670,16 @@ update_online_user(JID, #user{nick = Nick} = User, StateData) ->
 set_subscriber(JID, Nick, Nodes, StateData) ->
     BareJID = jid:remove_resource(JID),
     LBareJID = jid:tolower(BareJID),
-    Subscribers = ?DICT:store(LBareJID,
-			      #subscriber{jid = BareJID,
-					  nick = Nick,
-					  nodes = Nodes},
-			      StateData#state.subscribers),
-    Nicks = ?DICT:store(Nick, [LBareJID], StateData#state.subscriber_nicks),
+    Subscribers = maps:put(LBareJID,
+			   #subscriber{jid = BareJID,
+				       nick = Nick,
+				       nodes = Nodes},
+			   StateData#state.subscribers),
+    Nicks = maps:put(Nick, [LBareJID], StateData#state.subscriber_nicks),
     NewStateData = StateData#state{subscribers = Subscribers,
 				   subscriber_nicks = Nicks},
     store_room(NewStateData, [{add_subscription, BareJID, Nick, Nodes}]),
-    case not ?DICT:is_key(LBareJID, StateData#state.subscribers) of
+    case not maps:is_key(LBareJID, StateData#state.subscribers) of
 	true ->
 	    send_subscriptions_change_notifications(BareJID, Nick, subscribe, NewStateData);
 	_ ->
@@ -1721,18 +1700,17 @@ remove_online_user(JID, StateData) ->
 -spec remove_online_user(jid(), state(), binary()) -> state().
 remove_online_user(JID, StateData, Reason) ->
     LJID = jid:tolower(JID),
-    {ok, #user{nick = Nick}} = (?DICT):find(LJID,
-					    StateData#state.users),
+    #user{nick = Nick} = maps:get(LJID, StateData#state.users),
     add_to_log(leave, {Nick, Reason}, StateData),
     tab_remove_online_user(JID, StateData),
-    Users = (?DICT):erase(LJID, StateData#state.users),
-    Nicks = case (?DICT):find(Nick, StateData#state.nicks)
-		of
-	      {ok, [LJID]} ->
-		  (?DICT):erase(Nick, StateData#state.nicks);
-	      {ok, U} ->
-		  (?DICT):store(Nick, U -- [LJID], StateData#state.nicks);
-	      error -> StateData#state.nicks
+    Users = maps:remove(LJID, StateData#state.users),
+    Nicks = try maps:get(Nick, StateData#state.nicks) of
+		[LJID] ->
+		    maps:remove(Nick, StateData#state.nicks);
+		U ->
+		    maps:put(Nick, U -- [LJID], StateData#state.nicks)
+	    catch _:_ ->
+		    StateData#state.nicks
 	    end,
     StateData#state{users = Users, nicks = Nicks}.
 
@@ -1756,63 +1734,54 @@ strip_status(Presence) ->
 add_user_presence(JID, Presence, StateData) ->
     LJID = jid:tolower(JID),
     FPresence = filter_presence(Presence),
-    Users = (?DICT):update(LJID,
-			   fun (#user{} = User) ->
-				   User#user{last_presence = FPresence}
-			   end,
-			   StateData#state.users),
+    Users = maps:update_with(LJID,
+			     fun (#user{} = User) ->
+				     User#user{last_presence = FPresence}
+			     end, StateData#state.users),
     StateData#state{users = Users}.
 
 -spec add_user_presence_un(jid(), presence(), state()) -> state().
 add_user_presence_un(JID, Presence, StateData) ->
     LJID = jid:tolower(JID),
     FPresence = filter_presence(Presence),
-    Users = (?DICT):update(LJID,
-			   fun (#user{} = User) ->
-				   User#user{last_presence = FPresence,
-					     role = none}
-			   end,
-			   StateData#state.users),
+    Users = maps:update_with(LJID,
+			     fun (#user{} = User) ->
+				     User#user{last_presence = FPresence,
+					       role = none}
+			     end, StateData#state.users),
     StateData#state{users = Users}.
 
 %% Find and return a list of the full JIDs of the users of Nick.
 %% Return jid record.
 -spec find_jids_by_nick(binary(), state()) -> [jid()].
 find_jids_by_nick(Nick, StateData) ->
-    Nicks = ?DICT:merge(fun(_, Val, _) -> Val end,
-			StateData#state.nicks,
-			StateData#state.subscriber_nicks),
-    case (?DICT):find(Nick, Nicks) of
-      {ok, [User]} -> [jid:make(User)];
-      {ok, Users} -> [jid:make(LJID) || LJID <- Users];
-      error -> []
-    end.
+    Users = case maps:get(Nick, StateData#state.nicks, []) of
+		[] -> maps:get(Nick, StateData#state.subscriber_nicks, []);
+		Us -> Us
+	    end,
+    [jid:make(LJID) || LJID <- Users].
 
 %% Find and return the full JID of the user of Nick with
 %% highest-priority presence.  Return jid record.
 -spec find_jid_by_nick(binary(), state()) -> jid() | false.
 find_jid_by_nick(Nick, StateData) ->
-    case (?DICT):find(Nick, StateData#state.nicks) of
-      {ok, [User]} -> jid:make(User);
-      {ok, [FirstUser | Users]} ->
-	  #user{last_presence = FirstPresence} =
-	      (?DICT):fetch(FirstUser, StateData#state.users),
-	  {LJID, _} = lists:foldl(fun (Compare,
-				       {HighestUser, HighestPresence}) ->
-					  #user{last_presence = P1} =
-					      (?DICT):fetch(Compare,
-							    StateData#state.users),
-					  case higher_presence(P1,
-							       HighestPresence)
-					      of
-					    true -> {Compare, P1};
-					    false ->
-						{HighestUser, HighestPresence}
-					  end
-				  end,
-				  {FirstUser, FirstPresence}, Users),
-	  jid:make(LJID);
-      error -> false
+    try maps:get(Nick, StateData#state.nicks) of
+	[User] -> jid:make(User);
+	[FirstUser | Users] ->
+	    #user{last_presence = FirstPresence} =
+		maps:get(FirstUser, StateData#state.users),
+	    {LJID, _} = lists:foldl(
+			  fun(Compare, {HighestUser, HighestPresence}) ->
+				  #user{last_presence = P1} =
+				      maps:get(Compare, StateData#state.users),
+				  case higher_presence(P1, HighestPresence) of
+				      true -> {Compare, P1};
+				      false -> {HighestUser, HighestPresence}
+				  end
+			  end, {FirstUser, FirstPresence}, Users),
+	    jid:make(LJID)
+    catch _:_ ->
+	    false
     end.
 
 -spec higher_presence(undefined | presence(),
@@ -1834,7 +1803,7 @@ get_priority_from_presence(#presence{priority = Prio}) ->
 -spec find_nick_by_jid(jid(), state()) -> binary().
 find_nick_by_jid(JID, StateData) ->
     LJID = jid:tolower(JID),
-    {ok, #user{nick = Nick}} = (?DICT):find(LJID, StateData#state.users),
+    #user{nick = Nick} = maps:get(LJID, StateData#state.users),
     Nick.
 
 -spec is_nick_change(jid(), binary(), state()) -> boolean().
@@ -1843,8 +1812,7 @@ is_nick_change(JID, Nick, StateData) ->
     case Nick of
       <<"">> -> false;
       _ ->
-	  {ok, #user{nick = OldNick}} = (?DICT):find(LJID,
-						     StateData#state.users),
+	  #user{nick = OldNick} = maps:get(LJID, StateData#state.users),
 	  Nick /= OldNick
     end.
 
@@ -1852,9 +1820,9 @@ is_nick_change(JID, Nick, StateData) ->
 nick_collision(User, Nick, StateData) ->
     UserOfNick = case find_jid_by_nick(Nick, StateData) of
 		     false ->
-			 case ?DICT:find(Nick, StateData#state.subscriber_nicks) of
-			     {ok, [J]} -> J;
-			     error -> false
+			 try maps:get(Nick, StateData#state.subscriber_nicks) of
+			     [J] -> J
+			 catch _:_ -> false
 			 end;
 		     J -> J
 		 end,
@@ -1871,8 +1839,7 @@ add_new_user(From, Nick, Packet, StateData) ->
     MaxUsers = get_max_users(StateData),
     MaxAdminUsers = MaxUsers +
 		      get_max_users_admin_threshold(StateData),
-    NUsers = dict:fold(fun (_, _, Acc) -> Acc + 1 end, 0,
-		       StateData#state.users),
+    NUsers = maps:size(StateData#state.users),
     Affiliation = get_affiliation(From, StateData),
     ServiceAffiliation = get_service_affiliation(From,
 						 StateData),
@@ -1974,7 +1941,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 			  true ->
 			      NewStateData#state{just_created = false};
 			  false ->
-			      Robots = (?DICT):erase(From, StateData#state.robots),
+			      Robots = maps:remove(From, StateData#state.robots),
 			      NewStateData#state{robots = Robots}
 		      end,
 		  if not IsSubscribeRequest -> ResultState;
@@ -2002,8 +1969,8 @@ add_new_user(From, Nick, Packet, StateData) ->
 					to = From,
 					id = ID, body = Body,
 					sub_els = CaptchaEls},
-		      Robots = (?DICT):store(From, {Nick, Packet},
-					     StateData#state.robots),
+		      Robots = maps:put(From, {Nick, Packet},
+					StateData#state.robots),
 		      ejabberd_router:route(MsgPkt),
 		      NewState = StateData#state{robots = Robots},
 		      if not IsSubscribeRequest ->
@@ -2072,9 +2039,9 @@ check_captcha(Affiliation, From, StateData) ->
 	   andalso ejabberd_captcha:is_feature_available()
 	of
       true when Affiliation == none ->
-	  case (?DICT):find(From, StateData#state.robots) of
-	    {ok, passed} -> true;
-	    _ ->
+	  case maps:get(From, StateData#state.robots, error) of
+	      passed -> true;
+	      _ ->
 		WList =
 		    (StateData#state.config)#config.captcha_whitelist,
 		#jid{luser = U, lserver = S, lresource = R} = From,
@@ -2151,7 +2118,7 @@ is_room_overcrowded(StateData) ->
     MaxUsersPresence = gen_mod:get_module_opt(
 			 StateData#state.server_host,
 			 mod_muc, max_users_presence),
-    (?DICT):size(StateData#state.users) > MaxUsersPresence.
+    maps:size(StateData#state.users) > MaxUsersPresence.
 
 -spec presence_broadcast_allowed(jid(), state()) -> boolean().
 presence_broadcast_allowed(JID, StateData) ->
@@ -2189,7 +2156,7 @@ send_self_presence(JID, State) ->
 
 -spec send_initial_presence(jid(), state(), state()) -> ok.
 send_initial_presence(NJID, StateData, OldStateData) ->
-    send_new_presence1(NJID, <<"">>, true, StateData, OldStateData).
+    send_new_presence(NJID, <<"">>, true, StateData, OldStateData).
 
 -spec send_update_presence(jid(), state(), state()) -> ok.
 send_update_presence(JID, StateData, OldStateData) ->
@@ -2207,22 +2174,21 @@ send_update_presence1(JID, Reason, StateData, OldStateData) ->
     LJID = jid:tolower(JID),
     LJIDs = case LJID of
 	      {U, S, <<"">>} ->
-		  (?DICT):fold(fun (J, _, Js) ->
-				       case J of
-					 {U, S, _} -> [J | Js];
-					 _ -> Js
-				       end
-			       end,
-			       [], StateData#state.users);
+		    maps:fold(fun (J, _, Js) ->
+				      case J of
+					  {U, S, _} -> [J | Js];
+					  _ -> Js
+				      end
+			      end, [], StateData#state.users);
 	      _ ->
-		  case (?DICT):is_key(LJID, StateData#state.users) of
+		  case maps:is_key(LJID, StateData#state.users) of
 		    true -> [LJID];
 		    _ -> []
 		  end
 	    end,
     lists:foreach(fun (J) ->
-			  send_new_presence1(J, Reason, false, StateData,
-					     OldStateData)
+			  send_new_presence(J, Reason, false, StateData,
+					    OldStateData)
 		  end,
 		  LJIDs).
 
@@ -2233,14 +2199,6 @@ send_new_presence(NJID, StateData, OldStateData) ->
 -spec send_new_presence(jid(), binary(), state(), state()) -> ok.
 send_new_presence(NJID, Reason, StateData, OldStateData) ->
     send_new_presence(NJID, Reason, false, StateData, OldStateData).
-
--spec send_new_presence(jid(), binary(), boolean(), state(), state()) -> ok.
-send_new_presence(NJID, Reason, IsInitialPresence, StateData, OldStateData) ->
-    case is_room_overcrowded(StateData) of
-	true -> ok;
-	false -> send_new_presence1(NJID, Reason, IsInitialPresence, StateData,
-				    OldStateData)
-    end.
 
 -spec is_ra_changed(jid(), boolean(), state(), state()) -> boolean().
 is_ra_changed(_, _IsInitialPresence = true, _, _) ->
@@ -2257,32 +2215,31 @@ is_ra_changed(JID, _IsInitialPresence = false, NewStateData, OldStateData) ->
 	    (NewRole /= OldRole) or (NewAff /= OldAff)
     end.
 
--spec send_new_presence1(jid(), binary(), boolean(), state(), state()) -> ok.
-send_new_presence1(NJID, Reason, IsInitialPresence, StateData, OldStateData) ->
+-spec send_new_presence(jid(), binary(), boolean(), state(), state()) -> ok.
+send_new_presence(NJID, Reason, IsInitialPresence, StateData, OldStateData) ->
     LNJID = jid:tolower(NJID),
-    #user{nick = Nick} = (?DICT):fetch(LNJID, StateData#state.users),
+    #user{nick = Nick} = maps:get(LNJID, StateData#state.users),
     LJID = find_jid_by_nick(Nick, StateData),
-    {ok,
-     #user{jid = RealJID, role = Role0,
-	   last_presence = Presence0} = UserInfo} =
-	(?DICT):find(jid:tolower(LJID),
-		     StateData#state.users),
+    #user{jid = RealJID, role = Role0,
+	  last_presence = Presence0} = UserInfo =
+	maps:get(jid:tolower(LJID), StateData#state.users),
     {Role1, Presence1} =
         case presence_broadcast_allowed(NJID, StateData) of
             true -> {Role0, Presence0};
             false -> {none, #presence{type = unavailable}}
         end,
     Affiliation = get_affiliation(LJID, StateData),
-    UserList =
-        case not (presence_broadcast_allowed(NJID, StateData) orelse
-             presence_broadcast_allowed(NJID, OldStateData)) of
+    UserMap =
+        case is_room_overcrowded(StateData) orelse
+	     (not (presence_broadcast_allowed(NJID, StateData) orelse
+		   presence_broadcast_allowed(NJID, OldStateData))) of
             true ->
-                [{LNJID, UserInfo}];
+                #{LNJID => UserInfo};
             false ->
-                (?DICT):to_list(get_users_and_subscribers(StateData))
+                get_users_and_subscribers(StateData)
         end,
-    lists:foreach(
-      fun({LUJID, Info}) ->
+    maps:fold(
+      fun(LUJID, Info, _) ->
 	      IsSelfPresence = LNJID == LUJID,
 	      {Role, Presence} = if IsSelfPresence -> {Role0, Presence0};
 				    true -> {Role1, Presence1}
@@ -2321,8 +2278,7 @@ send_new_presence1(NJID, Reason, IsInitialPresence, StateData, OldStateData) ->
 		 true ->
 		      ok
 	      end
-      end,
-      UserList).
+      end, ok, UserMap).
 
 -spec send_existing_presences(jid(), state()) -> ok.
 send_existing_presences(ToJID, StateData) ->
@@ -2334,15 +2290,13 @@ send_existing_presences(ToJID, StateData) ->
 -spec send_existing_presences1(jid(), state()) -> ok.
 send_existing_presences1(ToJID, StateData) ->
     LToJID = jid:tolower(ToJID),
-    {ok, #user{jid = RealToJID, role = Role}} =
-	(?DICT):find(LToJID, StateData#state.users),
-    lists:foreach(
-      fun({FromNick, _Users}) ->
+    #user{jid = RealToJID, role = Role} = maps:get(LToJID, StateData#state.users),
+    maps:fold(
+      fun(FromNick, _Users, _) ->
 	      LJID = find_jid_by_nick(FromNick, StateData),
 	      #user{jid = FromJID, role = FromRole,
 		    last_presence = Presence} =
-		  (?DICT):fetch(jid:tolower(LJID),
-				StateData#state.users),
+		  maps:get(jid:tolower(LJID), StateData#state.users),
 	      PresenceBroadcast =
 		  lists:member(
 		    FromRole, (StateData#state.config)#config.presence_broadcast),
@@ -2364,41 +2318,34 @@ send_existing_presences1(ToJID, StateData) ->
 		      send_wrapped(jid:replace_resource(StateData#state.jid, FromNick),
 				   RealToJID, Packet, ?NS_MUCSUB_NODES_PRESENCE, StateData)
 	      end
-      end,
-      (?DICT):to_list(StateData#state.nicks)).
+      end, ok, StateData#state.nicks).
 
 -spec set_nick(jid(), binary(), state()) -> state().
 set_nick(JID, Nick, State) ->
     LJID = jid:tolower(JID),
-    {ok, #user{nick = OldNick}} = (?DICT):find(LJID, State#state.users),
-    Users = (?DICT):update(LJID,
-			   fun (#user{} = User) -> User#user{nick = Nick} end,
-			   State#state.users),
-    OldNickUsers = (?DICT):fetch(OldNick, State#state.nicks),
-    NewNickUsers = case (?DICT):find(Nick, State#state.nicks) of
-		       {ok, U} -> U;
-		       error -> []
-		   end,
+    #user{nick = OldNick} = maps:get(LJID, State#state.users),
+    Users = maps:update_with(LJID,
+			     fun (#user{} = User) -> User#user{nick = Nick} end,
+			     State#state.users),
+    OldNickUsers = maps:get(OldNick, State#state.nicks),
+    NewNickUsers = maps:get(Nick, State#state.nicks, []),
     Nicks = case OldNickUsers of
 		[LJID] ->
-		    (?DICT):store(Nick, [LJID | NewNickUsers -- [LJID]],
-				  (?DICT):erase(OldNick, State#state.nicks));
+		    maps:put(Nick, [LJID | NewNickUsers -- [LJID]],
+			     maps:remove(OldNick, State#state.nicks));
 		[_ | _] ->
-		    (?DICT):store(Nick, [LJID | NewNickUsers -- [LJID]],
-				  (?DICT):store(OldNick, OldNickUsers -- [LJID],
-						State#state.nicks))
+		    maps:put(Nick, [LJID | NewNickUsers -- [LJID]],
+			     maps:put(OldNick, OldNickUsers -- [LJID],
+				      State#state.nicks))
 	    end,
     State#state{users = Users, nicks = Nicks}.
 
 -spec change_nick(jid(), binary(), state()) -> state().
 change_nick(JID, Nick, StateData) ->
     LJID = jid:tolower(JID),
-    {ok, #user{nick = OldNick}} = (?DICT):find(LJID, StateData#state.users),
-    OldNickUsers = (?DICT):fetch(OldNick, StateData#state.nicks),
-    NewNickUsers = case (?DICT):find(Nick, StateData#state.nicks) of
-		       {ok, U} -> U;
-		       error -> []
-		   end,
+    #user{nick = OldNick} = maps:get(LJID, StateData#state.users),
+    OldNickUsers = maps:get(OldNick, StateData#state.nicks),
+    NewNickUsers = maps:get(Nick, StateData#state.nicks, []),
     SendOldUnavailable = length(OldNickUsers) == 1,
     SendNewAvailable = SendOldUnavailable orelse NewNickUsers == [],
     NewStateData = set_nick(JID, Nick, StateData),
@@ -2414,14 +2361,12 @@ change_nick(JID, Nick, StateData) ->
 -spec send_nick_changing(jid(), binary(), state(), boolean(), boolean()) -> ok.
 send_nick_changing(JID, OldNick, StateData,
 		   SendOldUnavailable, SendNewAvailable) ->
-    {ok,
-     #user{jid = RealJID, nick = Nick, role = Role,
-	   last_presence = Presence}} =
-	(?DICT):find(jid:tolower(JID),
-		     StateData#state.users),
+    #user{jid = RealJID, nick = Nick, role = Role,
+	  last_presence = Presence} =
+	maps:get(jid:tolower(JID), StateData#state.users),
     Affiliation = get_affiliation(JID, StateData),
-    lists:foreach(
-      fun({LJID, Info}) when Presence /= undefined ->
+    maps:fold(
+      fun(LJID, Info, _) when Presence /= undefined ->
 	      IsSelfPresence = LJID == jid:tolower(JID),
 	      Item0 = #muc_item{affiliation = Affiliation, role = Role},
 	      Item = case Info#user.role == moderator orelse
@@ -2456,24 +2401,23 @@ send_nick_changing(JID, OldNick, StateData,
 			StateData);
 		 true -> ok
 	      end;
-	 (_) ->
+	 (_, _, _) ->
 	      ok
-      end,
-		  ?DICT:to_list(get_users_and_subscribers(StateData))).
+      end, ok, get_users_and_subscribers(StateData)).
 
 -spec maybe_send_affiliation(jid(), affiliation(), state()) -> ok.
 maybe_send_affiliation(JID, Affiliation, StateData) ->
     LJID = jid:tolower(JID),
     Users = get_users_and_subscribers(StateData),
     IsOccupant = case LJID of
-		   {LUser, LServer, <<"">>} ->
-		       not (?DICT):is_empty(
-			     (?DICT):filter(fun({U, S, _}, _) ->
-						    U == LUser andalso
-						      S == LServer
-					    end, Users));
-		   {_LUser, _LServer, _LResource} ->
-		       (?DICT):is_key(LJID, Users)
+		     {LUser, LServer, <<"">>} ->
+			 #{} /= maps:filter(
+				  fun({U, S, _}, _) ->
+					  U == LUser andalso
+					      S == LServer
+				  end, Users);
+		     {_LUser, _LServer, _LResource} ->
+			 maps:is_key(LJID, Users)
 		 end,
     case IsOccupant of
       true ->
@@ -2492,11 +2436,11 @@ send_affiliation(JID, Affiliation, StateData) ->
     Users = get_users_and_subscribers(StateData),
     Recipients = case (StateData#state.config)#config.anonymous of
 		   true ->
-		       (?DICT):filter(fun(_, #user{role = moderator}) ->
-					      true;
-					 (_, _) ->
-					      false
-				      end, Users);
+		       maps:filter(fun(_, #user{role = moderator}) ->
+					   true;
+				      (_, _) ->
+					   false
+				   end, Users);
 		   false ->
 		       Users
 		 end,
@@ -2690,7 +2634,7 @@ user_to_item(#user{role = Role, nick = Nick, jid = JID},
 search_role(Role, StateData) ->
     lists:filter(fun ({_, #user{role = R}}) -> Role == R
 		 end,
-		 (?DICT):to_list(StateData#state.users)).
+		 maps:to_list(StateData#state.users)).
 
 -spec search_affiliation(affiliation(), state()) ->
 			 [{ljid(),
@@ -2720,8 +2664,7 @@ search_affiliation_fallback(Affiliation, StateData) ->
 		  {A1, _Reason} -> Affiliation == A1;
 		  _ -> Affiliation == A
 	      end
-      end,
-      (?DICT):to_list(StateData#state.affiliations)).
+      end, maps:to_list(StateData#state.affiliations)).
 
 -spec process_admin_items_set(jid(), [muc_item()], binary(),
 			      #state{}) -> {result, undefined, #state{}} |
@@ -3087,23 +3030,21 @@ send_kickban_presence(UJID, JID, Reason, Code, NewAffiliation,
 		      StateData) ->
     LJID = jid:tolower(JID),
     LJIDs = case LJID of
-	      {U, S, <<"">>} ->
-		  (?DICT):fold(fun (J, _, Js) ->
-				       case J of
-					 {U, S, _} -> [J | Js];
-					 _ -> Js
-				       end
-			       end,
-			       [], StateData#state.users);
-	      _ ->
-		  case (?DICT):is_key(LJID, StateData#state.users) of
-		    true -> [LJID];
-		    _ -> []
-		  end
+		{U, S, <<"">>} ->
+		    maps:fold(fun (J, _, Js) ->
+				      case J of
+					  {U, S, _} -> [J | Js];
+					  _ -> Js
+				      end
+			      end, [], StateData#state.users);
+		_ ->
+		    case maps:is_key(LJID, StateData#state.users) of
+			true -> [LJID];
+			_ -> []
+		    end
 	    end,
     lists:foreach(fun (J) ->
-			  {ok, #user{nick = Nick}} = (?DICT):find(J,
-								  StateData#state.users),
+			  #user{nick = Nick} = maps:get(J, StateData#state.users),
 			  add_to_log(kickban, {Nick, Reason, Code}, StateData),
 			  tab_remove_online_user(J, StateData),
 			  send_kickban_presence1(UJID, J, Reason, Code,
@@ -3115,12 +3056,10 @@ send_kickban_presence(UJID, JID, Reason, Code, NewAffiliation,
 			     affiliation(), state()) -> ok.
 send_kickban_presence1(MJID, UJID, Reason, Code, Affiliation,
 		       StateData) ->
-    {ok, #user{jid = RealJID, nick = Nick}} =
-	(?DICT):find(jid:tolower(UJID),
-		     StateData#state.users),
+    #user{jid = RealJID, nick = Nick} = maps:get(jid:tolower(UJID), StateData#state.users),
     ActorNick = get_actor_nick(MJID, StateData),
-    lists:foreach(
-      fun({LJID, Info}) ->
+    maps:fold(
+      fun(LJID, Info, _) ->
 	      IsSelfPresence = jid:tolower(UJID) == LJID,
 	      Item0 = #muc_item{affiliation = Affiliation,
 				role = none},
@@ -3152,16 +3091,15 @@ send_kickban_presence1(MJID, UJID, Reason, Code, Affiliation,
 		 true ->
 		      ok
 	      end
-      end,
-		  (?DICT):to_list(get_users_and_subscribers(StateData))).
+      end, ok, get_users_and_subscribers(StateData)).
 
 -spec get_actor_nick(undefined | jid(), state()) -> binary().
 get_actor_nick(undefined, _StateData) ->
     <<"">>;
 get_actor_nick(MJID, StateData) ->
-    case (?DICT):find(jid:tolower(MJID), StateData#state.users) of
-	{ok, #user{nick = ActorNick}} -> ActorNick;
-	_ -> <<"">>
+    try maps:get(jid:tolower(MJID), StateData#state.users) of
+	#user{nick = ActorNick} -> ActorNick
+    catch _:_ -> <<"">>
     end.
 
 convert_legacy_fields(Fs) ->
@@ -3416,7 +3354,7 @@ set_config(Options, StateData, Lang) ->
 		   {_, _} -> roomconfig_change
 	       end,
 	Users = [{U#user.jid, U#user.nick, U#user.role}
-		 || {_, U} <- (?DICT):to_list(StateData#state.users)],
+		 || U <- maps:values(StateData#state.users)],
 	add_to_log(Type, Users, NSD),
 	Res
     catch  _:{badmatch, {error, #stanza_error{}} = Err} ->
@@ -3539,15 +3477,15 @@ send_config_change_info(New, #state{config = Old} = StateData) ->
 		  _ -> [104]
 		end,
     if Codes /= [] ->
-	    lists:foreach(
-	      fun({_LJID, #user{jid = JID}}) ->
+	    maps:fold(
+	      fun(_LJID, #user{jid = JID}, _) ->
 		      send_self_presence(JID, StateData#state{config = New})
-	      end, ?DICT:to_list(StateData#state.users)),
+	      end, ok, StateData#state.users),
 	    Message = #message{type = groupchat,
 			       id = p1_rand:get_string(),
 			       sub_els = [#muc_user{status_codes = Codes}]},
 	    send_wrapped_multiple(StateData#state.jid,
-			  get_users_and_subscribers(StateData),
+				  get_users_and_subscribers(StateData),
 				  Message,
 				  ?NS_MUCSUB_NODES_CONFIG,
 				  StateData);
@@ -3557,17 +3495,16 @@ send_config_change_info(New, #state{config = Old} = StateData) ->
 
 -spec remove_nonmembers(state()) -> state().
 remove_nonmembers(StateData) ->
-    lists:foldl(fun ({_LJID, #user{jid = JID}}, SD) ->
-			Affiliation = get_affiliation(JID, SD),
-			case Affiliation of
-			  none ->
-			      catch send_kickban_presence(undefined, JID, <<"">>,
-							  322, SD),
-			      set_role(JID, none, SD);
-			  _ -> SD
-			end
-		end,
-		StateData, (?DICT):to_list(get_users_and_subscribers(StateData))).
+    maps:fold(
+      fun(_LJID, #user{jid = JID}, SD) ->
+	      Affiliation = get_affiliation(JID, SD),
+	      case Affiliation of
+		  none ->
+		      catch send_kickban_presence(undefined, JID, <<"">>, 322, SD),
+		      set_role(JID, none, SD);
+		  _ -> SD
+	      end
+      end, StateData, get_users_and_subscribers(StateData)).
 
 -spec set_opts([{atom(), any()}], state()) -> state().
 set_opts([], StateData) ->
@@ -3704,18 +3641,18 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 		      lists:foldl(
 			fun({JID, Nick, Nodes}, {SubAcc, NickAcc}) ->
 				BareJID = jid:remove_resource(JID),
-				{?DICT:store(
-				    jid:tolower(BareJID),
-				    #subscriber{jid = BareJID,
-						nick = Nick,
-						nodes = Nodes},
-				    SubAcc),
-				 ?DICT:store(Nick, [jid:tolower(BareJID)], NickAcc)}
-			end, {?DICT:new(), ?DICT:new()}, Val),
+				{maps:put(
+				   jid:tolower(BareJID),
+				   #subscriber{jid = BareJID,
+					       nick = Nick,
+					       nodes = Nodes},
+				   SubAcc),
+				 maps:put(Nick, [jid:tolower(BareJID)], NickAcc)}
+			end, {#{}, #{}}, Val),
 		  StateData#state{subscribers = Subscribers,
 				  subscriber_nicks = Nicks};
 	    affiliations ->
-		StateData#state{affiliations = (?DICT):from_list(Val)};
+		StateData#state{affiliations = maps:from_list(Val)};
 	    subject ->
 		  Subj = if Val == <<"">> -> [];
 			    is_binary(Val) -> [#text{data = Val}];
@@ -3747,7 +3684,7 @@ set_vcard_xupdate(State) ->
 -spec make_opts(state()) -> [{atom(), any()}].
 make_opts(StateData) ->
     Config = StateData#state.config,
-    Subscribers = (?DICT):fold(
+    Subscribers = maps:fold(
 		    fun(_LJID, Sub, Acc) ->
 			    [{Sub#subscriber.jid,
 			      Sub#subscriber.nick,
@@ -3782,7 +3719,7 @@ make_opts(StateData) ->
      {captcha_whitelist,
       (?SETS):to_list((StateData#state.config)#config.captcha_whitelist)},
      {affiliations,
-      (?DICT):to_list(StateData#state.affiliations)},
+      maps:to_list(StateData#state.affiliations)},
      {subject, StateData#state.subject},
      {subject_author, StateData#state.subject_author},
      {subscribers, Subscribers}].
@@ -3819,8 +3756,8 @@ config_fields() ->
 -spec destroy_room(muc_destroy(), state()) -> {result, undefined, stop}.
 destroy_room(DEl, StateData) ->
     Destroy = DEl#muc_destroy{xmlns = ?NS_MUC_USER},
-    lists:foreach(
-      fun({_LJID, Info}) ->
+    maps:fold(
+      fun(_LJID, Info, _) ->
 	      Nick = Info#user.nick,
 	      Item = #muc_item{affiliation = none,
 			       role = none},
@@ -3831,8 +3768,7 @@ destroy_room(DEl, StateData) ->
 	      send_wrapped(jid:replace_resource(StateData#state.jid, Nick),
 			   Info#user.jid, Packet,
 			   ?NS_MUCSUB_NODES_CONFIG, StateData)
-      end,
-		  (?DICT):to_list(get_users_and_subscribers(StateData))),
+      end, ok, get_users_and_subscribers(StateData)),
     case (StateData#state.config)#config.persistent of
       true ->
 	  mod_muc:forget_room(StateData#state.server_host,
@@ -3935,7 +3871,7 @@ iq_disco_info_extras(Lang, StateData, Static) ->
 	  end,
     Fs3 = case Static of
 	      false ->
-		  [{occupants, ?DICT:size(StateData#state.nicks)}|Fs2];
+		  [{occupants, maps:size(StateData#state.nicks)}|Fs2];
 	      true ->
 		  Fs2
 	  end,
@@ -4035,8 +3971,8 @@ process_iq_mucsub(From,
 		      sub_els = [#muc_subscribe{nick = Nick}]} = Packet,
 		  StateData) ->
     LBareJID = jid:tolower(jid:remove_resource(From)),
-    case (?DICT):find(LBareJID, StateData#state.subscribers) of
-	{ok, #subscriber{nick = Nick1}} when Nick1 /= Nick ->
+    try maps:get(LBareJID, StateData#state.subscribers) of
+	#subscriber{nick = Nick1} when Nick1 /= Nick ->
 	    Nodes = get_subscription_nodes(Packet),
 	    case {nick_collision(From, Nick, StateData),
 		  mod_muc:can_use_nick(StateData#state.server_host,
@@ -4052,11 +3988,11 @@ process_iq_mucsub(From,
 		    NewStateData = set_subscriber(From, Nick, Nodes, StateData),
 		    {result, subscribe_result(Packet), NewStateData}
 	    end;
-	{ok, #subscriber{}} ->
+	#subscriber{} ->
 	    Nodes = get_subscription_nodes(Packet),
 	    NewStateData = set_subscriber(From, Nick, Nodes, StateData),
-	    {result, subscribe_result(Packet), NewStateData};
-	error ->
+	    {result, subscribe_result(Packet), NewStateData}
+    catch _:_ ->
 	    SD2 = StateData#state{config = (StateData#state.config)#config{allow_subscription = true}},
 	    add_new_user(From, Nick, Packet, SD2)
     end;
@@ -4077,10 +4013,10 @@ process_iq_mucsub(From, #iq{type = set, lang = Lang,
 process_iq_mucsub(From, #iq{type = set, sub_els = [#muc_unsubscribe{}]},
 		  StateData) ->
     LBareJID = jid:tolower(jid:remove_resource(From)),
-    case ?DICT:find(LBareJID, StateData#state.subscribers) of
-	{ok, #subscriber{nick = Nick}} ->
-	    Nicks = ?DICT:erase(Nick, StateData#state.subscriber_nicks),
-	    Subscribers = ?DICT:erase(LBareJID, StateData#state.subscribers),
+    try maps:get(LBareJID, StateData#state.subscribers) of
+	#subscriber{nick = Nick} ->
+	    Nicks = maps:remove(Nick, StateData#state.subscriber_nicks),
+	    Subscribers = maps:remove(LBareJID, StateData#state.subscribers),
 	    NewStateData = StateData#state{subscribers = Subscribers,
 					   subscriber_nicks = Nicks},
 	    store_room(NewStateData, [{del_subscription, LBareJID}]),
@@ -4089,8 +4025,8 @@ process_iq_mucsub(From, #iq{type = set, sub_els = [#muc_unsubscribe{}]},
 		{stop, normal, _} -> stop;
 		{next_state, normal_state, SD} -> SD
 	    end,
-	    {result, undefined, NewStateData2};
-	_ ->
+	    {result, undefined, NewStateData2}
+	catch _:_ ->
 	    {result, undefined, StateData}
     end;
 process_iq_mucsub(From, #iq{type = get, lang = Lang,
@@ -4099,7 +4035,7 @@ process_iq_mucsub(From, #iq{type = get, lang = Lang,
     FAffiliation = get_affiliation(From, StateData),
     FRole = get_role(From, StateData),
     if FRole == moderator; FAffiliation == owner; FAffiliation == admin ->
-	    Subs = dict:fold(
+	    Subs = maps:fold(
 		     fun(_, #subscriber{jid = J, nodes = Nodes}, Acc) ->
 			     [#muc_subscription{jid = J, events = Nodes}|Acc]
 		     end, [], StateData#state.subscribers),
@@ -4114,8 +4050,8 @@ process_iq_mucsub(_From, #iq{type = get, lang = Lang}, _StateData) ->
 
 remove_subscriptions(StateData) ->
     if not (StateData#state.config)#config.allow_subscription ->
-	    StateData#state{subscribers = ?DICT:new(),
-			    subscriber_nicks = ?DICT:new()};
+	    StateData#state{subscribers = #{},
+			    subscriber_nicks = #{}};
        true ->
 	    StateData
     end.
@@ -4166,12 +4102,12 @@ get_roomdesc_tail(StateData, Lang) ->
 	     true -> <<"">>;
 	     _ -> translate:translate(Lang, <<"private, ">>)
 	   end,
-    Len = (?DICT):size(StateData#state.nicks),
+    Len = maps:size(StateData#state.nicks),
     <<" (", Desc/binary, (integer_to_binary(Len))/binary, ")">>.
 
 -spec get_mucroom_disco_items(state()) -> disco_items().
 get_mucroom_disco_items(StateData) ->
-    Items = ?DICT:fold(
+    Items = maps:fold(
 	       fun(Nick, _, Acc) ->
 		       [#disco_item{jid = jid:make(StateData#state.room,
 						   StateData#state.host,
@@ -4369,7 +4305,7 @@ store_room(StateData, ChangesHints) ->
 
 -spec send_subscriptions_change_notifications(jid(), binary(), subscribe|unsubscribe, state()) -> ok.
 send_subscriptions_change_notifications(From, Nick, Type, State) ->
-    ?DICT:fold(fun(_, #subscriber{nodes = Nodes, jid = JID}, _) ->
+    maps:fold(fun(_, #subscriber{nodes = Nodes, jid = JID}, _) ->
 		    case lists:member(?NS_MUCSUB_NODES_SUBSCRIBERS, Nodes) of
 			true ->
 			    ShowJid = case (State#state.config)#config.anonymous == false orelse
@@ -4405,23 +4341,23 @@ send_subscriptions_change_notifications(From, Nick, Type, State) ->
 send_wrapped(From, To, Packet, Node, State) ->
     LTo = jid:tolower(To),
     LBareTo = jid:tolower(jid:remove_resource(To)),
-    IsOffline = case ?DICT:find(LTo, State#state.users) of
-		    {ok, #user{last_presence = undefined}} -> true;
+    IsOffline = case maps:get(LTo, State#state.users, error) of
+		    #user{last_presence = undefined} -> true;
 		    error -> true;
 		    _ -> false
 		end,
     if IsOffline ->
-	    case ?DICT:find(LBareTo, State#state.subscribers) of
-		{ok, #subscriber{nodes = Nodes, jid = JID}} ->
-	    case lists:member(Node, Nodes) of
-		true ->
+	    try maps:get(LBareTo, State#state.subscribers) of
+		#subscriber{nodes = Nodes, jid = JID} ->
+		    case lists:member(Node, Nodes) of
+			true ->
 			    NewPacket = wrap(From, JID, Packet, Node),
 			    ejabberd_router:route(
 			      xmpp:set_from_to(NewPacket, State#state.jid, JID));
-		false ->
-		    ok
-	    end;
-	_ ->
+			false ->
+			    ok
+		    end
+	    catch _:_ ->
 		    ok
 	    end;
        true ->
@@ -4461,17 +4397,12 @@ wrap(From, To, Packet, Node) ->
 					    id = p1_rand:get_string(),
 					    sub_els = [El]}]}}]}.
 
-%% -spec send_multiple(jid(), binary(), [#user{}], stanza()) -> ok.
-%% send_multiple(From, Server, Users, Packet) ->
-%%     JIDs = [ User#user.jid || {_, User} <- ?DICT:to_list(Users)],
-%%     ejabberd_router_multicast:route_multicast(From, Server, JIDs, Packet).
-
--spec send_wrapped_multiple(jid(), dict:dict(), stanza(), binary(), state()) -> ok.
+-spec send_wrapped_multiple(jid(), map(), stanza(), binary(), state()) -> ok.
 send_wrapped_multiple(From, Users, Packet, Node, State) ->
-    lists:foreach(
-      fun({_, #user{jid = To}}) ->
+    maps:fold(
+      fun(_, #user{jid = To}, _) ->
 	      send_wrapped(From, To, Packet, Node, State)
-      end, ?DICT:to_list(Users)).
+      end, ok, Users).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Detect messange stanzas that don't have meaninful content

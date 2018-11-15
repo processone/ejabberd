@@ -887,7 +887,7 @@ get_room_occupants(RoomJIDString) ->
     MucService = RoomJID#jid.lserver,
     StateData = get_room_state(RoomName, MucService),
     [{U#user.jid, U#user.nick, U#user.role}
-     || {_, U} <- (?DICT):to_list(StateData#state.users)].
+     || U <- maps:values(StateData#state.users)].
 
 -spec get_room_state(binary(), binary()) -> mod_muc_room:state().
 
