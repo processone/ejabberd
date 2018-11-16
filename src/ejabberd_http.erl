@@ -411,11 +411,11 @@ extract_path_query(#state{request_method = Method,
     when Method =:= 'GET' orelse
 	   Method =:= 'HEAD' orelse
 	     Method =:= 'DELETE' orelse Method =:= 'OPTIONS' ->
-    case catch url_decode_q_split(Path) of
-	{'EXIT', _} -> {State, false};
-	{NPath, Query} ->
-	    LPath = normalize_path([NPE
-				    || NPE <- str:tokens(path_decode(NPath), <<"/">>)]),
+    case catch url_decode_q_split_normalize(Path) of
+	{'EXIT', Error} ->
+	    ?DEBUG("Error decoding URL '~p': ~p", [Path, Error]),
+	    {State, false};
+	{LPath, Query} ->
 	    LQuery = case catch parse_urlencoded(Query) of
 			 {'EXIT', _Reason} -> [];
 			 LQ -> LQ
@@ -429,11 +429,11 @@ extract_path_query(#state{request_method = Method,
 			  sockmod = _SockMod,
 			  socket = _Socket} = State)
   when (Method =:= 'POST' orelse Method =:= 'PUT') andalso Len>0 ->
-    case catch url_decode_q_split(Path) of
-        {'EXIT', _} -> {State, false};
-        {NPath, _Query} ->
-            LPath = normalize_path(
-		      [NPE || NPE <- str:tokens(path_decode(NPath), <<"/">>)]),
+    case catch url_decode_q_split_normalize(Path) of
+	{'EXIT', Error} ->
+	    ?DEBUG("Error decoding URL '~p': ~p", [Path, Error]),
+	    {State, false};
+        {LPath, _Query} ->
 	    case Method of
 		'PUT' ->
 		    {State, {LPath, [], Trail}};
@@ -723,6 +723,12 @@ file_format_error(Reason) ->
 	"unknown POSIX error" -> atom_to_list(Reason);
 	Text -> Text
     end.
+
+url_decode_q_split_normalize(Path) ->
+    {NPath, Query} = url_decode_q_split(Path),
+    LPath = normalize_path([NPE
+		    || NPE <- str:tokens(path_decode(NPath), <<"/">>)]),
+    {LPath, Query}.
 
 % Code below is taken (with some modifications) from the yaws webserver, which
 % is distributed under the following license:
