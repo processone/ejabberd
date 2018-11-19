@@ -33,9 +33,11 @@ before_script:
   - mysql -u root -e "CREATE USER 'ejabberd_test'@'localhost' IDENTIFIED BY 'ejabberd_test';"
   - mysql -u root -e "CREATE DATABASE ejabberd_test;"
   - mysql -u root -e "GRANT ALL ON ejabberd_test.* TO 'ejabberd_test'@'localhost';"
+  - mysql -u root ejabberd_test < sql/mysql.sql
   - psql -U postgres -c "CREATE USER ejabberd_test WITH PASSWORD 'ejabberd_test';"
   - psql -U postgres -c "CREATE DATABASE ejabberd_test;"
   - psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE ejabberd_test TO ejabberd_test;"
+  - psql -U postgres -c "USE ejabberd_test;" -f sql/pg.sql
 
 script:
   - ./autogen.sh
