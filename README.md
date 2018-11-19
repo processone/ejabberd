@@ -1,4 +1,4 @@
-ejabberd Community Edition 
+ejabberd Community Edition
 ==========================
 
 [![Build Status](https://travis-ci.org/processone/ejabberd.svg?branch=master)](https://travis-ci.org/processone/ejabberd) [![Hex version](https://img.shields.io/hexpm/v/ejabberd.svg "Hex version")](https://hex.pm/packages/ejabberd)
