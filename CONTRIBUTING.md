@@ -65,18 +65,22 @@ make it easier to understand and categorize the issue.
 
 ## <a name="submit-pr"></a> Pull Request Submission Guidelines
 
+By submitting a pull request for a code or doc contribution, you need to have the right
+to grant your contribution's copyright license to ProcessOne. Please check [ProcessOne CLA][cla]
+for details.
+
 Before you submit your pull request consider the following guidelines:
 
 * Search [GitHub][github-pr] for an open or closed Pull Request
   that relates to your submission. You don't want to duplicate effort.
-* Create the [development environment][developers.setup]
+* Create the [development environment][developer-setup]
 * Make your changes in a new git branch:
 
     ```shell
     git checkout -b my-fix-branch master
     ```
-
-* Create your patch commit, **including appropriate test cases**.
+* Test your changes and, if relevant, expand the automated test suite.
+* Create your patch commit, including appropriate test cases.
 * If the changes affect public APIs, change or add relevant [documentation][doc-repo].
 * Commit your changes using a descriptive commit message.
 
@@ -102,6 +106,7 @@ restarted.
 * If we suggest changes, then:
 
   * Make the required updates.
+  * Test your changes and test cases.
   * Commit your changes to your branch (e.g. `my-fix-branch`).
   * Push the changes to your GitHub repository (this will update your Pull Request).
 
@@ -124,6 +129,10 @@ so before. It's a quick process, we promise, and you will be able to do it all o
 
 You can read [ProcessOne Contribution License Agreement][cla] in PDF.
 
+This is part of the legal framework of the open-source ecosystem that adds some red tape,
+but protects both the contributor and the company / foundation behind the project. It also
+gives us the option to relicense the code with a more permissive license in the future.
+
 
 [coc]: https://github.com/processone/ejabberd/blob/master/CODE_OF_CONDUCT.md
 [stackoverflow]: https://stackoverflow.com/questions/tagged/ejabberd?sort=newest
@@ -134,4 +143,7 @@ You can read [ProcessOne Contribution License Agreement][cla] in PDF.
 [github-new-issue]: https://github.com/processone/ejabberd/issues/new
 [github-pr]: https://github.com/processone/ejabberd/pulls
 [doc-repo]: https://github.com/processone/docs.ejabberd.im
+[developer-setup]: https://docs.ejabberd.im/developer/
 [cla]: https://www.process-one.net/resources/ejabberd-cla.pdf
+[license]: https://github.com/processone/ejabberd/blob/master/COPYING
+[influx-cla]: https://influxdb.com/community/cla.html
