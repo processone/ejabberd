@@ -4,6 +4,11 @@ We'd love for you to contribute to our source code and to make ejabberd even bet
 today! Here are the guidelines we'd like you to follow:
 
 * [Code of Conduct](#coc)
+* [Questions and Problems](#question)
+* [Issues and Bugs](#issue)
+* [Feature Requests](#feature)
+* [Issue Submission Guidelines](#submit)
+* [Pull Request Submission Guidelines](#submit-pr)
 * [Signing the CLA](#cla)
 
 ## <a name="coc"></a> Code of Conduct
@@ -32,6 +37,86 @@ Other channels for support are:
 - [ejabberd Mailing List][list]
 - [ejabberd XMPP room][muc]: ejabberd@conference.process-one.net
 
+### <a name="issue"></a> Found an Issue or Bug?
+
+If you find a bug in the source code, you can help us by submitting an issue to our
+[GitHub Repository][github]. Even better, you can submit a Pull Request with a fix.
+
+### <a name="feature"></a> Missing a Feature?
+
+You can request a new feature by submitting an issue to our [GitHub Repository][github-issues].
+
+If you would like to implement a new feature then consider what kind of change it is:
+
+* **Major Changes** that you wish to contribute to the project should be discussed first in an
+  [GitHub issue][github-issues] that clearly outlines the changes and benefits of the feature.
+* **Small Changes** can directly be crafted and submitted to the [GitHub Repository][github]
+  as a Pull Request. See the section about [Pull Request Submission Guidelines](#submit-pr).
+
+## <a name="submit"></a> Issue Submission Guidelines
+
+Before you submit your issue search the archive, maybe your question was already answered.
+
+If your issue appears to be a bug, and hasn't been reported, open a new issue. Help us to maximize
+the effort we can spend fixing issues and adding new features, by not reporting duplicate issues.
+
+The "[new issue][github-new-issue]" form contains a number of prompts that you should fill out to
+make it easier to understand and categorize the issue.
+
+## <a name="submit-pr"></a> Pull Request Submission Guidelines
+
+Before you submit your pull request consider the following guidelines:
+
+* Search [GitHub][github-pr] for an open or closed Pull Request
+  that relates to your submission. You don't want to duplicate effort.
+* Create the [development environment][developers.setup]
+* Make your changes in a new git branch:
+
+    ```shell
+    git checkout -b my-fix-branch master
+    ```
+
+* Create your patch commit, **including appropriate test cases**.
+* If the changes affect public APIs, change or add relevant [documentation][doc-repo].
+* Commit your changes using a descriptive commit message.
+
+    ```shell
+    git commit -a
+    ```
+  Note: the optional commit `-a` command line option will automatically "add" and "rm" edited files.
+
+* Push your branch to GitHub:
+
+    ```shell
+    git push origin my-fix-branch
+    ```
+
+* In GitHub, send a pull request to `ejabberd:master`. This will trigger the Travis integration and run the test.
+We will also notify you if you have not yet signed the [contribution agreement][cla].
+
+* If you find that the Travis integration has failed, look into the logs on Travis to find out
+if your changes caused test failures, the commit message was malformed etc. If you find that the
+tests failed or times out for unrelated reasons, you can ping a team member so that the build can be
+restarted.
+
+* If we suggest changes, then:
+
+  * Make the required updates.
+  * Commit your changes to your branch (e.g. `my-fix-branch`).
+  * Push the changes to your GitHub repository (this will update your Pull Request).
+
+    You can also amend the initial commits and force push them to the branch.
+
+    ```shell
+    git rebase master -i
+    git push origin my-fix-branch -f
+    ```
+
+    This is generally easier to follow, but separate commits are useful if the Pull Request contains
+    iterations that might be interesting to see side-by-side.
+
+That's it! Thank you for your contribution!
+
 ## <a name="cla"></a> Signing the Contributor License Agreement (CLA)
 
 Upon submmitting a Pull Request, we will ask you to sign our CLA if you haven't done
@@ -44,4 +129,9 @@ You can read [ProcessOne Contribution License Agreement][cla] in PDF.
 [stackoverflow]: https://stackoverflow.com/questions/tagged/ejabberd?sort=newest
 [list]: http://lists.jabber.ru/mailman/listinfo/ejabberd
 [muc]: xmpp:ejabberd@conference.process-one.net
+[github]: https://github.com/processone/ejabberd
+[github-issues]: https://github.com/processone/ejabberd/issues
+[github-new-issue]: https://github.com/processone/ejabberd/issues/new
+[github-pr]: https://github.com/processone/ejabberd/pulls
+[doc-repo]: https://github.com/processone/docs.ejabberd.im
 [cla]: https://www.process-one.net/resources/ejabberd-cla.pdf
