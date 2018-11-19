@@ -29,7 +29,7 @@ We would like to thanks official ejabberd source code contributors:
 - Radoslaw Szymczyszyn
 - Stu Tomlinson
 - Christian Ulrich
-- Holger Weiss
+- Holger Weiß
 
 Please, if you think we are missing your contribution, do not hesitate to contact us at ProcessOne.
 In case you do not want to appear in this list, please, let us know as well.
