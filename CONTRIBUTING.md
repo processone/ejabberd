@@ -146,4 +146,3 @@ gives us the option to relicense the code with a more permissive license in the 
 [developer-setup]: https://docs.ejabberd.im/developer/
 [cla]: https://www.process-one.net/resources/ejabberd-cla.pdf
 [license]: https://github.com/processone/ejabberd/blob/master/COPYING
-[influx-cla]: https://influxdb.com/community/cla.html
