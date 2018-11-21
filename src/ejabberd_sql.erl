@@ -176,7 +176,7 @@ keep_alive(Host, PID) ->
 		    {sql_cmd, {sql_query, ?KEEPALIVE_QUERY},
 		     p1_time_compat:monotonic_time(milli_seconds)},
 		    query_timeout(Host)) of
-	{selected,[<<"1">>],[[<<"1">>]]} ->
+	{selected,_,[[<<"1">>]]} ->
 	    ok;
 	_Err ->
 	    ?ERROR_MSG("keep alive query failed, closing connection: ~p", [_Err]),
