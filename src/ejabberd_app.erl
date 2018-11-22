@@ -77,6 +77,7 @@ start(_, _) ->
 %% This function is called when an application is about to be stopped,
 %% before shutting down the processes of the application.
 prep_stop(State) ->
+    ejabberd_hooks:run(ejabberd_stopping, []),
     ejabberd_listener:stop_listeners(),
     ejabberd_sm:stop(),
     gen_mod:stop_modules(),
