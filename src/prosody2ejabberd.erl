@@ -169,8 +169,6 @@ convert_data(Host, "roster", User, [Data]) ->
 	  end, Data),
     lists:foreach(fun mod_roster:set_roster/1, Rosters);
 convert_data(Host, "private", User, [Data]) ->
-    LUser = jid:nodeprep(User),
-    LServer = jid:nameprep(Host),
     PrivData = lists:flatmap(
 		 fun({_TagXMLNS, Raw}) ->
 			 case deserialize(Raw) of
@@ -181,7 +179,7 @@ convert_data(Host, "private", User, [Data]) ->
 				 []
 			 end
 		 end, Data),
-    mod_private:set_data(LUser, LServer, PrivData);
+    mod_private:set_data(jid:make(User, Host), PrivData);
 convert_data(Host, "vcard", User, [Data]) ->
     LServer = jid:nameprep(Host),
     case deserialize(Data) of

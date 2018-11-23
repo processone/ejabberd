@@ -1388,8 +1388,8 @@ private_set(Username, Host, ElementString) ->
 
 private_set2(Username, Host, Xml) ->
     NS = fxml:get_tag_attr_s(<<"xmlns">>, Xml),
-    mod_private:set_data(jid:nodeprep(Username), jid:nameprep(Host),
-			 [{NS, Xml}]).
+    JID = jid:make(Username, Host),
+    mod_private:set_data(JID, [{NS, Xml}]).
 
 %%%
 %%% Shared Roster Groups

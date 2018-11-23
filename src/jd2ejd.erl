@@ -111,7 +111,6 @@ process_xdb(User, Server,
 xdb_data(_User, _Server, {xmlcdata, _CData}) -> ok;
 xdb_data(User, Server, #xmlel{attrs = Attrs} = El) ->
     From = jid:make(User, Server),
-    LUser = From#jid.luser,
     LServer = From#jid.lserver,
     case fxml:get_attr_s(<<"xmlns">>, Attrs) of
       ?NS_AUTH ->
@@ -142,7 +141,7 @@ xdb_data(User, Server, #xmlel{attrs = Attrs} = El) ->
 				(_) -> true
 			     end, Attrs),
 		catch mod_private:set_data(
-			LUser, LServer,
+			From,
 			[{XMLNS, El#xmlel{attrs = NewAttrs}}]);
 	    _ ->
 		?DEBUG("jd2ejd: Unknown namespace \"~s\"~n", [XMLNS])
