@@ -58,7 +58,7 @@ defmodule Ejabberd.Mixfile do
   end
 
   defp deps do
-    [{:lager, "~> 3.4.0"},
+    [{:lager, "~> 3.6.0"},
      {:p1_utils, "~> 1.0"},
      {:fast_xml, "~> 1.1"},
      {:xmpp, "~> 1.2"},

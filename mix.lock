@@ -17,7 +17,7 @@
   "iconv": {:hex, :iconv, "1.0.10", "fc7de75c0a1fbc1e4ed0c68637ae7464a5dd9eee81710fff26321922d144ecea", [:rebar3], [{:p1_utils, "1.0.13", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "jiffy": {:hex, :jiffy, "0.14.13", "225a9a35e26417832c611526567194b4d3adc4f0dfa5f2f7008f4684076f2a01", [:rebar3], [], "hexpm"},
   "jose": {:hex, :jose, "1.8.4", "7946d1e5c03a76ac9ef42a6e6a20001d35987afd68c2107bcd8f01a84e75aa73", [:mix, :rebar3], [{:base64url, "~> 0.0.1", [hex: :base64url, repo: "hexpm", optional: false]}], "hexpm"},
-  "lager": {:hex, :lager, "3.4.2", "150b9a17b23ae6d3265cc10dc360747621cf217b7a22b8cddf03b2909dbf7aa5", [:rebar3], [{:goldrush, "0.1.9", [hex: :goldrush, repo: "hexpm", optional: false]}], "hexpm"},
+  "lager": {:hex, :lager, "3.6.7", "2fbf823944caa0fc10df5ec13f3f047524a249bb32f0d801b7900c9610264286", [:rebar3], [{:goldrush, "0.1.9", [hex: :goldrush, repo: "hexpm", optional: false]}], "hexpm"},
   "luerl": {:hex, :luerl, "0.3.1", "5412807630aac1aaf59ffe5a1bc09259c447b4faeb1d3fe2d4ef41b87676cb04", [:rebar3], [], "hexpm"},
   "meck": {:hex, :meck, "0.8.10", "455aaef8403be46752272206613e7a15467c014d40994b22fb54cde4d1ff7075", [:rebar3], [], "hexpm"},
   "moka": {:git, "https://github.com/processone/moka.git", "3eed3a6dd7dedb70a6cd18f86c7561a18626eb3b", [tag: "1.0.5c"]},
