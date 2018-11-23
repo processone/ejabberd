@@ -102,12 +102,17 @@ mod_options(Host) ->
 			     {error, stanza_error()} | empty | {result, [binary()]}.
 get_sm_features({error, _Error} = Acc, _From, _To, _Node, _Lang) ->
     Acc;
-get_sm_features(Acc, _From, _To, <<"">>, _Lang) ->
-    {result, [?NS_BOOKMARKS_CONVERSION_0 |
-	      case Acc of
-		  {result, Features} -> Features;
-		  empty -> []
-	      end]};
+get_sm_features(Acc, _From, To, <<"">>, _Lang) ->
+    case gen_mod:is_loaded(To#jid.lserver, mod_pubsub) of
+	true ->
+	    {result, [?NS_BOOKMARKS_CONVERSION_0 |
+		      case Acc of
+			  {result, Features} -> Features;
+			  empty -> []
+		      end]};
+	false ->
+	    Acc
+    end;
 get_sm_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
