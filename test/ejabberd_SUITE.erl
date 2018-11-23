@@ -401,7 +401,7 @@ db_tests(riak) ->
        presence_broadcast,
        last,
        roster_tests:single_cases(),
-       private,
+       %%private_tests:single_cases(),
        privacy_tests:single_cases(),
        vcard_tests:single_cases(),
        muc_tests:single_cases(),
@@ -424,7 +424,7 @@ db_tests(DB) when DB == mnesia; DB == redis ->
        presence_broadcast,
        last,
        roster_tests:single_cases(),
-       private,
+       private_tests:single_cases(),
        privacy_tests:single_cases(),
        vcard_tests:single_cases(),
        pubsub_tests:single_cases(),
@@ -455,7 +455,7 @@ db_tests(_) ->
        presence_broadcast,
        last,
        roster_tests:single_cases(),
-       private,
+       private_tests:single_cases(),
        privacy_tests:single_cases(),
        vcard_tests:single_cases(),
        pubsub_tests:single_cases(),
@@ -976,33 +976,6 @@ disco(Config) ->
                             #iq{type = get, to = JID,
                                 sub_els = [#disco_info{node = Node}]})
       end, Items),
-    disconnect(Config).
-
-private(Config) ->
-    Conference = #bookmark_conference{name = <<"Some name">>,
-                                      autojoin = true,
-                                      jid = jid:make(
-                                              <<"some">>,
-                                              <<"some.conference.org">>,
-                                              <<>>)},
-    Storage = #bookmark_storage{conference = [Conference]},
-    StorageXMLOut = xmpp:encode(Storage),
-    WrongEl = #xmlel{name = <<"wrong">>},
-    #iq{type = error} =
-        send_recv(Config, #iq{type = get,
-			      sub_els = [#private{sub_els = [WrongEl]}]}),
-    #iq{type = result, sub_els = []} =
-        send_recv(
-          Config, #iq{type = set,
-                      sub_els = [#private{sub_els = [WrongEl, StorageXMLOut]}]}),
-    #iq{type = result,
-        sub_els = [#private{sub_els = [StorageXMLIn]}]} =
-        send_recv(
-          Config,
-          #iq{type = get,
-              sub_els = [#private{sub_els = [xmpp:encode(
-                                               #bookmark_storage{})]}]}),
-    Storage = xmpp:decode(StorageXMLIn),
     disconnect(Config).
 
 last(Config) ->
