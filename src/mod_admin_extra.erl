@@ -560,8 +560,8 @@ get_commands_spec() ->
 			desc = "Push template roster from file to a user",
 			longdesc = "The text file must contain an erlang term: a list "
 			    "of tuples with username, servername, group and nick. Example:\n"
-			    "[{<<\"user1\">>, <<\"localhost\">>, <<\"Workers\">>, <<\"User 1\"},\n"
-			    " {<<\"user2\">>, <<\"localhost\">>, <<\"Workers\">>, <<\"User 2\"}].\n"
+			    "[{<<\"user1\">>, <<\"localhost\">>, <<\"Workers\">>, <<\"User 1\">>},\n"
+			    " {<<\"user2\">>, <<\"localhost\">>, <<\"Workers\">>, <<\"User 2\">>}].\n"
 			    "When using UTF8 character encoding add /utf8 to certain string. Example:\n"
 			    "[{<<\"user2\">>, <<\"localhost\">>, <<\"Workers\"/utf8>>, <<\"User 2\"/utf8>>}].",
 			module = ?MODULE, function = push_roster,
