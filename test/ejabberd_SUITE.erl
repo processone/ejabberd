@@ -602,7 +602,7 @@ test_connect_bad_ns_stream(Config) ->
 test_connect_bad_lang(Config) ->
     Lang = iolist_to_binary(lists:duplicate(36, $x)),
     Config0 = init_stream(set_opt(lang, Lang, Config)),
-    ?recv1(#stream_error{reason = 'policy-violation'}),
+    ?recv1(#stream_error{reason = 'invalid-xml'}),
     ?recv1({xmlstreamend, <<"stream:stream">>}),
     close_socket(Config0).
 
