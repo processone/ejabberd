@@ -1172,7 +1172,7 @@ mod_opt_type(O) when O == cache_life_time; O == cache_size ->
     fun (I) when is_integer(I), I > 0 -> I;
 	(infinity) -> infinity
     end;
-mod_opt_type(O) when O == use_cache; O == cache_missed ->
+mod_opt_type(O) when O == use_cache; O == cache_missed; O == compress_xml ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(default) ->
@@ -1187,6 +1187,7 @@ mod_options(Host) ->
     [{assume_mam_usage, false},
      {default, never},
      {request_activates_archiving, false},
+     {compress_xml, false},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {use_cache, ejabberd_config:use_cache(Host)},
      {cache_size, ejabberd_config:cache_size(Host)},

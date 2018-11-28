@@ -102,9 +102,18 @@ store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir, TS) ->
 		   jid:remove_resource(Peer))),
     LPeer = jid:encode(
 	      jid:tolower(Peer)),
-    XML = fxml:element_to_binary(Pkt),
     Body = fxml:get_subtag_cdata(Pkt, <<"body">>),
     SType = misc:atom_to_binary(Type),
+    XML = case gen_mod:get_module_opt(LServer, mod_mam, compress_xml) of
+	      true ->
+		  J1 = case Type of
+			      chat -> jid:encode({LUser, LHost, <<>>});
+			      groupchat -> SUser
+			  end,
+		  xml_compress:encode(Pkt, J1, LPeer);
+	      _ ->
+		  fxml:element_to_binary(Pkt)
+	  end,
     case ejabberd_sql:sql_query(
            LServer,
            ?SQL_INSERT(
@@ -192,8 +201,8 @@ select(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
 	    {lists:flatmap(
 	       fun([TS, XML, PeerBin, Kind, Nick]) ->
 		       case make_archive_el(
-			      TS, XML, PeerBin, Kind, Nick,
-			      MsgType, JidRequestor, JidArchive) of
+			   jid:encode(JidArchive), TS, XML, PeerBin, Kind, Nick,
+			   MsgType, JidRequestor, JidArchive) of
 			   {ok, El} ->
 			       [{TS, binary_to_integer(TS), El}];
 			   {error, _} ->
@@ -399,13 +408,13 @@ get_max_direction_id(RSM) ->
 	    {undefined, undefined, <<>>}
     end.
 
--spec make_archive_el(binary(), binary(), binary(), binary(),
+-spec make_archive_el(binary(), binary(), binary(), binary(), binary(),
 		      binary(), _, jid(), jid()) ->
 			     {ok, xmpp_element()} | {error, invalid_jid |
 						     invalid_timestamp |
 						     invalid_xml}.
-make_archive_el(TS, XML, Peer, Kind, Nick, MsgType, JidRequestor, JidArchive) ->
-    case fxml_stream:parse_element(XML) of
+make_archive_el(User, TS, XML, Peer, Kind, Nick, MsgType, JidRequestor, JidArchive) ->
+    case xml_compress:decode(XML, User, Peer) of
 	#xmlel{} = El ->
 	    try binary_to_integer(TS) of
 		TSInt ->
