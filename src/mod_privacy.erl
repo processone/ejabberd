@@ -434,7 +434,7 @@ user_send_packet({#iq{type = Type,
             % Adjust the client's state directly, so the next to-be-processed
             % packet will take the active list into account.
             {IQ, State#{privacy_active_list => Active}};
-          true ->
+          _ ->
             {IQ, State}
         end;
       _ -> {IQ, State}
