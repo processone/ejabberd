@@ -3789,7 +3789,7 @@ destroy_room(DEl, StateData) ->
 -spec make_disco_info(jid(), state()) -> disco_info().
 make_disco_info(_From, StateData) ->
     Config = StateData#state.config,
-    Feats = [?NS_VCARD, ?NS_MUC,
+    Feats = [?NS_VCARD, ?NS_MUC, ?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
 	     ?CONFIG_OPT_TO_FEATURE((Config#config.public),
 				    <<"muc_public">>, <<"muc_hidden">>),
 	     ?CONFIG_OPT_TO_FEATURE((Config#config.persistent),
