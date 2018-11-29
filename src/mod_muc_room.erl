@@ -51,9 +51,8 @@
 	 code_change/4]).
 
 -include("logger.hrl").
-
 -include("xmpp.hrl").
-
+-include("translate.hrl").
 -include("mod_muc_room.hrl").
 
 -define(MAX_USERS_DEFAULT_LIST,
@@ -435,11 +434,10 @@ normal_state({route, ToNick,
 	  {next_state, normal_state, StateData}
     end;
 normal_state({route, ToNick,
-	      #iq{from = From, type = Type, lang = Lang} = Packet},
-	     StateData) ->
-    case {(StateData#state.config)#config.allow_query_users,
-	  maps:get(jid:tolower(From), StateData#state.users, error)} of
-	{true, #user{nick = FromNick}} ->
+	      #iq{from = From, lang = Lang} = Packet},
+	     #state{config = #config{allow_query_users = AllowQuery}} = StateData) ->
+    try maps:get(jid:tolower(From), StateData#state.users) of
+	#user{nick = FromNick} when AllowQuery orelse ToNick == FromNick ->
 	    case find_jid_by_nick(ToNick, StateData) of
 		false ->
 		    ErrText = <<"Recipient is not in the conference room">>,
@@ -447,27 +445,32 @@ normal_state({route, ToNick,
 		    ejabberd_router:route_error(Packet, Err);
 		To ->
 		    FromJID = jid:replace_resource(StateData#state.jid, FromNick),
-		    if Type == get; Type == set ->
-			    ToJID = case is_vcard_request(Packet) of
-					true -> jid:remove_resource(To);
-					false -> To
-				    end,
+		    case direct_iq_type(Packet) of
+			vcard ->
 			    ejabberd_router:route_iq(
-			      xmpp:set_from_to(Packet, FromJID, ToJID), Packet, self());
-		       true ->
-			    ejabberd_router:route(
-			      xmpp:set_from_to(Packet, FromJID, To))
+			      xmpp:set_from_to(Packet, FromJID, jid:remove_resource(To)),
+			      Packet, self());
+			ping when ToNick == FromNick ->
+			    %% Self-ping optimization from XEP-0410
+			    ejabberd_router:route(xmpp:make_iq_result(Packet));
+			response ->
+			    ejabberd_router:route(xmpp:set_from_to(Packet, FromJID, To));
+			#stanza_error{} = Err ->
+			    ejabberd_router:route_error(Packet, Err);
+			_OtherRequest ->
+			    ejabberd_router:route_iq(
+			      xmpp:set_from_to(Packet, FromJID, To), Packet, self())
 		    end
 	    end;
-	{true, error} ->
-	    ErrText = <<"Only occupants are allowed to send queries "
-			"to the conference">>,
-	    Err = xmpp:err_not_acceptable(ErrText, Lang),
-	    ejabberd_router:route_error(Packet, Err);
 	_ ->
 	    ErrText = <<"Queries to the conference members are "
 			"not allowed in this room">>,
 	    Err = xmpp:err_not_allowed(ErrText, Lang),
+	    ejabberd_router:route_error(Packet, Err)
+    catch _:{badkey, _} ->
+	    ErrText = <<"Only occupants are allowed to send queries "
+			"to the conference">>,
+	    Err = xmpp:err_not_acceptable(ErrText, Lang),
 	    ejabberd_router:route_error(Packet, Err)
     end,
     {next_state, normal_state, StateData};
@@ -951,11 +954,22 @@ process_voice_approval(From, Pkt, VoiceApproval, StateData) ->
 	    StateData
     end.
 
--spec is_vcard_request(iq()) -> boolean().
-is_vcard_request(#iq{type = T, sub_els = [El]}) ->
-    (T == get orelse T == set) andalso xmpp:get_ns(El) == ?NS_VCARD;
-is_vcard_request(_) ->
-    false.
+-spec direct_iq_type(iq()) -> vcard | ping | request | response | stanza_error().
+direct_iq_type(#iq{type = T, sub_els = SubEls, lang = Lang}) when T == get; T == set ->
+    case SubEls of
+	[El] ->
+	    case xmpp:get_ns(El) of
+		?NS_VCARD when T == get -> vcard;
+		?NS_PING when T == get -> ping;
+		_ -> request
+	    end;
+	[] ->
+	    xmpp:err_bad_request(?T("No child elements found"), Lang);
+	[_|_] ->
+	    xmpp:err_bad_request(?T("Too many child elements"), Lang)
+    end;
+direct_iq_type(#iq{}) ->
+    response.
 
 %% @doc Check if this non participant can send message to room.
 %%
