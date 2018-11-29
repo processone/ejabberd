@@ -222,30 +222,10 @@ check_subscription(From, To) ->
     end.
 
 sets_bare_member({U, S, <<"">>} = LBJID, Set) ->
-    case ?SETS:next(sets_iterator_from(LBJID, Set)) of
+    case ?SETS:next(?SETS:iterator_from(LBJID, Set)) of
         {{U, S, _}, _} -> true;
         _ -> false
     end.
-
--ifdef(GB_SETS_ITERATOR_FROM).
-sets_iterator_from(Element, Set) ->
-    ?SETS:iterator_from(Element, Set).
--else.
-%% Copied from gb_sets.erl
-%% TODO: Remove after dropping R17 support
-sets_iterator_from(S, {_, T}) ->
-    iterator_from(S, T, []).
-
-iterator_from(S, {K, _, T}, As) when K < S ->
-    iterator_from(S, T, As);
-iterator_from(_, {_, nil, _} = T, As) ->
-    [T | As];
-iterator_from(S, {_, L, _} = T, As) ->
-    iterator_from(S, L, [T | As]);
-iterator_from(_, nil, As) ->
-    As.
--endif.
-
 
 depends(_Host, _Opts) ->
     [].
