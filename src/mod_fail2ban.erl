@@ -36,7 +36,11 @@
 	 handle_info/2, terminate/2, code_change/3,
 	 mod_opt_type/1, mod_options/1, depends/2]).
 
+%% ejabberd command.
+-export([get_commands_spec/0, unban/1]).
+
 -include_lib("stdlib/include/ms_transform.hrl").
+-include("ejabberd_commands.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
 
@@ -101,9 +105,16 @@ c2s_stream_started(#{ip := {Addr, _}} = State, _) ->
 start(Host, Opts) ->
     catch ets:new(failed_auth, [named_table, public,
 				{heir, erlang:group_leader(), none}]),
+    ejabberd_commands:register_commands(get_commands_spec()),
     gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+        false ->
+            ejabberd_commands:unregister_commands(get_commands_spec());
+        true ->
+            ok
+    end,
     gen_mod:stop_child(?MODULE, Host).
 
 reload(_Host, _NewOpts, _OldOpts) ->
@@ -154,6 +165,46 @@ terminate(_Reason, #state{host = Host}) ->
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
+
+%%--------------------------------------------------------------------
+%% ejabberd command callback.
+%%--------------------------------------------------------------------
+-spec get_commands_spec() -> [ejabberd_commands()].
+get_commands_spec() ->
+    [#ejabberd_commands{name = unban_ip, tags = [accounts],
+			desc = "Remove banned IP addresses from the fail2ban table",
+			longdesc = "Accepts an IP address with a network mask. "
+			    "Returns the number of unbanned addresses, or a negative integer if there were any error.",
+			module = ?MODULE, function = unban,
+			args = [{address, binary}],
+			args_example = [<<"::FFFF:127.0.0.1/128">>],
+			args_desc = ["IP address, optionally with network mask."],
+			result_example = 3,
+			result_desc = "Amount of unbanned entries, or negative in case of error.",
+			result = {unbanned, integer}}].
+
+-spec unban(string()) -> integer().
+unban(S) ->
+    case acl:parse_ip_netmask(S) of
+	{ok, Net, Mask} ->
+	    unban(Net, Mask);
+	error ->
+	    ?WARNING_MSG("Invalid network address when trying to unban: ~p", [S]),
+	    -1
+    end.
+
+unban(Net, Mask) ->
+    ets:foldl(
+	fun({Addr, _, _, _}, Acc)  ->
+	    case acl:ip_matches_mask(Addr, Net, Mask) of
+		true ->
+		    ets:delete(failed_auth, Addr),
+		    Acc+1;
+		false -> Acc
+	    end
+	end,
+	0,
+	failed_auth).
 
 %%%===================================================================
 %%% Internal functions
