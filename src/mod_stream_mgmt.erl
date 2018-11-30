@@ -97,7 +97,8 @@ stop(Host) ->
     ejabberd_hooks:delete(c2s_closed, Host, ?MODULE, c2s_closed, 50),
     ejabberd_hooks:delete(c2s_terminated, Host, ?MODULE, c2s_terminated, 50).
 
-reload(_Host, _NewOpts, _OldOpts) ->
+reload(_Host, NewOpts, _OldOpts) ->
+    init_cache(NewOpts),
     ?WARNING_MSG("module ~s is reloaded, but new configuration will take "
 		 "effect for newly created client connections only", [?MODULE]).
 
