@@ -156,13 +156,6 @@
 -- CREATE INDEX i_sm_sh_username ON sm USING btree (server_host, username);
 -- ALTER TABLE sm ALTER COLUMN server_host DROP DEFAULT;
 
--- ALTER TABLE carboncopy ADD COLUMN server_host text NOT NULL DEFAULT '<HOST>';
--- DROP INDEX i_carboncopy_ur;
--- DROP INDEX i_carboncopy_user;
--- ALTER TABLE carboncopy ADD PRIMARY KEY (server_host, username, resource);
--- CREATE INDEX i_carboncopy_sh_user ON carboncopy USING btree (server_host, username);
--- ALTER TABLE carboncopy ALTER COLUMN server_host DROP DEFAULT;
-
 
 CREATE TABLE users (
     username text NOT NULL,
@@ -554,17 +547,6 @@ CREATE TABLE bosh (
 );
 
 CREATE UNIQUE INDEX i_bosh_sid ON bosh USING btree (sid);
-
-CREATE TABLE carboncopy (
-    username text NOT NULL,
-    server_host text NOT NULL,
-    resource text NOT NULL,
-    namespace text NOT NULL,
-    node text NOT NULL,
-    PRIMARY KEY (server_host, username, resource)
-);
-
-CREATE INDEX i_carboncopy_sh_user ON carboncopy USING btree (server_host, username);
 
 CREATE TABLE proxy65 (
     sid text NOT NULL,

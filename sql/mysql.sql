@@ -373,16 +373,6 @@ CREATE TABLE bosh (
 
 CREATE UNIQUE INDEX i_bosh_sid ON bosh(sid(75));
 
-CREATE TABLE carboncopy (
-    username text NOT NULL,
-    resource text NOT NULL,
-    namespace text NOT NULL,
-    node text NOT NULL
-) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-CREATE UNIQUE INDEX i_carboncopy_ur ON carboncopy (username(75), resource(75));
-CREATE INDEX i_carboncopy_user ON carboncopy (username(75));
-
 CREATE TABLE proxy65 (
     sid text NOT NULL,
     pid_t text NOT NULL,

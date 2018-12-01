@@ -377,16 +377,6 @@ CREATE TABLE bosh (
 
 CREATE UNIQUE INDEX i_bosh_sid ON bosh USING btree (sid);
 
-CREATE TABLE carboncopy (
-    username text NOT NULL,
-    resource text NOT NULL,
-    namespace text NOT NULL,
-    node text NOT NULL
-);
-
-CREATE UNIQUE INDEX i_carboncopy_ur ON carboncopy USING btree (username, resource);
-CREATE INDEX i_carboncopy_user ON carboncopy USING btree (username);
-
 CREATE TABLE proxy65 (
     sid text NOT NULL,
     pid_t text NOT NULL,

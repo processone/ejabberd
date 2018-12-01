@@ -35,24 +35,16 @@
 -export([start/2, stop/1, reload/3]).
 
 -export([user_send_packet/1, user_receive_packet/1,
-	 iq_handler/1, remove_connection/4, disco_features/5,
-	 is_carbon_copy/1, mod_opt_type/1, depends/2, clean_cache/1,
+	 iq_handler/1, disco_features/5,
+	 is_carbon_copy/1, mod_opt_type/1, depends/2,
 	 mod_options/1]).
+%% For debugging purposes
+-export([list/2]).
 
 -include("logger.hrl").
 -include("xmpp.hrl").
--include("mod_carboncopy.hrl").
 
 -type direction() :: sent | received.
-
--callback init(binary(), gen_mod:opts()) -> any().
--callback enable(binary(), binary(), binary(), binary()) -> ok | {error, any()}.
--callback disable(binary(), binary(), binary()) -> ok | {error, any()}.
--callback list(binary(), binary()) -> [{binary(), binary(), node()}].
--callback use_cache(binary()) -> boolean().
--callback cache_nodes(binary()) -> [node()].
-
--optional_callbacks([use_cache/1, cache_nodes/1]).
 
 -spec is_carbon_copy(stanza()) -> boolean().
 is_carbon_copy(#message{meta = #{carbon_copy := true}}) ->
@@ -60,13 +52,8 @@ is_carbon_copy(#message{meta = #{carbon_copy := true}}) ->
 is_carbon_copy(_) ->
     false.
 
-start(Host, Opts) ->
+start(Host, _Opts) ->
     ejabberd_hooks:add(disco_local_features, Host, ?MODULE, disco_features, 50),
-    Mod = gen_mod:ram_db_mod(Host, ?MODULE),
-    init_cache(Mod, Host, Opts),
-    Mod:init(Host, Opts),
-    clean_cache(),
-    ejabberd_hooks:add(unset_presence_hook,Host, ?MODULE, remove_connection, 10),
     %% why priority 89: to define clearly that we must run BEFORE mod_logdb hook (90)
     ejabberd_hooks:add(user_send_packet,Host, ?MODULE, user_send_packet, 89),
     ejabberd_hooks:add(user_receive_packet,Host, ?MODULE, user_receive_packet, 89),
@@ -77,23 +64,10 @@ stop(Host) ->
     ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, disco_features, 50),
     %% why priority 89: to define clearly that we must run BEFORE mod_logdb hook (90)
     ejabberd_hooks:delete(user_send_packet,Host, ?MODULE, user_send_packet, 89),
-    ejabberd_hooks:delete(user_receive_packet,Host, ?MODULE, user_receive_packet, 89),
-    ejabberd_hooks:delete(unset_presence_hook,Host, ?MODULE, remove_connection, 10).
+    ejabberd_hooks:delete(user_receive_packet,Host, ?MODULE, user_receive_packet, 89).
 
-reload(Host, NewOpts, OldOpts) ->
-    NewMod = gen_mod:ram_db_mod(Host, NewOpts, ?MODULE),
-    OldMod = gen_mod:ram_db_mod(Host, OldOpts, ?MODULE),
-    if NewMod /= OldMod ->
-	    NewMod:init(Host, NewOpts);
-       true ->
-	    ok
-    end,
-    case use_cache(NewMod, Host) of
-	true ->
-	    ets_cache:new(?CARBONCOPY_CACHE, cache_opts(NewOpts));
-	false ->
-	    ok
-    end.
+reload(_Host, _NewOpts, _OldOpts) ->
+    ok.
 
 -spec disco_features({error, stanza_error()} | {result, [binary()]} | empty,
 		     jid(), jid(), binary(), binary()) ->
@@ -113,19 +87,13 @@ iq_handler(#iq{type = set, lang = Lang, from = From,
 					  is_record(El, carbons_disable) ->
     {U, S, R} = jid:tolower(From),
     Result = case El of
-		 #carbons_enable{} ->
-		     ?DEBUG("Carbons enabled for user ~s@~s/~s", [U,S,R]),
-		     enable(S, U, R, ?NS_CARBONS_2);
-		 #carbons_disable{} ->
-		     ?DEBUG("Carbons disabled for user ~s@~s/~s", [U,S,R]),
-		     disable(S, U, R)
+		 #carbons_enable{} -> enable(S, U, R, ?NS_CARBONS_2);
+		 #carbons_disable{} -> disable(S, U, R)
 	     end,
     case Result of
 	ok ->
-	    ?DEBUG("carbons IQ result: ok", []),
 	    xmpp:make_iq_result(IQ);
-	{error,_Error} ->
-	    ?ERROR_MSG("Error enabling / disabling carbons: ~p", [Result]),
+	{error, _} ->
 	    Txt = <<"Database failure">>,
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
     end;
@@ -179,12 +147,6 @@ check_and_forward(JID, To, Packet, Direction)->
         _ ->
 	    Packet
     end.
-
--spec remove_connection(binary(), binary(), binary(), binary()) -> ok.
-remove_connection(User, Server, Resource, _Status)->
-    disable(Server, User, Resource),
-    ok.
-
 
 %%% Internal
 %% Direction = received | sent <received xmlns='urn:xmpp:carbons:1'/>
@@ -248,22 +210,26 @@ build_forward_packet(JID, #message{type = T} = Msg, Sender, Dest, Direction) ->
 
 -spec enable(binary(), binary(), binary(), binary()) -> ok | {error, any()}.
 enable(Host, U, R, CC)->
-    ?DEBUG("enabling for ~p", [U]),
-    Mod = gen_mod:ram_db_mod(Host, ?MODULE),
-    case Mod:enable(U, Host, R, CC) of
-	ok ->
-	    delete_cache(Mod, U, Host);
-	{error, _} = Err ->
+    ?DEBUG("Enabling carbons for ~s@~s/~s", [U, Host, R]),
+    case ejabberd_sm:set_user_info(U, Host, R, carboncopy, CC) of
+	ok -> ok;
+	{error, Reason} = Err ->
+	    ?ERROR_MSG("Failed to disable carbons for ~s@~s/~s: ~p",
+		       [U, Host, R, Reason]),
 	    Err
     end.
 
 -spec disable(binary(), binary(), binary()) -> ok | {error, any()}.
 disable(Host, U, R)->
-    ?DEBUG("disabling for ~p", [U]),
-    Mod = gen_mod:ram_db_mod(Host, ?MODULE),
-    Res = Mod:disable(U, Host, R),
-    delete_cache(Mod, U, Host),
-    Res.
+    ?DEBUG("Disabling carbons for ~s@~s/~s", [U, Host, R]),
+    case ejabberd_sm:del_user_info(U, Host, R, carboncopy) of
+	ok -> ok;
+	{error, notfound} -> ok;
+	{error, Reason} = Err ->
+	    ?ERROR_MSG("Failed to disable carbons for ~s@~s/~s: ~p",
+		       [U, Host, R, Reason]),
+	    Err
+    end.
 
 -spec complete_packet(jid(), message(), direction()) -> message().
 complete_packet(From, #message{from = undefined} = Msg, sent) ->
@@ -291,99 +257,30 @@ is_received_muc_pm(_To, Packet, received) ->
 
 -spec list(binary(), binary()) -> [{Resource :: binary(), Namespace :: binary()}].
 list(User, Server) ->
-    Mod = gen_mod:ram_db_mod(Server, ?MODULE),
-    case use_cache(Mod, Server) of
-	true ->
-	    case ets_cache:lookup(
-		   ?CARBONCOPY_CACHE, {User, Server},
-		   fun() ->
-			   case Mod:list(User, Server) of
-			       {ok, L} when L /= [] -> {ok, L};
-			       _ -> error
-			   end
-		   end) of
-		{ok, L} -> [{Resource, NS} || {Resource, NS, _} <- L];
-		error -> []
-	    end;
-	false ->
-	    case Mod:list(User, Server) of
-		{ok, L} -> [{Resource, NS} || {Resource, NS, _} <- L];
-		error -> []
-	    end
-    end.
-
--spec init_cache(module(), binary(), gen_mod:opts()) -> ok.
-init_cache(Mod, Host, Opts) ->
-    case use_cache(Mod, Host) of
-	true ->
-	    ets_cache:new(?CARBONCOPY_CACHE, cache_opts(Opts));
-	false ->
-	    ets_cache:delete(?CARBONCOPY_CACHE)
-    end.
-
--spec cache_opts(gen_mod:opts()) -> [proplists:property()].
-cache_opts(Opts) ->
-    MaxSize = gen_mod:get_opt(cache_size, Opts),
-    CacheMissed = gen_mod:get_opt(cache_missed, Opts),
-    LifeTime = case gen_mod:get_opt(cache_life_time, Opts) of
-		   infinity -> infinity;
-		   I -> timer:seconds(I)
-	       end,
-    [{max_size, MaxSize}, {cache_missed, CacheMissed}, {life_time, LifeTime}].
-
--spec use_cache(module(), binary()) -> boolean().
-use_cache(Mod, Host) ->
-    case erlang:function_exported(Mod, use_cache, 1) of
-	true -> Mod:use_cache(Host);
-	false -> gen_mod:get_module_opt(Host, ?MODULE, use_cache)
-    end.
-
--spec cache_nodes(module(), binary()) -> [node()].
-cache_nodes(Mod, Host) ->
-    case erlang:function_exported(Mod, cache_nodes, 1) of
-	true -> Mod:cache_nodes(Host);
-	false -> ejabberd_cluster:get_nodes()
-    end.
-
--spec clean_cache(node()) -> non_neg_integer().
-clean_cache(Node) ->
-    ets_cache:filter(
-      ?CARBONCOPY_CACHE,
-      fun(_, error) ->
-	      false;
-	 (_, {ok, L}) ->
-	      not lists:any(fun({_, _, N}) -> N == Node end, L)
-      end).
-
--spec clean_cache() -> ok.
-clean_cache() ->
-    ejabberd_cluster:eval_everywhere(?MODULE, clean_cache, [node()]).
-
--spec delete_cache(module(), binary(), binary()) -> ok.
-delete_cache(Mod, User, Server) ->
-    case use_cache(Mod, Server) of
-	true ->
-	    ets_cache:delete(?CARBONCOPY_CACHE, {User, Server},
-			     cache_nodes(Mod, Server));
-	false ->
-	    ok
-    end.
+    lists:filtermap(
+      fun({Resource, Info}) ->
+	      case lists:keyfind(carboncopy, 1, Info) of
+		  {_, NS} -> {true, {Resource, NS}};
+		  false -> false
+	      end
+      end, ejabberd_sm:get_user_info(User, Server)).
 
 depends(_Host, _Opts) ->
     [].
 
-mod_opt_type(ram_db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
-mod_opt_type(O) when O == use_cache; O == cache_missed ->
-    fun(B) when is_boolean(B) -> B end;
-mod_opt_type(O) when O == cache_size; O == cache_life_time ->
-    fun(I) when is_integer(I), I>0 -> I;
-       (unlimited) -> infinity;
-       (infinity) -> infinity
+mod_opt_type(O) when O == cache_size; O == cache_life_time;
+		     O == use_cache; O == cache_missed;
+		     O == ram_db_type ->
+    fun(deprecated) -> deprecated;
+       (_) ->
+	    ?WARNING_MSG("Option ~s of ~s has no effect anymore "
+			 "and will be ingored", [O, ?MODULE]),
+	    deprecated
     end.
 
-mod_options(Host) ->
-    [{ram_db_type, ejabberd_config:default_ram_db(Host, ?MODULE)},
-     {use_cache, ejabberd_config:use_cache(Host)},
-     {cache_size, ejabberd_config:cache_size(Host)},
-     {cache_missed, ejabberd_config:cache_missed(Host)},
-     {cache_life_time, ejabberd_config:cache_life_time(Host)}].
+mod_options(_) ->
+    [{ram_db_type, deprecated},
+     {use_cache, deprecated},
+     {cache_size, deprecated},
+     {cache_missed, deprecated},
+     {cache_life_time, deprecated}].

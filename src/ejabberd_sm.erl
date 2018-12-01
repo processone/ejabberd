@@ -66,6 +66,8 @@
 	 get_session_sids/2,
 	 get_user_info/2,
 	 get_user_info/3,
+	 set_user_info/5,
+	 del_user_info/4,
 	 get_user_ip/3,
 	 get_max_user_sessions/2,
 	 get_all_pids/0,
@@ -264,6 +266,44 @@ get_user_info(User, Server, Resource) ->
 	    Priority = Session#session.priority,
 	    [{node, Node}, {ts, Ts}, {pid, Pid}, {priority, Priority}
 	     |Session#session.info]
+    end.
+
+-spec set_user_info(binary(), binary(), binary(), atom(), term()) -> ok | {error, any()}.
+set_user_info(User, Server, Resource, Key, Val) ->
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
+    LResource = jid:resourceprep(Resource),
+    Mod = get_sm_backend(LServer),
+    case get_sessions(Mod, LUser, LServer, LResource) of
+	[] -> {error, notfound};
+	Ss ->
+	    lists:foldl(
+	      fun(#session{sid = {_, Pid},
+			   info = Info} = Session, _) when Pid == self() ->
+		      Info1 = lists:keystore(Key, 1, Info, {Key, Val}),
+		      set_session(Session#session{info = Info1});
+		 (_, Acc) ->
+		      Acc
+	      end, {error, not_owner}, Ss)
+    end.
+
+-spec del_user_info(binary(), binary(), binary(), atom()) -> ok | {error, any()}.
+del_user_info(User, Server, Resource, Key) ->
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
+    LResource = jid:resourceprep(Resource),
+    Mod = get_sm_backend(LServer),
+    case get_sessions(Mod, LUser, LServer, LResource) of
+	[] -> {error, notfound};
+	Ss ->
+	    lists:foldl(
+	      fun(#session{sid = {_, Pid},
+			   info = Info} = Session, _) when Pid == self() ->
+		      Info1 = lists:keydelete(Key, 1, Info),
+		      set_session(Session#session{info = Info1});
+		 (_, Acc) ->
+		      Acc
+	      end, {error, not_owner}, Ss)
     end.
 
 -spec set_presence(sid(), binary(), binary(), binary(),
@@ -483,9 +523,13 @@ set_session(SID, User, Server, Resource, Priority, Info) ->
     LResource = jid:resourceprep(Resource),
     US = {LUser, LServer},
     USR = {LUser, LServer, LResource},
+    set_session(#session{sid = SID, usr = USR, us = US,
+			 priority = Priority, info = Info}).
+
+-spec set_session(#session{}) -> ok | {error, any()}.
+set_session(#session{us = {LUser, LServer}} = Session) ->
     Mod = get_sm_backend(LServer),
-    case Mod:set_session(#session{sid = SID, usr = USR, us = US,
-				  priority = Priority, info = Info}) of
+    case Mod:set_session(Session) of
 	ok ->
 	    case use_cache(Mod, LServer) of
 		true ->

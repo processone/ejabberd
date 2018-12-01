@@ -531,19 +531,6 @@ CREATE TABLE [dbo].[bosh] (
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
 );
 
-CREATE TABLE [dbo].[carboncopy] (
-    [username] [varchar] (255) NOT NULL,
-    [resource] [varchar] (255) NOT NULL,
-    [namespace] [varchar] (255) NOT NULL,
-    [node] [varchar] (255) NOT NULL
-);
-
-CREATE UNIQUE CLUSTERED INDEX [carboncopy_ur] ON [carboncopy] (username, resource)
-WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
-
-CREATE INDEX [carboncopy_user] ON [carboncopy] (username)
-WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON);
-
 CREATE TABLE [dbo].[push_session] (
     [username] [varchar] (255) NOT NULL,
     [timestamp] [bigint] NOT NULL,
