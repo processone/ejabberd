@@ -138,13 +138,13 @@ process_closed(#{server := LServer} = State, Reason) ->
 tls_options(#{tls_options := TLSOpts, lserver := LServer}) ->
     ejabberd_s2s:tls_options(LServer, TLSOpts).
 
-tls_required(#{server_host := LServer}) ->
+tls_required(#{lserver := LServer}) ->
     ejabberd_s2s:tls_required(LServer).
 
-tls_enabled(#{server_host := LServer}) ->
+tls_enabled(#{lserver := LServer}) ->
     ejabberd_s2s:tls_enabled(LServer).
 
-compress_methods(#{server_host := LServer}) ->
+compress_methods(#{lserver := LServer}) ->
     case ejabberd_s2s:zlib_enabled(LServer) of
 	true -> [<<"zlib">>];
 	false -> []
@@ -181,7 +181,7 @@ handle_auth_success(RServer, Mech, _AuthModule,
     ?INFO_MSG("(~s) Accepted inbound s2s ~s authentication ~s -> ~s (~s)",
 	      [xmpp_socket:pp(Socket), Mech, RServer, LServer,
 	       ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
-    State1 = case ejabberd_s2s:allow_host(ServerHost, RServer) of
+    State1 = case ejabberd_s2s:allow_host(LServer, RServer) of
 		 true ->
 		     AuthDomains1 = sets:add_element(RServer, AuthDomains),
 		     State0 = change_shaper(State, RServer),
@@ -327,7 +327,7 @@ check_to(#jid{lserver = LServer}, _State) ->
     ejabberd_router:is_my_route(LServer).
 
 -spec set_idle_timeout(state()) -> state().
-set_idle_timeout(#{server_host := LServer,
+set_idle_timeout(#{lserver := LServer,
 		   established := true} = State) ->
     Timeout = ejabberd_s2s:get_idle_timeout(LServer),
     xmpp_stream_in:set_timeout(State, Timeout);
