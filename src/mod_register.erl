@@ -73,8 +73,14 @@ depends(_Host, _Opts) ->
     [].
 
 -spec stream_feature_register([xmpp_element()], binary()) -> [xmpp_element()].
-stream_feature_register(Acc, _Host) ->
-    [#feature_register{}|Acc].
+stream_feature_register(Acc, Host) ->
+    case {gen_mod:get_module_opt(Host, ?MODULE, access),
+	  gen_mod:get_module_opt(Host, ?MODULE, ip_access),
+	  gen_mod:get_module_opt(Host, ?MODULE, redirect_url)} of
+	{none, _, <<>>} -> Acc;
+	{_, none, <<>>} -> Acc;
+	{_, _, _} -> [#feature_register{}|Acc]
+    end.
 
 c2s_unauthenticated_packet(#{ip := IP, server := Server} = State,
 			   #iq{type = T, sub_els = [_]} = IQ)
