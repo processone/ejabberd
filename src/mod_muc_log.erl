@@ -155,50 +155,178 @@ init_state(Host, Opts) ->
 	      access = AccessLog, lang = Lang, timezone = Timezone,
 	      spam_prevention = NoFollow, top_link = Top_link}.
 
+put_header_xml(F, Room, Date) ->
+    {Y, M, D} = Date,
+    DateString = io_lib:format("~4..0w-~2..0w-~2..0w", [Y, M, D]),
+    Header = io_lib:format("<muclog xmlns='https://ejabberd.im/muclog' roomjid='~s' date='~s'>\n",
+                          [ xmlize(Room#room.jid), DateString ]),
+    file:write(F, Header),
+    % TODO: write current room config + current occupants + current subject?
+    ok.
+
+add_to_log_xml(Nick, Packet, RoomJID, Opts, State) ->
+    #logstate{out_dir = OutDir, dir_type = DirType,
+	      dir_name = DirName,
+	      file_permissions = FilePermissions,
+	      timezone = Timezone} =
+	State,
+    Room = get_room_info(RoomJID, Opts),
+    Now = p1_time_compat:timestamp(),
+    Addresses = #addresses{
+                   list = [#address{type = ofrom,
+                                    jid = xmpp:get_from(Packet)}]},
+    AddrPacket = xmpp:set_subtag(Packet, Addresses),
+    TSPacket = misc:add_delay_info(
+                 AddrPacket, RoomJID, Now),
+    SPacket = xmpp:set_from_to(
+                TSPacket,
+                jid:replace_resource(RoomJID, Nick),
+                RoomJID),
+    TimeStamp = case Timezone of
+		  local -> calendar:now_to_local_time(Now);
+		  universal -> calendar:now_to_universal_time(Now)
+		end,
+    {Fd, Fn, _Dir} = build_filename_string(TimeStamp,
+					   OutDir, Room#room.jid, DirType,
+					   DirName, xml),
+    {Date, _Time} = TimeStamp,
+    case file:read_file_info(Fn) of
+      {ok, _} -> {ok, F} = file:open(Fn, [append]);
+      {error, enoent} ->
+	  make_dir_rec(Fd),
+	  {ok, F} = file:open(Fn, [append]),
+	  catch set_filemode(Fn, FilePermissions),
+	  put_header_xml(F, Room, Date),
+	  TimeStampYesterday = get_timestamp_daydiff(TimeStamp,
+						     -1),
+	  {_FdYesterday, FnYesterday, _DatePrev} =
+	      build_filename_string(TimeStampYesterday, OutDir,
+				    Room#room.jid, DirType, DirName,
+				    xml),
+	  close_previous_log(FnYesterday, "", xml)
+    end,
+    case catch file:write(F, [fxml:element_to_binary(xmpp:encode(SPacket, <<"https://ejabberd.im/muclog">>))] ++ <<"\n">>) of
+      {'EXIT', Reason} -> ?ERROR_MSG("~p", [Reason]);
+      _ -> ok
+    end,
+    file:close(F),
+    ok.
+
+make_roomconfig_element(Room, NewConfig) ->
+    #iq{
+       type = set, to = Room, from = Room,
+       sub_els = [#muc_owner { config = NewConfig } ]
+      }.
+
 add_to_log2(text, {Nick, Packet}, Room, Opts, State) ->
     case has_no_permanent_store_hint(Packet) of
 	false ->
-	    case {Packet#message.subject, Packet#message.body} of
-		{[], []} -> ok;
-		{[], Body} ->
-		    Message = {body, xmpp:get_text(Body)},
-		    add_message_to_log(Nick, Message, Room, Opts, State);
-		{Subj, _} ->
-		    Message = {subject, xmpp:get_text(Subj)},
-		    add_message_to_log(Nick, Message, Room, Opts, State)
-	    end;
+            case State#logstate.file_format of
+                xml ->
+                    add_to_log_xml(Nick, Packet, Room, Opts, State);
+                _ ->
+                    case {Packet#message.subject, Packet#message.body} of
+                        {[], []} -> ok;
+                        {[], Body} ->
+                            Message = {body, xmpp:get_text(Body)},
+                            add_message_to_log(Nick, Message, Room, Opts, State);
+                        {Subj, _} ->
+                            Message = {subject, xmpp:get_text(Subj)},
+                            add_message_to_log(Nick, Message, Room, Opts, State)
+                    end
+            end;
 	true -> ok
     end;
-add_to_log2(roomconfig_change, _Occupants, Room, Opts,
+add_to_log2(roomconfig_change, {_Occupants, NewConfig}, Room, Opts,
 	    State) ->
-    add_message_to_log(<<"">>, roomconfig_change, Room,
-		       Opts, State);
-add_to_log2(roomconfig_change_enabledlogging, Occupants,
+    case State#logstate.file_format of
+        xml ->
+            Packet = make_roomconfig_element(Room, NewConfig),
+            add_to_log_xml(<<"">>, Packet, Room, Opts, State);
+        _ ->
+            add_message_to_log(<<"">>, roomconfig_change, Room,
+                               Opts, State)
+    end;
+add_to_log2(roomconfig_change_enabledlogging, {Occupants, NewConfig},
 	    Room, Opts, State) ->
-    add_message_to_log(<<"">>,
-		       {roomconfig_change, Occupants}, Room, Opts, State);
+    case State#logstate.file_format of
+        xml ->
+            Packet = make_roomconfig_element(Room, NewConfig),
+            add_to_log_xml(<<"">>, Packet, Room, Opts, State);
+        _ ->
+            add_message_to_log(<<"">>,
+                               {roomconfig_change, Occupants}, Room, Opts, State)
+    end;
 add_to_log2(room_existence, NewStatus, Room, Opts,
 	    State) ->
-    add_message_to_log(<<"">>, {room_existence, NewStatus},
-		       Room, Opts, State);
-add_to_log2(nickchange, {OldNick, NewNick}, Room, Opts,
-	    State) ->
-    add_message_to_log(NewNick, {nickchange, OldNick}, Room,
-		       Opts, State);
-add_to_log2(join, Nick, Room, Opts, State) ->
-    add_message_to_log(Nick, join, Room, Opts, State);
-add_to_log2(leave, {Nick, Reason}, Room, Opts, State) ->
-    case Reason of
-      <<"">> ->
-	  add_message_to_log(Nick, leave, Room, Opts, State);
-      _ ->
-	  add_message_to_log(Nick, {leave, Reason}, Room, Opts,
-			     State)
+    case State#logstate.file_format of
+        xml ->
+            Element = #xmlel{name = <<"status">>, attrs =
+                                 [{<<"xmlns">>, <<"https://ejabberd.im/muclog">>},
+                                  {<<"status">>, atom_to_binary(NewStatus, utf8)}]},
+            Packet = #iq{ type = set, to = Room, from = Room,
+                          sub_els = [Element]},
+            add_to_log_xml(<<"">>, Packet, Room, Opts, State);
+        _ ->
+            add_message_to_log(<<"">>, {room_existence, NewStatus},
+                               Room, Opts, State)
     end;
-add_to_log2(kickban, {Nick, Reason, Code}, Room, Opts,
+add_to_log2(nickchange, {OldNick, NewNick, Packet, SendOldUnavailable}, Room, Opts,
 	    State) ->
-    add_message_to_log(Nick, {kickban, Code, Reason}, Room,
-		       Opts, State).
+    case State#logstate.file_format of
+        xml ->
+            if SendOldUnavailable ->
+                    Packet1 = #presence{
+                                 from = xmpp:get_from(Packet),
+                                 type = unavailable,
+                                 sub_els = [#muc_user{
+                                               items = [#muc_item{nick = NewNick}],
+                                               status_codes = [303]}]},
+                    add_to_log_xml(OldNick, Packet1, Room, Opts, State);
+               true -> ok
+            end,
+            add_to_log_xml(NewNick, Packet, Room, Opts, State);
+        _ ->
+            add_message_to_log(NewNick, {nickchange, OldNick}, Room,
+                               Opts, State)
+    end;
+add_to_log2(join, {Nick, Packet}, Room, Opts, State) ->
+    case State#logstate.file_format of
+        xml ->
+            add_to_log_xml(Nick, Packet, Room, Opts, State);
+        _ ->
+            add_message_to_log(Nick, join, Room, Opts, State)
+    end;
+add_to_log2(leave, {Nick, Reason, Packet}, Room, Opts, State) ->
+    case State#logstate.file_format of
+        xml ->
+            add_to_log_xml(Nick, Packet, Room, Opts, State);
+        _ ->
+            case Reason of
+                <<"">> ->
+                    add_message_to_log(Nick, leave, Room, Opts, State);
+                _ ->
+                    add_message_to_log(Nick, {leave, Reason}, Room, Opts,
+                                       State)
+            end
+    end;
+add_to_log2(kickban, {Nick, Reason, Code, JID, NewAffiliation, ActorJID, ActorNick}, Room, Opts,
+	    State) ->
+    case State#logstate.file_format of
+        xml ->
+            Item = #muc_item{affiliation = NewAffiliation,
+                             role = none,
+                             reason = Reason,
+                             actor = #muc_actor{jid = ActorJID, nick = ActorNick}},
+            Packet = #presence{from = JID,
+                               type = unavailable,
+                               sub_els = [#muc_user{items = [Item],
+                                                    status_codes = [Code]}]},
+            add_to_log_xml(Nick, Packet, Room, Opts, State);
+        _ ->
+            add_message_to_log(Nick, {kickban, Code, Reason}, Room,
+                               Opts, State)
+    end.
 
 %%----------------------------------------------------------------------
 %% Core
@@ -232,7 +360,8 @@ build_filename_string(TimeStamp, OutDir, RoomJID,
 		 end,
     Extension = case FileFormat of
 		  html -> <<".html">>;
-		  plaintext -> <<".txt">>
+		  plaintext -> <<".txt">>;
+		  xml -> <<".xml">>
 		end,
     Fd = fjoin([OutDir, RoomString, Dir]),
     Fn = fjoin([Fd, <<Filename/binary, Extension/binary>>]),
@@ -261,6 +390,8 @@ close_previous_log(Fn, Images_dir, FileFormat) ->
     end.
 
 write_last_lines(_, _, plaintext) -> ok;
+write_last_lines(F, _, xml) ->
+    file:write(F, <<"</muclog>\n">>);
 write_last_lines(F, Images_dir, _FileFormat) ->
     fw(F, <<"<div class=\"legend\">">>),
     fw(F,
@@ -703,6 +834,12 @@ htmlize2(S1, NoFollow) ->
     ejabberd_regexp:greplace(S8, <<226, 128, 174>>,
 			     <<"[RLO]">>).
 
+xmlize(S1) ->
+    S2 = ejabberd_regexp:greplace(S1, <<"\\&">>, <<"\\&amp;">>),
+    S3 = ejabberd_regexp:greplace(S2, <<"<">>, <<"\\&lt;">>),
+    S4 = ejabberd_regexp:greplace(S3, <<">">>, <<"\\&gt;">>),
+    ejabberd_regexp:greplace(S4, <<"'">>, <<"\\&apos;">>).
+
 link_regexp(false) -> <<"<a href=\"&\">&</a>">>;
 link_regexp(true) ->
     <<"<a href=\"&\" rel=\"nofollow\">&</a>">>.
@@ -948,7 +1085,8 @@ mod_opt_type(dirtype) ->
     end;
 mod_opt_type(file_format) ->
     fun (html) -> html;
-	(plaintext) -> plaintext
+	(plaintext) -> plaintext;
+	(xml) -> xml
     end;
 mod_opt_type(file_permissions) ->
     fun (SubOpts) ->

@@ -306,7 +306,7 @@ remove_mam_for_user_with_peer(User, Server, Peer) ->
     end.
 
 -spec get_room_config([muc_roomconfig:property()], mod_muc_room:state(),
-		      jid(), binary()) -> [muc_roomconfig:property()].
+		      undefined | jid(), binary()) -> [muc_roomconfig:property()].
 get_room_config(Fields, RoomState, _From, _Lang) ->
     Config = RoomState#state.config,
     Fields ++ [{mam, Config#config.mam}].
