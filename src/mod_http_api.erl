@@ -325,15 +325,20 @@ handle2(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
 	    format_command_result(Call, Auth, Res, Version)
     end.
 
-get_elem_delete(A, L) ->
+get_elem_delete(A, L, F) ->
     case proplists:get_all_values(A, L) of
       [Value] -> {Value, proplists:delete(A, L)};
       [_, _ | _] ->
 	  %% Crash reporting the error
 	  exit({duplicated_attribute, A, L});
       [] ->
-	  %% Report the error and then force a crash
-	  exit({attribute_not_found, A, L})
+	  case F of
+	      {list, _} ->
+		  {[], L};
+	      _ ->
+		  %% Report the error and then force a crash
+		  exit({attribute_not_found, A, L})
+	  end
     end.
 
 format_args(Args, ArgsFormat) ->
@@ -342,7 +347,7 @@ format_args(Args, ArgsFormat) ->
 					  {Args1, Res}) ->
 					     {ArgValue, Args2} =
 						 get_elem_delete(ArgName,
-								 Args1),
+								 Args1, ArgFormat),
 					     Formatted = format_arg(ArgValue,
 								    ArgFormat),
 					     {Args2, Res ++ [Formatted]}
