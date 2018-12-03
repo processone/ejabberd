@@ -476,6 +476,9 @@ format_result(Code, {Name, restuple}) ->
 format_result(Els, {Name, {list, {_, {tuple, [{_, atom}, _]}} = Fmt}}) ->
     {misc:atom_to_binary(Name), {[format_result(El, Fmt) || El <- Els]}};
 
+format_result(Els, {Name, {list, {_, {tuple, [{name, string}, {value, _}]}} = Fmt}}) ->
+    {misc:atom_to_binary(Name), {[format_result(El, Fmt) || El <- Els]}};
+
 format_result(Els, {Name, {list, Def}}) ->
     {misc:atom_to_binary(Name), [element(2, format_result(El, Def)) || El <- Els]};
 
@@ -483,6 +486,11 @@ format_result(Tuple, {_Name, {tuple, [{_, atom}, ValFmt]}}) ->
     {Name2, Val} = Tuple,
     {_, Val2} = format_result(Val, ValFmt),
     {misc:atom_to_binary(Name2), Val2};
+
+format_result(Tuple, {_Name, {tuple, [{name, string}, {value, _} = ValFmt]}}) ->
+    {Name2, Val} = Tuple,
+    {_, Val2} = format_result(Val, ValFmt),
+    {iolist_to_binary(Name2), Val2};
 
 format_result(Tuple, {Name, {tuple, Def}}) ->
     Els = lists:zip(tuple_to_list(Tuple), Def),
