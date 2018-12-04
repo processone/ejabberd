@@ -69,7 +69,8 @@
 		default_host,
 		custom_headers,
 		trail = <<>>,
-		addr_re
+		addr_re,
+		sock_peer_name = none
 	       }).
 
 -define(XHTML_DOCTYPE,
@@ -143,6 +144,7 @@ init({SockMod, Socket}, Opts) ->
 		 true -> [{[], ejabberd_xmlrpc}];
 		 false -> []
 	     end,
+    SockPeer =  proplists:get_value(sock_peer_name, Opts, none),
     DefinedHandlers = proplists:get_value(request_handlers, Opts, []),
     RequestHandlers = DefinedHandlers ++ Captcha ++ Register ++
         Admin ++ Bind ++ XMLRPC,
@@ -159,6 +161,7 @@ init({SockMod, Socket}, Opts) ->
 		   custom_headers = CustomHeaders,
 		   options = Opts,
 		   request_handlers = RequestHandlers,
+		   sock_peer_name = SockPeer,
 		   addr_re = RE},
     try receive_headers(State) of
         V -> V
@@ -463,6 +466,7 @@ process_request(#state{request_method = Method,
 		       request_version = Version,
 		       sockmod = SockMod,
 		       socket = Socket,
+		       sock_peer_name = SockPeer,
 		       options = Options,
 		       request_host = Host,
 		       request_port = Port,
@@ -481,13 +485,17 @@ process_request(#state{request_method = Method,
 	{State2, false} ->
 	    {State2, make_bad_request(State)};
 	{State2, {LPath, LQuery, Data}} ->
-	    PeerName =
-		case SockMod of
-		    gen_tcp ->
-			inet:peername(Socket);
-		    _ ->
-			SockMod:peername(Socket)
-		end,
+	    PeerName = case SockPeer of
+			   none ->
+			       case SockMod of
+				   gen_tcp ->
+				       inet:peername(Socket);
+				   _ ->
+				       SockMod:peername(Socket)
+			       end;
+			   {_, Peer} ->
+			       {ok, Peer}
+		       end,
             IPHere = case PeerName of
                          {ok, V} -> V;
                          {error, _} = E -> throw(E)
