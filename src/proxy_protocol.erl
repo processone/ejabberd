@@ -109,7 +109,8 @@ decode_v2(SockMod, Socket, Timeout) ->
 					<<D1:8, D2:8, D3:8, D4:8,
 					  S1:8, S2:8, S3:8, S4:8,
 					  DP:16/big-unsigned-integer,
-					  SP:16/big-unsigned-integer>> ->
+					  SP:16/big-unsigned-integer,
+					  _/binary>> ->
 					    {{{S1, S2, S3, S4}, SP},
 					     {{D1, D2, D3, D4}, DP}};
 					_ ->
@@ -135,7 +136,8 @@ decode_v2(SockMod, Socket, Timeout) ->
 					  S7:16/big-unsigned-integer,
 					  S8:16/big-unsigned-integer,
 					  DP:16/big-unsigned-integer,
-					  SP:16/big-unsigned-integer>> ->
+					  SP:16/big-unsigned-integer,
+					  _/binary>> ->
 					    {{{S1, S2, S3, S4, S5, S6, S7, S8}, SP},
 					     {{D1, D2, D3, D4, D5, D6, D7, D8}, DP}};
 					_ ->
