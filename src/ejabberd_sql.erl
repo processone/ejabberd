@@ -37,12 +37,12 @@
 	 sql_query_t/1,
 	 sql_transaction/2,
 	 sql_bloc/2,
-         abort/1,
-         restart/1,
-         use_new_schema/0,
-         sql_query_to_iolist/1,
+	 abort/1,
+	 restart/1,
+	 use_new_schema/0,
+	 sql_query_to_iolist/1,
 	 escape/1,
-         standard_escape/1,
+	 standard_escape/1,
 	 escape_like/1,
 	 escape_like_arg/1,
 	 escape_like_arg_circumflex/1,
@@ -55,7 +55,8 @@
 	 freetds_config/0,
 	 odbcinst_config/0,
 	 init_mssql/1,
-	 keep_alive/2]).
+	 keep_alive/2,
+	 to_list/2]).
 
 %% gen_fsm callbacks
 -export([init/1, handle_event/3, handle_sync_event/4,
@@ -257,6 +258,10 @@ to_bool(<<"1">>) -> true;
 to_bool(true) -> true;
 to_bool(1) -> true;
 to_bool(_) -> false.
+
+to_list(EscapeFun, Val) ->
+    Escaped = lists:join(<<",">>, lists:map(EscapeFun, Val)),
+    [<<"(">>, Escaped, <<")">>].
 
 encode_term(Term) ->
     escape(list_to_binary(
