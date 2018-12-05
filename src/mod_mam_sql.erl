@@ -175,7 +175,7 @@ select(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
        MAMQuery, RSM, MsgType) ->
     User = case MsgType of
 	       chat -> LUser;
-	       {groupchat, _Role, _MUCState} -> jid:encode(JidArchive)
+	       _ -> jid:encode(JidArchive)
 	   end,
     {Query, CountQuery} = make_sql_query(User, LServer, MAMQuery, RSM),
     % TODO from XEP-0313 v0.2: "To conserve resources, a server MAY place a

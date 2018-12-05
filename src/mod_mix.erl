@@ -21,32 +21,45 @@
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
-
 -module(mod_mix).
-
--behaviour(gen_server).
 -behaviour(gen_mod).
+-behaviour(gen_server).
+-protocol({xep, 369, '0.13.0'}).
 
 %% API
--export([start/2, stop/1, process_iq/1,
-	 disco_items/5, disco_identity/5, disco_info/5,
-	 disco_features/5, mod_opt_type/1, mod_options/1, depends/2]).
-
+-export([route/1]).
+%% gen_mod callbacks
+-export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1, mod_options/1]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-	 terminate/2, code_change/3]).
+	 terminate/2, code_change/3, format_status/2]).
+%% Hooks
+-export([process_disco_info/1,
+	 process_disco_items/1,
+	 process_mix_core/1,
+	 process_mam_query/1,
+	 process_pubsub_query/1]).
 
--include("logger.hrl").
 -include("xmpp.hrl").
+-include("logger.hrl").
+-include("translate.hrl").
 
--define(NODES, [?NS_MIX_NODES_MESSAGES,
-		?NS_MIX_NODES_PRESENCE,
-		?NS_MIX_NODES_PARTICIPANTS,
-		?NS_MIX_NODES_SUBJECT,
-		?NS_MIX_NODES_CONFIG]).
+-callback init(binary(), gen_mod:opts()) -> ok | {error, db_failure}.
+-callback set_channel(binary(), binary(), binary(),
+		      binary(), boolean(), binary()) ->
+    ok | {error, db_failure}.
+-callback get_channels(binary(), binary()) ->
+    {ok, [binary()]} | {error, db_failure}.
+-callback get_channel(binary(), binary(), binary()) ->
+    {ok, {jid(), boolean(), binary()}} |
+    {error, notfound | db_failure}.
+-callback set_participant(binary(), binary(), binary(), jid(), binary(), binary()) ->
+    ok | {error, db_failure}.
+-callback get_participant(binary(), binary(), binary(), jid()) ->
+    {ok, {binary(), binary()}} | {error, notfound | db_failure}.
 
--record(state, {server_host :: binary(),
-		hosts :: [binary()]}).
+-record(state, {hosts :: [binary()],
+		server_host :: binary()}).
 
 %%%===================================================================
 %%% API
@@ -57,267 +70,571 @@ start(Host, Opts) ->
 stop(Host) ->
     gen_mod:stop_child(?MODULE, Host).
 
--spec disco_features({error, stanza_error()} | {result, [binary()]} | empty,
-		     jid(), jid(), binary(), binary()) -> {result, [binary()]}.
-disco_features(_Acc, _From, _To, _Node, _Lang) ->
-    {result, [?NS_MIX_0]}.
+reload(Host, NewOpts, OldOpts) ->
+    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    gen_server:cast(Proc, {reload, Host, NewOpts, OldOpts}).
 
-disco_items(_Acc, _From, To, _Node, _Lang) when To#jid.luser /= <<"">> ->
-    BareTo = jid:remove_resource(To),
-    {result, [#disco_item{jid = BareTo, node = Node} || Node <- ?NODES]};
-disco_items(_Acc, _From, _To, _Node, _Lang) ->
-    {result, []}.
+depends(_Host, _Opts) ->
+    [{mod_mam, hard}].
 
-disco_identity(Acc, _From, To, _Node, _Lang) when To#jid.luser == <<"">> ->
-    Acc ++ [#identity{category = <<"conference">>,
-		      name = <<"MIX service">>,
-		      type = <<"text">>}];
-disco_identity(Acc, _From, _To, _Node, _Lang) ->
-    Acc ++ [#identity{category = <<"conference">>,
-		      type = <<"mix">>}].
+mod_opt_type(access_create) -> fun acl:access_rules_validator/1;
+mod_opt_type(name) -> fun iolist_to_binary/1;
+mod_opt_type(host) -> fun ejabberd_config:v_host/1;
+mod_opt_type(hosts) -> fun ejabberd_config:v_hosts/1;
+mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end.
 
--spec disco_info([xdata()], binary(), module(), binary(), binary()) -> [xdata()];
-		([xdata()], jid(), jid(), binary(), binary()) -> [xdata()].
-disco_info(_Acc, _From, To, _Node, _Lang) when is_atom(To) ->
-    [#xdata{type = result,
-	    fields = [#xdata_field{var = <<"FORM_TYPE">>,
-				   type = hidden,
-				   values = [?NS_MIX_SERVICEINFO_0]}]}];
-disco_info(Acc, _From, _To, _Node, _Lang) ->
-    Acc.
+mod_options(Host) ->
+    [{access_create, all},
+     {host, <<"mix.@HOST@">>},
+     {hosts, []},
+     {name, ?T("Channels")},
+     {db_type, ejabberd_config:default_db(Host, ?MODULE)}].
 
-process_iq(#iq{type = set, from = From, to = To,
-	       sub_els = [#mix_join{subscribe = SubNodes}]} = IQ) ->
-    Nodes = [Node || Node <- SubNodes, lists:member(Node, ?NODES)],
-    case subscribe_nodes(From, To, Nodes) of
-	{result, _} ->
-	    case publish_participant(From, To) of
-		{result, _} ->
-		    BareFrom = jid:remove_resource(From),
-		    xmpp:make_iq_result(
-		      IQ, #mix_join{jid = BareFrom, subscribe = Nodes});
-		{error, Err} ->
-		    xmpp:make_error(IQ, Err)
-	    end;
-	{error, Err} ->
-	    xmpp:make_error(IQ, Err)
+-spec route(stanza()) -> ok.
+route(#iq{} = IQ) ->
+    ejabberd_router:process_iq(IQ);
+route(#message{type = groupchat, id = ID, lang = Lang,
+	       to = #jid{luser = <<_, _/binary>>}} = Msg) ->
+    case ID of
+	<<>> ->
+	    Txt = <<"Attribute 'id' is mandatory for MIX messages">>,
+	    Err = xmpp:err_bad_request(Txt, Lang),
+	    ejabberd_router:route_error(Msg, Err);
+	_ ->
+	    process_mix_message(Msg)
     end;
-process_iq(#iq{type = set, from = From, to = To,
-	       sub_els = [#mix_leave{}]} = IQ) ->
-    case delete_participant(From, To) of
-	{result, _} ->
-	    case unsubscribe_nodes(From, To, ?NODES) of
-		{result, _} ->
-		    xmpp:make_iq_result(IQ);
-		{error, Err} ->
-		    xmpp:make_error(IQ, Err)
-	    end;
-	{error, Err} ->
-	    xmpp:make_error(IQ, Err)
+route(Pkt) ->
+    ?DEBUG("Dropping packet:~n~s", [xmpp:pp(Pkt)]).
+
+-spec process_disco_info(iq()) -> iq().
+process_disco_info(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_disco_info(#iq{type = get, to = #jid{luser = <<>>} = To,
+		       from = _From, lang = Lang,
+		       sub_els = [#disco_info{node = <<>>}]} = IQ) ->
+    ServerHost = ejabberd_router:host_of_route(To#jid.lserver),
+    X = ejabberd_hooks:run_fold(disco_info, ServerHost, [],
+				[ServerHost, ?MODULE, <<"">>, Lang]),
+    Name = gen_mod:get_module_opt(ServerHost, ?MODULE, name),
+    Identity = #identity{category = <<"conference">>,
+			 type = <<"text">>,
+			 name = translate:translate(Lang, Name)},
+    Features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
+		?NS_MIX_CORE_0, ?NS_MIX_CORE_SEARCHABLE_0,
+		?NS_MIX_CORE_CREATE_CHANNEL_0],
+    xmpp:make_iq_result(
+      IQ, #disco_info{features = Features,
+		      identities = [Identity],
+		      xdata = X});
+process_disco_info(#iq{type = get, to = #jid{luser = <<_, _/binary>>} = To,
+		       sub_els = [#disco_info{node = <<"mix">>}]} = IQ) ->
+    {Chan, Host, _} = jid:tolower(To),
+    ServerHost = ejabberd_router:host_of_route(Host),
+    Mod = gen_mod:db_mod(ServerHost, ?MODULE),
+    case Mod:get_channel(ServerHost, Chan, Host) of
+	{ok, _} ->
+	    Identity = #identity{category = <<"conference">>,
+				 type = <<"mix">>},
+	    Features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
+			?NS_MIX_CORE_0, ?NS_MAM_2],
+	    xmpp:make_iq_result(
+	      IQ, #disco_info{node = <<"mix">>,
+			      features = Features,
+			      identities = [Identity]});
+	{error, notfound} ->
+	    xmpp:make_error(IQ, no_channel_error(IQ));
+	{error, db_failure} ->
+	    xmpp:make_error(IQ, db_error(IQ))
     end;
-process_iq(#iq{lang = Lang} = IQ) ->
-    Txt = <<"Unsupported MIX query">>,
-    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang)).
+process_disco_info(#iq{type = get, sub_els = [#disco_info{node = Node}]} = IQ) ->
+    xmpp:make_iq_result(IQ, #disco_info{node = Node, features = [?NS_DISCO_INFO]});
+process_disco_info(IQ) ->
+    xmpp:make_error(IQ, unsupported_error(IQ)).
+
+-spec process_disco_items(iq()) -> iq().
+process_disco_items(#iq{type = set, lang = Lang} = IQ) ->
+    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+process_disco_items(#iq{type = get, to = #jid{luser = <<>>} = To,
+			sub_els = [#disco_items{node = <<>>}]} = IQ) ->
+    Host = To#jid.lserver,
+    ServerHost = ejabberd_router:host_of_route(Host),
+    Mod = gen_mod:db_mod(ServerHost, ?MODULE),
+    case Mod:get_channels(ServerHost, Host) of
+	{ok, Channels} ->
+	    Items = [#disco_item{jid = jid:make(Channel, Host)}
+		     || Channel <- Channels],
+	    xmpp:make_iq_result(IQ, #disco_items{items = Items});
+	{error, db_failure} ->
+	    xmpp:make_error(IQ, db_error(IQ))
+    end;
+process_disco_items(#iq{type = get, to = #jid{luser = <<_, _/binary>>} = To,
+			sub_els = [#disco_items{node = <<"mix">>}]} = IQ) ->
+    {Chan, Host, _} = jid:tolower(To),
+    ServerHost = ejabberd_router:host_of_route(Host),
+    Mod = gen_mod:db_mod(ServerHost, ?MODULE),
+    case Mod:get_channel(ServerHost, Chan, Host) of
+	{ok, _} ->
+	    BTo = jid:remove_resource(To),
+	    Items = [#disco_item{jid = BTo, node = Node} || Node <- known_nodes()],
+	    xmpp:make_iq_result(IQ, #disco_items{node = <<"mix">>, items = Items});
+	{error, notfound} ->
+	    xmpp:make_error(IQ, no_channel_error(IQ));
+	{error, db_failure} ->
+	    xmpp:make_error(IQ, db_error(IQ))
+    end;
+process_disco_items(#iq{type = get, sub_els = [#disco_items{node = Node}]} = IQ) ->
+    xmpp:make_iq_result(IQ, #disco_items{node = Node});
+process_disco_items(IQ) ->
+    xmpp:make_error(IQ, unsupported_error(IQ)).
+
+-spec process_mix_core(iq()) -> iq().
+process_mix_core(#iq{type = set, to = #jid{luser = <<>>},
+		     sub_els = [#mix_create{}]} = IQ) ->
+    process_mix_create(IQ);
+process_mix_core(#iq{type = set, to = #jid{luser = <<>>},
+		     sub_els = [#mix_destroy{}]} = IQ) ->
+    process_mix_destroy(IQ);
+process_mix_core(#iq{type = set, to = #jid{luser = <<_, _/binary>>},
+		     sub_els = [#mix_join{}]} = IQ) ->
+    process_mix_join(IQ);
+process_mix_core(#iq{type = set, to = #jid{luser = <<_, _/binary>>},
+		     sub_els = [#mix_leave{}]} = IQ) ->
+    process_mix_leave(IQ);
+process_mix_core(#iq{type = set, to = #jid{luser = <<_, _/binary>>},
+		     sub_els = [#mix_setnick{}]} = IQ) ->
+    process_mix_setnick(IQ);
+process_mix_core(IQ) ->
+    xmpp:make_error(IQ, unsupported_error(IQ)).
+
+process_pubsub_query(#iq{type = get,
+			 sub_els = [#pubsub{items = #ps_items{node = Node}}]} = IQ)
+  when Node == ?NS_MIX_NODES_PARTICIPANTS ->
+    process_participants_list(IQ);
+process_pubsub_query(IQ) ->
+    xmpp:make_error(IQ, unsupported_error(IQ)).
+
+process_mam_query(#iq{from = From, to = To, type = T,
+		      sub_els = [#mam_query{}]} = IQ)
+  when T == get; T == set ->
+    {Chan, Host, _} = jid:tolower(To),
+    ServerHost = ejabberd_router:host_of_route(Host),
+    Mod = gen_mod:db_mod(ServerHost, ?MODULE),
+    case Mod:get_channel(ServerHost, Chan, Host) of
+	{ok, _} ->
+	    BFrom = jid:remove_resource(From),
+	    case Mod:get_participant(ServerHost, Chan, Host, BFrom) of
+		{ok, _} ->
+		    mod_mam:process_iq(ServerHost, IQ, mix);
+		{error, notfound} ->
+		    xmpp:make_error(IQ, not_joined_error(IQ));
+		{error, db_failure} ->
+		    xmpp:make_error(IQ, db_error(IQ))
+	    end;
+	{error, notfound} ->
+	    xmpp:make_error(IQ, no_channel_error(IQ));
+	{error, db_failure} ->
+	    xmpp:make_error(IQ, db_error(IQ))
+    end;
+process_mam_query(IQ) ->
+    xmpp:make_error(IQ, unsupported_error(IQ)).
 
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-init([ServerHost, Opts]) ->
+init([Host, Opts]) ->
     process_flag(trap_exit, true),
-    Hosts = gen_mod:get_opt_hosts(ServerHost, Opts),
-    lists:foreach(
-      fun(Host) ->
-	      ConfigTab = gen_mod:get_module_proc(Host, config),
-	      ets:new(ConfigTab, [named_table]),
-	      ets:insert(ConfigTab, {plugins, [<<"mix">>]}),
-	      ejabberd_hooks:add(disco_local_items, Host, ?MODULE, disco_items, 100),
-	      ejabberd_hooks:add(disco_local_features, Host, ?MODULE, disco_features, 100),
-	      ejabberd_hooks:add(disco_local_identity, Host, ?MODULE, disco_identity, 100),
-	      ejabberd_hooks:add(disco_sm_items, Host, ?MODULE, disco_items, 100),
-	      ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, disco_features, 100),
-	      ejabberd_hooks:add(disco_sm_identity, Host, ?MODULE, disco_identity, 100),
-	      ejabberd_hooks:add(disco_info, Host, ?MODULE, disco_info, 100),
-	      gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-					    ?NS_DISCO_ITEMS, mod_disco,
-					    process_local_iq_items),
-	      gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-					    ?NS_DISCO_INFO, mod_disco,
-					    process_local_iq_info),
-	      gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-					    ?NS_DISCO_ITEMS, mod_disco,
-					    process_local_iq_items),
-	      gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-					    ?NS_DISCO_INFO, mod_disco,
-					    process_local_iq_info),
-	      gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-					    ?NS_PUBSUB, mod_pubsub, iq_sm),
-	      gen_iq_handler:add_iq_handler(ejabberd_sm, Host,
-					    ?NS_MIX_0, ?MODULE, process_iq),
-	      ejabberd_router:register_route(Host, ServerHost)
-      end, Hosts),
-    {ok, #state{server_host = ServerHost, hosts = Hosts}}.
+    Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
+    MyHosts = gen_mod:get_opt_hosts(Host, Opts),
+    case Mod:init(Host, [{hosts, MyHosts}|Opts]) of
+	ok ->
+	    lists:foreach(
+	      fun(MyHost) ->
+		      ejabberd_router:register_route(
+			MyHost, Host, {apply, ?MODULE, route}),
+		      register_iq_handlers(MyHost)
+	      end, MyHosts),
+	    {ok, #state{hosts = MyHosts, server_host = Host}};
+	{error, db_failure} ->
+	    {stop, db_failure}
+    end.
 
-handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
-
-handle_cast(_Msg, State) ->
+handle_call(Request, _From, State) ->
+    ?WARNING_MSG("Unexpected call: ~p", [Request]),
     {noreply, State}.
 
-handle_info({route, Packet}, State) ->
-    case catch do_route(State, Packet) of
-	{'EXIT', _} = Err ->
-	    try
-		?ERROR_MSG("failed to route packet:~n~s~nReason: ~p",
-			   [xmpp:pp(Packet), Err]),
-		Error = xmpp:err_internal_server_error(),
-		ejabberd_router:route_error(Packet, Error)
-	    catch _:_ ->
-		    ok
-	    end;
-	_ ->
-	    ok
-    end,
-    {noreply, State};
-handle_info(_Info, State) ->
+handle_cast(Request, State) ->
+    ?WARNING_MSG("Unexpected cast: ~p", [Request]),
     {noreply, State}.
 
-terminate(_Reason, #state{hosts = Hosts}) ->
+handle_info(Info, State) ->
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
+    {noreply, State}.
+
+terminate(_Reason, State) ->
     lists:foreach(
-      fun(Host) ->
-	      ejabberd_hooks:delete(disco_local_items, Host, ?MODULE, disco_items, 100),
-	      ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, disco_features, 100),
-	      ejabberd_hooks:delete(disco_local_identity, Host, ?MODULE, disco_identity, 100),
-	      ejabberd_hooks:delete(disco_sm_items, Host, ?MODULE, disco_items, 100),
-	      ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, disco_features, 100),
-	      ejabberd_hooks:delete(disco_sm_identity, Host, ?MODULE, disco_identity, 100),
-	      ejabberd_hooks:delete(disco_info, Host, ?MODULE, disco_info, 100),
-	      gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS),
-	      gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
-	      gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_DISCO_ITEMS),
-	      gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_DISCO_INFO),
-	      gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PUBSUB),
-	      gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MIX_0),
-	      ejabberd_router:unregister_route(Host)
-      end, Hosts).
+      fun(MyHost) ->
+	      unregister_iq_handlers(MyHost),
+	      ejabberd_router:unregister_route(MyHost)
+      end, State#state.hosts).
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
+format_status(_Opt, Status) ->
+    Status.
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-do_route(_State, #iq{} = Packet) ->
-    ejabberd_router:process_iq(Packet);
-do_route(_State, #presence{from = From, to = To, type = unavailable})
-  when To#jid.luser /= <<"">> ->
-    delete_presence(From, To);
-do_route(_State, _Packet) ->
-    ok.
+-spec process_mix_create(iq()) -> iq().
+process_mix_create(#iq{to = To, from = From,
+		       sub_els = [#mix_create{channel = Chan}]} = IQ) ->
+    Host = To#jid.lserver,
+    ServerHost = ejabberd_router:host_of_route(Host),
+    Mod = gen_mod:db_mod(ServerHost, ?MODULE),
+    Creator = jid:remove_resource(From),
+    Chan1 = case Chan of
+		<<>> -> p1_rand:get_string();
+		_ -> Chan
+	    end,
+    Ret = case Mod:get_channel(ServerHost, Chan1, Host) of
+	      {ok, {#jid{luser = U, lserver = S}, _, _}} ->
+		  case {From#jid.luser, From#jid.lserver} of
+		      {U, S} -> ok;
+		      _ -> {error, conflict}
+		  end;
+	      {error, notfound} ->
+		  Key = xmpp_util:hex(p1_rand:bytes(20)),
+		  Mod:set_channel(ServerHost, Chan1, Host,
+				  Creator, Chan == <<>>, Key);
+	      {error, db_failure} = Err ->
+		  Err
+	  end,
+    case Ret of
+	ok ->
+	    xmpp:make_iq_result(IQ, #mix_create{channel = Chan1});
+	{error, conflict} ->
+	    xmpp:make_error(IQ, channel_exists_error(IQ));
+	{error, db_failure} ->
+	    xmpp:make_error(IQ, db_error(IQ))
+    end.
 
-subscribe_nodes(From, To, Nodes) ->
-    LTo = jid:tolower(jid:remove_resource(To)),
-    LFrom = jid:tolower(jid:remove_resource(From)),
-    lists:foldl(
-      fun(_Node, {error, _} = Err) ->
-	      Err;
-	 (Node, {result, _}) ->
-	      case mod_pubsub:subscribe_node(LTo, Node, From, From, []) of
-		  {error, _} = Err ->
-		      case is_item_not_found(Err) of
-			  true ->
-			      case mod_pubsub:create_node(
-				     LTo, To#jid.lserver, Node, LFrom, <<"mix">>) of
-				  {result, _} ->
-				      mod_pubsub:subscribe_node(LTo, Node, From, From, []);
-				  Error ->
-				      Error
-			      end;
-			  false ->
-			      Err
-		      end;
-		  {result, _} = Result ->
-		      Result
-	      end
-      end, {result, []}, Nodes).
+-spec process_mix_destroy(iq()) -> iq().
+process_mix_destroy(#iq{to = To,
+			from = #jid{luser = U, lserver = S},
+			sub_els = [#mix_destroy{channel = Chan}]} = IQ) ->
+    Host = To#jid.lserver,
+    ServerHost = ejabberd_router:host_of_route(Host),
+    Mod = gen_mod:db_mod(ServerHost, ?MODULE),
+    case Mod:get_channel(ServerHost, Chan, Host) of
+	{ok, {#jid{luser = U, lserver = S}, _, _}} ->
+	    case Mod:del_channel(ServerHost, Chan, Host) of
+		ok ->
+		    xmpp:make_iq_result(IQ, #mix_destroy{channel = Chan});
+		{error, db_failure} ->
+		    xmpp:make_error(IQ, db_error(IQ))
+	    end;
+	{ok, _} ->
+	    xmpp:make_error(IQ, ownership_error(IQ));
+	{error, notfound} ->
+	    xmpp:make_error(IQ, no_channel_error(IQ));
+	{error, db_failure} ->
+	    xmpp:make_error(IQ, db_error(IQ))
+    end.
 
-unsubscribe_nodes(From, To, Nodes) ->
-    LTo = jid:tolower(jid:remove_resource(To)),
-    BareFrom = jid:remove_resource(From),
-    lists:foldl(
-      fun(_Node, {error, _} = Err) ->
-	      Err;
-	 (Node, {result, _} = Result) ->
-	      case mod_pubsub:unsubscribe_node(LTo, Node, From, BareFrom, <<"">>) of
-		  {error, _} = Err ->
-		      case is_not_subscribed(Err) of
-			  true -> Result;
-			  _ -> Err
-		      end;
-		  {result, _} = Res ->
-		      Res
-	      end
-      end, {result, []}, Nodes).
+-spec process_mix_join(iq()) -> iq().
+process_mix_join(#iq{to = To, from = From,
+		     sub_els = [#mix_join{} = JoinReq]} = IQ) ->
+    Chan = To#jid.luser,
+    Host = To#jid.lserver,
+    ServerHost = ejabberd_router:host_of_route(Host),
+    Mod = gen_mod:db_mod(ServerHost, ?MODULE),
+    case Mod:get_channel(ServerHost, Chan, Host) of
+	{ok, {_, _, Key}} ->
+	    ID = make_id(From, Key),
+	    Nick = JoinReq#mix_join.nick,
+	    BFrom = jid:remove_resource(From),
+	    Nodes = filter_nodes(JoinReq#mix_join.subscribe),
+	    try
+		ok = Mod:set_participant(ServerHost, Chan, Host, BFrom, ID, Nick),
+		ok = Mod:subscribe(ServerHost, Chan, Host, BFrom, Nodes),
+		notify_participant_joined(Mod, ServerHost, To, From, ID, Nick),
+		xmpp:make_iq_result(IQ, #mix_join{id = ID,
+						  subscribe = Nodes,
+						  nick = Nick})
+	    catch _:{badmatch, {error, db_failure}} ->
+		    xmpp:make_error(IQ, db_error(IQ))
+	    end;
+	{error, notfound} ->
+	    xmpp:make_error(IQ, no_channel_error(IQ));
+	{error, db_failure} ->
+	    xmpp:make_error(IQ, db_error(IQ))
+    end.
 
-publish_participant(From, To) ->
-    BareFrom = jid:remove_resource(From),
-    LFrom = jid:tolower(BareFrom),
-    LTo = jid:tolower(jid:remove_resource(To)),
-    Participant = #mix_participant{jid = BareFrom},
-    ItemID = str:sha(jid:encode(LFrom)),
-    mod_pubsub:publish_item(
-      LTo, To#jid.lserver, ?NS_MIX_NODES_PARTICIPANTS,
-      From, ItemID, [xmpp:encode(Participant)]).
+-spec process_mix_leave(iq()) -> iq().
+process_mix_leave(#iq{to = To, from = From,
+		      sub_els = [#mix_leave{}]} = IQ) ->
+    {Chan, Host, _} = jid:tolower(To),
+    ServerHost = ejabberd_router:host_of_route(Host),
+    Mod = gen_mod:db_mod(ServerHost, ?MODULE),
+    BFrom = jid:remove_resource(From),
+    case Mod:get_channel(ServerHost, Chan, Host) of
+	{ok, _} ->
+	    case Mod:get_participant(ServerHost, Chan, Host, BFrom) of
+		{ok, {ID, _}} ->
+		    try
+			ok = Mod:unsubscribe(ServerHost, Chan, Host, BFrom),
+			ok = Mod:del_participant(ServerHost, Chan, Host, BFrom),
+			notify_participant_left(Mod, ServerHost, To, ID),
+			xmpp:make_iq_result(IQ, #mix_leave{})
+		    catch _:{badmatch, {error, db_failure}} ->
+			    xmpp:make_error(IQ, db_error(IQ))
+		    end;
+		{error, notfound} ->
+		    xmpp:make_iq_result(IQ, #mix_leave{});
+		{error, db_failure} ->
+		    xmpp:make_error(IQ, db_error(IQ))
+	    end;
+	{error, notfound} ->
+	    xmpp:make_iq_result(IQ, #mix_leave{});
+	{error, db_failure} ->
+	    xmpp:make_error(IQ, db_error(IQ))
+    end.
 
-delete_presence(From, To) ->
-    LFrom = jid:tolower(From),
-    LTo = jid:tolower(jid:remove_resource(To)),
-    case mod_pubsub:get_items(LTo, ?NS_MIX_NODES_PRESENCE) of
-	Items when is_list(Items) ->
+-spec process_mix_setnick(iq()) -> iq().
+process_mix_setnick(#iq{to = To, from = From,
+			sub_els = [#mix_setnick{nick = Nick}]} = IQ) ->
+    {Chan, Host, _} = jid:tolower(To),
+    ServerHost = ejabberd_router:host_of_route(Host),
+    Mod = gen_mod:db_mod(ServerHost, ?MODULE),
+    BFrom = jid:remove_resource(From),
+    case Mod:get_channel(ServerHost, Chan, Host) of
+	{ok, _} ->
+	    case Mod:get_participant(ServerHost, Chan, Host, BFrom) of
+		{ok, {_, Nick}} ->
+		    xmpp:make_iq_result(IQ, #mix_setnick{nick = Nick});
+		{ok, {ID, _}} ->
+		    case Mod:set_participant(ServerHost, Chan, Host, BFrom, ID, Nick) of
+			ok ->
+			    notify_participant_joined(Mod, ServerHost, To, From, ID, Nick),
+			    xmpp:make_iq_result(IQ, #mix_setnick{nick = Nick});
+			{error, db_failure} ->
+			    xmpp:make_error(IQ, db_error(IQ))
+		    end;
+		{error, notfound} ->
+		    xmpp:make_error(IQ, not_joined_error(IQ));
+		{error, db_failure} ->
+		    xmpp:make_error(IQ, db_error(IQ))
+	    end;
+	{error, notfound} ->
+	    xmpp:make_error(IQ, no_channel_error(IQ));
+	{error, db_failure} ->
+	    xmpp:make_error(IQ, db_error(IQ))
+    end.
+
+-spec process_mix_message(message()) -> ok.
+process_mix_message(#message{from = From, to = To,
+			     id = SubmissionID} = Msg) ->
+    {Chan, Host, _} = jid:tolower(To),
+    ServerHost = ejabberd_router:host_of_route(Host),
+    Mod = gen_mod:db_mod(ServerHost, ?MODULE),
+    case Mod:get_channel(ServerHost, Chan, Host) of
+	{ok, _} ->
+	    BFrom = jid:remove_resource(From),
+	    case Mod:get_participant(ServerHost, Chan, Host, BFrom) of
+		{ok, {_ID, Nick}} ->
+		    MamID = mod_mam:make_id(),
+		    Msg1 = xmpp:put_meta(
+			     xmpp:set_subtag(
+			       Msg#message{from = jid:remove_resource(To),
+					   to = undefined,
+					   id = integer_to_binary(MamID)},
+			       #mix{jid = BFrom,
+				    nick = Nick,
+				    submission_id = SubmissionID}),
+			     stanza_id, MamID),
+		    case ejabberd_hooks:run_fold(
+			   store_mam_message, ServerHost, Msg1,
+			   [Chan, Host, BFrom, Nick, groupchat, recv]) of
+			#message{} = Msg2 ->
+			    multicast(Mod, ServerHost, Chan, Host,
+				      ?NS_MIX_NODES_MESSAGES, Msg2);
+			_ ->
+			    ok
+		    end;
+		{error, notfound} ->
+		    ejabberd_router:route_error(Msg, not_joined_error(Msg));
+		{error, db_failure} ->
+		    ejabberd_router:route_error(Msg, db_error(Msg))
+	    end;
+	{error, notfound} ->
+	    ejabberd_router:route_error(Msg, no_channel_error(Msg));
+	{error, db_failure} ->
+	    ejabberd_router:route_error(Msg, db_error(Msg))
+    end.
+
+-spec process_participants_list(iq()) -> iq().
+process_participants_list(#iq{from = From, to = To} = IQ) ->
+    {Chan, Host, _} = jid:tolower(To),
+    ServerHost = ejabberd_router:host_of_route(Host),
+    Mod = gen_mod:db_mod(ServerHost, ?MODULE),
+    case Mod:get_channel(ServerHost, Chan, Host) of
+	{ok, _} ->
+	    BFrom = jid:remove_resource(From),
+	    case Mod:get_participant(ServerHost, Chan, Host, BFrom) of
+		{ok, _} ->
+		    case Mod:get_participants(ServerHost, Chan, Host) of
+			{ok, Participants} ->
+			    Items = items_of_participants(Participants),
+			    Pubsub = #pubsub{
+					items = #ps_items{
+						   node = ?NS_MIX_NODES_PARTICIPANTS,
+						   items = Items}},
+			    xmpp:make_iq_result(IQ, Pubsub);
+			{error, db_failure} ->
+			    xmpp:make_error(IQ, db_error(IQ))
+		    end;
+		{error, notfound} ->
+		    xmpp:make_error(IQ, not_joined_error(IQ));
+		{error, db_failure} ->
+		    xmpp:make_error(IQ, db_error(IQ))
+	    end;
+	{error, notfound} ->
+	    xmpp:make_error(IQ, no_channel_error(IQ));
+	{error, db_failure} ->
+	    xmpp:make_error(IQ, db_error(IQ))
+    end.
+
+-spec items_of_participants([{jid(), binary(), binary()}]) -> [ps_item()].
+items_of_participants(Participants) ->
+    lists:map(
+      fun({JID, ID, Nick}) ->
+	      Participant = #mix_participant{jid = JID, nick = Nick},
+	      #ps_item{id = ID,
+		       sub_els = [xmpp:encode(Participant)]}
+      end, Participants).
+
+-spec known_nodes() -> [binary()].
+known_nodes() ->
+    [?NS_MIX_NODES_MESSAGES,
+     ?NS_MIX_NODES_PARTICIPANTS].
+
+-spec filter_nodes(binary()) -> [binary()].
+filter_nodes(Nodes) ->
+    lists:filter(
+      fun(Node) ->
+	      lists:member(Node, Nodes)
+      end, known_nodes()).
+
+-spec multicast(module(), binary(), binary(),
+		binary(), binary(), message()) -> ok.
+multicast(Mod, LServer, Chan, Service, Node, Msg) ->
+    case Mod:get_subscribed(LServer, Chan, Service, Node) of
+	{ok, Subscribers} ->
 	    lists:foreach(
-	      fun({pubsub_item, {ItemID, _}, _, {_, LJID}, _})
-		    when LJID == LFrom ->
-		      delete_item(From, To, ?NS_MIX_NODES_PRESENCE, ItemID);
-		 (_) ->
-		      ok
-	      end, Items);
-	_ ->
+	      fun(To) ->
+		      ejabberd_router:route(Msg#message{to = To})
+	      end, Subscribers);
+	{error, db_failure} ->
 	    ok
     end.
 
-delete_participant(From, To) ->
-    LFrom = jid:tolower(jid:remove_resource(From)),
-    ItemID = str:sha(jid:encode(LFrom)),
-    delete_presence(From, To),
-    delete_item(From, To, ?NS_MIX_NODES_PARTICIPANTS, ItemID).
+-spec notify_participant_joined(module(), binary(),
+				jid(), jid(), binary(), binary()) -> ok.
+notify_participant_joined(Mod, LServer, To, From, ID, Nick) ->
+    {Chan, Host, _} = jid:tolower(To),
+    Participant = #mix_participant{jid = jid:remove_resource(From),
+				   nick = Nick},
+    Item = #ps_item{id = ID,
+		    sub_els = [xmpp:encode(Participant)]},
+    Items = #ps_items{node = ?NS_MIX_NODES_PARTICIPANTS,
+		      items = [Item]},
+    Event = #ps_event{items = Items},
+    Msg = #message{from = jid:remove_resource(To),
+		   id = p1_rand:get_string(),
+		   sub_els = [Event]},
+    multicast(Mod, LServer, Chan, Host, ?NS_MIX_NODES_PARTICIPANTS, Msg).
 
-delete_item(From, To, Node, ItemID) ->
-    LTo = jid:tolower(jid:remove_resource(To)),
-    case mod_pubsub:delete_item(
-	   LTo, Node, From, ItemID, true) of
-	{result, _} = Res ->
-	    Res;
-	{error, _} = Err ->
-	    case is_item_not_found(Err) of
-		true -> {result, []};
-		false -> Err
-	    end
-    end.
+-spec notify_participant_left(module(), binary(), jid(), binary()) -> ok.
+notify_participant_left(Mod, LServer, To, ID) ->
+    {Chan, Host, _} = jid:tolower(To),
+    Items = #ps_items{node = ?NS_MIX_NODES_PARTICIPANTS,
+		      retract = ID},
+    Event = #ps_event{items = Items},
+    Msg = #message{from = jid:remove_resource(To),
+		   id = p1_rand:get_string(),
+		   sub_els = [Event]},
+    multicast(Mod, LServer, Chan, Host, ?NS_MIX_NODES_PARTICIPANTS, Msg).
 
--spec is_item_not_found({error, stanza_error()}) -> boolean().
-is_item_not_found({error, #stanza_error{reason = 'item-not-found'}}) -> true;
-is_item_not_found({error, _}) -> false.
+-spec make_id(jid(), binary()) -> binary().
+make_id(JID, Key) ->
+    Data = jid:encode(jid:tolower(jid:remove_resource(JID))),
+    xmpp_util:hex(crypto:hmac(sha256, Data, Key, 10)).
 
--spec is_not_subscribed({error, stanza_error()}) -> boolean().
-is_not_subscribed({error, StanzaError}) ->
-    xmpp:has_subtag(StanzaError, #ps_error{type = 'not-subscribed'}).
+%%%===================================================================
+%%% Error generators
+%%%===================================================================
+-spec db_error(stanza()) -> stanza_error().
+db_error(Pkt) ->
+    Txt = <<"Database failure">>,
+    xmpp:err_internal_server_error(Txt, xmpp:get_lang(Pkt)).
 
-depends(_Host, _Opts) ->
-    [{mod_pubsub, hard}].
+-spec channel_exists_error(stanza()) -> stanza_error().
+channel_exists_error(Pkt) ->
+    Txt = <<"Channel already exists">>,
+    xmpp:err_conflict(Txt, xmpp:get_lang(Pkt)).
 
-mod_opt_type(host) -> fun ejabberd_config:v_host/1;
-mod_opt_type(hosts) -> fun ejabberd_config:v_hosts/1.
+-spec no_channel_error(stanza()) -> stanza_error().
+no_channel_error(Pkt) ->
+    Txt = <<"Channel does not exist">>,
+    xmpp:err_item_not_found(Txt, xmpp:get_lang(Pkt)).
 
-mod_options(_Host) ->
-    [{host, <<"mix.@HOST@">>},
-     {hosts, []}].
+-spec not_joined_error(stanza()) -> stanza_error().
+not_joined_error(Pkt) ->
+    Txt = <<"You are not joined to the conference">>,
+    xmpp:err_forbidden(Txt, xmpp:get_lang(Pkt)).
+
+-spec unsupported_error(stanza()) -> stanza_error().
+unsupported_error(Pkt) ->
+    Txt = <<"No module is handling this query">>,
+    xmpp:err_service_unavailable(Txt, xmpp:get_lang(Pkt)).
+
+-spec ownership_error(stanza()) -> stanza_error().
+ownership_error(Pkt) ->
+    Txt = <<"Owner privileges required">>,
+    xmpp:err_forbidden(Txt, xmpp:get_lang(Pkt)).
+
+%%%===================================================================
+%%% IQ handlers
+%%%===================================================================
+-spec register_iq_handlers(binary()) -> ok.
+register_iq_handlers(Host) ->
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO,
+				  ?MODULE, process_disco_info),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS,
+				  ?MODULE, process_disco_items),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_MIX_CORE_0,
+				  ?MODULE, process_mix_core),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_DISCO_INFO,
+				  ?MODULE, process_disco_info),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_DISCO_ITEMS,
+				  ?MODULE, process_disco_items),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MIX_CORE_0,
+				  ?MODULE, process_mix_core),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PUBSUB,
+				  ?MODULE, process_pubsub_query),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_MAM_2,
+				  ?MODULE, process_mam_query).
+
+-spec unregister_iq_handlers(binary()) -> ok.
+unregister_iq_handlers(Host) ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_DISCO_ITEMS),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_MIX_CORE_0),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_DISCO_INFO),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_DISCO_ITEMS),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MIX_CORE_0),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PUBSUB),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_MAM_2).
