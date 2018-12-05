@@ -623,8 +623,6 @@ process_subscription(Direction, User, Server, JID1,
 			    push_item(jid:make(User, Server), OldItem, NewItem)
 		    end,
 		    true;
-		none when (Direction == in) and (Type == unsubscribe) ->
-		    true;
 		none ->
 		    false
 	    end;
