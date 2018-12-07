@@ -52,7 +52,10 @@ define_macro:
     - "no_sslv2"
     - "no_sslv3"
     - "no_tlsv1"
-    - "no_tlsv1.1"
+    - "no_tlsv1_1"
+
+c2s_ciphers: CIPHERS_INTERMEDIATE
+c2s_protocol_options: PROTOCOL_OPTIONS_INTERMEDIATE
 
 listen:
   -
@@ -62,8 +65,6 @@ listen:
     max_stanza_size: 262144
     shaper: c2s_shaper
     access: c2s
-    ciphers: CIPHERS_MODERN
-    protocol_options: PROTOCOL_OPTIONS_MODERN
     starttls_required: true
   -
     port: 5269
@@ -81,8 +82,8 @@ listen:
       "/ws": ejabberd_http_ws
     web_admin: true
     captcha: true
-    ciphers: CIPHERS_MODERN
-    protocol_options: PROTOCOL_OPTIONS_MODERN
+    ciphers: CIPHERS_INTERMEDIATE
+    protocol_options: PROTOCOL_OPTIONS_INTERMEDIATE
     tls: true
 
 s2s_use_starttls: optional
