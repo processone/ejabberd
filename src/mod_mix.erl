@@ -605,7 +605,7 @@ no_channel_error(Pkt) ->
 
 -spec not_joined_error(stanza()) -> stanza_error().
 not_joined_error(Pkt) ->
-    Txt = <<"You are not joined to the conference">>,
+    Txt = <<"You are not joined to the channel">>,
     xmpp:err_forbidden(Txt, xmpp:get_lang(Pkt)).
 
 -spec unsupported_error(stanza()) -> stanza_error().
