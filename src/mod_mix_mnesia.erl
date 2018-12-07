@@ -142,7 +142,7 @@ get_participants(_LServer, Channel, Service) ->
 				  #mix_participant.chan_serv),
     {ok, lists:map(
 	   fun(#mix_participant{jid = JID, id = ID, nick = Nick}) ->
-		   {ok, {JID, ID, Nick}}
+		   {JID, ID, Nick}
 	   end, Ret)}.
 
 del_participant(_LServer, Channel, Service, JID) ->
