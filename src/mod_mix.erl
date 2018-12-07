@@ -128,7 +128,8 @@ process_disco_info(#iq{type = get, to = #jid{luser = <<>>} = To,
 		      identities = [Identity],
 		      xdata = X});
 process_disco_info(#iq{type = get, to = #jid{luser = <<_, _/binary>>} = To,
-		       sub_els = [#disco_info{node = <<"mix">>}]} = IQ) ->
+		       sub_els = [#disco_info{node = Node}]} = IQ)
+  when Node == <<"mix">>; Node == <<>> ->
     {Chan, Host, _} = jid:tolower(To),
     ServerHost = ejabberd_router:host_of_route(Host),
     Mod = gen_mod:db_mod(ServerHost, ?MODULE),
@@ -139,7 +140,7 @@ process_disco_info(#iq{type = get, to = #jid{luser = <<_, _/binary>>} = To,
 	    Features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
 			?NS_MIX_CORE_0, ?NS_MAM_2],
 	    xmpp:make_iq_result(
-	      IQ, #disco_info{node = <<"mix">>,
+	      IQ, #disco_info{node = Node,
 			      features = Features,
 			      identities = [Identity]});
 	{error, notfound} ->
@@ -170,15 +171,16 @@ process_disco_items(#iq{type = get, to = #jid{luser = <<>>} = To,
 	    xmpp:make_error(IQ, db_error(IQ))
     end;
 process_disco_items(#iq{type = get, to = #jid{luser = <<_, _/binary>>} = To,
-			sub_els = [#disco_items{node = <<"mix">>}]} = IQ) ->
+			sub_els = [#disco_items{node = Node}]} = IQ)
+  when Node == <<"mix">>; Node == <<>> ->
     {Chan, Host, _} = jid:tolower(To),
     ServerHost = ejabberd_router:host_of_route(Host),
     Mod = gen_mod:db_mod(ServerHost, ?MODULE),
     case Mod:get_channel(ServerHost, Chan, Host) of
 	{ok, _} ->
 	    BTo = jid:remove_resource(To),
-	    Items = [#disco_item{jid = BTo, node = Node} || Node <- known_nodes()],
-	    xmpp:make_iq_result(IQ, #disco_items{node = <<"mix">>, items = Items});
+	    Items = [#disco_item{jid = BTo, node = N} || N <- known_nodes()],
+	    xmpp:make_iq_result(IQ, #disco_items{node = Node, items = Items});
 	{error, notfound} ->
 	    xmpp:make_error(IQ, no_channel_error(IQ));
 	{error, db_failure} ->
@@ -438,29 +440,36 @@ process_mix_setnick(#iq{to = To, from = From,
 process_mix_message(#message{from = From, to = To,
 			     id = SubmissionID} = Msg) ->
     {Chan, Host, _} = jid:tolower(To),
+    {FUser, FServer, _} = jid:tolower(From),
     ServerHost = ejabberd_router:host_of_route(Host),
     Mod = gen_mod:db_mod(ServerHost, ?MODULE),
     case Mod:get_channel(ServerHost, Chan, Host) of
 	{ok, _} ->
 	    BFrom = jid:remove_resource(From),
 	    case Mod:get_participant(ServerHost, Chan, Host, BFrom) of
-		{ok, {_ID, Nick}} ->
+		{ok, {StableID, Nick}} ->
 		    MamID = mod_mam:make_id(),
-		    Msg1 = xmpp:put_meta(
-			     xmpp:set_subtag(
-			       Msg#message{from = jid:remove_resource(To),
-					   to = undefined,
-					   id = integer_to_binary(MamID)},
-			       #mix{jid = BFrom,
-				    nick = Nick,
-				    submission_id = SubmissionID}),
-			     stanza_id, MamID),
+		    Msg1 = xmpp:set_subtag(
+			     Msg#message{from = jid:replace_resource(To, StableID),
+					 to = undefined,
+					 id = integer_to_binary(MamID)},
+			     #mix{jid = BFrom, nick = Nick}),
+		    Msg2 = xmpp:put_meta(Msg1, stanza_id, MamID),
 		    case ejabberd_hooks:run_fold(
-			   store_mam_message, ServerHost, Msg1,
+			   store_mam_message, ServerHost, Msg2,
 			   [Chan, Host, BFrom, Nick, groupchat, recv]) of
-			#message{} = Msg2 ->
+			#message{} ->
 			    multicast(Mod, ServerHost, Chan, Host,
-				      ?NS_MIX_NODES_MESSAGES, Msg2);
+				      ?NS_MIX_NODES_MESSAGES,
+				      fun(#jid{luser = U, lserver = S})
+					    when U == FUser, S == FServer ->
+					      xmpp:set_subtag(
+						Msg1, #mix{jid = BFrom,
+							   nick = Nick,
+							   submission_id = SubmissionID});
+					 (_) ->
+					      Msg1
+				      end);
 			_ ->
 			    ok
 		    end;
@@ -529,13 +538,14 @@ filter_nodes(Nodes) ->
       end, known_nodes()).
 
 -spec multicast(module(), binary(), binary(),
-		binary(), binary(), message()) -> ok.
-multicast(Mod, LServer, Chan, Service, Node, Msg) ->
+		binary(), binary(), fun((jid()) -> message())) -> ok.
+multicast(Mod, LServer, Chan, Service, Node, F) ->
     case Mod:get_subscribed(LServer, Chan, Service, Node) of
 	{ok, Subscribers} ->
 	    lists:foreach(
 	      fun(To) ->
-		      ejabberd_router:route(Msg#message{to = To})
+		      Msg = xmpp:set_to(F(To), To),
+		      ejabberd_router:route(Msg)
 	      end, Subscribers);
 	{error, db_failure} ->
 	    ok
@@ -555,7 +565,9 @@ notify_participant_joined(Mod, LServer, To, From, ID, Nick) ->
     Msg = #message{from = jid:remove_resource(To),
 		   id = p1_rand:get_string(),
 		   sub_els = [Event]},
-    multicast(Mod, LServer, Chan, Host, ?NS_MIX_NODES_PARTICIPANTS, Msg).
+    multicast(Mod, LServer, Chan, Host,
+	      ?NS_MIX_NODES_PARTICIPANTS,
+	      fun(_) -> Msg end).
 
 -spec notify_participant_left(module(), binary(), jid(), binary()) -> ok.
 notify_participant_left(Mod, LServer, To, ID) ->
