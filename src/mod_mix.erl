@@ -578,7 +578,8 @@ notify_participant_left(Mod, LServer, To, ID) ->
     Msg = #message{from = jid:remove_resource(To),
 		   id = p1_rand:get_string(),
 		   sub_els = [Event]},
-    multicast(Mod, LServer, Chan, Host, ?NS_MIX_NODES_PARTICIPANTS, Msg).
+    multicast(Mod, LServer, Chan, Host, ?NS_MIX_NODES_PARTICIPANTS,
+	     fun(_) -> Msg end).
 
 -spec make_id(jid(), binary()) -> binary().
 make_id(JID, Key) ->
