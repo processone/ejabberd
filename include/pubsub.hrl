@@ -27,7 +27,7 @@
 
 %% this is currently a hard limit.
 %% Would be nice to have it configurable. 
--define(MAX_PAYLOAD_SIZE, 60000).
+-define(MAX_PAYLOAD_SIZE, 250000).
 
 %% -------------------------------
 %% Pubsub types
