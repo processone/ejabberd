@@ -263,9 +263,9 @@ get_commands_spec() ->
      #ejabberd_commands{name = subscribe_room, tags = [muc_room],
 			desc = "Subscribe to a MUC conference",
 			module = ?MODULE, function = subscribe_room,
-			args_desc = ["Full JID, including some resource", "a user's nick",
+			args_desc = ["User JID", "a user's nick",
 			    "the room to subscribe", "nodes separated by commas: ,"],
-			args_example = ["tom@localhost/dummy", "Tom", "room1@conference.localhost",
+			args_example = ["tom@localhost", "Tom", "room1@conference.localhost",
 			    "urn:xmpp:mucsub:nodes:messages,urn:xmpp:mucsub:nodes:affiliations"],
 			result_desc = "The list of nodes that has subscribed",
 			result_example = ["urn:xmpp:mucsub:nodes:messages",
@@ -1104,9 +1104,8 @@ subscribe_room(User, Nick, Room, Nodes) ->
     try jid:decode(Room) of
 	#jid{luser = Name, lserver = Host} when Name /= <<"">> ->
 	    try jid:decode(User) of
-		#jid{lresource = <<"">>} ->
-		    throw({error, "User's JID should have a resource"});
-		UserJID ->
+		UserJID1 ->
+		    UserJID = jid:replace_resource(UserJID1, <<"modmucadmin">>),
 		    case get_room_pid(Name, Host) of
 			Pid when is_pid(Pid) ->
 			    case p1_fsm:sync_send_all_state_event(
