@@ -47,8 +47,8 @@
 	 disconnect_removed_user/2,
 	 get_user_resources/2,
 	 get_user_present_resources/2,
-	 set_presence/7,
-	 unset_presence/6,
+	 set_presence/6,
+	 unset_presence/5,
 	 close_session_unset_presence/5,
 	 dirty_get_sessions_list/0,
 	 dirty_get_my_sessions_list/0,
@@ -307,26 +307,48 @@ del_user_info(User, Server, Resource, Key) ->
     end.
 
 -spec set_presence(sid(), binary(), binary(), binary(),
-                   prio(), presence(), info()) -> ok.
+                   prio(), presence()) -> ok | {error, notfound}.
 
-set_presence(SID, User, Server, Resource, Priority,
-	     Presence, Info) ->
-    set_session(SID, User, Server, Resource, Priority,
-		Info),
-    ejabberd_hooks:run(set_presence_hook,
-		       jid:nameprep(Server),
-		       [User, Server, Resource, Presence]).
+set_presence(SID, User, Server, Resource, Priority, Presence) ->
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
+    LResource = jid:resourceprep(Resource),
+    Mod = get_sm_backend(LServer),
+    case get_sessions(Mod, LUser, LServer, LResource) of
+	[] -> {error, notfound};
+	Ss ->
+	    case lists:keyfind(SID, 1, Ss) of
+		#session{info = Info} ->
+		    set_session(SID, User, Server, Resource, Priority, Info),
+		    ejabberd_hooks:run(set_presence_hook,
+				       LServer,
+				       [User, Server, Resource, Presence]);
+		false ->
+		    {error, notfound}
+	    end
+    end.
 
 -spec unset_presence(sid(), binary(), binary(),
-                     binary(), binary(), info()) -> ok.
+                     binary(), binary()) -> ok | {error, notfound}.
 
-unset_presence(SID, User, Server, Resource, Status,
-	       Info) ->
-    set_session(SID, User, Server, Resource, undefined,
-		Info),
-    ejabberd_hooks:run(unset_presence_hook,
-		       jid:nameprep(Server),
-		       [User, Server, Resource, Status]).
+unset_presence(SID, User, Server, Resource, Status) ->
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
+    LResource = jid:resourceprep(Resource),
+    Mod = get_sm_backend(LServer),
+    case get_sessions(Mod, LUser, LServer, LResource) of
+	[] -> {error, notfound};
+	Ss ->
+	    case lists:keyfind(SID, 1, Ss) of
+		#session{info = Info} ->
+		    set_session(SID, User, Server, Resource, undefined,	Info),
+		    ejabberd_hooks:run(unset_presence_hook,
+				       LServer,
+				       [User, Server, Resource, Status]);
+		false ->
+		    {error, notfound}
+	    end
+    end.
 
 -spec close_session_unset_presence(sid(), binary(), binary(),
                                    binary(), binary()) -> ok.

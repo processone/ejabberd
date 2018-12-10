@@ -38,6 +38,7 @@
 	 iq_handler/1, disco_features/5,
 	 is_carbon_copy/1, mod_opt_type/1, depends/2,
 	 mod_options/1]).
+-export([c2s_copy_session/2, c2s_session_opened/1, c2s_session_resumed/1]).
 %% For debugging purposes
 -export([list/2]).
 
@@ -45,6 +46,7 @@
 -include("xmpp.hrl").
 
 -type direction() :: sent | received.
+-type c2s_state() :: ejabberd_c2s:state().
 
 -spec is_carbon_copy(stanza()) -> boolean().
 is_carbon_copy(#message{meta = #{carbon_copy := true}}) ->
@@ -57,6 +59,9 @@ start(Host, _Opts) ->
     %% why priority 89: to define clearly that we must run BEFORE mod_logdb hook (90)
     ejabberd_hooks:add(user_send_packet,Host, ?MODULE, user_send_packet, 89),
     ejabberd_hooks:add(user_receive_packet,Host, ?MODULE, user_receive_packet, 89),
+    ejabberd_hooks:add(c2s_copy_session, Host, ?MODULE, c2s_copy_session, 50),
+    ejabberd_hooks:add(c2s_session_resumed, Host, ?MODULE, c2s_session_resumed, 50),
+    ejabberd_hooks:add(c2s_session_opened, Host, ?MODULE, c2s_session_opened, 50),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_CARBONS_2, ?MODULE, iq_handler).
 
 stop(Host) ->
@@ -64,7 +69,10 @@ stop(Host) ->
     ejabberd_hooks:delete(disco_local_features, Host, ?MODULE, disco_features, 50),
     %% why priority 89: to define clearly that we must run BEFORE mod_logdb hook (90)
     ejabberd_hooks:delete(user_send_packet,Host, ?MODULE, user_send_packet, 89),
-    ejabberd_hooks:delete(user_receive_packet,Host, ?MODULE, user_receive_packet, 89).
+    ejabberd_hooks:delete(user_receive_packet,Host, ?MODULE, user_receive_packet, 89),
+    ejabberd_hooks:delete(c2s_copy_session, Host, ?MODULE, c2s_copy_session, 50),
+    ejabberd_hooks:delete(c2s_session_resumed, Host, ?MODULE, c2s_session_resumed, 50),
+    ejabberd_hooks:delete(c2s_session_opened, Host, ?MODULE, c2s_session_opened, 50).
 
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.
@@ -122,6 +130,29 @@ user_receive_packet({Packet, #{jid := JID} = C2SState}) ->
 	{stop, Pkt} -> {stop, {Pkt, C2SState}};
 	Pkt -> {Pkt, C2SState}
     end.
+
+-spec c2s_copy_session(c2s_state(), c2s_state()) -> c2s_state().
+c2s_copy_session(State, #{user := U, server := S, resource := R}) ->
+    case ejabberd_sm:get_user_info(U, S, R) of
+	offline -> State;
+	Info ->
+	    case lists:keyfind(carboncopy, 1, Info) of
+		{_, CC} -> State#{carboncopy => CC};
+		false -> State
+	    end
+    end.
+
+-spec c2s_session_resumed(c2s_state()) -> c2s_state().
+c2s_session_resumed(#{user := U, server := S, resource := R,
+		      carboncopy := CC} = State) ->
+    ejabberd_sm:set_user_info(U, S, R, carboncopy, CC),
+    maps:remove(carboncopy, State);
+c2s_session_resumed(State) ->
+    State.
+
+-spec c2s_session_opened(c2s_state()) -> c2s_state().
+c2s_session_opened(State) ->
+    maps:remove(carboncopy, State).
 
 % Modified from original version:
 %    - registered to the user_send_packet hook, to be called only once even for multicast

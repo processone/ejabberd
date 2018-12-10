@@ -708,13 +708,11 @@ process_presence_out(#{lserver := LServer, jid := JID,
     end.
 
 -spec process_self_presence(state(), presence()) -> state().
-process_self_presence(#{ip := IP, conn := Conn, lserver := LServer,
-			auth_module := AuthMod, sid := SID,
+process_self_presence(#{lserver := LServer, sid := SID,
 			user := U, server := S,	resource := R} = State,
 		      #presence{type = unavailable} = Pres) ->
     Status = xmpp:get_text(Pres#presence.status),
-    Info = [{ip, IP}, {conn, Conn}, {auth_module, AuthMod}],
-    ejabberd_sm:unset_presence(SID, U, S, R, Status, Info),
+    ejabberd_sm:unset_presence(SID, U, S, R, Status),
     {Pres1, State1} = ejabberd_hooks:run_fold(
 			c2s_self_presence, LServer, {Pres, State}, []),
     State2 = broadcast_presence_unavailable(State1, Pres1),
@@ -732,13 +730,11 @@ process_self_presence(#{lserver := LServer} = State,
 process_self_presence(State, _Pres) ->
     State.
 
--spec update_priority(state(), presence()) -> ok.
-update_priority(#{ip := IP, conn := Conn, auth_module := AuthMod,
-		  sid := SID, user := U, server := S, resource := R},
+-spec update_priority(state(), presence()) -> ok | {error, notfound}.
+update_priority(#{sid := SID, user := U, server := S, resource := R},
 		Pres) ->
     Priority = get_priority_from_presence(Pres),
-    Info = [{ip, IP}, {conn, Conn}, {auth_module, AuthMod}],
-    ejabberd_sm:set_presence(SID, U, S, R, Priority, Pres, Info).
+    ejabberd_sm:set_presence(SID, U, S, R, Priority, Pres).
 
 -spec broadcast_presence_unavailable(state(), presence()) -> state().
 broadcast_presence_unavailable(#{jid := JID, pres_a := PresA} = State, Pres) ->
