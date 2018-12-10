@@ -35,7 +35,7 @@
 -export([start/1, stop/1, set_password/3, try_register/3,
 	 get_users/2, count_users/2, get_password/2,
 	 remove_user/2, store_type/1, plain_password_required/1,
-	 convert_to_scram/1, opt_type/1, export/1]).
+	 convert_to_scram/1, opt_type/1, export/1, which_users_exists/2]).
 
 -include("scram.hrl").
 -include("logger.hrl").
@@ -246,6 +246,32 @@ users_number(LServer, [{prefix, Prefix}])
            "where username like %(SPrefix2)s escape '^' and %(LServer)H"));
 users_number(LServer, []) ->
     users_number(LServer).
+
+which_users_exists(LServer, LUsers) when length(LUsers) =< 100 ->
+    try ejabberd_sql:sql_query(
+        LServer,
+        ?SQL("select @(username)s from users where username in %(LUsers)ls")) of
+        {selected, Matching} ->
+            [U || {U} <- Matching];
+        {error, _} = E ->
+            E
+    catch _:B ->
+        {error, B}
+    end;
+which_users_exists(LServer, LUsers) ->
+    {First, Rest} = lists:split(100, LUsers),
+    case which_users_exists(LServer, First) of
+        {error, _} = E ->
+            E;
+        V ->
+            case which_users_exists(LServer, Rest) of
+                {error, _} = E2 ->
+                    E2;
+                V2 ->
+                    V ++ V2
+            end
+    end.
+
 
 convert_to_scram(Server) ->
     LServer = jid:nameprep(Server),

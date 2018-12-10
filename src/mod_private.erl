@@ -37,9 +37,12 @@
 	 import/5, import_start/2, mod_opt_type/1, set_data/2,
 	 mod_options/1, depends/2, get_sm_features/5, pubsub_publish_item/6]).
 
+-export([get_commands_spec/0, bookmarks_to_pep/2]).
+
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("mod_private.hrl").
+-include("ejabberd_commands.hrl").
 
 -define(PRIVATE_CACHE, private_cache).
 
@@ -61,13 +64,20 @@ start(Host, Opts) ->
     ejabberd_hooks:add(remove_user, Host, ?MODULE, remove_user, 50),
     ejabberd_hooks:add(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
     ejabberd_hooks:add(pubsub_publish_item, Host, ?MODULE, pubsub_publish_item, 50),
-    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PRIVATE, ?MODULE, process_sm_iq).
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PRIVATE, ?MODULE, process_sm_iq),
+    ejabberd_commands:register_commands(get_commands_spec()).
 
 stop(Host) ->
     ejabberd_hooks:delete(remove_user, Host, ?MODULE, remove_user, 50),
     ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE, get_sm_features, 50),
     ejabberd_hooks:delete(pubsub_publish_item, Host, ?MODULE, pubsub_publish_item, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PRIVATE).
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PRIVATE),
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+	false ->
+	    ejabberd_commands:unregister_commands(get_commands_spec());
+	true ->
+	    ok
+    end.
 
 reload(Host, NewOpts, OldOpts) ->
     NewMod = gen_mod:db_mod(Host, NewOpts, ?MODULE),
@@ -263,6 +273,50 @@ pubsub_publish_item(LServer, ?NS_STORAGE_BOOKMARKS,
     set_data(From, [{?NS_STORAGE_BOOKMARKS, Payload}], false);
 pubsub_publish_item(_, _, _, _, _, _) ->
     ok.
+
+%%%===================================================================
+%%% Commands
+%%%===================================================================
+-spec get_commands_spec() -> [ejabberd_commands()].
+get_commands_spec() ->
+    [#ejabberd_commands{name = bookmarks_to_pep, tags = [private],
+			desc = "Export private XML storage bookmarks to PEP",
+			module = ?MODULE, function = bookmarks_to_pep,
+			args = [{user, binary}, {server, binary}],
+			args_desc = ["Username", "Server"],
+			args_example = [<<"bob">>, <<"example.com">>],
+			result = {res, restuple},
+			result_desc = "Result tuple",
+			result_example = {ok, <<"Bookmarks exported">>}}].
+
+-spec bookmarks_to_pep(binary(), binary())
+      -> {ok, binary()} | {error, binary()}.
+bookmarks_to_pep(User, Server) ->
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    Res = case use_cache(Mod, LServer) of
+	      true ->
+		  ets_cache:lookup(
+		    ?PRIVATE_CACHE, {LUser, LServer, ?NS_STORAGE_BOOKMARKS},
+		    fun() ->
+			    Mod:get_data(LUser, LServer, ?NS_STORAGE_BOOKMARKS)
+		    end);
+	      false ->
+		  Mod:get_data(LUser, LServer, ?NS_STORAGE_BOOKMARKS)
+	end,
+    case Res of
+	{ok, El} ->
+	    Data = [{?NS_STORAGE_BOOKMARKS, El}],
+	    case publish_data(jid:make(User, Server), Data) of
+		ok ->
+		    {ok, <<"Bookmarks exported to PEP node">>};
+		{error, Err} ->
+		    {error, xmpp:format_stanza_error(Err)}
+	    end;
+	_ ->
+	    {error, <<"Cannot retrieve bookmarks from private XML storage">>}
+    end.
 
 %%%===================================================================
 %%% Cache

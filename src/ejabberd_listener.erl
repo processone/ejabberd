@@ -204,26 +204,49 @@ accept(ListenSocket, Module, Opts, Sup, Interval) ->
     NewInterval = check_rate_limit(Interval),
     case gen_tcp:accept(ListenSocket) of
 	{ok, Socket} ->
-	    case {inet:sockname(Socket), inet:peername(Socket)} of
-		{{ok, {Addr, Port}}, {ok, {PAddr, PPort}}} ->
-		    Receiver = case start_connection(Module, Socket, Opts, Sup) of
-				   {ok, RecvPid} ->
-				       RecvPid;
-				   _ ->
-				       gen_tcp:close(Socket),
-				       none
-			       end,
-		    ?INFO_MSG("(~p) Accepted connection ~s:~p -> ~s:~p",
-			      [Receiver,
-			       ejabberd_config:may_hide_data(inet_parse:ntoa(PAddr)),
-			       PPort, inet_parse:ntoa(Addr), Port]);
+	    case proplists:get_value(use_proxy_protocol, Opts, false) of
+		true ->
+		    case proxy_protocol:decode(gen_tcp, Socket, 10000) of
+			{error, Err} ->
+			    ?ERROR_MSG("(~w) Proxy protocol parsing failed: ~s",
+				       [ListenSocket, inet:format_error(Err)]),
+			    gen_tcp:close(Socket);
+			{{Addr, Port}, {PAddr, PPort}} = SP ->
+			    Opts2 = [{sock_peer_name, SP} | Opts],
+			    Receiver = case start_connection(Module, Socket, Opts2, Sup) of
+					   {ok, RecvPid} ->
+					       RecvPid;
+					   _ ->
+					       gen_tcp:close(Socket),
+					       none
+				       end,
+			    ?INFO_MSG("(~p) Accepted proxied connection ~s:~p -> ~s:~p",
+				      [Receiver,
+				       ejabberd_config:may_hide_data(inet_parse:ntoa(PAddr)),
+				       PPort, inet_parse:ntoa(Addr), Port])
+		    end;
 		_ ->
-		    gen_tcp:close(Socket)
+		    case {inet:sockname(Socket), inet:peername(Socket)} of
+			{{ok, {Addr, Port}}, {ok, {PAddr, PPort}}} ->
+			    Receiver = case start_connection(Module, Socket, Opts, Sup) of
+					   {ok, RecvPid} ->
+					       RecvPid;
+					   _ ->
+					       gen_tcp:close(Socket),
+					       none
+				       end,
+			    ?INFO_MSG("(~p) Accepted connection ~s:~p -> ~s:~p",
+				      [Receiver,
+				       ejabberd_config:may_hide_data(inet_parse:ntoa(PAddr)),
+				       PPort, inet_parse:ntoa(Addr), Port]);
+			_ ->
+			    gen_tcp:close(Socket)
+		    end
 	    end,
 	    accept(ListenSocket, Module, Opts, Sup, NewInterval);
 	{error, Reason} ->
 	    ?ERROR_MSG("(~w) Failed TCP accept: ~s",
-                       [ListenSocket, inet:format_error(Reason)]),
+		       [ListenSocket, inet:format_error(Reason)]),
 	    accept(ListenSocket, Module, Opts, Sup, NewInterval)
     end.
 
@@ -665,7 +688,9 @@ listen_opt_type(max_fsm_queue) ->
 listen_opt_type(shaper) ->
     fun acl:shaper_rules_validator/1;
 listen_opt_type(access) ->
-    fun acl:access_rules_validator/1.
+    fun acl:access_rules_validator/1;
+listen_opt_type(use_proxy_protocol) ->
+    fun(B) when is_boolean(B) -> B end.
 
 listen_options() ->
     [module, port,
@@ -675,6 +700,7 @@ listen_options() ->
      {inet6, false},
      {accept_interval, 0},
      {backlog, 5},
+     {use_proxy_protocol, false},
      {supervisor, true}].
 
 opt_type(listen) -> fun validate_cfg/1;

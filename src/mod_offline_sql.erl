@@ -90,8 +90,17 @@ remove_expired_messages(_LServer) ->
 remove_old_messages(Days, LServer) ->
     case ejabberd_sql:sql_query(
 	   LServer,
-	   ?SQL("DELETE FROM spool"
-                " WHERE created_at < NOW() - INTERVAL %(Days)d DAY")) of
+           fun(pgsql, _) ->
+                   ejabberd_sql:sql_query_t(
+                     ?SQL("DELETE FROM spool"
+                          " WHERE created_at <"
+                          " NOW() - INTERVAL '%(Days)d DAY'"));
+              (_, _) ->
+                   ejabberd_sql:sql_query_t(
+                     ?SQL("DELETE FROM spool"
+                          " WHERE created_at < NOW() - INTERVAL %(Days)d DAY"))
+              end)
+        of
 	{updated, N} ->
 	    ?INFO_MSG("~p message(s) deleted from offline spool", [N]);
 	_Error ->

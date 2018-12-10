@@ -41,7 +41,8 @@
 	 get_password_s/2, get_password_with_authmodule/2,
 	 user_exists/2, user_exists_in_other_modules/3,
 	 remove_user/2, remove_user/3, plain_password_required/1,
-	 store_type/1, entropy/1, backend_type/1, password_format/1]).
+	 store_type/1, entropy/1, backend_type/1, password_format/1,
+	 which_users_exists/1]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
@@ -410,6 +411,47 @@ user_exists_in_other_modules_loop([AuthModule | AuthModules], User, Server) ->
 	{error, _} ->
 	    maybe
     end.
+
+-spec which_users_exists(list({binary(), binary()})) -> list({binary(), binary()}).
+which_users_exists(USPairs) ->
+    ByServer = lists:foldl(
+	fun({User, Server}, Dict) ->
+	    LServer = jid:nameprep(Server),
+	    LUser =  jid:nodeprep(User),
+	    case gb_trees:lookup(LServer, Dict) of
+		none ->
+		    gb_trees:insert(LServer, gb_sets:singleton(LUser), Dict);
+		{value, Set} ->
+		    gb_trees:update(LServer, gb_sets:add(LUser, Set), Dict)
+	    end
+	end, gb_trees:empty(), USPairs),
+    Set = lists:foldl(
+	fun({LServer, UsersSet}, Results) ->
+	    UsersList = gb_sets:to_list(UsersSet),
+	    lists:foldl(
+		fun(M, Results2) ->
+		    try M:which_users_exists(LServer, UsersList) of
+			{error, _} ->
+			    Results2;
+			Res ->
+			    gb_sets:union(
+				gb_sets:from_list([{U, LServer} || U <- Res]),
+				Results2)
+		    catch
+			_:undef ->
+			    lists:foldl(
+				fun(U, R2) ->
+				    case user_exists(U, LServer) of
+					true ->
+					    gb_sets:add({U, LServer}, R2);
+					_ ->
+					    R2
+				    end
+				end, Results2, UsersList)
+		    end
+		end, Results, auth_modules(LServer))
+	end, gb_sets:empty(), gb_trees:to_list(ByServer)),
+    gb_sets:to_list(Set).
 
 -spec remove_user(binary(), binary()) -> ok.
 remove_user(User, Server) ->

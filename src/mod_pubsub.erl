@@ -2990,6 +2990,7 @@ send_last_pep(From, To) ->
     Host = host(ServerHost),
     Publisher = jid:tolower(From),
     Owner = jid:remove_resource(Publisher),
+    RecipientIsOwner = jid:remove_resource(jid:tolower(To)) == Owner,
     lists:foreach(
       fun(#pubsub_node{nodeid = {_, Node}, type = Type, id = Nidx, options = Options}) ->
 	      case match_option(Options, send_last_published_item, on_sub_and_presence) of
@@ -2998,8 +2999,11 @@ send_last_pep(From, To) ->
 		      Subscribed = case get_option(Options, access_model) of
 				       open -> true;
 				       presence -> true;
-				       whitelist -> false; % subscribers are added manually
-				       authorize -> false; % likewise
+				       %% TODO: Fix the 'whitelist'/'authorize'
+				       %% cases. Currently, only node owners
+				       %% receive last PEP notifications.
+				       whitelist -> RecipientIsOwner;
+				       authorize -> RecipientIsOwner;
 				       roster ->
 					   Grps = get_option(Options, roster_groups_allowed, []),
 					   {OU, OS, _} = Owner,
