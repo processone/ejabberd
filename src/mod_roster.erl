@@ -231,7 +231,7 @@ roster_version(LServer, LUser) ->
     case roster_version_on_db(LServer) of
       true ->
 	  case read_roster_version(LUser, LServer) of
-	    error -> <<"not_found">>;
+	    error -> undefined;
 	    {ok, V} -> V
 	  end;
       false ->
