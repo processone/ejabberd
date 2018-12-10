@@ -317,7 +317,7 @@ set_presence(SID, User, Server, Resource, Priority, Presence) ->
     case get_sessions(Mod, LUser, LServer, LResource) of
 	[] -> {error, notfound};
 	Ss ->
-	    case lists:keyfind(SID, 1, Ss) of
+	    case lists:keyfind(SID, #session.sid, Ss) of
 		#session{info = Info} ->
 		    set_session(SID, User, Server, Resource, Priority, Info),
 		    ejabberd_hooks:run(set_presence_hook,
@@ -339,7 +339,7 @@ unset_presence(SID, User, Server, Resource, Status) ->
     case get_sessions(Mod, LUser, LServer, LResource) of
 	[] -> {error, notfound};
 	Ss ->
-	    case lists:keyfind(SID, 1, Ss) of
+	    case lists:keyfind(SID, #session.sid, Ss) of
 		#session{info = Info} ->
 		    set_session(SID, User, Server, Resource, undefined,	Info),
 		    ejabberd_hooks:run(unset_presence_hook,
