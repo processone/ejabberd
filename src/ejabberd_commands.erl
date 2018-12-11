@@ -492,6 +492,7 @@ do_execute_command(Command, Arguments) ->
     Module = Command#ejabberd_commands.module,
     Function = Command#ejabberd_commands.function,
     ?DEBUG("Executing command ~p:~p with Args=~p", [Module, Function, Arguments]),
+    ejabberd_hooks:run(api_call, [Module, Function, Arguments]),
     apply(Module, Function, Arguments).
 
 -spec get_tags_commands() -> [{string(), [string()]}].
