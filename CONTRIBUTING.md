@@ -124,7 +124,7 @@ That's it! Thank you for your contribution!
 
 ## <a name="cla"></a> Signing the Contributor License Agreement (CLA)
 
-Upon submmitting a Pull Request, we will ask you to sign our CLA if you haven't done
+Upon submitting a Pull Request, we will ask you to sign our CLA if you haven't done
 so before. It's a quick process, we promise, and you will be able to do it all online
 
 You can read [ProcessOne Contribution License Agreement][cla] in PDF.
