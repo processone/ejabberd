@@ -80,6 +80,7 @@
 -include("xmpp.hrl").
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
+-include("ejabberd_stacktrace.hrl").
 
 -define(DEFAULT_API_VERSION, 0).
 
@@ -192,9 +193,8 @@ process([Call], #request{method = 'POST', data = Data, ip = IPPort} = Req) ->
         _:{error,{_,invalid_json}} = _Err ->
 	    ?DEBUG("Bad Request: ~p", [_Err]),
 	    badrequest_response(<<"Invalid JSON input">>);
-	  _:_Error ->
-            St = erlang:get_stacktrace(),
-            ?DEBUG("Bad Request: ~p ~p", [_Error, St]),
+	?EX_RULE(_Class, _Error, Stack) ->
+            ?DEBUG("Bad Request: ~p ~p", [_Error, ?EX_STACK(Stack)]),
             badrequest_response()
     end;
 process([Call], #request{method = 'GET', q = Data, ip = {IP, _}} = Req) ->
@@ -210,9 +210,8 @@ process([Call], #request{method = 'GET', q = Data, ip = {IP, _}} = Req) ->
         %% TODO We need to refactor to remove redundant error return formatting
         throw:{error, unknown_command} ->
             json_format({404, 44, <<"Command not found.">>});
-        _:_Error ->
-            St = erlang:get_stacktrace(),
-            ?DEBUG("Bad Request: ~p ~p", [_Error, St]),
+        ?EX_RULE(_, _Error, Stack) ->
+            ?DEBUG("Bad Request: ~p ~p", [_Error, ?EX_STACK(Stack)]),
             badrequest_response()
     end;
 process([_Call], #request{method = 'OPTIONS', data = <<>>}) ->
@@ -302,9 +301,8 @@ handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
 		    {400, misc:atom_to_binary(Error)};
 		  throw:Msg when is_list(Msg); is_binary(Msg) ->
 		    {400, iolist_to_binary(Msg)};
-		  _Error ->
-                    St = erlang:get_stacktrace(),
-		    ?ERROR_MSG("REST API Error: ~p ~p", [_Error, St]),
+		  ?EX_RULE(Class, Error, Stack) ->
+		    ?ERROR_MSG("REST API Error: ~p:~p ~p", [Class, Error, ?EX_STACK(Stack)]),
 		    {500, <<"internal_error">>}
 	    end;
         {error, Msg} ->

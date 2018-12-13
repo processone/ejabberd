@@ -43,6 +43,7 @@
 -define(NEED_RESET, [local_content, type]).
 
 -include("logger.hrl").
+-include("ejabberd_stacktrace.hrl").
 
 -record(state, {tables = #{} :: map(),
 		schema = [] :: [{atom(), [{atom(), any()}]}]}).
@@ -385,8 +386,8 @@ do_transform(OldAttrs, Attrs, Old) ->
 transform_fun(Module, Name) ->
     fun(Obj) ->
 	    try Module:transform(Obj)
-	    catch E:R ->
-		    StackTrace = erlang:get_stacktrace(),
+	    catch ?EX_RULE(E, R, St) ->
+		    StackTrace = ?EX_STACK(St),
 		    ?ERROR_MSG("Failed to transform Mnesia table ~s:~n"
 			       "** Record: ~p~n"
 			       "** Reason: ~p~n"

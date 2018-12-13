@@ -90,6 +90,7 @@
 
 -include("ejabberd_commands.hrl").
 -include("ejabberd_sm.hrl").
+-include("ejabberd_stacktrace.hrl").
 
 -callback init() -> ok | {error, any()}.
 -callback set_session(#session{}) -> ok | {error, any()}.
@@ -140,11 +141,10 @@ route(Packet) ->
 	    ?DEBUG("hook dropped stanza:~n~s", [xmpp:pp(Packet)]);
 	Packet1 ->
 	    try do_route(Packet1), ok
-	    catch E:R ->
-                    St = erlang:get_stacktrace(),
+	    catch ?EX_RULE(E, R, St) ->
 		    ?ERROR_MSG("failed to route packet:~n~s~nReason = ~p",
 			       [xmpp:pp(Packet1),
-				{E, {R, St}}])
+				{E, {R, ?EX_STACK(St)}}])
 	    end
     end.
 

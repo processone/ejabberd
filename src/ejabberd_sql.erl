@@ -69,6 +69,7 @@
 
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
+-include("ejabberd_stacktrace.hrl").
 
 -record(state,
 	{db_ref = self()                     :: pid(),
@@ -516,24 +517,26 @@ outer_transaction(F, NRestarts, _Reason) ->
     end,
     sql_query_internal([<<"begin;">>]),
     put(?NESTING_KEY, PreviousNestingLevel + 1),
-    Result = (catch F()),
-    put(?NESTING_KEY, PreviousNestingLevel),
-    case Result of
-      {aborted, Reason} when NRestarts > 0 ->
-	  sql_query_internal([<<"rollback;">>]),
-	  outer_transaction(F, NRestarts - 1, Reason);
-      {aborted, Reason} when NRestarts =:= 0 ->
-	  ?ERROR_MSG("SQL transaction restarts exceeded~n** "
-		     "Restarts: ~p~n** Last abort reason: "
-		     "~p~n** Stacktrace: ~p~n** When State "
-		     "== ~p",
-		     [?MAX_TRANSACTION_RESTARTS, Reason,
-		      erlang:get_stacktrace(), get(?STATE_KEY)]),
-	  sql_query_internal([<<"rollback;">>]),
-	  {aborted, Reason};
-      {'EXIT', Reason} ->
-	  sql_query_internal([<<"rollback;">>]), {aborted, Reason};
-      Res -> sql_query_internal([<<"commit;">>]), {atomic, Res}
+    try F() of
+	Res ->
+	    sql_query_internal([<<"commit;">>]),
+	    {atomic, Res}
+    catch
+	?EX_RULE(throw, {aborted, Reason}, _) when NRestarts > 0 ->
+	    sql_query_internal([<<"rollback;">>]),
+	    outer_transaction(F, NRestarts - 1, Reason);
+	?EX_RULE(throw, {aborted, Reason}, Stack) when NRestarts =:= 0 ->
+	    ?ERROR_MSG("SQL transaction restarts exceeded~n** "
+		       "Restarts: ~p~n** Last abort reason: "
+		       "~p~n** Stacktrace: ~p~n** When State "
+		       "== ~p",
+		       [?MAX_TRANSACTION_RESTARTS, Reason,
+			?EX_STACK(Stack), get(?STATE_KEY)]),
+	    sql_query_internal([<<"rollback;">>]),
+	    {aborted, Reason};
+	?EX_RULE(exit, Reason, _) ->
+	    sql_query_internal([<<"rollback;">>]),
+	    {aborted, Reason}
     end.
 
 execute_bloc(F) ->
@@ -599,10 +602,9 @@ sql_query_internal(#sql_query{} = Query) ->
 		{error, <<"killed">>};
 	      exit:{normal, _} ->
 		{error, <<"terminated unexpectedly">>};
-	      Class:Reason ->
-                ST = erlang:get_stacktrace(),
+	      ?EX_RULE(Class, Reason, Stack) ->
                 ?ERROR_MSG("Internal error while processing SQL query: ~p",
-                           [{Class, Reason, ST}]),
+                           [{Class, Reason, ?EX_STACK(Stack)}]),
                 {error, <<"internal error">>}
         end,
     check_error(Res, Query);
@@ -737,12 +739,11 @@ sql_query_format_res({selected, _, Rows}, SQLQuery) ->
                   try
                       [(SQLQuery#sql_query.format_res)(Row)]
                   catch
-                      Class:Reason ->
-                          ST = erlang:get_stacktrace(),
+		      ?EX_RULE(Class, Reason, Stack) ->
                           ?ERROR_MSG("Error while processing "
                                      "SQL query result: ~p~n"
                                      "row: ~p",
-                                     [{Class, Reason, ST}, Row]),
+                                     [{Class, Reason, ?EX_STACK(Stack)}, Row]),
                           []
                   end
           end, Rows),

@@ -58,6 +58,7 @@
 
 -include("logger.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
+-include("ejabberd_stacktrace.hrl").
 
 -record(ejabberd_module,
         {module_host = {undefined, <<"">>} :: {atom(), binary()},
@@ -217,8 +218,8 @@ start_module(Host, Module, Opts0, Order, NeedValidation) ->
 		    {ok, Pid} when is_pid(Pid) -> {ok, Pid};
 		    Err -> erlang:error({bad_return, Module, Err})
 		end
-	    catch Class:Reason ->
-		    StackTrace = erlang:get_stacktrace(),
+	    catch ?EX_RULE(Class, Reason, Stack) ->
+		    StackTrace = ?EX_STACK(Stack),
 		    ets:delete(ejabberd_modules, {Module, Host}),
 		    ErrorText = format_module_error(
 				  Module, start, 2,
@@ -282,8 +283,8 @@ reload_module(Host, Module, NewOpts, OldOpts, Order) ->
 		    {ok, Pid} when is_pid(Pid) -> {ok, Pid};
 		    Err -> erlang:error({bad_return, Module, Err})
 		end
-	    catch Class:Reason ->
-		    StackTrace = erlang:get_stacktrace(),
+	    catch ?EX_RULE(Class, Reason, Stack) ->
+		    StackTrace = ?EX_STACK(Stack),
 		    ErrorText = format_module_error(
                                   Module, reload, 3,
                                   NewOpts, Class, Reason,

@@ -50,6 +50,7 @@
 -define(CALL_TIMEOUT, 60*1000). %% 60 seconds
 
 -include("logger.hrl").
+-include("ejabberd_stacktrace.hrl").
 
 -record(state, {connection :: pid() | undefined,
 		num :: pos_integer(),
@@ -106,9 +107,9 @@ multi(F) ->
 			{error, _} = Err -> Err;
 			Result -> get_result(Result)
 		    end
-	    catch E:R ->
+	    catch ?EX_RULE(E, R, St) ->
 		    erlang:erase(?TR_STACK),
-		    erlang:raise(E, R, erlang:get_stacktrace())
+		    erlang:raise(E, R, ?EX_STACK(St))
 	    end;
 	_ ->
 	    erlang:error(nested_transaction)

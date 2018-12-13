@@ -25,6 +25,7 @@
 -include("ejabberd_commands.hrl").
 -include("ejabberd_acme.hrl").
 -include_lib("public_key/include/public_key.hrl").
+-include("ejabberd_stacktrace.hrl").
 
 -define(DEFAULT_CONFIG_CONTACT, <<"mailto:example-admin@example.com">>).
 -define(DEFAULT_CONFIG_CA_URL, "https://acme-v01.api.letsencrypt.org").
@@ -100,10 +101,10 @@ is_valid_domain_opt(DomainString) ->
     end.
 
 -spec is_valid_revoke_cert(string()) -> boolean().
-is_valid_revoke_cert(DomainOrFile) ->	    
+is_valid_revoke_cert(DomainOrFile) ->
     lists:prefix("file:", DomainOrFile) orelse
 	lists:prefix("domain:", DomainOrFile).
-	    
+
 %% Commands
 get_commands_spec() ->
     [#ejabberd_commands{name = get_certificates, tags = [acme],
@@ -142,7 +143,7 @@ get_commands_spec() ->
 %%
 -spec get_certificates(domains_opt()) -> string() | {'error', _}.
 get_certificates(Domains) ->
-    case is_valid_domain_opt(Domains) of 
+    case is_valid_domain_opt(Domains) of
 	true ->
 	    try
 		CAUrl = get_config_ca_url(),
@@ -150,9 +151,8 @@ get_certificates(Domains) ->
 	    catch
 		throw:Throw ->
 		    Throw;
-		E:R ->
-                    St = erlang:get_stacktrace(),
-		    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, St]),
+		?EX_RULE(E, R, St) ->
+		    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, ?EX_STACK(St)]),
 		    {error, get_certificates}
 	    end;
 	false ->
@@ -171,7 +171,7 @@ retrieve_or_create_account(CAUrl) ->
     case read_account_persistent() of
 	none ->
 	    create_save_new_account(CAUrl);
-	
+
 	{ok, AccId, CAUrl, PrivateKey} ->
 	    {ok, AccId, PrivateKey};
 	{ok, _AccId, _, _PrivateKey} ->
@@ -199,7 +199,7 @@ get_certificates2(CAUrl, PrivateKey, Hosts) ->
     %% Format the result to send back to ejabberdctl
     format_get_certificates_result(SavedCerts).
 
--spec format_get_certificates_result([{'ok', bitstring(), _} | 
+-spec format_get_certificates_result([{'ok', bitstring(), _} |
 				      {'error', bitstring(), _}]) ->
 					    string().
 format_get_certificates_result(Certs) ->
@@ -211,26 +211,26 @@ format_get_certificates_result(Certs) ->
     case Cond of
 	true ->
 	    Result = io_lib:format("Success:~n~s", [FormattedCerts]),
-	    lists:flatten(Result); 
+	    lists:flatten(Result);
 	_ ->
 	    Result = io_lib:format("Error with one or more certificates~n~s", [FormattedCerts]),
 	    lists:flatten(Result)
     end.
 
--spec format_get_certificate({'ok', bitstring(), _} | 
+-spec format_get_certificate({'ok', bitstring(), _} |
 			     {'error', bitstring(), _}) ->
 				    string().
-format_get_certificate({ok, Domain, saved}) ->    
+format_get_certificate({ok, Domain, saved}) ->
     io_lib:format("  Certificate for domain: \"~s\" acquired and saved", [Domain]);
-format_get_certificate({ok, Domain, not_found}) ->    
+format_get_certificate({ok, Domain, not_found}) ->
     io_lib:format("  Certificate for domain: \"~s\" not found, so it was not renewed", [Domain]);
 format_get_certificate({ok, Domain, no_expire}) ->
     io_lib:format("  Certificate for domain: \"~s\" is not close to expiring", [Domain]);
 format_get_certificate({error, Domain, Reason}) ->
     io_lib:format("  Error for domain: \"~s\",  with reason: \'~s\'", [Domain, Reason]).
 
--spec get_certificate(url(), bitstring(), jose_jwk:key()) -> 
-			     {'ok', bitstring(), pem()} | 
+-spec get_certificate(url(), bitstring(), jose_jwk:key()) ->
+			     {'ok', bitstring(), pem()} |
 			     {'error', bitstring(), _}.
 get_certificate(CAUrl, DomainName, PrivateKey) ->
     try
@@ -243,9 +243,8 @@ get_certificate(CAUrl, DomainName, PrivateKey) ->
     catch
 	throw:Throw ->
 	    Throw;
-	E:R ->
-            St = erlang:get_stacktrace(),
-	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, St]),
+	?EX_RULE(E, R, St) ->
+	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, ?EX_STACK(St)]),
 	    {error, DomainName, get_certificate}
     end.
 
@@ -267,23 +266,23 @@ create_save_new_account(CAUrl) ->
 
 %% TODO:
 %% Find a way to ask the user if he accepts the TOS
--spec create_new_account(url(), bitstring(), jose_jwk:key()) -> {'ok', string()} | 
+-spec create_new_account(url(), bitstring(), jose_jwk:key()) -> {'ok', string()} |
 								no_return().
 create_new_account(CAUrl, Contact, PrivateKey) ->
     try
 	{ok, Dirs, Nonce0} = ejabberd_acme_comm:directory(CAUrl),
 	Req0 = [{ <<"contact">>, [Contact]}],
-	{ok, {TOS, Account}, Nonce1} = 
+	{ok, {TOS, Account}, Nonce1} =
 	    ejabberd_acme_comm:new_account(Dirs, PrivateKey, Req0, Nonce0),
 	{<<"id">>, AccIdInt} = lists:keyfind(<<"id">>, 1, Account),
 	AccId = integer_to_list(AccIdInt),
 	Req1 = [{ <<"agreement">>, list_to_bitstring(TOS)}],
-	{ok, _Account2, _Nonce2} = 
+	{ok, _Account2, _Nonce2} =
 	    ejabberd_acme_comm:update_account({CAUrl, AccId}, PrivateKey, Req1, Nonce1),
 	{ok, AccId}
     catch
 	E:R ->
-	    ?ERROR_MSG("Error: ~p creating an account for contact: ~p", 
+	    ?ERROR_MSG("Error: ~p creating an account for contact: ~p",
 		       [{E,R}, Contact]),
 	    throw({error,create_new_account})
     end.
@@ -298,7 +297,7 @@ create_new_authorization(CAUrl, DomainName, PrivateKey) ->
 		 {[{<<"type">>, <<"dns">>},
 		   {<<"value">>, DomainName}]}},
 		{<<"existing">>, <<"accept">>}],
-	{ok, {AuthzUrl, Authz}, Nonce1} = 
+	{ok, {AuthzUrl, Authz}, Nonce1} =
 	    ejabberd_acme_comm:new_authz(Dirs, PrivateKey, Req0, Nonce0),
 	{ok, AuthzId} = location_to_id(AuthzUrl),
 
@@ -321,7 +320,7 @@ create_new_authorization(CAUrl, DomainName, PrivateKey) ->
 	acme_challenge:unregister_hooks(DomainName)
     end.
 
--spec create_new_certificate(url(), {bitstring(), [bitstring()]}, jose_jwk:key()) -> 
+-spec create_new_certificate(url(), {bitstring(), [bitstring()]}, jose_jwk:key()) ->
 				    {ok, bitstring(), pem()}.
 create_new_certificate(CAUrl, {DomainName, AllSubDomains}, PrivateKey) ->
     try
@@ -338,7 +337,7 @@ create_new_certificate(CAUrl, {DomainName, AllSubDomains}, PrivateKey) ->
 	{ok, {IssuerCertLink, Certificate}, _Nonce1} =
 	    ejabberd_acme_comm:new_cert(Dirs, PrivateKey, Req, Nonce0),
 
-	DecodedCert = public_key:pkix_decode_cert(list_to_binary(Certificate), plain),	
+	DecodedCert = public_key:pkix_decode_cert(list_to_binary(Certificate), plain),
 	PemEntryCert = public_key:pem_entry_encode('Certificate', DecodedCert),
 
 	{ok, IssuerCert, _Nonce2} = ejabberd_acme_comm:get_issuer_cert(IssuerCertLink),
@@ -351,7 +350,7 @@ create_new_certificate(CAUrl, {DomainName, AllSubDomains}, PrivateKey) ->
 	PemCertKey = public_key:pem_encode([PemEntryKey, PemEntryCert, PemEntryIssuerCert]),
 
 	{ok, DomainName, PemCertKey}
-    catch		     
+    catch
 	E:R ->
 	    ?ERROR_MSG("Error: ~p getting an authorization for domain: ~p~n",
 		       [{E,R}, DomainName]),
@@ -383,9 +382,8 @@ renew_certificates() ->
     catch
 	throw:Throw ->
 	    Throw;
-	E:R ->
-            St = erlang:get_stacktrace(),
-	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, St]),
+	?EX_RULE(E, R, St) ->
+	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, ?EX_STACK(St)]),
 	    {error, get_certificates}
     end.
 
@@ -406,8 +404,8 @@ renew_certificates0(CAUrl) ->
     %% Format the result to send back to ejabberdctl
     format_get_certificates_result(SavedCerts).
 
--spec renew_certificate(url(), {bitstring(), data_cert()}, jose_jwk:key()) -> 
-			       {'ok', bitstring(), _} | 
+-spec renew_certificate(url(), {bitstring(), data_cert()}, jose_jwk:key()) ->
+			       {'ok', bitstring(), _} |
 			       {'error', bitstring(), _}.
 renew_certificate(CAUrl, {DomainName, _} = Cert, PrivateKey) ->
     case cert_to_expire(Cert) of
@@ -449,9 +447,8 @@ list_certificates(Verbose) ->
 	    catch
 		throw:Throw ->
 		    Throw;
-		E:R ->
-                    St = erlang:get_stacktrace(),
-		    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, St]),
+		?EX_RULE(E, R, St) ->
+		    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, ?EX_STACK(St)]),
 		    {error, list_certificates}
 	    end;
 	false ->
@@ -492,34 +489,33 @@ format_certificate(DataCert, Verbose) ->
 		format_certificate_verbose(DomainName, SANs, NotAfter, PemCert)
 	end
     catch
-	E:R ->
-            St = erlang:get_stacktrace(),
-	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, St]),
+	?EX_RULE(E, R, St) ->
+	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, ?EX_STACK(St)]),
 	    fail_format_certificate(DomainName)
     end.
 
--spec format_certificate_plain(bitstring(), [string()], {expired | ok, string()}, string()) 
+-spec format_certificate_plain(bitstring(), [string()], {expired | ok, string()}, string())
 			      -> string().
 format_certificate_plain(DomainName, SANs, NotAfter, Path) ->
     Result = lists:flatten(io_lib:format(
-			     "  Domain: ~s~n" 
+			     "  Domain: ~s~n"
 			     "~s"
-			     "    ~s~n" 
-			     "    Path: ~s", 
+			     "    ~s~n"
+			     "    Path: ~s",
 			     [DomainName,
 			      lists:flatten([io_lib:format("    SAN: ~s~n", [SAN]) || SAN <- SANs]),
 			      format_validity(NotAfter), Path])),
     Result.
 
--spec format_certificate_verbose(bitstring(), [string()], {expired | ok, string()}, bitstring()) 
+-spec format_certificate_verbose(bitstring(), [string()], {expired | ok, string()}, bitstring())
 				-> string().
 format_certificate_verbose(DomainName, SANs, NotAfter, PemCert) ->
     Result = lists:flatten(io_lib:format(
 			     "  Domain: ~s~n"
-			     "~s" 
-			     "    ~s~n" 
-			     "    Certificate In PEM format: ~n~s", 
-			     [DomainName, 
+			     "~s"
+			     "    ~s~n"
+			     "    Certificate In PEM format: ~n~s",
+			     [DomainName,
 			      lists:flatten([io_lib:format("    SAN: ~s~n", [SAN]) || SAN <- SANs]),
 			      format_validity(NotAfter), PemCert])),
     Result.
@@ -533,8 +529,8 @@ format_validity({ok, NotAfter}) ->
 -spec fail_format_certificate(bitstring()) -> string().
 fail_format_certificate(DomainName) ->
     Result = lists:flatten(io_lib:format(
-			     "  Domain: ~s~n" 
-			     "    Failed to format Certificate", 
+			     "  Domain: ~s~n"
+			     "    Failed to format Certificate",
 			     [DomainName])),
     Result.
 
@@ -542,7 +538,7 @@ fail_format_certificate(DomainName) ->
 get_commonName(#'Certificate'{tbsCertificate = TbsCertificate}) ->
     #'TBSCertificate'{
        subject = {rdnSequence, SubjectList}
-      } = TbsCertificate, 
+      } = TbsCertificate,
 
     %% TODO: Not the best way to find the commonName
     ShallowSubjectList = [Attribute || [Attribute] <- SubjectList],
@@ -560,9 +556,9 @@ get_notAfter(Certificate) ->
 	       true -> "19" ++ [Y1,Y2];
 	       _ -> "20" ++ [Y1,Y2]
 	   end,
-    NotAfter = lists:flatten(io_lib:format("~s-~s-~s ~s:~s:~s", 
+    NotAfter = lists:flatten(io_lib:format("~s-~s-~s ~s:~s:~s",
 					   [YEAR, [MO1,MO2], [D1,D2],
-					    [H1,H2], [MI1,MI2], [S1,S2]])), 
+					    [H1,H2], [MI1,MI2], [S1,S2]])),
 
     case close_to_expire(UtcTime, 0) of
 	true ->
@@ -577,7 +573,7 @@ get_subjectAltNames(#'Certificate'{tbsCertificate = TbsCertificate}) ->
        extensions = Exts
       } = TbsCertificate,
 
-    EncodedSANs = [Val || #'Extension'{extnID = Oid, extnValue = Val} <- Exts, 
+    EncodedSANs = [Val || #'Extension'{extnID = Oid, extnValue = Val} <- Exts,
 			  Oid =:= attribute_oid(subjectAltName)],
 
     lists:flatmap(
@@ -586,7 +582,7 @@ get_subjectAltNames(#'Certificate'{tbsCertificate = TbsCertificate}) ->
 	      [Name || {dNSName, Name} <- SANs0]
       end, EncodedSANs).
 
-    
+
 
 -spec get_utc_validity(#'Certificate'{}) -> string().
 get_utc_validity(#'Certificate'{tbsCertificate = TbsCertificate}) ->
@@ -618,18 +614,17 @@ revoke_certificates(DomainOrFile) ->
     catch
 	throw:Throw ->
 	    Throw;
-	E:R ->
-            St = erlang:get_stacktrace(),
-	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, St]),
+	?EX_RULE(E, R, St) ->
+	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, ?EX_STACK(St)]),
 	    {error, revoke_certificate}
-    end.	
+    end.
 
 -spec revoke_certificate0(url(), string()) -> {ok, deleted}.
 revoke_certificate0(CAUrl, DomainOrFile) ->
     ParsedCert = parse_revoke_cert_argument(DomainOrFile),
     revoke_certificate1(CAUrl, ParsedCert).
 
--spec revoke_certificate1(url(), {domain, bitstring()} | {file, file:filename()}) -> 
+-spec revoke_certificate1(url(), {domain, bitstring()} | {file, file:filename()}) ->
 				 {ok, deleted}.
 revoke_certificate1(CAUrl, {domain, Domain}) ->
     case domain_certificate_exists(Domain) of
@@ -650,7 +645,7 @@ revoke_certificate1(CAUrl, {file, File}) ->
 	    ?ERROR_MSG("Error: ~p reading pem certificate-key file: ~p", [Reason, File]),
 	    throw({error, Reason})
     end.
-	
+
 
 -spec revoke_certificate2(url(), pem()) -> ok.
 revoke_certificate2(CAUrl, PemEncodedCert) ->
@@ -676,10 +671,10 @@ prepare_certificate_revoke(PemEncodedCert) ->
     DerCert = public_key:der_encode('Certificate', PemCert),
     Base64Cert = base64url:encode(DerCert),
 
-    {ok, Key} = find_private_key_in_pem(PemEncodedCert),    
+    {ok, Key} = find_private_key_in_pem(PemEncodedCert),
     {Base64Cert, Key}.
 
--spec domain_certificate_exists(bitstring()) -> {bitstring(), data_cert()} | false.    
+-spec domain_certificate_exists(bitstring()) -> {bitstring(), data_cert()} | false.
 domain_certificate_exists(Domain) ->
     Certs = read_certificates_persistent(),
     lists:keyfind(Domain, 1, Certs).
@@ -693,7 +688,7 @@ domain_certificate_exists(Domain) ->
 %% For now we accept only generating a key of
 %% specific type for signing the csr
 
--spec make_csr(proplist(), [{dNSName, bitstring()}]) 
+-spec make_csr(proplist(), [{dNSName, bitstring()}])
 	      -> {binary(), jose_jwk:key()}.
 make_csr(Attributes, SANs) ->
     Key = generate_key(),
@@ -749,9 +744,9 @@ extension(SANs) ->
 extension_request(SANs) ->
     #'AttributePKCS-10'{
        type = ?'pkcs-9-at-extensionRequest',
-       values = [{'asn1_OPENTYPE', 
+       values = [{'asn1_OPENTYPE',
 		  public_key:der_encode(
-		    'ExtensionRequest', 
+		    'ExtensionRequest',
 		    [extension(SANs)])}]
       }.
 
@@ -918,7 +913,7 @@ find_private_key_in_pem(Pem) ->
 	    JoseKey = jose_jwk:from_key(Key),
 	    {ok, JoseKey}
     end.
-	    
+
 
 -spec find_private_key_in_pem1([public_key:pki_asn1_type()],
 			       [public_key:pem_entry()]) ->
@@ -948,10 +943,10 @@ private_key_types() ->
 find_all_sub_domains(DomainName) ->
     AllRoutes = ejabberd_router:get_all_routes(),
     DomainLen = size(DomainName),
-    [Route || Route <- AllRoutes,  
-	      binary:longest_common_suffix([DomainName, Route]) 
+    [Route || Route <- AllRoutes,
+	      binary:longest_common_suffix([DomainName, Route])
 		  =:= DomainLen].
-    
+
 
 -spec is_error(_) -> boolean().
 is_error({error, _}) -> true;
@@ -981,13 +976,13 @@ data_get_account(Data) ->
     end.
 
 -spec data_set_account(acme_data(), {list(), url(), jose_jwk:key()}) -> acme_data().
-data_set_account(Data, {AccId, CAUrl, PrivateKey}) -> 
+data_set_account(Data, {AccId, CAUrl, PrivateKey}) ->
     NewAcc = {account, #data_acc{id = AccId, ca_url = CAUrl, key = PrivateKey}},
     lists:keystore(account, 1, Data, NewAcc).
 
 %%
 %% Certificates
-%% 
+%%
 
 -spec data_get_certificates(acme_data()) -> data_certs().
 data_get_certificates(Data) ->
@@ -999,7 +994,7 @@ data_get_certificates(Data) ->
     end.
 
 -spec data_set_certificates(acme_data(), data_certs()) -> acme_data().
-data_set_certificates(Data, NewCerts) -> 
+data_set_certificates(Data, NewCerts) ->
     lists:keystore(certs, 1, Data, {certs, NewCerts}).
 
 %% ATM we preserve one certificate for each domain
@@ -1053,7 +1048,7 @@ write_persistent(Data) ->
 	{error, Reason} ->
 	    ?ERROR_MSG("Error: ~p writing acme data file", [Reason]),
 	    throw({error, Reason})
-    end.    
+    end.
 
 -spec create_persistent() -> ok | no_return().
 create_persistent() ->
@@ -1069,7 +1064,7 @@ create_persistent() ->
 	{error, Reason} ->
 	    ?ERROR_MSG("Error: ~p creating acme data file", [Reason]),
 	    throw({error, Reason})
-    end.        
+    end.
 
 -spec write_account_persistent({list(), url(), jose_jwk:key()}) -> ok | no_return().
 write_account_persistent({AccId, CAUrl, PrivateKey}) ->
@@ -1099,7 +1094,7 @@ remove_certificate_persistent(DataCert) ->
     NewData = data_remove_certificate(Data, DataCert),
     ok = write_persistent(NewData).
 
--spec save_certificate({ok, bitstring(), binary()} | {error, _, _}) -> 
+-spec save_certificate({ok, bitstring(), binary()} | {error, _, _}) ->
 			      {ok, bitstring(), saved} | {error, bitstring(), _}.
 save_certificate({error, _, _} = Error) ->
     Error;
@@ -1123,13 +1118,12 @@ save_certificate({ok, DomainName, Cert}) ->
     catch
 	throw:Throw ->
 	    Throw;
-	E:R ->
-            St = erlang:get_stacktrace(),
-	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, St]),
+	?EX_RULE(E, R, St) ->
+	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, ?EX_STACK(St)]),
 	    {error, DomainName, saving}
     end.
 
--spec save_renewed_certificate({ok, bitstring(), _} | {error, _, _}) -> 
+-spec save_renewed_certificate({ok, bitstring(), _} | {error, _, _}) ->
 				      {ok, bitstring(), _} | {error, bitstring(), _}.
 save_renewed_certificate({error, _, _} = Error) ->
     Error;
