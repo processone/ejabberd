@@ -54,6 +54,7 @@
 -include("xmpp.hrl").
 -include("translate.hrl").
 -include("mod_muc_room.hrl").
+-include("ejabberd_stacktrace.hrl").
 
 -define(MAX_USERS_DEFAULT_LIST,
 	[5, 10, 20, 30, 50, 100, 200, 500, 1000, 2000, 5000]).
@@ -2765,7 +2766,7 @@ process_item_change(Item, SD, UJID) ->
 		maybe_send_affiliation(JID, A, SD1),
 		SD1
 	end
-    catch E:R ->
+    catch ?EX_RULE(E, R, St) ->
 		FromSuffix = case UJID of
 			#jid{} ->
 				JidString = jid:encode(UJID),
@@ -2773,9 +2774,8 @@ process_item_change(Item, SD, UJID) ->
 			undefined ->
 				<<"">>
 		end,
-                St = erlang:get_stacktrace(),
 		?ERROR_MSG("failed to set item ~p~s: ~p",
-		       [Item, FromSuffix, {E, {R, St}}]),
+		       [Item, FromSuffix, {E, {R, ?EX_STACK(St)}}]),
 	    {error, xmpp:err_internal_server_error()}
     end.
 

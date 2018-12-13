@@ -32,6 +32,7 @@
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
 -include("ejabberd_router.hrl").
+-include("ejabberd_stacktrace.hrl").
 
 %%%===================================================================
 %%% API
@@ -121,12 +122,11 @@ row_to_route(Domain, {ServerHost, NodeS, PidS, LocalHintS} = Row) ->
 		local_hint = dec_local_hint(LocalHintS)}]
     catch _:{bad_node, _} ->
 	    [];
-	  E:R ->
-            St = erlang:get_stacktrace(),
+	  ?EX_RULE(E, R, St) ->
 	    ?ERROR_MSG("failed to decode row from 'route' table:~n"
 		       "Row = ~p~n"
 		       "Domain = ~s~n"
 		       "Reason = ~p",
-		       [Row, Domain, {E, {R, St}}]),
+		       [Row, Domain, {E, {R, ?EX_STACK(St)}}]),
 	    []
     end.

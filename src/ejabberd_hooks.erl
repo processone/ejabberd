@@ -57,6 +57,7 @@
 	 terminate/2]).
 
 -include("logger.hrl").
+-include("ejabberd_stacktrace.hrl").
 
 -record(state, {}).
 -type local_hook() :: { Seq :: integer(), Module :: atom(), Function :: atom()}.
@@ -129,14 +130,14 @@ delete_dist(Hook, Node, Module, Function, Seq) ->
 delete_dist(Hook, Host, Node, Module, Function, Seq) ->
     gen_server:call(ejabberd_hooks, {delete, Hook, Host, Node, Module, Function, Seq}).
 
--spec delete_all_hooks() -> true. 
+-spec delete_all_hooks() -> true.
 
 %% @doc Primarily for testing / instrumentation
 delete_all_hooks() ->
     gen_server:call(ejabberd_hooks, {delete_all}).
 
 -spec get_handlers(atom(), binary() | global) -> [local_hook() | distributed_hook()].
-%% @doc Returns currently set handler for hook name 
+%% @doc Returns currently set handler for hook name
 get_handlers(Hookname, Host) ->
     gen_server:call(ejabberd_hooks, {get_handlers, Hookname, Host}).
 
@@ -264,7 +265,7 @@ handle_delete(Hook, Host, El) ->
             ok;
         [] ->
             ok
-    end. 
+    end.
 
 %%----------------------------------------------------------------------
 %% Func: handle_cast/2
@@ -379,15 +380,11 @@ safe_apply(Hook, Module, Function, Args) ->
        true ->
 		apply(Module, Function, Args)
 	end
-    catch E:R when E /= exit; R /= normal ->
-            St = get_stacktrace(),
+    catch ?EX_RULE(E, R, St) when E /= exit; R /= normal ->
 	    ?ERROR_MSG("Hook ~p crashed when running ~p:~p/~p:~n"
 		       "** Reason = ~p~n"
 		       "** Arguments = ~p",
 		       [Hook, Module, Function, length(Args),
-			{E, R, St}, Args]),
+			{E, R, ?EX_STACK(St)}, Args]),
 	    'EXIT'
     end.
-
-get_stacktrace() ->
-    [{Mod, Fun, Loc, Args} || {Mod, Fun, Args, Loc} <- erlang:get_stacktrace()].

@@ -53,14 +53,11 @@
 	 depends/2]).
 
 -include("logger.hrl").
-
 -include("xmpp.hrl").
-
 -include("mod_roster.hrl").
-
 -include("ejabberd_http.hrl").
-
 -include("ejabberd_web_admin.hrl").
+-include("ejabberd_stacktrace.hrl").
 
 -define(ROSTER_CACHE, roster_cache).
 -define(ROSTER_ITEM_CACHE, roster_item_cache).
@@ -320,10 +317,9 @@ process_iq_get(#iq{to = To, lang = Lang,
 		   #roster_query{items = Items,
 				 ver = Version}
 	   end)
-    catch E:R ->
-            St = erlang:get_stacktrace(),
+    catch ?EX_RULE(E, R, St) ->
 	    ?ERROR_MSG("failed to process roster get for ~s: ~p",
-		       [jid:encode(To), {E, {R, St}}]),
+		       [jid:encode(To), {E, {R, ?EX_STACK(St)}}]),
 	    Txt = <<"Roster module has failed">>,
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
     end.
