@@ -65,6 +65,11 @@ listen:
     web_admin: true
     captcha: true
     tls: true
+  -
+    port: 5280
+    ip: "::"
+    module: ejabberd_http
+    web_admin: true
 
 s2s_use_starttls: optional
 
