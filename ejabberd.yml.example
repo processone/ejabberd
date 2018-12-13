@@ -85,6 +85,11 @@ listen:
     ciphers: CIPHERS_INTERMEDIATE
     protocol_options: PROTOCOL_OPTIONS_INTERMEDIATE
     tls: true
+  -
+    port: 5280
+    ip: "::"
+    module: ejabberd_http
+    web_admin: true
 
 s2s_use_starttls: optional
 
