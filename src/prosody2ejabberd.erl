@@ -358,9 +358,11 @@ convert_room_config(Data) ->
 		end,
     [{affiliations, convert_room_affiliations(Data)},
      {allow_change_subj, proplists:get_bool(<<"changesubject">>, Config)},
+     {mam, proplists:get_bool(<<"archiving">>, Config)},
      {description, proplists:get_value(<<"description">>, Config, <<"">>)},
      {members_only,	proplists:get_bool(<<"members_only">>, Config)},
      {moderated, proplists:get_bool(<<"moderated">>, Config)},
+     {persistent, proplists:get_bool(<<"persistent">>, Config)},
      {anonymous, Anonymous}] ++ Pass ++ Subj.
 
 convert_privacy_item({_, Item}) ->
