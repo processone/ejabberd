@@ -189,7 +189,11 @@ convert_data(Host, "vcard", User, [Data]) ->
 	    ok
     end;
 convert_data(_Host, "config", _User, [Data]) ->
-    RoomJID = jid:decode(proplists:get_value(<<"jid">>, Data, <<"">>)),
+    RoomJID1 = case proplists:get_value(<<"jid">>, Data, not_found) of
+	not_found -> proplists:get_value(<<"_jid">>, Data, room_jid_not_found);
+	A when is_binary(A) -> A
+    end,
+    RoomJID = jid:decode(RoomJID1),
     Config = proplists:get_value(<<"_data">>, Data, []),
     RoomCfg = convert_room_config(Data),
     case proplists:get_bool(<<"persistent">>, Config) of
