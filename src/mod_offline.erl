@@ -374,16 +374,25 @@ need_to_store(LServer, #message{type = Type} = Packet) ->
 		    true;
 		no_store ->
 		    false;
-		none when Type == headline ->
-		    false;
 		none ->
-		    case gen_mod:get_module_opt(
-			   LServer, ?MODULE, store_empty_body) of
-			true ->
+		    Store = case Type of
+				groupchat ->
+				    gen_mod:get_module_opt(
+				      LServer, ?MODULE, store_groupchat);
+				headline ->
+				    false;
+				_ ->
+				    true
+			    end,
+		    case {Store, gen_mod:get_module_opt(
+				   LServer, ?MODULE, store_empty_body)} of
+			{false, _} ->
+			    false;
+			{_, true} ->
 			    true;
-			false ->
+			{_, false} ->
 			    Packet#message.body /= [];
-			unless_chat_state ->
+			{_, unless_chat_state} ->
 			    not misc:is_standalone_chat_state(Packet)
 		    end
 	    end;
@@ -837,6 +846,8 @@ import(LServer, {sql, _}, DBType, <<"spool">>,
 mod_opt_type(access_max_user_messages) ->
     fun acl:shaper_rules_validator/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
+mod_opt_type(store_groupchat) ->
+    fun(V) when is_boolean(V) -> V end;
 mod_opt_type(store_empty_body) ->
     fun (V) when is_boolean(V) -> V;
         (unless_chat_state) -> unless_chat_state
@@ -845,4 +856,5 @@ mod_opt_type(store_empty_body) ->
 mod_options(Host) ->
     [{db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {access_max_user_messages, max_user_offline_messages},
-     {store_empty_body, unless_chat_state}].
+     {store_empty_body, unless_chat_state},
+     {store_groupchat, false}].
