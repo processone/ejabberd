@@ -48,13 +48,20 @@
 %%% API
 %%%===================================================================
 init(_Host, _Opts) ->
-    ejabberd_mnesia:create(?MODULE, archive_msg,
+    try
+	{atomic, _} = ejabberd_mnesia:create(
+			?MODULE, archive_msg,
 			[{disc_only_copies, [node()]},
 			 {type, bag},
 			 {attributes, record_info(fields, archive_msg)}]),
-    ejabberd_mnesia:create(?MODULE, archive_prefs,
+	{atomic, _} = ejabberd_mnesia:create(
+			?MODULE, archive_prefs,
 			[{disc_only_copies, [node()]},
-			 {attributes, record_info(fields, archive_prefs)}]).
+			 {attributes, record_info(fields, archive_prefs)}]),
+	ok
+    catch _:{badmatch, _} ->
+	    {error, db_failure}
+    end.
 
 remove_user(LUser, LServer) ->
     US = {LUser, LServer},

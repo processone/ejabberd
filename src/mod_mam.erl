@@ -52,6 +52,7 @@
 -define(MAX_PAGE_SIZE, 250).
 
 -type c2s_state() :: ejabberd_c2s:state().
+-type count() :: non_neg_integer() | undefined.
 
 -callback init(binary(), gen_mod:opts()) -> any().
 -callback remove_user(binary(), binary()) -> any().
@@ -66,7 +67,8 @@
 -callback get_prefs(binary(), binary()) -> {ok, #archive_prefs{}} | error.
 -callback select(binary(), jid(), jid(), mam_query:result(),
 		 #rsm_set{} | undefined, chat | groupchat) ->
-    {[{binary(), non_neg_integer(), xmlel()}], boolean(), non_neg_integer()}.
+    {[{binary(), non_neg_integer(), xmlel()}], boolean(), count()} |
+    {error, db_failure}.
 -callback use_cache(binary()) -> boolean().
 -callback cache_nodes(binary()) -> [node()].
 -callback remove_from_archive(binary(), binary(), jid() | none) -> ok | {error, any()}.
@@ -89,42 +91,45 @@ start(Host, Opts) ->
 	    ok
     end,
     Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
-    Mod:init(Host, Opts),
-    init_cache(Mod, Host, Opts),
-    register_iq_handlers(Host),
-    ejabberd_hooks:add(sm_receive_packet, Host, ?MODULE,
-		       sm_receive_packet, 50),
-    ejabberd_hooks:add(user_receive_packet, Host, ?MODULE,
-		       user_receive_packet, 88),
-    ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
-		       user_send_packet, 88),
-    ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
-		       user_send_packet_strip_tag, 500),
-    ejabberd_hooks:add(offline_message_hook, Host, ?MODULE,
-		       offline_message, 50),
-    ejabberd_hooks:add(muc_filter_message, Host, ?MODULE,
-		       muc_filter_message, 50),
-    ejabberd_hooks:add(muc_process_iq, Host, ?MODULE,
-		       muc_process_iq, 50),
-    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE,
-		       disco_sm_features, 50),
-    ejabberd_hooks:add(remove_user, Host, ?MODULE,
-		       remove_user, 50),
-    ejabberd_hooks:add(remove_room, Host, ?MODULE,
-		       remove_room, 50),
-    ejabberd_hooks:add(get_room_config, Host, ?MODULE,
-		       get_room_config, 50),
-    ejabberd_hooks:add(set_room_option, Host, ?MODULE,
-		       set_room_option, 50),
-    case gen_mod:get_opt(assume_mam_usage, Opts) of
-	true ->
-	    ejabberd_hooks:add(message_is_archived, Host, ?MODULE,
-			       message_is_archived, 50);
-	false ->
-	    ok
-    end,
-    ejabberd_commands:register_commands(get_commands_spec()),
-    ok.
+    case Mod:init(Host, Opts) of
+	ok ->
+	    init_cache(Mod, Host, Opts),
+	    register_iq_handlers(Host),
+	    ejabberd_hooks:add(sm_receive_packet, Host, ?MODULE,
+			       sm_receive_packet, 50),
+	    ejabberd_hooks:add(user_receive_packet, Host, ?MODULE,
+			       user_receive_packet, 88),
+	    ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
+			       user_send_packet, 88),
+	    ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
+			       user_send_packet_strip_tag, 500),
+	    ejabberd_hooks:add(offline_message_hook, Host, ?MODULE,
+			       offline_message, 50),
+	    ejabberd_hooks:add(muc_filter_message, Host, ?MODULE,
+			       muc_filter_message, 50),
+	    ejabberd_hooks:add(muc_process_iq, Host, ?MODULE,
+			       muc_process_iq, 50),
+	    ejabberd_hooks:add(disco_sm_features, Host, ?MODULE,
+			       disco_sm_features, 50),
+	    ejabberd_hooks:add(remove_user, Host, ?MODULE,
+			       remove_user, 50),
+	    ejabberd_hooks:add(remove_room, Host, ?MODULE,
+			       remove_room, 50),
+	    ejabberd_hooks:add(get_room_config, Host, ?MODULE,
+			       get_room_config, 50),
+	    ejabberd_hooks:add(set_room_option, Host, ?MODULE,
+			       set_room_option, 50),
+	    case gen_mod:get_opt(assume_mam_usage, Opts) of
+		true ->
+		    ejabberd_hooks:add(message_is_archived, Host, ?MODULE,
+				       message_is_archived, 50);
+		false ->
+		    ok
+	    end,
+	    ejabberd_commands:register_commands(get_commands_spec());
+	Err ->
+	    Err
+    end.
 
 use_cache(Mod, Host) ->
     case erlang:function_exported(Mod, use_cache, 2) of
@@ -940,15 +945,21 @@ maybe_activate_mam(LUser, LServer) ->
     end.
 
 select_and_send(LServer, Query, RSM, #iq{from = From, to = To} = IQ, MsgType) ->
-    {Msgs, IsComplete, Count} =
-	case MsgType of
-	    chat ->
-		select(LServer, From, From, Query, RSM, MsgType);
-	    {groupchat, _Role, _MUCState} ->
-		select(LServer, From, To, Query, RSM, MsgType)
-	end,
-    SortedMsgs = lists:keysort(2, Msgs),
-    send(SortedMsgs, Count, IsComplete, IQ).
+    Ret = case MsgType of
+	      chat ->
+		  select(LServer, From, From, Query, RSM, MsgType);
+	      {groupchat, _Role, _MUCState} ->
+		  select(LServer, From, To, Query, RSM, MsgType)
+	  end,
+    case Ret of
+	{Msgs, IsComplete, Count} ->
+	    SortedMsgs = lists:keysort(2, Msgs),
+	    send(SortedMsgs, Count, IsComplete, IQ);
+	{error, _} ->
+	    Txt = <<"Database failure">>,
+	    Err = xmpp:err_internal_server_error(Txt, IQ#iq.lang),
+	    xmpp:make_error(IQ, Err)
+    end.
 
 select(_LServer, JidRequestor, JidArchive, Query, RSM,
        {groupchat, _Role, #state{config = #config{mam = false},
@@ -1045,7 +1056,7 @@ maybe_update_from_to(Pkt, _JidRequestor, _JidArchive, _Peer, chat, _Nick) ->
     Pkt.
 
 -spec send([{binary(), integer(), xmlel()}],
-	   non_neg_integer(), boolean(), iq()) -> iq() | ignore.
+	   count(), boolean(), iq()) -> iq() | ignore.
 send(Msgs, Count, IsComplete,
      #iq{from = From, to = To,
 	 sub_els = [#mam_query{id = QID, xmlns = NS}]} = IQ) ->
@@ -1083,7 +1094,7 @@ send(Msgs, Count, IsComplete,
 	    ignore
     end.
 
--spec make_rsm_out([{binary(), integer(), xmlel()}], non_neg_integer()) -> rsm_set().
+-spec make_rsm_out([{binary(), integer(), xmlel()}], count()) -> rsm_set().
 make_rsm_out([], Count) ->
     #rsm_set{count = Count};
 make_rsm_out([{FirstID, _, _}|_] = Msgs, Count) ->
