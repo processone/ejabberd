@@ -105,12 +105,13 @@ create_captcha(SID, From, To, Lang, Limiter, Args) ->
 			  "To unblock them, visit ~s">>, [JID, get_url(Id)]},
 	  Body = xmpp:mk_text(BodyString, Lang),
 	  OOB = #oob_x{url = get_url(Id)},
+	  Hint = #hint{type = 'no-store'},
 	  Tref = erlang:send_after(?CAPTCHA_LIFETIME, ?MODULE,
 				   {remove_id, Id}),
 	  ets:insert(captcha,
 		     #captcha{id = Id, pid = self(), key = Key, tref = Tref,
 			      args = Args}),
-	  {ok, Id, Body, [OOB, Captcha, Data]};
+	  {ok, Id, Body, [Hint, OOB, Captcha, Data]};
       Err -> Err
     end.
 
