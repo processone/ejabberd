@@ -525,6 +525,11 @@ el_to_offline_msg(LUser, LServer, #xmlel{attrs = Attrs} = El) ->
 deserialize(L) ->
     deserialize(L, #xmlel{}, []).
 
+deserialize([{Other, _}|T], El, Acc)
+  when (Other == <<"key">>)
+       or (Other == <<"when">>)
+       or (Other == <<"with">>) ->
+    deserialize(T, El, Acc);
 deserialize([{<<"attr">>, Attrs}|T], El, Acc) ->
     deserialize(T, El#xmlel{attrs = Attrs ++ El#xmlel.attrs}, Acc);
 deserialize([{<<"name">>, Name}|T], El, Acc) ->
