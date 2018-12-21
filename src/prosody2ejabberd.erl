@@ -307,22 +307,24 @@ convert_roster_item(LUser, LServer, JIDstring, LuaList) ->
 	    InitR = #roster{usj = {LUser, LServer, LJID},
 			    us = {LUser, LServer},
 			    jid = LJID},
-	    Roster =
-		lists:foldl(
-		  fun({<<"groups">>, Val}, R) ->
+	    lists:foldl(
+		  fun({<<"groups">>, Val}, [R]) ->
 			  Gs = lists:flatmap(
 				 fun({G, true}) -> [G];
 				    (_) -> []
 				 end, Val),
-			  R#roster{groups = Gs};
-		     ({<<"subscription">>, Sub}, R) ->
-			  R#roster{subscription = misc:binary_to_atom(Sub)};
-		     ({<<"ask">>, <<"subscribe">>}, R) ->
-			  R#roster{ask = out};
-		     ({<<"name">>, Name}, R) ->
-			  R#roster{name = Name}
-		  end, InitR, LuaList),
-	    [Roster]
+			  [R#roster{groups = Gs}];
+		     ({<<"subscription">>, Sub}, [R]) ->
+			  [R#roster{subscription = misc:binary_to_atom(Sub)}];
+		     ({<<"ask">>, <<"subscribe">>}, [R]) ->
+			  [R#roster{ask = out}];
+		     ({<<"name">>, Name}, [R]) ->
+			  [R#roster{name = Name}];
+		     ({<<"persist">>, false}, _) ->
+			  [];
+		     (_, []) ->
+			  []
+		  end, [InitR], LuaList)
     catch _:{bad_jid, _} ->
 	    []
     end.
