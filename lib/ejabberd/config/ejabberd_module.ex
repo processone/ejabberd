@@ -12,7 +12,6 @@ defmodule Ejabberd.Config.EjabberdModule do
   defstruct [:module, :attrs]
 
   alias Ejabberd.Config.EjabberdModule
-  alias Ejabberd.Config.Attr
   alias Ejabberd.Config.Validation
 
   @doc """

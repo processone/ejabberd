@@ -7,9 +7,7 @@ defmodule Ejabberd.Config.Validation do
   @type mod_validation_result :: {:ok, EjabberdModule.t} | {:error, EjabberdModule.t, map}
 
   alias Ejabberd.Config.EjabberdModule
-  alias Ejabberd.Config.Attr
   alias Ejabberd.Config.Validator
-  alias Ejabberd.Config.ValidatorUtility
 
   @doc """
   Given a module or a list of modules it runs validators on them

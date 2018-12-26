@@ -23,7 +23,7 @@ defmodule Ejabberd.Config do
   # Could be also possible to interrupt the compilation&execution by throwing
   # an exception if necessary.
   def __before_compile__(_env) do
-    get_modules_parsed_in_order
+    get_modules_parsed_in_order()
     |> EjabberdModule.validate
     |> EjabberdLogger.log_errors
   end
@@ -48,7 +48,7 @@ defmodule Ejabberd.Config do
   Returns a list with all the opts, formatted for ejabberd.
   """
   def get_ejabberd_opts do
-    get_general_opts
+    get_general_opts()
     |> Dict.put(:modules, get_modules_parsed_in_order())
     |> Dict.put(:listeners, get_listeners_parsed_in_order())
     |> Ejabberd.Config.OptsFormatter.format_opts_for_ejabberd

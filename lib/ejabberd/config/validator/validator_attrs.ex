@@ -18,7 +18,7 @@ defmodule Ejabberd.Config.Validator.Attrs do
   def validate({modules, mod, errors}) do
     errors = Enum.reduce mod.attrs, errors, fn(attr, err) ->
       case Attr.validate(attr) do
-        {:ok, attr} -> err
+        {:ok, _attr} -> err
         {:error, attr, cause} -> put_error(err, :attribute, {attr, cause})
       end
     end

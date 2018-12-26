@@ -40,7 +40,7 @@ defmodule Mix.Tasks.Ejabberd.Deps.Tree do
     end
   end
 
-  defp build_dependency_tree(mods, mod, []), do: %{module: mod, dependency: []}
+  defp build_dependency_tree(_mods, mod, []), do: %{module: mod, dependency: []}
   defp build_dependency_tree(mods, mod, deps) when is_list(deps) do
     dependencies = Enum.map deps, fn dep ->
       dep_deps = get_dependencies_of_mod(mods, dep)
@@ -65,7 +65,7 @@ defmodule Mix.Tasks.Ejabberd.Deps.Tree do
 
   defp keep_only_mods_not_used_as_dep(mods, mods_used_as_dep) do
     Enum.filter mods, fn %{module: mod} ->
-      not mod in mods_used_as_dep
+      mod not in mods_used_as_dep
     end
   end
 
