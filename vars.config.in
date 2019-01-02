@@ -39,7 +39,6 @@
 {riak, @riak@}.
 {redis, @redis@}.
 {elixir, @elixir@}.
-{iconv, @iconv@}.
 {stun, @stun@}.
 {sip, @sip@}.
 
