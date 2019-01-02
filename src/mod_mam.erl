@@ -64,7 +64,7 @@
 -callback store(xmlel(), binary(), {binary(), binary()}, chat | groupchat,
 		jid(), binary(), recv | send, integer()) -> ok | any().
 -callback write_prefs(binary(), binary(), #archive_prefs{}, binary()) -> ok | any().
--callback get_prefs(binary(), binary()) -> {ok, #archive_prefs{}} | error.
+-callback get_prefs(binary(), binary()) -> {ok, #archive_prefs{}} | error | {error, db_failure}.
 -callback select(binary(), jid(), jid(), mam_query:result(),
 		 #rsm_set{} | undefined, chat | groupchat) ->
     {[{binary(), non_neg_integer(), xmlel()}], boolean(), count()} |
@@ -599,37 +599,48 @@ process_iq(#iq{from = #jid{luser = LUser, lserver = LServer},
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
     end;
 process_iq(#iq{from = #jid{luser = LUser, lserver = LServer},
-	       to = #jid{lserver = LServer},
+	       to = #jid{lserver = LServer}, lang = Lang,
 	       type = get, sub_els = [#mam_prefs{xmlns = NS}]} = IQ) ->
-    Prefs = get_prefs(LUser, LServer),
-    PrefsEl = prefs_el(Prefs#archive_prefs.default,
-		       Prefs#archive_prefs.always,
-		       Prefs#archive_prefs.never,
-		       NS),
-    xmpp:make_iq_result(IQ, PrefsEl);
+    case get_prefs(LUser, LServer) of
+	{ok, Prefs} ->
+	    PrefsEl = prefs_el(Prefs#archive_prefs.default,
+			       Prefs#archive_prefs.always,
+			       Prefs#archive_prefs.never,
+			       NS),
+	    xmpp:make_iq_result(IQ, PrefsEl);
+	{error, _} ->
+	    Txt = <<"Database failure">>,
+	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
+    end;
 process_iq(IQ) ->
     xmpp:make_error(IQ, xmpp:err_not_allowed()).
 
 process_iq(LServer, #iq{from = #jid{luser = LUser}, lang = Lang,
 			sub_els = [SubEl]} = IQ, MsgType) ->
-    case MsgType of
-	chat ->
-	    maybe_activate_mam(LUser, LServer);
-	{groupchat, _Role, _MUCState} ->
-	    ok
-    end,
-    case SubEl of
-	#mam_query{rsm = #rsm_set{index = I}} when is_integer(I) ->
-	    Txt = <<"Unsupported <index/> element">>,
-	    xmpp:make_error(IQ, xmpp:err_feature_not_implemented(Txt, Lang));
-	#mam_query{rsm = RSM, xmlns = NS} ->
-	    case parse_query(SubEl, Lang) of
-		{ok, Query} ->
-		    NewRSM = limit_max(RSM, NS),
-		    select_and_send(LServer, Query, NewRSM, IQ, MsgType);
-		{error, Err} ->
-		    xmpp:make_error(IQ, Err)
-	    end
+    Ret = case MsgType of
+	      chat ->
+		  maybe_activate_mam(LUser, LServer);
+	      {groupchat, _Role, _MUCState} ->
+		  ok
+	  end,
+    case Ret of
+	ok ->
+	    case SubEl of
+		#mam_query{rsm = #rsm_set{index = I}} when is_integer(I) ->
+		    Txt = <<"Unsupported <index/> element">>,
+		    xmpp:make_error(IQ, xmpp:err_feature_not_implemented(Txt, Lang));
+		#mam_query{rsm = RSM, xmlns = NS} ->
+		    case parse_query(SubEl, Lang) of
+			{ok, Query} ->
+			    NewRSM = limit_max(RSM, NS),
+			    select_and_send(LServer, Query, NewRSM, IQ, MsgType);
+			{error, Err} ->
+			    xmpp:make_error(IQ, Err)
+		    end
+	    end;
+	{error, _} ->
+	     Txt = <<"Database failure">>,
+	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
     end.
 
 -spec should_archive(message(), binary()) -> boolean().
@@ -823,23 +834,27 @@ may_enter_room(From, MUCState) ->
 -spec store_msg(message(), binary(), binary(), jid(), send | recv)
       -> ok | pass | any().
 store_msg(Pkt, LUser, LServer, Peer, Dir) ->
-    Prefs = get_prefs(LUser, LServer),
-    case {should_archive_peer(LUser, LServer, Prefs, Peer), Pkt} of
-	{true, #message{meta = #{sm_copy := true}}} ->
-	    ok; % Already stored.
-	{true, _} ->
-	    case ejabberd_hooks:run_fold(store_mam_message, LServer, Pkt,
-					 [LUser, LServer, Peer, chat, Dir]) of
-		drop ->
-		    pass;
-		Pkt1 ->
-		    US = {LUser, LServer},
-		    ID = get_stanza_id(Pkt1),
-		    El = xmpp:encode(Pkt1),
-		    Mod = gen_mod:db_mod(LServer, ?MODULE),
-		    Mod:store(El, LServer, US, chat, Peer, <<"">>, Dir, ID)
+    case get_prefs(LUser, LServer) of
+	{ok, Prefs} ->
+	    case {should_archive_peer(LUser, LServer, Prefs, Peer), Pkt} of
+		{true, #message{meta = #{sm_copy := true}}} ->
+		    ok; % Already stored.
+		{true, _} ->
+		    case ejabberd_hooks:run_fold(store_mam_message, LServer, Pkt,
+						 [LUser, LServer, Peer, chat, Dir]) of
+			drop ->
+			    pass;
+			Pkt1 ->
+			    US = {LUser, LServer},
+			    ID = get_stanza_id(Pkt1),
+			    El = xmpp:encode(Pkt1),
+			    Mod = gen_mod:db_mod(LServer, ?MODULE),
+			    Mod:store(El, LServer, US, chat, Peer, <<"">>, Dir, ID)
+		    end;
+		{false, _} ->
+		    pass
 	    end;
-	{false, _} ->
+	{error, _} ->
 	    pass
     end.
 
@@ -895,18 +910,20 @@ get_prefs(LUser, LServer) ->
 	  end,
     case Res of
 	{ok, Prefs} ->
-	    Prefs;
+	    {ok, Prefs};
+	{error, _} ->
+	    {error, db_failure};
 	error ->
 	    ActivateOpt = gen_mod:get_module_opt(
 			    LServer, ?MODULE,
 			    request_activates_archiving),
 	    case ActivateOpt of
 		true ->
-		    #archive_prefs{us = {LUser, LServer}, default = never};
+		    {ok, #archive_prefs{us = {LUser, LServer}, default = never}};
 		false ->
 		    Default = gen_mod:get_module_opt(
 				LServer, ?MODULE, default),
-		    #archive_prefs{us = {LUser, LServer}, default = Default}
+		    {ok, #archive_prefs{us = {LUser, LServer}, default = Default}}
 	    end
     end.
 
@@ -935,6 +952,8 @@ maybe_activate_mam(LUser, LServer) ->
 	    case Res of
 		{ok, _Prefs} ->
 		    ok;
+		{error, _} ->
+		    {error, db_failure};
 		error ->
 		    Default = gen_mod:get_module_opt(
 				LServer, ?MODULE, default),
