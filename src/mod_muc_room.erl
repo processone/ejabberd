@@ -1409,7 +1409,7 @@ get_affiliations_callback(StateData) ->
 -spec get_service_affiliation(jid(), state()) -> owner | none.
 get_service_affiliation(JID, StateData) ->
     {_AccessRoute, _AccessCreate, AccessAdmin,
-     _AccessPersistent} =
+     _AccessPersistent, _AccessMam} =
 	StateData#state.access,
     case acl:match_rule(StateData#state.server_host,
 			AccessAdmin, JID)
@@ -3170,6 +3170,7 @@ process_iq_owner(From, #iq{type = set, lang = Lang,
 			Options ->
 			    case is_allowed_log_change(Options, StateData, From) andalso
 				is_allowed_persistent_change(Options, StateData, From) andalso
+				is_allowed_mam_change(Options, StateData, From) andalso
 				is_allowed_room_name_desc_limits(Options, StateData) andalso
 				is_password_settings_correct(Options, StateData) of
 				true ->
@@ -3234,11 +3235,24 @@ is_allowed_persistent_change(Options, StateData, From) ->
       false -> true;
       true ->
 	  {_AccessRoute, _AccessCreate, _AccessAdmin,
-	   AccessPersistent} =
+	   AccessPersistent, _AccessMam} =
 	      StateData#state.access,
 	  allow ==
 	    acl:match_rule(StateData#state.server_host,
 			   AccessPersistent, From)
+    end.
+
+-spec is_allowed_mam_change(muc_roomconfig:result(), state(), jid()) -> boolean().
+is_allowed_mam_change(Options, StateData, From) ->
+    case proplists:is_defined(mam, Options) of
+      false -> true;
+      true ->
+	  {_AccessRoute, _AccessCreate, _AccessAdmin,
+	   _AccessPersistent, AccessMam} =
+	      StateData#state.access,
+	  allow ==
+	    acl:match_rule(StateData#state.server_host,
+			   AccessMam, From)
     end.
 
 %% Check if the Room Name and Room Description defined in the Data Form
@@ -3283,7 +3297,7 @@ get_default_room_maxusers(RoomState) ->
 
 -spec get_config(binary(), state(), jid()) -> xdata().
 get_config(Lang, StateData, From) ->
-    {_AccessRoute, _AccessCreate, _AccessAdmin, AccessPersistent} =
+    {_AccessRoute, _AccessCreate, _AccessAdmin, AccessPersistent, _AccessMam} =
 	StateData#state.access,
     ServiceMaxUsers = get_service_max_users(StateData),
     DefaultRoomMaxUsers = get_default_room_maxusers(StateData),
