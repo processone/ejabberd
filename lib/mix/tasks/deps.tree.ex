@@ -65,7 +65,7 @@ defmodule Mix.Tasks.Ejabberd.Deps.Tree do
 
   defp keep_only_mods_not_used_as_dep(mods, mods_used_as_dep) do
     Enum.filter mods, fn %{module: mod} ->
-      mod not in mods_used_as_dep
+      not (mod in mods_used_as_dep)
     end
   end
 
