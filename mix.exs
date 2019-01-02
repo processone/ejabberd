@@ -81,7 +81,7 @@ defmodule Ejabberd.Mixfile do
      {:p1_pgsql, "~> 1.1"},
      {:jiffy, "~> 0.14.7"},
      {:p1_oauth2, "~> 0.6.1"},
-     {:distillery, "~> 1.0"},
+     {:distillery, "~> 2.0"},
      {:pkix, "~> 1.0"},
      {:ex_doc, ">= 0.0.0", only: :dev},
      {:eimp, "~> 1.0"},

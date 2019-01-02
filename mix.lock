@@ -1,7 +1,8 @@
 %{
+  "artificery": {:hex, :artificery, "0.2.6", "f602909757263f7897130cbd006b0e40514a541b148d366ad65b89236b93497a", [:mix], [], "hexpm"},
   "base64url": {:hex, :base64url, "0.0.1", "36a90125f5948e3afd7be97662a1504b934dd5dac78451ca6e9abf85a10286be", [:rebar], [], "hexpm"},
   "cache_tab": {:hex, :cache_tab, "1.0.17", "0020e1036d7074d83a71be28b329ceb3e7f9d41cc5a8529b06c32ce4d8ee4995", [:rebar3], [{:p1_utils, "1.0.13", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
-  "distillery": {:hex, :distillery, "1.5.5", "c6132d5c0152bdce6850fb6c942d58f1971b169b6965d908dc4e8767cfa51a95", [:mix], [], "hexpm"},
+  "distillery": {:hex, :distillery, "2.0.12", "6e78fe042df82610ac3fa50bd7d2d8190ad287d120d3cd1682d83a44e8b34dfb", [:mix], [{:artificery, "~> 0.2", [hex: :artificery, repo: "hexpm", optional: false]}], "hexpm"},
   "earmark": {:hex, :earmark, "1.3.0", "17f0c38eaafb4800f746b457313af4b2442a8c2405b49c645768680f900be603", [:mix], [], "hexpm"},
   "eimp": {:hex, :eimp, "1.0.9", "daf0d2904be3ef5e4128d946e158113cdb4d52555023746d29b83ce86b531f3c", [:rebar3], [{:p1_utils, "1.0.13", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "epam": {:hex, :epam, "1.0.4", "2a5e40cbf9b2cf41df515782894c3b33c81b8ad32fff2fc847c3f725071dfaed", [:rebar3], [], "hexpm"},
