@@ -103,11 +103,8 @@ defmodule Ejabberd.Mixfile do
                          {config(:riak), {:riakc, "~> 2.4"}},
                          {config(:redis), {:eredis, "~> 1.0"}},
                          {config(:zlib), {:ezlib, "~> 1.0"}},
-                         {config(:iconv), {:iconv, "~> 1.0"}},
                          {config(:pam), {:epam, "~> 1.0"}},
-                         {config(:tools), {:luerl, "~> 0.3.1"}},
-                         {config(:tools), {:meck, "~> 0.8.4"}},
-                         {config(:tools), {:moka, github: "processone/moka", tag: "1.0.5c"}}], do:
+                         {config(:tools), {:luerl, "~> 0.3.1"}}], do:
       dep
   end
 
@@ -116,8 +113,7 @@ defmodule Ejabberd.Mixfile do
                          {config(:mysql), :p1_mysql},
                          {config(:pgsql), :p1_pgsql},
                          {config(:sqlite), :sqlite3},
-                         {config(:zlib), :ezlib},
-                         {config(:iconv), :iconv}], do:
+                         {config(:zlib), :ezlib}], do:
       app
   end
 
@@ -135,7 +131,7 @@ defmodule Ejabberd.Mixfile do
   defp vars do
     case :file.consult("vars.config") do
       {:ok,config} -> config
-      _ -> [zlib: true, iconv: false]
+      _ -> [zlib: true]
     end
   end
 
