@@ -117,8 +117,8 @@ gen_decode(Dev, Data, VerId) ->
 		   "  {Children, Rest4} = decode_children(Rest3, PNs, J1, J2),~n"
 		   "  {{xmlel, Name, Attrs, Children}, Rest4};~n", []),
     io:format(Dev, "decode_child(<<3:8, Rest/binary>>, PNs, J1, J2) ->~n"
-		   "  {Name, Rest2} = decode_string(Rest),~n"
-		   "  {Ns, Rest3} = decode_string(Rest2),~n"
+		   "  {Ns, Rest2} = decode_string(Rest),~n"
+		   "  {Name, Rest3} = decode_string(Rest2),~n"
 		   "  {Attrs, Rest4} = decode_attrs(Rest3),~n"
 		   "  {Children, Rest5} = decode_children(Rest4, Ns, J1, J2),~n"
 		   "  {{xmlel, Name, add_ns(PNs, Ns, Attrs), Children}, Rest5};~n", []),
