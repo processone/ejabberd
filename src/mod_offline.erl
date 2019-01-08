@@ -101,6 +101,8 @@
 -callback remove_all_messages(binary(), binary()) -> {atomic, any()}.
 -callback count_messages(binary(), binary()) -> non_neg_integer().
 
+-optional_callbacks([remove_expired_messages/1, remove_old_messages/2]).
+
 depends(_Host, _Opts) ->
     [].
 
@@ -551,12 +553,18 @@ privacy_check_packet(#{lserver := LServer} = State, Pkt, Dir) ->
 remove_expired_messages(Server) ->
     LServer = jid:nameprep(Server),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:remove_expired_messages(LServer).
+    case erlang:function_exported(Mod, remove_expired_messages, 1) of
+	true -> Mod:remove_expired_messages(LServer);
+	false -> erlang:error(not_implemented)
+    end.
 
 remove_old_messages(Days, Server) ->
     LServer = jid:nameprep(Server),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:remove_old_messages(Days, LServer).
+    case erlang:function_exported(Mod, remove_old_messages, 2) of
+	true -> Mod:remove_old_messages(Days, LServer);
+	false -> erlang:error(not_implemented)
+    end.
 
 -spec remove_user(binary(), binary()) -> ok.
 remove_user(User, Server) ->
