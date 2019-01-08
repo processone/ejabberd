@@ -255,7 +255,7 @@ publish_data(JID, Data) ->
 			       {access_model, whitelist}],
 		    case mod_pubsub:publish_item(
 			   LBJID, LServer, ?NS_STORAGE_BOOKMARKS, JID,
-			   <<>>, [El], PubOpts, all) of
+			   <<"current">>, [El], PubOpts, all) of
 			{result, _} -> ok;
 			{error, _} = Err -> Err
 		    end
