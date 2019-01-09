@@ -305,7 +305,7 @@ make_xhtml(Els, Host, Node, Lang, JID) ->
 			     #xmlel{name = <<"script">>,
 				    attrs =
 					[{<<"src">>,
-					  <<Base/binary, "/additions.js">>},
+					  <<Base/binary, "additions.js">>},
 					 {<<"type">>, <<"text/javascript">>}],
 				    children = [?C(<<" ">>)]},
 			     #xmlel{name = <<"link">>,
