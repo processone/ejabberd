@@ -65,13 +65,13 @@ init_per_suite(Config) ->
 start_ejabberd(Config) ->
     case proplists:get_value(backends, Config) of
         all ->
-            ok = application:start(ejabberd, transient);
+            {ok, _} = application:ensure_all_started(ejabberd, transient);
         Backends when is_list(Backends) ->
             Hosts = lists:map(fun(Backend) -> Backend ++ ".localhost" end, Backends),
             application:load(ejabberd),
             AllHosts = Hosts ++ ["localhost"],    %% We always need localhost for the generic no_db tests
             application:set_env(ejabberd, hosts, AllHosts),
-            ok = application:start(ejabberd, transient)
+            {ok, _} = application:ensure_all_started(ejabberd, transient)
     end.
 
 end_per_suite(_Config) ->
