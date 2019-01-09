@@ -39,9 +39,7 @@
 
 start(normal, _Args) ->
     {T1, _} = statistics(wall_clock),
-    ejabberd_logger:start(),
     write_pid_file(),
-    start_apps(),
     start_elixir_application(),
     ejabberd:check_app(ejabberd),
     setup_if_elixir_conf_used(),
@@ -147,18 +145,6 @@ file_queue_init() ->
 		       Path
 	       end,
     p1_queue:start(QueueDir).
-
-start_apps() ->
-    crypto:start(),
-    ejabberd:start_app(sasl),
-    ejabberd:start_app(ssl),
-    ejabberd:start_app(p1_utils),
-    ejabberd:start_app(fast_yaml),
-    ejabberd:start_app(fast_tls),
-    ejabberd:start_app(pkix),
-    ejabberd:start_app(xmpp),
-    ejabberd:start_app(cache_tab),
-    ejabberd:start_app(eimp).
 
 setup_if_elixir_conf_used() ->
   case ejabberd_config:is_using_elixir_config() of

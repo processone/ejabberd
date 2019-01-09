@@ -5,7 +5,7 @@
   {vsn, "@PACKAGE_VERSION@"},
   {modules, []},
   {registered, []},
-  {applications, [kernel, stdlib]},
+  {applications, [kernel, stdlib, crypto, sasl, ssl, p1_utils, fast_yaml, fast_tls, pkix, xmpp, cache_tab, eimp]},
   {env, [{enabled_backends, [@enabled_backends@]}]},
   {mod, {ejabberd_app, []}}]}.
 
