@@ -39,6 +39,7 @@
 
 start(normal, _Args) ->
     {T1, _} = statistics(wall_clock),
+    ejabberd_logger:start(),
     write_pid_file(),
     start_elixir_application(),
     ejabberd:check_app(ejabberd),
