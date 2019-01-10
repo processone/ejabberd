@@ -100,7 +100,7 @@
     room                    = <<"">> :: binary(),
     host                    = <<"">> :: binary(),
     server_host             = <<"">> :: binary(),
-    access                  = {none,none,none,none} :: {atom(), atom(), atom(), atom()},
+    access                  = {none,none,none,none,none} :: {atom(), atom(), atom(), atom(), atom()},
     jid                     = #jid{} :: jid(),
     config                  = #config{} :: config(),
     users                   = #{} :: map(),
