@@ -604,6 +604,7 @@ create_room_with_opts(Name1, Host1, ServerHost, CustomRoomOpts) ->
     AcCreate = gen_mod:get_module_opt(ServerHost, mod_muc, access_create),
     AcAdmin = gen_mod:get_module_opt(ServerHost, mod_muc, access_admin),
     AcPer = gen_mod:get_module_opt(ServerHost, mod_muc, access_persistent),
+    AcMam = gen_mod:get_module_opt(ServerHost, mod_muc, access_mam),
     HistorySize = gen_mod:get_module_opt(ServerHost, mod_muc, history_size),
     RoomShaper = gen_mod:get_module_opt(ServerHost, mod_muc, room_shaper),
     QueueType = gen_mod:get_module_opt(ServerHost, mod_muc, queue_type),
@@ -615,7 +616,7 @@ create_room_with_opts(Name1, Host1, ServerHost, CustomRoomOpts) ->
 	    {ok, Pid} = mod_muc_room:start(
 			  Host,
 			  ServerHost,
-			  {Access, AcCreate, AcAdmin, AcPer},
+			  {Access, AcCreate, AcAdmin, AcPer, AcMam},
 			  Name,
 			  HistorySize,
 			  RoomShaper,

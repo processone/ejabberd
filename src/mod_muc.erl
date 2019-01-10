@@ -354,6 +354,7 @@ init_state(Host, Opts) ->
     AccessCreate = gen_mod:get_opt(access_create, Opts),
     AccessAdmin = gen_mod:get_opt(access_admin, Opts),
     AccessPersistent = gen_mod:get_opt(access_persistent, Opts),
+    AccessMam = gen_mod:get_opt(access_mam, Opts),
     HistorySize = gen_mod:get_opt(history_size, Opts),
     MaxRoomsDiscoItems = gen_mod:get_opt(max_rooms_discoitems, Opts),
     DefRoomOpts = gen_mod:get_opt(default_room_options, Opts),
@@ -361,7 +362,7 @@ init_state(Host, Opts) ->
     RoomShaper = gen_mod:get_opt(room_shaper, Opts),
     #state{hosts = MyHosts,
 	   server_host = Host,
-	   access = {Access, AccessCreate, AccessAdmin, AccessPersistent},
+	   access = {Access, AccessCreate, AccessAdmin, AccessPersistent, AccessMam},
 	   default_room_opts = DefRoomOpts,
 	   queue_type = QueueType,
 	   history_size = HistorySize,
@@ -392,7 +393,7 @@ unregister_iq_handlers(Host) ->
 
 do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
 	 From, To, Packet, DefRoomOpts, _MaxRoomsDiscoItems, QueueType) ->
-    {AccessRoute, _AccessCreate, _AccessAdmin, _AccessPersistent} = Access,
+    {AccessRoute, _AccessCreate, _AccessAdmin, _AccessPersistent, _AccessMam} = Access,
     case acl:match_rule(ServerHost, AccessRoute, From) of
 	allow ->
 	    do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
@@ -411,7 +412,7 @@ do_route1(_Host, _ServerHost, _Access, _HistorySize, _RoomShaper,
 do_route1(Host, ServerHost, Access, _HistorySize, _RoomShaper,
 	  From, #jid{luser = <<"">>, lresource = <<"">>} = _To,
 	  #message{lang = Lang, body = Body, type = Type} = Packet, _, _) ->
-    {_AccessRoute, _AccessCreate, AccessAdmin, _AccessPersistent} = Access,
+    {_AccessRoute, _AccessCreate, AccessAdmin, _AccessPersistent, _AccessMam} = Access,
     if Type == error ->
 	    ok;
        true ->
@@ -432,7 +433,7 @@ do_route1(_Host, _ServerHost, _Access, _HistorySize, _RoomShaper,
     ejabberd_router:route_error(Packet, Err);
 do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 	  From, To, Packet, DefRoomOpts, QueueType) ->
-    {_AccessRoute, AccessCreate, _AccessAdmin, _AccessPersistent} = Access,
+    {_AccessRoute, AccessCreate, _AccessAdmin, _AccessPersistent, _AccessMam} = Access,
     {Room, _, Nick} = jid:tolower(To),
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
     case RMod:find_online_room(ServerHost, Room, Host) of
@@ -884,6 +885,8 @@ mod_opt_type(access_create) ->
     fun acl:access_rules_validator/1;
 mod_opt_type(access_persistent) ->
     fun acl:access_rules_validator/1;
+mod_opt_type(access_mam) ->
+    fun acl:access_rules_validator/1;
 mod_opt_type(access_register) ->
     fun acl:access_rules_validator/1;
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
@@ -992,6 +995,7 @@ mod_options(Host) ->
      {access_admin, none},
      {access_create, all},
      {access_persistent, all},
+     {access_mam, all},
      {access_register, all},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {ram_db_type, ejabberd_config:default_ram_db(Host, ?MODULE)},
