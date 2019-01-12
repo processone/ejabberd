@@ -98,7 +98,10 @@ stop_host(Host) ->
 
 -spec reload_host(binary()) -> ok.
 reload_host(Host) ->
-    ejabberd_sql_sup:reload(Host).
+    case needs_sql(Host) of
+	true -> ejabberd_sql_sup:reload(Host);
+	false -> ok
+    end.
 
 %% Returns {true, App} if we have configured sql for the given host
 needs_sql(Host) ->
