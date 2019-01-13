@@ -1,6 +1,6 @@
-# Version NEXT
+# Version 19.02
 
-*
+* New acl "access_preferences" for mam preferences
 
 # Version 18.12
 
