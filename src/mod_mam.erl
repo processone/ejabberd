@@ -113,8 +113,6 @@ start(Host, Opts) ->
 			       disco_sm_features, 50),
 	    ejabberd_hooks:add(remove_user, Host, ?MODULE,
 			       remove_user, 50),
-	    ejabberd_hooks:add(remove_room, Host, ?MODULE,
-			       remove_room, 50),
 	    ejabberd_hooks:add(get_room_config, Host, ?MODULE,
 			       get_room_config, 50),
 	    ejabberd_hooks:add(set_room_option, Host, ?MODULE,
@@ -126,10 +124,20 @@ start(Host, Opts) ->
 		false ->
 		    ok
 	    end,
+	    case gen_mod:get_opt(clear_archive_on_room_destroy, Opts) of
+		true ->
+		    ejabberd_hooks:add(remove_room, Host, ?MODULE,
+				       remove_room, 50);
+		false ->
+		    ok
+	    end,
 	    ejabberd_commands:register_commands(get_commands_spec());
 	Err ->
 	    Err
     end.
+
+
+
 
 use_cache(Mod, Host) ->
     case erlang:function_exported(Mod, use_cache, 2) of
@@ -180,8 +188,6 @@ stop(Host) ->
 			  disco_sm_features, 50),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE,
 			  remove_user, 50),
-    ejabberd_hooks:delete(remove_room, Host, ?MODULE,
-			  remove_room, 50),
     ejabberd_hooks:delete(get_room_config, Host, ?MODULE,
 			  get_room_config, 50),
     ejabberd_hooks:delete(set_room_option, Host, ?MODULE,
@@ -190,6 +196,13 @@ stop(Host) ->
 	true ->
 	    ejabberd_hooks:delete(message_is_archived, Host, ?MODULE,
 				  message_is_archived, 50);
+	false ->
+	    ok
+    end,
+    case gen_mod:get_module_opt(Host, ?MODULE, clear_archive_on_room_destroy) of
+	true ->
+	    ejabberd_hooks:delete(remove_room, Host, ?MODULE,
+				  remove_room, 50);
 	false ->
 	    ok
     end,
@@ -1211,6 +1224,8 @@ mod_opt_type(default) ->
 	(roster) -> roster
     end;
 mod_opt_type(request_activates_archiving) ->
+    fun (B) when is_boolean(B) -> B end;
+mod_opt_type(clear_archive_on_room_destroy) ->
     fun (B) when is_boolean(B) -> B end.
 
 mod_options(Host) ->
@@ -1218,6 +1233,7 @@ mod_options(Host) ->
      {default, never},
      {request_activates_archiving, false},
      {compress_xml, false},
+     {clear_archive_on_room_destroy, true},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {use_cache, ejabberd_config:use_cache(Host)},
      {cache_size, ejabberd_config:cache_size(Host)},
