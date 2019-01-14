@@ -24,7 +24,7 @@
 
 %% API
 -compile(export_all).
--import(suite, [my_jid/1, is_feature_advertised/3,
+-import(suite, [my_jid/1, server_jid/1, is_feature_advertised/3,
 		send_recv/2, disconnect/1]).
 
 -include("suite.hrl").
@@ -43,9 +43,15 @@ single_cases() ->
       single_test(test_published)]}.
 
 test_features(Config) ->
+    Server = jid:encode(server_jid(Config)),
     MyJID = my_jid(Config),
-    true = is_feature_advertised(Config, ?NS_BOOKMARKS_CONVERSION_0,
-				 jid:remove_resource(MyJID)),
+    case gen_mod:is_loaded(Server, mod_pubsub) of
+	true ->
+	    true = is_feature_advertised(Config, ?NS_BOOKMARKS_CONVERSION_0,
+					 jid:remove_resource(MyJID));
+	false ->
+	    ok
+    end,
     disconnect(Config).
 
 test_no_namespace(Config) ->
@@ -73,20 +79,26 @@ test_set_get(Config) ->
     disconnect(Config).
 
 test_published(Config) ->
-    Storage = bookmark_storage(),
-    Node = xmpp:get_ns(Storage),
-    #iq{type = result,
-	sub_els = [#pubsub{items = #ps_items{node = Node, items = Items}}]} =
-	send_recv(
-	  Config,
-	  #iq{type = get,
-	      sub_els = [#pubsub{items = #ps_items{node = Node}}]}),
-    [#ps_item{sub_els = [StorageXMLIn]}] = Items,
-    Storage = xmpp:decode(StorageXMLIn),
-    #iq{type = result, sub_els = []} =
-	send_recv(Config,
-		  #iq{type = set,
-		      sub_els = [#pubsub_owner{delete = {Node, <<>>}}]}),
+    Server = jid:encode(server_jid(Config)),
+    case gen_mod:is_loaded(Server, mod_pubsub) of
+	true ->
+	    Storage = bookmark_storage(),
+	    Node = xmpp:get_ns(Storage),
+	    #iq{type = result,
+		sub_els = [#pubsub{items = #ps_items{node = Node, items = Items}}]} =
+		send_recv(
+		  Config,
+		  #iq{type = get,
+		      sub_els = [#pubsub{items = #ps_items{node = Node}}]}),
+	    [#ps_item{sub_els = [StorageXMLIn]}] = Items,
+	    Storage = xmpp:decode(StorageXMLIn),
+	    #iq{type = result, sub_els = []} =
+		send_recv(Config,
+			  #iq{type = set,
+			      sub_els = [#pubsub_owner{delete = {Node, <<>>}}]});
+	false ->
+	    ok
+    end,
     disconnect(Config).
 
 %%%===================================================================

@@ -377,7 +377,7 @@ recv_fin(Config, I, QueryID, NS, IsComplete) when NS == ?NS_MAM_1; NS == ?NS_MAM
 			    complete = Complete,
 			    rsm = RSM}]} = recv_iq(Config),
     ct:comment("Checking if complete is ~s", [IsComplete]),
-    Complete = IsComplete,
+    ?match(IsComplete, Complete),
     RSM;
 recv_fin(Config, I, QueryID, ?NS_MAM_TMP = NS, _IsComplete) ->
     ct:comment("Receiving fin iq for namespace '~s'", [NS]),
@@ -394,7 +394,7 @@ recv_fin(Config, _, QueryID, ?NS_MAM_0 = NS, IsComplete) ->
 	     complete = Complete,
 	     rsm = RSM} = xmpp:get_subtag(FinMsg, #mam_fin{xmlns = NS}),
     ct:comment("Checking if complete is ~s", [IsComplete]),
-    Complete = IsComplete,
+    ?match(IsComplete, Complete),
     RSM.
 
 send_messages_to_room(Config, Range) ->
@@ -417,7 +417,6 @@ recv_messages_from_room(Config, Range) ->
     MyNickJID = jid:replace_resource(Room, MyNick),
     MyJID = my_jid(Config),
     QID = p1_rand:get_string(),
-    Count = length(Range),
     I = send(Config, #iq{type = set, to = Room,
 			 sub_els = [#mam_query{xmlns = ?NS_MAM_2, id = QID}]}),
     lists:foreach(
@@ -440,8 +439,9 @@ recv_messages_from_room(Config, Range) ->
     #iq{from = Room, id = I, type = result,
 	sub_els = [#mam_fin{xmlns = ?NS_MAM_2,
 			    id = QID,
-			    rsm = #rsm_set{count = Count},
-			    complete = true}]} = recv_iq(Config).
+			    rsm = RSM,
+			    complete = true}]} = recv_iq(Config),
+    match_rsm_count(RSM, length(Range)).
 
 query_all(Config, From, To) ->
     lists:foreach(
@@ -454,7 +454,8 @@ query_all(Config, From, To, NS) ->
     Range = lists:seq(1, 5),
     ID = send_query(Config, #mam_query{xmlns = NS, id = QID}),
     recv_archived_messages(Config, From, To, QID, Range),
-    #rsm_set{count = 5} = recv_fin(Config, ID, QID, NS, _Complete = true).
+    RSM = recv_fin(Config, ID, QID, NS, _Complete = true),
+    match_rsm_count(RSM, 5).
 
 query_with(Config, From, To) ->
     lists:foreach(
@@ -480,7 +481,8 @@ query_with(Config, From, To, NS) ->
 		      end,
 	      ID = send_query(Config, Query),
 	      recv_archived_messages(Config, From, To, QID, Range),
-	      #rsm_set{count = 5} = recv_fin(Config, ID, QID, NS, true)
+	      RSM = recv_fin(Config, ID, QID, NS, true),
+	      match_rsm_count(RSM, 5)
       end, [Peer, BarePeer]).
 
 query_rsm_max(Config, From, To) ->
@@ -498,7 +500,8 @@ query_rsm_max(Config, From, To, NS) ->
 	      ID = send_query(Config, Query),
 	      recv_archived_messages(Config, From, To, QID, Range),
 	      IsComplete = Max >= 5,
-	      #rsm_set{count = 5} = recv_fin(Config, ID, QID, NS, IsComplete)
+	      RSM = recv_fin(Config, ID, QID, NS, IsComplete),
+	      match_rsm_count(RSM, 5)
       end, lists:seq(0, 6)).
 
 query_rsm_after(Config, From, To) ->
@@ -517,8 +520,9 @@ query_rsm_after(Config, From, To, NS) ->
 				 rsm = #rsm_set{'after' = After}},
 	      ID = send_query(Config, Query),
 	      recv_archived_messages(Config, From, To, QID, Range),
-	      #rsm_set{count = 5, first = First} =
+	      RSM = #rsm_set{first = First} =
 		  recv_fin(Config, ID, QID, NS, true),
+	      match_rsm_count(RSM, 5),
 	      First
       end, #rsm_first{data = undefined},
       [lists:seq(N, 5) || N <- lists:seq(1, 6)]).
@@ -539,7 +543,15 @@ query_rsm_before(Config, From, To, NS) ->
 				 rsm = #rsm_set{before = Before}},
 	      ID = send_query(Config, Query),
 	      recv_archived_messages(Config, From, To, QID, Range),
-	      #rsm_set{count = 5, last = Last} =
+	      RSM = #rsm_set{last = Last} =
 		  recv_fin(Config, ID, QID, NS, true),
+	      match_rsm_count(RSM, 5),
 	      Last
       end, <<"">>, lists:reverse([lists:seq(1, N) || N <- lists:seq(0, 5)])).
+
+match_rsm_count(#rsm_set{count = undefined}, _) ->
+    %% The backend doesn't support counting
+    ok;
+match_rsm_count(#rsm_set{count = Count1}, Count2) ->
+    ct:comment("Checking if RSM 'count' is ~p", [Count2]),
+    ?match(Count2, Count1).
