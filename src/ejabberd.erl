@@ -45,6 +45,7 @@
 start() ->
     %%ejabberd_cover:start(),
     ejabberd_logger:start(),
+    ejabberd_mnesia:start(),
     application:ensure_all_started(ejabberd).
 
 stop() ->
