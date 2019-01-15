@@ -987,11 +987,15 @@ get_status_list(Host, Status_required) ->
 	apply(Fstatus, [Status, Status_required])].
 
 connected_users_info() ->
-    lists:map(
+    lists:filtermap(
       fun({U, S, R}) ->
-	    Info = user_session_info(U, S, R),
-	    Jid = jid:encode(jid:make(U, S, R)),
-	    erlang:insert_element(1, Info, Jid)
+	    case user_session_info(U, S, R) of
+		offline ->
+		    false;
+		Info ->
+		    Jid = jid:encode(jid:make(U, S, R)),
+		    {true, erlang:insert_element(1, Info, Jid)}
+	    end
       end,
       ejabberd_sm:dirty_get_sessions_list()).
 
@@ -1054,23 +1058,31 @@ set_presence(User, Host, Resource, Type, Show, Status, Priority0) ->
     ejabberd_c2s:set_presence(Ref, Pres).
 
 user_sessions_info(User, Host) ->
-    [user_session_info(User, Host, Resource) ||
-    Resource <- ejabberd_sm:get_user_resources(User, Host)].
+    lists:filtermap(fun(Resource) ->
+			    case user_session_info(User, Host, Resource) of
+				offline -> false;
+				Info -> {true, Info}
+			    end
+		    end, ejabberd_sm:get_user_resources(User, Host)).
 
 user_session_info(User, Host, Resource) ->
     CurrentSec = calendar:datetime_to_gregorian_seconds({date(), time()}),
-    Info = ejabberd_sm:get_user_info(User, Host, Resource),
-    Now = proplists:get_value(ts, Info),
-    Pid = proplists:get_value(pid, Info),
-    {_U, _Resource, Status, StatusText} = get_presence(Pid),
-    Priority = proplists:get_value(priority, Info),
-    Conn = proplists:get_value(conn, Info),
-    {Ip, Port} = proplists:get_value(ip, Info),
-    IPS = inet_parse:ntoa(Ip),
-    NodeS = atom_to_list(node(Pid)),
-    Uptime = CurrentSec - calendar:datetime_to_gregorian_seconds(
-	    calendar:now_to_local_time(Now)),
-    {atom_to_list(Conn), IPS, Port, num_prio(Priority), NodeS, Uptime, Status, Resource, StatusText}.
+    case ejabberd_sm:get_user_info(User, Host, Resource) of
+	offline ->
+	    offline;
+	Info ->
+	    Now = proplists:get_value(ts, Info),
+	    Pid = proplists:get_value(pid, Info),
+	    {_U, _Resource, Status, StatusText} = get_presence(Pid),
+	    Priority = proplists:get_value(priority, Info),
+	    Conn = proplists:get_value(conn, Info),
+	    {Ip, Port} = proplists:get_value(ip, Info),
+	    IPS = inet_parse:ntoa(Ip),
+	    NodeS = atom_to_list(node(Pid)),
+	    Uptime = CurrentSec - calendar:datetime_to_gregorian_seconds(
+				    calendar:now_to_local_time(Now)),
+	    {atom_to_list(Conn), IPS, Port, num_prio(Priority), NodeS, Uptime, Status, Resource, StatusText}
+    end.
 
 
 %%%
