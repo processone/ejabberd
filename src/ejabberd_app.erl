@@ -80,6 +80,8 @@ start_included_apps() ->
 	       ok;
 	   (lager)->
 	       ok;
+	   (os_mon)->
+	       ok;
 	   (App) ->
 	       application:ensure_all_started(App)
 	end, Apps).
