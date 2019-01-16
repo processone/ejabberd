@@ -69,7 +69,7 @@ defmodule Ejabberd.Mixfile do
     [{:lager, "~> 3.6.0"},
      {:p1_utils, "~> 1.0"},
      {:fast_xml, "~> 1.1"},
-     {:xmpp, "~> 1.2"},
+     {:xmpp, "~> 1.3.0"},
      {:cache_tab, "~> 1.0"},
      {:stringprep, "~> 1.0"},
      {:fast_yaml, "~> 1.0"},
