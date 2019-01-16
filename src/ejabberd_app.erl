@@ -41,6 +41,7 @@ start(normal, _Args) ->
     {T1, _} = statistics(wall_clock),
     ejabberd_logger:start(),
     write_pid_file(),
+    start_included_apps(),
     start_elixir_application(),
     ejabberd:check_app(ejabberd),
     setup_if_elixir_conf_used(),
@@ -71,6 +72,17 @@ start(normal, _Args) ->
     end;
 start(_, _) ->
     {error, badarg}.
+
+start_included_apps() ->
+    {ok, Apps} = application:get_key(ejabberd, included_applications),
+    lists:foreach(
+	fun(mnesia) ->
+	       ok;
+	   (lager)->
+	       ok;
+	   (App) ->
+	       application:ensure_all_started(App)
+	end, Apps).
 
 %% Prepare the application for termination.
 %% This function is called when an application is about to be stopped,

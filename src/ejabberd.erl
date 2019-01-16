@@ -43,14 +43,10 @@
 -include("logger.hrl").
 
 start() ->
-    %%ejabberd_cover:start(),
-    ejabberd_logger:start(),
-    ejabberd_mnesia:start(),
     application:ensure_all_started(ejabberd).
 
 stop() ->
     application:stop(ejabberd).
-    %%ejabberd_cover:stop().
 
 halt() ->
     application:stop(lager),
