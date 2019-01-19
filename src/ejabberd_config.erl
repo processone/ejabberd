@@ -1449,7 +1449,7 @@ opt_type(hosts) ->
 	    [iolist_to_binary(H) || H <- L]
     end;
 opt_type(language) ->
-    fun iolist_to_binary/1;
+    fun xmpp_lang:check/1;
 opt_type(max_fsm_queue) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 opt_type(default_db) ->

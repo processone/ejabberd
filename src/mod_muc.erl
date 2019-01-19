@@ -988,7 +988,7 @@ mod_opt_type({default_room_options, presence_broadcast}) ->
 	      end, L)
     end;
 mod_opt_type({default_room_options, lang}) ->
-    fun iolist_to_binary/1.
+    fun xmpp_lang:check/1.
 
 mod_options(Host) ->
     [{access, all},
