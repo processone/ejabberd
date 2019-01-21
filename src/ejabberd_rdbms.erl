@@ -99,7 +99,7 @@ stop_host(Host) ->
 -spec reload_host(binary()) -> ok.
 reload_host(Host) ->
     case needs_sql(Host) of
-	true -> ejabberd_sql_sup:reload(Host);
+	{true, _} -> ejabberd_sql_sup:reload(Host);
 	false -> ok
     end.
 
