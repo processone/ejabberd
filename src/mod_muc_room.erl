@@ -728,9 +728,12 @@ terminate(Reason, _StateName, StateData) ->
 		  tab_remove_online_user(LJID, StateData)
 	  end, [], get_users_and_subscribers(StateData)),
 	add_to_log(room_existence, stopped, StateData),
-    after
 	mod_muc:room_destroyed(StateData#state.host, StateData#state.room, self(),
 			       StateData#state.server_host)
+    catch ?EX_RULE(E, R, St) ->
+	    mod_muc:room_destroyed(StateData#state.host, StateData#state.room, self(),
+				   StateData#state.server_host),
+	    ?ERROR_MSG("Got exception on room termination: ~p", [{E, {R, ?EX_STACK(St)}}])
     end,
     ok.
 
