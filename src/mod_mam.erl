@@ -41,7 +41,7 @@
 	 delete_old_messages/2, get_commands_spec/0, msg_to_el/4,
 	 get_room_config/4, set_room_option/3, offline_message/1, export/1,
 	 mod_options/1, remove_mam_for_user_with_peer/3, remove_mam_for_user/2,
-	 is_empty_for_user/2, is_empty_for_room/3]).
+	 is_empty_for_user/2, is_empty_for_room/3, check_create_room/4]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -132,7 +132,8 @@ start(Host, Opts) ->
 		    ejabberd_hooks:add(remove_room, Host, ?MODULE,
 				       remove_room, 50);
 		false ->
-		    ok
+		    ejabberd_hooks:add(check_create_room, Host, ?MODULE,
+				       check_create_room, 50)
 	    end,
 	    ejabberd_commands:register_commands(get_commands_spec());
 	Err ->
@@ -207,7 +208,8 @@ stop(Host) ->
 	    ejabberd_hooks:delete(remove_room, Host, ?MODULE,
 				  remove_room, 50);
 	false ->
-	    ok
+	    ejabberd_hooks:delete(check_create_room, Host, ?MODULE,
+				  check_create_room, 50)
     end,
     case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
         false ->
@@ -588,6 +590,10 @@ is_empty_for_room(LServer, Name, Host) ->
     LHost = jid:nameprep(Host),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:is_empty_for_room(LServer, LName, LHost).
+
+-spec check_create_room(boolean(), binary(), binary(), binary()) -> boolean().
+check_create_room(Acc, ServerHost, RoomID, Host) ->
+    Acc and is_empty_for_room(ServerHost, RoomID, Host).
 
 %%%===================================================================
 %%% Internal functions

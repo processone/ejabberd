@@ -65,7 +65,8 @@
 	 iq_set_register_info/5,
 	 count_online_rooms_by_user/3,
 	 get_online_rooms_by_user/3,
-	 can_use_nick/4]).
+	 can_use_nick/4,
+	 check_create_room/4]).
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
@@ -112,10 +113,14 @@
 %% API
 %%====================================================================
 start(Host, Opts) ->
+    ejabberd_hooks:add(check_create_room, Host, ?MODULE,
+               check_create_room, 50),
     gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
     Rooms = shutdown_rooms(Host),
+    ejabberd_hooks:delete(check_create_room, Host, ?MODULE,
+               check_create_room, 50),
     gen_mod:stop_child(?MODULE, Host),
     {wait, Rooms}.
 
@@ -442,7 +447,9 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 		true ->
 		    case check_user_can_create_room(
 			   ServerHost, AccessCreate, From, Room) and
-			check_create_roomid(ServerHost, Room) of
+			ejabberd_hooks:run_fold(check_create_room,
+					ServerHost, true,
+					[ServerHost, Room, Host]) of
 			true ->
 			    {ok, Pid} = start_new_room(
 					  Host, ServerHost, Access,
@@ -611,9 +618,10 @@ check_user_can_create_room(ServerHost, AccessCreate,
       _ -> false
     end.
 
-check_create_roomid(ServerHost, RoomID) ->
+check_create_room(Acc, ServerHost, RoomID, _Host) ->
     Max = gen_mod:get_module_opt(ServerHost, ?MODULE, max_room_id),
     Regexp = gen_mod:get_module_opt(ServerHost, ?MODULE, regexp_room_id),
+    Acc and
     (byte_size(RoomID) =< Max) and
     (re:run(RoomID, Regexp, [unicode, {capture, none}]) == match).
 
