@@ -30,7 +30,8 @@
 
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
-	 extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/6, export/1, remove_from_archive/3]).
+	 extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/6, export/1, remove_from_archive/3,
+	 is_empty_for_user/2, is_empty_for_room/3]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("xmpp.hrl").
@@ -263,6 +264,23 @@ export(_Server) ->
          (_Host, _R) ->
               []
       end}].
+
+is_empty_for_user(LUser, LServer) ->
+    case ejabberd_sql:sql_query(
+	   LServer,
+	   ?SQL("select @(count(*))d from archive"
+                " where username=%(LUser)s and %(LServer)H")) of
+		{selected, [{Res}]} ->
+			case Res of
+				0 -> true;
+				_ -> false
+			end;
+		_ -> false
+	end.
+
+is_empty_for_room(LServer, LName, LHost) ->
+    LUser = jid:encode({LName, LHost, <<>>}),
+    is_empty_for_user(LUser, LServer).
 
 %%%===================================================================
 %%% Internal functions

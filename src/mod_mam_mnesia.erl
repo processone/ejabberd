@@ -28,7 +28,8 @@
 
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
-	 extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/6, remove_from_archive/3]).
+	 extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/6, remove_from_archive/3,
+	 is_empty_for_user/2, is_empty_for_room/3]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("xmpp.hrl").
@@ -197,6 +198,13 @@ select(_LServer, JidRequestor,
 		end, FilteredMsgs), IsComplete, Count},
     erlang:garbage_collect(),
     Result.
+
+is_empty_for_user(LUser, LServer) ->
+	not lists:member({LUser, LServer},
+		mnesia:dirty_all_keys(archive_msg)).
+
+is_empty_for_room(_LServer, LName, LHost) ->
+    is_empty_for_user(LName, LHost).
 
 %%%===================================================================
 %%% Internal functions

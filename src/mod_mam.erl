@@ -40,7 +40,8 @@
 	 muc_process_iq/2, muc_filter_message/3, message_is_archived/3,
 	 delete_old_messages/2, get_commands_spec/0, msg_to_el/4,
 	 get_room_config/4, set_room_option/3, offline_message/1, export/1,
-	 mod_options/1, remove_mam_for_user_with_peer/3, remove_mam_for_user/2]).
+	 mod_options/1, remove_mam_for_user_with_peer/3, remove_mam_for_user/2,
+	 is_empty_for_user/2, is_empty_for_room/3]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -72,6 +73,8 @@
 -callback use_cache(binary()) -> boolean().
 -callback cache_nodes(binary()) -> [node()].
 -callback remove_from_archive(binary(), binary(), jid() | none) -> ok | {error, any()}.
+-callback is_empty_for_user(binary(), binary()) -> boolean().
+-callback is_empty_for_room(binary(), binary(), binary()) -> boolean().
 
 -optional_callbacks([use_cache/1, cache_nodes/1]).
 
@@ -571,6 +574,20 @@ delete_old_messages(_TypeBin, _Days) ->
 export(LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:export(LServer).
+
+-spec is_empty_for_user(binary(), binary()) -> boolean().
+is_empty_for_user(User, Server) ->
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    Mod:is_empty_for_user(LUser, LServer).
+
+-spec is_empty_for_room(binary(), binary(), binary()) -> boolean().
+is_empty_for_room(LServer, Name, Host) ->
+    LName = jid:nodeprep(Name),
+    LHost = jid:nameprep(Host),
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    Mod:is_empty_for_room(LServer, LName, LHost).
 
 %%%===================================================================
 %%% Internal functions
