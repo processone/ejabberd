@@ -130,11 +130,12 @@ init([]) ->
 handle_call({can_access, Cmd, CallerInfo}, _From, State) ->
     CallerModule = maps:get(caller_module, CallerInfo, none),
     Host = maps:get(caller_host, CallerInfo, global),
+    Tag = maps:get(tag, CallerInfo, none),
     {State2, Defs0} = get_definitions(State),
     Defs = maps:get(extra_permissions, CallerInfo, []) ++ Defs0,
     Res = lists:foldl(
 	fun({Name, _} = Def, none) ->
-	    case matches_definition(Def, Cmd, CallerModule, Host, CallerInfo) of
+	    case matches_definition(Def, Cmd, CallerModule, Tag, Host, CallerInfo) of
 		true ->
 		    ?DEBUG("Command '~p' execution allowed by rule '~s' (CallerInfo=~p)", [Cmd, Name, CallerInfo]),
 		    allow;
@@ -261,10 +262,10 @@ get_definitions(#state{definitions = none, fragments_generators = Gens} = State)
 	    end,
     {State#state{definitions = NDefs}, NDefs}.
 
-matches_definition({_Name, {From, Who, What}}, Cmd, Module, Host, CallerInfo) ->
+matches_definition({_Name, {From, Who, What}}, Cmd, Module, Tag, Host, CallerInfo) ->
     case What == all orelse lists:member(Cmd, What) of
 	true ->
-	    case From == [] orelse lists:member(Module, From) of
+	    case From == [] orelse lists:member(Module, From) orelse lists:member({tag, Tag}, From) of
 		true ->
 		    Scope = maps:get(oauth_scope, CallerInfo, none),
 		    lists:any(
@@ -347,13 +348,15 @@ parse_api_permission(Name, Args0) ->
 parse_from(_Name, Module) when is_atom(Module) ->
     [Module];
 parse_from(Name, Modules) when is_list(Modules) ->
-    lists:foreach(fun(Module) when is_atom(Module) ->
-	ok;
-		     (Val) ->
-			 report_error(<<"Invalid value '~p' used inside 'from' section for api_permission '~s'">>,
-				      [Val, Name])
-		  end, Modules),
-    Modules;
+    lists:map(
+	fun(Module) when is_atom(Module) ->
+	    Module;
+	   ([{tag, Tag}]) when is_binary(Tag) ->
+	       {tag, Tag};
+	   (Val) ->
+	       report_error(<<"Invalid value '~p' used inside 'from' section for api_permission '~s'">>,
+			    [Val, Name])
+	end, Modules);
 parse_from(Name, Val) ->
     report_error(<<"Invalid value '~p' used inside 'from' section for api_permission '~s'">>,
 		 [Val, Name]).

@@ -992,6 +992,8 @@ listen_opt_type(http_bind) ->
     fun(B) when is_boolean(B) -> B end;
 listen_opt_type(xmlrpc) ->
     fun(B) when is_boolean(B) -> B end;
+listen_opt_type(tag) ->
+    fun(B) when is_binary(B) -> B end;
 listen_opt_type(request_handlers) ->
     fun(Hs) ->
 	    Hs1 = lists:map(fun
@@ -1026,5 +1028,6 @@ listen_options() ->
      {http_bind, false},
      {xmlrpc, false},
      {request_handlers, []},
+     {tag, <<>>},
      {default_host, undefined},
      {custom_headers, []}].

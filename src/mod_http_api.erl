@@ -137,7 +137,7 @@ depends(_Host, _Opts) ->
 %% basic auth
 %% ----------
 
-extract_auth(#request{auth = HTTPAuth, ip = {IP, _}}) ->
+extract_auth(#request{auth = HTTPAuth, ip = {IP, _}, opts = Opts}) ->
     Info = case HTTPAuth of
             {SJID, Pass} ->
                 try jid:decode(SJID) of
@@ -163,13 +163,15 @@ extract_auth(#request{auth = HTTPAuth, ip = {IP, _}}) ->
         end,
     case Info of
 	Map when is_map(Map) ->
-	    Map#{caller_module => ?MODULE, ip => IP};
+	    Tag = proplists:get_value(tag, Opts, <<>>),
+	    Map#{caller_module => ?MODULE, ip => IP, tag => Tag};
 	_ ->
 	    ?DEBUG("Invalid auth data: ~p", [Info]),
 	    Info
     end;
-extract_auth(#request{ip = IP}) ->
-    #{ip => IP, caller_module => ?MODULE}.
+extract_auth(#request{ip = IP, opts = Opts}) ->
+    Tag = proplists:get_value(tag, Opts, <<>>),
+    #{ip => IP, caller_module => ?MODULE, tag => Tag}.
 
 %% ------------------
 %% command processing
