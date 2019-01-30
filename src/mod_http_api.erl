@@ -357,7 +357,10 @@ format_args(Args, ArgsFormat) ->
 				     {Args, []}, ArgsFormat),
     case ArgsRemaining of
       [] -> R;
-      L when is_list(L) -> exit({additional_unused_args, L})
+      L when is_list(L) ->
+	  throw({invalid_parameter,
+		 io_lib:format("Request have unknown arguments: ~w",
+			       [[N || {N, _} <- L]])})
     end.
 
 format_arg({Elements},
