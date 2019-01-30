@@ -108,8 +108,9 @@ close({http_ws, FsmRef, _IP}) ->
 reset_stream({http_ws, _FsmRef, _IP} = Socket) ->
     Socket.
 
-change_shaper({http_ws, FsmRef, _IP}, Shaper) ->
-    p1_fsm:send_all_state_event(FsmRef, {new_shaper, Shaper}).
+change_shaper({http_ws, _FsmRef, _IP}, _Shaper) ->
+    %% TODO???
+    ok.
 
 get_transport(_Socket) ->
     websocket.
@@ -168,10 +169,7 @@ handle_event({activate, From}, StateName, State) ->
 		       end, Input),
 		     State#state{active = false, input = []}
 	     end,
-    {next_state, StateName, State1#state{c2s_pid = From}};
-handle_event({new_shaper, Shaper}, StateName, #state{ws = {_, WsPid}} = StateData) ->
-    WsPid ! {new_shaper, Shaper},
-    {next_state, StateName, StateData}.
+    {next_state, StateName, State1#state{c2s_pid = From}}.
 
 handle_sync_event({send_xml, Packet}, _From, StateName,
 		  #state{ws = {_, WsPid}, rfc_compilant = R} = StateData) ->
