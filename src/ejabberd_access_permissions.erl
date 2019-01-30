@@ -265,7 +265,9 @@ get_definitions(#state{definitions = none, fragments_generators = Gens} = State)
 matches_definition({_Name, {From, Who, What}}, Cmd, Module, Tag, Host, CallerInfo) ->
     case What == all orelse lists:member(Cmd, What) of
 	true ->
-	    case From == [] orelse lists:member(Module, From) orelse lists:member({tag, Tag}, From) of
+	    {Tags, Modules} = lists:partition(fun({tag, _}) -> true; (_) -> false end, From),
+	    case (Modules == [] orelse lists:member(Module, Modules)) andalso
+		 (Tags == [] orelse lists:member({tag, Tag}, Tags)) of
 		true ->
 		    Scope = maps:get(oauth_scope, CallerInfo, none),
 		    lists:any(
