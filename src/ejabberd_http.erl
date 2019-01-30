@@ -852,23 +852,23 @@ code_to_phrase(505) -> <<"HTTP Version Not Supported">>.
 
 -spec parse_auth(binary()) -> {binary(), binary()} | {oauth, binary(), []} | undefined.
 parse_auth(<<"Basic ", Auth64/binary>>) ->
-    Auth = try base64:decode(Auth64)
-	   catch _:badarg -> <<>>
-	   end,
-    %% Auth should be a string with the format: user@server:password
-    %% Note that password can contain additional characters '@' and ':'
-    case str:chr(Auth, $:) of
-        0 ->
-            undefined;
-        Pos ->
-            {User, <<$:, Pass/binary>>} = erlang:split_binary(Auth, Pos-1),
-            PassUtf8 = unicode:characters_to_binary(binary_to_list(Pass), utf8),
-            {User, PassUtf8}
+    try base64:decode(Auth64) of
+	Auth ->
+	    case binary:split(Auth, <<":">>) of
+		[User, Pass] ->
+		    PassUtf8 = unicode:characters_to_binary(Pass, utf8),
+		    {User, PassUtf8};
+		_ ->
+		    invalid
+	    end
+    catch _:_ ->
+	invalid
     end;
 parse_auth(<<"Bearer ", SToken/binary>>) ->
     Token = str:strip(SToken),
     {oauth, Token, []};
-parse_auth(<<_/binary>>) -> undefined.
+parse_auth(<<_/binary>>) ->
+    invalid.
 
 parse_urlencoded(S) ->
     parse_urlencoded(S, nokey, <<>>, key).

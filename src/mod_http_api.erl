@@ -139,28 +139,30 @@ depends(_Host, _Opts) ->
 
 extract_auth(#request{auth = HTTPAuth, ip = {IP, _}, opts = Opts}) ->
     Info = case HTTPAuth of
-            {SJID, Pass} ->
-                try jid:decode(SJID) of
+	       {SJID, Pass} ->
+		   try jid:decode(SJID) of
 		       #jid{luser = User, lserver = Server} ->
-                        case ejabberd_auth:check_password(User, <<"">>, Server, Pass) of
+			   case ejabberd_auth:check_password(User, <<"">>, Server, Pass) of
 			       true ->
 				   #{usr => {User, Server, <<"">>}, caller_server => Server};
 			       false ->
 				   {error, invalid_auth}
-                        end
-		catch _:{bad_jid, _} ->
-			{error, invalid_auth}
-                end;
-            {oauth, Token, _} ->
+			   end
+		   catch _:{bad_jid, _} ->
+		       {error, invalid_auth}
+		   end;
+	       {oauth, Token, _} ->
 		   case ejabberd_oauth:check_token(Token) of
 		       {ok, {U, S}, Scope} ->
 			   #{usr => {U, S, <<"">>}, oauth_scope => Scope, caller_server => S};
 		       {false, Reason} ->
 			   {error, Reason}
-                end;
-            _ ->
+		   end;
+	       invalid ->
+		   {error, invalid_auth};
+	       _ ->
 		   #{}
-        end,
+	   end,
     case Info of
 	Map when is_map(Map) ->
 	    Tag = proplists:get_value(tag, Opts, <<>>),

@@ -254,6 +254,7 @@ get_auth_admin(Auth, HostHTTP, RPath, Method) ->
 	    catch _:{bad_jid, _} ->
 		    {unauthorized, <<"badformed-jid">>}
 	    end;
+      invalid -> {unauthorized, <<"no-auth-provided">>};
       undefined -> {unauthorized, <<"no-auth-provided">>}
     end.
 
