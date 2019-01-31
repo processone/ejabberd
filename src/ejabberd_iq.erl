@@ -173,4 +173,4 @@ calc_checksum(Data) ->
 callback(undefined, IQRes, Fun) ->
     Fun(IQRes);
 callback(Proc, IQRes, Ctx) ->
-    Proc ! {iq_reply, IQRes, Ctx}.
+    catch Proc ! {iq_reply, IQRes, Ctx}.
