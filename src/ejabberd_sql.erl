@@ -1071,9 +1071,9 @@ init_mssql(Host) ->
     case filelib:ensure_dir(freetds_config()) of
 	ok ->
 	    try
-		ok = file:write_file(freetds_config(), FreeTDS, [append]),
-		ok = file:write_file(odbcinst_config(), ODBCINST),
-		ok = file:write_file(odbc_config(), ODBCINI, [append]),
+		ok = write_file_if_new(freetds_config(), FreeTDS),
+		ok = write_file_if_new(odbcinst_config(), ODBCINST),
+		ok = write_file_if_new(odbc_config(), ODBCINI),
 		os:putenv("ODBCSYSINI", tmp_dir()),
 		os:putenv("FREETDS", freetds_config()),
 		os:putenv("FREETDSCONF", freetds_config()),
@@ -1087,6 +1087,12 @@ init_mssql(Host) ->
 	    ?ERROR_MSG("failed to create temporary directory ~s: ~s",
 		       [tmp_dir(), file:format_error(Reason)]),
 	    Err
+    end.
+
+write_file_if_new(File, Payload) ->
+    case filelib:is_file(File) of
+	true -> ok;
+	false -> file:write_file(File, Payload)
     end.
 
 tmp_dir() ->
