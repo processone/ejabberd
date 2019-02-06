@@ -2381,10 +2381,13 @@ node_modules_parse_query(Host, Node, Modules, Query) ->
 				{ok, Tokens, _} =
 				    erl_scan:string(binary_to_list(<<SOpts/binary, ".">>)),
 				{ok, Opts} = erl_parse:parse_term(Tokens),
+				NewMods = lists:keystore(Module, 1, ejabberd_config:get_option(modules), {Module, Opts}),
 				ejabberd_cluster:call(Node, gen_mod, stop_module,
 					 [Host, Module]),
+				ejabberd_cluster:call(Node, ejabberd_config, add_option,
+					 [modules, NewMods]),
 				ejabberd_cluster:call(Node, gen_mod, start_module,
-					 [Host, Module, Opts]),
+					 [Host, Module]),
 				throw(submitted);
 			    _ ->
 				case lists:keysearch(<<"stop", SModule/binary>>,
