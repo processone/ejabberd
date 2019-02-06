@@ -477,7 +477,8 @@ push_item(To, OldItem, NewItem) ->
     #jid{luser = LUser, lserver = LServer} = To,
     Ver = case roster_versioning_enabled(LServer) of
 	      true -> roster_version(LServer, LUser);
-	      false -> undefined
+	      false -> undefined;
+	      undefined -> undefined
 	  end,
     lists:foreach(
       fun(Resource) ->
