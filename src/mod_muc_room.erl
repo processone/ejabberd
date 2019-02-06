@@ -340,7 +340,7 @@ normal_state({route, <<"">>, #iq{} = IQ}, StateData) ->
     ejabberd_router:route_error(IQ, Err),
     case StateData#state.just_created of
 	true -> {stop, normal, StateData};
-	false -> {next_state, normal_state, StateData}
+	_ -> {next_state, normal_state, StateData}
     end;
 normal_state({route, Nick, #presence{from = From} = Packet}, StateData) ->
     Activity = get_user_activity(From, StateData),
@@ -1960,8 +1960,8 @@ add_new_user(From, Nick, Packet, StateData) ->
 		  ResultState =
 		      case NewStateData#state.just_created of
 			  true ->
-			      NewStateData#state{just_created = false};
-			  false ->
+			      NewStateData#state{just_created = misc:now_to_usec(now())};
+			  _ ->
 			      Robots = maps:remove(From, StateData#state.robots),
 			      NewStateData#state{robots = Robots}
 		      end,
@@ -2475,7 +2475,7 @@ status_codes(IsInitialPresence, _IsSelfPresence = true, StateData) ->
 	true ->
 	    S1 = case StateData#state.just_created of
 		     true -> [201|S0];
-		     false -> S0
+		     _ -> S0
 		 end,
 	    S2 = case (StateData#state.config)#config.anonymous of
 		     true -> S1;
@@ -3983,7 +3983,7 @@ process_iq_vcard(From, #iq{type = set, lang = Lang, sub_els = [Pkt]},
       {ignore, state()}.
 process_iq_mucsub(_From, #iq{type = set, lang = Lang,
 			     sub_els = [#muc_subscribe{}]},
-		  #state{just_created = false, config = #config{allow_subscription = false}}) ->
+		  #state{just_created = Just, config = #config{allow_subscription = false}}) when Just /= true ->
     {error, xmpp:err_not_allowed(<<"Subscriptions are not allowed">>, Lang)};
 process_iq_mucsub(From,
 		  #iq{type = set, lang = Lang,

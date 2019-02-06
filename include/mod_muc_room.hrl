@@ -113,7 +113,7 @@
     history                 :: lqueue(),
     subject                 = [] :: [text()],
     subject_author          = <<"">> :: binary(),
-    just_created            = false :: boolean(),
+    just_created            = misc:now_to_usec(now()) :: true | integer(),
     activity                = treap:empty() :: treap:treap(),
     room_shaper             = none :: shaper:shaper(),
     room_queue              :: p1_queue:queue() | undefined

@@ -787,13 +787,15 @@ decide_room({_Room_name, _Host, Room_pid}, ServerHost, Last_allowed) ->
 
     History = (S#state.history)#lqueue.queue,
     Ts_now = calendar:universal_time(),
-    Ts_uptime = uptime_seconds(),
     HistorySize = gen_mod:get_module_opt(ServerHost, mod_muc, history_size),
+    JustCreated = S#state.just_created,
     {Has_hist, Last} = case p1_queue:is_empty(History) of
-			   true when HistorySize == 0 ->
+			   true when (HistorySize == 0) or (JustCreated == true) ->
 			       {false, 0};
 			   true ->
-			       {false, Ts_uptime};
+			       Ts_diff = (misc:now_to_usec(now())
+				    - S#state.just_created) div 1000000,
+			       {false, Ts_diff};
 			   false ->
 			       Last_message = get_queue_last(History),
 			       Ts_last = calendar:now_to_universal_time(
@@ -803,10 +805,9 @@ decide_room({_Room_name, _Host, Room_pid}, ServerHost, Last_allowed) ->
 				   - calendar:datetime_to_gregorian_seconds(Ts_last),
 			       {true, Ts_diff}
 		       end,
-
     case {Persistent, Just_created, Num_users, Has_hist, seconds_to_days(Last)} of
-	{_true, false, 0, _, Last_days}
-	when Last_days >= Last_allowed ->
+	{_true, JC, 0, _, Last_days}
+	when (Last_days >= Last_allowed) and (JC /= true) ->
 	    true;
 	_ ->
 	    false
@@ -1221,9 +1222,6 @@ make_opts(StateData) ->
 %%----------------------------
 %% Utils
 %%----------------------------
-
-uptime_seconds() ->
-    trunc(element(1, erlang:statistics(wall_clock))/1000).
 
 find_host(global) ->
     global;
