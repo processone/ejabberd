@@ -173,6 +173,8 @@ get_commands_spec() ->
 		       result = {res, rescode}},
      #ejabberd_commands{name = rooms_unused_list, tags = [muc],
 		       desc = "List the rooms that are unused for many days in host",
+		       longdesc = "The room recent history is used, so it's recommended "
+			    " to wait a few days after service start before running this.",
 		       module = ?MODULE, function = rooms_unused_list,
 		       args_desc = ["Server host", "Number of days"],
 		       args_example = ["example.com", 31],
@@ -182,6 +184,8 @@ get_commands_spec() ->
 		       result = {rooms, {list, {room, string}}}},
      #ejabberd_commands{name = rooms_unused_destroy, tags = [muc],
 		       desc = "Destroy the rooms that are unused for many days in host",
+		       longdesc = "The room recent history is used, so it's recommended "
+			    " to wait a few days after service start before running this.",
 		       module = ?MODULE, function = rooms_unused_destroy,
 		       args_desc = ["Server host", "Number of days"],
 		       args_example = ["example.com", 31],
