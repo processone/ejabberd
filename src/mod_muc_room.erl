@@ -4365,7 +4365,7 @@ send_subscriptions_change_notifications(From, Nick, Type, State) ->
 					items = [#ps_item{
 					    id = p1_rand:get_string(),
 					    sub_els = [Payload]}]}}]},
-			    ejabberd_router:route(xmpp:set_from_to(Packet, From, JID));
+			    ejabberd_router:route(xmpp:set_from_to(Packet, State#state.jid, JID));
 			false ->
 			    ok
 		    end
