@@ -441,14 +441,32 @@ notify(#{jid := #jid{luser = LUser, lserver = LServer},
 notify(LUser, LServer, Clients, Pkt, Dir) ->
     lists:foreach(
       fun({TS, PushLJID, Node, XData}) ->
-	      HandleResponse = fun(#iq{type = result}) ->
-				       ok;
-				  (#iq{type = error}) ->
-				       spawn(?MODULE, delete_session,
-					     [LUser, LServer, TS]);
-				  (timeout) ->
-				       ok % Hmm.
-			       end,
+	      HandleResponse =
+	          fun(#iq{type = result}) ->
+			  ?DEBUG("~s accepted notification for ~s@~s (~s)",
+				 [jid:encode(PushLJID), LUser, LServer, Node]);
+		     (#iq{type = error} = IQ) ->
+			  case inspect_error(IQ) of
+			      {wait, Reason} ->
+				  ?INFO_MSG("~s rejected notification for "
+					    "~s@~s (~s) temporarily: ~s",
+					    [jid:encode(PushLJID), LUser,
+					     LServer, Node, Reason]);
+			      {Type, Reason} ->
+				  spawn(?MODULE, delete_session,
+					[LUser, LServer, TS]),
+				  ?WARNING_MSG("~s rejected notification for "
+					       "~s@~s (~s), disabling push: ~s "
+					       "(~s)",
+					       [jid:encode(PushLJID), LUser,
+						LServer, Node, Reason, Type])
+			  end;
+		     (timeout) ->
+			  ?DEBUG("Timeout sending notification for ~s@~s (~s) "
+				 "to ~s",
+				 [LUser, LServer, Node, jid:encode(PushLJID)]),
+			  ok % Hmm.
+		  end,
 	      notify(LServer, PushLJID, Node, XData, Pkt, Dir, HandleResponse)
       end, Clients).
 
@@ -666,6 +684,15 @@ get_body_text(#message{body = Body} = Msg) ->
 -spec body_is_encrypted(message()) -> boolean().
 body_is_encrypted(#message{sub_els = SubEls}) ->
     lists:keyfind(<<"encrypted">>, #xmlel.name, SubEls) /= false.
+
+-spec inspect_error(iq()) -> {atom(), binary()}.
+inspect_error(IQ) ->
+    case xmpp:get_error(IQ) of
+	#stanza_error{type = Type} = Err ->
+	    {Type, xmpp:format_stanza_error(Err)};
+	undefined ->
+	    {undefined, <<"unrecognized error">>}
+    end.
 
 %%--------------------------------------------------------------------
 %% Caching.
