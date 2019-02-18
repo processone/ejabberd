@@ -839,7 +839,12 @@ decide_room(unused, {_Room_name, _Host, Room_pid}, ServerHost, Last_allowed) ->
 	    false
     end;
 decide_room(empty, {Room_name, Host, _Room_pid}, ServerHost, _Last_allowed) ->
-	mod_mam:is_empty_for_room(ServerHost, Room_name, Host).
+    case gen_mod:is_loaded(ServerHost, mod_mam) of
+        true ->
+        mod_mam:is_empty_for_room(ServerHost, Room_name, Host);
+        _ ->
+        false
+    end.
 
 seconds_to_days(S) ->
     S div (60*60*24).
