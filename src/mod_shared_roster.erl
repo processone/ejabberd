@@ -662,8 +662,13 @@ push_user_to_group(LUser, LServer, Group, Host,
 			  when (U == LUser) and (S == LServer) ->
 			  ok;
 		      ({U, S}) ->
-			  push_roster_item(U, S, LUser, LServer, GroupName,
-					   Subscription)
+			  case lists:member(S, ejabberd_config:get_myhosts()) of
+			      true ->
+				  push_roster_item(U, S, LUser, LServer, GroupName,
+						   Subscription);
+			      _ ->
+				  ok
+			  end
 		  end,
 		  get_group_users(Host, Group)).
 
