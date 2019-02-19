@@ -937,8 +937,12 @@ opt_type(modules) ->
     fun(Mods) ->
 	    lists:map(
 	      fun({M, A}) when is_atom(M) ->
-		      true = is_opt_list(A),
-		      {M, A}
+		      case is_opt_list(A) of
+			  true -> {M, A};
+			  false ->
+			      ?ERROR_MSG("Malformed configuration format of module ~s", [M]),
+			      erlang:error(badarg)
+		      end
 	      end, Mods)
     end;
 opt_type(_) -> [modules].

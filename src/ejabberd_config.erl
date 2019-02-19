@@ -713,10 +713,16 @@ process_term(Term, State) ->
 
 process_host_term(Term, Host, State, Action) ->
     case Term of
-        {modules, Modules} when Action == set ->
-            set_option({modules, Host}, replace_modules(Modules), State);
-        {modules, Modules} when Action == append ->
-            append_option({modules, Host}, replace_modules(Modules), State);
+        {modules, Modules} ->
+	    Modules1 = try (gen_mod:opt_type(modules))(Modules) of
+			   _ -> replace_modules(Modules)
+		       catch _:_ -> Modules
+		       end,
+	    if Action == set ->
+		    set_option({modules, Host}, Modules1, State);
+	       Action == append ->
+		    append_option({modules, Host}, Modules1, State)
+	    end;
         {host, _} ->
             State;
         {hosts, _} ->
