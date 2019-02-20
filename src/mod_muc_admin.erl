@@ -34,6 +34,7 @@
 	 create_room_with_opts/4, create_room/3, destroy_room/2,
 	 create_rooms_file/1, destroy_rooms_file/1,
 	 rooms_unused_list/2, rooms_unused_destroy/2,
+	 rooms_empty_list/1, rooms_empty_destroy/1,
 	 get_user_rooms/2, get_room_occupants/2,
 	 get_room_occupants_number/2, send_direct_invitation/5,
 	 change_room_option/4, get_room_options/2,
@@ -192,6 +193,25 @@ get_commands_spec() ->
 		       result_desc = "List of unused rooms that has been destroyed",
 		       result_example = ["room1@muc.example.com", "room2@muc.example.com"],
 		       args = [{host, binary}, {days, integer}],
+		       result = {rooms, {list, {room, string}}}},
+
+     #ejabberd_commands{name = rooms_empty_list, tags = [muc],
+		       desc = "List the rooms that have no messages in archive",
+		       module = ?MODULE, function = rooms_empty_list,
+		       args_desc = ["Server host"],
+		       args_example = ["example.com"],
+		       result_desc = "List of empty rooms",
+		       result_example = ["room1@muc.example.com", "room2@muc.example.com"],
+		       args = [{host, binary}],
+		       result = {rooms, {list, {room, string}}}},
+     #ejabberd_commands{name = rooms_empty_destroy, tags = [muc],
+		       desc = "Destroy the rooms that have no messages in archive",
+		       module = ?MODULE, function = rooms_empty_destroy,
+		       args_desc = ["Server host"],
+		       args_example = ["example.com"],
+		       result_desc = "List of empty rooms that have been destroyed",
+		       result_example = ["room1@muc.example.com", "room2@muc.example.com"],
+		       args = [{host, binary}],
 		       result = {rooms, {list, {room, string}}}},
 
      #ejabberd_commands{name = get_user_rooms, tags = [muc],
@@ -718,35 +738,41 @@ create_rooms_file(Filename) ->
 	ok.
 
 
-%%----------------------------
-%% List/Delete Unused Rooms
-%%----------------------------
+%%---------------------------------
+%% List/Delete Unused/Empty Rooms
+%%---------------------------------
 
 %%---------------
 %% Control
 
 rooms_unused_list(ServerHost, Days) ->
-    rooms_unused_report(list, ServerHost, Days).
+    rooms_report(unused, list, ServerHost, Days).
 rooms_unused_destroy(ServerHost, Days) ->
-    rooms_unused_report(destroy, ServerHost, Days).
+    rooms_report(unused, destroy, ServerHost, Days).
 
-rooms_unused_report(Action, ServerHost, Days) ->
-    {NA, NP, RP} = muc_unused(Action, ServerHost, Days),
-    io:format("Unused rooms: ~p out of ~p~n", [NP, NA]),
+rooms_empty_list(ServerHost) ->
+    rooms_report(empty, list, ServerHost, 0).
+rooms_empty_destroy(ServerHost) ->
+    rooms_report(empty, destroy, ServerHost, 0).
+
+
+rooms_report(Method, Action, ServerHost, Days) ->
+    {NA, NP, RP} = muc_unused(Method, Action, ServerHost, Days),
+    io:format("rooms ~s: ~p out of ~p~n", [Method, NP, NA]),
     [<<R/binary, "@", H/binary>> || {R, H, _P} <- RP].
 
-muc_unused(Action, ServerHost, Last_allowed) ->
+muc_unused(Method, Action, ServerHost, Last_allowed) ->
     %% Get all required info about all existing rooms
     Rooms_all = get_rooms(ServerHost),
 
     %% Decide which ones pass the requirements
-    Rooms_pass = decide_rooms(Rooms_all, ServerHost, Last_allowed),
+    Rooms_pass = decide_rooms(Method, Rooms_all, ServerHost, Last_allowed),
 
     Num_rooms_all = length(Rooms_all),
     Num_rooms_pass = length(Rooms_pass),
 
     %% Perform the desired action for matching rooms
-    act_on_rooms(Action, Rooms_pass, ServerHost),
+    act_on_rooms(Method, Action, Rooms_pass, ServerHost),
 
     {Num_rooms_all, Num_rooms_pass, Rooms_pass}.
 
@@ -771,11 +797,11 @@ get_room_state(Room_pid) ->
 %%---------------
 %% Decide
 
-decide_rooms(Rooms, ServerHost, Last_allowed) ->
-    Decide = fun(R) -> decide_room(R, ServerHost, Last_allowed) end,
+decide_rooms(Method, Rooms, ServerHost, Last_allowed) ->
+    Decide = fun(R) -> decide_room(Method, R, ServerHost, Last_allowed) end,
     lists:filter(Decide, Rooms).
 
-decide_room({_Room_name, _Host, Room_pid}, ServerHost, Last_allowed) ->
+decide_room(unused, {_Room_name, _Host, Room_pid}, ServerHost, Last_allowed) ->
     C = get_room_config(Room_pid),
     Persistent = C#config.persistent,
 
@@ -811,6 +837,13 @@ decide_room({_Room_name, _Host, Room_pid}, ServerHost, Last_allowed) ->
 	    true;
 	_ ->
 	    false
+    end;
+decide_room(empty, {Room_name, Host, _Room_pid}, ServerHost, _Last_allowed) ->
+    case gen_mod:is_loaded(ServerHost, mod_mam) of
+        true ->
+        mod_mam:is_empty_for_room(ServerHost, Room_name, Host);
+        _ ->
+        false
     end.
 
 seconds_to_days(S) ->
@@ -819,7 +852,7 @@ seconds_to_days(S) ->
 %%---------------
 %% Act
 
-act_on_rooms(Action, Rooms, ServerHost) ->
+act_on_rooms(Method, Action, Rooms, ServerHost) ->
     ServerHosts = [ {A, find_host(A)} || A <- ejabberd_config:get_myhosts() ],
     Delete = fun({_N, H, _Pid} = Room) ->
 		     SH = case ServerHost of
@@ -827,7 +860,7 @@ act_on_rooms(Action, Rooms, ServerHost) ->
 			      O -> O
 			  end,
 
-		     act_on_room(Action, Room, SH)
+		     act_on_room(Method, Action, Room, SH)
 	     end,
     lists:foreach(Delete, Rooms).
 
@@ -835,13 +868,15 @@ find_serverhost(Host, ServerHosts) ->
     {value, {ServerHost, Host}} = lists:keysearch(Host, 2, ServerHosts),
     ServerHost.
 
-act_on_room(destroy, {N, H, Pid}, SH) ->
+act_on_room(Method, destroy, {N, H, Pid}, SH) ->
+    Message = iolist_to_binary(io_lib:format(
+        <<"Room destroyed by rooms_~s_destroy.">>, [Method])),
     p1_fsm:send_all_state_event(
-      Pid, {destroy, <<"Room destroyed by rooms_unused_destroy.">>}),
+      Pid, {destroy, Message}),
     mod_muc:room_destroyed(H, N, Pid, SH),
     mod_muc:forget_room(SH, H, N);
 
-act_on_room(list, _, _) ->
+act_on_room(_Method, list, _, _) ->
     ok.
 
 
