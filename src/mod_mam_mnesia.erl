@@ -200,8 +200,7 @@ select(_LServer, JidRequestor,
     Result.
 
 is_empty_for_user(LUser, LServer) ->
-	not lists:member({LUser, LServer},
-		mnesia:dirty_all_keys(archive_msg)).
+    mnesia:dirty_read(archive_msg, {LUser, LServer}) == [].
 
 is_empty_for_room(_LServer, LName, LHost) ->
     is_empty_for_user(LName, LHost).
