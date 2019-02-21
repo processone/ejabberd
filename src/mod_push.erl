@@ -34,7 +34,7 @@
 
 %% ejabberd_hooks callbacks.
 -export([disco_sm_features/5, c2s_session_pending/1, c2s_copy_session/2,
-	 c2s_handle_cast/2, c2s_stanza/3, mam_message/6, offline_message/1,
+	 c2s_handle_cast/2, c2s_stanza/3, mam_message/7, offline_message/1,
 	 remove_user/2]).
 
 %% gen_iq_handler callback.
@@ -352,8 +352,8 @@ c2s_stanza(State, _Pkt, _SendResult) ->
     State.
 
 -spec mam_message(message() | drop, binary(), binary(), jid(),
-		  chat | groupchat, recv | send) -> message().
-mam_message(#message{} = Pkt, LUser, LServer, _Peer, chat, Dir) ->
+		  binary(), chat | groupchat, recv | send) -> message().
+mam_message(#message{} = Pkt, LUser, LServer, _Peer, _Nick, chat, Dir) ->
     case lookup_sessions(LUser, LServer) of
 	{ok, [_|_] = Clients} ->
 	    case drop_online_sessions(LUser, LServer, Clients) of
@@ -367,7 +367,7 @@ mam_message(#message{} = Pkt, LUser, LServer, _Peer, chat, Dir) ->
 	    ok
     end,
     Pkt;
-mam_message(Pkt, _LUser, _LServer, _Peer, _Type, _Dir) ->
+mam_message(Pkt, _LUser, _LServer, _Peer, _Nick, _Type, _Dir) ->
     Pkt.
 
 -spec offline_message(message()) -> message().

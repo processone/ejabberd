@@ -426,3 +426,57 @@ CREATE TABLE push_session (
 );
 
 CREATE UNIQUE INDEX i_push_session_susn ON push_session (server_host(191), username(191), service(191), node(191));
+
+CREATE TABLE mix_channel (
+    channel text NOT NULL,
+    service text NOT NULL,
+    username text NOT NULL,
+    domain text NOT NULL,
+    jid text NOT NULL,
+    hidden boolean NOT NULL,
+    hmac_key text NOT NULL,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE UNIQUE INDEX i_mix_channel ON mix_channel (channel(191), service(191));
+CREATE INDEX i_mix_channel_serv ON mix_channel (service(191));
+
+CREATE TABLE mix_participant (
+    channel text NOT NULL,
+    service text NOT NULL,
+    username text NOT NULL,
+    domain text NOT NULL,
+    jid text NOT NULL,
+    id text NOT NULL,
+    nick text NOT NULL,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE UNIQUE INDEX i_mix_participant ON mix_participant (channel(191), service(191), username(191), domain(191));
+CREATE INDEX i_mix_participant_chan_serv ON mix_participant (channel(191), service(191));
+
+CREATE TABLE mix_subscription (
+    channel text NOT NULL,
+    service text NOT NULL,
+    username text NOT NULL,
+    domain text NOT NULL,
+    node text NOT NULL,
+    jid text NOT NULL
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE UNIQUE INDEX i_mix_subscription ON mix_subscription (channel(153), service(153), username(153), domain(153), node(153));
+CREATE INDEX i_mix_subscription_chan_serv_ud ON mix_subscription (channel(191), service(191), username(191), domain(191));
+CREATE INDEX i_mix_subscription_chan_serv_node ON mix_subscription (channel(191), service(191), node(191));
+CREATE INDEX i_mix_subscription_chan_serv ON mix_subscription (channel(191), service(191));
+
+CREATE TABLE mix_pam (
+    username text NOT NULL,
+    server_host text NOT NULL,
+    channel text NOT NULL,
+    service text NOT NULL,
+    id text NOT NULL,
+    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE UNIQUE INDEX i_mix_pam ON mix_pam (username(191), server_host(191), channel(191), service(191));
+CREATE INDEX i_mix_pam_us ON mix_pam (username(191), server_host(191));

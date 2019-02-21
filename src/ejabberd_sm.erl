@@ -44,6 +44,7 @@
 	 close_session/4,
 	 check_in_subscription/2,
 	 bounce_offline_message/1,
+	 bounce_sm_packet/1,
 	 disconnect_removed_user/2,
 	 get_user_resources/2,
 	 get_user_present_resources/2,
@@ -191,14 +192,22 @@ check_in_subscription(Acc, #presence{to = To}) ->
 
 -spec bounce_offline_message({bounce, message()} | any()) -> any().
 
-bounce_offline_message({bounce, #message{type = T} = Packet} = Acc)
-    when T == chat; T == groupchat; T == normal ->
+bounce_offline_message({bounce, #message{type = T}} = Acc)
+  when T == chat; T == groupchat; T == normal ->
+    bounce_sm_packet(Acc);
+bounce_offline_message(Acc) ->
+    Acc.
+
+-spec bounce_sm_packet({bounce | term(), stanza()}) -> any().
+bounce_sm_packet({bounce, Packet} = Acc) ->
     Lang = xmpp:get_lang(Packet),
     Txt = <<"User session not found">>,
     Err = xmpp:err_service_unavailable(Txt, Lang),
     ejabberd_router:route_error(Packet, Err),
     {stop, Acc};
-bounce_offline_message(Acc) ->
+bounce_sm_packet({_, Packet} = Acc) ->
+    ?DEBUG("dropping packet to unavailable resource:~n~s",
+	   [xmpp:pp(Packet)]),
     Acc.
 
 -spec disconnect_removed_user(binary(), binary()) -> ok.
@@ -508,6 +517,8 @@ host_up(Host) ->
 		       ejabberd_sm, check_in_subscription, 20),
     ejabberd_hooks:add(offline_message_hook, Host,
 		       ejabberd_sm, bounce_offline_message, 100),
+    ejabberd_hooks:add(bounce_sm_packet, Host,
+		       ejabberd_sm, bounce_sm_packet, 100),
     ejabberd_hooks:add(remove_user, Host,
 		       ejabberd_sm, disconnect_removed_user, 100),
     ejabberd_c2s:host_up(Host).
@@ -532,6 +543,8 @@ host_down(Host) ->
 			  ejabberd_sm, check_in_subscription, 20),
     ejabberd_hooks:delete(offline_message_hook, Host,
 			  ejabberd_sm, bounce_offline_message, 100),
+    ejabberd_hooks:delete(bounce_sm_packet, Host,
+			  ejabberd_sm, bounce_sm_packet, 100),
     ejabberd_hooks:delete(remove_user, Host,
 			  ejabberd_sm, disconnect_removed_user, 100),
     ejabberd_c2s:host_down(Host).
@@ -667,19 +680,22 @@ do_route(#presence{to = #jid{lresource = <<"">>} = To} = Packet) ->
       fun({_, R}) ->
 	      do_route(Packet#presence{to = jid:replace_resource(To, R)})
       end, get_user_present_resources(LUser, LServer));
-do_route(#message{to = #jid{lresource = <<"">>}, type = T} = Packet) ->
+do_route(#message{to = #jid{lresource = <<"">>} = To, type = T} = Packet) ->
     ?DEBUG("processing message to bare JID:~n~s", [xmpp:pp(Packet)]),
     if T == chat; T == headline; T == normal ->
 	    route_message(Packet);
        true ->
-	    Lang = xmpp:get_lang(Packet),
-	    ErrTxt = <<"User session not found">>,
-	    Err = xmpp:err_service_unavailable(ErrTxt, Lang),
-	    ejabberd_router:route_error(Packet, Err)
+	    ejabberd_hooks:run_fold(bounce_sm_packet,
+				    To#jid.lserver, {bounce, Packet}, [])
     end;
-do_route(#iq{to = #jid{lresource = <<"">>}} = Packet) ->
-    ?DEBUG("processing IQ to bare JID:~n~s", [xmpp:pp(Packet)]),
-    gen_iq_handler:handle(?MODULE, Packet);
+do_route(#iq{to = #jid{lresource = <<"">>} = To, type = T} = Packet) ->
+    if T == set; T == get ->
+	    ?DEBUG("processing IQ to bare JID:~n~s", [xmpp:pp(Packet)]),
+	    gen_iq_handler:handle(?MODULE, Packet);
+       true ->
+	    ejabberd_hooks:run_fold(bounce_sm_packet,
+				    To#jid.lserver, {pass, Packet}, [])
+    end;
 do_route(Packet) ->
     ?DEBUG("processing packet to full JID:~n~s", [xmpp:pp(Packet)]),
     To = xmpp:get_to(Packet),
@@ -691,16 +707,14 @@ do_route(Packet) ->
 		#message{type = T} when T == chat; T == normal ->
 		    route_message(Packet);
 		#message{type = T} when T == headline ->
-		    ?DEBUG("dropping headline to unavailable resource:~n~s",
-			   [xmpp:pp(Packet)]);
+		    ejabberd_hooks:run_fold(bounce_sm_packet,
+					    LServer, {pass, Packet}, []);
 		#presence{} ->
-		    ?DEBUG("dropping presence to unavailable resource:~n~s",
-			   [xmpp:pp(Packet)]);
+		    ejabberd_hooks:run_fold(bounce_sm_packet,
+					    LServer, {pass, Packet}, []);
 		_ ->
-		    Lang = xmpp:get_lang(Packet),
-		    ErrTxt = <<"User session not found">>,
-		    Err = xmpp:err_service_unavailable(ErrTxt, Lang),
-		    ejabberd_router:route_error(Packet, Err)
+		    ejabberd_hooks:run_fold(bounce_sm_packet,
+					    LServer, {bounce, Packet}, [])
 	    end;
 	Ss ->
 	    Session = lists:max(Ss),
