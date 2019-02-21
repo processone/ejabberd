@@ -268,15 +268,13 @@ export(_Server) ->
 is_empty_for_user(LUser, LServer) ->
     case ejabberd_sql:sql_query(
 	   LServer,
-	   ?SQL("select @(count(*))d from archive"
-                " where username=%(LUser)s and %(LServer)H")) of
-		{selected, [{Res}]} ->
-			case Res of
-				0 -> true;
-				_ -> false
-			end;
-		_ -> false
-	end.
+	   ?SQL("select @(1)d from archive"
+		" where username=%(LUser)s and %(LServer)H limit 1")) of
+	{selected, [{1}]} ->
+	    false;
+	_ ->
+	    true
+    end.
 
 is_empty_for_room(LServer, LName, LHost) ->
     LUser = jid:encode({LName, LHost, <<>>}),
