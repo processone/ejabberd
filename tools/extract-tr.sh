@@ -217,7 +217,7 @@ format_location_list(L) ->
     "#: " ++ string:join(
 	       lists:map(
 		 fun({File, Pos}) ->
-			 io_lib:format("~s:~B", [File, Pos])
+			 io_lib:format("~s.erl:~B", [File, Pos])
 		 end, L),
 	       " ") ++ io_lib:nl().
 
