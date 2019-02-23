@@ -840,15 +840,15 @@ decide_room(unused, {_Room_name, _Host, Room_pid}, ServerHost, Last_allowed) ->
     end;
 decide_room(empty, {Room_name, Host, _Room_pid}, ServerHost, _Last_allowed) ->
     case gen_mod:is_loaded(ServerHost, mod_mam) of
-    true ->
+	true ->
 	    Room_options = get_room_options(Room_name, Host),
 	    case lists:keyfind(<<"mam">>, 1, Room_options) of
-	    {<<"mam">>, <<"true">>} ->
+		{<<"mam">>, <<"true">>} ->
 		    mod_mam:is_empty_for_room(ServerHost, Room_name, Host);
-	    _ ->
+		_ ->
 		    false
 	    end;
-    _ ->
+	_ ->
 	    false
     end.
 
