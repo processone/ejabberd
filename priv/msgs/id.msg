@@ -1,33 +1,32 @@
 %% -*- coding: latin-1 -*-
+{" has set the subject to: ","telah menetapkan topik yaitu:"}.
+{"A password is required to enter this room","Diperlukan kata sandi untuk masuk ruangan ini"}.
 {"Access Configuration","Akses Konfigurasi"}.
 {"Access Control List Configuration","Konfigurasi Daftar Akses Pengendalian"}.
 {"Access Control Lists","Akses Daftar Pengendalian"}.
-{"Access control lists","Daftar Pengendalian Akses"}.
 {"Access denied by service policy","Akses ditolak oleh kebijakan layanan"}.
-{"Access rules","Akses peraturan"}.
 {"Access Rules","Aturan Akses"}.
 {"Action on user","Tindakan pada pengguna"}.
 {"Add Jabber ID","Tambah Jabber ID"}.
 {"Add New","Tambah Baru"}.
 {"Add User","Tambah Pengguna"}.
-{"Administration","Administrasi"}.
 {"Administration of ","Administrasi"}.
+{"Administration","Administrasi"}.
 {"Administrator privileges required","Hak istimewa Administrator dibutuhkan"}.
 {"All activity","Semua aktifitas"}.
+{"All Users","Semua Pengguna"}.
 {"Allow users to change the subject","Perbolehkan pengguna untuk mengganti topik"}.
 {"Allow users to query other users","Perbolehkan pengguna untuk mengetahui pengguna lain"}.
 {"Allow users to send invites","Perbolehkan pengguna mengirimkan undangan"}.
 {"Allow users to send private messages","perbolehkan pengguna mengirimkan pesan ke pengguna lain secara pribadi"}.
 {"Allow visitors to change nickname","Perbolehkan visitor mengganti nama julukan"}.
 {"Allow visitors to send status text in presence updates","Izinkan pengunjung untuk mengirim teks status terbaru"}.
-{"All Users","Semua Pengguna"}.
 {"Announcements","Pengumuman"}.
-{"A password is required to enter this room","Diperlukan kata sandi untuk masuk ruangan ini"}.
 {"April","April"}.
 {"August","Agustus"}.
-{"Backup","Backup"}.
 {"Backup Management","Manajemen Backup"}.
 {"Backup to File at ","Backup ke File pada"}.
+{"Backup","Backup"}.
 {"Bad format","Format yang buruk"}.
 {"Birthday","Hari Lahir"}.
 {"CAPTCHA web page","CAPTCHA laman web"}.
@@ -50,15 +49,14 @@
 {"Configuration of room ~s","Pengaturan ruangan ~s"}.
 {"Configuration","Pengaturan"}.
 {"Connected Resources:","Sumber Daya Terhubung:"}.
-{"Connections parameters","Parameter Koneksi"}.
 {"Country","Negara"}.
 {"CPU Time:","Waktu CPU:"}.
-{"Database","Database"}.
 {"Database Tables Configuration at ","Database Tabel Konfigurasi pada"}.
+{"Database","Database"}.
 {"December","Desember"}.
 {"Default users as participants","pengguna pertama kali masuk sebagai participant"}.
-{"Delete message of the day","Hapus pesan harian"}.
 {"Delete message of the day on all hosts","Hapus pesan harian pada semua host"}.
+{"Delete message of the day","Hapus pesan harian"}.
 {"Delete Selected","Hapus Yang Terpilih"}.
 {"Delete User","Hapus Pengguna"}.
 {"Description:","Keterangan:"}.
@@ -68,7 +66,6 @@
 {"Dump Backup to Text File at ","Dump Backup ke File Teks di"}.
 {"Dump to Text File","Dump menjadi File Teks"}.
 {"Edit Properties","Ganti Properti"}.
-{"ejabberd IRC module","ejabberd IRC modul"}.
 {"ejabberd MUC module","ejabberd MUC Module"}.
 {"ejabberd Publish-Subscribe module","Modul ejabberd Setujui-Pertemanan"}.
 {"ejabberd SOCKS5 Bytestreams module","modul ejabberd SOCKS5 Bytestreams"}.
@@ -77,7 +74,6 @@
 {"Elements","Elemen-elemen"}.
 {"Email","Email"}.
 {"Enable logging","Aktifkan catatan"}.
-{"Encoding for server ~b","Pengkodean untuk layanan ~b"}.
 {"End User Session","Akhir Sesi Pengguna"}.
 {"Enter list of {Module, [Options]}","Masukkan daftar {Modul, [Options]}"}.
 {"Enter nickname you want to register","Masukkan nama julukan Anda jika ingin mendaftar"}.
@@ -86,19 +82,16 @@
 {"Enter path to jabberd14 spool file","Masukkan path ke file jabberd14 spool"}.
 {"Enter path to text file","Masukkan path ke file teks"}.
 {"Enter the text you see","Masukkan teks yang Anda lihat"}.
-{"Enter username and encodings you wish to use for connecting to IRC servers.  Press 'Next' to get more fields to fill in.  Press 'Complete' to save settings.","Masukkan username dan pengkodean yang ingin Anda gunakan untuk menghubungkan ke layanan IRC. Tekan 'Selanjutnya' untuk mendapatkan lagi formulir kemudian Tekan 'Lengkap' untuk menyimpan pengaturan."}.
-{"Enter username, encodings, ports and passwords you wish to use for connecting to IRC servers","Masukkan username, pengkodean, port dan sandi yang ingin Anda gunakan untuk menghubungkan ke layanan IRC"}.
 {"Erlang Jabber Server","Layanan Erlang Jabber"}.
 {"Error","Kesalahan"}.
-{"Example: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}].","Contoh: [{\"irc.lucky.net\", \"koi8-r\", 6667, \"secret\"}, {\"vendetta.fef.net\", \"iso8859-1\", 7000}, {\"irc.sometestserver.net\", \"utf-8\"}]."}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Ekspor data dari semua pengguna pada layanan ke berkas PIEFXIS (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Ekspor data pengguna pada sebuah host ke berkas PIEFXIS (XEP-0227):"}.
 {"Family Name","Nama Keluarga (marga)"}.
 {"February","Februari"}.
 {"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)","Isi formulir untuk pencarian pengguna Jabber yang cocok (Tambahkan * ke mengakhiri pengisian untuk menyamakan kata)"}.
 {"Friday","Jumat"}.
-{"From","Dari"}.
 {"From ~s","Dari ~s"}.
+{"From","Dari"}.
 {"Full Name","Nama Lengkap"}.
 {"Get Number of Online Users","Dapatkan Jumlah User Yang Online"}.
 {"Get Number of Registered Users","Dapatkan Jumlah Pengguna Yang Terdaftar"}.
@@ -108,14 +101,12 @@
 {"Group ","Grup"}.
 {"Groups","Grup"}.
 {"has been banned","telah dibanned"}.
-{"has been kicked because of an affiliation change","telah dikick karena perubahan afiliasi"}.
 {"has been kicked because of a system shutdown","telah dikick karena sistem shutdown"}.
+{"has been kicked because of an affiliation change","telah dikick karena perubahan afiliasi"}.
 {"has been kicked because the room has been changed to members-only","telah dikick karena ruangan telah diubah menjadi hanya untuk member"}.
 {"has been kicked","telah dikick"}.
-{" has set the subject to: ","telah menetapkan topik yaitu:"}.
 {"Host","Host"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Jika Anda tidak melihat gambar CAPTCHA disini, silahkan kunjungi halaman web."}.
-{"If you want to specify different ports, passwords, encodings for IRC servers, fill this list with values in format '{\"irc server\", \"encoding\", port, \"password\"}'.  By default this service use \"~s\" encoding, port ~p, empty password.","Jika Anda ingin menentukan port yang berbeda, sandi, pengkodean untuk layanan IRC, isi daftar ini dengan nilai-nilai dalam format '{\"server irc \", \"encoding \", port, \"sandi \"}'. Secara default ini menggunakan layanan \"~s \" pengkodean, port ~p, kata sandi kosong."}.
 {"Import Directory","Impor Direktori"}.
 {"Import File","Impor File"}.
 {"Import user data from jabberd14 spool file:","Impor data pengguna dari sekumpulan berkas jabberd14:"}.
@@ -128,23 +119,14 @@
 {"Incorrect password","Kata sandi salah"}.
 {"IP addresses","Alamat IP"}.
 {"IP","IP"}.
-{"IRC channel (don't put the first #)","Channel IRC (tidak perlu menempatkan # sebelumnya)"}.
-{"IRC server","Layanan IRC"}.
-{"IRC settings","Pengaturan IRC"}.
-{"IRC Transport","IRC Transport"}.
-{"IRC username","Nama Pengguna IRC"}.
-{"IRC Username","Nama Pengguna IRC"}.
 {"is now known as","sekarang dikenal sebagai"}.
-{"It is not allowed to send private messages","Hal ini tidak diperbolehkan untuk mengirim pesan pribadi"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Hal ini tidak diperbolehkan untuk mengirim pesan pribadi jenis \"groupchat \""}.
 {"It is not allowed to send private messages to the conference","Hal ini tidak diperbolehkan untuk mengirim pesan pribadi ke konferensi"}.
+{"It is not allowed to send private messages","Hal ini tidak diperbolehkan untuk mengirim pesan pribadi"}.
 {"Jabber Account Registration","Pendaftaran Akun Jabber"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Januari"}.
-{"Join IRC channel","Gabung channel IRC"}.
 {"joins the room","bergabung ke ruangan"}.
-{"Join the IRC channel here.","Gabung ke channel IRC disini"}.
-{"Join the IRC channel in this Jabber ID: ~s","Gabung ke channel IRC dengan Jabber ID: ~s"}.
 {"July","Juli"}.
 {"June","Juni"}.
 {"Last Activity","Aktifitas Terakhir"}.
@@ -152,9 +134,9 @@
 {"Last month","Akhir bulan"}.
 {"Last year","Akhir tahun"}.
 {"leaves the room","meninggalkan ruangan"}.
+{"List of modules to start","Daftar modul untuk memulai"}.
 {"Listened Ports at ","Mendeteksi Port-port di"}.
 {"Listened Ports","Port Terdeteksi"}.
-{"List of modules to start","Daftar modul untuk memulai"}.
 {"Low level update script","Perbaruan naskah tingkat rendah"}.
 {"Make participants list public","Buat daftar participant diketahui oleh public"}.
 {"Make room CAPTCHA protected","Buat ruangan dilindungi dengan CAPTCHA"}.
@@ -177,13 +159,13 @@
 {"Module","Modul"}.
 {"Modules","Modul"}.
 {"Monday","Senin"}.
-{"Name:","Nama:"}.
 {"Name","Nama"}.
+{"Name:","Nama:"}.
 {"Never","Tidak Pernah"}.
 {"New Password:","Password Baru:"}.
-{"Nickname","Nama Julukan"}.
 {"Nickname Registration at ","Pendaftaran Julukan pada"}.
 {"Nickname ~s does not exist in the room","Nama Julukan ~s tidak berada di dalam ruangan"}.
+{"Nickname","Nama Julukan"}.
 {"No body provided for announce message","Tidak ada isi pesan yang disediakan untuk mengirimkan pesan"}.
 {"No Data","Tidak Ada Data"}.
 {"Node not found","Node tidak ditemukan"}.
@@ -194,13 +176,13 @@
 {"Number of online users","Jumlah pengguna online"}.
 {"Number of registered users","Jumlah pengguna terdaftar"}.
 {"October","Oktober"}.
-{"Offline Messages:","Pesan Offline:"}.
 {"Offline Messages","Pesan Offline"}.
+{"Offline Messages:","Pesan Offline:"}.
 {"OK","YA"}.
 {"Old Password:","Password Lama:"}.
-{"Online","Online"}.
 {"Online Users:","Pengguna Online:"}.
 {"Online Users","Pengguna Yang Online"}.
+{"Online","Online"}.
 {"Only moderators and participants are allowed to change the subject in this room","Hanya moderator dan peserta yang diizinkan untuk mengganti topik pembicaraan di ruangan ini"}.
 {"Only moderators are allowed to change the subject in this room","Hanya moderator yang diperbolehkan untuk mengubah topik dalam ruangan ini"}.
 {"Only occupants are allowed to send messages to the conference","Hanya penghuni yang diizinkan untuk mengirim pesan ke konferensi"}.
@@ -213,11 +195,10 @@
 {"Outgoing s2s Connections:","Koneksi s2s yang keluar:"}.
 {"Owner privileges required","Hak istimewa owner dibutuhkan"}.
 {"Packet","Paket"}.
-{"Password ~b","Kata Sandi ~b"}.
-{"Password:","Kata Sandi:"}.
-{"Password","Sandi"}.
 {"Password Verification:","Verifikasi Kata Sandi:"}.
 {"Password Verification","Verifikasi Sandi"}.
+{"Password:","Kata Sandi:"}.
+{"Password","Sandi"}.
 {"Path to Dir","Jalur ke Dir"}.
 {"Path to File","Jalur ke File"}.
 {"Pending","Tertunda"}.
@@ -225,7 +206,6 @@
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Harap dicatat bahwa pilihan ini hanya akan membuat cadangan builtin Mnesia database. Jika Anda menggunakan modul ODBC, anda juga perlu untuk membuat cadangan database SQL Anda secara terpisah."}.
 {"Pong","Pong"}.
-{"Port ~b","Port ~b"}.
 {"Port","Port"}.
 {"private, ","pribadi, "}.
 {"Protocol","Protocol"}.
@@ -238,44 +218,43 @@
 {"Really delete message of the day?","Benar-benar ingin menghapus pesan harian?"}.
 {"Recipient is not in the conference room","Penerima tidak berada di ruangan konferensi"}.
 {"Register a Jabber account","Daftarkan sebuah akun jabber"}.
-{"Registered Users:","Pengguna Terdaftar:"}.
 {"Registered Users","Pengguna Terdaftar"}.
+{"Registered Users:","Pengguna Terdaftar:"}.
 {"Register","Mendaftar"}.
-{"Registration in mod_irc for ","Pendaftaran di mod_irc untuk"}.
 {"Remote copy","Salinan Remote"}.
 {"Remove All Offline Messages","Hapus Semua Pesan Offline"}.
-{"Remove","Menghapus"}.
 {"Remove User","Hapus Pengguna"}.
+{"Remove","Menghapus"}.
 {"Replaced by new connection","Diganti dengan koneksi baru"}.
 {"Resources","Sumber daya"}.
-{"Restart","Jalankan Ulang"}.
 {"Restart Service","Restart Layanan"}.
+{"Restart","Jalankan Ulang"}.
 {"Restore Backup from File at ","Kembalikan Backup dari File pada"}.
 {"Restore binary backup after next ejabberd restart (requires less memory):","Mengembalikan cadangan yang berpasanagn setelah ejabberd berikutnya dijalankan ulang (memerlukan memori lebih sedikit):"}.
 {"Restore binary backup immediately:","Segera mengembalikan cadangan yang berpasangan:"}.
-{"Restore","Mengembalikan"}.
 {"Restore plain text backup immediately:","Segera mengembalikan cadangan teks biasa:"}.
+{"Restore","Mengembalikan"}.
 {"Room Configuration","Konfigurasi Ruangan"}.
 {"Room creation is denied by service policy","Pembuatan Ruangan ditolak oleh kebijakan layanan"}.
 {"Room description","Keterangan ruangan"}.
 {"Room Occupants","Penghuni Ruangan"}.
 {"Room title","Nama Ruangan"}.
-{"Roster","Kontak"}.
 {"Roster of ","Kontak dari"}.
 {"Roster size","Ukuran Daftar Kontak"}.
+{"Roster","Kontak"}.
 {"RPC Call Error","Panggilan Kesalahan RPC"}.
 {"Running Nodes","Menjalankan Node"}.
 {"~s access rule configuration","~s aturan akses konfigurasi"}.
+{"~s invites you to the room ~s","~s mengundang anda ke ruangan ~s"}.
 {"Saturday","Sabtu"}.
 {"Script check","Periksa naskah"}.
 {"Search Results for ","Hasil Pencarian untuk"}.
 {"Search users in ","Pencarian pengguna dalam"}.
-{"Send announcement to all online users","Kirim pengumuman untuk semua pengguna yang online"}.
 {"Send announcement to all online users on all hosts","Kirim pengumuman untuk semua pengguna yang online pada semua host"}.
-{"Send announcement to all users","Kirim pengumuman untuk semua pengguna"}.
+{"Send announcement to all online users","Kirim pengumuman untuk semua pengguna yang online"}.
 {"Send announcement to all users on all hosts","Kirim pengumuman untuk semua pengguna pada semua host"}.
+{"Send announcement to all users","Kirim pengumuman untuk semua pengguna"}.
 {"September","September"}.
-{"Server ~b","Layanan ~b"}.
 {"Server:","Layanan:"}.
 {"Set message of the day and send to online users","Mengatur pesan harian dan mengirimkan ke pengguna yang online"}.
 {"Set message of the day on all hosts and send to online users","Mengatur pesan harian pada semua host dan kirimkan ke pengguna yang online"}.
@@ -283,7 +262,6 @@
 {"Show Integral Table","Tampilkan Tabel Terpisah"}.
 {"Show Ordinary Table","Tampilkan Tabel Normal"}.
 {"Shut Down Service","Shut Down Layanan"}.
-{"~s invites you to the room ~s","~s mengundang anda ke ruangan ~s"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Beberapa klien Jabber dapat menyimpan password di komputer Anda. Gunakan fitur itu hanya jika Anda mempercayai komputer Anda aman."}.
 {"~s's Offline Messages Queue","Antrian Pesan Offline ~s"}.
 {"Start Modules at ","Mulai Modul pada"}.
@@ -291,9 +269,9 @@
 {"Start","Mulai"}.
 {"Statistics of ~p","statistik dari ~p"}.
 {"Statistics","Statistik"}.
-{"Stop","Hentikan"}.
 {"Stop Modules at ","Hentikan Modul pada"}.
 {"Stop Modules","Hentikan Modul"}.
+{"Stop","Hentikan"}.
 {"Stopped Nodes","Menghentikan node"}.
 {"Storage Type","Jenis Penyimpanan"}.
 {"Store binary backup:","Penyimpanan cadangan yang berpasangan:"}.
@@ -307,8 +285,8 @@
 {"That nickname is registered by another person","Julukan tersebut telah didaftarkan oleh orang lain"}.
 {"The CAPTCHA is valid.","Captcha ini benar."}.
 {"The CAPTCHA verification has failed","Verifikasi CAPTCHA telah gagal"}.
-{"the password is","kata sandi yaitu:"}.
 {"The password is too weak","Kata sandi terlalu lemah"}.
+{"the password is","kata sandi yaitu:"}.
 {"The password of your Jabber account was successfully changed.","Kata sandi pada akun Jabber Anda telah berhasil diubah."}.
 {"There was an error changing the password: ","Ada kesalahan dalam mengubah password:"}.
 {"There was an error creating the account: ","Ada kesalahan saat membuat akun:"}.
@@ -320,8 +298,8 @@
 {"Thursday","Kamis"}.
 {"Time delay","Waktu tunda"}.
 {"Time","Waktu"}.
-{"To","Kepada"}.
 {"To ~s","Kepada ~s"}.
+{"To","Kepada"}.
 {"Traffic rate limit is exceeded","Lalu lintas melebihi batas"}.
 {"Transactions Aborted:","Transaksi yang dibatalkan:"}.
 {"Transactions Committed:","Transaksi yang dilakukan:"}.
@@ -332,13 +310,12 @@
 {"Unauthorized","Ditolak"}.
 {"Unregister a Jabber account","Nonaktifkan akun jabber"}.
 {"Unregister","Nonaktifkan"}.
-{"Update","Memperbarui"}.
 {"Update message of the day (don't send)","Rubah pesan harian (tidak dikirim)"}.
 {"Update message of the day on all hosts (don't send)","Rubah pesan harian pada semua host (tidak dikirim)"}.
 {"Update plan","Rencana Perubahan"}.
 {"Update script","Perbarui naskah"}.
+{"Update","Memperbarui"}.
 {"Uptime:","Sampai saat:"}.
-{"Use of STARTTLS required","Penggunaan STARTTLS diperlukan"}.
 {"User Management","Manajemen Pengguna"}.
 {"Username:","Nama Pengguna:"}.
 {"User","Pengguna"}.
@@ -356,7 +333,6 @@
 {"You must fill in field \"Nickname\" in the form","Anda harus mengisi kolom \"Julukan\" dalam formulir"}.
 {"You need a client that supports x:data and CAPTCHA to register","Anda memerlukan klien yang mendukung x:data dan CAPTCHA untuk mendaftar"}.
 {"You need a client that supports x:data to register the nickname","Anda memerlukan klien yang mendukung x:data untuk mendaftar julukan"}.
-{"You need an x:data capable client to configure mod_irc settings","Anda memerlukan x:data klien untuk mampu mengkonfigurasi pengaturan mod_irc"}.
 {"You need an x:data capable client to search","Anda memerlukan x:data klien untuk melakukan pencarian"}.
 {"Your active privacy list has denied the routing of this stanza.","Daftar privasi aktif Anda telah menolak routing ztanza ini"}.
 {"Your contact offline message queue is full. The message has been discarded.","Kontak offline Anda pada antrian pesan sudah penuh. Pesan telah dibuang."}.

@@ -1,10 +1,9 @@
 %% -*- coding: latin-1 -*-
+{" has set the subject to: "," đã đặt chủ đề thành: "}.
 {"Access Configuration","Cấu Hình Truy Cập"}.
 {"Access Control List Configuration","Cấu Hình Danh Sách Kiểm Soát Truy Cập"}.
-{"Access control lists","Danh sách kiểm soát truy cập"}.
 {"Access Control Lists","Danh Sách Kiểm Soát Truy Cập"}.
 {"Access denied by service policy","Sự truy cập bị chặn theo chính sách phục vụ"}.
-{"Access rules","Quy tắc Truy Cập"}.
 {"Access Rules","Quy Tắc Truy Cập"}.
 {"Action on user","Hành động đối với người sử dụng"}.
 {"Add Jabber ID","Thêm Jabber ID"}.
@@ -14,16 +13,16 @@
 {"Administration","Quản trị"}.
 {"Administrator privileges required","Yêu cầu đặc quyền của nhà quản trị"}.
 {"All activity","Tất cả hoạt động"}.
+{"All Users","Tất Cả Người Sử Dụng"}.
 {"Allow users to query other users","Cho phép người sử dụng hỏi người sử dụng khác"}.
 {"Allow users to send invites","Cho phép người sử dụng gửi lời mời"}.
 {"Allow users to send private messages","Cho phép người sử dụng gửi thư riêng"}.
-{"All Users","Tất Cả Người Sử Dụng"}.
 {"Announcements","Thông báo"}.
 {"April","Tháng Tư"}.
 {"August","Tháng Tám"}.
 {"Backup Management","Quản lý Sao Lưu Dự Phòng"}.
-{"Backup","Sao lưu dự phòng"}.
 {"Backup to File at ","Sao lưu dự phòng ra Tập Tin tại"}.
+{"Backup","Sao lưu dự phòng"}.
 {"Bad format","Định dạng hỏng"}.
 {"Birthday","Ngày sinh"}.
 {"Change Password","Thay Đổi Mật Khẩu"}.
@@ -41,8 +40,8 @@
 {"Connected Resources:","Tài Nguyên Được Kết Nối:"}.
 {"Country","Quốc gia"}.
 {"CPU Time:","Thời Gian CPU:"}.
-{"Database","Cơ sở dữ liệu"}.
 {"Database Tables Configuration at ","Cấu Hình Bảng Cơ Sở Dữ Liệu tại"}.
+{"Database","Cơ sở dữ liệu"}.
 {"December","Tháng Mười Hai"}.
 {"Default users as participants","Người sử dụng mặc định là người tham dự"}.
 {"Delete message of the day on all hosts","Xóa thư trong ngày trên tất cả các máy chủ"}.
@@ -55,7 +54,6 @@
 {"Dump Backup to Text File at ","Kết Xuất Sao Lưu ra Tập Tin Văn Bản tại"}.
 {"Dump to Text File","Kết xuất ra Tập Tin Văn Bản"}.
 {"Edit Properties","Chỉnh Sửa Thuộc Tính"}.
-{"ejabberd IRC module","Môdun ejabberd IRC Bản quyền"}.
 {"ejabberd MUC module","Môdun ejabberd MUC Bản quyền"}.
 {"ejabberd Publish-Subscribe module","Môdun ejabberd Xuất Bản-Đăng Ký Bản quyền"}.
 {"ejabberd SOCKS5 Bytestreams module","Môdun SOCKS5 Bytestreams Bản quyền"}.
@@ -86,7 +84,6 @@
 {"Groups","Nhóm"}.
 {"has been banned","đã bị cấm"}.
 {"has been kicked","đã bị đẩy ra khỏi"}.
-{" has set the subject to: "," đã đặt chủ đề thành: "}.
 {"Host","Máy chủ"}.
 {"Import Directory","Nhập Thư Mục"}.
 {"Import File","Nhập Tập Tin"}.
@@ -96,8 +93,6 @@
 {"Improper message type","Loại thư không phù hợp"}.
 {"Incorrect password","Mật khẩu sai"}.
 {"IP addresses","Địa chỉ IP"}.
-{"IRC Transport","Truyền tải IRC"}.
-{"IRC Username","Tên truy cập IRC"}.
 {"is now known as","bây giờ được biết như"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Không được phép gửi những thư riêng loại \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Không được phép gửi những thư riêng đến phòng họp"}.
@@ -111,9 +106,9 @@
 {"Last month","Tháng trước"}.
 {"Last year","Năm trước"}.
 {"leaves the room","rời khỏi phòng này"}.
+{"List of modules to start","Danh sách các môđun khởi động"}.
 {"Listened Ports at ","Cổng Liên Lạc tại"}.
 {"Listened Ports","Cổng Kết Nối"}.
-{"List of modules to start","Danh sách các môđun khởi động"}.
 {"Low level update script","Lệnh cập nhật mức độ thấp"}.
 {"Make participants list public","Tạo danh sách người tham dự công khai"}.
 {"Make room members-only","Tạo phòng chỉ cho phép tư cách thành viên tham gia"}.
@@ -131,12 +126,12 @@
 {"Module","Môđun"}.
 {"Modules","Môđun"}.
 {"Monday","Thứ Hai"}.
-{"Name:","Tên:"}.
 {"Name","Tên"}.
+{"Name:","Tên:"}.
 {"Never","Không bao giờ"}.
-{"Nickname","Bí danh"}.
 {"Nickname Registration at ","Đăng Ký Bí Danh tại"}.
 {"Nickname ~s does not exist in the room","Bí danh ~s không tồn tại trong phòng này"}.
+{"Nickname","Bí danh"}.
 {"No body provided for announce message","Không có nội dung trong thư thông báo"}.
 {"No Data","Không Dữ Liệu"}.
 {"Node not found","Nút không tìm thấy"}.
@@ -146,25 +141,25 @@
 {"Number of online users","Số người sử dụng trực tuyến"}.
 {"Number of registered users","Số người sử dụng đã đăng ký"}.
 {"October","Tháng Mười"}.
-{"Offline Messages:","Thư Ngoại Tuyến:"}.
 {"Offline Messages","Thư Ngoại Tuyến"}.
+{"Offline Messages:","Thư Ngoại Tuyến:"}.
 {"OK","OK"}.
-{"Online","Trực tuyến"}.
-{"Online Users:","Người Sử Dụng Trực Tuyến:"}.
 {"Online Users","Người Sử Dụng Trực Tuyến"}.
+{"Online Users:","Người Sử Dụng Trực Tuyến:"}.
+{"Online","Trực tuyến"}.
 {"Only occupants are allowed to send messages to the conference","Chỉ có những đối tượng tham gia mới được phép gửi thư đến phòng họp"}.
 {"Only occupants are allowed to send queries to the conference","Chỉ có những đối tượng tham gia mới được phép gửi yêu cầu đến phòng họp"}.
 {"Only service administrators are allowed to send service messages","Chỉ có người quản trị dịch vụ mới được phép gửi những thư dịch vụ"}.
 {"Options","Tùy chọn"}.
 {"Organization Name","Tên Tổ Chức"}.
 {"Organization Unit","Bộ Phận"}.
-{"Outgoing s2s Connections:","Kết Nối Bên Ngoài s2s:"}.
 {"Outgoing s2s Connections","Kết Nối Bên Ngoài s2s"}.
+{"Outgoing s2s Connections:","Kết Nối Bên Ngoài s2s:"}.
 {"Owner privileges required","Yêu cầu đặc quyền của người sở hữu"}.
 {"Packet","Gói thông tin"}.
-{"Password:","Mật Khẩu:"}.
-{"Password","Mật Khẩu"}.
 {"Password Verification","Kiểm Tra Mật Khẩu"}.
+{"Password","Mật Khẩu"}.
+{"Password:","Mật Khẩu:"}.
 {"Path to Dir","Đường Dẫn đến Thư Mục"}.
 {"Path to File","Đường dẫn đến Tập Tin"}.
 {"Pending","Chờ"}.
@@ -181,38 +176,38 @@
 {"Raw","Thô"}.
 {"Really delete message of the day?","Có thực sự xóa thư trong ngày này không?"}.
 {"Recipient is not in the conference room","Người nhận không có trong phòng họp"}.
-{"Registered Users:","Người Sử Dụng Đã Đăng Ký:"}.
 {"Registered Users","Người Sử Dụng Đã Đăng Ký"}.
-{"Registration in mod_irc for ","Đăng ký trong mod_irc cho "}.
+{"Registered Users:","Người Sử Dụng Đã Đăng Ký:"}.
 {"Remote copy","Sao chép từ xa"}.
-{"Remove","Gỡ bỏ"}.
 {"Remove User","Gỡ Bỏ Người Sử Dụng"}.
+{"Remove","Gỡ bỏ"}.
 {"Replaced by new connection","Được thay thế bởi kết nối mới"}.
 {"Resources","Nguồn tài nguyên"}.
-{"Restart","Khởi động lại"}.
 {"Restart Service","Khởi Động Lại Dịch Vụ"}.
+{"Restart","Khởi động lại"}.
 {"Restore Backup from File at ","Phục hồi Sao Lưu từ Tập Tin tại "}.
 {"Restore binary backup after next ejabberd restart (requires less memory):","Khôi phục bản sao lưu dự phòng dạng nhị phân sau lần khởi động ejabberd kế tiếp (yêu cầu ít bộ nhớ hơn):"}.
 {"Restore binary backup immediately:","Khôi phục bản sao lưu dự phòng dạng nhị phận ngay lập tức:"}.
-{"Restore","Khôi phục"}.
 {"Restore plain text backup immediately:","Khôi phục bản sao lưu dự phòng thuần văn bản ngay lập tức:"}.
+{"Restore","Khôi phục"}.
 {"Room Configuration","Cấu Hình Phòng"}.
 {"Room creation is denied by service policy","Việc tạo phòng bị ngăn lại theo chính sách dịch vụ"}.
 {"Room title","Tên phòng"}.
-{"Roster","Bảng phân công"}.
 {"Roster of ","Bảng phân công của "}.
 {"Roster size","Kích thước bảng phân công"}.
+{"Roster","Bảng phân công"}.
 {"RPC Call Error","Lỗi Gọi RPC"}.
 {"Running Nodes","Nút Hoạt Động"}.
 {"~s access rule configuration","~s cấu hình quy tắc truy cập"}.
+{"~s invites you to the room ~s","~s mời bạn vào phòng ~s"}.
 {"Saturday","Thứ Bảy"}.
 {"Script check","Lệnh kiểm tra"}.
 {"Search Results for ","Kết Quả Tìm Kiếm cho "}.
 {"Search users in ","Tìm kiếm người sử dụng trong"}.
-{"Send announcement to all online users","Gửi thông báo đến tất cả người sử dụng trực tuyến"}.
 {"Send announcement to all online users on all hosts","Gửi thông báo đến tất cả người sử dụng trực tuyến trên tất cả các máy chủ"}.
-{"Send announcement to all users","Gửi thông báo đến tất cả người sử dụng"}.
+{"Send announcement to all online users","Gửi thông báo đến tất cả người sử dụng trực tuyến"}.
 {"Send announcement to all users on all hosts","Gửi thông báo đến tất cả người sử dụng trên tất cả các máy chủ"}.
+{"Send announcement to all users","Gửi thông báo đến tất cả người sử dụng"}.
 {"September","Tháng Chín"}.
 {"Set message of the day and send to online users","Tạo lập thư trong ngày và gửi đến những người sử dụng trực tuyến"}.
 {"Set message of the day on all hosts and send to online users","Tạo lập thư trong ngày trên tất cả các máy chủ và gửi đến những người sử dụng trực tuyến"}.
@@ -220,16 +215,15 @@
 {"Show Integral Table","Hiển Thị Bảng Đầy Đủ"}.
 {"Show Ordinary Table","Hiển Thị Bảng Thường"}.
 {"Shut Down Service","Tắt Dịch Vụ"}.
-{"~s invites you to the room ~s","~s mời bạn vào phòng ~s"}.
 {"~s's Offline Messages Queue","~s's Danh Sách Chờ Thư Ngoại Tuyến"}.
-{"Start","Khởi động"}.
 {"Start Modules at ","Môđun Khởi Động tại "}.
 {"Start Modules","Môđun Khởi Động"}.
+{"Start","Khởi động"}.
 {"Statistics of ~p","Thống kê về ~p"}.
 {"Statistics","Số liệu thống kê"}.
-{"Stop","Dừng"}.
 {"Stop Modules at ","Môđun Dừng tại"}.
 {"Stop Modules","Môđun Dừng"}.
+{"Stop","Dừng"}.
 {"Stopped Nodes","Nút Dừng"}.
 {"Storage Type","Loại Lưu Trữ"}.
 {"Store binary backup:","Lưu dữ liệu sao lưu dạng nhị phân:"}.
@@ -244,21 +238,20 @@
 {"Thursday","Thứ Năm"}.
 {"Time delay","Thời gian trì hoãn"}.
 {"Time","Thời Gian"}.
-{"To","Đến"}.
 {"To ~s","Gửi đến ~s"}.
+{"To","Đến"}.
 {"Traffic rate limit is exceeded","Quá giới hạn tỷ lệ lưu lượng truyền tải"}.
 {"Transactions Aborted:","Giao Dịch Hủy Bỏ:"}.
 {"Transactions Committed:","Giao Dịch Được Cam Kết:"}.
 {"Transactions Logged:","Giao Dịch Được Ghi Nhận:"}.
 {"Transactions Restarted:","Giao Dịch Khởi Động Lại:"}.
 {"Tuesday","Thứ Ba"}.
-{"Update","Cập Nhật"}.
 {"Update message of the day (don't send)","Cập nhật thư trong ngày (không gửi)"}.
 {"Update message of the day on all hosts (don't send)","Cập nhật thư trong ngày trên tất cả các máy chủ (không gửi)"}.
 {"Update plan","Kế hoạch cập nhật"}.
 {"Update script","Cập nhận lệnh"}.
+{"Update","Cập Nhật"}.
 {"Uptime:","Thời gian tải lên:"}.
-{"Use of STARTTLS required","Yêu cầu sử dụng STARTTLS"}.
 {"User Management","Quản Lý Người Sử Dụng"}.
 {"User","Người sử dụng"}.
 {"Users Last Activity","Hoạt Động Cuối Cùng Của Người Sử Dụng"}.
@@ -270,6 +263,5 @@
 {"Wednesday","Thứ Tư"}.
 {"You have been banned from this room","Bạn bị cấm tham gia phòng này"}.
 {"You must fill in field \"Nickname\" in the form","Bạn phải điền thông tin vào ô \"Nickname\" trong biểu mẫu này"}.
-{"You need an x:data capable client to configure mod_irc settings","Bạn cần có một trình ứng dụng khách hỗ trợ định dạng dữ liệu x: để xác định các thiết lập mod_irc"}.
 {"You need an x:data capable client to search","Bạn cần có một trình ứng dụng khách hỗ trợ định dạng dữ liệu x: để tìm kiếm"}.
 {"Your contact offline message queue is full. The message has been discarded.","Danh sách chờ thư liên lạc ngoại tuyến của bạn đã đầy. Thư này đã bị loại bỏ."}.
