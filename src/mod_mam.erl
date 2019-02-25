@@ -631,15 +631,22 @@ process_iq(#iq{from = #jid{luser = LUser, lserver = LServer},
 				     default = Default,
 				     always = Always0,
 				     never = Never0}]} = IQ) ->
-    Always = lists:usort(get_jids(Always0)),
-    Never = lists:usort(get_jids(Never0)),
-    case write_prefs(LUser, LServer, LServer, Default, Always, Never) of
-	ok ->
-	    NewPrefs = prefs_el(Default, Always, Never, NS),
-	    xmpp:make_iq_result(IQ, NewPrefs);
-	_Err ->
-	    Txt = <<"Database failure">>,
-	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
+    Access = gen_mod:get_module_opt(LServer, ?MODULE, access_preferences),
+    case acl:match_rule(LServer, Access, jid:make(LUser, LServer)) of
+	allow ->
+	    Always = lists:usort(get_jids(Always0)),
+	    Never = lists:usort(get_jids(Never0)),
+	    case write_prefs(LUser, LServer, LServer, Default, Always, Never) of
+		ok ->
+		    NewPrefs = prefs_el(Default, Always, Never, NS),
+		    xmpp:make_iq_result(IQ, NewPrefs);
+		_Err ->
+		    Txt = <<"Database failure">>,
+		    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
+	    end;
+	deny ->
+	    Txt = <<"MAM preference modification denied by service policy">>,
+	    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang))
     end;
 process_iq(#iq{from = #jid{luser = LUser, lserver = LServer},
 	       to = #jid{lserver = LServer}, lang = Lang,
@@ -1257,7 +1264,9 @@ mod_opt_type(default) ->
 mod_opt_type(request_activates_archiving) ->
     fun (B) when is_boolean(B) -> B end;
 mod_opt_type(clear_archive_on_room_destroy) ->
-    fun (B) when is_boolean(B) -> B end.
+    fun (B) when is_boolean(B) -> B end;
+mod_opt_type(access_preferences) ->
+    fun acl:access_rules_validator/1.
 
 mod_options(Host) ->
     [{assume_mam_usage, false},
@@ -1265,6 +1274,7 @@ mod_options(Host) ->
      {request_activates_archiving, false},
      {compress_xml, false},
      {clear_archive_on_room_destroy, true},
+     {access_preferences, all},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {use_cache, ejabberd_config:use_cache(Host)},
      {cache_size, ejabberd_config:cache_size(Host)},
