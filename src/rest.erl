@@ -84,6 +84,7 @@ request(Server, Method, Path, Params, Mime, Data) ->
     Opts = [{connect_timeout, ?CONNECT_TIMEOUT},
             {timeout, ?HTTP_TIMEOUT}],
     Hdrs = [{"connection", "keep-alive"},
+            {"Accept", "application/json"},
 	    {"User-Agent", "ejabberd"}]
 	   ++ custom_headers(Server),
     Req = if
