@@ -169,7 +169,7 @@ sub update_app_src {
     my $app = ".deps-update/$dep/src/$dep.app.src";
     return if not -f $app;
     my $content = slurp($app);
-    $content =~ s/({\s*vsn\s*,\s*)".*"/$1"$version"/;
+    $content =~ s/(\{\s*vsn\s*,\s*)".*"/$1"$version"/;
     write_file($app, $content);
 }
 
@@ -235,6 +235,15 @@ sub deps_git_info {
             my $new_tag = $last_tag;
             $new_tag =~ s/(\d+)$/$1+1/e;
             chomp(@new);
+
+            my $cl = ".deps-update/$dep/CHANGELOG.md";
+            my $content = slurp($cl, err_mode => "quiet") // "";
+            if ($content =~ /^# Version (\S+)/) {
+                if (!grep({$_ eq $1} @tags) && $1 ne $new_tag) {
+                    $new_tag = $1;
+                }
+            }
+
             $info{$dep} = { last_tag => $last_tag, new_commits => \@new, new_tag => $new_tag };
         }
     }
@@ -252,12 +261,18 @@ sub show_commands {
         say color("red"), $_, color("reset"), ") $commands{$_}";
     }
     ReadMode(4);
+    my $wkey = "";
     while (1) {
         my $key = ReadKey(0);
+        $wkey = substr($wkey.$key, -2);
         if (defined $commands{uc($key)}) {
             ReadMode(0);
             say "";
             return uc($key);
+        } elsif (defined $commands{uc($wkey)}) {
+            ReadMode(0);
+            say "";
+            return uc($wkey);
         }
     }
 }
@@ -431,10 +446,17 @@ while (1) {
             my @deps_to_tag;
             my @od;
             my $idx = 1;
+            my $count = 0;
+            for my $dep (sort keys %$top_deps) {
+                next unless @{$git_info->{$dep}->{new_commits}};
+                $count++;
+            }
             for my $dep (sort keys %$top_deps) {
                 next unless @{$git_info->{$dep}->{new_commits}};
                 $od[$idx] = $dep;
-                push @deps_to_tag, $idx++, "Tag $dep with version $git_info->{$dep}->{new_tag}";
+                my $id = $idx++;
+                $id = sprintf "%02d", $id if $count > 9;
+                push @deps_to_tag, $id, "Tag $dep with version $git_info->{$dep}->{new_tag}";
             }
             last if $idx == 1;
             my $cmd = show_commands(@deps_to_tag, E => "Exit");
