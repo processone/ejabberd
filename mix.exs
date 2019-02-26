@@ -3,7 +3,7 @@ defmodule Ejabberd.Mixfile do
 
   def project do
     [app: :ejabberd,
-     version: "18.12.1",
+     version: "19.2.0",
      description: description(),
      elixir: "~> 1.4",
      elixirc_paths: ["lib"],
