@@ -819,7 +819,7 @@ decide_room(unused, {_Room_name, _Host, Room_pid}, ServerHost, Last_allowed) ->
 			   true when (HistorySize == 0) or (JustCreated == true) ->
 			       {false, 0};
 			   true ->
-			       Ts_diff = (misc:now_to_usec(now())
+			       Ts_diff = (p1_time_compat:os_system_time(micro_seconds)
 				    - S#state.just_created) div 1000000,
 			       {false, Ts_diff};
 			   false ->

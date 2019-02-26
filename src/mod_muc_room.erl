@@ -1960,7 +1960,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 		  ResultState =
 		      case NewStateData#state.just_created of
 			  true ->
-			      NewStateData#state{just_created = misc:now_to_usec(now())};
+			      NewStateData#state{just_created = p1_time_compat:os_system_time(micro_seconds)};
 			  _ ->
 			      Robots = maps:remove(From, StateData#state.robots),
 			      NewStateData#state{robots = Robots}
