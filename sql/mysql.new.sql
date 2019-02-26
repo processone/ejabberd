@@ -242,7 +242,7 @@ CREATE TABLE pubsub_node (
   nodeid bigint auto_increment primary key
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE INDEX i_pubsub_node_parent ON pubsub_node(parent(120));
-CREATE UNIQUE INDEX i_pubsub_node_tuple ON pubsub_node(host(20), node(120));
+CREATE UNIQUE INDEX i_pubsub_node_tuple ON pubsub_node(host(71), node(120));
 
 CREATE TABLE pubsub_node_option (
   nodeid bigint,
