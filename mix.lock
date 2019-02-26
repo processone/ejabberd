@@ -21,6 +21,7 @@
   "luerl": {:hex, :luerl, "0.3.1", "5412807630aac1aaf59ffe5a1bc09259c447b4faeb1d3fe2d4ef41b87676cb04", [:rebar3], [], "hexpm"},
   "makeup": {:hex, :makeup, "0.8.0", "9cf32aea71c7fe0a4b2e9246c2c4978f9070257e5c9ce6d4a28ec450a839b55f", [:mix], [{:nimble_parsec, "~> 0.5.0", [hex: :nimble_parsec, repo: "hexpm", optional: false]}], "hexpm"},
   "makeup_elixir": {:hex, :makeup_elixir, "0.13.0", "be7a477997dcac2e48a9d695ec730b2d22418292675c75aa2d34ba0909dcdeda", [:mix], [{:makeup, "~> 0.8", [hex: :makeup, repo: "hexpm", optional: false]}], "hexpm"},
+  "mqtree": {:hex, :mqtree, "1.0.2", "8c41098424b13c67bddb71c966aa19ae72209d8b8f066d0ac9157d5c2834b68b", [:rebar3], [{:p1_utils, "1.0.14", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "nimble_parsec": {:hex, :nimble_parsec, "0.5.0", "90e2eca3d0266e5c53f8fbe0079694740b9c91b6747f2b7e3c5d21966bba8300", [:mix], [], "hexpm"},
   "p1_mysql": {:hex, :p1_mysql, "1.0.9", "43ca869d3797b0248630cac0e05042e5e1b77d5cc3164206b10079c8d9182e0e", [:rebar3], [], "hexpm"},
   "p1_oauth2": {:hex, :p1_oauth2, "0.6.4", "7898999a940814707a26a5b113f39ff1b1fd7f6ea3d31fcd414cd765b2f1fd28", [:rebar3], [], "hexpm"},
