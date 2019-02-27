@@ -387,7 +387,7 @@ process(LocalPath, #request{method = Method, host = Host, ip = IP})
 process(_LocalPath, #request{method = 'PUT', host = Host, ip = IP,
 			     length = Length} = Request) ->
     {Proc, Slot} = parse_http_request(Request),
-    case catch gen_server:call(Proc, {use_slot, Slot, Length}, ?CALL_TIMEOUT) of
+    try gen_server:call(Proc, {use_slot, Slot, Length}, ?CALL_TIMEOUT) of
 	{ok, Path, FileMode, DirMode, GetPrefix, Thumbnail, CustomHeaders} ->
 	    ?DEBUG("Storing file from ~s for ~s: ~s",
 		   [encode_addr(IP), Host, Path]),
@@ -413,8 +413,14 @@ process(_LocalPath, #request{method = 'PUT', host = Host, ip = IP,
 	{error, invalid_slot} ->
 	    ?WARNING_MSG("Rejecting file ~s from ~s for ~s: Invalid slot",
 		      [lists:last(Slot), encode_addr(IP), Host]),
-	    http_response(403);
-	Error ->
+	    http_response(403)
+    catch
+	exit:{noproc, _} ->
+	    ?WARNING_MSG("Cannot handle PUT request from ~s for ~s: "
+			 "Upload not configured for this host",
+			 [encode_addr(IP), Host]),
+	    http_response(404);
+	_:Error ->
 	    ?ERROR_MSG("Cannot handle PUT request from ~s for ~s: ~p",
 		       [encode_addr(IP), Host, Error]),
 	    http_response(500)
@@ -423,7 +429,7 @@ process(_LocalPath, #request{method = Method, host = Host, ip = IP} = Request)
     when Method == 'GET';
 	 Method == 'HEAD' ->
     {Proc, [_UserDir, _RandDir, FileName] = Slot} = parse_http_request(Request),
-    case catch gen_server:call(Proc, get_conf, ?CALL_TIMEOUT) of
+    try gen_server:call(Proc, get_conf, ?CALL_TIMEOUT) of
 	{ok, DocRoot, CustomHeaders} ->
 	    Path = str:join([DocRoot | Slot], <<$/>>),
 	    case file:open(Path, [read]) of
@@ -458,8 +464,14 @@ process(_LocalPath, #request{method = Method, host = Host, ip = IP} = Request)
 		    ?WARNING_MSG("Cannot serve ~s to ~s: ~s",
 			      [Path, encode_addr(IP), format_error(Error)]),
 		    http_response(500)
-	    end;
-	Error ->
+	    end
+    catch
+	exit:{noproc, _} ->
+	    ?WARNING_MSG("Cannot handle ~s request from ~s for ~s: "
+			 "Upload not configured for this host",
+			 [Method, encode_addr(IP), Host]),
+	    http_response(404);
+	_:Error ->
 	    ?ERROR_MSG("Cannot handle ~s request from ~s for ~s: ~p",
 		       [Method, encode_addr(IP), Host, Error]),
 	    http_response(500)
@@ -469,11 +481,17 @@ process(_LocalPath, #request{method = 'OPTIONS', host = Host,
     ?DEBUG("Responding to OPTIONS request from ~s for ~s",
 	   [encode_addr(IP), Host]),
     {Proc, _Slot} = parse_http_request(Request),
-    case catch gen_server:call(Proc, get_conf, ?CALL_TIMEOUT) of
+    try gen_server:call(Proc, get_conf, ?CALL_TIMEOUT) of
 	{ok, _DocRoot, CustomHeaders} ->
 	    AllowHeader = {<<"Allow">>, <<"OPTIONS, HEAD, GET, PUT">>},
-	    http_response(200, [AllowHeader | CustomHeaders]);
-	Error ->
+	    http_response(200, [AllowHeader | CustomHeaders])
+    catch
+	exit:{noproc, _} ->
+	    ?WARNING_MSG("Cannot handle OPTIONS request from ~s for ~s: "
+			 "Upload not configured for this host",
+			 [encode_addr(IP), Host]),
+	    http_response(404);
+	_:Error ->
 	    ?ERROR_MSG("Cannot handle OPTIONS request from ~s for ~s: ~p",
 		       [encode_addr(IP), Host, Error]),
 	    http_response(500)
