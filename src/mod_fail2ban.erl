@@ -62,7 +62,7 @@ c2s_auth_result(#{ip := {Addr, _}, lserver := LServer} = State, false, _User) ->
 			    LServer, ?MODULE, c2s_auth_ban_lifetime),
 	    MaxFailures = gen_mod:get_module_opt(
 			    LServer, ?MODULE, c2s_max_auth_failures),
-	    UnbanTS = p1_time_compat:system_time(seconds) + BanLifetime,
+	    UnbanTS = erlang:system_time(second) + BanLifetime,
 	    Attempts = case ets:lookup(failed_auth, Addr) of
 		[{Addr, N, _, _}] ->
 			       ets:insert(failed_auth,
@@ -88,7 +88,7 @@ c2s_auth_result(#{ip := {Addr, _}} = State, true, _User) ->
 c2s_stream_started(#{ip := {Addr, _}} = State, _) ->
     case ets:lookup(failed_auth, Addr) of
 	[{Addr, N, TS, MaxFailures}] when N >= MaxFailures ->
-	    case TS > p1_time_compat:system_time(seconds) of
+	    case TS > erlang:system_time(second) of
 		true ->
 		    log_and_disconnect(State, N, TS);
 		false ->
@@ -143,7 +143,7 @@ handle_cast(_Msg, State) ->
 
 handle_info(clean, State) ->
     ?DEBUG("cleaning ~p ETS table", [failed_auth]),
-    Now = p1_time_compat:system_time(seconds),
+    Now = erlang:system_time(second),
     ets:select_delete(
       failed_auth,
       ets:fun2ms(fun({_, _, UnbanTS, _}) -> UnbanTS =< Now end)),

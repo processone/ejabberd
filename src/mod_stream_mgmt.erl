@@ -523,7 +523,7 @@ mgmt_queue_add(#{mgmt_stanzas_out := NumStanzasOut,
 		 4294967295 -> 0;
 		 Num -> Num + 1
 	     end,
-    Queue1 = p1_queue:in({NewNum, p1_time_compat:timestamp(), Pkt}, Queue),
+    Queue1 = p1_queue:in({NewNum, erlang:timestamp(), Pkt}, Queue),
     State1 = State#{mgmt_queue => Queue1, mgmt_stanzas_out => NewNum},
     check_queue_length(State1).
 

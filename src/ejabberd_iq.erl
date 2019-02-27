@@ -110,7 +110,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 -spec current_time() -> non_neg_integer().
 current_time() ->
-    p1_time_compat:system_time(milli_seconds).
+    erlang:system_time(millisecond).
 
 -spec clean({non_neg_integer(), binary()} | '$end_of_table')
 	   -> non_neg_integer() | infinity.

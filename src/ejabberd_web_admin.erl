@@ -1463,7 +1463,7 @@ user_parse_query1(Action, User, Server, Query) ->
     end.
 
 list_last_activity(Host, Lang, Integral, Period) ->
-    TimeStamp = p1_time_compat:system_time(seconds),
+    TimeStamp = erlang:system_time(second),
     case Period of
       <<"all">> -> TS = 0, Days = infinity;
       <<"year">> -> TS = TimeStamp - 366 * 86400, Days = 366;

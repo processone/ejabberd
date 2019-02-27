@@ -162,7 +162,7 @@ normal_state({route, <<"">>,
 	is_user_allowed_message_nonparticipant(From, StateData) of
 	true when Type == groupchat ->
 	    Activity = get_user_activity(From, StateData),
-	    Now = p1_time_compat:system_time(micro_seconds),
+	    Now = erlang:system_time(microsecond),
 	    MinMessageInterval = trunc(gen_mod:get_module_opt(
 					 StateData#state.server_host,
 					 mod_muc, min_message_interval)
@@ -344,7 +344,7 @@ normal_state({route, <<"">>, #iq{} = IQ}, StateData) ->
     end;
 normal_state({route, Nick, #presence{from = From} = Packet}, StateData) ->
     Activity = get_user_activity(From, StateData),
-    Now = p1_time_compat:system_time(micro_seconds),
+    Now = erlang:system_time(microsecond),
     MinPresenceInterval =
 	trunc(gen_mod:get_module_opt(StateData#state.server_host,
 				     mod_muc, min_presence_interval)
@@ -903,7 +903,7 @@ process_voice_request(From, Pkt, StateData) ->
 	true ->
 	    MinInterval = (StateData#state.config)#config.voice_request_min_interval,
 	    BareFrom = jid:remove_resource(jid:tolower(From)),
-	    NowPriority = -p1_time_compat:system_time(micro_seconds),
+	    NowPriority = -erlang:system_time(microsecond),
 	    CleanPriority = NowPriority + MinInterval * 1000000,
 	    Times = clean_treap(StateData#state.last_voice_request_time,
 				CleanPriority),
@@ -1572,7 +1572,7 @@ store_user_activity(JID, UserActivity, StateData) ->
 				     mod_muc, min_presence_interval)
 	      * 1000),
     Key = jid:tolower(JID),
-    Now = p1_time_compat:system_time(micro_seconds),
+    Now = erlang:system_time(microsecond),
     Activity1 = clean_treap(StateData#state.activity,
 			    {1, -Now}),
     Activity = case treap:lookup(Key, Activity1) of
@@ -1960,7 +1960,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 		  ResultState =
 		      case NewStateData#state.just_created of
 			  true ->
-			      NewStateData#state{just_created = p1_time_compat:os_system_time(micro_seconds)};
+			      NewStateData#state{just_created = erlang:system_time(microsecond)};
 			  _ ->
 			      Robots = maps:remove(From, StateData#state.robots),
 			      NewStateData#state{robots = Robots}
@@ -2103,7 +2103,7 @@ extract_password(#iq{} = IQ) ->
 get_history(Nick, Packet, #state{history = History}) ->
     case xmpp:get_subtag(Packet, #muc{}) of
 	#muc{history = #muc_history{} = MUCHistory} ->
-	    Now = p1_time_compat:timestamp(),
+	    Now = erlang:timestamp(),
 	    Q = History#lqueue.queue,
 	    filter_history(Q, Now, Nick, MUCHistory);
 	_ ->
@@ -2518,7 +2518,7 @@ add_message_to_history(FromNick, FromJID, Packet, StateData) ->
     add_to_log(text, {FromNick, Packet}, StateData),
     case check_subject(Packet) of
 	[] ->
-	    TimeStamp = p1_time_compat:timestamp(),
+	    TimeStamp = erlang:timestamp(),
 	    AddrPacket = case (StateData#state.config)#config.anonymous of
 			     true -> Packet;
 			     false ->

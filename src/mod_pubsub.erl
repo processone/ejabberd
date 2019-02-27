@@ -2571,7 +2571,7 @@ sub_option_can_deliver(nodes, _, {subscription_type, items}) -> false;
 sub_option_can_deliver(_, _, {subscription_depth, all}) -> true;
 sub_option_can_deliver(_, Depth, {subscription_depth, D}) -> Depth =< D;
 sub_option_can_deliver(_, _, {deliver, false}) -> false;
-sub_option_can_deliver(_, _, {expire, When}) -> p1_time_compat:timestamp() < When;
+sub_option_can_deliver(_, _, {expire, When}) -> erlang:timestamp() < When;
 sub_option_can_deliver(_, _, _) -> true.
 
 -spec presence_can_deliver(ljid(), boolean()) -> boolean().
@@ -3371,7 +3371,7 @@ set_cached_item({_, ServerHost, _}, Nidx, ItemId, Publisher, Payload) ->
 set_cached_item(Host, Nidx, ItemId, Publisher, Payload) ->
     case is_last_item_cache_enabled(Host) of
 	true ->
-	    Stamp = {p1_time_compat:timestamp(), jid:tolower(jid:remove_resource(Publisher))},
+	    Stamp = {erlang:timestamp(), jid:tolower(jid:remove_resource(Publisher))},
 	    Item = #pubsub_last_item{nodeid = {Host, Nidx},
 				     itemid = ItemId,
 				     creation = Stamp,
@@ -3748,7 +3748,7 @@ err_unsupported_access_model() ->
 
 -spec uniqid() -> mod_pubsub:itemId().
 uniqid() ->
-    {T1, T2, T3} = p1_time_compat:timestamp(),
+    {T1, T2, T3} = erlang:timestamp(),
     (str:format("~.16B~.16B~.16B", [T1, T2, T3])).
 
 -spec add_message_type(message(), message_type()) -> message().

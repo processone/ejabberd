@@ -589,7 +589,7 @@ callback(_, _, _) ->
     ok.
 
 now_priority() ->
-    -p1_time_compat:system_time(micro_seconds).
+    -erlang:system_time(microsecond).
 
 -spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(captcha_cmd) ->

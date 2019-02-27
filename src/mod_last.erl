@@ -117,7 +117,7 @@ get_node_uptime() ->
         undefined ->
             trunc(element(1, erlang:statistics(wall_clock)) / 1000);
         Now ->
-            p1_time_compat:system_time(seconds) - Now
+            erlang:system_time(second) - Now
     end.
 
 %%%
@@ -209,7 +209,7 @@ get_last_iq(#iq{lang = Lang} = IQ, LUser, LServer) ->
 		Txt = <<"No info about last activity found">>,
 		xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang));
 	    {ok, TimeStamp, Status} ->
-		TimeStamp2 = p1_time_compat:system_time(seconds),
+		TimeStamp2 = erlang:system_time(second),
 		Sec = TimeStamp2 - TimeStamp,
 		xmpp:make_iq_result(IQ, #last{seconds = Sec, status = Status})
 	  end;
@@ -227,7 +227,7 @@ register_user(User, Server) ->
 
 -spec on_presence_update(binary(), binary(), binary(), binary()) -> any().
 on_presence_update(User, Server, _Resource, Status) ->
-    TimeStamp = p1_time_compat:system_time(seconds),
+    TimeStamp = erlang:system_time(second),
     store_last_info(User, Server, TimeStamp, Status).
 
 -spec store_last_info(binary(), binary(), non_neg_integer(), binary()) -> any().

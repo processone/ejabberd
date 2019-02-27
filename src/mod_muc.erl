@@ -584,7 +584,7 @@ process_muc_unique(#iq{type = set, lang = Lang} = IQ) ->
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_muc_unique(#iq{from = From, type = get,
 		       sub_els = [#muc_unique{}]} = IQ) ->
-    Name = str:sha(term_to_binary([From, p1_time_compat:timestamp(),
+    Name = str:sha(term_to_binary([From, erlang:timestamp(),
 				      p1_rand:get_string()])),
     xmpp:make_iq_result(IQ, #muc_unique{name = Name}).
 

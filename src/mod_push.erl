@@ -163,7 +163,7 @@ get_commands_spec() ->
 
 -spec delete_old_sessions(non_neg_integer()) -> ok | any().
 delete_old_sessions(Days) ->
-    CurrentTime = p1_time_compat:system_time(micro_seconds),
+    CurrentTime = erlang:system_time(microsecond),
     Diff = Days * 24 * 60 * 60 * 1000000,
     TimeStamp = misc:usec_to_now(CurrentTime - Diff),
     DBTypes = lists:usort(

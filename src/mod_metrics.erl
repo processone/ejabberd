@@ -138,7 +138,7 @@ send_metrics(Host, Probe, Peer, Port) ->
     [_, FQDN] = binary:split(misc:atom_to_binary(node()), <<"@">>),
     [Node|_] = binary:split(FQDN, <<".">>),
     BaseId = <<Host/binary, "/", Node/binary, ".">>,
-    TS = integer_to_binary(p1_time_compat:system_time(seconds)),
+    TS = integer_to_binary(erlang:system_time(second)),
     case get_socket(?SOCKET_REGISTER_RETRIES) of
 	{ok, Socket} ->
 	    case Probe of

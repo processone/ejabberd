@@ -87,7 +87,7 @@ set_channel(_LServer, Channel, Service, CreatorJID, Hidden, Key) ->
 		   creator = jid:remove_resource(CreatorJID),
 		   hidden = Hidden,
 		   hmac_key = Key,
-		   created_at = p1_time_compat:timestamp()}).
+		   created_at = erlang:timestamp()}).
 
 get_channels(_LServer, Service) ->
     Ret = mnesia:dirty_index_read(mix_channel, Service, #mix_channel.service),
@@ -127,7 +127,7 @@ set_participant(_LServer, Channel, Service, JID, ID, Nick) ->
 	 jid = jid:remove_resource(JID),
 	 id = ID,
 	 nick = Nick,
-	 created_at = p1_time_compat:timestamp()}).
+	 created_at = erlang:timestamp()}).
 
 get_participant(_LServer, Channel, Service, JID) ->
     {User, Domain, _} = jid:tolower(JID),

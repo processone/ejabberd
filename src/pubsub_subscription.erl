@@ -169,7 +169,7 @@ write_subscription(_JID, _NodeId, SubID, Options) ->
 
 -spec make_subid() -> SubId::mod_pubsub:subId().
 make_subid() ->
-    {T1, T2, T3} = p1_time_compat:timestamp(),
+    {T1, T2, T3} = erlang:timestamp(),
     (str:format("~.16B~.16B~.16B", [T1, T2, T3])).
 
 %%

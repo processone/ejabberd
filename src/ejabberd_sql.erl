@@ -167,7 +167,7 @@ sql_call(Host, Msg) ->
           none -> {error, <<"Unknown Host">>};
           Pid ->
 		sync_send_event(Pid,{sql_cmd, Msg,
-				     p1_time_compat:monotonic_time(milli_seconds)},
+				     erlang:monotonic_time(millisecond)},
 				query_timeout(Host))
           end;
       _State -> nested_op(Msg)
@@ -176,7 +176,7 @@ sql_call(Host, Msg) ->
 keep_alive(Host, PID) ->
     case sync_send_event(PID,
 		    {sql_cmd, {sql_query, ?KEEPALIVE_QUERY},
-		     p1_time_compat:monotonic_time(milli_seconds)},
+		     erlang:monotonic_time(millisecond)},
 		    query_timeout(Host)) of
 	{selected,_,[[<<"1">>]]} ->
 	    ok;
@@ -450,7 +450,7 @@ print_state(State) -> State.
 
 run_sql_cmd(Command, From, State, Timestamp) ->
     QueryTimeout = query_timeout(State#state.host),
-    case p1_time_compat:monotonic_time(milli_seconds) - Timestamp of
+    case erlang:monotonic_time(millisecond) - Timestamp of
       Age when Age < QueryTimeout ->
 	  put(?NESTING_KEY, ?TOP_LEVEL_TXN),
 	  put(?STATE_KEY, State),

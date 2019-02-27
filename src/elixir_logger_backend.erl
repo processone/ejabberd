@@ -103,7 +103,7 @@ normalize_pid(Metadata) ->
 
 %% Return timestamp with milliseconds
 timestamp(Time, UTCLog) ->
-    {_, _, Micro} = p1_time_compat:timestamp(),
+    {_, _, Micro} = erlang:timestamp(),
     {Date, {Hours, Minutes, Seconds}} =
         case UTCLog of
             true  -> calendar:now_to_universal_time(Time);

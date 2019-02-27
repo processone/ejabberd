@@ -18,7 +18,7 @@
 %%%----------------------------------------------------------------------
 -record(push_session,
         {us = {<<"">>, <<"">>}                  :: {binary(), binary()},
-         timestamp = p1_time_compat:timestamp() :: erlang:timestamp(),
+         timestamp = erlang:timestamp()         :: erlang:timestamp(),
          service = {<<"">>, <<"">>, <<"">>}     :: ljid(),
          node = <<"">>                          :: binary(),
          xml                                    :: undefined | xmlel()}).

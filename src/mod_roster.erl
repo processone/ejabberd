@@ -251,7 +251,7 @@ write_roster_version_t(LUser, LServer) ->
     write_roster_version(LUser, LServer, true).
 
 write_roster_version(LUser, LServer, InTransaction) ->
-    Ver = str:sha(term_to_binary(p1_time_compat:unique_integer())),
+    Ver = str:sha(term_to_binary(erlang:unique_integer())),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     Mod:write_roster_version(LUser, LServer, InTransaction, Ver),
     if InTransaction -> ok;

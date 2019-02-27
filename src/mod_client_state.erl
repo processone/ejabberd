@@ -379,7 +379,7 @@ queue_new() ->
 -spec queue_in(csi_key(), stanza(), csi_queue()) -> csi_queue().
 queue_in(Key, Stanza, {Seq, Q}) ->
     Seq1 = Seq + 1,
-    Time = {Seq1, p1_time_compat:timestamp()},
+    Time = {Seq1, erlang:timestamp()},
     Q1 = maps:put(Key, {Time, Stanza}, Q),
     {Seq1, Q1}.
 

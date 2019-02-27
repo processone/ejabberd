@@ -1061,11 +1061,11 @@ topic_alias_maximum(Host) ->
 %%%===================================================================
 -spec current_time() -> milli_seconds().
 current_time() ->
-    p1_time_compat:monotonic_time(milli_seconds).
+    erlang:monotonic_time(millisecond).
 
 -spec unix_time() -> seconds().
 unix_time() ->
-    p1_time_compat:system_time(seconds).
+    erlang:system_time(second).
 
 -spec set_keep_alive(state(), seconds()) -> state().
 set_keep_alive(State, 0) ->

@@ -366,7 +366,7 @@ init([I]) ->
 
 handle_call(connect, From, #state{connection = undefined,
 				  pending_q = Q} = State) ->
-    CurrTime = p1_time_compat:monotonic_time(milli_seconds),
+    CurrTime = erlang:monotonic_time(millisecond),
     Q2 = try p1_queue:in({From, CurrTime}, Q)
 	 catch error:full ->
 		 Q1 = clean_queue(Q, CurrTime),
@@ -590,7 +590,7 @@ get_queue_type() ->
 
 -spec flush_queue(p1_queue:queue()) -> p1_queue:queue().
 flush_queue(Q) ->
-    CurrTime = p1_time_compat:monotonic_time(milli_seconds),
+    CurrTime = erlang:monotonic_time(millisecond),
     p1_queue:dropwhile(
       fun({From, Time}) ->
 	      if (CurrTime - Time) >= ?CALL_TIMEOUT ->

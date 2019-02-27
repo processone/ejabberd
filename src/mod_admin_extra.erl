@@ -858,7 +858,7 @@ delete_old_users_vhost(Host, Days) ->
 
 delete_old_users(Days, Users) ->
     SecOlder = Days*24*60*60,
-    TimeStamp_now = p1_time_compat:system_time(seconds),
+    TimeStamp_now = erlang:system_time(second),
     TimeStamp_oldest = TimeStamp_now - SecOlder,
     F = fun({LUser, LServer}) ->
 	    case catch delete_or_not(LUser, LServer, TimeStamp_oldest) of
@@ -1360,12 +1360,12 @@ get_last(User, Server) ->
         [] ->
             case mod_last:get_last_info(User, Server) of
                 not_found ->
-		    {p1_time_compat:timestamp(), "NOT FOUND"};
+		    {erlang:timestamp(), "NOT FOUND"};
                 {ok, Shift, Status1} ->
                     {{Shift div 1000000, Shift rem 1000000, 0}, Status1}
             end;
         _ ->
-	    {p1_time_compat:timestamp(), "ONLINE"}
+	    {erlang:timestamp(), "ONLINE"}
     end,
     {xmpp_util:encode_timestamp(Now), Status}.
 

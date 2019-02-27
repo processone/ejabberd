@@ -80,7 +80,7 @@ check_packet(Acc, _, _, _) ->
 update(Server, JID, Dir) ->
     StormCount = gen_mod:get_module_opt(Server, ?MODULE, count),
     TimeInterval = gen_mod:get_module_opt(Server, ?MODULE, interval),
-    TimeStamp = p1_time_compat:system_time(seconds),
+    TimeStamp = erlang:system_time(second),
     case read(Dir) of
       undefined ->
 	  write(Dir,

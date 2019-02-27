@@ -73,7 +73,7 @@ start() ->
 		  [named_table, public, {read_concurrency, true}]),
     case load_file(ConfigFile) of
 	{ok, State1} ->
-	    UnixTime = p1_time_compat:system_time(seconds),
+	    UnixTime = erlang:system_time(second),
 	    SharedKey = case erlang:get_cookie() of
 			    nocookie ->
 				str:sha(p1_rand:get_string());
@@ -113,7 +113,7 @@ start(Hosts, Opts) ->
 		  [named_table, public, {read_concurrency, true}]),
     catch ets:new(ejabberd_db_modules,
 		  [named_table, public, {read_concurrency, true}]),
-    UnixTime = p1_time_compat:system_time(seconds),
+    UnixTime = erlang:system_time(second),
     SharedKey = case erlang:get_cookie() of
 		    nocookie ->
 			str:sha(p1_rand:get_string());

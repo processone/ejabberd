@@ -112,7 +112,7 @@ external_host_overloaded(Host) ->
 	      "seconds",
 	      [Host, ?S2S_OVERLOAD_BLOCK_PERIOD]),
     mnesia:transaction(fun () ->
-                               Time = p1_time_compat:monotonic_time(),
+                               Time = erlang:monotonic_time(),
 			       mnesia:write(#temporarily_blocked{host = Host,
 								 timestamp = Time})
 		       end).
@@ -123,8 +123,8 @@ is_temporarly_blocked(Host) ->
     case mnesia:dirty_read(temporarily_blocked, Host) of
       [] -> false;
       [#temporarily_blocked{timestamp = T} = Entry] ->
-          Diff = p1_time_compat:monotonic_time() - T,
-	  case p1_time_compat:convert_time_unit(Diff, native, micro_seconds) of
+          Diff = erlang:monotonic_time() - T,
+	  case erlang:convert_time_unit(Diff, native, microsecond) of
 	    N when N > (?S2S_OVERLOAD_BLOCK_PERIOD) * 1000 * 1000 ->
 		mnesia:dirty_delete_object(Entry), false;
 	    _ -> true

@@ -309,7 +309,7 @@ add_message_to_log(Nick1, Message, RoomJID, Opts,
     Room = get_room_info(RoomJID, Opts),
     Nick = htmlize(Nick1, FileFormat),
     Nick2 = htmlize_nick(Nick1, FileFormat),
-    Now = p1_time_compat:timestamp(),
+    Now = erlang:timestamp(),
     TimeStamp = case Timezone of
 		  local -> calendar:now_to_local_time(Now);
 		  universal -> calendar:now_to_universal_time(Now)
@@ -625,7 +625,7 @@ put_header_script(F) ->
 put_room_config(_F, _RoomConfig, _Lang, plaintext) ->
     ok;
 put_room_config(F, RoomConfig, Lang, _FileFormat) ->
-    {_, Now2, _} = p1_time_compat:timestamp(),
+    {_, Now2, _} = erlang:timestamp(),
     fw(F, <<"<div class=\"rc\">">>),
     fw(F,
        <<"<div class=\"rct\" onclick=\"sh('a~p');return "
@@ -642,7 +642,7 @@ put_room_occupants(_F, _RoomOccupants, _Lang,
     ok;
 put_room_occupants(F, RoomOccupants, Lang,
 		   _FileFormat) ->
-    {_, Now2, _} = p1_time_compat:timestamp(),
+    {_, Now2, _} = erlang:timestamp(),
 %% htmlize
 %% The default behaviour is to ignore the nofollow spam prevention on links
 %% (NoFollow=false)

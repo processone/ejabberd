@@ -440,7 +440,7 @@ muc_filter_message(Acc, _MUCState, _FromNick) ->
 
 -spec make_id() -> binary().
 make_id() ->
-    p1_time_compat:system_time(micro_seconds).
+    erlang:system_time(microsecond).
 
 -spec get_stanza_id(stanza()) -> integer().
 get_stanza_id(#message{meta = #{stanza_id := ID}}) ->

@@ -35,7 +35,7 @@
 -include("logger.hrl").
 
 -record(bosh, {sid = <<"">>      :: binary() | '_',
-               timestamp = p1_time_compat:timestamp() :: erlang:timestamp() | '_',
+               timestamp = erlang:timestamp() :: erlang:timestamp() | '_',
                pid = self()      :: pid() | '$1'}).
 
 -record(state, {}).
@@ -60,7 +60,7 @@ use_cache() ->
     false.
 
 open_session(SID, Pid) ->
-    Session = #bosh{sid = SID, timestamp = p1_time_compat:timestamp(), pid = Pid},
+    Session = #bosh{sid = SID, timestamp = erlang:timestamp(), pid = Pid},
     lists:foreach(
       fun(Node) when Node == node() ->
 	      gen_server:call(?MODULE, {write, Session});

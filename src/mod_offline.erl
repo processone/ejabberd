@@ -413,7 +413,7 @@ store_packet({_Action, #message{from = From, to = To} = Packet} = Acc) ->
 			drop ->
 			    Acc;
 			NewPacket ->
-			    TimeStamp = p1_time_compat:timestamp(),
+			    TimeStamp = erlang:timestamp(),
 			    Expire = find_x_expire(TimeStamp, NewPacket),
 			    OffMsg = #offline_msg{us = {LUser, LServer},
 						  timestamp = TimeStamp,
@@ -538,7 +538,7 @@ route_offline_message(#{lserver := LServer} = State,
 
 -spec is_message_expired(erlang:timestamp() | never, message()) -> boolean().
 is_message_expired(Expire, Msg) ->
-    TS = p1_time_compat:timestamp(),
+    TS = erlang:timestamp(),
     Expire1 = case Expire of
 		  undefined -> find_x_expire(TS, Msg);
 		  _ -> Expire
@@ -807,7 +807,7 @@ count_offline_messages(User, Server) ->
 		     undefined | erlang:timestamp()) -> message().
 add_delay_info(Packet, LServer, TS) ->
     NewTS = case TS of
-		undefined -> p1_time_compat:timestamp();
+		undefined -> erlang:timestamp();
 		_ -> TS
 	    end,
     Packet1 = xmpp:put_meta(Packet, from_offline, true),
@@ -840,7 +840,7 @@ import(LServer, {sql, _}, DBType, <<"spool">>,
 	     #delay{stamp = {MegaSecs, Secs, _}} ->
 		 {MegaSecs, Secs, 0};
 	     false ->
-		 p1_time_compat:timestamp()
+		 erlang:timestamp()
 	 end,
     US = {LUser, LServer},
     Expire = find_x_expire(TS, Msg),

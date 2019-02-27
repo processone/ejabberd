@@ -725,7 +725,7 @@ process_self_presence(#{lserver := LServer} = State,
     {Pres1, State1} = ejabberd_hooks:run_fold(
 			c2s_self_presence, LServer, {Pres, State}, []),
     State2 = State1#{pres_last => Pres1,
-		     pres_timestamp => p1_time_compat:timestamp()},
+		     pres_timestamp => erlang:timestamp()},
     FromUnavailable = PreviousPres == undefined,
     broadcast_presence_available(State2, Pres1, FromUnavailable);
 process_self_presence(State, _Pres) ->
@@ -888,7 +888,7 @@ bounce_message_queue() ->
 new_uniq_id() ->
     iolist_to_binary(
       [p1_rand:get_string(),
-       integer_to_binary(p1_time_compat:unique_integer([positive]))]).
+       integer_to_binary(erlang:unique_integer([positive]))]).
 
 -spec get_conn_type(state()) -> c2s | c2s_tls | c2s_compressed | websocket |
 				c2s_compressed_tls | http_bind.

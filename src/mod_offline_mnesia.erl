@@ -63,7 +63,7 @@ pop_messages(LUser, LServer) ->
     end.
 
 remove_expired_messages(_LServer) ->
-    TimeStamp = p1_time_compat:timestamp(),
+    TimeStamp = erlang:timestamp(),
     F = fun () ->
 		mnesia:write_lock_table(offline_msg),
 		mnesia:foldl(fun (Rec, _Acc) ->
@@ -81,7 +81,7 @@ remove_expired_messages(_LServer) ->
     mnesia:transaction(F).
 
 remove_old_messages(Days, _LServer) ->
-    S = p1_time_compat:system_time(seconds) - 60 * 60 * 24 * Days,
+    S = erlang:system_time(second) - 60 * 60 * 24 * Days,
     MegaSecs1 = S div 1000000,
     Secs1 = S rem 1000000,
     TimeStamp = {MegaSecs1, Secs1, 0},

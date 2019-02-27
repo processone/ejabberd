@@ -171,7 +171,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 -spec curr_time() -> non_neg_integer().
 curr_time() ->
-    p1_time_compat:monotonic_time(milli_seconds).
+    erlang:monotonic_time(millisecond).
 
 -spec start_port(string()) -> {port(), integer() | undefined}.
 start_port(Path) ->
@@ -188,7 +188,7 @@ call_port(Server, Args) ->
     call_port(Server, Args, ?CALL_TIMEOUT).
 
 call_port(Server, Args, Timeout) ->
-    StartTime = p1_time_compat:monotonic_time(milli_seconds),
+    StartTime = erlang:monotonic_time(millisecond),
     Pool = pool_name(Server),
     PoolSize = pool_size(Server),
     I = p1_rand:round_robin(PoolSize),
