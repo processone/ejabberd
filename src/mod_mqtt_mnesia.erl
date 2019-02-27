@@ -142,7 +142,7 @@ init() ->
     end.
 
 open_session(USR) ->
-    TS1 = p1_time_compat:unique_timestamp(),
+    TS1 = misc:unique_timestamp(),
     P1 = self(),
     F = fun() ->
 		case mnesia:read(mqtt_session, USR) of
@@ -197,7 +197,7 @@ lookup_session(USR) ->
     end.
 
 subscribe({U, S, R} = USR, TopicFilter, SubOpts, ID) ->
-    T1 = p1_time_compat:unique_timestamp(),
+    T1 = misc:unique_timestamp(),
     P1 = self(),
     Key = {TopicFilter, S, U, R},
     F = fun() ->

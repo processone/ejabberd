@@ -1040,7 +1040,7 @@ kick_user(User, Server, Resource) ->
     end.
 
 make_sid() ->
-    {p1_time_compat:unique_timestamp(), self()}.
+    {misc:unique_timestamp(), self()}.
 
 -spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(sm_db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
