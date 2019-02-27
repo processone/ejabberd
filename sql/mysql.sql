@@ -448,3 +448,18 @@ CREATE TABLE mix_pam (
 
 CREATE UNIQUE INDEX i_mix_pam ON mix_pam (username(191), channel(191), service(191));
 CREATE INDEX i_mix_pam_u ON mix_pam (username(191));
+
+CREATE TABLE mqtt_pub (
+    username varchar(191) NOT NULL,
+    resource varchar(191) NOT NULL,
+    topic text NOT NULL,
+    qos tinyint NOT NULL,
+    payload blob NOT NULL,
+    payload_format tinyint NOT NULL,
+    content_type text NOT NULL,
+    response_topic text NOT NULL,
+    correlation_data blob NOT NULL,
+    user_properties blob NOT NULL,
+    expiry int unsigned NOT NULL,
+    UNIQUE KEY i_mqtt_topic (topic(191))
+);
