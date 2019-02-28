@@ -485,7 +485,7 @@ msgstr "Geben Sie den Pfad zur Textdatei ein"
 
 #: ejabberd_captcha.erl:71
 msgid "Enter the text you see"
-msgstr "Geben Sie den Text den sie sehen ein"
+msgstr "Geben Sie den Text den Sie sehen ein"
 
 #: mod_vcard.erl:202
 msgid "Erlang Jabber Server"

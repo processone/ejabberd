@@ -98,7 +98,7 @@
 {"Enter path to jabberd14 spool dir","Geben Sie den Pfad zum jabberd14-Spool-Verzeichnis ein"}.
 {"Enter path to jabberd14 spool file","Geben Sie den Pfad zur jabberd14-Spool-Datei ein"}.
 {"Enter path to text file","Geben Sie den Pfad zur Textdatei ein"}.
-{"Enter the text you see","Geben Sie den Text den sie sehen ein"}.
+{"Enter the text you see","Geben Sie den Text den Sie sehen ein"}.
 {"Erlang Jabber Server","Erlang Jabber-Server"}.
 {"Error","Fehler"}.
 {"Export all tables as SQL queries to a file:","Alle Tabellen als SQL-Abfragen in eine Datei exportieren:"}.
