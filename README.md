@@ -107,7 +107,7 @@ To compile ejabberd you need:
  - GCC.
  - Libexpat ≥ 1.95.
  - Libyaml ≥ 0.1.4.
- - Erlang/OTP ≥ 19.0.
+ - Erlang/OTP ≥ 19.1.
  - OpenSSL ≥ 1.0.0.
  - Zlib ≥ 1.2.3, for Stream Compression support (XEP-0138). Optional.
  - PAM library. Optional. For Pluggable Authentication Modules (PAM).

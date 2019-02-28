@@ -1,5 +1,8 @@
 # Version NEXT
 
+* Admin
+- The minimum required Erlang/OTP version is now 19.1
+
 # Version 19.02
 
 * Admin
