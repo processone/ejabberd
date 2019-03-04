@@ -965,6 +965,7 @@ get_db_version(State) ->
 log(Level, Format, Args) ->
     case Level of
       debug -> ?DEBUG(Format, Args);
+      info -> ?INFO_MSG(Format, Args);
       normal -> ?INFO_MSG(Format, Args);
       error -> ?ERROR_MSG(Format, Args)
     end.
