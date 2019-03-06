@@ -450,6 +450,7 @@ handle_info(Info, StateName, State) ->
 
 terminate(_Reason, _StateName, State) ->
     case State#state.db_type of
+        pgsql -> catch pgsql:terminate(State#state.db_ref);
         mysql -> catch p1_mysql_conn:stop(State#state.db_ref);
         sqlite -> catch sqlite3:close(sqlite_db(State#state.host));
         _ -> ok
