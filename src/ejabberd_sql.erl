@@ -524,6 +524,7 @@ outer_transaction(F, NRestarts, _Reason) ->
     catch
 	?EX_RULE(throw, {aborted, Reason}, _) when NRestarts > 0 ->
 	    sql_query_internal([<<"rollback;">>]),
+            put(?NESTING_KEY, ?TOP_LEVEL_TXN),
 	    outer_transaction(F, NRestarts - 1, Reason);
 	?EX_RULE(throw, {aborted, Reason}, Stack) when NRestarts =:= 0 ->
 	    ?ERROR_MSG("SQL transaction restarts exceeded~n** "
@@ -610,6 +611,7 @@ sql_query_internal(#sql_query{} = Query) ->
     check_error(Res, Query);
 sql_query_internal(F) when is_function(F) ->
     case catch execute_fun(F) of
+        {aborted, Reason} -> {error, Reason};
         {'EXIT', Reason} -> {error, Reason};
         Res -> Res
     end;
