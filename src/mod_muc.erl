@@ -438,18 +438,21 @@ do_route1(_Host, _ServerHost, _Access, _HistorySize, _RoomShaper,
     ejabberd_router:route_error(Packet, Err);
 do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 	  From, To, Packet, DefRoomOpts, QueueType) ->
-    {_AccessRoute, AccessCreate, _AccessAdmin, _AccessPersistent, _AccessMam} = Access,
+    {_AccessRoute, AccessCreate, AccessAdmin, _AccessPersistent, _AccessMam} = Access,
     {Room, _, Nick} = jid:tolower(To),
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
     case RMod:find_online_room(ServerHost, Room, Host) of
 	error ->
 	    case is_create_request(Packet) of
 		true ->
+		    IsServiceAdmin = acl:match_rule(ServerHost,
+			AccessAdmin, From) == allow,
 		    case check_user_can_create_room(
 			   ServerHost, AccessCreate, From, Room) and
-			ejabberd_hooks:run_fold(check_create_room,
+				(IsServiceAdmin orelse
+				    ejabberd_hooks:run_fold(check_create_room,
 					ServerHost, true,
-					[ServerHost, Room, Host]) of
+					[ServerHost, Room, Host])) of
 			true ->
 			    {ok, Pid} = start_new_room(
 					  Host, ServerHost, Access,

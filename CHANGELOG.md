@@ -3,6 +3,9 @@
 * Admin
 - The minimum required Erlang/OTP version is now 19.1
 
+* MUC
+- Service admins are allowed to recreate room even if archiv is nonempty
+
 # Version 19.02
 
 * Admin
