@@ -62,7 +62,11 @@ defmodule Ejabberd.Mixfile do
   end
 
   defp cond_options do
-    for {:true, option} <- [{config(:graphics), {:d, :GRAPHICS}}], do:
+    for {:true, option} <- [{config(:sip), {:d, :SIP}},
+                            {config(:stun), {:d, :STUN}},
+                            {config(:roster_gateway_workaround), {:d, :ROSTER_GATWAY_WORKAROUND}},
+                            {config(:new_sql_schema), {:d, :NEW_SQL_SCHEMA}}
+                           ], do:
     option
   end
 
