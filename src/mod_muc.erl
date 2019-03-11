@@ -65,8 +65,7 @@
 	 iq_set_register_info/5,
 	 count_online_rooms_by_user/3,
 	 get_online_rooms_by_user/3,
-	 can_use_nick/4,
-	 check_create_room/4]).
+	 can_use_nick/4]).
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
@@ -113,14 +112,10 @@
 %% API
 %%====================================================================
 start(Host, Opts) ->
-    ejabberd_hooks:add(check_create_room, Host, ?MODULE,
-               check_create_room, 50),
     gen_mod:start_child(?MODULE, Host, Opts).
 
 stop(Host) ->
     Rooms = shutdown_rooms(Host),
-    ejabberd_hooks:delete(check_create_room, Host, ?MODULE,
-               check_create_room, 50),
     gen_mod:stop_child(?MODULE, Host),
     {wait, Rooms}.
 
@@ -438,21 +433,14 @@ do_route1(_Host, _ServerHost, _Access, _HistorySize, _RoomShaper,
     ejabberd_router:route_error(Packet, Err);
 do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 	  From, To, Packet, DefRoomOpts, QueueType) ->
-    {_AccessRoute, AccessCreate, AccessAdmin, _AccessPersistent, _AccessMam} = Access,
     {Room, _, Nick} = jid:tolower(To),
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
     case RMod:find_online_room(ServerHost, Room, Host) of
 	error ->
 	    case is_create_request(Packet) of
 		true ->
-		    IsServiceAdmin = acl:match_rule(ServerHost,
-			AccessAdmin, From) == allow,
-		    case check_user_can_create_room(
-			   ServerHost, AccessCreate, From, Room) and
-				(IsServiceAdmin orelse
-				    ejabberd_hooks:run_fold(check_create_room,
-					ServerHost, true,
-					[ServerHost, Room, Host])) of
+		    case check_create_room(
+			   ServerHost, Host, Room, From, Access) of
 			true ->
 			    {ok, Pid} = start_new_room(
 					  Host, ServerHost, Access,
@@ -614,19 +602,37 @@ is_create_request(#iq{type = T} = IQ) when T == get; T == set ->
 is_create_request(_) ->
     false.
 
-check_user_can_create_room(ServerHost, AccessCreate,
-			   From, _RoomID) ->
+-spec check_create_room(binary(), binary(), binary(), jid(), tuple())
+      -> boolean().
+check_create_room(ServerHost, Host, Room, From, Access) ->
+    {_AccessRoute, AccessCreate, AccessAdmin,
+     _AccessPersistent, _AccessMam} = Access,
     case acl:match_rule(ServerHost, AccessCreate, From) of
-      allow -> true;
-      _ -> false
+	allow ->
+	    case gen_mod:get_module_opt(ServerHost, ?MODULE, max_room_id) of
+		Max when byte_size(Room) =< Max ->
+		    Regexp = gen_mod:get_module_opt(
+			       ServerHost, ?MODULE, regexp_room_id),
+		    case re:run(Room, Regexp, [unicode, {capture, none}]) of
+			match ->
+			    case acl:match_rule(
+				   ServerHost, AccessAdmin, From) of
+				allow ->
+				    true;
+				_ ->
+				    ejabberd_hooks:run_fold(
+				      check_create_room, ServerHost, true,
+				      [ServerHost, Room, Host])
+			    end;
+			_ ->
+			    false
+		    end;
+		_ ->
+		    false
+	    end;
+	_ ->
+	    false
     end.
-
-check_create_room(Acc, ServerHost, RoomID, _Host) ->
-    Max = gen_mod:get_module_opt(ServerHost, ?MODULE, max_room_id),
-    Regexp = gen_mod:get_module_opt(ServerHost, ?MODULE, regexp_room_id),
-    Acc and
-    (byte_size(RoomID) =< Max) and
-    (re:run(RoomID, Regexp, [unicode, {capture, none}]) == match).
 
 get_rooms(ServerHost, Host) ->
     LServer = jid:nameprep(ServerHost),
