@@ -682,8 +682,13 @@ get_body_text(#message{body = Body} = Msg) ->
     end.
 
 -spec body_is_encrypted(message()) -> boolean().
-body_is_encrypted(#message{sub_els = SubEls}) ->
-    lists:keyfind(<<"encrypted">>, #xmlel.name, SubEls) /= false.
+body_is_encrypted(#message{sub_els = MsgEls}) ->
+    case lists:keyfind(<<"encrypted">>, #xmlel.name, MsgEls) of
+	#xmlel{children = EncEls} ->
+	    lists:keyfind(<<"payload">>, #xmlel.name, EncEls) /= false;
+	false ->
+	    false
+    end.
 
 -spec inspect_error(iq()) -> {atom(), binary()}.
 inspect_error(IQ) ->
