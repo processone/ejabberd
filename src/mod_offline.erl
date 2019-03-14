@@ -889,5 +889,5 @@ mod_options(Host) ->
     [{db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {access_max_user_messages, max_user_offline_messages},
      {store_empty_body, unless_chat_state},
-     {bounce_groupchat, true},
+     {bounce_groupchat, false},
      {store_groupchat, false}].
