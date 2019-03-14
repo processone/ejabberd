@@ -1689,7 +1689,12 @@ update_online_user(JID, #user{nick = Nick} = User, StateData) ->
     NewStateData.
 
 set_subscriber(JID, Nick, Nodes, StateData) ->
-    BareJID = jid:remove_resource(JID),
+    BareJID = case JID of
+		  #jid{} -> jid:remove_resource(JID);
+		  _ ->
+		      ?ERROR_MSG("Invalid subscriber JID in set_subscriber ~p", [JID]),
+		      jid:remove_resource(jid:make(JID))
+	      end,
     LBareJID = jid:tolower(BareJID),
     Subscribers = maps:put(LBareJID,
 			   #subscriber{jid = BareJID,
@@ -3674,14 +3679,20 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 		  {Subscribers, Nicks} =
 		      lists:foldl(
 			fun({JID, Nick, Nodes}, {SubAcc, NickAcc}) ->
-				BareJID = jid:remove_resource(JID),
-				{maps:put(
-				   jid:tolower(BareJID),
-				   #subscriber{jid = BareJID,
-					       nick = Nick,
-					       nodes = Nodes},
-				   SubAcc),
-				 maps:put(Nick, [jid:tolower(BareJID)], NickAcc)}
+			    BareJID = case JID of
+					  #jid{} -> jid:remove_resource(JID);
+					  _ ->
+					      ?ERROR_MSG("Invalid subscriber JID in set_opts ~p", [JID]),
+					      jid:remove_resource(jid:make(JID))
+				      end,
+			    LBareJID = jid:tolower(BareJID),
+			    {maps:put(
+				LBareJID,
+				#subscriber{jid = BareJID,
+					    nick = Nick,
+					    nodes = Nodes},
+				SubAcc),
+			     maps:put(Nick, [LBareJID], NickAcc)}
 			end, {#{}, #{}}, Val),
 		  StateData#state{subscribers = Subscribers,
 				  subscriber_nicks = Nicks};
