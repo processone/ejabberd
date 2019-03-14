@@ -4046,7 +4046,8 @@ process_iq_mucsub(From, #iq{type = set, lang = Lang,
     end;
 process_iq_mucsub(From, #iq{type = set, sub_els = [#muc_unsubscribe{}]},
 		  StateData) ->
-    LBareJID = jid:tolower(jid:remove_resource(From)),
+    BareJID = jid:remove_resource(From),
+    LBareJID = jid:tolower(BareJID),
     try maps:get(LBareJID, StateData#state.subscribers) of
 	#subscriber{nick = Nick} ->
 	    Nicks = maps:remove(Nick, StateData#state.subscriber_nicks),
@@ -4054,7 +4055,7 @@ process_iq_mucsub(From, #iq{type = set, sub_els = [#muc_unsubscribe{}]},
 	    NewStateData = StateData#state{subscribers = Subscribers,
 					   subscriber_nicks = Nicks},
 	    store_room(NewStateData, [{del_subscription, LBareJID}]),
-	    send_subscriptions_change_notifications(LBareJID, Nick, unsubscribe, StateData),
+	    send_subscriptions_change_notifications(BareJID, Nick, unsubscribe, StateData),
 	    NewStateData2 = case close_room_if_temporary_and_empty(NewStateData) of
 		{stop, normal, _} -> stop;
 		{next_state, normal_state, SD} -> SD
