@@ -576,19 +576,42 @@ remove_user(User, Server) ->
 
 %% Helper functions:
 
+-spec check_if_message_should_be_bounced(message()) -> boolean().
+check_if_message_should_be_bounced(Packet) ->
+    case Packet of
+	#message{type = groupchat, to = #jid{lserver = LServer}} ->
+	    gen_mod:get_module_opt(LServer, ?MODULE, bounce_groupchat);
+	#message{to = #jid{lserver = LServer}} ->
+	    case misc:is_mucsub_message(Packet) of
+		true ->
+		    gen_mod:get_module_opt(LServer, ?MODULE, bounce_groupchat);
+		_ ->
+		    true
+	    end;
+	_ ->
+	    true
+    end.
+
 %% Warn senders that their messages have been discarded:
+
 -spec discard_warn_sender(message(), full | any()) -> ok.
-discard_warn_sender(Packet, full) ->
-    ErrText = <<"Your contact offline message queue is "
-		"full. The message has been discarded.">>,
-    Lang = xmpp:get_lang(Packet),
-    Err = xmpp:err_resource_constraint(ErrText, Lang),
-    ejabberd_router:route_error(Packet, Err);
-discard_warn_sender(Packet, _) ->
-    ErrText = <<"Database failure">>,
-    Lang = xmpp:get_lang(Packet),
-    Err = xmpp:err_internal_server_error(ErrText, Lang),
-    ejabberd_router:route_error(Packet, Err).
+discard_warn_sender(Packet, Reason) ->
+    case check_if_message_should_be_bounced(Packet) of
+	true ->
+	    Lang = xmpp:get_lang(Packet),
+	    Err = case Reason of
+		      full ->
+			  ErrText = <<"Your contact offline message queue is "
+				      "full. The message has been discarded.">>,
+			  xmpp:err_resource_constraint(ErrText, Lang);
+		      _ ->
+			  ErrText = <<"Database failure">>,
+			  xmpp:err_internal_server_error(ErrText, Lang)
+		  end,
+	    ejabberd_router:route_error(Packet, Err);
+	_ ->
+	    ok
+    end.
 
 webadmin_page(_, Host,
 	      #request{us = _US, path = [<<"user">>, U, <<"queue">>],
@@ -855,6 +878,8 @@ mod_opt_type(access_max_user_messages) ->
 mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
 mod_opt_type(store_groupchat) ->
     fun(V) when is_boolean(V) -> V end;
+mod_opt_type(bounce_groupchat) ->
+    fun(V) when is_boolean(V) -> V end;
 mod_opt_type(store_empty_body) ->
     fun (V) when is_boolean(V) -> V;
         (unless_chat_state) -> unless_chat_state
@@ -864,4 +889,5 @@ mod_options(Host) ->
     [{db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {access_max_user_messages, max_user_offline_messages},
      {store_empty_body, unless_chat_state},
+     {bounce_groupchat, true},
      {store_groupchat, false}].

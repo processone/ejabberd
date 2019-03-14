@@ -38,7 +38,8 @@
 	 compile_exprs/2, join_atoms/2, try_read_file/1, get_descr/2,
 	 css_dir/0, img_dir/0, js_dir/0, msgs_dir/0, sql_dir/0, lua_dir/0,
 	 read_css/1, read_img/1, read_js/1, read_lua/1, try_url/1,
-	 intersection/2, format_val/1, cancel_timer/1, unique_timestamp/0]).
+	 intersection/2, format_val/1, cancel_timer/1, unique_timestamp/0,
+	 is_mucsub_message/1]).
 
 %% Deprecated functions
 -export([decode_base64/1, encode_base64/1]).
@@ -107,6 +108,26 @@ unwrap_mucsub_message(#message{} = OuterMsg) ->
 	    false
     end;
 unwrap_mucsub_message(_Packet) ->
+    false.
+
+-spec is_mucsub_message(xmpp_element()) -> boolean().
+is_mucsub_message(#message{} = OuterMsg) ->
+    case xmpp:get_subtag(OuterMsg, #ps_event{}) of
+	#ps_event{
+	    items = #ps_items{
+		node = Node}}
+	    when Node == ?NS_MUCSUB_NODES_MESSAGES;
+		 Node == ?NS_MUCSUB_NODES_SUBJECT;
+		 Node == ?NS_MUCSUB_NODES_AFFILIATIONS;
+		 Node == ?NS_MUCSUB_NODES_CONFIG;
+		 Node == ?NS_MUCSUB_NODES_PARTICIPANTS;
+		 Node == ?NS_MUCSUB_NODES_PRESENCE;
+		 Node == ?NS_MUCSUB_NODES_SUBSCRIBERS ->
+	    true;
+	_ ->
+	    false
+    end;
+is_mucsub_message(_Packet) ->
     false.
 
 -spec is_standalone_chat_state(stanza()) -> boolean().
