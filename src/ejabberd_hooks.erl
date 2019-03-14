@@ -381,10 +381,13 @@ safe_apply(Hook, Module, Function, Args) ->
 		apply(Module, Function, Args)
 	end
     catch ?EX_RULE(E, R, St) when E /= exit; R /= normal ->
-	    ?ERROR_MSG("Hook ~p crashed when running ~p:~p/~p:~n"
-		       "** Reason = ~p~n"
-		       "** Arguments = ~p",
+	    ?ERROR_MSG("Hook ~p crashed when running ~p:~p/~p:~n" ++
+			   string:join(
+			     ["** Reason = ~p"|
+			      ["** Arg " ++ integer_to_list(I) ++ " = ~p"
+			       || I <- lists:seq(1, length(Args))]],
+			     "~n"),
 		       [Hook, Module, Function, length(Args),
-			{E, R, ?EX_STACK(St)}, Args]),
+			{E, R, ?EX_STACK(St)}|Args]),
 	    'EXIT'
     end.
