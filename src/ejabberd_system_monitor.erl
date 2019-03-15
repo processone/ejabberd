@@ -94,7 +94,7 @@ handle_event({set_alarm, {process_memory_high_watermark, Pid}}, State) ->
     case proc_stat(Pid, get_app_pids()) of
 	#proc_stat{name = Name} = ProcStat ->
 	    error_logger:warning_msg(
-	      "Process ~p consumes more than 5% of OS memory (~s)",
+	      "Process ~p consumes more than 5% of OS memory (~s)~n",
 	      [Name, format_proc(ProcStat)]),
 	    handle_overload(State),
 	    {ok, State};
@@ -104,7 +104,7 @@ handle_event({set_alarm, {process_memory_high_watermark, Pid}}, State) ->
 handle_event({clear_alarm, process_memory_high_watermark}, State) ->
     {ok, State};
 handle_event(Event, State) ->
-    error_logger:warning_msg("unexpected event: ~p", [Event]),
+    error_logger:warning_msg("unexpected event: ~p~n", [Event]),
     {ok, State}.
 
 handle_call(_Request, State) ->
@@ -114,7 +114,7 @@ handle_info({timeout, _TRef, handle_overload}, State) ->
     handle_overload(State),
     {ok, restart_timer(State)};
 handle_info(Info, State) ->
-    error_logger:warning_msg("unexpected info: ~p", [Info]),
+    error_logger:warning_msg("unexpected info: ~p~n", [Info]),
     {ok, State}.
 
 terminate(_Reason, _State) ->
@@ -141,7 +141,7 @@ handle_overload(_State, Procs) ->
 	      "The system is overloaded with ~b messages "
 	      "queued by ~b process(es) (~b%) "
 	      "from the following applications: ~s; "
-	      "the top processes are:~n~s",
+	      "the top processes are:~n~s~n",
 	      [TotalMsgs, ProcsNum,
 	       round(ProcsNum*100/length(Procs)),
 	       format_apps(Apps),
@@ -274,7 +274,7 @@ do_kill(Stats, Threshold) ->
 			   true ->
 			       error_logger:warning_msg(
 				 "Unable to kill process ~p from whitelisted "
-				 "application ~p", [Name, App]),
+				 "application ~p~n", [Name, App]),
 			       false;
 			   false ->
 			       case kill_proc(Name) of
@@ -291,7 +291,7 @@ do_kill(Stats, Threshold) ->
     TotalKilled = length(Killed),
     if TotalKilled > 0 ->
 	    error_logger:error_msg(
-	      "Killed ~b process(es) consuming more than ~b message(s) each",
+	      "Killed ~b process(es) consuming more than ~b message(s) each~n",
 	      [TotalKilled, Threshold]);
        true ->
 	    ok
