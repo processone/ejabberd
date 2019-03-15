@@ -371,5 +371,7 @@ opt_type(websocket_ping_interval) ->
     fun (I) when is_integer(I), I >= 0 -> I end;
 opt_type(websocket_timeout) ->
     fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(websocket_origin) ->
+    fun (O) -> O end;
 opt_type(_) ->
-    [websocket_ping_interval, websocket_timeout].
+    [websocket_ping_interval, websocket_timeout, websocket_origin].

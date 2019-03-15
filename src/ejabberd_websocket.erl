@@ -66,7 +66,8 @@ check(_Path, Headers) ->
     RequiredHeaders = [{'Upgrade', <<"websocket">>},
                        {'Connection', ignore}, {'Host', ignore},
                        {<<"Sec-Websocket-Key">>, ignore},
-                       {<<"Sec-Websocket-Version">>, <<"13">>}],
+                       {<<"Sec-Websocket-Version">>, <<"13">>},
+                       {<<"Origin">>, get_origin()}],
 
     F = fun ({Tag, Val}) ->
 		case lists:keyfind(Tag, 1, Headers) of
@@ -406,3 +407,6 @@ websocket_close(Socket, WsHandleLoopPid,
 websocket_close(Socket, WsHandleLoopPid, SocketMode, _CloseCode) ->
     WsHandleLoopPid ! closed,
     SocketMode:close(Socket).
+
+get_origin() ->
+    ejabberd_config:get_option({websocket_origin, ejabberd_config:get_myname()}, ignore).
