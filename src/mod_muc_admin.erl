@@ -590,9 +590,16 @@ prepare_room_info(Room_info) ->
      misc:atom_to_binary(Public),
      misc:atom_to_binary(Persistent),
      misc:atom_to_binary(Logging),
-     misc:atom_to_binary(Just_created),
+     justcreated_to_binary(Just_created),
      Title].
 
+justcreated_to_binary(J) when is_integer(J) ->
+    JNow = misc:usec_to_now(J),
+    {{Year, Month, Day}, {Hour, Minute, Second}} = calendar:now_to_local_time(JNow),
+    str:format("~w-~.2.0w-~.2.0w ~.2.0w:~.2.0w:~.2.0w",
+	       [Year, Month, Day, Hour, Minute, Second]);
+justcreated_to_binary(J) when is_atom(J) ->
+    misc:atom_to_binary(J).
 
 %%----------------------------
 %% Create/Delete Room
@@ -814,13 +821,12 @@ decide_room(unused, {_Room_name, _Host, Room_pid}, ServerHost, Last_allowed) ->
     History = (S#state.history)#lqueue.queue,
     Ts_now = calendar:universal_time(),
     HistorySize = gen_mod:get_module_opt(ServerHost, mod_muc, history_size),
-    JustCreated = S#state.just_created,
     {Has_hist, Last} = case p1_queue:is_empty(History) of
-			   true when (HistorySize == 0) or (JustCreated == true) ->
+			   true when (HistorySize == 0) or (Just_created == true) ->
 			       {false, 0};
 			   true ->
 			       Ts_diff = (erlang:system_time(microsecond)
-				    - S#state.just_created) div 1000000,
+				    - Just_created) div 1000000,
 			       {false, Ts_diff};
 			   false ->
 			       Last_message = get_queue_last(History),
