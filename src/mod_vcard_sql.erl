@@ -137,7 +137,7 @@ search(LServer, Data, AllowReturnAll, MaxMatch) ->
 		    end,
 	   case catch ejabberd_sql:sql_query(
 			LServer,
-			[<<"select username, fn, family, given, "
+			[<<"select username, fn, \"family\", given, "
 			   "middle,        nickname, bday, ctry, "
 			   "locality,        email, orgname, orgunit "
 			   "from vcard_search ">>,
