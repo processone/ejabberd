@@ -198,7 +198,7 @@ get_commands_spec() ->
 			result_example = [<<"example.com">>, <<"anon.example.com">>],
 			args = [],
 			result = {vhosts, {list, {vhost, string}}}},
-     #ejabberd_commands{name = reload_config, tags = [server],
+     #ejabberd_commands{name = reload_config, tags = [server, config],
 			desc = "Reload config file in memory",
 			module = ?MODULE, function = reload_config,
 			args = [],
