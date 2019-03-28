@@ -65,7 +65,8 @@
 	 iq_set_register_info/5,
 	 count_online_rooms_by_user/3,
 	 get_online_rooms_by_user/3,
-	 can_use_nick/4]).
+	 can_use_nick/4,
+	 get_subscribed_rooms/2]).
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
@@ -726,6 +727,11 @@ get_room_disco_item({Name, Host, Pid}, Query) ->
 		  _:{_, {p1_fsm, _, _}} ->
 		    {error, notfound}
     end.
+
+-spec get_subscribed_rooms(binary(), jid()) -> [#muc_subscription{}].
+get_subscribed_rooms(Host, User) ->
+    ServerHost = ejabberd_router:host_of_route(Host),
+    get_subscribed_rooms(ServerHost, Host, User).
 
 get_subscribed_rooms(ServerHost, Host, From) ->
     LServer = jid:nameprep(ServerHost),

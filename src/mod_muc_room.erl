@@ -4397,9 +4397,17 @@ send_wrapped(From, To, Packet, Node, State) ->
 		#subscriber{nodes = Nodes, jid = JID} ->
 		    case lists:member(Node, Nodes) of
 			true ->
-			    NewPacket = wrap(From, JID, Packet, Node),
+			    MamEnabled = (State#state.config)#config.mam,
+			    Id = case xmpp:get_subtag(Packet, #stanza_id{}) of
+				     #stanza_id{id = Id2} ->
+					 Id2;
+				     _ ->
+					 p1_rand:get_string()
+				 end,
+			    NewPacket = wrap(From, JID, Packet, Node, Id),
+			    NewPacket2 = xmpp:put_meta(NewPacket, in_muc_mam, MamEnabled),
 			    ejabberd_router:route(
-			      xmpp:set_from_to(NewPacket, State#state.jid, JID));
+			      xmpp:set_from_to(NewPacket2, State#state.jid, JID));
 			false ->
 			    ok
 		    end
@@ -4432,10 +4440,9 @@ send_wrapped(From, To, Packet, Node, State) ->
 	    ejabberd_router:route(xmpp:set_from_to(Packet, From, To))
     end.
 
--spec wrap(jid(), jid(), stanza(), binary()) -> message().
-wrap(From, To, Packet, Node) ->
+-spec wrap(jid(), jid(), stanza(), binary(), binary()) -> message().
+wrap(From, To, Packet, Node, Id) ->
     El = xmpp:set_from_to(Packet, From, To),
-    Id = p1_rand:get_string(),
     #message{
 	id = Id,
 	sub_els = [#ps_event{
