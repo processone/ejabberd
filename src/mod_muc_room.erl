@@ -4435,13 +4435,15 @@ send_wrapped(From, To, Packet, Node, State) ->
 -spec wrap(jid(), jid(), stanza(), binary()) -> message().
 wrap(From, To, Packet, Node) ->
     El = xmpp:set_from_to(Packet, From, To),
+    Id = p1_rand:get_string(),
     #message{
-       sub_els = [#ps_event{
-		     items = #ps_items{
-				node = Node,
-				items = [#ps_item{
-					    id = p1_rand:get_string(),
-					    sub_els = [El]}]}}]}.
+	id = Id,
+	sub_els = [#ps_event{
+	    items = #ps_items{
+		node = Node,
+		items = [#ps_item{
+		    id = Id,
+		    sub_els = [El]}]}}]}.
 
 -spec send_wrapped_multiple(jid(), map(), stanza(), binary(), state()) -> ok.
 send_wrapped_multiple(From, Users, Packet, Node, State) ->
