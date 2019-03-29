@@ -180,7 +180,7 @@ select(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
 	       _ -> jid:encode(JidArchive)
 	   end,
     {Query, CountQuery} = make_sql_query(User, LServer, MAMQuery, RSM, none),
-    do_select_query(LServer, JidRequestor, JidArchive, RSM, chat, Query, CountQuery).
+    do_select_query(LServer, JidRequestor, JidArchive, RSM, MsgType, Query, CountQuery).
 
 -spec select_with_mucsub(binary(), jid(), jid(), mam_query:result(),
 			     #rsm_set{} | undefined) ->
