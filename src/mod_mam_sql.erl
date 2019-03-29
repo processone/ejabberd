@@ -188,8 +188,8 @@ select(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
 				{error, db_failure}.
 select_with_mucsub(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
 		   MAMQuery, RSM) ->
-    Extra = case gen_mod:db_type(LServer, mod_muc) of
-		sql ->
+    Extra = case gen_mod:db_mod(LServer, mod_muc) of
+		mod_muc_sql ->
 		    subscribers_table;
 		_ ->
 		    SubRooms = case mod_muc_admin:find_hosts(LServer) of
