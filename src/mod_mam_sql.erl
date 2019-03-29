@@ -31,13 +31,14 @@
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
 	 extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/6, export/1, remove_from_archive/3,
-	 is_empty_for_user/2, is_empty_for_room/3]).
+	 is_empty_for_user/2, is_empty_for_room/3, select_with_mucsub/5]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("xmpp.hrl").
 -include("mod_mam.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
+-include("mod_muc_room.hrl").
 
 %%%===================================================================
 %%% API
@@ -178,7 +179,31 @@ select(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
 	       chat -> LUser;
 	       _ -> jid:encode(JidArchive)
 	   end,
-    {Query, CountQuery} = make_sql_query(User, LServer, MAMQuery, RSM),
+    {Query, CountQuery} = make_sql_query(User, LServer, MAMQuery, RSM, none),
+    do_select_query(LServer, JidRequestor, JidArchive, RSM, chat, Query, CountQuery).
+
+-spec select_with_mucsub(binary(), jid(), jid(), mam_query:result(),
+			     #rsm_set{} | undefined) ->
+				{[{binary(), non_neg_integer(), xmlel()}], boolean(), integer()} |
+				{error, db_failure}.
+select_with_mucsub(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
+		   MAMQuery, RSM) ->
+    Extra = case gen_mod:db_type(LServer, mod_muc) of
+		sql ->
+		    subscribers_table;
+		_ ->
+		    SubRooms = case mod_muc_admin:find_hosts(LServer) of
+				   [First|_] ->
+				       mod_muc:get_subscribed_rooms(First, JidRequestor);
+				   _ ->
+				       []
+			       end,
+		    [jid:encode(Jid) || #muc_subscription{jid = Jid} <- SubRooms]
+	    end,
+    {Query, CountQuery} = make_sql_query(LUser, LServer, MAMQuery, RSM, Extra),
+    do_select_query(LServer, JidRequestor, JidArchive, RSM, chat, Query, CountQuery).
+
+do_select_query(LServer, JidRequestor, #jid{luser = LUser} = JidArchive, RSM, MsgType, Query, CountQuery) ->
     % TODO from XEP-0313 v0.2: "To conserve resources, a server MAY place a
     % reasonable limit on how many stanzas may be pushed to a client in one
     % request. If a query returns a number of stanzas greater than this limit
@@ -190,26 +215,45 @@ select(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
 	{{selected, _, Res}, {selected, _, [[Count]]}} ->
 	    {Max, Direction, _} = get_max_direction_id(RSM),
 	    {Res1, IsComplete} =
-		if Max >= 0 andalso Max /= undefined andalso length(Res) > Max ->
-			if Direction == before ->
-				{lists:nthtail(1, Res), false};
-			   true ->
-				{lists:sublist(Res, Max), false}
-			end;
-		   true ->
-			{Res, true}
-		end,
+	    if Max >= 0 andalso Max /= undefined andalso length(Res) > Max ->
+		if Direction == before ->
+		    {lists:nthtail(1, Res), false};
+		    true ->
+			{lists:sublist(Res, Max), false}
+		end;
+		true ->
+		    {Res, true}
+	    end,
+	    MucState = #state{config = #config{anonymous = true}},
+	    JidArchiveS = jid:encode(JidArchive),
 	    {lists:flatmap(
-	       fun([TS, XML, PeerBin, Kind, Nick]) ->
-		       case make_archive_el(
-			   jid:encode(JidArchive), TS, XML, PeerBin, Kind, Nick,
-			   MsgType, JidRequestor, JidArchive) of
+		fun([TS, XML, PeerBin, Kind, Nick]) ->
+		    case make_archive_el(JidArchiveS, TS, XML, PeerBin, Kind, Nick,
+					 MsgType, JidRequestor, JidArchive) of
+			{ok, El} ->
+			    [{TS, binary_to_integer(TS), El}];
+			{error, _} ->
+			    []
+		    end;
+		   ([User, TS, XML, PeerBin, Kind, Nick]) when User == LUser ->
+		       case make_archive_el(JidArchiveS, TS, XML, PeerBin, Kind, Nick,
+					    MsgType, JidRequestor, JidArchive) of
 			   {ok, El} ->
 			       [{TS, binary_to_integer(TS), El}];
 			   {error, _} ->
 			       []
+		       end;
+		   ([User, TS, XML, PeerBin, Kind, Nick]) ->
+		       case make_archive_el(User, TS, XML, PeerBin, Kind, Nick,
+					    {groupchat, member, MucState}, JidRequestor,
+					    jid:decode(User)) of
+			   {ok, El} ->
+			       mod_mam:wrap_as_mucsub([{TS, binary_to_integer(TS), El}],
+						      JidRequestor);
+			   {error, _} ->
+			       []
 		       end
-	       end, Res1), IsComplete, binary_to_integer(Count)};
+		end, Res1), IsComplete, binary_to_integer(Count)};
 	_ ->
 	    {[], false, 0}
     end.
@@ -293,7 +337,7 @@ usec_to_now(Int) ->
     Sec = Secs rem 1000000,
     {MSec, Sec, USec}.
 
-make_sql_query(User, LServer, MAMQuery, RSM) ->
+make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
     Start = proplists:get_value(start, MAMQuery),
     End = proplists:get_value('end', MAMQuery),
     With = proplists:get_value(with, MAMQuery),
@@ -364,22 +408,33 @@ make_sql_query(User, LServer, MAMQuery, RSM) ->
     SUser = Escape(User),
     SServer = Escape(LServer),
 
-    Query =
-        case ejabberd_sql:use_new_schema() of
-            true ->
-                [<<"SELECT ">>, TopClause,
-                 <<" timestamp, xml, peer, kind, nick"
-                  " FROM archive WHERE username='">>,
-                 SUser, <<"' and server_host='">>,
-                 SServer, <<"'">>, WithClause, WithTextClause,
-                 StartClause, EndClause, PageClause];
-            false ->
-                [<<"SELECT ">>, TopClause,
-                 <<" timestamp, xml, peer, kind, nick"
-                  " FROM archive WHERE username='">>,
-                 SUser, <<"'">>, WithClause, WithTextClause,
-                 StartClause, EndClause, PageClause]
-        end,
+    HostMatch = case ejabberd_sql:use_new_schema() of
+		    true ->
+			[<<" and server_host='", SServer, "'">>];
+		    _ ->
+			<<"">>
+		end,
+
+    {UserSel, UserWhere} = case ExtraUsernames of
+			       Users when is_list(Users) ->
+				   EscUsers = [<<"'", (Escape(U))/binary, "'">> || U <- Users],
+				   {<<" username,">>,
+				    [<<" username in ('">>, SUser, <<"',">>, str:join(EscUsers, <<",">>), <<")">>]};
+			       subscribers_table ->
+				   SJid = jid:encode({User, LServer, <<>>}),
+				   {<<" username,">>,
+				    [<<" (username = '">>, SUser, <<"'">>,
+					<<" or username in (select concat(room, '@', host) ",
+					  "from muc_room_subscribers where jid='">>, SJid, <<"'">>, HostMatch, <<"))">>]};
+			       _ ->
+				   {<<>>, [<<" username='">>, SUser, <<"'">>]}
+			   end,
+
+    Query = [<<"SELECT ">>, TopClause, UserSel,
+	     <<" timestamp, xml, peer, kind, nick"
+	       " FROM archive WHERE">>, UserWhere, HostMatch,
+	     WithClause, WithTextClause,
+	     StartClause, EndClause, PageClause],
 
     QueryPage =
 	case Direction of
@@ -387,26 +442,17 @@ make_sql_query(User, LServer, MAMQuery, RSM) ->
 		% ID can be empty because of
 		% XEP-0059: Result Set Management
 		% 2.5 Requesting the Last Page in a Result Set
-		[<<"SELECT timestamp, xml, peer, kind, nick FROM (">>, Query,
-		 <<" ORDER BY timestamp DESC ">>,
+		[<<"SELECT">>, UserSel, <<" timestamp, xml, peer, kind, nick FROM (">>,
+		 Query, <<" ORDER BY timestamp DESC ">>,
 		 LimitClause, <<") AS t ORDER BY timestamp ASC;">>];
 	    _ ->
 		[Query, <<" ORDER BY timestamp ASC ">>,
 		 LimitClause, <<";">>]
 	end,
-    case ejabberd_sql:use_new_schema() of
-        true ->
-            {QueryPage,
-             [<<"SELECT COUNT(*) FROM archive WHERE username='">>,
-              SUser, <<"' and server_host='">>,
-              SServer, <<"'">>, WithClause, WithTextClause,
-              StartClause, EndClause, <<";">>]};
-        false ->
-            {QueryPage,
-             [<<"SELECT COUNT(*) FROM archive WHERE username='">>,
-              SUser, <<"'">>, WithClause, WithTextClause,
-              StartClause, EndClause, <<";">>]}
-    end.
+    {QueryPage,
+     [<<"SELECT COUNT(*) FROM archive WHERE ">>, UserWhere,
+      HostMatch, WithClause, WithTextClause,
+      StartClause, EndClause, <<";">>]}.
 
 -spec get_max_direction_id(rsm_set() | undefined) ->
 				  {integer() | undefined,

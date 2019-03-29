@@ -42,7 +42,7 @@
 	 get_room_config/4, set_room_option/3, offline_message/1, export/1,
 	 mod_options/1, remove_mam_for_user_with_peer/3, remove_mam_for_user/2,
 	 is_empty_for_user/2, is_empty_for_room/3, check_create_room/4,
-	 process_iq/3, store_mam_message/7, make_id/0]).
+	 process_iq/3, store_mam_message/7, make_id/0, wrap_as_mucsub/2]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
