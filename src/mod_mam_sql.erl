@@ -410,7 +410,7 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
 
     HostMatch = case ejabberd_sql:use_new_schema() of
 		    true ->
-			[<<" and server_host='", SServer, "'">>];
+			[<<" and server_host='", SServer/binary, "'">>];
 		    _ ->
 			<<"">>
 		end,
