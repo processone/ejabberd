@@ -59,7 +59,7 @@ add_delay_info(Stz, From, Time) ->
 
 -spec add_delay_info(stanza(), jid(), erlang:timestamp(), binary()) -> stanza().
 add_delay_info(Stz, From, Time, Desc) ->
-    Delays = xmpp:get_all_subtags(Stz, #delay{stamp = {0,0,0}}),
+    Delays = xmpp:get_subtags(Stz, #delay{stamp = {0,0,0}}),
     Matching = lists:any(
 	fun(#delay{from = OldFrom}) when is_record(OldFrom, jid) ->
 	       jid:tolower(From) == jid:tolower(OldFrom);
