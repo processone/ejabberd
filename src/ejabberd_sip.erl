@@ -1,7 +1,7 @@
 %%%-------------------------------------------------------------------
 %%% File    : ejabberd_sip.erl
 %%% Author  : Evgeny Khramtsov <ekhramtsov@process-one.net>
-%%% Purpose : 
+%%% Purpose :
 %%% Created : 30 Apr 2017 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
@@ -28,7 +28,7 @@
 
 -ifndef(SIP).
 -include("logger.hrl").
--export([accept/1, start/2, start_link/2, listen_options/0]).
+-export([accept/1, start/3, start_link/3, listen_options/0]).
 fail() ->
     ?CRITICAL_MSG("Listening module ~s is not available: "
 		  "ejabberd is not compiled with SIP support",
@@ -38,14 +38,14 @@ accept(_) ->
     fail().
 listen_options() ->
     fail().
-start(_, _) ->
+start(_, _, _) ->
     fail().
-start_link(_, _) ->
+start_link(_, _, _) ->
     fail().
 -else.
 %% API
--export([tcp_init/2, udp_init/2, udp_recv/5, start/2,
-	 start_link/2, accept/1, listen_options/0]).
+-export([tcp_init/2, udp_init/2, udp_recv/5, start/3,
+	 start_link/3, accept/1, listen_options/0]).
 
 
 %%%===================================================================
@@ -62,10 +62,10 @@ udp_init(Socket, Opts) ->
 udp_recv(Sock, Addr, Port, Data, Opts) ->
     esip_socket:udp_recv(Sock, Addr, Port, Data, Opts).
 
-start(Opaque, Opts) ->
-    esip_socket:start(Opaque, Opts).
+start(SockMod, Socket, Opts) ->
+    esip_socket:start({SockMod, Socket}, Opts).
 
-start_link({gen_tcp, Sock}, Opts) ->
+start_link(gen_tcp, Sock, Opts) ->
     esip_socket:start_link(Sock, Opts).
 
 accept(_) ->

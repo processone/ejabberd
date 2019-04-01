@@ -24,7 +24,7 @@
 -behaviour(ejabberd_listener).
 
 %% ejabberd_listener callbacks
--export([start/2, start_link/2, accept/1, listen_opt_type/1, listen_options/0]).
+-export([start/3, start_link/3, accept/1, listen_opt_type/1, listen_options/0]).
 %% xmpp_stream_in callbacks
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
@@ -50,12 +50,12 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-start(SockData, Opts) ->
-    xmpp_stream_in:start(?MODULE, [SockData, Opts],
+start(SockMod, Socket, Opts) ->
+    xmpp_stream_in:start(?MODULE, [{SockMod, Socket}, Opts],
 			 ejabberd_config:fsm_limit_opts(Opts)).
 
-start_link(SockData, Opts) ->
-    xmpp_stream_in:start_link(?MODULE, [SockData, Opts],
+start_link(SockMod, Socket, Opts) ->
+    xmpp_stream_in:start_link(?MODULE, [{SockMod, Socket}, Opts],
 			      ejabberd_config:fsm_limit_opts(Opts)).
 
 close(Ref) ->

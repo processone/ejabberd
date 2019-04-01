@@ -26,7 +26,7 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 %% ejabberd_listener API
--export([start_link/2, listen_opt_type/1, listen_options/0, accept/1]).
+-export([start/3, start_link/3, listen_opt_type/1, listen_options/0, accept/1]).
 %% Legacy ejabberd_listener API
 -export([become_controller/2, socket_type/0]).
 %% API
@@ -71,12 +71,13 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-start({SockMod, Sock}, ListenOpts) ->
-    mod_mqtt_session:start(SockMod, Sock, ListenOpts);
+start(SockMod, Sock, ListenOpts) ->
+    mod_mqtt_session:start(SockMod, Sock, ListenOpts).
+
 start(Host, Opts) ->
     gen_mod:start_child(?MODULE, Host, Opts).
 
-start_link({SockMod, Sock}, ListenOpts) ->
+start_link(SockMod, Sock, ListenOpts) ->
     mod_mqtt_session:start_link(SockMod, Sock, ListenOpts).
 
 stop(Host) ->

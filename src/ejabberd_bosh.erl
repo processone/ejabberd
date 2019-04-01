@@ -284,7 +284,7 @@ init([#body{attrs = Attrs}, IP, SID]) ->
                                     buf_new(XMPPDomain)),
                              Opts2}
 		    end,
-    case ejabberd_c2s:start({?MODULE, Socket}, [{receiver, self()}|Opts]) of
+    case ejabberd_c2s:start(?MODULE, Socket, [{receiver, self()}|Opts]) of
 	{ok, C2SPid} ->
 	    ejabberd_c2s:accept(C2SPid),
 	    Inactivity = gen_mod:get_module_opt(XMPPDomain,

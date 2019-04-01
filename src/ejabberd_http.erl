@@ -30,12 +30,12 @@
 -author('alexey@process-one.net').
 
 %% External exports
--export([start/2, start_link/2,
+-export([start/3, start_link/3,
 	 accept/1, receive_headers/1, recv_file/2,
          transform_listen_option/2, listen_opt_type/1,
 	 listen_options/0]).
 
--export([init/2, opt_type/1]).
+-export([init/3, opt_type/1]).
 
 -include("logger.hrl").
 -include("xmpp.hrl").
@@ -89,17 +89,17 @@
 -define(SEND_BUF, 65536).
 -define(MAX_POST_SIZE, 20971520). %% 20Mb
 
-start(SockData, Opts) ->
+start(SockMod, Socket, Opts) ->
     {ok,
      proc_lib:spawn(ejabberd_http, init,
-		    [SockData, Opts])}.
+		    [SockMod, Socket, Opts])}.
 
-start_link(SockData, Opts) ->
+start_link(SockMod, Socket, Opts) ->
     {ok,
      proc_lib:spawn_link(ejabberd_http, init,
-			 [SockData, Opts])}.
+			 [SockMod, Socket, Opts])}.
 
-init({SockMod, Socket}, Opts) ->
+init(SockMod, Socket, Opts) ->
     TLSEnabled = proplists:get_bool(tls, Opts),
     TLSOpts1 = lists:filter(fun ({ciphers, _}) -> true;
 				({dhfile, _}) -> true;

@@ -35,7 +35,7 @@
 
 -author('badlop@process-one.net').
 
--export([start/2, start_link/2, handler/2, process/2, accept/1,
+-export([start/3, start_link/3, handler/2, process/2, accept/1,
 	 transform_listen_option/2, listen_opt_type/1, listen_options/0]).
 
 -include("logger.hrl").
@@ -188,11 +188,11 @@
 %% Listener interface
 %% -----------------------------
 
-start({gen_tcp = _SockMod, Socket}, Opts) ->
-    ejabberd_http:start({gen_tcp, Socket}, [{xmlrpc, true}|Opts]).
+start(gen_tcp = _SockMod, Socket, Opts) ->
+    ejabberd_http:start(gen_tcp, Socket, [{xmlrpc, true}|Opts]).
 
-start_link({gen_tcp = _SockMod, Socket}, Opts) ->
-    ejabberd_http:start_link({gen_tcp, Socket}, [{xmlrpc, true}|Opts]).
+start_link(gen_tcp = _SockMod, Socket, Opts) ->
+    ejabberd_http:start_link(gen_tcp, Socket, [{xmlrpc, true}|Opts]).
 
 accept(Pid) ->
     ejabberd_http:accept(Pid).

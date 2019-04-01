@@ -38,7 +38,7 @@
 	 wait_for_request/2, wait_for_activation/2,
 	 stream_established/2]).
 
--export([start/2, stop/1, start_link/2, start_link/3, activate/2,
+-export([start/3, stop/1, start_link/3, activate/2,
 	 relay/3, accept/1, listen_opt_type/1,
 	 listen_options/0]).
 
@@ -65,20 +65,19 @@ code_change(_OldVsn, StateName, StateData, _Extra) ->
 
 %%-------------------------------
 
-start({gen_tcp, Socket}, Opts1) ->
+start(gen_tcp, Socket, Opts1) ->
     {[{server_host, Host}], Opts} = lists:partition(
 				      fun({server_host, _}) -> true;
 					 (_) -> false
 				      end, Opts1),
     p1_fsm:start(?MODULE, [Socket, Host, Opts], []).
 
-start_link({gen_tcp, Socket}, Opts1) ->
+start_link(gen_tcp, Socket, Opts1) ->
     {[{server_host, Host}], Opts} = lists:partition(
 				      fun({server_host, _}) -> true;
 					 (_) -> false
 				      end, Opts1),
-    start_link(Socket, Host, Opts).
-
+    start_link(Socket, Host, Opts);
 start_link(Socket, Host, Opts) ->
     p1_fsm:start_link(?MODULE, [Socket, Host, Opts], []).
 

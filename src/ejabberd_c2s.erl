@@ -27,7 +27,7 @@
 -protocol({rfc, 6121}).
 
 %% ejabberd_listener callbacks
--export([start/2, start_link/2, accept/1, listen_opt_type/1, listen_options/0]).
+-export([start/3, start_link/3, accept/1, listen_opt_type/1, listen_options/0]).
 %% ejabberd_config callbacks
 -export([opt_type/1, transform_listen_option/2]).
 %% xmpp_stream_in callbacks
@@ -63,12 +63,12 @@
 %%%===================================================================
 %%% ejabberd_listener API
 %%%===================================================================
-start(SockData, Opts) ->
-    xmpp_stream_in:start(?MODULE, [SockData, Opts],
+start(SockMod, Socket, Opts) ->
+    xmpp_stream_in:start(?MODULE, [{SockMod, Socket}, Opts],
 			 ejabberd_config:fsm_limit_opts(Opts)).
 
-start_link(SockData, Opts) ->
-    xmpp_stream_in:start_link(?MODULE, [SockData, Opts],
+start_link(SockMod, Socket, Opts) ->
+    xmpp_stream_in:start_link(?MODULE, [{SockMod, Socket}, Opts],
 			      ejabberd_config:fsm_limit_opts(Opts)).
 
 accept(Ref) ->

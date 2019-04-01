@@ -143,7 +143,7 @@ init([{#ws{ip = IP, http_opts = HOpts}, _} = WS]) ->
     Socket = {http_ws, self(), IP},
     ?DEBUG("Client connected through websocket ~p",
 	   [Socket]),
-    case ejabberd_c2s:start({?MODULE, Socket}, [{receiver, self()}|Opts]) of
+    case ejabberd_c2s:start(?MODULE, Socket, [{receiver, self()}|Opts]) of
 	{ok, C2SPid} ->
 	    ejabberd_c2s:accept(C2SPid),
 	    Timer = erlang:start_timer(WSTimeout, self(), []),

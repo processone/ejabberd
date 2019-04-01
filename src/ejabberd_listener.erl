@@ -43,10 +43,12 @@
 -type endpoint()  :: {inet:port_number(), inet:ip_address(), transport()}.
 -type listen_opts() :: [proplists:property()].
 -type listener() :: {endpoint(), module(), listen_opts()}.
+-type sockmod() :: gen_tcp.
+-type socket() :: inet:socket().
 
--callback start({gen_tcp, inet:socket()}, listen_opts()) ->
+-callback start(sockmod(), socket(), listen_opts()) ->
     {ok, pid()} | {error, any()} | ignore.
--callback start_link({gen_tcp, inet:socket()}, listen_opts()) ->
+-callback start_link(sockmod(), socket(), listen_opts()) ->
     {ok, pid()} | {error, any()} | ignore.
 -callback accept(pid()) -> any().
 -callback listen_opt_type(atom()) -> fun((term()) -> term()).
@@ -197,10 +199,15 @@ split_opts(Opts) ->
 -spec accept(inet:socket(), module(), listen_opts(), atom()) -> no_return().
 accept(ListenSocket, Module, Opts, Sup) ->
     Interval = proplists:get_value(accept_interval, Opts, 0),
-    accept(ListenSocket, Module, Opts, Sup, Interval).
+    Arity = case erlang:function_exported(Module, start, 3) of
+		true -> 3;
+		false -> 2
+	    end,
+    accept(ListenSocket, Module, Opts, Sup, Interval, Arity).
 
--spec accept(inet:socket(), module(), listen_opts(), atom(), non_neg_integer()) -> no_return().
-accept(ListenSocket, Module, Opts, Sup, Interval) ->
+-spec accept(inet:socket(), module(), listen_opts(), atom(),
+	     non_neg_integer(), 2|3) -> no_return().
+accept(ListenSocket, Module, Opts, Sup, Interval, Arity) ->
     NewInterval = check_rate_limit(Interval),
     case gen_tcp:accept(ListenSocket) of
 	{ok, Socket} ->
@@ -213,7 +220,7 @@ accept(ListenSocket, Module, Opts, Sup, Interval) ->
 			    gen_tcp:close(Socket);
 			{{Addr, Port}, {PAddr, PPort}} = SP ->
 			    Opts2 = [{sock_peer_name, SP} | Opts],
-			    Receiver = case start_connection(Module, Socket, Opts2, Sup) of
+			    Receiver = case start_connection(Module, Arity, Socket, Opts2, Sup) of
 					   {ok, RecvPid} ->
 					       RecvPid;
 					   _ ->
@@ -228,7 +235,7 @@ accept(ListenSocket, Module, Opts, Sup, Interval) ->
 		_ ->
 		    case {inet:sockname(Socket), inet:peername(Socket)} of
 			{{ok, {Addr, Port}}, {ok, {PAddr, PPort}}} ->
-			    Receiver = case start_connection(Module, Socket, Opts, Sup) of
+			    Receiver = case start_connection(Module, Arity, Socket, Opts, Sup) of
 					   {ok, RecvPid} ->
 					       RecvPid;
 					   _ ->
@@ -243,11 +250,11 @@ accept(ListenSocket, Module, Opts, Sup, Interval) ->
 			    gen_tcp:close(Socket)
 		    end
 	    end,
-	    accept(ListenSocket, Module, Opts, Sup, NewInterval);
+	    accept(ListenSocket, Module, Opts, Sup, NewInterval, Arity);
 	{error, Reason} ->
 	    ?ERROR_MSG("(~w) Failed TCP accept: ~s",
 		       [ListenSocket, inet:format_error(Reason)]),
-	    accept(ListenSocket, Module, Opts, Sup, NewInterval)
+	    accept(ListenSocket, Module, Opts, Sup, NewInterval, Arity)
     end.
 
 -spec udp_recv(inet:socket(), module(), listen_opts()) -> no_return().
@@ -269,11 +276,15 @@ udp_recv(Socket, Module, Opts) ->
 	    throw({error, Reason})
     end.
 
--spec start_connection(module(), inet:socket(), listen_opts(), atom()) ->
+-spec start_connection(module(), 2|3, inet:socket(), listen_opts(), atom()) ->
 		      {ok, pid()} | {error, any()} | ignore.
-start_connection(Module, Socket, Opts, Sup) ->
+start_connection(Module, Arity, Socket, Opts, Sup) ->
     Res = case Sup of
-	      undefined -> Module:start({gen_tcp, Socket}, Opts);
+	      undefined ->
+		  case Arity of
+		      3 -> Module:start(gen_tcp, Socket, Opts);
+		      2 -> Module:start({gen_tcp, Socket}, Opts)
+		  end;
 	      _ -> supervisor:start_child(Sup, [{gen_tcp, Socket}, Opts])
 	  end,
     case Res of
@@ -517,8 +528,11 @@ validate_module(Mod) ->
     case code:ensure_loaded(Mod) of
 	{module, Mod} ->
 	    lists:foreach(
-	      fun({Fun, Arity}) ->
-		      case erlang:function_exported(Mod, Fun, Arity) of
+	      fun({Fun, Arities}) ->
+		      case lists:any(
+			     fun(Arity) ->
+				     erlang:function_exported(Mod, Fun, Arity)
+			     end, Arities) of
 			  true -> ok;
 			  false ->
 			      ?ERROR_MSG("Failed to load listening module ~s, "
@@ -526,11 +540,11 @@ validate_module(Mod) ->
 					 "The module is either not a listening module "
 					 "or it is a third-party module which "
 					 "requires update",
-					 [Mod, Fun, Arity]),
+					 [Mod, Fun, hd(Arities)]),
 			      erlang:error(badarg)
 		      end
-	      end, [{start, 2}, {start_link, 2},
-		    {accept, 1}, {listen_options, 0}]);
+	      end, [{start, [3,2]}, {start_link, [3,2]},
+		    {accept, [1]}, {listen_options, [0]}]);
 	_ ->
 	    ?ERROR_MSG("Failed to load unknown listening module ~s: "
 		       "make sure there is no typo and ~s.beam "

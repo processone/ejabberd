@@ -30,7 +30,7 @@
 
 -ifndef(STUN).
 -include("logger.hrl").
--export([accept/1, start/2, start_link/2, listen_options/0]).
+-export([accept/1, start/3, start_link/3, listen_options/0]).
 fail() ->
     ?CRITICAL_MSG("Listening module ~s is not available: "
 		  "ejabberd is not compiled with STUN/TURN support",
@@ -40,13 +40,13 @@ accept(_) ->
     fail().
 listen_options() ->
     fail().
-start(_, _) ->
+start(_, _, _) ->
     fail().
-start_link(_, _) ->
+start_link(_, _, _) ->
     fail().
 -else.
--export([tcp_init/2, udp_init/2, udp_recv/5, start/2,
-	 start_link/2, accept/1, listen_opt_type/1, listen_options/0]).
+-export([tcp_init/2, udp_init/2, udp_recv/5, start/3,
+	 start_link/3, accept/1, listen_opt_type/1, listen_options/0]).
 
 -include("logger.hrl").
 
@@ -64,11 +64,11 @@ udp_init(Socket, Opts) ->
 udp_recv(Socket, Addr, Port, Packet, Opts) ->
     stun:udp_recv(Socket, Addr, Port, Packet, Opts).
 
-start(Opaque, Opts) ->
-    stun:start(Opaque, Opts).
+start(SockMod, Socket, Opts) ->
+    stun:start({SockMod, Socket}, Opts).
 
-start_link({gen_tcp, Sock}, Opts) ->
-    stun:start_link(Sock, Opts).
+start_link(_SockMod, Socket, Opts) ->
+    stun:start_link(Socket, Opts).
 
 accept(_Pid) ->
     ok.
