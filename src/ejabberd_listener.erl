@@ -280,12 +280,14 @@ udp_recv(Socket, Module, Opts) ->
 		      {ok, pid()} | {error, any()} | ignore.
 start_connection(Module, Arity, Socket, Opts, Sup) ->
     Res = case Sup of
+	      undefined when Arity == 3 ->
+		  Module:start(gen_tcp, Socket, Opts);
 	      undefined ->
-		  case Arity of
-		      3 -> Module:start(gen_tcp, Socket, Opts);
-		      2 -> Module:start({gen_tcp, Socket}, Opts)
-		  end;
-	      _ -> supervisor:start_child(Sup, [{gen_tcp, Socket}, Opts])
+		  Module:start({gen_tcp, Socket}, Opts);
+	      _ when Arity == 3 ->
+		  supervisor:start_child(Sup, [gen_tcp, Socket, Opts]);
+	      _ ->
+		  supervisor:start_child(Sup, [{gen_tcp, Socket}, Opts])
 	  end,
     case Res of
 	{ok, Pid} ->
