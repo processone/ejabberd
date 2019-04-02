@@ -137,7 +137,8 @@ reload(Host, NewOpts, OldOpts) ->
 	    NewMod:init(Host, NewOpts);
        true ->
 	    ok
-    end.
+    end,
+    init_cache(NewMod, Host, NewOpts).
 
 depends(_Host, _Opts) ->
     [].
