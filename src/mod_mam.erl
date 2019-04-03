@@ -245,8 +245,11 @@ reload(Host, NewOpts, OldOpts) ->
 	    ok
     end.
 
-depends(_Host, _Opts) ->
-    [].
+depends(_Host, Opts) ->
+    case proplists:get_bool(user_mucsub_from_muc_archive, Opts) of
+	true -> [{mod_muc, hard}, {mod_muc_admin, hard}];
+	false -> []
+    end.
 
 -spec register_iq_handlers(binary()) -> ok.
 register_iq_handlers(Host) ->
