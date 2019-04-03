@@ -33,8 +33,7 @@
 -export([register_online_room/4, unregister_online_room/4, find_online_room/3,
 	 get_online_rooms/3, count_online_rooms/2, rsm_supported/0,
 	 register_online_user/4, unregister_online_user/4,
-	 count_online_rooms_by_user/3, get_online_rooms_by_user/3,
-	 get_subscribed_rooms/3]).
+	 count_online_rooms_by_user/3, get_online_rooms_by_user/3]).
 -export([set_affiliation/6, set_affiliations/4, get_affiliation/5,
 	 get_affiliations/3, search_affiliation/4]).
 
@@ -183,9 +182,6 @@ import(_LServer, <<"muc_registered">>,
     R = #muc_registered{us_host = {{U, S}, RoomHost}, nick = Nick},
     ejabberd_riak:put(R, muc_registered_schema(),
 		      [{'2i', [{<<"nick_host">>, {Nick, RoomHost}}]}]).
-
-get_subscribed_rooms(_, _, _) ->
-    not_implemented.
 
 %%%===================================================================
 %%% Internal functions
