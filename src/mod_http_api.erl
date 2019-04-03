@@ -306,7 +306,10 @@ handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
 		  throw:Msg when is_list(Msg); is_binary(Msg) ->
 		    {400, iolist_to_binary(Msg)};
 		  ?EX_RULE(Class, Error, Stack) ->
-		    ?ERROR_MSG("REST API Error: ~p:~p ~p", [Class, Error, ?EX_STACK(Stack)]),
+		    ?ERROR_MSG("REST API Error: "
+			       "~s(~p) -> ~p:~p ~p",
+			       [Call, hide_sensitive_args(Args),
+				Class, Error, ?EX_STACK(Stack)]),
 		    {500, <<"internal_error">>}
 	    end;
         {error, Msg} ->
