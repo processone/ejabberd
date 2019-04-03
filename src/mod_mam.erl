@@ -1121,11 +1121,14 @@ select_with_mucsub(LServer, JidRequestor, JidArchive, Query, RSM) ->
 					 end,
 			    SubRooms = case mod_muc_admin:find_hosts(LServer) of
 					   [First|_] ->
-					       mod_muc:get_subscribed_rooms(First, JidRequestor);
+					       case mod_muc:get_subscribed_rooms(First, JidRequestor) of
+						   {ok, L} -> L;
+						   {error, _} -> []
+					       end;
 					   _ ->
 					       []
 				       end,
-			    SubRoomJids = [Jid || #muc_subscription{jid = Jid} <- SubRooms],
+			    SubRoomJids = [Jid || {Jid, _} <- SubRooms],
 			    {E2, A2, C2} = lists:foldl(
 				fun(MucJid, {E0, A0, C0}) ->
 				    case select(LServer, JidRequestor, MucJid, Query, RSM,

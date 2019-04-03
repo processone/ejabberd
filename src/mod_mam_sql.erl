@@ -194,11 +194,14 @@ select_with_mucsub(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
 		_ ->
 		    SubRooms = case mod_muc_admin:find_hosts(LServer) of
 				   [First|_] ->
-				       mod_muc:get_subscribed_rooms(First, JidRequestor);
+				       case mod_muc:get_subscribed_rooms(First, JidRequestor) of
+					   {ok, L} -> L;
+					   {error, _} -> []
+				       end;
 				   _ ->
 				       []
 			       end,
-		    [jid:encode(Jid) || #muc_subscription{jid = Jid} <- SubRooms]
+		    [jid:encode(Jid) || {Jid, _} <- SubRooms]
 	    end,
     {Query, CountQuery} = make_sql_query(LUser, LServer, MAMQuery, RSM, Extra),
     do_select_query(LServer, JidRequestor, JidArchive, RSM, chat, Query, CountQuery).

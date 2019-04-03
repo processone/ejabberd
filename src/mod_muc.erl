@@ -107,7 +107,10 @@
 -callback unregister_online_user(binary(), ljid(), binary(), binary()) -> any().
 -callback count_online_rooms_by_user(binary(), binary(), binary()) -> non_neg_integer().
 -callback get_online_rooms_by_user(binary(), binary(), binary()) -> [{binary(), binary()}].
--callback get_subscribed_rooms(binary(), binary(), jid()) -> [{ljid(), [binary()]}] | [].
+-callback get_subscribed_rooms(binary(), binary(), jid()) ->
+          {ok, [{jid(), [binary()]}]} | {error, db_failure}.
+
+-optional_callbacks([get_subscribed_rooms/3]).
 
 %%====================================================================
 %% API
@@ -584,12 +587,19 @@ process_muc_unique(#iq{from = From, type = get,
 process_mucsub(#iq{type = set, lang = Lang} = IQ) ->
     Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
-process_mucsub(#iq{type = get, from = From, to = To,
+process_mucsub(#iq{type = get, from = From, to = To, lang = Lang,
 		   sub_els = [#muc_subscriptions{}]} = IQ) ->
     Host = To#jid.lserver,
     ServerHost = ejabberd_router:host_of_route(Host),
-    Subs = get_subscribed_rooms(ServerHost, Host, From),
-    xmpp:make_iq_result(IQ, #muc_subscriptions{list = Subs});
+    case get_subscribed_rooms(ServerHost, Host, From) of
+	{ok, Subs} ->
+	    List = [#muc_subscription{jid = JID, events = Nodes}
+		    || {JID, Nodes} <- Subs],
+	    xmpp:make_iq_result(IQ, #muc_subscriptions{list = List});
+	{error, _} ->
+	    Txt = <<"Database failure">>,
+	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
+    end;
 process_mucsub(#iq{lang = Lang} = IQ) ->
     Txt = <<"No module is handling this query">>,
     xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
@@ -728,30 +738,33 @@ get_room_disco_item({Name, Host, Pid}, Query) ->
 		    {error, notfound}
     end.
 
--spec get_subscribed_rooms(binary(), jid()) -> [#muc_subscription{}].
+-spec get_subscribed_rooms(binary(), jid()) -> {ok, [{jid(), [binary()]}]} | {error, any()}.
 get_subscribed_rooms(Host, User) ->
     ServerHost = ejabberd_router:host_of_route(Host),
     get_subscribed_rooms(ServerHost, Host, User).
 
+-spec get_subscribed_rooms(binary(), binary(), jid()) ->
+			   {ok, [{jid(), [binary()]}]} | {error, any()}.
 get_subscribed_rooms(ServerHost, Host, From) ->
     LServer = jid:nameprep(ServerHost),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     BareFrom = jid:remove_resource(From),
-    case Mod:get_subscribed_rooms(LServer, Host, BareFrom) of
-	not_implemented ->
+    case erlang:function_exported(Mod, get_subscribed_rooms, 3) of
+	false ->
 	    Rooms = get_online_rooms(ServerHost, Host),
-	    lists:flatmap(
-	      fun({Name, _, Pid}) ->
-		      case p1_fsm:sync_send_all_state_event(Pid, {is_subscribed, BareFrom}) of
-			  {true, Nodes} ->
-				[#muc_subscription{jid = jid:make(Name, Host), events = Nodes}];
-			  false -> []
-		      end;
-		 (_) ->
-		      []
-	      end, Rooms);
-	V ->
-	    [#muc_subscription{jid = Jid, events = Nodes} || {Jid, Nodes} <- V]
+	    {ok, lists:flatmap(
+		   fun({Name, _, Pid}) ->
+			   case p1_fsm:sync_send_all_state_event(
+				  Pid, {is_subscribed, BareFrom}) of
+			       {true, Nodes} ->
+				   [{jid:make(Name, Host), Nodes}];
+			       false -> []
+			   end;
+		      (_) ->
+			   []
+		   end, Rooms)};
+	true ->
+	    Mod:get_subscribed_rooms(LServer, Host, BareFrom)
     end.
 
 get_nick(ServerHost, Host, From) ->
