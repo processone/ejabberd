@@ -307,7 +307,7 @@ handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
 		    {400, iolist_to_binary(Msg)};
 		  ?EX_RULE(Class, Error, Stack) ->
 		    ?ERROR_MSG("REST API Error: "
-			       "~s(~p) -> ~p:~p ~p",
+		              "~s(~p) -> ~p:~p ~p",
 			       [Call, hide_sensitive_args(Args),
 				Class, Error, ?EX_STACK(Stack)]),
 		    {500, <<"internal_error">>}
@@ -322,7 +322,7 @@ handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
 
 handle2(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
     {ArgsF, _ResultF} = ejabberd_commands:get_command_format(Call, Auth, Version),
-    ArgsFormatted = format_args(Args, ArgsF),
+    ArgsFormatted = format_args(Call, Args, ArgsF),
     case ejabberd_commands:execute_command2(Call, ArgsFormatted, Auth, Version) of
 	{error, Error} ->
 	    throw(Error);
@@ -346,7 +346,7 @@ get_elem_delete(A, L, F) ->
 	  end
     end.
 
-format_args(Args, ArgsFormat) ->
+format_args(Call, Args, ArgsFormat) ->
     {ArgsRemaining, R} = lists:foldl(fun ({ArgName,
 					   ArgFormat},
 					  {Args1, Res}) ->
@@ -361,9 +361,11 @@ format_args(Args, ArgsFormat) ->
     case ArgsRemaining of
       [] -> R;
       L when is_list(L) ->
+	  ExtraArgs = [N || {N, _} <- L],
+	  ?INFO_MSG("Command ~s call rejected, it has unknown arguments ~w",
+	      [Call, ExtraArgs]),
 	  throw({invalid_parameter,
-		 io_lib:format("Request have unknown arguments: ~w",
-			       [[N || {N, _} <- L]])})
+		 io_lib:format("Request have unknown arguments: ~w", [ExtraArgs])})
     end.
 
 format_arg({Elements},
