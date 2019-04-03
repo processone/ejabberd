@@ -330,19 +330,23 @@ handle2(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
 	    format_command_result(Call, Auth, Res, Version)
     end.
 
-get_elem_delete(A, L, F) ->
+get_elem_delete(Call, A, L, F) ->
     case proplists:get_all_values(A, L) of
       [Value] -> {Value, proplists:delete(A, L)};
       [_, _ | _] ->
-	  %% Crash reporting the error
-	  exit({duplicated_attribute, A, L});
+	  ?INFO_MSG("Command ~s call rejected, it has duplicate attribute ~w",
+		    [Call, A]),
+	  throw({invalid_parameter,
+		 io_lib:format("Request have duplicate argument: ~w", [A])});
       [] ->
 	  case F of
 	      {list, _} ->
 		  {[], L};
 	      _ ->
-		  %% Report the error and then force a crash
-		  exit({attribute_not_found, A, L})
+		  ?INFO_MSG("Command ~s call rejected, missing attribute ~w",
+			    [Call, A]),
+		  throw({invalid_parameter,
+			 io_lib:format("Request have missing argument: ~w", [A])})
 	  end
     end.
 
@@ -351,7 +355,7 @@ format_args(Call, Args, ArgsFormat) ->
 					   ArgFormat},
 					  {Args1, Res}) ->
 					     {ArgValue, Args2} =
-						 get_elem_delete(ArgName,
+						 get_elem_delete(Call, ArgName,
 								 Args1, ArgFormat),
 					     Formatted = format_arg(ArgValue,
 								    ArgFormat),
