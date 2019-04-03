@@ -32,7 +32,7 @@
 -export([start_link/0, update/0, check/1,
          available_command/0, available/0, available/1,
          installed_command/0, installed/0, installed/1,
-         install/1, uninstall/1, upgrade/0, upgrade/1,
+         install/1, uninstall/1, upgrade/0, upgrade/1, add_paths/0,
          add_sources/1, add_sources/2, del_sources/1, modules_dir/0,
          config_dir/0, opt_type/1, get_commands_spec/0]).
 
@@ -54,12 +54,15 @@ start_link() ->
 
 init([]) ->
     process_flag(trap_exit, true),
-    [code:add_patha(module_ebin_dir(Module))
-     || {Module, _} <- installed()],
+    add_paths(),
     application:start(inets),
     inets:start(httpc, [{profile, ext_mod}]),
     ejabberd_commands:register_commands(get_commands_spec()),
     {ok, #state{}}.
+
+add_paths() ->
+    [code:add_patha(module_ebin_dir(Module))
+     || {Module, _} <- installed()].
 
 handle_call(_Request, _From, State) ->
     Reply = ok,

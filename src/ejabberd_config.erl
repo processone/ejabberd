@@ -71,6 +71,7 @@ start() ->
 		  [named_table, public, {read_concurrency, true}]),
     catch ets:new(ejabberd_db_modules,
 		  [named_table, public, {read_concurrency, true}]),
+    ext_mod:add_paths(),
     case load_file(ConfigFile) of
 	{ok, State1} ->
 	    UnixTime = erlang:system_time(second),
