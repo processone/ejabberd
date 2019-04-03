@@ -293,7 +293,7 @@ handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
 		    {401, iolist_to_binary(Msg)};
                   throw:{error, account_unprivileged} ->
 		      {403, 31, <<"Command need to be run with admin privilege.">>};
-		throw:{error, access_rules_unauthorized} ->
+		  throw:{error, access_rules_unauthorized} ->
 		    {403, 32, <<"AccessRules: Account does not have the right to perform the operation.">>};
 		  throw:{invalid_parameter, Msg} ->
 		    {400, iolist_to_binary(Msg)};
