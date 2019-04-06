@@ -215,10 +215,10 @@ process_adhoc_request(#iq{from = From, to = To,
     Res = case Type of
 	      local ->
 		  ejabberd_hooks:run_fold(adhoc_local_commands, Host, empty,
-					  [From, To, SubEl]);
+					  [From, To, fix_lang(Lang, SubEl)]);
 	      sm ->
 		  ejabberd_hooks:run_fold(adhoc_sm_commands, Host, empty,
-					  [From, To, SubEl])
+					  [From, To, fix_lang(Lang, SubEl)])
 	  end,
     case Res of
 	ignore ->
@@ -265,6 +265,11 @@ ping_command(_Acc, _From, _To,
 	    {error, xmpp:err_bad_request(Txt, Lang)}
     end;
 ping_command(Acc, _From, _To, _Request) -> Acc.
+
+fix_lang(Lang, #adhoc_command{lang = <<>>} = Cmd) ->
+    Cmd#adhoc_command{lang = Lang};
+fix_lang(_, Cmd) ->
+    Cmd.
 
 depends(_Host, _Opts) ->
     [].
