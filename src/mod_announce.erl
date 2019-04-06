@@ -468,18 +468,24 @@ announce_commands(From, To,
 				 sid = SID,
 				 xdata = XData,
 				 action = Action} = Request) ->
-    ActionIsExecute = Action == execute orelse Action == complete,
     if Action == cancel ->
 	    %% User cancels request
 	    #adhoc_command{status = canceled, lang = Lang, node = Node,
 			   sid = SID};
-       XData == undefined, ActionIsExecute ->
+       XData == undefined andalso Action == execute ->
 	    %% User requests form
 	    Form = generate_adhoc_form(Lang, Node, To#jid.lserver),
-	    #adhoc_command{status = executing, lang = Lang, node = Node,
-			   sid = SID, xdata = Form};
-       XData /= undefined, ActionIsExecute ->
-	    handle_adhoc_form(From, To, Request);
+	    xmpp_util:make_adhoc_response(
+	      #adhoc_command{status = executing, lang = Lang, node = Node,
+			     sid = SID, xdata = Form});
+       XData /= undefined andalso (Action == execute orelse Action == complete) ->
+	    case handle_adhoc_form(From, To, Request) of
+		ok ->
+		    #adhoc_command{lang = Lang, node = Node, sid = SID,
+				   status = completed};
+		{error, _} = Err ->
+		    Err
+	    end;
        true ->
 	    Txt = <<"Unexpected action">>,
 	    {error, xmpp:err_bad_request(Txt, Lang)}
@@ -496,10 +502,10 @@ vvaluel(Val) ->
 
 generate_adhoc_form(Lang, Node, ServerHost) ->
     LNode = tokenize(Node),
-    {OldSubject, OldBody} = if (LNode == ?NS_ADMINL("edit-motd")) 
+    {OldSubject, OldBody} = if (LNode == ?NS_ADMINL("edit-motd"))
 			       or (LNode == ?NS_ADMINL("edit-motd-allhosts")) ->
 				    get_stored_motd(ServerHost);
-			       true -> 
+			       true ->
 				    {<<>>, <<>>}
 			    end,
     Fs = if (LNode == ?NS_ADMINL("delete-motd"))
@@ -536,7 +542,7 @@ join_lines([], Acc) ->
 
 handle_adhoc_form(From, #jid{lserver = LServer} = To,
 		  #adhoc_command{lang = Lang, node = Node,
-				 sid = SessionID, xdata = XData}) ->
+				 xdata = XData}) ->
     Confirm = case xmpp_util:get_xdata_values(<<"confirm">>, XData) of
 		  [<<"true">>] -> true;
 		  [<<"1">>] -> true;
@@ -544,8 +550,6 @@ handle_adhoc_form(From, #jid{lserver = LServer} = To,
 	      end,
     Subject = join_lines(xmpp_util:get_xdata_values(<<"subject">>, XData)),
     Body = join_lines(xmpp_util:get_xdata_values(<<"body">>, XData)),
-    Response = #adhoc_command{lang = Lang, node = Node, sid = SessionID,
-			      status = completed},
     Packet = #message{from = From,
 		      to = To,
 		      type = headline,
@@ -555,17 +559,15 @@ handle_adhoc_form(From, #jid{lserver = LServer} = To,
     case {Node, Body} of
 	{?NS_ADMIN_DELETE_MOTD, _} ->
 	    if	Confirm ->
-		    gen_server:cast(Proc, {announce_motd_delete, Packet}),
-		    Response;
+		    gen_server:cast(Proc, {announce_motd_delete, Packet});
 		true ->
-		    Response
+		    ok
 	    end;
 	{?NS_ADMIN_DELETE_MOTD_ALLHOSTS, _} ->
 	    if	Confirm ->
-		    gen_server:cast(Proc, {announce_all_hosts_motd_delete, Packet}),
-		    Response;
+		    gen_server:cast(Proc, {announce_all_hosts_motd_delete, Packet});
 		true ->
-		    Response
+		    ok
 	    end;
 	{_, <<>>} ->
 	    %% An announce message with no body is definitely an operator error.
@@ -576,29 +578,21 @@ handle_adhoc_form(From, #jid{lserver = LServer} = To,
 	%% We don't use direct announce_* functions because it
 	%% leads to large delay in response and <iq/> queries processing
 	{?NS_ADMIN_ANNOUNCE, _} ->
-	    gen_server:cast(Proc, {announce_online, Packet}),
-	    Response;
-	{?NS_ADMIN_ANNOUNCE_ALLHOSTS, _} ->	    
-	    gen_server:cast(Proc, {announce_all_hosts_online, Packet}),
-	    Response;
+	    gen_server:cast(Proc, {announce_online, Packet});
+	{?NS_ADMIN_ANNOUNCE_ALLHOSTS, _} ->
+	    gen_server:cast(Proc, {announce_all_hosts_online, Packet});
 	{?NS_ADMIN_ANNOUNCE_ALL, _} ->
-	    gen_server:cast(Proc, {announce_all, Packet}),
-	    Response;
-	{?NS_ADMIN_ANNOUNCE_ALL_ALLHOSTS, _} ->	    
-	    gen_server:cast(Proc, {announce_all_hosts_all, Packet}),
-	    Response;
+	    gen_server:cast(Proc, {announce_all, Packet});
+	{?NS_ADMIN_ANNOUNCE_ALL_ALLHOSTS, _} ->
+	    gen_server:cast(Proc, {announce_all_hosts_all, Packet});
 	{?NS_ADMIN_SET_MOTD, _} ->
-	    gen_server:cast(Proc, {announce_motd, Packet}),
-	    Response;
-	{?NS_ADMIN_SET_MOTD_ALLHOSTS, _} ->	    
-	    gen_server:cast(Proc, {announce_all_hosts_motd, Packet}),
-	    Response;
+	    gen_server:cast(Proc, {announce_motd, Packet});
+	{?NS_ADMIN_SET_MOTD_ALLHOSTS, _} ->
+	    gen_server:cast(Proc, {announce_all_hosts_motd, Packet});
 	{?NS_ADMIN_EDIT_MOTD, _} ->
-	    gen_server:cast(Proc, {announce_motd_update, Packet}),
-	    Response;
-	{?NS_ADMIN_EDIT_MOTD_ALLHOSTS, _} ->	    
-	    gen_server:cast(Proc, {announce_all_hosts_motd_update, Packet}),
-	    Response;
+	    gen_server:cast(Proc, {announce_motd_update, Packet});
+	{?NS_ADMIN_EDIT_MOTD_ALLHOSTS, _} ->
+	    gen_server:cast(Proc, {announce_all_hosts_motd_update, Packet});
 	Junk ->
 	    %% This can't happen, as we haven't registered any other
 	    %% command nodes.
