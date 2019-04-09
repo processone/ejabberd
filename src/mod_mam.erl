@@ -1174,7 +1174,7 @@ wrap_as_mucsub(Messages, #jid{lserver = LServer} = Requester) ->
 wrap_as_mucsub(Message, Requester, ReqServer) ->
     case Message of
 	#forwarded{delay = #delay{stamp = Stamp, desc = Desc},
-		   sub_els = [#message{from = From, sub_els = SubEls} = Msg]} ->
+		   sub_els = [#message{from = From, sub_els = SubEls, subject = Subject} = Msg]} ->
 	    {L1, SubEls2} = case lists:keytake(mam_archived, 1, xmpp:decode(SubEls)) of
 				{value, Arch, Rest} ->
 				    {[Arch#mam_archived{by = Requester}], Rest};
@@ -1188,13 +1188,19 @@ wrap_as_mucsub(Message, Requester, ReqServer) ->
 				    {p1_rand:get_string(), L1, SubEls2}
 			    end,
 	    Msg2 = Msg#message{to = Requester, sub_els = SubEls3},
+	    Node = case Subject of
+		       [] ->
+			   ?NS_MUCSUB_NODES_MESSAGES;
+		       _ ->
+			   ?NS_MUCSUB_NODES_SUBJECT
+		   end,
 	    #forwarded{delay = #delay{stamp = Stamp, desc = Desc, from = ReqServer},
 		       sub_els = [
 			   #message{from = jid:remove_resource(From), to = Requester,
 				    id = Sid,
 				    sub_els = [#ps_event{
 					items = #ps_items{
-					    node = ?NS_MUCSUB_NODES_MESSAGES,
+					    node = Node,
 					    items = [#ps_item{
 						id = Sid,
 						sub_els = [Msg2]
