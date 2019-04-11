@@ -420,9 +420,9 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
 
     {UserSel, UserWhere} = case ExtraUsernames of
 			       Users when is_list(Users) ->
-				   EscUsers = [<<"'", (Escape(U))/binary, "'">> || U <- Users],
+				   EscUsers = [<<"'", (Escape(U))/binary, "'">> || U <- [SUser | Users]],
 				   {<<" username,">>,
-				    [<<" username in ('">>, SUser, <<"',">>, str:join(EscUsers, <<",">>), <<")">>]};
+				    [<<" username in (">>, str:join(EscUsers, <<",">>), <<")">>]};
 			       subscribers_table ->
 				   SJid = jid:encode({User, LServer, <<>>}),
 				   {<<" username,">>,
