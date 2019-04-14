@@ -111,7 +111,8 @@
 	 external_secret        :: binary()}).
 
 -record(media_info,
-	{type   :: atom(),
+	{path   :: binary(),
+	 type   :: atom(),
 	 height :: integer(),
 	 width  :: integer()}).
 
@@ -780,10 +781,10 @@ parse_http_request(#request{host = Host, path = Path}) ->
 store_file(Path, Request, FileMode, DirMode, GetPrefix, Slot, Thumbnail) ->
     case do_store_file(Path, Request, FileMode, DirMode) of
 	ok when Thumbnail ->
-	    case identify(Path) of
-		{ok, MediaInfo} ->
-		    case convert(Path, MediaInfo) of
-			{ok, OutPath, OutMediaInfo} ->
+	    case read_image(Path) of
+		{ok, Data, MediaInfo} ->
+		    case convert(Data, MediaInfo) of
+			{ok, #media_info{path = OutPath} = OutMediaInfo} ->
 			    [UserDir, RandDir | _] = Slot,
 			    FileName = filename:basename(OutPath),
 			    URL = str:join([GetPrefix, UserDir,
@@ -888,30 +889,31 @@ format_error(Reason) ->
 %%--------------------------------------------------------------------
 %% Image manipulation stuff.
 %%--------------------------------------------------------------------
--spec identify(binary()) -> {ok, media_info()} | pass.
-identify(Path) ->
-    try
-	{ok, Fd} = file:open(Path, [read, raw]),
-	{ok, Data} = file:read(Fd, 1024),
-	case eimp:identify(Data) of
-	    {ok, Info} ->
-		{ok, #media_info{
+-spec read_image(binary()) -> {ok, binary(), media_info()} | pass.
+read_image(Path) ->
+    case file:read_file(Path) of
+	{ok, Data} ->
+	    case eimp:identify(Data) of
+		{ok, Info} ->
+		    {ok, Data,
+		     #media_info{
+			path = Path,
 			type = proplists:get_value(type, Info),
 			width = proplists:get_value(width, Info),
 			height = proplists:get_value(height, Info)}};
-	    {error, Why} ->
-		?DEBUG("Cannot identify type of ~s: ~s",
-		       [Path, eimp:format_error(Why)]),
-		pass
-	end
-    catch _:{badmatch, {error, Reason}} ->
+		{error, Why} ->
+		    ?DEBUG("Cannot identify type of ~s: ~s",
+			   [Path, eimp:format_error(Why)]),
+		    pass
+	    end;
+	{error, Reason} ->
 	    ?DEBUG("Failed to read file ~s: ~s",
 		   [Path, format_error(Reason)]),
 	    pass
     end.
 
 -spec convert(binary(), media_info()) -> {ok, binary(), media_info()} | pass.
-convert(Path, #media_info{type = T, width = W, height = H} = Info) ->
+convert(InData, #media_info{path = Path, type = T, width = W, height = H} = Info) ->
     if W * H >= 25000000 ->
 	    ?DEBUG("The image ~s is more than 25 Mpix", [Path]),
 	    pass;
@@ -926,27 +928,20 @@ convert(Path, #media_info{type = T, width = W, height = H} = Info) ->
 			  H > W -> {round(W*300/H), 300};
 			  true -> {300, 300}
 		       end,
-	    OutInfo = #media_info{type = T, width = W1, height = H1},
-	    case file:read_file(Path) of
-		{ok, Data} ->
-		    case eimp:convert(Data, T, [{scale, {W1, H1}}]) of
-			{ok, OutData} ->
-			    case file:write_file(OutPath, OutData) of
-				ok ->
-				    {ok, OutPath, OutInfo};
-				{error, Why} ->
-				    ?ERROR_MSG("Failed to write to ~s: ~s",
-					       [OutPath, format_error(Why)]),
-				    pass
-			    end;
+	    OutInfo = #media_info{path = OutPath, type = T, width = W1, height = H1},
+	    case eimp:convert(InData, T, [{scale, {W1, H1}}]) of
+		{ok, OutData} ->
+		    case file:write_file(OutPath, OutData) of
+			ok ->
+			    {ok, OutInfo};
 			{error, Why} ->
-			    ?ERROR_MSG("Failed to convert ~s to ~s: ~s",
-				       [Path, OutPath, eimp:format_error(Why)]),
+			    ?ERROR_MSG("Failed to write to ~s: ~s",
+				       [OutPath, format_error(Why)]),
 			    pass
 		    end;
 		{error, Why} ->
-		    ?ERROR_MSG("Failed to read file ~s: ~s",
-			       [Path, format_error(Why)]),
+		    ?ERROR_MSG("Failed to convert ~s to ~s: ~s",
+			       [Path, OutPath, eimp:format_error(Why)]),
 		    pass
 	    end
     end.
