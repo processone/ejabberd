@@ -359,6 +359,7 @@ parsed_items(List) ->
           when element(1, El) == xmlel;
                element(1, El) == xmlstreamstart;
                element(1, El) == xmlstreamelement;
+               element(1, El) == xmlstreamcdata;
                element(1, El) == xmlstreamend ->
             parsed_items([El | List]);
         {'$gen_event', {xmlstreamerror, _}} ->
