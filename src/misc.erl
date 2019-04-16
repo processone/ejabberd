@@ -483,6 +483,5 @@ get_dir(Type) ->
 %% Generates erlang:timestamp() that is guaranteed to unique
 -spec unique_timestamp() -> erlang:timestamp().
 unique_timestamp() ->
-    Time = erlang:system_time(microsecond),
-    UI = erlang:unique_integer([positive, monotonic]),
-    usec_to_now(Time + UI).
+    {MS, S, _} = erlang:timestamp(),
+    {MS, S, erlang:unique_integer([positive, monotonic]) rem 1000000}.
