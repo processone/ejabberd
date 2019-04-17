@@ -322,7 +322,8 @@ normal_state({route, <<"">>,
 		end,
 		case NewStateData of
 		    stop ->
-			{stop, normal, StateData};
+			Conf = StateData#state.config,
+			{stop, normal, StateData#state{config = Conf#config{persistent = false}}};
 		    _ when NewStateData#state.just_created ->
 			close_room_if_temporary_and_empty(NewStateData);
 		    _ ->
@@ -498,7 +499,8 @@ handle_event({destroy, Reason}, _StateName,
     ?INFO_MSG("Destroyed MUC room ~s with reason: ~p",
 	      [jid:encode(StateData#state.jid), Reason]),
     add_to_log(room_existence, destroyed, StateData),
-    {stop, shutdown, StateData};
+    Conf = StateData#state.config,
+    {stop, shutdown, StateData#state{config = Conf#config{persistent = false}}};
 handle_event(destroy, StateName, StateData) ->
     ?INFO_MSG("Destroyed MUC room ~s",
 	      [jid:encode(StateData#state.jid)]),
@@ -698,10 +700,10 @@ handle_info(config_reloaded, StateName, StateData) ->
 handle_info(_Info, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
-terminate(Reason, _StateName, StateData) ->
+terminate(Reason, _StateName,
+	  #state{server_host = LServer, host = Host, room = Room} = StateData) ->
     try
-	?INFO_MSG("Stopping MUC room ~s@~s",
-		  [StateData#state.room, StateData#state.host]),
+	?INFO_MSG("Stopping MUC room ~s@~s", [Room, Host]),
 	ReasonT = case Reason of
 		      shutdown ->
 			  <<"You are being removed from the room "
@@ -728,12 +730,16 @@ terminate(Reason, _StateName, StateData) ->
 		  tab_remove_online_user(LJID, StateData)
 	  end, [], get_users_and_subscribers(StateData)),
 	add_to_log(room_existence, stopped, StateData),
-	mod_muc:room_destroyed(StateData#state.host, StateData#state.room, self(),
-			       StateData#state.server_host)
+	case (StateData#state.config)#config.persistent of
+	    false ->
+		ejabberd_hooks:run(room_destroyed, LServer, [LServer, Room, Host]);
+	    _ ->
+		ok
+	end,
+	mod_muc:room_destroyed(Host, Room, self(), LServer)
     catch ?EX_RULE(E, R, St) ->
-	    mod_muc:room_destroyed(StateData#state.host, StateData#state.room, self(),
-				   StateData#state.server_host),
-	    ?ERROR_MSG("Got exception on room termination: ~p", [{E, {R, ?EX_STACK(St)}}])
+	mod_muc:room_destroyed(Host, Room, self(), LServer),
+	?ERROR_MSG("Got exception on room termination: ~p", [{E, {R, ?EX_STACK(St)}}])
     end,
     ok.
 
