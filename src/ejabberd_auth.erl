@@ -553,7 +553,7 @@ db_try_register(User, Server, Password, Mod) ->
 			{error, _} = Err -> Err
 		    end;
 		false ->
-		    Mod:try_register(User, Server, Password1)
+		    ets_cache:untag(Mod:try_register(User, Server, Password1))
 	    end;
 	false ->
 	    {error, not_allowed}
@@ -576,7 +576,7 @@ db_set_password(User, Server, Password, Mod) ->
 			{error, _} = Err -> Err
 		    end;
 		false ->
-		    Mod:set_password(User, Server, Password1)
+		    ets_cache:untag(Mod:set_password(User, Server, Password1))
 	    end;
 	false ->
 	    {error, not_allowed}
@@ -597,7 +597,7 @@ db_get_password(User, Server, Mod) ->
 	      ?AUTH_CACHE, {User, Server},
 	      fun() -> Mod:get_password(User, Server) end);
 	true ->
-	    Mod:get_password(User, Server)
+	    ets_cache:untag(Mod:get_password(User, Server))
     end.
 
 db_user_exists(User, Server, Mod) ->
@@ -624,7 +624,7 @@ db_user_exists(User, Server, Mod) ->
 			    Err
 		    end;
 		{external, false} ->
-		    Mod:user_exists(User, Server);
+		    ets_cache:untag(Mod:user_exists(User, Server));
 		_ ->
 		    false
 	    end
@@ -655,7 +655,8 @@ db_check_password(User, AuthzId, Server, ProvidedPassword,
 			    false
 		    end;
 		{external, false} ->
-		    Mod:check_password(User, AuthzId, Server, ProvidedPassword);
+		    ets_cache:untag(
+		      Mod:check_password(User, AuthzId, Server, ProvidedPassword));
 		_ ->
 		    false
 	    end
@@ -664,7 +665,7 @@ db_check_password(User, AuthzId, Server, ProvidedPassword,
 db_remove_user(User, Server, Mod) ->
     case erlang:function_exported(Mod, remove_user, 2) of
 	true ->
-	    case Mod:remove_user(User, Server) of
+	    case ets_cache:untag(Mod:remove_user(User, Server)) of
 		ok ->
 		    case use_cache(Mod, Server) of
 			true ->
@@ -683,7 +684,7 @@ db_remove_user(User, Server, Mod) ->
 db_get_users(Server, Opts, Mod) ->
     case erlang:function_exported(Mod, get_users, 2) of
 	true ->
-	    Mod:get_users(Server, Opts);
+	    ets_cache:untag(Mod:get_users(Server, Opts));
 	false ->
 	    case use_cache(Mod, Server) of
 		true ->
@@ -701,7 +702,7 @@ db_get_users(Server, Opts, Mod) ->
 db_count_users(Server, Opts, Mod) ->
     case erlang:function_exported(Mod, count_users, 2) of
 	true ->
-	    Mod:count_users(Server, Opts);
+	    ets_cache:untag(Mod:count_users(Server, Opts));
 	false ->
 	    case use_cache(Mod, Server) of
 		true ->
