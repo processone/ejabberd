@@ -613,7 +613,10 @@ db_user_exists(User, Server, Mod) ->
 				   case Mod:user_exists(User, Server) of
 				       true -> {ok, exists};
 				       false -> error;
-				       {error, _} = Err -> Err
+				       {error, _} = Err -> Err;
+				       {CacheTag, true} -> {CacheTag, {ok, exists}};
+				       {CacheTag, false} -> {CacheTag, error};
+				       {_, {error, _}} = Err -> Err
 				   end
 			   end) of
 			{ok, _} ->
@@ -643,10 +646,10 @@ db_check_password(User, AuthzId, Server, ProvidedPassword,
 			   fun() ->
 				   case Mod:check_password(
 					  User, AuthzId, Server, ProvidedPassword) of
-				       true ->
-					   {ok, ProvidedPassword};
-				       false ->
-					   error
+				       true -> {ok, ProvidedPassword};
+				       false -> error;
+				       {CacheTag, true} -> {CacheTag, {ok, ProvidedPassword}};
+				       {CacheTag, false} -> {CacheTag, error}
 				   end
 			   end) of
 			{ok, _} ->
