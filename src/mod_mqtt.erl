@@ -27,6 +27,8 @@
 	 terminate/2, code_change/3]).
 %% ejabberd_listener API
 -export([start/3, start_link/3, listen_opt_type/1, listen_options/0, accept/1]).
+%% ejabberd_http API
+-export([socket_handoff/3]).
 %% Legacy ejabberd_listener API
 -export([become_controller/2, socket_type/0]).
 %% API
@@ -97,6 +99,9 @@ become_controller(Pid, _) ->
 
 accept(Pid) ->
     mod_mqtt_session:accept(Pid).
+
+socket_handoff(LocalPath, Request, Opts) ->
+    mod_mqtt_ws:socket_handoff(LocalPath, Request, Opts).
 
 open_session({U, S, R}) ->
     Mod = gen_mod:ram_db_mod(S, ?MODULE),

@@ -64,8 +64,8 @@
                         session_expiry_non_zero | unknown_topic_alias.
 
 -type state() :: #state{}.
--type sockmod() :: gen_tcp | fast_tls.
--type socket() :: {sockmod(), inet:socket() | fast_tls:tls_socket()}.
+-type sockmod() :: gen_tcp | fast_tls | mod_mqtt_ws.
+-type socket() :: {sockmod(), inet:socket() | fast_tls:tls_socket() | mod_mqtt_ws:socket()}.
 -type peername() :: {inet:ip_address(), inet:port_number()}.
 -type seconds() :: non_neg_integer().
 -type milli_seconds() :: non_neg_integer().
