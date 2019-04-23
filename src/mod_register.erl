@@ -34,13 +34,15 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, reload/3, stream_feature_register/2,
-	 c2s_unauthenticated_packet/2, try_register/5,
+	 c2s_unauthenticated_packet/2, try_register/4,
 	 process_iq/1, send_registration_notifications/3,
 	 transform_options/1, transform_module_options/1,
-	 mod_opt_type/1, mod_options/1, opt_type/1, depends/2]).
+	 mod_opt_type/1, mod_options/1, opt_type/1, depends/2,
+	 format_error/1]).
 
 -include("logger.hrl").
 -include("xmpp.hrl").
+-include("translate.hrl").
 
 start(Host, _Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
@@ -306,74 +308,91 @@ try_set_password(User, Server, Password, #iq{lang = Lang, meta = M} = IQ) ->
 	  xmpp:make_error(IQ, xmpp:err_not_acceptable(ErrText, Lang))
     end.
 
-try_register(User, Server, Password, SourceRaw, Lang) ->
+try_register(User, Server, Password, SourceRaw) ->
     case jid:is_nodename(User) of
-      false -> {error, xmpp:err_bad_request(<<"Malformed username">>, Lang)};
-      _ ->
-	  JID = jid:make(User, Server),
-	  Access = gen_mod:get_module_opt(Server, ?MODULE, access),
-	  IPAccess = get_ip_access(Server),
-	  case {acl:match_rule(Server, Access, JID),
-		check_ip_access(SourceRaw, IPAccess)}
-	      of
-	    {deny, _} -> {error, xmpp:err_forbidden(<<"Access denied by service policy">>, Lang)};
-	    {_, deny} -> {error, xmpp:err_forbidden(<<"Access denied by service policy">>, Lang)};
-	    {allow, allow} ->
-		Source = may_remove_resource(SourceRaw),
-		case check_timeout(Source) of
-		  true ->
-		      case is_strong_password(Server, Password) of
+	false ->
+	    {error, invalid_jid};
+	true ->
+	    case check_access(User, Server, SourceRaw) of
+		deny ->
+		    {error, eaccess};
+		allow ->
+		    Source = may_remove_resource(SourceRaw),
+		    case check_timeout(Source) of
 			true ->
-			    case ejabberd_auth:try_register(User, Server,
-							    Password)
-				of
-			      ok ->
-				  ?INFO_MSG("The account ~s was registered "
-					    "from IP address ~s",
-					    [jid:encode({User, Server, <<"">>}),
-					     ejabberd_config:may_hide_data(
-					       ip_to_string(Source))]),
-				  send_welcome_message(JID),
-				  send_registration_notifications(
-                                    ?MODULE, JID, Source),
-				  ok;
-			      Error ->
-				  remove_timeout(Source),
-				  case Error of
-				    {error, exists} ->
-					Txt = <<"User already exists">>,
-					{error, xmpp:err_conflict(Txt, Lang)};
-				    {error, invalid_jid} ->
-					{error, xmpp:err_jid_malformed()};
-				    {error, invalid_password} ->
-					Txt = <<"Incorrect password">>,
-					{error, xmpp:err_not_allowed(Txt, Lang)};
-				    {error, not_allowed} ->
-					{error, xmpp:err_not_allowed()};
-				    {error, _} ->
-					?ERROR_MSG("failed to register user "
-						   "~s@~s: ~p",
-						   [User, Server, Error]),
-					{error, xmpp:err_internal_server_error()}
-				  end
+			    case is_strong_password(Server, Password) of
+				true ->
+				    case ejabberd_auth:try_register(
+					   User, Server, Password) of
+					ok ->
+					    ok;
+					{error, _} = Err ->
+					    remove_timeout(Source),
+					    Err
+				    end;
+				false ->
+				    remove_timeout(Source),
+				    {error, weak_password};
+				_ ->
+				    remove_timeout(Source),
+				    {error, invalid_password}
 			    end;
-			error_preparing_password ->
-			    remove_timeout(Source),
-			    ErrText = <<"The password contains unacceptable characters">>,
-			    {error, xmpp:err_not_acceptable(ErrText, Lang)};
 			false ->
-			    remove_timeout(Source),
-			    ErrText = <<"The password is too weak">>,
-			    {error, xmpp:err_not_acceptable(ErrText, Lang)}
-		      end;
-		  false ->
-		      ErrText =
-			  <<"Users are not allowed to register accounts "
-			    "so quickly">>,
-		      {error, xmpp:err_resource_constraint(ErrText, Lang)}
-		end
-	  end
+			    {error, wait}
+		    end
+	    end
     end.
+
+try_register(User, Server, Password, SourceRaw, Lang) ->
+    case try_register(User, Server, Password, SourceRaw) of
+	ok ->
+	    JID = jid:make(User, Server),
+	    Source = may_remove_resource(SourceRaw),
+	    ?INFO_MSG("The account ~s was registered from IP address ~s",
+		      [jid:encode({User, Server, <<"">>}),
+		       ejabberd_config:may_hide_data(ip_to_string(Source))]),
+	    send_welcome_message(JID),
+	    send_registration_notifications(?MODULE, JID, Source);
+	{error, invalid_jid = Why} ->
+	    {error, xmpp:err_jid_malformed(format_error(Why), Lang)};
+	{error, eaccess = Why} ->
+	    {error, xmpp:err_forbidden(format_error(Why), Lang)};
+	{error, wait = Why} ->
+	    {error, xmpp:err_resource_constraint(format_error(Why), Lang)};
+	{error, weak_password = Why} ->
+	    {error, xmpp:err_not_acceptable(format_error(Why), Lang)};
+	{error, invalid_password = Why} ->
+	    {error, xmpp:err_not_acceptable(format_error(Why), Lang)};
+	{error, not_allowed = Why} ->
+	    {error, xmpp:err_not_allowed(format_error(Why), Lang)};
+	{error, exists = Why} ->
+	    {error, xmpp:err_conflict(format_error(Why), Lang)};
+	{error, db_failure = Why} ->
+	    {error, xmpp:err_internal_server_error(format_error(Why), Lang)};
+	{error, Why} ->
+	    ?ERROR_MSG("Failed to register user ~s@~s: ~s",
+		       [User, Server, format_error(Why)]),
+	    {error, xmpp:err_internal_server_error(format_error(Why), Lang)}
+    end.
+
+format_error(invalid_jid) ->
+    ?T("Malformed username");
+format_error(eaccess) ->
+    ?T("Access denied by service policy");
+format_error(wait) ->
+    ?T("Users are not allowed to register accounts so quickly");
+format_error(weak_password) ->
+    ?T("The password is too weak");
+format_error(invalid_password) ->
+    ?T("The password contains unacceptable characters");
+format_error(not_allowed) ->
+    ?T("Not allowed");
+format_error(exists) ->
+    ?T("User already exists");
+format_error(db_failure) ->
+    ?T("Database failure");
+format_error(Unexpected) ->
+    list_to_binary(io_lib:format(?T("Unexpected error condition: ~p"), [Unexpected])).
 
 send_welcome_message(JID) ->
     Host = JID#jid.lserver,
@@ -596,6 +615,15 @@ check_ip_access(undefined, _IPAccess) ->
     deny;
 check_ip_access(IPAddress, IPAccess) ->
     acl:match_rule(global, IPAccess, IPAddress).
+
+check_access(User, Server, Source) ->
+    JID = jid:make(User, Server),
+    Access = gen_mod:get_module_opt(Server, ?MODULE, access),
+    IPAccess = get_ip_access(Server),
+    case acl:match_rule(Server, Access, JID) of
+	allow -> check_ip_access(Source, IPAccess);
+	deny -> deny
+    end.
 
 mod_opt_type(access) -> fun acl:access_rules_validator/1;
 mod_opt_type(access_from) -> fun acl:access_rules_validator/1;

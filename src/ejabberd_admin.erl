@@ -478,16 +478,23 @@ update_module(ModuleNameString) ->
 %%%
 
 register(User, Host, Password) ->
-    {ok, IPRaw} = inet_parse:address(binary_to_list(<<"::ffff:127.0.0.1">>)),
-    case mod_register:try_register(User, Host, Password, IPRaw, <<"en">>) of
+    Ret = case gen_mod:is_loaded(Host, mod_register) of
+	      true ->
+		  {ok, IPRaw} = inet_parse:address("::ffff:127.0.0.1"),
+		  mod_register:try_register(User, Host, Password, IPRaw);
+	      false ->
+		  ejabberd_auth:try_register(User, Host, Password)
+	  end,
+    case Ret of
 	ok ->
 	    {ok, io_lib:format("User ~s@~s successfully registered", [User, Host])};
 	{error, exists} ->
 	    Msg = io_lib:format("User ~s@~s already registered", [User, Host]),
 	    {error, conflict, 10090, Msg};
 	{error, Reason} ->
-	    String = io_lib:format("Can't register user ~s@~s at node ~p: ~p",
-				   [User, Host, node(), Reason]),
+	    String = io_lib:format("Can't register user ~s@~s at node ~p: ~s",
+				   [User, Host, node(),
+				    mod_register:format_error(Reason)]),
 	    {error, cannot_register, 10001, String}
     end.
 
