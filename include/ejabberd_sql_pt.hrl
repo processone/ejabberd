@@ -32,5 +32,4 @@
 
 -record(sql_query, {hash, format_query, format_res, args, loc}).
 
--record(sql_escape, {string, integer, boolean}).
-
+-record(sql_escape, {string, integer, boolean, in_array_string}).

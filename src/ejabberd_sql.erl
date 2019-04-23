@@ -56,7 +56,8 @@
 	 odbcinst_config/0,
 	 init_mssql/1,
 	 keep_alive/2,
-	 to_list/2]).
+	 to_list/2,
+	 to_array/2]).
 
 %% gen_fsm callbacks
 -export([init/1, handle_event/3, handle_sync_event/4,
@@ -263,6 +264,10 @@ to_bool(_) -> false.
 to_list(EscapeFun, Val) ->
     Escaped = lists:join(<<",">>, lists:map(EscapeFun, Val)),
     [<<"(">>, Escaped, <<")">>].
+
+to_array(EscapeFun, Val) ->
+    Escaped = lists:join(<<",">>, lists:map(EscapeFun, Val)),
+    [<<"{">>, Escaped, <<"}">>].
 
 encode_term(Term) ->
     escape(list_to_binary(
@@ -676,10 +681,11 @@ generic_sql_query_format(SQLQuery) ->
 
 generic_escape() ->
     #sql_escape{string = fun(X) -> <<"'", (escape(X))/binary, "'">> end,
-                integer = fun(X) -> misc:i2l(X) end,
-                boolean = fun(true) -> <<"1">>;
+		integer = fun(X) -> misc:i2l(X) end,
+		boolean = fun(true) -> <<"1">>;
                              (false) -> <<"0">>
-                          end
+                          end,
+		in_array_string = fun(X) -> <<"'", (escape(X))/binary, "'">> end
                }.
 
 sqlite_sql_query(SQLQuery) ->
@@ -693,10 +699,11 @@ sqlite_sql_query_format(SQLQuery) ->
 
 sqlite_escape() ->
     #sql_escape{string = fun(X) -> <<"'", (standard_escape(X))/binary, "'">> end,
-                integer = fun(X) -> misc:i2l(X) end,
-                boolean = fun(true) -> <<"1">>;
+		integer = fun(X) -> misc:i2l(X) end,
+		boolean = fun(true) -> <<"1">>;
                              (false) -> <<"0">>
-                          end
+                          end,
+		in_array_string = fun(X) -> <<"'", (standard_escape(X))/binary, "'">> end
                }.
 
 standard_escape(S) ->
@@ -717,10 +724,11 @@ pgsql_prepare(SQLQuery, State) ->
 
 pgsql_execute_escape() ->
     #sql_escape{string = fun(X) -> X end,
-                integer = fun(X) -> [misc:i2l(X)] end,
-                boolean = fun(true) -> "1";
+		integer = fun(X) -> [misc:i2l(X)] end,
+		boolean = fun(true) -> "1";
                              (false) -> "0"
-                          end
+                          end,
+		in_array_string = fun(X) -> <<"\"", (escape(X))/binary, "\"">> end
                }.
 
 pgsql_execute_sql_query(SQLQuery, State) ->
