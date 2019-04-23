@@ -153,9 +153,10 @@ format_error(Reason) ->
 %%%===================================================================
 init([SockMod, Socket, ListenOpts]) ->
     MaxSize = proplists:get_value(max_payload_size, ListenOpts, infinity),
-    SockMod1 = case proplists:get_bool(tls, ListenOpts) of
-		   true -> fast_tls;
-		   false -> SockMod
+    SockMod1 = case {SockMod, proplists:get_bool(tls, ListenOpts)} of
+		   {gen_tcp, true} -> fast_tls;
+		   {gen_tcp, false} -> gen_tcp;
+		   {_, _} -> SockMod
 	       end,
     State1 = #state{socket = {SockMod1, Socket},
 		    id = p1_rand:uniform(65535),
@@ -190,14 +191,14 @@ handle_call(Request, From, State) ->
     ?WARNING_MSG("Got unexpected call from ~p: ~p", [From, Request]),
     noreply(State).
 
-handle_cast(accept, #state{socket = {_, TCPSock} = Socket} = State) ->
-    case inet:peername(TCPSock) of
+handle_cast(accept, #state{socket = {_, Sock} = Socket} = State) ->
+    case peername(State) of
 	{ok, IPPort} ->
 	    State1 = State#state{peername = IPPort},
 	    case starttls(Socket) of
 		{ok, Socket1} ->
 		    State2 = State1#state{socket = Socket1},
-		    handle_info({tcp, TCPSock, <<>>}, State2);
+		    handle_info({tcp, Sock, <<>>}, State2);
 		{error, Why} ->
 		    stop(State1, Why)
 	    end;
@@ -862,6 +863,13 @@ activate({SockMod, Sock} = Socket) ->
 	      _ -> SockMod:setopts(Sock, [{active, once}])
 	  end,
     check_sock_result(Socket, Res).
+
+-spec peername(state()) -> {ok, peername()} | {error, socket_error_reason()}.
+peername(#state{socket = {SockMod, Sock}}) ->
+    case SockMod of
+	gen_tcp -> inet:peername(Sock);
+	_ -> SockMod:peername(Sock)
+    end.
 
 -spec disconnect(state(), error_reason()) -> state().
 disconnect(#state{socket = {SockMod, Sock}} = State, Err) ->
