@@ -273,39 +273,41 @@ try_register_or_set_password(User, Server, Password,
 	    xmpp:make_error(IQ, xmpp:err_not_allowed())
     end.
 
-%% @doc Try to change password and return IQ response
-try_set_password(User, Server, Password, #iq{lang = Lang, meta = M} = IQ) ->
+try_set_password(User, Server, Password) ->
     case is_strong_password(Server, Password) of
-      true ->
-	  case ejabberd_auth:set_password(User, Server, Password) of
-	    ok ->
-		?INFO_MSG("~s has changed password from ~s",
-			  [jid:encode({User, Server, <<"">>}),
-			   ejabberd_config:may_hide_data(
-			     misc:ip_to_list(maps:get(ip, M, {0,0,0,0})))]),
-		xmpp:make_iq_result(IQ);
-	    {error, empty_password} ->
-		Txt = <<"Empty password">>,
-		xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
-	    {error, not_allowed} ->
-		Txt = <<"Changing password is not allowed">>,
-		xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
-	    {error, invalid_jid} ->
-		xmpp:make_error(IQ, xmpp:err_jid_malformed());
-	    {error, invalid_password} ->
-		Txt = <<"Incorrect password">>,
-		xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
-	    Err ->
-		?ERROR_MSG("failed to register user ~s@~s: ~p",
-			   [User, Server, Err]),
-		xmpp:make_error(IQ, xmpp:err_internal_server_error())
-	  end;
-      error_preparing_password ->
-	  ErrText = <<"The password contains unacceptable characters">>,
-	  xmpp:make_error(IQ, xmpp:err_not_acceptable(ErrText, Lang));
-      false ->
-	  ErrText = <<"The password is too weak">>,
-	  xmpp:make_error(IQ, xmpp:err_not_acceptable(ErrText, Lang))
+	true ->
+	    ejabberd_auth:set_password(User, Server, Password);
+	error_preparing_password ->
+	    {error, invalid_password};
+	false ->
+	    {error, weak_password}
+    end.
+
+try_set_password(User, Server, Password, #iq{lang = Lang, meta = M} = IQ) ->
+    case try_set_password(User, Server, Password) of
+	ok ->
+	    ?INFO_MSG("~s has changed password from ~s",
+		      [jid:encode({User, Server, <<"">>}),
+		       ejabberd_config:may_hide_data(
+			 misc:ip_to_list(maps:get(ip, M, {0,0,0,0})))]),
+	    xmpp:make_iq_result(IQ);
+	{error, not_allowed} ->
+	    Txt = ?T("Changing password is not allowed"),
+	    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
+	{error, invalid_jid = Why} ->
+	    xmpp:make_error(IQ, xmpp:err_jid_malformed(format_error(Why), Lang));
+	{error, invalid_password = Why} ->
+	    xmpp:make_error(IQ, xmpp:err_not_allowed(format_error(Why), Lang));
+	{error, weak_password = Why} ->
+	    xmpp:make_error(IQ, xmpp:err_not_acceptable(format_error(Why), Lang));
+	{error, empty_password = Why} ->
+	    xmpp:make_error(IQ, xmpp:err_bad_request(format_error(Why), Lang));
+	{error, db_failure = Why} ->
+	    xmpp:make_error(IQ, xmpp:err_internal_server_error(format_error(Why), Lang));
+	{error, Why} ->
+	    ?ERROR_MSG("Failed to change password for user ~s@~s: ~s",
+		       [User, Server, format_error(Why)]),
+	    xmpp:make_error(IQ, xmpp:err_internal_server_error(format_error(Why), Lang))
     end.
 
 try_register(User, Server, Password, SourceRaw) ->
@@ -333,7 +335,7 @@ try_register(User, Server, Password, SourceRaw) ->
 				false ->
 				    remove_timeout(Source),
 				    {error, weak_password};
-				_ ->
+				error_preparing_password ->
 				    remove_timeout(Source),
 				    {error, invalid_password}
 			    end;
@@ -385,6 +387,8 @@ format_error(weak_password) ->
     ?T("The password is too weak");
 format_error(invalid_password) ->
     ?T("The password contains unacceptable characters");
+format_error(empty_password) ->
+    ?T("Empty password");
 format_error(not_allowed) ->
     ?T("Not allowed");
 format_error(exists) ->
