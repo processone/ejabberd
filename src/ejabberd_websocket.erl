@@ -37,12 +37,12 @@
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_websocket).
-
+-behaviour(ejabberd_config).
 -protocol({rfc, 6455}).
 
 -author('ecestari@process-one.net').
 
--export([check/2, socket_handoff/5]).
+-export([check/2, socket_handoff/5, opt_type/1]).
 
 -include("logger.hrl").
 
@@ -409,4 +409,22 @@ websocket_close(Socket, WsHandleLoopPid, SocketMode, _CloseCode) ->
     SocketMode:close(Socket).
 
 get_origin() ->
-    ejabberd_config:get_option({websocket_origin, ejabberd_config:get_myname()}, ignore).
+    ejabberd_config:get_option(websocket_origin, ignore).
+
+opt_type(websocket_ping_interval) ->
+    fun (I) when is_integer(I), I >= 0 -> I end;
+opt_type(websocket_timeout) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(websocket_origin) ->
+    %% Accept only values conforming to RFC6454 section 7.1
+    fun (<<"null">>) -> <<"null">>;
+	(null) -> <<"null">>;
+	(Origin) ->
+	    URIs = [_|_] = lists:flatmap(
+			     fun(<<>>) -> [];
+				(URI) -> [misc:try_url(URI)]
+			     end, re:split(Origin, "\\s")),
+	    str:join(URIs, <<" ">>)
+    end;
+opt_type(_) ->
+    [websocket_ping_interval, websocket_timeout, websocket_origin].
