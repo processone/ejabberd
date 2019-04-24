@@ -364,8 +364,13 @@ stop_module_keep_config(Host, Module) ->
     end.
 
 wait_for_process(Process) ->
-    MonitorReference = erlang:monitor(process, Process),
-    wait_for_stop(Process, MonitorReference).
+    try erlang:monitor(process, Process) of
+	MonitorReference ->
+	    wait_for_stop(Process, MonitorReference)
+    catch
+	_:_ ->
+	    ok
+    end.
 
 wait_for_stop(Process, MonitorReference) ->
     receive
