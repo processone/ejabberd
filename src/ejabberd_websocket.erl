@@ -63,15 +63,15 @@
 -define(HEADER, [?CT_XML, ?AC_ALLOW_ORIGIN, ?AC_ALLOW_HEADERS]).
 
 check(_Path, Headers) ->
-    RequiredHeaders = [{'Upgrade', <<"websocket">>},
-                       {'Connection', ignore}, {'Host', ignore},
-                       {<<"Sec-Websocket-Key">>, ignore},
-                       {<<"Sec-Websocket-Version">>, <<"13">>},
-                       {<<"Origin">>, get_origin()}],
+    HeadersValidators = [{'Upgrade', <<"websocket">>, true},
+                       {'Connection', ignore, true}, {'Host', ignore, true},
+                       {<<"Sec-Websocket-Key">>, ignore, true},
+                       {<<"Sec-Websocket-Version">>, <<"13">>, true},
+                       {<<"Origin">>, get_origin(), false}],
 
-    F = fun ({Tag, Val}) ->
+    F = fun ({Tag, Val, Required}) ->
 		case lists:keyfind(Tag, 1, Headers) of
-		  false -> true; % header not found, keep in list
+		  false -> Required; % header not found, keep in list if required
 		  {_, HVal} ->
 		      case Val of
 			ignore -> false; % ignore value -> ok, remove from list
@@ -82,9 +82,9 @@ check(_Path, Headers) ->
                       end
                 end
         end,
-    case lists:filter(F, RequiredHeaders) of
+    case lists:filter(F, HeadersValidators) of
       [] -> true;
-      _MissingHeaders -> false
+      _InvalidHeaders -> false
     end.
 
 socket_handoff(LocalPath, #request{method = 'GET', ip = IP, q = Q, path = Path,
