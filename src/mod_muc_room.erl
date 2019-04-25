@@ -4089,13 +4089,23 @@ process_iq_mucsub(From, #iq{type = get, lang = Lang,
 		  StateData) ->
     FAffiliation = get_affiliation(From, StateData),
     FRole = get_role(From, StateData),
-    if FRole == moderator; FAffiliation == owner; FAffiliation == admin ->
+    IsModerator = FRole == moderator orelse FAffiliation == owner orelse
+		  FAffiliation == admin,
+    case IsModerator orelse is_subscriber(From, StateData) of
+	true ->
+	    ShowJid = IsModerator orelse
+		      (StateData#state.config)#config.anonymous == false,
 	    Subs = maps:fold(
-		     fun(_, #subscriber{jid = J, nodes = Nodes}, Acc) ->
-			     [#muc_subscription{jid = J, events = Nodes}|Acc]
+		     fun(_, #subscriber{jid = J, nick = N, nodes = Nodes}, Acc) ->
+			 case ShowJid of
+			     true ->
+				 [#muc_subscription{jid = J, events = Nodes}|Acc];
+			     _ ->
+				 [#muc_subscription{nick = N, events = Nodes}|Acc]
+			 end
 		     end, [], StateData#state.subscribers),
 	    {result, #muc_subscriptions{list = Subs}, StateData};
-       true ->
+	_ ->
 	    Txt = <<"Moderator privileges required">>,
 	    {error, xmpp:err_forbidden(Txt, Lang)}
     end;
