@@ -202,8 +202,12 @@ ws_loop(FrameInfo, Socket, WsHandleLoopPid, SocketMode) ->
                    end,
             erlang:demonitor(Ref),
             websocket_close(Socket, WsHandleLoopPid, SocketMode, Code);
-        {send, Data} ->
+        {text, Data} ->
             SocketMode:send(Socket, encode_frame(Data, 1)),
+            ws_loop(FrameInfo, Socket, WsHandleLoopPid,
+                    SocketMode);
+	{data, Data} ->
+	    SocketMode:send(Socket, encode_frame(Data, 2)),
             ws_loop(FrameInfo, Socket, WsHandleLoopPid,
                     SocketMode);
         {ping, Data} ->

@@ -201,15 +201,15 @@ handle_sync_event({send_xml, Packet}, _From, StateName,
     case Packet2 of
         {xmlstreamstart, Name, Attrs3} ->
             B = fxml:element_to_binary(#xmlel{name = Name, attrs = Attrs3}),
-            WsPid ! {send, <<(binary:part(B, 0, byte_size(B)-2))/binary, ">">>};
+            WsPid ! {text, <<(binary:part(B, 0, byte_size(B)-2))/binary, ">">>};
         {xmlstreamend, Name} ->
-            WsPid ! {send, <<"</", Name/binary, ">">>};
+            WsPid ! {text, <<"</", Name/binary, ">">>};
         {xmlstreamelement, El} ->
-            WsPid ! {send, fxml:element_to_binary(El)};
+            WsPid ! {text, fxml:element_to_binary(El)};
         {xmlstreamraw, Bin} ->
-            WsPid ! {send, Bin};
+            WsPid ! {text, Bin};
         {xmlstreamcdata, Bin2} ->
-            WsPid ! {send, Bin2};
+            WsPid ! {text, Bin2};
         skip ->
             ok
     end,
@@ -224,7 +224,7 @@ handle_sync_event(close, _From, StateName, #state{ws = {_, WsPid}, rfc_compilant
   when StateName /= stream_end_sent ->
     Close = #xmlel{name = <<"close">>,
                    attrs = [{<<"xmlns">>, <<"urn:ietf:params:xml:ns:xmpp-framing">>}]},
-    WsPid ! {send, fxml:element_to_binary(Close)},
+    WsPid ! {text, fxml:element_to_binary(Close)},
     {stop, normal, StateData};
 handle_sync_event(close, _From, _StateName, StateData) ->
     {stop, normal, StateData}.

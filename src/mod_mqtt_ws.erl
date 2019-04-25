@@ -98,7 +98,7 @@ init([{#ws{ip = IP, http_opts = ListenOpts}, WsPid}]) ->
     end.
 
 handle_call({send, Data}, _From, #state{ws_pid = WsPid} = State) ->
-    WsPid ! {send, Data},
+    WsPid ! {data, Data},
     {reply, ok, State};
 handle_call(Request, From, State) ->
     ?WARNING_MSG("Got unexpected call from ~p: ~p", [From, Request]),
