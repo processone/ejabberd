@@ -42,7 +42,7 @@
 	 get_room_config/4, set_room_option/3, offline_message/1, export/1,
 	 mod_options/1, remove_mam_for_user_with_peer/3, remove_mam_for_user/2,
 	 is_empty_for_user/2, is_empty_for_room/3, check_create_room/4,
-	 process_iq/3, store_mam_message/7, make_id/0, wrap_as_mucsub/2]).
+	 process_iq/3, store_mam_message/7, make_id/0, wrap_as_mucsub/2, select/6]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -112,7 +112,7 @@ start(Host, Opts) ->
 	    ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
 			       user_send_packet_strip_tag, 500),
 	    ejabberd_hooks:add(offline_message_hook, Host, ?MODULE,
-			       offline_message, 50),
+			       offline_message, 49),
 	    ejabberd_hooks:add(muc_filter_message, Host, ?MODULE,
 			       muc_filter_message, 50),
 	    ejabberd_hooks:add(muc_process_iq, Host, ?MODULE,
@@ -188,7 +188,7 @@ stop(Host) ->
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
 			  user_send_packet_strip_tag, 500),
     ejabberd_hooks:delete(offline_message_hook, Host, ?MODULE,
-			  offline_message, 50),
+			  offline_message, 49),
     ejabberd_hooks:delete(muc_filter_message, Host, ?MODULE,
 			  muc_filter_message, 50),
     ejabberd_hooks:delete(muc_process_iq, Host, ?MODULE,
