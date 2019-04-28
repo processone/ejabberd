@@ -220,10 +220,6 @@ modules:
       - "flat"
       - "pep"
     force_node_config:
-      ## Change from "whitelist" to "open" to enable OMEMO support
-      ## See https://github.com/processone/ejabberd/issues/2425
-      "eu.siacs.conversations.axolotl.*":
-        access_model: whitelist
       ## Avoid buggy clients to make their bookmarks public
       "storage:bookmarks":
         access_model: whitelist
