@@ -975,9 +975,7 @@ remove_user(User, Server) ->
     end,
     ok.
 
--spec del_tree(file:filename_all()) -> ok | {error, term()}.
-del_tree(Dir) when is_binary(Dir) ->
-    del_tree(binary_to_list(Dir));
+-spec del_tree(file:filename_all()) -> ok | {error, file:posix()}.
 del_tree(Dir) ->
     try
 	{ok, Entries} = file:list_dir(Dir),
@@ -988,11 +986,9 @@ del_tree(Dir) ->
 				  false ->
 				      ok = file:delete(Path)
 			      end
-		      end, [Dir ++ "/" ++ Entry || Entry <- Entries]),
+		      end, [filename:join(Dir, Entry) || Entry <- Entries]),
 	ok = file:del_dir(Dir)
     catch
 	_:{badmatch, {error, Error}} ->
-	    {error, Error};
-	_:Error ->
 	    {error, Error}
     end.
