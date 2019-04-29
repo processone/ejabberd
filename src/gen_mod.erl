@@ -740,11 +740,15 @@ format_module_error(Module, Fun, Arity, Opts, Class, Reason, St) ->
     IsCallbackExported = erlang:function_exported(Module, Fun, Arity),
     case {Class, Reason} of
 	{error, undef} when not IsLoaded ->
-	    io_lib:format("Failed to ~s unknown module ~s: "
+	    io_lib:format("Failed to ~s unknown module ~s, "
+			  "did you mean ~s? Hint: "
 			  "make sure there is no typo and ~s.beam "
 			  "exists inside either ~s or ~s "
 			  "directory",
-			  [Fun, Module, Module,
+			  [Fun, Module,
+			   ejabberd_config:similar_option(
+			     Module, ejabberd_config:get_modules()),
+			   Module,
 			   filename:dirname(code:which(?MODULE)),
 			   ext_mod:modules_dir()]);
 	{error, undef} when not IsCallbackExported ->

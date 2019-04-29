@@ -39,7 +39,7 @@
 	 default_queue_type/1, queue_dir/0, fsm_limit_opts/1,
 	 use_cache/1, cache_size/1, cache_missed/1, cache_life_time/1,
 	 codec_options/1, get_plain_terms_file/2, negotiation_timeout/0,
-	 similar_option/2]).
+	 similar_option/2, get_modules/0]).
 
 -export([start/2]).
 
