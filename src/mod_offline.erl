@@ -793,8 +793,9 @@ read_mam_messages(LUser, LServer, ReadMsgs) ->
 		      ExtraMsgs;
 		  _ ->
 		      MaxOfflineMsgs = case get_max_user_messages(LUser, LServer) of
-					   Number when is_integer(Number) -> Number;
-					   _ -> 100
+					   Number when is_integer(Number) -> Number - length(ExtraMsgs);
+					   infinity -> undefined;
+					   _ -> 100 - length(ExtraMsgs)
 				       end,
 		      JID = jid:make(LUser, LServer, <<>>),
 		      {MamMsgs, _, _} = mod_mam:select(LServer, JID, JID,
