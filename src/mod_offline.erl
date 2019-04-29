@@ -759,7 +759,9 @@ read_mam_messages(LUser, LServer, ReadMsgs) ->
 					     TS0;
 					 _ ->
 					     erlang:timestamp()
-				     end
+				     end;
+				 _ ->
+				     TS
 			     end,
 		       if T == none orelse T > TS2 ->
 			   {TS2, E};
