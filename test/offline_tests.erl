@@ -175,16 +175,20 @@ flex_slave(Config) ->
     0 = get_number(Config),
     clean(disconnect(Config)).
 
-offline_from_mam_master(Config) ->
+from_mam_master(Config) ->
+    C2 = lists:keystore(mam_enabled, 1, Config, {mam_enabled, true}),
+    C3 = send_all_master(C2),
+    lists:keydelete(mam_enabled, 1, C3).
+
+from_mam_slave(Config) ->
     Server = ?config(server, Config),
     gen_mod:update_module_opts(Server, mod_offline, [{use_mam_for_storage, true}]),
-    send_all_master(Config),
+    ok = mam_tests:set_default(Config, always),
+    C2 = lists:keystore(mam_enabled, 1, Config, {mam_enabled, true}),
+    C3 = send_all_slave(C2),
     gen_mod:update_module_opts(Server, mod_offline, [{use_mam_for_storage, false}]),
-    wait_for_slave(Config).
-
-offline_from_mam_slave(Config) ->
-    send_all_slave(Config),
-    wait_for_master(Config).
+    C4 = lists:keydelete(mam_enabled, 1, C3),
+    mam_tests:clean(C4).
 
 send_all_master(Config) ->
     wait_for_slave(Config),
@@ -196,9 +200,11 @@ send_all_master(Config) ->
     		  send(Config, Msg#message{to = BarePeer}),
     		  Acc;
     	     (Msg, Acc) ->
-    		  I = send(Config, Msg#message{to = BarePeer}),
-    		  case xmpp:get_subtag(Msg, #xevent{}) of
-    		      #xevent{offline = true, id = undefined} ->
+		 I = send(Config, Msg#message{to = BarePeer}),
+		 case {xmpp:get_subtag(Msg, #offline{}), xmpp:get_subtag(Msg, #xevent{})} of
+		      {#offline{}, _} ->
+			  ok;
+		      {_, #xevent{offline = true, id = undefined}} ->
     			  ct:comment("Receiving event-reply for:~n~s",
     				     [xmpp:pp(Msg)]),
     			  #message{} = Reply = recv_message(Config),
@@ -222,6 +228,8 @@ send_all_master(Config) ->
 send_all_slave(Config) ->
     ServerJID = server_jid(Config),
     Peer = ?config(peer, Config),
+    #presence{} = send_recv(Config, #presence{}),
+    send(Config, #presence{type = unavailable}),
     wait_for_master(Config),
     peer_down = get_event(Config),
     #presence{} = send_recv(Config, #presence{}),
@@ -422,12 +430,14 @@ message_iterator(Config) ->
 	      Body <- [[], xmpp:mk_text(<<"body">>)],
 	      Subject <- [[], xmpp:mk_text(<<"subject">>)],
 	      Els <- AllEls],
+    MamEnabled = ?config(mam_enabled, Config) == true,
     lists:partition(
       fun(#message{type = error}) -> true;
 	 (#message{type = groupchat}) -> false;
-	 (#message{sub_els = [#offline{}|_]}) -> false;
-	 (#message{sub_els = [_, #xevent{id = I}]}) when I /= undefined -> false;
-	 (#message{sub_els = [#xevent{id = I}]}) when I /= undefined -> false;
+	 (#message{sub_els = [#hint{type = store}|_]}) when MamEnabled -> true;
+	 (#message{sub_els = [#offline{}|_]}) when not MamEnabled -> false;
+	 (#message{sub_els = [_, #xevent{id = I}]}) when I /= undefined, not MamEnabled -> false;
+	 (#message{sub_els = [#xevent{id = I}]}) when I /= undefined, not MamEnabled -> false;
 	 (#message{sub_els = [#hint{type = store}|_]}) -> true;
 	 (#message{sub_els = [#hint{type = 'no-store'}|_]}) -> false;
 	 (#message{body = [], subject = []}) -> false;

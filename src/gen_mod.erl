@@ -308,14 +308,15 @@ store_options(Host, Module, Opts, Order) ->
 -spec update_module_opts(binary(), module(), opts()) -> ok | {ok, pid()} | error.
 update_module_opts(Host, Module, NewValues) ->
     case ets:lookup(ejabberd_modules, {Module, Host}) of
-	#ejabberd_module{opts = Opts, order = Order} ->
+	[#ejabberd_module{opts = Opts, order = Order}] ->
 	    NewOpts = lists:foldl(
 		fun({K, _} = KV, Acc) ->
 		    lists:keystore(K, 1, Acc, KV)
 		end, Opts, NewValues),
 	    reload_module(Host, Module, NewOpts, Opts, Order);
-	_ ->
-	    error
+	Other ->
+	    ?WARNING_MSG("Unable to update module opts: (~p, ~p) -> ~p",
+			  [Host, Module, Other])
     end.
 
 maybe_halt_ejabberd() ->
