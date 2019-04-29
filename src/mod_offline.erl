@@ -171,8 +171,9 @@ reload(Host, NewOpts, OldOpts) ->
 
 -spec store_offline_msg(#offline_msg{}) -> ok | {error, full | any()}.
 store_offline_msg(#offline_msg{us = {User, Server}, packet = Pkt} = Msg) ->
-    case (not xmpp:get_meta(Pkt, activity_marker, false)) andalso
-	 use_mam_for_user(User, Server) of
+    case use_mam_for_user(User, Server) andalso
+	 (not xmpp:get_meta(Pkt, activity_marker, false)) andalso
+	 xmpp:get_meta(Pkt, mam_archived, false) of
 	true ->
 	    case xmpp:get_meta(Pkt, first_from_queue, false) of
 		true ->
