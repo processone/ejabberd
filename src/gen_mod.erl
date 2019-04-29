@@ -582,8 +582,10 @@ validate_opts(Host, Module, Opts0) ->
 	    module_error(ErrTxt);
 	  _:{unknown_option, Opt, KnownOpts} ->
 	    ErrTxt = io_lib:format("Unknown option '~s' of module '~s',"
-				   " available options are: ~s",
+				   " did you mean '~s'?"
+				   " Available options are: ~s",
 				   [Opt, Module,
+				    ejabberd_config:similar_option(Opt, KnownOpts),
 				    misc:join_atoms(KnownOpts, <<", ">>)]),
 	    module_error(ErrTxt)
     end.
