@@ -144,7 +144,8 @@ unsupported_iq(Config) ->
 master_slave_cases() ->
     {offline_master_slave, [sequence],
      [master_slave_test(flex),
-      master_slave_test(send_all)]}.
+      master_slave_test(send_all),
+      master_slave_test(from_mam)]}.
 
 flex_master(Config) ->
     send_messages(Config, 5),
@@ -173,6 +174,17 @@ flex_slave(Config) ->
     ct:comment("Checking if there are no offline messages"),
     0 = get_number(Config),
     clean(disconnect(Config)).
+
+offline_from_mam_master(Config) ->
+    Server = ?config(server, Config),
+    gen_mod:update_module_opts(Server, mod_offline, [{use_mam_for_storage, true}]),
+    send_all_master(Config),
+    gen_mod:update_module_opts(Server, mod_offline, [{use_mam_for_storage, false}]),
+    wait_for_slave(Config).
+
+offline_from_mam_slave(Config) ->
+    send_all_slave(Config),
+    wait_for_master(Config).
 
 send_all_master(Config) ->
     wait_for_slave(Config),
@@ -298,7 +310,7 @@ get_nodes(Config) ->
     MyBareJID = jid:remove_resource(MyJID),
     Peer = ?config(peer, Config),
     Peer_s = jid:encode(Peer),
-    ct:comment("Getting headers"), 
+    ct:comment("Getting headers"),
     #iq{type = result,
 	sub_els = [#disco_items{
 		      node = ?NS_FLEX_OFFLINE,

@@ -44,7 +44,7 @@
 %% Deprecated functions
 -export([get_opt/3, get_opt/4, get_module_opt/4, get_module_opt/5,
 	 get_opt_host/3, get_opt_hosts/3, db_type/2, db_type/3,
-	 ram_db_type/2, ram_db_type/3]).
+	 ram_db_type/2, ram_db_type/3, update_module_opts/3]).
 -deprecated([{get_opt, 3},
 	     {get_opt, 4},
 	     {get_opt_host, 3},
@@ -304,6 +304,19 @@ store_options(Host, Module, Opts, Order) ->
     ets:insert(ejabberd_modules,
 	       #ejabberd_module{module_host = {Module, Host},
 				opts = Opts, order = Order}).
+
+-spec update_module_opts(binary(), module(), opts()) -> ok | {ok, pid()} | error.
+update_module_opts(Host, Module, NewValues) ->
+    case ets:lookup(ejabberd_modules, {Module, Host}) of
+	#ejabberd_module{opts = Opts, order = Order} ->
+	    NewOpts = lists:foldl(
+		fun({K, _} = KV, Acc) ->
+		    lists:keystore(K, 1, Acc, KV)
+		end, Opts, NewValues),
+	    reload_module(Host, Module, NewOpts, Opts, Order);
+	_ ->
+	    error
+    end.
 
 maybe_halt_ejabberd() ->
     case is_app_running(ejabberd) of
