@@ -733,6 +733,8 @@ read_db_messages(LUser, LServer) ->
 	    end
 	end, Mod:read_message_headers(LUser, LServer)).
 
+-spec read_mam_messages(binary(), binary(), [#offline_msg{} | {any(), message()}]) ->
+    [{integer(), message()}].
 read_mam_messages(LUser, LServer, ReadMsgs) ->
     {Timestamp, ExtraMsgs} = lists:foldl(
 	fun({_Node, #message{id = <<"ActivityMarker">>,
@@ -984,8 +986,14 @@ webadmin_user_parse_query(Acc, _Action, _User, _Server,
 count_offline_messages(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Mod:count_messages(LUser, LServer).
+    case use_mam_for_user(User, Server) of
+	true ->
+	    Res = read_db_messages(LUser, LServer),
+	    length(read_mam_messages(LUser, LServer, Res));
+	_ ->
+	    Mod = gen_mod:db_mod(LServer, ?MODULE),
+	    Mod:count_messages(LUser, LServer)
+    end.
 
 -spec add_delay_info(message(), binary(),
 		     undefined | erlang:timestamp()) -> message().
