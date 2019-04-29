@@ -141,11 +141,15 @@ unsupported_iq(Config) ->
 %%%===================================================================
 %%% Master-slave tests
 %%%===================================================================
-master_slave_cases() ->
+master_slave_cases(DB) ->
     {offline_master_slave, [sequence],
      [master_slave_test(flex),
-      master_slave_test(send_all),
-      master_slave_test(from_mam)]}.
+      master_slave_test(send_all)] ++
+	case DB of
+	    riak -> [];
+	    _ -> [master_slave_test(from_mam)]
+	end
+      }.
 
 flex_master(Config) ->
     send_messages(Config, 5),

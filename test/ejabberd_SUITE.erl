@@ -411,7 +411,7 @@ db_tests(riak) ->
      muc_tests:master_slave_cases(),
      privacy_tests:master_slave_cases(),
      roster_tests:master_slave_cases(),
-     offline_tests:master_slave_cases(),
+     offline_tests:master_slave_cases(riak),
      vcard_tests:master_slave_cases(),
      announce_tests:master_slave_cases(),
      carbons_tests:master_slave_cases()];
@@ -439,14 +439,14 @@ db_tests(DB) when DB == mnesia; DB == redis ->
      privacy_tests:master_slave_cases(),
      pubsub_tests:master_slave_cases(),
      roster_tests:master_slave_cases(),
-     offline_tests:master_slave_cases(),
+     offline_tests:master_slave_cases(DB),
      mam_tests:master_slave_cases(),
      vcard_tests:master_slave_cases(),
      announce_tests:master_slave_cases(),
      carbons_tests:master_slave_cases(),
      csi_tests:master_slave_cases(),
      push_tests:master_slave_cases()];
-db_tests(_) ->
+db_tests(DB) ->
     [{single_user, [sequence],
       [test_register,
        legacy_auth_tests(),
@@ -468,7 +468,7 @@ db_tests(_) ->
      privacy_tests:master_slave_cases(),
      pubsub_tests:master_slave_cases(),
      roster_tests:master_slave_cases(),
-     offline_tests:master_slave_cases(),
+     offline_tests:master_slave_cases(DB),
      mam_tests:master_slave_cases(),
      vcard_tests:master_slave_cases(),
      announce_tests:master_slave_cases(),
