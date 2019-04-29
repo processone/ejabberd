@@ -811,12 +811,27 @@ read_mam_messages(LUser, LServer, ReadMsgs) ->
 	      end,
     AllMsgs2 = lists:sort(
 	fun(A, B) ->
-	    case {xmpp:get_subtag(A, #delay{}), xmpp:get_subtag(B, #delay{})} of
-		{#delay{stamp = TA}, #delay{stamp = TB}} ->
-		    TA < TB;
-		_ ->
-		    true
-	    end
+	    DA = case xmpp:get_subtag(A, #stanza_id{}) of
+		     #stanza_id{id = IDA} ->
+			 IDA;
+		     _ -> case xmpp:get_subtag(A, #delay{}) of
+			      #delay{stamp = STA} ->
+				  integer_to_binary(misc:now_to_usec(STA));
+			      _ ->
+				  <<"unknown">>
+			  end
+		 end,
+	    DB = case xmpp:get_subtag(B, #stanza_id{}) of
+		     #stanza_id{id = IDB} ->
+			 IDB;
+		     _ -> case xmpp:get_subtag(B, #delay{}) of
+			      #delay{stamp = STB} ->
+				  integer_to_binary(misc:now_to_usec(STB));
+			      _ ->
+				  <<"unknown">>
+			  end
+		 end,
+	    DA < DB
 	end, AllMsgs),
     {AllMsgs3, _} = lists:mapfoldl(
 	fun(Msg, Counter) ->
