@@ -425,10 +425,16 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
 				    [<<" username in (">>, str:join(EscUsers, <<",">>), <<")">>]};
 			       subscribers_table ->
 				   SJid = Escape(jid:encode({User, LServer, <<>>})),
+				   RoomName = case ODBCType of
+						  sqlite ->
+						      <<"room || '@' || host">>;
+						  _ ->
+						      <<"concat(room, '@', host)">>
+					      end,
 				   {<<" username,">>,
 				    [<<" (username = '">>, SUser, <<"'">>,
-					<<" or username in (select concat(room, '@', host) ",
-					  "from muc_room_subscribers where jid='">>, SJid, <<"'">>, HostMatch, <<"))">>]};
+					<<" or username in (select ">>, RoomName,
+					  <<" from muc_room_subscribers where jid='">>, SJid, <<"'">>, HostMatch, <<"))">>]};
 			       _ ->
 				   {<<>>, [<<" username='">>, SUser, <<"'">>]}
 			   end,
