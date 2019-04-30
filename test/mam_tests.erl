@@ -138,7 +138,10 @@ master_slave_cases() ->
       master_slave_test(query_rsm_max),
       master_slave_test(query_rsm_after),
       master_slave_test(query_rsm_before),
-      master_slave_test(muc)]}.
+      master_slave_test(muc),
+      master_slave_test(mucsub),
+      master_slave_test(mucsub_from_muc),
+      master_slave_test(mucsub_from_muc_non_persistent)]}.
 
 archived_and_stanza_id_master(Config) ->
     #presence{} = send_recv(Config, #presence{}),
@@ -281,11 +284,123 @@ muc_master(Config) ->
     %% And retrieve them via MAM again.
     recv_messages_from_room(Config, lists:seq(1, 5)),
     put_event(Config, disconnect),
+    muc_tests:leave(Config),
     clean(disconnect(Config)).
 
 muc_slave(Config) ->
     disconnect = get_event(Config),
     clean(disconnect(Config)).
+
+mucsub_master(Config) ->
+    Room = muc_room_jid(Config),
+    Peer = ?config(peer, Config),
+    wait_for_slave(Config),
+    ct:comment("Joining muc room"),
+    ok = muc_tests:join_new(Config),
+
+    ct:comment("Enabling mam in room"),
+    CfgOpts = muc_tests:get_config(Config),
+    %% Find the MAM field in the config
+    ?match(true, proplists:is_defined(mam, CfgOpts)),
+    ?match(true, proplists:is_defined(allow_subscription, CfgOpts)),
+    %% Enable MAM
+    [104] = muc_tests:set_config(Config, [{mam, true}, {allow_subscription, true}]),
+
+    ct:comment("Subscribing peer to room"),
+    ?send_recv(#iq{to = Room, type = set, sub_els = [
+	#muc_subscribe{jid = Peer, nick = <<"peer">>,
+		       events = [?NS_MUCSUB_NODES_MESSAGES]}
+    ]}, #iq{type = result}),
+
+    ct:comment("Sending messages to room"),
+    send_messages_to_room(Config, lists:seq(1, 5)),
+
+    ct:comment("Retrieving messages from room mam storage"),
+    recv_messages_from_room(Config, lists:seq(1, 5)),
+    muc_tests:leave(Config),
+
+    ct:comment("Cleaning up"),
+    put_event(Config, ready),
+    ready = get_event(Config),
+    clean(disconnect(Config)).
+
+mucsub_slave(Config) ->
+    Room = muc_room_jid(Config),
+    MyJID = my_jid(Config),
+    MyJIDBare = jid:remove_resource(MyJID),
+    ok = set_default(Config, always),
+    send_recv(Config, #presence{}),
+    wait_for_master(Config),
+
+    ct:comment("Receiving mucsub events"),
+    lists:foreach(
+	fun(N) ->
+	    Body = xmpp:mk_text(integer_to_binary(N)),
+	    Msg = ?match(#message{from = Room, type = normal} = Msg, recv_message(Config), Msg),
+	    PS = ?match(#ps_event{items = #ps_items{node = ?NS_MUCSUB_NODES_MESSAGES, items = [
+		#ps_item{} = PS
+	    ]}}, xmpp:get_subtag(Msg, #ps_event{}), PS),
+	    ?match(#message{type = groupchat, body = Body}, xmpp:get_subtag(PS, #message{}))
+	end, lists:seq(1, 5)),
+
+    ct:comment("Retrieving personal mam archive"),
+    QID = p1_rand:get_string(),
+    I = send(Config, #iq{type = set,
+			 sub_els = [#mam_query{xmlns = ?NS_MAM_2, id = QID}]}),
+    lists:foreach(
+	fun(N) ->
+	    Body = xmpp:mk_text(integer_to_binary(N)),
+	    Forw = ?match(#message{
+		to = MyJID, from = MyJIDBare,
+		sub_els = [#mam_result{
+		    xmlns = ?NS_MAM_2,
+		    queryid = QID,
+		    sub_els = [#forwarded{
+			delay = #delay{}} = Forw]}]},
+			  recv_message(Config), Forw),
+	    IMsg = ?match(#message{
+		to = MyJIDBare, from = Room} = IMsg, xmpp:get_subtag(Forw, #message{}), IMsg),
+
+	    PS = ?match(#ps_event{items = #ps_items{node = ?NS_MUCSUB_NODES_MESSAGES, items = [
+		#ps_item{} = PS
+	    ]}}, xmpp:get_subtag(IMsg, #ps_event{}), PS),
+	    ?match(#message{type = groupchat, body = Body}, xmpp:get_subtag(PS, #message{}))
+	end, lists:seq(1, 5)),
+    RSM = ?match(#iq{from = MyJIDBare, id = I, type = result,
+		     sub_els = [#mam_fin{xmlns = ?NS_MAM_2,
+					 id = QID,
+					 rsm = RSM,
+					 complete = true}]}, recv_iq(Config), RSM),
+    match_rsm_count(RSM, 5),
+
+    % Wait for master exit
+    ready = get_event(Config),
+    % Unsubscribe yourself
+    ?send_recv(#iq{to = Room, type = set, sub_els = [
+	#muc_unsubscribe{}
+    ]}, #iq{type = result}),
+    put_event(Config, ready),
+    clean(disconnect(Config)).
+
+mucsub_from_muc_master(Config) ->
+    mucsub_master(Config).
+
+mucsub_from_muc_slave(Config) ->
+    Server = ?config(server, Config),
+    gen_mod:update_module_opts(Server, mod_mam, [{user_mucsub_from_muc_archive, true}]),
+    Config2 = mucsub_slave(Config),
+    gen_mod:update_module_opts(Server, mod_mam, [{user_mucsub_from_muc_archive, false}]),
+    Config2.
+
+mucsub_from_muc_non_persistent_master(Config) ->
+    Config1 = lists:keystore(persistent_room, 1, Config, {persistent_room, false}),
+    Config2 = mucsub_from_muc_master(Config1),
+    lists:keydelete(persistent_room, 1, Config2).
+
+mucsub_from_muc_non_persistent_slave(Config) ->
+    Config1 = lists:keystore(persistent_room, 1, Config, {persistent_room, false}),
+    Config2 = mucsub_from_muc_slave(Config1),
+    lists:keydelete(persistent_room, 1, Config2).
 
 %%%===================================================================
 %%% Internal functions

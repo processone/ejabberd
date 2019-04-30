@@ -12,7 +12,7 @@
 
 -define(recv1(P1),
         P1 = (fun() ->
-                 V = recv(Config),
+                 V = suite:recv(Config),
                  case V of
                      P1 -> V;
                      _ -> suite:match_failure([V], [??P1])
@@ -21,7 +21,7 @@
 
 -define(recv2(P1, P2),
         (fun() ->
-                 case {R1 = recv(Config), R2 = recv(Config)} of
+                 case {R1 = suite:recv(Config), R2 = suite:recv(Config)} of
                      {P1, P2} -> {R1, R2};
                      {P2, P1} -> {R2, R1};
                      {P1, V1} -> suite:match_failure([V1], [P2]);
@@ -34,7 +34,7 @@
 
 -define(recv3(P1, P2, P3),
         (fun() ->
-                 case R3 = recv(Config) of
+                 case R3 = suite:recv(Config) of
                      P1 -> insert(R3, 1, ?recv2(P2, P3));
                      P2 -> insert(R3, 2, ?recv2(P1, P3));
                      P3 -> insert(R3, 3, ?recv2(P1, P2));
@@ -44,7 +44,7 @@
 
 -define(recv4(P1, P2, P3, P4),
         (fun() ->
-                 case R4 = recv(Config) of
+                 case R4 = suite:recv(Config) of
                      P1 -> insert(R4, 1, ?recv3(P2, P3, P4));
                      P2 -> insert(R4, 2, ?recv3(P1, P3, P4));
                      P3 -> insert(R4, 3, ?recv3(P1, P2, P4));
@@ -55,7 +55,7 @@
 
 -define(recv5(P1, P2, P3, P4, P5),
         (fun() ->
-                 case R5 = recv(Config) of
+                 case R5 = suite:recv(Config) of
                      P1 -> insert(R5, 1, ?recv4(P2, P3, P4, P5));
                      P2 -> insert(R5, 2, ?recv4(P1, P3, P4, P5));
                      P3 -> insert(R5, 3, ?recv4(P1, P2, P4, P5));
@@ -74,6 +74,19 @@
 		suite:match_failure([Mismatch], [??Pattern])
 	end
     end)()).
+
+-define(match(Pattern, Result, PatternRes),
+    (fun() ->
+        case Result of
+            Pattern ->
+                PatternRes;
+            Mismatch ->
+                suite:match_failure([Mismatch], [??Pattern])
+        end
+     end)()).
+
+-define(send_recv(Send, Recv),
+    ?match(Recv, suite:send_recv(Config, Send))).
 
 -define(COMMON_VHOST, <<"localhost">>).
 -define(MNESIA_VHOST, <<"mnesia.localhost">>).
