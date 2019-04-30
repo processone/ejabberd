@@ -971,10 +971,13 @@ prepare_request_module(Mod) when is_atom(Mod) ->
 	    Mod;
 	Err ->
 	    ?ERROR_MSG(
-	       "Failed to load request handler ~s: "
+	       "Failed to load request handler ~s, "
+	       "did you mean ~s? Hint: "
 	       "make sure there is no typo and file ~s.beam "
 	       "exists inside either ~s or ~s directory",
-	       [Mod, Mod,
+	       [Mod,
+		misc:best_match(Mod, ejabberd_config:get_modules()),
+		Mod,
 		filename:dirname(code:which(?MODULE)),
 		ext_mod:modules_dir()]),
 	    erlang:error(Err)
