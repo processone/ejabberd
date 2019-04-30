@@ -983,6 +983,18 @@ prepare_request_module(Mod) when is_atom(Mod) ->
 	    erlang:error(Err)
     end.
 
+emit_option_replacement(Option, Path, Handler) ->
+    ?WARNING_MSG(
+       "Listening option '~s' is deprecated, enable it via request handlers, e.g.:~n"
+       "listen:~n"
+       "  ...~n"
+       "  -~n"
+       "    module: ~s~n"
+       "    request_handlers:~n"
+       "      ...~n"
+       "      \"~s\": ~s~n",
+       [Option, ?MODULE, Path, Handler]).
+
 -spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
 opt_type(trusted_proxies) ->
     fun (all) -> all;
@@ -1004,15 +1016,30 @@ listen_opt_type(certfile = Opt) ->
 	    File
     end;
 listen_opt_type(captcha) ->
-    fun(B) when is_boolean(B) -> B end;
+    fun(B) when is_boolean(B) ->
+	    emit_option_replacement(captcha, "/captcha", ejabberd_captcha),
+	    B
+    end;
 listen_opt_type(register) ->
-    fun(B) when is_boolean(B) -> B end;
+    fun(B) when is_boolean(B) ->
+	    emit_option_replacement(register, "/register", mod_register_web),
+	    B
+    end;
 listen_opt_type(web_admin) ->
-    fun(B) when is_boolean(B) -> B end;
+    fun(B) when is_boolean(B) ->
+	    emit_option_replacement(web_admin, "/admin", ejabberd_web_admin),
+	    B
+    end;
 listen_opt_type(http_bind) ->
-    fun(B) when is_boolean(B) -> B end;
+    fun(B) when is_boolean(B) ->
+	    emit_option_replacement(http_bind, "/bosh", mod_bosh),
+	    B
+    end;
 listen_opt_type(xmlrpc) ->
-    fun(B) when is_boolean(B) -> B end;
+    fun(B) when is_boolean(B) ->
+	    emit_option_replacement(xmlrpc, "/", ejabberd_xmlrpc),
+	    B
+    end;
 listen_opt_type(tag) ->
     fun(B) when is_binary(B) -> B end;
 listen_opt_type(request_handlers) ->
