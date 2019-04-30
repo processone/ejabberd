@@ -317,11 +317,11 @@ mucsub_master(Config) ->
 
     ct:comment("Retrieving messages from room mam storage"),
     recv_messages_from_room(Config, lists:seq(1, 5)),
-    muc_tests:leave(Config),
 
     ct:comment("Cleaning up"),
     put_event(Config, ready),
     ready = get_event(Config),
+    muc_tests:leave(Config),
     clean(disconnect(Config)).
 
 mucsub_slave(Config) ->
