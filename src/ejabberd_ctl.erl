@@ -319,13 +319,18 @@ try_run_ctp(Args, Auth, AccessCommands, Version) ->
 %% @spec (Args::[string()], Auth, AccessCommands) -> string() | integer() | {string(), integer()}
 try_call_command(Args, Auth, AccessCommands, Version) ->
     try call_command(Args, Auth, AccessCommands, Version) of
-	{error, command_unknown} ->
-	    {io_lib:format("Error: command ~p not known.", [hd(Args)]), ?STATUS_ERROR};
 	{error, wrong_command_arguments} ->
 	    {"Error: wrong arguments", ?STATUS_ERROR};
 	Res ->
 	    Res
     catch
+	throw:{error, unknown_command} ->
+	    KnownCommands = [Cmd || {Cmd, _, _} <- ejabberd_commands:list_commands(Version)],
+	    UnknownCommand = list_to_atom(hd(Args)),
+	    {io_lib:format(
+	       "Error: unknown command '~s'. Did you mean '~s'?",
+	       [hd(Args), misc:best_match(UnknownCommand, KnownCommands)]),
+	     ?STATUS_ERROR};
 	throw:Error ->
 	    {io_lib:format("~p", [Error]), ?STATUS_ERROR};
 	?EX_RULE(A, Why, Stack) ->
@@ -340,7 +345,7 @@ call_command([CmdString | Args], Auth, _AccessCommands, Version) ->
     Command = list_to_atom(binary_to_list(CmdStringU)),
     case ejabberd_commands:get_command_format(Command, Auth, Version) of
 	{error, command_unknown} ->
-	    {error, command_unknown};
+	    throw({error, unknown_command});
 	{ArgsFormat, ResultFormat} ->
 	    case (catch format_args(Args, ArgsFormat)) of
 		ArgsFormatted when is_list(ArgsFormatted) ->
