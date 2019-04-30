@@ -39,7 +39,7 @@
 	 default_queue_type/1, queue_dir/0, fsm_limit_opts/1,
 	 use_cache/1, cache_size/1, cache_missed/1, cache_life_time/1,
 	 codec_options/1, get_plain_terms_file/2, negotiation_timeout/0,
-	 similar_option/2, get_modules/0]).
+	 get_modules/0]).
 
 -export([start/2]).
 
@@ -1102,7 +1102,7 @@ validate_opts(#state{opts = Opts} = State, ModOpts) ->
 				_ ->
 				    KnownOpts = dict:fetch_keys(ModOpts),
 				    ?ERROR_MSG("Unknown option '~s', did you mean '~s'?",
-					       [Opt, similar_option(Opt, KnownOpts)]),
+					       [Opt, misc:best_match(Opt, KnownOpts)]),
 				    erlang:error(unknown_option)
 			    end
 		    end, Opts),
@@ -1124,34 +1124,6 @@ is_file_readable(Path) ->
 	    end;
 	{error, _Reason} ->
 	    false
-    end.
-
--spec similar_option(atom(), [atom()]) -> atom().
-similar_option(Pattern, [_|_] = Opts) ->
-    String = atom_to_list(Pattern),
-    {Ds, _} = lists:mapfoldl(
-		fun(Opt, Cache) ->
-			{Distance, Cache1} = ld(String, atom_to_list(Opt), Cache),
-			{{Distance, Opt}, Cache1}
-		end, #{}, Opts),
-    element(2, lists:min(Ds)).
-
-%% Levenshtein distance
--spec ld(string(), string(), map()) -> {non_neg_integer(), map()}.
-ld([] = S, T, Cache) ->
-    {length(T), maps:put({S, T}, length(T), Cache)};
-ld(S, [] = T, Cache) ->
-    {length(S), maps:put({S, T}, length(S), Cache)};
-ld([X|S], [X|T], Cache) ->
-    ld(S, T, Cache);
-ld([_|ST] = S, [_|TT] = T, Cache) ->
-    try {maps:get({S, T}, Cache), Cache}
-    catch _:{badkey, _} ->
-            {L1, C1} = ld(S, TT, Cache),
-            {L2, C2} = ld(ST, T, C1),
-            {L3, C3} = ld(ST, TT, C2),
-            L = 1 + lists:min([L1, L2, L3]),
-            {L, maps:put({S, T}, L, C3)}
     end.
 
 get_version() ->

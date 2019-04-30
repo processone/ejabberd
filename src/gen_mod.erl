@@ -585,7 +585,7 @@ validate_opts(Host, Module, Opts0) ->
 				   " did you mean '~s'?"
 				   " Available options are: ~s",
 				   [Opt, Module,
-				    ejabberd_config:similar_option(Opt, KnownOpts),
+				    misc:best_match(Opt, KnownOpts),
 				    misc:join_atoms(KnownOpts, <<", ">>)]),
 	    module_error(ErrTxt)
     end.
@@ -746,7 +746,7 @@ format_module_error(Module, Fun, Arity, Opts, Class, Reason, St) ->
 			  "exists inside either ~s or ~s "
 			  "directory",
 			  [Fun, Module,
-			   ejabberd_config:similar_option(
+			   misc:best_match(
 			     Module, ejabberd_config:get_modules()),
 			   Module,
 			   filename:dirname(code:which(?MODULE)),

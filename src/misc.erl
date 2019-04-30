@@ -39,7 +39,7 @@
 	 css_dir/0, img_dir/0, js_dir/0, msgs_dir/0, sql_dir/0, lua_dir/0,
 	 read_css/1, read_img/1, read_js/1, read_lua/1, try_url/1,
 	 intersection/2, format_val/1, cancel_timer/1, unique_timestamp/0,
-	 is_mucsub_message/1]).
+	 is_mucsub_message/1, best_match/2]).
 
 %% Deprecated functions
 -export([decode_base64/1, encode_base64/1]).
@@ -425,6 +425,18 @@ cancel_timer(TRef) when is_reference(TRef) ->
 cancel_timer(_) ->
     ok.
 
+-spec best_match(atom(), [atom()]) -> atom().
+best_match(Pattern, []) ->
+    Pattern;
+best_match(Pattern, Opts) ->
+    String = atom_to_list(Pattern),
+    {Ds, _} = lists:mapfoldl(
+		fun(Opt, Cache) ->
+			{Distance, Cache1} = ld(String, atom_to_list(Opt), Cache),
+			{{Distance, Opt}, Cache1}
+		end, #{}, Opts),
+    element(2, lists:min(Ds)).
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
@@ -485,3 +497,21 @@ get_dir(Type) ->
 unique_timestamp() ->
     {MS, S, _} = erlang:timestamp(),
     {MS, S, erlang:unique_integer([positive, monotonic]) rem 1000000}.
+
+%% Levenshtein distance
+-spec ld(string(), string(), map()) -> {non_neg_integer(), map()}.
+ld([] = S, T, Cache) ->
+    {length(T), maps:put({S, T}, length(T), Cache)};
+ld(S, [] = T, Cache) ->
+    {length(S), maps:put({S, T}, length(S), Cache)};
+ld([X|S], [X|T], Cache) ->
+    ld(S, T, Cache);
+ld([_|ST] = S, [_|TT] = T, Cache) ->
+    try {maps:get({S, T}, Cache), Cache}
+    catch _:{badkey, _} ->
+            {L1, C1} = ld(S, TT, Cache),
+            {L2, C2} = ld(ST, T, C1),
+            {L3, C3} = ld(ST, TT, C2),
+            L = 1 + lists:min([L1, L2, L3]),
+            {L, maps:put({S, T}, L, C3)}
+    end.
