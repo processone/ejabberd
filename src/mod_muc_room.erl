@@ -3486,15 +3486,13 @@ change_config(Config, StateData) ->
                 end,
                 store_room(StateData1),
                 StateData1;
-            {WasPersistent, false} ->
-		maybe_forget_room(StateData1),
-		case WasPersistent of
-		    true ->
-			Affiliations = get_affiliations(StateData),
-			StateData1#state{affiliations = Affiliations};
-		    _ ->
-			StateData1
-		end
+            {true, false} ->
+		Affiliations = get_affiliations(StateData),
+		maybe_forget_room(StateData),
+		StateData1#state{affiliations = Affiliations};
+	    _ ->
+		maybe_forget_room(StateData),
+		StateData1
         end,
     case {(StateData#state.config)#config.members_only,
 	  Config#config.members_only} of
