@@ -1140,6 +1140,7 @@ close_room_if_temporary_and_empty(StateData1) ->
 		    "and empty",
 		    [jid:encode(StateData1#state.jid)]),
 	  add_to_log(room_existence, destroyed, StateData1),
+	  maybe_forget_room(StateData1),
 	  {stop, normal, StateData1};
       _ -> {next_state, normal_state, StateData1}
     end.
@@ -3485,14 +3486,15 @@ change_config(Config, StateData) ->
                 end,
                 store_room(StateData1),
                 StateData1;
-            {true, false} ->
-                Affiliations = get_affiliations(StateData),
-                mod_muc:forget_room(StateData1#state.server_host,
-                                    StateData1#state.host,
-                                    StateData1#state.room),
-                StateData1#state{affiliations = Affiliations};
-            {false, false} ->
-                StateData1
+            {WasPersistent, false} ->
+		maybe_forget_room(StateData1),
+		case WasPersistent of
+		    true ->
+			Affiliations = get_affiliations(StateData),
+			StateData1#state{affiliations = Affiliations};
+		    _ ->
+			StateData1
+		end
         end,
     case {(StateData#state.config)#config.members_only,
 	  Config#config.members_only} of
@@ -3822,13 +3824,26 @@ destroy_room(DEl, StateData) ->
 			   Info#user.jid, Packet,
 			   ?NS_MUCSUB_NODES_CONFIG, StateData)
       end, ok, get_users_and_subscribers(StateData)),
-    case (StateData#state.config)#config.persistent of
-      true ->
-	  mod_muc:forget_room(StateData#state.server_host,
-			      StateData#state.host, StateData#state.room);
-      false -> ok
-    end,
+    maybe_forget_room(StateData),
     {result, undefined, stop}.
+
+maybe_forget_room(StateData) ->
+    Forget = case (StateData#state.config)#config.persistent of
+		 true ->
+		     true;
+		 _ ->
+		     Mod = gen_mod:db_mod(StateData#state.server_host, mod_muc),
+		     erlang:function_exported(Mod, get_subscribed_rooms, 3)
+	     end,
+    case Forget of
+	true ->
+	    mod_muc:forget_room(StateData#state.server_host,
+				StateData#state.host,
+				StateData#state.room),
+	    StateData;
+	_ ->
+	    StateData
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Disco
@@ -4359,7 +4374,20 @@ element_size(El) ->
 store_room(StateData) ->
     store_room(StateData, []).
 store_room(StateData, ChangesHints) ->
-    if (StateData#state.config)#config.persistent ->
+    % Let store persistent rooms or on those backends that have get_subscribed_rooms
+    ShouldStore = case (StateData#state.config)#config.persistent of
+		      true ->
+			  true;
+		      _ ->
+			  case ChangesHints of
+			      [] ->
+				  false;
+			      _ ->
+				  Mod = gen_mod:db_mod(StateData#state.server_host, mod_muc),
+				  erlang:function_exported(Mod, get_subscribed_rooms, 3)
+			  end
+		  end,
+    if ShouldStore ->
 	    mod_muc:store_room(StateData#state.server_host,
 			       StateData#state.host, StateData#state.room,
 			       make_opts(StateData),

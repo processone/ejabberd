@@ -654,31 +654,46 @@ load_permanent_rooms(Host, ServerHost, Access,
 		     HistorySize, RoomShaper, QueueType) ->
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
     lists:foreach(
-      fun(R) ->
-		{Room, Host} = R#muc_room.name_host,
-	      case RMod:find_online_room(ServerHost, Room, Host) of
-		  error ->
-			{ok, Pid} = mod_muc_room:start(Host,
-				ServerHost, Access, Room,
-				HistorySize, RoomShaper,
-				R#muc_room.opts, QueueType),
-		      RMod:register_online_room(ServerHost, Room, Host, Pid);
-		  {ok, _} ->
-		      ok
-		end
-	end,
-	get_rooms(ServerHost, Host)).
+	fun(R) ->
+	    {Room, Host} = R#muc_room.name_host,
+	    case proplists:get_bool(persistent, R#muc_room.opts) of
+		true ->
+		    case RMod:find_online_room(ServerHost, Room, Host) of
+			error ->
+			    {ok, Pid} = mod_muc_room:start(Host,
+							   ServerHost, Access, Room,
+							   HistorySize, RoomShaper,
+							   R#muc_room.opts, QueueType),
+			    RMod:register_online_room(ServerHost, Room, Host, Pid);
+			{ok, _} ->
+			    ok
+		    end;
+		_ ->
+		    forget_room(ServerHost, Host, Room)
+	    end
+	end, get_rooms(ServerHost, Host)).
 
 start_new_room(Host, ServerHost, Access, Room,
 	    HistorySize, RoomShaper, From,
 	    Nick, DefRoomOpts, QueueType) ->
-    case restore_room(ServerHost, Host, Room) of
+    Opts = case restore_room(ServerHost, Host, Room) of
+	       error ->
+		   error;
+	       Opts0 ->
+		   case proplists:get_bool(persistent, Opts0) of
+		       true ->
+			   Opts0;
+		       _ ->
+			   error
+		   end
+	   end,
+    case Opts of
 	error ->
 	    ?DEBUG("MUC: open new room '~s'~n", [Room]),
 	    mod_muc_room:start(Host, ServerHost, Access, Room,
 		HistorySize, RoomShaper,
 		From, Nick, DefRoomOpts, QueueType);
-	Opts ->
+	_ ->
 	    ?DEBUG("MUC: restore room '~s'~n", [Room]),
 	    mod_muc_room:start(Host, ServerHost, Access, Room,
 		HistorySize, RoomShaper, Opts, QueueType)
