@@ -31,8 +31,6 @@
          put/4, patch/4, request/6, with_retry/4,
          opt_type/1]).
 
--include("logger.hrl").
-
 -define(HTTP_TIMEOUT, 10000).
 -define(CONNECT_TIMEOUT, 8000).
 -define(CONTENT_TYPE, "application/json").
@@ -81,7 +79,7 @@ patch(Server, Path, Params, Content) ->
 
 request(Server, Method, Path, _Params, _Mime, {error, Error}) ->
     ejabberd_hooks:run(backend_api_error, Server,
-                       [Server, Method, Path, Error]);
+                       [Server, Method, Path, Error]),
     {error, Error};
 request(Server, Method, Path, Params, Mime, Data) ->
     {Query, Opts} = case Params of
@@ -151,10 +149,6 @@ to_list(V) when is_list(V) ->
 encode_json(Content) ->
     case catch jiffy:encode(Content) of
         {'EXIT', Reason} ->
-            ?ERROR_MSG("HTTP content encodage failed:~n"
-                       "** Content = ~p~n"
-                       "** Err = ~p",
-                       [Content, Reason]),
             {error, {invalid_payload, Content, Reason}};
         Encoded ->
             Encoded
