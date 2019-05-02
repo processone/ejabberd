@@ -171,8 +171,13 @@ reload(Host, NewOpts, OldOpts) ->
 
 -spec store_offline_msg(#offline_msg{}) -> ok | {error, full | any()}.
 store_offline_msg(#offline_msg{us = {User, Server}, packet = Pkt} = Msg) ->
-    case use_mam_for_user(User, Server) andalso
-	 (not xmpp:get_meta(Pkt, activity_marker, false)) andalso
+    {UseMam, ActivityMarker} = case use_mam_for_user(User, Server) of
+				   true ->
+				       {true, xmpp:get_meta(Pkt, activity_marker, false)};
+				   _ ->
+				       {false, false}
+			       end,
+    case UseMam andalso (not ActivityMarker) andalso
 	 xmpp:get_meta(Pkt, mam_archived, false) of
 	true ->
 	    case xmpp:get_meta(Pkt, first_from_queue, false) of
@@ -181,7 +186,10 @@ store_offline_msg(#offline_msg{us = {User, Server}, packet = Pkt} = Msg) ->
 		_ ->
 		    ok
 	    end;
-	_ ->
+	false when ActivityMarker ->
+	    Mod = gen_mod:db_mod(Server, ?MODULE),
+	    Mod:store_message(Msg);
+	false ->
 	    Mod = gen_mod:db_mod(Server, ?MODULE),
 	    case get_max_user_messages(User, Server) of
 		infinity ->
