@@ -637,7 +637,7 @@ user_unset_presence(User, Server, _Resource, _Status) ->
 
 store_last_activity_marker(User, Server, Timestamp) ->
     Jid = jid:make(User, Server, <<>>),
-    Pkt = xmpp:put_meta(#message{id = <<"ActivityMarker">>, type = error},
+    Pkt = xmpp:put_meta(#message{id = <<"ActivityMarker">>, type = error, from = Jid, to = Jid},
 			activity_marker, true),
 
     Msg = #offline_msg{us = {User, Server}, from = Jid, to = Jid,
