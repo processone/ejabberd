@@ -712,6 +712,7 @@ read_messages(LUser, LServer) ->
 	    Res
     end.
 
+-spec read_db_messages(binary(), binary()) -> [{binary(), message()}].
 read_db_messages(LUser, LServer) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     CodecOpts = ejabberd_config:codec_options(LServer),
@@ -733,9 +734,9 @@ read_db_messages(LUser, LServer) ->
 	    end
 	end, Mod:read_message_headers(LUser, LServer)).
 
--spec read_mam_messages(binary(), binary(), [#offline_msg{} | {any(), message()}]) ->
-    [{integer(), message()}].
-read_mam_messages(LUser, LServer, ReadMsgs) ->
+-spec parse_marker_messages(binary(), [#offline_msg{} | {any(), message()}]) ->
+    {integer() | none, [message()]}.
+parse_marker_messages(LServer, ReadMsgs) ->
     {Timestamp, ExtraMsgs} = lists:foldl(
 	fun({_Node, #message{id = <<"ActivityMarker">>,
 			     body = [], type = error} = Msg}, {T, E}) ->
@@ -771,8 +772,8 @@ read_mam_messages(LUser, LServer, ReadMsgs) ->
 		   Decoded ->
 		       Pkt1 = add_delay_info(Decoded, LServer, TS),
 		       {T, [xmpp:set_from_to(Pkt1, From, To) | E]}
-		   catch _:{xmpp_codec, _Why} ->
-		       {T, E}
+	       catch _:{xmpp_codec, _Why} ->
+		   {T, E}
 	       end;
 	   ({_Node, Msg}, {T, E}) ->
 	       {T, [Msg | E]}
@@ -790,6 +791,12 @@ read_mam_messages(LUser, LServer, ReadMsgs) ->
 		_ ->
 		    Timestamp
 	    end,
+    {Start, ExtraMsgs}.
+
+-spec read_mam_messages(binary(), binary(), [#offline_msg{} | {any(), message()}]) ->
+    [{integer(), message()}].
+read_mam_messages(LUser, LServer, ReadMsgs) ->
+    {Start, ExtraMsgs} = parse_marker_messages(LServer, ReadMsgs),
     AllMsgs = case Start of
 		  none ->
 		      ExtraMsgs;
@@ -804,7 +811,7 @@ read_mam_messages(LUser, LServer, ReadMsgs) ->
 						       [{start, Start}],
 						       #rsm_set{max = MaxOfflineMsgs,
 								before = <<"9999999999999999">>},
-						       chat),
+						       chat, only_messages),
 		      MamMsgs2 = lists:map(
 			  fun({_, _, #forwarded{sub_els = [MM | _], delay = #delay{stamp = MMT}}}) ->
 			      add_delay_info(MM, LServer, MMT)
@@ -841,6 +848,28 @@ read_mam_messages(LUser, LServer, ReadMsgs) ->
 	    {{Counter, Msg}, Counter + 1}
 	end, 1, AllMsgs2),
     AllMsgs3.
+
+-spec count_mam_messages(binary(), binary(), [#offline_msg{} | {any(), message()}]) ->
+    integer().
+count_mam_messages(LUser, LServer, ReadMsgs) ->
+    {Start, ExtraMsgs} = parse_marker_messages(LServer, ReadMsgs),
+    case Start of
+	none ->
+	    length(ExtraMsgs);
+	_ ->
+	    MaxOfflineMsgs = case get_max_user_messages(LUser, LServer) of
+				 Number when is_integer(Number) -> Number - length(ExtraMsgs);
+				 infinity -> undefined;
+				 _ -> 100 - length(ExtraMsgs)
+			     end,
+	    JID = jid:make(LUser, LServer, <<>>),
+	    {_, _, Count} = mod_mam:select(LServer, JID, JID,
+					   [{start, Start}],
+					   #rsm_set{max = MaxOfflineMsgs,
+						    before = <<"9999999999999999">>},
+					   chat, only_count),
+	    Count + length(ExtraMsgs)
+    end.
 
 format_user_queue(Hdrs) ->
     lists:map(
@@ -1007,7 +1036,7 @@ count_offline_messages(User, Server) ->
     case use_mam_for_user(User, Server) of
 	true ->
 	    Res = read_db_messages(LUser, LServer),
-	    length(read_mam_messages(LUser, LServer, Res));
+	    count_mam_messages(LUser, LServer, Res);
 	_ ->
 	    Mod = gen_mod:db_mod(LServer, ?MODULE),
 	    Mod:count_messages(LUser, LServer)

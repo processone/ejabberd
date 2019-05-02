@@ -30,8 +30,8 @@
 
 %% API
 -export([init/2, remove_user/2, remove_room/3, delete_old_messages/3,
-	 extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/6, export/1, remove_from_archive/3,
-	 is_empty_for_user/2, is_empty_for_room/3, select_with_mucsub/5]).
+	 extended_fields/0, store/8, write_prefs/4, get_prefs/2, select/7, export/1, remove_from_archive/3,
+	 is_empty_for_user/2, is_empty_for_room/3, select_with_mucsub/6]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("xmpp.hrl").
@@ -174,20 +174,20 @@ get_prefs(LUser, LServer) ->
     end.
 
 select(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
-       MAMQuery, RSM, MsgType) ->
+       MAMQuery, RSM, MsgType, Flags) ->
     User = case MsgType of
 	       chat -> LUser;
 	       _ -> jid:encode(JidArchive)
 	   end,
     {Query, CountQuery} = make_sql_query(User, LServer, MAMQuery, RSM, none),
-    do_select_query(LServer, JidRequestor, JidArchive, RSM, MsgType, Query, CountQuery).
+    do_select_query(LServer, JidRequestor, JidArchive, RSM, MsgType, Query, CountQuery, Flags).
 
 -spec select_with_mucsub(binary(), jid(), jid(), mam_query:result(),
-			     #rsm_set{} | undefined) ->
+			     #rsm_set{} | undefined, all | only_count | only_messages) ->
 				{[{binary(), non_neg_integer(), xmlel()}], boolean(), integer()} |
 				{error, db_failure}.
 select_with_mucsub(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
-		   MAMQuery, RSM) ->
+		   MAMQuery, RSM, Flags) ->
     Extra = case gen_mod:db_mod(LServer, mod_muc) of
 		mod_muc_sql ->
 		    subscribers_table;
@@ -204,17 +204,25 @@ select_with_mucsub(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
 		    [jid:encode(Jid) || {Jid, _} <- SubRooms]
 	    end,
     {Query, CountQuery} = make_sql_query(LUser, LServer, MAMQuery, RSM, Extra),
-    do_select_query(LServer, JidRequestor, JidArchive, RSM, chat, Query, CountQuery).
+    do_select_query(LServer, JidRequestor, JidArchive, RSM, chat, Query, CountQuery, Flags).
 
-do_select_query(LServer, JidRequestor, #jid{luser = LUser} = JidArchive, RSM, MsgType, Query, CountQuery) ->
+do_select_query(LServer, JidRequestor, #jid{luser = LUser} = JidArchive, RSM,
+		MsgType, Query, CountQuery, Flags) ->
     % TODO from XEP-0313 v0.2: "To conserve resources, a server MAY place a
     % reasonable limit on how many stanzas may be pushed to a client in one
     % request. If a query returns a number of stanzas greater than this limit
     % and the client did not specify a limit using RSM then the server should
     % return a policy-violation error to the client." We currently don't do this
     % for v0.2 requests, but we do limit #rsm_in.max for v0.3 and newer.
-    case {ejabberd_sql:sql_query(LServer, Query),
-	  ejabberd_sql:sql_query(LServer, CountQuery)} of
+    QRes = case Flags of
+		   all ->
+		       {ejabberd_sql:sql_query(LServer, Query), ejabberd_sql:sql_query(LServer, CountQuery)};
+		   only_messages ->
+		       {ejabberd_sql:sql_query(LServer, Query), {selected, ok, [[<<"0">>]]}};
+		   only_count ->
+		       {{selected, ok, []}, ejabberd_sql:sql_query(LServer, CountQuery)}
+	       end,
+    case QRes of
 	{{selected, _, Res}, {selected, _, [[Count]]}} ->
 	    {Max, Direction, _} = get_max_direction_id(RSM),
 	    {Res1, IsComplete} =

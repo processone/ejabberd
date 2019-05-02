@@ -42,7 +42,7 @@
 	 get_room_config/4, set_room_option/3, offline_message/1, export/1,
 	 mod_options/1, remove_mam_for_user_with_peer/3, remove_mam_for_user/2,
 	 is_empty_for_user/2, is_empty_for_room/3, check_create_room/4,
-	 process_iq/3, store_mam_message/7, make_id/0, wrap_as_mucsub/2, select/6]).
+	 process_iq/3, store_mam_message/7, make_id/0, wrap_as_mucsub/2, select/7]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -71,17 +71,22 @@
 		 #rsm_set{} | undefined, chat | groupchat) ->
     {[{binary(), non_neg_integer(), xmlel()}], boolean(), count()} |
     {error, db_failure}.
+-callback select(binary(), jid(), jid(), mam_query:result(),
+		 #rsm_set{} | undefined, chat | groupchat,
+		 all | only_count | only_messages) ->
+		    {[{binary(), non_neg_integer(), xmlel()}], boolean(), count()} |
+		    {error, db_failure}.
 -callback use_cache(binary()) -> boolean().
 -callback cache_nodes(binary()) -> [node()].
 -callback remove_from_archive(binary(), binary(), jid() | none) -> ok | {error, any()}.
 -callback is_empty_for_user(binary(), binary()) -> boolean().
 -callback is_empty_for_room(binary(), binary(), binary()) -> boolean().
 -callback select_with_mucsub(binary(), jid(), jid(), mam_query:result(),
-			     #rsm_set{} | undefined) ->
+			     #rsm_set{} | undefined, all | only_count | only_messages) ->
     {[{binary(), non_neg_integer(), xmlel()}], boolean(), count()} |
     {error, db_failure}.
 
--optional_callbacks([use_cache/1, cache_nodes/1, select_with_mucsub/5]).
+-optional_callbacks([use_cache/1, cache_nodes/1, select_with_mucsub/6, select/6, select/7]).
 
 %%%===================================================================
 %%% API
@@ -1038,9 +1043,12 @@ select_and_send(LServer, Query, RSM, #iq{from = From, to = To} = IQ, MsgType) ->
 	    xmpp:make_error(IQ, Err)
     end.
 
+select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType) ->
+    select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType, all).
+
 select(_LServer, JidRequestor, JidArchive, Query, RSM,
        {groupchat, _Role, #state{config = #config{mam = false},
-				 history = History}} = MsgType) ->
+				 history = History}} = MsgType, _Flags) ->
     Start = proplists:get_value(start, Query),
     End = proplists:get_value('end', Query),
     #lqueue{queue = Q} = History,
@@ -1079,21 +1087,20 @@ select(_LServer, JidRequestor, JidArchive, Query, RSM,
 	_ ->
 	    {Msgs, true, L}
     end;
-select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType) ->
+select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType, Flags) ->
     case might_expose_jid(Query, MsgType) of
 	true ->
 	    {[], true, 0};
 	false ->
 	    case {MsgType, gen_mod:get_module_opt(LServer, ?MODULE, user_mucsub_from_muc_archive)} of
 		{chat, true} ->
-		    select_with_mucsub(LServer, JidRequestor, JidArchive, Query, RSM);
+		    select_with_mucsub(LServer, JidRequestor, JidArchive, Query, RSM, Flags);
 		_ ->
-		    Mod = gen_mod:db_mod(LServer, ?MODULE),
-		    Mod:select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType)
+		    db_select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType, Flags)
 	    end
     end.
 
-select_with_mucsub(LServer, JidRequestor, JidArchive, Query, RSM) ->
+select_with_mucsub(LServer, JidRequestor, JidArchive, Query, RSM, Flags) ->
     MucHosts = mod_muc_admin:find_hosts(LServer),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case proplists:get_value(with, Query) of
@@ -1103,20 +1110,19 @@ select_with_mucsub(LServer, JidRequestor, JidArchive, Query, RSM) ->
 		    select(LServer, JidRequestor, MucJid, Query, RSM,
 			   {groupchat, member, #state{config = #config{mam = true}}});
 		_ ->
-		    Mod:select(LServer, JidRequestor, JidArchive, Query, RSM, chat)
+		    db_select(LServer, JidRequestor, JidArchive, Query, RSM, chat, Flags)
 	    end;
 	_ ->
-	    case erlang:function_exported(Mod, select_with_mucsub, 5) of
+	    case erlang:function_exported(Mod, select_with_mucsub, 6) of
 		true ->
-		    Mod:select_with_mucsub(LServer, JidRequestor, JidArchive, Query, RSM);
+		    Mod:select_with_mucsub(LServer, JidRequestor, JidArchive, Query, RSM, Flags);
 		false ->
-		    select_with_mucsub_fallback(LServer, JidRequestor, JidArchive, Query, RSM)
+		    select_with_mucsub_fallback(LServer, JidRequestor, JidArchive, Query, RSM, Flags)
 	    end
     end.
 
-select_with_mucsub_fallback(LServer, JidRequestor, JidArchive, Query, RSM) ->
-    Mod = gen_mod:db_mod(LServer, ?MODULE),
-    case Mod:select(LServer, JidRequestor, JidArchive, Query, RSM, chat) of
+select_with_mucsub_fallback(LServer, JidRequestor, JidArchive, Query, RSM, Flags) ->
+    case db_select(LServer, JidRequestor, JidArchive, Query, RSM, chat, Flags) of
 	{error, _} = Err ->
 	    Err;
 	{Entries, All, Count} ->
@@ -1164,6 +1170,15 @@ select_with_mucsub_fallback(LServer, JidRequestor, JidArchive, Query, RSM) ->
 		    Sub = lists:sublist(E2, 1, Max),
 		    {Sub, if Sub == E2 -> A2; true -> false end, C2}
 	    end
+    end.
+
+db_select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType, Flags) ->
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    case erlang:function_exported(Mod, select, 7) of
+	true ->
+	    Mod:select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType, Flags);
+	_ ->
+	Mod:select(LServer, JidRequestor, JidArchive, Query, RSM, MsgType)
     end.
 
 wrap_as_mucsub(Messages, #jid{lserver = LServer} = Requester) ->
