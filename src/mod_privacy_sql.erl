@@ -92,7 +92,7 @@ set_lists(#privacy{us = {LUser, LServer},
 		lists:foreach(
 		  fun({Name, List}) ->
 			  add_privacy_list(LUser, LServer, Name),
-			  {selected, [<<"id">>], [[I]]} =
+			  {selected, [{I}]} =
 			      get_privacy_list_id_t(LUser, LServer, Name),
 			  RItems = lists:map(fun item_to_raw/1, List),
 			  set_privacy_list(I, RItems),
