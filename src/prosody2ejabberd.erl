@@ -198,7 +198,7 @@ convert_data(_Host, "config", _User, [Data]) ->
     RoomCfg = convert_room_config(Data),
     case proplists:get_bool(<<"persistent">>, Config) of
 	true when RoomJID /= error ->
-	    mod_muc:store_room(ejabberd_config:get_myname(), RoomJID#jid.lserver,
+	    mod_muc:store_room(find_serverhost(RoomJID#jid.lserver), RoomJID#jid.lserver,
 			       RoomJID#jid.luser, RoomCfg);
 	_ ->
 	    ok
@@ -521,6 +521,19 @@ el_to_offline_msg(LUser, LServer, #xmlel{attrs = Attrs} = El) ->
 	  _:{xmpp_codec, _} ->
 	    []
     end.
+
+find_serverhost(Host) ->
+    [ServerHost] =
+	lists:filter(
+	  fun(ServerHost) ->
+		  case gen_mod:is_loaded(ServerHost, mod_muc) of
+		      true ->
+			  Host == gen_mod:get_module_opt_host(ServerHost, mod_muc, <<"conference.@HOST@">>);
+		      false ->
+			  false
+		  end
+	  end, ejabberd_config:get_myhosts()),
+    ServerHost.
 
 deserialize(L) ->
     deserialize(L, #xmlel{}, []).
