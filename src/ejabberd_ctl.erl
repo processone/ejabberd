@@ -190,6 +190,9 @@ process(["restart"], _Version) ->
     init:restart(),
     ?STATUS_SUCCESS;
 
+%% TODO: Mnesia operations should not be hardcoded in ejabberd_ctl module.
+%% For now, I leave them there to avoid breaking those commands for people that
+%% may be using it (as format of response is going to change).
 process(["mnesia"], _Version) ->
     print("~p~n", [mnesia:system_info(all)]),
     ?STATUS_SUCCESS;

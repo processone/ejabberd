@@ -50,6 +50,7 @@
 	 set_master/1,
 	 backup_mnesia/1, restore_mnesia/1,
 	 dump_mnesia/1, dump_table/2, load_mnesia/1,
+	 mnesia_info/0, mnesia_table_info/1,
 	 install_fallback_mnesia/1,
 	 dump_to_textfile/1, dump_to_textfile/2,
 	 mnesia_change_nodename/4,
@@ -357,6 +358,16 @@ get_commands_spec() ->
 			args_desc = ["Full path to the text file"],
 			args_example = ["/var/lib/ejabberd/database.txt"],
 			args = [{file, string}], result = {res, restuple}},
+     #ejabberd_commands{name = mnesia_info, tags = [mnesia],
+			desc = "Dump info on global Mnesia state",
+			module = ?MODULE, function = mnesia_info,
+			args = [], result = {res, string}},
+     #ejabberd_commands{name = mnesia_table_info, tags = [mnesia],
+			desc = "Dump info on Mnesia table state",
+			module = ?MODULE, function = mnesia_table_info,
+			args_desc = ["Mnesia table name"],
+			args_example = ["roster"],
+			args = [{table, string}], result = {res, string}},
      #ejabberd_commands{name = install_fallback, tags = [mnesia],
 			desc = "Install the database from a fallback file",
 			module = ?MODULE, function = install_fallback_mnesia,
@@ -715,6 +726,13 @@ load_mnesia(Path) ->
 				   [filename:absname(Path), node(), Reason]),
 	    {cannot_load, String}
     end.
+
+mnesia_info() ->
+    lists:flatten(io_lib:format("~p", [mnesia:system_info(all)])).
+
+mnesia_table_info(Table) ->
+    ATable = list_to_atom(Table),
+    lists:flatten(io_lib:format("~p", [mnesia:table_info(ATable, all)])).
 
 install_fallback_mnesia(Path) ->
     case mnesia:install_fallback(Path) of
