@@ -49,8 +49,8 @@ defmodule Ejabberd.Config do
   """
   def get_ejabberd_opts do
     get_general_opts()
-    |> Dict.put(:modules, get_modules_parsed_in_order())
-    |> Dict.put(:listeners, get_listeners_parsed_in_order())
+    |> Map.put(:modules, get_modules_parsed_in_order())
+    |> Map.put(:listeners, get_listeners_parsed_in_order())
     |> Ejabberd.Config.OptsFormatter.format_opts_for_ejabberd
   end
 
