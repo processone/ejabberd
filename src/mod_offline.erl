@@ -405,31 +405,38 @@ need_to_store(_LServer, #message{type = error}) -> false;
 need_to_store(LServer, #message{type = Type} = Packet) ->
     case xmpp:has_subtag(Packet, #offline{}) of
 	false ->
-	    case check_store_hint(Packet) of
-		store ->
-		    true;
-		no_store ->
-		    false;
-		none ->
-		    Store = case Type of
-				groupchat ->
-				    gen_mod:get_module_opt(
-				      LServer, ?MODULE, store_groupchat);
-				headline ->
-				    false;
-				_ ->
-				    true
-			    end,
-		    case {Store, gen_mod:get_module_opt(
-				   LServer, ?MODULE, store_empty_body)} of
-			{false, _} ->
-			    false;
-			{_, true} ->
+	    case misc:unwrap_mucsub_message(Packet) of
+		#message{type = groupchat} = Msg ->
+		    need_to_store(LServer, Msg#message{type = chat});
+		#message{} = Msg ->
+		    need_to_store(LServer, Msg);
+		_ ->
+		    case check_store_hint(Packet) of
+			store ->
 			    true;
-			{_, false} ->
-			    Packet#message.body /= [];
-			{_, unless_chat_state} ->
-			    not misc:is_standalone_chat_state(Packet)
+			no_store ->
+			    false;
+			none ->
+			    Store = case Type of
+					groupchat ->
+					    gen_mod:get_module_opt(
+						LServer, ?MODULE, store_groupchat);
+					headline ->
+					    false;
+					_ ->
+					    true
+				    end,
+			    case {Store, gen_mod:get_module_opt(
+				LServer, ?MODULE, store_empty_body)} of
+				{false, _} ->
+				    false;
+				{_, true} ->
+				    true;
+				{_, false} ->
+				    Packet#message.body /= [];
+				{_, unless_chat_state} ->
+				    not misc:is_standalone_chat_state(Packet)
+			    end
 		    end
 	    end;
 	true ->
