@@ -27,7 +27,8 @@
 -compile(export_all).
 -import(suite, [send/2, disconnect/1, my_jid/1, send_recv/2, recv_message/1,
 		get_features/1, recv/1, get_event/1, server_jid/1,
-		wait_for_master/1, wait_for_slave/1]).
+		wait_for_master/1, wait_for_slave/1,
+		connect/1, open_session/1, bind/1, auth/1]).
 -include("suite.hrl").
 
 %%%===================================================================
@@ -147,7 +148,9 @@ master_slave_cases(DB) ->
       master_slave_test(send_all)] ++
 	case DB of
 	    riak -> [];
-	    _ -> [master_slave_test(from_mam)]
+	    _ -> [
+		master_slave_test(from_mam),
+		master_slave_test(mucsub_mam)]
 	end
       }.
 
@@ -193,6 +196,80 @@ from_mam_slave(Config) ->
     gen_mod:update_module_opts(Server, mod_offline, [{use_mam_for_storage, false}]),
     C4 = lists:keydelete(mam_enabled, 1, C3),
     mam_tests:clean(C4).
+
+mucsub_mam_master(Config) ->
+    Room = suite:muc_room_jid(Config),
+    Peer = ?config(peer, Config),
+    wait_for_slave(Config),
+    ct:comment("Joining muc room"),
+    ok = muc_tests:join_new(Config),
+
+    ct:comment("Enabling mam in room"),
+    CfgOpts = muc_tests:get_config(Config),
+    %% Find the MAM field in the config
+    ?match(true, proplists:is_defined(mam, CfgOpts)),
+    ?match(true, proplists:is_defined(allow_subscription, CfgOpts)),
+    %% Enable MAM
+    [104] = muc_tests:set_config(Config, [{mam, true}, {allow_subscription, true}]),
+
+    ct:comment("Subscribing peer to room"),
+    ?send_recv(#iq{to = Room, type = set, sub_els = [
+	#muc_subscribe{jid = Peer, nick = <<"peer">>,
+		       events = [?NS_MUCSUB_NODES_MESSAGES]}
+    ]}, #iq{type = result}),
+
+    ?match(#message{type = groupchat},
+	   send_recv(Config, #message{type = groupchat, to = Room, body = xmpp:mk_text(<<"1">>)})),
+    ?match(#message{type = groupchat},
+	   send_recv(Config, #message{type = groupchat, to = Room, body = xmpp:mk_text(<<"2">>),
+				      sub_els = [#hint{type = 'no-store'}]})),
+    ?match(#message{type = groupchat},
+	   send_recv(Config, #message{type = groupchat, to = Room, body = xmpp:mk_text(<<"3">>)})),
+
+    ct:comment("Cleaning up"),
+    suite:put_event(Config, ready),
+    ready = get_event(Config),
+    muc_tests:leave(Config),
+    mam_tests:clean(clean(disconnect(Config))).
+
+mucsub_mam_slave(Config) ->
+    Server = ?config(server, Config),
+    gen_mod:update_module_opts(Server, mod_offline, [{use_mam_for_storage, true}]),
+    gen_mod:update_module_opts(Server, mod_mam, [{user_mucsub_from_muc_archive, true}]),
+
+    Room = suite:muc_room_jid(Config),
+    MyJID = my_jid(Config),
+    MyJIDBare = jid:remove_resource(MyJID),
+    ok = mam_tests:set_default(Config, always),
+    #presence{} = send_recv(Config, #presence{}),
+    send(Config, #presence{type = unavailable}),
+
+    wait_for_master(Config),
+    ready = get_event(Config),
+    ct:sleep(100),
+
+    ct:comment("Receiving offline messages"),
+
+    ?match(#presence{}, suite:send_recv(Config, #presence{})),
+
+    lists:foreach(
+	fun(N) ->
+	    Body = xmpp:mk_text(integer_to_binary(N)),
+	    Msg = ?match(#message{from = Room, type = normal} = Msg, recv_message(Config), Msg),
+	    PS = ?match(#ps_event{items = #ps_items{node = ?NS_MUCSUB_NODES_MESSAGES, items = [
+		#ps_item{} = PS
+	    ]}}, xmpp:get_subtag(Msg, #ps_event{}), PS),
+	    ?match(#message{type = groupchat, body = Body}, xmpp:get_subtag(PS, #message{}))
+	end, [1, 3]),
+
+    % Unsubscribe yourself
+    ?send_recv(#iq{to = Room, type = set, sub_els = [
+	#muc_unsubscribe{}
+    ]}, #iq{type = result}),
+    suite:put_event(Config, ready),
+    mam_tests:clean(clean(disconnect(Config))),
+    gen_mod:update_module_opts(Server, mod_offline, [{use_mam_for_storage, false}]),
+    gen_mod:update_module_opts(Server, mod_mam, [{user_mucsub_from_muc_archive, false}]).
 
 send_all_master(Config) ->
     wait_for_slave(Config),
