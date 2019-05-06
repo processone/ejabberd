@@ -250,7 +250,7 @@ reload(Host, NewOpts, OldOpts) ->
 	    ok
     end.
 
-depends(_Host, Opts) ->
+depends(_Host, _Opts) ->
     [].
 
 -spec register_iq_handlers(binary()) -> ok.
