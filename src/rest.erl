@@ -100,6 +100,7 @@ request(Server, Method, Path, Params, Mime, Data) ->
                   {URI, Hdrs}
           end,
     Begin = os:timestamp(),
+    ejabberd_hooks:run(backend_api_call, Server, [Server, Method, Path]),
     Result = try httpc:request(Method, Req, HttpOpts, [{body_format, binary}]) of
         {ok, {{_, Code, _}, RetHdrs, Body}} ->
             try decode_json(Body) of
@@ -118,7 +119,6 @@ request(Server, Method, Path, Params, Mime, Data) ->
         exit:Reason ->
             {error, {http_error, {error, Reason}}}
     end,
-    ejabberd_hooks:run(backend_api_call, Server, [Server, Method, Path]),
     case Result of
         {error, {http_error, {error, timeout}}} ->
             ejabberd_hooks:run(backend_api_timeout, Server,
