@@ -195,7 +195,7 @@ store_offline_msg(#offline_msg{us = {User, Server}, packet = Pkt} = Msg) ->
 		infinity ->
 		    Mod:store_message(Msg);
 		Limit ->
-		    Num = count_offline_messages(User, Server),
+		    Num = count_messages_in_db(User, Server),
 		    if Num < Limit ->
 			Mod:store_message(Msg);
 			true ->
@@ -1053,9 +1053,13 @@ count_offline_messages(User, Server) ->
 	    Res = read_db_messages(LUser, LServer),
 	    count_mam_messages(LUser, LServer, Res);
 	_ ->
-	    Mod = gen_mod:db_mod(LServer, ?MODULE),
-	    Mod:count_messages(LUser, LServer)
+	    count_messages_in_db(LUser, LServer)
     end.
+
+-spec count_messages_in_db(binary(), binary()) -> non_neg_integer().
+count_messages_in_db(LUser, LServer) ->
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    Mod:count_messages(LUser, LServer).
 
 -spec add_delay_info(message(), binary(),
 		     undefined | erlang:timestamp()) -> message().
