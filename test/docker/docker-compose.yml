@@ -1,0 +1,48 @@
+version: '3.7'
+
+services:
+  mysql:
+    image: mysql:latest
+    container_name: ejabberd-mysql
+    volumes:
+      - ./db/mysql/data:/var/lib/mysql
+      - ./db/mysql/initdb:/docker-entrypoint-initdb.d:ro
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ejabberd_test
+      MYSQL_USER: ejabberd_test
+      MYSQL_PASSWORD: ejabberd_test
+
+  postgres:
+    image: postgres:latest
+    container_name: ejabberd-postgres
+    volumes:
+      - ./db/postgres/data:/var/lib/postgresql/data
+      - ./db/postgres/initdb:/docker-entrypoint-initdb.d:ro
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: ejabberd_test
+      POSTGRES_USER: ejabberd_test
+      POSTGRES_DB: ejabberd_test
+
+  redis:
+    image: redis:latest
+    container_name: ejabberd-redis
+    ports:
+      - 6379:6379
+
+  riak:
+    image: ejabberd/riak:latest
+    container_name: ejabberd-riak
+    ports:
+      - 8087:8087
+      - 8098:8098
+    volumes:
+      - ./db/riak/data:/var/lib/riak
+    environment:
+      WAIT_FOR_ERLANG: 60
