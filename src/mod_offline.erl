@@ -195,7 +195,7 @@ store_offline_msg(#offline_msg{us = {User, Server}, packet = Pkt} = Msg) ->
 		infinity ->
 		    Mod:store_message(Msg);
 		Limit ->
-		    Num = count_offline_messages(User, Server),
+		    Num = count_messages_in_db(User, Server),
 		    if Num < Limit ->
 			Mod:store_message(Msg);
 			true ->
@@ -405,31 +405,38 @@ need_to_store(_LServer, #message{type = error}) -> false;
 need_to_store(LServer, #message{type = Type} = Packet) ->
     case xmpp:has_subtag(Packet, #offline{}) of
 	false ->
-	    case check_store_hint(Packet) of
-		store ->
-		    true;
-		no_store ->
-		    false;
-		none ->
-		    Store = case Type of
-				groupchat ->
-				    gen_mod:get_module_opt(
-				      LServer, ?MODULE, store_groupchat);
-				headline ->
-				    false;
-				_ ->
-				    true
-			    end,
-		    case {Store, gen_mod:get_module_opt(
-				   LServer, ?MODULE, store_empty_body)} of
-			{false, _} ->
-			    false;
-			{_, true} ->
+	    case misc:unwrap_mucsub_message(Packet) of
+		#message{type = groupchat} = Msg ->
+		    need_to_store(LServer, Msg#message{type = chat});
+		#message{} = Msg ->
+		    need_to_store(LServer, Msg);
+		_ ->
+		    case check_store_hint(Packet) of
+			store ->
 			    true;
-			{_, false} ->
-			    Packet#message.body /= [];
-			{_, unless_chat_state} ->
-			    not misc:is_standalone_chat_state(Packet)
+			no_store ->
+			    false;
+			none ->
+			    Store = case Type of
+					groupchat ->
+					    gen_mod:get_module_opt(
+						LServer, ?MODULE, store_groupchat);
+					headline ->
+					    false;
+					_ ->
+					    true
+				    end,
+			    case {Store, gen_mod:get_module_opt(
+				LServer, ?MODULE, store_empty_body)} of
+				{false, _} ->
+				    false;
+				{_, true} ->
+				    true;
+				{_, false} ->
+				    Packet#message.body /= [];
+				{_, unless_chat_state} ->
+				    not misc:is_standalone_chat_state(Packet)
+			    end
 		    end
 	    end;
 	true ->
@@ -1046,9 +1053,13 @@ count_offline_messages(User, Server) ->
 	    Res = read_db_messages(LUser, LServer),
 	    count_mam_messages(LUser, LServer, Res);
 	_ ->
-	    Mod = gen_mod:db_mod(LServer, ?MODULE),
-	    Mod:count_messages(LUser, LServer)
+	    count_messages_in_db(LUser, LServer)
     end.
+
+-spec count_messages_in_db(binary(), binary()) -> non_neg_integer().
+count_messages_in_db(LUser, LServer) ->
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    Mod:count_messages(LUser, LServer).
 
 -spec add_delay_info(message(), binary(),
 		     undefined | erlang:timestamp()) -> message().

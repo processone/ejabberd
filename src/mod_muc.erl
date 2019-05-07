@@ -758,6 +758,10 @@ get_subscribed_rooms(Host, User) ->
     ServerHost = ejabberd_router:host_of_route(Host),
     get_subscribed_rooms(ServerHost, Host, User).
 
+-record(subscriber, {jid :: jid(),
+		     nick = <<>> :: binary(),
+		     nodes = [] :: [binary()]}).
+
 -spec get_subscribed_rooms(binary(), binary(), jid()) ->
 			   {ok, [{jid(), [binary()]}]} | {error, any()}.
 get_subscribed_rooms(ServerHost, Host, From) ->
@@ -768,7 +772,15 @@ get_subscribed_rooms(ServerHost, Host, From) ->
 	false ->
 	    Rooms = get_online_rooms(ServerHost, Host),
 	    {ok, lists:flatmap(
-		   fun({Name, _, Pid}) ->
+		   fun({Name, _, Pid}) when Pid == self() ->
+		       USR = jid:split(BareFrom),
+		       case erlang:get(muc_subscribers) of
+			   #{USR := #subscriber{nodes = Nodes}} ->
+			       [{jid:make(Name, Host), Nodes}];
+			   _ ->
+			       []
+		       end;
+		       ({Name, _, Pid}) ->
 			   case p1_fsm:sync_send_all_state_event(
 				  Pid, {is_subscribed, BareFrom}) of
 			       {true, Nodes} ->

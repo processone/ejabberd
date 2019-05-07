@@ -538,6 +538,7 @@ handle_sync_event({change_config, Config}, _From,
     {reply, {ok, NSD#state.config}, StateName, NSD};
 handle_sync_event({change_state, NewStateData}, _From,
 		  StateName, _StateData) ->
+    erlang:put(muc_subscribers, NewStateData#state.subscribers),
     {reply, {ok, NewStateData}, StateName, NewStateData};
 handle_sync_event({process_item_change, Item, UJID}, _From, StateName, StateData) ->
     case process_item_change(Item, StateData, UJID) of
@@ -4373,6 +4374,7 @@ store_room(StateData) ->
     store_room(StateData, []).
 store_room(StateData, ChangesHints) ->
     % Let store persistent rooms or on those backends that have get_subscribed_rooms
+    erlang:put(muc_subscribers, StateData#state.subscribers),
     ShouldStore = case (StateData#state.config)#config.persistent of
 		      true ->
 			  true;
