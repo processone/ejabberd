@@ -114,10 +114,16 @@ anonymous_user_exist(User, Server) ->
 %% Register connection
 -spec register_connection(ejabberd_sm:sid(), jid(), ejabberd_sm:info()) -> ok.
 register_connection(_SID,
-		    #jid{luser = LUser, lserver = LServer}, Info) ->
+		    #jid{luser = LUser, lserver = LServer, lresource = LResource}, Info) ->
     case proplists:get_value(auth_module, Info) of
 	?MODULE ->
-	    ejabberd_hooks:run(register_user, LServer, [LUser, LServer]);
+	    % Register user only if we are first resource
+	    case ejabberd_sm:get_user_resources(LUser, LServer) of
+		[LResource] ->
+		    ejabberd_hooks:run(register_user, LServer, [LUser, LServer]);
+		_ ->
+		    ok
+	    end;
 	_ ->
 	    ok
     end.
@@ -128,7 +134,13 @@ unregister_connection(_SID,
 		      #jid{luser = LUser, lserver = LServer}, Info) ->
     case proplists:get_value(auth_module, Info) of
 	?MODULE ->
-	    ejabberd_hooks:run(remove_user, LServer, [LUser, LServer]);
+	    % Remove user data only if there is no more resources around
+	    case ejabberd_sm:get_user_resources(LUser, LServer) of
+		[] ->
+		    ejabberd_hooks:run(remove_user, LServer, [LUser, LServer]);
+		_ ->
+		    ok
+	    end;
 	_ ->
 	    ok
     end.
