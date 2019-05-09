@@ -203,6 +203,9 @@ ws_loop(FrameInfo, Socket, WsHandleLoopPid, SocketMode) ->
         {tcp_closed, _Socket} ->
             ?DEBUG("tcp connection was closed, exit", []),
             websocket_close(Socket, WsHandleLoopPid, SocketMode, 0);
+	{tcp_error, Socket, Reason} ->
+	    ?DEBUG("tcp connection error: ~s", [inet:format_error(Reason)]),
+	    websocket_close(Socket, WsHandleLoopPid, SocketMode, 0);
         {'DOWN', Ref, process, WsHandleLoopPid, Reason} ->
             Code = case Reason of
                        normal ->
