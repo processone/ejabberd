@@ -512,7 +512,7 @@ handle_event({set_affiliations, Affiliations},
 handle_event(_Event, StateName, StateData) ->
     {next_state, StateName, StateData}.
 
-handle_sync_event({get_disco_item, Filter, JID, Lang}, _From, StateName, StateData) ->
+handle_sync_event({get_disco_item, Filter, JID, Lang, Time}, _From, StateName, StateData) ->
     Len = maps:size(StateData#state.nicks),
     Reply = case (Filter == all) or (Filter == Len) or ((Filter /= 0) and (Len /= 0)) of
 	true ->
@@ -521,10 +521,17 @@ handle_sync_event({get_disco_item, Filter, JID, Lang}, _From, StateName, StateDa
 	false ->
 	    false
     end,
-    {reply, Reply, StateName, StateData};
-%% This clause is only for backwards compatibility
+    CurrentTime = erlang:monotonic_time(millisecond),
+    if CurrentTime < Time ->
+	    {reply, Reply, StateName, StateData};
+       true ->
+	    {next_state, StateName, StateData}
+    end;
+%% These two clauses are only for backward compatibility with nodes running old code
 handle_sync_event({get_disco_item, JID, Lang}, From, StateName, StateData) ->
     handle_sync_event({get_disco_item, any, JID, Lang}, From, StateName, StateData);
+handle_sync_event({get_disco_item, Filter, JID, Lang}, From, StateName, StateData) ->
+    handle_sync_event({get_disco_item, Filter, JID, Lang, infinity}, From, StateName, StateData);
 handle_sync_event(get_config, _From, StateName,
 		  StateData) ->
     {reply, {ok, StateData#state.config}, StateName,
