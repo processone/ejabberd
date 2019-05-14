@@ -324,10 +324,10 @@ wait_for_session(#body{attrs = Attrs} = Req, From,
     NewKey = get_attr(newkey, Attrs),
     Type = get_attr(type, Attrs),
     Requests = Hold + 1,
-    {PollTime, Polling} = if Wait == 0, Hold == 0 ->
-				 {erlang:timestamp(), [{polling, ?DEFAULT_POLLING}]};
-			     true -> {undefined, []}
-			  end,
+    PollTime = if
+		   Wait == 0, Hold == 0 -> erlang:timestamp();
+		   true -> undefined
+	       end,
     MaxPause = gen_mod:get_module_opt(State#state.host,
 				      mod_bosh, max_pause),
     Resp = #body{attrs =
@@ -337,8 +337,7 @@ wait_for_session(#body{attrs = Attrs} = Req, From,
 		      {hold, Hold}, {'xmpp:restartlogic', true},
 		      {requests, Requests}, {secure, true},
 		      {maxpause, MaxPause}, {'xmlns:xmpp', ?NS_BOSH},
-		      {'xmlns:stream', ?NS_STREAM}, {from, State#state.host}
-		      | Polling]},
+		      {'xmlns:stream', ?NS_STREAM}, {from, State#state.host}]},
     {ShaperState, _} =
 	ejabberd_shaper:update(State#state.shaper_state, Req#body.size),
     State1 = State#state{wait_timeout = Wait,
