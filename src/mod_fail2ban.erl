@@ -1,7 +1,7 @@
 %%%-------------------------------------------------------------------
 %%% File    : mod_fail2ban.erl
 %%% Author  : Evgeny Khramtsov <ekhramtsov@process-one.net>
-%%% Purpose : 
+%%% Purpose :
 %%% Created : 15 Aug 2014 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
@@ -51,9 +51,9 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
--spec c2s_auth_result(ejabberd_c2s:state(), boolean(), binary())
+-spec c2s_auth_result(ejabberd_c2s:state(), true | {false, binary()}, binary())
       -> ejabberd_c2s:state() | {stop, ejabberd_c2s:state()}.
-c2s_auth_result(#{ip := {Addr, _}, lserver := LServer} = State, false, _User) ->
+c2s_auth_result(#{ip := {Addr, _}, lserver := LServer} = State, {false, _}, _User) ->
     case is_whitelisted(LServer, Addr) of
 	true ->
 	    State;

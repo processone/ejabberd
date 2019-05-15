@@ -42,7 +42,7 @@
 	 handle_auth_success/4, handle_auth_failure/4, handle_send/3,
 	 handle_recv/3, handle_cdata/2, handle_unbinded_packet/2]).
 %% Hooks
--export([handle_unexpected_cast/2,
+-export([handle_unexpected_cast/2, process_auth_result/3,
 	 reject_unauthenticated_packet/2, process_closed/2,
 	 process_terminated/2, process_info/2]).
 %% API
@@ -159,6 +159,8 @@ host_up(Host) ->
 		       reject_unauthenticated_packet, 100),
     ejabberd_hooks:add(c2s_handle_info, Host, ?MODULE,
 		       process_info, 100),
+    ejabberd_hooks:add(c2s_auth_result, Host, ?MODULE,
+		       process_auth_result, 100),
     ejabberd_hooks:add(c2s_handle_cast, Host, ?MODULE,
 		       handle_unexpected_cast, 100).
 
@@ -171,6 +173,8 @@ host_down(Host) ->
 			  reject_unauthenticated_packet, 100),
     ejabberd_hooks:delete(c2s_handle_info, Host, ?MODULE,
 			  process_info, 100),
+    ejabberd_hooks:delete(c2s_auth_result, Host, ?MODULE,
+			  process_auth_result, 100),
     ejabberd_hooks:delete(c2s_handle_cast, Host, ?MODULE,
 			  handle_unexpected_cast, 100).
 
@@ -256,6 +260,25 @@ handle_unexpected_cast(State, Msg) ->
 reject_unauthenticated_packet(State, _Pkt) ->
     Err = xmpp:serr_not_authorized(),
     send(State, Err).
+
+process_auth_result(#{sasl_mech := Mech, auth_module := AuthModule,
+		      socket := Socket, ip := IP, lserver := LServer} = State,
+		    true, User) ->
+    ?INFO_MSG("(~s) Accepted c2s ~s authentication for ~s@~s by ~s backend from ~s",
+              [xmpp_socket:pp(Socket), Mech, User, LServer,
+               ejabberd_auth:backend_type(AuthModule),
+               ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
+    State;
+process_auth_result(#{sasl_mech := Mech,
+		      socket := Socket, ip := IP, lserver := LServer} = State,
+		    {false, Reason}, User) ->
+    ?WARNING_MSG("(~s) Failed c2s ~s authentication ~sfrom ~s: ~s",
+                 [xmpp_socket:pp(Socket), Mech,
+                  if User /= <<"">> -> ["for ", User, "@", LServer, " "];
+                     true -> ""
+                  end,
+                  ejabberd_config:may_hide_data(misc:ip_to_list(IP)), Reason]),
+    State.
 
 process_closed(State, Reason) ->
     stop(State#{stop_reason => Reason}).
@@ -436,26 +459,14 @@ handle_stream_end(Reason, #{lserver := LServer} = State) ->
     State1 = State#{stop_reason => Reason},
     ejabberd_hooks:run_fold(c2s_closed, LServer, State1, [Reason]).
 
-handle_auth_success(User, Mech, AuthModule,
-		    #{socket := Socket,
-		      ip := IP, lserver := LServer} = State) ->
-    ?INFO_MSG("(~s) Accepted c2s ~s authentication for ~s@~s by ~s backend from ~s",
-	      [xmpp_socket:pp(Socket), Mech, User, LServer,
-	       ejabberd_auth:backend_type(AuthModule),
-	       ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
+handle_auth_success(User, _Mech, AuthModule,
+		    #{lserver := LServer} = State) ->
     State1 = State#{auth_module => AuthModule},
     ejabberd_hooks:run_fold(c2s_auth_result, LServer, State1, [true, User]).
 
-handle_auth_failure(User, Mech, Reason,
-		    #{socket := Socket,
-		      ip := IP, lserver := LServer} = State) ->
-    ?WARNING_MSG("(~s) Failed c2s ~s authentication ~sfrom ~s: ~s",
-		 [xmpp_socket:pp(Socket), Mech,
-		  if User /= <<"">> -> ["for ", User, "@", LServer, " "];
-		     true -> ""
-		  end,
-		  ejabberd_config:may_hide_data(misc:ip_to_list(IP)), Reason]),
-    ejabberd_hooks:run_fold(c2s_auth_result, LServer, State, [false, User]).
+handle_auth_failure(User, _Mech, Reason,
+		    #{lserver := LServer} = State) ->
+    ejabberd_hooks:run_fold(c2s_auth_result, LServer, State, [{false, Reason}, User]).
 
 handle_unbinded_packet(Pkt, #{lserver := LServer} = State) ->
     ejabberd_hooks:run_fold(c2s_unbinded_packet, LServer, State, [Pkt]).
