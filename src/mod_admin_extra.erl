@@ -57,7 +57,7 @@
 
 	 % Roster
 	 add_rosteritem/7, delete_rosteritem/4,
-	 process_rosteritems/5, get_roster/2, push_roster/3,
+	 get_roster/2, push_roster/3,
 	 push_roster_all/1, push_alltoall/2,
 	 push_roster_item/5, build_roster_item/3,
 
@@ -506,7 +506,7 @@ get_commands_spec() ->
 			args_desc = ["User name", "Server name", "Contact user name", "Contact server name"],
 			result = {res, rescode}},
      #ejabberd_commands{name = process_rosteritems, tags = [roster],
-			desc = "List/delete rosteritems that match filter (only Mnesia)",
+			desc = "List/delete rosteritems that match filter",
 			longdesc = "Explanation of each argument:\n"
 			" - action: what to do with each rosteritem that "
 			"matches all the filtering options\n"
@@ -514,6 +514,8 @@ get_commands_spec() ->
 			" - asks: pending subscription\n"
 			" - users: the JIDs of the local user\n"
 			" - contacts: the JIDs of the contact in the roster\n"
+			"\n"
+			" *** Mnesia: \n"
 			"\n"
 			"Allowed values in the arguments:\n"
 			"  ACTION = list | delete\n"
@@ -532,8 +534,26 @@ get_commands_spec() ->
 			"'example.org' and that the contact JID is either a "
 			"bare server name (without user part) or that has a "
 			"user part and the server part contains the word 'icq'"
-			":\n  list none:from:to any *@example.org *:*@*icq*",
-			module = ?MODULE, function = process_rosteritems,
+			":\n  list none:from:to any *@example.org *:*@*icq*"
+			"\n\n"
+			" *** SQL:\n"
+			"\n"
+			"Allowed values in the arguments:\n"
+			"  ACTION = list | delete\n"
+			"  SUBS = any | none | from | to | both\n"
+			"  ASKS = any | none | out | in\n"
+			"  USERS = JID\n"
+			"  CONTACTS = JID\n"
+			"  JID = characters valid in a JID, and can use the "
+			"globs: _ and %\n"
+			"\n"
+			"This example will list roster items with subscription "
+			"'to' that have any ask property, of "
+			"local users which JID is in the virtual host "
+			"'example.org' and that the contact JID's "
+			"server part contains the word 'icq'"
+			":\n  list to any %@example.org %@%icq%",
+			module = mod_roster, function = process_rosteritems,
 			args = [{action, string}, {subs, string},
 				{asks, string}, {users, string},
 				{contacts, string}],
@@ -1535,163 +1555,19 @@ stats(Name, Host) ->
     end.
 
 
-
-%%-----------------------------
-%% Purge roster items
-%%-----------------------------
-
-process_rosteritems(ActionS, SubsS, AsksS, UsersS, ContactsS) ->
-    Action = case ActionS of
-		 "list" -> list;
-		 "delete" -> delete
-	     end,
-
-    Subs = lists:foldl(
-	     fun(any, _) -> [none, from, to, both];
-		(Sub, Subs) -> [Sub | Subs]
-	     end,
-	     [],
-	     [list_to_atom(S) || S <- string:tokens(SubsS, ":")]
-	    ),
-
-    Asks = lists:foldl(
-	     fun(any, _) -> [none, out, in];
-		(Ask, Asks) -> [Ask | Asks]
-	     end,
-	     [],
-	     [list_to_atom(S) || S <- string:tokens(AsksS, ":")]
-	    ),
-
-    Users = lists:foldl(
-	      fun("any", _) -> ["*", "*@*"];
-		 (U, Us) -> [U | Us]
-	      end,
-	      [],
-	      [S || S <- string:tokens(UsersS, ":")]
-	     ),
-
-    Contacts = lists:foldl(
-		 fun("any", _) -> ["*", "*@*"];
-		    (U, Us) -> [U | Us]
-		 end,
-		 [],
-		 [S || S <- string:tokens(ContactsS, ":")]
-		),
-
-    rosteritem_purge({Action, Subs, Asks, Users, Contacts}).
-
-%% @spec ({Action::atom(), Subs::[atom()], Asks::[atom()], User::string(), Contact::string()}) -> {atomic, ok}
-rosteritem_purge(Options) ->
-    Num_rosteritems = mnesia:table_info(roster, size),
-    io:format("There are ~p roster items in total.~n", [Num_rosteritems]),
-    Key = mnesia:dirty_first(roster),
-    rip(Key, Options, {0, Num_rosteritems, 0, 0}, []).
-
-rip('$end_of_table', _Options, Counters, Res) ->
-    print_progress_line(Counters),
-    Res;
-rip(Key, Options, {Pr, NT, NV, ND}, Res) ->
-    Key_next = mnesia:dirty_next(roster, Key),
-    {Action, _, _, _, _} = Options,
-    {ND2, Res2} = case decide_rip(Key, Options) of
-	      true ->
-		  Jids = apply_action(Action, Key),
-		  {ND+1, [Jids | Res]};
-	      false ->
-		  {ND, Res}
-	  end,
-    NV2 = NV+1,
-    Pr2 = print_progress_line({Pr, NT, NV2, ND2}),
-    rip(Key_next, Options, {Pr2, NT, NV2, ND2}, Res2).
-
-apply_action(list, Key) ->
-    {User, Server, JID} = Key,
-    {RUser, RServer, _} = JID,
-    Jid1string = <<User/binary, "@", Server/binary>>,
-    Jid2string = <<RUser/binary, "@", RServer/binary>>,
-    io:format("Matches: ~s ~s~n", [Jid1string, Jid2string]),
-    {Jid1string, Jid2string};
-apply_action(delete, Key) ->
-    R = apply_action(list, Key),
-    mnesia:dirty_delete(roster, Key),
-    R.
-
-print_progress_line({_Pr, 0, _NV, _ND}) ->
-    ok;
-print_progress_line({Pr, NT, NV, ND}) ->
-    Pr2 = trunc((NV/NT)*100),
-    case Pr == Pr2 of
-	true ->
-	    ok;
-	false ->
-	    io:format("Progress ~p% - visited ~p - deleted ~p~n", [Pr2, NV, ND])
-    end,
-    Pr2.
-
-decide_rip(Key, {_Action, Subs, Asks, User, Contact}) ->
-    case catch mnesia:dirty_read(roster, Key) of
-	[RI] ->
-	    lists:member(RI#roster.subscription, Subs)
-		andalso lists:member(RI#roster.ask, Asks)
-		andalso decide_rip_jid(RI#roster.us, User)
-		andalso decide_rip_jid(RI#roster.jid, Contact);
-	_ ->
-	    false
-    end.
-
-%% Returns true if the server of the JID is included in the servers
-decide_rip_jid({UName, UServer, _UResource}, Match_list) ->
-    decide_rip_jid({UName, UServer}, Match_list);
-decide_rip_jid({UName, UServer}, Match_list) ->
-    lists:any(
-      fun(Match_string) ->
-	      MJID = jid:decode(list_to_binary(Match_string)),
-	      MName = MJID#jid.luser,
-	      MServer = MJID#jid.lserver,
-	      Is_server = is_glob_match(UServer, MServer),
-	      case MName of
-		  <<>> when UName == <<>> ->
-		      Is_server;
-		  <<>> ->
-		      false;
-		  _ ->
-		      Is_server
-			  andalso is_glob_match(UName, MName)
-	      end
-      end,
-      Match_list).
-
 user_action(User, Server, Fun, OK) ->
     case ejabberd_auth:user_exists(User, Server) of
         true ->
- 	    case catch Fun() of
+            case catch Fun() of
                 OK -> ok;
- 		{error, Error} -> throw(Error);
+                {error, Error} -> throw(Error);
                 Error ->
                     ?ERROR_MSG("Command returned: ~p", [Error]),
- 		    1
- 	    end;
- 	false ->
- 	    throw({not_found, "unknown_user"})
+                    1
+            end;
+        false ->
+            throw({not_found, "unknown_user"})
     end.
-
-%% Copied from ejabberd-2.0.0/src/acl.erl
-is_regexp_match(String, RegExp) ->
-    case ejabberd_regexp:run(String, RegExp) of
-	nomatch ->
-	    false;
-	match ->
-	    true;
-	{error, ErrDesc} ->
-	    io:format(
-	      "Wrong regexp ~p in ACL: ~p",
-	      [RegExp, ErrDesc]),
-	    false
-    end.
-is_glob_match(String, <<"!", Glob/binary>>) ->
-    not is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob));
-is_glob_match(String, Glob) ->
-    is_regexp_match(String, ejabberd_regexp:sh_to_awk(Glob)).
 
 num_prio(Priority) when is_integer(Priority) ->
     Priority;

@@ -33,11 +33,13 @@
 	 get_roster/2, get_roster_item/3, roster_subscribe/4,
 	 read_subscription_and_groups/3, remove_user/2,
 	 update_roster/4, del_roster/3, transaction/2,
+	 process_rosteritems/5,
 	 import/3, export/1, raw_to_record/2]).
 
 -include("mod_roster.hrl").
 -include("ejabberd_sql_pt.hrl").
 -include("logger.hrl").
+-include("jid.hrl").
 
 %%%===================================================================
 %%% API
@@ -375,3 +377,39 @@ format_row_error(User, Server, Why) ->
 	 {ask, Ask} -> ["Malformed 'ask' field with value '", Ask, "'"]
      end,
      " detected for ", User, "@", Server, " in table 'rosterusers'"].
+
+process_rosteritems(ActionS, SubsS, AsksS, UsersS, ContactsS) ->
+    process_rosteritems_sql(ActionS, list_to_atom(SubsS), list_to_atom(AsksS),
+	list_to_binary(UsersS), list_to_binary(ContactsS)).
+
+process_rosteritems_sql(ActionS, Subscription, Ask, SLocalJID, SJID) ->
+    [LUser, LServer] = binary:split(SLocalJID, <<"@">>),
+    SSubscription = case Subscription of
+		      any -> <<"_">>;
+		      both -> <<"B">>;
+		      to -> <<"T">>;
+		      from -> <<"F">>;
+		      none -> <<"N">>
+		    end,
+    SAsk = case Ask of
+	     any -> <<"_">>;
+	     subscribe -> <<"S">>;
+	     unsubscribe -> <<"U">>;
+	     both -> <<"B">>;
+	     out -> <<"O">>;
+	     in -> <<"I">>;
+	     none -> <<"N">>
+	   end,
+    {selected, List} = ejabberd_sql:sql_query(
+      LServer,
+      ?SQL("select @(username)s, @(jid)s from rosterusers "
+           "where username LIKE %(LUser)s"
+	   " and %(LServer)H"
+	   " and jid LIKE %(SJID)s"
+	   " and subscription LIKE %(SSubscription)s"
+	   " and ask LIKE %(SAsk)s")),
+    case ActionS of
+	"delete" -> [mod_roster:del_roster(User, LServer, jid:decode(Contact)) || {User, Contact} <- List];
+	"list" -> ok
+    end,
+    List.

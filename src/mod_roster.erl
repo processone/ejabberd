@@ -50,6 +50,7 @@
 	 webadmin_user/4, get_versioning_feature/2,
 	 roster_versioning_enabled/1, roster_version/2,
 	 mod_opt_type/1, mod_options/1, set_roster/1, del_roster/3,
+	 process_rosteritems/5,
 	 depends/2]).
 
 -include("logger.hrl").
@@ -891,6 +892,11 @@ is_subscribed(From, #jid{luser = LUser, lserver = LServer}) ->
 		      [LUser, LServer, From]),
     (Sub /= none) orelse (Ask == subscribe)
 	orelse (Ask == out) orelse (Ask == both).
+
+process_rosteritems(ActionS, SubsS, AsksS, UsersS, ContactsS) ->
+    LServer = ejabberd_config:get_myname(),
+    Mod = gen_mod:db_mod(LServer, ?MODULE),
+    Mod:process_rosteritems(ActionS, SubsS, AsksS, UsersS, ContactsS).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
