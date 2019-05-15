@@ -12,68 +12,48 @@
 
 main([Dir]) ->
     State =
-	filelib:fold_files(
-	  Dir, ".+\.[eh]rl\$", false,
-	  fun(FileIn, Res) ->
-		  case get_forms(FileIn) of
-		      {ok, Forms} ->
-			  Tree = erl_syntax:form_list(Forms),
-			  Mod = list_to_atom(filename:rootname(filename:basename(FileIn))),
-			  Acc0 = analyze_form(Tree, Res#state{module = Mod, file = FileIn}),
-			  erl_syntax_lib:fold(
-			    fun(Form, Acc) ->
-				    case erl_syntax:type(Form) of
-					application ->
-					    case erl_syntax_lib:analyze_application(Form) of
-						{ejabberd_hooks, {run, N}}
-						  when N == 2; N == 3 ->
-						    analyze_run_hook(Form, Acc);
-						{ejabberd_hooks, {run_fold, N}}
-						  when N == 3; N == 4 ->
-						    analyze_run_fold_hook(Form, Acc);
-						{ejabberd_hooks, {add, N}}
-						  when N == 4; N == 5 ->
-						    analyze_run_fun(Form, Acc);
-						{gen_iq_handler, {add_iq_handler, N}}
-						  when N == 5; N == 6 ->
-						    analyze_iq_handler(Form, Acc);
-						_ ->
-						    Acc
-					    end;
-					attribute ->
-					    case catch erl_syntax_lib:analyze_attribute(Form) of
-						{spec, _} ->
-						    analyze_type_spec(Form, Acc);
-						_ ->
-						    Acc
-					    end;
+	fold_beams(
+	  fun(File0, Tree, Acc0) ->
+		  BareName = filename:rootname(filename:basename(File0)),
+		  Mod = list_to_atom(BareName),
+		  File = BareName ++ ".erl",
+		  Acc1 = Acc0#state{file = File, module = Mod},
+		  erl_syntax_lib:fold(
+		    fun(Form, Acc) ->
+			    case erl_syntax:type(Form) of
+				application ->
+				    case erl_syntax_lib:analyze_application(Form) of
+					{ejabberd_hooks, {run, N}}
+					  when N == 2; N == 3 ->
+					    analyze_run_hook(Form, Acc);
+					{ejabberd_hooks, {run_fold, N}}
+					  when N == 3; N == 4 ->
+					    analyze_run_fold_hook(Form, Acc);
+					{ejabberd_hooks, {add, N}}
+					  when N == 4; N == 5 ->
+					    analyze_run_fun(Form, Acc);
+					{gen_iq_handler, {add_iq_handler, N}}
+					  when N == 5; N == 6 ->
+					    analyze_iq_handler(Form, Acc);
 					_ ->
 					    Acc
-				    end
-			    end, Acc0, Tree);
-		      _Err ->
-			  Res
-		  end
-	  end, #state{}),
+				    end;
+				attribute ->
+				    case catch erl_syntax_lib:analyze_attribute(Form) of
+					{spec, _} ->
+					    analyze_type_spec(Form, Acc);
+					_ ->
+					    Acc
+				    end;
+				_ ->
+				    Acc
+			    end
+		    end, Acc1, Tree)
+	  end, #state{}, Dir),
     report_orphaned_funs(State),
     RunDeps = build_deps(State#state.run_hooks, State#state.hooked_funs),
     RunFoldDeps = build_deps(State#state.run_fold_hooks, State#state.hooked_funs),
     emit_module(RunDeps, RunFoldDeps, State#state.specs, Dir, hooks_type_test).
-
-analyze_form(_Form, State) ->
-    %% case catch erl_syntax_lib:analyze_forms(Form) of
-    %% 	Props when is_list(Props) ->
-    %% 	    M = State#state.module,
-    %% 	    MFAs = lists:foldl(
-    %% 		     fun({F, A}, Acc) ->
-    %% 			     dict:append({M, F}, A, Acc)
-    %% 		     end, State#state.mfas,
-    %% 		     proplists:get_value(functions, Props, [])),
-    %% 	    State#state{mfas = MFAs};
-    %% 	_ ->
-    %% 	    State
-    %% end.
-    State.
 
 analyze_run_hook(Form, State) ->
     [Hook|Tail] = erl_syntax:application_arguments(Form),
@@ -145,7 +125,7 @@ analyze_iq_handler(Form, State) ->
 	    code:ensure_loaded(Mod),
 	    case erlang:function_exported(Mod, Fun, 1) of
 		false ->
-		    log("~s:~p: Error: function ~s:~s/1 is registered "
+		    err("~s:~p: Error: function ~s:~s/1 is registered "
 			"as iq handler, but is not exported~n",
 			[State#state.file, erl_syntax:get_pos(Form),
 			 Mod, Fun]);
@@ -179,7 +159,7 @@ build_deps(Hooks, Hooked) ->
 				    code:ensure_loaded(M),
 				    case erlang:function_exported(M, F, Arity) of
 					false ->
-					    log("~s:~p: Error: function ~s:~s/~p "
+					    err("~s:~p: Error: function ~s:~s/~p "
 						"is hooked on ~s/~p, but is not "
 						"exported~n",
 						[FunFile, FunLineNo, M, F,
@@ -204,7 +184,7 @@ report_orphaned_funs(State) ->
 		fun({M, F, _, {File, Line}}) ->
 			case get_fun_arities(M, F, State) of
 			    [] ->
-				log("~s:~p: Error: function ~s:~s is "
+				err("~s:~p: Error: function ~s:~s is "
 				    "hooked on hook ~s, but is not exported~n",
 				    [File, Line, M, F, Hook]);
 			    Arities ->
@@ -219,7 +199,7 @@ report_orphaned_funs(State) ->
 				       end, Arities) of
 				    false ->
 					Arity = hd(Arities),
-					log("~s:~p: Error: function ~s:~s/~p is hooked"
+					err("~s:~p: Error: function ~s:~s/~p is hooked"
 					    " on non-existent hook ~s/~p~n",
 					    [File, Line, M, F, Arity, Hook, Arity]);
 				    true ->
@@ -277,7 +257,7 @@ emit_module(RunDeps, RunFoldDeps, Specs, Dir, Module) ->
 	file:close(Fd),
 	log("Module written to file ~s~n", [File])
     catch _:{badmatch, {error, Reason}} ->
-	    log("writing to ~s failed: ~s", [File, file:format_error(Reason)])
+	    err("writing to ~s failed: ~s", [File, file:format_error(Reason)])
     end.
 
 emit_run_hooks(Fd, Deps, Specs) ->
@@ -352,41 +332,32 @@ emit_specs(Fd, Funs, Specs) ->
 	      end
       end, lists:keysort(2, Funs)).
 
-get_forms(Path) ->
-    case file:open(Path, [read]) of
-        {ok, Fd} ->
-            parse(Path, Fd, 1, []);
-        Err ->
-            Err
-    end.
+fold_beams(Fun, State, Dir) ->
+    filelib:fold_files(
+      Dir, ".+\.beam\$", false,
+      fun(File, Acc) ->
+	      AbsCode = get_code_from_beam(File),
+	      lists:foldl(
+		fun(Form, Acc1) ->
+			Fun(File, Form, Acc1)
+		end, Acc, AbsCode)
+      end, State).
 
-parse(Path, Fd, Line, Acc) ->
-    {ok, Pos} = file:position(Fd, cur),
-    case epp_dodger:parse_form(Fd, Line) of
-        {ok, Form, NewLine} ->
-	    {ok, NewPos} = file:position(Fd, cur),
-	    {ok, RawForm} = file:pread(Fd, Pos, NewPos - Pos),
-	    file:position(Fd, {bof, NewPos}),
-	    AnnForm = erl_syntax:set_ann(Form, RawForm),
-	    parse(Path, Fd, NewLine, [AnnForm|Acc]);
-        {eof, _} ->
-	    {ok, NewPos} = file:position(Fd, cur),
-	    if NewPos > Pos ->
-		    {ok, RawForm} = file:pread(Fd, Pos, NewPos - Pos),
-		    Form = erl_syntax:text(""),
-		    AnnForm = erl_syntax:set_ann(Form, RawForm),
-		    {ok, lists:reverse([AnnForm|Acc])};
-	       true ->
-		    {ok, lists:reverse(Acc)}
-	    end;
-	{error, {_, _, ErrDesc}, LineNo} = Err ->
-	    log("~s:~p: Error: ~s~n",
-		[Path, LineNo, erl_parse:format_error(ErrDesc)]),
-	    Err
+get_code_from_beam(File) ->
+    try
+	{ok, {_, List}} = beam_lib:chunks(File, [abstract_code]),
+        {_, {raw_abstract_v1, Forms}} = lists:keyfind(abstract_code, 1, List),
+	Forms
+    catch _:{badmatch, _} ->
+	    err("no abstract code found in ~s~n", [File])
     end.
 
 log(Format, Args) ->
     io:format(standard_io, Format, Args).
+
+err(Format, Args) ->
+    io:format(standard_error, "Error: " ++ Format, Args),
+    halt(1).
 
 write(Fd, Format, Args) ->
     file:write(Fd, io_lib:format(Format, Args)).
