@@ -245,8 +245,8 @@ integer_value(Form, State) ->
 	    0
     end.
 
-emit_module(RunDeps, RunFoldDeps, Specs, Dir, Module) ->
-    File = filename:join([Dir, Module]) ++ ".erl",
+emit_module(RunDeps, RunFoldDeps, Specs, _Dir, Module) ->
+    File = filename:join(["src", Module]) ++ ".erl",
     try
 	{ok, Fd} = file:open(File, [write]),
 	write(Fd, "-module(~s).~n~n", [Module]),
