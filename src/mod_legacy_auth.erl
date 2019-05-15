@@ -126,10 +126,11 @@ authenticate(#{stream_id := StreamID, server := Server,
 	    case ejabberd_auth:check_password_with_authmodule(
 		   U, U, JID#jid.lserver, P, D, DGen) of
 		{true, AuthModule} ->
-		    State1 = ejabberd_c2s:handle_auth_success(
-			       U, <<"legacy">>, AuthModule, State),
-		    State2 = State1#{user := U},
-		    open_session(State2, IQ, R);
+		    State1 = State#{sasl_mech => <<"legacy">>},
+		    State2 = ejabberd_c2s:handle_auth_success(
+			       U, <<"legacy">>, AuthModule, State1),
+		    State3 = State2#{user := U},
+		    open_session(State3, IQ, R);
 		_ ->
 		    Err = xmpp:make_error(IQ, xmpp:err_not_authorized()),
 		    process_auth_failure(State, U, Err, 'not-authorized')
@@ -157,4 +158,14 @@ open_session(State, IQ, R) ->
 -spec process_auth_failure(c2s_state(), binary(), iq(), atom()) -> c2s_state().
 process_auth_failure(State, User, StanzaErr, Reason) ->
     State1 = ejabberd_c2s:send(State, StanzaErr),
-    ejabberd_c2s:handle_auth_failure(User, <<"legacy">>, Reason, State1).
+    State2 = State1#{sasl_mech => <<"legacy">>},
+    Text = format_reason(Reason),
+    ejabberd_c2s:handle_auth_failure(User, <<"legacy">>, Text, State2).
+
+-spec format_reason(atom()) -> binary().
+format_reason('not-authorized') ->
+    <<"Invalid username or password">>;
+format_reason('forbidden') ->
+    <<"Access denied by service policy">>;
+format_reason('jid-malformed') ->
+    <<"Malformed XMPP address">>.
