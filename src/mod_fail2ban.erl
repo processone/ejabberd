@@ -53,6 +53,9 @@
 %%%===================================================================
 -spec c2s_auth_result(ejabberd_c2s:state(), true | {false, binary()}, binary())
       -> ejabberd_c2s:state() | {stop, ejabberd_c2s:state()}.
+c2s_auth_result(#{sasl_mech := Mech} = State, {false, _}, _User)
+  when Mech == <<"EXTERNAL">> ->
+    State;
 c2s_auth_result(#{ip := {Addr, _}, lserver := LServer} = State, {false, _}, _User) ->
     case is_whitelisted(LServer, Addr) of
 	true ->
