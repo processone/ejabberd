@@ -46,6 +46,7 @@ script:
   - make
   - make install -s
   - make xref
+  - ./tools/hook_deps.sh ebin
   - sed -i -e 's/ct:pal/ct:log/' test/suite.erl
   - ln -sf ../sql priv/
   - echo "" >> rebar.config
