@@ -1161,7 +1161,7 @@ get_form(_Host, ?NS_ADMINL(<<"get-user-password">>),
 get_form(_Host, ?NS_ADMINL(<<"change-user-password">>),
 	 Lang) ->
     {result,
-     #xdata{title = ?T(Lang, <<"Get User Password">>),
+     #xdata{title = ?T(Lang, <<"Change User Password">>),
 	    type = form,
 	    fields = [?HFIELD(),
 		      #xdata_field{type = 'jid-single',
