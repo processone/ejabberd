@@ -429,17 +429,25 @@ mk_search_form(JID, ServerHost, Lang) ->
     Fs = [mk_tfield(Label, Var, Lang) || {Label, Var} <- SearchFields],
     X = #xdata{type = form,
 	       title = Title,
-	       instructions =
-		   [translate:translate(
-		      Lang,
-		      <<"Fill in the form to search for any matching "
-			"Jabber User (Add * to the end of field "
-			"to match substring)">>)],
+	       instructions = [make_instructions(Mod, Lang)],
 	       fields = Fs},
     #search{instructions =
 		translate:translate(
 		  Lang, <<"You need an x:data capable client to search">>),
 	    xdata = X}.
+
+make_instructions(Mod, Lang) ->
+    Fill = translate:translate(
+	     Lang,
+	     <<"Fill in the form to search for any matching "
+	       "Jabber User">>),
+    Add = translate:translate(
+	    Lang,
+	    <<" (Add * to the end of field to match substring)">>),
+    case Mod of
+	mod_vcard_mnesia -> Fill;
+	_ -> str:concat(Fill, Add)
+    end.
 
 -spec search_result(binary(), jid(), binary(), [xdata_field()]) -> xdata().
 search_result(Lang, JID, ServerHost, XFields) ->
