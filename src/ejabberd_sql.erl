@@ -276,9 +276,23 @@ encode_term(Term) ->
 
 decode_term(Bin) ->
     Str = binary_to_list(<<Bin/binary, ".">>),
-    {ok, Tokens, _} = erl_scan:string(Str),
-    {ok, Term} = erl_parse:parse_term(Tokens),
-    Term.
+    try
+	{ok, Tokens, _} = erl_scan:string(Str),
+	{ok, Term} = erl_parse:parse_term(Tokens),
+	Term
+    catch _:{badmatch, {error, {Line, Mod, Reason}, _}} ->
+	    ?ERROR_MSG("Corrupted Erlang term in SQL database:~n"
+		       "** Scanner error: at line ~B: ~s~n"
+		       "** Term: ~s",
+		       [Line, Mod:format_error(Reason), Bin]),
+	    erlang:error(badarg);
+	  _:{badmatch, {error, {Line, Mod, Reason}}} ->
+	    ?ERROR_MSG("Corrupted Erlang term in SQL database:~n"
+		       "** Parser error: at line ~B: ~s~n"
+		       "** Term: ~s",
+		       [Line, Mod:format_error(Reason), Bin]),
+	    erlang:error(badarg)
+    end.
 
 -spec sqlite_db(binary()) -> atom().
 sqlite_db(Host) ->
