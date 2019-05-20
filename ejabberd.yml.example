@@ -101,8 +101,6 @@ access_rules:
     - allow: local
   pubsub_createnode:
     - allow: local
-  register:
-    - allow
   trusted_network:
     - allow: loopback
 
