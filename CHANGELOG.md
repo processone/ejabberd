@@ -1,10 +1,81 @@
 # Version NEXT
 
+# Version 19.05
+
 * Admin
 - The minimum required Erlang/OTP version is now 19.1
+- Provide a suggestion when unknown command, module, option or request handler is detected
+- Deprecate some listening options: captcha, register, web_admin, http_bind and xmlrpc
+- Add commands to get Mnesia info: mnesia_info and mnesia_table_info
+- Fix Register command to respect mod_register's Access option
+- Fixes in Prosody import: privacy and rooms
+- Remove TLS options from the example config
+- Improve request_handlers validator
+- Fix syntax in example Elixir config file
+
+* Auth
+- Correctly support cache tags in ejabberd_auth
+- Don't process failed EXTERNAL authentication by mod_fail2ban
+- Don't call to mod_register when it's not loaded
+- Make anonymous auth don't {de}register user when there are other resources
+
+* Developer
+- Rename listening callback from start/2 to start/3
+- New hook called when room gets destroyed: room_destroyed
+- New hooks for tracking mucsub subscriptions changes: muc_subscribed, muc_unsubscribed
+- Make static hooks analyzer working again
 
 * MUC
 - Service admins are allowed to recreate room even if archiv is nonempty
+- New option user_mucsub_from_muc_archive
+- Avoid late arrival of get_disco_item response
+- Handle get_subscribed_rooms call from mod_muc_room pid
+- Fix room state cleanup from db on change of persistent option change
+- Make get_subscribed_rooms work even for non-persistant rooms
+- Allow non-moderator subscribers to get list of room subscribers
+
+* Offline
+- New option bounce_groupchat: make it not bounce mucsub/groupchat messages
+- New option use_mam_for_storage: fetch data from mam instead of spool table
+- When applying limit of max msgs in spool check only spool size
+- Do not store mucsub wrapped messages with no-store hint in offline storage
+- Always store ActivityMarker messages
+- Don't issue count/message fetch queries for offline from mam when not needed
+- Properly handle infinity as max number of message in mam offline storage
+- Sort messages by stanza_id when using mam storage in mod_offline
+- Return correct value from count_offline_messages with mam storage option
+- Make mod_offline put msg ignored by mam in spool when mam storage is on
+
+* SQL:
+- Add SQL schemas for MQTT tables
+- Report better errors on SQL terms decode failure
+- Fix PostgreSQL compatibility in mod_offline_sql:remove_old_messages
+- Fix handling of list arguments on pgsql
+- Preliminary support for SQL in process_rosteritems command
+
+* Tests
+- Add tests for user mucsub mam from muc mam
+- Add tests for offline with mam storage
+- Add tests for offline use_mam_for_storage
+- Initial Docker environment to run ejabberd test suite
+- Test offline:use_mam_for_storage, mam:user_mucsub_from_muc_archive used together
+
+* Websocket
+- Add WebSockets support to mod_mqtt
+- Return "Bad request" error when origin in websocket connection doesn't match
+- Fix RFC6454 violation on websocket connection when validating Origin header
+- Origin header validation on websocket connection
+
+* Other modules
+- mod_adhoc: Use xml:lang from stanza when it's missing in <command/> element
+- mod_announce: Add 'sessionid' attribute when required
+- mod_bosh: Don't put duplicate polling attribute in bosh payload
+- mod_http_api: Improve argument error messages and log messages
+- mod_http_upload: Feed whole image to eimp:identify/1
+- mod_http_upload: Log nicer warning on unknown host
+- mod_http_upload: Case-insensitive host comparison
+- mod_mqtt: Support other socket modules
+- mod_push: Check for payload in encrypted messages
 
 # Version 19.02
 
