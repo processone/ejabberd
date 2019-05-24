@@ -20,7 +20,9 @@ You can fully clean up the environment with:
 (cd test/docker; docker-compose down)
 ```
 
-## TODO
+If you want to clean the data, you can remove the data directories after the `docker-compose down` command:
 
-- Document how to fully clean the test data.
-
+```
+mkdir test/docker/db/mysql/data
+mkdir test/docker/db/postgres/data
+mkdir test/docker/db/riak/data
