@@ -51,7 +51,7 @@
 	 roster_versioning_enabled/1, roster_version/2,
 	 mod_opt_type/1, mod_options/1, set_roster/1, del_roster/3,
 	 process_rosteritems/5,
-	 depends/2]).
+	 depends/2, set_item_and_notify_clients/3]).
 
 -include("logger.hrl").
 -include("xmpp.hrl").
@@ -441,23 +441,34 @@ decode_item(Item, R, Managed) ->
 
 process_iq_set(#iq{from = _From, to = To,
 		   sub_els = [#roster_query{items = [QueryItem]}]} = IQ) ->
+    case set_item_and_notify_clients(To, QueryItem, false) of
+	ok ->
+	    xmpp:make_iq_result(IQ);
+	E ->
+	    ?ERROR_MSG("roster set failed:~nIQ = ~s~nError = ~p",
+		       [xmpp:pp(IQ), E]),
+	    xmpp:make_error(IQ, xmpp:err_internal_server_error())
+    end.
+
+-spec set_item_and_notify_clients(jid(), #roster_item{}, boolean()) -> ok | error.
+set_item_and_notify_clients(To, #roster_item{jid = LJID} = RosterItem,
+			    OverrideSubscription) ->
     #jid{luser = LUser, lserver = LServer} = To,
-    LJID = jid:tolower(QueryItem#roster_item.jid),
     F = fun () ->
-		Item = get_roster_item(LUser, LServer, LJID),
-		Item2 = decode_item(QueryItem, Item, false),
-		Item3 = ejabberd_hooks:run_fold(roster_process_item,
-						LServer, Item2,
-						[LServer]),
-		case Item3#roster.subscription of
-		    remove -> del_roster_t(LUser, LServer, LJID);
-		    _ -> update_roster_t(LUser, LServer, LJID, Item3)
-		end,
-		case roster_version_on_db(LServer) of
-		    true -> write_roster_version_t(LUser, LServer);
-		    false -> ok
-		end,
-		{Item, Item3}
+	Item = get_roster_item(LUser, LServer, LJID),
+	Item2 = decode_item(RosterItem, Item, OverrideSubscription),
+	Item3 = ejabberd_hooks:run_fold(roster_process_item,
+					LServer, Item2,
+					[LServer]),
+	case Item3#roster.subscription of
+	    remove -> del_roster_t(LUser, LServer, LJID);
+	    _ -> update_roster_t(LUser, LServer, LJID, Item3)
+	end,
+	case roster_version_on_db(LServer) of
+	    true -> write_roster_version_t(LUser, LServer);
+	    false -> ok
+	end,
+	{Item, Item3}
 	end,
     case transaction(LUser, LServer, [LJID], F) of
 	{atomic, {OldItem, Item}} ->
@@ -468,11 +479,9 @@ process_iq_set(#iq{from = _From, to = To,
 		_ ->
 		    ok
 	    end,
-	    xmpp:make_iq_result(IQ);
+	    ok;
 	E ->
-	    ?ERROR_MSG("roster set failed:~nIQ = ~s~nError = ~p",
-		       [xmpp:pp(IQ), E]),
-	    xmpp:make_error(IQ, xmpp:err_internal_server_error())
+	    E
     end.
 
 push_item(To, OldItem, NewItem) ->

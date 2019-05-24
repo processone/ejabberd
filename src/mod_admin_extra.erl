@@ -1233,33 +1233,24 @@ update_vcard_els(Data, ContentList, Els1) ->
 %%%
 
 add_rosteritem(LocalUser, LocalServer, User, Server, Nick, Group, Subs) ->
-    case add_rosteritem(LocalUser, LocalServer, User, Server, Nick, Group, Subs, []) of
-	{atomic, ok} ->
-	    push_roster_item(LocalUser, LocalServer, User, Server, {add, Nick, Subs, Group}),
-	    ok;
-	_ ->
-	    error
+    Jid = jid:make(LocalUser, LocalServer),
+    RosterItem = build_roster_item(User, Server, {add, Nick, Subs, Group}),
+    case mod_roster:set_item_and_notify_clients(Jid, RosterItem, true) of
+	ok -> ok;
+	_ -> error
     end.
-
-add_rosteritem(LU, LS, User, Server, Nick, Group, Subscription, Xattrs) ->
-    subscribe(LU, LS, User, Server, Nick, Group, Subscription, Xattrs).
 
 subscribe(LU, LS, User, Server, Nick, Group, Subscription, _Xattrs) ->
     ItemEl = build_roster_item(User, Server, {add, Nick, Subscription, Group}),
     mod_roster:set_items(LU, LS, #roster_query{items = [ItemEl]}).
 
 delete_rosteritem(LocalUser, LocalServer, User, Server) ->
-    case unsubscribe(LocalUser, LocalServer, User, Server) of
-	{atomic, ok} ->
-	    push_roster_item(LocalUser, LocalServer, User, Server, remove),
-	    ok;
-	_  ->
-	    error
+    Jid = jid:make(LocalUser, LocalServer),
+    RosterItem = build_roster_item(User, Server, remove),
+    case mod_roster:set_item_and_notify_clients(Jid, RosterItem, true) of
+	ok -> ok;
+	_ -> error
     end.
-
-unsubscribe(LU, LS, User, Server) ->
-    ItemEl = build_roster_item(User, Server, remove),
-    mod_roster:set_items(LU, LS, #roster_query{items = [ItemEl]}).
 
 %% -----------------------------
 %% Get Roster
