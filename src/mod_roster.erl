@@ -451,18 +451,19 @@ process_iq_set(#iq{from = _From, to = To,
     end.
 
 -spec set_item_and_notify_clients(jid(), #roster_item{}, boolean()) -> ok | error.
-set_item_and_notify_clients(To, #roster_item{jid = LJID} = RosterItem,
+set_item_and_notify_clients(To, #roster_item{jid = PeerJID} = RosterItem,
 			    OverrideSubscription) ->
     #jid{luser = LUser, lserver = LServer} = To,
+    PeerLJID = jid:tolower(PeerJID),
     F = fun () ->
-	Item = get_roster_item(LUser, LServer, LJID),
+	Item = get_roster_item(LUser, LServer, PeerLJID),
 	Item2 = decode_item(RosterItem, Item, OverrideSubscription),
 	Item3 = ejabberd_hooks:run_fold(roster_process_item,
 					LServer, Item2,
 					[LServer]),
 	case Item3#roster.subscription of
-	    remove -> del_roster_t(LUser, LServer, LJID);
-	    _ -> update_roster_t(LUser, LServer, LJID, Item3)
+	    remove -> del_roster_t(LUser, LServer, PeerLJID);
+	    _ -> update_roster_t(LUser, LServer, PeerLJID, Item3)
 	end,
 	case roster_version_on_db(LServer) of
 	    true -> write_roster_version_t(LUser, LServer);
@@ -470,7 +471,7 @@ set_item_and_notify_clients(To, #roster_item{jid = LJID} = RosterItem,
 	end,
 	{Item, Item3}
 	end,
-    case transaction(LUser, LServer, [LJID], F) of
+    case transaction(LUser, LServer, [PeerLJID], F) of
 	{atomic, {OldItem, Item}} ->
 	    push_item(To, OldItem, Item),
 	    case Item#roster.subscription of
