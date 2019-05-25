@@ -1,5 +1,18 @@
 #!/bin/sh
 
+# This script is an example captcha script.
+# It takes the text to recognize in the captcha image as a parameter.
+# It return the image binary as a result. ejabberd support PNG, JPEG and GIF.
+
+# The whole idea of the captcha script is to let server admins adapt it to
+# their own needs. The goal is to be able to make the captcha generation as
+# unique as possible, to make the captcha challenge difficult to bypass by
+# a bot.
+# Server admins are thus supposed to write and use their own captcha generators.
+
+# This script relies on ImageMagick.
+# It is NOT compliant with ImageMagick forks like GraphicsMagick.
+
 INPUT=$1
 
 if test -n ${BASH_VERSION:-''} ; then
