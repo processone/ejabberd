@@ -833,8 +833,6 @@ do_store_file(Path, Request, FileMode, DirMode) ->
 	end
     catch
 	_:{badmatch, {error, Error}} ->
-	    {error, Error};
-	_:Error ->
 	    {error, Error}
     end.
 
