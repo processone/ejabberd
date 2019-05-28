@@ -489,14 +489,7 @@ update_module(ModuleNameString) ->
 %%%
 
 register(User, Host, Password) ->
-    Ret = case gen_mod:is_loaded(Host, mod_register) of
-	      true ->
-		  {ok, IPRaw} = inet_parse:address("::ffff:127.0.0.1"),
-		  mod_register:try_register(User, Host, Password, IPRaw);
-	      false ->
-		  ejabberd_auth:try_register(User, Host, Password)
-	  end,
-    case Ret of
+    case ejabberd_auth:try_register(User, Host, Password) of
 	ok ->
 	    {ok, io_lib:format("User ~s@~s successfully registered", [User, Host])};
 	{error, exists} ->
