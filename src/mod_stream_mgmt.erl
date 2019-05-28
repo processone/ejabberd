@@ -591,25 +591,22 @@ route_unacked_stanzas(#{mgmt_state := MgmtState,
 		      end,
     ?DEBUG("Re-routing ~B unacknowledged stanza(s) to ~s",
 	   [p1_queue:len(Queue), jid:encode(JID)]),
-    p1_queue:foldl(
-      fun({_, _Time, #presence{from = From}}, Acc) ->
-	      ?DEBUG("Dropping presence stanza from ~s", [jid:encode(From)]),
-	      Acc;
-	 ({_, _Time, #iq{} = El}, Acc) ->
+    p1_queue:foreach(
+      fun({_, _Time, #presence{from = From}}) ->
+	      ?DEBUG("Dropping presence stanza from ~s", [jid:encode(From)]);
+	 ({_, _Time, #iq{} = El}) ->
 	      Txt = <<"User session terminated">>,
 	      ejabberd_router:route_error(
-		El, xmpp:err_service_unavailable(Txt, Lang)),
-	      Acc;
-	 ({_, _Time, #message{from = From, meta = #{carbon_copy := true}}}, Acc) ->
+		El, xmpp:err_service_unavailable(Txt, Lang));
+	 ({_, _Time, #message{from = From, meta = #{carbon_copy := true}}}) ->
 	      %% XEP-0280 says: "When a receiving server attempts to deliver a
 	      %% forked message, and that message bounces with an error for
 	      %% any reason, the receiving server MUST NOT forward that error
 	      %% back to the original sender."  Resending such a stanza could
 	      %% easily lead to unexpected results as well.
 	      ?DEBUG("Dropping forwarded message stanza from ~s",
-		     [jid:encode(From)]),
-	      Acc;
-	 ({_, Time, #message{} = Msg}, Acc) ->
+		     [jid:encode(From)]);
+	 ({_, Time, #message{} = Msg}) ->
 	      case ejabberd_hooks:run_fold(message_is_archived,
 					   LServer, false,
 					   [State, Msg]) of
@@ -618,26 +615,17 @@ route_unacked_stanzas(#{mgmt_state := MgmtState,
 			     [jid:encode(xmpp:get_from(Msg))]);
 		  false when ResendOnTimeout ->
 		      NewEl = add_resent_delay_info(State, Msg, Time),
-		      NewEl2 = case Acc of
-				   first_resend ->
-				       xmpp:put_meta(NewEl, first_from_queue, true);
-				   _ ->
-				       NewEl
-			       end,
-		      ejabberd_router:route(NewEl2),
-		      false;
+		      ejabberd_router:route(NewEl);
 		  false ->
 		      Txt = <<"User session terminated">>,
 		      ejabberd_router:route_error(
-			Msg, xmpp:err_service_unavailable(Txt, Lang)),
-		      Acc
+			Msg, xmpp:err_service_unavailable(Txt, Lang))
 	      end;
-	   ({_, _Time, El}, Acc) ->
+	 ({_, _Time, El}) ->
 	      %% Raw element of type 'error' resulting from a validation error
 	      %% We cannot pass it to the router, it will generate an error
-	      ?DEBUG("Do not route raw element from ack queue: ~p", [El]),
-	      Acc
-      end, first_resend, Queue);
+	      ?DEBUG("Do not route raw element from ack queue: ~p", [El])
+      end, Queue);
 route_unacked_stanzas(_State) ->
     ok.
 
