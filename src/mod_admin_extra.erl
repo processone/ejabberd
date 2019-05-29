@@ -644,7 +644,7 @@ get_commands_spec() ->
 			module = ?MODULE, function = private_set,
 			args = [{user, binary}, {host, binary}, {element, binary}],
 			args_example = [<<"user1">>,<<"myserver.com">>,
-                            <<"<query xmlns='jabber:iq:private'> <storage xmlns='storage:rosternotes'/></query>">>],
+                            <<"<storage xmlns='storage:rosternotes'/>">>],
 			args_desc = ["User name", "Server name", "XML storage element"],
 			result = {res, rescode}},
 
