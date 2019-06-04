@@ -113,9 +113,9 @@ api_permissions:
   "admin access":
     who:
       - access:
-          - allow:
-            - acl: loopback
-            - acl: admin
+        - allow:
+          - acl: loopback
+          - acl: admin
       - oauth:
         - scope: "ejabberd:admin"
         - access:
