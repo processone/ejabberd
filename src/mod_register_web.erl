@@ -590,8 +590,8 @@ unregister_account(Username, Host, Password) ->
 get_error_text({error, captcha_non_valid}) ->
     <<"The captcha you entered is wrong">>;
 get_error_text({success, exists, _}) ->
-    get_error_text({atomic, exists});
-get_error_text({atomic, exists}) ->
+    get_error_text({error, exists});
+get_error_text({error, exists}) ->
     <<"The account already exists">>;
 get_error_text({error, password_incorrect}) ->
     <<"Incorrect password">>;
