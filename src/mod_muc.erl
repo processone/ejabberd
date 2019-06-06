@@ -744,7 +744,7 @@ get_room_disco_item({Name, Host, Pid},
 		    {get_disco_item, Filter, JID, Lang}) ->
     RoomJID = jid:make(Name, Host),
     Timeout = 100,
-    Time = erlang:monotonic_time(millisecond),
+    Time = erlang:system_time(millisecond),
     Query1 = {get_disco_item, Filter, JID, Lang, Time+Timeout},
     try p1_fsm:sync_send_all_state_event(Pid, Query1, Timeout) of
 	{item, Desc} ->

@@ -521,7 +521,7 @@ handle_sync_event({get_disco_item, Filter, JID, Lang, Time}, _From, StateName, S
 	false ->
 	    false
     end,
-    CurrentTime = erlang:monotonic_time(millisecond),
+    CurrentTime = erlang:system_time(millisecond),
     if CurrentTime < Time ->
 	    {reply, Reply, StateName, StateData};
        true ->
