@@ -157,6 +157,7 @@ handle_cast({component_connected, Host}, State) ->
 		  allow ->
 		      send_disco_queries(ServerHost, Host, NS);
 		  deny ->
+		      ?DEBUG("Denied delegation for ~s on ~s", [Host, NS]),
 		      ok
 	      end
       end, NSAttrsAccessList),
