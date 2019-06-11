@@ -1805,7 +1805,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, PubOpts, Access
 		(DeliverPayloads or PersistItems) and (PayloadCount > 1) ->
 		    {error, extended_error(xmpp:err_bad_request(),
 					   err_invalid_payload())};
-		(not DeliverPayloads) and (PayloadCount > 0) ->
+		(not (DeliverPayloads or PersistItems)) and (PayloadCount > 0) ->
 		    {error, extended_error(xmpp:err_bad_request(),
 					   err_item_forbidden())};
 		true ->
