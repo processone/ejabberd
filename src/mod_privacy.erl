@@ -36,7 +36,7 @@
 	 check_packet/4, remove_user/2, encode_list_item/1,
          get_user_lists/2, get_user_list/3,
 	 set_list/1, set_list/4, set_default_list/3,
-	 user_send_packet/1, user_receive_packet/1,
+	 user_send_packet/1,
 	 import_start/2, import_stop/2, import/5, import_info/0,
 	 mod_opt_type/1, mod_options/1, depends/2]).
 
@@ -78,8 +78,6 @@ start(Host, Opts) ->
 		       c2s_copy_session, 50),
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,
 		       user_send_packet, 50),
-    ejabberd_hooks:add(user_receive_packet, Host, ?MODULE,
-		       user_receive_packet, 50),
     ejabberd_hooks:add(privacy_check_packet, Host, ?MODULE,
 		       check_packet, 50),
     ejabberd_hooks:add(remove_user, Host, ?MODULE,
@@ -94,8 +92,6 @@ stop(Host) ->
 			  c2s_copy_session, 50),
     ejabberd_hooks:delete(user_send_packet, Host, ?MODULE,
 			  user_send_packet, 50),
-    ejabberd_hooks:delete(user_receive_packet, Host, ?MODULE,
-			  user_receive_packet, 50),
     ejabberd_hooks:delete(privacy_check_packet, Host,
 			  ?MODULE, check_packet, 50),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE,
@@ -407,6 +403,34 @@ c2s_copy_session(State, #{privacy_active_list := List}) ->
 c2s_copy_session(State, _) ->
     State.
 
+% Adjust the client's state, so next packets (which can be already queued)
+% will take the active list into account.
+-spec update_c2s_state_with_privacy_list(stanza(), c2s_state()) -> c2s_state().
+update_c2s_state_with_privacy_list(#iq{
+      type = set,
+      to = #jid{luser = U, lserver = S, lresource = <<"">>} = To} = IQ,
+    State) ->
+  % match a IQ set containing a new active privacy list
+  case xmpp:get_subtag(IQ, #privacy_query{}) of
+    #privacy_query{default = undefined, active = Active} ->
+      case Active of
+        none ->
+          ?DEBUG("Removing active privacy list for user ~p", [jid:encode(To)]),
+          State#{privacy_active_list => none};
+        _ ->
+          case get_user_list(U, S, Active) of
+            {ok, _} -> 
+              ?DEBUG("Setting active privacy list ~p for user ~p", [Active, jid:encode(To)]),
+              State#{privacy_active_list => Active};
+            _ -> State % unknown privacy list name
+          end
+      end;
+    _ -> State
+    end;
+
+update_c2s_state_with_privacy_list(_Packet, State) -> State.
+
+% add the active privacy list to packet metadata
 -spec user_send_packet({stanza(), c2s_state()}) -> {stanza(), c2s_state()}.
 user_send_packet({#iq{type = Type,
 		      to = #jid{luser = U, lserver = S, lresource = <<"">>},
@@ -418,16 +442,13 @@ user_send_packet({#iq{type = Type,
 		true -> xmpp:put_meta(IQ, privacy_active_list, Name);
 		false -> IQ
 	    end,
-    {NewIQ, State};
-user_send_packet(Acc) ->
-    Acc.
+    {NewIQ, update_c2s_state_with_privacy_list(IQ, State)};
 
--spec user_receive_packet({stanza(), c2s_state()}) -> {stanza(), c2s_state()}.
-user_receive_packet({#iq{type = result,
-			 meta = #{privacy_active_list := Name}} = IQ, State}) ->
-    {IQ, State#{privacy_active_list => Name}};
-user_receive_packet(Acc) ->
-    Acc.
+% for client with no active privacy list, see if there is 
+% one about to be activated in this packet and update client state
+user_send_packet({Packet, State}) ->
+  {Packet, update_c2s_state_with_privacy_list(Packet, State)}.
+
 
 -spec set_list(binary(), binary(), binary(), [listitem()]) -> ok | {error, any()}.
 set_list(LUser, LServer, Name, List) ->
