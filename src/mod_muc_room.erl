@@ -1074,13 +1074,18 @@ do_process_presence(Nick, #presence{from = From, type = available, lang = Lang} 
 			    StateData;
 			{_, false, _} ->
 			    Packet1 = Packet#presence{sub_els = [#muc{}]},
-			    ErrText = <<"That nickname is registered by another "
-					"person">>,
-			    Err = xmpp:err_conflict(ErrText, Lang),
+			    Err = case Nick of
+				      <<>> ->
+					  xmpp:err_jid_malformed(<<"Nickname can't be empty">>,
+								 Lang);
+				      _ ->
+					  xmpp:err_conflict(<<"That nickname is registered"
+							      " by another person">>, Lang)
+				  end,
 			    ejabberd_router:route_error(Packet1, Err),
 			    StateData;
 			_ ->
-				    change_nick(From, Nick, StateData)
+			    change_nick(From, Nick, StateData)
 		    end;
 		false ->
 		    Stanza = maybe_strip_status_from_presence(
@@ -1953,8 +1958,14 @@ add_new_user(From, Nick, Packet, StateData) ->
 		  {error, Err}
 	  end;
       {_, _, false, _} ->
-	  ErrText = <<"That nickname is registered by another person">>,
-	  Err = xmpp:err_conflict(ErrText, Lang),
+	  Err = case Nick of
+			<<>> ->
+			    xmpp:err_jid_malformed(<<"Nickname can't be empty">>,
+						   Lang);
+			_ ->
+			    xmpp:err_conflict(<<"That nickname is registered"
+						" by another person">>, Lang)
+		    end,
 	  if not IsSubscribeRequest ->
 		  ejabberd_router:route_error(Packet, Err),
 		  StateData;
@@ -4056,8 +4067,15 @@ process_iq_mucsub(From,
 		    ErrText = <<"That nickname is already in use by another occupant">>,
 		    {error, xmpp:err_conflict(ErrText, Lang)};
 		{_, false} ->
-		    ErrText = <<"That nickname is registered by another person">>,
-		    {error, xmpp:err_conflict(ErrText, Lang)};
+		    Err = case Nick of
+			      <<>> ->
+				  xmpp:err_jid_malformed(<<"Nickname can't be empty">>,
+							 Lang);
+			      _ ->
+				  xmpp:err_conflict(<<"That nickname is registered"
+						      " by another person">>, Lang)
+			  end,
+		    {error, Err};
 		_ ->
 		    NewStateData = set_subscriber(From, Nick, Nodes, StateData),
 		    {result, subscribe_result(Packet), NewStateData}
