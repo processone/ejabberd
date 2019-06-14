@@ -194,6 +194,9 @@ filter(_Host, Opt, Val, _) when Opt == outgoing_s2s_timeout;
 				Opt == s2s_dns_timeout ->
     warn_huge_timeout(Opt, Val),
     true;
+filter(_Host, captcha_host, _, _) ->
+    warn_deprecated_option(captcha_host, captcha_url),
+    true;
 filter(Host, modules, ModOpts, State) ->
     NoDialbackHosts = maps:get(remove_s2s_dialback, State, []),
     ModOpts1 = lists:filter(
@@ -442,6 +445,10 @@ warn_replaced_handler(Opt, {Path, Module}) ->
 		 "and was automatically replaced by "
 		 "HTTP request handler: \"~s\" -> ~s. ~s",
 		 [Opt, Path, Module, adjust_hint()]).
+
+warn_deprecated_option(OldOpt, NewOpt) ->
+    ?WARNING_MSG("Option '~s' is deprecated. Use option '~s' instead.",
+		 [OldOpt, NewOpt]).
 
 warn_replaced_option(OldOpt, NewOpt) ->
     ?WARNING_MSG("Option '~s' is deprecated and was automatically "

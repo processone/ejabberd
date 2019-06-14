@@ -29,6 +29,7 @@
 -export([captcha_cmd/0]).
 -export([captcha_host/0]).
 -export([captcha_limit/0]).
+-export([captcha_url/0]).
 -export([certfiles/0]).
 -export([cluster_backend/0]).
 -export([cluster_nodes/0]).
@@ -309,6 +310,10 @@ captcha_host() ->
 -spec captcha_limit() -> 'infinity' | pos_integer().
 captcha_limit() ->
     ejabberd_config:get_option({captcha_limit, global}).
+
+-spec captcha_url() -> 'undefined' | binary().
+captcha_url() ->
+    ejabberd_config:get_option({captcha_url, global}).
 
 -spec certfiles() -> 'undefined' | [binary()].
 certfiles() ->

@@ -437,23 +437,29 @@ get_prog_name() ->
 
 -spec get_url(binary()) -> binary().
 get_url(Str) ->
+    case ejabberd_option:captcha_url() of
+	undefined ->
+	    URL = parse_captcha_host(),
+	    <<URL/binary, "/captcha/", Str/binary>>;
+	URL ->
+	    <<URL/binary, $/, Str/binary>>
+    end.
+
+-spec parse_captcha_host() -> binary().
+parse_captcha_host() ->
     CaptchaHost = ejabberd_option:captcha_host(),
     case str:tokens(CaptchaHost, <<":">>) of
-      [Host] ->
-	  <<"http://", Host/binary, "/captcha/", Str/binary>>;
-      [<<"http", _/binary>> = TransferProt, Host] ->
-	  <<TransferProt/binary, ":", Host/binary, "/captcha/",
-	    Str/binary>>;
-      [Host, PortString] ->
-	  TransferProt =
-	      iolist_to_binary(atom_to_list(get_transfer_protocol(PortString))),
-	  <<TransferProt/binary, "://", Host/binary, ":",
-	    PortString/binary, "/captcha/", Str/binary>>;
-      [TransferProt, Host, PortString] ->
-	  <<TransferProt/binary, ":", Host/binary, ":",
-	    PortString/binary, "/captcha/", Str/binary>>;
+	[Host] ->
+	    <<"http://", Host/binary>>;
+	[<<"http", _/binary>> = TransferProt, Host] ->
+	    <<TransferProt/binary, ":", Host/binary>>;
+	[Host, PortString] ->
+	    TransferProt = atom_to_binary(get_transfer_protocol(PortString), latin1),
+	    <<TransferProt/binary, "://", Host/binary, ":", PortString/binary>>;
+	[TransferProt, Host, PortString] ->
+	    <<TransferProt/binary, ":", Host/binary, ":", PortString/binary>>;
       _ ->
-	  <<"http://", (ejabberd_config:get_myname())/binary, "/captcha/", Str/binary>>
+	    <<"http://", (ejabberd_config:get_myname())/binary>>
     end.
 
 get_transfer_protocol(PortString) ->
