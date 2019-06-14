@@ -25,8 +25,6 @@
 
 -module(ejabberd_router).
 
--behaviour(ejabberd_config).
-
 -author('alexey@process-one.net').
 
 -ifndef(GEN_SERVER).
@@ -59,7 +57,7 @@
 -export([start_link/0]).
 
 -export([init/1, handle_call/3, handle_cast/2,
-	 handle_info/2, terminate/2, code_change/3, opt_type/1]).
+	 handle_info/2, terminate/2, code_change/3]).
 
 %% Deprecated functions
 -export([route/3, route_error/4]).
@@ -388,10 +386,9 @@ do_route(_Pkt, _Route) ->
 
 -spec balancing_route(jid(), jid(), stanza(), [#route{}]) -> any().
 balancing_route(From, To, Packet, Rs) ->
-    LDstDomain = To#jid.lserver,
-    Value = get_domain_balancing(From, To, LDstDomain),
-    case get_component_number(LDstDomain) of
+    case get_domain_balancing(From, To, To#jid.lserver) of
 	undefined ->
+	    Value = erlang:system_time(),
 	    case [R || R <- Rs, node(R#route.pid) == node()] of
 		[] ->
 		    R = lists:nth(erlang:phash(Value, length(Rs)), Rs),
@@ -400,7 +397,7 @@ balancing_route(From, To, Packet, Rs) ->
 		    R = lists:nth(erlang:phash(Value, length(LRs)), LRs),
 		    do_route(Packet, R)
 	    end;
-	_ ->
+	Value ->
 	    SRs = lists:ukeysort(#route.local_hint, Rs),
 	    R = lists:nth(erlang:phash(Value, length(SRs)), SRs),
 	    do_route(Packet, R)
@@ -408,24 +405,30 @@ balancing_route(From, To, Packet, Rs) ->
 
 -spec get_component_number(binary()) -> pos_integer() | undefined.
 get_component_number(LDomain) ->
-    ejabberd_config:get_option({domain_balancing_component_number, LDomain}).
+    M = ejabberd_option:domain_balancing(),
+    case maps:get(LDomain, M, undefined) of
+	undefined -> undefined;
+	Opts -> maps:get(component_number, Opts)
+    end.
 
--spec get_domain_balancing(jid(), jid(), binary()) -> any().
+-spec get_domain_balancing(jid(), jid(), binary()) -> integer() | ljid() | undefined.
 get_domain_balancing(From, To, LDomain) ->
-    case ejabberd_config:get_option({domain_balancing, LDomain}) of
-	undefined -> erlang:system_time();
-	random -> erlang:system_time();
-	source -> jid:tolower(From);
-	destination -> jid:tolower(To);
-	bare_source -> jid:remove_resource(jid:tolower(From));
-	bare_destination -> jid:remove_resource(jid:tolower(To))
+    M = ejabberd_option:domain_balancing(),
+    case maps:get(LDomain, M, undefined) of
+	undefined -> undefined;
+	Opts ->
+	    case maps:get(type, Opts, random) of
+		random -> erlang:system_time();
+		source -> jid:tolower(From);
+		destination -> jid:tolower(To);
+		bare_source -> jid:remove_resource(jid:tolower(From));
+		bare_destination -> jid:remove_resource(jid:tolower(To))
+	    end
     end.
 
 -spec get_backend() -> module().
 get_backend() ->
-    DBType = ejabberd_config:get_option(
-	       router_db_type,
-	       ejabberd_config:default_ram_db(?MODULE)),
+    DBType = ejabberd_option:router_db_type(),
     list_to_atom("ejabberd_router_" ++ atom_to_list(DBType)).
 
 -spec cache_nodes(module()) -> [node()].
@@ -439,10 +442,7 @@ cache_nodes(Mod) ->
 use_cache(Mod) ->
     case erlang:function_exported(Mod, use_cache, 0) of
 	true -> Mod:use_cache();
-	false ->
-	    ejabberd_config:get_option(
-	      router_use_cache,
-	      ejabberd_config:use_cache(global))
+	false -> ejabberd_option:router_use_cache()
     end.
 
 -spec delete_cache(module(), binary()) -> ok.
@@ -466,15 +466,9 @@ init_cache(Mod) ->
 
 -spec cache_opts() -> [proplists:property()].
 cache_opts() ->
-    MaxSize = ejabberd_config:get_option(
-		router_cache_size,
-		ejabberd_config:cache_size(global)),
-    CacheMissed = ejabberd_config:get_option(
-		    router_cache_missed,
-		    ejabberd_config:cache_missed(global)),
-    LifeTime = case ejabberd_config:get_option(
-		      router_cache_life_time,
-		      ejabberd_config:cache_life_time(global)) of
+    MaxSize = ejabberd_option:router_cache_size(),
+    CacheMissed = ejabberd_option:router_cache_missed(),
+    LifeTime = case ejabberd_option:router_cache_life_time() of
 		   infinity -> infinity;
 		   I -> timer:seconds(I)
 	       end,
@@ -498,26 +492,3 @@ clean_cache(Node) ->
 -spec clean_cache() -> ok.
 clean_cache() ->
     ejabberd_cluster:eval_everywhere(?MODULE, clean_cache, [node()]).
-
--spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
-opt_type(domain_balancing) ->
-    fun (random) -> random;
-	(source) -> source;
-	(destination) -> destination;
-	(bare_source) -> bare_source;
-	(bare_destination) -> bare_destination
-    end;
-opt_type(domain_balancing_component_number) ->
-    fun (N) when is_integer(N), N > 1 -> N end;
-opt_type(router_db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
-opt_type(O) when O == router_use_cache; O == router_cache_missed ->
-    fun(B) when is_boolean(B) -> B end;
-opt_type(O) when O == router_cache_size; O == router_cache_life_time ->
-    fun(I) when is_integer(I), I>0 -> I;
-       (unlimited) -> infinity;
-       (infinity) -> infinity
-    end;
-opt_type(_) ->
-    [domain_balancing, domain_balancing_component_number,
-     router_db_type, router_use_cache, router_cache_size,
-     router_cache_missed, router_cache_life_time].

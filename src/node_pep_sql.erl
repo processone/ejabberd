@@ -30,7 +30,6 @@
 -behaviour(gen_pubsub_node).
 -author('christophe.romain@process-one.net').
 
--compile([{parse_transform, ejabberd_sql_pt}]).
 
 -include("pubsub.hrl").
 -include("ejabberd_sql_pt.hrl").

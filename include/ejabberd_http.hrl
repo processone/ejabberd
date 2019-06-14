@@ -23,7 +23,7 @@
 	 path = []         :: [binary()],
 	 q = []            :: [{binary() | nokey, binary()}],
 	 us = {<<>>, <<>>} :: {binary(), binary()},
-	 auth              :: {binary(), binary()} | {oauth, binary(), []} | undefined,
+	 auth              :: {binary(), binary()} | {oauth, binary(), []} | undefined | invalid,
 	 lang = <<"">>     :: binary(),
 	 data = <<"">>     :: binary(),
 	 ip                :: {inet:ip_address(), inet:port_number()},

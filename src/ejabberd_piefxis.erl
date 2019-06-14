@@ -92,7 +92,7 @@ import_file(FileName, State) ->
 
 -spec export_server(binary()) -> any().
 export_server(Dir) ->
-    export_hosts(ejabberd_config:get_myhosts(), Dir).
+    export_hosts(ejabberd_option:hosts(), Dir).
 
 -spec export_host(binary(), binary()) -> any().
 export_host(Dir, Host) ->

@@ -289,7 +289,7 @@ format(Format, Args) ->
     iolist_to_binary(io_lib:format(Format, Args)).
 
 
--spec sha(binary()) -> binary().
+-spec sha(iodata()) -> binary().
 
 sha(Text) ->
     Bin = crypto:hash(sha, Text),

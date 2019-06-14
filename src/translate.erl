@@ -103,7 +103,8 @@ load(ForceCacheRebuild) ->
 -spec load([file:filename()], file:filename()) -> ok.
 
 load(Files, Dir) ->
-    try ets:new(translations, [named_table, public])
+    try ets:new(translations, [named_table, public]) of
+	_ -> ok
     catch _:badarg -> ok
     end,
     case Files of
@@ -124,9 +125,17 @@ load(Files, Dir) ->
 load_file(Lang, File) ->
     case file:open(File, [read]) of
         {ok, Fd} ->
-            io:setopts(Fd, [{encoding,latin1}]),
-            load_file_loop(Fd, 1, File, Lang),
-            file:close(Fd);
+            case io:setopts(Fd, [{encoding,latin1}]) of
+		ok ->
+		    load_file_loop(Fd, 1, File, Lang),
+		    file:close(Fd);
+		{error, Error} ->
+		    ExitText = iolist_to_binary([File, ": ",
+                                         file:format_error(Error)]),
+		    ?ERROR_MSG("Problem loading translation file ~n~s",
+			       [ExitText]),
+		    exit(ExitText)
+	    end;
         {error, Error} ->
             ExitText = iolist_to_binary([File, ": ",
                                          file:format_error(Error)]),
@@ -195,7 +204,7 @@ translate(Lang, Msg) ->
     end.
 
 translate(Msg) ->
-    case ejabberd_config:get_mylang() of
+    case ejabberd_option:language() of
       <<"en">> -> Msg;
       Lang ->
 	  LLang = ascii_tolower(Lang),

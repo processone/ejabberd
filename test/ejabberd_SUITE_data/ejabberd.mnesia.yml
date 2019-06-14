@@ -1,0 +1,62 @@
+define_macro:
+  MNESIA_CONFIG:
+    queue_type: ram
+    auth_method: internal
+    modules:
+      mod_announce:
+        db_type: internal
+        access: local
+      mod_blocking: []
+      mod_caps:
+        db_type: internal
+      mod_last:
+        db_type: internal
+      mod_muc:
+        db_type: internal
+      mod_offline:
+        db_type: internal
+      mod_privacy:
+        db_type: internal
+      mod_private:
+        db_type: internal
+      mod_pubsub:
+        access_createnode: pubsub_createnode
+        ignore_pep_from_offline: true
+        last_item_cache: false
+        plugins:
+          - "flat"
+          - "hometree"
+          - "pep"
+      mod_roster:
+        versioning: true
+        store_current_id: true
+        db_type: internal
+      mod_mam:
+        db_type: internal
+      mod_vcard:
+        db_type: internal
+      mod_vcard_xupdate: []
+      mod_client_state:
+        queue_presence: true
+        queue_chat_states: true
+        queue_pep: true
+      mod_adhoc: []
+      mod_configure: []
+      mod_disco: []
+      mod_ping: []
+      mod_proxy65: []
+      mod_push:
+        include_body: false
+      mod_push_keepalive: []
+      mod_s2s_dialback: []
+      mod_stream_mgmt:
+        resume_timeout: 3
+      mod_legacy_auth: []
+      mod_register:
+        welcome_message:
+          subject: "Welcome!"
+          body: "Hi.
+Welcome to this XMPP server."
+      mod_stats: []
+      mod_time: []
+      mod_version: []

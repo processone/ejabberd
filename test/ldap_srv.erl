@@ -71,7 +71,7 @@ init([LDIFFile]) ->
             case load_ldif(LDIFFile) of
                 {ok, Tree} ->
                     ?INFO_MSG("LDIF tree loaded, "
-                              "ready to accept connections", []),
+                              "ready to accept connections at ~B", [1389]),
                     {_Pid, MRef} =
                         spawn_monitor(
                           fun() -> accept(ListenSocket, Tree) end

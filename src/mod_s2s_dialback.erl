@@ -21,16 +21,18 @@
 %%%-------------------------------------------------------------------
 -module(mod_s2s_dialback).
 -behaviour(gen_mod).
-
+-dialyzer([{no_fail_call, s2s_out_packet/2},
+	   {no_return, s2s_out_packet/2}]).
 -protocol({xep, 220, '1.1.1'}).
 -protocol({xep, 185, '1.0'}).
 
 %% gen_mod API
--export([start/2, stop/1, reload/3, depends/2, mod_options/1]).
+-export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1, mod_options/1]).
 %% Hooks
 -export([s2s_out_auth_result/2, s2s_out_downgraded/2,
 	 s2s_in_packet/2, s2s_out_packet/2, s2s_in_recv/3,
-	 s2s_in_features/2, s2s_out_init/2, s2s_out_closed/2]).
+	 s2s_in_features/2, s2s_out_init/2, s2s_out_closed/2,
+	 s2s_out_tls_verify/2]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -39,31 +41,26 @@
 %%% API
 %%%===================================================================
 start(Host, _Opts) ->
-    case ejabberd_s2s:tls_verify(Host) of
-	true ->
-	    ?ERROR_MSG("disabling ~s for host ~s because option "
-		       "'s2s_use_starttls' is set to 'required_trusted'",
-		       [?MODULE, Host]);
-	false ->
-	    ejabberd_hooks:add(s2s_out_init, Host, ?MODULE, s2s_out_init, 50),
-	    ejabberd_hooks:add(s2s_out_closed, Host, ?MODULE, s2s_out_closed, 50),
-	    ejabberd_hooks:add(s2s_in_pre_auth_features, Host, ?MODULE,
-			       s2s_in_features, 50),
-	    ejabberd_hooks:add(s2s_in_post_auth_features, Host, ?MODULE,
-			       s2s_in_features, 50),
-	    ejabberd_hooks:add(s2s_in_handle_recv, Host, ?MODULE,
-			       s2s_in_recv, 50),
-	    ejabberd_hooks:add(s2s_in_unauthenticated_packet, Host, ?MODULE,
-			       s2s_in_packet, 50),
-	    ejabberd_hooks:add(s2s_in_authenticated_packet, Host, ?MODULE,
-			       s2s_in_packet, 50),
-	    ejabberd_hooks:add(s2s_out_packet, Host, ?MODULE,
-			       s2s_out_packet, 50),
-	    ejabberd_hooks:add(s2s_out_downgraded, Host, ?MODULE,
-			       s2s_out_downgraded, 50),
-	    ejabberd_hooks:add(s2s_out_auth_result, Host, ?MODULE,
-			       s2s_out_auth_result, 50)
-    end.
+    ejabberd_hooks:add(s2s_out_init, Host, ?MODULE, s2s_out_init, 50),
+    ejabberd_hooks:add(s2s_out_closed, Host, ?MODULE, s2s_out_closed, 50),
+    ejabberd_hooks:add(s2s_in_pre_auth_features, Host, ?MODULE,
+		       s2s_in_features, 50),
+    ejabberd_hooks:add(s2s_in_post_auth_features, Host, ?MODULE,
+		       s2s_in_features, 50),
+    ejabberd_hooks:add(s2s_in_handle_recv, Host, ?MODULE,
+		       s2s_in_recv, 50),
+    ejabberd_hooks:add(s2s_in_unauthenticated_packet, Host, ?MODULE,
+		       s2s_in_packet, 50),
+    ejabberd_hooks:add(s2s_in_authenticated_packet, Host, ?MODULE,
+		       s2s_in_packet, 50),
+    ejabberd_hooks:add(s2s_out_packet, Host, ?MODULE,
+		       s2s_out_packet, 50),
+    ejabberd_hooks:add(s2s_out_downgraded, Host, ?MODULE,
+		       s2s_out_downgraded, 50),
+    ejabberd_hooks:add(s2s_out_auth_result, Host, ?MODULE,
+		       s2s_out_auth_result, 50),
+    ejabberd_hooks:add(s2s_out_tls_verify, Host, ?MODULE,
+		       s2s_out_tls_verify, 50).
 
 stop(Host) ->
     ejabberd_hooks:delete(s2s_out_init, Host, ?MODULE, s2s_out_init, 50),
@@ -83,21 +80,21 @@ stop(Host) ->
     ejabberd_hooks:delete(s2s_out_downgraded, Host, ?MODULE,
 			  s2s_out_downgraded, 50),
     ejabberd_hooks:delete(s2s_out_auth_result, Host, ?MODULE,
-			  s2s_out_auth_result, 50).
+			  s2s_out_auth_result, 50),
+    ejabberd_hooks:delete(s2s_out_tls_verify, Host, ?MODULE,
+			  s2s_out_tls_verify, 50).
 
-reload(Host, NewOpts, _OldOpts) ->
-    case ejabberd_s2s:tls_verify(Host) of
-	false ->
-	    start(Host, NewOpts);
-	true ->
-	    stop(Host)
-    end.
+reload(_Host, _NewOpts, _OldOpts) ->
+    ok.
 
 depends(_Host, _Opts) ->
     [].
 
+mod_opt_type(access) ->
+    econf:acl().
+
 mod_options(_Host) ->
-    [].
+    [{access, all}].
 
 s2s_in_features(Acc, _) ->
     [#db_feature{errors = true}|Acc].
@@ -258,12 +255,20 @@ s2s_out_packet(State, Pkt) when is_record(Pkt, db_result);
 s2s_out_packet(State, _) ->
     State.
 
+-spec s2s_out_tls_verify(boolean(), ejabberd_s2s_out:state()) -> boolean().
+s2s_out_tls_verify(_, #{server := LServer, remote_server := RServer}) ->
+    Access = mod_s2s_dialback_opt:access(LServer),
+    case acl:match_rule(LServer, Access, jid:make(RServer)) of
+	allow -> false;
+	deny -> true
+    end.
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 -spec make_key(binary(), binary(), binary()) -> binary().
 make_key(From, To, StreamID) ->
-    Secret = ejabberd_config:get_option(shared_key),
+    Secret = ejabberd_config:get_shared_key(),
     str:to_hexlist(
       crypto:hmac(sha256, str:to_hexlist(crypto:hash(sha256, Secret)),
 		  [To, " ", From, " ", StreamID])).

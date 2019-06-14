@@ -27,7 +27,6 @@
 -module(ejabberd_oauth).
 
 -behaviour(gen_server).
--behaviour(ejabberd_config).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
@@ -38,7 +37,6 @@
          verify_redirection_uri/3,
          authenticate_user/2,
          authenticate_client/2,
-         verify_resowner_scope/3,
          associate_access_code/3,
          associate_access_token/3,
          associate_refresh_token/3,
@@ -47,8 +45,7 @@
          check_token/2,
          scope_in_scope_list/2,
          process/2,
-	 config_reloaded/0,
-         opt_type/1]).
+	 config_reloaded/0]).
 
 -export([get_commands_spec/0,
 	 oauth_issue_token/3, oauth_list_tokens/0, oauth_revoke_token/1]).
@@ -72,8 +69,6 @@
 %%   * Using the web form/api results in the token being generated in behalf of the user providing the user/pass
 %%   * Using the command line and oauth_issue_token command, the token is generated in behalf of ejabberd' sysadmin
 %%    (as it has access to ejabberd command line).
-
--define(EXPIRE, 4294967).
 
 get_commands_spec() ->
     [
@@ -189,9 +184,7 @@ authenticate_user({User, Server}, Ctx) ->
     case jid:make(User, Server) of
         #jid{} = JID ->
             Access =
-                ejabberd_config:get_option(
-                  {oauth_access, JID#jid.lserver},
-                  none),
+                ejabberd_option:oauth_access(JID#jid.lserver),
             case acl:match_rule(JID#jid.lserver, Access, JID) of
                 allow ->
                     case Ctx of
@@ -213,21 +206,6 @@ authenticate_user({User, Server}, Ctx) ->
     end.
 
 authenticate_client(Client, Ctx) -> {ok, {Ctx, {client, Client}}}.
-
-verify_resowner_scope({user, _User, _Server}, Scope, Ctx) ->
-    Cmds = ejabberd_commands:get_exposed_commands(),
-    Cmds1 = ['ejabberd:user', 'ejabberd:admin', sasl_auth | Cmds],
-    RegisteredScope = [atom_to_binary(C, utf8) || C <- Cmds1],
-    case oauth2_priv_set:is_subset(oauth2_priv_set:new(Scope),
-                                   oauth2_priv_set:new(RegisteredScope)) of
-        true ->
-            {ok, {Ctx, Scope}};
-        false ->
-            {error, badscope}
-    end;
-verify_resowner_scope(_, _, _) ->
-    {error, badscope}.
-
 
 %% This is callback for oauth tokens generated through the command line.  Only open and admin commands are
 %% made available.
@@ -286,6 +264,8 @@ scope_in_scope_list(Scope, ScopeList) ->
         oauth2_priv_set:is_member(Scope2, TokenScopeSet) end,
               ScopeList).
 
+-spec check_token(binary()) -> {ok, {binary(), binary()}, [binary()]} |
+			       {false, expired | not_found}.
 check_token(Token) ->
     case lookup(Token) of
         {ok, #oauth_token{us = US,
@@ -380,29 +360,20 @@ init_cache(DBMod) ->
 use_cache(DBMod) ->
     case erlang:function_exported(DBMod, use_cache, 0) of
 	true -> DBMod:use_cache();
-	false ->
-	    ejabberd_config:get_option(
-	      oauth_use_cache,
-	      ejabberd_config:use_cache(global))
+	false -> ejabberd_option:oauth_use_cache()
     end.
 
 cache_opts() ->
-    MaxSize = ejabberd_config:get_option(
-		oauth_cache_size,
-		ejabberd_config:cache_size(global)),
-    CacheMissed = ejabberd_config:get_option(
-		    oauth_cache_missed,
-		    ejabberd_config:cache_missed(global)),
-    LifeTime = case ejabberd_config:get_option(
-		      oauth_cache_life_time,
-		      ejabberd_config:cache_life_time(global)) of
+    MaxSize = ejabberd_option:oauth_cache_size(),
+    CacheMissed = ejabberd_option:oauth_cache_missed(),
+    LifeTime = case ejabberd_option:oauth_cache_life_time() of
 		   infinity -> infinity;
 		   I -> timer:seconds(I)
 	       end,
     [{max_size, MaxSize}, {life_time, LifeTime}, {cache_missed, CacheMissed}].
 
 expire() ->
-    ejabberd_config:get_option(oauth_expire, ?EXPIRE).
+    ejabberd_option:oauth_expire().
 
 -define(DIV(Class, Els),
 	?XAE(<<"div">>, [{<<"class">>, Class}], Els)).
@@ -596,9 +567,7 @@ process(_Handlers, _Request) ->
 -spec get_db_backend() -> module().
 
 get_db_backend() ->
-    DBType = ejabberd_config:get_option(
-	       oauth_db_type,
-	       ejabberd_config:default_db(?MODULE)),
+    DBType = ejabberd_option:oauth_db_type(),
     list_to_atom("ejabberd_oauth_" ++ atom_to_list(DBType)).
 
 
@@ -645,21 +614,3 @@ logo() ->
 	{error, _} ->
 	    <<>>
     end.
-
--spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
-opt_type(oauth_expire) ->
-    fun(I) when is_integer(I), I >= 0 -> I end;
-opt_type(oauth_access) ->
-    fun acl:access_rules_validator/1;
-opt_type(oauth_db_type) ->
-    fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
-opt_type(O) when O == oauth_cache_life_time; O == oauth_cache_size ->
-    fun (I) when is_integer(I), I > 0 -> I;
-	(infinity) -> infinity
-    end;
-opt_type(O) when O == oauth_use_cache; O == oauth_cache_missed ->
-    fun (B) when is_boolean(B) -> B end;
-opt_type(_) ->
-    [oauth_expire, oauth_access, oauth_db_type,
-     oauth_cache_life_time, oauth_cache_size, oauth_use_cache,
-     oauth_cache_missed].

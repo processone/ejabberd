@@ -24,7 +24,6 @@
 
 -module(mod_vcard_sql).
 
--compile([{parse_transform, ejabberd_sql_pt}]).
 
 -behaviour(mod_vcard).
 

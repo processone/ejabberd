@@ -45,9 +45,7 @@ init() ->
 use_cache() ->
     case mnesia:table_info(oauth_token, storage_type) of
 	disc_only_copies ->
-	    ejabberd_config:get_option(
-	      oauth_use_cache,
-	      ejabberd_config:use_cache(global));
+	    ejabberd_option:oauth_use_cache();
 	_ ->
 	    false
     end.
@@ -73,4 +71,3 @@ clean(TS) ->
 		lists:foreach(fun mnesia:delete_object/1, Ts)
         end,
     mnesia:async_dirty(F).
-

@@ -96,7 +96,7 @@
 	Parents :: [nodeId()]) ->
     {ok, NodeIdx::nodeIdx()} |
     {error, stanza_error()} |
-    {error, {virtual, {host(), nodeId()}}}.
+    {error, {virtual, {host(), nodeId()} | nodeId()}}.
 
 -callback delete_node(Host :: host(),
 	NodeId :: nodeId()) ->

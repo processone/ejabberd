@@ -28,9 +28,7 @@
 %% API
 -export([parse_transform/2, format_error/1]).
 
-%-export([parse/2]).
-
--include("ejabberd_sql_pt.hrl").
+-include("ejabberd_sql.hrl").
 
 -record(state, {loc,
                 'query' = [],
@@ -66,10 +64,8 @@
 %% Description:
 %%--------------------------------------------------------------------
 parse_transform(AST, _Options) ->
-    %io:format("PT: ~p~nOpts: ~p~n", [AST, Options]),
     put(warnings, []),
     NewAST = top_transform(AST),
-    %io:format("NewPT: ~p~n", [NewAST]),
     NewAST ++ get(warnings).
 
 
@@ -141,7 +137,6 @@ transform(Form) ->
                     case erl_syntax:attribute_arguments(Form) of
                         [M | _] ->
                             Module = erl_syntax:atom_value(M),
-                            %io:format("module ~p~n", [Module]),
                             put(?MOD, Module),
                             Form;
                         _ ->
@@ -158,11 +153,7 @@ top_transform(Forms) when is_list(Forms) ->
     lists:map(
       fun(Form) ->
               try
-                  Form2 = erl_syntax_lib:map(
-                            fun(Node) ->
-                                                %io:format("asd ~p~n", [Node]),
-                                    transform(Node)
-                            end, Form),
+                  Form2 = erl_syntax_lib:map(fun transform/1, Form),
                   Form3 = erl_syntax:revert(Form2),
                   Form3
 	      catch
@@ -517,7 +508,6 @@ parse_upsert(Fields) ->
                                  "a constant string"})
                   end
           end, {[], 0}, Fields),
-    %io:format("upsert ~p~n", [{Fields, Fs}]),
     Fs.
 
 %% key | {Update}

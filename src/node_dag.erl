@@ -80,7 +80,7 @@ publish_item(Nidx, Publisher, Model, MaxItems, ItemId, Payload, PubOpts) ->
 		collection ->
 		    Txt = <<"Publishing items to collection node is not allowed">>,
 		    {error, mod_pubsub:extended_error(
-			      xmpp:err_not_allowed(Txt, ejabberd_config:get_mylang()),
+			      xmpp:err_not_allowed(Txt, ejabberd_option:language()),
 			      mod_pubsub:err_unsupported('publish'))};
 		_ ->
 		    node_hometree:publish_item(Nidx, Publisher, Model,

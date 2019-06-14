@@ -3,6 +3,7 @@
 
 -module('ELDAPv3').
 -compile(nowarn_unused_vars).
+-dialyzer(no_match).
 -include("ELDAPv3.hrl").
 -asn1_info([{vsn,'2.0.1'},
             {module,'ELDAPv3'},
@@ -349,7 +350,7 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
          'enc_ExtendedRequest'(element(2,Val), [<<119>>]);
       extendedResp ->
          'enc_ExtendedResponse'(element(2,Val), [<<120>>]);
-      Else -> 
+      Else ->
          exit({error,{asn1,{invalid_choice_type,Else}}})
    end,
 
@@ -361,105 +362,105 @@ Tlv1 = match_tags(Tlv, TagIn),
 case (case Tlv1 of [CtempTlv1] -> CtempTlv1; _ -> Tlv1 end) of
 
 %% 'bindRequest'
-    {65536, V1} -> 
+    {65536, V1} ->
         {bindRequest, 'dec_BindRequest'(V1, [])};
 
 
 %% 'bindResponse'
-    {65537, V1} -> 
+    {65537, V1} ->
         {bindResponse, 'dec_BindResponse'(V1, [])};
 
 
 %% 'unbindRequest'
-    {65538, V1} -> 
+    {65538, V1} ->
         {unbindRequest, decode_null(V1,[])};
 
 
 %% 'searchRequest'
-    {65539, V1} -> 
+    {65539, V1} ->
         {searchRequest, 'dec_SearchRequest'(V1, [])};
 
 
 %% 'searchResEntry'
-    {65540, V1} -> 
+    {65540, V1} ->
         {searchResEntry, 'dec_SearchResultEntry'(V1, [])};
 
 
 %% 'searchResDone'
-    {65541, V1} -> 
+    {65541, V1} ->
         {searchResDone, 'dec_SearchResultDone'(V1, [])};
 
 
 %% 'searchResRef'
-    {65555, V1} -> 
+    {65555, V1} ->
         {searchResRef, 'dec_SearchResultReference'(V1, [])};
 
 
 %% 'modifyRequest'
-    {65542, V1} -> 
+    {65542, V1} ->
         {modifyRequest, 'dec_ModifyRequest'(V1, [])};
 
 
 %% 'modifyResponse'
-    {65543, V1} -> 
+    {65543, V1} ->
         {modifyResponse, 'dec_ModifyResponse'(V1, [])};
 
 
 %% 'addRequest'
-    {65544, V1} -> 
+    {65544, V1} ->
         {addRequest, 'dec_AddRequest'(V1, [])};
 
 
 %% 'addResponse'
-    {65545, V1} -> 
+    {65545, V1} ->
         {addResponse, 'dec_AddResponse'(V1, [])};
 
 
 %% 'delRequest'
-    {65546, V1} -> 
+    {65546, V1} ->
         {delRequest, decode_restricted_string(V1,[])};
 
 
 %% 'delResponse'
-    {65547, V1} -> 
+    {65547, V1} ->
         {delResponse, 'dec_DelResponse'(V1, [])};
 
 
 %% 'modDNRequest'
-    {65548, V1} -> 
+    {65548, V1} ->
         {modDNRequest, 'dec_ModifyDNRequest'(V1, [])};
 
 
 %% 'modDNResponse'
-    {65549, V1} -> 
+    {65549, V1} ->
         {modDNResponse, 'dec_ModifyDNResponse'(V1, [])};
 
 
 %% 'compareRequest'
-    {65550, V1} -> 
+    {65550, V1} ->
         {compareRequest, 'dec_CompareRequest'(V1, [])};
 
 
 %% 'compareResponse'
-    {65551, V1} -> 
+    {65551, V1} ->
         {compareResponse, 'dec_CompareResponse'(V1, [])};
 
 
 %% 'abandonRequest'
-    {65552, V1} -> 
+    {65552, V1} ->
         {abandonRequest, decode_integer(V1,{0,2147483647},[])};
 
 
 %% 'extendedReq'
-    {65559, V1} -> 
+    {65559, V1} ->
         {extendedReq, 'dec_ExtendedRequest'(V1, [])};
 
 
 %% 'extendedResp'
-    {65560, V1} -> 
+    {65560, V1} ->
         {extendedResp, 'dec_ExtendedResponse'(V1, [])};
 
-      Else -> 
+      Else ->
          exit({error,{asn1,{invalid_choice_tag,Else}}})
    end
 .
@@ -470,20 +471,20 @@ case (case Tlv1 of [CtempTlv1] -> CtempTlv1; _ -> Tlv1 end) of
 
 'dec_LDAPMessage'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
 %%-------------------------------------------------
 %% attribute messageID(1) with type INTEGER
 %%-------------------------------------------------
-[V1|Tlv2] = Tlv1, 
+[V1|Tlv2] = Tlv1,
 Term1 = decode_integer(V1,{0,2147483647},[2]),
 
 %%-------------------------------------------------
 %% attribute protocolOp(2) with type CHOICE
 %%-------------------------------------------------
-[V2|Tlv3] = Tlv2, 
+[V2|Tlv3] = Tlv2,
 Term2 = 'dec_LDAPMessage_protocolOp'(V2, []),
 
 %%-------------------------------------------------
@@ -639,7 +640,7 @@ decode_restricted_string(Tlv,TagIn).
    {EncBytes,EncLen} = 'enc_AttributeDescriptionList_components'(Val,[],0),
    encode_tags(TagIn, EncBytes, EncLen).
 
-'enc_AttributeDescriptionList_components'([], AccBytes, AccLen) -> 
+'enc_AttributeDescriptionList_components'([], AccBytes, AccLen) ->
    {lists:reverse(AccBytes),AccLen};
 
 'enc_AttributeDescriptionList_components'([H|T],AccBytes, AccLen) ->
@@ -653,7 +654,7 @@ decode_restricted_string(Tlv,TagIn).
 
 'dec_AttributeDescriptionList'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 [decode_restricted_string(V1,[4]) || V1 <- Tlv1].
@@ -708,20 +709,20 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
 
 'dec_AttributeValueAssertion'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
 %%-------------------------------------------------
 %% attribute attributeDesc(1) with type OCTET STRING
 %%-------------------------------------------------
-[V1|Tlv2] = Tlv1, 
+[V1|Tlv2] = Tlv1,
 Term1 = decode_restricted_string(V1,[4]),
 
 %%-------------------------------------------------
 %% attribute assertionValue(2) with type OCTET STRING
 %%-------------------------------------------------
-[V2|Tlv3] = Tlv2, 
+[V2|Tlv3] = Tlv2,
 Term2 = decode_restricted_string(V2,[4]),
 
 case Tlv3 of
@@ -781,7 +782,7 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
       {EncBytes,EncLen} = 'enc_Attribute_vals_components'(Val,[],0),
    encode_tags(TagIn, EncBytes, EncLen).
 
-'enc_Attribute_vals_components'([], AccBytes, AccLen) -> 
+'enc_Attribute_vals_components'([], AccBytes, AccLen) ->
    {lists:reverse(AccBytes),AccLen};
 
 'enc_Attribute_vals_components'([H|T],AccBytes, AccLen) ->
@@ -790,7 +791,7 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
 
 'dec_Attribute_vals'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 [decode_restricted_string(V1,[4]) || V1 <- Tlv1].
@@ -803,20 +804,20 @@ Tlv1 = match_tags(Tlv, TagIn),
 
 'dec_Attribute'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
 %%-------------------------------------------------
 %% attribute type(1) with type OCTET STRING
 %%-------------------------------------------------
-[V1|Tlv2] = Tlv1, 
+[V1|Tlv2] = Tlv1,
 Term1 = decode_restricted_string(V1,[4]),
 
 %%-------------------------------------------------
 %% attribute vals(2) with type SET OF
 %%-------------------------------------------------
-[V2|Tlv3] = Tlv2, 
+[V2|Tlv3] = Tlv2,
 Term2 = 'dec_Attribute_vals'(V2, [17]),
 
 case Tlv3 of
@@ -928,26 +929,26 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
 
 'dec_LDAPResult'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
 %%-------------------------------------------------
 %% attribute resultCode(1) with type ENUMERATED
 %%-------------------------------------------------
-[V1|Tlv2] = Tlv1, 
+[V1|Tlv2] = Tlv1,
 Term1 = decode_enumerated(V1,[{success,0},{operationsError,1},{protocolError,2},{timeLimitExceeded,3},{sizeLimitExceeded,4},{compareFalse,5},{compareTrue,6},{authMethodNotSupported,7},{strongAuthRequired,8},{referral,10},{adminLimitExceeded,11},{unavailableCriticalExtension,12},{confidentialityRequired,13},{saslBindInProgress,14},{noSuchAttribute,16},{undefinedAttributeType,17},{inappropriateMatching,18},{constraintViolation,19},{attributeOrValueExists,20},{invalidAttributeSyntax,21},{noSuchObject,32},{aliasProblem,33},{invalidDNSyntax,34},{aliasDereferencingProblem,36},{inappropriateAuthentication,48},{invalidCredentials,49},{insufficientAccessRights,50},{busy,51},{unavailable,52},{unwillingToPerform,53},{loopDetect,54},{namingViolation,64},{objectClassViolation,65},{notAllowedOnNonLeaf,66},{notAllowedOnRDN,67},{entryAlreadyExists,68},{objectClassModsProhibited,69},{affectsMultipleDSAs,71},{other,80}],[10]),
 
 %%-------------------------------------------------
 %% attribute matchedDN(2) with type OCTET STRING
 %%-------------------------------------------------
-[V2|Tlv3] = Tlv2, 
+[V2|Tlv3] = Tlv2,
 Term2 = decode_restricted_string(V2,[4]),
 
 %%-------------------------------------------------
 %% attribute errorMessage(3) with type OCTET STRING
 %%-------------------------------------------------
-[V3|Tlv4] = Tlv3, 
+[V3|Tlv4] = Tlv3,
 Term3 = decode_restricted_string(V3,[4]),
 
 %%-------------------------------------------------
@@ -977,7 +978,7 @@ end,
    {EncBytes,EncLen} = 'enc_Referral_components'(Val,[],0),
    encode_tags(TagIn, EncBytes, EncLen).
 
-'enc_Referral_components'([], AccBytes, AccLen) -> 
+'enc_Referral_components'([], AccBytes, AccLen) ->
    {lists:reverse(AccBytes),AccLen};
 
 'enc_Referral_components'([H|T],AccBytes, AccLen) ->
@@ -991,7 +992,7 @@ end,
 
 'dec_Referral'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 [decode_restricted_string(V1,[4]) || V1 <- Tlv1].
@@ -1027,7 +1028,7 @@ decode_restricted_string(Tlv,TagIn).
    {EncBytes,EncLen} = 'enc_Controls_components'(Val,[],0),
    encode_tags(TagIn, EncBytes, EncLen).
 
-'enc_Controls_components'([], AccBytes, AccLen) -> 
+'enc_Controls_components'([], AccBytes, AccLen) ->
    {lists:reverse(AccBytes),AccLen};
 
 'enc_Controls_components'([H|T],AccBytes, AccLen) ->
@@ -1041,7 +1042,7 @@ decode_restricted_string(Tlv,TagIn).
 
 'dec_Controls'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 ['dec_Control'(V1, [16]) || V1 <- Tlv1].
@@ -1092,14 +1093,14 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
 
 'dec_Control'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
 %%-------------------------------------------------
 %% attribute controlType(1) with type OCTET STRING
 %%-------------------------------------------------
-[V1|Tlv2] = Tlv1, 
+[V1|Tlv2] = Tlv1,
 Term1 = decode_restricted_string(V1,[4]),
 
 %%-------------------------------------------------
@@ -1163,26 +1164,26 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
 
 'dec_BindRequest'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
 %%-------------------------------------------------
 %% attribute version(1) with type INTEGER
 %%-------------------------------------------------
-[V1|Tlv2] = Tlv1, 
+[V1|Tlv2] = Tlv1,
 Term1 = decode_integer(V1,{1,127},[2]),
 
 %%-------------------------------------------------
 %% attribute name(2) with type OCTET STRING
 %%-------------------------------------------------
-[V2|Tlv3] = Tlv2, 
+[V2|Tlv3] = Tlv2,
 Term2 = decode_restricted_string(V2,[4]),
 
 %%-------------------------------------------------
 %% attribute authentication(3)   External ELDAPv3:AuthenticationChoice
 %%-------------------------------------------------
-[V3|Tlv4] = Tlv3, 
+[V3|Tlv4] = Tlv3,
 Term3 = 'dec_AuthenticationChoice'(V3, []),
 
 case Tlv4 of
@@ -1204,7 +1205,7 @@ end,
          encode_restricted_string(element(2,Val), [<<128>>]);
       sasl ->
          'enc_SaslCredentials'(element(2,Val), [<<163>>]);
-      Else -> 
+      Else ->
          exit({error,{asn1,{invalid_choice_type,Else}}})
    end,
 
@@ -1221,15 +1222,15 @@ Tlv1 = match_tags(Tlv, TagIn),
 case (case Tlv1 of [CtempTlv1] -> CtempTlv1; _ -> Tlv1 end) of
 
 %% 'simple'
-    {131072, V1} -> 
+    {131072, V1} ->
         {simple, decode_restricted_string(V1,[])};
 
 
 %% 'sasl'
-    {131075, V1} -> 
+    {131075, V1} ->
         {sasl, 'dec_SaslCredentials'(V1, [])};
 
-      Else -> 
+      Else ->
          exit({error,{asn1,{invalid_choice_tag,Else}}})
    end
 .
@@ -1268,14 +1269,14 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
 
 'dec_SaslCredentials'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
 %%-------------------------------------------------
 %% attribute mechanism(1) with type OCTET STRING
 %%-------------------------------------------------
-[V1|Tlv2] = Tlv1, 
+[V1|Tlv2] = Tlv1,
 Term1 = decode_restricted_string(V1,[4]),
 
 %%-------------------------------------------------
@@ -1388,26 +1389,26 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
 
 'dec_BindResponse'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
 %%-------------------------------------------------
 %% attribute resultCode(1) with type ENUMERATED
 %%-------------------------------------------------
-[V1|Tlv2] = Tlv1, 
+[V1|Tlv2] = Tlv1,
 Term1 = decode_enumerated(V1,[{success,0},{operationsError,1},{protocolError,2},{timeLimitExceeded,3},{sizeLimitExceeded,4},{compareFalse,5},{compareTrue,6},{authMethodNotSupported,7},{strongAuthRequired,8},{referral,10},{adminLimitExceeded,11},{unavailableCriticalExtension,12},{confidentialityRequired,13},{saslBindInProgress,14},{noSuchAttribute,16},{undefinedAttributeType,17},{inappropriateMatching,18},{constraintViolation,19},{attributeOrValueExists,20},{invalidAttributeSyntax,21},{noSuchObject,32},{aliasProblem,33},{invalidDNSyntax,34},{aliasDereferencingProblem,36},{inappropriateAuthentication,48},{invalidCredentials,49},{insufficientAccessRights,50},{busy,51},{unavailable,52},{unwillingToPerform,53},{loopDetect,54},{namingViolation,64},{objectClassViolation,65},{notAllowedOnNonLeaf,66},{notAllowedOnRDN,67},{entryAlreadyExists,68},{objectClassModsProhibited,69},{affectsMultipleDSAs,71},{other,80}],[10]),
 
 %%-------------------------------------------------
 %% attribute matchedDN(2) with type OCTET STRING
 %%-------------------------------------------------
-[V2|Tlv3] = Tlv2, 
+[V2|Tlv3] = Tlv2,
 Term2 = decode_restricted_string(V2,[4]),
 
 %%-------------------------------------------------
 %% attribute errorMessage(3) with type OCTET STRING
 %%-------------------------------------------------
-[V3|Tlv4] = Tlv3, 
+[V3|Tlv4] = Tlv3,
 Term3 = decode_restricted_string(V3,[4]),
 
 %%-------------------------------------------------
@@ -1525,56 +1526,56 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
 
 'dec_SearchRequest'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
 %%-------------------------------------------------
 %% attribute baseObject(1) with type OCTET STRING
 %%-------------------------------------------------
-[V1|Tlv2] = Tlv1, 
+[V1|Tlv2] = Tlv1,
 Term1 = decode_restricted_string(V1,[4]),
 
 %%-------------------------------------------------
 %% attribute scope(2) with type ENUMERATED
 %%-------------------------------------------------
-[V2|Tlv3] = Tlv2, 
+[V2|Tlv3] = Tlv2,
 Term2 = decode_enumerated(V2,[{baseObject,0},{singleLevel,1},{wholeSubtree,2}],[10]),
 
 %%-------------------------------------------------
 %% attribute derefAliases(3) with type ENUMERATED
 %%-------------------------------------------------
-[V3|Tlv4] = Tlv3, 
+[V3|Tlv4] = Tlv3,
 Term3 = decode_enumerated(V3,[{neverDerefAliases,0},{derefInSearching,1},{derefFindingBaseObj,2},{derefAlways,3}],[10]),
 
 %%-------------------------------------------------
 %% attribute sizeLimit(4) with type INTEGER
 %%-------------------------------------------------
-[V4|Tlv5] = Tlv4, 
+[V4|Tlv5] = Tlv4,
 Term4 = decode_integer(V4,{0,2147483647},[2]),
 
 %%-------------------------------------------------
 %% attribute timeLimit(5) with type INTEGER
 %%-------------------------------------------------
-[V5|Tlv6] = Tlv5, 
+[V5|Tlv6] = Tlv5,
 Term5 = decode_integer(V5,{0,2147483647},[2]),
 
 %%-------------------------------------------------
 %% attribute typesOnly(6) with type BOOLEAN
 %%-------------------------------------------------
-[V6|Tlv7] = Tlv6, 
+[V6|Tlv7] = Tlv6,
 Term6 = decode_boolean(V6,[1]),
 
 %%-------------------------------------------------
 %% attribute filter(7)   External ELDAPv3:Filter
 %%-------------------------------------------------
-[V7|Tlv8] = Tlv7, 
+[V7|Tlv8] = Tlv7,
 Term7 = 'dec_Filter'(V7, []),
 
 %%-------------------------------------------------
 %% attribute attributes(8)   External ELDAPv3:AttributeDescriptionList
 %%-------------------------------------------------
-[V8|Tlv9] = Tlv8, 
+[V8|Tlv9] = Tlv8,
 Term8 = 'dec_AttributeDescriptionList'(V8, [16]),
 
 case Tlv9 of
@@ -1612,7 +1613,7 @@ end,
          'enc_AttributeValueAssertion'(element(2,Val), [<<168>>]);
       extensibleMatch ->
          'enc_MatchingRuleAssertion'(element(2,Val), [<<169>>]);
-      Else -> 
+      Else ->
          exit({error,{asn1,{invalid_choice_type,Else}}})
    end,
 
@@ -1629,7 +1630,7 @@ encode_tags(TagIn, EncBytes, EncLen).
       {EncBytes,EncLen} = 'enc_Filter_and_components'(Val,[],0),
    encode_tags(TagIn, EncBytes, EncLen).
 
-'enc_Filter_and_components'([], AccBytes, AccLen) -> 
+'enc_Filter_and_components'([], AccBytes, AccLen) ->
    {lists:reverse(AccBytes),AccLen};
 
 'enc_Filter_and_components'([H|T],AccBytes, AccLen) ->
@@ -1638,7 +1639,7 @@ encode_tags(TagIn, EncBytes, EncLen).
 
 'dec_Filter_and'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 ['dec_Filter'(V1, []) || V1 <- Tlv1].
@@ -1654,7 +1655,7 @@ Tlv1 = match_tags(Tlv, TagIn),
       {EncBytes,EncLen} = 'enc_Filter_or_components'(Val,[],0),
    encode_tags(TagIn, EncBytes, EncLen).
 
-'enc_Filter_or_components'([], AccBytes, AccLen) -> 
+'enc_Filter_or_components'([], AccBytes, AccLen) ->
    {lists:reverse(AccBytes),AccLen};
 
 'enc_Filter_or_components'([H|T],AccBytes, AccLen) ->
@@ -1663,7 +1664,7 @@ Tlv1 = match_tags(Tlv, TagIn),
 
 'dec_Filter_or'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 ['dec_Filter'(V1, []) || V1 <- Tlv1].
@@ -1679,55 +1680,55 @@ Tlv1 = match_tags(Tlv, TagIn),
 case (case Tlv1 of [CtempTlv1] -> CtempTlv1; _ -> Tlv1 end) of
 
 %% 'and'
-    {131072, V1} -> 
+    {131072, V1} ->
         {'and', 'dec_Filter_and'(V1, [])};
 
 
 %% 'or'
-    {131073, V1} -> 
+    {131073, V1} ->
         {'or', 'dec_Filter_or'(V1, [])};
 
 
 %% 'not'
-    {131074, V1} -> 
+    {131074, V1} ->
         {'not', 'dec_Filter'(V1, [])};
 
 
 %% 'equalityMatch'
-    {131075, V1} -> 
+    {131075, V1} ->
         {equalityMatch, 'dec_AttributeValueAssertion'(V1, [])};
 
 
 %% 'substrings'
-    {131076, V1} -> 
+    {131076, V1} ->
         {substrings, 'dec_SubstringFilter'(V1, [])};
 
 
 %% 'greaterOrEqual'
-    {131077, V1} -> 
+    {131077, V1} ->
         {greaterOrEqual, 'dec_AttributeValueAssertion'(V1, [])};
 
 
 %% 'lessOrEqual'
-    {131078, V1} -> 
+    {131078, V1} ->
         {lessOrEqual, 'dec_AttributeValueAssertion'(V1, [])};
 
 
 %% 'present'
-    {131079, V1} -> 
+    {131079, V1} ->
         {present, decode_restricted_string(V1,[])};
 
 
 %% 'approxMatch'
-    {131080, V1} -> 
+    {131080, V1} ->
         {approxMatch, 'dec_AttributeValueAssertion'(V1, [])};
 
 
 %% 'extensibleMatch'
-    {131081, V1} -> 
+    {131081, V1} ->
         {extensibleMatch, 'dec_MatchingRuleAssertion'(V1, [])};
 
-      Else -> 
+      Else ->
          exit({error,{asn1,{invalid_choice_tag,Else}}})
    end
 .
@@ -1765,7 +1766,7 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
       {EncBytes,EncLen} = 'enc_SubstringFilter_substrings_components'(Val,[],0),
    encode_tags(TagIn, EncBytes, EncLen).
 
-'enc_SubstringFilter_substrings_components'([], AccBytes, AccLen) -> 
+'enc_SubstringFilter_substrings_components'([], AccBytes, AccLen) ->
    {lists:reverse(AccBytes),AccLen};
 
 'enc_SubstringFilter_substrings_components'([H|T],AccBytes, AccLen) ->
@@ -1786,7 +1787,7 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
          encode_restricted_string(element(2,Val), [<<129>>]);
       final ->
          encode_restricted_string(element(2,Val), [<<130>>]);
-      Else -> 
+      Else ->
          exit({error,{asn1,{invalid_choice_type,Else}}})
    end,
 
@@ -1798,26 +1799,26 @@ Tlv1 = match_tags(Tlv, TagIn),
 case (case Tlv1 of [CtempTlv1] -> CtempTlv1; _ -> Tlv1 end) of
 
 %% 'initial'
-    {131072, V1} -> 
+    {131072, V1} ->
         {initial, decode_restricted_string(V1,[])};
 
 
 %% 'any'
-    {131073, V1} -> 
+    {131073, V1} ->
         {any, decode_restricted_string(V1,[])};
 
 
 %% 'final'
-    {131074, V1} -> 
+    {131074, V1} ->
         {final, decode_restricted_string(V1,[])};
 
-      Else -> 
+      Else ->
          exit({error,{asn1,{invalid_choice_tag,Else}}})
    end
 .
 'dec_SubstringFilter_substrings'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 ['dec_SubstringFilter_substrings_SEQOF'(V1, []) || V1 <- Tlv1].
@@ -1830,20 +1831,20 @@ Tlv1 = match_tags(Tlv, TagIn),
 
 'dec_SubstringFilter'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
 %%-------------------------------------------------
 %% attribute type(1) with type OCTET STRING
 %%-------------------------------------------------
-[V1|Tlv2] = Tlv1, 
+[V1|Tlv2] = Tlv1,
 Term1 = decode_restricted_string(V1,[4]),
 
 %%-------------------------------------------------
 %% attribute substrings(2) with type SEQUENCE OF
 %%-------------------------------------------------
-[V2|Tlv3] = Tlv2, 
+[V2|Tlv3] = Tlv2,
 Term2 = 'dec_SubstringFilter_substrings'(V2, [16]),
 
 case Tlv3 of
@@ -1905,7 +1906,7 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
 
 'dec_MatchingRuleAssertion'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
@@ -1932,7 +1933,7 @@ end,
 %%-------------------------------------------------
 %% attribute matchValue(3) with type OCTET STRING
 %%-------------------------------------------------
-[V3|Tlv4] = Tlv3, 
+[V3|Tlv4] = Tlv3,
 Term3 = decode_restricted_string(V3,[131075]),
 
 %%-------------------------------------------------
@@ -1981,20 +1982,20 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
 
 'dec_SearchResultEntry'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
 %%-------------------------------------------------
 %% attribute objectName(1) with type OCTET STRING
 %%-------------------------------------------------
-[V1|Tlv2] = Tlv1, 
+[V1|Tlv2] = Tlv1,
 Term1 = decode_restricted_string(V1,[4]),
 
 %%-------------------------------------------------
 %% attribute attributes(2)   External ELDAPv3:PartialAttributeList
 %%-------------------------------------------------
-[V2|Tlv3] = Tlv2, 
+[V2|Tlv3] = Tlv2,
 Term2 = 'dec_PartialAttributeList'(V2, [16]),
 
 case Tlv3 of
@@ -2014,7 +2015,7 @@ end,
    {EncBytes,EncLen} = 'enc_PartialAttributeList_components'(Val,[],0),
    encode_tags(TagIn, EncBytes, EncLen).
 
-'enc_PartialAttributeList_components'([], AccBytes, AccLen) -> 
+'enc_PartialAttributeList_components'([], AccBytes, AccLen) ->
    {lists:reverse(AccBytes),AccLen};
 
 'enc_PartialAttributeList_components'([H|T],AccBytes, AccLen) ->
@@ -2053,7 +2054,7 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
       {EncBytes,EncLen} = 'enc_PartialAttributeList_SEQOF_vals_components'(Val,[],0),
    encode_tags(TagIn, EncBytes, EncLen).
 
-'enc_PartialAttributeList_SEQOF_vals_components'([], AccBytes, AccLen) -> 
+'enc_PartialAttributeList_SEQOF_vals_components'([], AccBytes, AccLen) ->
    {lists:reverse(AccBytes),AccLen};
 
 'enc_PartialAttributeList_SEQOF_vals_components'([H|T],AccBytes, AccLen) ->
@@ -2062,7 +2063,7 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
 
 'dec_PartialAttributeList_SEQOF_vals'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 [decode_restricted_string(V1,[4]) || V1 <- Tlv1].
@@ -2070,20 +2071,20 @@ Tlv1 = match_tags(Tlv, TagIn),
 
 'dec_PartialAttributeList_SEQOF'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
 %%-------------------------------------------------
 %% attribute type(1) with type OCTET STRING
 %%-------------------------------------------------
-[V1|Tlv2] = Tlv1, 
+[V1|Tlv2] = Tlv1,
 Term1 = decode_restricted_string(V1,[4]),
 
 %%-------------------------------------------------
 %% attribute vals(2) with type SET OF
 %%-------------------------------------------------
-[V2|Tlv3] = Tlv2, 
+[V2|Tlv3] = Tlv2,
 Term2 = 'dec_PartialAttributeList_SEQOF_vals'(V2, [17]),
 
 case Tlv3 of
@@ -2098,7 +2099,7 @@ end,
 
 'dec_PartialAttributeList'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 ['dec_PartialAttributeList_SEQOF'(V1, [16]) || V1 <- Tlv1].
@@ -2116,7 +2117,7 @@ Tlv1 = match_tags(Tlv, TagIn),
    {EncBytes,EncLen} = 'enc_SearchResultReference_components'(Val,[],0),
    encode_tags(TagIn, EncBytes, EncLen).
 
-'enc_SearchResultReference_components'([], AccBytes, AccLen) -> 
+'enc_SearchResultReference_components'([], AccBytes, AccLen) ->
    {lists:reverse(AccBytes),AccLen};
 
 'enc_SearchResultReference_components'([H|T],AccBytes, AccLen) ->
@@ -2130,7 +2131,7 @@ Tlv1 = match_tags(Tlv, TagIn),
 
 'dec_SearchResultReference'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 [decode_restricted_string(V1,[4]) || V1 <- Tlv1].
@@ -2188,7 +2189,7 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
       {EncBytes,EncLen} = 'enc_ModifyRequest_modification_components'(Val,[],0),
    encode_tags(TagIn, EncBytes, EncLen).
 
-'enc_ModifyRequest_modification_components'([], AccBytes, AccLen) -> 
+'enc_ModifyRequest_modification_components'([], AccBytes, AccLen) ->
    {lists:reverse(AccBytes),AccLen};
 
 'enc_ModifyRequest_modification_components'([H|T],AccBytes, AccLen) ->
@@ -2224,20 +2225,20 @@ LenSoFar = EncLen1 + EncLen2,
 encode_tags(TagIn, BytesSoFar, LenSoFar).
 'dec_ModifyRequest_modification_SEQOF'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
 %%-------------------------------------------------
 %% attribute operation(1) with type ENUMERATED
 %%-------------------------------------------------
-[V1|Tlv2] = Tlv1, 
+[V1|Tlv2] = Tlv1,
 Term1 = decode_enumerated(V1,[{add,0},{delete,1},{replace,2}],[10]),
 
 %%-------------------------------------------------
 %% attribute modification(2)   External ELDAPv3:AttributeTypeAndValues
 %%-------------------------------------------------
-[V2|Tlv3] = Tlv2, 
+[V2|Tlv3] = Tlv2,
 Term2 = 'dec_AttributeTypeAndValues'(V2, [16]),
 
 case Tlv3 of
@@ -2247,7 +2248,7 @@ end,
 
 'dec_ModifyRequest_modification'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 ['dec_ModifyRequest_modification_SEQOF'(V1, [16]) || V1 <- Tlv1].
@@ -2260,20 +2261,20 @@ Tlv1 = match_tags(Tlv, TagIn),
 
 'dec_ModifyRequest'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
 %%-------------------------------------------------
 %% attribute object(1) with type OCTET STRING
 %%-------------------------------------------------
-[V1|Tlv2] = Tlv1, 
+[V1|Tlv2] = Tlv1,
 Term1 = decode_restricted_string(V1,[4]),
 
 %%-------------------------------------------------
 %% attribute modification(2) with type SEQUENCE OF
 %%-------------------------------------------------
-[V2|Tlv3] = Tlv2, 
+[V2|Tlv3] = Tlv2,
 Term2 = 'dec_ModifyRequest_modification'(V2, [16]),
 
 case Tlv3 of
@@ -2315,7 +2316,7 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
       {EncBytes,EncLen} = 'enc_AttributeTypeAndValues_vals_components'(Val,[],0),
    encode_tags(TagIn, EncBytes, EncLen).
 
-'enc_AttributeTypeAndValues_vals_components'([], AccBytes, AccLen) -> 
+'enc_AttributeTypeAndValues_vals_components'([], AccBytes, AccLen) ->
    {lists:reverse(AccBytes),AccLen};
 
 'enc_AttributeTypeAndValues_vals_components'([H|T],AccBytes, AccLen) ->
@@ -2324,7 +2325,7 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
 
 'dec_AttributeTypeAndValues_vals'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 [decode_restricted_string(V1,[4]) || V1 <- Tlv1].
@@ -2337,20 +2338,20 @@ Tlv1 = match_tags(Tlv, TagIn),
 
 'dec_AttributeTypeAndValues'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
 %%-------------------------------------------------
 %% attribute type(1) with type OCTET STRING
 %%-------------------------------------------------
-[V1|Tlv2] = Tlv1, 
+[V1|Tlv2] = Tlv1,
 Term1 = decode_restricted_string(V1,[4]),
 
 %%-------------------------------------------------
 %% attribute vals(2) with type SET OF
 %%-------------------------------------------------
-[V2|Tlv3] = Tlv2, 
+[V2|Tlv3] = Tlv2,
 Term2 = 'dec_AttributeTypeAndValues_vals'(V2, [17]),
 
 case Tlv3 of
@@ -2407,20 +2408,20 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
 
 'dec_AddRequest'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
 %%-------------------------------------------------
 %% attribute entry(1) with type OCTET STRING
 %%-------------------------------------------------
-[V1|Tlv2] = Tlv1, 
+[V1|Tlv2] = Tlv1,
 Term1 = decode_restricted_string(V1,[4]),
 
 %%-------------------------------------------------
 %% attribute attributes(2)   External ELDAPv3:AttributeList
 %%-------------------------------------------------
-[V2|Tlv3] = Tlv2, 
+[V2|Tlv3] = Tlv2,
 Term2 = 'dec_AttributeList'(V2, [16]),
 
 case Tlv3 of
@@ -2440,7 +2441,7 @@ end,
    {EncBytes,EncLen} = 'enc_AttributeList_components'(Val,[],0),
    encode_tags(TagIn, EncBytes, EncLen).
 
-'enc_AttributeList_components'([], AccBytes, AccLen) -> 
+'enc_AttributeList_components'([], AccBytes, AccLen) ->
    {lists:reverse(AccBytes),AccLen};
 
 'enc_AttributeList_components'([H|T],AccBytes, AccLen) ->
@@ -2479,7 +2480,7 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
       {EncBytes,EncLen} = 'enc_AttributeList_SEQOF_vals_components'(Val,[],0),
    encode_tags(TagIn, EncBytes, EncLen).
 
-'enc_AttributeList_SEQOF_vals_components'([], AccBytes, AccLen) -> 
+'enc_AttributeList_SEQOF_vals_components'([], AccBytes, AccLen) ->
    {lists:reverse(AccBytes),AccLen};
 
 'enc_AttributeList_SEQOF_vals_components'([H|T],AccBytes, AccLen) ->
@@ -2488,7 +2489,7 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
 
 'dec_AttributeList_SEQOF_vals'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 [decode_restricted_string(V1,[4]) || V1 <- Tlv1].
@@ -2496,20 +2497,20 @@ Tlv1 = match_tags(Tlv, TagIn),
 
 'dec_AttributeList_SEQOF'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
 %%-------------------------------------------------
 %% attribute type(1) with type OCTET STRING
 %%-------------------------------------------------
-[V1|Tlv2] = Tlv1, 
+[V1|Tlv2] = Tlv1,
 Term1 = decode_restricted_string(V1,[4]),
 
 %%-------------------------------------------------
 %% attribute vals(2) with type SET OF
 %%-------------------------------------------------
-[V2|Tlv3] = Tlv2, 
+[V2|Tlv3] = Tlv2,
 Term2 = 'dec_AttributeList_SEQOF_vals'(V2, [17]),
 
 case Tlv3 of
@@ -2524,7 +2525,7 @@ end,
 
 'dec_AttributeList'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 ['dec_AttributeList_SEQOF'(V1, [16]) || V1 <- Tlv1].
@@ -2629,26 +2630,26 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
 
 'dec_ModifyDNRequest'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
 %%-------------------------------------------------
 %% attribute entry(1) with type OCTET STRING
 %%-------------------------------------------------
-[V1|Tlv2] = Tlv1, 
+[V1|Tlv2] = Tlv1,
 Term1 = decode_restricted_string(V1,[4]),
 
 %%-------------------------------------------------
 %% attribute newrdn(2) with type OCTET STRING
 %%-------------------------------------------------
-[V2|Tlv3] = Tlv2, 
+[V2|Tlv3] = Tlv2,
 Term2 = decode_restricted_string(V2,[4]),
 
 %%-------------------------------------------------
 %% attribute deleteoldrdn(3) with type BOOLEAN
 %%-------------------------------------------------
-[V3|Tlv4] = Tlv3, 
+[V3|Tlv4] = Tlv3,
 Term3 = decode_boolean(V3,[1]),
 
 %%-------------------------------------------------
@@ -2715,20 +2716,20 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
 
 'dec_CompareRequest'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
 %%-------------------------------------------------
 %% attribute entry(1) with type OCTET STRING
 %%-------------------------------------------------
-[V1|Tlv2] = Tlv1, 
+[V1|Tlv2] = Tlv1,
 Term1 = decode_restricted_string(V1,[4]),
 
 %%-------------------------------------------------
 %% attribute ava(2)   External ELDAPv3:AttributeValueAssertion
 %%-------------------------------------------------
-[V2|Tlv3] = Tlv2, 
+[V2|Tlv3] = Tlv2,
 Term2 = 'dec_AttributeValueAssertion'(V2, [16]),
 
 case Tlv3 of
@@ -2807,14 +2808,14 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
 
 'dec_ExtendedRequest'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
 %%-------------------------------------------------
 %% attribute requestName(1) with type OCTET STRING
 %%-------------------------------------------------
-[V1|Tlv2] = Tlv1, 
+[V1|Tlv2] = Tlv1,
 Term1 = decode_restricted_string(V1,[131072]),
 
 %%-------------------------------------------------
@@ -2936,26 +2937,26 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
 
 'dec_ExtendedResponse'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
 %%-------------------------------------------------
 %% attribute resultCode(1) with type ENUMERATED
 %%-------------------------------------------------
-[V1|Tlv2] = Tlv1, 
+[V1|Tlv2] = Tlv1,
 Term1 = decode_enumerated(V1,[{success,0},{operationsError,1},{protocolError,2},{timeLimitExceeded,3},{sizeLimitExceeded,4},{compareFalse,5},{compareTrue,6},{authMethodNotSupported,7},{strongAuthRequired,8},{referral,10},{adminLimitExceeded,11},{unavailableCriticalExtension,12},{confidentialityRequired,13},{saslBindInProgress,14},{noSuchAttribute,16},{undefinedAttributeType,17},{inappropriateMatching,18},{constraintViolation,19},{attributeOrValueExists,20},{invalidAttributeSyntax,21},{noSuchObject,32},{aliasProblem,33},{invalidDNSyntax,34},{aliasDereferencingProblem,36},{inappropriateAuthentication,48},{invalidCredentials,49},{insufficientAccessRights,50},{busy,51},{unavailable,52},{unwillingToPerform,53},{loopDetect,54},{namingViolation,64},{objectClassViolation,65},{notAllowedOnNonLeaf,66},{notAllowedOnRDN,67},{entryAlreadyExists,68},{objectClassModsProhibited,69},{affectsMultipleDSAs,71},{other,80}],[10]),
 
 %%-------------------------------------------------
 %% attribute matchedDN(2) with type OCTET STRING
 %%-------------------------------------------------
-[V2|Tlv3] = Tlv2, 
+[V2|Tlv3] = Tlv2,
 Term2 = decode_restricted_string(V2,[4]),
 
 %%-------------------------------------------------
 %% attribute errorMessage(3) with type OCTET STRING
 %%-------------------------------------------------
-[V3|Tlv4] = Tlv3, 
+[V3|Tlv4] = Tlv3,
 Term3 = decode_restricted_string(V3,[4]),
 
 %%-------------------------------------------------
@@ -3041,7 +3042,7 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
 
 'dec_PasswdModifyRequestValue'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 
@@ -3110,7 +3111,7 @@ encode_tags(TagIn, BytesSoFar, LenSoFar).
 
 'dec_PasswdModifyResponseValue'(Tlv, TagIn) ->
    %%-------------------------------------------------
-   %% decode tag and length 
+   %% decode tag and length
    %%-------------------------------------------------
 Tlv1 = match_tags(Tlv, TagIn),
 

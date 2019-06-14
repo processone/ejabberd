@@ -164,7 +164,8 @@ count_messages(LUser, LServer) ->
 import(#offline_msg{} = Msg) ->
     mnesia:dirty_write(Msg).
 
-need_transform(#offline_msg{us = {U, S}}) when is_list(U) orelse is_list(S) ->
+need_transform({offline_msg, {U, S}, _, _, _, _, _})
+  when is_list(U) orelse is_list(S) ->
     ?INFO_MSG("Mnesia table 'offline_msg' will be converted to binary", []),
     true;
 need_transform(_) ->

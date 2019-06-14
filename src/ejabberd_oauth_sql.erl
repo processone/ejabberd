@@ -26,7 +26,6 @@
 
 -module(ejabberd_oauth_sql).
 -behaviour(ejabberd_oauth).
--compile([{parse_transform, ejabberd_sql_pt}]).
 
 -export([init/0,
          store/1,

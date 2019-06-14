@@ -1,0 +1,44 @@
+define_macro:
+  RIAK_CONFIG:
+    queue_type: ram
+    auth_method: riak
+    sm_db_type: riak
+    modules:
+      mod_announce:
+        db_type: riak
+        access: local
+      mod_blocking: []
+      mod_caps:
+        db_type: riak
+      mod_last:
+        db_type: riak
+      mod_muc:
+        db_type: riak
+      mod_offline:
+        db_type: riak
+      mod_privacy:
+        db_type: riak
+      mod_private:
+        db_type: riak
+      mod_roster:
+        versioning: true
+        store_current_id: true
+        db_type: riak
+      mod_vcard:
+        db_type: riak
+      mod_vcard_xupdate: []
+      mod_adhoc: []
+      mod_configure: []
+      mod_disco: []
+      mod_ping: []
+      mod_proxy65: []
+      mod_s2s_dialback: []
+      mod_legacy_auth: []
+      mod_register:
+        welcome_message:
+          subject: "Welcome!"
+          body: "Hi.
+Welcome to this XMPP server."
+      mod_stats: []
+      mod_time: []
+      mod_version: []

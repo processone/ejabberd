@@ -71,13 +71,13 @@ get_node(Host, Node, _From) ->
 get_node(Host, Node) ->
     case mnesia:read({pubsub_node, {Host, Node}}) of
 	[Record] when is_record(Record, pubsub_node) -> Record;
-	_ -> {error, xmpp:err_item_not_found(<<"Node not found">>, ejabberd_config:get_mylang())}
+	_ -> {error, xmpp:err_item_not_found(<<"Node not found">>, ejabberd_option:language())}
     end.
 
 get_node(Nidx) ->
     case mnesia:index_read(pubsub_node, Nidx, #pubsub_node.id) of
 	[Record] when is_record(Record, pubsub_node) -> Record;
-	_ -> {error, xmpp:err_item_not_found(<<"Node not found">>, ejabberd_config:get_mylang())}
+	_ -> {error, xmpp:err_item_not_found(<<"Node not found">>, ejabberd_option:language())}
     end.
 
 get_nodes(Host, _From) ->
@@ -189,7 +189,7 @@ create_node(Host, Node, Type, Owner, Options, Parents) ->
 		    {error, xmpp:err_forbidden()}
 	    end;
 	_ ->
-	    {error, xmpp:err_conflict(<<"Node already exists">>, ejabberd_config:get_mylang())}
+	    {error, xmpp:err_conflict(<<"Node already exists">>, ejabberd_option:language())}
     end.
 
 delete_node(Host, Node) ->

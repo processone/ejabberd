@@ -80,7 +80,7 @@
 -record(state,
 	{hosts = [] :: [binary()],
          server_host = <<"">> :: binary(),
-         access = {none, none, none, none} :: {atom(), atom(), atom(), atom()},
+         access = {none, none, none, none} :: {atom(), atom(), atom(), atom(), atom()},
          history_size = 20 :: non_neg_integer(),
          max_rooms_discoitems = 100 :: non_neg_integer(),
 	 queue_type = ram :: ram | file,
@@ -130,18 +130,18 @@ reload(Host, NewOpts, OldOpts) ->
 depends(_Host, _Opts) ->
     [{mod_mam, soft}].
 
-shutdown_rooms(Host) ->
-    RMod = gen_mod:ram_db_mod(Host, ?MODULE),
-    MyHost = gen_mod:get_module_opt_host(Host, mod_muc,
-					 <<"conference.@HOST@">>),
-    Rooms = RMod:get_online_rooms(Host, MyHost, undefined),
+shutdown_rooms(ServerHost) ->
+    RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
+    Hosts = gen_mod:get_module_opt_hosts(ServerHost, mod_muc),
+    Rooms = [RMod:get_online_rooms(ServerHost, Host, undefined)
+	     || Host <- Hosts],
     lists:flatmap(
       fun({_, _, Pid}) when node(Pid) == node() ->
 	      Pid ! shutdown,
 	      [Pid];
 	 (_) ->
 	      []
-      end, Rooms).
+      end, lists:flatten(Rooms)).
 
 %% This function is called by a room in three situations:
 %% A) The owner of the room destroyed it
@@ -238,10 +238,10 @@ init([Host, Opts]) ->
     #state{access = Access, hosts = MyHosts,
 	   history_size = HistorySize, queue_type = QueueType,
 	   room_shaper = RoomShaper} = State = init_state(Host, Opts),
-    Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
-    RMod = gen_mod:ram_db_mod(Host, Opts, ?MODULE),
-    Mod:init(Host, [{hosts, MyHosts}|Opts]),
-    RMod:init(Host, [{hosts, MyHosts}|Opts]),
+    Mod = gen_mod:db_mod(Opts, ?MODULE),
+    RMod = gen_mod:ram_db_mod(Opts, ?MODULE),
+    Mod:init(Host, gen_mod:set_opt(hosts, MyHosts, Opts)),
+    RMod:init(Host, gen_mod:set_opt(hosts, MyHosts, Opts)),
     lists:foreach(
       fun(MyHost) ->
 	      register_iq_handlers(MyHost),
@@ -274,18 +274,18 @@ handle_call({create, Room, Host, From, Nick, Opts}, _From,
     {reply, ok, State}.
 
 handle_cast({reload, ServerHost, NewOpts, OldOpts}, #state{hosts = OldHosts}) ->
-    NewMod = gen_mod:db_mod(ServerHost, NewOpts, ?MODULE),
-    NewRMod = gen_mod:ram_db_mod(ServerHost, NewOpts, ?MODULE),
-    OldMod = gen_mod:db_mod(ServerHost, OldOpts, ?MODULE),
-    OldRMod = gen_mod:ram_db_mod(ServerHost, OldOpts, ?MODULE),
+    NewMod = gen_mod:db_mod(NewOpts, ?MODULE),
+    NewRMod = gen_mod:ram_db_mod(NewOpts, ?MODULE),
+    OldMod = gen_mod:db_mod(OldOpts, ?MODULE),
+    OldRMod = gen_mod:ram_db_mod(OldOpts, ?MODULE),
     #state{hosts = NewHosts} = NewState = init_state(ServerHost, NewOpts),
     if NewMod /= OldMod ->
-	    NewMod:init(ServerHost, [{hosts, NewHosts}|NewOpts]);
+	    NewMod:init(ServerHost, gen_mod:set_opt(hosts, NewHosts, NewOpts));
        true ->
 	    ok
     end,
     if NewRMod /= OldRMod ->
-	    NewRMod:init(ServerHost, [{hosts, NewHosts}|NewOpts]);
+	    NewRMod:init(ServerHost, gen_mod:set_opt(hosts, NewHosts, NewOpts));
        true ->
 	    ok
     end,
@@ -353,17 +353,17 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%% Internal functions
 %%--------------------------------------------------------------------
 init_state(Host, Opts) ->
-    MyHosts = gen_mod:get_opt_hosts(Host, Opts),
-    Access = gen_mod:get_opt(access, Opts),
-    AccessCreate = gen_mod:get_opt(access_create, Opts),
-    AccessAdmin = gen_mod:get_opt(access_admin, Opts),
-    AccessPersistent = gen_mod:get_opt(access_persistent, Opts),
-    AccessMam = gen_mod:get_opt(access_mam, Opts),
-    HistorySize = gen_mod:get_opt(history_size, Opts),
-    MaxRoomsDiscoItems = gen_mod:get_opt(max_rooms_discoitems, Opts),
-    DefRoomOpts = gen_mod:get_opt(default_room_options, Opts),
-    QueueType = gen_mod:get_opt(queue_type, Opts),
-    RoomShaper = gen_mod:get_opt(room_shaper, Opts),
+    MyHosts = gen_mod:get_opt_hosts(Opts),
+    Access = mod_muc_opt:access(Opts),
+    AccessCreate = mod_muc_opt:access_create(Opts),
+    AccessAdmin = mod_muc_opt:access_admin(Opts),
+    AccessPersistent = mod_muc_opt:access_persistent(Opts),
+    AccessMam = mod_muc_opt:access_mam(Opts),
+    HistorySize = mod_muc_opt:history_size(Opts),
+    MaxRoomsDiscoItems = mod_muc_opt:max_rooms_discoitems(Opts),
+    DefRoomOpts = mod_muc_opt:default_room_options(Opts),
+    QueueType = mod_muc_opt:queue_type(Opts),
+    RoomShaper = mod_muc_opt:room_shaper(Opts),
     #state{hosts = MyHosts,
 	   server_host = Host,
 	   access = {Access, AccessCreate, AccessAdmin, AccessPersistent, AccessMam},
@@ -490,7 +490,7 @@ process_register(#iq{type = Type, from = From, to = To, lang = Lang,
 		     sub_els = [El = #register{}]} = IQ) ->
     Host = To#jid.lserver,
     ServerHost = ejabberd_router:host_of_route(Host),
-    AccessRegister = gen_mod:get_module_opt(ServerHost, ?MODULE, access_register),
+    AccessRegister = mod_muc_opt:access_register(ServerHost),
     case acl:match_rule(ServerHost, AccessRegister, From) of
 	allow ->
 	    case Type of
@@ -519,7 +519,7 @@ process_disco_info(#iq{type = get, from = From, to = To, lang = Lang,
 		       sub_els = [#disco_info{node = <<"">>}]} = IQ) ->
     ServerHost = ejabberd_router:host_of_route(To#jid.lserver),
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
-    AccessRegister = gen_mod:get_module_opt(ServerHost, ?MODULE, access_register),
+    AccessRegister = mod_muc_opt:access_register(ServerHost),
     X = ejabberd_hooks:run_fold(disco_info, ServerHost, [],
 				[ServerHost, ?MODULE, <<"">>, Lang]),
     MAMFeatures = case gen_mod:is_loaded(ServerHost, mod_mam) of
@@ -537,7 +537,7 @@ process_disco_info(#iq{type = get, from = From, to = To, lang = Lang,
     Features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
 		?NS_MUC, ?NS_VCARD, ?NS_MUCSUB, ?NS_MUC_UNIQUE
 		| RegisterFeatures ++ RSMFeatures ++ MAMFeatures],
-    Name = gen_mod:get_module_opt(ServerHost, ?MODULE, name),
+    Name = mod_muc_opt:name(ServerHost),
     Identity = #identity{category = <<"conference">>,
 			 type = <<"text">>,
 			 name = translate:translate(Lang, Name)},
@@ -560,8 +560,7 @@ process_disco_items(#iq{type = get, from = From, to = To, lang = Lang,
 			sub_els = [#disco_items{node = Node, rsm = RSM}]} = IQ) ->
     Host = To#jid.lserver,
     ServerHost = ejabberd_router:host_of_route(Host),
-    MaxRoomsDiscoItems = gen_mod:get_module_opt(
-			   ServerHost, ?MODULE, max_rooms_discoitems),
+    MaxRoomsDiscoItems = mod_muc_opt:max_rooms_discoitems(ServerHost),
     case iq_disco_items(ServerHost, Host, From, Lang,
 			MaxRoomsDiscoItems, Node, RSM) of
 	{error, Err} ->
@@ -620,10 +619,9 @@ check_create_room(ServerHost, Host, Room, From, Access) ->
      _AccessPersistent, _AccessMam} = Access,
     case acl:match_rule(ServerHost, AccessCreate, From) of
 	allow ->
-	    case gen_mod:get_module_opt(ServerHost, ?MODULE, max_room_id) of
+	    case mod_muc_opt:max_room_id(ServerHost) of
 		Max when byte_size(Room) =< Max ->
-		    Regexp = gen_mod:get_module_opt(
-			       ServerHost, ?MODULE, regexp_room_id),
+		    Regexp = mod_muc_opt:regexp_room_id(ServerHost),
 		    case re:run(Room, Regexp, [unicode, {capture, none}]) of
 			match ->
 			    case acl:match_rule(
@@ -945,117 +943,88 @@ import(LServer, {sql, _}, DBType, Tab, L) ->
     Mod:import(LServer, Tab, L).
 
 mod_opt_type(access) ->
-    fun acl:access_rules_validator/1;
+    econf:acl();
 mod_opt_type(access_admin) ->
-    fun acl:access_rules_validator/1;
+    econf:acl();
 mod_opt_type(access_create) ->
-    fun acl:access_rules_validator/1;
+    econf:acl();
 mod_opt_type(access_persistent) ->
-    fun acl:access_rules_validator/1;
+    econf:acl();
 mod_opt_type(access_mam) ->
-    fun acl:access_rules_validator/1;
+    econf:acl();
 mod_opt_type(access_register) ->
-    fun acl:access_rules_validator/1;
-mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
-mod_opt_type(ram_db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
+    econf:acl();
 mod_opt_type(history_size) ->
-    fun (I) when is_integer(I), I >= 0 -> I end;
-mod_opt_type(host) -> fun ejabberd_config:v_host/1;
-mod_opt_type(name) -> fun iolist_to_binary/1;
-mod_opt_type(hosts) -> fun ejabberd_config:v_hosts/1;
+    econf:non_neg_int();
+mod_opt_type(name) ->
+    econf:binary();
 mod_opt_type(max_room_desc) ->
-    fun (infinity) -> infinity;
-	(I) when is_integer(I), I > 0 -> I
-    end;
+    econf:pos_int(infinity);
 mod_opt_type(max_room_id) ->
-    fun (infinity) -> infinity;
-	(I) when is_integer(I), I > 0 -> I
-    end;
+    econf:pos_int(infinity);
 mod_opt_type(max_rooms_discoitems) ->
-    fun (I) when is_integer(I), I >= 0 -> I end;
+    econf:non_neg_int();
 mod_opt_type(regexp_room_id) ->
-    fun iolist_to_binary/1;
+    econf:binary();
 mod_opt_type(max_room_name) ->
-    fun (infinity) -> infinity;
-	(I) when is_integer(I), I > 0 -> I
-    end;
+    econf:pos_int(infinity);
 mod_opt_type(max_user_conferences) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
+    econf:pos_int();
 mod_opt_type(max_users) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
+    econf:pos_int();
 mod_opt_type(max_users_admin_threshold) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
+    econf:pos_int();
 mod_opt_type(max_users_presence) ->
-    fun (MUP) when is_integer(MUP) -> MUP end;
+    econf:int();
 mod_opt_type(min_message_interval) ->
-    fun (MMI) when is_number(MMI), MMI >= 0 -> MMI end;
+    econf:number(0);
 mod_opt_type(min_presence_interval) ->
-    fun (I) when is_number(I), I >= 0 -> I end;
+    econf:number(0);
 mod_opt_type(room_shaper) ->
-    fun (A) when is_atom(A) -> A end;
+    econf:atom();
 mod_opt_type(user_message_shaper) ->
-    fun (A) when is_atom(A) -> A end;
+    econf:atom();
 mod_opt_type(user_presence_shaper) ->
-    fun (A) when is_atom(A) -> A end;
+    econf:atom();
+mod_opt_type(default_room_options) ->
+    econf:options(
+      #{allow_change_subj => econf:bool(),
+	allow_private_messages => econf:bool(),
+	allow_private_messages_from_visitors =>
+	    econf:enum([anyone, moderators, nobody]),
+	allow_query_users => econf:bool(),
+	allow_subscription => econf:bool(),
+	allow_user_invites => econf:bool(),
+	allow_visitor_nickchange => econf:bool(),
+	allow_visitor_status => econf:bool(),
+	anonymous => econf:bool(),
+	captcha_protected => econf:bool(),
+	lang => econf:lang(),
+	logging => econf:bool(),
+	mam => econf:bool(),
+	max_users => econf:pos_int(),
+	members_by_default => econf:bool(),
+	members_only => econf:bool(),
+	moderated => econf:bool(),
+	password => econf:binary(),
+	password_protected => econf:bool(),
+	persistent => econf:bool(),
+	presence_broadcast =>
+	    econf:list(
+	      econf:enum([moderator, participant, visitor])),
+	public => econf:bool(),
+	public_list => econf:bool(),
+	title => econf:binary()});
+mod_opt_type(db_type) ->
+    econf:well_known(db_type, ?MODULE);
+mod_opt_type(ram_db_type) ->
+    econf:well_known(ram_db_type, ?MODULE);
+mod_opt_type(host) ->
+    econf:well_known(host, ?MODULE);
+mod_opt_type(hosts) ->
+    econf:well_known(hosts, ?MODULE);
 mod_opt_type(queue_type) ->
-    fun(ram) -> ram; (file) -> file end;
-mod_opt_type({default_room_options, allow_change_subj}) ->
-    fun(B) when is_boolean(B) -> B end;
-mod_opt_type({default_room_options, allow_private_messages}) ->
-    fun(B) when is_boolean(B) -> B end;
-mod_opt_type({default_room_options, allow_query_users}) ->
-    fun(B) when is_boolean(B) -> B end;
-mod_opt_type({default_room_options, allow_user_invites}) ->
-    fun(B) when is_boolean(B) -> B end;
-mod_opt_type({default_room_options, allow_visitor_nickchange}) ->
-    fun(B) when is_boolean(B) -> B end;
-mod_opt_type({default_room_options, allow_visitor_status}) ->
-    fun(B) when is_boolean(B) -> B end;
-mod_opt_type({default_room_options, anonymous}) ->
-    fun(B) when is_boolean(B) -> B end;
-mod_opt_type({default_room_options, captcha_protected}) ->
-    fun(B) when is_boolean(B) -> B end;
-mod_opt_type({default_room_options, logging}) ->
-    fun(B) when is_boolean(B) -> B end;
-mod_opt_type({default_room_options, members_by_default}) ->
-    fun(B) when is_boolean(B) -> B end;
-mod_opt_type({default_room_options, members_only}) ->
-    fun(B) when is_boolean(B) -> B end;
-mod_opt_type({default_room_options, moderated}) ->
-    fun(B) when is_boolean(B) -> B end;
-mod_opt_type({default_room_options, password_protected}) ->
-    fun(B) when is_boolean(B) -> B end;
-mod_opt_type({default_room_options, persistent}) ->
-    fun(B) when is_boolean(B) -> B end;
-mod_opt_type({default_room_options, public}) ->
-    fun(B) when is_boolean(B) -> B end;
-mod_opt_type({default_room_options, public_list}) ->
-    fun(B) when is_boolean(B) -> B end;
-mod_opt_type({default_room_options, mam}) ->
-    fun(B) when is_boolean(B) -> B end;
-mod_opt_type({default_room_options, allow_subscription}) ->
-    fun(B) when is_boolean(B) -> B end;
-mod_opt_type({default_room_options, password}) ->
-    fun iolist_to_binary/1;
-mod_opt_type({default_room_options, title}) ->
-    fun iolist_to_binary/1;
-mod_opt_type({default_room_options, allow_private_messages_from_visitors}) ->
-    fun(anyone) -> anyone;
-       (moderators) -> moderators;
-       (nobody) -> nobody
-    end;
-mod_opt_type({default_room_options, max_users}) ->
-    fun(I) when is_integer(I), I > 0 -> I end;
-mod_opt_type({default_room_options, presence_broadcast}) ->
-    fun(L) ->
-	    lists:map(
-	      fun(moderator) -> moderator;
-		 (participant) -> participant;
-		 (visitor) -> visitor
-	      end, L)
-    end;
-mod_opt_type({default_room_options, lang}) ->
-    fun xmpp_lang:check/1.
+    econf:well_known(queue_type, ?MODULE).
 
 mod_options(Host) ->
     [{access, all},
@@ -1067,7 +1036,7 @@ mod_options(Host) ->
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {ram_db_type, ejabberd_config:default_ram_db(Host, ?MODULE)},
      {history_size, 20},
-     {host, <<"conference.@HOST@">>},
+     {host, <<"conference.", Host/binary>>},
      {hosts, []},
      {name, ?T("Chatrooms")},
      {max_room_desc, infinity},
@@ -1080,7 +1049,7 @@ mod_options(Host) ->
      {max_users_presence, 1000},
      {min_message_interval, 0},
      {min_presence_interval, 0},
-     {queue_type, ejabberd_config:default_queue_type(Host)},
+     {queue_type, ejabberd_option:queue_type(Host)},
      {regexp_room_id, <<"">>},
      {room_shaper, none},
      {user_message_shaper, none},

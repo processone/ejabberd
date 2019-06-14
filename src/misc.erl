@@ -39,7 +39,8 @@
 	 css_dir/0, img_dir/0, js_dir/0, msgs_dir/0, sql_dir/0, lua_dir/0,
 	 read_css/1, read_img/1, read_js/1, read_lua/1, try_url/1,
 	 intersection/2, format_val/1, cancel_timer/1, unique_timestamp/0,
-	 is_mucsub_message/1, best_match/2]).
+	 is_mucsub_message/1, best_match/2, pmap/2, peach/2, format_exception/4,
+	 parse_ip_mask/1, match_ip_mask/3]).
 
 %% Deprecated functions
 -export([decode_base64/1, encode_base64/1]).
@@ -206,10 +207,10 @@ hex_to_base64(Hex) ->
 url_encode(A) ->
     url_encode(A, <<>>).
 
--spec expand_keyword(binary(), binary(), binary()) -> binary().
+-spec expand_keyword(iodata(), iodata(), iodata()) -> binary().
 expand_keyword(Keyword, Input, Replacement) ->
-    Parts = binary:split(Input, Keyword, [global]),
-    str:join(Parts, Replacement).
+    re:replace(Input, Keyword, Replacement,
+	       [{return, binary}, global]).
 
 binary_to_atom(Bin) ->
     erlang:binary_to_atom(Bin, utf8).
@@ -412,7 +413,7 @@ format_val(Term) ->
 	_ -> [io_lib:nl(), S]
     end.
 
--spec cancel_timer(reference()) -> ok.
+-spec cancel_timer(reference() | undefined) -> ok.
 cancel_timer(TRef) when is_reference(TRef) ->
     case erlang:cancel_timer(TRef) of
 	false ->
@@ -425,17 +426,105 @@ cancel_timer(TRef) when is_reference(TRef) ->
 cancel_timer(_) ->
     ok.
 
--spec best_match(atom(), [atom()]) -> atom().
+-spec best_match(atom(), [atom()]) -> atom();
+		(binary(), [binary()]) -> binary().
 best_match(Pattern, []) ->
     Pattern;
 best_match(Pattern, Opts) ->
-    String = atom_to_list(Pattern),
+    F = if is_atom(Pattern) -> fun atom_to_list/1;
+	   is_binary(Pattern) -> fun binary_to_list/1
+	end,
+    String = F(Pattern),
     {Ds, _} = lists:mapfoldl(
 		fun(Opt, Cache) ->
-			{Distance, Cache1} = ld(String, atom_to_list(Opt), Cache),
+			{Distance, Cache1} = ld(String, F(Opt), Cache),
 			{{Distance, Opt}, Cache1}
 		end, #{}, Opts),
     element(2, lists:min(Ds)).
+
+-spec pmap(fun((T1) -> T2), [T1]) -> [T2].
+pmap(Fun, [_,_|_] = List) ->
+    Self = self(),
+    lists:map(
+      fun({Pid, Ref}) ->
+	      receive
+		  {Pid, Ret} ->
+		      receive
+			  {'DOWN', Ref, _, _, _} ->
+			      Ret
+		      end;
+		  {'DOWN', Ref, _, _, Reason} ->
+		      exit(Reason)
+	      end
+      end, [spawn_monitor(
+	      fun() -> Self ! {self(), Fun(X)} end)
+	    || X <- List]);
+pmap(Fun, List) ->
+    lists:map(Fun, List).
+
+-spec peach(fun((T) -> any()), [T]) -> ok.
+peach(Fun, [_,_|_] = List) ->
+    Self = self(),
+    lists:foreach(
+      fun({Pid, Ref}) ->
+	      receive
+		  Pid ->
+		      receive
+			  {'DOWN', Ref, _, _, _} ->
+			      ok
+		      end;
+		  {'DOWN', Ref, _, _, Reason} ->
+		      exit(Reason)
+	      end
+      end, [spawn_monitor(
+	      fun() -> Fun(X), Self ! self() end)
+	    || X <- List]);
+peach(Fun, List) ->
+    lists:foreach(Fun, List).
+
+format_exception(Level, Class, Reason, Stacktrace) ->
+    erl_error:format_exception(
+      Level, Class, Reason, Stacktrace,
+      fun(_M, _F, _A) -> false end,
+      fun(Term, I) ->
+	      io_lib:print(Term, I, 80, -1)
+      end).
+
+-spec parse_ip_mask(binary()) -> {ok, {inet:ip4_address(), 0..32}} |
+				 {ok, {inet:ip6_address(), 0..128}} |
+				 error.
+parse_ip_mask(S) ->
+    case econf:validate(econf:ip_mask(), S) of
+	{ok, _} = Ret -> Ret;
+	_ -> error
+    end.
+
+-spec match_ip_mask(inet:ip_address(), inet:ip_address(), 0..128) -> boolean().
+match_ip_mask({_, _, _, _} = IP, {_, _, _, _} = Net, Mask) ->
+    IPInt = ip_to_integer(IP),
+    NetInt = ip_to_integer(Net),
+    M = bnot (1 bsl (32 - Mask) - 1),
+    IPInt band M =:= NetInt band M;
+match_ip_mask({_, _, _, _, _, _, _, _} = IP,
+		{_, _, _, _, _, _, _, _} = Net, Mask) ->
+    IPInt = ip_to_integer(IP),
+    NetInt = ip_to_integer(Net),
+    M = bnot (1 bsl (128 - Mask) - 1),
+    IPInt band M =:= NetInt band M;
+match_ip_mask({_, _, _, _} = IP,
+		{0, 0, 0, 0, 0, 16#FFFF, _, _} = Net, Mask) ->
+    IPInt = ip_to_integer({0, 0, 0, 0, 0, 16#FFFF, 0, 0}) + ip_to_integer(IP),
+    NetInt = ip_to_integer(Net),
+    M = bnot (1 bsl (128 - Mask) - 1),
+    IPInt band M =:= NetInt band M;
+match_ip_mask({0, 0, 0, 0, 0, 16#FFFF, _, _} = IP,
+		{_, _, _, _} = Net, Mask) ->
+    IPInt = ip_to_integer(IP) - ip_to_integer({0, 0, 0, 0, 0, 16#FFFF, 0, 0}),
+    NetInt = ip_to_integer(Net),
+    M = bnot (1 bsl (32 - Mask) - 1),
+    IPInt band M =:= NetInt band M;
+match_ip_mask(_, _, _) ->
+    false.
 
 %%%===================================================================
 %%% Internal functions
@@ -515,3 +604,11 @@ ld([_|ST] = S, [_|TT] = T, Cache) ->
             L = 1 + lists:min([L1, L2, L3]),
             {L, maps:put({S, T}, L, C3)}
     end.
+
+-spec ip_to_integer(inet:ip_address()) -> non_neg_integer().
+ip_to_integer({IP1, IP2, IP3, IP4}) ->
+    IP1 bsl 8 bor IP2 bsl 8 bor IP3 bsl 8 bor IP4;
+ip_to_integer({IP1, IP2, IP3, IP4, IP5, IP6, IP7,
+	       IP8}) ->
+    IP1 bsl 16 bor IP2 bsl 16 bor IP3 bsl 16 bor IP4 bsl 16
+	bor IP5 bsl 16 bor IP6 bsl 16 bor IP7 bsl 16 bor IP8.

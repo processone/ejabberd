@@ -144,11 +144,11 @@ import(LServer, <<"sr_user">>, [SJID, Group, _TimeStamp]) ->
     User = #sr_user{us = {U, S}, group_host = {Group, LServer}},
     mnesia:dirty_write(User).
 
-need_transform(#sr_group{group_host = {G, H}})
+need_transform({sr_group, {G, H}, _})
   when is_list(G) orelse is_list(H) ->
     ?INFO_MSG("Mnesia table 'sr_group' will be converted to binary", []),
     true;
-need_transform(#sr_user{us = {U, S}, group_host = {G, H}})
+need_transform({sr_user, {U, S}, {G, H}})
   when is_list(U) orelse is_list(S) orelse is_list(G) orelse is_list(H) ->
     ?INFO_MSG("Mnesia table 'sr_user' will be converted to binary", []),
     true;

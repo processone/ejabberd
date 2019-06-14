@@ -67,7 +67,7 @@ get_all_routes() ->
 %%% Internal functions
 %%%===================================================================
 route_schema() ->
-    {record_info(fields, route), #route{}}.
+    {record_info(fields, route), #route{domain = <<>>, server_host = <<>>}}.
 
 clean_table() ->
     ?DEBUG("Cleaning Riak 'route' table...", []),

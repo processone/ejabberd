@@ -25,17 +25,15 @@
 
 -module(ejabberd_auth_sql).
 
--compile([{parse_transform, ejabberd_sql_pt}]).
 
 -author('alexey@process-one.net').
 
 -behaviour(ejabberd_auth).
--behaviour(ejabberd_config).
 
 -export([start/1, stop/1, set_password/3, try_register/3,
 	 get_users/2, count_users/2, get_password/2,
 	 remove_user/2, store_type/1, plain_password_required/1,
-	 convert_to_scram/1, opt_type/1, export/1, which_users_exists/2]).
+	 convert_to_scram/1, export/1, which_users_exists/2]).
 
 -include("scram.hrl").
 -include("logger.hrl").
@@ -221,8 +219,7 @@ users_number(LServer) ->
       LServer,
       fun(pgsql, _) ->
               case
-                  ejabberd_config:get_option(
-                    {pgsql_users_number_estimate, LServer}, false) of
+                  ejabberd_option:pgsql_users_number_estimate(LServer) of
                   true ->
                       ejabberd_sql:sql_query_t(
                         ?SQL("select @(reltuples :: bigint)d from pg_class"
@@ -349,8 +346,3 @@ export(_Server) ->
          (_Host, _R) ->
               []
       end}].
-
--spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
-opt_type(pgsql_users_number_estimate) ->
-    fun (V) when is_boolean(V) -> V end;
-opt_type(_) -> [pgsql_users_number_estimate].

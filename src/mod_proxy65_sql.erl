@@ -23,7 +23,6 @@
 -module(mod_proxy65_sql).
 -behaviour(mod_proxy65).
 
--compile([{parse_transform, ejabberd_sql_pt}]).
 
 %% API
 -export([init/0, register_stream/2, unregister_stream/1, activate_stream/4]).

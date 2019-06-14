@@ -57,9 +57,15 @@ stop(Host) ->
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.
 
-mod_opt_type({roster, _}) -> fun acl:access_rules_validator/1;
-mod_opt_type({message, _}) -> fun acl:access_rules_validator/1;
-mod_opt_type({presence, _}) -> fun acl:access_rules_validator/1.
+mod_opt_type(roster) ->
+    econf:options(
+      #{both => econf:acl(), get => econf:acl(), set => econf:acl()});
+mod_opt_type(message) ->
+    econf:options(
+      #{outgoing => econf:acl()});
+mod_opt_type(presence) ->
+    econf:options(
+      #{managed_entity => econf:acl(), roster => econf:acl()}).
 
 mod_options(_) ->
     [{roster, [{both, none}, {get, none}, {set, none}]},
@@ -75,7 +81,7 @@ component_connected(Host) ->
       fun(ServerHost) ->
 	      Proc = gen_mod:get_module_proc(ServerHost, ?MODULE),
 	      gen_server:cast(Proc, {component_connected, Host})
-      end, ejabberd_config:get_myhosts()).
+      end, ejabberd_option:hosts()).
 
 -spec component_disconnected(binary(), binary()) -> ok.
 component_disconnected(Host, _Reason) ->
@@ -83,7 +89,7 @@ component_disconnected(Host, _Reason) ->
       fun(ServerHost) ->
 	      Proc = gen_mod:get_module_proc(ServerHost, ?MODULE),
 	      gen_server:cast(Proc, {component_disconnected, Host})
-      end, ejabberd_config:get_myhosts()).
+      end, ejabberd_option:hosts()).
 
 -spec process_message(stanza()) -> stop | ok.
 process_message(#message{from = #jid{luser = <<"">>, lresource = <<"">>} = From,
@@ -309,7 +315,7 @@ forward_message(#message{to = To} = Msg) ->
     end.
 
 get_roster_permission(ServerHost, Host) ->
-    Perms = gen_mod:get_module_opt(ServerHost, ?MODULE, roster),
+    Perms = mod_privilege_opt:roster(ServerHost),
     case match_rule(ServerHost, Host, Perms, both) of
 	allow ->
 	    both;
@@ -324,14 +330,14 @@ get_roster_permission(ServerHost, Host) ->
     end.
 
 get_message_permission(ServerHost, Host) ->
-    Perms = gen_mod:get_module_opt(ServerHost, ?MODULE, message),
+    Perms = mod_privilege_opt:message(ServerHost),
     case match_rule(ServerHost, Host, Perms, outgoing) of
 	allow -> outgoing;
 	deny -> none
     end.
 
 get_presence_permission(ServerHost, Host) ->
-    Perms = gen_mod:get_module_opt(ServerHost, ?MODULE, presence),
+    Perms = mod_privilege_opt:presence(ServerHost),
     case match_rule(ServerHost, Host, Perms, roster) of
 	allow ->
 	    roster;

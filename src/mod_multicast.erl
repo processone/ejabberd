@@ -52,8 +52,8 @@
 		     ts :: integer()}).
 
 -record(dest, {jid_string :: binary() | none,
-	       jid_jid :: jid(),
-	       type :: to | cc | bcc,
+	       jid_jid :: jid() | undefined,
+	       type :: bcc | cc | noreply | ofrom | replyroom | replyto | to,
 	       address :: address()}).
 
 -type limit_value() :: {default | custom, integer()}.
@@ -67,9 +67,9 @@
 
 -record(group, {server :: binary(),
 		dests :: [#dest{}],
-		multicast :: routing(),
-		others :: [#address{}],
-		addresses :: [#address{}]}).
+		multicast :: routing() | undefined,
+		others :: [address()],
+		addresses :: [address()]}).
 
 -record(state, {lserver :: binary(),
 		lservice :: binary(),
@@ -153,9 +153,9 @@ user_send_packet(Acc) ->
 -spec init(list()) -> {ok, state()}.
 init([LServerS, Opts]) ->
     process_flag(trap_exit, true),
-    [LServiceS|_] = gen_mod:get_opt_hosts(LServerS, Opts),
-    Access = gen_mod:get_opt(access, Opts),
-    SLimits = build_service_limit_record(gen_mod:get_opt(limits, Opts)),
+    [LServiceS|_] = gen_mod:get_opt_hosts(Opts),
+    Access = mod_multicast_opt:access(Opts),
+    SLimits = build_service_limit_record(mod_multicast_opt:limits(Opts)),
     create_cache(),
     try_start_loop(),
     ejabberd_router_multicast:register_route(LServerS),
@@ -171,9 +171,9 @@ handle_call(stop, _From, State) ->
 
 handle_cast({reload, NewOpts, NewOpts},
 	    #state{lserver = LServerS, lservice = OldLServiceS} = State) ->
-    Access = gen_mod:get_opt(access, NewOpts),
-    SLimits = build_service_limit_record(gen_mod:get_opt(limits, NewOpts)),
-    [NewLServiceS|_] = gen_mod:get_opt_hosts(LServerS, NewOpts),
+    Access = mod_multicast_opt:access(NewOpts),
+    SLimits = build_service_limit_record(mod_multicast_opt:limits(NewOpts)),
+    [NewLServiceS|_] = gen_mod:get_opt_hosts(NewOpts),
     if NewLServiceS /= OldLServiceS ->
 	    ejabberd_router:register_route(NewLServiceS, LServerS),
 	    ejabberd_router:unregister_route(OldLServiceS);
@@ -283,7 +283,7 @@ process_iq(_, _) ->
 -define(FEATURE(Feat), Feat).
 
 iq_disco_info(From, Lang, State) ->
-    Name = gen_mod:get_module_opt(State#state.lserver, ?MODULE, name),
+    Name = mod_multicast_opt:name(State#state.lserver),
     #disco_info{
        identities = [#identity{category = <<"service">>,
 			       type = <<"multicast">>,
@@ -459,8 +459,9 @@ check_limit_dests(SLimits, FromJID, Packet,
 -spec convert_dest_record([address()]) -> [#dest{}].
 convert_dest_record(Addrs) ->
     lists:map(
-      fun(#address{jid = undefined} = Addr) ->
-	      #dest{jid_string = none, address = Addr};
+      fun(#address{jid = undefined, type = Type} = Addr) ->
+	      #dest{jid_string = none,
+		    type = Type, address = Addr};
 	 (#address{jid = JID, type = Type} = Addr) ->
 	      #dest{jid_string = jid:encode(JID), jid_jid = JID,
 		    type = Type, address = Addr}
@@ -502,7 +503,8 @@ group_dests(Dests) ->
 		    end,
 		    dict:new(), Dests),
     Keys = dict:fetch_keys(D),
-    [#group{server = Key, dests = dict:fetch(Key, D)}
+    [#group{server = Key, dests = dict:fetch(Key, D),
+	    addresses = [], others = []}
      || Key <- Keys].
 
 %%%-------------------------
@@ -1074,7 +1076,7 @@ iq_disco_info_extras(From, State) ->
     end.
 
 sender_type(From) ->
-    Local_hosts = ejabberd_config:get_myhosts(),
+    Local_hosts = ejabberd_option:hosts(),
     case lists:member(From#jid.lserver, Local_hosts) of
       true -> local;
       false -> remote
@@ -1124,23 +1126,27 @@ depends(_Host, _Opts) ->
     [].
 
 mod_opt_type(access) ->
-    fun acl:access_rules_validator/1;
-mod_opt_type(host) -> fun ejabberd_config:v_host/1;
-mod_opt_type(hosts) -> fun ejabberd_config:v_hosts/1;
-mod_opt_type(name) -> fun iolist_to_binary/1;
-mod_opt_type({limits, Type}) when (Type == local) or (Type == remote) ->
-    fun(L) ->
-	    lists:map(
-		fun ({message, infinite} = O) -> O;
-		    ({presence, infinite} = O) -> O;
-		    ({message, I} = O) when is_integer(I) -> O;
-		    ({presence, I} = O) when is_integer(I) -> O
-		end, L)
-    end.
+    econf:acl();
+mod_opt_type(name) ->
+    econf:binary();
+mod_opt_type(limits) ->
+    econf:options(
+      #{local =>
+	    econf:options(
+	      #{message => econf:non_neg_int(infinite),
+		presence => econf:non_neg_int(infinite)}),
+	remote =>
+	    econf:options(
+	      #{message => econf:non_neg_int(infinite),
+		presence => econf:non_neg_int(infinite)})});
+mod_opt_type(host) ->
+    econf:well_known(host, ?MODULE);
+mod_opt_type(hosts) ->
+    econf:well_known(hosts, ?MODULE).
 
-mod_options(_Host) ->
+mod_options(Host) ->
     [{access, all},
-     {host, <<"multicast.@HOST@">>},
+     {host, <<"multicast.", Host/binary>>},
      {hosts, []},
      {limits, [{local, []}, {remote, []}]},
      {name, ?T("Multicast")}].

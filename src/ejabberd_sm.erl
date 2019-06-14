@@ -25,8 +25,6 @@
 
 -module(ejabberd_sm).
 
--behaviour(ejabberd_config).
-
 -author('alexey@process-one.net').
 
 -ifndef(GEN_SERVER).
@@ -83,7 +81,7 @@
 	]).
 
 -export([init/1, handle_call/3, handle_cast/2,
-	 handle_info/2, terminate/2, code_change/3, opt_type/1]).
+	 handle_info/2, terminate/2, code_change/3]).
 
 -include("logger.hrl").
 
@@ -117,11 +115,12 @@
 start_link() ->
     ?GEN_SERVER:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec stop() -> ok.
+-spec stop() -> ok | {error, atom()}.
 stop() ->
-    supervisor:terminate_child(ejabberd_sup, ?MODULE),
-    supervisor:delete_child(ejabberd_sup, ?MODULE),
-    ok.
+    case supervisor:terminate_child(ejabberd_sup, ?MODULE) of
+	ok -> supervisor:delete_child(ejabberd_sup, ?MODULE);
+	Err -> Err
+    end.
 
 -spec route(jid(), term()) -> ok.
 %% @doc route arbitrary term to c2s process(es)
@@ -477,7 +476,7 @@ init([]) ->
 	    ejabberd_hooks:add(host_up, ?MODULE, host_up, 50),
 	    ejabberd_hooks:add(host_down, ?MODULE, host_down, 60),
 	    ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),
-	    lists:foreach(fun host_up/1, ejabberd_config:get_myhosts()),
+	    lists:foreach(fun host_up/1, ejabberd_option:hosts()),
 	    ejabberd_commands:register_commands(get_commands_spec()),
 	    {ok, #state{}};
 	{error, Why} ->
@@ -497,7 +496,7 @@ handle_info(Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
-    lists:foreach(fun host_down/1, ejabberd_config:get_myhosts()),
+    lists:foreach(fun host_down/1, ejabberd_option:hosts()),
     ejabberd_hooks:delete(host_up, ?MODULE, host_up, 50),
     ejabberd_hooks:delete(host_down, ?MODULE, host_down, 60),
     ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 50),
@@ -860,12 +859,11 @@ check_max_sessions(LUser, LServer) ->
 %% Defaults to infinity
 -spec get_max_user_sessions(binary(), binary()) -> infinity | non_neg_integer().
 get_max_user_sessions(LUser, Host) ->
-    case acl:match_rule(Host, max_user_sessions,
-			jid:make(LUser, Host))
-	of
-      Max when is_integer(Max) -> Max;
-      infinity -> infinity;
-      _ -> ?MAX_USER_SESSIONS
+    case ejabberd_shaper:match(Host, max_user_sessions,
+			       jid:make(LUser, Host)) of
+	Max when is_integer(Max) -> Max;
+	infinity -> infinity;
+	_ -> ?MAX_USER_SESSIONS
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -882,15 +880,13 @@ force_update_presence({LUser, LServer}) ->
 -spec get_sm_backend(binary()) -> module().
 
 get_sm_backend(Host) ->
-    DBType = ejabberd_config:get_option(
-	       {sm_db_type, Host},
-	       ejabberd_config:default_ram_db(Host, ?MODULE)),
+    DBType = ejabberd_option:sm_db_type(Host),
     list_to_atom("ejabberd_sm_" ++ atom_to_list(DBType)).
 
 -spec get_sm_backends() -> [module()].
 
 get_sm_backends() ->
-    lists:usort([get_sm_backend(Host) || Host <- ejabberd_config:get_myhosts()]).
+    lists:usort([get_sm_backend(Host) || Host <- ejabberd_option:hosts()]).
 
 -spec get_vh_by_backend(module()) -> [binary()].
 
@@ -898,7 +894,7 @@ get_vh_by_backend(Mod) ->
     lists:filter(
       fun(Host) ->
 	      get_sm_backend(Host) == Mod
-      end, ejabberd_config:get_myhosts()).
+      end, ejabberd_option:hosts()).
 
 %%--------------------------------------------------------------------
 %%% Cache stuff
@@ -914,15 +910,9 @@ init_cache() ->
 
 -spec cache_opts() -> [proplists:property()].
 cache_opts() ->
-    MaxSize = ejabberd_config:get_option(
-		sm_cache_size,
-		ejabberd_config:cache_size(global)),
-    CacheMissed = ejabberd_config:get_option(
-		    sm_cache_missed,
-		    ejabberd_config:cache_missed(global)),
-    LifeTime = case ejabberd_config:get_option(
-		      sm_cache_life_time,
-		      ejabberd_config:cache_life_time(global)) of
+    MaxSize = ejabberd_option:sm_cache_size(),
+    CacheMissed = ejabberd_option:sm_cache_missed(),
+    LifeTime = case ejabberd_option:sm_cache_life_time() of
 		   infinity -> infinity;
 		   I -> timer:seconds(I)
 	       end,
@@ -949,10 +939,7 @@ clean_cache() ->
 use_cache(Mod, LServer) ->
     case erlang:function_exported(Mod, use_cache, 1) of
 	true -> Mod:use_cache(LServer);
-	false ->
-	    ejabberd_config:get_option(
-	      {sm_use_cache, LServer},
-	      ejabberd_config:use_cache(LServer))
+	false -> ejabberd_option:sm_use_cache(LServer)
     end.
 
 -spec use_cache() -> boolean().
@@ -961,7 +948,7 @@ use_cache() ->
       fun(Host) ->
 	      Mod = get_sm_backend(Host),
 	      use_cache(Mod, Host)
-      end, ejabberd_config:get_myhosts()).
+      end, ejabberd_option:hosts()).
 
 -spec cache_nodes(module(), binary()) -> [node()].
 cache_nodes(Mod, LServer) ->
@@ -1041,16 +1028,3 @@ kick_user(User, Server, Resource) ->
 
 make_sid() ->
     {misc:unique_timestamp(), self()}.
-
--spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
-opt_type(sm_db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
-opt_type(O) when O == sm_use_cache; O == sm_cache_missed ->
-    fun(B) when is_boolean(B) -> B end;
-opt_type(O) when O == sm_cache_size; O == sm_cache_life_time ->
-    fun(I) when is_integer(I), I>0 -> I;
-       (unlimited) -> infinity;
-       (infinity) -> infinity
-    end;
-opt_type(_) ->
-    [sm_db_type, sm_use_cache, sm_cache_size, sm_cache_missed,
-     sm_cache_life_time].

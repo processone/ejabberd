@@ -24,7 +24,6 @@
 
 -module(mod_muc_sql).
 
--compile([{parse_transform, ejabberd_sql_pt}]).
 
 -behaviour(mod_muc).
 -behaviour(mod_muc_room).
@@ -50,7 +49,7 @@
 %%% API
 %%%===================================================================
 init(Host, Opts) ->
-    case gen_mod:ram_db_mod(Host, Opts, mod_muc) of
+    case gen_mod:ram_db_mod(Opts, mod_muc) of
 	?MODULE ->
 	    clean_tables(Host);
 	_ ->

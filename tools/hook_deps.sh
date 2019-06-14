@@ -10,7 +10,7 @@
 		module :: module(),
 		file :: filename:filename()}).
 
-main([Dir]) ->
+main(Paths) ->
     State =
 	fold_beams(
 	  fun(File0, Tree, Acc0) ->
@@ -49,11 +49,11 @@ main([Dir]) ->
 				    Acc
 			    end
 		    end, Acc1, Tree)
-	  end, #state{}, Dir),
+	  end, #state{}, Paths),
     report_orphaned_funs(State),
     RunDeps = build_deps(State#state.run_hooks, State#state.hooked_funs),
     RunFoldDeps = build_deps(State#state.run_fold_hooks, State#state.hooked_funs),
-    emit_module(RunDeps, RunFoldDeps, State#state.specs, Dir, hooks_type_test).
+    emit_module(RunDeps, RunFoldDeps, State#state.specs, hooks_type_test).
 
 analyze_run_hook(Form, State) ->
     [Hook|Tail] = erl_syntax:application_arguments(Form),
@@ -245,11 +245,16 @@ integer_value(Form, State) ->
 	    0
     end.
 
-emit_module(RunDeps, RunFoldDeps, Specs, _Dir, Module) ->
+emit_module(RunDeps, RunFoldDeps, Specs, Module) ->
     File = filename:join(["src", Module]) ++ ".erl",
     try
 	{ok, Fd} = file:open(File, [write]),
-	write(Fd, "-module(~s).~n~n", [Module]),
+	write(Fd,
+	      "%% Generated automatically~n"
+	      "%% DO NOT EDIT: run `make hooks` instead~n~n", []),
+	write(Fd, "-module(~s).~n", [Module]),
+	write(Fd, "-compile(nowarn_unused_vars).~n", []),
+	write(Fd, "-dialyzer(no_return).~n~n", []),
 	emit_export(Fd, RunDeps, "run hooks"),
 	emit_export(Fd, RunFoldDeps, "run_fold hooks"),
 	emit_run_hooks(Fd, RunDeps, Specs),
@@ -263,20 +268,17 @@ emit_module(RunDeps, RunFoldDeps, Specs, _Dir, Module) ->
 emit_run_hooks(Fd, Deps, Specs) ->
     DepsList = lists:sort(dict:to_list(Deps)),
     lists:foreach(
-      fun({{Hook, Arity, {File, LineNo}}, []}) ->
-	      Args = lists:duplicate(Arity, "_"),
-	      write(Fd, "%% called at ~s:~p~n", [File, LineNo]),
-	      write(Fd, "~s(~s) -> ok.~n~n", [Hook, string:join(Args, ", ")]);
-	 ({{Hook, Arity, {File, LineNo}}, Funs}) ->
+      fun({{Hook, Arity, {File, LineNo}}, Funs}) ->
 	      emit_specs(Fd, Funs, Specs),
 	      write(Fd, "%% called at ~s:~p~n", [File, LineNo]),
 	      Args = string:join(
 		       [[N] || N <- lists:sublist(lists:seq($A, $Z), Arity)],
 		       ", "),
 	      write(Fd, "~s(~s) ->~n    ", [Hook, Args]),
-	      Calls = [io_lib:format("~s:~s(~s)", [Mod, Fun, Args])
+	      Calls = [io_lib:format("_ = ~s:~s(~s)", [Mod, Fun, Args])
 		       || {{Mod, Fun, _}, _Seq, _} <- lists:keysort(2, Funs)],
-	      write(Fd, "~s.~n~n", [string:join(Calls, ",\n    ")])
+	      write(Fd, "~s.~n~n",
+		    [string:join(Calls ++ ["ok"], ",\n    ")])
       end, DepsList).
 
 emit_run_fold_hooks(Fd, Deps, Specs) ->
@@ -332,16 +334,38 @@ emit_specs(Fd, Funs, Specs) ->
 	      end
       end, lists:keysort(2, Funs)).
 
-fold_beams(Fun, State, Dir) ->
-    filelib:fold_files(
-      Dir, ".+\.beam\$", false,
-      fun(File, Acc) ->
-	      AbsCode = get_code_from_beam(File),
-	      lists:foldl(
-		fun(Form, Acc1) ->
-			Fun(File, Form, Acc1)
-		end, Acc, AbsCode)
-      end, State).
+fold_beams(Fun, State, Paths) ->
+    Paths1 = fold_paths(Paths),
+    Total = length(Paths1),
+    {_, State1} =
+	lists:foldl(
+	  fun(File, {I, Acc}) ->
+		  io:format("Progress: ~B% (~B/~B)\r",
+			    [round(I*100/Total), I, Total]),
+		  AbsCode = get_code_from_beam(File),
+		  Acc2 = lists:foldl(
+			   fun(Form, Acc1) ->
+				   Fun(File, Form, Acc1)
+			   end, Acc, AbsCode),
+		  {I+1, Acc2}
+	  end, {0, State}, Paths1),
+    State1.
+
+fold_paths(Paths) ->
+    lists:flatmap(
+      fun(Path) ->
+	      case filelib:is_dir(Path) of
+		  true ->
+		      lists:reverse(
+			filelib:fold_files(
+			  Path, ".+\.beam\$", false,
+			  fun(File, Acc) ->
+				  [File|Acc]
+			  end, []));
+		  false ->
+		      [Path]
+	      end
+      end, Paths).
 
 get_code_from_beam(File) ->
     try

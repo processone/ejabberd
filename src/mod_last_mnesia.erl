@@ -45,7 +45,7 @@ init(_Host, _Opts) ->
 use_cache(Host) ->
     case mnesia:table_info(last_activity, storage_type) of
 	disc_only_copies ->
-	    gen_mod:get_module_opt(Host, mod_last, use_cache);
+	    mod_last_opt:use_cache(Host);
 	_ ->
 	    false
     end.
@@ -71,7 +71,7 @@ remove_user(LUser, LServer) ->
 import(_LServer, #last_activity{} = LA) ->
     mnesia:dirty_write(LA).
 
-need_transform(#last_activity{us = {U, S}, status = Status})
+need_transform({last_activity, {U, S}, _, Status})
   when is_list(U) orelse is_list(S) orelse is_list(Status) ->
     ?INFO_MSG("Mnesia table 'last_activity' will be converted to binary", []),
     true;

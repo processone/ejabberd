@@ -25,8 +25,6 @@
 
 -module(ejabberd_captcha).
 
--behaviour(ejabberd_config).
-
 -protocol({xep, 158, '1.0'}).
 
 -behaviour(gen_server).
@@ -41,7 +39,7 @@
 -export([create_captcha/6, build_captcha_html/2,
 	 check_captcha/2, process_reply/1, process/2,
 	 is_feature_available/0, create_captcha_x/5,
-	 opt_type/1, host_up/1, host_down/1,
+	 host_up/1, host_down/1,
 	 config_reloaded/0, process_iq/1]).
 
 -include("xmpp.hrl").
@@ -52,6 +50,7 @@
 -define(LIMIT_PERIOD, 60*1000*1000).
 
 -type image_error() :: efbig | enodata | limit | malformed_image | timeout.
+-type priority() :: neg_integer().
 
 -record(state, {limits = treap:empty() :: treap:treap(),
 		enabled = false :: boolean()}).
@@ -66,11 +65,11 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [],
 			  []).
 
--spec captcha_text(undefined | binary()) -> binary().
+-spec captcha_text(binary()) -> binary().
 captcha_text(Lang) ->
     translate:translate(Lang, <<"Enter the text you see">>).
 
--spec mk_ocr_field(binary() | undefined, binary(), binary()) -> xdata_field().
+-spec mk_ocr_field(binary(), binary(), binary()) -> xdata_field().
 mk_ocr_field(Lang, CID, Type) ->
     URI = #media_uri{type = Type, uri = <<"cid:", CID/binary>>},
     #xdata_field{var = <<"ocr">>,
@@ -79,13 +78,13 @@ mk_ocr_field(Lang, CID, Type) ->
 		 required = true,
 		 sub_els = [#media{uri = [URI]}]}.
 
+-spec mk_field(_, binary(), binary()) -> xdata_field().
 mk_field(Type, Var, Value) ->
     #xdata_field{type = Type, var = Var, values = [Value]}.
 
 -spec create_captcha(binary(), jid(), jid(),
                      binary(), any(), any()) -> {error, image_error()} |
-                                                {ok, binary(), [text()], [xmlel()]}.
-
+                                                {ok, binary(), [text()], [xmpp_element()]}.
 create_captcha(SID, From, To, Lang, Limiter, Args) ->
     case create_image(Limiter) of
       {ok, Type, Key, Image} ->
@@ -116,8 +115,7 @@ create_captcha(SID, From, To, Lang, Limiter, Args) ->
     end.
 
 -spec create_captcha_x(binary(), jid(), binary(), any(), xdata()) ->
-			      {ok, xdata()} | {error, image_error()}.
-
+			      {ok, [xmpp_element()]} | {error, image_error()}.
 create_captcha_x(SID, To, Lang, Limiter, #xdata{fields = Fs} = X) ->
     case create_image(Limiter) of
       {ok, Type, Key, Image} ->
@@ -151,7 +149,7 @@ create_captcha_x(SID, To, Lang, Limiter, #xdata{fields = Fs} = X) ->
 
 -spec build_captcha_html(binary(), binary()) -> captcha_not_found |
                                                 {xmlel(),
-                                                 {xmlel(), xmlel(),
+                                                 {xmlel(), cdata(),
                                                   xmlel(), xmlel()}}.
 
 build_captcha_html(Id, Lang) ->
@@ -161,7 +159,7 @@ build_captcha_html(Id, Lang) ->
 			 attrs =
 			     [{<<"src">>, get_url(<<Id/binary, "/image">>)}],
 			 children = []},
-	  TextEl = {xmlcdata, captcha_text(Lang)},
+	  Text = {xmlcdata, captcha_text(Lang)},
 	  IdEl = #xmlel{name = <<"input">>,
 			attrs =
 			    [{<<"type">>, <<"hidden">>}, {<<"name">>, <<"id">>},
@@ -181,7 +179,7 @@ build_captcha_html(Id, Lang) ->
 			      [ImgEl,
 			       #xmlel{name = <<"br">>, attrs = [],
 				      children = []},
-			       TextEl,
+			       Text,
 			       #xmlel{name = <<"br">>, attrs = [],
 				      children = []},
 			       IdEl, KeyEl,
@@ -193,7 +191,7 @@ build_captcha_html(Id, Lang) ->
 					   {<<"name">>, <<"enter">>},
 					   {<<"value">>, <<"OK">>}],
 				      children = []}]},
-	  {FormEl, {ImgEl, TextEl, IdEl, KeyEl}};
+	  {FormEl, {ImgEl, Text, IdEl, KeyEl}};
       _ -> captcha_not_found
     end.
 
@@ -216,6 +214,7 @@ process_reply(#xcaptcha{xdata = #xdata{} = X}) ->
 process_reply(_) ->
     {error, malformed}.
 
+-spec process_iq(iq()) -> iq().
 process_iq(#iq{type = set, lang = Lang, sub_els = [#xcaptcha{} = El]} = IQ) ->
     case process_reply(El) of
 	ok ->
@@ -238,7 +237,7 @@ process(_Handlers,
 	#request{method = 'GET', lang = Lang,
 		 path = [_, Id]}) ->
     case build_captcha_html(Id, Lang) of
-      {FormEl, _} when is_tuple(FormEl) ->
+      {FormEl, _} ->
 	  Form = #xmlel{name = <<"div">>,
 			attrs = [{<<"align">>, <<"center">>}],
 			children = [FormEl]},
@@ -292,8 +291,8 @@ config_reloaded() ->
     gen_server:call(?MODULE, config_reloaded, timer:minutes(1)).
 
 init([]) ->
-    mnesia:delete_table(captcha),
-    ets:new(captcha, [named_table, public, {keypos, #captcha.id}]),
+    _ = mnesia:delete_table(captcha),
+    _ = ets:new(captcha, [named_table, public, {keypos, #captcha.id}]),
     case check_captcha_setup() of
 	true ->
 	    register_handlers(),
@@ -364,27 +363,36 @@ terminate(_Reason, #state{enabled = Enabled}) ->
 register_handlers() ->
     ejabberd_hooks:add(host_up, ?MODULE, host_up, 50),
     ejabberd_hooks:add(host_down, ?MODULE, host_down, 50),
-    lists:foreach(fun host_up/1, ejabberd_config:get_myhosts()).
+    lists:foreach(fun host_up/1, ejabberd_option:hosts()).
 
 unregister_handlers() ->
     ejabberd_hooks:delete(host_up, ?MODULE, host_up, 50),
     ejabberd_hooks:delete(host_down, ?MODULE, host_down, 50),
-    lists:foreach(fun host_down/1, ejabberd_config:get_myhosts()).
+    lists:foreach(fun host_down/1, ejabberd_option:hosts()).
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
-create_image() -> create_image(undefined).
+-spec create_image() -> {ok, binary(), binary(), binary()} |
+			{error, image_error()}.
+create_image() ->
+    create_image(undefined).
 
+-spec create_image(term()) -> {ok, binary(), binary(), binary()} |
+			      {error, image_error()}.
 create_image(Limiter) ->
     Key = str:substr(p1_rand:get_string(), 1, 6),
     create_image(Limiter, Key).
 
+-spec create_image(term(), binary()) -> {ok, binary(), binary(), binary()} |
+					{error, image_error()}.
 create_image(Limiter, Key) ->
     case is_limited(Limiter) of
-      true -> {error, limit};
-      false -> do_create_image(Key)
+	true -> {error, limit};
+	false -> do_create_image(Key)
     end.
 
+-spec do_create_image(binary()) -> {ok, binary(), binary(), binary()} |
+				   {error, image_error()}.
 do_create_image(Key) ->
     FileName = get_prog_name(),
     Cmd = lists:flatten(io_lib:format("~s ~s", [FileName, Key])),
@@ -416,7 +424,7 @@ do_create_image(Key) ->
     end.
 
 get_prog_name() ->
-    case ejabberd_config:get_option(captcha_cmd) of
+    case ejabberd_option:captcha_cmd() of
         undefined ->
             ?DEBUG("The option captcha_cmd is not configured, "
                    "but some module wants to use the CAPTCHA "
@@ -427,8 +435,9 @@ get_prog_name() ->
             FileName
     end.
 
+-spec get_url(binary()) -> binary().
 get_url(Str) ->
-    CaptchaHost = ejabberd_config:get_option(captcha_host, <<"">>),
+    CaptchaHost = ejabberd_option:captcha_host(),
     case str:tokens(CaptchaHost, <<":">>) of
       [Host] ->
 	  <<"http://", Host/binary, "/captcha/", Str/binary>>;
@@ -453,7 +462,7 @@ get_transfer_protocol(PortString) ->
     get_captcha_transfer_protocol(PortListeners).
 
 get_port_listeners(PortNumber) ->
-    AllListeners = ejabberd_config:get_option(listen, []),
+    AllListeners = ejabberd_option:listen(),
     lists:filter(
       fun({{Port, _IP, _Transport}, _Module, _Opts}) ->
 	      Port == PortNumber
@@ -465,21 +474,26 @@ get_captcha_transfer_protocol([]) ->
 	    "'captcha' option. Change the port number "
 	    "or specify http:// in that option.">>);
 get_captcha_transfer_protocol([{_, ejabberd_http, Opts} | Listeners]) ->
-    case proplists:get_bool(captcha, Opts) of
-      true ->
-	    case proplists:get_bool(tls, Opts) of
+    Handlers = maps:get(request_handlers, Opts, []),
+    case lists:any(
+	   fun({_, ?MODULE}) -> true;
+	      ({_, _}) -> false
+	   end, Handlers) of
+	true ->
+	    case maps:get(tls, Opts) of
 		true -> https;
 		false -> http
 	    end;
-	false -> get_captcha_transfer_protocol(Listeners)
+	false ->
+	    get_captcha_transfer_protocol(Listeners)
     end;
 get_captcha_transfer_protocol([_ | Listeners]) ->
     get_captcha_transfer_protocol(Listeners).
 
 is_limited(undefined) -> false;
 is_limited(Limiter) ->
-    case ejabberd_config:get_option(captcha_limit) of
-      undefined -> false;
+    case ejabberd_option:captcha_limit() of
+      infinity -> false;
       Int ->
 	  case catch gen_server:call(?MODULE,
 				     {is_limited, Limiter, Int}, 5000)
@@ -494,12 +508,14 @@ is_limited(Limiter) ->
 
 -define(MAX_FILE_SIZE, 64 * 1024).
 
+-spec cmd(string()) -> {ok, binary()} | {error, image_error()}.
 cmd(Cmd) ->
     Port = open_port({spawn, Cmd}, [stream, eof, binary]),
     TRef = erlang:start_timer(?CMD_TIMEOUT, self(),
 			      timeout),
     recv_data(Port, TRef, <<>>).
 
+-spec recv_data(port(), reference(), binary()) -> {ok, binary()} | {error, image_error()}.
 recv_data(Port, TRef, Buf) ->
     receive
       {Port, {data, Bytes}} ->
@@ -516,6 +532,8 @@ recv_data(Port, TRef, Buf) ->
 	  return(Port, TRef, {error, timeout})
     end.
 
+-spec return(port(), reference(), {ok, binary()} | {error, image_error()}) ->
+		    {ok, binary()} | {error, image_error()}.
 return(Port, TRef, Result) ->
     misc:cancel_timer(TRef),
     catch port_close(Port),
@@ -543,10 +561,11 @@ check_captcha_setup() ->
 	    false
     end.
 
+-spec lookup_captcha(binary()) -> {ok, #captcha{}} | {error, enoent}.
 lookup_captcha(Id) ->
     case ets:lookup(captcha, Id) of
 	[C] -> {ok, C};
-	_ -> {error, enoent}
+	[] -> {error, enoent}
     end.
 
 -spec check_captcha(binary(), binary()) -> captcha_not_found |
@@ -554,8 +573,8 @@ lookup_captcha(Id) ->
                                            captcha_non_valid.
 
 check_captcha(Id, ProvidedKey) ->
-    case ets:lookup(captcha, Id) of
-	[#captcha{pid = Pid, args = Args, key = ValidKey, tref = Tref}] ->
+    case lookup_captcha(Id) of
+	{ok, #captcha{pid = Pid, args = Args, key = ValidKey, tref = Tref}} ->
 	    ets:delete(captcha, Id),
 	    misc:cancel_timer(Tref),
 	    if ValidKey == ProvidedKey ->
@@ -565,10 +584,11 @@ check_captcha(Id, ProvidedKey) ->
 		    callback(captcha_failed, Pid, Args),
 		    captcha_non_valid
 	    end;
-	_ ->
+	{error, _} ->
 	    captcha_not_found
     end.
 
+-spec clean_treap(treap:treap(), priority()) -> treap:treap().
 clean_treap(Treap, CleanPriority) ->
     case treap:is_empty(Treap) of
       true -> Treap;
@@ -588,16 +608,6 @@ callback(Result, Pid, Args) when is_pid(Pid) ->
 callback(_, _, _) ->
     ok.
 
+-spec now_priority() -> priority().
 now_priority() ->
     -erlang:system_time(microsecond).
-
--spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
-opt_type(captcha_cmd) ->
-    fun (FileName) ->
-	    F = iolist_to_binary(FileName), if F /= <<"">> -> F end
-    end;
-opt_type(captcha_host) -> fun iolist_to_binary/1;
-opt_type(captcha_limit) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
-opt_type(_) ->
-    [captcha_cmd, captcha_host, captcha_limit].

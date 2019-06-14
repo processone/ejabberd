@@ -22,11 +22,10 @@
 %%%-------------------------------------------------------------------
 -module(ejabberd_pkix).
 -behaviour(gen_server).
--behaviour(ejabberd_config).
 
 %% API
--export([start_link/0, opt_type/1]).
--export([certs_dir/0, ca_file/0]).
+-export([start_link/0]).
+-export([certs_dir/0]).
 -export([add_certfile/1, try_certfile/1, get_certfile/0, get_certfile/1]).
 %% Hooks
 -export([ejabberd_started/0, config_reloaded/0]).
@@ -99,11 +98,7 @@ get_certfile() ->
 	Ret -> {ok, select_certfile(Ret)}
     end.
 
--spec ca_file() -> filename() | undefined.
-ca_file() ->
-    ejabberd_config:get_option(ca_file).
-
--spec certs_dir() -> file:dirname_all().
+-spec certs_dir() -> file:filename_all().
 certs_dir() ->
     MnesiaDir = mnesia:system_info(directory),
     filename:join(MnesiaDir, "certs").
@@ -115,24 +110,6 @@ ejabberd_started() ->
 -spec config_reloaded() -> ok.
 config_reloaded() ->
     gen_server:call(?MODULE, config_reloaded, ?CALL_TIMEOUT).
-
-opt_type(ca_path) ->
-    fun(_) ->
-	    ?WARNING_MSG("Option 'ca_path' has no effect anymore, "
-			 "use 'ca_file' instead", []),
-	    undefined
-    end;
-opt_type(ca_file) ->
-    fun try_certfile/1;
-opt_type(certfiles) ->
-    fun(Paths) -> [iolist_to_binary(Path) || Path <- Paths] end;
-opt_type(O) when O == c2s_certfile; O == s2s_certfile; O == domain_certfile ->
-    fun(Path) ->
-	    ?WARNING_MSG("Option '~s' is deprecated, use 'certfiles' instead", [O]),
-	    prep_path(Path)
-    end;
-opt_type(_) ->
-    [ca_path, ca_file, certfiles, c2s_certfile, s2s_certfile, domain_certfile].
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -177,7 +154,7 @@ handle_call(config_reloaded, _From, State) ->
     Old = State#state.files,
     New = get_certfiles_from_config_options(),
     del_files(sets:subtract(Old, New)),
-    add_files(New),
+    _ = add_files(New),
     case commit() of
 	{ok, _} ->
 	    check_domain_certfiles(),
@@ -258,10 +235,9 @@ del_files(Files) ->
 
 -spec commit() -> {ok, [{filename(), pkix:error_reason()}]} | error.
 commit() ->
-    Opts = case ca_file() of
-	       undefined -> [];
-	       CAFile -> [{cafile, CAFile}]
-	   end,
+    CAFile = ejabberd_option:ca_file(),
+    ?DEBUG("Using CA root certificates from: ~s", [CAFile]),
+    Opts = [{cafile, CAFile}],
     case pkix:commit(certs_dir(), Opts) of
 	{ok, Errors, Warnings, CAError} ->
 	    log_errors(Errors),
@@ -277,35 +253,36 @@ commit() ->
 
 -spec check_domain_certfiles() -> ok.
 check_domain_certfiles() ->
-    Hosts = ejabberd_config:get_myhosts(),
+    Hosts = ejabberd_option:hosts(),
     Routes = ejabberd_router:get_all_routes(),
     check_domain_certfiles(Hosts ++ Routes).
 
 -spec check_domain_certfiles([binary()]) -> ok.
 check_domain_certfiles(Hosts) ->
-    lists:foreach(
-      fun(Host) ->
-	      case get_certfile_no_default(Host) of
-		  error ->
-		      ?WARNING_MSG("No certificate found matching '~s': strictly "
-				   "configured clients or servers will reject "
-				   "connections with this host; obtain "
-				   "a certificate for this (sub)domain from any "
-				   "trusted CA such as Let's Encrypt "
-				   "(www.letsencrypt.org)",
-				   [Host]);
-		  _ ->
-		      ok
-	      end
-      end, Hosts).
+    case ejabberd_listener:tls_listeners() of
+	[] -> ok;
+	_ ->
+	    lists:foreach(
+	      fun(Host) ->
+		      case get_certfile_no_default(Host) of
+			  error ->
+			      ?WARNING_MSG(
+				 "No certificate found matching '~s': strictly "
+				 "configured clients or servers will reject "
+				 "connections with this host; obtain "
+				 "a certificate for this (sub)domain from any "
+				 "trusted CA such as Let's Encrypt "
+				 "(www.letsencrypt.org)",
+				 [Host]);
+			  _ ->
+			      ok
+		      end
+	      end, Hosts)
+    end.
 
--spec deprecated_options() -> [atom()].
-deprecated_options() ->
-    [c2s_certfile, s2s_certfile, domain_certfile].
-
--spec global_certfiles() -> sets:set(filename()).
-global_certfiles() ->
-    case ejabberd_config:get_option(certfiles) of
+-spec get_certfiles_from_config_options() -> sets:set(filename()).
+get_certfiles_from_config_options() ->
+    case ejabberd_option:certfiles() of
 	undefined ->
 	    sets:new();
 	Paths ->
@@ -315,25 +292,6 @@ global_certfiles() ->
 		      lists:foldl(fun sets:add_element/2, Acc, Files)
 	      end, sets:new(), Paths)
     end.
-
--spec local_certfiles() -> sets:set(filename()).
-local_certfiles() ->
-    Opts = [{Opt, Host} || Opt <- deprecated_options(),
-			   Host <- ejabberd_config:get_myhosts()],
-    lists:foldl(
-      fun(OptHost, Acc) ->
-	      case ejabberd_config:get_option(OptHost) of
-		  undefined -> Acc;
-		  Path -> sets:add_element(Path, Acc)
-	      end
-      end, sets:new(), Opts).
-
--spec get_certfiles_from_config_options() -> sets:set(filename()).
-get_certfiles_from_config_options() ->
-    Global = global_certfiles(),
-    Local = local_certfiles(),
-    Listen = sets:from_list(ejabberd_listener:get_certfiles()),
-    sets:union([Global, Local, Listen]).
 
 -spec prep_path(file:filename_all()) -> filename().
 prep_path(Path0) ->

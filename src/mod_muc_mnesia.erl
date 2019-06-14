@@ -263,7 +263,7 @@ unregister_online_user(_ServerHost, {U, S, R}, Room, Host) ->
 					room = Room, host = Host}).
 
 count_online_rooms_by_user(ServerHost, U, S) ->
-    MucHost = gen_mod:get_module_opt_host(ServerHost, mod_muc, <<"conference.@HOST@">>),
+    MucHost = hd(gen_mod:get_module_opt_hosts(ServerHost, mod_muc)),
     ets:select_count(
       muc_online_users,
       ets:fun2ms(
@@ -272,7 +272,7 @@ count_online_rooms_by_user(ServerHost, U, S) ->
 	end)).
 
 get_online_rooms_by_user(ServerHost, U, S) ->
-    MucHost = gen_mod:get_module_opt_host(ServerHost, mod_muc, <<"conference.@HOST@">>),
+    MucHost = hd(gen_mod:get_module_opt_hosts(ServerHost, mod_muc)),
     ets:select(
       muc_online_users,
       ets:fun2ms(
@@ -296,9 +296,9 @@ import(_LServer, <<"muc_registered">>,
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-init([Host, Opts]) ->
-    MyHosts = proplists:get_value(hosts, Opts),
-    case gen_mod:db_mod(Host, Opts, mod_muc) of
+init([_Host, Opts]) ->
+    MyHosts = mod_muc_opt:hosts(Opts),
+    case gen_mod:db_mod(Opts, mod_muc) of
 	?MODULE ->
 	    ejabberd_mnesia:create(?MODULE, muc_room,
 				   [{disc_copies, [node()]},
@@ -312,7 +312,7 @@ init([Host, Opts]) ->
 	_ ->
 	    ok
     end,
-    case gen_mod:ram_db_mod(Host, Opts, mod_muc) of
+    case gen_mod:ram_db_mod(Opts, mod_muc) of
 	?MODULE ->
 	    ejabberd_mnesia:create(?MODULE, muc_online_room,
 				   [{ram_copies, [node()]},
@@ -382,11 +382,11 @@ clean_table_from_bad_node(Node, Host) ->
         end,
     mnesia:async_dirty(F).
 
-need_transform(#muc_room{name_host = {N, H}})
+need_transform({muc_room, {N, H}, _})
   when is_list(N) orelse is_list(H) ->
     ?INFO_MSG("Mnesia table 'muc_room' will be converted to binary", []),
     true;
-need_transform(#muc_registered{us_host = {{U, S}, H}, nick = Nick})
+need_transform({muc_registered, {{U, S}, H}, Nick})
   when is_list(U) orelse is_list(S) orelse is_list(H) orelse is_list(Nick) ->
     ?INFO_MSG("Mnesia table 'muc_registered' will be converted to binary", []),
     true;

@@ -58,7 +58,7 @@
 -optional_callbacks([use_cache/1, cache_nodes/1]).
 
 start(Host, Opts) ->
-    Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
+    Mod = gen_mod:db_mod(Opts, ?MODULE),
     Mod:init(Host, Opts),
     init_cache(Mod, Host, Opts),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
@@ -89,8 +89,8 @@ stop(Host) ->
 				     ?NS_LAST).
 
 reload(Host, NewOpts, OldOpts) ->
-    NewMod = gen_mod:db_mod(Host, NewOpts, ?MODULE),
-    OldMod = gen_mod:db_mod(Host, OldOpts, ?MODULE),
+    NewMod = gen_mod:db_mod(NewOpts, ?MODULE),
+    OldMod = gen_mod:db_mod(OldOpts, ?MODULE),
     if NewMod /= OldMod ->
 	    NewMod:init(Host, NewOpts);
        true ->
@@ -113,12 +113,8 @@ process_local_iq(#iq{type = get} = IQ) ->
 %% @doc Get the uptime of the ejabberd node, expressed in seconds.
 %% When ejabberd is starting, ejabberd_config:start/0 stores the datetime.
 get_node_uptime() ->
-    case ejabberd_config:get_option(node_start) of
-        undefined ->
-            trunc(element(1, erlang:statistics(wall_clock)) / 1000);
-        Now ->
-            erlang:system_time(second) - Now
-    end.
+    NodeStart = ejabberd_config:get_node_start(),
+    erlang:monotonic_time(second) - NodeStart.
 
 %%%
 %%% Serve queries about user last online
@@ -187,9 +183,7 @@ get_last(LUser, LServer) ->
 		    ?LAST_CACHE, {LUser, LServer},
 		    fun() -> Mod:get_last(LUser, LServer) end);
 	      false ->
-		  Mod:get_last(LUser, LServer);
-	      undefined ->
-		  error
+		  Mod:get_last(LUser, LServer)
 	  end,
     case Res of
 	{ok, {TimeStamp, Status}} -> {ok, TimeStamp, Status};
@@ -274,9 +268,9 @@ init_cache(Mod, Host, Opts) ->
 
 -spec cache_opts(gen_mod:opts()) -> [proplists:property()].
 cache_opts(Opts) ->
-    MaxSize = gen_mod:get_opt(cache_size, Opts),
-    CacheMissed = gen_mod:get_opt(cache_missed, Opts),
-    LifeTime = case gen_mod:get_opt(cache_life_time, Opts) of
+    MaxSize = mod_last_opt:cache_size(Opts),
+    CacheMissed = mod_last_opt:cache_missed(Opts),
+    LifeTime = case mod_last_opt:cache_life_time(Opts) of
 		   infinity -> infinity;
 		   I -> timer:seconds(I)
 	       end,
@@ -286,7 +280,7 @@ cache_opts(Opts) ->
 use_cache(Mod, Host) ->
     case erlang:function_exported(Mod, use_cache, 1) of
 	true -> Mod:use_cache(Host);
-	false -> gen_mod:get_module_opt(Host, ?MODULE, use_cache)
+	false -> mod_last_opt:use_cache(Host)
     end.
 
 -spec cache_nodes(module(), binary()) -> [node()].
@@ -321,17 +315,20 @@ export(LServer) ->
 depends(_Host, _Opts) ->
     [].
 
-mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
-mod_opt_type(O) when O == cache_life_time; O == cache_size ->
-    fun (I) when is_integer(I), I > 0 -> I;
-        (infinity) -> infinity
-    end;
-mod_opt_type(O) when O == use_cache; O == cache_missed ->
-    fun (B) when is_boolean(B) -> B end.
+mod_opt_type(db_type) ->
+    econf:well_known(db_type, ?MODULE);
+mod_opt_type(use_cache) ->
+    econf:well_known(use_cache, ?MODULE);
+mod_opt_type(cache_size) ->
+    econf:well_known(cache_size, ?MODULE);
+mod_opt_type(cache_missed) ->
+    econf:well_known(cache_missed, ?MODULE);
+mod_opt_type(cache_life_time) ->
+    econf:well_known(cache_life_time, ?MODULE).
 
 mod_options(Host) ->
     [{db_type, ejabberd_config:default_db(Host, ?MODULE)},
-     {use_cache, ejabberd_config:use_cache(Host)},
-     {cache_size, ejabberd_config:cache_size(Host)},
-     {cache_missed, ejabberd_config:cache_missed(Host)},
-     {cache_life_time, ejabberd_config:cache_life_time(Host)}].
+     {use_cache, ejabberd_option:use_cache(Host)},
+     {cache_size, ejabberd_option:cache_size(Host)},
+     {cache_missed, ejabberd_option:cache_missed(Host)},
+     {cache_life_time, ejabberd_option:cache_life_time(Host)}].

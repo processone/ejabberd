@@ -24,7 +24,6 @@
 
 -module(mod_mam_sql).
 
--compile([{parse_transform, ejabberd_sql_pt}]).
 
 -behaviour(mod_mam).
 
@@ -106,7 +105,7 @@ store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir, TS) ->
 	      jid:tolower(Peer)),
     Body = fxml:get_subtag_cdata(Pkt, <<"body">>),
     SType = misc:atom_to_binary(Type),
-    XML = case gen_mod:get_module_opt(LServer, mod_mam, compress_xml) of
+    XML = case mod_mam_opt:compress_xml(LServer) of
 	      true ->
 		  J1 = case Type of
 			      chat -> jid:encode({LUser, LHost, <<>>});
@@ -184,7 +183,7 @@ select(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
 
 -spec select_with_mucsub(binary(), jid(), jid(), mam_query:result(),
 			     #rsm_set{} | undefined, all | only_count | only_messages) ->
-				{[{binary(), non_neg_integer(), xmlel()}], boolean(), integer()} |
+				{[{binary(), non_neg_integer(), xmlel()}], boolean(), non_neg_integer()} |
 				{error, db_failure}.
 select_with_mucsub(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
 		   MAMQuery, RSM, Flags) ->
@@ -354,7 +353,7 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
     With = proplists:get_value(with, MAMQuery),
     WithText = proplists:get_value(withtext, MAMQuery),
     {Max, Direction, ID} = get_max_direction_id(RSM),
-    ODBCType = ejabberd_config:get_option({sql_type, LServer}),
+    ODBCType = ejabberd_option:sql_type(LServer),
     Escape =
         case ODBCType of
             mssql -> fun ejabberd_sql:standard_escape/1;

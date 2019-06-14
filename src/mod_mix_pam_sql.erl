@@ -22,7 +22,6 @@
 %%%----------------------------------------------------------------------
 -module(mod_mix_pam_sql).
 -behaviour(mod_mix_pam).
--compile([{parse_transform, ejabberd_sql_pt}]).
 
 %% API
 -export([init/2, add_channel/3, get_channel/2,
@@ -109,6 +108,7 @@ del_channels(User) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
--spec report_corrupted(iolist()) -> ok.
+-spec report_corrupted(#sql_query{}) -> ok.
 report_corrupted(SQL) ->
-    ?ERROR_MSG("Corrupted values returned by SQL request: ~s", [SQL]).
+    ?ERROR_MSG("Corrupted values returned by SQL request: ~s",
+	       [SQL#sql_query.hash]).

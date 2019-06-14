@@ -106,7 +106,7 @@ get_features(Host) ->
 
 init([]) ->
     process_flag(trap_exit, true),
-    lists:foreach(fun host_up/1, ejabberd_config:get_myhosts()),
+    lists:foreach(fun host_up/1, ejabberd_option:hosts()),
     ejabberd_hooks:add(host_up, ?MODULE, host_up, 10),
     ejabberd_hooks:add(host_down, ?MODULE, host_down, 100),
     gen_iq_handler:start(?MODULE),
@@ -126,7 +126,7 @@ handle_info(Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
-    lists:foreach(fun host_down/1, ejabberd_config:get_myhosts()),
+    lists:foreach(fun host_down/1, ejabberd_option:hosts()),
     ejabberd_hooks:delete(host_up, ?MODULE, host_up, 10),
     ejabberd_hooks:delete(host_down, ?MODULE, host_down, 100),
     ok.

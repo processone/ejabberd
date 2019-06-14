@@ -78,11 +78,11 @@ remove_user(User, Server, Password) ->
 
 -spec prog_name(binary()) -> string() | undefined.
 prog_name(Host) ->
-    ejabberd_config:get_option({extauth_program, Host}).
+    ejabberd_option:extauth_program(Host).
 
 -spec pool_name(binary()) -> atom().
 pool_name(Host) ->
-    case ejabberd_config:get_option({extauth_pool_name, Host}) of
+    case ejabberd_option:extauth_pool_name(Host) of
 	undefined ->
 	    list_to_atom("extauth_pool_" ++ binary_to_list(Host));
 	Name ->
@@ -95,7 +95,7 @@ worker_name(Pool, N) ->
 
 -spec pool_size(binary()) -> pos_integer().
 pool_size(Host) ->
-    case ejabberd_config:get_option({extauth_pool_size, Host}) of
+    case ejabberd_option:extauth_pool_size(Host) of
 	undefined ->
 	    try erlang:system_info(logical_processors)
 	    catch _:_ -> 1

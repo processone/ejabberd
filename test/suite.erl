@@ -38,7 +38,8 @@ init_config(Config) ->
     PrivDir = proplists:get_value(priv_dir, Config),
     [_, _|Tail] = lists:reverse(filename:split(DataDir)),
     BaseDir = filename:join(lists:reverse(Tail)),
-    ConfigPathTpl = filename:join([DataDir, "ejabberd.yml"]),
+    MacrosPathTpl = filename:join([DataDir, "macros.yml"]),
+    ConfigPath = filename:join([DataDir, "ejabberd.yml"]),
     LogPath = filename:join([PrivDir, "ejabberd.log"]),
     SASLPath = filename:join([PrivDir, "sasl.log"]),
     MnesiaDir = filename:join([PrivDir, "mnesia"]),
@@ -50,46 +51,32 @@ init_config(Config) ->
     {ok, _} = file:copy(SelfSignedCertFile,
 			filename:join([CWD, "self-signed-cert.pem"])),
     {ok, _} = file:copy(CAFile, filename:join([CWD, "ca.pem"])),
-    {ok, CfgContentTpl} = file:read_file(ConfigPathTpl),
+    {ok, MacrosContentTpl} = file:read_file(MacrosPathTpl),
     Password = <<"password!@#$%^&*()'\"`~<>+-/;:_=[]{}|\\">>,
-    CfgContent = process_config_tpl(CfgContentTpl, [
-                                                    {c2s_port, 5222},
-                                                    {loglevel, 4},
-                                                    {new_schema, false},
-                                                    {s2s_port, 5269},
-						    {component_port, 5270},
-                                                    {web_port, 5280},
-						    {password, Password},
-                                                    {mysql_server, <<"localhost">>},
-                                                    {mysql_port, 3306},
-                                                    {mysql_db, <<"ejabberd_test">>},
-                                                    {mysql_user, <<"ejabberd_test">>},
-                                                    {mysql_pass, <<"ejabberd_test">>},
-                                                    {pgsql_server, <<"localhost">>},
-                                                    {pgsql_port, 5432},
-                                                    {pgsql_db, <<"ejabberd_test">>},
-                                                    {pgsql_user, <<"ejabberd_test">>},
-                                                    {pgsql_pass, <<"ejabberd_test">>},
-						    {priv_dir, PrivDir}
-						   ]),
-    HostTypes = re:split(CfgContent, "(\\s*- \"(.*)\\.localhost\")",
-			 [group, {return, binary}]),
-    Types = [binary_to_list(Type) || [_, _, Type] <- HostTypes],
-    Backends = get_config_backends(Types),
-    HostTypes = re:split(CfgContent, "(\\s*- \"(.*)\\.localhost\")",
-			   [group, {return, binary}]),
-    CfgContent2 = lists:foldl(fun([Pre, Frag, Type], Acc) ->
-				      case lists:member(binary_to_list(Type), Backends) of
-					  true ->
-					      <<Acc/binary, Pre/binary, Frag/binary>>;
-					  _ ->
-					      <<Acc/binary, Pre/binary>>
-				      end;
-				 ([Rest], Acc) ->
-				      <<Acc/binary, Rest/binary>>
-			      end, <<>>, HostTypes),
-    ConfigPath = filename:join([CWD, "ejabberd.yml"]),
-    ok = file:write_file(ConfigPath, CfgContent2),
+    Backends = get_config_backends(),
+    MacrosContent = process_config_tpl(
+		      MacrosContentTpl,
+		      [{c2s_port, 5222},
+		       {loglevel, 4},
+		       {new_schema, false},
+		       {s2s_port, 5269},
+		       {component_port, 5270},
+		       {web_port, 5280},
+		       {password, Password},
+		       {mysql_server, <<"localhost">>},
+		       {mysql_port, 3306},
+		       {mysql_db, <<"ejabberd_test">>},
+		       {mysql_user, <<"ejabberd_test">>},
+		       {mysql_pass, <<"ejabberd_test">>},
+		       {pgsql_server, <<"localhost">>},
+		       {pgsql_port, 5432},
+		       {pgsql_db, <<"ejabberd_test">>},
+		       {pgsql_user, <<"ejabberd_test">>},
+		       {pgsql_pass, <<"ejabberd_test">>},
+		       {priv_dir, PrivDir}]),
+    MacrosPath = filename:join([CWD, "macros.yml"]),
+    ok = file:write_file(MacrosPath, MacrosContent),
+    copy_backend_configs(DataDir, CWD, Backends),
     setup_ejabberd_lib_path(Config),
     case application:load(sasl) of
 	ok -> ok;
@@ -141,6 +128,29 @@ init_config(Config) ->
      {backends, Backends}
      |Config].
 
+copy_backend_configs(DataDir, CWD, Backends) ->
+    Files = filelib:wildcard(filename:join([DataDir, "ejabberd.*.yml"])),
+    lists:foreach(
+      fun(Src) ->
+	      File = filename:basename(Src),
+	      case string:tokens(File, ".") of
+		  ["ejabberd", SBackend, "yml"] ->
+		      Backend = list_to_atom(SBackend),
+		      Macro = list_to_atom(string:to_upper(SBackend) ++ "_CONFIG"),
+		      Dst = filename:join([CWD, File]),
+		      case lists:member(Backend, Backends) of
+			  true ->
+			      {ok, _} = file:copy(Src, Dst);
+			  false ->
+			      ok = file:write_file(
+				     Dst, fast_yaml:encode(
+					    [{define_macro, [{Macro, []}]}]))
+		      end;
+		  _ ->
+		      ok
+	      end
+      end, Files).
+
 find_top_dir(Dir) ->
     case file:read_file_info(filename:join([Dir, ebin])) of
 	{ok, #file_info{type = directory}} ->
@@ -165,29 +175,19 @@ setup_ejabberd_lib_path(Config) ->
 %% Read environment variable CT_DB=riak,mysql to limit the backends to test.
 %% You can thus limit the backend you want to test with:
 %%  CT_BACKENDS=riak,mysql rebar ct suites=ejabberd
-get_config_backends(Types) ->
+get_config_backends() ->
     EnvBackends = case os:getenv("CT_BACKENDS") of
-		      false  -> Types;
+		      false  -> ?BACKENDS;
 		      String ->
 			  Backends0 = string:tokens(String, ","),
-			  lists:map(fun(Backend) -> string:strip(Backend, both, $ ) end, Backends0)
+			  lists:map(
+			    fun(Backend) ->
+				    list_to_atom(string:strip(Backend, both, $ ))
+			    end, Backends0)
 		  end,
     application:load(ejabberd),
-    EnabledBackends = lists:map(fun(V) when is_atom(V) ->
-					atom_to_list(V);
-				   (V) ->
-					V
-				end,
-			       application:get_env(ejabberd, enabled_backends, Types)),
-    lists:foldl(fun(Backend, Backends) ->
-			case lists:member(Backend, EnabledBackends) of
-			    false ->
-				lists:delete(Backend, Backends);
-			    _ ->
-				Backends
-			end
-		end, EnvBackends, ["odbc", "mysql", "pgsql",
-				   "sqlite", "riak", "redis"]).
+    EnabledBackends = application:get_env(ejabberd, enabled_backends, EnvBackends),
+    misc:intersection(EnvBackends, [mnesia, ldap, extauth|EnabledBackends]).
 
 process_config_tpl(Content, []) ->
     Content;
@@ -489,6 +489,8 @@ wait_auth_SASL_result(Config, ShouldFail) ->
 			      set_opt(csi, true, ConfigAcc);
 			 (#rosterver_feature{}, ConfigAcc) ->
 			      set_opt(rosterver, true, ConfigAcc);
+			 (#compression{methods = Ms}, ConfigAcc) ->
+			      set_opt(compression, Ms, ConfigAcc);
 			 (_, ConfigAcc) ->
 			      ConfigAcc
 		      end, Config2, Fs)

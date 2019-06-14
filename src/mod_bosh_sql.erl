@@ -26,7 +26,6 @@
 -module(mod_bosh_sql).
 -behaviour(mod_bosh).
 
--compile([{parse_transform, ejabberd_sql_pt}]).
 
 %% API
 -export([init/0, open_session/2, close_session/1, find_session/1]).

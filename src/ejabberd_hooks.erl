@@ -151,10 +151,12 @@ run(Hook, Args) ->
 -spec run(atom(), binary() | global, list()) -> ok.
 
 run(Hook, Host, Args) ->
-    case ets:lookup(hooks, {Hook, Host}) of
+    try ets:lookup(hooks, {Hook, Host}) of
 	[{_, Ls}] ->
 	    run1(Ls, Hook, Args);
 	[] ->
+	    ok
+    catch _:badarg ->
 	    ok
     end.
 
@@ -171,10 +173,12 @@ run_fold(Hook, Val, Args) ->
 -spec run_fold(atom(), binary() | global, any(), list()) -> any().
 
 run_fold(Hook, Host, Val, Args) ->
-    case ets:lookup(hooks, {Hook, Host}) of
+    try ets:lookup(hooks, {Hook, Host}) of
 	[{_, Ls}] ->
 	    run_fold1(Ls, Hook, Val, Args);
 	[] ->
+	    Val
+    catch _:badarg ->
 	    Val
     end.
 
@@ -190,7 +194,7 @@ run_fold(Hook, Host, Val, Args) ->
 %%          {stop, Reason}
 %%----------------------------------------------------------------------
 init([]) ->
-    ets:new(hooks, [named_table, {read_concurrency, true}]),
+    _ = ets:new(hooks, [named_table, {read_concurrency, true}]),
     {ok, #state{}}.
 
 %%----------------------------------------------------------------------
@@ -381,13 +385,14 @@ safe_apply(Hook, Module, Function, Args) ->
 		apply(Module, Function, Args)
 	end
     catch ?EX_RULE(E, R, St) when E /= exit; R /= normal ->
+	    Stack = ?EX_STACK(St),
 	    ?ERROR_MSG("Hook ~p crashed when running ~p:~p/~p:~n" ++
 			   string:join(
-			     ["** Reason = ~p"|
+			     ["** ~s"|
 			      ["** Arg " ++ integer_to_list(I) ++ " = ~p"
 			       || I <- lists:seq(1, length(Args))]],
 			     "~n"),
 		       [Hook, Module, Function, length(Args),
-			{E, R, ?EX_STACK(St)}|Args]),
+			misc:format_exception(2, E, R, Stack)|Args]),
 	    'EXIT'
     end.

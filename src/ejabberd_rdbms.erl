@@ -26,11 +26,10 @@
 -module(ejabberd_rdbms).
 
 -behaviour(supervisor).
--behaviour(ejabberd_config).
 
 -author('alexey@process-one.net').
 
--export([start_link/0, init/1, opt_type/1,
+-export([start_link/0, init/1,
 	 config_reloaded/0, start_host/1, stop_host/1]).
 
 -include("logger.hrl").
@@ -55,7 +54,7 @@ get_specs() ->
 		  {ok, Spec} -> [Spec];
 		  undefined -> []
 	      end
-      end, ejabberd_config:get_myhosts()).
+      end, ejabberd_option:hosts()).
 
 -spec get_spec(binary()) -> {ok, supervisor:child_spec()} | undefined.
 get_spec(Host) ->
@@ -71,7 +70,7 @@ get_spec(Host) ->
 
 -spec config_reloaded() -> ok.
 config_reloaded() ->
-    lists:foreach(fun reload_host/1, ejabberd_config:get_myhosts()).
+    lists:foreach(fun reload_host/1, ejabberd_option:hosts()).
 
 -spec start_host(binary()) -> ok.
 start_host(Host) ->
@@ -89,12 +88,13 @@ start_host(Host) ->
 	    ok
     end.
 
--spec stop_host(binary()) -> ok.
+-spec stop_host(binary()) -> ok | {error, atom()}.
 stop_host(Host) ->
     SupName = gen_mod:get_module_proc(Host, ejabberd_sql_sup),
-    supervisor:terminate_child(?MODULE, SupName),
-    supervisor:delete_child(?MODULE, SupName),
-    ok.
+    case supervisor:terminate_child(?MODULE, SupName) of
+	ok -> supervisor:delete_child(?MODULE, SupName);
+	Err -> Err
+    end.
 
 -spec reload_host(binary()) -> ok.
 reload_host(Host) ->
@@ -106,7 +106,7 @@ reload_host(Host) ->
 %% Returns {true, App} if we have configured sql for the given host
 needs_sql(Host) ->
     LHost = jid:nameprep(Host),
-    case ejabberd_config:get_option({sql_type, LHost}, undefined) of
+    case ejabberd_option:sql_type(LHost) of
         mysql -> {true, p1_mysql};
         pgsql -> {true, p1_pgsql};
         sqlite -> {true, sqlite3};
@@ -114,13 +114,3 @@ needs_sql(Host) ->
         odbc -> {true, odbc};
         undefined -> false
     end.
-
--spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
-opt_type(sql_type) ->
-    fun (mysql) -> mysql;
-	(pgsql) -> pgsql;
-	(sqlite) -> sqlite;
-	(mssql) -> mssql;
-	(odbc) -> odbc
-    end;
-opt_type(_) -> [sql_type].

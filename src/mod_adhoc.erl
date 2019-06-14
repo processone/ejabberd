@@ -93,8 +93,7 @@ reload(_Host, _NewOpts, _OldOpts) ->
 get_local_commands(Acc, _From,
 		   #jid{server = Server, lserver = LServer} = _To, <<"">>,
 		   Lang) ->
-    Display = gen_mod:get_module_opt(LServer, ?MODULE,
-				     report_commands_node),
+    Display = mod_adhoc_opt:report_commands_node(LServer),
     case Display of
       false -> Acc;
       _ ->
@@ -121,8 +120,7 @@ get_local_commands(Acc, _From, _To, _Node, _Lang) ->
 
 get_sm_commands(Acc, _From,
 		#jid{lserver = LServer} = To, <<"">>, Lang) ->
-    Display = gen_mod:get_module_opt(LServer, ?MODULE,
-				     report_commands_node),
+    Display = mod_adhoc_opt:report_commands_node(LServer),
     case Display of
       false -> Acc;
       _ ->
@@ -275,7 +273,7 @@ depends(_Host, _Opts) ->
     [].
 
 mod_opt_type(report_commands_node) ->
-    fun (B) when is_boolean(B) -> B end.
+    econf:bool().
 
 mod_options(_Host) ->
     [{report_commands_node, false}].

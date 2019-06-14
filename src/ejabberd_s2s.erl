@@ -27,8 +27,6 @@
 
 -protocol({xep, 220, '1.1'}).
 
--behaviour(ejabberd_config).
-
 -author('alexey@process-one.net').
 
 -behaviour(gen_server).
@@ -44,15 +42,14 @@
 	 list_temporarily_blocked_hosts/0,
 	 external_host_overloaded/1, is_temporarly_blocked/1,
 	 get_commands_spec/0, zlib_enabled/1, get_idle_timeout/1,
-	 tls_required/1, tls_verify/1, tls_enabled/1, tls_options/2,
+	 tls_required/1, tls_enabled/1, tls_options/2,
 	 host_up/1, host_down/1, queue_type/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
 
--export([get_info_s2s_connections/1,
-	 transform_options/1, opt_type/1]).
+-export([get_info_s2s_connections/1]).
 
 -include("logger.hrl").
 -include("xmpp.hrl").
@@ -131,19 +128,21 @@ is_temporarly_blocked(Host) ->
 	  end
     end.
 
--spec remove_connection({binary(), binary()},
-                        pid()) -> {atomic, ok} | ok | {aborted, any()}.
-
+-spec remove_connection({binary(), binary()}, pid()) -> ok.
 remove_connection(FromTo, Pid) ->
-    case catch mnesia:dirty_match_object(s2s,
-					 #s2s{fromto = FromTo, pid = Pid})
-	of
-      [#s2s{pid = Pid}] ->
-	  F = fun () ->
-		      mnesia:delete_object(#s2s{fromto = FromTo, pid = Pid})
-	      end,
-	  mnesia:transaction(F);
-      _ -> ok
+    case mnesia:dirty_match_object(s2s, #s2s{fromto = FromTo, pid = Pid}) of
+	[#s2s{pid = Pid}] ->
+	    F = fun() ->
+			mnesia:delete_object(#s2s{fromto = FromTo, pid = Pid})
+		end,
+	    case mnesia:transaction(F) of
+		{atomic, _} -> ok;
+		{aborted, Reason} ->
+		    ?ERROR_MSG("Failed to unregister s2s connection: "
+			       "Mnesia failure: ~p", [Reason])
+	    end;
+	_ ->
+	    ok
     end.
 
 -spec have_connection({binary(), binary()}) -> boolean().
@@ -195,36 +194,32 @@ dirty_get_connections() ->
 
 -spec tls_options(binary(), [proplists:property()]) -> [proplists:property()].
 tls_options(LServer, DefaultOpts) ->
-    TLSOpts1 = case get_certfile(LServer) of
-		   undefined -> DefaultOpts;
-		   CertFile ->
+    TLSOpts1 = case ejabberd_pkix:get_certfile(LServer) of
+		   error -> DefaultOpts;
+		   {ok, CertFile} ->
 		       lists:keystore(certfile, 1, DefaultOpts,
 				      {certfile, CertFile})
 	       end,
-    TLSOpts2 = case ejabberd_config:get_option(
-		      {s2s_ciphers, LServer}) of
+    TLSOpts2 = case ejabberd_option:s2s_ciphers(LServer) of
                    undefined -> TLSOpts1;
                    Ciphers -> lists:keystore(ciphers, 1, TLSOpts1,
 					     {ciphers, Ciphers})
                end,
-    TLSOpts3 = case ejabberd_config:get_option(
-                      {s2s_protocol_options, LServer}) of
+    TLSOpts3 = case ejabberd_option:s2s_protocol_options(LServer) of
                    undefined -> TLSOpts2;
                    ProtoOpts -> lists:keystore(protocol_options, 1, TLSOpts2,
 					       {protocol_options, ProtoOpts})
                end,
-    TLSOpts4 = case ejabberd_config:get_option(
-		      {s2s_dhfile, LServer}) of
+    TLSOpts4 = case ejabberd_option:s2s_dhfile(LServer) of
                    undefined -> TLSOpts3;
                    DHFile -> lists:keystore(dhfile, 1, TLSOpts3,
 					    {dhfile, DHFile})
                end,
-    TLSOpts5 = case get_cafile(LServer) of
-		   undefined -> TLSOpts4;
-		   CAFile -> lists:keystore(cafile, 1, TLSOpts4,
-					    {cafile, CAFile})
+    TLSOpts5 = case lists:keymember(cafile, 1, TLSOpts4) of
+		   true -> TLSOpts4;
+		   false -> [{cafile, get_cafile(LServer)}|TLSOpts4]
 	       end,
-    case ejabberd_config:get_option({s2s_tls_compression, LServer}) of
+    case ejabberd_option:s2s_tls_compression(LServer) of
 	undefined -> TLSOpts5;
 	false -> [compression_none | TLSOpts5];
 	true -> lists:delete(compression_none, TLSOpts5)
@@ -233,12 +228,7 @@ tls_options(LServer, DefaultOpts) ->
 -spec tls_required(binary()) -> boolean().
 tls_required(LServer) ->
     TLS = use_starttls(LServer),
-    TLS == required orelse TLS == required_trusted.
-
--spec tls_verify(binary()) -> boolean().
-tls_verify(LServer) ->
-    TLS = use_starttls(LServer),
-    TLS == required_trusted.
+    TLS == required.
 
 -spec tls_enabled(binary()) -> boolean().
 tls_enabled(LServer) ->
@@ -247,38 +237,25 @@ tls_enabled(LServer) ->
 
 -spec zlib_enabled(binary()) -> boolean().
 zlib_enabled(LServer) ->
-    ejabberd_config:get_option({s2s_zlib, LServer}, false).
+    ejabberd_option:s2s_zlib(LServer).
 
--spec use_starttls(binary()) -> boolean() | optional | required | required_trusted.
+-spec use_starttls(binary()) -> boolean() | optional | required.
 use_starttls(LServer) ->
-    ejabberd_config:get_option({s2s_use_starttls, LServer}, false).
+    ejabberd_option:s2s_use_starttls(LServer).
 
 -spec get_idle_timeout(binary()) -> non_neg_integer() | infinity.
 get_idle_timeout(LServer) ->
-    ejabberd_config:get_option({s2s_timeout, LServer}, timer:minutes(10)).
+    ejabberd_option:s2s_timeout(LServer).
 
 -spec queue_type(binary()) -> ram | file.
 queue_type(LServer) ->
-    ejabberd_config:get_option(
-      {s2s_queue_type, LServer},
-      ejabberd_config:default_queue_type(LServer)).
-
--spec get_certfile(binary()) -> file:filename_all() | undefined.
-get_certfile(LServer) ->
-    case ejabberd_pkix:get_certfile(LServer) of
-	{ok, CertFile} ->
-	    CertFile;
-	error ->
-	    ejabberd_config:get_option(
-	      {domain_certfile, LServer},
-	      ejabberd_config:get_option({s2s_certfile, LServer}))
-    end.
+    ejabberd_option:s2s_queue_type(LServer).
 
 -spec get_cafile(binary()) -> file:filename_all() | undefined.
 get_cafile(LServer) ->
-    case ejabberd_config:get_option({s2s_cafile, LServer}) of
+    case ejabberd_option:s2s_cafile(LServer) of
 	undefined ->
-	    ejabberd_pkix:ca_file();
+	    ejabberd_option:ca_file();
 	File ->
 	    File
     end.
@@ -286,22 +263,26 @@ get_cafile(LServer) ->
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
-
 init([]) ->
     update_tables(),
     ejabberd_mnesia:create(?MODULE, s2s,
-			[{ram_copies, [node()]},
-			 {type, bag},
-			 {attributes, record_info(fields, s2s)}]),
-    mnesia:subscribe(system),
-    ejabberd_commands:register_commands(get_commands_spec()),
-    ejabberd_mnesia:create(?MODULE, temporarily_blocked,
-			[{ram_copies, [node()]},
-			 {attributes, record_info(fields, temporarily_blocked)}]),
-    ejabberd_hooks:add(host_up, ?MODULE, host_up, 50),
-    ejabberd_hooks:add(host_down, ?MODULE, host_down, 60),
-    lists:foreach(fun host_up/1, ejabberd_config:get_myhosts()),
-    {ok, #state{}}.
+			   [{ram_copies, [node()]},
+			    {type, bag},
+			    {attributes, record_info(fields, s2s)}]),
+    case mnesia:subscribe(system) of
+	{ok, _} ->
+	    ejabberd_commands:register_commands(get_commands_spec()),
+	    ejabberd_mnesia:create(
+	      ?MODULE, temporarily_blocked,
+	      [{ram_copies, [node()]},
+	       {attributes, record_info(fields, temporarily_blocked)}]),
+	    ejabberd_hooks:add(host_up, ?MODULE, host_up, 50),
+	    ejabberd_hooks:add(host_down, ?MODULE, host_down, 60),
+	    lists:foreach(fun host_up/1, ejabberd_option:hosts()),
+	    {ok, #state{}};
+	{error, Reason} ->
+	    {stop, Reason}
+    end.
 
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
@@ -319,7 +300,7 @@ handle_info(_Info, State) -> {noreply, State}.
 
 terminate(_Reason, _State) ->
     ejabberd_commands:unregister_commands(get_commands_spec()),
-    lists:foreach(fun host_down/1, ejabberd_config:get_myhosts()),
+    lists:foreach(fun host_down/1, ejabberd_option:hosts()),
     ejabberd_hooks:delete(host_up, ?MODULE, host_up, 50),
     ejabberd_hooks:delete(host_down, ?MODULE, host_down, 60),
     ok.
@@ -508,18 +489,18 @@ new_connection(MyServer, Server, From, FromTo,
 	    []
     end.
 
--spec max_s2s_connections_number({binary(), binary()}) -> integer().
+-spec max_s2s_connections_number({binary(), binary()}) -> pos_integer().
 max_s2s_connections_number({From, To}) ->
-    case acl:match_rule(From, max_s2s_connections, jid:make(To)) of
-      Max when is_integer(Max) -> Max;
-      _ -> ?DEFAULT_MAX_S2S_CONNECTIONS_NUMBER
+    case ejabberd_shaper:match(From, max_s2s_connections, jid:make(To)) of
+	Max when is_integer(Max) -> Max;
+	_ -> ?DEFAULT_MAX_S2S_CONNECTIONS_NUMBER
     end.
 
--spec max_s2s_connections_number_per_node({binary(), binary()}) -> integer().
+-spec max_s2s_connections_number_per_node({binary(), binary()}) -> pos_integer().
 max_s2s_connections_number_per_node({From, To}) ->
-    case acl:match_rule(From, max_s2s_connections_per_node, jid:make(To)) of
-      Max when is_integer(Max) -> Max;
-      _ -> ?DEFAULT_MAX_S2S_CONNECTIONS_NUMBER_PER_NODE
+    case ejabberd_shaper:match(From, max_s2s_connections_per_node, jid:make(To)) of
+	Max when is_integer(Max) -> Max;
+	_ -> ?DEFAULT_MAX_S2S_CONNECTIONS_NUMBER_PER_NODE
     end.
 
 -spec needed_connections_number([#s2s{}], integer(), integer()) -> integer().
@@ -537,11 +518,11 @@ needed_connections_number(Ls, MaxS2SConnectionsNumber,
 -spec is_service(jid(), jid()) -> boolean().
 is_service(From, To) ->
     LFromDomain = From#jid.lserver,
-    case ejabberd_config:get_option({route_subdomains, LFromDomain}, local) of
+    case ejabberd_option:route_subdomains(LFromDomain) of
       s2s -> % bypass RFC 3920 10.3
 	  false;
       local ->
-	  Hosts = ejabberd_config:get_myhosts(),
+	  Hosts = ejabberd_option:hosts(),
 	  P = fun (ParentDomain) ->
 		      lists:member(ParentDomain, Hosts)
 	      end,
@@ -602,32 +583,15 @@ stop_s2s_connections() ->
       fun({_Id, Pid, _Type, _Module}) ->
 	      supervisor:terminate_child(ejabberd_s2s_out_sup, Pid)
       end, supervisor:which_children(ejabberd_s2s_out_sup)),
-    mnesia:clear_table(s2s),
+    _ = mnesia:clear_table(s2s),
     ok.
 
 %%%----------------------------------------------------------------------
 %%% Update Mnesia tables
 
 update_tables() ->
-    case catch mnesia:table_info(s2s, type) of
-      bag -> ok;
-      {'EXIT', _} -> ok;
-      _ -> mnesia:delete_table(s2s)
-    end,
-    case catch mnesia:table_info(s2s, attributes) of
-      [fromto, node, key] ->
-	  mnesia:transform_table(s2s, ignore, [fromto, pid]),
-	  mnesia:clear_table(s2s);
-      [fromto, pid, key] ->
-	  mnesia:transform_table(s2s, ignore, [fromto, pid]),
-	  mnesia:clear_table(s2s);
-      [fromto, pid] -> ok;
-      {'EXIT', _} -> ok
-    end,
-    case lists:member(local_s2s, mnesia:system_info(tables)) of
-	true -> mnesia:delete_table(local_s2s);
-	false -> ok
-    end.
+    _ = mnesia:delete_table(local_s2s),
+    ok.
 
 %% Check if host is in blacklist or white list
 allow_host(MyServer, S2SHost) ->
@@ -635,7 +599,7 @@ allow_host(MyServer, S2SHost) ->
       not is_temporarly_blocked(S2SHost).
 
 allow_host1(MyHost, S2SHost) ->
-    Rule = ejabberd_config:get_option({s2s_access, MyHost}, all),
+    Rule = ejabberd_option:s2s_access(MyHost),
     JID = jid:make(S2SHost),
     case acl:match_rule(MyHost, Rule, JID) of
         deny -> false;
@@ -647,30 +611,6 @@ allow_host1(MyHost, S2SHost) ->
                 _ -> true
             end
     end.
-
-transform_options(Opts) ->
-    lists:foldl(fun transform_options/2, [], Opts).
-
-transform_options({{s2s_host, Host}, Action}, Opts) ->
-    ?WARNING_MSG("Option 's2s_host' is deprecated. "
-                 "The option is still supported but it is better to "
-                 "fix your config: use access rules instead.", []),
-    ACLName = misc:binary_to_atom(
-                iolist_to_binary(["s2s_access_", Host])),
-    [{acl, ACLName, {server, Host}},
-     {access, s2s, [{Action, ACLName}]},
-     {s2s_access, s2s} |
-     Opts];
-transform_options({s2s_default_policy, Action}, Opts) ->
-    ?WARNING_MSG("Option 's2s_default_policy' is deprecated. "
-                 "The option is still supported but it is better to "
-                 "fix your config: "
-                 "use 's2s_access' with an access rule.", []),
-    [{access, s2s, [{Action, all}]},
-     {s2s_access, s2s} |
-     Opts];
-transform_options(Opt, Opts) ->
-    [Opt|Opts].
 
 %% Get information about S2S connections of the specified type.
 %% @spec (Type) -> [Info]
@@ -704,51 +644,3 @@ get_s2s_state(S2sPid) ->
 	      {badrpc, _} -> [{status, error}]
 	    end,
     [{s2s_pid, S2sPid} | Infos].
-
--spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
-opt_type(route_subdomains) ->
-    fun (s2s) -> s2s;
-	(local) -> local
-    end;
-opt_type(s2s_access) ->
-    fun acl:access_rules_validator/1;
-opt_type(s2s_ciphers) -> fun iolist_to_binary/1;
-opt_type(s2s_dhfile) -> fun misc:try_read_file/1;
-opt_type(s2s_cafile) -> fun misc:try_read_file/1;
-opt_type(s2s_protocol_options) ->
-    fun (Options) -> str:join(Options, <<"|">>) end;
-opt_type(s2s_tls_compression) ->
-    fun (true) -> true;
-	(false) -> false
-    end;
-opt_type(s2s_use_starttls) ->
-    fun (true) -> true;
-	(false) -> false;
-	(optional) -> optional;
-	(required) -> required;
-	(required_trusted) ->
-	    ?WARNING_MSG("The value 'required_trusted' of option "
-			 "'s2s_use_starttls' is deprected and will be "
-			 "unsupported in future releases. Instead, "
-			 "set it to 'required' and make sure "
-			 "mod_s2s_dialback is *NOT* loaded", []),
-	    required_trusted
-    end;
-opt_type(s2s_zlib) ->
-    fun(true) ->
-	    ejabberd:start_app(ezlib),
-	    true;
-       (false) ->
-	    false
-    end;
-opt_type(s2s_timeout) ->
-    fun(I) when is_integer(I), I >= 0 -> timer:seconds(I);
-       (infinity) -> infinity;
-       (unlimited) -> infinity
-    end;
-opt_type(s2s_queue_type) ->
-    fun(ram) -> ram; (file) -> file end;
-opt_type(_) ->
-    [route_subdomains, s2s_access, s2s_zlib,
-     s2s_ciphers, s2s_dhfile, s2s_cafile, s2s_protocol_options,
-     s2s_tls_compression, s2s_use_starttls, s2s_timeout, s2s_queue_type].

@@ -53,7 +53,7 @@ find_session(SID) ->
 %%% Internal functions
 %%%===================================================================
 bosh_schema() ->
-    {record_info(fields, bosh), #bosh{}}.
+    {record_info(fields, bosh), #bosh{sid = <<>>, pid = self()}}.
 
 clean_table() ->
     ?DEBUG("Cleaning Riak 'bosh' table...", []),

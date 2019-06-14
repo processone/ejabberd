@@ -69,25 +69,21 @@
 %%--------------------------------------------------------------------
 %% gen_mod/supervisor callbacks.
 %%--------------------------------------------------------------------
--spec start(binary(), gen_mod:opts()) -> {ok, pid()}.
 start(ServerHost, Opts) ->
     Proc = mod_http_upload:get_proc_name(ServerHost, ?MODULE),
     gen_mod:start_child(?MODULE, ServerHost, Opts, Proc).
 
--spec stop(binary()) -> ok | {error, any()}.
 stop(ServerHost) ->
     Proc = mod_http_upload:get_proc_name(ServerHost, ?MODULE),
     gen_mod:stop_child(Proc).
 
--spec mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
+-spec mod_opt_type(atom()) -> econf:validator().
 mod_opt_type(access_soft_quota) ->
-    fun acl:shaper_rules_validator/1;
+    econf:shaper();
 mod_opt_type(access_hard_quota) ->
-    fun acl:shaper_rules_validator/1;
+    econf:shaper();
 mod_opt_type(max_days) ->
-    fun(I) when is_integer(I), I > 0 -> I;
-       (infinity) -> infinity
-    end.
+    econf:pos_int(infinity).
 
 -spec mod_options(binary()) -> [{atom(), any()}].
 mod_options(_) ->
@@ -105,10 +101,10 @@ depends(_Host, _Opts) ->
 -spec init(list()) -> {ok, state()}.
 init([ServerHost, Opts]) ->
     process_flag(trap_exit, true),
-    AccessSoftQuota = gen_mod:get_opt(access_soft_quota, Opts),
-    AccessHardQuota = gen_mod:get_opt(access_hard_quota, Opts),
-    MaxDays = gen_mod:get_opt(max_days, Opts),
-    DocRoot1 = gen_mod:get_module_opt(ServerHost, mod_http_upload, docroot),
+    AccessSoftQuota = mod_http_upload_quota_opt:access_soft_quota(Opts),
+    AccessHardQuota = mod_http_upload_quota_opt:access_hard_quota(Opts),
+    MaxDays = mod_http_upload_quota_opt:max_days(Opts),
+    DocRoot1 = mod_http_upload_opt:docroot(ServerHost),
     DocRoot2 = mod_http_upload:expand_home(str:strip(DocRoot1, right, $/)),
     DocRoot3 = mod_http_upload:expand_host(DocRoot2, ServerHost),
     Timers = if MaxDays == infinity -> [];
@@ -137,13 +133,13 @@ handle_cast({handle_slot_request, #jid{user = U, server = S} = JID, Path, Size},
 		   access_soft_quota = AccessSoftQuota,
 		   access_hard_quota = AccessHardQuota,
 		   disk_usage = DiskUsage} = State) ->
-    HardQuota = case acl:match_rule(ServerHost, AccessHardQuota, JID) of
+    HardQuota = case ejabberd_shaper:match(ServerHost, AccessHardQuota, JID) of
 		    Hard when is_integer(Hard), Hard > 0 ->
 			Hard * 1024 * 1024;
 		    _ ->
 			0
 		end,
-    SoftQuota = case acl:match_rule(ServerHost, AccessSoftQuota, JID) of
+    SoftQuota = case ejabberd_shaper:match(ServerHost, AccessSoftQuota, JID) of
 		    Soft when is_integer(Soft), Soft > 0 ->
 			Soft * 1024 * 1024;
 		    _ ->

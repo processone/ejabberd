@@ -57,6 +57,7 @@ tcp_init(Socket, Opts) ->
     ejabberd:start_app(stun),
     stun:tcp_init(Socket, prepare_turn_opts(Opts)).
 
+-dialyzer({nowarn_function, udp_init/2}).
 udp_init(Socket, Opts) ->
     ejabberd:start_app(stun),
     stun:udp_init(Socket, prepare_turn_opts(Opts)).
@@ -83,11 +84,11 @@ prepare_turn_opts(Opts) ->
 prepare_turn_opts(Opts, _UseTurn = false) ->
     set_certfile(Opts);
 prepare_turn_opts(Opts, _UseTurn = true) ->
-    NumberOfMyHosts = length(ejabberd_config:get_myhosts()),
+    NumberOfMyHosts = length(ejabberd_option:hosts()),
     case proplists:get_value(turn_ip, Opts) of
 	undefined ->
-	    ?WARNING_MSG("option 'turn_ip' is undefined, "
-			 "more likely the TURN relay won't be working "
+	    ?WARNING_MSG("Option 'turn_ip' is undefined, "
+			 "most likely the TURN relay won't be working "
 			 "properly", []);
 	_ ->
 	    ok
@@ -98,11 +99,11 @@ prepare_turn_opts(Opts, _UseTurn = true) ->
     Realm = case proplists:get_value(auth_realm, Opts) of
 		undefined when AuthType == user ->
 		    if NumberOfMyHosts > 1 ->
-			    ?WARNING_MSG("you have several virtual "
+			    ?WARNING_MSG("You have several virtual "
 					 "hosts configured, but option "
 					 "'auth_realm' is undefined and "
 					 "'auth_type' is set to 'user', "
-					 "more likely the TURN relay won't "
+					 "most likely the TURN relay won't "
 					 "be working properly. Using ~s as "
 					 "a fallback", [ejabberd_config:get_myname()]);
 		       true ->
@@ -127,44 +128,32 @@ set_certfile(Opts) ->
 		{ok, CertFile} ->
 		    [{certfile, CertFile}|Opts];
 		error ->
-		    case ejabberd_config:get_option({domain_certfile, Realm}) of
-			undefined ->
-			    Opts;
-			CertFile ->
-			    [{certfile, CertFile}|Opts]
-		    end
+		    Opts
 	    end
     end.
 
 listen_opt_type(use_turn) ->
-    fun(B) when is_boolean(B) -> B end;
+    econf:bool();
+listen_opt_type(ip) ->
+    econf:ipv4();
 listen_opt_type(turn_ip) ->
-    fun(S) ->
-	    {ok, Addr} = inet_parse:ipv4_address(binary_to_list(S)),
-	    Addr
-    end;
+    econf:ipv4();
 listen_opt_type(auth_type) ->
-    fun(anonymous) -> anonymous;
-       (user) -> user
-    end;
+    econf:enum([anonymous, user]);
 listen_opt_type(auth_realm) ->
-    fun iolist_to_binary/1;
+    econf:binary();
 listen_opt_type(turn_min_port) ->
-    fun(P) when is_integer(P), P > 1024, P < 65536 -> P end;
+    econf:int(1025, 65535);
 listen_opt_type(turn_max_port) ->
-    fun(P) when is_integer(P), P > 1024, P < 65536 -> P end;
+    econf:int(1025, 65535);
 listen_opt_type(turn_max_allocations) ->
-    fun(I) when is_integer(I), I>0 -> I;
-       (unlimited) -> infinity;
-       (infinity) -> infinity
-    end;
+    econf:pos_int(infinity);
 listen_opt_type(turn_max_permissions) ->
-    fun(I) when is_integer(I), I>0 -> I;
-       (unlimited) -> infinity;
-       (infinity) -> infinity
-    end;
+    econf:pos_int(infinity);
 listen_opt_type(server_name) ->
-    fun iolist_to_binary/1.
+    econf:binary();
+listen_opt_type(certfile) ->
+    econf:pem().
 
 listen_options() ->
     [{shaper, none},

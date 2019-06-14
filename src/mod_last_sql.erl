@@ -26,7 +26,6 @@
 
 -behaviour(mod_last).
 
--compile([{parse_transform, ejabberd_sql_pt}]).
 
 %% API
 -export([init/2, get_last/2, store_last_info/4, remove_user/2,

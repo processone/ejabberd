@@ -58,9 +58,9 @@
 %%--------------------------------------------------------------------
 -spec start(binary(), gen_mod:opts()) -> ok.
 start(Host, Opts) ->
-    QueuePresence = gen_mod:get_opt(queue_presence, Opts),
-    QueueChatStates = gen_mod:get_opt(queue_chat_states, Opts),
-    QueuePEP = gen_mod:get_opt(queue_pep, Opts),
+    QueuePresence = mod_client_state_opt:queue_presence(Opts),
+    QueueChatStates = mod_client_state_opt:queue_chat_states(Opts),
+    QueuePEP = mod_client_state_opt:queue_pep(Opts),
     if QueuePresence; QueueChatStates; QueuePEP ->
 	   register_hooks(Host),
 	   if QueuePresence ->
@@ -83,9 +83,9 @@ start(Host, Opts) ->
 
 -spec stop(binary()) -> ok.
 stop(Host) ->
-    QueuePresence = gen_mod:get_module_opt(Host, ?MODULE, queue_presence),
-    QueueChatStates = gen_mod:get_module_opt(Host, ?MODULE, queue_chat_states),
-    QueuePEP = gen_mod:get_module_opt(Host, ?MODULE, queue_pep),
+    QueuePresence = mod_client_state_opt:queue_presence(Host),
+    QueueChatStates = mod_client_state_opt:queue_chat_states(Host),
+    QueuePEP = mod_client_state_opt:queue_pep(Host),
     if QueuePresence; QueueChatStates; QueuePEP ->
 	   unregister_hooks(Host),
 	   if QueuePresence ->
@@ -108,9 +108,9 @@ stop(Host) ->
 
 -spec reload(binary(), gen_mod:opts(), gen_mod:opts()) -> ok.
 reload(Host, NewOpts, _OldOpts) ->
-    QueuePresence = gen_mod:get_opt(queue_presence, NewOpts),
-    QueueChatStates = gen_mod:get_opt(queue_chat_states, NewOpts),
-    QueuePEP = gen_mod:get_opt(queue_pep, NewOpts),
+    QueuePresence = mod_client_state_opt:queue_presence(NewOpts),
+    QueueChatStates = mod_client_state_opt:queue_chat_states(NewOpts),
+    QueuePEP = mod_client_state_opt:queue_pep(NewOpts),
     if QueuePresence; QueueChatStates; QueuePEP ->
 	    register_hooks(Host);
        true ->
@@ -138,13 +138,13 @@ reload(Host, NewOpts, _OldOpts) ->
 				  filter_pep, 50)
     end.
 
--spec mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
+-spec mod_opt_type(atom()) -> econf:validator().
 mod_opt_type(queue_presence) ->
-    fun(B) when is_boolean(B) -> B end;
+    econf:bool();
 mod_opt_type(queue_chat_states) ->
-    fun(B) when is_boolean(B) -> B end;
+    econf:bool();
 mod_opt_type(queue_pep) ->
-    fun(B) when is_boolean(B) -> B end.
+    econf:bool().
 
 mod_options(_) ->
     [{queue_presence, true},

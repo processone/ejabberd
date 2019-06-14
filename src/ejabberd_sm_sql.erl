@@ -24,7 +24,6 @@
 
 -module(ejabberd_sm_sql).
 
--compile([{parse_transform, ejabberd_sql_pt}]).
 
 -behaviour(ejabberd_sm).
 

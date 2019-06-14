@@ -22,9 +22,11 @@
 -module(ejabberd_s2s_in).
 -behaviour(xmpp_stream_in).
 -behaviour(ejabberd_listener).
+-dialyzer([{no_fail_call, [stop/1, process_closed/2]},
+	   {no_return, process_closed/2}]).
 
 %% ejabberd_listener callbacks
--export([start/3, start_link/3, accept/1, listen_opt_type/1, listen_options/0]).
+-export([start/3, start_link/3, accept/1, listen_options/0]).
 %% xmpp_stream_in callbacks
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
@@ -252,11 +254,11 @@ init([State, Opts]) ->
 		   false -> [compression_none | TLSOpts1];
 		   true -> TLSOpts1
 	       end,
-    Timeout = ejabberd_config:negotiation_timeout(),
+    Timeout = ejabberd_option:negotiation_timeout(),
     State1 = State#{tls_options => TLSOpts2,
 		    auth_domains => sets:new(),
 		    xmlns => ?NS_SERVER,
-		    lang => ejabberd_config:get_mylang(),
+		    lang => ejabberd_option:language(),
 		    server => ejabberd_config:get_myname(),
 		    lserver => ejabberd_config:get_myname(),
 		    server_host => ejabberd_config:get_myname(),
@@ -337,20 +339,11 @@ set_idle_timeout(State) ->
 -spec change_shaper(state(), binary()) -> state().
 change_shaper(#{shaper := ShaperName, server_host := ServerHost} = State,
 	      RServer) ->
-    Shaper = acl:match_rule(ServerHost, ShaperName, jid:make(RServer)),
+    Shaper = ejabberd_shaper:match(ServerHost, ShaperName, jid:make(RServer)),
     xmpp_stream_in:change_shaper(State, ejabberd_shaper:new(Shaper)).
-
-listen_opt_type(certfile = Opt) ->
-    fun(S) ->
-	    ?WARNING_MSG("Listening option '~s' for ~s is deprecated, use "
-			 "'certfiles' global option instead", [Opt, ?MODULE]),
-	    {ok, File} = ejabberd_pkix:add_certfile(S),
-	    File
-    end.
 
 listen_options() ->
     [{shaper, none},
-     {certfile, undefined},
      {ciphers, undefined},
      {dhfile, undefined},
      {cafile, undefined},

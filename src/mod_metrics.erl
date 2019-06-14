@@ -32,7 +32,7 @@
 -include("xmpp.hrl").
 
 -export([start/2, stop/1, mod_opt_type/1, mod_options/1, depends/2, reload/3]).
-
+-export([push/2]).
 -export([offline_message_hook/1,
          sm_register_connection_hook/3, sm_remove_connection_hook/3,
          user_send_packet/1, user_receive_packet/1,
@@ -41,6 +41,8 @@
 
 -define(SOCKET_NAME, mod_metrics_udp_socket).
 -define(SOCKET_REGISTER_RETRIES, 10).
+
+-type probe() :: atom() | {atom(), integer()}.
 
 %%====================================================================
 %% API
@@ -124,12 +126,14 @@ register_user(_User, Server) ->
 %%====================================================================
 %% metrics push handler
 %%====================================================================
-
+-spec push(binary(), probe()) -> ok | {error, not_owner | inet:posix()}.
 push(Host, Probe) ->
-    IP = gen_mod:get_module_opt(Host, ?MODULE, ip),
-    Port = gen_mod:get_module_opt(Host, ?MODULE, port),
+    IP = mod_metrics_opt:ip(Host),
+    Port = mod_metrics_opt:port(Host),
     send_metrics(Host, Probe, IP, Port).
 
+-spec send_metrics(binary(), probe(), inet:ip4_address(), inet:port_number()) ->
+			  ok | {error, not_owner | inet:posix()}.
 send_metrics(Host, Probe, Peer, Port) ->
     % our default metrics handler is https://github.com/processone/grapherl
     % grapherl metrics are named first with service domain, then nodename
@@ -156,6 +160,7 @@ send_metrics(Host, Probe, Peer, Port) ->
 	    Err
     end.
 
+-spec get_socket(integer()) -> {ok, gen_udp:socket()} | {error, inet:posix()}.
 get_socket(N) ->
     case whereis(?SOCKET_NAME) of
 	undefined ->
@@ -177,13 +182,9 @@ get_socket(N) ->
     end.
 
 mod_opt_type(ip) ->
-    fun(S) ->
-	    {ok, IP} = inet:parse_ipv4_address(
-			 binary_to_list(iolist_to_binary(S))),
-	    IP
-    end;
+    econf:ipv4();
 mod_opt_type(port) ->
-    fun(I) when is_integer(I), I>0, I<65536 -> I end.
+    econf:port().
 
 mod_options(_) ->
-    [{ip, <<"127.0.0.1">>}, {port, 11111}].
+    [{ip, {127,0,0,1}}, {port, 11111}].

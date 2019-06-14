@@ -30,7 +30,7 @@
 -type info() :: [{conn, atom()} | {ip, ip()} | {node, atom()}
                  | {oor, boolean()} | {auth_module, atom()}
                  | {num_stanzas_in, non_neg_integer()}
-		 | offline].
+		 | {atom(), term()}].
 -type prio() :: undefined | integer().
 
 -endif.

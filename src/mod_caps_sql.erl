@@ -26,7 +26,6 @@
 
 -behaviour(mod_caps).
 
--compile([{parse_transform, ejabberd_sql_pt}]).
 
 %% API
 -export([init/2, caps_read/2, caps_write/3, export/1, import/3]).

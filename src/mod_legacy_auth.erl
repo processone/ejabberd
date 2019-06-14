@@ -119,9 +119,8 @@ authenticate(#{stream_id := StreamID, server := Server,
     DGen = fun (PW) -> str:sha(<<StreamID/binary, PW/binary>>) end,
     JID = jid:make(U, Server, R),
     case JID /= error andalso
-	acl:access_matches(Access,
-			   #{usr => jid:split(JID), ip => IP},
-			   JID#jid.lserver) == allow of
+	acl:match_rule(JID#jid.lserver, Access,
+		       #{usr => jid:split(JID), ip => IP}) == allow of
 	true ->
 	    case ejabberd_auth:check_password_with_authmodule(
 		   U, U, JID#jid.lserver, P, D, DGen) of

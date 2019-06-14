@@ -119,6 +119,11 @@ update:
 xref: all
 	$(REBAR) skip_deps=true xref
 
+hooks: all
+	tools/hook_deps.sh ebin
+
+options: all
+	tools/opt_types.sh ebin
 
 translations:
 	tools/prepare-tr.sh
@@ -335,8 +340,8 @@ dialyzer/erlang.plt:
 	@mkdir -p dialyzer
 	@dialyzer --build_plt --output_plt dialyzer/erlang.plt \
 	-o dialyzer/erlang.log --apps kernel stdlib sasl crypto \
-	public_key ssl mnesia inets odbc tools compiler erts \
-	runtime_tools asn1 observer xmerl et gs wx syntax_tools; \
+	public_key ssl mnesia inets odbc compiler erts \
+	os_mon asn1 syntax_tools; \
 	status=$$? ; if [ $$status -ne 2 ]; then exit $$status; else exit 0; fi
 
 dialyzer/deps.plt:
@@ -377,4 +382,4 @@ test:
 
 .PHONY: src edoc dialyzer Makefile TAGS clean clean-rel distclean rel \
 	install uninstall uninstall-binary uninstall-all translations deps test \
-	quicktest erlang_plt deps_plt ejabberd_plt
+	quicktest erlang_plt deps_plt ejabberd_plt xref hooks options

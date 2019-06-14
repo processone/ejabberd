@@ -98,10 +98,10 @@ set_motd_user(LUser, LServer) ->
 	end,
     transaction(F).
 
-need_transform(#motd{server = S}) when is_list(S) ->
+need_transform({motd, S, _}) when is_list(S) ->
     ?INFO_MSG("Mnesia table 'motd' will be converted to binary", []),
     true;
-need_transform(#motd_users{us = {U, S}}) when is_list(U) orelse is_list(S) ->
+need_transform({motd_users, {U, S}, _}) when is_list(U) orelse is_list(S) ->
     ?INFO_MSG("Mnesia table 'motd_users' will be converted to binary", []),
     true;
 need_transform(_) ->

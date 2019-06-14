@@ -33,7 +33,7 @@
 -record(state, {vsn = ?VSN            :: integer(),
                 version               :: undefined | mqtt_version(),
                 socket                :: undefined | socket(),
-		peername              :: peername(),
+		peername              :: undefined | peername(),
 		timeout = infinity    :: timer(),
 		jid                   :: undefined | jid:jid(),
 		session_expiry = 0    :: seconds(),
@@ -1050,19 +1050,19 @@ connack_reason_code(_) -> 'unspecified-error'.
 %%%===================================================================
 -spec queue_type(binary()) -> ram | file.
 queue_type(Host) ->
-    gen_mod:get_module_opt(Host, mod_mqtt, queue_type).
+    mod_mqtt_opt:queue_type(Host).
 
 -spec queue_limit(binary()) -> non_neg_integer() | unlimited.
 queue_limit(Host) ->
-    gen_mod:get_module_opt(Host, mod_mqtt, max_queue).
+    mod_mqtt_opt:max_queue(Host).
 
 -spec session_expiry(binary()) -> seconds().
 session_expiry(Host) ->
-    gen_mod:get_module_opt(Host, mod_mqtt, session_expiry).
+    mod_mqtt_opt:session_expiry(Host).
 
 -spec topic_alias_maximum(binary()) -> non_neg_integer().
 topic_alias_maximum(Host) ->
-    gen_mod:get_module_opt(Host, mod_mqtt, max_topic_aliases).
+    mod_mqtt_opt:max_topic_aliases(Host).
 
 %%%===================================================================
 %%% Timings

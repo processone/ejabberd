@@ -85,8 +85,8 @@ stop(Host) ->
     gen_mod:stop_child(?MODULE, Host).
 
 reload(Host, NewOpts, OldOpts) ->
-    NewMod = gen_mod:db_mod(Host, NewOpts, ?MODULE),
-    OldMod = gen_mod:db_mod(Host, OldOpts, ?MODULE),
+    NewMod = gen_mod:db_mod(NewOpts, ?MODULE),
+    OldMod = gen_mod:db_mod(OldOpts, ?MODULE),
     if NewMod /= OldMod ->
 	    NewMod:init(Host, NewOpts);
        true ->
@@ -102,7 +102,7 @@ depends(_Host, _Opts) ->
 %%====================================================================
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
-    Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
+    Mod = gen_mod:db_mod(Opts, ?MODULE),
     Mod:init(Host, Opts),
     init_cache(Mod, Host, Opts),
     ejabberd_hooks:add(local_send_to_resource_hook, Host,
@@ -663,7 +663,7 @@ announce_motd(#message{to = To} = Packet) ->
     announce_motd(To#jid.lserver, Packet).
 
 announce_all_hosts_motd(Packet) ->
-    Hosts = ejabberd_config:get_myhosts(),
+    Hosts = ejabberd_option:hosts(),
     [announce_motd(Host, Packet) || Host <- Hosts].
 
 announce_motd(Host, Packet) ->
@@ -678,7 +678,7 @@ announce_motd_update(#message{to = To} = Packet) ->
     announce_motd_update(To#jid.lserver, Packet).
 
 announce_all_hosts_motd_update(Packet) ->
-    Hosts = ejabberd_config:get_myhosts(),
+    Hosts = ejabberd_option:hosts(),
     [announce_motd_update(Host, Packet) || Host <- Hosts].
 
 announce_motd_update(LServer, Packet) ->
@@ -696,7 +696,7 @@ announce_all_hosts_motd_delete(_Packet) ->
       fun(Host) ->
 	      Mod = gen_mod:db_mod(Host, ?MODULE),
 	      delete_motd(Mod, Host)
-      end, ejabberd_config:get_myhosts()).
+      end, ejabberd_option:hosts()).
 
 -spec send_motd({presence(), ejabberd_c2s:state()}) -> {presence(), ejabberd_c2s:state()}.
 send_motd({_, #{pres_last := _}} = Acc) ->
@@ -829,7 +829,7 @@ send_announcement_to_all(Host, SubjectS, BodyS) ->
 -spec get_access(global | binary()) -> atom().
 
 get_access(Host) ->
-    gen_mod:get_module_opt(Host, ?MODULE, access).
+    mod_announce_opt:access(Host).
 
 -spec add_store_hint(stanza()) -> stanza().
 add_store_hint(El) ->
@@ -853,9 +853,9 @@ init_cache(Mod, Host, Opts) ->
 
 -spec cache_opts(gen_mod:opts()) -> [proplists:property()].
 cache_opts(Opts) ->
-    MaxSize = gen_mod:get_opt(cache_size, Opts),
-    CacheMissed = gen_mod:get_opt(cache_missed, Opts),
-    LifeTime = case gen_mod:get_opt(cache_life_time, Opts) of
+    MaxSize = mod_announce_opt:cache_size(Opts),
+    CacheMissed = mod_announce_opt:cache_missed(Opts),
+    LifeTime = case mod_announce_opt:cache_life_time(Opts) of
 		   infinity -> infinity;
 		   I -> timer:seconds(I)
 	       end,
@@ -865,7 +865,7 @@ cache_opts(Opts) ->
 use_cache(Mod, Host) ->
     case erlang:function_exported(Mod, use_cache, 1) of
 	true -> Mod:use_cache(Host);
-	false -> gen_mod:get_module_opt(Host, ?MODULE, use_cache)
+	false -> mod_announce_opt:use_cache(Host)
     end.
 
 -spec cache_nodes(module(), binary()) -> [node()].
@@ -897,19 +897,23 @@ import(LServer, {sql, _}, DBType, Tab, List) ->
     Mod = gen_mod:db_mod(DBType, ?MODULE),
     Mod:import(LServer, Tab, List).
 
-mod_opt_type(access) -> fun acl:access_rules_validator/1;
-mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
-mod_opt_type(O) when O == cache_life_time; O == cache_size ->
-    fun (I) when is_integer(I), I > 0 -> I;
-        (infinity) -> infinity
-    end;
-mod_opt_type(O) when O == use_cache; O == cache_missed ->
-    fun (B) when is_boolean(B) -> B end.
+mod_opt_type(access) ->
+    econf:acl();
+mod_opt_type(db_type) ->
+    econf:well_known(db_type, ?MODULE);
+mod_opt_type(use_cache) ->
+    econf:well_known(use_cache, ?MODULE);
+mod_opt_type(cache_size) ->
+    econf:well_known(cache_size, ?MODULE);
+mod_opt_type(cache_missed) ->
+    econf:well_known(cache_missed, ?MODULE);
+mod_opt_type(cache_life_time) ->
+    econf:well_known(cache_life_time, ?MODULE).
 
 mod_options(Host) ->
     [{access, none},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
-     {use_cache, ejabberd_config:use_cache(Host)},
-     {cache_size, ejabberd_config:cache_size(Host)},
-     {cache_missed, ejabberd_config:cache_missed(Host)},
-     {cache_life_time, ejabberd_config:cache_life_time(Host)}].
+     {use_cache, ejabberd_option:use_cache(Host)},
+     {cache_size, ejabberd_option:cache_size(Host)},
+     {cache_missed, ejabberd_option:cache_missed(Host)},
+     {cache_life_time, ejabberd_option:cache_life_time(Host)}].

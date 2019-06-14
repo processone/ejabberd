@@ -181,7 +181,7 @@ get(Table, RecSchema, Key) ->
 
 -spec get_by_index(atom(), record_schema(), binary(), any()) ->
 			  {ok, [any()]} | {error, any()}.
-%% @doc Reads records by `Index' and value `Key' from `Table' 
+%% @doc Reads records by `Index' and value `Key' from `Table'
 get_by_index(Table, RecSchema, Index, Key) ->
     {NewIndex, NewKey} = encode_index_key(Index, Key),
     case get_by_index_raw(Table, NewIndex, NewKey) of
@@ -520,8 +520,13 @@ make_invalid_object(Val) ->
     (str:format("Invalid object: ~p", [Val])).
 
 get_random_pid() ->
-    PoolPid = ejabberd_riak_sup:get_random_pid(),
-    get_riak_pid(PoolPid).
+    case ejabberd_riak_sup:start() of
+	ok ->
+	    PoolPid = ejabberd_riak_sup:get_random_pid(),
+	    get_riak_pid(PoolPid);
+	{error, _} = Err ->
+	    Err
+    end.
 
 get_riak_pid(PoolPid) ->
     case catch gen_server:call(PoolPid, get_pid) of

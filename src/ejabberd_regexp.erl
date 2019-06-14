@@ -125,13 +125,12 @@ sh_to_awk_3(<<"]", Sh/binary>>, false) ->
 sh_to_awk_3(<<C:8, Sh/binary>>, UpArrow) ->
     [C|sh_to_awk_3(Sh, UpArrow)];
 sh_to_awk_3(<<>>, true) ->
-    [$^|sh_to_awk_1([])];
+    [$^|sh_to_awk_1(<<>>)];
 sh_to_awk_3(<<>>, false) ->
-    sh_to_awk_1([]).
+    sh_to_awk_1(<<>>).
 
-%% -type sh_special_char(char()) -> bool().
 %%  Test if a character is a special character.
-
+-spec sh_special_char(char()) -> boolean().
 sh_special_char($|) -> true;
 sh_special_char($*) -> true;
 sh_special_char($+) -> true;
@@ -146,4 +145,3 @@ sh_special_char($[) -> true;
 sh_special_char($]) -> true;
 sh_special_char($") -> true;
 sh_special_char(_C) -> false.
-

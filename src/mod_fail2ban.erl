@@ -61,10 +61,8 @@ c2s_auth_result(#{ip := {Addr, _}, lserver := LServer} = State, {false, _}, _Use
 	true ->
 	    State;
 	false ->
-	    BanLifetime = gen_mod:get_module_opt(
-			    LServer, ?MODULE, c2s_auth_ban_lifetime),
-	    MaxFailures = gen_mod:get_module_opt(
-			    LServer, ?MODULE, c2s_max_auth_failures),
+	    BanLifetime = mod_fail2ban_opt:c2s_auth_ban_lifetime(LServer),
+	    MaxFailures = mod_fail2ban_opt:c2s_max_auth_failures(LServer),
 	    UnbanTS = erlang:system_time(second) + BanLifetime,
 	    Attempts = case ets:lookup(failed_auth, Addr) of
 		[{Addr, N, _, _}] ->
@@ -186,28 +184,27 @@ get_commands_spec() ->
 			result_desc = "Amount of unbanned entries, or negative in case of error.",
 			result = {unbanned, integer}}].
 
--spec unban(string()) -> integer().
+-spec unban(binary()) -> integer().
 unban(S) ->
-    case acl:parse_ip_netmask(S) of
-	{ok, Net, Mask} ->
+    case misc:parse_ip_mask(S) of
+	{ok, {Net, Mask}} ->
 	    unban(Net, Mask);
 	error ->
 	    ?WARNING_MSG("Invalid network address when trying to unban: ~p", [S]),
 	    -1
     end.
 
+-spec unban(inet:ip_address(), 0..128) -> non_neg_integer().
 unban(Net, Mask) ->
     ets:foldl(
 	fun({Addr, _, _, _}, Acc)  ->
-	    case acl:ip_matches_mask(Addr, Net, Mask) of
+	    case misc:match_ip_mask(Addr, Net, Mask) of
 		true ->
 		    ets:delete(failed_auth, Addr),
 		    Acc+1;
 		false -> Acc
 	    end
-	end,
-	0,
-	failed_auth).
+	end, 0, failed_auth).
 
 %%%===================================================================
 %%% Internal functions
@@ -228,7 +225,7 @@ log_and_disconnect(#{ip := {Addr, _}, lang := Lang} = State, Attempts, UnbanTS) 
     {stop, ejabberd_c2s:send(State, Err)}.
 
 is_whitelisted(Host, Addr) ->
-    Access = gen_mod:get_module_opt(Host, ?MODULE, access),
+    Access = mod_fail2ban_opt:access(Host),
     acl:match_rule(Host, Access, Addr) == allow.
 
 seconds_to_now(Secs) ->
@@ -239,11 +236,11 @@ format_date({{Year, Month, Day}, {Hour, Minute, Second}}) ->
 		  [Hour, Minute, Second, Day, Month, Year]).
 
 mod_opt_type(access) ->
-    fun acl:access_rules_validator/1;
+    econf:acl();
 mod_opt_type(c2s_auth_ban_lifetime) ->
-    fun (T) when is_integer(T), T > 0 -> T end;
+    econf:pos_int();
 mod_opt_type(c2s_max_auth_failures) ->
-    fun (I) when is_integer(I), I > 0 -> I end.
+    econf:pos_int().
 
 mod_options(_Host) ->
     [{access, none},

@@ -25,15 +25,13 @@
 
 -module(ejabberd_auth_external).
 
--behaviour(ejabberd_config).
-
 -author('alexey@process-one.net').
 
 -behaviour(ejabberd_auth).
 
 -export([start/1, stop/1, reload/1, set_password/3, check_password/4,
 	 try_register/3, user_exists/2, remove_user/2,
-	 store_type/1, plain_password_required/1, opt_type/1]).
+	 store_type/1, plain_password_required/1]).
 
 -include("logger.hrl").
 
@@ -91,7 +89,7 @@ check_password_extauth(User, _AuthzId, Server, Password) ->
 	    case extauth:check_password(User, Server, Password) of
 		Res when is_boolean(Res) -> Res;
 		{error, Reason} ->
-		    failure(User, Server, check_password, Reason),
+		    _ = failure(User, Server, check_password, Reason),
 		    false
 	    end;
        true ->
@@ -103,26 +101,3 @@ failure(User, Server, Fun, Reason) ->
     ?ERROR_MSG("External authentication program failed when calling "
 	       "'~s' for ~s@~s: ~p", [Fun, User, Server, Reason]),
     {error, db_failure}.
-
-opt_type(extauth_cache) ->
-    ?WARNING_MSG("option 'extauth_cache' is deprecated and has no effect, "
-		 "use authentication or global cache configuration "
-		 "options: auth_use_cache, auth_cache_life_time, "
-		 "use_cache, cache_life_time, and so on", []),
-    fun (false) -> false;
-	(I) when is_integer(I), I >= 0 -> I
-    end;
-opt_type(extauth_instances) ->
-    ?WARNING_MSG("option 'extauth_instances' is deprecated and has no effect, "
-		 "use 'extauth_pool_size'", []),
-    fun (V) when is_integer(V), V > 0 -> V end;
-opt_type(extauth_program) ->
-    fun (V) -> binary_to_list(iolist_to_binary(V)) end;
-opt_type(extauth_pool_name) ->
-    fun (V) -> iolist_to_binary(V) end;
-opt_type(extauth_pool_size) ->
-    fun(I) when is_integer(I), I>0 -> I end;
-opt_type(_) ->
-    [extauth_program, extauth_pool_size, extauth_pool_name,
-     %% Deprecated:
-     extauth_cache, extauth_instances].

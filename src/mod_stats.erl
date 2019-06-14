@@ -136,7 +136,7 @@ get_local_stat(_Server, [], Name)
 				   ejabberd_auth:count_users(Host)
 				     + Total
 			   end,
-			   0, ejabberd_config:get_myhosts()),
+			   0, ejabberd_option:hosts()),
     ?STATVAL((integer_to_binary(NumUsers)),
 	     <<"users">>);
 get_local_stat(_Server, _, Name) ->

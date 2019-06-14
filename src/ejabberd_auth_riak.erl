@@ -25,8 +25,6 @@
 
 -module(ejabberd_auth_riak).
 
--compile([{parse_transform, ejabberd_sql_pt}]).
-
 -author('alexey@process-one.net').
 
 -behaviour(ejabberd_auth).

@@ -21,7 +21,6 @@
 %%%----------------------------------------------------------------------
 -module(mod_mix_sql).
 -behaviour(mod_mix).
--compile([{parse_transform, ejabberd_sql_pt}]).
 
 %% API
 -export([init/2]).
@@ -230,7 +229,7 @@ unsubscribe(LServer, Channel, Service, JID, Nodes) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
--spec report_corrupted(atom(), iolist()) -> ok.
+-spec report_corrupted(atom(), #sql_query{}) -> ok.
 report_corrupted(Column, SQL) ->
     ?ERROR_MSG("Corrupted value of '~s' column returned by "
-	       "SQL request: ~s", [Column, SQL]).
+	       "SQL request: ~s", [Column, SQL#sql_query.hash]).

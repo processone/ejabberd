@@ -25,7 +25,6 @@
 
 -module(mod_push_sql).
 -behaviour(mod_push).
--compile([{parse_transform, ejabberd_sql_pt}]).
 
 %% API
 -export([init/2, store_session/6, lookup_session/4, lookup_session/3,

@@ -21,7 +21,6 @@
 %%%
 %%%-------------------------------------------------------------------
 -module(ejabberd_cluster).
--behaviour(ejabberd_config).
 -behaviour(gen_server).
 
 %% API
@@ -33,7 +32,6 @@
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
--export([opt_type/1]).
 
 -include("logger.hrl").
 
@@ -154,9 +152,9 @@ subscribe(Proc) ->
 %%% gen_server API
 %%%===================================================================
 init([]) ->
-    Ticktime = ejabberd_config:get_option(net_ticktime, 60),
-    Nodes = ejabberd_config:get_option(cluster_nodes, []),
-    net_kernel:set_net_ticktime(Ticktime),
+    Ticktime = ejabberd_option:net_ticktime(),
+    Nodes = ejabberd_option:cluster_nodes(),
+    _ = net_kernel:set_net_ticktime(Ticktime),
     lists:foreach(fun(Node) ->
                           net_kernel:connect_node(Node)
                   end, Nodes),
@@ -195,19 +193,8 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 get_mod() ->
-    Backend = ejabberd_config:get_option(cluster_backend, mnesia),
+    Backend = ejabberd_option:cluster_backend(),
     list_to_atom("ejabberd_cluster_" ++ atom_to_list(Backend)).
 
 rpc_timeout() ->
-    timer:seconds(ejabberd_config:get_option(rpc_timeout, 5)).
-
-opt_type(net_ticktime) ->
-    fun (P) when is_integer(P), P > 0 -> P end;
-opt_type(cluster_nodes) ->
-    fun (Ns) -> true = lists:all(fun is_atom/1, Ns), Ns end;
-opt_type(rpc_timeout) ->
-    fun (T) when is_integer(T), T > 0 -> T end;
-opt_type(cluster_backend) ->
-    fun (T) -> ejabberd_config:v_db(?MODULE, T) end;
-opt_type(_) ->
-    [rpc_timeout, cluster_backend, cluster_nodes, net_ticktime].
+    ejabberd_option:rpc_timeout().

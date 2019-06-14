@@ -44,6 +44,7 @@
                       attributes = []    :: [{binary(), [binary()]}]}).
 
 -type tlsopts() :: [{encrypt, tls | starttls | none} |
+		    {tls_certfile, binary() | undefined} |
                     {tls_cacertfile, binary() | undefined} |
                     {tls_depth, non_neg_integer() | undefined} |
                     {tls_verify, hard | soft | false}].
@@ -61,3 +62,18 @@
 -type eldap_config() :: #eldap_config{}.
 -type eldap_search() :: #eldap_search{}.
 -type eldap_entry() :: #eldap_entry{}.
+
+-define(eldap_config(M, H),
+	#eldap_config{
+	   servers = M:ldap_servers(H),
+	   backups = M:ldap_backups(H),
+	   tls_options = [{encrypt, M:ldap_encrypt(H)},
+			  {tls_verify, M:ldap_tls_verify(H)},
+			  {tls_certfile, M:ldap_tls_certfile(H)},
+			  {tls_cacertfile, M:ldap_tls_cacertfile(H)},
+			  {tls_depth, M:ldap_tls_depth(H)}],
+	   port = M:ldap_port(H),
+	   dn = M:ldap_rootdn(H),
+	   password = M:ldap_password(H),
+	   base = M:ldap_base(H),
+	   deref_aliases = M:ldap_deref_aliases(H)}).

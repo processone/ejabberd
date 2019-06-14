@@ -37,12 +37,11 @@
 %%%----------------------------------------------------------------------
 
 -module(ejabberd_websocket).
--behaviour(ejabberd_config).
 -protocol({rfc, 6455}).
 
 -author('ecestari@process-one.net').
 
--export([socket_handoff/5, opt_type/1]).
+-export([socket_handoff/5]).
 
 -include("logger.hrl").
 
@@ -429,27 +428,4 @@ websocket_close(Socket, WsHandleLoopPid, SocketMode, _CloseCode) ->
     SocketMode:close(Socket).
 
 get_origin() ->
-    ejabberd_config:get_option(websocket_origin, []).
-
-opt_type(websocket_ping_interval) ->
-    fun (I) when is_integer(I), I >= 0 -> I end;
-opt_type(websocket_timeout) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
-opt_type(websocket_origin) ->
-    fun Verify(V) when is_binary(V) ->
-        Verify([V]);
-        Verify([]) ->
-            [];
-        Verify([<<"null">> | R]) ->
-            [<<"null">> | Verify(R)];
-        Verify([null | R]) ->
-            [<<"null">> | Verify(R)];
-        Verify([V | R]) when is_binary(V) ->
-	    URIs = [_|_] = lists:filtermap(
-			     fun(<<>>) -> false;
-				(URI) -> {true, misc:try_url(URI)}
-			     end, re:split(V, "\\s+")),
-	    [str:join(URIs, <<" ">>) | Verify(R)]
-    end;
-opt_type(_) ->
-    [websocket_ping_interval, websocket_timeout, websocket_origin].
+    ejabberd_option:websocket_origin().

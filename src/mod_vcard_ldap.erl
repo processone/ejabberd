@@ -57,8 +57,8 @@
          dn = <<"">>                :: binary(),
          base = <<"">>              :: binary(),
          password = <<"">>          :: binary(),
-         uids = []                  :: [{binary()} | {binary(), binary()}],
-         vcard_map = []             :: [{binary(), binary(), [binary()]}],
+         uids = []                  :: [{binary(), binary()}],
+         vcard_map = []             :: [{binary(), [{binary(), [binary()]}]}],
 	 vcard_map_attrs = []       :: [binary()],
          user_filter = <<"">>       :: binary(),
          search_filter              :: eldap:filter(),
@@ -234,12 +234,10 @@ find_ldap_user(User, State) ->
     end.
 
 ldap_attributes_to_vcard(Attributes, VCardMap, UD) ->
-    Attrs = lists:map(fun ({VCardName, _, _}) ->
-			      {stringprep:tolower(VCardName),
-			       map_vcard_attr(VCardName, Attributes, VCardMap,
-					      UD)}
-		      end,
-		      VCardMap),
+    Attrs = lists:map(
+	      fun({VCardName, _}) ->
+		      {VCardName, map_vcard_attr(VCardName, Attributes, VCardMap, UD)}
+	      end, VCardMap),
     lists:foldl(fun ldap_attribute_to_vcard/2, #vcard_temp{}, Attrs).
 
 -spec ldap_attribute_to_vcard({binary(), binary()}, vcard_temp()) -> vcard_temp().
@@ -258,7 +256,7 @@ ldap_attribute_to_vcard({Attr, Value}, V) ->
 	    [] -> #vcard_adr{};
 	    As -> hd(As)
 	end,
-    case Attr of
+    case str:to_lower(Attr) of
 	<<"fn">> -> V#vcard_temp{fn = Value};
 	<<"nickname">> -> V#vcard_temp{nickname = Value};
 	<<"title">> -> V#vcard_temp{title = Value};
@@ -283,13 +281,12 @@ ldap_attribute_to_vcard({Attr, Value}, V) ->
     end.
 
 map_vcard_attr(VCardName, Attributes, Pattern, UD) ->
-    Res = lists:filter(fun ({Name, _, _}) ->
-			       eldap_utils:case_insensitive_match(Name,
-								  VCardName)
-		       end,
-		       Pattern),
+    Res = lists:filter(
+	    fun({Name, _}) ->
+		    eldap_utils:case_insensitive_match(Name, VCardName)
+	    end, Pattern),
     case Res of
-      [{_, Str, Attrs}] ->
+      [{_, [{Str, Attrs}|_]}] ->
 	  process_pattern(Str, UD,
 			  [eldap_utils:get_ldap_attr(X, Attributes)
 			   || X <- Attrs]);
@@ -351,15 +348,15 @@ default_search_reported() ->
      {?T("Organization Unit"), <<"ORGUNIT">>}].
 
 parse_options(Host, Opts) ->
-    MyHosts = gen_mod:get_opt_hosts(Host, Opts),
-    Search = gen_mod:get_opt(search, Opts),
-    Matches = gen_mod:get_opt(matches, Opts),
+    MyHosts = gen_mod:get_opt_hosts(Opts),
+    Search = mod_vcard_opt:search(Opts),
+    Matches = mod_vcard_opt:matches(Opts),
     Eldap_ID = misc:atom_to_binary(gen_mod:get_module_proc(Host, ?PROCNAME)),
-    Cfg = eldap_utils:get_config(Host, Opts),
-    UIDsTemp = gen_mod:get_opt(ldap_uids, Opts),
+    Cfg = ?eldap_config(mod_vcard_ldap_opt, Opts),
+    UIDsTemp = mod_vcard_ldap_opt:ldap_uids(Opts),
     UIDs = eldap_utils:uids_domain_subst(Host, UIDsTemp),
     SubFilter = eldap_utils:generate_subfilter(UIDs),
-    UserFilter = case gen_mod:get_opt(ldap_filter, Opts) of
+    UserFilter = case mod_vcard_ldap_opt:ldap_filter(Opts) of
                      <<"">> ->
 			 SubFilter;
                      F ->
@@ -368,28 +365,27 @@ parse_options(Host, Opts) ->
     {ok, SearchFilter} =
 	eldap_filter:parse(eldap_filter:do_sub(UserFilter,
 					       [{<<"%u">>, <<"*">>}])),
-    VCardMap = gen_mod:get_opt(ldap_vcard_map, Opts),
-    SearchFields = gen_mod:get_opt(ldap_search_fields, Opts),
-    SearchReported = gen_mod:get_opt(ldap_search_reported, Opts),
+    VCardMap = mod_vcard_ldap_opt:ldap_vcard_map(Opts),
+    SearchFields = mod_vcard_ldap_opt:ldap_search_fields(Opts),
+    SearchReported = mod_vcard_ldap_opt:ldap_search_reported(Opts),
     UIDAttrs = [UAttr || {UAttr, _} <- UIDs],
-    VCardMapAttrs = lists:usort(lists:append([A
-					      || {_, _, A} <- VCardMap])
-				  ++ UIDAttrs),
-    SearchReportedAttrs = lists:usort(lists:flatmap(fun ({_,
-							  N}) ->
-							    case
-							      lists:keysearch(N,
-									      1,
-									      VCardMap)
-								of
-							      {value,
-							       {_, _, L}} ->
-								  L;
-							      _ -> []
-							    end
-						    end,
-						    SearchReported)
-					++ UIDAttrs),
+    VCardMapAttrs = lists:usort(
+		      lists:flatten(
+			lists:map(
+			  fun({_, Map}) ->
+				  [Attrs || {_, Attrs} <- Map]
+			  end, VCardMap) ++ UIDAttrs)),
+    SearchReportedAttrs = lists:usort(
+			    lists:flatten(
+			      lists:map(
+				fun ({_, N}) ->
+					case lists:keyfind(N, 1, VCardMap) of
+					    {_, Map} ->
+						[Attrs || {_, Attrs} <- Map];
+					    false ->
+						[]
+					end
+				end, SearchReported) ++ UIDAttrs)),
     #state{serverhost = Host, myhosts = MyHosts,
 	   eldap_id = Eldap_ID, search = Search,
 	   servers = Cfg#eldap_config.servers,
@@ -409,31 +405,71 @@ parse_options(Host, Opts) ->
 	   matches = Matches}.
 
 mod_opt_type(ldap_search_fields) ->
-    fun (Ls) ->
-	    [{iolist_to_binary(S), iolist_to_binary(P)}
-	     || {S, P} <- Ls]
-    end;
+    econf:map(
+      econf:binary(),
+      econf:binary());
 mod_opt_type(ldap_search_reported) ->
-    fun (Ls) ->
-	    [{iolist_to_binary(S), iolist_to_binary(P)}
-	     || {S, P} <- Ls]
-    end;
+    econf:map(
+      econf:binary(),
+      econf:binary());
 mod_opt_type(ldap_vcard_map) ->
-    fun (Ls) ->
-	    lists:map(fun ({S, [{P, L}]}) ->
-			      {iolist_to_binary(S), iolist_to_binary(P),
-			       [iolist_to_binary(E) || E <- L]}
-		      end,
-		      Ls)
-    end;
-mod_opt_type(Opt) ->
-    eldap_utils:opt_type(Opt).
+    econf:map(
+      econf:binary(),
+      econf:map(
+	econf:binary(),
+	econf:list(
+	  econf:binary())));
+mod_opt_type(ldap_backups) ->
+    econf:list(econf:domain(), [unique]);
+mod_opt_type(ldap_base) ->
+    econf:binary();
+mod_opt_type(ldap_deref_aliases) ->
+    econf:enum([never, searching, finding, always]);
+mod_opt_type(ldap_encrypt) ->
+    econf:enum([tls, starttls, none]);
+mod_opt_type(ldap_filter) ->
+    econf:ldap_filter();
+mod_opt_type(ldap_password) ->
+    econf:binary();
+mod_opt_type(ldap_port) ->
+    econf:port();
+mod_opt_type(ldap_rootdn) ->
+    econf:binary();
+mod_opt_type(ldap_servers) ->
+    econf:list(econf:domain(), [unique]);
+mod_opt_type(ldap_tls_cacertfile) ->
+    econf:pem();
+mod_opt_type(ldap_tls_certfile) ->
+    econf:pem();
+mod_opt_type(ldap_tls_depth) ->
+    econf:non_neg_int();
+mod_opt_type(ldap_tls_verify) ->
+    econf:enum([hard, soft, false]);
+mod_opt_type(ldap_uids) ->
+    econf:either(
+      econf:list(
+        econf:and_then(
+          econf:binary(),
+          fun(U) -> {U, <<"%u">>} end)),
+      econf:map(econf:binary(), econf:binary(), [unique])).
 
+-spec mod_options(binary()) -> [{ldap_uids, [{binary(), binary()}]} |
+				{atom(), any()}].
 mod_options(Host) ->
     [{ldap_search_fields, default_search_fields()},
      {ldap_search_reported, default_search_reported()},
-     {ldap_vcard_map, default_vcard_map()}
-     | lists:map(
-	 fun({Opt, Default}) ->
-		 {Opt, ejabberd_config:get_option({Opt, Host}, Default)}
-	 end, eldap_utils:options(Host))].
+     {ldap_vcard_map, default_vcard_map()},
+     {ldap_backups, ejabberd_option:ldap_backups(Host)},
+     {ldap_base, ejabberd_option:ldap_base(Host)},
+     {ldap_uids, ejabberd_option:ldap_uids(Host)},
+     {ldap_deref_aliases, ejabberd_option:ldap_deref_aliases(Host)},
+     {ldap_encrypt, ejabberd_option:ldap_encrypt(Host)},
+     {ldap_password, ejabberd_option:ldap_password(Host)},
+     {ldap_port, ejabberd_option:ldap_port(Host)},
+     {ldap_rootdn, ejabberd_option:ldap_rootdn(Host)},
+     {ldap_servers, ejabberd_option:ldap_servers(Host)},
+     {ldap_filter, ejabberd_option:ldap_filter(Host)},
+     {ldap_tls_certfile, ejabberd_option:ldap_tls_certfile(Host)},
+     {ldap_tls_cacertfile, ejabberd_option:ldap_tls_cacertfile(Host)},
+     {ldap_tls_depth, ejabberd_option:ldap_tls_depth(Host)},
+     {ldap_tls_verify, ejabberd_option:ldap_tls_verify(Host)}].

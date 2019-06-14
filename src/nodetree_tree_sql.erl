@@ -37,7 +37,6 @@
 -behaviour(gen_pubsub_nodetree).
 -author('christophe.romain@process-one.net').
 
--compile([{parse_transform, ejabberd_sql_pt}]).
 
 -include("pubsub.hrl").
 -include("xmpp.hrl").
@@ -94,7 +93,7 @@ set_node(Record) when is_record(Record, pubsub_node) ->
     case Nidx of
 	none ->
 	    Txt = <<"Node index not found">>,
-	    {error, xmpp:err_internal_server_error(Txt, ejabberd_config:get_mylang())};
+	    {error, xmpp:err_internal_server_error(Txt, ejabberd_option:language())};
 	_ ->
 	    lists:foreach(fun ({Key, Value}) ->
 			SKey = iolist_to_binary(atom_to_list(Key)),
@@ -121,9 +120,9 @@ get_node(Host, Node) ->
 	{selected, [RItem]} ->
 	    raw_to_node(Host, RItem);
 	{'EXIT', _Reason} ->
-	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ejabberd_config:get_mylang())};
+	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ejabberd_option:language())};
 	_ ->
-	    {error, xmpp:err_item_not_found(<<"Node not found">>, ejabberd_config:get_mylang())}
+	    {error, xmpp:err_item_not_found(<<"Node not found">>, ejabberd_option:language())}
     end.
 
 get_node(Nidx) ->
@@ -135,9 +134,9 @@ get_node(Nidx) ->
 	{selected, [{Host, Node, Parent, Type}]} ->
 	    raw_to_node(Host, {Node, Parent, Type, Nidx});
 	{'EXIT', _Reason} ->
-	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ejabberd_config:get_mylang())};
+	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ejabberd_option:language())};
 	_ ->
-	    {error, xmpp:err_item_not_found(<<"Node not found">>, ejabberd_config:get_mylang())}
+	    {error, xmpp:err_item_not_found(<<"Node not found">>, ejabberd_option:language())}
     end.
 
 get_nodes(Host, _From) ->
@@ -259,9 +258,9 @@ create_node(Host, Node, Type, Owner, Options, Parents) ->
 		    {error, xmpp:err_forbidden()}
 	    end;
 	{result, _} ->
-	    {error, xmpp:err_conflict(<<"Node already exists">>, ejabberd_config:get_mylang())};
+	    {error, xmpp:err_conflict(<<"Node already exists">>, ejabberd_option:language())};
 	{error, db_fail} ->
-	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ejabberd_config:get_mylang())}
+	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ejabberd_option:language())}
     end.
 
 delete_node(Host, Node) ->

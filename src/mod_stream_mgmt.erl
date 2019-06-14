@@ -28,7 +28,7 @@
 %% gen_mod API
 -export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1, mod_options/1]).
 %% hooks
--export([c2s_stream_init/2, c2s_stream_started/2, c2s_stream_features/2,
+-export([c2s_stream_started/2, c2s_stream_features/2,
 	 c2s_authenticated_packet/2, c2s_unauthenticated_packet/2,
 	 c2s_unbinded_packet/2, c2s_closed/2, c2s_terminated/2,
 	 c2s_handle_send/3, c2s_handle_info/2, c2s_handle_call/3,
@@ -55,7 +55,6 @@
 %%%===================================================================
 start(Host, Opts) ->
     init_cache(Opts),
-    ejabberd_hooks:add(c2s_init, ?MODULE, c2s_stream_init, 50),
     ejabberd_hooks:add(c2s_stream_started, Host, ?MODULE,
 		       c2s_stream_started, 50),
     ejabberd_hooks:add(c2s_post_auth_features, Host, ?MODULE,
@@ -74,12 +73,6 @@ start(Host, Opts) ->
     ejabberd_hooks:add(c2s_terminated, Host, ?MODULE, c2s_terminated, 50).
 
 stop(Host) ->
-    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
-	true ->
-	    ok;
-	false ->
-	    ejabberd_hooks:delete(c2s_init, ?MODULE, c2s_stream_init, 50)
-    end,
     ejabberd_hooks:delete(c2s_stream_started, Host, ?MODULE,
 			  c2s_stream_started, 50),
     ejabberd_hooks:delete(c2s_post_auth_features, Host, ?MODULE,
@@ -104,21 +97,6 @@ reload(_Host, NewOpts, _OldOpts) ->
 
 depends(_Host, _Opts) ->
     [].
-
-c2s_stream_init({ok, State}, Opts) ->
-    MgmtOpts = lists:filter(
-		 fun({stream_management, _}) -> true;
-		    ({max_ack_queue, _}) -> true;
-		    ({resume_timeout, _}) -> true;
-		    ({max_resume_timeout, _}) -> true;
-		    ({ack_timeout, _}) -> true;
-		    ({resend_on_timeout, _}) -> true;
-		    ({queue_type, _}) -> true;
-		    (_) -> false
-		 end, Opts),
-    {ok, State#{mgmt_options => MgmtOpts}};
-c2s_stream_init(Acc, _Opts) ->
-    Acc.
 
 c2s_stream_started(#{lserver := LServer} = State, _StreamStart) ->
     State1 = maps:remove(mgmt_options, State),
@@ -749,7 +727,7 @@ init_cache(Opts) ->
     ets_cache:new(?STREAM_MGMT_CACHE, cache_opts(Opts)).
 
 cache_opts(Opts) ->
-    [{max_size, gen_mod:get_opt(cache_size, Opts)},
+    [{max_size, mod_stream_mgmt_opt:cache_size(Opts)},
      {life_time, infinity}].
 
 -spec store_stanzas_in(ljid(), erlang:timestamp(), non_neg_integer()) -> boolean().
@@ -772,61 +750,49 @@ pop_stanzas_in(LJID, Time) ->
 %%% Configuration processing
 %%%===================================================================
 get_max_ack_queue(Host) ->
-    gen_mod:get_module_opt(Host, ?MODULE, max_ack_queue).
+    mod_stream_mgmt_opt:max_ack_queue(Host).
 
 get_configured_resume_timeout(Host) ->
-    gen_mod:get_module_opt(Host, ?MODULE, resume_timeout).
+    mod_stream_mgmt_opt:resume_timeout(Host).
 
 get_max_resume_timeout(Host, ResumeTimeout) ->
-    case gen_mod:get_module_opt(Host, ?MODULE, max_resume_timeout) of
+    case mod_stream_mgmt_opt:max_resume_timeout(Host) of
 	undefined -> ResumeTimeout;
 	Max when Max >= ResumeTimeout -> Max;
 	_ -> ResumeTimeout
     end.
 
 get_ack_timeout(Host) ->
-    case gen_mod:get_module_opt(Host, ?MODULE, ack_timeout) of
-	infinity -> infinity;
-	T -> timer:seconds(T)
-    end.
+    mod_stream_mgmt_opt:ack_timeout(Host).
 
 get_resend_on_timeout(Host) ->
-    gen_mod:get_module_opt(Host, ?MODULE, resend_on_timeout).
+    mod_stream_mgmt_opt:resend_on_timeout(Host).
 
 get_queue_type(Host) ->
-    gen_mod:get_module_opt(Host, ?MODULE, queue_type).
+    mod_stream_mgmt_opt:queue_type(Host).
 
 mod_opt_type(max_ack_queue) ->
-    fun(I) when is_integer(I), I > 0 -> I;
-       (infinity) -> infinity
-    end;
+    econf:pos_int(infinity);
 mod_opt_type(resume_timeout) ->
-    fun(I) when is_integer(I), I >= 0 -> I end;
+    econf:non_neg_int();
 mod_opt_type(max_resume_timeout) ->
-    fun(I) when is_integer(I), I >= 0 -> I;
-       (undefined) -> undefined
-    end;
+    econf:non_neg_int();
 mod_opt_type(ack_timeout) ->
-    fun(I) when is_integer(I), I > 0 -> I;
-       (infinity) -> infinity
-    end;
+    econf:timeout(second, infinity);
 mod_opt_type(resend_on_timeout) ->
-    fun(B) when is_boolean(B) -> B;
-       (if_offline) -> if_offline
-    end;
+    econf:either(
+      if_offline,
+      econf:bool());
 mod_opt_type(cache_size) ->
-    fun(I) when is_integer(I), I>0 -> I;
-       (unlimited) -> infinity;
-       (infinity) -> infinity
-    end;
+    econf:well_known(cache_size, ?MODULE);
 mod_opt_type(queue_type) ->
-    fun(ram) -> ram; (file) -> file end.
+    econf:well_known(queue_type, ?MODULE).
 
 mod_options(Host) ->
     [{max_ack_queue, 5000},
      {resume_timeout, 300},
      {max_resume_timeout, undefined},
-     {ack_timeout, 60},
-     {cache_size, ejabberd_config:cache_size(Host)},
+     {ack_timeout, timer:seconds(60)},
+     {cache_size, ejabberd_option:cache_size(Host)},
      {resend_on_timeout, false},
-     {queue_type, ejabberd_config:default_queue_type(Host)}].
+     {queue_type, ejabberd_option:queue_type(Host)}].

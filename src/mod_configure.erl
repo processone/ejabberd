@@ -180,10 +180,6 @@ get_local_identity(Acc, _From, _To, Node, Lang) ->
 			Lang);
       ?NS_ADMINL(<<"get-online-users-num">>) ->
 	  ?INFO_COMMAND(<<"Get Number of Online Users">>, Lang);
-      [<<"config">>, <<"acls">>] ->
-	  ?INFO_COMMAND(<<"Access Control Lists">>, Lang);
-      [<<"config">>, <<"access">>] ->
-	  ?INFO_COMMAND(<<"Access Rules">>, Lang);
       _ -> Acc
     end.
 
@@ -508,10 +504,6 @@ get_local_items(_Host, [], Server, Lang) ->
 	    <<"outgoing s2s">>),
       ?NODE(<<"Running Nodes">>, <<"running nodes">>),
       ?NODE(<<"Stopped Nodes">>, <<"stopped nodes">>)]};
-get_local_items(_Host, [<<"config">>], Server, Lang) ->
-    {result,
-     [?NODE(<<"Access Control Lists">>, <<"config/acls">>),
-      ?NODE(<<"Access Rules">>, <<"config/access">>)]};
 get_local_items(_Host, [<<"config">>, _], _Server,
 		_Lang) ->
     {result, []};
@@ -1076,42 +1068,6 @@ get_form(_Host,
 		      #xdata_field{var = <<"announcement">>,
 				   type = 'text-multi',
 				   label = ?T(Lang, <<"Message body">>)}]}};
-get_form(Host, [<<"config">>, <<"acls">>], Lang) ->
-    ACLs = str:tokens(
-	     str:format("~p.",
-			[mnesia:dirty_select(
-			   acl,
-			   ets:fun2ms(
-			     fun({acl, {Name, H}, Spec}) when H == Host ->
-				     {acl, Name, Spec}
-			     end))]),
-	     <<"\n">>),
-    {result,
-     #xdata{title = ?T(Lang, <<"Access Control List Configuration">>),
-	    type = form,
-	    fields = [?HFIELD(),
-		      #xdata_field{type = 'text-multi',
-				   label = ?T(Lang, <<"Access Control Lists">>),
-				   var = <<"acls">>,
-				   values = ACLs}]}};
-get_form(Host, [<<"config">>, <<"access">>], Lang) ->
-    Accs = str:tokens(
-	     str:format("~p.",
-			[mnesia:dirty_select(
-			   access,
-			   ets:fun2ms(
-			     fun({access, {Name, H}, Acc}) when H == Host ->
-				     {access, Name, Acc}
-			     end))]),
-	     <<"\n">>),
-    {result,
-     #xdata{title = ?T(Lang, <<"Access Configuration">>),
-	    type = form,
-	    fields = [?HFIELD(),
-		      #xdata_field{type = 'text-multi',
-				   label = ?T(Lang, <<"Access Rules">>),
-				   var = <<"access">>,
-				   values = Accs}]}};
 get_form(_Host, ?NS_ADMINL(<<"add-user">>), Lang) ->
     {result,
      #xdata{title = ?T(Lang, <<"Add User">>),
@@ -1447,75 +1403,6 @@ set_form(From, Host,
 	 [<<"running nodes">>, ENode, <<"shutdown">>], _Lang,
 	 XData) ->
     stop_node(From, Host, ENode, stop, XData);
-set_form(_From, Host, [<<"config">>, <<"acls">>], Lang,
-	 XData) ->
-    case xmpp_util:get_xdata_values(<<"acls">>, XData) of
-	[] ->
-	    Txt = <<"No 'acls' found in data form">>,
-	    {error, xmpp:err_bad_request(Txt, Lang)};
-	Strings ->
-	    String = lists:foldl(fun (S, Res) ->
-					 <<Res/binary, S/binary, "\n">>
-				 end, <<"">>, Strings),
-	    case erl_scan:string(binary_to_list(String)) of
-		{ok, Tokens, _} ->
-		    case erl_parse:parse_term(Tokens) of
-			{ok, ACLs} ->
-			    acl:add_list(Host, ACLs, true),
-			    {result, undefined};
-			_ ->
-			    Txt = <<"Parse failed">>,
-			    {error, xmpp:err_bad_request(Txt, Lang)}
-		    end;
-		_ ->
-		    {error, xmpp:err_bad_request(<<"Scan failed">>, Lang)}
-	    end
-    end;
-set_form(_From, Host, [<<"config">>, <<"access">>],
-	 Lang, XData) ->
-    SetAccess =
-	fun(Rs) ->
-		mnesia:transaction(
-		  fun () ->
-			  Os = mnesia:select(
-				 access,
-				 ets:fun2ms(
-				   fun({access, {_, H}, _} = O) when H == Host ->
-					   O
-				   end)),
-			  lists:foreach(fun mnesia:delete_object/1, Os),
-			  lists:foreach(
-			    fun({access, Name, Rules}) ->
-				    mnesia:write({access, {Name, Host}, Rules})
-			    end, Rs)
-		  end)
-	end,
-    case xmpp_util:get_xdata_values(<<"access">>, XData) of
-	[] ->
-	    Txt = <<"No 'access' found in data form">>,
-	    {error, xmpp:err_bad_request(Txt, Lang)};
-	Strings ->
-	    String = lists:foldl(fun (S, Res) ->
-					 <<Res/binary, S/binary, "\n">>
-				 end, <<"">>, Strings),
-	    case erl_scan:string(binary_to_list(String)) of
-		{ok, Tokens, _} ->
-		    case erl_parse:parse_term(Tokens) of
-			{ok, Rs} ->
-			    case SetAccess(Rs) of
-				{atomic, _} ->
-				    {result, undefined};
-				_ ->
-				    {error, xmpp:err_bad_request()}
-			    end;
-			_ ->
-			    Txt = <<"Parse failed">>,
-			    {error, xmpp:err_bad_request(Txt, Lang)}
-		    end;
-		_ ->
-		    {error, xmpp:err_bad_request(<<"Scan failed">>, Lang)}
-	    end
-    end;
 set_form(From, Host, ?NS_ADMINL(<<"add-user">>), _Lang,
 	 XData) ->
     AccountString = get_value(<<"accountjid">>, XData),
@@ -1524,7 +1411,7 @@ set_form(From, Host, ?NS_ADMINL(<<"add-user">>), _Lang,
     AccountJID = jid:decode(AccountString),
     User = AccountJID#jid.luser,
     Server = AccountJID#jid.lserver,
-    true = lists:member(Server, ejabberd_config:get_myhosts()),
+    true = lists:member(Server, ejabberd_option:hosts()),
     true = Server == Host orelse
 	     get_permission_level(From) == global,
     case ejabberd_auth:try_register(User, Server, Password) of

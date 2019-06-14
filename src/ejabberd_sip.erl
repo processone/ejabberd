@@ -45,8 +45,8 @@ start_link(_, _, _) ->
 -else.
 %% API
 -export([tcp_init/2, udp_init/2, udp_recv/5, start/3,
-	 start_link/3, accept/1, listen_options/0]).
-
+	 start_link/3, accept/1]).
+-export([listen_opt_type/1, listen_options/0]).
 
 %%%===================================================================
 %%% API
@@ -80,14 +80,12 @@ set_certfile(Opts) ->
 		{ok, CertFile} ->
 		    [{certfile, CertFile}|Opts];
 		error ->
-		    case ejabberd_config:get_option({domain_certfile, ejabberd_config:get_myname()}) of
-			undefined ->
-			    Opts;
-			CertFile ->
-			    [{certfile, CertFile}|Opts]
-		    end
+		    Opts
 	    end
     end.
+
+listen_opt_type(certfile) ->
+    econf:pem().
 
 listen_options() ->
     [{tls, false},

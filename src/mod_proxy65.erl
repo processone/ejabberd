@@ -34,7 +34,7 @@
 -behaviour(supervisor).
 
 %% gen_mod callbacks.
--export([start/2, stop/1, reload/3, transform_module_options/1]).
+-export([start/2, stop/1, reload/3]).
 
 %% supervisor callbacks.
 -export([init/1]).
@@ -52,21 +52,14 @@
     ok | {error, limit | conflict | notfound | term()}.
 
 start(Host, Opts) ->
-    {ListenOpts, ModOpts} = lists:partition(
-			      fun({auth_type, _}) -> true;
-				 ({recbuf, _}) -> true;
-				 ({sndbuf, _}) -> true;
-				 ({shaper, _}) -> true;
-				 (_) -> false
-			      end, Opts),
-    case mod_proxy65_service:add_listener(Host, ListenOpts) of
+    case mod_proxy65_service:add_listener(Host, Opts) of
 	{error, _} = Err ->
 	    Err;
 	_ ->
 	    Mod = gen_mod:ram_db_mod(global, ?MODULE),
 	    Mod:init(),
 	    Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-	    ChildSpec = {Proc, {?MODULE, start_link, [Host, ModOpts]},
+	    ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
 			 transient, infinity, supervisor, [?MODULE]},
 	    supervisor:start_child(ejabberd_gen_mod_sup, ChildSpec)
     end.
@@ -92,9 +85,6 @@ start_link(Host, Opts) ->
     supervisor:start_link({local, Proc}, ?MODULE,
 			  [Host, Opts]).
 
-transform_module_options(Opts) ->
-    mod_proxy65_service:transform_module_options(Opts).
-
 init([Host, Opts]) ->
     Service = {mod_proxy65_service,
 	       {mod_proxy65_service, start_link, [Host, Opts]},
@@ -104,41 +94,46 @@ init([Host, Opts]) ->
 depends(_Host, _Opts) ->
     [].
 
-mod_opt_type(access) -> fun acl:access_rules_validator/1;
-mod_opt_type(host) -> fun ejabberd_config:v_host/1;
-mod_opt_type(hosts) -> fun ejabberd_config:v_hosts/1;
+mod_opt_type(access) ->
+    econf:acl();
 mod_opt_type(hostname) ->
-    fun(undefined) -> undefined;
-       (H) -> iolist_to_binary(H)
-    end;
+    econf:well_known(host, ?MODULE);
 mod_opt_type(ip) ->
-    fun(undefined) ->
-	    undefined;
-       (S) ->
-	    {ok, Addr} =
-		inet_parse:address(binary_to_list(iolist_to_binary(S))),
-	    Addr
-    end;
-mod_opt_type(name) -> fun iolist_to_binary/1;
+    econf:ip();
+mod_opt_type(name) ->
+    econf:binary();
 mod_opt_type(port) ->
-    fun (P) when is_integer(P), P > 0, P < 65536 -> P end;
+    econf:port();
 mod_opt_type(max_connections) ->
-    fun (I) when is_integer(I), I > 0 -> I;
-	(infinity) -> infinity
-    end;
+    econf:pos_int(infinity);
+mod_opt_type(host) ->
+    econf:well_known(host, ?MODULE);
+mod_opt_type(hosts) ->
+    econf:well_known(hosts, ?MODULE);
 mod_opt_type(ram_db_type) ->
-    fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
-mod_opt_type(Opt) ->
-    mod_proxy65_stream:listen_opt_type(Opt).
+    econf:well_known(ram_db_type, ?MODULE);
+mod_opt_type(server_host) ->
+    econf:binary();
+mod_opt_type(auth_type) ->
+    econf:enum([plain, anonymous]);
+mod_opt_type(recbuf) ->
+    econf:pos_int();
+mod_opt_type(shaper) ->
+    econf:shaper();
+mod_opt_type(sndbuf) ->
+    econf:pos_int().
 
 mod_options(Host) ->
     [{ram_db_type, ejabberd_config:default_ram_db(Host, ?MODULE)},
      {access, all},
-     {host, <<"proxy.@HOST@">>},
+     {host, <<"proxy.", Host/binary>>},
      {hosts, []},
      {hostname, undefined},
      {ip, undefined},
      {port, 7777},
      {name, ?T("SOCKS5 Bytestreams")},
-     {max_connections, infinity}] ++
-	mod_proxy65_stream:listen_options().
+     {max_connections, infinity},
+     {auth_type, anonymous},
+     {recbuf, 65536},
+     {sndbuf, 65536},
+     {shaper, none}].

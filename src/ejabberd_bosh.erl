@@ -91,8 +91,8 @@
 	 xmpp_ver = <<"">>                        :: binary(),
          inactivity_timer                         :: reference() | undefined,
          wait_timer                               :: reference() | undefined,
-	 wait_timeout = ?DEFAULT_WAIT             :: timeout(),
-         inactivity_timeout                       :: timeout(),
+	 wait_timeout = ?DEFAULT_WAIT             :: pos_integer(),
+         inactivity_timeout                       :: pos_integer(),
 	 prev_rid = 0                             :: non_neg_integer(),
          prev_key = <<"">>                        :: binary(),
          prev_poll                                :: erlang:timestamp() | undefined,
@@ -274,8 +274,7 @@ init([#body{attrs = Attrs}, IP, SID]) ->
     Socket = make_socket(self(), IP),
     XMPPVer = get_attr('xmpp:version', Attrs),
     XMPPDomain = get_attr(to, Attrs),
-    {InBuf, Opts} = case gen_mod:get_module_opt(
-                           XMPPDomain, mod_bosh, prebind) of
+    {InBuf, Opts} = case mod_bosh_opt:prebind(XMPPDomain) of
                         true ->
                             JID = make_random_jid(XMPPDomain),
                             {buf_new(XMPPDomain), [{jid, JID} | Opts2]};
@@ -287,9 +286,8 @@ init([#body{attrs = Attrs}, IP, SID]) ->
     case ejabberd_c2s:start(?MODULE, Socket, [{receiver, self()}|Opts]) of
 	{ok, C2SPid} ->
 	    ejabberd_c2s:accept(C2SPid),
-	    Inactivity = gen_mod:get_module_opt(XMPPDomain,
-						mod_bosh, max_inactivity),
-	    MaxConcat = gen_mod:get_module_opt(XMPPDomain, mod_bosh, max_concat),
+	    Inactivity = mod_bosh_opt:max_inactivity(XMPPDomain),
+	    MaxConcat = mod_bosh_opt:max_concat(XMPPDomain),
 	    ShapedReceivers = buf_new(XMPPDomain, ?MAX_SHAPED_REQUESTS_QUEUE_LEN),
 	    State = #state{host = XMPPDomain, sid = SID, ip = IP,
 			   xmpp_ver = XMPPVer, el_ibuf = InBuf,
@@ -298,8 +296,12 @@ init([#body{attrs = Attrs}, IP, SID]) ->
 			   shaped_receivers = ShapedReceivers,
 			   shaper_state = ShaperState},
 	    NewState = restart_inactivity_timer(State),
-	    mod_bosh:open_session(SID, self()),
-	    {ok, wait_for_session, NewState};
+	    case mod_bosh:open_session(SID, self()) of
+		ok ->
+		    {ok, wait_for_session, NewState};
+		{error, Reason} ->
+		    {stop, Reason}
+	    end;
 	{error, Reason} ->
 	    {stop, Reason};
 	ignore ->
@@ -328,8 +330,7 @@ wait_for_session(#body{attrs = Attrs} = Req, From,
 		   Wait == 0, Hold == 0 -> erlang:timestamp();
 		   true -> undefined
 	       end,
-    MaxPause = gen_mod:get_module_opt(State#state.host,
-				      mod_bosh, max_pause),
+    MaxPause = mod_bosh_opt:max_pause(State#state.host),
     Resp = #body{attrs =
 		     [{sid, State#state.sid}, {wait, Wait},
 		      {ver, ?BOSH_VERSION}, {polling, ?DEFAULT_POLLING},
@@ -887,7 +888,9 @@ decode_body(Data, Size, Type) ->
     end.
 
 decode(Data, xml) ->
-    fxml_stream:parse_element(Data).
+    fxml_stream:parse_element(Data);
+decode(Data, json) ->
+    Data.
 
 attrs_to_body_attrs(Attrs) ->
     lists:foldl(fun (_, {error, Reason}) -> {error, Reason};
@@ -991,8 +994,7 @@ buf_new(Host) ->
     buf_new(Host, unlimited).
 
 buf_new(Host, Limit) ->
-    QueueType = gen_mod:get_module_opt(
-		  Host, mod_bosh, queue_type),
+    QueueType = mod_bosh_opt:queue_type(Host),
     p1_queue:new(QueueType, Limit).
 
 buf_in(Xs, Buf) ->

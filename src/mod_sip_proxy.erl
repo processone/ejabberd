@@ -1,7 +1,7 @@
 %%%-------------------------------------------------------------------
 %%% File    : mod_sip_proxy.erl
 %%% Author  : Evgeny Khramtsov <ekhramtsov@process-one.net>
-%%% Purpose : 
+%%% Purpose :
 %%% Created : 21 Apr 2014 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
@@ -273,12 +273,7 @@ add_certfile(LServer, Opts) ->
 	{ok, CertFile} ->
 	    [{certfile, CertFile}|Opts];
 	error ->
-	    case ejabberd_config:get_option({domain_certfile, LServer}) of
-		CertFile when is_binary(CertFile) ->
-		    [{certfile, CertFile}|Opts];
-		_ ->
-		    Opts
-	    end
+	    Opts
     end.
 
 add_via(#sip_socket{type = Transport}, LServer, #sip{hdrs = Hdrs} = Req) ->
@@ -320,7 +315,7 @@ is_request_within_dialog(#sip{hdrs = Hdrs}) ->
     esip:has_param(<<"tag">>, Params).
 
 need_record_route(LServer) ->
-    gen_mod:get_module_opt(LServer, mod_sip, always_record_route).
+    mod_sip_opt:always_record_route(LServer).
 
 make_sign(TS, Hdrs) ->
     {_, #uri{user = FUser, host = FServer}, FParams} = esip:get_hdr('from', Hdrs),
@@ -331,7 +326,7 @@ make_sign(TS, Hdrs) ->
     LTServer = safe_nameprep(TServer),
     FromTag = esip:get_param(<<"tag">>, FParams),
     CallID = esip:get_hdr('call-id', Hdrs),
-    SharedKey = ejabberd_config:get_option(shared_key),
+    SharedKey = ejabberd_config:get_shared_key(),
     str:sha([SharedKey, LFUser, LFServer, LTUser, LTServer,
 		FromTag, CallID, TS]).
 
@@ -347,13 +342,13 @@ is_signed_by_me(TS_Sign, Hdrs) ->
     end.
 
 get_configured_vias(LServer) ->
-    gen_mod:get_module_opt(LServer, mod_sip, via).
+    mod_sip_opt:via(LServer).
 
 get_configured_record_route(LServer) ->
-    gen_mod:get_module_opt(LServer, mod_sip, record_route).
+    mod_sip_opt:record_route(LServer).
 
 get_configured_routes(LServer) ->
-    gen_mod:get_module_opt(LServer, mod_sip, routes).
+    mod_sip_opt:routes(LServer).
 
 mark_transaction_as_complete(TrID, State) ->
     NewTrIDs = lists:delete(TrID, State#state.tr_ids),

@@ -34,7 +34,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start/2, stop/1, reload/3, transform_module_options/1,
+-export([start/2, stop/1, reload/3,
 	 check_access_log/2, add_to_log/5]).
 
 -export([init/1, handle_call/3, handle_cast/2,
@@ -91,14 +91,6 @@ check_access_log(Host, From) ->
       Res -> Res
     end.
 
-transform_module_options(Opts) ->
-    lists:map(
-      fun({top_link, {S1, S2}}) ->
-              {top_link, [{S1, S2}]};
-         (Opt) ->
-              Opt
-      end, Opts).
-
 depends(_Host, _Opts) ->
     [{mod_muc, hard}].
 
@@ -137,17 +129,17 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%% Internal functions
 %%--------------------------------------------------------------------
 init_state(Host, Opts) ->
-    OutDir = gen_mod:get_opt(outdir, Opts),
-    DirType = gen_mod:get_opt(dirtype, Opts),
-    DirName = gen_mod:get_opt(dirname, Opts),
-    FileFormat = gen_mod:get_opt(file_format, Opts),
-    FilePermissions = gen_mod:get_opt(file_permissions, Opts),
-    CSSFile = gen_mod:get_opt(cssfile, Opts),
-    AccessLog = gen_mod:get_opt(access_log, Opts),
-    Timezone = gen_mod:get_opt(timezone, Opts),
-    Top_link = gen_mod:get_opt(top_link, Opts),
-    NoFollow = gen_mod:get_opt(spam_prevention, Opts),
-    Lang = ejabberd_config:get_lang(Host),
+    OutDir = mod_muc_log_opt:outdir(Opts),
+    DirType = mod_muc_log_opt:dirtype(Opts),
+    DirName = mod_muc_log_opt:dirname(Opts),
+    FileFormat = mod_muc_log_opt:file_format(Opts),
+    FilePermissions = mod_muc_log_opt:file_permissions(Opts),
+    CSSFile = mod_muc_log_opt:cssfile(Opts),
+    AccessLog = mod_muc_log_opt:access_log(Opts),
+    Timezone = mod_muc_log_opt:timezone(Opts),
+    Top_link = mod_muc_log_opt:top_link(Opts),
+    NoFollow = mod_muc_log_opt:spam_prevention(Opts),
+    Lang = ejabberd_option:language(Host),
     #logstate{host = Host, out_dir = OutDir,
 	      dir_type = DirType, dir_name = DirName,
 	      file_format = FileFormat, css_file = CSSFile,
@@ -885,26 +877,30 @@ get_room_occupants(RoomJIDString) ->
     RoomJID = jid:decode(RoomJIDString),
     RoomName = RoomJID#jid.luser,
     MucService = RoomJID#jid.lserver,
-    StateData = get_room_state(RoomName, MucService),
-    [{U#user.jid, U#user.nick, U#user.role}
-     || U <- maps:values(StateData#state.users)].
+    case get_room_state(RoomName, MucService) of
+	{ok, StateData} ->
+	    [{U#user.jid, U#user.nick, U#user.role}
+	     || U <- maps:values(StateData#state.users)];
+	error ->
+	    []
+    end.
 
--spec get_room_state(binary(), binary()) -> mod_muc_room:state().
+-spec get_room_state(binary(), binary()) -> {ok, mod_muc_room:state()} | error.
 
 get_room_state(RoomName, MucService) ->
     case mod_muc:find_online_room(RoomName, MucService) of
 	{ok, RoomPid} ->
-	  get_room_state(RoomPid);
+	    get_room_state(RoomPid);
 	error ->
-	    #state{}
+	    error
     end.
 
--spec get_room_state(pid()) -> mod_muc_room:state().
+-spec get_room_state(pid()) -> {ok, mod_muc_room:state()} | error.
 
 get_room_state(RoomPid) ->
-    {ok, R} = p1_fsm:sync_send_all_state_event(RoomPid,
-						get_state),
-    R.
+    try p1_fsm:sync_send_all_state_event(RoomPid, get_state)
+    catch _:_ -> error
+    end.
 
 get_proc_name(Host) ->
     gen_mod:get_module_proc(Host, ?MODULE).
@@ -929,58 +925,48 @@ has_no_permanent_store_hint(Packet) ->
     xmpp:has_subtag(Packet, #hint{type = 'no-permanent-storage'}).
 
 mod_opt_type(access_log) ->
-    fun acl:access_rules_validator/1;
+    econf:acl();
 mod_opt_type(cssfile) ->
-    fun(S) ->
-	    case str:to_lower(S) of
-		<<"http:/", _/binary>> -> {url, misc:try_url(S)};
-		<<"https:/", _/binary>> -> {url, misc:try_url(S)};
-		_ -> {file, misc:try_read_file(S)}
-	    end
-    end;
+    econf:url_or_file();
 mod_opt_type(dirname) ->
-    fun (room_jid) -> room_jid;
-	(room_name) -> room_name
-    end;
+    econf:enum([room_jid, room_name]);
 mod_opt_type(dirtype) ->
-    fun (subdirs) -> subdirs;
-	(plain) -> plain
-    end;
+    econf:enum([subdirs, plain]);
 mod_opt_type(file_format) ->
-    fun (html) -> html;
-	(plaintext) -> plaintext
-    end;
+    econf:enum([html, plaintext]);
 mod_opt_type(file_permissions) ->
-    fun (SubOpts) ->
-	    {proplists:get_value(mode, SubOpts, 644),
-	     proplists:get_value(group, SubOpts, 33)}
-    end;
-mod_opt_type({file_permissions, mode}) ->
-    fun(I) when is_integer(I), I>=0 -> I end;
-mod_opt_type({file_permissions, group}) ->
-    fun(I) when is_integer(I), I>=0 -> I end;
-mod_opt_type(outdir) -> fun iolist_to_binary/1;
+    econf:and_then(
+      econf:options(
+	#{mode => econf:non_neg_int(),
+	  group => econf:non_neg_int()}),
+      fun(Opts) ->
+	      {proplists:get_value(mode, Opts, 644),
+	       proplists:get_value(group, Opts, 33)}
+      end);
+mod_opt_type(outdir) ->
+    econf:directory(write);
 mod_opt_type(spam_prevention) ->
-    fun (B) when is_boolean(B) -> B end;
+    econf:bool();
 mod_opt_type(timezone) ->
-    fun (local) -> local;
-	(universal) -> universal
-    end;
+    econf:enum([local, universal]);
 mod_opt_type(top_link) ->
-    fun ([{S1, S2}]) ->
-	    {iolist_to_binary(S1), iolist_to_binary(S2)}
-    end.
+    econf:and_then(
+      econf:non_empty(
+	econf:map(econf:binary(), econf:binary())),
+      fun hd/1).
 
+-spec mod_options(binary()) -> [{top_link, {binary(), binary()}} |
+				{file_permissions,
+				 {non_neg_integer(), non_neg_integer()}} |
+				{atom(), any()}].
 mod_options(_) ->
     [{access_log, muc_admin},
-     {cssfile, filename:join(misc:css_dir(), "muc.css")},
+     {cssfile, filename:join(misc:css_dir(), <<"muc.css">>)},
      {dirname, room_jid},
      {dirtype, subdirs},
      {file_format, html},
-     {file_permissions,
-      [{mode, 644},
-       {group, 33}]},
+     {file_permissions, {644, 33}},
      {outdir, <<"www/muc">>},
      {spam_prevention, true},
      {timezone, local},
-     {top_link, [{<<"/">>, <<"Home">>}]}].
+     {top_link, {<<"/">>, <<"Home">>}}].

@@ -74,7 +74,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, reload/3, process/2, mod_opt_type/1, depends/2,
+-export([start/2, stop/1, reload/3, process/2, depends/2,
 	 mod_options/1]).
 
 -include("xmpp.hrl").
@@ -119,16 +119,13 @@
 %% -------------------
 
 start(_Host, _Opts) ->
-    ejabberd_access_permissions:register_permission_addon(?MODULE, fun permission_addon/0),
     ok.
 
 stop(_Host) ->
-    ejabberd_access_permissions:unregister_permission_addon(?MODULE),
     ok.
 
-reload(Host, NewOpts, _OldOpts) ->
-    stop(Host),
-    start(Host, NewOpts).
+reload(_Host, _NewOpts, _OldOpts) ->
+    ok.
 
 depends(_Host, _Opts) ->
     [].
@@ -170,10 +167,7 @@ extract_auth(#request{auth = HTTPAuth, ip = {IP, _}, opts = Opts}) ->
 	_ ->
 	    ?DEBUG("Invalid auth data: ~p", [Info]),
 	    Info
-    end;
-extract_auth(#request{ip = IP, opts = Opts}) ->
-    Tag = proplists:get_value(tag, Opts, <<>>),
-    #{ip => IP, caller_module => ?MODULE, tag => Tag}.
+    end.
 
 %% ------------------
 %% command processing
@@ -233,7 +227,6 @@ perform_call(Command, Args, Req, Version) ->
 		{error, expired} -> invalid_token_response();
 		{error, not_found} -> invalid_token_response();
 		{error, invalid_auth} -> unauthorized_response();
-		{error, _} -> unauthorized_response();
 		Auth when is_map(Auth) ->
 		    Result = handle(Call, Auth, Args, Version),
 		    json_format(Result)
@@ -274,50 +267,40 @@ get_api_version([]) ->
 
 % generic ejabberd command handler
 handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
-    case ejabberd_commands:get_command_format(Call, Auth, Version) of
-        {ArgsSpec, _} when is_list(ArgsSpec) ->
-            Args2 = [{misc:binary_to_atom(Key), Value} || {Key, Value} <- Args],
-	    try
-          handle2(Call, Auth, Args2, Version)
-	    catch throw:not_found ->
-		    {404, <<"not_found">>};
-		  throw:{not_found, Why} when is_atom(Why) ->
-		    {404, misc:atom_to_binary(Why)};
-		  throw:{not_found, Msg} ->
-		    {404, iolist_to_binary(Msg)};
-		  throw:not_allowed ->
-		    {401, <<"not_allowed">>};
-		  throw:{not_allowed, Why} when is_atom(Why) ->
-		    {401, misc:atom_to_binary(Why)};
-		  throw:{not_allowed, Msg} ->
-		    {401, iolist_to_binary(Msg)};
-                  throw:{error, account_unprivileged} ->
-		      {403, 31, <<"Command need to be run with admin privilege.">>};
-		  throw:{error, access_rules_unauthorized} ->
-		    {403, 32, <<"AccessRules: Account does not have the right to perform the operation.">>};
-		  throw:{invalid_parameter, Msg} ->
-		    {400, iolist_to_binary(Msg)};
-		  throw:{error, Why} when is_atom(Why) ->
-		    {400, misc:atom_to_binary(Why)};
-		  throw:{error, Msg} ->
-		    {400, iolist_to_binary(Msg)};
-		  throw:Error when is_atom(Error) ->
-		    {400, misc:atom_to_binary(Error)};
-		  throw:Msg when is_list(Msg); is_binary(Msg) ->
-		    {400, iolist_to_binary(Msg)};
-		  ?EX_RULE(Class, Error, Stack) ->
-		    ?ERROR_MSG("REST API Error: "
-		              "~s(~p) -> ~p:~p ~p",
-			       [Call, hide_sensitive_args(Args),
-				Class, Error, ?EX_STACK(Stack)]),
-		    {500, <<"internal_error">>}
-	    end;
-        {error, Msg} ->
-	    ?ERROR_MSG("REST API Error: ~p", [Msg]),
-            {400, Msg};
-        _Error ->
-	    ?ERROR_MSG("REST API Error: ~p", [_Error]),
-            {400, <<"Error">>}
+    Args2 = [{misc:binary_to_atom(Key), Value} || {Key, Value} <- Args],
+    try handle2(Call, Auth, Args2, Version)
+    catch throw:not_found ->
+	    {404, <<"not_found">>};
+	  throw:{not_found, Why} when is_atom(Why) ->
+	    {404, misc:atom_to_binary(Why)};
+	  throw:{not_found, Msg} ->
+	    {404, iolist_to_binary(Msg)};
+	  throw:not_allowed ->
+	    {401, <<"not_allowed">>};
+	  throw:{not_allowed, Why} when is_atom(Why) ->
+	    {401, misc:atom_to_binary(Why)};
+	  throw:{not_allowed, Msg} ->
+	    {401, iolist_to_binary(Msg)};
+	  throw:{error, account_unprivileged} ->
+	    {403, 31, <<"Command need to be run with admin privilege.">>};
+	  throw:{error, access_rules_unauthorized} ->
+	    {403, 32, <<"AccessRules: Account does not have the right to perform the operation.">>};
+	  throw:{invalid_parameter, Msg} ->
+	    {400, iolist_to_binary(Msg)};
+	  throw:{error, Why} when is_atom(Why) ->
+	    {400, misc:atom_to_binary(Why)};
+	  throw:{error, Msg} ->
+	    {400, iolist_to_binary(Msg)};
+	  throw:Error when is_atom(Error) ->
+	    {400, misc:atom_to_binary(Error)};
+	  throw:Msg when is_list(Msg); is_binary(Msg) ->
+	    {400, iolist_to_binary(Msg)};
+	  ?EX_RULE(Class, Error, Stack) ->
+	    ?ERROR_MSG("REST API Error: "
+		       "~s(~p) -> ~p:~p ~p",
+		       [Call, hide_sensitive_args(Args),
+			Class, Error, ?EX_STACK(Stack)]),
+	    {500, <<"internal_error">>}
     end.
 
 handle2(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
@@ -566,31 +549,5 @@ hide_sensitive_args(Args=[_H|_T]) ->
 hide_sensitive_args(NonListArgs) ->
     NonListArgs.
 
-permission_addon() ->
-    Access = gen_mod:get_module_opt(global, ?MODULE, admin_ip_access),
-    Rules = acl:resolve_access(Access, global),
-    R = case Rules of
-	    all ->
-		[{[{allow, all}], {all, []}}];
-	    none ->
-		[];
-	    _ ->
-		lists:filtermap(
-		  fun({V, AclRules}) when V == all; V == [all]; V == [allow]; V == allow ->
-			  {true, {[{allow, AclRules}], {all, []}}};
-		     ({List, AclRules}) when is_list(List) ->
-			  {true, {[{allow, AclRules}], {List, []}}};
-		     (_) ->
-			  false
-		  end, Rules)
-	end,
-    {_, Res} = lists:foldl(
-		 fun({R2, L2}, {Idx, Acc}) ->
-			 {Idx+1, [{<<"'mod_http_api admin_ip_access' option compatibility shim ",
-				     (integer_to_binary(Idx))/binary>>,
-				   {[?MODULE], [{access, R2}], L2}} | Acc]}
-		 end, {1, []}, R),
-    Res.
-
-mod_opt_type(admin_ip_access) -> fun acl:access_rules_validator/1.
-mod_options(_) -> [{admin_ip_access, none}].
+mod_options(_) ->
+    [].

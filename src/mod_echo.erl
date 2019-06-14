@@ -60,11 +60,13 @@ reload(Host, NewOpts, OldOpts) ->
 depends(_Host, _Opts) ->
     [].
 
-mod_opt_type(host) -> fun ejabberd_config:v_host/1;
-mod_opt_type(hosts) -> fun ejabberd_config:v_hosts/1.
+mod_opt_type(host) ->
+    econf:well_known(host, ?MODULE);
+mod_opt_type(hosts) ->
+    econf:well_known(hosts, ?MODULE).
 
-mod_options(_Host) ->
-    [{host, <<"echo.@HOST@">>}, {hosts, []}].
+mod_options(Host) ->
+    [{host, <<"echo.", Host/binary>>}, {hosts, []}].
 
 %%====================================================================
 %% gen_server callbacks
@@ -79,7 +81,7 @@ mod_options(_Host) ->
 %%--------------------------------------------------------------------
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
-    Hosts = gen_mod:get_opt_hosts(Host, Opts),
+    Hosts = gen_mod:get_opt_hosts(Opts),
     lists:foreach(
       fun(H) ->
 	      ejabberd_router:register_route(H, Host)
@@ -105,8 +107,8 @@ handle_call(stop, _From, State) ->
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
 handle_cast({reload, Host, NewOpts, OldOpts}, State) ->
-    NewMyHosts = gen_mod:get_opt_hosts(Host, NewOpts),
-    OldMyHosts = gen_mod:get_opt_hosts(Host, OldOpts),
+    NewMyHosts = gen_mod:get_opt_hosts(NewOpts),
+    OldMyHosts = gen_mod:get_opt_hosts(OldOpts),
     lists:foreach(
       fun(H) ->
 	      ejabberd_router:unregister_route(H)
@@ -167,12 +169,12 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %% replace the argument 'disabled' with 'enabled' in the call to the
 %% function do_client_version.
 
-%% ejabberd provides a method to receive XMPP packets using Erlang's 
-%% message passing mechanism. 
+%% ejabberd provides a method to receive XMPP packets using Erlang's
+%% message passing mechanism.
 %%
 %% The packets received by ejabberd are sent
 %% to the local destination process by sending an Erlang message.
-%% This means that you can receive XMPP stanzas in an Erlang process 
+%% This means that you can receive XMPP stanzas in an Erlang process
 %% using Erlang's Receive, as long as this process is registered in
 %% ejabberd as the process which handles the destination JID.
 %%

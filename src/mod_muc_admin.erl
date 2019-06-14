@@ -411,7 +411,7 @@ get_user_rooms(User, Server) ->
 		  false ->
 		      []
 	      end
-      end, ejabberd_config:get_myhosts()).
+      end, ejabberd_option:hosts()).
 
 %%----------------------------
 %% Ad-hoc commands
@@ -619,8 +619,7 @@ create_room_with_opts(Name1, Host1, ServerHost, CustomRoomOpts) ->
     true = (error /= (Host = jid:nodeprep(Host1))),
 
     %% Get the default room options from the muc configuration
-    DefRoomOpts = gen_mod:get_module_opt(ServerHost, mod_muc,
-					 default_room_options),
+    DefRoomOpts = mod_muc_opt:default_room_options(ServerHost),
     %% Change default room options as required
     FormattedRoomOpts = [format_room_option(Opt, Val) || {Opt, Val}<-CustomRoomOpts],
     RoomOpts = lists:ukeymerge(1,
@@ -631,14 +630,14 @@ create_room_with_opts(Name1, Host1, ServerHost, CustomRoomOpts) ->
     mod_muc:store_room(ServerHost, Host, Name, RoomOpts),
 
     %% Get all remaining mod_muc parameters that might be utilized
-    Access = gen_mod:get_module_opt(ServerHost, mod_muc, access),
-    AcCreate = gen_mod:get_module_opt(ServerHost, mod_muc, access_create),
-    AcAdmin = gen_mod:get_module_opt(ServerHost, mod_muc, access_admin),
-    AcPer = gen_mod:get_module_opt(ServerHost, mod_muc, access_persistent),
-    AcMam = gen_mod:get_module_opt(ServerHost, mod_muc, access_mam),
-    HistorySize = gen_mod:get_module_opt(ServerHost, mod_muc, history_size),
-    RoomShaper = gen_mod:get_module_opt(ServerHost, mod_muc, room_shaper),
-    QueueType = gen_mod:get_module_opt(ServerHost, mod_muc, queue_type),
+    Access = mod_muc_opt:access(ServerHost),
+    AcCreate = mod_muc_opt:access_create(ServerHost),
+    AcAdmin = mod_muc_opt:access_admin(ServerHost),
+    AcPer = mod_muc_opt:access_persistent(ServerHost),
+    AcMam = mod_muc_opt:access_mam(ServerHost),
+    HistorySize = mod_muc_opt:history_size(ServerHost),
+    RoomShaper = mod_muc_opt:room_shaper(ServerHost),
+    QueueType = mod_muc_opt:queue_type(ServerHost),
 
     %% If the room does not exist yet in the muc_online_room
     case mod_muc:find_online_room(Name, Host) of
@@ -739,8 +738,7 @@ create_rooms_file(Filename) ->
     Rooms = read_rooms(F, RJID, []),
     file:close(F),
     %% Read the default room options defined for the first virtual host
-    DefRoomOpts = gen_mod:get_module_opt(ejabberd_config:get_myname(), mod_muc,
-					 default_room_options),
+    DefRoomOpts = mod_muc_opt:default_room_options(ejabberd_config:get_myname()),
     [muc_create_room(ejabberd_config:get_myname(), A, DefRoomOpts) || A <- Rooms],
 	ok.
 
@@ -820,7 +818,7 @@ decide_room(unused, {_Room_name, _Host, Room_pid}, ServerHost, Last_allowed) ->
 
     History = (S#state.history)#lqueue.queue,
     Ts_now = calendar:universal_time(),
-    HistorySize = gen_mod:get_module_opt(ServerHost, mod_muc, history_size),
+    HistorySize = mod_muc_opt:history_size(ServerHost),
     {Has_hist, Last} = case p1_queue:is_empty(History) of
 			   true when (HistorySize == 0) or (Just_created == true) ->
 			       {false, 0};
@@ -865,7 +863,7 @@ seconds_to_days(S) ->
 %% Act
 
 act_on_rooms(Method, Action, Rooms, ServerHost) ->
-    ServerHosts = [ {A, find_host(A)} || A <- ejabberd_config:get_myhosts() ],
+    ServerHosts = [ {A, find_host(A)} || A <- ejabberd_option:hosts() ],
     Delete = fun({_N, H, _Pid} = Room) ->
 		     SH = case ServerHost of
 			      global -> find_serverhost(H, ServerHosts);
@@ -1279,7 +1277,7 @@ find_host(<<"global">>) ->
 find_host(ServerHost) when is_list(ServerHost) ->
     find_host(list_to_binary(ServerHost));
 find_host(ServerHost) ->
-    gen_mod:get_module_opt_host(ServerHost, mod_muc, <<"conference.@HOST@">>).
+    hd(gen_mod:get_module_opt_hosts(ServerHost, mod_muc)).
 
 find_hosts(Global) when Global == global;
 			Global == "global";
@@ -1292,7 +1290,7 @@ find_hosts(Global) when Global == global;
 		  false ->
 		      []
 	      end
-      end, ejabberd_config:get_myhosts());
+      end, ejabberd_option:hosts());
 find_hosts(ServerHost) when is_list(ServerHost) ->
     find_hosts(list_to_binary(ServerHost));
 find_hosts(ServerHost) ->

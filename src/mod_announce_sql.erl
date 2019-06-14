@@ -26,7 +26,6 @@
 
 -behaviour(mod_announce).
 
--compile([{parse_transform, ejabberd_sql_pt}]).
 
 %% API
 -export([init/2, set_motd_users/2, set_motd/2, delete_motd/1,

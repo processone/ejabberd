@@ -47,7 +47,7 @@
 %%--------------------------------------------------------------------
 -spec start(binary(), gen_mod:opts()) -> ok.
 start(Host, Opts) ->
-    case gen_mod:get_opt(wake_on_start, Opts) of
+    case mod_push_keepalive_opt:wake_on_start(Opts) of
 	true ->
 	    wake_all(Host);
 	false ->
@@ -61,13 +61,13 @@ stop(Host) ->
 
 -spec reload(binary(), gen_mod:opts(), gen_mod:opts()) -> ok.
 reload(Host, NewOpts, OldOpts) ->
-    case gen_mod:is_equal_opt(wake_on_start, NewOpts, OldOpts) of
-	{false, true, _} ->
+    case {mod_push_keepalive_opt:wake_on_start(NewOpts),
+	  mod_push_keepalive_opt:wake_on_start(OldOpts)} of
+	{true, false} ->
 	    wake_all(Host);
 	_ ->
 	    ok
-    end,
-    ok.
+    end.
 
 -spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
 depends(_Host, _Opts) ->
@@ -75,15 +75,13 @@ depends(_Host, _Opts) ->
      {mod_client_state, soft},
      {mod_stream_mgmt, soft}].
 
--spec mod_opt_type(atom()) -> fun((term()) -> term()) | [atom()].
+-spec mod_opt_type(atom()) -> econf:validator().
 mod_opt_type(resume_timeout) ->
-    fun(I) when is_integer(I), I >= 0 -> I;
-       (undefined) -> undefined
-    end;
+    econf:non_neg_int();
 mod_opt_type(wake_on_start) ->
-    fun (B) when is_boolean(B) -> B end;
+    econf:bool();
 mod_opt_type(wake_on_timeout) ->
-    fun (B) when is_boolean(B) -> B end.
+    econf:bool().
 
 mod_options(_Host) ->
     [{resume_timeout, 259200},
@@ -176,8 +174,8 @@ c2s_copy_session(State, _) ->
 
 -spec c2s_handle_cast(c2s_state(), any()) -> c2s_state().
 c2s_handle_cast(#{lserver := LServer} = State, push_enable) ->
-    ResumeTimeout = gen_mod:get_module_opt(LServer, ?MODULE, resume_timeout),
-    WakeOnTimeout = gen_mod:get_module_opt(LServer, ?MODULE, wake_on_timeout),
+    ResumeTimeout = mod_push_keepalive_opt:resume_timeout(LServer),
+    WakeOnTimeout = mod_push_keepalive_opt:wake_on_timeout(LServer),
     State#{push_resume_timeout => ResumeTimeout,
 	   push_wake_on_timeout => WakeOnTimeout};
 c2s_handle_cast(State, push_disable) ->
@@ -226,7 +224,7 @@ maybe_start_wakeup_timer(#{push_wake_on_timeout := true,
 maybe_start_wakeup_timer(State) ->
     State.
 
--spec wake_all(binary()) -> ok | error.
+-spec wake_all(binary()) -> ok.
 wake_all(LServer) ->
     ?INFO_MSG("Waking all push clients on ~s", [LServer]),
     Mod = gen_mod:db_mod(LServer, mod_push),
@@ -239,5 +237,5 @@ wake_all(LServer) ->
 						  IgnoreResponse)
 			  end, Sessions);
 	error ->
-	    error
+	    ok
     end.

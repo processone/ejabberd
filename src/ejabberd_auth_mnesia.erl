@@ -25,8 +25,6 @@
 
 -module(ejabberd_auth_mnesia).
 
--compile([{parse_transform, ejabberd_sql_pt}]).
-
 -author('alexey@process-one.net').
 
 -behaviour(ejabberd_auth).
@@ -77,9 +75,7 @@ update_reg_users_counter_table(Server) ->
 use_cache(Host) ->
     case mnesia:table_info(passwd, storage_type) of
 	disc_only_copies ->
-	    ejabberd_config:get_option(
-	      {auth_use_cache, Host},
-	      ejabberd_config:use_cache(Host));
+	    ejabberd_option:auth_use_cache(Host);
 	_ ->
 	    false
     end.
@@ -207,7 +203,7 @@ remove_user(User, Server) ->
 
 need_transform(#reg_users_counter{}) ->
     false;
-need_transform(#passwd{us = {U, S}, password = Pass}) ->
+need_transform({passwd, {U, S}, Pass}) ->
     if is_binary(Pass) ->
 	    case store_type(S) of
 		scram ->
@@ -234,7 +230,7 @@ need_transform(#passwd{us = {U, S}, password = Pass}) ->
 	    true
     end.
 
-transform(#passwd{us = {U, S}, password = Pass} = R)
+transform({passwd, {U, S}, Pass})
   when is_list(U) orelse is_list(S) orelse is_list(Pass) ->
     NewUS = {iolist_to_binary(U), iolist_to_binary(S)},
     NewPass = case Pass of
@@ -248,7 +244,7 @@ transform(#passwd{us = {U, S}, password = Pass} = R)
 		  _ ->
 		      iolist_to_binary(Pass)
 	      end,
-    transform(R#passwd{us = NewUS, password = NewPass});
+    transform(#passwd{us = NewUS, password = NewPass});
 transform(#passwd{us = {U, S}, password = Password} = P)
   when is_binary(Password) ->
     case store_type(S) of

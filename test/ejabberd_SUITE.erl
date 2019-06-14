@@ -20,10 +20,7 @@
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
-
-
 -module(ejabberd_SUITE).
-
 -compile(export_all).
 
 -import(suite, [init_config/1, connect/1, disconnect/1, recv_message/1,
@@ -62,22 +59,11 @@ init_per_suite(Config) ->
     start_ejabberd(NewConfig),
     NewConfig.
 
-start_ejabberd(Config) ->
-    case proplists:get_value(backends, Config) of
-        all ->
-            {ok, _} = application:ensure_all_started(ejabberd, transient);
-        Backends when is_list(Backends) ->
-            Hosts = lists:map(fun(Backend) -> Backend ++ ".localhost" end, Backends),
-            application:load(ejabberd),
-            AllHosts = Hosts ++ ["localhost"],    %% We always need localhost for the generic no_db tests
-            application:set_env(ejabberd, hosts, AllHosts),
-            {ok, _} = application:ensure_all_started(ejabberd, transient)
-    end.
+start_ejabberd(_) ->
+    {ok, _} = application:ensure_all_started(ejabberd, transient).
 
 end_per_suite(_Config) ->
     application:stop(ejabberd).
-
--define(BACKENDS, [mnesia,redis,mysql,pgsql,sqlite,ldap,extauth,riak]).
 
 init_per_group(Group, Config) ->
     case lists:member(Group, ?BACKENDS) of
@@ -91,7 +77,7 @@ init_per_group(Group, Config) ->
                     do_init_per_group(Group, Config);
                 Backends ->
                     %% Skipped backends that were not explicitely enabled
-                    case lists:member(atom_to_list(Group), Backends) of
+                    case lists:member(Group, Backends) of
                         true ->
                             do_init_per_group(Group, Config);
                         false ->
@@ -149,8 +135,8 @@ do_init_per_group(riak, Config) ->
 	    {skip, {riak_not_available, Err}}
     end;
 do_init_per_group(s2s, Config) ->
-    ejabberd_config:add_option(s2s_use_starttls, required_trusted),
-    ejabberd_config:add_option(domain_certfile, "cert.pem"),
+    ejabberd_config:set_option({s2s_use_starttls, ?COMMON_VHOST}, required),
+    ejabberd_config:set_option(ca_file, "ca.pem"),
     Port = ?config(s2s_port, Config),
     set_opt(server, ?COMMON_VHOST,
 	    set_opt(xmlns, ?NS_SERVER,
@@ -200,8 +186,9 @@ end_per_group(riak, Config) ->
     end;
 end_per_group(component, _Config) ->
     ok;
-end_per_group(s2s, _Config) ->
-    ejabberd_config:add_option(s2s_use_starttls, false);
+end_per_group(s2s, Config) ->
+    Server = ?config(server, Config),
+    ejabberd_config:set_option({s2s_use_starttls, Server}, false);
 end_per_group(_GroupName, Config) ->
     stop_event_relay(Config),
     set_opt(anonymous, false, Config).
@@ -297,7 +284,7 @@ init_per_testcase(TestCase, OrigConfig) ->
         "test_starttls" ++ _ ->
             connect(Config);
         "test_zlib" ->
-            connect(Config);
+            auth(connect(starttls(connect(Config))));
         "test_register" ->
             connect(Config);
         "auth_md5" ->
@@ -355,8 +342,8 @@ no_db_tests() ->
        unauthenticated_message,
        unauthenticated_presence,
        test_starttls,
-       test_zlib,
        test_auth,
+       test_zlib,
        test_bind,
        test_open_session,
        codec_failure,
@@ -373,8 +360,7 @@ no_db_tests() ->
        presence,
        s2s_dialback,
        s2s_optional,
-       s2s_required,
-       s2s_required_trusted]},
+       s2s_required]},
      auth_external,
      auth_external_no_jid,
      auth_external_no_user,
@@ -389,7 +375,9 @@ no_db_tests() ->
      proxy65_tests:single_cases(),
      proxy65_tests:master_slave_cases(),
      replaced_tests:master_slave_cases(),
-     upload_tests:single_cases()].
+     upload_tests:single_cases(),
+     carbons_tests:single_cases(),
+     carbons_tests:master_slave_cases()].
 
 db_tests(riak) ->
     %% No support for mod_pubsub
@@ -406,15 +394,13 @@ db_tests(riak) ->
        vcard_tests:single_cases(),
        muc_tests:single_cases(),
        offline_tests:single_cases(),
-       carbons_tests:single_cases(),
        test_unregister]},
      muc_tests:master_slave_cases(),
      privacy_tests:master_slave_cases(),
      roster_tests:master_slave_cases(),
      offline_tests:master_slave_cases(riak),
      vcard_tests:master_slave_cases(),
-     announce_tests:master_slave_cases(),
-     carbons_tests:master_slave_cases()];
+     announce_tests:master_slave_cases()];
 db_tests(DB) when DB == mnesia; DB == redis ->
     [{single_user, [sequence],
       [test_register,
@@ -431,7 +417,6 @@ db_tests(DB) when DB == mnesia; DB == redis ->
        muc_tests:single_cases(),
        offline_tests:single_cases(),
        mam_tests:single_cases(),
-       carbons_tests:single_cases(),
        csi_tests:single_cases(),
        push_tests:single_cases(),
        test_unregister]},
@@ -443,7 +428,6 @@ db_tests(DB) when DB == mnesia; DB == redis ->
      mam_tests:master_slave_cases(),
      vcard_tests:master_slave_cases(),
      announce_tests:master_slave_cases(),
-     carbons_tests:master_slave_cases(),
      csi_tests:master_slave_cases(),
      push_tests:master_slave_cases()];
 db_tests(DB) ->
@@ -472,7 +456,6 @@ db_tests(DB) ->
      mam_tests:master_slave_cases(),
      vcard_tests:master_slave_cases(),
      announce_tests:master_slave_cases(),
-     carbons_tests:master_slave_cases(),
      push_tests:master_slave_cases()].
 
 ldap_tests() ->
@@ -754,27 +737,29 @@ test_component_send(Config) ->
     disconnect(Config).
 
 s2s_dialback(Config) ->
+    Server = ?config(server, Config),
     ejabberd_s2s:stop_s2s_connections(),
-    ejabberd_config:add_option(s2s_use_starttls, false),
-    ejabberd_config:add_option(domain_certfile, "self-signed-cert.pem"),
+    ejabberd_config:set_option({s2s_use_starttls, Server}, false),
+    ejabberd_config:set_option({s2s_use_starttls, ?MNESIA_VHOST}, false),
+    ejabberd_config:set_option(ca_file, pkix:get_cafile()),
     s2s_ping(Config).
 
 s2s_optional(Config) ->
+    Server = ?config(server, Config),
     ejabberd_s2s:stop_s2s_connections(),
-    ejabberd_config:add_option(s2s_use_starttls, optional),
-    ejabberd_config:add_option(domain_certfile, "self-signed-cert.pem"),
+    ejabberd_config:set_option({s2s_use_starttls, Server}, optional),
+    ejabberd_config:set_option({s2s_use_starttls, ?MNESIA_VHOST}, optional),
+    ejabberd_config:set_option(ca_file, pkix:get_cafile()),
     s2s_ping(Config).
 
 s2s_required(Config) ->
+    Server = ?config(server, Config),
     ejabberd_s2s:stop_s2s_connections(),
-    ejabberd_config:add_option(s2s_use_starttls, required),
-    ejabberd_config:add_option(domain_certfile, "self-signed-cert.pem"),
-    s2s_ping(Config).
-
-s2s_required_trusted(Config) ->
-    ejabberd_s2s:stop_s2s_connections(),
-    ejabberd_config:add_option(s2s_use_starttls, required),
-    ejabberd_config:add_option(domain_certfile, "cert.pem"),
+    gen_mod:stop_module(Server, mod_s2s_dialback),
+    gen_mod:stop_module(?MNESIA_VHOST, mod_s2s_dialback),
+    ejabberd_config:set_option({s2s_use_starttls, Server}, required),
+    ejabberd_config:set_option({s2s_use_starttls, ?MNESIA_VHOST}, required),
+    ejabberd_config:set_option(ca_file, "ca.pem"),
     s2s_ping(Config).
 
 s2s_ping(Config) ->

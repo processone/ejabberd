@@ -24,7 +24,7 @@
 %%%----------------------------------------------------------------------
 
 -module(pubsub_migrate).
-
+-dialyzer({no_return, report_and_stop/2}).
 -include("pubsub.hrl").
 -include("logger.hrl").
 

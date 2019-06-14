@@ -25,17 +25,15 @@
 
 -module(ejabberd_http).
 -behaviour(ejabberd_listener).
--behaviour(ejabberd_config).
 
 -author('alexey@process-one.net').
 
 %% External exports
 -export([start/3, start_link/3,
 	 accept/1, receive_headers/1, recv_file/2,
-         transform_listen_option/2, listen_opt_type/1,
-	 listen_options/0]).
+         listen_opt_type/1, listen_options/0]).
 
--export([init/3, opt_type/1]).
+-export([init/3]).
 
 -include("logger.hrl").
 -include("xmpp.hrl").
@@ -112,9 +110,10 @@ init(SockMod, Socket, Opts) ->
                    false -> [compression_none | TLSOpts1];
                    true -> TLSOpts1
                end,
-    TLSOpts3 = case get_certfile(Opts) of
-		   undefined -> TLSOpts2;
-		   CertFile -> [{certfile, CertFile}|TLSOpts2]
+    TLSOpts3 = case ejabberd_pkix:get_certfile(
+		      ejabberd_config:get_myname()) of
+		   error -> TLSOpts2;
+		   {ok, CertFile} -> [{certfile, CertFile}|TLSOpts2]
 	       end,
     TLSOpts = [verify_none | TLSOpts3],
     {SockMod1, Socket1} = if TLSEnabled ->
@@ -124,30 +123,8 @@ init(SockMod, Socket, Opts) ->
 				 {fast_tls, TLSSocket};
 			     true -> {SockMod, Socket}
 			  end,
-    Captcha = case proplists:get_bool(captcha, Opts) of
-                  true -> [{[<<"captcha">>], ejabberd_captcha}];
-                  false -> []
-              end,
-    Register = case proplists:get_bool(register, Opts) of
-                 true -> [{[<<"register">>], mod_register_web}];
-                 false -> []
-               end,
-    Admin = case proplists:get_bool(web_admin, Opts) of
-              true -> [{[<<"admin">>], ejabberd_web_admin}];
-              false -> []
-            end,
-    Bind = case proplists:get_bool(http_bind, Opts) of
-	     true -> [{[<<"http-bind">>], mod_bosh}];
-             false -> []
-           end,
-    XMLRPC = case proplists:get_bool(xmlrpc, Opts) of
-		 true -> [{[], ejabberd_xmlrpc}];
-		 false -> []
-	     end,
     SockPeer =  proplists:get_value(sock_peer_name, Opts, none),
-    DefinedHandlers = proplists:get_value(request_handlers, Opts, []),
-    RequestHandlers = DefinedHandlers ++ Captcha ++ Register ++
-        Admin ++ Bind ++ XMLRPC,
+    RequestHandlers = proplists:get_value(request_handlers, Opts, []),
     ?DEBUG("S: ~p~n", [RequestHandlers]),
 
     DefaultHost = proplists:get_value(default_host, Opts),
@@ -557,7 +534,7 @@ analyze_ip_xff(IP, [], _Host) -> IP;
 analyze_ip_xff({IPLast, Port}, XFF, Host) ->
     [ClientIP | ProxiesIPs] = str:tokens(XFF, <<", ">>) ++
 				[misc:ip_to_list(IPLast)],
-    TrustedProxies = ejabberd_config:get_option({trusted_proxies, Host}, []),
+    TrustedProxies = ejabberd_option:trusted_proxies(Host),
     IPClient = case is_ipchain_trusted(ProxiesIPs,
 				       TrustedProxies)
 		   of
@@ -581,7 +558,7 @@ is_ipchain_trusted(UserIPs, Masks) ->
 		{ok, IP2} ->
 		    lists:any(
 			fun({Mask, MaskLen}) ->
-			    acl:ip_matches_mask(IP2, Mask, MaskLen)
+				misc:match_ip_mask(IP2, Mask, MaskLen)
 			end, Masks);
 		_ ->
 		    false
@@ -803,7 +780,7 @@ rest_dir(N, Path, <<_H, T/binary>>) -> rest_dir(N, Path, T).
 expand_custom_headers(Headers) ->
     lists:map(fun({K, V}) ->
 		      {K, misc:expand_keyword(<<"@VERSION@">>, V,
-					      ejabberd_config:get_version())}
+					      ejabberd_option:version())}
 	      end, Headers).
 
 code_to_phrase(100) -> <<"Continue">>;
@@ -851,7 +828,7 @@ code_to_phrase(503) -> <<"Service Unavailable">>;
 code_to_phrase(504) -> <<"Gateway Timeout">>;
 code_to_phrase(505) -> <<"HTTP Version Not Supported">>.
 
--spec parse_auth(binary()) -> {binary(), binary()} | {oauth, binary(), []} | undefined.
+-spec parse_auth(binary()) -> {binary(), binary()} | {oauth, binary(), []} | invalid.
 parse_auth(<<"Basic ", Auth64/binary>>) ->
     try base64:decode(Auth64) of
 	Auth ->
@@ -927,150 +904,32 @@ normalize_path([_Parent, <<"..">>|Path], Norm) ->
 normalize_path([Part | Path], Norm) ->
     normalize_path(Path, [Part|Norm]).
 
--spec get_certfile([proplists:property()]) -> binary() | undefined.
-get_certfile(Opts) ->
-    case lists:keyfind(certfile, 1, Opts) of
-	{_, CertFile} ->
-	    CertFile;
-	false ->
-	    case ejabberd_pkix:get_certfile(ejabberd_config:get_myname()) of
-		{ok, CertFile} ->
-		    CertFile;
-		error ->
-		    ejabberd_config:get_option({domain_certfile, ejabberd_config:get_myname()})
-	    end
-    end.
-
-transform_listen_option(captcha, Opts) ->
-    [{captcha, true}|Opts];
-transform_listen_option(register, Opts) ->
-    [{register, true}|Opts];
-transform_listen_option(web_admin, Opts) ->
-    [{web_admin, true}|Opts];
-transform_listen_option(http_bind, Opts) ->
-    [{http_bind, true}|Opts];
-transform_listen_option(http_poll, Opts) ->
-    Opts;
-transform_listen_option({request_handlers, Hs}, Opts) ->
-    Hs1 = lists:map(
-            fun({PList, Mod}) when is_list(PList) ->
-                    Path = iolist_to_binary([[$/, P] || P <- PList]),
-                    {Path, Mod};
-               (Opt) ->
-                    Opt
-            end, Hs),
-    [{request_handlers, Hs1} | Opts];
-transform_listen_option(Opt, Opts) ->
-    [Opt|Opts].
-
-prepare_request_module(mod_http_bind) ->
-    mod_bosh;
-prepare_request_module(Mod) when is_atom(Mod) ->
-    case code:ensure_loaded(Mod) of
-	{module, Mod} ->
-	    Mod;
-	Err ->
-	    ?ERROR_MSG(
-	       "Failed to load request handler ~s, "
-	       "did you mean ~s? Hint: "
-	       "make sure there is no typo and file ~s.beam "
-	       "exists inside either ~s or ~s directory",
-	       [Mod,
-		misc:best_match(Mod, ejabberd_config:get_modules()),
-		Mod,
-		filename:dirname(code:which(?MODULE)),
-		ext_mod:modules_dir()]),
-	    erlang:error(Err)
-    end.
-
-emit_option_replacement(Option, Path, Handler) ->
-    ?WARNING_MSG(
-       "Listening option '~s' is deprecated, enable it via request handlers, e.g.:~n"
-       "listen:~n"
-       "  ...~n"
-       "  -~n"
-       "    module: ~s~n"
-       "    request_handlers:~n"
-       "      ...~n"
-       "      \"~s\": ~s~n",
-       [Option, ?MODULE, Path, Handler]).
-
--spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
-opt_type(trusted_proxies) ->
-    fun (all) -> all;
-        (TPs) -> lists:filtermap(
-	    fun(TP) ->
-		case acl:parse_ip_netmask(iolist_to_binary(TP)) of
-		    {ok, Ip, Mask} -> {true, {Ip, Mask}};
-		    _ -> false
-		end
-	    end, TPs)
-    end;
-opt_type(_) -> [trusted_proxies].
-
-listen_opt_type(certfile = Opt) ->
-    fun(S) ->
-	    ?WARNING_MSG("Listening option '~s' for ~s is deprecated, use "
-			 "'certfiles' global option instead", [Opt, ?MODULE]),
-	    {ok, File} = ejabberd_pkix:add_certfile(S),
-	    File
-    end;
-listen_opt_type(captcha) ->
-    fun(B) when is_boolean(B) ->
-	    emit_option_replacement(captcha, "/captcha", ejabberd_captcha),
-	    B
-    end;
-listen_opt_type(register) ->
-    fun(B) when is_boolean(B) ->
-	    emit_option_replacement(register, "/register", mod_register_web),
-	    B
-    end;
-listen_opt_type(web_admin) ->
-    fun(B) when is_boolean(B) ->
-	    emit_option_replacement(web_admin, "/admin", ejabberd_web_admin),
-	    B
-    end;
-listen_opt_type(http_bind) ->
-    fun(B) when is_boolean(B) ->
-	    emit_option_replacement(http_bind, "/bosh", mod_bosh),
-	    B
-    end;
-listen_opt_type(xmlrpc) ->
-    fun(B) when is_boolean(B) ->
-	    emit_option_replacement(xmlrpc, "/", ejabberd_xmlrpc),
-	    B
-    end;
 listen_opt_type(tag) ->
-    fun(B) when is_binary(B) -> B end;
+    econf:binary();
 listen_opt_type(request_handlers) ->
-    fun(Hs) ->
-	    Hs1 = lists:map(fun
-				({Mod, Path}) when is_atom(Mod) -> {Path, Mod};
-				({Path, Mod}) -> {Path, Mod}
-			    end, Hs),
-	    Hs2 = [{str:tokens(
-		      iolist_to_binary(Path), <<"/">>),
-		    Mod} || {Path, Mod} <- Hs1],
-	    [{Path, prepare_request_module(Mod)} || {Path, Mod} <- Hs2]
-    end;
+    econf:and_then(
+      econf:map(
+	econf:binary(),
+	econf:beam([[{socket_handoff, 3}, {process, 2}]])),
+      fun(L) ->
+	      [{str:tokens(Path, <<"/">>), Mod} || {Path, Mod} <- L]
+      end);
 listen_opt_type(default_host) ->
-    fun iolist_to_binary/1;
+    econf:domain();
 listen_opt_type(custom_headers) ->
-    fun expand_custom_headers/1.
+    econf:and_then(
+      econf:map(
+	econf:binary(),
+	econf:binary()),
+      fun expand_custom_headers/1).
 
 listen_options() ->
-    [{certfile, undefined},
-     {ciphers, undefined},
+    [{ciphers, undefined},
      {dhfile, undefined},
      {cafile, undefined},
      {protocol_options, undefined},
      {tls, false},
      {tls_compression, false},
-     {captcha, false},
-     {register, false},
-     {web_admin, false},
-     {http_bind, false},
-     {xmlrpc, false},
      {request_handlers, []},
      {tag, <<>>},
      {default_host, undefined},

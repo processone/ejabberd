@@ -30,7 +30,7 @@
 
 -export([start_link/0, init/1]).
 
--define(SHUTDOWN_TIMEOUT, timer:seconds(30)).
+-define(SHUTDOWN_TIMEOUT, timer:minutes(1)).
 
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
@@ -53,10 +53,9 @@ init([]) ->
 	   simple_supervisor(ejabberd_service),
 	   worker(acl),
 	   worker(ejabberd_shaper),
+	   supervisor(ejabberd_db_sup),
 	   supervisor(ejabberd_backend_sup),
 	   supervisor(ejabberd_rdbms),
-	   supervisor(ejabberd_riak_sup),
-	   supervisor(ejabberd_redis_sup),
 	   worker(ejabberd_iq),
 	   worker(ejabberd_router),
 	   worker(ejabberd_router_multicast),

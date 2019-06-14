@@ -100,6 +100,8 @@
 -define(S2S_VHOST, <<"s2s.localhost">>).
 -define(UPLOAD_VHOST, <<"upload.localhost">>).
 
+-define(BACKENDS, [mnesia, redis, mysql, pgsql, sqlite, ldap, extauth, riak]).
+
 insert(Val, N, Tuple) ->
     L = tuple_to_list(Tuple),
     {H, T} = lists:split(N-1, L),

@@ -55,7 +55,7 @@ init(_Host, _Opts) ->
 use_cache(Host, Table) ->
     case mnesia:table_info(Table, storage_type) of
 	disc_only_copies ->
-	    gen_mod:get_module_opt(Host, mod_roster, use_cache);
+	    mod_roster_opt:use_cache(Host);
 	_ ->
 	    false
     end.
@@ -122,10 +122,11 @@ import(LServer, <<"roster_version">>, [LUser, Ver]) ->
     RV = #roster_version{us = {LUser, LServer}, version = Ver},
     mnesia:dirty_write(RV).
 
-need_transform(#roster{usj = {U, S, _}}) when is_list(U) orelse is_list(S) ->
+need_transform({roster, {U, S, _}, _, _, _, _, _, _, _, _})
+  when is_list(U) orelse is_list(S) ->
     ?INFO_MSG("Mnesia table 'roster' will be converted to binary", []),
     true;
-need_transform(#roster_version{us = {U, S}, version = Ver})
+need_transform({roster_version, {U, S}, Ver})
   when is_list(U) orelse is_list(S) orelse is_list(Ver) ->
     ?INFO_MSG("Mnesia table 'roster_version' will be converted to binary", []),
     true;

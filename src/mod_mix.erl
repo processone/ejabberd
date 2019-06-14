@@ -46,7 +46,7 @@
 
 -callback init(binary(), gen_mod:opts()) -> ok | {error, db_failure}.
 -callback set_channel(binary(), binary(), binary(),
-		      binary(), boolean(), binary()) ->
+		      jid:jid(), boolean(), binary()) ->
     ok | {error, db_failure}.
 -callback get_channels(binary(), binary()) ->
     {ok, [binary()]} | {error, db_failure}.
@@ -77,15 +77,20 @@ reload(Host, NewOpts, OldOpts) ->
 depends(_Host, _Opts) ->
     [{mod_mam, hard}].
 
-mod_opt_type(access_create) -> fun acl:access_rules_validator/1;
-mod_opt_type(name) -> fun iolist_to_binary/1;
-mod_opt_type(host) -> fun ejabberd_config:v_host/1;
-mod_opt_type(hosts) -> fun ejabberd_config:v_hosts/1;
-mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end.
+mod_opt_type(access_create) ->
+    econf:acl();
+mod_opt_type(name) ->
+    econf:binary();
+mod_opt_type(host) ->
+    econf:well_known(host, ?MODULE);
+mod_opt_type(hosts) ->
+    econf:well_known(hosts, ?MODULE);
+mod_opt_type(db_type) ->
+    econf:well_known(db_type, ?MODULE).
 
 mod_options(Host) ->
     [{access_create, all},
-     {host, <<"mix.@HOST@">>},
+     {host, <<"mix.", Host/binary>>},
      {hosts, []},
      {name, ?T("Channels")},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)}].
@@ -116,7 +121,7 @@ process_disco_info(#iq{type = get, to = #jid{luser = <<>>} = To,
     ServerHost = ejabberd_router:host_of_route(To#jid.lserver),
     X = ejabberd_hooks:run_fold(disco_info, ServerHost, [],
 				[ServerHost, ?MODULE, <<"">>, Lang]),
-    Name = gen_mod:get_module_opt(ServerHost, ?MODULE, name),
+    Name = mod_mix_opt:name(ServerHost),
     Identity = #identity{category = <<"conference">>,
 			 type = <<"text">>,
 			 name = translate:translate(Lang, Name)},
@@ -247,9 +252,9 @@ process_mam_query(IQ) ->
 %%%===================================================================
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
-    Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
-    MyHosts = gen_mod:get_opt_hosts(Host, Opts),
-    case Mod:init(Host, [{hosts, MyHosts}|Opts]) of
+    Mod = gen_mod:db_mod(Opts, ?MODULE),
+    MyHosts = gen_mod:get_opt_hosts(Opts),
+    case Mod:init(Host, gen_mod:set_opt(hosts, MyHosts, Opts)) of
 	ok ->
 	    lists:foreach(
 	      fun(MyHost) ->
@@ -530,7 +535,7 @@ known_nodes() ->
     [?NS_MIX_NODES_MESSAGES,
      ?NS_MIX_NODES_PARTICIPANTS].
 
--spec filter_nodes(binary()) -> [binary()].
+-spec filter_nodes([binary()]) -> [binary()].
 filter_nodes(Nodes) ->
     lists:filter(
       fun(Node) ->

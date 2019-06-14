@@ -35,6 +35,8 @@
 	 stop_kindly/2, send_service_message_all_mucs/2,
 	 registered_vhosts/0,
 	 reload_config/0,
+	 dump_config/1,
+	 convert_to_yaml/2,
 	 %% Cluster
 	 join_cluster/1, leave_cluster/1, list_cluster/0,
 	 %% Erlang
@@ -152,7 +154,7 @@ get_commands_spec() ->
 			result_desc = "The type of logger module used",
 			result_example = lager,
 			args = [{loglevel, integer}],
-			result = {logger, atom}},
+			result = {res, rescode}},
 
      #ejabberd_commands{name = update_list, tags = [server],
 			desc = "List modified modules that can be updated",
@@ -285,11 +287,18 @@ get_commands_spec() ->
 
      #ejabberd_commands{name = convert_to_yaml, tags = [config],
                         desc = "Convert the input file from Erlang to YAML format",
-                        module = ejabberd_config, function = convert_to_yaml,
+                        module = ?MODULE, function = convert_to_yaml,
 			args_desc = ["Full path to the original configuration file", "And full path to final file"],
 			args_example = ["/etc/ejabberd/ejabberd.cfg", "/etc/ejabberd/ejabberd.yml"],
                         args = [{in, string}, {out, string}],
                         result = {res, rescode}},
+     #ejabberd_commands{name = dump_config, tags = [config],
+			desc = "Dump configuration in YAML format as seen by ejabberd",
+			module = ?MODULE, function = dump_config,
+			args_desc = ["Full path to output file"],
+			args_example = ["/tmp/ejabberd.yml"],
+			args = [{out, string}],
+			result = {res, rescode}},
 
      #ejabberd_commands{name = delete_expired_messages, tags = [purge],
 			desc = "Delete expired offline messages from database",
@@ -407,9 +416,7 @@ rotate_log() ->
     ejabberd_logger:rotate_log().
 
 set_loglevel(LogLevel) ->
-    {module, Module} = ejabberd_logger:set(LogLevel),
-    Module.
-
+    ejabberd_logger:set(LogLevel).
 
 %%%
 %%% Stop Kindly
@@ -454,11 +461,13 @@ send_service_message_all_mucs(Subject, AnnouncementText) ->
     Message = str:format("~s~n~s", [Subject, AnnouncementText]),
     lists:foreach(
       fun(ServerHost) ->
-	      MUCHost = gen_mod:get_module_opt_host(
-			  ServerHost, mod_muc, <<"conference.@HOST@">>),
-	      mod_muc:broadcast_service_message(ServerHost, MUCHost, Message)
+	      MUCHosts = gen_mod:get_module_opt_hosts(ServerHost, mod_muc),
+	      lists:foreach(
+		fun(MUCHost) ->
+			mod_muc:broadcast_service_message(ServerHost, MUCHost, Message)
+		end, MUCHosts)
       end,
-      ejabberd_config:get_myhosts()).
+      ejabberd_option:hosts()).
 
 %%%
 %%% ejabberd_update
@@ -512,10 +521,31 @@ registered_users(Host) ->
     lists:map(fun({U, _S}) -> U end, SUsers).
 
 registered_vhosts() ->
-    ejabberd_config:get_myhosts().
+    ejabberd_option:hosts().
 
 reload_config() ->
-    ejabberd_config:reload_file().
+    case ejabberd_config:reload() of
+	ok -> {ok, ""};
+	Err ->
+	    Reason = ejabberd_config:format_error(Err),
+	    {invalid_config, Reason}
+    end.
+
+dump_config(Path) ->
+    case ejabberd_config:dump(Path) of
+	ok -> {ok, ""};
+	Err ->
+	    Reason = ejabberd_config:format_error(Err),
+	    {invalid_file, Reason}
+    end.
+
+convert_to_yaml(In, Out) ->
+    case ejabberd_config:convert_to_yaml(In, Out) of
+	ok -> {ok, ""};
+	Err ->
+	    Reason = ejabberd_config:format_error(Err),
+	    {invalid_config, Reason}
+    end.
 
 %%%
 %%% Cluster management
@@ -562,13 +592,13 @@ delete_expired_messages() ->
     lists:foreach(
       fun(Host) ->
               {atomic, ok} = mod_offline:remove_expired_messages(Host)
-      end, ejabberd_config:get_myhosts()).
+      end, ejabberd_option:hosts()).
 
 delete_old_messages(Days) ->
     lists:foreach(
       fun(Host) ->
               {atomic, _} = mod_offline:remove_old_messages(Days, Host)
-      end, ejabberd_config:get_myhosts()).
+      end, ejabberd_option:hosts()).
 
 %%%
 %%% Mnesia management
@@ -602,10 +632,6 @@ restore_mnesia(Path) ->
     case ejabberd_admin:restore(Path) of
 	{atomic, _} ->
 	    {ok, ""};
-	{error, Reason} ->
-	    String = io_lib:format("Can't restore backup from ~p at node ~p: ~p",
-				   [filename:absname(Path), node(), Reason]),
-	    {cannot_restore, String};
 	{aborted,{no_exists,Table}} ->
 	    String = io_lib:format("Can't restore backup from ~p at node ~p: Table ~p does not exist.",
 				   [filename:absname(Path), node(), Table]),

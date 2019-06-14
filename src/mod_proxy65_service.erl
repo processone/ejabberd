@@ -35,7 +35,7 @@
 
 -export([start_link/2, reload/3, add_listener/2, process_disco_info/1,
 	 process_disco_items/1, process_vcard/1, process_bytestreams/1,
-	 transform_module_options/1, delete_listener/1]).
+	 delete_listener/1]).
 
 -include("logger.hrl").
 -include("xmpp.hrl").
@@ -60,7 +60,7 @@ reload(Host, NewOpts, OldOpts) ->
 
 init([Host, Opts]) ->
     process_flag(trap_exit, true),
-    MyHosts = gen_mod:get_opt_hosts(Host, Opts),
+    MyHosts = gen_mod:get_opt_hosts(Opts),
     lists:foreach(
       fun(MyHost) ->
 	      gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_DISCO_INFO,
@@ -91,8 +91,8 @@ handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
 handle_cast({reload, ServerHost, NewOpts, OldOpts}, State) ->
-    NewHosts = gen_mod:get_opt_hosts(ServerHost, NewOpts),
-    OldHosts = gen_mod:get_opt_hosts(ServerHost, OldOpts),
+    NewHosts = gen_mod:get_opt_hosts(NewOpts),
+    OldHosts = gen_mod:get_opt_hosts(OldOpts),
     lists:foreach(
       fun(NewHost) ->
 	      ejabberd_router:register_route(NewHost, ServerHost),
@@ -116,8 +116,8 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 add_listener(Host, Opts) ->
     {_, IP, _} = EndPoint = get_endpoint(Host),
-    Opts1 = [{server_host, Host} | Opts],
-    Opts2 = lists:keystore(ip, 1, Opts1, {ip, IP}),
+    Opts1 = gen_mod:set_opt(server_host, Host, Opts),
+    Opts2 = gen_mod:set_opt(ip, IP, Opts1),
     ejabberd_listener:add_listener(EndPoint, mod_proxy65_stream, Opts2).
 
 delete_listener(Host) ->
@@ -132,7 +132,7 @@ process_disco_info(#iq{type = set, lang = Lang} = IQ) ->
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_disco_info(#iq{type = get, to = To, lang = Lang} = IQ) ->
     Host = ejabberd_router:host_of_route(To#jid.lserver),
-    Name = gen_mod:get_module_opt(Host, mod_proxy65, name),
+    Name = mod_proxy65_opt:name(Host),
     Info = ejabberd_hooks:run_fold(disco_info, Host,
 				   [], [Host, ?MODULE, <<"">>, <<"">>]),
     xmpp:make_iq_result(
@@ -164,7 +164,7 @@ process_vcard(#iq{type = get, lang = Lang} = IQ) ->
 process_bytestreams(#iq{type = get, from = JID, to = To, lang = Lang} = IQ) ->
     Host = To#jid.lserver,
     ServerHost = ejabberd_router:host_of_route(Host),
-    ACL = gen_mod:get_module_opt(ServerHost, mod_proxy65, access),
+    ACL = mod_proxy65_opt:access(ServerHost),
     case acl:match_rule(ServerHost, ACL, JID) of
 	allow ->
 	    StreamHost = get_streamhost(Host, ServerHost),
@@ -178,7 +178,7 @@ process_bytestreams(#iq{type = set, lang = Lang,
     Why = {bad_attr_value, <<"sid">>, <<"query">>, ?NS_BYTESTREAMS},
     Txt = xmpp:io_format_error(Why),
     xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
-process_bytestreams(#iq{type = set, lang = Lang, 
+process_bytestreams(#iq{type = set, lang = Lang,
 			sub_els = [#bytestreams{activate = undefined}]} = IQ) ->
     Why = {missing_cdata, <<"">>, <<"activate">>, ?NS_BYTESTREAMS},
     Txt = xmpp:io_format_error(Why),
@@ -187,7 +187,7 @@ process_bytestreams(#iq{type = set, lang = Lang, from = InitiatorJID, to = To,
 			sub_els = [#bytestreams{activate = TargetJID,
 						sid = SID}]} = IQ) ->
     ServerHost = ejabberd_router:host_of_route(To#jid.lserver),
-    ACL = gen_mod:get_module_opt(ServerHost, mod_proxy65, access),
+    ACL = mod_proxy65_opt:access(ServerHost),
     case acl:match_rule(ServerHost, ACL, InitiatorJID) of
 	allow ->
 	    Node = ejabberd_cluster:get_node_by_id(To#jid.lresource),
@@ -226,24 +226,13 @@ process_bytestreams(#iq{type = set, lang = Lang, from = InitiatorJID, to = To,
 %%%-------------------------
 %%% Auxiliary functions.
 %%%-------------------------
-transform_module_options(Opts) ->
-    lists:map(
-      fun({ip, IP}) when is_tuple(IP) ->
-              {ip, misc:ip_to_list(IP)};
-         ({hostname, IP}) when is_tuple(IP) ->
-              {hostname, misc:ip_to_list(IP)};
-         (Opt) ->
-              Opt
-      end, Opts).
-
 -spec get_streamhost(binary(), binary()) -> streamhost().
 get_streamhost(Host, ServerHost) ->
     {Port, IP, _} = get_endpoint(ServerHost),
-    HostName0 = case gen_mod:get_module_opt(ServerHost, mod_proxy65, hostname) of
-		    undefined -> misc:ip_to_list(IP);
-		    Val -> Val
-		end,
-    HostName = misc:expand_keyword(<<"@HOST@">>, HostName0, ServerHost),
+    HostName = case mod_proxy65_opt:hostname(ServerHost) of
+		   undefined -> misc:ip_to_list(IP);
+		   Val -> Val
+	       end,
     Resource = ejabberd_cluster:node_id(),
     #streamhost{jid = jid:make(<<"">>, Host, Resource),
 		host = HostName,
@@ -251,8 +240,8 @@ get_streamhost(Host, ServerHost) ->
 
 -spec get_endpoint(binary()) -> {inet:port_number(), inet:ip_address(), tcp}.
 get_endpoint(Host) ->
-    Port = gen_mod:get_module_opt(Host, mod_proxy65, port),
-    IP = case gen_mod:get_module_opt(Host, mod_proxy65, ip) of
+    Port = mod_proxy65_opt:port(Host),
+    IP = case mod_proxy65_opt:ip(Host) of
 	     undefined -> get_my_ip();
 	     Addr -> Addr
 	 end,
@@ -267,7 +256,7 @@ get_my_ip() ->
     end.
 
 max_connections(ServerHost) ->
-    gen_mod:get_module_opt(ServerHost, mod_proxy65, max_connections).
+    mod_proxy65_opt:max_connections(ServerHost).
 
 register_handlers(Host) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_DISCO_INFO,

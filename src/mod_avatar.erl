@@ -35,7 +35,8 @@
 -include("logger.hrl").
 -include("pubsub.hrl").
 
--type convert_rules() :: {default | eimp:img_type(), eimp:img_type()}.
+-opaque convert_rule() :: {default | eimp:img_type(), eimp:img_type()}.
+-export_type([convert_rule/0]).
 
 %%%===================================================================
 %%% API
@@ -75,7 +76,7 @@ pubsub_publish_item(LServer, ?NS_AVATAR_METADATA,
 	#avatar_meta{info = []} ->
 	    delete_vcard_avatar(From);
 	#avatar_meta{info = Info} ->
-	    Rules = get_converting_rules(LServer),
+	    Rules = mod_avatar_opt:convert(LServer),
 	    case get_meta_info(Info, Rules) of
 		#avatar_info{type = MimeType, id = ID, url = <<"">>} = I ->
 		    case get_avatar_data(Host, ID) of
@@ -168,7 +169,7 @@ get_sm_features(Acc, _From, _To, _Node, _Lang) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
--spec get_meta_info([avatar_info()], convert_rules()) -> avatar_info().
+-spec get_meta_info([avatar_info()], [convert_rule()]) -> avatar_info().
 get_meta_info(Info, Rules) ->
     case lists:foldl(
 	   fun(_, #avatar_info{} = Acc) ->
@@ -317,7 +318,7 @@ publish_avatar(#iq{from = JID} = IQ, Meta, MimeType, Data, ItemID) ->
 			    {error, eimp:error_reason() | base64_error} |
 			    pass.
 convert_avatar(LUser, LServer, VCard) ->
-    case get_converting_rules(LServer) of
+    case mod_avatar_opt:convert(LServer) of
 	[] ->
 	    pass;
 	Rules ->
@@ -329,19 +330,19 @@ convert_avatar(LUser, LServer, VCard) ->
 	    end
     end.
 
--spec convert_avatar(binary(), binary(), binary(), convert_rules()) ->
-			    {ok, eimp:img_type(), binary()} |
+-spec convert_avatar(binary(), binary(), binary(), [convert_rule()]) ->
+			    {ok, binary(), binary()} |
 			    {error, eimp:error_reason()} |
 			    pass.
 convert_avatar(LUser, LServer, Data, Rules) ->
     Type = get_type(Data),
     NewType = convert_to_type(Type, Rules),
-    if NewType == undefined orelse Type == NewType ->
+    if NewType == undefined ->
 	    pass;
        true ->
 	    ?DEBUG("Converting avatar of ~s@~s: ~s -> ~s",
 		   [LUser, LServer, Type, NewType]),
-	    RateLimit = gen_mod:get_module_opt(LServer, ?MODULE, rate_limit),
+	    RateLimit = mod_avatar_opt:rate_limit(LServer),
 	    Opts = [{limit_by, {LUser, LServer}},
 		    {rate_limit, RateLimit}],
 	    case eimp:convert(Data, NewType, Opts) of
@@ -401,15 +402,11 @@ stop_with_error(Lang, Reason) ->
     Txt = eimp:format_error(Reason),
     {stop, xmpp:err_internal_server_error(Txt, Lang)}.
 
--spec get_converting_rules(binary()) -> convert_rules().
-get_converting_rules(LServer) ->
-    gen_mod:get_module_opt(LServer, ?MODULE, convert).
-
 -spec get_type(binary()) -> eimp:img_type() | unknown.
 get_type(Data) ->
     eimp:get_type(Data).
 
--spec convert_to_type(eimp:img_type() | unknown, convert_rules()) ->
+-spec convert_to_type(eimp:img_type() | unknown, [convert_rule()]) ->
 			     eimp:img_type() | undefined.
 convert_to_type(unknown, _Rules) ->
     undefined;
@@ -417,6 +414,8 @@ convert_to_type(Type, Rules) ->
     case proplists:get_value(Type, Rules) of
 	undefined ->
 	    proplists:get_value(default, Rules);
+	Type ->
+	    undefined;
 	T ->
 	    T
     end.
@@ -435,38 +434,23 @@ decode_mime_type(MimeType) ->
 encode_mime_type(Type) ->
     <<"image/", (atom_to_binary(Type, latin1))/binary>>.
 
--spec fail(atom()) -> no_return().
-fail(Format) ->
-    FormatS = case Format of
-		  webp -> "WebP";
-		  png -> "PNG";
-		  jpeg -> "JPEG";
-		  gif -> "GIF";
-		  _ -> ""
-	      end,
-    if FormatS /= "" ->
-	    ?WARNING_MSG("ejabberd is not compiled with ~s support", [FormatS]);
-       true ->
-	    ok
-    end,
-    erlang:error(badarg).
-
-mod_opt_type({convert, From}) ->
-    fun(To) when is_atom(To), To /= From ->
-	    case eimp:is_supported(From) orelse From == default of
-		false ->
-		    fail(From);
-		true ->
-		    case eimp:is_supported(To) orelse To == undefined of
-			false -> fail(To);
-			true -> To
-		    end
-	    end
-    end;
+mod_opt_type(convert) ->
+    Formats = eimp:supported_formats(),
+    econf:and_then(
+      fun(_) when Formats == [] ->
+	      econf:fail(eimp_error);
+	 (V) ->
+	      V
+      end,
+      econf:options(
+	maps:from_list(
+	  [{Type, econf:enum(Formats)}
+	   || Type <- [default|Formats]])));
 mod_opt_type(rate_limit) ->
-    fun(I) when is_integer(I), I > 0 -> I end.
+    econf:pos_int().
 
+-spec mod_options(binary()) -> [{convert, [?MODULE:convert_rule()]} |
+				{atom(), any()}].
 mod_options(_) ->
     [{rate_limit, 10},
-     {convert,
-      [{T, undefined} || T <- [default|eimp:supported_formats()]]}].
+     {convert, []}].

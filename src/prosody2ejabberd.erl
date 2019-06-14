@@ -528,11 +528,11 @@ find_serverhost(Host) ->
 	  fun(ServerHost) ->
 		  case gen_mod:is_loaded(ServerHost, mod_muc) of
 		      true ->
-			  Host == gen_mod:get_module_opt_host(ServerHost, mod_muc, <<"conference.@HOST@">>);
+			  lists:member(Host, gen_mod:get_module_opt_hosts(ServerHost, mod_muc));
 		      false ->
 			  false
 		  end
-	  end, ejabberd_config:get_myhosts()),
+	  end, ejabberd_option:hosts()),
     ServerHost.
 
 deserialize(L) ->

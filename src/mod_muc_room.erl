@@ -163,10 +163,7 @@ normal_state({route, <<"">>,
 	true when Type == groupchat ->
 	    Activity = get_user_activity(From, StateData),
 	    Now = erlang:system_time(microsecond),
-	    MinMessageInterval = trunc(gen_mod:get_module_opt(
-					 StateData#state.server_host,
-					 mod_muc, min_message_interval)
-				       * 1000000),
+	    MinMessageInterval = trunc(mod_muc_opt:min_message_interval(StateData#state.server_host) * 1000000),
 	    Size = element_size(Packet),
 	    {MessageShaper, MessageShaperInterval} =
 		ejabberd_shaper:update(Activity#activity.message_shaper, Size),
@@ -347,9 +344,7 @@ normal_state({route, Nick, #presence{from = From} = Packet}, StateData) ->
     Activity = get_user_activity(From, StateData),
     Now = erlang:system_time(microsecond),
     MinPresenceInterval =
-	trunc(gen_mod:get_module_opt(StateData#state.server_host,
-				     mod_muc, min_presence_interval)
-	      * 1000000),
+	trunc(mod_muc_opt:min_presence_interval(StateData#state.server_host) * 1000000),
     if (Now >= Activity#activity.presence_time + MinPresenceInterval)
        and (Activity#activity.presence == undefined) ->
 	    NewActivity = Activity#activity{presence_time = Now},
@@ -415,8 +410,10 @@ normal_state({route, ToNick,
 				    PrivMsg = xmpp:set_from(
 						xmpp:set_subtag(Packet, X),
 						FromNickJID),
-				    [ejabberd_router:route(xmpp:set_to(PrivMsg, ToJID))
-				     || ToJID <- ToJIDs];
+				    lists:foreach(
+				      fun(ToJID) ->
+					      ejabberd_router:route(xmpp:set_to(PrivMsg, ToJID))
+				      end, ToJIDs);
 			       true ->
 				    ErrText = <<"It is not allowed to send private messages">>,
 				    Err = xmpp:err_forbidden(ErrText, Lang),
@@ -493,9 +490,7 @@ handle_event({service_message, Msg}, _StateName,
     {next_state, normal_state, NSD};
 handle_event({destroy, Reason}, _StateName,
 	     StateData) ->
-    {result, undefined, stop} =
-	destroy_room(#muc_destroy{xmlns = ?NS_MUC_OWNER, reason = Reason},
-		     StateData),
+    _ = destroy_room(#muc_destroy{xmlns = ?NS_MUC_OWNER, reason = Reason}, StateData),
     ?INFO_MSG("Destroyed MUC room ~s with reason: ~p",
 	      [jid:encode(StateData#state.jid), Reason]),
     add_to_log(room_existence, destroyed, StateData),
@@ -693,8 +688,7 @@ handle_info({iq_reply, timeout, IQ}, StateName, StateData) ->
     ejabberd_router:route_error(IQ, Err),
     {next_state, StateName, StateData};
 handle_info(config_reloaded, StateName, StateData) ->
-    Max = gen_mod:get_module_opt(StateData#state.server_host,
-				 mod_muc, history_size),
+    Max = mod_muc_opt:history_size(StateData#state.server_host),
     History1 = StateData#state.history,
     Q1 = History1#lqueue.queue,
     Q2 = case p1_queue:len(Q1) of
@@ -1377,7 +1371,7 @@ get_affiliation(#jid{} = JID, StateData) ->
 get_affiliation(LJID, StateData) ->
     get_affiliation(jid:make(LJID), StateData).
 
--spec do_get_affiliation(jid(), state()) -> affiliation().
+-spec do_get_affiliation(jid(), state()) -> affiliation() | {affiliation(), binary()}.
 do_get_affiliation(JID, #state{config = #config{persistent = false}} = StateData) ->
     do_get_affiliation_fallback(JID, StateData);
 do_get_affiliation(JID, StateData) ->
@@ -1394,7 +1388,7 @@ do_get_affiliation(JID, StateData) ->
 	    Affiliation
     end.
 
--spec do_get_affiliation_fallback(jid(), state()) -> affiliation().
+-spec do_get_affiliation_fallback(jid(), state()) -> affiliation() | {affiliation(),  binary()}.
 do_get_affiliation_fallback(JID, StateData) ->
     LJID = jid:tolower(JID),
     try maps:get(LJID, StateData#state.affiliations)
@@ -1534,29 +1528,19 @@ get_max_users(StateData) ->
 
 -spec get_service_max_users(state()) -> pos_integer().
 get_service_max_users(StateData) ->
-    gen_mod:get_module_opt(StateData#state.server_host,
-			   mod_muc, max_users).
+    mod_muc_opt:max_users(StateData#state.server_host).
 
 -spec get_max_users_admin_threshold(state()) -> pos_integer().
 get_max_users_admin_threshold(StateData) ->
-    gen_mod:get_module_opt(StateData#state.server_host,
-			   mod_muc, max_users_admin_threshold).
+    mod_muc_opt:max_users_admin_threshold(StateData#state.server_host).
 
 -spec room_queue_new(binary(), ejabberd_shaper:shaper(), _) -> p1_queue:queue().
 room_queue_new(ServerHost, Shaper, QueueType) ->
     HaveRoomShaper = Shaper /= none,
-    HaveMessageShaper = gen_mod:get_module_opt(
-			  ServerHost, mod_muc,
-			  user_message_shaper) /= none,
-    HavePresenceShaper = gen_mod:get_module_opt(
-			   ServerHost, mod_muc,
-			   user_presence_shaper) /= none,
-    HaveMinMessageInterval = gen_mod:get_module_opt(
-			       ServerHost, mod_muc,
-			       min_message_interval) /= 0,
-    HaveMinPresenceInterval = gen_mod:get_module_opt(
-				ServerHost, mod_muc,
-				min_presence_interval) /= 0,
+    HaveMessageShaper = mod_muc_opt:user_message_shaper(ServerHost) /= none,
+    HavePresenceShaper = mod_muc_opt:user_presence_shaper(ServerHost) /= none,
+    HaveMinMessageInterval = mod_muc_opt:min_message_interval(ServerHost) /= 0,
+    HaveMinPresenceInterval = mod_muc_opt:min_presence_interval(ServerHost) /= 0,
     if HaveRoomShaper or HaveMessageShaper or HavePresenceShaper
        or HaveMinMessageInterval or HaveMinPresenceInterval ->
 	    p1_queue:new(QueueType);
@@ -1572,11 +1556,9 @@ get_user_activity(JID, StateData) ->
       {ok, _P, A} -> A;
       error ->
 	  MessageShaper =
-	      ejabberd_shaper:new(gen_mod:get_module_opt(StateData#state.server_host,
-						mod_muc, user_message_shaper)),
+	      ejabberd_shaper:new(mod_muc_opt:user_message_shaper(StateData#state.server_host)),
 	  PresenceShaper =
-	      ejabberd_shaper:new(gen_mod:get_module_opt(StateData#state.server_host,
-						mod_muc, user_presence_shaper)),
+	      ejabberd_shaper:new(mod_muc_opt:user_presence_shaper(StateData#state.server_host)),
 	  #activity{message_shaper = MessageShaper,
 		    presence_shaper = PresenceShaper}
     end.
@@ -1584,13 +1566,9 @@ get_user_activity(JID, StateData) ->
 -spec store_user_activity(jid(), #activity{}, state()) -> state().
 store_user_activity(JID, UserActivity, StateData) ->
     MinMessageInterval =
-	trunc(gen_mod:get_module_opt(StateData#state.server_host,
-				     mod_muc, min_message_interval)
-	      * 1000),
+	trunc(mod_muc_opt:min_message_interval(StateData#state.server_host) * 1000),
     MinPresenceInterval =
-	trunc(gen_mod:get_module_opt(StateData#state.server_host,
-				     mod_muc, min_presence_interval)
-	      * 1000),
+	trunc(mod_muc_opt:min_presence_interval(StateData#state.server_host) * 1000),
     Key = jid:tolower(JID),
     Now = erlang:system_time(microsecond),
     Activity1 = clean_treap(StateData#state.activity,
@@ -1710,12 +1688,7 @@ update_online_user(JID, #user{nick = Nick} = User, StateData) ->
 
 set_subscriber(JID, Nick, Nodes,
 	       #state{room = Room, host = Host, server_host = ServerHost} = StateData) ->
-    BareJID = case JID of
-		  #jid{} -> jid:remove_resource(JID);
-		  _ ->
-		      ?ERROR_MSG("Invalid subscriber JID in set_subscriber ~p", [JID]),
-		      jid:remove_resource(jid:make(JID))
-	      end,
+    BareJID = jid:remove_resource(JID),
     LBareJID = jid:tolower(BareJID),
     Subscribers = maps:put(LBareJID,
 			   #subscriber{jid = BareJID,
@@ -1893,8 +1866,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 						 StateData),
     NConferences = tab_count_user(From, StateData),
     MaxConferences =
-	gen_mod:get_module_opt(StateData#state.server_host,
-			       mod_muc, max_user_conferences),
+	mod_muc_opt:max_user_conferences(StateData#state.server_host),
     Collision = nick_collision(From, Nick, StateData),
     IsSubscribeRequest = not is_record(Packet, presence),
     case {(ServiceAffiliation == owner orelse
@@ -2132,7 +2104,7 @@ extract_password(#iq{} = IQ) ->
 	    false
     end.
 
--spec get_history(binary(), stanza(), state()) -> lqueue().
+-spec get_history(binary(), stanza(), state()) -> [lqueue_elem()].
 get_history(Nick, Packet, #state{history = History}) ->
     case xmpp:get_subtag(Packet, #muc{}) of
 	#muc{history = #muc_history{} = MUCHistory} ->
@@ -2144,7 +2116,7 @@ get_history(Nick, Packet, #state{history = History}) ->
     end.
 
 -spec filter_history(p1_queue:queue(), erlang:timestamp(),
-		     binary(), muc_history()) -> list().
+		     binary(), muc_history()) -> [lqueue_elem()].
 filter_history(Queue, Now, Nick,
 	       #muc_history{since = Since,
 			    seconds = Seconds,
@@ -2169,9 +2141,7 @@ filter_history(Queue, Now, Nick,
 
 -spec is_room_overcrowded(state()) -> boolean().
 is_room_overcrowded(StateData) ->
-    MaxUsersPresence = gen_mod:get_module_opt(
-			 StateData#state.server_host,
-			 mod_muc, max_users_presence),
+    MaxUsersPresence = mod_muc_opt:max_users_presence(StateData#state.server_host),
     maps:size(StateData#state.users) > MaxUsersPresence.
 
 -spec presence_broadcast_allowed(jid(), state()) -> boolean().
@@ -2527,7 +2497,7 @@ status_codes(_IsInitialPresence, _IsSelfPresence = false, _StateData) -> [].
 lqueue_new(Max, Type) ->
     #lqueue{queue = p1_queue:new(Type), max = Max}.
 
--spec lqueue_in(term(), lqueue()) -> lqueue().
+-spec lqueue_in(lqueue_elem(), lqueue()) -> lqueue().
 %% If the message queue limit is set to 0, do not store messages.
 lqueue_in(_Item, LQ = #lqueue{max = 0}) -> LQ;
 %% Otherwise, rotate messages in the queue store.
@@ -2575,7 +2545,7 @@ add_message_to_history(FromNick, FromJID, Packet, StateData) ->
 	    StateData
     end.
 
--spec send_history(jid(), list(), state()) -> ok.
+-spec send_history(jid(), [lqueue_elem()], state()) -> ok.
 send_history(JID, History, StateData) ->
     lists:foreach(
       fun({Nick, Packet, _HaveSubject, _TimeStamp, _Size}) ->
@@ -3155,6 +3125,7 @@ get_actor_nick(MJID, StateData) ->
     catch _:{badkey, _} -> <<"">>
     end.
 
+-spec convert_legacy_fields([xdata_field()]) -> [xdata_field()].
 convert_legacy_fields(Fs) ->
     lists:map(
       fun(#xdata_field{var = Var} = F) ->
@@ -3300,12 +3271,8 @@ is_allowed_mam_change(Options, StateData, From) ->
 is_allowed_room_name_desc_limits(Options, StateData) ->
     RoomName = proplists:get_value(roomname, Options, <<"">>),
     RoomDesc = proplists:get_value(roomdesc, Options, <<"">>),
-    MaxRoomName = gen_mod:get_module_opt(
-		    StateData#state.server_host,
-		    mod_muc, max_room_name),
-    MaxRoomDesc = gen_mod:get_module_opt(
-		    StateData#state.server_host,
-		    mod_muc, max_room_desc),
+    MaxRoomName = mod_muc_opt:max_room_name(StateData#state.server_host),
+    MaxRoomDesc = mod_muc_opt:max_room_desc(StateData#state.server_host),
     (byte_size(RoomName) =< MaxRoomName)
 	andalso (byte_size(RoomDesc) =< MaxRoomDesc).
 
@@ -3329,8 +3296,7 @@ is_password_settings_correct(Options, StateData) ->
 -spec get_default_room_maxusers(state()) -> non_neg_integer().
 get_default_room_maxusers(RoomState) ->
     DefRoomOpts =
-	gen_mod:get_module_opt(RoomState#state.server_host,
-			       mod_muc, default_room_options),
+	mod_muc_opt:default_room_options(RoomState#state.server_host),
     RoomState2 = set_opts(DefRoomOpts, RoomState),
     (RoomState2#state.config)#config.max_users.
 
@@ -3428,6 +3394,7 @@ set_config(Options, StateData, Lang) ->
 	    Err
     end.
 
+-spec get_config_opt_name(pos_integer()) -> atom().
 get_config_opt_name(Pos) ->
     Fs = [config|record_info(fields, config)],
     lists:nth(Pos, Fs).
@@ -3736,6 +3703,7 @@ set_opts([{Opt, Val} | Opts], StateData) ->
 	  end,
     set_opts(Opts, NSD).
 
+-spec set_vcard_xupdate(state()) -> state().
 set_vcard_xupdate(#state{config =
 			     #config{vcard = VCardRaw,
 				     vcard_xupdate = undefined} = Config} = State)
@@ -4470,7 +4438,7 @@ send_wrapped(From, To, Packet, Node, State) ->
 		    case lists:member(Node, Nodes) of
 			true ->
 			    MamEnabled = (State#state.config)#config.mam,
-			    Id = case xmpp:get_subtag(Packet, #stanza_id{}) of
+			    Id = case xmpp:get_subtag(Packet, #stanza_id{by = #jid{}}) of
 				     #stanza_id{id = Id2} ->
 					 Id2;
 				     _ ->

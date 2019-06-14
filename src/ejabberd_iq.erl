@@ -1,7 +1,7 @@
 %%%-------------------------------------------------------------------
 %%% File    : ejabberd_iq.erl
 %%% Author  : Evgeny Khramtsov <ekhramtsov@process-one.net>
-%%% Purpose : 
+%%% Purpose :
 %%% Created : 10 Nov 2017 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%
@@ -70,7 +70,7 @@ dispatch(_) ->
 %%% gen_server callbacks
 %%%===================================================================
 init([]) ->
-    ets:new(?MODULE, [named_table, ordered_set, public]),
+    _ = ets:new(?MODULE, [named_table, ordered_set, public]),
     {ok, #state{}}.
 
 handle_call(Request, From, State) ->
@@ -166,7 +166,7 @@ decode_id(_) ->
 
 -spec calc_checksum(binary()) -> binary().
 calc_checksum(Data) ->
-    Key = ejabberd_config:get_option(shared_key),
+    Key = ejabberd_config:get_shared_key(),
     base64:encode(crypto:hash(sha, <<Data/binary, Key/binary>>)).
 
 -spec callback(atom() | pid(), #iq{} | timeout, term()) -> any().

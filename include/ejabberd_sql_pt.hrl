@@ -17,19 +17,5 @@
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
-
--define(SQL_MARK, sql__mark_).
--define(SQL(SQL), ?SQL_MARK(SQL)).
-
--define(SQL_UPSERT_MARK, sql_upsert__mark_).
--define(SQL_UPSERT(Host, Table, Fields),
-        ejabberd_sql:sql_query(Host, ?SQL_UPSERT_MARK(Table, Fields))).
--define(SQL_UPSERT_T(Table, Fields),
-        ejabberd_sql:sql_query_t(?SQL_UPSERT_MARK(Table, Fields))).
-
--define(SQL_INSERT_MARK, sql_insert__mark_).
--define(SQL_INSERT(Table, Fields), ?SQL_INSERT_MARK(Table, Fields)).
-
--record(sql_query, {hash, format_query, format_res, args, loc}).
-
--record(sql_escape, {string, integer, boolean, in_array_string}).
+-compile([{parse_transform, ejabberd_sql_pt}]).
+-include("ejabberd_sql.hrl").

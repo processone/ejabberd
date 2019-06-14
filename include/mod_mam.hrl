@@ -19,12 +19,12 @@
 %%%----------------------------------------------------------------------
 
 -record(archive_msg,
-	{us = {<<"">>, <<"">>}                :: {binary(), binary()} | '$2',
-	 id = <<>>                            :: binary() | '_',
-	 timestamp = erlang:timestamp()       :: erlang:timestamp() | '_' | '$1',
-	 peer = {<<"">>, <<"">>, <<"">>}      :: ljid() | '_' | '$3' | undefined,
-	 bare_peer = {<<"">>, <<"">>, <<"">>} :: ljid() | '_' | '$3',
-	 packet = #xmlel{}                    :: xmlel() | message() | '_',
+	{us = {<<"">>, <<"">>}                :: {binary(), binary()},
+	 id = <<>>                            :: binary(),
+	 timestamp = erlang:timestamp()       :: erlang:timestamp(),
+	 peer = {<<"">>, <<"">>, <<"">>}      :: ljid() | undefined,
+	 bare_peer = {<<"">>, <<"">>, <<"">>} :: ljid(),
+	 packet = #xmlel{}                    :: xmlel() | message(),
 	 nick = <<"">>                        :: binary(),
 	 type = chat                          :: chat | groupchat}).
 

@@ -81,7 +81,7 @@ update_sql() ->
                   _ ->
                       update_sql(Host)
               end
-      end, ejabberd_config:get_myhosts()),
+      end, ejabberd_option:hosts()),
     ok.
 
 -record(state, {host :: binary(),
@@ -90,7 +90,7 @@ update_sql() ->
 
 update_sql(Host) ->
     LHost = jid:nameprep(Host),
-    DBType = ejabberd_config:get_option({sql_type, LHost}, undefined),
+    DBType = ejabberd_option:sql_type(LHost),
     IsSupported =
         case DBType of
             pgsql -> true;

@@ -85,7 +85,7 @@
 -optional_callbacks([use_cache/2, cache_nodes/1]).
 
 start(Host, Opts) ->
-    Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
+    Mod = gen_mod:db_mod(Opts, ?MODULE),
     Mod:init(Host, Opts),
     init_cache(Mod, Host, Opts),
     ejabberd_hooks:add(roster_get, Host, ?MODULE,
@@ -132,8 +132,8 @@ stop(Host) ->
 				     ?NS_ROSTER).
 
 reload(Host, NewOpts, OldOpts) ->
-    NewMod = gen_mod:db_mod(Host, NewOpts, ?MODULE),
-    OldMod = gen_mod:db_mod(Host, OldOpts, ?MODULE),
+    NewMod = gen_mod:db_mod(NewOpts, ?MODULE),
+    OldMod = gen_mod:db_mod(OldOpts, ?MODULE),
     if NewMod /= OldMod ->
 	    NewMod:init(Host, NewOpts);
        true ->
@@ -172,7 +172,7 @@ process_local_iq(#iq{type = set, from = From, lang = Lang,
 	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
 	false ->
 	    #jid{lserver = LServer} = From,
-	    Access = gen_mod:get_module_opt(LServer, ?MODULE, access),
+	    Access = mod_roster_opt:access(LServer),
 	    case acl:match_rule(LServer, Access, From) of
 		deny ->
 		    Txt = <<"Access denied by service policy">>,
@@ -205,10 +205,10 @@ roster_hash(Items) ->
 					      <- Items]))).
 
 roster_versioning_enabled(Host) ->
-    gen_mod:get_module_opt(Host, ?MODULE, versioning).
+    mod_roster_opt:versioning(Host).
 
 roster_version_on_db(Host) ->
-    gen_mod:get_module_opt(Host, ?MODULE, store_current_id).
+    mod_roster_opt:store_current_id(Host).
 
 %% Returns a list that may contain an xmlelement with the XEP-237 feature if it's enabled.
 -spec get_versioning_feature([xmpp_element()], binary()) -> [xmpp_element()].
@@ -489,8 +489,7 @@ push_item(To, OldItem, NewItem) ->
     #jid{luser = LUser, lserver = LServer} = To,
     Ver = case roster_versioning_enabled(LServer) of
 	      true -> roster_version(LServer, LUser);
-	      false -> undefined;
-	      undefined -> undefined
+	      false -> undefined
 	  end,
     lists:foreach(
       fun(Resource) ->
@@ -1011,7 +1010,7 @@ build_contact_jid_td(RosterJID) ->
 		 of
 	       {<<"">>, _} -> <<"">>;
 	       {CUser, CServer} ->
-		   case lists:member(CServer, ejabberd_config:get_myhosts()) of
+		   case lists:member(CServer, ejabberd_option:hosts()) of
 		     false -> <<"">>;
 		     true ->
 			 <<"/admin/server/", CServer/binary, "/user/",
@@ -1129,9 +1128,9 @@ init_cache(Mod, Host, Opts) ->
 
 -spec cache_opts(gen_mod:opts()) -> [proplists:property()].
 cache_opts(Opts) ->
-    MaxSize = gen_mod:get_opt(cache_size, Opts),
-    CacheMissed = gen_mod:get_opt(cache_missed, Opts),
-    LifeTime = case gen_mod:get_opt(cache_life_time, Opts) of
+    MaxSize = mod_roster_opt:cache_size(Opts),
+    CacheMissed = mod_roster_opt:cache_missed(Opts),
+    LifeTime = case mod_roster_opt:cache_life_time(Opts) of
 		   infinity -> infinity;
 		   I -> timer:seconds(I)
 	       end,
@@ -1141,7 +1140,7 @@ cache_opts(Opts) ->
 use_cache(Mod, Host, Table) ->
     case erlang:function_exported(Mod, use_cache, 2) of
 	true -> Mod:use_cache(Host, Table);
-	false -> gen_mod:get_module_opt(Host, ?MODULE, use_cache)
+	false -> mod_roster_opt:use_cache(Host)
     end.
 
 -spec cache_nodes(module(), binary()) -> [node()].
@@ -1215,25 +1214,28 @@ import(LServer, {sql, _}, DBType, <<"roster_version">>, [LUser, Ver]) ->
     Mod:import(LServer, <<"roster_version">>, [LUser, Ver]).
 
 mod_opt_type(access) ->
-    fun acl:access_rules_validator/1;
-mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
+    econf:acl();
 mod_opt_type(store_current_id) ->
-    fun (B) when is_boolean(B) -> B end;
+    econf:bool();
 mod_opt_type(versioning) ->
-    fun (B) when is_boolean(B) -> B end;
-mod_opt_type(O) when O == cache_life_time; O == cache_size ->
-    fun (I) when is_integer(I), I > 0 -> I;
-        (infinity) -> infinity
-    end;
-mod_opt_type(O) when O == use_cache; O == cache_missed ->
-    fun (B) when is_boolean(B) -> B end.
+    econf:bool();
+mod_opt_type(db_type) ->
+    econf:well_known(db_type, ?MODULE);
+mod_opt_type(use_cache) ->
+    econf:well_known(use_cache, ?MODULE);
+mod_opt_type(cache_size) ->
+    econf:well_known(cache_size, ?MODULE);
+mod_opt_type(cache_missed) ->
+    econf:well_known(cache_missed, ?MODULE);
+mod_opt_type(cache_life_time) ->
+    econf:well_known(cache_life_time, ?MODULE).
 
 mod_options(Host) ->
     [{access, all},
      {store_current_id, false},
      {versioning, false},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
-     {use_cache, ejabberd_config:use_cache(Host)},
-     {cache_size, ejabberd_config:cache_size(Host)},
-     {cache_missed, ejabberd_config:cache_missed(Host)},
-     {cache_life_time, ejabberd_config:cache_life_time(Host)}].
+     {use_cache, ejabberd_option:use_cache(Host)},
+     {cache_size, ejabberd_option:cache_size(Host)},
+     {cache_missed, ejabberd_option:cache_missed(Host)},
+     {cache_life_time, ejabberd_option:cache_life_time(Host)}].

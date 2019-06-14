@@ -21,7 +21,6 @@
 %%%----------------------------------------------------------------------
 -module(mod_mix_mnesia).
 -behaviour(mod_mix).
--compile([{parse_transform, ejabberd_sql_pt}]).
 
 %% API
 -export([init/2]).

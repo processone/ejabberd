@@ -78,8 +78,8 @@ check_packet(Acc, _, _, _) ->
     Acc.
 
 update(Server, JID, Dir) ->
-    StormCount = gen_mod:get_module_opt(Server, ?MODULE, count),
-    TimeInterval = gen_mod:get_module_opt(Server, ?MODULE, interval),
+    StormCount = mod_pres_counter_opt:count(Server),
+    TimeInterval = mod_pres_counter_opt:interval(Server),
     TimeStamp = erlang:system_time(second),
     case read(Dir) of
       undefined ->
@@ -123,9 +123,9 @@ read(K) -> get({pres_counter, K}).
 write(K, V) -> put({pres_counter, K}, V).
 
 mod_opt_type(count) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
+    econf:pos_int();
 mod_opt_type(interval) ->
-    fun (I) when is_integer(I), I > 0 -> I end.
+    econf:pos_int().
 
 mod_options(_) ->
     [{count, 5}, {interval, 60}].

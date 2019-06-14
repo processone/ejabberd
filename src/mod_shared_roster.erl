@@ -71,7 +71,7 @@
 -callback remove_user_from_group(binary(), {binary(), binary()}, binary()) -> {atomic, any()}.
 
 start(Host, Opts) ->
-    Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
+    Mod = gen_mod:db_mod(Opts, ?MODULE),
     Mod:init(Host, Opts),
     ejabberd_hooks:add(webadmin_menu_host, Host, ?MODULE,
 		       webadmin_menu, 70),
@@ -122,8 +122,8 @@ stop(Host) ->
 			  50).
 
 reload(Host, NewOpts, OldOpts) ->
-    NewMod = gen_mod:db_mod(Host, NewOpts, ?MODULE),
-    OldMod = gen_mod:db_mod(Host, OldOpts, ?MODULE),
+    NewMod = gen_mod:db_mod(NewOpts, ?MODULE),
+    OldMod = gen_mod:db_mod(OldOpts, ?MODULE),
     if NewMod /= OldMod ->
 	    NewMod:init(Host, NewOpts);
        true ->
@@ -662,7 +662,7 @@ push_user_to_group(LUser, LServer, Group, Host,
 			  when (U == LUser) and (S == LServer) ->
 			  ok;
 		      ({U, S}) ->
-			  case lists:member(S, ejabberd_config:get_myhosts()) of
+			  case lists:member(S, ejabberd_option:hosts()) of
 			      true ->
 				  push_roster_item(U, S, LUser, LServer, GroupName,
 						   Subscription);
@@ -1007,7 +1007,8 @@ import(LServer, {sql, _}, DBType, Tab, L) ->
     Mod = gen_mod:db_mod(DBType, ?MODULE),
     Mod:import(LServer, Tab, L).
 
-mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end.
+mod_opt_type(db_type) ->
+    econf:well_known(db_type, ?MODULE).
 
 mod_options(Host) ->
     [{db_type, ejabberd_config:default_db(Host, ?MODULE)}].

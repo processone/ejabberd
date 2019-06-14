@@ -1,10 +1,4 @@
 %%%----------------------------------------------------------------------
-%%% File    : ejabberd_shaper.erl
-%%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : Functions to control connections traffic
-%%% Created :  9 Feb 2003 by Alexey Shchepin <alexey@process-one.net>
-%%%
-%%%
 %%% ejabberd, Copyright (C) 2002-2019   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
@@ -22,131 +16,225 @@
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
-
 -module(ejabberd_shaper).
-
 -behaviour(gen_server).
--behaviour(ejabberd_config).
 
--author('alexey@process-one.net').
-
--export([start_link/0, new/1, update/2,
-	 get_max_rate/1, transform_options/1, load_from_config/0,
-	 opt_type/1]).
+-export([start_link/0, new/1, update/2, match/3, get_max_rate/1]).
+-export([reload_from_config/0]).
+-export([validator/1, shaper_rules_validator/0]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
 -include("logger.hrl").
 
--record(shaper, {name :: {atom(), global},
-		 maxrate :: integer(),
-		 burst_size :: integer()}).
-
--record(state, {}).
-
+-type state() :: #{hosts := [binary()]}.
 -type shaper() :: none | p1_shaper:state().
--export_type([shaper/0]).
+-type shaper_rate() :: {pos_integer(), pos_integer()} | pos_integer() | infinity.
+-type shaper_rule() :: {atom() | pos_integer(), [acl:access_rule()]}.
+-type shaper_rate_rule() :: {shaper_rate(), [acl:access_rule()]}.
 
+-export_type([shaper/0, shaper_rule/0, shaper_rate/0]).
+
+%%%===================================================================
+%%% API
+%%%===================================================================
 -spec start_link() -> {ok, pid()} | {error, any()}.
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
+-spec match(global | binary(), atom() | [shaper_rule()],
+	    jid:jid() | jid:ljid() | inet:ip_address() | acl:match()) -> none | shaper_rate().
+match(_, none, _) -> none;
+match(_, infinity, _) -> infinity;
+match(Host, Shaper, Match) when is_map(Match) ->
+    Rules = if is_atom(Shaper) -> read_shaper_rules(Shaper, Host);
+	       true -> Shaper
+	    end,
+    Rate = acl:match_rules(Host, Rules, Match, none),
+    read_shaper(Rate);
+match(Host, Shaper, IP) when tuple_size(IP) == 4; tuple_size(IP) == 8 ->
+    match(Host, Shaper, #{ip => IP});
+match(Host, Shaper, JID) ->
+    match(Host, Shaper, #{usr => jid:tolower(JID)}).
+
+-spec get_max_rate(none | shaper_rate()) -> none | pos_integer().
+get_max_rate({Rate, _}) -> Rate;
+get_max_rate(Rate) when is_integer(Rate), Rate > 0 -> Rate;
+get_max_rate(_) -> none.
+
+-spec new(none | shaper_rate()) -> shaper().
+new({Rate, Burst}) -> p1_shaper:new(Rate, Burst);
+new(Rate) when is_integer(Rate), Rate > 0 -> p1_shaper:new(Rate);
+new(_) -> none.
+
+-spec update(shaper(), non_neg_integer()) -> {shaper(), non_neg_integer()}.
+update(none, _Size) -> {none, 0};
+update(Shaper1, Size) ->
+    Shaper2 = p1_shaper:update(Shaper1, Size),
+    ?DEBUG("Shaper update:~n~s =>~n~s",
+	   [p1_shaper:pp(Shaper1), p1_shaper:pp(Shaper2)]),
+    Shaper2.
+
+-spec validator(shaper | shaper_rules) -> econf:validator().
+validator(shaper) ->
+    econf:options(
+      #{'_' => shaper_validator()},
+      [{disallowed, reserved()}, {return, map}, unique]);
+validator(shaper_rules) ->
+    econf:options(
+      #{'_' => shaper_rules_validator()},
+      [{disallowed, reserved()}, unique]).
+
+-spec shaper_rules_validator() -> econf:validator().
+shaper_rules_validator() ->
+    fun(L) when is_list(L) ->
+	    lists:map(
+	      fun({K, V}) ->
+		      {(shaper_name())(K), (acl:access_validator())(V)};
+		 (N) ->
+		      {(shaper_name())(N), [{acl, all}]}
+	      end, lists:flatten(L));
+       (N) ->
+	    [{(shaper_name())(N), [{acl, all}]}]
+    end.
+
+-spec reload_from_config() -> ok.
+reload_from_config() ->
+    gen_server:call(?MODULE, reload_from_config, timer:minutes(1)).
+
+%%%===================================================================
+%%% gen_server callbacks
+%%%===================================================================
 init([]) ->
-    ejabberd_mnesia:create(?MODULE, shaper,
-			   [{ram_copies, [node()]},
-			    {local_content, true},
-			    {attributes, record_info(fields, shaper)}]),
-    ejabberd_hooks:add(config_reloaded, ?MODULE, load_from_config, 20),
-    load_from_config(),
-    {ok, #state{}}.
+    create_tabs(),
+    Hosts = ejabberd_option:hosts(),
+    load_from_config([], Hosts),
+    ejabberd_hooks:add(config_reloaded, ?MODULE, reload_from_config, 20),
+    {ok, #{hosts => Hosts}}.
 
-handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
-
-handle_cast(_Msg, State) ->
+-spec handle_call(term(), term(), state()) -> {reply, ok, state()} | {noreply, state()}.
+handle_call(reload_from_config, _, #{hosts := OldHosts} = State) ->
+    NewHosts = ejabberd_option:hosts(),
+    load_from_config(OldHosts, NewHosts),
+    {reply, ok, State#{hosts => NewHosts}};
+handle_call(Request, From, State) ->
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
     {noreply, State}.
 
-handle_info(_Info, State) ->
+-spec handle_cast(term(), state()) -> {noreply, state()}.
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
+-spec handle_info(term(), state()) -> {noreply, state()}.
+handle_info(Info, State) ->
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
+    {noreply, State}.
+
+-spec terminate(any(), state()) -> ok.
 terminate(_Reason, _State) ->
-    ok.
+    ejabberd_hooks:delete(config_reloaded, ?MODULE, reload_from_config, 20).
 
+-spec code_change(term(), state(), term()) -> {ok, state()}.
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
--spec load_from_config() -> ok | {error, any()}.
-load_from_config() ->
-    Shapers = ejabberd_config:get_option(shaper, []),
-    case mnesia:transaction(
-	fun() ->
-	    lists:foreach(
-		fun({Name, MaxRate, BurstSize}) ->
-		    mnesia:write(
-			#shaper{name = {Name, global},
-				maxrate = MaxRate,
-				burst_size = BurstSize})
-		end,
-		Shapers)
-	end) of
-	{atomic, ok} ->
-	    ok;
-	Err ->
-	    {error, Err}
+%%%===================================================================
+%%% Internal functions
+%%%===================================================================
+%%%===================================================================
+%%% Table management
+%%%===================================================================
+-spec load_from_config([binary()], [binary()]) -> ok.
+load_from_config(OldHosts, NewHosts) ->
+    ?DEBUG("Loading shaper rules from config", []),
+    Shapers = ejabberd_option:shaper(),
+    ets:insert(shaper, maps:to_list(Shapers)),
+    ets:insert(
+      shaper_rules,
+      lists:flatmap(
+	fun(Host) ->
+		lists:flatmap(
+		  fun({Name, List}) ->
+			  case resolve_shapers(Name, List, Shapers) of
+			      [] -> [];
+			      List1 ->
+				  [{{Name, Host}, List1}]
+			  end
+		  end, ejabberd_option:shaper_rules(Host))
+	end, [global|NewHosts])),
+    lists:foreach(
+      fun(Host) ->
+	      ets:match_delete(shaper_rules, {{'_', Host}, '_'})
+      end, OldHosts -- NewHosts),
+    ?DEBUG("Shaper rules loaded successfully", []).
+
+-spec create_tabs() -> ok.
+create_tabs() ->
+    _ = mnesia:delete_table(shaper),
+    _ = ets:new(shaper, [named_table, {read_concurrency, true}]),
+    _ = ets:new(shaper_rules, [named_table, {read_concurrency, true}]),
+    ok.
+
+-spec read_shaper_rules(atom(), global | binary()) -> [shaper_rate_rule()].
+read_shaper_rules(Name, Host) ->
+    case ets:lookup(shaper_rules, {Name, Host}) of
+	[{_, Rule}] -> Rule;
+	[] -> []
     end.
 
--spec get_max_rate(atom()) -> none | non_neg_integer().
-get_max_rate(none) ->
-    none;
-get_max_rate(Name) ->
-    case ets:lookup(shaper, {Name, global}) of
-	[#shaper{maxrate = R}] ->
-	    R;
-	[] ->
-	    none
-    end.
+-spec read_shaper(atom() | shaper_rate()) -> none | shaper_rate().
+read_shaper(Name) when is_atom(Name), Name /= none, Name /= infinity ->
+    case ets:lookup(shaper, Name) of
+	[{_, Rate}] -> Rate;
+	[] -> none
+    end;
+read_shaper(Rate) ->
+    Rate.
 
--spec new(atom()) -> shaper().
-new(none) ->
-    none;
-new(Name) ->
-    case ets:lookup(shaper, {Name, global}) of
-	[#shaper{maxrate = R, burst_size = B}] ->
-	    p1_shaper:new(R, B);
-	[] ->
-	    none
-    end.
+%%%===================================================================
+%%% Validators
+%%%===================================================================
+shaper_name() ->
+    econf:either(
+      econf:and_then(
+	econf:atom(),
+	fun(infinite) -> infinity;
+	   (unlimited) -> infinity;
+	   (A) -> A
+	end),
+      econf:pos_int()).
 
--spec update(shaper(), integer()) -> {shaper(), integer()}.
-update(none, _Size) -> {none, 0};
-update(Shaper, Size) ->
-    Result = p1_shaper:update(Shaper, Size),
-    ?DEBUG("Shaper update:~n~s =>~n~s",
-	   [p1_shaper:pp(Shaper), p1_shaper:pp(Result)]),
-    Result.
+shaper_validator() ->
+    econf:either(
+      econf:and_then(
+	econf:options(
+	  #{rate => econf:pos_int(),
+	    burst_size => econf:pos_int()},
+	  [unique, {required, [rate]}, {return, map}]),
+	fun(#{rate := Rate} = Map) ->
+		{Rate, maps:get(burst_size, Map, Rate)}
+	end),
+      econf:pos_int(infinity)).
 
-transform_options(Opts) ->
-    lists:foldl(fun transform_options/2, [], Opts).
+%%%===================================================================
+%%% Aux
+%%%===================================================================
+reserved() ->
+    [none, infinite, unlimited, infinity].
 
-transform_options({shaper, Name, {maxrate, N}}, Opts) ->
-    [{shaper, [{Name, N}]} | Opts];
-transform_options({shaper, Name, none}, Opts) ->
-    [{shaper, [{Name, none}]} | Opts];
-transform_options({shaper, List}, Opts) when is_list(List) ->
-    R = lists:map(
-	fun({Name, Args}) when is_list(Args) ->
-	    MaxRate = proplists:get_value(rate, Args, 1000),
-	    BurstSize = proplists:get_value(burst_size, Args, MaxRate),
-	    {Name, MaxRate, BurstSize};
-	   ({Name, Val}) ->
-	       {Name, Val, Val}
-	end, List),
-    [{shaper, R} | Opts];
-transform_options(Opt, Opts) ->
-    [Opt | Opts].
-
--spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
-opt_type(shaper) -> fun(V) -> V end;
-opt_type(_) -> [shaper].
+-spec resolve_shapers(atom(), [shaper_rule()], #{atom() => shaper_rate()}) -> [shaper_rate_rule()].
+resolve_shapers(ShaperRule, Rules, Shapers) ->
+    lists:filtermap(
+      fun({Name, Rule}) when is_atom(Name), Name /= none, Name /= infinity ->
+	      try {true, {maps:get(Name, Shapers), Rule}}
+	      catch _:{badkey, _} ->
+		      ?WARNING_MSG(
+			 "Shaper rule '~s' refers to unknown shaper: ~s",
+			 [ShaperRule, Name]),
+		      false
+	      end;
+	 (_) ->
+	      true
+      end, Rules).

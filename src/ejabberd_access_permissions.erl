@@ -29,17 +29,13 @@
 -include("logger.hrl").
 
 -behaviour(gen_server).
--behaviour(ejabberd_config).
 
 %% API
 -export([start_link/0,
-	 parse_api_permissions/1,
 	 can_access/2,
 	 invalidate/0,
-	 opt_type/1,
-	 show_current_definitions/0,
-	 register_permission_addon/2,
-	 unregister_permission_addon/1]).
+	 validator/0,
+	 show_current_definitions/0]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -51,16 +47,29 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {
-    definitions = none,
-    fragments_generators = []
-}).
+-record(state,
+	{definitions = none :: none | [definition()]}).
+
+-type state() :: #state{}.
+-type rule() :: {access, acl:access()} |
+		{acl, all | none | acl:acl_rule()}.
+-type what() :: all | none | [atom() | {tag, atom()}].
+-type who() :: rule() | {oauth, {[binary()], [rule()]}}.
+-type from() :: atom().
+-type permission() :: {binary(), {[from()], [who()], {what(), what()}}}.
+-type definition() :: {binary(), {[from()], [who()], [atom()] | all}}.
+-type caller_info() :: #{caller_module => module(),
+			 caller_host => global | binary(),
+			 tag => binary() | none,
+			 extra_permissions => [definition()],
+			 atom() => term()}.
+
+-export_type([permission/0]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
-
--spec can_access(atom(), map()) -> allow | deny.
+-spec can_access(atom(), caller_info()) -> allow | deny.
 can_access(Cmd, CallerInfo) ->
     gen_server:call(?MODULE, {can_access, Cmd, CallerInfo}).
 
@@ -68,65 +77,24 @@ can_access(Cmd, CallerInfo) ->
 invalidate() ->
     gen_server:cast(?MODULE, invalidate).
 
--spec register_permission_addon(atom(), fun()) -> ok.
-register_permission_addon(Name, Fun) ->
-    gen_server:call(?MODULE, {register_config_fragment_generator, Name, Fun}).
-
--spec unregister_permission_addon(atom()) -> ok.
-unregister_permission_addon(Name) ->
-    gen_server:call(?MODULE, {unregister_config_fragment_generator, Name}).
-
--spec show_current_definitions() -> any().
+-spec show_current_definitions() -> [definition()].
 show_current_definitions() ->
     gen_server:call(?MODULE, show_current_definitions).
 
-%%--------------------------------------------------------------------
-%% @doc
-%% Starts the server
-%%
-%% @end
-%%--------------------------------------------------------------------
--spec start_link() -> {ok, Pid :: pid()} | ignore | {error, Reason :: term()}.
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Initializes the server
-%%
-%% @spec init(Args) -> {ok, State} |
-%%                     {ok, State, Timeout} |
-%%                     ignore |
-%%                     {stop, Reason}
-%% @end
-%%--------------------------------------------------------------------
--spec init(Args :: term()) ->
-    {ok, State :: #state{}} | {ok, State :: #state{}, timeout() | hibernate} |
-    {stop, Reason :: term()} | ignore.
+-spec init([]) -> {ok, state()}.
 init([]) ->
     ejabberd_hooks:add(config_reloaded, ?MODULE, invalidate, 90),
     {ok, #state{}}.
 
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Handling call messages
-%%
-%% @end
-%%--------------------------------------------------------------------
--spec handle_call(Request :: term(), From :: {pid(), Tag :: term()},
-		  State :: #state{}) ->
-		     {reply, Reply :: term(), NewState :: #state{}} |
-		     {reply, Reply :: term(), NewState :: #state{}, timeout() | hibernate} |
-		     {noreply, NewState :: #state{}} |
-		     {noreply, NewState :: #state{}, timeout() | hibernate} |
-		     {stop, Reason :: term(), Reply :: term(), NewState :: #state{}} |
-		     {stop, Reason :: term(), NewState :: #state{}}.
+-spec handle_call({can_access, atom(), caller_info()} |
+		  show_current_definitions | term(),
+		  term(), state()) -> {reply, term(), state()}.
 handle_call({can_access, Cmd, CallerInfo}, _From, State) ->
     CallerModule = maps:get(caller_module, CallerInfo, none),
     Host = maps:get(caller_host, CallerInfo, global),
@@ -134,123 +102,61 @@ handle_call({can_access, Cmd, CallerInfo}, _From, State) ->
     {State2, Defs0} = get_definitions(State),
     Defs = maps:get(extra_permissions, CallerInfo, []) ++ Defs0,
     Res = lists:foldl(
-	fun({Name, _} = Def, none) ->
-	    case matches_definition(Def, Cmd, CallerModule, Tag, Host, CallerInfo) of
-		true ->
-		    ?DEBUG("Command '~p' execution allowed by rule '~s' (CallerInfo=~p)", [Cmd, Name, CallerInfo]),
-		    allow;
-		_ ->
-		    none
-	    end;
-	   (_, Val) ->
-	       Val
-	end, none, Defs),
+	    fun({Name, _} = Def, none) ->
+		    case matches_definition(Def, Cmd, CallerModule, Tag, Host, CallerInfo) of
+			true ->
+			    ?DEBUG("Command '~p' execution allowed by rule "
+				   "'~s' (CallerInfo=~p)", [Cmd, Name, CallerInfo]),
+			    allow;
+			_ ->
+			    none
+		    end;
+	       (_, Val) ->
+		    Val
+	    end, none, Defs),
     Res2 = case Res of
 	       allow -> allow;
 	       _ ->
-		   ?DEBUG("Command '~p' execution denied (CallerInfo=~p)", [Cmd, CallerInfo]),
+		   ?DEBUG("Command '~p' execution denied "
+			  "(CallerInfo=~p)", [Cmd, CallerInfo]),
 		   deny
 	   end,
     {reply, Res2, State2};
 handle_call(show_current_definitions, _From, State) ->
     {State2, Defs} = get_definitions(State),
     {reply, Defs, State2};
-handle_call({register_config_fragment_generator, Name, Fun}, _From, #state{fragments_generators = Gens} = State) ->
-    NGens = lists:keystore(Name, 1, Gens, {Name, Fun}),
-    {reply, ok, State#state{fragments_generators = NGens}};
-handle_call({unregister_config_fragment_generator, Name}, _From, #state{fragments_generators = Gens} = State) ->
-    NGens = lists:keydelete(Name, 1, Gens),
-    {reply, ok, State#state{fragments_generators = NGens}};
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Handling cast messages
-%%
-%% @end
-%%--------------------------------------------------------------------
--spec handle_cast(Request :: term(), State :: #state{}) ->
-    {noreply, NewState :: #state{}} |
-    {noreply, NewState :: #state{}, timeout() | hibernate} |
-    {stop, Reason :: term(), NewState :: #state{}}.
+-spec handle_cast(invalidate | term(), state()) -> {noreply, state()}.
 handle_cast(invalidate, State) ->
     {noreply, State#state{definitions = none}};
 handle_cast(_Request, State) ->
     {noreply, State}.
 
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Handling all non call/cast messages
-%%
-%% @spec handle_info(Info, State) -> {noreply, State} |
-%%                                   {noreply, State, Timeout} |
-%%                                   {stop, Reason, State}
-%% @end
-%%--------------------------------------------------------------------
--spec handle_info(Info :: timeout() | term(), State :: #state{}) ->
-    {noreply, NewState :: #state{}} |
-    {noreply, NewState :: #state{}, timeout() | hibernate} |
-    {stop, Reason :: term(), NewState :: #state{}}.
 handle_info(_Info, State) ->
     {noreply, State}.
 
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% This function is called by a gen_server when it is about to
-%% terminate. It should be the opposite of Module:init/1 and do any
-%% necessary cleaning up. When it returns, the gen_server terminates
-%% with Reason. The return value is ignored.
-%%
-%% @spec terminate(Reason, State) -> void()
-%% @end
-%%--------------------------------------------------------------------
--spec terminate(Reason :: (normal | shutdown | {shutdown, term()} | term()),
-		State :: #state{}) -> term().
 terminate(_Reason, _State) ->
     ejabberd_hooks:delete(config_reloaded, ?MODULE, invalidate, 90).
 
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Convert process state when code is changed
-%%
-%% @spec code_change(OldVsn, State, Extra) -> {ok, NewState}
-%% @end
-%%--------------------------------------------------------------------
--spec code_change(OldVsn :: term() | {down, term()}, State :: #state{},
-		  Extra :: term()) ->
-		     {ok, NewState :: #state{}} | {error, Reason :: term()}.
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-
--spec get_definitions(#state{}) -> {#state{}, any()}.
+-spec get_definitions(state()) -> {state(), [definition()]}.
 get_definitions(#state{definitions = Defs} = State) when Defs /= none ->
     {State, Defs};
-get_definitions(#state{definitions = none, fragments_generators = Gens} = State) ->
-    DefaultOptions = [{<<"admin access">>,
-		       {[],
-			[{acl,{acl,admin}},
-			 {oauth,[<<"ejabberd:admin">>],[{acl,{acl,admin}}]}],
-			{all, [start, stop]}}}],
-    ApiPerms = ejabberd_config:get_option(api_permissions, DefaultOptions),
+get_definitions(#state{definitions = none} = State) ->
+    ApiPerms = ejabberd_option:api_permissions(),
     AllCommands = ejabberd_commands:get_commands_definition(),
-    Frags = lists:foldl(
-	      fun({_Name, Generator}, Acc) ->
-		      Acc ++ Generator()
-	      end, [], Gens),
     NDefs0 = lists:map(
 	       fun({Name, {From, Who, {Add, Del}}}) ->
 		       Cmds = filter_commands_with_permissions(AllCommands, Add, Del),
 		       {Name, {From, Who, Cmds}}
-	       end, ApiPerms ++ Frags),
+	       end, ApiPerms),
     NDefs = case lists:keyfind(<<"console commands">>, 1, NDefs0) of
 		false ->
 		    [{<<"console commands">>,
@@ -262,6 +168,8 @@ get_definitions(#state{definitions = none, fragments_generators = Gens} = State)
 	    end,
     {State#state{definitions = NDefs}, NDefs}.
 
+-spec matches_definition(definition(), atom(), module(),
+			 atom(), global | binary(), caller_info()) -> boolean().
 matches_definition({_Name, {From, Who, What}}, Cmd, Module, Tag, Host, CallerInfo) ->
     case What == all orelse lists:member(Cmd, What) of
 	true ->
@@ -271,25 +179,29 @@ matches_definition({_Name, {From, Who, What}}, Cmd, Module, Tag, Host, CallerInf
 		true ->
 		    Scope = maps:get(oauth_scope, CallerInfo, none),
 		    lists:any(
-			fun({access, Access}) when Scope == none ->
-			    acl:access_matches(Access, CallerInfo, Host) == allow;
-			   ({acl, Acl}) when Scope == none ->
-			       acl:acl_rule_matches(Acl, CallerInfo, Host);
-			   ({oauth, Scopes, List}) when Scope /= none ->
-			       case ejabberd_oauth:scope_in_scope_list(Scope, Scopes) of
-				   true ->
-				       lists:any(
-					   fun({access, Access}) ->
-					       acl:access_matches(Access, CallerInfo, Host) == allow;
-					      ({acl, Acl}) ->
-						  acl:acl_rule_matches(Acl, CallerInfo, Host)
-					   end, List);
-				   _ ->
-				       false
-			       end;
-			   (_) ->
-			       false
-			end, Who);
+		      fun({access, Access}) when Scope == none ->
+			      acl:match_rule(Host, Access, CallerInfo) == allow;
+			 ({acl, Name} = Acl) when Scope == none, is_atom(Name) ->
+			      acl:match_acl(Host, Acl, CallerInfo);
+			 ({acl, Acl}) when Scope == none ->
+			      acl:match_acl(Host, Acl, CallerInfo);
+			 ({oauth, {Scopes, List}}) when Scope /= none ->
+			      case ejabberd_oauth:scope_in_scope_list(Scope, Scopes) of
+				  true ->
+				      lists:any(
+					fun({access, Access}) ->
+						acl:match_rule(Host, Access, CallerInfo) == allow;
+					   ({acl, Name} = Acl) when is_atom(Name) ->
+						acl:match_acl(Host, Acl, CallerInfo);
+					   ({acl, Acl}) ->
+						acl:match_acl(Host, Acl, CallerInfo)
+					end, List);
+				  _ ->
+				      false
+			      end;
+			 (_) ->
+			      false
+		      end, Who);
 		_ ->
 		    false
 	    end;
@@ -297,12 +209,15 @@ matches_definition({_Name, {From, Who, What}}, Cmd, Module, Tag, Host, CallerInf
 	    false
     end.
 
+-spec filter_commands_with_permissions([#ejabberd_commands{}], what(), what()) -> [atom()].
 filter_commands_with_permissions(AllCommands, Add, Del) ->
     CommandsAdd = filter_commands_with_patterns(AllCommands, Add, []),
     CommandsDel = filter_commands_with_patterns(CommandsAdd, Del, []),
     lists:map(fun(#ejabberd_commands{name = N}) -> N end,
 	      CommandsAdd -- CommandsDel).
 
+-spec filter_commands_with_patterns([#ejabberd_commands{}], what(),
+				    [#ejabberd_commands{}]) -> [#ejabberd_commands{}].
 filter_commands_with_patterns([], _Patterns, Acc) ->
     Acc;
 filter_commands_with_patterns([C | CRest], Patterns, Acc) ->
@@ -313,6 +228,7 @@ filter_commands_with_patterns([C | CRest], Patterns, Acc) ->
 	    filter_commands_with_patterns(CRest, Patterns, Acc)
     end.
 
+-spec command_matches_patterns(#ejabberd_commands{}, what()) -> boolean().
 command_matches_patterns(_, all) ->
     true;
 command_matches_patterns(_, none) ->
@@ -332,125 +248,26 @@ command_matches_patterns(C, [_ | Tail]) ->
     command_matches_patterns(C, Tail).
 
 %%%===================================================================
-%%% Options parsing code
+%%% Validators
 %%%===================================================================
-
-parse_api_permissions(Data) when is_list(Data) ->
-    [parse_api_permission(Name, Args) || {Name, Args} <- Data].
-
-parse_api_permission(Name, Args0) ->
-    Args = lists:flatten(Args0),
-    {From, Who, What} = case key_split(Args, [{from, []}, {who, none}, {what, []}]) of
-			    {error, Msg} ->
-				report_error(<<"~s inside api_permission '~s' section">>, [Msg, Name]);
-			    Val -> Val
-			end,
-    {Name, {parse_from(Name, From), parse_who(Name, Who, oauth), parse_what(Name, What)}}.
-
-parse_from(_Name, Module) when is_atom(Module) ->
-    [Module];
-parse_from(Name, Modules) when is_list(Modules) ->
-    lists:map(
-	fun(Module) when is_atom(Module) ->
-	    Module;
-	   ([{tag, Tag}]) when is_binary(Tag) ->
-	       {tag, Tag};
-	   (Val) ->
-	       report_error(<<"Invalid value '~p' used inside 'from' section for api_permission '~s'">>,
-			    [Val, Name])
-	end, Modules);
-parse_from(Name, Val) ->
-    report_error(<<"Invalid value '~p' used inside 'from' section for api_permission '~s'">>,
-		 [Val, Name]).
-
-parse_who(Name, Atom, ParseOauth) when is_atom(Atom) ->
-    parse_who(Name, [Atom], ParseOauth);
-parse_who(Name, Defs, ParseOauth) when is_list(Defs) ->
-    lists:map(
-      fun([Val]) ->
-	      [NVal] = parse_who(Name, [Val], ParseOauth),
-	      NVal;
-	 ({access, Val}) ->
-	    try acl:access_rules_validator(Val) of
-		Rule ->
-		    {access, Rule}
-	    catch
-		throw:{invalid_syntax, Msg} ->
-		    report_error(<<"Invalid access rule: '~s' used inside 'who' section for api_permission '~s'">>,
-				 [Msg, Name]);
-		error:_ ->
-		    report_error(<<"Invalid access rule '~p' used inside 'who' section for api_permission '~s'">>,
-				 [Val, Name])
-	    end;
-	   ({oauth, OauthList}) when is_list(OauthList) ->
-	       case ParseOauth of
-		   oauth ->
-		       Nested = parse_who(Name, lists:flatten(OauthList), scope),
-		       {Scopes, Rest} = lists:partition(
-				   fun({scope, _}) -> true;
-				      (_) -> false
-				   end, Nested),
-		       case Scopes of
-			   [] ->
-			       report_error(<<"Oauth rule must contain at least one scope rule in 'who' section for api_permission '~s'">>,
-					    [Name]);
-			   _ ->
-			       {oauth, lists:foldl(fun({scope, S}, A) -> S ++ A end, [], Scopes), Rest}
-		       end;
-		   scope ->
-		       report_error(<<"Oauth rule can't be embedded inside other oauth rule in 'who' section for api_permission '~s'">>,
-				    [Name])
-	       end;
-	   ({scope, ScopeList}) ->
-	       case ParseOauth of
-		   oauth ->
-		       report_error(<<"Scope can be included only inside oauth rule in 'who' section for api_permission '~s'">>,
-				    [Name]);
-		   scope ->
-		       ScopeList2 = case ScopeList of
-					V when is_binary(V) -> [V];
-					V2 when is_list(V2) -> V2;
-					V3 ->
-					    report_error(<<"Invalid value for scope '~p' in 'who' section for api_permission '~s'">>,
-							 [V3, Name])
-				    end,
-		       {scope, ScopeList2}
-	       end;
-	   (Atom) when is_atom(Atom) ->
-	       {acl, {acl, Atom}};
-	   (Other) ->
-	       try acl:normalize_spec(Other) of
-		   Rule2 ->
-		       {acl, Rule2}
-	       catch
-		   _:_ ->
-		       report_error(<<"Invalid value '~p' used inside 'who' section for api_permission '~s'">>,
-				    [Other, Name])
-	       end
-	end, Defs);
-parse_who(Name, Val, _ParseOauth) ->
-    report_error(<<"Invalid value '~p' used inside 'who' section for api_permission '~s'">>,
-		 [Val, Name]).
-
-parse_what(Name, Binary) when is_binary(Binary) ->
-    parse_what(Name, [Binary]);
-parse_what(Name, Defs) when is_list(Defs) ->
-    {A, D} = lists:foldl(
-	fun(Def, {Add, Del}) ->
-	    case parse_single_what(Def) of
-		{error, Err} ->
-		    report_error(<<"~s used in value '~p' in 'what' section for api_permission '~s'">>,
-				 [Err, Def, Name]);
-		all ->
-		    {case Add of none -> none; _ -> all end, Del};
-		{neg, all} ->
-		    {none, all};
-		{neg, Value} ->
-		    {Add, case Del of L when is_list(L) -> [Value | L]; L2 -> L2 end};
-		Value ->
-		    {case Add of L when is_list(L) -> [Value | L]; L2 -> L2 end, Del}
-	    end
-	end, {[], []}, Defs),
+-spec parse_what([binary()]) -> {what(), what()}.
+parse_what(Defs) ->
+    {A, D} =
+	lists:foldl(
+	  fun(Def, {Add, Del}) ->
+		  case parse_single_what(Def) of
+		      {error, Err} ->
+			  econf:fail({invalid_syntax, [Err, ": ", Def]});
+		      all ->
+			  {case Add of none -> none; _ -> all end, Del};
+		      {neg, all} ->
+			  {none, all};
+		      {neg, Value} ->
+			  {Add, case Del of L when is_list(L) -> [Value | L]; L2 -> L2 end};
+		      Value ->
+			  {case Add of L when is_list(L) -> [Value | L]; L2 -> L2 end, Del}
+		  end
+	  end, {[], []}, Defs),
     case {A, D} of
 	{[], _} ->
 	    {none, all};
@@ -458,11 +275,9 @@ parse_what(Name, Defs) when is_list(Defs) ->
 	    {A2, none};
 	V ->
 	    V
-    end;
-parse_what(Name, Val) ->
-    report_error(<<"Invalid value '~p' used inside 'what' section for api_permission '~s'">>,
-		 [Val, Name]).
+    end.
 
+-spec parse_single_what(binary()) -> atom() | {neg, atom()} | {tag, atom()} | {error, string()}.
 parse_single_what(<<"*">>) ->
     all;
 parse_single_what(<<"!*">>) ->
@@ -470,7 +285,7 @@ parse_single_what(<<"!*">>) ->
 parse_single_what(<<"!", Rest/binary>>) ->
     case parse_single_what(Rest) of
 	{neg, _} ->
-	    {error, <<"Double negation">>};
+	    {error, "double negation"};
 	{error, _} = Err ->
 	    Err;
 	V ->
@@ -485,71 +300,78 @@ parse_single_what(<<"[tag:", Rest/binary>>) ->
 		V when is_atom(V) ->
 		    {tag, V};
 		_ ->
-		    {error, <<"Invalid tag">>}
+		    {error, "invalid tag"}
 	    end;
 	_ ->
-	    {error, <<"Invalid tag">>}
+	    {error, "invalid tag"}
     end;
-parse_single_what(Binary) when is_binary(Binary) ->
-    case is_valid_command_name(Binary) of
-	true ->
-	    binary_to_atom(Binary, latin1);
-	_ ->
-	    {error, <<"Invalid value">>}
-    end;
-parse_single_what(Atom) when is_atom(Atom) ->
-    parse_single_what(atom_to_binary(Atom, latin1));
-parse_single_what(_) ->
-    {error, <<"Invalid value">>}.
-
-is_valid_command_name(<<>>) ->
-    false;
-is_valid_command_name(Val) ->
-    is_valid_command_name2(Val).
-
-is_valid_command_name2(<<>>) ->
-    true;
-is_valid_command_name2(<<K:8, Rest/binary>>) when (K >= $a andalso K =< $z)
-						  orelse (K >= $0 andalso K =< $9)
-						  orelse K == $_ orelse K == $- ->
-    is_valid_command_name2(Rest);
-is_valid_command_name2(_) ->
-    false.
-
-key_split(Args, Fields) ->
-    {_, Order1, Results1, Required1} = lists:foldl(
-	fun({Field, Default}, {Idx, Order, Results, Required}) ->
-	    {Idx + 1, maps:put(Field, Idx, Order), [Default | Results], Required};
-	   (Field, {Idx, Order, Results, Required}) ->
-	       {Idx + 1, maps:put(Field, Idx, Order), [none | Results], maps:put(Field, 1, Required)}
-	end, {1, #{}, [], #{}}, Fields),
-    key_split(Args, list_to_tuple(Results1), Order1, Required1, #{}).
-
-key_split([], _Results, _Order, Required, _Duplicates) when map_size(Required) > 0 ->
-    parse_error(<<"Missing fields '~s">>, [str:join(maps:keys(Required), <<", ">>)]);
-key_split([], Results, _Order, _Required, _Duplicates) ->
-    Results;
-key_split([{Arg, Value} | Rest], Results, Order, Required, Duplicates) ->
-    case maps:find(Arg, Order) of
-	{ok, Idx} ->
-	    case maps:is_key(Arg, Duplicates) of
-		false ->
-		    Results2 = setelement(Idx, Results, Value),
-		    key_split(Rest, Results2, Order, maps:remove(Arg, Required), maps:put(Arg, 1, Duplicates));
-		true ->
-		    parse_error(<<"Duplicate field '~s'">>, [Arg])
-	    end;
-	_ ->
-	    parse_error(<<"Unknown field '~s'">>, [Arg])
+parse_single_what(B) ->
+    case re:run(B, "^[a-z0-9_\\-]*$") of
+	nomatch -> {error, "invalid command"};
+	_ -> binary_to_atom(B, latin1)
     end.
 
-report_error(Format, Args) ->
-    throw({invalid_syntax, (str:format(Format, Args))}).
+validator(Map, Opts) ->
+    econf:and_then(
+      fun(L) when is_list(L) ->
+              lists:map(
+                fun({K, V}) -> {(econf:atom())(K), V};
+                   (A) -> {acl, (econf:atom())(A)}
+                end, lists:flatten(L));
+         (A) ->
+              [{acl, (econf:atom())(A)}]
+      end,
+      econf:and_then(
+	econf:options(maps:merge(acl:validators(), Map), Opts),
+	fun(Rules) ->
+		lists:flatmap(
+		  fun({Type, Rs}) when is_list(Rs) ->
+			  case maps:is_key(Type, acl:validators()) of
+			      true -> [{acl, {Type, R}} || R <- Rs];
+			      false -> [{Type, Rs}]
+			  end;
+		     (Other) ->
+			  [Other]
+		  end, Rules)
+	end)).
 
-parse_error(Format, Args) ->
-    {error, (str:format(Format, Args))}.
+validator(from) ->
+    fun(L) when is_list(L) ->
+	    lists:map(
+	      fun({K, V}) -> {(econf:enum([tag]))(K), (econf:binary())(V)};
+		 (A) -> (econf:enum([ejabberd_xmlrpc, mod_http_api, ejabberd_ctl]))(A)
+	      end, lists:flatten(L));
+       (A) ->
+	    [(econf:enum([ejabberd_xmlrpc, mod_http_api, ejabberd_ctl]))(A)]
+    end;
+validator(what) ->
+    econf:and_then(
+      econf:list_or_single(econf:non_empty(econf:binary())),
+      fun parse_what/1);
+validator(who) ->
+    validator(#{access => econf:acl(), oauth => validator(oauth)}, []);
+validator(oauth) ->
+    econf:and_then(
+      validator(#{access => econf:acl(),
+		  scope => econf:non_empty(
+			     econf:list_or_single(econf:binary()))},
+		[{required, [scope]}]),
+      fun(Os) ->
+	      {[Scopes], Rest} = proplists:split(Os, [scope]),
+	      {lists:flatten([S || {_, S} <- Scopes]), Rest}
+      end).
 
-opt_type(api_permissions) ->
-    fun parse_api_permissions/1;
-opt_type(_) ->
-    [api_permissions].
+validator() ->
+    econf:map(
+      econf:binary(),
+      econf:and_then(
+	econf:options(
+	  #{from => validator(from),
+	    what => validator(what),
+	    who => validator(who)}),
+	fun(Os) ->
+		{proplists:get_value(from, Os, []),
+		 proplists:get_value(who, Os, none),
+		 proplists:get_value(what, Os, [])}
+	end),
+      [unique]).

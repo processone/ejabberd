@@ -184,7 +184,7 @@
     {result, {[pubsubItem()], undefined | rsm_set()}}.
 
 -callback get_last_items(nodeIdx(), jid(), undefined | rsm_set()) ->
-    {result, {[pubsubItem()], undefined | rsm_set()}}.
+    {result, [pubsubItem()]}.
 
 -callback get_item(NodeIdx :: nodeIdx(),
 	ItemId :: itemId(),

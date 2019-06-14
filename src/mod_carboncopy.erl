@@ -36,7 +36,7 @@
 
 -export([user_send_packet/1, user_receive_packet/1,
 	 iq_handler/1, disco_features/5,
-	 is_carbon_copy/1, mod_opt_type/1, depends/2,
+	 is_carbon_copy/1, depends/2,
 	 mod_options/1]).
 -export([c2s_copy_session/2, c2s_session_opened/1, c2s_session_resumed/1]).
 %% For debugging purposes
@@ -219,15 +219,14 @@ send_copies(JID, To, Packet, Direction)->
 	    %TargetJIDs = lists:delete(JID, [ jid:make({U, S, CCRes}) || CCRes <- list(U, S) ]),
     end,
 
-    lists:map(fun({Dest, _Version}) ->
-		    {_, _, Resource} = jid:tolower(Dest),
-		    ?DEBUG("Sending:  ~p =/= ~p", [R, Resource]),
-		    Sender = jid:make({U, S, <<>>}),
-		    %{xmlelement, N, A, C} = Packet,
-		    New = build_forward_packet(JID, Packet, Sender, Dest, Direction),
-		    ejabberd_router:route(xmpp:set_from_to(New, Sender, Dest))
-	      end, TargetJIDs),
-    ok.
+    lists:foreach(
+      fun({Dest, _Version}) ->
+	      {_, _, Resource} = jid:tolower(Dest),
+	      ?DEBUG("Sending:  ~p =/= ~p", [R, Resource]),
+	      Sender = jid:make({U, S, <<>>}),
+	      New = build_forward_packet(JID, Packet, Sender, Dest, Direction),
+	      ejabberd_router:route(xmpp:set_from_to(New, Sender, Dest))
+      end, TargetJIDs).
 
 -spec build_forward_packet(jid(), message(), jid(), jid(), direction()) -> message().
 build_forward_packet(JID, #message{type = T} = Msg, Sender, Dest, Direction) ->
@@ -299,19 +298,5 @@ list(User, Server) ->
 depends(_Host, _Opts) ->
     [].
 
-mod_opt_type(O) when O == cache_size; O == cache_life_time;
-		     O == use_cache; O == cache_missed;
-		     O == ram_db_type ->
-    fun(deprecated) -> deprecated;
-       (_) ->
-	    ?WARNING_MSG("Option ~s of ~s has no effect anymore "
-			 "and will be ingored", [O, ?MODULE]),
-	    deprecated
-    end.
-
 mod_options(_) ->
-    [{ram_db_type, deprecated},
-     {use_cache, deprecated},
-     {cache_size, deprecated},
-     {cache_missed, deprecated},
-     {cache_life_time, deprecated}].
+    [].

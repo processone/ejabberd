@@ -47,7 +47,7 @@ init(_Host, _Opts) ->
 use_cache(Host) ->
     case mnesia:table_info(privacy, storage_type) of
         disc_only_copies ->
-            gen_mod:get_module_opt(Host, mod_privacy, use_cache);
+            mod_privacy_opt:use_cache(Host);
         _ ->
             false
     end.
@@ -143,7 +143,7 @@ remove_lists(LUser, LServer) ->
 import(#privacy{} = P) ->
     mnesia:dirty_write(P).
 
-need_transform(#privacy{us = {U, S}}) when is_list(U) orelse is_list(S) ->
+need_transform({privacy, {U, S}, _, _}) when is_list(U) orelse is_list(S) ->
     ?INFO_MSG("Mnesia table 'privacy' will be converted to binary", []),
     true;
 need_transform(_) ->

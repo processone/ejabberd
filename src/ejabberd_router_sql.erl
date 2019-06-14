@@ -23,7 +23,6 @@
 -module(ejabberd_router_sql).
 -behaviour(ejabberd_router).
 
--compile([{parse_transform, ejabberd_sql_pt}]).
 
 %% API
 -export([init/0, register_route/5, unregister_route/3, find_routes/1,

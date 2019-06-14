@@ -46,7 +46,7 @@ init(_Host, _Opts) ->
 use_cache(Host) ->
     case mnesia:table_info(private_storage, storage_type) of
 	disc_only_copies ->
-	    gen_mod:get_module_opt(Host, mod_private, use_cache);
+	    mod_private_opt:use_cache(Host);
 	_ ->
 	    false
     end.
@@ -107,7 +107,7 @@ import(LServer, <<"private_storage">>,
     PS = #private_storage{usns = {LUser, LServer, XMLNS}, xml = El},
     mnesia:dirty_write(PS).
 
-need_transform(#private_storage{usns = {U, S, NS}})
+need_transform({private_storage, {U, S, NS}, _})
   when is_list(U) orelse is_list(S) orelse is_list(NS) ->
     ?INFO_MSG("Mnesia table 'private_storage' will be converted to binary", []),
     true;

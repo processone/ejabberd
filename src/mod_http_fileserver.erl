@@ -121,20 +121,20 @@ init([Host, Opts]) ->
     end.
 
 initialize(Host, Opts) ->
-    DocRoot = gen_mod:get_opt(docroot, Opts),
-    AccessLog = gen_mod:get_opt(accesslog, Opts),
+    DocRoot = mod_http_fileserver_opt:docroot(Opts),
+    AccessLog = mod_http_fileserver_opt:accesslog(Opts),
     AccessLogFD = try_open_log(AccessLog, Host),
-    DirectoryIndices = gen_mod:get_opt(directory_indices, Opts),
-    CustomHeaders = gen_mod:get_opt(custom_headers, Opts),
-    DefaultContentType = gen_mod:get_opt(default_content_type, Opts),
-    UserAccess0 = gen_mod:get_opt(must_authenticate_with, Opts),
+    DirectoryIndices = mod_http_fileserver_opt:directory_indices(Opts),
+    CustomHeaders = mod_http_fileserver_opt:custom_headers(Opts),
+    DefaultContentType = mod_http_fileserver_opt:default_content_type(Opts),
+    UserAccess0 = mod_http_fileserver_opt:must_authenticate_with(Opts),
     UserAccess = case UserAccess0 of
 		     [] -> none;
 		     _ ->
 			 dict:from_list(UserAccess0)
 		 end,
     ContentTypes = build_list_content_types(
-                     gen_mod:get_opt(content_types, Opts),
+                     mod_http_fileserver_opt:content_types(Opts),
                      ?DEFAULT_CONTENT_TYPES),
     ?DEBUG("known content types: ~s",
 	   [str:join([[$*, K, " -> ", V] || {K, V} <- ContentTypes],
@@ -320,9 +320,7 @@ serve(LocalPath, Auth, DocRoot, DirectoryIndices, CustomHeaders, DefaultContentT
 				       DefaultContentType,
 				       ContentTypes)
 		    end
-	    end;
-	_ ->
-	    ?HTTP_ERR_FORBIDDEN
+	    end
     end.
 
 %% Troll through the directory indices attempting to find one which
@@ -382,7 +380,7 @@ reopen_log() ->
     lists:foreach(
       fun(Host) ->
 	      gen_server:cast(get_proc_name(Host), reopen_log)
-      end, ejabberd_config:get_myhosts()).
+      end, ejabberd_option:hosts()).
 
 add_to_log(FileSize, Code, Request) ->
     gen_server:cast(get_proc_name(Request#request.host),
@@ -464,43 +462,27 @@ ip_to_string(Address) when size(Address) == 8 ->
     string:to_lower(lists:flatten(join(Parts, ":"))).
 
 mod_opt_type(accesslog) ->
-    fun(undefined) -> undefined;
-       (File) -> iolist_to_binary(File)
-    end;
+    econf:file(write);
 mod_opt_type(content_types) ->
-    fun(L) when is_list(L) ->
-	    lists:map(
-	      fun({K, V}) ->
-		      {iolist_to_binary(K),
-		       iolist_to_binary(V)}
-	      end, L)
-    end;
+    econf:map(econf:binary(), econf:binary());
 mod_opt_type(custom_headers) ->
-    fun (L) when is_list(L) -> L end;
+    econf:map(econf:binary(), econf:binary());
 mod_opt_type(default_content_type) ->
-    fun iolist_to_binary/1;
+    econf:binary();
 mod_opt_type(directory_indices) ->
-    fun (L) when is_list(L) -> L end;
+    econf:list(econf:binary());
 mod_opt_type(docroot) ->
-    fun(S) ->
-	    Path = iolist_to_binary(S),
-	    case filelib:ensure_dir(filename:join(Path, "foo")) of
-		ok ->
-		    Path;
-		{error, Why} ->
-		    ?ERROR_MSG("Failed to create directory ~s: ~s",
-			       [Path, file:format_error(Why)]),
-		    erlang:error(badarg)
-	    end
-    end;
+    econf:directory(write);
 mod_opt_type(must_authenticate_with) ->
-    fun (L) when is_list(L) ->
-	    lists:map(fun(UP) when is_binary(UP) ->
-			      [K, V] = binary:split(UP, <<":">>),
-			      {K, V}
-		      end, L)
-    end.
+    econf:list(
+      econf:and_then(
+	econf:and_then(
+	  econf:binary("^[^:]+:[^:]+$"),
+	  econf:binary_sep(":")),
+	fun([K, V]) -> {K, V} end)).
 
+-spec mod_options(binary()) -> [{must_authenticate_with, [{binary(), binary()}]} |
+				{atom(), any()}].
 mod_options(_) ->
     [{accesslog, undefined},
      {content_types, []},

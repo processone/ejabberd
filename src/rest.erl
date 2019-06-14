@@ -25,11 +25,11 @@
 
 -module(rest).
 
--behaviour(ejabberd_config).
-
 -export([start/1, stop/1, get/2, get/3, post/4, delete/2,
          put/4, patch/4, request/6, with_retry/4,
-         opt_type/1]).
+         encode_json/1]).
+
+-include("logger.hrl").
 
 -define(HTTP_TIMEOUT, 10000).
 -define(CONNECT_TIMEOUT, 8000).
@@ -37,7 +37,7 @@
 
 start(Host) ->
     application:start(inets),
-    Size = ejabberd_config:get_option({ext_api_http_pool_size, Host}, 100),
+    Size = ejabberd_option:ext_api_http_pool_size(Host),
     httpc:set_options([{max_sessions, Size}]).
 
 stop(_Host) ->
@@ -160,8 +160,7 @@ decode_json(<<"\r\n">>) -> [];
 decode_json(Data) -> jiffy:decode(Data).
 
 custom_headers(Server) ->
-  case ejabberd_config:get_option({ext_api_headers, Server},
-                                  <<>>) of
+  case ejabberd_option:ext_api_headers(Server) of
         <<>> ->
             [];
         Hdrs ->
@@ -181,8 +180,7 @@ base_url(Server, Path) ->
     Url = case BPath of
         <<"http", _/binary>> -> BPath;
         _ ->
-            Base = ejabberd_config:get_option({ext_api_url, Server},
-                                              <<"http://localhost/api">>),
+            Base = ejabberd_option:ext_api_url(Server),
             case binary:last(Base) of
                 $/ -> <<Base/binary, BPath/binary>>;
                 _ -> <<Base/binary, "/", BPath/binary>>
@@ -210,12 +208,3 @@ url(Server, Path, Params) ->
                       || P <- binary:split(Extra, <<"&">>, [global])],
             url(Url, Custom++Params)
     end.
-
--spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
-opt_type(ext_api_http_pool_size) ->
-    fun (X) when is_integer(X), X > 0 -> X end;
-opt_type(ext_api_url) ->
-    fun (X) -> iolist_to_binary(X) end;
-opt_type(ext_api_headers) ->
-    fun (X) -> iolist_to_binary(X) end;
-opt_type(_) -> [ext_api_http_pool_size, ext_api_url, ext_api_headers].

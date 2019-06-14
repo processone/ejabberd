@@ -90,8 +90,8 @@ filter_subscription(Acc, #presence{meta = #{captcha := passed}}) ->
 filter_subscription(Acc, #presence{from = From, to = To, lang = Lang,
 				   id = SID, type = subscribe} = Pres) ->
     LServer = To#jid.lserver,
-    case gen_mod:get_module_opt(LServer, ?MODULE, drop) andalso
-	 gen_mod:get_module_opt(LServer, ?MODULE, captcha) andalso
+    case mod_block_strangers_opt:drop(LServer) andalso
+	 mod_block_strangers_opt:captcha(LServer) andalso
 	 need_check(Pres) of
 	true ->
 	    case check_subscription(From, To) of
@@ -106,7 +106,7 @@ filter_subscription(Acc, #presence{from = From, to = To, lang = Lang,
 			    Msg = #message{from = BTo, to = From,
 					   id = ID, body = Body,
 					   sub_els = CaptchaEls},
-			    case gen_mod:get_module_opt(LServer, ?MODULE, log) of
+			    case mod_block_strangers_opt:log(LServer) of
 				true ->
 				    ?INFO_MSG("Challenge subscription request "
 					      "from stranger ~s to ~s with "
@@ -151,8 +151,8 @@ check_message(#message{from = From, to = To, lang = Lang} = Msg) ->
 	true ->
 	    case check_subscription(From, To) of
 		false ->
-		    Drop = gen_mod:get_module_opt(LServer, ?MODULE, drop),
-		    Log = gen_mod:get_module_opt(LServer, ?MODULE, log),
+		    Drop = mod_block_strangers_opt:drop(LServer),
+		    Log = mod_block_strangers_opt:log(LServer),
 		    if
 			Log ->
 			    ?INFO_MSG("~s message from stranger ~s to ~s",
@@ -199,8 +199,8 @@ need_check(Pkt) ->
 		  _ ->
 		      false
 	      end,
-    AllowLocalUsers = gen_mod:get_module_opt(LServer, ?MODULE, allow_local_users),
-    Access = gen_mod:get_module_opt(LServer, ?MODULE, access),
+    AllowLocalUsers = mod_block_strangers_opt:allow_local_users(LServer),
+    Access = mod_block_strangers_opt:access(LServer),
     not (IsSelf orelse IsEmpty
 	 orelse acl:match_rule(LServer, Access, From) == allow
 	 orelse ((AllowLocalUsers orelse From#jid.luser == <<"">>)
@@ -215,7 +215,7 @@ check_subscription(From, To) ->
 	    false;
 	false ->
 	    %% Check if the contact's server is in the roster
-	    gen_mod:get_module_opt(LocalServer, ?MODULE, allow_transports)
+	    mod_block_strangers_opt:allow_transports(LocalServer)
 		andalso mod_roster:is_subscribed(jid:make(RemoteServer), To);
 	true ->
 	    true
@@ -230,19 +230,18 @@ sets_bare_member({U, S, <<"">>} = LBJID, Set) ->
 depends(_Host, _Opts) ->
     [].
 
-mod_opt_type(drop) ->
-    fun (B) when is_boolean(B) -> B end;
-mod_opt_type(log) ->
-    fun (B) when is_boolean(B) -> B end;
-mod_opt_type(allow_local_users) ->
-    fun (B) when is_boolean(B) -> B end;
-mod_opt_type(allow_transports) ->
-    fun (B) when is_boolean(B) -> B end;
-mod_opt_type(captcha) ->
-    fun (B) when is_boolean(B) -> B end;
 mod_opt_type(access) ->
-    fun acl:access_rules_validator/1.
-
+    econf:acl();
+mod_opt_type(drop) ->
+    econf:bool();
+mod_opt_type(log) ->
+    econf:bool();
+mod_opt_type(captcha) ->
+    econf:bool();
+mod_opt_type(allow_local_users) ->
+    econf:bool();
+mod_opt_type(allow_transports) ->
+    econf:bool().
 
 mod_options(_) ->
     [{access, none},

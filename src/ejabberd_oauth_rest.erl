@@ -26,13 +26,11 @@
 
 -module(ejabberd_oauth_rest).
 -behaviour(ejabberd_oauth).
--behaviour(ejabberd_config).
 
 -export([init/0,
          store/1,
          lookup/1,
-         clean/1,
-         opt_type/1]).
+         clean/1]).
 
 -include("ejabberd_oauth.hrl").
 -include("logger.hrl").
@@ -88,11 +86,5 @@ clean(_TS) ->
     ok.
 
 path(Path) ->
-    Base = ejabberd_config:get_option(ext_api_path_oauth, <<"/oauth">>),
+    Base = ejabberd_option:ext_api_path_oauth(),
     <<Base/binary, "/", Path/binary>>.
-
-
--spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
-opt_type(ext_api_path_oauth) ->
-    fun (X) -> iolist_to_binary(X) end;
-opt_type(_) -> [ext_api_path_oauth].

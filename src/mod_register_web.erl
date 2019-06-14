@@ -70,7 +70,7 @@
 %%%----------------------------------------------------------------------
 
 start(_Host, _Opts) ->
-    %% case gen_mod:get_opt(docroot, Opts, fun(A) -> A end, undefined) of
+    %% case mod_register_web_opt:docroot(Opts, fun(A) -> A end, undefined) of
     ok.
 
 stop(_Host) -> ok.
@@ -361,15 +361,18 @@ build_captcha_li_list2(Lang, IP) ->
     To = #jid{user = <<"">>, server = <<"test">>,
 	      resource = <<"">>},
     Args = [],
-    case ejabberd_captcha:create_captcha(SID, From, To,
-					 Lang, IP, Args)
-	of
-      {ok, Id, _, _} ->
-	  {_, {CImg, CText, CId, CKey}} =
-	      ejabberd_captcha:build_captcha_html(Id, Lang),
-	  [?XE(<<"li">>,
-	       [CText, ?C(<<" ">>), CId, CKey, ?BR, CImg])];
-      Error -> throw(Error)
+    case ejabberd_captcha:create_captcha(
+	   SID, From, To, Lang, IP, Args) of
+	{ok, Id, _, _} ->
+	    case ejabberd_captcha:build_captcha_html(Id, Lang) of
+		{_, {CImg, CText, CId, CKey}} ->
+		    [?XE(<<"li">>,
+			 [CText, ?C(<<" ">>), CId, CKey, ?BR, CImg])];
+		Error ->
+		    throw(Error)
+	    end;
+	Error ->
+	    throw(Error)
     end.
 
 %%%----------------------------------------------------------------------
@@ -525,7 +528,7 @@ form_del_get(Host, Lang) ->
 %%                                    {error, not_allowed} |
 %%                                    {error, invalid_jid}
 register_account(Username, Host, Password) ->
-    Access = gen_mod:get_module_opt(Host, mod_register, access),
+    Access = mod_register_opt:access(Host),
     case jid:make(Username, Host) of
       error -> {error, invalid_jid};
       JID ->
@@ -589,8 +592,6 @@ unregister_account(Username, Host, Password) ->
 
 get_error_text({error, captcha_non_valid}) ->
     <<"The captcha you entered is wrong">>;
-get_error_text({success, exists, _}) ->
-    get_error_text({error, exists});
 get_error_text({error, exists}) ->
     <<"The account already exists">>;
 get_error_text({error, password_incorrect}) ->

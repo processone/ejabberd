@@ -54,12 +54,12 @@ process_local_iq(#iq{type = set, lang = Lang} = IQ) ->
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_local_iq(#iq{type = get, to = To} = IQ) ->
     Host = To#jid.lserver,
-    OS = case gen_mod:get_module_opt(Host, ?MODULE, show_os) of
+    OS = case mod_version_opt:show_os(Host) of
 	     true -> get_os();
 	     false -> undefined
 	 end,
     xmpp:make_iq_result(IQ, #version{name = <<"ejabberd">>,
-				     ver = ejabberd_config:get_version(),
+				     ver = ejabberd_option:version(),
 				     os = OS}).
 
 get_os() ->
@@ -77,7 +77,7 @@ depends(_Host, _Opts) ->
     [].
 
 mod_opt_type(show_os) ->
-    fun (B) when is_boolean(B) -> B end.
+    econf:bool().
 
 mod_options(_Host) ->
     [{show_os, true}].

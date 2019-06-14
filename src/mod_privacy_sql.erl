@@ -24,7 +24,6 @@
 
 -module(mod_privacy_sql).
 
--compile([{parse_transform, ejabberd_sql_pt}]).
 
 -behaviour(mod_privacy).
 

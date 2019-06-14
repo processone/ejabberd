@@ -12,22 +12,10 @@
 ### ******* MAKE SURE YOU INDENT SECTIONS CORRECTLY *******
 ### *******************************************************
 ### Refer to http://en.wikipedia.org/wiki/YAML for the brief description.
-### However, ejabberd treats different literals as different types:
-###
-### - unquoted or single-quoted strings. They are called "atoms".
-###   Example: dog, 'Jupiter', '3.14159', YELLOW
-###
-### - numeric literals. Example: 3, -45.0, .0
-###
-### - quoted or folded strings.
-###   Examples of quoted string: "Lizzard", "orange".
-###   Example of folded string:
-###   > Art thou not Romeo,
-###     and a Montague?
 ###
 
 hosts:
-  - "localhost"
+  - localhost
 
 loglevel: 4
 log_rotate_size: 10485760
@@ -36,8 +24,8 @@ log_rotate_count: 1
 log_rate_limit: 100
 
 certfiles:
-  - "/etc/letsencrypt/live/localhost/fullchain.pem"
-  - "/etc/letsencrypt/live/localhost/privkey.pem"
+  - /etc/letsencrypt/live/localhost/fullchain.pem
+  - /etc/letsencrypt/live/localhost/privkey.pem
 
 listen:
   -
@@ -84,25 +72,25 @@ acl:
     user_regexp: ""
   loopback:
     ip:
-      - "127.0.0.0/8"
-      - "::1/128"
+      - 127.0.0.0/8
+      - ::1/128
 
 access_rules:
   local:
-    - allow: local
+    allow: local
   c2s:
-    - deny: blocked
-    - allow
+    deny: blocked
+    allow: all
   announce:
-    - allow: admin
+    allow: admin
   configure:
-    - allow: admin
+    allow: admin
   muc_create:
-    - allow: local
+    allow: local
   pubsub_createnode:
-    - allow: local
+    allow: local
   trusted_network:
-    - allow: loopback
+    allow: loopback
 
 api_permissions:
   "console commands":
@@ -112,26 +100,26 @@ api_permissions:
     what: "*"
   "admin access":
     who:
-      - access:
-        - allow:
-          - acl: loopback
-          - acl: admin
-      - oauth:
-        - scope: "ejabberd:admin"
-        - access:
-          - allow:
-            - acl: loopback
-            - acl: admin
+      access:
+        allow:
+          acl: loopback
+          acl: admin
+      oauth:
+        scope: "ejabberd:admin"
+        access:
+          allow:
+            acl: loopback
+            acl: admin
     what:
       - "*"
       - "!stop"
       - "!start"
   "public commands":
     who:
-      - ip: "127.0.0.1/8"
+      ip: 127.0.0.1/8
     what:
-      - "status"
-      - "connected_users_number"
+      - status
+      - connected_users_number
 
 shaper:
   normal: 1000
@@ -140,11 +128,11 @@ shaper:
 shaper_rules:
   max_user_sessions: 10
   max_user_offline_messages:
-    - 5000: admin
-    - 100
+    5000: admin
+    100: all
   c2s_shaper:
-    - none: admin
-    - normal
+    none: admin
+    normal: all
   s2s_shaper: fast
 
 modules:
@@ -163,7 +151,7 @@ modules:
   mod_fail2ban: {}
   mod_http_api: {}
   mod_http_upload:
-    put_url: "https://@HOST@:5443/upload"
+    put_url: https://@HOST@:5443/upload
   mod_last: {}
   mod_mam:
     ## Mnesia is limited to 2GB, better to use an SQL backend
@@ -196,11 +184,11 @@ modules:
   mod_pubsub:
     access_createnode: pubsub_createnode
     plugins:
-      - "flat"
-      - "pep"
+      - flat
+      - pep
     force_node_config:
       ## Avoid buggy clients to make their bookmarks public
-      "storage:bookmarks":
+      storage:bookmarks:
         access_model: whitelist
   mod_push: {}
   mod_push_keepalive: {}

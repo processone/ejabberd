@@ -25,22 +25,13 @@
 
 -module(ejabberd_sql_sup).
 
--behaviour(ejabberd_config).
-
 -author('alexey@process-one.net').
 
 -export([start_link/1, init/1, add_pid/2, remove_pid/2,
-	 get_pids/1, get_random_pid/1, transform_options/1,
-	 reload/1, opt_type/1]).
+	 get_pids/1, get_random_pid/1, reload/1]).
 
 -include("logger.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
-
--define(PGSQL_PORT, 5432).
--define(MYSQL_PORT, 3306).
--define(DEFAULT_POOL_SIZE, 10).
--define(DEFAULT_SQL_START_INTERVAL, 30).
--define(CONNECT_TIMEOUT, 500).
 
 -record(sql_pool, {host :: binary(),
 		   pid  :: pid()}).
@@ -57,7 +48,7 @@ start_link(Host) ->
 			  ?MODULE, [Host]).
 
 init([Host]) ->
-    Type = ejabberd_config:get_option({sql_type, Host}, odbc),
+    Type = ejabberd_option:sql_type(Host),
     PoolSize = get_pool_size(Type, Host),
     case Type of
         sqlite ->
@@ -71,7 +62,7 @@ init([Host]) ->
 	  [child_spec(I, Host) || I <- lists:seq(1, PoolSize)]}}.
 
 reload(Host) ->
-    Type = ejabberd_config:get_option({sql_type, Host}, odbc),
+    Type = ejabberd_option:sql_type(Host),
     NewPoolSize = get_pool_size(Type, Host),
     OldPoolSize = ets:select_count(
 		    sql_pool,
@@ -125,12 +116,7 @@ remove_pid(Host, Pid) ->
 
 -spec get_pool_size(atom(), binary()) -> pos_integer().
 get_pool_size(SQLType, Host) ->
-    PoolSize = ejabberd_config:get_option(
-                 {sql_pool_size, Host},
-		 case SQLType of
-		     sqlite -> 1;
-		     _ -> ?DEFAULT_POOL_SIZE
-		 end),
+    PoolSize = ejabberd_option:sql_pool_size(Host),
     if PoolSize > 1 andalso SQLType == sqlite ->
 	    ?WARNING_MSG("it's not recommended to set sql_pool_size > 1 for "
 			 "sqlite, because it may cause race conditions", []);
@@ -140,30 +126,9 @@ get_pool_size(SQLType, Host) ->
     PoolSize.
 
 child_spec(I, Host) ->
-    StartInterval = ejabberd_config:get_option(
-                      {sql_start_interval, Host},
-                      ?DEFAULT_SQL_START_INTERVAL),
-    {I, {ejabberd_sql, start_link, [Host, timer:seconds(StartInterval)]},
+    StartInterval = ejabberd_option:sql_start_interval(Host),
+    {I, {ejabberd_sql, start_link, [Host, StartInterval]},
      transient, 2000, worker, [?MODULE]}.
-
-transform_options(Opts) ->
-    lists:foldl(fun transform_options/2, [], Opts).
-
-transform_options({odbc_server, {Type, Server, Port, DB, User, Pass}}, Opts) ->
-    [{sql_type, Type},
-     {sql_server, Server},
-     {sql_port, Port},
-     {sql_database, DB},
-     {sql_username, User},
-     {sql_password, Pass}|Opts];
-transform_options({odbc_server, {mysql, Server, DB, User, Pass}}, Opts) ->
-    transform_options({odbc_server, {mysql, Server, ?MYSQL_PORT, DB, User, Pass}}, Opts);
-transform_options({odbc_server, {pgsql, Server, DB, User, Pass}}, Opts) ->
-    transform_options({odbc_server, {pgsql, Server, ?PGSQL_PORT, DB, User, Pass}}, Opts);
-transform_options({odbc_server, {sqlite, DB}}, Opts) ->
-    transform_options({odbc_server, {sqlite, DB}}, Opts);
-transform_options(Opt, Opts) ->
-    [Opt|Opts].
 
 check_sqlite_db(Host) ->
     DB = ejabberd_sql:sqlite_db(Host),
@@ -234,11 +199,3 @@ read_lines(Fd, File, Acc) ->
             ?ERROR_MSG("Failed read from lite.sql, reason: ~p", [Err]),
             []
     end.
-
--spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
-opt_type(sql_pool_size) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
-opt_type(sql_start_interval) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
-opt_type(_) ->
-    [sql_pool_size, sql_start_interval].

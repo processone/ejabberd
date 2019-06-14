@@ -387,9 +387,9 @@ mucsub_from_muc_master(Config) ->
 
 mucsub_from_muc_slave(Config) ->
     Server = ?config(server, Config),
-    gen_mod:update_module_opts(Server, mod_mam, [{user_mucsub_from_muc_archive, true}]),
+    gen_mod:update_module(Server, mod_mam, #{user_mucsub_from_muc_archive => true}),
     Config2 = mucsub_slave(Config),
-    gen_mod:update_module_opts(Server, mod_mam, [{user_mucsub_from_muc_archive, false}]),
+    gen_mod:update_module(Server, mod_mam, #{user_mucsub_from_muc_archive => false}),
     Config2.
 
 mucsub_from_muc_non_persistent_master(Config) ->

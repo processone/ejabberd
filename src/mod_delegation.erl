@@ -61,15 +61,24 @@ reload(_Host, _NewOpts, _OldOpts) ->
     ok.
 
 mod_opt_type(namespaces) ->
-    fun(L) ->
-	    lists:map(
-	      fun({NS, Opts}) ->
-		      Attrs = proplists:get_value(filtering, Opts, []),
-		      Access = proplists:get_value(access, Opts, none),
-		      {NS, Attrs, Access}
-	      end, L)
-    end.
+    econf:and_then(
+      econf:map(
+	econf:binary(),
+	econf:options(
+	  #{filtering => econf:list(econf:binary()),
+	    access => econf:acl()})),
+      fun(L) ->
+	      lists:map(
+		fun({NS, Opts}) ->
+			Attrs = proplists:get_value(filtering, Opts, []),
+			Access = proplists:get_value(access, Opts, none),
+			{NS, Attrs, Access}
+		end, L)
+      end).
 
+-spec mod_options(binary()) -> [{namespaces,
+				 [{binary(), [binary()], acl:acl()}]} |
+				{atom(), term()}].
 mod_options(_Host) ->
     [{namespaces, []}].
 
@@ -87,7 +96,7 @@ component_connected(Host) ->
       fun(ServerHost) ->
 	      Proc = gen_mod:get_module_proc(ServerHost, ?MODULE),
 	      gen_server:cast(Proc, {component_connected, Host})
-      end, ejabberd_config:get_myhosts()).
+      end, ejabberd_option:hosts()).
 
 -spec component_disconnected(binary(), binary()) -> ok.
 component_disconnected(Host, _Reason) ->
@@ -95,7 +104,7 @@ component_disconnected(Host, _Reason) ->
       fun(ServerHost) ->
 	      Proc = gen_mod:get_module_proc(ServerHost, ?MODULE),
 	      gen_server:cast(Proc, {component_disconnected, Host})
-      end, ejabberd_config:get_myhosts()).
+      end, ejabberd_option:hosts()).
 
 -spec ejabberd_local(iq()) -> iq().
 ejabberd_local(IQ) ->
@@ -149,8 +158,7 @@ handle_call(_Request, _From, State) ->
 handle_cast({component_connected, Host}, State) ->
     ServerHost = State#state.server_host,
     To = jid:make(Host),
-    NSAttrsAccessList = gen_mod:get_module_opt(
-			  ServerHost, ?MODULE, namespaces),
+    NSAttrsAccessList = mod_delegation_opt:namespaces(ServerHost),
     lists:foreach(
       fun({NS, _Attrs, Access}) ->
 	      case acl:match_rule(ServerHost, Access, To) of

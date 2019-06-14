@@ -155,12 +155,17 @@ import(LServer, <<"vcard_search">>,
                     orgname = OrgName, lorgname = LOrgName,
                     orgunit = OrgUnit, lorgunit = LOrgUnit}).
 
-need_transform(#vcard{us = {U, S}}) when is_list(U) orelse is_list(S) ->
+need_transform({vcard, {U, S}, _}) when is_list(U) orelse is_list(S) ->
     ?INFO_MSG("Mnesia table 'vcard' will be converted to binary", []),
     true;
-need_transform(#vcard_search{us = {U, S}}) when is_list(U) orelse is_list(S) ->
-    ?INFO_MSG("Mnesia table 'vcard_search' will be converted to binary", []),
-    true;
+need_transform(R) when element(1, R) == vcard_search ->
+    case element(2, R) of
+	{U, S} when is_list(U) orelse is_list(S) ->
+	    ?INFO_MSG("Mnesia table 'vcard_search' will be converted to binary", []),
+	    true;
+	_ ->
+	    false
+    end;
 need_transform(_) ->
     false.
 
@@ -192,8 +197,7 @@ filter_fields([{SVar, [Val]} | Ds], Match, LServer)
     LVal = mod_vcard:string2lower(Val),
     NewMatch = case SVar of
 		   <<"user">> ->
-		       case gen_mod:get_module_opt(LServer, mod_vcard,
-						   search_all_hosts) of
+		       case mod_vcard_mnesia_opt:search_all_hosts(LServer) of
 			   true -> Match#vcard_search{luser = make_val(LVal)};
 			   false ->
 			       Host = find_my_host(LServer),
@@ -234,7 +238,7 @@ make_val(Val) ->
 
 find_my_host(LServer) ->
     Parts = str:tokens(LServer, <<".">>),
-    find_my_host(Parts, ejabberd_config:get_myhosts()).
+    find_my_host(Parts, ejabberd_option:hosts()).
 
 find_my_host([], _Hosts) -> ejabberd_config:get_myname();
 find_my_host([_ | Tail] = Parts, Hosts) ->
@@ -266,7 +270,7 @@ record_to_item(R) ->
      {<<"orgunit">>, (R#vcard_search.orgunit)}].
 
 mod_opt_type(search_all_hosts) ->
-    fun (B) when is_boolean(B) -> B end.
+    econf:bool().
 
 mod_options(_) ->
     [{search_all_hosts, true}].

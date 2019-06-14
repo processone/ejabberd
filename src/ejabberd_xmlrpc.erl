@@ -36,7 +36,7 @@
 -author('badlop@process-one.net').
 
 -export([start/3, start_link/3, handler/2, process/2, accept/1,
-	 transform_listen_option/2, listen_opt_type/1, listen_options/0]).
+	 listen_opt_type/1, listen_options/0]).
 
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
@@ -233,7 +233,8 @@ process(_, _) ->
 %% -----------------------------
 %% Access verification
 %% -----------------------------
-
+-spec extract_auth([{user | server | token | password, binary()}]) ->
+			  map() | {error, not_found | expired | invalid_auth}.
 extract_auth(AuthList) ->
     ?DEBUG("AUTHLIST ~p", [AuthList]),
     try get_attrs([user, server, token], AuthList) of
@@ -306,10 +307,6 @@ handler(#state{get_auth = true, auth = noauth, ip = IP} = State,
 	    build_fault_response(-118,
 				 "Invalid oauth token",
 				 []);
-	{error, Value} ->
-	    build_fault_response(-118,
-				 "Invalid authentication data: ~p",
-				 [Value]);
         Auth ->
             handler(State#state{get_auth = false, auth = Auth#{ip => IP, caller_module => ?MODULE}},
                     {call, Method, Arguments})
@@ -341,15 +338,10 @@ handler(_State,
 handler(State, {call, Command, []}) ->
     handler(State, {call, Command, [{struct, []}]});
 handler(State,
-	{call, Command, [{struct, AttrL}]} = Payload) ->
-    case ejabberd_commands:get_command_format(Command, State#state.auth) of
-      {error, command_unknown} ->
-	  build_fault_response(-112, "Unknown call: ~p",
-			       [Payload]);
-      {ArgsF, ResultF} ->
-	  try_do_command(State#state.access_commands,
-			 State#state.auth, Command, AttrL, ArgsF, ResultF)
-    end;
+	{call, Command, [{struct, AttrL}]}) ->
+    {ArgsF, ResultF} = ejabberd_commands:get_command_format(Command, State#state.auth),
+    try_do_command(State#state.access_commands,
+		   State#state.auth, Command, AttrL, ArgsF, ResultF);
 %% If no other guard matches
 handler(_State, Payload) ->
     build_fault_response(-112, "Unknown call: ~p",
@@ -400,14 +392,8 @@ build_fault_response(Code, ParseString, ParseArgs) ->
 do_command(AccessCommands, Auth, Command, AttrL, ArgsF,
 	   ResultF) ->
     ArgsFormatted = format_args(AttrL, ArgsF),
-    Auth2 = case AccessCommands of
-		V when is_list(V) ->
-		    Auth#{extra_permissions => AccessCommands};
-		_ ->
-		    Auth
-	    end,
-    Result =
-	ejabberd_commands:execute_command2(Command, ArgsFormatted, Auth2),
+    Auth2 = Auth#{extra_permissions => AccessCommands},
+    Result = ejabberd_commands:execute_command2(Command, ArgsFormatted, Auth2),
     ResultFormatted = format_result(Result, ResultF),
     {command_result, ResultFormatted}.
 
@@ -554,17 +540,6 @@ make_status(true) -> 0;
 make_status(false) -> 1;
 make_status(error) -> 1;
 make_status(_) -> 1.
-
-transform_listen_option({access_commands, ACOpts}, Opts) ->
-    NewACOpts = lists:map(
-                  fun({AName, ACmds, AOpts}) ->
-                          {AName, [{commands, ACmds}, {options, AOpts}]};
-                     (Opt) ->
-                          Opt
-                  end, ACOpts),
-    [{access_commands, NewACOpts}|Opts];
-transform_listen_option(Opt, Opts) ->
-    [Opt|Opts].
 
 listen_opt_type(access_commands) ->
     fun(Opts) ->

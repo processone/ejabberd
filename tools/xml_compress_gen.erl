@@ -33,7 +33,7 @@
 -record(attr_stats, {count = 0, vals = #{}}).
 
 archive_analyze(Host, Table, EHost) ->
-    case ejabberd_sql:sql_query(Host, <<"select username, peer, kind, xml from ", Table/binary>>) of
+    case ejabberd_sql:sql_query(Host, [<<"select username, peer, kind, xml from ", Table/binary>>]) of
 	{selected, _, Res} ->
 	    lists:foldl(
 		fun([U, P, K, X], Stats) ->
@@ -76,7 +76,7 @@ gen_code(File, Rules, Ver) when Ver < 64 ->
 		end, Id + 1, Text),
 	    {lists:keystore(Ns, 1, Acc, {Ns, NsC ++ [{El, encode_id(Id), AttrsE, TextE}]}), Id5}
 	end, {[], 5}, Rules),
-    {ok, Dev} = file:open(File, write),
+    {ok, Dev} = file:open(File, [write]),
     Mod = filename:basename(File, ".erl"),
     io:format(Dev, "-module(~s).~n-export([encode/3, decode/3]).~n~n", [Mod]),
     RulesS = iolist_to_binary(io_lib:format("~p", [Rules])),

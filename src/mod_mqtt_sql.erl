@@ -17,7 +17,6 @@
 %%%-------------------------------------------------------------------
 -module(mod_mqtt_sql).
 -behaviour(mod_mqtt).
--compile([{parse_transform, ejabberd_sql_pt}]).
 
 %% API
 -export([init/2, publish/6, delete_published/2, lookup_published/2]).

@@ -1,0 +1,24 @@
+define_macro:
+  CERTFILE: cert.pem
+  CAFILE: ca.pem
+  C2S_PORT: @@c2s_port@@
+  S2S_PORT: @@s2s_port@@
+  WEB_PORT: @@web_port@@
+  COMPONENT_PORT: @@component_port@@
+  PASSWORD: >-
+    @@password@@
+  LOGLEVEL: @@loglevel@@
+  PRIV_DIR: "@@priv_dir@@"
+  PUT_URL: "http://upload.@HOST@:@@web_port@@/upload"
+  GET_URL: "http://upload.@HOST@:@@web_port@@/upload"
+  NEW_SCHEMA: @@new_schema@@
+  MYSQL_USER: "@@mysql_user@@"
+  MYSQL_SERVER: "@@mysql_server@@"
+  MYSQL_PORT: @@mysql_port@@
+  MYSQL_PASS: "@@mysql_pass@@"
+  MYSQL_DB: "@@mysql_db@@"
+  PGSQL_USER: "@@pgsql_user@@"
+  PGSQL_SERVER: "@@pgsql_server@@"
+  PGSQL_PORT: @@pgsql_port@@
+  PGSQL_PASS: "@@pgsql_pass@@"
+  PGSQL_DB: "@@pgsql_db@@"

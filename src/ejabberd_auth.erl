@@ -25,7 +25,6 @@
 -module(ejabberd_auth).
 
 -behaviour(gen_server).
--behaviour(ejabberd_config).
 
 -author('alexey@process-one.net').
 
@@ -47,7 +46,7 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
--export([auth_modules/1, opt_type/1]).
+-export([auth_modules/1]).
 
 -include("scram.hrl").
 -include("logger.hrl").
@@ -107,7 +106,7 @@ init([]) ->
 		    fun(Host, Acc) ->
 			    Modules = auth_modules(Host),
 			    maps:put(Host, Modules, Acc)
-		    end, #{}, ejabberd_config:get_myhosts()),
+		    end, #{}, ejabberd_option:hosts()),
     lists:foreach(
       fun({Host, Modules}) ->
 	      start(Host, Modules)
@@ -141,7 +140,7 @@ handle_cast(config_reloaded, #state{host_modules = HostModules} = State) ->
 		  stop(Host, OldModules -- NewModules),
 		  reload(Host, misc:intersection(OldModules, NewModules)),
 		  maps:put(Host, NewModules, Acc)
-	  end, HostModules, ejabberd_config:get_myhosts()),
+	  end, HostModules, ejabberd_option:hosts()),
     init_cache(NewHostModules),
     {noreply, State#state{host_modules = NewHostModules}};
 handle_cast(Msg, State) ->
@@ -530,7 +529,7 @@ backend_type(Mod) ->
 
 -spec password_format(binary() | global) -> plain | scram.
 password_format(LServer) ->
-    ejabberd_config:get_option({auth_password_format, LServer}, plain).
+    ejabberd_option:auth_password_format(LServer).
 
 %%%----------------------------------------------------------------------
 %%% Backend calls
@@ -767,15 +766,9 @@ init_cache(HostModules) ->
 
 -spec cache_opts() -> [proplists:property()].
 cache_opts() ->
-    MaxSize = ejabberd_config:get_option(
-		auth_cache_size,
-		ejabberd_config:cache_size(global)),
-    CacheMissed = ejabberd_config:get_option(
-		    auth_cache_missed,
-		    ejabberd_config:cache_missed(global)),
-    LifeTime = case ejabberd_config:get_option(
-		      auth_cache_life_time,
-		      ejabberd_config:cache_life_time(global)) of
+    MaxSize = ejabberd_option:auth_cache_size(),
+    CacheMissed = ejabberd_option:auth_cache_missed(),
+    LifeTime = case ejabberd_option:auth_cache_life_time() of
 		   infinity -> infinity;
 		   I -> timer:seconds(I)
 	       end,
@@ -803,9 +796,7 @@ use_cache(Mod, LServer) ->
     case erlang:function_exported(Mod, use_cache, 1) of
 	true -> Mod:use_cache(LServer);
 	false ->
-	    ejabberd_config:get_option(
-	      {auth_use_cache, LServer},
-	      ejabberd_config:use_cache(LServer))
+	    ejabberd_option:auth_use_cache(LServer)
     end.
 
 -spec cache_nodes(module(), binary()) -> [node()].
@@ -827,13 +818,12 @@ auth_modules() ->
     lists:flatmap(
       fun(Host) ->
 	      [{Host, Mod} || Mod <- auth_modules(Host)]
-      end, ejabberd_config:get_myhosts()).
+      end, ejabberd_option:hosts()).
 
 -spec auth_modules(binary()) -> [module()].
 auth_modules(Server) ->
     LServer = jid:nameprep(Server),
-    Default = ejabberd_config:default_db(LServer, ?MODULE),
-    Methods = ejabberd_config:get_option({auth_method, LServer}, [Default]),
+    Methods = ejabberd_option:auth_method(LServer),
     [ejabberd:module_name([<<"ejabberd">>, <<"auth">>,
 			   misc:atom_to_binary(M)])
      || M <- Methods].
@@ -911,31 +901,3 @@ import(Server, {sql, _}, riak, <<"users">>, Fields) ->
     ejabberd_auth_riak:import(Server, Fields);
 import(_LServer, {sql, _}, sql, <<"users">>, _) ->
     ok.
-
--spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
-opt_type(auth_method) ->
-    fun (V) when is_list(V) ->
-	    lists:map(fun(M) -> ejabberd_config:v_db(?MODULE, M) end, V);
-	(V) -> [ejabberd_config:v_db(?MODULE, V)]
-    end;
-opt_type(auth_password_format) ->
-    fun (plain) -> plain;
-	(scram) -> scram
-    end;
-opt_type(auth_use_cache) ->
-    fun(B) when is_boolean(B) -> B end;
-opt_type(auth_cache_missed) ->
-    fun(B) when is_boolean(B) -> B end;
-opt_type(auth_cache_life_time) ->
-    fun(I) when is_integer(I), I>0 -> I;
-       (unlimited) -> infinity;
-       (infinity) -> infinity
-    end;
-opt_type(auth_cache_size) ->
-    fun(I) when is_integer(I), I>0 -> I;
-       (unlimited) -> infinity;
-       (infinity) -> infinity
-    end;
-opt_type(_) ->
-    [auth_method, auth_password_format, auth_use_cache,
-     auth_cache_missed, auth_cache_life_time, auth_cache_size].

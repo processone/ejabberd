@@ -24,11 +24,13 @@
 
 -record(lqueue,
 {
-    queue   :: p1_queue:queue(),
-    max = 0 :: integer()
+    queue = p1_queue:new()  :: p1_queue:queue(),
+    max   = 0               :: integer()
 }).
 
 -type lqueue() :: #lqueue{}.
+-type lqueue_elem() :: {binary(), message(), boolean(),
+			erlang:timestamp(), non_neg_integer()}.
 
 -record(config,
 {
@@ -63,7 +65,7 @@
     captcha_whitelist                    = (?SETS):empty() :: gb_sets:set(),
     mam                                  = false :: boolean(),
     pubsub                               = <<"">> :: binary(),
-    lang                                 = ejabberd_config:get_mylang() :: binary()
+    lang                                 = ejabberd_option:language() :: binary()
 }).
 
 -type config() :: #config{}.
@@ -89,8 +91,8 @@
 {
     message_time    = 0 :: integer(),
     presence_time   = 0 :: integer(),
-    message_shaper  = none :: shaper:shaper(),
-    presence_shaper = none :: shaper:shaper(),
+    message_shaper  = none :: ejabberd_shaper:shaper(),
+    presence_shaper = none :: ejabberd_shaper:shaper(),
     message :: message() | undefined,
     presence :: {binary(), presence()} | undefined
 }).
@@ -110,11 +112,11 @@
     robots                  = #{} :: map(),
     nicks                   = #{} :: map(),
     affiliations            = #{} :: map(),
-    history                 :: lqueue(),
+    history                 = #lqueue{} :: lqueue(),
     subject                 = [] :: [text()],
     subject_author          = <<"">> :: binary(),
     just_created            = erlang:system_time(microsecond) :: true | integer(),
     activity                = treap:empty() :: treap:treap(),
-    room_shaper             = none :: shaper:shaper(),
+    room_shaper             = none :: ejabberd_shaper:shaper(),
     room_queue              :: p1_queue:queue() | undefined
 }).

@@ -21,10 +21,9 @@
 %%%-------------------------------------------------------------------
 -module(ejabberd_s2s_out).
 -behaviour(xmpp_stream_out).
--behaviour(ejabberd_config).
+-dialyzer([{no_fail_call, [stop/1, process_closed/2, handle_timeout/1]},
+	   {no_return, [process_closed/2, handle_timeout/1]}]).
 
-%% ejabberd_config callbacks
--export([opt_type/1, transform_options/1]).
 %% xmpp_stream_out callbacks
 -export([tls_options/1, tls_required/1, tls_verify/1, tls_enabled/1,
 	 connect_timeout/1, address_families/1, default_port/1,
@@ -77,8 +76,7 @@ connect(Ref) ->
 close(Ref) ->
     xmpp_stream_out:close(Ref).
 
--spec close(pid(), atom()) -> ok;
-	   (state(), atom()) -> state().
+-spec close(pid(), atom()) -> ok.
 close(Ref, Reason) ->
     xmpp_stream_out:close(Ref, Reason).
 
@@ -184,30 +182,26 @@ tls_options(#{server := LServer}) ->
 tls_required(#{server := LServer}) ->
     ejabberd_s2s:tls_required(LServer).
 
-tls_verify(#{server := LServer}) ->
-    ejabberd_s2s:tls_verify(LServer).
+tls_verify(#{server := LServer} = State) ->
+    ejabberd_hooks:run_fold(s2s_out_tls_verify, LServer, true, [State]).
 
 tls_enabled(#{server := LServer}) ->
     ejabberd_s2s:tls_enabled(LServer).
 
 connect_timeout(#{server := LServer}) ->
-    ejabberd_config:get_option(
-      {outgoing_s2s_timeout, LServer},
-      timer:seconds(10)).
+    ejabberd_option:outgoing_s2s_timeout(LServer).
 
 default_port(#{server := LServer}) ->
-    ejabberd_config:get_option({outgoing_s2s_port, LServer}, 5269).
+    ejabberd_option:outgoing_s2s_port(LServer).
 
 address_families(#{server := LServer}) ->
-    ejabberd_config:get_option(
-      {outgoing_s2s_families, LServer},
-      [inet, inet6]).
+    ejabberd_option:outgoing_s2s_families(LServer).
 
 dns_retries(#{server := LServer}) ->
-    ejabberd_config:get_option({s2s_dns_retries, LServer}, 2).
+    ejabberd_option:s2s_dns_retries(LServer).
 
 dns_timeout(#{server := LServer}) ->
-    ejabberd_config:get_option({s2s_dns_timeout, LServer}, timer:seconds(10)).
+    ejabberd_option:s2s_dns_timeout(LServer).
 
 handle_auth_success(Mech, #{socket := Socket, ip := IP,
 			    remote_server := RServer,
@@ -269,11 +263,11 @@ init([#{server := LServer, remote_server := RServer} = State, Opts]) ->
 		     {_, N} -> N;
 		     false -> unlimited
 		 end,
-    Timeout = ejabberd_config:negotiation_timeout(),
+    Timeout = ejabberd_option:negotiation_timeout(),
     State1 = State#{on_route => queue,
 		    queue => p1_queue:new(QueueType, QueueLimit),
 		    xmlns => ?NS_SERVER,
-		    lang => ejabberd_config:get_mylang(),
+		    lang => ejabberd_option:language(),
 		    server_host => ServerHost,
 		    shaper => none},
     State2 = xmpp_stream_out:set_timeout(State1, Timeout),
@@ -314,8 +308,8 @@ terminate(Reason, #{server := LServer,
 		 normal -> State;
 		 _ -> State#{stop_reason => internal_failure}
     end,
-    bounce_queue(State1),
-    bounce_message_queue(State1).
+    State2 = bounce_queue(State1),
+    bounce_message_queue(State2).
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
@@ -374,7 +368,7 @@ mk_bounce_error(_Lang, _State) ->
 
 -spec get_delay() -> non_neg_integer().
 get_delay() ->
-    MaxDelay = ejabberd_config:get_option(s2s_max_retry_delay, 300),
+    MaxDelay = ejabberd_option:s2s_max_retry_delay(),
     p1_rand:uniform(MaxDelay).
 
 -spec set_idle_timeout(state()) -> state().
@@ -400,76 +394,3 @@ format_error(queue_full) ->
     <<"Stream queue is overloaded">>;
 format_error(Reason) ->
     xmpp_stream_out:format_error(Reason).
-
-transform_options(Opts) ->
-    lists:foldl(fun transform_options/2, [], Opts).
-
-transform_options({outgoing_s2s_options, Families, Timeout}, Opts) ->
-    ?WARNING_MSG("Option 'outgoing_s2s_options' is deprecated. "
-                 "The option is still supported "
-                 "but it is better to fix your config: "
-                 "use 'outgoing_s2s_timeout' and "
-                 "'outgoing_s2s_families' instead.", []),
-    maybe_report_huge_timeout(outgoing_s2s_timeout, Timeout),
-    [{outgoing_s2s_families, Families},
-     {outgoing_s2s_timeout, Timeout}
-     | Opts];
-transform_options({s2s_dns_options, S2SDNSOpts}, AllOpts) ->
-    ?WARNING_MSG("Option 's2s_dns_options' is deprecated. "
-                 "The option is still supported "
-                 "but it is better to fix your config: "
-                 "use 's2s_dns_timeout' and "
-                 "'s2s_dns_retries' instead", []),
-    lists:foldr(
-      fun({timeout, T}, AccOpts) ->
-	      maybe_report_huge_timeout(s2s_dns_timeout, T),
-              [{s2s_dns_timeout, T}|AccOpts];
-         ({retries, R}, AccOpts) ->
-              [{s2s_dns_retries, R}|AccOpts];
-         (_, AccOpts) ->
-              AccOpts
-      end, AllOpts, S2SDNSOpts);
-transform_options({Opt, T}, Opts)
-  when Opt == outgoing_s2s_timeout; Opt == s2s_dns_timeout ->
-    maybe_report_huge_timeout(Opt, T),
-    [{Opt, T}|Opts];
-transform_options(Opt, Opts) ->
-    [Opt|Opts].
-
-maybe_report_huge_timeout(Opt, T) when is_integer(T), T >= 1000 ->
-    ?WARNING_MSG("value '~p' of option '~p' is too big, "
-		 "are you sure you have set seconds?",
-		 [T, Opt]);
-maybe_report_huge_timeout(_, _) ->
-    ok.
-
--spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
-opt_type(outgoing_s2s_families) ->
-    fun(Families) ->
-	    lists:map(
-	      fun(ipv4) -> inet;
-		 (ipv6) -> inet6
-	      end, Families)
-    end;
-opt_type(outgoing_s2s_port) ->
-    fun (I) when is_integer(I), I > 0, I < 65536 -> I end;
-opt_type(outgoing_s2s_timeout) ->
-    fun(TimeOut) when is_integer(TimeOut), TimeOut > 0 ->
-	    timer:seconds(TimeOut);
-       (unlimited) ->
-	    infinity;
-       (infinity) ->
-	    infinity
-    end;
-opt_type(s2s_dns_retries) ->
-    fun (I) when is_integer(I), I >= 0 -> I end;
-opt_type(s2s_dns_timeout) ->
-    fun(I) when is_integer(I), I>=0 -> timer:seconds(I);
-       (infinity) -> infinity;
-       (unlimited) -> infinity
-    end;
-opt_type(s2s_max_retry_delay) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
-opt_type(_) ->
-    [outgoing_s2s_families, outgoing_s2s_port, outgoing_s2s_timeout,
-     s2s_dns_retries, s2s_dns_timeout, s2s_max_retry_delay].

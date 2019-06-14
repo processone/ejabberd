@@ -27,7 +27,7 @@
 
 %% ejabberd_listener callbacks
 -export([start/3, start_link/3, accept/1]).
--export([listen_opt_type/1, listen_options/0, transform_listen_option/2]).
+-export([listen_opt_type/1, listen_options/0]).
 %% xmpp_stream_in callbacks
 -export([init/1, handle_info/2, terminate/2, code_change/3]).
 -export([handle_stream_start/2, handle_auth_success/4, handle_auth_failure/4,
@@ -65,8 +65,7 @@ send(Stream, Pkt) ->
 close(Ref) ->
     xmpp_stream_in:close(Ref).
 
--spec close(pid(), atom()) -> ok;
-	   (state(), atom()) -> state().
+-spec close(pid(), atom()) -> ok.
 close(Ref, Reason) ->
     xmpp_stream_in:close(Ref, Reason).
 
@@ -100,12 +99,12 @@ init([State, Opts]) ->
 		  true -> TLSOpts1
 	      end,
     GlobalRoutes = proplists:get_value(global_routes, Opts, true),
-    Timeout = ejabberd_config:negotiation_timeout(),
+    Timeout = ejabberd_option:negotiation_timeout(),
     State1 = xmpp_stream_in:change_shaper(State, ejabberd_shaper:new(Shaper)),
     State2 = xmpp_stream_in:set_timeout(State1, Timeout),
     State3 = State2#{access => Access,
 		     xmlns => ?NS_COMPONENT,
-		     lang => ejabberd_config:get_mylang(),
+		     lang => ejabberd_option:language(),
 		     server => ejabberd_config:get_myname(),
 		     host_opts => dict:from_list(HostOpts1),
 		     stream_version => undefined,
@@ -263,45 +262,30 @@ check_from(From, #{host_opts := HostOpts}) ->
 random_password() ->
     str:sha(p1_rand:bytes(20)).
 
-transform_listen_option({hosts, Hosts, O}, Opts) ->
-    case lists:keyfind(hosts, 1, Opts) of
-        {_, PrevHostOpts} ->
-            NewHostOpts =
-                lists:foldl(
-                  fun(H, Acc) ->
-                          dict:append_list(H, O, Acc)
-                  end, dict:from_list(PrevHostOpts), Hosts),
-            [{hosts, dict:to_list(NewHostOpts)}|
-             lists:keydelete(hosts, 1, Opts)];
-        _ ->
-            [{hosts, [{H, O} || H <- Hosts]}|Opts]
-    end;
-transform_listen_option({host, Host, Os}, Opts) ->
-    transform_listen_option({hosts, [Host], Os}, Opts);
-transform_listen_option(Opt, Opts) ->
-    [Opt|Opts].
-
 listen_opt_type(shaper_rule) ->
-    fun(V) ->
-	    ?WARNING_MSG("Listening option 'shaper_rule' of module ~s "
-			 "is renamed to 'shaper'", [?MODULE]),
-	    acl:shaper_rules_validator(V)
-    end;
-listen_opt_type(check_from) -> fun(B) when is_boolean(B) -> B end;
-listen_opt_type(password) -> fun iolist_to_binary/1;
+    econf:and_then(
+      econf:shaper(),
+      fun(S) ->
+	      ?WARNING_MSG("Listening option 'shaper_rule' of module ~s "
+			   "is renamed to 'shaper'. Please adjust your "
+			   "configuration", [?MODULE]),
+	      S
+      end);
+listen_opt_type(check_from) ->
+    econf:bool();
+listen_opt_type(password) ->
+    econf:binary();
 listen_opt_type(hosts) ->
-    fun(HostOpts) ->
-	    lists:map(
-	      fun({Host, Opts}) ->
-		      Password = case proplists:get_value(password, Opts) of
-				     undefined -> undefined;
-				     P -> iolist_to_binary(P)
-				 end,
-		      {iolist_to_binary(Host), Password}
-	      end, HostOpts)
-    end;
+    econf:and_then(
+      econf:map(
+	econf:domain(),
+	econf:options(
+	  #{password => econf:binary()})),
+      fun({Host, Opts}) ->
+	      {Host, proplists:get_value(password, Opts)}
+      end);
 listen_opt_type(global_routes) ->
-    fun(B) when is_boolean(B) -> B end.
+    econf:bool().
 
 listen_options() ->
     [{access, all},

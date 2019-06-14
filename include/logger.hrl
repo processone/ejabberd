@@ -22,19 +22,19 @@
 -compile([{parse_transform, lager_transform}]).
 
 -define(DEBUG(Format, Args),
-	lager:debug(Format, Args)).
+	lager:debug(Format, Args), ok).
 
 -define(INFO_MSG(Format, Args),
-	lager:info(Format, Args)).
+	lager:info(Format, Args), ok).
 
 -define(WARNING_MSG(Format, Args),
-	lager:warning(Format, Args)).
+	lager:warning(Format, Args), ok).
 
 -define(ERROR_MSG(Format, Args),
-	lager:error(Format, Args)).
+	lager:error(Format, Args), ok).
 
 -define(CRITICAL_MSG(Format, Args),
-	lager:critical(Format, Args)).
+	lager:critical(Format, Args), ok).
 
 %% Use only when trying to troubleshoot test problem with ExUnit
 -define(EXUNIT_LOG(Format, Args),

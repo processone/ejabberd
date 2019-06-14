@@ -61,7 +61,7 @@ start(_Host, _Opts) ->
     esip:set_config_value(max_server_transactions, 10000),
     esip:set_config_value(max_client_transactions, 10000),
     esip:set_config_value(
-      software, <<"ejabberd ", (ejabberd_config:get_version())/binary>>),
+      software, <<"ejabberd ", (ejabberd_option:version())/binary>>),
     esip:set_config_value(module, ?MODULE),
     Spec = {mod_sip_registrar, {mod_sip_registrar, start_link, []},
 	    transient, 2000, worker, [mod_sip_registrar]},
@@ -325,45 +325,36 @@ is_my_host(LServer) ->
     gen_mod:is_loaded(LServer, ?MODULE).
 
 mod_opt_type(always_record_route) ->
-    fun (true) -> true;
-	(false) -> false
-    end;
+    econf:bool();
 mod_opt_type(flow_timeout_tcp) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
+    econf:pos_int();
 mod_opt_type(flow_timeout_udp) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
+    econf:pos_int();
 mod_opt_type(record_route) ->
-    fun (IOList) ->
-	    S = iolist_to_binary(IOList),
-	    #uri{} = esip:decode_uri(S)
-    end;
+    econf:sip_uri();
 mod_opt_type(routes) ->
-    fun (L) ->
-	    lists:map(fun (IOList) ->
-			      S = iolist_to_binary(IOList),
-			      #uri{} = esip:decode_uri(S)
-		      end,
-		      L)
-    end;
+    econf:list(econf:sip_uri());
 mod_opt_type(via) ->
-    fun (L) ->
-	    lists:map(fun (Opts) ->
-			      Type = proplists:get_value(type, Opts),
-			      Host = proplists:get_value(host, Opts),
-			      Port = proplists:get_value(port, Opts),
-			      true = (Type == tcp) or (Type == tls) or
-				       (Type == udp),
-			      true = is_binary(Host) and (Host /= <<"">>),
-			      true = is_integer(Port) and (Port > 0) and
-				       (Port < 65536)
-				       or (Port == undefined),
-			      {Type, {Host, Port}}
-		      end,
-		      L)
-    end.
+    econf:list(
+      econf:and_then(
+	econf:options(
+	  #{type => econf:enum([tcp, tls, udp]),
+	    host => econf:domain(),
+	    port => econf:port()},
+	  [{required, [type, host]}]),
+	fun(Opts) ->
+		Type = proplists:get_value(type, Opts),
+		Host = proplists:get_value(host, Opts),
+		Port = proplists:get_value(port, Opts),
+		{Type, {Host, Port}}
+	end)).
 
+-spec mod_options(binary()) -> [{via, [{tcp | tls | udp, {binary(), 1..65535}}]} |
+				{atom(), term()}].
 mod_options(Host) ->
-    Route = <<"sip:", Host/binary, ";lr">>,
+    Route = #uri{scheme = <<"sip">>,
+		 host = Host,
+		 params = [{<<"lr">>, <<>>}]},
     [{always_record_route, true},
      {flow_timeout_tcp, 120},
      {flow_timeout_udp, 29},

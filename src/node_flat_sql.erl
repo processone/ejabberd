@@ -33,7 +33,6 @@
 -behaviour(gen_pubsub_node).
 -author('christophe.romain@process-one.net').
 
--compile([{parse_transform, ejabberd_sql_pt}]).
 
 -include("pubsub.hrl").
 -include("xmpp.hrl").
@@ -767,7 +766,7 @@ get_item(Nidx, ItemId) ->
 	{selected, []} ->
 	    {error, xmpp:err_item_not_found()};
 	{'EXIT', _} ->
-	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ejabberd_config:get_mylang())}
+	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ejabberd_option:language())}
     end.
 
 get_item(Nidx, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId) ->

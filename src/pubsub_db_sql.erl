@@ -25,7 +25,6 @@
 
 -module(pubsub_db_sql).
 
--compile([{parse_transform, ejabberd_sql_pt}]).
 
 -author("pablo.polvorin@process-one.net").
 

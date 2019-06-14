@@ -90,7 +90,7 @@ activate_stream(SID, IJID, MaxConnections, _Node) ->
 %%% Internal functions
 %%%===================================================================
 proxy65_schema() ->
-    {record_info(fields, proxy65), #proxy65{}}.
+    {record_info(fields, proxy65), #proxy65{sid = <<>>, pid_t = self()}}.
 
 clean_table() ->
     ?DEBUG("Cleaning Riak 'proxy65' table...", []),

@@ -67,7 +67,7 @@ init(_Host, _Opts) ->
 use_cache(Host) ->
     case mnesia:table_info(mqtt_pub, storage_type) of
         disc_only_copies ->
-            gen_mod:get_module_opt(Host, mod_mqtt, use_cache);
+            mod_mqtt_opt:use_cache(Host);
         _ ->
             false
     end.
@@ -217,7 +217,7 @@ subscribe({U, S, R} = USR, TopicFilter, SubOpts, ID) ->
 	end,
     case mnesia:transaction(F) of
 	{atomic, _} -> ok;
-	{abored, Reason} ->
+	{aborted, Reason} ->
 	    db_fail("Failed to subscribe ~s to ~s",
 		    Reason, [jid:encode(USR), TopicFilter])
     end.

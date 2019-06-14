@@ -109,7 +109,7 @@ depends(_Host, _Opts) ->
     [].
 
 start(Host, Opts) ->
-    Mod = gen_mod:db_mod(Host, Opts, ?MODULE),
+    Mod = gen_mod:db_mod(Opts, ?MODULE),
     Mod:init(Host, Opts),
     init_cache(Opts),
     ejabberd_hooks:add(offline_message_hook, Host, ?MODULE,
@@ -159,8 +159,8 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_FLEX_OFFLINE).
 
 reload(Host, NewOpts, OldOpts) ->
-    NewMod = gen_mod:db_mod(Host, NewOpts, ?MODULE),
-    OldMod = gen_mod:db_mod(Host, OldOpts, ?MODULE),
+    NewMod = gen_mod:db_mod(NewOpts, ?MODULE),
+    OldMod = gen_mod:db_mod(OldOpts, ?MODULE),
     init_cache(NewOpts),
     if NewMod /= OldMod ->
 	    NewMod:init(Host, NewOpts);
@@ -169,10 +169,10 @@ reload(Host, NewOpts, OldOpts) ->
     end.
 
 init_cache(Opts) ->
-    case gen_mod:get_opt(use_mam_for_storage, Opts) of
+    case mod_offline_opt:use_mam_for_storage(Opts) of
         true ->
-	    MaxSize = gen_mod:get_opt(cache_size, Opts),
-	    LifeTime = case gen_mod:get_opt(cache_life_time, Opts) of
+	    MaxSize = mod_offline_opt:cache_size(Opts),
+	    LifeTime = case mod_offline_opt:cache_life_time(Opts) of
 			   infinity -> infinity;
 			   I -> timer:seconds(I)
 		       end,
@@ -218,8 +218,8 @@ store_offline_msg(#offline_msg{us = {User, Server}, packet = Pkt} = Msg) ->
     end.
 
 get_max_user_messages(User, Server) ->
-    Access = gen_mod:get_module_opt(Server, ?MODULE, access_max_user_messages),
-    case acl:match_rule(Server, Access, jid:make(User, Server)) of
+    Access = mod_offline_opt:access_max_user_messages(Server),
+    case ejabberd_shaper:match(Server, Access, jid:make(User, Server)) of
 	Max when is_integer(Max) -> Max;
 	infinity -> infinity;
 	_ -> ?MAX_USER_MESSAGES
@@ -432,15 +432,13 @@ need_to_store(LServer, #message{type = Type} = Packet) ->
 			none ->
 			    Store = case Type of
 					groupchat ->
-					    gen_mod:get_module_opt(
-						LServer, ?MODULE, store_groupchat);
+					    mod_offline_opt:store_groupchat(LServer);
 					headline ->
 					    false;
 					_ ->
 					    true
 				    end,
-			    case {Store, gen_mod:get_module_opt(
-				LServer, ?MODULE, store_empty_body)} of
+			    case {Store, mod_offline_opt:store_empty_body(LServer)} of
 				{false, _} ->
 				    false;
 				{_, true} ->
@@ -648,11 +646,11 @@ remove_user(User, Server) ->
 check_if_message_should_be_bounced(Packet) ->
     case Packet of
 	#message{type = groupchat, to = #jid{lserver = LServer}} ->
-	    gen_mod:get_module_opt(LServer, ?MODULE, bounce_groupchat);
+	    mod_offline_opt:bounce_groupchat(LServer);
 	#message{to = #jid{lserver = LServer}} ->
 	    case misc:is_mucsub_message(Packet) of
 		true ->
-		    gen_mod:get_module_opt(LServer, ?MODULE, bounce_groupchat);
+		    mod_offline_opt:bounce_groupchat(LServer);
 		_ ->
 		    true
 	    end;
@@ -745,7 +743,7 @@ parse_marker_messages(LServer, ReadMsgs) ->
     {Timestamp, ExtraMsgs} = lists:foldl(
 	fun({_Node, #message{id = <<"ActivityMarker">>,
 			     body = [], type = error} = Msg}, {T, E}) ->
-	    case xmpp:get_subtag(Msg, #delay{}) of
+	    case xmpp:get_subtag(Msg, #delay{stamp = {0,0,0}}) of
 		#delay{stamp = Time} ->
 		    if T == none orelse T > Time ->
 			{Time, E};
@@ -760,7 +758,7 @@ parse_marker_messages(LServer, ReadMsgs) ->
 			    body = [], type = error} = Msg ->
 		       TS2 = case TS of
 				 undefined ->
-				     case xmpp:get_subtag(Msg, #delay{}) of
+				     case xmpp:get_subtag(Msg, #delay{stamp = {0,0,0}}) of
 					 #delay{stamp = TS0} ->
 					     TS0;
 					 _ ->
@@ -785,7 +783,7 @@ parse_marker_messages(LServer, ReadMsgs) ->
 	end, {none, []}, ReadMsgs),
     Start = case {Timestamp, ExtraMsgs} of
 		{none, [First|_]} ->
-		    case xmpp:get_subtag(First, #delay{}) of
+		    case xmpp:get_subtag(First, #delay{stamp = {0,0,0}}) of
 			#delay{stamp = {Mega, Sec, Micro}} ->
 			    {Mega, Sec, Micro+1};
 			_ ->
@@ -807,9 +805,10 @@ read_mam_messages(LUser, LServer, ReadMsgs) ->
 		      ExtraMsgs;
 		  _ ->
 		      MaxOfflineMsgs = case get_max_user_messages(LUser, LServer) of
-					   Number when is_integer(Number) -> Number - length(ExtraMsgs);
-					   infinity -> undefined;
-					   _ -> 100 - length(ExtraMsgs)
+					   Number when is_integer(Number) ->
+					       max(0, Number - length(ExtraMsgs));
+					   infinity ->
+					       undefined
 				       end,
 		      JID = jid:make(LUser, LServer, <<>>),
 		      {MamMsgs, _, _} = mod_mam:select(LServer, JID, JID,
@@ -826,20 +825,20 @@ read_mam_messages(LUser, LServer, ReadMsgs) ->
 	      end,
     AllMsgs2 = lists:sort(
 	fun(A, B) ->
-	    DA = case xmpp:get_subtag(A, #stanza_id{}) of
+	    DA = case xmpp:get_subtag(A, #stanza_id{by = #jid{}}) of
 		     #stanza_id{id = IDA} ->
 			 IDA;
-		     _ -> case xmpp:get_subtag(A, #delay{}) of
+		     _ -> case xmpp:get_subtag(A, #delay{stamp = {0,0,0}}) of
 			      #delay{stamp = STA} ->
 				  integer_to_binary(misc:now_to_usec(STA));
 			      _ ->
 				  <<"unknown">>
 			  end
 		 end,
-	    DB = case xmpp:get_subtag(B, #stanza_id{}) of
+	    DB = case xmpp:get_subtag(B, #stanza_id{by = #jid{}}) of
 		     #stanza_id{id = IDB} ->
 			 IDB;
-		     _ -> case xmpp:get_subtag(B, #delay{}) of
+		     _ -> case xmpp:get_subtag(B, #delay{stamp = {0,0,0}}) of
 			      #delay{stamp = STB} ->
 				  integer_to_binary(misc:now_to_usec(STB));
 			      _ ->
@@ -864,8 +863,7 @@ count_mam_messages(LUser, LServer, ReadMsgs) ->
 	_ ->
 	    MaxOfflineMsgs = case get_max_user_messages(LUser, LServer) of
 				 Number when is_integer(Number) -> Number - length(ExtraMsgs);
-				 infinity -> undefined;
-				 _ -> 100 - length(ExtraMsgs)
+				 infinity -> undefined
 			     end,
 	    JID = jid:make(LUser, LServer, <<>>),
 	    {_, _, Count} = mod_mam:select(LServer, JID, JID,
@@ -915,19 +913,14 @@ user_queue(User, Server, Query, Lang) ->
     LServer = jid:nameprep(Server),
     US = {LUser, LServer},
     Mod = gen_mod:db_mod(LServer, ?MODULE),
-    Res = user_queue_parse_query(LUser, LServer, Query),
+    user_queue_parse_query(LUser, LServer, Query),
     HdrsAll = Mod:read_message_headers(LUser, LServer),
     Hdrs = get_messages_subset(User, Server, HdrsAll),
     FMsgs = format_user_queue(Hdrs),
     [?XC(<<"h1">>,
 	 (str:format(?T(<<"~s's Offline Messages Queue">>),
                                       [us_to_list(US)])))]
-      ++
-      case Res of
-	ok -> [?XREST(<<"Submitted">>)];
-	nothing -> []
-      end
-	++
+      ++ [?XREST(<<"Submitted">>)] ++
 	[?XAE(<<"form">>,
 	      [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
 	      [?XE(<<"table">>,
@@ -954,7 +947,7 @@ user_queue_parse_query(LUser, LServer, Query) ->
 	{value, _} ->
 	    user_queue_parse_query(LUser, LServer, Query, Mod);
 	_ ->
-	    nothing
+	    ok
     end.
 
 user_queue_parse_query(LUser, LServer, Query, Mod) ->
@@ -964,11 +957,11 @@ user_queue_parse_query(LUser, LServer, Query, Mod) ->
 		I when is_integer(I), I>=0 ->
 		    Mod:remove_message(LUser, LServer, I);
 		_ ->
-		    nothing
+		    ok
 	    end,
 	    user_queue_parse_query(LUser, LServer, Query2, Mod);
 	false ->
-	    nothing
+	    ok
     end.
 
 us_to_list({User, Server}) ->
@@ -1099,26 +1092,26 @@ import(LServer, {sql, _}, DBType, <<"spool">>,
     Mod:import(OffMsg).
 
 use_mam_for_user(_User, Server) ->
-    gen_mod:get_module_opt(Server, ?MODULE, use_mam_for_storage).
+    mod_offline_opt:use_mam_for_storage(Server).
 
 mod_opt_type(access_max_user_messages) ->
-    fun acl:shaper_rules_validator/1;
-mod_opt_type(db_type) -> fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
+    econf:shaper();
 mod_opt_type(store_groupchat) ->
-    fun(V) when is_boolean(V) -> V end;
+    econf:bool();
 mod_opt_type(bounce_groupchat) ->
-    fun(V) when is_boolean(V) -> V end;
+    econf:bool();
 mod_opt_type(use_mam_for_storage) ->
-    fun(V) when is_boolean(V) -> V end;
+    econf:bool();
 mod_opt_type(store_empty_body) ->
-    fun (V) when is_boolean(V) -> V;
-        (unless_chat_state) -> unless_chat_state
-    end;
-mod_opt_type(O) when O == cache_life_time; O == cache_size ->
-    fun (I) when is_integer(I), I > 0 -> I;
-        (infinity) -> infinity
-    end.
-
+    econf:either(
+      unless_chat_state,
+      econf:bool());
+mod_opt_type(db_type) ->
+    econf:well_known(db_type, ?MODULE);
+mod_opt_type(cache_size) ->
+    econf:well_known(cache_size, ?MODULE);
+mod_opt_type(cache_life_time) ->
+    econf:well_known(cache_life_time, ?MODULE).
 
 mod_options(Host) ->
     [{db_type, ejabberd_config:default_db(Host, ?MODULE)},
@@ -1127,5 +1120,5 @@ mod_options(Host) ->
      {use_mam_for_storage, false},
      {bounce_groupchat, false},
      {store_groupchat, false},
-     {cache_size, ejabberd_config:cache_size(Host)},
-     {cache_life_time, ejabberd_config:cache_life_time(Host)}].
+     {cache_size, ejabberd_option:cache_size(Host)},
+     {cache_life_time, ejabberd_option:cache_life_time(Host)}].

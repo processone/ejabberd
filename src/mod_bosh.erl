@@ -115,10 +115,9 @@ find_session(SID) ->
 	    end
     end.
 
-start(Host, Opts) ->
-    start_jiffy(Opts),
-    Mod = gen_mod:ram_db_mod(global, ?MODULE),
-    init_cache(Mod),
+start(Host, _Opts) ->
+    Mod = gen_mod:ram_db_mod(Host, ?MODULE),
+    init_cache(Host, Mod),
     Mod:init(),
     clean_cache(),
     TmpSup = gen_mod:get_module_proc(Host, ?MODULE),
@@ -132,30 +131,15 @@ stop(Host) ->
     supervisor:terminate_child(ejabberd_gen_mod_sup, TmpSup),
     supervisor:delete_child(ejabberd_gen_mod_sup, TmpSup).
 
-reload(_Host, NewOpts, _OldOpts) ->
-    start_jiffy(NewOpts),
+reload(Host, _NewOpts, _OldOpts) ->
     Mod = gen_mod:ram_db_mod(global, ?MODULE),
-    init_cache(Mod),
+    init_cache(Host, Mod),
     Mod:init(),
     ok.
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-start_jiffy(Opts) ->
-    case gen_mod:get_opt(json, Opts) of
-        false ->
-            ok;
-        true ->
-            case catch ejabberd:start_app(jiffy) of
-                ok ->
-                    ok;
-                Err ->
-                    ?WARNING_MSG("Failed to start JSON codec (jiffy): ~p. "
-                                 "JSON support will be disabled", [Err])
-            end
-    end.
-
 get_type(Hdrs) ->
     try
         {_, S} = lists:keyfind('Content-Type', 1, Hdrs),
@@ -170,31 +154,36 @@ depends(_Host, _Opts) ->
     [].
 
 mod_opt_type(json) ->
-    fun (false) -> false;
-	(true) -> true
-    end;
+    econf:and_then(
+      econf:bool(),
+      fun(false) -> false;
+	 (true) ->
+	      ejabberd:start_app(jiffy),
+	      true
+      end);
 mod_opt_type(max_concat) ->
-    fun (unlimited) -> unlimited;
-	(N) when is_integer(N), N > 0 -> N
-    end;
+    econf:pos_int(unlimited);
 mod_opt_type(max_inactivity) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
+    econf:pos_int();
 mod_opt_type(max_pause) ->
-    fun (I) when is_integer(I), I > 0 -> I end;
+    econf:pos_int();
 mod_opt_type(prebind) ->
-    fun (B) when is_boolean(B) -> B end;
-mod_opt_type(ram_db_type) ->
-    fun(T) -> ejabberd_config:v_db(?MODULE, T) end;
+    econf:bool();
 mod_opt_type(queue_type) ->
-    fun(ram) -> ram; (file) -> file end;
-mod_opt_type(O) when O == use_cache; O == cache_missed ->
-    fun(B) when is_boolean(B) -> B end;
-mod_opt_type(O) when O == cache_size; O == cache_life_time ->
-    fun(I) when is_integer(I), I>0 -> I;
-       (unlimited) -> infinity;
-       (infinity) -> infinity
-    end.
+    econf:well_known(queue_type, ?MODULE);
+mod_opt_type(ram_db_type) ->
+    econf:well_known(ram_db_type, ?MODULE);
+mod_opt_type(use_cache) ->
+    econf:well_known(use_cache, ?MODULE);
+mod_opt_type(cache_size) ->
+    econf:well_known(cache_size, ?MODULE);
+mod_opt_type(cache_missed) ->
+    econf:well_known(cache_missed, ?MODULE);
+mod_opt_type(cache_life_time) ->
+    econf:well_known(cache_life_time, ?MODULE).
 
+-spec mod_options(binary()) -> [{json, boolean()} |
+				{atom(), term()}].
 mod_options(Host) ->
     [{json, false},
      {max_concat, unlimited},
@@ -202,29 +191,33 @@ mod_options(Host) ->
      {max_pause, 120},
      {prebind, false},
      {ram_db_type, ejabberd_config:default_ram_db(Host, ?MODULE)},
-     {queue_type, ejabberd_config:default_queue_type(Host)},
-     {use_cache, ejabberd_config:use_cache(Host)},
-     {cache_size, ejabberd_config:cache_size(Host)},
-     {cache_missed, ejabberd_config:cache_missed(Host)},
-     {cache_life_time, ejabberd_config:cache_life_time(Host)}].
+     {queue_type, ejabberd_option:queue_type(Host)},
+     {use_cache, ejabberd_option:use_cache(Host)},
+     {cache_size, ejabberd_option:cache_size(Host)},
+     {cache_missed, ejabberd_option:cache_missed(Host)},
+     {cache_life_time, ejabberd_option:cache_life_time(Host)}].
 
 %%%----------------------------------------------------------------------
 %%% Cache stuff
 %%%----------------------------------------------------------------------
--spec init_cache(module()) -> ok.
-init_cache(Mod) ->
-    case use_cache(Mod) of
+-spec init_cache(binary(), module()) -> ok.
+init_cache(Host, Mod) ->
+    case use_cache(Mod, Host) of
 	true ->
-	    ets_cache:new(?BOSH_CACHE, cache_opts());
+	    ets_cache:new(?BOSH_CACHE, cache_opts(Host));
 	false ->
 	    ets_cache:delete(?BOSH_CACHE)
     end.
 
 -spec use_cache(module()) -> boolean().
 use_cache(Mod) ->
+    use_cache(Mod, global).
+
+-spec use_cache(module(), global | binary()) -> boolean().
+use_cache(Mod, Host) ->
     case erlang:function_exported(Mod, use_cache, 0) of
 	true -> Mod:use_cache();
-	false -> gen_mod:get_module_opt(global, ?MODULE, use_cache)
+	false -> mod_bosh_opt:use_cache(Host)
     end.
 
 -spec cache_nodes(module()) -> [node()].
@@ -243,11 +236,11 @@ delete_cache(Mod, SID) ->
 	    ok
     end.
 
--spec cache_opts() -> [proplists:property()].
-cache_opts() ->
-    MaxSize = gen_mod:get_module_opt(global, ?MODULE, cache_size),
-    CacheMissed = gen_mod:get_module_opt(global, ?MODULE, cache_missed),
-    LifeTime = case gen_mod:get_module_opt(global, ?MODULE, cache_life_time) of
+-spec cache_opts(binary()) -> [proplists:property()].
+cache_opts(Host) ->
+    MaxSize = mod_bosh_opt:cache_size(Host),
+    CacheMissed = mod_bosh_opt:cache_missed(Host),
+    LifeTime = case mod_bosh_opt:cache_life_time(Host) of
 		   infinity -> infinity;
 		   I -> timer:seconds(I)
 	       end,

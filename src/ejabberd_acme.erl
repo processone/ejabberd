@@ -1,6 +1,5 @@
 -module (ejabberd_acme).
 -behaviour(gen_server).
--behaviour(ejabberd_config).
 
 %% ejabberdctl commands
 -export([get_commands_spec/0,
@@ -18,7 +17,7 @@
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
--export([start_link/0, opt_type/1, register_certfiles/0]).
+-export([start_link/0, register_certfiles/0]).
 
 -include("logger.hrl").
 -include("xmpp.hrl").
@@ -188,7 +187,7 @@ get_certificates1(CAUrl, DomainString, PrivateKey) ->
     Hosts = [list_to_bitstring(D) || D <- Domains],
     get_certificates2(CAUrl, PrivateKey, Hosts).
 
--spec get_certificates2(url(), jose_jwk:key(), [bitstring()]) -> string().
+-spec get_certificates2(url(), jose_jwk:key(), [binary()]) -> string().
 get_certificates2(CAUrl, PrivateKey, Hosts) ->
     %% Get a certificate for each host
     PemCertKeys = [get_certificate(CAUrl, Host, PrivateKey) || Host <- Hosts],
@@ -199,8 +198,8 @@ get_certificates2(CAUrl, PrivateKey, Hosts) ->
     %% Format the result to send back to ejabberdctl
     format_get_certificates_result(SavedCerts).
 
--spec format_get_certificates_result([{'ok', bitstring(), _} |
-				      {'error', bitstring(), _}]) ->
+-spec format_get_certificates_result([{'ok', binary(), _} |
+				      {'error', binary(), _}]) ->
 					    string().
 format_get_certificates_result(Certs) ->
     Cond = lists:all(fun(Cert) ->
@@ -217,21 +216,21 @@ format_get_certificates_result(Certs) ->
 	    lists:flatten(Result)
     end.
 
--spec format_get_certificate({'ok', bitstring(), _} |
-			     {'error', bitstring(), _}) ->
+-spec format_get_certificate({'ok', binary(), _} |
+			     {'error', binary(), _}) ->
 				    string().
 format_get_certificate({ok, Domain, saved}) ->
     io_lib:format("  Certificate for domain: \"~s\" acquired and saved", [Domain]);
-format_get_certificate({ok, Domain, not_found}) ->
+format_get_certificate({error, Domain, not_found}) ->
     io_lib:format("  Certificate for domain: \"~s\" not found, so it was not renewed", [Domain]);
 format_get_certificate({ok, Domain, no_expire}) ->
     io_lib:format("  Certificate for domain: \"~s\" is not close to expiring", [Domain]);
 format_get_certificate({error, Domain, Reason}) ->
     io_lib:format("  Error for domain: \"~s\",  with reason: \'~s\'", [Domain, Reason]).
 
--spec get_certificate(url(), bitstring(), jose_jwk:key()) ->
-			     {'ok', bitstring(), pem()} |
-			     {'error', bitstring(), _}.
+-spec get_certificate(url(), binary(), jose_jwk:key()) ->
+			     {'ok', binary(), pem()} |
+			     {'error', binary(), _}.
 get_certificate(CAUrl, DomainName, PrivateKey) ->
     try
 	AllSubDomains = find_all_sub_domains(DomainName),
@@ -266,7 +265,7 @@ create_save_new_account(CAUrl) ->
 
 %% TODO:
 %% Find a way to ask the user if he accepts the TOS
--spec create_new_account(url(), bitstring(), jose_jwk:key()) -> {'ok', string()} |
+-spec create_new_account(url(), binary(), jose_jwk:key()) -> {'ok', string()} |
 								no_return().
 create_new_account(CAUrl, Contact, PrivateKey) ->
     try
@@ -287,7 +286,7 @@ create_new_account(CAUrl, Contact, PrivateKey) ->
 	    throw({error,create_new_account})
     end.
 
--spec create_new_authorization(url(), bitstring(), jose_jwk:key()) ->
+-spec create_new_authorization(url(), binary(), jose_jwk:key()) ->
 				      {'ok', proplist()} | no_return().
 create_new_authorization(CAUrl, DomainName, PrivateKey) ->
     acme_challenge:register_hooks(DomainName),
@@ -320,12 +319,12 @@ create_new_authorization(CAUrl, DomainName, PrivateKey) ->
 	acme_challenge:unregister_hooks(DomainName)
     end.
 
--spec create_new_certificate(url(), {bitstring(), [bitstring()]}, jose_jwk:key()) ->
-				    {ok, bitstring(), pem()}.
+-spec create_new_certificate(url(), {binary(), [binary()]}, jose_jwk:key()) ->
+				    {ok, binary(), pem()}.
 create_new_certificate(CAUrl, {DomainName, AllSubDomains}, PrivateKey) ->
     try
 	{ok, Dirs, Nonce0} = ejabberd_acme_comm:directory(CAUrl),
-	CSRSubject = [{commonName, bitstring_to_list(DomainName)}],
+	CSRSubject = [{?'id-at-commonName', bitstring_to_list(DomainName)}],
 	SANs = [{dNSName, SAN} || SAN <- AllSubDomains],
 	{CSR, CSRKey} = make_csr(CSRSubject, SANs),
 	{NotBefore, NotAfter} = not_before_not_after(),
@@ -404,9 +403,9 @@ renew_certificates0(CAUrl) ->
     %% Format the result to send back to ejabberdctl
     format_get_certificates_result(SavedCerts).
 
--spec renew_certificate(url(), {bitstring(), data_cert()}, jose_jwk:key()) ->
-			       {'ok', bitstring(), _} |
-			       {'error', bitstring(), _}.
+-spec renew_certificate(url(), {binary(), data_cert()}, jose_jwk:key()) ->
+			       {'ok', binary(), _} |
+			       {'error', binary(), _}.
 renew_certificate(CAUrl, {DomainName, _} = Cert, PrivateKey) ->
     case cert_to_expire(Cert) of
 	true ->
@@ -416,7 +415,7 @@ renew_certificate(CAUrl, {DomainName, _} = Cert, PrivateKey) ->
     end.
 
 
--spec cert_to_expire({bitstring(), data_cert()}) -> boolean().
+-spec cert_to_expire({binary(), data_cert()}) -> boolean().
 cert_to_expire({_DomainName, #data_cert{pem = Pem}}) ->
     Certificate = pem_to_certificate(Pem),
     Validity = get_utc_validity(Certificate),
@@ -494,7 +493,7 @@ format_certificate(DataCert, Verbose) ->
 	    fail_format_certificate(DomainName)
     end.
 
--spec format_certificate_plain(bitstring(), [string()], {expired | ok, string()}, string())
+-spec format_certificate_plain(binary(), [string()], {expired | ok, string()}, string())
 			      -> string().
 format_certificate_plain(DomainName, SANs, NotAfter, Path) ->
     Result = lists:flatten(io_lib:format(
@@ -507,7 +506,7 @@ format_certificate_plain(DomainName, SANs, NotAfter, Path) ->
 			      format_validity(NotAfter), Path])),
     Result.
 
--spec format_certificate_verbose(bitstring(), [string()], {expired | ok, string()}, bitstring())
+-spec format_certificate_verbose(binary(), [string()], {expired | ok, string()}, binary())
 				-> string().
 format_certificate_verbose(DomainName, SANs, NotAfter, PemCert) ->
     Result = lists:flatten(io_lib:format(
@@ -526,7 +525,7 @@ format_validity({expired, NotAfter}) ->
 format_validity({ok, NotAfter}) ->
     io_lib:format("Valid until: ~s UTC", [NotAfter]).
 
--spec fail_format_certificate(bitstring()) -> string().
+-spec fail_format_certificate(binary()) -> string().
 fail_format_certificate(DomainName) ->
     Result = lists:flatten(io_lib:format(
 			     "  Domain: ~s~n"
@@ -542,7 +541,7 @@ get_commonName(#'Certificate'{tbsCertificate = TbsCertificate}) ->
 
     %% TODO: Not the best way to find the commonName
     ShallowSubjectList = [Attribute || [Attribute] <- SubjectList],
-    {_, _, CommonName} = lists:keyfind(attribute_oid(commonName), 2, ShallowSubjectList),
+    {_, _, CommonName} = lists:keyfind(?'id-at-commonName', 2, ShallowSubjectList),
 
     %% TODO: Remove the length-encoding from the commonName before returning it
     CommonName.
@@ -574,7 +573,7 @@ get_subjectAltNames(#'Certificate'{tbsCertificate = TbsCertificate}) ->
       } = TbsCertificate,
 
     EncodedSANs = [Val || #'Extension'{extnID = Oid, extnValue = Val} <- Exts,
-			  Oid =:= attribute_oid(subjectAltName)],
+			  Oid == ?'id-ce-subjectAltName'],
 
     lists:flatmap(
       fun(EncSAN) ->
@@ -624,7 +623,7 @@ revoke_certificate0(CAUrl, DomainOrFile) ->
     ParsedCert = parse_revoke_cert_argument(DomainOrFile),
     revoke_certificate1(CAUrl, ParsedCert).
 
--spec revoke_certificate1(url(), {domain, bitstring()} | {file, file:filename()}) ->
+-spec revoke_certificate1(url(), {domain, binary()} | {file, file:filename()}) ->
 				 {ok, deleted}.
 revoke_certificate1(CAUrl, {domain, Domain}) ->
     case domain_certificate_exists(Domain) of
@@ -657,13 +656,13 @@ revoke_certificate2(CAUrl, PemEncodedCert) ->
     {ok, [], _Nonce1} = ejabberd_acme_comm:revoke_cert(Dirs, CertPrivateKey, Req, Nonce),
     ok.
 
--spec parse_revoke_cert_argument(string()) -> {domain, bitstring()} | {file, file:filename()}.
+-spec parse_revoke_cert_argument(string()) -> {domain, binary()} | {file, file:filename()}.
 parse_revoke_cert_argument([$f, $i, $l, $e, $:|File]) ->
     {file, File};
 parse_revoke_cert_argument([$d, $o, $m, $a, $i, $n, $: | Domain]) ->
     {domain, list_to_bitstring(Domain)}.
 
--spec prepare_certificate_revoke(pem()) -> {bitstring(), jose_jwk:key()}.
+-spec prepare_certificate_revoke(pem()) -> {binary(), jose_jwk:key()}.
 prepare_certificate_revoke(PemEncodedCert) ->
     PemList = public_key:pem_decode(PemEncodedCert),
     PemCertEnc = lists:keyfind('Certificate', 1, PemList),
@@ -674,7 +673,7 @@ prepare_certificate_revoke(PemEncodedCert) ->
     {ok, Key} = find_private_key_in_pem(PemEncodedCert),
     {Base64Cert, Key}.
 
--spec domain_certificate_exists(bitstring()) -> {bitstring(), data_cert()} | false.
+-spec domain_certificate_exists(binary()) -> {binary(), data_cert()} | false.
 domain_certificate_exists(Domain) ->
     Certs = read_certificates_persistent(),
     lists:keyfind(Domain, 1, Certs).
@@ -688,7 +687,7 @@ domain_certificate_exists(Domain) ->
 %% For now we accept only generating a key of
 %% specific type for signing the csr
 
--spec make_csr(proplist(), [{dNSName, bitstring()}])
+-spec make_csr(proplist(), [{dNSName, binary()}])
 	      -> {binary(), jose_jwk:key()}.
 make_csr(Attributes, SANs) ->
     Key = generate_key(),
@@ -698,7 +697,7 @@ make_csr(Attributes, SANs) ->
 	SubPKInfoAlgo = subject_pk_info_algo(KeyPub),
 	{ok, RawBinPubKey} = raw_binary_public_key(KeyPub),
 	SubPKInfo = subject_pk_info(SubPKInfoAlgo, RawBinPubKey),
-	{ok, Subject} = attributes_from_list(Attributes),
+	Subject = attributes_from_list(Attributes),
 	ExtensionRequest = extension_request(SANs),
 	CRI = certificate_request_info(SubPKInfo, Subject, ExtensionRequest),
 	{ok, EncodedCRI} = der_encode(
@@ -737,7 +736,7 @@ subject_pk_info(Algo, RawBinPubKey) ->
 
 extension(SANs) ->
     #'Extension'{
-       extnID = attribute_oid(subjectAltName),
+       extnID = ?'id-ce-subjectAltName',
        critical = false,
        extnValue = public_key:der_encode('SubjectAltName', SANs)}.
 
@@ -791,45 +790,12 @@ der_encode(Type, Term) ->
 	    {error, der_encode}
     end.
 
-%%
-%% Attributes Parser
-%%
-
 attributes_from_list(Attrs) ->
-    ParsedAttrs = [attribute_parser_fun(Attr) || Attr <- Attrs],
-    case lists:any(fun is_error/1, ParsedAttrs) of
-	true ->
-	    {error, bad_attributes};
-	false ->
-	    {ok, {rdnSequence, [[PAttr] || PAttr <- ParsedAttrs]}}
-    end.
-
-attribute_parser_fun({AttrName, AttrVal}) ->
-    try
-	#'AttributeTypeAndValue'{
-	   type = attribute_oid(AttrName),
-	   %% TODO: Check if every attribute should be encoded as
-	   %% common name. Actually it doesn't matter in
-	   %% practice. Only in theory in order to have cleaner code.
-	   value = public_key:der_encode('X520CommonName', {printableString, AttrVal})
-	   %% value = length_bitstring(list_to_bitstring(AttrVal))
-	  }
-    catch
-	_:_ ->
-	    ?ERROR_MSG("Bad attribute: ~p~n", [{AttrName, AttrVal}]),
-	    {error, bad_attributes}
-    end.
-
--spec attribute_oid(atom()) -> tuple() | no_return().
-attribute_oid(commonName) -> ?'id-at-commonName';
-attribute_oid(countryName) -> ?'id-at-countryName';
-attribute_oid(stateOrProvinceName) -> ?'id-at-stateOrProvinceName';
-attribute_oid(localityName) -> ?'id-at-localityName';
-attribute_oid(organizationName) -> ?'id-at-organizationName';
-attribute_oid(subjectAltName) -> ?'id-ce-subjectAltName';
-attribute_oid(_) -> error(bad_attributes).
-
-
+    {rdnSequence,
+     [[#'AttributeTypeAndValue'{
+	  type = AttrName,
+	  value = public_key:der_encode('X520CommonName', {printableString, AttrVal})
+	 }] || {AttrName, AttrVal} <- Attrs]}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
@@ -939,7 +905,7 @@ private_key_types() ->
      'DSAPrivateKey',
      'ECPrivateKey'].
 
--spec find_all_sub_domains(bitstring()) -> [bitstring()].
+-spec find_all_sub_domains(binary()) -> [binary()].
 find_all_sub_domains(DomainName) ->
     AllRoutes = ejabberd_router:get_all_routes(),
     DomainLen = size(DomainName),
@@ -1094,8 +1060,8 @@ remove_certificate_persistent(DataCert) ->
     NewData = data_remove_certificate(Data, DataCert),
     ok = write_persistent(NewData).
 
--spec save_certificate({ok, bitstring(), binary()} | {error, _, _}) ->
-			      {ok, bitstring(), saved} | {error, bitstring(), _}.
+-spec save_certificate({ok, binary(), binary()} | {error, _, _}) ->
+			      {ok, binary(), saved} | {error, binary(), _}.
 save_certificate({error, _, _} = Error) ->
     Error;
 save_certificate({ok, DomainName, Cert}) ->
@@ -1123,8 +1089,8 @@ save_certificate({ok, DomainName, Cert}) ->
 	    {error, DomainName, saving}
     end.
 
--spec save_renewed_certificate({ok, bitstring(), _} | {error, _, _}) ->
-				      {ok, bitstring(), _} | {error, bitstring(), _}.
+-spec save_renewed_certificate({ok, binary(), _} | {error, _, _}) ->
+				      {ok, binary(), _} | {error, binary(), _}.
 save_renewed_certificate({error, _, _} = Error) ->
     Error;
 save_renewed_certificate({ok, _, no_expire} = Cert) ->
@@ -1141,7 +1107,7 @@ register_certfiles() ->
 	      ejabberd_pkix:add_certfile(Path)
       end, Paths).
 
--spec write_cert(file:filename(), binary(), bitstring()) -> {ok, bitstring(), saved}.
+-spec write_cert(file:filename(), binary(), binary()) -> ok.
 write_cert(CertificateFile, Cert, DomainName) ->
     case file:write_file(CertificateFile, Cert) of
 	ok ->
@@ -1150,59 +1116,34 @@ write_cert(CertificateFile, Cert, DomainName) ->
 		{error, Why} ->
 		    ?WARNING_MSG("Failed to change mode of file ~s: ~s",
 				 [CertificateFile, file:format_error(Why)])
-	    end,
-	    {ok, DomainName, saved};
+	    end;
 	{error, Reason} ->
 	    ?ERROR_MSG("Error: ~p saving certificate at file: ~p",
 		       [Reason, CertificateFile]),
 	    throw({error, DomainName, saving})
     end.
 
--spec get_config_acme() -> acme_config().
-get_config_acme() ->
-    case ejabberd_config:get_option(acme, undefined) of
-	undefined ->
-	    ?WARNING_MSG("No acme configuration has been specified", []),
-	    %% throw({error, configuration});
-	    [];
-        Acme ->
-	    Acme
-    end.
-
--spec get_config_contact() -> bitstring().
+-spec get_config_contact() -> binary().
 get_config_contact() ->
-    Acme = get_config_acme(),
-    case lists:keyfind(contact, 1, Acme) of
-	{contact, Contact} ->
-	    Contact;
-	false ->
+    Acme = ejabberd_option:acme(),
+    try maps:get(contact, Acme)
+    catch _:{badkey, _} ->
 	    ?WARNING_MSG("No contact has been specified in configuration", []),
 	    ?DEFAULT_CONFIG_CONTACT
-	    %% throw({error, configuration_contact})
     end.
 
 -spec get_config_ca_url() -> url().
 get_config_ca_url() ->
-    Acme = get_config_acme(),
-    case lists:keyfind(ca_url, 1, Acme) of
-	{ca_url, CAUrl} ->
-	    CAUrl;
-	false ->
+    Acme = ejabberd_option:acme(),
+    try maps:get(ca_url, Acme)
+    catch _:{badkey, _} ->
 	    ?ERROR_MSG("No CA url has been specified in configuration", []),
 	    ?DEFAULT_CONFIG_CA_URL
-	    %% throw({error, configuration_ca_url})
     end.
 
-
--spec get_config_hosts() -> [bitstring()].
+-spec get_config_hosts() -> [binary()].
 get_config_hosts() ->
-    case ejabberd_config:get_option(hosts, undefined) of
-	undefined ->
-	    ?ERROR_MSG("No hosts have been specified in configuration", []),
-	    throw({error, configuration_hosts});
-        Hosts ->
-	    Hosts
-    end.
+    ejabberd_option:hosts().
 
 -spec acme_certs_dir() -> file:filename().
 acme_certs_dir() ->
@@ -1210,23 +1151,3 @@ acme_certs_dir() ->
 
 generate_key() ->
     jose_jwk:generate_key({ec, secp256r1}).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%
-%% Option Parsing Code
-%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
-opt_type(acme) ->
-    fun(L) ->
-	    lists:map(
-	      fun({ca_url, URL}) ->
-		      {ca_url, misc:try_url(URL)};
-		 ({contact, Contact}) ->
-		      [<<_, _/binary>>, <<_, _/binary>>] =
-			  binary:split(Contact, <<":">>),
-		      {contact, Contact}
-	      end, L)
-    end;
-opt_type(_) ->
-    [acme].
