@@ -22,7 +22,7 @@
 %%%-------------------------------------------------------------------
 -module(mod_avatar).
 -behaviour(gen_mod).
-
+-dialyzer({no_return, mod_opt_type/1}).
 -protocol({xep, 398, '0.2.0'}).
 
 %% gen_mod API
@@ -435,17 +435,15 @@ encode_mime_type(Type) ->
     <<"image/", (atom_to_binary(Type, latin1))/binary>>.
 
 mod_opt_type(convert) ->
-    Formats = eimp:supported_formats(),
-    econf:and_then(
-      fun(_) when Formats == [] ->
-	      econf:fail(eimp_error);
-	 (V) ->
-	      V
-      end,
-      econf:options(
-	maps:from_list(
-	  [{Type, econf:enum(Formats)}
-	   || Type <- [default|Formats]])));
+    case eimp:supported_formats() of
+	[] ->
+	    fun(_) -> econf:fail(eimp_error) end;
+	Formats ->
+	    econf:options(
+	      maps:from_list(
+		[{Type, econf:enum(Formats)}
+		 || Type <- [default|Formats]]))
+    end;
 mod_opt_type(rate_limit) ->
     econf:pos_int().
 
