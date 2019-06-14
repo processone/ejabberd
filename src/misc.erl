@@ -482,6 +482,7 @@ peach(Fun, [_,_|_] = List) ->
 peach(Fun, List) ->
     lists:foreach(Fun, List).
 
+-ifdef(HAVE_ERL_ERROR).
 format_exception(Level, Class, Reason, Stacktrace) ->
     erl_error:format_exception(
       Level, Class, Reason, Stacktrace,
@@ -489,6 +490,15 @@ format_exception(Level, Class, Reason, Stacktrace) ->
       fun(Term, I) ->
 	      io_lib:print(Term, I, 80, -1)
       end).
+-else.
+format_exception(Level, Class, Reason, Stacktrace) ->
+    lib:format_exception(
+      Level, Class, Reason, Stacktrace,
+      fun(_M, _F, _A) -> false end,
+      fun(Term, I) ->
+	      io_lib:print(Term, I, 80, -1)
+      end).
+-endif.
 
 -spec parse_ip_mask(binary()) -> {ok, {inet:ip4_address(), 0..32}} |
 				 {ok, {inet:ip6_address(), 0..128}} |
