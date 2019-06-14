@@ -1,6 +1,5 @@
 #!/usr/bin/env escript
 %% -*- erlang -*-
-%%! -pa ebin
 
 -record(state, {run_hooks = dict:new(),
 		run_fold_hooks = dict:new(),
@@ -342,12 +341,16 @@ fold_beams(Fun, State, Paths) ->
 	  fun(File, {I, Acc}) ->
 		  io:format("Progress: ~B% (~B/~B)\r",
 			    [round(I*100/Total), I, Total]),
-		  AbsCode = get_code_from_beam(File),
-		  Acc2 = lists:foldl(
-			   fun(Form, Acc1) ->
-				   Fun(File, Form, Acc1)
-			   end, Acc, AbsCode),
-		  {I+1, Acc2}
+		  case is_elixir_beam(File) of
+		      true -> {I+1, Acc};
+		      false ->
+			  AbsCode = get_code_from_beam(File),
+			  Acc2 = lists:foldl(
+				   fun(Form, Acc1) ->
+					   Fun(File, Form, Acc1)
+				   end, Acc, AbsCode),
+			  {I+1, Acc2}
+		  end
 	  end, {0, State}, Paths1),
     State1.
 
@@ -356,16 +359,27 @@ fold_paths(Paths) ->
       fun(Path) ->
 	      case filelib:is_dir(Path) of
 		  true ->
-		      lists:reverse(
-			filelib:fold_files(
-			  Path, ".+\.beam\$", false,
-			  fun(File, Acc) ->
-				  [File|Acc]
-			  end, []));
+		      Beams = lists:reverse(
+				filelib:fold_files(
+				  Path, ".+\.beam\$", false,
+				  fun(File, Acc) ->
+					  [File|Acc]
+				  end, [])),
+		      case Beams of
+			  [] -> ok;
+			  _ -> code:add_path(Path)
+		      end,
+		      Beams;
 		  false ->
 		      [Path]
 	      end
       end, Paths).
+
+is_elixir_beam(File) ->
+    case filename:basename(File) of
+	"Elixir" ++ _ -> true;
+	_ -> false
+    end.
 
 get_code_from_beam(File) ->
     try

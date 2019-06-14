@@ -1,6 +1,5 @@
 #!/usr/bin/env escript
 %% -*- erlang -*-
-%%! -pa ebin
 
 -compile([nowarn_unused_function]).
 -record(state, {g_opts = #{} :: map(),
@@ -495,14 +494,18 @@ fold_beams(Fun, State, Paths) ->
 	  fun(File, {I, Acc}) ->
 		  io:format("Progress: ~B% (~B/~B)\r",
 			    [round(I*100/Total), I, Total]),
-		  AbsCode = get_code_from_beam(File),
-		  Acc2 = case is_behaviour(AbsCode, ejabberd_config) of
-			     true ->
-				 fold_opt(File, Fun, Acc, AbsCode);
-			     false ->
-				 fold_mod_opt(File, Fun, Acc, AbsCode)
-			 end,
-		  {I+1, Acc2}
+		  case is_elixir_beam(File) of
+		      true -> {I+1, Acc};
+		      false ->
+			  AbsCode = get_code_from_beam(File),
+			  Acc2 = case is_behaviour(AbsCode, ejabberd_config) of
+				     true ->
+					 fold_opt(File, Fun, Acc, AbsCode);
+				     false ->
+					 fold_mod_opt(File, Fun, Acc, AbsCode)
+				 end,
+			  {I+1, Acc2}
+		  end
 	  end, {0, State}, Paths1),
     State1.
 
@@ -543,12 +546,17 @@ fold_paths(Paths) ->
       fun(Path) ->
 	      case filelib:is_dir(Path) of
 		  true ->
-		      lists:reverse(
-			filelib:fold_files(
-			  Path, ".+\.beam\$", false,
-			  fun(File, Acc) ->
-				  [File|Acc]
-			  end, []));
+		      Beams = lists:reverse(
+				filelib:fold_files(
+				  Path, ".+\.beam\$", false,
+				  fun(File, Acc) ->
+					  [File|Acc]
+				  end, [])),
+		      case Beams of
+			  [] -> ok;
+			  _ -> code:add_path(Path)
+		      end,
+		      Beams;
 		  false ->
 		      [Path]
 	      end
@@ -565,6 +573,12 @@ is_behaviour(AbsCode, Mod) ->
 		      false
 	      end
       end, AbsCode).
+
+is_elixir_beam(File) ->
+    case filename:basename(File) of
+	"Elixir" ++ _ -> true;
+	_ -> false
+    end.
 
 get_code_from_beam(File) ->
     try
