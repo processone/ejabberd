@@ -194,16 +194,17 @@ filter(_Host, Opt, Val, _) when Opt == outgoing_s2s_timeout;
 				Opt == s2s_dns_timeout ->
     warn_huge_timeout(Opt, Val),
     true;
-filter(Host, modules, ModOpts, #{remove_s2s_dialback := Hosts}) ->
-    ModOpts1 = case lists:member(Host, Hosts) of
-		   true ->
-		       lists:filter(
-			 fun({mod_s2s_dialback, _}) -> false;
-			    (_) -> true
-			 end, ModOpts);
-		   false ->
-		       ModOpts
-	       end,
+filter(Host, modules, ModOpts, State) ->
+    NoDialbackHosts = maps:get(remove_s2s_dialback, State, []),
+    ModOpts1 = lists:filter(
+		 fun({mod_s2s_dialback, _}) ->
+			 not lists:member(Host, NoDialbackHosts);
+		    ({mod_echo, _}) ->
+			 warn_removed_module(mod_echo),
+			 false;
+		    (_) ->
+			 true
+		 end, ModOpts),
     {true, {modules, ModOpts1}};
 filter(_, _, _, _) ->
     true.
@@ -432,6 +433,10 @@ warn_replaced_module(From, To, Type) ->
 		 "replaced by ~s with db_type: ~s. ~s",
 		 [From, To, Type, adjust_hint()]).
 
+warn_removed_module(Mod) ->
+    ?WARNING_MSG("Module ~s is deprecated and was automatically "
+		 "removed from the configuration. ~s", [Mod, adjust_hint()]).
+
 warn_replaced_handler(Opt, {Path, Module}) ->
     ?WARNING_MSG("Listening option '~s' is deprecated "
 		 "and was automatically replaced by "
@@ -464,8 +469,8 @@ warn_huge_timeout(_, _) ->
     ok.
 
 adjust_hint() ->
-    "Please adjust your configuration accordingly. "
-    "Hint: use `ejabberdctl dump-config` command to view current "
+    "Please adjust your configuration file accordingly. "
+    "Hint: run `ejabberdctl dump-config` command to view current "
     "configuration as it is seen by ejabberd.".
 
 %%%===================================================================
