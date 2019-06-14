@@ -174,13 +174,7 @@ mod_opt_type(put_url) ->
 mod_opt_type(get_url) ->
     econf:url();
 mod_opt_type(service_url) ->
-    econf:and_then(
-      econf:url(),
-      fun(URL) ->
-	      ?WARNING_MSG("Option 'service_url' is deprecated, consider using "
-			   "the 'external_secret' interface instead", []),
-	      URL
-      end);
+    econf:url();
 mod_opt_type(custom_headers) ->
     econf:map(econf:binary(), econf:binary());
 mod_opt_type(rm_on_unregister) ->
@@ -203,8 +197,7 @@ mod_opt_type(host) ->
 mod_opt_type(hosts) ->
     econf:well_known(hosts, ?MODULE).
 
--spec mod_options(binary()) -> [{service_url, binary()} |
-				{thumbnail, boolean()} |
+-spec mod_options(binary()) -> [{thumbnail, boolean()} |
 				{atom(), any()}].
 mod_options(Host) ->
     [{host, <<"upload.", Host/binary>>},

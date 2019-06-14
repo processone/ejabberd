@@ -111,7 +111,7 @@ secret_length(Opts) when is_map(Opts) ->
 secret_length(Host) ->
     gen_mod:get_module_opt(Host, mod_http_upload, secret_length).
 
--spec service_url(gen_mod:opts() | global | binary()) -> binary().
+-spec service_url(gen_mod:opts() | global | binary()) -> 'undefined' | binary().
 service_url(Opts) when is_map(Opts) ->
     gen_mod:get_opt(service_url, Opts);
 service_url(Host) ->
