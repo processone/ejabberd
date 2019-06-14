@@ -21,6 +21,7 @@ before_install:
   - sudo add-apt-repository 'deb http://repo.mysql.com/apt/ubuntu/ precise mysql-5.6'
   - sudo apt-get -qq update
   - sudo apt-get -qq -o Dpkg::Options::=--force-confold install mysql-server
+  - sudo service mysql start
   - sudo mysql_upgrade
   # /END MYSQL 5.6
   - pip install --user coveralls-merge
