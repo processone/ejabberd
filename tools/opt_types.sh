@@ -11,7 +11,7 @@
 		specs = #{} :: map(),
 		mod_specs = #{} :: map()}).
 
-main(Paths) ->
+main([Mod|Paths]) ->
     State = fold_beams(
 	      fun(File, Form, StateAcc) ->
 		      append(Form, File, StateAcc)
@@ -19,13 +19,13 @@ main(Paths) ->
     emit_modules(map_to_specs(State#state.m_opts,
 			      State#state.mod_defaults,
 			      State#state.mod_specs)),
-    emit_config(map_to_specs(State#state.g_opts,
+    emit_config(Mod,
+		map_to_specs(State#state.g_opts,
 			     State#state.defaults,
 			     State#state.specs),
 		State#state.globals).
 
-emit_config(Specs, Globals) ->
-    Mod = "ejabberd_option",
+emit_config(Mod, Specs, Globals) ->
     File = filename:join("src", Mod ++ ".erl"),
     case file:open(File, [write]) of
 	{ok, Fd} ->

@@ -123,7 +123,7 @@ hooks: all
 	tools/hook_deps.sh ebin
 
 options: all
-	tools/opt_types.sh ebin
+	tools/opt_types.sh ejabberd_option ebin
 
 translations:
 	tools/prepare-tr.sh
