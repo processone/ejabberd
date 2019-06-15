@@ -32,7 +32,7 @@
 -export([get_shared_key/0, get_node_start/0]).
 -export([fsm_limit_opts/1]).
 -export([codec_options/1]).
--export([default_db/1, default_db/2, default_ram_db/1, default_ram_db/2]).
+-export([default_db/2, default_db/3, default_ram_db/2, default_ram_db/3]).
 -export([beams/1, validators/1, globals/0, may_hide_data/1]).
 -export([dump/0, dump/1, convert_to_yaml/1, convert_to_yaml/2]).
 
@@ -225,24 +225,24 @@ codec_options(Host) ->
 	false -> [ignore_els]
     end.
 
--spec default_db(module()) -> atom().
-default_db(Module) ->
-    default_db(global, Module).
-
 -spec default_db(binary() | global, module()) -> atom().
 default_db(Host, Module) ->
-    default_db(default_db, Host, Module).
+    default_db(default_db, Host, Module, mnesia).
 
--spec default_ram_db(module()) -> atom().
-default_ram_db(Module) ->
-    default_ram_db(global, Module).
+-spec default_db(binary() | global, module(), atom()) -> atom().
+default_db(Host, Module, Default) ->
+    default_db(default_db, Host, Module, Default).
 
 -spec default_ram_db(binary() | global, module()) -> atom().
 default_ram_db(Host, Module) ->
-    default_db(default_ram_db, Host, Module).
+    default_db(default_ram_db, Host, Module, mnesia).
 
--spec default_db(default_db | default_ram_db, binary() | global, module()) -> atom().
-default_db(Opt, Host, Mod) ->
+-spec default_ram_db(binary() | global, module(), atom()) -> atom().
+default_ram_db(Host, Module, Default) ->
+    default_db(default_ram_db, Host, Module, Default).
+
+-spec default_db(default_db | default_ram_db, binary() | global, module(), atom()) -> atom().
+default_db(Opt, Host, Mod, Default) ->
     Type = get_option({Opt, Host}),
     DBMod = list_to_atom(atom_to_list(Mod) ++ "_" ++ atom_to_list(Type)),
     case code:ensure_loaded(DBMod) of
@@ -250,8 +250,8 @@ default_db(Opt, Host, Mod) ->
 	{error, _} ->
 	    ?WARNING_MSG("Module ~s doesn't support database '~s' "
 			 "defined in option '~s', using "
-			 "Mnesia as fallback", [Mod, Type, Opt]),
-	    mnesia
+			 "'~s' as fallback", [Mod, Type, Opt, Default]),
+	    Default
     end.
 
 -spec beams(local | external | all) -> [module()].
