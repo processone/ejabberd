@@ -3894,11 +3894,11 @@ mod_opt_type(pep_mapping) ->
 mod_opt_type(plugins) ->
     econf:list(econf:binary());
 mod_opt_type(host) ->
-    econf:well_known(host, ?MODULE);
+    econf:host();
 mod_opt_type(hosts) ->
-    econf:well_known(hosts, ?MODULE);
+    econf:hosts();
 mod_opt_type(db_type) ->
-    econf:well_known(db_type, ?MODULE).
+    econf:db_type(?MODULE).
 
 mod_options(Host) ->
     [{access_createnode, all},

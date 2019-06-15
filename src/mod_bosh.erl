@@ -170,17 +170,17 @@ mod_opt_type(max_pause) ->
 mod_opt_type(prebind) ->
     econf:bool();
 mod_opt_type(queue_type) ->
-    econf:well_known(queue_type, ?MODULE);
+    econf:queue_type();
 mod_opt_type(ram_db_type) ->
-    econf:well_known(ram_db_type, ?MODULE);
+    econf:db_type(?MODULE);
 mod_opt_type(use_cache) ->
-    econf:well_known(use_cache, ?MODULE);
+    econf:bool();
 mod_opt_type(cache_size) ->
-    econf:well_known(cache_size, ?MODULE);
+    econf:pos_int(infinity);
 mod_opt_type(cache_missed) ->
-    econf:well_known(cache_missed, ?MODULE);
+    econf:bool();
 mod_opt_type(cache_life_time) ->
-    econf:well_known(cache_life_time, ?MODULE).
+    econf:timeout(second, infinity).
 
 -spec mod_options(binary()) -> [{json, boolean()} |
 				{atom(), term()}].
@@ -240,10 +240,7 @@ delete_cache(Mod, SID) ->
 cache_opts(Host) ->
     MaxSize = mod_bosh_opt:cache_size(Host),
     CacheMissed = mod_bosh_opt:cache_missed(Host),
-    LifeTime = case mod_bosh_opt:cache_life_time(Host) of
-		   infinity -> infinity;
-		   I -> timer:seconds(I)
-	       end,
+    LifeTime = mod_bosh_opt:cache_life_time(Host),
     [{max_size, MaxSize}, {cache_missed, CacheMissed}, {life_time, LifeTime}].
 
 -spec clean_cache(node()) -> non_neg_integer().

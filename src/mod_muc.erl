@@ -1016,15 +1016,15 @@ mod_opt_type(default_room_options) ->
 	public_list => econf:bool(),
 	title => econf:binary()});
 mod_opt_type(db_type) ->
-    econf:well_known(db_type, ?MODULE);
+    econf:db_type(?MODULE);
 mod_opt_type(ram_db_type) ->
-    econf:well_known(ram_db_type, ?MODULE);
+    econf:db_type(?MODULE);
 mod_opt_type(host) ->
-    econf:well_known(host, ?MODULE);
+    econf:host();
 mod_opt_type(hosts) ->
-    econf:well_known(hosts, ?MODULE);
+    econf:hosts();
 mod_opt_type(queue_type) ->
-    econf:well_known(queue_type, ?MODULE).
+    econf:queue_type().
 
 mod_options(Host) ->
     [{access, all},

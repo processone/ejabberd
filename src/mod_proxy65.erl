@@ -97,7 +97,7 @@ depends(_Host, _Opts) ->
 mod_opt_type(access) ->
     econf:acl();
 mod_opt_type(hostname) ->
-    econf:well_known(host, ?MODULE);
+    econf:host();
 mod_opt_type(ip) ->
     econf:ip();
 mod_opt_type(name) ->
@@ -107,11 +107,11 @@ mod_opt_type(port) ->
 mod_opt_type(max_connections) ->
     econf:pos_int(infinity);
 mod_opt_type(host) ->
-    econf:well_known(host, ?MODULE);
+    econf:host();
 mod_opt_type(hosts) ->
-    econf:well_known(hosts, ?MODULE);
+    econf:hosts();
 mod_opt_type(ram_db_type) ->
-    econf:well_known(ram_db_type, ?MODULE);
+    econf:db_type(?MODULE);
 mod_opt_type(server_host) ->
     econf:binary();
 mod_opt_type(auth_type) ->

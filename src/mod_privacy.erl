@@ -419,7 +419,7 @@ update_c2s_state_with_privacy_list(#iq{
           State#{privacy_active_list => none};
         _ ->
           case get_user_list(U, S, Active) of
-            {ok, _} -> 
+            {ok, _} ->
               ?DEBUG("Setting active privacy list ~p for user ~p", [Active, jid:encode(To)]),
               State#{privacy_active_list => Active};
             _ -> State % unknown privacy list name
@@ -444,7 +444,7 @@ user_send_packet({#iq{type = Type,
 	    end,
     {NewIQ, update_c2s_state_with_privacy_list(IQ, State)};
 
-% for client with no active privacy list, see if there is 
+% for client with no active privacy list, see if there is
 % one about to be activated in this packet and update client state
 user_send_packet({Packet, State}) ->
   {Packet, update_c2s_state_with_privacy_list(Packet, State)}.
@@ -706,10 +706,7 @@ init_cache(Mod, Host, Opts) ->
 cache_opts(Opts) ->
     MaxSize = mod_privacy_opt:cache_size(Opts),
     CacheMissed = mod_privacy_opt:cache_missed(Opts),
-    LifeTime = case mod_privacy_opt:cache_life_time(Opts) of
-		   infinity -> infinity;
-		   I -> timer:seconds(I)
-	       end,
+    LifeTime = mod_privacy_opt:cache_life_time(Opts),
     [{max_size, MaxSize}, {cache_missed, CacheMissed}, {life_time, LifeTime}].
 
 -spec use_cache(module(), binary()) -> boolean().
@@ -849,15 +846,15 @@ depends(_Host, _Opts) ->
     [].
 
 mod_opt_type(db_type) ->
-    econf:well_known(db_type, ?MODULE);
+    econf:db_type(?MODULE);
 mod_opt_type(use_cache) ->
-    econf:well_known(use_cache, ?MODULE);
+    econf:bool();
 mod_opt_type(cache_size) ->
-    econf:well_known(cache_size, ?MODULE);
+    econf:pos_int(infinity);
 mod_opt_type(cache_missed) ->
-    econf:well_known(cache_missed, ?MODULE);
+    econf:bool();
 mod_opt_type(cache_life_time) ->
-    econf:well_known(cache_life_time, ?MODULE).
+    econf:timeout(second, infinity).
 
 mod_options(Host) ->
     [{db_type, ejabberd_config:default_db(Host, ?MODULE)},

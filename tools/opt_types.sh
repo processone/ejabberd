@@ -389,18 +389,10 @@ spec(either, 2, [F1, F2], Mod) ->
     erl_types:t_sup([Spec1, Spec2]);
 spec(and_then, 2, [_, F], Mod) ->
     spec(Mod, F);
-spec(well_known, 2, [Form, _], Mod) ->
-    case erl_syntax:atom_value(Form) of
-	queue_type -> spec(queue_type, 0, [], Mod);
-	db_type -> erl_types:t_atom();
-	ram_db_type -> erl_types:t_atom();
-	cache_life_time -> spec(pos_int, 1, [erl_syntax:atom(infinity)], Mod);
-	cache_size -> spec(pos_int, 1, [erl_syntax:atom(infinity)], Mod);
-	use_cache -> spec(bool, 0, [], Mod);
-	cache_missed -> spec(bool, 0, [], Mod);
-	host -> erl_types:t_binary();
-	hosts -> erl_types:t_list(erl_types:t_binary())
-    end;
+spec(host, 0, _, _) ->
+    erl_types:t_binary();
+spec(hosts, 0, _, _) ->
+    erl_types:t_list(erl_types:t_binary());
 spec(options, A, [Form|OForm], Mod) when A == 1; A == 2 ->
     case erl_syntax:type(Form) of
 	map_expr ->

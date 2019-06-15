@@ -160,10 +160,7 @@ init_cache(Host, Opts) ->
 cache_opts(Opts) ->
     MaxSize = mod_vcard_xupdate_opt:cache_size(Opts),
     CacheMissed = mod_vcard_xupdate_opt:cache_missed(Opts),
-    LifeTime = case mod_vcard_xupdate_opt:cache_life_time(Opts) of
-		   infinity -> infinity;
-		   I -> timer:seconds(I)
-	       end,
+    LifeTime = mod_vcard_xupdate_opt:cache_life_time(Opts),
     [{max_size, MaxSize}, {cache_missed, CacheMissed}, {life_time, LifeTime}].
 
 -spec use_cache(binary()) -> boolean().
@@ -192,13 +189,13 @@ compute_hash(VCard) ->
 %% Options
 %%====================================================================
 mod_opt_type(use_cache) ->
-    econf:well_known(use_cache, ?MODULE);
+    econf:bool();
 mod_opt_type(cache_size) ->
-    econf:well_known(cache_size, ?MODULE);
+    econf:pos_int(infinity);
 mod_opt_type(cache_missed) ->
-    econf:well_known(cache_missed, ?MODULE);
+    econf:bool();
 mod_opt_type(cache_life_time) ->
-    econf:well_known(cache_life_time, ?MODULE).
+    econf:timeout(second, infinity).
 
 mod_options(Host) ->
     [{use_cache, ejabberd_option:use_cache(Host)},

@@ -768,10 +768,7 @@ init_cache(HostModules) ->
 cache_opts() ->
     MaxSize = ejabberd_option:auth_cache_size(),
     CacheMissed = ejabberd_option:auth_cache_missed(),
-    LifeTime = case ejabberd_option:auth_cache_life_time() of
-		   infinity -> infinity;
-		   I -> timer:seconds(I)
-	       end,
+    LifeTime = ejabberd_option:auth_cache_life_time(),
     [{max_size, MaxSize}, {cache_missed, CacheMissed}, {life_time, LifeTime}].
 
 -spec use_cache(map()) -> {True :: [module()], False :: [module()]}.

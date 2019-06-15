@@ -366,10 +366,7 @@ use_cache(DBMod) ->
 cache_opts() ->
     MaxSize = ejabberd_option:oauth_cache_size(),
     CacheMissed = ejabberd_option:oauth_cache_missed(),
-    LifeTime = case ejabberd_option:oauth_cache_life_time() of
-		   infinity -> infinity;
-		   I -> timer:seconds(I)
-	       end,
+    LifeTime = ejabberd_option:oauth_cache_life_time(),
     [{max_size, MaxSize}, {life_time, LifeTime}, {cache_missed, CacheMissed}].
 
 expire() ->

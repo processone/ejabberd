@@ -784,9 +784,9 @@ mod_opt_type(resend_on_timeout) ->
       if_offline,
       econf:bool());
 mod_opt_type(cache_size) ->
-    econf:well_known(cache_size, ?MODULE);
+    econf:pos_int(infinity);
 mod_opt_type(queue_type) ->
-    econf:well_known(queue_type, ?MODULE).
+    econf:queue_type().
 
 mod_options(Host) ->
     [{max_ack_queue, 5000},

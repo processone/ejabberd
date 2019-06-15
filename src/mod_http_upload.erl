@@ -193,9 +193,9 @@ mod_opt_type(thumbnail) ->
 mod_opt_type(external_secret) ->
     econf:binary();
 mod_opt_type(host) ->
-    econf:well_known(host, ?MODULE);
+    econf:host();
 mod_opt_type(hosts) ->
-    econf:well_known(hosts, ?MODULE).
+    econf:hosts().
 
 -spec mod_options(binary()) -> [{thumbnail, boolean()} |
 				{atom(), any()}].

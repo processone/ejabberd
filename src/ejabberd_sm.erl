@@ -912,10 +912,7 @@ init_cache() ->
 cache_opts() ->
     MaxSize = ejabberd_option:sm_cache_size(),
     CacheMissed = ejabberd_option:sm_cache_missed(),
-    LifeTime = case ejabberd_option:sm_cache_life_time() of
-		   infinity -> infinity;
-		   I -> timer:seconds(I)
-	       end,
+    LifeTime = ejabberd_option:sm_cache_life_time(),
     [{max_size, MaxSize}, {cache_missed, CacheMissed}, {life_time, LifeTime}].
 
 -spec clean_cache(node()) -> non_neg_integer().

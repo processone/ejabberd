@@ -1008,7 +1008,7 @@ import(LServer, {sql, _}, DBType, Tab, L) ->
     Mod:import(LServer, Tab, L).
 
 mod_opt_type(db_type) ->
-    econf:well_known(db_type, ?MODULE).
+    econf:db_type(?MODULE).
 
 mod_options(Host) ->
     [{db_type, ejabberd_config:default_db(Host, ?MODULE)}].

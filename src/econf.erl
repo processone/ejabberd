@@ -49,7 +49,8 @@
 -export([acl/0, shaper/0, url_or_file/0, lang/0]).
 -export([pem/0, queue_type/0]).
 -export([jid/0, user/0, domain/0, resource/0]).
--export([db_type/1, ldap_filter/0, well_known/2]).
+-export([db_type/1, ldap_filter/0]).
+-export([host/0, hosts/0]).
 -ifdef(SIP).
 -export([sip_uri/0]).
 -endif.
@@ -462,25 +463,6 @@ ldap_filter() ->
 	      end
       end).
 
-well_known(queue_type, _) ->
-    queue_type();
-well_known(db_type, M) ->
-    db_type(M);
-well_known(ram_db_type, M) ->
-    db_type(M);
-well_known(cache_life_time, _) ->
-    pos_int(infinity);
-well_known(cache_size, _) ->
-    pos_int(infinity);
-well_known(use_cache, _) ->
-    bool();
-well_known(cache_missed, _) ->
-    bool();
-well_known(host, _) ->
-    host();
-well_known(hosts, _) ->
-    list(host(), [unique]).
-
 -ifdef(SIP).
 sip_uri() ->
     and_then(
@@ -506,6 +488,10 @@ host() ->
 		false -> Domain3
 	    end
     end.
+
+-spec hosts() -> yconf:validator([binary()]).
+hosts() ->
+    list(host(), [unique]).
 
 %%%===================================================================
 %%% Internal functions

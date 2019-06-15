@@ -229,19 +229,19 @@ mod_opt_type(access_subscribe) ->
 mod_opt_type(access_publish) ->
     topic_access_validator();
 mod_opt_type(queue_type) ->
-    econf:well_known(queue_type, ?MODULE);
+    econf:queue_type();
 mod_opt_type(db_type) ->
-    econf:well_known(db_type, ?MODULE);
+    econf:db_type(?MODULE);
 mod_opt_type(ram_db_type) ->
-    econf:well_known(ram_db_type, ?MODULE);
+    econf:db_type(?MODULE);
 mod_opt_type(use_cache) ->
-    econf:well_known(use_cache, ?MODULE);
+    econf:bool();
 mod_opt_type(cache_size) ->
-    econf:well_known(cache_size, ?MODULE);
+    econf:pos_int(infinity);
 mod_opt_type(cache_missed) ->
-    econf:well_known(cache_missed, ?MODULE);
+    econf:bool();
 mod_opt_type(cache_life_time) ->
-    econf:well_known(cache_life_time, ?MODULE).
+    econf:timeout(second, infinity).
 
 listen_opt_type(tls_verify) ->
     econf:bool();
@@ -541,10 +541,7 @@ init_payload_cache(Mod, Host, Opts) ->
 cache_opts(Opts) ->
     MaxSize = mod_mqtt_opt:cache_size(Opts),
     CacheMissed = mod_mqtt_opt:cache_missed(Opts),
-    LifeTime = case mod_mqtt_opt:cache_life_time(Opts) of
-                   infinity -> infinity;
-                   I -> timer:seconds(I)
-               end,
+    LifeTime = mod_mqtt_opt:cache_life_time(Opts),
     [{max_size, MaxSize}, {cache_missed, CacheMissed}, {life_time, LifeTime}].
 
 -spec use_cache(module(), binary()) -> boolean().

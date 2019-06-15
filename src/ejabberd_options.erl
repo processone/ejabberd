@@ -57,7 +57,7 @@ opt_type(append_host_config) ->
 	econf:enum(ejabberd_option:hosts())),
       validator());
 opt_type(auth_cache_life_time) ->
-    econf:pos_int(infinity);
+    econf:timeout(second, infinity);
 opt_type(auth_cache_missed) ->
     econf:bool();
 opt_type(auth_cache_size) ->
@@ -83,7 +83,7 @@ opt_type(c2s_tls_compression) ->
 opt_type(ca_file) ->
     econf:pem();
 opt_type(cache_life_time) ->
-    econf:pos_int(infinity);
+    econf:timeout(second, infinity);
 opt_type(cache_missed) ->
     econf:bool();
 opt_type(cache_size) ->
@@ -219,7 +219,7 @@ opt_type(new_sql_schema) ->
 opt_type(oauth_access) ->
     econf:acl();
 opt_type(oauth_cache_life_time) ->
-    econf:pos_int(infinity);
+    econf:timeout(second, infinity);
 opt_type(oauth_cache_missed) ->
     econf:bool();
 opt_type(oauth_cache_size) ->
@@ -295,7 +295,7 @@ opt_type(riak_username) ->
 opt_type(route_subdomains) ->
     econf:enum([s2s, local]);
 opt_type(router_cache_life_time) ->
-    econf:pos_int(infinity);
+    econf:timeout(second, infinity);
 opt_type(router_cache_missed) ->
     econf:bool();
 opt_type(router_cache_size) ->
@@ -347,7 +347,7 @@ opt_type(shaper) ->
 opt_type(shaper_rules) ->
     ejabberd_shaper:validator(shaper_rules);
 opt_type(sm_cache_life_time) ->
-    econf:pos_int(infinity);
+    econf:timeout(second, infinity);
 opt_type(sm_cache_missed) ->
     econf:bool();
 opt_type(sm_cache_size) ->
@@ -435,7 +435,7 @@ options() ->
     [%% Top-priority options
      hosts,
      {loglevel, 4},
-     {cache_life_time, 3600},
+     {cache_life_time, timer:seconds(3600)},
      {cache_missed, true},
      {cache_size, 1000},
      {use_cache, true},

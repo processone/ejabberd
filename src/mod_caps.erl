@@ -503,10 +503,7 @@ use_cache(Mod, Host) ->
 cache_opts(Opts) ->
     MaxSize = mod_caps_opt:cache_size(Opts),
     CacheMissed = mod_caps_opt:cache_missed(Opts),
-    LifeTime = case mod_caps_opt:cache_life_time(Opts) of
-		   infinity -> infinity;
-		   I -> timer:seconds(I)
-	       end,
+    LifeTime = mod_caps_opt:cache_life_time(Opts),
     [{max_size, MaxSize}, {cache_missed, CacheMissed}, {life_time, LifeTime}].
 
 export(LServer) ->
@@ -545,15 +542,15 @@ import_next(LServer, DBType, NodePair) ->
     import_next(LServer, DBType, ets:next(caps_features_tmp, NodePair)).
 
 mod_opt_type(db_type) ->
-    econf:well_known(db_type, ?MODULE);
+    econf:db_type(?MODULE);
 mod_opt_type(use_cache) ->
-    econf:well_known(use_cache, ?MODULE);
+    econf:bool();
 mod_opt_type(cache_size) ->
-    econf:well_known(cache_size, ?MODULE);
+    econf:pos_int(infinity);
 mod_opt_type(cache_missed) ->
-    econf:well_known(cache_missed, ?MODULE);
+    econf:bool();
 mod_opt_type(cache_life_time) ->
-    econf:well_known(cache_life_time, ?MODULE).
+    econf:timeout(second, infinity).
 
 mod_options(Host) ->
     [{db_type, ejabberd_config:default_db(Host, ?MODULE)},

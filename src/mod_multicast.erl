@@ -1140,9 +1140,9 @@ mod_opt_type(limits) ->
 	      #{message => econf:non_neg_int(infinite),
 		presence => econf:non_neg_int(infinite)})});
 mod_opt_type(host) ->
-    econf:well_known(host, ?MODULE);
+    econf:host();
 mod_opt_type(hosts) ->
-    econf:well_known(hosts, ?MODULE).
+    econf:hosts().
 
 mod_options(Host) ->
     [{access, all},
