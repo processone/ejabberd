@@ -881,7 +881,7 @@ force_update_presence({LUser, LServer}) ->
 
 get_sm_backend(Host) ->
     DBType = ejabberd_option:sm_db_type(Host),
-    list_to_atom("ejabberd_sm_" ++ atom_to_list(DBType)).
+    list_to_existing_atom("ejabberd_sm_" ++ atom_to_list(DBType)).
 
 -spec get_sm_backends() -> [module()].
 

@@ -429,7 +429,7 @@ get_domain_balancing(From, To, LDomain) ->
 -spec get_backend() -> module().
 get_backend() ->
     DBType = ejabberd_option:router_db_type(),
-    list_to_atom("ejabberd_router_" ++ atom_to_list(DBType)).
+    list_to_existing_atom("ejabberd_router_" ++ atom_to_list(DBType)).
 
 -spec cache_nodes(module()) -> [node()].
 cache_nodes(Mod) ->

@@ -194,7 +194,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 get_mod() ->
     Backend = ejabberd_option:cluster_backend(),
-    list_to_atom("ejabberd_cluster_" ++ atom_to_list(Backend)).
+    list_to_existing_atom("ejabberd_cluster_" ++ atom_to_list(Backend)).
 
 rpc_timeout() ->
     ejabberd_option:rpc_timeout().

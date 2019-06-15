@@ -353,7 +353,7 @@ db_mod(Opt, Host, Module) when is_binary(Host) orelse Host == global ->
 db_mod(Opt, Opts, Module) when is_map(Opts) ->
     db_mod(Opt, get_opt(Opt, Opts), Module);
 db_mod(_Opt, Type, Module) when is_atom(Type) ->
-    list_to_atom(atom_to_list(Module) ++ "_" ++ atom_to_list(Type)).
+    list_to_existing_atom(atom_to_list(Module) ++ "_" ++ atom_to_list(Type)).
 
 -spec loaded_modules(binary()) -> [atom()].
 loaded_modules(Host) ->

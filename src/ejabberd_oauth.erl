@@ -565,7 +565,7 @@ process(_Handlers, _Request) ->
 
 get_db_backend() ->
     DBType = ejabberd_option:oauth_db_type(),
-    list_to_atom("ejabberd_oauth_" ++ atom_to_list(DBType)).
+    list_to_existing_atom("ejabberd_oauth_" ++ atom_to_list(DBType)).
 
 
 %% Headers as per RFC 6749
