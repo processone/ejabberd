@@ -3892,7 +3892,9 @@ mod_opt_type(nodetree) ->
 mod_opt_type(pep_mapping) ->
     econf:map(econf:binary(), econf:binary());
 mod_opt_type(plugins) ->
-    econf:list(econf:binary());
+    econf:list(
+      econf:enum([<<"flat">>, <<"pep">>]),
+      [unique]);
 mod_opt_type(host) ->
     econf:host();
 mod_opt_type(hosts) ->

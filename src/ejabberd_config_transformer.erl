@@ -343,30 +343,30 @@ transform_module_options(Opts) ->
 	      true
       end, Opts).
 
-transform_module(_Host, mod_http_bind, Opts, Acc) ->
+transform_module(Host, mod_http_bind, Opts, Acc) ->
     warn_replaced_module(mod_http_bind, mod_bosh),
-    {{mod_bosh, Opts}, Acc};
-transform_module(_Host, mod_vcard_xupdate_odbc, Opts, Acc) ->
+    transform_module(Host, mod_bosh, Opts, Acc);
+transform_module(Host, mod_vcard_xupdate_odbc, Opts, Acc) ->
     warn_replaced_module(mod_vcard_xupdate_odbc, mod_vcard_xupdate),
-    {{mod_vcard_xupdate, Opts}, Acc};
-transform_module(_Host, mod_vcard_ldap, Opts, Acc) ->
+    transform_module(Host, mod_vcard_xupdate, Opts, Acc);
+transform_module(Host, mod_vcard_ldap, Opts, Acc) ->
     warn_replaced_module(mod_vcard_ldap, mod_vcard, ldap),
-    {{mod_vcard, [{db_type, ldap}|Opts]}, Acc};
-transform_module(_Host, M, Opts, Acc) when (M == mod_announce_odbc orelse
-					    M == mod_blocking_odbc orelse
-					    M == mod_caps_odbc orelse
-					    M == mod_last_odbc orelse
-					    M == mod_muc_odbc orelse
-					    M == mod_offline_odbc orelse
-					    M == mod_privacy_odbc orelse
-					    M == mod_private_odbc orelse
-					    M == mod_pubsub_odbc orelse
-					    M == mod_roster_odbc orelse
-					    M == mod_shared_roster_odbc orelse
-					    M == mod_vcard_odbc) ->
+    transform_module(Host, mod_vcard, [{db_type, ldap}|Opts], Acc);
+transform_module(Host, M, Opts, Acc) when (M == mod_announce_odbc orelse
+					   M == mod_blocking_odbc orelse
+					   M == mod_caps_odbc orelse
+					   M == mod_last_odbc orelse
+					   M == mod_muc_odbc orelse
+					   M == mod_offline_odbc orelse
+					   M == mod_privacy_odbc orelse
+					   M == mod_private_odbc orelse
+					   M == mod_pubsub_odbc orelse
+					   M == mod_roster_odbc orelse
+					   M == mod_shared_roster_odbc orelse
+					   M == mod_vcard_odbc) ->
     M1 = strip_odbc_suffix(M),
     warn_replaced_module(M, M1, sql),
-    {{M1, [{db_type, sql}|Opts]}, Acc};
+    transform_module(Host, M1, [{db_type, sql}|Opts], Acc);
 transform_module(_Host, mod_blocking, Opts, Acc) ->
     Opts1 = lists:filter(
 	      fun({db_type, _}) ->
@@ -407,6 +407,34 @@ transform_module(_Host, mod_http_upload, Opts, Acc) ->
 		      true
 	      end, Opts),
     {{mod_http_upload, Opts1}, Acc};
+transform_module(_Host, mod_pubsub, Opts, Acc) ->
+    Opts1 = lists:map(
+	      fun({plugins, Plugins}) ->
+		      {plugins,
+		       lists:filter(
+			 fun(Plugin) ->
+				 case lists:member(
+					Plugin,
+					[<<"buddy">>, <<"club">>, <<"dag">>,
+					 <<"dispatch">>, <<"hometree">>, <<"mb">>,
+					 <<"mix">>, <<"online">>, <<"private">>,
+					 <<"public">>]) of
+				     true ->
+					 ?WARNING_MSG(
+					    "Plugin '~s' of mod_pubsub is not "
+					    "supported anymore and has been "
+					    "automatically removed from 'plugins' "
+					    "option. ~s",
+					    [Plugin, adjust_hint()]),
+					 false;
+				     false ->
+					 true
+				 end
+			 end, Plugins)};
+		 (Opt) ->
+		      Opt
+	      end, Opts),
+    {{mod_pubsub, Opts1}, Acc};
 transform_module(_Host, Mod, Opts, Acc) ->
     {{Mod, Opts}, Acc}.
 
@@ -524,6 +552,7 @@ validator() ->
 		#{'_' =>
 		      econf:options(
 			#{db_type => econf:atom(),
+			  plugins => econf:list(econf:binary()),
 			  '_' => econf:any()},
 			[])},
 		[]),
