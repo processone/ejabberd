@@ -171,7 +171,7 @@ handle_auth_success(_, Mech, _,
 	      ejabberd_router:register_route(H, ejabberd_config:get_myname()),
 	      ejabberd_hooks:run(component_connected, [H])
       end, Routes),
-    State.
+    State#{routes => Routes}.
 
 handle_auth_failure(_, Mech, Reason,
 		    #{remote_server := RemoteServer,
@@ -219,25 +219,12 @@ handle_info(Info, State) ->
     ?ERROR_MSG("Unexpected info: ~p", [Info]),
     State.
 
-terminate(Reason, #{stream_state := StreamState,
-		    host_opts := HostOpts,
-		    remote_server := RemoteServer,
-		    global_routes := GlobalRoutes}) ->
-    case StreamState of
-	established ->
-	    Routes = if GlobalRoutes ->
-			     dict:fetch_keys(HostOpts);
-			true ->
-			     [RemoteServer]
-		     end,
-	    lists:foreach(
-	      fun(H) ->
-		      ejabberd_router:unregister_route(H),
-		      ejabberd_hooks:run(component_disconnected, [H, Reason])
-	      end, Routes);
-	_ ->
-	    ok
-    end;
+terminate(Reason, #{routes := Routes}) ->
+    lists:foreach(
+      fun(H) ->
+	      ejabberd_router:unregister_route(H),
+	      ejabberd_hooks:run(component_disconnected, [H, Reason])
+      end, Routes);
 terminate(_Reason, _State) ->
     ok.
 
