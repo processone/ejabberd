@@ -62,7 +62,7 @@
 -callback options() -> [atom() | {atom(), term()}].
 -callback globals() -> [atom()].
 
--optional_callbacks([globals/0, opt_type/1]).
+-optional_callbacks([globals/0]).
 
 %%%===================================================================
 %%% API
@@ -418,7 +418,8 @@ callback_modules(external) ->
       fun(M) ->
 	      case code:ensure_loaded(M) of
 		  {module, _} ->
-		      erlang:function_exported(M, options, 0);
+		      erlang:function_exported(M, options, 0)
+			  andalso erlang:function_exported(M, opt_type, 1);
 		  {error, _} ->
 		      false
 	      end
