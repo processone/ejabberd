@@ -29,7 +29,6 @@ define_macro:
         last_item_cache: false
         plugins:
           - "flat"
-          - "hometree"
           - "pep"
       mod_roster:
         versioning: true
