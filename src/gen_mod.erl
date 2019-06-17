@@ -221,10 +221,13 @@ reload_module(Host, Module, NewOpts, OldOpts, Order) ->
 
 -spec update_module(binary(), module(), opts()) -> ok | {ok, pid()}.
 update_module(Host, Module, Opts) ->
-    [#ejabberd_module{opts = OldOpts, order = Order}] =
-	ets:lookup(ejabberd_modules, {Module, Host}),
-    NewOpts = maps:merge(OldOpts, Opts),
-    reload_module(Host, Module, NewOpts, OldOpts, Order).
+    case ets:lookup(ejabberd_modules, {Module, Host}) of
+	[#ejabberd_module{opts = OldOpts, order = Order}] ->
+	    NewOpts = maps:merge(OldOpts, Opts),
+	    reload_module(Host, Module, NewOpts, OldOpts, Order);
+	[] ->
+	    erlang:error({module_not_loaded, Module, Host})
+    end.
 
 -spec store_options(binary(), module(), opts(), integer()) -> true.
 store_options(Host, Module, Opts, Order) ->
@@ -321,13 +324,19 @@ set_opt(Opt, Val, Opts) ->
 get_module_opt(global, Module, Opt) ->
     get_module_opt(ejabberd_config:get_myname(), Module, Opt);
 get_module_opt(Host, Module, Opt) ->
-    Opts = ets:lookup_element(ejabberd_modules, {Module, Host}, 3),
-    get_opt(Opt, Opts).
+    try ets:lookup_element(ejabberd_modules, {Module, Host}, 3) of
+	Opts -> get_opt(Opt, Opts)
+    catch _:badarg ->
+	    erlang:error({module_not_loaded, Module, Host})
+    end.
 
 -spec get_module_opt_hosts(binary(), module()) -> [binary()].
 get_module_opt_hosts(Host, Module) ->
-    Opts = ets:lookup_element(ejabberd_modules, {Module, Host}, 3),
-    get_opt_hosts(Opts).
+    try ets:lookup_element(ejabberd_modules, {Module, Host}, 3) of
+	Opts -> get_opt_hosts(Opts)
+    catch _:badarg ->
+	    erlang:error({module_not_loaded, Module, Host})
+    end.
 
 -spec get_opt_hosts(opts()) -> [binary()].
 get_opt_hosts(Opts) ->
