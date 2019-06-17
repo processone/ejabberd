@@ -74,7 +74,7 @@ defmodule Ejabberd.Mixfile do
      {:xmpp, "~> 1.3.0"},
      {:cache_tab, "~> 1.0"},
      {:stringprep, "~> 1.0"},
-     {:fast_yaml, "~> 1.0"},
+     {:fast_yaml, "~> 1.0", override: true},
      {:fast_tls, "~> 1.1"},
      {:stun, "~> 1.0"},
      {:esip, "~> 1.0"},
@@ -88,6 +88,7 @@ defmodule Ejabberd.Mixfile do
      {:ex_doc, ">= 0.0.0", only: :dev},
      {:eimp, "~> 1.0"},
      {:base64url, "~> 0.0.1"},
+     {:yconf, github: "processone/yconf", commit: "f9c235faf828f52bb01881b172646960d5a8d523", manager: :rebar},
      {:jose, "~> 1.8"}]
     ++ cond_deps()
   end
