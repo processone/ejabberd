@@ -55,10 +55,7 @@ defmodule Ejabberd.Mixfile do
     includes = ["include"] ++ deps_include(["fast_xml", "xmpp", "p1_utils"])
     [:debug_info, {:d, :ELIXIR_ENABLED}] ++ cond_options() ++ Enum.map(includes, fn(path) -> {:i, path} end) ++
     if_version_above('20', [{:d, :DEPRECATED_GET_STACKTRACE}]) ++
-    if_function_exported(:crypto, :strong_rand_bytes, 1, [{:d, :STRONG_RAND_BYTES}]) ++
-    if_function_exported(:rand, :uniform, 1, [{:d, :RAND_UNIFORM}]) ++
-    if_function_exported(:gb_sets, :iterator_from, 2, [{:d, :GB_SETS_ITERATOR_FROM}]) ++
-    if_function_exported(:public_key, :short_name_hash, 1, [{:d, :SHORT_NAME_HASH}])
+    if_function_exported(:erl_error, :format_exception, 6, [{:d, :HAVE_ERL_ERROR}])
   end
 
   defp cond_options do
