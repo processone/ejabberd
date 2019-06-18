@@ -59,6 +59,7 @@
         %% access is: [accessRuleName] or [{Module, AccessOption, DefaultAccessRuleName}]
          access = []             :: [{atom(),atom(),atom()}|atom()],
          result = {res, rescode} :: rterm() | '_' | '$2',
+         args_rename = []        :: [{atom(),atom()}],
          args_desc = none        :: none | [string()] | '_',
          result_desc = none      :: none | string() | '_',
          args_example = none     :: none | [any()] | '_',

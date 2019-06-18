@@ -340,7 +340,7 @@ call_command([CmdString | Args], Auth, _AccessCommands, Version) ->
     CmdStringU = ejabberd_regexp:greplace(
                    list_to_binary(CmdString), <<"-">>, <<"_">>),
     Command = list_to_atom(binary_to_list(CmdStringU)),
-    {ArgsFormat, ResultFormat} = ejabberd_commands:get_command_format(Command, Auth, Version),
+    {ArgsFormat, _, ResultFormat} = ejabberd_commands:get_command_format(Command, Auth, Version),
     case (catch format_args(Args, ArgsFormat)) of
 	ArgsFormatted when is_list(ArgsFormatted) ->
 	    CI = case Auth of
@@ -484,7 +484,7 @@ get_list_commands(Version) ->
 
 %% Return: {string(), [string()], string()}
 tuple_command_help({Name, _Args, Desc}) ->
-    {Args, _} = ejabberd_commands:get_command_format(Name, admin),
+    {Args, _, _} = ejabberd_commands:get_command_format(Name, admin),
     Arguments = [atom_to_list(ArgN) || {ArgN, _ArgF} <- Args],
     Prepend = case is_supported_args(Args) of
 		  true -> "";
@@ -796,7 +796,7 @@ print_usage_command2(Cmd, C, MaxC, ShCode) ->
     NameFmt = ["  ", ?B("Command Name"), ": ", Cmd, "\n"],
 
     %% Initial indentation of result is 13 = length("  Arguments: ")
-    {ArgsDef, _} = ejabberd_commands:get_command_format(
+    {ArgsDef, _, _} = ejabberd_commands:get_command_format(
                      C#ejabberd_commands.name, admin),
     Args = [format_usage_ctype(ArgDef, 13) || ArgDef <- ArgsDef],
     ArgsMargin = lists:duplicate(13, $\s),

@@ -339,9 +339,9 @@ handler(State, {call, Command, []}) ->
     handler(State, {call, Command, [{struct, []}]});
 handler(State,
 	{call, Command, [{struct, AttrL}]}) ->
-    {ArgsF, ResultF} = ejabberd_commands:get_command_format(Command, State#state.auth),
+    {ArgsF, ArgsR, ResultF} = ejabberd_commands:get_command_format(Command, State#state.auth),
     try_do_command(State#state.access_commands,
-		   State#state.auth, Command, AttrL, ArgsF, ResultF);
+		   State#state.auth, Command, AttrL, ArgsF, ArgsR, ResultF);
 %% If no other guard matches
 handler(_State, Payload) ->
     build_fault_response(-112, "Unknown call: ~p",
@@ -352,9 +352,9 @@ handler(_State, Payload) ->
 %% -----------------------------
 
 try_do_command(AccessCommands, Auth, Command, AttrL,
-	       ArgsF, ResultF) ->
+	       ArgsF, ArgsR, ResultF) ->
     try do_command(AccessCommands, Auth, Command, AttrL,
-		   ArgsF, ResultF)
+		   ArgsF, ArgsR, ResultF)
     of
       {command_result, ResultFormatted} ->
 	  {false, {response, [ResultFormatted]}}
@@ -389,13 +389,24 @@ build_fault_response(Code, ParseString, ParseArgs) ->
     ?WARNING_MSG(FaultString, []),
     {false, {response, {fault, Code, list_to_binary(FaultString)}}}.
 
-do_command(AccessCommands, Auth, Command, AttrL, ArgsF,
+do_command(AccessCommands, Auth, Command, AttrL, ArgsF, ArgsR,
 	   ResultF) ->
-    ArgsFormatted = format_args(AttrL, ArgsF),
+    ArgsFormatted = format_args(rename_old_args(AttrL, ArgsR), ArgsF),
     Auth2 = Auth#{extra_permissions => AccessCommands},
     Result = ejabberd_commands:execute_command2(Command, ArgsFormatted, Auth2),
     ResultFormatted = format_result(Result, ResultF),
     {command_result, ResultFormatted}.
+
+rename_old_args(Args, []) ->
+    Args;
+rename_old_args(Args, [{OldName, NewName} | ArgsR]) ->
+    Args2 = case lists:keytake(OldName, 1, Args) of
+	{value, {OldName, Value}, ArgsTail} ->
+	    [{NewName, Value} | ArgsTail];
+	false ->
+	    Args
+    end,
+    rename_old_args(Args2, ArgsR).
 
 %%-----------------------------
 %% Format arguments

@@ -304,14 +304,25 @@ handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
     end.
 
 handle2(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
-    {ArgsF, _ResultF} = ejabberd_commands:get_command_format(Call, Auth, Version),
-    ArgsFormatted = format_args(Call, Args, ArgsF),
+    {ArgsF, ArgsR, _ResultF} = ejabberd_commands:get_command_format(Call, Auth, Version),
+    ArgsFormatted = format_args(Call, rename_old_args(Args, ArgsR), ArgsF),
     case ejabberd_commands:execute_command2(Call, ArgsFormatted, Auth, Version) of
 	{error, Error} ->
 	    throw(Error);
 	Res ->
 	    format_command_result(Call, Auth, Res, Version)
     end.
+
+rename_old_args(Args, []) ->
+    Args;
+rename_old_args(Args, [{OldName, NewName} | ArgsR]) ->
+    Args2 = case lists:keytake(OldName, 1, Args) of
+	{value, {OldName, Value}, ArgsTail} ->
+	    [{NewName, Value} | ArgsTail];
+	false ->
+	    Args
+    end,
+    rename_old_args(Args2, ArgsR).
 
 get_elem_delete(Call, A, L, F) ->
     case proplists:get_all_values(A, L) of
@@ -422,7 +433,7 @@ process_unicode_codepoints(Str) ->
 %% ----------------
 
 format_command_result(Cmd, Auth, Result, Version) ->
-    {_, ResultFormat} = ejabberd_commands:get_command_format(Cmd, Auth, Version),
+    {_, _, ResultFormat} = ejabberd_commands:get_command_format(Cmd, Auth, Version),
     case {ResultFormat, Result} of
 	{{_, rescode}, V} when V == true; V == ok ->
 	    {200, 0};

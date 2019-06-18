@@ -353,7 +353,7 @@ list_commands(Version) ->
                                               args = Args,
                                               desc = Desc} <- Commands].
 
--spec get_command_format(atom()) -> {[aterm()], rterm()}.
+-spec get_command_format(atom()) -> {[aterm()], [{atom(),atom()}], rterm()}.
 
 %% @doc Get the format of arguments and result of a command.
 get_command_format(Name) ->
@@ -363,19 +363,20 @@ get_command_format(Name, Version) when is_integer(Version) ->
 get_command_format(Name, Auth)  ->
     get_command_format(Name, Auth, ?DEFAULT_VERSION).
 
--spec get_command_format(atom(), noauth | admin | auth(), integer()) -> {[aterm()], rterm()}.
+-spec get_command_format(atom(), noauth | admin | auth(), integer()) -> {[aterm()], [{atom(),atom()}], rterm()}.
 get_command_format(Name, Auth, Version) ->
     Admin = is_admin(Name, Auth, #{}),
     #ejabberd_commands{args = Args,
 		       result = Result,
+		       args_rename = Rename,
                        policy = Policy} =
         get_command_definition(Name, Version),
     case Policy of
         user when Admin;
                   Auth == noauth ->
-            {[{user, binary}, {server, binary} | Args], Result};
+            {[{user, binary}, {server, binary} | Args], Rename, Result};
         _ ->
-            {Args, Result}
+            {Args, Rename, Result}
     end.
 
 -spec get_command_definition(atom()) -> ejabberd_commands().
