@@ -374,7 +374,7 @@ get_command_format(Name, Auth, Version) ->
     case Policy of
         user when Admin;
                   Auth == noauth ->
-            {[{user, binary}, {server, binary} | Args], Rename, Result};
+            {[{user, binary}, {host, binary} | Args], Rename, Result};
         _ ->
             {Args, Rename, Result}
     end.
