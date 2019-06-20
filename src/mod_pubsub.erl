@@ -2869,21 +2869,23 @@ broadcast_stanza({LUser, LServer, LResource}, Publisher, Node, Nidx, Type, NodeO
     %% set the from address on the notification to the bare JID of the account owner
     %% Also, add "replyto" if entity has presence subscription to the account owner
     %% See XEP-0163 1.1 section 4.3.1
-    FromBareJid = xmpp:set_from(BaseStanza, jid:make(LUser, LServer)),
+    Owner = jid:make(LUser, LServer),
+    FromBareJid = xmpp:set_from(BaseStanza, Owner),
     Stanza = add_extended_headers(
 	       add_message_type(FromBareJid, NotificationType),
 	       extended_headers([Publisher])),
+    Pred = fun(To) -> delivery_permitted(Owner, To, NodeOptions) end,
     ejabberd_sm:route(jid:make(LUser, LServer, SenderResource),
-		      {pep_message, <<((Node))/binary, "+notify">>, Stanza}),
+		      {pep_message, <<((Node))/binary, "+notify">>, Stanza, Pred}),
     ejabberd_router:route(xmpp:set_to(Stanza, jid:make(LUser, LServer)));
 broadcast_stanza(Host, _Publisher, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM) ->
     broadcast_stanza(Host, Node, Nidx, Type, NodeOptions, SubsByDepth, NotifyType, BaseStanza, SHIM).
 
 -spec c2s_handle_info(ejabberd_c2s:state(), term()) -> ejabberd_c2s:state().
 c2s_handle_info(#{lserver := LServer} = C2SState,
-		{pep_message, Feature, Packet}) ->
+		{pep_message, Feature, Packet, Pred}) when is_function(Pred) ->
     [maybe_send_pep_stanza(LServer, USR, Caps, Feature, Packet)
-     || {USR, Caps} <- mod_caps:list_features(C2SState)],
+     || {USR, Caps} <- mod_caps:list_features(C2SState), Pred(USR)],
     {stop, C2SState};
 c2s_handle_info(#{lserver := LServer} = C2SState,
 		{pep_message, Feature, Packet, USR}) ->
@@ -2990,27 +2992,17 @@ send_last_pep(From, To) ->
     Host = host(ServerHost),
     Publisher = jid:tolower(From),
     Owner = jid:remove_resource(Publisher),
-    RecipientIsOwner = jid:remove_resource(jid:tolower(To)) == Owner,
     lists:foreach(
       fun(#pubsub_node{nodeid = {_, Node}, type = Type, id = Nidx, options = Options}) ->
 	      case match_option(Options, send_last_published_item, on_sub_and_presence) of
 		  true ->
-		      LJID = jid:tolower(To),
-		      Subscribed = case get_option(Options, access_model) of
-				       open -> true;
-				       presence -> true;
-				       %% TODO: Fix the 'whitelist'/'authorize'
-				       %% cases. Currently, only node owners
-				       %% receive last PEP notifications.
-				       whitelist -> RecipientIsOwner;
-				       authorize -> RecipientIsOwner;
-				       roster ->
-					   Grps = get_option(Options, roster_groups_allowed, []),
-					   {OU, OS, _} = Owner,
-					   element(2, get_roster_info(OU, OS, LJID, Grps))
-				   end,
-		      if Subscribed -> send_items(Owner, Node, Nidx, Type, Options, Publisher, LJID, LJID, 1);
-			 true -> ok
+		      case delivery_permitted(From, To, Options) of
+			  true ->
+			      LJID = jid:tolower(To),
+			      send_items(Owner, Node, Nidx, Type, Options,
+					 Publisher, LJID, LJID, 1);
+			  false ->
+			      ok
 		      end;
 		  _ ->
 		      ok
@@ -3077,6 +3069,26 @@ subscribed_nodes_by_jid(NotifyType, SubsByDepth) ->
 	end,
     {_, JIDSubs} = lists:foldl(DepthsToDeliver, {[], []}, SubsByDepth),
     JIDSubs.
+
+-spec delivery_permitted(jid() | ljid(), jid() | ljid(), nodeOptions())
+      -> boolean().
+delivery_permitted(From, To, Options) ->
+    LFrom = jid:tolower(From),
+    LTo = jid:tolower(To),
+    RecipientIsOwner = jid:remove_resource(LFrom) == jid:remove_resource(LTo),
+    %% TODO: Fix the 'whitelist'/'authorize' cases for last PEP notifications.
+    %% Currently, only node owners receive those.
+    case get_option(Options, access_model) of
+	open -> true;
+	presence -> true;
+	whitelist -> RecipientIsOwner;
+	authorize -> RecipientIsOwner;
+	roster ->
+	   Grps = get_option(Options, roster_groups_allowed, []),
+	   {LUser, LServer, _} = LFrom,
+	   {_, IsInGrp} = get_roster_info(LUser, LServer, LTo, Grps),
+	   IsInGrp
+    end.
 
 -spec user_resources(binary(), binary()) -> [binary()].
 user_resources(User, Server) ->
