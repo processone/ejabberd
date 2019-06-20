@@ -417,7 +417,7 @@ spec(options, A, [Form|OForm], Mod) when A == 1; A == 2 ->
 		  end, {erl_types:t_none(), erl_types:t_none()}, Fs),
 	    case options_return_type(OForm) of
 		map ->
-		    erl_types:t_map(lists:flatten(Els), DefK, DefV);
+		    erl_types:t_map(lists:keysort(1, lists:flatten(Els)), DefK, DefV);
 		dict ->
 		    t_remote(dict, dict);
 		_ ->
