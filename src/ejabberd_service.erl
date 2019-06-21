@@ -133,7 +133,7 @@ handle_stream_start(_StreamStart,
 					  HostOpts
 				  end
 			  end,
-	    CodecOpts = ejabberd_config:codec_options(global),
+	    CodecOpts = ejabberd_config:codec_options(),
 	    State#{host_opts => NewHostOpts, codec_options => CodecOpts}
     end.
 

@@ -710,7 +710,7 @@ bounce_receivers(State, _Reason) ->
 		State, Receivers ++ ShapedReceivers).
 
 bounce_els_from_obuf(State) ->
-    Opts = ejabberd_config:codec_options(State#state.host),
+    Opts = ejabberd_config:codec_options(),
     p1_queue:foreach(
       fun({xmlstreamelement, El}) ->
 	      try xmpp:decode(El, ?NS_CLIENT, Opts) of

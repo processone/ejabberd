@@ -267,7 +267,7 @@ process_iq(#iq{to = To, lang = Lang, sub_els = [SubEl]} = IQ, Type) ->
 process_iq_result(#iq{from = From, to = To, id = ID, lang = Lang} = IQ,
 		  #iq{type = result} = ResIQ) ->
     try
-	CodecOpts = ejabberd_config:codec_options(To#jid.lserver),
+	CodecOpts = ejabberd_config:codec_options(),
 	#delegation{forwarded = #forwarded{sub_els = [SubEl]}} =
 	    xmpp:get_subtag(ResIQ, #delegation{}),
 	case xmpp:decode(SubEl, ?NS_CLIENT, CodecOpts) of

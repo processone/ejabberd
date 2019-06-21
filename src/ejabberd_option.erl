@@ -156,7 +156,7 @@
 -export([sql_username/0, sql_username/1]).
 -export([trusted_proxies/0, trusted_proxies/1]).
 -export([use_cache/0, use_cache/1]).
--export([validate_stream/0, validate_stream/1]).
+-export([validate_stream/0]).
 -export([version/0]).
 -export([websocket_origin/0]).
 -export([websocket_ping_interval/0]).
@@ -1040,10 +1040,7 @@ use_cache(Host) ->
 
 -spec validate_stream() -> boolean().
 validate_stream() ->
-    validate_stream(global).
--spec validate_stream(global | binary()) -> boolean().
-validate_stream(Host) ->
-    ejabberd_config:get_option({validate_stream, Host}).
+    ejabberd_config:get_option({validate_stream, global}).
 
 -spec version() -> binary().
 version() ->

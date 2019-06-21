@@ -1218,8 +1218,7 @@ wrap_as_mucsub(Message, Requester, ReqServer) ->
 msg_to_el(#archive_msg{timestamp = TS, packet = El, nick = Nick,
 		       peer = Peer, id = ID},
 	  MsgType, JidRequestor, #jid{lserver = LServer} = JidArchive) ->
-    CodecOpts = ejabberd_config:codec_options(
-		  ejabberd_router:host_of_route(LServer)),
+    CodecOpts = ejabberd_config:codec_options(),
     try xmpp:decode(El, ?NS_CLIENT, CodecOpts) of
 	Pkt1 ->
 	    Pkt2 = case MsgType of

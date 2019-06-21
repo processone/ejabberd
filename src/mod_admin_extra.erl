@@ -1496,7 +1496,7 @@ send_stanza(FromString, ToString, Stanza) ->
 	#xmlel{} = El = fxml_stream:parse_element(Stanza),
 	From = jid:decode(FromString),
 	To = jid:decode(ToString),
-	CodecOpts = ejabberd_config:codec_options(From#jid.lserver),
+	CodecOpts = ejabberd_config:codec_options(),
 	Pkt = xmpp:decode(El, ?NS_CLIENT, CodecOpts),
 	ejabberd_router:route(xmpp:set_from_to(Pkt, From, To))
     catch _:{xmpp_codec, Why} ->

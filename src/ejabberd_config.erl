@@ -31,7 +31,7 @@
 -export([get_myname/0, get_uri/0, get_copyright/0]).
 -export([get_shared_key/0, get_node_start/0]).
 -export([fsm_limit_opts/1]).
--export([codec_options/1]).
+-export([codec_options/0]).
 -export([default_db/2, default_db/3, default_ram_db/2, default_ram_db/3]).
 -export([beams/1, validators/1, globals/0, may_hide_data/1]).
 -export([dump/0, dump/1, convert_to_yaml/1, convert_to_yaml/2]).
@@ -218,9 +218,9 @@ fsm_limit_opts(Opts) ->
 	    end
     end.
 
--spec codec_options(binary() | global) -> [xmpp:decode_option()].
-codec_options(Host) ->
-    case get_option({validate_stream, Host}) of
+-spec codec_options() -> [xmpp:decode_option()].
+codec_options() ->
+    case get_option(validate_stream) of
 	true -> [];
 	false -> [ignore_els]
     end.

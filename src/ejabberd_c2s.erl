@@ -442,7 +442,7 @@ handle_stream_start(StreamStart, #{lserver := LServer} = State) ->
 	    send(State#{lserver => ejabberd_config:get_myname()}, xmpp:serr_host_unknown());
 	true ->
 	    State1 = change_shaper(State),
-	    Opts = ejabberd_config:codec_options(LServer),
+	    Opts = ejabberd_config:codec_options(),
 	    State2 = State1#{codec_options => Opts},
 	    ejabberd_hooks:run_fold(
 	      c2s_stream_started, LServer, State2, [StreamStart])
