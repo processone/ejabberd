@@ -492,15 +492,9 @@ read_erlang_file(File, _) ->
 	    Err
     end.
 
--spec validate(term()) -> {ok, term()} | error_return().
+-spec validate(term()) -> {ok, [{atom(), term()}]} | error_return().
 validate(Y1) ->
-    case econf:validate(
-	   econf:options(
-	     #{hosts => ejabberd_options:opt_type(hosts),
-	       loglevel => ejabberd_options:opt_type(loglevel),
-	       '_' => econf:any()},
-	     [{required, [hosts]}, unique]),
-	   Y1) of
+    case pre_validate(Y1) of
 	{ok, Y2} ->
 	    set_loglevel(proplists:get_value(loglevel, Y2, 4)),
 	    case ejabberd_config_transformer:map_reduce(Y2) of
@@ -518,6 +512,23 @@ validate(Y1) ->
 		Err ->
 		    Err
 	    end;
+	Err ->
+	    Err
+    end.
+
+-spec pre_validate(term()) -> {ok, [{atom(), term()}]} | error_return().
+pre_validate(Y1) ->
+    case econf:validate(
+	   econf:options(
+	     #{hosts => ejabberd_options:opt_type(hosts),
+	       loglevel => ejabberd_options:opt_type(loglevel),
+	       host_config => econf:map(econf:binary(), econf:any()),
+	       append_host_config => econf:map(econf:binary(), econf:any()),
+	       '_' => econf:any()},
+	     [{required, [hosts]}]),
+	   Y1) of
+	{ok, Y2} ->
+	    {ok, group_duplicated_options(Y2, [append_host_config, host_config])};
 	Err ->
 	    Err
     end.
@@ -725,3 +736,17 @@ set_node_start(UnixTime) ->
 -spec set_loglevel(0..5) -> ok.
 set_loglevel(Level) ->
     ejabberd_logger:set(Level).
+
+-spec group_duplicated_options([{atom(), term()}], [atom()]) -> [{atom(), term()}].
+group_duplicated_options(Y1, Options) ->
+    {Y2, Y3} = lists:partition(
+		 fun({Option, _}) ->
+			 lists:member(Option, Options)
+		 end, Y1),
+    lists:foldl(
+      fun(Option, Y4) ->
+	      case lists:flatten(proplists:get_all_values(Option, Y2)) of
+		  [] -> Y4;
+		  Values -> [{Option, Values}|Y4]
+	      end
+      end, Y3, Options).

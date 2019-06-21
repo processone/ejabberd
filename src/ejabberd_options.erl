@@ -55,7 +55,8 @@ opt_type(append_host_config) ->
       econf:and_then(
 	econf:domain(),
 	econf:enum(ejabberd_option:hosts())),
-      validator());
+      validator(),
+      [unique]);
 opt_type(auth_cache_life_time) ->
     econf:timeout(second, infinity);
 opt_type(auth_cache_missed) ->
@@ -145,7 +146,8 @@ opt_type(host_config) ->
       econf:and_then(
 	econf:domain(),
 	econf:enum(ejabberd_option:hosts())),
-      validator());
+      validator(),
+      [unique]);
 opt_type(hosts) ->
     econf:non_empty(econf:list(econf:domain(), [unique]));
 opt_type(include_config_file) ->
