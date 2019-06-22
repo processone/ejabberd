@@ -13,6 +13,8 @@ msgstr ""
 "X-Additional-Translator: Lukáš Polívka [spike411] xmpp:spike411@jabber.cz\n"
 "X-Additional-Translator: Milos Svasek [DuxforD] from openheads.net\n"
 "X-Generator: Poedit 2.0.1\n"
+"X-Poedit-Basepath: ../../src\n"
+"X-Poedit-SearchPath-0: .\n"
 
 #: mod_muc_log.erl:412 mod_muc_log.erl:586
 msgid " has set the subject to: "

@@ -117,7 +117,9 @@ pot_header() ->
        "\"Last-Translator: Translator name and contact method\\n\"",
        "\"MIME-Version: 1.0\\n\"",
        "\"Content-Type: text/plain; charset=UTF-8\\n\"",
-       "\"Content-Transfer-Encoding: 8bit\\n\""],
+       "\"Content-Transfer-Encoding: 8bit\\n\"",
+       "\"X-Poedit-Basepath: ../../src\\n\"",
+       "\"X-Poedit-SearchPath-0: .\\n\""],
       io_lib:nl()).
 
 err(Format, Args) ->

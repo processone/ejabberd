@@ -11,6 +11,8 @@ msgstr ""
 "X-Additional-Translator: Lucius Curado\n"
 "X-Additional-Translator: Felipe Brito Vasconcellos\n"
 "X-Additional-Translator: Victor Hugo dos Santos\n"
+"X-Poedit-Basepath: ../../src\n"
+"X-Poedit-SearchPath-0: .\n"
 
 #: mod_muc_log.erl:412 mod_muc_log.erl:586
 msgid " has set the subject to: "

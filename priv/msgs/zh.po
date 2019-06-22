@@ -13,6 +13,8 @@ msgstr ""
 "X-Additional-Translator: Zhan Caibao - zhancaibao AT gmail DOT com\n"
 "X-Additional-Translator: Mike Wang\n"
 "X-Generator: Poedit 1.8.7.1\n"
+"X-Poedit-Basepath: ../../src\n"
+"X-Poedit-SearchPath-0: .\n"
 
 #: mod_muc_log.erl:412 mod_muc_log.erl:586
 msgid " has set the subject to: "

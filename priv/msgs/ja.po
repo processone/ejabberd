@@ -9,6 +9,8 @@ msgstr ""
 "X-Language: Japanese (日本語)\n"
 "X-Additional-Translator: Tsukasa Hamano <code@cuspy.org>\n"
 "X-Additional-Translator: Mako N <mako@pasero.net>\n"
+"X-Poedit-Basepath: ../../src\n"
+"X-Poedit-SearchPath-0: .\n"
 
 #: mod_muc_log.erl:412 mod_muc_log.erl:586
 msgid " has set the subject to: "

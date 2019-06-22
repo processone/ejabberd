@@ -10,6 +10,8 @@ msgstr ""
 "X-Additional-Translator: Heysan\n"
 "X-Additional-Translator: Magnus Henoch\n"
 "X-Additional-Translator: Jonas Ådahl\n"
+"X-Poedit-Basepath: ../../src\n"
+"X-Poedit-SearchPath-0: .\n"
 
 #: mod_muc_log.erl:412 mod_muc_log.erl:586
 msgid " has set the subject to: "
