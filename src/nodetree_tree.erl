@@ -41,6 +41,7 @@
 
 -include("pubsub.hrl").
 -include("xmpp.hrl").
+-include("translate.hrl").
 
 -export([init/3, terminate/2, options/0, set_node/1,
     get_node/3, get_node/2, get_node/1, get_nodes/2,
@@ -71,13 +72,13 @@ get_node(Host, Node, _From) ->
 get_node(Host, Node) ->
     case mnesia:read({pubsub_node, {Host, Node}}) of
 	[Record] when is_record(Record, pubsub_node) -> Record;
-	_ -> {error, xmpp:err_item_not_found(<<"Node not found">>, ejabberd_option:language())}
+	_ -> {error, xmpp:err_item_not_found(?T("Node not found"), ejabberd_option:language())}
     end.
 
 get_node(Nidx) ->
     case mnesia:index_read(pubsub_node, Nidx, #pubsub_node.id) of
 	[Record] when is_record(Record, pubsub_node) -> Record;
-	_ -> {error, xmpp:err_item_not_found(<<"Node not found">>, ejabberd_option:language())}
+	_ -> {error, xmpp:err_item_not_found(?T("Node not found"), ejabberd_option:language())}
     end.
 
 get_nodes(Host, _From) ->
@@ -189,7 +190,7 @@ create_node(Host, Node, Type, Owner, Options, Parents) ->
 		    {error, xmpp:err_forbidden()}
 	    end;
 	_ ->
-	    {error, xmpp:err_conflict(<<"Node already exists">>, ejabberd_option:language())}
+	    {error, xmpp:err_conflict(?T("Node already exists"), ejabberd_option:language())}
     end.
 
 delete_node(Host, Node) ->

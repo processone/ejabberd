@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : mod_time.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : 
+%%% Purpose :
 %%% Purpose :
 %%% Created : 18 Jan 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
@@ -36,8 +36,8 @@
 	 mod_options/1, depends/2]).
 
 -include("logger.hrl").
-
 -include("xmpp.hrl").
+-include("translate.hrl").
 
 start(Host, _Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
@@ -51,7 +51,7 @@ reload(_Host, _NewOpts, _OldOpts) ->
     ok.
 
 process_local_iq(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_local_iq(#iq{type = get} = IQ) ->
     Now = erlang:timestamp(),

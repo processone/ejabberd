@@ -49,6 +49,7 @@
 -include("mod_muc_room.hrl").
 -include("ejabberd_commands.hrl").
 -include("mod_mam.hrl").
+-include("translate.hrl").
 
 -define(DEF_PAGE_SIZE, 50).
 -define(MAX_PAGE_SIZE, 250).
@@ -509,7 +510,7 @@ muc_process_iq(#iq{type = T, lang = Lang,
 	    Role = mod_muc_room:get_role(From, MUCState),
 	    process_iq(LServer, IQ, {groupchat, Role, MUCState});
 	false ->
-	    Text = <<"Only members may query archives of this room">>,
+	    Text = ?T("Only members may query archives of this room"),
 	    xmpp:make_error(IQ, xmpp:err_forbidden(Text, Lang))
     end;
 muc_process_iq(#iq{type = get,
@@ -648,11 +649,11 @@ process_iq(#iq{from = #jid{luser = LUser, lserver = LServer},
 		    NewPrefs = prefs_el(Default, Always, Never, NS),
 		    xmpp:make_iq_result(IQ, NewPrefs);
 		_Err ->
-		    Txt = <<"Database failure">>,
+		    Txt = ?T("Database failure"),
 		    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
 	    end;
 	deny ->
-	    Txt = <<"MAM preference modification denied by service policy">>,
+	    Txt = ?T("MAM preference modification denied by service policy"),
 	    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang))
     end;
 process_iq(#iq{from = #jid{luser = LUser, lserver = LServer},
@@ -666,7 +667,7 @@ process_iq(#iq{from = #jid{luser = LUser, lserver = LServer},
 			       NS),
 	    xmpp:make_iq_result(IQ, PrefsEl);
 	{error, _} ->
-	    Txt = <<"Database failure">>,
+	    Txt = ?T("Database failure"),
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
     end;
 process_iq(IQ) ->
@@ -684,7 +685,7 @@ process_iq(LServer, #iq{from = #jid{luser = LUser}, lang = Lang,
 	ok ->
 	    case SubEl of
 		#mam_query{rsm = #rsm_set{index = I}} when is_integer(I) ->
-		    Txt = <<"Unsupported <index/> element">>,
+		    Txt = ?T("Unsupported <index/> element"),
 		    xmpp:make_error(IQ, xmpp:err_feature_not_implemented(Txt, Lang));
 		#mam_query{rsm = RSM, xmlns = NS} ->
 		    case parse_query(SubEl, Lang) of
@@ -696,7 +697,7 @@ process_iq(LServer, #iq{from = #jid{luser = LUser}, lang = Lang,
 		    end
 	    end;
 	{error, _} ->
-	     Txt = <<"Database failure">>,
+	     Txt = ?T("Database failure"),
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
     end.
 
@@ -1028,7 +1029,7 @@ select_and_send(LServer, Query, RSM, #iq{from = From, to = To} = IQ, MsgType) ->
 	    SortedMsgs = lists:keysort(2, Msgs),
 	    send(SortedMsgs, Count, IsComplete, IQ);
 	{error, _} ->
-	    Txt = <<"Database failure">>,
+	    Txt = ?T("Database failure"),
 	    Err = xmpp:err_internal_server_error(Txt, IQ#iq.lang),
 	    xmpp:make_error(IQ, Err)
     end.

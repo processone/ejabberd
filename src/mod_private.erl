@@ -43,6 +43,7 @@
 -include("xmpp.hrl").
 -include("mod_private.hrl").
 -include("ejabberd_commands.hrl").
+-include("translate.hrl").
 
 -define(PRIVATE_CACHE, private_cache).
 
@@ -136,7 +137,7 @@ process_sm_iq(#iq{type = Type, lang = Lang,
 		  sub_els = [#private{sub_els = Els0}]} = IQ) ->
     case filter_xmlels(Els0) of
 	[] ->
-	    Txt = <<"No private data found in this query">>,
+	    Txt = ?T("No private data found in this query"),
 	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
 	Data when Type == set ->
 	    case set_data(From, Data) of
@@ -145,14 +146,14 @@ process_sm_iq(#iq{type = Type, lang = Lang,
 		{error, #stanza_error{} = Err} ->
 		    xmpp:make_error(IQ, Err);
 		{error, _} ->
-		    Txt = <<"Database failure">>,
+		    Txt = ?T("Database failure"),
 		    Err = xmpp:err_internal_server_error(Txt, Lang),
 		    xmpp:make_error(IQ, Err)
 	    end;
 	Data when Type == get ->
 	    case get_data(LUser, LServer, Data) of
 		{error, _} ->
-		    Txt = <<"Database failure">>,
+		    Txt = ?T("Database failure"),
 		    Err = xmpp:err_internal_server_error(Txt, Lang),
 		    xmpp:make_error(IQ, Err);
 		Els ->
@@ -160,7 +161,7 @@ process_sm_iq(#iq{type = Type, lang = Lang,
 	    end
     end;
 process_sm_iq(#iq{lang = Lang} = IQ) ->
-    Txt = <<"Query to another users is forbidden">>,
+    Txt = ?T("Query to another users is forbidden"),
     xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang)).
 
 -spec filter_xmlels([xmlel()]) -> [{binary(), xmlel()}].

@@ -50,6 +50,7 @@
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
 -include("ejabberd_commands.hrl").
+-include("translate.hrl").
 
 %%----------------------------
 %% gen_mod
@@ -426,10 +427,10 @@ get_user_rooms(User, Server) ->
 %% Web Admin Menu
 
 web_menu_main(Acc, Lang) ->
-    Acc ++ [{<<"muc">>, ?T(<<"Multi-User Chat">>)}].
+    Acc ++ [{<<"muc">>, translate:translate(Lang, ?T("Multi-User Chat"))}].
 
 web_menu_host(Acc, _Host, Lang) ->
-    Acc ++ [{<<"muc">>, ?T(<<"Multi-User Chat">>)}].
+    Acc ++ [{<<"muc">>, translate:translate(Lang, ?T("Multi-User Chat"))}].
 
 
 %%---------------
@@ -445,13 +446,13 @@ web_page_main(_, #request{path=[<<"muc">>], lang = Lang} = _Request) ->
 			  fun(Host, Acc) ->
 				  Acc + mod_muc:count_online_rooms(Host)
 			  end, 0, find_hosts(global)),
-    Res = [?XCT(<<"h1">>, <<"Multi-User Chat">>),
-	   ?XCT(<<"h3">>, <<"Statistics">>),
+    Res = [?XCT(<<"h1">>, ?T("Multi-User Chat")),
+	   ?XCT(<<"h3">>, ?T("Statistics")),
 	   ?XAE(<<"table">>, [],
-		[?XE(<<"tbody">>, [?TDTD(<<"Total rooms">>, OnlineRoomsNumber)
+		[?XE(<<"tbody">>, [?TDTD(?T("Total rooms"), OnlineRoomsNumber)
 				  ])
 		]),
-	   ?XE(<<"ul">>, [?LI([?ACT(<<"rooms">>, <<"List of rooms">>)])])
+	   ?XE(<<"ul">>, [?LI([?ACT(<<"rooms">>, ?T("List of rooms"))])])
 	  ],
     {stop, Res};
 
@@ -517,8 +518,8 @@ make_rooms_page(Host, Lang, {Sort_direction, Sort_column}) ->
 	  end,
 	  1,
 	  Titles),
-    [?XCT(<<"h1">>, <<"Multi-User Chat">>),
-     ?XCT(<<"h2">>, <<"Chatrooms">>),
+    [?XCT(<<"h1">>, ?T("Multi-User Chat")),
+     ?XCT(<<"h2">>, ?T("Chatrooms")),
      ?XE(<<"table">>,
 	 [?XE(<<"thead">>,
 	      [?XE(<<"tr">>, Titles_TR)]

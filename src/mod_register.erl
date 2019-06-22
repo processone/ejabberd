@@ -120,7 +120,7 @@ process_iq(#iq{from = From, to = To} = IQ, Source) ->
 process_iq(#iq{type = set, lang = Lang,
 	       sub_els = [#register{remove = true}]} = IQ,
 	   _Source, _IsCaptchaEnabled, _AllowRemove = false) ->
-    Txt = <<"Access denied by service policy">>,
+    Txt = ?T("Access denied by service policy"),
     xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang));
 process_iq(#iq{type = set, lang = Lang, to = To, from = From,
 	       sub_els = [#register{remove = true,
@@ -138,7 +138,7 @@ process_iq(#iq{type = set, lang = Lang, to = To, from = From,
 			    ejabberd_auth:remove_user(User, Server, Password),
 			    xmpp:make_iq_result(IQ);
 		       true ->
-			    Txt = <<"No 'password' found in this query">>,
+			    Txt = ?T("No 'password' found in this query"),
 			    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang))
 		    end
 	    end;
@@ -150,7 +150,7 @@ process_iq(#iq{type = set, lang = Lang, to = To, from = From,
 		    ejabberd_auth:remove_user(LUser, Server),
 		    ignore;
 		_ ->
-		    Txt = <<"The query is only allowed from local users">>,
+		    Txt = ?T("The query is only allowed from local users"),
 		    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang))
 	    end
     end;
@@ -173,14 +173,14 @@ process_iq(#iq{type = set, to = To,
 		    try_register_or_set_password(
 		      User, Server, Password, IQ, Source, true);
 		_ ->
-		    Txt = <<"Incorrect data form">>,
+		    Txt = ?T("Incorrect data form"),
 		    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang))
 	    end;
 	{error, malformed} ->
-	    Txt = <<"Incorrect CAPTCHA submit">>,
+	    Txt = ?T("Incorrect CAPTCHA submit"),
 	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
 	_ ->
-	    ErrText = <<"The CAPTCHA verification has failed">>,
+	    ErrText = ?T("The CAPTCHA verification has failed"),
 	    xmpp:make_error(IQ, xmpp:err_not_allowed(ErrText, Lang))
     end;
 process_iq(#iq{type = set} = IQ, _Source, _IsCaptchaEnabled, _AllowRemove) ->
@@ -201,25 +201,25 @@ process_iq(#iq{type = get, from = From, to = To, id = ID, lang = Lang} = IQ,
 		{false, <<"">>}
 	end,
     Instr = translate:translate(
-	      Lang, <<"Choose a username and password to register "
-		      "with this server">>),
+	      Lang, ?T("Choose a username and password to register "
+		       "with this server")),
     URL = mod_register_opt:redirect_url(Server),
     if (URL /= undefined) and not IsRegistered ->
-	    Txt = translate:translate(Lang, <<"To register, visit ~s">>),
+	    Txt = translate:translate(Lang, ?T("To register, visit ~s")),
 	    Desc = str:format(Txt, [URL]),
 	    xmpp:make_iq_result(
 	      IQ, #register{instructions = Desc,
 			    sub_els = [#oob_x{url = URL}]});
        IsCaptchaEnabled and not IsRegistered ->
 	    TopInstr = translate:translate(
-			 Lang, <<"You need a client that supports x:data "
-				 "and CAPTCHA to register">>),
+			 Lang, ?T("You need a client that supports x:data "
+				  "and CAPTCHA to register")),
 	    UField = #xdata_field{type = 'text-single',
-				  label = translate:translate(Lang, <<"User">>),
+				  label = translate:translate(Lang, ?T("User")),
 				  var = <<"username">>,
 				  required = true},
 	    PField = #xdata_field{type = 'text-private',
-				  label = translate:translate(Lang, <<"Password">>),
+				  label = translate:translate(Lang, ?T("Password")),
 				  var = <<"password">>,
 				  required = true},
 	    X = #xdata{type = form, instructions = [Instr],
@@ -230,11 +230,11 @@ process_iq(#iq{type = get, from = From, to = To, id = ID, lang = Lang} = IQ,
 		      IQ, #register{instructions = TopInstr,
 				    sub_els = CaptchaEls});
 		{error, limit} ->
-		    ErrText = <<"Too many CAPTCHA requests">>,
+		    ErrText = ?T("Too many CAPTCHA requests"),
 		    xmpp:make_error(
 		      IQ, xmpp:err_resource_constraint(ErrText, Lang));
 		_Err ->
-		    ErrText = <<"Unable to generate a CAPTCHA">>,
+		    ErrText = ?T("Unable to generate a CAPTCHA"),
 		    xmpp:make_error(
 		      IQ, xmpp:err_internal_server_error(ErrText, Lang))
 	    end;
@@ -263,7 +263,7 @@ try_register_or_set_password(User, Server, Password,
 			    xmpp:make_error(IQ, Error)
 		    end;
 		deny ->
-		    Txt = <<"Access denied by service policy">>,
+		    Txt = ?T("Access denied by service policy"),
 		    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang))
 	    end;
 	_ ->

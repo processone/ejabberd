@@ -53,6 +53,7 @@
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("mod_announce.hrl").
+-include("translate.hrl").
 
 -callback init(binary(), gen_mod:opts()) -> any().
 -callback import(binary(), binary(), [binary()]) -> ok.
@@ -236,7 +237,7 @@ disco_identity(Acc, _From, _To, Node, Lang) ->
 -define(INFO_RESULT(Allow, Feats, Lang),
 	case Allow of
 	    deny ->
-		{error, xmpp:err_forbidden(<<"Access denied by service policy">>, Lang)};
+		{error, xmpp:err_forbidden(?T("Access denied by service policy"), Lang)};
 	    allow ->
 		{result, Feats}
 	end).
@@ -251,7 +252,7 @@ disco_features(Acc, From, #jid{lserver = LServer} = _To, <<"announce">>, Lang) -
 	    case {acl:match_rule(LServer, Access1, From),
 		  acl:match_rule(global, Access2, From)} of
 		{deny, deny} ->
-		    Txt = <<"Access denied by service policy">>,
+		    Txt = ?T("Access denied by service policy"),
 		    {error, xmpp:err_forbidden(Txt, Lang)};
 		_ ->
 		    {result, []}
@@ -302,7 +303,7 @@ disco_features(Acc, From, #jid{lserver = LServer} = _To, Node, Lang) ->
 -define(ITEMS_RESULT(Allow, Items, Lang),
 	case Allow of
 	    deny ->
-		{error, xmpp:err_forbidden(<<"Access denied by service policy">>, Lang)};
+		{error, xmpp:err_forbidden(?T("Access denied by service policy"), Lang)};
 	    allow ->
 		{result, Items}
 	end).
@@ -416,7 +417,7 @@ commands_result(Allow, From, To, Request) ->
     case Allow of
 	deny ->
 	    Lang = Request#adhoc_command.lang,
-	    {error, xmpp:err_forbidden(<<"Access denied by service policy">>, Lang)};
+	    {error, xmpp:err_forbidden(?T("Access denied by service policy"), Lang)};
 	allow ->
 	    announce_commands(From, To, Request)
     end.
@@ -487,7 +488,7 @@ announce_commands(From, To,
 		    Err
 	    end;
        true ->
-	    Txt = <<"Unexpected action">>,
+	    Txt = ?T("Unexpected action"),
 	    {error, xmpp:err_bad_request(Txt, Lang)}
     end.
 
@@ -513,16 +514,16 @@ generate_adhoc_form(Lang, Node, ServerHost) ->
 		 [#xdata_field{type = boolean,
 			       var = <<"confirm">>,
 			       label = translate:translate(
-					 Lang, <<"Really delete message of the day?">>),
+					 Lang, ?T("Really delete message of the day?")),
 			       values = [<<"true">>]}];
 	    true ->
 		 [#xdata_field{type = 'text-single',
 			       var = <<"subject">>,
-			       label = translate:translate(Lang, <<"Subject">>),
+			       label = translate:translate(Lang, ?T("Subject")),
 			       values = vvaluel(OldSubject)},
 		  #xdata_field{type = 'text-multi',
 			       var = <<"body">>,
-			       label = translate:translate(Lang, <<"Message body">>),
+			       label = translate:translate(Lang, ?T("Message body")),
 			       values = vvaluel(OldBody)}]
 	 end,
     #xdata{type = form,
@@ -573,7 +574,7 @@ handle_adhoc_form(From, #jid{lserver = LServer} = To,
 	    %% An announce message with no body is definitely an operator error.
 	    %% Throw an error and give him/her a chance to send message again.
 	    {error, xmpp:err_not_acceptable(
-		      <<"No body provided for announce message">>, Lang)};
+		      ?T("No body provided for announce message"), Lang)};
 	%% Now send the packet to ?MODULE.
 	%% We don't use direct announce_* functions because it
 	%% leads to large delay in response and <iq/> queries processing
@@ -601,27 +602,27 @@ handle_adhoc_form(From, #jid{lserver = LServer} = To,
     end.
 
 get_title(Lang, <<"announce">>) ->
-    translate:translate(Lang, <<"Announcements">>);
+    translate:translate(Lang, ?T("Announcements"));
 get_title(Lang, ?NS_ADMIN_ANNOUNCE_ALL) ->
-    translate:translate(Lang, <<"Send announcement to all users">>);
+    translate:translate(Lang, ?T("Send announcement to all users"));
 get_title(Lang, ?NS_ADMIN_ANNOUNCE_ALL_ALLHOSTS) ->
-    translate:translate(Lang, <<"Send announcement to all users on all hosts">>);
+    translate:translate(Lang, ?T("Send announcement to all users on all hosts"));
 get_title(Lang, ?NS_ADMIN_ANNOUNCE) ->
-    translate:translate(Lang, <<"Send announcement to all online users">>);
+    translate:translate(Lang, ?T("Send announcement to all online users"));
 get_title(Lang, ?NS_ADMIN_ANNOUNCE_ALLHOSTS) ->
-    translate:translate(Lang, <<"Send announcement to all online users on all hosts">>);
+    translate:translate(Lang, ?T("Send announcement to all online users on all hosts"));
 get_title(Lang, ?NS_ADMIN_SET_MOTD) ->
-    translate:translate(Lang, <<"Set message of the day and send to online users">>);
+    translate:translate(Lang, ?T("Set message of the day and send to online users"));
 get_title(Lang, ?NS_ADMIN_SET_MOTD_ALLHOSTS) ->
-    translate:translate(Lang, <<"Set message of the day on all hosts and send to online users">>);
+    translate:translate(Lang, ?T("Set message of the day on all hosts and send to online users"));
 get_title(Lang, ?NS_ADMIN_EDIT_MOTD) ->
-    translate:translate(Lang, <<"Update message of the day (don't send)">>);
+    translate:translate(Lang, ?T("Update message of the day (don't send)"));
 get_title(Lang, ?NS_ADMIN_EDIT_MOTD_ALLHOSTS) ->
-    translate:translate(Lang, <<"Update message of the day on all hosts (don't send)">>);
+    translate:translate(Lang, ?T("Update message of the day on all hosts (don't send)"));
 get_title(Lang, ?NS_ADMIN_DELETE_MOTD) ->
-    translate:translate(Lang, <<"Delete message of the day">>);
+    translate:translate(Lang, ?T("Delete message of the day"));
 get_title(Lang, ?NS_ADMIN_DELETE_MOTD_ALLHOSTS) ->
-    translate:translate(Lang, <<"Delete message of the day on all hosts">>).
+    translate:translate(Lang, ?T("Delete message of the day on all hosts")).
 
 %%-------------------------------------------------------------------------
 
@@ -838,7 +839,7 @@ add_store_hint(El) ->
 -spec route_forbidden_error(stanza()) -> ok.
 route_forbidden_error(Packet) ->
     Lang = xmpp:get_lang(Packet),
-    Err = xmpp:err_forbidden(<<"Access denied by service policy">>, Lang),
+    Err = xmpp:err_forbidden(?T("Access denied by service policy"), Lang),
     ejabberd_router:route_error(Packet, Err).
 
 -spec init_cache(module(), binary(), gen_mod:opts()) -> ok.

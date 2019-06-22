@@ -65,6 +65,8 @@
 
 -include("ejabberd_web_admin.hrl").
 
+-include("translate.hrl").
+
 %%%----------------------------------------------------------------------
 %%% gen_mod callbacks
 %%%----------------------------------------------------------------------
@@ -107,13 +109,12 @@ process([<<"new">>],
       {success, ok, {Username, Host, _Password}} ->
 	  Jid = jid:make(Username, Host),
           mod_register:send_registration_notifications(?MODULE, Jid, Ip),
-	  Text = (?T(<<"Your Jabber account was successfully "
-		       "created.">>)),
+	  Text = translate:translate(Lang, ?T("Your Jabber account was successfully created.")),
 	  {200, [], Text};
       Error ->
 	  ErrorText =
-                list_to_binary([?T(<<"There was an error creating the account: ">>),
-                                ?T(get_error_text(Error))]),
+                list_to_binary([translate:translate(Lang, ?T("There was an error creating the account: ")),
+                                translate:translate(Lang, get_error_text(Error))]),
 	  {404, [], ErrorText}
     end;
 process([<<"delete">>],
@@ -121,13 +122,12 @@ process([<<"delete">>],
 		 host = _HTTPHost}) ->
     case form_del_post(Q) of
       {atomic, ok} ->
-	  Text = (?T(<<"Your Jabber account was successfully "
-		       "deleted.">>)),
+	  Text = translate:translate(Lang, ?T("Your Jabber account was successfully deleted.")),
 	  {200, [], Text};
       Error ->
 	  ErrorText =
-                list_to_binary([?T(<<"There was an error deleting the account: ">>),
-                                ?T(get_error_text(Error))]),
+                list_to_binary([translate:translate(Lang, ?T("There was an error deleting the account: ")),
+                                translate:translate(Lang, get_error_text(Error))]),
 	  {404, [], ErrorText}
     end;
 %% TODO: Currently only the first vhost is usable. The web request record
@@ -137,13 +137,12 @@ process([<<"change_password">>],
 		 host = _HTTPHost}) ->
     case form_changepass_post(Q) of
       {atomic, ok} ->
-	  Text = (?T(<<"The password of your Jabber account "
-		       "was successfully changed.">>)),
+	  Text = translate:translate(Lang, ?T("The password of your Jabber account was successfully changed.")),
 	  {200, [], Text};
       Error ->
 	  ErrorText =
-                list_to_binary([?T(<<"There was an error changing the password: ">>),
-                                ?T(get_error_text(Error))]),
+                list_to_binary([translate:translate(Lang, ?T("There was an error changing the password: ")),
+                                translate:translate(Lang, get_error_text(Error))]),
 	  {404, [], ErrorText}
     end;
 
@@ -195,7 +194,7 @@ meta() ->
 index_page(Lang) ->
     HeadEls = [meta(),
 	       ?XCT(<<"title">>,
-		    <<"Jabber Account Registration">>),
+		    ?T("Jabber Account Registration")),
 	       ?XA(<<"link">>,
 		   [{<<"href">>, <<"/register/register.css">>},
 		    {<<"type">>, <<"text/css">>},
@@ -203,15 +202,15 @@ index_page(Lang) ->
     Els = [?XACT(<<"h1">>,
 		 [{<<"class">>, <<"title">>},
 		  {<<"style">>, <<"text-align:center;">>}],
-		 <<"Jabber Account Registration">>),
+		 ?T("Jabber Account Registration")),
 	   ?XE(<<"ul">>,
 	       [?XE(<<"li">>,
-		    [?ACT(<<"new">>, <<"Register a Jabber account">>)]),
+		    [?ACT(<<"new">>, ?T("Register a Jabber account"))]),
 		?XE(<<"li">>,
-		    [?ACT(<<"change_password">>, <<"Change Password">>)]),
+		    [?ACT(<<"change_password">>, ?T("Change Password"))]),
 		?XE(<<"li">>,
 		    [?ACT(<<"delete">>,
-			  <<"Unregister a Jabber account">>)])])],
+			  ?T("Unregister a Jabber account"))])])],
     {200,
      [{<<"Server">>, <<"ejabberd">>},
       {<<"Content-Type">>, <<"text/html">>}],
@@ -234,7 +233,7 @@ form_new_get(Host, Lang, IP) ->
 form_new_get2(Host, Lang, CaptchaEls) ->
     HeadEls = [meta(),
 	       ?XCT(<<"title">>,
-		    <<"Register a Jabber account">>),
+		    ?T("Register a Jabber account")),
 	       ?XA(<<"link">>,
 		   [{<<"href">>, <<"/register/register.css">>},
 		    {<<"type">>, <<"text/css">>},
@@ -242,64 +241,64 @@ form_new_get2(Host, Lang, CaptchaEls) ->
     Els = [?XACT(<<"h1">>,
 		 [{<<"class">>, <<"title">>},
 		  {<<"style">>, <<"text-align:center;">>}],
-		 <<"Register a Jabber account">>),
+		 ?T("Register a Jabber account")),
 	   ?XCT(<<"p">>,
-		<<"This page allows to create a Jabber "
-		  "account in this Jabber server. Your "
-		  "JID (Jabber IDentifier) will be of the "
-		  "form: username@server. Please read carefully "
-		  "the instructions to fill correctly the "
-		  "fields.">>),
+		?T("This page allows to create a Jabber "
+		   "account in this Jabber server. Your "
+		   "JID (Jabber IDentifier) will be of the "
+		   "form: username@server. Please read carefully "
+		   "the instructions to fill correctly the "
+		   "fields.")),
 	   ?XAE(<<"form">>,
 		[{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
 		[?XE(<<"ol">>,
 		     ([?XE(<<"li">>,
-			   [?CT(<<"Username:">>), ?C(<<" ">>),
+			   [?CT(?T("Username:")), ?C(<<" ">>),
 			    ?INPUTS(<<"text">>, <<"username">>, <<"">>,
 				    <<"20">>),
 			    ?BR,
 			    ?XE(<<"ul">>,
 				[?XCT(<<"li">>,
-				      <<"This is case insensitive: macbeth is "
-					"the same that MacBeth and Macbeth.">>),
+				      ?T("This is case insensitive: macbeth is "
+					 "the same that MacBeth and Macbeth.")),
 				 ?XC(<<"li">>,
-				     <<(?T(<<"Characters not allowed:">>))/binary,
+				     <<(translate:translate(Lang, ?T("Characters not allowed:")))/binary,
 				       " \" & ' / : < > @ ">>)])]),
 		       ?XE(<<"li">>,
-			   [?CT(<<"Server:">>), ?C(<<" ">>),
+			   [?CT(?T("Server:")), ?C(<<" ">>),
 			    ?INPUTS(<<"text">>, <<"host">>, Host, <<"20">>)]),
 		       ?XE(<<"li">>,
-			   [?CT(<<"Password:">>), ?C(<<" ">>),
+			   [?CT(?T("Password:")), ?C(<<" ">>),
 			    ?INPUTS(<<"password">>, <<"password">>, <<"">>,
 				    <<"20">>),
 			    ?BR,
 			    ?XE(<<"ul">>,
 				[?XCT(<<"li">>,
-				      <<"Don't tell your password to anybody, "
-					"not even the administrators of the Jabber "
-					"server.">>),
+				      ?T("Don't tell your password to anybody, "
+					 "not even the administrators of the Jabber "
+					 "server.")),
 				 ?XCT(<<"li">>,
-				      <<"You can later change your password using "
-					"a Jabber client.">>),
+				      ?T("You can later change your password using "
+					 "a Jabber client.")),
 				 ?XCT(<<"li">>,
-				      <<"Some Jabber clients can store your password "
-					"in the computer, but you should do this only "
-					"in your personal computer for safety reasons.">>),
+				      ?T("Some Jabber clients can store your password "
+					 "in the computer, but you should do this only "
+					 "in your personal computer for safety reasons.")),
 				 ?XCT(<<"li">>,
-				      <<"Memorize your password, or write it "
-					"in a paper placed in a safe place. In "
-					"Jabber there isn't an automated way "
-					"to recover your password if you forget "
-					"it.">>)])]),
+				      ?T("Memorize your password, or write it "
+					 "in a paper placed in a safe place. In "
+					 "Jabber there isn't an automated way "
+					 "to recover your password if you forget "
+					 "it."))])]),
 		       ?XE(<<"li">>,
-			   [?CT(<<"Password Verification:">>), ?C(<<" ">>),
+			   [?CT(?T("Password Verification:")), ?C(<<" ">>),
 			    ?INPUTS(<<"password">>, <<"password2">>, <<"">>,
 				    <<"20">>)])]
 			++
 			CaptchaEls ++
 			  [?XE(<<"li">>,
 			       [?INPUTT(<<"submit">>, <<"register">>,
-					<<"Register">>)])]))])],
+					?T("Register"))])]))])],
     {200,
      [{<<"Server">>, <<"ejabberd">>},
       {<<"Content-Type">>, <<"text/html">>}],
@@ -381,7 +380,7 @@ build_captcha_li_list2(Lang, IP) ->
 
 form_changepass_get(Host, Lang) ->
     HeadEls = [meta(),
-	       ?XCT(<<"title">>, <<"Change Password">>),
+	       ?XCT(<<"title">>, ?T("Change Password")),
 	       ?XA(<<"link">>,
 		   [{<<"href">>, <<"/register/register.css">>},
 		    {<<"type">>, <<"text/css">>},
@@ -389,32 +388,32 @@ form_changepass_get(Host, Lang) ->
     Els = [?XACT(<<"h1">>,
 		 [{<<"class">>, <<"title">>},
 		  {<<"style">>, <<"text-align:center;">>}],
-		 <<"Change Password">>),
+		 ?T("Change Password")),
 	   ?XAE(<<"form">>,
 		[{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
 		[?XE(<<"ol">>,
 		     [?XE(<<"li">>,
-			  [?CT(<<"Username:">>), ?C(<<" ">>),
+			  [?CT(?T("Username:")), ?C(<<" ">>),
 			   ?INPUTS(<<"text">>, <<"username">>, <<"">>,
 				   <<"20">>)]),
 		      ?XE(<<"li">>,
-			  [?CT(<<"Server:">>), ?C(<<" ">>),
+			  [?CT(?T("Server:")), ?C(<<" ">>),
 			   ?INPUTS(<<"text">>, <<"host">>, Host, <<"20">>)]),
 		      ?XE(<<"li">>,
-			  [?CT(<<"Old Password:">>), ?C(<<" ">>),
+			  [?CT(?T("Old Password:")), ?C(<<" ">>),
 			   ?INPUTS(<<"password">>, <<"passwordold">>, <<"">>,
 				   <<"20">>)]),
 		      ?XE(<<"li">>,
-			  [?CT(<<"New Password:">>), ?C(<<" ">>),
+			  [?CT(?T("New Password:")), ?C(<<" ">>),
 			   ?INPUTS(<<"password">>, <<"password">>, <<"">>,
 				   <<"20">>)]),
 		      ?XE(<<"li">>,
-			  [?CT(<<"Password Verification:">>), ?C(<<" ">>),
+			  [?CT(?T("Password Verification:")), ?C(<<" ">>),
 			   ?INPUTS(<<"password">>, <<"password2">>, <<"">>,
 				   <<"20">>)]),
 		      ?XE(<<"li">>,
 			  [?INPUTT(<<"submit">>, <<"changepass">>,
-				   <<"Change Password">>)])])])],
+				   ?T("Change Password"))])])])],
     {200,
      [{<<"Server">>, <<"ejabberd">>},
       {<<"Content-Type">>, <<"text/html">>}],
@@ -489,7 +488,7 @@ check_password(Username, Host, Password) ->
 form_del_get(Host, Lang) ->
     HeadEls = [meta(),
 	       ?XCT(<<"title">>,
-		    <<"Unregister a Jabber account">>),
+		    ?T("Unregister a Jabber account")),
 	       ?XA(<<"link">>,
 		   [{<<"href">>, <<"/register/register.css">>},
 		    {<<"type">>, <<"text/css">>},
@@ -497,27 +496,27 @@ form_del_get(Host, Lang) ->
     Els = [?XACT(<<"h1">>,
 		 [{<<"class">>, <<"title">>},
 		  {<<"style">>, <<"text-align:center;">>}],
-		 <<"Unregister a Jabber account">>),
+		 ?T("Unregister a Jabber account")),
 	   ?XCT(<<"p">>,
-		<<"This page allows to unregister a Jabber "
-		  "account in this Jabber server.">>),
+		?T("This page allows to unregister a Jabber "
+		   "account in this Jabber server.")),
 	   ?XAE(<<"form">>,
 		[{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
 		[?XE(<<"ol">>,
 		     [?XE(<<"li">>,
-			  [?CT(<<"Username:">>), ?C(<<" ">>),
+			  [?CT(?T("Username:")), ?C(<<" ">>),
 			   ?INPUTS(<<"text">>, <<"username">>, <<"">>,
 				   <<"20">>)]),
 		      ?XE(<<"li">>,
-			  [?CT(<<"Server:">>), ?C(<<" ">>),
+			  [?CT(?T("Server:")), ?C(<<" ">>),
 			   ?INPUTS(<<"text">>, <<"host">>, Host, <<"20">>)]),
 		      ?XE(<<"li">>,
-			  [?CT(<<"Password:">>), ?C(<<" ">>),
+			  [?CT(?T("Password:")), ?C(<<" ">>),
 			   ?INPUTS(<<"password">>, <<"password">>, <<"">>,
 				   <<"20">>)]),
 		      ?XE(<<"li">>,
 			  [?INPUTT(<<"submit">>, <<"unregister">>,
-				   <<"Unregister">>)])])])],
+				   ?T("Unregister"))])])])],
     {200,
      [{<<"Server">>, <<"ejabberd">>},
       {<<"Content-Type">>, <<"text/html">>}],
@@ -591,25 +590,25 @@ unregister_account(Username, Host, Password) ->
 %%%----------------------------------------------------------------------
 
 get_error_text({error, captcha_non_valid}) ->
-    <<"The captcha you entered is wrong">>;
+    ?T("The captcha you entered is wrong");
 get_error_text({error, exists}) ->
-    <<"The account already exists">>;
+    ?T("The account already exists");
 get_error_text({error, password_incorrect}) ->
-    <<"Incorrect password">>;
+    ?T("Incorrect password");
 get_error_text({error, invalid_jid}) ->
-    <<"The username is not valid">>;
+    ?T("The username is not valid");
 get_error_text({error, not_allowed}) ->
-    <<"Not allowed">>;
+    ?T("Not allowed");
 get_error_text({error, account_doesnt_exist}) ->
-    <<"Account doesn't exist">>;
+    ?T("Account doesn't exist");
 get_error_text({error, account_exists}) ->
-    <<"The account was not deleted">>;
+    ?T("The account was not deleted");
 get_error_text({error, password_not_changed}) ->
-    <<"The password was not changed">>;
+    ?T("The password was not changed");
 get_error_text({error, passwords_not_identical}) ->
-    <<"The passwords are different">>;
+    ?T("The passwords are different");
 get_error_text({error, wrong_parameters}) ->
-    <<"Wrong parameters in the web formulary">>.
+    ?T("Wrong parameters in the web formulary").
 
 mod_options(_) ->
     [].

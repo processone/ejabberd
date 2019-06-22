@@ -168,7 +168,7 @@ normal_state({route, <<"">>,
 	    {MessageShaper, MessageShaperInterval} =
 		ejabberd_shaper:update(Activity#activity.message_shaper, Size),
 	    if Activity#activity.message /= undefined ->
-		    ErrText = <<"Traffic rate limit is exceeded">>,
+		    ErrText = ?T("Traffic rate limit is exceeded"),
 		    Err = xmpp:err_resource_constraint(ErrText, Lang),
 		    ejabberd_router:route_error(Packet, Err),
 		    {next_state, normal_state, StateData};
@@ -228,9 +228,9 @@ normal_state({route, <<"">>,
 	true when Type == error ->
 	    case is_user_online(From, StateData) of
 		true ->
-		    ErrorText = <<"It is not allowed to send error messages to the"
-				  " room. The participant (~s) has sent an error "
-				  "message (~s) and got kicked from the room">>,
+		    ErrorText = ?T("It is not allowed to send error messages to the"
+				   " room. The participant (~s) has sent an error "
+				   "message (~s) and got kicked from the room"),
 		    NewState = expulse_participant(Packet, From, StateData,
 						   translate:translate(Lang,
 								       ErrorText)),
@@ -239,8 +239,8 @@ normal_state({route, <<"">>,
 		    {next_state, normal_state, StateData}
 	    end;
 	true when Type == chat ->
-	    ErrText = <<"It is not allowed to send private messages "
-			"to the conference">>,
+	    ErrText = ?T("It is not allowed to send private messages "
+			 "to the conference"),
 	    Err = xmpp:err_not_acceptable(ErrText, Lang),
 	    ejabberd_router:route_error(Packet, Err),
 	    {next_state, normal_state, StateData};
@@ -255,7 +255,7 @@ normal_state({route, <<"">>,
 		     StateData
 	     end};
 	true ->
-	    ErrText = <<"Improper message type">>,
+	    ErrText = ?T("Improper message type"),
 	    Err = xmpp:err_not_acceptable(ErrText, Lang),
 	    ejabberd_router:route_error(Packet, Err),
 	    {next_state, normal_state, StateData};
@@ -297,8 +297,8 @@ normal_state({route, <<"">>,
 			   ?NS_CAPTCHA ->
 			       process_iq_captcha(From, IQ, StateData);
 			   _ ->
-			       Txt = <<"The feature requested is not "
-				       "supported by the conference">>,
+			       Txt = ?T("The feature requested is not "
+					"supported by the conference"),
 			       {error, xmpp:err_service_unavailable(Txt, Lang)}
 		       end,
 		{IQRes, NewStateData} =
@@ -370,9 +370,9 @@ normal_state({route, ToNick,
     case decide_fate_message(Packet, From, StateData) of
 	{expulse_sender, Reason} ->
 	    ?DEBUG(Reason, []),
-	    ErrorText = <<"It is not allowed to send error messages to the"
-			  " room. The participant (~s) has sent an error "
-			  "message (~s) and got kicked from the room">>,
+	    ErrorText = ?T("It is not allowed to send error messages to the"
+			   " room. The participant (~s) has sent an error "
+			   "message (~s) and got kicked from the room"),
 	    NewState = expulse_participant(Packet, From, StateData,
 					   translate:translate(Lang, ErrorText)),
 	    {next_state, normal_state, NewState};
@@ -383,14 +383,14 @@ normal_state({route, ToNick,
 		  is_user_online(From, StateData) orelse
 		  is_subscriber(From, StateData)} of
 		{true, true} when Type == groupchat ->
-		    ErrText = <<"It is not allowed to send private messages "
-				"of type \"groupchat\"">>,
+		    ErrText = ?T("It is not allowed to send private messages "
+				 "of type \"groupchat\""),
 		    Err = xmpp:err_bad_request(ErrText, Lang),
 		    ejabberd_router:route_error(Packet, Err);
 		{true, true} ->
 		    case find_jids_by_nick(ToNick, StateData) of
 			[] ->
-			    ErrText = <<"Recipient is not in the conference room">>,
+			    ErrText = ?T("Recipient is not in the conference room"),
 			    Err = xmpp:err_item_not_found(ErrText, Lang),
 			    ejabberd_router:route_error(Packet, Err);
 			ToJIDs ->
@@ -415,18 +415,18 @@ normal_state({route, ToNick,
 					      ejabberd_router:route(xmpp:set_to(PrivMsg, ToJID))
 				      end, ToJIDs);
 			       true ->
-				    ErrText = <<"It is not allowed to send private messages">>,
+				    ErrText = ?T("It is not allowed to send private messages"),
 				    Err = xmpp:err_forbidden(ErrText, Lang),
 				    ejabberd_router:route_error(Packet, Err)
 			    end
 		    end;
 		{true, false} ->
-		    ErrText = <<"Only occupants are allowed to send messages "
-				"to the conference">>,
+		    ErrText = ?T("Only occupants are allowed to send messages "
+				 "to the conference"),
 		    Err = xmpp:err_not_acceptable(ErrText, Lang),
 		    ejabberd_router:route_error(Packet, Err);
 		{false, _} ->
-		    ErrText = <<"It is not allowed to send private messages">>,
+		    ErrText = ?T("It is not allowed to send private messages"),
 		    Err = xmpp:err_forbidden(ErrText, Lang),
 		    ejabberd_router:route_error(Packet, Err)
 	    end,
@@ -439,7 +439,7 @@ normal_state({route, ToNick,
 	#user{nick = FromNick} when AllowQuery orelse ToNick == FromNick ->
 	    case find_jid_by_nick(ToNick, StateData) of
 		false ->
-		    ErrText = <<"Recipient is not in the conference room">>,
+		    ErrText = ?T("Recipient is not in the conference room"),
 		    Err = xmpp:err_item_not_found(ErrText, Lang),
 		    ejabberd_router:route_error(Packet, Err);
 		To ->
@@ -462,13 +462,13 @@ normal_state({route, ToNick,
 		    end
 	    end;
 	_ ->
-	    ErrText = <<"Queries to the conference members are "
-			"not allowed in this room">>,
+	    ErrText = ?T("Queries to the conference members are "
+			 "not allowed in this room"),
 	    Err = xmpp:err_not_allowed(ErrText, Lang),
 	    ejabberd_router:route_error(Packet, Err)
     catch _:{badkey, _} ->
-	    ErrText = <<"Only occupants are allowed to send queries "
-			"to the conference">>,
+	    ErrText = ?T("Only occupants are allowed to send queries "
+			 "to the conference"),
 	    Err = xmpp:err_not_acceptable(ErrText, Lang),
 	    ejabberd_router:route_error(Packet, Err)
     end,
@@ -664,7 +664,7 @@ handle_info({captcha_failed, From}, normal_state,
     NewState = case maps:get(From, StateData#state.robots, passed) of
 		   {_Nick, Packet} ->
 		       Robots = maps:remove(From, StateData#state.robots),
-		       Txt = <<"The CAPTCHA verification has failed">>,
+		       Txt = ?T("The CAPTCHA verification has failed"),
 		       Lang = xmpp:get_lang(Packet),
 		       Err = xmpp:err_not_authorized(Txt, Lang),
 		       ejabberd_router:route_error(Packet, Err),
@@ -683,7 +683,7 @@ handle_info({iq_reply, #iq{type = Type, sub_els = Els},
 	To, From)),
     {next_state, StateName, StateData};
 handle_info({iq_reply, timeout, IQ}, StateName, StateData) ->
-    Txt = <<"Request has timed out">>,
+    Txt = ?T("Request has timed out"),
     Err = xmpp:err_recipient_unavailable(Txt, IQ#iq.lang),
     ejabberd_router:route_error(IQ, Err),
     {next_state, StateName, StateData};
@@ -708,9 +708,9 @@ terminate(Reason, _StateName,
 	?INFO_MSG("Stopping MUC room ~s@~s", [Room, Host]),
 	ReasonT = case Reason of
 		      shutdown ->
-			  <<"You are being removed from the room "
-			    "because of a system shutdown">>;
-		      _ -> <<"Room terminates">>
+			  ?T("You are being removed from the room "
+			     "because of a system shutdown");
+		      _ -> ?T("Room terminates")
 		  end,
 	Packet = #presence{
 		    type = unavailable,
@@ -819,27 +819,27 @@ process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData
 		       Err = case (StateData#state.config)#config.allow_change_subj of
 			       true ->
 				   xmpp:err_forbidden(
-				     <<"Only moderators and participants are "
-				       "allowed to change the subject in this "
-				       "room">>, Lang);
+				     ?T("Only moderators and participants are "
+					"allowed to change the subject in this "
+					"room"), Lang);
 			       _ ->
 				   xmpp:err_forbidden(
-				     <<"Only moderators are allowed to change "
-				       "the subject in this room">>, Lang)
+				     ?T("Only moderators are allowed to change "
+					"the subject in this room"), Lang)
 			     end,
 		       ejabberd_router:route_error(Packet, Err),
 		       {next_state, normal_state, StateData}
 		 end;
 	     true ->
-		 ErrText = <<"Visitors are not allowed to send messages "
-			     "to all occupants">>,
+		 ErrText = ?T("Visitors are not allowed to send messages "
+			      "to all occupants"),
 		 Err = xmpp:err_forbidden(ErrText, Lang),
 		 ejabberd_router:route_error(Packet, Err),
 		 {next_state, normal_state, StateData}
 	  end;
       false ->
-	  ErrText = <<"Only occupants are allowed to send messages "
-		      "to the conference">>,
+	  ErrText = ?T("Only occupants are allowed to send messages "
+		       "to the conference"),
 	  Err = xmpp:err_not_acceptable(ErrText, Lang),
 	  ejabberd_router:route_error(Packet, Err),
 	  {next_state, normal_state, StateData}
@@ -924,14 +924,14 @@ process_voice_request(From, Pkt, StateData) ->
 		    send_voice_request(From, Lang, NSD),
 		    NSD;
 		{ok, _, _} ->
-		    ErrText = <<"Please, wait for a while before sending "
-				"new voice request">>,
+		    ErrText = ?T("Please, wait for a while before sending "
+				 "new voice request"),
 		    Err = xmpp:err_resource_constraint(ErrText, Lang),
 		    ejabberd_router:route_error(Pkt, Err),
 		    StateData#state{last_voice_request_time = Times}
 	    end;
 	false ->
-	    ErrText = <<"Voice requests are disabled in this conference">>,
+	    ErrText = ?T("Voice requests are disabled in this conference"),
 	    Err = xmpp:err_forbidden(ErrText, Lang),
 	    ejabberd_router:route_error(Pkt, Err),
 	    StateData
@@ -956,14 +956,14 @@ process_voice_approval(From, Pkt, VoiceApproval, StateData) ->
 			    StateData
 		    end;
 		false ->
-		    ErrText = <<"Failed to extract JID from your voice "
-				"request approval">>,
+		    ErrText = ?T("Failed to extract JID from your voice "
+				 "request approval"),
 		    Err = xmpp:err_bad_request(ErrText, Lang),
 		    ejabberd_router:route_error(Pkt, Err),
 		    StateData
 	    end;
 	false ->
-	    ErrText = <<"Only moderators can approve voice requests">>,
+	    ErrText = ?T("Only moderators can approve voice requests"),
 	    Err = xmpp:err_not_allowed(ErrText, Lang),
 	    ejabberd_router:route_error(Pkt, Err),
 	    StateData
@@ -1054,15 +1054,15 @@ do_process_presence(Nick, #presence{from = From, type = available, lang = Lang} 
 			   is_visitor(From, StateData)}} of
 			{_, _, {false, true}} ->
 			    Packet1 = Packet#presence{sub_els = [#muc{}]},
-			    ErrText = <<"Visitors are not allowed to change their "
-					"nicknames in this room">>,
+			    ErrText = ?T("Visitors are not allowed to change their "
+					 "nicknames in this room"),
 			    Err = xmpp:err_not_allowed(ErrText, Lang),
 			    ejabberd_router:route_error(Packet1, Err),
 			    StateData;
 			{true, _, _} ->
 			    Packet1 = Packet#presence{sub_els = [#muc{}]},
-			    ErrText = <<"That nickname is already in use by another "
-					"occupant">>,
+			    ErrText = ?T("That nickname is already in use by another "
+					 "occupant"),
 			    Err = xmpp:err_conflict(ErrText, Lang),
 			    ejabberd_router:route_error(Packet1, Err),
 			    StateData;
@@ -1070,11 +1070,11 @@ do_process_presence(Nick, #presence{from = From, type = available, lang = Lang} 
 			    Packet1 = Packet#presence{sub_els = [#muc{}]},
 			    Err = case Nick of
 				      <<>> ->
-					  xmpp:err_jid_malformed(<<"Nickname can't be empty">>,
+					  xmpp:err_jid_malformed(?T("Nickname can't be empty"),
 								 Lang);
 				      _ ->
-					  xmpp:err_conflict(<<"That nickname is registered"
-							      " by another person">>, Lang)
+					  xmpp:err_conflict(?T("That nickname is registered"
+							       " by another person"), Lang)
 				  end,
 			    ejabberd_router:route_error(Packet1, Err),
 			    StateData;
@@ -1121,9 +1121,9 @@ do_process_presence(Nick, #presence{from = From, type = unavailable} = Packet,
     remove_online_user(From, NewState, Reason);
 do_process_presence(_Nick, #presence{from = From, type = error, lang = Lang} = Packet,
 		    StateData) ->
-    ErrorText = <<"It is not allowed to send error messages to the"
-		  " room. The participant (~s) has sent an error "
-		  "message (~s) and got kicked from the room">>,
+    ErrorText = ?T("It is not allowed to send error messages to the"
+		   " room. The participant (~s) has sent an error "
+		   "message (~s) and got kicked from the room"),
     expulse_participant(Packet, From, StateData,
 			translate:translate(Lang, ErrorText)).
 
@@ -1880,7 +1880,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 	  get_default_role(Affiliation, StateData)}
 	of
       {false, _, _, _} when NUsers >= MaxUsers orelse NUsers >= MaxAdminUsers ->
-	  Txt = <<"Too many users in this conference">>,
+	  Txt = ?T("Too many users in this conference"),
 	  Err = xmpp:err_resource_constraint(Txt, Lang),
 	  if not IsSubscribeRequest ->
 		  ejabberd_router:route_error(Packet, Err),
@@ -1889,7 +1889,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 		  {error, Err}
 	  end;
       {false, _, _, _} when NConferences >= MaxConferences ->
-	  Txt = <<"You have joined too many conferences">>,
+	  Txt = ?T("You have joined too many conferences"),
 	  Err = xmpp:err_resource_constraint(Txt, Lang),
 	  if not IsSubscribeRequest ->
 		  ejabberd_router:route_error(Packet, Err),
@@ -1908,10 +1908,10 @@ add_new_user(From, Nick, Packet, StateData) ->
       {_, _, _, none} ->
 	  Err = case Affiliation of
 		    outcast ->
-			ErrText = <<"You have been banned from this room">>,
+			ErrText = ?T("You have been banned from this room"),
 			xmpp:err_forbidden(ErrText, Lang);
 		    _ ->
-			ErrText = <<"Membership is required to enter this room">>,
+			ErrText = ?T("Membership is required to enter this room"),
 			xmpp:err_registration_required(ErrText, Lang)
 		end,
 	  if not IsSubscribeRequest ->
@@ -1921,7 +1921,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 		  {error, Err}
 	  end;
       {_, true, _, _} ->
-	  ErrText = <<"That nickname is already in use by another occupant">>,
+	  ErrText = ?T("That nickname is already in use by another occupant"),
 	  Err = xmpp:err_conflict(ErrText, Lang),
 	  if not IsSubscribeRequest ->
 		  ejabberd_router:route_error(Packet, Err),
@@ -1932,11 +1932,11 @@ add_new_user(From, Nick, Packet, StateData) ->
       {_, _, false, _} ->
 	  Err = case Nick of
 			<<>> ->
-			    xmpp:err_jid_malformed(<<"Nickname can't be empty">>,
+			    xmpp:err_jid_malformed(?T("Nickname can't be empty"),
 						   Lang);
 			_ ->
-			    xmpp:err_conflict(<<"That nickname is registered"
-						" by another person">>, Lang)
+			    xmpp:err_conflict(?T("That nickname is registered"
+						 " by another person"), Lang)
 		    end,
 	  if not IsSubscribeRequest ->
 		  ejabberd_router:route_error(Packet, Err),
@@ -1974,7 +1974,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 		     true -> {result, subscribe_result(Packet), ResultState}
 		  end;
 	    need_password ->
-		ErrText = <<"A password is required to enter this room">>,
+		ErrText = ?T("A password is required to enter this room"),
 		Err = xmpp:err_not_authorized(ErrText, Lang),
 		if not IsSubscribeRequest ->
 			ejabberd_router:route_error(Packet, Err),
@@ -2005,7 +2005,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 			      {ignore, NewState}
 		      end;
 		  {error, limit} ->
-		      ErrText = <<"Too many CAPTCHA requests">>,
+		      ErrText = ?T("Too many CAPTCHA requests"),
 		      Err = xmpp:err_resource_constraint(ErrText, Lang),
 		      if not IsSubscribeRequest ->
 			      ejabberd_router:route_error(Packet, Err),
@@ -2014,7 +2014,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 			      {error, Err}
 		      end;
 		  _ ->
-		      ErrText = <<"Unable to generate a CAPTCHA">>,
+		      ErrText = ?T("Unable to generate a CAPTCHA"),
 		      Err = xmpp:err_internal_server_error(ErrText, Lang),
 		      if not IsSubscribeRequest ->
 			      ejabberd_router:route_error(Packet, Err),
@@ -2024,7 +2024,7 @@ add_new_user(From, Nick, Packet, StateData) ->
 		      end
 		end;
 	    _ ->
-		ErrText = <<"Incorrect password">>,
+		ErrText = ?T("Incorrect password"),
 		Err = xmpp:err_not_authorized(ErrText, Lang),
 		if not IsSubscribeRequest ->
 			ejabberd_router:route_error(Packet, Err),
@@ -2589,7 +2589,7 @@ can_change_subject(Role, IsSubscriber, StateData) ->
 						 {result, muc_admin()}.
 process_iq_admin(_From, #iq{lang = Lang, sub_els = [#muc_admin{items = []}]},
 		 _StateData) ->
-    Txt = <<"No 'item' element found">>,
+    Txt = ?T("No 'item' element found"),
     {error, xmpp:err_bad_request(Txt, Lang)};
 process_iq_admin(From, #iq{type = set, lang = Lang,
 			   sub_els = [#muc_admin{items = Items}]},
@@ -2602,7 +2602,7 @@ process_iq_admin(From, #iq{type = get, lang = Lang,
     FRole = get_role(From, StateData),
     case Item of
 	#muc_item{role = undefined, affiliation = undefined} ->
-	    Txt = <<"Neither 'role' nor 'affiliation' attribute found">>,
+	    Txt = ?T("Neither 'role' nor 'affiliation' attribute found"),
 	    {error, xmpp:err_bad_request(Txt, Lang)};
 	#muc_item{role = undefined, affiliation = Affiliation} ->
 	    if (FAffiliation == owner) or
@@ -2612,7 +2612,7 @@ process_iq_admin(From, #iq{type = get, lang = Lang,
 		    Items = items_with_affiliation(Affiliation, StateData),
 		    {result, #muc_admin{items = Items}};
 	       true ->
-		    ErrText = <<"Administrator privileges required">>,
+		    ErrText = ?T("Administrator privileges required"),
 		    {error, xmpp:err_forbidden(ErrText, Lang)}
 	    end;
 	#muc_item{role = Role} ->
@@ -2620,12 +2620,12 @@ process_iq_admin(From, #iq{type = get, lang = Lang,
 		    Items = items_with_role(Role, StateData),
 		    {result, #muc_admin{items = Items}};
 	       true ->
-		    ErrText = <<"Moderator privileges required">>,
+		    ErrText = ?T("Moderator privileges required"),
 		    {error, xmpp:err_forbidden(ErrText, Lang)}
 	    end
     end;
 process_iq_admin(_From, #iq{type = get, lang = Lang}, _StateData) ->
-    ErrText = <<"Too many <item/> elements">>,
+    ErrText = ?T("Too many <item/> elements"),
     {error, xmpp:err_bad_request(ErrText, Lang)}.
 
 -spec items_with_role(role(), state()) -> [muc_item()].
@@ -2797,12 +2797,12 @@ find_changed_items(_UJID, _UAffiliation, _URole, [],
 find_changed_items(_UJID, _UAffiliation, _URole,
 		   [#muc_item{jid = undefined, nick = <<"">>}|_],
 		   Lang, _StateData, _Res) ->
-    Txt = <<"Neither 'jid' nor 'nick' attribute found">>,
+    Txt = ?T("Neither 'jid' nor 'nick' attribute found"),
     throw({error, xmpp:err_bad_request(Txt, Lang)});
 find_changed_items(_UJID, _UAffiliation, _URole,
 		   [#muc_item{role = undefined, affiliation = undefined}|_],
 		   Lang, _StateData, _Res) ->
-    Txt = <<"Neither 'role' nor 'affiliation' attribute found">>,
+    Txt = ?T("Neither 'role' nor 'affiliation' attribute found"),
     throw({error, xmpp:err_bad_request(Txt, Lang)});
 find_changed_items(UJID, UAffiliation, URole,
 		   [#muc_item{jid = J, nick = Nick, reason = Reason,
@@ -2814,7 +2814,7 @@ find_changed_items(UJID, UAffiliation, URole,
 	   Nick /= <<"">> ->
 		case find_jids_by_nick(Nick, StateData) of
 		    [] ->
-			ErrText = {<<"Nickname ~s does not exist in the room">>,
+			ErrText = {?T("Nickname ~s does not exist in the room"),
 				   [Nick]},
 			throw({error, xmpp:err_not_acceptable(ErrText, Lang)});
 		    JIDList ->
@@ -2870,7 +2870,7 @@ find_changed_items(UJID, UAffiliation, URole,
 			       Items, Lang, StateData,
 			       MoreRes ++ Res);
 	false ->
-	    Txt = <<"Changing role/affiliation is not allowed">>,
+	    Txt = ?T("Changing role/affiliation is not allowed"),
 	    throw({error, xmpp:err_not_allowed(Txt, Lang)})
     end.
 
@@ -3163,7 +3163,7 @@ process_iq_owner(From, #iq{type = set, lang = Lang,
 		 StateData) ->
     FAffiliation = get_affiliation(From, StateData),
     if FAffiliation /= owner ->
-	    ErrText = <<"Owner privileges required">>,
+	    ErrText = ?T("Owner privileges required"),
 	    {error, xmpp:err_forbidden(ErrText, Lang)};
        Destroy /= undefined, Config == undefined, Items == [] ->
 	    ?INFO_MSG("Destroyed MUC room ~s by the owner ~s",
@@ -3193,7 +3193,7 @@ process_iq_owner(From, #iq{type = set, lang = Lang,
 			    {error, xmpp:err_bad_request(Txt, Lang)}
 		    end;
 		_ ->
-		    Txt = <<"Incorrect data form">>,
+		    Txt = ?T("Incorrect data form"),
 		    {error, xmpp:err_bad_request(Txt, Lang)}
 	    end;
        Items /= [], Config == undefined, Destroy == undefined ->
@@ -3208,7 +3208,7 @@ process_iq_owner(From, #iq{type = get, lang = Lang,
 		 StateData) ->
     FAffiliation = get_affiliation(From, StateData),
     if FAffiliation /= owner ->
-	    ErrText = <<"Owner privileges required">>,
+	    ErrText = ?T("Owner privileges required"),
 	    {error, xmpp:err_forbidden(ErrText, Lang)};
        Destroy == undefined, Config == undefined ->
 	    case Items of
@@ -3216,13 +3216,13 @@ process_iq_owner(From, #iq{type = get, lang = Lang,
 		    {result,
 		     #muc_owner{config = get_config(Lang, StateData, From)}};
 		[#muc_item{affiliation = undefined}] ->
-		    Txt = <<"No 'affiliation' attribute found">>,
+		    Txt = ?T("No 'affiliation' attribute found"),
 		    {error, xmpp:err_bad_request(Txt, Lang)};
 		[#muc_item{affiliation = Affiliation}] ->
 		    Items = items_with_affiliation(Affiliation, StateData),
 		    {result, #muc_owner{items = Items}};
 		[_|_] ->
-		    Txt = <<"Too many <item/> elements">>,
+		    Txt = ?T("Too many <item/> elements"),
 		    {error, xmpp:err_bad_request(Txt, Lang)}
 	    end;
        true ->
@@ -3309,7 +3309,7 @@ get_config(Lang, StateData, From) ->
     Config = StateData#state.config,
     MaxUsersRoom = get_max_users(StateData),
     Title = str:format(
-	      translate:translate(Lang, <<"Configuration of room ~s">>),
+	      translate:translate(Lang, ?T("Configuration of room ~s")),
 	      [jid:encode(StateData#state.jid)]),
     Fs = [{roomname, Config#config.title},
 	  {roomdesc, Config#config.description},
@@ -3327,7 +3327,7 @@ get_config(Lang, StateData, From) ->
 		      end},
 	 {maxusers, MaxUsersRoom,
 	  [if is_integer(ServiceMaxUsers) -> [];
-	      true -> [{<<"No limit">>, <<"none">>}]
+	      true -> [{?T("No limit"), <<"none">>}]
 	   end] ++ [{integer_to_binary(N), N}
 		    || N <- lists:usort([ServiceMaxUsers,
 					 DefaultRoomMaxUsers,
@@ -3448,7 +3448,7 @@ set_config(Opts, Config, ServerHost, Lang) ->
 		  {0, undefined} ->
 		      ?ERROR_MSG("set_room_option hook failed for "
 				 "option '~s' with value ~p", [O, V]),
-		      Txt = {<<"Failed to process option '~s'">>, [O]},
+		      Txt = {?T("Failed to process option '~s'"), [O]},
 		      {error, xmpp:err_internal_server_error(Txt, Lang)};
 		  {Pos, Val} ->
 		      setelement(Pos, C, Val)
@@ -3874,7 +3874,7 @@ make_disco_info(_From, StateData) ->
 -spec process_iq_disco_info(jid(), iq(), state()) ->
 				   {result, disco_info()} | {error, stanza_error()}.
 process_iq_disco_info(_From, #iq{type = set, lang = Lang}, _StateData) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     {error, xmpp:err_not_allowed(Txt, Lang)};
 process_iq_disco_info(From, #iq{type = get, lang = Lang,
 				sub_els = [#disco_info{node = <<>>}]},
@@ -3894,7 +3894,7 @@ process_iq_disco_info(From, #iq{type = get, lang = Lang,
 	Node = <<(ejabberd_config:get_uri())/binary, $#, Hash/binary>>,
 	{result, DiscoInfo1#disco_info{node = Node}}
     catch _:{badmatch, _} ->
-	    Txt = <<"Invalid node name">>,
+	    Txt = ?T("Invalid node name"),
 	    {error, xmpp:err_item_not_found(Txt, Lang)}
     end.
 
@@ -3934,7 +3934,7 @@ iq_disco_info_extras(Lang, StateData, Static) ->
 -spec process_iq_disco_items(jid(), iq(), state()) ->
 				    {error, stanza_error()} | {result, disco_items()}.
 process_iq_disco_items(_From, #iq{type = set, lang = Lang}, _StateData) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     {error, xmpp:err_not_allowed(Txt, Lang)};
 process_iq_disco_items(From, #iq{type = get}, StateData) ->
     case (StateData#state.config)#config.public_list of
@@ -3955,17 +3955,17 @@ process_iq_disco_items(From, #iq{type = get}, StateData) ->
 -spec process_iq_captcha(jid(), iq(), state()) -> {error, stanza_error()} |
 						  {result, undefined}.
 process_iq_captcha(_From, #iq{type = get, lang = Lang}, _StateData) ->
-    Txt = <<"Value 'get' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'get' of 'type' attribute is not allowed"),
     {error, xmpp:err_not_allowed(Txt, Lang)};
 process_iq_captcha(_From, #iq{type = set, lang = Lang, sub_els = [SubEl]},
 		   _StateData) ->
     case ejabberd_captcha:process_reply(SubEl) of
       ok -> {result, undefined};
       {error, malformed} ->
-	    Txt = <<"Incorrect CAPTCHA submit">>,
+	    Txt = ?T("Incorrect CAPTCHA submit"),
 	    {error, xmpp:err_bad_request(Txt, Lang)};
       _ ->
-	    Txt = <<"The CAPTCHA verification has failed">>,
+	    Txt = ?T("The CAPTCHA verification has failed"),
 	    {error, xmpp:err_not_allowed(Txt, Lang)}
     end.
 
@@ -3992,7 +3992,7 @@ process_iq_vcard(From, #iq{type = set, lang = Lang, sub_els = [Pkt]},
 	    NewConfig = Config#config{vcard = VCardRaw, vcard_xupdate = Hash},
 	    change_config(NewConfig, StateData);
 	_ ->
-	    ErrText = <<"Owner privileges required">>,
+	    ErrText = ?T("Owner privileges required"),
 	    {error, xmpp:err_forbidden(ErrText, Lang)}
     end.
 
@@ -4003,7 +4003,7 @@ process_iq_vcard(From, #iq{type = set, lang = Lang, sub_els = [Pkt]},
 process_iq_mucsub(_From, #iq{type = set, lang = Lang,
 			     sub_els = [#muc_subscribe{}]},
 		  #state{just_created = Just, config = #config{allow_subscription = false}}) when Just /= true ->
-    {error, xmpp:err_not_allowed(<<"Subscriptions are not allowed">>, Lang)};
+    {error, xmpp:err_not_allowed(?T("Subscriptions are not allowed"), Lang)};
 process_iq_mucsub(From,
 		  #iq{type = set, lang = Lang,
 		      sub_els = [#muc_subscribe{jid = #jid{} = SubJid} = Mucsub]},
@@ -4016,7 +4016,7 @@ process_iq_mucsub(From,
 				  sub_els = [Mucsub#muc_subscribe{jid = undefined}]},
 			      StateData);
        true ->
-	    Txt = <<"Moderator privileges required">>,
+	    Txt = ?T("Moderator privileges required"),
 	    {error, xmpp:err_forbidden(Txt, Lang)}
     end;
 process_iq_mucsub(From,
@@ -4032,16 +4032,16 @@ process_iq_mucsub(From,
 				       StateData#state.host,
 				       From, Nick)} of
 		{true, _} ->
-		    ErrText = <<"That nickname is already in use by another occupant">>,
+		    ErrText = ?T("That nickname is already in use by another occupant"),
 		    {error, xmpp:err_conflict(ErrText, Lang)};
 		{_, false} ->
 		    Err = case Nick of
 			      <<>> ->
-				  xmpp:err_jid_malformed(<<"Nickname can't be empty">>,
+				  xmpp:err_jid_malformed(?T("Nickname can't be empty"),
 							 Lang);
 			      _ ->
-				  xmpp:err_conflict(<<"That nickname is registered"
-						      " by another person">>, Lang)
+				  xmpp:err_conflict(?T("That nickname is registered"
+						       " by another person"), Lang)
 			  end,
 		    {error, Err};
 		_ ->
@@ -4067,7 +4067,7 @@ process_iq_mucsub(From, #iq{type = set, lang = Lang,
 				  sub_els = [#muc_unsubscribe{jid = undefined}]},
 			      StateData);
        true ->
-	    Txt = <<"Moderator privileges required">>,
+	    Txt = ?T("Moderator privileges required"),
 	    {error, xmpp:err_forbidden(Txt, Lang)}
     end;
 process_iq_mucsub(From, #iq{type = set, sub_els = [#muc_unsubscribe{}]},
@@ -4113,11 +4113,11 @@ process_iq_mucsub(From, #iq{type = get, lang = Lang,
 		     end, [], StateData#state.subscribers),
 	    {result, #muc_subscriptions{list = Subs}, StateData};
 	_ ->
-	    Txt = <<"Moderator privileges required">>,
+	    Txt = ?T("Moderator privileges required"),
 	    {error, xmpp:err_forbidden(Txt, Lang)}
     end;
 process_iq_mucsub(_From, #iq{type = get, lang = Lang}, _StateData) ->
-    Txt = <<"Value 'get' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'get' of 'type' attribute is not allowed"),
     {error, xmpp:err_bad_request(Txt, Lang)}.
 
 remove_subscriptions(StateData) ->
@@ -4172,7 +4172,7 @@ get_roomdesc_reply(JID, StateData, Tail) ->
 get_roomdesc_tail(StateData, Lang) ->
     Desc = case (StateData#state.config)#config.public of
 	     true -> <<"">>;
-	     _ -> translate:translate(Lang, <<"private, ">>)
+	     _ -> translate:translate(Lang, ?T("private, "))
 	   end,
     Len = maps:size(StateData#state.nicks),
     <<" (", Desc/binary, (integer_to_binary(Len))/binary, ")">>.
@@ -4193,9 +4193,9 @@ get_mucroom_disco_items(StateData) ->
 
 -spec prepare_request_form(jid(), binary(), binary()) -> message().
 prepare_request_form(Requester, Nick, Lang) ->
-    Title = translate:translate(Lang, <<"Voice request">>),
+    Title = translate:translate(Lang, ?T("Voice request")),
     Instruction = translate:translate(
-		    Lang, <<"Either approve or decline the voice request.">>),
+		    Lang, ?T("Either approve or decline the voice request.")),
     Fs = muc_request:encode([{role, participant},
 			     {jid, Requester},
 			     {roomnick, Nick},
@@ -4237,11 +4237,11 @@ check_invitation(From, Invitations, Lang, StateData) ->
 		true ->
 		    ok;
 		false ->
-		    Txt = <<"No 'to' attribute found in the invitation">>,
+		    Txt = ?T("No 'to' attribute found in the invitation"),
 		    {error, xmpp:err_bad_request(Txt, Lang)}
 	    end;
 	false ->
-	    Txt = <<"Invitations are not allowed in this conference">>,
+	    Txt = ?T("Invitations are not allowed in this conference"),
 	    {error, xmpp:err_not_allowed(Txt, Lang)}
     end.
 
@@ -4263,14 +4263,14 @@ route_invitation(From, Pkt, Invitation, Lang, StateData) ->
 	     [io_lib:format(
 		translate:translate(
 		  Lang,
-		  <<"~s invites you to the room ~s">>),
+		  ?T("~s invites you to the room ~s")),
 		[jid:encode(From),
 		 jid:encode({StateData#state.room, StateData#state.host, <<"">>})]),
 	      case (StateData#state.config)#config.password_protected of
 		  true ->
 		      <<", ",
 			(translate:translate(
-			   Lang, <<"the password is">>))/binary,
+			   Lang, ?T("the password is")))/binary,
 			" '",
 			((StateData#state.config)#config.password)/binary,
 			"'">>;
@@ -4306,8 +4306,8 @@ handle_roommessage_from_nonparticipant(Packet, StateData, From) ->
 	    ejabberd_router:route(
 	      xmpp:set_from_to(NewPacket, StateData#state.jid, To));
 	_ ->
-	    ErrText = <<"Only occupants are allowed to send messages "
-			"to the conference">>,
+	    ErrText = ?T("Only occupants are allowed to send messages "
+			 "to the conference"),
 	    Err = xmpp:err_not_acceptable(ErrText, xmpp:get_lang(Packet)),
 	    ejabberd_router:route_error(Packet, Err)
     catch _:{xmpp_codec, Why} ->

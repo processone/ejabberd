@@ -37,6 +37,7 @@
 -include("pubsub.hrl").
 -include("xmpp.hrl").
 -include("ejabberd_sql_pt.hrl").
+-include("translate.hrl").
 
 -export([init/3, terminate/2, options/0, features/0,
     create_node_permission/6, create_node/2, delete_node/1,
@@ -766,7 +767,7 @@ get_item(Nidx, ItemId) ->
 	{selected, []} ->
 	    {error, xmpp:err_item_not_found()};
 	{'EXIT', _} ->
-	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ejabberd_option:language())}
+	    {error, xmpp:err_internal_server_error(?T("Database failure"), ejabberd_option:language())}
     end.
 
 get_item(Nidx, ItemId, JID, AccessModel, PresenceSubscription, RosterGroup, _SubId) ->

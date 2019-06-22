@@ -77,6 +77,8 @@
 
 -include("mod_offline.hrl").
 
+-include("translate.hrl").
+
 -define(OFFLINE_TABLE_LOCK_THRESHOLD, 1000).
 
 %% default value for the maximum number of user messages
@@ -294,7 +296,7 @@ handle_offline_query(#iq{from = #jid{luser = U1, lserver = S1},
 			 lang = Lang,
 			 sub_els = [#offline{}]} = IQ)
   when {U1, S1} /= {U2, S2} ->
-    Txt = <<"Query to another users is forbidden">>,
+    Txt = ?T("Query to another users is forbidden"),
     xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang));
 handle_offline_query(#iq{from = #jid{luser = U, lserver = S} = From,
 			 to = #jid{luser = U, lserver = S} = _To,
@@ -315,7 +317,7 @@ handle_offline_query(#iq{from = #jid{luser = U, lserver = S} = From,
 		{atomic, ok} ->
 		    xmpp:make_iq_result(IQ);
 		_Err ->
-		    Txt = <<"Database failure">>,
+		    Txt = ?T("Database failure"),
 		    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
 	    end;
 	{set, #offline{fetch = false, items = [_|_] = Items, purge = false}} ->
@@ -327,7 +329,7 @@ handle_offline_query(#iq{from = #jid{luser = U, lserver = S} = From,
 	    xmpp:make_error(IQ, xmpp:err_bad_request())
     end;
 handle_offline_query(#iq{lang = Lang} = IQ) ->
-    Txt = <<"No module is handling this query">>,
+    Txt = ?T("No module is handling this query"),
     xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
 -spec handle_offline_items_view(jid(), [offline_item()]) -> boolean().
@@ -664,11 +666,11 @@ discard_warn_sender(Packet, Reason) ->
 	    Lang = xmpp:get_lang(Packet),
 	    Err = case Reason of
 		      full ->
-			  ErrText = <<"Your contact offline message queue is "
-				      "full. The message has been discarded.">>,
+			  ErrText = ?T("Your contact offline message queue is "
+				       "full. The message has been discarded."),
 			  xmpp:err_resource_constraint(ErrText, Lang);
 		      _ ->
-			  ErrText = <<"Database failure">>,
+			  ErrText = ?T("Database failure"),
 			  xmpp:err_internal_server_error(ErrText, Lang)
 		  end,
 	    ejabberd_router:route_error(Packet, Err);
@@ -915,18 +917,18 @@ user_queue(User, Server, Query, Lang) ->
     Hdrs = get_messages_subset(User, Server, HdrsAll),
     FMsgs = format_user_queue(Hdrs),
     [?XC(<<"h1">>,
-	 (str:format(?T(<<"~s's Offline Messages Queue">>),
-                                      [us_to_list(US)])))]
-      ++ [?XREST(<<"Submitted">>)] ++
+	 (str:format(translate:translate(Lang, ?T("~s's Offline Messages Queue")),
+		     [us_to_list(US)])))]
+      ++ [?XREST(?T("Submitted"))] ++
 	[?XAE(<<"form">>,
 	      [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
 	      [?XE(<<"table">>,
 		   [?XE(<<"thead">>,
 			[?XE(<<"tr">>,
-			     [?X(<<"td">>), ?XCT(<<"td">>, <<"Time">>),
-			      ?XCT(<<"td">>, <<"From">>),
-			      ?XCT(<<"td">>, <<"To">>),
-			      ?XCT(<<"td">>, <<"Packet">>)])]),
+			     [?X(<<"td">>), ?XCT(<<"td">>, ?T("Time")),
+			      ?XCT(<<"td">>, ?T("From")),
+			      ?XCT(<<"td">>, ?T("To")),
+			      ?XCT(<<"td">>, ?T("Packet"))])]),
 		    ?XE(<<"tbody">>,
 			if FMsgs == [] ->
 			       [?XE(<<"tr">>,
@@ -936,7 +938,7 @@ user_queue(User, Server, Query, Lang) ->
 			end)]),
 	       ?BR,
 	       ?INPUTT(<<"submit">>, <<"delete">>,
-		       <<"Delete Selected">>)])].
+		       ?T("Delete Selected"))])].
 
 user_queue_parse_query(LUser, LServer, Query) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
@@ -994,11 +996,11 @@ webadmin_user(Acc, User, Server, Lang) ->
     FQueueLen = [?AC(<<"queue/">>,
 		     (integer_to_binary(QueueLen)))],
     Acc ++
-      [?XCT(<<"h3">>, <<"Offline Messages:">>)] ++
+      [?XCT(<<"h3">>, ?T("Offline Messages:"))] ++
 	FQueueLen ++
 	  [?C(<<" ">>),
 	   ?INPUTT(<<"submit">>, <<"removealloffline">>,
-		   <<"Remove All Offline Messages">>)].
+		   ?T("Remove All Offline Messages"))].
 
 -spec delete_all_msgs(binary(), binary()) -> {atomic, any()}.
 delete_all_msgs(User, Server) ->

@@ -33,10 +33,9 @@
 	 disco_features/5, mod_options/1]).
 
 -include("logger.hrl").
-
 -include("xmpp.hrl").
-
 -include("mod_privacy.hrl").
+-include("translate.hrl").
 
 start(Host, _Opts) ->
     ejabberd_hooks:add(disco_local_features, Host, ?MODULE, disco_features, 50),
@@ -74,21 +73,21 @@ process_iq(#iq{type = Type,
 	set -> process_iq_set(IQ)
     end;
 process_iq(#iq{lang = Lang} = IQ) ->
-    Txt = <<"Query to another users is forbidden">>,
+    Txt = ?T("Query to another users is forbidden"),
     xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang)).
 
 -spec process_iq_get(iq()) -> iq().
 process_iq_get(#iq{sub_els = [#block_list{}]} = IQ) ->
     process_get(IQ);
 process_iq_get(#iq{lang = Lang} = IQ) ->
-    Txt = <<"No module is handling this query">>,
+    Txt = ?T("No module is handling this query"),
     xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
 -spec process_iq_set(iq()) -> iq().
 process_iq_set(#iq{lang = Lang, sub_els = [SubEl]} = IQ) ->
     case SubEl of
 	#block{items = []} ->
-	    Txt = <<"No items found in this query">>,
+	    Txt = ?T("No items found in this query"),
 	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
 	#block{items = Items} ->
 	    JIDs = [jid:tolower(JID) || #block_item{jid = JID} <- Items],
@@ -99,7 +98,7 @@ process_iq_set(#iq{lang = Lang, sub_els = [SubEl]} = IQ) ->
 	    JIDs = [jid:tolower(JID) || #block_item{jid = JID} <- Items],
 	    process_unblock(IQ, JIDs);
 	_ ->
-	    Txt = <<"No module is handling this query">>,
+	    Txt = ?T("No module is handling this query"),
 	    xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang))
     end.
 
@@ -260,7 +259,7 @@ process_get(#iq{from = #jid{luser = LUser, lserver = LServer}} = IQ) ->
     end.
 
 err_db_failure(#iq{lang = Lang} = IQ) ->
-    Txt = <<"Database failure">>,
+    Txt = ?T("Database failure"),
     xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang)).
 
 mod_options(_Host) ->

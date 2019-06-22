@@ -41,6 +41,7 @@
 
 -include("logger.hrl").
 -include("xmpp.hrl").
+-include("translate.hrl").
 
 -record(state, {server_host = <<"">> :: binary(),
 		permissions = dict:new() :: dict:dict()}).
@@ -104,7 +105,7 @@ process_message(#message{from = #jid{luser = <<"">>, lresource = <<"">>} = From,
 		outgoing ->
 		    forward_message(Msg);
 		_ ->
-		    Txt = <<"Insufficient privilege">>,
+		    Txt = ?T("Insufficient privilege"),
 		    Err = xmpp:err_forbidden(Txt, Lang),
 		    ejabberd_router:route_error(Msg, Err)
 	    end,
@@ -291,12 +292,12 @@ forward_message(#message{to = To} = Msg) ->
 			    ejabberd_router:route(NewMsg);
 			_ ->
 			    Lang = xmpp:get_lang(Msg),
-			    Txt = <<"Invalid 'from' attribute in forwarded message">>,
+			    Txt = ?T("Invalid 'from' attribute in forwarded message"),
 			    Err = xmpp:err_forbidden(Txt, Lang),
 			    ejabberd_router:route_error(Msg, Err)
 		    end;
 		_ ->
-		    Txt = <<"Message not found in forwarded payload">>,
+		    Txt = ?T("Message not found in forwarded payload"),
 		    Err = xmpp:err_bad_request(Txt, Lang),
 		    ejabberd_router:route_error(Msg, Err)
 	    catch _:{xmpp_codec, Why} ->
@@ -305,7 +306,7 @@ forward_message(#message{to = To} = Msg) ->
 		    ejabberd_router:route_error(Msg, Err)
 	    end;
 	_ ->
-	    Txt = <<"No <forwarded/> element found">>,
+	    Txt = ?T("No <forwarded/> element found"),
 	    Err = xmpp:err_bad_request(Txt, Lang),
 	    ejabberd_router:route_error(Msg, Err)
     catch _:{xmpp_codec, Why} ->

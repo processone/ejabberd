@@ -49,6 +49,7 @@
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("xmpp.hrl").
 -include("ejabberd_stacktrace.hrl").
+-include("translate.hrl").
 
 -record(state, {}).
 
@@ -91,7 +92,7 @@ bounce_resource_packet(#message{to = #jid{lresource = <<"">>}, type = headline})
     ok;
 bounce_resource_packet(Packet) ->
     Lang = xmpp:get_lang(Packet),
-    Txt = <<"No available resource found">>,
+    Txt = ?T("No available resource found"),
     Err = xmpp:err_item_not_found(Txt, Lang),
     ejabberd_router:route_error(Packet, Err),
     stop.

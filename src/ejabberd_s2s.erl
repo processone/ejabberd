@@ -56,6 +56,7 @@
 -include("ejabberd_commands.hrl").
 -include_lib("public_key/include/public_key.hrl").
 -include("ejabberd_stacktrace.hrl").
+-include("translate.hrl").
 
 -define(PKIXEXPLICIT, 'OTP-PUB-KEY').
 
@@ -361,10 +362,10 @@ do_route(Packet) ->
 	    Err = case Reason of
 		      policy_violation ->
 			  xmpp:err_policy_violation(
-			    <<"Server connections to local "
-			      "subdomains are forbidden">>, Lang);
+			    ?T("Server connections to local "
+			       "subdomains are forbidden"), Lang);
 		      forbidden ->
-			  xmpp:err_forbidden(<<"Access denied by service policy">>, Lang);
+			  xmpp:err_forbidden(?T("Access denied by service policy"), Lang);
 		      internal_server_error ->
 			  xmpp:err_internal_server_error()
 		  end,

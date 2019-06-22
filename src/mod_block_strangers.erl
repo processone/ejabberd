@@ -36,6 +36,7 @@
 
 -include("xmpp.hrl").
 -include("logger.hrl").
+-include("translate.hrl").
 
 -define(SETS, gb_sets).
 
@@ -117,11 +118,11 @@ filter_subscription(Acc, #presence{from = From, to = To, lang = Lang,
 			    end,
 			    ejabberd_router:route(Msg);
 			{error, limit} ->
-			    ErrText = <<"Too many CAPTCHA requests">>,
+			    ErrText = ?T("Too many CAPTCHA requests"),
 			    Err = xmpp:err_resource_constraint(ErrText, Lang),
 			    ejabberd_router:route_error(Pres, Err);
 			_ ->
-			    ErrText = <<"Unable to generate a CAPTCHA">>,
+			    ErrText = ?T("Unable to generate a CAPTCHA"),
 			    Err = xmpp:err_internal_server_error(ErrText, Lang),
 			    ejabberd_router:route_error(Pres, Err)
 		    end,
@@ -139,7 +140,7 @@ handle_captcha_result(captcha_succeed, Pres) ->
     Pres1 = xmpp:put_meta(Pres, captcha, passed),
     ejabberd_router:route(Pres1);
 handle_captcha_result(captcha_failed, #presence{lang = Lang} = Pres) ->
-    Txt = <<"The CAPTCHA verification has failed">>,
+    Txt = ?T("The CAPTCHA verification has failed"),
     ejabberd_router:route_error(Pres, xmpp:err_not_allowed(Txt, Lang)).
 
 %%%===================================================================
@@ -165,7 +166,7 @@ check_message(#message{from = From, to = To, lang = Lang} = Msg) ->
 		    end,
 		    if
 			Drop ->
-			    Txt = <<"Messages from strangers are rejected">>,
+			    Txt = ?T("Messages from strangers are rejected"),
 			    Err = xmpp:err_policy_violation(Txt, Lang),
 			    Msg1 = maybe_adjust_from(Msg),
 			    ejabberd_router:route_error(Msg1, Err),

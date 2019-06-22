@@ -79,7 +79,7 @@ handle(Component,
 	[{_, Module, Function}] ->
 	    process_iq(Host, Module, Function, Packet);
 	[] ->
-	    Txt = <<"No module is handling this query">>,
+	    Txt = ?T("No module is handling this query"),
 	    Err = xmpp:err_service_unavailable(Txt, Lang),
 	    ejabberd_router:route_error(Packet, Err)
     end;
@@ -114,7 +114,7 @@ process_iq(_Host, Module, Function, IQ) ->
     catch ?EX_RULE(E, R, St) ->
 	    ?ERROR_MSG("failed to process iq:~n~s~nReason = ~p",
 		       [xmpp:pp(IQ), {E, {R, ?EX_STACK(St)}}]),
-	    Txt = <<"Module failed to handle the query">>,
+	    Txt = ?T("Module failed to handle the query"),
 	    Err = xmpp:err_internal_server_error(Txt, IQ#iq.lang),
 	    ejabberd_router:route_error(IQ, Err)
     end.

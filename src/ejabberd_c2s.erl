@@ -52,6 +52,7 @@
 -include("xmpp.hrl").
 -include("logger.hrl").
 -include("mod_roster.hrl").
+-include("translate.hrl").
 
 -define(SETS, gb_sets).
 
@@ -431,7 +432,7 @@ bind(R, #{user := U, server := S, access := Access, lang := Lang,
 		    ejabberd_hooks:run(forbidden_session_hook, LServer, [JID]),
 		    ?WARNING_MSG("(~s) Forbidden c2s session for ~s",
 				 [xmpp_socket:pp(Socket), jid:encode(JID)]),
-		    Txt = <<"Access denied by service policy">>,
+		    Txt = ?T("Access denied by service policy"),
 		    {error, xmpp:err_not_allowed(Txt, Lang), State}
 	    end
     end.
@@ -670,7 +671,7 @@ process_presence_out(#{lserver := LServer, jid := JID,
 		MyBareJID = jid:remove_resource(JID),
 		case acl:match_rule(LServer, Access, MyBareJID) of
 		    deny ->
-			AccessErrTxt = <<"Access denied by service policy">>,
+			AccessErrTxt = ?T("Access denied by service policy"),
 			AccessErr = xmpp:err_forbidden(AccessErrTxt, Lang),
 			send_error(State0, Pres, AccessErr);
 		    allow ->
@@ -682,8 +683,8 @@ process_presence_out(#{lserver := LServer, jid := JID,
 	end,
     case privacy_check_packet(State1, Pres, out) of
 	deny ->
-	    PrivErrTxt = <<"Your active privacy list has denied "
-			   "the routing of this stanza.">>,
+	    PrivErrTxt = ?T("Your active privacy list has denied "
+			    "the routing of this stanza."),
 	    PrivErr = xmpp:err_not_acceptable(PrivErrTxt, Lang),
 	    send_error(State1, Pres, PrivErr);
 	allow when Type == subscribe; Type == subscribed;
@@ -827,8 +828,8 @@ broadcast_presence_available(#{jid := JID} = State,
 check_privacy_then_route(#{lang := Lang} = State, Pkt) ->
     case privacy_check_packet(State, Pkt, out) of
         deny ->
-            ErrText = <<"Your active privacy list has denied "
-			"the routing of this stanza.">>,
+            ErrText = ?T("Your active privacy list has denied "
+			 "the routing of this stanza."),
 	    Err = xmpp:err_not_acceptable(ErrText, Lang),
 	    send_error(State, Pkt, Err);
         allow ->

@@ -37,6 +37,8 @@
 
 -include("xmpp.hrl").
 
+-include("translate.hrl").
+
 %% API
 -export([start_ping/2, stop_ping/2]).
 
@@ -169,7 +171,7 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 iq_ping(#iq{type = get, sub_els = [#ping{}]} = IQ) ->
     xmpp:make_iq_result(IQ);
 iq_ping(#iq{lang = Lang} = IQ) ->
-    Txt = <<"Ping query is incorrect">>,
+    Txt = ?T("Ping query is incorrect"),
     xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang)).
 
 -spec user_online(ejabberd_sm:sid(), jid(), ejabberd_sm:info()) -> ok.

@@ -404,7 +404,7 @@ do_route(Host, ServerHost, Access, HistorySize, RoomShaper,
 		      From, To, Packet, DefRoomOpts, QueueType);
 	deny ->
 	    Lang = xmpp:get_lang(Packet),
-	    ErrText = <<"Access denied by service policy">>,
+	    ErrText = ?T("Access denied by service policy"),
 	    Err = xmpp:err_forbidden(ErrText, Lang),
 	    ejabberd_router:route_error(Packet, Err)
     end.
@@ -425,8 +425,8 @@ do_route1(Host, ServerHost, Access, _HistorySize, _RoomShaper,
 		    Msg = xmpp:get_text(Body),
 		    broadcast_service_message(ServerHost, Host, Msg);
 		deny ->
-		    ErrText = <<"Only service administrators are allowed "
-				"to send service messages">>,
+		    ErrText = ?T("Only service administrators are allowed "
+				 "to send service messages"),
 		    Err = xmpp:err_forbidden(ErrText, Lang),
 		    ejabberd_router:route_error(Packet, Err)
 	    end
@@ -456,13 +456,13 @@ do_route1(Host, ServerHost, Access, HistorySize, RoomShaper,
 			    ok;
 			false ->
 			    Lang = xmpp:get_lang(Packet),
-			    ErrText = <<"Room creation is denied by service policy">>,
+			    ErrText = ?T("Room creation is denied by service policy"),
 			    Err = xmpp:err_forbidden(ErrText, Lang),
 			    ejabberd_router:route_error(Packet, Err)
 		    end;
 		false ->
 		    Lang = xmpp:get_lang(Packet),
-		    ErrText = <<"Conference room does not exist">>,
+		    ErrText = ?T("Conference room does not exist"),
 		    Err = xmpp:err_item_not_found(ErrText, Lang),
 		    ejabberd_router:route_error(Packet, Err)
 	    end;
@@ -479,10 +479,10 @@ process_vcard(#iq{type = get, lang = Lang, sub_els = [#vcard_temp{}]} = IQ) ->
 		      url = ejabberd_config:get_uri(),
 		      desc = misc:get_descr(Lang, ?T("ejabberd MUC module"))});
 process_vcard(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_vcard(#iq{lang = Lang} = IQ) ->
-    Txt = <<"No module is handling this query">>,
+    Txt = ?T("No module is handling this query"),
     xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
 -spec process_register(iq()) -> iq().
@@ -506,14 +506,14 @@ process_register(#iq{type = Type, from = From, to = To, lang = Lang,
 		    end
 	    end;
 	deny ->
-	    ErrText = <<"Access denied by service policy">>,
+	    ErrText = ?T("Access denied by service policy"),
 	    Err = xmpp:err_forbidden(ErrText, Lang),
 	    xmpp:make_error(IQ, Err)
     end.
 
 -spec process_disco_info(iq()) -> iq().
 process_disco_info(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_disco_info(#iq{type = get, from = From, to = To, lang = Lang,
 		       sub_els = [#disco_info{node = <<"">>}]} = IQ) ->
@@ -547,14 +547,14 @@ process_disco_info(#iq{type = get, from = From, to = To, lang = Lang,
 		      xdata = X});
 process_disco_info(#iq{type = get, lang = Lang,
 		       sub_els = [#disco_info{}]} = IQ) ->
-    xmpp:make_error(IQ, xmpp:err_item_not_found(<<"Node not found">>, Lang));
+    xmpp:make_error(IQ, xmpp:err_item_not_found(?T("Node not found"), Lang));
 process_disco_info(#iq{lang = Lang} = IQ) ->
-    Txt = <<"No module is handling this query">>,
+    Txt = ?T("No module is handling this query"),
     xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
 -spec process_disco_items(iq()) -> iq().
 process_disco_items(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_disco_items(#iq{type = get, from = From, to = To, lang = Lang,
 			sub_els = [#disco_items{node = Node, rsm = RSM}]} = IQ) ->
@@ -569,12 +569,12 @@ process_disco_items(#iq{type = get, from = From, to = To, lang = Lang,
 	    xmpp:make_iq_result(IQ, Result)
     end;
 process_disco_items(#iq{lang = Lang} = IQ) ->
-    Txt = <<"No module is handling this query">>,
+    Txt = ?T("No module is handling this query"),
     xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
 -spec process_muc_unique(iq()) -> iq().
 process_muc_unique(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_muc_unique(#iq{from = From, type = get,
 		       sub_els = [#muc_unique{}]} = IQ) ->
@@ -584,7 +584,7 @@ process_muc_unique(#iq{from = From, type = get,
 
 -spec process_mucsub(iq()) -> iq().
 process_mucsub(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_mucsub(#iq{type = get, from = From, to = To, lang = Lang,
 		   sub_els = [#muc_subscriptions{}]} = IQ) ->
@@ -596,11 +596,11 @@ process_mucsub(#iq{type = get, from = From, to = To, lang = Lang,
 		    || {JID, Nodes} <- Subs],
 	    xmpp:make_iq_result(IQ, #muc_subscriptions{list = List});
 	{error, _} ->
-	    Txt = <<"Database failure">>,
+	    Txt = ?T("Database failure"),
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
     end;
 process_mucsub(#iq{lang = Lang} = IQ) ->
-    Txt = <<"No module is handling this query">>,
+    Txt = ?T("No module is handling this query"),
     xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
 -spec is_create_request(stanza()) -> boolean().
@@ -733,7 +733,7 @@ iq_disco_items(ServerHost, Host, From, Lang, MaxRoomsDiscoItems, Node, RSM)
 	     end,
     {result, #disco_items{node = Node, items = Items, rsm = ResRSM}};
 iq_disco_items(_ServerHost, _Host, _From, Lang, _MaxRoomsDiscoItems, _Node, _RSM) ->
-    {error, xmpp:err_item_not_found(<<"Node not found">>, Lang)}.
+    {error, xmpp:err_item_not_found(?T("Node not found"), Lang)}.
 
 -spec get_room_disco_item({binary(), binary(), pid()},
 			  term()) -> {ok, disco_item()} |
@@ -807,8 +807,8 @@ iq_get_register_info(ServerHost, Host, From, Lang) ->
 			     N -> {N, true}
 			 end,
     Title = <<(translate:translate(
-		 Lang, <<"Nickname Registration at ">>))/binary, Host/binary>>,
-    Inst = translate:translate(Lang, <<"Enter nickname you want to register">>),
+		 Lang, ?T("Nickname Registration at ")))/binary, Host/binary>>,
+    Inst = translate:translate(Lang, ?T("Enter nickname you want to register")),
     Fields = muc_register:encode([{roomnick, Nick}], Lang),
     X = #xdata{type = form, title = Title,
 	       instructions = [Inst], fields = Fields},
@@ -816,8 +816,8 @@ iq_get_register_info(ServerHost, Host, From, Lang) ->
 	      registered = Registered,
 	      instructions =
 		  translate:translate(
-		    Lang, <<"You need a client that supports x:data "
-			    "to register the nickname">>),
+		    Lang, ?T("You need a client that supports x:data "
+			     "to register the nickname")),
 	      xdata = X}.
 
 set_nick(ServerHost, Host, From, Nick) ->
@@ -830,11 +830,10 @@ iq_set_register_info(ServerHost, Host, From, Nick,
     case set_nick(ServerHost, Host, From, Nick) of
       {atomic, ok} -> {result, undefined};
       {atomic, false} ->
-	  ErrText = <<"That nickname is registered by another "
-		      "person">>,
+	  ErrText = ?T("That nickname is registered by another person"),
 	  {error, xmpp:err_conflict(ErrText, Lang)};
       _ ->
-	  Txt = <<"Database failure">>,
+	  Txt = ?T("Database failure"),
 	  {error, xmpp:err_internal_server_error(Txt, Lang)}
     end.
 
@@ -857,12 +856,12 @@ process_iq_register_set(ServerHost, Host, From,
 		    {error, xmpp:err_bad_request(ErrText, Lang)}
 	    end;
 	#xdata{} ->
-	    Txt = <<"Incorrect data form">>,
+	    Txt = ?T("Incorrect data form"),
 	    {error, xmpp:err_bad_request(Txt, Lang)};
 	_ when is_binary(Nick), Nick /= <<"">> ->
 	    iq_set_register_info(ServerHost, Host, From, Nick, Lang);
 	_ ->
-	    ErrText = <<"You must fill in field \"Nickname\" in the form">>,
+	    ErrText = ?T("You must fill in field \"Nickname\" in the form"),
 	    {error, xmpp:err_not_acceptable(ErrText, Lang)}
     end.
 

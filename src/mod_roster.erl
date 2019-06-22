@@ -59,6 +59,7 @@
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
 -include("ejabberd_stacktrace.hrl").
+-include("translate.hrl").
 
 -define(ROSTER_CACHE, roster_cache).
 -define(ROSTER_ITEM_CACHE, roster_item_cache).
@@ -151,7 +152,7 @@ process_iq(#iq{lang = Lang, to = To} = IQ) ->
     case ejabberd_hooks:run_fold(roster_remote_access,
 				 To#jid.lserver, false, [IQ]) of
 	false ->
-	    Txt = <<"Query to another users is forbidden">>,
+	    Txt = ?T("Query to another users is forbidden"),
 	    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang));
 	true ->
 	    process_local_iq(IQ)
@@ -161,21 +162,21 @@ process_local_iq(#iq{type = set,lang = Lang,
 		     sub_els = [#roster_query{
 				   items = [#roster_item{ask = Ask}]}]} = IQ)
   when Ask /= undefined ->
-    Txt = <<"Possessing 'ask' attribute is not allowed by RFC6121">>,
+    Txt = ?T("Possessing 'ask' attribute is not allowed by RFC6121"),
     xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
 process_local_iq(#iq{type = set, from = From, lang = Lang,
 		     sub_els = [#roster_query{
 				   items = [#roster_item{} = Item]}]} = IQ) ->
     case has_duplicated_groups(Item#roster_item.groups) of
 	true ->
-	    Txt = <<"Duplicated groups are not allowed by RFC6121">>,
+	    Txt = ?T("Duplicated groups are not allowed by RFC6121"),
 	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
 	false ->
 	    #jid{lserver = LServer} = From,
 	    Access = mod_roster_opt:access(LServer),
 	    case acl:match_rule(LServer, Access, From) of
 		deny ->
-		    Txt = <<"Access denied by service policy">>,
+		    Txt = ?T("Access denied by service policy"),
 		    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 		allow ->
 		    process_iq_set(IQ)
@@ -183,7 +184,7 @@ process_local_iq(#iq{type = set, from = From, lang = Lang,
     end;
 process_local_iq(#iq{type = set, lang = Lang,
 		     sub_els = [#roster_query{items = [_|_]}]} = IQ) ->
-    Txt = <<"Multiple <item/> elements are not allowed by RFC6121">>,
+    Txt = ?T("Multiple <item/> elements are not allowed by RFC6121"),
     xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
 process_local_iq(#iq{type = get, lang = Lang,
 		     sub_els = [#roster_query{items = Items}]} = IQ) ->
@@ -191,11 +192,11 @@ process_local_iq(#iq{type = get, lang = Lang,
 	[] ->
 	    process_iq_get(IQ);
 	[_|_] ->
-	    Txt = <<"The query must not contain <item/> elements">>,
+	    Txt = ?T("The query must not contain <item/> elements"),
 	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang))
     end;
 process_local_iq(#iq{lang = Lang} = IQ) ->
-    Txt = <<"No module is handling this query">>,
+    Txt = ?T("No module is handling this query"),
     xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
 roster_hash(Items) ->
@@ -322,7 +323,7 @@ process_iq_get(#iq{to = To, lang = Lang,
     catch ?EX_RULE(E, R, St) ->
 	    ?ERROR_MSG("failed to process roster get for ~s: ~p",
 		       [jid:encode(To), {E, {R, ?EX_STACK(St)}}]),
-	    Txt = <<"Roster module has failed">>,
+	    Txt = ?T("Roster module has failed"),
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
     end.
 
@@ -926,16 +927,16 @@ user_roster(User, Server, Query, Lang) ->
     Items = get_roster(LUser, LServer),
     SItems = lists:sort(Items),
     FItems = case SItems of
-	       [] -> [?CT(<<"None">>)];
+	       [] -> [?CT(?T("None"))];
 	       _ ->
 		   [?XE(<<"table">>,
 			[?XE(<<"thead">>,
 			     [?XE(<<"tr">>,
-				  [?XCT(<<"td">>, <<"Jabber ID">>),
-				   ?XCT(<<"td">>, <<"Nickname">>),
-				   ?XCT(<<"td">>, <<"Subscription">>),
-				   ?XCT(<<"td">>, <<"Pending">>),
-				   ?XCT(<<"td">>, <<"Groups">>)])]),
+				  [?XCT(<<"td">>, ?T("Jabber ID")),
+				   ?XCT(<<"td">>, ?T("Nickname")),
+				   ?XCT(<<"td">>, ?T("Subscription")),
+				   ?XCT(<<"td">>, ?T("Pending")),
+				   ?XCT(<<"td">>, ?T("Groups"))])]),
 			 ?XE(<<"tbody">>,
 			     (lists:map(fun (R) ->
 						Groups = lists:flatmap(fun
@@ -973,7 +974,7 @@ user_roster(User, Server, Query, Lang) ->
 								 [?INPUTT(<<"submit">>,
 									  <<"validate",
 									    (ejabberd_web_admin:term_to_id(R#roster.jid))/binary>>,
-									  <<"Validate">>)]);
+									  ?T("Validate"))]);
 							true -> ?X(<<"td">>)
 						     end,
 						     ?XAE(<<"td">>,
@@ -982,16 +983,16 @@ user_roster(User, Server, Query, Lang) ->
 							  [?INPUTT(<<"submit">>,
 								   <<"remove",
 								     (ejabberd_web_admin:term_to_id(R#roster.jid))/binary>>,
-								   <<"Remove">>)])])
+								   ?T("Remove"))])])
 					end,
 					SItems)))])]
 	     end,
     [?XC(<<"h1">>,
-	 (<<(?T(<<"Roster of ">>))/binary, (us_to_list(US))/binary>>))]
+	 (<<(translate:translate(Lang, ?T("Roster of ")))/binary, (us_to_list(US))/binary>>))]
       ++
       case Res of
-	ok -> [?XREST(<<"Submitted">>)];
-	error -> [?XREST(<<"Bad format">>)];
+	ok -> [?XREST(?T("Submitted"))];
+	error -> [?XREST(?T("Bad format"))];
 	nothing -> []
       end
 	++
@@ -1001,7 +1002,7 @@ user_roster(User, Server, Query, Lang) ->
 		 [?P, ?INPUT(<<"text">>, <<"newjid">>, <<"">>),
 		  ?C(<<" ">>),
 		  ?INPUTT(<<"submit">>, <<"addjid">>,
-			  <<"Add Jabber ID">>)]))].
+			  ?T("Add Jabber ID"))]))].
 
 build_contact_jid_td(RosterJID) ->
     ContactJID = jid:make(RosterJID),
@@ -1101,7 +1102,7 @@ us_to_list({User, Server}) ->
 
 webadmin_user(Acc, _User, _Server, Lang) ->
     Acc ++
-      [?XE(<<"h3">>, [?ACT(<<"roster/">>, <<"Roster">>)])].
+      [?XE(<<"h3">>, [?ACT(<<"roster/">>, ?T("Roster"))])].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 has_duplicated_groups(Groups) ->

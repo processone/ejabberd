@@ -38,11 +38,10 @@
 	 register_user/2, depends/2, privacy_check_packet/4]).
 
 -include("logger.hrl").
-
 -include("xmpp.hrl").
-
 -include("mod_privacy.hrl").
 -include("mod_last.hrl").
+-include("translate.hrl").
 
 -define(LAST_CACHE, last_activity_cache).
 
@@ -104,7 +103,7 @@ reload(Host, NewOpts, OldOpts) ->
 
 -spec process_local_iq(iq()) -> iq().
 process_local_iq(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_local_iq(#iq{type = get} = IQ) ->
     xmpp:make_iq_result(IQ, #last{seconds = get_node_uptime()}).
@@ -122,7 +121,7 @@ get_node_uptime() ->
 
 -spec process_sm_iq(iq()) -> iq().
 process_sm_iq(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_sm_iq(#iq{from = From, to = To, lang = Lang} = IQ) ->
     User = To#jid.luser,
@@ -141,7 +140,7 @@ process_sm_iq(#iq{from = From, to = To, lang = Lang} = IQ) ->
 		deny -> xmpp:make_error(IQ, xmpp:err_forbidden())
 	    end;
        true ->
-	    Txt = <<"Not subscribed">>,
+	    Txt = ?T("Not subscribed"),
 	    xmpp:make_error(IQ, xmpp:err_subscription_required(Txt, Lang))
     end.
 
@@ -197,10 +196,10 @@ get_last_iq(#iq{lang = Lang} = IQ, LUser, LServer) ->
       [] ->
 	  case get_last(LUser, LServer) of
 	    {error, _Reason} ->
-		Txt = <<"Database failure">>,
+		Txt = ?T("Database failure"),
 		xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang));
 	    not_found ->
-		Txt = <<"No info about last activity found">>,
+		Txt = ?T("No info about last activity found"),
 		xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang));
 	    {ok, TimeStamp, Status} ->
 		TimeStamp2 = erlang:system_time(second),

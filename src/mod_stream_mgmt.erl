@@ -39,6 +39,7 @@
 -include("xmpp.hrl").
 -include("logger.hrl").
 -include("p1_queue.hrl").
+-include("translate.hrl").
 
 -define(STREAM_MGMT_CACHE, stream_mgmt_cache).
 
@@ -131,7 +132,7 @@ c2s_unauthenticated_packet(#{lang := Lang} = State, Pkt) when ?is_sm_packet(Pkt)
     %% says: "Stream management errors SHOULD be considered recoverable", so we
     %% won't bail out.
     Err = #sm_failed{reason = 'not-authorized',
-		     text = xmpp:mk_text(<<"Unauthorized">>, Lang),
+		     text = xmpp:mk_text(?T("Unauthorized"), Lang),
 		     xmlns = ?NS_STREAM_MGMT_3},
     {stop, send(State, Err)};
 c2s_unauthenticated_packet(State, _Pkt) ->
@@ -195,7 +196,7 @@ c2s_handle_send(#{mgmt_state := MgmtState, mod := Mod,
 			#{mgmt_max_queue := exceeded} = State2 ->
 			    State3 = State2#{mgmt_resend => false},
 			    Err = xmpp:serr_policy_violation(
-				    <<"Too many unacked stanzas">>, Lang),
+				    ?T("Too many unacked stanzas"), Lang),
 			    send(State3, Err);
 			State2 when SendResult == ok ->
 			    send_rack(State2);
@@ -224,7 +225,7 @@ c2s_handle_call(#{sid := {Time, _}, mod := Mod, mgmt_queue := Queue} = State,
     Mod:reply(From, {resume, State1}),
     {stop, State#{mgmt_state => resumed}};
 c2s_handle_call(#{mod := Mod} = State, {resume_session, _}, From) ->
-    Mod:reply(From, {error, <<"Previous session not found">>}),
+    Mod:reply(From, {error, ?T("Previous session not found")}),
     {stop, State};
 c2s_handle_call(State, _Call, _From) ->
     State.
@@ -240,7 +241,7 @@ c2s_handle_info(#{mgmt_state := pending, lang := Lang,
 		{timeout, TRef, pending_timeout}) ->
     ?DEBUG("Timed out waiting for resumption of stream for ~s",
 	   [jid:encode(JID)]),
-    Txt = <<"Timed out waiting for stream resumption">>,
+    Txt = ?T("Timed out waiting for stream resumption"),
     Err = xmpp:serr_connection_timeout(Txt, Lang),
     Mod:stop(State#{mgmt_state => timeout,
 		    stop_reason => {stream, {out, Err}}});
@@ -320,7 +321,7 @@ negotiate_stream_mgmt(Pkt, #{lang := Lang} = State) ->
 	_ when is_record(Pkt, sm_a);
 	       is_record(Pkt, sm_r);
 	       is_record(Pkt, sm_resume) ->
-	    Txt = <<"Stream management is not enabled">>,
+	    Txt = ?T("Stream management is not enabled"),
 	    Err = #sm_failed{reason = 'unexpected-request',
 			     text = xmpp:mk_text(Txt, Lang),
 			     xmlns = Xmlns},
@@ -338,13 +339,13 @@ perform_stream_mgmt(Pkt, #{mgmt_xmlns := Xmlns, lang := Lang} = State) ->
 		    handle_a(State, Pkt);
 		_ when is_record(Pkt, sm_enable);
 		       is_record(Pkt, sm_resume) ->
-		    Txt = <<"Stream management is already enabled">>,
+		    Txt = ?T("Stream management is already enabled"),
 		    send(State, #sm_failed{reason = 'unexpected-request',
 					   text = xmpp:mk_text(Txt, Lang),
 					   xmlns = Xmlns})
 	    end;
 	_ ->
-	    Txt = <<"Unsupported version">>,
+	    Txt = ?T("Unsupported version"),
 	    send(State, #sm_failed{reason = 'unexpected-request',
 				   text = xmpp:mk_text(Txt, Lang),
 				   xmlns = Xmlns})
@@ -448,7 +449,7 @@ check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut, jid := JID,
 		 [jid:encode(JID), H, NumStanzasOut]),
     State1 = State#{mgmt_resend => false},
     Err = xmpp:serr_undefined_condition(
-	    <<"Client acknowledged more stanzas than sent by server">>, Lang),
+	    ?T("Client acknowledged more stanzas than sent by server"), Lang),
     send(State1, Err);
 check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut, jid := JID} = State, H) ->
     ?DEBUG("~s acknowledged ~B of ~B stanzas",
@@ -573,7 +574,7 @@ route_unacked_stanzas(#{mgmt_state := MgmtState,
       fun({_, _Time, #presence{from = From}}) ->
 	      ?DEBUG("Dropping presence stanza from ~s", [jid:encode(From)]);
 	 ({_, _Time, #iq{} = El}) ->
-	      Txt = <<"User session terminated">>,
+	      Txt = ?T("User session terminated"),
 	      ejabberd_router:route_error(
 		El, xmpp:err_service_unavailable(Txt, Lang));
 	 ({_, _Time, #message{from = From, meta = #{carbon_copy := true}}}) ->
@@ -595,7 +596,7 @@ route_unacked_stanzas(#{mgmt_state := MgmtState,
 		      NewEl = add_resent_delay_info(State, Msg, Time),
 		      ejabberd_router:route(NewEl);
 		  false ->
-		      Txt = <<"User session terminated">>,
+		      Txt = ?T("User session terminated"),
 		      ejabberd_router:route_error(
 			Msg, xmpp:err_service_unavailable(Txt, Lang))
 	      end;
@@ -618,9 +619,9 @@ inherit_session_state(#{user := U, server := S,
 		none ->
 		    case pop_stanzas_in({U, S, R}, Time) of
 			error ->
-			    {error, <<"Previous session PID not found">>};
+			    {error, ?T("Previous session PID not found")};
 			{ok, H} ->
-			    {error, <<"Previous session timed out">>, H}
+			    {error, ?T("Previous session timed out"), H}
 		    end;
 		OldPID ->
 		    OldSID = {Time, OldPID},
@@ -648,19 +649,19 @@ inherit_session_state(#{user := U, server := S,
 			{error, Msg} ->
 			    {error, Msg}
 		    catch exit:{noproc, _} ->
-			    {error, <<"Previous session PID is dead">>};
+			    {error, ?T("Previous session PID is dead")};
 			  exit:{normal, _} ->
-			    {error, <<"Previous session PID has exited">>};
+			    {error, ?T("Previous session PID has exited")};
 			  exit:{killed, _} ->
-			    {error, <<"Previous session PID has been killed">>};
+			    {error, ?T("Previous session PID has been killed")};
 			  exit:{timeout, _} ->
 			    ejabberd_sm:close_session(OldSID, U, S, R),
 			    ejabberd_c2s:stop(OldPID),
-			    {error, <<"Session state copying timed out">>}
+			    {error, ?T("Session state copying timed out")}
 		    end
 	    end;
 	_ ->
-	    {error, <<"Invalid 'previd' value">>}
+	    {error, ?T("Invalid 'previd' value")}
     end.
 
 -spec resume_session({erlang:timestamp(), pid()}, state()) -> {resume, state()} |

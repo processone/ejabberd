@@ -36,6 +36,7 @@
 
 -include("logger.hrl").
 -include("xmpp.hrl").
+-include("translate.hrl").
 
 start(Host, _Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_STATS,
@@ -51,7 +52,7 @@ depends(_Host, _Opts) ->
     [].
 
 process_iq(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_iq(#iq{type = get, to = To, lang = Lang,
 	       sub_els = [#stats{} = Stats]} = IQ) ->
@@ -89,7 +90,7 @@ get_local_stats(_Server, [<<"running nodes">>, ENode],
 		Names, Lang) ->
     case search_running_node(ENode) of
       false ->
-	    Txt = <<"No running node found">>,
+	    Txt = ?T("No running node found"),
 	    {error, xmpp:err_item_not_found(Txt, Lang)};
       Node ->
 	  {result,
@@ -97,7 +98,7 @@ get_local_stats(_Server, [<<"running nodes">>, ENode],
 		     Names)}
     end;
 get_local_stats(_Server, _, _, Lang) ->
-    Txt = <<"No statistics found for this item">>,
+    Txt = ?T("No statistics found for this item"),
     {error, xmpp:err_feature_not_implemented(Txt, Lang)}.
 
 -define(STATVAL(Val, Unit), #stat{name = Name, units = Unit, value = Val}).

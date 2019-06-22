@@ -44,6 +44,7 @@
 
 -include("logger.hrl").
 -include("xmpp.hrl").
+-include("translate.hrl").
 
 -type direction() :: sent | received.
 -type c2s_state() :: ejabberd_c2s:state().
@@ -102,14 +103,14 @@ iq_handler(#iq{type = set, lang = Lang, from = From,
 	ok ->
 	    xmpp:make_iq_result(IQ);
 	{error, _} ->
-	    Txt = <<"Database failure">>,
+	    Txt = ?T("Database failure"),
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
     end;
 iq_handler(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Only <enable/> or <disable/> tags are allowed">>,
+    Txt = ?T("Only <enable/> or <disable/> tags are allowed"),
     xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
 iq_handler(#iq{type = get, lang = Lang} = IQ)->
-    Txt = <<"Value 'get' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'get' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang)).
 
 -spec user_send_packet({stanza(), ejabberd_c2s:state()})

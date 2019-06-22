@@ -814,7 +814,7 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%--------------------------------------------------------------------
 -spec process_disco_info(iq()) -> iq().
 process_disco_info(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_disco_info(#iq{from = From, to = To, lang = Lang, type = get,
 		       sub_els = [#disco_info{node = Node}]} = IQ) ->
@@ -833,7 +833,7 @@ process_disco_info(#iq{from = From, to = To, lang = Lang, type = get,
 
 -spec process_disco_items(iq()) -> iq().
 process_disco_items(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_disco_items(#iq{type = get, from = From, to = To,
                         sub_els = [#disco_items{node = Node} = SubEl]} = IQ) ->
@@ -871,7 +871,7 @@ process_pubsub_owner(#iq{to = To} = IQ) ->
 process_vcard(#iq{type = get, lang = Lang} = IQ) ->
     xmpp:make_iq_result(IQ, iq_get_vcard(Lang));
 process_vcard(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang)).
 
 -spec process_commands(iq()) -> iq().
@@ -889,7 +889,7 @@ process_commands(#iq{type = set, to = To, from = From,
 	      IQ, xmpp_util:make_adhoc_response(Request, Response))
     end;
 process_commands(#iq{type = get, lang = Lang} = IQ) ->
-    Txt = <<"Value 'get' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'get' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang)).
 
 -spec do_route(binary(), stanza()) -> ok.
@@ -1015,7 +1015,7 @@ iq_disco_items(Host, ?NS_COMMANDS, _From, _RSM) ->
     {result,
      #disco_items{items = [#disco_item{jid = jid:make(Host),
 				       node = ?NS_PUBSUB_GET_PENDING,
-				       name = <<"Get Pending">>}]}};
+				       name = ?T("Get Pending")}]}};
 iq_disco_items(_Host, ?NS_PUBSUB_GET_PENDING, _From, _RSM) ->
     {result, #disco_items{}};
 iq_disco_items(Host, Item, From, RSM) ->
@@ -1139,10 +1139,10 @@ iq_pubsub(Host, Access, #iq{from = From, type = IQType, lang = Lang,
 			 #ps_options{xdata = XData, jid = undefined, node = <<>>} ->
 			     decode_subscribe_options(XData, Lang);
 			 #ps_options{xdata = _XData, jid = #jid{}} ->
-			     Txt = <<"Attribute 'jid' is not allowed here">>,
+			     Txt = ?T("Attribute 'jid' is not allowed here"),
 			     {error, xmpp:err_bad_request(Txt, Lang)};
 			 #ps_options{xdata = _XData} ->
-			     Txt = <<"Attribute 'node' is not allowed here">>,
+			     Txt = ?T("Attribute 'node' is not allowed here"),
 			     {error, xmpp:err_bad_request(Txt, Lang)};
 			 _ ->
 			     []
@@ -1202,7 +1202,7 @@ iq_pubsub_owner(Host, #iq{type = IQType, from = From,
 	{set, #pubsub_owner{configure = {Node, XData}, _ = undefined}} ->
 	    case XData of
 		undefined ->
-		    {error, xmpp:err_bad_request(<<"No data form found">>, Lang)};
+		    {error, xmpp:err_bad_request(?T("No data form found"), Lang)};
 		#xdata{type = cancel} ->
 		    {result, #pubsub_owner{}};
 		#xdata{type = submit} ->
@@ -1213,7 +1213,7 @@ iq_pubsub_owner(Host, #iq{type = IQType, from = From,
 			    set_configure(Host, Node, From, Config, Lang)
 		    end;
 		#xdata{} ->
-		    {error, xmpp:err_bad_request(<<"Incorrect data form">>, Lang)}
+		    {error, xmpp:err_bad_request(?T("Incorrect data form"), Lang)}
 	    end;
 	{get, #pubsub_owner{default = {Node, undefined}, _ = undefined}} ->
 	    get_default(Host, Node, From, Lang);
@@ -1321,7 +1321,7 @@ send_pending_auth_events(Host, Node, Owner, Lang) ->
 				node_call(Host, Type, get_node_subscriptions, [Nidx]);
 			    _ ->
 				{error, xmpp:err_forbidden(
-					  <<"Owner privileges required">>, Lang)}
+					  ?T("Owner privileges required"), Lang)}
 			end;
 		    false ->
 			{error, extended_error(xmpp:err_feature_not_implemented(),
@@ -1353,11 +1353,11 @@ send_authorization_request(#pubsub_node{nodeid = {Host, Node},
 	   Lang),
     X = #xdata{type = form,
 	       title = translate:translate(
-			 Lang, <<"PubSub subscriber request">>),
+			 Lang, ?T("PubSub subscriber request")),
 	       instructions = [translate:translate(
 				 Lang,
-				 <<"Choose whether to approve this entity's "
-				   "subscription.">>)],
+				 ?T("Choose whether to approve this entity's "
+				    "subscription."))],
 	       fields = Fs},
     Stanza = #message{from = service_jid(Host), sub_els = [X]},
     lists:foreach(
@@ -1412,7 +1412,7 @@ handle_authorization_response(Host, #message{from = From} = Packet, Response) ->
 			{result, Subs} = node_call(Host, Type, get_subscriptions, [Nidx, Subscriber]),
 			update_auth(Host, Node, Type, Nidx, Subscriber, Allow, Subs);
 		    false ->
-			{error, xmpp:err_forbidden(<<"Owner privileges required">>, Lang)}
+			{error, xmpp:err_forbidden(?T("Owner privileges required"), Lang)}
 		end
 	end,
     case transaction(Host, Node, Action, sync_dirty) of
@@ -1444,7 +1444,7 @@ update_auth(Host, Node, Type, Nidx, Subscriber, Allow, Subs) ->
 	    send_authorization_approval(Host, Subscriber, Node, NewSub),
 	    {result, ok};
 	_ ->
-	    Txt = <<"No pending subscriptions found">>,
+	    Txt = ?T("No pending subscriptions found"),
 	    {error, xmpp:err_unexpected_request(Txt, ejabberd_option:language())}
     end.
 
@@ -1524,7 +1524,7 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 				Error
 			end;
 		    _ ->
-			Txt = <<"You're not allowed to create nodes">>,
+			Txt = ?T("You're not allowed to create nodes"),
 			{error, xmpp:err_forbidden(Txt, ejabberd_option:language())}
 		end
 	end,
@@ -1561,7 +1561,7 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 %%</ul>
 -spec delete_node(host(), binary(), jid()) -> {result, pubsub_owner()} | {error, stanza_error()}.
 delete_node(_Host, <<>>, _Owner) ->
-    {error, xmpp:err_not_allowed(<<"No node specified">>, ejabberd_option:language())};
+    {error, xmpp:err_not_allowed(?T("No node specified"), ejabberd_option:language())};
 delete_node(Host, Node, Owner) ->
     Action = fun (#pubsub_node{type = Type, id = Nidx}) ->
 	    case node_call(Host, Type, get_affiliation, [Nidx, Owner]) of
@@ -1573,7 +1573,7 @@ delete_node(Host, Node, Owner) ->
 			Error -> Error
 		    end;
 		_ ->
-		    {error, xmpp:err_forbidden(<<"Owner privileges required">>, ejabberd_option:language())}
+		    {error, xmpp:err_forbidden(?T("Owner privileges required"), ejabberd_option:language())}
 	    end
     end,
     Reply = undefined,
@@ -1865,7 +1865,7 @@ publish_item(Host, ServerHost, Node, Publisher, ItemId, Payload, PubOpts, Access
 			    {error, xmpp:err_item_not_found()}
 		    end;
 		false ->
-		    Txt = <<"Automatic node creation is not enabled">>,
+		    Txt = ?T("Automatic node creation is not enabled"),
 		    {error, xmpp:err_item_not_found(Txt, ejabberd_option:language())}
 	    end;
 	Error ->
@@ -2147,7 +2147,7 @@ get_affiliations(Host, Node, JID) ->
 			{error, extended_error(xmpp:err_feature_not_implemented(),
 					       err_unsupported('modify-affiliations'))};
 		   Affiliation /= owner ->
-			{error, xmpp:err_forbidden(<<"Owner privileges required">>, ejabberd_option:language())};
+			{error, xmpp:err_forbidden(?T("Owner privileges required"), ejabberd_option:language())};
 		   true ->
 			node_call(Host, Type, get_node_affiliations, [Nidx])
 		end
@@ -2213,7 +2213,7 @@ set_affiliations(Host, Node, From, Affs) ->
 			{result, undefined};
 		    _ ->
 			{error, xmpp:err_forbidden(
-				  <<"Owner privileges required">>, ejabberd_option:language())}
+				  ?T("Owner privileges required"), ejabberd_option:language())}
 		end
 	end,
     case transaction(Host, Node, Action, sync_dirty) of
@@ -2410,7 +2410,7 @@ get_subscriptions(Host, Node, JID) ->
 		    {error, extended_error(xmpp:err_feature_not_implemented(),
 					   err_unsupported('manage-subscriptions'))};
 		Affiliation /= owner ->
-		    {error, xmpp:err_forbidden(<<"Owner privileges required">>, ejabberd_option:language())};
+		    {error, xmpp:err_forbidden(?T("Owner privileges required"), ejabberd_option:language())};
 		true ->
 		    node_call(Host, Type, get_node_subscriptions, [Nidx])
 	    end
@@ -2491,7 +2491,7 @@ set_subscriptions(Host, Node, From, Entities) ->
 			end;
 		    _ ->
 			{error, xmpp:err_forbidden(
-				  <<"Owner privileges required">>, ejabberd_option:language())}
+				  ?T("Owner privileges required"), ejabberd_option:language())}
 
 		end
 	end,
@@ -3116,7 +3116,7 @@ get_configure(Host, ServerHost, Node, From, Lang) ->
 				configure =
 				    {Node, #xdata{type = form, fields = Fs}}}};
 		_ ->
-		    {error, xmpp:err_forbidden(<<"Owner privileges required">>, Lang)}
+		    {error, xmpp:err_forbidden(?T("Owner privileges required"), Lang)}
 	    end
     end,
     case transaction(Host, Node, Action, sync_dirty) of
@@ -3275,7 +3275,7 @@ set_configure(Host, Node, From, Config, Lang) ->
 			end;
 		    _ ->
 			{error, xmpp:err_forbidden(
-				  <<"Owner privileges required">>, Lang)}
+				  ?T("Owner privileges required"), Lang)}
 		end
 	end,
     case transaction(Host, Node, Action, transaction) of
@@ -3575,7 +3575,7 @@ tree_action(Host, Function, Args) ->
 		    Result;
 		{aborted, Reason} ->
 		    ?ERROR_MSG("transaction return internal error: ~p~n", [{aborted, Reason}]),
-		    ErrTxt = <<"Database failure">>,
+		    ErrTxt = ?T("Database failure"),
 		    {error, xmpp:err_internal_server_error(ErrTxt, ejabberd_option:language())}
 	    end;
 	_ ->
@@ -3654,10 +3654,10 @@ do_transaction(ServerHost, Fun, Trans, DBType) ->
 	    {error, Error};
 	{aborted, Reason} ->
 	    ?ERROR_MSG("transaction return internal error: ~p~n", [{aborted, Reason}]),
-	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ejabberd_option:language())};
+	    {error, xmpp:err_internal_server_error(?T("Database failure"), ejabberd_option:language())};
 	Other ->
 	    ?ERROR_MSG("transaction return internal error: ~p~n", [Other]),
-	    {error, xmpp:err_internal_server_error(<<"Database failure">>, ejabberd_option:language())}
+	    {error, xmpp:err_internal_server_error(?T("Database failure"), ejabberd_option:language())}
     end.
 
 %%%% helpers

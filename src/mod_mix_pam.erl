@@ -34,6 +34,7 @@
 
 -include("xmpp.hrl").
 -include("logger.hrl").
+-include("translate.hrl").
 
 -define(MIX_PAM_CACHE, mix_pam_cache).
 
@@ -253,7 +254,7 @@ process_iq_error(#iq{type = error} = ErrIQ, #iq{sub_els = [El]} = IQ) ->
 	    ejabberd_router:route_error(IQ, Err)
     end;
 process_iq_error(timeout, IQ) ->
-    Txt = <<"Request has timed out">>,
+    Txt = ?T("Request has timed out"),
     Err = xmpp:err_recipient_unavailable(Txt, IQ#iq.lang),
     ejabberd_router:route_error(IQ, Err).
 
@@ -267,22 +268,22 @@ make_channel_id(JID, ID) ->
 %%%===================================================================
 -spec missing_channel_error(stanza()) -> stanza_error().
 missing_channel_error(Pkt) ->
-    Txt = <<"Attribute 'channel' is required for this request">>,
+    Txt = ?T("Attribute 'channel' is required for this request"),
     xmpp:err_bad_request(Txt, xmpp:get_lang(Pkt)).
 
 -spec forbidden_query_error(stanza()) -> stanza_error().
 forbidden_query_error(Pkt) ->
-    Txt = <<"Query to another users is forbidden">>,
+    Txt = ?T("Query to another users is forbidden"),
     xmpp:err_forbidden(Txt, xmpp:get_lang(Pkt)).
 
 -spec unsupported_query_error(stanza()) -> stanza_error().
 unsupported_query_error(Pkt) ->
-    Txt = <<"No module is handling this query">>,
+    Txt = ?T("No module is handling this query"),
     xmpp:err_service_unavailable(Txt, xmpp:get_lang(Pkt)).
 
 -spec db_error(stanza()) -> stanza_error().
 db_error(Pkt) ->
-    Txt = <<"Database failure">>,
+    Txt = ?T("Database failure"),
     xmpp:err_internal_server_error(Txt, xmpp:get_lang(Pkt)).
 
 %%%===================================================================

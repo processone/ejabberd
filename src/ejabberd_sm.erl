@@ -84,12 +84,11 @@
 	 handle_info/2, terminate/2, code_change/3]).
 
 -include("logger.hrl").
-
 -include("xmpp.hrl").
-
 -include("ejabberd_commands.hrl").
 -include("ejabberd_sm.hrl").
 -include("ejabberd_stacktrace.hrl").
+-include("translate.hrl").
 
 -callback init() -> ok | {error, any()}.
 -callback set_session(#session{}) -> ok | {error, any()}.
@@ -200,7 +199,7 @@ bounce_offline_message(Acc) ->
 -spec bounce_sm_packet({bounce | term(), stanza()}) -> any().
 bounce_sm_packet({bounce, Packet} = Acc) ->
     Lang = xmpp:get_lang(Packet),
-    Txt = <<"User session not found">>,
+    Txt = ?T("User session not found"),
     Err = xmpp:err_service_unavailable(Txt, Lang),
     ejabberd_router:route_error(Packet, Err),
     {stop, Acc};
@@ -212,7 +211,7 @@ bounce_sm_packet({_, Packet} = Acc) ->
 -spec disconnect_removed_user(binary(), binary()) -> ok.
 
 disconnect_removed_user(User, Server) ->
-    route(jid:make(User, Server), {exit, <<"User removed">>}).
+    route(jid:make(User, Server), {exit, ?T("User removed")}).
 
 get_user_resources(User, Server) ->
     LUser = jid:nodeprep(User),
@@ -442,10 +441,10 @@ get_vh_session_number(Server) ->
 %% Why the hell do we have so many similar kicks?
 c2s_handle_info(#{lang := Lang} = State, replaced) ->
     State1 = State#{replaced => true},
-    Err = xmpp:serr_conflict(<<"Replaced by new connection">>, Lang),
+    Err = xmpp:serr_conflict(?T("Replaced by new connection"), Lang),
     {stop, ejabberd_c2s:send(State1, Err)};
 c2s_handle_info(#{lang := Lang} = State, kick) ->
-    Err = xmpp:serr_policy_violation(<<"has been kicked">>, Lang),
+    Err = xmpp:serr_policy_violation(?T("has been kicked"), Lang),
     c2s_handle_info(State, {kick, kicked_by_admin, Err});
 c2s_handle_info(State, {kick, _Reason, Err}) ->
     {stop, ejabberd_c2s:send(State, Err)};

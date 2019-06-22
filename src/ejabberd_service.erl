@@ -37,6 +37,7 @@
 
 -include("xmpp.hrl").
 -include("logger.hrl").
+-include("translate.hrl").
 
 -type state() :: xmpp_stream_in:state().
 -export_type([state/0]).
@@ -119,7 +120,7 @@ handle_stream_start(_StreamStart,
 		      host_opts := HostOpts} = State) ->
     case ejabberd_router:is_my_host(RemoteServer) of
 	true ->
-	    Txt = <<"Unable to register route on existing local domain">>,
+	    Txt = ?T("Unable to register route on existing local domain"),
 	    xmpp_stream_in:send(State, xmpp:serr_conflict(Txt, Lang));
 	false ->
 	    NewHostOpts = case dict:is_key(RemoteServer, HostOpts) of
@@ -198,7 +199,7 @@ handle_authenticated_packet(Pkt0, #{ip := {IP, _}, lang := Lang} = State)
 		end,
         State2;
 	false ->
-	    Txt = <<"Improper domain part of 'from' attribute">>,
+	    Txt = ?T("Improper domain part of 'from' attribute"),
 	    Err = xmpp:serr_invalid_from(Txt, Lang),
 	    xmpp_stream_in:send(State, Err)
     end;
@@ -211,7 +212,7 @@ handle_info({route, Packet}, #{access := Access} = State) ->
 	    xmpp_stream_in:send(State, Packet);
 	deny ->
 	    Lang = xmpp:get_lang(Packet),
-	    Err = xmpp:err_not_allowed(<<"Access denied by service policy">>, Lang),
+	    Err = xmpp:err_not_allowed(?T("Access denied by service policy"), Lang),
 	    ejabberd_router:route_error(Packet, Err),
 	    State
     end;

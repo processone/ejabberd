@@ -322,27 +322,27 @@ route_untrusted(LServiceS, LServerS, Access, SLimits, Packet) ->
     catch
       adenied ->
 	  route_error(Packet, forbidden,
-		      <<"Access denied by service policy">>);
+		      ?T("Access denied by service policy"));
       eadsele ->
 	  route_error(Packet, bad_request,
-		      <<"No addresses element found">>);
+		      ?T("No addresses element found"));
       eadeles ->
 	  route_error(Packet, bad_request,
-		      <<"No address elements found">>);
+		      ?T("No address elements found"));
       ewxmlns ->
 	  route_error(Packet, bad_request,
-		      <<"Wrong xmlns">>);
+		      ?T("Wrong xmlns"));
       etoorec ->
 	  route_error(Packet, not_acceptable,
-		      <<"Too many receiver fields were specified">>);
+		      ?T("Too many receiver fields were specified"));
       edrelay ->
 	  route_error(Packet, forbidden,
-		      <<"Packet relay is denied by service policy">>);
+		      ?T("Packet relay is denied by service policy"));
       EType:EReason ->
 	  ?ERROR_MSG("Multicast unknown error: Type: ~p~nReason: ~p",
 		     [EType, EReason]),
 	  route_error(Packet, internal_server_error,
-		      <<"Unknown problem">>)
+		      ?T("Internal server error"))
     end.
 
 -spec route_untrusted2(binary(), binary(), atom(), #service_limits{}, stanza()) -> 'ok'.
@@ -486,9 +486,9 @@ split_dests_jid(Dests) ->
 report_not_jid(From, Packet, Dests) ->
     Dests2 = [fxml:element_to_binary(xmpp:encode(Dest#dest.address))
 	      || Dest <- Dests],
-    [route_error(xmpp:set_from_to(Packet, From, From), jid_malformed,
-		 <<"This service can not process the address: ",
-		   D/binary>>)
+    [route_error(
+       xmpp:set_from_to(Packet, From, From), jid_malformed,
+       str:format(?T("This service can not process the address: ~s"), [D]))
      || D <- Dests2].
 
 %%%-------------------------

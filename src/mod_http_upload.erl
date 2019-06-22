@@ -529,7 +529,7 @@ process_iq(#iq{type = get, sub_els = [#upload_request_0{filename = File,
 	   State) ->
     process_slot_request(IQ, File, Size, CType, XMLNS, State);
 process_iq(#iq{type = T, lang = Lang} = IQ, _State) when T == get; T == set ->
-    Txt = <<"No module is handling this query">>,
+    Txt = ?T("No module is handling this query"),
     xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang));
 process_iq(#iq{}, _State) ->
     not_request.
@@ -559,7 +559,7 @@ process_slot_request(#iq{lang = Lang, from = From} = IQ,
 	deny ->
 	    ?DEBUG("Denying HTTP upload slot request from ~s",
 		   [jid:encode(From)]),
-	    Txt = <<"Access denied by service policy">>,
+	    Txt = ?T("Access denied by service policy"),
 	    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang))
     end.
 
@@ -570,7 +570,7 @@ create_slot(#state{service_url = undefined, max_size = MaxSize},
 	    JID, File, Size, _ContentType, XMLNS, Lang)
   when MaxSize /= infinity,
        Size > MaxSize ->
-    Text = {<<"File larger than ~w bytes">>, [MaxSize]},
+    Text = {?T("File larger than ~w bytes"), [MaxSize]},
     ?WARNING_MSG("Rejecting file ~s from ~s (too large: ~B bytes)",
 	      [File, jid:encode(JID), Size]),
     Error = xmpp:err_not_acceptable(Text, Lang),
@@ -624,7 +624,7 @@ create_slot(#state{service_url = ServiceURL},
 		Lines ->
 		    ?ERROR_MSG("Can't parse data received for ~s from <~s>: ~p",
 			       [jid:encode(JID), ServiceURL, Lines]),
-		    Txt = <<"Failed to parse HTTP response">>,
+		    Txt = ?T("Failed to parse HTTP response"),
 		    {error, xmpp:err_service_unavailable(Txt, Lang)}
 	    end;
 	{ok, {402, _Body}} ->

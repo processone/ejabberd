@@ -43,6 +43,7 @@
 -include("ejabberd_commands.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
+-include("translate.hrl").
 
 -define(CLEAN_INTERVAL, timer:minutes(10)).
 
@@ -215,9 +216,9 @@ log_and_disconnect(#{ip := {Addr, _}, lang := Lang} = State, Attempts, UnbanTS) 
     IP = misc:ip_to_list(Addr),
     UnbanDate = format_date(
 		  calendar:now_to_universal_time(seconds_to_now(UnbanTS))),
-    Format = <<"Too many (~p) failed authentications "
-	       "from this IP address (~s). The address "
-	       "will be unblocked at ~s UTC">>,
+    Format = ?T("Too many (~p) failed authentications "
+		"from this IP address (~s). The address "
+		"will be unblocked at ~s UTC"),
     Args = [Attempts, IP, UnbanDate],
     ?WARNING_MSG("Connection attempt from blacklisted IP ~s: ~s",
 		 [IP, io_lib:fwrite(Format, Args)]),

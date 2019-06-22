@@ -51,14 +51,12 @@
 	 oauth_issue_token/3, oauth_list_tokens/0, oauth_revoke_token/1]).
 
 -include("xmpp.hrl").
-
 -include("logger.hrl").
-
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
 -include("ejabberd_oauth.hrl").
-
 -include("ejabberd_commands.hrl").
+-include("translate.hrl").
 
 -callback init() -> any().
 -callback store(#oauth_token{}) -> ok | {error, any()}.
@@ -393,10 +391,10 @@ process(_Handlers,
         ?XAE(<<"form">>,
              [{<<"action">>, <<"authorization_token">>},
               {<<"method">>, <<"post">>}],
-             [?LABEL(<<"username">>, [?CT(<<"User (jid)">>), ?C(<<": ">>)]),
+             [?LABEL(<<"username">>, [?CT(?T("User (jid)")), ?C(<<": ">>)]),
               ?INPUTID(<<"text">>, <<"username">>, <<"">>),
               ?BR,
-              ?LABEL(<<"password">>, [?CT(<<"Password">>), ?C(<<": ">>)]),
+              ?LABEL(<<"password">>, [?CT(?T("Password")), ?C(<<": ">>)]),
               ?INPUTID(<<"password">>, <<"password">>, <<"">>),
               ?INPUT(<<"hidden">>, <<"response_type">>, ResponseType),
               ?INPUT(<<"hidden">>, <<"client_id">>, ClientId),
@@ -404,7 +402,7 @@ process(_Handlers,
               ?INPUT(<<"hidden">>, <<"scope">>, Scope),
               ?INPUT(<<"hidden">>, <<"state">>, State),
               ?BR,
-              ?LABEL(<<"ttl">>, [?CT(<<"Token TTL">>), ?C(<<": ">>)]),
+              ?LABEL(<<"ttl">>, [?CT(?T("Token TTL")), ?C(<<": ">>)]),
               ?XAE(<<"select">>, [{<<"name">>, <<"ttl">>}],
                    [
                    ?XAC(<<"option">>, [{<<"value">>, <<"3600">>}],<<"1 Hour">>),
@@ -413,7 +411,7 @@ process(_Handlers,
                    ?XAC(<<"option">>, [{<<"selected">>, <<"selected">>},{<<"value">>, <<"31536000">>}],<<"1 Year">>),
                    ?XAC(<<"option">>, [{<<"value">>, <<"315360000">>}],<<"10 Years">>)]),
               ?BR,
-              ?INPUTT(<<"submit">>, <<"">>, <<"Accept">>)
+              ?INPUTT(<<"submit">>, <<"">>, ?T("Accept"))
              ]),
     Top =
         ?DIV(<<"section">>,

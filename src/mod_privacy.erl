@@ -43,6 +43,7 @@
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("mod_privacy.hrl").
+-include("translate.hrl").
 
 -define(PRIVACY_CACHE, privacy_cache).
 -define(PRIVACY_LIST_CACHE, privacy_list_cache).
@@ -130,7 +131,7 @@ process_iq(#iq{type = Type,
 	set -> process_iq_set(IQ)
     end;
 process_iq(#iq{lang = Lang} = IQ) ->
-    Txt = <<"Query to another users is forbidden">>,
+    Txt = ?T("Query to another users is forbidden"),
     xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang)).
 
 -spec process_iq_get(iq()) -> iq().
@@ -138,7 +139,7 @@ process_iq_get(#iq{lang = Lang,
 		      sub_els = [#privacy_query{default = Default,
 					     active = Active}]} = IQ)
   when Default /= undefined; Active /= undefined ->
-    Txt = <<"Only <list/> element is allowed in this query">>,
+    Txt = ?T("Only <list/> element is allowed in this query"),
     xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
 process_iq_get(#iq{lang = Lang,
 		   sub_els = [#privacy_query{lists = Lists}]} = IQ) ->
@@ -148,11 +149,11 @@ process_iq_get(#iq{lang = Lang,
 	[#privacy_list{name = ListName}] ->
 	    process_list_get(IQ, ListName);
 	_ ->
-	    Txt = <<"Too many <list/> elements">>,
+	    Txt = ?T("Too many <list/> elements"),
 	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang))
     end;
 process_iq_get(#iq{lang = Lang} = IQ) ->
-    Txt = <<"No module is handling this query">>,
+    Txt = ?T("No module is handling this query"),
     xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
 -spec process_lists_get(iq()) -> iq().
@@ -170,7 +171,7 @@ process_lists_get(#iq{from = #jid{luser = LUser, lserver = LServer},
 	    xmpp:make_iq_result(
 	      IQ, #privacy_query{active = none, default = none});
 	{error, _} ->
-	    Txt = <<"Database failure">>,
+	    Txt = ?T("Database failure"),
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
     end.
 
@@ -185,10 +186,10 @@ process_list_get(#iq{from = #jid{luser = LUser, lserver = LServer},
 	      #privacy_query{
 		 lists = [#privacy_list{name = Name, items = Items}]});
 	error ->
-	    Txt = <<"No privacy list with this name found">>,
+	    Txt = ?T("No privacy list with this name found"),
 	    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang));
 	{error, _} ->
-	    Txt = <<"Database failure">>,
+	    Txt = ?T("Database failure"),
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
     end.
 
@@ -264,12 +265,12 @@ process_iq_set(#iq{lang = Lang,
 	[] when Active == undefined, Default /= undefined ->
 	    process_default_set(IQ, Default);
 	_ ->
-	    Txt = <<"The stanza MUST contain only one <active/> element, "
-		    "one <default/> element, or one <list/> element">>,
+	    Txt = ?T("The stanza MUST contain only one <active/> element, "
+		     "one <default/> element, or one <list/> element"),
 	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang))
     end;
 process_iq_set(#iq{lang = Lang} = IQ) ->
-    Txt = <<"No module is handling this query">>,
+    Txt = ?T("No module is handling this query"),
     xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
 -spec process_default_set(iq(), none | binary()) -> iq().
@@ -279,10 +280,10 @@ process_default_set(#iq{from = #jid{luser = LUser, lserver = LServer},
 	ok ->
 	    xmpp:make_iq_result(IQ);
 	{error, notfound} ->
-	    Txt = <<"No privacy list with this name found">>,
+	    Txt = ?T("No privacy list with this name found"),
 	    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang));
 	{error, _} ->
-	    Txt = <<"Database failure">>,
+	    Txt = ?T("Database failure"),
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
     end.
 
@@ -295,10 +296,10 @@ process_active_set(#iq{from = #jid{luser = LUser, lserver = LServer},
 	{ok, _} ->
 	    xmpp:make_iq_result(xmpp:put_meta(IQ, privacy_active_list, Name));
 	error ->
-	    Txt = <<"No privacy list with this name found">>,
+	    Txt = ?T("No privacy list with this name found"),
 	    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang));
 	{error, _} ->
-	    Txt = <<"Database failure">>,
+	    Txt = ?T("Database failure"),
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
     end.
 
@@ -318,20 +319,20 @@ process_lists_set(#iq{from = #jid{luser = LUser, lserver = LServer},
 		      lang = Lang} = IQ, Name, []) ->
     case xmpp:get_meta(IQ, privacy_active_list, none) of
 	Name ->
-	    Txt = <<"Cannot remove active list">>,
+	    Txt = ?T("Cannot remove active list"),
 	    xmpp:make_error(IQ, xmpp:err_conflict(Txt, Lang));
 	_ ->
 	    case remove_list(LUser, LServer, Name) of
 		ok ->
 		    xmpp:make_iq_result(IQ);
 		{error, conflict} ->
-		    Txt = <<"Cannot remove default list">>,
+		    Txt = ?T("Cannot remove default list"),
 		    xmpp:make_error(IQ, xmpp:err_conflict(Txt, Lang));
 		{error, notfound} ->
-		    Txt = <<"No privacy list with this name found">>,
+		    Txt = ?T("No privacy list with this name found"),
 		    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang));
 		{error, _} ->
-		    Txt = <<"Database failure">>,
+		    Txt = ?T("Database failure"),
 		    Err = xmpp:err_internal_server_error(Txt, Lang),
 		    xmpp:make_error(IQ, Err)
 	    end
@@ -348,7 +349,7 @@ process_lists_set(#iq{from = #jid{luser = LUser, lserver = LServer} = From,
 		    push_list_update(From, Name),
 		    xmpp:make_iq_result(IQ);
 		{error, _} ->
-		    Txt = <<"Database failure">>,
+		    Txt = ?T("Database failure"),
 		    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
 	    end
     end.

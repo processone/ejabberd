@@ -193,7 +193,7 @@ get_sm_features(Acc, _From, _To, Node, _Lang) ->
 
 -spec process_local_iq(iq()) -> iq().
 process_local_iq(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_local_iq(#iq{type = get, lang = Lang} = IQ) ->
     xmpp:make_iq_result(
@@ -213,14 +213,14 @@ process_sm_iq(#iq{type = set, lang = Lang, from = From} = IQ) ->
 		_ -> xmpp:make_iq_result(IQ)
 	    end;
 	false ->
-	    Txt = <<"The query is only allowed from local users">>,
+	    Txt = ?T("The query is only allowed from local users"),
 	    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang))
     end;
 process_sm_iq(#iq{type = get, from = From, to = To, lang = Lang} = IQ) ->
     #jid{luser = LUser, lserver = LServer} = To,
     case get_vcard(LUser, LServer) of
 	error ->
-	    Txt = <<"Database failure">>,
+	    Txt = ?T("Database failure"),
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang));
 	[] ->
 	    xmpp:make_iq_result(IQ, #vcard_temp{});
@@ -230,7 +230,7 @@ process_sm_iq(#iq{type = get, from = From, to = To, lang = Lang} = IQ) ->
 
 -spec process_vcard(iq()) -> iq().
 process_vcard(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_vcard(#iq{type = get, lang = Lang} = IQ) ->
     xmpp:make_iq_result(
@@ -249,7 +249,7 @@ process_search(#iq{type = set, to = To, lang = Lang,
     ResultXData = search_result(Lang, To, ServerHost, Fs),
     xmpp:make_iq_result(IQ, #search{xdata = ResultXData});
 process_search(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Incorrect data form">>,
+    Txt = ?T("Incorrect data form"),
     xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang)).
 
 -spec disco_items({error, stanza_error()} | {result, [disco_item()]} | empty,
@@ -258,7 +258,7 @@ process_search(#iq{type = set, lang = Lang} = IQ) ->
 disco_items(empty, _From, _To, <<"">>, _Lang) ->
     {result, []};
 disco_items(empty, _From, _To, _Node, Lang) ->
-    {error, xmpp:err_item_not_found(<<"No services available">>, Lang)};
+    {error, xmpp:err_item_not_found(?T("No services available"), Lang)};
 disco_items(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
@@ -275,7 +275,7 @@ disco_features(Acc, _From, _To, <<"">>, _Lang) ->
     {result, [?NS_DISCO_INFO, ?NS_DISCO_ITEMS,
 	      ?NS_VCARD, ?NS_SEARCH | Features]};
 disco_features(empty, _From, _To, _Node, Lang) ->
-    Txt = <<"No features available">>,
+    Txt = ?T("No features available"),
     {error, xmpp:err_item_not_found(Txt, Lang)};
 disco_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
@@ -380,7 +380,7 @@ vcard_iq_set(#iq{from = From, lang = Lang, sub_els = [VCard]} = IQ) ->
     case set_vcard(User, LServer, VCard) of
 	{error, badarg} ->
 	    %% Should not be here?
-	    Txt = <<"Nodeprep has failed">>,
+	    Txt = ?T("Nodeprep has failed"),
 	    {stop, xmpp:err_internal_server_error(Txt, Lang)};
 	ok ->
 	    IQ
@@ -422,7 +422,7 @@ mk_field(Var, Val) ->
 
 -spec mk_search_form(jid(), binary(), binary()) -> search().
 mk_search_form(JID, ServerHost, Lang) ->
-    Title = <<(translate:translate(Lang, <<"Search users in ">>))/binary,
+    Title = <<(translate:translate(Lang, ?T("Search users in ")))/binary,
 	      (jid:encode(JID))/binary>>,
     Mod = gen_mod:db_mod(ServerHost, ?MODULE),
     SearchFields = Mod:search_fields(ServerHost),
@@ -433,17 +433,17 @@ mk_search_form(JID, ServerHost, Lang) ->
 	       fields = Fs},
     #search{instructions =
 		translate:translate(
-		  Lang, <<"You need an x:data capable client to search">>),
+		  Lang, ?T("You need an x:data capable client to search")),
 	    xdata = X}.
 
 make_instructions(Mod, Lang) ->
     Fill = translate:translate(
 	     Lang,
-	     <<"Fill in the form to search for any matching "
-	       "Jabber User">>),
+	     ?T("Fill in the form to search for any matching "
+		"Jabber User")),
     Add = translate:translate(
 	    Lang,
-	    <<" (Add * to the end of field to match substring)">>),
+	    ?T(" (Add * to the end of field to match substring)")),
     case Mod of
 	mod_vcard_mnesia -> Fill;
 	_ -> str:concat(Fill, Add)
@@ -456,7 +456,7 @@ search_result(Lang, JID, ServerHost, XFields) ->
 		   {Label, Var} <- Mod:search_reported(ServerHost)],
     #xdata{type = result,
 	   title = <<(translate:translate(Lang,
-					  <<"Search Results for ">>))/binary,
+					  ?T("Search Results for ")))/binary,
 		     (jid:encode(JID))/binary>>,
 	   reported = Reported,
 	   items = lists:map(fun (Item) -> item_to_field(Item) end,

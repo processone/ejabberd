@@ -52,6 +52,7 @@
 -include("ejabberd_commands.hrl").
 -include("logger.hrl").
 -include("xmpp.hrl").
+-include("translate.hrl").
 
 -define(PUSH_CACHE, push_cache).
 
@@ -261,10 +262,10 @@ unregister_iq_handlers(Host) ->
 
 -spec process_iq(iq()) -> iq().
 process_iq(#iq{type = get, lang = Lang} = IQ) ->
-    Txt = <<"Value 'get' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'get' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_iq(#iq{lang = Lang, sub_els = [#push_enable{node = <<>>}]} = IQ) ->
-    Txt = <<"Enabling push without 'node' attribute is not supported">>,
+    Txt = ?T("Enabling push without 'node' attribute is not supported"),
     xmpp:make_error(IQ, xmpp:err_feature_not_implemented(Txt, Lang));
 process_iq(#iq{from = #jid{lserver = LServer} = JID,
 	       to = #jid{lserver = LServer},
@@ -276,10 +277,10 @@ process_iq(#iq{from = #jid{lserver = LServer} = JID,
 	ok ->
 	    xmpp:make_iq_result(IQ);
 	{error, db_failure} ->
-	    Txt = <<"Database failure">>,
+	    Txt = ?T("Database failure"),
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang));
 	{error, notfound} ->
-	    Txt = <<"User session not found">>,
+	    Txt = ?T("User session not found"),
 	    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang))
     end;
 process_iq(#iq{from = #jid{lserver = LServer} = JID,
@@ -291,10 +292,10 @@ process_iq(#iq{from = #jid{lserver = LServer} = JID,
 	ok ->
 	    xmpp:make_iq_result(IQ);
 	{error, db_failure} ->
-	    Txt = <<"Database failure">>,
+	    Txt = ?T("Database failure"),
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang));
 	{error, notfound} ->
-	    Txt = <<"Push record not found">>,
+	    Txt = ?T("Push record not found"),
 	    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang))
     end;
 process_iq(IQ) ->

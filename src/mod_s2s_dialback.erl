@@ -36,6 +36,7 @@
 
 -include("xmpp.hrl").
 -include("logger.hrl").
+-include("translate.hrl").
 
 %%%===================================================================
 %%% API
@@ -323,9 +324,9 @@ check_from_to(From, To) ->
 
 -spec mk_error(term(), binary()) -> stanza_error().
 mk_error(forbidden, Lang) ->
-    xmpp:err_forbidden(<<"Access denied by service policy">>, Lang);
+    xmpp:err_forbidden(?T("Access denied by service policy"), Lang);
 mk_error(host_unknown, Lang) ->
-    xmpp:err_not_allowed(<<"Host unknown">>, Lang);
+    xmpp:err_not_allowed(?T("Host unknown"), Lang);
 mk_error({codec_error, Why}, Lang) ->
     xmpp:err_bad_request(xmpp:io_format_error(Why), Lang);
 mk_error({_Class, _Reason} = Why, Lang) ->

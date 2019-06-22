@@ -53,6 +53,8 @@
 
 -include("mod_shared_roster.hrl").
 
+-include("translate.hrl").
+
 -type group_options() :: [{atom(), any()}].
 -callback init(binary(), gen_mod:opts()) -> any().
 -callback import(binary(), binary(), [binary()]) -> ok.
@@ -727,7 +729,7 @@ unset_presence(LUser, LServer, Resource, Status) ->
 %%---------------------
 
 webadmin_menu(Acc, _Host, Lang) ->
-    [{<<"shared-roster">>, ?T(<<"Shared Roster Groups">>)}
+    [{<<"shared-roster">>, translate:translate(Lang, ?T("Shared Roster Groups"))}
      | Acc].
 
 webadmin_page(_, Host,
@@ -768,13 +770,13 @@ list_shared_roster_groups(Host, Query, Lang) ->
 					      <<"">>)]),
 				  ?XE(<<"td">>,
 				      [?INPUTT(<<"submit">>, <<"addnew">>,
-					       <<"Add New">>)])])]))])),
-    (?H1GL((?T(<<"Shared Roster Groups">>)),
+					       ?T("Add New"))])])]))])),
+    (?H1GL((translate:translate(Lang, ?T("Shared Roster Groups"))),
 	   <<"mod_shared_roster">>, <<"mod_shared_roster">>))
       ++
       case Res of
-	ok -> [?XREST(<<"Submitted">>)];
-	error -> [?XREST(<<"Bad format">>)];
+	ok -> [?XREST(?T("Submitted"))];
+	error -> [?XREST(?T("Bad format"))];
 	nothing -> []
       end
 	++
@@ -782,7 +784,7 @@ list_shared_roster_groups(Host, Query, Lang) ->
 	      [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
 	      [FGroups, ?BR,
 	       ?INPUTT(<<"submit">>, <<"delete">>,
-		       <<"Delete Selected">>)])].
+		       ?T("Delete Selected"))])].
 
 list_sr_groups_parse_query(Host, Query) ->
     case lists:keysearch(<<"addnew">>, 1, Query) of
@@ -839,44 +841,44 @@ shared_roster_group(Host, Group, Query, Lang) ->
 		   [{<<"class">>, <<"withtextareas">>}],
 		   [?XE(<<"tbody">>,
 			[?XE(<<"tr">>,
-			     [?XCT(<<"td">>, <<"Name:">>),
+			     [?XCT(<<"td">>, ?T("Name:")),
 			      ?XE(<<"td">>,
 				  [?INPUT(<<"text">>, <<"name">>, Name)])]),
 			 ?XE(<<"tr">>,
-			     [?XCT(<<"td">>, <<"Description:">>),
+			     [?XCT(<<"td">>, ?T("Description:")),
 			      ?XE(<<"td">>,
 				  [?TEXTAREA(<<"description">>,
 					     integer_to_binary(lists:max([3,
                                                                                DescNL])),
 					     <<"20">>, Description)])]),
 			 ?XE(<<"tr">>,
-			     [?XCT(<<"td">>, <<"Members:">>),
+			     [?XCT(<<"td">>, ?T("Members:")),
 			      ?XE(<<"td">>,
 				  [?TEXTAREA(<<"members">>,
 					     integer_to_binary(lists:max([3,
                                                                                length(Members)+3])),
 					     <<"20">>, FMembers)])]),
 			 ?XE(<<"tr">>,
-			     [?XCT(<<"td">>, <<"Displayed Groups:">>),
+			     [?XCT(<<"td">>, ?T("Displayed Groups:")),
 			      ?XE(<<"td">>,
 				  [?TEXTAREA(<<"dispgroups">>,
 					     integer_to_binary(lists:max([3,											        length(FDisplayedGroups)])),
 					     <<"20">>,
 					     list_to_binary(FDisplayedGroups))])])])])),
-    (?H1GL((?T(<<"Shared Roster Groups">>)),
+    (?H1GL((translate:translate(Lang, ?T("Shared Roster Groups"))),
 	   <<"mod_shared_roster">>, <<"mod_shared_roster">>))
       ++
-      [?XC(<<"h2">>, <<(?T(<<"Group ">>))/binary, Group/binary>>)] ++
+      [?XC(<<"h2">>, <<(translate:translate(Lang, ?T("Group ")))/binary, Group/binary>>)] ++
 	case Res of
-	  ok -> [?XREST(<<"Submitted">>)];
-	  error -> [?XREST(<<"Bad format">>)];
+	  ok -> [?XREST(?T("Submitted"))];
+	  error -> [?XREST(?T("Bad format"))];
 	  nothing -> []
 	end
 	  ++
 	  [?XAE(<<"form">>,
 		[{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
 		[FGroup, ?BR,
-		 ?INPUTT(<<"submit">>, <<"submit">>, <<"Submit">>)])].
+		 ?INPUTT(<<"submit">>, <<"submit">>, ?T("Submit"))])].
 
 shared_roster_group_parse_query(Host, Group, Query) ->
     case lists:keysearch(<<"submit">>, 1, Query) of

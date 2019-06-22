@@ -35,8 +35,8 @@
 	 mod_opt_type/1, mod_options/1, depends/2]).
 
 -include("logger.hrl").
-
 -include("xmpp.hrl").
+-include("translate.hrl").
 
 start(Host, _Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
@@ -50,7 +50,7 @@ reload(_Host, _NewOpts, _OldOpts) ->
     ok.
 
 process_local_iq(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_local_iq(#iq{type = get, to = To} = IQ) ->
     Host = To#jid.lserver,

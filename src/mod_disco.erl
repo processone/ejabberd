@@ -132,7 +132,7 @@ unregister_extra_domain(Host, Domain) ->
 
 -spec process_local_iq_items(iq()) -> iq().
 process_local_iq_items(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_local_iq_items(#iq{type = get, lang = Lang,
 			   from = From, to = To,
@@ -148,7 +148,7 @@ process_local_iq_items(#iq{type = get, lang = Lang,
 
 -spec process_local_iq_info(iq()) -> iq().
 process_local_iq_info(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_local_iq_info(#iq{type = get, lang = Lang,
 			  from = From, to = To,
@@ -199,7 +199,7 @@ get_local_features(Acc, _From, _To, _Node, Lang) ->
     case Acc of
       {result, _Features} -> Acc;
       empty ->
-	    Txt = <<"No features available">>,
+	    Txt = ?T("No features available"),
 	    {error, xmpp:err_item_not_found(Txt, Lang)}
     end.
 
@@ -227,7 +227,7 @@ get_local_services({result, _} = Acc, _From, _To, _Node,
 		   _Lang) ->
     Acc;
 get_local_services(empty, _From, _To, _Node, Lang) ->
-    {error, xmpp:err_item_not_found(<<"No services available">>, Lang)}.
+    {error, xmpp:err_item_not_found(?T("No services available"), Lang)}.
 
 -spec get_vh_services(binary()) -> [binary()].
 get_vh_services(Host) ->
@@ -254,7 +254,7 @@ get_vh_services(Host) ->
 
 -spec process_sm_iq_items(iq()) -> iq().
 process_sm_iq_items(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_sm_iq_items(#iq{type = get, lang = Lang,
 			from = From, to = To,
@@ -271,7 +271,7 @@ process_sm_iq_items(#iq{type = get, lang = Lang,
 		    xmpp:make_error(IQ, Error)
 	    end;
 	false ->
-	    Txt = <<"Not subscribed">>,
+	    Txt = ?T("Not subscribed"),
 	    xmpp:make_error(IQ, xmpp:err_subscription_required(Txt, Lang))
     end.
 
@@ -300,13 +300,13 @@ get_sm_items(empty, From, To, _Node, Lang) ->
     case {LFrom, LSFrom} of
       {LTo, LSTo} -> {error, xmpp:err_item_not_found()};
       _ ->
-	    Txt = <<"Query to another users is forbidden">>,
+	    Txt = ?T("Query to another users is forbidden"),
 	    {error, xmpp:err_not_allowed(Txt, Lang)}
     end.
 
 -spec process_sm_iq_info(iq()) -> iq().
 process_sm_iq_info(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_sm_iq_info(#iq{type = get, lang = Lang,
 		       from = From, to = To,
@@ -330,7 +330,7 @@ process_sm_iq_info(#iq{type = get, lang = Lang,
 		    xmpp:make_error(IQ, Error)
 	    end;
 	false ->
-	    Txt = <<"Not subscribed">>,
+	    Txt = ?T("Not subscribed"),
 	    xmpp:make_error(IQ, xmpp:err_subscription_required(Txt, Lang))
     end.
 
@@ -357,7 +357,7 @@ get_sm_features(empty, From, To, Node, Lang) ->
 		_ -> {error, xmpp:err_item_not_found()}
 	    end;
 	_ ->
-	    Txt = <<"Query to another users is forbidden">>,
+	    Txt = ?T("Query to another users is forbidden"),
 	    {error, xmpp:err_not_allowed(Txt, Lang)}
     end;
 get_sm_features({result, Features}, _From, _To, <<"">>, _Lang) ->

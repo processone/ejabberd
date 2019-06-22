@@ -42,6 +42,7 @@
 
 -include("logger.hrl").
 -include("xmpp.hrl").
+-include("translate.hrl").
 
 -type disco_acc() :: {error, stanza_error()} | {result, [binary()]} | empty.
 -record(state, {server_host = <<"">> :: binary(),
@@ -259,7 +260,7 @@ process_iq(#iq{to = To, lang = Lang, sub_els = [SubEl]} = IQ, Type) ->
 	      IQ, gen_mod:get_module_proc(LServer, ?MODULE)),
 	    ignore;
 	error ->
-	    Txt = <<"Failed to map delegated namespace to external component">>,
+	    Txt = ?T("Failed to map delegated namespace to external component"),
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
     end.
 
@@ -278,7 +279,7 @@ process_iq_result(#iq{from = From, to = To, id = ID, lang = Lang} = IQ,
     catch _:_ ->
 	    ?ERROR_MSG("got iq-result with invalid delegated "
 		       "payload:~n~s", [xmpp:pp(ResIQ)]),
-	    Txt = <<"External component failure">>,
+	    Txt = ?T("External component failure"),
 	    Err = xmpp:err_internal_server_error(Txt, Lang),
 	    ejabberd_router:route_error(IQ, Err)
     end;
@@ -286,7 +287,7 @@ process_iq_result(#iq{from = From, to = To}, #iq{type = error} = ResIQ) ->
     Err = xmpp:set_from_to(ResIQ, To, From),
     ejabberd_router:route(Err);
 process_iq_result(#iq{lang = Lang} = IQ, timeout) ->
-    Txt = <<"External component timeout">>,
+    Txt = ?T("External component timeout"),
     Err = xmpp:err_internal_server_error(Txt, Lang),
     ejabberd_router:route_error(IQ, Err).
 

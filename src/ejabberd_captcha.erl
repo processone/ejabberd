@@ -45,6 +45,7 @@
 -include("xmpp.hrl").
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
+-include("translate.hrl").
 
 -define(CAPTCHA_LIFETIME, 120000).
 -define(LIMIT_PERIOD, 60*1000*1000).
@@ -67,7 +68,7 @@ start_link() ->
 
 -spec captcha_text(binary()) -> binary().
 captcha_text(Lang) ->
-    translate:translate(Lang, <<"Enter the text you see">>).
+    translate:translate(Lang, ?T("Enter the text you see")).
 
 -spec mk_ocr_field(binary(), binary(), binary()) -> xdata_field().
 mk_ocr_field(Lang, CID, Type) ->
@@ -100,8 +101,8 @@ create_captcha(SID, From, To, Lang, Limiter, Args) ->
 		mk_ocr_field(Lang, CID, Type)],
 	  X = #xdata{type = form, fields = Fs},
 	  Captcha = #xcaptcha{xdata = X},
-          BodyString = {<<"Your subscription request and/or messages to ~s have been blocked. "
-		          "To unblock your subscription request, visit ~s">>, [JID, get_url(Id)]},
+          BodyString = {?T("Your subscription request and/or messages to ~s have been blocked. "
+			   "To unblock your subscription request, visit ~s"), [JID, get_url(Id)]},
 	  Body = xmpp:mk_text(BodyString, Lang),
 	  OOB = #oob_x{url = get_url(Id)},
 	  Hint = #hint{type = 'no-store'},
@@ -123,8 +124,8 @@ create_captcha_x(SID, To, Lang, Limiter, #xdata{fields = Fs} = X) ->
 	  CID = <<"sha1+", (str:sha(Image))/binary, "@bob.xmpp.org">>,
 	  Data = #bob_data{cid = CID, 'max-age' = 0, type = Type, data = Image},
 	  HelpTxt = translate:translate(Lang,
-					<<"If you don't see the CAPTCHA image here, "
-					  "visit the web page.">>),
+					?T("If you don't see the CAPTCHA image here, "
+					   "visit the web page.")),
 	  Imageurl = get_url(<<Id/binary, "/image">>),
 	  NewFs = [mk_field(hidden, <<"FORM_TYPE">>, ?NS_CAPTCHA)|Fs] ++
 		[#xdata_field{type = fixed, var = <<"captcha-fallback-text">>, values = [HelpTxt]},
@@ -132,7 +133,7 @@ create_captcha_x(SID, To, Lang, Limiter, #xdata{fields = Fs} = X) ->
 			      values = [<<"workaround-for-psi">>]},
 		 #xdata_field{type = 'text-single', var = <<"captcha-fallback-url">>,
 			      label = translate:translate(
-					Lang, <<"CAPTCHA web page">>),
+					Lang, ?T("CAPTCHA web page")),
 			      values = [Imageurl]},
 		 mk_field(hidden, <<"from">>, jid:encode(To)),
 		 mk_field(hidden, <<"challenge">>, Id),
@@ -189,7 +190,7 @@ build_captcha_html(Id, Lang) ->
 				      attrs =
 					  [{<<"type">>, <<"submit">>},
 					   {<<"name">>, <<"enter">>},
-					   {<<"value">>, <<"OK">>}],
+					   {<<"value">>, ?T("OK")}],
 				      children = []}]},
 	  {FormEl, {ImgEl, Text, IdEl, KeyEl}};
       _ -> captcha_not_found
@@ -220,17 +221,17 @@ process_iq(#iq{type = set, lang = Lang, sub_els = [#xcaptcha{} = El]} = IQ) ->
 	ok ->
 	    xmpp:make_iq_result(IQ);
 	{error, malformed} ->
-	    Txt = <<"Incorrect CAPTCHA submit">>,
+	    Txt = ?T("Incorrect CAPTCHA submit"),
 	    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang));
 	{error, _} ->
-	    Txt = <<"The CAPTCHA verification has failed">>,
+	    Txt = ?T("The CAPTCHA verification has failed"),
 	    xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang))
     end;
 process_iq(#iq{type = get, lang = Lang} = IQ) ->
-    Txt = <<"Value 'get' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'get' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_iq(#iq{lang = Lang} = IQ) ->
-    Txt = <<"No module is handling this query">>,
+    Txt = ?T("No module is handling this query"),
     xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
 process(_Handlers,
@@ -272,7 +273,7 @@ process(_Handlers,
 			children =
 			    [{xmlcdata,
 			      translate:translate(Lang,
-						  <<"The CAPTCHA is valid.">>)}]},
+						  ?T("The CAPTCHA is valid."))}]},
 	  ejabberd_web:make_xhtml([Form]);
       captcha_non_valid -> ejabberd_web:error(not_allowed);
       captcha_not_found -> ejabberd_web:error(not_found)

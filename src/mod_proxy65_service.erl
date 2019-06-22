@@ -128,7 +128,7 @@ delete_listener(Host) ->
 %%%------------------------
 -spec process_disco_info(iq()) -> iq().
 process_disco_info(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_disco_info(#iq{type = get, to = To, lang = Lang} = IQ) ->
     Host = ejabberd_router:host_of_route(To#jid.lserver),
@@ -145,14 +145,14 @@ process_disco_info(#iq{type = get, to = To, lang = Lang} = IQ) ->
 
 -spec process_disco_items(iq()) -> iq().
 process_disco_items(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_disco_items(#iq{type = get} = IQ) ->
     xmpp:make_iq_result(IQ, #disco_items{}).
 
 -spec process_vcard(iq()) -> iq().
 process_vcard(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_vcard(#iq{type = get, lang = Lang} = IQ) ->
     xmpp:make_iq_result(
@@ -170,7 +170,7 @@ process_bytestreams(#iq{type = get, from = JID, to = To, lang = Lang} = IQ) ->
 	    StreamHost = get_streamhost(Host, ServerHost),
 	    xmpp:make_iq_result(IQ, #bytestreams{hosts = [StreamHost]});
 	deny ->
-	    xmpp:make_error(IQ, xmpp:err_forbidden(<<"Access denied by service policy">>, Lang))
+	    xmpp:make_error(IQ, xmpp:err_forbidden(?T("Access denied by service policy"), Lang))
     end;
 process_bytestreams(#iq{type = set, lang = Lang,
 			sub_els = [#bytestreams{sid = SID}]} = IQ)
@@ -202,24 +202,24 @@ process_bytestreams(#iq{type = set, lang = Lang, from = InitiatorJID, to = To,
 		      {InitiatorPid, InitiatorJID}, {TargetPid, TargetJID}),
 		    xmpp:make_iq_result(IQ);
 		{error, notfound} ->
-		    Txt = <<"Failed to activate bytestream">>,
+		    Txt = ?T("Failed to activate bytestream"),
 		    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang));
 		{error, {limit, InitiatorPid, TargetPid}} ->
 		    mod_proxy65_stream:stop(InitiatorPid),
 		    mod_proxy65_stream:stop(TargetPid),
-		    Txt = <<"Too many active bytestreams">>,
+		    Txt = ?T("Too many active bytestreams"),
 		    xmpp:make_error(IQ, xmpp:err_resource_constraint(Txt, Lang));
 		{error, conflict} ->
-		    Txt = <<"Bytestream already activated">>,
+		    Txt = ?T("Bytestream already activated"),
 		    xmpp:make_error(IQ, xmpp:err_conflict(Txt, Lang));
 		{error, Err} ->
 		    ?ERROR_MSG("failed to activate bytestream from ~s to ~s: ~p",
 			       [Initiator, Target, Err]),
-		    Txt = <<"Database failure">>,
+		    Txt = ?T("Database failure"),
 		    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
 	    end;
 	deny ->
-	    Txt = <<"Access denied by service policy">>,
+	    Txt = ?T("Access denied by service policy"),
 	    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang))
     end.
 

@@ -102,7 +102,7 @@ route(#message{type = groupchat, id = ID, lang = Lang,
 	       to = #jid{luser = <<_, _/binary>>}} = Msg) ->
     case ID of
 	<<>> ->
-	    Txt = <<"Attribute 'id' is mandatory for MIX messages">>,
+	    Txt = ?T("Attribute 'id' is mandatory for MIX messages"),
 	    Err = xmpp:err_bad_request(Txt, Lang),
 	    ejabberd_router:route_error(Msg, Err);
 	_ ->
@@ -113,7 +113,7 @@ route(Pkt) ->
 
 -spec process_disco_info(iq()) -> iq().
 process_disco_info(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_disco_info(#iq{type = get, to = #jid{luser = <<>>} = To,
 		       from = _From, lang = Lang,
@@ -160,7 +160,7 @@ process_disco_info(IQ) ->
 
 -spec process_disco_items(iq()) -> iq().
 process_disco_items(#iq{type = set, lang = Lang} = IQ) ->
-    Txt = <<"Value 'set' of 'type' attribute is not allowed">>,
+    Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_disco_items(#iq{type = get, to = #jid{luser = <<>>} = To,
 			sub_els = [#disco_items{node = <<>>}]} = IQ) ->
@@ -596,32 +596,32 @@ make_id(JID, Key) ->
 %%%===================================================================
 -spec db_error(stanza()) -> stanza_error().
 db_error(Pkt) ->
-    Txt = <<"Database failure">>,
+    Txt = ?T("Database failure"),
     xmpp:err_internal_server_error(Txt, xmpp:get_lang(Pkt)).
 
 -spec channel_exists_error(stanza()) -> stanza_error().
 channel_exists_error(Pkt) ->
-    Txt = <<"Channel already exists">>,
+    Txt = ?T("Channel already exists"),
     xmpp:err_conflict(Txt, xmpp:get_lang(Pkt)).
 
 -spec no_channel_error(stanza()) -> stanza_error().
 no_channel_error(Pkt) ->
-    Txt = <<"Channel does not exist">>,
+    Txt = ?T("Channel does not exist"),
     xmpp:err_item_not_found(Txt, xmpp:get_lang(Pkt)).
 
 -spec not_joined_error(stanza()) -> stanza_error().
 not_joined_error(Pkt) ->
-    Txt = <<"You are not joined to the channel">>,
+    Txt = ?T("You are not joined to the channel"),
     xmpp:err_forbidden(Txt, xmpp:get_lang(Pkt)).
 
 -spec unsupported_error(stanza()) -> stanza_error().
 unsupported_error(Pkt) ->
-    Txt = <<"No module is handling this query">>,
+    Txt = ?T("No module is handling this query"),
     xmpp:err_service_unavailable(Txt, xmpp:get_lang(Pkt)).
 
 -spec ownership_error(stanza()) -> stanza_error().
 ownership_error(Pkt) ->
-    Txt = <<"Owner privileges required">>,
+    Txt = ?T("Owner privileges required"),
     xmpp:err_forbidden(Txt, xmpp:get_lang(Pkt)).
 
 %%%===================================================================

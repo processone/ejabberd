@@ -40,6 +40,7 @@
 
 -include("logger.hrl").
 -include("xmpp.hrl").
+-include("translate.hrl").
 
 start(Host, _Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
@@ -103,7 +104,7 @@ get_local_commands(Acc, _From,
 		  end,
 	  Nodes = [#disco_item{jid = jid:make(Server),
 			       node = ?NS_COMMANDS,
-			       name = translate:translate(Lang, <<"Commands">>)}],
+			       name = translate:translate(Lang, ?T("Commands"))}],
 	  {result, Items ++ Nodes}
     end;
 get_local_commands(_Acc, From,
@@ -130,7 +131,7 @@ get_sm_commands(Acc, _From,
 		  end,
 	  Nodes = [#disco_item{jid = To,
 			       node = ?NS_COMMANDS,
-			       name = translate:translate(Lang, <<"Commands">>)}],
+			       name = translate:translate(Lang, ?T("Commands"))}],
 	  {result, Items ++ Nodes}
     end;
 get_sm_commands(_Acc, From,
@@ -146,12 +147,12 @@ get_local_identity(Acc, _From, _To, ?NS_COMMANDS,
 		   Lang) ->
     [#identity{category = <<"automation">>,
 	       type = <<"command-list">>,
-	       name = translate:translate(Lang, <<"Commands">>)}
+	       name = translate:translate(Lang, ?T("Commands"))}
      | Acc];
 get_local_identity(Acc, _From, _To, <<"ping">>, Lang) ->
     [#identity{category = <<"automation">>,
 	       type = <<"command-node">>,
-	       name = translate:translate(Lang, <<"Ping">>)}
+	       name = translate:translate(Lang, ?T("Ping"))}
      | Acc];
 get_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
@@ -162,7 +163,7 @@ get_local_identity(Acc, _From, _To, _Node, _Lang) ->
 get_sm_identity(Acc, _From, _To, ?NS_COMMANDS, Lang) ->
     [#identity{category = <<"automation">>,
 	       type = <<"command-list">>,
-	       name = translate:translate(Lang, <<"Commands">>)}
+	       name = translate:translate(Lang, ?T("Commands"))}
      | Acc];
 get_sm_identity(Acc, _From, _To, _Node, _Lang) -> Acc.
 
@@ -222,7 +223,7 @@ process_adhoc_request(#iq{from = From, to = To,
 	ignore ->
 	    ignore;
 	empty ->
-	    Txt = <<"No hook has processed this command">>,
+	    Txt = ?T("No hook has processed this command"),
 	    xmpp:make_error(IQ, xmpp:err_item_not_found(Txt, Lang));
 	{error, Error} ->
 	    xmpp:make_error(IQ, Error);
@@ -242,7 +243,7 @@ ping_item(Acc, _From, #jid{server = Server} = _To,
 	    end,
     Nodes = [#disco_item{jid = jid:make(Server),
 			 node = <<"ping">>,
-			 name = translate:translate(Lang, <<"Ping">>)}],
+			 name = translate:translate(Lang, ?T("Ping"))}],
     {result, Items ++ Nodes}.
 
 -spec ping_command(adhoc_command(), jid(), jid(), adhoc_command()) ->
@@ -257,9 +258,9 @@ ping_command(_Acc, _From, _To,
 		 status = completed,
 		 notes = [#adhoc_note{
 			     type = info,
-			     data = translate:translate(Lang, <<"Pong">>)}]});
+			     data = translate:translate(Lang, ?T("Pong"))}]});
        true ->
-	    Txt = <<"Incorrect value of 'action' attribute">>,
+	    Txt = ?T("Incorrect value of 'action' attribute"),
 	    {error, xmpp:err_bad_request(Txt, Lang)}
     end;
 ping_command(Acc, _From, _To, _Request) -> Acc.

@@ -43,6 +43,7 @@
 
 -include("xmpp.hrl").
 -include("logger.hrl").
+-include("translate.hrl").
 
 -type state() :: xmpp_stream_out:state().
 -export_type([state/0]).
@@ -251,7 +252,7 @@ handle_timeout(#{on_route := Action, lang := Lang} = State) ->
     case Action of
 	bounce -> stop(State);
 	_ ->
-	    Txt = <<"Idle connection">>,
+	    Txt = ?T("Idle connection"),
 	    send(State, xmpp:serr_connection_timeout(Txt, Lang))
     end.
 
