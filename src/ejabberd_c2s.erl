@@ -55,7 +55,7 @@
 
 -define(SETS, gb_sets).
 
--type state() :: map().
+-type state() :: xmpp_stream_in:state().
 -export_type([state/0]).
 
 %%%===================================================================
@@ -926,7 +926,7 @@ fix_from_to(Pkt, _State) ->
     Pkt.
 
 -spec change_shaper(state()) -> state().
-change_shaper(#{shaper := ShaperName, ip := IP, lserver := LServer,
+change_shaper(#{shaper := ShaperName, ip := {IP, _}, lserver := LServer,
 		user := U, server := S, resource := R} = State) ->
     JID = jid:make(U, S, R),
     Shaper = ejabberd_shaper:match(LServer, ShaperName,

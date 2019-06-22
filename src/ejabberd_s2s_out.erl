@@ -44,7 +44,7 @@
 -include("xmpp.hrl").
 -include("logger.hrl").
 
--type state() :: map().
+-type state() :: xmpp_stream_out:state().
 -export_type([state/0]).
 
 %%%===================================================================
