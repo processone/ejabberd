@@ -1,12 +1,6 @@
 %% -*- coding: latin-1 -*-
-{" has set the subject to: "," установил(а) тему: "}.
-{"A password is required to enter this room","Чтобы войти в эту конференцию, нужен пароль"}.
 {"Accept","Принять"}.
-{"Access Configuration","Конфигурация доступа"}.
-{"Access Control List Configuration","Конфигурация списков управления доступом"}.
-{"Access Control Lists","Списки управления доступом"}.
 {"Access denied by service policy","Доступ запрещён политикой службы"}.
-{"Access Rules","Правила доступа"}.
 {"Action on user","Действие над пользователем"}.
 {"Add Jabber ID","Добавить Jabber ID"}.
 {"Add New","Добавить"}.
@@ -15,7 +9,6 @@
 {"Administration","Администрирование"}.
 {"Administrator privileges required","Требуются права администратора"}.
 {"All activity","Вся статистика"}.
-{"All Users","Все пользователи"}.
 {"Allow users to change the subject","Разрешить пользователям изменять тему"}.
 {"Allow users to query other users","Разрешить iq-запросы к пользователям"}.
 {"Allow users to send invites","Разрешить пользователям посылать приглашения"}.
@@ -23,7 +16,9 @@
 {"Allow visitors to change nickname","Разрешить посетителям изменять псевдоним"}.
 {"Allow visitors to send private messages to","Разрешить посетителям посылать приватные сообщения"}.
 {"Allow visitors to send status text in presence updates","Разрешить посетителям вставлять текcт статуса в сообщения о присутствии"}.
+{"All Users","Все пользователи"}.
 {"Announcements","Объявления"}.
+{"A password is required to enter this room","Чтобы войти в эту конференцию, нужен пароль"}.
 {"April","апреля"}.
 {"August","августа"}.
 {"Automatic node creation is not enabled","Автоматическое создание узлов недоступно"}.
@@ -114,7 +109,6 @@
 {"Family Name","Фамилия"}.
 {"February","февраля"}.
 {"File larger than ~w bytes","Файл больше ~w байт"}.
-{"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)","Заполните форму для поиска пользователя Jabber (Если добавить * в конец поля, то происходит поиск подстроки)"}.
 {"Friday","Пятница"}.
 {"From ~s","От ~s"}.
 {"From","От кого"}.
@@ -125,13 +119,14 @@
 {"Get User Password","Получить пароль пользователя"}.
 {"Get User Statistics","Получить статистику по пользователю"}.
 {"Given Name","Имя"}.
-{"Group ","Группа "}.
 {"Groups","Группы"}.
+{"Group ","Группа "}.
 {"has been banned","запретили входить в комнату"}.
-{"has been kicked because of a system shutdown","выгнали из комнаты из-за останова системы"}.
 {"has been kicked because of an affiliation change","выгнали из комнаты вследствие смены ранга"}.
+{"has been kicked because of a system shutdown","выгнали из комнаты из-за останова системы"}.
 {"has been kicked because the room has been changed to members-only","выгнали из комнаты потому что она стала только для членов"}.
 {"has been kicked","выгнали из комнаты"}.
+{" has set the subject to: "," установил(а) тему: "}.
 {"Host unknown","Неизвестное имя сервера"}.
 {"Host","Хост"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Если вы не видите изображение капчи, перейдите по ссылке."}.
@@ -156,7 +151,6 @@
 {"Invalid 'from' attribute in forwarded message","Некорректный атрибут 'from' в пересланном сообщении"}.
 {"Invitations are not allowed in this conference","Рассылка приглашений отключена в этой конференции"}.
 {"IP addresses","IP адреса"}.
-{"IP","IP"}.
 {"is now known as","изменил(а) имя на"}.
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Запрещено посылать сообщения об ошибках в эту комнату. Участник (~s) послал сообщение об ошибке (~s) и был выкинут из комнаты"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Нельзя посылать частные сообщения типа \"groupchat\""}.
@@ -175,8 +169,6 @@
 {"leaves the room","вышел(а) из комнаты"}.
 {"List of modules to start","Список запускаемых модулей"}.
 {"List of rooms","Список комнат"}.
-{"Listened Ports at ","Прослушиваемые порты на "}.
-{"Listened Ports","Прослушиваемые порты"}.
 {"Low level update script","Низкоуровневый сценарий обновления"}.
 {"Make participants list public","Сделать список участников видимым всем"}.
 {"Make room CAPTCHA protected","Сделать комнату защищённой капчей"}.
@@ -199,9 +191,7 @@
 {"Moderator privileges required","Требуются права модератора"}.
 {"Modified modules","Изменённые модули"}.
 {"Module failed to handle the query","Ошибка модуля при обработке запроса"}.
-{"Modules at ~p","Модули на ~p"}.
 {"Modules","Модули"}.
-{"Module","Модуль"}.
 {"Monday","Понедельник"}.
 {"Multicast","Мультикаст"}.
 {"Multiple <item/> elements are not allowed by RFC6121","Множественные элементы <item/> запрещены стандартом RFC6121"}.
@@ -215,20 +205,26 @@
 {"Nickname Registration at ","Регистрация псевдонима на "}.
 {"Nickname ~s does not exist in the room","Псевдоним ~s в комнате отсутствует"}.
 {"Nickname","Псевдоним"}.
-{"No 'access' found in data form","Не найден 'access' в форме данных"}.
-{"No 'acls' found in data form","Не найден 'acls' в форме данных"}.
 {"No 'affiliation' attribute found","Не найден атрибут 'affiliation'"}.
 {"No available resource found","Нет доступных ресурсов"}.
 {"No body provided for announce message","Тело объявления не должно быть пустым"}.
 {"No data form found","Форма данных не найдена"}.
 {"No Data","Нет данных"}.
+{"Node already exists","Узел уже существует"}.
+{"Node index not found","Индекс узла не найден"}.
+{"Node not found","Узел не найден"}.
+{"Nodeprep has failed","Ошибка применения профиля Nodeprep"}.
+{"Node ~p","Узел ~p"}.
+{"Nodes","Узлы"}.
 {"No features available","Свойства недоступны"}.
 {"No hook has processed this command","Ни один из хуков не выполнил эту команду"}.
 {"No info about last activity found","Не найдено информации о последней активности"}.
 {"No 'item' element found","Элемент 'item' не найден"}.
 {"No items found in this query","Не найдены элементы в этом запросе"}.
+{"No limit","Не ограничено"}.
 {"No module is handling this query","Нет модуля который бы обработал этот запрос"}.
 {"No 'modules' found in data form","Не найден 'modules' в форме данных"}.
+{"None","Нет"}.
 {"No node specified","Узел не указан"}.
 {"No 'password' found in data form","Не найден 'password' в форме данных"}.
 {"No 'password' found in this query","Не найден 'password' в этом запросе"}.
@@ -239,15 +235,8 @@
 {"No running node found","Нет работающих узлов"}.
 {"No services available","Нет доступных сервисов"}.
 {"No statistics found for this item","Не найдено статистики для этого элемента"}.
-{"No 'to' attribute found in the invitation","Не найден атрибут 'to' в этом приглашении"}.
-{"Node already exists","Узел уже существует"}.
-{"Node index not found","Индекс узла не найден"}.
-{"Node not found","Узел не найден"}.
-{"Node ~p","Узел ~p"}.
-{"Nodeprep has failed","Ошибка применения профиля Nodeprep"}.
-{"Nodes","Узлы"}.
-{"None","Нет"}.
 {"Not Found","Не Найдено"}.
+{"No 'to' attribute found in the invitation","Не найден атрибут 'to' в этом приглашении"}.
 {"Not subscribed","Нет подписки"}.
 {"November","ноября"}.
 {"Number of online users","Количество подключённых пользователей"}.
@@ -269,7 +258,6 @@
 {"Only occupants are allowed to send messages to the conference","Только присутствующим разрешается посылать сообщения в конференцию"}.
 {"Only occupants are allowed to send queries to the conference","Только присутствующим разрешается посылать запросы в конференцию"}.
 {"Only service administrators are allowed to send service messages","Только администратор службы может посылать служебные сообщения"}.
-{"Options","Параметры"}.
 {"Organization Name","Название организации"}.
 {"Organization Unit","Отдел организации"}.
 {"Outgoing s2s Connections:","Исходящие s2s-серверы:"}.
@@ -290,18 +278,14 @@
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Заметьте, что здесь производится резервное копирование только встроенной базы данных Mnesia. Если Вы также используете другое хранилище данных (например с помощью модуля ODBC), то его резервное копирование следует осуществлять отдельно."}.
 {"Please, wait for a while before sending new voice request","Пожалуйста, подождите перед тем как подать новый запрос на право голоса"}.
 {"Pong","Понг"}.
-{"Port","Порт"}.
 {"Possessing 'ask' attribute is not allowed by RFC6121","Включение атрибута 'ask' запрещено стандартом RFC6121"}.
 {"private, ","приватная, "}.
-{"Protocol","Протокол"}.
-{"Publishing items to collection node is not allowed","Недоступна публикация элементов в коллекцию узлов"}.
 {"Publish-Subscribe","Публикация-Подписка"}.
 {"PubSub subscriber request","Запрос подписчика PubSub"}.
 {"Queries to the conference members are not allowed in this room","Запросы к пользователям в этой конференции запрещены"}.
 {"Query to another users is forbidden","Запрос к другим пользователям запрещён"}.
 {"RAM and disc copy","ОЗУ и диск"}.
 {"RAM copy","ОЗУ"}.
-{"Raw","Необработанный формат"}.
 {"Really delete message of the day?","Действительно удалить сообщение дня?"}.
 {"Recipient is not in the conference room","Адресата нет в конференции"}.
 {"Register a Jabber account","Зарегистрировать Jabber-аккаунт"}.
@@ -332,8 +316,6 @@
 {"Roster","Ростер"}.
 {"RPC Call Error","Ошибка вызова RPC"}.
 {"Running Nodes","Работающие узлы"}.
-{"~s access rule configuration","Конфигурация правила доступа ~s"}.
-{"~s invites you to the room ~s","~s приглашает вас в комнату ~s"}.
 {"Saturday","Суббота"}.
 {"Scan failed","Ошибка сканирования"}.
 {"Script check","Проверка сценария"}.
@@ -352,11 +334,11 @@
 {"Show Integral Table","Показать интегральную таблицу"}.
 {"Show Ordinary Table","Показать обычную таблицу"}.
 {"Shut Down Service","Остановить службу"}.
+{"~s invites you to the room ~s","~s приглашает вас в комнату ~s"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Некоторые Jabber-клиенты могут сохранять пароль на Вашем компьютере. Используйте эту функцию только в том случае, если считаете это безопасным."}.
 {"~s's Offline Messages Queue","Oчередь офлайновых сообщений ~s"}.
 {"Start Modules at ","Запуск модулей на "}.
 {"Start Modules","Запуск модулей"}.
-{"Start","Запустить"}.
 {"Statistics of ~p","статистика узла ~p"}.
 {"Statistics","Статистика"}.
 {"Stop Modules at ","Остановка модулей на "}.
@@ -383,10 +365,10 @@
 {"The password of your Jabber account was successfully changed.","Пароль Вашего Jabber-аккаунта был успешно изменен."}.
 {"The query is only allowed from local users","Запрос доступен только для локальных пользователей"}.
 {"The query must not contain <item/> elements","Запрос не должен содержать элементов <item/>"}.
-{"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Строфа может содержать только один элемент <active/>, один элемент <default/> или один элемент <list/>"}.
 {"There was an error changing the password: ","Ошибка при смене пароля:"}.
 {"There was an error creating the account: ","Ошибка при создании аккаунта:"}.
 {"There was an error deleting the account: ","Ошибка при удалении аккаунта:"}.
+{"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Строфа может содержать только один элемент <active/>, один элемент <default/> или один элемент <list/>"}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Регистр не имеет значения: \"маша\" и \"МАША\" будет считаться одним и тем же именем."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Здесь Вы можете создать Jabber-аккаунт на этом Jabber-сервере. Ваш JID (Jabber-идентификатор) будет в виде: \"пользователь@сервер\". Пожалуйста, внимательно читайте инструкции для правильного заполнения полей."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Здесь Вы можете удалить Jabber-аккаунт с этого сервера."}.
@@ -394,15 +376,16 @@
 {"Thursday","Четверг"}.
 {"Time delay","По истечение"}.
 {"Time","Время"}.
-{"To register, visit ~s","Для регистрации посетите ~s"}.
-{"To ~s","К ~s"}.
 {"Token TTL","Токен TTL"}.
 {"Too many active bytestreams","Слишком много активных потоков данных"}.
 {"Too many CAPTCHA requests","Слишком много запросов капчи"}.
 {"Too many <item/> elements","Слишком много элементов <item/>"}.
 {"Too many <list/> elements","Слишком много элементов <list/>"}.
+{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Слишком много (~p) неудачных попыток аутентификации с этого IP-адреса (~s). Адрес будет разблокирован в ~s UTC"}.
 {"Too many unacked stanzas","Слишком много неподтверждённых пакетов"}.
 {"Too many users in this conference","Слишком много пользователей в этой конференции"}.
+{"To register, visit ~s","Для регистрации посетите ~s"}.
+{"To ~s","К ~s"}.
 {"Total rooms","Все комнаты"}.
 {"To","Кому"}.
 {"Traffic rate limit is exceeded","Превышен лимит скорости посылки информации"}.
@@ -428,14 +411,13 @@
 {"User already exists","Пользователь уже существует"}.
 {"User (jid)","Пользователь (XMPP адрес)"}.
 {"User Management","Управление пользователями"}.
-{"User part of JID in 'from' is empty","Пустое имя пользователя в XMPP-адресе"}.
-{"User session not found","Сессия пользователя не найдена"}.
-{"User session terminated","Сессия пользователя завершена"}.
-{"User ~s","Пользователь ~s"}.
 {"Username:","Имя пользователя:"}.
 {"Users are not allowed to register accounts so quickly","Пользователи не могут регистрировать учётные записи так быстро"}.
+{"User session not found","Сессия пользователя не найдена"}.
+{"User session terminated","Сессия пользователя завершена"}.
 {"Users Last Activity","Статистика последнего подключения пользователей"}.
 {"Users","Пользователи"}.
+{"User ~s","Пользователь ~s"}.
 {"User","Пользователь"}.
 {"Validate","Утвердить"}.
 {"Value 'get' of 'type' attribute is not allowed","Значение 'get' атрибута 'type' недопустимо"}.
@@ -459,7 +441,6 @@
 {"You need an x:data capable client to search","Чтобы воспользоваться поиском, требуется x:data-совместимый клиент"}.
 {"Your active privacy list has denied the routing of this stanza.","Маршрутизация этой строфы запрещена вашим активным списком приватности."}.
 {"Your contact offline message queue is full. The message has been discarded.","Очередь недоставленных сообщений Вашего адресата переполнена. Сообщение не было сохранено."}.
+{"You're not allowed to create nodes","Вам не разрешается создавать узлы"}.
 {"Your Jabber account was successfully created.","Ваш Jabber-аккаунт был успешно создан."}.
 {"Your Jabber account was successfully deleted.","Ваш Jabber-аккаунт был успешно удален."}.
-{"Your messages to ~s are being blocked. To unblock them, visit ~s","Ваши сообщения к ~s блокируются. Для снятия блокировки перейдите по ссылке ~s"}.
-{"You're not allowed to create nodes","Вам не разрешается создавать узлы"}.

@@ -1,12 +1,6 @@
 %% -*- coding: latin-1 -*-
-{" has set the subject to: "," הגדיר/ה את הנושא אל: "}.
-{"A password is required to enter this room","נדרשת סיסמה כדי להיכנס אל חדר זה"}.
 {"Accept","קבל"}.
-{"Access Configuration","תצורת גישה"}.
-{"Access Control List Configuration","תצורת רשימת בקרת גישה"}.
-{"Access Control Lists","רשימות בקרת גישה"}.
 {"Access denied by service policy","גישה נדחתה על ידי פוליסת שירות"}.
-{"Access Rules","כללי גישה"}.
 {"Action on user","פעולה על משתמש"}.
 {"Add Jabber ID","הוסף מזהה Jabber"}.
 {"Add New","הוסף חדש"}.
@@ -15,7 +9,6 @@
 {"Administration","הנהלה"}.
 {"Administrator privileges required","נדרשות הרשאות מנהל"}.
 {"All activity","כל פעילות"}.
-{"All Users","כל המשתמשים"}.
 {"Allow users to change the subject","התר למשתמשים לשנות את הנושא"}.
 {"Allow users to query other users","התר למשתמשים לתשאל משתמשים אחרים"}.
 {"Allow users to send invites","התר למשתמשים לשלוח הזמנות"}.
@@ -23,7 +16,9 @@
 {"Allow visitors to change nickname","התר למבקרים לשנות שם כינוי"}.
 {"Allow visitors to send private messages to","התר למבקרים לשלוח הודעות פרטיות אל"}.
 {"Allow visitors to send status text in presence updates","התר למבקרים לשלוח טקסט מצב בתוך עדכוני נוכחות"}.
+{"All Users","כל המשתמשים"}.
 {"Announcements","בשורות"}.
+{"A password is required to enter this room","נדרשת סיסמה כדי להיכנס אל חדר זה"}.
 {"April","אפריל"}.
 {"August","אוגוסט"}.
 {"Automatic node creation is not enabled","יצירה אוטומטית של צומת אינה מאופשרת"}.
@@ -107,7 +102,6 @@
 {"Family Name","שם משפחה"}.
 {"February","פברואר"}.
 {"File larger than ~w bytes","קובץ גדול יותר משיעור של ~w בייטים"}.
-{"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)","מלא את הטופס כדי לחפש אחר כל משתמש Jabber מבוקש (באפשרותך להוסיף * בסוף שדה כדי להתאים למחרוזת-משנה)"}.
 {"Friday","יום שישי"}.
 {"From ~s","מאת ~s"}.
 {"From","מאת"}.
@@ -118,13 +112,14 @@
 {"Get User Password","השג סיסמת משתמש"}.
 {"Get User Statistics","השג סטטיסטיקת משתמש"}.
 {"Given Name","שם פרטי"}.
-{"Group ","קבוצה "}.
 {"Groups","קבוצות"}.
+{"Group ","קבוצה "}.
 {"has been banned","נאסר/ה"}.
-{"has been kicked because of a system shutdown","נבעט/ה משום כיבוי מערכת"}.
 {"has been kicked because of an affiliation change","נבעט/ה משום שינוי סינוף"}.
+{"has been kicked because of a system shutdown","נבעט/ה משום כיבוי מערכת"}.
 {"has been kicked because the room has been changed to members-only","נבעט/ה משום שהחדר שונה אל חברים-בלבד"}.
 {"has been kicked","נבעט/ה"}.
+{" has set the subject to: "," הגדיר/ה את הנושא אל: "}.
 {"Host unknown","מארח לא ידוע"}.
 {"Host","מארח"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","אם אינך רואה תמונת CAPTCHA כאן, בקר בעמוד רשת."}.
@@ -144,7 +139,6 @@
 {"Insufficient privilege","הרשאה לא מספיקה"}.
 {"Invitations are not allowed in this conference","הזמנות אינן מותרות בועידה זו"}.
 {"IP addresses","כתובות IP"}.
-{"IP","‫IP"}.
 {"is now known as","ידועה כעת בכינוי"}.
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","אין זה מותר לשלוח הודעות שגיאה לחדר. משתתף זה (~s) שלח הודעת שגיאה (~s) ונבעט מתוך החדר"}.
 {"It is not allowed to send private messages of type \"groupchat\"","אין זה מותר לשלוח הודעות פרטיות מן טיפוס \"groupchat\""}.
@@ -163,8 +157,6 @@
 {"leaves the room","עוזב/ת את החדר"}.
 {"List of modules to start","רשימה של מודולים להפעלה"}.
 {"List of rooms","רשימה של חדרים"}.
-{"Listened Ports at ","פורטים מואזנים אצל "}.
-{"Listened Ports","פורטים מואזנים"}.
 {"Low level update script","תסריט עדכון Low level"}.
 {"Make participants list public","הפוך רשימת משתתפים לפומבית"}.
 {"Make room CAPTCHA protected","הפוך חדר לחדר מוגן CAPTCHA"}.
@@ -186,9 +178,7 @@
 {"Moderator privileges required","נדרשות הרשאות אחראי"}.
 {"Modified modules","מודולים שהותאמו"}.
 {"Module failed to handle the query","מודול נכשל לטפל בשאילתא"}.
-{"Modules at ~p","מודולים אצל ~p"}.
 {"Modules","מודולים"}.
-{"Module","מודול"}.
 {"Monday","יום שני"}.
 {"Multicast","שידור מרובב"}.
 {"Multi-User Chat","שיחה מרובת משתמשים"}.
@@ -202,9 +192,17 @@
 {"No available resource found","לא נמצא משאב זמין"}.
 {"No body provided for announce message","לא סופק גוף עבור הודעת בשורה"}.
 {"No Data","אין מידע"}.
+{"Node already exists","צומת כבר קיים"}.
+{"Node index not found","מפתח צומת לא נמצא"}.
+{"Node not found","צומת לא נמצא"}.
+{"Nodeprep has failed","‏Nodeprep נכשל"}.
+{"Node ~p","צומת ~p"}.
+{"Nodes","צמתים"}.
 {"No features available","אין תכונות זמינות"}.
 {"No items found in this query","לא נמצאו פריטים בתוך שאילתא זו"}.
+{"No limit","ללא הגבלה"}.
 {"No module is handling this query","אין מודול אשר מטפל בשאילתא זו"}.
+{"None","אין"}.
 {"No node specified","לא צויין צומת"}.
 {"No pending subscriptions found","לא נמצאו הרשמות ממתינות"}.
 {"No privacy list with this name found","לא נמצאה רשימת פרטיות בשם זה"}.
@@ -212,13 +210,6 @@
 {"No running node found","לא נמצא צומת מורץ"}.
 {"No services available","אין שירות זמין"}.
 {"No statistics found for this item","לא נמצאה סטטיסטיקה לגבי פריט זה"}.
-{"Node already exists","צומת כבר קיים"}.
-{"Node index not found","מפתח צומת לא נמצא"}.
-{"Node not found","צומת לא נמצא"}.
-{"Node ~p","צומת ~p"}.
-{"Nodeprep has failed","‏Nodeprep נכשל"}.
-{"Nodes","צמתים"}.
-{"None","אין"}.
 {"Not Found","לא נמצא"}.
 {"Not subscribed","לא רשום"}.
 {"November","נובמבר"}.
@@ -240,7 +231,6 @@
 {"Only occupants are allowed to send messages to the conference","רק נוכחים רשאים לשלוח הודעות אל הועידה"}.
 {"Only occupants are allowed to send queries to the conference","רק נוכחים רשאים לשלוח שאילתות אל הועידה"}.
 {"Only service administrators are allowed to send service messages","רק מנהלי שירות רשאים לשלוח הודעות שירות"}.
-{"Options","אפשרויות"}.
 {"Organization Name","שם ארגון"}.
 {"Organization Unit","יחידת איגוד"}.
 {"Outgoing s2s Connections","חיבורי s2s יוצאים"}.
@@ -261,15 +251,12 @@
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","אנא שים לב כי אפשרויות אלו יגבו את מסד הנתונים המובנה Mnesia בלבד. אם הינך עושה שימוש במודול ODBC, עליך גם לגבות את מסד הנתונים SQL אשר מצוי ברשותך בנפרד."}.
 {"Please, wait for a while before sending new voice request","אנא, המתן לזמן מה לפני שליחת בקשת ביטוי חדשה"}.
 {"Pong","פונג"}.
-{"Port","פורט"}.
 {"private, ","פרטי, "}.
-{"Protocol","פרוטוקול"}.
 {"Publish-Subscribe","‫Publish-Subscribe"}.
 {"PubSub subscriber request","בקשת מנוי PubSub"}.
 {"Queries to the conference members are not allowed in this room","שאילתות אל חברי הועידה אינן מותרות בחדר זה"}.
 {"RAM and disc copy","העתק RAM וגם תקליטור"}.
 {"RAM copy","העתק RAM"}.
-{"Raw","גולמי"}.
 {"Really delete message of the day?","באמת למחוק את בשורת היום?"}.
 {"Recipient is not in the conference room","מקבל אינו מצוי בחדר הועידה"}.
 {"Register a Jabber account","רשום חשבון Jabber"}.
@@ -300,8 +287,6 @@
 {"Roster","רשימה"}.
 {"RPC Call Error","שגיאת קריאת RPC"}.
 {"Running Nodes","צמתים מורצים"}.
-{"~s access rule configuration","~s תצורת כללי גישה"}.
-{"~s invites you to the room ~s","‫~s מזמינך לחדר ~s"}.
 {"Saturday","יום שבת"}.
 {"Scan failed","סריקה נכשלה"}.
 {"Script check","בדיקת תסריט"}.
@@ -319,11 +304,11 @@
 {"Show Integral Table","הצג טבלה אינטגרלית"}.
 {"Show Ordinary Table","הצג טבלה רגילה"}.
 {"Shut Down Service","כבה שירות"}.
+{"~s invites you to the room ~s","‫~s מזמינך לחדר ~s"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","ישנם לקוחות Jabber אשר מסוגלים לאחסן את הסיסמה שלך בתוך המחשב, אולם עליך לעשות זאת רק בתוך המחשב האישי שלך מסיבות ביטחוניות."}.
 {"~s's Offline Messages Queue","תור הודעות לא מקוונות של ~s"}.
 {"Start Modules at ","התחל מודולים אצל "}.
 {"Start Modules","התחל מודולים"}.
-{"Start","התחל"}.
 {"Statistics of ~p","סטטיסטיקות של ~p"}.
 {"Statistics","סטטיסטיקה"}.
 {"Stop Modules at ","הפסק מודולים אצל "}.
@@ -356,13 +341,14 @@
 {"Thursday","יום חמישי"}.
 {"Time delay","זמן שיהוי"}.
 {"Time","זמן"}.
-{"To register, visit ~s","כדי להירשם, בקרו ~s"}.
-{"To ~s","אל ~s"}.
 {"Token TTL","סימן TTL"}.
 {"Too many active bytestreams","יותר מדי יחידות bytestream פעילות"}.
 {"Too many CAPTCHA requests","יותר מדי בקשות CAPTCHA"}.
+{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","יותר מדי (~p) אימותים כושלים מתוך כתובת IP זו (~s). הכתובת תורשה לקבל גישה בשעה ~s UTC"}.
 {"Too many unacked stanzas","יותר מדי סטנזות בלי אישורי קבלה"}.
 {"Too many users in this conference","יותר מדי משתמשים בועידה זו"}.
+{"To register, visit ~s","כדי להירשם, בקרו ~s"}.
+{"To ~s","אל ~s"}.
 {"Total rooms","חדרים סה״כ"}.
 {"To","לכבוד"}.
 {"Traffic rate limit is exceeded","מגבלת שיעור תעבורה נחצתה"}.
@@ -386,12 +372,12 @@
 {"User already exists","משתמש כבר קיים"}.
 {"User (jid)","משתמש (jid)"}.
 {"User Management","ניהול משתמשים"}.
-{"User session not found","סשן משתמש לא נמצא"}.
-{"User session terminated","סשן משתמש הסתיים"}.
-{"User ~s","משתמש ~s"}.
 {"Username:","שם משתמש:"}.
 {"Users are not allowed to register accounts so quickly","משתמשים אינם מורשים לרשום חשבונות כל כך במהירות"}.
+{"User session not found","סשן משתמש לא נמצא"}.
+{"User session terminated","סשן משתמש הסתיים"}.
 {"Users Last Activity","פעילות משתמשים אחרונה"}.
+{"User ~s","משתמש ~s"}.
 {"Users","משתמשים"}.
 {"User","משתמש"}.
 {"Validate","הענק תוקף"}.
@@ -414,7 +400,6 @@
 {"You need an x:data capable client to search","עליך להשתמש בלקוח אשר מסוגל להבין x:data כדי לחפש"}.
 {"Your active privacy list has denied the routing of this stanza.","רשימת הפרטיות הפעילה שלך אסרה את הניתוב של סטנזה זו."}.
 {"Your contact offline message queue is full. The message has been discarded.","תור הודעות קשר לא מקוונות הינו מלא. ההודעה סולקה."}.
+{"You're not allowed to create nodes","אינך מורשה ליצור צמתים"}.
 {"Your Jabber account was successfully created.","חשבון Jabber נוצר בהצלחה."}.
 {"Your Jabber account was successfully deleted.","חשבון Jabber נמחק בהצלחה."}.
-{"Your messages to ~s are being blocked. To unblock them, visit ~s","ההודעות שלך לערוץ ~s הינן חסומות. כדי לבטל את חסימתן, בקר בכתובת ~s"}.
-{"You're not allowed to create nodes","אינך מורשה ליצור צמתים"}.

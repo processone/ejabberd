@@ -1,31 +1,26 @@
 %% -*- coding: latin-1 -*-
-{" has set the subject to: "," har satt ämnet till: "}.
-{"Access Configuration","Åtkomstkonfiguration"}.
-{"Access Control List Configuration","Konfiguera ACL"}.
-{"Access Control Lists","ACL"}.
 {"Access denied by service policy","Åtkomst nekad enligt lokal policy"}.
-{"Access Rules","Åtkomstregler"}.
 {"Action on user","Handling mot användare"}.
 {"Add Jabber ID","Lägg till Jabber ID"}.
 {"Add New","Lägg till ny"}.
 {"Add User","Lägg till användare"}.
-{"Administration of ","Administration av "}.
 {"Administration","Administration"}.
+{"Administration of ","Administration av "}.
 {"Administrator privileges required","Administrationsprivilegier krävs"}.
 {"All activity","All aktivitet"}.
-{"All Users","Alla användare"}.
 {"Allow users to change the subject","Tillåt användare att byta ämne"}.
 {"Allow users to query other users","Tillåt användare att söka efter andra användare"}.
 {"Allow users to send invites","Tillåt användare att skicka inbjudningar"}.
 {"Allow users to send private messages","Tillåt användare att skicka privata meddelanden"}.
 {"Allow visitors to change nickname","Tillåt gäster att kunna ändra smeknamn"}.
 {"Allow visitors to send status text in presence updates","Tillåt gäster att skicka statustext som uppdatering"}.
+{"All Users","Alla användare"}.
 {"Announcements","Meddelanden"}.
 {"April","April"}.
 {"August","Augusti"}.
 {"Backup Management","Hantera säkerhetskopior"}.
-{"Backup to File at ","Säkerhetskopiera till fil på "}.
 {"Backup","Säkerhetskopiera"}.
+{"Backup to File at ","Säkerhetskopiera till fil på "}.
 {"Bad format","Dåligt format"}.
 {"Birthday","Födelsedag"}.
 {"Change Password","Ändra lösenord"}.
@@ -39,13 +34,13 @@
 {"City","Stad"}.
 {"Commands","Kommandon"}.
 {"Conference room does not exist","Rummet finns inte"}.
-{"Configuration of room ~s","Konfiguration för ~s"}.
 {"Configuration","Konfiguration"}.
+{"Configuration of room ~s","Konfiguration för ~s"}.
 {"Connected Resources:","Anslutna resurser:"}.
 {"Country","Land"}.
 {"CPU Time:","CPU tid"}.
-{"Database Tables Configuration at ","Databastabellers konfiguration"}.
 {"Database","Databas"}.
+{"Database Tables Configuration at ","Databastabellers konfiguration"}.
 {"December","December"}.
 {"Default users as participants","Gör om användare till deltagare"}.
 {"Delete message of the day on all hosts","Ta bort dagens meddelande på alla värdar"}.
@@ -80,10 +75,9 @@
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Exportera data av användare i en host till PIEFXIS fil (XEP-0227):"}.
 {"Family Name","Efternamn"}.
 {"February","Februari"}.
-{"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)","Fyll i formuläret för att söka efter en användare (lägg till * på slutet av fältet för att hitta alla som börjar så)"}.
 {"Friday","Fredag"}.
-{"From ~s","Från ~s"}.
 {"From","Från"}.
+{"From ~s","Från ~s"}.
 {"Full Name","Fullständigt namn"}.
 {"Get Number of Online Users","Hämta antal inloggade användare"}.
 {"Get Number of Registered Users","Hämta antal registrerade användare"}.
@@ -93,10 +87,11 @@
 {"Group ","Grupp "}.
 {"Groups","Grupper"}.
 {"has been banned","har blivit bannad"}.
-{"has been kicked because of a system shutdown","har blivit kickad p.g.a en systemnerstängning"}.
 {"has been kicked because of an affiliation change","har blivit kickad p.g.a en ändring av tillhörighet"}.
+{"has been kicked because of a system shutdown","har blivit kickad p.g.a en systemnerstängning"}.
 {"has been kicked because the room has been changed to members-only","har blivit kickad p.g.a att rummet har ändrats till endast användare"}.
 {"has been kicked","har blivit kickad"}.
+{" has set the subject to: "," har satt ämnet till: "}.
 {"Host","Server"}.
 {"Import Directory","Importera katalog"}.
 {"Import File","Importera fil"}.
@@ -109,11 +104,10 @@
 {"Improper message type","Felaktig medelandetyp"}.
 {"Incorrect password","Fel lösenord"}.
 {"IP addresses","IP adresser"}.
-{"IP","IP"}.
 {"is now known as","är känd som"}.
+{"It is not allowed to send private messages","Det ar inte tillåtet att skicka privata meddelanden"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Det är inte tillåtet att skicka privata medelanden med typen \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Det är inte tillåtet att skicka privata medelanden till den här konferensen"}.
-{"It is not allowed to send private messages","Det ar inte tillåtet att skicka privata meddelanden"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Januari"}.
 {"joins the room","joinar rummet"}.
@@ -125,8 +119,6 @@
 {"Last year","Senaste året"}.
 {"leaves the room","lämnar rummet"}.
 {"List of modules to start","Lista av moduler som skall startas"}.
-{"Listened Ports at ","Lyssnande portar på "}.
-{"Listened Ports","Lyssnarport"}.
 {"Low level update script","Uppdaterade laglevel skript"}.
 {"Make participants list public","Gör deltagarlistan publik"}.
 {"Make room members-only","Gör om rummet till endast medlemmar"}.
@@ -144,7 +136,6 @@
 {"Middle Name","Mellannamn"}.
 {"Moderator privileges required","Moderatorprivilegier krävs"}.
 {"Modified modules","Uppdaterade moduler"}.
-{"Module","Modul"}.
 {"Modules","Moduler"}.
 {"Monday","Måndag"}.
 {"Name","Namn"}.
@@ -157,6 +148,7 @@
 {"No Data","Ingen data"}.
 {"Node not found","Noden finns inte"}.
 {"Nodes","Noder"}.
+{"No limit","Ingen gräns"}.
 {"None","Inga"}.
 {"Not Found","Noden finns inte"}.
 {"November","November"}.
@@ -166,23 +158,22 @@
 {"Offline Messages","Offline meddelanden"}.
 {"Offline Messages:","Offline meddelanden:"}.
 {"OK","OK"}.
+{"Online","Ansluten"}.
 {"Online Users","Anslutna användare"}.
 {"Online Users:","Inloggade användare"}.
-{"Online","Ansluten"}.
 {"Only moderators and participants are allowed to change the subject in this room","Endast moderatorer och deltagare har tillåtelse att ändra ämnet i det här rummet"}.
 {"Only occupants are allowed to send messages to the conference","Utomstående får inte skicka medelanden till den här konferensen"}.
 {"Only occupants are allowed to send queries to the conference","Utomstående får inte skicka iq-queries till den här konferensen"}.
 {"Only service administrators are allowed to send service messages","Endast administratörer får skicka tjänstmeddelanden"}.
-{"Options","Parametrar"}.
 {"Organization Name","Organisationsnamn"}.
 {"Organization Unit","Organisationsenhet"}.
 {"Outgoing s2s Connections","Utgaende s2s anslutning"}.
 {"Outgoing s2s Connections:","Utgående s2s anslutning"}.
 {"Owner privileges required","Ägarprivilegier krävs"}.
 {"Packet","Paket"}.
-{"Password Verification","Lösenordsverifikation"}.
 {"Password","Lösenord"}.
 {"Password:","Lösenord:"}.
+{"Password Verification","Lösenordsverifikation"}.
 {"Path to Dir","Sökväg till katalog"}.
 {"Path to File","Sökväg till fil"}.
 {"Pending","Ännu inte godkända"}.
@@ -190,42 +181,37 @@
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Kom ihåg att dessa inställningar endast tar backup pa builtin Mnesias databas. Om du använder ODBC modul så måste du ta backup på SQLs databas enskilt"}.
 {"Pong","Pong"}.
-{"Port","Port"}.
 {"private, ","privat, "}.
-{"Protocol","Protocol"}.
 {"Publish-Subscribe","Publikprenumeration"}.
 {"PubSub subscriber request","Pubsub prenumerationsforfrågan"}.
 {"Queries to the conference members are not allowed in this room","Det är förbjudet att skicka iq-queries till konferensdeltagare"}.
 {"RAM and disc copy","RAM- och diskkopia"}.
 {"RAM copy","RAM-kopia"}.
-{"Raw","Ra"}.
 {"Really delete message of the day?","Verkligen ta bort dagens meddelanden?"}.
 {"Recipient is not in the conference room","Mottagaren finns inte i rummet"}.
 {"Registered Users","Registrerade användare"}.
 {"Registered Users:","Registrerade användare"}.
 {"Remote copy","Sparas inte lokalt"}.
-{"Remove User","Ta bort användare"}.
 {"Remove","Ta bort"}.
+{"Remove User","Ta bort användare"}.
 {"Replaced by new connection","Ersatt av ny anslutning"}.
 {"Resources","Resurser"}.
-{"Restart Service","Starta om servicen"}.
 {"Restart","Omstart"}.
+{"Restart Service","Starta om servicen"}.
+{"Restore","Återställ"}.
 {"Restore Backup from File at ","Återställ säkerhetskopia från fil på "}.
 {"Restore binary backup after next ejabberd restart (requires less memory):","återställ den binära backupen efter nästa ejabberd omstart"}.
 {"Restore binary backup immediately:","återställ den binära backupen omedelbart"}.
 {"Restore plain text backup immediately:","återställ textbackup omedelbart"}.
-{"Restore","Återställ"}.
 {"Room Configuration","Rumkonfiguration"}.
 {"Room creation is denied by service policy","Skapandet av rum är förbjudet enligt lokal policy"}.
 {"Room Occupants","Antal besökare"}.
 {"Room title","Rumstitel"}.
+{"Roster","Kontaktlista"}.
 {"Roster of ","Kontaktlista för "}.
 {"Roster size","Roster storlek"}.
-{"Roster","Kontaktlista"}.
 {"RPC Call Error","RPC Uppringningserror"}.
 {"Running Nodes","Körande noder"}.
-{"~s access rule configuration","Åtkomstregelkonfiguration för ~s"}.
-{"~s invites you to the room ~s","~s bjöd in dig till rummet ~s"}.
 {"Saturday","Lördag"}.
 {"Script check","Skript kollat"}.
 {"Search Results for ","Sökresultat för"}.
@@ -241,10 +227,10 @@
 {"Show Integral Table","Visa kumulativ tabell"}.
 {"Show Ordinary Table","Visa normal tabell"}.
 {"Shut Down Service","Stäng ner servicen"}.
+{"~s invites you to the room ~s","~s bjöd in dig till rummet ~s"}.
 {"~s's Offline Messages Queue","~s's offline meddelandekö"}.
 {"Start Modules at ","Starta moduler på "}.
 {"Start Modules","Starta moduler"}.
-{"Start","Starta"}.
 {"Statistics of ~p","Statistik på ~p"}.
 {"Statistics","Statistik"}.
 {"Stop Modules at ","Stoppa moduler på "}.
@@ -281,11 +267,11 @@
 {"Update script","Uppdatera skript"}.
 {"Update","Uppdatera"}.
 {"Uptime:","Tid upp"}.
-{"User Management","Användarmanagement"}.
 {"User","Användarnamn"}.
+{"User Management","Användarmanagement"}.
+{"Users","Användare"}.
 {"Users are not allowed to register accounts so quickly","Det är inte tillåtet för användare att skapa konton så fort"}.
 {"Users Last Activity","Användarens senaste aktivitet"}.
-{"Users","Användare"}.
 {"Validate","Validera"}.
 {"vCard User Search","vCard användare sök"}.
 {"Virtual Hosts","Virtuella servrar"}.
@@ -296,4 +282,3 @@
 {"You must fill in field \"Nickname\" in the form","Du måste fylla i fält \"smeknamn\" i formen"}.
 {"You need an x:data capable client to search","Du behöver en klient som stödjer x:data, för att kunna söka"}.
 {"Your contact offline message queue is full. The message has been discarded.","Din kontaktkö for offlinekontakter ar full"}.
-{"Your messages to ~s are being blocked. To unblock them, visit ~s","Dina meddelanden till ~s är blockerade. För att avblockera dem, gå till ~s"}.

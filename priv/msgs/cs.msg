@@ -1,21 +1,14 @@
 %% -*- coding: latin-1 -*-
-{" has set the subject to: "," změnil(a) téma na: "}.
-{"A password is required to enter this room","Pro vstup do místnosti musíte zadat heslo"}.
 {"Accept","Přijmout"}.
-{"Access Configuration","Konfigurace přístupů"}.
-{"Access Control List Configuration","Konfigurace seznamu přístupových práv (ACL)"}.
-{"Access Control Lists","Seznamy přístupových práv (ACL)"}.
 {"Access denied by service policy","Přístup byl zamítnut nastavením služby"}.
-{"Access Rules","Pravidla přístupů"}.
 {"Action on user","Akce aplikovaná na uživatele"}.
 {"Add Jabber ID","Přidat Jabber ID"}.
 {"Add New","Přidat nový"}.
 {"Add User","Přidat uživatele"}.
-{"Administration of ","Administrace "}.
 {"Administration","Administrace"}.
+{"Administration of ","Administrace "}.
 {"Administrator privileges required","Potřebujete práva administrátora"}.
 {"All activity","Všechny aktivity"}.
-{"All Users","Všichni uživatelé"}.
 {"Allow users to change the subject","Povolit uživatelům měnit téma místnosti"}.
 {"Allow users to query other users","Povolit uživatelům odesílat požadavky (query) ostatním uživatelům"}.
 {"Allow users to send invites","Povolit uživatelům posílání pozvánek"}.
@@ -23,7 +16,9 @@
 {"Allow visitors to change nickname","Povolit návštěvníkům měnit přezdívku"}.
 {"Allow visitors to send private messages to","Povolit návštěvníkům odesílat soukromé zprávy"}.
 {"Allow visitors to send status text in presence updates","Povolit návštěvníkům posílat stavové zprávy ve statusu"}.
+{"All Users","Všichni uživatelé"}.
 {"Announcements","Oznámení"}.
+{"A password is required to enter this room","Pro vstup do místnosti musíte zadat heslo"}.
 {"April",". dubna"}.
 {"August",". srpna"}.
 {"Automatic node creation is not enabled","Automatické vytváření uzlů není povoleno"}.
@@ -56,15 +51,15 @@
 {"City","Město"}.
 {"Commands","Příkazy"}.
 {"Conference room does not exist","Místnost neexistuje"}.
-{"Configuration of room ~s","Konfigurace místnosti ~s"}.
 {"Configuration","Konfigurace"}.
+{"Configuration of room ~s","Konfigurace místnosti ~s"}.
 {"Connected Resources:","Připojené zdroje:"}.
 {"Country","Země"}.
 {"CPU Time:","Čas procesoru:"}.
+{"Database","Databáze"}.
 {"Database failure","Chyba databáze"}.
 {"Database Tables at ~p","Databázové tabulky na ~p"}.
 {"Database Tables Configuration at ","Konfigurace databázových tabulek "}.
-{"Database","Databáze"}.
 {"December",". prosince"}.
 {"Default users as participants","Uživatelé jsou implicitně členy"}.
 {"Delete message of the day on all hosts","Smazat zprávu dne na všech hostitelích"}.
@@ -114,10 +109,9 @@
 {"Family Name","Příjmení"}.
 {"February",". února"}.
 {"File larger than ~w bytes","Soubor větší než ~w bytů"}.
-{"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)","Pro vyhledání uživatele Jabberu vyplňte formulář (na konec přidejte znak * pro vyhledání podřetězce)"}.
 {"Friday","Pátek"}.
-{"From ~s","Od  ~s"}.
 {"From","Od"}.
+{"From ~s","Od  ~s"}.
 {"Full Name","Celé jméno"}.
 {"Get Number of Online Users","Získat počet online uživatelů"}.
 {"Get Number of Registered Users","Získat počet registrovaných uživatelů"}.
@@ -128,12 +122,13 @@
 {"Group ","Skupina "}.
 {"Groups","Skupiny"}.
 {"has been banned","byl(a) zablokován(a)"}.
-{"has been kicked because of a system shutdown","byl(a) vyhozen(a), protože dojde k vypnutí systému"}.
 {"has been kicked because of an affiliation change","byl(a) vyhozen(a) kvůli změně přiřazení"}.
+{"has been kicked because of a system shutdown","byl(a) vyhozen(a), protože dojde k vypnutí systému"}.
 {"has been kicked because the room has been changed to members-only","byl(a) vyhozen(a), protože mísnost je nyní pouze pro členy"}.
 {"has been kicked","byl(a) vyhozen(a) z místnosti"}.
-{"Host unknown","Neznámý hostitel"}.
+{" has set the subject to: "," změnil(a) téma na: "}.
 {"Host","Hostitel"}.
+{"Host unknown","Neznámý hostitel"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Pokud zde nevidíte obrázek CAPTCHA, přejděte na webovou stránku."}.
 {"Import Directory","Import adresáře"}.
 {"Import File","Import souboru"}.
@@ -156,12 +151,11 @@
 {"Invalid 'from' attribute in forwarded message","Nesprávný atribut 'from' v přeposlané zprávě"}.
 {"Invitations are not allowed in this conference","Pozvánky nejsou povoleny v této místnosti"}.
 {"IP addresses","IP adresy"}.
-{"IP","IP"}.
 {"is now known as","se přejmenoval(a) na"}.
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Není povoleno posílat chybové zprávy do místnosti. Účastník (~s) odeslal chybovou zprávu (~s) a byl vyhozen z místnosti"}.
+{"It is not allowed to send private messages","Je zakázáno posílat soukromé zprávy"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Není dovoleno odeslání soukromé zprávy typu \"skupinová zpráva\" "}.
 {"It is not allowed to send private messages to the conference","Není povoleno odesílat soukromé zprávy v této místnosti"}.
-{"It is not allowed to send private messages","Je zakázáno posílat soukromé zprávy"}.
 {"Jabber Account Registration","Registrace účtu Jabberu"}.
 {"Jabber ID","Jabber ID"}.
 {"January",". ledna"}.
@@ -175,8 +169,6 @@
 {"leaves the room","opustil(a) místnost"}.
 {"List of modules to start","Seznam modulů, které mají být spuštěné"}.
 {"List of rooms","Seznam místností"}.
-{"Listened Ports at ","Otevřené porty na "}.
-{"Listened Ports","Otevřené porty"}.
 {"Low level update script","Nízkoúrovňový aktualizační skript"}.
 {"Make participants list public","Nastavit seznam účastníků jako veřejný"}.
 {"Make room CAPTCHA protected","Chránit místnost pomocí CAPTCHA"}.
@@ -199,8 +191,6 @@
 {"Moderator privileges required","Potřebujete práva moderátora"}.
 {"Modified modules","Aktualizované moduly"}.
 {"Module failed to handle the query","Modul chyboval při zpracování dotazu"}.
-{"Module","Modul"}.
-{"Modules at ~p","Moduly v ~p"}.
 {"Modules","Moduly"}.
 {"Monday","Pondělí"}.
 {"Multicast","Multicast"}.
@@ -212,23 +202,29 @@
 {"Neither 'role' nor 'affiliation' attribute found","Nebyl nalezen atribut 'role'  ani 'affiliation'"}.
 {"Never","Nikdy"}.
 {"New Password:","Nové heslo:"}.
+{"Nickname","Přezdívka"}.
 {"Nickname Registration at ","Registrace přezdívky na "}.
 {"Nickname ~s does not exist in the room","Přezdívka ~s v místnosti neexistuje"}.
-{"Nickname","Přezdívka"}.
-{"No 'access' found in data form","Chybějící atribut 'access' v datovém formuláři"}.
-{"No 'acls' found in data form","Chybějící atribut 'acls' v datovém formuláři"}.
 {"No 'affiliation' attribute found","Chybějící atribut 'affiliation'"}.
 {"No available resource found","Nebyl nalezen žádný dostupný zdroj"}.
 {"No body provided for announce message","Zpráva neobsahuje text"}.
 {"No data form found","Nebyl nalezen datový formulář"}.
 {"No Data","Žádná data"}.
+{"Node already exists","Uzel již existuje"}.
+{"Node index not found","Index uzlu nebyl nalezen"}.
+{"Node not found","Uzel nenalezen"}.
+{"Nodeprep has failed","Nodeprep chyboval"}.
+{"Node ~p","Uzel ~p"}.
+{"Nodes","Uzly"}.
 {"No features available","Žádné funce nejsou dostupné"}.
 {"No hook has processed this command","Žádný hook nebyl zpracován tímto příkazem"}.
 {"No info about last activity found","Nebyla žádná informace o poslední aktivitě"}.
 {"No 'item' element found","Element 'item' nebyl nalezen"}.
 {"No items found in this query","Žádné položky nebyly nalezeny v tomto dotazu"}.
+{"No limit","Bez limitu"}.
 {"No module is handling this query","Žádný modul neobsluhuje tento dotaz"}.
 {"No 'modules' found in data form","Chybějící atribut 'modules' v datovém formuláři"}.
+{"None","Nic"}.
 {"No node specified","Žádný uzel nebyl specifikován"}.
 {"No 'password' found in data form","Chybějící atribut 'password' v datovém formuláři"}.
 {"No 'password' found in this query","Chybějící atribut 'password' v tomto dotazu"}.
@@ -239,15 +235,8 @@
 {"No running node found","Nebyl nalezen žádný běžící uzel"}.
 {"No services available","Žádné služby nejsou dostupné"}.
 {"No statistics found for this item","Nebyly nalezeny statistiky pro uvedenou položku"}.
-{"No 'to' attribute found in the invitation","Chybějící atribut 'to' v pozvánce"}.
-{"Node already exists","Uzel již existuje"}.
-{"Node index not found","Index uzlu nebyl nalezen"}.
-{"Node not found","Uzel nenalezen"}.
-{"Node ~p","Uzel ~p"}.
-{"Nodeprep has failed","Nodeprep chyboval"}.
-{"Nodes","Uzly"}.
-{"None","Nic"}.
 {"Not Found","Nenalezeno"}.
+{"No 'to' attribute found in the invitation","Chybějící atribut 'to' v pozvánce"}.
 {"Not subscribed","Není odebíráno"}.
 {"November",". listopadu"}.
 {"Number of online users","Počet online uživatelů"}.
@@ -257,9 +246,9 @@
 {"Offline Messages:","Offline zprávy:"}.
 {"OK","OK"}.
 {"Old Password:","Současné heslo:"}.
+{"Online","Online"}.
 {"Online Users","Připojení uživatelé"}.
 {"Online Users:","Připojení uživatelé:"}.
-{"Online","Online"}.
 {"Only <enable/> or <disable/> tags are allowed","Pouze značky <enable/> nebo <disable/>jsou povoleny"}.
 {"Only <list/> element is allowed in this query","Pouze element <list/> je povolen v tomto dotazu"}.
 {"Only members may query archives of this room","Pouze moderátoři mají povoleno měnit téma místnosti"}.
@@ -269,7 +258,6 @@
 {"Only occupants are allowed to send messages to the conference","Jen členové mají povolené zasílat zprávy do místnosti"}.
 {"Only occupants are allowed to send queries to the conference","Jen členové mohou odesílat požadavky (query) do místnosti"}.
 {"Only service administrators are allowed to send service messages","Pouze správci služby smí odesílat servisní zprávy"}.
-{"Options","Nastavení"}.
 {"Organization Name","Název firmy"}.
 {"Organization Unit","Oddělení"}.
 {"Outgoing s2s Connections","Odchozí s2s spojení"}.
@@ -277,31 +265,27 @@
 {"Owner privileges required","Jsou vyžadována práva vlastníka"}.
 {"Packet","Paket"}.
 {"Parse failed","Došlo k chybě při parsování"}.
-{"Password Verification","Ověření hesla"}.
-{"Password Verification:","Ověření hesla:"}.
 {"Password","Heslo"}.
 {"Password:","Heslo:"}.
+{"Password Verification","Ověření hesla"}.
+{"Password Verification:","Ověření hesla:"}.
 {"Path to Dir","Cesta k adresáři"}.
 {"Path to File","Cesta k souboru"}.
 {"Pending","Čekající"}.
 {"Period: ","Čas: "}.
-{"Ping query is incorrect","Ping dotaz je nesprávný"}.
 {"Ping","Ping"}.
+{"Ping query is incorrect","Ping dotaz je nesprávný"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Podotýkáme, že tato nastavení budou zálohována do zabudované databáze Mnesia. Pokud používáte ODBC modul, musíte zálohovat svoji SQL databázi samostatně."}.
 {"Please, wait for a while before sending new voice request","Prosím, počkejte chvíli před posláním nové žádosti o voice práva"}.
 {"Pong","Pong"}.
-{"Port","Port"}.
 {"Possessing 'ask' attribute is not allowed by RFC6121","Atribut 'ask' není povolen dle RFC6121"}.
 {"private, ","soukromá, "}.
-{"Protocol","Protokol"}.
-{"Publishing items to collection node is not allowed","Publikování položek do collection uzlu není povoleno"}.
 {"Publish-Subscribe","Publish-Subscribe"}.
 {"PubSub subscriber request","Žádost odběratele PubSub"}.
 {"Queries to the conference members are not allowed in this room","Požadavky (queries) na členy místnosti nejsou v této místnosti povolené"}.
 {"Query to another users is forbidden","Dotaz na jiné uživatele je zakázán"}.
 {"RAM and disc copy","Kopie RAM a disku"}.
 {"RAM copy","Kopie RAM"}.
-{"Raw","Zdroj"}.
 {"Really delete message of the day?","Skutečně smazat zprávu dne?"}.
 {"Recipient is not in the conference room","Příjemce se nenachází v místnosti"}.
 {"Register a Jabber account","Zaregistrujte si účet Jabberu"}.
@@ -310,17 +294,17 @@
 {"Register","Zaregistrovat se"}.
 {"Remote copy","Vzdálená kopie"}.
 {"Remove All Offline Messages","Odstranit všechny offline zprávy"}.
-{"Remove User","Odstranit uživatele"}.
 {"Remove","Odstranit"}.
+{"Remove User","Odstranit uživatele"}.
 {"Replaced by new connection","Nahrazeno novým spojením"}.
 {"Resources","Zdroje"}.
-{"Restart Service","Restartovat službu"}.
 {"Restart","Restart"}.
+{"Restart Service","Restartovat službu"}.
 {"Restore Backup from File at ","Obnovit zálohu ze souboru na "}.
 {"Restore binary backup after next ejabberd restart (requires less memory):","Obnovit binární zálohu při následujícím restartu ejabberd (vyžaduje méně paměti):"}.
 {"Restore binary backup immediately:","Okamžitě obnovit binární zálohu:"}.
-{"Restore plain text backup immediately:","Okamžitě obnovit zálohu z textového souboru:"}.
 {"Restore","Obnovit"}.
+{"Restore plain text backup immediately:","Okamžitě obnovit zálohu z textového souboru:"}.
 {"Room Configuration","Nastavení místnosti"}.
 {"Room creation is denied by service policy","Pravidla služby nepovolují vytvořit místnost"}.
 {"Room description","Popis místnosti"}.
@@ -328,21 +312,19 @@
 {"Room title","Název místnosti"}.
 {"Roster module has failed","Modul Roster chyboval"}.
 {"Roster of ","Seznam kontaktů "}.
-{"Roster size","Velikost seznamu kontaktů"}.
 {"Roster","Seznam kontaktů"}.
+{"Roster size","Velikost seznamu kontaktů"}.
 {"RPC Call Error","Chyba RPC volání"}.
 {"Running Nodes","Běžící uzly"}.
-{"~s access rule configuration","~s konfigurace pravidla přístupu"}.
-{"~s invites you to the room ~s","~s vás zve do místnosti ~s"}.
 {"Saturday","Sobota"}.
 {"Scan failed","Při skenování došlo k chybě"}.
 {"Script check","Kontrola skriptu"}.
 {"Search Results for ","Výsledky hledání pro "}.
 {"Search users in ","Hledat uživatele v "}.
-{"Send announcement to all online users on all hosts","Odeslat oznámení všem online uživatelům na všech hostitelích"}.
 {"Send announcement to all online users","Odeslat oznámení všem online uživatelům"}.
-{"Send announcement to all users on all hosts","Odeslat oznámení všem uživatelům na všech hostitelích"}.
+{"Send announcement to all online users on all hosts","Odeslat oznámení všem online uživatelům na všech hostitelích"}.
 {"Send announcement to all users","Odeslat oznámení všem uživatelům"}.
+{"Send announcement to all users on all hosts","Odeslat oznámení všem uživatelům na všech hostitelích"}.
 {"September",". září"}.
 {"Server connections to local subdomains are forbidden","Serverová spojení k lokálním subdoménám je zakázáno"}.
 {"Server:","Server:"}.
@@ -352,11 +334,11 @@
 {"Show Integral Table","Zobrazit kompletní tabulku"}.
 {"Show Ordinary Table","Zobrazit běžnou tabulku"}.
 {"Shut Down Service","Vypnout službu"}.
+{"~s invites you to the room ~s","~s vás zve do místnosti ~s"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Někteří klienti umí uložit vaše heslo na disk počítače. Tuto funkci používejte, pouze pokud věříte zabezpečení svého počítače."}.
 {"~s's Offline Messages Queue","Fronta offline zpráv uživatele ~s"}.
 {"Start Modules at ","Spustit moduly na "}.
 {"Start Modules","Spustit moduly"}.
-{"Start","Start"}.
 {"Statistics of ~p","Statistiky ~p"}.
 {"Statistics","Statistiky"}.
 {"Stop Modules at ","Zastavit moduly na "}.
@@ -378,32 +360,33 @@
 {"The CAPTCHA verification has failed","Ověření CAPTCHA se nezdařilo"}.
 {"The feature requested is not supported by the conference","Požadovaná vlastnost není podporována touto místností"}.
 {"The password contains unacceptable characters","Heslo obsahuje nepovolené znaky"}.
-{"The password is too weak","Heslo je příliš slabé"}.
 {"the password is","heslo je"}.
+{"The password is too weak","Heslo je příliš slabé"}.
 {"The password of your Jabber account was successfully changed.","Heslo vašeho účtu Jabberu bylo úspěšně změněno."}.
 {"The query is only allowed from local users","Dotaz je povolen pouze pro místní uživatele"}.
 {"The query must not contain <item/> elements","Dotaz nesmí obsahovat elementy <item/>"}.
-{"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Stanza MUSÍ obsahovat pouze jeden element  <active/>, jeden element <default/> nebo jeden element <list/>"}.
 {"There was an error changing the password: ","Při změně hesla došlo k chybě: "}.
 {"There was an error creating the account: ","Při vytváření účtu došlo k chybě:"}.
 {"There was an error deleting the account: ","Při mazání účtu došlo k chybě: "}.
+{"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Stanza MUSÍ obsahovat pouze jeden element  <active/>, jeden element <default/> nebo jeden element <list/>"}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Zde nezáleží na velikosti písmen: macbeth je stejný jako MacBeth a Macbeth."}.
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Na této stránce si můžete vytvořit účet na tomto serveru Jabberu. Vaše JID (Jabber IDentifikátor) bude mít tvar: uživatelskéjméno@server. Přečtěte si prosím pozorně instrukce pro vyplnění údajů."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Zde můžete zrušit registraci účtu na tomto serveru Jabberu."}.
 {"This room is not anonymous","Tato místnost není anonymní"}.
 {"Thursday","Čtvrtek"}.
-{"Time delay","Časový posun"}.
 {"Time","Čas"}.
-{"To register, visit ~s","Pokud se chcete zaregistrovat, navštivte ~s"}.
-{"To ~s","Pro ~s"}.
+{"Time delay","Časový posun"}.
 {"Token TTL","Token TTL"}.
 {"Too many active bytestreams","Příliš mnoho aktivních bytestreamů"}.
 {"Too many CAPTCHA requests","Přiliš mnoho CAPTCHA žádostí"}.
 {"Too many <item/> elements","Příliš mnoho elementů <item/>"}.
 {"Too many <list/> elements","Přilíš mnoho elementů <list/>"}.
+{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Příliš mnoho (~p) chybných pokusů o přihlášení z této IP adresy (~s). Adresa bude zablokována do ~s UTC"}.
 {"Too many unacked stanzas","Příliš mnoho nepotvrzených stanz"}.
 {"Too many users in this conference","Přiliš mnoho uživatelů v této místnosti"}.
 {"To","Pro"}.
+{"To register, visit ~s","Pokud se chcete zaregistrovat, navštivte ~s"}.
+{"To ~s","Pro ~s"}.
 {"Total rooms","Celkem místností"}.
 {"Traffic rate limit is exceeded","Byl překročen limit"}.
 {"Transactions Aborted:","Transakcí zrušených:"}.
@@ -418,24 +401,23 @@
 {"Unregister a Jabber account","Zrušte registraci účtu Jabberu"}.
 {"Unregister","Zrušit registraci"}.
 {"Unsupported <index/> element","Nepodporovaný <index/> element"}.
+{"Update","Aktualizovat"}.
 {"Update message of the day (don't send)","Aktualizovat zprávu dne (neodesílat)"}.
 {"Update message of the day on all hosts (don't send)","Aktualizovat zprávu dne pro všechny hostitele (neodesílat)"}.
 {"Update ~p","Aktualizovat ~p"}.
 {"Update plan","Aktualizovat plán"}.
 {"Update script","Aktualizované skripty"}.
-{"Update","Aktualizovat"}.
 {"Uptime:","Čas běhu:"}.
 {"User already exists","Uživatel již existuje"}.
 {"User (jid)","Uživatel (JID)"}.
 {"User Management","Správa uživatelů"}.
-{"User part of JID in 'from' is empty","Uživatelská část Jabber ID v elementu 'from' je prázdná"}.
-{"User session not found","Sezení uživatele nebylo nalezeno"}.
-{"User session terminated","Sezení uživatele bylo ukončeno"}.
-{"User ~s","Uživatel ~s"}.
 {"Username:","Uživatelské jméno:"}.
 {"Users are not allowed to register accounts so quickly","Je zakázáno registrovat účty v tak rychlém sledu"}.
+{"User session not found","Sezení uživatele nebylo nalezeno"}.
+{"User session terminated","Sezení uživatele bylo ukončeno"}.
 {"Users Last Activity","Poslední aktivita uživatele"}.
 {"Users","Uživatelé"}.
+{"User ~s","Uživatel ~s"}.
 {"User","Uživatel"}.
 {"Validate","Ověřit"}.
 {"Value 'get' of 'type' attribute is not allowed","Hodnota 'get' atrubutu 'type' není povolena"}.
@@ -459,7 +441,6 @@
 {"You need an x:data capable client to search","K vyhledávání potřebujete klienta podporujícího x:data"}.
 {"Your active privacy list has denied the routing of this stanza.","Vaše nastavení soukromí znemožnilo směrování této stance."}.
 {"Your contact offline message queue is full. The message has been discarded.","Fronta offline zpráv pro váš kontakt je plná. Zpráva byla zahozena."}.
+{"You're not allowed to create nodes","Nemáte povoleno vytvářet uzly"}.
 {"Your Jabber account was successfully created.","Váš účet Jabberu byl úspěšně vytvořen."}.
 {"Your Jabber account was successfully deleted.","Váš účet Jabberu byl úspěšně smazán."}.
-{"Your messages to ~s are being blocked. To unblock them, visit ~s","Nesmíte posílat zprávy na ~s. Pro povolení navštivte ~s"}.
-{"You're not allowed to create nodes","Nemáte povoleno vytvářet uzly"}.

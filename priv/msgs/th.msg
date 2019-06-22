@@ -1,10 +1,5 @@
 %% -*- coding: latin-1 -*-
-{" has set the subject to: "," ตั้งหัวข้อว่า: "}.
-{"Access Configuration","การกำหนดค่าการเข้าถึง"}.
-{"Access Control List Configuration","การกำหนดค่ารายการควบคุมการเข้าถึง"}.
-{"Access Control Lists","รายการควบคุมการเข้าถึง"}.
 {"Access denied by service policy","การเข้าถึงถูกปฏิเสธโดยนโยบายการบริการ"}.
-{"Access Rules","กฎการเข้าถึง"}.
 {"Action on user","การดำเนินการกับผู้ใช้"}.
 {"Add Jabber ID","เพิ่ม Jabber ID"}.
 {"Add New","เพิ่มผู้ใช้ใหม่"}.
@@ -13,10 +8,10 @@
 {"Administration","การดูแล"}.
 {"Administrator privileges required","ต้องมีสิทธิพิเศษของผู้ดูแลระบบ"}.
 {"All activity","กิจกรรมทั้งหมด"}.
-{"All Users","ผู้ใช้ทั้งหมด"}.
 {"Allow users to query other users","อนุญาตให้ผู้ใช้ถามคำถามกับผู้ใช้คนอื่นๆ ได้"}.
 {"Allow users to send invites","อนุญาตให้ผู้ใช้ส่งคำเชิญถึงกันได้"}.
 {"Allow users to send private messages","อนุญาตให้ผู้ใช้ส่งข้อความส่วนตัว"}.
+{"All Users","ผู้ใช้ทั้งหมด"}.
 {"Announcements","ประกาศ"}.
 {"April","เมษายน"}.
 {"August","สิงหาคม"}.
@@ -70,7 +65,6 @@
 {"Erlang Jabber Server","Erlang Jabber Server"}.
 {"Family Name","นามสกุล"}.
 {"February","กุมภาพันธ์"}.
-{"Fill in the form to search for any matching Jabber User (Add * to the end of field to match substring)","กรอกข้อมูลในแบบฟอร์มเพื่อค้นหาผู้ใช้ Jabber ที่ตรงกัน (ใส่เครื่องหมาย * ที่ท้ายสุดของฟิลด์เพื่อจับคู่กับสตริงย่อย)"}.
 {"Friday","วันศุกร์"}.
 {"From ~s","จาก ~s"}.
 {"From","จาก"}.
@@ -80,10 +74,11 @@
 {"Get User Last Login Time","แสดงเวลาเข้าสู่ระบบครั้งล่าสุดของผู้ใช้"}.
 {"Get User Password","ขอรับรหัสผ่านของผู้ใช้"}.
 {"Get User Statistics","แสดงสถิติของผู้ใช้"}.
-{"Group ","กลุ่ม"}.
 {"Groups","กลุ่ม"}.
+{"Group ","กลุ่ม"}.
 {"has been banned","ถูกสั่งห้าม"}.
 {"has been kicked","ถูกไล่ออก"}.
+{" has set the subject to: "," ตั้งหัวข้อว่า: "}.
 {"Host","โฮสต์"}.
 {"Import Directory","อิมพอร์ตไดเร็กทอรี"}.
 {"Import File","อิมพอร์ตไฟล์"}.
@@ -107,8 +102,6 @@
 {"Last year","ปีที่แล้ว"}.
 {"leaves the room","ออกจากห้อง"}.
 {"List of modules to start","รายการของโมดูลที่จะเริ่มการทำงาน"}.
-{"Listened Ports at ","พอร์ทฟังที่"}.
-{"Listened Ports","พอร์ทฟัง"}.
 {"Low level update script","อัพเดตสคริปต์ระดับต่ำ"}.
 {"Make participants list public","สร้างรายการผู้เข้าร่วมสำหรับใช้งานโดยบุคคลทั่วไป"}.
 {"Make room members-only","สร้างห้องสำหรับสมาชิกเท่านั้น"}.
@@ -124,7 +117,6 @@
 {"Middle Name","ชื่อกลาง"}.
 {"Moderator privileges required","ต้องมีสิทธิพิเศษของผู้ดูแลการสนทนา"}.
 {"Modules","โมดูล"}.
-{"Module","โมดูล"}.
 {"Monday","วันจันทร์"}.
 {"Name","ชื่อ"}.
 {"Name:","ชื่อ:"}.
@@ -136,6 +128,7 @@
 {"No Data","ไม่มีข้อมูล"}.
 {"Node not found","ไม่พบโหนด"}.
 {"Nodes","โหนด"}.
+{"No limit","ไม่จำกัด"}.
 {"None","ไม่มี"}.
 {"November","พฤศจิกายน"}.
 {"Number of online users","จำนวนผู้ใช้ออนไลน์"}.
@@ -150,7 +143,6 @@
 {"Only occupants are allowed to send messages to the conference","ผู้ครอบครองห้องเท่านั้นที่ได้รับอนุญาตให้ส่งข้อความไปยังห้องประชุม"}.
 {"Only occupants are allowed to send queries to the conference","ผู้ครอบครองห้องเท่านั้นที่ได้รับอนุญาตให้ส่งกระทู้ถามไปยังห้องประชุม"}.
 {"Only service administrators are allowed to send service messages","ผู้ดูแลด้านการบริการเท่านั้นที่ได้รับอนุญาตให้ส่งข้อความการบริการ"}.
-{"Options","ตัวเลือก"}.
 {"Organization Name","ชื่อองค์กร"}.
 {"Organization Unit","หน่วยขององค์กร"}.
 {"Outgoing s2s Connections","การเชื่อมต่อ s2s ขาออก"}.
@@ -166,14 +158,12 @@
 {"Period: ","ระยะเวลา:"}.
 {"Ping","Ping"}.
 {"Pong","Pong"}.
-{"Port","พอร์ท"}.
 {"private, ","ส่วนตัว, "}.
 {"Publish-Subscribe","เผยแพร่-สมัครเข้าใช้งาน"}.
 {"PubSub subscriber request","คำร้องขอของผู้สมัครเข้าใช้งาน PubSub"}.
 {"Queries to the conference members are not allowed in this room","ห้องนี้ไม่อนุญาตให้ส่งกระทู้ถามถึงสมาชิกในห้องประชุม"}.
 {"RAM and disc copy","คัดลอก RAM และดิสก์"}.
 {"RAM copy","คัดลอก RAM"}.
-{"Raw","ข้อมูลดิบ"}.
 {"Really delete message of the day?","แน่ใจว่าต้องการลบข้อความของวันหรือไม่"}.
 {"Recipient is not in the conference room","ผู้รับไม่ได้อยู่ในห้องประชุม"}.
 {"Registered Users","ผู้ใช้ที่ลงทะเบียน"}.
@@ -198,8 +188,6 @@
 {"Roster","บัญชีรายชื่อ"}.
 {"RPC Call Error","ข้อผิดพลาดจากการเรียกใช้ RPC"}.
 {"Running Nodes","โหนดที่ทำงาน"}.
-{"~s access rule configuration","~s การกำหนดค่ากฎการเข้าถึง"}.
-{"~s invites you to the room ~s","~s เชิญคุณเข้าร่วมสนทนาในห้อง ~s"}.
 {"Saturday","วันเสาร์"}.
 {"Script check","ตรวจสอบคริปต์"}.
 {"Search Results for ","ผลการค้นหาสำหรับ "}.
@@ -215,10 +203,10 @@
 {"Show Integral Table","แสดงตารางรวม"}.
 {"Show Ordinary Table","แสดงตารางทั่วไป"}.
 {"Shut Down Service","ปิดการบริการ"}.
+{"~s invites you to the room ~s","~s เชิญคุณเข้าร่วมสนทนาในห้อง ~s"}.
 {"~s's Offline Messages Queue","~s's ลำดับข้อความออฟไลน์"}.
 {"Start Modules at ","เริ่มโมดูลที่"}.
 {"Start Modules","เริ่มโมดูล"}.
-{"Start","เริ่ม"}.
 {"Statistics of ~p","สถิติของ ~p"}.
 {"Statistics","สถิติ"}.
 {"Stop Modules at ","หยุดโมดูลที่"}.

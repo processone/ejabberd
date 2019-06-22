@@ -1,19 +1,14 @@
 %% -*- coding: latin-1 -*-
-{" has set the subject to: "," colocou o tópico: "}.
-{"Access Configuration","Configuração de acessos"}.
-{"Access Control List Configuration","Configuração da Lista de Controlo de Acesso"}.
-{"Access Control Lists","Listas de Controlo de Acesso"}.
 {"Access denied by service policy","Acesso negado pela política de serviço"}.
-{"Access Rules","Regras de Acesso"}.
 {"Action on user","Acção no utilizador"}.
 {"Add New","Adicionar novo"}.
 {"Add User","Adicionar utilizador"}.
 {"Administration of ","Administração de "}.
 {"Administrator privileges required","São necessários privilégios de administrador"}.
 {"All Users","Todos os utilizadores"}.
+{"Backup","Guardar cópia de segurança"}.
 {"Backup Management","Gestão de cópias de segurança"}.
 {"Backup to File at ","Guardar cópia de segurança para ficheiro em "}.
-{"Backup","Guardar cópia de segurança"}.
 {"Birthday","Data de nascimento"}.
 {"Change Password","Mudar palavra-chave"}.
 {"Choose a username and password to register with this server","Escolha um nome de utilizador e palavra-chave para se registar neste servidor"}.
@@ -39,10 +34,11 @@
 {"Enter path to text file","Introduza caminho para o ficheiro de texto"}.
 {"Erlang Jabber Server","Servidor Jabber em Erlang"}.
 {"Family Name","Apelido"}.
-{"From ~s","De ~s"}.
 {"From","De"}.
+{"From ~s","De ~s"}.
 {"Full Name","Nome completo"}.
 {"Groups","Grupos"}.
+{" has set the subject to: "," colocou o tópico: "}.
 {"Import Directory","Importar directório"}.
 {"Import File","Importar ficheiro"}.
 {"Import User from File at ","Importar utilizador a partir do ficheiro em "}.
@@ -53,28 +49,25 @@
 {"It is not allowed to send private messages to the conference","Impedir o envio de mensagens privadas para a sala"}.
 {"Last Activity","Última actividade"}.
 {"List of modules to start","Lista de módulos a iniciar"}.
-{"Listened Ports at ","Portas em escuta em "}.
 {"Make room moderated","Tornar a sala moderada"}.
 {"Memory","Memória"}.
 {"Middle Name","Segundo nome"}.
 {"Moderator privileges required","São necessários privilégios de moderador"}.
-{"Module","Módulo"}.
 {"Modules","Módulos"}.
 {"Name","Nome"}.
 {"Never","Nunca"}.
+{"Nickname","Alcunha"}.
 {"Nickname Registration at ","Registo da alcunha em "}.
 {"Nickname ~s does not exist in the room","A alcunha ~s não existe na sala"}.
-{"Nickname","Alcunha"}.
 {"Node not found","Nodo não encontrado"}.
 {"Nodes","Nodos"}.
 {"None","Nenhum"}.
 {"OK","OK"}.
-{"Online Users","Utilizadores ligados"}.
 {"Online","Ligado"}.
+{"Online Users","Utilizadores ligados"}.
 {"Only occupants are allowed to send messages to the conference","Só os ocupantes podem enviar mensagens para a sala"}.
 {"Only occupants are allowed to send queries to the conference","Só os ocupantes podem enviar consultas para a sala"}.
 {"Only service administrators are allowed to send service messages","Só os administradores do serviço têm permissão para enviar mensagens de serviço"}.
-{"Options","Opções"}.
 {"Organization Name","Nome da organização"}.
 {"Organization Unit","Unidade da organização"}.
 {"Owner privileges required","São necessários privilégios de dono"}.
@@ -84,23 +77,21 @@
 {"Path to Dir","Caminho para o directório"}.
 {"Path to File","Caminho do ficheiro"}.
 {"Pending","Pendente"}.
-{"Port","Porta"}.
 {"private, ","privado"}.
 {"Queries to the conference members are not allowed in this room","Nesta sala não são permitidas consultas aos seus membros"}.
 {"RAM and disc copy","Cópia em RAM e em disco"}.
 {"RAM copy","Cópia em RAM"}.
 {"Recipient is not in the conference room","O destinatário não está na sala"}.
 {"Remote copy","Cópia remota"}.
-{"Remove User","Eliminar utilizador"}.
 {"Remove","Remover"}.
+{"Remove User","Eliminar utilizador"}.
 {"Restart","Reiniciar"}.
 {"Restore Backup from File at ","Restaura cópia de segurança a partir do ficheiro em "}.
 {"Restore","Restaurar"}.
 {"Room title","Título da sala"}.
-{"Roster of ","Lista de contactos de "}.
 {"Roster","Lista de contactos"}.
+{"Roster of ","Lista de contactos de "}.
 {"Running Nodes","Nodos a correr"}.
-{"~s access rule configuration","Configuração das Regra de Acesso ~s"}.
 {"Search users in ","Procurar utilizadores em "}.
 {"Start Modules at ","Iniciar os módulos em "}.
 {"Start Modules","Iniciar módulos"}.
@@ -113,8 +104,8 @@
 {"Submit","Enviar"}.
 {"Subscription","Subscrição"}.
 {"Time","Data"}.
-{"To ~s","A ~s"}.
 {"To","Para"}.
+{"To ~s","A ~s"}.
 {"Update","Actualizar"}.
 {"Users","Utilizadores"}.
 {"User","Utilizador"}.
