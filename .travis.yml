@@ -44,7 +44,7 @@ before_script:
 
 script:
   - ./autogen.sh
-  - ./configure --prefix=/tmp/ejabberd --enable-all --disable-odbc --disable-riak
+  - ./configure --prefix=/tmp/ejabberd --enable-all --disable-odbc --disable-riak --disable-elixir
   - make
   - make install -s
   - make xref
