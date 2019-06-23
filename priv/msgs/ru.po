@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2017-10-06 23:43+0300\n"
+"PO-Revision-Date: 2019-06-23 14:17+0300\n"
 "Last-Translator: Evgeniy Khramtsov <ekhramtsov@process-one.net>\n"
 "Language-Team: Russian <kde-russian@lists.kde.ru>\n"
 "Language: ru\n"
@@ -13,18 +13,15 @@ msgstr ""
 "X-Language: Russian (русский)\n"
 "X-Additional-Translator: Konstantin Khomoutov\n"
 "X-Additional-Translator: Sergei Golovan\n"
-"X-Generator: Lokalize 1.0\n"
+"X-Generator: Poedit 2.2.1\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
 "%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 "X-Poedit-Basepath: ../../src\n"
 "X-Poedit-SearchPath-0: .\n"
 
 #: mod_vcard.erl:446
-#, fuzzy
 msgid " (Add * to the end of field to match substring)"
-msgstr ""
-"Заполните форму для поиска пользователя Jabber (Если добавить * в конец "
-"поля, то происходит поиск подстроки)"
+msgstr " (Добавьте * в конец поля для поиска подстроки)"
 
 #: mod_muc_log.erl:403 mod_muc_log.erl:577
 msgid " has set the subject to: "
@@ -51,9 +48,8 @@ msgid "Access denied by service policy"
 msgstr "Доступ запрещён политикой службы"
 
 #: mod_register_web.erl:603
-#, fuzzy
 msgid "Account doesn't exist"
-msgstr "Конференция не существует"
+msgstr "Учётная запись не существует"
 
 #: mod_configure.erl:1638
 msgid "Action on user"
@@ -131,19 +127,19 @@ msgstr "апреля"
 
 #: mod_mix_pam.erl:271
 msgid "Attribute 'channel' is required for this request"
-msgstr ""
+msgstr "Атрибут 'channel' является обязательным для этого запроса"
 
 #: mod_mix.erl:105
 msgid "Attribute 'id' is mandatory for MIX messages"
-msgstr ""
+msgstr "Атрибут 'id' является обязательным для MIX сообщений"
 
 #: mod_pubsub.erl:1142
 msgid "Attribute 'jid' is not allowed here"
-msgstr ""
+msgstr "Атрибут 'jid' здесь недопустим"
 
 #: mod_pubsub.erl:1145
 msgid "Attribute 'node' is not allowed here"
-msgstr ""
+msgstr "Атрибут 'node' здесь недопустим"
 
 #: mod_muc_log.erl:470
 msgid "August"
@@ -223,18 +219,16 @@ msgid "Changing role/affiliation is not allowed"
 msgstr "Изменение роли/ранга не разрешено"
 
 #: mod_mix.erl:604
-#, fuzzy
 msgid "Channel already exists"
-msgstr "Узел уже существует"
+msgstr "Канал уже существует"
 
 #: mod_mix.erl:609
-#, fuzzy
 msgid "Channel does not exist"
-msgstr "Конференция не существует"
+msgstr "Канал не существует"
 
 #: mod_mix.erl:95
 msgid "Channels"
-msgstr ""
+msgstr "Каналы"
 
 #: mod_register_web.erl:265
 msgid "Characters not allowed:"
@@ -287,7 +281,7 @@ msgstr "Город"
 
 #: mod_stream_mgmt.erl:452
 msgid "Client acknowledged more stanzas than sent by server"
-msgstr ""
+msgstr "Клиент подтвердил больше сообщений чем было отправлено сервером"
 
 #: mod_adhoc.erl:107 mod_adhoc.erl:134 mod_adhoc.erl:150 mod_adhoc.erl:166
 msgid "Commands"
@@ -358,9 +352,8 @@ msgid "Delete User"
 msgstr "Удалить пользователя"
 
 #: ejabberd_web_admin.erl:1478
-#, fuzzy
 msgid "Delete content"
-msgstr "Удалить выделенные"
+msgstr "Удалить содержимое"
 
 #: mod_announce.erl:623
 msgid "Delete message of the day"
@@ -371,9 +364,8 @@ msgid "Delete message of the day on all hosts"
 msgstr "Удалить сообщение дня со всех виртуальных серверов"
 
 #: ejabberd_web_admin.erl:1479
-#, fuzzy
 msgid "Delete table"
-msgstr "Удалить пользователя"
+msgstr "Удалить таблицу"
 
 #: mod_shared_roster.erl:848
 msgid "Description:"
@@ -530,7 +522,6 @@ msgid "File larger than ~w bytes"
 msgstr "Файл больше ~w байт"
 
 #: mod_vcard.erl:442
-#, fuzzy
 msgid "Fill in the form to search for any matching Jabber User"
 msgstr "Заполните форму для поиска пользователя Jabber"
 
@@ -560,9 +551,8 @@ msgid "Get Number of Registered Users"
 msgstr "Получить количество зарегистрированных пользователей"
 
 #: mod_pubsub.erl:1018
-#, fuzzy
 msgid "Get Pending"
-msgstr "Ожидание"
+msgstr "Получить отложенные"
 
 #: mod_configure.erl:174 mod_configure.erl:520 mod_configure.erl:1133
 msgid "Get User Last Login Time"
@@ -590,7 +580,7 @@ msgstr "Группы"
 
 #: mod_http_upload.erl:205
 msgid "HTTP File Upload"
-msgstr ""
+msgstr "Передача файлов по HTTP"
 
 #: ejabberd_web_admin.erl:572
 msgid "Host"
@@ -605,9 +595,8 @@ msgid "IP addresses"
 msgstr "IP адреса"
 
 #: ejabberd_s2s_out.erl:255
-#, fuzzy
 msgid "Idle connection"
-msgstr "Заменено новым соединением"
+msgstr "Неиспользуемое соединение"
 
 #: ejabberd_captcha.erl:127
 msgid "If you don't see the CAPTCHA image here, visit the web page."
@@ -689,21 +678,19 @@ msgstr "Недостаточно прав"
 
 #: mod_multicast.erl:345
 msgid "Internal server error"
-msgstr ""
+msgstr "Внутренняя ошибка сервера"
 
 #: mod_privilege.erl:295
 msgid "Invalid 'from' attribute in forwarded message"
 msgstr "Некорректный атрибут 'from' в пересланном сообщении"
 
 #: mod_stream_mgmt.erl:664
-#, fuzzy
 msgid "Invalid 'previd' value"
-msgstr "Недопустимая роль: ~s"
+msgstr "Недопустимое значение 'previd'"
 
 #: mod_muc_room.erl:3897
-#, fuzzy
 msgid "Invalid node name"
-msgstr "Недопустимая роль: ~s"
+msgstr "Недопустимое имя узла"
 
 #: mod_muc_room.erl:4244
 msgid "Invitations are not allowed in this conference"
@@ -783,9 +770,8 @@ msgid "Low level update script"
 msgstr "Низкоуровневый сценарий обновления"
 
 #: mod_mam.erl:656
-#, fuzzy
 msgid "MAM preference modification denied by service policy"
-msgstr "Cоздавать конференцию запрещено политикой службы"
+msgstr "Изменение настроек архива сообщений запрещено политикой службы"
 
 #: mod_muc_log.erl:785
 msgid "Make participants list public"
@@ -863,7 +849,7 @@ msgstr "Сообщение не найдено в пересылаемом вл�
 
 #: mod_block_strangers.erl:169
 msgid "Messages from strangers are rejected"
-msgstr ""
+msgstr "Сообщения от незнакомцев запрещены"
 
 #: mod_vcard_sql.erl:159 mod_vcard_sql.erl:173 mod_vcard_ldap.erl:327
 #: mod_vcard_ldap.erl:340 mod_vcard_mnesia.erl:102 mod_vcard_mnesia.erl:116
@@ -941,7 +927,7 @@ msgstr "Регистрация псевдонима на "
 
 #: mod_muc_room.erl:1073 mod_muc_room.erl:1935 mod_muc_room.erl:4040
 msgid "Nickname can't be empty"
-msgstr ""
+msgstr "Псевдоним не может быть пустым значением"
 
 #: mod_muc_room.erl:2817
 msgid "Nickname ~s does not exist in the room"
@@ -977,23 +963,20 @@ msgid "No 'to' attribute found in the invitation"
 msgstr "Не найден атрибут 'to' в этом приглашении"
 
 #: mod_privilege.erl:309
-#, fuzzy
 msgid "No <forwarded/> element found"
-msgstr "Неверный элемент <forwarded/>"
+msgstr "Не найден элемент <forwarded/>"
 
 #: ejabberd_web_admin.erl:974
 msgid "No Data"
 msgstr "Нет данных"
 
 #: mod_multicast.erl:331
-#, fuzzy
 msgid "No address elements found"
-msgstr "Элемент 'item' не найден"
+msgstr "Не найден элемент <address/>"
 
 #: mod_multicast.erl:328
-#, fuzzy
 msgid "No addresses element found"
-msgstr "Элемент 'item' не найден"
+msgstr "Не найден элемент <addresses/>"
 
 #: ejabberd_local.erl:95
 msgid "No available resource found"
@@ -1004,9 +987,8 @@ msgid "No body provided for announce message"
 msgstr "Тело объявления не должно быть пустым"
 
 #: mod_muc_room.erl:982 gen_iq_handler.erl:89
-#, fuzzy
 msgid "No child elements found"
-msgstr "Элемент 'item' не найден"
+msgstr "Нет дочерних элементов"
 
 #: mod_pubsub.erl:1205
 msgid "No data form found"
@@ -1109,9 +1091,8 @@ msgid "Not Found"
 msgstr "Не Найдено"
 
 #: mod_register.erl:390 mod_register_web.erl:601
-#, fuzzy
 msgid "Not allowed"
-msgstr "Не Найдено"
+msgstr "Недопустимо"
 
 #: mod_last.erl:143 mod_disco.erl:274 mod_disco.erl:333
 msgid "Not subscribed"
@@ -1237,9 +1218,8 @@ msgid "Packet"
 msgstr "Пакет"
 
 #: mod_multicast.erl:340
-#, fuzzy
 msgid "Packet relay is denied by service policy"
-msgstr "Cоздавать конференцию запрещено политикой службы"
+msgstr "Пересылка пакетов запрещена политикой службы"
 
 #: mod_configure.erl:1253
 msgid "Parse failed"
@@ -1314,29 +1294,27 @@ msgstr "Включение атрибута 'ask' запрещено станд�
 
 #: mod_stream_mgmt.erl:656
 msgid "Previous session PID has been killed"
-msgstr ""
+msgstr "Предыдущая сессия была убита"
 
 #: mod_stream_mgmt.erl:654
 msgid "Previous session PID has exited"
-msgstr ""
+msgstr "Процесс предыдущей сессии завершён"
 
 #: mod_stream_mgmt.erl:652
 msgid "Previous session PID is dead"
-msgstr ""
+msgstr "Предыдущая сессия мертва"
 
 #: mod_stream_mgmt.erl:622
-#, fuzzy
 msgid "Previous session PID not found"
-msgstr "Сессия пользователя не найдена"
+msgstr "Не найден идентификатор процесса предыдущей сессии"
 
 #: mod_stream_mgmt.erl:228
-#, fuzzy
 msgid "Previous session not found"
-msgstr "Сессия пользователя не найдена"
+msgstr "Предыдущая сессия не найдена"
 
 #: mod_stream_mgmt.erl:624
 msgid "Previous session timed out"
-msgstr ""
+msgstr "Предыдущая сессия не отвечает"
 
 #: mod_pubsub.erl:1356
 msgid "PubSub subscriber request"
@@ -1347,9 +1325,8 @@ msgid "Publish-Subscribe"
 msgstr "Публикация-Подписка"
 
 #: mod_push.erl:298
-#, fuzzy
 msgid "Push record not found"
-msgstr "Узел не найден"
+msgstr "Push-запись не найдена"
 
 #: mod_muc_room.erl:465
 msgid "Queries to the conference members are not allowed in this room"
@@ -1419,7 +1396,7 @@ msgstr "Заменено новым соединением"
 
 #: mod_mix_pam.erl:257 mod_muc_room.erl:686
 msgid "Request has timed out"
-msgstr ""
+msgstr "Истекло время ожидания запроса"
 
 #: mod_configure.erl:1541
 msgid "Resources"
@@ -1473,9 +1450,8 @@ msgid "Room description"
 msgstr "Описание комнаты"
 
 #: mod_muc_room.erl:713
-#, fuzzy
 msgid "Room terminates"
-msgstr "Название комнаты"
+msgstr "Комната остановлена"
 
 #: mod_muc_log.erl:779
 msgid "Room title"
@@ -1502,9 +1478,8 @@ msgid "Running Nodes"
 msgstr "Работающие узлы"
 
 #: mod_proxy65.erl:134
-#, fuzzy
 msgid "SOCKS5 Bytestreams"
-msgstr "ejabberd SOCKS5 Bytestreams модуль"
+msgstr "Передача файлов через SOCKS5"
 
 #: mod_muc_log.erl:458
 msgid "Saturday"
@@ -1528,7 +1503,7 @@ msgstr "Поиск пользователей в "
 
 #: ejabberd_web_admin.erl:1390
 msgid "Select All"
-msgstr ""
+msgstr "Выбрать всё"
 
 #: mod_announce.erl:611
 msgid "Send announcement to all online users"
@@ -1562,7 +1537,7 @@ msgstr "Сервер:"
 
 #: mod_stream_mgmt.erl:660
 msgid "Session state copying timed out"
-msgstr ""
+msgstr "Таймаут копирования состояния сессии"
 
 #: mod_announce.erl:615
 msgid "Set message of the day and send to online users"
@@ -1647,12 +1622,11 @@ msgstr "Сохранить текстовую резервную копию:"
 
 #: mod_stream_mgmt.erl:342
 msgid "Stream management is already enabled"
-msgstr ""
+msgstr "Управление потоком уже активировано"
 
 #: mod_stream_mgmt.erl:324
-#, fuzzy
 msgid "Stream management is not enabled"
-msgstr "Автоматическое создание узлов недоступно"
+msgstr "Управление потоком не активировано"
 
 #: mod_announce.erl:522 mod_configure.erl:1026 mod_configure.erl:1066
 msgid "Subject"
@@ -1701,18 +1675,16 @@ msgid "The CAPTCHA verification has failed"
 msgstr "Проверка капчи не пройдена"
 
 #: mod_register_web.erl:595
-#, fuzzy
 msgid "The account already exists"
-msgstr "Узел уже существует"
+msgstr "Учётная запись уже существует"
 
 #: mod_register_web.erl:605
-#, fuzzy
 msgid "The account was not deleted"
-msgstr "Ваш Jabber-аккаунт был успешно удален."
+msgstr "Аккаунт не был удален"
 
 #: mod_register_web.erl:593
 msgid "The captcha you entered is wrong"
-msgstr ""
+msgstr "Неправильно введённое значение капчи"
 
 #: mod_muc_room.erl:300
 msgid "The feature requested is not supported by the conference"
@@ -1731,14 +1703,12 @@ msgid "The password of your Jabber account was successfully changed."
 msgstr "Пароль Вашего Jabber-аккаунта был успешно изменен."
 
 #: mod_register_web.erl:607
-#, fuzzy
 msgid "The password was not changed"
-msgstr "Слишком слабый пароль"
+msgstr "Пароль не был изменён"
 
 #: mod_register_web.erl:609
-#, fuzzy
 msgid "The passwords are different"
-msgstr "Слишком слабый пароль"
+msgstr "Пароли не совпадают"
 
 #: mod_register.erl:153 mod_vcard.erl:216
 msgid "The query is only allowed from local users"
@@ -1758,7 +1728,7 @@ msgstr ""
 
 #: mod_register_web.erl:599
 msgid "The username is not valid"
-msgstr ""
+msgstr "Недопустимое имя пользователя"
 
 #: mod_register_web.erl:144
 msgid "There was an error changing the password: "
@@ -1798,7 +1768,7 @@ msgstr "Эта комната не анонимная"
 
 #: mod_multicast.erl:491
 msgid "This service can not process the address: ~s"
-msgstr ""
+msgstr "Сервер не может обработать адрес: ~s"
 
 #: mod_muc_log.erl:456
 msgid "Thursday"
@@ -1814,7 +1784,7 @@ msgstr "По истечение"
 
 #: mod_stream_mgmt.erl:244
 msgid "Timed out waiting for stream resumption"
-msgstr ""
+msgstr "Истекло время ожидания возобновления потока"
 
 #: mod_offline.erl:930
 msgid "To"
@@ -1857,13 +1827,12 @@ msgid "Too many active bytestreams"
 msgstr "Слишком много активных потоков данных"
 
 #: mod_muc_room.erl:984 gen_iq_handler.erl:90
-#, fuzzy
 msgid "Too many child elements"
-msgstr "Слишком много элементов <item/>"
+msgstr "Слишком много дочерних элементов"
 
 #: mod_multicast.erl:337
 msgid "Too many receiver fields were specified"
-msgstr ""
+msgstr "Указано слишком много получателей"
 
 #: mod_stream_mgmt.erl:199
 msgid "Too many unacked stanzas"
@@ -1920,9 +1889,8 @@ msgid "Unexpected action"
 msgstr "Неожиданное действие"
 
 #: mod_register.erl:396
-#, fuzzy
 msgid "Unexpected error condition: ~p"
-msgstr "Неожиданное действие"
+msgstr "Неожиданная ошибка: ~p"
 
 #: mod_register_web.erl:519
 msgid "Unregister"
@@ -1934,16 +1902,15 @@ msgstr "Удалить Jabber-аккаунт"
 
 #: ejabberd_web_admin.erl:1395
 msgid "Unselect All"
-msgstr ""
+msgstr "Снять всё выделение"
 
 #: mod_mam.erl:688
 msgid "Unsupported <index/> element"
 msgstr "Элемент <index/> не поддерживается"
 
 #: mod_stream_mgmt.erl:348
-#, fuzzy
 msgid "Unsupported version"
-msgstr "Неподдерживаемый запрос MIX"
+msgstr "Неподдерживаемая версия"
 
 #: ejabberd_web_admin.erl:1076 ejabberd_web_admin.erl:1424
 #: ejabberd_web_admin.erl:1780
@@ -1994,7 +1961,7 @@ msgstr "Пользователь уже существует"
 
 #: ejabberd_sm.erl:214
 msgid "User removed"
-msgstr ""
+msgstr "Пользователь удалён"
 
 #: ejabberd_sm.erl:202 mod_sic.erl:93 mod_push.erl:283
 msgid "User session not found"
@@ -2059,9 +2026,8 @@ msgid "Value of '~s' should be integer"
 msgstr "Значение '~s' должно быть целочисленным"
 
 #: ejabberd_web_admin.erl:441
-#, fuzzy
 msgid "Virtual Hosting"
-msgstr "Виртуальные хосты"
+msgstr "Виртуальный хостинг"
 
 #: ejabberd_web_admin.erl:440 ejabberd_web_admin.erl:1789
 msgid "Virtual Hosts"
@@ -2089,21 +2055,19 @@ msgstr "Среда"
 
 #: mod_register_web.erl:611
 msgid "Wrong parameters in the web formulary"
-msgstr ""
+msgstr "Недопустимые параметры веб-формы"
 
 #: mod_multicast.erl:334
 msgid "Wrong xmlns"
-msgstr ""
+msgstr "Неправильный xmlns"
 
 #: mod_muc_room.erl:711
-#, fuzzy
 msgid "You are being removed from the room because of a system shutdown"
-msgstr "выгнали из комнаты из-за останова системы"
+msgstr "Вы покинули комнату из-за останова системы"
 
 #: mod_mix.erl:614
-#, fuzzy
 msgid "You are not joined to the channel"
-msgstr "Вам не разрешается создавать узлы"
+msgstr "Вы не присоединены к каналу"
 
 #: mod_register_web.erl:281
 msgid "You can later change your password using a Jabber client."
@@ -2158,17 +2122,16 @@ msgstr ""
 "было сохранено."
 
 #: ejabberd_captcha.erl:104
-#, fuzzy
 msgid ""
 "Your subscription request and/or messages to ~s have been blocked. To "
 "unblock your subscription request, visit ~s"
 msgstr ""
-"Ваши сообщения к ~s блокируются. Для снятия блокировки перейдите по ссылке ~s"
+"Ваши запросы на добавление в контакт-лист, а также сообщения к ~s "
+"блокируются. Для снятия блокировки перейдите по ссылке ~s"
 
 #: mod_disco.erl:437
-#, fuzzy
 msgid "ejabberd"
-msgstr "Web-интерфейс администрирования ejabberd"
+msgstr "ejabberd"
 
 #: mod_muc.erl:480
 msgid "ejabberd MUC module"
