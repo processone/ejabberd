@@ -137,17 +137,17 @@ process_closed(#{server := LServer} = State, Reason) ->
 %%%===================================================================
 %%% xmpp_stream_in callbacks
 %%%===================================================================
-tls_options(#{tls_options := TLSOpts, lserver := LServer}) ->
-    ejabberd_s2s:tls_options(LServer, TLSOpts).
+tls_options(#{tls_options := TLSOpts, server_host := ServerHost}) ->
+    ejabberd_s2s:tls_options(ServerHost, TLSOpts).
 
-tls_required(#{lserver := LServer}) ->
-    ejabberd_s2s:tls_required(LServer).
+tls_required(#{server_host := ServerHost}) ->
+    ejabberd_s2s:tls_required(ServerHost).
 
-tls_enabled(#{lserver := LServer}) ->
-    ejabberd_s2s:tls_enabled(LServer).
+tls_enabled(#{server_host := ServerHost}) ->
+    ejabberd_s2s:tls_enabled(ServerHost).
 
-compress_methods(#{lserver := LServer}) ->
-    case ejabberd_s2s:zlib_enabled(LServer) of
+compress_methods(#{server_host := ServerHost}) ->
+    case ejabberd_s2s:zlib_enabled(ServerHost) of
 	true -> [<<"zlib">>];
 	false -> []
     end.
@@ -168,9 +168,9 @@ handle_stream_start(_StreamStart, #{lserver := LServer} = State) ->
 	    State#{server_host => ServerHost, codec_options => Opts}
     end.
 
-handle_stream_end(Reason, #{server_host := LServer} = State) ->
+handle_stream_end(Reason, #{server_host := ServerHost} = State) ->
     State1 = State#{stop_reason => Reason},
-    ejabberd_hooks:run_fold(s2s_in_closed, LServer, State1, [Reason]).
+    ejabberd_hooks:run_fold(s2s_in_closed, ServerHost, State1, [Reason]).
 
 handle_stream_established(State) ->
     set_idle_timeout(State#{established => true}).
@@ -203,12 +203,12 @@ handle_auth_failure(RServer, Mech, Reason,
     ejabberd_hooks:run_fold(s2s_in_auth_result,
 			    ServerHost, State, [false, RServer]).
 
-handle_unauthenticated_packet(Pkt, #{server_host := LServer} = State) ->
+handle_unauthenticated_packet(Pkt, #{server_host := ServerHost} = State) ->
     ejabberd_hooks:run_fold(s2s_in_unauthenticated_packet,
-			    LServer, State, [Pkt]).
+			    ServerHost, State, [Pkt]).
 
-handle_authenticated_packet(Pkt, #{server_host := LServer} = State) when not ?is_stanza(Pkt) ->
-    ejabberd_hooks:run_fold(s2s_in_authenticated_packet, LServer, State, [Pkt]);
+handle_authenticated_packet(Pkt, #{server_host := ServerHost} = State) when not ?is_stanza(Pkt) ->
+    ejabberd_hooks:run_fold(s2s_in_authenticated_packet, ServerHost, State, [Pkt]);
 handle_authenticated_packet(Pkt0, #{ip := {IP, _}} = State) ->
     Pkt = xmpp:put_meta(Pkt0, ip, IP),
     From = xmpp:get_from(Pkt),
@@ -229,15 +229,15 @@ handle_authenticated_packet(Pkt0, #{ip := {IP, _}} = State) ->
 	    send(State, Err)
     end.
 
-handle_cdata(Data, #{server_host := LServer} = State) ->
-    ejabberd_hooks:run_fold(s2s_in_handle_cdata, LServer, State, [Data]).
+handle_cdata(Data, #{server_host := ServerHost} = State) ->
+    ejabberd_hooks:run_fold(s2s_in_handle_cdata, ServerHost, State, [Data]).
 
-handle_recv(El, Pkt, #{server_host := LServer} = State) ->
+handle_recv(El, Pkt, #{server_host := ServerHost} = State) ->
     State1 = set_idle_timeout(State),
-    ejabberd_hooks:run_fold(s2s_in_handle_recv, LServer, State1, [El, Pkt]).
+    ejabberd_hooks:run_fold(s2s_in_handle_recv, ServerHost, State1, [El, Pkt]).
 
-handle_send(Pkt, Result, #{server_host := LServer} = State) ->
-    ejabberd_hooks:run_fold(s2s_in_handle_send, LServer,
+handle_send(Pkt, Result, #{server_host := ServerHost} = State) ->
+    ejabberd_hooks:run_fold(s2s_in_handle_send, ServerHost,
 			    State, [Pkt, Result]).
 
 init([State, Opts]) ->
@@ -267,19 +267,19 @@ init([State, Opts]) ->
     State2 = xmpp_stream_in:set_timeout(State1, Timeout),
     ejabberd_hooks:run_fold(s2s_in_init, {ok, State2}, [Opts]).
 
-handle_call(Request, From, #{server_host := LServer} = State) ->
-    ejabberd_hooks:run_fold(s2s_in_handle_call, LServer, State, [Request, From]).
+handle_call(Request, From, #{server_host := ServerHost} = State) ->
+    ejabberd_hooks:run_fold(s2s_in_handle_call, ServerHost, State, [Request, From]).
 
 handle_cast({update_state, Fun}, State) ->
     case Fun of
 	{M, F, A} -> erlang:apply(M, F, [State|A]);
 	_ when is_function(Fun) -> Fun(State)
     end;
-handle_cast(Msg, #{server_host := LServer} = State) ->
-    ejabberd_hooks:run_fold(s2s_in_handle_cast, LServer, State, [Msg]).
+handle_cast(Msg, #{server_host := ServerHost} = State) ->
+    ejabberd_hooks:run_fold(s2s_in_handle_cast, ServerHost, State, [Msg]).
 
-handle_info(Info, #{server_host := LServer} = State) ->
-    ejabberd_hooks:run_fold(s2s_in_handle_info, LServer, State, [Info]).
+handle_info(Info, #{server_host := ServerHost} = State) ->
+    ejabberd_hooks:run_fold(s2s_in_handle_info, ServerHost, State, [Info]).
 
 terminate(Reason, #{auth_domains := AuthDomains,
 		    socket := Socket} = State) ->
@@ -329,9 +329,9 @@ check_to(#jid{lserver = LServer}, _State) ->
     ejabberd_router:is_my_route(LServer).
 
 -spec set_idle_timeout(state()) -> state().
-set_idle_timeout(#{lserver := LServer,
+set_idle_timeout(#{server_host := ServerHost,
 		   established := true} = State) ->
-    Timeout = ejabberd_s2s:get_idle_timeout(LServer),
+    Timeout = ejabberd_s2s:get_idle_timeout(ServerHost),
     xmpp_stream_in:set_timeout(State, Timeout);
 set_idle_timeout(State) ->
     State.
