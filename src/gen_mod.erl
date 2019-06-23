@@ -30,7 +30,7 @@
 	 stop_child/1, stop_child/2, config_reloaded/0]).
 -export([start_module/2, stop_module/2, stop_module_keep_config/2,
 	 get_opt/2, set_opt/3, get_opt_hosts/1, is_equal_opt/3,
-	 get_module_opt/3, get_module_opt_hosts/2,
+	 get_module_opt/3, get_module_opts/2, get_module_opt_hosts/2,
 	 loaded_modules/1, loaded_modules_with_opts/1,
 	 get_hosts/2, get_module_proc/2, is_loaded/2, is_loaded_elsewhere/2,
 	 start_modules/0, start_modules/1, stop_modules/0, stop_modules/1,
@@ -324,19 +324,13 @@ set_opt(Opt, Val, Opts) ->
 get_module_opt(global, Module, Opt) ->
     get_module_opt(ejabberd_config:get_myname(), Module, Opt);
 get_module_opt(Host, Module, Opt) ->
-    try ets:lookup_element(ejabberd_modules, {Module, Host}, 3) of
-	Opts -> get_opt(Opt, Opts)
-    catch _:badarg ->
-	    erlang:error({module_not_loaded, Module, Host})
-    end.
+    Opts = get_module_opts(Host, Module),
+    get_opt(Opt, Opts).
 
 -spec get_module_opt_hosts(binary(), module()) -> [binary()].
 get_module_opt_hosts(Host, Module) ->
-    try ets:lookup_element(ejabberd_modules, {Module, Host}, 3) of
-	Opts -> get_opt_hosts(Opts)
-    catch _:badarg ->
-	    erlang:error({module_not_loaded, Module, Host})
-    end.
+    Opts = get_module_opts(Host, Module),
+    get_opt_hosts(Opts).
 
 -spec get_opt_hosts(opts()) -> [binary()].
 get_opt_hosts(Opts) ->
@@ -345,6 +339,12 @@ get_opt_hosts(Opts) ->
 	    [get_opt(host, Opts)];
 	L ->
 	    L
+    end.
+
+-spec get_module_opts(binary(), module()) -> opts().
+get_module_opts(Host, Module) ->
+    try ets:lookup_element(ejabberd_modules, {Module, Host}, 3)
+    catch _:badarg -> erlang:error({module_not_loaded, Module, Host})
     end.
 
 -spec db_mod(binary() | global | db_type() | opts(), module()) -> module().
