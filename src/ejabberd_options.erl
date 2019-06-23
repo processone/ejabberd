@@ -444,6 +444,7 @@ options() ->
      {default_db, mnesia},
      {default_ram_db, mnesia},
      {queue_type, ram},
+     {version, ejabberd_config:version()},
      %% Other options
      {acl, []},
      {access_rules, []},
@@ -638,7 +639,6 @@ options() ->
      {sql_username, <<"ejabberd">>},
      {trusted_proxies, []},
      {validate_stream, false},
-     {version, fun version/1},
      {websocket_origin, []},
      {websocket_ping_interval, timer:seconds(60)},
      {websocket_timeout, timer:minutes(5)}].
@@ -742,22 +742,6 @@ fqdn(global) ->
     end;
 fqdn(_) ->
     ejabberd_config:get_option(fqdn).
-
--spec version(global | binary()) -> binary().
-version(global) ->
-    case application:get_env(ejabberd, custom_vsn) of
-	{ok, Vsn0} when is_list(Vsn0) ->
-	    list_to_binary(Vsn0);
-	{ok, Vsn1} when is_binary(Vsn1) ->
-	    Vsn1;
-	_ ->
-	    case application:get_key(ejabberd, vsn) of
-		undefined -> <<"">>;
-		{ok, Vsn} -> list_to_binary(Vsn)
-	    end
-    end;
-version(_) ->
-    ejabberd_config:get_option(version).
 
 -spec concat_tls_protocol_options([binary()]) -> binary().
 concat_tls_protocol_options(Opts) ->

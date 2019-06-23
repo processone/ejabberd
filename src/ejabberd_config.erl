@@ -32,6 +32,7 @@
 -export([get_shared_key/0, get_node_start/0]).
 -export([fsm_limit_opts/1]).
 -export([codec_options/0]).
+-export([version/0]).
 -export([default_db/2, default_db/3, default_ram_db/2, default_ram_db/3]).
 -export([beams/1, validators/1, globals/0, may_hide_data/1]).
 -export([dump/0, dump/1, convert_to_yaml/1, convert_to_yaml/2]).
@@ -223,6 +224,23 @@ codec_options() ->
     case get_option(validate_stream) of
 	true -> [];
 	false -> [ignore_els]
+    end.
+
+%% Do not use this function in runtime:
+%% It's slow and doesn't read 'version' option from the config.
+%% Use ejabberd_option:version() instead.
+-spec version() -> binary().
+version() ->
+    case application:get_env(ejabberd, custom_vsn) of
+	{ok, Vsn0} when is_list(Vsn0) ->
+	    list_to_binary(Vsn0);
+	{ok, Vsn1} when is_binary(Vsn1) ->
+	    Vsn1;
+	_ ->
+	    case application:get_key(ejabberd, vsn) of
+		undefined -> <<"">>;
+		{ok, Vsn} -> list_to_binary(Vsn)
+	    end
     end.
 
 -spec default_db(binary() | global, module()) -> atom().
@@ -500,9 +518,11 @@ validate(Y1) ->
 	    case ejabberd_config_transformer:map_reduce(Y2) of
 		{ok, Y3} ->
 		    Hosts = proplists:get_value(hosts, Y3),
+		    Version = proplists:get_value(version, Y3, version()),
 		    create_tmp_config(),
 		    set_option(hosts, Hosts),
 		    set_option(host, hd(Hosts)),
+		    set_option(version, Version),
 		    set_option(yaml_config, Y3),
 		    {Validators, Required} = validators([]),
 		    Validator = econf:options(Validators,
@@ -522,6 +542,7 @@ pre_validate(Y1) ->
 	   econf:options(
 	     #{hosts => ejabberd_options:opt_type(hosts),
 	       loglevel => ejabberd_options:opt_type(loglevel),
+	       version => ejabberd_options:opt_type(version),
 	       host_config => econf:map(econf:binary(), econf:any()),
 	       append_host_config => econf:map(econf:binary(), econf:any()),
 	       '_' => econf:any()},
