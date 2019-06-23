@@ -127,14 +127,12 @@ init(SockMod, Socket, Opts) ->
     RequestHandlers = proplists:get_value(request_handlers, Opts, []),
     ?DEBUG("S: ~p~n", [RequestHandlers]),
 
-    DefaultHost = proplists:get_value(default_host, Opts),
     {ok, RE} = re:compile(<<"^(?:\\[(.*?)\\]|(.*?))(?::(\\d+))?$">>),
 
     CustomHeaders = proplists:get_value(custom_headers, Opts, []),
 
     State = #state{sockmod = SockMod1,
                    socket = Socket1,
-                   default_host = DefaultHost,
 		   custom_headers = CustomHeaders,
 		   options = Opts,
 		   request_handlers = RequestHandlers,
@@ -264,19 +262,20 @@ process_header(State, Data) ->
        {http_header, _, 'Accept-Language' = Name, _, Langs}} ->
 	  State#state{request_lang = parse_lang(Langs),
 		      request_headers = add_header(Name, Langs, State)};
-      {ok, {http_header, _, 'Host' = Name, _, Host}} ->
+      {ok, {http_header, _, 'Host' = Name, _, Value}} ->
+	  {Host, Port, TP} = get_transfer_protocol(State#state.addr_re, SockMod, Value),
 	  State#state{request_host = Host,
-		      request_headers = add_header(Name, Host, State)};
+		      request_port = Port,
+		      request_tp = TP,
+		      request_headers = add_header(Name, Value, State)};
       {ok, {http_header, _, Name, _, Value}} when is_binary(Name) ->
 	  State#state{request_headers =
 			  add_header(normalize_header_name(Name), Value, State)};
       {ok, {http_header, _, Name, _, Value}} ->
 	  State#state{request_headers =
 			  add_header(Name, Value, State)};
-      {ok, http_eoh}
-	  when State#state.request_host == undefined ->
-	    ?DEBUG("An HTTP request without 'Host' HTTP "
-		   "header was received.", []),
+      {ok, http_eoh} when State#state.request_host == undefined;
+			  State#state.request_host == error ->
 	    {State1, Out} = process_request(State),
 	    send_text(State1, Out),
 	    process_header(State, {ok, {http_error, <<>>}});
@@ -284,32 +283,33 @@ process_header(State, Data) ->
 	  ?DEBUG("(~w) http query: ~w ~p~n",
 		 [State#state.socket, State#state.request_method,
 		  element(2, State#state.request_path)]),
-	  {HostProvided, Port, TP} =
-	      get_transfer_protocol(State#state.addr_re, SockMod,
-				    State#state.request_host),
-	  Host = get_host_really_served(State#state.default_host,
-					HostProvided),
-	  State2 = State#state{request_host = Host,
-			       request_port = Port, request_tp = TP},
-	  {State3, Out} = process_request(State2),
-	  send_text(State3, Out),
-	  case State3#state.request_keepalive of
-	    true ->
-		#state{sockmod = SockMod, socket = Socket,
-		       trail = State3#state.trail,
-		       options = State#state.options,
-		       default_host = State#state.default_host,
-		       custom_headers = State#state.custom_headers,
-		       request_handlers = State#state.request_handlers,
-		       addr_re = State#state.addr_re};
-	    _ ->
-		#state{end_of_request = true,
-		       trail = State3#state.trail,
-		       options = State#state.options,
-		       default_host = State#state.default_host,
-		       custom_headers = State#state.custom_headers,
-		       request_handlers = State#state.request_handlers,
-		       addr_re = State#state.addr_re}
+	  case ejabberd_router:is_my_route(State#state.request_host) of
+	      true ->
+		  {State3, Out} = process_request(State),
+		  send_text(State3, Out),
+		  case State3#state.request_keepalive of
+		      true ->
+			  #state{sockmod = SockMod, socket = Socket,
+				 trail = State3#state.trail,
+				 options = State#state.options,
+				 default_host = State#state.default_host,
+				 custom_headers = State#state.custom_headers,
+				 request_handlers = State#state.request_handlers,
+				 addr_re = State#state.addr_re};
+		      _ ->
+			  #state{end_of_request = true,
+				 trail = State3#state.trail,
+				 options = State#state.options,
+				 default_host = State#state.default_host,
+				 custom_headers = State#state.custom_headers,
+				 request_handlers = State#state.request_handlers,
+				 addr_re = State#state.addr_re}
+		  end;
+	      false ->
+		  Out = make_text_output(State, 400, State#state.custom_headers,
+					 <<"Host not served">>),
+		  send_text(State, Out),
+		  process_header(State, {ok, {http_error, <<>>}})
 	  end;
       _ ->
 	  #state{end_of_request = true,
@@ -323,14 +323,6 @@ process_header(State, Data) ->
 add_header(Name, Value, State)->
     [{Name, Value} | State#state.request_headers].
 
-get_host_really_served(undefined, Provided) ->
-    Provided;
-get_host_really_served(Default, Provided) ->
-    case ejabberd_router:is_my_host(Provided) of
-      true -> Provided;
-      false -> Default
-    end.
-
 get_transfer_protocol(RE, SockMod, HostPort) ->
     {Proto, DefPort} = case SockMod of
 			   gen_tcp -> {http, 80};
@@ -338,15 +330,15 @@ get_transfer_protocol(RE, SockMod, HostPort) ->
 		       end,
     {Host, Port} = case re:run(HostPort, RE, [{capture,[1,2,3],binary}]) of
 		       nomatch ->
-			   {<<"0.0.0.0">>, DefPort};
+			   {error, DefPort};
 		       {match, [<<>>, H, <<>>]} ->
-			   {H, DefPort};
+			   {jid:nameprep(H), DefPort};
 		       {match, [H, <<>>, <<>>]} ->
-			   {H, DefPort};
+			   {jid:nameprep(H), DefPort};
 		       {match, [<<>>, H, PortStr]} ->
-			   {H, binary_to_integer(PortStr)};
+			   {jid:nameprep(H), binary_to_integer(PortStr)};
 		       {match, [H, <<>>, PortStr]} ->
-			   {H, binary_to_integer(PortStr)}
+			   {jid:nameprep(H), binary_to_integer(PortStr)}
 		   end,
 
     {Host, Port, Proto}.
@@ -438,6 +430,10 @@ process_request(#state{request_host = undefined,
 		       custom_headers = CustomHeaders} = State) ->
     {State, make_text_output(State, 400, CustomHeaders,
 			     <<"Missing Host header">>)};
+process_request(#state{request_host = error,
+		       custom_headers = CustomHeaders} = State) ->
+    {State, make_text_output(State, 400, CustomHeaders,
+			     <<"Malformed Host header">>)};
 process_request(#state{request_method = Method,
 		       request_auth = Auth,
 		       request_lang = Lang,
