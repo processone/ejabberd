@@ -138,27 +138,21 @@ dump(Y, Output) ->
 	    end
     end.
 
--spec get_option(option()) -> term().
-get_option(Opt) ->
-    get_option(Opt, undefined).
-
 -spec get_option(option(), term()) -> term().
-get_option(Opt, Default) when is_atom(Opt) ->
-    get_option({Opt, global}, Default);
 get_option(Opt, Default) ->
+    try get_option(Opt)
+    catch _:badarg -> Default
+    end.
+
+-spec get_option(option()) -> term().
+get_option(Opt) when is_atom(Opt) ->
+    get_option({Opt, global});
+get_option(Opt) ->
     Tab = case get_tmp_config() of
 	      undefined -> ejabberd_options;
 	      T -> T
 	  end,
-    try ets:lookup_element(Tab, Opt, 2)
-    catch ?EX_RULE(Class, badarg, St) ->
-	    Stack = ?EX_STACK(St),
-	    ?WARNING_MSG("Attempt to read unspecified option:~n"
-			 "** Option: ~p~n"
-			 "** ~s",
-			 [Opt, misc:format_exception(2, Class, badarg, Stack)]),
-	    Default
-    end.
+    ets:lookup_element(Tab, Opt, 2).
 
 -spec set_option(option(), term()) -> ok.
 set_option(Opt, Val) when is_atom(Opt) ->
