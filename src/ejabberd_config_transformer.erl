@@ -224,6 +224,8 @@ transform_request_handlers(Opts) ->
     case lists:keyfind(module, 1, Opts) of
 	{_, ejabberd_http} ->
 	    replace_request_handlers(Opts);
+	{_, ejabberd_xmlrpc} ->
+	    remove_xmlrpc_access_commands(Opts);
 	_ ->
 	    Opts
     end.
@@ -277,6 +279,15 @@ replace_request_handlers(Opts) ->
 	 ({request_handlers, _}) ->
 	      {true, {request_handlers, Handlers2}};
 	 (_) -> true
+      end, Opts).
+
+remove_xmlrpc_access_commands(Opts) ->
+    lists:filter(
+      fun({access_commands, _}) ->
+	      warn_removed_option(access_commands, api_permissions),
+	      false;
+	 (_) ->
+	      true
       end, Opts).
 
 remove_inet_options(Opts) ->

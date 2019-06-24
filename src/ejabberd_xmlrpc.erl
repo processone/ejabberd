@@ -36,7 +36,7 @@
 -author('badlop@process-one.net').
 
 -export([start/3, start_link/3, handler/2, process/2, accept/1,
-	 listen_opt_type/1, listen_options/0]).
+	 listen_options/0]).
 
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
@@ -554,21 +554,5 @@ make_status(false) -> 1;
 make_status(error) -> 1;
 make_status(_) -> 1.
 
-listen_opt_type(access_commands) ->
-    fun(Opts) ->
-	    lists:map(
-	      fun({Ac, AcOpts}) ->
-		      Commands = case proplists:get_value(
-					commands, lists:flatten(AcOpts), all) of
-				     Cmd when is_atom(Cmd) -> Cmd;
-				     Cmds when is_list(Cmds) ->
-					 true = lists:all(fun is_atom/1, Cmds),
-					 Cmds
-				 end,
-		      {<<"ejabberd_xmlrpc compatibility shim">>,
-		       {[?MODULE], [{access, Ac}], Commands}}
-	      end, lists:flatten(Opts))
-    end.
-
 listen_options() ->
-    [{access_commands, []}].
+    [].
