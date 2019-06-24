@@ -10,8 +10,13 @@ main(Paths) ->
     generate_pot(Dict).
 
 extract_tr(File, [{'?', _}, {var, _, 'T'}, {'(', Line}|Tokens], Acc) ->
-    {String, Tokens1} = extract_string(Tokens, []),
-    extract_tr(File, Tokens1, dict:append(String, {File, Line}, Acc));
+    case extract_string(Tokens, "") of
+	{"", Tokens1} ->
+	    err("~s:~B: Warning: invalid string", [File, Line]),
+	    extract_tr(File, Tokens1, Acc);
+	{String, Tokens1} ->
+	    extract_tr(File, Tokens1, dict:append(String, {File, Line}, Acc))
+    end;
 extract_tr(File, [_|Tokens], Acc) ->
     extract_tr(File, Tokens, Acc);
 extract_tr(_, [], Acc) ->
@@ -19,8 +24,10 @@ extract_tr(_, [], Acc) ->
 
 extract_string([{string, _, S}|Tokens], Acc) ->
     extract_string(Tokens, [S|Acc]);
-extract_string(Tokens, Acc) ->
-    {lists:flatten(lists:reverse(Acc)), Tokens}.
+extract_string([{')', _}|Tokens], Acc) ->
+    {lists:flatten(lists:reverse(Acc)), Tokens};
+extract_string(Tokens, _) ->
+    {"", Tokens}.
 
 fold_erls(Fun, State, Paths) ->
     Paths1 = fold_paths(Paths),
