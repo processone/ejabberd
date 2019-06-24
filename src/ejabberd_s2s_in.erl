@@ -183,7 +183,7 @@ handle_auth_success(RServer, Mech, _AuthModule,
     ?INFO_MSG("(~s) Accepted inbound s2s ~s authentication ~s -> ~s (~s)",
 	      [xmpp_socket:pp(Socket), Mech, RServer, LServer,
 	       ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
-    State1 = case ejabberd_s2s:allow_host(LServer, RServer) of
+    State1 = case ejabberd_s2s:allow_host(ServerHost, RServer) of
 		 true ->
 		     AuthDomains1 = sets:add_element(RServer, AuthDomains),
 		     State0 = change_shaper(State, RServer),
