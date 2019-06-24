@@ -219,6 +219,11 @@ get_avatar_data(JID, ItemID) ->
 				  xmpp:format_error(Why)]),
 		    {error, invalid_data}
 	    end;
+	#pubsub_item{payload = []} ->
+	    ?WARNING_MSG("Empty avatar data detected "
+			 "for ~s@~s with item id ~s",
+			 [LUser, LServer, ItemID]),
+	    {error, invalid_data};
 	{error, #stanza_error{reason = 'item-not-found'}} ->
 	    {error, notfound};
 	{error, Reason} ->
