@@ -188,11 +188,13 @@
 %% Listener interface
 %% -----------------------------
 
-start(gen_tcp = _SockMod, Socket, Opts) ->
-    ejabberd_http:start(gen_tcp, Socket, [{xmlrpc, true}|Opts]).
+start(SockMod, Socket, Opts) ->
+    Opts1 = [{request_handlers, [{[], ?MODULE}]}|Opts],
+    ejabberd_http:start(SockMod, Socket, Opts1).
 
-start_link(gen_tcp = _SockMod, Socket, Opts) ->
-    ejabberd_http:start_link(gen_tcp, Socket, [{xmlrpc, true}|Opts]).
+start_link(SockMod, Socket, Opts) ->
+    Opts1 = [{request_handlers, [{[], ?MODULE}]}|Opts],
+    ejabberd_http:start_link(SockMod, Socket, Opts1).
 
 accept(Pid) ->
     ejabberd_http:accept(Pid).
