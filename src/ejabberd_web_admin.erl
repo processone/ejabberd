@@ -707,9 +707,7 @@ list_given_users(Host, Users, Prefix, Lang, URLFunc) ->
 									 Server)
 					    of
 					  [] ->
-					      case mod_last:get_last_info(User,
-									  Server)
-						  of
+					      case get_last_info(User, Server) of
 						not_found -> translate:translate(Lang, ?T("Never"));
 						{ok, Shift, _Status} ->
 						    TimeStamp = {Shift div
@@ -755,9 +753,22 @@ get_offlinemsg_module(Server) ->
     end.
 
 get_lastactivity_menuitem_list(Server) ->
-    case mod_last_opt:db_type(Server) of
-      mnesia -> [{<<"last-activity">>, ?T("Last Activity")}];
-      _ -> []
+    case gen_mod:is_loaded(Server, mod_last) of
+	true ->
+	    case mod_last_opt:db_type(Server) of
+		mnesia -> [{<<"last-activity">>, ?T("Last Activity")}];
+		_ -> []
+	    end;
+	false ->
+	    []
+    end.
+
+get_last_info(User, Server) ->
+    case gen_mod:is_loaded(Server, mod_last) of
+	true ->
+	    mod_last:get_last_info(User, Server);
+	false ->
+	    not_found
     end.
 
 us_to_list({User, Server}) ->
@@ -890,7 +901,7 @@ user_info(User, Server, Query, Lang) ->
 						       Server)
 		       of
 		     [] ->
-			 case mod_last:get_last_info(User, Server) of
+			 case get_last_info(User, Server) of
 			   not_found -> translate:translate(Lang, ?T("Never"));
 			   {ok, Shift, _Status} ->
 			       TimeStamp = {Shift div 1000000,
