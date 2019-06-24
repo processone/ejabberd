@@ -708,7 +708,7 @@ c2s_self_presence(Acc) ->
 unset_presence(LUser, LServer, Resource, Status) ->
     Resources = ejabberd_sm:get_user_resources(LUser,
 					       LServer),
-    ?DEBUG("unset_presence for ~p @ ~p / ~p -> ~p "
+    ?DEBUG("Unset_presence for ~p @ ~p / ~p -> ~p "
 	   "(~p resources)",
 	   [LUser, LServer, Resource, Status, length(Resources)]),
     case length(Resources) of

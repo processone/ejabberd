@@ -459,7 +459,7 @@ handle_cast(_Msg, State) ->
 handle_info({'DOWN', _MonitorRef, _Type, _Object, _Info}, State) ->
     {stop, normal, State};
 handle_info(_Info, State) ->
-    ?ERROR_MSG("unexpected info: ~p", [_Info]),
+    ?ERROR_MSG("Unexpected info: ~p", [_Info]),
     {noreply, State}.
 
 %% @private
@@ -511,7 +511,7 @@ log_error({error, Why} = Err, Function, Opts) ->
                 true ->
                      io_lib:fwrite("** Error: ~p", [Err])
              end,
-    ?ERROR_MSG("database error:~n** Function: ~p~n~s~s",
+    ?ERROR_MSG("Database error:~n** Function: ~p~n~s~s",
                [Function, Txt, ErrTxt]);
 log_error(_, _, _) ->
     ok.

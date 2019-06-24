@@ -463,7 +463,7 @@ process_admin(Host, #request{path = [<<"online-users">>],
 process_admin(Host, #request{path = [<<"last-activity">>],
 			     q = Query, lang = Lang}, AJID)
     when is_binary(Host) ->
-    ?DEBUG("query: ~p", [Query]),
+    ?DEBUG("Query: ~p", [Query]),
     Month = case lists:keysearch(<<"period">>, 1, Query) of
 	      {value, {_, Val}} -> Val;
 	      _ -> <<"month">>

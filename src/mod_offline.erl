@@ -698,7 +698,7 @@ offline_msg_to_route(LServer, #offline_msg{from = From, to = To} = R) ->
 	    Pkt2 = add_delay_info(Pkt1, LServer, R#offline_msg.timestamp),
 	    {route, Pkt2}
     catch _:{xmpp_codec, Why} ->
-	    ?ERROR_MSG("failed to decode packet ~p of user ~s: ~s",
+	    ?ERROR_MSG("Failed to decode packet ~p of user ~s: ~s",
 		       [R#offline_msg.packet, jid:encode(To),
 			xmpp:format_error(Why)]),
 	    error
@@ -728,7 +728,7 @@ read_db_messages(LUser, LServer) ->
 		    Pkt2 = xmpp:set_from_to(Pkt1, From, To),
 		    [{Node, Pkt2}]
 	    catch _:{xmpp_codec, Why} ->
-		?ERROR_MSG("failed to decode packet ~p "
+		?ERROR_MSG("Failed to decode packet ~p "
 			   "of user ~s: ~s",
 			   [El, jid:encode(To),
 			    xmpp:format_error(Why)]),

@@ -118,7 +118,7 @@ remove_pid(Host, Pid) ->
 get_pool_size(SQLType, Host) ->
     PoolSize = ejabberd_option:sql_pool_size(Host),
     if PoolSize > 1 andalso SQLType == sqlite ->
-	    ?WARNING_MSG("it's not recommended to set sql_pool_size > 1 for "
+	    ?WARNING_MSG("It's not recommended to set sql_pool_size > 1 for "
 			 "sqlite, because it may cause race conditions", []);
        true ->
 	    ok

@@ -431,7 +431,7 @@ clean_tables(ServerHost) ->
 	{updated, _} ->
 	    ok;
 	Err1 ->
-	    ?ERROR_MSG("failed to clean 'muc_online_room' table: ~p", [Err1]),
+	    ?ERROR_MSG("Failed to clean 'muc_online_room' table: ~p", [Err1]),
 	    Err1
     end,
     ?DEBUG("Cleaning SQL muc_online_users table...", []),
@@ -441,6 +441,6 @@ clean_tables(ServerHost) ->
 	{updated, _} ->
 	    ok;
 	Err2 ->
-	    ?ERROR_MSG("failed to clean 'muc_online_users' table: ~p", [Err2]),
+	    ?ERROR_MSG("Failed to clean 'muc_online_users' table: ~p", [Err2]),
 	    Err2
     end.

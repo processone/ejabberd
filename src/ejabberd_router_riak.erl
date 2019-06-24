@@ -78,6 +78,6 @@ clean_table() ->
 		      ejabberd_riak:delete(route, {Domain, Pid})
 	      end, Routes);
 	{error, Err} ->
-	    ?ERROR_MSG("failed to clean Riak 'route' table: ~p", [Err]),
+	    ?ERROR_MSG("Failed to clean Riak 'route' table: ~p", [Err]),
 	    Err
     end.

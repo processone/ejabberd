@@ -286,7 +286,7 @@ check_auth(#sip{method = Method, hdrs = Hdrs, body = Body}, AuthHdr, _SIPSock) -
 		Password when is_binary(Password) ->
 		    esip:check_auth(Auth, Method, Body, Password);
 		_ScramedPassword ->
-		    ?ERROR_MSG("unable to authenticate ~s@~s against SCRAM'ed "
+		    ?ERROR_MSG("Unable to authenticate ~s@~s against SCRAM'ed "
 			       "password", [LUser, LServer]),
 		    false
 	    end;

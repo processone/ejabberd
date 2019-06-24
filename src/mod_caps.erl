@@ -295,7 +295,7 @@ handle_info({iq_reply, IQReply, {Host, From, To, Caps, SubNodes}}, State) ->
     feature_response(IQReply, Host, From, To, Caps, SubNodes),
     {noreply, State};
 handle_info(Info, State) ->
-    ?WARNING_MSG("unexpected info: ~p", [Info]),
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, State) ->

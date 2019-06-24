@@ -101,13 +101,13 @@ handle_call({send, Data}, _From, #state{ws_pid = WsPid} = State) ->
     WsPid ! {data, Data},
     {reply, ok, State};
 handle_call(Request, From, State) ->
-    ?WARNING_MSG("Got unexpected call from ~p: ~p", [From, Request]),
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
     {noreply, State}.
 
 handle_cast(close, State) ->
     {stop, normal, State#state{mqtt_session = undefined}};
 handle_cast(Request, State) ->
-    ?WARNING_MSG("Got unexpected cast: ~p", [Request]),
+    ?WARNING_MSG("Unexpected cast: ~p", [Request]),
     {noreply, State}.
 
 handle_info(closed, State) ->
@@ -119,7 +119,7 @@ handle_info({'DOWN', _, process, Pid, _}, State)
   when Pid == State#state.mqtt_session orelse Pid == State#state.ws_pid ->
     {stop, normal, State};
 handle_info(Info, State) ->
-    ?WARNING_MSG("Got unexpected info: ~p", [Info]),
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, State) ->

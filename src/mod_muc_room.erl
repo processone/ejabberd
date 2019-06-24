@@ -2783,7 +2783,7 @@ process_item_change(Item, SD, UJID) ->
 			undefined ->
 				<<"">>
 		end,
-		?ERROR_MSG("failed to set item ~p~s: ~p",
+		?ERROR_MSG("Failed to set item ~p~s: ~p",
 		       [Item, FromSuffix, {E, {R, ?EX_STACK(St)}}]),
 	    {error, xmpp:err_internal_server_error()}
     end.

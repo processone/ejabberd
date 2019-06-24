@@ -178,7 +178,7 @@ css() ->
 	{ok, Data} ->
 	    {ok, Data};
 	{error, Why} ->
-	    ?ERROR_MSG("failed to read ~s: ~s", [File, file:format_error(Why)]),
+	    ?ERROR_MSG("Failed to read ~s: ~s", [File, file:format_error(Why)]),
 	    error
     end.
 

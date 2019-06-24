@@ -216,7 +216,7 @@ export(_Server) ->
                            "server_host=%(LServer)s",
                            "xml=%(XML)s"])]
 	      catch _:{xmpp_codec, Why} ->
-		      ?ERROR_MSG("failed to decode packet ~p of user ~s@~s: ~s",
+		      ?ERROR_MSG("Failed to decode packet ~p of user ~s@~s: ~s",
 				 [El, LUser, LServer, xmpp:format_error(Why)]),
 		      []
 	      end;
@@ -235,7 +235,7 @@ xml_to_offline_msg(XML) ->
 	#xmlel{} = El ->
 	    el_to_offline_msg(El);
 	Err ->
-	    ?ERROR_MSG("got ~p when parsing XML packet ~s",
+	    ?ERROR_MSG("Got ~p when parsing XML packet ~s",
 		       [Err, XML]),
 	    Err
     end.
@@ -251,10 +251,10 @@ el_to_offline_msg(El) ->
 			  to = To,
 			  packet = El}}
     catch _:{bad_jid, To_s} ->
-	    ?ERROR_MSG("failed to get 'to' JID from offline XML ~p", [El]),
+	    ?ERROR_MSG("Failed to get 'to' JID from offline XML ~p", [El]),
 	    {error, bad_jid_to};
 	  _:{bad_jid, From_s} ->
-	    ?ERROR_MSG("failed to get 'from' JID from offline XML ~p", [El]),
+	    ?ERROR_MSG("Failed to get 'from' JID from offline XML ~p", [El]),
 	    {error, bad_jid_from}
     end.
 

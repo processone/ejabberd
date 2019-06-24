@@ -90,7 +90,7 @@ start_link() ->
 route(Packet) ->
     try do_route(Packet)
     catch ?EX_RULE(E, R, St) ->
-	    ?ERROR_MSG("failed to route packet:~n~s~nReason = ~p",
+	    ?ERROR_MSG("Failed to route packet:~n~s~nReason = ~p",
 		       [xmpp:pp(Packet), {E, {R, ?EX_STACK(St)}}])
     end.
 
@@ -99,7 +99,7 @@ route(#jid{} = From, #jid{} = To, #xmlel{} = El) ->
     try xmpp:decode(El, ?NS_CLIENT, [ignore_els]) of
 	Pkt -> route(From, To, Pkt)
     catch _:{xmpp_codec, Why} ->
-	    ?ERROR_MSG("failed to decode xml element ~p when "
+	    ?ERROR_MSG("Failed to decode xml element ~p when "
 		       "routing from ~s to ~s: ~s",
 		       [El, jid:encode(From), jid:encode(To),
 			xmpp:format_error(Why)])
@@ -334,7 +334,7 @@ handle_info({route, Packet}, State) ->
     route(Packet),
     {noreply, State};
 handle_info(Info, State) ->
-    ?ERROR_MSG("unexpected info: ~p", [Info]),
+    ?ERROR_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->
@@ -348,7 +348,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 -spec do_route(stanza()) -> ok.
 do_route(OrigPacket) ->
-    ?DEBUG("route:~n~s", [xmpp:pp(OrigPacket)]),
+    ?DEBUG("Route:~n~s", [xmpp:pp(OrigPacket)]),
     case ejabberd_hooks:run_fold(filter_packet, OrigPacket, []) of
 	drop ->
 	    ok;

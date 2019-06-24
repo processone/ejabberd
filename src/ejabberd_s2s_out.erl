@@ -164,11 +164,11 @@ process_closed(#{server := LServer, remote_server := RServer} = State,
     xmpp_stream_out:set_timeout(State2, timer:seconds(Delay)).
 
 handle_unexpected_info(State, Info) ->
-    ?WARNING_MSG("got unexpected info: ~p", [Info]),
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
     State.
 
 handle_unexpected_cast(State, Msg) ->
-    ?WARNING_MSG("got unexpected cast: ~p", [Msg]),
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     State.
 
 process_downgraded(State, _StreamStart) ->

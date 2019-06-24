@@ -6,7 +6,7 @@
 %%%           draft-ietf-asid-ldap-c-api-00.txt
 %%%
 %%% Copyright (C) 2000  Torbjorn Tornkvist, tnt@home.se
-%%% 
+%%%
 %%%
 %%% This program is free software; you can redistribute it and/or modify
 %%% it under the terms of the GNU General Public License as published by
@@ -181,7 +181,7 @@ close(Handle) ->
 %%% to succeed. The parent of the entry MUST exist.
 %%% Example:
 %%%
-%%%  add(Handle, 
+%%%  add(Handle,
 %%%         "cn=Bill Valentine, ou=people, o=Bluetail AB, dc=bluetail, dc=com",
 %%%         [{"objectclass", ["person"]},
 %%%          {"cn", ["Bill Valentine"]},
@@ -205,11 +205,11 @@ add_attrs(Attrs) ->
     end.
 
 %%% --------------------------------------------------------------------
-%%% Delete an entry. The entry consists of the DN of 
+%%% Delete an entry. The entry consists of the DN of
 %%% the entry to be deleted.
 %%% Example:
 %%%
-%%%  delete(Handle, 
+%%%  delete(Handle,
 %%%         "cn=Bill Valentine, ou=people, o=Bluetail AB, dc=bluetail, dc=com"
 %%%        )
 %%% --------------------------------------------------------------------
@@ -223,10 +223,10 @@ delete(Handle, Entry) ->
 %%% operations can be performed as one atomic operation.
 %%% Example:
 %%%
-%%%  modify(Handle, 
+%%%  modify(Handle,
 %%%         "cn=Torbjorn Tornkvist, ou=people, o=Bluetail AB, dc=bluetail, dc=com",
 %%%         [replace("telephoneNumber", ["555 555 00"]),
-%%%          add("description", ["LDAP hacker"])] 
+%%%          add("description", ["LDAP hacker"])]
 %%%        )
 %%% --------------------------------------------------------------------
 -spec modify(handle(), any(), [add | delete | replace]) -> any().
@@ -237,7 +237,7 @@ modify(Handle, Object, Mods) ->
 			    ?CALL_TIMEOUT).
 
 %%%
-%%% Modification operations. 
+%%% Modification operations.
 %%% Example:
 %%%            replace("telephoneNumber", ["555 555 00"])
 %%%
@@ -252,7 +252,7 @@ mod_delete(Type, Values) ->
 %%% operations can be performed as one atomic operation.
 %%% Example:
 %%%
-%%%  modify_dn(Handle, 
+%%%  modify_dn(Handle,
 %%%    "cn=Bill Valentine, ou=people, o=Bluetail AB, dc=bluetail, dc=com",
 %%%    "cn=Ben Emerson",
 %%%    true,
@@ -289,12 +289,12 @@ modify_passwd(Handle, DN, Passwd) ->
 %%% Bind.
 %%% Example:
 %%%
-%%%  bind(Handle, 
+%%%  bind(Handle,
 %%%    "cn=Bill Valentine, ou=people, o=Bluetail AB, dc=bluetail, dc=com",
 %%%    "secret")
 %%% --------------------------------------------------------------------
 -spec bind(handle(), binary(), binary()) -> any().
- 
+
 bind(Handle, RootDN, Passwd) ->
     Handle1 = get_handle(Handle),
     p1_fsm:sync_send_event(Handle1, {bind, RootDN, Passwd},
@@ -308,7 +308,7 @@ optional([]) -> asn1_NOVALUE;
 optional(Value) -> Value.
 
 %%% --------------------------------------------------------------------
-%%% Synchronous search of the Directory returning a 
+%%% Synchronous search of the Directory returning a
 %%% requested set of attributes.
 %%%
 %%%  Example:
@@ -560,9 +560,9 @@ get_handle(Name) when is_binary(Name) ->
 %% Returns: {ok, StateName, StateData}          |
 %%          {ok, StateName, StateData, Timeout} |
 %%          ignore                              |
-%%          {stop, StopReason}             
+%%          {stop, StopReason}
 %% I use the trick of setting a timeout of 0 to pass control into the
-%% process.      
+%% process.
 %%----------------------------------------------------------------------
 init([Hosts, Port, Rootdn, Passwd, Opts]) ->
     Encrypt = case proplists:get_value(encrypt, Opts) of
@@ -639,7 +639,7 @@ active(Event, From, S) ->
 %% Called when p1_fsm:send_all_state_event/2 is invoked.
 %% Returns: {next_state, NextStateName, NextStateData}          |
 %%          {next_state, NextStateName, NextStateData, Timeout} |
-%%          {stop, Reason, NewStateData}                         
+%%          {stop, Reason, NewStateData}
 %%----------------------------------------------------------------------
 handle_event(close, _StateName, S) ->
     catch (S#eldap.sockmod):close(S#eldap.fd),
@@ -655,7 +655,7 @@ handle_sync_event(_Event, _From, StateName, S) ->
 %%
 handle_info({Tag, _Socket, Data}, connecting, S)
     when Tag == tcp; Tag == ssl ->
-    ?DEBUG("tcp packet received when disconnected!~n~p", [Data]),
+    ?DEBUG("TCP packet received when disconnected!~n~p", [Data]),
     {next_state, connecting, S};
 handle_info({Tag, _Socket, Data}, wait_bind_response, S)
     when Tag == tcp; Tag == ssl ->
@@ -721,7 +721,7 @@ handle_info({timeout, _Timer, bind_timeout}, wait_bind_response, S) ->
 %% Make sure we don't fill the message queue with rubbish
 %%
 handle_info(Info, StateName, S) ->
-    ?DEBUG("eldap. Unexpected Info: ~p~nIn state: "
+    ?DEBUG("Unexpected Info: ~p~nIn state: "
 	   "~p~n when StateData is: ~p",
 	   [Info, StateName, S]),
     {next_state, StateName, S}.
@@ -822,7 +822,7 @@ gen_req({bind, RootDN, Passwd}) ->
 %% recvd_packet
 %% Deals with incoming packets in the active state
 %% Will return one of:
-%%  {ok, NewS} - Don't reply to client yet as this is part of a search 
+%%  {ok, NewS} - Don't reply to client yet as this is part of a search
 %%               result and we haven't got all the answers yet.
 %%  {reply, Result, From, NewS} - Reply with result to client From
 %%  {error, Reason}

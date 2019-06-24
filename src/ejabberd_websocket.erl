@@ -192,7 +192,7 @@ ws_loop(FrameInfo, Socket, WsHandleLoopPid, SocketMode) ->
         {DataType, _Socket, Data} when DataType =:= tcp orelse DataType =:= raw ->
             case handle_data(DataType, FrameInfo, Data, Socket, WsHandleLoopPid, SocketMode) of
                 {error, Error} ->
-                    ?DEBUG("tls decode error ~p", [Error]),
+                    ?DEBUG("TLS decode error ~p", [Error]),
                     websocket_close(Socket, WsHandleLoopPid, SocketMode, 1002); % protocol error
                 {NewFrameInfo, ToSend} ->
                     lists:foreach(fun(Pkt) -> SocketMode:send(Socket, Pkt)
@@ -200,17 +200,17 @@ ws_loop(FrameInfo, Socket, WsHandleLoopPid, SocketMode) ->
                     ws_loop(NewFrameInfo, Socket, WsHandleLoopPid, SocketMode)
             end;
         {tcp_closed, _Socket} ->
-            ?DEBUG("tcp connection was closed, exit", []),
+            ?DEBUG("TCP connection was closed, exit", []),
             websocket_close(Socket, WsHandleLoopPid, SocketMode, 0);
 	{tcp_error, Socket, Reason} ->
-	    ?DEBUG("tcp connection error: ~s", [inet:format_error(Reason)]),
+	    ?DEBUG("TCP connection error: ~s", [inet:format_error(Reason)]),
 	    websocket_close(Socket, WsHandleLoopPid, SocketMode, 0);
         {'DOWN', Ref, process, WsHandleLoopPid, Reason} ->
             Code = case Reason of
                        normal ->
                            1000; % normal close
                        _ ->
-                           ?ERROR_MSG("linked websocket controlling loop crashed "
+                           ?ERROR_MSG("Linked websocket controlling loop crashed "
                                       "with reason: ~p",
                                       [Reason]),
                            1011 % internal error
@@ -230,12 +230,12 @@ ws_loop(FrameInfo, Socket, WsHandleLoopPid, SocketMode) ->
             ws_loop(FrameInfo, Socket, WsHandleLoopPid,
                     SocketMode);
         shutdown ->
-	  ?DEBUG("shutdown request received, closing websocket "
+	  ?DEBUG("Shutdown request received, closing websocket "
 		 "with pid ~p",
 		 [self()]),
             websocket_close(Socket, WsHandleLoopPid, SocketMode, 1001); % going away
         _Ignored ->
-            ?WARNING_MSG("received unexpected message, ignoring: ~p",
+            ?WARNING_MSG("Received unexpected message, ignoring: ~p",
                          [_Ignored]),
             ws_loop(FrameInfo, Socket, WsHandleLoopPid,
                     SocketMode)

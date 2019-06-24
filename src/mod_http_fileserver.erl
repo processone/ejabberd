@@ -136,7 +136,7 @@ initialize(Host, Opts) ->
     ContentTypes = build_list_content_types(
                      mod_http_fileserver_opt:content_types(Opts),
                      ?DEFAULT_CONTENT_TYPES),
-    ?DEBUG("known content types: ~s",
+    ?DEBUG("Known content types: ~s",
 	   [str:join([[$*, K, " -> ", V] || {K, V} <- ContentTypes],
 		     <<", ">>)]),
     #state{host = Host,
@@ -222,7 +222,7 @@ handle_cast({reload, Host, NewOpts, _OldOpts}, OldState) ->
 	    {noreply, OldState}
     end;
 handle_cast(Msg, State) ->
-    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
 %%--------------------------------------------------------------------

@@ -114,7 +114,7 @@ delete(Server, Module) ->
 import(Server, Dir, ToType) ->
     lists:foreach(
       fun(Mod) ->
-              ?INFO_MSG("importing ~p...", [Mod]),
+              ?INFO_MSG("Importing ~p...", [Mod]),
               import(Mod, Server, Dir, ToType)
       end, modules()).
 

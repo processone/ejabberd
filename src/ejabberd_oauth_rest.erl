@@ -56,7 +56,7 @@ store(R) ->
         {ok, Code, _} when Code == 200 orelse Code == 201 ->
             ok;
         Err ->
-            ?ERROR_MSG("failed to store oauth record ~p: ~p", [R, Err]),
+            ?ERROR_MSG("Failed to store oauth record ~p: ~p", [R, Err]),
             {error, db_failure}
     end.
 

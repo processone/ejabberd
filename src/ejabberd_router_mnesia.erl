@@ -201,7 +201,7 @@ handle_info({'DOWN', _Ref, _Type, Pid, _Info}, State) ->
     transaction(F),
     {noreply, State};
 handle_info(Info, State) ->
-    ?ERROR_MSG("unexpected info: ~p", [Info]),
+    ?ERROR_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->

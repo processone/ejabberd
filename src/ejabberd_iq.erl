@@ -80,7 +80,7 @@ handle_cast({restart_timer, Expire}, State) ->
     State1 = State#state{expire = min(Expire, State#state.expire)},
     noreply(State1);
 handle_cast(Msg, State) ->
-    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     noreply(State).
 
 handle_info({route, IQ, Key}, State) ->
@@ -96,7 +96,7 @@ handle_info(timeout, State) ->
     Expire = clean(ets:first(?MODULE)),
     noreply(State#state{expire = Expire});
 handle_info(Info, State) ->
-    ?WARNING_MSG("unexpected info: ~p", [Info]),
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
     noreply(State).
 
 terminate(_Reason, _State) ->

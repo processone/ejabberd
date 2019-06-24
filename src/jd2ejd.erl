@@ -144,7 +144,7 @@ xdb_data(User, Server, #xmlel{attrs = Attrs} = El) ->
 			From,
 			[{XMLNS, El#xmlel{attrs = NewAttrs}}]);
 	    _ ->
-		?DEBUG("jd2ejd: Unknown namespace \"~s\"~n", [XMLNS])
+		?DEBUG("Unknown namespace \"~s\"~n", [XMLNS])
 	  end,
 	  ok
     end.
@@ -166,7 +166,7 @@ process_offline(Server, To, #xmlel{children = Els}) ->
 		      ok
 	      catch _:{xmpp_codec, Why} ->
 		      Txt = xmpp:format_error(Why),
-		      ?ERROR_MSG("failed to decode XML '~s': ~s",
+		      ?ERROR_MSG("Failed to decode XML '~s': ~s",
 				 [fxml:element_to_binary(El), Txt])
 	      end
       end, Els).

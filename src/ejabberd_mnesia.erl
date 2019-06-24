@@ -438,7 +438,7 @@ mnesia_op(Fun, Args) ->
 	{atomic, ok} ->
 	    {atomic, ok};
 	Other ->
-	    ?ERROR_MSG("failure on mnesia ~s ~p: ~p",
+	    ?ERROR_MSG("Failure on mnesia ~s ~p: ~p",
 		      [Fun, Args, Other]),
 	    Other
     end.

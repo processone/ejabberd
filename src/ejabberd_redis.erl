@@ -390,7 +390,7 @@ handle_call({subscribe, Caller, Channels}, _From,
     eredis_subscribe(Pid, Channels),
     {reply, ok, State#state{subscriptions = Subs1}};
 handle_call(Request, _From, State) ->
-    ?WARNING_MSG("unexepected call: ~p", [Request]),
+    ?WARNING_MSG("Unexepected call: ~p", [Request]),
     {noreply, State}.
 
 handle_cast(_Msg, State) ->
@@ -423,7 +423,7 @@ handle_info({subscribed, Channel, Pid}, State) ->
 	    case maps:is_key(Channel, State#state.subscriptions) of
 		true -> eredis_sub:ack_message(Pid);
 		false ->
-		    ?WARNING_MSG("got subscription ack for unknown channel ~s",
+		    ?WARNING_MSG("Got subscription ack for unknown channel ~s",
 				 [Channel])
 	    end;
 	_ ->
@@ -443,7 +443,7 @@ handle_info({message, Channel, Data, Pid}, State) ->
     end,
     {noreply, State};
 handle_info(Info, State) ->
-    ?WARNING_MSG("unexpected info = ~p", [Info]),
+    ?WARNING_MSG("Unexpected info = ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->
@@ -497,7 +497,7 @@ do_connect(_, Server, Port, Pass, DB, ConnTimeout) ->
 	  (pos_integer(), {qp, redis_pipeline()}, integer()) ->
 		  [{ok, redis_reply()} | redis_error()] | redis_error().
 call(I, {F, Cmd}, Retries) ->
-    ?DEBUG("redis query: ~p", [Cmd]),
+    ?DEBUG("Redis query: ~p", [Cmd]),
     Conn = get_connection(I),
     Res = try eredis:F(Conn, Cmd, ?CALL_TIMEOUT) of
 	      {error, Reason} when is_atom(Reason) ->
@@ -630,5 +630,5 @@ re_subscribe(Pid, Subs) ->
     end.
 
 eredis_subscribe(Pid, Channels) ->
-    ?DEBUG("redis query: ~p", [[<<"SUBSCRIBE">>|Channels]]),
+    ?DEBUG("Redis query: ~p", [[<<"SUBSCRIBE">>|Channels]]),
     eredis_sub:subscribe(Pid, Channels).

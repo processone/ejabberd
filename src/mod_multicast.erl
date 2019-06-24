@@ -183,7 +183,7 @@ handle_cast({reload, NewOpts, NewOpts},
     {noreply, State#state{lservice = NewLServiceS,
 			  access = Access, service_limits = SLimits}};
 handle_cast(Msg, State) ->
-    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
 %%--------------------------------------------------------------------

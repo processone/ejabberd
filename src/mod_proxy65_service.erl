@@ -105,7 +105,7 @@ handle_cast({reload, ServerHost, NewOpts, OldOpts}, State) ->
       end, OldHosts -- NewHosts),
     {noreply, State#state{myhosts = NewHosts}};
 handle_cast(Msg, State) ->
-    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
@@ -213,7 +213,7 @@ process_bytestreams(#iq{type = set, lang = Lang, from = InitiatorJID, to = To,
 		    Txt = ?T("Bytestream already activated"),
 		    xmpp:make_error(IQ, xmpp:err_conflict(Txt, Lang));
 		{error, Err} ->
-		    ?ERROR_MSG("failed to activate bytestream from ~s to ~s: ~p",
+		    ?ERROR_MSG("Failed to activate bytestream from ~s to ~s: ~p",
 			       [Initiator, Target, Err]),
 		    Txt = ?T("Database failure"),
 		    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))

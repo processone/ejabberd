@@ -66,6 +66,6 @@ clean_table() ->
 		      ok
 	      end, Rs);
 	{error, Reason} = Err ->
-	    ?ERROR_MSG("failed to clean Riak 'bosh' table: ~p", [Reason]),
+	    ?ERROR_MSG("Failed to clean Riak 'bosh' table: ~p", [Reason]),
 	    Err
     end.

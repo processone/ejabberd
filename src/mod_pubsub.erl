@@ -239,7 +239,7 @@ stop(Host) ->
 
 init([ServerHost, Opts]) ->
     process_flag(trap_exit, true),
-    ?DEBUG("pubsub init ~p ~p", [ServerHost, Opts]),
+    ?DEBUG("Pubsub init ~p ~p", [ServerHost, Opts]),
     Hosts = gen_mod:get_opt_hosts(Opts),
     Access = mod_pubsub_opt:access_createnode(Opts),
     PepOffline = mod_pubsub_opt:ignore_pep_from_offline(Opts),
@@ -3559,11 +3559,11 @@ tree_call({_User, Server, _Resource}, Function, Args) ->
     tree_call(Server, Function, Args);
 tree_call(Host, Function, Args) ->
     Tree = tree(Host),
-    ?DEBUG("tree_call apply(~s, ~s, ~p) @ ~s", [Tree, Function, Args, Host]),
+    ?DEBUG("Tree_call apply(~s, ~s, ~p) @ ~s", [Tree, Function, Args, Host]),
     apply(Tree, Function, Args).
 
 tree_action(Host, Function, Args) ->
-    ?DEBUG("tree_action ~p ~p ~p", [Host, Function, Args]),
+    ?DEBUG("Tree_action ~p ~p ~p", [Host, Function, Args]),
     ServerHost = serverhost(Host),
     Fun = fun () -> tree_call(Host, Function, Args) end,
     case mod_pubsub_opt:db_type(ServerHost) of
@@ -3574,7 +3574,7 @@ tree_action(Host, Function, Args) ->
 		{atomic, Result} ->
 		    Result;
 		{aborted, Reason} ->
-		    ?ERROR_MSG("transaction return internal error: ~p~n", [{aborted, Reason}]),
+		    ?ERROR_MSG("Transaction return internal error: ~p~n", [{aborted, Reason}]),
 		    ErrTxt = ?T("Database failure"),
 		    {error, xmpp:err_internal_server_error(ErrTxt, ejabberd_option:language())}
 	    end;
@@ -3584,7 +3584,7 @@ tree_action(Host, Function, Args) ->
 
 %% @doc <p>node plugin call.</p>
 node_call(Host, Type, Function, Args) ->
-    ?DEBUG("node_call ~p ~p ~p", [Type, Function, Args]),
+    ?DEBUG("Node_call ~p ~p ~p", [Type, Function, Args]),
     Module = plugin(Host, Type),
     case apply(Module, Function, Args) of
 	{result, Result} ->
@@ -3603,7 +3603,7 @@ node_call(Host, Type, Function, Args) ->
     end.
 
 node_action(Host, Type, Function, Args) ->
-    ?DEBUG("node_action ~p ~p ~p ~p", [Host, Type, Function, Args]),
+    ?DEBUG("Node_action ~p ~p ~p ~p", [Host, Type, Function, Args]),
     transaction(Host, fun () ->
 		node_call(Host, Type, Function, Args)
 	end,
@@ -3653,10 +3653,10 @@ do_transaction(ServerHost, Fun, Trans, DBType) ->
 	{atomic, {error, Error}} ->
 	    {error, Error};
 	{aborted, Reason} ->
-	    ?ERROR_MSG("transaction return internal error: ~p~n", [{aborted, Reason}]),
+	    ?ERROR_MSG("Transaction return internal error: ~p~n", [{aborted, Reason}]),
 	    {error, xmpp:err_internal_server_error(?T("Database failure"), ejabberd_option:language())};
 	Other ->
-	    ?ERROR_MSG("transaction return internal error: ~p~n", [Other]),
+	    ?ERROR_MSG("Transaction return internal error: ~p~n", [Other]),
 	    {error, xmpp:err_internal_server_error(?T("Database failure"), ejabberd_option:language())}
     end.
 
@@ -3833,7 +3833,7 @@ purge_offline(LJID) ->
 			    end
 		    end, lists:usort(lists:flatten(Affs)));
 	{Error, _} ->
-	    ?ERROR_MSG("can not purge offline: ~p", [Error])
+	    ?ERROR_MSG("Can not purge offline: ~p", [Error])
     end.
 
 -spec purge_offline(host(), ljid(), #pubsub_node{}) -> ok | {error, stanza_error()}.

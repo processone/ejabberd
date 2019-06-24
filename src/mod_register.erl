@@ -464,8 +464,7 @@ check_timeout(Source) ->
 	   case mnesia:transaction(F) of
 	     {atomic, Res} -> Res;
 	     {aborted, Reason} ->
-		 ?ERROR_MSG("mod_register: timeout check error: ~p~n",
-			    [Reason]),
+		 ?ERROR_MSG("timeout check error: ~p~n", [Reason]),
 		 true
 	   end;
        true -> true
@@ -499,7 +498,7 @@ remove_timeout(Source) ->
 	   case mnesia:transaction(F) of
 	     {atomic, ok} -> ok;
 	     {aborted, Reason} ->
-		 ?ERROR_MSG("mod_register: timeout remove error: "
+		 ?ERROR_MSG("Mod_register: timeout remove error: "
 			    "~p~n",
 			    [Reason]),
 		 ok

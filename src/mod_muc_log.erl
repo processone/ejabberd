@@ -115,7 +115,7 @@ handle_cast({add_to_log, Type, Data, Room, Opts}, State) ->
     end,
     {noreply, State};
 handle_cast(Msg, State) ->
-    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
 handle_info(_Info, State) -> {noreply, State}.

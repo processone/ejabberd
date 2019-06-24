@@ -125,7 +125,7 @@ handle_cast({stop_ping, JID}, State) ->
     Timers = del_timer(JID, State#state.timers),
     {noreply, State#state{timers = Timers}};
 handle_cast(Msg, State) ->
-    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
 handle_info({iq_reply, #iq{type = error}, JID}, State) ->

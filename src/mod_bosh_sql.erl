@@ -44,7 +44,7 @@ init() ->
 	{updated, _} ->
 	    ok;
 	Err ->
-	    ?ERROR_MSG("failed to clean 'route' table: ~p", [Err]),
+	    ?ERROR_MSG("Failed to clean 'route' table: ~p", [Err]),
 	    Err
     end.
 

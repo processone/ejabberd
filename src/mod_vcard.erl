@@ -117,7 +117,7 @@ init([Host, Opts]) ->
 			process_local_iq_info),
 		      case Mod:is_search_supported(Host) of
 			  false ->
-			      ?WARNING_MSG("vcard search functionality is "
+			      ?WARNING_MSG("vCard search functionality is "
 					   "not implemented for ~s backend",
 					   [mod_vcard_opt:db_type(Opts)]);
 			  true ->
@@ -133,7 +133,7 @@ handle_call(_Call, _From, State) ->
     {noreply, State}.
 
 handle_cast(Cast, State) ->
-    ?WARNING_MSG("unexpected cast: ~p", [Cast]),
+    ?WARNING_MSG("Unexpected cast: ~p", [Cast]),
     {noreply, State}.
 
 handle_info({route, Packet}, State) ->
@@ -143,7 +143,7 @@ handle_info({route, Packet}, State) ->
     end,
     {noreply, State};
 handle_info(Info, State) ->
-    ?WARNING_MSG("unexpected info: ~p", [Info]),
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, #state{hosts = MyHosts, server_host = Host}) ->

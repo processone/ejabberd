@@ -220,7 +220,7 @@ process(_, #request{method = 'POST', data = Data, opts = Opts, ip = {IP, _}}) ->
 		     #xmlel{name = <<"h1">>, attrs = [],
 			    children = [{xmlcdata, <<"Malformed Request">>}]}};
 		{ok, RPC} ->
-		    ?DEBUG("got XML-RPC request: ~p", [RPC]),
+		    ?DEBUG("Got XML-RPC request: ~p", [RPC]),
 		    {false, Result} = handler(State, RPC),
 		    XML = fxml:element_to_binary(fxmlrpc:encode(Result)),
 		    {200, [{<<"Content-Type">>, <<"text/xml">>}],
@@ -486,7 +486,7 @@ format_arg(Arg, string) when is_binary(Arg) -> binary_to_list(Arg);
 format_arg(undefined, binary) -> <<>>;
 format_arg(undefined, string) -> "";
 format_arg(Arg, Format) ->
-    ?ERROR_MSG("don't know how to format Arg ~p for format ~p", [Arg, Format]),
+    ?ERROR_MSG("Don't know how to format Arg ~p for format ~p", [Arg, Format]),
     exit({invalid_arg_type, Arg, Format}).
 
 process_unicode_codepoints(Str) ->

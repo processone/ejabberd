@@ -398,7 +398,7 @@ decode(Json) ->
 
 -spec failed_http_request({ok, _} | {error, _}, url()) -> {error, _}.
 failed_http_request({ok, {{_, Code, Reason}, _Head, Body}}, Url) ->
-    ?ERROR_MSG("Got unexpected status code from <~s>: ~B, Body: ~s",
+    ?ERROR_MSG("Unexpected status code from <~s>: ~B, Body: ~s",
 	       [Url, Code, Body]),
     throw({error, {unexpected_code, Code, Reason}});
 failed_http_request({error, Reason}, Url) ->

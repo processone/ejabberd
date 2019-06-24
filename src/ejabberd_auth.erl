@@ -144,7 +144,7 @@ handle_cast(config_reloaded, #state{host_modules = HostModules} = State) ->
     init_cache(NewHostModules),
     {noreply, State#state{host_modules = NewHostModules}};
 handle_cast(Msg, State) ->
-    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
 handle_info(_Info, State) ->

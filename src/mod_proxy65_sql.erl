@@ -43,7 +43,7 @@ init() ->
 	{updated, _} ->
 	    ok;
 	Err ->
-	    ?ERROR_MSG("failed to clean 'proxy65' table: ~p", [Err]),
+	    ?ERROR_MSG("Failed to clean 'proxy65' table: ~p", [Err]),
 	    Err
     end.
 

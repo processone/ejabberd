@@ -248,11 +248,11 @@ process_info(#{jid := JID} = State, {resend_presence, To}) ->
 	    process_presence_out(State, xmpp:set_to(Pres, To))
     end;
 process_info(State, Info) ->
-    ?WARNING_MSG("got unexpected info: ~p", [Info]),
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
     State.
 
 handle_unexpected_cast(State, Msg) ->
-    ?WARNING_MSG("got unexpected cast: ~p", [Msg]),
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     State.
 
 reject_unauthenticated_packet(State, _Pkt) ->

@@ -95,11 +95,11 @@ pubsub_publish_item(LServer, ?NS_AVATAR_METADATA,
 		    set_vcard_avatar(From, Photo, #{})
 	    end;
 	_ ->
-	    ?WARNING_MSG("invalid avatar metadata of ~s@~s published "
+	    ?WARNING_MSG("Invalid avatar metadata of ~s@~s published "
 			 "with item id ~s",
 			 [LUser, LServer, ItemId])
     catch _:{xmpp_codec, Why} ->
-	    ?WARNING_MSG("failed to decode avatar metadata of ~s@~s: ~s",
+	    ?WARNING_MSG("Failed to decode avatar metadata of ~s@~s: ~s",
 			 [LUser, LServer, xmpp:format_error(Why)])
     end;
 pubsub_publish_item(_, _, _, _, _, _) ->
@@ -208,12 +208,12 @@ get_avatar_data(JID, ItemID) ->
 		#avatar_data{data = Data} ->
 		    {ok, Data};
 		_ ->
-		    ?WARNING_MSG("invalid avatar data detected "
+		    ?WARNING_MSG("Invalid avatar data detected "
 				 "for ~s@~s with item id ~s",
 				 [LUser, LServer, ItemID]),
 		    {error, invalid_data}
 	    catch _:{xmpp_codec, Why} ->
-		    ?WARNING_MSG("failed to decode avatar data for "
+		    ?WARNING_MSG("Failed to decode avatar data for "
 				 "~s@~s with item id ~s: ~s",
 				 [LUser, LServer, ItemID,
 				  xmpp:format_error(Why)]),
@@ -227,7 +227,7 @@ get_avatar_data(JID, ItemID) ->
 	{error, #stanza_error{reason = 'item-not-found'}} ->
 	    {error, notfound};
 	{error, Reason} ->
-	    ?WARNING_MSG("failed to get item for ~s@~s at node ~s "
+	    ?WARNING_MSG("Failed to get item for ~s@~s at node ~s "
 			 "with item id ~s: ~p",
 			 [LUser, LServer, ?NS_AVATAR_METADATA, ItemID, Reason]),
 	    {error, internal_error}
@@ -246,12 +246,12 @@ get_avatar_meta(#iq{from = JID}) ->
 		#avatar_meta{} = Meta ->
 		    {ok, ItemID, Meta};
 		_ ->
-		    ?WARNING_MSG("invalid metadata payload detected "
+		    ?WARNING_MSG("Invalid metadata payload detected "
 				 "for ~s@~s with item id ~s",
 				 [LUser, LServer, ItemID]),
 		    {error, invalid_metadata}
 	    catch _:{xmpp_codec, Why} ->
-		    ?WARNING_MSG("failed to decode metadata for "
+		    ?WARNING_MSG("Failed to decode metadata for "
 				 "~s@~s with item id ~s: ~s",
 				 [LUser, LServer, ItemID,
 				  xmpp:format_error(Why)]),
@@ -260,7 +260,7 @@ get_avatar_meta(#iq{from = JID}) ->
 	{error, #stanza_error{reason = 'item-not-found'}} ->
 	    {error, notfound};
 	{error, Reason} ->
-	    ?WARNING_MSG("failed to get items for ~s@~s at node ~s: ~p",
+	    ?WARNING_MSG("Failed to get items for ~s@~s at node ~s: ~p",
 			 [LUser, LServer, ?NS_AVATAR_METADATA, Reason]),
 	    {error, internal_error}
     end.
@@ -392,11 +392,11 @@ get_vcard(#jid{luser = LUser, lserver = LServer}) ->
 	#vcard_temp{} = VCard ->
 	    {ok, VCard};
 	_ ->
-	    ?ERROR_MSG("invalid vCard of ~s@~s in the database",
+	    ?ERROR_MSG("Invalid vCard of ~s@~s in the database",
 		       [LUser, LServer]),
 	    {error, invalid_vcard}
     catch _:{xmpp_codec, Why} ->
-	    ?ERROR_MSG("failed to decode vCard of ~s@~s: ~s",
+	    ?ERROR_MSG("Failed to decode vCard of ~s@~s: ~s",
 		       [LUser, LServer, xmpp:format_error(Why)]),
 	    {error, invalid_vcard}
     end.

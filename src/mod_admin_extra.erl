@@ -849,7 +849,7 @@ check_password_hash(User, Host, PasswordHash, HashMethod) ->
 			  {A, _} when is_tuple(A) -> scrammed;
 			  {_, true} -> get_hash(AccountPass, HashMethod);
 			  {_, false} ->
-			      ?ERROR_MSG("check_password_hash called "
+			      ?ERROR_MSG("Check_password_hash called "
 					 "with hash method: ~p", [HashMethod]),
 			      undefined
 		      end,

@@ -139,7 +139,7 @@ handle_cast(_Msg, State) ->
     {noreply, State}.
 
 handle_info(Info, State) ->
-    ?ERROR_MSG("unexpected info: ~p", [Info]),
+    ?ERROR_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->

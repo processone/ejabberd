@@ -124,7 +124,7 @@ init([ServerHost, Opts]) ->
 
 -spec handle_call(_, {pid(), _}, state()) -> {noreply, state()}.
 handle_call(Request, From, State) ->
-    ?ERROR_MSG("Got unexpected request from ~p: ~p", [From, Request]),
+    ?ERROR_MSG("Unexpected request from ~p: ~p", [From, Request]),
     {noreply, State}.
 
 -spec handle_cast(_, state()) -> {noreply, state()}.
@@ -181,7 +181,7 @@ handle_cast({handle_slot_request, #jid{user = U, server = S} = JID, Path, Size},
 		   end,
     {noreply, State#state{disk_usage = NewDiskUsage}};
 handle_cast(Request, State) ->
-    ?ERROR_MSG("Got unexpected request: ~p", [Request]),
+    ?ERROR_MSG("Unexpected request: ~p", [Request]),
     {noreply, State}.
 
 -spec handle_info(_, state()) -> {noreply, state()}.
@@ -207,7 +207,7 @@ handle_info(sweep, #state{server_host = ServerHost,
     end,
     {noreply, State};
 handle_info(Info, State) ->
-    ?ERROR_MSG("Got unexpected info: ~p", [Info]),
+    ?ERROR_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 -spec terminate(normal | shutdown | {shutdown, _} | _, state()) -> ok.

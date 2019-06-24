@@ -112,7 +112,7 @@ process_iq(_Host, Module, Function, IQ) ->
 	ignore ->
 	    ok
     catch ?EX_RULE(E, R, St) ->
-	    ?ERROR_MSG("failed to process iq:~n~s~nReason = ~p",
+	    ?ERROR_MSG("Failed to process iq:~n~s~nReason = ~p",
 		       [xmpp:pp(IQ), {E, {R, ?EX_STACK(St)}}]),
 	    Txt = ?T("Module failed to handle the query"),
 	    Err = xmpp:err_internal_server_error(Txt, IQ#iq.lang),

@@ -169,7 +169,7 @@ keep_alive(Host, PID) ->
 	{selected,_,[[<<"1">>]]} ->
 	    ok;
 	_Err ->
-	    ?ERROR_MSG("keep alive query failed, closing connection: ~p", [_Err]),
+	    ?ERROR_MSG("Keep alive query failed, closing connection: ~p", [_Err]),
 	    sync_send_event(PID, force_timeout, query_timeout(Host))
     end.
 
@@ -364,7 +364,7 @@ connecting(connect, #state{host = Host} = State) ->
 	  {next_state, connecting, State}
     end;
 connecting(Event, State) ->
-    ?WARNING_MSG("unexpected event in 'connecting': ~p",
+    ?WARNING_MSG("Unexpected event in 'connecting': ~p",
 		 [Event]),
     {next_state, connecting, State}.
 
@@ -376,7 +376,7 @@ connecting({sql_cmd, {sql_query, ?KEEPALIVE_QUERY},
     {next_state, connecting, State};
 connecting({sql_cmd, Command, Timestamp} = Req, From,
 	   State) ->
-    ?DEBUG("queuing pending request while connecting:~n\t~p",
+    ?DEBUG("Queuing pending request while connecting:~n\t~p",
 	   [Req]),
     PendingRequests =
 	try p1_queue:in({sql_cmd, Command, From, Timestamp},
@@ -393,7 +393,7 @@ connecting({sql_cmd, Command, Timestamp} = Req, From,
     {next_state, connecting,
      State#state{pending_requests = PendingRequests}};
 connecting(Request, {Who, _Ref}, State) ->
-    ?WARNING_MSG("unexpected call ~p from ~p in 'connecting'",
+    ?WARNING_MSG("Unexpected call ~p from ~p in 'connecting'",
 		 [Request, Who]),
     {reply, {error, badarg}, connecting, State}.
 
@@ -401,7 +401,7 @@ session_established({sql_cmd, Command, Timestamp}, From,
 		    State) ->
     run_sql_cmd(Command, From, State, Timestamp);
 session_established(Request, {Who, _Ref}, State) ->
-    ?WARNING_MSG("unexpected call ~p from ~p in 'session_establ"
+    ?WARNING_MSG("Unexpected call ~p from ~p in 'session_establ"
 		 "ished'",
 		 [Request, Who]),
     {reply, {error, badarg}, session_established, State}.
@@ -412,7 +412,7 @@ session_established({sql_cmd, Command, From, Timestamp},
 session_established(force_timeout, State) ->
     {stop, timeout, State};
 session_established(Event, State) ->
-    ?WARNING_MSG("unexpected event in 'session_established': ~p",
+    ?WARNING_MSG("Unexpected event in 'session_established': ~p",
 		 [Event]),
     {next_state, session_established, State}.
 
@@ -432,7 +432,7 @@ handle_info({'DOWN', _MonitorRef, process, _Pid, _Info},
     p1_fsm:send_event(self(), connect),
     {next_state, connecting, State};
 handle_info(Info, StateName, State) ->
-    ?WARNING_MSG("unexpected info in ~p: ~p",
+    ?WARNING_MSG("Unexpected info in ~p: ~p",
 		 [StateName, Info]),
     {next_state, StateName, State}.
 
@@ -496,7 +496,7 @@ inner_transaction(F) ->
     case get(?NESTING_KEY) of
       ?TOP_LEVEL_TXN ->
 	  {backtrace, T} = process_info(self(), backtrace),
-	  ?ERROR_MSG("inner transaction called at outer txn "
+	  ?ERROR_MSG("Inner transaction called at outer txn "
 		     "level. Trace: ~s",
 		     [T]),
 	  erlang:exit(implementation_faulty);
@@ -518,7 +518,7 @@ outer_transaction(F, NRestarts, _Reason) ->
       ?TOP_LEVEL_TXN -> ok;
       _N ->
 	  {backtrace, T} = process_info(self(), backtrace),
-	  ?ERROR_MSG("outer transaction called at inner txn "
+	  ?ERROR_MSG("Outer transaction called at inner txn "
 		     "level. Trace: ~s",
 		     [T]),
 	  erlang:exit(implementation_faulty)
@@ -965,11 +965,11 @@ get_db_version(#state{db_type = pgsql} = State) ->
                 Version when is_integer(Version) ->
                     State#state{db_version = Version};
                 Error ->
-                    ?WARNING_MSG("error getting pgsql version: ~p", [Error]),
+                    ?WARNING_MSG("Error getting pgsql version: ~p", [Error]),
                     State
             end;
         Res ->
-            ?WARNING_MSG("error getting pgsql version: ~p", [Res]),
+            ?WARNING_MSG("Error getting pgsql version: ~p", [Res]),
             State
     end;
 get_db_version(State) ->
@@ -1092,12 +1092,12 @@ init_mssql(Host) ->
 		os:putenv("FREETDSCONF", freetds_config()),
 		ok
 	    catch error:{badmatch, {error, Reason} = Err} ->
-		    ?ERROR_MSG("failed to create temporary files in ~s: ~s",
+		    ?ERROR_MSG("Failed to create temporary files in ~s: ~s",
 			       [tmp_dir(), file:format_error(Reason)]),
 		    Err
 	    end;
 	{error, Reason} = Err ->
-	    ?ERROR_MSG("failed to create temporary directory ~s: ~s",
+	    ?ERROR_MSG("Failed to create temporary directory ~s: ~s",
 		       [tmp_dir(), file:format_error(Reason)]),
 	    Err
     end.

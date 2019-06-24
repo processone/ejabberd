@@ -205,7 +205,7 @@ handle_info({iq_reply, ResIQ, #iq{} = IQ}, State) ->
     process_iq_result(IQ, ResIQ),
     {noreply, State};
 handle_info(Info, State) ->
-    ?WARNING_MSG("unexpected info: ~p", [Info]),
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, State) ->
@@ -277,7 +277,7 @@ process_iq_result(#iq{from = From, to = To, id = ID, lang = Lang} = IQ,
 		ejabberd_router:route(Reply)
 	end
     catch _:_ ->
-	    ?ERROR_MSG("got iq-result with invalid delegated "
+	    ?ERROR_MSG("Got iq-result with invalid delegated "
 		       "payload:~n~s", [xmpp:pp(ResIQ)]),
 	    Txt = ?T("External component failure"),
 	    Err = xmpp:err_internal_server_error(Txt, Lang),

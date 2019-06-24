@@ -400,7 +400,7 @@ format_arg({Elements},
 			      _ when TElDef == binary; TElDef == string ->
 				  <<"">>;
 			      _ ->
-				  ?ERROR_MSG("missing field ~p in tuple ~p", [TElName, Elements]),
+				  ?ERROR_MSG("Missing field ~p in tuple ~p", [TElName, Elements]),
 				  throw({invalid_parameter,
 					 io_lib:format("Missing field ~w in tuple ~w", [TElName, Elements])})
 			  end
@@ -418,7 +418,7 @@ format_arg(Arg, string) when is_binary(Arg) -> binary_to_list(Arg);
 format_arg(undefined, binary) -> <<>>;
 format_arg(undefined, string) -> "";
 format_arg(Arg, Format) ->
-    ?ERROR_MSG("don't know how to format Arg ~p for format ~p", [Arg, Format]),
+    ?ERROR_MSG("Don't know how to format Arg ~p for format ~p", [Arg, Format]),
     throw({invalid_parameter,
 	   io_lib:format("Arg ~w is not in format ~w",
 			 [Arg, Format])}).

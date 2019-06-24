@@ -80,7 +80,7 @@ request(#sip{hdrs = Hdrs} = Req, SIPSock) ->
         [<<"*">>] when Expires == 0 ->
             case unregister_session(US, CallID, CSeq) of
 		{ok, ContactsWithExpires} ->
-		    ?INFO_MSG("unregister SIP session for user ~s@~s from ~s",
+		    ?INFO_MSG("Unregister SIP session for user ~s@~s from ~s",
 			      [LUser, LServer, inet_parse:ntoa(PeerIP)]),
 		    Cs = prepare_contacts_to_send(ContactsWithExpires),
 		    mod_sip:make_response(
@@ -223,7 +223,7 @@ handle_info({'DOWN', MRef, process, _Pid, _Reason}, State) ->
     end,
     {noreply, State};
 handle_info(_Info, State) ->
-    ?ERROR_MSG("got unexpected info: ~p", [_Info]),
+    ?ERROR_MSG("Unexpected info: ~p", [_Info]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->

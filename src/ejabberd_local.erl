@@ -73,7 +73,7 @@ start_link() ->
 route(Packet) ->
     try do_route(Packet)
     catch ?EX_RULE(E, R, St) ->
-	    ?ERROR_MSG("failed to route packet:~n~s~nReason = ~p",
+	    ?ERROR_MSG("Failed to route packet:~n~s~nReason = ~p",
 		       [xmpp:pp(Packet), {E, {R, ?EX_STACK(St)}}])
     end.
 
@@ -123,7 +123,7 @@ handle_info({route, Packet}, State) ->
     route(Packet),
     {noreply, State};
 handle_info(Info, State) ->
-    ?WARNING_MSG("unexpected info: ~p", [Info]),
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->
@@ -140,7 +140,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 -spec do_route(stanza()) -> any().
 do_route(Packet) ->
-    ?DEBUG("local route:~n~s", [xmpp:pp(Packet)]),
+    ?DEBUG("Local route:~n~s", [xmpp:pp(Packet)]),
     Type = xmpp:get_type(Packet),
     To = xmpp:get_to(Packet),
     if To#jid.luser /= <<"">> ->

@@ -116,7 +116,7 @@ handle_info({delete, Session}, State) ->
     delete_session(Session),
     {noreply, State};
 handle_info(_Info, State) ->
-    ?ERROR_MSG("got unexpected info: ~p", [_Info]),
+    ?ERROR_MSG("Unexpected info: ~p", [_Info]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->

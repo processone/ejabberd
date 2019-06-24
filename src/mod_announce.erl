@@ -143,12 +143,12 @@ handle_cast({F, #message{from = From, to = To} = Pkt}, State) when is_atom(F) ->
     end,
     {noreply, State};
 handle_cast(Msg, State) ->
-    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
 
 handle_info(Info, State) ->
-    ?WARNING_MSG("unexpected info: ~p", [Info]),
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, #state{host = Host}) ->
@@ -597,7 +597,7 @@ handle_adhoc_form(From, #jid{lserver = LServer} = To,
 	Junk ->
 	    %% This can't happen, as we haven't registered any other
 	    %% command nodes.
-	    ?ERROR_MSG("got unexpected node/body = ~p", [Junk]),
+	    ?ERROR_MSG("Unexpected node/body = ~p", [Junk]),
 	    {error, xmpp:err_internal_server_error()}
     end.
 
@@ -722,7 +722,7 @@ send_motd({#presence{type = available},
 			    ok
 		    end
 	    catch _:{xmpp_codec, Why} ->
-		    ?ERROR_MSG("failed to decode motd packet ~p: ~s",
+		    ?ERROR_MSG("Failed to decode motd packet ~p: ~s",
 			       [Packet, xmpp:format_error(Why)])
 	    end;
 	_ ->
@@ -806,7 +806,7 @@ get_stored_motd(LServer) ->
 		#message{body = Body, subject = Subject} ->
 		    {xmpp:get_text(Subject), xmpp:get_text(Body)}
 	    catch _:{xmpp_codec, Why} ->
-		    ?ERROR_MSG("failed to decode motd packet ~p: ~s",
+		    ?ERROR_MSG("Failed to decode motd packet ~p: ~s",
 			       [Packet, xmpp:format_error(Why)])
 	    end;
         _ ->

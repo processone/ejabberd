@@ -309,14 +309,14 @@ init([#body{attrs = Attrs}, IP, SID]) ->
     end.
 
 wait_for_session(_Event, State) ->
-    ?ERROR_MSG("unexpected event in 'wait_for_session': ~p",
+    ?ERROR_MSG("Unexpected event in 'wait_for_session': ~p",
 	       [_Event]),
     {next_state, wait_for_session, State}.
 
 wait_for_session(#body{attrs = Attrs} = Req, From,
 		 State) ->
     RID = get_attr(rid, Attrs),
-    ?DEBUG("got request:~n** RequestID: ~p~n** Request: "
+    ?DEBUG("Got request:~n** RequestID: ~p~n** Request: "
 	   "~p~n** From: ~p~n** State: ~p",
 	   [RID, Req, From, State]),
     Wait = min(get_attr(wait, Attrs, undefined),
@@ -368,20 +368,20 @@ wait_for_session(#body{attrs = Attrs} = Req, From,
 			     From)
     end;
 wait_for_session(_Event, _From, State) ->
-    ?ERROR_MSG("unexpected sync event in 'wait_for_session': ~p",
+    ?ERROR_MSG("Unexpected sync event in 'wait_for_session': ~p",
 	       [_Event]),
     {reply, {error, badarg}, wait_for_session, State}.
 
 active({#body{} = Body, From}, State) ->
     active1(Body, From, State);
 active(_Event, State) ->
-    ?ERROR_MSG("unexpected event in 'active': ~p",
+    ?ERROR_MSG("Unexpected event in 'active': ~p",
 	       [_Event]),
     {next_state, active, State}.
 
 active(#body{attrs = Attrs, size = Size} = Req, From,
        State) ->
-    ?DEBUG("got request:~n** Request: ~p~n** From: "
+    ?DEBUG("Got request:~n** Request: ~p~n** From: "
 	   "~p~n** State: ~p",
 	   [Req, From, State]),
     {ShaperState, Pause} =
@@ -409,7 +409,7 @@ active(#body{attrs = Attrs, size = Size} = Req, From,
        true -> active1(Req, From, State1)
     end;
 active(_Event, _From, State) ->
-    ?ERROR_MSG("unexpected sync event in 'active': ~p",
+    ?ERROR_MSG("Unexpected sync event in 'active': ~p",
 	       [_Event]),
     {reply, {error, badarg}, active, State}.
 
@@ -518,7 +518,7 @@ handle_event({change_shaper, Shaper}, StateName,
 	     State) ->
     {next_state, StateName, State#state{shaper_state = Shaper}};
 handle_event(_Event, StateName, State) ->
-    ?ERROR_MSG("unexpected event in '~s': ~p",
+    ?ERROR_MSG("Unexpected event in '~s': ~p",
 	       [StateName, _Event]),
     {next_state, StateName, State}.
 
@@ -558,7 +558,7 @@ handle_sync_event(deactivate_socket, _From, StateName,
     {reply, ok, StateName,
      StateData#state{c2s_pid = undefined}};
 handle_sync_event(_Event, _From, StateName, State) ->
-    ?ERROR_MSG("unexpected sync event in '~s': ~p",
+    ?ERROR_MSG("Unexpected sync event in '~s': ~p",
 	       [StateName, _Event]),
     {reply, {error, badarg}, StateName, State}.
 
@@ -584,7 +584,7 @@ handle_info({timeout, TRef, shaper_timeout}, StateName,
       _ -> {next_state, StateName, State}
     end;
 handle_info(_Info, StateName, State) ->
-    ?ERROR_MSG("unexpected info:~n** Msg: ~p~n** StateName: ~p",
+    ?ERROR_MSG("Unexpected info:~n** Msg: ~p~n** StateName: ~p",
 	       [_Info, StateName]),
     {next_state, StateName, State}.
 
@@ -676,7 +676,7 @@ drop_holding_receiver(State, RID) ->
     end.
 
 do_reply(State, From, Body, RID) ->
-    ?DEBUG("send reply:~n** RequestID: ~p~n** Reply: "
+    ?DEBUG("Send reply:~n** RequestID: ~p~n** Reply: "
 	   "~p~n** To: ~p~n** State: ~p",
 	   [RID, Body, From, State]),
     p1_fsm:reply(From, Body),
@@ -949,7 +949,7 @@ bosh_response(Body, Type) ->
      encode_body(Body, Type)}.
 
 bosh_response_with_msg(Body, Type, RcvBody) ->
-    ?DEBUG("send error reply:~p~n** Receiced body: ~p",
+    ?DEBUG("Send error reply:~p~n** Receiced body: ~p",
 	   [Body, RcvBody]),
     bosh_response(Body, Type).
 

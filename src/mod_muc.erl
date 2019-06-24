@@ -310,7 +310,7 @@ handle_cast({reload, ServerHost, NewOpts, OldOpts}, #state{hosts = OldHosts}) ->
       end, misc:intersection(NewHosts, OldHosts)),
     {noreply, NewState};
 handle_cast(Msg, State) ->
-    ?WARNING_MSG("unexpected cast: ~p", [Msg]),
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
 handle_info({route, Packet},
@@ -337,7 +337,7 @@ handle_info({room_destroyed, {Room, Host}, Pid}, State) ->
     RMod:unregister_online_room(ServerHost, Room, Host, Pid),
     {noreply, State};
 handle_info(Info, State) ->
-    ?ERROR_MSG("unexpected info: ~p", [Info]),
+    ?ERROR_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, #state{hosts = MyHosts}) ->

@@ -95,7 +95,7 @@ register_stream(SID, Pid) ->
 			    end),
 		ok;
 	      _:badarg ->
-		?ERROR_MSG("malformed data in redis (key = '~s'): ~p",
+		?ERROR_MSG("Malformed data in redis (key = '~s'): ~p",
 			   [SIDKey, Val]),
 		{error, db_failure}
 	end
@@ -128,7 +128,7 @@ unregister_stream(SID) ->
 	catch _:badarg when Val == undefined ->
 		ok;
 	      _:badarg ->
-		?ERROR_MSG("malformed data in redis (key = '~s'): ~p",
+		?ERROR_MSG("Malformed data in redis (key = '~s'): ~p",
 			   [SIDKey, Val]),
 		{error, db_failure}
 	end
@@ -163,7 +163,7 @@ activate_stream(SID, IJID, MaxConnections, _Node) ->
 	catch _:badarg when Val == undefined ->
 		{error, notfound};
 	      _:badarg ->
-		?ERROR_MSG("malformed data in redis (key = '~s'): ~p",
+		?ERROR_MSG("Malformed data in redis (key = '~s'): ~p",
 			   [SIDKey, Val]),
 		{error, db_failure}
 	end

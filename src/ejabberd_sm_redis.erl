@@ -160,11 +160,11 @@ handle_info({redis_message, ?SM_KEY, Data}, State) ->
 	{delete, Key} ->
 	    ets_cache:delete(?SM_CACHE, Key);
 	Msg ->
-	    ?WARNING_MSG("unexpected redis message: ~p", [Msg])
+	    ?WARNING_MSG("Unexpected redis message: ~p", [Msg])
     end,
     {noreply, State};
 handle_info(Info, State) ->
-    ?ERROR_MSG("unexpected info: ~p", [Info]),
+    ?ERROR_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->

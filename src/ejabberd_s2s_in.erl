@@ -112,11 +112,11 @@ host_down(Host) ->
 %%% Hooks
 %%%===================================================================
 handle_unexpected_info(State, Info) ->
-    ?WARNING_MSG("got unexpected info: ~p", [Info]),
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
     State.
 
 handle_unexpected_cast(State, Msg) ->
-    ?WARNING_MSG("got unexpected cast: ~p", [Msg]),
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     State.
 
 reject_unauthenticated_packet(State, _Pkt) ->

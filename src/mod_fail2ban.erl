@@ -140,11 +140,11 @@ handle_call(_Request, _From, State) ->
     {reply, Reply, State}.
 
 handle_cast(_Msg, State) ->
-    ?ERROR_MSG("got unexpected cast = ~p", [_Msg]),
+    ?ERROR_MSG("Unexpected cast = ~p", [_Msg]),
     {noreply, State}.
 
 handle_info(clean, State) ->
-    ?DEBUG("cleaning ~p ETS table", [failed_auth]),
+    ?DEBUG("Cleaning ~p ETS table", [failed_auth]),
     Now = erlang:system_time(second),
     ets:select_delete(
       failed_auth,
@@ -152,7 +152,7 @@ handle_info(clean, State) ->
     erlang:send_after(?CLEAN_INTERVAL, self(), clean),
     {noreply, State};
 handle_info(_Info, State) ->
-    ?ERROR_MSG("got unexpected info = ~p", [_Info]),
+    ?ERROR_MSG("Unexpected info = ~p", [_Info]),
     {noreply, State}.
 
 terminate(_Reason, #state{host = Host}) ->

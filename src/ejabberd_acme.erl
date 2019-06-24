@@ -54,11 +54,11 @@ handle_call(_Request, _From, State) ->
     {stop, {unexpected_call, _Request, _From}, State}.
 
 handle_cast(_Msg, State) ->
-    ?WARNING_MSG("unexpected cast: ~p", [_Msg]),
+    ?WARNING_MSG("Unexpected cast: ~p", [_Msg]),
     {noreply, State}.
 
 handle_info(_Info, State) ->
-    ?WARNING_MSG("unexpected info: ~p", [_Info]),
+    ?WARNING_MSG("Unexpected info: ~p", [_Info]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->

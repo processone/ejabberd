@@ -89,7 +89,7 @@ find_session(SID) ->
 	    try
 		{ok, binary_to_term(Pid)}
 	    catch _:badarg ->
-		    ?ERROR_MSG("malformed data in redis (key = '~s'): ~p",
+		    ?ERROR_MSG("Malformed data in redis (key = '~s'): ~p",
 			       [SID, Pid]),
 		    {error, db_failure}
 	    end;
@@ -118,7 +118,7 @@ handle_info({redis_message, ?BOSH_KEY, SID}, State) ->
     ets_cache:delete(?BOSH_CACHE, SID),
     {noreply, State};
 handle_info(Info, State) ->
-    ?ERROR_MSG("unexpected info: ~p", [Info]),
+    ?ERROR_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->
@@ -145,5 +145,5 @@ clean_table() ->
 	      end),
 	    ok;
 	{error, _} ->
-	    ?ERROR_MSG("failed to clean bosh sessions in redis", [])
+	    ?ERROR_MSG("Failed to clean bosh sessions in redis", [])
     end.

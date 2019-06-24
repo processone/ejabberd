@@ -345,7 +345,7 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, State) -> {noreply, State}.
 
 handle_info({remove_id, Id}, State) ->
-    ?DEBUG("captcha ~p timed out", [Id]),
+    ?DEBUG("CAPTCHA ~p timed out", [Id]),
     case ets:lookup(captcha, Id) of
 	[#captcha{args = Args, pid = Pid}] ->
 	    callback(captcha_failed, Pid, Args),

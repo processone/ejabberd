@@ -286,7 +286,7 @@ raw_to_item({SType, SValue, SAction, Order, MatchAll,
                    match_presence_in = MatchPresenceIn,
                    match_presence_out = MatchPresenceOut}]
     catch _:_ ->
-            ?WARNING_MSG("failed to parse row: ~p", [Row]),
+            ?WARNING_MSG("Failed to parse row: ~p", [Row]),
             []
     end.
 

@@ -186,7 +186,7 @@ handle_call({get_state, Pid}, From, State) ->
             noreply(State3)
     end;
 handle_call(Request, From, State) ->
-    ?WARNING_MSG("Got unexpected call from ~p: ~p", [From, Request]),
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
     noreply(State).
 
 handle_cast(accept, #state{socket = {_, Sock}} = State) ->
@@ -204,7 +204,7 @@ handle_cast(accept, #state{socket = {_, Sock}} = State) ->
 	    stop(State, {socket, Why})
     end;
 handle_cast(Msg, State) ->
-    ?WARNING_MSG("Got unexpected cast: ~p", [Msg]),
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     noreply(State).
 
 handle_info(Msg, #state{stop_reason = {resumed, Pid} = Reason} = State) ->
@@ -275,7 +275,7 @@ handle_info({Ref, badarg}, State) when is_reference(Ref) ->
     %% TODO: figure out from where this messages comes from
     noreply(State);
 handle_info(Info, State) ->
-    ?WARNING_MSG("Got unexpected info: ~p", [Info]),
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
     noreply(State).
 
 -spec handle_packet(mqtt_packet(), state()) -> {ok, state()} |
@@ -308,7 +308,7 @@ handle_packet(#pubrec{id = ID, code = Code}, State) ->
             {ok, State};
         false ->
             Code1 = 'packet-identifier-not-found',
-            ?DEBUG("Got unexpected PUBREC with id=~B, "
+            ?DEBUG("Unexpected PUBREC with id=~B, "
                    "sending PUBREL with error code '~s'", [ID, Code1]),
             send(State, #pubrel{id = ID, code = Code1})
     end;
@@ -324,7 +324,7 @@ handle_packet(#pubrel{id = ID}, State) ->
             send(State#state{acks = Acks}, #pubcomp{id = ID});
         error ->
             Code = 'packet-identifier-not-found',
-            ?DEBUG("Got unexpected PUBREL with id=~B, "
+            ?DEBUG("Unexpected PUBREL with id=~B, "
                    "sending PUBCOMP with error code '~s'", [ID, Code]),
             Pubcomp = #pubcomp{id = ID, code = Code},
             send(State, Pubcomp)

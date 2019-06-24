@@ -342,7 +342,7 @@ handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
 handle_info({mnesia_system_event, {mnesia_up, _Node}}, State) ->
     {noreply, State};
 handle_info(Info, State) ->
-    ?ERROR_MSG("unexpected info: ~p", [Info]),
+    ?ERROR_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->

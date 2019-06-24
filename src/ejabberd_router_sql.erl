@@ -44,7 +44,7 @@ init() ->
 	{updated, _} ->
 	    ok;
 	Err ->
-	    ?ERROR_MSG("failed to clean 'route' table: ~p", [Err]),
+	    ?ERROR_MSG("Failed to clean 'route' table: ~p", [Err]),
 	    Err
     end.
 
@@ -122,7 +122,7 @@ row_to_route(Domain, {ServerHost, NodeS, PidS, LocalHintS} = Row) ->
     catch _:{bad_node, _} ->
 	    [];
 	  ?EX_RULE(E, R, St) ->
-	    ?ERROR_MSG("failed to decode row from 'route' table:~n"
+	    ?ERROR_MSG("Failed to decode row from 'route' table:~n"
 		       "Row = ~p~n"
 		       "Domain = ~s~n"
 		       "Reason = ~p",

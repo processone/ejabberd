@@ -91,7 +91,7 @@ start_link() ->
 route(Packet) ->
     try do_route(Packet)
     catch ?EX_RULE(E, R, St) ->
-            ?ERROR_MSG("failed to route packet:~n~s~nReason = ~p",
+            ?ERROR_MSG("Failed to route packet:~n~s~nReason = ~p",
                        [xmpp:pp(Packet), {E, {R, ?EX_STACK(St)}}])
     end.
 
@@ -348,12 +348,12 @@ clean_table_from_bad_node(Node) ->
 
 -spec do_route(stanza()) -> ok.
 do_route(Packet) ->
-    ?DEBUG("local route:~n~s", [xmpp:pp(Packet)]),
+    ?DEBUG("Local route:~n~s", [xmpp:pp(Packet)]),
     From = xmpp:get_from(Packet),
     To = xmpp:get_to(Packet),
     case start_connection(From, To) of
 	{ok, Pid} when is_pid(Pid) ->
-	  ?DEBUG("sending to process ~p~n", [Pid]),
+	  ?DEBUG("Sending to process ~p~n", [Pid]),
 	  #jid{lserver = MyServer} = From,
 	    ejabberd_hooks:run(s2s_send_packet, MyServer, [Packet]),
 	    ejabberd_s2s_out:route(Pid, Packet);
@@ -484,7 +484,7 @@ new_connection(MyServer, Server, From, FromTo,
 	    end,
 	    [Pid1];
       {aborted, Reason} ->
-	    ?ERROR_MSG("failed to register connection ~s -> ~s: ~p",
+	    ?ERROR_MSG("Failed to register connection ~s -> ~s: ~p",
 		       [MyServer, Server, Reason]),
 	    ejabberd_s2s_out:stop(Pid),
 	    []
