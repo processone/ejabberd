@@ -321,8 +321,9 @@ process_iq_get(#iq{to = To, lang = Lang,
 				 ver = Version}
 	   end)
     catch ?EX_RULE(E, R, St) ->
+	    StackTrace = ?EX_STACK(St),
 	    ?ERROR_MSG("Failed to process roster get for ~s: ~p",
-		       [jid:encode(To), {E, {R, ?EX_STACK(St)}}]),
+		       [jid:encode(To), {E, {R, StackTrace}}]),
 	    Txt = ?T("Roster module has failed"),
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
     end.

@@ -73,8 +73,9 @@ start_link() ->
 route(Packet) ->
     try do_route(Packet)
     catch ?EX_RULE(E, R, St) ->
+	    StackTrace = ?EX_STACK(St),
 	    ?ERROR_MSG("Failed to route packet:~n~s~nReason = ~p",
-		       [xmpp:pp(Packet), {E, {R, ?EX_STACK(St)}}])
+		       [xmpp:pp(Packet), {E, {R, StackTrace}}])
     end.
 
 -spec route_iq(iq(), function()) -> ok.

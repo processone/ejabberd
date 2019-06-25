@@ -535,12 +535,13 @@ outer_transaction(F, NRestarts, _Reason) ->
             put(?NESTING_KEY, ?TOP_LEVEL_TXN),
 	    outer_transaction(F, NRestarts - 1, Reason);
 	?EX_RULE(throw, {aborted, Reason}, Stack) when NRestarts =:= 0 ->
+	    StackTrace = ?EX_STACK(Stack),
 	    ?ERROR_MSG("SQL transaction restarts exceeded~n** "
 		       "Restarts: ~p~n** Last abort reason: "
 		       "~p~n** Stacktrace: ~p~n** When State "
 		       "== ~p",
 		       [?MAX_TRANSACTION_RESTARTS, Reason,
-			?EX_STACK(Stack), get(?STATE_KEY)]),
+			StackTrace, get(?STATE_KEY)]),
 	    sql_query_internal([<<"rollback;">>]),
 	    {aborted, Reason};
 	?EX_RULE(exit, Reason, _) ->
@@ -612,8 +613,9 @@ sql_query_internal(#sql_query{} = Query) ->
 	      exit:{normal, _} ->
 		{error, <<"terminated unexpectedly">>};
 	      ?EX_RULE(Class, Reason, Stack) ->
+		StackTrace = ?EX_STACK(Stack),
                 ?ERROR_MSG("Internal error while processing SQL query: ~p",
-                           [{Class, Reason, ?EX_STACK(Stack)}]),
+                           [{Class, Reason, StackTrace}]),
                 {error, <<"internal error">>}
         end,
     check_error(Res, Query);
@@ -753,10 +755,11 @@ sql_query_format_res({selected, _, Rows}, SQLQuery) ->
                       [(SQLQuery#sql_query.format_res)(Row)]
                   catch
 		      ?EX_RULE(Class, Reason, Stack) ->
+			  StackTrace = ?EX_STACK(Stack),
                           ?ERROR_MSG("Error while processing "
                                      "SQL query result: ~p~n"
                                      "row: ~p",
-                                     [{Class, Reason, ?EX_STACK(Stack)}, Row]),
+                                     [{Class, Reason, StackTrace}, Row]),
                           []
                   end
           end, Rows),

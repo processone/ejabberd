@@ -151,7 +151,8 @@ get_certificates(Domains) ->
 		throw:Throw ->
 		    Throw;
 		?EX_RULE(E, R, St) ->
-		    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, ?EX_STACK(St)]),
+		    StackTrace = ?EX_STACK(St),
+		    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, StackTrace]),
 		    {error, get_certificates}
 	    end;
 	false ->
@@ -243,7 +244,8 @@ get_certificate(CAUrl, DomainName, PrivateKey) ->
 	throw:Throw ->
 	    Throw;
 	?EX_RULE(E, R, St) ->
-	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, ?EX_STACK(St)]),
+	    StackTrace = ?EX_STACK(St),
+	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, StackTrace]),
 	    {error, DomainName, get_certificate}
     end.
 
@@ -382,7 +384,8 @@ renew_certificates() ->
 	throw:Throw ->
 	    Throw;
 	?EX_RULE(E, R, St) ->
-	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, ?EX_STACK(St)]),
+	    StackTrace = ?EX_STACK(St),
+	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, StackTrace]),
 	    {error, get_certificates}
     end.
 
@@ -447,7 +450,8 @@ list_certificates(Verbose) ->
 		throw:Throw ->
 		    Throw;
 		?EX_RULE(E, R, St) ->
-		    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, ?EX_STACK(St)]),
+		    StackTrace = ?EX_STACK(St),
+		    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, StackTrace]),
 		    {error, list_certificates}
 	    end;
 	false ->
@@ -489,7 +493,8 @@ format_certificate(DataCert, Verbose) ->
 	end
     catch
 	?EX_RULE(E, R, St) ->
-	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, ?EX_STACK(St)]),
+	    StackTrace = ?EX_STACK(St),
+	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, StackTrace]),
 	    fail_format_certificate(DomainName)
     end.
 
@@ -614,7 +619,8 @@ revoke_certificates(DomainOrFile) ->
 	throw:Throw ->
 	    Throw;
 	?EX_RULE(E, R, St) ->
-	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, ?EX_STACK(St)]),
+	    StackTrace = ?EX_STACK(St),
+	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, StackTrace]),
 	    {error, revoke_certificate}
     end.
 
@@ -1085,7 +1091,8 @@ save_certificate({ok, DomainName, Cert}) ->
 	throw:Throw ->
 	    Throw;
 	?EX_RULE(E, R, St) ->
-	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, ?EX_STACK(St)]),
+	    StackTrace = ?EX_STACK(St),
+	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, StackTrace]),
 	    {error, DomainName, saving}
     end.
 

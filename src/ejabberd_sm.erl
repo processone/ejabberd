@@ -141,9 +141,10 @@ route(Packet) ->
 	Packet1 ->
 	    try do_route(Packet1), ok
 	    catch ?EX_RULE(E, R, St) ->
+		    StackTrace = ?EX_STACK(St),
 		    ?ERROR_MSG("Failed to route packet:~n~s~nReason = ~p",
 			       [xmpp:pp(Packet1),
-				{E, {R, ?EX_STACK(St)}}])
+				{E, {R, StackTrace}}])
 	    end
     end.
 

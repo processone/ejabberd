@@ -122,10 +122,11 @@ row_to_route(Domain, {ServerHost, NodeS, PidS, LocalHintS} = Row) ->
     catch _:{bad_node, _} ->
 	    [];
 	  ?EX_RULE(E, R, St) ->
+	    StackTrace = ?EX_STACK(St),
 	    ?ERROR_MSG("Failed to decode row from 'route' table:~n"
 		       "Row = ~p~n"
 		       "Domain = ~s~n"
 		       "Reason = ~p",
-		       [Row, Domain, {E, {R, ?EX_STACK(St)}}]),
+		       [Row, Domain, {E, {R, StackTrace}}]),
 	    []
     end.

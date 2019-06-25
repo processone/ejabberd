@@ -192,7 +192,8 @@ process([Call], #request{method = 'POST', data = Data, ip = IPPort} = Req) ->
 	    ?DEBUG("Bad Request: ~p", [_Err]),
 	    badrequest_response(<<"Invalid JSON input">>);
 	?EX_RULE(_Class, _Error, Stack) ->
-            ?DEBUG("Bad Request: ~p ~p", [_Error, ?EX_STACK(Stack)]),
+	    StackTrace = ?EX_STACK(Stack),
+            ?DEBUG("Bad Request: ~p ~p", [_Error, StackTrace]),
             badrequest_response()
     end;
 process([Call], #request{method = 'GET', q = Data, ip = {IP, _}} = Req) ->
@@ -209,7 +210,8 @@ process([Call], #request{method = 'GET', q = Data, ip = {IP, _}} = Req) ->
         throw:{error, unknown_command} ->
             json_format({404, 44, <<"Command not found.">>});
         ?EX_RULE(_, _Error, Stack) ->
-            ?DEBUG("Bad Request: ~p ~p", [_Error, ?EX_STACK(Stack)]),
+	    StackTrace = ?EX_STACK(Stack),
+            ?DEBUG("Bad Request: ~p ~p", [_Error, StackTrace]),
             badrequest_response()
     end;
 process([_Call], #request{method = 'OPTIONS', data = <<>>}) ->
@@ -296,10 +298,11 @@ handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
 	  throw:Msg when is_list(Msg); is_binary(Msg) ->
 	    {400, iolist_to_binary(Msg)};
 	  ?EX_RULE(Class, Error, Stack) ->
+	    StackTrace = ?EX_STACK(Stack),
 	    ?ERROR_MSG("REST API Error: "
 		       "~s(~p) -> ~p:~p ~p",
 		       [Call, hide_sensitive_args(Args),
-			Class, Error, ?EX_STACK(Stack)]),
+			Class, Error, StackTrace]),
 	    {500, <<"internal_error">>}
     end.
 

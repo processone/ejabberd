@@ -746,8 +746,9 @@ terminate(Reason, _StateName,
 	end,
 	mod_muc:room_destroyed(Host, Room, self(), LServer)
     catch ?EX_RULE(E, R, St) ->
-	mod_muc:room_destroyed(Host, Room, self(), LServer),
-	?ERROR_MSG("Got exception on room termination: ~p", [{E, {R, ?EX_STACK(St)}}])
+	    StackTrace = ?EX_STACK(St),
+	    mod_muc:room_destroyed(Host, Room, self(), LServer),
+	    ?ERROR_MSG("Got exception on room termination: ~p", [{E, {R, StackTrace}}])
     end,
     ok.
 
@@ -2782,15 +2783,16 @@ process_item_change(Item, SD, UJID) ->
 		SD1
 	end
     catch ?EX_RULE(E, R, St) ->
-		FromSuffix = case UJID of
-			#jid{} ->
-				JidString = jid:encode(UJID),
-				<<" from ", JidString/binary>>;
-			undefined ->
-				<<"">>
-		end,
-		?ERROR_MSG("Failed to set item ~p~s: ~p",
-		       [Item, FromSuffix, {E, {R, ?EX_STACK(St)}}]),
+	    StackTrace = ?EX_STACK(St),
+	    FromSuffix = case UJID of
+			     #jid{} ->
+				 JidString = jid:encode(UJID),
+				 <<" from ", JidString/binary>>;
+			     undefined ->
+				 <<"">>
+			 end,
+	    ?ERROR_MSG("Failed to set item ~p~s: ~p",
+		       [Item, FromSuffix, {E, {R, StackTrace}}]),
 	    {error, xmpp:err_internal_server_error()}
     end.
 
