@@ -251,7 +251,7 @@ c2s_handle_info(#{jid := JID} = State, {_Ref, {resume, OldState}}) ->
     ?DEBUG("Received old session state for ~s after failed resumption",
 	   [jid:encode(JID)]),
     route_unacked_stanzas(OldState#{mgmt_resend => false}),
-    State;
+    {stop, State};
 c2s_handle_info(State, _) ->
     State.
 
