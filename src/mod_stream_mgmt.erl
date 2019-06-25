@@ -50,6 +50,10 @@
 	is_record(Pkt, sm_r)).
 
 -type state() :: ejabberd_c2s:state().
+-type error_reason() :: session_not_found | session_timed_out |
+			session_is_dead | session_has_exited |
+			session_was_killed | session_copy_timed_out |
+			invalid_previd.
 
 %%%===================================================================
 %%% API
@@ -225,7 +229,7 @@ c2s_handle_call(#{sid := {Time, _}, mod := Mod, mgmt_queue := Queue} = State,
     Mod:reply(From, {resume, State1}),
     {stop, State#{mgmt_state => resumed}};
 c2s_handle_call(#{mod := Mod} = State, {resume_session, _}, From) ->
-    Mod:reply(From, {error, ?T("Previous session not found")}),
+    Mod:reply(From, {error, session_not_found}),
     {stop, State};
 c2s_handle_call(State, _Call, _From) ->
     State.
@@ -400,11 +404,11 @@ handle_resume(#{user := User, lserver := LServer,
 		{ok, InheritedState, H};
 	    {error, Err, InH} ->
 		{error, #sm_failed{reason = 'item-not-found',
-				   text = xmpp:mk_text(Err, Lang),
+				   text = xmpp:mk_text(format_error(Err), Lang),
 				   h = InH, xmlns = Xmlns}, Err};
 	    {error, Err} ->
 		{error, #sm_failed{reason = 'item-not-found',
-				   text = xmpp:mk_text(Err, Lang),
+				   text = xmpp:mk_text(format_error(Err), Lang),
 				   xmlns = Xmlns}, Err}
 	end,
     case R of
@@ -421,9 +425,8 @@ handle_resume(#{user := User, lserver := LServer,
 	    ?INFO_MSG("(~s) Resumed session for ~s",
 		      [xmpp_socket:pp(Socket), jid:encode(JID)]),
 	    {ok, State5};
-	{error, El, Msg} ->
-	    ?WARNING_MSG("Cannot resume session for ~s@~s: ~s",
-			 [User, LServer, Msg]),
+	{error, El, Reason} ->
+	    log_resumption_error(User, LServer, Reason),
 	    {error, send(State, El)}
     end.
 
@@ -609,8 +612,8 @@ route_unacked_stanzas(_State) ->
     ok.
 
 -spec inherit_session_state(state(), binary()) -> {ok, state()} |
-						  {error, binary()} |
-						  {error, binary(), non_neg_integer()}.
+						  {error, error_reason()} |
+						  {error, error_reason(), non_neg_integer()}.
 inherit_session_state(#{user := U, server := S,
 			mgmt_queue_type := QueueType} = State, ResumeID) ->
     case misc:base64_to_term(ResumeID) of
@@ -619,9 +622,9 @@ inherit_session_state(#{user := U, server := S,
 		none ->
 		    case pop_stanzas_in({U, S, R}, Time) of
 			error ->
-			    {error, ?T("Previous session PID not found")};
+			    {error, session_not_found};
 			{ok, H} ->
-			    {error, ?T("Previous session timed out"), H}
+			    {error, session_timed_out, H}
 		    end;
 		OldPID ->
 		    OldSID = {Time, OldPID},
@@ -649,23 +652,23 @@ inherit_session_state(#{user := U, server := S,
 			{error, Msg} ->
 			    {error, Msg}
 		    catch exit:{noproc, _} ->
-			    {error, ?T("Previous session PID is dead")};
+			    {error, session_is_dead};
 			  exit:{normal, _} ->
-			    {error, ?T("Previous session PID has exited")};
+			    {error, session_has_exited};
 			  exit:{killed, _} ->
-			    {error, ?T("Previous session PID has been killed")};
+			    {error, session_was_killed};
 			  exit:{timeout, _} ->
 			    ejabberd_sm:close_session(OldSID, U, S, R),
 			    ejabberd_c2s:stop(OldPID),
-			    {error, ?T("Session state copying timed out")}
+			    {error, session_copy_timed_out}
 		    end
 	    end;
 	_ ->
-	    {error, ?T("Invalid 'previd' value")}
+	    {error, invalid_previd}
     end.
 
 -spec resume_session({erlang:timestamp(), pid()}, state()) -> {resume, state()} |
-							      {error, binary()}.
+							      {error, error_reason()}.
 resume_session({Time, Pid}, _State) ->
     ejabberd_c2s:call(Pid, {resume_session, Time}, timer:seconds(15)).
 
@@ -720,6 +723,34 @@ need_to_enqueue(#{mgmt_force_enqueue := true} = State, #xmlel{}) ->
     {true, State2};
 need_to_enqueue(State, _) ->
     {false, State}.
+
+%%%===================================================================
+%%% Formatters and Logging
+%%%===================================================================
+-spec format_error(error_reason()) -> binary().
+format_error(session_not_found) ->
+    ?T("Previous session not found");
+format_error(session_timed_out) ->
+    ?T("Previous session timed out");
+format_error(session_is_dead) ->
+    ?T("Previous session PID is dead");
+format_error(session_has_exited) ->
+    ?T("Previous session PID has exited");
+format_error(session_was_killed) ->
+    ?T("Previous session PID has been killed");
+format_error(session_copy_timed_out) ->
+    ?T("Session state copying timed out");
+format_error(invalid_previd) ->
+    ?T("Invalid 'previd' value").
+
+-spec log_resumption_error(binary(), binary(), error_reason()) -> ok.
+log_resumption_error(User, Server, Reason)
+  when Reason == invalid_previd ->
+    ?WARNING_MSG("Cannot resume session for ~s@~s: ~s",
+		 [User, Server, format_error(Reason)]);
+log_resumption_error(User, Server, Reason) ->
+    ?INFO_MSG("Cannot resume session for ~s@~s: ~s",
+	      [User, Server, format_error(Reason)]).
 
 %%%===================================================================
 %%% Cache-like storage for last handled stanzas
