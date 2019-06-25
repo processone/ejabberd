@@ -540,7 +540,13 @@ handle_sync_event({change_config, Config}, _From,
     {reply, {ok, NSD#state.config}, StateName, NSD};
 handle_sync_event({change_state, NewStateData}, _From,
 		  StateName, _StateData) ->
-    erlang:put(muc_subscribers, NewStateData#state.subscribers),
+    Mod = gen_mod:db_mod(NewStateData#state.server_host, mod_muc),
+    case erlang:function_exported(Mod, get_subscribed_rooms, 3) of
+	true ->
+	    ok;
+	_ ->
+	    erlang:put(muc_subscribers, NewStateData#state.subscribers)
+    end,
     {reply, {ok, NewStateData}, StateName, NewStateData};
 handle_sync_event({process_item_change, Item, UJID}, _From, StateName, StateData) ->
     case process_item_change(Item, StateData, UJID) of
@@ -4367,7 +4373,14 @@ store_room(StateData) ->
     store_room(StateData, []).
 store_room(StateData, ChangesHints) ->
     % Let store persistent rooms or on those backends that have get_subscribed_rooms
-    erlang:put(muc_subscribers, StateData#state.subscribers),
+    Mod = gen_mod:db_mod(StateData#state.server_host, mod_muc),
+    HasGSR = erlang:function_exported(Mod, get_subscribed_rooms, 3),
+    case HasGSR of
+	true ->
+	    ok;
+	_ ->
+	    erlang:put(muc_subscribers, StateData#state.subscribers)
+    end,
     ShouldStore = case (StateData#state.config)#config.persistent of
 		      true ->
 			  true;
@@ -4376,8 +4389,7 @@ store_room(StateData, ChangesHints) ->
 			      [] ->
 				  false;
 			      _ ->
-				  Mod = gen_mod:db_mod(StateData#state.server_host, mod_muc),
-				  erlang:function_exported(Mod, get_subscribed_rooms, 3)
+				  HasGSR
 			  end
 		  end,
     if ShouldStore ->
