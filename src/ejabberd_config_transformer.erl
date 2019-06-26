@@ -197,6 +197,9 @@ filter(_Host, Opt, Val, _) when Opt == outgoing_s2s_timeout;
 filter(_Host, captcha_host, _, _) ->
     warn_deprecated_option(captcha_host, captcha_url),
     true;
+filter(_Host, route_subdomains, _, _) ->
+    warn_removed_option(route_subdomains, s2s_access),
+    false;
 filter(Host, modules, ModOpts, State) ->
     NoDialbackHosts = maps:get(remove_s2s_dialback, State, []),
     ModOpts1 = lists:filter(

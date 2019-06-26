@@ -361,10 +361,6 @@ do_route(Packet) ->
 	{error, Reason} ->
 	  Lang = xmpp:get_lang(Packet),
 	    Err = case Reason of
-		      policy_violation ->
-			  xmpp:err_policy_violation(
-			    ?T("Server connections to local "
-			       "subdomains are forbidden"), Lang);
 		      forbidden ->
 			  xmpp:err_forbidden(?T("Access denied by service policy"), Lang);
 		      internal_server_error ->
@@ -374,12 +370,12 @@ do_route(Packet) ->
     end.
 
 -spec start_connection(jid(), jid())
-      -> {ok, pid()} | {error, policy_violation | forbidden | internal_server_error}.
+      -> {ok, pid()} | {error, forbidden | internal_server_error}.
 start_connection(From, To) ->
     start_connection(From, To, []).
 
 -spec start_connection(jid(), jid(), [proplists:property()])
-      -> {ok, pid()} | {error, policy_violation | forbidden | internal_server_error}.
+      -> {ok, pid()} | {error, forbidden | internal_server_error}.
 start_connection(From, To, Opts) ->
     #jid{lserver = MyServer} = From,
     #jid{lserver = Server} = To,
@@ -395,24 +391,19 @@ start_connection(From, To, Opts) ->
 	  %% service and if the s2s host is not blacklisted or
 	  %% is in whitelist:
 	  LServer = ejabberd_router:host_of_route(MyServer),
-	  case is_service(From, To) of
-	    true ->
-		  {error, policy_violation};
-	      false ->
-		  case allow_host(LServer, Server) of
-		      true ->
-			  NeededConnections = needed_connections_number(
-						[],
-							      MaxS2SConnectionsNumber,
-							      MaxS2SConnectionsNumberPerNode),
-		open_several_connections(NeededConnections, MyServer,
-					 Server, From, FromTo,
-					 MaxS2SConnectionsNumber,
-						   MaxS2SConnectionsNumberPerNode, Opts);
-		      false ->
-			  {error, forbidden}
-		  end
-	  end;
+	    case allow_host(LServer, Server) of
+		true ->
+		    NeededConnections = needed_connections_number(
+					  [],
+					  MaxS2SConnectionsNumber,
+					  MaxS2SConnectionsNumberPerNode),
+		    open_several_connections(NeededConnections, MyServer,
+					     Server, From, FromTo,
+					     MaxS2SConnectionsNumber,
+					     MaxS2SConnectionsNumberPerNode, Opts);
+		false ->
+		    {error, forbidden}
+	    end;
       L when is_list(L) ->
 	  NeededConnections = needed_connections_number(L,
 							MaxS2SConnectionsNumber,
@@ -511,32 +502,6 @@ needed_connections_number(Ls, MaxS2SConnectionsNumber,
     LocalLs = [L || L <- Ls, node(L#s2s.pid) == node()],
     lists:min([MaxS2SConnectionsNumber - length(Ls),
 	       MaxS2SConnectionsNumberPerNode - length(LocalLs)]).
-
-%%--------------------------------------------------------------------
-%% Function: is_service(From, To) -> true | false
-%% Description: Return true if the destination must be considered as a
-%% service.
-%% --------------------------------------------------------------------
--spec is_service(jid(), jid()) -> boolean().
-is_service(From, To) ->
-    LFromDomain = From#jid.lserver,
-    case ejabberd_option:route_subdomains(LFromDomain) of
-      s2s -> % bypass RFC 3920 10.3
-	  false;
-      local ->
-	  Hosts = ejabberd_option:hosts(),
-	  P = fun (ParentDomain) ->
-		      lists:member(ParentDomain, Hosts)
-	      end,
-	  lists:any(P, parent_domains(To#jid.lserver))
-    end.
-
-parent_domains(Domain) ->
-    lists:foldl(fun (Label, []) -> [Label];
-		    (Label, [Head | Tail]) ->
-			[<<Label/binary, ".", Head/binary>>, Head | Tail]
-		end,
-		[], lists:reverse(str:tokens(Domain, <<".">>))).
 
 %%%----------------------------------------------------------------------
 %%% ejabberd commands

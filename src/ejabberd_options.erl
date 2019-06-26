@@ -294,8 +294,6 @@ opt_type(riak_start_interval) ->
     econf:timeout(second);
 opt_type(riak_username) ->
     econf:string();
-opt_type(route_subdomains) ->
-    econf:enum([s2s, local]);
 opt_type(router_cache_life_time) ->
     econf:timeout(second, infinity);
 opt_type(router_cache_missed) ->
@@ -568,7 +566,6 @@ options() ->
      {riak_server, "127.0.0.1"},
      {riak_start_interval, timer:seconds(30)},
      {riak_username, nil},
-     {route_subdomains, local},
      {router_cache_life_time,
       fun(Host) -> ejabberd_config:get_option({cache_life_time, Host}) end},
      {router_cache_missed,

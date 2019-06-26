@@ -111,7 +111,6 @@
 -export([riak_server/0]).
 -export([riak_start_interval/0]).
 -export([riak_username/0]).
--export([route_subdomains/0, route_subdomains/1]).
 -export([router_cache_life_time/0]).
 -export([router_cache_missed/0]).
 -export([router_cache_size/0]).
@@ -755,13 +754,6 @@ riak_start_interval() ->
 -spec riak_username() -> 'nil' | string().
 riak_username() ->
     ejabberd_config:get_option({riak_username, global}).
-
--spec route_subdomains() -> 'local' | 's2s'.
-route_subdomains() ->
-    route_subdomains(global).
--spec route_subdomains(global | binary()) -> 'local' | 's2s'.
-route_subdomains(Host) ->
-    ejabberd_config:get_option({route_subdomains, Host}).
 
 -spec router_cache_life_time() -> 'infinity' | pos_integer().
 router_cache_life_time() ->
