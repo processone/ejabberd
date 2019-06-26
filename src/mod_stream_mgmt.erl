@@ -266,10 +266,10 @@ c2s_closed(#{mgmt_state := active} = State, _Reason) ->
 c2s_closed(State, _Reason) ->
     State.
 
-c2s_terminated(#{mgmt_state := resumed, jid := JID} = State, _Reason) ->
+c2s_terminated(#{mgmt_state := resumed, sid := SID, jid := JID} = State, _Reason) ->
     ?DEBUG("Closing former stream of resumed session for ~s",
 	   [jid:encode(JID)]),
-    bounce_message_queue(),
+    ejabberd_c2s:bounce_message_queue(SID, JID),
     {stop, State};
 c2s_terminated(#{mgmt_state := MgmtState, mgmt_stanzas_in := In,
 		 sid := {Time, _}, jid := JID} = State, _Reason) ->
@@ -704,15 +704,6 @@ cancel_ack_timer(#{mgmt_ack_timer := TRef} = State) ->
     maps:remove(mgmt_ack_timer, State);
 cancel_ack_timer(State) ->
     State.
-
--spec bounce_message_queue() -> ok.
-bounce_message_queue() ->
-    receive {route, Pkt} ->
-	    ejabberd_router:route(Pkt),
-	    bounce_message_queue()
-    after 0 ->
-	    ok
-    end.
 
 -spec need_to_enqueue(state(), xmlel() | stanza()) -> {boolean(), state()}.
 need_to_enqueue(State, Pkt) when ?is_stanza(Pkt) ->

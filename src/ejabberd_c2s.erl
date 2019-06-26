@@ -47,7 +47,7 @@
 -export([get_presence/1, set_presence/2, resend_presence/1, resend_presence/2,
 	 open_session/1, call/3, cast/2, send/2, close/1, close/2, stop/1,
 	 reply/2, copy_state/2, set_timeout/2, route/2,
-	 host_up/1, host_down/1, send_ws_ping/1]).
+	 host_up/1, host_down/1, send_ws_ping/1, bounce_message_queue/2]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -299,7 +299,7 @@ process_terminated(#{sid := SID, socket := Socket,
 		     ejabberd_sm:close_session(SID, U, S, R),
 		     State
 	     end,
-    bounce_message_queue(),
+    bounce_message_queue(SID, JID),
     State1;
 process_terminated(#{socket := Socket,
 		     stop_reason := {tls, _}} = State, Reason) ->
@@ -882,13 +882,23 @@ resource_conflict_action(U, S, R) ->
 	    {accept_resource, Rnew}
     end.
 
--spec bounce_message_queue() -> ok.
-bounce_message_queue() ->
-    receive {route, Pkt} ->
-	    ejabberd_router:route(Pkt),
-	    bounce_message_queue()
-    after 0 ->
-	    ok
+-spec bounce_message_queue(ejabberd_sm:sid(), jid:jid()) -> ok.
+bounce_message_queue(SID, JID) ->
+    {U, S, R} = jid:tolower(JID),
+    SIDs = ejabberd_sm:get_session_sids(U, S, R),
+    case lists:member(SID, SIDs) of
+	true ->
+	    ?WARNING_MSG("The session for ~s@~s/~s is supposed to "
+			 "be unregistered, but session identifier ~p "
+			 "still presents in the 'session' table",
+			 [U, S, R]);
+	false ->
+	    receive {route, Pkt} ->
+		    ejabberd_router:route(Pkt),
+		    bounce_message_queue(SID, JID)
+	    after 0 ->
+		    ok
+	    end
     end.
 
 -spec new_uniq_id() -> binary().

@@ -63,6 +63,7 @@
 	 get_session_pid/3,
 	 get_session_sid/3,
 	 get_session_sids/2,
+	 get_session_sids/3,
 	 get_user_info/2,
 	 get_user_info/3,
 	 set_user_info/5,
@@ -398,6 +399,16 @@ get_session_sids(User, Server) ->
     LServer = jid:nameprep(Server),
     Mod = get_sm_backend(LServer),
     Sessions = get_sessions(Mod, LUser, LServer),
+    [SID || #session{sid = SID} <- Sessions].
+
+-spec get_session_sids(binary(), binary(), binary()) -> [sid()].
+
+get_session_sids(User, Server, Resource) ->
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
+    LResource = jid:resourceprep(Resource),
+    Mod = get_sm_backend(LServer),
+    Sessions = get_sessions(Mod, LUser, LServer, LResource),
     [SID || #session{sid = SID} <- Sessions].
 
 -spec dirty_get_sessions_list() -> [ljid()].
