@@ -385,7 +385,7 @@ process_user(#xmlel{name = <<"user">>, attrs = Attrs, children = Els},
     PasswordFormat = ejabberd_auth:password_format(LServer),
     Pass = case PasswordFormat of
       scram ->
-        case Password of 
+        case Password of
           <<"scram:", PassData/binary>> ->
             parse_scram_password(PassData);
           P -> P
@@ -520,7 +520,7 @@ process_private(Private, State = #state{user = U, server = S}) ->
             stop("Failed to write private: ~p", [Err])
     end.
 
--spec process_vcard(xmlel(), state()) -> {ok, state()} | {error, _}.
+-spec process_vcard(xmpp_element(), state()) -> {ok, state()} | {error, _}.
 process_vcard(El, State = #state{user = U, server = S}) ->
     JID = jid:make(U, S),
     IQ = #iq{type = set, id = p1_rand:get_string(),

@@ -459,7 +459,7 @@ check_h_attribute(#{mgmt_stanzas_out := NumStanzasOut, jid := JID} = State, H) -
 	   [jid:encode(JID), H, NumStanzasOut]),
     mgmt_queue_drop(State, H).
 
--spec update_num_stanzas_in(state(), xmpp_element()) -> state().
+-spec update_num_stanzas_in(state(), xmpp_element() | xmlel()) -> state().
 update_num_stanzas_in(#{mgmt_state := MgmtState,
 			mgmt_stanzas_in := NumStanzasIn} = State, El)
   when MgmtState == active; MgmtState == pending ->

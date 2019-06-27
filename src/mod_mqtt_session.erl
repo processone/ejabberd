@@ -1189,7 +1189,7 @@ authenticate(#connect{password = Pass} = Pkt, IP) ->
 %%%===================================================================
 %%% Validators
 %%%===================================================================
--spec validate_will(connect(), jid:jid()) -> ok | {error, reason_code()}.
+-spec validate_will(connect(), jid:jid()) -> ok | {error, error_reason()}.
 validate_will(#connect{will = undefined}, _) ->
     ok;
 validate_will(#connect{will = #publish{topic = Topic, payload = Payload},

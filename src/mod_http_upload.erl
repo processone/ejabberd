@@ -565,7 +565,7 @@ process_slot_request(#iq{lang = Lang, from = From} = IQ,
 
 -spec create_slot(state(), jid(), binary(), pos_integer(), binary(), binary(),
 		  binary())
-      -> {ok, slot()} | {ok, binary(), binary()} | {error, xmlel()}.
+      -> {ok, slot()} | {ok, binary(), binary()} | {error, xmpp_element()}.
 create_slot(#state{service_url = undefined, max_size = MaxSize},
 	    JID, File, Size, _ContentType, XMLNS, Lang)
   when MaxSize /= infinity,
