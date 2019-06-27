@@ -105,13 +105,13 @@
     access                  = {none,none,none,none,none} :: {atom(), atom(), atom(), atom(), atom()},
     jid                     = #jid{} :: jid(),
     config                  = #config{} :: config(),
-    users                   = #{} :: map(),
-    subscribers             = #{} :: map(),
-    subscriber_nicks        = #{} :: map(),
+    users                   = #{} :: users(),
+    subscribers             = #{} :: subscribers(),
+    subscriber_nicks        = #{} :: subscriber_nicks(),
     last_voice_request_time = treap:empty() :: treap:treap(),
-    robots                  = #{} :: map(),
-    nicks                   = #{} :: map(),
-    affiliations            = #{} :: map(),
+    robots                  = #{} :: robots(),
+    nicks                   = #{} :: nicks(),
+    affiliations            = #{} :: affiliations(),
     history                 = #lqueue{} :: lqueue(),
     subject                 = [] :: [text()],
     subject_author          = <<"">> :: binary(),
@@ -120,3 +120,10 @@
     room_shaper             = none :: ejabberd_shaper:shaper(),
     room_queue              :: p1_queue:queue() | undefined
 }).
+
+-type users() :: #{ljid() => #user{}}.
+-type robots() :: #{jid() => {binary(), stanza()}}.
+-type nicks() :: #{binary() => [ljid()]}.
+-type affiliations() :: #{ljid() => affiliation() | {affiliation(), binary()}}.
+-type subscribers() :: #{ljid() => #subscriber{}}.
+-type subscriber_nicks() :: #{binary() => [ljid()]}.

@@ -105,7 +105,7 @@
 	 service_url            :: binary() | undefined,
 	 thumbnail              :: boolean(),
 	 custom_headers         :: [{binary(), binary()}],
-	 slots = #{}            :: map(),
+	 slots = #{}            :: slots(),
 	 external_secret        :: binary()}).
 
 -record(media_info,
@@ -116,6 +116,7 @@
 
 -type state() :: #state{}.
 -type slot() :: [binary(), ...].
+-type slots() :: #{slot() => {pos_integer(), reference()}}.
 -type media_info() :: #media_info{}.
 
 %%--------------------------------------------------------------------

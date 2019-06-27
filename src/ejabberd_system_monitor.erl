@@ -53,6 +53,7 @@
 		    name :: pid() | atom()}).
 -type state() :: #state{}.
 -type proc_stat() :: #proc_stat{}.
+-type app_pids() :: #{pid() => atom()}.
 
 %%%===================================================================
 %%% API
@@ -151,7 +152,7 @@ handle_overload(_State, Procs) ->
     end,
     lists:foreach(fun erlang:garbage_collect/1, Procs).
 
--spec get_app_pids() -> map().
+-spec get_app_pids() -> app_pids().
 get_app_pids() ->
     try application:info() of
 	Info ->
@@ -170,7 +171,7 @@ get_app_pids() ->
 	    #{}
     end.
 
--spec overloaded_procs(map(), [pid()])
+-spec overloaded_procs(app_pids(), [pid()])
       -> {non_neg_integer(), non_neg_integer(), dict:dict(), [proc_stat()]}.
 overloaded_procs(AppPids, AllProcs) ->
     lists:foldl(
@@ -186,7 +187,7 @@ overloaded_procs(AppPids, AllProcs) ->
 	      end
       end, {0, 0, dict:new(), []}, AllProcs).
 
--spec proc_stat(pid(), map()) -> proc_stat() | undefined.
+-spec proc_stat(pid(), app_pids()) -> proc_stat() | undefined.
 proc_stat(Pid, AppPids) ->
     case process_info(Pid, [message_queue_len,
 			    memory,

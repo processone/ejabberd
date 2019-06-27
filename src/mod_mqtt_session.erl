@@ -40,14 +40,18 @@
 		will                  :: undefined | publish(),
                 will_delay = 0        :: seconds(),
 		stop_reason           :: undefined | error_reason(),
-		acks = #{}            :: map(),
-		subscriptions = #{}   :: map(),
-                topic_aliases = #{}   :: map(),
+		acks = #{}            :: acks(),
+		subscriptions = #{}   :: subscriptions(),
+                topic_aliases = #{}   :: topic_aliases(),
 		id = 0                :: non_neg_integer(),
 		in_flight             :: undefined | publish() | pubrel(),
 		codec                 :: mqtt_codec:state(),
 		queue                 :: undefined | p1_queue:queue(),
 		tls                   :: boolean()}).
+
+-type acks() :: #{non_neg_integer() => pubrec()}.
+-type subscriptions() :: #{binary() => {sub_opts(), non_neg_integer()}}.
+-type topic_aliases() :: #{non_neg_integer() => binary()}.
 
 -type error_reason() :: {auth, reason_code()} |
                         {code, reason_code()} |
@@ -685,13 +689,13 @@ get_connack_properties(#state{session_expiry = SessExp, jid = JID},
             server_keep_alive => KeepAlive}.
 
 -spec subscribe([{binary(), sub_opts()}], jid:ljid(), non_neg_integer()) ->
-                       {[reason_code()], map(), properties()}.
+                       {[reason_code()], subscriptions(), properties()}.
 subscribe(TopicFilters, USR, SubID) ->
     subscribe(TopicFilters, USR, SubID, [], #{}, ok).
 
 -spec subscribe([{binary(), sub_opts()}], jid:ljid(), non_neg_integer(),
-                [reason_code()], map(), ok | {error, error_reason()}) ->
-                       {[reason_code()], map(), properties()}.
+                [reason_code()], subscriptions(), ok | {error, error_reason()}) ->
+                       {[reason_code()], subscriptions(), properties()}.
 subscribe([{TopicFilter, SubOpts}|TopicFilters], USR, SubID, Codes, Subs, Err) ->
     case mod_mqtt:subscribe(USR, TopicFilter, SubOpts, SubID) of
         ok ->
@@ -710,15 +714,15 @@ subscribe([], _USR, _SubID, Codes, Subs, Err) ->
             end,
     {lists:reverse(Codes), Subs, Props}.
 
--spec unsubscribe([binary()], jid:ljid(), map()) ->
-                         {[reason_code()], map(), properties()}.
+-spec unsubscribe([binary()], jid:ljid(), subscriptions()) ->
+                         {[reason_code()], subscriptions(), properties()}.
 unsubscribe(TopicFilters, USR, Subs) ->
     unsubscribe(TopicFilters, USR, [], Subs, ok).
 
 -spec unsubscribe([binary()], jid:ljid(),
-                  [reason_code()], map(),
+                  [reason_code()], subscriptions(),
                   ok | {error, error_reason()}) ->
-                         {[reason_code()], map(), properties()}.
+                         {[reason_code()], subscriptions(), properties()}.
 unsubscribe([TopicFilter|TopicFilters], USR, Codes, Subs, Err) ->
     case mod_mqtt:unsubscribe(USR, TopicFilter) of
         ok ->
@@ -740,7 +744,7 @@ unsubscribe([], _USR, Codes, Subs, Err) ->
             end,
     {lists:reverse(Codes), Subs, Props}.
 
--spec select_retained(jid:ljid(), map(), map()) -> [{publish(), seconds()}].
+-spec select_retained(jid:ljid(), subscriptions(), subscriptions()) -> [{publish(), seconds()}].
 select_retained(USR, NewSubs, OldSubs) ->
     lists:flatten(
       maps:fold(
@@ -1254,7 +1258,7 @@ validate_payload(_, _, _) ->
 %%%===================================================================
 %%% Misc
 %%%===================================================================
--spec resubscribe(jid:ljid(), map()) -> ok | {error, error_reason()}.
+-spec resubscribe(jid:ljid(), subscriptions()) -> ok | {error, error_reason()}.
 resubscribe(USR, Subs) ->
     case maps:fold(
            fun(TopicFilter, {SubOpts, ID}, ok) ->

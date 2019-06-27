@@ -61,9 +61,10 @@
 	 access_hard_quota              :: atom(),
 	 max_days                       :: pos_integer() | infinity,
 	 docroot                        :: binary(),
-	 disk_usage = #{}               :: map(),
+	 disk_usage = #{}               :: disk_usage(),
 	 timers                         :: [timer:tref()]}).
 
+-type disk_usage() :: #{{binary(), binary()} => non_neg_integer()}.
 -type state() :: #state{}.
 
 %%--------------------------------------------------------------------

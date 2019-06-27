@@ -53,8 +53,9 @@
 
 -define(SALT_LENGTH, 16).
 
--record(state, {host_modules = #{} :: map()}).
+-record(state, {host_modules = #{} :: host_modules()}).
 
+-type host_modules() :: #{binary => [module()]}.
 -type password() :: binary() | #scram{}.
 -type digest_fun() :: fun((binary()) -> binary()).
 -export_type([password/0]).
@@ -751,7 +752,7 @@ password_to_scram(Password, IterationCount) ->
 %%%----------------------------------------------------------------------
 %%% Cache stuff
 %%%----------------------------------------------------------------------
--spec init_cache(map()) -> ok.
+-spec init_cache(host_modules()) -> ok.
 init_cache(HostModules) ->
     CacheOpts = cache_opts(),
     {True, False} = use_cache(HostModules),
@@ -771,7 +772,7 @@ cache_opts() ->
     LifeTime = ejabberd_option:auth_cache_life_time(),
     [{max_size, MaxSize}, {cache_missed, CacheMissed}, {life_time, LifeTime}].
 
--spec use_cache(map()) -> {True :: [module()], False :: [module()]}.
+-spec use_cache(host_modules()) -> {True :: [module()], False :: [module()]}.
 use_cache(HostModules) ->
     {Enabled, Disabled} =
 	maps:fold(

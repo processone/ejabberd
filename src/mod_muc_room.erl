@@ -83,10 +83,10 @@
 -callback set_affiliation(binary(), binary(), binary(), jid(), affiliation(),
 			  binary()) -> ok | {error, any()}.
 -callback set_affiliations(binary(), binary(), binary(),
-			   map()) -> ok | {error, any()}.
+			   affiliations()) -> ok | {error, any()}.
 -callback get_affiliation(binary(), binary(), binary(),
 			  binary(), binary()) -> {ok, affiliation()} | {error, any()}.
--callback get_affiliations(binary(), binary(), binary()) -> {ok, map()} | {error, any()}.
+-callback get_affiliations(binary(), binary(), binary()) -> {ok, affiliations()} | {error, any()}.
 -callback search_affiliation(binary(), binary(), binary(), affiliation()) ->
     {ok, [{ljid(), {affiliation(), binary()}}]} | {error, any()}.
 
@@ -725,17 +725,16 @@ terminate(Reason, _StateName,
 							    role = none}],
 					 status_codes = [332,110]}]},
 	maps:fold(
-	  fun(LJID, Info, _) ->
-		  Nick = Info#user.nick,
+	  fun(_, #user{nick = Nick, jid = JID}, _) ->
 		  case Reason of
 		      shutdown ->
 			  send_wrapped(jid:replace_resource(StateData#state.jid, Nick),
-				       Info#user.jid, Packet,
+				       JID, Packet,
 				       ?NS_MUCSUB_NODES_PARTICIPANTS,
 				       StateData);
 		      _ -> ok
 		  end,
-		  tab_remove_online_user(LJID, StateData)
+		  tab_remove_online_user(JID, StateData)
 	  end, [], get_users_and_subscribers(StateData)),
 	add_to_log(room_existence, stopped, StateData),
 	case (StateData#state.config)#config.persistent of
@@ -1159,7 +1158,7 @@ close_room_if_temporary_and_empty(StateData1) ->
       _ -> {next_state, normal_state, StateData1}
     end.
 
--spec get_users_and_subscribers(state()) -> map().
+-spec get_users_and_subscribers(state()) -> users().
 get_users_and_subscribers(StateData) ->
     OnlineSubscribers = maps:fold(
 			   fun(LJID, _, Acc) ->
@@ -1344,7 +1343,7 @@ set_affiliation_fallback(JID, Affiliation, StateData, Reason) ->
 		   end,
     StateData#state{affiliations = Affiliations}.
 
--spec set_affiliations(map(), state()) -> state().
+-spec set_affiliations(affiliations(), state()) -> state().
 set_affiliations(Affiliations,
                  #state{config = #config{persistent = false}} = StateData) ->
     set_affiliations_fallback(Affiliations, StateData);
@@ -1360,7 +1359,7 @@ set_affiliations(Affiliations, StateData) ->
 	    set_affiliations_fallback(Affiliations, StateData)
     end.
 
--spec set_affiliations_fallback(map(), state()) -> state().
+-spec set_affiliations_fallback(affiliations(), state()) -> state().
 set_affiliations_fallback(Affiliations, StateData) ->
     StateData#state{affiliations = Affiliations}.
 
@@ -1414,7 +1413,7 @@ do_get_affiliation_fallback(JID, StateData) ->
             end
     end.
 
--spec get_affiliations(state()) -> map().
+-spec get_affiliations(state()) -> affiliations().
 get_affiliations(#state{config = #config{persistent = false}} = StateData) ->
     get_affiliations_callback(StateData);
 get_affiliations(StateData) ->
@@ -1429,7 +1428,7 @@ get_affiliations(StateData) ->
 	    Affiliations
     end.
 
--spec get_affiliations_callback(state()) -> map().
+-spec get_affiliations_callback(state()) -> affiliations().
 get_affiliations_callback(StateData) ->
     StateData#state.affiliations.
 
@@ -3074,8 +3073,8 @@ send_kickban_presence(UJID, JID, Reason, Code, NewAffiliation,
 			_ -> []
 		    end
 	    end,
-    lists:foreach(fun (J) ->
-			  #user{nick = Nick} = maps:get(J, StateData#state.users),
+    lists:foreach(fun (LJ) ->
+			  #user{nick = Nick, jid = J} = maps:get(LJ, StateData#state.users),
 			  add_to_log(kickban, {Nick, Reason, Code}, StateData),
 			  tab_remove_online_user(J, StateData),
 			  send_kickban_presence1(UJID, J, Reason, Code,
@@ -4506,7 +4505,7 @@ wrap(From, To, Packet, Node, Id) ->
 		    id = Id,
 		    sub_els = [El]}]}}]}.
 
--spec send_wrapped_multiple(jid(), map(), stanza(), binary(), state()) -> ok.
+-spec send_wrapped_multiple(jid(), users(), stanza(), binary(), state()) -> ok.
 send_wrapped_multiple(From, Users, Packet, Node, State) ->
     maps:fold(
       fun(_, #user{jid = To}, _) ->

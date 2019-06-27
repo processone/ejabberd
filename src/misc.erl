@@ -51,6 +51,8 @@
 -include("xmpp.hrl").
 -include_lib("kernel/include/file.hrl").
 
+-type distance_cache() :: #{{string(), string()} => non_neg_integer()}.
+
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -598,7 +600,7 @@ unique_timestamp() ->
     {MS, S, erlang:unique_integer([positive, monotonic]) rem 1000000}.
 
 %% Levenshtein distance
--spec ld(string(), string(), map()) -> {non_neg_integer(), map()}.
+-spec ld(string(), string(), distance_cache()) -> {non_neg_integer(), distance_cache()}.
 ld([] = S, T, Cache) ->
     {length(T), maps:put({S, T}, length(T), Cache)};
 ld(S, [] = T, Cache) ->

@@ -53,12 +53,14 @@
 	 user_send/1, mod_opt_type/1, mod_options/1, depends/2]).
 
 -record(state,
-	{host = <<"">>       :: binary(),
+	{host                :: binary(),
          send_pings          :: boolean(),
 	 ping_interval       :: non_neg_integer(),
 	 ping_ack_timeout    :: undefined | non_neg_integer(),
-	 timeout_action      ::none | kill,
-         timers = maps:new() :: map()}).
+	 timeout_action      :: none | kill,
+         timers              :: timers()}).
+
+-type timers() :: #{ljid() => reference()}.
 
 %%====================================================================
 %% API
@@ -200,7 +202,7 @@ init_state(Host, Opts) ->
 	   ping_interval = PingInterval,
 	   timeout_action = TimeoutAction,
 	   ping_ack_timeout = PingAckTimeout,
-	   timers = maps:new()}.
+	   timers = #{}}.
 
 register_hooks(Host) ->
     ejabberd_hooks:add(sm_register_connection_hook, Host,
@@ -228,7 +230,7 @@ unregister_iq_handlers(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_PING),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PING).
 
--spec add_timer(jid(), non_neg_integer(), map()) -> map().
+-spec add_timer(jid(), non_neg_integer(), timers()) -> timers().
 add_timer(JID, Interval, Timers) ->
     LJID = jid:tolower(JID),
     NewTimers = case maps:find(LJID, Timers) of
@@ -241,7 +243,7 @@ add_timer(JID, Interval, Timers) ->
 			      {ping, JID}),
     maps:put(LJID, TRef, NewTimers).
 
--spec del_timer(jid(), map()) -> map().
+-spec del_timer(jid(), timers()) -> timers().
 del_timer(JID, Timers) ->
     LJID = jid:tolower(JID),
     case maps:find(LJID, Timers) of

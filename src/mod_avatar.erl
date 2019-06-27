@@ -35,6 +35,7 @@
 -include("logger.hrl").
 -include("pubsub.hrl").
 
+-type avatar_id_meta() :: #{avatar_meta => {binary(), avatar_meta()}}.
 -opaque convert_rule() :: {default | eimp:img_type(), eimp:img_type()}.
 -export_type([convert_rule/0]).
 
@@ -362,7 +363,7 @@ convert_avatar(LUser, LServer, Data, Rules) ->
 	    end
     end.
 
--spec set_vcard_avatar(jid(), vcard_photo() | undefined, map()) -> ok.
+-spec set_vcard_avatar(jid(), vcard_photo() | undefined, avatar_id_meta()) -> ok.
 set_vcard_avatar(JID, VCardPhoto, Meta) ->
     case get_vcard(JID) of
 	{ok, #vcard_temp{photo = VCardPhoto}} ->

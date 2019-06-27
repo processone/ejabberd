@@ -58,6 +58,7 @@
 			{exception, term(), term(), term()}.
 -type error_return() :: {error, econf:error_reason(), term()} |
 			{error, error_reason()}.
+-type host_config() :: #{{atom(), binary() | global} => term()}.
 
 -callback opt_type(atom()) -> econf:validator().
 -callback options() -> [atom() | {atom(), term()}].
@@ -594,7 +595,7 @@ abort(Err) ->
     end,
     Err.
 
--spec set_host_config([{atom(), term()}]) -> {ok, map()} | error_return().
+-spec set_host_config([{atom(), term()}]) -> {ok, host_config()} | error_return().
 set_host_config(Opts) ->
     Map1 = lists:foldl(
 	     fun({Opt, Val}, M) when Opt /= host_config,
@@ -635,7 +636,7 @@ set_host_config(Opts) ->
 	_ -> {ok, Map3}
     end.
 
--spec apply_defaults(ets:tid(), [binary()], map()) -> ok.
+-spec apply_defaults(ets:tid(), [binary()], host_config()) -> ok.
 apply_defaults(Tab, Hosts, Map) ->
     Defaults1 = defaults(),
     apply_defaults(Tab, global, Map, Defaults1),
@@ -646,7 +647,8 @@ apply_defaults(Tab, Hosts, Map) ->
 	      apply_defaults(Tab, Host, Map, Defaults2)
       end, Hosts).
 
--spec apply_defaults(ets:tid(), global | binary(), map(),
+-spec apply_defaults(ets:tid(), global | binary(),
+		     host_config(),
 		     [atom() | {atom(), term()}]) -> ok.
 apply_defaults(Tab, Host, Map, Defaults) ->
     lists:foreach(

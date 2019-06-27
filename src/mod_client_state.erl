@@ -46,7 +46,7 @@
 -define(CSI_QUEUE_MAX, 100).
 
 -type csi_type() :: presence | chatstate | {pep, binary()}.
--type csi_queue() :: {non_neg_integer(), map()}.
+-type csi_queue() :: {non_neg_integer(), #{csi_key() => csi_element()}}.
 -type csi_timestamp() :: {non_neg_integer(), erlang:timestamp()}.
 -type csi_key() :: {ljid(), csi_type()}.
 -type csi_element() :: {csi_timestamp(), stanza()}.

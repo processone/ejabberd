@@ -54,9 +54,10 @@
 
 -record(state, {connection :: pid() | undefined,
 		num :: pos_integer(),
-		subscriptions = #{} :: map(),
+		subscriptions = #{} :: subscriptions(),
 		pending_q :: p1_queue:queue()}).
 
+-type subscriptions() :: #{binary() => [pid()]}.
 -type error_reason() :: binary() | timeout | disconnected | overloaded.
 -type redis_error() :: {error, error_reason()}.
 -type redis_reply() :: undefined | binary() | [binary()].
