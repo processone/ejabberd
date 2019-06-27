@@ -45,8 +45,15 @@
 -include("logger.hrl").
 -include("ejabberd_stacktrace.hrl").
 
--record(state, {tables = #{} :: map(),
-		schema = [] :: [{atom(), [{atom(), any()}]}]}).
+-record(state, {tables = #{} :: tables(),
+		schema = [] :: [{atom(), custom_schema()}]}).
+
+-type tables() :: #{atom() => {[{atom(), term()}], term()}}.
+-type custom_schema() :: [{ram_copies | disc_copies | disc_only_copies, [node()]} |
+			  {local_content, boolean()} |
+			  {type, set | ordered_set | bag} |
+			  {attributes, [atom()]} |
+			  {index, [atom()]}].
 
 start() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
@@ -201,79 +208,51 @@ schema(Name, Default, Schema) ->
 		   [Name, TabDefs]),
 	    TabDefs;
 	false ->
-	    ?DEBUG("No custom Mnesia schema for table '~s' found",
-		   [Name]),
 	    Default
     end.
 
+-spec read_schema_file() -> [{atom(), custom_schema()}].
 read_schema_file() ->
     File = schema_path(),
     case fast_yaml:decode_from_file(File, [plain_as_atom]) of
-	{ok, [Defs|_]} ->
-	    ?INFO_MSG("Using custom Mnesia schema from ~s", [File]),
-	    lists:flatmap(
-	      fun({Tab, Opts}) ->
-		      case validate_schema_opts(File, Opts) of
-			  {ok, NewOpts} ->
-			      [{Tab, lists:ukeysort(1, NewOpts)}];
-			  error ->
-			      []
-		      end
-	      end, Defs);
-	{ok, []} ->
-	    ?WARNING_MSG("Mnesia schema file ~s is empty", [File]),
-	    [];
+	{ok, Y} ->
+	    case econf:validate(validator(), lists:flatten(Y)) of
+		{ok, []} ->
+		    ?WARNING_MSG("Mnesia schema file ~s is empty", [File]),
+		    [];
+		{ok, Config} ->
+		    lists:map(
+		      fun({Tab, Opts}) ->
+			      {Tab, lists:map(
+				      fun({storage_type, T}) -> {T, [node()]};
+					 (Other) -> Other
+				      end, Opts)}
+		      end, Config);
+		{error, Reason, Ctx} ->
+		    ?ERROR_MSG("Failed to read Mnesia schema from ~s: ~s",
+			       [File, econf:format_error(Reason, Ctx)]),
+		    []
+	    end;
 	{error, enoent} ->
-	    ?DEBUG("No custom Mnesia schema file found", []),
-	    [];
+	    ?DEBUG("No custom Mnesia schema file found at ~s", [File]),
+            [];
 	{error, Reason} ->
 	    ?ERROR_MSG("Failed to read Mnesia schema file ~s: ~s",
-		       [File, fast_yaml:format_error(Reason)]),
-	    []
+		       [File, fast_yaml:format_error(Reason)])
     end.
 
-validate_schema_opts(File, Opts) ->
-    try {ok, lists:map(
-	       fun({storage_type, Type}) when Type == ram_copies;
-					      Type == disc_copies;
-					      Type == disc_only_copies ->
-		       {Type, [node()]};
-		  ({storage_type, _} = Opt) ->
-		       erlang:error({invalid_value, Opt});
-		  ({local_content, Bool}) when is_boolean(Bool) ->
-		       {local_content, Bool};
-		  ({local_content, _} = Opt) ->
-		       erlang:error({invalid_value, Opt});
-		  ({type, Type}) when Type == set;
-				      Type == ordered_set;
-				      Type == bag ->
-		       {type, Type};
-		  ({type, _} = Opt) ->
-		       erlang:error({invalid_value, Opt});
-		  ({attributes, Attrs} = Opt) ->
-		       try lists:all(fun is_atom/1, Attrs) of
-			   true -> {attributes, Attrs};
-			   false -> erlang:error({invalid_value, Opt})
-		       catch _:_ -> erlang:error({invalid_value, Opt})
-		       end;
-		  ({index, Indexes} = Opt) ->
-		       try lists:all(fun is_atom/1, Indexes) of
-			   true -> {index, Indexes};
-			   false -> erlang:error({invalid_value, Opt})
-		       catch _:_ -> erlang:error({invalid_value, Opt})
-		       end;
-		  (Opt) ->
-		       erlang:error({unknown_option, Opt})
-	       end, Opts)}
-    catch _:{invalid_value, {Opt, Val}} ->
-	    ?ERROR_MSG("Mnesia schema ~s is incorrect: invalid value ~p of "
-		       "option '~s'", [File, Val, Opt]),
-	    error;
-	  _:{unknown_option, Opt} ->
-	    ?ERROR_MSG("Mnesia schema ~s is incorrect: unknown option ~p",
-		       [File, Opt]),
-	    error
-    end.
+-spec validator() -> econf:validator().
+validator() ->
+    econf:map(
+      econf:atom(),
+      econf:options(
+	#{storage_type => econf:enum([ram_copies, disc_copies, disc_only_copies]),
+	  local_content => econf:bool(),
+	  type => econf:enum([set, ordered_set, bag]),
+	  attributes => econf:list(econf:atom()),
+	  index => econf:list(econf:atom())},
+	[{return, orddict}, unique]),
+      [unique]).
 
 create(Name, TabDef) ->
     ?INFO_MSG("Creating Mnesia table '~s'", [Name]),
