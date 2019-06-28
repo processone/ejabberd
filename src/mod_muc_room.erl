@@ -1540,7 +1540,7 @@ get_service_max_users(StateData) ->
 get_max_users_admin_threshold(StateData) ->
     mod_muc_opt:max_users_admin_threshold(StateData#state.server_host).
 
--spec room_queue_new(binary(), ejabberd_shaper:shaper(), _) -> p1_queue:queue().
+-spec room_queue_new(binary(), ejabberd_shaper:shaper(), _) -> p1_queue:queue({message | presence, jid()}) | undefined.
 room_queue_new(ServerHost, Shaper, QueueType) ->
     HaveRoomShaper = Shaper /= none,
     HaveMessageShaper = mod_muc_opt:user_message_shaper(ServerHost) /= none,
@@ -2121,7 +2121,7 @@ get_history(Nick, Packet, #state{history = History}) ->
 	    p1_queue:to_list(History#lqueue.queue)
     end.
 
--spec filter_history(p1_queue:queue(), erlang:timestamp(),
+-spec filter_history(p1_queue:queue(lqueue_elem()), erlang:timestamp(),
 		     binary(), muc_history()) -> [lqueue_elem()].
 filter_history(Queue, Now, Nick,
 	       #muc_history{since = Since,
@@ -2516,7 +2516,7 @@ lqueue_in(Item, #lqueue{queue = Q1, max = Max}) ->
        true -> #lqueue{queue = Q2, max = Max}
     end.
 
--spec lqueue_cut(p1_queue:queue(), non_neg_integer()) -> p1_queue:queue().
+-spec lqueue_cut(p1_queue:queue(lqueue_elem()), non_neg_integer()) -> p1_queue:queue(lqueue_elem()).
 lqueue_cut(Q, 0) -> Q;
 lqueue_cut(Q, N) ->
     {_, Q1} = p1_queue:out(Q),

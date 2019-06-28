@@ -55,8 +55,9 @@
 -record(state, {connection :: pid() | undefined,
 		num :: pos_integer(),
 		subscriptions = #{} :: subscriptions(),
-		pending_q :: p1_queue:queue()}).
+		pending_q :: queue()}).
 
+-type queue() :: p1_queue:queue({{pid(), term()}, integer()}).
 -type subscriptions() :: #{binary() => [pid()]}.
 -type error_reason() :: binary() | timeout | disconnected | overloaded.
 -type redis_error() :: {error, error_reason()}.
@@ -592,7 +593,7 @@ fsm_limit_opts() ->
 get_queue_type() ->
     ejabberd_option:redis_queue_type().
 
--spec flush_queue(p1_queue:queue()) -> p1_queue:queue().
+-spec flush_queue(queue()) -> queue().
 flush_queue(Q) ->
     CurrTime = erlang:monotonic_time(millisecond),
     p1_queue:dropwhile(
@@ -605,7 +606,7 @@ flush_queue(Q) ->
 	      true
       end, Q).
 
--spec clean_queue(p1_queue:queue(), integer()) -> p1_queue:queue().
+-spec clean_queue(queue(), integer()) -> queue().
 clean_queue(Q, CurrTime) ->
     Q1 = p1_queue:dropwhile(
 	   fun({_From, Time}) ->

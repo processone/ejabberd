@@ -24,7 +24,7 @@
 
 -record(lqueue,
 {
-    queue = p1_queue:new()  :: p1_queue:queue(),
+    queue = p1_queue:new()  :: p1_queue:queue(lqueue_elem()),
     max   = 0               :: integer()
 }).
 
@@ -118,7 +118,7 @@
     just_created            = erlang:system_time(microsecond) :: true | integer(),
     activity                = treap:empty() :: treap:treap(),
     room_shaper             = none :: ejabberd_shaper:shaper(),
-    room_queue              :: p1_queue:queue() | undefined
+    room_queue              :: p1_queue:queue({message | presence, jid()}) | undefined
 }).
 
 -type users() :: #{ljid() => #user{}}.

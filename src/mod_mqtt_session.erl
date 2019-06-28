@@ -46,7 +46,7 @@
 		id = 0                :: non_neg_integer(),
 		in_flight             :: undefined | publish() | pubrel(),
 		codec                 :: mqtt_codec:state(),
-		queue                 :: undefined | p1_queue:queue(),
+		queue                 :: undefined | p1_queue:queue(publish()),
 		tls                   :: boolean()}).
 
 -type acks() :: #{non_neg_integer() => pubrec()}.

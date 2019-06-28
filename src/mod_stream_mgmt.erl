@@ -50,6 +50,7 @@
 	is_record(Pkt, sm_r)).
 
 -type state() :: ejabberd_c2s:state().
+-type queue() :: p1_queue:queue({non_neg_integer(), erlang:timestamp(), xmpp_element() | xmlel()}).
 -type error_reason() :: session_not_found | session_timed_out |
 			session_is_dead | session_has_exited |
 			session_was_killed | session_copy_timed_out |
@@ -298,7 +299,7 @@ set_resume_timeout(State, Timeout) ->
     State1 = restart_pending_timer(State, Timeout),
     State1#{mgmt_timeout => Timeout}.
 
--spec queue_find(fun((stanza()) -> boolean()), p1_queue:queue())
+-spec queue_find(fun((stanza()) -> boolean()), queue())
       -> stanza() | none.
 queue_find(Pred, Queue) ->
     case p1_queue:out(Queue) of
