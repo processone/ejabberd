@@ -156,10 +156,10 @@ count_messages(LUser, LServer) ->
     F = fun () ->
 		count_mnesia_records(US)
 	end,
-    case catch mnesia:async_dirty(F) of
-	I when is_integer(I) -> I;
-	_ -> 0
-    end.
+    {cache, case mnesia:async_dirty(F) of
+		I when is_integer(I) -> I;
+		_ -> 0
+	    end}.
 
 import(#offline_msg{} = Msg) ->
     mnesia:dirty_write(Msg).

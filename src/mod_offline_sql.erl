@@ -185,8 +185,11 @@ count_messages(LUser, LServer) ->
                  ?SQL("select @(count(*))d from spool "
                       "where username=%(LUser)s and %(LServer)H")) of
         {selected, [{Res}]} ->
-            Res;
-        _ -> 0
+            {cache, Res};
+	{selected, []} ->
+	    {cache, 0};
+        _ ->
+	    {nocache, 0}
     end.
 
 export(_Server) ->

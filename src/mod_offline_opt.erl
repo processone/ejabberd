@@ -10,6 +10,7 @@
 -export([db_type/1]).
 -export([store_empty_body/1]).
 -export([store_groupchat/1]).
+-export([use_cache/1]).
 -export([use_mam_for_storage/1]).
 
 -spec access_max_user_messages(gen_mod:opts() | global | binary()) -> atom() | [ejabberd_shaper:shaper_rule()].
@@ -53,6 +54,12 @@ store_groupchat(Opts) when is_map(Opts) ->
     gen_mod:get_opt(store_groupchat, Opts);
 store_groupchat(Host) ->
     gen_mod:get_module_opt(Host, mod_offline, store_groupchat).
+
+-spec use_cache(gen_mod:opts() | global | binary()) -> boolean().
+use_cache(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(use_cache, Opts);
+use_cache(Host) ->
+    gen_mod:get_module_opt(Host, mod_offline, use_cache).
 
 -spec use_mam_for_storage(gen_mod:opts() | global | binary()) -> boolean().
 use_mam_for_storage(Opts) when is_map(Opts) ->
