@@ -148,16 +148,14 @@ unregister_connection(_SID,
 %% Specific anonymous auth functions
 %% ---------------------------------
 check_password(User, _AuthzId, Server, _Password) ->
-    case
-      ejabberd_auth:user_exists_in_other_modules(?MODULE,
-						    User, Server)
-	of
-      %% If user exists in other module, reject anonnymous authentication
-      true -> false;
-      %% If we are not sure whether the user exists in other module, reject anon auth
-      maybe -> false;
-      false -> login(User, Server)
-    end.
+    {nocache,
+     case ejabberd_auth:user_exists_in_other_modules(?MODULE, User, Server) of
+	 %% If user exists in other module, reject anonnymous authentication
+	 true -> false;
+	 %% If we are not sure whether the user exists in other module, reject anon auth
+	 maybe -> false;
+	 false -> login(User, Server)
+     end}.
 
 login(User, Server) ->
     case is_login_anonymous_enabled(Server) of
@@ -180,7 +178,7 @@ count_users(Server, Opts) ->
     length(get_users(Server, Opts)).
 
 user_exists(User, Server) ->
-    anonymous_user_exist(User, Server).
+    {nocache, anonymous_user_exist(User, Server)}.
 
 plain_password_required(_) ->
     false.

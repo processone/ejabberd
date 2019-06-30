@@ -72,14 +72,16 @@
 -callback reload(binary()) -> any().
 -callback plain_password_required(binary()) -> boolean().
 -callback store_type(binary()) -> plain | external | scram.
--callback set_password(binary(), binary(), binary()) -> ok | {error, atom()}.
--callback remove_user(binary(), binary()) -> ok | {error, any()}.
--callback user_exists(binary(), binary()) -> boolean() | {error, atom()}.
--callback check_password(binary(), binary(), binary(), binary()) -> boolean().
--callback try_register(binary(), binary(), password()) -> ok | {error, atom()}.
+-callback set_password(binary(), binary(), password()) ->
+    {ets_cache:tag(), {ok, password()} | {error, db_failure}}.
+-callback remove_user(binary(), binary()) -> ok | {error, db_failure | not_allowed}.
+-callback user_exists(binary(), binary()) -> {ets_cache:tag(), boolean() | {error, db_failure}}.
+-callback check_password(binary(), binary(), binary(), binary()) -> {ets_cache:tag(), boolean()}.
+-callback try_register(binary(), binary(), password()) ->
+    {ets_cache:tag(), {ok, password()} | {error, exists | db_failure | not_allowed}}.
 -callback get_users(binary(), opts()) -> [{binary(), binary()}].
 -callback count_users(binary(), opts()) -> number().
--callback get_password(binary(), binary()) -> {ok, password()} | error.
+-callback get_password(binary(), binary()) -> {ets_cache:tag(), {ok, password()} | error}.
 -callback use_cache(binary()) -> boolean().
 -callback cache_nodes(binary()) -> boolean().
 
@@ -610,9 +612,6 @@ db_user_exists(User, Server, Mod) ->
 			   cache_tab(Mod), {User, Server},
 			   fun() ->
 				   case Mod:user_exists(User, Server) of
-				       true -> {ok, exists};
-				       false -> error;
-				       {error, _} = Err -> Err;
 				       {CacheTag, true} -> {CacheTag, {ok, exists}};
 				       {CacheTag, false} -> {CacheTag, error};
 				       {_, {error, _}} = Err -> Err
@@ -645,8 +644,6 @@ db_check_password(User, AuthzId, Server, ProvidedPassword,
 			   fun() ->
 				   case Mod:check_password(
 					  User, AuthzId, Server, ProvidedPassword) of
-				       true -> {ok, ProvidedPassword};
-				       false -> error;
 				       {CacheTag, true} -> {CacheTag, {ok, ProvidedPassword}};
 				       {CacheTag, false} -> {CacheTag, error}
 				   end
@@ -667,7 +664,7 @@ db_check_password(User, AuthzId, Server, ProvidedPassword,
 db_remove_user(User, Server, Mod) ->
     case erlang:function_exported(Mod, remove_user, 2) of
 	true ->
-	    case ets_cache:untag(Mod:remove_user(User, Server)) of
+	    case Mod:remove_user(User, Server) of
 		ok ->
 		    case use_cache(Mod, Server) of
 			true ->
@@ -686,7 +683,7 @@ db_remove_user(User, Server, Mod) ->
 db_get_users(Server, Opts, Mod) ->
     case erlang:function_exported(Mod, get_users, 2) of
 	true ->
-	    ets_cache:untag(Mod:get_users(Server, Opts));
+	    Mod:get_users(Server, Opts);
 	false ->
 	    case use_cache(Mod, Server) of
 		true ->
@@ -704,7 +701,7 @@ db_get_users(Server, Opts, Mod) ->
 db_count_users(Server, Opts, Mod) ->
     case erlang:function_exported(Mod, count_users, 2) of
 	true ->
-	    ets_cache:untag(Mod:count_users(Server, Opts));
+	    Mod:count_users(Server, Opts);
 	false ->
 	    case use_cache(Mod, Server) of
 		true ->

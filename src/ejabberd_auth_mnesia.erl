@@ -93,10 +93,10 @@ set_password(User, Server, Password) ->
 	end,
     case mnesia:transaction(F) of
 	{atomic, ok} ->
-	    ok;
+	    {cache, {ok, Password}};
 	{aborted, Reason} ->
 	    ?ERROR_MSG("Mnesia transaction failed: ~p", [Reason]),
-	    {error, db_failure}
+	    {nocache, {error, db_failure}}
     end.
 
 try_register(User, Server, Password) ->
@@ -106,17 +106,17 @@ try_register(User, Server, Password) ->
 		    [] ->
 			mnesia:write(#passwd{us = US, password = Password}),
 			mnesia:dirty_update_counter(reg_users_counter, Server, 1),
-			ok;
+			{ok, Password};
 		    [_] ->
 			{error, exists}
 		end
 	end,
     case mnesia:transaction(F) of
 	{atomic, Res} ->
-	    Res;
+	    {cache, Res};
 	{aborted, Reason} ->
 	    ?ERROR_MSG("Mnesia transaction failed: ~p", [Reason]),
-	    {error, db_failure}
+	    {nocache, {error, db_failure}}
     end.
 
 get_users(Server, []) ->
@@ -181,9 +181,9 @@ count_users(Server, _) ->
 get_password(User, Server) ->
     case mnesia:dirty_read(passwd, {User, Server}) of
 	[#passwd{password = Password}] ->
-	    {ok, Password};
+	    {cache, {ok, Password}};
 	_ ->
-	    error
+	    {cache, error}
     end.
 
 remove_user(User, Server) ->

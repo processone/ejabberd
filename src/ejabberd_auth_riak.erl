@@ -56,21 +56,27 @@ passwd_schema() ->
     {record_info(fields, passwd), #passwd{}}.
 
 set_password(User, Server, Password) ->
-    ejabberd_riak:put(#passwd{us = {User, Server}, password = Password},
-		      passwd_schema(),
-		      [{'2i', [{<<"host">>, Server}]}]).
+    case ejabberd_riak:put(#passwd{us = {User, Server}, password = Password},
+			   passwd_schema(),
+			   [{'2i', [{<<"host">>, Server}]}]) of
+	ok -> {cache, {ok, Password}};
+	{error, _} -> {nocache, {error, db_failure}}
+    end.
 
 try_register(User, Server, Password) ->
     US = {User, Server},
     case ejabberd_riak:get(passwd, passwd_schema(), US) of
 	{error, notfound} ->
-	    ejabberd_riak:put(#passwd{us = US, password = Password},
-			      passwd_schema(),
-			      [{'2i', [{<<"host">>, Server}]}]);
+	    case ejabberd_riak:put(#passwd{us = US, password = Password},
+				   passwd_schema(),
+				   [{'2i', [{<<"host">>, Server}]}]) of
+		ok -> {cache, {ok, Password}};
+		{error, _} -> {nocache, {error, db_failure}}
+	    end;
 	{ok, _} ->
-	    {error, exists};
-	{error, _} = Err ->
-	    Err
+	    {cache, {error, exists}};
+	{error, _} ->
+	    {nocache, {error, db_failure}}
     end.
 
 get_users(Server, _) ->
@@ -92,9 +98,11 @@ count_users(Server, _) ->
 get_password(User, Server) ->
     case ejabberd_riak:get(passwd, passwd_schema(), {User, Server}) of
 	{ok, Password} ->
-	    {ok, Password};
+	    {cache, {ok, Password}};
+	{error, notfound} ->
+	    {cache, error};
 	{error, _} ->
-	    error
+	    {nocache, error}
     end.
 
 remove_user(User, Server) ->

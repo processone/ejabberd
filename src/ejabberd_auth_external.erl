@@ -53,27 +53,27 @@ store_type(_) -> external.
 
 check_password(User, AuthzId, Server, Password) ->
     if AuthzId /= <<>> andalso AuthzId /= User ->
-	    false;
+	    {nocache, false};
        true ->
 	    check_password_extauth(User, AuthzId, Server, Password)
     end.
 
 set_password(User, Server, Password) ->
     case extauth:set_password(User, Server, Password) of
-	Res when is_boolean(Res) -> ok;
+	Res when is_boolean(Res) -> {cache, {ok, Password}};
 	{error, Reason} -> failure(User, Server, set_password, Reason)
     end.
 
 try_register(User, Server, Password) ->
     case extauth:try_register(User, Server, Password) of
-	true -> ok;
-	false -> {error, not_allowed};
+	true -> {cache, {ok, Password}};
+	false -> {cache, {error, not_allowed}};
 	{error, Reason} -> failure(User, Server, try_register, Reason)
     end.
 
 user_exists(User, Server) ->
     case extauth:user_exists(User, Server) of
-	Res when is_boolean(Res) -> Res;
+	Res when is_boolean(Res) -> {cache, Res};
 	{error, Reason} -> failure(User, Server, user_exists, Reason)
     end.
 
@@ -81,23 +81,25 @@ remove_user(User, Server) ->
     case extauth:remove_user(User, Server) of
 	false -> {error, not_allowed};
 	true -> ok;
-	{error, Reason} -> failure(User, Server, remove_user, Reason)
+	{error, Reason} ->
+	    {_, Err} = failure(User, Server, remove_user, Reason),
+	    Err
     end.
 
 check_password_extauth(User, _AuthzId, Server, Password) ->
     if Password /= <<"">> ->
 	    case extauth:check_password(User, Server, Password) of
-		Res when is_boolean(Res) -> Res;
+		Res when is_boolean(Res) -> {cache, Res};
 		{error, Reason} ->
-		    _ = failure(User, Server, check_password, Reason),
-		    false
+		    {Tag, _} = failure(User, Server, check_password, Reason),
+		    {Tag, false}
 	    end;
        true ->
-	    false
+	    {nocache, false}
     end.
 
--spec failure(binary(), binary(), atom(), any()) -> {error, db_failure}.
+-spec failure(binary(), binary(), atom(), any()) -> {nocache, {error, db_failure}}.
 failure(User, Server, Fun, Reason) ->
     ?ERROR_MSG("External authentication program failed when calling "
 	       "'~s' for ~s@~s: ~p", [Fun, User, Server, Reason]),
-    {error, db_failure}.
+    {nocache, {error, db_failure}}.

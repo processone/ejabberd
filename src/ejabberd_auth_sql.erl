@@ -68,9 +68,9 @@ set_password(User, Server, Password) ->
 	end,
     case ejabberd_sql:sql_transaction(Server, F) of
 	{atomic, _} ->
-	    ok;
+	    {cache, {ok, Password}};
 	{aborted, _} ->
-	    {error, db_failure}
+	    {nocache, {error, db_failure}}
     end.
 
 try_register(User, Server, Password) ->
@@ -83,8 +83,8 @@ try_register(User, Server, Password) ->
 		  add_user(Server, User, Password)
 	  end,
     case Res of
-	{updated, 1} -> ok;
-	_ -> {error, exists}
+	{updated, 1} -> {cache, {ok, Password}};
+	_ -> {nocache, {error, exists}}
     end.
 
 get_users(Server, Opts) ->
@@ -104,16 +104,16 @@ count_users(Server, Opts) ->
 get_password(User, Server) ->
     case get_password_scram(Server, User) of
 	{selected, [{Password, <<>>, <<>>, 0}]} ->
-	    {ok, Password};
+	    {cache, {ok, Password}};
 	{selected, [{StoredKey, ServerKey, Salt, IterationCount}]} ->
-	    {ok, #scram{storedkey = StoredKey,
-			serverkey = ServerKey,
-			salt = Salt,
-			iterationcount = IterationCount}};
+	    {cache, {ok, #scram{storedkey = StoredKey,
+				serverkey = ServerKey,
+				salt = Salt,
+				iterationcount = IterationCount}}};
 	{selected, []} ->
-	    error;
+	    {cache, error};
 	_ ->
-	    error
+	    {nocache, error}
     end.
 
 remove_user(User, Server) ->

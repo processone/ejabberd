@@ -39,19 +39,18 @@ stop(_Host) ->
 
 check_password(User, AuthzId, Host, Password) ->
     if AuthzId /= <<>> andalso AuthzId /= User ->
-        false;
-    true ->
-    Service = get_pam_service(Host),
-    UserInfo = case get_pam_userinfotype(Host) of
-		 username -> User;
-		 jid -> <<User/binary, "@", Host/binary>>
-	       end,
-    case catch epam:authenticate(Service, UserInfo,
-				 Password)
-	of
-      true -> true;
-      _ -> false
-        end
+	    false;
+       true ->
+	    Service = get_pam_service(Host),
+	    UserInfo = case get_pam_userinfotype(Host) of
+			   username -> User;
+			   jid -> <<User/binary, "@", Host/binary>>
+		       end,
+	    case catch epam:authenticate(Service, UserInfo, Password) of
+		true -> {cache, true};
+		false -> {cache, false};
+		_ -> {nocache, false}
+	    end
     end.
 
 user_exists(User, Host) ->
@@ -61,9 +60,9 @@ user_exists(User, Host) ->
 		 jid -> <<User/binary, "@", Host/binary>>
 	       end,
     case catch epam:acct_mgmt(Service, UserInfo) of
-      true -> true;
-      false -> false;
-      _Err -> {error, db_failure}
+	true -> {cache, true};
+	false -> {cache, false};
+	_Err -> {nocache, {error, db_failure}}
     end.
 
 plain_password_required(_) -> true.
