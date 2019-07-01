@@ -88,7 +88,7 @@ read_message_headers(LUser, LServer) ->
 		     end, Rs),
 	    lists:keysort(1, Hdrs);
 	_Err ->
-	    []
+	    error
     end.
 
 read_message(_LUser, _LServer, I) ->

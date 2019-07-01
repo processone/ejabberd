@@ -131,7 +131,7 @@ read_message_headers(LUser, LServer) ->
 		      end
 	      end, Rows);
 	_Err ->
-	    []
+	    error
     end.
 
 read_message(LUser, LServer, Seq) ->
