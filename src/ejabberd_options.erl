@@ -407,7 +407,9 @@ opt_type(websocket_origin) ->
 opt_type(websocket_ping_interval) ->
     econf:timeout(second);
 opt_type(websocket_timeout) ->
-    econf:timeout(second).
+    econf:timeout(second);
+opt_type(jwt_key) ->
+    econf:binary().
 
 %% We only define the types of options that cannot be derived
 %% automatically by tools/opt_type.sh script
@@ -638,7 +640,8 @@ options() ->
      {validate_stream, false},
      {websocket_origin, []},
      {websocket_ping_interval, timer:seconds(60)},
-     {websocket_timeout, timer:minutes(5)}].
+     {websocket_timeout, timer:minutes(5)},
+     {jwt_key, <<"">>}].
 
 -spec globals() -> [atom()].
 globals() ->
