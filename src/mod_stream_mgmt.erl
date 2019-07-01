@@ -752,7 +752,8 @@ init_cache(Opts) ->
 
 cache_opts(Opts) ->
     [{max_size, mod_stream_mgmt_opt:cache_size(Opts)},
-     {life_time, infinity}].
+     {life_time, mod_stream_mgmt_opt:cache_life_time(Opts)},
+     {type, ordered_set}].
 
 -spec store_stanzas_in(ljid(), erlang:timestamp(), non_neg_integer()) -> boolean().
 store_stanzas_in(LJID, Time, Num) ->
@@ -763,8 +764,8 @@ store_stanzas_in(LJID, Time, Num) ->
 pop_stanzas_in(LJID, Time) ->
     case ets_cache:lookup(?STREAM_MGMT_CACHE, {LJID, Time}) of
 	{ok, Val} ->
-	    ets_cache:delete(?STREAM_MGMT_CACHE, {LJID, Time},
-			     ejabberd_cluster:get_nodes()),
+	    ets_cache:match_delete(?STREAM_MGMT_CACHE, {LJID, '_'},
+				   ejabberd_cluster:get_nodes()),
 	    {ok, Val};
 	error ->
 	    error
@@ -809,6 +810,8 @@ mod_opt_type(resend_on_timeout) ->
       econf:bool());
 mod_opt_type(cache_size) ->
     econf:pos_int(infinity);
+mod_opt_type(cache_life_time) ->
+    econf:timeout(second, infinity);
 mod_opt_type(queue_type) ->
     econf:queue_type().
 
@@ -818,5 +821,6 @@ mod_options(Host) ->
      {max_resume_timeout, undefined},
      {ack_timeout, timer:seconds(60)},
      {cache_size, ejabberd_option:cache_size(Host)},
+     {cache_life_time, timer:hours(48)},
      {resend_on_timeout, false},
      {queue_type, ejabberd_option:queue_type(Host)}].

@@ -4,6 +4,7 @@
 -module(mod_stream_mgmt_opt).
 
 -export([ack_timeout/1]).
+-export([cache_life_time/1]).
 -export([cache_size/1]).
 -export([max_ack_queue/1]).
 -export([max_resume_timeout/1]).
@@ -16,6 +17,12 @@ ack_timeout(Opts) when is_map(Opts) ->
     gen_mod:get_opt(ack_timeout, Opts);
 ack_timeout(Host) ->
     gen_mod:get_module_opt(Host, mod_stream_mgmt, ack_timeout).
+
+-spec cache_life_time(gen_mod:opts() | global | binary()) -> 'infinity' | pos_integer().
+cache_life_time(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(cache_life_time, Opts);
+cache_life_time(Host) ->
+    gen_mod:get_module_opt(Host, mod_stream_mgmt, cache_life_time).
 
 -spec cache_size(gen_mod:opts() | global | binary()) -> 'infinity' | pos_integer().
 cache_size(Opts) when is_map(Opts) ->
