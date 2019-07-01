@@ -75,7 +75,7 @@ check_jwt_token(User, Server, Token) ->
                 {ok, Exp} ->
                     Now = erlang:system_time(second),
                     if
-                        true orelse Exp > Now ->
+                        Exp > Now ->
                             case maps:find(<<"jid">>, Fields) of
                                 error ->
                                     false;
