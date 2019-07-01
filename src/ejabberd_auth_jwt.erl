@@ -31,7 +31,6 @@
 
 -export([start/1, stop/1, check_password/4,
 	 store_type/1, plain_password_required/1
-         %,opt_type/1, options/0, globals/0
         ]).
 
 -include("xmpp.hrl").
@@ -48,16 +47,16 @@ plain_password_required(_Host) -> true.
 
 store_type(_Host) -> external.
 
--spec check_password(binary(), binary(), binary(), binary()) -> boolean().
+-spec check_password(binary(), binary(), binary(), binary()) -> {ets_cache:tag(), boolean()}.
 check_password(User, AuthzId, Server, Token) ->
     %% MREMOND: Should we move the AuthzId check at a higher level in
     %%          the call stack?
     if AuthzId /= <<>> andalso AuthzId /= User ->
-            false;
+            {nocache, false};
        true ->
-            if Token == <<"">> -> false;
+            if Token == <<"">> -> {nocache, false};
                true ->
-                    check_jwt_token(User, Server, Token)
+                    {nocache, check_jwt_token(User, Server, Token)}
             end
     end.
 
@@ -102,28 +101,7 @@ check_jwt_token(User, Server, Token) ->
     end.
 
 get_jwk(Host) ->
-    jose_jwk:from_binary(ejabberd_config:get_option({jwt_key, Host})).
-
-%%%----------------------------------------------------------------------
-%%% Options for JWT authentication modules
-%%%----------------------------------------------------------------------
-%-spec opt_type(atom()) -> fun((any()) -> any()) | [atom()].
-%
-%%%% name: jwt_key
-%%%% type: binary
-%%%% description: JWT key used to validate JWT tokens.
-%%%% Default: none
-%%%% Mandatory: yes
-%opt_type(jwt_key) -> fun iolist_to_binary/1;
-%
-%%%% Available options:
-%opt_type(_) -> [jwt_key].
-%
-%options() ->
-%    [{jwt_key, <<"">>}].
-%
-%globals() ->
-%    [jwt_key].
+    jose_jwk:from_binary(ejabberd_option:jwt_key(Host)).
 
 %% TODO: auth0 username is defined in 'jid' field, but we should
 %% allow customizing the name of the field containing the username
