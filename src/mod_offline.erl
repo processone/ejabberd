@@ -84,7 +84,6 @@
 %% default value for the maximum number of user messages
 -define(MAX_USER_MESSAGES, infinity).
 
--define(EMPTY_SPOOL_CACHE, offline_empty_cache).
 -define(SPOOL_COUNTER_CACHE, offline_msg_counter_cache).
 
 -type c2s_state() :: ejabberd_c2s:state().
@@ -178,12 +177,6 @@ init_cache(Mod, Host, Opts) ->
     CacheOpts = [{max_size, mod_offline_opt:cache_size(Opts)},
 		 {life_time, mod_offline_opt:cache_life_time(Opts)},
 		 {cache_missed, false}],
-    case mod_offline_opt:use_mam_for_storage(Opts) of
-        true ->
-            ets_cache:new(?EMPTY_SPOOL_CACHE, CacheOpts);
-        false ->
-            ets_cache:delete(?EMPTY_SPOOL_CACHE)
-    end,
     case use_cache(Mod, Host) of
 	true ->
 	    ets_cache:new(?SPOOL_COUNTER_CACHE, CacheOpts);
@@ -626,8 +619,7 @@ route_offline_messages(#{jid := #jid{luser = LUser, lserver = LServer}} = State)
 	       {ok, OffMsgs} ->
 		   case use_mam_for_user(LUser, LServer) of
 		       true ->
-			   ets_cache:delete(?EMPTY_SPOOL_CACHE, {LUser, LServer},
-					    ejabberd_cluster:get_nodes()),
+			   flush_cache(Mod, LUser, LServer),
 			   lists:map(
 			       fun({_, #message{from = From, to = To} = Msg}) ->
 				   #offline_msg{from = From, to = To,
