@@ -21,8 +21,6 @@
 %%%-------------------------------------------------------------------
 -module(mod_s2s_dialback).
 -behaviour(gen_mod).
--dialyzer([{no_fail_call, s2s_out_packet/2},
-	   {no_return, s2s_out_packet/2}]).
 -protocol({xep, 220, '1.1.1'}).
 -protocol({xep, 185, '1.0'}).
 

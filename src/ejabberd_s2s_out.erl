@@ -21,8 +21,6 @@
 %%%-------------------------------------------------------------------
 -module(ejabberd_s2s_out).
 -behaviour(xmpp_stream_out).
--dialyzer([{no_fail_call, [stop/1, process_closed/2, handle_timeout/1]},
-	   {no_return, [process_closed/2, handle_timeout/1]}]).
 
 %% xmpp_stream_out callbacks
 -export([tls_options/1, tls_required/1, tls_verify/1, tls_enabled/1,

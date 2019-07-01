@@ -22,8 +22,6 @@
 -module(ejabberd_s2s_in).
 -behaviour(xmpp_stream_in).
 -behaviour(ejabberd_listener).
--dialyzer([{no_fail_call, [stop/1, process_closed/2]},
-	   {no_return, process_closed/2}]).
 
 %% ejabberd_listener callbacks
 -export([start/3, start_link/3, accept/1, listen_options/0]).

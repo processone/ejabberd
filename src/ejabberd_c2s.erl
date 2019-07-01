@@ -22,8 +22,6 @@
 -module(ejabberd_c2s).
 -behaviour(xmpp_stream_in).
 -behaviour(ejabberd_listener).
--dialyzer([{no_fail_call, [stop/1, process_closed/2]},
-	   {no_return, process_closed/2}]).
 -protocol({rfc, 6121}).
 
 %% ejabberd_listener callbacks

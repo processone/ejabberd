@@ -22,7 +22,6 @@
 %%%-------------------------------------------------------------------
 -module(mod_avatar).
 -behaviour(gen_mod).
--dialyzer({no_return, mod_opt_type/1}).
 -protocol({xep, 398, '0.2.0'}).
 
 %% gen_mod API
