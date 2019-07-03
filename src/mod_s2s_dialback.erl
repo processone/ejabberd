@@ -255,9 +255,9 @@ s2s_out_packet(State, _) ->
     State.
 
 -spec s2s_out_tls_verify(boolean(), ejabberd_s2s_out:state()) -> boolean().
-s2s_out_tls_verify(_, #{server := LServer, remote_server := RServer}) ->
-    Access = mod_s2s_dialback_opt:access(LServer),
-    case acl:match_rule(LServer, Access, jid:make(RServer)) of
+s2s_out_tls_verify(_, #{server_host := ServerHost, remote_server := RServer}) ->
+    Access = mod_s2s_dialback_opt:access(ServerHost),
+    case acl:match_rule(ServerHost, Access, jid:make(RServer)) of
 	allow -> false;
 	deny -> true
     end.
