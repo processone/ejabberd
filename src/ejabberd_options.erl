@@ -54,7 +54,7 @@ opt_type(append_host_config) ->
     econf:map(
       econf:and_then(
 	econf:domain(),
-	econf:enum(ejabberd_option:hosts())),
+	econf:enum(ejabberd_config:get_option(hosts))),
       validator(),
       [unique]);
 opt_type(auth_cache_life_time) ->
@@ -145,7 +145,7 @@ opt_type(host_config) ->
     econf:map(
       econf:and_then(
 	econf:domain(),
-	econf:enum(ejabberd_option:hosts())),
+	econf:enum(ejabberd_config:get_option(hosts))),
       validator(),
       [unique]);
 opt_type(hosts) ->
@@ -516,7 +516,7 @@ options() ->
      {ldap_password, <<"">>},
      {ldap_port,
       fun(Host) ->
-	      case ejabberd_option:ldap_encrypt(Host) of
+	      case ejabberd_config:get_option({ldap_encrypt, Host}) of
 		  tls -> 636;
 		  _ -> 389
 	      end
