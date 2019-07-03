@@ -409,7 +409,15 @@ opt_type(websocket_ping_interval) ->
 opt_type(websocket_timeout) ->
     econf:timeout(second);
 opt_type(jwt_key) ->
-    econf:binary().
+    econf:and_then(
+      econf:file(),
+      fun(Path) ->
+              case file:read_file(Path) of
+                  {ok, Binary} -> Binary;
+                  {error, Reason} ->
+                      econf:fail({jtw_key_error, Reason})
+              end
+      end).
 
 %% We only define the types of options that cannot be derived
 %% automatically by tools/opt_type.sh script
