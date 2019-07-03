@@ -380,7 +380,7 @@ handle_offline_items_view(JID, Items) ->
 				    NewEl = set_offline_tag(El, Node),
 				    case ejabberd_sm:get_session_pid(U, S, R) of
 					Pid when is_pid(Pid) ->
-					    Pid ! {route, NewEl};
+					    ejabberd_c2s:route(Pid, {route, NewEl});
 					none ->
 					    ok
 				    end,

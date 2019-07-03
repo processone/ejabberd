@@ -380,7 +380,7 @@ do_route(Pkt, #route{local_hint = LocalHint,
 	{apply, Module, Function} when node(Pid) == node() ->
 	    Module:Function(Pkt);
 	_ ->
-	    Pid ! {route, Pkt}
+	    ejabberd_cluster:send(Pid, {route, Pkt})
     end;
 do_route(_Pkt, _Route) ->
     ok.
