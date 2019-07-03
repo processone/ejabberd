@@ -267,22 +267,26 @@ replace_request_handlers(Opts) ->
 		     (PathMod) ->
 			  PathMod
 		  end, Handlers1),
-    lists:filtermap(
-      fun({captcha, _}) -> false;
-	 ({register, _}) -> false;
-	 ({web_admin, _}) -> false;
-	 ({http_bind, _}) -> false;
-	 ({xmlrpc, _}) -> false;
-	 ({http_poll, _}) ->
-	      ?WARNING_MSG("Listening option 'http_poll' is "
-			   "ignored: HTTP Polling support was "
-			   "removed in ejabberd 15.04. ~s",
-			   [adjust_hint()]),
-	      false;
-	 ({request_handlers, _}) ->
-	      {true, {request_handlers, Handlers2}};
-	 (_) -> true
-      end, Opts).
+    Opts1 = lists:filtermap(
+	      fun({captcha, _}) -> false;
+		 ({register, _}) -> false;
+		 ({web_admin, _}) -> false;
+		 ({http_bind, _}) -> false;
+		 ({xmlrpc, _}) -> false;
+		 ({http_poll, _}) ->
+		      ?WARNING_MSG("Listening option 'http_poll' is "
+				   "ignored: HTTP Polling support was "
+				   "removed in ejabberd 15.04. ~s",
+				   [adjust_hint()]),
+		      false;
+		 ({request_handlers, _}) ->
+		      false;
+		 (_) -> true
+	      end, Opts),
+    case Handlers2 of
+	[] -> Opts1;
+	_ -> [{request_handlers, Handlers2}|Opts1]
+    end.
 
 remove_xmlrpc_access_commands(Opts) ->
     lists:filter(
