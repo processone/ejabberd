@@ -415,7 +415,7 @@ opt_type(jwt_key) ->
               case file:read_file(Path) of
                   {ok, Binary} -> Binary;
                   {error, Reason} ->
-                      econf:fail({jtw_key_error, Reason})
+                      econf:fail({read_file, Reason, Path})
               end
       end).
 
@@ -436,6 +436,7 @@ opt_type(jwt_key) ->
 		    {shaper, #{atom() => ejabberd_shaper:shaper_rate()}} |
 		    {shaper_rules, [{atom(), [ejabberd_shaper:shaper_rule()]}]} |
 		    {api_permissions, [ejabberd_access_permissions:permission()]} |
+		    {jwt_key, binary()} |
 		    {append_host_config, [{binary(), any()}]} |
 		    {host_config, [{binary(), any()}]} |
 		    {define_macro, any()} |
