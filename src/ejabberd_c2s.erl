@@ -881,7 +881,7 @@ resource_conflict_action(U, S, R) ->
     end.
 
 -spec bounce_message_queue(ejabberd_sm:sid(), jid:jid()) -> ok.
-bounce_message_queue(SID, JID) ->
+bounce_message_queue({_, Pid} = SID, JID) ->
     {U, S, R} = jid:tolower(JID),
     SIDs = ejabberd_sm:get_session_sids(U, S, R),
     case lists:member(SID, SIDs) of
@@ -889,7 +889,7 @@ bounce_message_queue(SID, JID) ->
 	    ?WARNING_MSG("The session for ~s@~s/~s is supposed to "
 			 "be unregistered, but session identifier ~p "
 			 "still presents in the 'session' table",
-			 [U, S, R]);
+			 [U, S, R, Pid]);
 	false ->
 	    receive {route, Pkt} ->
 		    ejabberd_router:route(Pkt),
