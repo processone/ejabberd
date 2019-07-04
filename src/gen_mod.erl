@@ -96,7 +96,8 @@ start_child(Mod, Host, Opts) ->
 -spec start_child(module(), binary(), opts(), atom()) -> {ok, pid()} | {error, any()}.
 start_child(Mod, Host, Opts, Proc) ->
     Spec = {Proc, {?GEN_SERVER, start_link,
-		   [{local, Proc}, Mod, [Host, Opts], []]},
+		   [{local, Proc}, Mod, [Host, Opts],
+		    ejabberd_config:fsm_limit_opts([])]},
             transient, timer:minutes(1), worker, [Mod]},
     supervisor:start_child(ejabberd_gen_mod_sup, Spec).
 
