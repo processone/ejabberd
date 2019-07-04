@@ -118,7 +118,7 @@ start_link(Host, StartInterval) ->
 -type sql_query() :: sql_query_simple() |
 		     [{atom() | {atom(), any()}, sql_query_simple()}].
 -type sql_query_result() :: {updated, non_neg_integer()} |
-                            {error, binary()} |
+                            {error, binary() | atom()} |
                             {selected, [binary()], [[binary()]]} |
                             {selected, [any()]} |
 			    ok.
@@ -143,7 +143,11 @@ sql_transaction(Host, Queries)
     sql_transaction(Host, F);
 %% SQL transaction, based on a erlang anonymous function (F = fun)
 sql_transaction(Host, F) when is_function(F) ->
-    sql_call(Host, {sql_transaction, F}).
+    case sql_call(Host, {sql_transaction, F}) of
+	{atomic, _} = Ret -> Ret;
+	{aborted, _} = Ret -> Ret;
+	Err -> {aborted, Err}
+    end.
 
 %% SQL bloc, based on a erlang anonymous function (F = fun)
 sql_bloc(Host, F) -> sql_call(Host, {sql_bloc, F}).
