@@ -25,6 +25,7 @@
 -export([min_message_interval/1]).
 -export([min_presence_interval/1]).
 -export([name/1]).
+-export([preload_rooms/1]).
 -export([queue_type/1]).
 -export([ram_db_type/1]).
 -export([regexp_room_id/1]).
@@ -164,6 +165,12 @@ name(Opts) when is_map(Opts) ->
 name(Host) ->
     gen_mod:get_module_opt(Host, mod_muc, name).
 
+-spec preload_rooms(gen_mod:opts() | global | binary()) -> boolean().
+preload_rooms(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(preload_rooms, Opts);
+preload_rooms(Host) ->
+    gen_mod:get_module_opt(Host, mod_muc, preload_rooms).
+
 -spec queue_type(gen_mod:opts() | global | binary()) -> 'file' | 'ram'.
 queue_type(Opts) when is_map(Opts) ->
     gen_mod:get_opt(queue_type, Opts);
@@ -176,7 +183,7 @@ ram_db_type(Opts) when is_map(Opts) ->
 ram_db_type(Host) ->
     gen_mod:get_module_opt(Host, mod_muc, ram_db_type).
 
--spec regexp_room_id(gen_mod:opts() | global | binary()) -> binary().
+-spec regexp_room_id(gen_mod:opts() | global | binary()) -> <<>> | re:mp().
 regexp_room_id(Opts) when is_map(Opts) ->
     gen_mod:get_opt(regexp_room_id, Opts);
 regexp_room_id(Host) ->

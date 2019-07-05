@@ -93,23 +93,35 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
+-spec start(binary(), binary(), mod_muc:access(), binary(), non_neg_integer(),
+	    atom(), jid(), binary(), [{atom(), term()}], ram | file) ->
+		   {ok, pid()} | {error, any()}.
 start(Host, ServerHost, Access, Room, HistorySize, RoomShaper,
       Creator, Nick, DefRoomOpts, QueueType) ->
     p1_fsm:start(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
 			    RoomShaper, Creator, Nick, DefRoomOpts, QueueType],
 		    ?FSMOPTS).
 
+-spec start(binary(), binary(), mod_muc:access(), binary(), non_neg_integer(),
+	    atom(), [{atom(), term()}], ram | file) ->
+		   {ok, pid()} | {error, any()}.
 start(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, QueueType) ->
     p1_fsm:start(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
 			    RoomShaper, Opts, QueueType],
 		    ?FSMOPTS).
 
+-spec start_link(binary(), binary(), mod_muc:access(), binary(), non_neg_integer(),
+		 atom(), jid(), binary(), [{atom(), term()}], ram | file) ->
+			{ok, pid()} | {error, any()}.
 start_link(Host, ServerHost, Access, Room, HistorySize, RoomShaper,
 	   Creator, Nick, DefRoomOpts, QueueType) ->
     p1_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
 				 RoomShaper, Creator, Nick, DefRoomOpts, QueueType],
 		       ?FSMOPTS).
 
+-spec start_link(binary(), binary(), mod_muc:access(), binary(), non_neg_integer(),
+		 atom(), [{atom(), term()}], ram | file) ->
+			{ok, pid()} | {error, any()}.
 start_link(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, QueueType) ->
     p1_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
 				 RoomShaper, Opts, QueueType],
@@ -756,6 +768,7 @@ terminate(Reason, _StateName,
 %%%----------------------------------------------------------------------
 -spec route(pid(), stanza()) -> ok.
 route(Pid, Packet) ->
+    ?DEBUG("Routing to MUC room ~p:~n~s", [Pid, xmpp:pp(Packet)]),
     #jid{lresource = Nick} = xmpp:get_to(Packet),
     p1_fsm:send_event(Pid, {route, Nick, Packet}).
 
