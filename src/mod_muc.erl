@@ -829,15 +829,27 @@ iq_disco_items(ServerHost, Host, From, Lang, MaxRoomsDiscoItems, Node, RSM)
 	       true ->
 		    {get_disco_item, all, From, Lang}
 	    end,
-    Items = lists:flatmap(
-	      fun(R) ->
-		      case get_room_disco_item(R, Query) of
-			  {ok, Item} -> [Item];
-			  {error, _} -> []
-		      end
-	      end, get_online_rooms(ServerHost, Host, RSM)),
+    MaxItems = case RSM of
+		   undefined ->
+		       MaxRoomsDiscoItems;
+		   #rsm_set{max = undefined} ->
+		       MaxRoomsDiscoItems;
+		   #rsm_set{max = Max} when Max > MaxRoomsDiscoItems ->
+		       MaxRoomsDiscoItems;
+		   #rsm_set{max = Max} ->
+		       Max
+	       end,
+    {Items, HitMax} = lists:foldr(
+	fun(_, {Acc, _}) when length(Acc) >= MaxItems ->
+	    {Acc, true};
+	   (R, {Acc, _}) ->
+	    case get_room_disco_item(R, Query) of
+		{ok, Item} -> {[Item | Acc], false};
+		{error, _} -> {Acc, false}
+	    end
+	end, {[], false}, get_online_rooms(ServerHost, Host, RSM)),
     ResRSM = case Items of
-		 [_|_] when RSM /= undefined ->
+		 [_|_] when RSM /= undefined; HitMax ->
 		     #disco_item{jid = #jid{luser = First}} = hd(Items),
 		     #disco_item{jid = #jid{luser = Last}} = lists:last(Items),
 		     #rsm_set{first = #rsm_first{data = First},
