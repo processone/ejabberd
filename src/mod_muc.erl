@@ -507,28 +507,39 @@ route_to_room(Packet, ServerHost) ->
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
     case RMod:find_online_room(ServerHost, Room, Host) of
 	error ->
-	    case is_create_request(Packet) of
-		true ->
-		    case check_create_room(ServerHost, Host, Room, From) of
-			true ->
-			    case start_new_room(Host, ServerHost, Room, From, Nick) of
-				{ok, Pid} ->
-				    mod_muc_room:route(Pid, Packet);
-				_Err ->
-				    Err = xmpp:err_internal_server_error(),
-				    ejabberd_router:route_error(Packet, Err)
-			    end;
-			false ->
-			    Lang = xmpp:get_lang(Packet),
-			    ErrText = ?T("Room creation is denied by service policy"),
-			    Err = xmpp:err_forbidden(ErrText, Lang),
-			    ejabberd_router:route_error(Packet, Err)
-		    end;
+	    case should_start_room(Packet) of
 		false ->
 		    Lang = xmpp:get_lang(Packet),
 		    ErrText = ?T("Conference room does not exist"),
 		    Err = xmpp:err_item_not_found(ErrText, Lang),
-		    ejabberd_router:route_error(Packet, Err)
+		    ejabberd_router:route_error(Packet, Err);
+		StartType ->
+		    RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
+		    case load_room(RMod, Host, ServerHost, Room) of
+			error when StartType == start ->
+			    case check_create_room(ServerHost, Host, Room, From) of
+				true ->
+				    case start_new_room(RMod, Host, ServerHost, Room, From, Nick) of
+					{ok, Pid} ->
+					    mod_muc_room:route(Pid, Packet);
+					_Err ->
+					    Err = xmpp:err_internal_server_error(),
+					    ejabberd_router:route_error(Packet, Err)
+				    end;
+				false ->
+				    Lang = xmpp:get_lang(Packet),
+				    ErrText = ?T("Room creation is denied by service policy"),
+				    Err = xmpp:err_forbidden(ErrText, Lang),
+				    ejabberd_router:route_error(Packet, Err)
+			    end;
+			error ->
+			    Lang = xmpp:get_lang(Packet),
+			    ErrText = ?T("Conference room does not exist"),
+			    Err = xmpp:err_item_not_found(ErrText, Lang),
+			    ejabberd_router:route_error(Packet, Err);
+			{ok, Pid2} ->
+			    mod_muc_room:route(Pid2, Packet)
+		    end
 	    end;
 	{ok, Pid} ->
 	    mod_muc_room:route(Pid, Packet)
@@ -665,13 +676,24 @@ process_mucsub(#iq{lang = Lang} = IQ) ->
     Txt = ?T("No module is handling this query"),
     xmpp:make_error(IQ, xmpp:err_service_unavailable(Txt, Lang)).
 
--spec is_create_request(stanza()) -> boolean().
-is_create_request(#presence{type = available}) ->
-    true;
-is_create_request(#iq{type = T} = IQ) when T == get; T == set ->
-    xmpp:has_subtag(IQ, #muc_subscribe{}) orelse
-    xmpp:has_subtag(IQ, #muc_owner{});
-is_create_request(_) ->
+-spec should_start_room(stanza()) -> start | load | false.
+should_start_room(#presence{type = available}) ->
+    start;
+should_start_room(#iq{type = T} = IQ) when T == get; T == set ->
+    case xmpp:has_subtag(IQ, #muc_subscribe{}) orelse
+	 xmpp:has_subtag(IQ, #muc_owner{}) of
+	true ->
+	    start;
+	_ ->
+	    load
+    end;
+should_start_room(#message{type = T, to = #jid{lresource = <<>>}})
+    when T == groupchat; T == normal->
+    load;
+should_start_room(#message{type = T, to = #jid{lresource = Res}})
+    when Res /= <<>> andalso T /= groupchat andalso T /= error ->
+    load;
+should_start_room(_) ->
     false.
 
 -spec check_create_room(binary(), binary(), binary(), jid()) -> boolean().
@@ -751,28 +773,24 @@ load_permanent_rooms(Hosts, ServerHost, Opts) ->
 	    ok
     end.
 
-start_new_room(Host, ServerHost, Room, From, Nick) ->
-    RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
-    Opts = case restore_room(ServerHost, Host, Room) of
-	       error ->
-		   error;
-	       Opts0 ->
-		   case proplists:get_bool(persistent, Opts0) of
-		       true ->
-			   Opts0;
-		       _ ->
-			   error
-		   end
-	   end,
-    case Opts of
+load_room(RMod, Host, ServerHost, Room) ->
+    case restore_room(ServerHost, Host, Room) of
 	error ->
-	    ?DEBUG("Open new room: ~s", [Room]),
-	    DefRoomOpts = mod_muc_opt:default_room_options(ServerHost),
-	    start_room(RMod, Host, ServerHost, Room, DefRoomOpts, From, Nick);
-	_ ->
-	    ?DEBUG("Restore room: ~s", [Room]),
-	    start_room(RMod, Host, ServerHost, Room, Opts)
+	    error;
+	Opts0 ->
+	    case proplists:get_bool(persistent, Opts0) of
+		true ->
+		    ?DEBUG("Restore room: ~s", [Room]),
+		    start_room(RMod, Host, ServerHost, Room, Opts0);
+		_ ->
+		    error
+	    end
     end.
+
+start_new_room(RMod, Host, ServerHost, Room, From, Nick) ->
+    ?DEBUG("Open new room: ~s", [Room]),
+    DefRoomOpts = mod_muc_opt:default_room_options(ServerHost),
+    start_room(RMod, Host, ServerHost, Room, DefRoomOpts, From, Nick).
 
 start_room(Mod, Host, ServerHost, Room, DefOpts) ->
     Access = get_access(ServerHost),
