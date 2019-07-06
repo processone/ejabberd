@@ -264,14 +264,12 @@ listen_opt_type(check_from) ->
 listen_opt_type(password) ->
     econf:binary();
 listen_opt_type(hosts) ->
-    econf:and_then(
-      econf:map(
-	econf:domain(),
+    econf:map(
+      econf:domain(),
+      econf:and_then(
 	econf:options(
-	  #{password => econf:binary()})),
-      fun({Host, Opts}) ->
-	      {Host, proplists:get_value(password, Opts)}
-      end);
+	  #{password => econf:binary()}),
+	fun(Opts) -> proplists:get_value(password, Opts) end));
 listen_opt_type(global_routes) ->
     econf:bool().
 
