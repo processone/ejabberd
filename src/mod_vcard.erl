@@ -41,11 +41,13 @@
 	 vcard_iq_set/1, mod_opt_type/1, set_vcard/3, make_vcard_search/4]).
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3]).
+-export([route/1]).
 
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("mod_vcard.hrl").
 -include("translate.hrl").
+-include("ejabberd_stacktrace.hrl").
 
 -define(VCARD_CACHE, vcard_cache).
 
@@ -121,7 +123,8 @@ init([Host, Opts]) ->
 					   "not implemented for ~s backend",
 					   [mod_vcard_opt:db_type(Opts)]);
 			  true ->
-			      ejabberd_router:register_route(MyHost, Host)
+			      ejabberd_router:register_route(
+				MyHost, Host, {apply, ?MODULE, route})
 		      end
 	      end, MyHosts);
        true ->
@@ -137,9 +140,12 @@ handle_cast(Cast, State) ->
     {noreply, State}.
 
 handle_info({route, Packet}, State) ->
-    case catch do_route(Packet) of
-	{'EXIT', Reason} -> ?ERROR_MSG("~p", [Reason]);
-	_ -> ok
+    try route(Packet)
+    catch ?EX_RULE(Class, Reason, St) ->
+	    StackTrace = ?EX_STACK(St),
+	    ?ERROR_MSG("Failed to route packet:~n~s~n** ~s",
+		       [xmpp:pp(Packet),
+			misc:format_exception(2, Class, Reason, StackTrace)])
     end,
     {noreply, State};
 handle_info(Info, State) ->
@@ -169,9 +175,10 @@ terminate(_Reason, #state{hosts = MyHosts, server_host = Host}) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-do_route(#iq{} = IQ) ->
+-spec route(stanza()) -> ok.
+route(#iq{} = IQ) ->
     ejabberd_router:process_iq(IQ);
-do_route(_) ->
+route(_) ->
     ok.
 
 -spec get_sm_features({error, stanza_error()} | empty | {result, [binary()]},

@@ -43,6 +43,7 @@
 -include("xmpp.hrl").
 -include("logger.hrl").
 -include("translate.hrl").
+-include("ejabberd_stacktrace.hrl").
 
 -callback init(binary(), gen_mod:opts()) -> ok | {error, db_failure}.
 -callback set_channel(binary(), binary(), binary(),
@@ -275,6 +276,15 @@ handle_cast(Request, State) ->
     ?WARNING_MSG("Unexpected cast: ~p", [Request]),
     {noreply, State}.
 
+handle_info({route, Packet}, State) ->
+    try route(Packet)
+    catch ?EX_RULE(Class, Reason, St) ->
+	    StackTrace = ?EX_STACK(St),
+	    ?ERROR_MSG("Failed to route packet:~n~s~n** ~s",
+		       [xmpp:pp(Packet),
+			misc:format_exception(2, Class, Reason, StackTrace)])
+    end,
+    {noreply, State};
 handle_info(Info, State) ->
     ?WARNING_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.

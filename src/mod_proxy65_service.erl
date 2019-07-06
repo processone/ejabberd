@@ -35,11 +35,12 @@
 
 -export([start_link/2, reload/3, add_listener/2, process_disco_info/1,
 	 process_disco_items/1, process_vcard/1, process_bytestreams/1,
-	 delete_listener/1]).
+	 delete_listener/1, route/1]).
 
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("translate.hrl").
+-include("ejabberd_stacktrace.hrl").
 
 -define(PROCNAME, ejabberd_mod_proxy65_service).
 
@@ -71,7 +72,8 @@ init([Host, Opts]) ->
 					    ?MODULE, process_vcard),
 	      gen_iq_handler:add_iq_handler(ejabberd_local, MyHost, ?NS_BYTESTREAMS,
 					    ?MODULE, process_bytestreams),
-	      ejabberd_router:register_route(MyHost, Host)
+	      ejabberd_router:register_route(
+		MyHost, Host, {apply, ?MODULE, route})
       end, MyHosts),
     {ok, #state{myhosts = MyHosts}}.
 
@@ -82,8 +84,14 @@ terminate(_Reason, #state{myhosts = MyHosts}) ->
 	      unregister_handlers(MyHost)
       end, MyHosts).
 
-handle_info({route, #iq{} = Packet}, State) ->
-    ejabberd_router:process_iq(Packet),
+handle_info({route, Packet}, State) ->
+    try route(Packet)
+    catch ?EX_RULE(Class, Reason, St) ->
+            StackTrace = ?EX_STACK(St),
+            ?ERROR_MSG("Failed to route packet:~n~s~n** ~s",
+                       [xmpp:pp(Packet),
+                        misc:format_exception(2, Class, Reason, StackTrace)])
+    end,
     {noreply, State};
 handle_info(_Info, State) -> {noreply, State}.
 
@@ -109,6 +117,12 @@ handle_cast(Msg, State) ->
     {noreply, State}.
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
+
+-spec route(stanza()) -> ok.
+route(#iq{} = IQ) ->
+    ejabberd_router:process_iq(IQ);
+route(_) ->
+    ok.
 
 %%%------------------------
 %%% Listener management

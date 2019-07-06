@@ -44,6 +44,7 @@
 -include("pubsub.hrl").
 -include("mod_roster.hrl").
 -include("translate.hrl").
+-include("ejabberd_stacktrace.hrl").
 
 -define(STDTREE, <<"tree">>).
 -define(STDNODE, <<"flat">>).
@@ -91,6 +92,8 @@
 -export([start/2, stop/1, init/1,
     handle_call/3, handle_cast/2, handle_info/2,
     terminate/2, code_change/3, depends/2, mod_opt_type/1, mod_options/1]).
+
+-export([route/1]).
 
 %%====================================================================
 %% API
@@ -254,7 +257,8 @@ init([ServerHost, Opts]) ->
 	lists:flatmap(
 	  fun(Host) ->
 		  DBMod:init(Host, ServerHost, Opts),
-		  ejabberd_router:register_route(Host, ServerHost),
+		  ejabberd_router:register_route(
+		    Host, ServerHost, {apply, ?MODULE, route}),
 		  {Plugins, NodeTree, PepMapping} = init_plugins(Host, ServerHost, Opts),
 		  DefaultModule = plugin(Host, hd(Plugins)),
 		  DefaultNodeCfg = merge_config(
@@ -727,15 +731,13 @@ handle_cast(_Msg, State) -> {noreply, State}.
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
 %% @private
-handle_info({route, #iq{to = To} = IQ},
-	    State) when To#jid.lresource == <<"">> ->
-    ejabberd_router:process_iq(IQ),
-    {noreply, State};
 handle_info({route, Packet}, State) ->
-    To = xmpp:get_to(Packet),
-    case catch do_route(To#jid.lserver, Packet) of
-	{'EXIT', Reason} -> ?ERROR_MSG("~p", [Reason]);
-	_ -> ok
+    try route(Packet)
+    catch ?EX_RULE(Class, Reason, St) ->
+	    StackTrace = ?EX_STACK(St),
+	    ?ERROR_MSG("Failed to route packet:~n~s~n** ~s",
+		       [xmpp:pp(Packet),
+			misc:format_exception(2, Class, Reason, StackTrace)])
     end,
     {noreply, State};
 handle_info(_Info, State) ->
@@ -892,8 +894,10 @@ process_commands(#iq{type = get, lang = Lang} = IQ) ->
     Txt = ?T("Value 'get' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang)).
 
--spec do_route(binary(), stanza()) -> ok.
-do_route(Host, Packet) ->
+-spec route(stanza()) -> ok.
+route(#iq{to = To} = IQ) when To#jid.lresource == <<"">> ->
+    ejabberd_router:process_iq(IQ);
+route(Packet) ->
     To = xmpp:get_to(Packet),
     case To of
 	#jid{luser = <<>>, lresource = <<>>} ->
@@ -906,7 +910,7 @@ do_route(Host, Packet) ->
 			    ejabberd_router:route_error(Packet, Err);
 			AuthResponse ->
 			    handle_authorization_response(
-			      Host, Packet, AuthResponse)
+			      To#jid.lserver, Packet, AuthResponse)
 		    end;
 		_ ->
 		    Err = xmpp:err_service_unavailable(),

@@ -393,10 +393,11 @@ handle_call({create, Room, Host, From, Nick, Opts}, _From,
 
 handle_cast({route_to_room, Packet}, #state{server_host = ServerHost} = State) ->
     try route_to_room(Packet, ServerHost)
-    catch ?EX_RULE(E, R, St) ->
+    catch ?EX_RULE(Class, Reason, St) ->
             StackTrace = ?EX_STACK(St),
-            ?ERROR_MSG("Failed to route packet:~n~s~nReason = ~p",
-                       [xmpp:pp(Packet), {E, {R, StackTrace}}])
+            ?ERROR_MSG("Failed to route packet:~n~s~n** ~s",
+		       [xmpp:pp(Packet),
+			misc:format_exception(2, Class, Reason, StackTrace)])
     end,
     {noreply, State};
 handle_cast({room_destroyed, {Room, Host}, Pid}, State) ->
@@ -420,10 +421,11 @@ handle_info({route, Packet}, State) ->
     %% where mod_muc is not loaded. Such configuration
     %% is *highly* discouraged
     try route(Packet, State#state.server_host)
-    catch ?EX_RULE(E, R, St) ->
+    catch ?EX_RULE(Class, Reason, St) ->
             StackTrace = ?EX_STACK(St),
-            ?ERROR_MSG("Failed to route packet:~n~s~nReason = ~p",
-                       [xmpp:pp(Packet), {E, {R, StackTrace}}])
+            ?ERROR_MSG("Failed to route packet:~n~s~n** ~s",
+		       [xmpp:pp(Packet),
+			misc:format_exception(2, Class, Reason, StackTrace)])
     end,
     {noreply, State};
 handle_info({room_destroyed, {Room, Host}, Pid}, State) ->
