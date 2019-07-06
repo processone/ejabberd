@@ -514,7 +514,6 @@ route_to_room(Packet, ServerHost) ->
 		    Err = xmpp:err_item_not_found(ErrText, Lang),
 		    ejabberd_router:route_error(Packet, Err);
 		StartType ->
-		    RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
 		    case load_room(RMod, Host, ServerHost, Room) of
 			error when StartType == start ->
 			    case check_create_room(ServerHost, Host, Room, From) of
