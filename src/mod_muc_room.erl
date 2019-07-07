@@ -759,9 +759,9 @@ terminate(Reason, _StateName,
     catch ?EX_RULE(E, R, St) ->
 	    StackTrace = ?EX_STACK(St),
 	    mod_muc:room_destroyed(Host, Room, self(), LServer),
-	    ?ERROR_MSG("Got exception on room termination: ~p", [{E, {R, StackTrace}}])
-    end,
-    ok.
+	    ?ERROR_MSG("Got exception on room termination:~n** ~s",
+		       [misc:format_exception(2, E, R, StackTrace)])
+    end.
 
 %%%----------------------------------------------------------------------
 %%% Internal functions
@@ -2803,8 +2803,9 @@ process_item_change(Item, SD, UJID) ->
 			     undefined ->
 				 <<"">>
 			 end,
-	    ?ERROR_MSG("Failed to set item ~p~s: ~p",
-		       [Item, FromSuffix, {E, {R, StackTrace}}]),
+	    ?ERROR_MSG("Failed to set item ~p~s:~n** ~s",
+		       [Item, FromSuffix,
+			misc:format_exception(2, E, R, StackTrace)]),
 	    {error, xmpp:err_internal_server_error()}
     end.
 

@@ -503,7 +503,7 @@ create_image_files(Images_dir) ->
 	      case file:copy(Src, Dst) of
 		  {ok, _} -> ok;
 		  {error, Why} ->
-		      ?ERROR_MSG("Failed to copy ~s to ~s",
+		      ?ERROR_MSG("Failed to copy ~s to ~s: ~s",
 				 [Src, Dst, file:format_error(Why)])
 	      end
       end, Filenames).

@@ -270,63 +270,56 @@ write_roster_version(LUser, LServer, InTransaction) ->
 %%     - roster versioning is not used by the client OR
 %%     - roster versioning is used by server and client, BUT the server isn't storing versions on db OR
 %%     - the roster version from client don't match current version.
-process_iq_get(#iq{to = To, lang = Lang,
+process_iq_get(#iq{to = To,
 		   sub_els = [#roster_query{ver = RequestedVersion}]} = IQ) ->
     LUser = To#jid.luser,
     LServer = To#jid.lserver,
     US = {LUser, LServer},
-    try {ItemsToSend, VersionToSend} =
-	     case {roster_versioning_enabled(LServer),
-		   roster_version_on_db(LServer)} of
-		 {true, true} when RequestedVersion /= undefined ->
-		     case read_roster_version(LUser, LServer) of
-			 error ->
-			     RosterVersion = write_roster_version(LUser, LServer),
-			     {lists:map(fun encode_item/1,
-					ejabberd_hooks:run_fold(
-					  roster_get, To#jid.lserver, [], [US])),
-			      RosterVersion};
-			 {ok, RequestedVersion} ->
-			     {false, false};
-			 {ok, NewVersion} ->
-			     {lists:map(fun encode_item/1,
-					ejabberd_hooks:run_fold(
-					  roster_get, To#jid.lserver, [], [US])),
-			      NewVersion}
-		     end;
-		 {true, false} when RequestedVersion /= undefined ->
-		     RosterItems = ejabberd_hooks:run_fold(
-				     roster_get, To#jid.lserver, [], [US]),
-		     case roster_hash(RosterItems) of
-			 RequestedVersion ->
-			     {false, false};
-			 New ->
-			     {lists:map(fun encode_item/1, RosterItems), New}
-		     end;
-		 _ ->
-		     {lists:map(fun encode_item/1,
-				ejabberd_hooks:run_fold(
-				  roster_get, To#jid.lserver, [], [US])),
-		      false}
-	     end,
-	 xmpp:make_iq_result(
-	   IQ,
-	   case {ItemsToSend, VersionToSend} of
-	       {false, false} ->
-		   undefined;
-	       {Items, false} ->
-		   #roster_query{items = Items};
-	       {Items, Version} ->
-		   #roster_query{items = Items,
-				 ver = Version}
-	   end)
-    catch ?EX_RULE(E, R, St) ->
-	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Failed to process roster get for ~s: ~p",
-		       [jid:encode(To), {E, {R, StackTrace}}]),
-	    Txt = ?T("Roster module has failed"),
-	    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))
-    end.
+    {ItemsToSend, VersionToSend} =
+	case {roster_versioning_enabled(LServer),
+	      roster_version_on_db(LServer)} of
+	    {true, true} when RequestedVersion /= undefined ->
+		case read_roster_version(LUser, LServer) of
+		    error ->
+			RosterVersion = write_roster_version(LUser, LServer),
+			{lists:map(fun encode_item/1,
+				   ejabberd_hooks:run_fold(
+				     roster_get, To#jid.lserver, [], [US])),
+			 RosterVersion};
+		    {ok, RequestedVersion} ->
+			{false, false};
+		    {ok, NewVersion} ->
+			{lists:map(fun encode_item/1,
+				   ejabberd_hooks:run_fold(
+				     roster_get, To#jid.lserver, [], [US])),
+			 NewVersion}
+		end;
+	    {true, false} when RequestedVersion /= undefined ->
+		RosterItems = ejabberd_hooks:run_fold(
+				roster_get, To#jid.lserver, [], [US]),
+		case roster_hash(RosterItems) of
+		    RequestedVersion ->
+			{false, false};
+		    New ->
+			{lists:map(fun encode_item/1, RosterItems), New}
+		end;
+	    _ ->
+		{lists:map(fun encode_item/1,
+			   ejabberd_hooks:run_fold(
+			     roster_get, To#jid.lserver, [], [US])),
+		 false}
+	end,
+    xmpp:make_iq_result(
+      IQ,
+      case {ItemsToSend, VersionToSend} of
+	  {false, false} ->
+	      undefined;
+	  {Items, false} ->
+	      #roster_query{items = Items};
+	  {Items, Version} ->
+	      #roster_query{items = Items,
+			    ver = Version}
+      end).
 
 -spec get_user_roster([#roster{}], {binary(), binary()}) -> [#roster{}].
 get_user_roster(Acc, {LUser, LServer}) ->

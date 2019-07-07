@@ -69,13 +69,20 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [],
 			  []).
 
--spec route(stanza()) -> any().
+-spec route(stanza()) -> ok.
 route(Packet) ->
-    try do_route(Packet)
-    catch ?EX_RULE(E, R, St) ->
-	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Failed to route packet:~n~s~nReason = ~p",
-		       [xmpp:pp(Packet), {E, {R, StackTrace}}])
+    ?DEBUG("Local route:~n~s", [xmpp:pp(Packet)]),
+    Type = xmpp:get_type(Packet),
+    To = xmpp:get_to(Packet),
+    if To#jid.luser /= <<"">> ->
+	    ejabberd_sm:route(Packet);
+       is_record(Packet, iq), To#jid.lresource == <<"">> ->
+	    gen_iq_handler:handle(?MODULE, Packet);
+       Type == result; Type == error ->
+	    ok;
+       true ->
+	    ejabberd_hooks:run(local_send_to_resource_hook,
+			       To#jid.lserver, [Packet])
     end.
 
 -spec route_iq(iq(), function()) -> ok.
@@ -139,22 +146,6 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
--spec do_route(stanza()) -> any().
-do_route(Packet) ->
-    ?DEBUG("Local route:~n~s", [xmpp:pp(Packet)]),
-    Type = xmpp:get_type(Packet),
-    To = xmpp:get_to(Packet),
-    if To#jid.luser /= <<"">> ->
-	    ejabberd_sm:route(Packet);
-       is_record(Packet, iq), To#jid.lresource == <<"">> ->
-	    gen_iq_handler:handle(?MODULE, Packet);
-       Type == result; Type == error ->
-	    ok;
-       true ->
-	    ejabberd_hooks:run(local_send_to_resource_hook,
-			       To#jid.lserver, [Packet])
-    end.
-
 -spec update_table() -> ok.
 update_table() ->
     catch mnesia:delete_table(iq_response),

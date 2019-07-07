@@ -86,16 +86,6 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [],
 			  []).
 
--spec route(stanza()) -> ok.
-
-route(Packet) ->
-    try do_route(Packet)
-    catch ?EX_RULE(E, R, St) ->
-	    StackTrace = ?EX_STACK(St),
-            ?ERROR_MSG("Failed to route packet:~n~s~nReason = ~p",
-                       [xmpp:pp(Packet), {E, {R, StackTrace}}])
-    end.
-
 clean_temporarily_blocked_table() ->
     mnesia:clear_table(temporarily_blocked).
 
@@ -296,7 +286,13 @@ handle_info({mnesia_system_event, {mnesia_down, Node}}, State) ->
     clean_table_from_bad_node(Node),
     {noreply, State};
 handle_info({route, Packet}, State) ->
-    route(Packet),
+    try route(Packet)
+    catch ?EX_RULE(Class, Reason, St) ->
+	    StackTrace = ?EX_STACK(St),
+	    ?ERROR_MSG("Failed to route packet:~n~s~n** ~s",
+		       [xmpp:pp(Packet),
+			misc:format_exception(2, Class, Reason, StackTrace)])
+    end,
     {noreply, State};
 handle_info(_Info, State) -> {noreply, State}.
 
@@ -347,8 +343,8 @@ clean_table_from_bad_node(Node) ->
 	end,
     mnesia:async_dirty(F).
 
--spec do_route(stanza()) -> ok.
-do_route(Packet) ->
+-spec route(stanza()) -> ok.
+route(Packet) ->
     ?DEBUG("Local route:~n~s", [xmpp:pp(Packet)]),
     From = xmpp:get_from(Packet),
     To = xmpp:get_to(Packet),

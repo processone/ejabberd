@@ -125,12 +125,14 @@ stop() ->
 -spec route(jid(), term()) -> ok.
 %% @doc route arbitrary term to c2s process(es)
 route(To, Term) ->
-    case catch do_route(To, Term) of
-	{'EXIT', Reason} ->
-	    ?ERROR_MSG("Route ~p to ~p failed: ~p",
-		       [Term, To, Reason]);
-	_ ->
-	    ok
+    try do_route(To, Term), ok
+    catch ?EX_RULE(E, R, St) ->
+	    StackTrace = ?EX_STACK(St),
+	    ?ERROR_MSG("Failed to route term to ~s:~n"
+		       "** Term = ~p~n"
+		       "** ~s",
+		       [jid:encode(To), Term,
+			misc:format_exception(2, E, R, StackTrace)])
     end.
 
 -spec route(stanza()) -> ok.
@@ -140,13 +142,8 @@ route(Packet) ->
 	drop ->
 	    ?DEBUG("Hook dropped stanza:~n~s", [xmpp:pp(Packet)]);
 	Packet1 ->
-	    try do_route(Packet1), ok
-	    catch ?EX_RULE(E, R, St) ->
-		    StackTrace = ?EX_STACK(St),
-		    ?ERROR_MSG("Failed to route packet:~n~s~nReason = ~p",
-			       [xmpp:pp(Packet1),
-				{E, {R, StackTrace}}])
-	    end
+	    do_route(Packet1),
+	    ok
     end.
 
 -spec open_session(sid(), binary(), binary(), binary(), prio(), info()) -> ok.
@@ -500,7 +497,13 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, State) -> {noreply, State}.
 
 handle_info({route, Packet}, State) ->
-    route(Packet),
+    try route(Packet)
+    catch ?EX_RULE(E, R, St) ->
+	    StackTrace = ?EX_STACK(St),
+	    ?ERROR_MSG("Failed to route packet:~n~s~n** ~s",
+		       [xmpp:pp(Packet),
+			misc:format_exception(2, E, R, StackTrace)])
+    end,
     {noreply, State};
 handle_info(Info, State) ->
     ?WARNING_MSG("Unexpected info: ~p", [Info]),

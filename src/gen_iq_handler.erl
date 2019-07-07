@@ -111,10 +111,11 @@ process_iq(_Host, Module, Function, IQ) ->
 	    ejabberd_router:route(ResIQ);
 	ignore ->
 	    ok
-    catch ?EX_RULE(E, R, St) ->
+    catch ?EX_RULE(Class, Reason, St) ->
 	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Failed to process iq:~n~s~nReason = ~p",
-		       [xmpp:pp(IQ), {E, {R, StackTrace}}]),
+	    ?ERROR_MSG("Failed to process iq:~n~s~n** ~s",
+		       [xmpp:pp(IQ),
+			misc:format_exception(2, Class, Reason, StackTrace)]),
 	    Txt = ?T("Module failed to handle the query"),
 	    Err = xmpp:err_internal_server_error(Txt, IQ#iq.lang),
 	    ejabberd_router:route_error(IQ, Err)

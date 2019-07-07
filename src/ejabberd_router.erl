@@ -90,10 +90,11 @@ start_link() ->
 -spec route(stanza()) -> ok.
 route(Packet) ->
     try do_route(Packet)
-    catch ?EX_RULE(E, R, St) ->
+    catch ?EX_RULE(Class, Reason, St) ->
 	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Failed to route packet:~n~s~nReason = ~p",
-		       [xmpp:pp(Packet), {E, {R, StackTrace}}])
+	    ?ERROR_MSG("Failed to route packet:~n~s~n** ~s",
+		       [xmpp:pp(Packet),
+			misc:format_exception(2, Class, Reason, StackTrace)])
     end.
 
 -spec route(jid(), jid(), xmlel() | stanza()) -> ok.
@@ -107,13 +108,7 @@ route(#jid{} = From, #jid{} = To, #xmlel{} = El) ->
 			xmpp:format_error(Why)])
     end;
 route(#jid{} = From, #jid{} = To, Packet) ->
-    case catch do_route(xmpp:set_from_to(Packet, From, To)) of
-	{'EXIT', Reason} ->
-	    ?ERROR_MSG("~p~nwhen processing: ~p",
-		       [Reason, {From, To, Packet}]);
-	_ ->
-	    ok
-    end.
+    route(xmpp:set_from_to(Packet, From, To)).
 
 -spec route_error(stanza(), stanza_error()) -> ok.
 route_error(Packet, Err) ->

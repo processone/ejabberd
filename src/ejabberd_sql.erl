@@ -618,8 +618,8 @@ sql_query_internal(#sql_query{} = Query) ->
 		{error, <<"terminated unexpectedly">>};
 	      ?EX_RULE(Class, Reason, Stack) ->
 		StackTrace = ?EX_STACK(Stack),
-                ?ERROR_MSG("Internal error while processing SQL query: ~p",
-                           [{Class, Reason, StackTrace}]),
+                ?ERROR_MSG("Internal error while processing SQL query:~n** ~s",
+			   [misc:format_exception(2, Class, Reason, StackTrace)]),
                 {error, <<"internal error">>}
         end,
     check_error(Res, Query);
@@ -760,10 +760,10 @@ sql_query_format_res({selected, _, Rows}, SQLQuery) ->
                   catch
 		      ?EX_RULE(Class, Reason, Stack) ->
 			  StackTrace = ?EX_STACK(Stack),
-                          ?ERROR_MSG("Error while processing "
-                                     "SQL query result: ~p~n"
-                                     "row: ~p",
-                                     [{Class, Reason, StackTrace}, Row]),
+                          ?ERROR_MSG("Error while processing SQL query result:~n"
+                                     "** Row: ~p~n** ~s",
+                                     [Row,
+				      misc:format_exception(2, Class, Reason, StackTrace)]),
                           []
                   end
           end, Rows),
