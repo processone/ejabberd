@@ -73,7 +73,7 @@
 -callback plain_password_required(binary()) -> boolean().
 -callback store_type(binary()) -> plain | external | scram.
 -callback set_password(binary(), binary(), password()) ->
-    {ets_cache:tag(), {ok, password()} | {error, db_failure}}.
+    {ets_cache:tag(), {ok, password()} | {error, db_failure | not_allowed}}.
 -callback remove_user(binary(), binary()) -> ok | {error, db_failure | not_allowed}.
 -callback user_exists(binary(), binary()) -> {ets_cache:tag(), boolean() | {error, db_failure}}.
 -callback check_password(binary(), binary(), binary(), binary()) -> {ets_cache:tag(), boolean()}.
@@ -252,7 +252,9 @@ check_password_with_authmodule(User, AuthzId, Server, Password, Digest, DigestGe
 	    false
     end.
 
--spec set_password(binary(), binary(), password()) -> ok | {error, atom()}.
+-spec set_password(binary(), binary(), password()) -> ok | {error,
+							    db_failure | not_allowed |
+							    invalid_jid | invalid_password}.
 set_password(User, Server, Password) ->
     case validate_credentials(User, Server, Password) of
 	{ok, LUser, LServer} ->
@@ -266,7 +268,9 @@ set_password(User, Server, Password) ->
 	    Err
     end.
 
--spec try_register(binary(), binary(), password()) -> ok | {error, atom()}.
+-spec try_register(binary(), binary(), password()) -> ok | {error,
+							    db_failure | not_allowed | exists |
+							    invalid_jid | invalid_password}.
 try_register(User, Server, Password) ->
     case validate_credentials(User, Server, Password) of
 	{ok, LUser, LServer} ->
@@ -537,6 +541,7 @@ password_format(LServer) ->
 %%%----------------------------------------------------------------------
 %%% Backend calls
 %%%----------------------------------------------------------------------
+-spec db_try_register(binary(), binary(), password(), module()) -> ok | {error, exists | db_failure | not_allowed}.
 db_try_register(User, Server, Password, Mod) ->
     case erlang:function_exported(Mod, try_register, 3) of
 	true ->
@@ -544,22 +549,24 @@ db_try_register(User, Server, Password, Mod) ->
 			    scram -> password_to_scram(Password);
 			    _ -> Password
 			end,
-	    case use_cache(Mod, Server) of
-		true ->
-		    case ets_cache:update(
-			   cache_tab(Mod), {User, Server}, {ok, Password},
-			   fun() -> Mod:try_register(User, Server, Password1) end,
-			   cache_nodes(Mod, Server)) of
-			{ok, _} -> ok;
-			{error, _} = Err -> Err
-		    end;
-		false ->
-		    ets_cache:untag(Mod:try_register(User, Server, Password1))
+	    Ret = case use_cache(Mod, Server) of
+		      true ->
+			  ets_cache:update(
+			    cache_tab(Mod), {User, Server}, {ok, Password},
+			    fun() -> Mod:try_register(User, Server, Password1) end,
+			    cache_nodes(Mod, Server));
+		      false ->
+			  ets_cache:untag(Mod:try_register(User, Server, Password1))
+		  end,
+	    case Ret of
+		{ok, _} -> ok;
+		{error, _} = Err -> Err
 	    end;
 	false ->
 	    {error, not_allowed}
     end.
 
+-spec db_set_password(binary(), binary(), password(), module()) -> ok | {error, db_failure | not_allowed}.
 db_set_password(User, Server, Password, Mod) ->
     case erlang:function_exported(Mod, set_password, 3) of
 	true ->
@@ -567,17 +574,18 @@ db_set_password(User, Server, Password, Mod) ->
 			    scram -> password_to_scram(Password);
 			    _ -> Password
 			end,
-	    case use_cache(Mod, Server) of
-		true ->
-		    case ets_cache:update(
-			   cache_tab(Mod), {User, Server}, {ok, Password},
-			   fun() -> Mod:set_password(User, Server, Password1) end,
-			   cache_nodes(Mod, Server)) of
-			{ok, _} -> ok;
-			{error, _} = Err -> Err
-		    end;
-		false ->
-		    ets_cache:untag(Mod:set_password(User, Server, Password1))
+	    Ret = case use_cache(Mod, Server) of
+		      true ->
+			  ets_cache:update(
+			    cache_tab(Mod), {User, Server}, {ok, Password},
+			    fun() -> Mod:set_password(User, Server, Password1) end,
+			    cache_nodes(Mod, Server));
+		      false ->
+			  ets_cache:untag(Mod:set_password(User, Server, Password1))
+		  end,
+	    case Ret of
+		{ok, _} -> ok;
+		{error, _} = Err -> Err
 	    end;
 	false ->
 	    {error, not_allowed}

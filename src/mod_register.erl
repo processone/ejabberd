@@ -297,13 +297,7 @@ try_set_password(User, Server, Password, #iq{lang = Lang, meta = M} = IQ) ->
 	    xmpp:make_error(IQ, xmpp:err_not_allowed(format_error(Why), Lang));
 	{error, weak_password = Why} ->
 	    xmpp:make_error(IQ, xmpp:err_not_acceptable(format_error(Why), Lang));
-	{error, empty_password = Why} ->
-	    xmpp:make_error(IQ, xmpp:err_bad_request(format_error(Why), Lang));
 	{error, db_failure = Why} ->
-	    xmpp:make_error(IQ, xmpp:err_internal_server_error(format_error(Why), Lang));
-	{error, Why} ->
-	    ?ERROR_MSG("Failed to change password for user ~s@~s: ~s",
-		       [User, Server, format_error(Why)]),
 	    xmpp:make_error(IQ, xmpp:err_internal_server_error(format_error(Why), Lang))
     end.
 
@@ -367,10 +361,6 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 	{error, exists = Why} ->
 	    {error, xmpp:err_conflict(format_error(Why), Lang)};
 	{error, db_failure = Why} ->
-	    {error, xmpp:err_internal_server_error(format_error(Why), Lang)};
-	{error, Why} ->
-	    ?ERROR_MSG("Failed to register user ~s@~s: ~s",
-		       [User, Server, format_error(Why)]),
 	    {error, xmpp:err_internal_server_error(format_error(Why), Lang)}
     end.
 
@@ -384,8 +374,6 @@ format_error(weak_password) ->
     ?T("The password is too weak");
 format_error(invalid_password) ->
     ?T("The password contains unacceptable characters");
-format_error(empty_password) ->
-    ?T("Empty password");
 format_error(not_allowed) ->
     ?T("Not allowed");
 format_error(exists) ->
