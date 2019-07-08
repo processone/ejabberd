@@ -1510,16 +1510,24 @@ send_stanza(FromString, ToString, Stanza) ->
 	    {error, "JID malformed"}
     end.
 
+-spec send_stanza_c2s(binary(), binary(), binary(), binary()) -> ok | {error, any()}.
 send_stanza_c2s(Username, Host, Resource, Stanza) ->
-    case {fxml_stream:parse_element(Stanza),
-          ejabberd_sm:get_session_pid(Username, Host, Resource)}
-    of
-	{{error, Error}, _} ->
-	    {error, Error};
-	{_, none} ->
-	    {error, no_session};
-	{XmlEl, C2sPid} ->
-	    p1_fsm:send_event(C2sPid, {xmlstreamelement, XmlEl})
+    try
+	#xmlel{} = El = fxml_stream:parse_element(Stanza),
+	CodecOpts = ejabberd_config:codec_options(),
+	Pkt = xmpp:decode(El, ?NS_CLIENT, CodecOpts),
+	case ejabberd_sm:get_session_pid(Username, Host, Resource) of
+	    Pid when is_pid(Pid) ->
+		ejabberd_c2s:send(Pid, Pkt);
+	    _ ->
+		{error, no_session}
+	end
+    catch _:{badmatch, {error, Why} = Err} ->
+	    io:format("invalid xml: ~p~n", [Why]),
+	    Err;
+	  _:{xmpp_codec, Why} ->
+	    io:format("incorrect stanza: ~s~n", [xmpp:format_error(Why)]),
+	    {error, Why}
     end.
 
 privacy_set(Username, Host, QueryS) ->
