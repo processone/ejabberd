@@ -36,6 +36,7 @@
 
 -include("xmpp.hrl").
 -include("logger.hrl").
+-include("ejabberd_stacktrace.hrl").
 
 -record(state, {expire = infinity :: timeout()}).
 -type state() :: #state{}.
@@ -74,7 +75,8 @@ init([]) ->
     {ok, #state{}}.
 
 handle_call(Request, From, State) ->
-    {stop, {unexpected_call, Request, From}, State}.
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
+    noreply(State).
 
 handle_cast({restart_timer, Expire}, State) ->
     State1 = State#state{expire = min(Expire, State#state.expire)},
@@ -171,7 +173,13 @@ calc_checksum(Data) ->
 
 -spec callback(atom() | pid(), #iq{} | timeout, term()) -> any().
 callback(undefined, IQRes, Fun) ->
-    Fun(IQRes);
+    try Fun(IQRes)
+    catch ?EX_RULE(Class, Reason, St) ->
+	    StackTrace = ?EX_STACK(St),
+	    ?ERROR_MSG("Failed to process iq response:~n~s~n** ~s",
+		       [xmpp:pp(IQRes),
+			misc:format_exception(2, Class, Reason, StackTrace)])
+    end;
 callback(Proc, IQRes, Ctx) ->
     try
         Proc ! {iq_reply, IQRes, Ctx}
