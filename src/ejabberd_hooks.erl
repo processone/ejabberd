@@ -379,6 +379,8 @@ run_fold1([{_Seq, Module, Function} | Ls], Hook, Val, Args) ->
     end.
 
 safe_apply(Hook, Module, Function, Args) ->
+    ?DEBUG("Running hook ~p: ~p:~p/~B",
+	   [Hook, Module, Function, length(Args)]),
     try if is_function(Function) ->
 		apply(Function, Args);
        true ->
