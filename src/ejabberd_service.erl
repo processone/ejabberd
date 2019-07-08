@@ -107,7 +107,7 @@ init([State, Opts]) ->
 		     xmlns => ?NS_COMPONENT,
 		     lang => ejabberd_option:language(),
 		     server => ejabberd_config:get_myname(),
-		     host_opts => dict:from_list(HostOpts1),
+		     host_opts => maps:from_list(HostOpts1),
 		     stream_version => undefined,
 		     tls_options => TLSOpts,
 		     global_routes => GlobalRoutes,
@@ -123,13 +123,13 @@ handle_stream_start(_StreamStart,
 	    Txt = ?T("Unable to register route on existing local domain"),
 	    xmpp_stream_in:send(State, xmpp:serr_conflict(Txt, Lang));
 	false ->
-	    NewHostOpts = case dict:is_key(RemoteServer, HostOpts) of
+	    NewHostOpts = case maps:is_key(RemoteServer, HostOpts) of
 			      true ->
 				  HostOpts;
 			      false ->
-				  case dict:find(global, HostOpts) of
+				  case maps:find(global, HostOpts) of
 				      {ok, GlobalPass} ->
-					  dict:from_list([{RemoteServer, GlobalPass}]);
+					  maps:from_list([{RemoteServer, GlobalPass}]);
 				      error ->
 					  HostOpts
 				  end
@@ -142,7 +142,7 @@ get_password_fun(#{remote_server := RemoteServer,
 		   socket := Socket, ip := IP,
 		   host_opts := HostOpts}) ->
     fun(_) ->
-	    case dict:find(RemoteServer, HostOpts) of
+	    case maps:find(RemoteServer, HostOpts) of
 		{ok, Password} ->
 		    {Password, undefined};
 		error ->
@@ -163,7 +163,7 @@ handle_auth_success(_, Mech, _,
 	      [xmpp_socket:pp(Socket), Mech, RemoteServer,
 	       ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
     Routes = if GlobalRoutes ->
-		     dict:fetch_keys(HostOpts);
+		     maps:keys(HostOpts);
 		true ->
 		     [RemoteServer]
 	     end,
@@ -245,7 +245,7 @@ check_from(_From, #{check_from := false}) ->
 check_from(From, #{host_opts := HostOpts}) ->
     %% The default is the standard behaviour in XEP-0114
     Server = From#jid.lserver,
-    dict:is_key(Server, HostOpts).
+    maps:is_key(Server, HostOpts).
 
 random_password() ->
     str:sha(p1_rand:bytes(20)).

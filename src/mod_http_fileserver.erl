@@ -131,7 +131,7 @@ initialize(Host, Opts) ->
     UserAccess = case UserAccess0 of
 		     [] -> none;
 		     _ ->
-			 dict:from_list(UserAccess0)
+			 maps:from_list(UserAccess0)
 		 end,
     ContentTypes = build_list_content_types(
                      mod_http_fileserver_opt:content_types(Opts),
@@ -285,7 +285,7 @@ serve(LocalPath, Auth, DocRoot, DirectoryIndices, CustomHeaders, DefaultContentT
     CanProceed = case {UserAccess, Auth} of
 		     {none, _} -> true;
 		     {_, {User, Pass}} ->
-			 case dict:find(User, UserAccess) of
+			 case maps:find(User, UserAccess) of
 			     {ok, Pass} -> true;
 			     _ -> false
 			 end;
