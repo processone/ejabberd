@@ -257,6 +257,12 @@ c2s_handle_info(#{jid := JID} = State, {_Ref, {resume, OldState}}) ->
 	   [jid:encode(JID)]),
     route_unacked_stanzas(OldState#{mgmt_resend => false}),
     {stop, State};
+c2s_handle_info(State, {timeout, _, Timeout}) when Timeout == ack_timeout;
+						   Timeout == pending_timeout ->
+    %% Late arrival of an already cancelled timer: we just ignore it.
+    %% This might happen because misc:cancel_timer/1 doesn't guarantee
+    %% timer cancelation in the case when p1_server is used.
+    {stop, State};
 c2s_handle_info(State, _) ->
     State.
 
