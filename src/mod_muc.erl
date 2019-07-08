@@ -164,7 +164,7 @@ reload(ServerHost, NewOpts, OldOpts) ->
       fun(Host) ->
 	      lists:foreach(
 		fun({_, _, Pid}) when node(Pid) == node() ->
-			Pid ! config_reloaded;
+			mod_muc_room:config_reloaded(Pid);
 		   (_) ->
 			ok
 		end, get_online_rooms(ServerHost, Host))
@@ -271,7 +271,7 @@ shutdown_rooms(ServerHost, Hosts, RMod) ->
 	     || Host <- Hosts],
     lists:flatmap(
       fun({_, _, Pid}) when node(Pid) == node() ->
-	      Pid ! shutdown,
+	      mod_muc_room:shutdown(Pid),
 	      [Pid];
 	 (_) ->
 	      []
@@ -840,13 +840,13 @@ iq_disco_items(ServerHost, Host, From, Lang, MaxRoomsDiscoItems, Node, RSM)
   when Node == <<"">>; Node == <<"nonemptyrooms">>; Node == <<"emptyrooms">> ->
     Count = count_online_rooms(ServerHost, Host),
     Query = if Node == <<"">>, RSM == undefined, Count > MaxRoomsDiscoItems ->
-		    {get_disco_item, only_non_empty, From, Lang};
+		    {only_non_empty, From, Lang};
 	       Node == <<"nonemptyrooms">> ->
-		    {get_disco_item, only_non_empty, From, Lang};
+		    {only_non_empty, From, Lang};
 	       Node == <<"emptyrooms">> ->
-		    {get_disco_item, 0, From, Lang};
+		    {0, From, Lang};
 	       true ->
-		    {get_disco_item, all, From, Lang}
+		    {all, From, Lang}
 	    end,
     MaxItems = case RSM of
 		   undefined ->
@@ -884,23 +884,16 @@ iq_disco_items(_ServerHost, _Host, _From, Lang, _MaxRoomsDiscoItems, _Node, _RSM
     {error, xmpp:err_item_not_found(?T("Node not found"), Lang)}.
 
 -spec get_room_disco_item({binary(), binary(), pid()},
-			  term()) -> {ok, disco_item()} |
-				     {error, timeout | notfound}.
-get_room_disco_item({Name, Host, Pid},
-		    {get_disco_item, Filter, JID, Lang}) ->
-    RoomJID = jid:make(Name, Host),
-    Timeout = 100,
-    Time = erlang:system_time(millisecond),
-    Query1 = {get_disco_item, Filter, JID, Lang, Time+Timeout},
-    try p1_fsm:sync_send_all_state_event(Pid, Query1, Timeout) of
-	{item, Desc} ->
+			  {mod_muc_room:disco_item_filter(),
+			   jid(), binary()}) -> {ok, disco_item()} |
+						{error, timeout | notfound}.
+get_room_disco_item({Name, Host, Pid}, {Filter, JID, Lang}) ->
+    case mod_muc_room:get_disco_item(Pid, Filter, JID, Lang) of
+	{ok, Desc} ->
+	    RoomJID = jid:make(Name, Host),
 	    {ok, #disco_item{jid = RoomJID, name = Desc}};
-	false ->
-	    {error, notfound}
-    catch _:{timeout, {p1_fsm, _, _}} ->
-	    {error, timeout};
-	  _:{_, {p1_fsm, _, _}} ->
-	    {error, notfound}
+	{error, _} = Err ->
+	    Err
     end.
 
 -spec get_subscribed_rooms(binary(), jid()) -> {ok, [{jid(), [binary()]}]} | {error, any()}.
@@ -931,8 +924,7 @@ get_subscribed_rooms(ServerHost, Host, From) ->
 			       []
 		       end;
 		       ({Name, _, Pid}) ->
-			   case p1_fsm:sync_send_all_state_event(
-				  Pid, {is_subscribed, BareFrom}) of
+			   case mod_muc_room:is_subscribed(Pid, BareFrom) of
 			       {true, Nodes} ->
 				   [{jid:make(Name, Host), Nodes}];
 			       false -> []
@@ -1017,8 +1009,7 @@ process_iq_register_set(ServerHost, Host, From,
 broadcast_service_message(ServerHost, Host, Msg) ->
     lists:foreach(
       fun({_, _, Pid}) ->
-		p1_fsm:send_all_state_event(
-		    Pid, {service_message, Msg})
+	      mod_muc_room:service_message(Pid, Msg)
       end, get_online_rooms(ServerHost, Host)).
 
 -spec get_online_rooms(binary(), binary()) -> [{binary(), binary(), pid()}].

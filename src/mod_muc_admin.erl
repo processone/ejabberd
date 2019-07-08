@@ -673,8 +673,7 @@ muc_create_room(ServerHost, {Name, Host, _}, DefRoomOpts) ->
 destroy_room(Name, Service) ->
     case mod_muc:find_online_room(Name, Service) of
 	{ok, Pid} ->
-	    p1_fsm:send_all_state_event(Pid, destroy),
-	    ok;
+	    mod_muc_room:destroy(Pid);
 	error ->
 	    error
     end.
@@ -793,11 +792,11 @@ get_rooms(ServerHost) ->
       end, Hosts).
 
 get_room_config(Room_pid) ->
-    {ok, R} = p1_fsm:sync_send_all_state_event(Room_pid, get_config),
+    {ok, R} = mod_muc_room:get_config(Room_pid),
     R.
 
 get_room_state(Room_pid) ->
-    {ok, R} = p1_fsm:sync_send_all_state_event(Room_pid, get_state),
+    {ok, R} = mod_muc_room:get_state(Room_pid),
     R.
 
 %%---------------
@@ -882,8 +881,7 @@ find_serverhost(Host, ServerHosts) ->
 act_on_room(Method, destroy, {N, H, Pid}, SH) ->
     Message = iolist_to_binary(io_lib:format(
         <<"Room destroyed by rooms_~s_destroy.">>, [Method])),
-    p1_fsm:send_all_state_event(
-      Pid, {destroy, Message}),
+    mod_muc_room:destroy(Pid, Message),
     mod_muc:room_destroyed(H, N, Pid, SH),
     mod_muc:forget_room(SH, H, N);
 
@@ -991,7 +989,7 @@ change_room_option(Name, Service, OptionString, ValueString) ->
 	    {Option, Value} = format_room_option(OptionString, ValueString),
 	    Config = get_room_config(Pid),
 	    Config2 = change_option(Option, Value, Config),
-	    {ok, _} = p1_fsm:sync_send_all_state_event(Pid, {change_config, Config2}),
+	    {ok, _} = mod_muc_room:set_config(Pid, Config2),
 	    ok
     end.
 
@@ -1093,7 +1091,7 @@ get_room_affiliations(Name, Service) ->
     case mod_muc:find_online_room(Name, Service) of
 	{ok, Pid} ->
 	    %% Get the PID of the online room, then request its state
-	    {ok, StateData} = p1_fsm:sync_send_all_state_event(Pid, get_state),
+	    {ok, StateData} = mod_muc_room:get_state(Pid),
 	    Affiliations = maps:to_list(StateData#state.affiliations),
 	    lists:map(
 	      fun({{Uname, Domain, _Res}, {Aff, Reason}}) when is_atom(Aff)->
@@ -1117,7 +1115,7 @@ get_room_affiliation(Name, Service, JID) ->
 	case mod_muc:find_online_room(Name, Service) of
 	{ok, Pid} ->
 		%% Get the PID of the online room, then request its state
-		{ok, StateData} = p1_fsm:sync_send_all_state_event(Pid, get_state),
+		{ok, StateData} = mod_muc_room:get_state(Pid),
 		UserJID = jid:decode(JID),
 		mod_muc_room:get_affiliation(UserJID, StateData);
 	error ->
@@ -1141,7 +1139,7 @@ set_room_affiliation(Name, Service, JID, AffiliationString) ->
     case mod_muc:find_online_room(Name, Service) of
 	{ok, Pid} ->
 	    %% Get the PID for the online room so we can get the state of the room
-	    {ok, StateData} = p1_fsm:sync_send_all_state_event(Pid, {process_item_change, {jid:decode(JID), affiliation, Affiliation, <<"">>}, undefined}),
+	    {ok, StateData} = mod_muc_room:change_item(Pid, jid:decode(JID), affiliation, Affiliation, <<"">>),
 	    mod_muc:store_room(StateData#state.server_host, StateData#state.host, StateData#state.room, make_opts(StateData)),
 	    ok;
 	error ->
@@ -1163,9 +1161,8 @@ subscribe_room(User, Nick, Room, Nodes) ->
 		    UserJID = jid:replace_resource(UserJID1, <<"modmucadmin">>),
 		    case get_room_pid(Name, Host) of
 			Pid when is_pid(Pid) ->
-			    case p1_fsm:sync_send_all_state_event(
-				   Pid,
-				   {muc_subscribe, UserJID, Nick, NodeList}) of
+			    case mod_muc_room:subscribe(
+				   Pid, UserJID, Nick, NodeList) of
 				{ok, SubscribedNodes} ->
 				    SubscribedNodes;
 				{error, Reason} ->
@@ -1190,9 +1187,7 @@ unsubscribe_room(User, Room) ->
 		UserJID ->
 		    case get_room_pid(Name, Host) of
 			Pid when is_pid(Pid) ->
-			    case p1_fsm:sync_send_all_state_event(
-				   Pid,
-				   {muc_unsubscribe, UserJID}) of
+			    case mod_muc_room:unsubscribe(Pid, UserJID) of
 				ok ->
 				    ok;
 				{error, Reason} ->
@@ -1213,7 +1208,7 @@ unsubscribe_room(User, Room) ->
 get_subscribers(Name, Host) ->
     case get_room_pid(Name, Host) of
 	Pid when is_pid(Pid) ->
-	    {ok, JIDList} = p1_fsm:sync_send_all_state_event(Pid, get_subscribers),
+	    {ok, JIDList} = mod_muc_room:get_subscribers(Pid),
 	    [jid:encode(jid:remove_resource(J)) || J <- JIDList];
 	_ ->
 	    throw({error, "The room does not exist"})

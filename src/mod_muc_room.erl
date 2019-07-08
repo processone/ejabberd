@@ -39,7 +39,21 @@
 	 is_occupant_or_admin/2,
 	 route/2,
 	 expand_opts/1,
-	 config_fields/0]).
+	 config_fields/0,
+	 destroy/1,
+	 destroy/2,
+	 shutdown/1,
+	 get_config/1,
+	 set_config/2,
+	 get_state/1,
+	 change_item/5,
+	 config_reloaded/1,
+	 subscribe/4,
+	 unsubscribe/2,
+	 is_subscribed/2,
+	 get_subscribers/1,
+	 service_message/2,
+	 get_disco_item/4]).
 
 %% gen_fsm callbacks
 -export([init/1,
@@ -77,8 +91,8 @@
 -type fsm_stop() :: {stop, normal, state()}.
 -type fsm_next() :: {next_state, normal_state, state()}.
 -type fsm_transition() :: fsm_stop() | fsm_next().
-
--export_type([state/0]).
+-type disco_item_filter() ::  only_non_empty | all | non_neg_integer().
+-export_type([state/0, disco_item_filter/0]).
 
 -callback set_affiliation(binary(), binary(), binary(), jid(), affiliation(),
 			  binary()) -> ok | {error, any()}.
@@ -126,6 +140,114 @@ start_link(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, QueueT
     p1_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
 				 RoomShaper, Opts, QueueType],
 		       ?FSMOPTS).
+
+-spec destroy(pid()) -> ok.
+destroy(Pid) ->
+    p1_fsm:send_all_state_event(Pid, destroy).
+
+-spec destroy(pid(), binary()) -> ok.
+destroy(Pid, Reason) ->
+    p1_fsm:send_all_state_event(Pid, {destroy, Reason}).
+
+-spec shutdown(pid()) -> boolean().
+shutdown(Pid) ->
+    ejabberd_cluster:send(Pid, shutdown).
+
+-spec config_reloaded(pid()) -> boolean().
+config_reloaded(Pid) ->
+    ejabberd_cluster:send(Pid, config_reloaded).
+
+-spec get_config(pid()) -> {ok, config()} | {error, notfound | timeout}.
+get_config(Pid) ->
+    try p1_fsm:sync_send_all_state_event(Pid, get_config)
+    catch _:{timeout, {p1_fsm, _, _}} ->
+	    {error, timeout};
+	  _:{_, {p1_fsm, _, _}} ->
+	    {error, notfound}
+    end.
+
+-spec set_config(pid(), config()) -> {ok, config()} | {error, notfound | timeout}.
+set_config(Pid, Config) ->
+    try p1_fsm:sync_send_all_state_event(Pid, {change_config, Config})
+    catch _:{timeout, {p1_fsm, _, _}} ->
+	    {error, timeout};
+	  _:{_, {p1_fsm, _, _}} ->
+	    {error, notfound}
+    end.
+
+-spec change_item(pid(), jid(), affiliation | role, affiliation() | role(), binary()) ->
+			 {ok, state()} | {error, notfound | timeout}.
+change_item(Pid, JID, Type, AffiliationOrRole, Reason) ->
+    try p1_fsm:sync_send_all_state_event(
+	  Pid, {process_item_change, {JID, Type, AffiliationOrRole, Reason}, undefined})
+    catch _:{timeout, {p1_fsm, _, _}} ->
+	    {error, timeout};
+	  _:{_, {p1_fsm, _, _}} ->
+	    {error, notfound}
+    end.
+
+-spec get_state(pid()) -> {ok, state()} | {error, notfound | timeout}.
+get_state(Pid) ->
+    try p1_fsm:sync_send_all_state_event(Pid, get_state)
+    catch _:{timeout, {p1_fsm, _, _}} ->
+	    {error, timeout};
+	  _:{_, {p1_fsm, _, _}} ->
+	    {error, notfound}
+    end.
+
+-spec subscribe(pid(), jid(), binary(), [binary()]) -> {ok, [binary()]} | {error, binary()}.
+subscribe(Pid, JID, Nick, Nodes) ->
+    try p1_fsm:sync_send_all_state_event(Pid, {muc_subscribe, JID, Nick, Nodes})
+    catch _:{timeout, {p1_fsm, _, _}} ->
+	    {error, ?T("Request has timed out")};
+	  _:{_, {p1_fsm, _, _}} ->
+	    {error, ?T("Conference room does not exist")}
+    end.
+
+-spec unsubscribe(pid(), jid()) -> ok | {error, binary()}.
+unsubscribe(Pid, JID) ->
+    try p1_fsm:sync_send_all_state_event(Pid, {muc_unsubscribe, JID})
+    catch _:{timeout, {p1_fsm, _, _}} ->
+	    {error, ?T("Request has timed out")};
+	  _:{_, {p1_fsm, _, _}} ->
+	    {error, ?T("Conference room does not exist")}
+    end.
+
+-spec is_subscribed(pid(), jid()) -> {true, [binary()]} | false.
+is_subscribed(Pid, JID) ->
+    try p1_fsm:sync_send_all_state_event(Pid, {is_subscribed, JID})
+    catch _:{_, {p1_fsm, _, _}} -> false
+    end.
+
+-spec get_subscribers(pid()) -> {ok, [jid()]} | {error, notfound | timeout}.
+get_subscribers(Pid) ->
+    try p1_fsm:sync_send_all_state_event(Pid, get_subscribers)
+    catch _:{timeout, {p1_fsm, _, _}} ->
+	    {error, timeout};
+	  _:{_, {p1_fsm, _, _}} ->
+	    {error, notfound}
+    end.
+
+-spec service_message(pid(), binary()) -> ok.
+service_message(Pid, Text) ->
+    p1_fsm:send_all_state_event(Pid, {service_message, Text}).
+
+-spec get_disco_item(pid(), disco_item_filter(), jid(), binary()) ->
+			    {ok, binary()} | {error, notfound | timeout}.
+get_disco_item(Pid, Filter, JID, Lang) ->
+    Timeout = 100,
+    Time = erlang:system_time(millisecond),
+    Query = {get_disco_item, Filter, JID, Lang, Time+Timeout},
+    try p1_fsm:sync_send_all_state_event(Pid, Query, Timeout) of
+	{item, Desc} ->
+	    {ok, Desc};
+	false ->
+	    {error, notfound}
+    catch _:{timeout, {p1_fsm, _, _}} ->
+	    {error, timeout};
+	  _:{_, {p1_fsm, _, _}} ->
+	    {error, notfound}
+    end.
 
 %%%----------------------------------------------------------------------
 %%% Callback functions from gen_fsm
@@ -593,7 +715,7 @@ handle_sync_event({muc_subscribe, From, Nick, Nodes}, _From,
 	    NewConfig = (NewState#state.config)#config{
 			  captcha_protected = CaptchaRequired,
 			  password_protected = PasswordProtected},
-	    {reply, {error, <<"Request is ignored">>},
+	    {reply, {error, ?T("Request is ignored")},
 	     NewState#state{config = NewConfig}};
 	{error, Err} ->
 	    {reply, {error, get_error_text(Err)}, StateName, StateData}
@@ -605,7 +727,7 @@ handle_sync_event({muc_unsubscribe, From}, _From, StateName, StateData) ->
 	{result, _, NewState} ->
 	    {reply, ok, StateName, NewState};
 	{ignore, NewState} ->
-	    {reply, {error, <<"Request is ignored">>}, NewState};
+	    {reply, {error, ?T("Request is ignored")}, NewState};
 	{error, Err} ->
 	    {reply, {error, get_error_text(Err)}, StateName, StateData}
     end;
