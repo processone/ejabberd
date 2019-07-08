@@ -325,6 +325,12 @@ normal_state({route, <<"">>,
 			    {xmpp:make_error(IQ0, Error), StateData}
 		    end,
 		if IQRes /= ignore ->
+			State = case NewStateData of
+				  stop ->
+				    StateData;
+				  _ ->
+				    NewStateData
+				end,
 			case ejabberd_hooks:run_fold(muc_filter_iq_result, NewStateData#state.server_host, IQRes, [NewStateData]) of
 			  drop ->
 			    ok;
