@@ -331,7 +331,7 @@ normal_state({route, <<"">>,
 				  _ ->
 				    NewStateData
 				end,
-			case ejabberd_hooks:run_fold(muc_filter_iq_result, NewStateData#state.server_host, IQRes, [NewStateData]) of
+			case ejabberd_hooks:run_fold(muc_filter_iq_result, State#state.server_host, IQRes, [State]) of
 			  drop ->
 			    ok;
 			  IQRes2 ->
