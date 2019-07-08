@@ -325,11 +325,11 @@ normal_state({route, <<"">>,
 			    {xmpp:make_error(IQ0, Error), StateData}
 		    end,
 		if IQRes /= ignore ->
-		     case ejabberd_hooks:run_fold(muc_filter_iq_result, NewStateData#state.server_host, IQRes, [NewStateData]) of
-               drop ->
-                 ok;
-               IQRes2 ->
-                 ejabberd_router:route(IQRes2)
+            case ejabberd_hooks:run_fold(muc_filter_iq_result, NewStateData#state.server_host, IQRes, [NewStateData]) of
+              drop ->
+                ok;
+              IQRes2 ->
+                ejabberd_router:route(IQRes2)
             end;
 		   true ->
 			ok
@@ -4478,11 +4478,11 @@ send_wrapped(From, To, Packet, Node, State) ->
 				 end,
 			    NewPacket = wrap(From, JID, Packet, Node, Id),
 			    NewPacket2 = xmpp:put_meta(NewPacket, in_muc_mam, MamEnabled),
-			    case ejabberd_hooks:run_fold(muc_filter_send_offline, State#state.server_host, NewPacket2, [State, From, To]) of
-                   drop ->
-                       ok;
-                   NewPacket3 ->
-                       ejabberd_router:route(xmpp:set_from_to(NewPacket3, State#state.jid, JID))
+                case ejabberd_hooks:run_fold(muc_filter_send_offline, State#state.server_host, NewPacket2, [State, From, To]) of
+                  drop ->
+                    ok;
+                  NewPacket3 ->
+                    ejabberd_router:route(xmpp:set_from_to(NewPacket3, State#state.jid, JID))
                 end;
 			false ->
 			    ok
@@ -4513,11 +4513,11 @@ send_wrapped(From, To, Packet, Node, State) ->
 		_ ->
 		    ok
 	    end,
-	    case ejabberd_hooks:run_fold(muc_filter_send_online, State#state.server_host, Packet, [State, From, To]) of
-           drop ->
-               ok;
-           NewPacket1 ->
-               ejabberd_router:route(xmpp:set_from_to(NewPacket1, From, To))
+        case ejabberd_hooks:run_fold(muc_filter_send_online, State#state.server_host, Packet, [State, From, To]) of
+          drop ->
+            ok;
+          NewPacket1 ->
+            ejabberd_router:route(xmpp:set_from_to(NewPacket1, From, To))
         end
     end.
 
