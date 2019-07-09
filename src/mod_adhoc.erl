@@ -90,7 +90,7 @@ reload(_Host, _NewOpts, _OldOpts) ->
     ok.
 
 %-------------------------------------------------------------------------
-
+-spec get_local_commands(mod_disco:items_acc(), jid(), jid(), binary(), binary()) -> mod_disco:items_acc().
 get_local_commands(Acc, _From,
 		   #jid{server = Server, lserver = LServer} = _To, <<"">>,
 		   Lang) ->
@@ -118,7 +118,7 @@ get_local_commands(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
 %-------------------------------------------------------------------------
-
+-spec get_sm_commands(mod_disco:items_acc(), jid(), jid(), binary(), binary()) -> mod_disco:items_acc().
 get_sm_commands(Acc, _From,
 		#jid{lserver = LServer} = To, <<"">>, Lang) ->
     Display = mod_adhoc_opt:report_commands_node(LServer),
@@ -141,7 +141,7 @@ get_sm_commands(_Acc, From,
 get_sm_commands(Acc, _From, _To, _Node, _Lang) -> Acc.
 
 %-------------------------------------------------------------------------
-
+-spec get_local_identity([identity()], jid(), jid(), binary(), binary()) -> [identity()].
 %% On disco info request to the ad-hoc node, return automation/command-list.
 get_local_identity(Acc, _From, _To, ?NS_COMMANDS,
 		   Lang) ->
@@ -158,7 +158,7 @@ get_local_identity(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
 %-------------------------------------------------------------------------
-
+-spec get_sm_identity([identity()], jid(), jid(), binary(), binary()) -> [identity()].
 %% On disco info request to the ad-hoc node, return automation/command-list.
 get_sm_identity(Acc, _From, _To, ?NS_COMMANDS, Lang) ->
     [#identity{category = <<"automation">>,
@@ -168,9 +168,7 @@ get_sm_identity(Acc, _From, _To, ?NS_COMMANDS, Lang) ->
 get_sm_identity(Acc, _From, _To, _Node, _Lang) -> Acc.
 
 %-------------------------------------------------------------------------
--spec get_local_features({error, stanza_error()} | {result, [binary()]} | empty,
-			 jid(), jid(), binary(), binary()) ->
-				{error, stanza_error()} | {result, [binary()]} | empty.
+-spec get_local_features(mod_disco:features_acc(), jid(), jid(), binary(), binary()) -> mod_disco:features_acc().
 get_local_features(Acc, _From, _To, <<"">>, _Lang) ->
     Feats = case Acc of
 	      {result, I} -> I;
@@ -187,7 +185,7 @@ get_local_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
 %-------------------------------------------------------------------------
-
+-spec get_sm_features(mod_disco:features_acc(), jid(), jid(), binary(), binary()) -> mod_disco:features_acc().
 get_sm_features(Acc, _From, _To, <<"">>, _Lang) ->
     Feats = case Acc of
 	      {result, I} -> I;
@@ -200,13 +198,15 @@ get_sm_features(_Acc, _From, _To, ?NS_COMMANDS,
 get_sm_features(Acc, _From, _To, _Node, _Lang) -> Acc.
 
 %-------------------------------------------------------------------------
-
+-spec process_local_iq(iq()) -> iq() | ignore.
 process_local_iq(IQ) ->
     process_adhoc_request(IQ, local).
 
+-spec process_sm_iq(iq()) -> iq() | ignore.
 process_sm_iq(IQ) ->
     process_adhoc_request(IQ, sm).
 
+-spec process_adhoc_request(iq(), sm | local) -> iq() | ignore.
 process_adhoc_request(#iq{from = From, to = To,
 			  type = set, lang = Lang,
 			  sub_els = [#adhoc_command{} = SubEl]} = IQ, Type) ->
@@ -233,8 +233,7 @@ process_adhoc_request(#iq{from = From, to = To,
 process_adhoc_request(#iq{} = IQ, _Hooks) ->
     xmpp:make_error(IQ, xmpp:err_bad_request()).
 
--spec ping_item(empty | {error, stanza_error()} | {result, [disco_item()]},
-		jid(), jid(), binary()) -> {result, [disco_item()]}.
+-spec ping_item(mod_disco:items_acc(), jid(), jid(), binary()) -> {result, [disco_item()]}.
 ping_item(Acc, _From, #jid{server = Server} = _To,
 	  Lang) ->
     Items = case Acc of
@@ -265,6 +264,7 @@ ping_command(_Acc, _From, _To,
     end;
 ping_command(Acc, _From, _To, _Request) -> Acc.
 
+-spec fix_lang(binary(), adhoc_command()) -> adhoc_command().
 fix_lang(Lang, #adhoc_command{lang = <<>>} = Cmd) ->
     Cmd#adhoc_command{lang = Lang};
 fix_lang(_, Cmd) ->

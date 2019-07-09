@@ -47,6 +47,7 @@
 
 -type features_acc() :: {error, stanza_error()} | {result, [binary()]} | empty.
 -type items_acc() :: {error, stanza_error()} | {result, [disco_item()]} | empty.
+-export_type([features_acc/0, items_acc/0]).
 
 start(Host, Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host,
