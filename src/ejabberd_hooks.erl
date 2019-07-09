@@ -111,16 +111,16 @@ run(Hook, Host, Args) ->
 	    ok
     end.
 
--spec run_fold(atom(), any(), list()) -> any().
+-spec run_fold(atom(), T, list()) -> T.
 %% @doc Run the calls of this hook in order.
 %% The arguments passed to the function are: [Val | Args].
 %% The result of a call is used as Val for the next call.
-%% If a call returns 'stop', no more calls are performed and 'stopped' is returned.
+%% If a call returns 'stop', no more calls are performed.
 %% If a call returns {stop, NewVal}, no more calls are performed and NewVal is returned.
 run_fold(Hook, Val, Args) ->
     run_fold(Hook, global, Val, Args).
 
--spec run_fold(atom(), binary() | global, any(), list()) -> any().
+-spec run_fold(atom(), binary() | global, T, list()) -> T.
 run_fold(Hook, Host, Val, Args) ->
     try ets:lookup(hooks, {Hook, Host}) of
 	[{_, Ls}] ->
@@ -210,7 +210,7 @@ run1([{_Seq, Module, Function} | Ls], Hook, Args) ->
 	    run1(Ls, Hook, Args)
     end.
 
--spec run_fold1([hook()], atom(), T, list()) -> T | stopped.
+-spec run_fold1([hook()], atom(), T, list()) -> T.
 run_fold1([], _Hook, Val, _Args) ->
     Val;
 run_fold1([{_Seq, Module, Function} | Ls], Hook, Val, Args) ->
@@ -219,7 +219,7 @@ run_fold1([{_Seq, Module, Function} | Ls], Hook, Val, Args) ->
 	'EXIT' ->
 	    run_fold1(Ls, Hook, Val, Args);
 	stop ->
-	    stopped;
+	    Val;
 	{stop, NewVal} ->
 	    NewVal;
 	NewVal ->
