@@ -92,6 +92,7 @@
 -type fsm_next() :: {next_state, normal_state, state()}.
 -type fsm_transition() :: fsm_stop() | fsm_next().
 -type disco_item_filter() ::  only_non_empty | all | non_neg_integer().
+-type admin_action() :: {jid(), affiliation | role, affiliation() | role(), binary()}.
 -export_type([state/0, disco_item_filter/0]).
 
 -callback set_affiliation(binary(), binary(), binary(), jid(), affiliation(),
@@ -1827,6 +1828,7 @@ update_online_user(JID, #user{nick = Nick} = User, StateData) ->
     end,
     NewStateData.
 
+-spec set_subscriber(jid(), binary(), [binary()], state()) -> state().
 set_subscriber(JID, Nick, Nodes,
 	       #state{room = Room, host = Host, server_host = ServerHost} = StateData) ->
     BareJID = jid:remove_resource(JID),
@@ -2856,16 +2858,14 @@ process_admin_items_set(UJID, Items, Lang, StateData) ->
 	{error, Err} -> {error, Err}
     end.
 
--spec process_item_change(jid()) -> function().
+-spec process_item_change(jid()) -> fun((admin_action(), state() | {error, stanza_error()}) ->
+					       state() | {error, stanza_error()}).
 process_item_change(UJID) ->
     fun(_, {error, _} = Err) ->
 	    Err;
        (Item, SD) ->
 	    process_item_change(Item, SD, UJID)
     end.
-
--type admin_action() :: {jid(), affiliation | role,
-			 affiliation() | role(), binary()}.
 
 -spec process_item_change(admin_action(), state(), undefined | jid()) -> state() | {error, stanza_error()}.
 process_item_change(Item, SD, UJID) ->
@@ -3955,6 +3955,7 @@ destroy_room(DEl, StateData) ->
     maybe_forget_room(StateData),
     {result, undefined, stop}.
 
+-spec maybe_forget_room(state()) -> state().
 maybe_forget_room(StateData) ->
     Forget = case (StateData#state.config)#config.persistent of
 		 true ->
@@ -4263,6 +4264,7 @@ process_iq_mucsub(_From, #iq{type = get, lang = Lang}, _StateData) ->
     Txt = ?T("Value 'get' of 'type' attribute is not allowed"),
     {error, xmpp:err_bad_request(Txt, Lang)}.
 
+-spec remove_subscriptions(state()) -> state().
 remove_subscriptions(StateData) ->
     if not (StateData#state.config)#config.allow_subscription ->
 	    StateData#state{subscribers = #{},
