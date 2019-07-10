@@ -446,41 +446,49 @@ best_match(Pattern, Opts) ->
 
 -spec pmap(fun((T1) -> T2), [T1]) -> [T2].
 pmap(Fun, [_,_|_] = List) ->
-    Self = self(),
-    lists:map(
-      fun({Pid, Ref}) ->
-	      receive
-		  {Pid, Ret} ->
+    case erlang:system_info(logical_processors) of
+	1 -> lists:map(Fun, List);
+	_ ->
+	    Self = self(),
+	    lists:map(
+	      fun({Pid, Ref}) ->
 		      receive
-			  {'DOWN', Ref, _, _, _} ->
-			      Ret
-		      end;
-		  {'DOWN', Ref, _, _, Reason} ->
-		      exit(Reason)
-	      end
-      end, [spawn_monitor(
-	      fun() -> Self ! {self(), Fun(X)} end)
-	    || X <- List]);
+			  {Pid, Ret} ->
+			      receive
+				  {'DOWN', Ref, _, _, _} ->
+				      Ret
+			      end;
+			  {'DOWN', Ref, _, _, Reason} ->
+			      exit(Reason)
+		      end
+	      end, [spawn_monitor(
+		      fun() -> Self ! {self(), Fun(X)} end)
+		    || X <- List])
+    end;
 pmap(Fun, List) ->
     lists:map(Fun, List).
 
 -spec peach(fun((T) -> any()), [T]) -> ok.
 peach(Fun, [_,_|_] = List) ->
-    Self = self(),
-    lists:foreach(
-      fun({Pid, Ref}) ->
-	      receive
-		  Pid ->
+    case erlang:system_info(logical_processors) of
+	1 -> lists:foreach(Fun, List);
+	_ ->
+	    Self = self(),
+	    lists:foreach(
+	      fun({Pid, Ref}) ->
 		      receive
-			  {'DOWN', Ref, _, _, _} ->
-			      ok
-		      end;
-		  {'DOWN', Ref, _, _, Reason} ->
-		      exit(Reason)
-	      end
-      end, [spawn_monitor(
-	      fun() -> Fun(X), Self ! self() end)
-	    || X <- List]);
+			  Pid ->
+			      receive
+				  {'DOWN', Ref, _, _, _} ->
+				      ok
+			      end;
+			  {'DOWN', Ref, _, _, Reason} ->
+			      exit(Reason)
+		      end
+	      end, [spawn_monitor(
+		      fun() -> Fun(X), Self ! self() end)
+		    || X <- List])
+    end;
 peach(Fun, List) ->
     lists:foreach(Fun, List).
 
