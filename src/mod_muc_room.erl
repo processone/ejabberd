@@ -3372,7 +3372,7 @@ process_iq_owner(From, #iq{type = get, lang = Lang,
 	    {error, xmpp:err_bad_request()}
     end;
 process_iq_owner(_, _, _) ->
-	  {error, xmpp:err_bad_request()}.
+    {error, xmpp:err_bad_request()}.
 
 -spec is_allowed_log_change(muc_roomconfig:result(), state(), jid()) -> boolean().
 is_allowed_log_change(Options, StateData, From) ->
