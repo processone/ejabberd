@@ -147,10 +147,12 @@ load_file(File) ->
 	{ok, Lines} ->
 	    lists:map(
 	      fun({In, Out}) ->
-		      try
-			  InB = unicode:characters_to_binary(In, utf8),
-			  OutB = unicode:characters_to_binary(Out, utf8),
-			  {{Lang, InB}, OutB}
+		      try {unicode:characters_to_binary(In, utf8),
+			   unicode:characters_to_binary(Out, utf8)} of
+			  {InB, OutB} when is_binary(InB), is_binary(OutB) ->
+			      {{Lang, InB}, OutB};
+			  _ ->
+			      {error, File, bad_encoding}
 		      catch _:badarg ->
 			      {error, File, bad_encoding}
 		      end;
