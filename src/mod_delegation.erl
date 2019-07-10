@@ -44,7 +44,6 @@
 -include("xmpp.hrl").
 -include("translate.hrl").
 
--type disco_acc() :: {error, stanza_error()} | {result, [binary()]} | empty.
 -type route_type() :: ejabberd_sm | ejabberd_local.
 -type delegations() :: #{{binary(), route_type()} => {binary(), disco_info()}}.
 -record(state, {server_host = <<"">> :: binary()}).
@@ -115,19 +114,21 @@ ejabberd_local(IQ) ->
 ejabberd_sm(IQ) ->
     process_iq(IQ, ejabberd_sm).
 
--spec disco_local_features(disco_acc(), jid(), jid(), binary(), binary()) -> disco_acc().
+-spec disco_local_features(mod_disco:features_acc(), jid(), jid(),
+			   binary(), binary()) -> mod_disco:features_acc().
 disco_local_features(Acc, From, To, Node, Lang) ->
     disco_features(Acc, From, To, Node, Lang, ejabberd_local).
 
--spec disco_sm_features(disco_acc(), jid(), jid(), binary(), binary()) -> disco_acc().
+-spec disco_sm_features(mod_disco:features_acc(), jid(), jid(),
+			binary(), binary()) -> mod_disco:features_acc().
 disco_sm_features(Acc, From, To, Node, Lang) ->
     disco_features(Acc, From, To, Node, Lang, ejabberd_sm).
 
--spec disco_local_identity(disco_acc(), jid(), jid(), binary(), binary()) -> disco_acc().
+-spec disco_local_identity([identity()], jid(), jid(), binary(), binary()) -> [identity()].
 disco_local_identity(Acc, From, To, Node, Lang) ->
     disco_identity(Acc, From, To, Node, Lang, ejabberd_local).
 
--spec disco_sm_identity(disco_acc(), jid(), jid(), binary(), binary()) -> disco_acc().
+-spec disco_sm_identity([identity()], jid(), jid(), binary(), binary()) -> [identity()].
 disco_sm_identity(Acc, From, To, Node, Lang) ->
     disco_identity(Acc, From, To, Node, Lang, ejabberd_sm).
 
@@ -335,8 +336,8 @@ send_disco_queries(LServer, Host, NS) ->
       end, [{ejabberd_local, <<(?NS_DELEGATION)/binary, "::", NS/binary>>},
 	    {ejabberd_sm, <<(?NS_DELEGATION)/binary, ":bare:", NS/binary>>}]).
 
--spec disco_features(disco_acc(), jid(), jid(), binary(), binary(),
-		     route_type()) -> disco_acc().
+-spec disco_features(mod_disco:features_acc(), jid(), jid(), binary(), binary(),
+		     route_type()) -> mod_disco:features_acc().
 disco_features(Acc, _From, To, <<"">>, _Lang, Type) ->
     Delegations = get_delegations(To#jid.lserver),
     Features = my_features(Type) ++
@@ -354,8 +355,8 @@ disco_features(Acc, _From, To, <<"">>, _Lang, Type) ->
 disco_features(Acc, _, _, _, _, _) ->
     Acc.
 
--spec disco_identity(disco_acc(), jid(), jid(), binary(), binary(),
-		     route_type()) -> disco_acc().
+-spec disco_identity([identity()], jid(), jid(), binary(), binary(),
+		     route_type()) -> [identity()].
 disco_identity(Acc, _From, To, <<"">>, _Lang, Type) ->
     Delegations = get_delegations(To#jid.lserver),
     Identities = lists:flatmap(
@@ -364,11 +365,7 @@ disco_identity(Acc, _From, To, <<"">>, _Lang, Type) ->
 		      (_) ->
 			   []
 		   end, maps:to_list(Delegations)),
-    case Acc of
-	empty when Identities /= [] -> {result, Identities};
-	{result, Ids} -> {result, Ids ++ Identities};
-	Acc -> Acc
-    end;
+    Acc ++ Identities;
 disco_identity(Acc, _From, _To, _Node, _Lang, _Type) ->
     Acc.
 

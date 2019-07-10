@@ -225,13 +225,16 @@ log_and_disconnect(#{ip := {Addr, _}, lang := Lang} = State, Attempts, UnbanTS) 
     Err = xmpp:serr_policy_violation({Format, Args}, Lang),
     {stop, ejabberd_c2s:send(State, Err)}.
 
+-spec is_whitelisted(binary(), inet:ip_address()) -> boolean().
 is_whitelisted(Host, Addr) ->
     Access = mod_fail2ban_opt:access(Host),
     acl:match_rule(Host, Access, Addr) == allow.
 
+-spec seconds_to_now(non_neg_integer()) -> erlang:timestamp().
 seconds_to_now(Secs) ->
     {Secs div 1000000, Secs rem 1000000, 0}.
 
+-spec format_date(calendar:datetime()) -> iolist().
 format_date({{Year, Month, Day}, {Hour, Minute, Second}}) ->
     io_lib:format("~2..0w:~2..0w:~2..0w ~2..0w.~2..0w.~4..0w",
 		  [Hour, Minute, Second, Day, Month, Year]).

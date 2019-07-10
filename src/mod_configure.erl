@@ -119,8 +119,10 @@ depends(_Host, _Opts) ->
 	[<<"http:">>, <<"jabber.org">>, <<"protocol">>,
 	 <<"admin">>, Sub]).
 
+-spec tokenize(binary()) -> [binary()].
 tokenize(Node) -> str:tokens(Node, <<"/#">>).
 
+-spec get_sm_identity([identity()], jid(), jid(), binary(), binary()) -> [identity()].
 get_sm_identity(Acc, _From, _To, Node, Lang) ->
     case Node of
       <<"config">> ->
@@ -128,6 +130,7 @@ get_sm_identity(Acc, _From, _To, Node, Lang) ->
       _ -> Acc
     end.
 
+-spec get_local_identity([identity()], jid(), jid(), binary(), binary()) -> [identity()].
 get_local_identity(Acc, _From, _To, Node, Lang) ->
     LNode = tokenize(Node),
     case LNode of
@@ -190,6 +193,8 @@ get_local_identity(Acc, _From, _To, Node, Lang) ->
 	  allow -> {result, Feats}
 	end).
 
+-spec get_sm_features(mod_disco:features_acc(), jid(), jid(),
+		      binary(), binary()) -> mod_disco:features_acc().
 get_sm_features(Acc, From,
 		#jid{lserver = LServer} = _To, Node, Lang) ->
     case gen_mod:is_loaded(LServer, mod_adhoc) of
@@ -202,6 +207,8 @@ get_sm_features(Acc, From,
 	  end
     end.
 
+-spec get_local_features(mod_disco:features_acc(), jid(), jid(),
+			 binary(), binary()) -> mod_disco:features_acc().
 get_local_features(Acc, From,
 		   #jid{lserver = LServer} = _To, Node, Lang) ->
     case gen_mod:is_loaded(LServer, mod_adhoc) of
@@ -264,10 +271,8 @@ get_local_features(Acc, From,
     end.
 
 %%%-----------------------------------------------------------------------
--spec adhoc_sm_items(empty | {error, stanza_error()} | {result, [disco_item()]},
-		     jid(), jid(), binary()) -> {error, stanza_error()} |
-						{result, [disco_item()]} |
-						empty.
+-spec adhoc_sm_items(mod_disco:items_acc(),
+		     jid(), jid(), binary()) -> mod_disco:items_acc().
 adhoc_sm_items(Acc, From, #jid{lserver = LServer} = To,
 	       Lang) ->
     case acl:match_rule(LServer, configure, From) of
@@ -283,7 +288,8 @@ adhoc_sm_items(Acc, From, #jid{lserver = LServer} = To,
     end.
 
 %%%-----------------------------------------------------------------------
-
+-spec get_sm_items(mod_disco:items_acc(), jid(), jid(),
+		   binary(), binary()) -> mod_disco:items_acc().
 get_sm_items(Acc, From,
 	     #jid{user = User, server = Server, lserver = LServer} =
 		 To,
@@ -309,6 +315,7 @@ get_sm_items(Acc, From,
 	  end
     end.
 
+-spec get_user_resources(binary(), binary()) -> [disco_item()].
 get_user_resources(User, Server) ->
     Rs = ejabberd_sm:get_user_resources(User, Server),
     lists:map(fun (R) ->
@@ -319,10 +326,8 @@ get_user_resources(User, Server) ->
 
 %%%-----------------------------------------------------------------------
 
--spec adhoc_local_items(empty | {error, stanza_error()} | {result, [disco_item()]},
-			jid(), jid(), binary()) -> {error, stanza_error()} |
-						   {result, [disco_item()]} |
-						   empty.
+-spec adhoc_local_items(mod_disco:items_acc(),
+			jid(), jid(), binary()) -> mod_disco:items_acc().
 adhoc_local_items(Acc, From,
 		  #jid{lserver = LServer, server = Server} = To, Lang) ->
     case acl:match_rule(LServer, configure, From) of
@@ -336,7 +341,7 @@ adhoc_local_items(Acc, From,
 					      <<"">>, Server, Lang),
 	  Nodes1 = lists:filter(
 		     fun (#disco_item{node = Nd}) ->
-			     F = get_local_features([], From, To, Nd, Lang),
+			     F = get_local_features(empty, From, To, Nd, Lang),
 			     case F of
 				 {result, [?NS_COMMANDS]} -> true;
 				 _ -> false
@@ -347,6 +352,8 @@ adhoc_local_items(Acc, From,
       _ -> Acc
     end.
 
+-spec recursively_get_local_items(global | vhost, binary(), binary(),
+				  binary(), binary()) -> [disco_item()].
 recursively_get_local_items(_PermLev, _LServer,
 			    <<"online users">>, _Server, _Lang) ->
     [];
@@ -376,6 +383,7 @@ recursively_get_local_items(PermLev, LServer, Node,
 	end,
 	Items)).
 
+-spec get_permission_level(jid()) -> global | vhost.
 get_permission_level(JID) ->
     case acl:match_rule(global, configure, JID) of
       allow -> global;
@@ -397,6 +405,8 @@ get_permission_level(JID) ->
 	      end
 	end).
 
+-spec get_local_items(mod_disco:items_acc(), jid(), jid(),
+		      binary(), binary()) -> mod_disco:items_acc().
 get_local_items(Acc, From, #jid{lserver = LServer} = To,
 		<<"">>, Lang) ->
     case gen_mod:is_loaded(LServer, mod_adhoc) of
@@ -489,10 +499,8 @@ get_local_items(Acc, From, #jid{lserver = LServer} = To,
     end.
 
 %%%-----------------------------------------------------------------------
-
-%% @spec ({PermissionLevel, Host}, [string()], Server::string(), Lang)
-%%              -> {result, [xmlelement()]}
-%%       PermissionLevel = global | vhost
+-spec get_local_items({global | vhost, binary()}, [binary()],
+		      binary(), binary()) -> {result, [disco_item()]} | {error, stanza_error()}.
 get_local_items(_Host, [], Server, Lang) ->
     {result,
      [?NODE(?T("Configuration"), <<"config">>),
@@ -550,7 +558,7 @@ get_local_items({_, Host},
 				       name = <<U/binary, $@, S/binary>>}
 		   end, Sub)}
     catch _:_ ->
-	    xmpp:err_not_acceptable()
+	    {error, xmpp:err_not_acceptable()}
     end;
 get_local_items({_, Host}, [<<"outgoing s2s">>],
 		_Server, Lang) ->
@@ -638,6 +646,7 @@ get_local_items(_Host,
 get_local_items(_Host, _, _Server, _Lang) ->
     {error, xmpp:err_item_not_found()}.
 
+-spec get_online_vh_users(binary()) -> [disco_item()].
 get_online_vh_users(Host) ->
     case catch ejabberd_sm:get_vh_session_list(Host) of
       {'EXIT', _Reason} -> [];
@@ -650,6 +659,7 @@ get_online_vh_users(Host) ->
 		    end, SURs)
     end.
 
+-spec get_all_vh_users(binary()) -> [disco_item()].
 get_all_vh_users(Host) ->
     case catch ejabberd_auth:get_users(Host)
 	of
@@ -686,6 +696,7 @@ get_all_vh_users(Host) ->
 	  end
     end.
 
+-spec get_outgoing_s2s(binary(), binary()) -> [disco_item()].
 get_outgoing_s2s(Host, Lang) ->
     case catch ejabberd_s2s:dirty_get_connections() of
       {'EXIT', _Reason} -> [];
@@ -703,6 +714,7 @@ get_outgoing_s2s(Host, Lang) ->
 	    end, lists:usort(TConns))
     end.
 
+-spec get_outgoing_s2s(binary(), binary(), binary()) -> [disco_item()].
 get_outgoing_s2s(Host, Lang, To) ->
     case catch ejabberd_s2s:dirty_get_connections() of
       {'EXIT', _Reason} -> [];
@@ -719,6 +731,7 @@ get_outgoing_s2s(Host, Lang, To) ->
 				       Connections)))
     end.
 
+-spec get_running_nodes(binary(), binary()) -> [disco_item()].
 get_running_nodes(Server, _Lang) ->
     case catch mnesia:system_info(running_db_nodes) of
       {'EXIT', _Reason} -> [];
@@ -733,6 +746,7 @@ get_running_nodes(Server, _Lang) ->
 	    lists:sort(DBNodes))
     end.
 
+-spec get_stopped_nodes(binary()) -> [disco_item()].
 get_stopped_nodes(_Lang) ->
     case catch lists:usort(mnesia:system_info(db_nodes) ++
 			     mnesia:system_info(extra_db_nodes))
@@ -785,6 +799,7 @@ adhoc_local_commands(Acc, From,
       _ -> Acc
     end.
 
+-spec adhoc_local_commands(jid(), jid(), adhoc_command()) -> adhoc_command() | {error, stanza_error()}.
 adhoc_local_commands(From,
 		     #jid{lserver = LServer} = _To,
 		     #adhoc_command{lang = Lang, node = Node,
@@ -852,6 +867,9 @@ adhoc_local_commands(From,
 		      #xdata_option{label = tr(Lang, ?T("Remote copy")),
 				    value = <<"unknown">>}]}).
 
+-spec get_form(binary(), [binary()], binary()) -> {result, xdata()} |
+						  {result, completed, xdata()} |
+						  {error, stanza_error()}.
 get_form(_Host, [<<"running nodes">>, ENode, <<"DB">>],
 	 Lang) ->
     case search_running_node(ENode) of
@@ -1169,6 +1187,8 @@ get_form(Host, ?NS_ADMINL(<<"get-online-users-num">>),
 get_form(_Host, _, _Lang) ->
     {error, xmpp:err_service_unavailable()}.
 
+-spec set_form(jid(), binary(), [binary()], binary(), xdata()) -> {result, xdata() | undefined} |
+								  {error, stanza_error()}.
 set_form(_From, _Host,
 	 [<<"running nodes">>, ENode, <<"DB">>], Lang, XData) ->
     case search_running_node(ENode) of
@@ -1543,22 +1563,28 @@ set_form(From, Host, ?NS_ADMINL(<<"user-stats">>), Lang,
 set_form(_From, _Host, _, _Lang, _XData) ->
     {error, xmpp:err_service_unavailable()}.
 
-get_value(Field, XData) -> hd(get_values(Field, XData)).
+-spec get_value(binary(), xdata()) -> binary().
+get_value(Field, XData) ->
+    hd(get_values(Field, XData)).
 
+-spec get_values(binary(), xdata()) -> [binary()].
 get_values(Field, XData) ->
     xmpp_util:get_xdata_values(Field, XData).
 
+-spec search_running_node(binary()) -> false | node().
 search_running_node(SNode) ->
     search_running_node(SNode,
 			mnesia:system_info(running_db_nodes)).
 
+-spec search_running_node(binary(), [node()]) -> false | node().
 search_running_node(_, []) -> false;
 search_running_node(SNode, [Node | Nodes]) ->
-    case iolist_to_binary(atom_to_list(Node)) of
-      SNode -> Node;
-      _ -> search_running_node(SNode, Nodes)
+    case atom_to_binary(Node, utf8) of
+	SNode -> Node;
+	_ -> search_running_node(SNode, Nodes)
     end.
 
+-spec stop_node(jid(), binary(), binary(), restart | stop, xdata()) -> {result, undefined}.
 stop_node(From, Host, ENode, Action, XData) ->
     Delay = binary_to_integer(get_value(<<"delay">>, XData)),
     Subject = case get_value(<<"subject">>, XData) of
@@ -1586,9 +1612,10 @@ stop_node(From, Host, ENode, Action, XData) ->
     end,
     Time = timer:seconds(Delay),
     Node = misc:binary_to_atom(ENode),
-    {ok, _} = timer:apply_after(Time, rpc, call, [Node, init, Action, []]),
+    {ok, _} = timer:apply_after(Time, ejabberd_cluster, call, [Node, init, Action, []]),
     {result, undefined}.
 
+-spec get_last_info(binary(), binary()) -> {ok, non_neg_integer(), binary()} | not_found.
 get_last_info(User, Server) ->
     case gen_mod:is_loaded(Server, mod_last) of
       true -> mod_last:get_last_info(User, Server);
@@ -1596,7 +1623,8 @@ get_last_info(User, Server) ->
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec adhoc_sm_commands(adhoc_command(), jid(), jid(), adhoc_command()) -> adhoc_command().
+-spec adhoc_sm_commands(adhoc_command(), jid(), jid(), adhoc_command()) -> adhoc_command() |
+									   {error, stanza_error()}.
 adhoc_sm_commands(_Acc, From,
 		  #jid{user = User, server = Server, lserver = LServer},
 		  #adhoc_command{lang = Lang, node = <<"config">>,
@@ -1627,6 +1655,8 @@ adhoc_sm_commands(_Acc, From,
     end;
 adhoc_sm_commands(Acc, _From, _To, _Request) -> Acc.
 
+-spec get_sm_form(binary(), binary(), binary(), binary()) -> {result, xdata()} |
+							     {error, stanza_error()}.
 get_sm_form(User, Server, <<"config">>, Lang) ->
     {result,
      #xdata{type = form,
@@ -1650,6 +1680,8 @@ get_sm_form(User, Server, <<"config">>, Lang) ->
 get_sm_form(_User, _Server, _Node, _Lang) ->
     {error, xmpp:err_service_unavailable()}.
 
+-spec set_sm_form(binary(), binary(), binary(), adhoc_command()) -> adhoc_command() |
+								    {error, stanza_error()}.
 set_sm_form(User, Server, <<"config">>,
 	    #adhoc_command{lang = Lang, node = Node,
 			   sid = SessionID, xdata = XData}) ->

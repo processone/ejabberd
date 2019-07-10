@@ -40,6 +40,8 @@
 
 -define(SETS, gb_sets).
 
+-type c2s_state() :: ejabberd_c2s:state().
+
 %%%===================================================================
 %%% Callbacks and hooks
 %%%===================================================================
@@ -62,6 +64,8 @@ stop(Host) ->
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.
 
+-spec filter_packet({stanza(), c2s_state()}) -> {stanza(), c2s_state()} |
+						{stop, {drop, c2s_state()}}.
 filter_packet({#message{from = From} = Msg, State} = Acc) ->
     LFrom = jid:tolower(From),
     LBFrom = jid:remove_resource(LFrom),
@@ -80,12 +84,14 @@ filter_packet({#message{from = From} = Msg, State} = Acc) ->
 filter_packet(Acc) ->
     Acc.
 
+-spec filter_offline_msg({_, message()}) -> {_, message()} | {stop, {drop, message()}}.
 filter_offline_msg({_Action, #message{} = Msg} = Acc) ->
     case check_message(Msg) of
 	allow -> Acc;
 	deny -> {stop, {drop, Msg}}
     end.
 
+-spec filter_subscription(boolean(), presence()) -> boolean() | {stop, false}.
 filter_subscription(Acc, #presence{meta = #{captcha := passed}}) ->
     Acc;
 filter_subscription(Acc, #presence{from = From, to = To, lang = Lang,
@@ -136,6 +142,7 @@ filter_subscription(Acc, #presence{from = From, to = To, lang = Lang,
 filter_subscription(Acc, _) ->
     Acc.
 
+-spec handle_captcha_result(captcha_succeed | captcha_failed, presence()) -> ok.
 handle_captcha_result(captcha_succeed, Pres) ->
     Pres1 = xmpp:put_meta(Pres, captcha, passed),
     ejabberd_router:route(Pres1);
@@ -146,6 +153,7 @@ handle_captcha_result(captcha_failed, #presence{lang = Lang} = Pres) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+-spec check_message(message()) -> allow | deny.
 check_message(#message{from = From, to = To, lang = Lang} = Msg) ->
     LServer = To#jid.lserver,
     case need_check(Msg) of
@@ -222,6 +230,7 @@ check_subscription(From, To) ->
 	    true
     end.
 
+-spec sets_bare_member(ljid(), ?SETS:set()) -> boolean().
 sets_bare_member({U, S, <<"">>} = LBJID, Set) ->
     case ?SETS:next(?SETS:iterator_from(LBJID, Set)) of
         {{U, S, _}, _} -> true;

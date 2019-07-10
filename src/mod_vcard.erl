@@ -132,7 +132,8 @@ init([Host, Opts]) ->
     end,
     {ok, #state{hosts = MyHosts, server_host = Host}}.
 
-handle_call(_Call, _From, State) ->
+handle_call(Call, From, State) ->
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Call]),
     {noreply, State}.
 
 handle_cast(Cast, State) ->
@@ -443,6 +444,7 @@ mk_search_form(JID, ServerHost, Lang) ->
 		  Lang, ?T("You need an x:data capable client to search")),
 	    xdata = X}.
 
+-spec make_instructions(module(), binary()) -> binary().
 make_instructions(Mod, Lang) ->
     Fill = translate:translate(
 	     Lang,

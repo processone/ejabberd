@@ -68,6 +68,7 @@ depends(_Host, _Opts) ->
 %%%===================================================================
 %%% Hooks
 %%%===================================================================
+-spec pubsub_publish_item(binary(), binary(), jid(), jid(), binary(), [xmlel()]) -> ok.
 pubsub_publish_item(LServer, ?NS_AVATAR_METADATA,
 		    #jid{luser = LUser, lserver = LServer} = From,
 		    #jid{luser = LUser, lserver = LServer} = Host,

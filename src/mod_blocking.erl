@@ -258,6 +258,7 @@ process_get(#iq{from = #jid{luser = LUser, lserver = LServer}} = IQ) ->
 	    err_db_failure(IQ)
     end.
 
+-spec err_db_failure(iq()) -> iq().
 err_db_failure(#iq{lang = Lang} = IQ) ->
     Txt = ?T("Database failure"),
     xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang)).

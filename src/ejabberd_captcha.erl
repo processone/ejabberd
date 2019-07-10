@@ -52,6 +52,7 @@
 
 -type image_error() :: efbig | enodata | limit | malformed_image | timeout.
 -type priority() :: neg_integer().
+-type callback() :: fun((captcha_succeed | captcha_failed) -> any()).
 
 -record(state, {limits = treap:empty() :: treap:treap(),
 		enabled = false :: boolean()}).
@@ -84,8 +85,9 @@ mk_field(Type, Var, Value) ->
     #xdata_field{type = Type, var = Var, values = [Value]}.
 
 -spec create_captcha(binary(), jid(), jid(),
-                     binary(), any(), any()) -> {error, image_error()} |
-                                                {ok, binary(), [text()], [xmpp_element()]}.
+                     binary(), any(),
+		     callback() | term()) -> {error, image_error()} |
+					     {ok, binary(), [text()], [xmpp_element()]}.
 create_captcha(SID, From, To, Lang, Limiter, Args) ->
     case create_image(Limiter) of
       {ok, Type, Key, Image} ->
@@ -607,7 +609,9 @@ clean_treap(Treap, CleanPriority) ->
 	  end
     end.
 
--spec callback(captcha_succeed | captcha_failed, pid(), term()) -> any().
+-spec callback(captcha_succeed | captcha_failed,
+	       pid() | undefined,
+	       callback() | term()) -> any().
 callback(Result, _Pid, F) when is_function(F) ->
     F(Result);
 callback(Result, Pid, Args) when is_pid(Pid) ->

@@ -60,6 +60,8 @@
 
 -record(state, {host = <<"">> :: binary()}).
 
+-type digest_type() :: md5 | sha | sha224 | sha256 | sha384 | sha512.
+
 -callback init(binary(), gen_mod:opts()) -> any().
 -callback import(binary(), {binary(), binary()}, [binary() | pos_integer()]) -> ok.
 -callback caps_read(binary(), {binary(), binary()}) ->
@@ -416,19 +418,18 @@ make_my_disco_hash(Host) ->
       _Err -> <<"">>
     end.
 
--type digest_type() :: md5 | sha | sha224 | sha256 | sha384 | sha512.
 -spec compute_disco_hash(disco_info(), digest_type()) -> binary().
 compute_disco_hash(DiscoInfo, Algo) ->
     Concat = list_to_binary([concat_identities(DiscoInfo),
                              concat_features(DiscoInfo), concat_info(DiscoInfo)]),
     base64:encode(case Algo of
-                           md5 -> erlang:md5(Concat);
-                           sha -> crypto:hash(sha, Concat);
-                           sha224 -> crypto:hash(sha224, Concat);
-                           sha256 -> crypto:hash(sha256, Concat);
-                           sha384 -> crypto:hash(sha384, Concat);
-                           sha512 -> crypto:hash(sha512, Concat)
-                       end).
+		      md5 -> erlang:md5(Concat);
+		      sha -> crypto:hash(sha, Concat);
+		      sha224 -> crypto:hash(sha224, Concat);
+		      sha256 -> crypto:hash(sha256, Concat);
+		      sha384 -> crypto:hash(sha384, Concat);
+		      sha512 -> crypto:hash(sha512, Concat)
+		  end).
 
 -spec check_hash(caps(), disco_info()) -> boolean().
 check_hash(Caps, DiscoInfo) ->

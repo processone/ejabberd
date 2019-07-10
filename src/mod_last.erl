@@ -45,6 +45,8 @@
 
 -define(LAST_CACHE, last_activity_cache).
 
+-type c2s_state() :: ejabberd_c2s:state().
+
 -callback init(binary(), gen_mod:opts()) -> any().
 -callback import(binary(), #last_activity{}) -> ok | pass.
 -callback get_last(binary(), binary()) ->
@@ -144,6 +146,7 @@ process_sm_iq(#iq{from = From, to = To, lang = Lang} = IQ) ->
 	    xmpp:make_error(IQ, xmpp:err_subscription_required(Txt, Lang))
     end.
 
+-spec privacy_check_packet(allow | deny, c2s_state(), stanza(), in | out) -> allow | deny | {stop, deny}.
 privacy_check_packet(allow, C2SState,
 		     #iq{from = From, to = To, type = T} = IQ, in)
   when T == get; T == set ->

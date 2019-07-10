@@ -50,6 +50,7 @@ stop(Host) ->
 reload(_Host, _NewOpts, _OldOpts) ->
     ok.
 
+-spec process_local_iq(iq()) -> iq().
 process_local_iq(#iq{type = set, lang = Lang} = IQ) ->
     Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
