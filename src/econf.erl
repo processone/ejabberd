@@ -91,21 +91,24 @@ format_error({bad_module, Mod}, Ctx)
     Mods = ejabberd_config:beams(all),
     format("~s: unknown ~s: ~s. Did you mean ~s?",
 	   [yconf:format_ctx(Ctx),
-	    format_module_type(Ctx), Mod,
-	    misc:best_match(Mod, Mods)]);
+	    format_module_type(Ctx),
+	    format_module(Mod),
+	    format_module(misc:best_match(Mod, Mods))]);
 format_error({bad_module, Mod}, Ctx)
   when Ctx == [modules] ->
     Mods = lists:filter(
 	     fun(M) ->
 		     case atom_to_list(M) of
 			 "mod_" ++ _ -> true;
+			 "Elixir.Mod" ++ _ -> true;
 			 _ -> false
 		     end
 	     end, ejabberd_config:beams(all)),
     format("~s: unknown ~s: ~s. Did you mean ~s?",
 	   [yconf:format_ctx(Ctx),
-	    format_module_type(Ctx), Mod,
-	    misc:best_match(Mod, Mods)]);
+	    format_module_type(Ctx),
+	    format_module(Mod),
+	    format_module(misc:best_match(Mod, Mods))]);
 format_error({bad_export, {F, A}, Mod}, Ctx)
   when Ctx == [listen, module];
        Ctx == [listen, request_handlers];
@@ -114,17 +117,18 @@ format_error({bad_export, {F, A}, Mod}, Ctx)
     Slogan = yconf:format_ctx(Ctx),
     case lists:member(Mod, ejabberd_config:beams(local)) of
 	true ->
-	    format("~s: '~s' is not a ~s", [Slogan, Mod, Type]);
+	    format("~s: '~s' is not a ~s",
+		   [Slogan, format_module(Mod), Type]);
 	false ->
 	    case lists:member(Mod, ejabberd_config:beams(external)) of
 		true ->
 		    format("~s: third-party ~s '~s' doesn't export "
 			   "function ~s/~B. If it's really a ~s, "
 			   "consider to upgrade it",
-			   [Slogan, Type, Mod, F, A, Type]);
+			   [Slogan, Type, format_module(Mod),F, A, Type]);
 		false ->
 		    format("~s: '~s' doesn't match any known ~s",
-			   [Slogan, Mod, Type])
+			   [Slogan, format_module(Mod), Type])
 	    end
     end;
 format_error({unknown_option, [], _} = Why, Ctx) ->
@@ -190,6 +194,13 @@ format_error({mqtt_codec, Reason}) ->
     mqtt_codec:format_error(Reason);
 format_error(Reason) ->
     yconf:format_error(Reason).
+
+-spec format_module(atom()) -> string().
+format_module(Mod) ->
+    case atom_to_list(Mod) of
+	"Elixir." ++ M -> M;
+	M -> M
+    end.
 
 format_module_type([listen, module]) ->
     "listening module";
@@ -306,12 +317,6 @@ path() ->
 binary_sep(Sep) ->
     yconf:binary_sep(Sep).
 
-beam() ->
-    yconf:beam().
-
-beam(Exports) ->
-    yconf:beam(Exports).
-
 timeout(Units) ->
     yconf:timeout(Units).
 
@@ -354,6 +359,20 @@ options(V, O) ->
 %%%===================================================================
 %%% Custom validators
 %%%===================================================================
+beam() ->
+    beam([]).
+
+beam(Exports) ->
+    and_then(
+      non_empty(binary()),
+      fun(<<"Elixir.", _/binary>> = Val) ->
+	      (yconf:beam(Exports))(Val);
+	 (<<C, _/binary>> = Val) when C >= $A, C =< $Z ->
+	      (yconf:beam(Exports))(<<"Elixir.", Val/binary>>);
+	 (Val) ->
+	      (yconf:beam(Exports))(Val)
+      end).
+
 acl() ->
     either(
       atom(),
