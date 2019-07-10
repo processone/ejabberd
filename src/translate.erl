@@ -40,7 +40,8 @@
 -define(ZERO_DATETIME, {{0,0,0}, {0,0,0}}).
 
 -type error_reason() :: file:posix() | {integer(), module(), term()} |
-			badarg | terminated | system_limit | bad_file.
+			badarg | terminated | system_limit | bad_file |
+			bad_encoding.
 
 -record(state, {}).
 
@@ -146,9 +147,13 @@ load_file(File) ->
 	{ok, Lines} ->
 	    lists:map(
 	      fun({In, Out}) ->
-		      InB = iolist_to_binary(In),
-		      OutB = iolist_to_binary(Out),
-		      {{Lang, InB}, OutB};
+		      try
+			  InB = unicode:characters_to_binary(In, utf8),
+			  OutB = unicode:characters_to_binary(Out, utf8),
+			  {{Lang, InB}, OutB}
+		      catch _:badarg ->
+			      {error, File, bad_encoding}
+		      end;
 		 (_) ->
 		      {error, File, bad_file}
 	      end, Lines);
@@ -289,6 +294,8 @@ lang_of_file(FileName) ->
 -spec format_error(error_reason()) -> string().
 format_error(bad_file) ->
     "corrupted or invalid translation file";
+format_error(bad_encoding) ->
+    "not an UTF-8 encoding";
 format_error({_, _, _} = Reason) ->
     "at line " ++ file:format_error(Reason);
 format_error(Reason) ->
