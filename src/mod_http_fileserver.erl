@@ -198,8 +198,9 @@ handle_call({serve, LocalPath, Auth, RHeaders}, _From, State) ->
 		  State#state.default_content_type, State#state.content_types,
 		  State#state.user_access, IfModifiedSince),
     {reply, Reply, State};
-handle_call(_Request, _From, State) ->
-    {reply, ok, State}.
+handle_call(Request, From, State) ->
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
+    {noreply, State}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_cast(Msg, State) -> {noreply, State} |
@@ -231,7 +232,8 @@ handle_cast(Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-handle_info(_Info, State) ->
+handle_info(Info, State) ->
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 %%--------------------------------------------------------------------

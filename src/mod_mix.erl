@@ -268,8 +268,8 @@ init([Host, Opts]) ->
 	    {stop, db_failure}
     end.
 
-handle_call(Request, _From, State) ->
-    ?WARNING_MSG("Unexpected call: ~p", [Request]),
+handle_call(Request, From, State) ->
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
     {noreply, State}.
 
 handle_cast(Request, State) ->

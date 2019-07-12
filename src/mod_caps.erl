@@ -288,10 +288,13 @@ init([Host, Opts]) ->
 
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
-handle_call(_Req, _From, State) ->
-    {reply, {error, badarg}, State}.
+handle_call(Request, From, State) ->
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
+    {noreply, State}.
 
-handle_cast(_Msg, State) -> {noreply, State}.
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
+    {noreply, State}.
 
 handle_info({iq_reply, IQReply, {Host, From, To, Caps, SubNodes}}, State) ->
     feature_response(IQReply, Host, From, To, Caps, SubNodes),

@@ -167,11 +167,12 @@ init([]) ->
 	    {stop, Reason}
     end.
 
-handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
+handle_call(Request, From, State) ->
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
+    {noreply, State}.
 
-handle_cast(_Msg, State) ->
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
 handle_info({node_up, Node}, State) ->
@@ -180,7 +181,8 @@ handle_info({node_up, Node}, State) ->
 handle_info({node_down, Node}, State) ->
     ?INFO_MSG("Node ~s has left", [Node]),
     {noreply, State};
-handle_info(_Info, State) ->
+handle_info(Info, State) ->
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->

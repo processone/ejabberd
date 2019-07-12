@@ -125,16 +125,19 @@ handle_call({can_access, Cmd, CallerInfo}, _From, State) ->
 handle_call(show_current_definitions, _From, State) ->
     {State2, Defs} = get_definitions(State),
     {reply, Defs, State2};
-handle_call(_Request, _From, State) ->
-    {reply, ok, State}.
+handle_call(Request, From, State) ->
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
+    {noreply, State}.
 
 -spec handle_cast(invalidate | term(), state()) -> {noreply, state()}.
 handle_cast(invalidate, State) ->
     {noreply, State#state{definitions = none}};
-handle_cast(_Request, State) ->
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
-handle_info(_Info, State) ->
+handle_info(Info, State) ->
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->

@@ -491,10 +491,13 @@ init([]) ->
 	    {stop, Why}
     end.
 
-handle_call(_Request, _From, State) ->
-    Reply = ok, {reply, Reply, State}.
+handle_call(Request, From, State) ->
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
+    {noreply, State}.
 
-handle_cast(_Msg, State) -> {noreply, State}.
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
+    {noreply, State}.
 
 handle_info({route, Packet}, State) ->
     try route(Packet)

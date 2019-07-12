@@ -61,11 +61,15 @@
          dn_filter              :: binary() | undefined,
          dn_filter_attrs = []   :: [binary()]}).
 
-handle_cast(_Request, State) -> {noreply, State}.
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
+    {noreply, State}.
 
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
-handle_info(_Info, State) -> {noreply, State}.
+handle_info(Info, State) ->
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
+    {noreply, State}.
 
 -define(LDAP_SEARCH_TIMEOUT, 5).
 
@@ -225,8 +229,9 @@ handle_call(get_state, _From, State) ->
     {reply, {ok, State}, State};
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
-handle_call(_Request, _From, State) ->
-    {reply, bad_request, State}.
+handle_call(Request, From, State) ->
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
+    {noreply, State}.
 
 find_user_dn(User, State) ->
     ResAttrs = result_attrs(State),

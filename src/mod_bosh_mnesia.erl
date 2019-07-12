@@ -102,11 +102,12 @@ handle_call({write, Session}, _From, State) ->
 handle_call({delete, Session}, _From, State) ->
     Res = delete_session(Session),
     {reply, Res, State};
-handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
+handle_call(Request, From, State) ->
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
+    {noreply, State}.
 
-handle_cast(_Msg, State) ->
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
 handle_info({write, Session}, State) ->
@@ -115,8 +116,8 @@ handle_info({write, Session}, State) ->
 handle_info({delete, Session}, State) ->
     delete_session(Session),
     {noreply, State};
-handle_info(_Info, State) ->
-    ?ERROR_MSG("Unexpected info: ~p", [_Info]),
+handle_info(Info, State) ->
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->

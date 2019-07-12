@@ -135,12 +135,12 @@ init([Host, _Opts]) ->
     erlang:send_after(?CLEAN_INTERVAL, self(), clean),
     {ok, #state{host = Host}}.
 
-handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
+handle_call(Request, From, State) ->
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
+    {noreply, State}.
 
 handle_cast(_Msg, State) ->
-    ?ERROR_MSG("Unexpected cast = ~p", [_Msg]),
+    ?WARNING_MSG("Unexpected cast = ~p", [_Msg]),
     {noreply, State}.
 
 handle_info(clean, State) ->
@@ -152,7 +152,7 @@ handle_info(clean, State) ->
     erlang:send_after(?CLEAN_INTERVAL, self(), clean),
     {noreply, State};
 handle_info(_Info, State) ->
-    ?ERROR_MSG("Unexpected info = ~p", [_Info]),
+    ?WARNING_MSG("Unexpected info = ~p", [_Info]),
     {noreply, State}.
 
 terminate(_Reason, #state{host = Host}) ->
