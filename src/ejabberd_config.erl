@@ -149,12 +149,21 @@ get_option(Opt, Default) ->
 -spec get_option(option()) -> term().
 get_option(Opt) when is_atom(Opt) ->
     get_option({Opt, global});
-get_option(Opt) ->
+get_option({O, Host} = Opt) ->
     Tab = case get_tmp_config() of
 	      undefined -> ejabberd_options;
 	      T -> T
 	  end,
-    ets:lookup_element(Tab, Opt, 2).
+    try ets:lookup_element(Tab, Opt, 2)
+    catch ?EX_RULE(error, badarg, St) when Host /= global ->
+	    StackTrace = ?EX_STACK(St),
+	    Val = get_option({O, global}),
+	    ?WARNING_MSG("Option '~s' is not defined for virtual host '~s'. "
+			 "This is a bug, please report it with the following "
+			 "stacktrace included:~n** ~s",
+			 [O, Host, misc:format_exception(2, error, badarg, StackTrace)]),
+	    Val
+    end.
 
 -spec set_option(option(), term()) -> ok.
 set_option(Opt, Val) when is_atom(Opt) ->
