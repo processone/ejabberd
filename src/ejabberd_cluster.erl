@@ -24,8 +24,8 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, call/4, multicall/3, multicall/4, eval_everywhere/3,
-	 eval_everywhere/4]).
+-export([start_link/0, call/4, call/5, multicall/3, multicall/4, multicall/5,
+	 eval_everywhere/3, eval_everywhere/4]).
 %% Backend dependent API
 -export([get_nodes/0, get_known_nodes/0, join/1, leave/1, subscribe/0,
 	 subscribe/1, node_id/0, get_node_by_id/1, send/2, wait_for_sync/1]).
@@ -58,7 +58,11 @@ start_link() ->
 
 -spec call(node(), module(), atom(), [any()]) -> any().
 call(Node, Module, Function, Args) ->
-    rpc:call(Node, Module, Function, Args, rpc_timeout()).
+    call(Node, Module, Function, Args, rpc_timeout()).
+
+-spec call(node(), module(), atom(), [any()], timeout()) -> any().
+call(Node, Module, Function, Args, Timeout) ->
+    call(Node, Module, Function, Args, Timeout).
 
 -spec multicall(module(), atom(), [any()]) -> {list(), [node()]}.
 multicall(Module, Function, Args) ->
@@ -66,7 +70,11 @@ multicall(Module, Function, Args) ->
 
 -spec multicall([node()], module(), atom(), list()) -> {list(), [node()]}.
 multicall(Nodes, Module, Function, Args) ->
-    rpc:multicall(Nodes, Module, Function, Args, rpc_timeout()).
+    multicall(Nodes, Module, Function, Args, rpc_timeout()).
+
+-spec multicall([node()], module(), atom(), list(), timeout()) -> {list(), [node()]}.
+multicall(Nodes, Module, Function, Args, Timeout) ->
+    rpc:multicall(Nodes, Module, Function, Args, Timeout).
 
 -spec eval_everywhere(module(), atom(), [any()]) -> ok.
 eval_everywhere(Module, Function, Args) ->
