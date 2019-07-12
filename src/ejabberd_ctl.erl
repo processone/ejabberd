@@ -92,7 +92,7 @@ start() ->
                      end
              end,
     Node = list_to_atom(SNode1),
-    Status = case rpc:call(Node, ?MODULE, process, [Args], Timeout) of
+    Status = case ejabberd_cluster:call(Node, ?MODULE, process, [Args], Timeout) of
                  {badrpc, Reason} ->
                      print("Failed RPC connection to the node ~p: ~p~n",
                            [Node, Reason]),
