@@ -38,9 +38,9 @@
 	 handle_auth_success/4, handle_auth_failure/4, handle_send/3,
 	 handle_recv/3, handle_cdata/2, handle_unbinded_packet/2]).
 %% Hooks
--export([handle_unexpected_cast/2, process_auth_result/3,
-	 reject_unauthenticated_packet/2, process_closed/2,
-	 process_terminated/2, process_info/2]).
+-export([handle_unexpected_cast/2, handle_unexpected_call/3,
+	 process_auth_result/3, reject_unauthenticated_packet/2,
+	 process_closed/2, process_terminated/2, process_info/2]).
 %% API
 -export([get_presence/1, set_presence/2, resend_presence/1, resend_presence/2,
 	 open_session/1, call/3, cast/2, send/2, close/1, close/2, stop/1,
@@ -158,7 +158,9 @@ host_up(Host) ->
     ejabberd_hooks:add(c2s_auth_result, Host, ?MODULE,
 		       process_auth_result, 100),
     ejabberd_hooks:add(c2s_handle_cast, Host, ?MODULE,
-		       handle_unexpected_cast, 100).
+		       handle_unexpected_cast, 100),
+    ejabberd_hooks:add(c2s_handle_call, Host, ?MODULE,
+		       handle_unexpected_call, 100).
 
 -spec host_down(binary()) -> ok.
 host_down(Host) ->
@@ -172,7 +174,9 @@ host_down(Host) ->
     ejabberd_hooks:delete(c2s_auth_result, Host, ?MODULE,
 			  process_auth_result, 100),
     ejabberd_hooks:delete(c2s_handle_cast, Host, ?MODULE,
-			  handle_unexpected_cast, 100).
+			  handle_unexpected_cast, 100),
+    ejabberd_hooks:delete(c2s_handle_call, Host, ?MODULE,
+			  handle_unexpected_call, 100).
 
 %% Copies content of one c2s state to another.
 %% This is needed for session migration from one pid to another.
@@ -247,6 +251,10 @@ process_info(#{jid := JID} = State, {resend_presence, To}) ->
     end;
 process_info(State, Info) ->
     ?WARNING_MSG("Unexpected info: ~p", [Info]),
+    State.
+
+handle_unexpected_call(State, From, Msg) ->
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Msg]),
     State.
 
 handle_unexpected_cast(State, Msg) ->

@@ -289,6 +289,7 @@ handle_info(Info, State) ->
 
 terminate(_Reason, _State) ->
     ejabberd_commands:unregister_commands(get_commands_spec()),
+    stop_s2s_connections(stream_error()),
     lists:foreach(fun host_down/1, ejabberd_option:hosts()),
     ejabberd_hooks:delete(host_up, ?MODULE, host_up, 50),
     ejabberd_hooks:delete(host_down, ?MODULE, host_down, 60).
@@ -306,11 +307,12 @@ host_up(Host) ->
 
 -spec host_down(binary()) -> ok.
 host_down(Host) ->
+    Err = stream_error(),
     lists:foreach(
       fun(#s2s{fromto = {From, _}, pid = Pid}) when node(Pid) == node() ->
 	      case ejabberd_router:host_of_route(From) of
 		  Host ->
-		      ejabberd_s2s_out:send(Pid, xmpp:serr_system_shutdown()),
+		      ejabberd_s2s_out:send(Pid, Err),
 		      ejabberd_s2s_out:stop(Pid);
 		  _ ->
 		      ok
@@ -538,16 +540,31 @@ supervisor_count(Supervisor) ->
 
 -spec stop_s2s_connections() -> ok.
 stop_s2s_connections() ->
+    stop_s2s_connections(xmpp:serr_reset()).
+
+-spec stop_s2s_connections(stream_error()) -> ok.
+stop_s2s_connections(Err) ->
     lists:foreach(
       fun({_Id, Pid, _Type, _Module}) ->
+	      ejabberd_s2s_in:send(Pid, Err),
+	      ejabberd_s2s_in:stop(Pid),
 	      supervisor:terminate_child(ejabberd_s2s_in_sup, Pid)
       end, supervisor:which_children(ejabberd_s2s_in_sup)),
     lists:foreach(
       fun({_Id, Pid, _Type, _Module}) ->
+	      ejabberd_s2s_out:send(Pid, Err),
+	      ejabberd_s2s_out:stop(Pid),
 	      supervisor:terminate_child(ejabberd_s2s_out_sup, Pid)
       end, supervisor:which_children(ejabberd_s2s_out_sup)),
     _ = mnesia:clear_table(s2s),
     ok.
+
+-spec stream_error() -> stream_error().
+stream_error() ->
+    case ejabberd_cluster:get_nodes() of
+	[Node] when Node == node() -> xmpp:serr_system_shutdown();
+	_ -> xmpp:serr_reset()
+    end.
 
 %%%----------------------------------------------------------------------
 %%% Update Mnesia tables

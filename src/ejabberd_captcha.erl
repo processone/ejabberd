@@ -341,10 +341,13 @@ handle_call(config_reloaded, _From, #state{enabled = Enabled} = State) ->
 		     State
 	     end,
     {reply, ok, State1};
-handle_call(_Request, _From, State) ->
-    {reply, bad_request, State}.
+handle_call(Request, From, State) ->
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
+    {noreply, State}.
 
-handle_cast(_Msg, State) -> {noreply, State}.
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
+    {noreply, State}.
 
 handle_info({remove_id, Id}, State) ->
     ?DEBUG("CAPTCHA ~p timed out", [Id]),
@@ -355,7 +358,9 @@ handle_info({remove_id, Id}, State) ->
 	_ -> ok
     end,
     {noreply, State};
-handle_info(_Info, State) -> {noreply, State}.
+handle_info(Info, State) ->
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
+    {noreply, State}.
 
 terminate(_Reason, #state{enabled = Enabled}) ->
     if Enabled -> unregister_handlers();

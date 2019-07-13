@@ -50,8 +50,9 @@ init([]) ->
 	    {stop, Why}
     end.
 
-handle_call(_Request, _From, State) ->
-    {stop, {unexpected_call, _Request, _From}, State}.
+handle_call(Request, From, State) ->
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
+    {noreply, State}.
 
 handle_cast(_Msg, State) ->
     ?WARNING_MSG("Unexpected cast: ~p", [_Msg]),

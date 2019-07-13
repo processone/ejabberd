@@ -93,10 +93,13 @@ handle_info({route, Packet}, State) ->
                         misc:format_exception(2, Class, Reason, StackTrace)])
     end,
     {noreply, State};
-handle_info(_Info, State) -> {noreply, State}.
+handle_info(Info, State) ->
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
+    {noreply, State}.
 
-handle_call(_Request, _From, State) ->
-    {reply, ok, State}.
+handle_call(Request, From, State) ->
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
+    {noreply, State}.
 
 handle_cast({reload, ServerHost, NewOpts, OldOpts}, State) ->
     NewHosts = gen_mod:get_opt_hosts(NewOpts),

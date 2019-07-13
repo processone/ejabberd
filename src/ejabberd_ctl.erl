@@ -92,7 +92,7 @@ start() ->
                      end
              end,
     Node = list_to_atom(SNode1),
-    Status = case rpc:call(Node, ?MODULE, process, [Args], Timeout) of
+    Status = case ejabberd_cluster:call(Node, ?MODULE, process, [Args], Timeout) of
                  {badrpc, Reason} ->
                      print("Failed RPC connection to the node ~p: ~p~n",
                            [Node, Reason]),
@@ -114,14 +114,16 @@ init([]) ->
     ets:new(ejabberd_ctl_host_cmds, [named_table, set, public]),
     {ok, #state{}}.
 
-handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
-
-handle_cast(_Msg, State) ->
+handle_call(Request, From, State) ->
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
     {noreply, State}.
 
-handle_info(_Info, State) ->
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
+    {noreply, State}.
+
+handle_info(Info, State) ->
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->

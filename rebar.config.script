@@ -299,7 +299,7 @@ fun(Hooks) ->
 	lists:map(fun({Pkg, Flags}) ->
 			  DepPath = ResolveDepPath("deps/" ++ Pkg ++ "/"),
 			  Line = lists:flatten(GenDepConfigureLine(DepPath, Flags)),
-			  {add, list_to_atom(Pkg), [{pre_hooks, [{'compile', Line}, {'configure-deps', Line}]}]}
+			  {add, list_to_atom(Pkg), [{pre_hooks, [{{pc, compile}, Line}, {'compile', Line}, {'configure-deps', Line}]}]}
 		  end, Hooks)
 end,
 

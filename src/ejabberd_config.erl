@@ -73,8 +73,9 @@
 load() ->
     load(path()).
 
--spec load(file:filename()) -> ok | error_return().
-load(ConfigFile) ->
+-spec load(file:filename_all()) -> ok | error_return().
+load(Path) ->
+    ConfigFile = unicode:characters_to_binary(Path),
     UnixTime = erlang:monotonic_time(second),
     ?INFO_MSG("Loading configuration from ~s", [ConfigFile]),
     _ = ets:new(ejabberd_options,
@@ -148,12 +149,21 @@ get_option(Opt, Default) ->
 -spec get_option(option()) -> term().
 get_option(Opt) when is_atom(Opt) ->
     get_option({Opt, global});
-get_option(Opt) ->
+get_option({O, Host} = Opt) ->
     Tab = case get_tmp_config() of
 	      undefined -> ejabberd_options;
 	      T -> T
 	  end,
-    ets:lookup_element(Tab, Opt, 2).
+    try ets:lookup_element(Tab, Opt, 2)
+    catch ?EX_RULE(error, badarg, St) when Host /= global ->
+	    StackTrace = ?EX_STACK(St),
+	    Val = get_option({O, global}),
+	    ?WARNING_MSG("Option '~s' is not defined for virtual host '~s'. "
+			 "This is a bug, please report it with the following "
+			 "stacktrace included:~n** ~s",
+			 [O, Host, misc:format_exception(2, error, badarg, StackTrace)]),
+	    Val
+    end.
 
 -spec set_option(option(), term()) -> ok.
 set_option(Opt, Val) when is_atom(Opt) ->
@@ -353,7 +363,7 @@ format_error({error, {old_config, Path, Reason}}) ->
     lists:flatten(
       io_lib:format(
 	"Failed to read configuration from '~s': ~s~s",
-	[Path,
+	[unicode:characters_to_binary(Path),
 	 case Reason of
 	     {_, _, _} -> "at line ";
 	     _ -> ""
@@ -362,7 +372,8 @@ format_error({error, {write_file, Path, Reason}}) ->
     lists:flatten(
       io_lib:format(
 	"Failed to write to '~s': ~s",
-	[Path, file:format_error(Reason)]));
+	[unicode:characters_to_binary(Path),
+	 file:format_error(Reason)]));
 format_error({error, {exception, Class, Reason, St}}) ->
     lists:flatten(
       io_lib:format(
@@ -376,19 +387,20 @@ format_error({error, {exception, Class, Reason, St}}) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
--spec path() -> string().
+-spec path() -> binary().
 path() ->
-    case get_env_config() of
-	{ok, Path} ->
-	    Path;
-	undefined ->
-	    case os:getenv("EJABBERD_CONFIG_PATH") of
-		false ->
-		    "ejabberd.yml";
-		Path ->
-		    Path
-	    end
-    end.
+    unicode:characters_to_binary(
+      case get_env_config() of
+	  {ok, Path} ->
+	      Path;
+	  undefined ->
+	      case os:getenv("EJABBERD_CONFIG_PATH") of
+		  false ->
+		      "ejabberd.yml";
+		  Path ->
+		      Path
+	      end
+      end).
 
 -spec get_env_config() -> {ok, string()} | undefined.
 get_env_config() ->
@@ -456,12 +468,13 @@ validators(Mod, Disallowed) ->
 		end
 	end, proplists:get_keys(Mod:options()))).
 
--spec get_modules_configs() -> [file:filename_all()].
+-spec get_modules_configs() -> [binary()].
 get_modules_configs() ->
     Fs = [{filename:rootname(filename:basename(F)), F}
 	  || F <- filelib:wildcard(ext_mod:config_dir() ++ "/*.{yml,yaml}")
 		 ++ filelib:wildcard(ext_mod:modules_dir() ++ "/*/conf/*.{yml,yaml}")],
-    [proplists:get_value(F, Fs) || F <- proplists:get_keys(Fs)].
+    [unicode:characters_to_binary(proplists:get_value(F, Fs))
+     || F <- proplists:get_keys(Fs)].
 
 read_file(File) ->
     read_file(File, [replace_macros, include_files, include_modules_configs]).
@@ -469,7 +482,7 @@ read_file(File) ->
 read_file(File, Opts) ->
     {Opts1, Opts2} = proplists:split(Opts, [replace_macros, include_files]),
     Ret = case filename:extension(File) of
-	      Ex when Ex == ".yml" orelse Ex == ".yaml" ->
+	      Ex when Ex == <<".yml">> orelse Ex == <<".yaml">> ->
 		  Files = case proplists:get_bool(include_modules_configs, Opts2) of
 			      true -> get_modules_configs();
 			      false -> []
@@ -549,7 +562,7 @@ pre_validate(Y1) ->
 	    Err
     end.
 
--spec load_file(file:filename_all()) -> ok | error_return().
+-spec load_file(binary()) -> ok | error_return().
 load_file(File) ->
     try
 	case read_file(File) of

@@ -447,19 +447,20 @@ init([Server, Port, Options]) ->
 %% @private
 handle_call(get_pid, _From, #state{pid = Pid} = State) ->
     {reply, {ok, Pid}, State};
-handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
+handle_call(Request, From, State) ->
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
+    {noreply, State}.
 
 %% @private
-handle_cast(_Msg, State) ->
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
 %% @private
 handle_info({'DOWN', _MonitorRef, _Type, _Object, _Info}, State) ->
     {stop, normal, State};
-handle_info(_Info, State) ->
-    ?ERROR_MSG("Unexpected info: ~p", [_Info]),
+handle_info(Info, State) ->
+    ?ERROR_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 %% @private

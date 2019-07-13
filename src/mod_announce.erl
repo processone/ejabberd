@@ -117,7 +117,8 @@ init([Host, Opts]) ->
 		       ?MODULE, send_motd, 50),
     {ok, #state{host = Host}}.
 
-handle_call(_Call, _From, State) ->
+handle_call(Request, From, State) ->
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
     {noreply, State}.
 
 handle_cast({F, #message{from = From, to = To} = Pkt}, State) when is_atom(F) ->

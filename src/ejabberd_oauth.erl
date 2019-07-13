@@ -154,10 +154,13 @@ init([]) ->
     erlang:send_after(expire() * 1000, self(), clean),
     {ok, ok}.
 
-handle_call(_Request, _From, State) ->
-    {reply, bad_request, State}.
+handle_call(Request, From, State) ->
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
+    {noreply, State}.
 
-handle_cast(_Msg, State) -> {noreply, State}.
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
+    {noreply, State}.
 
 handle_info(clean, State) ->
     {MegaSecs, Secs, MiniSecs} = os:timestamp(),
@@ -167,7 +170,9 @@ handle_info(clean, State) ->
     erlang:send_after(trunc(expire() * 1000 * (1 + MiniSecs / 1000000)),
                       self(), clean),
     {noreply, State};
-handle_info(_Info, State) -> {noreply, State}.
+handle_info(Info, State) ->
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
+    {noreply, State}.
 
 terminate(_Reason, _State) -> ok.
 

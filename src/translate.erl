@@ -40,7 +40,8 @@
 -define(ZERO_DATETIME, {{0,0,0}, {0,0,0}}).
 
 -type error_reason() :: file:posix() | {integer(), module(), term()} |
-			badarg | terminated | system_limit | bad_file.
+			badarg | terminated | system_limit | bad_file |
+			bad_encoding.
 
 -record(state, {}).
 
@@ -57,14 +58,16 @@ init([]) ->
 	    {stop, Reason}
     end.
 
-handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
-
-handle_cast(_Msg, State) ->
+handle_call(Request, From, State) ->
+    ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
     {noreply, State}.
 
-handle_info(_Info, State) ->
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
+    {noreply, State}.
+
+handle_info(Info, State) ->
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->
@@ -146,9 +149,15 @@ load_file(File) ->
 	{ok, Lines} ->
 	    lists:map(
 	      fun({In, Out}) ->
-		      InB = iolist_to_binary(In),
-		      OutB = iolist_to_binary(Out),
-		      {{Lang, InB}, OutB};
+		      try {unicode:characters_to_binary(In, utf8),
+			   unicode:characters_to_binary(Out, utf8)} of
+			  {InB, OutB} when is_binary(InB), is_binary(OutB) ->
+			      {{Lang, InB}, OutB};
+			  _ ->
+			      {error, File, bad_encoding}
+		      catch _:badarg ->
+			      {error, File, bad_encoding}
+		      end;
 		 (_) ->
 		      {error, File, bad_file}
 	      end, Lines);
@@ -289,6 +298,8 @@ lang_of_file(FileName) ->
 -spec format_error(error_reason()) -> string().
 format_error(bad_file) ->
     "corrupted or invalid translation file";
+format_error(bad_encoding) ->
+    "not an UTF-8 encoding";
 format_error({_, _, _} = Reason) ->
     "at line " ++ file:format_error(Reason);
 format_error(Reason) ->
