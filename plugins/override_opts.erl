@@ -9,6 +9,11 @@ override_opts(add, Config, Opts) ->
     lists:foldl(fun({Opt, Value}, Conf) ->
 			V = rebar_config:get_local(Conf, Opt, []),
 			rebar_config:set(Conf, Opt, V ++ Value)
+		end, Config, Opts);
+override_opts(del, Config, Opts) ->
+    lists:foldl(fun({Opt, Value}, Conf) ->
+			V = rebar_config:get_local(Conf, Opt, []),
+			rebar_config:set(Conf, Opt, V -- Value)
 		end, Config, Opts).
 
 preprocess(Config, _Dirs) ->
@@ -24,6 +29,8 @@ preprocess(Config, _Dirs) ->
 		      lists:foldl(fun({Type, AppName2, Opts}, Conf1) when
 					    AppName2 == AppName ->
 					  override_opts(Type, Conf1, Opts);
+				     ({Type, Opts}, Conf1a) ->
+					  override_opts(Type, Conf1a, Opts);
 				     (_, Conf2) ->
 					  Conf2
 				  end, C, TopOverrides);
