@@ -138,12 +138,6 @@ get_local_identity(Acc, _From, _To, Node, Lang) ->
 	  ?INFO_IDENTITY(<<"ejabberd">>, <<"node">>, ENode, Lang);
       [<<"running nodes">>, _ENode, <<"DB">>] ->
 	  ?INFO_COMMAND(?T("Database"), Lang);
-      [<<"running nodes">>, _ENode, <<"modules">>,
-       <<"start">>] ->
-	  ?INFO_COMMAND(?T("Start Modules"), Lang);
-      [<<"running nodes">>, _ENode, <<"modules">>,
-       <<"stop">>] ->
-	  ?INFO_COMMAND(?T("Stop Modules"), Lang);
       [<<"running nodes">>, _ENode, <<"backup">>,
        <<"backup">>] ->
 	  ?INFO_COMMAND(?T("Backup"), Lang);
@@ -229,10 +223,6 @@ get_local_features(Acc, From,
 	    [<<"running nodes">>, _ENode] ->
 		?INFO_RESULT(Allow, [?NS_STATS], Lang);
 	    [<<"running nodes">>, _ENode, <<"DB">>] ->
-		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
-	    [<<"running nodes">>, _ENode, <<"modules">>] ->
-		?INFO_RESULT(Allow, [], Lang);
-	    [<<"running nodes">>, _ENode, <<"modules">>, _] ->
 		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    [<<"running nodes">>, _ENode, <<"backup">>] ->
 		?INFO_RESULT(Allow, [], Lang);
@@ -458,10 +448,6 @@ get_local_items(Acc, From, #jid{lserver = LServer} = To,
 		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"running nodes">>, _ENode, <<"DB">>] ->
 		?ITEMS_RESULT(Allow, LNode, {error, Err});
-	    [<<"running nodes">>, _ENode, <<"modules">>] ->
-		?ITEMS_RESULT(Allow, LNode, {error, Err});
-	    [<<"running nodes">>, _ENode, <<"modules">>, _] ->
-		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"running nodes">>, _ENode, <<"backup">>] ->
 		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"running nodes">>, _ENode, <<"backup">>, _] ->
@@ -577,8 +563,6 @@ get_local_items({global, _Host},
     {result,
      [?NODE(?T("Database"),
 	    <<"running nodes/", ENode/binary, "/DB">>),
-      ?NODE(?T("Modules"),
-	    <<"running nodes/", ENode/binary, "/modules">>),
       ?NODE(?T("Backup Management"),
 	    <<"running nodes/", ENode/binary, "/backup">>),
       ?NODE(?T("Import Users From jabberd14 Spool Files"),
@@ -587,26 +571,9 @@ get_local_items({global, _Host},
 	    <<"running nodes/", ENode/binary, "/restart">>),
       ?NODE(?T("Shut Down Service"),
 	    <<"running nodes/", ENode/binary, "/shutdown">>)]};
-get_local_items({vhost, _Host},
-		[<<"running nodes">>, ENode], Server, Lang) ->
-    {result,
-     [?NODE(?T("Modules"),
-	    <<"running nodes/", ENode/binary, "/modules">>)]};
 get_local_items(_Host,
 		[<<"running nodes">>, _ENode, <<"DB">>], _Server,
 		_Lang) ->
-    {result, []};
-get_local_items(_Host,
-		[<<"running nodes">>, ENode, <<"modules">>], Server,
-		Lang) ->
-    {result,
-     [?NODE(?T("Start Modules"),
-	    <<"running nodes/", ENode/binary, "/modules/start">>),
-      ?NODE(?T("Stop Modules"),
-	    <<"running nodes/", ENode/binary, "/modules/stop">>)]};
-get_local_items(_Host,
-		[<<"running nodes">>, _ENode, <<"modules">>, _],
-		_Server, _Lang) ->
     {result, []};
 get_local_items(_Host,
 		[<<"running nodes">>, ENode, <<"backup">>], Server,
@@ -758,8 +725,6 @@ adhoc_local_commands(Acc, From,
     case LNode of
       [<<"running nodes">>, _ENode, <<"DB">>] ->
 	  ?COMMANDS_RESULT(global, From, To, Request, Lang);
-      [<<"running nodes">>, _ENode, <<"modules">>, _] ->
-	  ?COMMANDS_RESULT(LServer, From, To, Request, Lang);
       [<<"running nodes">>, _ENode, <<"backup">>, _] ->
 	  ?COMMANDS_RESULT(global, From, To, Request, Lang);
       [<<"running nodes">>, _ENode, <<"import">>, _] ->
@@ -884,46 +849,6 @@ get_form(_Host, [<<"running nodes">>, ENode, <<"DB">>],
 		end
 	  end
     end;
-get_form(Host,
-	 [<<"running nodes">>, ENode, <<"modules">>, <<"stop">>],
-	 Lang) ->
-    case search_running_node(ENode) of
-      false ->
-	  Txt = ?T("No running node found"),
-	  {error, xmpp:err_item_not_found(Txt, Lang)};
-      Node ->
-	  case ejabberd_cluster:call(Node, gen_mod, loaded_modules, [Host]) of
-	    {badrpc, Reason} ->
-		?ERROR_MSG("RPC call gen_mod:loaded_modules(~s) on node "
-			   "~s failed: ~p", [Host, Node, Reason]),
-		{error, xmpp:err_internal_server_error()};
-	    Modules ->
-		SModules = lists:sort(Modules),
-		Title = <<(tr(Lang, ?T("Stop Modules at ")))/binary,
-			  ENode/binary>>,
-		Instr = tr(Lang, ?T("Choose modules to stop")),
-		Fs = lists:map(fun(M) ->
-				       S = misc:atom_to_binary(M),
-				       ?XFIELD(boolean, S, S, <<"0">>)
-			       end, SModules),
-		{result, #xdata{title = Title,
-				type = form,
-				instructions = [Instr],
-				fields = [?HFIELD()|Fs]}}
-	  end
-    end;
-get_form(_Host,
-	 [<<"running nodes">>, ENode, <<"modules">>,
-	  <<"start">>],
-	 Lang) ->
-    {result,
-     #xdata{title = <<(tr(Lang, ?T("Start Modules at ")))/binary, ENode/binary>>,
-	    type = form,
-	    instructions = [tr(Lang, ?T("Enter list of {Module, [Options]}"))],
-	    fields = [?HFIELD(),
-		      ?XFIELD('text-multi',
-			      ?T("List of modules to start"), <<"modules">>,
-			      <<"[].">>)]}};
 get_form(_Host,
 	 [<<"running nodes">>, ENode, <<"backup">>,
 	  <<"backup">>],
@@ -1195,65 +1120,6 @@ set_form(_From, _Host,
 		    end
 	    end, XData#xdata.fields),
 	    {result, undefined}
-    end;
-set_form(_From, Host,
-	 [<<"running nodes">>, ENode, <<"modules">>, <<"stop">>],
-	 Lang, XData) ->
-    case search_running_node(ENode) of
-      false ->
-	  Txt = ?T("No running node found"),
-	  {error, xmpp:err_item_not_found(Txt, Lang)};
-      Node ->
-	  lists:foreach(
-	    fun(#xdata_field{var = Var, values = Vals}) ->
-		    case Vals of
-			[<<"1">>] ->
-			    Module = misc:binary_to_atom(Var),
-			    ejabberd_cluster:call(Node, gen_mod, stop_module,
-						  [Host, Module]);
-			_ -> ok
-		    end
-	    end, XData#xdata.fields),
-	  {result, undefined}
-    end;
-set_form(_From, Host,
-	 [<<"running nodes">>, ENode, <<"modules">>,
-	  <<"start">>],
-	 Lang, XData) ->
-    case search_running_node(ENode) of
-	false ->
-	    Txt = ?T("No running node found"),
-	    {error, xmpp:err_item_not_found(Txt, Lang)};
-	Node ->
-	    case xmpp_util:get_xdata_values(<<"modules">>, XData) of
-		[] ->
-		    Txt = ?T("No 'modules' found in data form"),
-		    {error, xmpp:err_bad_request(Txt, Lang)};
-		Strings ->
-		    String = lists:foldl(fun (S, Res) ->
-						 <<Res/binary, S/binary, "\n">>
-					 end, <<"">>, Strings),
-		    case erl_scan:string(binary_to_list(String)) of
-			{ok, Tokens, _} ->
-			    case erl_parse:parse_term(Tokens) of
-				{ok, Modules} ->
-				    lists:foreach(
-				      fun ({Module, Args}) ->
-					      ejabberd_cluster:call(
-						Node, gen_mod, start_module,
-						[Host, Module, Args])
-				      end,
-				      Modules),
-				    {result, undefined};
-				_ ->
-				    Txt = ?T("Parse failed"),
-				    {error, xmpp:err_bad_request(Txt, Lang)}
-			    end;
-			_ ->
-			    Txt = ?T("Scan failed"),
-			    {error, xmpp:err_bad_request(Txt, Lang)}
-		    end
-	    end
     end;
 set_form(_From, _Host,
 	 [<<"running nodes">>, ENode, <<"backup">>,
