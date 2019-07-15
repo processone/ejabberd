@@ -648,121 +648,97 @@ get_local_items(_Host, _, _Server, _Lang) ->
 
 -spec get_online_vh_users(binary()) -> [disco_item()].
 get_online_vh_users(Host) ->
-    case catch ejabberd_sm:get_vh_session_list(Host) of
-      {'EXIT', _Reason} -> [];
-      USRs ->
-	  SURs = lists:sort([{S, U, R} || {U, S, R} <- USRs]),
-	  lists:map(
-	    fun({S, U, R}) ->
-		    #disco_item{jid = jid:make(U, S, R),
-				name = <<U/binary, "@", S/binary>>}
-		    end, SURs)
-    end.
+    USRs = ejabberd_sm:get_vh_session_list(Host),
+    SURs = lists:sort([{S, U, R} || {U, S, R} <- USRs]),
+    lists:map(
+      fun({S, U, R}) ->
+	      #disco_item{jid = jid:make(U, S, R),
+			  name = <<U/binary, "@", S/binary>>}
+      end, SURs).
 
 -spec get_all_vh_users(binary()) -> [disco_item()].
 get_all_vh_users(Host) ->
-    case catch ejabberd_auth:get_users(Host)
-	of
-      {'EXIT', _Reason} -> [];
-      Users ->
-	  SUsers = lists:sort([{S, U} || {U, S} <- Users]),
-	  case length(SUsers) of
-	    N when N =< 100 ->
-		lists:map(fun({S, U}) ->
-				  #disco_item{jid = jid:make(U, S),
-					      name = <<U/binary, $@, S/binary>>}
-			  end, SUsers);
-	    N ->
-		NParts = trunc(math:sqrt(N * 6.17999999999999993783e-1))
-			   + 1,
-		M = trunc(N / NParts) + 1,
-		lists:map(fun (K) ->
-				  L = K + M - 1,
-				  Node = <<"@",
-					   (integer_to_binary(K))/binary,
-					   "-",
-					   (integer_to_binary(L))/binary>>,
-				  {FS, FU} = lists:nth(K, SUsers),
-				  {LS, LU} = if L < N -> lists:nth(L, SUsers);
-						true -> lists:last(SUsers)
-					     end,
-				  Name = <<FU/binary, "@", FS/binary, " -- ",
-					   LU/binary, "@", LS/binary>>,
-				  #disco_item{jid = jid:make(Host),
-					      node = <<"all users/", Node/binary>>,
-					      name = Name}
-			  end,
-			  lists:seq(1, N, M))
-	  end
+    Users = ejabberd_auth:get_users(Host),
+    SUsers = lists:sort([{S, U} || {U, S} <- Users]),
+    case length(SUsers) of
+	N when N =< 100 ->
+	    lists:map(fun({S, U}) ->
+			      #disco_item{jid = jid:make(U, S),
+					  name = <<U/binary, $@, S/binary>>}
+		      end, SUsers);
+	N ->
+	    NParts = trunc(math:sqrt(N * 6.17999999999999993783e-1)) + 1,
+	    M = trunc(N / NParts) + 1,
+	    lists:map(
+	      fun (K) ->
+		      L = K + M - 1,
+		      Node = <<"@",
+			       (integer_to_binary(K))/binary,
+			       "-",
+			       (integer_to_binary(L))/binary>>,
+		      {FS, FU} = lists:nth(K, SUsers),
+		      {LS, LU} = if L < N -> lists:nth(L, SUsers);
+				    true -> lists:last(SUsers)
+				 end,
+		      Name = <<FU/binary, "@", FS/binary, " -- ",
+			       LU/binary, "@", LS/binary>>,
+		      #disco_item{jid = jid:make(Host),
+				  node = <<"all users/", Node/binary>>,
+				  name = Name}
+	      end, lists:seq(1, N, M))
     end.
 
 -spec get_outgoing_s2s(binary(), binary()) -> [disco_item()].
 get_outgoing_s2s(Host, Lang) ->
-    case catch ejabberd_s2s:dirty_get_connections() of
-      {'EXIT', _Reason} -> [];
-      Connections ->
-	  DotHost = <<".", Host/binary>>,
-	  TConns = [TH
-		    || {FH, TH} <- Connections,
-		       Host == FH orelse str:suffix(DotHost, FH)],
-	  lists:map(
-	    fun (T) ->
-		    Name = str:format(tr(Lang, ?T("To ~s")),[T]),
-		    #disco_item{jid = jid:make(Host),
-				node = <<"outgoing s2s/", T/binary>>,
-				name = Name}
-	    end, lists:usort(TConns))
-    end.
+    Connections = ejabberd_s2s:dirty_get_connections(),
+    DotHost = <<".", Host/binary>>,
+    TConns = [TH || {FH, TH} <- Connections,
+		    Host == FH orelse str:suffix(DotHost, FH)],
+    lists:map(
+      fun (T) ->
+	      Name = str:format(tr(Lang, ?T("To ~s")),[T]),
+	      #disco_item{jid = jid:make(Host),
+			  node = <<"outgoing s2s/", T/binary>>,
+			  name = Name}
+      end, lists:usort(TConns)).
 
 -spec get_outgoing_s2s(binary(), binary(), binary()) -> [disco_item()].
 get_outgoing_s2s(Host, Lang, To) ->
-    case catch ejabberd_s2s:dirty_get_connections() of
-      {'EXIT', _Reason} -> [];
-      Connections ->
-	  lists:map(
-	    fun ({F, _T}) ->
-		    Node = <<"outgoing s2s/", To/binary, "/", F/binary>>,
-		    Name = str:format(tr(Lang, ?T("From ~s")), [F]),
-		    #disco_item{jid = jid:make(Host), node = Node, name = Name}
-	    end,
-	    lists:keysort(1,
-			  lists:filter(fun (E) -> element(2, E) == To
-				       end,
-				       Connections)))
-    end.
+    Connections = ejabberd_s2s:dirty_get_connections(),
+    lists:map(
+      fun ({F, _T}) ->
+	      Node = <<"outgoing s2s/", To/binary, "/", F/binary>>,
+	      Name = str:format(tr(Lang, ?T("From ~s")), [F]),
+	      #disco_item{jid = jid:make(Host), node = Node, name = Name}
+      end,
+      lists:keysort(
+	1,
+	lists:filter(fun (E) -> element(2, E) == To end,
+		     Connections))).
 
 -spec get_running_nodes(binary(), binary()) -> [disco_item()].
 get_running_nodes(Server, _Lang) ->
-    case catch mnesia:system_info(running_db_nodes) of
-      {'EXIT', _Reason} -> [];
-      DBNodes ->
-	  lists:map(
-	    fun (N) ->
-		    S = iolist_to_binary(atom_to_list(N)),
-		    #disco_item{jid = jid:make(Server),
-				node = <<"running nodes/", S/binary>>,
-				name = S}
-	    end,
-	    lists:sort(DBNodes))
-    end.
+    DBNodes = mnesia:system_info(running_db_nodes),
+    lists:map(
+      fun (N) ->
+	      S = iolist_to_binary(atom_to_list(N)),
+	      #disco_item{jid = jid:make(Server),
+			  node = <<"running nodes/", S/binary>>,
+			  name = S}
+      end, lists:sort(DBNodes)).
 
 -spec get_stopped_nodes(binary()) -> [disco_item()].
 get_stopped_nodes(_Lang) ->
-    case catch lists:usort(mnesia:system_info(db_nodes) ++
-			     mnesia:system_info(extra_db_nodes))
-		 -- mnesia:system_info(running_db_nodes)
-	of
-      {'EXIT', _Reason} -> [];
-      DBNodes ->
-	  lists:map(
-	    fun (N) ->
-		    S = iolist_to_binary(atom_to_list(N)),
-		    #disco_item{jid = jid:make(ejabberd_config:get_myname()),
-				node = <<"stopped nodes/", S/binary>>,
-				name = S}
-	    end,
-	    lists:sort(DBNodes))
-    end.
+    DBNodes = lists:usort(mnesia:system_info(db_nodes) ++
+			      mnesia:system_info(extra_db_nodes))
+	-- mnesia:system_info(running_db_nodes),
+    lists:map(
+      fun (N) ->
+	      S = iolist_to_binary(atom_to_list(N)),
+	      #disco_item{jid = jid:make(ejabberd_config:get_myname()),
+			  node = <<"stopped nodes/", S/binary>>,
+			  name = S}
+      end, lists:sort(DBNodes)).
 
 %%-------------------------------------------------------------------------
 
@@ -823,12 +799,12 @@ adhoc_local_commands(From,
 	     {error, Error} -> {error, Error}
 	   end;
        XData /= undefined, ActionIsExecute ->
-	    case catch set_form(From, LServer, LNode, Lang, XData) of
+	    case set_form(From, LServer, LNode, Lang, XData) of
 		{result, Res} ->
 		    xmpp_util:make_adhoc_response(
 		      Request,
 		      #adhoc_command{xdata = Res, status = completed});
-		{'EXIT', _} -> {error, xmpp:err_bad_request()};
+		%%{'EXIT', _} -> {error, xmpp:err_bad_request()};
 		{error, Error} -> {error, Error}
 	    end;
        true ->
@@ -1587,10 +1563,10 @@ search_running_node(SNode, [Node | Nodes]) ->
 -spec stop_node(jid(), binary(), binary(), restart | stop, xdata()) -> {result, undefined}.
 stop_node(From, Host, ENode, Action, XData) ->
     Delay = binary_to_integer(get_value(<<"delay">>, XData)),
-    Subject = case get_value(<<"subject">>, XData) of
-		  <<"">> ->
+    Subject = case get_values(<<"subject">>, XData) of
+		  [] ->
 		      [];
-		  S ->
+		  [S|_] ->
 		      [#xdata_field{var = <<"subject">>, values = [S]}]
 	      end,
     Announcement = case get_values(<<"announcement">>, XData) of
@@ -1698,7 +1674,7 @@ set_sm_form(User, Server, <<"config">>,
 		    {error, xmpp:err_not_acceptable(Txt, Lang)}
 	    end;
 	[<<"remove">>] ->
-	    catch ejabberd_auth:remove_user(User, Server),
+	    ejabberd_auth:remove_user(User, Server),
 	    xmpp_util:make_adhoc_response(Response);
 	_ ->
 	    Txt = ?T("Incorrect value of 'action' in data form"),
