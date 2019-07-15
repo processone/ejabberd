@@ -706,7 +706,7 @@ check_create_room(ServerHost, Host, Room, From) ->
 	    case mod_muc_opt:max_room_id(ServerHost) of
 		Max when byte_size(Room) =< Max ->
 		    Regexp = mod_muc_opt:regexp_room_id(ServerHost),
-		    case re:run(Room, Regexp, [unicode, {capture, none}]) of
+		    case re:run(Room, Regexp, [{capture, none}]) of
 			match ->
 			    AccessAdmin = mod_muc_opt:access_admin(ServerHost),
 			    case acl:match_rule(ServerHost, AccessAdmin, From) of
