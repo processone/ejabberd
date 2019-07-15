@@ -774,12 +774,6 @@ rest_dir(0, Path, <<H, T/binary>>) ->
     rest_dir(0, <<H, Path/binary>>, T);
 rest_dir(N, Path, <<_H, T/binary>>) -> rest_dir(N, Path, T).
 
-expand_custom_headers(Headers) ->
-    lists:map(fun({K, V}) ->
-		      {K, misc:expand_keyword(<<"@VERSION@">>, V,
-					      ejabberd_option:version())}
-	      end, Headers).
-
 code_to_phrase(100) -> <<"Continue">>;
 code_to_phrase(101) -> <<"Switching Protocols ">>;
 code_to_phrase(200) -> <<"OK">>;
@@ -904,21 +898,22 @@ normalize_path([Part | Path], Norm) ->
 listen_opt_type(tag) ->
     econf:binary();
 listen_opt_type(request_handlers) ->
-    econf:and_then(
-      econf:map(
+    econf:map(
+      econf:and_then(
 	econf:binary(),
-	econf:beam([[{socket_handoff, 3}, {process, 2}]])),
-      fun(L) ->
-	      [{str:tokens(Path, <<"/">>), Mod} || {Path, Mod} <- L]
-      end);
+	fun(Path) -> str:tokens(Path, <<"/">>) end),
+      econf:beam([[{socket_handoff, 3}, {process, 2}]]));
 listen_opt_type(default_host) ->
     econf:domain();
 listen_opt_type(custom_headers) ->
-    econf:and_then(
-      econf:map(
+    econf:map(
+      econf:binary(),
+      econf:and_then(
 	econf:binary(),
-	econf:binary()),
-      fun expand_custom_headers/1).
+	fun(V) ->
+		misc:expand_keyword(<<"@VERSION@">>, V,
+				    ejabberd_option:version())
+	end)).
 
 listen_options() ->
     [{ciphers, undefined},

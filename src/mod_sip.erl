@@ -349,7 +349,7 @@ mod_opt_type(via) ->
 		{Type, {Host, Port}}
 	end)).
 
--spec mod_options(binary()) -> [{via, [{tcp | tls | udp, {binary(), 1..65535}}]} |
+-spec mod_options(binary()) -> [{via, [{tcp | tls | udp, {binary(), 1..65535 | undefined}}]} |
 				{atom(), term()}].
 mod_options(Host) ->
     Route = #uri{scheme = <<"sip">>,
