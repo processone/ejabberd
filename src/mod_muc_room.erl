@@ -4093,7 +4093,8 @@ iq_disco_info_extras(Lang, StateData, Static) ->
 process_iq_disco_items(_From, #iq{type = set, lang = Lang}, _StateData) ->
     Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     {error, xmpp:err_not_allowed(Txt, Lang)};
-process_iq_disco_items(From, #iq{type = get}, StateData) ->
+process_iq_disco_items(From, #iq{type = get, sub_els = [#disco_items{node = <<>>}]},
+		       StateData) ->
     case (StateData#state.config)#config.public_list of
       true ->
 	  {result, get_mucroom_disco_items(StateData)};
@@ -4107,7 +4108,10 @@ process_iq_disco_items(From, #iq{type = get}, StateData) ->
 		%% (http://xmpp.org/extensions/xep-0045.html#disco-roomitems)
 		{result, #disco_items{}}
 	  end
-    end.
+    end;
+process_iq_disco_items(_From, #iq{lang = Lang}, _StateData) ->
+    Txt = ?T("Node not found"),
+    {error, xmpp:err_item_not_found(Txt, Lang)}.
 
 -spec process_iq_captcha(jid(), iq(), state()) -> {error, stanza_error()} |
 						  {result, undefined}.
