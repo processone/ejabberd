@@ -1106,7 +1106,7 @@ mod_opt_type(max_room_id) ->
 mod_opt_type(max_rooms_discoitems) ->
     econf:non_neg_int();
 mod_opt_type(regexp_room_id) ->
-    econf:re();
+    econf:re([unicode]);
 mod_opt_type(max_room_name) ->
     econf:pos_int(infinity);
 mod_opt_type(max_user_conferences) ->
