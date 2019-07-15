@@ -423,20 +423,24 @@ normal_state({route, <<"">>,
 		ejabberd_router:route(IQRes),
 		{next_state, normal_state, StateData};
 	    #iq{sub_els = [SubEl]} = IQ ->
-		Res1 = case xmpp:get_ns(SubEl) of
-			   ?NS_MUC_ADMIN ->
+		Res1 = case SubEl of
+			   #muc_admin{} ->
 			       process_iq_admin(From, IQ, StateData);
-			   ?NS_MUC_OWNER ->
+			   #muc_owner{} ->
 			       process_iq_owner(From, IQ, StateData);
-			   ?NS_DISCO_INFO ->
+			   #disco_info{} ->
 			       process_iq_disco_info(From, IQ, StateData);
-			   ?NS_DISCO_ITEMS ->
+			   #disco_items{} ->
 			       process_iq_disco_items(From, IQ, StateData);
-			   ?NS_VCARD ->
+			   #vcard_temp{} ->
 			       process_iq_vcard(From, IQ, StateData);
-			   ?NS_MUCSUB ->
+			   #muc_subscribe{} ->
 			       process_iq_mucsub(From, IQ, StateData);
-			   ?NS_CAPTCHA ->
+			   #muc_unsubscribe{} ->
+			       process_iq_mucsub(From, IQ, StateData);
+			   #muc_subscriptions{} ->
+			       process_iq_mucsub(From, IQ, StateData);
+			   #xcaptcha{} ->
 			       process_iq_captcha(From, IQ, StateData);
 			   _ ->
 			       Txt = ?T("The feature requested is not "
@@ -2741,6 +2745,11 @@ process_iq_admin(_From, #iq{lang = Lang, sub_els = [#muc_admin{items = []}]},
 		 _StateData) ->
     Txt = ?T("No 'item' element found"),
     {error, xmpp:err_bad_request(Txt, Lang)};
+process_iq_admin(_From, #iq{type = get, lang = Lang,
+			    sub_els = [#muc_admin{items = [_, _|_]}]},
+		 _StateData) ->
+    ErrText = ?T("Too many <item/> elements"),
+    {error, xmpp:err_bad_request(ErrText, Lang)};
 process_iq_admin(From, #iq{type = set, lang = Lang,
 			   sub_els = [#muc_admin{items = Items}]},
 		 StateData) ->
@@ -2773,10 +2782,7 @@ process_iq_admin(From, #iq{type = get, lang = Lang,
 		    ErrText = ?T("Moderator privileges required"),
 		    {error, xmpp:err_forbidden(ErrText, Lang)}
 	    end
-    end;
-process_iq_admin(_From, #iq{type = get, lang = Lang}, _StateData) ->
-    ErrText = ?T("Too many <item/> elements"),
-    {error, xmpp:err_bad_request(ErrText, Lang)}.
+    end.
 
 -spec items_with_role(role(), state()) -> [muc_item()].
 items_with_role(SRole, StateData) ->
@@ -3377,9 +3383,7 @@ process_iq_owner(From, #iq{type = get, lang = Lang,
 	    end;
        true ->
 	    {error, xmpp:err_bad_request()}
-    end;
-process_iq_owner(_, _, _) ->
-    {error, xmpp:err_bad_request()}.
+    end.
 
 -spec is_allowed_log_change(muc_roomconfig:result(), state(), jid()) -> boolean().
 is_allowed_log_change(Options, StateData, From) ->
