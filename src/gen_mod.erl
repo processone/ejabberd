@@ -277,40 +277,16 @@ stop_module(Host, Module) ->
 -spec stop_module_keep_config(binary(), atom()) -> error | ok.
 stop_module_keep_config(Host, Module) ->
     ?DEBUG("Stopping ~s at ~s", [Module, Host]),
-    case catch Module:stop(Host) of
-      {'EXIT', Reason} -> ?ERROR_MSG("~p", [Reason]), error;
-      {wait, ProcList} when is_list(ProcList) ->
-	  lists:foreach(fun wait_for_process/1, ProcList),
-	  ets:delete(ejabberd_modules, {Module, Host}),
-	  ok;
-      {wait, Process} ->
-	  wait_for_process(Process),
-	  ets:delete(ejabberd_modules, {Module, Host}),
-	  ok;
-      _ -> ets:delete(ejabberd_modules, {Module, Host}), ok
-    end.
-
-wait_for_process(Process) ->
-    try erlang:monitor(process, Process) of
-	MonitorReference ->
-	    wait_for_stop(Process, MonitorReference)
-    catch
-	_:_ ->
+    try Module:stop(Host) of
+	_ ->
+	    ets:delete(ejabberd_modules, {Module, Host}),
 	    ok
-    end.
-
-wait_for_stop(Process, MonitorReference) ->
-    receive
-      {'DOWN', MonitorReference, _Type, _Object, _Info} -> ok
-      after 5000 ->
-		catch exit(whereis(Process), kill),
-		wait_for_stop1(MonitorReference)
-    end.
-
-wait_for_stop1(MonitorReference) ->
-    receive
-      {'DOWN', MonitorReference, _Type, _Object, _Info} -> ok
-      after 5000 -> ok
+    catch ?EX_RULE(Class, Reason, St) ->
+            StackTrace = ?EX_STACK(St),
+            ?ERROR_MSG("Failed to stop module ~s at ~s:~n** ~s",
+                       [Module, Host,
+                        misc:format_exception(2, Class, Reason, StackTrace)]),
+	    error
     end.
 
 -spec get_opt(atom(), opts()) -> any().
