@@ -34,6 +34,7 @@
 	 start_link/8,
 	 start/10,
 	 start/8,
+	 supervisor/1,
 	 get_role/2,
 	 get_affiliation/2,
 	 is_occupant_or_admin/2,
@@ -113,17 +114,19 @@
 		   {ok, pid()} | {error, any()}.
 start(Host, ServerHost, Access, Room, HistorySize, RoomShaper,
       Creator, Nick, DefRoomOpts, QueueType) ->
-    p1_fsm:start(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
-			    RoomShaper, Creator, Nick, DefRoomOpts, QueueType],
-		    ?FSMOPTS).
+    supervisor:start_child(
+      supervisor(ServerHost),
+      [Host, ServerHost, Access, Room, HistorySize,
+       RoomShaper, Creator, Nick, DefRoomOpts, QueueType]).
 
 -spec start(binary(), binary(), mod_muc:access(), binary(), non_neg_integer(),
 	    atom(), [{atom(), term()}], ram | file) ->
 		   {ok, pid()} | {error, any()}.
 start(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, QueueType) ->
-    p1_fsm:start(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
-			    RoomShaper, Opts, QueueType],
-		    ?FSMOPTS).
+    supervisor:start_child(
+      supervisor(ServerHost),
+      [Host, ServerHost, Access, Room, HistorySize,
+       RoomShaper, Opts, QueueType]).
 
 -spec start_link(binary(), binary(), mod_muc:access(), binary(), non_neg_integer(),
 		 atom(), jid(), binary(), [{atom(), term()}], ram | file) ->
@@ -141,6 +144,10 @@ start_link(Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, QueueT
     p1_fsm:start_link(?MODULE, [Host, ServerHost, Access, Room, HistorySize,
 				 RoomShaper, Opts, QueueType],
 		       ?FSMOPTS).
+
+-spec supervisor(binary()) -> atom().
+supervisor(Host) ->
+    gen_mod:get_module_proc(Host, mod_muc_room_sup).
 
 -spec destroy(pid()) -> ok.
 destroy(Pid) ->

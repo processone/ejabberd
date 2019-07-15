@@ -52,15 +52,26 @@ procname(Host) ->
 %%%===================================================================
 init([Host, Opts]) ->
     Cores = erlang:system_info(logical_processors),
-    Specs = [#{id => mod_muc:procname(Host, I),
-	       start => {mod_muc, start_link, [Host, Opts, I]},
-	       restart => permanent,
-	       shutdown => timer:minutes(1),
-	       type => worker,
-	       modules => [mod_muc]}
-	     || I <- lists:seq(1, Cores)],
+    Specs = lists:foldl(
+	      fun(I, Acc) ->
+		      [#{id => mod_muc:procname(Host, I),
+			 start => {mod_muc, start_link, [Host, Opts, I]},
+			 restart => permanent,
+			 shutdown => timer:minutes(1),
+			 type => worker,
+			 modules => [mod_muc]}|Acc]
+	      end, [room_sup_spec(Host)], lists:seq(1, Cores)),
     {ok, {{one_for_one, 10*Cores, 1}, Specs}}.
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+-spec room_sup_spec(binary()) -> supervisor:child_spec().
+room_sup_spec(Host) ->
+    Name = mod_muc_room:supervisor(Host),
+    #{id => Name,
+      start => {ejabberd_tmp_sup, start_link, [Name, mod_muc_room]},
+      restart => permanent,
+      shutdown => infinity,
+      type => supervisor,
+      modules => [ejabberd_tmp_sup]}.
