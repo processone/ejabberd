@@ -4707,7 +4707,7 @@ reset_hibernate_timer(State) ->
 			   {infinity, _} ->
 			       none;
 			   {Timeout, 0} ->
-			       p1_fsm:send_event_after(timer:minutes(Timeout), hibernate);
+			       p1_fsm:send_event_after(Timeout, hibernate);
 			   _ ->
 			       none
 		       end,

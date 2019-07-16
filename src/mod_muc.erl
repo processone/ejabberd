@@ -1178,7 +1178,7 @@ mod_opt_type(hosts) ->
 mod_opt_type(queue_type) ->
     econf:queue_type();
 mod_opt_type(hibernation_timeout) ->
-    econf:non_neg_int(infinity).
+    econf:timeout(minute, infinity).
 
 mod_options(Host) ->
     [{access, all},
