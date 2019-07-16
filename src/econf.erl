@@ -28,7 +28,7 @@
 -export([pos_int/0, pos_int/1, non_neg_int/0, non_neg_int/1]).
 -export([int/0, int/2, number/1, octal/0]).
 -export([binary/0, binary/1, binary/2]).
--export([string/0, string/1]).
+-export([string/0, string/1, string/2]).
 -export([enum/1, bool/0, atom/0, any/0]).
 %% Complex types
 -export([url/0, url/1]).
@@ -271,6 +271,9 @@ string() ->
 
 string(Re) ->
     yconf:string(Re).
+
+string(Re, Opts) ->
+    yconf:string(Re, Opts).
 
 any() ->
     yconf:any().
