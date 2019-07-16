@@ -82,7 +82,7 @@ default_room_options(Opts) when is_map(Opts) ->
 default_room_options(Host) ->
     gen_mod:get_module_opt(Host, mod_muc, default_room_options).
 
--spec hibernation_timeout(gen_mod:opts() | global | binary()) -> 'infinity' | non_neg_integer().
+-spec hibernation_timeout(gen_mod:opts() | global | binary()) -> 'infinity' | pos_integer().
 hibernation_timeout(Opts) when is_map(Opts) ->
     gen_mod:get_opt(hibernation_timeout, Opts);
 hibernation_timeout(Host) ->
