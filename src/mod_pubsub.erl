@@ -3238,11 +3238,12 @@ max_items(Host, Options) ->
 			    binary(), [binary()]) -> [xdata_field()].
 get_configure_xfields(_Type, Options, Lang, Groups) ->
     pubsub_node_config:encode(
-      lists:map(
+      lists:filtermap(
 	fun({roster_groups_allowed, Value}) ->
-		{roster_groups_allowed, Value, Groups};
-	   (Opt) ->
-		Opt
+		{true, {roster_groups_allowed, Value, Groups}};
+	   ({sql, _}) -> false;
+	   ({rsm, _}) -> false;
+	   (_) -> true
 	end, Options),
       Lang).
 

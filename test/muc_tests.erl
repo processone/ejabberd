@@ -638,7 +638,7 @@ voice_request_master(Config) ->
      {roomnick, PeerNick}] = lists:sort(muc_request:decode(Fs)),
     ct:comment("Approving voice request"),
     ApprovalFs = muc_request:encode([{jid, PeerJID}, {role, participant},
-				     {nick, PeerNick}, {request_allow, true}]),
+				     {roomnick, PeerNick}, {request_allow, true}]),
     send(Config, #message{to = Room, sub_els = [#xdata{type = submit,
 						       fields = ApprovalFs}]}),
     #muc_user{
@@ -1449,7 +1449,7 @@ config_voice_request_interval_master(Config) ->
     #message{from = Room, type = normal} = recv_message(Config),
     ct:comment("Deny voice request at first"),
     Fs = muc_request:encode([{jid, PeerJID}, {role, participant},
-			     {nick, PeerNick}, {request_allow, false}]),
+			     {roomnick, PeerNick}, {request_allow, false}]),
     send(Config, #message{to = Room, sub_els = [#xdata{type = submit,
                                                        fields = Fs}]}),
     put_event(Config, denied),
