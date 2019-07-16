@@ -76,13 +76,13 @@
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("mod_muc.hrl").
+-include("mod_muc_room.hrl").
 -include("translate.hrl").
 -include("ejabberd_stacktrace.hrl").
 
--record(state, {hosts :: [binary()],
-		server_host :: binary(),
-		worker :: pos_integer()}).
-
+-type state() :: #{hosts := [binary()],
+		   server_host := binary(),
+		   worker := pos_integer()}.
 -type access() :: {acl:acl(), acl:acl(), acl:acl(), acl:acl(), acl:acl()}.
 -type muc_room_opts() :: [{atom(), any()}].
 -export_type([access/0]).
@@ -364,17 +364,21 @@ get_online_rooms_by_user(ServerHost, LUser, LServer) ->
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
+-spec init(list()) -> {ok, state()}.
 init([Host, Opts, Worker]) ->
     process_flag(trap_exit, true),
     MyHosts = gen_mod:get_opt_hosts(Opts),
     register_routes(Host, MyHosts, Worker),
     register_iq_handlers(MyHosts, Worker),
-    {ok, #state{server_host = Host, hosts = MyHosts, worker = Worker}}.
+    {ok, #{server_host => Host, hosts => MyHosts, worker => Worker}}.
 
+-spec handle_call(term(), {pid(), term()}, state()) ->
+			 {reply, ok | {ok, pid()} | {error, any()}, state()} |
+			 {stop, normal, ok, state()}.
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
 handle_call({create, Room, Host, From, Nick, Opts}, _From,
-	    #state{server_host = ServerHost} = State) ->
+	    #{server_host := ServerHost} = State) ->
     ?DEBUG("MUC: create new room '~s'~n", [Room]),
     NewOpts = case Opts of
 		  default -> mod_muc_opt:default_room_options(ServerHost);
@@ -389,7 +393,8 @@ handle_call({create, Room, Host, From, Nick, Opts}, _From,
 	    {reply, Err, State}
     end.
 
-handle_cast({route_to_room, Packet}, #state{server_host = ServerHost} = State) ->
+-spec handle_cast(term(), state()) -> {noreply, state()}.
+handle_cast({route_to_room, Packet}, #{server_host := ServerHost} = State) ->
     try route_to_room(Packet, ServerHost)
     catch ?EX_RULE(Class, Reason, St) ->
             StackTrace = ?EX_STACK(St),
@@ -398,27 +403,28 @@ handle_cast({route_to_room, Packet}, #state{server_host = ServerHost} = State) -
 			misc:format_exception(2, Class, Reason, StackTrace)])
     end,
     {noreply, State};
-handle_cast({room_destroyed, {Room, Host}, Pid}, State) ->
-    ServerHost = State#state.server_host,
+handle_cast({room_destroyed, {Room, Host}, Pid},
+	    #{server_host := ServerHost} = State) ->
     RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
     RMod:unregister_online_room(ServerHost, Room, Host, Pid),
     {noreply, State};
 handle_cast({reload, AddHosts, DelHosts, NewHosts},
-	    #state{server_host = ServerHost, worker = Worker} = State) ->
+	    #{server_host := ServerHost, worker := Worker} = State) ->
     register_routes(ServerHost, AddHosts, Worker),
     register_iq_handlers(AddHosts, Worker),
     unregister_routes(DelHosts, Worker),
     unregister_iq_handlers(DelHosts, Worker),
-    {noreply, State#state{hosts = NewHosts}};
+    {noreply, State#{hosts => NewHosts}};
 handle_cast(Msg, State) ->
     ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
-handle_info({route, Packet}, State) ->
+-spec handle_info(term(), state()) -> {noreply, state()}.
+handle_info({route, Packet}, #{server_host := ServerHost} = State) ->
     %% We can only receive the packet here from other nodes
     %% where mod_muc is not loaded. Such configuration
     %% is *highly* discouraged
-    try route(Packet, State#state.server_host)
+    try route(Packet, ServerHost)
     catch ?EX_RULE(Class, Reason, St) ->
             StackTrace = ?EX_STACK(St),
             ?ERROR_MSG("Failed to route packet:~n~s~n** ~s",
@@ -433,10 +439,12 @@ handle_info(Info, State) ->
     ?ERROR_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
-terminate(_Reason, #state{hosts = Hosts, worker = Worker}) ->
+-spec terminate(term(), state()) -> any().
+terminate(_Reason, #{hosts := Hosts, worker := Worker}) ->
     unregister_routes(Hosts, Worker),
     unregister_iq_handlers(Hosts, Worker).
 
+-spec code_change(term(), state(), term()) -> {ok, state()}.
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 %%--------------------------------------------------------------------
@@ -912,10 +920,6 @@ get_room_disco_item({Name, Host, Pid}, {Filter, JID, Lang}) ->
 get_subscribed_rooms(Host, User) ->
     ServerHost = ejabberd_router:host_of_route(Host),
     get_subscribed_rooms(ServerHost, Host, User).
-
--record(subscriber, {jid :: jid(),
-		     nick = <<>> :: binary(),
-		     nodes = [] :: [binary()]}).
 
 -spec get_subscribed_rooms(binary(), binary(), jid()) ->
 			   {ok, [{jid(), [binary()]}]} | {error, any()}.
