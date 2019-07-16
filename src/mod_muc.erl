@@ -128,10 +128,8 @@ start(Host, Opts) ->
 
 stop(Host) ->
     Proc = mod_muc_sup:procname(Host),
-    Rooms = shutdown_rooms(Host),
     supervisor:terminate_child(ejabberd_gen_mod_sup, Proc),
-    supervisor:delete_child(ejabberd_gen_mod_sup, Proc),
-    {wait, Rooms}.
+    supervisor:delete_child(ejabberd_gen_mod_sup, Proc).
 
 -spec reload(binary(), gen_mod:opts(), gen_mod:opts()) -> ok.
 reload(ServerHost, NewOpts, OldOpts) ->
@@ -517,7 +515,7 @@ route_to_room(Packet, ServerHost) ->
 		    ejabberd_router:route_error(Packet, Err);
 		StartType ->
 		    case load_room(RMod, Host, ServerHost, Room) of
-			error when StartType == start ->
+			{error, notfound} when StartType == start ->
 			    case check_create_room(ServerHost, Host, Room, From) of
 				true ->
 				    case start_new_room(RMod, Host, ServerHost, Room, From, Nick) of
@@ -533,10 +531,13 @@ route_to_room(Packet, ServerHost) ->
 				    Err = xmpp:err_forbidden(ErrText, Lang),
 				    ejabberd_router:route_error(Packet, Err)
 			    end;
-			error ->
+			{error, notfound} ->
 			    Lang = xmpp:get_lang(Packet),
 			    ErrText = ?T("Conference room does not exist"),
 			    Err = xmpp:err_item_not_found(ErrText, Lang),
+			    ejabberd_router:route_error(Packet, Err);
+			{error, _} ->
+			    Err = xmpp:err_internal_server_error(),
 			    ejabberd_router:route_error(Packet, Err);
 			{ok, Pid2} ->
 			    mod_muc_room:route(Pid2, Packet)
@@ -705,7 +706,7 @@ check_create_room(ServerHost, Host, Room, From) ->
 	    case mod_muc_opt:max_room_id(ServerHost) of
 		Max when byte_size(Room) =< Max ->
 		    Regexp = mod_muc_opt:regexp_room_id(ServerHost),
-		    case re:run(Room, Regexp, [unicode, {capture, none}]) of
+		    case re:run(Room, Regexp, [{capture, none}]) of
 			match ->
 			    AccessAdmin = mod_muc_opt:access_admin(ServerHost),
 			    case acl:match_rule(ServerHost, AccessAdmin, From) of
@@ -774,17 +775,19 @@ load_permanent_rooms(Hosts, ServerHost, Opts) ->
 	    ok
     end.
 
+-spec load_room(module(), binary(), binary(), binary()) -> {ok, pid()} |
+							   {error, notfound | term()}.
 load_room(RMod, Host, ServerHost, Room) ->
     case restore_room(ServerHost, Host, Room) of
 	error ->
-	    error;
+	    {error, notfound};
 	Opts0 ->
 	    case proplists:get_bool(persistent, Opts0) of
 		true ->
 		    ?DEBUG("Restore room: ~s", [Room]),
 		    start_room(RMod, Host, ServerHost, Room, Opts0);
 		_ ->
-		    error
+		    {error, notfound}
 	    end
     end.
 
@@ -1103,7 +1106,7 @@ mod_opt_type(max_room_id) ->
 mod_opt_type(max_rooms_discoitems) ->
     econf:non_neg_int();
 mod_opt_type(regexp_room_id) ->
-    econf:re();
+    econf:re([unicode]);
 mod_opt_type(max_room_name) ->
     econf:pos_int(infinity);
 mod_opt_type(max_user_conferences) ->

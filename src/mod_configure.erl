@@ -138,12 +138,6 @@ get_local_identity(Acc, _From, _To, Node, Lang) ->
 	  ?INFO_IDENTITY(<<"ejabberd">>, <<"node">>, ENode, Lang);
       [<<"running nodes">>, _ENode, <<"DB">>] ->
 	  ?INFO_COMMAND(?T("Database"), Lang);
-      [<<"running nodes">>, _ENode, <<"modules">>,
-       <<"start">>] ->
-	  ?INFO_COMMAND(?T("Start Modules"), Lang);
-      [<<"running nodes">>, _ENode, <<"modules">>,
-       <<"stop">>] ->
-	  ?INFO_COMMAND(?T("Stop Modules"), Lang);
       [<<"running nodes">>, _ENode, <<"backup">>,
        <<"backup">>] ->
 	  ?INFO_COMMAND(?T("Backup"), Lang);
@@ -229,10 +223,6 @@ get_local_features(Acc, From,
 	    [<<"running nodes">>, _ENode] ->
 		?INFO_RESULT(Allow, [?NS_STATS], Lang);
 	    [<<"running nodes">>, _ENode, <<"DB">>] ->
-		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
-	    [<<"running nodes">>, _ENode, <<"modules">>] ->
-		?INFO_RESULT(Allow, [], Lang);
-	    [<<"running nodes">>, _ENode, <<"modules">>, _] ->
 		?INFO_RESULT(Allow, [?NS_COMMANDS], Lang);
 	    [<<"running nodes">>, _ENode, <<"backup">>] ->
 		?INFO_RESULT(Allow, [], Lang);
@@ -458,10 +448,6 @@ get_local_items(Acc, From, #jid{lserver = LServer} = To,
 		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"running nodes">>, _ENode, <<"DB">>] ->
 		?ITEMS_RESULT(Allow, LNode, {error, Err});
-	    [<<"running nodes">>, _ENode, <<"modules">>] ->
-		?ITEMS_RESULT(Allow, LNode, {error, Err});
-	    [<<"running nodes">>, _ENode, <<"modules">>, _] ->
-		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"running nodes">>, _ENode, <<"backup">>] ->
 		?ITEMS_RESULT(Allow, LNode, {error, Err});
 	    [<<"running nodes">>, _ENode, <<"backup">>, _] ->
@@ -577,8 +563,6 @@ get_local_items({global, _Host},
     {result,
      [?NODE(?T("Database"),
 	    <<"running nodes/", ENode/binary, "/DB">>),
-      ?NODE(?T("Modules"),
-	    <<"running nodes/", ENode/binary, "/modules">>),
       ?NODE(?T("Backup Management"),
 	    <<"running nodes/", ENode/binary, "/backup">>),
       ?NODE(?T("Import Users From jabberd14 Spool Files"),
@@ -587,26 +571,9 @@ get_local_items({global, _Host},
 	    <<"running nodes/", ENode/binary, "/restart">>),
       ?NODE(?T("Shut Down Service"),
 	    <<"running nodes/", ENode/binary, "/shutdown">>)]};
-get_local_items({vhost, _Host},
-		[<<"running nodes">>, ENode], Server, Lang) ->
-    {result,
-     [?NODE(?T("Modules"),
-	    <<"running nodes/", ENode/binary, "/modules">>)]};
 get_local_items(_Host,
 		[<<"running nodes">>, _ENode, <<"DB">>], _Server,
 		_Lang) ->
-    {result, []};
-get_local_items(_Host,
-		[<<"running nodes">>, ENode, <<"modules">>], Server,
-		Lang) ->
-    {result,
-     [?NODE(?T("Start Modules"),
-	    <<"running nodes/", ENode/binary, "/modules/start">>),
-      ?NODE(?T("Stop Modules"),
-	    <<"running nodes/", ENode/binary, "/modules/stop">>)]};
-get_local_items(_Host,
-		[<<"running nodes">>, _ENode, <<"modules">>, _],
-		_Server, _Lang) ->
     {result, []};
 get_local_items(_Host,
 		[<<"running nodes">>, ENode, <<"backup">>], Server,
@@ -648,121 +615,97 @@ get_local_items(_Host, _, _Server, _Lang) ->
 
 -spec get_online_vh_users(binary()) -> [disco_item()].
 get_online_vh_users(Host) ->
-    case catch ejabberd_sm:get_vh_session_list(Host) of
-      {'EXIT', _Reason} -> [];
-      USRs ->
-	  SURs = lists:sort([{S, U, R} || {U, S, R} <- USRs]),
-	  lists:map(
-	    fun({S, U, R}) ->
-		    #disco_item{jid = jid:make(U, S, R),
-				name = <<U/binary, "@", S/binary>>}
-		    end, SURs)
-    end.
+    USRs = ejabberd_sm:get_vh_session_list(Host),
+    SURs = lists:sort([{S, U, R} || {U, S, R} <- USRs]),
+    lists:map(
+      fun({S, U, R}) ->
+	      #disco_item{jid = jid:make(U, S, R),
+			  name = <<U/binary, "@", S/binary>>}
+      end, SURs).
 
 -spec get_all_vh_users(binary()) -> [disco_item()].
 get_all_vh_users(Host) ->
-    case catch ejabberd_auth:get_users(Host)
-	of
-      {'EXIT', _Reason} -> [];
-      Users ->
-	  SUsers = lists:sort([{S, U} || {U, S} <- Users]),
-	  case length(SUsers) of
-	    N when N =< 100 ->
-		lists:map(fun({S, U}) ->
-				  #disco_item{jid = jid:make(U, S),
-					      name = <<U/binary, $@, S/binary>>}
-			  end, SUsers);
-	    N ->
-		NParts = trunc(math:sqrt(N * 6.17999999999999993783e-1))
-			   + 1,
-		M = trunc(N / NParts) + 1,
-		lists:map(fun (K) ->
-				  L = K + M - 1,
-				  Node = <<"@",
-					   (integer_to_binary(K))/binary,
-					   "-",
-					   (integer_to_binary(L))/binary>>,
-				  {FS, FU} = lists:nth(K, SUsers),
-				  {LS, LU} = if L < N -> lists:nth(L, SUsers);
-						true -> lists:last(SUsers)
-					     end,
-				  Name = <<FU/binary, "@", FS/binary, " -- ",
-					   LU/binary, "@", LS/binary>>,
-				  #disco_item{jid = jid:make(Host),
-					      node = <<"all users/", Node/binary>>,
-					      name = Name}
-			  end,
-			  lists:seq(1, N, M))
-	  end
+    Users = ejabberd_auth:get_users(Host),
+    SUsers = lists:sort([{S, U} || {U, S} <- Users]),
+    case length(SUsers) of
+	N when N =< 100 ->
+	    lists:map(fun({S, U}) ->
+			      #disco_item{jid = jid:make(U, S),
+					  name = <<U/binary, $@, S/binary>>}
+		      end, SUsers);
+	N ->
+	    NParts = trunc(math:sqrt(N * 6.17999999999999993783e-1)) + 1,
+	    M = trunc(N / NParts) + 1,
+	    lists:map(
+	      fun (K) ->
+		      L = K + M - 1,
+		      Node = <<"@",
+			       (integer_to_binary(K))/binary,
+			       "-",
+			       (integer_to_binary(L))/binary>>,
+		      {FS, FU} = lists:nth(K, SUsers),
+		      {LS, LU} = if L < N -> lists:nth(L, SUsers);
+				    true -> lists:last(SUsers)
+				 end,
+		      Name = <<FU/binary, "@", FS/binary, " -- ",
+			       LU/binary, "@", LS/binary>>,
+		      #disco_item{jid = jid:make(Host),
+				  node = <<"all users/", Node/binary>>,
+				  name = Name}
+	      end, lists:seq(1, N, M))
     end.
 
 -spec get_outgoing_s2s(binary(), binary()) -> [disco_item()].
 get_outgoing_s2s(Host, Lang) ->
-    case catch ejabberd_s2s:dirty_get_connections() of
-      {'EXIT', _Reason} -> [];
-      Connections ->
-	  DotHost = <<".", Host/binary>>,
-	  TConns = [TH
-		    || {FH, TH} <- Connections,
-		       Host == FH orelse str:suffix(DotHost, FH)],
-	  lists:map(
-	    fun (T) ->
-		    Name = str:format(tr(Lang, ?T("To ~s")),[T]),
-		    #disco_item{jid = jid:make(Host),
-				node = <<"outgoing s2s/", T/binary>>,
-				name = Name}
-	    end, lists:usort(TConns))
-    end.
+    Connections = ejabberd_s2s:dirty_get_connections(),
+    DotHost = <<".", Host/binary>>,
+    TConns = [TH || {FH, TH} <- Connections,
+		    Host == FH orelse str:suffix(DotHost, FH)],
+    lists:map(
+      fun (T) ->
+	      Name = str:format(tr(Lang, ?T("To ~s")),[T]),
+	      #disco_item{jid = jid:make(Host),
+			  node = <<"outgoing s2s/", T/binary>>,
+			  name = Name}
+      end, lists:usort(TConns)).
 
 -spec get_outgoing_s2s(binary(), binary(), binary()) -> [disco_item()].
 get_outgoing_s2s(Host, Lang, To) ->
-    case catch ejabberd_s2s:dirty_get_connections() of
-      {'EXIT', _Reason} -> [];
-      Connections ->
-	  lists:map(
-	    fun ({F, _T}) ->
-		    Node = <<"outgoing s2s/", To/binary, "/", F/binary>>,
-		    Name = str:format(tr(Lang, ?T("From ~s")), [F]),
-		    #disco_item{jid = jid:make(Host), node = Node, name = Name}
-	    end,
-	    lists:keysort(1,
-			  lists:filter(fun (E) -> element(2, E) == To
-				       end,
-				       Connections)))
-    end.
+    Connections = ejabberd_s2s:dirty_get_connections(),
+    lists:map(
+      fun ({F, _T}) ->
+	      Node = <<"outgoing s2s/", To/binary, "/", F/binary>>,
+	      Name = str:format(tr(Lang, ?T("From ~s")), [F]),
+	      #disco_item{jid = jid:make(Host), node = Node, name = Name}
+      end,
+      lists:keysort(
+	1,
+	lists:filter(fun (E) -> element(2, E) == To end,
+		     Connections))).
 
 -spec get_running_nodes(binary(), binary()) -> [disco_item()].
 get_running_nodes(Server, _Lang) ->
-    case catch mnesia:system_info(running_db_nodes) of
-      {'EXIT', _Reason} -> [];
-      DBNodes ->
-	  lists:map(
-	    fun (N) ->
-		    S = iolist_to_binary(atom_to_list(N)),
-		    #disco_item{jid = jid:make(Server),
-				node = <<"running nodes/", S/binary>>,
-				name = S}
-	    end,
-	    lists:sort(DBNodes))
-    end.
+    DBNodes = mnesia:system_info(running_db_nodes),
+    lists:map(
+      fun (N) ->
+	      S = iolist_to_binary(atom_to_list(N)),
+	      #disco_item{jid = jid:make(Server),
+			  node = <<"running nodes/", S/binary>>,
+			  name = S}
+      end, lists:sort(DBNodes)).
 
 -spec get_stopped_nodes(binary()) -> [disco_item()].
 get_stopped_nodes(_Lang) ->
-    case catch lists:usort(mnesia:system_info(db_nodes) ++
-			     mnesia:system_info(extra_db_nodes))
-		 -- mnesia:system_info(running_db_nodes)
-	of
-      {'EXIT', _Reason} -> [];
-      DBNodes ->
-	  lists:map(
-	    fun (N) ->
-		    S = iolist_to_binary(atom_to_list(N)),
-		    #disco_item{jid = jid:make(ejabberd_config:get_myname()),
-				node = <<"stopped nodes/", S/binary>>,
-				name = S}
-	    end,
-	    lists:sort(DBNodes))
-    end.
+    DBNodes = lists:usort(mnesia:system_info(db_nodes) ++
+			      mnesia:system_info(extra_db_nodes))
+	-- mnesia:system_info(running_db_nodes),
+    lists:map(
+      fun (N) ->
+	      S = iolist_to_binary(atom_to_list(N)),
+	      #disco_item{jid = jid:make(ejabberd_config:get_myname()),
+			  node = <<"stopped nodes/", S/binary>>,
+			  name = S}
+      end, lists:sort(DBNodes)).
 
 %%-------------------------------------------------------------------------
 
@@ -782,8 +725,6 @@ adhoc_local_commands(Acc, From,
     case LNode of
       [<<"running nodes">>, _ENode, <<"DB">>] ->
 	  ?COMMANDS_RESULT(global, From, To, Request, Lang);
-      [<<"running nodes">>, _ENode, <<"modules">>, _] ->
-	  ?COMMANDS_RESULT(LServer, From, To, Request, Lang);
       [<<"running nodes">>, _ENode, <<"backup">>, _] ->
 	  ?COMMANDS_RESULT(global, From, To, Request, Lang);
       [<<"running nodes">>, _ENode, <<"import">>, _] ->
@@ -823,12 +764,12 @@ adhoc_local_commands(From,
 	     {error, Error} -> {error, Error}
 	   end;
        XData /= undefined, ActionIsExecute ->
-	    case catch set_form(From, LServer, LNode, Lang, XData) of
+	    case set_form(From, LServer, LNode, Lang, XData) of
 		{result, Res} ->
 		    xmpp_util:make_adhoc_response(
 		      Request,
 		      #adhoc_command{xdata = Res, status = completed});
-		{'EXIT', _} -> {error, xmpp:err_bad_request()};
+		%%{'EXIT', _} -> {error, xmpp:err_bad_request()};
 		{error, Error} -> {error, Error}
 	    end;
        true ->
@@ -908,46 +849,6 @@ get_form(_Host, [<<"running nodes">>, ENode, <<"DB">>],
 		end
 	  end
     end;
-get_form(Host,
-	 [<<"running nodes">>, ENode, <<"modules">>, <<"stop">>],
-	 Lang) ->
-    case search_running_node(ENode) of
-      false ->
-	  Txt = ?T("No running node found"),
-	  {error, xmpp:err_item_not_found(Txt, Lang)};
-      Node ->
-	  case ejabberd_cluster:call(Node, gen_mod, loaded_modules, [Host]) of
-	    {badrpc, Reason} ->
-		?ERROR_MSG("RPC call gen_mod:loaded_modules(~s) on node "
-			   "~s failed: ~p", [Host, Node, Reason]),
-		{error, xmpp:err_internal_server_error()};
-	    Modules ->
-		SModules = lists:sort(Modules),
-		Title = <<(tr(Lang, ?T("Stop Modules at ")))/binary,
-			  ENode/binary>>,
-		Instr = tr(Lang, ?T("Choose modules to stop")),
-		Fs = lists:map(fun(M) ->
-				       S = misc:atom_to_binary(M),
-				       ?XFIELD(boolean, S, S, <<"0">>)
-			       end, SModules),
-		{result, #xdata{title = Title,
-				type = form,
-				instructions = [Instr],
-				fields = [?HFIELD()|Fs]}}
-	  end
-    end;
-get_form(_Host,
-	 [<<"running nodes">>, ENode, <<"modules">>,
-	  <<"start">>],
-	 Lang) ->
-    {result,
-     #xdata{title = <<(tr(Lang, ?T("Start Modules at ")))/binary, ENode/binary>>,
-	    type = form,
-	    instructions = [tr(Lang, ?T("Enter list of {Module, [Options]}"))],
-	    fields = [?HFIELD(),
-		      ?XFIELD('text-multi',
-			      ?T("List of modules to start"), <<"modules">>,
-			      <<"[].">>)]}};
 get_form(_Host,
 	 [<<"running nodes">>, ENode, <<"backup">>,
 	  <<"backup">>],
@@ -1219,65 +1120,6 @@ set_form(_From, _Host,
 		    end
 	    end, XData#xdata.fields),
 	    {result, undefined}
-    end;
-set_form(_From, Host,
-	 [<<"running nodes">>, ENode, <<"modules">>, <<"stop">>],
-	 Lang, XData) ->
-    case search_running_node(ENode) of
-      false ->
-	  Txt = ?T("No running node found"),
-	  {error, xmpp:err_item_not_found(Txt, Lang)};
-      Node ->
-	  lists:foreach(
-	    fun(#xdata_field{var = Var, values = Vals}) ->
-		    case Vals of
-			[<<"1">>] ->
-			    Module = misc:binary_to_atom(Var),
-			    ejabberd_cluster:call(Node, gen_mod, stop_module,
-						  [Host, Module]);
-			_ -> ok
-		    end
-	    end, XData#xdata.fields),
-	  {result, undefined}
-    end;
-set_form(_From, Host,
-	 [<<"running nodes">>, ENode, <<"modules">>,
-	  <<"start">>],
-	 Lang, XData) ->
-    case search_running_node(ENode) of
-	false ->
-	    Txt = ?T("No running node found"),
-	    {error, xmpp:err_item_not_found(Txt, Lang)};
-	Node ->
-	    case xmpp_util:get_xdata_values(<<"modules">>, XData) of
-		[] ->
-		    Txt = ?T("No 'modules' found in data form"),
-		    {error, xmpp:err_bad_request(Txt, Lang)};
-		Strings ->
-		    String = lists:foldl(fun (S, Res) ->
-						 <<Res/binary, S/binary, "\n">>
-					 end, <<"">>, Strings),
-		    case erl_scan:string(binary_to_list(String)) of
-			{ok, Tokens, _} ->
-			    case erl_parse:parse_term(Tokens) of
-				{ok, Modules} ->
-				    lists:foreach(
-				      fun ({Module, Args}) ->
-					      ejabberd_cluster:call(
-						Node, gen_mod, start_module,
-						[Host, Module, Args])
-				      end,
-				      Modules),
-				    {result, undefined};
-				_ ->
-				    Txt = ?T("Parse failed"),
-				    {error, xmpp:err_bad_request(Txt, Lang)}
-			    end;
-			_ ->
-			    Txt = ?T("Scan failed"),
-			    {error, xmpp:err_bad_request(Txt, Lang)}
-		    end
-	    end
     end;
 set_form(_From, _Host,
 	 [<<"running nodes">>, ENode, <<"backup">>,
@@ -1587,10 +1429,10 @@ search_running_node(SNode, [Node | Nodes]) ->
 -spec stop_node(jid(), binary(), binary(), restart | stop, xdata()) -> {result, undefined}.
 stop_node(From, Host, ENode, Action, XData) ->
     Delay = binary_to_integer(get_value(<<"delay">>, XData)),
-    Subject = case get_value(<<"subject">>, XData) of
-		  <<"">> ->
+    Subject = case get_values(<<"subject">>, XData) of
+		  [] ->
 		      [];
-		  S ->
+		  [S|_] ->
 		      [#xdata_field{var = <<"subject">>, values = [S]}]
 	      end,
     Announcement = case get_values(<<"announcement">>, XData) of
@@ -1698,7 +1540,7 @@ set_sm_form(User, Server, <<"config">>,
 		    {error, xmpp:err_not_acceptable(Txt, Lang)}
 	    end;
 	[<<"remove">>] ->
-	    catch ejabberd_auth:remove_user(User, Server),
+	    ejabberd_auth:remove_user(User, Server),
 	    xmpp_util:make_adhoc_response(Response);
 	_ ->
 	    Txt = ?T("Incorrect value of 'action' in data form"),

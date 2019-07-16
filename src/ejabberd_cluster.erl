@@ -62,7 +62,7 @@ call(Node, Module, Function, Args) ->
 
 -spec call(node(), module(), atom(), [any()], timeout()) -> any().
 call(Node, Module, Function, Args, Timeout) ->
-    call(Node, Module, Function, Args, Timeout).
+    rpc:call(Node, Module, Function, Args, Timeout).
 
 -spec multicall(module(), atom(), [any()]) -> {list(), [node()]}.
 multicall(Module, Function, Args) ->

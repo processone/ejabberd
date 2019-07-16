@@ -27,7 +27,7 @@
 %% Simple types
 -export([pos_int/0, pos_int/1, non_neg_int/0, non_neg_int/1]).
 -export([int/0, int/2, number/1, octal/0]).
--export([binary/0, binary/1]).
+-export([binary/0, binary/1, binary/2]).
 -export([string/0, string/1]).
 -export([enum/1, bool/0, atom/0, any/0]).
 %% Complex types
@@ -35,7 +35,7 @@
 -export([file/0, file/1]).
 -export([directory/0, directory/1]).
 -export([ip/0, ipv4/0, ipv6/0, ip_mask/0, port/0]).
--export([re/0, glob/0]).
+-export([re/0, re/1, glob/0, glob/1]).
 -export([path/0, binary_sep/1]).
 -export([beam/0, beam/1]).
 -export([timeout/1, timeout/2]).
@@ -254,6 +254,9 @@ binary() ->
 binary(Re) ->
     yconf:binary(Re).
 
+binary(Re, Opts) ->
+    yconf:binary(Re, Opts).
+
 enum(L) ->
     yconf:enum(L).
 
@@ -308,8 +311,14 @@ port() ->
 re() ->
     yconf:re().
 
+re(Opts) ->
+    yconf:re(Opts).
+
 glob() ->
     yconf:glob().
+
+glob(Opts) ->
+    yconf:glob(Opts).
 
 path() ->
     yconf:path().

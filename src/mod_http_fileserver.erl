@@ -243,11 +243,14 @@ handle_info(Info, State) ->
 %% cleaning up. When it returns, the gen_server terminates with Reason.
 %% The return value is ignored.
 %%--------------------------------------------------------------------
-terminate(_Reason, State) ->
+terminate(_Reason, #state{host = Host} = State) ->
     close_log(State#state.accesslogfd),
-    %% TODO: unregister the hook gracefully
-    %% ejabberd_hooks:delete(reopen_log_hook, State#state.host, ?MODULE, reopen_log, 50),
-    ok.
+    case gen_mod:is_loaded_elsewhere(Host, ?MODULE) of
+	false ->
+	    ejabberd_hooks:delete(reopen_log_hook, ?MODULE, reopen_log, 50);
+	true ->
+	    ok
+    end.
 
 %%--------------------------------------------------------------------
 %% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
