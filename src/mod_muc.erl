@@ -787,7 +787,16 @@ load_room(RMod, Host, ServerHost, Room) ->
 		    ?DEBUG("Restore room: ~s", [Room]),
 		    start_room(RMod, Host, ServerHost, Room, Opts0);
 		_ ->
-		    {error, notfound}
+		    ?DEBUG("Restore hibernated non-persistent room: ~s", [Room]),
+		    Res = start_room(RMod, Host, ServerHost, Room, Opts0),
+		    Mod = gen_mod:db_mod(ServerHost, mod_muc),
+		    case erlang:function_exported(Mod, get_subscribed_rooms, 3) of
+			true ->
+			    ok;
+			_ ->
+			    forget_room(ServerHost, Host, Room)
+		    end,
+		    Res
 	    end
     end.
 
@@ -1167,7 +1176,9 @@ mod_opt_type(host) ->
 mod_opt_type(hosts) ->
     econf:hosts();
 mod_opt_type(queue_type) ->
-    econf:queue_type().
+    econf:queue_type();
+mod_opt_type(hibernation_timeout) ->
+    econf:non_neg_int(infinity).
 
 mod_options(Host) ->
     [{access, all},
@@ -1198,6 +1209,7 @@ mod_options(Host) ->
      {user_message_shaper, none},
      {user_presence_shaper, none},
      {preload_rooms, true},
+     {hibernation_timeout, infinity},
      {default_room_options,
       [{allow_change_subj,true},
        {allow_private_messages,true},

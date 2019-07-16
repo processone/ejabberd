@@ -280,7 +280,7 @@ init([Host, ServerHost, Access, Room, HistorySize,
 	      [Room, Host, jid:encode(Creator)]),
     add_to_log(room_existence, created, State1),
     add_to_log(room_existence, started, State1),
-    {ok, normal_state, State1};
+    {ok, normal_state, reset_hibernate_timer(State1)};
 init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, QueueType]) ->
     process_flag(trap_exit, true),
     Shaper = ejabberd_shaper:new(RoomShaper),
@@ -294,7 +294,7 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, QueueType])
 				  room_queue = RoomQueue,
 				  room_shaper = Shaper}),
     add_to_log(room_existence, started, State),
-    {ok, normal_state, State}.
+    {ok, normal_state, reset_hibernate_timer(State)}.
 
 normal_state({route, <<"">>,
 	      #message{from = From, type = Type, lang = Lang} = Packet},
@@ -619,6 +619,15 @@ normal_state({route, ToNick,
 	    ejabberd_router:route_error(Packet, Err)
     end,
     {next_state, normal_state, StateData};
+normal_state(hibernate, StateData) ->
+    case maps:size(StateData#state.users) of
+	0 ->
+	    store_room_no_checks(StateData, []),
+	    ?INFO_MSG("Hibernating room ~s@~s", [StateData#state.room, StateData#state.host]),
+	    {stop, normal, StateData#state{hibernate_timer = hibernating}};
+	_ ->
+	    {next_state, normal_state, StateData}
+    end;
 normal_state(_Event, StateData) ->
     {next_state, normal_state, StateData}.
 
@@ -882,12 +891,19 @@ terminate(Reason, _StateName,
 		  end,
 		  tab_remove_online_user(JID, StateData)
 	  end, [], get_users_and_subscribers(StateData)),
-	add_to_log(room_existence, stopped, StateData),
-	case (StateData#state.config)#config.persistent of
-	    false ->
-		ejabberd_hooks:run(room_destroyed, LServer, [LServer, Room, Host]);
+
+	disable_hibernate_timer(StateData),
+	case StateData#state.hibernate_timer of
+	    hibernating ->
+		ok;
 	    _ ->
-		ok
+		add_to_log(room_existence, stopped, StateData),
+		case (StateData#state.config)#config.persistent of
+		    false ->
+			ejabberd_hooks:run(room_destroyed, LServer, [LServer, Room, Host]);
+		    _ ->
+			ok
+		end
 	end,
 	mod_muc:room_destroyed(Host, Room, self(), LServer)
     catch ?EX_RULE(E, R, St) ->
@@ -1300,7 +1316,7 @@ close_room_if_temporary_and_empty(StateData1) ->
 		    "and empty",
 		    [jid:encode(StateData1#state.jid)]),
 	  add_to_log(room_existence, destroyed, StateData1),
-	  maybe_forget_room(StateData1),
+	  forget_room(StateData1),
 	  {stop, normal, StateData1};
       _ -> {next_state, normal_state, StateData1}
     end.
@@ -1768,7 +1784,7 @@ store_user_activity(JID, UserActivity, StateData) ->
 							      Activity)}
 		       end
 		 end,
-    StateData1.
+    reset_hibernate_timer(StateData1).
 
 -spec clean_treap(treap:treap(), integer() | {1, integer()}) -> treap:treap().
 clean_treap(Treap, CleanPriority) ->
@@ -1866,7 +1882,7 @@ set_subscriber(JID, Nick, Nodes,
 add_online_user(JID, Nick, Role, StateData) ->
     tab_add_online_user(JID, StateData),
     User = #user{jid = JID, nick = Nick, role = Role},
-    update_online_user(JID, User, StateData).
+    reset_hibernate_timer(update_online_user(JID, User, StateData)).
 
 -spec remove_online_user(jid(), state()) -> state().
 remove_online_user(JID, StateData) ->
@@ -1887,7 +1903,7 @@ remove_online_user(JID, StateData, Reason) ->
 	    catch _:{badkey, _} ->
 		    StateData#state.nicks
 	    end,
-    StateData#state{users = Users, nicks = Nicks}.
+    reset_hibernate_timer(StateData#state{users = Users, nicks = Nicks}).
 
 -spec filter_presence(presence()) -> presence().
 filter_presence(Presence) ->
@@ -3633,7 +3649,6 @@ change_config(Config, StateData) ->
 		maybe_forget_room(StateData),
 		StateData1#state{affiliations = Affiliations};
 	    _ ->
-		maybe_forget_room(StateData),
 		StateData1
         end,
     case {(StateData#state.config)#config.members_only,
@@ -3965,8 +3980,15 @@ destroy_room(DEl, StateData) ->
 			   Info#user.jid, Packet,
 			   ?NS_MUCSUB_NODES_CONFIG, StateData)
       end, ok, get_users_and_subscribers(StateData)),
-    maybe_forget_room(StateData),
+    forget_room(StateData),
     {result, undefined, stop}.
+
+-spec forget_room(state()) -> state().
+forget_room(StateData) ->
+    mod_muc:forget_room(StateData#state.server_host,
+			StateData#state.host,
+			StateData#state.room),
+    StateData.
 
 -spec maybe_forget_room(state()) -> state().
 maybe_forget_room(StateData) ->
@@ -3979,10 +4001,7 @@ maybe_forget_room(StateData) ->
 	     end,
     case Forget of
 	true ->
-	    mod_muc:forget_room(StateData#state.server_host,
-				StateData#state.host,
-				StateData#state.room),
-	    StateData;
+	    forget_room(StateData);
 	_ ->
 	    StateData
     end.
@@ -4549,13 +4568,16 @@ store_room(StateData, ChangesHints) ->
 			  end
 		  end,
     if ShouldStore ->
-	    mod_muc:store_room(StateData#state.server_host,
-			       StateData#state.host, StateData#state.room,
-			       make_opts(StateData),
-			       ChangesHints);
+	    store_room_no_checks(StateData, ChangesHints);
        true ->
 	    ok
     end.
+
+store_room_no_checks(StateData, ChangesHints) ->
+    mod_muc:store_room(StateData#state.server_host,
+		       StateData#state.host, StateData#state.room,
+		       make_opts(StateData),
+		       ChangesHints).
 
 -spec send_subscriptions_change_notifications(jid(), binary(), subscribe|unsubscribe, state()) -> ok.
 send_subscriptions_change_notifications(From, Nick, Type, State) ->
@@ -4672,3 +4694,33 @@ send_wrapped_multiple(From, Users, Packet, Node, State) ->
 -spec has_body_or_subject(message()) -> boolean().
 has_body_or_subject(#message{body = Body, subject = Subj}) ->
     Body /= [] orelse Subj /= [].
+
+-spec reset_hibernate_timer(state()) -> state().
+reset_hibernate_timer(State) ->
+    case State#state.hibernate_timer of
+	hibernating ->
+	    ok;
+	_ ->
+	    disable_hibernate_timer(State),
+	    NewTimer = case {mod_muc_opt:hibernation_timeout(State#state.server_host),
+			     maps:size(State#state.users)} of
+			   {infinity, _} ->
+			       none;
+			   {Timeout, 0} ->
+			       p1_fsm:send_event_after(timer:minutes(Timeout), hibernate);
+			   _ ->
+			       none
+		       end,
+	    State#state{hibernate_timer = NewTimer}
+    end.
+
+
+-spec disable_hibernate_timer(state()) -> ok.
+disable_hibernate_timer(State) ->
+    case State#state.hibernate_timer of
+	Ref when is_reference(Ref) ->
+	    p1_fsm:cancel_timer(Ref),
+	    ok;
+	_ ->
+	    ok
+    end.

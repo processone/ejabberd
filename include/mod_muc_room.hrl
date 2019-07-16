@@ -118,7 +118,8 @@
     just_created            = erlang:system_time(microsecond) :: true | integer(),
     activity                = treap:empty() :: treap:treap(),
     room_shaper             = none :: ejabberd_shaper:shaper(),
-    room_queue              :: p1_queue:queue({message | presence, jid()}) | undefined
+    room_queue              :: p1_queue:queue({message | presence, jid()}) | undefined,
+    hibernate_timer         = none :: reference() | none | hibernating
 }).
 
 -type users() :: #{ljid() => #user{}}.
