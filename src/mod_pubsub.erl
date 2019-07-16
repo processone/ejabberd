@@ -1284,9 +1284,9 @@ send_pending_node_form(Host, Owner, Lang, Plugins) ->
 	Ps ->
 	    case get_pending_nodes(Host, Owner, Ps) of
 		{ok, Nodes} ->
+		    Form = [{node, <<>>, lists:zip(Nodes, Nodes)}],
 		    XForm = #xdata{type = form,
-				   fields = pubsub_get_pending:encode(
-					      [{node, Nodes}], Lang)},
+				   fields = pubsub_get_pending:encode(Form, Lang)},
 		    #adhoc_command{status = executing, action = execute,
 				   xdata = XForm};
 		Err ->
