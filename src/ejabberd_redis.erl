@@ -392,7 +392,7 @@ handle_call({subscribe, Caller, Channels}, _From,
     eredis_subscribe(Pid, Channels),
     {reply, ok, State#state{subscriptions = Subs1}};
 handle_call(Request, _From, State) ->
-    ?WARNING_MSG("Unexepected call: ~p", [Request]),
+    ?WARNING_MSG("Unexpected call: ~p", [Request]),
     {noreply, State}.
 
 handle_cast(_Msg, State) ->

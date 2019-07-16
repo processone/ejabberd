@@ -4690,7 +4690,7 @@ send_wrapped_multiple(From, Users, Packet, Node, State) ->
       end, ok, Users).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Detect messange stanzas that don't have meaninful content
+%% Detect messange stanzas that don't have meaningful content
 -spec has_body_or_subject(message()) -> boolean().
 has_body_or_subject(#message{body = Body, subject = Subj}) ->
     Body /= [] orelse Subj /= [].

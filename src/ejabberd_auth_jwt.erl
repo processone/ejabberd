@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_auth_jwt.erl
 %%% Author  : Mickael Remond <mremond@process-one.net>
-%%% Purpose : Authentification using JWT tokens
+%%% Purpose : Authentication using JWT tokens
 %%% Created : 16 Mar 2019 by Mickael Remond <mremond@process-one.net>
 %%%
 %%%

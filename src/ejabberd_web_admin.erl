@@ -70,7 +70,7 @@ get_acl_rule([<<"additions.js">>], _) ->
 %% This page only displays vhosts that the user is admin:
 get_acl_rule([<<"vhosts">>], _) ->
     {<<"localhost">>, [all]};
-%% The pages of a vhost are only accesible if the user is admin of that vhost:
+%% The pages of a vhost are only accessible if the user is admin of that vhost:
 get_acl_rule([<<"server">>, VHost | _RPath], Method)
     when Method =:= 'GET' orelse Method =:= 'HEAD' ->
     {VHost, [configure, webadmin_view]};

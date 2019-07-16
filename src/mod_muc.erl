@@ -280,7 +280,7 @@ shutdown_rooms(ServerHost, Hosts, RMod) ->
 %% B) The only participant of a temporary room leaves it
 %% C) mod_muc:stop was called, and each room is being terminated
 %%    In this case, the mod_muc process died before the room processes
-%%    So the message sending must be catched
+%%    So the message sending must be caught
 -spec room_destroyed(binary(), binary(), pid(), binary()) -> ok.
 room_destroyed(Host, Room, Pid, ServerHost) ->
     Proc = procname(ServerHost, {Room, Host}),

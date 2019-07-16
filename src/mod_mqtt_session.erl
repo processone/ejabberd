@@ -175,7 +175,7 @@ handle_call({get_state, Pid}, From, State) ->
         {stop, Status, State1} ->
             {stop, Status, State1#state{stop_reason = {replaced, Pid}}};
         {noreply, State1, _} ->
-            ?DEBUG("Transfering MQTT session state to ~p at ~s", [Pid, node(Pid)]),
+            ?DEBUG("Transferring MQTT session state to ~p at ~s", [Pid, node(Pid)]),
             Q1 = p1_queue:file_to_ram(State1#state.queue),
             p1_server:reply(From, {ok, State1#state{queue = Q1}}),
             SessionExpiry = timer:seconds(State1#state.session_expiry),

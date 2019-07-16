@@ -572,7 +572,7 @@ caps_update(From, To, _Features) ->
 
 -spec presence_probe(jid(), jid(), pid()) -> ok.
 presence_probe(#jid{luser = U, lserver = S}, #jid{luser = U, lserver = S}, _Pid) ->
-    %% ignore presence_probe from my other ressources
+    %% ignore presence_probe from my other resources
     ok;
 presence_probe(#jid{lserver = S} = From, #jid{lserver = S} = To, _Pid) ->
     send_last_pep(To, From);
@@ -1556,7 +1556,7 @@ create_node(Host, ServerHost, Node, Owner, GivenType, Access, Configuration) ->
 	    Error
     end.
 
-%% @doc <p>Delete specified node and all childs.</p>
+%% @doc <p>Delete specified node and all children.</p>
 %%<p>There are several reasons why the node deletion request might fail:</p>
 %%<ul>
 %%<li>The requesting entity does not have sufficient privileges to delete the node.</li>
@@ -1899,7 +1899,7 @@ delete_item(Host, Node, Publisher, ItemId, ForceNotify) ->
 	    PersistentFeature = lists:member(<<"persistent-items">>, Features),
 	    DeleteFeature = lists:member(<<"delete-items">>, Features),
 	    PublishModel = get_option(Options, publish_model),
-	    if %%->   iq_pubsub just does that matchs
+	    if %%->   iq_pubsub just does that matches
 		%%        %% Request does not specify an item
 		%%        {error, extended_error(?ERR_BAD_REQUEST, "item-required")};
 		not PersistentFeature ->

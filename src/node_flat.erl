@@ -179,7 +179,7 @@ delete_node(Nodes) ->
 %%   {@link mod_pubsub:pubsubState()} will be considered as already stored and
 %%   no further persistence operation will be performed. This case is used,
 %%   when the plugin module is doing the persistence by itself or when it want
-%%   to completly disable persistence.</li></ul>
+%%   to completely disable persistence.</li></ul>
 %% </p>
 %% <p>In the default plugin module, the record is unchanged.</p>
 subscribe_node(Nidx, Sender, Subscriber, AccessModel,
@@ -349,7 +349,7 @@ delete_subscriptions(SubState, Subscriptions) ->
 %%   {@link mod_pubsub:pubsubItem()} will be considered as already stored and
 %%   no further persistence operation will be performed. This case is used,
 %%   when the plugin module is doing the persistence by itself or when it want
-%%   to completly disable persistence.</li></ul>
+%%   to completely disable persistence.</li></ul>
 %% </p>
 %% <p>In the default plugin module, the record is unchanged.</p>
 publish_item(Nidx, Publisher, PublishModel, MaxItems, ItemId, Payload,

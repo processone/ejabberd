@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_auth_riak.erl
 %%% Author  : Evgeniy Khramtsov <ekhramtsov@process-one.net>
-%%% Purpose : Authentification via Riak
+%%% Purpose : Authentication via Riak
 %%% Created : 12 Nov 2012 by Evgeniy Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%

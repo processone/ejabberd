@@ -62,7 +62,7 @@
 -define(DEFAULT_MAX_S2S_CONNECTIONS_NUMBER_PER_NODE, 1).
 -define(S2S_OVERLOAD_BLOCK_PERIOD, 60).
 
-%% once a server is temporarly blocked, it stay blocked for 60 seconds
+%% once a server is temporary blocked, it stay blocked for 60 seconds
 
 -record(s2s, {fromto :: {binary(), binary()},
               pid    :: pid()}).
