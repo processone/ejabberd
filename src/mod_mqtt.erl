@@ -204,7 +204,7 @@ mod_options(Host) ->
     [{match_retained_limit, 1000},
      {max_topic_depth, 8},
      {max_topic_aliases, 100},
-     {session_expiry, 300},
+     {session_expiry, timer:minutes(5)},
      {max_queue, 5000},
      {access_subscribe, []},
      {access_publish, []},
@@ -219,7 +219,9 @@ mod_options(Host) ->
 mod_opt_type(max_queue) ->
     econf:pos_int(unlimited);
 mod_opt_type(session_expiry) ->
-    econf:non_neg_int();
+    econf:either(
+      econf:int(0, 0),
+      econf:timeout(second));
 mod_opt_type(match_retained_limit) ->
     econf:pos_int(infinity);
 mod_opt_type(max_topic_depth) ->
