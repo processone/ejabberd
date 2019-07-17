@@ -1135,7 +1135,9 @@ set_form(_From, _Host,
 		    Txt = ?T("No 'path' found in data form"),
 		    {error, xmpp:err_bad_request(Txt, Lang)};
 		[String] ->
-		    case ejabberd_cluster:call(Node, mnesia, backup, [String]) of
+		    case ejabberd_cluster:call(
+			   Node, mnesia, backup, [binary_to_list(String)],
+			   timer:minutes(10)) of
 			{badrpc, Reason} ->
 			    ?ERROR_MSG("RPC call mnesia:backup(~s) to node ~s "
 				       "failed: ~p", [String, Node, Reason]),
@@ -1166,8 +1168,9 @@ set_form(_From, _Host,
 		    Txt = ?T("No 'path' found in data form"),
 		    {error, xmpp:err_bad_request(Txt, Lang)};
 		[String] ->
-		    case ejabberd_cluster:call(Node, ejabberd_admin,
-					       restore, [String]) of
+		    case ejabberd_cluster:call(
+			   Node, ejabberd_admin, restore,
+			   [String], timer:minutes(10)) of
 			{badrpc, Reason} ->
 			    ?ERROR_MSG("RPC call ejabberd_admin:restore(~s) to node "
 				       "~s failed: ~p", [String, Node, Reason]),
@@ -1198,8 +1201,9 @@ set_form(_From, _Host,
 		    Txt = ?T("No 'path' found in data form"),
 		    {error, xmpp:err_bad_request(Txt, Lang)};
 		[String] ->
-		    case ejabberd_cluster:call(Node, ejabberd_admin,
-					       dump_to_textfile, [String]) of
+		    case ejabberd_cluster:call(
+			   Node, ejabberd_admin, dump_to_textfile,
+			   [String], timer:minutes(10)) of
 			{badrpc, Reason} ->
 			    ?ERROR_MSG("RPC call ejabberd_admin:dump_to_textfile(~s) "
 				       "to node ~s failed: ~p", [String, Node, Reason]),
