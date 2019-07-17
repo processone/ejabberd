@@ -429,7 +429,7 @@ check_timeout(undefined) -> true;
 check_timeout(Source) ->
     Timeout = ejabberd_option:registration_timeout(),
     if is_integer(Timeout) ->
-	   Priority = -erlang:system_time(second),
+	   Priority = -erlang:system_time(millisecond),
 	   CleanPriority = Priority + Timeout,
 	   F = fun () ->
 		       Treap = case mnesia:read(mod_register_ip, treap, write)

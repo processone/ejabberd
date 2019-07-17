@@ -160,7 +160,7 @@ subscribe(Proc) ->
 %%% gen_server API
 %%%===================================================================
 init([]) ->
-    Ticktime = ejabberd_option:net_ticktime(),
+    Ticktime = ejabberd_option:net_ticktime() div 1000,
     Nodes = ejabberd_option:cluster_nodes(),
     _ = net_kernel:set_net_ticktime(Ticktime),
     lists:foreach(fun(Node) ->

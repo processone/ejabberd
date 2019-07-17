@@ -286,7 +286,7 @@ init([#body{attrs = Attrs}, IP, SID]) ->
     case ejabberd_c2s:start(?MODULE, Socket, [{receiver, self()}|Opts]) of
 	{ok, C2SPid} ->
 	    ejabberd_c2s:accept(C2SPid),
-	    Inactivity = mod_bosh_opt:max_inactivity(XMPPDomain),
+	    Inactivity = mod_bosh_opt:max_inactivity(XMPPDomain) div 1000,
 	    MaxConcat = mod_bosh_opt:max_concat(XMPPDomain),
 	    ShapedReceivers = buf_new(XMPPDomain, ?MAX_SHAPED_REQUESTS_QUEUE_LEN),
 	    State = #state{host = XMPPDomain, sid = SID, ip = IP,
@@ -330,7 +330,7 @@ wait_for_session(#body{attrs = Attrs} = Req, From,
 		   Wait == 0, Hold == 0 -> erlang:timestamp();
 		   true -> undefined
 	       end,
-    MaxPause = mod_bosh_opt:max_pause(State#state.host),
+    MaxPause = mod_bosh_opt:max_pause(State#state.host) div 1000,
     Resp = #body{attrs =
 		     [{sid, State#state.sid}, {wait, Wait},
 		      {ver, ?BOSH_VERSION}, {polling, ?DEFAULT_POLLING},

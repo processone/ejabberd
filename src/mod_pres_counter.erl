@@ -80,7 +80,7 @@ check_packet(Acc, _, _, _) ->
 update(Server, JID, Dir) ->
     StormCount = mod_pres_counter_opt:count(Server),
     TimeInterval = mod_pres_counter_opt:interval(Server),
-    TimeStamp = erlang:system_time(second),
+    TimeStamp = erlang:system_time(millisecond),
     case read(Dir) of
       undefined ->
 	  write(Dir,
@@ -125,7 +125,7 @@ write(K, V) -> put({pres_counter, K}, V).
 mod_opt_type(count) ->
     econf:pos_int();
 mod_opt_type(interval) ->
-    econf:pos_int().
+    econf:timeout(second).
 
 mod_options(_) ->
-    [{count, 5}, {interval, 60}].
+    [{count, 5}, {interval, timer:seconds(60)}].

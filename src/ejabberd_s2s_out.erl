@@ -137,11 +137,11 @@ process_auth_result(#{server := LServer, remote_server := RServer} = State,
     Delay = get_delay(),
     ?WARNING_MSG("Failed to establish outbound s2s connection ~s -> ~s: "
 		 "authentication failed; bouncing for ~p seconds",
-		 [LServer, RServer, Delay]),
+		 [LServer, RServer, Delay div 1000]),
     State1 = State#{on_route => bounce, stop_reason => Reason},
     State2 = close(State1),
     State3 = bounce_queue(State2),
-    xmpp_stream_out:set_timeout(State3, timer:seconds(Delay));
+    xmpp_stream_out:set_timeout(State3, Delay);
 process_auth_result(State, true) ->
     State.
 
@@ -156,10 +156,10 @@ process_closed(#{server := LServer, remote_server := RServer} = State,
     Delay = get_delay(),
     ?WARNING_MSG("Failed to establish outbound s2s connection ~s -> ~s: ~s; "
 		 "bouncing for ~p seconds",
-		 [LServer, RServer, format_error(Reason), Delay]),
+		 [LServer, RServer, format_error(Reason), Delay div 1000]),
     State1 = State#{on_route => bounce},
     State2 = bounce_queue(State1),
-    xmpp_stream_out:set_timeout(State2, timer:seconds(Delay)).
+    xmpp_stream_out:set_timeout(State2, Delay).
 
 handle_unexpected_info(State, Info) ->
     ?WARNING_MSG("Unexpected info: ~p", [Info]),

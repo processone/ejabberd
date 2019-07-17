@@ -55,7 +55,7 @@
 -record(state,
 	{host                :: binary(),
          send_pings          :: boolean(),
-	 ping_interval       :: non_neg_integer(),
+	 ping_interval       :: pos_integer(),
 	 ping_ack_timeout    :: undefined | non_neg_integer(),
 	 timeout_action      :: none | kill,
          timers              :: timers()}).
@@ -233,7 +233,7 @@ unregister_iq_handlers(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_PING),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PING).
 
--spec add_timer(jid(), non_neg_integer(), timers()) -> timers().
+-spec add_timer(jid(), pos_integer(), timers()) -> timers().
 add_timer(JID, Interval, Timers) ->
     LJID = jid:tolower(JID),
     NewTimers = case maps:find(LJID, Timers) of
@@ -242,8 +242,7 @@ add_timer(JID, Interval, Timers) ->
           maps:remove(LJID, Timers);
       _ -> Timers
 		end,
-    TRef = erlang:start_timer(Interval * 1000, self(),
-			      {ping, JID}),
+    TRef = erlang:start_timer(Interval, self(), {ping, JID}),
     maps:put(LJID, TRef, NewTimers).
 
 -spec del_timer(jid(), timers()) -> timers().
@@ -260,7 +259,7 @@ depends(_Host, _Opts) ->
     [].
 
 mod_opt_type(ping_interval) ->
-    econf:pos_int();
+    econf:timeout(second);
 mod_opt_type(ping_ack_timeout) ->
     econf:timeout(second);
 mod_opt_type(send_pings) ->
@@ -269,7 +268,7 @@ mod_opt_type(timeout_action) ->
     econf:enum([none, kill]).
 
 mod_options(_Host) ->
-    [{ping_interval, 60},
+    [{ping_interval, timer:minutes(1)},
      {ping_ack_timeout, undefined},
      {send_pings, false},
      {timeout_action, none}].
