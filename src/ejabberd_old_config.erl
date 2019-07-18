@@ -60,8 +60,7 @@ transform(Opts) ->
     Opts1 = transform_register(Opts),
     Opts2 = transform_s2s(Opts1),
     Opts3 = transform_listeners(Opts2),
-    Opts4 = transform_sql(Opts3),
-    Opts5 = transform_riak(Opts4),
+    Opts5 = transform_sql(Opts3),
     Opts6 = transform_shaper(Opts5),
     Opts7 = transform_s2s_out(Opts6),
     Opts8 = transform_acl(Opts7),
@@ -410,17 +409,6 @@ transform_sql({odbc_server, {sqlite, DB}}, Opts) ->
 transform_sql({odbc_pool_size, N}, Opts) ->
     [{sql_pool_size, N}|Opts];
 transform_sql(Opt, Opts) ->
-    [Opt|Opts].
-
-%%%===================================================================
-%%% Riak
-%%%===================================================================
-transform_riak(Opts) ->
-    lists:foldl(fun transform_riak/2, [], Opts).
-
-transform_riak({riak_server, {S, P}}, Opts) ->
-    [{riak_server, S}, {riak_port, P}|Opts];
-transform_riak(Opt, Opts) ->
     [Opt|Opts].
 
 %%%===================================================================

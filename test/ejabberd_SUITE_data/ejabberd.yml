@@ -6,7 +6,6 @@ include_config_file:
   - ejabberd.mysql.yml
   - ejabberd.pgsql.yml
   - ejabberd.redis.yml
-  - ejabberd.riak.yml
   - ejabberd.sqlite.yml
 
 host_config:
@@ -15,7 +14,6 @@ host_config:
   mysql.localhost: MYSQL_CONFIG
   mnesia.localhost: MNESIA_CONFIG
   redis.localhost: REDIS_CONFIG
-  riak.localhost: RIAK_CONFIG
   ldap.localhost: LDAP_CONFIG
   extauth.localhost: EXTAUTH_CONFIG
   localhost:
@@ -31,7 +29,6 @@ hosts:
   - pgsql.localhost
   - extauth.localhost
   - ldap.localhost
-  - riak.localhost
   - sqlite.localhost
 
 shaper_rules:

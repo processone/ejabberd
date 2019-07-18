@@ -107,7 +107,6 @@ defmodule Ejabberd.Mixfile do
 
   defp cond_deps do
     for {:true, dep} <- [{config(:sqlite), {:sqlite3, "~> 1.1"}},
-                         {config(:riak), {:riakc, "~> 2.4"}},
                          {config(:redis), {:eredis, "~> 1.0"}},
                          {config(:zlib), {:ezlib, "~> 1.0"}},
                          {config(:pam), {:epam, "~> 1.0"}},

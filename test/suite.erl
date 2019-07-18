@@ -172,9 +172,9 @@ setup_ejabberd_lib_path(Config) ->
 	    ok
     end.
 
-%% Read environment variable CT_DB=riak,mysql to limit the backends to test.
+%% Read environment variable CT_DB=mysql to limit the backends to test.
 %% You can thus limit the backend you want to test with:
-%%  CT_BACKENDS=riak,mysql rebar ct suites=ejabberd
+%%  CT_BACKENDS=mysql rebar ct suites=ejabberd
 get_config_backends() ->
     EnvBackends = case os:getenv("CT_BACKENDS") of
 		      false  -> ?BACKENDS;

@@ -104,9 +104,9 @@ opt_type(cluster_backend) ->
 opt_type(cluster_nodes) ->
     econf:list(econf:atom(), [unique]);
 opt_type(default_db) ->
-    econf:enum([mnesia, riak, sql]);
+    econf:enum([mnesia, sql]);
 opt_type(default_ram_db) ->
-    econf:enum([mnesia, riak, sql, redis]);
+    econf:enum([mnesia, sql, redis]);
 opt_type(define_macro) ->
     econf:any();
 opt_type(disable_sasl_mechanisms) ->
@@ -280,20 +280,6 @@ opt_type(registration_timeout) ->
     econf:timeout(second, infinity);
 opt_type(resource_conflict) ->
     econf:enum([setresource, closeold, closenew, acceptnew]);
-opt_type(riak_cacertfile) ->
-    econf:and_then(econf:pem(), econf:string());
-opt_type(riak_password) ->
-    econf:string();
-opt_type(riak_pool_size) ->
-    econf:pos_int();
-opt_type(riak_port) ->
-    econf:port();
-opt_type(riak_server) ->
-    econf:string();
-opt_type(riak_start_interval) ->
-    econf:timeout(second);
-opt_type(riak_username) ->
-    econf:string();
 opt_type(router_cache_life_time) ->
     econf:timeout(second, infinity);
 opt_type(router_cache_missed) ->
@@ -570,13 +556,6 @@ options() ->
      {redis_server, "localhost"},
      {registration_timeout, timer:seconds(600)},
      {resource_conflict, acceptnew},
-     {riak_cacertfile, nil},
-     {riak_password, nil},
-     {riak_pool_size, 10},
-     {riak_port, 8087},
-     {riak_server, "127.0.0.1"},
-     {riak_start_interval, timer:seconds(30)},
-     {riak_username, nil},
      {router_cache_life_time,
       fun(Host) -> ejabberd_config:get_option({cache_life_time, Host}) end},
      {router_cache_missed,
@@ -702,13 +681,6 @@ globals() ->
      redis_queue_type,
      redis_server,
      registration_timeout,
-     riak_cacertfile,
-     riak_password,
-     riak_pool_size,
-     riak_port,
-     riak_server,
-     riak_start_interval,
-     riak_username,
      router_cache_life_time,
      router_cache_missed,
      router_cache_size,
