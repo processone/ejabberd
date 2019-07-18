@@ -396,7 +396,7 @@ opt_type(websocket_timeout) ->
     econf:timeout(second);
 opt_type(jwt_key) ->
     econf:and_then(
-      econf:file(),
+      econf:path(),
       fun(Path) ->
               case file:read_file(Path) of
                   {ok, Data} ->
