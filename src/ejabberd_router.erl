@@ -358,6 +358,9 @@ handle_info({'DOWN', MRef, _, Pid, Info}, State) ->
 		      ?DEBUG("Process ~p with route registered to ~s "
 			     "has terminated unexpectedly with reason: ~p",
 			     [P, Domain, Info]),
+		      try unregister_route(Domain, Pid)
+		      catch _:_ -> ok
+		      end,
 		      false;
 		 (_, _) ->
 		      true
@@ -462,7 +465,12 @@ monitor_route(Domain, Pid) ->
 
 -spec demonitor_route(binary(), pid()) -> ok.
 demonitor_route(Domain, Pid) ->
-    ?GEN_SERVER:call(?MODULE, {demonitor, Domain, Pid}, ?CALL_TIMEOUT).
+    case whereis(?MODULE) == self() of
+	true ->
+	    ok;
+	false ->
+	    ?GEN_SERVER:call(?MODULE, {demonitor, Domain, Pid}, ?CALL_TIMEOUT)
+    end.
 
 -spec get_backend() -> module().
 get_backend() ->
