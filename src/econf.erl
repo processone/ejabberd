@@ -159,6 +159,8 @@ format_error({bad_pem, Why, Path}) ->
 	   [Path, pkix:format_error(Why)]);
 format_error({bad_cert, Why, Path}) ->
     format_error({bad_pem, Why, Path});
+format_error({bad_jwt_key, Path}) ->
+    format("No valid JWT key found in file: ~s", [Path]);
 format_error({bad_jid, Bad}) ->
     format("Invalid XMPP address: ~s", [Bad]);
 format_error({bad_user, Bad}) ->

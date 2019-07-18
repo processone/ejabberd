@@ -399,7 +399,13 @@ opt_type(jwt_key) ->
       econf:file(),
       fun(Path) ->
               case file:read_file(Path) of
-                  {ok, Binary} -> Binary;
+                  {ok, Data} ->
+		      try jose_jwk:from_binary(Data) of
+			  {error, _} -> econf:fail({bad_jwt_key, Path});
+			  Ret -> Ret
+		      catch _:_ ->
+			      econf:fail({bad_jwt_key, Path})
+		      end;
                   {error, Reason} ->
                       econf:fail({read_file, Reason, Path})
               end
@@ -422,7 +428,7 @@ opt_type(jwt_key) ->
 		    {shaper, #{atom() => ejabberd_shaper:shaper_rate()}} |
 		    {shaper_rules, [{atom(), [ejabberd_shaper:shaper_rule()]}]} |
 		    {api_permissions, [ejabberd_access_permissions:permission()]} |
-		    {jwt_key, binary()} |
+		    {jwt_key, jose_jwk:key()} |
 		    {append_host_config, [{binary(), any()}]} |
 		    {host_config, [{binary(), any()}]} |
 		    {define_macro, any()} |

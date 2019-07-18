@@ -424,10 +424,10 @@ include_config_file() ->
 include_config_file(Host) ->
     ejabberd_config:get_option({include_config_file, Host}).
 
--spec jwt_key() -> binary().
+-spec jwt_key() -> jose_jwk:key().
 jwt_key() ->
     jwt_key(global).
--spec jwt_key(global | binary()) -> binary().
+-spec jwt_key(global | binary()) -> jose_jwk:key().
 jwt_key(Host) ->
     ejabberd_config:get_option({jwt_key, Host}).
 
