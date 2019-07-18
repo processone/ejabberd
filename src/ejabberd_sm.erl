@@ -499,15 +499,6 @@ handle_cast(Msg, State) ->
     ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
-handle_info({route, Packet}, State) ->
-    try route(Packet)
-    catch ?EX_RULE(E, R, St) ->
-	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Failed to route packet:~n~s~n** ~s",
-		       [xmpp:pp(Packet),
-			misc:format_exception(2, E, R, StackTrace)])
-    end,
-    {noreply, State};
 handle_info(Info, State) ->
     ?WARNING_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
