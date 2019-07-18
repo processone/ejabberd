@@ -32,6 +32,8 @@
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
+%% hooks
+-export([set_ticktime/0]).
 
 -include("logger.hrl").
 
@@ -157,18 +159,25 @@ subscribe(Proc) ->
     Mod:subscribe(Proc).
 
 %%%===================================================================
+%%% Hooks
+%%%===================================================================
+set_ticktime() ->
+    Ticktime = ejabberd_option:net_ticktime() div 1000,
+    net_kernel:set_net_ticktime(Ticktime).
+
+%%%===================================================================
 %%% gen_server API
 %%%===================================================================
 init([]) ->
-    Ticktime = ejabberd_option:net_ticktime() div 1000,
+    set_ticktime(),
     Nodes = ejabberd_option:cluster_nodes(),
-    _ = net_kernel:set_net_ticktime(Ticktime),
     lists:foreach(fun(Node) ->
                           net_kernel:connect_node(Node)
                   end, Nodes),
     Mod = get_mod(),
     case Mod:init() of
 	ok ->
+	    ejabberd_hooks:add(config_reloaded, ?MODULE, set_ticktime, 50),
 	    Mod:subscribe(?MODULE),
 	    {ok, #state{}};
 	{error, Reason} ->
@@ -194,7 +203,7 @@ handle_info(Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
-    ok.
+    ejabberd_hooks:delete(config_reloaded, ?MODULE, set_ticktime, 50).
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
