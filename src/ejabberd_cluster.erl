@@ -163,7 +163,15 @@ subscribe(Proc) ->
 %%%===================================================================
 set_ticktime() ->
     Ticktime = ejabberd_option:net_ticktime() div 1000,
-    net_kernel:set_net_ticktime(Ticktime).
+    case net_kernel:set_net_ticktime(Ticktime) of
+	{ongoing_change_to, Time} when Time /= Ticktime ->
+	    ?ERROR_MSG("Failed to set new net_ticktime because "
+		       "the net kernel is busy changing it to the "
+		       "previously configured value. Please wait for "
+		       "~B seconds and retry", [Time]);
+	_ ->
+	    ok
+    end.
 
 %%%===================================================================
 %%% gen_server API
