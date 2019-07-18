@@ -23,6 +23,7 @@ You can fully clean up the environment with:
 If you want to clean the data, you can remove the data directories after the `docker-compose down` command:
 
 ```
-mkdir test/docker/db/mysql/data
-mkdir test/docker/db/postgres/data
-mkdir test/docker/db/riak/data
+rm -rf test/docker/db/mysql/data
+rm -rf test/docker/db/postgres/data
+rm -rf test/docker/db/riak/data
+```
