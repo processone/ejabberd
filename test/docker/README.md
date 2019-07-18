@@ -18,6 +18,13 @@ You can stop all the databases with CTRL-C.
 
 ## Running tests
 
+Before running the test, you can ensure there is no running instance of Erlang common test tool. You can run the following 
+command, especially if all test are skipped with an `eaddrinuse` error:
+
+```
+pkill -9 ct_run
+```
+
 You can run tests with (from ejabberd repository root):
 
 ```
