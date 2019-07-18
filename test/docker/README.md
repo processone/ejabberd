@@ -31,6 +31,14 @@ You can run tests with (from ejabberd repository root):
 make test
 ```
 
+At the moment, starting from Erlang 21, some Riak tests are broken because Riak client is not compliant with OTP 21+.
+
+To run everything except Riak tests, you can use the following command:
+
+```
+CT_BACKENDS=mnesia,redis,mysql,pgsql,sqlite,ldap,extauth rebar ct suites=ejabberd
+```
+
 ## Cleaning up the test environment
 
 You can fully clean up the environment with:
