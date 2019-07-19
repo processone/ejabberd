@@ -377,7 +377,7 @@ format_error({error, {write_file, Path, Reason}}) ->
 format_error({error, {exception, Class, Reason, St}}) ->
     lists:flatten(
       io_lib:format(
-	"Exception occured during configuration processing. "
+	"Exception occurred during configuration processing. "
 	"This is most likely due to faulty/incompatible validator in "
 	"third-party code. If you are not running any third-party "
 	"code, please report the bug with ejabberd configuration "

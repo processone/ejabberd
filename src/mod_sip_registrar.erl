@@ -494,9 +494,9 @@ need_ob_hdrs(Contacts, _IsOutboundSupported = true) ->
 get_flow_timeout(LServer, #sip_socket{type = Type}) ->
     case Type of
 	udp ->
-	    mod_sip_opt:flow_timeout_udp(LServer);
+	    mod_sip_opt:flow_timeout_udp(LServer) div 1000;
 	_ ->
-	    mod_sip_opt:flow_timeout_tcp(LServer)
+	    mod_sip_opt:flow_timeout_tcp(LServer) div 1000
     end.
 
 update_table() ->

@@ -36,7 +36,6 @@
 {sqlite, @sqlite@}.
 {pam, @pam@}.
 {zlib, @zlib@}.
-{riak, @riak@}.
 {redis, @redis@}.
 {elixir, @elixir@}.
 {stun, @stun@}.

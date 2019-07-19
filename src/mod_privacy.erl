@@ -618,7 +618,7 @@ do_check_packet(#jid{luser = LUser, lserver = LServer}, List, Packet, Dir) ->
 		       message | iq | presence_in | presence_out | other,
 		       ljid(), none | both | from | to, [binary()]) ->
 			      allow | deny.
-%% Ptype = mesage | iq | presence_in | presence_out | other
+%% Ptype = message | iq | presence_in | presence_out | other
 check_packet_aux([], _PType, _JID, _Subscription,
 		 _Groups) ->
     allow;

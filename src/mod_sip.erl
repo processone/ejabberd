@@ -327,9 +327,9 @@ is_my_host(LServer) ->
 mod_opt_type(always_record_route) ->
     econf:bool();
 mod_opt_type(flow_timeout_tcp) ->
-    econf:pos_int();
+    econf:timeout(second);
 mod_opt_type(flow_timeout_udp) ->
-    econf:pos_int();
+    econf:timeout(second);
 mod_opt_type(record_route) ->
     econf:sip_uri();
 mod_opt_type(routes) ->
@@ -356,8 +356,8 @@ mod_options(Host) ->
 		 host = Host,
 		 params = [{<<"lr">>, <<>>}]},
     [{always_record_route, true},
-     {flow_timeout_tcp, 120},
-     {flow_timeout_udp, 29},
+     {flow_timeout_tcp, timer:seconds(120)},
+     {flow_timeout_udp, timer:seconds(29)},
      {record_route, Route},
      {routes, [Route]},
      {via, []}].

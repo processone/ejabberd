@@ -1023,7 +1023,7 @@ get_room_pid(Name, Service) ->
 	    Pid
     end.
 
-%% It is required to put explicitely all the options because
+%% It is required to put explicitly all the options because
 %% the record elements are replaced at compile time.
 %% So, this can't be parametrized.
 change_option(Option, Value, Config) ->

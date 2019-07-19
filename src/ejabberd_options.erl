@@ -104,9 +104,9 @@ opt_type(cluster_backend) ->
 opt_type(cluster_nodes) ->
     econf:list(econf:atom(), [unique]);
 opt_type(default_db) ->
-    econf:enum([mnesia, riak, sql]);
+    econf:enum([mnesia, sql]);
 opt_type(default_ram_db) ->
-    econf:enum([mnesia, riak, sql, redis]);
+    econf:enum([mnesia, sql, redis]);
 opt_type(define_macro) ->
     econf:any();
 opt_type(disable_sasl_mechanisms) ->
@@ -215,7 +215,7 @@ opt_type(modules) ->
 opt_type(negotiation_timeout) ->
     econf:timeout(second);
 opt_type(net_ticktime) ->
-    econf:pos_int();
+    econf:timeout(second);
 opt_type(new_sql_schema) ->
     econf:bool();
 opt_type(oauth_access) ->
@@ -277,23 +277,9 @@ opt_type(redis_queue_type) ->
 opt_type(redis_server) ->
     econf:string();
 opt_type(registration_timeout) ->
-    econf:pos_int(infinity);
+    econf:timeout(second, infinity);
 opt_type(resource_conflict) ->
     econf:enum([setresource, closeold, closenew, acceptnew]);
-opt_type(riak_cacertfile) ->
-    econf:and_then(econf:pem(), econf:string());
-opt_type(riak_password) ->
-    econf:string();
-opt_type(riak_pool_size) ->
-    econf:pos_int();
-opt_type(riak_port) ->
-    econf:port();
-opt_type(riak_server) ->
-    econf:string();
-opt_type(riak_start_interval) ->
-    econf:timeout(second);
-opt_type(riak_username) ->
-    econf:string();
 opt_type(router_cache_life_time) ->
     econf:timeout(second, infinity);
 opt_type(router_cache_missed) ->
@@ -319,7 +305,7 @@ opt_type(s2s_dns_retries) ->
 opt_type(s2s_dns_timeout) ->
     econf:timeout(second, infinity);
 opt_type(s2s_max_retry_delay) ->
-    econf:pos_int();
+    econf:timeout(second);
 opt_type(s2s_protocol_options) ->
     econf:and_then(
       econf:list(econf:binary(), [unique]),
@@ -410,10 +396,16 @@ opt_type(websocket_timeout) ->
     econf:timeout(second);
 opt_type(jwt_key) ->
     econf:and_then(
-      econf:file(),
+      econf:path(),
       fun(Path) ->
               case file:read_file(Path) of
-                  {ok, Binary} -> Binary;
+                  {ok, Data} ->
+		      try jose_jwk:from_binary(Data) of
+			  {error, _} -> econf:fail({bad_jwt_key, Path});
+			  Ret -> Ret
+		      catch _:_ ->
+			      econf:fail({bad_jwt_key, Path})
+		      end;
                   {error, Reason} ->
                       econf:fail({read_file, Reason, Path})
               end
@@ -436,7 +428,7 @@ opt_type(jwt_key) ->
 		    {shaper, #{atom() => ejabberd_shaper:shaper_rate()}} |
 		    {shaper_rules, [{atom(), [ejabberd_shaper:shaper_rule()]}]} |
 		    {api_permissions, [ejabberd_access_permissions:permission()]} |
-		    {jwt_key, binary()} |
+		    {jwt_key, jose_jwk:key()} |
 		    {append_host_config, [{binary(), any()}]} |
 		    {host_config, [{binary(), any()}]} |
 		    {define_macro, any()} |
@@ -536,7 +528,7 @@ options() ->
      {max_fsm_queue, undefined},
      {modules, []},
      {negotiation_timeout, timer:seconds(30)},
-     {net_ticktime, 60},
+     {net_ticktime, timer:seconds(60)},
      {new_sql_schema, ?USE_NEW_SQL_SCHEMA_DEFAULT},
      {oauth_access, none},
      {oauth_cache_life_time,
@@ -568,15 +560,8 @@ options() ->
      {redis_queue_type,
       fun(Host) -> ejabberd_config:get_option({queue_type, Host}) end},
      {redis_server, "localhost"},
-     {registration_timeout, 600},
+     {registration_timeout, timer:seconds(600)},
      {resource_conflict, acceptnew},
-     {riak_cacertfile, nil},
-     {riak_password, nil},
-     {riak_pool_size, 10},
-     {riak_port, 8087},
-     {riak_server, "127.0.0.1"},
-     {riak_start_interval, timer:seconds(30)},
-     {riak_username, nil},
      {router_cache_life_time,
       fun(Host) -> ejabberd_config:get_option({cache_life_time, Host}) end},
      {router_cache_missed,
@@ -594,7 +579,7 @@ options() ->
      {s2s_dhfile, undefined},
      {s2s_dns_retries, 2},
      {s2s_dns_timeout, timer:seconds(10)},
-     {s2s_max_retry_delay, 300},
+     {s2s_max_retry_delay, timer:seconds(300)},
      {s2s_protocol_options, undefined},
      {s2s_queue_type,
       fun(Host) -> ejabberd_config:get_option({queue_type, Host}) end},
@@ -702,13 +687,6 @@ globals() ->
      redis_queue_type,
      redis_server,
      registration_timeout,
-     riak_cacertfile,
-     riak_password,
-     riak_pool_size,
-     riak_port,
-     riak_server,
-     riak_start_interval,
-     riak_username,
      router_cache_life_time,
      router_cache_missed,
      router_cache_size,

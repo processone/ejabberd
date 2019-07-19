@@ -431,7 +431,7 @@ format_module_error(Module, Fun, Arity, Opts, Class, Reason, St) ->
 			  [Module, Fun, Arity, Ret]);
 	_ ->
 	    io_lib:format("Internal error of module ~s has "
-			  "occured during ~s:~n"
+			  "occurred during ~s:~n"
 			  "** Options: ~p~n"
 			  "** ~s",
 			  [Module, Fun, Opts,

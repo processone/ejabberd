@@ -164,9 +164,9 @@ mod_opt_type(json) ->
 mod_opt_type(max_concat) ->
     econf:pos_int(unlimited);
 mod_opt_type(max_inactivity) ->
-    econf:pos_int();
+    econf:timeout(second);
 mod_opt_type(max_pause) ->
-    econf:pos_int();
+    econf:timeout(second);
 mod_opt_type(prebind) ->
     econf:bool();
 mod_opt_type(queue_type) ->
@@ -187,8 +187,8 @@ mod_opt_type(cache_life_time) ->
 mod_options(Host) ->
     [{json, false},
      {max_concat, unlimited},
-     {max_inactivity, 30},
-     {max_pause, 120},
+     {max_inactivity, timer:seconds(30)},
+     {max_pause, timer:seconds(120)},
      {prebind, false},
      {ram_db_type, ejabberd_config:default_ram_db(Host, ?MODULE)},
      {queue_type, ejabberd_option:queue_type(Host)},

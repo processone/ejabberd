@@ -28,7 +28,7 @@
 -export([pos_int/0, pos_int/1, non_neg_int/0, non_neg_int/1]).
 -export([int/0, int/2, number/1, octal/0]).
 -export([binary/0, binary/1, binary/2]).
--export([string/0, string/1]).
+-export([string/0, string/1, string/2]).
 -export([enum/1, bool/0, atom/0, any/0]).
 %% Complex types
 -export([url/0, url/1]).
@@ -159,6 +159,8 @@ format_error({bad_pem, Why, Path}) ->
 	   [Path, pkix:format_error(Why)]);
 format_error({bad_cert, Why, Path}) ->
     format_error({bad_pem, Why, Path});
+format_error({bad_jwt_key, Path}) ->
+    format("No valid JWT key found in file: ~s", [Path]);
 format_error({bad_jid, Bad}) ->
     format("Invalid XMPP address: ~s", [Bad]);
 format_error({bad_user, Bad}) ->
@@ -271,6 +273,9 @@ string() ->
 
 string(Re) ->
     yconf:string(Re).
+
+string(Re, Opts) ->
+    yconf:string(Re, Opts).
 
 any() ->
     yconf:any().

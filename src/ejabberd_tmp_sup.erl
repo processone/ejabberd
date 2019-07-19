@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_tmp_sup.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : Supervisor for temporary processess
+%%% Purpose : Supervisor for temporary processes
 %%% Created : 18 Jul 2003 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%

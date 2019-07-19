@@ -269,7 +269,7 @@ spec(number, 1, _, _) ->
     erl_types:t_number();
 spec(octal, 0, _, _) ->
     erl_types:t_non_neg_integer();
-spec(binary, A, _, _) when A == 0; A == 1 ->
+spec(binary, A, _, _) when A == 0; A == 1; A == 2 ->
     erl_types:t_binary();
 spec(enum, 1, [L], _) ->
     try
@@ -287,7 +287,7 @@ spec(bool, 0, _, _) ->
     erl_types:t_boolean();
 spec(atom, 0, _, _) ->
     erl_types:t_atom();
-spec(string, A, _, _) when A == 0; A == 1 ->
+spec(string, A, _, _) when A == 0; A == 1; A == 2 ->
     erl_types:t_string();
 spec(any, 0, _, Mod) ->
     t_unknown(Mod);
@@ -311,9 +311,9 @@ spec(ip_mask, 0, _, _) ->
 	[t_remote(inet, ip6_address), erl_types:t_from_range(0, 128)]));
 spec(port, 0, _, _) ->
     erl_types:t_from_range(1, 65535);
-spec(re, 0, _, _) ->
+spec(re, A, _, _) when A == 0; A == 1 ->
     t_remote(re, mp);
-spec(glob, 0, _, _) ->
+spec(glob, A, _, _) when A == 0; A == 1 ->
     t_remote(re, mp);
 spec(path, 0, _, _) ->
     erl_types:t_binary();

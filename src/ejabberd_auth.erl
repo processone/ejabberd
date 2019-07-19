@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_auth.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : Authentification
+%%% Purpose : Authentication
 %%% Created : 23 Nov 2002 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
@@ -901,7 +901,5 @@ import_start(_LServer, _) ->
 
 import(Server, {sql, _}, mnesia, <<"users">>, Fields) ->
     ejabberd_auth_mnesia:import(Server, Fields);
-import(Server, {sql, _}, riak, <<"users">>, Fields) ->
-    ejabberd_auth_riak:import(Server, Fields);
 import(_LServer, {sql, _}, sql, <<"users">>, _) ->
     ok.

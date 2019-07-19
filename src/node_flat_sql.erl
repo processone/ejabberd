@@ -546,40 +546,25 @@ unsub_with_subid(Nidx, SubId, SubState) ->
     end.
 
 get_pending_nodes(Host, Owner) ->
-    GenKey = jid:remove_resource(jid:tolower(Owner)),
-    States = mnesia:match_object(#pubsub_state{stateid = {GenKey, '_'},
-		affiliation = owner, _ = '_'}),
-    Nidxxs = [Nidx || #pubsub_state{stateid = {_, Nidx}} <- States],
+    GenKey = encode_jid(jid:remove_resource(jid:tolower(Owner))),
+    PendingIdxs = case ejabberd_sql:sql_query_t(
+                         ?SQL("select @(nodeid)d from pubsub_state "
+                              "where subscriptions like '%p%' and affiliation='o'"
+                              "and jid=%(GenKey)s")) of
+	{selected, RItems} ->
+            [Nidx || {Nidx} <- RItems];
+        _ ->
+            []
+        end,
     NodeTree = mod_pubsub:tree(Host),
-    Reply = mnesia:foldl(fun (#pubsub_state{stateid = {_, Nidx}} = S, Acc) ->
-		    case lists:member(Nidx, Nidxxs) of
-			true ->
-			    case get_nodes_helper(NodeTree, S) of
-				{value, Node} -> [Node | Acc];
-				false -> Acc
-			    end;
-			false ->
-			    Acc
-		    end
-	    end,
-	    [], pubsub_state),
+    Reply = lists:foldl(fun(Nidx, Acc) ->
+                            case NodeTree:get_node(Nidx) of
+                                #pubsub_node{nodeid = {_, Node}} -> [Node | Acc];
+                                _ -> Acc
+                            end
+                        end,
+                        [], PendingIdxs),
     {result, Reply}.
-
-get_nodes_helper(NodeTree, #pubsub_state{stateid = {_, N}, subscriptions = Subs}) ->
-    HasPending = fun
-	({pending, _}) -> true;
-	(pending) -> true;
-	(_) -> false
-    end,
-    case lists:any(HasPending, Subs) of
-	true ->
-	    case NodeTree:get_node(N) of
-		#pubsub_node{nodeid = {_, Node}} -> {value, Node};
-		_ -> false
-	    end;
-	false ->
-	    false
-    end.
 
 get_states(Nidx) ->
     case ejabberd_sql:sql_query_t(

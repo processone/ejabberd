@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_auth_external.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : Authentification via LDAP external script
+%%% Purpose : Authentication via LDAP external script
 %%% Created : 12 Dec 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%

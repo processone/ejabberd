@@ -105,13 +105,6 @@
 -export([redis_server/0]).
 -export([registration_timeout/0]).
 -export([resource_conflict/0, resource_conflict/1]).
--export([riak_cacertfile/0]).
--export([riak_password/0]).
--export([riak_pool_size/0]).
--export([riak_port/0]).
--export([riak_server/0]).
--export([riak_start_interval/0]).
--export([riak_username/0]).
 -export([router_cache_life_time/0]).
 -export([router_cache_missed/0]).
 -export([router_cache_size/0]).
@@ -327,17 +320,17 @@ cluster_backend() ->
 cluster_nodes() ->
     ejabberd_config:get_option({cluster_nodes, global}).
 
--spec default_db() -> 'mnesia' | 'riak' | 'sql'.
+-spec default_db() -> 'mnesia' | 'sql'.
 default_db() ->
     default_db(global).
--spec default_db(global | binary()) -> 'mnesia' | 'riak' | 'sql'.
+-spec default_db(global | binary()) -> 'mnesia' | 'sql'.
 default_db(Host) ->
     ejabberd_config:get_option({default_db, Host}).
 
--spec default_ram_db() -> 'mnesia' | 'redis' | 'riak' | 'sql'.
+-spec default_ram_db() -> 'mnesia' | 'redis' | 'sql'.
 default_ram_db() ->
     default_ram_db(global).
--spec default_ram_db(global | binary()) -> 'mnesia' | 'redis' | 'riak' | 'sql'.
+-spec default_ram_db(global | binary()) -> 'mnesia' | 'redis' | 'sql'.
 default_ram_db(Host) ->
     ejabberd_config:get_option({default_ram_db, Host}).
 
@@ -431,10 +424,10 @@ include_config_file() ->
 include_config_file(Host) ->
     ejabberd_config:get_option({include_config_file, Host}).
 
--spec jwt_key() -> binary().
+-spec jwt_key() -> jose_jwk:key().
 jwt_key() ->
     jwt_key(global).
--spec jwt_key(global | binary()) -> binary().
+-spec jwt_key(global | binary()) -> jose_jwk:key().
 jwt_key(Host) ->
     ejabberd_config:get_option({jwt_key, Host}).
 
@@ -734,34 +727,6 @@ resource_conflict() ->
 -spec resource_conflict(global | binary()) -> 'acceptnew' | 'closenew' | 'closeold' | 'setresource'.
 resource_conflict(Host) ->
     ejabberd_config:get_option({resource_conflict, Host}).
-
--spec riak_cacertfile() -> 'nil' | string().
-riak_cacertfile() ->
-    ejabberd_config:get_option({riak_cacertfile, global}).
-
--spec riak_password() -> 'nil' | string().
-riak_password() ->
-    ejabberd_config:get_option({riak_password, global}).
-
--spec riak_pool_size() -> pos_integer().
-riak_pool_size() ->
-    ejabberd_config:get_option({riak_pool_size, global}).
-
--spec riak_port() -> 1..1114111.
-riak_port() ->
-    ejabberd_config:get_option({riak_port, global}).
-
--spec riak_server() -> string().
-riak_server() ->
-    ejabberd_config:get_option({riak_server, global}).
-
--spec riak_start_interval() -> pos_integer().
-riak_start_interval() ->
-    ejabberd_config:get_option({riak_start_interval, global}).
-
--spec riak_username() -> 'nil' | string().
-riak_username() ->
-    ejabberd_config:get_option({riak_username, global}).
 
 -spec router_cache_life_time() -> 'infinity' | pos_integer().
 router_cache_life_time() ->

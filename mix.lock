@@ -28,8 +28,6 @@
   "p1_pgsql": {:hex, :p1_pgsql, "1.1.7", "ef64d34adbbe08258cc10b1532649446d8c086ff8663d44f430d837ec31a89f8", [:rebar3], [], "hexpm"},
   "p1_utils": {:hex, :p1_utils, "1.0.15", "731f76ae1f31f4554afb2ae629cb5589d53bd13efc72b11f5a7c3b1242f91046", [:rebar3], [], "hexpm"},
   "pkix": {:hex, :pkix, "1.0.2", "f618455c4edbcc7ebf8be5e655b269876fa36e890b806d18d8b2b708dfb1e583", [:rebar3], [], "hexpm"},
-  "riak_pb": {:hex, :riak_pb, "2.3.2", "48ffbf66dbb3f136ab9a7134bac4e496754baa5ef58c4f50a61326736d996390", [:make, :mix, :rebar3], [{:hamcrest, "~> 0.4.1", [hex: :basho_hamcrest, repo: "hexpm", optional: false]}], "hexpm"},
-  "riakc": {:hex, :riakc, "2.5.3", "6132d9e687a0dfd314b2b24c4594302ca8b55568a5d733c491d8fb6cd4004763", [:make, :mix, :rebar3], [{:riak_pb, "~> 2.3", [hex: :riak_pb, repo: "hexpm", optional: false]}], "hexpm"},
   "sqlite3": {:hex, :sqlite3, "1.1.6", "4ea71af0b45908b5f02c9b09e4c87177039ef404f20accb35049cd8924cc417c", [:rebar3], [], "hexpm"},
   "stringprep": {:hex, :stringprep, "1.0.16", "5a7e617cabba5791aed45b394307d46b9f22ac2eef3bbcf6a4b639637079c84d", [:rebar3], [{:p1_utils, "1.0.15", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "stun": {:hex, :stun, "1.0.28", "ee81bc075f955f529679213157f76c3d3355a1dec4625108a62872006c3db8a0", [:rebar3], [{:fast_tls, "1.1.1", [hex: :fast_tls, repo: "hexpm", optional: false]}, {:p1_utils, "1.0.15", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},

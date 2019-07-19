@@ -407,7 +407,7 @@ add_to_log(File, FileSize, Code, Request) ->
     Referer = find_header('Referer', Request#request.headers, "-"),
     %% Pseudo Combined Apache log format:
     %% 127.0.0.1 - - [28/Mar/2007:18:41:55 +0200] "GET / HTTP/1.1" 302 303 "-" "tsung"
-    %% TODO some fields are harcoded/missing:
+    %% TODO some fields are hardcoded/missing:
     %%   The date/time integers should have always 2 digits. For example day "7" should be "07"
     %%   Month should be 3*letter, not integer 1..12
     %%   Missing time zone = (`+' | `-') 4*digit

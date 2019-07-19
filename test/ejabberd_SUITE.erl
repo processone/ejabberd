@@ -125,15 +125,6 @@ do_init_per_group(ldap, Config) ->
     set_opt(server, ?LDAP_VHOST, Config);
 do_init_per_group(extauth, Config) ->
     set_opt(server, ?EXTAUTH_VHOST, Config);
-do_init_per_group(riak, Config) ->
-    case ejabberd_riak:is_connected() of
-	true ->
-	    mod_muc:shutdown_rooms(?RIAK_VHOST),
-	    NewConfig = set_opt(server, ?RIAK_VHOST, Config),
-	    clear_riak_tables(NewConfig);
-	Err ->
-	    {skip, {riak_not_available, Err}}
-    end;
 do_init_per_group(s2s, Config) ->
     ejabberd_config:set_option({s2s_use_starttls, ?COMMON_VHOST}, required),
     ejabberd_config:set_option(ca_file, "ca.pem"),
@@ -177,13 +168,6 @@ end_per_group(ldap, _Config) ->
     ok;
 end_per_group(extauth, _Config) ->
     ok;
-end_per_group(riak, Config) ->
-    case ejabberd_riak:is_connected() of
-	true ->
-	    clear_riak_tables(Config);
-	false ->
-	    Config
-    end;
 end_per_group(component, _Config) ->
     ok;
 end_per_group(s2s, Config) ->
@@ -379,28 +363,6 @@ no_db_tests() ->
      carbons_tests:single_cases(),
      carbons_tests:master_slave_cases()].
 
-db_tests(riak) ->
-    %% No support for mod_pubsub
-    [{single_user, [sequence],
-      [test_register,
-       legacy_auth_tests(),
-       auth_plain,
-       auth_md5,
-       presence_broadcast,
-       last,
-       roster_tests:single_cases(),
-       %%private_tests:single_cases(),
-       privacy_tests:single_cases(),
-       vcard_tests:single_cases(),
-       muc_tests:single_cases(),
-       offline_tests:single_cases(),
-       test_unregister]},
-     muc_tests:master_slave_cases(),
-     privacy_tests:master_slave_cases(),
-     roster_tests:master_slave_cases(),
-     offline_tests:master_slave_cases(riak),
-     vcard_tests:master_slave_cases(),
-     announce_tests:master_slave_cases()];
 db_tests(DB) when DB == mnesia; DB == redis ->
     [{single_user, [sequence],
       [test_register,
@@ -519,8 +481,7 @@ groups() ->
      {redis, [sequence], db_tests(redis)},
      {mysql, [sequence], db_tests(mysql)},
      {pgsql, [sequence], db_tests(pgsql)},
-     {sqlite, [sequence], db_tests(sqlite)},
-     {riak, [sequence], db_tests(riak)}].
+     {sqlite, [sequence], db_tests(sqlite)}].
 
 all() ->
     [{group, ldap},
@@ -531,7 +492,6 @@ all() ->
      {group, pgsql},
      {group, sqlite},
      {group, extauth},
-     {group, riak},
      {group, component},
      {group, s2s},
      stop_ejabberd].
@@ -1113,16 +1073,3 @@ split(Data) ->
          (_) ->
               true
       end, re:split(Data, <<"\s">>)).
-
-clear_riak_tables(Config) ->
-    User = ?config(user, Config),
-    Server = ?config(server, Config),
-    Master = <<"test_master!#$%^*()`~+-;_=[]{}|\\">>,
-    Slave = <<"test_slave!#$%^*()`~+-;_=[]{}|\\">>,
-    ejabberd_auth:remove_user(User, Server),
-    ejabberd_auth:remove_user(Master, Server),
-    ejabberd_auth:remove_user(Slave, Server),
-    ejabberd_riak:delete(muc_room),
-    ejabberd_riak:delete(muc_registered),
-    timer:sleep(timer:seconds(5)),
-    Config.

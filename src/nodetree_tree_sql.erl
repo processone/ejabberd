@@ -30,7 +30,7 @@
 %%% <p>PubSub node tree plugins are using the {@link gen_nodetree} behaviour.</p>
 %%% <p><strong>The API isn't stabilized yet</strong>. The pubsub plugin
 %%% development is still a work in progress. However, the system is already
-%%% useable and useful as is. Please, send us comments, feedback and
+%%% usable and useful as is. Please, send us comments, feedback and
 %%% improvements.</p>
 
 -module(nodetree_tree_sql).

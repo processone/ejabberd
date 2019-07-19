@@ -35,14 +35,3 @@ services:
     container_name: ejabberd-redis
     ports:
       - 6379:6379
-
-  riak:
-    image: ejabberd/riak:latest
-    container_name: ejabberd-riak
-    ports:
-      - 8087:8087
-      - 8098:8098
-    volumes:
-      - ./db/riak/data:/var/lib/riak
-    environment:
-      WAIT_FOR_ERLANG: 60

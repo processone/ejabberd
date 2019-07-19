@@ -278,7 +278,7 @@ get_commands_spec() ->
 			args_example = ["example.com"],
 			args = [{host, binary}], result = {res, rescode}},
 
-     #ejabberd_commands{name = import_prosody, tags = [mnesia, sql, riak],
+     #ejabberd_commands{name = import_prosody, tags = [mnesia, sql],
 			desc = "Import data from Prosody",
 			longdesc = "Note: this method requires ejabberd compiled with optional tools support "
 				"and package must provide optional luerl dependency.",

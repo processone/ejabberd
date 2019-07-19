@@ -11,6 +11,7 @@
 -export([access_register/1]).
 -export([db_type/1]).
 -export([default_room_options/1]).
+-export([hibernation_timeout/1]).
 -export([history_size/1]).
 -export([host/1]).
 -export([hosts/1]).
@@ -80,6 +81,12 @@ default_room_options(Opts) when is_map(Opts) ->
     gen_mod:get_opt(default_room_options, Opts);
 default_room_options(Host) ->
     gen_mod:get_module_opt(Host, mod_muc, default_room_options).
+
+-spec hibernation_timeout(gen_mod:opts() | global | binary()) -> 'infinity' | pos_integer().
+hibernation_timeout(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(hibernation_timeout, Opts);
+hibernation_timeout(Host) ->
+    gen_mod:get_module_opt(Host, mod_muc, hibernation_timeout).
 
 -spec history_size(gen_mod:opts() | global | binary()) -> non_neg_integer().
 history_size(Opts) when is_map(Opts) ->
