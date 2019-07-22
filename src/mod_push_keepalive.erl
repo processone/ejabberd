@@ -38,7 +38,7 @@
 -include("logger.hrl").
 -include("xmpp.hrl").
 
--define(PUSH_BEFORE_TIMEOUT_SECS, 120).
+-define(PUSH_BEFORE_TIMEOUT_PERIOD, 120000). % 2 minutes.
 
 -type c2s_state() :: ejabberd_c2s:state().
 
@@ -77,14 +77,16 @@ depends(_Host, _Opts) ->
 
 -spec mod_opt_type(atom()) -> econf:validator().
 mod_opt_type(resume_timeout) ->
-    econf:non_neg_int();
+    econf:either(
+      econf:int(0, 0),
+      econf:timeout(second));
 mod_opt_type(wake_on_start) ->
     econf:bool();
 mod_opt_type(wake_on_timeout) ->
     econf:bool().
 
 mod_options(_Host) ->
-    [{resume_timeout, 259200},
+    [{resume_timeout, timer:seconds(259200)},
      {wake_on_start, false},
      {wake_on_timeout, true}].
 
@@ -216,10 +218,10 @@ maybe_restore_resume_timeout(State) ->
 -spec maybe_start_wakeup_timer(c2s_state()) -> c2s_state().
 maybe_start_wakeup_timer(#{push_wake_on_timeout := true,
 			   push_resume_timeout := ResumeTimeout} = State)
-  when is_integer(ResumeTimeout), ResumeTimeout > ?PUSH_BEFORE_TIMEOUT_SECS ->
-    WakeTimeout = ResumeTimeout - ?PUSH_BEFORE_TIMEOUT_SECS,
+  when is_integer(ResumeTimeout), ResumeTimeout > ?PUSH_BEFORE_TIMEOUT_PERIOD ->
+    WakeTimeout = ResumeTimeout - ?PUSH_BEFORE_TIMEOUT_PERIOD,
     ?DEBUG("Scheduling wake-up timer to fire in ~B seconds", [WakeTimeout]),
-    erlang:start_timer(timer:seconds(WakeTimeout), self(), push_keepalive),
+    erlang:start_timer(WakeTimeout, self(), push_keepalive),
     State;
 maybe_start_wakeup_timer(State) ->
     State.
