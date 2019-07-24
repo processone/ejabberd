@@ -1,4 +1,4 @@
-%% -*- coding: latin-1 -*-
+%% -*- coding: utf-8 -*-
 {"Access denied by service policy","Prístup bol zamietnutý nastavením služby"}.
 {"Action on user","Operácia aplikovaná na užívateľa"}.
 {"Add Jabber ID","Pridať Jabber ID"}.

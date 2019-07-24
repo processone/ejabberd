@@ -1,4 +1,4 @@
-%% -*- coding: latin-1 -*-
+%% -*- coding: utf-8 -*-
 {"Accept","Прийняти"}.
 {"Access denied by service policy","Доступ заборонений політикою служби"}.
 {"Action on user","Дія над користувачем"}.

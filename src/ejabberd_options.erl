@@ -428,7 +428,7 @@ opt_type(jwt_key) ->
 		    {shaper, #{atom() => ejabberd_shaper:shaper_rate()}} |
 		    {shaper_rules, [{atom(), [ejabberd_shaper:shaper_rule()]}]} |
 		    {api_permissions, [ejabberd_access_permissions:permission()]} |
-		    {jwt_key, jose_jwk:key()} |
+		    {jwt_key, jose_jwk:key() | undefined} |
 		    {append_host_config, [{binary(), any()}]} |
 		    {host_config, [{binary(), any()}]} |
 		    {define_macro, any()} |
@@ -635,7 +635,7 @@ options() ->
      {websocket_origin, []},
      {websocket_ping_interval, timer:seconds(60)},
      {websocket_timeout, timer:minutes(5)},
-     {jwt_key, <<"">>}].
+     {jwt_key, undefined}].
 
 -spec globals() -> [atom()].
 globals() ->

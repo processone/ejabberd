@@ -1,4 +1,4 @@
-%% -*- coding: latin-1 -*-
+%% -*- coding: utf-8 -*-
 {"Accept","Aceito"}.
 {"Access denied by service policy","Acesso negado pela política do serviço"}.
 {"Action on user","Ação no usuário"}.

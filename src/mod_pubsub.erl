@@ -603,7 +603,11 @@ on_user_offline(C2SState, _Reason) ->
 
 -spec out_subscription(presence()) -> any().
 out_subscription(#presence{type = subscribed, from = From, to = To}) ->
-    send_last_pep(jid:remove_resource(From), To);
+    if From#jid.lserver == To#jid.lserver ->
+           send_last_pep(jid:remove_resource(From), To);
+       true ->
+           ok
+    end;
 out_subscription(_) ->
     ok.
 

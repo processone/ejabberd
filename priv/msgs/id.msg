@@ -1,4 +1,4 @@
-%% -*- coding: latin-1 -*-
+%% -*- coding: utf-8 -*-
 {"Access denied by service policy","Akses ditolak oleh kebijakan layanan"}.
 {"Action on user","Tindakan pada pengguna"}.
 {"Add Jabber ID","Tambah Jabber ID"}.

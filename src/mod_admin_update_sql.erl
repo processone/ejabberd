@@ -75,14 +75,13 @@ get_commands_spec() ->
 update_sql() ->
     lists:foreach(
       fun(Host) ->
-              case ejabberd_sql_sup:get_pids(Host) of
-                  [] ->
+              case ejabberd_sql_sup:is_started(Host) of
+                  false ->
                       ok;
-                  _ ->
+                  true ->
                       update_sql(Host)
               end
-      end, ejabberd_option:hosts()),
-    ok.
+      end, ejabberd_option:hosts()).
 
 -record(state, {host :: binary(),
                 dbtype :: mysql | pgsql | sqlite | mssql | odbc,

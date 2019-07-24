@@ -1,4 +1,4 @@
-%% -*- coding: latin-1 -*-
+%% -*- coding: utf-8 -*-
 {"Access denied by service policy","การเข้าถึงถูกปฏิเสธโดยนโยบายการบริการ"}.
 {"Action on user","การดำเนินการกับผู้ใช้"}.
 {"Add Jabber ID","เพิ่ม Jabber ID"}.

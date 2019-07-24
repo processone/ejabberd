@@ -1,4 +1,4 @@
-%% -*- coding: latin-1 -*-
+%% -*- coding: utf-8 -*-
 {"Accept","Принять"}.
 {"Access denied by service policy","Доступ запрещён политикой службы"}.
 {"Account doesn't exist","Учётная запись не существует"}.

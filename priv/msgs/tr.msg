@@ -1,4 +1,4 @@
-%% -*- coding: latin-1 -*-
+%% -*- coding: utf-8 -*-
 {"Access denied by service policy","Servis politikası gereği erişim engellendi"}.
 {"Action on user","Kullanıcıya uygulanacak eylem"}.
 {"Add Jabber ID","Jabber ID'si Ekle"}.

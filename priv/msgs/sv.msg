@@ -1,4 +1,4 @@
-%% -*- coding: latin-1 -*-
+%% -*- coding: utf-8 -*-
 {"Access denied by service policy","Åtkomst nekad enligt lokal policy"}.
 {"Action on user","Handling mot användare"}.
 {"Add Jabber ID","Lägg till Jabber ID"}.

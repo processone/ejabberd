@@ -39,7 +39,14 @@
 %%%----------------------------------------------------------------------
 %%% API
 %%%----------------------------------------------------------------------
-start(_Host) -> ok.
+start(Host) ->
+    case ejabberd_option:jwt_key(Host) of
+	undefined ->
+	    ?ERROR_MSG("Option jwt_key is not configured for ~s: "
+		       "JWT authentication won't work", [Host]);
+	_ ->
+	    ok
+    end.
 
 stop(_Host) -> ok.
 

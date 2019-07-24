@@ -1,4 +1,4 @@
-%% -*- coding: latin-1 -*-
+%% -*- coding: utf-8 -*-
 {"Accept","קבל"}.
 {"Access denied by service policy","גישה נדחתה על ידי פוליסת שירות"}.
 {"Action on user","פעולה על משתמש"}.

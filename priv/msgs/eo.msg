@@ -1,4 +1,4 @@
-%% -*- coding: latin-1 -*-
+%% -*- coding: utf-8 -*-
 {"Access denied by service policy","Atingo rifuzita de serv-politiko"}.
 {"Action on user","Ago je uzanto"}.
 {"Add Jabber ID","Aldonu Jabber ID"}.

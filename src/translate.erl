@@ -145,12 +145,12 @@ load(Files, Dir) ->
 				     {error, file:filename(), error_reason()}].
 load_file(File) ->
     Lang = lang_of_file(File),
-    case file:consult(File) of
+    try file:consult(File) of
 	{ok, Lines} ->
 	    lists:map(
 	      fun({In, Out}) ->
-		      try {unicode:characters_to_binary(In, utf8),
-			   unicode:characters_to_binary(Out, utf8)} of
+		      try {unicode:characters_to_binary(In),
+			   unicode:characters_to_binary(Out)} of
 			  {InB, OutB} when is_binary(InB), is_binary(OutB) ->
 			      {{Lang, InB}, OutB};
 			  _ ->
@@ -163,6 +163,11 @@ load_file(File) ->
 	      end, Lines);
 	{error, Reason} ->
 	    [{error, File, Reason}]
+    catch _:{case_clause, {error, _}} ->
+	    %% At the moment of the writing there was a bug in
+	    %% file:consult_stream/3 - it doesn't process {error, term()}
+	    %% result from io:read/3
+	    [{error, File, bad_file}]
     end.
 
 -spec translate(binary(), binary()) -> binary().
@@ -299,7 +304,7 @@ lang_of_file(FileName) ->
 format_error(bad_file) ->
     "corrupted or invalid translation file";
 format_error(bad_encoding) ->
-    "not an UTF-8 encoding";
+    "cannot translate from UTF-8";
 format_error({_, _, _} = Reason) ->
     "at line " ++ file:format_error(Reason);
 format_error(Reason) ->

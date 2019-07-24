@@ -1,4 +1,4 @@
-%% -*- coding: latin-1 -*-
+%% -*- coding: utf-8 -*-
 {"Accept","Přijmout"}.
 {"Access denied by service policy","Přístup byl zamítnut nastavením služby"}.
 {"Action on user","Akce aplikovaná na uživatele"}.

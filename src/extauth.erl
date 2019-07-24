@@ -31,7 +31,7 @@
 %% API
 -export([start/1, stop/1, reload/1, start_link/2]).
 -export([check_password/3, set_password/3, try_register/3, remove_user/2,
-	 remove_user/3, user_exists/2]).
+	 remove_user/3, user_exists/2, check_certificate/3]).
 -export([prog_name/1, pool_name/1, worker_name/2, pool_size/1]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
@@ -60,6 +60,9 @@ start_link(Name, Prog) ->
 
 check_password(User, Server, Password) ->
     call_port(Server, [<<"auth">>, User, Server, Password]).
+
+check_certificate(User, Server, Certificate) ->
+    call_port(Server, [<<"certauth">>, User, Server, Certificate]).
 
 user_exists(User, Server) ->
     call_port(Server, [<<"isuser">>, User, Server]).
