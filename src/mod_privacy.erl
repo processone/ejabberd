@@ -413,6 +413,8 @@ update_c2s_state_with_privacy_list(#iq{type = set,
 				   State) ->
     %% Match a IQ set containing a new active privacy list
     case xmpp:get_subtag(IQ, #privacy_query{}) of
+	#privacy_query{active = undefined} ->
+	    State;
 	#privacy_query{default = undefined, active = Active} ->
 	    case Active of
 		none ->
