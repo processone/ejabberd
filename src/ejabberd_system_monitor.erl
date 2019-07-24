@@ -281,7 +281,6 @@ do_kill(Stats, Threshold) ->
 				   false ->
 				       false;
 				   Pid ->
-				       maybe_restart_app(App),
 				       {true, Pid}
 			       end
 		       end;
@@ -310,9 +309,3 @@ kill_proc(Pid) ->
 set_oom_watermark() ->
     WaterMark = ejabberd_option:oom_watermark(),
     memsup:set_sysmem_high_watermark(WaterMark/100).
-
--spec maybe_restart_app(atom()) -> any().
-maybe_restart_app(lager) ->
-    ejabberd_logger:restart();
-maybe_restart_app(_) ->
-    ok.
