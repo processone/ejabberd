@@ -1,4 +1,4 @@
-%% -*- coding: latin-1 -*-
+%% -*- coding: utf-8 -*-
 {"Access denied by service policy","Tilgang nektes på grunn av en tjeneste regel"}.
 {"Action on user","Handling på bruker"}.
 {"Add Jabber ID","Legg til Jabber ID"}.

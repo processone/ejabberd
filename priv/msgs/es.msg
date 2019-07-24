@@ -1,4 +1,4 @@
-%% -*- coding: latin-1 -*-
+%% -*- coding: utf-8 -*-
 {" (Add * to the end of field to match substring)","(Añade * al final del campo para buscar subcadenas)"}.
 {" has set the subject to: "," ha puesto el asunto: "}.
 {"A password is required to enter this room"," (Añade * al final del campo para buscar subcadenas)"}.

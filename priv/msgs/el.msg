@@ -1,4 +1,4 @@
-%% -*- coding: latin-1 -*-
+%% -*- coding: utf-8 -*-
 {"Accept","Αποδοχή"}.
 {"Access denied by service policy","Άρνηση πρόσβασης, λόγω τακτικής παροχής υπηρεσιών"}.
 {"Action on user","Eνέργεια για το χρήστη"}.

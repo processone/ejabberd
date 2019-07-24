@@ -1,4 +1,4 @@
-%% -*- coding: latin-1 -*-
+%% -*- coding: utf-8 -*-
 {"Accept","許可"}.
 {"Access denied by service policy","サービスポリシーによってアクセスが禁止されました"}.
 {"Action on user","ユーザー操作"}.

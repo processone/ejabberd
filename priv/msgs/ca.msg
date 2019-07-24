@@ -1,4 +1,4 @@
-%% -*- coding: latin-1 -*-
+%% -*- coding: utf-8 -*-
 {" (Add * to the end of field to match substring)"," (Afegix * al final d'un camp per a buscar subcadenes)"}.
 {" has set the subject to: "," ha posat l'assumpte: "}.
 {"A password is required to enter this room","Es necessita contrasenya per a entrar en aquesta sala"}.

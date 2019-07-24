@@ -1,4 +1,4 @@
-%% -*- coding: latin-1 -*-
+%% -*- coding: utf-8 -*-
 {"Access denied by service policy","De toegang werd geweigerd door het beleid van deze dienst"}.
 {"Action on user","Actie op gebruiker"}.
 {"Add Jabber ID","Jabber ID toevoegen"}.

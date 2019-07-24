@@ -1,4 +1,4 @@
-%% -*- coding: latin-1 -*-
+%% -*- coding: utf-8 -*-
 {"Access denied by service policy","Acesso negado pela política de serviço"}.
 {"Action on user","Acção no utilizador"}.
 {"Add New","Adicionar novo"}.

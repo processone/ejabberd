@@ -1,4 +1,4 @@
-%% -*- coding: latin-1 -*-
+%% -*- coding: utf-8 -*-
 {"Access denied by service policy","Sự truy cập bị chặn theo chính sách phục vụ"}.
 {"Action on user","Hành động đối với người sử dụng"}.
 {"Add Jabber ID","Thêm Jabber ID"}.
