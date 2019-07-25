@@ -826,7 +826,7 @@ mod_opt_type(queue_type) ->
 
 mod_options(Host) ->
     [{max_ack_queue, 5000},
-     {resume_timeout, 300},
+     {resume_timeout, timer:seconds(300)},
      {max_resume_timeout, undefined},
      {ack_timeout, timer:seconds(60)},
      {cache_size, ejabberd_option:cache_size(Host)},
