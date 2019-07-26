@@ -98,7 +98,9 @@ start_included_apps() ->
 prep_stop(State) ->
     ejabberd_hooks:run(ejabberd_stopping, []),
     ejabberd_listener:stop_listeners(),
-    _ = ejabberd_sm:stop(),
+    ejabberd_sm:stop(),
+    ejabberd_service:stop(),
+    ejabberd_s2s:stop(),
     gen_mod:stop_modules(),
     State.
 

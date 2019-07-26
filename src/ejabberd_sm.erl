@@ -115,12 +115,13 @@
 start_link() ->
     ?GEN_SERVER:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec stop() -> ok | {error, atom()}.
+-spec stop() -> ok.
 stop() ->
-    case supervisor:terminate_child(ejabberd_sup, ?MODULE) of
-	ok -> supervisor:delete_child(ejabberd_sup, ?MODULE);
-	Err -> Err
-    end.
+    _ = supervisor:terminate_child(ejabberd_sup, ?MODULE),
+    _ = supervisor:delete_child(ejabberd_sup, ?MODULE),
+    _ = supervisor:terminate_child(ejabberd_sup, ejabberd_c2s_sup),
+    _ = supervisor:delete_child(ejabberd_sup, ejabberd_c2s_sup),
+    ok.
 
 -spec route(jid(), term()) -> ok.
 %% @doc route arbitrary term to c2s process(es)
