@@ -535,8 +535,8 @@ set_affiliation(Nidx, Owner, Affiliation) ->
     GenKey = jid:remove_resource(SubKey),
     GenState = get_state(Nidx, GenKey),
     case {Affiliation, GenState#pubsub_state.subscriptions} of
-	{none, []} -> del_state(GenState);
-	_ -> set_state(GenState#pubsub_state{affiliation = Affiliation})
+	{none, []} -> {result, del_state(GenState)};
+	_ -> {result, set_state(GenState#pubsub_state{affiliation = Affiliation})}
     end.
 
 %% @doc <p>Return the current subscriptions for the given user</p>
@@ -616,7 +616,7 @@ set_subscriptions(Nidx, Owner, Subscription, SubId) ->
 
 replace_subscription(NewSub, SubState) ->
     NewSubs = replace_subscription(NewSub, SubState#pubsub_state.subscriptions, []),
-    set_state(SubState#pubsub_state{subscriptions = NewSubs}).
+    {result, set_state(SubState#pubsub_state{subscriptions = NewSubs})}.
 
 replace_subscription(_, [], Acc) -> Acc;
 replace_subscription({Sub, SubId}, [{_, SubId} | T], Acc) ->
@@ -627,7 +627,7 @@ new_subscription(_Nidx, _Owner, Sub, SubState) ->
     SubId = pubsub_subscription:make_subid(),
     Subs = SubState#pubsub_state.subscriptions,
     set_state(SubState#pubsub_state{subscriptions = [{Sub, SubId} | Subs]}),
-    {Sub, SubId}.
+    {result, {Sub, SubId}}.
 
 unsub_with_subid(SubState, SubId) ->
     %%pubsub_subscription:delete_subscription(SubState#pubsub_state.stateid, Nidx, SubId),
@@ -635,8 +635,8 @@ unsub_with_subid(SubState, SubId) ->
 	    || {S, Sid} <- SubState#pubsub_state.subscriptions,
 		SubId =/= Sid],
     case {NewSubs, SubState#pubsub_state.affiliation} of
-	{[], none} -> del_state(SubState);
-	_ -> set_state(SubState#pubsub_state{subscriptions = NewSubs})
+	{[], none} -> {result, del_state(SubState)};
+	_ -> {result, set_state(SubState#pubsub_state{subscriptions = NewSubs})}
     end.
 
 %% @doc <p>Returns a list of Owner's nodes on Host with pending
@@ -884,22 +884,23 @@ del_orphan_items(Nidx) ->
     end.
 
 get_item_name(_Host, _Node, Id) ->
-    Id.
+    {result, Id}.
 
 %% @doc <p>Return the path of the node. In flat it's just node id.</p>
 node_to_path(Node) ->
-    [(Node)].
+    {result, [Node]}.
 
 path_to_node(Path) ->
-    case Path of
-	% default slot
-	[Node] -> iolist_to_binary(Node);
-	% handle old possible entries, used when migrating database content to new format
-	[Node | _] when is_binary(Node) ->
-	    iolist_to_binary(str:join([<<"">> | Path], <<"/">>));
-	% default case (used by PEP for example)
-	_ -> iolist_to_binary(Path)
-    end.
+    {result,
+     case Path of
+	 %% default slot
+	 [Node] -> iolist_to_binary(Node);
+	 %% handle old possible entries, used when migrating database content to new format
+	 [Node | _] when is_binary(Node) ->
+	     iolist_to_binary(str:join([<<"">> | Path], <<"/">>));
+	 %% default case (used by PEP for example)
+	 _ -> iolist_to_binary(Path)
+     end}.
 
 can_fetch_item(owner, _) -> true;
 can_fetch_item(member, _) -> true;

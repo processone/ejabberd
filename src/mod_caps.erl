@@ -106,7 +106,7 @@ list_features(C2SState) ->
     Rs = maps:get(caps_resources, C2SState, gb_trees:empty()),
     gb_trees:to_list(Rs).
 
--spec get_user_caps(jid(), ejabberd_c2s:state()) -> {ok, caps()} | error.
+-spec get_user_caps(jid() | ljid(), ejabberd_c2s:state()) -> {ok, caps()} | error.
 get_user_caps(JID, C2SState) ->
     Rs = maps:get(caps_resources, C2SState, gb_trees:empty()),
     LJID = jid:tolower(JID),

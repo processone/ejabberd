@@ -142,7 +142,7 @@
 -callback set_affiliation(NodeIdx :: nodeIdx(),
 	Owner :: jid(),
 	Affiliation :: affiliation()) ->
-    ok |
+    {result, ok} |
     {error, stanza_error()}.
 
 -callback get_node_subscriptions(NodeIdx :: nodeIdx()) ->
@@ -208,10 +208,10 @@
 -callback get_item_name(Host :: host(),
 	ServerHost :: binary(),
 	Node :: nodeId()) ->
-    itemId().
+    {result, itemId()}.
 
 -callback node_to_path(Node :: nodeId()) ->
-    [nodeId()].
+    {result, [nodeId()]}.
 
 -callback path_to_node(Node :: [nodeId()]) ->
-    nodeId().
+    {result, nodeId()}.

@@ -377,8 +377,8 @@ set_affiliation(Nidx, Owner, Affiliation) ->
     GenKey = jid:remove_resource(SubKey),
     {_, Subscriptions} = select_affiliation_subscriptions(Nidx, GenKey),
     case {Affiliation, Subscriptions} of
-	{none, []} -> del_state(Nidx, GenKey);
-	_ -> update_affiliation(Nidx, GenKey, Affiliation)
+	{none, []} -> {result, del_state(Nidx, GenKey)};
+	_ -> {result, update_affiliation(Nidx, GenKey, Affiliation)}
     end.
 
 get_entity_subscriptions(Host, Owner) ->
@@ -522,7 +522,7 @@ set_subscriptions(Nidx, Owner, Subscription, SubId) ->
 
 replace_subscription(NewSub, SubState) ->
     NewSubs = replace_subscription(NewSub, SubState#pubsub_state.subscriptions, []),
-    set_state(SubState#pubsub_state{subscriptions = NewSubs}).
+    {result, set_state(SubState#pubsub_state{subscriptions = NewSubs})}.
 
 replace_subscription(_, [], Acc) -> Acc;
 replace_subscription({Sub, SubId}, [{_, SubId} | T], Acc) ->
@@ -533,7 +533,7 @@ new_subscription(_Nidx, _Owner, Subscription, SubState) ->
     SubId = pubsub_subscription_sql:make_subid(),
     Subscriptions = [{Subscription, SubId} | SubState#pubsub_state.subscriptions],
     set_state(SubState#pubsub_state{subscriptions = Subscriptions}),
-    {Subscription, SubId}.
+    {result, {Subscription, SubId}}.
 
 unsub_with_subid(Nidx, SubId, SubState) ->
     %%pubsub_subscription_sql:unsubscribe_node(SubState#pubsub_state.stateid, Nidx, SubId),
@@ -541,8 +541,8 @@ unsub_with_subid(Nidx, SubId, SubState) ->
 	    || {S, Sid} <- SubState#pubsub_state.subscriptions,
 		SubId =/= Sid],
     case {NewSubs, SubState#pubsub_state.affiliation} of
-	{[], none} -> del_state(Nidx, element(1, SubState#pubsub_state.stateid));
-	_ -> set_state(SubState#pubsub_state{subscriptions = NewSubs})
+	{[], none} -> {result, del_state(Nidx, element(1, SubState#pubsub_state.stateid))};
+	_ -> {result, set_state(SubState#pubsub_state{subscriptions = NewSubs})}
     end.
 
 get_pending_nodes(Host, Owner) ->
@@ -825,7 +825,7 @@ del_items(Nidx, ItemIds) ->
 	    I, <<") and nodeid='">>, SNidx, <<"';">>]).
 
 get_item_name(_Host, _Node, Id) ->
-    Id.
+    {result, Id}.
 
 node_to_path(Node) ->
     node_flat:node_to_path(Node).

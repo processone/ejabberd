@@ -139,11 +139,11 @@ get_subnodes_tree(Host, Node) ->
 	Rec ->
 	    BasePlugin = misc:binary_to_atom(<<"node_",
 			(Rec#pubsub_node.type)/binary>>),
-	    BasePath = BasePlugin:node_to_path(Node),
+	    {result, BasePath} = BasePlugin:node_to_path(Node),
 	    mnesia:foldl(fun (#pubsub_node{nodeid = {H, N}} = R, Acc) ->
 			Plugin = misc:binary_to_atom(<<"node_",
 				    (R#pubsub_node.type)/binary>>),
-			Path = Plugin:node_to_path(N),
+			{result, Path} = Plugin:node_to_path(N),
 			case lists:prefix(BasePath, Path) and (H == Host) of
 			    true -> [R | Acc];
 			    false -> Acc

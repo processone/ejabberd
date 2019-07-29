@@ -26,7 +26,7 @@
 -define(MAXITEMS, 10).
 
 %% this is currently a hard limit.
-%% Would be nice to have it configurable. 
+%% Would be nice to have it configurable.
 -define(MAX_PAYLOAD_SIZE, 250000).
 
 %% -------------------------------
@@ -84,7 +84,7 @@
      Value::binary() | [binary()] | boolean()
 }).
 
--type(subOptions() :: [mod_pubsub:subOption(),...]).
+-type(subOptions() :: [mod_pubsub:subOption()]).
 
 -type(pubOption() ::
     {Option::binary(),
