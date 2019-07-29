@@ -29,7 +29,7 @@
 
 -author('alexey@process-one.net').
 
--export([start_link/0, init/1,
+-export([start_link/0, init/1, stop/0,
 	 config_reloaded/0, start_host/1, stop_host/1]).
 
 -include("logger.hrl").
@@ -45,6 +45,12 @@ init([]) ->
     ejabberd_hooks:add(host_down, ?MODULE, stop_host, 90),
     ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 20),
     {ok, {{one_for_one, 10, 1}, get_specs()}}.
+
+stop() ->
+    ejabberd_hooks:delete(host_up, ?MODULE, start_host, 20),
+    ejabberd_hooks:delete(host_down, ?MODULE, stop_host, 90),
+    ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 20),
+    ejabberd_sup:stop_child(?MODULE).
 
 -spec get_specs() -> [supervisor:child_spec()].
 get_specs() ->

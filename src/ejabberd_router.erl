@@ -371,7 +371,7 @@ handle_info(Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
-    ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50).
+    ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 50).
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.

@@ -110,8 +110,6 @@ register_hooks(Host) ->
 
 -spec unregister_hooks(binary()) -> ok.
 unregister_hooks(Host) ->
-    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE,
-			  disco_sm_features, 50),
     ejabberd_hooks:delete(c2s_session_pending, Host, ?MODULE,
 			  c2s_session_pending, 50),
     ejabberd_hooks:delete(c2s_session_resumed, Host, ?MODULE,

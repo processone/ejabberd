@@ -155,8 +155,8 @@ handle_info(Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, State) ->
-    ejabberd_hooks:delete(host_up, ?MODULE, start, 30),
-    ejabberd_hooks:delete(host_down, ?MODULE, stop, 80),
+    ejabberd_hooks:delete(host_up, ?MODULE, host_up, 30),
+    ejabberd_hooks:delete(host_down, ?MODULE, host_down, 80),
     ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 40),
     lists:foreach(
       fun({Host, Modules}) ->

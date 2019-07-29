@@ -25,7 +25,7 @@
 -behaviour(supervisor).
 
 %% API
--export([start/0, start_link/0]).
+-export([start/0, stop/0, start_link/0]).
 -export([get_pool_size/0, config_reloaded/0]).
 
 %% Supervisor callbacks
@@ -51,6 +51,12 @@ start() ->
 		    Err
 	    end
     end.
+
+stop() ->
+    ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 20),
+    _ = supervisor:terminate_child(ejabberd_db_sup, ?MODULE),
+    _ = supervisor:delete_child(ejabberd_db_sup, ?MODULE),
+    ok.
 
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).

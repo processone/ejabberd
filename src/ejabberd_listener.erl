@@ -28,7 +28,7 @@
 -author('alexey@process-one.net').
 -author('ekhramtsov@process-one.net').
 
--export([start_link/0, init/1, start/3, init/3,
+-export([start_link/0, init/1, stop/0, start/3, init/3,
 	 start_listeners/0, start_listener/3, stop_listeners/0,
 	 add_listener/3, delete_listener/2,
 	 config_reloaded/0]).
@@ -70,6 +70,11 @@ init(_) ->
     ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),
     Listeners = ejabberd_option:listen(),
     {ok, {{one_for_one, 10, 1}, listeners_childspec(Listeners)}}.
+
+stop() ->
+    ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 50),
+    stop_listeners(),
+    ejabberd_sup:stop_child(?MODULE).
 
 -spec listeners_childspec([listener()]) -> [supervisor:child_spec()].
 listeners_childspec(Listeners) ->
