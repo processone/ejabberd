@@ -289,7 +289,7 @@ iq_disco_info(From, Lang, State) ->
 			       type = <<"multicast">>,
 			       name = translate:translate(Lang, Name)}],
        features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS, ?NS_VCARD, ?NS_ADDRESS],
-       xdata = iq_disco_info_extras(From, State)}.
+       xdata = [iq_disco_info_extras(From, State)]}.
 
 iq_vcard(Lang) ->
     #vcard_temp{fn = <<"ejabberd/mod_multicast">>,
