@@ -3724,26 +3724,45 @@ tree_call(Host, Function, Args) ->
 tree_action(Host, Function, Args) ->
     ?DEBUG("Tree_action ~p ~p ~p", [Host, Function, Args]),
     ServerHost = serverhost(Host),
-    Fun = fun () -> tree_call(Host, Function, Args) end,
-    Ret = case mod_pubsub_opt:db_type(ServerHost) of
+    DBType = mod_pubsub_opt:db_type(ServerHost),
+    Fun = fun () ->
+		  try tree_call(Host, Function, Args)
+		  catch ?EX_RULE(Class, Reason, St) when DBType == sql ->
+			  StackTrace = ?EX_STACK(St),
+			  ejabberd_sql:abort({exception, Class, Reason, StackTrace})
+		  end
+	  end,
+    Ret = case DBType of
 	      mnesia ->
 		  mnesia:sync_dirty(Fun);
 	      sql ->
 		  ejabberd_sql:sql_bloc(ServerHost, Fun);
 	      _ ->
-		 Fun()
+		  Fun()
 	  end,
-    case Ret of
-	{atomic, Result} ->
-	    Result;
-	{aborted, Reason} ->
-	    ?ERROR_MSG("Transaction aborted: ~p~n", [Reason]),
-	    ErrTxt = ?T("Database failure"),
-	    Lang = ejabberd_option:language(),
-	    {error, xmpp:err_internal_server_error(ErrTxt, Lang)};
-	Other ->
-	    Other
-    end.
+    get_tree_action_result(Ret).
+
+-spec get_tree_action_result(any()) -> {error, stanza_error() | {virtual, nodeIdx()}} | any().
+get_tree_action_result({atomic, Result}) ->
+    Result;
+get_tree_action_result({aborted, {exception, Class, Reason, StackTrace}}) ->
+    ?ERROR_MSG("Transaction aborted:~n** ~s",
+	       [misc:format_exception(2, Class, Reason, StackTrace)]),
+    get_tree_action_result({error, db_failure});
+get_tree_action_result({aborted, Reason}) ->
+    ?ERROR_MSG("Transaction aborted: ~p~n", [Reason]),
+    get_tree_action_result({error, db_failure});
+get_tree_action_result({error, #stanza_error{}} = Err) ->
+    Err;
+get_tree_action_result({error, {virtual, _}} = Err) ->
+    Err;
+get_tree_action_result({error, _}) ->
+    ErrTxt = ?T("Database failure"),
+    Lang = ejabberd_option:language(),
+    {error, xmpp:err_internal_server_error(ErrTxt, Lang)};
+get_tree_action_result(Other) ->
+    %% This is very risky, but tree plugins design is really bad
+    Other.
 
 %% @doc <p>node plugin call.</p>
 -spec node_call(host(), binary(), atom(), list()) -> {result, any()} | {error, stanza_error()}.
