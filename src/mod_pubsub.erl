@@ -3806,9 +3806,15 @@ transaction(Host, Fun, Trans) ->
 do_transaction(ServerHost, Fun, Trans, DBType) ->
     F = fun() ->
 		try Fun()
-		catch ?EX_RULE(Class, Reason, St) ->
+		catch ?EX_RULE(Class, Reason, St) when (DBType == mnesia andalso
+							Trans == transaction) orelse
+						       DBType == sql ->
 			StackTrace = ?EX_STACK(St),
-			mnesia:abort({exception, Class, Reason, StackTrace})
+			Ex = {exception, Class, Reason, StackTrace},
+			case DBType of
+			    mnesia -> mnesia:abort(Ex);
+			    sql -> ejabberd_sql:abort(Ex)
+			end
 		end
 	end,
     Res = case DBType of
