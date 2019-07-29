@@ -1070,9 +1070,9 @@ iq_disco_info_extras(From, State) ->
     case iq_disco_info_extras2(SenderT, Service_limits) of
       [] -> [];
       List_limits_xmpp ->
-	    #xdata{type = result,
+	    [#xdata{type = result,
 		   fields = [?RFIELDT(hidden, <<"FORM_TYPE">>, ?NS_ADDRESS)
-			     | List_limits_xmpp]}
+			     | List_limits_xmpp]}]
     end.
 
 sender_type(From) ->
