@@ -448,15 +448,12 @@ get_vh_session_number(Server) ->
     Mod = get_sm_backend(LServer),
     length(get_sessions(Mod, LServer)).
 
-%% Why the hell do we have so many similar kicks?
 c2s_handle_info(#{lang := Lang} = State, replaced) ->
     State1 = State#{replaced => true},
     Err = xmpp:serr_conflict(?T("Replaced by new connection"), Lang),
     {stop, ejabberd_c2s:send(State1, Err)};
 c2s_handle_info(#{lang := Lang} = State, kick) ->
     Err = xmpp:serr_policy_violation(?T("has been kicked"), Lang),
-    c2s_handle_info(State, {kick, kicked_by_admin, Err});
-c2s_handle_info(State, {kick, _Reason, Err}) ->
     {stop, ejabberd_c2s:send(State, Err)};
 c2s_handle_info(#{lang := Lang} = State, {exit, Reason}) ->
     Err = xmpp:serr_conflict(Reason, Lang),
