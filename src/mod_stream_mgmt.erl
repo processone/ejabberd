@@ -381,7 +381,7 @@ handle_enable(#{mgmt_timeout := DefaultTimeout,
 		  #sm_enabled{xmlns = Xmlns,
 			      id = make_resume_id(State),
 			      resume = true,
-			      max = Timeout};
+			      max = Timeout div 1000};
 	     true ->
 		  ?DEBUG("Stream management without resumption enabled for ~s",
 			 [jid:encode(JID)]),
@@ -444,7 +444,8 @@ transition_to_pending(#{mgmt_state := active, mod := Mod,
 transition_to_pending(#{mgmt_state := active, jid := JID,
 			lserver := LServer, mgmt_timeout := Timeout} = State) ->
     State1 = cancel_ack_timer(State),
-    ?INFO_MSG("Waiting for resumption of stream for ~s", [jid:encode(JID)]),
+    ?INFO_MSG("Waiting ~B seconds for resumption of stream for ~s",
+	      [Timeout div 1000, jid:encode(JID)]),
     TRef = erlang:start_timer(Timeout, self(), pending_timeout),
     State2 = State1#{mgmt_state => pending, mgmt_pending_timer => TRef},
     ejabberd_hooks:run_fold(c2s_session_pending, LServer, State2, []);
