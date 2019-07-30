@@ -964,6 +964,8 @@ node_disco_info(Host, Node, _From, _Identity, _Features) ->
 			{description, get_option(Options, description, <<>>)},
 			{owner, [jid:make(LJID) || {LJID, Aff} <- Affs, Aff =:= owner]},
 			{publisher, [jid:make(LJID) || {LJID, Aff} <- Affs, Aff =:= publisher]},
+			{access_model, get_option(Options, access_model, open)},
+                        {publish_model, get_option(Options, publish_model, publishers)},
 			{num_subscribers, length(Subs)}],
 		XData = #xdata{type = result,
 			       fields = pubsub_meta_data:encode(Meta)},
