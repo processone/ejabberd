@@ -250,7 +250,7 @@ c2s_handle_info(#{mgmt_state := pending, lang := Lang,
     Err = xmpp:serr_connection_timeout(Txt, Lang),
     Mod:stop(State#{mgmt_state => timeout,
 		    stop_reason => {stream, {out, Err}}});
-c2s_handle_info(#{jid := JID} = State, {_Ref, {resume, OldState}}) ->
+c2s_handle_info(State, {_Ref, {resume, #{jid := JID} = OldState}}) ->
     %% This happens if the resume_session/1 request timed out; the new session
     %% now receives the late response.
     ?DEBUG("Received old session state for ~s after failed resumption",
