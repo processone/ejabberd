@@ -370,8 +370,8 @@ handle_enable(#{mgmt_timeout := DefaultTimeout,
 	      #sm_enable{resume = Resume, max = Max}) ->
     Timeout = if Resume == false ->
 		      0;
-		 Max /= undefined, Max > 0, Max =< MaxTimeout ->
-		      Max;
+		 Max /= undefined, Max > 0, Max*1000 =< MaxTimeout ->
+		      Max*1000;
 		 true ->
 		      DefaultTimeout
 	      end,
