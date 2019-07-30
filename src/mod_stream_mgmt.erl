@@ -664,6 +664,8 @@ inherit_session_state(#{user := U, server := S,
 			    {error, session_is_dead};
 			  exit:{normal, _} ->
 			    {error, session_has_exited};
+			  exit:{shutdown, _} ->
+			    {error, session_has_exited};
 			  exit:{killed, _} ->
 			    {error, session_was_killed};
 			  exit:{timeout, _} ->
