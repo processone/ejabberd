@@ -276,6 +276,8 @@ c2s_closed(State, _Reason) ->
 c2s_terminated(#{mgmt_state := resumed, sid := SID, jid := JID} = State, _Reason) ->
     ?DEBUG("Closing former stream of resumed session for ~s",
 	   [jid:encode(JID)]),
+    {U, S, R} = jid:tolower(JID),
+    ejabberd_sm:close_session(SID, U, S, R),
     ejabberd_c2s:bounce_message_queue(SID, JID),
     {stop, State};
 c2s_terminated(#{mgmt_state := MgmtState, mgmt_stanzas_in := In,
@@ -653,7 +655,6 @@ inherit_session_state(#{user := U, server := S,
 					     mgmt_stanzas_in => NumStanzasIn,
 					     mgmt_stanzas_out => NumStanzasOut,
 					     mgmt_state => active},
-			    ejabberd_sm:close_session(OldSID, U, S, R),
 			    State3 = ejabberd_c2s:open_session(State2),
 			    ejabberd_c2s:stop(OldPID),
 			    {ok, State3};
