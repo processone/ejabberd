@@ -584,11 +584,11 @@ set_session(#session{us = {LUser, LServer}} = Session) ->
 
 -spec get_sessions(module()) -> [#session{}].
 get_sessions(Mod) ->
-    Mod:get_sessions().
+    delete_dead(Mod, Mod:get_sessions()).
 
 -spec get_sessions(module(), binary()) -> [#session{}].
 get_sessions(Mod, LServer) ->
-    Mod:get_sessions(LServer).
+    delete_dead(Mod, Mod:get_sessions(LServer)).
 
 -spec get_sessions(module(), binary(), binary()) -> [#session{}].
 get_sessions(Mod, LUser, LServer) ->
@@ -605,13 +605,13 @@ get_sessions(Mod, LUser, LServer) ->
 			   end
 		   end) of
 		{ok, Sessions} ->
-		    Sessions;
+		    delete_dead(Mod, Sessions);
 		error ->
 		    []
 	    end;
 	false ->
 	    case Mod:get_sessions(LUser, LServer) of
-		{ok, Ss} -> Ss;
+		{ok, Ss} -> delete_dead(Mod, Ss);
 		_ -> []
 	    end
     end.
@@ -631,6 +631,20 @@ delete_session(Mod, #session{usr = {LUser, LServer, _}} = Session) ->
 	false ->
 	    ok
     end.
+
+-spec delete_dead(module(), [#session{}]) -> [#session{}].
+delete_dead(Mod, Sessions) ->
+    lists:filter(
+      fun(#session{sid = {_, Pid}} = Session) when node(Pid) == node() ->
+	      case is_process_alive(Pid) of
+		  true -> true;
+		  false ->
+		      delete_session(Mod, Session),
+		      false
+	      end;
+	 (_) ->
+	      true
+      end, Sessions).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec do_route(jid(), term()) -> any().
