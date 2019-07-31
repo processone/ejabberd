@@ -51,7 +51,8 @@
     set_state/1, get_items/7, get_items/3, get_item/7,
     get_item/2, set_item/1, get_item_name/3, node_to_path/1,
     path_to_node/1,
-    get_entity_subscriptions_for_send_last/2, get_last_items/3]).
+    get_entity_subscriptions_for_send_last/2, get_last_items/3,
+    get_only_item/2]).
 
 -export([decode_jid/1, encode_jid/1, encode_jid_like/1,
          decode_affiliation/1, decode_subscriptions/1,
@@ -732,6 +733,25 @@ get_last_items(Nidx, _From, Limit) ->
 			 " from pubsub_item where nodeid='", SNidx/binary,
 			 "' order by modification desc ",
 			 " limit ", (integer_to_binary(Limit))/binary>>])
+	    end,
+    case catch ejabberd_sql:sql_query_t(Query) of
+	{selected, [<<"itemid">>, <<"publisher">>, <<"creation">>,
+		    <<"modification">>, <<"payload">>], RItems} ->
+	    {result, [raw_to_item(Nidx, RItem) || RItem <- RItems]};
+	_ ->
+	    {result, []}
+    end.
+
+get_only_item(Nidx, _From) ->
+    SNidx = misc:i2l(Nidx),
+    Query = fun(mssql, _) ->
+	ejabberd_sql:sql_query_t(
+	    [<<"select  itemid, publisher, creation, modification, payload",
+	       " from pubsub_item where nodeid='", SNidx/binary, "'">>]);
+	       (_, _) ->
+		   ejabberd_sql:sql_query_t(
+		       [<<"select itemid, publisher, creation, modification, payload",
+			  " from pubsub_item where nodeid='", SNidx/binary, "'">>])
 	    end,
     case catch ejabberd_sql:sql_query_t(Query) of
 	{selected, [<<"itemid">>, <<"publisher">>, <<"creation">>,

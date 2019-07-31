@@ -46,7 +46,8 @@
     set_state/1, get_items/7, get_items/3, get_item/7,
     get_item/2, set_item/1, get_item_name/3, node_to_path/1,
     path_to_node/1, depends/3,
-    get_entity_subscriptions_for_send_last/2, get_last_items/3]).
+    get_entity_subscriptions_for_send_last/2, get_last_items/3,
+    get_only_item/2]).
 
 depends(_Host, _ServerHost, _Opts) ->
     [{mod_caps, hard}].
@@ -217,6 +218,9 @@ get_items(Nidx, JID, AccessModel, PresenceSubscription, RosterGroup, SubId, RSM)
 
 get_last_items(Nidx, JID, Count) ->
     node_flat_sql:get_last_items(Nidx, JID, Count).
+
+get_only_item(Nidx, JID) ->
+    node_flat_sql:get_only_item(Nidx, JID).
 
 get_item(Nidx, ItemId) ->
     node_flat_sql:get_item(Nidx, ItemId).

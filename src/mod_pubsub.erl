@@ -2151,6 +2151,21 @@ get_last_items(Host, Type, Nidx, LJID, Count) when Count > 1 ->
 get_last_items(_Host, _Type, _Nidx, _LJID, _Count) ->
     [].
 
+-spec get_only_item(host(), binary(), nodeIdx(), ljid()) -> [#pubsub_item{}].
+get_only_item(Host, Type, Nidx, LJID) ->
+    case get_cached_item(Host, Nidx) of
+	undefined ->
+	    case node_action(Host, Type, get_only_item, [Nidx, LJID]) of
+		{result, Items} when length(Items) < 2 ->
+		    Items;
+		{result, Items} ->
+		    [hd(lists:keysort(#pubsub_item.modification, Items))];
+		_ -> []
+	    end;
+	LastItem ->
+	    [LastItem]
+    end.
+
 %% @doc <p>Return the list of affiliations as an XMPP response.</p>
 -spec get_affiliations(host(), binary(), jid(), [binary()]) ->
 			      {result, pubsub()} | {error, stanza_error()}.
@@ -3031,7 +3046,13 @@ c2s_handle_info(C2SState, _) ->
 send_items(Host, Node, Nidx, Type, Options, LJID, Number) ->
     send_items(Host, Node, Nidx, Type, Options, Host, LJID, LJID, Number).
 send_items(Host, Node, Nidx, Type, Options, Publisher, SubLJID, ToLJID, Number) ->
-    case get_last_items(Host, Type, Nidx, SubLJID, Number) of
+    Items = case max_items(Host, Options) of
+		1 ->
+		    get_only_item(Host, Type, Nidx, SubLJID);
+		_ ->
+		    get_last_items(Host, Type, Nidx, SubLJID, Number)
+	    end,
+    case Items of
 	[] ->
 	    ok;
 	Items ->
