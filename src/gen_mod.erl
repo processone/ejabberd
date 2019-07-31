@@ -535,7 +535,7 @@ get_defaults(Host, Module, Opts) ->
      lists:filtermap(
        fun({Opt, T1}) when Opt == db_type; Opt == ram_db_type ->
 	       T2 = proplists:get_value(Opt, Opts, T1),
-	       DBMod = db_mod(Opt, T2, Module),
+	       DBMod = list_to_atom(atom_to_list(Module) ++ "_" ++ atom_to_list(T2)),
 	       case code:ensure_loaded(DBMod) of
 		   {module, _} ->
 		       case erlang:function_exported(DBMod, mod_options, 1) of
