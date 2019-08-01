@@ -730,12 +730,16 @@ get_commands_spec() ->
 			result = {value, integer}},
      #ejabberd_commands{name = send_message, tags = [stanza],
 			desc = "Send a message to a local or remote bare of full JID",
+			longdesc = "When sending a groupchat message to a MUC room, "
+			"FROM must be the full JID of a room occupant, "
+			"or the bare JID of a MUC service admin, "
+			"or the bare JID of a MUC/Sub subscribed user.",
 			module = ?MODULE, function = send_message,
 			args = [{type, binary}, {from, binary}, {to, binary},
 				{subject, binary}, {body, binary}],
 			args_example = [<<"headline">>, <<"admin@localhost">>, <<"user1@localhost">>,
 				<<"Restart">>, <<"In 5 minutes">>],
-			args_desc = ["Message type: normal, chat, headline", "Sender JID",
+			args_desc = ["Message type: normal, chat, headline, groupchat", "Sender JID",
 				"Receiver JID", "Subject, or empty string", "Body"],
 			result = {res, rescode}},
      #ejabberd_commands{name = send_stanza_c2s, tags = [stanza],
