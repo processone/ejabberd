@@ -37,7 +37,7 @@
 -export([ip/0, ipv4/0, ipv6/0, ip_mask/0, port/0]).
 -export([re/0, re/1, glob/0, glob/1]).
 -export([path/0, binary_sep/1]).
--export([beam/0, beam/1]).
+-export([beam/0, beam/1, base64/0]).
 -export([timeout/1, timeout/2]).
 %% Composite types
 -export([list/1, list/2]).
@@ -338,6 +338,9 @@ timeout(Units) ->
 timeout(Units, Inf) ->
     yconf:timeout(Units, Inf).
 
+base64() ->
+    yconf:base64().
+
 non_empty(F) ->
     yconf:non_empty(F).
 
@@ -576,7 +579,7 @@ vcard_photo() ->
     vcard_validator(
       vcard_photo, undefined,
       [{type, undefined, binary()},
-       {binval, undefined, binary()},
+       {binval, undefined, base64()},
        {extval, undefined, binary()}]).
 
 -spec vcard_adr() -> yconf:validator().
@@ -653,7 +656,7 @@ vcard_logo() ->
     vcard_validator(
       vcard_logo, undefined,
       [{type, undefined, binary()},
-       {binval, undefined, binary()},
+       {binval, undefined, base64()},
        {extval, undefined, binary()}]).
 
 -spec vcard_org() -> yconf:validator().
@@ -668,7 +671,7 @@ vcard_sound() ->
     vcard_validator(
       vcard_sound, undefined,
       [{phonetic, undefined, binary()},
-       {binval, undefined, binary()},
+       {binval, undefined, base64()},
        {extval, undefined, binary()}]).
 
 -spec vcard_key() -> yconv:validator().
