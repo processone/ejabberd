@@ -878,8 +878,9 @@ process_pubsub_owner(#iq{to = To} = IQ) ->
     end.
 
 -spec process_vcard(iq()) -> iq().
-process_vcard(#iq{type = get, lang = Lang} = IQ) ->
-    xmpp:make_iq_result(IQ, iq_get_vcard(Lang));
+process_vcard(#iq{type = get, to = To, lang = Lang} = IQ) ->
+    ServerHost = ejabberd_router:host_of_route(To#jid.lserver),
+    xmpp:make_iq_result(IQ, iq_get_vcard(ServerHost, Lang));
 process_vcard(#iq{type = set, lang = Lang} = IQ) ->
     Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang)).
@@ -1100,12 +1101,17 @@ iq_sm(#iq{to = To, sub_els = [SubEl]} = IQ) ->
 	    xmpp:make_error(IQ, Error)
     end.
 
--spec iq_get_vcard(binary()) -> vcard_temp().
-iq_get_vcard(Lang) ->
-    Desc = misc:get_descr(Lang, ?T("ejabberd Publish-Subscribe module")),
-    #vcard_temp{fn = <<"ejabberd/mod_pubsub">>,
-		url = ejabberd_config:get_uri(),
-		desc = Desc}.
+-spec iq_get_vcard(binary(), binary()) -> vcard_temp().
+iq_get_vcard(ServerHost, Lang) ->
+    case mod_pubsub_opt:vcard(ServerHost) of
+	undefined ->
+	    Desc = misc:get_descr(Lang, ?T("ejabberd Publish-Subscribe module")),
+	    #vcard_temp{fn = <<"ejabberd/mod_pubsub">>,
+			url = ejabberd_config:get_uri(),
+			desc = Desc};
+	VCard ->
+	    VCard
+    end.
 
 -spec iq_pubsub(binary() | ljid(), atom(), iq()) ->
 		       {result, pubsub()} | {error, stanza_error()}.
@@ -4152,7 +4158,9 @@ mod_opt_type(host) ->
 mod_opt_type(hosts) ->
     econf:hosts();
 mod_opt_type(db_type) ->
-    econf:db_type(?MODULE).
+    econf:db_type(?MODULE);
+mod_opt_type(vcard) ->
+    econf:vcard_temp().
 
 mod_options(Host) ->
     [{access_createnode, all},
@@ -4160,6 +4168,7 @@ mod_options(Host) ->
      {host, <<"pubsub.", Host/binary>>},
      {hosts, []},
      {name, ?T("Publish-Subscribe")},
+     {vcard, undefined},
      {ignore_pep_from_offline, true},
      {last_item_cache, false},
      {max_items_node, ?MAXITEMS},

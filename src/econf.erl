@@ -51,6 +51,7 @@
 -export([jid/0, user/0, domain/0, resource/0]).
 -export([db_type/1, ldap_filter/0]).
 -export([host/0, hosts/0]).
+-export([vcard_temp/0]).
 -ifdef(SIP).
 -export([sip_uri/0]).
 -endif.
@@ -526,6 +527,157 @@ host() ->
 hosts() ->
     list(host(), [unique]).
 
+-spec vcard_temp() -> yconf:validator().
+vcard_temp() ->
+    vcard_validator(
+      vcard_temp, undefined,
+      [{version, undefined, binary()},
+       {fn, undefined, binary()},
+       {n, undefined, vcard_name()},
+       {nickname, undefined, binary()},
+       {photo, undefined, vcard_photo()},
+       {bday, undefined, binary()},
+       {adr, [], list(vcard_adr())},
+       {label, [], list(vcard_label())},
+       {tel, [], list(vcard_tel())},
+       {email, [], list(vcard_email())},
+       {jabberid, undefined, binary()},
+       {mailer, undefined, binary()},
+       {tz, undefined, binary()},
+       {geo, undefined, vcard_geo()},
+       {title, undefined, binary()},
+       {role, undefined, binary()},
+       {logo, undefined, vcard_logo()},
+       {org, undefined, vcard_org()},
+       {categories, [], list(binary())},
+       {note, undefined, binary()},
+       {prodid, undefined, binary()},
+       {rev, undefined, binary()},
+       {sort_string, undefined, binary()},
+       {sound, undefined, vcard_sound()},
+       {uid, undefined, binary()},
+       {url, undefined, binary()},
+       {class, undefined, enum([confidential, private, public])},
+       {key, undefined, vcard_key()},
+       {desc, undefined, binary()}]).
+
+-spec vcard_name() -> yconf:validator().
+vcard_name() ->
+    vcard_validator(
+      vcard_name, undefined,
+      [{family, undefined, binary()},
+       {given, undefined, binary()},
+       {middle, undefined, binary()},
+       {prefix, undefined, binary()},
+       {suffix, undefined, binary()}]).
+
+-spec vcard_photo() -> yconf:validator().
+vcard_photo() ->
+    vcard_validator(
+      vcard_photo, undefined,
+      [{type, undefined, binary()},
+       {binval, undefined, binary()},
+       {extval, undefined, binary()}]).
+
+-spec vcard_adr() -> yconf:validator().
+vcard_adr() ->
+    vcard_validator(
+      vcard_adr, [],
+      [{home, false, bool()},
+       {work, false, bool()},
+       {postal, false, bool()},
+       {parcel, false, bool()},
+       {dom, false, bool()},
+       {intl, false, bool()},
+       {pref, false, bool()},
+       {pobox, undefined, binary()},
+       {extadd, undefined, binary()},
+       {street, undefined, binary()},
+       {locality, undefined, binary()},
+       {region, undefined, binary()},
+       {pcode, undefined, binary()},
+       {ctry, undefined, binary()}]).
+
+-spec vcard_label() -> yconf:validator().
+vcard_label() ->
+    vcard_validator(
+      vcard_label, [],
+      [{home, false, bool()},
+       {work, false, bool()},
+       {postal, false, bool()},
+       {parcel, false, bool()},
+       {dom, false, bool()},
+       {intl, false, bool()},
+       {pref, false, bool()},
+       {line, [], list(binary())}]).
+
+-spec vcard_tel() -> yconf:validator().
+vcard_tel() ->
+    vcard_validator(
+      vcard_tel, [],
+      [{home, false, bool()},
+       {work, false, bool()},
+       {voice, false, bool()},
+       {fax, false, bool()},
+       {pager, false, bool()},
+       {msg, false, bool()},
+       {cell, false, bool()},
+       {video, false, bool()},
+       {bbs, false, bool()},
+       {modem, false, bool()},
+       {isdn, false, bool()},
+       {pcs, false, bool()},
+       {pref, false, bool()},
+       {number, undefined, binary()}]).
+
+-spec vcard_email() -> yconf:validator().
+vcard_email() ->
+    vcard_validator(
+      vcard_email, [],
+      [{home, false, bool()},
+       {work, false, bool()},
+       {internet, false, bool()},
+       {pref, false, bool()},
+       {x400, false, bool()},
+       {userid, undefined, binary()}]).
+
+-spec vcard_geo() -> yconf:validator().
+vcard_geo() ->
+    vcard_validator(
+      vcard_geo, undefined,
+      [{lat, undefined, binary()},
+       {lon, undefined, binary()}]).
+
+-spec vcard_logo() -> yconf:validator().
+vcard_logo() ->
+    vcard_validator(
+      vcard_logo, undefined,
+      [{type, undefined, binary()},
+       {binval, undefined, binary()},
+       {extval, undefined, binary()}]).
+
+-spec vcard_org() -> yconf:validator().
+vcard_org() ->
+    vcard_validator(
+      vcard_org, undefined,
+      [{name, undefined, binary()},
+       {units, [], list(binary())}]).
+
+-spec vcard_sound() -> yconf:validator().
+vcard_sound() ->
+    vcard_validator(
+      vcard_sound, undefined,
+      [{phonetic, undefined, binary()},
+       {binval, undefined, binary()},
+       {extval, undefined, binary()}]).
+
+-spec vcard_key() -> yconv:validator().
+vcard_key() ->
+    vcard_validator(
+      vcard_key, undefined,
+      [{type, undefined, binary()},
+       {cred, undefined, binary()}]).
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
@@ -546,3 +698,20 @@ format_addr_port({IP, Port}) ->
 -spec format(iolist(), list()) -> string().
 format(Fmt, Args) ->
     lists:flatten(io_lib:format(Fmt, Args)).
+
+-spec vcard_validator(atom(), term(), [{atom(), term(), validator()}]) -> validator().
+vcard_validator(Name, Default, Schema) ->
+    Defaults = [{Key, Val} || {Key, Val, _} <- Schema],
+    and_then(
+      options(
+	maps:from_list([{Key, Fun} || {Key, _, Fun} <- Schema]),
+	[{return, map}, {unique, true}]),
+      fun(Options) ->
+	      merge(Defaults, Options, Name, Default)
+      end).
+
+-spec merge([{atom(), term()}], #{atom() => term()}, atom(), T) -> tuple() | T.
+merge(_, Options, _, Default) when Options == #{} ->
+    Default;
+merge(Defaults, Options, Name, _) ->
+    list_to_tuple([Name|[maps:get(Key, Options, Val) || {Key, Val} <- Defaults]]).

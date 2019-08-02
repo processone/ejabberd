@@ -33,6 +33,7 @@
 -export([room_shaper/1]).
 -export([user_message_shaper/1]).
 -export([user_presence_shaper/1]).
+-export([vcard/1]).
 
 -spec access(gen_mod:opts() | global | binary()) -> 'all' | acl:acl().
 access(Opts) when is_map(Opts) ->
@@ -213,4 +214,10 @@ user_presence_shaper(Opts) when is_map(Opts) ->
     gen_mod:get_opt(user_presence_shaper, Opts);
 user_presence_shaper(Host) ->
     gen_mod:get_module_opt(Host, mod_muc, user_presence_shaper).
+
+-spec vcard(gen_mod:opts() | global | binary()) -> 'undefined' | tuple().
+vcard(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(vcard, Opts);
+vcard(Host) ->
+    gen_mod:get_module_opt(Host, mod_muc, vcard).
 

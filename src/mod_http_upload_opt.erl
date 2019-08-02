@@ -20,6 +20,7 @@
 -export([secret_length/1]).
 -export([service_url/1]).
 -export([thumbnail/1]).
+-export([vcard/1]).
 
 -spec access(gen_mod:opts() | global | binary()) -> 'local' | acl:acl().
 access(Opts) when is_map(Opts) ->
@@ -122,4 +123,10 @@ thumbnail(Opts) when is_map(Opts) ->
     gen_mod:get_opt(thumbnail, Opts);
 thumbnail(Host) ->
     gen_mod:get_module_opt(Host, mod_http_upload, thumbnail).
+
+-spec vcard(gen_mod:opts() | global | binary()) -> 'undefined' | tuple().
+vcard(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(vcard, Opts);
+vcard(Host) ->
+    gen_mod:get_module_opt(Host, mod_http_upload, vcard).
 

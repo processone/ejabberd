@@ -273,8 +273,8 @@ process_iq(#iq{type = get, lang = Lang, from = From,
     {result, iq_disco_info(From, Lang, State)};
 process_iq(#iq{type = get, sub_els = [#disco_items{}]}, _) ->
     {result, #disco_items{}};
-process_iq(#iq{type = get, lang = Lang, sub_els = [#vcard_temp{}]}, _) ->
-    {result, iq_vcard(Lang)};
+process_iq(#iq{type = get, lang = Lang, sub_els = [#vcard_temp{}]}, State) ->
+    {result, iq_vcard(Lang, State)};
 process_iq(#iq{type = T}, _) when T == set; T == get ->
     {error, xmpp:err_service_unavailable()};
 process_iq(_, _) ->
@@ -291,10 +291,16 @@ iq_disco_info(From, Lang, State) ->
        features = [?NS_DISCO_INFO, ?NS_DISCO_ITEMS, ?NS_VCARD, ?NS_ADDRESS],
        xdata = iq_disco_info_extras(From, State)}.
 
-iq_vcard(Lang) ->
-    #vcard_temp{fn = <<"ejabberd/mod_multicast">>,
-		url = ejabberd_config:get_uri(),
-		desc = misc:get_descr(Lang, ?T("ejabberd Multicast service"))}.
+-spec iq_vcard(binary(), state()) -> #vcard_temp{}.
+iq_vcard(Lang, State) ->
+    case mod_multicast_opt:vcard(State#state.lserver) of
+	undefined ->
+	    #vcard_temp{fn = <<"ejabberd/mod_multicast">>,
+			url = ejabberd_config:get_uri(),
+			desc = misc:get_descr(Lang, ?T("ejabberd Multicast service"))};
+	VCard ->
+	    VCard
+    end.
 
 %%%-------------------------
 %%% Route
@@ -1142,11 +1148,14 @@ mod_opt_type(limits) ->
 mod_opt_type(host) ->
     econf:host();
 mod_opt_type(hosts) ->
-    econf:hosts().
+    econf:hosts();
+mod_opt_type(vcard) ->
+    econf:vcard_temp().
 
 mod_options(Host) ->
     [{access, all},
      {host, <<"multicast.", Host/binary>>},
      {hosts, []},
      {limits, [{local, []}, {remote, []}]},
+     {vcard, undefined},
      {name, ?T("Multicast")}].

@@ -14,6 +14,7 @@
 -export([name/1]).
 -export([search/1]).
 -export([use_cache/1]).
+-export([vcard/1]).
 
 -spec allow_return_all(gen_mod:opts() | global | binary()) -> boolean().
 allow_return_all(Opts) when is_map(Opts) ->
@@ -80,4 +81,10 @@ use_cache(Opts) when is_map(Opts) ->
     gen_mod:get_opt(use_cache, Opts);
 use_cache(Host) ->
     gen_mod:get_module_opt(Host, mod_vcard, use_cache).
+
+-spec vcard(gen_mod:opts() | global | binary()) -> 'undefined' | tuple().
+vcard(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(vcard, Opts);
+vcard(Host) ->
+    gen_mod:get_module_opt(Host, mod_vcard, vcard).
 
