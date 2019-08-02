@@ -32,7 +32,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, route/1, have_connection/1,
+-export([start_link/0, stop/0, route/1, have_connection/1,
 	 get_connections_pids/1, try_register/1,
 	 remove_connection/2, start_connection/2, start_connection/3,
 	 dirty_get_connections/0, allow_host/2,
@@ -75,6 +75,12 @@
 -type temporarily_blocked() :: #temporarily_blocked{}.
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+-spec stop() -> ok.
+stop() ->
+    _ = supervisor:terminate_child(ejabberd_sup, ?MODULE),
+    _ = supervisor:delete_child(ejabberd_sup, ?MODULE),
+    ok.
 
 clean_temporarily_blocked_table() ->
     mnesia:clear_table(temporarily_blocked).

@@ -213,9 +213,16 @@ handle_info(Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, State) ->
-    %% Note: we don't remove component_* hooks because they are global
-    %% and might be registered within a module on another virtual host
     ServerHost = State#state.server_host,
+    case gen_mod:is_loaded_elsewhere(ServerHost, ?MODULE) of
+	false ->
+	    ejabberd_hooks:delete(component_connected, ?MODULE,
+				  component_connected, 50),
+	    ejabberd_hooks:delete(component_disconnected, ?MODULE,
+				  component_disconnected, 50);
+	true ->
+	    ok
+    end,
     ejabberd_hooks:delete(disco_local_features, ServerHost, ?MODULE,
 			  disco_local_features, 50),
     ejabberd_hooks:delete(disco_sm_features, ServerHost, ?MODULE,

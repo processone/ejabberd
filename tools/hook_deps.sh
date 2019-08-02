@@ -1,60 +1,58 @@
 #!/usr/bin/env escript
 %% -*- erlang -*-
 
--record(state, {run_hooks = dict:new(),
-		run_fold_hooks = dict:new(),
-		hooked_funs = dict:new(),
-		mfas = dict:new(),
-		specs = dict:new(),
+-record(state, {run_hooks = #{},
+		run_fold_hooks = #{},
+		hooked_funs = {#{}, #{}},
+		iq_handlers = {#{}, #{}},
+		exports = #{},
 		module :: module(),
 		file :: filename:filename()}).
 
 main(Paths) ->
     State =
 	fold_beams(
-	  fun(File0, Tree, Acc0) ->
+	  fun(File0, Tree, X, Acc0) ->
 		  BareName = filename:rootname(filename:basename(File0)),
 		  Mod = list_to_atom(BareName),
 		  File = BareName ++ ".erl",
-		  Acc1 = Acc0#state{file = File, module = Mod},
+		  Exports = maps:put(Mod, X, Acc0#state.exports),
+		  Acc1 = Acc0#state{file = File, module = Mod, exports = Exports},
 		  erl_syntax_lib:fold(
 		    fun(Form, Acc) ->
-			    case erl_syntax:type(Form) of
-				application ->
-				    case erl_syntax_lib:analyze_application(Form) of
-					{ejabberd_hooks, {run, N}}
-					  when N == 2; N == 3 ->
-					    analyze_run_hook(Form, Acc);
-					{ejabberd_hooks, {run_fold, N}}
-					  when N == 3; N == 4 ->
-					    analyze_run_fold_hook(Form, Acc);
-					{ejabberd_hooks, {add, N}}
-					  when N == 4; N == 5 ->
-					    analyze_run_fun(Form, Acc);
-					{gen_iq_handler, {add_iq_handler, N}}
-					  when N == 5; N == 6 ->
-					    analyze_iq_handler(Form, Acc);
-					_ ->
-					    Acc
-				    end;
-				attribute ->
-				    case catch erl_syntax_lib:analyze_attribute(Form) of
-					{spec, _} ->
-					    analyze_type_spec(Form, Acc);
-					_ ->
-					    Acc
-				    end;
-				_ ->
-				    Acc
-			    end
+		  	    case erl_syntax:type(Form) of
+		  		application ->
+		  		    case erl_syntax_lib:analyze_application(Form) of
+		  			{ejabberd_hooks, {run, N}} when N == 2; N == 3 ->
+		  			    collect_run_hook(Form, Acc);
+		  			{ejabberd_hooks, {run_fold, N}} when N == 3; N == 4 ->
+		  			    collect_run_fold_hook(Form, Acc);
+		  			{ejabberd_hooks, {add, N}} when N == 4; N == 5 ->
+		  			    collect_run_fun(Form, add, Acc);
+		  			{ejabberd_hooks, {delete, N}} when N == 4; N == 5 ->
+		  			    collect_run_fun(Form, delete, Acc);
+		  			{gen_iq_handler, {add_iq_handler, 5}} ->
+		  			    collect_iq_handler(Form, add, Acc);
+		  			{gen_iq_handler, {remove_iq_handler, 3}} ->
+		  			    collect_iq_handler(Form, delete, Acc);
+		  			_ ->
+		  			    Acc
+		  		    end;
+		  		_ ->
+		  		    Acc
+		  	    end
 		    end, Acc1, Tree)
 	  end, #state{}, Paths),
-    report_orphaned_funs(State),
+    check_hooks_arity(State#state.run_hooks),
+    check_hooks_arity(State#state.run_fold_hooks),
+    check_iq_handlers_export(State#state.iq_handlers, State#state.exports),
+    analyze_iq_handlers(State#state.iq_handlers),
+    analyze_hooks(State#state.hooked_funs),
     RunDeps = build_deps(State#state.run_hooks, State#state.hooked_funs),
     RunFoldDeps = build_deps(State#state.run_fold_hooks, State#state.hooked_funs),
-    emit_module(RunDeps, RunFoldDeps, State#state.specs, hooks_type_test).
+    emit_module(RunDeps, RunFoldDeps, hooks_type_test).
 
-analyze_run_hook(Form, State) ->
+collect_run_hook(Form, State) ->
     [Hook|Tail] = erl_syntax:application_arguments(Form),
     case atom_value(Hook, State) of
 	undefined ->
@@ -66,13 +64,13 @@ analyze_run_hook(Form, State) ->
 			   Args0
 		   end,
 	    Arity = erl_syntax:list_length(Args),
-	    Hooks = dict:store({HookName, Arity},
-			       {State#state.file, erl_syntax:get_pos(Hook)},
-			       State#state.run_hooks),
+	    Hooks = maps:put({HookName, Arity},
+			     {State#state.file, erl_syntax:get_pos(Hook)},
+			     State#state.run_hooks),
 	    State#state{run_hooks = Hooks}
     end.
 
-analyze_run_fold_hook(Form, State) ->
+collect_run_fold_hook(Form, State) ->
     [Hook|Tail] = erl_syntax:application_arguments(Form),
     case atom_value(Hook, State) of
 	undefined ->
@@ -83,13 +81,13 @@ analyze_run_fold_hook(Form, State) ->
 		       [_Val, Args0] -> Args0
 		   end,
 	    Arity = erl_syntax:list_length(Args) + 1,
-	    Hooks = dict:store({HookName, Arity},
-			       {State#state.file, erl_syntax:get_pos(Form)},
-			       State#state.run_fold_hooks),
+	    Hooks = maps:put({HookName, Arity},
+			     {State#state.file, erl_syntax:get_pos(Form)},
+			     State#state.run_fold_hooks),
 	    State#state{run_fold_hooks = Hooks}
     end.
 
-analyze_run_fun(Form, State) ->
+collect_run_fun(Form, Action, State) ->
     [Hook|Tail] = erl_syntax:application_arguments(Form),
     case atom_value(Hook, State) of
 	undefined ->
@@ -103,113 +101,160 @@ analyze_run_fun(Form, State) ->
 				 end,
 	    ModName = module_name(Module, State),
 	    FunName = atom_value(Fun, State),
-	    if ModName /= undefined, FunName /= undefined ->
-		    Funs = dict:append(
+	    SeqInt = integer_value(Seq, State),
+	    if ModName /= undefined, FunName /= undefined, SeqInt /= undefined ->
+		    Pos = case Action of
+			      add -> 1;
+			      delete -> 2
+			  end,
+		    Funs = maps_append(
 			     HookName,
-			     {ModName, FunName, integer_value(Seq, State),
+			     {ModName, FunName, SeqInt,
 			      {State#state.file, erl_syntax:get_pos(Form)}},
-			     State#state.hooked_funs),
-		    State#state{hooked_funs = Funs};
+			     element(Pos, State#state.hooked_funs)),
+		    Hooked = setelement(Pos, State#state.hooked_funs, Funs),
+		    State#state{hooked_funs = Hooked};
 	       true ->
 		    State
 	    end
     end.
 
-analyze_iq_handler(Form, State) ->
-    [_Component, _Host, _NS, Module, Function|_] =
-	erl_syntax:application_arguments(Form),
+collect_iq_handler(Form, add, #state{iq_handlers = {Add, Del}} = State) ->
+    [Component, _Host, Namespace, Module, Function] = erl_syntax:application_arguments(Form),
     Mod = module_name(Module, State),
     Fun = atom_value(Function, State),
-    if Mod /= undefined, Fun /= undefined ->
-	    code:ensure_loaded(Mod),
-	    case erlang:function_exported(Mod, Fun, 1) of
-		false ->
-		    err("~s:~p: Error: function ~s:~s/1 is registered "
-			"as iq handler, but is not exported~n",
-			[State#state.file, erl_syntax:get_pos(Form),
-			 Mod, Fun]);
-		true ->
-		    ok
-	    end;
+    Comp = atom_value(Component, State),
+    NS = binary_value(Namespace, State),
+    if Mod /= undefined, Fun /= undefined, Comp /= undefined, NS /= undefined ->
+	    Handlers = maps_append(
+			 {Comp, NS},
+			 {Mod, Fun,
+			  {State#state.file, erl_syntax:get_pos(Form)}},
+			 Add),
+	    State#state{iq_handlers = {Handlers, Del}};
        true ->
-	    ok
-    end,
-    State.
-
-analyze_type_spec(Form, State) ->
-    case catch erl_syntax:revert(Form) of
-	{attribute, _, spec, {{F, A}, _}} ->
-	    Specs = dict:store({State#state.module, F, A},
-			       {Form, State#state.file},
-			       State#state.specs),
-	    State#state{specs = Specs};
-	_ ->
+	    State
+    end;
+collect_iq_handler(Form, delete, #state{iq_handlers = {Add, Del}} = State) ->
+    [Component, _Host, Namespace] = erl_syntax:application_arguments(Form),
+    Comp = atom_value(Component, State),
+    NS = binary_value(Namespace, State),
+    if Comp /= undefined, NS /= undefined ->
+	    Handlers = maps_append(
+			 {Comp, NS},
+			 {State#state.file, erl_syntax:get_pos(Form)},
+			 Del),
+	    State#state{iq_handlers = {Add, Handlers}};
+       true ->
 	    State
     end.
 
-build_deps(Hooks, Hooked) ->
-    dict:fold(
-      fun({Hook, Arity}, {_File, _LineNo} = Meta, Deps) ->
-	      case dict:find(Hook, Hooked) of
-		  {ok, Funs} ->
-		      ExportedFuns =
-			  lists:flatmap(
-			    fun({M, F, Seq, {FunFile, FunLineNo} = FunMeta}) ->
-				    code:ensure_loaded(M),
-				    case erlang:function_exported(M, F, Arity) of
-					false ->
-					    err("~s:~p: Error: function ~s:~s/~p "
-						"is hooked on ~s/~p, but is not "
-						"exported~n",
-						[FunFile, FunLineNo, M, F,
-						 Arity, Hook, Arity]),
-					    [];
-					true ->
-					    [{{M, F, Arity}, Seq, FunMeta}]
-				    end
-			    end, Funs),
-		      dict:append_list({Hook, Arity, Meta}, ExportedFuns, Deps);
-		  error ->
-		      %% log("~s:~p: Warning: hook ~p/~p is unused~n",
-		      %% 	  [_File, _LineNo, Hook, Arity]),
-		      dict:append_list({Hook, Arity, Meta}, [], Deps)
+check_hooks_arity(Hooks) ->
+    maps:fold(
+      fun({Hook, Arity}, _, M) ->
+	      case maps:is_key(Hook, M) of
+		  true ->
+		      err("Error: hook ~s is called with different "
+			  "number of arguments~n", [Hook]);
+		  false ->
+		      maps:put(Hook, Arity, M)
 	      end
-      end, dict:new(), Hooks).
+      end, #{}, Hooks).
 
-report_orphaned_funs(State) ->
-    dict:map(
-      fun(Hook, Funs) ->
+check_iq_handlers_export({HookedFuns, _}, Exports) ->
+    maps:map(
+      fun(_, Funs) ->
 	      lists:foreach(
-		fun({M, F, _, {File, Line}}) ->
-			case get_fun_arities(M, F, State) of
-			    [] ->
-				err("~s:~p: Error: function ~s:~s is "
-				    "hooked on hook ~s, but is not exported~n",
-				    [File, Line, M, F, Hook]);
-			    Arities ->
-				case lists:any(
-				       fun(Arity) ->
-					       dict:is_key({Hook, Arity},
-							   State#state.run_hooks) orelse
-						   dict:is_key({Hook, Arity},
-							       State#state.run_fold_hooks);
-					  (_) ->
-					       false
-				       end, Arities) of
-				    false ->
-					Arity = hd(Arities),
-					err("~s:~p: Error: function ~s:~s/~p is hooked"
-					    " on non-existent hook ~s/~p~n",
-					    [File, Line, M, F, Arity, Hook, Arity]);
-				    true ->
-					ok
-				end
+		fun({Mod, Fun, {File, FileNo}}) ->
+			case is_exported(Mod, Fun, 1, Exports) of
+			    true -> ok;
+			    false ->
+				err("~s:~B: Error: "
+				    "iq handler is registered on unexported function: "
+				    "~s:~s/1~n", [File, FileNo, Mod, Fun])
 			end
 		end, Funs)
-      end, State#state.hooked_funs).
+      end, HookedFuns).
 
-get_fun_arities(Mod, Fun, _State) ->
-    proplists:get_all_values(Fun, Mod:module_info(exports)).
+analyze_iq_handlers({Add, Del}) ->
+    maps:map(
+      fun(Handler, Funs) ->
+	      lists:foreach(
+		fun({_, _, {File, FileNo}}) ->
+			case maps:is_key(Handler, Del) of
+			    true -> ok;
+			    false ->
+				err("~s:~B: Error: "
+				    "iq handler is added but not removed~n",
+				    [File, FileNo])
+			end
+		end, Funs)
+      end, Add),
+    maps:map(
+      fun(Handler, Meta) ->
+	      lists:foreach(
+		fun({File, FileNo}) ->
+			case maps:is_key(Handler, Add) of
+			    true -> ok;
+			    false ->
+				err("~s:~B: Error: "
+				    "iq handler is removed but not added~n",
+				    [File, FileNo])
+			end
+		end, Meta)
+      end, Del).
+
+analyze_hooks({Add, Del}) ->
+    Del1 = maps:fold(
+	     fun(Hook, Funs, D) ->
+		     lists:foldl(
+		       fun({Mod, Fun, Seq, {File, FileNo}}, D1) ->
+			       maps:put({Hook, Mod, Fun, Seq}, {File, FileNo}, D1)
+		       end, D, Funs)
+	     end, #{}, Del),
+    Add1 = maps:fold(
+	     fun(Hook, Funs, D) ->
+		     lists:foldl(
+		       fun({Mod, Fun, Seq, {File, FileNo}}, D1) ->
+			       maps:put({Hook, Mod, Fun, Seq}, {File, FileNo}, D1)
+		       end, D, Funs)
+	     end, #{}, Add),
+    lists:foreach(
+      fun({{Hook, Mod, Fun, _} = Key, {File, FileNo}}) ->
+	      case maps:is_key(Key, Del1) of
+		  true -> ok;
+		  false ->
+		      err("~s:~B: Error: "
+			  "hook ~s->~s->~s is added but was never removed~n",
+			  [File, FileNo, Hook, Mod, Fun])
+	      end
+      end, maps:to_list(Add1)),
+    lists:foreach(
+      fun({{Hook, Mod, Fun, _} = Key, {File, FileNo}}) ->
+	      case maps:is_key(Key, Add1) of
+		  true -> ok;
+		  false ->
+		      err("~s:~B: Error: "
+			  "hook ~s->~s->~s is removed but was never added~n",
+			  [File, FileNo, Hook, Mod, Fun])
+	      end
+      end, maps:to_list(Del1)).
+
+build_deps(Hooks, {HookedFuns, _}) ->
+    maps:fold(
+      fun({Hook, Arity}, Meta, Deps) ->
+	      case maps:find(Hook, HookedFuns) of
+		  {ok, Funs} ->
+		      ExportedFuns =
+			  lists:map(
+			    fun({M, F, Seq, FunMeta}) ->
+				    {{M, F, Arity}, Seq, FunMeta}
+			    end, Funs),
+		      maps_append_list({Hook, Arity, Meta}, ExportedFuns, Deps);
+		  error ->
+		      maps_append_list({Hook, Arity, Meta}, [], Deps)
+	      end
+      end, #{}, Hooks).
 
 module_name(Form, State) ->
     try
@@ -225,10 +270,7 @@ atom_value(Form, State) ->
 	atom ->
 	    erl_syntax:atom_value(Form);
 	_ ->
-	    log("~s:~p: Warning: not an atom: ~s~n",
-		[State#state.file,
-		 erl_syntax:get_pos(Form),
-		 erl_prettypr:format(Form)]),
+	    warn_type(Form, State, "not an atom"),
 	    undefined
     end.
 
@@ -237,14 +279,35 @@ integer_value(Form, State) ->
 	integer ->
 	    erl_syntax:integer_value(Form);
 	_ ->
-	    log("~s:~p: Warning: not an integer: ~s~n",
-		[State#state.file,
-		 erl_syntax:get_pos(Form),
-		 erl_prettypr:format(Form)]),
-	    0
+	    warn_type(Form, State, "not an integer"),
+	    undefined
     end.
 
-emit_module(RunDeps, RunFoldDeps, Specs, Module) ->
+binary_value(Form, State) ->
+    try erl_syntax:concrete(Form) of
+	Binary when is_binary(Binary) ->
+	    Binary;
+	_ ->
+	    warn_type(Form, State, "not a binary"),
+	    undefined
+    catch _:_ ->
+	    warn_type(Form, State, "not a binary"),
+	    undefined
+    end.
+
+is_exported(Mod, Fun, Arity, Exports) ->
+    try maps:get(Mod, Exports) of
+	L -> lists:member({Fun, Arity}, L)
+    catch _:{badkey, _} -> false
+    end.
+
+warn_type(Form, State, Warning) ->
+    log("~s:~p: Warning: " ++ Warning ++ ": ~s~n",
+	[State#state.file,
+	 erl_syntax:get_pos(Form),
+	 erl_prettypr:format(Form)]).
+
+emit_module(RunDeps, RunFoldDeps, Module) ->
     File = filename:join(["src", Module]) ++ ".erl",
     try
 	{ok, Fd} = file:open(File, [write]),
@@ -256,19 +319,18 @@ emit_module(RunDeps, RunFoldDeps, Specs, Module) ->
 	write(Fd, "-dialyzer(no_return).~n~n", []),
 	emit_export(Fd, RunDeps, "run hooks"),
 	emit_export(Fd, RunFoldDeps, "run_fold hooks"),
-	emit_run_hooks(Fd, RunDeps, Specs),
-	emit_run_fold_hooks(Fd, RunFoldDeps, Specs),
+	emit_run_hooks(Fd, RunDeps),
+	emit_run_fold_hooks(Fd, RunFoldDeps),
 	file:close(Fd),
-	log("Module written to file ~s~n", [File])
+	log("Module written to ~s~n", [File])
     catch _:{badmatch, {error, Reason}} ->
-	    err("writing to ~s failed: ~s", [File, file:format_error(Reason)])
+	    err("Error: writing to ~s failed: ~s", [File, file:format_error(Reason)])
     end.
 
-emit_run_hooks(Fd, Deps, Specs) ->
-    DepsList = lists:sort(dict:to_list(Deps)),
+emit_run_hooks(Fd, Deps) ->
+    DepsList = lists:sort(maps:to_list(Deps)),
     lists:foreach(
       fun({{Hook, Arity, {File, LineNo}}, Funs}) ->
-	      emit_specs(Fd, Funs, Specs),
 	      write(Fd, "%% called at ~s:~p~n", [File, LineNo]),
 	      Args = string:join(
 		       [[N] || N <- lists:sublist(lists:seq($A, $Z), Arity)],
@@ -280,15 +342,14 @@ emit_run_hooks(Fd, Deps, Specs) ->
 		    [string:join(Calls ++ ["ok"], ",\n    ")])
       end, DepsList).
 
-emit_run_fold_hooks(Fd, Deps, Specs) ->
-    DepsList = lists:sort(dict:to_list(Deps)),
+emit_run_fold_hooks(Fd, Deps) ->
+    DepsList = lists:sort(maps:to_list(Deps)),
     lists:foreach(
       fun({{Hook, Arity, {File, LineNo}}, []}) ->
 	      write(Fd, "%% called at ~s:~p~n", [File, LineNo]),
 	      Args = ["Acc"|lists:duplicate(Arity - 1, "_")],
 	      write(Fd, "~s(~s) -> Acc.~n~n", [Hook, string:join(Args, ", ")]);
 	 ({{Hook, Arity, {File, LineNo}}, Funs}) ->
-	      emit_specs(Fd, Funs, Specs),
 	      write(Fd, "%% called at ~s:~p~n", [File, LineNo]),
 	      Args = [[N] || N <- lists:sublist(lists:seq($A, $Z), Arity - 1)],
 	      write(Fd, "~s(~s) ->~n    ", [Hook, string:join(["Acc0"|Args], ", ")]),
@@ -305,33 +366,13 @@ emit_run_fold_hooks(Fd, Deps, Specs) ->
       end, DepsList).
 
 emit_export(Fd, Deps, Comment) ->
-    DepsList = lists:sort(dict:to_list(Deps)),
+    DepsList = lists:sort(maps:to_list(Deps)),
     Exports = lists:map(
 		fun({{Hook, Arity, _}, _}) ->
 			io_lib:format("~s/~p", [Hook, Arity])
 		end, DepsList),
     write(Fd, "%% ~s~n-export([~s]).~n~n",
 	      [Comment, string:join(Exports, ",\n         ")]).
-
-emit_specs(Fd, Funs, Specs) ->
-    lists:foreach(
-      fun({{M, _, _} = MFA, _, _}) ->
-	      case dict:find(MFA, Specs) of
-		  {ok, {Form, _File}} ->
-		      Lines = string:tokens(erl_syntax:get_ann(Form), "\n"),
-		      lists:foreach(
-			fun("%" ++ _) ->
-				ok;
-			   ("-spec" ++ Spec) ->
-				write(Fd, "%% -spec ~p:~s~n",
-				      [M, string:strip(Spec, left)]);
-			   (Line) ->
-				write(Fd, "%% ~s~n", [Line])
-			end, Lines);
-		  error ->
-		      ok
-	      end
-      end, lists:keysort(2, Funs)).
 
 fold_beams(Fun, State, Paths) ->
     Paths1 = fold_paths(Paths),
@@ -344,10 +385,10 @@ fold_beams(Fun, State, Paths) ->
 		  case is_elixir_beam(File) of
 		      true -> {I+1, Acc};
 		      false ->
-			  AbsCode = get_code_from_beam(File),
+			  {AbsCode, Exports} = get_code_from_beam(File),
 			  Acc2 = lists:foldl(
 				   fun(Form, Acc1) ->
-					   Fun(File, Form, Acc1)
+					   Fun(File, Form, Exports, Acc1)
 				   end, Acc, AbsCode),
 			  {I+1, Acc2}
 		  end
@@ -359,17 +400,12 @@ fold_paths(Paths) ->
       fun(Path) ->
 	      case filelib:is_dir(Path) of
 		  true ->
-		      Beams = lists:reverse(
-				filelib:fold_files(
-				  Path, ".+\.beam\$", false,
-				  fun(File, Acc) ->
+		      lists:reverse(
+			filelib:fold_files(
+			  Path, ".+\.beam\$", false,
+			  fun(File, Acc) ->
 					  [File|Acc]
-				  end, [])),
-		      case Beams of
-			  [] -> ok;
-			  _ -> code:add_path(Path)
-		      end,
-		      Beams;
+			  end, []));
 		  false ->
 		      [Path]
 	      end
@@ -382,20 +418,26 @@ is_elixir_beam(File) ->
     end.
 
 get_code_from_beam(File) ->
-    try
-	{ok, {_, List}} = beam_lib:chunks(File, [abstract_code]),
-        {_, {raw_abstract_v1, Forms}} = lists:keyfind(abstract_code, 1, List),
-	Forms
-    catch _:{badmatch, _} ->
-	    err("no abstract code found in ~s~n", [File])
+    case beam_lib:chunks(File, [abstract_code, exports]) of
+	{ok, {_, [{abstract_code, {raw_abstract_v1, Forms}}, {exports, X}]}} ->
+	    {Forms, X};
+	_ ->
+	    err("No abstract code found in ~s~n", [File])
     end.
 
 log(Format, Args) ->
     io:format(standard_io, Format, Args).
 
 err(Format, Args) ->
-    io:format(standard_error, "Error: " ++ Format, Args),
+    io:format(standard_error, Format, Args),
     halt(1).
 
 write(Fd, Format, Args) ->
     file:write(Fd, io_lib:format(Format, Args)).
+
+maps_append(K, V, M) ->
+    maps_append_list(K, [V], M).
+
+maps_append_list(K, L1, M) ->
+    L2 = maps:get(K, M, []),
+    maps:put(K, L2 ++ L1, M).

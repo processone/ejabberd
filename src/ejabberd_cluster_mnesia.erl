@@ -136,7 +136,7 @@ replicate_database(Node) ->
     mnesia:change_table_copy_type(schema, node(), disc_copies),
     lists:foreach(
         fun(Table) ->
-            Type = ejabberd_cluster:call(Node, mnesia, table_info, [Table, storage_type]),
+            Type = rpc:call(Node, mnesia, table_info, [Table, storage_type]),
             mnesia:add_table_copy(Table, node(), Type)
         end, mnesia:system_info(tables)--[schema]).
 

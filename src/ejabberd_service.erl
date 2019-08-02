@@ -26,14 +26,14 @@
 -protocol({xep, 114, '1.6'}).
 
 %% ejabberd_listener callbacks
--export([start/3, start_link/3, accept/1]).
+-export([start/3, start_link/3, stop/0, accept/1]).
 -export([listen_opt_type/1, listen_options/0]).
 %% xmpp_stream_in callbacks
 -export([init/1, handle_info/2, terminate/2, code_change/3]).
 -export([handle_stream_start/2, handle_auth_success/4, handle_auth_failure/4,
 	 handle_authenticated_packet/2, get_password_fun/1, tls_options/1]).
 %% API
--export([send/2, close/1, close/2]).
+-export([send/2, close/1, close/2, stop/1]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -53,6 +53,19 @@ start_link(SockMod, Socket, Opts) ->
     xmpp_stream_in:start_link(?MODULE, [{SockMod, Socket}, Opts],
 			      ejabberd_config:fsm_limit_opts(Opts)).
 
+-spec stop() -> ok.
+stop() ->
+    Err = xmpp:serr_system_shutdown(),
+    lists:foreach(
+      fun({_Id, Pid, _Type, _Module}) ->
+              send(Pid, Err),
+              stop(Pid),
+              supervisor:terminate_child(ejabberd_service_sup, Pid)
+      end, supervisor:which_children(ejabberd_service_sup)),
+    _ = supervisor:terminate_child(ejabberd_sup, ejabberd_service_sup),
+    _ = supervisor:delete_child(ejabberd_sup, ejabberd_service_sup),
+    ok.
+
 accept(Ref) ->
     xmpp_stream_in:accept(Ref).
 
@@ -69,6 +82,11 @@ close(Ref) ->
 -spec close(pid(), atom()) -> ok.
 close(Ref, Reason) ->
     xmpp_stream_in:close(Ref, Reason).
+
+-spec stop(pid()) -> ok;
+          (state()) -> no_return().
+stop(Ref) ->
+    xmpp_stream_in:stop(Ref).
 
 %%%===================================================================
 %%% xmpp_stream_in callbacks

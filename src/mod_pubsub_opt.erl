@@ -17,6 +17,7 @@
 -export([nodetree/1]).
 -export([pep_mapping/1]).
 -export([plugins/1]).
+-export([vcard/1]).
 
 -spec access_createnode(gen_mod:opts() | global | binary()) -> 'all' | acl:acl().
 access_createnode(Opts) when is_map(Opts) ->
@@ -101,4 +102,10 @@ plugins(Opts) when is_map(Opts) ->
     gen_mod:get_opt(plugins, Opts);
 plugins(Host) ->
     gen_mod:get_module_opt(Host, mod_pubsub, plugins).
+
+-spec vcard(gen_mod:opts() | global | binary()) -> 'undefined' | tuple().
+vcard(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(vcard, Opts);
+vcard(Host) ->
+    gen_mod:get_module_opt(Host, mod_pubsub, vcard).
 

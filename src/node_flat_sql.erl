@@ -51,7 +51,8 @@
     set_state/1, get_items/7, get_items/3, get_item/7,
     get_item/2, set_item/1, get_item_name/3, node_to_path/1,
     path_to_node/1,
-    get_entity_subscriptions_for_send_last/2, get_last_items/3]).
+    get_entity_subscriptions_for_send_last/2, get_last_items/3,
+    get_only_item/2]).
 
 -export([decode_jid/1, encode_jid/1, encode_jid_like/1,
          decode_affiliation/1, decode_subscriptions/1,
@@ -377,8 +378,8 @@ set_affiliation(Nidx, Owner, Affiliation) ->
     GenKey = jid:remove_resource(SubKey),
     {_, Subscriptions} = select_affiliation_subscriptions(Nidx, GenKey),
     case {Affiliation, Subscriptions} of
-	{none, []} -> del_state(Nidx, GenKey);
-	_ -> update_affiliation(Nidx, GenKey, Affiliation)
+	{none, []} -> {result, del_state(Nidx, GenKey)};
+	_ -> {result, update_affiliation(Nidx, GenKey, Affiliation)}
     end.
 
 get_entity_subscriptions(Host, Owner) ->
@@ -522,7 +523,7 @@ set_subscriptions(Nidx, Owner, Subscription, SubId) ->
 
 replace_subscription(NewSub, SubState) ->
     NewSubs = replace_subscription(NewSub, SubState#pubsub_state.subscriptions, []),
-    set_state(SubState#pubsub_state{subscriptions = NewSubs}).
+    {result, set_state(SubState#pubsub_state{subscriptions = NewSubs})}.
 
 replace_subscription(_, [], Acc) -> Acc;
 replace_subscription({Sub, SubId}, [{_, SubId} | T], Acc) ->
@@ -533,7 +534,7 @@ new_subscription(_Nidx, _Owner, Subscription, SubState) ->
     SubId = pubsub_subscription_sql:make_subid(),
     Subscriptions = [{Subscription, SubId} | SubState#pubsub_state.subscriptions],
     set_state(SubState#pubsub_state{subscriptions = Subscriptions}),
-    {Subscription, SubId}.
+    {result, {Subscription, SubId}}.
 
 unsub_with_subid(Nidx, SubId, SubState) ->
     %%pubsub_subscription_sql:unsubscribe_node(SubState#pubsub_state.stateid, Nidx, SubId),
@@ -541,8 +542,8 @@ unsub_with_subid(Nidx, SubId, SubState) ->
 	    || {S, Sid} <- SubState#pubsub_state.subscriptions,
 		SubId =/= Sid],
     case {NewSubs, SubState#pubsub_state.affiliation} of
-	{[], none} -> del_state(Nidx, element(1, SubState#pubsub_state.stateid));
-	_ -> set_state(SubState#pubsub_state{subscriptions = NewSubs})
+	{[], none} -> {result, del_state(Nidx, element(1, SubState#pubsub_state.stateid))};
+	_ -> {result, set_state(SubState#pubsub_state{subscriptions = NewSubs})}
     end.
 
 get_pending_nodes(Host, Owner) ->
@@ -741,6 +742,25 @@ get_last_items(Nidx, _From, Limit) ->
 	    {result, []}
     end.
 
+get_only_item(Nidx, _From) ->
+    SNidx = misc:i2l(Nidx),
+    Query = fun(mssql, _) ->
+	ejabberd_sql:sql_query_t(
+	    [<<"select  itemid, publisher, creation, modification, payload",
+	       " from pubsub_item where nodeid='", SNidx/binary, "'">>]);
+	       (_, _) ->
+		   ejabberd_sql:sql_query_t(
+		       [<<"select itemid, publisher, creation, modification, payload",
+			  " from pubsub_item where nodeid='", SNidx/binary, "'">>])
+	    end,
+    case catch ejabberd_sql:sql_query_t(Query) of
+	{selected, [<<"itemid">>, <<"publisher">>, <<"creation">>,
+		    <<"modification">>, <<"payload">>], RItems} ->
+	    {result, [raw_to_item(Nidx, RItem) || RItem <- RItems]};
+	_ ->
+	    {result, []}
+    end.
+
 get_item(Nidx, ItemId) ->
     case catch ejabberd_sql:sql_query_t(
 		 ?SQL("select @(itemid)s, @(publisher)s, @(creation)s,"
@@ -825,7 +845,7 @@ del_items(Nidx, ItemIds) ->
 	    I, <<") and nodeid='">>, SNidx, <<"';">>]).
 
 get_item_name(_Host, _Node, Id) ->
-    Id.
+    {result, Id}.
 
 node_to_path(Node) ->
     node_flat:node_to_path(Node).

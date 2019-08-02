@@ -17,6 +17,7 @@
 -export([server_host/1]).
 -export([shaper/1]).
 -export([sndbuf/1]).
+-export([vcard/1]).
 
 -spec access(gen_mod:opts() | global | binary()) -> 'all' | acl:acl().
 access(Opts) when is_map(Opts) ->
@@ -101,4 +102,10 @@ sndbuf(Opts) when is_map(Opts) ->
     gen_mod:get_opt(sndbuf, Opts);
 sndbuf(Host) ->
     gen_mod:get_module_opt(Host, mod_proxy65, sndbuf).
+
+-spec vcard(gen_mod:opts() | global | binary()) -> 'undefined' | tuple().
+vcard(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(vcard, Opts);
+vcard(Host) ->
+    gen_mod:get_module_opt(Host, mod_proxy65, vcard).
 

@@ -250,7 +250,7 @@ c2s_handle_info(#{mgmt_state := pending, lang := Lang,
     Err = xmpp:serr_connection_timeout(Txt, Lang),
     Mod:stop(State#{mgmt_state => timeout,
 		    stop_reason => {stream, {out, Err}}});
-c2s_handle_info(#{jid := JID} = State, {_Ref, {resume, OldState}}) ->
+c2s_handle_info(State, {_Ref, {resume, #{jid := JID} = OldState}}) ->
     %% This happens if the resume_session/1 request timed out; the new session
     %% now receives the late response.
     ?DEBUG("Received old session state for ~s after failed resumption",
@@ -276,6 +276,8 @@ c2s_closed(State, _Reason) ->
 c2s_terminated(#{mgmt_state := resumed, sid := SID, jid := JID} = State, _Reason) ->
     ?DEBUG("Closing former stream of resumed session for ~s",
 	   [jid:encode(JID)]),
+    {U, S, R} = jid:tolower(JID),
+    ejabberd_sm:close_session(SID, U, S, R),
     ejabberd_c2s:bounce_message_queue(SID, JID),
     {stop, State};
 c2s_terminated(#{mgmt_state := MgmtState, mgmt_stanzas_in := In,
@@ -370,8 +372,8 @@ handle_enable(#{mgmt_timeout := DefaultTimeout,
 	      #sm_enable{resume = Resume, max = Max}) ->
     Timeout = if Resume == false ->
 		      0;
-		 Max /= undefined, Max > 0, Max =< MaxTimeout ->
-		      Max;
+		 Max /= undefined, Max > 0, Max*1000 =< MaxTimeout ->
+		      Max*1000;
 		 true ->
 		      DefaultTimeout
 	      end,
@@ -381,7 +383,7 @@ handle_enable(#{mgmt_timeout := DefaultTimeout,
 		  #sm_enabled{xmlns = Xmlns,
 			      id = make_resume_id(State),
 			      resume = true,
-			      max = Timeout};
+			      max = Timeout div 1000};
 	     true ->
 		  ?DEBUG("Stream management without resumption enabled for ~s",
 			 [jid:encode(JID)]),
@@ -444,7 +446,8 @@ transition_to_pending(#{mgmt_state := active, mod := Mod,
 transition_to_pending(#{mgmt_state := active, jid := JID,
 			lserver := LServer, mgmt_timeout := Timeout} = State) ->
     State1 = cancel_ack_timer(State),
-    ?INFO_MSG("Waiting for resumption of stream for ~s", [jid:encode(JID)]),
+    ?INFO_MSG("Waiting ~B seconds for resumption of stream for ~s",
+	      [Timeout div 1000, jid:encode(JID)]),
     TRef = erlang:start_timer(Timeout, self(), pending_timeout),
     State2 = State1#{mgmt_state => pending, mgmt_pending_timer => TRef},
     ejabberd_hooks:run_fold(c2s_session_pending, LServer, State2, []);
@@ -652,7 +655,6 @@ inherit_session_state(#{user := U, server := S,
 					     mgmt_stanzas_in => NumStanzasIn,
 					     mgmt_stanzas_out => NumStanzasOut,
 					     mgmt_state => active},
-			    ejabberd_sm:close_session(OldSID, U, S, R),
 			    State3 = ejabberd_c2s:open_session(State2),
 			    ejabberd_c2s:stop(OldPID),
 			    {ok, State3};
@@ -661,6 +663,8 @@ inherit_session_state(#{user := U, server := S,
 		    catch exit:{noproc, _} ->
 			    {error, session_is_dead};
 			  exit:{normal, _} ->
+			    {error, session_has_exited};
+			  exit:{shutdown, _} ->
 			    {error, session_has_exited};
 			  exit:{killed, _} ->
 			    {error, session_was_killed};
@@ -826,7 +830,7 @@ mod_opt_type(queue_type) ->
 
 mod_options(Host) ->
     [{max_ack_queue, 5000},
-     {resume_timeout, 300},
+     {resume_timeout, timer:seconds(300)},
      {max_resume_timeout, undefined},
      {ack_timeout, timer:seconds(60)},
      {cache_size, ejabberd_option:cache_size(Host)},

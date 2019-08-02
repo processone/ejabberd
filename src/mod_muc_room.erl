@@ -3527,11 +3527,15 @@ get_config(Lang, StateData, From) ->
 	 {pubsub, Config#config.pubsub}]
 	++
 	case ejabberd_captcha:is_feature_available() of
-	    true -> [{captcha_protected, Config#config.captcha_protected}];
-	    false -> []
-	end ++
-	[{captcha_whitelist,
-	  lists:map(fun jid:make/1, ?SETS:to_list(Config#config.captcha_whitelist))}]
+	    true ->
+		[{captcha_protected, Config#config.captcha_protected},
+		 {captcha_whitelist,
+		  lists:map(
+		    fun jid:make/1,
+		    ?SETS:to_list(Config#config.captcha_whitelist))}];
+	    false ->
+		[]
+	end
 	++
 	case mod_muc_log:check_access_log(StateData#state.server_host, From) of
 	    allow -> [{enablelogging, Config#config.logging}];

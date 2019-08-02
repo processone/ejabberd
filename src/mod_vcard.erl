@@ -203,12 +203,18 @@ get_sm_features(Acc, _From, _To, Node, _Lang) ->
 process_local_iq(#iq{type = set, lang = Lang} = IQ) ->
     Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
-process_local_iq(#iq{type = get, lang = Lang} = IQ) ->
-    xmpp:make_iq_result(
-      IQ, #vcard_temp{fn = <<"ejabberd">>,
-		      url = ejabberd_config:get_uri(),
-		      desc = misc:get_descr(Lang, ?T("Erlang Jabber Server")),
-		      bday = <<"2002-11-16">>}).
+process_local_iq(#iq{type = get, to = To, lang = Lang} = IQ) ->
+    ServerHost = ejabberd_router:host_of_route(To#jid.lserver),
+    VCard = case mod_vcard_opt:vcard(ServerHost) of
+		undefined ->
+		    #vcard_temp{fn = <<"ejabberd">>,
+				url = ejabberd_config:get_uri(),
+				desc = misc:get_descr(Lang, ?T("Erlang Jabber Server")),
+				bday = <<"2002-11-16">>};
+		V ->
+		    V
+	    end,
+    xmpp:make_iq_result(IQ, VCard).
 
 -spec process_sm_iq(iq()) -> iq().
 process_sm_iq(#iq{type = set, lang = Lang, from = From} = IQ) ->
@@ -562,7 +568,9 @@ mod_opt_type(cache_size) ->
 mod_opt_type(cache_missed) ->
     econf:bool();
 mod_opt_type(cache_life_time) ->
-    econf:timeout(second, infinity).
+    econf:timeout(second, infinity);
+mod_opt_type(vcard) ->
+    econf:vcard_temp().
 
 mod_options(Host) ->
     [{allow_return_all, false},
@@ -571,6 +579,7 @@ mod_options(Host) ->
      {matches, 30},
      {search, false},
      {name, ?T("vCard User Search")},
+     {vcard, undefined},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)},
      {use_cache, ejabberd_option:use_cache(Host)},
      {cache_size, ejabberd_option:cache_size(Host)},

@@ -115,12 +115,13 @@
 start_link() ->
     ?GEN_SERVER:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec stop() -> ok | {error, atom()}.
+-spec stop() -> ok.
 stop() ->
-    case supervisor:terminate_child(ejabberd_sup, ?MODULE) of
-	ok -> supervisor:delete_child(ejabberd_sup, ?MODULE);
-	Err -> Err
-    end.
+    _ = supervisor:terminate_child(ejabberd_sup, ?MODULE),
+    _ = supervisor:delete_child(ejabberd_sup, ?MODULE),
+    _ = supervisor:terminate_child(ejabberd_sup, ejabberd_c2s_sup),
+    _ = supervisor:delete_child(ejabberd_sup, ejabberd_c2s_sup),
+    ok.
 
 -spec route(jid(), term()) -> ok.
 %% @doc route arbitrary term to c2s process(es)
@@ -447,15 +448,12 @@ get_vh_session_number(Server) ->
     Mod = get_sm_backend(LServer),
     length(get_sessions(Mod, LServer)).
 
-%% Why the hell do we have so many similar kicks?
 c2s_handle_info(#{lang := Lang} = State, replaced) ->
     State1 = State#{replaced => true},
     Err = xmpp:serr_conflict(?T("Replaced by new connection"), Lang),
     {stop, ejabberd_c2s:send(State1, Err)};
 c2s_handle_info(#{lang := Lang} = State, kick) ->
     Err = xmpp:serr_policy_violation(?T("has been kicked"), Lang),
-    c2s_handle_info(State, {kick, kicked_by_admin, Err});
-c2s_handle_info(State, {kick, _Reason, Err}) ->
     {stop, ejabberd_c2s:send(State, Err)};
 c2s_handle_info(#{lang := Lang} = State, {exit, Reason}) ->
     Err = xmpp:serr_conflict(Reason, Lang),
@@ -586,11 +584,11 @@ set_session(#session{us = {LUser, LServer}} = Session) ->
 
 -spec get_sessions(module()) -> [#session{}].
 get_sessions(Mod) ->
-    Mod:get_sessions().
+    delete_dead(Mod, Mod:get_sessions()).
 
 -spec get_sessions(module(), binary()) -> [#session{}].
 get_sessions(Mod, LServer) ->
-    Mod:get_sessions(LServer).
+    delete_dead(Mod, Mod:get_sessions(LServer)).
 
 -spec get_sessions(module(), binary(), binary()) -> [#session{}].
 get_sessions(Mod, LUser, LServer) ->
@@ -607,13 +605,13 @@ get_sessions(Mod, LUser, LServer) ->
 			   end
 		   end) of
 		{ok, Sessions} ->
-		    Sessions;
+		    delete_dead(Mod, Sessions);
 		error ->
 		    []
 	    end;
 	false ->
 	    case Mod:get_sessions(LUser, LServer) of
-		{ok, Ss} -> Ss;
+		{ok, Ss} -> delete_dead(Mod, Ss);
 		_ -> []
 	    end
     end.
@@ -633,6 +631,20 @@ delete_session(Mod, #session{usr = {LUser, LServer, _}} = Session) ->
 	false ->
 	    ok
     end.
+
+-spec delete_dead(module(), [#session{}]) -> [#session{}].
+delete_dead(Mod, Sessions) ->
+    lists:filter(
+      fun(#session{sid = {_, Pid}} = Session) when node(Pid) == node() ->
+	      case is_process_alive(Pid) of
+		  true -> true;
+		  false ->
+		      delete_session(Mod, Session),
+		      false
+	      end;
+	 (_) ->
+	      true
+      end, Sessions).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -spec do_route(jid(), term()) -> any().

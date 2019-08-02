@@ -110,8 +110,6 @@ register_hooks(Host) ->
 
 -spec unregister_hooks(binary()) -> ok.
 unregister_hooks(Host) ->
-    ejabberd_hooks:delete(disco_sm_features, Host, ?MODULE,
-			  disco_sm_features, 50),
     ejabberd_hooks:delete(c2s_session_pending, Host, ?MODULE,
 			  c2s_session_pending, 50),
     ejabberd_hooks:delete(c2s_session_resumed, Host, ?MODULE,
@@ -203,13 +201,13 @@ maybe_adjust_resume_timeout(#{push_resume_timeout := undefined} = State) ->
     State;
 maybe_adjust_resume_timeout(#{push_resume_timeout := Timeout} = State) ->
     OrigTimeout = mod_stream_mgmt:get_resume_timeout(State),
-    ?DEBUG("Adjusting resume timeout to ~B seconds", [Timeout]),
+    ?DEBUG("Adjusting resume timeout to ~B seconds", [Timeout div 1000]),
     State1 = mod_stream_mgmt:set_resume_timeout(State, Timeout),
     State1#{push_resume_timeout_orig => OrigTimeout}.
 
 -spec maybe_restore_resume_timeout(c2s_state()) -> c2s_state().
 maybe_restore_resume_timeout(#{push_resume_timeout_orig := Timeout} = State) ->
-    ?DEBUG("Restoring resume timeout to ~B seconds", [Timeout]),
+    ?DEBUG("Restoring resume timeout to ~B seconds", [Timeout div 1000]),
     State1 = mod_stream_mgmt:set_resume_timeout(State, Timeout),
     maps:remove(push_resume_timeout_orig, State1);
 maybe_restore_resume_timeout(State) ->
@@ -220,7 +218,7 @@ maybe_start_wakeup_timer(#{push_wake_on_timeout := true,
 			   push_resume_timeout := ResumeTimeout} = State)
   when is_integer(ResumeTimeout), ResumeTimeout > ?PUSH_BEFORE_TIMEOUT_PERIOD ->
     WakeTimeout = ResumeTimeout - ?PUSH_BEFORE_TIMEOUT_PERIOD,
-    ?DEBUG("Scheduling wake-up timer to fire in ~B seconds", [WakeTimeout]),
+    ?DEBUG("Scheduling wake-up timer to fire in ~B seconds", [WakeTimeout div 1000]),
     erlang:start_timer(WakeTimeout, self(), push_keepalive),
     State;
 maybe_start_wakeup_timer(State) ->

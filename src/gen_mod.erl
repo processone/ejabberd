@@ -27,7 +27,7 @@
 -author('alexey@process-one.net').
 
 -export([init/1, start_link/0, start_child/3, start_child/4,
-	 stop_child/1, stop_child/2, config_reloaded/0]).
+	 stop_child/1, stop_child/2, stop/0, config_reloaded/0]).
 -export([start_module/2, stop_module/2, stop_module_keep_config/2,
 	 get_opt/2, set_opt/3, get_opt_hosts/1, is_equal_opt/3,
 	 get_module_opt/3, get_module_opts/2, get_module_opt_hosts/2,
@@ -88,6 +88,14 @@ init([]) ->
 	     {keypos, #ejabberd_module.module_host},
 	     {read_concurrency, true}]),
     {ok, {{one_for_one, 10, 1}, []}}.
+
+-spec stop() -> ok.
+stop() ->
+    ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 50),
+    ejabberd_hooks:delete(host_up, ?MODULE, start_modules, 40),
+    ejabberd_hooks:delete(host_down, ?MODULE, stop_modules, 70),
+    stop_modules(),
+    ejabberd_sup:stop_child(ejabberd_gen_mod_sup).
 
 -spec start_child(module(), binary(), opts()) -> {ok, pid()} | {error, any()}.
 start_child(Mod, Host, Opts) ->
@@ -255,9 +263,9 @@ is_app_running(AppName) ->
 -spec stop_modules() -> ok.
 stop_modules() ->
     lists:foreach(
-	fun(Host) ->
-	    stop_modules(Host)
-	end, ejabberd_option:hosts()).
+      fun(Host) ->
+	      stop_modules(Host)
+      end, ejabberd_option:hosts()).
 
 -spec stop_modules(binary()) -> ok.
 stop_modules(Host) ->
@@ -527,7 +535,7 @@ get_defaults(Host, Module, Opts) ->
      lists:filtermap(
        fun({Opt, T1}) when Opt == db_type; Opt == ram_db_type ->
 	       T2 = proplists:get_value(Opt, Opts, T1),
-	       DBMod = db_mod(Opt, T2, Module),
+	       DBMod = list_to_atom(atom_to_list(Module) ++ "_" ++ atom_to_list(T2)),
 	       case code:ensure_loaded(DBMod) of
 		   {module, _} ->
 		       case erlang:function_exported(DBMod, mod_options, 1) of

@@ -55,6 +55,7 @@ single_cases() ->
       single_test(test_delete_item),
       single_test(test_purge),
       single_test(test_subscribe),
+      single_test(test_subscribe_max_item_1),
       single_test(test_unsubscribe)]}.
 
 test_features(Config) ->
@@ -158,6 +159,16 @@ test_delete_item(Config) ->
 
 test_subscribe(Config) ->
     Node = create_node(Config, <<>>),
+    #ps_subscription{type = subscribed} = subscribe_node(Config, Node),
+    [#ps_subscription{node = Node}] = get_subscriptions(Config),
+    delete_node(Config, Node),
+    disconnect(Config).
+
+test_subscribe_max_item_1(Config) ->
+    DefaultNodeConfig = get_default_node_config(Config),
+    CustomNodeConfig = set_opts(DefaultNodeConfig,
+				[{max_items, 1}]),
+    Node = create_node(Config, <<>>, CustomNodeConfig),
     #ps_subscription{type = subscribed} = subscribe_node(Config, Node),
     [#ps_subscription{node = Node}] = get_subscriptions(Config),
     delete_node(Config, Node),

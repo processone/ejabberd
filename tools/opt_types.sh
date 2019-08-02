@@ -393,6 +393,9 @@ spec(host, 0, _, _) ->
     erl_types:t_binary();
 spec(hosts, 0, _, _) ->
     erl_types:t_list(erl_types:t_binary());
+spec(vcard_temp, 0, _, _) ->
+    erl_types:t_sup([erl_types:t_atom(undefined),
+		     erl_types:t_tuple()]);
 spec(options, A, [Form|OForm], Mod) when A == 1; A == 2 ->
     case erl_syntax:type(Form) of
 	map_expr ->

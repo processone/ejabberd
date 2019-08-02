@@ -121,7 +121,9 @@ mod_opt_type(recbuf) ->
 mod_opt_type(shaper) ->
     econf:shaper();
 mod_opt_type(sndbuf) ->
-    econf:pos_int().
+    econf:pos_int();
+mod_opt_type(vcard) ->
+    econf:vcard_temp().
 
 mod_options(Host) ->
     [{ram_db_type, ejabberd_config:default_ram_db(Host, ?MODULE)},
@@ -132,6 +134,7 @@ mod_options(Host) ->
      {ip, undefined},
      {port, 7777},
      {name, ?T("SOCKS5 Bytestreams")},
+     {vcard, undefined},
      {max_connections, infinity},
      {auth_type, anonymous},
      {recbuf, 65536},

@@ -367,9 +367,11 @@ mk_bounce_error(Lang, #{stop_reason := Why}) ->
 	    xmpp:err_resource_constraint(Reason, Lang);
 	{dns, _} ->
 	    xmpp:err_remote_server_not_found(Reason, Lang);
-					     _ ->
+	{idna, _} ->
+	    xmpp:err_remote_server_not_found(Reason, Lang);
+	_ ->
 	    xmpp:err_remote_server_timeout(Reason, Lang)
-	  end;
+    end;
 mk_bounce_error(_Lang, _State) ->
     %% We should not be here. Probably :)
     xmpp:err_remote_server_not_found().

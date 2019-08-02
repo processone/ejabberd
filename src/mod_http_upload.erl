@@ -196,7 +196,9 @@ mod_opt_type(external_secret) ->
 mod_opt_type(host) ->
     econf:host();
 mod_opt_type(hosts) ->
-    econf:hosts().
+    econf:hosts();
+mod_opt_type(vcard) ->
+    econf:vcard_temp().
 
 -spec mod_options(binary()) -> [{thumbnail, boolean()} |
 				{atom(), any()}].
@@ -204,6 +206,7 @@ mod_options(Host) ->
     [{host, <<"upload.", Host/binary>>},
      {hosts, []},
      {name, ?T("HTTP File Upload")},
+     {vcard, undefined},
      {access, local},
      {max_size, 104857600},
      {secret_length, 40},
@@ -517,6 +520,18 @@ process_iq(#iq{type = get, lang = Lang, sub_els = [#disco_info{}]} = IQ,
     xmpp:make_iq_result(IQ, iq_disco_info(ServerHost, Lang, Name, AddInfo));
 process_iq(#iq{type = get, sub_els = [#disco_items{}]} = IQ, _State) ->
     xmpp:make_iq_result(IQ, #disco_items{});
+process_iq(#iq{type = get, sub_els = [#vcard_temp{}], lang = Lang} = IQ,
+	   #state{server_host = ServerHost}) ->
+    VCard = case mod_http_upload_opt:vcard(ServerHost) of
+		undefined ->
+		    #vcard_temp{fn = <<"ejabberd/mod_http_upload">>,
+				url = ejabberd_config:get_uri(),
+				desc = misc:get_descr(
+					 Lang, ?T("ejabberd HTTP Upload service"))};
+		V ->
+		    V
+	    end,
+    xmpp:make_iq_result(IQ, VCard);
 process_iq(#iq{type = get, sub_els = [#upload_request{filename = File,
 						      size = Size,
 						      'content-type' = CType,
@@ -736,6 +751,7 @@ iq_disco_info(Host, Lang, Name, AddInfo) ->
 		features = [?NS_HTTP_UPLOAD,
 			    ?NS_HTTP_UPLOAD_0,
 			    ?NS_HTTP_UPLOAD_OLD,
+			    ?NS_VCARD,
 			    ?NS_DISCO_INFO,
 			    ?NS_DISCO_ITEMS],
 		xdata = Form}.

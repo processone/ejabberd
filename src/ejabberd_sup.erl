@@ -28,7 +28,7 @@
 
 -behaviour(supervisor).
 
--export([start_link/0, init/1]).
+-export([start_link/0, init/1, stop_child/1]).
 
 -define(SHUTDOWN_TIMEOUT, timer:minutes(1)).
 
@@ -66,6 +66,12 @@ init([]) ->
 	   supervisor(ejabberd_gen_mod_sup, gen_mod),
 	   worker(ejabberd_auth),
 	   worker(ejabberd_oauth)]}}.
+
+-spec stop_child(atom()) -> ok.
+stop_child(Name) ->
+    _ = supervisor:terminate_child(?MODULE, Name),
+    _ = supervisor:delete_child(?MODULE, Name),
+    ok.
 
 %%%===================================================================
 %%% Internal functions

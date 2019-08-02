@@ -171,11 +171,18 @@ process_disco_items(#iq{type = get} = IQ) ->
 process_vcard(#iq{type = set, lang = Lang} = IQ) ->
     Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
-process_vcard(#iq{type = get, lang = Lang} = IQ) ->
-    xmpp:make_iq_result(
-      IQ, #vcard_temp{fn = <<"ejabberd/mod_proxy65">>,
-		      url = ejabberd_config:get_uri(),
-		      desc = misc:get_descr(Lang, ?T("ejabberd SOCKS5 Bytestreams module"))}).
+process_vcard(#iq{type = get, to = To, lang = Lang} = IQ) ->
+    ServerHost = ejabberd_router:host_of_route(To#jid.lserver),
+    VCard = case mod_proxy65_opt:vcard(ServerHost) of
+		undefined ->
+		    #vcard_temp{fn = <<"ejabberd/mod_proxy65">>,
+				url = ejabberd_config:get_uri(),
+				desc = misc:get_descr(
+					 Lang, ?T("ejabberd SOCKS5 Bytestreams module"))};
+		V ->
+		    V
+	    end,
+    xmpp:make_iq_result(IQ, VCard).
 
 -spec process_bytestreams(iq()) -> iq().
 process_bytestreams(#iq{type = get, from = JID, to = To, lang = Lang} = IQ) ->
