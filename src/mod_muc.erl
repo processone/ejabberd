@@ -34,7 +34,7 @@
 %% API
 -export([start/2,
 	 stop/1,
-	 start_link/3,
+	 start_link/2,
 	 reload/3,
 	 room_destroyed/4,
 	 store_room/4,
@@ -114,7 +114,7 @@
 %% API
 %%====================================================================
 start(Host, Opts) ->
-    case mod_muc_sup:start(Host, Opts) of
+    case mod_muc_sup:start(Host) of
 	{ok, _} ->
 	    MyHosts = gen_mod:get_opt_hosts(Opts),
 	    Mod = gen_mod:db_mod(Opts, ?MODULE),
@@ -171,9 +171,9 @@ reload(ServerHost, NewOpts, OldOpts) ->
 depends(_Host, _Opts) ->
     [{mod_mam, soft}].
 
-start_link(Host, Opts, I) ->
+start_link(Host, I) ->
     Proc = procname(Host, I),
-    ?GEN_SERVER:start_link({local, Proc}, ?MODULE, [Host, Opts, I],
+    ?GEN_SERVER:start_link({local, Proc}, ?MODULE, [Host, I],
 			   ejabberd_config:fsm_limit_opts([])).
 
 -spec procname(binary(), pos_integer() | {binary(), binary()}) -> atom().
@@ -365,8 +365,9 @@ get_online_rooms_by_user(ServerHost, LUser, LServer) ->
 %% gen_server callbacks
 %%====================================================================
 -spec init(list()) -> {ok, state()}.
-init([Host, Opts, Worker]) ->
+init([Host, Worker]) ->
     process_flag(trap_exit, true),
+    Opts = gen_mod:get_module_opts(Host, ?MODULE),
     MyHosts = gen_mod:get_opt_hosts(Opts),
     register_routes(Host, MyHosts, Worker),
     register_iq_handlers(MyHosts, Worker),

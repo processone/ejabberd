@@ -23,25 +23,25 @@
 -behaviour(supervisor).
 
 %% API
--export([start/2, start_link/2, procname/1]).
+-export([start/1, start_link/1, procname/1]).
 %% Supervisor callbacks
 -export([init/1]).
 
 %%%===================================================================
 %%% API functions
 %%%===================================================================
-start(Host, Opts) ->
+start(Host) ->
     Spec = #{id => procname(Host),
-	     start => {?MODULE, start_link, [Host, Opts]},
+	     start => {?MODULE, start_link, [Host]},
 	     restart => permanent,
 	     shutdown => infinity,
 	     type => supervisor,
 	     modules => [?MODULE]},
     supervisor:start_child(ejabberd_gen_mod_sup, Spec).
 
-start_link(Host, Opts) ->
+start_link(Host) ->
     Proc = procname(Host),
-    supervisor:start_link({local, Proc}, ?MODULE, [Host, Opts]).
+    supervisor:start_link({local, Proc}, ?MODULE, [Host]).
 
 -spec procname(binary()) -> atom().
 procname(Host) ->
@@ -50,12 +50,12 @@ procname(Host) ->
 %%%===================================================================
 %%% Supervisor callbacks
 %%%===================================================================
-init([Host, Opts]) ->
+init([Host]) ->
     Cores = erlang:system_info(logical_processors),
     Specs = lists:foldl(
 	      fun(I, Acc) ->
 		      [#{id => mod_muc:procname(Host, I),
-			 start => {mod_muc, start_link, [Host, Opts, I]},
+			 start => {mod_muc, start_link, [Host, I]},
 			 restart => permanent,
 			 shutdown => timer:minutes(1),
 			 type => worker,

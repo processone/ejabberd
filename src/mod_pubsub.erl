@@ -241,9 +241,9 @@ stop(Host) ->
 %%--------------------------------------------------------------------
 -spec init([binary() | [{_,_}],...]) -> {'ok',state()}.
 
-init([ServerHost, Opts]) ->
+init([ServerHost|_]) ->
     process_flag(trap_exit, true),
-    ?DEBUG("Pubsub init ~p ~p", [ServerHost, Opts]),
+    Opts = gen_mod:get_module_opts(ServerHost, ?MODULE),
     Hosts = gen_mod:get_opt_hosts(Opts),
     Access = mod_pubsub_opt:access_createnode(Opts),
     PepOffline = mod_pubsub_opt:ignore_pep_from_offline(Opts),

@@ -96,8 +96,9 @@ depends(_Host, _Opts) ->
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
-init([Host, Opts]) ->
+init([Host|_]) ->
     process_flag(trap_exit, true),
+    Opts = gen_mod:get_module_opts(Host, ?MODULE),
     {ok, init_state(Host, Opts)}.
 
 handle_call({check_access_log, ServerHost, FromJID}, _From, State) ->

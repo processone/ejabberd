@@ -230,8 +230,9 @@ depends(_Host, _Opts) ->
 %% gen_server callbacks.
 %%--------------------------------------------------------------------
 -spec init(list()) -> {ok, state()}.
-init([ServerHost, Opts]) ->
+init([ServerHost|_]) ->
     process_flag(trap_exit, true),
+    Opts = gen_mod:get_module_opts(ServerHost, ?MODULE),
     Hosts = gen_mod:get_opt_hosts(Opts),
     Name = mod_http_upload_opt:name(Opts),
     Access = mod_http_upload_opt:access(Opts),

@@ -151,8 +151,9 @@ user_send_packet(Acc) ->
 %%====================================================================
 
 -spec init(list()) -> {ok, state()}.
-init([LServerS, Opts]) ->
+init([LServerS|_]) ->
     process_flag(trap_exit, true),
+    Opts = gen_mod:get_module_opts(LServerS, ?MODULE),
     [LServiceS|_] = gen_mod:get_opt_hosts(Opts),
     Access = mod_multicast_opt:access(Opts),
     SLimits = build_service_limit_record(mod_multicast_opt:limits(Opts)),

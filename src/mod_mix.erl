@@ -251,8 +251,9 @@ process_mam_query(IQ) ->
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-init([Host, Opts]) ->
+init([Host|_]) ->
     process_flag(trap_exit, true),
+    Opts = gen_mod:get_module_opts(Host, ?MODULE),
     Mod = gen_mod:db_mod(Opts, ?MODULE),
     MyHosts = gen_mod:get_opt_hosts(Opts),
     case Mod:init(Host, gen_mod:set_opt(hosts, MyHosts, Opts)) of

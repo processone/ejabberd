@@ -263,8 +263,9 @@ reload(Host, NewOpts, OldOpts) ->
     end,
     init_cache(NewMod, Host, NewOpts).
 
-init([Host, Opts]) ->
+init([Host|_]) ->
     process_flag(trap_exit, true),
+    Opts = gen_mod:get_module_opts(Host, ?MODULE),
     Mod = gen_mod:db_mod(Opts, ?MODULE),
     init_cache(Mod, Host, Opts),
     Mod:init(Host, Opts),

@@ -33,7 +33,7 @@
 -export([init/1, handle_info/2, handle_call/3,
 	 handle_cast/2, terminate/2, code_change/3]).
 
--export([start_link/2, reload/3, add_listener/2, process_disco_info/1,
+-export([start_link/1, reload/3, add_listener/2, process_disco_info/1,
 	 process_disco_items/1, process_vcard/1, process_bytestreams/1,
 	 delete_listener/1, route/1]).
 
@@ -50,17 +50,17 @@
 %%% gen_server callbacks
 %%%------------------------
 
-start_link(Host, Opts) ->
+start_link(Host) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
-    gen_server:start_link({local, Proc}, ?MODULE,
-			  [Host, Opts], []).
+    gen_server:start_link({local, Proc}, ?MODULE, [Host], []).
 
 reload(Host, NewOpts, OldOpts) ->
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     gen_server:cast(Proc, {reload, Host, NewOpts, OldOpts}).
 
-init([Host, Opts]) ->
+init([Host]) ->
     process_flag(trap_exit, true),
+    Opts = gen_mod:get_module_opts(Host, mod_proxy65),
     MyHosts = gen_mod:get_opt_hosts(Opts),
     lists:foreach(
       fun(MyHost) ->
