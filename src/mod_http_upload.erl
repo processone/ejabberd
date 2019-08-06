@@ -61,6 +61,7 @@
 %% gen_mod/supervisor callbacks.
 -export([start/2,
 	 stop/1,
+	 reload/3,
 	 depends/2,
 	 mod_opt_type/1,
 	 mod_options/1]).
@@ -90,23 +91,23 @@
 -include("translate.hrl").
 
 -record(state,
-	{server_host            :: binary(),
-	 hosts                  :: [binary()],
-	 name                   :: binary(),
-	 access                 :: atom(),
-	 max_size               :: pos_integer() | infinity,
-	 secret_length          :: pos_integer(),
-	 jid_in_url             :: sha1 | node,
+	{server_host = <<>>     :: binary(),
+	 hosts = []             :: [binary()],
+	 name = <<>>            :: binary(),
+	 access = none          :: atom(),
+	 max_size = infinity    :: pos_integer() | infinity,
+	 secret_length = 40     :: pos_integer(),
+	 jid_in_url = sha1      :: sha1 | node,
 	 file_mode              :: integer() | undefined,
 	 dir_mode               :: integer() | undefined,
-	 docroot                :: binary(),
-	 put_url                :: binary(),
-	 get_url                :: binary(),
+	 docroot = <<>>         :: binary(),
+	 put_url = <<>>         :: binary(),
+	 get_url = <<>>         :: binary(),
 	 service_url            :: binary() | undefined,
-	 thumbnail              :: boolean(),
-	 custom_headers         :: [{binary(), binary()}],
+	 thumbnail = false      :: boolean(),
+	 custom_headers = []    :: [{binary(), binary()}],
 	 slots = #{}            :: slots(),
-	 external_secret        :: binary()}).
+	 external_secret = <<>> :: binary()}).
 
 -record(media_info,
 	{path   :: binary(),
@@ -122,36 +123,36 @@
 %%--------------------------------------------------------------------
 %% gen_mod/supervisor callbacks.
 %%--------------------------------------------------------------------
--spec start(binary(), gen_mod:opts()) -> {ok, pid()} | {error, already_started}.
+-spec start(binary(), gen_mod:opts()) -> {ok, pid()} | {error, term()}.
 start(ServerHost, Opts) ->
-    case mod_http_upload_opt:rm_on_unregister(Opts) of
-	true ->
-	    ejabberd_hooks:add(remove_user, ServerHost, ?MODULE,
-			       remove_user, 50);
-	false ->
-	    ok
-    end,
     Proc = get_proc_name(ServerHost, ?MODULE),
-    case whereis(Proc) of
-	undefined ->
-	    gen_mod:start_child(?MODULE, ServerHost, Opts, Proc);
-	_Pid ->
+    case gen_mod:start_child(?MODULE, ServerHost, Opts, Proc) of
+	{ok, _} = Ret -> Ret;
+	{error, {already_started, _}} = Err ->
 	    ?ERROR_MSG("Multiple virtual hosts can't use a single 'put_url' "
 		       "without the @HOST@ keyword", []),
-	    {error, already_started}
+	    Err;
+	Err ->
+	    Err
     end.
 
 -spec stop(binary()) -> ok | {error, any()}.
 stop(ServerHost) ->
-    case mod_http_upload_opt:rm_on_unregister(ServerHost) of
-	true ->
-	    ejabberd_hooks:delete(remove_user, ServerHost, ?MODULE,
-				  remove_user, 50);
-	false ->
-	    ok
-    end,
     Proc = get_proc_name(ServerHost, ?MODULE),
     gen_mod:stop_child(Proc).
+
+-spec reload(binary(), gen_mod:opts(), gen_mod:opts()) -> ok | {ok, pid()} | {error, term()}.
+reload(ServerHost, NewOpts, OldOpts) ->
+    NewURL = mod_http_upload_opt:put_url(NewOpts),
+    OldURL = mod_http_upload_opt:put_url(OldOpts),
+    OldProc = get_proc_name(ServerHost, ?MODULE, OldURL),
+    NewProc = get_proc_name(ServerHost, ?MODULE, NewURL),
+    if OldProc /= NewProc ->
+	    gen_mod:stop_child(OldProc),
+	    start(ServerHost, NewOpts);
+       true ->
+	    gen_server:cast(NewProc, {reload, NewOpts, OldOpts})
+    end.
 
 -spec mod_opt_type(atom()) -> econf:validator().
 mod_opt_type(name) ->
@@ -234,46 +235,15 @@ init([ServerHost|_]) ->
     process_flag(trap_exit, true),
     Opts = gen_mod:get_module_opts(ServerHost, ?MODULE),
     Hosts = gen_mod:get_opt_hosts(Opts),
-    Name = mod_http_upload_opt:name(Opts),
-    Access = mod_http_upload_opt:access(Opts),
-    MaxSize = mod_http_upload_opt:max_size(Opts),
-    SecretLength = mod_http_upload_opt:secret_length(Opts),
-    JIDinURL = mod_http_upload_opt:jid_in_url(Opts),
-    DocRoot = mod_http_upload_opt:docroot(Opts),
-    FileMode = mod_http_upload_opt:file_mode(Opts),
-    DirMode = mod_http_upload_opt:dir_mode(Opts),
-    PutURL = mod_http_upload_opt:put_url(Opts),
-    GetURL = case mod_http_upload_opt:get_url(Opts) of
-		 undefined -> PutURL;
-		 URL -> URL
-	     end,
-    ServiceURL = mod_http_upload_opt:service_url(Opts),
-    Thumbnail = mod_http_upload_opt:thumbnail(Opts),
-    ExternalSecret = mod_http_upload_opt:external_secret(Opts),
-    CustomHeaders = mod_http_upload_opt:custom_headers(Opts),
-    DocRoot1 = expand_home(str:strip(DocRoot, right, $/)),
-    DocRoot2 = expand_host(DocRoot1, ServerHost),
-    case DirMode of
-	undefined ->
-	    ok;
-	Mode ->
-	    file:change_mode(DocRoot2, Mode)
+    case mod_http_upload_opt:rm_on_unregister(Opts) of
+	true ->
+	    ejabberd_hooks:add(remove_user, ServerHost, ?MODULE,
+			       remove_user, 50);
+	false ->
+	    ok
     end,
-    lists:foreach(
-      fun(Host) ->
-	      ejabberd_router:register_route(Host, ServerHost)
-      end, Hosts),
-    {ok, #state{server_host = ServerHost, hosts = Hosts, name = Name,
-		access = Access, max_size = MaxSize,
-		secret_length = SecretLength, jid_in_url = JIDinURL,
-		file_mode = FileMode, dir_mode = DirMode,
-		thumbnail = Thumbnail,
-		docroot = DocRoot2,
-		put_url = expand_host(str:strip(PutURL, right, $/), ServerHost),
-		get_url = expand_host(str:strip(GetURL, right, $/), ServerHost),
-		service_url = ServiceURL,
-		external_secret = ExternalSecret,
-		custom_headers = CustomHeaders}}.
+    State = init_state(ServerHost, Hosts, Opts),
+    {ok, State}.
 
 -spec handle_call(_, {pid(), _}, state())
       -> {reply, {ok, pos_integer(), binary(),
@@ -309,6 +279,24 @@ handle_call(Request, From, State) ->
     {noreply, State}.
 
 -spec handle_cast(_, state()) -> {noreply, state()}.
+handle_cast({reload, NewOpts, OldOpts},
+	    #state{server_host = ServerHost} = State) ->
+    case {mod_http_upload_opt:rm_on_unregister(NewOpts),
+	  mod_http_upload_opt:rm_on_unregister(OldOpts)} of
+	{true, false} ->
+	    ejabberd_hooks:add(remove_user, ServerHost, ?MODULE,
+			       remove_user, 50);
+	{false, true} ->
+	    ejabberd_hooks:delete(remove_user, ServerHost, ?MODULE,
+				  remove_user, 50);
+	_ ->
+	    ok
+    end,
+    NewHosts = gen_mod:get_opt_hosts(NewOpts),
+    OldHosts = gen_mod:get_opt_hosts(OldOpts),
+    lists:foreach(fun ejabberd_router:unregister_route/1, OldHosts -- NewHosts),
+    NewState = init_state(State#state{hosts = NewHosts -- OldHosts}, NewOpts),
+    {noreply, NewState};
 handle_cast(Request, State) ->
     ?WARNING_MSG("Unexpected cast: ~p", [Request]),
     {noreply, State}.
@@ -347,6 +335,7 @@ handle_info(Info, State) ->
 -spec terminate(normal | shutdown | {shutdown, _} | _, state()) -> ok.
 terminate(Reason, #state{server_host = ServerHost, hosts = Hosts}) ->
     ?DEBUG("Stopping HTTP upload process for ~s: ~p", [ServerHost, Reason]),
+    ejabberd_hooks:delete(remove_user, ServerHost, ?MODULE, remove_user, 50),
     lists:foreach(fun ejabberd_router:unregister_route/1, Hosts).
 
 -spec code_change({down, _} | _, state(), _) -> {ok, state()}.
@@ -485,11 +474,65 @@ process(_LocalPath, #request{method = Method, host = Host, ip = IP}) ->
     http_response(405, [{<<"Allow">>, <<"OPTIONS, HEAD, GET, PUT">>}]).
 
 %%--------------------------------------------------------------------
+%% State initialization
+%%--------------------------------------------------------------------
+-spec init_state(binary(), [binary()], gen_mod:opts()) -> state().
+init_state(ServerHost, Hosts, Opts) ->
+    init_state(#state{server_host = ServerHost, hosts = Hosts}, Opts).
+
+-spec init_state(state(), gen_mod:opts()) -> state().
+init_state(#state{server_host = ServerHost, hosts = Hosts} = State, Opts) ->
+    Name = mod_http_upload_opt:name(Opts),
+    Access = mod_http_upload_opt:access(Opts),
+    MaxSize = mod_http_upload_opt:max_size(Opts),
+    SecretLength = mod_http_upload_opt:secret_length(Opts),
+    JIDinURL = mod_http_upload_opt:jid_in_url(Opts),
+    DocRoot = mod_http_upload_opt:docroot(Opts),
+    FileMode = mod_http_upload_opt:file_mode(Opts),
+    DirMode = mod_http_upload_opt:dir_mode(Opts),
+    PutURL = mod_http_upload_opt:put_url(Opts),
+    GetURL = case mod_http_upload_opt:get_url(Opts) of
+		 undefined -> PutURL;
+		 URL -> URL
+	     end,
+    ServiceURL = mod_http_upload_opt:service_url(Opts),
+    Thumbnail = mod_http_upload_opt:thumbnail(Opts),
+    ExternalSecret = mod_http_upload_opt:external_secret(Opts),
+    CustomHeaders = mod_http_upload_opt:custom_headers(Opts),
+    DocRoot1 = expand_home(str:strip(DocRoot, right, $/)),
+    DocRoot2 = expand_host(DocRoot1, ServerHost),
+    case DirMode of
+	undefined ->
+	    ok;
+	Mode ->
+	    file:change_mode(DocRoot2, Mode)
+    end,
+    lists:foreach(
+      fun(Host) ->
+	      ejabberd_router:register_route(Host, ServerHost)
+      end, Hosts),
+    State#state{server_host = ServerHost, hosts = Hosts, name = Name,
+		access = Access, max_size = MaxSize,
+		secret_length = SecretLength, jid_in_url = JIDinURL,
+		file_mode = FileMode, dir_mode = DirMode,
+		thumbnail = Thumbnail,
+		docroot = DocRoot2,
+		put_url = expand_host(str:strip(PutURL, right, $/), ServerHost),
+		get_url = expand_host(str:strip(GetURL, right, $/), ServerHost),
+		service_url = ServiceURL,
+		external_secret = ExternalSecret,
+		custom_headers = CustomHeaders}.
+
+%%--------------------------------------------------------------------
 %% Exported utility functions.
 %%--------------------------------------------------------------------
 -spec get_proc_name(binary(), atom()) -> atom().
 get_proc_name(ServerHost, ModuleName) ->
     PutURL = mod_http_upload_opt:put_url(ServerHost),
+    get_proc_name(ServerHost, ModuleName, PutURL).
+
+-spec get_proc_name(binary(), atom(), binary()) -> atom().
+get_proc_name(ServerHost, ModuleName, PutURL) ->
     %% Once we depend on OTP >= 20.0, we can use binaries with http_uri.
     {ok, {_Scheme, _UserInfo, Host0, _Port, Path0, _Query}} =
 	http_uri:parse(binary_to_list(expand_host(PutURL, ServerHost))),

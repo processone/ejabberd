@@ -56,7 +56,7 @@
 
 -callback start(binary(), opts()) -> ok | {ok, pid()} | {error, term()}.
 -callback stop(binary()) -> any().
--callback reload(binary(), opts(), opts()) -> ok | {ok, pid()}.
+-callback reload(binary(), opts(), opts()) -> ok | {ok, pid()} | {error, term()}.
 -callback mod_opt_type(atom()) -> econf:validator().
 -callback mod_options(binary()) -> [{atom(), term()} | atom()].
 -callback depends(binary(), opts()) -> [{module(), hard | soft}].
