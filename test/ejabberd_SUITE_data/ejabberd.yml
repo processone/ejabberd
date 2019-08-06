@@ -100,8 +100,10 @@ modules:
   mod_configure: []
   mod_disco: []
   mod_ping: []
-  mod_proxy65: []
-  mod_muc: []
+  mod_proxy65:
+    vcard: VCARD
+  mod_muc:
+    vcard: VCARD
   mod_muc_admin: []
   mod_carboncopy: []
   mod_mam: []
@@ -124,6 +126,7 @@ Welcome to this XMPP server."
     put_url: PUT_URL
     get_url: GET_URL
     max_size: 10000
+    vcard: VCARD
 registration_timeout: infinity
 route_subdomains: s2s
 s2s_use_starttls: false

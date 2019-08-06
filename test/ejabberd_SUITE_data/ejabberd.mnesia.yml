@@ -13,6 +13,7 @@ define_macro:
         db_type: internal
       mod_muc:
         db_type: internal
+        vcard: VCARD
       mod_offline:
         db_type: internal
       mod_privacy:
@@ -26,6 +27,7 @@ define_macro:
         plugins:
           - "flat"
           - "pep"
+        vcard: VCARD
       mod_roster:
         versioning: true
         store_current_id: true
@@ -34,6 +36,7 @@ define_macro:
         db_type: internal
       mod_vcard:
         db_type: internal
+        vcard: VCARD
       mod_vcard_xupdate: []
       mod_client_state:
         queue_presence: true

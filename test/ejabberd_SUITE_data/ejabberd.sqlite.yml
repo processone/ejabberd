@@ -16,6 +16,7 @@ define_macro:
       mod_muc:
         db_type: sql
         ram_db_type: sql
+        vcard: VCARD
       mod_offline:
         db_type: sql
       mod_privacy:
@@ -30,6 +31,7 @@ define_macro:
         plugins:
           - "flat"
           - "pep"
+        vcard: VCARD
       mod_roster:
         versioning: true
         store_current_id: true
@@ -38,6 +40,7 @@ define_macro:
         db_type: sql
       mod_vcard:
         db_type: sql
+        vcard: VCARD
       mod_vcard_xupdate: []
       mod_adhoc: []
       mod_configure: []

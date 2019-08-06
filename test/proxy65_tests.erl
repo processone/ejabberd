@@ -49,7 +49,8 @@ feature_enabled(Config) ->
 service_vcard(Config) ->
     JID = proxy_jid(Config),
     ct:comment("Retreiving vCard from ~s", [jid:encode(JID)]),
-    #iq{type = result, sub_els = [#vcard_temp{}]} =
+    VCard = mod_proxy65_opt:vcard(?config(server, Config)),
+    #iq{type = result, sub_els = [VCard]} =
 	send_recv(Config, #iq{type = get, to = JID, sub_els = [#vcard_temp{}]}),
     disconnect(Config).
 

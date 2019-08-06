@@ -22,3 +22,106 @@ define_macro:
   PGSQL_PORT: @@pgsql_port@@
   PGSQL_PASS: "@@pgsql_pass@@"
   PGSQL_DB: "@@pgsql_db@@"
+  VCARD:
+    version: "1.0"
+    fn: Full Name
+    n:
+      family: Family
+      given: Given
+      middle: Middle
+      prefix: Prefix
+      suffix: Suffix
+    nickname: Nickname
+    photo:
+      type: image/png
+      extval: https://domain.tld/photo.png
+      binval: >-
+        iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQAAAAA3bvkkAA
+        AACklEQVR4AWNoAAAAggCBTBfX3wAAAABJRU5ErkJggg==
+    bday: 2000-01-01
+    adr:
+      -
+        home: true
+        work: true
+        postal: true
+        parcel: true
+        dom: true
+        intl: true
+        pref: true
+        pobox: Pobox
+        extadd: Extadd
+        street: Street
+        locality: Locality
+        region: Region
+        pcode: Pcode
+        ctry: Ctry
+    label:
+      -
+        home: true
+        work: true
+        postal: true
+        parcel: true
+        dom: true
+        intl: true
+        pref: true
+        line:
+          - Line1
+          - Line2
+    tel:
+      -
+        home: true
+        work: true
+        voice: true
+        fax: true
+        pager: true
+        msg: true
+        cell: true
+        video: true
+        bbs: true
+        modem: true
+        isdn: true
+        pcs: true
+        pref: true
+        number: +7-900-01-02
+    email:
+      -
+        home: true
+        work: true
+        internet: true
+        pref: true
+        x400: true
+        userid: user@domain.tld
+    jabberid: user@domain.tld
+    mailer: Mailer
+    tz: TZ
+    geo:
+      lat: "12.0"
+      lon: "21.0"
+    title: Title
+    role: Role
+    logo:
+      type: image/png
+      extval: https://domain.tld/logo.png
+      binval: >-
+        iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQAAAAA3bvkkAA
+        AACklEQVR4AWNoAAAAggCBTBfX3wAAAABJRU5ErkJggg==
+    categories:
+      - Cat1
+      - Cat2
+    note: Note
+    prodid: ProdID
+    rev: Rev
+    sort_string: SortString
+    sound:
+      phonetic: Phonetic
+      extval: https://domain.tld/sound.ogg
+      binval: >-
+        iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQAAAAA3bvkkAA
+        AACklEQVR4AWNoAAAAggCBTBfX3wAAAABJRU5ErkJggg==
+    uid: UID
+    url: https://domain.tld
+    class: public
+    key:
+      type: Type
+      cred: Cred
+    desc: Desc
