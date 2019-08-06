@@ -14,7 +14,6 @@
   "fast_xml": {:hex, :fast_xml, "1.1.37", "e5276cd18d5ce5b179da34b6a1232805956f3057ee45833a0d62a9e414c86e07", [:rebar3], [{:p1_utils, "1.0.16", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "fast_yaml": {:hex, :fast_yaml, "1.0.20", "df9efa0722e99cff12b76c2175fbca1e268ef8949b4b7922e2f966bd2370bd13", [:rebar3], [{:p1_utils, "1.0.16", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "goldrush": {:hex, :goldrush, "0.1.9", "f06e5d5f1277da5c413e84d5a2924174182fb108dabb39d5ec548b27424cd106", [:rebar3], [], "hexpm"},
-  "hamcrest": {:hex, :basho_hamcrest, "0.4.1", "fb7b2c92d252a1e9db936750b86089addaebeb8f87967fb4bbdda61e8863338e", [:make, :mix, :rebar3], [], "hexpm"},
   "jiffy": {:hex, :jiffy, "0.14.13", "225a9a35e26417832c611526567194b4d3adc4f0dfa5f2f7008f4684076f2a01", [:rebar3], [], "hexpm"},
   "jose": {:hex, :jose, "1.9.0", "4167c5f6d06ffaebffd15cdb8da61a108445ef5e85ab8f5a7ad926fdf3ada154", [:mix, :rebar3], [{:base64url, "~> 0.0.1", [hex: :base64url, repo: "hexpm", optional: false]}], "hexpm"},
   "lager": {:hex, :lager, "3.6.10", "6172b43ab720ac33914ccd0aeb21fdbdf88213847707d4b91e6af57b2ae5c4d2", [:rebar3], [{:goldrush, "0.1.9", [hex: :goldrush, repo: "hexpm", optional: false]}], "hexpm"},

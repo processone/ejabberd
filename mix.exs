@@ -74,7 +74,7 @@ defmodule Ejabberd.Mixfile do
      {:xmpp, "~> 1.4.0"},
      {:cache_tab, "~> 1.0"},
      {:stringprep, "~> 1.0"},
-     {:fast_yaml, "~> 1.0", override: true},
+     {:fast_yaml, "~> 1.0"},
      {:fast_tls, "~> 1.1"},
      {:stun, "~> 1.0"},
      {:esip, "~> 1.0"},
