@@ -91,41 +91,45 @@ get_commands_spec() ->
 		       desc = "List existing rooms ('global' to get all vhosts)",
                        policy = admin,
 		       module = ?MODULE, function = muc_online_rooms,
-		       args_desc = ["Server domain where the MUC service is, or 'global' for all"],
-		       args_example = ["example.com"],
+		       args_desc = ["MUC service, or 'global' for all"],
+		       args_example = ["muc.example.com"],
 		       result_desc = "List of rooms",
 		       result_example = ["room1@muc.example.com", "room2@muc.example.com"],
-		       args = [{host, binary}],
+		       args = [{service, binary}],
+		       args_rename = [{host, service}],
 		       result = {rooms, {list, {room, string}}}},
 	#ejabberd_commands{name = muc_online_rooms_by_regex, tags = [muc],
 		       desc = "List existing rooms ('global' to get all vhosts) by regex",
                        policy = admin,
 		       module = ?MODULE, function = muc_online_rooms_by_regex,
-		       args_desc = ["Server domain where the MUC service is, or 'global' for all",
+		       args_desc = ["MUC service, or 'global' for all",
 			   				"Regex pattern for room name"],
-		       args_example = ["example.com", "^prefix"],
+		       args_example = ["muc.example.com", "^prefix"],
 		       result_desc = "List of rooms with summary",
 		       result_example = [{"room1@muc.example.com", "true", 10},
 			   					 {"room2@muc.example.com", "false", 10}],
-		       args = [{host, binary}, {regex, binary}],
+		       args = [{service, binary}, {regex, binary}],
+		       args_rename = [{host, service}],
 		       result = {rooms, {list, {room, {tuple,
 							  [{jid, string},
 							   {public, string},
 							   {participants, integer}
 							  ]}}}}},
      #ejabberd_commands{name = muc_register_nick, tags = [muc],
-		       desc = "Register a nick to a User JID in the MUC service of a server",
+		       desc = "Register a nick to a User JID in a MUC service",
 		       module = ?MODULE, function = muc_register_nick,
-		       args_desc = ["Nick", "User JID", "Server Host"],
-		       args_example = [<<"Tim">>, <<"tim@example.org">>, <<"example.org">>],
-		       args = [{nick, binary}, {jid, binary}, {host, binary}],
+		       args_desc = ["Nick", "User JID", "Service"],
+		       args_example = [<<"Tim">>, <<"tim@example.org">>, <<"muc.example.org">>],
+		       args = [{nick, binary}, {jid, binary}, {service, binary}],
+		       args_rename = [{host, service}],
 		       result = {res, rescode}},
      #ejabberd_commands{name = muc_unregister_nick, tags = [muc],
 		       desc = "Unregister the nick registered by that account in the MUC service",
 		       module = ?MODULE, function = muc_unregister_nick,
 		       args_desc = ["User JID", "MUC service"],
-		       args_example = [<<"tim@example.org">>, <<"example.org">>],
-		       args = [{jid, binary}, {host, binary}],
+		       args_example = [<<"tim@example.org">>, <<"muc.example.org">>],
+		       args = [{jid, binary}, {service, binary}],
+		       args_rename = [{host, service}],
 		       result = {res, rescode}},
 
      #ejabberd_commands{name = create_room, tags = [muc_room],
@@ -174,45 +178,49 @@ get_commands_spec() ->
 		       args = [{file, string}],
 		       result = {res, rescode}},
      #ejabberd_commands{name = rooms_unused_list, tags = [muc],
-		       desc = "List the rooms that are unused for many days in host",
+		       desc = "List the rooms that are unused for many days in the service",
 		       longdesc = "The room recent history is used, so it's recommended "
 			    " to wait a few days after service start before running this.",
 		       module = ?MODULE, function = rooms_unused_list,
-		       args_desc = ["Server host", "Number of days"],
-		       args_example = ["example.com", 31],
+		       args_desc = ["MUC service", "Number of days"],
+		       args_example = ["muc.example.com", 31],
 		       result_desc = "List of unused rooms",
 		       result_example = ["room1@muc.example.com", "room2@muc.example.com"],
-		       args = [{host, binary}, {days, integer}],
+		       args = [{service, binary}, {days, integer}],
+		       args_rename = [{host, service}],
 		       result = {rooms, {list, {room, string}}}},
      #ejabberd_commands{name = rooms_unused_destroy, tags = [muc],
-		       desc = "Destroy the rooms that are unused for many days in host",
+		       desc = "Destroy the rooms that are unused for many days in the service",
 		       longdesc = "The room recent history is used, so it's recommended "
 			    " to wait a few days after service start before running this.",
 		       module = ?MODULE, function = rooms_unused_destroy,
-		       args_desc = ["Server host", "Number of days"],
-		       args_example = ["example.com", 31],
+		       args_desc = ["MUC service", "Number of days"],
+		       args_example = ["muc.example.com", 31],
 		       result_desc = "List of unused rooms that has been destroyed",
 		       result_example = ["room1@muc.example.com", "room2@muc.example.com"],
-		       args = [{host, binary}, {days, integer}],
+		       args = [{service, binary}, {days, integer}],
+		       args_rename = [{host, service}],
 		       result = {rooms, {list, {room, string}}}},
 
      #ejabberd_commands{name = rooms_empty_list, tags = [muc],
 		       desc = "List the rooms that have no messages in archive",
 		       module = ?MODULE, function = rooms_empty_list,
-		       args_desc = ["Server host"],
-		       args_example = ["example.com"],
+		       args_desc = ["MUC service"],
+		       args_example = ["muc.example.com"],
 		       result_desc = "List of empty rooms",
 		       result_example = ["room1@muc.example.com", "room2@muc.example.com"],
-		       args = [{host, binary}],
+		       args = [{service, binary}],
+		       args_rename = [{host, service}],
 		       result = {rooms, {list, {room, string}}}},
      #ejabberd_commands{name = rooms_empty_destroy, tags = [muc],
 		       desc = "Destroy the rooms that have no messages in archive",
 		       module = ?MODULE, function = rooms_empty_destroy,
-		       args_desc = ["Server host"],
-		       args_example = ["example.com"],
+		       args_desc = ["MUC service"],
+		       args_example = ["muc.example.com"],
 		       result_desc = "List of empty rooms that have been destroyed",
 		       result_example = ["room1@muc.example.com", "room2@muc.example.com"],
-		       args = [{host, binary}],
+		       args = [{service, binary}],
+		       args_rename = [{host, service}],
 		       result = {rooms, {list, {room, string}}}},
 
      #ejabberd_commands{name = get_user_rooms, tags = [muc],
@@ -354,17 +362,17 @@ get_commands_spec() ->
 %%% ejabberd commands
 %%%
 
-muc_online_rooms(ServerHost) ->
-    Hosts = find_hosts(ServerHost),
+muc_online_rooms(ServiceArg) ->
+    Hosts = find_services(ServiceArg),
     lists:flatmap(
       fun(Host) ->
 	      [<<Name/binary, "@", Host/binary>>
 	       || {Name, _, _} <- mod_muc:get_online_rooms(Host)]
       end, Hosts).
 
-muc_online_rooms_by_regex(ServerHost, Regex) ->
-	{_, P} = re:compile(Regex),
-    Hosts = find_hosts(ServerHost),
+muc_online_rooms_by_regex(ServiceArg, Regex) ->
+    {_, P} = re:compile(Regex),
+    Hosts = find_services(ServiceArg),
     lists:flatmap(
       fun(Host) ->
 	      [build_summary_room(Name, RoomHost, Pid)
@@ -388,17 +396,17 @@ build_summary_room(Name, Host, Pid) ->
      Participants
     }.
 
-muc_register_nick(Nick, FromBinary, ServerHost) ->
-    Host = find_host(ServerHost),
+muc_register_nick(Nick, FromBinary, Service) ->
+    ServerHost = get_room_serverhost(Service),
     From = jid:decode(FromBinary),
     Lang = <<"en">>,
-    case mod_muc:iq_set_register_info(ServerHost, Host, From, Nick, Lang) of
+    case mod_muc:iq_set_register_info(ServerHost, Service, From, Nick, Lang) of
 	{result, undefined} -> ok;
 	E -> E
     end.
 
-muc_unregister_nick(FromBinary, ServerHost) ->
-    muc_register_nick(<<"">>, FromBinary, ServerHost).
+muc_unregister_nick(FromBinary, Service) ->
+    muc_register_nick(<<"">>, FromBinary, Service).
 
 get_user_rooms(User, Server) ->
     lists:flatmap(
@@ -489,7 +497,8 @@ get_sort_query2(Q) ->
     end.
 
 make_rooms_page(Host, Lang, {Sort_direction, Sort_column}) ->
-    Rooms_names = get_rooms(Host),
+    Service = find_service(Host),
+    Rooms_names = get_rooms(Service),
     Rooms_infos = build_info_rooms(Rooms_names),
     Rooms_sorted = sort_rooms(Sort_direction, Sort_column, Rooms_infos),
     Rooms_prepared = prepare_rooms_infos(Rooms_sorted),
@@ -750,27 +759,28 @@ create_rooms_file(Filename) ->
 %%---------------
 %% Control
 
-rooms_unused_list(ServerHost, Days) ->
-    rooms_report(unused, list, ServerHost, Days).
-rooms_unused_destroy(ServerHost, Days) ->
-    rooms_report(unused, destroy, ServerHost, Days).
+rooms_unused_list(Service, Days) ->
+    rooms_report(unused, list, Service, Days).
+rooms_unused_destroy(Service, Days) ->
+    rooms_report(unused, destroy, Service, Days).
 
-rooms_empty_list(ServerHost) ->
-    rooms_report(empty, list, ServerHost, 0).
-rooms_empty_destroy(ServerHost) ->
-    rooms_report(empty, destroy, ServerHost, 0).
+rooms_empty_list(Service) ->
+    rooms_report(empty, list, Service, 0).
+rooms_empty_destroy(Service) ->
+    rooms_report(empty, destroy, Service, 0).
 
 
-rooms_report(Method, Action, ServerHost, Days) ->
-    {NA, NP, RP} = muc_unused(Method, Action, ServerHost, Days),
+rooms_report(Method, Action, Service, Days) ->
+    {NA, NP, RP} = muc_unused(Method, Action, Service, Days),
     io:format("rooms ~s: ~p out of ~p~n", [Method, NP, NA]),
     [<<R/binary, "@", H/binary>> || {R, H, _P} <- RP].
 
-muc_unused(Method, Action, ServerHost, Last_allowed) ->
+muc_unused(Method, Action, Service, Last_allowed) ->
     %% Get all required info about all existing rooms
-    Rooms_all = get_rooms(ServerHost),
+    Rooms_all = get_rooms(Service),
 
     %% Decide which ones pass the requirements
+    ServerHost = get_room_serverhost(Service),
     Rooms_pass = decide_rooms(Method, Rooms_all, ServerHost, Last_allowed),
 
     Num_rooms_all = length(Rooms_all),
@@ -784,8 +794,8 @@ muc_unused(Method, Action, ServerHost, Last_allowed) ->
 %%---------------
 %% Get info
 
-get_rooms(ServerHost) ->
-    Hosts = find_hosts(ServerHost),
+get_rooms(ServiceArg) ->
+    Hosts = find_services(ServiceArg),
     lists:flatmap(
       fun(Host) ->
 	      mod_muc:get_online_rooms(Host)
@@ -1264,19 +1274,32 @@ make_opts(StateData) ->
 %% Utils
 %%----------------------------
 
-find_host(global) ->
+find_service(global) ->
     global;
-find_host("global") ->
-    global;
-find_host(<<"global">>) ->
-    global;
-find_host(ServerHost) when is_list(ServerHost) ->
-    find_host(list_to_binary(ServerHost));
+find_service(ServerHost) ->
+    hd(gen_mod:get_module_opt_hosts(ServerHost, mod_muc)).
+
+find_services(Global) when Global == global;
+			Global == <<"global">> ->
+    lists:flatmap(
+      fun(ServerHost) ->
+	      case gen_mod:is_loaded(ServerHost, mod_muc) of
+		  true ->
+		      [find_service(ServerHost)];
+		  false ->
+		      []
+	      end
+      end, ejabberd_option:hosts());
+find_services(Service) when is_binary(Service) ->
+    [Service].
+
+get_room_serverhost(Service) when is_binary(Service) ->
+  ejabberd_router:host_of_route(Service).
+
 find_host(ServerHost) ->
     hd(gen_mod:get_module_opt_hosts(ServerHost, mod_muc)).
 
 find_hosts(Global) when Global == global;
-			Global == "global";
 			Global == <<"global">> ->
     lists:flatmap(
       fun(ServerHost) ->
@@ -1287,8 +1310,6 @@ find_hosts(Global) when Global == global;
 		      []
 	      end
       end, ejabberd_option:hosts());
-find_hosts(ServerHost) when is_list(ServerHost) ->
-    find_hosts(list_to_binary(ServerHost));
 find_hosts(ServerHost) ->
     case gen_mod:is_loaded(ServerHost, mod_muc) of
 	true ->
