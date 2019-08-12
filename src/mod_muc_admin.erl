@@ -180,9 +180,10 @@ get_commands_spec() ->
      #ejabberd_commands{name = rooms_unused_list, tags = [muc],
 		       desc = "List the rooms that are unused for many days in the service",
 		       longdesc = "The room recent history is used, so it's recommended "
-			    " to wait a few days after service start before running this.",
+			    " to wait a few days after service start before running this."
+			    " The MUC service argument can be 'global' to get all hosts.",
 		       module = ?MODULE, function = rooms_unused_list,
-		       args_desc = ["MUC service", "Number of days"],
+		       args_desc = ["MUC service, or 'global' for all", "Number of days"],
 		       args_example = ["muc.example.com", 31],
 		       result_desc = "List of unused rooms",
 		       result_example = ["room1@muc.example.com", "room2@muc.example.com"],
@@ -192,9 +193,10 @@ get_commands_spec() ->
      #ejabberd_commands{name = rooms_unused_destroy, tags = [muc],
 		       desc = "Destroy the rooms that are unused for many days in the service",
 		       longdesc = "The room recent history is used, so it's recommended "
-			    " to wait a few days after service start before running this.",
+			    " to wait a few days after service start before running this."
+			    " The MUC service argument can be 'global' to get all hosts.",
 		       module = ?MODULE, function = rooms_unused_destroy,
-		       args_desc = ["MUC service", "Number of days"],
+		       args_desc = ["MUC service, or 'global' for all", "Number of days"],
 		       args_example = ["muc.example.com", 31],
 		       result_desc = "List of unused rooms that has been destroyed",
 		       result_example = ["room1@muc.example.com", "room2@muc.example.com"],
@@ -204,8 +206,9 @@ get_commands_spec() ->
 
      #ejabberd_commands{name = rooms_empty_list, tags = [muc],
 		       desc = "List the rooms that have no messages in archive",
+		       longdesc = "The MUC service argument can be 'global' to get all hosts.",
 		       module = ?MODULE, function = rooms_empty_list,
-		       args_desc = ["MUC service"],
+		       args_desc = ["MUC service, or 'global' for all"],
 		       args_example = ["muc.example.com"],
 		       result_desc = "List of empty rooms",
 		       result_example = ["room1@muc.example.com", "room2@muc.example.com"],
@@ -214,8 +217,9 @@ get_commands_spec() ->
 		       result = {rooms, {list, {room, string}}}},
      #ejabberd_commands{name = rooms_empty_destroy, tags = [muc],
 		       desc = "Destroy the rooms that have no messages in archive",
+		       longdesc = "The MUC service argument can be 'global' to get all hosts.",
 		       module = ?MODULE, function = rooms_empty_destroy,
-		       args_desc = ["MUC service"],
+		       args_desc = ["MUC service, or 'global' for all"],
 		       args_example = ["muc.example.com"],
 		       result_desc = "List of empty rooms that have been destroyed",
 		       result_example = ["room1@muc.example.com", "room2@muc.example.com"],
@@ -548,7 +552,7 @@ sort_rooms(Direction, Column, Rooms) ->
 build_info_rooms(Rooms) ->
     [build_info_room(Room) || Room <- Rooms].
 
-build_info_room({Name, Host, Pid}) ->
+build_info_room({Name, Host, _ServerHost, Pid}) ->
     C = get_room_config(Pid),
     Title = C#config.title,
     Public = C#config.public,
@@ -773,21 +777,20 @@ rooms_empty_destroy(Service) ->
 rooms_report(Method, Action, Service, Days) ->
     {NA, NP, RP} = muc_unused(Method, Action, Service, Days),
     io:format("rooms ~s: ~p out of ~p~n", [Method, NP, NA]),
-    [<<R/binary, "@", H/binary>> || {R, H, _P} <- RP].
+    [<<R/binary, "@", H/binary>> || {R, H, _SH, _P} <- RP].
 
 muc_unused(Method, Action, Service, Last_allowed) ->
     %% Get all required info about all existing rooms
     Rooms_all = get_rooms(Service),
 
     %% Decide which ones pass the requirements
-    ServerHost = get_room_serverhost(Service),
-    Rooms_pass = decide_rooms(Method, Rooms_all, ServerHost, Last_allowed),
+    Rooms_pass = decide_rooms(Method, Rooms_all, Last_allowed),
 
     Num_rooms_all = length(Rooms_all),
     Num_rooms_pass = length(Rooms_pass),
 
     %% Perform the desired action for matching rooms
-    act_on_rooms(Method, Action, Rooms_pass, ServerHost),
+    act_on_rooms(Method, Action, Rooms_pass),
 
     {Num_rooms_all, Num_rooms_pass, Rooms_pass}.
 
@@ -798,7 +801,8 @@ get_rooms(ServiceArg) ->
     Hosts = find_services(ServiceArg),
     lists:flatmap(
       fun(Host) ->
-	      mod_muc:get_online_rooms(Host)
+	      [{RoomName, RoomHost, Host, Pid}
+	       || {RoomName, RoomHost, Pid} <- mod_muc:get_online_rooms(Host)]
       end, Hosts).
 
 get_room_config(Room_pid) ->
@@ -812,11 +816,11 @@ get_room_state(Room_pid) ->
 %%---------------
 %% Decide
 
-decide_rooms(Method, Rooms, ServerHost, Last_allowed) ->
-    Decide = fun(R) -> decide_room(Method, R, ServerHost, Last_allowed) end,
+decide_rooms(Method, Rooms, Last_allowed) ->
+    Decide = fun(R) -> decide_room(Method, R, Last_allowed) end,
     lists:filter(Decide, Rooms).
 
-decide_room(unused, {_Room_name, _Host, Room_pid}, ServerHost, Last_allowed) ->
+decide_room(unused, {_Room_name, _Host, ServerHost, Room_pid}, Last_allowed) ->
     C = get_room_config(Room_pid),
     Persistent = C#config.persistent,
 
@@ -852,7 +856,7 @@ decide_room(unused, {_Room_name, _Host, Room_pid}, ServerHost, Last_allowed) ->
 	_ ->
 	    false
     end;
-decide_room(empty, {Room_name, Host, _Room_pid}, ServerHost, _Last_allowed) ->
+decide_room(empty, {Room_name, Host, ServerHost, _Room_pid}, _Last_allowed) ->
     case gen_mod:is_loaded(ServerHost, mod_mam) of
 	true ->
 	    Room_options = get_room_options(Room_name, Host),
@@ -872,30 +876,20 @@ seconds_to_days(S) ->
 %%---------------
 %% Act
 
-act_on_rooms(Method, Action, Rooms, ServerHost) ->
-    ServerHosts = [ {A, find_host(A)} || A <- ejabberd_option:hosts() ],
-    Delete = fun({_N, H, _Pid} = Room) ->
-		     SH = case ServerHost of
-			      global -> find_serverhost(H, ServerHosts);
-			      O -> O
-			  end,
-
-		     act_on_room(Method, Action, Room, SH)
+act_on_rooms(Method, Action, Rooms) ->
+    Delete = fun(Room) ->
+		     act_on_room(Method, Action, Room)
 	     end,
     lists:foreach(Delete, Rooms).
 
-find_serverhost(Host, ServerHosts) ->
-    {value, {ServerHost, Host}} = lists:keysearch(Host, 2, ServerHosts),
-    ServerHost.
-
-act_on_room(Method, destroy, {N, H, Pid}, SH) ->
+act_on_room(Method, destroy, {N, H, SH, Pid}) ->
     Message = iolist_to_binary(io_lib:format(
         <<"Room destroyed by rooms_~s_destroy.">>, [Method])),
     mod_muc_room:destroy(Pid, Message),
     mod_muc:room_destroyed(H, N, Pid, SH),
     mod_muc:forget_room(SH, H, N);
 
-act_on_room(_Method, list, _, _) ->
+act_on_room(_Method, list, _) ->
     ok.
 
 
