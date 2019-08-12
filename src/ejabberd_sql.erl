@@ -141,8 +141,8 @@ sql_call(Host, Msg) ->
     Timeout = query_timeout(Host),
     case get(?STATE_KEY) of
 	undefined ->
-	    Proc = get_worker(Host),
-	    sync_send_event(Proc, {sql_cmd, Msg, current_time() + Timeout},
+	    sync_send_event(Host,
+			    {sql_cmd, Msg, current_time() + Timeout},
 			    Timeout);
 	_State ->
 	    nested_op(Msg)
@@ -161,6 +161,14 @@ keep_alive(Host, Proc) ->
 	    sync_send_event(Proc, force_timeout, Timeout)
     end.
 
+sync_send_event(Host, Msg, Timeout) when is_binary(Host) ->
+    case ejabberd_sql_sup:start(Host) of
+	ok ->
+	    Proc = get_worker(Host),
+	    sync_send_event(Proc, Msg, Timeout);
+	{error, _} = Err ->
+	    Err
+    end;
 sync_send_event(Proc, Msg, Timeout) ->
     try p1_fsm:sync_send_event(Proc, Msg, Timeout)
     catch _:{Reason, {p1_fsm, _, _}} ->
@@ -993,10 +1001,7 @@ log(Level, Format, Args) ->
     end.
 
 db_opts(Host) ->
-    Type = case ejabberd_option:sql_type(Host) of
-	       undefined -> odbc;
-	       T -> T
-	   end,
+    Type = ejabberd_option:sql_type(Host),
     Server = ejabberd_option:sql_server(Host),
     Timeout = ejabberd_option:sql_connect_timeout(Host),
     Transport = case ejabberd_option:sql_ssl(Host) of

@@ -599,7 +599,7 @@ options() ->
       fun(Host) -> ejabberd_config:default_ram_db(Host, ejabberd_sm) end},
      {sm_use_cache,
       fun(Host) -> ejabberd_config:get_option({use_cache, Host}) end},
-     {sql_type, undefined},
+     {sql_type, odbc},
      {sql_connect_timeout, timer:seconds(5)},
      {sql_database, undefined},
      {sql_keepalive_interval, undefined},
