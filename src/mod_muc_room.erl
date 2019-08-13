@@ -4410,8 +4410,7 @@ send_voice_request(From, Lang, StateData) ->
 			      ok | {error, stanza_error()}.
 check_invitation(From, Invitations, Lang, StateData) ->
     FAffiliation = get_affiliation(From, StateData),
-    CanInvite = ((StateData#state.config)#config.allow_user_invites
-	        and not (StateData#state.config)#config.members_only) orelse
+    CanInvite = (StateData#state.config)#config.allow_user_invites orelse
 	        FAffiliation == admin orelse FAffiliation == owner,
     case CanInvite of
 	true ->
