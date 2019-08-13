@@ -147,7 +147,7 @@
 -export([sql_start_interval/0, sql_start_interval/1]).
 -export([sql_type/0, sql_type/1]).
 -export([sql_username/0, sql_username/1]).
--export([trusted_proxies/0, trusted_proxies/1]).
+-export([trusted_proxies/0]).
 -export([use_cache/0, use_cache/1]).
 -export([validate_stream/0]).
 -export([version/0]).
@@ -991,10 +991,7 @@ sql_username(Host) ->
 
 -spec trusted_proxies() -> 'all' | [{inet:ip4_address() | inet:ip6_address(),byte()}].
 trusted_proxies() ->
-    trusted_proxies(global).
--spec trusted_proxies(global | binary()) -> 'all' | [{inet:ip4_address() | inet:ip6_address(),byte()}].
-trusted_proxies(Host) ->
-    ejabberd_config:get_option({trusted_proxies, Host}).
+    ejabberd_config:get_option({trusted_proxies, global}).
 
 -spec use_cache() -> boolean().
 use_cache() ->

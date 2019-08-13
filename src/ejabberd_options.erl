@@ -698,6 +698,7 @@ globals() ->
      sm_cache_life_time,
      sm_cache_missed,
      sm_cache_size,
+     trusted_proxies,
      validate_stream,
      version,
      websocket_origin,

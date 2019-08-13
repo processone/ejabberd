@@ -213,31 +213,36 @@ process(RPath,
 	#request{auth = Auth, lang = Lang, host = HostHTTP,
 		 method = Method} =
 	    Request) ->
-    case get_auth_admin(Auth, HostHTTP, RPath, Method) of
-      {ok, {User, Server}} ->
-	  AJID = get_jid(Auth, HostHTTP, Method),
-	  process_admin(global,
-			Request#request{path = RPath,
-					us = {User, Server}},
-			AJID);
-      {unauthorized, <<"no-auth-provided">>} ->
-	  {401,
-	   [{<<"WWW-Authenticate">>,
-	     <<"basic realm=\"ejabberd\"">>}],
-	   ejabberd_web:make_xhtml([?XCT(<<"h1">>,
-					 ?T("Unauthorized"))])};
-      {unauthorized, Error} ->
-	  {BadUser, _BadPass} = Auth,
-	  {IPT, _Port} = Request#request.ip,
-	  IPS = ejabberd_config:may_hide_data(misc:ip_to_list(IPT)),
-	  ?WARNING_MSG("Access of ~p from ~p failed with error: ~p",
-		       [BadUser, IPS, Error]),
-	  {401,
-	   [{<<"WWW-Authenticate">>,
-	     <<"basic realm=\"auth error, retry login "
-	       "to ejabberd\"">>}],
-	   ejabberd_web:make_xhtml([?XCT(<<"h1">>,
-					 ?T("Unauthorized"))])}
+    case ejabberd_router:is_my_host(HostHTTP) of
+	true ->
+	    case get_auth_admin(Auth, HostHTTP, RPath, Method) of
+		{ok, {User, Server}} ->
+		    AJID = get_jid(Auth, HostHTTP, Method),
+		    process_admin(global,
+				  Request#request{path = RPath,
+						  us = {User, Server}},
+				  AJID);
+		{unauthorized, <<"no-auth-provided">>} ->
+		    {401,
+		     [{<<"WWW-Authenticate">>,
+		       <<"basic realm=\"ejabberd\"">>}],
+		     ejabberd_web:make_xhtml([?XCT(<<"h1">>,
+						   ?T("Unauthorized"))])};
+		{unauthorized, Error} ->
+		    {BadUser, _BadPass} = Auth,
+		    {IPT, _Port} = Request#request.ip,
+		    IPS = ejabberd_config:may_hide_data(misc:ip_to_list(IPT)),
+		    ?WARNING_MSG("Access of ~p from ~p failed with error: ~p",
+				 [BadUser, IPS, Error]),
+		    {401,
+		     [{<<"WWW-Authenticate">>,
+		       <<"basic realm=\"auth error, retry login "
+			 "to ejabberd\"">>}],
+		     ejabberd_web:make_xhtml([?XCT(<<"h1">>,
+						   ?T("Unauthorized"))])}
+	    end;
+	false ->
+	    ejabberd_web:error(not_found)
     end.
 
 get_auth_admin(Auth, HostHTTP, RPath, Method) ->
