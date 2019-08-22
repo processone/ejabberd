@@ -1292,9 +1292,7 @@ get_node(global, Node, [<<"backup">>], Query, Lang) ->
 				   [?CT(?T("Export data of users in a host to PIEFXIS "
 					   "files (XEP-0227):")),
 				    ?C(<<" ">>),
-				    ?INPUT(<<"text">>,
-					   <<"export_piefxis_host_dirhost">>,
-					   (ejabberd_config:get_myname()))]),
+				    make_select_host(Lang, <<"export_piefxis_host_dirhost">>)]),
 			       ?XE(<<"td">>,
 				   [?INPUT(<<"text">>,
 					   <<"export_piefxis_host_dirpath">>,
@@ -1308,9 +1306,7 @@ get_node(global, Node, [<<"backup">>], Query, Lang) ->
                                    [?CT(?T("Export all tables as SQL queries "
 					   "to a file:")),
                                     ?C(<<" ">>),
-                                    ?INPUT(<<"text">>,
-                                           <<"export_sql_filehost">>,
-                                           (ejabberd_config:get_myname()))]),
+                                    make_select_host(Lang, <<"export_sql_filehost">>)]),
                                ?XE(<<"td">>,
 				   [?INPUT(<<"text">>,
                                            <<"export_sql_filepath">>,
@@ -1479,6 +1475,15 @@ node_parse_query(Node, Query) ->
 	    _ -> nothing
 	  end
     end.
+
+make_select_host(Lang, Name) ->
+    ?XAE(<<"select">>,
+	 [{<<"name">>, Name}],
+	 (lists:map(fun (Host) ->
+			    ?XACT(<<"option">>,
+				  ([{<<"value">>, Host}]), Host)
+		    end,
+		    ejabberd_config:get_option(hosts)))).
 
 db_storage_select(ID, Opt, Lang) ->
     ?XAE(<<"select">>,
