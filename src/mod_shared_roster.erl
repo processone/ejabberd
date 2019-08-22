@@ -545,7 +545,7 @@ is_user_in_group(US, Group, Host) ->
 %% @spec (Host::string(), {User::string(), Server::string()}, Group::string()) -> {atomic, ok} | error
 add_user_to_group(Host, US, Group) ->
     {_LUser, LServer} = US,
-    case lists:member(LServer, ejabberd_config:get_myhosts()) of
+    case lists:member(LServer, ejabberd_config:get_option(hosts)) of
 	true -> add_user_to_group2(Host, US, Group);
 	false ->
 	    ?INFO_MSG("Attempted adding to shared roster user of inexistent vhost ~s", [LServer]),
