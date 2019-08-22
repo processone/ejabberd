@@ -265,6 +265,13 @@ get_auth_admin(Auth, HostHTTP, RPath, Method) ->
 
 get_auth_account(HostOfRule, AccessRule, User, Server,
 		 Pass) ->
+    case lists:member(Server, ejabberd_config:get_myhosts()) of
+	true -> get_auth_account2(HostOfRule, AccessRule, User, Server, Pass);
+	false -> {unauthorized, <<"inexistent-host">>}
+    end.
+
+get_auth_account2(HostOfRule, AccessRule, User, Server,
+		 Pass) ->
     case ejabberd_auth:check_password(User, <<"">>, Server, Pass) of
       true ->
 	  case any_rules_allowed(HostOfRule, AccessRule,
