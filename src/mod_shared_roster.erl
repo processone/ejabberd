@@ -542,8 +542,16 @@ is_user_in_group(US, Group, Host) ->
 	    true
     end.
 
-%% @spec (Host::string(), {User::string(), Server::string()}, Group::string()) -> {atomic, ok}
+%% @spec (Host::string(), {User::string(), Server::string()}, Group::string()) -> {atomic, ok} | error
 add_user_to_group(Host, US, Group) ->
+    {_LUser, LServer} = US,
+    case lists:member(LServer, ejabberd_config:get_myhosts()) of
+	true -> add_user_to_group2(Host, US, Group);
+	false ->
+	    ?INFO_MSG("Attempted adding to shared roster user of inexistent vhost ~s", [LServer]),
+	    error
+    end.
+add_user_to_group2(Host, US, Group) ->
     {LUser, LServer} = US,
     case ejabberd_regexp:run(LUser, <<"^@.+@\$">>) of
       match ->
@@ -871,6 +879,12 @@ shared_roster_group(Host, Group, Query, Lang) ->
       [?XC(<<"h2">>, <<(translate:translate(Lang, ?T("Group ")))/binary, Group/binary>>)] ++
 	case Res of
 	  ok -> [?XREST(?T("Submitted"))];
+	  {error_jids, NonAddedList1} ->
+		NonAddedList2 = [jid:encode({U,S,<<>>}) || {U,S} <- NonAddedList1],
+		NonAddedList3 = str:join(NonAddedList2, <<", ">>),
+		NonAddedText1 = translate:translate(Lang, ?T("Members not added (inexistent vhost): ")),
+		NonAddedText2 = str:concat(NonAddedText1, NonAddedList3),
+		[?XRES(NonAddedText2)];
 	  error -> [?XREST(?T("Bad format"))];
 	  nothing -> []
 	end
@@ -951,12 +965,15 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 									Group)
 			       end,
 			       RemovedMembers),
-		 lists:foreach(fun (US) ->
-				       mod_shared_roster:add_user_to_group(Host, US,
+		 NonAddedMembers = lists:filter(fun (US) ->
+				       error == mod_shared_roster:add_user_to_group(Host, US,
 								   Group)
 			       end,
 			       AddedMembers),
-		 ok
+		 case NonAddedMembers of
+		    [] -> ok;
+		    _ -> {error_jids, NonAddedMembers}
+		 end
 	  end;
       _ -> nothing
     end.
