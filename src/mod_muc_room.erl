@@ -2418,7 +2418,8 @@ send_new_presence(NJID, Reason, IsInitialPresence, StateData, OldStateData) ->
 	  last_presence = Presence0} = UserInfo =
 	maps:get(jid:tolower(LJID), StateData#state.users),
     {Role1, Presence1} =
-        case presence_broadcast_allowed(NJID, StateData) of
+        case (presence_broadcast_allowed(NJID, StateData) orelse
+         presence_broadcast_allowed(NJID, OldStateData)) of
             true -> {Role0, Presence0};
             false -> {none, #presence{type = unavailable}}
         end,
