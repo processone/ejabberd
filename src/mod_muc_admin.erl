@@ -458,8 +458,9 @@ web_page_main(_, #request{path=[<<"muc">>], lang = Lang} = _Request) ->
 			  fun(Host, Acc) ->
 				  Acc + mod_muc:count_online_rooms(Host)
 			  end, 0, find_hosts(global)),
-    Res = [?XCT(<<"h1">>, ?T("Multi-User Chat")),
-	   ?XCT(<<"h3">>, ?T("Statistics")),
+    PageTitle = translate:translate(Lang, ?T("Multi-User Chat")),
+    Res = ?H1GL(PageTitle, <<"mod-muc">>, <<"mod_muc">>) ++
+	  [?XCT(<<"h3">>, ?T("Statistics")),
 	   ?XAE(<<"table">>, [],
 		[?XE(<<"tbody">>, [?TDTD(?T("Total rooms"), OnlineRoomsNumber)
 				  ])
@@ -531,8 +532,9 @@ make_rooms_page(Host, Lang, {Sort_direction, Sort_column}) ->
 	  end,
 	  1,
 	  Titles),
-    [?XCT(<<"h1">>, ?T("Multi-User Chat")),
-     ?XCT(<<"h2">>, ?T("Chatrooms")),
+    PageTitle = translate:translate(Lang, ?T("Multi-User Chat")),
+    ?H1GL(PageTitle, <<"mod-muc">>, <<"mod_muc">>) ++
+    [?XCT(<<"h2">>, ?T("Chatrooms")),
      ?XE(<<"table">>,
 	 [?XE(<<"thead">>,
 	      [?XE(<<"tr">>, Titles_TR)]

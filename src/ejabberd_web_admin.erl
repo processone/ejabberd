@@ -450,7 +450,7 @@ process_admin(_Host, #request{path = [<<"additions.js">>]}, _) ->
 process_admin(global, #request{path = [<<"vhosts">>], lang = Lang}, AJID) ->
     Res = list_vhosts(Lang, AJID),
     make_xhtml((?H1GL((translate:translate(Lang, ?T("Virtual Hosts"))),
-		      <<"virtualhosting">>, ?T("Virtual Hosting")))
+		      <<"virtual-hosting">>, ?T("Virtual Hosting")))
 		 ++ Res,
 	       global, Lang, AJID);
 process_admin(Host,  #request{path = [<<"users">>], q = Query,
@@ -485,8 +485,8 @@ process_admin(Host, #request{path = [<<"last-activity">>],
 		list_last_activity(Host, Lang, false, Month);
 	    _ -> list_last_activity(Host, Lang, true, Month)
 	  end,
-    make_xhtml([?XCT(<<"h1">>, ?T("Users Last Activity"))]
-		 ++
+    PageH1 = ?H1GL(translate:translate(Lang, ?T("Users Last Activity")), <<"mod-last">>, <<"mod_last">>),
+    make_xhtml(PageH1 ++
 		 [?XAE(<<"form">>,
 		       [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
 		       [?CT(?T("Period: ")),
@@ -516,8 +516,8 @@ process_admin(Host, #request{path = [<<"last-activity">>],
 	       Host, Lang, AJID);
 process_admin(Host, #request{path = [<<"stats">>], lang = Lang}, AJID) ->
     Res = get_stats(Host, Lang),
-    make_xhtml([?XCT(<<"h1">>, ?T("Statistics"))] ++ Res,
-	       Host, Lang, AJID);
+    PageH1 = ?H1GL(translate:translate(Lang, ?T("Statistics")), <<"mod-stats">>, <<"mod_stats">>),
+    make_xhtml(PageH1 ++ Res, Host, Lang, AJID);
 process_admin(Host, #request{path = [<<"user">>, U],
 			     q = Query, lang = Lang}, AJID) ->
     case ejabberd_auth:user_exists(U, Host) of

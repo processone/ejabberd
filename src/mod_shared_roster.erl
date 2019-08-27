@@ -780,7 +780,7 @@ list_shared_roster_groups(Host, Query, Lang) ->
 				      [?INPUTT(<<"submit">>, <<"addnew">>,
 					       ?T("Add New"))])])]))])),
     (?H1GL((translate:translate(Lang, ?T("Shared Roster Groups"))),
-	   <<"mod_shared_roster">>, <<"mod_shared_roster">>))
+	   <<"mod-shared-roster">>, <<"mod_shared_roster">>))
       ++
       case Res of
 	ok -> [?XREST(?T("Submitted"))];
@@ -874,7 +874,7 @@ shared_roster_group(Host, Group, Query, Lang) ->
 					     <<"20">>,
 					     list_to_binary(FDisplayedGroups))])])])])),
     (?H1GL((translate:translate(Lang, ?T("Shared Roster Groups"))),
-	   <<"mod_shared_roster">>, <<"mod_shared_roster">>))
+	   <<"mod-shared-roster">>, <<"mod_shared_roster">>))
       ++
       [?XC(<<"h2">>, <<(translate:translate(Lang, ?T("Group ")))/binary, Group/binary>>)] ++
 	case Res of
