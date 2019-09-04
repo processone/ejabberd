@@ -34,7 +34,7 @@
 %% API
 -export([start/2,
 	 stop/1,
-	 start_link/3,
+	 start_link/2,
 	 reload/3,
 	 room_destroyed/4,
 	 store_room/4,
@@ -114,7 +114,7 @@
 %% API
 %%====================================================================
 start(Host, Opts) ->
-    case mod_muc_sup:start(Host, Opts) of
+    case mod_muc_sup:start(Host) of
 	{ok, _} ->
 	    MyHosts = gen_mod:get_opt_hosts(Opts),
 	    Mod = gen_mod:db_mod(Opts, ?MODULE),
@@ -171,9 +171,9 @@ reload(ServerHost, NewOpts, OldOpts) ->
 depends(_Host, _Opts) ->
     [{mod_mam, soft}].
 
-start_link(Host, Opts, I) ->
+start_link(Host, I) ->
     Proc = procname(Host, I),
-    ?GEN_SERVER:start_link({local, Proc}, ?MODULE, [Host, Opts, I],
+    ?GEN_SERVER:start_link({local, Proc}, ?MODULE, [Host, I],
 			   ejabberd_config:fsm_limit_opts([])).
 
 -spec procname(binary(), pos_integer() | {binary(), binary()}) -> atom().
@@ -365,8 +365,9 @@ get_online_rooms_by_user(ServerHost, LUser, LServer) ->
 %% gen_server callbacks
 %%====================================================================
 -spec init(list()) -> {ok, state()}.
-init([Host, Opts, Worker]) ->
+init([Host, Worker]) ->
     process_flag(trap_exit, true),
+    Opts = gen_mod:get_module_opts(Host, ?MODULE),
     MyHosts = gen_mod:get_opt_hosts(Opts),
     register_routes(Host, MyHosts, Worker),
     register_iq_handlers(MyHosts, Worker),
@@ -507,6 +508,23 @@ unregister_routes(Hosts, 1) ->
 unregister_routes(_, _) ->
     ok.
 
+%% Function copied from mod_muc_room.erl
+-spec extract_password(presence() | iq()) -> binary() | false.
+extract_password(#presence{} = Pres) ->
+    case xmpp:get_subtag(Pres, #muc{}) of
+        #muc{password = Password} when is_binary(Password) ->
+            Password;
+        _ ->
+            false
+    end;
+extract_password(#iq{} = IQ) ->
+    case xmpp:get_subtag(IQ, #muc_subscribe{}) of
+        #muc_subscribe{password = Password} when Password /= <<"">> ->
+            Password;
+        _ ->
+            false
+    end.
+
 -spec route_to_room(stanza(), binary()) -> ok.
 route_to_room(Packet, ServerHost) ->
     From = xmpp:get_from(Packet),
@@ -526,7 +544,8 @@ route_to_room(Packet, ServerHost) ->
 			{error, notfound} when StartType == start ->
 			    case check_create_room(ServerHost, Host, Room, From) of
 				true ->
-				    case start_new_room(RMod, Host, ServerHost, Room, From, Nick) of
+				    Pass = extract_password(Packet),
+				    case start_new_room(RMod, Host, ServerHost, Room, Pass, From, Nick) of
 					{ok, Pid} ->
 					    mod_muc_room:route(Pid, Packet);
 					_Err ->
@@ -814,10 +833,19 @@ load_room(RMod, Host, ServerHost, Room) ->
 	    end
     end.
 
-start_new_room(RMod, Host, ServerHost, Room, From, Nick) ->
+start_new_room(RMod, Host, ServerHost, Room, Pass, From, Nick) ->
     ?DEBUG("Open new room: ~s", [Room]),
     DefRoomOpts = mod_muc_opt:default_room_options(ServerHost),
-    start_room(RMod, Host, ServerHost, Room, DefRoomOpts, From, Nick).
+    DefRoomOpts2 = add_password_options(Pass, DefRoomOpts),
+    start_room(RMod, Host, ServerHost, Room, DefRoomOpts2, From, Nick).
+
+add_password_options(false, DefRoomOpts) ->
+    DefRoomOpts;
+add_password_options(<<>>, DefRoomOpts) ->
+    DefRoomOpts;
+add_password_options(Pass, DefRoomOpts) when is_binary(Pass) ->
+    O2 = lists:keystore(password, 1, DefRoomOpts, {password, Pass}),
+    lists:keystore(password_protected, 1, O2, {password_protected, true}).
 
 start_room(Mod, Host, ServerHost, Room, DefOpts) ->
     Access = get_access(ServerHost),

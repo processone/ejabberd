@@ -128,7 +128,7 @@ depends(_Host, _Opts) ->
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-init([Host, _Opts]) ->
+init([Host|_]) ->
     process_flag(trap_exit, true),
     ejabberd_hooks:add(c2s_auth_result, Host, ?MODULE, c2s_auth_result, 100),
     ejabberd_hooks:add(c2s_stream_started, Host, ?MODULE, c2s_stream_started, 100),

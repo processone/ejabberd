@@ -280,37 +280,29 @@ process_header(State, Data) ->
 	    send_text(State1, Out),
 	    process_header(State, {ok, {http_error, <<>>}});
       {ok, http_eoh} ->
-	  ?DEBUG("(~w) http query: ~w ~p~n",
-		 [State#state.socket, State#state.request_method,
-		  element(2, State#state.request_path)]),
-	  case ejabberd_router:is_my_route(State#state.request_host) of
-	      true ->
-		  {State3, Out} = process_request(State),
-		  send_text(State3, Out),
-		  case State3#state.request_keepalive of
-		      true ->
-			  #state{sockmod = SockMod, socket = Socket,
-				 trail = State3#state.trail,
-				 options = State#state.options,
-				 default_host = State#state.default_host,
-				 custom_headers = State#state.custom_headers,
-				 request_handlers = State#state.request_handlers,
-				 addr_re = State#state.addr_re};
-		      _ ->
-			  #state{end_of_request = true,
-				 trail = State3#state.trail,
-				 options = State#state.options,
-				 default_host = State#state.default_host,
-				 custom_headers = State#state.custom_headers,
-				 request_handlers = State#state.request_handlers,
-				 addr_re = State#state.addr_re}
-		  end;
-	      false ->
-		  Out = make_text_output(State, 400, State#state.custom_headers,
-					 <<"Host not served">>),
-		  send_text(State, Out),
-		  process_header(State, {ok, {http_error, <<>>}})
-	  end;
+	    ?DEBUG("(~w) http query: ~w ~p~n",
+		   [State#state.socket, State#state.request_method,
+		    element(2, State#state.request_path)]),
+	    {State3, Out} = process_request(State),
+	    send_text(State3, Out),
+	    case State3#state.request_keepalive of
+		true ->
+		    #state{sockmod = SockMod, socket = Socket,
+			   trail = State3#state.trail,
+			   options = State#state.options,
+			   default_host = State#state.default_host,
+			   custom_headers = State#state.custom_headers,
+			   request_handlers = State#state.request_handlers,
+			   addr_re = State#state.addr_re};
+		_ ->
+		    #state{end_of_request = true,
+			   trail = State3#state.trail,
+			   options = State#state.options,
+			   default_host = State#state.default_host,
+			   custom_headers = State#state.custom_headers,
+			   request_handlers = State#state.request_handlers,
+			   addr_re = State#state.addr_re}
+	    end;
       _ ->
 	  #state{end_of_request = true,
 		 options = State#state.options,
@@ -475,7 +467,7 @@ process_request(#state{request_method = Method,
                          {error, _} = E -> throw(E)
                      end,
 	    XFF = proplists:get_value('X-Forwarded-For', RequestHeaders, []),
-	    IP = analyze_ip_xff(IPHere, XFF, Host),
+	    IP = analyze_ip_xff(IPHere, XFF),
             Request = #request{method = Method,
                                path = LPath,
                                q = LQuery,
@@ -526,12 +518,11 @@ make_bad_request(State) ->
 							  [{xmlcdata,
 							    <<"400 Bad Request">>}]}])).
 
-analyze_ip_xff(IP, [], _Host) -> IP;
-analyze_ip_xff({IPLast, Port}, XFF, Host) ->
+analyze_ip_xff(IP, []) -> IP;
+analyze_ip_xff({IPLast, Port}, XFF) ->
     [ClientIP | ProxiesIPs] = str:tokens(XFF, <<", ">>) ++
 				[misc:ip_to_list(IPLast)],
-    ServerHost = ejabberd_router:host_of_route(Host),
-    TrustedProxies = ejabberd_option:trusted_proxies(ServerHost),
+    TrustedProxies = ejabberd_option:trusted_proxies(),
     IPClient = case is_ipchain_trusted(ProxiesIPs,
 				       TrustedProxies)
 		   of

@@ -240,7 +240,8 @@ c2s_handle_info(#{mgmt_ack_timer := TRef, jid := JID, mod := Mod} = State,
     ?DEBUG("Timed out waiting for stream management acknowledgement of ~s",
 	   [jid:encode(JID)]),
     State1 = Mod:close(State),
-    {stop, transition_to_pending(State1)};
+    State2 = State1#{stop_reason => {socket, ack_timeout}},
+    {stop, transition_to_pending(State2, ack_timeout)};
 c2s_handle_info(#{mgmt_state := pending, lang := Lang,
 		  mgmt_pending_timer := TRef, jid := JID, mod := Mod} = State,
 		{timeout, TRef, pending_timeout}) ->
@@ -268,8 +269,8 @@ c2s_handle_info(State, _) ->
 
 c2s_closed(State, {stream, _}) ->
     State;
-c2s_closed(#{mgmt_state := active} = State, _Reason) ->
-    {stop, transition_to_pending(State)};
+c2s_closed(#{mgmt_state := active} = State, Reason) ->
+    {stop, transition_to_pending(State, Reason)};
 c2s_closed(State, _Reason) ->
     State.
 
@@ -439,19 +440,22 @@ handle_resume(#{user := User, lserver := LServer,
 	    {error, send(State, El)}
     end.
 
--spec transition_to_pending(state()) -> state().
+-spec transition_to_pending(state(), _) -> state().
 transition_to_pending(#{mgmt_state := active, mod := Mod,
-			mgmt_timeout := 0} = State) ->
+			mgmt_timeout := 0} = State, _Reason) ->
     Mod:stop(State);
-transition_to_pending(#{mgmt_state := active, jid := JID,
-			lserver := LServer, mgmt_timeout := Timeout} = State) ->
+transition_to_pending(#{mgmt_state := active, jid := JID, socket := Socket,
+			lserver := LServer, mgmt_timeout := Timeout} = State,
+		      Reason) ->
     State1 = cancel_ack_timer(State),
-    ?INFO_MSG("Waiting ~B seconds for resumption of stream for ~s",
-	      [Timeout div 1000, jid:encode(JID)]),
+    ?INFO_MSG("(~s) Closing c2s connection for ~s: ~s; "
+	      "waiting ~B seconds for stream resumption",
+	      [xmpp_socket:pp(Socket), jid:encode(JID),
+	       format_reason(State, Reason), Timeout div 1000]),
     TRef = erlang:start_timer(Timeout, self(), pending_timeout),
     State2 = State1#{mgmt_state => pending, mgmt_pending_timer => TRef},
     ejabberd_hooks:run_fold(c2s_session_pending, LServer, State2, []);
-transition_to_pending(State) ->
+transition_to_pending(State, _Reason) ->
     State.
 
 -spec check_h_attribute(state(), non_neg_integer()) -> state().
@@ -743,6 +747,14 @@ format_error(session_copy_timed_out) ->
     ?T("Session state copying timed out");
 format_error(invalid_previd) ->
     ?T("Invalid 'previd' value").
+
+-spec format_reason(state(), term()) -> binary().
+format_reason(_, ack_timeout) ->
+    <<"Timed out waiting for stream acknowledgement">>;
+format_reason(#{stop_reason := {socket, ack_timeout}} = State, _) ->
+    format_reason(State, ack_timeout);
+format_reason(State, Reason) ->
+    ejabberd_c2s:format_reason(State, Reason).
 
 -spec log_resumption_error(binary(), binary(), error_reason()) -> ok.
 log_resumption_error(User, Server, Reason)

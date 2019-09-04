@@ -100,8 +100,9 @@ depends(_Host, _Opts) ->
 %% gen_server callbacks.
 %%--------------------------------------------------------------------
 -spec init(list()) -> {ok, state()}.
-init([ServerHost, Opts]) ->
+init([ServerHost|_]) ->
     process_flag(trap_exit, true),
+    Opts = gen_mod:get_module_opts(ServerHost, ?MODULE),
     AccessSoftQuota = mod_http_upload_quota_opt:access_soft_quota(Opts),
     AccessHardQuota = mod_http_upload_quota_opt:access_hard_quota(Opts),
     MaxDays = mod_http_upload_quota_opt:max_days(Opts),

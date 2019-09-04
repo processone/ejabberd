@@ -164,7 +164,8 @@ select_retained({_, S, _} = USR, TopicFilter, QoS, SubID) ->
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-init([Host, Opts]) ->
+init([Host|_]) ->
+    Opts = gen_mod:get_module_opts(Host, ?MODULE),
     Mod = gen_mod:db_mod(Opts, ?MODULE),
     RMod = gen_mod:ram_db_mod(Opts, ?MODULE),
     try

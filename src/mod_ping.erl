@@ -91,8 +91,9 @@ reload(Host, NewOpts, OldOpts) ->
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
-init([Host, Opts]) ->
+init([Host|_]) ->
     process_flag(trap_exit, true),
+    Opts = gen_mod:get_module_opts(Host, ?MODULE),
     State = init_state(Host, Opts),
     register_iq_handlers(Host),
     case State#state.send_pings of
@@ -131,8 +132,6 @@ handle_cast(Msg, State) ->
     ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
-handle_info({iq_reply, #iq{type = error}, JID}, State) ->
-    handle_info({iq_reply, timeout, JID}, State);
 handle_info({iq_reply, #iq{}, _JID}, State) ->
     {noreply, State};
 handle_info({iq_reply, timeout, JID}, State) ->

@@ -210,8 +210,9 @@ process_subscription(Direction, User, Server, JID,
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
-init([Host, Opts]) ->
+init([Host|_]) ->
     process_flag(trap_exit, true),
+    Opts = gen_mod:get_module_opts(Host, ?MODULE),
     State = parse_options(Host, Opts),
     init_cache(Host, Opts),
     ejabberd_hooks:add(roster_get, Host, ?MODULE,

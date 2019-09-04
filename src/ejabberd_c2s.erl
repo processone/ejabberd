@@ -44,7 +44,7 @@
 %% API
 -export([get_presence/1, set_presence/2, resend_presence/1, resend_presence/2,
 	 open_session/1, call/3, cast/2, send/2, close/1, close/2, stop/1,
-	 reply/2, copy_state/2, set_timeout/2, route/2,
+	 reply/2, copy_state/2, set_timeout/2, route/2, format_reason/2,
 	 host_up/1, host_down/1, send_ws_ping/1, bounce_message_queue/2]).
 
 -include("xmpp.hrl").

@@ -193,7 +193,8 @@ service_disco_items(Config) ->
 service_vcard(Config) ->
     MUC = muc_jid(Config),
     ct:comment("Retreiving vCard from ~s", [jid:encode(MUC)]),
-    #iq{type = result, sub_els = [#vcard_temp{}]} =
+    VCard = mod_muc_opt:vcard(?config(server, Config)),
+    #iq{type = result, sub_els = [VCard]} =
 	send_recv(Config, #iq{type = get, to = MUC, sub_els = [#vcard_temp{}]}),
     disconnect(Config).
 

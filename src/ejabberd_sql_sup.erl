@@ -27,15 +27,67 @@
 
 -author('alexey@process-one.net').
 
--export([start_link/1, init/1, reload/1, is_started/1]).
+-export([start/1, stop/1, stop/0]).
+-export([start_link/0, start_link/1]).
+-export([init/1, reload/1, config_reloaded/0, is_started/1]).
 
 -include("logger.hrl").
+
+start(Host) ->
+    case is_started(Host) of
+	true -> ok;
+	false ->
+	    App = case ejabberd_option:sql_type(Host) of
+		      mysql -> p1_mysql;
+		      pgsql -> p1_pgsql;
+		      sqlite -> sqlite3;
+		      _ -> odbc
+		  end,
+	    ejabberd:start_app(App),
+	    Spec = #{id => gen_mod:get_module_proc(Host, ?MODULE),
+		     start => {ejabberd_sql_sup, start_link, [Host]},
+		     restart => transient,
+		     shutdown => infinity,
+		     type => supervisor,
+		     modules => [?MODULE]},
+	    case supervisor:start_child(ejabberd_db_sup, Spec) of
+		{ok, _} -> ok;
+		{error, {already_started, _}} -> ok;
+		{error, Why} = Err ->
+		    ?ERROR_MSG("Failed to start ~s: ~p", [?MODULE, Why]),
+		    Err
+	    end
+    end.
+
+stop(Host) ->
+    Proc = gen_mod:get_module_proc(Host, ?MODULE),
+    case supervisor:terminate_child(ejabberd_db_sup, Proc) of
+	ok -> supervisor:delete_child(ejabberd_db_sup, Proc);
+	Err -> Err
+    end.
+
+
+start_link() ->
+    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 start_link(Host) ->
     supervisor:start_link({local,
 			   gen_mod:get_module_proc(Host, ?MODULE)},
 			  ?MODULE, [Host]).
 
+stop() ->
+    ejabberd_hooks:delete(host_up, ?MODULE, start, 20),
+    ejabberd_hooks:delete(host_down, ?MODULE, stop, 90),
+    ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 20).
+
+init([]) ->
+    file:delete(ejabberd_sql:freetds_config()),
+    file:delete(ejabberd_sql:odbc_config()),
+    file:delete(ejabberd_sql:odbcinst_config()),
+    ejabberd_hooks:add(host_up, ?MODULE, start, 20),
+    ejabberd_hooks:add(host_down, ?MODULE, stop, 90),
+    ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 20),
+    ignore;
 init([Host]) ->
     Type = ejabberd_option:sql_type(Host),
     PoolSize = get_pool_size(Type, Host),
@@ -48,6 +100,10 @@ init([Host]) ->
             ok
     end,
     {ok, {{one_for_one, PoolSize * 10, 1}, child_specs(Host, PoolSize)}}.
+
+-spec config_reloaded() -> ok.
+config_reloaded() ->
+    lists:foreach(fun reload/1, ejabberd_option:hosts()).
 
 -spec reload(binary()) -> ok.
 reload(Host) ->

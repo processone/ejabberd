@@ -674,7 +674,7 @@ vcard_sound() ->
        {binval, undefined, base64()},
        {extval, undefined, binary()}]).
 
--spec vcard_key() -> yconv:validator().
+-spec vcard_key() -> yconf:validator().
 vcard_key() ->
     vcard_validator(
       vcard_key, undefined,

@@ -110,7 +110,8 @@ depends(_Host, _Opts) ->
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init([Host, Opts]) ->
+init([Host|_]) ->
+    Opts = gen_mod:get_module_opts(Host, ?MODULE),
     try initialize(Host, Opts) of
 	State ->
 	    process_flag(trap_exit, true),

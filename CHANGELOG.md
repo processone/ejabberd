@@ -1,4 +1,47 @@
-# Version NEXT
+# Version 19.08
+
+* Administration
+- Improve ejabberd halting procedure
+- Process unexpected erlang messages uniformly: logging a warning
+- mod_configure: Remove modules management
+
+* Configuration
+- Use new configuration validator
+- ejabberd_http: Use correct virtual host when consulting trusted_proxies
+- Fix Elixir modules detection in the configuration file
+- Make option 'validate_stream' global
+- Allow multiple definitions of host_config and append_host_config
+- Introduce option 'captcha_url'
+- mod_stream_mgmt: Allow flexible timeout format
+- mod_mqtt: Allow flexible timeout format in session_expiry option
+
+* Misc
+- Fix SQL connections leakage
+- New authentication method using JWT tokens
+- extauth: Add 'certauth' command
+- Improve SQL pool logic
+- Add and improve type specs
+- Improve extraction of translated strings
+- Improve error handling/reporting when loading language translations
+- Improve hooks validator and fix bugs related to hooks registration
+- Gracefully close inbound s2s connections
+- mod_mqtt: Fix usage of TLS
+- mod_offline: Make count_offline_messages cache work when using mam for storage
+- mod_privacy: Don't attempt to query 'undefined' active list
+- mod_privacy: Fix race condition
+
+* MUC
+- Add code for hibernating inactive muc_room processes
+- Improve handling of unexpected iq in mod_muc_room
+- Attach mod_muc_room processes to a supervisor
+- Restore room when receiving message or generic iq for not started room
+- Distribute routing of MUC messages accross all CPU cores
+
+* PubSub
+- Fix pending nodes retrieval for SQL backend
+- Check access_model when publishing PEP
+- Remove deprecated pubsub plugins
+- Expose access_model and publish_model in pubsub#metadata
 
 # Version 19.05
 

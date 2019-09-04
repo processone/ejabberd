@@ -135,7 +135,7 @@ disco_sm_identity(Acc, From, To, Node, Lang) ->
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-init([Host, _Opts]) ->
+init([Host|_]) ->
     process_flag(trap_exit, true),
     catch ets:new(?MODULE,
                   [named_table, public,

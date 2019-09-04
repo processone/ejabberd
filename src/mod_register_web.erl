@@ -95,13 +95,29 @@ process([<<"register.css">>],
 process([<<"new">>],
 	#request{method = 'GET', lang = Lang, host = Host,
 		 ip = IP}) ->
-    {Addr, _Port} = IP, form_new_get(Host, Lang, Addr);
+    case ejabberd_router:is_my_host(Host) of
+	true ->
+	    {Addr, _Port} = IP,
+	    form_new_get(Host, Lang, Addr);
+	false ->
+	    {400, [], <<"Host not served">>}
+    end;
 process([<<"delete">>],
 	#request{method = 'GET', lang = Lang, host = Host}) ->
-    form_del_get(Host, Lang);
+    case ejabberd_router:is_my_host(Host) of
+	true ->
+	    form_del_get(Host, Lang);
+	false ->
+	    {400, [], <<"Host not served">>}
+    end;
 process([<<"change_password">>],
 	#request{method = 'GET', lang = Lang, host = Host}) ->
-    form_changepass_get(Host, Lang);
+    case ejabberd_router:is_my_host(Host) of
+	true ->
+	    form_changepass_get(Host, Lang);
+	false ->
+	    {400, [], <<"Host not served">>}
+    end;
 process([<<"new">>],
 	#request{method = 'POST', q = Q, ip = {Ip, _Port},
 		 lang = Lang, host = _HTTPHost}) ->
