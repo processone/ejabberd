@@ -132,8 +132,6 @@ handle_cast(Msg, State) ->
     ?WARNING_MSG("Unexpected cast: ~p", [Msg]),
     {noreply, State}.
 
-handle_info({iq_reply, #iq{type = error}, JID}, State) ->
-    handle_info({iq_reply, timeout, JID}, State);
 handle_info({iq_reply, #iq{}, _JID}, State) ->
     {noreply, State};
 handle_info({iq_reply, timeout, JID}, State) ->
