@@ -45,10 +45,11 @@
          check_token/2,
          scope_in_scope_list/2,
          process/2,
-	 config_reloaded/0]).
+         config_reloaded/0,
+         verify_resowner_scope/3]).
 
 -export([get_commands_spec/0,
-	 oauth_issue_token/3, oauth_list_tokens/0, oauth_revoke_token/1]).
+         oauth_issue_token/3, oauth_list_tokens/0, oauth_revoke_token/1]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -210,6 +211,21 @@ authenticate_user({User, Server}, Ctx) ->
     end.
 
 authenticate_client(Client, Ctx) -> {ok, {Ctx, {client, Client}}}.
+
+-spec verify_resowner_scope({user, binary(), binary()}, [binary()], any()) ->
+    {ok, any(), [binary()]} | {error, any()}.
+verify_resowner_scope({user, _User, _Server}, Scope, Ctx) ->
+    Cmds = [atom_to_binary(Name, utf8) || {Name, _, _} <- ejabberd_commands:list_commands()],
+    AllowedScopes = [<<"ejabberd:user">>, <<"ejabberd:admin">>, <<"sasl_auth">>] ++ Cmds,
+    case oauth2_priv_set:is_subset(oauth2_priv_set:new(Scope),
+                                   oauth2_priv_set:new(AllowedScopes)) of
+        true ->
+            {ok, {Ctx, Scope}};
+        false ->
+            {error, badscope}
+    end;
+verify_resowner_scope(_, _, _) ->
+    {error, badscope}.
 
 %% This is callback for oauth tokens generated through the command line.  Only open and admin commands are
 %% made available.
