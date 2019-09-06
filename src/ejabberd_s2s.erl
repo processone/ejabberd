@@ -42,7 +42,7 @@
 	 list_temporarily_blocked_hosts/0,
 	 external_host_overloaded/1, is_temporarly_blocked/1,
 	 get_commands_spec/0, zlib_enabled/1, get_idle_timeout/1,
-	 tls_required/1, tls_enabled/1, tls_options/2,
+	 tls_required/1, tls_enabled/1, tls_options/3,
 	 host_up/1, host_down/1, queue_type/1]).
 
 %% gen_server callbacks
@@ -177,34 +177,34 @@ try_register({From, To} = FromTo) ->
 dirty_get_connections() ->
     mnesia:dirty_all_keys(s2s).
 
--spec tls_options(binary(), [proplists:property()]) -> [proplists:property()].
-tls_options(LServer, DefaultOpts) ->
+-spec tls_options(binary(), binary(), [proplists:property()]) -> [proplists:property()].
+tls_options(LServer, ServerHost, DefaultOpts) ->
     TLSOpts1 = case ejabberd_pkix:get_certfile(LServer) of
 		   error -> DefaultOpts;
 		   {ok, CertFile} ->
 		       lists:keystore(certfile, 1, DefaultOpts,
 				      {certfile, CertFile})
 	       end,
-    TLSOpts2 = case ejabberd_option:s2s_ciphers(LServer) of
+    TLSOpts2 = case ejabberd_option:s2s_ciphers(ServerHost) of
                    undefined -> TLSOpts1;
                    Ciphers -> lists:keystore(ciphers, 1, TLSOpts1,
 					     {ciphers, Ciphers})
                end,
-    TLSOpts3 = case ejabberd_option:s2s_protocol_options(LServer) of
+    TLSOpts3 = case ejabberd_option:s2s_protocol_options(ServerHost) of
                    undefined -> TLSOpts2;
                    ProtoOpts -> lists:keystore(protocol_options, 1, TLSOpts2,
 					       {protocol_options, ProtoOpts})
                end,
-    TLSOpts4 = case ejabberd_option:s2s_dhfile(LServer) of
+    TLSOpts4 = case ejabberd_option:s2s_dhfile(ServerHost) of
                    undefined -> TLSOpts3;
                    DHFile -> lists:keystore(dhfile, 1, TLSOpts3,
 					    {dhfile, DHFile})
                end,
     TLSOpts5 = case lists:keymember(cafile, 1, TLSOpts4) of
 		   true -> TLSOpts4;
-		   false -> [{cafile, get_cafile(LServer)}|TLSOpts4]
+		   false -> [{cafile, get_cafile(ServerHost)}|TLSOpts4]
 	       end,
-    case ejabberd_option:s2s_tls_compression(LServer) of
+    case ejabberd_option:s2s_tls_compression(ServerHost) of
 	undefined -> TLSOpts5;
 	false -> [compression_none | TLSOpts5];
 	true -> lists:delete(compression_none, TLSOpts5)
