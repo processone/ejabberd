@@ -523,15 +523,15 @@ outer_transaction(F, NRestarts, _Reason) ->
 		     [T]),
 	  erlang:exit(implementation_faulty)
     end,
-    sql_query_internal([<<"begin;">>]),
+    sql_begin(),
     put(?NESTING_KEY, PreviousNestingLevel + 1),
     try F() of
 	Res ->
-	    sql_query_internal([<<"commit;">>]),
+	    sql_commit(),
 	    {atomic, Res}
     catch
 	?EX_RULE(throw, {aborted, Reason}, _) when NRestarts > 0 ->
-	    sql_query_internal([<<"rollback;">>]),
+	    sql_rollback(),
             put(?NESTING_KEY, ?TOP_LEVEL_TXN),
 	    outer_transaction(F, NRestarts - 1, Reason);
 	?EX_RULE(throw, {aborted, Reason}, Stack) when NRestarts =:= 0 ->
@@ -542,10 +542,10 @@ outer_transaction(F, NRestarts, _Reason) ->
 		       "== ~p",
 		       [?MAX_TRANSACTION_RESTARTS, Reason,
 			StackTrace, get(?STATE_KEY)]),
-	    sql_query_internal([<<"rollback;">>]),
+	    sql_rollback(),
 	    {aborted, Reason};
 	?EX_RULE(exit, Reason, _) ->
-	    sql_query_internal([<<"rollback;">>]),
+	    sql_rollback(),
 	    {aborted, Reason}
     end.
 
@@ -771,6 +771,22 @@ sql_query_format_res(Res, _SQLQuery) ->
 
 sql_query_to_iolist(SQLQuery) ->
     generic_sql_query_format(SQLQuery).
+
+sql_begin() ->
+    sql_query_internal(
+      [{mssql, [<<"begin transaction;">>]},
+       {any, [<<"begin;">>]}]).
+
+sql_commit() ->
+    sql_query_internal(
+      [{mssql, [<<"commit transaction;">>]},
+       {any, [<<"commit;">>]}]).
+
+sql_rollback() ->
+    sql_query_internal(
+      [{mssql, [<<"rollback transaction;">>]},
+       {any, [<<"rollback;">>]}]).
+
 
 %% Generate the OTP callback return tuple depending on the driver result.
 abort_on_driver_error({error, <<"query timed out">>} = Reply, From, Timestamp) ->
