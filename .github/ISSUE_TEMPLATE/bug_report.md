@@ -27,4 +27,4 @@ No errors
 
 ## Bug description
 
-Please, make us e a precise description (what does not work, what is expected, etc.
+Please, give us a precise description (what does not work, what is expected, etc.)
