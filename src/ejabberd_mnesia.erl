@@ -258,7 +258,13 @@ validator() ->
       [unique]).
 
 create(Name, TabDef) ->
-    ?INFO_MSG("Creating Mnesia table '~s'", [Name]),
+    Type = lists:foldl(
+	     fun({ram_copies, _}, _) -> " ram ";
+		({disc_copies, _}, _) -> " disc ";
+		({disc_only_copies, _}, _) -> " disc_only ";
+		(_, Acc) -> Acc
+	     end, " ", TabDef),
+    ?INFO_MSG("Creating Mnesia~stable '~s'", [Type, Name]),
     case mnesia_op(create_table, [Name, TabDef]) of
 	{atomic, ok} ->
 	    add_table_copy(Name);
