@@ -106,6 +106,7 @@ modules:
     vcard: VCARD
   mod_muc_admin: []
   mod_carboncopy: []
+  mod_jidprep: []
   mod_mam: []
   mod_last: []
   mod_register:
