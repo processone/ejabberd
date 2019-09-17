@@ -30,7 +30,8 @@
 -behaviour(ejabberd_auth).
 
 -export([start/1, stop/1, check_password/4,
-	 store_type/1, plain_password_required/1
+	 store_type/1, plain_password_required/1,
+         user_exists/2
         ]).
 
 -include("xmpp.hrl").
@@ -66,6 +67,8 @@ check_password(User, AuthzId, Server, Token) ->
                     {nocache, check_jwt_token(User, Server, Token)}
             end
     end.
+
+user_exists(_User, _Host) -> {nocache, false}.
 
 %%%----------------------------------------------------------------------
 %%% Internal functions

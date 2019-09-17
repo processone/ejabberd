@@ -175,8 +175,8 @@ process_downgraded(State, _StreamStart) ->
 %%%===================================================================
 %%% xmpp_stream_out callbacks
 %%%===================================================================
-tls_options(#{server_host := ServerHost}) ->
-    ejabberd_s2s:tls_options(ServerHost, []).
+tls_options(#{server := LServer, server_host := ServerHost}) ->
+    ejabberd_s2s:tls_options(LServer, ServerHost, []).
 
 tls_required(#{server_host := ServerHost}) ->
     ejabberd_s2s:tls_required(ServerHost).
