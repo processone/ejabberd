@@ -2916,9 +2916,13 @@ process_item_change(Item, SD, UJID) ->
 			set_role(JID, none, SD1);
 		    _ ->
 			SD1 = set_affiliation(JID, none, SD),
-			send_update_presence(JID, Reason, SD1, SD),
-			maybe_send_affiliation(JID, none, SD1),
-			SD1
+			SD2 = case (SD1#state.config)#config.moderated of
+			    true -> set_role(JID, visitor, SD1);
+			    false -> set_role(JID, participant, SD1)
+			end,
+			send_update_presence(JID, Reason, SD2, SD),
+			maybe_send_affiliation(JID, none, SD2),
+			SD2
 		end;
 	    {JID, affiliation, outcast, Reason} ->
 		send_kickban_presence(UJID, JID, Reason, 301, outcast, SD),
