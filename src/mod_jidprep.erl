@@ -93,7 +93,7 @@ disco_local_features(empty, From, To, Node, Lang) ->
     disco_local_features({result, []}, From, To, Node, Lang);
 disco_local_features({result, OtherFeatures} = Acc, From,
 		     #jid{lserver = LServer}, <<"">>, _Lang) ->
-    Access = gen_mod:get_module_opt(LServer, ?MODULE, access),
+    Access = mod_jidprep_opt:access(LServer),
     case acl:match_rule(LServer, Access, From) of
 	allow ->
 	    {result, [?NS_JIDPREP_0 | OtherFeatures]};
@@ -123,7 +123,7 @@ process_iq(#iq{from = From, to = #jid{lserver = LServer}, lang = Lang,
 	       sub_els = [#jidprep{jid = #jid{luser = U,
 					      lserver = S,
 					      lresource = R} = JID}]} = IQ) ->
-    Access = gen_mod:get_module_opt(LServer, ?MODULE, access),
+    Access = mod_jidprep_opt:access(LServer),
     case acl:match_rule(LServer, Access, From) of
 	allow ->
 	    case jid:make(U, S, R) of
