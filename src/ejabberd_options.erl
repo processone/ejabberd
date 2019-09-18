@@ -409,7 +409,9 @@ opt_type(jwt_key) ->
                   {error, Reason} ->
                       econf:fail({read_file, Reason, Path})
               end
-      end).
+      end);
+opt_type(jwt_auth_only_rule) ->
+    econf:atom().
 
 %% We only define the types of options that cannot be derived
 %% automatically by tools/opt_type.sh script
@@ -635,7 +637,8 @@ options() ->
      {websocket_origin, []},
      {websocket_ping_interval, timer:seconds(60)},
      {websocket_timeout, timer:minutes(5)},
-     {jwt_key, undefined}].
+     {jwt_key, undefined},
+     {jwt_auth_only_rule, none}].
 
 -spec globals() -> [atom()].
 globals() ->

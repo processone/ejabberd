@@ -31,7 +31,7 @@
 
 -export([start/1, stop/1, check_password/4,
 	 store_type/1, plain_password_required/1,
-         user_exists/2
+         user_exists/2, use_cache/1
         ]).
 
 -include("xmpp.hrl").
@@ -55,7 +55,7 @@ plain_password_required(_Host) -> true.
 
 store_type(_Host) -> external.
 
--spec check_password(binary(), binary(), binary(), binary()) -> {ets_cache:tag(), boolean()}.
+-spec check_password(binary(), binary(), binary(), binary()) -> {ets_cache:tag(), boolean() | {stop, boolean()}}.
 check_password(User, AuthzId, Server, Token) ->
     %% MREMOND: Should we move the AuthzId check at a higher level in
     %%          the call stack?
@@ -64,11 +64,22 @@ check_password(User, AuthzId, Server, Token) ->
        true ->
             if Token == <<"">> -> {nocache, false};
                true ->
-                    {nocache, check_jwt_token(User, Server, Token)}
+                    Res = check_jwt_token(User, Server, Token),
+                    Rule = ejabberd_option:jwt_auth_only_rule(Server),
+                    case acl:match_rule(Server, Rule,
+                                        jid:make(User, Server, <<"">>)) of
+                        deny ->
+                            {nocache, Res};
+                        allow ->
+                            {nocache, {stop, Res}}
+                    end
             end
     end.
 
 user_exists(_User, _Host) -> {nocache, false}.
+
+use_cache(_) ->
+    false.
 
 %%%----------------------------------------------------------------------
 %%% Internal functions
