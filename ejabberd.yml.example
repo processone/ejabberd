@@ -23,9 +23,10 @@ log_rotate_date: ""
 log_rotate_count: 1
 log_rate_limit: 100
 
-certfiles:
-  - /etc/letsencrypt/live/localhost/fullchain.pem
-  - /etc/letsencrypt/live/localhost/privkey.pem
+## If you already have certificates, list them here
+# certfiles:
+#  - /etc/letsencrypt/live/domain.tld/fullchain.pem
+#  - /etc/letsencrypt/live/domain.tld/privkey.pem
 
 listen:
   -
