@@ -565,7 +565,8 @@ request_on_start() ->
 		_ ->
 		    case lists:filter(
 			   fun(Host) ->
-				   not have_cert_for_domain(Host)
+				   not (have_cert_for_domain(Host)
+					orelse is_ip_or_localhost(Host))
 			   end, all_domains()) of
 			[] -> false;
 			Hosts ->
@@ -590,6 +591,15 @@ well_known() ->
 -spec have_cert_for_domain(binary()) -> boolean().
 have_cert_for_domain(Host) ->
     ejabberd_pkix:get_certfile_no_default(Host) /= error.
+
+-spec is_ip_or_localhost(binary()) -> boolean().
+is_ip_or_localhost(Host) ->
+    Parts = binary:split(Host, <<".">>),
+    TLD = binary_to_list(lists:last(Parts)),
+    case inet:parse_address(TLD) of
+	{ok, _} -> true;
+	_ -> TLD == "localhost"
+    end.
 
 -spec have_acme_listener() -> boolean().
 have_acme_listener() ->
