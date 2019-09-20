@@ -417,12 +417,12 @@ time_before_expiration(Expiry) ->
 	   calendar:now_to_datetime(erlang:timestamp())),
     Secs = max(0, T1 - T2),
     if Secs == {0, ""};
-       Secs >= 220752000 -> {ceil(Secs/220752000), "year"};
-       Secs >= 2592000 -> {ceil(Secs/2592000), "month"};
-       Secs >= 604800 -> {ceil(Secs/604800), "week"};
-       Secs >= 86400 -> {ceil(Secs/86400), "day"};
-       Secs >= 3600 -> {ceil(Secs/3600), "hour"};
-       Secs >= 60 -> {ceil(Secs/60), "minute"};
+       Secs >= 220752000 -> {round(Secs/220752000), "year"};
+       Secs >= 2592000 -> {round(Secs/2592000), "month"};
+       Secs >= 604800 -> {round(Secs/604800), "week"};
+       Secs >= 86400 -> {round(Secs/86400), "day"};
+       Secs >= 3600 -> {round(Secs/3600), "hour"};
+       Secs >= 60 -> {round(Secs/60), "minute"};
        true -> {Secs, "second"}
     end.
 
@@ -430,8 +430,8 @@ time_before_expiration(Expiry) ->
 format_expiration_date(DateTime) ->
     case time_before_expiration(DateTime) of
 	{0, _} -> "is expired";
-	{1, Unit} -> "will expire in less than a " ++ Unit;
+	{1, Unit} -> "will expire in a " ++ Unit;
 	{Int, Unit} ->
-	    "will expire in less than " ++ integer_to_list(Int)
+	    "will expire in " ++ integer_to_list(Int)
 		++ " " ++ Unit ++ "s"
     end.
