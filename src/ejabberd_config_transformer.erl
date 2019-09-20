@@ -99,6 +99,25 @@ transform(_Host, certfiles, CertFiles1, Acc) ->
     CertFiles2 = maps:get(certfiles, Acc, []),
     Acc1 = maps:put(certfiles, CertFiles1 ++ CertFiles2, Acc),
     {true, Acc1};
+transform(_Host, acme, ACME, Acc) ->
+    ACME1 = lists:map(
+	      fun({ca_url, URL} = Opt) ->
+		      case http_uri:parse(binary_to_list(URL)) of
+			  {ok, {_, _, "acme-v01.api.letsencrypt.org", _, _, _}} ->
+			      NewURL = ejabberd_acme:default_directory_url(),
+			      ?WARNING_MSG("ACME directory URL ~s defined in "
+					   "option acme->ca_url is deprecated "
+					   "and was automatically replaced "
+					   "with ~s. ~s",
+					   [URL, NewURL, adjust_hint()]),
+			      {ca_url, NewURL};
+			  _ ->
+			      Opt
+		      end;
+		 (Opt) ->
+		      Opt
+	      end, ACME),
+    {{true, {acme, ACME1}}, Acc};
 transform(Host, s2s_use_starttls, required_trusted, Acc) ->
     ?WARNING_MSG("The value 'required_trusted' of option "
 		 "'s2s_use_starttls' is deprecated and was "
@@ -550,6 +569,10 @@ validator() ->
 	  default_db => econf:atom(),
 	  default_ram_db => econf:atom(),
 	  auth_method => econf:list_or_single(econf:atom()),
+	  acme => econf:options(
+		    #{ca_url => econf:binary(),
+		      '_' => econf:any()},
+		    [unique]),
 	  listen =>
 	      econf:list(
 		econf:options(

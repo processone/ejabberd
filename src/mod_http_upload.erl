@@ -1004,7 +1004,7 @@ remove_user(User, Server) ->
     DocRoot1 = expand_host(expand_home(DocRoot), ServerHost),
     UserStr = make_user_string(jid:make(User, Server), JIDinURL),
     UserDir = str:join([DocRoot1, UserStr], <<$/>>),
-    case del_tree(UserDir) of
+    case misc:delete_dir(UserDir) of
 	ok ->
 	    ?INFO_MSG("Removed HTTP upload directory of ~s@~s", [User, Server]);
 	{error, enoent} ->
@@ -1014,21 +1014,3 @@ remove_user(User, Server) ->
 		       [User, Server, format_error(Error)])
     end,
     ok.
-
--spec del_tree(file:filename_all()) -> ok | {error, file:posix()}.
-del_tree(Dir) ->
-    try
-	{ok, Entries} = file:list_dir(Dir),
-	lists:foreach(fun(Path) ->
-			      case filelib:is_dir(Path) of
-				  true ->
-				      ok = del_tree(Path);
-				  false ->
-				      ok = file:delete(Path)
-			      end
-		      end, [filename:join(Dir, Entry) || Entry <- Entries]),
-	ok = file:del_dir(Dir)
-    catch
-	_:{badmatch, {error, Error}} ->
-	    {error, Error}
-    end.

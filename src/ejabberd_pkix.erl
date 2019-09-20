@@ -26,9 +26,12 @@
 %% API
 -export([start_link/0]).
 -export([certs_dir/0]).
--export([add_certfile/1, try_certfile/1, get_certfile/0, get_certfile/1]).
+-export([add_certfile/1, del_certfile/1, commit/0]).
+-export([notify_expired/1]).
+-export([try_certfile/1, get_certfile/0, get_certfile/1]).
+-export([get_certfile_no_default/1]).
 %% Hooks
--export([ejabberd_started/0, config_reloaded/0]).
+-export([ejabberd_started/0, config_reloaded/0, cert_expired/2]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3, format_status/2]).
@@ -57,6 +60,14 @@ add_certfile(Path0) ->
 		ok -> {ok, Path};
 		Err -> Err
 	    end
+    end.
+
+-spec del_certfile(file:filename_all()) -> ok.
+del_certfile(Path0) ->
+    Path = prep_path(Path0),
+    try gen_server:call(?MODULE, {del_certfile, Path}, ?CALL_TIMEOUT)
+    catch exit:{noproc, _} ->
+	    pkix:del_file(Path)
     end.
 
 -spec try_certfile(file:filename_all()) -> filename().
@@ -103,6 +114,10 @@ certs_dir() ->
     MnesiaDir = mnesia:system_info(directory),
     filename:join(MnesiaDir, "certs").
 
+-spec commit() -> ok.
+commit() ->
+    gen_server:call(?MODULE, commit, ?CALL_TIMEOUT).
+
 -spec ejabberd_started() -> ok.
 ejabberd_started() ->
     gen_server:call(?MODULE, ejabberd_started, ?CALL_TIMEOUT).
@@ -111,21 +126,38 @@ ejabberd_started() ->
 config_reloaded() ->
     gen_server:call(?MODULE, config_reloaded, ?CALL_TIMEOUT).
 
+-spec notify_expired(pkix:notify_event()) -> ok.
+notify_expired(Event) ->
+    gen_server:cast(?MODULE, Event).
+
+-spec cert_expired(_, pkix:cert_info()) -> ok.
+cert_expired(_Cert, #{domains := Domains,
+		      expiry := Expiry,
+		      files := [{Path, Line}|_]}) ->
+    ?WARNING_MSG("Certificate in ~s (at line: ~B)~s ~s",
+		 [Path, Line,
+		  case Domains of
+		      [] -> "";
+		      _ -> " for " ++ misc:format_hosts_list(Domains)
+		  end,
+		  format_expiration_date(Expiry)]).
+
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
 -spec init([]) -> {ok, state()}.
 init([]) ->
     process_flag(trap_exit, true),
+    ejabberd_hooks:add(cert_expired, ?MODULE, cert_expired, 50),
     ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 100),
     ejabberd_hooks:add(ejabberd_started, ?MODULE, ejabberd_started, 30),
     case add_files() of
-	{Files, []} ->
-	    {ok, #state{files = Files}};
+	{_Files, []} ->
+	    {ok, #state{}};
 	{Files, [_|_]} ->
 	    case ejabberd:is_loaded() of
 		true ->
-		    {ok, #state{files = Files}};
+		    {ok, #state{}};
 		false ->
 		    del_files(Files),
 		    stop_ejabberd()
@@ -137,13 +169,15 @@ init([]) ->
 handle_call({add_certfile, Path}, _From, State) ->
     case add_file(Path) of
 	ok ->
-	    Files = sets:add_element(Path, State#state.files),
-	    {reply, {ok, Path}, State#state{files = Files}};
+	    {reply, {ok, Path}, State};
 	{error, _} = Err ->
 	    {reply, Err, State}
     end;
+handle_call({del_certfile, Path}, _From, State) ->
+    pkix:del_file(Path),
+    {reply, ok, State};
 handle_call(ejabberd_started, _From, State) ->
-    case commit() of
+    case do_commit() of
 	{ok, []} ->
 	    check_domain_certfiles(),
 	    {reply, ok, State};
@@ -151,22 +185,25 @@ handle_call(ejabberd_started, _From, State) ->
 	    stop_ejabberd()
     end;
 handle_call(config_reloaded, _From, State) ->
-    Old = State#state.files,
-    New = get_certfiles_from_config_options(),
-    del_files(sets:subtract(Old, New)),
-    _ = add_files(New),
-    case commit() of
+    Files = get_certfiles_from_config_options(),
+    _ = add_files(Files),
+    case do_commit() of
 	{ok, _} ->
 	    check_domain_certfiles(),
-	    {reply, ok, State#state{files = New}};
+	    {reply, ok, State};
 	error ->
 	    {reply, ok, State}
     end;
+handle_call(commit, From, State) ->
+    handle_call(config_reloaded, From, State);
 handle_call(Request, _From, State) ->
     ?WARNING_MSG("Unexpected call: ~p", [Request]),
     {noreply, State}.
 
 -spec handle_cast(term(), state()) -> {noreply, state()}.
+handle_cast({cert_expired, Cert, CertInfo}, State) ->
+    ejabberd_hooks:run(cert_expired, [Cert, CertInfo]),
+    {noreply, State};
 handle_cast(Request, State) ->
     ?WARNING_MSG("Unexpected cast: ~p", [Request]),
     {noreply, State}.
@@ -179,6 +216,7 @@ handle_info(Info, State) ->
 -spec terminate(normal | shutdown | {shutdown, term()} | term(),
 		state()) -> any().
 terminate(_Reason, State) ->
+    ejabberd_hooks:delete(cert_expired, ?MODULE, cert_expired, 50),
     ejabberd_hooks:delete(ejabberd_started, ?MODULE, ejabberd_started, 30),
     ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 100),
     del_files(State#state.files).
@@ -233,11 +271,16 @@ add_file(File) ->
 del_files(Files) ->
     lists:foreach(fun pkix:del_file/1, sets:to_list(Files)).
 
--spec commit() -> {ok, [{filename(), pkix:error_reason()}]} | error.
-commit() ->
+-spec do_commit() -> {ok, [{filename(), pkix:error_reason()}]} | error.
+do_commit() ->
     CAFile = ejabberd_option:ca_file(),
     ?DEBUG("Using CA root certificates from: ~s", [CAFile]),
-    Opts = [{cafile, CAFile}],
+    Opts = [{cafile, CAFile},
+	    {notify_before, [7*24*60*60, % 1 week
+			     24*60*60, % 1 day
+			     60*60, % 1 hour
+			     0]},
+	    {notify_fun, fun ?MODULE:notify_expired/1}],
     case pkix:commit(certs_dir(), Opts) of
 	{ok, Errors, Warnings, CAError} ->
 	    log_errors(Errors),
@@ -267,12 +310,7 @@ check_domain_certfiles(Hosts) ->
 		      case get_certfile_no_default(Host) of
 			  error ->
 			      ?WARNING_MSG(
-				 "No certificate found matching '~s': strictly "
-				 "configured clients or servers will reject "
-				 "connections with this host; obtain "
-				 "a certificate for this (sub)domain from any "
-				 "trusted CA such as Let's Encrypt "
-				 "(www.letsencrypt.org)",
+				 "No certificate found matching ~s",
 				 [Host]);
 			  _ ->
 			      ok
@@ -371,3 +409,29 @@ log_cafile_error({File, Reason}) ->
 		  [File, pkix:format_error(Reason)]);
 log_cafile_error(_) ->
     ok.
+
+-spec time_before_expiration(calendar:datetime()) -> {non_neg_integer(), string()}.
+time_before_expiration(Expiry) ->
+    T1 = calendar:datetime_to_gregorian_seconds(Expiry),
+    T2 = calendar:datetime_to_gregorian_seconds(
+	   calendar:now_to_datetime(erlang:timestamp())),
+    Secs = max(0, T1 - T2),
+    if Secs == {0, ""};
+       Secs >= 220752000 -> {ceil(Secs/220752000), "year"};
+       Secs >= 2592000 -> {ceil(Secs/2592000), "month"};
+       Secs >= 604800 -> {ceil(Secs/604800), "week"};
+       Secs >= 86400 -> {ceil(Secs/86400), "day"};
+       Secs >= 3600 -> {ceil(Secs/3600), "hour"};
+       Secs >= 60 -> {ceil(Secs/60), "minute"};
+       true -> {Secs, "second"}
+    end.
+
+-spec format_expiration_date(calendar:datetime()) -> string().
+format_expiration_date(DateTime) ->
+    case time_before_expiration(DateTime) of
+	{0, _} -> "is expired";
+	{1, Unit} -> "will expire in less than a " ++ Unit;
+	{Int, Unit} ->
+	    "will expire in less than " ++ integer_to_list(Int)
+		++ " " ++ Unit ++ "s"
+    end.

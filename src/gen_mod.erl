@@ -121,7 +121,7 @@ stop_child(Proc) ->
 -spec start_modules() -> any().
 start_modules() ->
     Hosts = ejabberd_option:hosts(),
-    ?INFO_MSG("Loading modules for ~s", [format_hosts_list(Hosts)]),
+    ?INFO_MSG("Loading modules for ~s", [misc:format_hosts_list(Hosts)]),
     lists:foreach(fun start_modules/1, Hosts).
 
 -spec start_modules(binary()) -> ok.
@@ -446,25 +446,6 @@ format_module_error(Module, Fun, Arity, Opts, Class, Reason, St) ->
 			   misc:format_exception(2, Class, Reason, St)])
     end.
 
--spec format_hosts_list([binary()]) -> iolist().
-format_hosts_list([Host]) ->
-    Host;
-format_hosts_list([H1, H2]) ->
-    [H1, " and ", H2];
-format_hosts_list([H1, H2, H3]) ->
-    [H1, ", ", H2, " and ", H3];
-format_hosts_list([H1, H2|Hs]) ->
-    io_lib:format("~s, ~s and ~B more hosts",
-		  [H1, H2, length(Hs)]).
-
--spec format_cycle([atom()]) -> iolist().
-format_cycle([M1]) ->
-    atom_to_list(M1);
-format_cycle([M1, M2]) ->
-    [atom_to_list(M1), " and ", atom_to_list(M2)];
-format_cycle([M|Ms]) ->
-    atom_to_list(M) ++ ", " ++ format_cycle(Ms).
-
 %%%===================================================================
 %%% Validation
 %%%===================================================================
@@ -602,4 +583,4 @@ warn_cyclic_dep(Path) ->
 		 "This is either a bug, or the modules are not "
 		 "supposed to work together in this configuration. "
 		 "The modules will still be loaded though",
-		 [format_cycle(Path)]).
+		 [misc:format_cycle(Path)]).

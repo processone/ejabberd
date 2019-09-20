@@ -40,7 +40,9 @@ opt_type(acl) ->
 opt_type(acme) ->
     econf:options(
       #{ca_url => econf:url(),
-	contact => econf:binary("^[a-zA-Z]+:[^:]+$")},
+	contact => econf:list_or_single(econf:binary("^[a-zA-Z]+:[^:]+$")),
+	auto => econf:bool(),
+	cert_type => econf:enum([ec, rsa])},
       [unique, {return, map}]);
 opt_type(allow_contrib_modules) ->
     econf:bool();

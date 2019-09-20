@@ -170,7 +170,7 @@ acl() ->
 acl(Host) ->
     ejabberd_config:get_option({acl, Host}).
 
--spec acme() -> #{'ca_url'=>binary(), 'contact'=>binary()}.
+-spec acme() -> #{'auto'=>boolean(), 'ca_url'=>binary(), 'cert_type'=>'ec' | 'rsa', 'contact'=>[binary()]}.
 acme() ->
     ejabberd_config:get_option({acme, global}).
 
