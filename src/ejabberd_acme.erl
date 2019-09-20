@@ -530,7 +530,7 @@ list_certificates() ->
 			 lists:foldl(fun sets:add_element/2,
 				     S, [{Domain, File} || {File, _} <- Files])
 		     catch _:{badmatch, _} ->
-			     []
+			     S
 		     end
 	     end, sets:new(), all_domains()),
     lists:sort(
