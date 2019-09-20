@@ -59,6 +59,7 @@ listen:
     module: ejabberd_http
     request_handlers:
       "/admin": ejabberd_web_admin
+      "/.well-known/acme-challenge": ejabberd_acme
   -
     port: 1883
     ip: "::"
