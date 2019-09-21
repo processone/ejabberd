@@ -573,12 +573,14 @@ request_on_start() ->
 			    case have_acme_listener() of
 				true -> {true, Hosts};
 				false ->
-				    ?INFO_MSG("No HTTP listeners for ACME challenges "
-					      "are configured, automatic "
-					      "certificate requests are aborted. Hint: "
-					      "configure the listener and run "
-					      "`ejabberdctl request-certificate all`",
-					      []),
+				    ?WARNING_MSG(
+				       "No HTTP listeners for ACME challenges "
+				       "are configured, automatic "
+				       "certificate requests are aborted. Hint: "
+				       "configure the listener and restart/reload "
+				       "ejabberd. Or set acme->auto option to "
+				       "`false` to suppress this warning.",
+				       []),
 				    false
 			    end
 		    end
