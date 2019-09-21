@@ -448,7 +448,7 @@ get_commands_spec() ->
 			       "domains: all | domain1,domain2,...",
 			module = ?MODULE, function = request_certificate,
 			args_desc = ["Domains for which to acquire a certificate"],
-			args_example = ["all | www.example.com,www.example1.net"],
+			args_example = ["all | domain.tld,conference.domain.tld,..."],
 			args = [{domains, string}],
 			result = {res, restuple}},
      #ejabberd_commands{name = list_certificates, tags = [acme],
