@@ -100,19 +100,14 @@ init([]) ->
     ets:new(acme_challenge, [named_table, public]),
     process_flag(trap_exit, true),
     ejabberd:start_app(acme),
-    case ensure_dir(account_file()) of
-	ok ->
-	    delete_obsolete_data(),
-	    ejabberd_hooks:add(cert_expired, ?MODULE, cert_expired, 60),
-	    ejabberd_hooks:add(config_reloaded, ?MODULE, register_certfiles, 40),
-	    ejabberd_hooks:add(ejabberd_started, ?MODULE, ejabberd_started, 110),
-	    ejabberd_hooks:add(config_reloaded, ?MODULE, ejabberd_started, 110),
-	    ejabberd_commands:register_commands(get_commands_spec()),
-	    register_certfiles(),
-	    {ok, #state{}};
-	{error, Why} ->
-	    {stop, Why}
-    end.
+    delete_obsolete_data(),
+    ejabberd_hooks:add(cert_expired, ?MODULE, cert_expired, 60),
+    ejabberd_hooks:add(config_reloaded, ?MODULE, register_certfiles, 40),
+    ejabberd_hooks:add(ejabberd_started, ?MODULE, ejabberd_started, 110),
+    ejabberd_hooks:add(config_reloaded, ?MODULE, ejabberd_started, 110),
+    ejabberd_commands:register_commands(get_commands_spec()),
+    register_certfiles(),
+    {ok, #state{}}.
 
 handle_call({request, [_|_] = Domains}, _From, State) ->
     ?INFO_MSG("Requesting new certificate for ~s from ~s",
