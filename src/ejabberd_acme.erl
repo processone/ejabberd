@@ -473,17 +473,22 @@ request_certificate(Arg) ->
 		 fun(S) -> S /= <<>> end,
 		 re:split(Arg, "[\\h,;]+", [{return, binary}])) of
 	      [<<"all">>] ->
-		  Domains = all_domains(),
-		  gen_server:call(?MODULE, {request, Domains}, ?CALL_TIMEOUT);
+		  case auto_domains() of
+		      [] -> {error, no_auto_hosts};
+		      Domains ->
+			  gen_server:call(?MODULE, {request, Domains}, ?CALL_TIMEOUT)
+		  end;
 	      [_|_] = Domains ->
 		  case lists:dropwhile(
 			 fun(D) ->
-				 try ejabberd_router:is_my_route(D)
+				 try ejabberd_router:is_my_route(D) of
+				     true -> not is_ip_or_localhost(D);
+				     false -> false
 				 catch _:{invalid_domain, _} -> false
 				 end
 			 end, Domains) of
 		      [Bad|_] ->
-			  {error, {unknown_host, Bad}};
+			  {error, {invalid_host, Bad}};
 		      [] ->
 			  gen_server:call(?MODULE, {request, Domains}, ?CALL_TIMEOUT)
 		  end;
@@ -546,6 +551,13 @@ list_certificates() ->
 all_domains() ->
     ejabberd_option:hosts() ++ ejabberd_router:get_all_routes().
 
+-spec auto_domains() -> [binary()].
+auto_domains() ->
+    lists:filter(
+      fun(Host) ->
+	      not is_ip_or_localhost(Host)
+      end, all_domains()).
+
 -spec directory_url() -> binary().
 directory_url() ->
     maps:get(ca_url, ejabberd_option:acme(), default_directory_url()).
@@ -567,7 +579,7 @@ request_on_start() ->
 			   fun(Host) ->
 				   not (have_cert_for_domain(Host)
 					orelse is_ip_or_localhost(Host))
-			   end, all_domains()) of
+			   end, auto_domains()) of
 			[] -> false;
 			Hosts ->
 			    case have_acme_listener() of
@@ -616,8 +628,10 @@ have_acme_listener() ->
 -spec format_error(term()) -> string().
 format_error({file, Reason}) ->
     "I/O error: " ++ file:format_error(Reason);
-format_error({unknown_host, Domain}) ->
-    "Unknown or invalid virtual host: " ++ binary_to_list(Domain);
+format_error({invalid_host, Domain}) ->
+    "Unknown or unacceptable virtual host: " ++ binary_to_list(Domain);
+format_error(no_auto_hosts) ->
+    "You have no virtual hosts acceptable for ACME certification";
 format_error(invalid_argument) ->
     "Invalid argument";
 format_error(unexpected_certfile) ->
