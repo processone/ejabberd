@@ -92,14 +92,14 @@ get_certfile(Domain) ->
 
 -spec get_certfile_no_default(binary()) -> {ok, filename()} | error.
 get_certfile_no_default(Domain) ->
-    case xmpp_idna:domain_utf8_to_ascii(Domain) of
-	false ->
-	    error;
+    try list_to_binary(idna:utf8_to_ascii(Domain)) of
 	ASCIIDomain ->
 	    case pkix:get_certfile(ASCIIDomain) of
 		error -> error;
 		Ret -> {ok, select_certfile(Ret)}
 	    end
+    catch _:_ ->
+	    error
     end.
 
 -spec get_certfile() -> {ok, filename()} | error.
