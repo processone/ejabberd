@@ -46,7 +46,9 @@
 -type cert() :: #'OTPCertificate'{}.
 -type cert_type() :: ec | rsa.
 -type io_error() :: file:posix().
--type issue_result() :: ok | acme:issue_return() | {error, {file, io_error()}}.
+-type issue_result() :: ok | acme:issue_return() |
+			{error, {file, io_error()} |
+			        {idna_failed, binary()}}.
 
 %%%===================================================================
 %%% API
@@ -191,17 +193,22 @@ unregister_challenge(Ref) ->
 %%%===================================================================
 -spec issue_request(state(), [binary(),...]) -> {issue_result(), state()}.
 issue_request(State, Domains) ->
-    case read_account_key() of
-	{ok, AccKey} ->
-	    Config = ejabberd_option:acme(),
-	    DirURL = maps:get(ca_url, Config, default_directory_url()),
-	    Contact = maps:get(contact, Config, []),
-	    CertType = maps:get(cert_type, Config, rsa),
-	    issue_request(State, DirURL, Domains, AccKey, CertType, Contact);
-	{error, Reason} = Err ->
-	    ?ERROR_MSG("Failed to request certificate for ~s: ~s",
-		       [misc:format_hosts_list(Domains),
-			format_error(Reason)]),
+    case check_idna(Domains) of
+	ok ->
+	    case read_account_key() of
+		{ok, AccKey} ->
+		    Config = ejabberd_option:acme(),
+		    DirURL = maps:get(ca_url, Config, default_directory_url()),
+		    Contact = maps:get(contact, Config, []),
+		    CertType = maps:get(cert_type, Config, rsa),
+		    issue_request(State, DirURL, Domains, AccKey, CertType, Contact);
+		{error, Reason} = Err ->
+		    ?ERROR_MSG("Failed to request certificate for ~s: ~s",
+			       [misc:format_hosts_list(Domains),
+				format_error(Reason)]),
+		    {Err, State}
+	    end;
+	{error, _} = Err ->
 	    {Err, State}
     end.
 
@@ -620,6 +627,16 @@ have_acme_listener() ->
 	      false
       end, ejabberd_option:listen()).
 
+-spec check_idna([binary()]) -> ok | {error, {idna_failed, binary()}}.
+check_idna([Domain|Domains]) ->
+    try idna:to_ascii(binary_to_list(Domain)) of
+	_ -> check_idna(Domains)
+    catch _:_ ->
+	    {error, {idna_failed, Domain}}
+    end;
+check_idna([]) ->
+    ok.
+
 -spec format_error(term()) -> string().
 format_error({file, Reason}) ->
     "I/O error: " ++ file:format_error(Reason);
@@ -631,6 +648,8 @@ format_error(invalid_argument) ->
     "Invalid argument";
 format_error(unexpected_certfile) ->
     "The certificate file was not obtained using ACME";
+format_error({idna_failed, Domain}) ->
+    "Not an IDN hostname: " ++ binary_to_list(Domain);
 format_error({bad_cert, _, _} = Reason) ->
     "Malformed certificate file: " ++ pkix:format_error(Reason);
 format_error(Reason) ->
