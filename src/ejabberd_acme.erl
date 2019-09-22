@@ -208,7 +208,10 @@ issue_request(State, Domains) ->
 				format_error(Reason)]),
 		    {Err, State}
 	    end;
-	{error, _} = Err ->
+	{error, Reason} = Err ->
+	    ?ERROR_MSG("Failed to request certificate for ~s: ~s",
+		       [misc:format_hosts_list(Domains),
+			format_error(Reason)]),
 	    {Err, State}
     end.
 
