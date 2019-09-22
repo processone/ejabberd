@@ -112,12 +112,12 @@ init([]) ->
     {ok, #state{}}.
 
 handle_call({request, [_|_] = Domains}, _From, State) ->
-    ?INFO_MSG("Requesting new certificate for ~s from ~s",
+    ?INFO_MSG("Requesting new certificate for ~ts from ~s",
 	      [misc:format_hosts_list(Domains), directory_url()]),
     {Ret, State1} = issue_request(State, Domains),
     {reply, Ret, State1};
 handle_call({revoke, Cert, Key, Path}, _From, State) ->
-    ?INFO_MSG("Revoking certificate from file ~s", [Path]),
+    ?INFO_MSG("Revoking certificate from file ~ts", [Path]),
     {Ret, State1} = revoke_request(State, Cert, Key, Path),
     {reply, Ret, State1};
 handle_call(Request, From, State) ->
@@ -127,7 +127,7 @@ handle_call(Request, From, State) ->
 handle_cast(ejabberd_started, State) ->
     case request_on_start() of
 	{true, Domains} ->
-	    ?INFO_MSG("Requesting new certificate for ~s from ~s",
+	    ?INFO_MSG("Requesting new certificate for ~ts from ~s",
 		      [misc:format_hosts_list(Domains), directory_url()]),
 	    {_, State1} = issue_request(State, Domains),
 	    {noreply, State1};
@@ -135,7 +135,7 @@ handle_cast(ejabberd_started, State) ->
 	    {noreply, State}
     end;
 handle_cast({request, [_|_] = Domains}, State) ->
-    ?INFO_MSG("Requesting renewal of certificate for ~s from ~s",
+    ?INFO_MSG("Requesting renewal of certificate for ~ts from ~s",
 	      [misc:format_hosts_list(Domains), directory_url()]),
     {_, State1} = issue_request(State, Domains),
     {noreply, State1};
@@ -203,13 +203,13 @@ issue_request(State, Domains) ->
 		    CertType = maps:get(cert_type, Config, rsa),
 		    issue_request(State, DirURL, Domains, AsciiDomains, AccKey, CertType, Contact);
 		{error, Reason} = Err ->
-		    ?ERROR_MSG("Failed to request certificate for ~s: ~s",
+		    ?ERROR_MSG("Failed to request certificate for ~ts: ~ts",
 			       [misc:format_hosts_list(Domains),
 				format_error(Reason)]),
 		    {Err, State}
 	    end;
 	{error, Reason} = Err ->
-	    ?ERROR_MSG("Failed to request certificate for ~s: ~s",
+	    ?ERROR_MSG("Failed to request certificate for ~ts: ~ts",
 		       [misc:format_hosts_list(Domains),
 			format_error(Reason)]),
 	    {Err, State}
@@ -231,18 +231,18 @@ issue_request(State, DirURL, Domains, AsciiDomains, AccKey, CertType, Contact) -
 		      {ok, Path} ->
 			  ejabberd_pkix:add_certfile(Path),
 			  ejabberd_pkix:commit(),
-			  ?INFO_MSG("Certificate for ~s has been received, "
+			  ?INFO_MSG("Certificate for ~ts has been received, "
 				    "stored and loaded successfully",
 				    [misc:format_hosts_list(Domains)]),
 			  {ok, State};
 		      {error, Reason} = Err ->
-			  ?ERROR_MSG("Failed to store certificate for ~s: ~s",
+			  ?ERROR_MSG("Failed to store certificate for ~ts: ~ts",
 				     [misc:format_hosts_list(Domains),
 				      format_error(Reason)]),
 			  {Err, State}
 		  end;
 	      {error, Reason} = Err ->
-		  ?ERROR_MSG("Failed to request certificate for ~s: ~s",
+		  ?ERROR_MSG("Failed to request certificate for ~ts: ~ts",
 			     [misc:format_hosts_list(Domains),
 			      format_error(Reason)]),
 		  {Err, State}
@@ -257,7 +257,7 @@ revoke_request(State, Cert, Key, Path) ->
     case acme:revoke(directory_url(), Cert, Key,
 		     [{debug_fun, debug_fun()}]) of
 	ok ->
-	    ?INFO_MSG("Certificate from file ~s has been "
+	    ?INFO_MSG("Certificate from file ~ts has been "
 		      "revoked successfully", [Path]),
 	    case delete_file(Path) of
 		ok ->
@@ -268,7 +268,7 @@ revoke_request(State, Cert, Key, Path) ->
 		    {Err, State}
 	    end;
 	{error, Reason} = Err ->
-	    ?ERROR_MSG("Failed to revoke certificate from file ~s: ~s",
+	    ?ERROR_MSG("Failed to revoke certificate from file ~ts: ~ts",
 		       [Path, format_error(Reason)]),
 	    {Err, State}
     end.
@@ -313,36 +313,36 @@ read_account_key() ->
 	    case maps:keys(KeyMap) of
 		[#'ECPrivateKey'{} = Key|_] -> {ok, Key};
 		_ ->
-		    ?WARNING_MSG("File ~s doesn't contain ACME account key. "
+		    ?WARNING_MSG("File ~ts doesn't contain ACME account key. "
 				 "Trying to create a new one...",
-				 [prep_path(Path)]),
+				 [Path]),
 		    create_account_key()
 	    end;
 	{error, enoent} ->
 	    create_account_key();
 	{error, {bad_cert, _, _} = Reason} ->
-	    ?WARNING_MSG("ACME account key from '~s' is corrupted: ~s. "
+	    ?WARNING_MSG("ACME account key from '~ts' is corrupted: ~s. "
 			 "Trying to create a new one...",
-			 [prep_path(Path), pkix:format_error(Reason)]),
+			 [Path, pkix:format_error(Reason)]),
 	    create_account_key();
 	{error, Reason} ->
-	    ?ERROR_MSG("Failed to read ACME account from ~s: ~s. "
+	    ?ERROR_MSG("Failed to read ACME account from ~ts: ~s. "
 		       "Try to fix permissions or delete the file completely",
-		       [prep_path(Path), pkix:format_error(Reason)]),
+		       [Path, pkix:format_error(Reason)]),
 	    {error, {file, Reason}}
     end.
 
 -spec create_account_key() -> {ok, #'ECPrivateKey'{}} | {error, {file, io_error()}}.
 create_account_key() ->
     Path = account_file(),
-    ?DEBUG("Creating ACME account key in ~s", [prep_path(Path)]),
+    ?DEBUG("Creating ACME account key in ~ts", [Path]),
     Key = acme:generate_key(ec),
     DER = public_key:der_encode(element(1, Key), Key),
     PEM = public_key:pem_encode([{element(1, Key), DER, not_encrypted}]),
     case write_file(Path, PEM) of
 	ok ->
-	    ?DEBUG("ACME account key has been created successfully in ~s",
-		   [prep_path(Path)]),
+	    ?DEBUG("ACME account key has been created successfully in ~ts",
+		   [Path]),
 	    {ok, Key};
 	{error, Reason} ->
 	    {error, {file, Reason}}
@@ -361,8 +361,8 @@ store_cert(Key, Chain, CertType, Domains) ->
 		 end, Chain),
     PEM = public_key:pem_encode(PemChain ++ PemKey),
     Path = cert_file(CertType, Domains),
-    ?DEBUG("Storing certificate for ~s in ~s",
-	   [misc:format_hosts_list(Domains), prep_path(Path)]),
+    ?DEBUG("Storing certificate for ~ts in ~ts",
+	   [misc:format_hosts_list(Domains), Path]),
     case write_file(Path, PEM) of
 	ok ->
 	    {ok, Path};
@@ -375,7 +375,7 @@ store_cert(Key, Chain, CertType, Domains) ->
 					        {bad_cert, _, _} |
 					        unexpected_certfile}.
 read_cert(Path) ->
-    ?DEBUG("Reading certificate from ~s", [prep_path(Path)]),
+    ?DEBUG("Reading certificate from ~ts", [Path]),
     case pkix:read_file(Path) of
 	{ok, CertsMap, KeysMap} ->
 	    case {maps:to_list(CertsMap), maps:keys(KeysMap)} of
@@ -399,12 +399,12 @@ write_file(Path, Data) ->
 		    case file:change_mode(Path, 8#600) of
 			ok -> ok;
 			{error, Why} ->
-			    ?WARNING_MSG("Failed to change permissions of ~s: ~s",
-					 [prep_path(Path), file:format_error(Why)])
+			    ?WARNING_MSG("Failed to change permissions of ~ts: ~s",
+					 [Path, file:format_error(Why)])
 		    end;
 		{error, Why} = Err ->
-		    ?ERROR_MSG("Failed to write file ~s: ~s",
-			       [prep_path(Path), file:format_error(Why)]),
+		    ?ERROR_MSG("Failed to write file ~ts: ~s",
+			       [Path, file:format_error(Why)]),
 		    Err
 	    end;
 	Err ->
@@ -416,8 +416,8 @@ delete_file(Path) ->
     case file:delete(Path) of
 	ok -> ok;
 	{error, Why} = Err ->
-	    ?WARNING_MSG("Failed to delete file ~s: ~s",
-			 [prep_path(Path), file:format_error(Why)]),
+	    ?WARNING_MSG("Failed to delete file ~ts: ~s",
+			 [Path, file:format_error(Why)]),
 	    Err
     end.
 
@@ -426,8 +426,8 @@ ensure_dir(Path) ->
     case filelib:ensure_dir(Path) of
 	ok -> ok;
 	{error, Why} = Err ->
-	    ?ERROR_MSG("Failed to create directory ~s: ~s",
-		       [prep_path(filename:dirname(Path)),
+	    ?ERROR_MSG("Failed to create directory ~ts: ~s",
+		       [filename:dirname(Path),
 			file:format_error(Why)]),
 	    Err
     end.
@@ -437,7 +437,7 @@ delete_obsolete_data() ->
     Path = filename:join(ejabberd_pkix:certs_dir(), "acme"),
     case filelib:is_dir(Path) of
 	true ->
-	    ?INFO_MSG("Deleting obsolete directory ~s", [prep_path(Path)]),
+	    ?INFO_MSG("Deleting obsolete directory ~ts", [Path]),
 	    _ = misc:delete_dir(Path),
 	    ok;
 	false ->
