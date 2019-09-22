@@ -194,14 +194,14 @@ unregister_challenge(Ref) ->
 -spec issue_request(state(), [binary(),...]) -> {issue_result(), state()}.
 issue_request(State, Domains) ->
     case check_idna(Domains) of
-	ok ->
+	{ok, AsciiDomains} ->
 	    case read_account_key() of
 		{ok, AccKey} ->
 		    Config = ejabberd_option:acme(),
 		    DirURL = maps:get(ca_url, Config, default_directory_url()),
 		    Contact = maps:get(contact, Config, []),
 		    CertType = maps:get(cert_type, Config, rsa),
-		    issue_request(State, DirURL, Domains, AccKey, CertType, Contact);
+		    issue_request(State, DirURL, Domains, AsciiDomains, AccKey, CertType, Contact);
 		{error, Reason} = Err ->
 		    ?ERROR_MSG("Failed to request certificate for ~s: ~s",
 			       [misc:format_hosts_list(Domains),
@@ -215,12 +215,12 @@ issue_request(State, Domains) ->
 	    {Err, State}
     end.
 
--spec issue_request(state(), binary(), [binary(),...], priv_key(),
+-spec issue_request(state(), binary(), [binary(),...], [string(), ...], priv_key(),
 		    cert_type(), [binary()]) -> {issue_result(), state()}.
-issue_request(State, DirURL, Domains, AccKey, CertType, Contact) ->
+issue_request(State, DirURL, Domains, AsciiDomains, AccKey, CertType, Contact) ->
     Ref = make_ref(),
     ChallengeFun = fun(Auth) -> register_challenge(Auth, Ref) end,
-    Ret = case acme:issue(DirURL, Domains, AccKey,
+    Ret = case acme:issue(DirURL, AsciiDomains, AccKey,
 			  [{cert_type, CertType},
 			   {contact, Contact},
 			   {debug_fun, debug_fun()},
@@ -630,15 +630,16 @@ have_acme_listener() ->
 	      false
       end, ejabberd_option:listen()).
 
--spec check_idna([binary()]) -> ok | {error, {idna_failed, binary()}}.
-check_idna([Domain|Domains]) ->
-    try idna:to_ascii(binary_to_list(Domain)) of
-	_ -> check_idna(Domains)
-    catch _:_ ->
-	    {error, {idna_failed, Domain}}
-    end;
-check_idna([]) ->
-    ok.
+-spec check_idna([binary()]) -> {ok, [string()]} | {error, {idna_failed, binary()}}.
+check_idna(Domains) ->
+    lists:foldl(
+      fun(D, {ok, Ds}) ->
+	      try {ok, [idna:utf8_to_ascii(D)|Ds]}
+	      catch _:_ -> {error, {idna_failed, D}}
+	      end;
+	 (_, Err) ->
+	      Err
+      end, {ok, []}, Domains).
 
 -spec format_error(term()) -> string().
 format_error({file, Reason}) ->
