@@ -101,5 +101,5 @@ check_password_extauth(User, _AuthzId, Server, Password) ->
 -spec failure(binary(), binary(), atom(), any()) -> {nocache, {error, db_failure}}.
 failure(User, Server, Fun, Reason) ->
     ?ERROR_MSG("External authentication program failed when calling "
-	       "'~s' for ~s@~s: ~p", [Fun, User, Server, Reason]),
+	       "'~ts' for ~ts@~ts: ~p", [Fun, User, Server, Reason]),
     {nocache, {error, db_failure}}.

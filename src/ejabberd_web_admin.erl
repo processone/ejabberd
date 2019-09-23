@@ -166,7 +166,7 @@ process([<<"doc">>, LocalFile], _Request) ->
 		   "documentation with the environment variable "
 		   "EJABBERD_DOC_PATH. Check the ejabberd "
 		   "Guide for more information.">>,
-	  ?WARNING_MSG("Problem '~p' accessing the local Guide file ~s", [Error, Help]),
+	  ?WARNING_MSG("Problem '~p' accessing the local Guide file ~ts", [Error, Help]),
 	  case Error of
 	    eacces -> {403, [], <<"Forbidden", Help/binary>>};
 	    enoent -> {307, [{<<"Location">>, <<"http://docs.ejabberd.im/admin/guide/configuration/">>}], <<"Not found", Help/binary>>};
@@ -927,7 +927,7 @@ user_info(User, Server, Query, Lang) ->
 			 end;
 		     _ -> translate:translate(Lang, ?T("Online"))
 		   end,
-    [?XC(<<"h1">>, (str:format(translate:translate(Lang, ?T("User ~s")),
+    [?XC(<<"h1">>, (str:format(translate:translate(Lang, ?T("User ~ts")),
                                                 [us_to_list(US)])))]
       ++
       case Res of

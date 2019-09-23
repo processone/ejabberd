@@ -43,7 +43,7 @@
 start(Host) ->
     case ejabberd_option:jwt_key(Host) of
 	undefined ->
-	    ?ERROR_MSG("Option jwt_key is not configured for ~s: "
+	    ?ERROR_MSG("Option jwt_key is not configured for ~ts: "
 		       "JWT authentication won't work", [Host]);
 	_ ->
 	    ok

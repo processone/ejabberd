@@ -187,7 +187,7 @@ c2s_handle_cast(State, _Msg) ->
 -spec c2s_handle_info(c2s_state(), any()) -> c2s_state() | {stop, c2s_state()}.
 c2s_handle_info(#{push_enabled := true, mgmt_state := pending,
 		  jid := JID} = State, {timeout, _, push_keepalive}) ->
-    ?INFO_MSG("Waking ~s before session times out", [jid:encode(JID)]),
+    ?INFO_MSG("Waking ~ts before session times out", [jid:encode(JID)]),
     mod_push:notify(State, none, undefined),
     {stop, State};
 c2s_handle_info(State, _) ->
@@ -226,7 +226,7 @@ maybe_start_wakeup_timer(State) ->
 
 -spec wake_all(binary()) -> ok.
 wake_all(LServer) ->
-    ?INFO_MSG("Waking all push clients on ~s", [LServer]),
+    ?INFO_MSG("Waking all push clients on ~ts", [LServer]),
     Mod = gen_mod:db_mod(LServer, mod_push),
     case Mod:lookup_sessions(LServer) of
 	{ok, Sessions} ->

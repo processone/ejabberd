@@ -308,16 +308,16 @@ enable(#jid{luser = LUser, lserver = LServer, lresource = LResource} = JID,
 	{TS, PID} ->
 	    case store_session(LUser, LServer, TS, PushJID, Node, XData) of
 		{ok, _} ->
-		    ?INFO_MSG("Enabling push notifications for ~s",
+		    ?INFO_MSG("Enabling push notifications for ~ts",
 			      [jid:encode(JID)]),
 		    ejabberd_c2s:cast(PID, push_enable);
 		{error, _} = Err ->
-		    ?ERROR_MSG("Cannot enable push for ~s: database error",
+		    ?ERROR_MSG("Cannot enable push for ~ts: database error",
 			       [jid:encode(JID)]),
 		    Err
 	    end;
 	none ->
-	    ?WARNING_MSG("Cannot enable push for ~s: session not found",
+	    ?WARNING_MSG("Cannot enable push for ~ts: session not found",
 			 [jid:encode(JID)]),
 	    {error, notfound}
     end.
@@ -327,11 +327,11 @@ disable(#jid{luser = LUser, lserver = LServer, lresource = LResource} = JID,
        PushJID, Node) ->
     case ejabberd_sm:get_session_sid(LUser, LServer, LResource) of
 	{_TS, PID} ->
-	    ?INFO_MSG("Disabling push notifications for ~s",
+	    ?INFO_MSG("Disabling push notifications for ~ts",
 		      [jid:encode(JID)]),
 	    ejabberd_c2s:cast(PID, push_disable);
 	none ->
-	    ?WARNING_MSG("Session not found while disabling push for ~s",
+	    ?WARNING_MSG("Session not found while disabling push for ~ts",
 			 [jid:encode(JID)])
     end,
     if Node /= <<>> ->
@@ -361,7 +361,7 @@ mam_message(#message{} = Pkt, LUser, LServer, _Peer, _Nick, chat, Dir) ->
 	{ok, [_|_] = Clients} ->
 	    case drop_online_sessions(LUser, LServer, Clients) of
 		[_|_] = Clients1 ->
-		    ?DEBUG("Notifying ~s@~s of MAM message", [LUser, LServer]),
+		    ?DEBUG("Notifying ~ts@~ts of MAM message", [LUser, LServer]),
 		    notify(LUser, LServer, Clients1, Pkt, Dir);
 		[] ->
 		    ok
@@ -379,7 +379,7 @@ offline_message(#message{meta = #{mam_archived := true}} = Pkt) ->
 offline_message(#message{to = #jid{luser = LUser, lserver = LServer}} = Pkt) ->
     case lookup_sessions(LUser, LServer) of
 	{ok, [_|_] = Clients} ->
-	    ?DEBUG("Notifying ~s@~s of offline message", [LUser, LServer]),
+	    ?DEBUG("Notifying ~ts@~ts of offline message", [LUser, LServer]),
 	    notify(LUser, LServer, Clients, Pkt, recv);
 	_ ->
 	    ok
@@ -420,7 +420,7 @@ c2s_handle_cast(State, _Msg) ->
 
 -spec remove_user(binary(), binary()) -> ok | {error, err_reason()}.
 remove_user(LUser, LServer) ->
-    ?INFO_MSG("Removing any push sessions of ~s@~s", [LUser, LServer]),
+    ?INFO_MSG("Removing any push sessions of ~ts@~ts", [LUser, LServer]),
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     LookupFun = fun() -> Mod:lookup_sessions(LUser, LServer) end,
     delete_sessions(LUser, LServer, LookupFun, Mod).
@@ -446,27 +446,27 @@ notify(LUser, LServer, Clients, Pkt, Dir) ->
       fun({TS, PushLJID, Node, XData}) ->
 	      HandleResponse =
 	          fun(#iq{type = result}) ->
-			  ?DEBUG("~s accepted notification for ~s@~s (~s)",
+			  ?DEBUG("~ts accepted notification for ~ts@~ts (~ts)",
 				 [jid:encode(PushLJID), LUser, LServer, Node]);
 		     (#iq{type = error} = IQ) ->
 			  case inspect_error(IQ) of
 			      {wait, Reason} ->
-				  ?INFO_MSG("~s rejected notification for "
-					    "~s@~s (~s) temporarily: ~s",
+				  ?INFO_MSG("~ts rejected notification for "
+					    "~ts@~ts (~ts) temporarily: ~ts",
 					    [jid:encode(PushLJID), LUser,
 					     LServer, Node, Reason]);
 			      {Type, Reason} ->
 				  spawn(?MODULE, delete_session,
 					[LUser, LServer, TS]),
-				  ?WARNING_MSG("~s rejected notification for "
-					       "~s@~s (~s), disabling push: ~s "
-					       "(~s)",
+				  ?WARNING_MSG("~ts rejected notification for "
+					       "~ts@~ts (~ts), disabling push: ~ts "
+					       "(~ts)",
 					       [jid:encode(PushLJID), LUser,
 						LServer, Node, Reason, Type])
 			  end;
 		     (timeout) ->
-			  ?DEBUG("Timeout sending notification for ~s@~s (~s) "
-				 "to ~s",
+			  ?DEBUG("Timeout sending notification for ~ts@~ts (~ts) "
+				 "to ~ts",
 				 [LUser, LServer, Node, jid:encode(PushLJID)]),
 			  ok % Hmm.
 		  end,

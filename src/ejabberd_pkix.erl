@@ -76,7 +76,7 @@ try_certfile(Path0) ->
     case pkix:is_pem_file(Path) of
 	true -> Path;
 	{false, Reason} ->
-	    ?ERROR_MSG("Failed to read PEM file ~s: ~s",
+	    ?ERROR_MSG("Failed to read PEM file ~ts: ~ts",
 		       [Path, pkix:format_error(Reason)]),
 	    erlang:error(badarg)
     end.
@@ -134,7 +134,7 @@ notify_expired(Event) ->
 cert_expired(_Cert, #{domains := Domains,
 		      expiry := Expiry,
 		      files := [{Path, Line}|_]}) ->
-    ?WARNING_MSG("Certificate in ~s (at line: ~B)~s ~s",
+    ?WARNING_MSG("Certificate in ~ts (at line: ~B)~ts ~ts",
 		 [Path, Line,
 		  case Domains of
 		      [] -> "";
@@ -262,7 +262,7 @@ add_file(File) ->
     case pkix:add_file(File) of
 	ok -> ok;
 	{error, Reason} = Err ->
-	    ?ERROR_MSG("Failed to read PEM file ~s: ~s",
+	    ?ERROR_MSG("Failed to read PEM file ~ts: ~ts",
 		       [File, pkix:format_error(Reason)]),
 	    Err
     end.
@@ -274,7 +274,7 @@ del_files(Files) ->
 -spec do_commit() -> {ok, [{filename(), pkix:error_reason()}]} | error.
 do_commit() ->
     CAFile = ejabberd_option:ca_file(),
-    ?DEBUG("Using CA root certificates from: ~s", [CAFile]),
+    ?DEBUG("Using CA root certificates from: ~ts", [CAFile]),
     Opts = [{cafile, CAFile},
 	    {notify_before, [7*24*60*60, % 1 week
 			     24*60*60, % 1 day
@@ -289,7 +289,7 @@ do_commit() ->
 	    fast_tls_add_certfiles(),
 	    {ok, Errors};
 	{error, File, Reason} ->
-	    ?CRITICAL_MSG("Failed to write to ~s: ~s",
+	    ?CRITICAL_MSG("Failed to write to ~ts: ~ts",
 			  [File, file:format_error(Reason)]),
 	    error
     end.
@@ -310,7 +310,7 @@ check_domain_certfiles(Hosts) ->
 		      case get_certfile_no_default(Host) of
 			  error ->
 			      ?WARNING_MSG(
-				 "No certificate found matching ~s",
+				 "No certificate found matching ~ts",
 				 [Host]);
 			  _ ->
 			      ok
@@ -339,7 +339,7 @@ prep_path(Path0) ->
 		{ok, CWD} ->
 		    unicode:characters_to_binary(filename:join(CWD, Path0));
 		{error, Reason} ->
-		    ?WARNING_MSG("Failed to get current directory name: ~s",
+		    ?WARNING_MSG("Failed to get current directory name: ~ts",
 				 [file:format_error(Reason)]),
 		    unicode:characters_to_binary(Path0)
 	    end;
@@ -359,7 +359,7 @@ wildcard(Path) when is_binary(Path) ->
 wildcard(Path) ->
     case filelib:wildcard(Path) of
 	[] ->
-	    ?WARNING_MSG("Path ~s is empty, please make sure ejabberd has "
+	    ?WARNING_MSG("Path ~ts is empty, please make sure ejabberd has "
 			 "sufficient rights to read it", [Path]),
 	    [];
 	Files ->
@@ -382,9 +382,9 @@ fast_tls_add_certfiles() ->
     fast_tls:clear_cache().
 
 reason_to_fmt({invalid_cert, _, _}) ->
-    "Invalid certificate in ~s: ~s";
+    "Invalid certificate in ~ts: ~ts";
 reason_to_fmt(_) ->
-    "Failed to read PEM file ~s: ~s".
+    "Failed to read PEM file ~ts: ~ts".
 
 -spec log_warnings([{filename(), pkix:error_reason()}]) -> ok.
 log_warnings(Warnings) ->
@@ -404,7 +404,7 @@ log_errors(Errors) ->
 
 -spec log_cafile_error({filename(), pkix:error_reason()} | undefined) -> ok.
 log_cafile_error({File, Reason}) ->
-    ?CRITICAL_MSG("Failed to read CA certitificates from ~s: ~s. "
+    ?CRITICAL_MSG("Failed to read CA certitificates from ~ts: ~ts. "
 		  "Try to change/set option 'ca_file'",
 		  [File, pkix:format_error(Reason)]);
 log_cafile_error(_) ->

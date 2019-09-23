@@ -94,8 +94,8 @@ create_captcha(SID, From, To, Lang, Limiter, Args) ->
 		   Lang, [challenge]),
 	    X = #xdata{type = form, fields = Fs},
 	    Captcha = #xcaptcha{xdata = X},
-	    BodyString = {?T("Your subscription request and/or messages to ~s have been blocked. "
-			     "To unblock your subscription request, visit ~s"), [JID, get_url(Id)]},
+	    BodyString = {?T("Your subscription request and/or messages to ~ts have been blocked. "
+			     "To unblock your subscription request, visit ~ts"), [JID, get_url(Id)]},
 	    Body = xmpp:mk_text(BodyString, Lang),
 	    OOB = #oob_x{url = get_url(Id)},
 	    Hint = #hint{type = 'no-store'},
@@ -197,7 +197,7 @@ process_reply(#xdata{} = X) ->
 		captcha_not_found -> {error, not_found}
 	    end
     catch _:{captcha_form, Why} ->
-	    ?WARNING_MSG("Malformed CAPTCHA form: ~s",
+	    ?WARNING_MSG("Malformed CAPTCHA form: ~ts",
 			 [captcha_form:format_error(Why)]),
 	    {error, malformed}
     end;
@@ -392,7 +392,7 @@ create_image(Limiter, Key) ->
 				   {error, image_error()}.
 do_create_image(Key) ->
     FileName = get_prog_name(),
-    Cmd = lists:flatten(io_lib:format("~s ~s", [FileName, Key])),
+    Cmd = lists:flatten(io_lib:format("~ts ~ts", [FileName, Key])),
     case cmd(Cmd) of
       {ok,
        <<137, $P, $N, $G, $\r, $\n, 26, $\n, _/binary>> =
@@ -404,18 +404,18 @@ do_create_image(Key) ->
 	  when X == $7; X == $9 ->
 	  {ok, <<"image/gif">>, Key, Img};
       {error, enodata = Reason} ->
-	  ?ERROR_MSG("Failed to process output from \"~s\". "
+	  ?ERROR_MSG("Failed to process output from \"~ts\". "
 		     "Maybe ImageMagick's Convert program "
 		     "is not installed.",
 		     [Cmd]),
 	  {error, Reason};
       {error, Reason} ->
-	  ?ERROR_MSG("Failed to process an output from \"~s\": ~p",
+	  ?ERROR_MSG("Failed to process an output from \"~ts\": ~p",
 		     [Cmd, Reason]),
 	  {error, Reason};
       _ ->
 	  Reason = malformed_image,
-	  ?ERROR_MSG("Failed to process an output from \"~s\": ~p",
+	  ?ERROR_MSG("Failed to process an output from \"~ts\": ~p",
 		     [Cmd, Reason]),
 	  {error, Reason}
     end.

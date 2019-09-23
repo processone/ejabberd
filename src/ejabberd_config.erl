@@ -77,7 +77,7 @@ load() ->
 load(Path) ->
     ConfigFile = unicode:characters_to_binary(Path),
     UnixTime = erlang:monotonic_time(second),
-    ?INFO_MSG("Loading configuration from ~s", [ConfigFile]),
+    ?INFO_MSG("Loading configuration from ~ts", [ConfigFile]),
     _ = ets:new(ejabberd_options,
 		[named_table, public, {read_concurrency, true}]),
     case load_file(ConfigFile) of
@@ -92,7 +92,7 @@ load(Path) ->
 -spec reload() -> ok | error_return().
 reload() ->
     ConfigFile = path(),
-    ?INFO_MSG("Reloading configuration from ~s", [ConfigFile]),
+    ?INFO_MSG("Reloading configuration from ~ts", [ConfigFile]),
     OldHosts = get_myhosts(),
     case load_file(ConfigFile) of
 	ok ->
@@ -111,7 +111,7 @@ reload() ->
 	    delete_host_options(DelHosts),
 	    ?INFO_MSG("Configuration reloaded successfully", []);
 	Err ->
-	    ?ERROR_MSG("Configuration reload aborted: ~s",
+	    ?ERROR_MSG("Configuration reload aborted: ~ts",
 		       [format_error(Err)]),
 	    Err
     end.
@@ -130,7 +130,7 @@ dump(Y, Output) ->
     Data = fast_yaml:encode(Y),
     case Output of
 	stdout ->
-	    io:format("~s~n", [Data]);
+	    io:format("~ts~n", [Data]);
 	FileName ->
 	    try
 		ok = filelib:ensure_dir(FileName),
@@ -158,9 +158,9 @@ get_option({O, Host} = Opt) ->
     catch ?EX_RULE(error, badarg, St) when Host /= global ->
 	    StackTrace = ?EX_STACK(St),
 	    Val = get_option({O, global}),
-	    ?WARNING_MSG("Option '~s' is not defined for virtual host '~s'. "
+	    ?WARNING_MSG("Option '~ts' is not defined for virtual host '~ts'. "
 			 "This is a bug, please report it with the following "
-			 "stacktrace included:~n** ~s",
+			 "stacktrace included:~n** ~ts",
 			 [O, Host, misc:format_exception(2, error, badarg, StackTrace)]),
 	    Val
     end.
@@ -271,9 +271,9 @@ default_db(Opt, Host, Mod, Default) ->
     case code:ensure_loaded(DBMod) of
 	{module, _} -> Type;
 	{error, _} ->
-	    ?WARNING_MSG("Module ~s doesn't support database '~s' "
-			 "defined in option '~s', using "
-			 "'~s' as fallback", [Mod, Type, Opt, Default]),
+	    ?WARNING_MSG("Module ~ts doesn't support database '~ts' "
+			 "defined in option '~ts', using "
+			 "'~ts' as fallback", [Mod, Type, Opt, Default]),
 	    Default
     end.
 
@@ -355,15 +355,15 @@ format_error({error, Reason, Ctx}) ->
 format_error({error, {merge_conflict, Opt, Host}}) ->
     lists:flatten(
       io_lib:format(
-	"Cannot merge value of option '~s' defined in append_host_config "
-	"for virtual host ~s: only options of type list or map are allowed "
+	"Cannot merge value of option '~ts' defined in append_host_config "
+	"for virtual host ~ts: only options of type list or map are allowed "
 	"in append_host_config. Hint: specify the option in host_config",
 	[Opt, Host]));
 format_error({error, {old_config, Path, Reason}}) ->
     lists:flatten(
       io_lib:format(
-	"Failed to read configuration from '~s': ~s~s",
-	[unicode:characters_to_binary(Path),
+	"Failed to read configuration from '~ts': ~ts~ts",
+	[Path,
 	 case Reason of
 	     {_, _, _} -> "at line ";
 	     _ -> ""
@@ -371,8 +371,8 @@ format_error({error, {old_config, Path, Reason}}) ->
 format_error({error, {write_file, Path, Reason}}) ->
     lists:flatten(
       io_lib:format(
-	"Failed to write to '~s': ~s",
-	[unicode:characters_to_binary(Path),
+	"Failed to write to '~ts': ~ts",
+	[Path,
 	 file:format_error(Reason)]));
 format_error({error, {exception, Class, Reason, St}}) ->
     lists:flatten(
@@ -381,7 +381,7 @@ format_error({error, {exception, Class, Reason, St}}) ->
 	"This is most likely due to faulty/incompatible validator in "
 	"third-party code. If you are not running any third-party "
 	"code, please report the bug with ejabberd configuration "
-	"file attached and the following stacktrace included:~n** ~s",
+	"file attached and the following stacktrace included:~n** ~ts",
 	[misc:format_exception(2, Class, Reason, St)])).
 
 %%%===================================================================

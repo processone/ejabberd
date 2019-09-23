@@ -231,5 +231,5 @@ unsubscribe(LServer, Channel, Service, JID, Nodes) ->
 %%%===================================================================
 -spec report_corrupted(atom(), #sql_query{}) -> ok.
 report_corrupted(Column, SQL) ->
-    ?ERROR_MSG("Corrupted value of '~s' column returned by "
-	       "SQL request: ~s", [Column, SQL#sql_query.hash]).
+    ?ERROR_MSG("Corrupted value of '~ts' column returned by "
+	       "SQL request: ~ts", [Column, SQL#sql_query.hash]).

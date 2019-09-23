@@ -128,17 +128,17 @@ process_iq(#iq{from = From, to = #jid{lserver = LServer}, lang = Lang,
 	allow ->
 	    case jid:make(U, S, R) of
 		#jid{} = Normalized ->
-		    ?DEBUG("Normalized JID for ~s: ~s",
+		    ?DEBUG("Normalized JID for ~ts: ~ts",
 			   [jid:encode(From), jid:encode(JID)]),
 		    xmpp:make_iq_result(IQ, #jidprep{jid = Normalized});
 		error -> % Cannot happen.
-		    ?DEBUG("Normalizing JID failed for ~s: ~s",
+		    ?DEBUG("Normalizing JID failed for ~ts: ~ts",
 			   [jid:encode(From), jid:encode(JID)]),
 		    Txt = ?T("JID normalization failed"),
 		    xmpp:make_error(IQ, xmpp:err_jid_malformed(Txt, Lang))
 	    end;
 	deny ->
-	    ?DEBUG("Won't return normalized JID to ~s: ~s",
+	    ?DEBUG("Won't return normalized JID to ~ts: ~ts",
 		   [jid:encode(From), jid:encode(JID)]),
 	    Txt = ?T("JID normalization denied by service policy"),
             xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang))

@@ -47,7 +47,7 @@ start() ->
 		{ok, _} -> ok;
 		{error, {already_started, _}} -> ok;
 		{error, Why} = Err ->
-		    ?ERROR_MSG("Failed to start ~s: ~p", [?MODULE, Why]),
+		    ?ERROR_MSG("Failed to start ~ts: ~p", [?MODULE, Why]),
 		    Err
 	    end
     end.

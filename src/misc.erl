@@ -315,7 +315,7 @@ try_read_file(Path) ->
 	    file:close(Fd),
 	    iolist_to_binary(Path);
 	{error, Why} ->
-	    ?ERROR_MSG("Failed to read ~s: ~s", [Path, file:format_error(Why)]),
+	    ?ERROR_MSG("Failed to read ~ts: ~ts", [Path, file:format_error(Why)]),
 	    erlang:error(badarg)
     end.
 
@@ -330,15 +330,15 @@ try_url(URL0) ->
     end,
     case http_uri:parse(URL) of
 	{ok, {Scheme, _, _, _, _, _}} when Scheme /= http, Scheme /= https ->
-	    ?ERROR_MSG("Unsupported URI scheme: ~s", [URL]),
+	    ?ERROR_MSG("Unsupported URI scheme: ~ts", [URL]),
 	    erlang:error(badarg);
 	{ok, {_, _, Host, _, _, _}} when Host == ""; Host == <<"">> ->
-	    ?ERROR_MSG("Invalid URL: ~s", [URL]),
+	    ?ERROR_MSG("Invalid URL: ~ts", [URL]),
 	    erlang:error(badarg);
 	{ok, _} ->
 	    iolist_to_binary(URL);
 	{error, _} ->
-	    ?ERROR_MSG("Invalid URL: ~s", [URL]),
+	    ?ERROR_MSG("Invalid URL: ~ts", [URL]),
 	    erlang:error(badarg)
     end.
 
@@ -555,7 +555,7 @@ format_hosts_list([H1, H2]) ->
 format_hosts_list([H1, H2, H3]) ->
     [H1, ", ", H2, " and ", H3];
 format_hosts_list([H1, H2|Hs]) ->
-    io_lib:format("~s, ~s and ~B more hosts",
+    io_lib:format("~ts, ~ts and ~B more hosts",
 		  [H1, H2, length(Hs)]).
 
 -spec format_cycle([atom(), ...]) -> iolist().
@@ -621,7 +621,7 @@ read_file(Path) ->
 	{ok, Data} ->
 	    {ok, Data};
 	{error, Why} = Err ->
-	    ?ERROR_MSG("Failed to read file ~s: ~s",
+	    ?ERROR_MSG("Failed to read file ~ts: ~ts",
 		       [Path, file:format_error(Why)]),
 	    Err
     end.

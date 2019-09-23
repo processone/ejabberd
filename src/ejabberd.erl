@@ -87,8 +87,8 @@ start_app([App|Apps], Type, StartFlag) ->
             case lists:member(DepApp, [App|Apps]) of
                 true ->
                     Reason = io_lib:format(
-                               "Failed to start Erlang application '~s': "
-                               "circular dependency with '~s' detected",
+                               "Failed to start Erlang application '~ts': "
+                               "circular dependency with '~ts' detected",
                                [App, DepApp]),
                     exit_or_halt(Reason, StartFlag);
                 false ->
@@ -96,7 +96,7 @@ start_app([App|Apps], Type, StartFlag) ->
             end;
         {error, Why} ->
             Reason = io_lib:format(
-		       "Failed to start Erlang application '~s': ~s. ~s",
+		       "Failed to start Erlang application '~ts': ~ts. ~ts",
 		       [App, format_error(Why), hint()]),
             exit_or_halt(Reason, StartFlag)
     end;
@@ -112,8 +112,8 @@ check_app_modules(App, StartFlag) ->
                           non_existing ->
                               File = get_module_file(App, Mod),
                               Reason = io_lib:format(
-                                         "Couldn't find file ~s needed "
-					 "for Erlang application '~s'. ~s",
+                                         "Couldn't find file ~ts needed "
+					 "for Erlang application '~ts'. ~ts",
                                          [File, App, hint()]),
                               exit_or_halt(Reason, StartFlag);
                           _ ->
@@ -131,7 +131,7 @@ check_apps() ->
 	      Apps = [ejabberd |
 		      [App || {App, _, _} <- application:which_applications(),
 			      App /= ejabberd]],
-	      ?DEBUG("Checking consistency of applications: ~s",
+	      ?DEBUG("Checking consistency of applications: ~ts",
 		     [misc:join_atoms(Apps, <<", ">>)]),
 	      misc:peach(
 		fun(App) ->

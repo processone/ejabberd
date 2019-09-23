@@ -293,7 +293,7 @@ convert_to_scram(Server) ->
 					      error ->
 						  ?ERROR_MSG(
 						     "SASLprep failed for "
-						     "password of user ~s@~s",
+						     "password of user ~ts@~ts",
 						     [LUser, LServer]);
 					      _ ->
 						  Scram = ejabberd_auth:password_to_scram(Password),

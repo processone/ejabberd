@@ -663,7 +663,7 @@ get_outgoing_s2s(Host, Lang) ->
 		    Host == FH orelse str:suffix(DotHost, FH)],
     lists:map(
       fun (T) ->
-	      Name = str:format(tr(Lang, ?T("To ~s")),[T]),
+	      Name = str:format(tr(Lang, ?T("To ~ts")),[T]),
 	      #disco_item{jid = jid:make(Host),
 			  node = <<"outgoing s2s/", T/binary>>,
 			  name = Name}
@@ -675,7 +675,7 @@ get_outgoing_s2s(Host, Lang, To) ->
     lists:map(
       fun ({F, _T}) ->
 	      Node = <<"outgoing s2s/", To/binary, "/", F/binary>>,
-	      Name = str:format(tr(Lang, ?T("From ~s")), [F]),
+	      Name = str:format(tr(Lang, ?T("From ~ts")), [F]),
 	      #disco_item{jid = jid:make(Host), node = Node, name = Name}
       end,
       lists:keysort(
@@ -821,7 +821,7 @@ get_form(_Host, [<<"running nodes">>, ENode, <<"DB">>],
 	  case ejabberd_cluster:call(Node, mnesia, system_info, [tables]) of
 	    {badrpc, Reason} ->
 		?ERROR_MSG("RPC call mnesia:system_info(tables) on node "
-			   "~s failed: ~p", [Node, Reason]),
+			   "~ts failed: ~p", [Node, Reason]),
 		{error, xmpp:err_internal_server_error()};
 	    Tables ->
 		STables = lists:sort(Tables),
@@ -844,7 +844,7 @@ get_form(_Host, [<<"running nodes">>, ENode, <<"DB">>],
 				    fields = [?HFIELD()|Fs]}}
 		catch _:{case_clause, {badrpc, Reason}} ->
 			?ERROR_MSG("RPC call mnesia:table_info/2 "
-				   "on node ~s failed: ~p", [Node, Reason]),
+				   "on node ~ts failed: ~p", [Node, Reason]),
 			{error, xmpp:err_internal_server_error()}
 		end
 	  end
@@ -1139,11 +1139,11 @@ set_form(_From, _Host,
 			   Node, mnesia, backup, [binary_to_list(String)],
 			   timer:minutes(10)) of
 			{badrpc, Reason} ->
-			    ?ERROR_MSG("RPC call mnesia:backup(~s) to node ~s "
+			    ?ERROR_MSG("RPC call mnesia:backup(~ts) to node ~ts "
 				       "failed: ~p", [String, Node, Reason]),
 			    {error, xmpp:err_internal_server_error()};
 			{error, Reason} ->
-			    ?ERROR_MSG("RPC call mnesia:backup(~s) to node ~s "
+			    ?ERROR_MSG("RPC call mnesia:backup(~ts) to node ~ts "
 				       "failed: ~p", [String, Node, Reason]),
 			    {error, xmpp:err_internal_server_error()};
 			_ ->
@@ -1172,12 +1172,12 @@ set_form(_From, _Host,
 			   Node, ejabberd_admin, restore,
 			   [String], timer:minutes(10)) of
 			{badrpc, Reason} ->
-			    ?ERROR_MSG("RPC call ejabberd_admin:restore(~s) to node "
-				       "~s failed: ~p", [String, Node, Reason]),
+			    ?ERROR_MSG("RPC call ejabberd_admin:restore(~ts) to node "
+				       "~ts failed: ~p", [String, Node, Reason]),
 			    {error, xmpp:err_internal_server_error()};
 			{error, Reason} ->
-			    ?ERROR_MSG("RPC call ejabberd_admin:restore(~s) to node "
-				       "~s failed: ~p", [String, Node, Reason]),
+			    ?ERROR_MSG("RPC call ejabberd_admin:restore(~ts) to node "
+				       "~ts failed: ~p", [String, Node, Reason]),
 			    {error, xmpp:err_internal_server_error()};
 			_ ->
 			    {result, undefined}
@@ -1205,12 +1205,12 @@ set_form(_From, _Host,
 			   Node, ejabberd_admin, dump_to_textfile,
 			   [String], timer:minutes(10)) of
 			{badrpc, Reason} ->
-			    ?ERROR_MSG("RPC call ejabberd_admin:dump_to_textfile(~s) "
-				       "to node ~s failed: ~p", [String, Node, Reason]),
+			    ?ERROR_MSG("RPC call ejabberd_admin:dump_to_textfile(~ts) "
+				       "to node ~ts failed: ~p", [String, Node, Reason]),
 			    {error, xmpp:err_internal_server_error()};
 			{error, Reason} ->
-			    ?ERROR_MSG("RPC call ejabberd_admin:dump_to_textfile(~s) "
-				       "to node ~s failed: ~p", [String, Node, Reason]),
+			    ?ERROR_MSG("RPC call ejabberd_admin:dump_to_textfile(~ts) "
+				       "to node ~ts failed: ~p", [String, Node, Reason]),
 			    {error, xmpp:err_internal_server_error()};
 			_ ->
 			    {result, undefined}

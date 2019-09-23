@@ -174,7 +174,7 @@ open_session(USR) ->
     case mnesia:transaction(F) of
 	{atomic, _} -> ok;
 	{aborted, Reason} ->
-	    db_fail("Failed to register MQTT session for ~s",
+	    db_fail("Failed to register MQTT session for ~ts",
 		    Reason, [jid:encode(USR)])
     end.
 
@@ -218,7 +218,7 @@ subscribe({U, S, R} = USR, TopicFilter, SubOpts, ID) ->
     case mnesia:transaction(F) of
 	{atomic, _} -> ok;
 	{aborted, Reason} ->
-	    db_fail("Failed to subscribe ~s to ~s",
+	    db_fail("Failed to subscribe ~ts to ~ts",
 		    Reason, [jid:encode(USR), TopicFilter])
     end.
 
@@ -237,7 +237,7 @@ unsubscribe({U, S, R} = USR, Topic) ->
     case mnesia:transaction(F) of
 	{atomic, _} -> ok;
 	{aborted, Reason} ->
-	    db_fail("Failed to unsubscribe ~s from ~s",
+	    db_fail("Failed to unsubscribe ~ts from ~ts",
 		    Reason, [jid:encode(USR), Topic])
     end.
 
@@ -287,7 +287,7 @@ close_session(USR, Pid) ->
     case mnesia:transaction(F) of
 	{atomic, _} -> ok;
 	{aborted, Reason} ->
-	    db_fail("Failed to unregister MQTT session for ~s",
+	    db_fail("Failed to unregister MQTT session for ~ts",
 		    Reason, [jid:encode(USR)])
     end.
 

@@ -78,7 +78,7 @@ process(_, #request{method = 'POST', data = Data, opts = Opts, ip = {IP, _}}) ->
 	El ->
 	    case fxmlrpc:decode(El) of
 		{error, _} = Err ->
-		    ?ERROR_MSG("XML-RPC request ~s failed with reason: ~p",
+		    ?ERROR_MSG("XML-RPC request ~ts failed with reason: ~p",
 			       [Data, Err]),
 		    {400, [],
 		     #xmlel{name = <<"h1">>, attrs = [],

@@ -113,7 +113,7 @@ process_iq(_Host, Module, Function, IQ) ->
 	    ok
     catch ?EX_RULE(Class, Reason, St) ->
 	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Failed to process iq:~n~s~n** ~s",
+	    ?ERROR_MSG("Failed to process iq:~n~ts~n** ~ts",
 		       [xmpp:pp(IQ),
 			misc:format_exception(2, Class, Reason, StackTrace)]),
 	    Txt = ?T("Module failed to handle the query"),

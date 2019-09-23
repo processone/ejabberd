@@ -168,7 +168,7 @@ handle_cast({component_connected, Host}, State) ->
 		  allow ->
 		      send_disco_queries(ServerHost, Host, NS);
 		  deny ->
-		      ?DEBUG("Denied delegation for ~s on ~s", [Host, NS])
+		      ?DEBUG("Denied delegation for ~ts on ~ts", [Host, NS])
 	      end
       end, NSAttrsAccessList),
     {noreply, State};
@@ -177,8 +177,8 @@ handle_cast({component_disconnected, Host}, State) ->
     Delegations =
 	maps:filter(
 	  fun({NS, Type}, {H, _}) when H == Host ->
-		  ?INFO_MSG("Remove delegation of namespace '~s' "
-			    "from external component '~s'",
+		  ?INFO_MSG("Remove delegation of namespace '~ts' "
+			    "from external component '~ts'",
 			    [NS, Host]),
 		  gen_iq_handler:remove_iq_handler(Type, ServerHost, NS),
 		  false;
@@ -293,7 +293,7 @@ process_iq_result(#iq{from = From, to = To, id = ID, lang = Lang} = IQ,
 	end
     catch _:_ ->
 	    ?ERROR_MSG("Got iq-result with invalid delegated "
-		       "payload:~n~s", [xmpp:pp(ResIQ)]),
+		       "payload:~n~ts", [xmpp:pp(ResIQ)]),
 	    Txt = ?T("External component failure"),
 	    Err = xmpp:err_internal_server_error(Txt, Lang),
 	    ejabberd_router:route_error(IQ, Err)
@@ -320,12 +320,12 @@ process_disco_info(ServerHost, Type, Host, NS, Info) ->
 	    gen_iq_handler:add_iq_handler(Type, ServerHost, NS, ?MODULE, Type),
 	    ejabberd_router:route(Msg),
 	    set_delegations(ServerHost, Delegations1),
-	    ?INFO_MSG("Namespace '~s' is delegated to external component '~s'",
+	    ?INFO_MSG("Namespace '~ts' is delegated to external component '~ts'",
 		      [NS, Host]);
 	{ok, {AnotherHost, _}} ->
-	    ?WARNING_MSG("Failed to delegate namespace '~s' to "
-			 "external component '~s' because it's already "
-			 "delegated to '~s'",
+	    ?WARNING_MSG("Failed to delegate namespace '~ts' to "
+			 "external component '~ts' because it's already "
+			 "delegated to '~ts'",
 			 [NS, Host, AnotherHost])
     end.
 

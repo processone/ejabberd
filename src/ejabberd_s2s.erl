@@ -91,7 +91,7 @@ list_temporarily_blocked_hosts() ->
 
 -spec external_host_overloaded(binary()) -> {aborted, any()} | {atomic, ok}.
 external_host_overloaded(Host) ->
-    ?INFO_MSG("Disabling s2s connections to ~s for ~p seconds",
+    ?INFO_MSG("Disabling s2s connections to ~ts for ~p seconds",
 	      [Host, ?S2S_OVERLOAD_BLOCK_PERIOD]),
     mnesia:transaction(fun () ->
                                Time = erlang:monotonic_time(),
@@ -122,7 +122,7 @@ remove_connection({From, To} = FromTo, Pid) ->
 	    case mnesia:transaction(F) of
 		{atomic, _} -> ok;
 		{aborted, Reason} ->
-		    ?ERROR_MSG("Failed to unregister s2s connection ~s -> ~s: "
+		    ?ERROR_MSG("Failed to unregister s2s connection ~ts -> ~ts: "
 			       "Mnesia failure: ~p",
 			       [From, To, Reason])
 	    end;
@@ -167,7 +167,7 @@ try_register({From, To} = FromTo) ->
     case mnesia:transaction(F) of
 	{atomic, Res} -> Res;
 	{aborted, Reason} ->
-	    ?ERROR_MSG("Failed to register s2s connection ~s -> ~s: "
+	    ?ERROR_MSG("Failed to register s2s connection ~ts -> ~ts: "
 		       "Mnesia failure: ~p",
 		       [From, To, Reason]),
 	    false
@@ -284,7 +284,7 @@ handle_info({route, Packet}, State) ->
     try route(Packet)
     catch ?EX_RULE(Class, Reason, St) ->
 	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Failed to route packet:~n~s~n** ~s",
+	    ?ERROR_MSG("Failed to route packet:~n~ts~n** ~ts",
 		       [xmpp:pp(Packet),
 			misc:format_exception(2, Class, Reason, StackTrace)])
     end,
@@ -344,7 +344,7 @@ clean_table_from_bad_node(Node) ->
 
 -spec route(stanza()) -> ok.
 route(Packet) ->
-    ?DEBUG("Local route:~n~s", [xmpp:pp(Packet)]),
+    ?DEBUG("Local route:~n~ts", [xmpp:pp(Packet)]),
     From = xmpp:get_from(Packet),
     To = xmpp:get_to(Packet),
     case start_connection(From, To) of
@@ -477,7 +477,7 @@ new_connection(MyServer, Server, From, FromTo,
 	    end,
 	    [Pid1];
 	{aborted, Reason} ->
-	    ?ERROR_MSG("Failed to register s2s connection ~s -> ~s: "
+	    ?ERROR_MSG("Failed to register s2s connection ~ts -> ~ts: "
 		       "Mnesia failure: ~p",
 		       [MyServer, Server, Reason]),
 	    ejabberd_s2s_out:stop(Pid),

@@ -72,7 +72,7 @@ new(_) -> none.
 update(none, _Size) -> {none, 0};
 update(Shaper1, Size) ->
     Shaper2 = p1_shaper:update(Shaper1, Size),
-    ?DEBUG("Shaper update:~n~s =>~n~s",
+    ?DEBUG("Shaper update:~n~ts =>~n~ts",
 	   [p1_shaper:pp(Shaper1), p1_shaper:pp(Shaper2)]),
     Shaper2.
 
@@ -231,7 +231,7 @@ resolve_shapers(ShaperRule, Rules, Shapers) ->
 	      try {true, {maps:get(Name, Shapers), Rule}}
 	      catch _:{badkey, _} ->
 		      ?WARNING_MSG(
-			 "Shaper rule '~s' refers to unknown shaper: ~s",
+			 "Shaper rule '~ts' refers to unknown shaper: ~ts",
 			 [ShaperRule, Name]),
 		      false
 	      end;

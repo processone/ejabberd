@@ -376,7 +376,7 @@ init_plugins(Host, ServerHost, Opts) ->
 	    fun (Name, Acc) ->
 		    Plugin = plugin(Host, Name),
 		    apply(Plugin, init, [Host, ServerHost, Opts]),
-		    ?DEBUG("** init ~s plugin", [Name]),
+		    ?DEBUG("** init ~ts plugin", [Name]),
 		    [Name | Acc]
 	    end,
 	    [], Plugins),
@@ -385,7 +385,7 @@ init_plugins(Host, ServerHost, Opts) ->
 terminate_plugins(Host, ServerHost, Plugins, TreePlugin) ->
     lists:foreach(
 	fun (Name) ->
-		?DEBUG("** terminate ~s plugin", [Name]),
+		?DEBUG("** terminate ~ts plugin", [Name]),
 		Plugin = plugin(Host, Name),
 		Plugin:terminate(Host, ServerHost)
 	end,
@@ -750,7 +750,7 @@ handle_info({route, Packet}, State) ->
     try route(Packet)
     catch ?EX_RULE(Class, Reason, St) ->
 	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Failed to route packet:~n~s~n** ~s",
+	    ?ERROR_MSG("Failed to route packet:~n~ts~n** ~ts",
 		       [xmpp:pp(Packet),
 			misc:format_exception(2, Class, Reason, StackTrace)])
     end,
@@ -1342,7 +1342,7 @@ get_pending_nodes(Host, Owner, Plugins) ->
 -spec send_pending_auth_events(binary(), binary(), jid(),
 			       binary()) -> ok | {error, stanza_error()}.
 send_pending_auth_events(Host, Node, Owner, Lang) ->
-    ?DEBUG("Sending pending auth events for ~s on ~s:~s",
+    ?DEBUG("Sending pending auth events for ~ts on ~ts:~ts",
 	   [jid:encode(Owner), Host, Node]),
     Action =
 	fun(#pubsub_node{id = Nidx, type = Type}) ->
@@ -3735,7 +3735,7 @@ tree_call({_User, Server, _Resource}, Function, Args) ->
     tree_call(Server, Function, Args);
 tree_call(Host, Function, Args) ->
     Tree = tree(Host),
-    ?DEBUG("Tree_call apply(~s, ~s, ~p) @ ~s", [Tree, Function, Args, Host]),
+    ?DEBUG("Tree_call apply(~ts, ~ts, ~p) @ ~ts", [Tree, Function, Args, Host]),
     case apply(Tree, Function, Args) of
 	{error, #stanza_error{}} = Err ->
 	    Err;
@@ -3775,7 +3775,7 @@ tree_action(Host, Function, Args) ->
 get_tree_action_result({atomic, Result}) ->
     Result;
 get_tree_action_result({aborted, {exception, Class, Reason, StackTrace}}) ->
-    ?ERROR_MSG("Transaction aborted:~n** ~s",
+    ?ERROR_MSG("Transaction aborted:~n** ~ts",
 	       [misc:format_exception(2, Class, Reason, StackTrace)]),
     get_tree_action_result({error, db_failure});
 get_tree_action_result({aborted, Reason}) ->
@@ -3892,7 +3892,7 @@ get_transaction_response({error, _}) ->
     Lang = ejabberd_option:language(),
     {error, xmpp:err_internal_server_error(?T("Database failure"), Lang)};
 get_transaction_response({exception, Class, Reason, StackTrace}) ->
-    ?ERROR_MSG("Transaction aborted:~n** ~s",
+    ?ERROR_MSG("Transaction aborted:~n** ~ts",
 	       [misc:format_exception(2, Class, Reason, StackTrace)]),
     get_transaction_response({error, db_failure});
 get_transaction_response(Err) ->

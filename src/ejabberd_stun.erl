@@ -32,7 +32,7 @@
 -include("logger.hrl").
 -export([accept/1, start/3, start_link/3, listen_options/0]).
 fail() ->
-    ?CRITICAL_MSG("Listening module ~s is not available: "
+    ?CRITICAL_MSG("Listening module ~ts is not available: "
 		  "ejabberd is not compiled with STUN/TURN support",
 		  [?MODULE]),
     erlang:error(stun_not_compiled).
@@ -104,7 +104,7 @@ prepare_turn_opts(Opts, _UseTurn = true) ->
 					 "'auth_realm' is undefined and "
 					 "'auth_type' is set to 'user', "
 					 "most likely the TURN relay won't "
-					 "be working properly. Using ~s as "
+					 "be working properly. Using ~ts as "
 					 "a fallback", [ejabberd_config:get_myname()]);
 		       true ->
 			    ok

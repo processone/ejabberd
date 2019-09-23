@@ -125,8 +125,8 @@ row_to_route(Domain, {ServerHost, NodeS, PidS, LocalHintS} = Row) ->
 	    StackTrace = ?EX_STACK(St),
 	    ?ERROR_MSG("Failed to decode row from 'route' table:~n"
 		       "** Row = ~p~n"
-		       "** Domain = ~s~n"
-		       "** ~s",
+		       "** Domain = ~ts~n"
+		       "** ~ts",
 		       [Row, Domain,
 			misc:format_exception(2, Class, Reason, StackTrace)]),
 	    []

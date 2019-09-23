@@ -173,11 +173,11 @@ process(["status"], _Version) ->
         false ->
             EjabberdLogPath = ejabberd_logger:get_log_path(),
             print("ejabberd is not running in that node~n"
-		   "Check for error messages: ~s~n"
+		   "Check for error messages: ~ts~n"
 		   "or other files in that directory.~n", [EjabberdLogPath]),
             ?STATUS_ERROR;
         true ->
-            print("ejabberd ~s is running in that node~n", [ejabberd_option:version()]),
+            print("ejabberd ~ts is running in that node~n", [ejabberd_option:version()]),
             ?STATUS_SUCCESS
     end;
 
@@ -252,7 +252,7 @@ process(Args, Version) ->
     case String of
 	[] -> ok;
 	_ ->
-	    io:format("~s~n", [String])
+	    io:format("~ts~n", [String])
     end,
     Code.
 
@@ -327,14 +327,14 @@ try_call_command(Args, Auth, AccessCommands, Version) ->
 	    KnownCommands = [Cmd || {Cmd, _, _} <- ejabberd_commands:list_commands(Version)],
 	    UnknownCommand = list_to_atom(hd(Args)),
 	    {io_lib:format(
-	       "Error: unknown command '~s'. Did you mean '~s'?",
+	       "Error: unknown command '~ts'. Did you mean '~ts'?",
 	       [hd(Args), misc:best_match(UnknownCommand, KnownCommands)]),
 	     ?STATUS_ERROR};
 	throw:Error ->
 	    {io_lib:format("~p", [Error]), ?STATUS_ERROR};
 	?EX_RULE(A, Why, Stack) ->
 	    StackTrace = ?EX_STACK(Stack),
-	    {io_lib:format("Unhandled exception occurred executing the command:~n** ~s",
+	    {io_lib:format("Unhandled exception occurred executing the command:~n** ~ts",
 			   [misc:format_exception(2, A, Why, StackTrace)]),
 	     ?STATUS_ERROR}
     end.
@@ -363,7 +363,7 @@ call_command([CmdString | Args], Auth, _AccessCommands, Version) ->
 		    {L1, L2} when L1 < L2 -> {L2-L1, "less argument"};
 		    {L1, L2} when L1 > L2 -> {L1-L2, "more argument"}
 		end,
-	    {io_lib:format("Error: the command ~p requires ~p ~s.",
+	    {io_lib:format("Error: the command ~p requires ~p ~ts.",
 			   [CmdString, NumCompa, TextCompa]),
 	     wrong_command_arguments}
     end.
@@ -417,16 +417,16 @@ format_result(Int, {_Name, integer}) ->
     io_lib:format("~p", [Int]);
 
 format_result([A|_]=String, {_Name, string}) when is_list(String) and is_integer(A) ->
-    io_lib:format("~s", [String]);
+    io_lib:format("~ts", [String]);
 
 format_result(Binary, {_Name, string}) when is_binary(Binary) ->
-    io_lib:format("~s", [binary_to_list(Binary)]);
+    io_lib:format("~ts", [binary_to_list(Binary)]);
 
 format_result(Atom, {_Name, string}) when is_atom(Atom) ->
-    io_lib:format("~s", [atom_to_list(Atom)]);
+    io_lib:format("~ts", [atom_to_list(Atom)]);
 
 format_result(Integer, {_Name, string}) when is_integer(Integer) ->
-    io_lib:format("~s", [integer_to_list(Integer)]);
+    io_lib:format("~ts", [integer_to_list(Integer)]);
 
 format_result(Other, {_Name, string})  ->
     io_lib:format("~p", [Other]);
@@ -435,7 +435,7 @@ format_result(Code, {_Name, rescode}) ->
     make_status(Code);
 
 format_result({Code, Text}, {_Name, restuple}) ->
-    {io_lib:format("~s", [Text]), make_status(Code)};
+    {io_lib:format("~ts", [Text]), make_status(Code)};
 
 %% The result is a list of something: [something()]
 format_result([], {_Name, {list, _ElementsDef}}) ->

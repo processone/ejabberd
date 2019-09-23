@@ -416,7 +416,7 @@ update_c2s_state_with_privacy_list(#iq{type = set,
 	#privacy_query{default = undefined, active = Active} ->
 	    case Active of
 		none ->
-		    ?DEBUG("Removing active privacy list for user: ~s",
+		    ?DEBUG("Removing active privacy list for user: ~ts",
 			   [jid:encode(To)]),
 		    State#{privacy_active_list => none};
 		undefined ->
@@ -424,7 +424,7 @@ update_c2s_state_with_privacy_list(#iq{type = set,
 		_ ->
 		    case get_user_list(U, S, Active) of
 			{ok, _} ->
-			    ?DEBUG("Setting active privacy list '~s' for user: ~s",
+			    ?DEBUG("Setting active privacy list '~ts' for user: ~ts",
 				   [Active, jid:encode(To)]),
 			    State#{privacy_active_list => Active};
 			_ ->
@@ -548,8 +548,8 @@ check_packet(Acc, #{jid := JID} = State, Packet, Dir) ->
 		{ok, {_, List}} ->
 		    do_check_packet(JID, List, Packet, Dir);
 		_ ->
-		    ?DEBUG("Non-existing active list '~s' is set "
-			   "for user '~s'", [ListName, jid:encode(JID)]),
+		    ?DEBUG("Non-existing active list '~ts' is set "
+			   "for user '~ts'", [ListName, jid:encode(JID)]),
 		    check_packet(Acc, JID, Packet, Dir)
 	    end
     end;

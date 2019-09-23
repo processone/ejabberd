@@ -86,8 +86,8 @@ export(Server, Output, Module1) ->
               case export(LServer, Table, IO, ConvertFun) of
                   {atomic, ok} -> ok;
 		  {aborted, {no_exists, _}} ->
-		      ?WARNING_MSG("Ignoring export for module ~s: "
-				   "Mnesia table ~s doesn't exist (most likely "
+		      ?WARNING_MSG("Ignoring export for module ~ts: "
+				   "Mnesia table ~ts doesn't exist (most likely "
 				   "because the module is unused)",
 				   [Module1, Table]);
                   {aborted, Reason} ->
@@ -133,9 +133,9 @@ import(Mod, Server, Dir, ToType) ->
                   {error, enoent} ->
                       ok;
                   eof ->
-                      ?INFO_MSG("It seems like SQL dump ~s is empty", [FileName]);
+                      ?INFO_MSG("It seems like SQL dump ~ts is empty", [FileName]);
                   Err ->
-                      ?ERROR_MSG("Failed to open SQL dump ~s: ~s",
+                      ?ERROR_MSG("Failed to open SQL dump ~ts: ~ts",
                                  [FileName, format_error(Err)])
               end
       end, import_info(Mod)),
@@ -260,7 +260,7 @@ import_rows(LServer, FromType, ToType, Tab, Mod, Dump, FieldsNumber) ->
         eof ->
             ok;
         Err ->
-            ?ERROR_MSG("Failed to read row from SQL dump: ~s",
+            ?ERROR_MSG("Failed to read row from SQL dump: ~ts",
                        [format_error(Err)])
     end.
 

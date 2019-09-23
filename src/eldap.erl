@@ -692,7 +692,7 @@ handle_info({Tag, _Socket, Data}, StateName, S)
     end;
 handle_info({Tag, _Socket}, Fsm_state, S)
     when Tag == tcp_closed; Tag == ssl_closed ->
-    ?WARNING_MSG("LDAP server closed the connection: ~s:~p~nIn "
+    ?WARNING_MSG("LDAP server closed the connection: ~ts:~p~nIn "
 		 "State: ~p",
 		 [S#eldap.host, S#eldap.port, Fsm_state]),
     {next_state, connecting, close_and_retry(S)};
@@ -985,7 +985,7 @@ close_and_retry(S) ->
     close_and_retry(S, ?RETRY_TIMEOUT).
 
 report_bind_failure(Host, Port, Reason) ->
-    ?WARNING_MSG("LDAP bind failed on ~s:~p~nReason: ~p",
+    ?WARNING_MSG("LDAP bind failed on ~ts:~p~nReason: ~p",
 		 [Host, Port, Reason]).
 
 %%-----------------------------------------------------------------------
@@ -1048,7 +1048,7 @@ connect_bind(S) ->
 		  [{packet, asn1}, {active, true}, {keepalive, true},
 		   {send_timeout, ?SEND_TIMEOUT}, binary]
 	   end,
-    ?DEBUG("Connecting to LDAP server at ~s:~p with options ~p",
+    ?DEBUG("Connecting to LDAP server at ~ts:~p with options ~p",
 	   [Host, S#eldap.port, Opts]),
     HostS = binary_to_list(Host),
     SockMod = case S#eldap.tls of
@@ -1070,7 +1070,7 @@ connect_bind(S) ->
 		{ok, connecting, NewS#eldap{host = Host}}
 	  end;
       {error, Reason} ->
-	  ?ERROR_MSG("LDAP connection to ~s:~b failed: ~s",
+	  ?ERROR_MSG("LDAP connection to ~ts:~b failed: ~ts",
 		     [Host, S#eldap.port, format_error(SockMod, Reason)]),
 	  NewS = close_and_retry(S),
 	  {ok, connecting, NewS#eldap{host = Host}}

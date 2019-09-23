@@ -63,7 +63,7 @@ register_certfiles() ->
 
 -spec process([binary()], _) -> {integer(), [{binary(), binary()}], binary()}.
 process([Token], _) ->
-    ?DEBUG("Received ACME challenge request for token: ~s", [Token]),
+    ?DEBUG("Received ACME challenge request for token: ~ts", [Token]),
     try ets:lookup_element(acme_challenge, Token, 2) of
 	Key -> {200, [{<<"Content-Type">>,
 		       <<"application/octet-stream">>}],
@@ -112,7 +112,7 @@ init([]) ->
     {ok, #state{}}.
 
 handle_call({request, [_|_] = Domains}, _From, State) ->
-    ?INFO_MSG("Requesting new certificate for ~ts from ~s",
+    ?INFO_MSG("Requesting new certificate for ~ts from ~ts",
 	      [misc:format_hosts_list(Domains), directory_url()]),
     {Ret, State1} = issue_request(State, Domains),
     {reply, Ret, State1};
@@ -127,7 +127,7 @@ handle_call(Request, From, State) ->
 handle_cast(ejabberd_started, State) ->
     case request_on_start() of
 	{true, Domains} ->
-	    ?INFO_MSG("Requesting new certificate for ~ts from ~s",
+	    ?INFO_MSG("Requesting new certificate for ~ts from ~ts",
 		      [misc:format_hosts_list(Domains), directory_url()]),
 	    {_, State1} = issue_request(State, Domains),
 	    {noreply, State1};
@@ -135,7 +135,7 @@ handle_cast(ejabberd_started, State) ->
 	    {noreply, State}
     end;
 handle_cast({request, [_|_] = Domains}, State) ->
-    ?INFO_MSG("Requesting renewal of certificate for ~ts from ~s",
+    ?INFO_MSG("Requesting renewal of certificate for ~ts from ~ts",
 	      [misc:format_hosts_list(Domains), directory_url()]),
     {_, State1} = issue_request(State, Domains),
     {noreply, State1};
@@ -321,12 +321,12 @@ read_account_key() ->
 	{error, enoent} ->
 	    create_account_key();
 	{error, {bad_cert, _, _} = Reason} ->
-	    ?WARNING_MSG("ACME account key from '~ts' is corrupted: ~s. "
+	    ?WARNING_MSG("ACME account key from '~ts' is corrupted: ~ts. "
 			 "Trying to create a new one...",
 			 [Path, pkix:format_error(Reason)]),
 	    create_account_key();
 	{error, Reason} ->
-	    ?ERROR_MSG("Failed to read ACME account from ~ts: ~s. "
+	    ?ERROR_MSG("Failed to read ACME account from ~ts: ~ts. "
 		       "Try to fix permissions or delete the file completely",
 		       [Path, pkix:format_error(Reason)]),
 	    {error, {file, Reason}}
@@ -399,11 +399,11 @@ write_file(Path, Data) ->
 		    case file:change_mode(Path, 8#600) of
 			ok -> ok;
 			{error, Why} ->
-			    ?WARNING_MSG("Failed to change permissions of ~ts: ~s",
+			    ?WARNING_MSG("Failed to change permissions of ~ts: ~ts",
 					 [Path, file:format_error(Why)])
 		    end;
 		{error, Why} = Err ->
-		    ?ERROR_MSG("Failed to write file ~ts: ~s",
+		    ?ERROR_MSG("Failed to write file ~ts: ~ts",
 			       [Path, file:format_error(Why)]),
 		    Err
 	    end;
@@ -416,7 +416,7 @@ delete_file(Path) ->
     case file:delete(Path) of
 	ok -> ok;
 	{error, Why} = Err ->
-	    ?WARNING_MSG("Failed to delete file ~ts: ~s",
+	    ?WARNING_MSG("Failed to delete file ~ts: ~ts",
 			 [Path, file:format_error(Why)]),
 	    Err
     end.
@@ -426,7 +426,7 @@ ensure_dir(Path) ->
     case filelib:ensure_dir(Path) of
 	ok -> ok;
 	{error, Why} = Err ->
-	    ?ERROR_MSG("Failed to create directory ~ts: ~s",
+	    ?ERROR_MSG("Failed to create directory ~ts: ~ts",
 		       [filename:dirname(Path),
 			file:format_error(Why)]),
 	    Err

@@ -425,7 +425,7 @@ handle_info({subscribed, Channel, Pid}, State) ->
 	    case maps:is_key(Channel, State#state.subscriptions) of
 		true -> eredis_sub:ack_message(Pid);
 		false ->
-		    ?WARNING_MSG("Got subscription ack for unknown channel ~s",
+		    ?WARNING_MSG("Got subscription ack for unknown channel ~ts",
 				 [Channel])
 	    end;
 	_ ->
@@ -466,7 +466,7 @@ connect(#state{num = Num}) ->
     ConnTimeout = ejabberd_option:redis_connect_timeout(),
     try case do_connect(Num, Server, Port, Pass, DB, ConnTimeout) of
 	    {ok, Client} ->
-		?DEBUG("Connection #~p established to Redis at ~s:~p",
+		?DEBUG("Connection #~p established to Redis at ~ts:~p",
 		       [Num, Server, Port]),
 		register(get_connection(Num), Client),
 		{ok, Client};
@@ -476,7 +476,7 @@ connect(#state{num = Num}) ->
     catch _:Reason ->
 	    Timeout = p1_rand:uniform(
 			min(10, ejabberd_redis_sup:get_pool_size())),
-	    ?ERROR_MSG("Redis connection #~p at ~s:~p has failed: ~p; "
+	    ?ERROR_MSG("Redis connection #~p at ~ts:~p has failed: ~p; "
 		       "reconnecting in ~p seconds",
 		       [Num, Server, Port, Reason, Timeout]),
 	    erlang:send_after(timer:seconds(Timeout), self(), connect),
@@ -542,7 +542,7 @@ gen_server_call(Proc, Msg) ->
 log_error(Cmd, Reason) ->
     ?ERROR_MSG("Redis request has failed:~n"
 	       "** request = ~p~n"
-	       "** response = ~s",
+	       "** response = ~ts",
 	       [Cmd, format_error(Reason)]).
 
 -spec get_rnd_id() -> pos_integer().

@@ -59,7 +59,7 @@ start(normal, _Args) ->
 			ejabberd_hooks:run(ejabberd_started, []),
 			ejabberd:check_apps(),
 			{T2, _} = statistics(wall_clock),
-			?INFO_MSG("ejabberd ~s is started in the node ~p in ~.2fs",
+			?INFO_MSG("ejabberd ~ts is started in the node ~p in ~.2fs",
 				  [ejabberd_option:version(),
 				   node(), (T2-T1)/1000]),
 			{ok, SupPid};
@@ -68,7 +68,7 @@ start(normal, _Args) ->
 			ejabberd:halt()
 		end;
 	    Err ->
-		?CRITICAL_MSG("Failed to start ejabberd application: ~s",
+		?CRITICAL_MSG("Failed to start ejabberd application: ~ts",
 			      [ejabberd_config:format_error(Err)]),
 		ejabberd:halt()
 	end
@@ -106,7 +106,7 @@ prep_stop(State) ->
 
 %% All the processes were killed when this function is called
 stop(_State) ->
-    ?INFO_MSG("ejabberd ~s is stopped in the node ~p",
+    ?INFO_MSG("ejabberd ~ts is stopped in the node ~p",
 	      [ejabberd_option:version(), node()]),
     delete_pid_file().
 
@@ -139,11 +139,11 @@ write_pid_file() ->
     end.
 
 write_pid_file(Pid, PidFilename) ->
-    case file:write_file(PidFilename, io_lib:format("~s~n", [Pid])) of
+    case file:write_file(PidFilename, io_lib:format("~ts~n", [Pid])) of
 	ok ->
 	    ok;
 	{error, Reason} = Err ->
-	    ?CRITICAL_MSG("Cannot write PID file ~s: ~s",
+	    ?CRITICAL_MSG("Cannot write PID file ~ts: ~ts",
 			  [PidFilename, file:format_error(Reason)]),
 	    throw({?MODULE, Err})
     end.

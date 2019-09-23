@@ -121,7 +121,7 @@ init([Host|_]) ->
 		      case Mod:is_search_supported(Host) of
 			  false ->
 			      ?WARNING_MSG("vCard search functionality is "
-					   "not implemented for ~s backend",
+					   "not implemented for ~ts backend",
 					   [mod_vcard_opt:db_type(Opts)]);
 			  true ->
 			      ejabberd_router:register_route(
@@ -145,7 +145,7 @@ handle_info({route, Packet}, State) ->
     try route(Packet)
     catch ?EX_RULE(Class, Reason, St) ->
 	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Failed to route packet:~n~s~n** ~s",
+	    ?ERROR_MSG("Failed to route packet:~n~ts~n** ~ts",
 		       [xmpp:pp(Packet),
 			misc:format_exception(2, Class, Reason, StackTrace)])
     end,

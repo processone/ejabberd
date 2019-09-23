@@ -106,7 +106,7 @@ handle_call({can_access, Cmd, CallerInfo}, _From, State) ->
 		    case matches_definition(Def, Cmd, CallerModule, Tag, Host, CallerInfo) of
 			true ->
 			    ?DEBUG("Command '~p' execution allowed by rule "
-				   "'~s' (CallerInfo=~p)", [Cmd, Name, CallerInfo]),
+				   "'~ts' (CallerInfo=~p)", [Cmd, Name, CallerInfo]),
 			    allow;
 			_ ->
 			    none

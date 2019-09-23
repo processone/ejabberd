@@ -251,7 +251,7 @@ transform(#passwd{us = {U, S}, password = Password} = P)
 	scram ->
 	    case jid:resourceprep(Password) of
 		error ->
-		    ?ERROR_MSG("SASLprep failed for password of user ~s@~s",
+		    ?ERROR_MSG("SASLprep failed for password of user ~ts@~ts",
 			       [U, S]),
 		    P;
 		_ ->
