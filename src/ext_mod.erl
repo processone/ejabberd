@@ -159,7 +159,7 @@ update() ->
         end, Contrib, modules_spec(sources_dir(), "*/*")),
     Repos = maps:fold(fun(Repo, _Mods, Acc) ->
                 Update = add_sources(Repo),
-                ?INFO_MSG("Update packages from repo ~s: ~p", [Repo, Update]),
+                ?INFO_MSG("Update packages from repo ~ts: ~p", [Repo, Update]),
                 case Update of
                     ok -> Acc;
                     Error -> [{repository, Repo, Error}|Acc]
@@ -168,7 +168,7 @@ update() ->
     Res = lists:foldl(fun({Package, Spec}, Acc) ->
                 Repo = proplists:get_value(url, Spec, ""),
                 Update = add_sources(Package, Repo),
-                ?INFO_MSG("Update package ~s: ~p", [Package, Update]),
+                ?INFO_MSG("Update package ~ts: ~p", [Package, Update]),
                 case Update of
                     ok -> Acc;
                     Error -> [{Package, Repo, Error}|Acc]

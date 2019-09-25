@@ -30,7 +30,7 @@
 -include("logger.hrl").
 -export([accept/1, start/3, start_link/3, listen_options/0]).
 fail() ->
-    ?CRITICAL_MSG("Listening module ~s is not available: "
+    ?CRITICAL_MSG("Listening module ~ts is not available: "
 		  "ejabberd is not compiled with SIP support",
 		  [?MODULE]),
     erlang:error(sip_not_compiled).

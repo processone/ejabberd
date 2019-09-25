@@ -129,9 +129,9 @@ route(To, Term) ->
     try do_route(To, Term), ok
     catch ?EX_RULE(E, R, St) ->
 	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Failed to route term to ~s:~n"
+	    ?ERROR_MSG("Failed to route term to ~ts:~n"
 		       "** Term = ~p~n"
-		       "** ~s",
+		       "** ~ts",
 		       [jid:encode(To), Term,
 			misc:format_exception(2, E, R, StackTrace)])
     end.
@@ -141,7 +141,7 @@ route(Packet) ->
     #jid{lserver = LServer} = xmpp:get_to(Packet),
     case ejabberd_hooks:run_fold(sm_receive_packet, LServer, Packet, []) of
 	drop ->
-	    ?DEBUG("Hook dropped stanza:~n~s", [xmpp:pp(Packet)]);
+	    ?DEBUG("Hook dropped stanza:~n~ts", [xmpp:pp(Packet)]);
 	Packet1 ->
 	    do_route(Packet1),
 	    ok
@@ -204,7 +204,7 @@ bounce_sm_packet({bounce, Packet} = Acc) ->
     ejabberd_router:route_error(Packet, Err),
     {stop, Acc};
 bounce_sm_packet({_, Packet} = Acc) ->
-    ?DEBUG("Dropping packet to unavailable resource:~n~s",
+    ?DEBUG("Dropping packet to unavailable resource:~n~ts",
 	   [xmpp:pp(Packet)]),
     Acc.
 
@@ -654,7 +654,7 @@ do_route(#jid{lresource = <<"">>} = To, Term) ->
 	      do_route(jid:replace_resource(To, R), Term)
       end, get_user_resources(To#jid.user, To#jid.server));
 do_route(To, Term) ->
-    ?DEBUG("Broadcasting ~p to ~s", [Term, jid:encode(To)]),
+    ?DEBUG("Broadcasting ~p to ~ts", [Term, jid:encode(To)]),
     {U, S, R} = jid:tolower(To),
     Mod = get_sm_backend(S),
     case get_sessions(Mod, U, S, R) of
@@ -670,7 +670,7 @@ do_route(To, Term) ->
 -spec do_route(stanza()) -> any().
 do_route(#presence{to = To, type = T} = Packet)
   when T == subscribe; T == subscribed; T == unsubscribe; T == unsubscribed ->
-    ?DEBUG("Processing subscription:~n~s", [xmpp:pp(Packet)]),
+    ?DEBUG("Processing subscription:~n~ts", [xmpp:pp(Packet)]),
     #jid{luser = LUser, lserver = LServer} = To,
     case is_privacy_allow(Packet) andalso
 	ejabberd_hooks:run_fold(
@@ -683,7 +683,7 @@ do_route(#presence{to = To, type = T} = Packet)
 			   priority = Prio}) when is_integer(Prio) ->
 		      Pid = element(2, SID),
 		      Packet1 = Packet#presence{to = jid:replace_resource(To, R)},
-		      ?DEBUG("Sending to process ~p:~n~s",
+		      ?DEBUG("Sending to process ~p:~n~ts",
 			     [Pid, xmpp:pp(Packet1)]),
 		      ejabberd_c2s:route(Pid, {route, Packet1});
 		 (_) ->
@@ -693,14 +693,14 @@ do_route(#presence{to = To, type = T} = Packet)
 	    ok
     end;
 do_route(#presence{to = #jid{lresource = <<"">>} = To} = Packet) ->
-    ?DEBUG("Processing presence to bare JID:~n~s", [xmpp:pp(Packet)]),
+    ?DEBUG("Processing presence to bare JID:~n~ts", [xmpp:pp(Packet)]),
     {LUser, LServer, _} = jid:tolower(To),
     lists:foreach(
       fun({_, R}) ->
 	      do_route(Packet#presence{to = jid:replace_resource(To, R)})
       end, get_user_present_resources(LUser, LServer));
 do_route(#message{to = #jid{lresource = <<"">>} = To, type = T} = Packet) ->
-    ?DEBUG("Processing message to bare JID:~n~s", [xmpp:pp(Packet)]),
+    ?DEBUG("Processing message to bare JID:~n~ts", [xmpp:pp(Packet)]),
     if T == chat; T == headline; T == normal ->
 	    route_message(Packet);
        true ->
@@ -709,14 +709,14 @@ do_route(#message{to = #jid{lresource = <<"">>} = To, type = T} = Packet) ->
     end;
 do_route(#iq{to = #jid{lresource = <<"">>} = To, type = T} = Packet) ->
     if T == set; T == get ->
-	    ?DEBUG("Processing IQ to bare JID:~n~s", [xmpp:pp(Packet)]),
+	    ?DEBUG("Processing IQ to bare JID:~n~ts", [xmpp:pp(Packet)]),
 	    gen_iq_handler:handle(?MODULE, Packet);
        true ->
 	    ejabberd_hooks:run_fold(bounce_sm_packet,
 				    To#jid.lserver, {pass, Packet}, [])
     end;
 do_route(Packet) ->
-    ?DEBUG("Processing packet to full JID:~n~s", [xmpp:pp(Packet)]),
+    ?DEBUG("Processing packet to full JID:~n~ts", [xmpp:pp(Packet)]),
     To = xmpp:get_to(Packet),
     {LUser, LServer, LResource} = jid:tolower(To),
     Mod = get_sm_backend(LServer),
@@ -738,7 +738,7 @@ do_route(Packet) ->
 	Ss ->
 	    Session = lists:max(Ss),
 	    Pid = element(2, Session#session.sid),
-	    ?DEBUG("Sending to process ~p:~n~s", [Pid, xmpp:pp(Packet)]),
+	    ?DEBUG("Sending to process ~p:~n~ts", [Pid, xmpp:pp(Packet)]),
 	    ejabberd_c2s:route(Pid, {route, Packet})
     end.
 

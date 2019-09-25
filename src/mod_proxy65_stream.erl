@@ -110,8 +110,8 @@ activate({P1, J1}, {P2, J2}) ->
 	  P2 ! {activate, P1, S1, J1, J2},
 	  JID1 = jid:encode(J1),
 	  JID2 = jid:encode(J2),
-	  ?INFO_MSG("(~w:~w) Activated bytestream for ~s "
-		    "-> ~s",
+	  ?INFO_MSG("(~w:~w) Activated bytestream for ~ts "
+		    "-> ~ts",
 		    [P1, P2, JID1, JID2]),
 	  ok;
       _ -> error

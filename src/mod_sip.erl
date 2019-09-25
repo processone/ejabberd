@@ -86,7 +86,7 @@ data_in(Data, #sip_socket{type = Transport,
                           addr = {MyIP, MyPort},
                           peer = {PeerIP, PeerPort}}) ->
     ?DEBUG(
-       "SIP [~p/in] ~s:~p -> ~s:~p:~n~s",
+       "SIP [~p/in] ~ts:~p -> ~ts:~p:~n~ts",
        [Transport, inet_parse:ntoa(PeerIP), PeerPort,
 	inet_parse:ntoa(MyIP), MyPort, Data]).
 
@@ -94,7 +94,7 @@ data_out(Data, #sip_socket{type = Transport,
                            addr = {MyIP, MyPort},
                            peer = {PeerIP, PeerPort}}) ->
     ?DEBUG(
-       "SIP [~p/out] ~s:~p -> ~s:~p:~n~s",
+       "SIP [~p/out] ~ts:~p -> ~ts:~p:~n~ts",
        [Transport, inet_parse:ntoa(MyIP), MyPort,
 	inet_parse:ntoa(PeerIP), PeerPort, Data]).
 
@@ -286,7 +286,7 @@ check_auth(#sip{method = Method, hdrs = Hdrs, body = Body}, AuthHdr, _SIPSock) -
 		Password when is_binary(Password) ->
 		    esip:check_auth(Auth, Method, Body, Password);
 		_ScramedPassword ->
-		    ?ERROR_MSG("Unable to authenticate ~s@~s against SCRAM'ed "
+		    ?ERROR_MSG("Unable to authenticate ~ts@~ts against SCRAM'ed "
 			       "password", [LUser, LServer]),
 		    false
 	    end;

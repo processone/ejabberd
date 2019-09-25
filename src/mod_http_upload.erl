@@ -334,13 +334,13 @@ handle_info(Info, State) ->
 
 -spec terminate(normal | shutdown | {shutdown, _} | _, state()) -> ok.
 terminate(Reason, #state{server_host = ServerHost, hosts = Hosts}) ->
-    ?DEBUG("Stopping HTTP upload process for ~s: ~p", [ServerHost, Reason]),
+    ?DEBUG("Stopping HTTP upload process for ~ts: ~p", [ServerHost, Reason]),
     ejabberd_hooks:delete(remove_user, ServerHost, ?MODULE, remove_user, 50),
     lists:foreach(fun ejabberd_router:unregister_route/1, Hosts).
 
 -spec code_change({down, _} | _, state(), _) -> {ok, state()}.
 code_change(_OldVsn, #state{server_host = ServerHost} = State, _Extra) ->
-    ?DEBUG("Updating HTTP upload process for ~s", [ServerHost]),
+    ?DEBUG("Updating HTTP upload process for ~ts", [ServerHost]),
     {ok, State}.
 
 %%--------------------------------------------------------------------
@@ -353,7 +353,7 @@ process(LocalPath, #request{method = Method, host = Host, ip = IP})
 	 Method == 'PUT' orelse
 	 Method == 'GET' orelse
 	 Method == 'HEAD' ->
-    ?DEBUG("Rejecting ~s request from ~s for ~s: Too few path components",
+    ?DEBUG("Rejecting ~ts request from ~ts for ~ts: Too few path components",
 	   [Method, encode_addr(IP), Host]),
     http_response(404);
 process(_LocalPath, #request{method = 'PUT', host = Host, ip = IP,
@@ -361,7 +361,7 @@ process(_LocalPath, #request{method = 'PUT', host = Host, ip = IP,
     {Proc, Slot} = parse_http_request(Request),
     try gen_server:call(Proc, {use_slot, Slot, Length}, ?CALL_TIMEOUT) of
 	{ok, Path, FileMode, DirMode, GetPrefix, Thumbnail, CustomHeaders} ->
-	    ?DEBUG("Storing file from ~s for ~s: ~s",
+	    ?DEBUG("Storing file from ~ts for ~ts: ~ts",
 		   [encode_addr(IP), Host, Path]),
 	    case store_file(Path, Request, FileMode, DirMode,
 			    GetPrefix, Slot, Thumbnail) of
@@ -370,30 +370,30 @@ process(_LocalPath, #request{method = 'PUT', host = Host, ip = IP,
 		{ok, Headers, OutData} ->
 		    http_response(201, Headers ++ CustomHeaders, OutData);
 		{error, closed} ->
-		    ?DEBUG("Cannot store file ~s from ~s for ~s: connection closed",
+		    ?DEBUG("Cannot store file ~ts from ~ts for ~ts: connection closed",
 			   [Path, encode_addr(IP), Host]),
 		    http_response(404);
 		{error, Error} ->
-		    ?ERROR_MSG("Cannot store file ~s from ~s for ~s: ~s",
+		    ?ERROR_MSG("Cannot store file ~ts from ~ts for ~ts: ~ts",
 			       [Path, encode_addr(IP), Host, format_error(Error)]),
 		    http_response(500)
 	    end;
 	{error, size_mismatch} ->
-	    ?WARNING_MSG("Rejecting file ~s from ~s for ~s: Unexpected size (~B)",
+	    ?WARNING_MSG("Rejecting file ~ts from ~ts for ~ts: Unexpected size (~B)",
 		      [lists:last(Slot), encode_addr(IP), Host, Length]),
 	    http_response(413);
 	{error, invalid_slot} ->
-	    ?WARNING_MSG("Rejecting file ~s from ~s for ~s: Invalid slot",
+	    ?WARNING_MSG("Rejecting file ~ts from ~ts for ~ts: Invalid slot",
 		      [lists:last(Slot), encode_addr(IP), Host]),
 	    http_response(403)
     catch
 	exit:{noproc, _} ->
-	    ?WARNING_MSG("Cannot handle PUT request from ~s for ~s: "
+	    ?WARNING_MSG("Cannot handle PUT request from ~ts for ~ts: "
 			 "Upload not configured for this host",
 			 [encode_addr(IP), Host]),
 	    http_response(404);
 	_:Error ->
-	    ?ERROR_MSG("Cannot handle PUT request from ~s for ~s: ~p",
+	    ?ERROR_MSG("Cannot handle PUT request from ~ts for ~ts: ~p",
 		       [encode_addr(IP), Host, Error]),
 	    http_response(500)
     end;
@@ -407,7 +407,7 @@ process(_LocalPath, #request{method = Method, host = Host, ip = IP} = Request)
 	    case file:open(Path, [read]) of
 		{ok, Fd} ->
 		    file:close(Fd),
-		    ?INFO_MSG("Serving ~s to ~s", [Path, encode_addr(IP)]),
+		    ?INFO_MSG("Serving ~ts to ~ts", [Path, encode_addr(IP)]),
 		    ContentType = guess_content_type(FileName),
 		    Headers1 = case ContentType of
 				 <<"image/", _SubType/binary>> -> [];
@@ -421,36 +421,36 @@ process(_LocalPath, #request{method = Method, host = Host, ip = IP} = Request)
 		    Headers3 = Headers2 ++ CustomHeaders,
 		    http_response(200, Headers3, {file, Path});
 		{error, eacces} ->
-		    ?WARNING_MSG("Cannot serve ~s to ~s: Permission denied",
+		    ?WARNING_MSG("Cannot serve ~ts to ~ts: Permission denied",
 			      [Path, encode_addr(IP)]),
 		    http_response(403);
 		{error, enoent} ->
-		    ?WARNING_MSG("Cannot serve ~s to ~s: No such file",
+		    ?WARNING_MSG("Cannot serve ~ts to ~ts: No such file",
 			      [Path, encode_addr(IP)]),
 		    http_response(404);
 		{error, eisdir} ->
-		    ?WARNING_MSG("Cannot serve ~s to ~s: Is a directory",
+		    ?WARNING_MSG("Cannot serve ~ts to ~ts: Is a directory",
 			      [Path, encode_addr(IP)]),
 		    http_response(404);
 		{error, Error} ->
-		    ?WARNING_MSG("Cannot serve ~s to ~s: ~s",
+		    ?WARNING_MSG("Cannot serve ~ts to ~ts: ~ts",
 			      [Path, encode_addr(IP), format_error(Error)]),
 		    http_response(500)
 	    end
     catch
 	exit:{noproc, _} ->
-	    ?WARNING_MSG("Cannot handle ~s request from ~s for ~s: "
+	    ?WARNING_MSG("Cannot handle ~ts request from ~ts for ~ts: "
 			 "Upload not configured for this host",
 			 [Method, encode_addr(IP), Host]),
 	    http_response(404);
 	_:Error ->
-	    ?ERROR_MSG("Cannot handle ~s request from ~s for ~s: ~p",
+	    ?ERROR_MSG("Cannot handle ~ts request from ~ts for ~ts: ~p",
 		       [Method, encode_addr(IP), Host, Error]),
 	    http_response(500)
     end;
 process(_LocalPath, #request{method = 'OPTIONS', host = Host,
 			     ip = IP} = Request) ->
-    ?DEBUG("Responding to OPTIONS request from ~s for ~s",
+    ?DEBUG("Responding to OPTIONS request from ~ts for ~ts",
 	   [encode_addr(IP), Host]),
     {Proc, _Slot} = parse_http_request(Request),
     try gen_server:call(Proc, get_conf, ?CALL_TIMEOUT) of
@@ -459,17 +459,17 @@ process(_LocalPath, #request{method = 'OPTIONS', host = Host,
 	    http_response(200, [AllowHeader | CustomHeaders])
     catch
 	exit:{noproc, _} ->
-	    ?WARNING_MSG("Cannot handle OPTIONS request from ~s for ~s: "
+	    ?WARNING_MSG("Cannot handle OPTIONS request from ~ts for ~ts: "
 			 "Upload not configured for this host",
 			 [encode_addr(IP), Host]),
 	    http_response(404);
 	_:Error ->
-	    ?ERROR_MSG("Cannot handle OPTIONS request from ~s for ~s: ~p",
+	    ?ERROR_MSG("Cannot handle OPTIONS request from ~ts for ~ts: ~p",
 		       [encode_addr(IP), Host, Error]),
 	    http_response(500)
     end;
 process(_LocalPath, #request{method = Method, host = Host, ip = IP}) ->
-    ?DEBUG("Rejecting ~s request from ~s for ~s",
+    ?DEBUG("Rejecting ~ts request from ~ts for ~ts",
 	   [Method, encode_addr(IP), Host]),
     http_response(405, [{<<"Allow">>, <<"OPTIONS, HEAD, GET, PUT">>}]).
 
@@ -617,7 +617,7 @@ process_slot_request(#iq{lang = Lang, from = From} = IQ,
 		    xmpp:make_error(IQ, Error)
 	    end;
 	deny ->
-	    ?DEBUG("Denying HTTP upload slot request from ~s",
+	    ?DEBUG("Denying HTTP upload slot request from ~ts",
 		   [jid:encode(From)]),
 	    Txt = ?T("Access denied by service policy"),
 	    xmpp:make_error(IQ, xmpp:err_forbidden(Txt, Lang))
@@ -631,7 +631,7 @@ create_slot(#state{service_url = undefined, max_size = MaxSize},
   when MaxSize /= infinity,
        Size > MaxSize ->
     Text = {?T("File larger than ~w bytes"), [MaxSize]},
-    ?WARNING_MSG("Rejecting file ~s from ~s (too large: ~B bytes)",
+    ?WARNING_MSG("Rejecting file ~ts from ~ts (too large: ~B bytes)",
 	      [File, jid:encode(JID), Size]),
     Error = xmpp:err_not_acceptable(Text, Lang),
     Els = xmpp:get_els(Error),
@@ -652,7 +652,7 @@ create_slot(#state{service_url = undefined,
 	allow ->
 	    RandStr = p1_rand:get_alphanum_string(SecretLength),
 	    FileStr = make_file_string(File),
-	    ?INFO_MSG("Got HTTP upload slot for ~s (file: ~s, size: ~B)",
+	    ?INFO_MSG("Got HTTP upload slot for ~ts (file: ~ts, size: ~B)",
 		      [jid:encode(JID), File, Size]),
 	    {ok, [UserStr, RandStr, FileStr]};
 	deny ->
@@ -678,33 +678,33 @@ create_slot(#state{service_url = ServiceURL},
 	    case binary:split(Body, <<$\n>>, [global, trim]) of
 		[<<"http", _/binary>> = PutURL,
 		 <<"http", _/binary>> = GetURL] ->
-		    ?INFO_MSG("Got HTTP upload slot for ~s (file: ~s, size: ~B)",
+		    ?INFO_MSG("Got HTTP upload slot for ~ts (file: ~ts, size: ~B)",
 			      [jid:encode(JID), File, Size]),
 		    {ok, PutURL, GetURL};
 		Lines ->
-		    ?ERROR_MSG("Can't parse data received for ~s from <~s>: ~p",
+		    ?ERROR_MSG("Can't parse data received for ~ts from <~ts>: ~p",
 			       [jid:encode(JID), ServiceURL, Lines]),
 		    Txt = ?T("Failed to parse HTTP response"),
 		    {error, xmpp:err_service_unavailable(Txt, Lang)}
 	    end;
 	{ok, {402, _Body}} ->
-	    ?WARNING_MSG("Got status code 402 for ~s from <~s>",
+	    ?WARNING_MSG("Got status code 402 for ~ts from <~ts>",
 		      [jid:encode(JID), ServiceURL]),
 	    {error, xmpp:err_resource_constraint()};
 	{ok, {403, _Body}} ->
-	    ?WARNING_MSG("Got status code 403 for ~s from <~s>",
+	    ?WARNING_MSG("Got status code 403 for ~ts from <~ts>",
 		      [jid:encode(JID), ServiceURL]),
 	    {error, xmpp:err_not_allowed()};
 	{ok, {413, _Body}} ->
-	    ?WARNING_MSG("Got status code 413 for ~s from <~s>",
+	    ?WARNING_MSG("Got status code 413 for ~ts from <~ts>",
 		      [jid:encode(JID), ServiceURL]),
 	    {error, xmpp:err_not_acceptable()};
 	{ok, {Code, _Body}} ->
-	    ?ERROR_MSG("Unexpected status code for ~s from <~s>: ~B",
+	    ?ERROR_MSG("Unexpected status code for ~ts from <~ts>: ~B",
 		       [jid:encode(JID), ServiceURL, Code]),
 	    {error, xmpp:err_service_unavailable()};
 	{error, Reason} ->
-	    ?ERROR_MSG("Error requesting upload slot for ~s from <~s>: ~p",
+	    ?ERROR_MSG("Error requesting upload slot for ~ts from <~ts>: ~p",
 		       [jid:encode(JID), ServiceURL, Reason]),
 	    {error, xmpp:err_service_unavailable()}
     end.
@@ -942,12 +942,12 @@ read_image(Path) ->
 			width = proplists:get_value(width, Info),
 			height = proplists:get_value(height, Info)}};
 		{error, Why} ->
-		    ?DEBUG("Cannot identify type of ~s: ~s",
+		    ?DEBUG("Cannot identify type of ~ts: ~ts",
 			   [Path, eimp:format_error(Why)]),
 		    pass
 	    end;
 	{error, Reason} ->
-	    ?DEBUG("Failed to read file ~s: ~s",
+	    ?DEBUG("Failed to read file ~ts: ~ts",
 		   [Path, format_error(Reason)]),
 	    pass
     end.
@@ -955,7 +955,7 @@ read_image(Path) ->
 -spec convert(binary(), media_info()) -> {ok, media_info()} | pass.
 convert(InData, #media_info{path = Path, type = T, width = W, height = H} = Info) ->
     if W * H >= 25000000 ->
-	    ?DEBUG("The image ~s is more than 25 Mpix", [Path]),
+	    ?DEBUG("The image ~ts is more than 25 Mpix", [Path]),
 	    pass;
        W =< 300, H =< 300 ->
 	    {ok, Info};
@@ -975,12 +975,12 @@ convert(InData, #media_info{path = Path, type = T, width = W, height = H} = Info
 			ok ->
 			    {ok, OutInfo};
 			{error, Why} ->
-			    ?ERROR_MSG("Failed to write to ~s: ~s",
+			    ?ERROR_MSG("Failed to write to ~ts: ~ts",
 				       [OutPath, format_error(Why)]),
 			    pass
 		    end;
 		{error, Why} ->
-		    ?ERROR_MSG("Failed to convert ~s to ~s: ~s",
+		    ?ERROR_MSG("Failed to convert ~ts to ~ts: ~ts",
 			       [Path, OutPath, eimp:format_error(Why)]),
 		    pass
 	    end
@@ -1004,31 +1004,13 @@ remove_user(User, Server) ->
     DocRoot1 = expand_host(expand_home(DocRoot), ServerHost),
     UserStr = make_user_string(jid:make(User, Server), JIDinURL),
     UserDir = str:join([DocRoot1, UserStr], <<$/>>),
-    case del_tree(UserDir) of
+    case misc:delete_dir(UserDir) of
 	ok ->
-	    ?INFO_MSG("Removed HTTP upload directory of ~s@~s", [User, Server]);
+	    ?INFO_MSG("Removed HTTP upload directory of ~ts@~ts", [User, Server]);
 	{error, enoent} ->
-	    ?DEBUG("Found no HTTP upload directory of ~s@~s", [User, Server]);
+	    ?DEBUG("Found no HTTP upload directory of ~ts@~ts", [User, Server]);
 	{error, Error} ->
-	    ?ERROR_MSG("Cannot remove HTTP upload directory of ~s@~s: ~s",
+	    ?ERROR_MSG("Cannot remove HTTP upload directory of ~ts@~ts: ~ts",
 		       [User, Server, format_error(Error)])
     end,
     ok.
-
--spec del_tree(file:filename_all()) -> ok | {error, file:posix()}.
-del_tree(Dir) ->
-    try
-	{ok, Entries} = file:list_dir(Dir),
-	lists:foreach(fun(Path) ->
-			      case filelib:is_dir(Path) of
-				  true ->
-				      ok = del_tree(Path);
-				  false ->
-				      ok = file:delete(Path)
-			      end
-		      end, [filename:join(Dir, Entry) || Entry <- Entries]),
-	ok = file:del_dir(Dir)
-    catch
-	_:{badmatch, {error, Error}} ->
-	    {error, Error}
-    end.

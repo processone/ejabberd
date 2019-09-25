@@ -223,7 +223,7 @@ apply_action(list, Key) ->
     {RUser, RServer, _} = JID,
     Jid1string = <<User/binary, "@", Server/binary>>,
     Jid2string = <<RUser/binary, "@", RServer/binary>>,
-    io:format("Matches: ~s ~s~n", [Jid1string, Jid2string]),
+    io:format("Matches: ~ts ~ts~n", [Jid1string, Jid2string]),
     {Jid1string, Jid2string};
 apply_action(delete, Key) ->
     R = apply_action(list, Key),

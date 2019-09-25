@@ -255,7 +255,7 @@ handle(Call, Auth, Args, Version) when is_atom(Call), is_list(Args) ->
 	  ?EX_RULE(Class, Error, Stack) ->
 	    StackTrace = ?EX_STACK(Stack),
 	    ?ERROR_MSG("REST API Error: "
-		       "~s(~p) -> ~p:~p ~p",
+		       "~ts(~p) -> ~p:~p ~p",
 		       [Call, hide_sensitive_args(Args),
 			Class, Error, StackTrace]),
 	    {500, <<"internal_error">>}
@@ -286,7 +286,7 @@ get_elem_delete(Call, A, L, F) ->
     case proplists:get_all_values(A, L) of
       [Value] -> {Value, proplists:delete(A, L)};
       [_, _ | _] ->
-	  ?INFO_MSG("Command ~s call rejected, it has duplicate attribute ~w",
+	  ?INFO_MSG("Command ~ts call rejected, it has duplicate attribute ~w",
 		    [Call, A]),
 	  throw({invalid_parameter,
 		 io_lib:format("Request have duplicate argument: ~w", [A])});
@@ -295,7 +295,7 @@ get_elem_delete(Call, A, L, F) ->
 	      {list, _} ->
 		  {[], L};
 	      _ ->
-		  ?INFO_MSG("Command ~s call rejected, missing attribute ~w",
+		  ?INFO_MSG("Command ~ts call rejected, missing attribute ~w",
 			    [Call, A]),
 		  throw({invalid_parameter,
 			 io_lib:format("Request have missing argument: ~w", [A])})
@@ -318,7 +318,7 @@ format_args(Call, Args, ArgsFormat) ->
       [] -> R;
       L when is_list(L) ->
 	  ExtraArgs = [N || {N, _} <- L],
-	  ?INFO_MSG("Command ~s call rejected, it has unknown arguments ~w",
+	  ?INFO_MSG("Command ~ts call rejected, it has unknown arguments ~w",
 	      [Call, ExtraArgs]),
 	  throw({invalid_parameter,
 		 io_lib:format("Request have unknown arguments: ~w", [ExtraArgs])})
@@ -506,9 +506,9 @@ json_error(HTTPCode, JSONCode, Message) ->
 
 log(Call, Args, {Addr, Port}) ->
     AddrS = misc:ip_to_list({Addr, Port}),
-    ?INFO_MSG("API call ~s ~p from ~s:~p", [Call, hide_sensitive_args(Args), AddrS, Port]);
+    ?INFO_MSG("API call ~ts ~p from ~ts:~p", [Call, hide_sensitive_args(Args), AddrS, Port]);
 log(Call, Args, IP) ->
-    ?INFO_MSG("API call ~s ~p (~p)", [Call, hide_sensitive_args(Args), IP]).
+    ?INFO_MSG("API call ~ts ~p (~p)", [Call, hide_sensitive_args(Args), IP]).
 
 hide_sensitive_args(Args=[_H|_T]) ->
     lists:map( fun({<<"password">>, Password}) -> {<<"password">>, ejabberd_config:may_hide_data(Password)};

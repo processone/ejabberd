@@ -241,23 +241,23 @@ build_forward_packet(JID, #message{type = T} = Msg, Sender, Dest, Direction) ->
 
 -spec enable(binary(), binary(), binary(), binary()) -> ok | {error, any()}.
 enable(Host, U, R, CC)->
-    ?DEBUG("Enabling carbons for ~s@~s/~s", [U, Host, R]),
+    ?DEBUG("Enabling carbons for ~ts@~ts/~ts", [U, Host, R]),
     case ejabberd_sm:set_user_info(U, Host, R, carboncopy, CC) of
 	ok -> ok;
 	{error, Reason} = Err ->
-	    ?ERROR_MSG("Failed to enable carbons for ~s@~s/~s: ~p",
+	    ?ERROR_MSG("Failed to enable carbons for ~ts@~ts/~ts: ~p",
 		       [U, Host, R, Reason]),
 	    Err
     end.
 
 -spec disable(binary(), binary(), binary()) -> ok | {error, any()}.
 disable(Host, U, R)->
-    ?DEBUG("Disabling carbons for ~s@~s/~s", [U, Host, R]),
+    ?DEBUG("Disabling carbons for ~ts@~ts/~ts", [U, Host, R]),
     case ejabberd_sm:del_user_info(U, Host, R, carboncopy) of
 	ok -> ok;
 	{error, notfound} -> ok;
 	{error, Reason} = Err ->
-	    ?ERROR_MSG("Failed to disable carbons for ~s@~s/~s: ~p",
+	    ?ERROR_MSG("Failed to disable carbons for ~ts@~ts/~ts: ~p",
 		       [U, Host, R, Reason]),
 	    Err
     end.

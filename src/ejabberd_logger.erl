@@ -71,7 +71,7 @@ get_integer_env(Name, Default) ->
         undefined ->
             Default;
         {ok, Junk} ->
-            error_logger:error_msg("wrong value for ~s: ~p; "
+            error_logger:error_msg("wrong value for ~ts: ~p; "
                                    "using ~p as a fallback~n",
                                    [Name, Junk, Default]),
             Default
@@ -83,7 +83,7 @@ get_string_env(Name, Default) ->
         undefined ->
             Default;
         {ok, Junk} ->
-            error_logger:error_msg("wrong value for ~s: ~p; "
+            error_logger:error_msg("wrong value for ~ts: ~p; "
                                    "using ~p as a fallback~n",
                                    [Name, Junk, Default]),
             Default

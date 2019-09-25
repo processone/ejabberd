@@ -1,3 +1,56 @@
+# Version 19.09
+
+* Admin
+- The minimum required Erlang/OTP version is now 19.3
+- Fix API call using OAuth (#2982)
+- Rename MUC command arguments from Host to Service (#2976)
+
+* Webadmin
+- Don't treat 'Host' header as a virtual XMPP host (#2989)
+- Fix some links to Guide in WebAdmin and add new ones (#3003)
+- Use select fields to input host in WebAdmin Backup (#3000)
+- Check account auth provided in WebAdmin is a local host (#3000)
+
+* ACME
+- Improve ACME implementation
+- Fix IDA support in ACME requests
+- Fix unicode formatting in ACME module
+- Log an error message on IDNA failure
+- Support IDN hostnames in ACME requests
+- Don't attempt to create ACME directory on ejabberd startup
+- Don't allow requesting certificates for localhost or IP-like domains
+- Don't auto request certificate for localhost and IP-like domains
+- Add listener for ACME challenge in example config
+
+* Authentication
+- JWT-only authentication for some users (#3012)
+
+* MUC
+- Apply default role after revoking admin affiliation (#3023)
+- Custom exit message is not broadcast (#3004)
+- Revert "Affiliations other than admin and owner cannot invite to members_only rooms" (#2987)
+- When join new room with password, set pass and password_protected (#2668)
+- Improve rooms_* commands to accept 'global' as MUC service argument (#2976)
+- Rename MUC command arguments from Host to Service (#2976)
+
+* SQL
+- Fix transactions for Microsoft SQL Server (#2978)
+- Spawn SQL connections on demand only
+
+* Misc
+- Add support for XEP-0328: JID Prep
+- Added gsfonts for captcha
+- Log Mnesia table type on creation
+- Replicate Mnesia 'bosh' table when nodes are joined
+- Fix certificate selection for s2s (#3015)
+- Provide meaningful error when adding non-local users to shared roster (#3000)
+- Websocket: don't treat 'Host' header as a virtual XMPP host (#2989)
+- Fix sm ack related c2s error (#2984)
+- Don't hide the reason why c2s connection has failed
+- Unicode support
+- Correctly handle unicode in log messages
+- Fix unicode processing in ejabberd.yml
+
 # Version 19.08
 
 * Administration

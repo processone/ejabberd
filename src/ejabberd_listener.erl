@@ -115,7 +115,7 @@ init({Port, _, udp} = EndPoint, Module, Opts, SockOpts) ->
 		    proc_lib:init_ack({ok, self()}),
 		    case application:ensure_started(ejabberd) of
 			ok ->
-			    ?INFO_MSG("Start accepting ~s connections at ~s for ~p",
+			    ?INFO_MSG("Start accepting ~ts connections at ~ts for ~p",
 				      [format_transport(udp, Opts),
 				       format_endpoint({Port1, Addr, udp}), Module]),
 			    Opts1 = opts_to_list(Module, Opts),
@@ -148,7 +148,7 @@ init({Port, _, tcp} = EndPoint, Module, Opts, SockOpts) ->
 			    Sup = start_module_sup(Module, Opts),
 			    Interval = maps:get(accept_interval, Opts),
 			    Proxy = maps:get(use_proxy_protocol, Opts),
-			    ?INFO_MSG("Start accepting ~s connections at ~s for ~p",
+			    ?INFO_MSG("Start accepting ~ts connections at ~ts for ~p",
 				      [format_transport(tcp, Opts),
 				       format_endpoint({Port1, Addr, tcp}), Module]),
 			    Opts1 = opts_to_list(Module, Opts),
@@ -223,7 +223,7 @@ accept(ListenSocket, Module, State, Sup, Interval, Proxy, Arity) ->
 	{ok, Socket} when Proxy ->
 	    case proxy_protocol:decode(gen_tcp, Socket, 10000) of
 		{error, Err} ->
-		    ?ERROR_MSG("(~w) Proxy protocol parsing failed: ~s",
+		    ?ERROR_MSG("(~w) Proxy protocol parsing failed: ~ts",
 			       [ListenSocket, format_error(Err)]),
 		    gen_tcp:close(Socket);
 		{{Addr, Port}, {PAddr, PPort}} = SP ->
@@ -236,7 +236,7 @@ accept(ListenSocket, Module, State, Sup, Interval, Proxy, Arity) ->
 				       gen_tcp:close(Socket),
 				       none
 			       end,
-		    ?INFO_MSG("(~p) Accepted proxied connection ~s -> ~s",
+		    ?INFO_MSG("(~p) Accepted proxied connection ~ts -> ~ts",
 			      [Receiver,
 			       ejabberd_config:may_hide_data(
 				 format_endpoint({PPort, PAddr, tcp})),
@@ -253,7 +253,7 @@ accept(ListenSocket, Module, State, Sup, Interval, Proxy, Arity) ->
 				       gen_tcp:close(Socket),
 				       none
 			       end,
-		    ?INFO_MSG("(~p) Accepted connection ~s -> ~s",
+		    ?INFO_MSG("(~p) Accepted connection ~ts -> ~ts",
 			      [Receiver,
 			       ejabberd_config:may_hide_data(
 				 format_endpoint({PPort, PAddr, tcp})),
@@ -263,7 +263,7 @@ accept(ListenSocket, Module, State, Sup, Interval, Proxy, Arity) ->
 	    end,
 	    accept(ListenSocket, Module, State, Sup, NewInterval, Proxy, Arity);
 	{error, Reason} ->
-	    ?ERROR_MSG("(~w) Failed TCP accept: ~s",
+	    ?ERROR_MSG("(~w) Failed TCP accept: ~ts",
 		       [ListenSocket, format_error(Reason)]),
 	    accept(ListenSocket, Module, State, Sup, NewInterval, Proxy, Arity)
     end.
@@ -283,7 +283,7 @@ udp_recv(Socket, Module, State) ->
 		    udp_recv(Socket, Module, NewState)
 	    end;
 	{error, Reason} ->
-	    ?ERROR_MSG("Unexpected UDP error: ~s", [format_error(Reason)]),
+	    ?ERROR_MSG("Unexpected UDP error: ~ts", [format_error(Reason)]),
 	    throw({error, Reason})
     end.
 
@@ -376,7 +376,7 @@ stop_listeners() ->
 stop_listener({_, _, Transport} = EndPoint, Module, Opts) ->
     case supervisor:terminate_child(?MODULE, EndPoint) of
 	ok ->
-	    ?INFO_MSG("Stop accepting ~s connections at ~s for ~p",
+	    ?INFO_MSG("Stop accepting ~ts connections at ~ts for ~p",
 		      [format_transport(Transport, Opts),
 		       format_endpoint(EndPoint), Module]),
 	    ets:delete(?MODULE, EndPoint),
@@ -444,7 +444,7 @@ config_reloaded() ->
 
 -spec report_socket_error(inet:posix(), endpoint(), module()) -> ok.
 report_socket_error(Reason, EndPoint, Module) ->
-    ?ERROR_MSG("Failed to open socket at ~s for ~s: ~s",
+    ?ERROR_MSG("Failed to open socket at ~ts for ~ts: ~ts",
 	       [format_endpoint(EndPoint), Module, format_error(Reason)]).
 
 -spec format_error(inet:posix() | atom()) -> string().

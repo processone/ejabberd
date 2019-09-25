@@ -761,7 +761,7 @@ offline_msg_to_route(LServer, #offline_msg{from = From, to = To} = R) ->
 	    Pkt2 = add_delay_info(Pkt1, LServer, R#offline_msg.timestamp),
 	    {route, Pkt2}
     catch _:{xmpp_codec, Why} ->
-	    ?ERROR_MSG("Failed to decode packet ~p of user ~s: ~s",
+	    ?ERROR_MSG("Failed to decode packet ~p of user ~ts: ~ts",
 		       [R#offline_msg.packet, jid:encode(To),
 			xmpp:format_error(Why)]),
 	    error
@@ -801,7 +801,7 @@ read_db_messages(LUser, LServer) ->
 			    [{Node, Pkt2}]
 		    catch _:{xmpp_codec, Why} ->
 			?ERROR_MSG("Failed to decode packet ~p "
-				   "of user ~s: ~s",
+				   "of user ~ts: ~ts",
 				   [El, jid:encode(To),
 				    xmpp:format_error(Why)]),
 			[]
@@ -994,7 +994,7 @@ user_queue(User, Server, Query, Lang) ->
 	      end,
     Hdrs = get_messages_subset(User, Server, HdrsAll),
     FMsgs = format_user_queue(Hdrs),
-    PageTitle = str:format(translate:translate(Lang, ?T("~s's Offline Messages Queue")), [us_to_list(US)]),
+    PageTitle = str:format(translate:translate(Lang, ?T("~ts's Offline Messages Queue")), [us_to_list(US)]),
     (?H1GL(PageTitle, <<"mod-offline">>, <<"mod_offline">>))
       ++ [?XREST(?T("Submitted"))] ++
 	[?XAE(<<"form">>,
@@ -1098,7 +1098,7 @@ webadmin_user_parse_query(_, <<"removealloffline">>,
 			  User, Server, _Query) ->
     case delete_all_msgs(User, Server) of
 	{atomic, ok} ->
-	    ?INFO_MSG("Removed all offline messages for ~s@~s",
+	    ?INFO_MSG("Removed all offline messages for ~ts@~ts",
 		      [User, Server]),
 	    {stop, ok};
 	Err ->

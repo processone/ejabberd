@@ -264,14 +264,14 @@ decode_term(Bin) ->
 	Term
     catch _:{badmatch, {error, {Line, Mod, Reason}, _}} ->
 	    ?ERROR_MSG("Corrupted Erlang term in SQL database:~n"
-		       "** Scanner error: at line ~B: ~s~n"
-		       "** Term: ~s",
+		       "** Scanner error: at line ~B: ~ts~n"
+		       "** Term: ~ts",
 		       [Line, Mod:format_error(Reason), Bin]),
 	    erlang:error(badarg);
 	  _:{badmatch, {error, {Line, Mod, Reason}}} ->
 	    ?ERROR_MSG("Corrupted Erlang term in SQL database:~n"
-		       "** Parser error: at line ~B: ~s~n"
-		       "** Term: ~s",
+		       "** Parser error: at line ~B: ~ts~n"
+		       "** Term: ~ts",
 		       [Line, Mod:format_error(Reason), Bin]),
 	    erlang:error(badarg)
     end.
@@ -290,7 +290,7 @@ sqlite_file(Host) ->
 		{ok, Cwd} ->
 		    filename:join([Cwd|Path]);
 		{error, Reason} ->
-		    ?ERROR_MSG("Failed to get current directory: ~s",
+		    ?ERROR_MSG("Failed to get current directory: ~ts",
 			       [file:format_error(Reason)]),
 		    filename:join(Path)
 	    end;
@@ -382,7 +382,7 @@ connecting({sql_cmd, Command, Timestamp} = Req, From,
 			State#state.pending_requests)
 	catch error:full ->
 		Err = <<"SQL request queue is overfilled">>,
-		?ERROR_MSG("~s, bouncing all pending requests", [Err]),
+		?ERROR_MSG("~ts, bouncing all pending requests", [Err]),
 		Q = p1_queue:dropwhile(
 		      fun({sql_cmd, _, To, TS}) ->
 			      reply(To, {error, Err}, TS),
@@ -497,7 +497,7 @@ inner_transaction(F) ->
       ?TOP_LEVEL_TXN ->
 	  {backtrace, T} = process_info(self(), backtrace),
 	  ?ERROR_MSG("Inner transaction called at outer txn "
-		     "level. Trace: ~s",
+		     "level. Trace: ~ts",
 		     [T]),
 	  erlang:exit(implementation_faulty);
       _N -> ok
@@ -519,7 +519,7 @@ outer_transaction(F, NRestarts, _Reason) ->
       _N ->
 	  {backtrace, T} = process_info(self(), backtrace),
 	  ?ERROR_MSG("Outer transaction called at inner txn "
-		     "level. Trace: ~s",
+		     "level. Trace: ~ts",
 		     [T]),
 	  erlang:exit(implementation_faulty)
     end,
@@ -616,7 +616,7 @@ sql_query_internal(#sql_query{} = Query) ->
 		{error, <<"shutdown">>};
 	      ?EX_RULE(Class, Reason, Stack) ->
 		StackTrace = ?EX_STACK(Stack),
-                ?ERROR_MSG("Internal error while processing SQL query:~n** ~s",
+                ?ERROR_MSG("Internal error while processing SQL query:~n** ~ts",
 			   [misc:format_exception(2, Class, Reason, StackTrace)]),
                 {error, <<"internal error">>}
         end,
@@ -629,7 +629,7 @@ sql_query_internal(F) when is_function(F) ->
     end;
 sql_query_internal(Query) ->
     State = get(?STATE_KEY),
-    ?DEBUG("SQL: \"~s\"", [Query]),
+    ?DEBUG("SQL: \"~ts\"", [Query]),
     QueryTimeout = query_timeout(State#state.host),
     Res = case State#state.db_type of
 	    odbc ->
@@ -744,7 +744,7 @@ pgsql_execute_sql_query(SQLQuery, State) ->
         pgsql:execute(State#state.db_ref, SQLQuery#sql_query.hash, Args),
 %    {T, ExecuteRes} =
 %        timer:tc(pgsql, execute, [State#state.db_ref, SQLQuery#sql_query.hash, Args]),
-%    io:format("T ~s ~p~n", [SQLQuery#sql_query.hash, T]),
+%    io:format("T ~ts ~p~n", [SQLQuery#sql_query.hash, T]),
     Res = pgsql_execute_to_odbc(ExecuteRes),
     sql_query_format_res(Res, SQLQuery).
 
@@ -759,7 +759,7 @@ sql_query_format_res({selected, _, Rows}, SQLQuery) ->
 		      ?EX_RULE(Class, Reason, Stack) ->
 			  StackTrace = ?EX_STACK(Stack),
                           ?ERROR_MSG("Error while processing SQL query result:~n"
-                                     "** Row: ~p~n** ~s",
+                                     "** Row: ~p~n** ~ts",
                                      [Row,
 				      misc:format_exception(2, Class, Reason, StackTrace)]),
                           []
@@ -1053,7 +1053,7 @@ warn_if_ssl_unsupported(tcp, _) ->
 warn_if_ssl_unsupported(ssl, pgsql) ->
     ok;
 warn_if_ssl_unsupported(ssl, Type) ->
-    ?WARNING_MSG("SSL connection is not supported for ~s", [Type]).
+    ?WARNING_MSG("SSL connection is not supported for ~ts", [Type]).
 
 get_ssl_opts(ssl, Host) ->
     Opts1 = case ejabberd_option:sql_ssl_certfile(Host) of
@@ -1089,8 +1089,8 @@ init_mssql(Host) ->
 	     undefined -> <<"ejabberd">>;
 	     D -> D
 	 end,
-    FreeTDS = io_lib:fwrite("[~s]~n"
-			    "\thost = ~s~n"
+    FreeTDS = io_lib:fwrite("[~ts]~n"
+			    "\thost = ~ts~n"
 			    "\tport = ~p~n"
 			    "\tclient charset = UTF-8~n"
 			    "\ttds version = 7.1~n",
@@ -1101,16 +1101,16 @@ init_mssql(Host) ->
 			     "Setup = libtdsS.so~n"
 			     "UsageCount = 1~n"
 			     "FileUsage = 1~n", []),
-    ODBCINI = io_lib:fwrite("[~s]~n"
+    ODBCINI = io_lib:fwrite("[~ts]~n"
 			    "Description = MS SQL~n"
 			    "Driver = freetds~n"
-			    "Servername = ~s~n"
-			    "Database = ~s~n"
+			    "Servername = ~ts~n"
+			    "Database = ~ts~n"
 			    "Port = ~p~n",
 			    [Host, Host, DB, Port]),
-    ?DEBUG("~s:~n~s", [freetds_config(), FreeTDS]),
-    ?DEBUG("~s:~n~s", [odbcinst_config(), ODBCINST]),
-    ?DEBUG("~s:~n~s", [odbc_config(), ODBCINI]),
+    ?DEBUG("~ts:~n~ts", [freetds_config(), FreeTDS]),
+    ?DEBUG("~ts:~n~ts", [odbcinst_config(), ODBCINST]),
+    ?DEBUG("~ts:~n~ts", [odbc_config(), ODBCINI]),
     case filelib:ensure_dir(freetds_config()) of
 	ok ->
 	    try
@@ -1122,12 +1122,12 @@ init_mssql(Host) ->
 		os:putenv("FREETDSCONF", freetds_config()),
 		ok
 	    catch error:{badmatch, {error, Reason} = Err} ->
-		    ?ERROR_MSG("Failed to create temporary files in ~s: ~s",
+		    ?ERROR_MSG("Failed to create temporary files in ~ts: ~ts",
 			       [tmp_dir(), file:format_error(Reason)]),
 		    Err
 	    end;
 	{error, Reason} = Err ->
-	    ?ERROR_MSG("Failed to create temporary directory ~s: ~s",
+	    ?ERROR_MSG("Failed to create temporary directory ~ts: ~ts",
 		       [tmp_dir(), file:format_error(Reason)]),
 	    Err
     end.
@@ -1168,22 +1168,22 @@ current_time() ->
 %% ***IMPORTANT*** This error format requires extended_errors turned on.
 extended_error({"08S01", _, Reason}) ->
     % TCP Provider: The specified network name is no longer available
-    ?DEBUG("ODBC Link Failure: ~s", [Reason]),
+    ?DEBUG("ODBC Link Failure: ~ts", [Reason]),
     <<"Communication link failure">>;
 extended_error({"08001", _, Reason}) ->
     % Login timeout expired
-    ?DEBUG("ODBC Connect Timeout: ~s", [Reason]),
+    ?DEBUG("ODBC Connect Timeout: ~ts", [Reason]),
     <<"SQL connection failed">>;
 extended_error({"IMC01", _, Reason}) ->
     % The connection is broken and recovery is not possible
-    ?DEBUG("ODBC Link Failure: ~s", [Reason]),
+    ?DEBUG("ODBC Link Failure: ~ts", [Reason]),
     <<"Communication link failure">>;
 extended_error({"IMC06", _, Reason}) ->
     % The connection is broken and recovery is not possible
-    ?DEBUG("ODBC Link Failure: ~s", [Reason]),
+    ?DEBUG("ODBC Link Failure: ~ts", [Reason]),
     <<"Communication link failure">>;
 extended_error({Code, _, Reason}) ->
-    ?DEBUG("ODBC Error ~s: ~s", [Code, Reason]),
+    ?DEBUG("ODBC Error ~ts: ~ts", [Code, Reason]),
     iolist_to_binary(Reason);
 extended_error(Error) ->
     Error.
@@ -1192,14 +1192,14 @@ check_error({error, Why} = Err, _Query) when Why == killed ->
     Err;
 check_error({error, Why}, #sql_query{} = Query) ->
     Err = extended_error(Why),
-    ?ERROR_MSG("SQL query '~s' at ~p failed: ~p",
+    ?ERROR_MSG("SQL query '~ts' at ~p failed: ~p",
                [Query#sql_query.hash, Query#sql_query.loc, Err]),
     {error, Err};
 check_error({error, Why}, Query) ->
     Err = extended_error(Why),
     case catch iolist_to_binary(Query) of
         SQuery when is_binary(SQuery) ->
-            ?ERROR_MSG("SQL query '~s' failed: ~p", [SQuery, Err]);
+            ?ERROR_MSG("SQL query '~ts' failed: ~p", [SQuery, Err]);
         _ ->
             ?ERROR_MSG("SQL query ~p failed: ~p", [Query, Err])
     end,

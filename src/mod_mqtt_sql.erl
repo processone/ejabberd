@@ -92,12 +92,12 @@ lookup_published({_, LServer, _}, Topic) ->
                             {ok, {Payload, QoS, Props, Expiry}}
                     catch _:badarg ->
                             ?ERROR_MSG("Malformed value of 'payload_format' column "
-                                       "for topic '~s'", [Topic]),
+                                       "for topic '~ts'", [Topic]),
                             {error, db_failure}
                     end
             catch _:badarg ->
                     ?ERROR_MSG("Malformed value of 'user_properties' column "
-                               "for topic '~s'", [Topic]),
+                               "for topic '~ts'", [Topic]),
                     {error, db_failure}
             end;
 	{selected, []} ->

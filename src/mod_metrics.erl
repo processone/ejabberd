@@ -173,7 +173,7 @@ get_socket(N) ->
 			    get_socket(N-1)
 		    end;
 		{error, Reason} = Err ->
-		    ?ERROR_MSG("Can not open udp socket to grapherl: ~s",
+		    ?ERROR_MSG("Can not open udp socket to grapherl: ~ts",
 			       [inet:format_error(Reason)]),
 		    Err
 	    end;

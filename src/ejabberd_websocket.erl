@@ -211,7 +211,7 @@ ws_loop(FrameInfo, Socket, WsHandleLoopPid, SocketMode, Shaper) ->
             ?DEBUG("TCP connection was closed, exit", []),
             websocket_close(Socket, WsHandleLoopPid, SocketMode, 0);
 	{tcp_error, Socket, Reason} ->
-	    ?DEBUG("TCP connection error: ~s", [inet:format_error(Reason)]),
+	    ?DEBUG("TCP connection error: ~ts", [inet:format_error(Reason)]),
 	    websocket_close(Socket, WsHandleLoopPid, SocketMode, 0);
         {'DOWN', Ref, process, WsHandleLoopPid, Reason} ->
             Code = case Reason of
@@ -356,7 +356,7 @@ process_frame(#frame_info{unprocessed = none,
                 8 -> % Close
                     CloseCode = case Unmasked of
                                     <<Code:16/integer-big, Message/binary>> ->
-                                        ?DEBUG("WebSocket close op: ~p ~s",
+                                        ?DEBUG("WebSocket close op: ~p ~ts",
                                                [Code, Message]),
                                         Code;
                                     <<Code:16/integer-big>> ->

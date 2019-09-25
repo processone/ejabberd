@@ -677,7 +677,7 @@ create_room_with_opts(Name1, Host1, ServerHost, CustomRoomOpts) ->
 %% Create the room only in the database.
 %% It is required to restart the MUC service for the room to appear.
 muc_create_room(ServerHost, {Name, Host, _}, DefRoomOpts) ->
-    io:format("Creating room ~s@~s~n", [Name, Host]),
+    io:format("Creating room ~ts@~ts~n", [Name, Host]),
     mod_muc:store_room(ServerHost, Host, Name, DefRoomOpts).
 
 %% @spec (Name::binary(), Host::binary()) ->
@@ -694,7 +694,7 @@ destroy_room(Name, Service) ->
     end.
 
 destroy_room({N, H, SH}) ->
-    io:format("Destroying room: ~s@~s - vhost: ~s~n", [N, H, SH]),
+    io:format("Destroying room: ~ts@~ts - vhost: ~ts~n", [N, H, SH]),
     destroy_room(N, H).
 
 
@@ -726,7 +726,7 @@ read_room(F) ->
     case io:get_line(F, "") of
 	eof -> eof;
 	String ->
-	    case io_lib:fread("~s", String) of
+	    case io_lib:fread("~ts", String) of
 		{ok, [RoomJID], _} -> split_roomjid(list_to_binary(RoomJID));
 		{error, What} ->
 		    io:format("Parse error: what: ~p~non the line: ~p~n~n", [What, String])
@@ -778,7 +778,7 @@ rooms_empty_destroy(Service) ->
 
 rooms_report(Method, Action, Service, Days) ->
     {NA, NP, RP} = muc_unused(Method, Action, Service, Days),
-    io:format("rooms ~s: ~p out of ~p~n", [Method, NP, NA]),
+    io:format("rooms ~ts: ~p out of ~p~n", [Method, NP, NA]),
     [<<R/binary, "@", H/binary>> || {R, H, _SH, _P} <- RP].
 
 muc_unused(Method, Action, Service, Last_allowed) ->
@@ -886,7 +886,7 @@ act_on_rooms(Method, Action, Rooms) ->
 
 act_on_room(Method, destroy, {N, H, SH, Pid}) ->
     Message = iolist_to_binary(io_lib:format(
-        <<"Room destroyed by rooms_~s_destroy.">>, [Method])),
+        <<"Room destroyed by rooms_~ts_destroy.">>, [Method])),
     mod_muc_room:destroy(Pid, Message),
     mod_muc:room_destroyed(H, N, Pid, SH),
     mod_muc:forget_room(SH, H, N);

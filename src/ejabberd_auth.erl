@@ -76,7 +76,7 @@
     {ets_cache:tag(), {ok, password()} | {error, db_failure | not_allowed}}.
 -callback remove_user(binary(), binary()) -> ok | {error, db_failure | not_allowed}.
 -callback user_exists(binary(), binary()) -> {ets_cache:tag(), boolean() | {error, db_failure}}.
--callback check_password(binary(), binary(), binary(), binary()) -> {ets_cache:tag(), boolean()}.
+-callback check_password(binary(), binary(), binary(), binary()) -> {ets_cache:tag(), boolean() | {stop, boolean()}}.
 -callback try_register(binary(), binary(), password()) ->
     {ets_cache:tag(), {ok, password()} | {error, exists | db_failure | not_allowed}}.
 -callback get_users(binary(), opts()) -> [{binary(), binary()}].
@@ -237,17 +237,20 @@ check_password_with_authmodule(User, AuthzId, Server, Password, Digest, DigestGe
 		error ->
 		    false;
 		LAuthzId ->
-		    lists:foldl(
-		      fun(Mod, false) ->
-			      case db_check_password(
-				     LUser, LAuthzId, LServer, Password,
-				     Digest, DigestGen, Mod) of
-				  true -> {true, Mod};
-				  false -> false
-			      end;
-			 (_, Acc) ->
-			      Acc
-		      end, false, auth_modules(LServer))
+                    untag_stop(
+                      lists:foldl(
+                        fun(Mod, false) ->
+                                case db_check_password(
+                                       LUser, LAuthzId, LServer, Password,
+                                       Digest, DigestGen, Mod) of
+                                    true -> {true, Mod};
+                                    false -> false;
+                                    {stop, true} -> {stop, {true, Mod}};
+                                    {stop, false} -> {stop, false}
+                                end;
+                           (_, Acc) ->
+                                Acc
+                        end, false, auth_modules(LServer)))
 	    end;
 	_ ->
 	    false
@@ -484,7 +487,11 @@ remove_user(User, Server, Password) ->
 				  <<"">>, undefined, Mod) of
 			       true ->
 				   db_remove_user(LUser, LServer, Mod);
+			       {stop, true} ->
+				   db_remove_user(LUser, LServer, Mod);
 			       false ->
+				   {error, not_allowed};
+			       {stop, false} ->
 				   {error, not_allowed}
 			   end
 		   end, {error, not_allowed}, auth_modules(Server)) of
@@ -654,7 +661,9 @@ db_check_password(User, AuthzId, Server, ProvidedPassword,
 				   case Mod:check_password(
 					  User, AuthzId, Server, ProvidedPassword) of
 				       {CacheTag, true} -> {CacheTag, {ok, ProvidedPassword}};
-				       {CacheTag, false} -> {CacheTag, error}
+				       {CacheTag, {stop, true}} -> {CacheTag, {ok, ProvidedPassword}};
+				       {CacheTag, false} -> {CacheTag, error};
+				       {CacheTag, {stop, false}} -> {CacheTag, error}
 				   end
 			   end) of
 			{ok, _} ->
@@ -890,6 +899,9 @@ validate_credentials(User, Server, Password) ->
 		    end
 	    end
     end.
+
+untag_stop({stop, Val}) -> Val;
+untag_stop(Val) -> Val.
 
 import_info() ->
     [{<<"users">>, 3}].

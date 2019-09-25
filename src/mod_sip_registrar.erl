@@ -80,7 +80,7 @@ request(#sip{hdrs = Hdrs} = Req, SIPSock) ->
         [<<"*">>] when Expires == 0 ->
             case unregister_session(US, CallID, CSeq) of
 		{ok, ContactsWithExpires} ->
-		    ?INFO_MSG("Unregister SIP session for user ~s@~s from ~s",
+		    ?INFO_MSG("Unregister SIP session for user ~ts@~ts from ~ts",
 			      [LUser, LServer, inet_parse:ntoa(PeerIP)]),
 		    Cs = prepare_contacts_to_send(ContactsWithExpires),
 		    mod_sip:make_response(
@@ -114,7 +114,7 @@ request(#sip{hdrs = Hdrs} = Req, SIPSock) ->
 					  IsOutboundSupported,
 					  ContactsWithExpires) of
 			{ok, Res} ->
-			    ?INFO_MSG("~s SIP session for user ~s@~s from ~s",
+			    ?INFO_MSG("~ts SIP session for user ~ts@~ts from ~ts",
 				      [Res, LUser, LServer,
 				       inet_parse:ntoa(PeerIP)]),
 			    Cs = prepare_contacts_to_send(ContactsWithExpires),

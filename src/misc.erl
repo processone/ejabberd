@@ -40,7 +40,8 @@
 	 read_css/1, read_img/1, read_js/1, read_lua/1, try_url/1,
 	 intersection/2, format_val/1, cancel_timer/1, unique_timestamp/0,
 	 is_mucsub_message/1, best_match/2, pmap/2, peach/2, format_exception/4,
-	 parse_ip_mask/1, match_ip_mask/3]).
+	 parse_ip_mask/1, match_ip_mask/3, format_hosts_list/1, format_cycle/1,
+	 delete_dir/1]).
 
 %% Deprecated functions
 -export([decode_base64/1, encode_base64/1]).
@@ -314,7 +315,7 @@ try_read_file(Path) ->
 	    file:close(Fd),
 	    iolist_to_binary(Path);
 	{error, Why} ->
-	    ?ERROR_MSG("Failed to read ~s: ~s", [Path, file:format_error(Why)]),
+	    ?ERROR_MSG("Failed to read ~ts: ~ts", [Path, file:format_error(Why)]),
 	    erlang:error(badarg)
     end.
 
@@ -329,15 +330,15 @@ try_url(URL0) ->
     end,
     case http_uri:parse(URL) of
 	{ok, {Scheme, _, _, _, _, _}} when Scheme /= http, Scheme /= https ->
-	    ?ERROR_MSG("Unsupported URI scheme: ~s", [URL]),
+	    ?ERROR_MSG("Unsupported URI scheme: ~ts", [URL]),
 	    erlang:error(badarg);
 	{ok, {_, _, Host, _, _, _}} when Host == ""; Host == <<"">> ->
-	    ?ERROR_MSG("Invalid URL: ~s", [URL]),
+	    ?ERROR_MSG("Invalid URL: ~ts", [URL]),
 	    erlang:error(badarg);
 	{ok, _} ->
 	    iolist_to_binary(URL);
 	{error, _} ->
-	    ?ERROR_MSG("Invalid URL: ~s", [URL]),
+	    ?ERROR_MSG("Invalid URL: ~ts", [URL]),
 	    erlang:error(badarg)
     end.
 
@@ -546,6 +547,43 @@ match_ip_mask({0, 0, 0, 0, 0, 16#FFFF, _, _} = IP,
 match_ip_mask(_, _, _) ->
     false.
 
+-spec format_hosts_list([binary(), ...]) -> iolist().
+format_hosts_list([Host]) ->
+    Host;
+format_hosts_list([H1, H2]) ->
+    [H1, " and ", H2];
+format_hosts_list([H1, H2, H3]) ->
+    [H1, ", ", H2, " and ", H3];
+format_hosts_list([H1, H2|Hs]) ->
+    io_lib:format("~ts, ~ts and ~B more hosts",
+		  [H1, H2, length(Hs)]).
+
+-spec format_cycle([atom(), ...]) -> iolist().
+format_cycle([M1]) ->
+    atom_to_list(M1);
+format_cycle([M1, M2]) ->
+    [atom_to_list(M1), " and ", atom_to_list(M2)];
+format_cycle([M|Ms]) ->
+    atom_to_list(M) ++ ", " ++ format_cycle(Ms).
+
+-spec delete_dir(file:filename_all()) -> ok | {error, file:posix()}.
+delete_dir(Dir) ->
+    try
+	{ok, Entries} = file:list_dir(Dir),
+	lists:foreach(fun(Path) ->
+			      case filelib:is_dir(Path) of
+				  true ->
+				      ok = delete_dir(Path);
+				  false ->
+				      ok = file:delete(Path)
+			      end
+		      end, [filename:join(Dir, Entry) || Entry <- Entries]),
+	ok = file:del_dir(Dir)
+    catch
+	_:{badmatch, {error, Error}} ->
+	    {error, Error}
+    end.
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
@@ -583,7 +621,7 @@ read_file(Path) ->
 	{ok, Data} ->
 	    {ok, Data};
 	{error, Why} = Err ->
-	    ?ERROR_MSG("Failed to read file ~s: ~s",
+	    ?ERROR_MSG("Failed to read file ~ts: ~ts",
 		       [Path, file:format_error(Why)]),
 	    Err
     end.

@@ -239,7 +239,7 @@ safe_apply(Hook, Module, Function, Args) ->
 	    Stack = ?EX_STACK(St),
 	    ?ERROR_MSG("Hook ~p crashed when running ~p:~p/~p:~n" ++
 			   string:join(
-			     ["** ~s"|
+			     ["** ~ts"|
 			      ["** Arg " ++ integer_to_list(I) ++ " = ~p"
 			       || I <- lists:seq(1, length(Args))]],
 			     "~n"),

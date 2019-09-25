@@ -40,7 +40,9 @@ opt_type(acl) ->
 opt_type(acme) ->
     econf:options(
       #{ca_url => econf:url(),
-	contact => econf:binary("^[a-zA-Z]+:[^:]+$")},
+	contact => econf:list_or_single(econf:binary("^[a-zA-Z]+:[^:]+$")),
+	auto => econf:bool(),
+	cert_type => econf:enum([ec, rsa])},
       [unique, {return, map}]);
 opt_type(allow_contrib_modules) ->
     econf:bool();
@@ -409,7 +411,9 @@ opt_type(jwt_key) ->
                   {error, Reason} ->
                       econf:fail({read_file, Reason, Path})
               end
-      end).
+      end);
+opt_type(jwt_auth_only_rule) ->
+    econf:atom().
 
 %% We only define the types of options that cannot be derived
 %% automatically by tools/opt_type.sh script
@@ -635,7 +639,8 @@ options() ->
      {websocket_origin, []},
      {websocket_ping_interval, timer:seconds(60)},
      {websocket_timeout, timer:minutes(5)},
-     {jwt_key, undefined}].
+     {jwt_key, undefined},
+     {jwt_auth_only_rule, none}].
 
 -spec globals() -> [atom()].
 globals() ->

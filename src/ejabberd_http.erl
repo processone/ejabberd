@@ -179,7 +179,7 @@ send_file(State, Fd, Size, FileName) ->
 	end
     catch _:{case_clause, {error, Why}} ->
 	    if Why /= closed ->
-		    ?WARNING_MSG("Failed to read ~s: ~s",
+		    ?WARNING_MSG("Failed to read ~ts: ~ts",
 				 [FileName, file_format_error(Why)]),
 		    exit(normal);
 	       true ->
@@ -530,7 +530,7 @@ analyze_ip_xff({IPLast, Port}, XFF) ->
 		     {ok, IPFirst} = inet_parse:address(
                                        binary_to_list(ClientIP)),
 		     ?DEBUG("The IP ~w was replaced with ~w due to "
-			    "header X-Forwarded-For: ~s",
+			    "header X-Forwarded-For: ~ts",
 			    [IPLast, IPFirst, XFF]),
 		     IPFirst;
 		 false -> IPLast
@@ -677,12 +677,12 @@ make_file_output(State, Status, Headers, FileName) ->
 		    none;
 		{error, Why} ->
 		    Reason = file_format_error(Why),
-		    ?ERROR_MSG("Failed to open ~s: ~s", [FileName, Reason]),
+		    ?ERROR_MSG("Failed to open ~ts: ~ts", [FileName, Reason]),
 		    make_text_output(State, 404, Reason, [], <<>>)
 	    end;
 	{error, Why} ->
 	    Reason = file_format_error(Why),
-	    ?ERROR_MSG("Failed to read info of ~s: ~s", [FileName, Reason]),
+	    ?ERROR_MSG("Failed to read info of ~ts: ~ts", [FileName, Reason]),
 	    make_text_output(State, 404, Reason, [], <<>>)
     end.
 

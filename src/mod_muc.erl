@@ -245,7 +245,7 @@ route(Pkt, Host, ServerHost) ->
 			Pid when Pid == self() ->
 			    route_to_room(Pkt, ServerHost);
 			Pid when is_pid(Pid) ->
-			    ?DEBUG("Routing to MUC worker ~p:~n~s", [Proc, xmpp:pp(Pkt)]),
+			    ?DEBUG("Routing to MUC worker ~p:~n~ts", [Proc, xmpp:pp(Pkt)]),
 			    ?GEN_SERVER:cast(Pid, {route_to_room, Pkt});
 			undefined ->
 			    ?DEBUG("MUC worker ~p is dead", [Proc]),
@@ -380,7 +380,7 @@ handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
 handle_call({create, Room, Host, From, Nick, Opts}, _From,
 	    #{server_host := ServerHost} = State) ->
-    ?DEBUG("MUC: create new room '~s'~n", [Room]),
+    ?DEBUG("MUC: create new room '~ts'~n", [Room]),
     NewOpts = case Opts of
 		  default -> mod_muc_opt:default_room_options(ServerHost);
 		  _ -> Opts
@@ -399,7 +399,7 @@ handle_cast({route_to_room, Packet}, #{server_host := ServerHost} = State) ->
     try route_to_room(Packet, ServerHost)
     catch ?EX_RULE(Class, Reason, St) ->
             StackTrace = ?EX_STACK(St),
-            ?ERROR_MSG("Failed to route packet:~n~s~n** ~s",
+            ?ERROR_MSG("Failed to route packet:~n~ts~n** ~ts",
 		       [xmpp:pp(Packet),
 			misc:format_exception(2, Class, Reason, StackTrace)])
     end,
@@ -428,7 +428,7 @@ handle_info({route, Packet}, #{server_host := ServerHost} = State) ->
     try route(Packet, ServerHost)
     catch ?EX_RULE(Class, Reason, St) ->
             StackTrace = ?EX_STACK(St),
-            ?ERROR_MSG("Failed to route packet:~n~s~n** ~s",
+            ?ERROR_MSG("Failed to route packet:~n~ts~n** ~ts",
 		       [xmpp:pp(Packet),
 			misc:format_exception(2, Class, Reason, StackTrace)])
     end,
@@ -785,7 +785,7 @@ load_permanent_rooms(Hosts, ServerHost, Opts) ->
 	    RMod = gen_mod:ram_db_mod(Opts, ?MODULE),
 	    lists:foreach(
 	      fun(Host) ->
-		      ?DEBUG("Loading rooms at ~s", [Host]),
+		      ?DEBUG("Loading rooms at ~ts", [Host]),
 		      lists:foreach(
 			fun(R) ->
 				{Room, _} = R#muc_room.name_host,
@@ -817,10 +817,10 @@ load_room(RMod, Host, ServerHost, Room) ->
 	Opts0 ->
 	    case proplists:get_bool(persistent, Opts0) of
 		true ->
-		    ?DEBUG("Restore room: ~s", [Room]),
+		    ?DEBUG("Restore room: ~ts", [Room]),
 		    start_room(RMod, Host, ServerHost, Room, Opts0);
 		_ ->
-		    ?DEBUG("Restore hibernated non-persistent room: ~s", [Room]),
+		    ?DEBUG("Restore hibernated non-persistent room: ~ts", [Room]),
 		    Res = start_room(RMod, Host, ServerHost, Room, Opts0),
 		    Mod = gen_mod:db_mod(ServerHost, mod_muc),
 		    case erlang:function_exported(Mod, get_subscribed_rooms, 3) of
@@ -834,7 +834,7 @@ load_room(RMod, Host, ServerHost, Room) ->
     end.
 
 start_new_room(RMod, Host, ServerHost, Room, Pass, From, Nick) ->
-    ?DEBUG("Open new room: ~s", [Room]),
+    ?DEBUG("Open new room: ~ts", [Room]),
     DefRoomOpts = mod_muc_opt:default_room_options(ServerHost),
     DefRoomOpts2 = add_password_options(Pass, DefRoomOpts),
     start_room(RMod, Host, ServerHost, Room, DefRoomOpts2, From, Nick).

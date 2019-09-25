@@ -135,7 +135,7 @@ host_down(Host) ->
 process_auth_result(#{server := LServer, remote_server := RServer} = State,
 		    {false, Reason}) ->
     Delay = get_delay(),
-    ?WARNING_MSG("Failed to establish outbound s2s connection ~s -> ~s: "
+    ?WARNING_MSG("Failed to establish outbound s2s connection ~ts -> ~ts: "
 		 "authentication failed; bouncing for ~p seconds",
 		 [LServer, RServer, Delay div 1000]),
     State1 = State#{on_route => bounce, stop_reason => Reason},
@@ -148,13 +148,13 @@ process_auth_result(State, true) ->
 process_closed(#{server := LServer, remote_server := RServer,
 		 on_route := send} = State,
 	       Reason) ->
-    ?INFO_MSG("Closing outbound s2s connection ~s -> ~s: ~s",
+    ?INFO_MSG("Closing outbound s2s connection ~ts -> ~ts: ~ts",
 	      [LServer, RServer, format_error(Reason)]),
     stop(State);
 process_closed(#{server := LServer, remote_server := RServer} = State,
 	       Reason) ->
     Delay = get_delay(),
-    ?WARNING_MSG("Failed to establish outbound s2s connection ~s -> ~s: ~s; "
+    ?WARNING_MSG("Failed to establish outbound s2s connection ~ts -> ~ts: ~ts; "
 		 "bouncing for ~p seconds",
 		 [LServer, RServer, format_error(Reason), Delay div 1000]),
     State1 = State#{on_route => bounce},
@@ -206,7 +206,7 @@ handle_auth_success(Mech, #{socket := Socket, ip := IP,
 			    remote_server := RServer,
 			    server_host := ServerHost,
 			    server := LServer} = State) ->
-    ?INFO_MSG("(~s) Accepted outbound s2s ~s authentication ~s -> ~s (~s)",
+    ?INFO_MSG("(~ts) Accepted outbound s2s ~ts authentication ~ts -> ~ts (~ts)",
 	      [xmpp_socket:pp(Socket), Mech, LServer, RServer,
 	       ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
     ejabberd_hooks:run_fold(s2s_out_auth_result, ServerHost, State, [true]).
@@ -216,7 +216,7 @@ handle_auth_failure(Mech, Reason,
 		      remote_server := RServer,
 		      server_host := ServerHost,
 		      server := LServer} = State) ->
-    ?WARNING_MSG("(~s) Failed outbound s2s ~s authentication ~s -> ~s (~s): ~s",
+    ?WARNING_MSG("(~ts) Failed outbound s2s ~ts authentication ~ts -> ~ts (~ts): ~ts",
 		 [xmpp_socket:pp(Socket), Mech, LServer, RServer,
 		  ejabberd_config:may_hide_data(misc:ip_to_list(IP)),
 		  xmpp_stream_out:format_error(Reason)]),
@@ -270,7 +270,7 @@ init([#{server := LServer, remote_server := RServer} = State, Opts]) ->
 		    server_host => ServerHost,
 		    shaper => none},
     State2 = xmpp_stream_out:set_timeout(State1, Timeout),
-    ?INFO_MSG("Outbound s2s connection started: ~s -> ~s",
+    ?INFO_MSG("Outbound s2s connection started: ~ts -> ~ts",
 	      [LServer, RServer]),
     ejabberd_hooks:run_fold(s2s_out_init, ServerHost, {ok, State2}, [Opts]).
 
@@ -335,7 +335,7 @@ bounce_message_queue({LServer, RServer} = FromTo, State) ->
     Pids = ejabberd_s2s:get_connections_pids(FromTo),
     case lists:member(self(), Pids) of
 	true ->
-	    ?WARNING_MSG("Outgoing s2s connection ~s -> ~s is supposed "
+	    ?WARNING_MSG("Outgoing s2s connection ~ts -> ~ts is supposed "
 			 "to be unregistered, but pid ~p still presents "
 			 "in 's2s' table", [LServer, RServer, self()]),
 	    State;

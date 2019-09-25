@@ -89,7 +89,7 @@ find_session(SID) ->
 	    try
 		{ok, binary_to_term(Pid)}
 	    catch _:badarg ->
-		    ?ERROR_MSG("Malformed data in redis (key = '~s'): ~p",
+		    ?ERROR_MSG("Malformed data in redis (key = '~ts'): ~p",
 			       [SID, Pid]),
 		    {error, db_failure}
 	    end;
