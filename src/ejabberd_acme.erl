@@ -46,7 +46,7 @@
 -type cert() :: #'OTPCertificate'{}.
 -type cert_type() :: ec | rsa.
 -type io_error() :: file:posix().
--type issue_result() :: ok | acme:issue_return() |
+-type issue_result() :: ok | p1_acme:issue_return() |
 			{error, {file, io_error()} |
 			        {idna_failed, binary()}}.
 
@@ -101,7 +101,7 @@ default_directory_url() ->
 init([]) ->
     ets:new(acme_challenge, [named_table, public]),
     process_flag(trap_exit, true),
-    ejabberd:start_app(acme),
+    ejabberd:start_app(p1_acme),
     delete_obsolete_data(),
     ejabberd_hooks:add(cert_expired, ?MODULE, cert_expired, 60),
     ejabberd_hooks:add(config_reloaded, ?MODULE, register_certfiles, 40),
@@ -166,7 +166,7 @@ format_status(_Opt, Status) ->
 %%%===================================================================
 %%% Challenge callback
 %%%===================================================================
--spec register_challenge(acme:challenge_data(), reference()) -> true.
+-spec register_challenge(p1_acme:challenge_data(), reference()) -> true.
 register_challenge(Auth, Ref) ->
     ?DEBUG("Registering ACME challenge ~p -> ~p", [Ref, Auth]),
     ejabberd_hooks:run(acme_challenge, [{start, Auth, Ref}]),
@@ -220,7 +220,7 @@ issue_request(State, Domains) ->
 issue_request(State, DirURL, Domains, AsciiDomains, AccKey, CertType, Contact) ->
     Ref = make_ref(),
     ChallengeFun = fun(Auth) -> register_challenge(Auth, Ref) end,
-    Ret = case acme:issue(DirURL, AsciiDomains, AccKey,
+    Ret = case p1_acme:issue(DirURL, AsciiDomains, AccKey,
 			  [{cert_type, CertType},
 			   {contact, Contact},
 			   {debug_fun, debug_fun()},
@@ -254,7 +254,7 @@ issue_request(State, DirURL, Domains, AsciiDomains, AccKey, CertType, Contact) -
 %%% Revocation
 %%%===================================================================
 revoke_request(State, Cert, Key, Path) ->
-    case acme:revoke(directory_url(), Cert, Key,
+    case p1_acme:revoke(directory_url(), Cert, Key,
 		     [{debug_fun, debug_fun()}]) of
 	ok ->
 	    ?INFO_MSG("Certificate from file ~ts has been "
@@ -336,7 +336,7 @@ read_account_key() ->
 create_account_key() ->
     Path = account_file(),
     ?DEBUG("Creating ACME account key in ~ts", [Path]),
-    Key = acme:generate_key(ec),
+    Key = p1_acme:generate_key(ec),
     DER = public_key:der_encode(element(1, Key), Key),
     PEM = public_key:pem_encode([{element(1, Key), DER, not_encrypted}]),
     case write_file(Path, PEM) of
@@ -657,4 +657,4 @@ format_error({idna_failed, Domain}) ->
 format_error({bad_cert, _, _} = Reason) ->
     "Malformed certificate file: " ++ pkix:format_error(Reason);
 format_error(Reason) ->
-    acme:format_error(Reason).
+    p1_acme:format_error(Reason).
