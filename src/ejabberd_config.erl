@@ -158,10 +158,10 @@ get_option({O, Host} = Opt) ->
     catch ?EX_RULE(error, badarg, St) when Host /= global ->
 	    StackTrace = ?EX_STACK(St),
 	    Val = get_option({O, global}),
-	    ?WARNING_MSG("Option '~ts' is not defined for virtual host '~ts'. "
-			 "This is a bug, please report it with the following "
-			 "stacktrace included:~n** ~ts",
-			 [O, Host, misc:format_exception(2, error, badarg, StackTrace)]),
+	    ?DEBUG("Option '~ts' is not defined for virtual host '~ts'. "
+		   "This is a bug, please report it with the following "
+		   "stacktrace included:~n** ~ts",
+		   [O, Host, misc:format_exception(2, error, badarg, StackTrace)]),
 	    Val
     end.
 
