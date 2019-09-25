@@ -29,7 +29,8 @@ defmodule Ejabberd.Mixfile do
      included_applications: [:lager, :mnesia, :inets, :p1_utils, :cache_tab,
                              :fast_tls, :stringprep, :fast_xml, :xmpp, :mqtree,
                              :stun, :fast_yaml, :esip, :jiffy, :p1_oauth2,
-                             :eimp, :base64url, :jose, :pkix, :os_mon, :yconf]
+                             :eimp, :base64url, :jose, :pkix, :os_mon, :yconf,
+                             :p1_acme, :idna]
      ++ cond_apps()]
   end
 
@@ -81,7 +82,7 @@ defmodule Ejabberd.Mixfile do
      {:p1_mysql, "~> 1.0"},
      {:mqtree, "~> 1.0"},
      {:p1_pgsql, "~> 1.1"},
-     {:jiffy, "~> 0.14.7"},
+     {:jiffy, "~> 1.0"},
      {:p1_oauth2, "~> 0.6.1"},
      {:distillery, "~> 2.0"},
      {:pkix, "~> 1.0"},
@@ -89,7 +90,9 @@ defmodule Ejabberd.Mixfile do
      {:eimp, "~> 1.0"},
      {:base64url, "~> 0.0.1"},
      {:yconf, "~> 1.0"},
-     {:jose, "~> 1.8"}]
+     {:jose, "~> 1.8"},
+     {:idna, "~> 6.0"},
+     {:p1_acme, "~> 1.0"}]
     ++ cond_deps()
   end
 
