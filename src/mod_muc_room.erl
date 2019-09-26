@@ -4113,8 +4113,19 @@ iq_disco_info_extras(Lang, StateData, Static) ->
 	      true ->
 		  Fs2
 	  end,
+    Fs4 = case Config#config.logging of
+	      true ->
+		  case mod_muc_log:get_url(StateData) of
+		      {ok, URL} ->
+			  [{logs, URL}|Fs3];
+		      error ->
+			  Fs3
+		  end;
+	      false ->
+		  Fs3
+	  end,
     #xdata{type = result,
-	   fields = muc_roominfo:encode(Fs3, Lang)}.
+	   fields = muc_roominfo:encode(Fs4, Lang)}.
 
 -spec process_iq_disco_items(jid(), iq(), state()) ->
 				    {error, stanza_error()} | {result, disco_items()}.

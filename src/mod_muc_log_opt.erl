@@ -13,6 +13,7 @@
 -export([spam_prevention/1]).
 -export([timezone/1]).
 -export([top_link/1]).
+-export([url/1]).
 
 -spec access_log(gen_mod:opts() | global | binary()) -> 'muc_admin' | acl:acl().
 access_log(Opts) when is_map(Opts) ->
@@ -73,4 +74,10 @@ top_link(Opts) when is_map(Opts) ->
     gen_mod:get_opt(top_link, Opts);
 top_link(Host) ->
     gen_mod:get_module_opt(Host, mod_muc_log, top_link).
+
+-spec url(gen_mod:opts() | global | binary()) -> 'undefined' | binary().
+url(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(url, Opts);
+url(Host) ->
+    gen_mod:get_module_opt(Host, mod_muc_log, url).
 
