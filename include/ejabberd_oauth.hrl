@@ -24,3 +24,10 @@
           scope = []               :: [binary()] | '_',
           expire                   :: integer() | '$1' | '_'
          }).
+
+-record(oauth_client, {
+          client = <<"">>          :: binary() | '_',
+          secret = <<"">>          :: binary() | '_',
+          grant_type = password    :: password | '_',
+          options                  :: [any()] | '_'
+         }).

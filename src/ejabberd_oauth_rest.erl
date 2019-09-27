@@ -30,7 +30,9 @@
 -export([init/0,
          store/1,
          lookup/1,
-         clean/1]).
+         clean/1,
+         lookup_client/1,
+         store_client/1]).
 
 -include("ejabberd_oauth.hrl").
 -include("logger.hrl").
@@ -88,3 +90,50 @@ clean(_TS) ->
 path(Path) ->
     Base = ejabberd_option:ext_api_path_oauth(),
     <<Base/binary, "/", Path/binary>>.
+
+store_client(#oauth_client{client = Client,
+                           secret = Secret,
+                           grant_type = GrantType} = R) ->
+    Path = path(<<"store_client">>),
+    %% Retry 2 times, with a backoff of 500millisec
+    SGrantType =
+        case GrantType of
+            password -> <<"password">>
+        end,
+    case rest:with_retry(
+           post,
+           [ejabberd_config:get_myname(), Path, [],
+            {[{<<"client">>, Client},
+              {<<"secret">>, Secret},
+              {<<"grant_type">>, SGrantType},
+              {<<"options">>, []}
+             ]}], 2, 500) of
+        {ok, Code, _} when Code == 200 orelse Code == 201 ->
+            ok;
+        Err ->
+            ?ERROR_MSG("Failed to store oauth record ~p: ~p", [R, Err]),
+            {error, db_failure}
+    end.
+
+lookup_client(Client) ->
+    Path = path(<<"lookup_client">>),
+    case rest:with_retry(post, [ejabberd_config:get_myname(), Path, [],
+                                {[{<<"client">>, Client}]}],
+                         2, 500) of
+        {ok, 200, {Data}} ->
+            Secret = proplists:get_value(<<"secret">>, Data, <<>>),
+            SGrantType = proplists:get_value(<<"grant_type">>, Data, <<>>),
+            GrantType =
+                case SGrantType of
+                    <<"password">> -> password
+                end,
+            {ok, #oauth_client{client = Client,
+                               secret = Secret,
+                               grant_type = GrantType,
+                               options = []}};
+        {ok, 404, _Resp} ->
+            error;
+        Other ->
+            ?ERROR_MSG("Unexpected response for oauth lookup: ~p", [Other]),
+	    error
+    end.

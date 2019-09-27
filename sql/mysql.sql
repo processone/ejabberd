@@ -354,6 +354,13 @@ CREATE TABLE oauth_token (
     expire bigint NOT NULL
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+CREATE TABLE oauth_client (
+    client varchar(191) NOT NULL PRIMARY KEY,
+    secret text NOT NULL,
+    grant_type text NOT NULL,
+    options text NOT NULL
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 CREATE TABLE route (
     domain text NOT NULL,
     server_host text NOT NULL,

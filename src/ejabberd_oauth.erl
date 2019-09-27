@@ -49,7 +49,8 @@
          verify_resowner_scope/3]).
 
 -export([get_commands_spec/0,
-         oauth_issue_token/3, oauth_list_tokens/0, oauth_revoke_token/1]).
+         oauth_issue_token/3, oauth_list_tokens/0, oauth_revoke_token/1,
+         oauth_add_client/3, oauth_remove_client/1]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -97,6 +98,22 @@ get_commands_spec() ->
                         policy = restricted,
                         result = {tokens, {list, {token, {tuple, [{token, string}, {user, string}, {scope, string}, {expires_in, string}]}}}},
                         result_desc = "List of remaining tokens"
+                       },
+     #ejabberd_commands{name = oauth_add_client, tags = [oauth],
+                        desc = "Add OAUTH client_id",
+                        module = ?MODULE, function = oauth_add_client,
+                        args = [{client_id, binary},
+                                {secret, binary},
+                                {grant_type, binary}],
+                        policy = restricted,
+                        result = {res, restuple}
+                       },
+     #ejabberd_commands{name = oauth_remove_client, tags = [oauth],
+                        desc = "Remove OAUTH client_id",
+                        module = ?MODULE, function = oauth_remove_client,
+                        args = [{client_id, binary}],
+                        policy = restricted,
+                        result = {res, restuple}
                        }
     ].
 
@@ -128,6 +145,24 @@ oauth_list_tokens() ->
 oauth_revoke_token(Token) ->
     ok = mnesia:dirty_delete(oauth_token, list_to_binary(Token)),
     oauth_list_tokens().
+
+oauth_add_client(Client, Secret, SGrantType) ->
+    case SGrantType of
+        <<"password">> ->
+            DBMod = get_db_backend(),
+            DBMod:store_client(#oauth_client{client = Client,
+                                             secret = Secret,
+                                             grant_type = password,
+                                             options = []}),
+            {ok, []};
+        _ ->
+            {error, "Unsupported grant type"}
+    end.
+
+oauth_remove_client(Client) ->
+    DBMod = get_db_backend(),
+    DBMod:remove_client(Client),
+    {ok, []}.
 
 config_reloaded() ->
     DBMod = get_db_backend(),
@@ -535,48 +570,89 @@ process(_Handlers,
     end;
 process(_Handlers,
 	#request{method = 'POST', q = Q, lang = _Lang,
+                 auth = HTTPAuth,
 		 path = [_, <<"token">>]}) ->
-    case proplists:get_value(<<"grant_type">>, Q, <<"">>) of
-      <<"password">> ->
-        SScope = proplists:get_value(<<"scope">>, Q, <<"">>),
-        StringJID = proplists:get_value(<<"username">>, Q, <<"">>),
-        #jid{user = Username, server = Server} = jid:decode(StringJID),
-        Password = proplists:get_value(<<"password">>, Q, <<"">>),
-        Scope = str:tokens(SScope, <<" ">>),
-        TTL = proplists:get_value(<<"ttl">>, Q, <<"">>),
-        ExpiresIn = case TTL of
-                        <<>> -> undefined;
-                        _ -> binary_to_integer(TTL)
+    Access =
+        case ejabberd_option:oauth_client_id_check() of
+            allow ->
+                case proplists:get_value(<<"grant_type">>, Q, <<"">>) of
+                    <<"password">> ->
+                        password;
+                    _ ->
+                        unsupported_grant_type
+                end;
+            deny ->
+                deny;
+            db ->
+                {ClientID, Secret} =
+                    case HTTPAuth of
+                        {ClientID1, Secret1} ->
+                            {ClientID1, Secret1};
+                        _ ->
+                            ClientID1 = proplists:get_value(
+                                          <<"client_id">>, Q, <<"">>),
+                            Secret1 = proplists:get_value(
+                                        <<"client_secret">>, Q, <<"">>),
+                            {ClientID1, Secret1}
                     end,
-        case oauth2:authorize_password({Username, Server},
-                                       Scope,
-                                       {password, Password}) of
-            {ok, {_AppContext, Authorization}} ->
-                {ok, {_AppContext2, Response}} =
-                    oauth2:issue_token(Authorization, [{expiry_time, ExpiresIn} || ExpiresIn /= undefined ]),
-                {ok, AccessToken} = oauth2_response:access_token(Response),
-                {ok, Type} = oauth2_response:token_type(Response),
-                %%Ugly: workardound to return the correct expirity time, given than oauth2 lib doesn't really have
-                %%per-case expirity time.
-                Expires = case ExpiresIn of
-                              undefined ->
-                                 {ok, Ex} = oauth2_response:expires_in(Response),
-                                 Ex;
-                              _ ->
-                                ExpiresIn
-                          end,
-                {ok, VerifiedScope} = oauth2_response:scope(Response),
-                json_response(200, {[
-                   {<<"access_token">>, AccessToken},
-                   {<<"token_type">>, Type},
-                   {<<"scope">>, str:join(VerifiedScope, <<" ">>)},
-                   {<<"expires_in">>, Expires}]});
-            {error, Error} when is_atom(Error) ->
-                json_error(400, <<"invalid_grant">>, Error)
-        end;
-        _OtherGrantType ->
-            json_error(400, <<"unsupported_grant_type">>, unsupported_grant_type)
-  end;
+                DBMod = get_db_backend(),
+                case DBMod:lookup_client(ClientID) of
+                    {ok, #oauth_client{secret = Secret} = Client} ->
+                        case proplists:get_value(<<"grant_type">>, Q, <<"">>) of
+                            <<"password">> when
+                            Client#oauth_client.grant_type == password ->
+                                password;
+                            _ ->
+                                unsupported_grant_type
+                        end;
+                    _ ->
+                        deny
+                end
+        end,
+    case Access of
+        password ->
+            SScope = proplists:get_value(<<"scope">>, Q, <<"">>),
+            StringJID = proplists:get_value(<<"username">>, Q, <<"">>),
+            #jid{user = Username, server = Server} = jid:decode(StringJID),
+            Password = proplists:get_value(<<"password">>, Q, <<"">>),
+            Scope = str:tokens(SScope, <<" ">>),
+            TTL = proplists:get_value(<<"ttl">>, Q, <<"">>),
+            ExpiresIn = case TTL of
+                            <<>> -> undefined;
+                            _ -> binary_to_integer(TTL)
+                        end,
+            case oauth2:authorize_password({Username, Server},
+                                           Scope,
+                                           {password, Password}) of
+                {ok, {_AppContext, Authorization}} ->
+                    {ok, {_AppContext2, Response}} =
+                        oauth2:issue_token(Authorization, [{expiry_time, ExpiresIn} || ExpiresIn /= undefined ]),
+                    {ok, AccessToken} = oauth2_response:access_token(Response),
+                    {ok, Type} = oauth2_response:token_type(Response),
+                    %%Ugly: workardound to return the correct expirity time, given than oauth2 lib doesn't really have
+                    %%per-case expirity time.
+                    Expires = case ExpiresIn of
+                                  undefined ->
+                                      {ok, Ex} = oauth2_response:expires_in(Response),
+                                      Ex;
+                                  _ ->
+                                      ExpiresIn
+                              end,
+                    {ok, VerifiedScope} = oauth2_response:scope(Response),
+                    json_response(200, {[
+                                         {<<"access_token">>, AccessToken},
+                                         {<<"token_type">>, Type},
+                                         {<<"scope">>, str:join(VerifiedScope, <<" ">>)},
+                                         {<<"expires_in">>, Expires}]});
+                {error, Error} when is_atom(Error) ->
+                    json_error(400, <<"invalid_grant">>, Error)
+            end;
+        unsupported_grant_type ->
+            json_error(400, <<"unsupported_grant_type">>,
+                       unsupported_grant_type);
+        deny ->
+            ejabberd_web:error(not_allowed)
+    end;
 
 process(_Handlers, _Request) ->
     ejabberd_web:error(not_found).

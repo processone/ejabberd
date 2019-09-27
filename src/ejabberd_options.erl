@@ -234,6 +234,8 @@ opt_type(oauth_expire) ->
     econf:non_neg_int();
 opt_type(oauth_use_cache) ->
     econf:bool();
+opt_type(oauth_client_id_check) ->
+    econf:enum([allow, deny, db]);
 opt_type(oom_killer) ->
     econf:bool();
 opt_type(oom_queue) ->
@@ -546,6 +548,7 @@ options() ->
      {oauth_expire, 4294967},
      {oauth_use_cache,
       fun(Host) -> ejabberd_config:get_option({use_cache, Host}) end},
+     {oauth_client_id_check, allow},
      {oom_killer, true},
      {oom_queue, 10000},
      {oom_watermark, 80},

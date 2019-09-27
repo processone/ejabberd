@@ -31,6 +31,9 @@
          store/1,
          lookup/1,
          clean/1,
+         lookup_client/1,
+         store_client/1,
+         remove_client/1,
 	 use_cache/0]).
 
 -include("ejabberd_oauth.hrl").
@@ -40,6 +43,10 @@ init() ->
                         [{disc_only_copies, [node()]},
                          {attributes,
                           record_info(fields, oauth_token)}]),
+    ejabberd_mnesia:create(?MODULE, oauth_client,
+                        [{disc_copies, [node()]},
+                         {attributes,
+                          record_info(fields, oauth_client)}]),
     ok.
 
 use_cache() ->
@@ -71,3 +78,17 @@ clean(TS) ->
 		lists:foreach(fun mnesia:delete_object/1, Ts)
         end,
     mnesia:async_dirty(F).
+
+lookup_client(ClientID) ->
+    case catch mnesia:dirty_read(oauth_client, ClientID) of
+        [R] ->
+            {ok, R};
+        _ ->
+            error
+    end.
+
+remove_client(ClientID) ->
+    mnesia:dirty_delete(oauth_client, ClientID).
+
+store_client(R) ->
+    mnesia:dirty_write(R).
