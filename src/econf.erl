@@ -198,9 +198,11 @@ format_error({mqtt_codec, Reason}) ->
 format_error(Reason) ->
     yconf:format_error(Reason).
 
--spec format_module(atom()) -> string().
+-spec format_module(atom() | string()) -> string().
+format_module(Mod) when is_atom(Mod) ->
+    format_module(atom_to_list(Mod));
 format_module(Mod) ->
-    case atom_to_list(Mod) of
+    case Mod of
 	"Elixir." ++ M -> M;
 	M -> M
     end.
