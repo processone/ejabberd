@@ -19,7 +19,7 @@ defmodule Ejabberd.Mixfile do
 
   def description do
     """
-    Robust, ubiquitous and massively scalable Jabber / XMPP Instant Messaging platform.
+    Robust, Ubiquitous and Massively Scalable Messaging Platform (XMPP, MQTT, SIP Server)
     """
   end
 
