@@ -346,6 +346,7 @@ start_module_sup(Module, Opts) ->
 			 [ejabberd_tmp_sup]},
 	    case supervisor:start_child(ejabberd_sup, ChildSpec) of
 		{ok, _} -> Proc;
+		{error, {already_started, _}} -> Proc;
 		_ -> undefined
 	    end;
 	false ->
