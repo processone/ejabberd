@@ -62,6 +62,7 @@ init_config(Config) ->
 		       {s2s_port, 5269},
 		       {component_port, 5270},
 		       {web_port, 5280},
+		       {proxy_port, 7777},
 		       {password, Password},
 		       {mysql_server, <<"localhost">>},
 		       {mysql_port, 3306},

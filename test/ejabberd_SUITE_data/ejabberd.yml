@@ -101,6 +101,7 @@ modules:
   mod_disco: []
   mod_ping: []
   mod_proxy65:
+    port: PROXY_PORT
     vcard: VCARD
   mod_muc:
     vcard: VCARD

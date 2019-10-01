@@ -47,7 +47,8 @@ define_macro:
       mod_configure: []
       mod_disco: []
       mod_ping: []
-      mod_proxy65: []
+      mod_proxy65:
+        port: PROXY_PORT
       mod_push:
         include_body: false
       mod_push_keepalive: []
