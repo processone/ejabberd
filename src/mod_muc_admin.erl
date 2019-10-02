@@ -465,7 +465,7 @@ web_page_main(_, #request{path=[<<"muc">>], lang = Lang} = _Request) ->
 		[?XE(<<"tbody">>, [?TDTD(?T("Total rooms"), OnlineRoomsNumber)
 				  ])
 		]),
-	   ?XE(<<"ul">>, [?LI([?ACT(<<"rooms">>, ?T("List of rooms"))])])
+	   ?XE(<<"ul">>, [?LI([?ACT(<<"rooms/">>, ?T("List of rooms"))])])
 	  ],
     {stop, Res};
 
