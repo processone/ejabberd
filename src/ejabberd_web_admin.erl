@@ -150,30 +150,6 @@ url_to_path(URL) -> str:tokens(URL, <<"/">>).
 %%%==================================
 %%%% process/2
 
-process([<<"doc">>, LocalFile], _Request) ->
-    DocPath = case os:getenv("EJABBERD_DOC_PATH") of
-		P when is_list(P) -> P;
-		false -> <<"/share/doc/ejabberd/">>
-	      end,
-    FileName = filename:join(DocPath, LocalFile),
-    case file:read_file(FileName) of
-      {ok, FileContents} ->
-	  ?DEBUG("Delivering content.", []),
-	  {200, [{<<"Server">>, <<"ejabberd">>}], FileContents};
-      {error, Error} ->
-	  Help = <<" ", FileName/binary,
-		   " - Try to specify the path to ejabberd "
-		   "documentation with the environment variable "
-		   "EJABBERD_DOC_PATH. Check the ejabberd "
-		   "Guide for more information.">>,
-	  ?WARNING_MSG("Problem '~p' accessing the local Guide file ~ts", [Error, Help]),
-	  case Error of
-	    eacces -> {403, [], <<"Forbidden", Help/binary>>};
-	    enoent -> {307, [{<<"Location">>, <<"http://docs.ejabberd.im/admin/guide/configuration/">>}], <<"Not found", Help/binary>>};
-	    _Else ->
-		{404, [], <<(iolist_to_binary(atom_to_list(Error)))/binary, Help/binary>>}
-	  end
-    end;
 process([<<"server">>, SHost | RPath] = Path,
 	#request{auth = Auth, lang = Lang, host = HostHTTP,
 		 method = Method} =
