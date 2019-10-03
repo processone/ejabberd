@@ -83,37 +83,45 @@ clean(TS) ->
       ejabberd_config:get_myname(),
       ?SQL("delete from oauth_token where expire < %(TS)d")).
 
-lookup_client(Client) ->
+lookup_client(ClientID) ->
     case ejabberd_sql:sql_query(
            ejabberd_config:get_myname(),
-           ?SQL("select @(secret)s, @(grant_type)s"
-                " from oauth_client where client=%(Client)s")) of
-        {selected, [{Secret, SGrantType}]} ->
+           ?SQL("select @(client_name)s, @(grant_type)s, @(options)s"
+                " from oauth_client where client_id=%(ClientID)s")) of
+        {selected, [{ClientName, SGrantType, SOptions}]} ->
             GrantType =
                 case SGrantType of
-                    <<"password">> -> password
+                    <<"password">> -> password;
+                    <<"implicit">> -> implicit
                 end,
-            {ok, #oauth_client{client = Client,
-                               secret = Secret,
-                               grant_type = GrantType,
-                               options = []}};
+            case misc:base64_to_term(SOptions) of
+                {term, Options} ->
+                    {ok, #oauth_client{client_id = ClientID,
+                                       client_name = ClientName,
+                                       grant_type = GrantType,
+                                       options = Options}};
+                _ ->
+                    error
+            end;
         _ ->
             error
     end.
 
-store_client(#oauth_client{client = Client,
-                           secret = Secret,
-                           grant_type = GrantType}) ->
+store_client(#oauth_client{client_id = ClientID,
+                           client_name = ClientName,
+                           grant_type = GrantType,
+                           options = Options}) ->
     SGrantType =
         case GrantType of
-            password -> <<"password">>
+            password -> <<"password">>;
+            implicit -> <<"implicit">>
         end,
-    SOptions = <<"">>,
+    SOptions = misc:term_to_base64(Options),
     case ?SQL_UPSERT(
 	    ejabberd_config:get_myname(),
 	    "oauth_client",
-	    ["!client=%(Client)s",
-	     "secret=%(Secret)s",
+	    ["!client_id=%(ClientID)s",
+	     "client_name=%(ClientName)s",
 	     "grant_type=%(SGrantType)s",
 	     "options=%(SOptions)s"]) of
 	ok ->

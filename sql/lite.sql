@@ -339,8 +339,8 @@ CREATE TABLE oauth_token (
 );
 
 CREATE TABLE oauth_client (
-    client text PRIMARY KEY,
-    secret text NOT NULL,
+    client_id text PRIMARY KEY,
+    client_name text NOT NULL,
     grant_type text NOT NULL,
     options text NOT NULL
 );

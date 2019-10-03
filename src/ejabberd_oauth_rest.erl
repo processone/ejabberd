@@ -91,22 +91,25 @@ path(Path) ->
     Base = ejabberd_option:ext_api_path_oauth(),
     <<Base/binary, "/", Path/binary>>.
 
-store_client(#oauth_client{client = Client,
-                           secret = Secret,
-                           grant_type = GrantType} = R) ->
+store_client(#oauth_client{client_id = ClientID,
+                           client_name = ClientName,
+                           grant_type = GrantType,
+                           options = Options} = R) ->
     Path = path(<<"store_client">>),
-    %% Retry 2 times, with a backoff of 500millisec
     SGrantType =
         case GrantType of
-            password -> <<"password">>
+            password -> <<"password">>;
+            implicit -> <<"implicit">>
         end,
+    SOptions = misc:term_to_base64(Options),
+    %% Retry 2 times, with a backoff of 500millisec
     case rest:with_retry(
            post,
            [ejabberd_config:get_myname(), Path, [],
-            {[{<<"client">>, Client},
-              {<<"secret">>, Secret},
+            {[{<<"client_id">>, ClientID},
+              {<<"client_name">>, ClientName},
               {<<"grant_type">>, SGrantType},
-              {<<"options">>, []}
+              {<<"options">>, SOptions}
              ]}], 2, 500) of
         {ok, Code, _} when Code == 200 orelse Code == 201 ->
             ok;
@@ -115,22 +118,29 @@ store_client(#oauth_client{client = Client,
             {error, db_failure}
     end.
 
-lookup_client(Client) ->
+lookup_client(ClientID) ->
     Path = path(<<"lookup_client">>),
     case rest:with_retry(post, [ejabberd_config:get_myname(), Path, [],
-                                {[{<<"client">>, Client}]}],
+                                {[{<<"client_id">>, ClientID}]}],
                          2, 500) of
         {ok, 200, {Data}} ->
-            Secret = proplists:get_value(<<"secret">>, Data, <<>>),
+            ClientName = proplists:get_value(<<"client_name">>, Data, <<>>),
             SGrantType = proplists:get_value(<<"grant_type">>, Data, <<>>),
             GrantType =
                 case SGrantType of
-                    <<"password">> -> password
+                    <<"password">> -> password;
+                    <<"implicit">> -> implicit
                 end,
-            {ok, #oauth_client{client = Client,
-                               secret = Secret,
-                               grant_type = GrantType,
-                               options = []}};
+            SOptions = proplists:get_value(<<"options">>, Data, <<>>),
+            case misc:base64_to_term(SOptions) of
+                {term, Options} ->
+                    {ok, #oauth_client{client_id = ClientID,
+                                       client_name = ClientName,
+                                       grant_type = GrantType,
+                                       options = Options}};
+                _ ->
+                    error
+            end;
         {ok, 404, _Resp} ->
             error;
         Other ->

@@ -355,8 +355,8 @@ CREATE TABLE oauth_token (
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE oauth_client (
-    client varchar(191) NOT NULL PRIMARY KEY,
-    secret text NOT NULL,
+    client_id varchar(191) NOT NULL PRIMARY KEY,
+    client_name text NOT NULL,
     grant_type text NOT NULL,
     options text NOT NULL
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

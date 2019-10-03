@@ -26,8 +26,8 @@
          }).
 
 -record(oauth_client, {
-          client = <<"">>          :: binary() | '_',
-          secret = <<"">>          :: binary() | '_',
-          grant_type = password    :: password | '_',
+          client_id = <<"">>       :: binary() | '_',
+          client_name = <<"">>     :: binary() | '_',
+          grant_type               :: password | implicit | '_',
           options                  :: [any()] | '_'
          }).
