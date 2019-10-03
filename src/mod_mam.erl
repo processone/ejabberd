@@ -312,11 +312,11 @@ remove_mam_for_user(User, Server) ->
     Mod = gen_mod:db_mod(LServer, ?MODULE),
     case Mod:remove_from_archive(LUser, LServer, none) of
 	ok ->
-	    {ok, "MAM archive removed"};
+	    {ok, <<"MAM archive removed">>};
 	{error, Bin} when is_binary(Bin) ->
 	    {error, Bin};
 	{error, _} ->
-	    {error, "Db returned error"}
+	    {error, <<"Db returned error">>}
     end.
 
 -spec remove_mam_for_user_with_peer(binary(), binary(), binary()) ->
@@ -329,11 +329,11 @@ remove_mam_for_user_with_peer(User, Server, Peer) ->
 	    Mod = gen_mod:db_mod(LServer, ?MODULE),
 	    case Mod:remove_from_archive(LUser, LServer, Jid) of
 		ok ->
-		    {ok, "MAM archive removed"};
+		    {ok, <<"MAM archive removed">>};
 		{error, Bin} when is_binary(Bin) ->
 		    {error, Bin};
 		{error, _} ->
-		    {error, "Db returned error"}
+		    {error, <<"Db returned error">>}
 	    end
     catch _:_ ->
 	{error, <<"Invalid peer JID">>}
@@ -1375,7 +1375,7 @@ get_commands_spec() ->
 			args_example = [<<"bob">>, <<"example.com">>],
 			result = {res, restuple},
 			result_desc = "Result tuple",
-			result_example = {ok, "MAM archive removed"}},
+			result_example = {ok, <<"MAM archive removed">>}},
      #ejabberd_commands{name = remove_mam_for_user_with_peer, tags = [mam],
 			desc = "Remove mam archive for user with peer",
 			module = ?MODULE, function = remove_mam_for_user_with_peer,
@@ -1385,7 +1385,7 @@ get_commands_spec() ->
 			args_example = [<<"bob">>, <<"example.com">>, <<"anne@example.com">>],
 			result = {res, restuple},
 			result_desc = "Result tuple",
-			result_example = {ok, "MAM archive removed"}}
+			result_example = {ok, <<"MAM archive removed">>}}
 	].
 
 mod_opt_type(compress_xml) ->

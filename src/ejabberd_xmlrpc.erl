@@ -371,7 +371,7 @@ format_result(Code, {Name, rescode}) ->
 format_result({Code, Text}, {Name, restuple}) ->
     {struct,
      [{Name, make_status(Code)},
-      {text, lists:flatten(Text)}]};
+      {text, io_lib:format("~ts", [Text])}]};
 format_result(Elements, {Name, {list, ElementsDef}}) ->
     FormattedList = lists:map(fun (Element) ->
 				      format_result(Element, ElementsDef)
