@@ -69,7 +69,7 @@
 
 -record(oauth_ctx, {
           password    :: binary() | admin_generated,
-          client      :: #oauth_client{}
+          client      :: #oauth_client{} | undefined
          }).
 
 %% There are two ways to obtain an oauth token:
