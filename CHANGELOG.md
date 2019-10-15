@@ -1,3 +1,9 @@
+# Version 19.09.1
+
+* Bugfixes
+- Fix issue with webadmin returning 404 when 'Host' header doesn't match anything in configured hosts
+- Change url to guide in webadmin to working one
+
 # Version 19.09
 
 * Admin
