@@ -202,11 +202,11 @@ init([]) ->
     init_cache(DBMod),
     Expire = expire(),
     application:set_env(oauth2, backend, ejabberd_oauth),
-    application:set_env(oauth2, expiry_time, Expire),
+    application:set_env(oauth2, expiry_time, Expire div 1000),
     application:start(oauth2),
     ejabberd_commands:register_commands(get_commands_spec()),
     ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),
-    erlang:send_after(expire() * 1000, self(), clean),
+    erlang:send_after(expire(), self(), clean),
     {ok, ok}.
 
 handle_call(Request, From, State) ->
@@ -222,7 +222,7 @@ handle_info(clean, State) ->
     TS = 1000000 * MegaSecs + Secs,
     DBMod = get_db_backend(),
     DBMod:clean(TS),
-    erlang:send_after(trunc(expire() * 1000 * (1 + MiniSecs / 1000000)),
+    erlang:send_after(trunc(expire() * (1 + MiniSecs / 1000000)),
                       self(), clean),
     {noreply, State};
 handle_info(Info, State) ->

@@ -632,7 +632,7 @@ oauth_client_id_check(Host) ->
 oauth_db_type() ->
     ejabberd_config:get_option({oauth_db_type, global}).
 
--spec oauth_expire() -> non_neg_integer().
+-spec oauth_expire() -> pos_integer().
 oauth_expire() ->
     ejabberd_config:get_option({oauth_expire, global}).
 

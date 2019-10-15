@@ -231,7 +231,7 @@ opt_type(oauth_cache_size) ->
 opt_type(oauth_db_type) ->
     econf:db_type(ejabberd_oauth);
 opt_type(oauth_expire) ->
-    econf:non_neg_int();
+    econf:timeout(second);
 opt_type(oauth_use_cache) ->
     econf:bool();
 opt_type(oauth_client_id_check) ->
