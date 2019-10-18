@@ -142,20 +142,16 @@ get_commands_spec() ->
 			desc = "Get the current loglevel",
 			module = ejabberd_logger, function = get,
 			result_desc = "Tuple with the log level number, its keyword and description",
-			result_example = {4, info, <<"Info">>},
+			result_example = warning,
 			args = [],
-                        result = {leveltuple, {tuple, [{levelnumber, integer},
-                                                       {levelatom, atom},
-                                                       {leveldesc, string}
-                                                      ]}}},
+                        result = {levelatom, atom}},
      #ejabberd_commands{name = set_loglevel, tags = [logs, server],
-			desc = "Set the loglevel (0 to 5)",
+			desc = "Set the loglevel",
 			module = ?MODULE, function = set_loglevel,
-			args_desc = ["Integer of the desired logging level, between 1 and 5"],
-			args_example = [5],
-			result_desc = "The type of logger module used",
-			result_example = lager,
-			args = [{loglevel, integer}],
+			args_desc = ["Desired logging level: none | emergency | alert | critical "
+				     "| error | warning | notice | info | debug"],
+			args_example = [debug],
+			args = [{loglevel, string}],
 			result = {res, rescode}},
 
      #ejabberd_commands{name = update_list, tags = [server],
@@ -410,15 +406,23 @@ status() ->
     {Is_running, String1 ++ String2}.
 
 reopen_log() ->
-    ejabberd_hooks:run(reopen_log_hook, []),
-    ejabberd_logger:reopen_log().
+    ejabberd_hooks:run(reopen_log_hook, []).
 
 rotate_log() ->
-    ejabberd_hooks:run(rotate_log_hook, []),
-    ejabberd_logger:rotate_log().
+    ejabberd_hooks:run(rotate_log_hook, []).
 
 set_loglevel(LogLevel) ->
-    ejabberd_logger:set(LogLevel).
+    try binary_to_existing_atom(iolist_to_binary(LogLevel), latin1) of
+	Level ->
+	    case lists:member(Level, ejabberd_logger:loglevels()) of
+		true ->
+		    ejabberd_logger:set(Level);
+		false ->
+		    {error, "Invalid log level"}
+	    end
+    catch _:_ ->
+	    {error, "Invalid log level"}
+    end.
 
 %%%
 %%% Stop Kindly

@@ -522,7 +522,7 @@ read_erlang_file(File, _) ->
 validate(Y1) ->
     case pre_validate(Y1) of
 	{ok, Y2} ->
-	    set_loglevel(proplists:get_value(loglevel, Y2, 4)),
+	    set_loglevel(proplists:get_value(loglevel, Y2, info)),
 	    case ejabberd_config_transformer:map_reduce(Y2) of
 		{ok, Y3} ->
 		    Hosts = proplists:get_value(hosts, Y3),
@@ -763,7 +763,7 @@ set_shared_key() ->
 set_node_start(UnixTime) ->
     set_option(node_start, UnixTime).
 
--spec set_loglevel(0..5) -> ok.
+-spec set_loglevel(logger:level()) -> ok.
 set_loglevel(Level) ->
     ejabberd_logger:set(Level).
 

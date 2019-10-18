@@ -198,18 +198,19 @@ opt_type(ldap_uids) ->
       econf:map(econf:binary(), econf:binary(), [unique]));
 opt_type(listen) ->
     ejabberd_listener:validator();
-opt_type(log_rate_limit) ->
-    econf:non_neg_int();
 opt_type(log_rotate_count) ->
     econf:non_neg_int();
-opt_type(log_rotate_date) ->
-    econf:string("^(\\$((D(([0-9])|(1[0-9])|(2[0-3])))|"
-		 "(((W[0-6])|(M(([1-2][0-9])|(3[0-1])|([1-9]))))"
-		 "(D(([0-9])|(1[0-9])|(2[0-3])))?)))?$");
 opt_type(log_rotate_size) ->
-    econf:non_neg_int();
+    econf:pos_int(infinity);
 opt_type(loglevel) ->
-    econf:int(0, 5);
+    fun(N) when is_integer(N) ->
+	    (econf:and_then(
+	       econf:int(0, 5),
+	       fun ejabberd_logger:convert_loglevel/1))(N);
+       (Level) ->
+	    (econf:enum([none, emergency, alert, critical,
+			 error, warning, notice, info, debug]))(Level)
+    end;
 opt_type(max_fsm_queue) ->
     econf:pos_int();
 opt_type(modules) ->
@@ -424,6 +425,7 @@ opt_type(jwt_auth_only_rule) ->
 		    {websocket_origin, [binary()]} |
 		    {disable_sasl_mechanisms, [binary()]} |
 		    {s2s_zlib, boolean()} |
+		    {loglevel, none | logger:level()} |
 		    {listen, [ejabberd_listener:listener()]} |
 		    {modules, [{module(), gen_mod:opts(), integer()}]} |
 		    {ldap_uids, [{binary(), binary()}]} |
@@ -443,7 +445,7 @@ opt_type(jwt_auth_only_rule) ->
 options() ->
     [%% Top-priority options
      hosts,
-     {loglevel, 4},
+     {loglevel, info},
      {cache_life_time, timer:seconds(3600)},
      {cache_missed, true},
      {cache_size, 1000},
@@ -527,10 +529,8 @@ options() ->
      {ldap_tls_verify, false},
      {ldap_uids, [{<<"uid">>, <<"%u">>}]},
      {listen, []},
-     {log_rate_limit, undefined},
-     {log_rotate_count, undefined},
-     {log_rotate_date, undefined},
-     {log_rotate_size, undefined},
+     {log_rotate_count, 1},
+     {log_rotate_size, 10*1024*1024},
      {max_fsm_queue, undefined},
      {modules, []},
      {negotiation_timeout, timer:seconds(30)},
@@ -669,9 +669,7 @@ globals() ->
      host_config,
      listen,
      loglevel,
-     log_rate_limit,
      log_rotate_count,
-     log_rotate_date,
      log_rotate_size,
      negotiation_timeout,
      net_ticktime,

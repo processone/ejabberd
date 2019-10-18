@@ -68,6 +68,7 @@
 %%-----------------------------
 
 start() ->
+    logger:set_primary_config(level, none),
     [SNode, Timeout, Args] = case init:get_plain_arguments() of
                                  [SNode2, "--no-timeout" | Args2] ->
                                      [SNode2, infinity, Args2];

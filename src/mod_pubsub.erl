@@ -367,16 +367,13 @@ depends(ServerHost, Opts) ->
 %% <p>See {@link node_hometree:init/1} for an example implementation.</p>
 init_plugins(Host, ServerHost, Opts) ->
     TreePlugin = tree(Host, mod_pubsub_opt:nodetree(Opts)),
-    ?DEBUG("** tree plugin is ~p", [TreePlugin]),
     TreePlugin:init(Host, ServerHost, Opts),
     Plugins = mod_pubsub_opt:plugins(Opts),
     PepMapping = mod_pubsub_opt:pep_mapping(Opts),
-    ?DEBUG("** PEP Mapping : ~p~n", [PepMapping]),
     PluginsOK = lists:foldl(
 	    fun (Name, Acc) ->
 		    Plugin = plugin(Host, Name),
 		    apply(Plugin, init, [Host, ServerHost, Opts]),
-		    ?DEBUG("** init ~ts plugin", [Name]),
 		    [Name | Acc]
 	    end,
 	    [], Plugins),
@@ -385,7 +382,6 @@ init_plugins(Host, ServerHost, Opts) ->
 terminate_plugins(Host, ServerHost, Plugins, TreePlugin) ->
     lists:foreach(
 	fun (Name) ->
-		?DEBUG("** terminate ~ts plugin", [Name]),
 		Plugin = plugin(Host, Name),
 		Plugin:terminate(Host, ServerHost)
 	end,
