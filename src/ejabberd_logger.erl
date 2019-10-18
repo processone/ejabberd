@@ -30,6 +30,7 @@
 %% API
 -export([start/0, get/0, set/1, get_log_path/0, flush/0]).
 -export([convert_loglevel/1, loglevels/0]).
+-export([progress_filter/2]).
 %% Deprecated functions
 -export([restart/0, reopen_log/0, rotate_log/0]).
 -deprecated([{restart, 0},
@@ -111,7 +112,7 @@ start(Level) ->
     ConsoleFmtConfig = FmtConfig#{template => console_template()},
     logger:set_primary_config(level, Level),
     logger:add_primary_filter(progress_report,
-			      {fun logger_filters:progress/2, stop}),
+			      {fun ?MODULE:progress_filter/2, stop}),
     logger:update_formatter_config(default, ConsoleFmtConfig),
     logger:add_handler(ejabberd_log, logger_std_h,
 		       #{level => all,
@@ -126,12 +127,26 @@ start(Level) ->
 restart() ->
     ok.
 
+progress_filter(#{level:=info,msg:={report,#{label:={_,progress}}}} = Event, _) ->
+    case get() of
+	debug ->
+	    logger_filters:progress(Event#{level => debug}, log);
+	_ ->
+	    stop
+    end;
+progress_filter(Event, _) ->
+    Event.
+
 console_template() ->
-    [time, " [", level, "] ", msg, io_lib:nl()].
+    [time, " [", level, "] " | msg()].
 
 file_template() ->
     [time, " [", level, "] ", pid,
-     {mfa, ["@", mfa, {line, [":", line], []}], []}, " ", msg, io_lib:nl()].
+     {mfa, ["@", mfa, {line, [":", line], []}], []}, " " | msg()].
+
+msg() ->
+    [{logger_formatter, [[logger_formatter, title], ":", io_lib:nl()], []},
+     msg, io_lib:nl()].
 
 reopen_log() ->
     ok.
