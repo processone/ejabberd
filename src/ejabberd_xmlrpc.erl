@@ -342,8 +342,12 @@ process_unicode_codepoints(Str) ->
 %% Result
 %% -----------------------------
 
+format_result({error, Error}, _) when is_list(Error) ->
+    throw({error, lists:flatten(Error)});
 format_result({error, Error}, _) ->
     throw({error, Error});
+format_result({error, _Type, _Code, Error}, _) when is_list(Error) ->
+    throw({error, lists:flatten(Error)});
 format_result({error, _Type, _Code, Error}, _) ->
     throw({error, Error});
 format_result(String, string) -> lists:flatten(String);
