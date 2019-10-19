@@ -549,7 +549,7 @@ reload_config() ->
 	ok -> {ok, ""};
 	Err ->
 	    Reason = ejabberd_config:format_error(Err),
-	    {invalid_config, Reason}
+	    {error, Reason}
     end.
 
 dump_config(Path) ->
@@ -557,7 +557,7 @@ dump_config(Path) ->
 	ok -> {ok, ""};
 	Err ->
 	    Reason = ejabberd_config:format_error(Err),
-	    {invalid_file, Reason}
+	    {error, Reason}
     end.
 
 convert_to_yaml(In, Out) ->
@@ -565,7 +565,7 @@ convert_to_yaml(In, Out) ->
 	ok -> {ok, ""};
 	Err ->
 	    Reason = ejabberd_config:format_error(Err),
-	    {invalid_config, Reason}
+	    {error, Reason}
     end.
 
 %%%
