@@ -487,6 +487,10 @@ read_file(File, Opts) ->
 			      true -> get_modules_configs();
 			      false -> []
 			  end,
+		  lists:foreach(
+		    fun(F) ->
+			    ?INFO_MSG("Loading third-party configuration from ~ts", [F])
+		    end, Files),
 		  read_yaml_files([File|Files], lists:flatten(Opts1));
 	      _ ->
 		  read_erlang_file(File, lists:flatten(Opts1))
