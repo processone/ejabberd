@@ -120,14 +120,14 @@ start(Level) ->
 	end,
 	case logger:add_handler(ejabberd_log, logger_std_h,
 				#{level => all,
-				  config => Config#{file => EjabberdLog},
+				  config => Config#{type => {file, EjabberdLog}},
 				  formatter => {logger_formatter, FileFmtConfig}}) of
 	    ok -> ok;
 	    {error, {already_exist, _}} -> ok
 	end,
 	case logger:add_handler(error_log, logger_std_h,
 				#{level => error,
-				  config => Config#{file => ErrorLog},
+				  config => Config#{type => {file, ErrorLog}},
 				  formatter => {logger_formatter, FileFmtConfig}}) of
 	    ok -> ok;
 	    {error, {already_exist, _}} -> ok
