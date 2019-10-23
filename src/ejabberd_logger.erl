@@ -110,19 +110,32 @@ start(Level) ->
 		  single_line => false},
     FileFmtConfig = FmtConfig#{template => file_template()},
     ConsoleFmtConfig = FmtConfig#{template => console_template()},
-    logger:set_primary_config(level, Level),
-    logger:add_primary_filter(progress_report,
-			      {fun ?MODULE:progress_filter/2, stop}),
-    logger:update_formatter_config(default, ConsoleFmtConfig),
-    logger:add_handler(ejabberd_log, logger_std_h,
-		       #{level => all,
-			 config => Config#{file => EjabberdLog},
-			 formatter => {logger_formatter, FileFmtConfig}}),
-    logger:add_handler(error_log, logger_std_h,
-		       #{level => error,
-			 config => Config#{file => ErrorLog},
-			 formatter => {logger_formatter, FileFmtConfig}}),
-    ok.
+    try
+	ok = logger:set_primary_config(level, Level),
+	ok = logger:update_formatter_config(default, ConsoleFmtConfig),
+	case logger:add_primary_filter(progress_report,
+				       {fun ?MODULE:progress_filter/2, stop}) of
+	    ok -> ok;
+	    {error, {already_exist, _}} -> ok
+	end,
+	case logger:add_handler(ejabberd_log, logger_std_h,
+				#{level => all,
+				  config => Config#{file => EjabberdLog},
+				  formatter => {logger_formatter, FileFmtConfig}}) of
+	    ok -> ok;
+	    {error, {already_exist, _}} -> ok
+	end,
+	case logger:add_handler(error_log, logger_std_h,
+				#{level => error,
+				  config => Config#{file => ErrorLog},
+				  formatter => {logger_formatter, FileFmtConfig}}) of
+	    ok -> ok;
+	    {error, {already_exist, _}} -> ok
+	end
+    catch _:{Tag, Err} when Tag == badmatch; Tag == case_clause ->
+	    ?LOG_CRITICAL("Failed to set logging: ~p", [Err]),
+	    Err
+    end.
 
 restart() ->
     ok.
