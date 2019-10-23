@@ -125,7 +125,7 @@ CREATE TABLE vcard_search (
     lusername text PRIMARY KEY,
     fn text NOT NULL,
     lfn text NOT NULL,
-    family text NOT NULL,
+    "family" text NOT NULL,
     lfamily text NOT NULL,
     given text NOT NULL,
     lgiven text NOT NULL,
