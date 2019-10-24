@@ -65,10 +65,10 @@ get_node(Nidx) ->
     {Host, Node} = nodeid(Nidx),
     node_record(Host, Node, Nidx).
 
-get_nodes(Host, _From) ->
-    get_nodes(Host).
+get_nodes(Host) ->
+    get_nodes(Host, infinity).
 
-get_nodes(_Host) ->
+get_nodes(_Host, _Limit) ->
     [].
 
 get_parentnodes(_Host, _Node, _From) ->
@@ -77,10 +77,7 @@ get_parentnodes(_Host, _Node, _From) ->
 get_parentnodes_tree(Host, Node, From) ->
     [{0, [get_node(Host, Node, From)]}].
 
-get_subnodes(Host, Node, _From) ->
-    get_subnodes(Host, Node).
-
-get_subnodes(_Host, _Node) ->
+get_subnodes(_Host, _Node, _From) ->
     [].
 
 get_subnodes_tree(Host, Node, _From) ->

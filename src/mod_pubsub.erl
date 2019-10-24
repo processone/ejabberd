@@ -498,6 +498,7 @@ disco_sm_items(Acc, _From, _To, _Node, _Lang) -> Acc.
 
 -spec disco_items(ljid(), binary(), jid()) -> [disco_item()].
 disco_items(Host, <<>>, From) ->
+    MaxNodes = mod_pubsub_opt:max_nodes_discoitems(serverhost(Host)),
     Action =
 	fun(#pubsub_node{nodeid = {_, Node}, options = Options,
 			 type = Type, id = Nidx, owners = O}, Acc) ->
@@ -513,7 +514,7 @@ disco_items(Host, <<>>, From) ->
 		end
 	end,
     NodeBloc = fun() ->
-		       case tree_call(Host, get_nodes, [Host]) of
+		       case tree_call(Host, get_nodes, [Host, MaxNodes]) of
 			   Nodes when is_list(Nodes) ->
 			       {result, lists:foldl(Action, [], Nodes)};
 			   Error ->
@@ -1007,8 +1008,9 @@ iq_disco_info(ServerHost, Host, SNode, From, Lang) ->
 
 -spec iq_disco_items(host(), binary(), jid(), undefined | rsm_set()) ->
 			    {result, disco_items()} | {error, stanza_error()}.
-iq_disco_items(Host, <<>>, From, _RSM) ->
-    case tree_action(Host, get_subnodes, [Host, <<>>, From]) of
+iq_disco_items(Host, <<>>, _From, _RSM) ->
+    MaxNodes = mod_pubsub_opt:max_nodes_discoitems(serverhost(Host)),
+    case tree_action(Host, get_subnodes, [Host, <<>>, MaxNodes]) of
 	{error, #stanza_error{}} = Err ->
 	    Err;
 	Nodes when is_list(Nodes) ->
@@ -1039,6 +1041,7 @@ iq_disco_items(Host, Item, From, RSM) ->
 	[_Node, _ItemId] ->
 	    {result, #disco_items{}};
 	[Node] ->
+	    MaxNodes = mod_pubsub_opt:max_nodes_discoitems(serverhost(Host)),
 	    Action = fun(#pubsub_node{id = Nidx, type = Type, options = Options, owners = O}) ->
 			     Owners = node_owners_call(Host, Type, Nidx, O),
 			     {NodeItems, RsmOut} = case get_allowed_items_call(
@@ -1046,7 +1049,7 @@ iq_disco_items(Host, Item, From, RSM) ->
 						       {result, R} -> R;
 						       _ -> {[], undefined}
 						   end,
-			     case tree_call(Host, get_subnodes, [Host, Node, From]) of
+			     case tree_call(Host, get_subnodes, [Host, Node, MaxNodes]) of
 				 SubNodes when is_list(SubNodes) ->
 				     Nodes = lists:map(
 					       fun(#pubsub_node{nodeid = {_, SubNode}, options = SubOptions}) ->
@@ -3154,7 +3157,7 @@ send_last_pep(From, To) ->
     Host = host(ServerHost),
     Publisher = jid:tolower(From),
     Owner = jid:remove_resource(Publisher),
-    case tree_action(Host, get_nodes, [Owner, From]) of
+    case tree_action(Host, get_nodes, [Owner, infinity]) of
 	Nodes when is_list(Nodes) ->
 	    lists:foreach(
 	      fun(#pubsub_node{nodeid = {_, Node}, type = Type, id = Nidx, options = Options}) ->
@@ -4123,6 +4126,8 @@ mod_opt_type(last_item_cache) ->
     econf:bool();
 mod_opt_type(max_items_node) ->
     econf:non_neg_int();
+mod_opt_type(max_nodes_discoitems) ->
+    econf:non_neg_int(infinity);
 mod_opt_type(max_subscriptions_node) ->
     econf:non_neg_int();
 mod_opt_type(force_node_config) ->
@@ -4168,6 +4173,7 @@ mod_options(Host) ->
      {ignore_pep_from_offline, true},
      {last_item_cache, false},
      {max_items_node, ?MAXITEMS},
+     {max_nodes_discoitems, 100},
      {nodetree, ?STDTREE},
      {pep_mapping, []},
      {plugins, [?STDNODE]},
