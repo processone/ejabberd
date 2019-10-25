@@ -415,6 +415,8 @@ opt_type(jwt_key) ->
                       econf:fail({read_file, Reason, Path})
               end
       end);
+opt_type(jwt_jid_field) ->
+    econf:binary();
 opt_type(jwt_auth_only_rule) ->
     econf:atom().
 
@@ -643,6 +645,7 @@ options() ->
      {websocket_ping_interval, timer:seconds(60)},
      {websocket_timeout, timer:minutes(5)},
      {jwt_key, undefined},
+     {jwt_jid_field, <<"jid">>},
      {jwt_auth_only_rule, none}].
 
 -spec globals() -> [atom()].
