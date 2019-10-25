@@ -162,6 +162,8 @@ format_error({bad_cert, Why, Path}) ->
     format_error({bad_pem, Why, Path});
 format_error({bad_jwt_key, Path}) ->
     format("No valid JWT key found in file: ~ts", [Path]);
+format_error({bad_jwt_key_set, Path}) ->
+    format("JWT key contains JWK set in file: ~ts", [Path]);
 format_error({bad_jid, Bad}) ->
     format("Invalid XMPP address: ~ts", [Bad]);
 format_error({bad_user, Bad}) ->
