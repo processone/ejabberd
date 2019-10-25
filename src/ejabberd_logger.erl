@@ -242,7 +242,8 @@ get_lager_version() ->
     end.
 
 flush() ->
-    application:stop(lager).
+    application:stop(lager),
+    application:stop(sasl).
 
 -else.
 -include_lib("kernel/include/logger.hrl").
