@@ -58,6 +58,7 @@
 	 mnesia_change_nodename/4,
 	 restore/1, % Still used by some modules
 	 clear_cache/0,
+	 gc/0,
 	 get_commands_spec/0
 	]).
 %% gen_server callbacks
@@ -384,6 +385,10 @@ get_commands_spec() ->
      #ejabberd_commands{name = clear_cache, tags = [server],
 			desc = "Clear database cache on all nodes",
 			module = ?MODULE, function = clear_cache,
+			args = [], result = {res, rescode}},
+     #ejabberd_commands{name = gc, tags = [server],
+			desc = "Force full garbage collection",
+			module = ?MODULE, function = gc,
 			args = [], result = {res, rescode}}
     ].
 
@@ -833,6 +838,9 @@ mnesia_change_nodename(FromString, ToString, Source, Target) ->
 clear_cache() ->
     Nodes = ejabberd_cluster:get_nodes(),
     lists:foreach(fun(T) -> ets_cache:clear(T, Nodes) end, ets_cache:all()).
+
+gc() ->
+    lists:foreach(fun erlang:garbage_collect/1, processes()).
 
 -spec is_my_host(binary()) -> boolean().
 is_my_host(Host) ->
