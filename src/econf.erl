@@ -148,8 +148,7 @@ format_error({bad_enum, Known, Bad} = Why, Ctx) ->
 format_error({bad_yaml, _, _} = Why, _) ->
     format_error(Why);
 format_error(Reason, Ctx) ->
-    [H|T] = format_error(Reason),
-    yconf:format_ctx(Ctx) ++ ": " ++ [string:to_lower(H)|T].
+    yconf:format_ctx(Ctx) ++ ": " ++ format_error(Reason).
 
 format_error({bad_db_type, _, Atom}) ->
     format("unsupported database: ~ts", [Atom]);
