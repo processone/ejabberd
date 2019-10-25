@@ -425,7 +425,7 @@ opt_type(jwt_auth_only_rule) ->
 		    {websocket_origin, [binary()]} |
 		    {disable_sasl_mechanisms, [binary()]} |
 		    {s2s_zlib, boolean()} |
-		    {loglevel, none | logger:level()} |
+		    {loglevel, ejabberd_logger:loglevel()} |
 		    {listen, [ejabberd_listener:listener()]} |
 		    {modules, [{module(), gen_mod:opts(), integer()}]} |
 		    {ldap_uids, [{binary(), binary()}]} |

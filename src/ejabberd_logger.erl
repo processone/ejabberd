@@ -45,6 +45,8 @@
 	 or (L == critical) or (L == error) or (L == warning)
 	 or (L == notice) or (L == info) or (L == debug))).
 
+-export_type([loglevel/0]).
+
 -spec restart() -> ok.
 -spec reopen_log() -> ok.
 -spec rotate_log() -> ok.

@@ -562,7 +562,7 @@ log_rotate_count() ->
 log_rotate_size() ->
     ejabberd_config:get_option({log_rotate_size, global}).
 
--spec loglevel() -> 'none' | logger:level().
+-spec loglevel() -> ejabberd_logger:loglevel().
 loglevel() ->
     ejabberd_config:get_option({loglevel, global}).
 
