@@ -411,8 +411,10 @@ opt_type(jwt_key) ->
                               case jose_jwk:to_map(JWK) of
                                   {_, #{<<"keys">> := [Key]}} ->
                                       jose_jwk:from_map(Key);
-                                  {_, #{<<"keys">> := _}} ->
+                                  {_, #{<<"keys">> := [_|_]}} ->
                                       econf:fail({bad_jwt_key_set, Path});
+				  {_, #{<<"keys">> := _}} ->
+				      econf:fail({bad_jwt_key, Path});
                                   _ ->
                                       JWK
                               end
