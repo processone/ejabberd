@@ -86,6 +86,7 @@ use_cache(_) ->
 %%%----------------------------------------------------------------------
 check_jwt_token(User, Server, Token) ->
     JWK = ejabberd_option:jwt_key(Server),
+    JidField = ejabberd_option:jwt_jid_field(Server),
     try jose_jwt:verify(JWK, Token) of
         {true, {jose_jwt, Fields}, Signature} ->
             ?DEBUG("jwt verify: ~p - ~p~n", [Fields, Signature]),
@@ -97,7 +98,7 @@ check_jwt_token(User, Server, Token) ->
                     Now = erlang:system_time(second),
                     if
                         Exp > Now ->
-                            case maps:find(<<"jid">>, Fields) of
+                            case maps:find(JidField, Fields) of
                                 error ->
                                     false;
                                 {ok, SJID} ->
@@ -121,6 +122,3 @@ check_jwt_token(User, Server, Token) ->
             false
     end.
 
-%% TODO: auth0 username is defined in 'jid' field, but we should
-%% allow customizing the name of the field containing the username
-%% to adapt to custom claims.
