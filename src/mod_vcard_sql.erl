@@ -102,7 +102,7 @@ set_vcard(LUser, LServer, VCARD,
                            "!server_host=%(LServer)s",
                            "fn=%(FN)s",
                            "lfn=%(LFN)s",
-                           "family=%(Family)s",
+                           "\"family\"=%(Family)s",
                            "lfamily=%(LFamily)s",
                            "given=%(Given)s",
                            "lgiven=%(LGiven)s",
@@ -136,7 +136,7 @@ search(LServer, Data, AllowReturnAll, MaxMatch) ->
 		    end,
 	   case catch ejabberd_sql:sql_query(
 			LServer,
-			[<<"select username, fn, family, given, "
+			[<<"select username, fn, \"family\", given, "
 			   "middle,        nickname, bday, ctry, "
 			   "locality,        email, orgname, orgunit "
 			   "from vcard_search ">>,
@@ -192,7 +192,7 @@ remove_user(LUser, LServer) ->
                      " where lusername=%(LUser)s and %(LServer)H"))
       end).
 
-export(_Server) ->   
+export(_Server) ->
     [{vcard,
       fun(Host, #vcard{us = {LUser, LServer}, vcard = VCARD})
             when LServer == Host ->
@@ -227,7 +227,7 @@ export(_Server) ->
                             "server_host=%(LServer)s",
                             "fn=%(FN)s",
                             "lfn=%(LFN)s",
-                            "family=%(Family)s",
+                            "\"family\"=%(Family)s",
                             "lfamily=%(LFamily)s",
                             "given=%(Given)s",
                             "lgiven=%(LGiven)s",
