@@ -62,7 +62,7 @@ after_script:
 after_failure:
   - find logs -name exunit.log -exec cat '{}' ';'
   - find logs -name ejabberd.log -exec cat '{}' ';'
-  - find logs -name suite.log -exec cat '{}' ';' | awk 'BEGIN{RS="\n=case";FS="\n"} /=result\s*failed/ {print "=case" $0}
+  - find logs -name suite.log -exec cat '{}' ';' | awk 'BEGIN{RS="\n=case";FS="\n"} /=result\s*failed/ {print "=case" $0}'
 
 after_success:
   - coveralls-merge erlang.json
