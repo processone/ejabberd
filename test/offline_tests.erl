@@ -522,4 +522,4 @@ message_iterator(Config) ->
       end, All).
 
 rand_string() ->
-    integer_to_binary(p1_rand:uniform((1 bsl 63)-1)).
+    integer_to_binary(p1_rand:uniform((1 bsl 31)-1)).
