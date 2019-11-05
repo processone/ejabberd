@@ -74,13 +74,19 @@ opt_type(auth_use_cache) ->
 opt_type(c2s_cafile) ->
     econf:file();
 opt_type(c2s_ciphers) ->
-    econf:binary();
+    fun(L) when is_list(L) ->
+            (econf:and_then(
+               econf:list(econf:binary(), [unique]),
+               concat_binary($:)))(L);
+       (B) ->
+            (econf:binary())(B)
+    end;
 opt_type(c2s_dhfile) ->
     econf:file();
 opt_type(c2s_protocol_options) ->
     econf:and_then(
       econf:list(econf:binary(), [unique]),
-      fun concat_tls_protocol_options/1);
+      concat_binary($|));
 opt_type(c2s_tls_compression) ->
     econf:bool();
 opt_type(ca_file) ->
@@ -302,7 +308,7 @@ opt_type(s2s_access) ->
 opt_type(s2s_cafile) ->
     econf:pem();
 opt_type(s2s_ciphers) ->
-    econf:binary();
+    opt_type(c2s_ciphers);
 opt_type(s2s_dhfile) ->
     econf:file();
 opt_type(s2s_dns_retries) ->
@@ -312,9 +318,7 @@ opt_type(s2s_dns_timeout) ->
 opt_type(s2s_max_retry_delay) ->
     econf:timeout(second);
 opt_type(s2s_protocol_options) ->
-    econf:and_then(
-      econf:list(econf:binary(), [unique]),
-      fun concat_tls_protocol_options/1);
+    opt_type(c2s_protocol_options);
 opt_type(s2s_queue_type) ->
     econf:enum([ram, file]);
 opt_type(s2s_timeout) ->
@@ -434,6 +438,8 @@ opt_type(jwt_auth_only_rule) ->
 %% automatically by tools/opt_type.sh script
 -spec options() -> [{s2s_protocol_options, undefined | binary()} |
 		    {c2s_protocol_options, undefined | binary()} |
+                    {s2s_ciphers, undefined | binary()} |
+                    {c2s_ciphers, undefined | binary()} |
 		    {websocket_origin, [binary()]} |
 		    {disable_sasl_mechanisms, [binary()]} |
 		    {s2s_zlib, boolean()} |
@@ -750,6 +756,6 @@ fqdn(global) ->
 fqdn(_) ->
     ejabberd_config:get_option(fqdn).
 
--spec concat_tls_protocol_options([binary()]) -> binary().
-concat_tls_protocol_options(Opts) ->
-    str:join(Opts, <<"|">>).
+-spec concat_binary(char()) -> fun(([binary()]) -> binary()).
+concat_binary(C) ->
+    fun(Opts) -> str:join(Opts, <<C>>) end.
