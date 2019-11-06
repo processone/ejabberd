@@ -557,11 +557,13 @@ pre_validate(Y1) ->
 	       version => ejabberd_options:opt_type(version),
 	       host_config => econf:map(econf:binary(), econf:any()),
 	       append_host_config => econf:map(econf:binary(), econf:any()),
+               modules => ejabberd_options:opt_type(modules),
 	       '_' => econf:any()},
 	     [{required, [hosts]}]),
 	   Y1) of
 	{ok, Y2} ->
-	    {ok, group_duplicated_options(Y2, [append_host_config, host_config])};
+	    {ok, group_duplicated_options(
+                   Y2, [append_host_config, host_config, modules])};
 	Err ->
 	    Err
     end.
