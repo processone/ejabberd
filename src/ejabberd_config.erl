@@ -555,15 +555,11 @@ pre_validate(Y1) ->
 	     #{hosts => ejabberd_options:opt_type(hosts),
 	       loglevel => ejabberd_options:opt_type(loglevel),
 	       version => ejabberd_options:opt_type(version),
-	       host_config => econf:map(econf:binary(), econf:any()),
-	       append_host_config => econf:map(econf:binary(), econf:any()),
-               modules => ejabberd_options:opt_type(modules),
-	       '_' => econf:any()},
+               '_' => econf:any()},
 	     [{required, [hosts]}]),
 	   Y1) of
 	{ok, Y2} ->
-	    {ok, group_duplicated_options(
-                   Y2, [append_host_config, host_config, modules])};
+	    {ok, group_duplicated_options(Y2)};
 	Err ->
 	    Err
     end.
@@ -773,16 +769,14 @@ set_node_start(UnixTime) ->
 set_loglevel(Level) ->
     ejabberd_logger:set(Level).
 
--spec group_duplicated_options([{atom(), term()}], [atom()]) -> [{atom(), term()}].
-group_duplicated_options(Y1, Options) ->
-    {Y2, Y3} = lists:partition(
-		 fun({Option, _}) ->
-			 lists:member(Option, Options)
-		 end, Y1),
-    lists:foldl(
-      fun(Option, Y4) ->
-	      case lists:flatten(proplists:get_all_values(Option, Y2)) of
-		  [] -> Y4;
-		  Values -> [{Option, Values}|Y4]
-	      end
-      end, Y3, Options).
+%% All duplicated options having list-values are grouped
+%% into a single option with all list-values being concatenated
+-spec group_duplicated_options([{atom(), term()}]) -> [{atom(), term()}].
+group_duplicated_options(Y1) ->
+    {Y2, D} = lists:mapfoldl(
+                fun({Option, Values}, Acc) when is_list(Values) ->
+                        {[], dict:append_list(Option, Values, Acc)};
+                   ({Option, Value}, Acc) ->
+                        {{Option, Value}, Acc}
+                end, dict:new(), Y1),
+    lists:flatten(Y2) ++ dict:to_list(D).
