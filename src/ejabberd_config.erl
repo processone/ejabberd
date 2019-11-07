@@ -283,6 +283,14 @@ beams(local) ->
     Mods;
 beams(external) ->
     ExtMods = [Name || {Name, _Details} <- ext_mod:installed()],
+    lists:foreach(
+      fun(ExtMod) ->
+              ExtModPath = ext_mod:module_ebin_dir(ExtMod),
+              case lists:member(ExtModPath, code:get_path()) of
+                  true -> ok;
+                  false -> code:add_patha(ExtModPath)
+              end
+      end, ExtMods),
     case application:get_env(ejabberd, external_beams) of
         {ok, Path} ->
             case lists:member(Path, code:get_path()) of
@@ -468,14 +476,6 @@ validators(Mod, Disallowed) ->
 		end
 	end, proplists:get_keys(Mod:options()))).
 
--spec get_modules_configs() -> [binary()].
-get_modules_configs() ->
-    Fs = [{filename:rootname(filename:basename(F)), F}
-	  || F <- filelib:wildcard(ext_mod:config_dir() ++ "/*.{yml,yaml}")
-		 ++ filelib:wildcard(ext_mod:modules_dir() ++ "/*/conf/*.{yml,yaml}")],
-    [unicode:characters_to_binary(proplists:get_value(F, Fs))
-     || F <- proplists:get_keys(Fs)].
-
 read_file(File) ->
     read_file(File, [replace_macros, include_files, include_modules_configs]).
 
@@ -484,7 +484,7 @@ read_file(File, Opts) ->
     Ret = case filename:extension(File) of
 	      Ex when Ex == <<".yml">> orelse Ex == <<".yaml">> ->
 		  Files = case proplists:get_bool(include_modules_configs, Opts2) of
-			      true -> get_modules_configs();
+			      true -> ext_mod:modules_configs();
 			      false -> []
 			  end,
 		  lists:foreach(

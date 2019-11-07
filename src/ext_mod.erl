@@ -34,7 +34,7 @@
          install/1, uninstall/1, upgrade/0, upgrade/1, add_paths/0,
          add_sources/1, add_sources/2, del_sources/1, modules_dir/0,
          config_dir/0, get_commands_spec/0]).
-
+-export([modules_configs/0, module_ebin_dir/1]).
 -export([compile_erlang_file/2, compile_elixir_file/2]).
 
 %% gen_server callbacks
@@ -425,6 +425,14 @@ sources_dir() ->
 config_dir() ->
     DefaultDir = filename:join(modules_dir(), "conf"),
     getenv("CONTRIB_MODULES_CONF_DIR", DefaultDir).
+
+-spec modules_configs() -> [binary()].
+modules_configs() ->
+    Fs = [{filename:rootname(filename:basename(F)), F}
+	  || F <- filelib:wildcard(config_dir() ++ "/*.{yml,yaml}")
+		 ++ filelib:wildcard(modules_dir() ++ "/*/conf/*.{yml,yaml}")],
+    [unicode:characters_to_binary(proplists:get_value(F, Fs))
+     || F <- proplists:get_keys(Fs)].
 
 module_lib_dir(Package) ->
     filename:join(modules_dir(), Package).
