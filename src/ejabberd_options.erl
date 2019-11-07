@@ -53,12 +53,7 @@ opt_type(anonymous_protocol) ->
 opt_type(api_permissions) ->
     ejabberd_access_permissions:validator();
 opt_type(append_host_config) ->
-    econf:map(
-      econf:and_then(
-	econf:domain(),
-	econf:enum(ejabberd_config:get_option(hosts))),
-      validator(),
-      [unique]);
+    opt_type(host_config);
 opt_type(auth_cache_life_time) ->
     econf:timeout(second, infinity);
 opt_type(auth_cache_missed) ->
@@ -150,12 +145,14 @@ opt_type(fqdn) ->
 opt_type(hide_sensitive_log_data) ->
     econf:bool();
 opt_type(host_config) ->
-    econf:map(
+    econf:and_then(
       econf:and_then(
-	econf:domain(),
-	econf:enum(ejabberd_config:get_option(hosts))),
-      validator(),
-      [unique]);
+        econf:map(econf:domain(), econf:list(econf:any())),
+        fun econf:group_dups/1),
+      econf:map(
+	econf:enum(ejabberd_config:get_option(hosts)),
+        validator(),
+        [unique]));
 opt_type(hosts) ->
     econf:non_empty(econf:list(econf:domain(), [unique]));
 opt_type(include_config_file) ->
@@ -737,9 +734,11 @@ globals() ->
 validator() ->
     Disallowed = ejabberd_config:globals(),
     {Validators, Required} = ejabberd_config:validators(Disallowed),
-    econf:options(
-      Validators,
-      [{disallowed, Required ++ Disallowed}, unique]).
+    econf:and_then(
+      fun econf:group_dups/1,
+      econf:options(
+        Validators,
+        [{disallowed, Required ++ Disallowed}, unique])).
 
 -spec fqdn(global | binary()) -> [binary()].
 fqdn(global) ->

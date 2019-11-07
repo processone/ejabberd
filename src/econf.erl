@@ -24,6 +24,7 @@
 
 %% API
 -export([parse/3, validate/2, fail/1, format_error/2, replace_macros/1]).
+-export([group_dups/1]).
 %% Simple types
 -export([pos_int/0, pos_int/1, non_neg_int/0, non_neg_int/1]).
 -export([int/0, int/2, number/1, octal/0]).
@@ -226,6 +227,18 @@ format_join([H|_] = L) when is_atom(H) ->
     format_join([atom_to_binary(A, utf8) || A <- L]);
 format_join(L) ->
     str:join(lists:sort(L), <<", ">>).
+
+%% All duplicated options having list-values are grouped
+%% into a single option with all list-values being concatenated
+-spec group_dups(list(T)) -> list(T).
+group_dups(Y1) ->
+    {Y2, D} = lists:mapfoldl(
+                fun({Option, Values}, Acc) when is_list(Values) ->
+                        {[], dict:append_list(Option, Values, Acc)};
+                   (Other, Acc) ->
+                        {[Other], Acc}
+                end, dict:new(), Y1),
+    lists:append(Y2) ++ dict:to_list(D).
 
 %%%===================================================================
 %%% Validators from yconf

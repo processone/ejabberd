@@ -550,19 +550,15 @@ validate(Y1) ->
 
 -spec pre_validate(term()) -> {ok, [{atom(), term()}]} | error_return().
 pre_validate(Y1) ->
-    case econf:validate(
-	   econf:options(
-	     #{hosts => ejabberd_options:opt_type(hosts),
-	       loglevel => ejabberd_options:opt_type(loglevel),
-	       version => ejabberd_options:opt_type(version),
-               '_' => econf:any()},
-	     [{required, [hosts]}]),
-	   Y1) of
-	{ok, Y2} ->
-	    {ok, group_duplicated_options(Y2)};
-	Err ->
-	    Err
-    end.
+    econf:validate(
+      econf:and_then(
+        econf:options(
+          #{hosts => ejabberd_options:opt_type(hosts),
+            loglevel => ejabberd_options:opt_type(loglevel),
+            version => ejabberd_options:opt_type(version),
+            '_' => econf:any()},
+          [{required, [hosts]}]),
+        fun econf:group_dups/1), Y1).
 
 -spec load_file(binary()) -> ok | error_return().
 load_file(File) ->
@@ -768,15 +764,3 @@ set_node_start(UnixTime) ->
 -spec set_loglevel(logger:level()) -> ok.
 set_loglevel(Level) ->
     ejabberd_logger:set(Level).
-
-%% All duplicated options having list-values are grouped
-%% into a single option with all list-values being concatenated
--spec group_duplicated_options([{atom(), term()}]) -> [{atom(), term()}].
-group_duplicated_options(Y1) ->
-    {Y2, D} = lists:mapfoldl(
-                fun({Option, Values}, Acc) when is_list(Values) ->
-                        {[], dict:append_list(Option, Values, Acc)};
-                   ({Option, Value}, Acc) ->
-                        {{Option, Value}, Acc}
-                end, dict:new(), Y1),
-    lists:flatten(Y2) ++ dict:to_list(D).
