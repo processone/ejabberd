@@ -55,6 +55,7 @@ script:
   - echo '{ct_extra_params, "-verbosity 20"}.' >> rebar.config
   - escript ./rebar skip_deps=true ct -v
   - grep -q 'TEST COMPLETE,.* 0 failed' logs/raw.log
+  - test $(find logs -empty -name error.log)
 
 after_script:
   - find logs -name suite.log -exec cat '{}' ';'
