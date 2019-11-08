@@ -232,13 +232,18 @@ format_join(L) ->
 %% into a single option with all list-values being concatenated
 -spec group_dups(list(T)) -> list(T).
 group_dups(Y1) ->
-    {Y2, D} = lists:mapfoldl(
-                fun({Option, Values}, Acc) when is_list(Values) ->
-                        {[], dict:append_list(Option, Values, Acc)};
-                   (Other, Acc) ->
-                        {[Other], Acc}
-                end, dict:new(), Y1),
-    lists:append(Y2) ++ dict:to_list(D).
+    lists:reverse(
+      lists:foldl(
+        fun({Option, Values}, Acc) when is_list(Values) ->
+                case lists:keyfind(Option, 1, Acc) of
+                    {Option, Vals} when is_list(Vals) ->
+                        lists:keyreplace(Option, 1, Acc, {Option, Vals ++ Values});
+                    _ ->
+                        [{Option, Values}|Acc]
+                end;
+           (Other, Acc) ->
+                [Other|Acc]
+        end, [], Y1)).
 
 %%%===================================================================
 %%% Validators from yconf
