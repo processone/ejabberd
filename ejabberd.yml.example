@@ -17,7 +17,7 @@
 hosts:
   - localhost
 
-loglevel: info
+loglevel: 4
 
 ## If you already have certificates, list them here
 # certfiles:
