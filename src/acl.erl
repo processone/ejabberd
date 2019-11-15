@@ -169,17 +169,17 @@ validator(acl) ->
 %%%===================================================================
 -spec init([]) -> {ok, state()}.
 init([]) ->
-    create_tab(acl, bag),
-    create_tab(access, set),
+    create_tab(acl),
+    create_tab(access),
     Hosts = ejabberd_option:hosts(),
-    load_from_config([], Hosts),
+    load_from_config(Hosts),
     ejabberd_hooks:add(config_reloaded, ?MODULE, reload_from_config, 20),
     {ok, #{hosts => Hosts}}.
 
 -spec handle_call(term(), term(), state()) -> {reply, ok, state()} | {noreply, state()}.
-handle_call(reload_from_config, _, #{hosts := OldHosts} = State) ->
+handle_call(reload_from_config, _, State) ->
     NewHosts = ejabberd_option:hosts(),
-    load_from_config(OldHosts, NewHosts),
+    load_from_config(NewHosts),
     {reply, ok, State#{hosts => NewHosts}};
 handle_call(Request, From, State) ->
     ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
@@ -209,31 +209,33 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Table management
 %%%===================================================================
--spec load_from_config([binary()], [binary()]) -> ok.
-load_from_config(OldHosts, NewHosts) ->
+-spec load_from_config([binary()]) -> ok.
+load_from_config(NewHosts) ->
     ?DEBUG("Loading access rules from config", []),
     load_tab(acl, NewHosts, fun ejabberd_option:acl/1),
     load_tab(access, NewHosts, fun ejabberd_option:access_rules/1),
-    lists:foreach(
-      fun(Host) ->
-	      ets:match_delete(access, {{'_', Host}, '_'}),
-	      ets:match_delete(acl, {{'_', Host}, '_'})
-      end, OldHosts -- NewHosts),
     ?DEBUG("Access rules loaded successfully", []).
 
--spec create_tab(atom(), set | bag) -> atom().
-create_tab(Tab, Type) ->
+-spec create_tab(atom()) -> atom().
+create_tab(Tab) ->
     _ = mnesia:delete_table(Tab),
-    ets:new(Tab, [named_table, Type, {read_concurrency, true}]).
+    ets:new(Tab, [named_table, set, {read_concurrency, true}]).
 
--spec load_tab(atom(), [binary()], fun((global | binary()) -> {atom(), list()})) -> true.
+-spec load_tab(atom(), [binary()], fun((global | binary()) -> {atom(), list()})) -> ok.
 load_tab(Tab, Hosts, Fun) ->
-    ets:insert(
-      Tab,
-      lists:flatmap(
-	fun(Host) ->
-		[{{Name, Host}, List} || {Name, List} <- Fun(Host)]
-	end, [global|Hosts])).
+    Old = ets:tab2list(Tab),
+    New = lists:flatmap(
+            fun(Host) ->
+                    [{{Name, Host}, List} || {Name, List} <- Fun(Host)]
+            end, [global|Hosts]),
+    ets:insert(Tab, New),
+    lists:foreach(
+      fun({Key, _}) ->
+              case lists:keymember(Key, 1, New) of
+                  false -> ets:delete(Tab, Key);
+                  true -> ok
+              end
+      end, Old).
 
 -spec read_access(atom(), global | binary()) -> access().
 read_access(Name, Host) ->
@@ -244,9 +246,10 @@ read_access(Name, Host) ->
 
 -spec read_acl(atom(), global | binary()) -> [acl_rule()].
 read_acl(Name, Host) ->
-    lists:flatmap(
-      fun({_, ACL}) -> ACL end,
-      ets:lookup(acl, {Name, Host})).
+    case ets:lookup(acl, {Name, Host}) of
+        [{_, ACL}] -> ACL;
+        [] -> []
+    end.
 
 %%%===================================================================
 %%% Validators
