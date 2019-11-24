@@ -114,8 +114,12 @@ process_iq(#iq{from = From, to = To} = IQ, Source) ->
 	end,
     Server = To#jid.lserver,
     Access = mod_register_opt:access_remove(Server),
-    AllowRemove = allow == acl:match_rule(Server, Access, From),
-    process_iq(IQ, Source, IsCaptchaEnabled, AllowRemove).
+    Remove = case acl:match_rule(Server, Access, From) of
+                 deny -> deny;
+                 allow ->
+                     check_access(From#jid.luser, From#jid.lserver, Source)
+             end,
+    process_iq(IQ, Source, IsCaptchaEnabled, Remove == allow).
 
 process_iq(#iq{type = set, lang = Lang,
 	       sub_els = [#register{remove = true}]} = IQ,
