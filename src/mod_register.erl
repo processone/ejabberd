@@ -116,8 +116,10 @@ process_iq(#iq{from = From, to = To} = IQ, Source) ->
     Access = mod_register_opt:access_remove(Server),
     Remove = case acl:match_rule(Server, Access, From) of
                  deny -> deny;
+                 allow when From#jid.lserver /= Server ->
+                     deny;
                  allow ->
-                     check_access(From#jid.luser, From#jid.lserver, Source)
+                     check_access(From#jid.luser, Server, Source)
              end,
     process_iq(IQ, Source, IsCaptchaEnabled, Remove == allow).
 
