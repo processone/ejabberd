@@ -40,7 +40,7 @@
 
 -define(CHUNK_SIZE, 1024*20). %20k
 
--include("scram.hrl").
+-include_lib("xmpp/include/scram.hrl").
 -include("logger.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
 -include("mod_privacy.hrl").

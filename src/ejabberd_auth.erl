@@ -48,7 +48,7 @@
 
 -export([auth_modules/1]).
 
--include("scram.hrl").
+-include_lib("xmpp/include/scram.hrl").
 -include("logger.hrl").
 
 -define(SALT_LENGTH, 16).
