@@ -40,7 +40,7 @@
 -export([get_commands_spec/0, bookmarks_to_pep/2]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_private.hrl").
 -include("ejabberd_commands.hrl").
 -include("translate.hrl").

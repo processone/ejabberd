@@ -35,7 +35,7 @@
 -deprecated([{add_iq_handler, 6}, {handle, 5}, {iqdisc, 1}]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
 -include("ejabberd_stacktrace.hrl").
 

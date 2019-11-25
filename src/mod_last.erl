@@ -38,7 +38,7 @@
 	 register_user/2, depends/2, privacy_check_packet/4]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_privacy.hrl").
 -include("mod_last.hrl").
 -include("translate.hrl").

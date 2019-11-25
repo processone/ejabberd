@@ -33,7 +33,7 @@
 	 disco_features/5, mod_options/1]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_privacy.hrl").
 -include("translate.hrl").
 

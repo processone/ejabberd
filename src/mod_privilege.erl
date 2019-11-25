@@ -40,7 +40,7 @@
 	 process_presence_out/1, process_presence_in/1]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
 
 -type roster_permission() :: both | get | set.

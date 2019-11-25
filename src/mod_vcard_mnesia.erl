@@ -33,7 +33,7 @@
 -export([need_transform/1, transform/1]).
 -export([mod_opt_type/1, mod_options/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_vcard.hrl").
 -include("logger.hrl").
 -include("translate.hrl").

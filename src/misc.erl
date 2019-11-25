@@ -48,7 +48,7 @@
 	     {encode_base64, 1}]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include_lib("kernel/include/file.hrl").
 
 -type distance_cache() :: #{{string(), string()} => non_neg_integer()}.

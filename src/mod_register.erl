@@ -38,7 +38,7 @@
 	 format_error/1]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
 
 start(Host, _Opts) ->

@@ -44,7 +44,7 @@
 	 web_page_host/3, mod_options/1, get_commands_spec/0, find_hosts/1]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_muc.hrl").
 -include("mod_muc_room.hrl").
 -include("ejabberd_http.hrl").

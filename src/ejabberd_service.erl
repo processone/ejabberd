@@ -35,7 +35,7 @@
 %% API
 -export([send/2, close/1, close/2, stop/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("translate.hrl").
 

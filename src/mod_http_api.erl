@@ -32,7 +32,7 @@
 -export([start/2, stop/1, reload/3, process/2, depends/2,
 	 mod_options/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_stacktrace.hrl").

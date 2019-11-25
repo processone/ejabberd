@@ -31,7 +31,7 @@
 	 get_motd/1, is_motd_user/2, set_motd_user/2, import/3]).
 -export([need_transform/1, transform/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_announce.hrl").
 -include("logger.hrl").
 

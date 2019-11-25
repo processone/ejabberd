@@ -42,7 +42,7 @@
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("ejabberd_commands.hrl").
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
 
 -define(CLEAN_INTERVAL, timer:minutes(10)).

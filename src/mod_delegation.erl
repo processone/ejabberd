@@ -41,7 +41,7 @@
 	 disco_local_identity/5, disco_sm_identity/5]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
 
 -type route_type() :: ejabberd_sm | ejabberd_local.

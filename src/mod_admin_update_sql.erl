@@ -37,7 +37,7 @@
 
 -include("logger.hrl").
 -include("ejabberd_commands.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd_sql_pt.hrl").
 
 %%%

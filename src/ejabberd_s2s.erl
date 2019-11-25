@@ -52,7 +52,7 @@
 -export([get_info_s2s_connections/1]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd_commands.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("ejabberd_stacktrace.hrl").

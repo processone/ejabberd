@@ -32,7 +32,7 @@
 	 s2s_in_features/2, s2s_out_init/2, s2s_out_closed/2,
 	 s2s_out_tls_verify/2]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("translate.hrl").
 

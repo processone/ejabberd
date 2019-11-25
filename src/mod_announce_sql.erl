@@ -32,7 +32,7 @@
 	 get_motd/1, is_motd_user/2, set_motd_user/2, import/3,
 	 export/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_announce.hrl").
 -include("ejabberd_sql_pt.hrl").
 -include("logger.hrl").

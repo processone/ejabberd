@@ -33,7 +33,7 @@
 	 store_type/1, plain_password_required/1
         ]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 
 %%%----------------------------------------------------------------------

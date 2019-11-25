@@ -32,7 +32,7 @@
 	 remove_all_messages/2, count_messages/2, import/1]).
 -export([need_transform/1, transform/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_offline.hrl").
 -include("logger.hrl").
 

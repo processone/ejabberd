@@ -36,7 +36,7 @@
 -export([init/3]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd_http.hrl").
 -include_lib("kernel/include/file.hrl").
 

@@ -31,7 +31,7 @@
 	 lookup_sessions/3, lookup_sessions/2, lookup_sessions/1,
 	 delete_session/3, delete_old_sessions/2, export/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").
 -include("mod_push.hrl").

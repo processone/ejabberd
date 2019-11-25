@@ -40,7 +40,7 @@
 	 process_mam_query/1,
 	 process_pubsub_query/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("translate.hrl").
 -include("ejabberd_stacktrace.hrl").

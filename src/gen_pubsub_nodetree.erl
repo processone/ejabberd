@@ -36,7 +36,7 @@
 	ServerHost :: binary(),
 	Opts :: [any()]) -> atom().
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -callback terminate(Host :: host(), ServerHost :: binary()) -> atom().
 

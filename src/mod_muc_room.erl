@@ -66,7 +66,7 @@
 	 code_change/4]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
 -include("mod_muc_room.hrl").
 -include("ejabberd_stacktrace.hrl").

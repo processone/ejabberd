@@ -32,7 +32,7 @@
 	 is_empty_for_user/2, is_empty_for_room/3]).
 
 -include_lib("stdlib/include/ms_transform.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("mod_mam.hrl").
 

@@ -34,7 +34,7 @@
 
 -export([item_to_raw/1, raw_to_item/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_privacy.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").

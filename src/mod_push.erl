@@ -51,7 +51,7 @@
 
 -include("ejabberd_commands.hrl").
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
 
 -define(PUSH_CACHE, push_cache).

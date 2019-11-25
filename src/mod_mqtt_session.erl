@@ -28,7 +28,7 @@
 
 -include("logger.hrl").
 -include("mqtt.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -record(state, {vsn = ?VSN            :: integer(),
                 version               :: undefined | mqtt_version(),

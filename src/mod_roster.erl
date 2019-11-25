@@ -54,7 +54,7 @@
 	 depends/2, set_item_and_notify_clients/3]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_roster.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").

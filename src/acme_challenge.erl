@@ -15,7 +15,7 @@
 %% 4. (?) oob-01:  https://tools.ietf.org/html/draft-ietf-acme-acme-05#section-7.5
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_acme.hrl").
 

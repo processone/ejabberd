@@ -45,7 +45,7 @@
 
 -include("logger.hrl").
 -include("translate.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -record(multicastc, {rserver :: binary(),
 		     response,

@@ -30,7 +30,7 @@
 -export([pubsub_publish_item/6, vcard_iq_convert/1, vcard_iq_publish/1,
 	 get_sm_features/5]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("pubsub.hrl").
 

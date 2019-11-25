@@ -41,7 +41,7 @@
 	 c2s_copy_session/2, c2s_session_resumed/1]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -define(CSI_QUEUE_MAX, 100).
 

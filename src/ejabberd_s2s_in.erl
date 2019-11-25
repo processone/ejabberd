@@ -41,7 +41,7 @@
 -export([stop/1, close/1, close/2, send/2, update_state/2, establish/1,
 	 host_up/1, host_down/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 
 -type state() :: xmpp_stream_in:state().

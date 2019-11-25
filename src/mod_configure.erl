@@ -39,7 +39,7 @@
 	 depends/2]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd_sm.hrl").
 -include("translate.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").

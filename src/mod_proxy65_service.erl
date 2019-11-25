@@ -38,7 +38,7 @@
 	 delete_listener/1, route/1]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
 -include("ejabberd_stacktrace.hrl").
 

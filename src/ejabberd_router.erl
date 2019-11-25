@@ -69,7 +69,7 @@
 
 -include("logger.hrl").
 -include("ejabberd_router.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd_stacktrace.hrl").
 
 -callback init() -> any().

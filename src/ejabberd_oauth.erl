@@ -50,7 +50,7 @@
 -export([get_commands_spec/0,
 	 oauth_issue_token/3, oauth_list_tokens/0, oauth_revoke_token/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").

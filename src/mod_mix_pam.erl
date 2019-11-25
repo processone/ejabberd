@@ -32,7 +32,7 @@
 	 remove_user/2,
 	 process_iq/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("translate.hrl").
 

@@ -37,7 +37,7 @@
 -export([compute_hash/1]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -define(VCARD_XUPDATE_CACHE, vcard_xupdate_cache).
 

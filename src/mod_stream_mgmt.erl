@@ -36,7 +36,7 @@
 %% adjust pending session timeout / access queue
 -export([get_resume_timeout/1, set_resume_timeout/2, queue_find/2]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("p1_queue.hrl").
 -include("translate.hrl").

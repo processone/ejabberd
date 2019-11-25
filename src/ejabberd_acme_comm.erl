@@ -23,7 +23,7 @@
 	]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -include("ejabberd_acme.hrl").
 -include_lib("public_key/include/public_key.hrl").

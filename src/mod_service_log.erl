@@ -34,7 +34,7 @@
 
 -include("logger.hrl").
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 start(Host, _Opts) ->
     ejabberd_hooks:add(user_send_packet, Host, ?MODULE,

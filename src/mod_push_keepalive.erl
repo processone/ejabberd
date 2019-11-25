@@ -36,7 +36,7 @@
 	 c2s_handle_cast/2, c2s_handle_info/2, c2s_stanza/3]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -define(PUSH_BEFORE_TIMEOUT_PERIOD, 120000). % 2 minutes.
 

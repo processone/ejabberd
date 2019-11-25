@@ -39,7 +39,7 @@
 -export([start/3, start_link/3, connect/1, close/1, close/2, stop/1, send/2,
 	 route/2, establish/1, update_state/2, host_up/1, host_down/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("translate.hrl").
 

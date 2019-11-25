@@ -40,7 +40,7 @@
 -include_lib("stdlib/include/qlc.hrl").
 
 -include("pubsub.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
 
 -export([init/3, terminate/2, options/0, set_node/1,

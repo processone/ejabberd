@@ -29,7 +29,7 @@
 -export([init/2, set_data/3, get_data/3, get_all_data/2, del_data/2,
 	 import/3, export/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_private.hrl").
 -include("ejabberd_sql_pt.hrl").
 -include("logger.hrl").
