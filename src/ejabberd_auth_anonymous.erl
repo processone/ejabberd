@@ -45,7 +45,7 @@
 	 plain_password_required/1]).
 
 -include("logger.hrl").
--include("jid.hrl").
+-include_lib("xmpp/include/jid.hrl").
 
 start(Host) ->
     ejabberd_hooks:add(sm_register_connection_hook, Host,

@@ -51,7 +51,7 @@
 %% ejabberd_hooks callback.
 -export([handle_slot_request/6]).
 
--include("jid.hrl").
+-include_lib("xmpp/include/jid.hrl").
 -include("logger.hrl").
 -include_lib("kernel/include/file.hrl").
 

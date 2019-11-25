@@ -34,7 +34,7 @@
 
 -include("ejabberd_oauth.hrl").
 -include("ejabberd_sql_pt.hrl").
--include("jid.hrl").
+-include_lib("xmpp/include/jid.hrl").
 -include("logger.hrl").
 
 init() ->
