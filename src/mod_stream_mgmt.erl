@@ -38,7 +38,7 @@
 
 -include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
--include("p1_queue.hrl").
+-include_lib("p1_utils/include/p1_queue.hrl").
 -include("translate.hrl").
 
 -define(STREAM_MGMT_CACHE, stream_mgmt_cache).
