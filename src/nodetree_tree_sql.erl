@@ -140,16 +140,25 @@ get_node(Nidx) ->
 	    {error, xmpp:err_item_not_found(?T("Node not found"), ejabberd_option:language())}
     end.
 
-get_nodes(Host, _From) ->
-    get_nodes(Host).
-
 get_nodes(Host) ->
+    get_nodes(Host, infinity).
+
+get_nodes(Host, Limit) ->
     H = node_flat_sql:encode_host(Host),
-    case catch
-	ejabberd_sql:sql_query_t(
-	  ?SQL("select @(node)s, @(parent)s, @(plugin)s, @(nodeid)d from pubsub_node "
-	       "where host=%(H)s"))
-    of
+    Query = fun(mssql, _) when is_integer(Limit), Limit>=0 ->
+		    ejabberd_sql:sql_query_t(
+		      ?SQL("select top %(Limit)d @(node)s, @(parent)s, @(plugin)s, @(nodeid)d "
+			   "from pubsub_node where host=%(H)s"));
+	       (_, _) when is_integer(Limit), Limit>=0 ->
+		    ejabberd_sql:sql_query_t(
+		      ?SQL("select @(node)s, @(parent)s, @(plugin)s, @(nodeid)d "
+			   "from pubsub_node where host=%(H)s limit %(Limit)d"));
+	       (_, _) ->
+		    ejabberd_sql:sql_query_t(
+		      ?SQL("select @(node)s, @(parent)s, @(plugin)s, @(nodeid)d "
+			   "from pubsub_node where host=%(H)s"))
+	    end,
+    case ejabberd_sql:sql_query_t(Query) of
 	{selected, RItems} ->
 	    [raw_to_node(Host, Item) || Item <- RItems];
 	_ ->
@@ -178,16 +187,23 @@ get_parentnodes_tree(Host, Node, Level, Acc) ->
 	    Acc
     end.
 
-get_subnodes(Host, Node, _From) ->
-    get_subnodes(Host, Node).
-
-get_subnodes(Host, Node) ->
+get_subnodes(Host, Node, Limit) ->
     H = node_flat_sql:encode_host(Host),
-    case catch
-	ejabberd_sql:sql_query_t(
-	  ?SQL("select @(node)s, @(parent)s, @(plugin)s, @(nodeid)d from pubsub_node "
-	       "where host=%(H)s and parent=%(Node)s"))
-    of
+    Query = fun(mssql, _) when is_integer(Limit), Limit>=0 ->
+		    ejabberd_sql:sql_query_t(
+		      ?SQL("select top %(Limit)d @(node)s, @(parent)s, @(plugin)s, @(nodeid)d "
+			   "from pubsub_node where host=%(H)s and parent=%(Node)s"));
+	       (_, _) when is_integer(Limit), Limit>=0 ->
+		    ejabberd_sql:sql_query_t(
+		      ?SQL("select @(node)s, @(parent)s, @(plugin)s, @(nodeid)d "
+			   "from pubsub_node where host=%(H)s and parent=%(Node)s "
+			   "limit %(Limit)d"));
+	       (_, _) ->
+		    ejabberd_sql:sql_query_t(
+		      ?SQL("select @(node)s, @(parent)s, @(plugin)s, @(nodeid)d "
+			   "from pubsub_node where host=%(H)s and parent=%(Node)s"))
+	    end,
+    case ejabberd_sql:sql_query_t(Query) of
 	{selected, RItems} ->
 	    [raw_to_node(Host, Item) || Item <- RItems];
 	_ ->

@@ -35,7 +35,7 @@
 start(Host) ->
     case extauth:prog_name(Host) of
 	undefined ->
-	    ?ERROR_MSG("Option 'extauth_program' is not set for '~s'",
+	    ?ERROR_MSG("Option 'extauth_program' is not set for '~ts'",
 		       [Host]),
 	    ignore;
 	Prog ->

@@ -50,7 +50,7 @@
 -define(USER_CACHE, shared_roster_ldap_user_cache).
 -define(GROUP_CACHE, shared_roster_ldap_group_cache).
 -define(LDAP_SEARCH_TIMEOUT, 5).    %% Timeout for LDAP search queries in seconds
--define(INVALID_SETTING_MSG, "~s is not properly set! ~s will not function.").
+-define(INVALID_SETTING_MSG, "~ts is not properly set! ~ts will not function.").
 
 -record(state,
 	{host = <<"">>                                :: binary(),

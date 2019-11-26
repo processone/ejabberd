@@ -137,7 +137,7 @@ initialize(Host, Opts) ->
     ContentTypes = build_list_content_types(
                      mod_http_fileserver_opt:content_types(Opts),
                      ?DEFAULT_CONTENT_TYPES),
-    ?DEBUG("Known content types: ~s",
+    ?DEBUG("Known content types: ~ts",
 	   [str:join([[$*, K, " -> ", V] || {K, V} <- ContentTypes],
 		     <<", ">>)]),
     #state{host = Host,
@@ -278,7 +278,7 @@ process(LocalPath, #request{host = Host, auth = Auth, headers = RHeaders} = Requ
 	add_to_log(FileSize, Code, Request#request{host = VHost}),
 	{Code, Headers, Contents}
     catch _:{Why, _} when Why == noproc; Why == invalid_domain; Why == unregistered_route ->
-	    ?DEBUG("Received an HTTP request with Host: ~s, "
+	    ?DEBUG("Received an HTTP request with Host: ~ts, "
 		   "but couldn't find the related "
 		   "ejabberd virtual host", [Host]),
 	    {FileSize1, Code1, Headers1, Contents1} = ?HTTP_ERR_HOST_UNKNOWN,
@@ -342,7 +342,7 @@ serve_index(FileName, [Index | T], CH, DefaultContentType, ContentTypes) ->
     end.
 
 serve_not_modified(FileInfo, FileName, CustomHeaders) ->
-    ?DEBUG("Delivering not modified: ~s", [FileName]),
+    ?DEBUG("Delivering not modified: ~ts", [FileName]),
     {0, 304,
      [{<<"Server">>, <<"ejabberd">>},
       {<<"Last-Modified">>, last_modified(FileInfo)}
@@ -351,7 +351,7 @@ serve_not_modified(FileInfo, FileName, CustomHeaders) ->
 %% Assume the file exists if we got this far and attempt to read it in
 %% and serve it up.
 serve_file(FileInfo, FileName, CustomHeaders, DefaultContentType, ContentTypes) ->
-    ?DEBUG("Delivering: ~s", [FileName]),
+    ?DEBUG("Delivering: ~ts", [FileName]),
     ContentType = content_type(FileName, DefaultContentType,
 			       ContentTypes),
     {FileInfo#file_info.size, 200,
@@ -414,7 +414,7 @@ add_to_log(File, FileSize, Code, Request) ->
     %%   Missing time zone = (`+' | `-') 4*digit
     %%   Missing protocol version: HTTP/1.1
     %% For reference: http://httpd.apache.org/docs/2.2/logs.html
-    io:format(File, "~s - - [~p/~p/~p:~p:~p:~p] \"~s /~s~s\" ~p ~p ~p ~p~n",
+    io:format(File, "~ts - - [~p/~p/~p:~p:~p:~p] \"~ts /~ts~ts\" ~p ~p ~p ~p~n",
 	      [IP, Day, Month, Year, Hour, Minute, Second, Request#request.method, Path, Query, Code,
                FileSize, Referer, UserAgent]).
 

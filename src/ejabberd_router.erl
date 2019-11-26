@@ -92,7 +92,7 @@ route(Packet) ->
     try do_route(Packet)
     catch ?EX_RULE(Class, Reason, St) ->
 	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Failed to route packet:~n~s~n** ~s",
+	    ?ERROR_MSG("Failed to route packet:~n~ts~n** ~ts",
 		       [xmpp:pp(Packet),
 			misc:format_exception(2, Class, Reason, StackTrace)])
     end.
@@ -103,7 +103,7 @@ route(#jid{} = From, #jid{} = To, #xmlel{} = El) ->
 	Pkt -> route(From, To, Pkt)
     catch _:{xmpp_codec, Why} ->
 	    ?ERROR_MSG("Failed to decode xml element ~p when "
-		       "routing from ~s to ~s: ~s",
+		       "routing from ~ts to ~ts: ~ts",
 		       [El, jid:encode(From), jid:encode(To),
 			xmpp:format_error(Why)])
     end;
@@ -171,12 +171,12 @@ register_route(Domain, ServerHost, LocalHint, Pid) ->
 	    case Mod:register_route(LDomain, LServerHost, LocalHint,
 				    get_component_number(LDomain), Pid) of
 		ok ->
-		    ?DEBUG("Route registered: ~s", [LDomain]),
+		    ?DEBUG("Route registered: ~ts", [LDomain]),
 		    monitor_route(LDomain, Pid),
 		    ejabberd_hooks:run(route_registered, [LDomain]),
 		    delete_cache(Mod, LDomain);
 		{error, Err} ->
-		    ?ERROR_MSG("Failed to register route ~s: ~p",
+		    ?ERROR_MSG("Failed to register route ~ts: ~p",
 			       [LDomain, Err])
 	    end
     end.
@@ -201,12 +201,12 @@ unregister_route(Domain, Pid) ->
 	    case Mod:unregister_route(
 		   LDomain, get_component_number(LDomain), Pid) of
 		ok ->
-		    ?DEBUG("Route unregistered: ~s", [LDomain]),
+		    ?DEBUG("Route unregistered: ~ts", [LDomain]),
 		    demonitor_route(LDomain, Pid),
 		    ejabberd_hooks:run(route_unregistered, [LDomain]),
 		    delete_cache(Mod, LDomain);
 		{error, Err} ->
-		    ?ERROR_MSG("Failed to unregister route ~s: ~p",
+		    ?ERROR_MSG("Failed to unregister route ~ts: ~p",
 			       [LDomain, Err])
 	    end
     end.
@@ -355,7 +355,7 @@ handle_info({route, Packet}, State) ->
 handle_info({'DOWN', MRef, _, Pid, Info}, State) ->
     MRefs = maps:filter(
 	      fun({Domain, P}, M) when P == Pid, M == MRef ->
-		      ?DEBUG("Process ~p with route registered to ~s "
+		      ?DEBUG("Process ~p with route registered to ~ts "
 			     "has terminated unexpectedly with reason: ~p",
 			     [P, Domain, Info]),
 		      try unregister_route(Domain, Pid)
@@ -381,7 +381,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 -spec do_route(stanza()) -> ok.
 do_route(OrigPacket) ->
-    ?DEBUG("Route:~n~s", [xmpp:pp(OrigPacket)]),
+    ?DEBUG("Route:~n~ts", [xmpp:pp(OrigPacket)]),
     case ejabberd_hooks:run_fold(filter_packet, OrigPacket, []) of
 	drop ->
 	    ok;

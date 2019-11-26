@@ -128,15 +128,15 @@ process_closed(#{server := LServer} = State, Reason) ->
 		  #{ip := IP} ->
 		      ejabberd_config:may_hide_data(misc:ip_to_list(IP))
 	      end,
-    ?INFO_MSG("Closing inbound s2s connection ~s -> ~s: ~s",
+    ?INFO_MSG("Closing inbound s2s connection ~ts -> ~ts: ~ts",
 	      [RServer, LServer, xmpp_stream_out:format_error(Reason)]),
     stop(State).
 
 %%%===================================================================
 %%% xmpp_stream_in callbacks
 %%%===================================================================
-tls_options(#{tls_options := TLSOpts, server_host := ServerHost}) ->
-    ejabberd_s2s:tls_options(ServerHost, TLSOpts).
+tls_options(#{tls_options := TLSOpts, lserver := LServer, server_host := ServerHost}) ->
+    ejabberd_s2s:tls_options(LServer, ServerHost, TLSOpts).
 
 tls_required(#{server_host := ServerHost}) ->
     ejabberd_s2s:tls_required(ServerHost).
@@ -178,7 +178,7 @@ handle_auth_success(RServer, Mech, _AuthModule,
 		      auth_domains := AuthDomains,
 		      server_host := ServerHost,
 		      lserver := LServer} = State) ->
-    ?INFO_MSG("(~s) Accepted inbound s2s ~s authentication ~s -> ~s (~s)",
+    ?INFO_MSG("(~ts) Accepted inbound s2s ~ts authentication ~ts -> ~ts (~ts)",
 	      [xmpp_socket:pp(Socket), Mech, RServer, LServer,
 	       ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
     State1 = case ejabberd_s2s:allow_host(ServerHost, RServer) of
@@ -195,7 +195,7 @@ handle_auth_failure(RServer, Mech, Reason,
 		    #{socket := Socket, ip := IP,
 		      server_host := ServerHost,
 		      lserver := LServer} = State) ->
-    ?WARNING_MSG("(~s) Failed inbound s2s ~s authentication ~s -> ~s (~s): ~s",
+    ?WARNING_MSG("(~ts) Failed inbound s2s ~ts authentication ~ts -> ~ts (~ts): ~ts",
 		 [xmpp_socket:pp(Socket), Mech, RServer, LServer,
 		  ejabberd_config:may_hide_data(misc:ip_to_list(IP)), Reason]),
     ejabberd_hooks:run_fold(s2s_in_auth_result,
@@ -283,7 +283,7 @@ terminate(Reason, #{auth_domains := AuthDomains,
 		    socket := Socket} = State) ->
     case maps:get(stop_reason, State, undefined) of
 	{tls, _} = Err ->
-	    ?WARNING_MSG("(~s) Failed to secure inbound s2s connection: ~s",
+	    ?WARNING_MSG("(~ts) Failed to secure inbound s2s connection: ~ts",
 			 [xmpp_socket:pp(Socket), xmpp_stream_in:format_error(Err)]);
 	_ ->
 	    ok

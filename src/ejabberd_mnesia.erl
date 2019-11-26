@@ -81,7 +81,7 @@ init([]) ->
 	    Schema = read_schema_file(),
 	    {ok, #state{schema = Schema}};
 	false ->
-	    ?CRITICAL_MSG("Node name mismatch: I'm [~s], "
+	    ?CRITICAL_MSG("Node name mismatch: I'm [~ts], "
 			  "the database is owned by ~p", [MyNode, DbNodes]),
 	    ?CRITICAL_MSG("Either set ERLANG_NODE in ejabberdctl.cfg "
 			  "or change node name in Mnesia", []),
@@ -139,7 +139,7 @@ do_create(Module, Name, TabDef, TabDefs) ->
     end.
 
 reset(Name, TabDef) ->
-    ?INFO_MSG("Deleting Mnesia table '~s'", [Name]),
+    ?INFO_MSG("Deleting Mnesia table '~ts'", [Name]),
     mnesia_op(delete_table, [Name]),
     create(Name, TabDef).
 
@@ -170,7 +170,7 @@ change_table_copy_type(Name, TabDef) ->
 		  [] -> CurrType
 	      end,
     if NewType /= CurrType ->
-	    ?INFO_MSG("Changing Mnesia table '~s' from ~s to ~s",
+	    ?INFO_MSG("Changing Mnesia table '~ts' from ~ts to ~ts",
 		      [Name, CurrType, NewType]),
 	    mnesia_op(change_table_copy_type, [Name, node(), NewType]);
        true ->
@@ -178,7 +178,7 @@ change_table_copy_type(Name, TabDef) ->
     end.
 
 delete_indexes(Name, [Index|Indexes]) ->
-    ?INFO_MSG("Deleting index '~s' from Mnesia table '~s'", [Index, Name]),
+    ?INFO_MSG("Deleting index '~ts' from Mnesia table '~ts'", [Index, Name]),
     case mnesia_op(del_table_index, [Name, Index]) of
 	{atomic, ok} ->
 	    delete_indexes(Name, Indexes);
@@ -189,7 +189,7 @@ delete_indexes(_Name, []) ->
     {atomic, ok}.
 
 add_indexes(Name, [Index|Indexes]) ->
-    ?INFO_MSG("Adding index '~s' to Mnesia table '~s'", [Index, Name]),
+    ?INFO_MSG("Adding index '~ts' to Mnesia table '~ts'", [Index, Name]),
     case mnesia_op(add_table_index, [Name, Index]) of
 	{atomic, ok} ->
 	    add_indexes(Name, Indexes);
@@ -207,7 +207,7 @@ schema(Name, Default, Schema) ->
     case lists:keyfind(Name, 1, Schema) of
 	{_, Custom} ->
 	    TabDefs = merge(Custom, Default),
-	    ?DEBUG("Using custom schema for table '~s': ~p",
+	    ?DEBUG("Using custom schema for table '~ts': ~p",
 		   [Name, TabDefs]),
 	    TabDefs;
 	false ->
@@ -221,7 +221,7 @@ read_schema_file() ->
 	{ok, Y} ->
 	    case econf:validate(validator(), lists:flatten(Y)) of
 		{ok, []} ->
-		    ?WARNING_MSG("Mnesia schema file ~s is empty", [File]),
+		    ?WARNING_MSG("Mnesia schema file ~ts is empty", [File]),
 		    [];
 		{ok, Config} ->
 		    lists:map(
@@ -232,15 +232,15 @@ read_schema_file() ->
 				      end, Opts)}
 		      end, Config);
 		{error, Reason, Ctx} ->
-		    ?ERROR_MSG("Failed to read Mnesia schema from ~s: ~s",
+		    ?ERROR_MSG("Failed to read Mnesia schema from ~ts: ~ts",
 			       [File, econf:format_error(Reason, Ctx)]),
 		    []
 	    end;
 	{error, enoent} ->
-	    ?DEBUG("No custom Mnesia schema file found at ~s", [File]),
+	    ?DEBUG("No custom Mnesia schema file found at ~ts", [File]),
             [];
 	{error, Reason} ->
-	    ?ERROR_MSG("Failed to read Mnesia schema file ~s: ~s",
+	    ?ERROR_MSG("Failed to read Mnesia schema file ~ts: ~ts",
 		       [File, fast_yaml:format_error(Reason)])
     end.
 
@@ -258,7 +258,13 @@ validator() ->
       [unique]).
 
 create(Name, TabDef) ->
-    ?INFO_MSG("Creating Mnesia table '~s'", [Name]),
+    Type = lists:foldl(
+	     fun({ram_copies, _}, _) -> " ram ";
+		({disc_copies, _}, _) -> " disc ";
+		({disc_only_copies, _}, _) -> " disc_only ";
+		(_, Acc) -> Acc
+	     end, " ", TabDef),
+    ?INFO_MSG("Creating Mnesia~tstable '~ts'", [Type, Name]),
     case mnesia_op(create_table, [Name, TabDef]) of
 	{atomic, ok} ->
 	    add_table_copy(Name);
@@ -317,7 +323,7 @@ transform(Module, Name, NewAttrs) ->
 transform(Module, Name, Attrs, Attrs) ->
     case need_transform(Module, Name) of
 	true ->
-	    ?INFO_MSG("Transforming table '~s', this may take a while", [Name]),
+	    ?INFO_MSG("Transforming table '~ts', this may take a while", [Name]),
 	    transform_table(Module, Name);
 	false ->
 	    {atomic, ok}
@@ -370,9 +376,9 @@ transform_fun(Module, Name) ->
 	    try Module:transform(Obj)
 	    catch ?EX_RULE(Class, Reason, St) ->
 		    StackTrace = ?EX_STACK(St),
-		    ?ERROR_MSG("Failed to transform Mnesia table ~s:~n"
+		    ?ERROR_MSG("Failed to transform Mnesia table ~ts:~n"
 			       "** Record: ~p~n"
-			       "** ~s",
+			       "** ~ts",
 			       [Name, Obj,
 				misc:format_exception(2, Class, Reason, StackTrace)]),
 		    erlang:raise(Class, Reason, StackTrace)
@@ -420,7 +426,7 @@ mnesia_op(Fun, Args) ->
 	{atomic, ok} ->
 	    {atomic, ok};
 	Other ->
-	    ?ERROR_MSG("Failure on mnesia ~s ~p: ~p",
+	    ?ERROR_MSG("Failure on mnesia ~ts ~p: ~p",
 		      [Fun, Args, Other]),
 	    Other
     end.
@@ -448,8 +454,8 @@ dump_schema() ->
 	       end, mnesia:system_info(tables)),
     case file:write_file(File, [fast_yaml:encode(Schema), io_lib:nl()]) of
 	ok ->
-	    io:format("Mnesia schema is written to ~s~n", [File]);
+	    io:format("Mnesia schema is written to ~ts~n", [File]);
 	{error, Reason} ->
-	    io:format("Failed to write Mnesia schema to ~s: ~s",
+	    io:format("Failed to write Mnesia schema to ~ts: ~ts",
 		      [File, file:format_error(Reason)])
     end.

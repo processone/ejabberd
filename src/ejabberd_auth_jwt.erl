@@ -30,7 +30,8 @@
 -behaviour(ejabberd_auth).
 
 -export([start/1, stop/1, check_password/4,
-	 store_type/1, plain_password_required/1
+	 store_type/1, plain_password_required/1,
+         user_exists/2, use_cache/1
         ]).
 
 -include_lib("xmpp/include/xmpp.hrl").
@@ -42,7 +43,7 @@
 start(Host) ->
     case ejabberd_option:jwt_key(Host) of
 	undefined ->
-	    ?ERROR_MSG("Option jwt_key is not configured for ~s: "
+	    ?ERROR_MSG("Option jwt_key is not configured for ~ts: "
 		       "JWT authentication won't work", [Host]);
 	_ ->
 	    ok
@@ -54,7 +55,7 @@ plain_password_required(_Host) -> true.
 
 store_type(_Host) -> external.
 
--spec check_password(binary(), binary(), binary(), binary()) -> {ets_cache:tag(), boolean()}.
+-spec check_password(binary(), binary(), binary(), binary()) -> {ets_cache:tag(), boolean() | {stop, boolean()}}.
 check_password(User, AuthzId, Server, Token) ->
     %% MREMOND: Should we move the AuthzId check at a higher level in
     %%          the call stack?
@@ -63,15 +64,29 @@ check_password(User, AuthzId, Server, Token) ->
        true ->
             if Token == <<"">> -> {nocache, false};
                true ->
-                    {nocache, check_jwt_token(User, Server, Token)}
+                    Res = check_jwt_token(User, Server, Token),
+                    Rule = ejabberd_option:jwt_auth_only_rule(Server),
+                    case acl:match_rule(Server, Rule,
+                                        jid:make(User, Server, <<"">>)) of
+                        deny ->
+                            {nocache, Res};
+                        allow ->
+                            {nocache, {stop, Res}}
+                    end
             end
     end.
+
+user_exists(_User, _Host) -> {nocache, false}.
+
+use_cache(_) ->
+    false.
 
 %%%----------------------------------------------------------------------
 %%% Internal functions
 %%%----------------------------------------------------------------------
 check_jwt_token(User, Server, Token) ->
     JWK = ejabberd_option:jwt_key(Server),
+    JidField = ejabberd_option:jwt_jid_field(Server),
     try jose_jwt:verify(JWK, Token) of
         {true, {jose_jwt, Fields}, Signature} ->
             ?DEBUG("jwt verify: ~p - ~p~n", [Fields, Signature]),
@@ -83,7 +98,7 @@ check_jwt_token(User, Server, Token) ->
                     Now = erlang:system_time(second),
                     if
                         Exp > Now ->
-                            case maps:find(<<"jid">>, Fields) of
+                            case maps:find(JidField, Fields) of
                                 error ->
                                     false;
                                 {ok, SJID} ->
@@ -107,6 +122,3 @@ check_jwt_token(User, Server, Token) ->
             false
     end.
 
-%% TODO: auth0 username is defined in 'jid' field, but we should
-%% allow customizing the name of the field containing the username
-%% to adapt to custom claims.

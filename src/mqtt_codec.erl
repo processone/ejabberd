@@ -169,20 +169,20 @@ format_error(bad_varint) ->
 format_error({bad_packet_type, Type}) ->
     format("Unexpected packet type: ~B", [Type]);
 format_error({bad_packet, Name}) ->
-    format("Malformed ~s packet", [string:to_upper(atom_to_list(Name))]);
+    format("Malformed ~ts packet", [string:to_upper(atom_to_list(Name))]);
 format_error({unexpected_packet, Name}) ->
-    format("Unexpected ~s packet", [string:to_upper(atom_to_list(Name))]);
+    format("Unexpected ~ts packet", [string:to_upper(atom_to_list(Name))]);
 format_error({bad_reason_code, Name, Code}) ->
-    format("Unexpected reason code in ~s code: ~B",
+    format("Unexpected reason code in ~ts code: ~B",
            [string:to_upper(atom_to_list(Name)), Code]);
 format_error({bad_properties, Name}) ->
-    format("Malformed properties of ~s packet",
+    format("Malformed properties of ~ts packet",
            [string:to_upper(atom_to_list(Name))]);
 format_error({bad_property, Pkt, Prop}) ->
-    format("Malformed property ~s of ~s packet",
+    format("Malformed property ~ts of ~ts packet",
            [Prop, string:to_upper(atom_to_list(Pkt))]);
 format_error({duplicated_property, Pkt, Prop}) ->
-    format("Property ~s is included more than once into ~s packet",
+    format("Property ~ts is included more than once into ~ts packet",
            [Prop, string:to_upper(atom_to_list(Pkt))]);
 format_error(bad_will_topic_or_message) ->
     "Malformed Will Topic or Will Message";
@@ -191,7 +191,7 @@ format_error(bad_connect_username_or_password) ->
 format_error(bad_publish_id_or_payload) ->
     "Malformed id or payload of PUBLISH packet";
 format_error({bad_topic_filters, Name}) ->
-    format("Malformed topic filters of ~s packet",
+    format("Malformed topic filters of ~ts packet",
 	   [string:to_upper(atom_to_list(Name))]);
 format_error({bad_qos, Q}) ->
     format_got_expected("Malformed QoS value", Q, "0, 1 or 2");
@@ -1282,7 +1282,7 @@ format(Fmt, Args) ->
 format_got_expected(Txt, Got, Expected) ->
     FmtGot = term_format(Got),
     FmtExp = term_format(Expected),
-    format("~s: " ++ FmtGot ++ " (expected: " ++ FmtExp ++ ")",
+    format("~ts: " ++ FmtGot ++ " (expected: " ++ FmtExp ++ ")",
            [Txt, Got, Expected]).
 
 term_format(I) when is_integer(I) ->
@@ -1293,7 +1293,7 @@ term_format(A) when is_atom(A) ->
     term_format(atom_to_list(A));
 term_format(T) ->
     case io_lib:printable_latin1_list(T) of
-        true -> "~s";
+        true -> "~ts";
         false -> "~w"
     end.
 

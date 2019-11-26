@@ -38,6 +38,7 @@
 -author('christophe.romain@process-one.net').
 
 -include_lib("stdlib/include/qlc.hrl").
+-include_lib("stdlib/include/ms_transform.hrl").
 
 -include("pubsub.hrl").
 -include_lib("xmpp/include/xmpp.hrl").
@@ -81,11 +82,21 @@ get_node(Nidx) ->
 	_ -> {error, xmpp:err_item_not_found(?T("Node not found"), ejabberd_option:language())}
     end.
 
-get_nodes(Host, _From) ->
-    get_nodes(Host).
-
 get_nodes(Host) ->
-    mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, _ = '_'}).
+    get_nodes(Host, infinity).
+
+get_nodes(Host, infinity) ->
+    mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, _ = '_'});
+get_nodes(Host, Limit) ->
+    case mnesia:select(
+	   pubsub_node,
+	   ets:fun2ms(
+	     fun(#pubsub_node{nodeid = {H, _}} = Node) when H == Host ->
+		     Node
+	     end), Limit, read) of
+	'$end_of_table' -> [];
+	{Nodes, _} -> Nodes
+    end.
 
 get_parentnodes(Host, Node, _From) ->
     case catch mnesia:read({pubsub_node, {Host, Node}}) of
@@ -109,25 +120,40 @@ get_parentnodes_tree(Host, Node, Level, Acc) ->
 	    Acc
     end.
 
-get_subnodes(Host, Node, _From) ->
-    get_subnodes(Host, Node).
-
-get_subnodes(Host, <<>>) ->
-    Q = qlc:q([N
-		|| #pubsub_node{nodeid = {NHost, _},
-			parents = Parents} =
-		    N
-		    <- mnesia:table(pubsub_node),
-		    Host == NHost, Parents == []]),
-    qlc:e(Q);
-get_subnodes(Host, Node) ->
+get_subnodes(Host, <<>>, infinity) ->
+    mnesia:match_object(#pubsub_node{nodeid = {Host, '_'}, parents = [], _ = '_'});
+get_subnodes(Host, <<>>, Limit) ->
+    case mnesia:select(
+	   pubsub_node,
+	   ets:fun2ms(
+	     fun(#pubsub_node{nodeid = {H, _}, parents = []} = Node) when H == Host ->
+		     Node
+	     end), Limit, read) of
+	'$end_of_table' -> [];
+	{Nodes, _} -> Nodes
+    end;
+get_subnodes(Host, Node, infinity) ->
     Q = qlc:q([N
 		|| #pubsub_node{nodeid = {NHost, _},
 			parents = Parents} =
 		    N
 		    <- mnesia:table(pubsub_node),
 		    Host == NHost, lists:member(Node, Parents)]),
-    qlc:e(Q).
+    qlc:e(Q);
+get_subnodes(Host, Node, Limit) ->
+    case mnesia:select(
+	   pubsub_node,
+	   ets:fun2ms(
+	     fun(#pubsub_node{nodeid = {H, _}, parents = Ps} = N)
+		   when H == Host andalso Ps /= [] -> N
+	     end), Limit, read) of
+	'$end_of_table' -> [];
+	{Nodes, _} ->
+	    lists:filter(
+	      fun(#pubsub_node{parents = Parents}) ->
+		      lists:member(Node, Parents)
+	      end, Nodes)
+    end.
 
 get_subnodes_tree(Host, Node, _From) ->
     get_subnodes_tree(Host, Node).

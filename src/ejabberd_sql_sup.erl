@@ -52,9 +52,12 @@ start(Host) ->
 		     modules => [?MODULE]},
 	    case supervisor:start_child(ejabberd_db_sup, Spec) of
 		{ok, _} -> ok;
-		{error, {already_started, _}} -> ok;
+		{error, {already_started, Pid}} ->
+                    %% Wait for the supervisor to fully start
+                    _ = supervisor:count_children(Pid),
+                    ok;
 		{error, Why} = Err ->
-		    ?ERROR_MSG("Failed to start ~s: ~p", [?MODULE, Why]),
+		    ?ERROR_MSG("Failed to start ~ts: ~p", [?MODULE, Why]),
 		    Err
 	    end
     end.
@@ -195,7 +198,7 @@ create_sqlite_tables(DB) ->
             [ok = sqlite3:sql_exec(DB, Q) || Q <- Qs],
             ok = sqlite3:sql_exec(DB, "commit");
         {error, Reason} ->
-            ?WARNING_MSG("Failed to read SQLite schema file: ~s",
+            ?WARNING_MSG("Failed to read SQLite schema file: ~ts",
 			 [file:format_error(Reason)])
     end.
 

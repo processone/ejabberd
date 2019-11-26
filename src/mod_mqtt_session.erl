@@ -129,26 +129,26 @@ format_error({payload_format_invalid, will}) ->
 format_error({payload_format_invalid, publish}) ->
     "PUBLISH payload format doesn't match its indicator";
 format_error({peer_disconnected, Code, <<>>}) ->
-    format("Peer disconnected with reason: ~s",
+    format("Peer disconnected with reason: ~ts",
            [mqtt_codec:format_reason_code(Code)]);
 format_error({peer_disconnected, Code, Reason}) ->
-    format("Peer disconnected with reason: ~s (~s)", [Reason, Code]);
+    format("Peer disconnected with reason: ~ts (~ts)", [Reason, Code]);
 format_error({replaced, Pid}) ->
-    format("Replaced by ~p at ~s", [Pid, node(Pid)]);
+    format("Replaced by ~p at ~ts", [Pid, node(Pid)]);
 format_error({resumed, Pid}) ->
-    format("Resumed by ~p at ~s", [Pid, node(Pid)]);
+    format("Resumed by ~p at ~ts", [Pid, node(Pid)]);
 format_error({unexpected_packet, Name}) ->
-    format("Unexpected ~s packet", [string:to_upper(atom_to_list(Name))]);
+    format("Unexpected ~ts packet", [string:to_upper(atom_to_list(Name))]);
 format_error({tls, Reason}) ->
-    format("TLS failed: ~s", [format_tls_error(Reason)]);
+    format("TLS failed: ~ts", [format_tls_error(Reason)]);
 format_error({socket, A}) ->
-    format("Connection failed: ~s", [format_inet_error(A)]);
+    format("Connection failed: ~ts", [format_inet_error(A)]);
 format_error({code, Code}) ->
-    format("Protocol error: ~s", [mqtt_codec:format_reason_code(Code)]);
+    format("Protocol error: ~ts", [mqtt_codec:format_reason_code(Code)]);
 format_error({auth, Code}) ->
-    format("Authentication failed: ~s", [mqtt_codec:format_reason_code(Code)]);
+    format("Authentication failed: ~ts", [mqtt_codec:format_reason_code(Code)]);
 format_error({codec, CodecError}) ->
-    format("Protocol error: ~s", [mqtt_codec:format_error(CodecError)]);
+    format("Protocol error: ~ts", [mqtt_codec:format_error(CodecError)]);
 format_error(A) when is_atom(A) ->
     atom_to_list(A);
 format_error(Reason) ->
@@ -175,7 +175,7 @@ handle_call({get_state, Pid}, From, State) ->
         {stop, Status, State1} ->
             {stop, Status, State1#state{stop_reason = {replaced, Pid}}};
         {noreply, State1, _} ->
-            ?DEBUG("Transferring MQTT session state to ~p at ~s", [Pid, node(Pid)]),
+            ?DEBUG("Transferring MQTT session state to ~p at ~ts", [Pid, node(Pid)]),
             Q1 = p1_queue:file_to_ram(State1#state.queue),
             p1_server:reply(From, {ok, State1#state{queue = Q1}}),
             SessionExpiry = State1#state.session_expiry,
@@ -214,7 +214,7 @@ handle_cast(Msg, State) ->
 handle_info(Msg, #state{stop_reason = {resumed, Pid} = Reason} = State) ->
     case Msg of
 	{#publish{}, _} ->
-	    ?DEBUG("Relaying delayed publish to ~p at ~s", [Pid, node(Pid)]),
+	    ?DEBUG("Relaying delayed publish to ~p at ~ts", [Pid, node(Pid)]),
 	    ejabberd_cluster:send(Pid, Msg),
 	    noreply(State);
 	timeout ->
@@ -237,7 +237,7 @@ handle_info({tcp, TCPSock, TCPData},
 	{ok, Data} ->
 	    case mqtt_codec:decode(Codec, Data) of
 		{ok, Pkt, Codec1} ->
-		    ?DEBUG("Got MQTT packet:~n~s", [pp(Pkt)]),
+		    ?DEBUG("Got MQTT packet:~n~ts", [pp(Pkt)]),
 		    State1 = State#state{codec = Codec1},
 		    case handle_packet(Pkt, State1) of
 			{ok, State2} ->
@@ -260,7 +260,7 @@ handle_info({tcp_closed, _Sock}, State) ->
     ?DEBUG("MQTT connection reset by peer", []),
     stop(State, {socket, closed});
 handle_info({tcp_error, _Sock, Reason}, State) ->
-    ?DEBUG("MQTT connection error: ~s", [format_inet_error(Reason)]),
+    ?DEBUG("MQTT connection error: ~ts", [format_inet_error(Reason)]),
     stop(State, {socket, Reason});
 handle_info(timeout, #state{socket = Socket} = State) ->
     case Socket of
@@ -291,13 +291,13 @@ handle_packet(#publish{} = Pkt, State) ->
 handle_packet(#puback{id = ID}, #state{in_flight = #publish{qos = 1, id = ID}} = State) ->
     resend(State#state{in_flight = undefined});
 handle_packet(#puback{id = ID, code = Code}, State) ->
-    ?DEBUG("Ignoring unexpected PUBACK with id=~B and code '~s'", [ID, Code]),
+    ?DEBUG("Ignoring unexpected PUBACK with id=~B and code '~ts'", [ID, Code]),
     {ok, State};
 handle_packet(#pubrec{id = ID, code = Code},
               #state{in_flight = #publish{qos = 2, id = ID}} = State) ->
     case mqtt_codec:is_error_code(Code) of
         true ->
-            ?DEBUG("Got PUBREC with error code '~s', "
+            ?DEBUG("Got PUBREC with error code '~ts', "
                    "aborting acknowledgement", [Code]),
             resend(State#state{in_flight = undefined});
         false ->
@@ -307,13 +307,13 @@ handle_packet(#pubrec{id = ID, code = Code},
 handle_packet(#pubrec{id = ID, code = Code}, State) ->
     case mqtt_codec:is_error_code(Code) of
         true ->
-            ?DEBUG("Ignoring unexpected PUBREC with id=~B and code '~s'",
+            ?DEBUG("Ignoring unexpected PUBREC with id=~B and code '~ts'",
                    [ID, Code]),
             {ok, State};
         false ->
             Code1 = 'packet-identifier-not-found',
             ?DEBUG("Unexpected PUBREC with id=~B, "
-                   "sending PUBREL with error code '~s'", [ID, Code1]),
+                   "sending PUBREL with error code '~ts'", [ID, Code1]),
             send(State, #pubrel{id = ID, code = Code1})
     end;
 handle_packet(#pubcomp{id = ID}, #state{in_flight = #pubrel{id = ID}} = State) ->
@@ -329,7 +329,7 @@ handle_packet(#pubrel{id = ID}, State) ->
         error ->
             Code = 'packet-identifier-not-found',
             ?DEBUG("Unexpected PUBREL with id=~B, "
-                   "sending PUBCOMP with error code '~s'", [ID, Code]),
+                   "sending PUBCOMP with error code '~ts'", [ID, Code]),
             Pubcomp = #pubcomp{id = ID, code = Code},
             send(State, Pubcomp)
     end;
@@ -357,7 +357,7 @@ handle_packet(#disconnect{code = Code, properties = Props},
              end,
     {error, State2, {peer_disconnected, Code, Reason}};
 handle_packet(Pkt, State) ->
-    ?WARNING_MSG("Unexpected packet:~n~s~n** when state:~n~s",
+    ?WARNING_MSG("Unexpected packet:~n~ts~n** when state:~n~ts",
 		 [pp(Pkt), pp(State)]),
     {error, State, {unexpected_packet, element(1, Pkt)}}.
 
@@ -462,13 +462,13 @@ open_session(State, JID, _CleanStart = false) ->
 					 subscriptions = State2#state.subscriptions,
 					 id = State2#state.id,
 					 in_flight = State2#state.in_flight},
-		    ?DEBUG("Resumed state from ~p at ~s:~n~s",
+		    ?DEBUG("Resumed state from ~p at ~ts:~n~ts",
 			   [Pid, node(Pid), pp(State3)]),
 		    register_session(State3, JID, Pid);
 		{error, Why} ->
 		    {error, State, Why}
 	    catch exit:{Why, {p1_server, _, _}} ->
-		    ?WARNING_MSG("Failed to copy session state from ~p at ~s: ~s",
+		    ?WARNING_MSG("Failed to copy session state from ~p at ~ts: ~ts",
 				 [Pid, node(Pid), format_exit_reason(Why)]),
 		    register_session(State, JID, undefined)
 	    end;
@@ -488,7 +488,7 @@ register_session(#state{peername = IP} = State, JID, Parent) ->
 	ok ->
 	    case resubscribe(USR, State#state.subscriptions) of
 		ok ->
-		    ?INFO_MSG("~s for ~s from ~s",
+		    ?INFO_MSG("~ts for ~ts from ~ts",
 			      [if is_pid(Parent) ->
 				       io_lib:format(
 					 "Reopened MQTT session via ~p",
@@ -511,14 +511,14 @@ register_session(#state{peername = IP} = State, JID, Parent) ->
 		    {error, State#state{session_expiry = 0}, Why}
 	    end;
 	{error, Reason} ->
-	    ?ERROR_MSG("Failed to register MQTT session for ~s from ~s: ~s",
+	    ?ERROR_MSG("Failed to register MQTT session for ~ts from ~ts: ~ts",
 		       err_args(JID, IP, Reason)),
 	    {error, State, Reason}
     end.
 
 -spec unregister_session(state(), error_reason()) -> ok.
 unregister_session(#state{jid = #jid{} = JID, peername = IP} = State, Reason) ->
-    Msg = "Closing MQTT session for ~s from ~s: ~s",
+    Msg = "Closing MQTT session for ~ts from ~ts: ~ts",
     case Reason of
         {Tag, _} when Tag == replaced; Tag == resumed ->
             ?DEBUG(Msg, err_args(JID, IP, Reason));
@@ -540,7 +540,7 @@ unregister_session(#state{jid = #jid{} = JID, peername = IP} = State, Reason) ->
 	ok -> ok;
 	{error, Why} ->
             ?ERROR_MSG(
-               "Failed to close MQTT session for ~s from ~s: ~s",
+               "Failed to close MQTT session for ~ts from ~ts: ~ts",
                err_args(JID, IP, Why))
     end;
 unregister_session(_, _) ->
@@ -677,12 +677,17 @@ set_will_properties(State, _) ->
 -spec get_connack_properties(state(), connect()) -> properties().
 get_connack_properties(#state{session_expiry = SessExp, jid = JID},
                        #connect{client_id = ClientID,
-                                keep_alive = KeepAlive}) ->
+                                keep_alive = KeepAlive,
+				properties = Props}) ->
     Props1 = case ClientID of
                  <<>> -> #{assigned_client_identifier => JID#jid.lresource};
                  _ -> #{}
              end,
-    Props1#{session_expiry_interval => SessExp div 1000,
+    Props2 = case maps:find(authentication_method, Props) of
+		 {ok, Method} -> Props1#{authentication_method => Method};
+		 error -> Props1
+	     end,
+    Props2#{session_expiry_interval => SessExp div 1000,
             shared_subscription_available => false,
             topic_alias_maximum => topic_alias_maximum(JID#jid.lserver),
             server_keep_alive => KeepAlive}.
@@ -823,7 +828,7 @@ send(State, #publish{} = Pkt) ->
                     State1 = State#state{in_flight = Dup},
                     {ok, do_send(State1, Pkt1)};
                 false ->
-                    ?DEBUG("Queueing packet:~n~s~n** when state:~n~s",
+                    ?DEBUG("Queueing packet:~n~ts~n** when state:~n~ts",
                            [pp(Pkt), pp(State)]),
                     try p1_queue:in(Pkt, State#state.queue) of
                         Q ->
@@ -863,7 +868,7 @@ resend(#state{in_flight = Pkt} = State) ->
 
 -spec do_send(state(), mqtt_packet()) -> state().
 do_send(#state{socket = {SockMod, Sock} = Socket} = State, Pkt) ->
-    ?DEBUG("Send MQTT packet:~n~s", [pp(Pkt)]),
+    ?DEBUG("Send MQTT packet:~n~ts", [pp(Pkt)]),
     Data = mqtt_codec:encode(State#state.version, Pkt),
     Res = SockMod:send(Sock, Data),
     check_sock_result(Socket, Res),
@@ -1121,7 +1126,7 @@ is_expired(#publish{meta = Meta, properties = Props} = Pkt) ->
                     Props1 = Props#{message_expiry_interval => Left},
                     {false, Pkt#publish{properties = Props1}};
                true ->
-                    ?DEBUG("Dropping expired packet:~n~s", [pp(Pkt)]),
+                    ?DEBUG("Dropping expired packet:~n~ts", [pp(Pkt)]),
                     true
             end
     end.
@@ -1169,24 +1174,41 @@ parse_credentials(JID, ClientID) ->
     end.
 
 -spec authenticate(connect(), peername()) -> {ok, jid:jid()} | {error, reason_code()}.
-authenticate(#connect{password = Pass} = Pkt, IP) ->
+authenticate(Pkt, IP) ->
+    case authenticate(Pkt) of
+	{ok, JID, AuthModule} ->
+	    ?INFO_MSG("Accepted MQTT authentication for ~ts by ~s backend from ~s",
+		      [jid:encode(JID),
+		       ejabberd_auth:backend_type(AuthModule),
+		       ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
+	    {ok, JID};
+	{error, _} = Err ->
+	    Err
+    end.
+
+-spec authenticate(connect()) -> {ok, jid:jid(), module()} | {error, reason_code()}.
+authenticate(#connect{password = Pass, properties = Props} = Pkt) ->
     case parse_credentials(Pkt) of
 	{ok, #jid{luser = LUser, lserver = LServer} = JID} ->
-	    case ejabberd_auth:check_password_with_authmodule(
-                   LUser, <<>>, LServer, Pass) of
-		{true, AuthModule} ->
-                    ?INFO_MSG(
-                       "Accepted MQTT authentication for ~s "
-                       "by ~s backend from ~s",
-                       [jid:encode(JID),
-                        ejabberd_auth:backend_type(AuthModule),
-                        ejabberd_config:may_hide_data(misc:ip_to_list(IP))]),
-                    {ok, JID};
-                false ->
-                    {error, 'not-authorized'}
-            end;
-        {error, _} = Err ->
-            Err
+	    case maps:find(authentication_method, Props) of
+		{ok, <<"X-OAUTH2">>} ->
+		    Token = maps:get(authentication_data, Props, <<>>),
+		    case ejabberd_oauth:check_token(
+			   LUser, LServer, [<<"sasl_auth">>], Token) of
+			true -> {ok, JID, ejabberd_oauth};
+			_ -> {error, 'not-authorized'}
+		    end;
+		{ok, _} ->
+		    {error, 'bad-authentication-method'};
+		error ->
+		    case ejabberd_auth:check_password_with_authmodule(
+			   LUser, <<>>, LServer, Pass) of
+			{true, AuthModule} -> {ok, JID, AuthModule};
+			false -> {error, 'not-authorized'}
+		    end
+	    end;
+	{error, _} = Err ->
+	    Err
     end.
 
 %%%===================================================================
@@ -1277,10 +1299,10 @@ publish_will(#state{will = #publish{} = Will,
 		    jid = #jid{} = JID} = State) ->
     case publish(State, Will) of
         {ok, _} ->
-            ?DEBUG("Will of ~s has been published to ~s",
+            ?DEBUG("Will of ~ts has been published to ~ts",
                    [jid:encode(JID), Will#publish.topic]);
         {error, Why} ->
-            ?WARNING_MSG("Failed to publish will of ~s to ~s: ~s",
+            ?WARNING_MSG("Failed to publish will of ~ts to ~ts: ~ts",
                          [jid:encode(JID), Will#publish.topic,
                           format_error(Why)])
     end,
@@ -1321,8 +1343,8 @@ err_args(JID, IP, Reason) ->
 -spec log_disconnection(state(), error_reason()) -> ok.
 log_disconnection(#state{jid = JID, peername = IP}, Reason) ->
     Msg = case JID of
-              undefined -> "Rejected MQTT connection from ~s: ~s";
-              _ -> "Closing MQTT connection for ~s from ~s: ~s"
+              undefined -> "Rejected MQTT connection from ~ts: ~ts";
+              _ -> "Closing MQTT connection for ~ts from ~ts: ~ts"
           end,
     case Reason of
         {Tag, _} when Tag == replaced; Tag == resumed; Tag == socket ->

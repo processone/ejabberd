@@ -40,7 +40,9 @@ opt_type(acl) ->
 opt_type(acme) ->
     econf:options(
       #{ca_url => econf:url(),
-	contact => econf:binary("^[a-zA-Z]+:[^:]+$")},
+	contact => econf:list_or_single(econf:binary("^[a-zA-Z]+:[^:]+$")),
+	auto => econf:bool(),
+	cert_type => econf:enum([ec, rsa])},
       [unique, {return, map}]);
 opt_type(allow_contrib_modules) ->
     econf:bool();
@@ -51,12 +53,7 @@ opt_type(anonymous_protocol) ->
 opt_type(api_permissions) ->
     ejabberd_access_permissions:validator();
 opt_type(append_host_config) ->
-    econf:map(
-      econf:and_then(
-	econf:domain(),
-	econf:enum(ejabberd_config:get_option(hosts))),
-      validator(),
-      [unique]);
+    opt_type(host_config);
 opt_type(auth_cache_life_time) ->
     econf:timeout(second, infinity);
 opt_type(auth_cache_missed) ->
@@ -72,13 +69,19 @@ opt_type(auth_use_cache) ->
 opt_type(c2s_cafile) ->
     econf:file();
 opt_type(c2s_ciphers) ->
-    econf:binary();
+    fun(L) when is_list(L) ->
+            (econf:and_then(
+               econf:list(econf:binary(), [unique]),
+               concat_binary($:)))(L);
+       (B) ->
+            (econf:binary())(B)
+    end;
 opt_type(c2s_dhfile) ->
     econf:file();
 opt_type(c2s_protocol_options) ->
     econf:and_then(
       econf:list(econf:binary(), [unique]),
-      fun concat_tls_protocol_options/1);
+      concat_binary($|));
 opt_type(c2s_tls_compression) ->
     econf:bool();
 opt_type(ca_file) ->
@@ -142,12 +145,14 @@ opt_type(fqdn) ->
 opt_type(hide_sensitive_log_data) ->
     econf:bool();
 opt_type(host_config) ->
-    econf:map(
+    econf:and_then(
       econf:and_then(
-	econf:domain(),
-	econf:enum(ejabberd_config:get_option(hosts))),
-      validator(),
-      [unique]);
+        econf:map(econf:domain(), econf:list(econf:any())),
+        fun econf:group_dups/1),
+      econf:map(
+	econf:enum(ejabberd_config:get_option(hosts)),
+        validator(),
+        [unique]));
 opt_type(hosts) ->
     econf:non_empty(econf:list(econf:domain(), [unique]));
 opt_type(include_config_file) ->
@@ -196,18 +201,19 @@ opt_type(ldap_uids) ->
       econf:map(econf:binary(), econf:binary(), [unique]));
 opt_type(listen) ->
     ejabberd_listener:validator();
-opt_type(log_rate_limit) ->
-    econf:non_neg_int();
 opt_type(log_rotate_count) ->
     econf:non_neg_int();
-opt_type(log_rotate_date) ->
-    econf:string("^(\\$((D(([0-9])|(1[0-9])|(2[0-3])))|"
-		 "(((W[0-6])|(M(([1-2][0-9])|(3[0-1])|([1-9]))))"
-		 "(D(([0-9])|(1[0-9])|(2[0-3])))?)))?$");
 opt_type(log_rotate_size) ->
-    econf:non_neg_int();
+    econf:pos_int(infinity);
 opt_type(loglevel) ->
-    econf:int(0, 5);
+    fun(N) when is_integer(N) ->
+	    (econf:and_then(
+	       econf:int(0, 5),
+	       fun ejabberd_logger:convert_loglevel/1))(N);
+       (Level) ->
+	    (econf:enum([none, emergency, alert, critical,
+			 error, warning, notice, info, debug]))(Level)
+    end;
 opt_type(max_fsm_queue) ->
     econf:pos_int();
 opt_type(modules) ->
@@ -229,9 +235,11 @@ opt_type(oauth_cache_size) ->
 opt_type(oauth_db_type) ->
     econf:db_type(ejabberd_oauth);
 opt_type(oauth_expire) ->
-    econf:non_neg_int();
+    econf:timeout(second);
 opt_type(oauth_use_cache) ->
     econf:bool();
+opt_type(oauth_client_id_check) ->
+    econf:enum([allow, deny, db]);
 opt_type(oom_killer) ->
     econf:bool();
 opt_type(oom_queue) ->
@@ -297,7 +305,7 @@ opt_type(s2s_access) ->
 opt_type(s2s_cafile) ->
     econf:pem();
 opt_type(s2s_ciphers) ->
-    econf:binary();
+    opt_type(c2s_ciphers);
 opt_type(s2s_dhfile) ->
     econf:file();
 opt_type(s2s_dns_retries) ->
@@ -307,9 +315,7 @@ opt_type(s2s_dns_timeout) ->
 opt_type(s2s_max_retry_delay) ->
     econf:timeout(second);
 opt_type(s2s_protocol_options) ->
-    econf:and_then(
-      econf:list(econf:binary(), [unique]),
-      fun concat_tls_protocol_options/1);
+    opt_type(c2s_protocol_options);
 opt_type(s2s_queue_type) ->
     econf:enum([ram, file]);
 opt_type(s2s_timeout) ->
@@ -402,22 +408,39 @@ opt_type(jwt_key) ->
                   {ok, Data} ->
 		      try jose_jwk:from_binary(Data) of
 			  {error, _} -> econf:fail({bad_jwt_key, Path});
-			  Ret -> Ret
+			  JWK ->
+                              case jose_jwk:to_map(JWK) of
+                                  {_, #{<<"keys">> := [Key]}} ->
+                                      jose_jwk:from_map(Key);
+                                  {_, #{<<"keys">> := [_|_]}} ->
+                                      econf:fail({bad_jwt_key_set, Path});
+				  {_, #{<<"keys">> := _}} ->
+				      econf:fail({bad_jwt_key, Path});
+                                  _ ->
+                                      JWK
+                              end
 		      catch _:_ ->
 			      econf:fail({bad_jwt_key, Path})
 		      end;
                   {error, Reason} ->
                       econf:fail({read_file, Reason, Path})
               end
-      end).
+      end);
+opt_type(jwt_jid_field) ->
+    econf:binary();
+opt_type(jwt_auth_only_rule) ->
+    econf:atom().
 
 %% We only define the types of options that cannot be derived
 %% automatically by tools/opt_type.sh script
 -spec options() -> [{s2s_protocol_options, undefined | binary()} |
 		    {c2s_protocol_options, undefined | binary()} |
+                    {s2s_ciphers, undefined | binary()} |
+                    {c2s_ciphers, undefined | binary()} |
 		    {websocket_origin, [binary()]} |
 		    {disable_sasl_mechanisms, [binary()]} |
 		    {s2s_zlib, boolean()} |
+		    {loglevel, ejabberd_logger:loglevel()} |
 		    {listen, [ejabberd_listener:listener()]} |
 		    {modules, [{module(), gen_mod:opts(), integer()}]} |
 		    {ldap_uids, [{binary(), binary()}]} |
@@ -437,7 +460,7 @@ opt_type(jwt_key) ->
 options() ->
     [%% Top-priority options
      hosts,
-     {loglevel, 4},
+     {loglevel, info},
      {cache_life_time, timer:seconds(3600)},
      {cache_missed, true},
      {cache_size, 1000},
@@ -521,10 +544,8 @@ options() ->
      {ldap_tls_verify, false},
      {ldap_uids, [{<<"uid">>, <<"%u">>}]},
      {listen, []},
-     {log_rate_limit, undefined},
-     {log_rotate_count, undefined},
-     {log_rotate_date, undefined},
-     {log_rotate_size, undefined},
+     {log_rotate_count, 1},
+     {log_rotate_size, 10*1024*1024},
      {max_fsm_queue, undefined},
      {modules, []},
      {negotiation_timeout, timer:seconds(30)},
@@ -542,6 +563,7 @@ options() ->
      {oauth_expire, 4294967},
      {oauth_use_cache,
       fun(Host) -> ejabberd_config:get_option({use_cache, Host}) end},
+     {oauth_client_id_check, allow},
      {oom_killer, true},
      {oom_queue, 10000},
      {oom_watermark, 80},
@@ -635,7 +657,9 @@ options() ->
      {websocket_origin, []},
      {websocket_ping_interval, timer:seconds(60)},
      {websocket_timeout, timer:minutes(5)},
-     {jwt_key, undefined}].
+     {jwt_key, undefined},
+     {jwt_jid_field, <<"jid">>},
+     {jwt_auth_only_rule, none}].
 
 -spec globals() -> [atom()].
 globals() ->
@@ -661,9 +685,7 @@ globals() ->
      host_config,
      listen,
      loglevel,
-     log_rate_limit,
      log_rotate_count,
-     log_rotate_date,
      log_rotate_size,
      negotiation_timeout,
      net_ticktime,
@@ -712,9 +734,11 @@ globals() ->
 validator() ->
     Disallowed = ejabberd_config:globals(),
     {Validators, Required} = ejabberd_config:validators(Disallowed),
-    econf:options(
-      Validators,
-      [{disallowed, Required ++ Disallowed}, unique]).
+    econf:and_then(
+      fun econf:group_dups/1,
+      econf:options(
+        Validators,
+        [{disallowed, Required ++ Disallowed}, unique])).
 
 -spec fqdn(global | binary()) -> [binary()].
 fqdn(global) ->
@@ -731,6 +755,6 @@ fqdn(global) ->
 fqdn(_) ->
     ejabberd_config:get_option(fqdn).
 
--spec concat_tls_protocol_options([binary()]) -> binary().
-concat_tls_protocol_options(Opts) ->
-    str:join(Opts, <<"|">>).
+-spec concat_binary(char()) -> fun(([binary()]) -> binary()).
+concat_binary(C) ->
+    fun(Opts) -> str:join(Opts, <<C>>) end.

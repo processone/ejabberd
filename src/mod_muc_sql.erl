@@ -97,7 +97,7 @@ change_room(Host, Room, {del_subscription, JID}) ->
     ejabberd_sql:sql_query_t(?SQL("delete from muc_room_subscribers where "
 				  "room=%(Room)s and host=%(Host)s and jid=%(SJID)s"));
 change_room(Host, Room, Change) ->
-    ?ERROR_MSG("Unsupported change on room ~s@~s: ~p", [Room, Host, Change]).
+    ?ERROR_MSG("Unsupported change on room ~ts@~ts: ~p", [Room, Host, Change]).
 
 restore_room(LServer, Host, Name) ->
     case catch ejabberd_sql:sql_query(

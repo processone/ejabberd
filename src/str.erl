@@ -286,7 +286,7 @@ suffix(B1, B2) ->
 -spec format(io:format(), list()) -> binary().
 
 format(Format, Args) ->
-    iolist_to_binary(io_lib:format(Format, Args)).
+    unicode:characters_to_binary(io_lib:format(Format, Args)).
 
 
 -spec sha(iodata()) -> binary().

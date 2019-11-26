@@ -155,6 +155,6 @@ parse_element(XML) ->
             {ok, El};
         _ ->
             ?ERROR_MSG("Malformed XML element in SQL table "
-                       "'motd' for username='': ~s", [XML]),
+                       "'motd' for username='': ~ts", [XML]),
             {error, db_failure}
     end.

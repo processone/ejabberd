@@ -548,7 +548,7 @@ add_user_to_group(Host, US, Group) ->
     case lists:member(LServer, ejabberd_config:get_option(hosts)) of
 	true -> add_user_to_group2(Host, US, Group);
 	false ->
-	    ?INFO_MSG("Attempted adding to shared roster user of inexistent vhost ~s", [LServer]),
+	    ?INFO_MSG("Attempted adding to shared roster user of inexistent vhost ~ts", [LServer]),
 	    error
     end.
 add_user_to_group2(Host, US, Group) ->

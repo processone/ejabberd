@@ -98,14 +98,14 @@ update(Server, JID, Dir) ->
 		 write(Dir, R#pres_counter{logged = true}),
 		 case Dir of
 		   in ->
-		       ?WARNING_MSG("User ~s is being flooded, ignoring received "
+		       ?WARNING_MSG("User ~ts is being flooded, ignoring received "
 				    "presence subscriptions",
 				    [jid:encode(JID)]);
 		   out ->
 		       IP = ejabberd_sm:get_user_ip(JID#jid.luser,
 						    JID#jid.lserver,
 						    JID#jid.lresource),
-		       ?WARNING_MSG("Flooder detected: ~s, on IP: ~s ignoring "
+		       ?WARNING_MSG("Flooder detected: ~ts, on IP: ~ts ignoring "
 				    "sent presence subscriptions~n",
 				    [jid:encode(JID),
 				     misc:ip_to_list(IP)])

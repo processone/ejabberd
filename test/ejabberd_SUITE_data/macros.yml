@@ -5,6 +5,7 @@ define_macro:
   S2S_PORT: @@s2s_port@@
   WEB_PORT: @@web_port@@
   COMPONENT_PORT: @@component_port@@
+  PROXY_PORT: @@proxy_port@@
   PASSWORD: >-
     @@password@@
   LOGLEVEL: @@loglevel@@

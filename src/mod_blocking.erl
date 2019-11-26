@@ -166,7 +166,7 @@ process_block(#iq{from = From} = IQ, LJIDs) ->
 			    broadcast_event(From, #block{items = Items}),
 			    xmpp:make_iq_result(IQ);
 			{error, notfound} ->
-			    ?ERROR_MSG("Failed to set default list '~s': "
+			    ?ERROR_MSG("Failed to set default list '~ts': "
 				       "the list should exist, but not found",
 				       [Name]),
 			    err_db_failure(IQ);

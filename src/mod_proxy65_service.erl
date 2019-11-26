@@ -88,7 +88,7 @@ handle_info({route, Packet}, State) ->
     try route(Packet)
     catch ?EX_RULE(Class, Reason, St) ->
             StackTrace = ?EX_STACK(St),
-            ?ERROR_MSG("Failed to route packet:~n~s~n** ~s",
+            ?ERROR_MSG("Failed to route packet:~n~ts~n** ~ts",
                        [xmpp:pp(Packet),
                         misc:format_exception(2, Class, Reason, StackTrace)])
     end,
@@ -237,7 +237,7 @@ process_bytestreams(#iq{type = set, lang = Lang, from = InitiatorJID, to = To,
 		    Txt = ?T("Bytestream already activated"),
 		    xmpp:make_error(IQ, xmpp:err_conflict(Txt, Lang));
 		{error, Err} ->
-		    ?ERROR_MSG("Failed to activate bytestream from ~s to ~s: ~p",
+		    ?ERROR_MSG("Failed to activate bytestream from ~ts to ~ts: ~p",
 			       [Initiator, Target, Err]),
 		    Txt = ?T("Database failure"),
 		    xmpp:make_error(IQ, xmpp:err_internal_server_error(Txt, Lang))

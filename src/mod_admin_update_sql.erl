@@ -348,7 +348,7 @@ create_index(#state{dbtype = mysql} = State, Table, Index, Cols) ->
        SCols, ");"]).
 
 sql_query(Host, Query) ->
-    io:format("executing \"~s\" on ~s~n", [Query, Host]),
+    io:format("executing \"~ts\" on ~ts~n", [Query, Host]),
     case ejabberd_sql:sql_query(Host, Query) of
         {error, Error} ->
             io:format("error: ~p~n", [Error]),

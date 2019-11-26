@@ -93,7 +93,7 @@
 -define(GL(Ref, Title),
 	?XAE(<<"div">>, [{<<"class">>, <<"guidelink">>}],
 	     [?XAE(<<"a">>,
-		   [{<<"href">>, <<"/admin/doc/guide.html#", Ref/binary>>},
+		   [{<<"href">>, <<"https://docs.ejabberd.im/admin/configuration/#", Ref/binary>>},
 		    {<<"target">>, <<"_blank">>}],
 		   [?C(<<"[Guide: ", Title/binary, "]">>)])])).
 

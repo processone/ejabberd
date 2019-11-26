@@ -450,7 +450,7 @@ bin(L) -> iolist_to_binary(L).
 convert_table_to_binary(Tab, Fields, Type, DetectFun, ConvertFun) ->
     case is_table_still_list(Tab, DetectFun) of
         true ->
-            ?INFO_MSG("Converting '~s' table from strings to binaries.", [Tab]),
+            ?INFO_MSG("Converting '~ts' table from strings to binaries.", [Tab]),
             TmpTab = list_to_atom(atom_to_list(Tab) ++ "_tmp_table"),
             catch mnesia:delete_table(TmpTab),
             case ejabberd_mnesia:create(?MODULE, TmpTab,
@@ -526,7 +526,7 @@ is_table_still_list(Tab, DetectFun, Key) ->
 report_and_stop(Tab, Err) ->
     ErrTxt = lists:flatten(
                io_lib:format(
-                 "Failed to convert '~s' table to binary: ~p",
+                 "Failed to convert '~ts' table to binary: ~p",
                  [Tab, Err])),
     ?CRITICAL_MSG(ErrTxt, []),
     ejabberd:halt().

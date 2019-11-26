@@ -95,20 +95,20 @@ get_jid(Auth, HostHTTP, Method) ->
 	  throw({unauthorized, Auth})
     end.
 
-get_menu_items(global, cluster, Lang, JID) ->
-    {Base, _, Items} = make_server_menu([], [], Lang, JID),
+get_menu_items(global, cluster, Lang, JID, Level) ->
+    {_Base, _, Items} = make_server_menu([], [], Lang, JID, Level),
     lists:map(fun ({URI, Name}) ->
-		      {<<Base/binary, URI/binary, "/">>, Name};
+		      {<<URI/binary, "/">>, Name};
 		  ({URI, Name, _SubMenu}) ->
-		      {<<Base/binary, URI/binary, "/">>, Name}
+		      {<<URI/binary, "/">>, Name}
 	      end,
 	      Items);
-get_menu_items(Host, cluster, Lang, JID) ->
-    {Base, _, Items} = make_host_menu(Host, [], Lang, JID),
+get_menu_items(Host, cluster, Lang, JID, Level) ->
+    {_Base, _, Items} = make_host_menu(Host, [], Lang, JID, Level),
     lists:map(fun ({URI, Name}) ->
-		      {<<Base/binary, URI/binary, "/">>, Name};
+		      {<<URI/binary, "/">>, Name};
 		  ({URI, Name, _SubMenu}) ->
-		      {<<Base/binary, URI/binary, "/">>, Name}
+		      {<<URI/binary, "/">>, Name}
 	      end,
 	      Items).
 
@@ -150,30 +150,6 @@ url_to_path(URL) -> str:tokens(URL, <<"/">>).
 %%%==================================
 %%%% process/2
 
-process([<<"doc">>, LocalFile], _Request) ->
-    DocPath = case os:getenv("EJABBERD_DOC_PATH") of
-		P when is_list(P) -> P;
-		false -> <<"/share/doc/ejabberd/">>
-	      end,
-    FileName = filename:join(DocPath, LocalFile),
-    case file:read_file(FileName) of
-      {ok, FileContents} ->
-	  ?DEBUG("Delivering content.", []),
-	  {200, [{<<"Server">>, <<"ejabberd">>}], FileContents};
-      {error, Error} ->
-	  Help = <<" ", FileName/binary,
-		   " - Try to specify the path to ejabberd "
-		   "documentation with the environment variable "
-		   "EJABBERD_DOC_PATH. Check the ejabberd "
-		   "Guide for more information.">>,
-	  ?WARNING_MSG("Problem '~p' accessing the local Guide file ~s", [Error, Help]),
-	  case Error of
-	    eacces -> {403, [], <<"Forbidden", Help/binary>>};
-	    enoent -> {307, [{<<"Location">>, <<"http://docs.ejabberd.im/admin/guide/configuration/">>}], <<"Not found", Help/binary>>};
-	    _Else ->
-		{404, [], <<(iolist_to_binary(atom_to_list(Error)))/binary, Help/binary>>}
-	  end
-    end;
 process([<<"server">>, SHost | RPath] = Path,
 	#request{auth = Auth, lang = Lang, host = HostHTTP,
 		 method = Method} =
@@ -213,36 +189,31 @@ process(RPath,
 	#request{auth = Auth, lang = Lang, host = HostHTTP,
 		 method = Method} =
 	    Request) ->
-    case ejabberd_router:is_my_host(HostHTTP) of
-	true ->
-	    case get_auth_admin(Auth, HostHTTP, RPath, Method) of
-		{ok, {User, Server}} ->
-		    AJID = get_jid(Auth, HostHTTP, Method),
-		    process_admin(global,
-				  Request#request{path = RPath,
-						  us = {User, Server}},
-				  AJID);
-		{unauthorized, <<"no-auth-provided">>} ->
-		    {401,
-		     [{<<"WWW-Authenticate">>,
-		       <<"basic realm=\"ejabberd\"">>}],
-		     ejabberd_web:make_xhtml([?XCT(<<"h1">>,
-						   ?T("Unauthorized"))])};
-		{unauthorized, Error} ->
-		    {BadUser, _BadPass} = Auth,
-		    {IPT, _Port} = Request#request.ip,
-		    IPS = ejabberd_config:may_hide_data(misc:ip_to_list(IPT)),
-		    ?WARNING_MSG("Access of ~p from ~p failed with error: ~p",
-				 [BadUser, IPS, Error]),
-		    {401,
-		     [{<<"WWW-Authenticate">>,
-		       <<"basic realm=\"auth error, retry login "
-			 "to ejabberd\"">>}],
-		     ejabberd_web:make_xhtml([?XCT(<<"h1">>,
-						   ?T("Unauthorized"))])}
-	    end;
-	false ->
-	    ejabberd_web:error(not_found)
+    case get_auth_admin(Auth, HostHTTP, RPath, Method) of
+	{ok, {User, Server}} ->
+	    AJID = get_jid(Auth, HostHTTP, Method),
+	    process_admin(global,
+			  Request#request{path = RPath,
+					  us = {User, Server}},
+			  AJID);
+	{unauthorized, <<"no-auth-provided">>} ->
+	    {401,
+	     [{<<"WWW-Authenticate">>,
+	       <<"basic realm=\"ejabberd\"">>}],
+	     ejabberd_web:make_xhtml([?XCT(<<"h1">>,
+					   ?T("Unauthorized"))])};
+	{unauthorized, Error} ->
+	    {BadUser, _BadPass} = Auth,
+	    {IPT, _Port} = Request#request.ip,
+	    IPS = ejabberd_config:may_hide_data(misc:ip_to_list(IPT)),
+	    ?WARNING_MSG("Access of ~p from ~p failed with error: ~p",
+			 [BadUser, IPS, Error]),
+	    {401,
+	     [{<<"WWW-Authenticate">>,
+	       <<"basic realm=\"auth error, retry login "
+		 "to ejabberd\"">>}],
+	     ejabberd_web:make_xhtml([?XCT(<<"h1">>,
+					   ?T("Unauthorized"))])}
     end.
 
 get_auth_admin(Auth, HostHTTP, RPath, Method) ->
@@ -251,8 +222,13 @@ get_auth_admin(Auth, HostHTTP, RPath, Method) ->
 	  {HostOfRule, AccessRule} = get_acl_rule(RPath, Method),
 	    try jid:decode(SJID) of
 		#jid{user = <<"">>, server = User} ->
-		    get_auth_account(HostOfRule, AccessRule, User, HostHTTP,
-				     Pass);
+		    case ejabberd_router:is_my_host(HostHTTP) of
+			true ->
+			    get_auth_account(HostOfRule, AccessRule, User, HostHTTP,
+					     Pass);
+			_ ->
+			    {unauthorized, <<"missing-server">>}
+		    end;
 		#jid{user = User, server = Server} ->
 		    get_auth_account(HostOfRule, AccessRule, User, Server,
 				     Pass)
@@ -290,16 +266,16 @@ get_auth_account2(HostOfRule, AccessRule, User, Server,
 %%%==================================
 %%%% make_xhtml
 
-make_xhtml(Els, Host, Lang, JID) ->
-    make_xhtml(Els, Host, cluster, Lang, JID).
+make_xhtml(Els, Host, Lang, JID, Level) ->
+    make_xhtml(Els, Host, cluster, Lang, JID, Level).
 
 %% @spec (Els, Host, Node, Lang, JID) -> {200, [html], xmlelement()}
 %% where Host = global | string()
 %%       Node = cluster | atom()
 %%       JID = jid()
-make_xhtml(Els, Host, Node, Lang, JID) ->
-    Base = get_base_path(Host, cluster),
-    MenuItems = make_navigation(Host, Node, Lang, JID),
+make_xhtml(Els, Host, Node, Lang, JID, Level) ->
+    Base = get_base_path_sum(0, 0, Level),
+    MenuItems = make_navigation(Host, Node, Lang, JID, Level),
     {200, [html],
      #xmlel{name = <<"html">>,
 	    attrs =
@@ -339,7 +315,7 @@ make_xhtml(Els, Host, Node, Lang, JID) ->
 		     [?XAE(<<"div">>, [{<<"id">>, <<"container">>}],
 			   [?XAE(<<"div">>, [{<<"id">>, <<"header">>}],
 				 [?XE(<<"h1">>,
-				      [?ACT(<<"/admin/">>,
+				      [?ACT(Base,
 					    <<"ejabberd Web Admin">>)])]),
 			    ?XAE(<<"div">>, [{<<"id">>, <<"navigation">>}],
 				 [?XE(<<"ul">>, MenuItems)]),
@@ -357,15 +333,19 @@ make_xhtml(Els, Host, Node, Lang, JID) ->
 direction(<<"he">>) -> [{<<"dir">>, <<"rtl">>}];
 direction(_) -> [].
 
-get_base_path(global, cluster) -> <<"/admin/">>;
-get_base_path(Host, cluster) ->
-    <<"/admin/server/", Host/binary, "/">>;
-get_base_path(global, Node) ->
-    <<"/admin/node/",
-      (iolist_to_binary(atom_to_list(Node)))/binary, "/">>;
-get_base_path(Host, Node) ->
-    <<"/admin/server/", Host/binary, "/node/",
-      (iolist_to_binary(atom_to_list(Node)))/binary, "/">>.
+get_base_path(Host, Node, Level) ->
+    SumHost = case Host of
+        global -> 0;
+        _ -> -2
+    end,
+    SumNode = case Node of
+        cluster -> 0;
+        _ -> -2
+    end,
+    get_base_path_sum(SumHost, SumNode, Level).
+
+get_base_path_sum(SumHost, SumNode, Level) ->
+    iolist_to_binary(lists:duplicate(Level + SumHost + SumNode, "../")).
 
 %%%==================================
 %%%% css & images
@@ -379,7 +359,7 @@ additions_js() ->
 css(Host) ->
     case misc:read_css("admin.css") of
 	{ok, CSS} ->
-	    Base = get_base_path(Host, cluster),
+	    Base = get_base_path(Host, cluster, 0),
 	    re:replace(CSS, <<"@BASE@">>, Base, [{return, binary}]);
 	{error, _} ->
 	    <<>>
@@ -413,15 +393,15 @@ process_admin(global, #request{path = [], lang = Lang}, AJID) ->
 		 [?XE(<<"ul">>,
 		      [?LI([?ACT(MIU, MIN)])
 		       || {MIU, MIN}
-			      <- get_menu_items(global, cluster, Lang, AJID)])],
-	       global, Lang, AJID);
+			      <- get_menu_items(global, cluster, Lang, AJID, 0)])],
+	       global, Lang, AJID, 0);
 process_admin(Host, #request{path = [], lang = Lang}, AJID) ->
     make_xhtml([?XCT(<<"h1">>, ?T("Administration")),
 		?XE(<<"ul">>,
 		    [?LI([?ACT(MIU, MIN)])
 		     || {MIU, MIN}
-			    <- get_menu_items(Host, cluster, Lang, AJID)])],
-	       Host, Lang, AJID);
+			    <- get_menu_items(Host, cluster, Lang, AJID, 2)])],
+	       Host, Lang, AJID, 2);
 process_admin(Host, #request{path = [<<"style.css">>]}, _) ->
     {200,
      [{<<"Content-Type">>, <<"text/css">>}, last_modified(),
@@ -452,26 +432,26 @@ process_admin(global, #request{path = [<<"vhosts">>], lang = Lang}, AJID) ->
     make_xhtml((?H1GL((translate:translate(Lang, ?T("Virtual Hosts"))),
 		      <<"virtual-hosting">>, ?T("Virtual Hosting")))
 		 ++ Res,
-	       global, Lang, AJID);
+	       global, Lang, AJID, 1);
 process_admin(Host,  #request{path = [<<"users">>], q = Query,
 			      lang = Lang}, AJID)
     when is_binary(Host) ->
     Res = list_users(Host, Query, Lang, fun url_func/1),
     make_xhtml([?XCT(<<"h1">>, ?T("Users"))] ++ Res, Host,
-	       Lang, AJID);
+	       Lang, AJID, 3);
 process_admin(Host, #request{path = [<<"users">>, Diap],
 			     lang = Lang}, AJID)
     when is_binary(Host) ->
     Res = list_users_in_diapason(Host, Diap, Lang,
 				 fun url_func/1),
     make_xhtml([?XCT(<<"h1">>, ?T("Users"))] ++ Res, Host,
-	       Lang, AJID);
+	       Lang, AJID, 4);
 process_admin(Host, #request{path = [<<"online-users">>],
 			     lang = Lang}, AJID)
     when is_binary(Host) ->
     Res = list_online_users(Host, Lang),
     make_xhtml([?XCT(<<"h1">>, ?T("Online Users"))] ++ Res,
-	       Host, Lang, AJID);
+	       Host, Lang, AJID, 3);
 process_admin(Host, #request{path = [<<"last-activity">>],
 			     q = Query, lang = Lang}, AJID)
     when is_binary(Host) ->
@@ -513,33 +493,45 @@ process_admin(Host, #request{path = [<<"last-activity">>],
 			?INPUTT(<<"submit">>, <<"integral">>,
 				?T("Show Integral Table"))])]
 		   ++ Res,
-	       Host, Lang, AJID);
+	       Host, Lang, AJID, 3);
 process_admin(Host, #request{path = [<<"stats">>], lang = Lang}, AJID) ->
     Res = get_stats(Host, Lang),
     PageH1 = ?H1GL(translate:translate(Lang, ?T("Statistics")), <<"mod-stats">>, <<"mod_stats">>),
-    make_xhtml(PageH1 ++ Res, Host, Lang, AJID);
+    Level = case Host of
+	global -> 1;
+	_ -> 3
+    end,
+    make_xhtml(PageH1 ++ Res, Host, Lang, AJID, Level);
 process_admin(Host, #request{path = [<<"user">>, U],
 			     q = Query, lang = Lang}, AJID) ->
     case ejabberd_auth:user_exists(U, Host) of
       true ->
 	  Res = user_info(U, Host, Query, Lang),
-	  make_xhtml(Res, Host, Lang, AJID);
+	  make_xhtml(Res, Host, Lang, AJID, 4);
       false ->
 	  make_xhtml([?XCT(<<"h1">>, ?T("Not Found"))], Host,
-		     Lang, AJID)
+		     Lang, AJID, 4)
     end;
 process_admin(Host, #request{path = [<<"nodes">>], lang = Lang}, AJID) ->
     Res = get_nodes(Lang),
-    make_xhtml(Res, Host, Lang, AJID);
+    Level = case Host of
+	global -> 1;
+	_ -> 3
+    end,
+    make_xhtml(Res, Host, Lang, AJID, Level);
 process_admin(Host, #request{path = [<<"node">>, SNode | NPath],
 			     q = Query, lang = Lang}, AJID) ->
     case search_running_node(SNode) of
       false ->
 	  make_xhtml([?XCT(<<"h1">>, ?T("Node not found"))], Host,
-		     Lang, AJID);
+		     Lang, AJID, 2);
       Node ->
 	  Res = get_node(Host, Node, NPath, Query, Lang),
-	  make_xhtml(Res, Host, Node, Lang, AJID)
+	  Level = case Host of
+		global -> 2 + length(NPath);
+		_ -> 4 + length(NPath)
+	  end,
+	  make_xhtml(Res, Host, Node, Lang, AJID, Level)
     end;
 %%%==================================
 %%%% process_admin default case
@@ -552,13 +544,17 @@ process_admin(Host, #request{lang = Lang} = Request, AJID) ->
 		  ejabberd_hooks:run_fold(
 		    webadmin_page_host, Host, [], [Host, Request])
 	  end,
+    Level = case Host of
+	global -> length(Request#request.path);
+	_ -> 2 + length(Request#request.path)
+    end,
     case Res of
       [] ->
 	  setelement(1,
 		     make_xhtml([?XC(<<"h1">>, <<"Not Found">>)], Host, Lang,
-				AJID),
+				AJID, Level),
 		     404);
-      _ -> make_xhtml(Res, Host, Lang, AJID)
+      _ -> make_xhtml(Res, Host, Lang, AJID, Level)
     end.
 
 term_to_id(T) -> base64:encode((term_to_binary(T))).
@@ -927,7 +923,7 @@ user_info(User, Server, Query, Lang) ->
 			 end;
 		     _ -> translate:translate(Lang, ?T("Online"))
 		   end,
-    [?XC(<<"h1">>, (str:format(translate:translate(Lang, ?T("User ~s")),
+    [?XC(<<"h1">>, (str:format(translate:translate(Lang, ?T("User ~ts")),
                                                 [us_to_list(US)])))]
       ++
       case Res of
@@ -1081,7 +1077,7 @@ search_running_node(SNode, [Node | Nodes]) ->
 
 get_node(global, Node, [], Query, Lang) ->
     Res = node_parse_query(Node, Query),
-    Base = get_base_path(global, Node),
+    Base = get_base_path(global, Node, 2),
     MenuItems2 = make_menu_items(global, Node, Base, Lang),
     [?XC(<<"h1">>,
 	 (str:format(translate:translate(Lang, ?T("Node ~p")), [Node])))]
@@ -1093,10 +1089,10 @@ get_node(global, Node, [], Query, Lang) ->
       end
 	++
 	[?XE(<<"ul">>,
-	     ([?LI([?ACT(<<Base/binary, "db/">>, ?T("Database"))]),
-	       ?LI([?ACT(<<Base/binary, "backup/">>, ?T("Backup"))]),
-	       ?LI([?ACT(<<Base/binary, "stats/">>, ?T("Statistics"))]),
-	       ?LI([?ACT(<<Base/binary, "update/">>, ?T("Update"))])]
+	     ([?LI([?ACT(<<"db/">>, ?T("Database"))]),
+	       ?LI([?ACT(<<"backup/">>, ?T("Backup"))]),
+	       ?LI([?ACT(<<"stats/">>, ?T("Statistics"))]),
+	       ?LI([?ACT(<<"update/">>, ?T("Update"))])]
 		++ MenuItems2)),
 	 ?XAE(<<"form">>,
 	      [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
@@ -1104,7 +1100,7 @@ get_node(global, Node, [], Query, Lang) ->
 	       ?C(<<" ">>),
 	       ?INPUTT(<<"submit">>, <<"stop">>, ?T("Stop"))])];
 get_node(Host, Node, [], _Query, Lang) ->
-    Base = get_base_path(Host, Node),
+    Base = get_base_path(Host, Node, 4),
     MenuItems2 = make_menu_items(Host, Node, Base, Lang),
     [?XC(<<"h1">>, (str:format(translate:translate(Lang, ?T("Node ~p")), [Node]))),
      ?XE(<<"ul">>, MenuItems2)];
@@ -1733,8 +1729,8 @@ pretty_string_int(String) when is_binary(String) ->
 %%%% navigation menu
 
 %% @spec (Host, Node, Lang, JID::jid()) -> [LI]
-make_navigation(Host, Node, Lang, JID) ->
-    Menu = make_navigation_menu(Host, Node, Lang, JID),
+make_navigation(Host, Node, Lang, JID, Level) ->
+    Menu = make_navigation_menu(Host, Node, Lang, JID, Level),
     make_menu_items(Lang, Menu).
 
 %% @spec (Host, Node, Lang, JID::jid()) -> Menu
@@ -1744,13 +1740,13 @@ make_navigation(Host, Node, Lang, JID) ->
 %%       Menu = {URL, Title} | {URL, Title, [Menu]}
 %%       URL = string()
 %%       Title = string()
-make_navigation_menu(Host, Node, Lang, JID) ->
+make_navigation_menu(Host, Node, Lang, JID, Level) ->
     HostNodeMenu = make_host_node_menu(Host, Node, Lang,
-				       JID),
+				       JID, Level),
     HostMenu = make_host_menu(Host, HostNodeMenu, Lang,
-			      JID),
-    NodeMenu = make_node_menu(Host, Node, Lang),
-    make_server_menu(HostMenu, NodeMenu, Lang, JID).
+			      JID, Level),
+    NodeMenu = make_node_menu(Host, Node, Lang, Level),
+    make_server_menu(HostMenu, NodeMenu, Lang, JID, Level).
 
 %% @spec (Host, Node, Base, Lang) -> [LI]
 make_menu_items(global, cluster, Base, Lang) ->
@@ -1767,12 +1763,12 @@ make_menu_items(Host, Node, Base, Lang) ->
 				    Lang),
     make_menu_items(Lang, {Base, <<"">>, HookItems}).
 
-make_host_node_menu(global, _, _Lang, _JID) ->
+make_host_node_menu(global, _, _Lang, _JID, _Level) ->
     {<<"">>, <<"">>, []};
-make_host_node_menu(_, cluster, _Lang, _JID) ->
+make_host_node_menu(_, cluster, _Lang, _JID, _Level) ->
     {<<"">>, <<"">>, []};
-make_host_node_menu(Host, Node, Lang, JID) ->
-    HostNodeBase = get_base_path(Host, Node),
+make_host_node_menu(Host, Node, Lang, JID, Level) ->
+    HostNodeBase = get_base_path(Host, Node, Level),
     HostNodeFixed = get_menu_items_hook({hostnode, Host, Node}, Lang),
     HostNodeBasePath = url_to_path(HostNodeBase),
     HostNodeFixed2 = [Tuple
@@ -1781,10 +1777,10 @@ make_host_node_menu(Host, Node, Lang, JID) ->
     {HostNodeBase, iolist_to_binary(atom_to_list(Node)),
      HostNodeFixed2}.
 
-make_host_menu(global, _HostNodeMenu, _Lang, _JID) ->
+make_host_menu(global, _HostNodeMenu, _Lang, _JID, _Level) ->
     {<<"">>, <<"">>, []};
-make_host_menu(Host, HostNodeMenu, Lang, JID) ->
-    HostBase = get_base_path(Host, cluster),
+make_host_menu(Host, HostNodeMenu, Lang, JID, Level) ->
+    HostBase = get_base_path(Host, cluster, Level),
     HostFixed = [{<<"users">>, ?T("Users")},
 		 {<<"online-users">>, ?T("Online Users")}]
 		  ++
@@ -1798,22 +1794,22 @@ make_host_menu(Host, HostNodeMenu, Lang, JID) ->
 		     is_allowed_path(HostBasePath, Tuple, JID)],
     {HostBase, Host, HostFixed2}.
 
-make_node_menu(_Host, cluster, _Lang) ->
+make_node_menu(_Host, cluster, _Lang, _Level) ->
     {<<"">>, <<"">>, []};
-make_node_menu(global, Node, Lang) ->
-    NodeBase = get_base_path(global, Node),
-    NodeFixed = [{<<"db/">>, ?T("Database")},
-		 {<<"backup/">>, ?T("Backup")},
-		 {<<"stats/">>, ?T("Statistics")},
-		 {<<"update/">>, ?T("Update")}]
+make_node_menu(global, Node, Lang, Level) ->
+    NodeBase = get_base_path(global, Node, Level),
+    NodeFixed = [{<<"db">>, ?T("Database")},
+		 {<<"backup">>, ?T("Backup")},
+		 {<<"stats">>, ?T("Statistics")},
+		 {<<"update">>, ?T("Update")}]
 		  ++ get_menu_items_hook({node, Node}, Lang),
     {NodeBase, iolist_to_binary(atom_to_list(Node)),
      NodeFixed};
-make_node_menu(_Host, _Node, _Lang) ->
+make_node_menu(_Host, _Node, _Lang, _Level) ->
     {<<"">>, <<"">>, []}.
 
-make_server_menu(HostMenu, NodeMenu, Lang, JID) ->
-    Base = get_base_path(global, cluster),
+make_server_menu(HostMenu, NodeMenu, Lang, JID, Level) ->
+    Base = get_base_path(global, cluster, Level),
     Fixed = [{<<"vhosts">>, ?T("Virtual Hosts"), HostMenu},
 	     {<<"nodes">>, ?T("Nodes"), NodeMenu},
 	     {<<"stats">>, ?T("Statistics")}]

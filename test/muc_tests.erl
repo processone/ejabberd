@@ -784,7 +784,7 @@ change_affiliation_master(Config) ->
 		  #muc_item{affiliation = Aff} ->
 		      ok
 	      end
-      end, [{member, participant, available}, {none, participant, available},
+      end, [{member, participant, available}, {none, visitor, available},
 	    {admin, moderator, available}, {owner, moderator, available},
 	    {outcast, none, unavailable}]),
     ok = leave(Config),

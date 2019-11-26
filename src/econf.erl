@@ -24,6 +24,7 @@
 
 %% API
 -export([parse/3, validate/2, fail/1, format_error/2, replace_macros/1]).
+-export([group_dups/1]).
 %% Simple types
 -export([pos_int/0, pos_int/1, non_neg_int/0, non_neg_int/1]).
 -export([int/0, int/2, number/1, octal/0]).
@@ -90,7 +91,7 @@ format_error({bad_module, Mod}, Ctx)
   when Ctx == [listen, module];
        Ctx == [listen, request_handlers] ->
     Mods = ejabberd_config:beams(all),
-    format("~s: unknown ~s: ~s. Did you mean ~s?",
+    format("~ts: unknown ~ts: ~ts. Did you mean ~ts?",
 	   [yconf:format_ctx(Ctx),
 	    format_module_type(Ctx),
 	    format_module(Mod),
@@ -105,7 +106,7 @@ format_error({bad_module, Mod}, Ctx)
 			 _ -> false
 		     end
 	     end, ejabberd_config:beams(all)),
-    format("~s: unknown ~s: ~s. Did you mean ~s?",
+    format("~ts: unknown ~ts: ~ts. Did you mean ~ts?",
 	   [yconf:format_ctx(Ctx),
 	    format_module_type(Ctx),
 	    format_module(Mod),
@@ -118,77 +119,78 @@ format_error({bad_export, {F, A}, Mod}, Ctx)
     Slogan = yconf:format_ctx(Ctx),
     case lists:member(Mod, ejabberd_config:beams(local)) of
 	true ->
-	    format("~s: '~s' is not a ~s",
+	    format("~ts: '~ts' is not a ~ts",
 		   [Slogan, format_module(Mod), Type]);
 	false ->
 	    case lists:member(Mod, ejabberd_config:beams(external)) of
 		true ->
-		    format("~s: third-party ~s '~s' doesn't export "
-			   "function ~s/~B. If it's really a ~s, "
+		    format("~ts: third-party ~ts '~ts' doesn't export "
+			   "function ~ts/~B. If it's really a ~ts, "
 			   "consider to upgrade it",
 			   [Slogan, Type, format_module(Mod),F, A, Type]);
 		false ->
-		    format("~s: '~s' doesn't match any known ~s",
+		    format("~ts: '~ts' doesn't match any known ~ts",
 			   [Slogan, format_module(Mod), Type])
 	    end
     end;
 format_error({unknown_option, [], _} = Why, Ctx) ->
-    format("~s. There are no available options",
+    format("~ts. There are no available options",
 	   [yconf:format_error(Why, Ctx)]);
 format_error({unknown_option, Known, Opt} = Why, Ctx) ->
-    format("~s. Did you mean ~s? ~s",
+    format("~ts. Did you mean ~ts? ~ts",
 	   [yconf:format_error(Why, Ctx),
 	    misc:best_match(Opt, Known),
 	    format_known("Available options", Known)]);
 format_error({bad_enum, Known, Bad} = Why, Ctx) ->
-    format("~s. Did you mean ~s? ~s",
+    format("~ts. Did you mean ~ts? ~ts",
 	   [yconf:format_error(Why, Ctx),
 	    misc:best_match(Bad, Known),
 	    format_known("Possible values", Known)]);
 format_error({bad_yaml, _, _} = Why, _) ->
     format_error(Why);
 format_error(Reason, Ctx) ->
-    [H|T] = format_error(Reason),
-    yconf:format_ctx(Ctx) ++ ": " ++ [string:to_lower(H)|T].
+    yconf:format_ctx(Ctx) ++ ": " ++ format_error(Reason).
 
 format_error({bad_db_type, _, Atom}) ->
-    format("unsupported database: ~s", [Atom]);
+    format("unsupported database: ~ts", [Atom]);
 format_error({bad_lang, Lang}) ->
-    format("Invalid language tag: ~s", [Lang]);
+    format("Invalid language tag: ~ts", [Lang]);
 format_error({bad_pem, Why, Path}) ->
-    format("Failed to read PEM file '~s': ~s",
+    format("Failed to read PEM file '~ts': ~ts",
 	   [Path, pkix:format_error(Why)]);
 format_error({bad_cert, Why, Path}) ->
     format_error({bad_pem, Why, Path});
 format_error({bad_jwt_key, Path}) ->
-    format("No valid JWT key found in file: ~s", [Path]);
+    format("No valid JWT key found in file: ~ts", [Path]);
+format_error({bad_jwt_key_set, Path}) ->
+    format("JWK set contains multiple JWT keys in file: ~ts", [Path]);
 format_error({bad_jid, Bad}) ->
-    format("Invalid XMPP address: ~s", [Bad]);
+    format("Invalid XMPP address: ~ts", [Bad]);
 format_error({bad_user, Bad}) ->
-    format("Invalid user part: ~s", [Bad]);
+    format("Invalid user part: ~ts", [Bad]);
 format_error({bad_domain, Bad}) ->
-    format("Invalid domain: ~s", [Bad]);
+    format("Invalid domain: ~ts", [Bad]);
 format_error({bad_resource, Bad}) ->
-    format("Invalid resource part: ~s", [Bad]);
+    format("Invalid resource part: ~ts", [Bad]);
 format_error({bad_ldap_filter, Bad}) ->
-    format("Invalid LDAP filter: ~s", [Bad]);
+    format("Invalid LDAP filter: ~ts", [Bad]);
 format_error({bad_sip_uri, Bad}) ->
-    format("Invalid SIP URI: ~s", [Bad]);
+    format("Invalid SIP URI: ~ts", [Bad]);
 format_error({route_conflict, R}) ->
-    format("Failed to reuse route '~s' because it's "
+    format("Failed to reuse route '~ts' because it's "
 	   "already registered on a virtual host",
 	   [R]);
 format_error({listener_dup, AddrPort}) ->
-    format("Overlapping listeners found at ~s",
+    format("Overlapping listeners found at ~ts",
 	   [format_addr_port(AddrPort)]);
 format_error({listener_conflict, AddrPort1, AddrPort2}) ->
-    format("Overlapping listeners found at ~s and ~s",
+    format("Overlapping listeners found at ~ts and ~ts",
 	   [format_addr_port(AddrPort1),
 	    format_addr_port(AddrPort2)]);
 format_error({invalid_syntax, Reason}) ->
-    format("~s", [Reason]);
+    format("~ts", [Reason]);
 format_error({missing_module_dep, Mod, DepMod}) ->
-    format("module ~s depends on module ~s, "
+    format("module ~ts depends on module ~ts, "
 	   "which is not found in the config",
 	   [Mod, DepMod]);
 format_error(eimp_error) ->
@@ -198,9 +200,11 @@ format_error({mqtt_codec, Reason}) ->
 format_error(Reason) ->
     yconf:format_error(Reason).
 
--spec format_module(atom()) -> string().
+-spec format_module(atom() | string()) -> string().
+format_module(Mod) when is_atom(Mod) ->
+    format_module(atom_to_list(Mod));
 format_module(Mod) ->
-    case atom_to_list(Mod) of
+    case Mod of
 	"Elixir." ++ M -> M;
 	M -> M
     end.
@@ -223,6 +227,23 @@ format_join([H|_] = L) when is_atom(H) ->
     format_join([atom_to_binary(A, utf8) || A <- L]);
 format_join(L) ->
     str:join(lists:sort(L), <<", ">>).
+
+%% All duplicated options having list-values are grouped
+%% into a single option with all list-values being concatenated
+-spec group_dups(list(T)) -> list(T).
+group_dups(Y1) ->
+    lists:reverse(
+      lists:foldl(
+        fun({Option, Values}, Acc) when is_list(Values) ->
+                case lists:keyfind(Option, 1, Acc) of
+                    {Option, Vals} when is_list(Vals) ->
+                        lists:keyreplace(Option, 1, Acc, {Option, Vals ++ Values});
+                    _ ->
+                        [{Option, Values}|Acc]
+                end;
+           (Other, Acc) ->
+                [Other|Acc]
+        end, [], Y1)).
 
 %%%===================================================================
 %%% Validators from yconf

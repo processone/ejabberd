@@ -134,7 +134,7 @@ parse_element(LUser, LServer, XML) ->
 	    {ok, El};
 	_ ->
 	    ?ERROR_MSG("Malformed XML element in SQL table "
-		       "'private_storage' for user ~s@~s: ~s",
+		       "'private_storage' for user ~ts@~ts: ~ts",
 		       [LUser, LServer, XML]),
 	    error
     end.

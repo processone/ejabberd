@@ -271,7 +271,7 @@ route(Mod, LServer, Pkt, ExpiryTime, Continuation, Num) ->
           when Pid == self() ->
             route(Mod, LServer, Pkt, ExpiryTime, Continuation1, Num);
 	{ok, {Pid, SubOpts, ID}, Continuation1} ->
-	    ?DEBUG("Route to ~p: ~s", [Pid, Pkt#publish.topic]),
+	    ?DEBUG("Route to ~p: ~ts", [Pid, Pkt#publish.topic]),
             MinQoS = min(SubOpts#sub_opts.qos, Pkt#publish.qos),
             Retain = case SubOpts#sub_opts.retain_as_published of
                          false -> false;
@@ -520,7 +520,7 @@ init_topic_cache(Mod, Host) ->
     catch ets:new(?MQTT_TOPIC_CACHE,
                   [named_table, ordered_set, public,
                    {heir, erlang:group_leader(), none}]),
-    ?INFO_MSG("Building MQTT cache for ~s, this may take a while", [Host]),
+    ?INFO_MSG("Building MQTT cache for ~ts, this may take a while", [Host]),
     case Mod:list_topics(Host) of
         {ok, Topics} ->
             lists:foreach(

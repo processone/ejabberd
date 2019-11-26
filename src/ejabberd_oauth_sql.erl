@@ -30,7 +30,10 @@
 -export([init/0,
          store/1,
          lookup/1,
-         clean/1]).
+         clean/1,
+         lookup_client/1,
+         store_client/1,
+         remove_client/1]).
 
 -include("ejabberd_oauth.hrl").
 -include("ejabberd_sql_pt.hrl").
@@ -80,3 +83,54 @@ clean(TS) ->
       ejabberd_config:get_myname(),
       ?SQL("delete from oauth_token where expire < %(TS)d")).
 
+lookup_client(ClientID) ->
+    case ejabberd_sql:sql_query(
+           ejabberd_config:get_myname(),
+           ?SQL("select @(client_name)s, @(grant_type)s, @(options)s"
+                " from oauth_client where client_id=%(ClientID)s")) of
+        {selected, [{ClientName, SGrantType, SOptions}]} ->
+            GrantType =
+                case SGrantType of
+                    <<"password">> -> password;
+                    <<"implicit">> -> implicit
+                end,
+            case misc:base64_to_term(SOptions) of
+                {term, Options} ->
+                    {ok, #oauth_client{client_id = ClientID,
+                                       client_name = ClientName,
+                                       grant_type = GrantType,
+                                       options = Options}};
+                _ ->
+                    error
+            end;
+        _ ->
+            error
+    end.
+
+store_client(#oauth_client{client_id = ClientID,
+                           client_name = ClientName,
+                           grant_type = GrantType,
+                           options = Options}) ->
+    SGrantType =
+        case GrantType of
+            password -> <<"password">>;
+            implicit -> <<"implicit">>
+        end,
+    SOptions = misc:term_to_base64(Options),
+    case ?SQL_UPSERT(
+	    ejabberd_config:get_myname(),
+	    "oauth_client",
+	    ["!client_id=%(ClientID)s",
+	     "client_name=%(ClientName)s",
+	     "grant_type=%(SGrantType)s",
+	     "options=%(SOptions)s"]) of
+	ok ->
+	    ok;
+	_ ->
+	    {error, db_failure}
+    end.
+
+remove_client(Client) ->
+    ejabberd_sql:sql_query(
+      ejabberd_config:get_myname(),
+      ?SQL("delete from oauth_client where client=%(Client)s")).

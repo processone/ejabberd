@@ -318,7 +318,7 @@ raw_to_record(LServer,
 		  subscription = Subscription, ask = Ask,
 		  askmessage = SAskMessage}
     catch _:{bad_jid, _} ->
-	    ?ERROR_MSG("~s", [format_row_error(User, LServer, {jid, SJID})]),
+	    ?ERROR_MSG("~ts", [format_row_error(User, LServer, {jid, SJID})]),
 	    error
     end.
 
@@ -351,7 +351,7 @@ decode_subscription(User, Server, S) ->
 	<<"N">> -> none;
 	<<"">> -> none;
 	_ ->
-	    ?ERROR_MSG("~s", [format_row_error(User, Server, {subscription, S})]),
+	    ?ERROR_MSG("~ts", [format_row_error(User, Server, {subscription, S})]),
 	    none
     end.
 
@@ -365,7 +365,7 @@ decode_ask(User, Server, A) ->
 	<<"N">> -> none;
 	<<"">> -> none;
 	_ ->
-	    ?ERROR_MSG("~s", [format_row_error(User, Server, {ask, A})]),
+	    ?ERROR_MSG("~ts", [format_row_error(User, Server, {ask, A})]),
 	    none
     end.
 

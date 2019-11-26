@@ -515,21 +515,21 @@ make_archive_el(User, TS, XML, Peer, Kind, Nick, MsgType, JidRequestor, JidArchi
 			      MsgType, JidRequestor, JidArchive)
 		    catch _:{bad_jid, _} ->
 			    ?ERROR_MSG("Malformed 'peer' field with value "
-				       "'~s' detected for user ~s in table "
+				       "'~ts' detected for user ~ts in table "
 				       "'archive': invalid JID",
 				       [Peer, jid:encode(JidArchive)]),
 			    {error, invalid_jid}
 		    end
 	    catch _:_ ->
-		    ?ERROR_MSG("Malformed 'timestamp' field with value '~s' "
-			       "detected for user ~s in table 'archive': "
+		    ?ERROR_MSG("Malformed 'timestamp' field with value '~ts' "
+			       "detected for user ~ts in table 'archive': "
 			       "not an integer",
 			       [TS, jid:encode(JidArchive)]),
 		    {error, invalid_timestamp}
 	    end;
 	{error, {_, Reason}} ->
-	    ?ERROR_MSG("Malformed 'xml' field with value '~s' detected "
-		       "for user ~s in table 'archive': ~s",
+	    ?ERROR_MSG("Malformed 'xml' field with value '~ts' detected "
+		       "for user ~ts in table 'archive': ~ts",
 		       [XML, jid:encode(JidArchive), Reason]),
 	    {error, invalid_xml}
     end.

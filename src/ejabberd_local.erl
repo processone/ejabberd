@@ -71,7 +71,7 @@ start_link() ->
 
 -spec route(stanza()) -> ok.
 route(Packet) ->
-    ?DEBUG("Local route:~n~s", [xmpp:pp(Packet)]),
+    ?DEBUG("Local route:~n~ts", [xmpp:pp(Packet)]),
     Type = xmpp:get_type(Packet),
     To = xmpp:get_to(Packet),
     if To#jid.luser /= <<"">> ->

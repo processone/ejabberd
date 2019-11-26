@@ -110,7 +110,7 @@ route(#message{type = groupchat, id = ID, lang = Lang,
 	    process_mix_message(Msg)
     end;
 route(Pkt) ->
-    ?DEBUG("Dropping packet:~n~s", [xmpp:pp(Pkt)]).
+    ?DEBUG("Dropping packet:~n~ts", [xmpp:pp(Pkt)]).
 
 -spec process_disco_info(iq()) -> iq().
 process_disco_info(#iq{type = set, lang = Lang} = IQ) ->
@@ -281,7 +281,7 @@ handle_info({route, Packet}, State) ->
     try route(Packet)
     catch ?EX_RULE(Class, Reason, St) ->
 	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Failed to route packet:~n~s~n** ~s",
+	    ?ERROR_MSG("Failed to route packet:~n~ts~n** ~ts",
 		       [xmpp:pp(Packet),
 			misc:format_exception(2, Class, Reason, StackTrace)])
     end,

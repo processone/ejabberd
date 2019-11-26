@@ -1,1161 +1,660 @@
--module (ejabberd_acme).
+%%%----------------------------------------------------------------------
+%%% ejabberd, Copyright (C) 2002-2019   ProcessOne
+%%%
+%%% This program is free software; you can redistribute it and/or
+%%% modify it under the terms of the GNU General Public License as
+%%% published by the Free Software Foundation; either version 2 of the
+%%% License, or (at your option) any later version.
+%%%
+%%% This program is distributed in the hope that it will be useful,
+%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%%% General Public License for more details.
+%%%
+%%% You should have received a copy of the GNU General Public License along
+%%% with this program; if not, write to the Free Software Foundation, Inc.,
+%%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+%%%
+%%%----------------------------------------------------------------------
+-module(ejabberd_acme).
 -behaviour(gen_server).
 
-%% ejabberdctl commands
--export([get_commands_spec/0,
-	 get_certificates/1,
-	 renew_certificates/0,
-	 list_certificates/1,
-	 revoke_certificate/1]).
-%% Command Options Validity
--export([is_valid_account_opt/1,
-	 is_valid_verbose_opt/1,
-	 is_valid_domain_opt/1,
-	 is_valid_revoke_cert/1]).
-%% Key Related
--export([generate_key/0, to_public/1]).
+%% API
+-export([start_link/0]).
+-export([default_directory_url/0]).
+%% HTTP API
+-export([process/2]).
+%% Hooks
+-export([ejabberd_started/0, register_certfiles/0, cert_expired/2]).
+%% ejabberd commands
+-export([request_certificate/1, revoke_certificate/1, list_certificates/0]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-	 terminate/2, code_change/3]).
--export([start_link/0, register_certfiles/0]).
+	 terminate/2, code_change/3, format_status/2]).
 
 -include("logger.hrl").
--include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd_commands.hrl").
--include("ejabberd_acme.hrl").
 -include_lib("public_key/include/public_key.hrl").
--include("ejabberd_stacktrace.hrl").
+-include_lib("stdlib/include/ms_transform.hrl").
 
--define(DEFAULT_CONFIG_CONTACT, <<"mailto:example-admin@example.com">>).
--define(DEFAULT_CONFIG_CA_URL, "https://acme-v01.api.letsencrypt.org").
+-define(CALL_TIMEOUT, timer:minutes(10)).
 
 -record(state, {}).
 
+-type state() :: #state{}.
+-type priv_key() :: public_key:private_key().
+-type cert() :: #'OTPCertificate'{}.
+-type cert_type() :: ec | rsa.
+-type io_error() :: file:posix().
+-type issue_result() :: ok | p1_acme:issue_return() |
+			{error, {file, io_error()} |
+			        {idna_failed, binary()}}.
+
+%%%===================================================================
+%%% API
+%%%===================================================================
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+-spec register_certfiles() -> ok.
+register_certfiles() ->
+    lists:foreach(fun ejabberd_pkix:add_certfile/1,
+		  list_certfiles()).
+
+-spec process([binary()], _) -> {integer(), [{binary(), binary()}], binary()}.
+process([Token], _) ->
+    ?DEBUG("Received ACME challenge request for token: ~ts", [Token]),
+    try ets:lookup_element(acme_challenge, Token, 2) of
+	Key -> {200, [{<<"Content-Type">>,
+		       <<"application/octet-stream">>}],
+		Key}
+    catch _:_ ->
+	    {404, [], <<>>}
+    end;
+process(_, _) ->
+    {404, [], <<>>}.
+
+-spec cert_expired(_, pkix:cert_info()) -> ok | stop.
+cert_expired(_, #{domains := Domains, files := Files}) ->
+    CertFiles = list_certfiles(),
+    case lists:any(
+	   fun({File, _}) ->
+		   lists:member(File, CertFiles)
+	   end, Files) of
+	true ->
+	    gen_server:cast(?MODULE, {request, Domains}),
+	    stop;
+	false ->
+	    ok
+    end.
+
+-spec ejabberd_started() -> ok.
+ejabberd_started() ->
+    gen_server:cast(?MODULE, ejabberd_started).
+
+default_directory_url() ->
+    <<"https://acme-v02.api.letsencrypt.org/directory">>.
 
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
 init([]) ->
-    case filelib:ensure_dir(filename:join(acme_certs_dir(), "foo")) of
-	ok ->
-	    ejabberd_hooks:add(config_reloaded, ?MODULE, register_certfiles, 40),
-	    ejabberd_commands:register_commands(get_commands_spec()),
-	    register_certfiles(),
-	    {ok, #state{}};
-	{error, Why} ->
-	    ?CRITICAL_MSG("Failed to create directory ~s: ~s",
-			  [acme_certs_dir(), file:format_error(Why)]),
-	    {stop, Why}
-    end.
+    ets:new(acme_challenge, [named_table, public]),
+    process_flag(trap_exit, true),
+    ejabberd:start_app(p1_acme),
+    delete_obsolete_data(),
+    ejabberd_hooks:add(cert_expired, ?MODULE, cert_expired, 60),
+    ejabberd_hooks:add(config_reloaded, ?MODULE, register_certfiles, 40),
+    ejabberd_hooks:add(ejabberd_started, ?MODULE, ejabberd_started, 110),
+    ejabberd_hooks:add(config_reloaded, ?MODULE, ejabberd_started, 110),
+    ejabberd_commands:register_commands(get_commands_spec()),
+    register_certfiles(),
+    {ok, #state{}}.
 
+handle_call({request, [_|_] = Domains}, _From, State) ->
+    ?INFO_MSG("Requesting new certificate for ~ts from ~ts",
+	      [misc:format_hosts_list(Domains), directory_url()]),
+    {Ret, State1} = issue_request(State, Domains),
+    {reply, Ret, State1};
+handle_call({revoke, Cert, Key, Path}, _From, State) ->
+    ?INFO_MSG("Revoking certificate from file ~ts", [Path]),
+    {Ret, State1} = revoke_request(State, Cert, Key, Path),
+    {reply, Ret, State1};
 handle_call(Request, From, State) ->
     ?WARNING_MSG("Unexpected call from ~p: ~p", [From, Request]),
     {noreply, State}.
 
-handle_cast(_Msg, State) ->
-    ?WARNING_MSG("Unexpected cast: ~p", [_Msg]),
+handle_cast(ejabberd_started, State) ->
+    case request_on_start() of
+	{true, Domains} ->
+	    ?INFO_MSG("Requesting new certificate for ~ts from ~ts",
+		      [misc:format_hosts_list(Domains), directory_url()]),
+	    {_, State1} = issue_request(State, Domains),
+	    {noreply, State1};
+	false ->
+	    {noreply, State}
+    end;
+handle_cast({request, [_|_] = Domains}, State) ->
+    ?INFO_MSG("Requesting renewal of certificate for ~ts from ~ts",
+	      [misc:format_hosts_list(Domains), directory_url()]),
+    {_, State1} = issue_request(State, Domains),
+    {noreply, State1};
+handle_cast(Request, State) ->
+    ?WARNING_MSG("Unexpected cast: ~p", [Request]),
     {noreply, State}.
 
-handle_info(_Info, State) ->
-    ?WARNING_MSG("Unexpected info: ~p", [_Info]),
+handle_info(Info, State) ->
+    ?WARNING_MSG("Unexpected info: ~p", [Info]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->
+    ejabberd_hooks:delete(cert_expired, ?MODULE, cert_expired, 60),
     ejabberd_hooks:delete(config_reloaded, ?MODULE, register_certfiles, 40),
+    ejabberd_hooks:delete(ejabberd_started, ?MODULE, ejabberd_started, 110),
+    ejabberd_hooks:delete(config_reloaded, ?MODULE, ejabberd_started, 110),
     ejabberd_commands:unregister_commands(get_commands_spec()).
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%
-%% Command Functions
-%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+format_status(_Opt, Status) ->
+    Status.
 
-%%
-%% Check Validity of command options
-%%
+%%%===================================================================
+%%% Internal functions
+%%%===================================================================
+%%%===================================================================
+%%% Challenge callback
+%%%===================================================================
+-spec register_challenge(p1_acme:challenge_data(), reference()) -> true.
+register_challenge(Auth, Ref) ->
+    ?DEBUG("Registering ACME challenge ~p -> ~p", [Ref, Auth]),
+    ejabberd_hooks:run(acme_challenge, [{start, Auth, Ref}]),
+    ets:insert(
+      acme_challenge,
+      lists:map(
+	fun(#{token := Token, key := Key}) ->
+		{Token, Key, Ref}
+	end, Auth)).
 
--spec is_valid_account_opt(string()) -> boolean().
-is_valid_account_opt("old-account") -> true;
-is_valid_account_opt("new-account") -> true;
-is_valid_account_opt(_) -> false.
+-spec unregister_challenge(reference()) -> non_neg_integer().
+unregister_challenge(Ref) ->
+    ?DEBUG("Unregistering ACME challenge ~p", [Ref]),
+    ejabberd_hooks:run(acme_challenge, [{stop, Ref}]),
+    ets:select_delete(
+      acme_challenge,
+      ets:fun2ms(
+	fun({_, _, Ref1}) ->
+		Ref1 == Ref
+	end)).
 
--spec is_valid_verbose_opt(string()) -> boolean().
-is_valid_verbose_opt("plain") -> true;
-is_valid_verbose_opt("verbose") -> true;
-is_valid_verbose_opt(_) -> false.
-
-%% TODO: Make this check more complicated
--spec is_valid_domain_opt(string()) -> boolean().
-is_valid_domain_opt("all") -> true;
-is_valid_domain_opt(DomainString) ->
-    case parse_domain_string(DomainString) of
-	[] ->
-	    false;
-	_SeparatedDomains ->
-	    true
+%%%===================================================================
+%%% Issuance
+%%%===================================================================
+-spec issue_request(state(), [binary(),...]) -> {issue_result(), state()}.
+issue_request(State, Domains) ->
+    case check_idna(Domains) of
+	{ok, AsciiDomains} ->
+	    case read_account_key() of
+		{ok, AccKey} ->
+		    Config = ejabberd_option:acme(),
+		    DirURL = maps:get(ca_url, Config, default_directory_url()),
+		    Contact = maps:get(contact, Config, []),
+		    CertType = maps:get(cert_type, Config, rsa),
+		    issue_request(State, DirURL, Domains, AsciiDomains, AccKey, CertType, Contact);
+		{error, Reason} = Err ->
+		    ?ERROR_MSG("Failed to request certificate for ~ts: ~ts",
+			       [misc:format_hosts_list(Domains),
+				format_error(Reason)]),
+		    {Err, State}
+	    end;
+	{error, Reason} = Err ->
+	    ?ERROR_MSG("Failed to request certificate for ~ts: ~ts",
+		       [misc:format_hosts_list(Domains),
+			format_error(Reason)]),
+	    {Err, State}
     end.
 
--spec is_valid_revoke_cert(string()) -> boolean().
-is_valid_revoke_cert(DomainOrFile) ->
-    lists:prefix("file:", DomainOrFile) orelse
-	lists:prefix("domain:", DomainOrFile).
+-spec issue_request(state(), binary(), [binary(),...], [string(), ...], priv_key(),
+		    cert_type(), [binary()]) -> {issue_result(), state()}.
+issue_request(State, DirURL, Domains, AsciiDomains, AccKey, CertType, Contact) ->
+    Ref = make_ref(),
+    ChallengeFun = fun(Auth) -> register_challenge(Auth, Ref) end,
+    Ret = case p1_acme:issue(DirURL, AsciiDomains, AccKey,
+			  [{cert_type, CertType},
+			   {contact, Contact},
+			   {debug_fun, debug_fun()},
+			   {challenge_fun, ChallengeFun}]) of
+	      {ok, #{cert_key := CertKey,
+		     cert_chain := Certs}} ->
+		  case store_cert(CertKey, Certs, CertType, Domains) of
+		      {ok, Path} ->
+			  ejabberd_pkix:add_certfile(Path),
+			  ejabberd_pkix:commit(),
+			  ?INFO_MSG("Certificate for ~ts has been received, "
+				    "stored and loaded successfully",
+				    [misc:format_hosts_list(Domains)]),
+			  {ok, State};
+		      {error, Reason} = Err ->
+			  ?ERROR_MSG("Failed to store certificate for ~ts: ~ts",
+				     [misc:format_hosts_list(Domains),
+				      format_error(Reason)]),
+			  {Err, State}
+		  end;
+	      {error, Reason} = Err ->
+		  ?ERROR_MSG("Failed to request certificate for ~ts: ~ts",
+			     [misc:format_hosts_list(Domains),
+			      format_error(Reason)]),
+		  {Err, State}
+	  end,
+    unregister_challenge(Ref),
+    Ret.
 
-%% Commands
+%%%===================================================================
+%%% Revocation
+%%%===================================================================
+revoke_request(State, Cert, Key, Path) ->
+    case p1_acme:revoke(directory_url(), Cert, Key,
+		     [{debug_fun, debug_fun()}]) of
+	ok ->
+	    ?INFO_MSG("Certificate from file ~ts has been "
+		      "revoked successfully", [Path]),
+	    case delete_file(Path) of
+		ok ->
+		    ejabberd_pkix:del_certfile(Path),
+		    ejabberd_pkix:commit(),
+		    {ok, State};
+		Err ->
+		    {Err, State}
+	    end;
+	{error, Reason} = Err ->
+	    ?ERROR_MSG("Failed to revoke certificate from file ~ts: ~ts",
+		       [Path, format_error(Reason)]),
+	    {Err, State}
+    end.
+
+%%%===================================================================
+%%% File management
+%%%===================================================================
+-spec acme_dir() -> file:filename_all().
+acme_dir() ->
+    MnesiaDir = mnesia:system_info(directory),
+    filename:join(MnesiaDir, "acme").
+
+-spec acme_certs_dir(atom()) -> file:filename_all().
+acme_certs_dir(Tag) ->
+    filename:join(acme_dir(), Tag).
+
+-spec account_file() -> file:filename_all().
+account_file() ->
+    filename:join(acme_dir(), "account.key").
+
+-spec cert_file(cert_type(), [binary()]) -> file:filename_all().
+cert_file(CertType, Domains) ->
+    L = [erlang:atom_to_binary(CertType, latin1)|Domains],
+    Hash = str:sha(str:join(L, <<0>>)),
+    filename:join(acme_certs_dir(live), Hash).
+
+-spec prep_path(file:filename_all()) -> binary().
+prep_path(Path) ->
+    unicode:characters_to_binary(Path).
+
+-spec list_certfiles() -> [binary()].
+list_certfiles() ->
+    filelib:fold_files(
+      acme_certs_dir(live), "^[0-9a-f]{40}$", false,
+      fun(F, Fs) -> [prep_path(F)|Fs] end, []).
+
+-spec read_account_key() -> {ok, #'ECPrivateKey'{}} | {error, {file, io_error()}}.
+read_account_key() ->
+    Path = account_file(),
+    case pkix:read_file(Path) of
+	{ok, _, KeyMap} ->
+	    case maps:keys(KeyMap) of
+		[#'ECPrivateKey'{} = Key|_] -> {ok, Key};
+		_ ->
+		    ?WARNING_MSG("File ~ts doesn't contain ACME account key. "
+				 "Trying to create a new one...",
+				 [Path]),
+		    create_account_key()
+	    end;
+	{error, enoent} ->
+	    create_account_key();
+	{error, {bad_cert, _, _} = Reason} ->
+	    ?WARNING_MSG("ACME account key from '~ts' is corrupted: ~ts. "
+			 "Trying to create a new one...",
+			 [Path, pkix:format_error(Reason)]),
+	    create_account_key();
+	{error, Reason} ->
+	    ?ERROR_MSG("Failed to read ACME account from ~ts: ~ts. "
+		       "Try to fix permissions or delete the file completely",
+		       [Path, pkix:format_error(Reason)]),
+	    {error, {file, Reason}}
+    end.
+
+-spec create_account_key() -> {ok, #'ECPrivateKey'{}} | {error, {file, io_error()}}.
+create_account_key() ->
+    Path = account_file(),
+    ?DEBUG("Creating ACME account key in ~ts", [Path]),
+    Key = p1_acme:generate_key(ec),
+    DER = public_key:der_encode(element(1, Key), Key),
+    PEM = public_key:pem_encode([{element(1, Key), DER, not_encrypted}]),
+    case write_file(Path, PEM) of
+	ok ->
+	    ?DEBUG("ACME account key has been created successfully in ~ts",
+		   [Path]),
+	    {ok, Key};
+	{error, Reason} ->
+	    {error, {file, Reason}}
+    end.
+
+-spec store_cert(priv_key(), [cert()], cert_type(), [binary()]) -> {ok, file:filename_all()} |
+								   {error, {file, io_error()}}.
+store_cert(Key, Chain, CertType, Domains) ->
+    DerKey = public_key:der_encode(element(1, Key), Key),
+    PemKey = [{element(1, Key), DerKey, not_encrypted}],
+    PemChain = lists:map(
+		 fun(Cert) ->
+			 DerCert = public_key:pkix_encode(
+				     element(1, Cert), Cert, otp),
+			 {'Certificate', DerCert, not_encrypted}
+		 end, Chain),
+    PEM = public_key:pem_encode(PemChain ++ PemKey),
+    Path = cert_file(CertType, Domains),
+    ?DEBUG("Storing certificate for ~ts in ~ts",
+	   [misc:format_hosts_list(Domains), Path]),
+    case write_file(Path, PEM) of
+	ok ->
+	    {ok, Path};
+	{error, Reason} ->
+	    {error, {file, Reason}}
+    end.
+
+-spec read_cert(file:filename_all()) -> {ok, [cert()], priv_key()} |
+					{error, {file, io_error()} |
+					        {bad_cert, _, _} |
+					        unexpected_certfile}.
+read_cert(Path) ->
+    ?DEBUG("Reading certificate from ~ts", [Path]),
+    case pkix:read_file(Path) of
+	{ok, CertsMap, KeysMap} ->
+	    case {maps:to_list(CertsMap), maps:keys(KeysMap)} of
+		{[_|_] = Certs, [CertKey]} ->
+		    {ok, [Cert || {Cert, _} <- lists:keysort(2, Certs)], CertKey};
+		_ ->
+		    {error, unexpected_certfile}
+	    end;
+	{error, Why} when is_atom(Why) ->
+	    {error, {file, Why}};
+	{error, _} = Err ->
+	    Err
+    end.
+
+-spec write_file(file:filename_all(), iodata()) -> ok | {error, io_error()}.
+write_file(Path, Data) ->
+    case ensure_dir(Path) of
+	ok ->
+	    case file:write_file(Path, Data) of
+		ok ->
+		    case file:change_mode(Path, 8#600) of
+			ok -> ok;
+			{error, Why} ->
+			    ?WARNING_MSG("Failed to change permissions of ~ts: ~ts",
+					 [Path, file:format_error(Why)])
+		    end;
+		{error, Why} = Err ->
+		    ?ERROR_MSG("Failed to write file ~ts: ~ts",
+			       [Path, file:format_error(Why)]),
+		    Err
+	    end;
+	Err ->
+	    Err
+    end.
+
+-spec delete_file(file:filename_all()) -> ok | {error, io_error()}.
+delete_file(Path) ->
+    case file:delete(Path) of
+	ok -> ok;
+	{error, Why} = Err ->
+	    ?WARNING_MSG("Failed to delete file ~ts: ~ts",
+			 [Path, file:format_error(Why)]),
+	    Err
+    end.
+
+-spec ensure_dir(file:filename_all()) -> ok | {error, io_error()}.
+ensure_dir(Path) ->
+    case filelib:ensure_dir(Path) of
+	ok -> ok;
+	{error, Why} = Err ->
+	    ?ERROR_MSG("Failed to create directory ~ts: ~ts",
+		       [filename:dirname(Path),
+			file:format_error(Why)]),
+	    Err
+    end.
+
+-spec delete_obsolete_data() -> ok.
+delete_obsolete_data() ->
+    Path = filename:join(ejabberd_pkix:certs_dir(), "acme"),
+    case filelib:is_dir(Path) of
+	true ->
+	    ?INFO_MSG("Deleting obsolete directory ~ts", [Path]),
+	    _ = misc:delete_dir(Path),
+	    ok;
+	false ->
+	    ok
+    end.
+
+%%%===================================================================
+%%% ejabberd commands
+%%%===================================================================
 get_commands_spec() ->
-    [#ejabberd_commands{name = get_certificates, tags = [acme],
-			desc = "Gets certificates for all or the specified "
-			       "domains {all|domain1;domain2;...}.",
-			module = ?MODULE, function = get_certificates,
+    [#ejabberd_commands{name = request_certificate, tags = [acme],
+			desc = "Requests certificates for all or the specified "
+			       "domains: all | domain1,domain2,...",
+			module = ?MODULE, function = request_certificate,
 			args_desc = ["Domains for which to acquire a certificate"],
-			args_example = ["all | www.example.com;www.example1.net"],
+			args_example = ["all | domain.tld,conference.domain.tld,..."],
 			args = [{domains, string}],
-			result = {certificates, string}},
-     #ejabberd_commands{name = renew_certificates, tags = [acme],
-			desc = "Renews all certificates that are close to expiring",
-			module = ?MODULE, function = renew_certificates,
-			args = [],
-			result = {certificates, string}},
+			result = {res, restuple}},
      #ejabberd_commands{name = list_certificates, tags = [acme],
-			desc = "Lists all currently handled certificates and "
-			       "their respective domains in {plain|verbose} format",
+			desc = "Lists all ACME certificates",
 			module = ?MODULE, function = list_certificates,
-			args_desc = ["Whether to print the whole certificate "
-				     "or just some metadata. "
-				     "Possible values: plain | verbose"],
-			args = [{option, string}],
-			result = {certificates, {list, {certificate, string}}}},
+			args = [],
+			result = {certificates,
+				  {list, {certificate,
+					  {tuple, [{domain, string},
+						   {file, string},
+						   {used, string}]}}}}},
      #ejabberd_commands{name = revoke_certificate, tags = [acme],
-			desc = "Revokes the selected certificate",
+			desc = "Revokes the selected ACME certificate",
 			module = ?MODULE, function = revoke_certificate,
-			args_desc = ["The domain or file (in pem format) of "
-				     "the certificate in question "
-				     "{domain:Domain | file:File}"],
-			args = [{domain_or_file, string}],
+			args_desc = ["Filename of the certificate"],
+			args = [{file, string}],
 			result = {res, restuple}}].
 
-%%
-%% Get Certificate
-%%
--spec get_certificates(domains_opt()) -> string() | {'error', _}.
-get_certificates(Domains) ->
-    case is_valid_domain_opt(Domains) of
+-spec request_certificate(iodata()) -> {ok | error, string()}.
+request_certificate(Arg) ->
+    Ret = case lists:filter(
+		 fun(S) -> S /= <<>> end,
+		 re:split(Arg, "[\\h,;]+", [{return, binary}])) of
+	      [<<"all">>] ->
+		  case auto_domains() of
+		      [] -> {error, no_auto_hosts};
+		      Domains ->
+			  gen_server:call(?MODULE, {request, Domains}, ?CALL_TIMEOUT)
+		  end;
+	      [_|_] = Domains ->
+		  case lists:dropwhile(
+			 fun(D) ->
+				 try ejabberd_router:is_my_route(D) of
+				     true -> not is_ip_or_localhost(D);
+				     false -> false
+				 catch _:{invalid_domain, _} -> false
+				 end
+			 end, Domains) of
+		      [Bad|_] ->
+			  {error, {invalid_host, Bad}};
+		      [] ->
+			  gen_server:call(?MODULE, {request, Domains}, ?CALL_TIMEOUT)
+		  end;
+	      [] ->
+		  {error, invalid_argument}
+	  end,
+    case Ret of
+	ok -> {ok, ""};
+	{error, Why} -> {error, format_error(Why)}
+    end.
+
+-spec revoke_certificate(iodata()) -> {ok | error, string()}.
+revoke_certificate(Path0) ->
+    Path = prep_path(Path0),
+    Ret = case read_cert(Path) of
+	      {ok, [Cert|_], Key} ->
+		  gen_server:call(?MODULE, {revoke, Cert, Key, Path}, ?CALL_TIMEOUT);
+	      {error, _} = Err ->
+		  Err
+	  end,
+    case Ret of
+	ok -> {ok, ""};
+	{error, Reason} -> {error, format_error(Reason)}
+    end.
+
+-spec list_certificates() -> [{binary(), binary(), boolean()}].
+list_certificates() ->
+    Known = lists:flatmap(
+	      fun(Path) ->
+		      try
+			  {ok, [Cert|_], _} = read_cert(Path),
+			  Domains = pkix:extract_domains(Cert),
+			  [{Domain, Path} || Domain <- Domains]
+		      catch _:{badmatch, _} ->
+			      []
+		      end
+	      end, list_certfiles()),
+    Used = lists:foldl(
+	     fun(Domain, S) ->
+		     try
+			 {ok, Path} = ejabberd_pkix:get_certfile_no_default(Domain),
+			 {ok, [Cert|_], _} = read_cert(Path),
+			 {ok, #{files := Files}} = pkix:get_cert_info(Cert),
+			 lists:foldl(fun sets:add_element/2,
+				     S, [{Domain, File} || {File, _} <- Files])
+		     catch _:{badmatch, _} ->
+			     S
+		     end
+	     end, sets:new(), all_domains()),
+    lists:sort(
+      lists:map(
+	fun({Domain, Path} = E) ->
+		{Domain, Path, sets:is_element(E, Used)}
+	end, Known)).
+
+%%%===================================================================
+%%% Other stuff
+%%%===================================================================
+-spec all_domains() -> [binary(),...].
+all_domains() ->
+    ejabberd_option:hosts() ++ ejabberd_router:get_all_routes().
+
+-spec auto_domains() -> [binary()].
+auto_domains() ->
+    lists:filter(
+      fun(Host) ->
+	      not is_ip_or_localhost(Host)
+      end, all_domains()).
+
+-spec directory_url() -> binary().
+directory_url() ->
+    maps:get(ca_url, ejabberd_option:acme(), default_directory_url()).
+
+-spec debug_fun() -> fun((string(), list()) -> ok).
+debug_fun() ->
+    fun(Fmt, Args) -> ?DEBUG(Fmt, Args) end.
+
+-spec request_on_start() -> false | {true, [binary()]}.
+request_on_start() ->
+    Config = ejabberd_option:acme(),
+    case maps:get(auto, Config, true) of
+	false -> false;
 	true ->
-	    try
-		CAUrl = get_config_ca_url(),
-		get_certificates0(CAUrl, Domains)
-	    catch
-		throw:Throw ->
-		    Throw;
-		?EX_RULE(E, R, St) ->
-		    StackTrace = ?EX_STACK(St),
-		    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, StackTrace]),
-		    {error, get_certificates}
-	    end;
-	false ->
-	    io_lib:format("Invalid domains: ~p", [Domains])
+	    case ejabberd_listener:tls_listeners() of
+		[] -> false;
+		_ ->
+		    case lists:filter(
+			   fun(Host) ->
+				   not (have_cert_for_domain(Host)
+					orelse is_ip_or_localhost(Host))
+			   end, auto_domains()) of
+			[] -> false;
+			Hosts ->
+			    case have_acme_listener() of
+				true -> {true, Hosts};
+				false ->
+				    ?WARNING_MSG(
+				       "No HTTP listeners for ACME challenges "
+				       "are configured, automatic "
+				       "certificate requests are aborted. Hint: "
+				       "configure the listener and restart/reload "
+				       "ejabberd. Or set acme->auto option to "
+				       "`false` to suppress this warning.",
+				       []),
+				    false
+			    end
+		    end
+	    end
     end.
 
--spec get_certificates0(url(), domains_opt()) -> string().
-get_certificates0(CAUrl, Domains) ->
-    %% Check if an account exists or create another one
-    {ok, _AccId, PrivateKey} = retrieve_or_create_account(CAUrl),
+well_known() ->
+    [<<".well-known">>, <<"acme-challenge">>].
 
-    get_certificates1(CAUrl, Domains, PrivateKey).
+-spec have_cert_for_domain(binary()) -> boolean().
+have_cert_for_domain(Host) ->
+    ejabberd_pkix:get_certfile_no_default(Host) /= error.
 
--spec retrieve_or_create_account(url()) -> {'ok', string(), jose_jwk:key()}.
-retrieve_or_create_account(CAUrl) ->
-    case read_account_persistent() of
-	none ->
-	    create_save_new_account(CAUrl);
-
-	{ok, AccId, CAUrl, PrivateKey} ->
-	    {ok, AccId, PrivateKey};
-	{ok, _AccId, _, _PrivateKey} ->
-	    create_save_new_account(CAUrl)
+-spec is_ip_or_localhost(binary()) -> boolean().
+is_ip_or_localhost(Host) ->
+    Parts = binary:split(Host, <<".">>),
+    TLD = binary_to_list(lists:last(Parts)),
+    case inet:parse_address(TLD) of
+	{ok, _} -> true;
+	_ -> TLD == "localhost"
     end.
 
-
--spec get_certificates1(url(), domains_opt(), jose_jwk:key()) -> string().
-get_certificates1(CAUrl, "all", PrivateKey) ->
-    Hosts = get_config_hosts(),
-    get_certificates2(CAUrl, PrivateKey, Hosts);
-get_certificates1(CAUrl, DomainString, PrivateKey) ->
-    Domains = parse_domain_string(DomainString),
-    Hosts = [list_to_bitstring(D) || D <- Domains],
-    get_certificates2(CAUrl, PrivateKey, Hosts).
-
--spec get_certificates2(url(), jose_jwk:key(), [binary()]) -> string().
-get_certificates2(CAUrl, PrivateKey, Hosts) ->
-    %% Get a certificate for each host
-    PemCertKeys = [get_certificate(CAUrl, Host, PrivateKey) || Host <- Hosts],
-
-    %% Save Certificates
-    SavedCerts = [save_certificate(Cert) || Cert <- PemCertKeys],
-
-    %% Format the result to send back to ejabberdctl
-    format_get_certificates_result(SavedCerts).
-
--spec format_get_certificates_result([{'ok', binary(), _} |
-				      {'error', binary(), _}]) ->
-					    string().
-format_get_certificates_result(Certs) ->
-    Cond = lists:all(fun(Cert) ->
-			     not is_error(Cert)
-		     end, Certs),
-    %% FormattedCerts = string:join([format_get_certificate(C) || C <- Certs], "\n"),
-    FormattedCerts = str:join([format_get_certificate(C) || C <- Certs], $\n),
-    case Cond of
-	true ->
-	    Result = io_lib:format("Success:~n~s", [FormattedCerts]),
-	    lists:flatten(Result);
-	_ ->
-	    Result = io_lib:format("Error with one or more certificates~n~s", [FormattedCerts]),
-	    lists:flatten(Result)
-    end.
-
--spec format_get_certificate({'ok', binary(), _} |
-			     {'error', binary(), _}) ->
-				    string().
-format_get_certificate({ok, Domain, saved}) ->
-    io_lib:format("  Certificate for domain: \"~s\" acquired and saved", [Domain]);
-format_get_certificate({error, Domain, not_found}) ->
-    io_lib:format("  Certificate for domain: \"~s\" not found, so it was not renewed", [Domain]);
-format_get_certificate({ok, Domain, no_expire}) ->
-    io_lib:format("  Certificate for domain: \"~s\" is not close to expiring", [Domain]);
-format_get_certificate({error, Domain, Reason}) ->
-    io_lib:format("  Error for domain: \"~s\",  with reason: \'~s\'", [Domain, Reason]).
-
--spec get_certificate(url(), binary(), jose_jwk:key()) ->
-			     {'ok', binary(), pem()} |
-			     {'error', binary(), _}.
-get_certificate(CAUrl, DomainName, PrivateKey) ->
-    try
-	AllSubDomains = find_all_sub_domains(DomainName),
-	lists:foreach(
-	  fun(Domain) ->
-		  {ok, _Authz} = create_new_authorization(CAUrl, Domain, PrivateKey)
-	  end, [DomainName|AllSubDomains]),
-	create_new_certificate(CAUrl, {DomainName, AllSubDomains}, PrivateKey)
-    catch
-	throw:Throw ->
-	    Throw;
-	?EX_RULE(E, R, St) ->
-	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, StackTrace]),
-	    {error, DomainName, get_certificate}
-    end.
-
--spec create_save_new_account(url()) -> {'ok', string(), jose_jwk:key()} | no_return().
-create_save_new_account(CAUrl) ->
-    %% Get contact from configuration file
-    Contact = get_config_contact(),
-
-    %% Generate a Key
-    PrivateKey = generate_key(),
-
-    %% Create a new account
-    {ok, Id} = create_new_account(CAUrl, Contact, PrivateKey),
-
-    %% Write Persistent Data
-    ok = write_account_persistent({Id, CAUrl, PrivateKey}),
-
-    {ok, Id, PrivateKey}.
-
-%% TODO:
-%% Find a way to ask the user if he accepts the TOS
--spec create_new_account(url(), binary(), jose_jwk:key()) -> {'ok', string()} |
-								no_return().
-create_new_account(CAUrl, Contact, PrivateKey) ->
-    try
-	{ok, Dirs, Nonce0} = ejabberd_acme_comm:directory(CAUrl),
-	Req0 = [{ <<"contact">>, [Contact]}],
-	{ok, {TOS, Account}, Nonce1} =
-	    ejabberd_acme_comm:new_account(Dirs, PrivateKey, Req0, Nonce0),
-	{<<"id">>, AccIdInt} = lists:keyfind(<<"id">>, 1, Account),
-	AccId = integer_to_list(AccIdInt),
-	Req1 = [{ <<"agreement">>, list_to_bitstring(TOS)}],
-	{ok, _Account2, _Nonce2} =
-	    ejabberd_acme_comm:update_account({CAUrl, AccId}, PrivateKey, Req1, Nonce1),
-	{ok, AccId}
-    catch
-	E:R ->
-	    ?ERROR_MSG("Error: ~p creating an account for contact: ~p",
-		       [{E,R}, Contact]),
-	    throw({error,create_new_account})
-    end.
-
--spec create_new_authorization(url(), binary(), jose_jwk:key()) ->
-				      {'ok', proplist()} | no_return().
-create_new_authorization(CAUrl, DomainName, PrivateKey) ->
-    acme_challenge:register_hooks(DomainName),
-    try
-	{ok, Dirs, Nonce0} = ejabberd_acme_comm:directory(CAUrl),
-	Req0 = [{<<"identifier">>,
-		 {[{<<"type">>, <<"dns">>},
-		   {<<"value">>, DomainName}]}},
-		{<<"existing">>, <<"accept">>}],
-	{ok, {AuthzUrl, Authz}, Nonce1} =
-	    ejabberd_acme_comm:new_authz(Dirs, PrivateKey, Req0, Nonce0),
-	{ok, AuthzId} = location_to_id(AuthzUrl),
-
-	Challenges = get_challenges(Authz),
-	{ok, ChallengeUrl, KeyAuthz} =
-	    acme_challenge:solve_challenge(<<"http-01">>, Challenges, PrivateKey),
-	{ok, ChallengeId} = location_to_id(ChallengeUrl),
-	Req3 = [{<<"type">>, <<"http-01">>},{<<"keyAuthorization">>, KeyAuthz}],
-	{ok, _SolvedChallenge, _Nonce2} = ejabberd_acme_comm:complete_challenge(
-					    {CAUrl, AuthzId, ChallengeId}, PrivateKey, Req3, Nonce1),
-
-	{ok, AuthzValid, _Nonce} = ejabberd_acme_comm:get_authz_until_valid({CAUrl, AuthzId}),
-	{ok, AuthzValid}
-    catch
-	E:R ->
-	    ?ERROR_MSG("Error: ~p getting an authorization for domain: ~p~n",
-		       [{E,R}, DomainName]),
-	    throw({error, DomainName, authorization})
-    after
-	acme_challenge:unregister_hooks(DomainName)
-    end.
-
--spec create_new_certificate(url(), {binary(), [binary()]}, jose_jwk:key()) ->
-				    {ok, binary(), pem()}.
-create_new_certificate(CAUrl, {DomainName, AllSubDomains}, PrivateKey) ->
-    try
-	{ok, Dirs, Nonce0} = ejabberd_acme_comm:directory(CAUrl),
-	CSRSubject = [{?'id-at-commonName', bitstring_to_list(DomainName)}],
-	SANs = [{dNSName, SAN} || SAN <- AllSubDomains],
-	{CSR, CSRKey} = make_csr(CSRSubject, SANs),
-	{NotBefore, NotAfter} = not_before_not_after(),
-	Req =
-	    [{<<"csr">>, CSR},
-	     {<<"notBefore">>, NotBefore},
-	     {<<"NotAfter">>, NotAfter}
-	    ],
-	{ok, {IssuerCertLink, Certificate}, _Nonce1} =
-	    ejabberd_acme_comm:new_cert(Dirs, PrivateKey, Req, Nonce0),
-
-	DecodedCert = public_key:pkix_decode_cert(list_to_binary(Certificate), plain),
-	PemEntryCert = public_key:pem_entry_encode('Certificate', DecodedCert),
-
-	{ok, IssuerCert, _Nonce2} = ejabberd_acme_comm:get_issuer_cert(IssuerCertLink),
-	DecodedIssuerCert = public_key:pkix_decode_cert(list_to_binary(IssuerCert), plain),
-	PemEntryIssuerCert = public_key:pem_entry_encode('Certificate', DecodedIssuerCert),
-
-	{_, CSRKeyKey} = jose_jwk:to_key(CSRKey),
-	PemEntryKey = public_key:pem_entry_encode('ECPrivateKey', CSRKeyKey),
-
-	PemCertKey = public_key:pem_encode([PemEntryKey, PemEntryCert, PemEntryIssuerCert]),
-
-	{ok, DomainName, PemCertKey}
-    catch
-	E:R ->
-	    ?ERROR_MSG("Error: ~p getting an authorization for domain: ~p~n",
-		       [{E,R}, DomainName]),
-	    throw({error, DomainName, certificate})
-    end.
-
--spec ensure_account_exists(url()) -> {ok, string(), jose_jwk:key()}.
-ensure_account_exists(CAUrl) ->
-    case read_account_persistent() of
-	none ->
-	    ?ERROR_MSG("No existing account", []),
-	    throw({error, no_old_account});
-	{ok, AccId, CAUrl, PrivateKey} ->
-	    {ok, AccId, PrivateKey};
-	{ok, _AccId, OtherCAUrl, _PrivateKey} ->
-	    ?ERROR_MSG("Account is connected to another CA: ~s", [OtherCAUrl]),
-	    throw({error, account_in_other_CA})
-    end.
-
-
-%%
-%% Renew Certificates
-%%
--spec renew_certificates() -> string() | {'error', _}.
-renew_certificates() ->
-    try
-	CAUrl = get_config_ca_url(),
-        renew_certificates0(CAUrl)
-    catch
-	throw:Throw ->
-	    Throw;
-	?EX_RULE(E, R, St) ->
-	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, StackTrace]),
-	    {error, get_certificates}
-    end.
-
--spec renew_certificates0(url()) -> string().
-renew_certificates0(CAUrl) ->
-    %% Get the current account
-    {ok, _AccId, PrivateKey} = ensure_account_exists(CAUrl),
-
-    %% Find all hosts that we have certificates for
-    Certs = read_certificates_persistent(),
-
-    %% Get a certificate for each host
-    PemCertKeys = [renew_certificate(CAUrl, Cert, PrivateKey) || Cert <- Certs],
-
-    %% Save Certificates
-    SavedCerts = [save_renewed_certificate(Cert) || Cert <- PemCertKeys],
-
-    %% Format the result to send back to ejabberdctl
-    format_get_certificates_result(SavedCerts).
-
--spec renew_certificate(url(), {binary(), data_cert()}, jose_jwk:key()) ->
-			       {'ok', binary(), _} |
-			       {'error', binary(), _}.
-renew_certificate(CAUrl, {DomainName, _} = Cert, PrivateKey) ->
-    case cert_to_expire(Cert) of
-	true ->
-	    get_certificate(CAUrl, DomainName, PrivateKey);
-	false ->
-	    {ok, DomainName, no_expire}
-    end.
-
-
--spec cert_to_expire({binary(), data_cert()}) -> boolean().
-cert_to_expire({_DomainName, #data_cert{pem = Pem}}) ->
-    Certificate = pem_to_certificate(Pem),
-    Validity = get_utc_validity(Certificate),
-
-    %% 30 days before expiration
-    close_to_expire(Validity, 30).
-
--spec close_to_expire(string(), integer()) -> boolean().
-close_to_expire(Validity, Days) ->
-    {ValidDate, _ValidTime} = utc_string_to_datetime(Validity),
-    ValidDays = calendar:date_to_gregorian_days(ValidDate),
-
-    {CurrentDate, _CurrentTime} = calendar:universal_time(),
-    CurrentDays = calendar:date_to_gregorian_days(CurrentDate),
-    CurrentDays > ValidDays - Days.
-
-
-
-%%
-%% List Certificates
-%%
--spec list_certificates(verbose_opt()) -> [string()] | [any()] | {error, _}.
-list_certificates(Verbose) ->
-    case is_valid_verbose_opt(Verbose) of
-	true ->
-	    try
-		list_certificates0(Verbose)
-	    catch
-		throw:Throw ->
-		    Throw;
-		?EX_RULE(E, R, St) ->
-		    StackTrace = ?EX_STACK(St),
-		    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, StackTrace]),
-		    {error, list_certificates}
-	    end;
-	false ->
-	    String = io_lib:format("Invalid verbose  option: ~p", [Verbose]),
-	    {invalid_option, String}
-    end.
-
--spec list_certificates0(verbose_opt()) -> [string()] | [any()].
-list_certificates0(Verbose) ->
-    Certs = read_certificates_persistent(),
-    [format_certificate(DataCert, Verbose) || {_Key, DataCert} <- Certs].
-
-%% TODO: Make this cleaner and more robust
--spec format_certificate(data_cert(), verbose_opt()) -> string().
-format_certificate(DataCert, Verbose) ->
-    #data_cert{
-       domain = DomainName,
-       pem = PemCert,
-       path = Path
-      } = DataCert,
-
-    try
-	Certificate = pem_to_certificate(PemCert),
-
-	%% Find the commonName
-	_CommonName = get_commonName(Certificate),
-
-	%% Find the notAfter date
-	NotAfter = get_notAfter(Certificate),
-
-	%% Find the subjectAltNames
-	SANs = get_subjectAltNames(Certificate),
-
-	case Verbose of
-	    "plain" ->
-		format_certificate_plain(DomainName, SANs, NotAfter, Path);
-	    "verbose" ->
-		format_certificate_verbose(DomainName, SANs, NotAfter, PemCert)
-	end
-    catch
-	?EX_RULE(E, R, St) ->
-	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, StackTrace]),
-	    fail_format_certificate(DomainName)
-    end.
-
--spec format_certificate_plain(binary(), [string()], {expired | ok, string()}, string())
-			      -> string().
-format_certificate_plain(DomainName, SANs, NotAfter, Path) ->
-    Result = lists:flatten(io_lib:format(
-			     "  Domain: ~s~n"
-			     "~s"
-			     "    ~s~n"
-			     "    Path: ~s",
-			     [DomainName,
-			      lists:flatten([io_lib:format("    SAN: ~s~n", [SAN]) || SAN <- SANs]),
-			      format_validity(NotAfter), Path])),
-    Result.
-
--spec format_certificate_verbose(binary(), [string()], {expired | ok, string()}, binary())
-				-> string().
-format_certificate_verbose(DomainName, SANs, NotAfter, PemCert) ->
-    Result = lists:flatten(io_lib:format(
-			     "  Domain: ~s~n"
-			     "~s"
-			     "    ~s~n"
-			     "    Certificate In PEM format: ~n~s",
-			     [DomainName,
-			      lists:flatten([io_lib:format("    SAN: ~s~n", [SAN]) || SAN <- SANs]),
-			      format_validity(NotAfter), PemCert])),
-    Result.
-
--spec format_validity({'expired' | 'ok', string()}) -> string().
-format_validity({expired, NotAfter}) ->
-    io_lib:format("Expired at: ~s UTC", [NotAfter]);
-format_validity({ok, NotAfter}) ->
-    io_lib:format("Valid until: ~s UTC", [NotAfter]).
-
--spec fail_format_certificate(binary()) -> string().
-fail_format_certificate(DomainName) ->
-    Result = lists:flatten(io_lib:format(
-			     "  Domain: ~s~n"
-			     "    Failed to format Certificate",
-			     [DomainName])),
-    Result.
-
--spec get_commonName(#'Certificate'{}) -> string().
-get_commonName(#'Certificate'{tbsCertificate = TbsCertificate}) ->
-    #'TBSCertificate'{
-       subject = {rdnSequence, SubjectList}
-      } = TbsCertificate,
-
-    %% TODO: Not the best way to find the commonName
-    ShallowSubjectList = [Attribute || [Attribute] <- SubjectList],
-    {_, _, CommonName} = lists:keyfind(?'id-at-commonName', 2, ShallowSubjectList),
-
-    %% TODO: Remove the length-encoding from the commonName before returning it
-    CommonName.
-
--spec get_notAfter(#'Certificate'{}) -> {expired | ok, string()}.
-get_notAfter(Certificate) ->
-    UtcTime = get_utc_validity(Certificate),
-    %% TODO: Find a library function to decode utc time
-    [Y1,Y2,MO1,MO2,D1,D2,H1,H2,MI1,MI2,S1,S2,$Z] = UtcTime,
-    YEAR = case list_to_integer([Y1,Y2]) >= 50 of
-	       true -> "19" ++ [Y1,Y2];
-	       _ -> "20" ++ [Y1,Y2]
-	   end,
-    NotAfter = lists:flatten(io_lib:format("~s-~s-~s ~s:~s:~s",
-					   [YEAR, [MO1,MO2], [D1,D2],
-					    [H1,H2], [MI1,MI2], [S1,S2]])),
-
-    case close_to_expire(UtcTime, 0) of
-	true ->
-	    {expired, NotAfter};
-	false ->
-	    {ok, NotAfter}
-    end.
-
--spec get_subjectAltNames(#'Certificate'{}) -> [string()].
-get_subjectAltNames(#'Certificate'{tbsCertificate = TbsCertificate}) ->
-    #'TBSCertificate'{
-       extensions = Exts
-      } = TbsCertificate,
-
-    EncodedSANs = [Val || #'Extension'{extnID = Oid, extnValue = Val} <- Exts,
-			  Oid == ?'id-ce-subjectAltName'],
-
-    lists:flatmap(
-      fun(EncSAN) ->
-	      SANs0 = public_key:der_decode('SubjectAltName', EncSAN),
-	      [Name || {dNSName, Name} <- SANs0]
-      end, EncodedSANs).
-
-
-
--spec get_utc_validity(#'Certificate'{}) -> string().
-get_utc_validity(#'Certificate'{tbsCertificate = TbsCertificate}) ->
-    #'TBSCertificate'{
-       validity = Validity
-      } = TbsCertificate,
-
-    #'Validity'{notAfter = {utcTime, UtcTime}} = Validity,
-    UtcTime.
-
-%%
-%% Revoke Certificate
-%%
-
-revoke_certificate(DomainOrFile) ->
-    case is_valid_revoke_cert(DomainOrFile) of
-	true ->
-	    revoke_certificates(DomainOrFile);
-	false ->
-	    String = io_lib:format("Bad argument: ~s", [DomainOrFile]),
-	    {invalid_argument, String}
-    end.
-
--spec revoke_certificates(string()) -> {ok, deleted} | {error, _}.
-revoke_certificates(DomainOrFile) ->
-    try
-	CAUrl = get_config_ca_url(),
-	revoke_certificate0(CAUrl, DomainOrFile)
-    catch
-	throw:Throw ->
-	    Throw;
-	?EX_RULE(E, R, St) ->
-	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, StackTrace]),
-	    {error, revoke_certificate}
-    end.
-
--spec revoke_certificate0(url(), string()) -> {ok, deleted}.
-revoke_certificate0(CAUrl, DomainOrFile) ->
-    ParsedCert = parse_revoke_cert_argument(DomainOrFile),
-    revoke_certificate1(CAUrl, ParsedCert).
-
--spec revoke_certificate1(url(), {domain, binary()} | {file, file:filename()}) ->
-				 {ok, deleted}.
-revoke_certificate1(CAUrl, {domain, Domain}) ->
-    case domain_certificate_exists(Domain) of
-	{Domain, Cert = #data_cert{pem=PemCert}} ->
-	    ok = revoke_certificate2(CAUrl, PemCert),
-	    ok = remove_certificate_persistent(Cert),
-	    {ok, deleted};
-	false ->
-	    ?ERROR_MSG("Certificate for domain: ~p not found", [Domain]),
-	    throw({error, not_found})
-    end;
-revoke_certificate1(CAUrl, {file, File}) ->
-    case file:read_file(File) of
-	{ok, Pem} ->
-	    ok = revoke_certificate2(CAUrl, Pem),
-	    {ok, deleted};
-	{error, Reason} ->
-	    ?ERROR_MSG("Error: ~p reading pem certificate-key file: ~p", [Reason, File]),
-	    throw({error, Reason})
-    end.
-
-
--spec revoke_certificate2(url(), pem()) -> ok.
-revoke_certificate2(CAUrl, PemEncodedCert) ->
-    {Certificate, CertPrivateKey} = prepare_certificate_revoke(PemEncodedCert),
-
-    {ok, Dirs, Nonce} = ejabberd_acme_comm:directory(CAUrl),
-
-    Req = [{<<"certificate">>, Certificate}],
-    {ok, [], _Nonce1} = ejabberd_acme_comm:revoke_cert(Dirs, CertPrivateKey, Req, Nonce),
-    ok.
-
--spec parse_revoke_cert_argument(string()) -> {domain, binary()} | {file, file:filename()}.
-parse_revoke_cert_argument([$f, $i, $l, $e, $:|File]) ->
-    {file, File};
-parse_revoke_cert_argument([$d, $o, $m, $a, $i, $n, $: | Domain]) ->
-    {domain, list_to_bitstring(Domain)}.
-
--spec prepare_certificate_revoke(pem()) -> {binary(), jose_jwk:key()}.
-prepare_certificate_revoke(PemEncodedCert) ->
-    PemList = public_key:pem_decode(PemEncodedCert),
-    PemCertEnc = lists:keyfind('Certificate', 1, PemList),
-    PemCert = public_key:pem_entry_decode(PemCertEnc),
-    DerCert = public_key:der_encode('Certificate', PemCert),
-    Base64Cert = base64url:encode(DerCert),
-
-    {ok, Key} = find_private_key_in_pem(PemEncodedCert),
-    {Base64Cert, Key}.
-
--spec domain_certificate_exists(binary()) -> {binary(), data_cert()} | false.
-domain_certificate_exists(Domain) ->
-    Certs = read_certificates_persistent(),
-    lists:keyfind(Domain, 1, Certs).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%
-%% Certificate Request Functions
-%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% For now we accept only generating a key of
-%% specific type for signing the csr
-
--spec make_csr(proplist(), [{dNSName, binary()}])
-	      -> {binary(), jose_jwk:key()}.
-make_csr(Attributes, SANs) ->
-    Key = generate_key(),
-    {_, KeyKey} = jose_jwk:to_key(Key),
-    KeyPub = to_public(Key),
-    try
-	SubPKInfoAlgo = subject_pk_info_algo(KeyPub),
-	{ok, RawBinPubKey} = raw_binary_public_key(KeyPub),
-	SubPKInfo = subject_pk_info(SubPKInfoAlgo, RawBinPubKey),
-	Subject = attributes_from_list(Attributes),
-	ExtensionRequest = extension_request(SANs),
-	CRI = certificate_request_info(SubPKInfo, Subject, ExtensionRequest),
-	{ok, EncodedCRI} = der_encode(
-			     'CertificationRequestInfo',
-			     CRI),
-	SignedCRI = public_key:sign(EncodedCRI, 'sha256', KeyKey),
-	SignatureAlgo = signature_algo(Key, 'sha256'),
-	CSR = certification_request(CRI, SignatureAlgo, SignedCRI),
-	{ok, DerCSR} = der_encode(
-			 'CertificationRequest',
-			 CSR),
-	Result = base64url:encode(DerCSR),
-	{Result, Key}
-    catch
-	_:{badmatch, {error, bad_public_key}} ->
-	    {error, bad_public_key};
-	_:{badmatch, {error, bad_attributes}} ->
-	    {error, bad_public_key};
-	_:{badmatch, {error, der_encode}} ->
-	    {error, der_encode}
-    end.
-
-
-
-subject_pk_info_algo(_KeyPub) ->
-    #'SubjectPublicKeyInfoAlgorithm'{
-       algorithm = ?'id-ecPublicKey',
-       parameters = {asn1_OPENTYPE,<<6,8,42,134,72,206,61,3,1,7>>}
-      }.
-
-subject_pk_info(Algo, RawBinPubKey) ->
-    #'SubjectPublicKeyInfo-PKCS-10'{
-       algorithm = Algo,
-       subjectPublicKey = RawBinPubKey
-      }.
-
-extension(SANs) ->
-    #'Extension'{
-       extnID = ?'id-ce-subjectAltName',
-       critical = false,
-       extnValue = public_key:der_encode('SubjectAltName', SANs)}.
-
-extension_request(SANs) ->
-    #'AttributePKCS-10'{
-       type = ?'pkcs-9-at-extensionRequest',
-       values = [{'asn1_OPENTYPE',
-		  public_key:der_encode(
-		    'ExtensionRequest',
-		    [extension(SANs)])}]
-      }.
-
-certificate_request_info(SubPKInfo, Subject, ExtensionRequest) ->
-    #'CertificationRequestInfo'{
-       version = 0,
-       subject = Subject,
-       subjectPKInfo = SubPKInfo,
-       attributes = [ExtensionRequest]
-      }.
-
-signature_algo(_Key, _Hash) ->
-    #'CertificationRequest_signatureAlgorithm'{
-       algorithm = ?'ecdsa-with-SHA256',
-       parameters = asn1_NOVALUE
-      }.
-
-certification_request(CRI, SignatureAlgo, SignedCRI) ->
-    #'CertificationRequest'{
-       certificationRequestInfo = CRI,
-       signatureAlgorithm = SignatureAlgo,
-       signature = SignedCRI
-      }.
-
-raw_binary_public_key(KeyPub) ->
-    try
-	{_, RawPubKey} = jose_jwk:to_key(KeyPub),
-	{{_, RawBinPubKey}, _} = RawPubKey,
-	{ok, RawBinPubKey}
-    catch
-	_:_ ->
-	    ?ERROR_MSG("Bad public key: ~p~n", [KeyPub]),
-	    {error, bad_public_key}
-    end.
-
-der_encode(Type, Term) ->
-    try
-	{ok, public_key:der_encode(Type, Term)}
-    catch
-	_:_ ->
-	    ?ERROR_MSG("Cannot DER encode: ~p, with asn1type: ~p", [Term, Type]),
-	    {error, der_encode}
-    end.
-
-attributes_from_list(Attrs) ->
-    {rdnSequence,
-     [[#'AttributeTypeAndValue'{
-	  type = AttrName,
-	  value = public_key:der_encode('X520CommonName', {printableString, AttrVal})
-	 }] || {AttrName, AttrVal} <- Attrs]}.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%
-%% Useful funs
-%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
--spec location_to_id(url()) -> {ok, string()} | {error, not_found}.
-location_to_id(Url0) ->
-    Url = string:strip(Url0, right, $/),
-    case string:rchr(Url, $/) of
-	0 ->
-	    ?ERROR_MSG("Couldn't find id in url: ~p~n", [Url]),
-	    {error, not_found};
-	Ind ->
-	    {ok, string:sub_string(Url, Ind+1)}
-    end.
-
--spec get_challenges(proplist()) -> [{proplist()}].
-get_challenges(Body) ->
-    {<<"challenges">>, Challenges} = proplists:lookup(<<"challenges">>, Body),
-    Challenges.
-
--spec not_before_not_after() -> {binary(), binary()}.
-not_before_not_after() ->
-    {Date, Time} = calendar:universal_time(),
-    NotBefore = encode_calendar_datetime({Date, Time}),
-    %% The certificate will be valid for 90 Days after today
-    AfterDate = add_days_to_date(90, Date),
-    NotAfter = encode_calendar_datetime({AfterDate, Time}),
-    {NotBefore, NotAfter}.
-
--spec to_public(jose_jwk:key()) -> jose_jwk:key().
-to_public(PrivateKey) ->
-    jose_jwk:to_public(PrivateKey).
-
--spec pem_to_certificate(pem()) -> #'Certificate'{}.
-pem_to_certificate(Pem) ->
-    PemList = public_key:pem_decode(Pem),
-    PemEntryCert = lists:keyfind('Certificate', 1, PemList),
-    Certificate = public_key:pem_entry_decode(PemEntryCert),
-    Certificate.
-
--spec add_days_to_date(integer(), calendar:date()) -> calendar:date().
-add_days_to_date(Days, Date) ->
-    Date1 = calendar:date_to_gregorian_days(Date),
-    calendar:gregorian_days_to_date(Date1 + Days).
-
--spec encode_calendar_datetime(calendar:datetime()) -> binary().
-encode_calendar_datetime({{Year, Month, Day}, {Hour, Minute, Second}}) ->
-    list_to_binary(io_lib:format("~4..0B-~2..0B-~2..0BT"
-				 "~2..0B:~2..0B:~2..0BZ",
-				 [Year, Month, Day, Hour, Minute, Second])).
-
-%% TODO: Find a better and more robust way to parse the utc string
--spec utc_string_to_datetime(string()) -> calendar:datetime().
-utc_string_to_datetime(UtcString) ->
-    try
-	[Y1,Y2,MO1,MO2,D1,D2,H1,H2,MI1,MI2,S1,S2,$Z] = UtcString,
-	Year = list_to_integer("20" ++ [Y1,Y2]),
-	Month = list_to_integer([MO1, MO2]),
-	Day = list_to_integer([D1,D2]),
-	Hour = list_to_integer([H1,H2]),
-	Minute = list_to_integer([MI1,MI2]),
-	Second = list_to_integer([S1,S2]),
-	{{Year, Month, Day}, {Hour, Minute, Second}}
-    catch
-	_:_ ->
-	    ?ERROR_MSG("Unable to parse UTC string", []),
-	    throw({error, utc_string_to_datetime})
-    end.
-
--spec find_private_key_in_pem(pem()) -> {ok, jose_jwk:key()} | false.
-find_private_key_in_pem(Pem) ->
-    PemList = public_key:pem_decode(Pem),
-    case find_private_key_in_pem1(private_key_types(), PemList) of
-	false ->
-	    false;
-	PemKey ->
-	    Key = public_key:pem_entry_decode(PemKey),
-	    JoseKey = jose_jwk:from_key(Key),
-	    {ok, JoseKey}
-    end.
-
-
--spec find_private_key_in_pem1([public_key:pki_asn1_type()],
-			       [public_key:pem_entry()]) ->
-				      public_key:pem_entry() | false.
-find_private_key_in_pem1([], _PemList) ->
-    false;
-find_private_key_in_pem1([Type|Types], PemList) ->
-    case lists:keyfind(Type, 1, PemList) of
-	false ->
-	    find_private_key_in_pem1(Types, PemList);
-	Key ->
-	    Key
-    end.
-
-
--spec parse_domain_string(string()) -> [string()].
-parse_domain_string(DomainString) ->
-    string:tokens(DomainString, ";").
-
--spec private_key_types() -> [public_key:pki_asn1_type()].
-private_key_types() ->
-    ['RSAPrivateKey',
-     'DSAPrivateKey',
-     'ECPrivateKey'].
-
--spec find_all_sub_domains(binary()) -> [binary()].
-find_all_sub_domains(DomainName) ->
-    AllRoutes = ejabberd_router:get_all_routes(),
-    DomainLen = size(DomainName),
-    [Route || Route <- AllRoutes,
-	      binary:longest_common_suffix([DomainName, Route])
-		  =:= DomainLen].
-
-
--spec is_error(_) -> boolean().
-is_error({error, _}) -> true;
-is_error({error, _, _}) -> true;
-is_error(_) -> false.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%
-%% Handle the persistent data structure
-%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec data_empty() -> [].
-data_empty() ->
-    [].
-
-%%
-%% Account
-%%
-
--spec data_get_account(acme_data()) -> {ok, list(), url(), jose_jwk:key()} | none.
-data_get_account(Data) ->
-    case lists:keyfind(account, 1, Data) of
-	{account, #data_acc{id = AccId, ca_url = CAUrl, key = PrivateKey}} ->
-	    {ok, AccId, CAUrl,  PrivateKey};
-        false ->
-	    none
-    end.
-
--spec data_set_account(acme_data(), {list(), url(), jose_jwk:key()}) -> acme_data().
-data_set_account(Data, {AccId, CAUrl, PrivateKey}) ->
-    NewAcc = {account, #data_acc{id = AccId, ca_url = CAUrl, key = PrivateKey}},
-    lists:keystore(account, 1, Data, NewAcc).
-
-%%
-%% Certificates
-%%
-
--spec data_get_certificates(acme_data()) -> data_certs().
-data_get_certificates(Data) ->
-    case lists:keyfind(certs, 1, Data) of
-	{certs, Certs} ->
-	    Certs;
-        false ->
-	    []
-    end.
-
--spec data_set_certificates(acme_data(), data_certs()) -> acme_data().
-data_set_certificates(Data, NewCerts) ->
-    lists:keystore(certs, 1, Data, {certs, NewCerts}).
-
-%% ATM we preserve one certificate for each domain
--spec data_add_certificate(acme_data(), data_cert()) -> acme_data().
-data_add_certificate(Data, DataCert = #data_cert{domain=Domain}) ->
-    Certs = data_get_certificates(Data),
-    NewCerts = lists:keystore(Domain, 1, Certs, {Domain, DataCert}),
-    data_set_certificates(Data, NewCerts).
-
--spec data_remove_certificate(acme_data(), data_cert()) -> acme_data().
-data_remove_certificate(Data, _DataCert = #data_cert{domain=Domain}) ->
-    Certs = data_get_certificates(Data),
-    NewCerts = lists:keydelete(Domain, 1, Certs),
-    data_set_certificates(Data, NewCerts).
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%
-%% Handle Config and Persistence Files
-%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
--spec persistent_file() -> file:filename().
-persistent_file() ->
-    AcmeDir = acme_certs_dir(),
-    filename:join(AcmeDir, "acme.DAT").
-
-%% The persistent file should be read and written only by its owner
--spec file_mode() -> 384.
-file_mode() ->
-    8#600.
-
--spec read_persistent() -> {ok, acme_data()} | no_return().
-read_persistent() ->
-    case file:read_file(persistent_file()) of
-	{ok, Binary} ->
-	    {ok, binary_to_term(Binary)};
-	{error, enoent} ->
-	    create_persistent(),
-	    {ok, data_empty()};
-	{error, Reason} ->
-	    ?ERROR_MSG("Error: ~p reading acme data file", [Reason]),
-	    throw({error, Reason})
-    end.
-
--spec write_persistent(acme_data()) -> ok | no_return().
-write_persistent(Data) ->
-    Binary = term_to_binary(Data),
-    case file:write_file(persistent_file(), Binary) of
-	ok -> ok;
-	{error, Reason} ->
-	    ?ERROR_MSG("Error: ~p writing acme data file", [Reason]),
-	    throw({error, Reason})
-    end.
-
--spec create_persistent() -> ok | no_return().
-create_persistent() ->
-    Binary = term_to_binary(data_empty()),
-    case file:write_file(persistent_file(), Binary) of
-	ok ->
-	    case file:change_mode(persistent_file(), file_mode()) of
-		ok -> ok;
-		{error, Reason} ->
-		    ?ERROR_MSG("Error: ~p changing acme data file mode", [Reason]),
-		    throw({error, Reason})
-	    end;
-	{error, Reason} ->
-	    ?ERROR_MSG("Error: ~p creating acme data file", [Reason]),
-	    throw({error, Reason})
-    end.
-
--spec write_account_persistent({list(), url(), jose_jwk:key()}) -> ok | no_return().
-write_account_persistent({AccId, CAUrl, PrivateKey}) ->
-    {ok, Data} = read_persistent(),
-    NewData = data_set_account(Data, {AccId, CAUrl, PrivateKey}),
-    ok = write_persistent(NewData).
-
--spec read_account_persistent() -> {ok, list(), url(), jose_jwk:key()} | none.
-read_account_persistent() ->
-    {ok, Data} = read_persistent(),
-    data_get_account(Data).
-
--spec read_certificates_persistent() -> data_certs().
-read_certificates_persistent() ->
-    {ok, Data} = read_persistent(),
-    data_get_certificates(Data).
-
--spec add_certificate_persistent(data_cert()) -> ok.
-add_certificate_persistent(DataCert) ->
-    {ok, Data} = read_persistent(),
-    NewData = data_add_certificate(Data, DataCert),
-    ok = write_persistent(NewData).
-
--spec remove_certificate_persistent(data_cert()) -> ok.
-remove_certificate_persistent(DataCert) ->
-    {ok, Data} = read_persistent(),
-    NewData = data_remove_certificate(Data, DataCert),
-    ok = write_persistent(NewData).
-
--spec save_certificate({ok, binary(), binary()} | {error, _, _}) ->
-			      {ok, binary(), saved} | {error, binary(), _}.
-save_certificate({error, _, _} = Error) ->
-    Error;
-save_certificate({ok, DomainName, Cert}) ->
-    try
-        CertDir = acme_certs_dir(),
-	DomainString = bitstring_to_list(DomainName),
-	CertificateFile = filename:join([CertDir, DomainString ++ ".pem"]),
-	%% TODO: At some point do the following using a Transaction so
-	%% that there is no certificate saved if it cannot be added in
-	%% certificate persistent storage
-	write_cert(CertificateFile, Cert, DomainName),
-	{ok, _} = ejabberd_pkix:add_certfile(CertificateFile),
-	DataCert = #data_cert{
-		      domain = DomainName,
-		      pem = Cert,
-		      path = CertificateFile
-		     },
-	add_certificate_persistent(DataCert),
-	{ok, DomainName, saved}
-    catch
-	throw:Throw ->
-	    Throw;
-	?EX_RULE(E, R, St) ->
-	    StackTrace = ?EX_STACK(St),
-	    ?ERROR_MSG("Unknown ~p:~p, ~p", [E, R, StackTrace]),
-	    {error, DomainName, saving}
-    end.
-
--spec save_renewed_certificate({ok, binary(), _} | {error, _, _}) ->
-				      {ok, binary(), _} | {error, binary(), _}.
-save_renewed_certificate({error, _, _} = Error) ->
-    Error;
-save_renewed_certificate({ok, _, no_expire} = Cert) ->
-    Cert;
-save_renewed_certificate({ok, DomainName, Cert}) ->
-    save_certificate({ok, DomainName, Cert}).
-
--spec register_certfiles() -> ok.
-register_certfiles() ->
-    Dir = acme_certs_dir(),
-    Paths = filelib:wildcard(filename:join(Dir, "*.pem")),
-    lists:foreach(
-      fun(Path) ->
-	      ejabberd_pkix:add_certfile(Path)
-      end, Paths).
-
--spec write_cert(file:filename(), binary(), binary()) -> ok.
-write_cert(CertificateFile, Cert, DomainName) ->
-    case file:write_file(CertificateFile, Cert) of
-	ok ->
-	    case file:change_mode(CertificateFile, file_mode()) of
-		ok -> ok;
-		{error, Why} ->
-		    ?WARNING_MSG("Failed to change mode of file ~s: ~s",
-				 [CertificateFile, file:format_error(Why)])
-	    end;
-	{error, Reason} ->
-	    ?ERROR_MSG("Error: ~p saving certificate at file: ~p",
-		       [Reason, CertificateFile]),
-	    throw({error, DomainName, saving})
-    end.
-
--spec get_config_contact() -> binary().
-get_config_contact() ->
-    Acme = ejabberd_option:acme(),
-    try maps:get(contact, Acme)
-    catch _:{badkey, _} ->
-	    ?WARNING_MSG("No contact has been specified in configuration", []),
-	    ?DEFAULT_CONFIG_CONTACT
-    end.
-
--spec get_config_ca_url() -> url().
-get_config_ca_url() ->
-    Acme = ejabberd_option:acme(),
-    try maps:get(ca_url, Acme)
-    catch _:{badkey, _} ->
-	    ?ERROR_MSG("No CA url has been specified in configuration", []),
-	    ?DEFAULT_CONFIG_CA_URL
-    end.
-
--spec get_config_hosts() -> [binary()].
-get_config_hosts() ->
-    ejabberd_option:hosts().
-
--spec acme_certs_dir() -> file:filename().
-acme_certs_dir() ->
-    filename:join(ejabberd_pkix:certs_dir(), "acme").
-
-generate_key() ->
-    jose_jwk:generate_key({ec, secp256r1}).
+-spec have_acme_listener() -> boolean().
+have_acme_listener() ->
+    lists:any(
+      fun({_, ejabberd_http, #{tls := false,
+			       request_handlers := Handlers}}) ->
+	      lists:keymember(well_known(), 1, Handlers);
+	 (_) ->
+	      false
+      end, ejabberd_option:listen()).
+
+-spec check_idna([binary()]) -> {ok, [string()]} | {error, {idna_failed, binary()}}.
+check_idna(Domains) ->
+    lists:foldl(
+      fun(D, {ok, Ds}) ->
+	      try {ok, [idna:utf8_to_ascii(D)|Ds]}
+	      catch _:_ -> {error, {idna_failed, D}}
+	      end;
+	 (_, Err) ->
+	      Err
+      end, {ok, []}, Domains).
+
+-spec format_error(term()) -> string().
+format_error({file, Reason}) ->
+    "I/O error: " ++ file:format_error(Reason);
+format_error({invalid_host, Domain}) ->
+    "Unknown or unacceptable virtual host: " ++ binary_to_list(Domain);
+format_error(no_auto_hosts) ->
+    "You have no virtual hosts acceptable for ACME certification";
+format_error(invalid_argument) ->
+    "Invalid argument";
+format_error(unexpected_certfile) ->
+    "The certificate file was not obtained using ACME";
+format_error({idna_failed, Domain}) ->
+    "Not an IDN hostname: " ++ binary_to_list(Domain);
+format_error({bad_cert, _, _} = Reason) ->
+    "Malformed certificate file: " ++ pkix:format_error(Reason);
+format_error(Reason) ->
+    p1_acme:format_error(Reason).

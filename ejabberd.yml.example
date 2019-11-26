@@ -17,15 +17,12 @@
 hosts:
   - localhost
 
-loglevel: 4
-log_rotate_size: 10485760
-log_rotate_date: ""
-log_rotate_count: 1
-log_rate_limit: 100
+loglevel: info
 
-certfiles:
-  - /etc/letsencrypt/live/localhost/fullchain.pem
-  - /etc/letsencrypt/live/localhost/privkey.pem
+## If you already have certificates, list them here
+# certfiles:
+#  - /etc/letsencrypt/live/domain.tld/fullchain.pem
+#  - /etc/letsencrypt/live/domain.tld/privkey.pem
 
 listen:
   -
@@ -47,18 +44,19 @@ listen:
     module: ejabberd_http
     tls: true
     request_handlers:
-      "/admin": ejabberd_web_admin
-      "/api": mod_http_api
-      "/bosh": mod_bosh
-      "/captcha": ejabberd_captcha
-      "/upload": mod_http_upload
-      "/ws": ejabberd_http_ws
+      /admin: ejabberd_web_admin
+      /api: mod_http_api
+      /bosh: mod_bosh
+      /captcha: ejabberd_captcha
+      /upload: mod_http_upload
+      /ws: ejabberd_http_ws
   -
     port: 5280
     ip: "::"
     module: ejabberd_http
     request_handlers:
-      "/admin": ejabberd_web_admin
+      /admin: ejabberd_web_admin
+      /.well-known/acme-challenge: ejabberd_acme
   -
     port: 1883
     ip: "::"

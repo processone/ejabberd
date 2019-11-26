@@ -282,7 +282,7 @@ CREATE TABLE vcard_search (
     server_host text NOT NULL,
     fn text NOT NULL,
     lfn text NOT NULL,
-    family text NOT NULL,
+    "family" text NOT NULL,
     lfamily text NOT NULL,
     given text NOT NULL,
     lgiven text NOT NULL,
@@ -528,6 +528,13 @@ CREATE TABLE oauth_token (
 );
 
 CREATE UNIQUE INDEX i_oauth_token_token ON oauth_token USING btree (token);
+
+CREATE TABLE oauth_client (
+    client_id text PRIMARY KEY,
+    client_name text NOT NULL,
+    grant_type text NOT NULL,
+    options text NOT NULL
+);
 
 CREATE TABLE route (
     domain text NOT NULL,

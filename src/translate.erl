@@ -102,14 +102,12 @@ load(ForceCacheRebuild) ->
 		{error, {read_error, {file_error, _, enoent}}} ->
 		    load(MsgFiles, MsgsDir);
 		{error, {read_error, {file_error, _, Reason}}} ->
-		    ?WARNING_MSG("Failed to read translation cache from ~s: ~s",
-				 [unicode:characters_to_binary(CacheFile),
-				  format_error(Reason)]),
+		    ?WARNING_MSG("Failed to read translation cache from ~ts: ~ts",
+				 [CacheFile, format_error(Reason)]),
 		    load(MsgFiles, MsgsDir);
 		{error, Reason} ->
-		    ?WARNING_MSG("Failed to read translation cache from ~s: ~p",
-				 [unicode:characters_to_binary(CacheFile),
-				  Reason]),
+		    ?WARNING_MSG("Failed to read translation cache from ~ts: ~p",
+				 [CacheFile, Reason]),
 		    load(MsgFiles, MsgsDir)
 	    end
     end.
@@ -122,9 +120,9 @@ load(Files, Dir) ->
     end,
     case Files of
 	[] ->
-	    ?WARNING_MSG("No translation files found in ~s, "
+	    ?WARNING_MSG("No translation files found in ~ts, "
 			 "check directory access",
-			 [unicode:characters_to_binary(Dir)]);
+			 [Dir]);
 	_ ->
 	    ?INFO_MSG("Building language translation cache", []),
 	    Objs = lists:flatten(misc:pmap(fun load_file/1, Files)),
@@ -134,9 +132,8 @@ load(Files, Dir) ->
 		    ets:insert(translations, Objs),
 		    ?DEBUG("Language translation cache built successfully", []);
 		{error, File, Reason} ->
-		    ?ERROR_MSG("Failed to read translation file ~s: ~s",
-			       [unicode:characters_to_binary(File),
-				format_error(Reason)]),
+		    ?ERROR_MSG("Failed to read translation file ~ts: ~ts",
+			       [File, format_error(Reason)]),
 		    {error, Reason}
 	    end
     end.
@@ -233,9 +230,8 @@ get_msg_dir() ->
 	{ok, #file_info{mtime = MTime}} ->
 	    {MTime, Dir};
 	{error, Reason} ->
-	    ?ERROR_MSG("Failed to read directory ~s: ~s",
-		       [unicode:characters_to_binary(Dir),
-			format_error(Reason)]),
+	    ?ERROR_MSG("Failed to read directory ~ts: ~ts",
+		       [Dir, format_error(Reason)]),
 	    {?ZERO_DATETIME, Dir}
     end.
 
@@ -250,15 +246,14 @@ get_msg_files(MsgsDir) ->
 				{ok, #file_info{mtime = Time}} ->
 				    {lists:max([MTime, Time]), [File|Files]};
 				{error, Reason} ->
-				    ?ERROR_MSG("Failed to read translation file ~s: ~s",
-					       [unicode:characters_to_binary(File),
-						format_error(Reason)]),
+				    ?ERROR_MSG("Failed to read translation file ~ts: ~ts",
+					       [File, format_error(Reason)]),
 				    Acc
 			    end;
 			false ->
-			    ?WARNING_MSG("Ignoring translation file ~s: file name "
+			    ?WARNING_MSG("Ignoring translation file ~ts: file name "
 					 "must be a valid language tag",
-					 [unicode:characters_to_binary(File)]),
+					 [File]),
 			    Acc
 		    end
 	    end, {?ZERO_DATETIME, []}),
@@ -267,9 +262,8 @@ get_msg_files(MsgsDir) ->
 	    case file:list_dir(MsgsDir) of
 		{ok, _} -> ok;
 		{error, Reason} ->
-		    ?ERROR_MSG("Failed to read directory ~s: ~s",
-			       [unicode:characters_to_binary(MsgsDir),
-				format_error(Reason)])
+		    ?ERROR_MSG("Failed to read directory ~ts: ~ts",
+			       [MsgsDir, format_error(Reason)])
 	    end;
 	_ ->
 	    ok
@@ -291,8 +285,8 @@ dump_to_file(CacheFile) ->
     case ets:tab2file(translations, CacheFile) of
 	ok -> ok;
 	{error, Reason} ->
-	    ?WARNING_MSG("Failed to create translation cache in ~s: ~p",
-			 [unicode:characters_to_binary(CacheFile), Reason])
+	    ?WARNING_MSG("Failed to create translation cache in ~ts: ~p",
+			 [CacheFile, Reason])
     end.
 
 -spec lang_of_file(file:filename()) -> binary().

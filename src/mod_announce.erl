@@ -724,7 +724,7 @@ send_motd({#presence{type = available},
 			    ok
 		    end
 	    catch _:{xmpp_codec, Why} ->
-		    ?ERROR_MSG("Failed to decode motd packet ~p: ~s",
+		    ?ERROR_MSG("Failed to decode motd packet ~p: ~ts",
 			       [Packet, xmpp:format_error(Why)])
 	    end;
 	_ ->
@@ -808,7 +808,7 @@ get_stored_motd(LServer) ->
 		#message{body = Body, subject = Subject} ->
 		    {xmpp:get_text(Subject), xmpp:get_text(Body)}
 	    catch _:{xmpp_codec, Why} ->
-		    ?ERROR_MSG("Failed to decode motd packet ~p: ~s",
+		    ?ERROR_MSG("Failed to decode motd packet ~p: ~ts",
 			       [Packet, xmpp:format_error(Why)])
 	    end;
         _ ->

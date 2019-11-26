@@ -250,8 +250,8 @@ load_script() ->
 			V when V >= ?MIN_REDIS_VERSION ->
 			    ejabberd_redis:script_load(Data);
 			V ->
-			    ?CRITICAL_MSG("Unsupported Redis version: ~s. "
-					  "The version must be ~s or above",
+			    ?CRITICAL_MSG("Unsupported Redis version: ~ts. "
+					  "The version must be ~ts or above",
 					  [V, ?MIN_REDIS_VERSION]),
 			    {error, unsupported_redis_version}
 		    end;

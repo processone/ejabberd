@@ -219,7 +219,7 @@ export(_Server) ->
                            "server_host=%(LServer)s",
                            "xml=%(XML)s"])]
 	      catch _:{xmpp_codec, Why} ->
-		      ?ERROR_MSG("Failed to decode packet ~p of user ~s@~s: ~s",
+		      ?ERROR_MSG("Failed to decode packet ~p of user ~ts@~ts: ~ts",
 				 [El, LUser, LServer, xmpp:format_error(Why)]),
 		      []
 	      end;
@@ -238,7 +238,7 @@ xml_to_offline_msg(XML) ->
 	#xmlel{} = El ->
 	    el_to_offline_msg(El);
 	Err ->
-	    ?ERROR_MSG("Got ~p when parsing XML packet ~s",
+	    ?ERROR_MSG("Got ~p when parsing XML packet ~ts",
 		       [Err, XML]),
 	    Err
     end.

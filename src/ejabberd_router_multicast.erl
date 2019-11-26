@@ -211,7 +211,7 @@ code_change(_OldVsn, State, _Extra) ->
 %% Destinations = [#jid]
 -spec do_route(binary(), [jid()], stanza()) -> any().
 do_route(Domain, Destinations, Packet) ->
-    ?DEBUG("Route multicast:~n~s~nDomain: ~s~nDestinations: ~s~n",
+    ?DEBUG("Route multicast:~n~ts~nDomain: ~ts~nDestinations: ~ts~n",
 	   [xmpp:pp(Packet), Domain,
 	    str:join([jid:encode(To) || To <- Destinations], <<", ">>)]),
     %% Try to find an appropriate multicast service

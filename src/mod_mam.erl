@@ -95,7 +95,7 @@
 start(Host, Opts) ->
     case mod_mam_opt:db_type(Opts) of
 	mnesia ->
-	    ?WARNING_MSG("Mnesia backend for ~s is not recommended: "
+	    ?WARNING_MSG("Mnesia backend for ~ts is not recommended: "
 			 "it's limited to 2GB and often gets corrupted "
 			 "when reaching this limit. SQL backend is "
 			 "recommended. Namely, for small servers SQLite "
@@ -1233,7 +1233,7 @@ msg_to_el(#archive_msg{timestamp = TS, packet = El, nick = Nick,
 	    {ok, #forwarded{sub_els = [Pkt3], delay = Delay}}
     catch _:{xmpp_codec, Why} ->
 	    ?ERROR_MSG("Failed to decode raw element ~p from message "
-		       "archive of user ~s: ~s",
+		       "archive of user ~ts: ~ts",
 		       [El, jid:encode(JidArchive), xmpp:format_error(Why)]),
 	    {error, invalid_xml}
     end.

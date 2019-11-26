@@ -114,8 +114,14 @@ process_iq(#iq{from = From, to = To} = IQ, Source) ->
 	end,
     Server = To#jid.lserver,
     Access = mod_register_opt:access_remove(Server),
-    AllowRemove = allow == acl:match_rule(Server, Access, From),
-    process_iq(IQ, Source, IsCaptchaEnabled, AllowRemove).
+    Remove = case acl:match_rule(Server, Access, From) of
+                 deny -> deny;
+                 allow when From#jid.lserver /= Server ->
+                     deny;
+                 allow ->
+                     check_access(From#jid.luser, Server, Source)
+             end,
+    process_iq(IQ, Source, IsCaptchaEnabled, Remove == allow).
 
 process_iq(#iq{type = set, lang = Lang,
 	       sub_els = [#register{remove = true}]} = IQ,
@@ -131,12 +137,24 @@ process_iq(#iq{type = set, lang = Lang, to = To, from = From,
     if is_binary(User) ->
 	    case From of
 		#jid{user = User, lserver = Server} ->
+                    ResIQ = xmpp:make_iq_result(IQ),
+                    ejabberd_router:route(ResIQ),
 		    ejabberd_auth:remove_user(User, Server),
-		    xmpp:make_iq_result(IQ);
+                    ignore;
 		_ ->
 		    if is_binary(Password) ->
-			    ejabberd_auth:remove_user(User, Server, Password),
-			    xmpp:make_iq_result(IQ);
+                            case ejabberd_auth:check_password(
+                                   User, <<"">>, Server, Password) of
+                                true ->
+                                    ResIQ = xmpp:make_iq_result(IQ),
+                                    ejabberd_router:route(ResIQ),
+                                    ejabberd_auth:remove_user(User, Server),
+                                    ignore;
+                                false ->
+                                    Txt = ?T("Incorrect password"),
+                                    xmpp:make_error(
+                                      IQ, xmpp:err_forbidden(Txt, Lang))
+                            end;
 		       true ->
 			    Txt = ?T("No 'password' found in this query"),
 			    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang))
@@ -205,7 +223,7 @@ process_iq(#iq{type = get, from = From, to = To, id = ID, lang = Lang} = IQ,
 		       "with this server")),
     URL = mod_register_opt:redirect_url(Server),
     if (URL /= undefined) and not IsRegistered ->
-	    Txt = translate:translate(Lang, ?T("To register, visit ~s")),
+	    Txt = translate:translate(Lang, ?T("To register, visit ~ts")),
 	    Desc = str:format(Txt, [URL]),
 	    xmpp:make_iq_result(
 	      IQ, #register{instructions = Desc,
@@ -283,7 +301,7 @@ try_set_password(User, Server, Password) ->
 try_set_password(User, Server, Password, #iq{lang = Lang, meta = M} = IQ) ->
     case try_set_password(User, Server, Password) of
 	ok ->
-	    ?INFO_MSG("~s has changed password from ~s",
+	    ?INFO_MSG("~ts has changed password from ~ts",
 		      [jid:encode({User, Server, <<"">>}),
 		       ejabberd_config:may_hide_data(
 			 misc:ip_to_list(maps:get(ip, M, {0,0,0,0})))]),
@@ -341,7 +359,7 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 	ok ->
 	    JID = jid:make(User, Server),
 	    Source = may_remove_resource(SourceRaw),
-	    ?INFO_MSG("The account ~s was registered from IP address ~s",
+	    ?INFO_MSG("The account ~ts was registered from IP address ~ts",
 		      [jid:encode({User, Server, <<"">>}),
 		       ejabberd_config:may_hide_data(ip_to_string(Source))]),
 	    send_welcome_message(JID),
@@ -401,8 +419,8 @@ send_registration_notifications(Mod, UJID, Source) ->
         [] -> ok;
         JIDs when is_list(JIDs) ->
             Body =
-                (str:format("[~s] The account ~s was registered from "
-                                               "IP address ~s on node ~w using ~p.",
+                (str:format("[~ts] The account ~ts was registered from "
+                                               "IP address ~ts on node ~w using ~p.",
                                                [get_time_string(),
                                                 jid:encode(UJID),
 						ejabberd_config:may_hide_data(

@@ -1004,7 +1004,7 @@ user_roster(User, Server, Query, Lang) ->
 					end,
 					SItems)))])]
 	     end,
-    PageTitle = str:format(translate:translate(Lang, ?T("Roster of ~s")), [us_to_list(US)]),
+    PageTitle = str:format(translate:translate(Lang, ?T("Roster of ~ts")), [us_to_list(US)]),
     (?H1GL(PageTitle, <<"mod-roster">>, <<"mod_roster">>))
       ++
       case Res of
@@ -1031,7 +1031,7 @@ build_contact_jid_td(RosterJID) ->
 		   case lists:member(CServer, ejabberd_option:hosts()) of
 		     false -> <<"">>;
 		     true ->
-			 <<"/admin/server/", CServer/binary, "/user/",
+			 <<"../../../../../server/", CServer/binary, "/user/",
 			   CUser/binary, "/">>
 		   end
 	     end,

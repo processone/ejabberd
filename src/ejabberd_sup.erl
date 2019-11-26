@@ -46,7 +46,6 @@ init([]) ->
 	   worker(ejabberd_admin),
 	   supervisor(ejabberd_listener),
 	   worker(ejabberd_pkix),
-	   worker(ejabberd_acme),
 	   worker(acl),
 	   worker(ejabberd_shaper),
 	   supervisor(ejabberd_db_sup),
@@ -64,6 +63,7 @@ init([]) ->
 	   worker(ejabberd_captcha),
 	   worker(ext_mod),
 	   supervisor(ejabberd_gen_mod_sup, gen_mod),
+	   worker(ejabberd_acme),
 	   worker(ejabberd_auth),
 	   worker(ejabberd_oauth)]}}.
 

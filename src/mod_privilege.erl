@@ -236,8 +236,8 @@ handle_cast({component_connected, Host}, State) ->
 				       #privilege_perm{access = presence,
 						       type = PresencePerm}]},
 	    ?INFO_MSG("Granting permissions to external "
-		      "component '~s': roster = ~s, presence = ~s, "
-		      "message = ~s",
+		      "component '~ts': roster = ~ts, presence = ~ts, "
+		      "message = ~ts",
 		      [Host, RosterPerm, PresencePerm, MessagePerm]),
 	    Msg = #message{from = From, to = To,  sub_els = [Priv]},
 	    ejabberd_router:route(Msg),
@@ -248,7 +248,7 @@ handle_cast({component_connected, Host}, State) ->
 	    ets:insert(?MODULE, {ServerHost, Permissions}),
 	    {noreply, State};
        true ->
-	    ?INFO_MSG("Granting no permissions to external component '~s'",
+	    ?INFO_MSG("Granting no permissions to external component '~ts'",
 		      [Host]),
 	    {noreply, State}
     end;

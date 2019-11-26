@@ -110,5 +110,5 @@ del_channels(User) ->
 %%%===================================================================
 -spec report_corrupted(#sql_query{}) -> ok.
 report_corrupted(SQL) ->
-    ?ERROR_MSG("Corrupted values returned by SQL request: ~s",
+    ?ERROR_MSG("Corrupted values returned by SQL request: ~ts",
 	       [SQL#sql_query.hash]).

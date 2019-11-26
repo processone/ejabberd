@@ -77,7 +77,7 @@ load() ->
 load(Path) ->
     ConfigFile = unicode:characters_to_binary(Path),
     UnixTime = erlang:monotonic_time(second),
-    ?INFO_MSG("Loading configuration from ~s", [ConfigFile]),
+    ?INFO_MSG("Loading configuration from ~ts", [ConfigFile]),
     _ = ets:new(ejabberd_options,
 		[named_table, public, {read_concurrency, true}]),
     case load_file(ConfigFile) of
@@ -92,7 +92,7 @@ load(Path) ->
 -spec reload() -> ok | error_return().
 reload() ->
     ConfigFile = path(),
-    ?INFO_MSG("Reloading configuration from ~s", [ConfigFile]),
+    ?INFO_MSG("Reloading configuration from ~ts", [ConfigFile]),
     OldHosts = get_myhosts(),
     case load_file(ConfigFile) of
 	ok ->
@@ -111,7 +111,7 @@ reload() ->
 	    delete_host_options(DelHosts),
 	    ?INFO_MSG("Configuration reloaded successfully", []);
 	Err ->
-	    ?ERROR_MSG("Configuration reload aborted: ~s",
+	    ?ERROR_MSG("Configuration reload aborted: ~ts",
 		       [format_error(Err)]),
 	    Err
     end.
@@ -130,7 +130,7 @@ dump(Y, Output) ->
     Data = fast_yaml:encode(Y),
     case Output of
 	stdout ->
-	    io:format("~s~n", [Data]);
+	    io:format("~ts~n", [Data]);
 	FileName ->
 	    try
 		ok = filelib:ensure_dir(FileName),
@@ -158,10 +158,10 @@ get_option({O, Host} = Opt) ->
     catch ?EX_RULE(error, badarg, St) when Host /= global ->
 	    StackTrace = ?EX_STACK(St),
 	    Val = get_option({O, global}),
-	    ?WARNING_MSG("Option '~s' is not defined for virtual host '~s'. "
-			 "This is a bug, please report it with the following "
-			 "stacktrace included:~n** ~s",
-			 [O, Host, misc:format_exception(2, error, badarg, StackTrace)]),
+	    ?DEBUG("Option '~ts' is not defined for virtual host '~ts'. "
+		   "This is a bug, please report it with the following "
+		   "stacktrace included:~n** ~ts",
+		   [O, Host, misc:format_exception(2, error, badarg, StackTrace)]),
 	    Val
     end.
 
@@ -271,9 +271,9 @@ default_db(Opt, Host, Mod, Default) ->
     case code:ensure_loaded(DBMod) of
 	{module, _} -> Type;
 	{error, _} ->
-	    ?WARNING_MSG("Module ~s doesn't support database '~s' "
-			 "defined in option '~s', using "
-			 "'~s' as fallback", [Mod, Type, Opt, Default]),
+	    ?WARNING_MSG("Module ~ts doesn't support database '~ts' "
+			 "defined in option '~ts', using "
+			 "'~ts' as fallback", [Mod, Type, Opt, Default]),
 	    Default
     end.
 
@@ -283,6 +283,14 @@ beams(local) ->
     Mods;
 beams(external) ->
     ExtMods = [Name || {Name, _Details} <- ext_mod:installed()],
+    lists:foreach(
+      fun(ExtMod) ->
+              ExtModPath = ext_mod:module_ebin_dir(ExtMod),
+              case lists:member(ExtModPath, code:get_path()) of
+                  true -> ok;
+                  false -> code:add_patha(ExtModPath)
+              end
+      end, ExtMods),
     case application:get_env(ejabberd, external_beams) of
         {ok, Path} ->
             case lists:member(Path, code:get_path()) of
@@ -355,15 +363,15 @@ format_error({error, Reason, Ctx}) ->
 format_error({error, {merge_conflict, Opt, Host}}) ->
     lists:flatten(
       io_lib:format(
-	"Cannot merge value of option '~s' defined in append_host_config "
-	"for virtual host ~s: only options of type list or map are allowed "
+	"Cannot merge value of option '~ts' defined in append_host_config "
+	"for virtual host ~ts: only options of type list or map are allowed "
 	"in append_host_config. Hint: specify the option in host_config",
 	[Opt, Host]));
 format_error({error, {old_config, Path, Reason}}) ->
     lists:flatten(
       io_lib:format(
-	"Failed to read configuration from '~s': ~s~s",
-	[unicode:characters_to_binary(Path),
+	"Failed to read configuration from '~ts': ~ts~ts",
+	[Path,
 	 case Reason of
 	     {_, _, _} -> "at line ";
 	     _ -> ""
@@ -371,8 +379,8 @@ format_error({error, {old_config, Path, Reason}}) ->
 format_error({error, {write_file, Path, Reason}}) ->
     lists:flatten(
       io_lib:format(
-	"Failed to write to '~s': ~s",
-	[unicode:characters_to_binary(Path),
+	"Failed to write to '~ts': ~ts",
+	[Path,
 	 file:format_error(Reason)]));
 format_error({error, {exception, Class, Reason, St}}) ->
     lists:flatten(
@@ -381,7 +389,7 @@ format_error({error, {exception, Class, Reason, St}}) ->
 	"This is most likely due to faulty/incompatible validator in "
 	"third-party code. If you are not running any third-party "
 	"code, please report the bug with ejabberd configuration "
-	"file attached and the following stacktrace included:~n** ~s",
+	"file attached and the following stacktrace included:~n** ~ts",
 	[misc:format_exception(2, Class, Reason, St)])).
 
 %%%===================================================================
@@ -468,14 +476,6 @@ validators(Mod, Disallowed) ->
 		end
 	end, proplists:get_keys(Mod:options()))).
 
--spec get_modules_configs() -> [binary()].
-get_modules_configs() ->
-    Fs = [{filename:rootname(filename:basename(F)), F}
-	  || F <- filelib:wildcard(ext_mod:config_dir() ++ "/*.{yml,yaml}")
-		 ++ filelib:wildcard(ext_mod:modules_dir() ++ "/*/conf/*.{yml,yaml}")],
-    [unicode:characters_to_binary(proplists:get_value(F, Fs))
-     || F <- proplists:get_keys(Fs)].
-
 read_file(File) ->
     read_file(File, [replace_macros, include_files, include_modules_configs]).
 
@@ -484,9 +484,13 @@ read_file(File, Opts) ->
     Ret = case filename:extension(File) of
 	      Ex when Ex == <<".yml">> orelse Ex == <<".yaml">> ->
 		  Files = case proplists:get_bool(include_modules_configs, Opts2) of
-			      true -> get_modules_configs();
+			      true -> ext_mod:modules_configs();
 			      false -> []
 			  end,
+		  lists:foreach(
+		    fun(F) ->
+			    ?INFO_MSG("Loading third-party configuration from ~ts", [F])
+		    end, Files),
 		  read_yaml_files([File|Files], lists:flatten(Opts1));
 	      _ ->
 		  read_erlang_file(File, lists:flatten(Opts1))
@@ -522,7 +526,7 @@ read_erlang_file(File, _) ->
 validate(Y1) ->
     case pre_validate(Y1) of
 	{ok, Y2} ->
-	    set_loglevel(proplists:get_value(loglevel, Y2, 4)),
+	    set_loglevel(proplists:get_value(loglevel, Y2, info)),
 	    case ejabberd_config_transformer:map_reduce(Y2) of
 		{ok, Y3} ->
 		    Hosts = proplists:get_value(hosts, Y3),
@@ -546,21 +550,15 @@ validate(Y1) ->
 
 -spec pre_validate(term()) -> {ok, [{atom(), term()}]} | error_return().
 pre_validate(Y1) ->
-    case econf:validate(
-	   econf:options(
-	     #{hosts => ejabberd_options:opt_type(hosts),
-	       loglevel => ejabberd_options:opt_type(loglevel),
-	       version => ejabberd_options:opt_type(version),
-	       host_config => econf:map(econf:binary(), econf:any()),
-	       append_host_config => econf:map(econf:binary(), econf:any()),
-	       '_' => econf:any()},
-	     [{required, [hosts]}]),
-	   Y1) of
-	{ok, Y2} ->
-	    {ok, group_duplicated_options(Y2, [append_host_config, host_config])};
-	Err ->
-	    Err
-    end.
+    econf:validate(
+      econf:and_then(
+        econf:options(
+          #{hosts => ejabberd_options:opt_type(hosts),
+            loglevel => ejabberd_options:opt_type(loglevel),
+            version => ejabberd_options:opt_type(version),
+            '_' => econf:any()},
+          [{required, [hosts]}]),
+        fun econf:group_dups/1), Y1).
 
 -spec load_file(binary()) -> ok | error_return().
 load_file(File) ->
@@ -763,20 +761,6 @@ set_shared_key() ->
 set_node_start(UnixTime) ->
     set_option(node_start, UnixTime).
 
--spec set_loglevel(0..5) -> ok.
+-spec set_loglevel(logger:level()) -> ok.
 set_loglevel(Level) ->
     ejabberd_logger:set(Level).
-
--spec group_duplicated_options([{atom(), term()}], [atom()]) -> [{atom(), term()}].
-group_duplicated_options(Y1, Options) ->
-    {Y2, Y3} = lists:partition(
-		 fun({Option, _}) ->
-			 lists:member(Option, Options)
-		 end, Y1),
-    lists:foldl(
-      fun(Option, Y4) ->
-	      case lists:flatten(proplists:get_all_values(Option, Y2)) of
-		  [] -> Y4;
-		  Values -> [{Option, Values}|Y4]
-	      end
-      end, Y3, Options).
