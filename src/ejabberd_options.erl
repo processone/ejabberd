@@ -380,6 +380,8 @@ opt_type(sql_type) ->
     econf:enum([mysql, pgsql, sqlite, mssql, odbc]);
 opt_type(sql_username) ->
     econf:binary();
+opt_type(sql_prepared_statements) ->
+    econf:bool();
 opt_type(trusted_proxies) ->
     econf:either(all, econf:list(econf:ip_mask()));
 opt_type(use_cache) ->
@@ -652,6 +654,7 @@ options() ->
      {sql_ssl_verify, false},
      {sql_start_interval, timer:seconds(30)},
      {sql_username, <<"ejabberd">>},
+     {sql_prepared_statements, true},
      {trusted_proxies, []},
      {validate_stream, false},
      {websocket_origin, []},
