@@ -138,6 +138,7 @@
 -export([sql_password/0, sql_password/1]).
 -export([sql_pool_size/0, sql_pool_size/1]).
 -export([sql_port/0, sql_port/1]).
+-export([sql_prepared_statements/0, sql_prepared_statements/1]).
 -export([sql_query_timeout/0, sql_query_timeout/1]).
 -export([sql_queue_type/0, sql_queue_type/1]).
 -export([sql_server/0, sql_server/1]).
@@ -932,6 +933,13 @@ sql_port() ->
 -spec sql_port(global | binary()) -> 1..1114111.
 sql_port(Host) ->
     ejabberd_config:get_option({sql_port, Host}).
+
+-spec sql_prepared_statements() -> boolean().
+sql_prepared_statements() ->
+    sql_prepared_statements(global).
+-spec sql_prepared_statements(global | binary()) -> boolean().
+sql_prepared_statements(Host) ->
+    ejabberd_config:get_option({sql_prepared_statements, Host}).
 
 -spec sql_query_timeout() -> pos_integer().
 sql_query_timeout() ->
