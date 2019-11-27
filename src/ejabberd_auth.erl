@@ -46,7 +46,7 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
--export([auth_modules/1]).
+-export([auth_modules/1, convert_to_scram/1]).
 
 -include("scram.hrl").
 -include("logger.hrl").
@@ -915,3 +915,24 @@ import(Server, {sql, _}, mnesia, <<"users">>, Fields) ->
     ejabberd_auth_mnesia:import(Server, Fields);
 import(_LServer, {sql, _}, sql, <<"users">>, _) ->
     ok.
+
+-spec convert_to_scram(binary()) -> {error, any()} | ok.
+convert_to_scram(Server) ->
+    LServer = jid:nameprep(Server),
+    if
+	LServer == error;
+	LServer == <<>> ->
+	    {error, {incorrect_server_name, Server}};
+	true ->
+	    lists:foreach(
+		fun({U, S}) ->
+		    case get_password(U, S) of
+			Pass when is_binary(Pass) ->
+			    SPass = password_to_scram(Pass),
+			    set_password(U, S, SPass);
+			_ ->
+			    ok
+		    end
+		end, get_users(LServer)),
+	    ok
+    end.

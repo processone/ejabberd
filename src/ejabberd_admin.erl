@@ -269,12 +269,11 @@ get_commands_spec() ->
 			args_example = ["example.com"],
                         args = [{host, string}], result = {res, rescode}},
      #ejabberd_commands{name = convert_to_scram, tags = [sql],
-			desc = "Convert the passwords in 'users' ODBC table to SCRAM",
-			module = ejabberd_auth_sql, function = convert_to_scram,
+			desc = "Convert the passwords of users to SCRAM",
+			module = ejabberd_auth, function = convert_to_scram,
 			args_desc = ["Vhost which users' passwords will be scrammed"],
 			args_example = ["example.com"],
 			args = [{host, binary}], result = {res, rescode}},
-
      #ejabberd_commands{name = import_prosody, tags = [mnesia, sql],
 			desc = "Import data from Prosody",
 			longdesc = "Note: this method requires ejabberd compiled with optional tools support "
