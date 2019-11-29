@@ -1480,20 +1480,26 @@ srg_user_del(User, Host, Group, GroupHost) ->
 %% @doc Send a message to a Jabber account.
 %% @spec (Type::binary(), From::binary(), To::binary(), Subject::binary(), Body::binary()) -> ok
 send_message(Type, From, To, Subject, Body) ->
-    FromJID = jid:decode(From),
-    ToJID = jid:decode(To),
-    Packet = build_packet(Type, Subject, Body, FromJID, ToJID),
-    State1 = #{jid => FromJID},
-    ejabberd_hooks:run_fold(user_send_packet, FromJID#jid.lserver, {Packet, State1}, []),
-    ejabberd_router:route(xmpp:set_from_to(Packet, FromJID, ToJID)).
-
-build_packet(Type, Subject, Body, FromJID, ToJID) ->
-    #message{type = misc:binary_to_atom(Type),
-	     body = xmpp:mk_text(Body),
-	     from = FromJID,
-	     to = ToJID,
-	     id = p1_rand:get_string(),
-	     subject = xmpp:mk_text(Subject)}.
+    CodecOpts = ejabberd_config:codec_options(),
+    try xmpp:decode(
+          #xmlel{name = <<"message">>,
+                 attrs = [{<<"to">>, To},
+                          {<<"from">>, From},
+                          {<<"type">>, Type},
+                          {<<"id">>, p1_rand:get_string()}],
+                 children =
+                     [#xmlel{name = <<"subject">>,
+                             children = [{xmlcdata, Subject}]},
+                      #xmlel{name = <<"body">>,
+                             children = [{xmlcdata, Body}]}]},
+          ?NS_CLIENT, CodecOpts) of
+        #message{from = JID} = Msg ->
+            State = #{jid => JID},
+            ejabberd_hooks:run_fold(user_send_packet, JID#jid.lserver, {Msg, State}, []),
+            ejabberd_router:route(Msg)
+    catch _:{xmpp_codec, Why} ->
+            {error, xmpp:format_error(Why)}
+    end.
 
 send_stanza(FromString, ToString, Stanza) ->
     try
