@@ -214,7 +214,11 @@ process_bytestreams(#iq{type = set, lang = Lang, from = InitiatorJID, to = To,
     ACL = mod_proxy65_opt:access(ServerHost),
     case acl:match_rule(ServerHost, ACL, InitiatorJID) of
 	allow ->
-	    Node = ejabberd_cluster:get_node_by_id(To#jid.lresource),
+	    Node = try
+		       ejabberd_cluster:get_node_by_id(To#jid.lresource)
+		   catch _:{badmatch, _} ->
+		       node()
+		   end,
 	    Target = jid:encode(jid:tolower(TargetJID)),
 	    Initiator = jid:encode(jid:tolower(InitiatorJID)),
 	    SHA1 = str:sha(<<SID/binary, Initiator/binary, Target/binary>>),
