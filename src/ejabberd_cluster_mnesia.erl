@@ -108,7 +108,7 @@ get_node_by_id(Hash) ->
     try binary_to_integer(Hash) of
 	I -> match_node_id(I)
     catch _:_ ->
-	    node()
+        throw({badmatch, Hash})
     end.
 
 -spec send({atom(), node()}, term()) -> boolean().
@@ -150,5 +150,5 @@ match_node_id(I, [Node|Nodes]) ->
 	I -> Node;
 	_ -> match_node_id(I, Nodes)
     end;
-match_node_id(_I, []) ->
-    node().
+match_node_id(I, []) ->
+    throw({badmatch, I}).
