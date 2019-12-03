@@ -49,8 +49,7 @@ stop() ->
     application:stop(ejabberd).
 
 halt() ->
-    _ = application:stop(lager),
-    _ = application:stop(sasl),
+    ejabberd_logger:flush(),
     erlang:halt(1, [{flush, true}]).
 
 %% @spec () -> false | string()

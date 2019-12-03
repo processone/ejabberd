@@ -86,7 +86,33 @@
 -type qos() :: 0|1|2.
 -type sub_opts() :: #sub_opts{}.
 -type utf8_pair() :: {binary(), binary()}.
--type properties() :: map().
+-type properties() :: #{assigned_client_identifier => binary(),
+			authentication_data => binary(),
+			authentication_method => binary(),
+			content_type => binary(),
+			correlation_data => binary(),
+			maximum_packet_size => pos_integer(),
+			maximum_qos => 0|1,
+			message_expiry_interval => non_neg_integer(),
+			payload_format_indicator => binary | utf8,
+			reason_string => binary(),
+			receive_maximum => pos_integer(),
+			request_problem_information => boolean(),
+			request_response_information => boolean(),
+			response_information => binary(),
+			response_topic => binary(),
+			retain_available => boolean(),
+			server_keep_alive => non_neg_integer(),
+			server_reference => binary(),
+			session_expiry_interval => non_neg_integer(),
+			shared_subscription_available => boolean(),
+			subscription_identifier => [non_neg_integer()] | non_neg_integer(),
+			subscription_identifiers_available => boolean(),
+			topic_alias => pos_integer(),
+			topic_alias_maximum => non_neg_integer(),
+			user_property => [utf8_pair()],
+			wildcard_subscription_available => boolean(),
+			will_delay_interval => non_neg_integer()}.
 -type property() :: assigned_client_identifier |
                     authentication_data |
                     authentication_method |

@@ -429,19 +429,17 @@ cancel_timer(TRef) when is_reference(TRef) ->
 cancel_timer(_) ->
     ok.
 
--spec best_match(atom(), [atom()]) -> atom();
-		(binary(), [binary()]) -> binary().
+-spec best_match(atom() | binary() | string(),
+		 [atom() | binary() | string()]) -> string().
 best_match(Pattern, []) ->
     Pattern;
 best_match(Pattern, Opts) ->
-    F = if is_atom(Pattern) -> fun atom_to_list/1;
-	   is_binary(Pattern) -> fun binary_to_list/1
-	end,
-    String = F(Pattern),
+    String = to_string(Pattern),
     {Ds, _} = lists:mapfoldl(
 		fun(Opt, Cache) ->
-			{Distance, Cache1} = ld(String, F(Opt), Cache),
-			{{Distance, Opt}, Cache1}
+			SOpt = to_string(Opt),
+			{Distance, Cache1} = ld(String, SOpt, Cache),
+			{{Distance, SOpt}, Cache1}
 		end, #{}, Opts),
     element(2, lists:min(Ds)).
 
@@ -670,3 +668,11 @@ ip_to_integer({IP1, IP2, IP3, IP4, IP5, IP6, IP7,
 	       IP8}) ->
     IP1 bsl 16 bor IP2 bsl 16 bor IP3 bsl 16 bor IP4 bsl 16
 	bor IP5 bsl 16 bor IP6 bsl 16 bor IP7 bsl 16 bor IP8.
+
+-spec to_string(atom() | binary() | string()) -> string().
+to_string(A) when is_atom(A) ->
+    atom_to_list(A);
+to_string(B) when is_binary(B) ->
+    binary_to_list(B);
+to_string(S) ->
+    S.

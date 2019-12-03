@@ -34,7 +34,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start/2, stop/1, reload/3,
+-export([start/2, stop/1, reload/3, get_url/1,
 	 check_access_log/2, add_to_log/5]).
 
 -export([init/1, handle_call/3, handle_cast/2,
@@ -88,6 +88,19 @@ check_access_log(Host, From) ->
 	of
       {'EXIT', _Error} -> deny;
       Res -> Res
+    end.
+
+-spec get_url(#state{}) -> {ok, binary()} | error.
+get_url(#state{room = Room, host = Host, server_host = ServerHost}) ->
+    case mod_muc_log_opt:url(ServerHost) of
+	undefined -> error;
+	URL ->
+	    case mod_muc_log_opt:dirname(ServerHost) of
+		room_jid ->
+		    {ok, <<URL/binary, $/, Room/binary, $@, Host/binary>>};
+		room_name ->
+		    {ok, <<URL/binary, $/, Room/binary>>}
+	    end
     end.
 
 depends(_Host, _Opts) ->
@@ -953,6 +966,8 @@ mod_opt_type(spam_prevention) ->
     econf:bool();
 mod_opt_type(timezone) ->
     econf:enum([local, universal]);
+mod_opt_type(url) ->
+    econf:url();
 mod_opt_type(top_link) ->
     econf:and_then(
       econf:non_empty(
@@ -965,7 +980,7 @@ mod_opt_type(top_link) ->
 				{atom(), any()}].
 mod_options(_) ->
     [{access_log, muc_admin},
-     {cssfile, filename:join(misc:css_dir(), <<"muc.css">>)},
+     {cssfile, {file, filename:join(misc:css_dir(), <<"muc.css">>)}},
      {dirname, room_jid},
      {dirtype, subdirs},
      {file_format, html},
@@ -973,4 +988,5 @@ mod_options(_) ->
      {outdir, <<"www/muc">>},
      {spam_prevention, true},
      {timezone, local},
+     {url, undefined},
      {top_link, {<<"/">>, <<"Home">>}}].

@@ -30,12 +30,6 @@ map_reduce(Y) ->
     F = fun(Y1) ->
 		Y2 = (validator())(Y1),
 		Y3 = transform(Y2),
-		if Y2 /= Y3 ->
-			?DEBUG("Transformed configuration:~ts~n",
-			       [misc:format_val({yaml, Y3})]);
-		   true ->
-			ok
-		end,
 		Y3
 	end,
     econf:validate(F, Y).
@@ -148,6 +142,12 @@ filter(Host, Y, Acc) ->
 	      filter(Host, Opt, Val, Acc)
       end, Y).
 
+filter(_Host, log_rotate_date, _, _) ->
+    warn_removed_option(log_rotate_date),
+    false;
+filter(_Host, log_rate_limit, _, _) ->
+    warn_removed_option(log_rate_limit),
+    false;
 filter(_Host, ca_path, _, _) ->
     warn_removed_option(ca_path, ca_file),
     false;

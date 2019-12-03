@@ -17,8 +17,9 @@
 %%% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 %%%
 %%%----------------------------------------------------------------------
-
 -define(PRINT(Format, Args), io:format(Format, Args)).
+
+-ifdef(LAGER).
 -compile([{parse_transform, lager_transform}]).
 
 -define(DEBUG(Format, Args),
@@ -35,6 +36,24 @@
 
 -define(CRITICAL_MSG(Format, Args),
 	begin lager:critical(Format, Args), ok end).
+-else.
+-include_lib("kernel/include/logger.hrl").
+
+-define(DEBUG(Format, Args),
+	begin ?LOG_DEBUG(Format, Args), ok end).
+
+-define(INFO_MSG(Format, Args),
+	begin ?LOG_INFO(Format, Args), ok end).
+
+-define(WARNING_MSG(Format, Args),
+	begin ?LOG_WARNING(Format, Args), ok end).
+
+-define(ERROR_MSG(Format, Args),
+	begin ?LOG_ERROR(Format, Args), ok end).
+
+-define(CRITICAL_MSG(Format, Args),
+	begin ?LOG_CRITICAL(Format, Args), ok end).
+-endif.
 
 %% Use only when trying to troubleshoot test problem with ExUnit
 -define(EXUNIT_LOG(Format, Args),

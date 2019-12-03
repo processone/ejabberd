@@ -24,7 +24,8 @@ define_macro:
       mod_configure: []
       mod_disco: []
       mod_ping: []
-      mod_proxy65: []
+      mod_proxy65:
+        port: PROXY_PORT
       mod_register:
         welcome_message:
           subject: "Welcome!"

@@ -114,8 +114,14 @@ process_iq(#iq{from = From, to = To} = IQ, Source) ->
 	end,
     Server = To#jid.lserver,
     Access = mod_register_opt:access_remove(Server),
-    AllowRemove = allow == acl:match_rule(Server, Access, From),
-    process_iq(IQ, Source, IsCaptchaEnabled, AllowRemove).
+    Remove = case acl:match_rule(Server, Access, From) of
+                 deny -> deny;
+                 allow when From#jid.lserver /= Server ->
+                     deny;
+                 allow ->
+                     check_access(From#jid.luser, Server, Source)
+             end,
+    process_iq(IQ, Source, IsCaptchaEnabled, Remove == allow).
 
 process_iq(#iq{type = set, lang = Lang,
 	       sub_els = [#register{remove = true}]} = IQ,
@@ -131,12 +137,24 @@ process_iq(#iq{type = set, lang = Lang, to = To, from = From,
     if is_binary(User) ->
 	    case From of
 		#jid{user = User, lserver = Server} ->
+                    ResIQ = xmpp:make_iq_result(IQ),
+                    ejabberd_router:route(ResIQ),
 		    ejabberd_auth:remove_user(User, Server),
-		    xmpp:make_iq_result(IQ);
+                    ignore;
 		_ ->
 		    if is_binary(Password) ->
-			    ejabberd_auth:remove_user(User, Server, Password),
-			    xmpp:make_iq_result(IQ);
+                            case ejabberd_auth:check_password(
+                                   User, <<"">>, Server, Password) of
+                                true ->
+                                    ResIQ = xmpp:make_iq_result(IQ),
+                                    ejabberd_router:route(ResIQ),
+                                    ejabberd_auth:remove_user(User, Server),
+                                    ignore;
+                                false ->
+                                    Txt = ?T("Incorrect password"),
+                                    xmpp:make_error(
+                                      IQ, xmpp:err_forbidden(Txt, Lang))
+                            end;
 		       true ->
 			    Txt = ?T("No 'password' found in this query"),
 			    xmpp:make_error(IQ, xmpp:err_bad_request(Txt, Lang))

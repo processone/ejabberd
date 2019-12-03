@@ -12,6 +12,7 @@
 -export([ignore_pep_from_offline/1]).
 -export([last_item_cache/1]).
 -export([max_items_node/1]).
+-export([max_nodes_discoitems/1]).
 -export([max_subscriptions_node/1]).
 -export([name/1]).
 -export([nodetree/1]).
@@ -72,6 +73,12 @@ max_items_node(Opts) when is_map(Opts) ->
     gen_mod:get_opt(max_items_node, Opts);
 max_items_node(Host) ->
     gen_mod:get_module_opt(Host, mod_pubsub, max_items_node).
+
+-spec max_nodes_discoitems(gen_mod:opts() | global | binary()) -> 'infinity' | non_neg_integer().
+max_nodes_discoitems(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(max_nodes_discoitems, Opts);
+max_nodes_discoitems(Host) ->
+    gen_mod:get_module_opt(Host, mod_pubsub, max_nodes_discoitems).
 
 -spec max_subscriptions_node(gen_mod:opts() | global | binary()) -> 'undefined' | non_neg_integer().
 max_subscriptions_node(Opts) when is_map(Opts) ->

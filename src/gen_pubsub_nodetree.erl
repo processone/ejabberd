@@ -61,7 +61,7 @@
     {error, stanza_error()}.
 
 -callback get_nodes(Host :: host(),
-	From :: jid:jid())->
+		    Limit :: non_neg_integer() | infinity)->
     [pubsubNode()].
 
 -callback get_nodes(Host :: host())->
@@ -79,8 +79,8 @@
     [{0, [pubsubNode(),...]}].
 
 -callback get_subnodes(Host :: host(),
-	NodeId :: nodeId(),
-	From :: jid:jid()) ->
+		       NodeId :: nodeId(),
+		       Limit :: non_neg_integer() | infinity) ->
     [pubsubNode()].
 
 -callback get_subnodes_tree(Host :: host(),

@@ -17,11 +17,7 @@
 hosts:
   - localhost
 
-loglevel: 4
-log_rotate_size: 10485760
-log_rotate_date: ""
-log_rotate_count: 1
-log_rate_limit: 100
+loglevel: info
 
 ## If you already have certificates, list them here
 # certfiles:

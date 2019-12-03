@@ -24,6 +24,7 @@
 
 %% API
 -export([parse/3, validate/2, fail/1, format_error/2, replace_macros/1]).
+-export([group_dups/1]).
 %% Simple types
 -export([pos_int/0, pos_int/1, non_neg_int/0, non_neg_int/1]).
 -export([int/0, int/2, number/1, octal/0]).
@@ -148,8 +149,7 @@ format_error({bad_enum, Known, Bad} = Why, Ctx) ->
 format_error({bad_yaml, _, _} = Why, _) ->
     format_error(Why);
 format_error(Reason, Ctx) ->
-    [H|T] = format_error(Reason),
-    yconf:format_ctx(Ctx) ++ ": " ++ [string:to_lower(H)|T].
+    yconf:format_ctx(Ctx) ++ ": " ++ format_error(Reason).
 
 format_error({bad_db_type, _, Atom}) ->
     format("unsupported database: ~ts", [Atom]);
@@ -162,6 +162,8 @@ format_error({bad_cert, Why, Path}) ->
     format_error({bad_pem, Why, Path});
 format_error({bad_jwt_key, Path}) ->
     format("No valid JWT key found in file: ~ts", [Path]);
+format_error({bad_jwt_key_set, Path}) ->
+    format("JWK set contains multiple JWT keys in file: ~ts", [Path]);
 format_error({bad_jid, Bad}) ->
     format("Invalid XMPP address: ~ts", [Bad]);
 format_error({bad_user, Bad}) ->
@@ -198,9 +200,11 @@ format_error({mqtt_codec, Reason}) ->
 format_error(Reason) ->
     yconf:format_error(Reason).
 
--spec format_module(atom()) -> string().
+-spec format_module(atom() | string()) -> string().
+format_module(Mod) when is_atom(Mod) ->
+    format_module(atom_to_list(Mod));
 format_module(Mod) ->
-    case atom_to_list(Mod) of
+    case Mod of
 	"Elixir." ++ M -> M;
 	M -> M
     end.
@@ -223,6 +227,23 @@ format_join([H|_] = L) when is_atom(H) ->
     format_join([atom_to_binary(A, utf8) || A <- L]);
 format_join(L) ->
     str:join(lists:sort(L), <<", ">>).
+
+%% All duplicated options having list-values are grouped
+%% into a single option with all list-values being concatenated
+-spec group_dups(list(T)) -> list(T).
+group_dups(Y1) ->
+    lists:reverse(
+      lists:foldl(
+        fun({Option, Values}, Acc) when is_list(Values) ->
+                case lists:keyfind(Option, 1, Acc) of
+                    {Option, Vals} when is_list(Vals) ->
+                        lists:keyreplace(Option, 1, Acc, {Option, Vals ++ Values});
+                    _ ->
+                        [{Option, Values}|Acc]
+                end;
+           (Other, Acc) ->
+                [Other|Acc]
+        end, [], Y1)).
 
 %%%===================================================================
 %%% Validators from yconf

@@ -283,6 +283,14 @@ beams(local) ->
     Mods;
 beams(external) ->
     ExtMods = [Name || {Name, _Details} <- ext_mod:installed()],
+    lists:foreach(
+      fun(ExtMod) ->
+              ExtModPath = ext_mod:module_ebin_dir(ExtMod),
+              case lists:member(ExtModPath, code:get_path()) of
+                  true -> ok;
+                  false -> code:add_patha(ExtModPath)
+              end
+      end, ExtMods),
     case application:get_env(ejabberd, external_beams) of
         {ok, Path} ->
             case lists:member(Path, code:get_path()) of
@@ -468,14 +476,6 @@ validators(Mod, Disallowed) ->
 		end
 	end, proplists:get_keys(Mod:options()))).
 
--spec get_modules_configs() -> [binary()].
-get_modules_configs() ->
-    Fs = [{filename:rootname(filename:basename(F)), F}
-	  || F <- filelib:wildcard(ext_mod:config_dir() ++ "/*.{yml,yaml}")
-		 ++ filelib:wildcard(ext_mod:modules_dir() ++ "/*/conf/*.{yml,yaml}")],
-    [unicode:characters_to_binary(proplists:get_value(F, Fs))
-     || F <- proplists:get_keys(Fs)].
-
 read_file(File) ->
     read_file(File, [replace_macros, include_files, include_modules_configs]).
 
@@ -484,9 +484,13 @@ read_file(File, Opts) ->
     Ret = case filename:extension(File) of
 	      Ex when Ex == <<".yml">> orelse Ex == <<".yaml">> ->
 		  Files = case proplists:get_bool(include_modules_configs, Opts2) of
-			      true -> get_modules_configs();
+			      true -> ext_mod:modules_configs();
 			      false -> []
 			  end,
+		  lists:foreach(
+		    fun(F) ->
+			    ?INFO_MSG("Loading third-party configuration from ~ts", [F])
+		    end, Files),
 		  read_yaml_files([File|Files], lists:flatten(Opts1));
 	      _ ->
 		  read_erlang_file(File, lists:flatten(Opts1))
@@ -522,7 +526,7 @@ read_erlang_file(File, _) ->
 validate(Y1) ->
     case pre_validate(Y1) of
 	{ok, Y2} ->
-	    set_loglevel(proplists:get_value(loglevel, Y2, 4)),
+	    set_loglevel(proplists:get_value(loglevel, Y2, info)),
 	    case ejabberd_config_transformer:map_reduce(Y2) of
 		{ok, Y3} ->
 		    Hosts = proplists:get_value(hosts, Y3),
@@ -546,21 +550,15 @@ validate(Y1) ->
 
 -spec pre_validate(term()) -> {ok, [{atom(), term()}]} | error_return().
 pre_validate(Y1) ->
-    case econf:validate(
-	   econf:options(
-	     #{hosts => ejabberd_options:opt_type(hosts),
-	       loglevel => ejabberd_options:opt_type(loglevel),
-	       version => ejabberd_options:opt_type(version),
-	       host_config => econf:map(econf:binary(), econf:any()),
-	       append_host_config => econf:map(econf:binary(), econf:any()),
-	       '_' => econf:any()},
-	     [{required, [hosts]}]),
-	   Y1) of
-	{ok, Y2} ->
-	    {ok, group_duplicated_options(Y2, [append_host_config, host_config])};
-	Err ->
-	    Err
-    end.
+    econf:validate(
+      econf:and_then(
+        econf:options(
+          #{hosts => ejabberd_options:opt_type(hosts),
+            loglevel => ejabberd_options:opt_type(loglevel),
+            version => ejabberd_options:opt_type(version),
+            '_' => econf:any()},
+          [{required, [hosts]}]),
+        fun econf:group_dups/1), Y1).
 
 -spec load_file(binary()) -> ok | error_return().
 load_file(File) ->
@@ -763,20 +761,6 @@ set_shared_key() ->
 set_node_start(UnixTime) ->
     set_option(node_start, UnixTime).
 
--spec set_loglevel(0..5) -> ok.
+-spec set_loglevel(logger:level()) -> ok.
 set_loglevel(Level) ->
     ejabberd_logger:set(Level).
-
--spec group_duplicated_options([{atom(), term()}], [atom()]) -> [{atom(), term()}].
-group_duplicated_options(Y1, Options) ->
-    {Y2, Y3} = lists:partition(
-		 fun({Option, _}) ->
-			 lists:member(Option, Options)
-		 end, Y1),
-    lists:foldl(
-      fun(Option, Y4) ->
-	      case lists:flatten(proplists:get_all_values(Option, Y2)) of
-		  [] -> Y4;
-		  Values -> [{Option, Values}|Y4]
-	      end
-      end, Y3, Options).

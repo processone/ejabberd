@@ -49,7 +49,10 @@
          verify_resowner_scope/3]).
 
 -export([get_commands_spec/0,
-         oauth_issue_token/3, oauth_list_tokens/0, oauth_revoke_token/1]).
+         oauth_issue_token/3, oauth_list_tokens/0, oauth_revoke_token/1,
+         oauth_add_client_password/3,
+         oauth_add_client_implicit/3,
+         oauth_remove_client/1]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
@@ -63,6 +66,11 @@
 -callback store(#oauth_token{}) -> ok | {error, any()}.
 -callback lookup(binary()) -> {ok, #oauth_token{}} | error.
 -callback clean(non_neg_integer()) -> any().
+
+-record(oauth_ctx, {
+          password    :: binary() | admin_generated,
+          client      :: #oauth_client{} | undefined
+         }).
 
 %% There are two ways to obtain an oauth token:
 %%   * Using the web form/api results in the token being generated in behalf of the user providing the user/pass
@@ -97,6 +105,31 @@ get_commands_spec() ->
                         policy = restricted,
                         result = {tokens, {list, {token, {tuple, [{token, string}, {user, string}, {scope, string}, {expires_in, string}]}}}},
                         result_desc = "List of remaining tokens"
+                       },
+     #ejabberd_commands{name = oauth_add_client_password, tags = [oauth],
+                        desc = "Add OAUTH client_id with password grant type",
+                        module = ?MODULE, function = oauth_add_client_password,
+                        args = [{client_id, binary},
+                                {client_name, binary},
+                                {secret, binary}],
+                        policy = restricted,
+                        result = {res, restuple}
+                       },
+     #ejabberd_commands{name = oauth_add_client_implicit, tags = [oauth],
+                        desc = "Add OAUTH client_id with implicit grant type",
+                        module = ?MODULE, function = oauth_add_client_implicit,
+                        args = [{client_id, binary},
+                                {client_name, binary},
+                                {redirect_uri, binary}],
+                        policy = restricted,
+                        result = {res, restuple}
+                       },
+     #ejabberd_commands{name = oauth_remove_client, tags = [oauth],
+                        desc = "Remove OAUTH client_id",
+                        module = ?MODULE, function = oauth_remove_client,
+                        args = [{client_id, binary}],
+                        policy = restricted,
+                        result = {res, restuple}
                        }
     ].
 
@@ -129,6 +162,27 @@ oauth_revoke_token(Token) ->
     ok = mnesia:dirty_delete(oauth_token, list_to_binary(Token)),
     oauth_list_tokens().
 
+oauth_add_client_password(ClientID, ClientName, Secret) ->
+    DBMod = get_db_backend(),
+    DBMod:store_client(#oauth_client{client_id = ClientID,
+                                     client_name = ClientName,
+                                     grant_type = password,
+                                     options = [{secret, Secret}]}),
+    {ok, []}.
+
+oauth_add_client_implicit(ClientID, ClientName, RedirectURI) ->
+    DBMod = get_db_backend(),
+    DBMod:store_client(#oauth_client{client_id = ClientID,
+                                     client_name = ClientName,
+                                     grant_type = implicit,
+                                     options = [{redirect_uri, RedirectURI}]}),
+    {ok, []}.
+
+oauth_remove_client(Client) ->
+    DBMod = get_db_backend(),
+    DBMod:remove_client(Client),
+    {ok, []}.
+
 config_reloaded() ->
     DBMod = get_db_backend(),
     case init_cache(DBMod) of
@@ -148,11 +202,11 @@ init([]) ->
     init_cache(DBMod),
     Expire = expire(),
     application:set_env(oauth2, backend, ejabberd_oauth),
-    application:set_env(oauth2, expiry_time, Expire),
+    application:set_env(oauth2, expiry_time, Expire div 1000),
     application:start(oauth2),
     ejabberd_commands:register_commands(get_commands_spec()),
     ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),
-    erlang:send_after(expire() * 1000, self(), clean),
+    erlang:send_after(expire(), self(), clean),
     {ok, ok}.
 
 handle_call(Request, From, State) ->
@@ -168,7 +222,7 @@ handle_info(clean, State) ->
     TS = 1000000 * MegaSecs + Secs,
     DBMod = get_db_backend(),
     DBMod:clean(TS),
-    erlang:send_after(trunc(expire() * 1000 * (1 + MiniSecs / 1000000)),
+    erlang:send_after(trunc(expire() * (1 + MiniSecs / 1000000)),
                       self(), clean),
     {noreply, State};
 handle_info(Info, State) ->
@@ -181,9 +235,23 @@ terminate(_Reason, _State) ->
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
 
 
-get_client_identity(Client, Ctx) -> {ok, {Ctx, {client, Client}}}.
+get_client_identity({client, ClientID}, Ctx) ->
+    {ok, {Ctx, {client, ClientID}}}.
 
-verify_redirection_uri(_, _, Ctx) -> {ok, Ctx}.
+verify_redirection_uri(_ClientID, RedirectURI, Ctx) ->
+    case Ctx of
+        #oauth_ctx{client = #oauth_client{grant_type = implicit} = Client} ->
+            case get_redirect_uri(Client) of
+                RedirectURI ->
+                    {ok, Ctx};
+                _ ->
+                    {error, invalid_uri}
+            end;
+        #oauth_ctx{client = #oauth_client{}} ->
+            {error, invalid_client};
+        _ ->
+            {ok, Ctx}
+    end.
 
 authenticate_user({User, Server}, Ctx) ->
     case jid:make(User, Server) of
@@ -193,15 +261,16 @@ authenticate_user({User, Server}, Ctx) ->
             case acl:match_rule(JID#jid.lserver, Access, JID) of
                 allow ->
                     case Ctx of
-                        {password, Password} ->
-                    case ejabberd_auth:check_password(User, <<"">>, Server, Password) of
-                        true ->
+                        #oauth_ctx{password = admin_generated} ->
                             {ok, {Ctx, {user, User, Server}}};
-                        false ->
-                            {error, badpass}
-                    end;
-                        admin_generated ->
-                            {ok, {Ctx, {user, User, Server}}}
+                        #oauth_ctx{password = Password}
+                        when is_binary(Password) ->
+                            case ejabberd_auth:check_password(User, <<"">>, Server, Password) of
+                                true ->
+                                    {ok, {Ctx, {user, User, Server}}};
+                                false ->
+                                    {error, badpass}
+                            end
                     end;
                 deny ->
                     {error, badpass}
@@ -210,7 +279,20 @@ authenticate_user({User, Server}, Ctx) ->
             {error, badpass}
     end.
 
-authenticate_client(Client, Ctx) -> {ok, {Ctx, {client, Client}}}.
+authenticate_client(ClientID, Ctx) ->
+    case ejabberd_option:oauth_client_id_check() of
+        allow ->
+            {ok, {Ctx, {client, ClientID}}};
+        deny -> {error, not_allowed};
+        db ->
+            DBMod = get_db_backend(),
+            case DBMod:lookup_client(ClientID) of
+                {ok, #oauth_client{} = Client} ->
+                    {ok, {Ctx#oauth_ctx{client = Client}, {client, ClientID}}};
+                _ ->
+                    {error, not_allowed}
+            end
+    end.
 
 -spec verify_resowner_scope({user, binary(), binary()}, [binary()], any()) ->
     {ok, any(), [binary()]} | {error, any()}.
@@ -490,7 +572,7 @@ process(_Handlers,
                                    ClientId,
                                    RedirectURI,
                                    Scope,
-                                   {password, Password}) of
+                                   #oauth_ctx{password = Password}) of
         {ok, {_AppContext, Authorization}} ->
             {ok, {_AppContext2, Response}} =
                 oauth2:issue_token(Authorization, [{expiry_time, ExpiresIn} || ExpiresIn /= undefined ]),
@@ -535,48 +617,94 @@ process(_Handlers,
     end;
 process(_Handlers,
 	#request{method = 'POST', q = Q, lang = _Lang,
+                 auth = HTTPAuth,
 		 path = [_, <<"token">>]}) ->
-    case proplists:get_value(<<"grant_type">>, Q, <<"">>) of
-      <<"password">> ->
-        SScope = proplists:get_value(<<"scope">>, Q, <<"">>),
-        StringJID = proplists:get_value(<<"username">>, Q, <<"">>),
-        #jid{user = Username, server = Server} = jid:decode(StringJID),
-        Password = proplists:get_value(<<"password">>, Q, <<"">>),
-        Scope = str:tokens(SScope, <<" ">>),
-        TTL = proplists:get_value(<<"ttl">>, Q, <<"">>),
-        ExpiresIn = case TTL of
-                        <<>> -> undefined;
-                        _ -> binary_to_integer(TTL)
+    Access =
+        case ejabberd_option:oauth_client_id_check() of
+            allow ->
+                case proplists:get_value(<<"grant_type">>, Q, <<"">>) of
+                    <<"password">> ->
+                        password;
+                    _ ->
+                        unsupported_grant_type
+                end;
+            deny ->
+                deny;
+            db ->
+                {ClientID, Secret} =
+                    case HTTPAuth of
+                        {ClientID1, Secret1} ->
+                            {ClientID1, Secret1};
+                        _ ->
+                            ClientID1 = proplists:get_value(
+                                          <<"client_id">>, Q, <<"">>),
+                            Secret1 = proplists:get_value(
+                                        <<"client_secret">>, Q, <<"">>),
+                            {ClientID1, Secret1}
                     end,
-        case oauth2:authorize_password({Username, Server},
-                                       Scope,
-                                       {password, Password}) of
-            {ok, {_AppContext, Authorization}} ->
-                {ok, {_AppContext2, Response}} =
-                    oauth2:issue_token(Authorization, [{expiry_time, ExpiresIn} || ExpiresIn /= undefined ]),
-                {ok, AccessToken} = oauth2_response:access_token(Response),
-                {ok, Type} = oauth2_response:token_type(Response),
-                %%Ugly: workardound to return the correct expirity time, given than oauth2 lib doesn't really have
-                %%per-case expirity time.
-                Expires = case ExpiresIn of
-                              undefined ->
-                                 {ok, Ex} = oauth2_response:expires_in(Response),
-                                 Ex;
-                              _ ->
-                                ExpiresIn
-                          end,
-                {ok, VerifiedScope} = oauth2_response:scope(Response),
-                json_response(200, {[
-                   {<<"access_token">>, AccessToken},
-                   {<<"token_type">>, Type},
-                   {<<"scope">>, str:join(VerifiedScope, <<" ">>)},
-                   {<<"expires_in">>, Expires}]});
-            {error, Error} when is_atom(Error) ->
-                json_error(400, <<"invalid_grant">>, Error)
-        end;
-        _OtherGrantType ->
-            json_error(400, <<"unsupported_grant_type">>, unsupported_grant_type)
-  end;
+                DBMod = get_db_backend(),
+                case DBMod:lookup_client(ClientID) of
+                    {ok, #oauth_client{grant_type = password} = Client} ->
+                        case get_client_secret(Client) of
+                            Secret ->
+                                case proplists:get_value(<<"grant_type">>, Q, <<"">>) of
+                                    <<"password">> when
+                                    Client#oauth_client.grant_type == password ->
+                                        password;
+                                    _ ->
+                                        unsupported_grant_type
+                                end;
+                            _ ->
+                                deny
+                        end;
+                    _ ->
+                        deny
+                end
+        end,
+    case Access of
+        password ->
+            SScope = proplists:get_value(<<"scope">>, Q, <<"">>),
+            StringJID = proplists:get_value(<<"username">>, Q, <<"">>),
+            #jid{user = Username, server = Server} = jid:decode(StringJID),
+            Password = proplists:get_value(<<"password">>, Q, <<"">>),
+            Scope = str:tokens(SScope, <<" ">>),
+            TTL = proplists:get_value(<<"ttl">>, Q, <<"">>),
+            ExpiresIn = case TTL of
+                            <<>> -> undefined;
+                            _ -> binary_to_integer(TTL)
+                        end,
+            case oauth2:authorize_password({Username, Server},
+                                           Scope,
+                                           #oauth_ctx{password = Password}) of
+                {ok, {_AppContext, Authorization}} ->
+                    {ok, {_AppContext2, Response}} =
+                        oauth2:issue_token(Authorization, [{expiry_time, ExpiresIn} || ExpiresIn /= undefined ]),
+                    {ok, AccessToken} = oauth2_response:access_token(Response),
+                    {ok, Type} = oauth2_response:token_type(Response),
+                    %%Ugly: workardound to return the correct expirity time, given than oauth2 lib doesn't really have
+                    %%per-case expirity time.
+                    Expires = case ExpiresIn of
+                                  undefined ->
+                                      {ok, Ex} = oauth2_response:expires_in(Response),
+                                      Ex;
+                                  _ ->
+                                      ExpiresIn
+                              end,
+                    {ok, VerifiedScope} = oauth2_response:scope(Response),
+                    json_response(200, {[
+                                         {<<"access_token">>, AccessToken},
+                                         {<<"token_type">>, Type},
+                                         {<<"scope">>, str:join(VerifiedScope, <<" ">>)},
+                                         {<<"expires_in">>, Expires}]});
+                {error, Error} when is_atom(Error) ->
+                    json_error(400, <<"invalid_grant">>, Error)
+            end;
+        unsupported_grant_type ->
+            json_error(400, <<"unsupported_grant_type">>,
+                       unsupported_grant_type);
+        deny ->
+            ejabberd_web:error(not_allowed)
+    end;
 
 process(_Handlers, _Request) ->
     ejabberd_web:error(not_found).
@@ -587,6 +715,11 @@ get_db_backend() ->
     DBType = ejabberd_option:oauth_db_type(),
     list_to_existing_atom("ejabberd_oauth_" ++ atom_to_list(DBType)).
 
+get_client_secret(#oauth_client{grant_type = password, options = Options}) ->
+    proplists:get_value(secret, Options, false).
+
+get_redirect_uri(#oauth_client{grant_type = implicit, options = Options}) ->
+    proplists:get_value(redirect_uri, Options, false).
 
 %% Headers as per RFC 6749
 json_response(Code, Body) ->

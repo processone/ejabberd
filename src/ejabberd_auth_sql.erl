@@ -33,7 +33,7 @@
 -export([start/1, stop/1, set_password/3, try_register/3,
 	 get_users/2, count_users/2, get_password/2,
 	 remove_user/2, store_type/1, plain_password_required/1,
-	 convert_to_scram/1, export/1, which_users_exists/2]).
+	 export/1, which_users_exists/2]).
 
 -include("scram.hrl").
 -include("logger.hrl").
@@ -266,54 +266,6 @@ which_users_exists(LServer, LUsers) ->
                     E2;
                 V2 ->
                     V ++ V2
-            end
-    end.
-
-
-convert_to_scram(Server) ->
-    LServer = jid:nameprep(Server),
-    if
-        LServer == error;
-        LServer == <<>> ->
-            {error, {incorrect_server_name, Server}};
-        true ->
-            F = fun () ->
-                        BatchSize = ?BATCH_SIZE,
-                        case ejabberd_sql:sql_query_t(
-                               ?SQL("select @(username)s, @(password)s"
-                                    " from users"
-                                    " where iterationcount=0 and %(LServer)H"
-                                    " limit %(BatchSize)d")) of
-                            {selected, []} ->
-                                ok;
-                            {selected, Rs} ->
-                                lists:foreach(
-                                  fun({LUser, Password}) ->
-					  case jid:resourceprep(Password) of
-					      error ->
-						  ?ERROR_MSG(
-						     "SASLprep failed for "
-						     "password of user ~ts@~ts",
-						     [LUser, LServer]);
-					      _ ->
-						  Scram = ejabberd_auth:password_to_scram(Password),
-						  set_password_scram_t(
-						    LUser, LServer,
-						    Scram#scram.storedkey,
-						    Scram#scram.serverkey,
-						    Scram#scram.salt,
-						    Scram#scram.iterationcount)
-					  end
-                                  end, Rs),
-                                continue;
-                            Err -> {bad_reply, Err}
-                        end
-                end,
-            case ejabberd_sql:sql_transaction(LServer, F) of
-                {atomic, ok} -> ok;
-                {atomic, continue} -> convert_to_scram(Server);
-                {atomic, Error} -> {error, Error};
-                Error -> Error
             end
     end.
 

@@ -1031,7 +1031,7 @@ build_contact_jid_td(RosterJID) ->
 		   case lists:member(CServer, ejabberd_option:hosts()) of
 		     false -> <<"">>;
 		     true ->
-			 <<"/admin/server/", CServer/binary, "/user/",
+			 <<"../../../../../server/", CServer/binary, "/user/",
 			   CUser/binary, "/">>
 		   end
 	     end,

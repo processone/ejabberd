@@ -84,8 +84,8 @@ start_included_apps() ->
     lists:foreach(
 	fun(mnesia) ->
 	       ok;
-	   (lager)->
-	       ok;
+	   (lager) ->
+		ok;
 	   (os_mon)->
 	       ok;
 	   (App) ->
