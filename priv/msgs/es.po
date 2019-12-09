@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: es\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2019-07-01 17:11+0200\n"
+"PO-Revision-Date: 2019-12-09 16:40+0100\n"
 "Last-Translator: Badlop <badlop@process-one.net>\n"
 "Language-Team: \n"
 "Language: es\n"
@@ -289,9 +289,8 @@ msgid "Configuration"
 msgstr "Configuración"
 
 #: mod_muc_room.erl:3489
-#, fuzzy
 msgid "Configuration of room ~ts"
-msgstr "Configuración para la sala ~s"
+msgstr "Configuración para la sala ~ts"
 
 #: ejabberd_web_admin.erl:937
 msgid "Connected Resources:"
@@ -494,9 +493,8 @@ msgid "Failed to parse HTTP response"
 msgstr "Falló la comprensión de la respuesta HTTP"
 
 #: mod_muc_room.erl:3632
-#, fuzzy
 msgid "Failed to process option '~ts'"
-msgstr "Falló el procesado de la opción '~s'"
+msgstr "Falló el procesado de la opción '~ts'"
 
 #: mod_vcard_mnesia.erl:103 mod_vcard_mnesia.erl:117 mod_vcard_sql.erl:160
 #: mod_vcard_sql.erl:174 mod_vcard_ldap.erl:330 mod_vcard_ldap.erl:343
@@ -524,9 +522,8 @@ msgid "From"
 msgstr "De"
 
 #: mod_configure.erl:678
-#, fuzzy
 msgid "From ~ts"
-msgstr "De ~s"
+msgstr "De ~ts"
 
 #: mod_vcard_mnesia.erl:100 mod_vcard_mnesia.erl:114 mod_vcard_sql.erl:157
 #: mod_vcard_sql.erl:171 mod_vcard_ldap.erl:327 mod_vcard_ldap.erl:340
@@ -688,13 +685,12 @@ msgid "Invitations are not allowed in this conference"
 msgstr "Las invitaciones no están permitidas en esta sala"
 
 #: mod_muc_room.erl:373 mod_muc_room.erl:519 mod_muc_room.erl:1293
-#, fuzzy
 msgid ""
 "It is not allowed to send error messages to the room. The participant (~ts) "
 "has sent an error message (~ts) and got kicked from the room"
 msgstr ""
-"No está permitido enviar mensajes de error a la sala. Este participante (~s) "
-"ha enviado un mensaje de error (~s) y fue expulsado de la sala"
+"No está permitido enviar mensajes de error a la sala. Este participante "
+"(~ts) ha enviado un mensaje de error (~ts) y fue expulsado de la sala"
 
 #: mod_muc_room.erl:564 mod_muc_room.erl:575
 msgid "It is not allowed to send private messages"
@@ -709,13 +705,12 @@ msgid "It is not allowed to send private messages to the conference"
 msgstr "Impedir el envio de mensajes privados a la sala"
 
 #: mod_jidprep.erl:143
-#, fuzzy
 msgid "JID normalization denied by service policy"
-msgstr "Se te ha denegado crear la sala por política del servicio"
+msgstr "Se ha denegado la normalización del JID por política del servicio"
 
 #: mod_jidprep.erl:137
 msgid "JID normalization failed"
-msgstr ""
+msgstr "Ha fallado la normalización del JID"
 
 #: mod_register_web.erl:213 mod_register_web.erl:221
 msgid "Jabber Account Registration"
@@ -816,7 +811,7 @@ msgstr "mayo"
 
 #: mod_shared_roster.erl:885
 msgid "Members not added (inexistent vhost): "
-msgstr ""
+msgstr "Miembros no añadidos (el vhost no existe): "
 
 #: mod_shared_roster.erl:863
 msgid "Members:"
@@ -926,9 +921,8 @@ msgid "Nickname can't be empty"
 msgstr "El apodo no puede estar vacío"
 
 #: mod_muc_room.erl:2994
-#, fuzzy
 msgid "Nickname ~ts does not exist in the room"
-msgstr "El apodo ~s no existe en la sala"
+msgstr "El apodo ~ts no existe en la sala"
 
 #: mod_muc_room.erl:3396
 msgid "No 'affiliation' attribute found"
@@ -1384,9 +1378,8 @@ msgid "Request has timed out"
 msgstr "La petición ha caducado"
 
 #: mod_muc_room.erl:739 mod_muc_room.erl:751
-#, fuzzy
 msgid "Request is ignored"
-msgstr "La petición ha caducado"
+msgstr "La petición ha sido ignorada"
 
 #: mod_configure.erl:1407
 msgid "Resources"
@@ -1452,9 +1445,8 @@ msgid "Roster"
 msgstr "Lista de contactos"
 
 #: mod_roster.erl:1007
-#, fuzzy
 msgid "Roster of ~ts"
-msgstr "Lista de contactos de "
+msgstr "Lista de contactos de ~ts"
 
 #: mod_configure.erl:1403
 msgid "Roster size"
@@ -1728,9 +1720,8 @@ msgid "This room is not anonymous"
 msgstr "Sala no anónima"
 
 #: mod_multicast.erl:498
-#, fuzzy
 msgid "This service can not process the address: ~ts"
-msgstr "Este servicio no puede procesar la dirección: ~s"
+msgstr "Este servicio no puede procesar la dirección: ~ts"
 
 #: mod_muc_log.erl:470
 msgid "Thursday"
@@ -1753,27 +1744,24 @@ msgid "To"
 msgstr "Para"
 
 #: mod_register.erl:226
-#, fuzzy
 msgid "To register, visit ~ts"
-msgstr "Para registrarte, visita ~s"
+msgstr "Para registrarte, visita ~ts"
 
 #: mod_configure.erl:666
-#, fuzzy
 msgid "To ~ts"
-msgstr "A ~s"
+msgstr "A ~ts"
 
 #: ejabberd_oauth.erl:509
 msgid "Token TTL"
 msgstr "Token TTL"
 
 #: mod_fail2ban.erl:219
-#, fuzzy
 msgid ""
 "Too many (~p) failed authentications from this IP address (~ts). The address "
 "will be unblocked at ~ts UTC"
 msgstr ""
-"Demasiadas (~p) autenticaciones fallidas de esta dirección IP (~s). La "
-"dirección será desbloqueada en ~s UTC"
+"Demasiadas (~p) autenticaciones fallidas de esta dirección IP (~ts). La "
+"dirección será desbloqueada en ~ts UTC"
 
 #: mod_muc_room.erl:2768 mod_muc_room.erl:3402
 msgid "Too many <item/> elements"
@@ -1936,9 +1924,8 @@ msgid "User session terminated"
 msgstr "Sesión de usuario terminada"
 
 #: ejabberd_web_admin.erl:926
-#, fuzzy
 msgid "User ~ts"
-msgstr "Usuario ~s"
+msgstr "Usuario ~ts"
 
 #: mod_register_web.erl:272 mod_register_web.erl:412 mod_register_web.erl:523
 msgid "Username:"
@@ -1979,20 +1966,17 @@ msgid "Value 'set' of 'type' attribute is not allowed"
 msgstr "El valor 'set' del atributo 'type' no está permitido"
 
 #: pubsub_subscription.erl:237 pubsub_subscription_sql.erl:202
-#, fuzzy
 msgid "Value of '~ts' should be boolean"
-msgstr "El valor de '~s' debería ser booleano"
+msgstr "El valor de '~ts' debería ser booleano"
 
 #: pubsub_subscription.erl:215 pubsub_subscription_sql.erl:180
-#, fuzzy
 msgid "Value of '~ts' should be datetime string"
-msgstr "El valor de '~s' debería ser una fecha"
+msgstr "El valor de '~ts' debería ser una fecha"
 
 #: pubsub_subscription.erl:209 pubsub_subscription.erl:227
 #: pubsub_subscription_sql.erl:174 pubsub_subscription_sql.erl:192
-#, fuzzy
 msgid "Value of '~ts' should be integer"
-msgstr "El valor de '~s' debería ser un entero"
+msgstr "El valor de '~ts' debería ser un entero"
 
 #: ejabberd_web_admin.erl:433
 msgid "Virtual Hosting"
@@ -2091,22 +2075,20 @@ msgstr ""
 "descartado."
 
 #: ejabberd_captcha.erl:97
-#, fuzzy
 msgid ""
 "Your subscription request and/or messages to ~ts have been blocked. To "
 "unblock your subscription request, visit ~ts"
 msgstr ""
-"Tu petición de suscripción y/o mensajes a ~s están siendo bloqueados. Para "
-"desbloquearlos, visita ~s"
+"Tu petición de suscripción y/o mensajes a ~ts ha sido bloqueado. Para "
+"desbloquear tu petición de suscripción visita ~ts"
 
 #: mod_disco.erl:438
 msgid "ejabberd"
 msgstr "ejabberd"
 
 #: mod_http_upload.erl:574
-#, fuzzy
 msgid "ejabberd HTTP Upload service"
-msgstr "Servicio Multicast de ejabberd"
+msgstr "Servicio HTTP Upload de ejabberd"
 
 #: mod_muc.erl:584
 msgid "ejabberd MUC module"
@@ -2177,14 +2159,12 @@ msgid "vCard User Search"
 msgstr "Buscar vCard de usuario"
 
 #: mod_muc_room.erl:4466
-#, fuzzy
 msgid "~ts invites you to the room ~ts"
-msgstr "~s te invita a la sala ~s"
+msgstr "~ts te invita a la sala ~ts"
 
 #: mod_offline.erl:997
-#, fuzzy
 msgid "~ts's Offline Messages Queue"
-msgstr "Cola de mensajes diferidos de ~s"
+msgstr "Cola de mensajes diferidos de ~ts"
 
 #~ msgid "CAPTCHA web page"
 #~ msgstr "Página web de CAPTCHA"
