@@ -1,4 +1,5 @@
 %% -*- coding: utf-8 -*-
+{" has set the subject to: "," ตั้งหัวข้อว่า: "}.
 {"Access denied by service policy","การเข้าถึงถูกปฏิเสธโดยนโยบายการบริการ"}.
 {"Action on user","การดำเนินการกับผู้ใช้"}.
 {"Add Jabber ID","เพิ่ม Jabber ID"}.
@@ -8,10 +9,10 @@
 {"Administration","การดูแล"}.
 {"Administrator privileges required","ต้องมีสิทธิพิเศษของผู้ดูแลระบบ"}.
 {"All activity","กิจกรรมทั้งหมด"}.
+{"All Users","ผู้ใช้ทั้งหมด"}.
 {"Allow users to query other users","อนุญาตให้ผู้ใช้ถามคำถามกับผู้ใช้คนอื่นๆ ได้"}.
 {"Allow users to send invites","อนุญาตให้ผู้ใช้ส่งคำเชิญถึงกันได้"}.
 {"Allow users to send private messages","อนุญาตให้ผู้ใช้ส่งข้อความส่วนตัว"}.
-{"All Users","ผู้ใช้ทั้งหมด"}.
 {"Announcements","ประกาศ"}.
 {"April","เมษายน"}.
 {"August","สิงหาคม"}.
@@ -25,7 +26,6 @@
 {"Chatroom configuration modified","มีการปรับเปลี่ยนการกำหนดค่าของห้องสนทนา"}.
 {"Chatrooms","ห้องสนทนา"}.
 {"Choose a username and password to register with this server","เลือกชื่อผู้ใช้และรหัสผ่านเพื่อลงทะเบียนกับเซิร์ฟเวอร์นี้"}.
-{"Choose modules to stop","เลือกโมดูลเพื่อหยุดการทำงาน"}.
 {"Choose storage type of tables","เลือกชนิดการจัดเก็บของตาราง"}.
 {"Choose whether to approve this entity's subscription.","เลือกว่าจะอนุมัติการสมัครเข้าใช้งานของเอนทิตี้นี้หรือไม่"}.
 {"City","เมือง"}.
@@ -56,7 +56,6 @@
 {"Email","อีเมล"}.
 {"Enable logging","เปิดใช้งานการบันทึก"}.
 {"End User Session","สิ้นสุดเซสชันของผู้ใช้"}.
-{"Enter list of {Module, [Options]}","ป้อนรายการของ {โมดูล, [ตัวเลือก]}"}.
 {"Enter nickname you want to register","ป้อนชื่อเล่นที่คุณต้องการลงทะเบียน"}.
 {"Enter path to backup file","ป้อนพาธเพื่อสำรองไฟล์ข้อมูล"}.
 {"Enter path to jabberd14 spool dir","ป้อนพาธไปยัง jabberd14 spool dir"}.
@@ -66,7 +65,6 @@
 {"Family Name","นามสกุล"}.
 {"February","กุมภาพันธ์"}.
 {"Friday","วันศุกร์"}.
-{"From ~s","จาก ~s"}.
 {"From","จาก"}.
 {"Full Name","ชื่อเต็ม"}.
 {"Get Number of Online Users","แสดงจำนวนผู้ใช้ออนไลน์"}.
@@ -74,11 +72,10 @@
 {"Get User Last Login Time","แสดงเวลาเข้าสู่ระบบครั้งล่าสุดของผู้ใช้"}.
 {"Get User Password","ขอรับรหัสผ่านของผู้ใช้"}.
 {"Get User Statistics","แสดงสถิติของผู้ใช้"}.
-{"Groups","กลุ่ม"}.
 {"Group ","กลุ่ม"}.
+{"Groups","กลุ่ม"}.
 {"has been banned","ถูกสั่งห้าม"}.
 {"has been kicked","ถูกไล่ออก"}.
-{" has set the subject to: "," ตั้งหัวข้อว่า: "}.
 {"Host","โฮสต์"}.
 {"Import Directory","อิมพอร์ตไดเร็กทอรี"}.
 {"Import File","อิมพอร์ตไฟล์"}.
@@ -101,7 +98,6 @@
 {"Last month","เดือนที่แล้ว"}.
 {"Last year","ปีที่แล้ว"}.
 {"leaves the room","ออกจากห้อง"}.
-{"List of modules to start","รายการของโมดูลที่จะเริ่มการทำงาน"}.
 {"Low level update script","อัพเดตสคริปต์ระดับต่ำ"}.
 {"Make participants list public","สร้างรายการผู้เข้าร่วมสำหรับใช้งานโดยบุคคลทั่วไป"}.
 {"Make room members-only","สร้างห้องสำหรับสมาชิกเท่านั้น"}.
@@ -116,19 +112,17 @@
 {"Message body","เนื้อหาของข้อความ"}.
 {"Middle Name","ชื่อกลาง"}.
 {"Moderator privileges required","ต้องมีสิทธิพิเศษของผู้ดูแลการสนทนา"}.
-{"Modules","โมดูล"}.
 {"Monday","วันจันทร์"}.
 {"Name","ชื่อ"}.
 {"Name:","ชื่อ:"}.
 {"Never","ไม่เคย"}.
 {"Nickname Registration at ","การลงทะเบียนชื่อเล่นที่ "}.
-{"Nickname ~s does not exist in the room","ไม่มีชื่อเล่น ~s อยู่ในห้องนี้"}.
 {"Nickname","ชื่อเล่น"}.
 {"No body provided for announce message","ไม่ได้ป้อนเนื้อหาสำหรับข้อความที่ประกาศ"}.
 {"No Data","ไม่มีข้อมูล"}.
+{"No limit","ไม่จำกัด"}.
 {"Node not found","ไม่พบโหนด"}.
 {"Nodes","โหนด"}.
-{"No limit","ไม่จำกัด"}.
 {"None","ไม่มี"}.
 {"November","พฤศจิกายน"}.
 {"Number of online users","จำนวนผู้ใช้ออนไลน์"}.
@@ -183,7 +177,6 @@
 {"Room Configuration","การกำหนดค่าห้องสนทนา"}.
 {"Room creation is denied by service policy","การสร้างห้องสนทนาถูกปฏิเสธโดยนโยบายการบริการ"}.
 {"Room title","ชื่อห้อง"}.
-{"Roster of ","บัญชีรายชื่อของ "}.
 {"Roster size","ขนาดของบัญชีรายชื่อ"}.
 {"Roster","บัญชีรายชื่อ"}.
 {"RPC Call Error","ข้อผิดพลาดจากการเรียกใช้ RPC"}.
@@ -203,14 +196,8 @@
 {"Show Integral Table","แสดงตารางรวม"}.
 {"Show Ordinary Table","แสดงตารางทั่วไป"}.
 {"Shut Down Service","ปิดการบริการ"}.
-{"~s invites you to the room ~s","~s เชิญคุณเข้าร่วมสนทนาในห้อง ~s"}.
-{"~s's Offline Messages Queue","~s's ลำดับข้อความออฟไลน์"}.
-{"Start Modules at ","เริ่มโมดูลที่"}.
-{"Start Modules","เริ่มโมดูล"}.
 {"Statistics of ~p","สถิติของ ~p"}.
 {"Statistics","สถิติ"}.
-{"Stop Modules at ","หยุดโมดูลที่"}.
-{"Stop Modules","หยุดโมดูล"}.
 {"Stopped Nodes","โหนดที่หยุด"}.
 {"Stop","หยุด"}.
 {"Storage Type","ชนิดที่เก็บข้อมูล"}.
@@ -226,7 +213,6 @@
 {"Thursday","วันพฤหัสบดี"}.
 {"Time delay","การหน่วงเวลา"}.
 {"Time","เวลา"}.
-{"To ~s","ถึง ~s"}.
 {"To","ถึง"}.
 {"Traffic rate limit is exceeded","อัตราของปริมาณการเข้าใช้เกินขีดจำกัด"}.
 {"Transactions Aborted:","ทรานแซกชันที่ถูกยกเลิก:"}.

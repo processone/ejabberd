@@ -1,13 +1,16 @@
 %% -*- coding: utf-8 -*-
+{" has set the subject to: "," veranderde het onderwerp in: "}.
+{"A password is required to enter this room","U hebt een wachtwoord nodig om deze chatruimte te kunnen betreden"}.
 {"Access denied by service policy","De toegang werd geweigerd door het beleid van deze dienst"}.
 {"Action on user","Actie op gebruiker"}.
 {"Add Jabber ID","Jabber ID toevoegen"}.
 {"Add New","Toevoegen"}.
 {"Add User","Gebruiker toevoegen"}.
-{"Administration","Beheer"}.
 {"Administration of ","Beheer van "}.
+{"Administration","Beheer"}.
 {"Administrator privileges required","U hebt beheerdersprivileges nodig"}.
 {"All activity","Alle activiteit"}.
+{"All Users","Alle gebruikers"}.
 {"Allow users to change the subject","Sta gebruikers toe het onderwerp te veranderen"}.
 {"Allow users to query other users","Gebruikers mogen naar andere gebruikers verzoeken verzenden"}.
 {"Allow users to send invites","Gebruikers mogen uitnodigingen verzenden"}.
@@ -15,18 +18,15 @@
 {"Allow visitors to change nickname","Sta bezoekers toe hun naam te veranderen"}.
 {"Allow visitors to send private messages to","Gebruikers mogen privéberichten verzenden aan"}.
 {"Allow visitors to send status text in presence updates","Sta bezoekers toe hun statusbericht in te stellen"}.
-{"All Users","Alle gebruikers"}.
 {"Announcements","Mededelingen"}.
-{"A password is required to enter this room","U hebt een wachtwoord nodig om deze chatruimte te kunnen betreden"}.
 {"April","April"}.
 {"August","Augustus"}.
-{"Backup","Backup"}.
 {"Backup Management","Backup"}.
 {"Backup of ~p","Backup maken van ~p"}.
 {"Backup to File at ","Binaire backup maken op "}.
+{"Backup","Backup"}.
 {"Bad format","Verkeerd formaat"}.
 {"Birthday","Geboortedatum"}.
-{"CAPTCHA web page","CAPTCHA webpagina."}.
 {"Change Password","Wachtwoord wijzigen"}.
 {"Change User Password","Verander Gebruikerswachtwoord"}.
 {"Characters not allowed:","Niet-toegestane karakters:"}.
@@ -37,24 +37,22 @@
 {"Chatroom is stopped","Gespreksruimte gestopt"}.
 {"Chatrooms","Groepsgesprekken"}.
 {"Choose a username and password to register with this server","Kies een gebruikersnaam en een wachtwoord om u te registreren op deze server"}.
-{"Choose modules to stop","Selecteer de modules die u wilt stoppen"}.
 {"Choose storage type of tables","Opslagmethode voor tabellen kiezen"}.
 {"Choose whether to approve this entity's subscription.","Beslis of dit verzoek tot abonneren zal worden goedgekeurd"}.
 {"City","Plaats"}.
 {"Commands","Commando's"}.
 {"Conference room does not exist","De chatruimte bestaat niet"}.
 {"Configuration","Instellingen"}.
-{"Configuration of room ~s","Instellingen van chatruimte ~s"}.
 {"Connected Resources:","Verbonden bronnen:"}.
 {"Country","Land"}.
 {"CPU Time:","Processortijd:"}.
-{"Database","Database"}.
 {"Database Tables at ~p","Databasetabellen van ~p"}.
 {"Database Tables Configuration at ","Instellingen van databasetabellen op "}.
+{"Database","Database"}.
 {"December","December"}.
 {"Default users as participants","Gebruikers standaard instellen als deelnemers"}.
-{"Delete message of the day","Bericht van de dag verwijderen"}.
 {"Delete message of the day on all hosts","Verwijder bericht-van-de-dag op alle hosts"}.
+{"Delete message of the day","Bericht van de dag verwijderen"}.
 {"Delete Selected","Geselecteerde verwijderen"}.
 {"Delete User","Verwijder Gebruiker"}.
 {"Description:","Beschrijving:"}.
@@ -75,7 +73,6 @@
 {"Email","E-mail"}.
 {"Enable logging","Logs aanzetten"}.
 {"End User Session","Verwijder Gebruikers-sessie"}.
-{"Enter list of {Module, [Options]}","Voer lijst met op te starten modules als volgt in: {Module, [Opties]}"}.
 {"Enter nickname you want to register","Voer de bijnaam in die u wilt registreren"}.
 {"Enter path to backup file","Voer pad naar backupbestand in"}.
 {"Enter path to jabberd14 spool dir","Voer pad naar jabberd14-spool-directory in"}.
@@ -91,7 +88,6 @@
 {"Family Name","Achternaam"}.
 {"February","Februari"}.
 {"Friday","Vrijdag"}.
-{"From ~s","Van ~s"}.
 {"From","Van"}.
 {"Full Name","Volledige naam"}.
 {"Get Number of Online Users","Aantal Aanwezige Gebruikers Opvragen"}.
@@ -102,11 +98,10 @@
 {"Group ","Groep "}.
 {"Groups","Groepen"}.
 {"has been banned","is verbannen"}.
-{"has been kicked because of an affiliation change","is weggestuurd vanwege een affiliatieverandering"}.
 {"has been kicked because of a system shutdown","is weggestuurd omdat het systeem gestopt wordt"}.
+{"has been kicked because of an affiliation change","is weggestuurd vanwege een affiliatieverandering"}.
 {"has been kicked because the room has been changed to members-only","is weggestuurd omdat de chatruimte vanaf heden alleen toegankelijk is voor leden"}.
 {"has been kicked","is weggestuurd"}.
-{" has set the subject to: "," veranderde het onderwerp in: "}.
 {"Host","Host"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Als U het CAPTCHA-plaatje niet ziet, bezoek dan de webpagina."}.
 {"Import Directory","Directory importeren"}.
@@ -121,9 +116,9 @@
 {"Incorrect password","Foutief wachtwoord"}.
 {"IP addresses","IP-adres"}.
 {"is now known as","heet nu"}.
-{"It is not allowed to send private messages","Het is niet toegestaan priveberichten te sturen"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Er mogen geen privéberichten van het type \"groupchat\" worden verzonden"}.
 {"It is not allowed to send private messages to the conference","Er mogen geen privéberichten naar de chatruimte worden verzonden"}.
+{"It is not allowed to send private messages","Het is niet toegestaan priveberichten te sturen"}.
 {"Jabber Account Registration","Jabber-account registratie"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Januari"}.
@@ -135,7 +130,6 @@
 {"Last month","Afgelopen maand"}.
 {"Last year","Afgelopen jaar"}.
 {"leaves the room","verliet de chatruimte"}.
-{"List of modules to start","Lijst met op te starten modules"}.
 {"List of rooms","Lijst van groepsgesprekken"}.
 {"Low level update script","Lowlevel script voor de opwaardering"}.
 {"Make participants list public","Deelnemerslijst publiek maken"}.
@@ -156,7 +150,6 @@
 {"Middle Name","Tussennaam"}.
 {"Moderator privileges required","U hebt moderatorprivileges nodig"}.
 {"Modified modules","Gewijzigde modules"}.
-{"Modules","Modules"}.
 {"Monday","Maandag"}.
 {"Multicast","Multicast"}.
 {"Multi-User Chat","Groepschat"}.
@@ -164,15 +157,14 @@
 {"Name:","Naam:"}.
 {"Never","Nooit"}.
 {"New Password:","Nieuw Wachtwoord:"}.
-{"Nickname","Bijnaam"}.
 {"Nickname Registration at ","Registratie van een bijnaam op "}.
-{"Nickname ~s does not exist in the room","De bijnaam ~s bestaat niet in deze chatruimte"}.
+{"Nickname","Bijnaam"}.
 {"No body provided for announce message","De mededeling bevat geen bericht"}.
 {"No Data","Geen gegevens"}.
+{"No limit","Geen limiet"}.
 {"Node not found","Node niet gevonden"}.
 {"Node ~p","Node ~p"}.
 {"Nodes","Nodes"}.
-{"No limit","Geen limiet"}.
 {"None","Geen"}.
 {"Not Found","Niet gevonden"}.
 {"November","November"}.
@@ -183,9 +175,9 @@
 {"Offline Messages:","Offline berichten:"}.
 {"OK","OK"}.
 {"Old Password:","Oud Wachtwoord:"}.
-{"Online","Online"}.
 {"Online Users","Online gebruikers"}.
 {"Online Users:","Online gebruikers:"}.
+{"Online","Online"}.
 {"Only moderators and participants are allowed to change the subject in this room","Alleen moderators en deelnemers mogen het onderwerp van deze chatruimte veranderen"}.
 {"Only moderators are allowed to change the subject in this room","Alleen moderators mogen het onderwerp van deze chatruimte veranderen"}.
 {"Only moderators can approve voice requests","Alleen moderators kunnen stemaanvragen goedkeuren"}.
@@ -228,31 +220,30 @@
 {"Remove","Verwijderen"}.
 {"Replaced by new connection","Vervangen door een nieuwe verbinding"}.
 {"Resources","Bronnen"}.
-{"Restart","Herstarten"}.
 {"Restart Service","Herstart Service"}.
+{"Restart","Herstarten"}.
 {"Restore Backup from File at ","Binaire backup direct herstellen op "}.
-{"Restore","Binaire backup direct herstellen"}.
 {"Restore binary backup after next ejabberd restart (requires less memory):","Binaire backup herstellen na herstart van ejabberd (vereist minder geheugen):"}.
 {"Restore binary backup immediately:","Binaire backup direct herstellen:"}.
 {"Restore plain text backup immediately:","Backup in een tekstbestand direct herstellen:"}.
+{"Restore","Binaire backup direct herstellen"}.
 {"Room Configuration","Instellingen van de chatruimte"}.
 {"Room creation is denied by service policy","De aanmaak van de chatruimte is verhinderd door de instellingen van deze server"}.
 {"Room description","Beschrijving"}.
 {"Room Occupants","Aantal aanwezigen"}.
 {"Room title","Naam van de chatruimte"}.
-{"Roster of ","Roster van "}.
-{"Roster","Roster"}.
 {"Roster size","Contactlijst Groote"}.
+{"Roster","Roster"}.
 {"RPC Call Error","RPC-oproepfout"}.
 {"Running Nodes","Draaiende nodes"}.
 {"Saturday","Zaterdag"}.
 {"Script check","Controle van script"}.
 {"Search Results for ","Zoekresultaten voor "}.
 {"Search users in ","Gebruikers zoeken in "}.
-{"Send announcement to all online users","Mededeling verzenden naar alle online gebruikers"}.
 {"Send announcement to all online users on all hosts","Mededeling verzenden naar alle online gebruikers op alle virtuele hosts"}.
-{"Send announcement to all users","Mededeling verzenden naar alle gebruikers"}.
+{"Send announcement to all online users","Mededeling verzenden naar alle online gebruikers"}.
 {"Send announcement to all users on all hosts","Stuur aankondiging aan alle gebruikers op alle hosts"}.
+{"Send announcement to all users","Mededeling verzenden naar alle gebruikers"}.
 {"September","September"}.
 {"Server:","Server:"}.
 {"Set message of the day and send to online users","Bericht van de dag instellen en verzenden naar online gebruikers"}.
@@ -261,15 +252,9 @@
 {"Show Integral Table","Volledige tabel laten zien"}.
 {"Show Ordinary Table","Deel van tabel laten zien"}.
 {"Shut Down Service","Stop Service"}.
-{"~s invites you to the room ~s","~s nodigt je uit voor het groepsgesprek ~s"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Sommige Jabber-clienten kunnen het wachtwoord opslaan op Uw computer. Gebruik deze mogelijkheid alleen als U vertrouwd dat Uw computer afdoende beveiligd is."}.
-{"~s's Offline Messages Queue","offline berichten van ~s"}.
-{"Start Modules at ","Modules starten op "}.
-{"Start Modules","Modules starten"}.
 {"Statistics of ~p","Statistieken van ~p"}.
 {"Statistics","Statistieken"}.
-{"Stop Modules at ","Modules stoppen op "}.
-{"Stop Modules","Modules stoppen"}.
 {"Stopped Nodes","Gestopte nodes"}.
 {"Stop","Stoppen"}.
 {"Storage Type","Opslagmethode"}.
@@ -284,8 +269,8 @@
 {"That nickname is registered by another person","Deze bijnaam is al geregistreerd door iemand anders"}.
 {"The CAPTCHA is valid.","De geautomatiseerde Turing-test is geslaagd."}.
 {"The CAPTCHA verification has failed","De CAPTCHA-verificatie is mislukt"}.
-{"the password is","het wachtwoord is"}.
 {"The password is too weak","Het wachtwoord is te zwak"}.
+{"the password is","het wachtwoord is"}.
 {"The password of your Jabber account was successfully changed.","Het wachtwoord van Uw Jabber-account is succesvol veranderd."}.
 {"There was an error changing the password: ","Er was een fout bij het veranderen van het wachtwoord:"}.
 {"There was an error creating the account: ","Er was een fout bij het creeern van de account:"}.
@@ -299,9 +284,7 @@
 {"Time","Tijd"}.
 {"To","Aan"}.
 {"Too many CAPTCHA requests","Te veel CAPTCHA-aanvragen"}.
-{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Te veel (~p) mislukte authenticatie-pogingen van dit IP-adres (~s). Dit adres zal worden gedeblokkeerd om ~s UTC"}.
 {"Too many unacked stanzas","Te veel niet-bevestigde stanzas"}.
-{"To ~s","Naar ~s"}.
 {"Total rooms","Aantal groepsgesprekken"}.
 {"Traffic rate limit is exceeded","Dataverkeerslimiet overschreden"}.
 {"Transactions Aborted:","Afgebroken transacties:"}.
@@ -313,20 +296,19 @@
 {"Unauthorized","Niet geautoriseerd"}.
 {"Unregister a Jabber account","Opheffen van Jabber-account"}.
 {"Unregister","Opheffen"}.
-{"Update","Bijwerken"}.
 {"Update message of the day (don't send)","Bericht van de dag bijwerken (niet verzenden)"}.
 {"Update message of the day on all hosts (don't send)","Verander bericht-van-de-dag op alle hosts (niet versturen)"}.
 {"Update plan","Plan voor de opwaardering"}.
 {"Update ~p","Opwaarderen van ~p"}.
 {"Update script","Script voor de opwaardering"}.
+{"Update","Bijwerken"}.
 {"Uptime:","Uptime:"}.
-{"User","Gebruiker"}.
 {"User Management","Gebruikersbeheer"}.
+{"User","Gebruiker"}.
 {"Username:","Gebruikersnaam:"}.
 {"Users are not allowed to register accounts so quickly","Het is gebruikers niet toegestaan zo snel achter elkaar te registreren"}.
-{"User ~s","Gebruiker ~s"}.
-{"Users","Gebruikers"}.
 {"Users Last Activity","Laatste activiteit van gebruikers"}.
+{"Users","Gebruikers"}.
 {"Validate","Bevestigen"}.
 {"vCard User Search","Gebruikers zoeken"}.
 {"Virtual Hosts","Virtuele hosts"}.

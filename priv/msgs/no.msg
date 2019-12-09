@@ -1,13 +1,16 @@
 %% -*- coding: utf-8 -*-
+{" has set the subject to: "," har satt emnet til: "}.
+{"A password is required to enter this room","Et passord kreves for tilgang til samtalerommet"}.
 {"Access denied by service policy","Tilgang nektes på grunn av en tjeneste regel"}.
 {"Action on user","Handling på bruker"}.
 {"Add Jabber ID","Legg til Jabber ID"}.
 {"Add New","Legg til ny"}.
 {"Add User","Legg til Bruker"}.
-{"Administration","Administrasjon"}.
 {"Administration of ","Administrasjon av "}.
+{"Administration","Administrasjon"}.
 {"Administrator privileges required","Administratorprivilegier kreves"}.
 {"All activity","All aktivitet"}.
+{"All Users","Alle Brukere"}.
 {"Allow users to change the subject","Tillat brukere å endre emne"}.
 {"Allow users to query other users","Tillat brukere å sende forespørsel til andre brukere"}.
 {"Allow users to send invites","Tillat brukere å sende invitasjoner"}.
@@ -15,17 +18,14 @@
 {"Allow visitors to change nickname","Tillat besøkende å endre kallenavn"}.
 {"Allow visitors to send private messages to","Tillat brukere å sende private meldinger til"}.
 {"Allow visitors to send status text in presence updates","Tillat besøkende å sende status tekst i "}.
-{"All Users","Alle Brukere"}.
 {"Announcements","Kunngjøringer"}.
-{"A password is required to enter this room","Et passord kreves for tilgang til samtalerommet"}.
 {"April","april"}.
 {"August","august"}.
 {"Backup Management","Håndtere Sikkerehetskopiering"}.
-{"Backup","Sikkerhetskopier"}.
 {"Backup to File at ","Sikkerhetskopiere til Fil på "}.
+{"Backup","Sikkerhetskopier"}.
 {"Bad format","Feil format"}.
 {"Birthday","Fødselsdag"}.
-{"CAPTCHA web page","CAPTCHA web side"}.
 {"Change Password","Endre Passord"}.
 {"Change User Password","Endre Brukers Passord"}.
 {"Characters not allowed:","Ikke godtatte tegn:"}.
@@ -36,19 +36,17 @@
 {"Chatroom is stopped","Samtalerom er stoppet"}.
 {"Chatrooms","Samtalerom"}.
 {"Choose a username and password to register with this server","Velg et brukernavn og passord for å registrere på "}.
-{"Choose modules to stop","Velg hvilke moduler som skal stoppes"}.
 {"Choose storage type of tables","Velg lagringstype for tabeller"}.
 {"Choose whether to approve this entity's subscription.","Velg om du vil godkjenne denne eksistensens abonement"}.
 {"City","By"}.
 {"Commands","Kommandoer"}.
 {"Conference room does not exist","Konferanserommet finnes ikke"}.
 {"Configuration","Konfigurasjon"}.
-{"Configuration of room ~s","Konfigurasjon for rom ~s"}.
 {"Connected Resources:","Tilkoblede Ressurser:"}.
 {"Country","Land"}.
 {"CPU Time:","CPU Tid:"}.
-{"Database","Database"}.
 {"Database Tables Configuration at ","Database Tabell Konfigurasjon på "}.
+{"Database","Database"}.
 {"December","desember"}.
 {"Default users as participants","Standard brukere som deltakere"}.
 {"Delete message of the day on all hosts","Slett melding for dagen på alle maskiner"}.
@@ -72,7 +70,6 @@
 {"Email","Epost"}.
 {"Enable logging","Slå på logging"}.
 {"End User Session","Avslutt Bruker Sesjon"}.
-{"Enter list of {Module, [Options]}","Skriv inn en liste av {Module, [Options]}"}.
 {"Enter nickname you want to register","Skriv inn kallenavnet du ønsker å registrere"}.
 {"Enter path to backup file","Skriv inn sti til sikkerhetskopi filen"}.
 {"Enter path to jabberd14 spool dir","Skriv inn sti til jabberd14 spoolkatalog"}.
@@ -88,7 +85,6 @@
 {"February","februar"}.
 {"Friday","fredag"}.
 {"From","Fra"}.
-{"From ~s","Fra ~s"}.
 {"Full Name","Fullstendig Navn"}.
 {"Get Number of Online Users","Vis Antall Tilkoblede Brukere"}.
 {"Get Number of Registered Users","Vis Antall Registrerte Brukere"}.
@@ -98,11 +94,10 @@
 {"Group ","Gruppe "}.
 {"Groups","Grupper"}.
 {"has been banned","har blitt bannlyst"}.
-{"has been kicked because of an affiliation change","har blitt kastet ut på grunn av en tilknytnings endring"}.
 {"has been kicked because of a system shutdown","har blitt kastet ut på grunn av at systemet avslutter"}.
+{"has been kicked because of an affiliation change","har blitt kastet ut på grunn av en tilknytnings endring"}.
 {"has been kicked because the room has been changed to members-only","har blitt kastet ut på grunn av at rommet er endret til kun-for-medlemmer"}.
 {"has been kicked","har blitt kastet ut"}.
-{" has set the subject to: "," har satt emnet til: "}.
 {"Host","Maskin"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Dersom du ikke ser CAPTCHA bilde her, besøk web siden. "}.
 {"Import Directory","Importer Katalog"}.
@@ -117,9 +112,9 @@
 {"Incorrect password","Feil passord"}.
 {"IP addresses","IP adresser"}.
 {"is now known as","er nå kjent som"}.
-{"It is not allowed to send private messages","Det er ikke tillatt å sende private meldinger"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Det er ikke tillatt å sende private meldinger med typen "}.
 {"It is not allowed to send private messages to the conference","Det er ikke tillatt å sende private meldinger til "}.
+{"It is not allowed to send private messages","Det er ikke tillatt å sende private meldinger"}.
 {"Jabber Account Registration","Jabber Konto Registrering"}.
 {"Jabber ID","Jabber ID"}.
 {"January","januar"}.
@@ -131,7 +126,6 @@
 {"Last month","Siste måned"}.
 {"Last year","Siste året"}.
 {"leaves the room","forlater rommet"}.
-{"List of modules to start","Liste over moduler som skal startes"}.
 {"Low level update script","Lavnivå oppdaterings skript"}.
 {"Make participants list public","Gjør deltakerlisten offentlig"}.
 {"Make room CAPTCHA protected","Gjør rommet CAPTCHA beskyttet"}.
@@ -151,20 +145,18 @@
 {"Middle Name","Mellomnavn"}.
 {"Moderator privileges required","Redaktørprivilegier kreves"}.
 {"Modified modules","Endrede moduler"}.
-{"Modules","Moduler"}.
 {"Monday","mandag"}.
 {"Name","Navn"}.
 {"Name:","Navn:"}.
 {"Never","Aldri"}.
 {"New Password:","Nytt Passord:"}.
-{"Nickname","Kallenavn"}.
 {"Nickname Registration at ","Registrer Kallenavn på "}.
-{"Nickname ~s does not exist in the room","Kallenavn ~s eksisterer ikke i dette rommet"}.
+{"Nickname","Kallenavn"}.
 {"No body provided for announce message","Ingen meldingskropp gitt for kunngjørings melding"}.
 {"No Data","Ingen Data"}.
+{"No limit","Ingen grense"}.
 {"Node not found","Noden finnes ikke"}.
 {"Nodes","Noder"}.
-{"No limit","Ingen grense"}.
 {"None","Ingen"}.
 {"Not Found","Finnes Ikke"}.
 {"November","november"}.
@@ -175,9 +167,9 @@
 {"Offline Messages:","Frakoblede Meldinger:"}.
 {"OK","OK"}.
 {"Old Password:","Gammelt Passord:"}.
-{"Online","Tilkoblet"}.
 {"Online Users","Tilkoblede Brukere"}.
 {"Online Users:","Tilkoblede Brukere:"}.
+{"Online","Tilkoblet"}.
 {"Only moderators and participants are allowed to change the subject in this room","Bare redaktører og deltakere kan endre emnet i dette rommet"}.
 {"Only moderators are allowed to change the subject in this room","Bare ordstyrer tillates å  endre emnet i dette rommet"}.
 {"Only moderators can approve voice requests","Bare ordstyrer kan godkjenne lyd forespørsler"}.
@@ -190,10 +182,10 @@
 {"Outgoing s2s Connections:","Utgående s2s Koblinger"}.
 {"Owner privileges required","Eierprivilegier kreves"}.
 {"Packet","Pakke"}.
-{"Password","Passord"}.
-{"Password:","Passord:"}.
 {"Password Verification","Passord Bekreftelse"}.
 {"Password Verification:","Passord Bekreftelse:"}.
+{"Password","Passord"}.
+{"Password:","Passord:"}.
 {"Path to Dir","Sti til Katalog"}.
 {"Path to File","Sti til Fil"}.
 {"Pending","Ventende"}.
@@ -216,8 +208,8 @@
 {"Register","Registrer"}.
 {"Remote copy","Lagres ikke lokalt"}.
 {"Remove All Offline Messages","Fjern Alle Frakoblede Meldinger"}.
-{"Remove","Fjern"}.
 {"Remove User","Fjern Bruker"}.
+{"Remove","Fjern"}.
 {"Replaced by new connection","Erstattet av en ny tilkobling"}.
 {"Resources","Ressurser"}.
 {"Restart Service","Start Tjeneste på Nytt"}.
@@ -225,16 +217,15 @@
 {"Restore Backup from File at ","Gjenopprett fra Sikkerhetsopifil på "}.
 {"Restore binary backup after next ejabberd restart (requires less memory):","Gjenopprette binær backup etter neste ejabberd omstart (krever mindre minne):"}.
 {"Restore binary backup immediately:","Gjenopprette binær backup umiddelbart:"}.
-{"Restore","Gjenopprett"}.
 {"Restore plain text backup immediately:","Gjenopprette rentekst sikkerhetskopi umiddelbart:"}.
+{"Restore","Gjenopprett"}.
 {"Room Configuration","Rom Konfigurasjon"}.
 {"Room creation is denied by service policy","Oppretting av rom nektes av en tjenste regel"}.
 {"Room description","Rom beskrivelse"}.
 {"Room Occupants","Samtalerom Deltakere"}.
 {"Room title","Romtittel"}.
-{"Roster","Kontaktliste"}.
-{"Roster of ","Kontaktliste for "}.
 {"Roster size","Kontaktliste størrelse"}.
+{"Roster","Kontaktliste"}.
 {"RPC Call Error","RPC Kall Feil"}.
 {"Running Nodes","Kjørende Noder"}.
 {"Saturday","lørdag"}.
@@ -253,15 +244,9 @@
 {"Show Integral Table","Vis Integral Tabell"}.
 {"Show Ordinary Table","Vis Ordinær Tabell"}.
 {"Shut Down Service","Avslutt Tjeneste"}.
-{"~s invites you to the room ~s","~s inviterer deg til rommet ~s"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Noen Jabber klienter kan lagre passordet på datamaskinen. Bruk bare den funksjonen dersom du er sikker på at maskinen er trygg."}.
-{"~s's Offline Messages Queue","~ss kø for Frakoblede Meldinger"}.
-{"Start Modules at ","Start Moduler på "}.
-{"Start Modules","Start Moduler"}.
 {"Statistics of ~p","Statistikk for ~p"}.
 {"Statistics","Statistikk"}.
-{"Stop Modules at ","Stopp Moduler på "}.
-{"Stop Modules","Stop Moduler"}.
 {"Stopped Nodes","Stoppede Noder"}.
 {"Stop","Stoppe"}.
 {"Storage Type","Lagringstype"}.
@@ -276,8 +261,8 @@
 {"That nickname is registered by another person","Det kallenavnet er registrert av en annen person"}.
 {"The CAPTCHA is valid.","Captchaen er ikke gyldig"}.
 {"The CAPTCHA verification has failed","CAPTCHA godkjenningen har feilet"}.
-{"the password is","passordet er"}.
 {"The password is too weak","Passordet er for svakt"}.
+{"the password is","passordet er"}.
 {"The password of your Jabber account was successfully changed.","Passordet for din Jabber konto ble endret."}.
 {"There was an error changing the password: ","En feil skjedde under endring av passordet:"}.
 {"There was an error creating the account: ","En feil skjedde under oppretting av kontoen:"}.
@@ -290,7 +275,6 @@
 {"Time delay","Tids forsinkelse"}.
 {"Time","Tid"}.
 {"Too many CAPTCHA requests","For mange CAPTCHA forespørsler"}.
-{"To ~s","Til ~s"}.
 {"To","Til"}.
 {"Traffic rate limit is exceeded","Trafikkmengde grense overskredet"}.
 {"Transactions Aborted:","Avbrutte Transasksjoner:"}.
@@ -304,16 +288,16 @@
 {"Unregister","Avregistrer"}.
 {"Update message of the day (don't send)","Oppdater melding for dagen (ikke send)"}.
 {"Update message of the day on all hosts (don't send)","Oppdater melding for dagen på alle maskiner (ikke send)"}.
-{"Update","Oppdatere"}.
 {"Update plan","Oppdaterings plan"}.
 {"Update script","Oppdaterings skript"}.
+{"Update","Oppdatere"}.
 {"Uptime:","Oppetid:"}.
-{"User","Bruker"}.
 {"User Management","Bruker Behandling"}.
+{"User","Bruker"}.
 {"Username:","Brukernavn:"}.
 {"Users are not allowed to register accounts so quickly","Brukere får ikke lov til  registrere kontoer så fort"}.
-{"Users","Brukere"}.
 {"Users Last Activity","Brukers Siste Aktivitet"}.
+{"Users","Brukere"}.
 {"Validate","Bekrefte gyldighet"}.
 {"vCard User Search","vCard Bruker Søk"}.
 {"Virtual Hosts","Virtuella Maskiner"}.

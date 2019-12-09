@@ -1,4 +1,6 @@
 %% -*- coding: utf-8 -*-
+{" has set the subject to: "," встановив(ла) тему: "}.
+{"A password is required to enter this room","Щоб зайти в цю конференцію, необхідно ввести пароль"}.
 {"Accept","Прийняти"}.
 {"Access denied by service policy","Доступ заборонений політикою служби"}.
 {"Action on user","Дія над користувачем"}.
@@ -9,6 +11,7 @@
 {"Administration","Адміністрування"}.
 {"Administrator privileges required","Необхідні права адміністратора"}.
 {"All activity","Вся статистика"}.
+{"All Users","Всі користувачі"}.
 {"Allow users to change the subject","Дозволити користувачам змінювати тему"}.
 {"Allow users to query other users","Дозволити iq-запити до користувачів"}.
 {"Allow users to send invites","Дозволити користувачам надсилати запрошення"}.
@@ -16,9 +19,7 @@
 {"Allow visitors to change nickname","Дозволити відвідувачам змінювати псевдонім"}.
 {"Allow visitors to send private messages to","Дозволити відвідувачам відсилати приватні повідомлення"}.
 {"Allow visitors to send status text in presence updates","Дозволити відвідувачам відсилати текст статусу в оновленнях присутності"}.
-{"All Users","Всі користувачі"}.
 {"Announcements","Сповіщення"}.
-{"A password is required to enter this room","Щоб зайти в цю конференцію, необхідно ввести пароль"}.
 {"April","квітня"}.
 {"August","серпня"}.
 {"Backup Management","Керування резервним копіюванням"}.
@@ -27,7 +28,6 @@
 {"Backup","Резервне копіювання"}.
 {"Bad format","Неправильний формат"}.
 {"Birthday","День народження"}.
-{"CAPTCHA web page","Адреса капчі"}.
 {"Change Password","Змінити пароль"}.
 {"Change User Password","Змінити Пароль Користувача"}.
 {"Characters not allowed:","Заборонені символи:"}.
@@ -38,13 +38,11 @@
 {"Chatroom is stopped","Зупинено кімнату"}.
 {"Chatrooms","Кімнати"}.
 {"Choose a username and password to register with this server","Виберіть назву користувача та пароль для реєстрації на цьому сервері"}.
-{"Choose modules to stop","Виберіть модулі, які необхідно зупинити"}.
 {"Choose storage type of tables","Оберіть тип збереження таблиць"}.
 {"Choose whether to approve this entity's subscription.","Вирішіть, чи задовольнити запит цього об'єкту на підписку"}.
 {"City","Місто"}.
 {"Commands","Команди"}.
 {"Conference room does not exist","Конференція не існує"}.
-{"Configuration of room ~s","Конфігурація кімнати ~s"}.
 {"Configuration","Конфігурація"}.
 {"Connected Resources:","Підключені ресурси:"}.
 {"Country","Країна"}.
@@ -76,7 +74,6 @@
 {"Email","Електронна пошта"}.
 {"Enable logging","Включити журнал роботи"}.
 {"End User Session","Закінчити Сеанс Користувача"}.
-{"Enter list of {Module, [Options]}","Введіть перелік такого виду {Module, [Options]}"}.
 {"Enter nickname you want to register","Введіть псевдонім, який ви хочете зареєструвати"}.
 {"Enter path to backup file","Введіть шлях до резервного файла"}.
 {"Enter path to jabberd14 spool dir","Введіть шлях до директорії спула jabberd14"}.
@@ -92,7 +89,6 @@
 {"Family Name","Прізвище"}.
 {"February","лютого"}.
 {"Friday","П'ятниця"}.
-{"From ~s","Від ~s"}.
 {"From","Від кого"}.
 {"Full Name","Повне ім'я"}.
 {"Get Number of Online Users","Отримати Кількість Підключених Користувачів"}.
@@ -100,14 +96,13 @@
 {"Get User Last Login Time","Отримати Час Останнього Підключення Користувача"}.
 {"Get User Password","Отримати Пароль Користувача"}.
 {"Get User Statistics","Отримати Статистику по Користувачу"}.
-{"Groups","Групи"}.
 {"Group ","Група "}.
+{"Groups","Групи"}.
 {"has been banned","заборонили вхід в кімнату"}.
-{"has been kicked because of an affiliation change","вигнано з кімнати внаслідок зміни рангу"}.
 {"has been kicked because of a system shutdown","вигнано з кімнати внаслідок зупинки системи"}.
+{"has been kicked because of an affiliation change","вигнано з кімнати внаслідок зміни рангу"}.
 {"has been kicked because the room has been changed to members-only","вигнано з кімнати тому, що вона стала тільки для учасників"}.
 {"has been kicked","вигнали з кімнати"}.
-{" has set the subject to: "," встановив(ла) тему: "}.
 {"Host","Хост"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Якщо ви не бачите зображення капчі, перейдіть за за цією адресою."}.
 {"Import Directory","Імпорт з директорії"}.
@@ -123,7 +118,6 @@
 {"Incorrect password","Неправильний пароль"}.
 {"IP addresses","IP адреси"}.
 {"is now known as","змінив(ла) псевдонім на"}.
-{"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Не дозволяється відправляти помилкові повідомлення в кімнату. Учасник (~s) відправив помилкове повідомлення (~s), та був виганий з кімнати"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Не дозволяється надсилати приватні повідомлення типу \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Не дозволяється надсилати приватні повідомлення  в конференцію"}.
 {"It is not allowed to send private messages","Приватні повідомлення не дозволені"}.
@@ -138,7 +132,6 @@
 {"Last month","За останній місяць"}.
 {"Last year","За останній рік"}.
 {"leaves the room","вийшов(ла) з кімнати"}.
-{"List of modules to start","Список завантажуваних модулів"}.
 {"List of rooms","Перелік кімнат"}.
 {"Low level update script","Низькорівневий сценарій поновлення"}.
 {"Make participants list public","Зробити список учасників видимим всім"}.
@@ -159,7 +152,6 @@
 {"Middle Name","По-батькові"}.
 {"Moderator privileges required","Необхідні права модератора"}.
 {"Modified modules","Змінені модулі"}.
-{"Modules","Модулі"}.
 {"Monday","Понеділок"}.
 {"Multicast","Мультікаст"}.
 {"Multi-User Chat","Багато-користувальницький чат"}.
@@ -168,14 +160,13 @@
 {"Never","Ніколи"}.
 {"New Password:","Новий Пароль:"}.
 {"Nickname Registration at ","Реєстрація псевдоніма на "}.
-{"Nickname ~s does not exist in the room","Псевдонім ~s в кімнаті відсутній"}.
 {"Nickname","Псевдонім"}.
 {"No body provided for announce message","Тіло оголошення має бути непустим"}.
 {"No Data","Немає даних"}.
+{"No limit","Без обмежень"}.
 {"Node not found","Вузол не знайдено"}.
 {"Node ~p","Вузол ~p"}.
 {"Nodes","Вузли"}.
-{"No limit","Без обмежень"}.
 {"None","Немає"}.
 {"Not Found","не знайдено"}.
 {"November","листопада"}.
@@ -244,7 +235,6 @@
 {"Room description","Опис кімнати"}.
 {"Room Occupants","Учасники кімнати"}.
 {"Room title","Назва кімнати"}.
-{"Roster of ","Ростер користувача "}.
 {"Roster size","Кількість контактів"}.
 {"Roster","Ростер"}.
 {"RPC Call Error","Помилка виклику RPC"}.
@@ -265,15 +255,9 @@
 {"Show Integral Table","Показати інтегральну таблицю"}.
 {"Show Ordinary Table","Показати звичайну таблицю"}.
 {"Shut Down Service","Вимкнути Сервіс"}.
-{"~s invites you to the room ~s","~s запрошує вас до кімнати ~s"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Деякі Jabber-клієнти можуть зберігати пароль на вашому комп'ютері. Користуйтесь цією функцією тільки у тому випадку, якщо вважаєте її безпечною."}.
-{"~s's Offline Messages Queue","Черга офлайнових повідомлень ~s"}.
-{"Start Modules at ","Запуск модулів на "}.
-{"Start Modules","Запуск модулів"}.
 {"Statistics of ~p","Статистика вузла ~p"}.
 {"Statistics","Статистика"}.
-{"Stop Modules at ","Зупинка модулів на "}.
-{"Stop Modules","Зупинка модулів"}.
 {"Stopped Nodes","Зупинені вузли"}.
 {"Stop","Зупинити"}.
 {"Storage Type","Тип таблиці"}.
@@ -302,9 +286,7 @@
 {"Time delay","Час затримки"}.
 {"Time","Час"}.
 {"Too many CAPTCHA requests","Надто багато CAPTCHA-запитів"}.
-{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Забагато  (~p) помилок авторизації з цієї IP адреси (~s). Адресу буде розблоковано о ~s UTC"}.
 {"Too many unacked stanzas","Занадто багато пакетів без відповідей"}.
-{"To ~s","До ~s"}.
 {"Total rooms","Всього кімнат"}.
 {"To","Кому"}.
 {"Traffic rate limit is exceeded","Швидкість передачі інформації було перевищено"}.
@@ -328,7 +310,6 @@
 {"Username:","Ім'я користувача:"}.
 {"Users are not allowed to register accounts so quickly","Користувачам не дозволено так часто реєструвати облікові записи"}.
 {"Users Last Activity","Статистика останнього підключення користувачів"}.
-{"User ~s","Користувач ~s"}.
 {"Users","Користувачі"}.
 {"User","Користувач"}.
 {"Validate","Затвердити"}.
