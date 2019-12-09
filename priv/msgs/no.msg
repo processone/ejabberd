@@ -25,7 +25,6 @@
 {"Backup to File at ","Sikkerhetskopiere til Fil på "}.
 {"Bad format","Feil format"}.
 {"Birthday","Fødselsdag"}.
-{"CAPTCHA web page","CAPTCHA web side"}.
 {"Change Password","Endre Passord"}.
 {"Change User Password","Endre Brukers Passord"}.
 {"Characters not allowed:","Ikke godtatte tegn:"}.
@@ -36,14 +35,12 @@
 {"Chatroom is stopped","Samtalerom er stoppet"}.
 {"Chatrooms","Samtalerom"}.
 {"Choose a username and password to register with this server","Velg et brukernavn og passord for å registrere på "}.
-{"Choose modules to stop","Velg hvilke moduler som skal stoppes"}.
 {"Choose storage type of tables","Velg lagringstype for tabeller"}.
 {"Choose whether to approve this entity's subscription.","Velg om du vil godkjenne denne eksistensens abonement"}.
 {"City","By"}.
 {"Commands","Kommandoer"}.
 {"Conference room does not exist","Konferanserommet finnes ikke"}.
 {"Configuration","Konfigurasjon"}.
-{"Configuration of room ~s","Konfigurasjon for rom ~s"}.
 {"Connected Resources:","Tilkoblede Ressurser:"}.
 {"Country","Land"}.
 {"CPU Time:","CPU Tid:"}.
@@ -72,7 +69,6 @@
 {"Email","Epost"}.
 {"Enable logging","Slå på logging"}.
 {"End User Session","Avslutt Bruker Sesjon"}.
-{"Enter list of {Module, [Options]}","Skriv inn en liste av {Module, [Options]}"}.
 {"Enter nickname you want to register","Skriv inn kallenavnet du ønsker å registrere"}.
 {"Enter path to backup file","Skriv inn sti til sikkerhetskopi filen"}.
 {"Enter path to jabberd14 spool dir","Skriv inn sti til jabberd14 spoolkatalog"}.
@@ -88,7 +84,6 @@
 {"February","februar"}.
 {"Friday","fredag"}.
 {"From","Fra"}.
-{"From ~s","Fra ~s"}.
 {"Full Name","Fullstendig Navn"}.
 {"Get Number of Online Users","Vis Antall Tilkoblede Brukere"}.
 {"Get Number of Registered Users","Vis Antall Registrerte Brukere"}.
@@ -131,7 +126,6 @@
 {"Last month","Siste måned"}.
 {"Last year","Siste året"}.
 {"leaves the room","forlater rommet"}.
-{"List of modules to start","Liste over moduler som skal startes"}.
 {"Low level update script","Lavnivå oppdaterings skript"}.
 {"Make participants list public","Gjør deltakerlisten offentlig"}.
 {"Make room CAPTCHA protected","Gjør rommet CAPTCHA beskyttet"}.
@@ -151,7 +145,6 @@
 {"Middle Name","Mellomnavn"}.
 {"Moderator privileges required","Redaktørprivilegier kreves"}.
 {"Modified modules","Endrede moduler"}.
-{"Modules","Moduler"}.
 {"Monday","mandag"}.
 {"Name","Navn"}.
 {"Name:","Navn:"}.
@@ -159,7 +152,6 @@
 {"New Password:","Nytt Passord:"}.
 {"Nickname","Kallenavn"}.
 {"Nickname Registration at ","Registrer Kallenavn på "}.
-{"Nickname ~s does not exist in the room","Kallenavn ~s eksisterer ikke i dette rommet"}.
 {"No body provided for announce message","Ingen meldingskropp gitt for kunngjørings melding"}.
 {"No Data","Ingen Data"}.
 {"Node not found","Noden finnes ikke"}.
@@ -233,7 +225,6 @@
 {"Room Occupants","Samtalerom Deltakere"}.
 {"Room title","Romtittel"}.
 {"Roster","Kontaktliste"}.
-{"Roster of ","Kontaktliste for "}.
 {"Roster size","Kontaktliste størrelse"}.
 {"RPC Call Error","RPC Kall Feil"}.
 {"Running Nodes","Kjørende Noder"}.
@@ -253,15 +244,9 @@
 {"Show Integral Table","Vis Integral Tabell"}.
 {"Show Ordinary Table","Vis Ordinær Tabell"}.
 {"Shut Down Service","Avslutt Tjeneste"}.
-{"~s invites you to the room ~s","~s inviterer deg til rommet ~s"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Noen Jabber klienter kan lagre passordet på datamaskinen. Bruk bare den funksjonen dersom du er sikker på at maskinen er trygg."}.
-{"~s's Offline Messages Queue","~ss kø for Frakoblede Meldinger"}.
-{"Start Modules at ","Start Moduler på "}.
-{"Start Modules","Start Moduler"}.
 {"Statistics of ~p","Statistikk for ~p"}.
 {"Statistics","Statistikk"}.
-{"Stop Modules at ","Stopp Moduler på "}.
-{"Stop Modules","Stop Moduler"}.
 {"Stopped Nodes","Stoppede Noder"}.
 {"Stop","Stoppe"}.
 {"Storage Type","Lagringstype"}.
@@ -290,7 +275,6 @@
 {"Time delay","Tids forsinkelse"}.
 {"Time","Tid"}.
 {"Too many CAPTCHA requests","For mange CAPTCHA forespørsler"}.
-{"To ~s","Til ~s"}.
 {"To","Til"}.
 {"Traffic rate limit is exceeded","Trafikkmengde grense overskredet"}.
 {"Transactions Aborted:","Avbrutte Transasksjoner:"}.

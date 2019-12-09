@@ -28,14 +28,12 @@
 {"Chatroom configuration modified","Chattrum konfiguration modifierad"}.
 {"Chatrooms","Chattrum"}.
 {"Choose a username and password to register with this server","Välj ett användarnamn och lösenord för att registrera mot denna server"}.
-{"Choose modules to stop","Välj vilka moduler som skall stoppas"}.
 {"Choose storage type of tables","Välj lagringstyp för tabeller"}.
 {"Choose whether to approve this entity's subscription.","Välj om du vill godkänna hela denna  prenumertion."}.
 {"City","Stad"}.
 {"Commands","Kommandon"}.
 {"Conference room does not exist","Rummet finns inte"}.
 {"Configuration","Konfiguration"}.
-{"Configuration of room ~s","Konfiguration för ~s"}.
 {"Connected Resources:","Anslutna resurser:"}.
 {"Country","Land"}.
 {"CPU Time:","CPU tid"}.
@@ -62,7 +60,6 @@
 {"Email","Email"}.
 {"Enable logging","Möjliggör login"}.
 {"End User Session","Avsluta användarsession"}.
-{"Enter list of {Module, [Options]}","Skriv in en lista av {Module, [Options]}"}.
 {"Enter nickname you want to register","Skriv in smeknamnet du vill registrera"}.
 {"Enter path to backup file","Skriv in sökväg till fil för säkerhetskopia"}.
 {"Enter path to jabberd14 spool dir","Skriv in sökväg till spoolkatalog från jabberd14"}.
@@ -77,7 +74,6 @@
 {"February","Februari"}.
 {"Friday","Fredag"}.
 {"From","Från"}.
-{"From ~s","Från ~s"}.
 {"Full Name","Fullständigt namn"}.
 {"Get Number of Online Users","Hämta antal inloggade användare"}.
 {"Get Number of Registered Users","Hämta antal registrerade användare"}.
@@ -118,7 +114,6 @@
 {"Last month","Senaste månaden"}.
 {"Last year","Senaste året"}.
 {"leaves the room","lämnar rummet"}.
-{"List of modules to start","Lista av moduler som skall startas"}.
 {"Low level update script","Uppdaterade laglevel skript"}.
 {"Make participants list public","Gör deltagarlistan publik"}.
 {"Make room members-only","Gör om rummet till endast medlemmar"}.
@@ -136,13 +131,11 @@
 {"Middle Name","Mellannamn"}.
 {"Moderator privileges required","Moderatorprivilegier krävs"}.
 {"Modified modules","Uppdaterade moduler"}.
-{"Modules","Moduler"}.
 {"Monday","Måndag"}.
 {"Name","Namn"}.
 {"Name:","Namn:"}.
 {"Never","Aldrig"}.
 {"Nickname Registration at ","Registrera smeknamn på "}.
-{"Nickname ~s does not exist in the room","Smeknamnet ~s existerar inte i det här rummet"}.
 {"Nickname","Smeknamn"}.
 {"No body provided for announce message","Ingen kropp behövs för dessa meddelanden"}.
 {"No Data","Ingen data"}.
@@ -208,7 +201,6 @@
 {"Room Occupants","Antal besökare"}.
 {"Room title","Rumstitel"}.
 {"Roster","Kontaktlista"}.
-{"Roster of ","Kontaktlista för "}.
 {"Roster size","Roster storlek"}.
 {"RPC Call Error","RPC Uppringningserror"}.
 {"Running Nodes","Körande noder"}.
@@ -227,14 +219,8 @@
 {"Show Integral Table","Visa kumulativ tabell"}.
 {"Show Ordinary Table","Visa normal tabell"}.
 {"Shut Down Service","Stäng ner servicen"}.
-{"~s invites you to the room ~s","~s bjöd in dig till rummet ~s"}.
-{"~s's Offline Messages Queue","~s's offline meddelandekö"}.
-{"Start Modules at ","Starta moduler på "}.
-{"Start Modules","Starta moduler"}.
 {"Statistics of ~p","Statistik på ~p"}.
 {"Statistics","Statistik"}.
-{"Stop Modules at ","Stoppa moduler på "}.
-{"Stop Modules","Stanna moduler"}.
 {"Stopped Nodes","Stannade noder"}.
 {"Stop","Stoppa"}.
 {"Storage Type","Lagringstyp"}.
@@ -252,7 +238,6 @@
 {"Thursday","Torsdag"}.
 {"Time delay","Tidsförsening"}.
 {"Time","Tid"}.
-{"To ~s","Till ~s"}.
 {"To","Till"}.
 {"Traffic rate limit is exceeded","Trafikgränsen har överstigits"}.
 {"Transactions Aborted:","Transaktioner borttagna"}.

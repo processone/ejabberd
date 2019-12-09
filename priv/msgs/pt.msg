@@ -12,7 +12,6 @@
 {"Birthday","Data de nascimento"}.
 {"Change Password","Mudar palavra-chave"}.
 {"Choose a username and password to register with this server","Escolha um nome de utilizador e palavra-chave para se registar neste servidor"}.
-{"Choose modules to stop","Seleccione os módulos a parar"}.
 {"Choose storage type of tables","Seleccione o tipo de armazenagem das tabelas"}.
 {"City","Cidade"}.
 {"Conference room does not exist","A sala não existe"}.
@@ -26,7 +25,6 @@
 {"Edit Properties","Editar propriedades"}.
 {"ejabberd MUC module","Módulo MUC de ejabberd"}.
 {"ejabberd vCard module","Módulo vCard de ejabberd"}.
-{"Enter list of {Module, [Options]}","Introduza lista de {módulos, [opções]}"}.
 {"Enter nickname you want to register","Introduza a alcunha que quer registar"}.
 {"Enter path to backup file","Introduza o caminho do ficheiro de cópia de segurança"}.
 {"Enter path to jabberd14 spool dir","Introduza o caminho para o directório de spools do jabberd14"}.
@@ -35,7 +33,6 @@
 {"Erlang Jabber Server","Servidor Jabber em Erlang"}.
 {"Family Name","Apelido"}.
 {"From","De"}.
-{"From ~s","De ~s"}.
 {"Full Name","Nome completo"}.
 {"Groups","Grupos"}.
 {" has set the subject to: "," colocou o tópico: "}.
@@ -48,17 +45,14 @@
 {"It is not allowed to send private messages of type \"groupchat\"","Não é permitido enviar mensagens privadas do tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Impedir o envio de mensagens privadas para a sala"}.
 {"Last Activity","Última actividade"}.
-{"List of modules to start","Lista de módulos a iniciar"}.
 {"Make room moderated","Tornar a sala moderada"}.
 {"Memory","Memória"}.
 {"Middle Name","Segundo nome"}.
 {"Moderator privileges required","São necessários privilégios de moderador"}.
-{"Modules","Módulos"}.
 {"Name","Nome"}.
 {"Never","Nunca"}.
 {"Nickname","Alcunha"}.
 {"Nickname Registration at ","Registo da alcunha em "}.
-{"Nickname ~s does not exist in the room","A alcunha ~s não existe na sala"}.
 {"Node not found","Nodo não encontrado"}.
 {"Nodes","Nodos"}.
 {"None","Nenhum"}.
@@ -90,14 +84,9 @@
 {"Restore","Restaurar"}.
 {"Room title","Título da sala"}.
 {"Roster","Lista de contactos"}.
-{"Roster of ","Lista de contactos de "}.
 {"Running Nodes","Nodos a correr"}.
 {"Search users in ","Procurar utilizadores em "}.
-{"Start Modules at ","Iniciar os módulos em "}.
-{"Start Modules","Iniciar módulos"}.
 {"Statistics","Estatísticas"}.
-{"Stop Modules at ","Parar módulos em "}.
-{"Stop Modules","Parar módulos"}.
 {"Stop","Parar"}.
 {"Stopped Nodes","Nodos parados"}.
 {"Storage Type","Tipo de armazenagem"}.
@@ -105,7 +94,6 @@
 {"Subscription","Subscrição"}.
 {"Time","Data"}.
 {"To","Para"}.
-{"To ~s","A ~s"}.
 {"Update","Actualizar"}.
 {"Users","Utilizadores"}.
 {"User","Utilizador"}.

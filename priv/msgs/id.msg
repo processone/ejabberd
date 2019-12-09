@@ -24,7 +24,6 @@
 {"Backup to File at ","Backup ke File pada"}.
 {"Bad format","Format yang buruk"}.
 {"Birthday","Hari Lahir"}.
-{"CAPTCHA web page","CAPTCHA laman web"}.
 {"Change Password","Ubah Kata Sandi"}.
 {"Change User Password","Ubah User Password"}.
 {"Characters not allowed:","Karakter tidak diperbolehkan:"}.
@@ -35,13 +34,11 @@
 {"Chatroom is stopped","Ruang chat dihentikan"}.
 {"Chatrooms","Ruangan Chat"}.
 {"Choose a username and password to register with this server","Pilih nama pengguna dan kata sandi untuk mendaftar dengan layanan ini"}.
-{"Choose modules to stop","Pilih Modul untuk berhenti"}.
 {"Choose storage type of tables","Pilih jenis penyimpanan tabel"}.
 {"Choose whether to approve this entity's subscription.","Pilih apakah akan menyetujui hubungan pertemanan ini."}.
 {"City","Kota"}.
 {"Commands","Perintah"}.
 {"Conference room does not exist","Ruang Konferensi tidak ada"}.
-{"Configuration of room ~s","Pengaturan ruangan ~s"}.
 {"Configuration","Pengaturan"}.
 {"Connected Resources:","Sumber Daya Terhubung:"}.
 {"Country","Negara"}.
@@ -70,7 +67,6 @@
 {"Email","Email"}.
 {"Enable logging","Aktifkan catatan"}.
 {"End User Session","Akhir Sesi Pengguna"}.
-{"Enter list of {Module, [Options]}","Masukkan daftar {Modul, [Options]}"}.
 {"Enter nickname you want to register","Masukkan nama julukan Anda jika ingin mendaftar"}.
 {"Enter path to backup file","Masukkan path untuk file cadangan"}.
 {"Enter path to jabberd14 spool dir","Masukkan path ke direktori spool jabberd14"}.
@@ -85,7 +81,6 @@
 {"February","Februari"}.
 {"Friday","Jumat"}.
 {"From","Dari"}.
-{"From ~s","Dari ~s"}.
 {"Full Name","Nama Lengkap"}.
 {"Get Number of Online Users","Dapatkan Jumlah User Yang Online"}.
 {"Get Number of Registered Users","Dapatkan Jumlah Pengguna Yang Terdaftar"}.
@@ -128,7 +123,6 @@
 {"Last month","Akhir bulan"}.
 {"Last year","Akhir tahun"}.
 {"leaves the room","meninggalkan ruangan"}.
-{"List of modules to start","Daftar modul untuk memulai"}.
 {"Low level update script","Perbaruan naskah tingkat rendah"}.
 {"Make participants list public","Buat daftar participant diketahui oleh public"}.
 {"Make room CAPTCHA protected","Buat ruangan dilindungi dengan CAPTCHA"}.
@@ -148,7 +142,6 @@
 {"Middle Name","Nama Tengah"}.
 {"Moderator privileges required","Hak istimewa moderator dibutuhkan"}.
 {"Modified modules","Modifikasi modul-modul"}.
-{"Modules","Modul"}.
 {"Monday","Senin"}.
 {"Name","Nama"}.
 {"Name:","Nama:"}.
@@ -156,7 +149,6 @@
 {"New Password:","Password Baru:"}.
 {"Nickname","Nama Julukan"}.
 {"Nickname Registration at ","Pendaftaran Julukan pada"}.
-{"Nickname ~s does not exist in the room","Nama Julukan ~s tidak berada di dalam ruangan"}.
 {"No body provided for announce message","Tidak ada isi pesan yang disediakan untuk mengirimkan pesan"}.
 {"No Data","Tidak Ada Data"}.
 {"Node not found","Node tidak ditemukan"}.
@@ -228,7 +220,6 @@
 {"Room Occupants","Penghuni Ruangan"}.
 {"Room title","Nama Ruangan"}.
 {"Roster","Kontak"}.
-{"Roster of ","Kontak dari"}.
 {"Roster size","Ukuran Daftar Kontak"}.
 {"RPC Call Error","Panggilan Kesalahan RPC"}.
 {"Running Nodes","Menjalankan Node"}.
@@ -248,16 +239,10 @@
 {"Show Integral Table","Tampilkan Tabel Terpisah"}.
 {"Show Ordinary Table","Tampilkan Tabel Normal"}.
 {"Shut Down Service","Shut Down Layanan"}.
-{"~s invites you to the room ~s","~s mengundang anda ke ruangan ~s"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Beberapa klien Jabber dapat menyimpan password di komputer Anda. Gunakan fitur itu hanya jika Anda mempercayai komputer Anda aman."}.
-{"~s's Offline Messages Queue","Antrian Pesan Offline ~s"}.
-{"Start Modules at ","Mulai Modul pada"}.
-{"Start Modules","Memulai Modul"}.
 {"Statistics of ~p","statistik dari ~p"}.
 {"Statistics","Statistik"}.
 {"Stop","Hentikan"}.
-{"Stop Modules at ","Hentikan Modul pada"}.
-{"Stop Modules","Hentikan Modul"}.
 {"Stopped Nodes","Menghentikan node"}.
 {"Storage Type","Jenis Penyimpanan"}.
 {"Store binary backup:","Penyimpanan cadangan yang berpasangan:"}.
@@ -285,7 +270,6 @@
 {"Time delay","Waktu tunda"}.
 {"Time","Waktu"}.
 {"To","Kepada"}.
-{"To ~s","Kepada ~s"}.
 {"Traffic rate limit is exceeded","Lalu lintas melebihi batas"}.
 {"Transactions Aborted:","Transaksi yang dibatalkan:"}.
 {"Transactions Committed:","Transaksi yang dilakukan:"}.

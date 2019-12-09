@@ -30,7 +30,6 @@
 {"Birthday","יום הולדת"}.
 {"Cannot remove active list","לא ניתן להסיר רשימה פעילה"}.
 {"Cannot remove default list","לא ניתן להסיר רשימה שגרתית"}.
-{"CAPTCHA web page","עמוד רשת CAPTCHA"}.
 {"Change Password","שנה סיסמה"}.
 {"Change User Password","שנה סיסמת משתמש"}.
 {"Changing password is not allowed","שינוי סיסמה אינו מותר"}.
@@ -43,13 +42,11 @@
 {"Chatroom is stopped","חדר שיחה הינו מופסק"}.
 {"Chatrooms","חדרי שיחה"}.
 {"Choose a username and password to register with this server","בחר שם משתמש וסיסמה כדי להירשם בעזרת שרת זה"}.
-{"Choose modules to stop","בחר מודולים להפסקה"}.
 {"Choose storage type of tables","בחר טיפוס אחסון של טבלאות"}.
 {"Choose whether to approve this entity's subscription.","בחר האם לאשר את ההרשמה של ישות זו."}.
 {"City","עיר"}.
 {"Commands","פקודות"}.
 {"Conference room does not exist","חדר ועידה לא קיים"}.
-{"Configuration of room ~s","תצורת חדר ~s"}.
 {"Configuration","תצורה"}.
 {"Connected Resources:","משאבים מחוברים:"}.
 {"Country","ארץ"}.
@@ -80,10 +77,8 @@
 {"ejabberd Web Admin","מנהל רשת ejabberd"}.
 {"Elements","אלמנטים"}.
 {"Email","דוא״ל"}.
-{"Empty password","סיסמה ריקה"}.
 {"Enable logging","אפשר רישום פעילות"}.
 {"End User Session","סיים סשן משתמש"}.
-{"Enter list of {Module, [Options]}","הזן רשימה של {מודול, [אפשרויות]}"}.
 {"Enter nickname you want to register","הזן שם כינוי אשר ברצונך לרשום"}.
 {"Enter path to backup file","הזן נתיב לקובץ גיבוי"}.
 {"Enter path to jabberd14 spool dir","הזן נתיב למדור סליל (spool dir) של jabberd14"}.
@@ -98,12 +93,10 @@
 {"Failed to activate bytestream","נכשל להפעיל bytestream"}.
 {"Failed to extract JID from your voice request approval","נכשל לחלץ JID מתוך אישור בקשת הביטוי שלך"}.
 {"Failed to parse HTTP response","נכשל לפענח תגובת HTTP"}.
-{"Failed to process option '~s'","נכשל לעבד אפשרות '~s'"}.
 {"Family Name","שם משפחה"}.
 {"February","פברואר"}.
 {"File larger than ~w bytes","קובץ גדול יותר משיעור של ~w בייטים"}.
 {"Friday","יום שישי"}.
-{"From ~s","מאת ~s"}.
 {"From","מאת"}.
 {"Full Name","שם מלא"}.
 {"Get Number of Online Users","השג מספר של משתמשים מקוונים"}.
@@ -140,7 +133,6 @@
 {"Invitations are not allowed in this conference","הזמנות אינן מותרות בועידה זו"}.
 {"IP addresses","כתובות IP"}.
 {"is now known as","ידועה כעת בכינוי"}.
-{"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","אין זה מותר לשלוח הודעות שגיאה לחדר. משתתף זה (~s) שלח הודעת שגיאה (~s) ונבעט מתוך החדר"}.
 {"It is not allowed to send private messages of type \"groupchat\"","אין זה מותר לשלוח הודעות פרטיות מן טיפוס \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","אין זה מותר לשלוח הודעות פרטיות לועידה"}.
 {"It is not allowed to send private messages","אין זה מותר לשלוח הודעות פרטיות"}.
@@ -155,7 +147,6 @@
 {"Last month","חודש אחרון"}.
 {"Last year","שנה אחרונה"}.
 {"leaves the room","עוזב/ת את החדר"}.
-{"List of modules to start","רשימה של מודולים להפעלה"}.
 {"List of rooms","רשימה של חדרים"}.
 {"Low level update script","תסריט עדכון Low level"}.
 {"Make participants list public","הפוך רשימת משתתפים לפומבית"}.
@@ -178,7 +169,6 @@
 {"Moderator privileges required","נדרשות הרשאות אחראי"}.
 {"Modified modules","מודולים שהותאמו"}.
 {"Module failed to handle the query","מודול נכשל לטפל בשאילתא"}.
-{"Modules","מודולים"}.
 {"Monday","יום שני"}.
 {"Multicast","שידור מרובב"}.
 {"Multi-User Chat","שיחה מרובת משתמשים"}.
@@ -187,7 +177,6 @@
 {"Never","אף פעם"}.
 {"New Password:","סיסמה חדשה:"}.
 {"Nickname Registration at ","רישום שם כינוי אצל "}.
-{"Nickname ~s does not exist in the room","שם כינוי ~s לא קיים בחדר"}.
 {"Nickname","שם כינוי"}.
 {"No available resource found","לא נמצא משאב זמין"}.
 {"No body provided for announce message","לא סופק גוף עבור הודעת בשורה"}.
@@ -237,7 +226,6 @@
 {"Outgoing s2s Connections:","חיבורי s2s יוצאים:"}.
 {"Owner privileges required","נדרשות הרשאות בעלים"}.
 {"Packet","חבילת מידע"}.
-{"Parse failed","פענוח הכשל"}.
 {"Password Verification","אימות סיסמה"}.
 {"Password Verification:","אימות סיסמה:"}.
 {"Password","סיסמה"}.
@@ -281,14 +269,11 @@
 {"Room description","תיאור חדר"}.
 {"Room Occupants","נוכחי חדר"}.
 {"Room title","כותרת חדר"}.
-{"Roster module has failed","מודול רשימה נכשל"}.
-{"Roster of ","רשימה של "}.
 {"Roster size","גודל רשימה"}.
 {"Roster","רשימה"}.
 {"RPC Call Error","שגיאת קריאת RPC"}.
 {"Running Nodes","צמתים מורצים"}.
 {"Saturday","יום שבת"}.
-{"Scan failed","סריקה נכשלה"}.
 {"Script check","בדיקת תסריט"}.
 {"Search Results for ","תוצאות חיפוש עבור "}.
 {"Search users in ","חיפוש משתמשים אצל "}.
@@ -304,15 +289,9 @@
 {"Show Integral Table","הצג טבלה אינטגרלית"}.
 {"Show Ordinary Table","הצג טבלה רגילה"}.
 {"Shut Down Service","כבה שירות"}.
-{"~s invites you to the room ~s","‫~s מזמינך לחדר ~s"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","ישנם לקוחות Jabber אשר מסוגלים לאחסן את הסיסמה שלך בתוך המחשב, אולם עליך לעשות זאת רק בתוך המחשב האישי שלך מסיבות ביטחוניות."}.
-{"~s's Offline Messages Queue","תור הודעות לא מקוונות של ~s"}.
-{"Start Modules at ","התחל מודולים אצל "}.
-{"Start Modules","התחל מודולים"}.
 {"Statistics of ~p","סטטיסטיקות של ~p"}.
 {"Statistics","סטטיסטיקה"}.
-{"Stop Modules at ","הפסק מודולים אצל "}.
-{"Stop Modules","הפסק מודולים"}.
 {"Stopped Nodes","צמתים שנפסקו"}.
 {"Stop","הפסק"}.
 {"Storage Type","טיפוס אחסון"}.
@@ -344,11 +323,8 @@
 {"Token TTL","סימן TTL"}.
 {"Too many active bytestreams","יותר מדי יחידות bytestream פעילות"}.
 {"Too many CAPTCHA requests","יותר מדי בקשות CAPTCHA"}.
-{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","יותר מדי (~p) אימותים כושלים מתוך כתובת IP זו (~s). הכתובת תורשה לקבל גישה בשעה ~s UTC"}.
 {"Too many unacked stanzas","יותר מדי סטנזות בלי אישורי קבלה"}.
 {"Too many users in this conference","יותר מדי משתמשים בועידה זו"}.
-{"To register, visit ~s","כדי להירשם, בקרו ~s"}.
-{"To ~s","אל ~s"}.
 {"Total rooms","חדרים סה״כ"}.
 {"To","לכבוד"}.
 {"Traffic rate limit is exceeded","מגבלת שיעור תעבורה נחצתה"}.
@@ -377,13 +353,9 @@
 {"User session not found","סשן משתמש לא נמצא"}.
 {"User session terminated","סשן משתמש הסתיים"}.
 {"Users Last Activity","פעילות משתמשים אחרונה"}.
-{"User ~s","משתמש ~s"}.
 {"Users","משתמשים"}.
 {"User","משתמש"}.
 {"Validate","הענק תוקף"}.
-{"Value of '~s' should be boolean","ערך של '~s' צריך להיות boolean"}.
-{"Value of '~s' should be datetime string","ערך של '~s' צריך להיות מחרוזת datetime"}.
-{"Value of '~s' should be integer","ערך של '~s' צריך להיות integer"}.
 {"vCard User Search","חיפוש משתמש vCard"}.
 {"Virtual Hosts","מארחים מדומים"}.
 {"Visitors are not allowed to change their nicknames in this room","מבקרים אינם מורשים לשנות את שמות הכינויים שלהם בחדר זה"}.

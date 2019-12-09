@@ -25,7 +25,6 @@
 {"Backup to File at ","Salvataggio sul file "}.
 {"Bad format","Formato non valido"}.
 {"Birthday","Compleanno"}.
-{"CAPTCHA web page","Pagina web CAPTCHA"}.
 {"Change Password","Modificare la password"}.
 {"Change User Password","Cambiare la password dell'utente"}.
 {"Characters not allowed:","Caratteri non consentiti:"}.
@@ -36,14 +35,12 @@
 {"Chatroom is stopped","La stanza è arrestata"}.
 {"Chatrooms","Stanze"}.
 {"Choose a username and password to register with this server","Scegliere un nome utente e una password per la registrazione con questo server"}.
-{"Choose modules to stop","Selezionare i moduli da arrestare"}.
 {"Choose storage type of tables","Selezionare una modalità di conservazione delle tabelle"}.
 {"Choose whether to approve this entity's subscription.","Scegliere se approvare l'iscrizione per questa entità"}.
 {"City","Città"}.
 {"Commands","Comandi"}.
 {"Conference room does not exist","La stanza per conferenze non esiste"}.
 {"Configuration","Configurazione"}.
-{"Configuration of room ~s","Configurazione per la stanza ~s"}.
 {"Connected Resources:","Risorse connesse:"}.
 {"Country","Paese"}.
 {"CPU Time:","Tempo CPU:"}.
@@ -72,7 +69,6 @@
 {"Email","E-mail"}.
 {"Enable logging","Abilitare i log"}.
 {"End User Session","Terminare la sessione dell'utente"}.
-{"Enter list of {Module, [Options]}","Immettere un elenco di {Modulo, [Opzioni]}"}.
 {"Enter nickname you want to register","Immettere il nickname che si vuole registrare"}.
 {"Enter path to backup file","Immettere il percorso del file di salvataggio"}.
 {"Enter path to jabberd14 spool dir","Immettere il percorso della directory di spool di jabberd14"}.
@@ -88,7 +84,6 @@
 {"February","Febbraio"}.
 {"Friday","Venerdì"}.
 {"From","Da"}.
-{"From ~s","Da ~s"}.
 {"Full Name","Nome completo"}.
 {"Get Number of Online Users","Ottenere il numero di utenti online"}.
 {"Get Number of Registered Users","Ottenere il numero di utenti registrati"}.
@@ -131,7 +126,6 @@
 {"Last month","Ultimo mese"}.
 {"Last year","Ultimo anno"}.
 {"leaves the room","esce dalla stanza"}.
-{"List of modules to start","Elenco dei moduli da avviare"}.
 {"Low level update script","Script di aggiornamento di basso livello"}.
 {"Make participants list public","Rendere pubblica la lista dei partecipanti"}.
 {"Make room CAPTCHA protected","Rendere la stanza protetta da CAPTCHA"}.
@@ -151,7 +145,6 @@
 {"Middle Name","Altro nome"}.
 {"Moderator privileges required","Necessari i privilegi di moderatore"}.
 {"Modified modules","Moduli modificati"}.
-{"Modules","Moduli"}.
 {"Monday","Lunedì"}.
 {"Name","Nome"}.
 {"Name:","Nome:"}.
@@ -159,7 +152,6 @@
 {"New Password:","Nuova password:"}.
 {"Nickname","Nickname"}.
 {"Nickname Registration at ","Registrazione di un nickname su "}.
-{"Nickname ~s does not exist in the room","Il nickname ~s non esiste nella stanza"}.
 {"No body provided for announce message","Nessun corpo fornito per il messaggio di annuncio"}.
 {"No Data","Nessuna informazione"}.
 {"Node not found","Nodo non trovato"}.
@@ -233,7 +225,6 @@
 {"Room Occupants","Presenti nella stanza"}.
 {"Room title","Titolo della stanza"}.
 {"Roster","Lista dei contatti"}.
-{"Roster of ","Lista dei contatti di "}.
 {"Roster size","Dimensione della lista dei contatti"}.
 {"RPC Call Error","Errore di chiamata RPC"}.
 {"Running Nodes","Nodi attivi"}.
@@ -253,16 +244,10 @@
 {"Show Integral Table","Mostrare la tabella integrale"}.
 {"Show Ordinary Table","Mostrare la tabella normale"}.
 {"Shut Down Service","Terminare il servizio"}.
-{"~s invites you to the room ~s","~s ti invita nella stanza ~s"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Alcuni client Jabber possono conservare la password nel tuo computer. Utilizza tale funzione soltanto se ritieni che il tuo computer sia sicuro."}.
-{"~s's Offline Messages Queue","Coda di ~s messaggi offline"}.
-{"Start Modules at ","Avviare moduli su "}.
-{"Start Modules","Avviare moduli"}.
 {"Statistics of ~p","Statistiche di ~p"}.
 {"Statistics","Statistiche"}.
 {"Stop","Arrestare"}.
-{"Stop Modules","Arrestare moduli"}.
-{"Stop Modules at ","Arrestare moduli su "}.
 {"Stopped Nodes","Nodi arrestati"}.
 {"Storage Type","Tipo di conservazione"}.
 {"Store binary backup:","Conservare un salvataggio binario:"}.
@@ -291,7 +276,6 @@
 {"Time","Ora"}.
 {"To","A"}.
 {"Too many CAPTCHA requests","Troppe richieste CAPTCHA"}.
-{"To ~s","A ~s"}.
 {"Traffic rate limit is exceeded","Limite di traffico superato"}.
 {"Transactions Aborted:","Transazioni abortite:"}.
 {"Transactions Committed:","Transazioni avvenute:"}.

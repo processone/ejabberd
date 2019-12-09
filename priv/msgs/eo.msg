@@ -26,7 +26,6 @@
 {"Backup to File at ","Faru sekurkopion je "}.
 {"Bad format","Malĝusta formo"}.
 {"Birthday","Naskiĝtago"}.
-{"CAPTCHA web page","CAPTCHA teksaĵ-paĝo"}.
 {"Change Password","Ŝanĝu pasvorton"}.
 {"Change User Password","Ŝanĝu pasvorton de uzanto"}.
 {"Characters not allowed:","Karaktroj ne permesata:"}.
@@ -37,14 +36,12 @@
 {"Chatroom is stopped","Babilejo haltita"}.
 {"Chatrooms","Babilejoj"}.
 {"Choose a username and password to register with this server","Elektu uzantnomon kaj pasvorton por registri je ĉi tiu servilo"}.
-{"Choose modules to stop","Elektu modulojn por fini"}.
 {"Choose storage type of tables","Elektu konserv-tipon de tabeloj"}.
 {"Choose whether to approve this entity's subscription.","Elektu ĉu permesi la abonon de ĉi tiu ento"}.
 {"City","Urbo"}.
 {"Commands","Ordonoj"}.
 {"Conference room does not exist","Babilejo ne ekzistas"}.
 {"Configuration","Agordo"}.
-{"Configuration of room ~s","Agordo de babilejo ~s"}.
 {"Connected Resources:","Konektataj risurcoj:"}.
 {"Country","Lando"}.
 {"CPU Time:","CPU-tempo"}.
@@ -75,7 +72,6 @@
 {"Email","Retpoŝto"}.
 {"Enable logging","Ŝaltu protokoladon"}.
 {"End User Session","Haltigu Uzant-seancon"}.
-{"Enter list of {Module, [Options]}","Enmetu liston de {Modulo, [Elektebloj]}"}.
 {"Enter nickname you want to register","Enmetu kaŝnomon kiun vi volas registri"}.
 {"Enter path to backup file","Enmetu vojon por sekurkopio"}.
 {"Enter path to jabberd14 spool dir","Enmetu vojon al jabberd14-uzantdosierujo"}.
@@ -92,7 +88,6 @@
 {"February","Februaro"}.
 {"Friday","Vendredo"}.
 {"From","De"}.
-{"From ~s","De ~s"}.
 {"Full Name","Plena Nomo"}.
 {"Get Number of Online Users","Montru nombron de konektataj uzantoj"}.
 {"Get Number of Registered Users","Montru nombron de registritaj uzantoj"}.
@@ -135,7 +130,6 @@
 {"Last month","Lasta monato"}.
 {"Last year","Lasta jaro"}.
 {"leaves the room","eliras la babilejo"}.
-{"List of modules to start","Listo de moduloj por starti"}.
 {"List of rooms","Listo de babilejoj"}.
 {"Low level update script","Bazanivela ĝisdatigo-skripto"}.
 {"Make participants list public","Farigu partoprento-liston publika"}.
@@ -156,7 +150,6 @@
 {"Middle Name","Meza Nomo"}.
 {"Moderator privileges required","Moderantaj rajtoj bezonata"}.
 {"Modified modules","Ĝisdatigitaj moduloj"}.
-{"Modules","Moduloj"}.
 {"Monday","Lundo"}.
 {"Multicast","Multicast"}.
 {"Multi-User Chat","Grupbabilado"}.
@@ -166,7 +159,6 @@
 {"New Password:","Nova Pasvorto:"}.
 {"Nickname","Kaŝnomo"}.
 {"Nickname Registration at ","Kaŝnomo-registrado je "}.
-{"Nickname ~s does not exist in the room","Kaŝnomo ~s ne ekzistas en la babilejo"}.
 {"No body provided for announce message","Neniu teksto donita por anonc-mesaĝo"}.
 {"No Data","Neniu datumo"}.
 {"Node not found","Nodo ne trovita"}.
@@ -241,7 +233,6 @@
 {"Room Occupants","Nombro de ĉeestantoj"}.
 {"Room title","Babilejo-nomo"}.
 {"Roster","Kontaktlisto"}.
-{"Roster of ","Kontaktlisto de "}.
 {"Roster size","Kontaktlist-grando"}.
 {"RPC Call Error","Eraro de RPC-alvoko"}.
 {"Running Nodes","Funkciantaj Nodoj"}.
@@ -261,16 +252,10 @@
 {"Show Integral Table","Montru integran tabelon"}.
 {"Show Ordinary Table","Montru ordinaran tabelon"}.
 {"Shut Down Service","Haltigu Servon"}.
-{"~s invites you to the room ~s","~s invitas vin al la babilejo ~s"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Kelkaj Ĵabber-klientoj povas memori vian pasvorton je via komputilo. Nur uzu tiun eblon se vi fidas ke via komputilo estas sekura."}.
-{"~s's Offline Messages Queue","Mesaĝo-atendovico de ~s"}.
-{"Start Modules at ","Startu modulojn je "}.
-{"Start Modules","Startu Modulojn"}.
 {"Statistics of ~p","Statistikoj de ~p"}.
 {"Statistics","Statistikoj"}.
 {"Stop","Haltigu"}.
-{"Stop Modules at ","Haltigu modulojn je "}.
-{"Stop Modules","Haltigu Modulojn"}.
 {"Stopped Nodes","Neaktivaj Nodoj"}.
 {"Storage Type","Konserv-tipo"}.
 {"Store binary backup:","Konservu duuman sekurkopion:"}.
@@ -299,9 +284,7 @@
 {"Time","Tempo"}.
 {"To","Ĝis"}.
 {"Too many CAPTCHA requests","Tro multaj CAPTCHA-petoj"}.
-{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Tro da malsukcesaj aŭtentprovoj (~p) de ĉi tiu IP-adreso (~s). La adreso estos malbarata je ~s UTC."}.
 {"Too many unacked stanzas","Tro da neagnoskitaj stancoj"}.
-{"To ~s","Al ~s"}.
 {"Total rooms","Babilejoj"}.
 {"Traffic rate limit is exceeded","Trafikrapida limigo superita"}.
 {"Transactions Aborted:","Transakcioj nuligitaj"}.
@@ -325,7 +308,6 @@
 {"Users are not allowed to register accounts so quickly","Ne estas permesata al uzantoj registri tiel rapide"}.
 {"Users Last Activity","Lasta aktiveco de uzanto"}.
 {"Users","Uzantoj"}.
-{"User ~s","Uzanto ~s"}.
 {"User","Uzanto"}.
 {"Validate","Validigu"}.
 {"vCard User Search","Serĉado de vizitkartoj"}.

@@ -25,7 +25,6 @@
 {"Backup","Zálohovať"}.
 {"Bad format","Zlý formát"}.
 {"Birthday","Dátum narodenia"}.
-{"CAPTCHA web page","Webová stránka CAPTCHA"}.
 {"Change Password","Zmeniť heslo"}.
 {"Change User Password","Zmeniť heslo užívateľa"}.
 {"Characters not allowed:","Nepovolené znaky:"}.
@@ -36,14 +35,12 @@
 {"Chatroom is stopped","Diskusná miestnosť je pozastavená"}.
 {"Chatrooms","Diskusné miestnosti"}.
 {"Choose a username and password to register with this server","Zvolte meno užívateľa a heslo pre registráciu na tomto servere"}.
-{"Choose modules to stop","Vyberte moduly, ktoré majú byť zastavené"}.
 {"Choose storage type of tables","Vyberte typ úložiska pre tabuľky"}.
 {"Choose whether to approve this entity's subscription.","Zvolte, či chcete povoliť toto odoberanie"}.
 {"City","Mesto"}.
 {"Commands","Príkazy"}.
 {"Conference room does not exist","Diskusná miestnosť neexistuje"}.
 {"Configuration","Konfigurácia"}.
-{"Configuration of room ~s","Konfigurácia miestnosti ~s"}.
 {"Connected Resources:","Pripojené zdroje:"}.
 {"Country","Krajina"}.
 {"CPU Time:","Čas procesoru"}.
@@ -72,7 +69,6 @@
 {"Email","E-mail"}.
 {"Enable logging","Zapnúť zaznamenávanie histórie"}.
 {"End User Session","Ukončiť reláciu užívateľa"}.
-{"Enter list of {Module, [Options]}","Vložte zoznam modulov {Modul, [Parametre]}"}.
 {"Enter nickname you want to register","Zadajte prezývku, ktorú chcete registrovať"}.
 {"Enter path to backup file","Zadajte cestu k súboru so zálohou"}.
 {"Enter path to jabberd14 spool dir","Zadajte cestu k jabberd14 spool adresáru"}.
@@ -88,7 +84,6 @@
 {"February","Február"}.
 {"Friday","Piatok"}.
 {"From","Od"}.
-{"From ~s","Od ~s"}.
 {"Full Name","Celé meno: "}.
 {"Get Number of Online Users","Zobraziť počet pripojených užívateľov"}.
 {"Get Number of Registered Users","Zobraziť počet registrovaných užívateľov"}.
@@ -131,7 +126,6 @@
 {"Last month","Posledný mesiac"}.
 {"Last year","Posledný rok"}.
 {"leaves the room","odišiel(a) z miestnosti"}.
-{"List of modules to start","Zoznam modulov, ktoré majú byť spustené"}.
 {"Low level update script","Nízkoúrovňový aktualizačný skript"}.
 {"Make participants list public","Nastaviť zoznam zúčastnených ako verejný"}.
 {"Make room CAPTCHA protected","Chrániť miestnosť systémom CAPTCHA"}.
@@ -151,7 +145,6 @@
 {"Middle Name","Prostredné meno: "}.
 {"Moderator privileges required","Sú potrebné práva moderátora"}.
 {"Modified modules","Modifikované moduly"}.
-{"Modules","Moduly"}.
 {"Monday","Pondelok"}.
 {"Name","Meno"}.
 {"Name:","Meno:"}.
@@ -159,7 +152,6 @@
 {"New Password:","Nové heslo:"}.
 {"Nickname","Prezývka"}.
 {"Nickname Registration at ","Registrácia prezývky na "}.
-{"Nickname ~s does not exist in the room","Prezývka ~s v miestnosti neexistuje"}.
 {"No body provided for announce message","Správa neobsahuje text"}.
 {"No Data","Žiadne dáta"}.
 {"Node not found","Uzol nenájdený"}.
@@ -232,7 +224,6 @@
 {"Room description","Popis miestnosti"}.
 {"Room Occupants","Ľudí v miestnosti"}.
 {"Room title","Názov miestnosti"}.
-{"Roster of ","Zoznam kontaktov "}.
 {"Roster size","Počet kontaktov v zozname"}.
 {"Roster","Zoznam kontaktov"}.
 {"RPC Call Error","Chyba RPC volania"}.
@@ -252,15 +243,9 @@
 {"Show Integral Table","Zobraziť kompletnú tabuľku"}.
 {"Show Ordinary Table","Zobraziť bežnú tabuľku"}.
 {"Shut Down Service","Vypnúť službu"}.
-{"~s invites you to the room ~s","~s Vás pozýva do miestnosti ~s"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Niektorí Jabber klenti môžu ukladať heslá v počítači. Používajte túto funkciu len ak veríte, že sú tam v bezpečí.  "}.
-{"~s's Offline Messages Queue","~s Offline správy"}.
-{"Start Modules at ","Spustiť moduly na "}.
-{"Start Modules","Spustiť moduly"}.
 {"Statistics of ~p","Štatistiky ~p"}.
 {"Statistics","Štatistiky"}.
-{"Stop Modules at ","Zastaviť moduly na "}.
-{"Stop Modules","Zastaviť moduly"}.
 {"Stopped Nodes","Zastavené uzly"}.
 {"Stop","Zastaviť"}.
 {"Storage Type","Typ úložiska"}.
@@ -290,7 +275,6 @@
 {"Time delay","Časový posun"}.
 {"Too many CAPTCHA requests","Príliš veľa žiadostí o CAPTCHA"}.
 {"To","Pre"}.
-{"To ~s","Pre ~s"}.
 {"Traffic rate limit is exceeded","Bol prekročený prenosový limit"}.
 {"Transactions Aborted:","Transakcie zrušená"}.
 {"Transactions Committed:","Transakcie potvrdená"}.

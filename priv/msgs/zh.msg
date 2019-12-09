@@ -32,7 +32,6 @@
 {"Bytestream already activated","字节流已经被激活"}.
 {"Cannot remove active list","无法移除活跃列表"}.
 {"Cannot remove default list","无法移除缺省列表"}.
-{"CAPTCHA web page","验证码网页"}.
 {"Change Password","更改密码"}.
 {"Change User Password","更改用户密码"}.
 {"Changing password is not allowed","不允许修改密码"}.
@@ -45,13 +44,11 @@
 {"Chatroom is stopped","聊天室已被停用"}.
 {"Chatrooms","聊天室"}.
 {"Choose a username and password to register with this server","请选择在此服务器上注册所需的用户名和密码"}.
-{"Choose modules to stop","请选择要停止的模块"}.
 {"Choose storage type of tables","请选择表格的存储类型"}.
 {"Choose whether to approve this entity's subscription.","选择是否允许该实体的订阅"}.
 {"City","城市"}.
 {"Commands","命令"}.
 {"Conference room does not exist","会议室不存在"}.
-{"Configuration of room ~s","房间~s的配置 "}.
 {"Configuration","配置"}.
 {"Connected Resources:","已连接资源:"}.
 {"Country","国家"}.
@@ -83,11 +80,9 @@
 {"ejabberd Web Admin","ejabberd网页管理"}.
 {"Elements","元素"}.
 {"Email","电子邮件"}.
-{"Empty password","空密码"}.
 {"Enable logging","启用服务器端聊天记录"}.
 {"Enabling push without 'node' attribute is not supported","不支持未使用'node'属性就开启推送"}.
 {"End User Session","结束用户会话"}.
-{"Enter list of {Module, [Options]}","请输入{模块, [选项]}列表"}.
 {"Enter nickname you want to register","请输入您想要注册的昵称"}.
 {"Enter path to backup file","请输入备份文件的路径"}.
 {"Enter path to jabberd14 spool dir","请输入jabberd14 spool目录的路径"}.
@@ -105,12 +100,10 @@
 {"Failed to extract JID from your voice request approval","无法从你的声音请求确认信息中提取JID"}.
 {"Failed to map delegated namespace to external component","未能将代理命名空间映射到外部组件"}.
 {"Failed to parse HTTP response","HTTP响应解析失败"}.
-{"Failed to process option '~s'","选项'~s'处理失败"}.
 {"Family Name","姓氏"}.
 {"February","二月"}.
 {"File larger than ~w bytes","文件大于 ~w 字节"}.
 {"Friday","星期五"}.
-{"From ~s","来自~s"}.
 {"From","从"}.
 {"Full Name","全名"}.
 {"Get Number of Online Users","获取在线用户数"}.
@@ -152,7 +145,6 @@
 {"Invitations are not allowed in this conference","此会议不允许邀请"}.
 {"IP addresses","IP地址"}.
 {"is now known as","现在称呼为"}.
-{"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","不允许将错误消息发送到该房间. 参与者(~s)已发送过一条消息(~s)并已被踢出房间"}.
 {"It is not allowed to send private messages of type \"groupchat\"","\"群组聊天\"类型不允许发送私聊消息"}.
 {"It is not allowed to send private messages to the conference","不允许向会议发送私聊消息"}.
 {"It is not allowed to send private messages","不可以发送私聊消息"}.
@@ -167,7 +159,6 @@
 {"Last month","上个月"}.
 {"Last year","上一年"}.
 {"leaves the room","离开房间"}.
-{"List of modules to start","要启动的模块列表"}.
 {"List of rooms","房间列表"}.
 {"Low level update script","低级别更新脚本"}.
 {"Make participants list public","公开参与人列表"}.
@@ -191,7 +182,6 @@
 {"Moderator privileges required","需要主持人权限"}.
 {"Modified modules","被修改模块"}.
 {"Module failed to handle the query","模块未能处理查询"}.
-{"Modules","模块"}.
 {"Monday","星期一"}.
 {"Multicast","多重映射"}.
 {"Multiple <item/> elements are not allowed by RFC6121","按照 RFC6121，多个 <item/> 元素是不允许的"}.
@@ -203,7 +193,6 @@
 {"Never","从未"}.
 {"New Password:","新密码:"}.
 {"Nickname Registration at ","昵称注册于"}.
-{"Nickname ~s does not exist in the room","昵称~s不在该房间"}.
 {"Nickname","昵称"}.
 {"No 'affiliation' attribute found","未发现 'affiliation' 属性"}.
 {"No available resource found","没发现可用资源"}.
@@ -223,7 +212,6 @@
 {"No items found in this query","此查询中没发现任何项"}.
 {"No limit","不限"}.
 {"No module is handling this query","没有正在处理此查询的模块"}.
-{"No 'modules' found in data form","数据表单中未发现 'module'"}.
 {"None","无"}.
 {"No node specified","无指定节点"}.
 {"No 'password' found in data form","数据表单中未发现 'password'"}.
@@ -264,7 +252,6 @@
 {"Outgoing s2s Connections:","出站 s2s 连接:"}.
 {"Owner privileges required","需要持有人权限"}.
 {"Packet","数据包"}.
-{"Parse failed","解析失败"}.
 {"Password Verification:","密码确认:"}.
 {"Password Verification","确认密码"}.
 {"Password","密码"}.
@@ -310,14 +297,11 @@
 {"Room description","房间描述"}.
 {"Room Occupants","房间人数"}.
 {"Room title","房间标题"}.
-{"Roster module has failed","花名册模块已失效"}.
-{"Roster of ","花名册属于"}.
 {"Roster size","花名册大小"}.
 {"Roster","花名册"}.
 {"RPC Call Error","RPC 调用错误"}.
 {"Running Nodes","运行中的节点"}.
 {"Saturday","星期六"}.
-{"Scan failed","扫描失败."}.
 {"Script check","脚本检查"}.
 {"Search Results for ","搜索结果属于关键词 "}.
 {"Search users in ","搜索用户于"}.
@@ -326,7 +310,6 @@
 {"Send announcement to all users on all hosts","发送通知给所有主机上的所有用户"}.
 {"Send announcement to all users","发送通知给所有用户"}.
 {"September","九月"}.
-{"Server connections to local subdomains are forbidden","禁止服务器连接到本地子域"}.
 {"Server:","服务器:"}.
 {"Set message of the day and send to online users","设定每日消息并发送给所有在线用户"}.
 {"Set message of the day on all hosts and send to online users","设置所有主机上的每日消息并发送给在线用户"}.
@@ -334,15 +317,9 @@
 {"Show Integral Table","显示完整列表"}.
 {"Show Ordinary Table","显示普通列表"}.
 {"Shut Down Service","关闭服务"}.
-{"~s invites you to the room ~s","~s邀请你到房间~s"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","某些 Jabber 客户端可以在你的计算机里存储密码. 请仅在你确认你的计算机安全的情况下使用该功能."}.
-{"~s's Offline Messages Queue","~s的离线消息队列"}.
-{"Start Modules at ","要启动的模块位于 "}.
-{"Start Modules","启动模块"}.
 {"Statistics of ~p","~p的统计"}.
 {"Statistics","统计"}.
-{"Stop Modules at ","要停止的模块位于 "}.
-{"Stop Modules","停止模块"}.
 {"Stopped Nodes","已经停止的节点"}.
 {"Stop","停止"}.
 {"Storage Type","存储类型"}.
@@ -381,11 +358,8 @@
 {"Too many CAPTCHA requests","验证码请求太多"}.
 {"Too many <item/> elements","太多 <item/> 元素"}.
 {"Too many <list/> elements","太多 <list/> 元素"}.
-{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","来自IP地址(~p)的(~s)失败认证太多. 该地址将在UTC时间~s被禁用."}.
 {"Too many unacked stanzas","未被确认的节太多"}.
 {"Too many users in this conference","该会议的用户太多"}.
-{"To register, visit ~s","要注册，请访问 ~s"}.
-{"To ~s","发送给~s"}.
 {"Total rooms","所有房间"}.
 {"To","到"}.
 {"Traffic rate limit is exceeded","已经超过传输率限制"}.
@@ -417,13 +391,9 @@
 {"User session terminated","用户会话已终止"}.
 {"Users Last Activity","用户上次活动"}.
 {"Users","用户"}.
-{"User ~s","用户~s"}.
 {"User","用户"}.
 {"Validate","确认"}.
 {"Value 'get' of 'type' attribute is not allowed","不允许 'type' 属性的 'get' 值"}.
-{"Value of '~s' should be boolean","'~s' 的值应为布尔型"}.
-{"Value of '~s' should be datetime string","'~s' 的值应为日期时间字符串"}.
-{"Value of '~s' should be integer","'~s' 的值应为整数"}.
 {"Value 'set' of 'type' attribute is not allowed","不允许 'type' 属性的 'set' 值"}.
 {"vCard User Search","vCard用户搜索"}.
 {"Virtual Hosts","虚拟主机"}.

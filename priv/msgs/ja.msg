@@ -27,7 +27,6 @@
 {"Backup","バックアップ"}.
 {"Bad format","不正なフォーマット"}.
 {"Birthday","誕生日"}.
-{"CAPTCHA web page","CAPTCHA ウェブページ"}.
 {"Change Password","パスワードを変更"}.
 {"Change User Password","パスワードを変更"}.
 {"Characters not allowed:","使用できない文字:"}.
@@ -38,13 +37,11 @@
 {"Chatroom is stopped","チャットルームを停止しました"}.
 {"Chatrooms","チャットルーム"}.
 {"Choose a username and password to register with this server","サーバーに登録するユーザー名とパスワードを選択してください"}.
-{"Choose modules to stop","停止するモジュールを選択"}.
 {"Choose storage type of tables","テーブルのストレージタイプを選択"}.
 {"Choose whether to approve this entity's subscription.","このエントリを承認するかどうかを選択してください"}.
 {"City","都道府県"}.
 {"Commands","コマンド"}.
 {"Conference room does not exist","会議室は存在しません"}.
-{"Configuration of room ~s","チャットルーム ~s の設定"}.
 {"Configuration","設定"}.
 {"Connected Resources:","接続リソース:"}.
 {"Country","国"}.
@@ -76,7 +73,6 @@
 {"Email","メールアドレス"}.
 {"Enable logging","ロギングを有効"}.
 {"End User Session","エンドユーザーセッション"}.
-{"Enter list of {Module, [Options]}","{モジュール, [オプション]}のリストを入力してください"}.
 {"Enter nickname you want to register","登録するニックネームを入力してください"}.
 {"Enter path to backup file","バックアップファイルのパスを入力してください"}.
 {"Enter path to jabberd14 spool dir","jabberd14 spool ディレクトリのディレクトリを入力してください"}.
@@ -92,7 +88,6 @@
 {"Family Name","姓"}.
 {"February","2月"}.
 {"Friday","金曜日"}.
-{"From ~s","From ~s"}.
 {"From","差出人"}.
 {"Full Name","氏名"}.
 {"Get Number of Online Users","オンラインユーザー数を取得"}.
@@ -123,7 +118,6 @@
 {"Incorrect password","パスワードが違います"}.
 {"IP addresses","IP アドレス"}.
 {"is now known as","は名前を変更しました: "}.
-{"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","このルームにエラーメッセージを送ることは許可されていません。参加者(~s)はエラーメッセージを(~s)を送信してルームからキックされました。"}.
 {"It is not allowed to send private messages of type \"groupchat\"","種別が\"groupchat\" であるプライベートメッセージを送信することはできません"}.
 {"It is not allowed to send private messages to the conference","この会議にプライベートメッセージを送信することはできません"}.
 {"It is not allowed to send private messages","プライベートメッセージを送信することはできません"}.
@@ -138,7 +132,6 @@
 {"Last month","先月"}.
 {"Last year","去年"}.
 {"leaves the room","がチャットルームから退出しました"}.
-{"List of modules to start","起動モジュールの一覧"}.
 {"List of rooms","チャットルームの一覧"}.
 {"Low level update script","低レベル更新スクリプト"}.
 {"Make participants list public","参加者一覧を公開"}.
@@ -159,7 +152,6 @@
 {"Middle Name","ミドルネーム"}.
 {"Moderator privileges required","モデレーター権限が必要です"}.
 {"Modified modules","更新されたモジュール"}.
-{"Modules","モジュール"}.
 {"Monday","月曜日"}.
 {"Multicast","マルチキャスト"}.
 {"Multi-User Chat","マルチユーザーチャット"}.
@@ -168,7 +160,6 @@
 {"Never","なし"}.
 {"New Password:","新しいパスワード:"}.
 {"Nickname Registration at ","ニックネーム登録: "}.
-{"Nickname ~s does not exist in the room","ニックネーム ~s はこのチャットルームにいません"}.
 {"Nickname","ニックネーム"}.
 {"No body provided for announce message","アナウンスメッセージはありませんでした"}.
 {"No Data","データなし"}.
@@ -244,7 +235,6 @@
 {"Room description","チャットルームの説明"}.
 {"Room Occupants","在室者"}.
 {"Room title","チャットルームのタイトル"}.
-{"Roster of ","名簿: "}.
 {"Roster size","名簿サイズ"}.
 {"Roster","名簿"}.
 {"RPC Call Error","RPC 呼び出しエラー"}.
@@ -265,15 +255,9 @@
 {"Show Integral Table","累積の表を表示"}.
 {"Show Ordinary Table","通常の表を表示"}.
 {"Shut Down Service","サービスを停止"}.
-{"~s invites you to the room ~s","~s はあなたをチャットルーム ~s に招待しています"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Jabber クライアントはコンピューターにパスワードを記憶できます。コンピューターが安全であると信頼できる場合にのみ、この機能を使用してください。"}.
-{"~s's Offline Messages Queue","~s' のオフラインメッセージキュー"}.
-{"Start Modules at ","モジュールを開始: "}.
-{"Start Modules","モジュールを起動"}.
 {"Statistics of ~p","~p の統計"}.
 {"Statistics","統計"}.
-{"Stop Modules at ","モジュールを停止: "}.
-{"Stop Modules","モジュールを停止"}.
 {"Stopped Nodes","停止ノード"}.
 {"Stop","停止"}.
 {"Storage Type","ストレージタイプ"}.
@@ -302,9 +286,7 @@
 {"Time delay","遅延時間"}.
 {"Time","時間"}.
 {"Too many CAPTCHA requests","CAPTCHA 要求が多すぎます"}.
-{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","~p回の認証に失敗しました。このIPアドレス(~s)は~s UTCまでブロックされます。"}.
 {"Too many unacked stanzas","多くのスタンザが応答していません"}.
-{"To ~s","宛先 ~s"}.
 {"Total rooms","チャットルーム数"}.
 {"To","To"}.
 {"Traffic rate limit is exceeded","トラフィックレートの制限を超えました"}.
@@ -329,7 +311,6 @@
 {"Users are not allowed to register accounts so quickly","それほど速くアカウントを登録することはできません"}.
 {"Users Last Activity","ユーザーの活動履歴"}.
 {"Users","ユーザー"}.
-{"User ~s","ユーザー ~s"}.
 {"User","ユーザー"}.
 {"Validate","検証"}.
 {"vCard User Search","vCard検索"}.

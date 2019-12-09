@@ -32,7 +32,6 @@
 {"Bytestream already activated","Bytestream já foi ativado"}.
 {"Cannot remove active list","Não é possível remover uma lista ativa"}.
 {"Cannot remove default list","Não é possível remover uma lista padrão"}.
-{"CAPTCHA web page","CAPTCHA web page"}.
 {"Change Password","Mudar senha"}.
 {"Change User Password","Alterar Senha do Usuário"}.
 {"Characters not allowed:","Caracteres não aceitos:"}.
@@ -43,14 +42,12 @@
 {"Chatroom is stopped","A sala de chat está parada"}.
 {"Chatrooms","Salas de Chat"}.
 {"Choose a username and password to register with this server","Escolha um nome de usuário e senha para registrar-se neste servidor"}.
-{"Choose modules to stop","Selecione módulos a parar"}.
 {"Choose storage type of tables","Selecione o tipo de armazenamento das tabelas"}.
 {"Choose whether to approve this entity's subscription.","Aprovar esta assinatura."}.
 {"City","Cidade"}.
 {"Commands","Comandos"}.
 {"Conference room does not exist","A sala de conferência não existe"}.
 {"Configuration","Configuração"}.
-{"Configuration of room ~s","Configuração para ~s"}.
 {"Connected Resources:","Recursos conectados:"}.
 {"Country","País"}.
 {"CPU Time:","Tempo de CPU"}.
@@ -83,7 +80,6 @@
 {"Enable logging","Permitir criação de logs"}.
 {"Enabling push without 'node' attribute is not supported","Abilitar push sem o atributo 'node' não é suportado"}.
 {"End User Session","Terminar Sessão do Usuário"}.
-{"Enter list of {Module, [Options]}","Introduza lista de {módulo, [opções]}"}.
 {"Enter nickname you want to register","Introduza o apelido que quer registrar"}.
 {"Enter path to backup file","Introduza o caminho do arquivo de backup"}.
 {"Enter path to jabberd14 spool dir","Introduza o caminho para o diretório de fila do jabberd14"}.
@@ -101,13 +97,11 @@
 {"Failed to extract JID from your voice request approval","Não foi possível extrair o JID (Jabber ID) da requisição de voz"}.
 {"Failed to map delegated namespace to external component","Falha ao mapear namespace delegado ao componente externo"}.
 {"Failed to parse HTTP response","Falha ao analisar resposta HTTP"}.
-{"Failed to process option '~s'","Falha ao processar opção '~s'"}.
 {"Family Name","Sobrenome"}.
 {"February","Fevereiro"}.
 {"File larger than ~w bytes","Arquivo maior que ~w bytes"}.
 {"Friday","Sexta"}.
 {"From","De"}.
-{"From ~s","De ~s"}.
 {"Full Name","Nome completo"}.
 {"Get Number of Online Users","Obter Número de Usuários Online"}.
 {"Get Number of Registered Users","Obter Número de Usuários Registrados"}.
@@ -145,7 +139,6 @@
 {"Invalid 'from' attribute in forwarded message","Atributo 'from' inválido na mensagem reenviada"}.
 {"IP addresses","Endereços IP"}.
 {"is now known as","é agora conhecido como"}.
-{"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Não é permitido o envio de mensagens de erro a esta sala. O membro (~s) enviou uma mensagem de erro (~s) e foi desconectado (\"kicked\")."}.
 {"It is not allowed to send private messages","Não é permitido enviar mensagens privadas"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Não é permitido enviar mensagens privadas do tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Não é permitido enviar mensagens privadas para a sala de conferência"}.
@@ -160,7 +153,6 @@
 {"Last month","Último mês"}.
 {"Last year","Último ano"}.
 {"leaves the room","Sair da sala"}.
-{"List of modules to start","Listas de módulos para inicializar"}.
 {"List of rooms","Lista de salas"}.
 {"Low level update script","Script de atualização low level"}.
 {"Make participants list public","Tornar pública a lista de participantes"}.
@@ -183,7 +175,6 @@
 {"Moderator privileges required","Se necessita privilégios de moderador"}.
 {"Modified modules","Módulos atualizados"}.
 {"Module failed to handle the query","Módulo falhou ao processar a consulta"}.
-{"Modules","Módulos"}.
 {"Monday","Segunda"}.
 {"Multicast","Multicast"}.
 {"Multiple <item/> elements are not allowed by RFC6121","Vários elementos <item/> não são permitidos pela RFC6121"}.
@@ -196,7 +187,6 @@
 {"New Password:","Nova Senha:"}.
 {"Nickname","Apelido"}.
 {"Nickname Registration at ","Registro do apelido em "}.
-{"Nickname ~s does not exist in the room","O apelido ~s não existe na sala"}.
 {"No 'affiliation' attribute found","Atributo 'affiliation' não foi encontrado"}.
 {"No available resource found","Nenhum recurso disponível foi encontrado"}.
 {"No body provided for announce message","Nenhum corpo de texto fornecido para anunciar mensagem"}.
@@ -212,7 +202,6 @@
 {"No items found in this query","Nenhum item encontrado nesta consulta"}.
 {"No limit","Ilimitado"}.
 {"No module is handling this query","Nenhum módulo está processando esta consulta"}.
-{"No 'modules' found in data form","'modules' não foi encontrado em formulário de dados"}.
 {"None","Nenhum"}.
 {"No node specified","Nenhum nó especificado"}.
 {"No 'password' found in data form","'password' não foi encontrado em formulário de dados"}.
@@ -252,7 +241,6 @@
 {"Outgoing s2s Connections:","Conexões s2s de Saída"}.
 {"Owner privileges required","Se requer privilégios de proprietário da sala"}.
 {"Packet","Pacote"}.
-{"Parse failed","Análise de dados falhou"}.
 {"Password","Senha"}.
 {"Password:","Senha:"}.
 {"Password Verification","Verificação de Senha"}.
@@ -298,8 +286,6 @@
 {"Room Occupants","Número de participantes"}.
 {"Room title","Título da sala"}.
 {"Roster","Lista de contatos"}.
-{"Roster module has failed","O módulo Roster falhou"}.
-{"Roster of ","Lista de contatos de "}.
 {"Roster size","Tamanho da Lista"}.
 {"RPC Call Error","Erro de chamada RPC"}.
 {"Running Nodes","Nós em execução"}.
@@ -312,7 +298,6 @@
 {"Send announcement to all users","Enviar anúncio a todos os usuários"}.
 {"Send announcement to all users on all hosts","Enviar aviso para todos os usuários em todos os hosts"}.
 {"September","Setembro"}.
-{"Server connections to local subdomains are forbidden","Conexões de servidor a subdomínios locais estão proibidas"}.
 {"Server:","Servidor:"}.
 {"Set message of the day and send to online users","Definir mensagem do dia e enviar a todos usuários online"}.
 {"Set message of the day on all hosts and send to online users","Definir mensagem do dia em todos os hosts e enviar para os usuários online"}.
@@ -320,15 +305,9 @@
 {"Show Integral Table","Mostrar Tabela Integral"}.
 {"Show Ordinary Table","Mostrar Tabela Ordinária"}.
 {"Shut Down Service","Parar Serviço"}.
-{"~s invites you to the room ~s","~s convidou você para a sala ~s"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Alguns clientes jabber podem salvar a sua senha no seu computador. Use o recurso somente se você considera este computador seguro o suficiente."}.
-{"~s's Offline Messages Queue","~s's Fila de Mensagens Offline"}.
-{"Start Modules at ","Iniciar módulos em "}.
-{"Start Modules","Iniciar módulos"}.
 {"Statistics","Estatísticas"}.
 {"Statistics of ~p","Estatísticas de ~p"}.
-{"Stop Modules at ","Parar módulos em "}.
-{"Stop Modules","Parar módulos"}.
 {"Stop","Parar"}.
 {"Stopped Nodes","Nós parados"}.
 {"Storage Type","Tipo de armazenamento"}.
@@ -366,11 +345,8 @@
 {"Too many CAPTCHA requests","Número excessivo de requisições para o CAPTCHA"}.
 {"Too many <item/> elements","Número excessivo de elementos <item/>"}.
 {"Too many <list/> elements","Número excessivo de elementos <list/>"}.
-{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Número excessivo (~p) de tentativas falhas de autenticação (~s). O endereço será desbloqueado às ~s UTC"}.
 {"Too many unacked stanzas","Número excessivo de instâncias sem confirmação"}.
 {"To","Para"}.
-{"To register, visit ~s","Para registrar, visite ~s"}.
-{"To ~s","Para ~s"}.
 {"Total rooms","Salas no total"}.
 {"Traffic rate limit is exceeded","Limite de banda excedido"}.
 {"Transactions Aborted:","Transações abortadas:"}.
@@ -399,14 +375,10 @@
 {"Users are not allowed to register accounts so quickly","Usuários não estão autorizados a registrar contas imediatamente"}.
 {"User session terminated","Sessão de usuário terminada"}.
 {"Users Last Activity","Últimas atividades dos usuários"}.
-{"User ~s","Usuário ~s"}.
 {"Users","Usuários"}.
 {"User","Usuário"}.
 {"Validate","Validar"}.
 {"Value 'get' of 'type' attribute is not allowed","Valor 'get' não permitido para atributo 'type'"}.
-{"Value of '~s' should be boolean","Value de '~s' deveria ser um booleano"}.
-{"Value of '~s' should be datetime string","Valor de '~s' deveria ser data e hora"}.
-{"Value of '~s' should be integer","Valor de '~s' deveria ser um inteiro"}.
 {"Value 'set' of 'type' attribute is not allowed","Valor 'set' não permitido para atributo 'type'"}.
 {"vCard User Search","Busca de Usuário vCard"}.
 {"Virtual Hosts","Hosts virtuais"}.

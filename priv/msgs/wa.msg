@@ -27,7 +27,6 @@
 {"Backup to File at ","Fé ene copeye di såvrité dins on fitchî so "}.
 {"Bad format","Mwais fôrmat"}.
 {"Birthday","Date d' askepiaedje"}.
-{"CAPTCHA web page","Pådje web CAPTCHA"}.
 {"Change Password","Candjî l' sicret"}.
 {"Change User Password","Candjî l' sicret d' l' uzeu"}.
 {"Characters not allowed:","Caracteres nén permetous:"}.
@@ -38,14 +37,12 @@
 {"Chatroom is stopped","Li såle di berdelaedje est ahotêye"}.
 {"Chatrooms","Såles di berdelaedje"}.
 {"Choose a username and password to register with this server","Tchoezixhoz on no d' uzeu eyet on scret po vs edjîstrer so ç' sierveu ci"}.
-{"Choose modules to stop","Tchoezixhoz les modules a-z arester"}.
 {"Choose storage type of tables","Tchoezi l' sôre di wårdaedje po les tåves"}.
 {"Choose whether to approve this entity's subscription.","Tchoezi s' i fåt aprover ou nén l' abounmint di ciste intité."}.
 {"City","Veye"}.
 {"Commands","Comandes"}.
 {"Conference room does not exist","Li såle di conferince n' egzistêye nén"}.
 {"Configuration","Apontiaedjes"}.
-{"Configuration of room ~s","Apontiaedje del såle ~s"}.
 {"Connected Resources:","Raloyî avou les rsoûces:"}.
 {"Country","Payis"}.
 {"CPU Time:","Tins CPU:"}.
@@ -76,7 +73,6 @@
 {"Email","Emile"}.
 {"Enable logging","Mete en alaedje li djournå"}.
 {"End User Session","Fini l' session d' l' uzeu"}.
-{"Enter list of {Module, [Options]}","Dinez ene djivêye del cogne {Module, [Tchuzes]}"}.
 {"Enter nickname you want to register","Dinez l' metou no ki vos vloz edjîstrer"}.
 {"Enter path to backup file","Dinez l' tchimin viè l' fitchî copeye di såvrité"}.
 {"Enter path to jabberd14 spool dir","Dinez l' tchimin viè l' ridant di spool jabberd14"}.
@@ -93,7 +89,6 @@
 {"February","fevrî"}.
 {"Friday","vénrdi"}.
 {"From","Di"}.
-{"From ~s","Dispoy ~s"}.
 {"Full Name","No etir"}.
 {"Get Number of Online Users","Riçure li nombe d' uzeus raloyîs"}.
 {"Get Number of Registered Users","Riçure li nombe d' uzeus edjîstrés"}.
@@ -123,7 +118,6 @@
 {"Incorrect password","Sicret nén corek"}.
 {"IP addresses","Adresses IP"}.
 {"is now known as","est asteure kinoxhou come"}.
-{"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","On n' pout nén evoyî des messaedjes d' aroke sol såle. Li pårticipan (~s) a-st evoyî on messaedje d' aroke (~s) ey a stî tapé foû."}.
 {"It is not allowed to send private messages","Ci n' est nén permetou d' evoyî des messaedjes privés"}.
 {"It is not allowed to send private messages of type \"groupchat\"","C' est nén possibe d' evoyî des messaedjes privés del sôre «groupchat»"}.
 {"It is not allowed to send private messages to the conference","On n' pout nén evoyî des messaedjes privés dins cisse conferince ci"}.
@@ -138,7 +132,6 @@
 {"Last month","Dierin moes"}.
 {"Last year","Dierinne anêye"}.
 {"leaves the room","cwite li såle"}.
-{"List of modules to start","Djivêye di modules a-z enonder"}.
 {"List of rooms","Djivêye des såles"}.
 {"Low level update script","Sicripe di metaedje a djoû d' bas livea"}.
 {"Make participants list public","Rinde publike li djivêye des pårticipants"}.
@@ -159,7 +152,6 @@
 {"Middle Name","No do mitan"}.
 {"Moderator privileges required","I fåt des priviledjes di moderateu"}.
 {"Modified modules","Modules di candjîs"}.
-{"Modules","Modules"}.
 {"Monday","londi"}.
 {"Multicast","Multicast"}.
 {"Multi-User Chat","Berdelaedje a sacwants"}.
@@ -169,7 +161,6 @@
 {"New Password:","Novea scret:"}.
 {"Nickname","Metou no"}.
 {"Nickname Registration at ","Edjîstraedje di metou no amon "}.
-{"Nickname ~s does not exist in the room","Li metou no ~s n' egzistêye nén dins l' såle"}.
 {"No body provided for announce message","I n' a nou coir do messaedje po ciste anonce la"}.
 {"No Data","Nole dinêye disponibe"}.
 {"Node not found","Nuk nén trové"}.
@@ -245,7 +236,6 @@
 {"Room Occupants","Prezints el såle"}.
 {"Room title","Tite del såle"}.
 {"Roster","Djivêye des soçons"}.
-{"Roster of ","Djivêye des soçons da "}.
 {"Roster size","Grandeu del djivêye des soçons"}.
 {"RPC Call Error","Aroke di houcaedje RPC"}.
 {"Running Nodes","Nuks en alaedje"}.
@@ -265,16 +255,10 @@
 {"Show Integral Table","Mostrer totå"}.
 {"Show Ordinary Table","Mostrer crexhince"}.
 {"Shut Down Service","Arester siervice"}.
-{"~s invites you to the room ~s","~s vos preye sol såle ~s"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Des cliyints Jabber k' i gn a polèt wårder vosse sicret sol copiutrece, mins vos n' duvrîz fé çoula ki sol copiutrece da vosse, po des råjhons di såvrité."}.
-{"~s's Offline Messages Queue","messaedjes ki ratindèt el cawêye po ~s"}.
-{"Start Modules at ","Renonder les modules so "}.
-{"Start Modules","Enonder des modules"}.
 {"Statistics of ~p","Sitatistikes di ~p"}.
 {"Statistics","Sitatistikes"}.
 {"Stop","Arester"}.
-{"Stop Modules","Arester des modules"}.
-{"Stop Modules at ","Arester les modules so "}.
 {"Stopped Nodes","Nuks essoctés"}.
 {"Storage Type","Sôre di wårdaedje"}.
 {"Store binary backup:","Copeye di såvrité binaire:"}.
@@ -302,10 +286,8 @@
 {"Time","Date"}.
 {"Time delay","Tårdjaedje"}.
 {"Too many CAPTCHA requests","Pår trop di dmandes CAPTCHA"}.
-{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","I gn a-st avou pår trop (~p) d' otintifiaedjes k' ont fwait berwete vinant di ciste adresse IP la (~s). L' adresse serè disblokêye a ~s UTC"}.
 {"Too many unacked stanzas","Pår trop di messaedjes sins acertinaedje di rçuvaedje"}.
 {"To","Po"}.
-{"To ~s","Viè ~s"}.
 {"Total rooms","Totå di såles"}.
 {"Traffic rate limit is exceeded","Li limite pol volume di trafik a stî passêye"}.
 {"Transactions Aborted:","Transaccions arestêyes:"}.
@@ -328,7 +310,6 @@
 {"Username:","No d' uzeu:"}.
 {"Users are not allowed to register accounts so quickly","Les noveas uzeus n' si polèt nén edjîstrer si raddimint"}.
 {"Users Last Activity","Dierinne activité des uzeus"}.
-{"User ~s","Uzeu ~s"}.
 {"Users","Uzeus"}.
 {"User","Uzeu"}.
 {"Validate","Valider"}.

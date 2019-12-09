@@ -25,7 +25,6 @@
 {"Chatroom configuration modified","Cấu hình phòng trò chuyện được chỉnh sửa"}.
 {"Chatrooms","Phòng trò chuyện"}.
 {"Choose a username and password to register with this server","Chọn một tên truy cập và mật khẩu để đăng ký với máy chủ này"}.
-{"Choose modules to stop","Chọn môđun để dừng"}.
 {"Choose storage type of tables","Chọn loại bảng lưu trữ"}.
 {"Choose whether to approve this entity's subscription.","Chọn có nên chấp nhận sự đăng ký của đối tượng này không"}.
 {"City","Thành phố"}.
@@ -56,7 +55,6 @@
 {"Email","Email"}.
 {"Enable logging","Cho phép ghi nhật ký"}.
 {"End User Session","Kết Thúc Phiên Giao Dịch Người Sử Dụng"}.
-{"Enter list of {Module, [Options]}","Nhập danh sách {Môđun, [Các Tùy Chọn]}"}.
 {"Enter nickname you want to register","Nhập bí danh bạn muốn đăng ký"}.
 {"Enter path to backup file","Nhập đường dẫn đến tập tin sao lưu dự phòng"}.
 {"Enter path to jabberd14 spool dir","Nhập đường dẫn đến thư mục spool jabberd14"}.
@@ -66,7 +64,6 @@
 {"Family Name","Họ"}.
 {"February","Tháng Hai"}.
 {"Friday","Thứ Sáu"}.
-{"From ~s","Nhận từ ~s"}.
 {"From","Từ"}.
 {"Full Name","Tên Đầy Đủ"}.
 {"Get Number of Online Users","Nhận Số Người Sử Dụng Trực Tuyến"}.
@@ -101,7 +98,6 @@
 {"Last month","Tháng trước"}.
 {"Last year","Năm trước"}.
 {"leaves the room","rời khỏi phòng này"}.
-{"List of modules to start","Danh sách các môđun khởi động"}.
 {"Low level update script","Lệnh cập nhật mức độ thấp"}.
 {"Make participants list public","Tạo danh sách người tham dự công khai"}.
 {"Make room members-only","Tạo phòng chỉ cho phép tư cách thành viên tham gia"}.
@@ -116,14 +112,12 @@
 {"Message body","Thân thư"}.
 {"Middle Name","Họ Đệm"}.
 {"Moderator privileges required","Yêu cầu đặc quyền của nhà điều phối"}.
-{"Modules","Môđun"}.
 {"Monday","Thứ Hai"}.
 {"Name","Tên"}.
 {"Name:","Tên:"}.
 {"Never","Không bao giờ"}.
 {"Nickname","Bí danh"}.
 {"Nickname Registration at ","Đăng Ký Bí Danh tại"}.
-{"Nickname ~s does not exist in the room","Bí danh ~s không tồn tại trong phòng này"}.
 {"No body provided for announce message","Không có nội dung trong thư thông báo"}.
 {"No Data","Không Dữ Liệu"}.
 {"Node not found","Nút không tìm thấy"}.
@@ -184,7 +178,6 @@
 {"Room creation is denied by service policy","Việc tạo phòng bị ngăn lại theo chính sách dịch vụ"}.
 {"Room title","Tên phòng"}.
 {"Roster","Bảng phân công"}.
-{"Roster of ","Bảng phân công của "}.
 {"Roster size","Kích thước bảng phân công"}.
 {"RPC Call Error","Lỗi Gọi RPC"}.
 {"Running Nodes","Nút Hoạt Động"}.
@@ -203,15 +196,9 @@
 {"Show Integral Table","Hiển Thị Bảng Đầy Đủ"}.
 {"Show Ordinary Table","Hiển Thị Bảng Thường"}.
 {"Shut Down Service","Tắt Dịch Vụ"}.
-{"~s invites you to the room ~s","~s mời bạn vào phòng ~s"}.
-{"~s's Offline Messages Queue","~s's Danh Sách Chờ Thư Ngoại Tuyến"}.
-{"Start Modules at ","Môđun Khởi Động tại "}.
-{"Start Modules","Môđun Khởi Động"}.
 {"Statistics of ~p","Thống kê về ~p"}.
 {"Statistics","Số liệu thống kê"}.
 {"Stop","Dừng"}.
-{"Stop Modules at ","Môđun Dừng tại"}.
-{"Stop Modules","Môđun Dừng"}.
 {"Stopped Nodes","Nút Dừng"}.
 {"Storage Type","Loại Lưu Trữ"}.
 {"Store binary backup:","Lưu dữ liệu sao lưu dạng nhị phân:"}.
@@ -227,7 +214,6 @@
 {"Time delay","Thời gian trì hoãn"}.
 {"Time","Thời Gian"}.
 {"To","Đến"}.
-{"To ~s","Gửi đến ~s"}.
 {"Traffic rate limit is exceeded","Quá giới hạn tỷ lệ lưu lượng truyền tải"}.
 {"Transactions Aborted:","Giao Dịch Hủy Bỏ:"}.
 {"Transactions Committed:","Giao Dịch Được Cam Kết:"}.

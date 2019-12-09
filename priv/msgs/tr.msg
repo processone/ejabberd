@@ -25,7 +25,6 @@
 {"Backup","Yedekle"}.
 {"Bad format","Kötü biçem"}.
 {"Birthday","Doğumgünü"}.
-{"CAPTCHA web page","CAPTCHA web sayfası"}.
 {"Change Password","Parola Değiştir"}.
 {"Change User Password","Kullanıcı Parolasını Değiştir"}.
 {"Characters not allowed:","İzin verilmeyen karakterler:"}.
@@ -36,14 +35,12 @@
 {"Chatroom is stopped","Sohbet odası durduruldu"}.
 {"Chatrooms","Sohbet Odaları"}.
 {"Choose a username and password to register with this server","Bu sunucuya kayıt olmak için bir kullanıcı ismi ve parola seçiniz"}.
-{"Choose modules to stop","Durdurulacak modülleri seçiniz"}.
 {"Choose storage type of tables","Tabloların veri depolama tipini seçiniz"}.
 {"Choose whether to approve this entity's subscription.","Bu varlığın üyeliğini onaylayıp onaylamamayı seçiniz."}.
 {"City","İl"}.
 {"Commands","Komutlar"}.
 {"Conference room does not exist","Konferans odası bulunamadı"}.
 {"Configuration","Ayarlar"}.
-{"Configuration of room ~s","~s odasının ayarları"}.
 {"Connected Resources:","Bağlı Kaynaklar:"}.
 {"Country","Ülke"}.
 {"CPU Time:","İşlemci Zamanı:"}.
@@ -72,7 +69,6 @@
 {"Email","E-posta"}.
 {"Enable logging","Kayıt tutma özelliğini aç"}.
 {"End User Session","Kullanıcı Oturumunu Kapat"}.
-{"Enter list of {Module, [Options]}","{Module, [Options]} listesi giriniz"}.
 {"Enter nickname you want to register","Kaydettirmek istediğiniz takma ismi giriniz"}.
 {"Enter path to backup file","Yedek dosyasının yolunu giriniz"}.
 {"Enter path to jabberd14 spool dir","jabberd14 spool dosyası için yol giriniz"}.
@@ -88,7 +84,6 @@
 {"February","Şubat"}.
 {"Friday","Cuma"}.
 {"From","Kimden"}.
-{"From ~s","Kimden ~s"}.
 {"Full Name","Tam İsim"}.
 {"Get Number of Online Users","Bağlı Kullanıcı Sayısını Al"}.
 {"Get Number of Registered Users","Kayıtlı Kullanıcı Sayısını Al"}.
@@ -131,7 +126,6 @@
 {"Last month","Geçen ay"}.
 {"Last year","Geçen yıl"}.
 {"leaves the room","odadan ayrıldı"}.
-{"List of modules to start","Başlatılacak modüllerin listesi"}.
 {"Low level update script","Düşük seviye güncelleme betiği"}.
 {"Make participants list public","Katılımcı listesini herkese açık hale getir"}.
 {"Make room CAPTCHA protected","Odayı insan doğrulaması (captcha) korumalı hale getir"}.
@@ -151,14 +145,12 @@
 {"Middle Name","Ortanca İsim"}.
 {"Moderator privileges required","Moderatör yetkileri gerekli"}.
 {"Modified modules","Değişen modüller"}.
-{"Modules","Modüller"}.
 {"Monday","Pazartesi"}.
 {"Name","İsim"}.
 {"Name:","İsim:"}.
 {"Never","Asla"}.
 {"New Password:","Yeni Parola:"}.
 {"Nickname Registration at ","Takma İsim Kaydı : "}.
-{"Nickname ~s does not exist in the room","~s takma ismi odada yok"}.
 {"Nickname","Takma isim"}.
 {"No body provided for announce message","Duyuru mesajının gövdesi yok"}.
 {"No Data","Veri Yok"}.
@@ -233,7 +225,6 @@
 {"Room Occupants","Oda Sakini Sayısı"}.
 {"Room title","Oda başlığı"}.
 {"Roster","Kontak Listesi"}.
-{"Roster of ","Kontak Listesi : "}.
 {"Roster size","İsim listesi boyutu"}.
 {"RPC Call Error","RPC Çağrı Hatası"}.
 {"Running Nodes","Çalışan Düğümler"}.
@@ -253,16 +244,10 @@
 {"Show Integral Table","Önemli Tabloyu Göster"}.
 {"Show Ordinary Table","Sıradan Tabloyu Göster"}.
 {"Shut Down Service","Servisi Kapat"}.
-{"~s invites you to the room ~s","~s sizi ~s odasına davet ediyor"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Bazı Jabber istemcileri parolanızı bilgisayarınızda saklayabilir. Bu özelliği ancak bilgisayarın güvenli olduğuna güveniyorsanız kullanın."}.
-{"~s's Offline Messages Queue","~s Kullanıcısının Mesaj Kuyruğu"}.
-{"Start Modules at ","Modülleri Başlat : "}.
-{"Start Modules","Modülleri Başlat"}.
 {"Statistics","İstatistikler"}.
 {"Statistics of ~p","~p istatistikleri"}.
 {"Stop","Durdur"}.
-{"Stop Modules at ","Modülleri Durdur : "}.
-{"Stop Modules","Modülleri Durdur"}.
 {"Stopped Nodes","Durdurulmuş Düğümler"}.
 {"Storage Type","Depolama Tipi"}.
 {"Store binary backup:","İkili yedeği sakla:"}.
@@ -291,7 +276,6 @@
 {"Time","Zaman"}.
 {"To","Kime"}.
 {"Too many CAPTCHA requests","Çok fazla CAPTCHA isteği"}.
-{"To ~s","Kime ~s"}.
 {"Traffic rate limit is exceeded","Trafik oran sınırı aşıldı"}.
 {"Transactions Aborted:","İptal Edilen Hareketler (Transactions):"}.
 {"Transactions Committed:","Tamamlanan Hareketler (Transactions Committed):"}.

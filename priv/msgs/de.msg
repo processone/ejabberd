@@ -32,7 +32,6 @@
 {"Bytestream already activated","Bytestream bereits aktiviert"}.
 {"Cannot remove active list","Kann aktive Liste nicht entfernen"}.
 {"Cannot remove default list","Kann Standardliste nicht entfernen"}.
-{"CAPTCHA web page","CAPTCHA -Webseite"}.
 {"Change Password","Passwort ändern"}.
 {"Change User Password","Benutzer-Passwort ändern"}.
 {"Changing password is not allowed","Ändern des Passwortes ist nicht erlaubt"}.
@@ -45,14 +44,12 @@
 {"Chatroom is stopped","Chatraum wurde beendet"}.
 {"Chatrooms","Chaträume"}.
 {"Choose a username and password to register with this server","Wählen sie zum Registrieren auf diesem Server einen Benutzernamen und ein Passwort"}.
-{"Choose modules to stop","Wähle zu stoppende Module"}.
 {"Choose storage type of tables","Wähle Speichertyp der Tabellen"}.
 {"Choose whether to approve this entity's subscription.","Wählen Sie, ob dieses Abonnement akzeptiert werden soll."}.
 {"City","Stadt"}.
 {"Commands","Befehle"}.
 {"Conference room does not exist","Konferenzraum existiert nicht"}.
 {"Configuration","Konfiguration"}.
-{"Configuration of room ~s","Konfiguration für Raum ~s"}.
 {"Connected Resources:","Verbundene Ressourcen:"}.
 {"Country","Land"}.
 {"CPU Time:","CPU-Zeit:"}.
@@ -83,11 +80,9 @@
 {"ejabberd Web Admin","ejabberd Web-Admin"}.
 {"Elements","Elemente"}.
 {"Email","E-Mail"}.
-{"Empty password","Leeres Passwort"}.
 {"Enable logging","Protokollierung aktivieren"}.
 {"Enabling push without 'node' attribute is not supported","push ohne 'node'-Attribut zu aktivieren wird nicht unterstützt"}.
 {"End User Session","Benutzer-Sitzung beenden"}.
-{"Enter list of {Module, [Options]}","Geben Sie eine Liste bestehend aus {Modul, [Optionen]} ein"}.
 {"Enter nickname you want to register","Geben Sie den zu registrierenden Benutzernamen ein"}.
 {"Enter path to backup file","Geben Sie den Pfad zur Datensicherungsdatei ein"}.
 {"Enter path to jabberd14 spool dir","Geben Sie den Pfad zum jabberd14-Spool-Verzeichnis ein"}.
@@ -105,12 +100,10 @@
 {"Failed to extract JID from your voice request approval","Fehler beim Auslesen der JID aus der Anfragenbestätigung für Sprachrechte"}.
 {"Failed to map delegated namespace to external component","Konnte delegierten Namensraum nicht externer Komponente zuordnen"}.
 {"Failed to parse HTTP response","Konnte HTTP-Antwort nicht parsen"}.
-{"Failed to process option '~s'","Konnte Option '~s' nicht verarbeiten"}.
 {"Family Name","Nachname"}.
 {"February","Februar"}.
 {"File larger than ~w bytes","Datei größer als ~w Bytes"}.
 {"Friday","Freitag"}.
-{"From ~s","Von ~s"}.
 {"From","Von"}.
 {"Full Name","Vollständiger Name"}.
 {"Get Number of Online Users","Anzahl der angemeldeten Benutzer abrufen"}.
@@ -152,7 +145,6 @@
 {"Invitations are not allowed in this conference","Einladungen sind in dieser Konferenz nicht erlaubt"}.
 {"IP addresses","IP-Adressen"}.
 {"is now known as","ist nun bekannt als"}.
-{"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Es ist nicht erlaubt Fehlermeldungen an den Raum zu senden. Der Teilnehmer (~s) hat eine Fehlermeldung (~s) gesendet und wurde aus dem Raum gekickt"}.
 {"It is not allowed to send private messages","Es ist nicht erlaubt private Nachrichten zu senden"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Es ist nicht erlaubt private Nachrichten des Typs \"Gruppenchat\" zu senden"}.
 {"It is not allowed to send private messages to the conference","Es ist nicht erlaubt private Nachrichten an den Raum zu schicken"}.
@@ -167,7 +159,6 @@
 {"Last month","Letzter Monat"}.
 {"Last year","Letztes Jahr"}.
 {"leaves the room","verlässt den Raum"}.
-{"List of modules to start","Liste der zu startenden Module"}.
 {"List of rooms","Liste von Chaträumen"}.
 {"Low level update script","Low-Level-Aktualisierungsscript"}.
 {"Make participants list public","Teilnehmerliste öffentlich machen"}.
@@ -191,7 +182,6 @@
 {"Moderator privileges required","Moderatorrechte benötigt"}.
 {"Modified modules","Geänderte Module"}.
 {"Module failed to handle the query","Modul konnte die Anfrage nicht verarbeiten"}.
-{"Modules","Module"}.
 {"Monday","Montag"}.
 {"Multicast","Multicast"}.
 {"Multiple <item/> elements are not allowed by RFC6121","Mehrere <item/>-Elemente sind laut RFC6121 nicht erlaubt"}.
@@ -204,7 +194,6 @@
 {"New Password:","Neues Passwort:"}.
 {"Nickname","Benutzername"}.
 {"Nickname Registration at ","Registrieren des Benutzernames auf "}.
-{"Nickname ~s does not exist in the room","Der Benutzername ~s existiert im Raum nicht"}.
 {"No 'affiliation' attribute found","Kein 'affiliation'-Attribut gefunden"}.
 {"No available resource found","Keine verfügbare Ressource gefunden"}.
 {"No body provided for announce message","Kein Text für die Ankündigungsnachricht angegeben"}.
@@ -223,7 +212,6 @@
 {"No items found in this query","Keine Elemente in dieser Anfrage gefunden"}.
 {"No limit","Keine Begrenzung"}.
 {"No module is handling this query","Kein Modul verarbeitet diese Anfrage"}.
-{"No 'modules' found in data form","Kein 'modules' in Datenformular gefunden"}.
 {"None","Keine"}.
 {"No node specified","Kein Knoten angegeben"}.
 {"No 'password' found in data form","Kein 'password' in Datenformular gefunden"}.
@@ -264,7 +252,6 @@
 {"Outgoing s2s Connections:","Ausgehende s2s-Verbindungen:"}.
 {"Owner privileges required","Besitzerrechte benötigt"}.
 {"Packet","Paket"}.
-{"Parse failed","Parsen fehlgeschlagen"}.
 {"Password","Passwort"}.
 {"Password:","Passwort:"}.
 {"Password Verification","Passwort bestätigen"}.
@@ -311,13 +298,10 @@
 {"Room Occupants","Teilnehmer in diesem Raum"}.
 {"Room title","Raumname"}.
 {"Roster","Kontaktliste"}.
-{"Roster module has failed","Roster-Modul schlug fehl"}.
-{"Roster of ","Kontaktliste von "}.
 {"Roster size","Kontaktlistengröße"}.
 {"RPC Call Error","Fehler bei RPC-Aufruf"}.
 {"Running Nodes","Aktive Knoten"}.
 {"Saturday","Samstag"}.
-{"Scan failed","Scan fehlgeschlagen"}.
 {"Script check","Script-Überprüfung"}.
 {"Search Results for ","Suchergebnisse für "}.
 {"Search users in ","Benutzer suchen in "}.
@@ -326,7 +310,6 @@
 {"Send announcement to all users on all hosts","Sende Ankündigung an alle Benutzer auf allen Hosts"}.
 {"Send announcement to all users","Sende Ankündigung an alle Benutzer"}.
 {"September","September"}.
-{"Server connections to local subdomains are forbidden","Serververbindungen zu lokalen Subdomains sind verboten"}.
 {"Server:","Server:"}.
 {"Set message of the day and send to online users","Setze Nachricht des Tages und sende sie an alle angemeldeten Benutzer"}.
 {"Set message of the day on all hosts and send to online users","Setze Nachricht des Tages auf allen Hosts und sende sie an alle angemeldeten Benutzer"}.
@@ -334,15 +317,9 @@
 {"Show Integral Table","Integral-Tabelle anzeigen"}.
 {"Show Ordinary Table","Gewöhnliche Tabelle anzeigen"}.
 {"Shut Down Service","Dienst herunterfahren"}.
-{"~s invites you to the room ~s","~s lädt Sie in den Raum ~s ein"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Einige Jabber-Clients speichern Ihr Passwort auf dem Computer. Aus Sicherheitsgründen sollten Sie das nur auf Ihrem persönlichen Computer tun."}.
-{"~s's Offline Messages Queue","~ss Offline-Nachrichten-Warteschlange"}.
-{"Start Modules at ","Starte Module auf "}.
-{"Start Modules","Module starten"}.
 {"Statistics of ~p","Statistiken von ~p"}.
 {"Statistics","Statistiken"}.
-{"Stop Modules at ","Stoppe Module auf "}.
-{"Stop Modules","Module stoppen"}.
 {"Stopped Nodes","Angehaltene Knoten"}.
 {"Stop","Stoppen"}.
 {"Storage Type","Speichertyp"}.
@@ -382,11 +359,8 @@
 {"Too many CAPTCHA requests","Zu viele CAPTCHA-Anfragen"}.
 {"Too many <item/> elements","Zu viele <item/>-Elemente"}.
 {"Too many <list/> elements","Zu viele <list/>-Elemente"}.
-{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Zu viele (~p) fehlgeschlagene Anmeldeversuche von dieser IP Adresse (~s). Die Adresse wird bis ~s UTC blockiert."}.
 {"Too many unacked stanzas","Zu viele unbestätigte Stanzas"}.
 {"Too many users in this conference","Zu viele Benutzer in dieser Konferenz"}.
-{"To register, visit ~s","Um sich anzumelden, besuchen Sie ~s"}.
-{"To ~s","An ~s"}.
 {"Total rooms","Alle Chaträume"}.
 {"Traffic rate limit is exceeded","Datenratenlimit wurde überschritten"}.
 {"Transactions Aborted:","Abgebrochene Transaktionen:"}.
@@ -415,15 +389,11 @@
 {"Username:","Benutzername:"}.
 {"Users are not allowed to register accounts so quickly","Benutzer dürfen Konten nicht so schnell registrieren"}.
 {"Users","Benutzer"}.
-{"User ~s","Benutzer ~s"}.
 {"User session not found","Benutzersitzung nicht gefunden"}.
 {"User session terminated","Benutzersitzung beendet"}.
 {"Users Last Activity","Letzte Benutzeraktivität"}.
 {"Validate","Validieren"}.
 {"Value 'get' of 'type' attribute is not allowed","Wert 'get' des 'type'-Attributs ist nicht erlaubt"}.
-{"Value of '~s' should be boolean","Wert von '~s' sollte boolesch sein"}.
-{"Value of '~s' should be datetime string","Wert von '~s' sollte datetime-String sein"}.
-{"Value of '~s' should be integer","Wert von '~s' sollte eine Ganzzahl sein"}.
 {"Value 'set' of 'type' attribute is not allowed","Wert 'set' des 'type'-Attributs ist nicht erlaubt"}.
 {"vCard User Search","vCard-Benutzer-Suche"}.
 {"Virtual Hosts","Virtuelle Hosts"}.

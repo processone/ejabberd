@@ -32,7 +32,6 @@
 {"Bytestream already activated","Bytestream již byl aktivován"}.
 {"Cannot remove active list","Aktivní seznam nelze odebrat"}.
 {"Cannot remove default list","Výchozí seznam nelze odebrat"}.
-{"CAPTCHA web page","Webová stránka CAPTCHA"}.
 {"Change Password","Změnit heslo"}.
 {"Change User Password","Změnit heslo uživatele"}.
 {"Changing password is not allowed","Změna hesla není povolena"}.
@@ -45,14 +44,12 @@
 {"Chatroom is stopped","Místnost zastavena"}.
 {"Chatrooms","Místnosti"}.
 {"Choose a username and password to register with this server","Zadejte jméno uživatele a heslo pro registraci na tomto serveru"}.
-{"Choose modules to stop","Vyberte moduly, které mají být zastaveny"}.
 {"Choose storage type of tables","Vyberte typ úložiště pro tabulky"}.
 {"Choose whether to approve this entity's subscription.","Zvolte, zda chcete schválit odebírání touto entitou."}.
 {"City","Město"}.
 {"Commands","Příkazy"}.
 {"Conference room does not exist","Místnost neexistuje"}.
 {"Configuration","Konfigurace"}.
-{"Configuration of room ~s","Konfigurace místnosti ~s"}.
 {"Connected Resources:","Připojené zdroje:"}.
 {"Country","Země"}.
 {"CPU Time:","Čas procesoru:"}.
@@ -83,11 +80,9 @@
 {"ejabberd Web Admin","Webová administrace ejabberd"}.
 {"Elements","Položek"}.
 {"Email","E-mail"}.
-{"Empty password","Prázdné heslo"}.
 {"Enable logging","Zaznamenávat konverzace"}.
 {"Enabling push without 'node' attribute is not supported","Aktivováno push bez atributu 'node' není podporováno"}.
 {"End User Session","Ukončit sezení uživatele"}.
-{"Enter list of {Module, [Options]}","Vložte seznam modulů {Modul, [Parametry]}"}.
 {"Enter nickname you want to register","Zadejte přezdívku, kterou chcete zaregistrovat"}.
 {"Enter path to backup file","Zadajte cestu k souboru se zálohou"}.
 {"Enter path to jabberd14 spool dir","Zadejte cestu k jabberd14 spool adresáři"}.
@@ -105,13 +100,11 @@
 {"Failed to extract JID from your voice request approval","Došlo k chybě při získávání Jabber ID z vaší žádosti o voice práva"}.
 {"Failed to map delegated namespace to external component","Chyba při mapování namespace pro externí komponentu"}.
 {"Failed to parse HTTP response","Chyba parsování HTTP odpovědi"}.
-{"Failed to process option '~s'","Chyba při zpracování možnosti '~s'"}.
 {"Family Name","Příjmení"}.
 {"February",". února"}.
 {"File larger than ~w bytes","Soubor větší než ~w bytů"}.
 {"Friday","Pátek"}.
 {"From","Od"}.
-{"From ~s","Od  ~s"}.
 {"Full Name","Celé jméno"}.
 {"Get Number of Online Users","Získat počet online uživatelů"}.
 {"Get Number of Registered Users","Získat počet registrovaných uživatelů"}.
@@ -152,7 +145,6 @@
 {"Invitations are not allowed in this conference","Pozvánky nejsou povoleny v této místnosti"}.
 {"IP addresses","IP adresy"}.
 {"is now known as","se přejmenoval(a) na"}.
-{"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Není povoleno posílat chybové zprávy do místnosti. Účastník (~s) odeslal chybovou zprávu (~s) a byl vyhozen z místnosti"}.
 {"It is not allowed to send private messages","Je zakázáno posílat soukromé zprávy"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Není dovoleno odeslání soukromé zprávy typu \"skupinová zpráva\" "}.
 {"It is not allowed to send private messages to the conference","Není povoleno odesílat soukromé zprávy v této místnosti"}.
@@ -167,7 +159,6 @@
 {"Last month","Poslední měsíc"}.
 {"Last year","Poslední rok"}.
 {"leaves the room","opustil(a) místnost"}.
-{"List of modules to start","Seznam modulů, které mají být spuštěné"}.
 {"List of rooms","Seznam místností"}.
 {"Low level update script","Nízkoúrovňový aktualizační skript"}.
 {"Make participants list public","Nastavit seznam účastníků jako veřejný"}.
@@ -191,7 +182,6 @@
 {"Moderator privileges required","Potřebujete práva moderátora"}.
 {"Modified modules","Aktualizované moduly"}.
 {"Module failed to handle the query","Modul chyboval při zpracování dotazu"}.
-{"Modules","Moduly"}.
 {"Monday","Pondělí"}.
 {"Multicast","Multicast"}.
 {"Multiple <item/> elements are not allowed by RFC6121","Vícenásobný element <item/> není povolen dle RFC6121"}.
@@ -204,7 +194,6 @@
 {"New Password:","Nové heslo:"}.
 {"Nickname","Přezdívka"}.
 {"Nickname Registration at ","Registrace přezdívky na "}.
-{"Nickname ~s does not exist in the room","Přezdívka ~s v místnosti neexistuje"}.
 {"No 'affiliation' attribute found","Chybějící atribut 'affiliation'"}.
 {"No available resource found","Nebyl nalezen žádný dostupný zdroj"}.
 {"No body provided for announce message","Zpráva neobsahuje text"}.
@@ -223,7 +212,6 @@
 {"No items found in this query","Žádné položky nebyly nalezeny v tomto dotazu"}.
 {"No limit","Bez limitu"}.
 {"No module is handling this query","Žádný modul neobsluhuje tento dotaz"}.
-{"No 'modules' found in data form","Chybějící atribut 'modules' v datovém formuláři"}.
 {"None","Nic"}.
 {"No node specified","Žádný uzel nebyl specifikován"}.
 {"No 'password' found in data form","Chybějící atribut 'password' v datovém formuláři"}.
@@ -264,7 +252,6 @@
 {"Outgoing s2s Connections:","Odchozí s2s spojení:"}.
 {"Owner privileges required","Jsou vyžadována práva vlastníka"}.
 {"Packet","Paket"}.
-{"Parse failed","Došlo k chybě při parsování"}.
 {"Password","Heslo"}.
 {"Password:","Heslo:"}.
 {"Password Verification","Ověření hesla"}.
@@ -310,14 +297,11 @@
 {"Room description","Popis místnosti"}.
 {"Room Occupants","Počet účastníků"}.
 {"Room title","Název místnosti"}.
-{"Roster module has failed","Modul Roster chyboval"}.
-{"Roster of ","Seznam kontaktů "}.
 {"Roster","Seznam kontaktů"}.
 {"Roster size","Velikost seznamu kontaktů"}.
 {"RPC Call Error","Chyba RPC volání"}.
 {"Running Nodes","Běžící uzly"}.
 {"Saturday","Sobota"}.
-{"Scan failed","Při skenování došlo k chybě"}.
 {"Script check","Kontrola skriptu"}.
 {"Search Results for ","Výsledky hledání pro "}.
 {"Search users in ","Hledat uživatele v "}.
@@ -326,7 +310,6 @@
 {"Send announcement to all users","Odeslat oznámení všem uživatelům"}.
 {"Send announcement to all users on all hosts","Odeslat oznámení všem uživatelům na všech hostitelích"}.
 {"September",". září"}.
-{"Server connections to local subdomains are forbidden","Serverová spojení k lokálním subdoménám je zakázáno"}.
 {"Server:","Server:"}.
 {"Set message of the day and send to online users","Nastavit zprávu dne a odeslat ji online uživatelům"}.
 {"Set message of the day on all hosts and send to online users","Nastavit zprávu dne a odeslat ji online uživatelům"}.
@@ -334,15 +317,9 @@
 {"Show Integral Table","Zobrazit kompletní tabulku"}.
 {"Show Ordinary Table","Zobrazit běžnou tabulku"}.
 {"Shut Down Service","Vypnout službu"}.
-{"~s invites you to the room ~s","~s vás zve do místnosti ~s"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Někteří klienti umí uložit vaše heslo na disk počítače. Tuto funkci používejte, pouze pokud věříte zabezpečení svého počítače."}.
-{"~s's Offline Messages Queue","Fronta offline zpráv uživatele ~s"}.
-{"Start Modules at ","Spustit moduly na "}.
-{"Start Modules","Spustit moduly"}.
 {"Statistics of ~p","Statistiky ~p"}.
 {"Statistics","Statistiky"}.
-{"Stop Modules at ","Zastavit moduly na "}.
-{"Stop Modules","Zastavit moduly"}.
 {"Stopped Nodes","Zastavené uzly"}.
 {"Stop","Stop"}.
 {"Storage Type","Typ úložiště"}.
@@ -381,12 +358,9 @@
 {"Too many CAPTCHA requests","Přiliš mnoho CAPTCHA žádostí"}.
 {"Too many <item/> elements","Příliš mnoho elementů <item/>"}.
 {"Too many <list/> elements","Přilíš mnoho elementů <list/>"}.
-{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Příliš mnoho (~p) chybných pokusů o přihlášení z této IP adresy (~s). Adresa bude zablokována do ~s UTC"}.
 {"Too many unacked stanzas","Příliš mnoho nepotvrzených stanz"}.
 {"Too many users in this conference","Přiliš mnoho uživatelů v této místnosti"}.
 {"To","Pro"}.
-{"To register, visit ~s","Pokud se chcete zaregistrovat, navštivte ~s"}.
-{"To ~s","Pro ~s"}.
 {"Total rooms","Celkem místností"}.
 {"Traffic rate limit is exceeded","Byl překročen limit"}.
 {"Transactions Aborted:","Transakcí zrušených:"}.
@@ -417,13 +391,9 @@
 {"User session terminated","Sezení uživatele bylo ukončeno"}.
 {"Users Last Activity","Poslední aktivita uživatele"}.
 {"Users","Uživatelé"}.
-{"User ~s","Uživatel ~s"}.
 {"User","Uživatel"}.
 {"Validate","Ověřit"}.
 {"Value 'get' of 'type' attribute is not allowed","Hodnota 'get' atrubutu 'type' není povolena"}.
-{"Value of '~s' should be boolean","Hodnota  '~s' by měla být boolean"}.
-{"Value of '~s' should be datetime string","Hodnota  '~s' by měla být datetime řetězec"}.
-{"Value of '~s' should be integer","Hodnota '~s' by měla být celé číslo"}.
 {"Value 'set' of 'type' attribute is not allowed","Hodnota 'set' atrubutu 'type' není povolena"}.
 {"vCard User Search","Hledání uživatelů ve vizitkách"}.
 {"Virtual Hosts","Virtuální hostitelé"}.
