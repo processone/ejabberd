@@ -44,6 +44,7 @@
 	 escape_like/1,
 	 escape_like_arg/1,
 	 escape_like_arg_circumflex/1,
+         to_string_literal/2,
 	 to_bool/1,
 	 sqlite_db/1,
 	 sqlite_file/1,
@@ -250,6 +251,17 @@ to_list(EscapeFun, Val) ->
 to_array(EscapeFun, Val) ->
     Escaped = lists:join(<<",">>, lists:map(EscapeFun, Val)),
     [<<"{">>, Escaped, <<"}">>].
+
+to_string_literal(odbc, S) ->
+    <<"'", (escape(S))/binary, "'">>;
+to_string_literal(mysql, S) ->
+    <<"'", (escape(S))/binary, "'">>;
+to_string_literal(mssql, S) ->
+    <<"'", (standard_escape(S))/binary, "'">>;
+to_string_literal(sqlite, S) ->
+    <<"'", (standard_escape(S))/binary, "'">>;
+to_string_literal(pgsql, S) ->
+    <<"E'", (escape(S))/binary, "'">>.
 
 encode_term(Term) ->
     escape(list_to_binary(
