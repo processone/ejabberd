@@ -440,12 +440,10 @@ add_message_to_log(Nick1, Message, RoomJID, Opts,
     {_, _, Microsecs} = Now,
     STimeUnique = io_lib:format("~ts.~w",
 				[STime, Microsecs]),
-    catch fw(F,
-       list_to_binary(
-         io_lib:format("<a id=\"~ts\" name=\"~ts\" href=\"#~ts\" "
+    fw(F, io_lib:format("<a id=\"~ts\" name=\"~ts\" href=\"#~ts\" "
                        "class=\"ts\">[~ts]</a> ",
                        [STimeUnique, STimeUnique, STimeUnique, STime])
-	 ++ Text),
+	 ++ Text,
        FileFormat),
     file:close(F),
     ok.
@@ -529,7 +527,7 @@ fw(F, S, FileFormat) when is_atom(FileFormat) ->
     fw(F, S, [], FileFormat).
 
 fw(F, S, O, FileFormat) ->
-    S1 = (str:format(binary_to_list(S) ++ "~n", O)),
+    S1 = <<(str:format(S, O))/binary, "\n">>,
     S2 = case FileFormat of
 	     html ->
 		 S1;
