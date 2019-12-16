@@ -40,13 +40,12 @@
 %% -spec read_subscription(SubID :: string()) -> {ok, #pubsub_subscription{}} |  notfound.
 read_subscription(SubID) ->
     case
-	ejabberd_sql:sql_query_t([<<"select opt_name, opt_value from pubsub_subscr"
-		    "iption_opt where subid = '">>,
-		ejabberd_sql:escape(SubID), <<"'">>])
+	ejabberd_sql:sql_query_t(
+          ?SQL("select @(opt_name)s, @(opt_value)s from pubsub_subscription_opt where subid = %(SubID)s"))
     of
-	{selected, [<<"opt_name">>, <<"opt_value">>], []} ->
+	{selected, []} ->
 	    notfound;
-	{selected, [<<"opt_name">>, <<"opt_value">>], Options} ->
+	{selected, Options} ->
 	    {ok,
 		#pubsub_subscription{subid = SubID,
 		    options = lists:map(fun subscription_opt_from_sql/1, Options)}}
@@ -57,48 +56,47 @@ delete_subscription(SubID) ->
     %% -spec update_subscription(#pubsub_subscription{}) -> ok .
     %% -spec add_subscription(#pubsub_subscription{}) -> ok.
     %% -------------- Internal utilities -----------------------
-    ejabberd_sql:sql_query_t([<<"delete from pubsub_subscription_opt "
-		"where subid = '">>,
-	    ejabberd_sql:escape(SubID), <<"'">>]),
+    ejabberd_sql:sql_query_t(
+      ?SQL("delete from pubsub_subscription_opt "
+           "where subid = %(SubID)s")),
     ok.
 
 update_subscription(#pubsub_subscription{subid = SubId} = Sub) ->
     delete_subscription(SubId), add_subscription(Sub).
 
 add_subscription(#pubsub_subscription{subid = SubId, options = Opts}) ->
-    EscapedSubId = ejabberd_sql:escape(SubId),
-    lists:foreach(fun (Opt) ->
-		{OdbcOptName, OdbcOptValue} = subscription_opt_to_sql(Opt),
-		ejabberd_sql:sql_query_t([<<"insert into pubsub_subscription_opt(subid, "
-			    "opt_name, opt_value)values ('">>,
-			EscapedSubId, <<"','">>,
-			OdbcOptName, <<"','">>,
-			OdbcOptValue, <<"')">>])
-	end,
-	Opts),
+    lists:foreach(
+      fun(Opt) ->
+              {OdbcOptName, OdbcOptValue} = subscription_opt_to_sql(Opt),
+              ejabberd_sql:sql_query_t(
+                ?SQL("insert into pubsub_subscription_opt(subid, "
+                     "opt_name, opt_value) values "
+                     "(%(SubId)s, %(OdbcOptName)s, %(OdbcOptValue)s)"))
+      end,
+      Opts),
     ok.
 
-subscription_opt_from_sql([<<"DELIVER">>, Value]) ->
+subscription_opt_from_sql({<<"DELIVER">>, Value}) ->
     {deliver, sql_to_boolean(Value)};
-subscription_opt_from_sql([<<"DIGEST">>, Value]) ->
+subscription_opt_from_sql({<<"DIGEST">>, Value}) ->
     {digest, sql_to_boolean(Value)};
-subscription_opt_from_sql([<<"DIGEST_FREQUENCY">>, Value]) ->
+subscription_opt_from_sql({<<"DIGEST_FREQUENCY">>, Value}) ->
     {digest_frequency, sql_to_integer(Value)};
-subscription_opt_from_sql([<<"EXPIRE">>, Value]) ->
+subscription_opt_from_sql({<<"EXPIRE">>, Value}) ->
     {expire, sql_to_timestamp(Value)};
-subscription_opt_from_sql([<<"INCLUDE_BODY">>, Value]) ->
+subscription_opt_from_sql({<<"INCLUDE_BODY">>, Value}) ->
     {include_body, sql_to_boolean(Value)};
 %%TODO: might be > than 1 show_values value??.
 %%      need to use compact all in only 1 opt.
-subscription_opt_from_sql([<<"SHOW_VALUES">>, Value]) ->
+subscription_opt_from_sql({<<"SHOW_VALUES">>, Value}) ->
     {show_values, Value};
-subscription_opt_from_sql([<<"SUBSCRIPTION_TYPE">>, Value]) ->
+subscription_opt_from_sql({<<"SUBSCRIPTION_TYPE">>, Value}) ->
     {subscription_type,
 	case Value of
 	    <<"items">> -> items;
 	    <<"nodes">> -> nodes
 	end};
-subscription_opt_from_sql([<<"SUBSCRIPTION_DEPTH">>, Value]) ->
+subscription_opt_from_sql({<<"SUBSCRIPTION_DEPTH">>, Value}) ->
     {subscription_depth,
 	case Value of
 	    <<"all">> -> all;

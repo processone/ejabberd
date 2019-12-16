@@ -45,6 +45,7 @@
 	 escape_like_arg/1,
 	 escape_like_arg_circumflex/1,
          to_string_literal/2,
+         to_string_literal_t/1,
 	 to_bool/1,
 	 sqlite_db/1,
 	 sqlite_file/1,
@@ -262,6 +263,10 @@ to_string_literal(sqlite, S) ->
     <<"'", (standard_escape(S))/binary, "'">>;
 to_string_literal(pgsql, S) ->
     <<"E'", (escape(S))/binary, "'">>.
+
+to_string_literal_t(S) ->
+    State = get(?STATE_KEY),
+    to_string_literal(State#state.db_type, S).
 
 encode_term(Term) ->
     escape(list_to_binary(
