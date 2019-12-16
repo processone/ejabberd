@@ -27,11 +27,17 @@
 %%% API
 %%%===================================================================
 map_reduce(Y) ->
-    F = fun(Y1) ->
-		Y2 = (validator())(Y1),
-		Y3 = transform(Y2),
+    F =
+    fun(Y1) ->
+	Y2 = (validator())(Y1),
+	Y3 = transform(Y2),
+	case application:get_env(ejabberd, custom_config_transformer) of
+	    {ok, TransMod} when is_atom(TransMod) ->
+		TransMod:transform(Y3);
+	    _ ->
 		Y3
-	end,
+	end
+    end,
     econf:validate(F, Y).
 
 %%%===================================================================
