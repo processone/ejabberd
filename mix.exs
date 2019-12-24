@@ -120,6 +120,7 @@ defmodule Ejabberd.Mixfile do
   defp cond_apps do
     for {:true, app} <- [{config(:redis), :eredis},
                          {config(:mysql), :p1_mysql},
+                         {config(:odbc), :odbc},
                          {config(:pgsql), :p1_pgsql},
                          {config(:sqlite), :sqlite3},
                          {config(:zlib), :ezlib}], do:
