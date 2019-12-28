@@ -84,8 +84,6 @@ stop() ->
     ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 20).
 
 init([]) ->
-    file:delete(ejabberd_sql:freetds_config()),
-    file:delete(ejabberd_sql:odbc_config()),
     file:delete(ejabberd_sql:odbcinst_config()),
     ejabberd_hooks:add(host_up, ?MODULE, start, 20),
     ejabberd_hooks:add(host_down, ?MODULE, stop, 90),
@@ -98,7 +96,7 @@ init([Host]) ->
         sqlite ->
             check_sqlite_db(Host);
 	mssql ->
-	    ejabberd_sql:init_mssql(Host);
+	    ejabberd_sql:init_mssql();
         _ ->
             ok
     end,
