@@ -69,6 +69,11 @@ init_config(Config) ->
 		       {mysql_db, <<"ejabberd_test">>},
 		       {mysql_user, <<"ejabberd_test">>},
 		       {mysql_pass, <<"ejabberd_test">>},
+		       {mssql_server, <<"localhost">>},
+		       {mssql_port, 1433},
+		       {mssql_db, <<"ejabberd_test">>},
+		       {mssql_user, <<"ejabberd_test">>},
+		       {mssql_pass, <<"ejabberd_Test1">>},
 		       {pgsql_server, <<"localhost">>},
 		       {pgsql_port, 5432},
 		       {pgsql_db, <<"ejabberd_test">>},
@@ -139,14 +144,26 @@ copy_backend_configs(DataDir, CWD, Backends) ->
 		      Backend = list_to_atom(SBackend),
 		      Macro = list_to_atom(string:to_upper(SBackend) ++ "_CONFIG"),
 		      Dst = filename:join([CWD, File]),
-		      case lists:member(Backend, Backends) of
-			  true ->
-			      {ok, _} = file:copy(Src, Dst);
-			  false ->
-			      ok = file:write_file(
-				     Dst, fast_yaml:encode(
-					    [{define_macro, [{Macro, []}]}]))
-		      end;
+		      case Backend of
+		      	mssql ->
+			      case lists:member(odbc, Backends) of
+				  true ->
+				      {ok, _} = file:copy(Src, Dst);
+				  false ->
+				      ok = file:write_file(
+					     Dst, fast_yaml:encode(
+						    [{define_macro, [{Macro, []}]}]))
+			      end;
+		      	_ ->
+			      case lists:member(Backend, Backends) of
+				  true ->
+				      {ok, _} = file:copy(Src, Dst);
+				  false ->
+				      ok = file:write_file(
+					     Dst, fast_yaml:encode(
+						    [{define_macro, [{Macro, []}]}]))
+			      end
+			    end;
 		  _ ->
 		      ok
 	      end
