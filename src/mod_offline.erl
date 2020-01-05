@@ -493,26 +493,20 @@ store_packet({_Action, #message{from = From, to = To} = Packet} = Acc) ->
 	    case check_event(Packet) of
 		true ->
 		    #jid{luser = LUser, lserver = LServer} = To,
-		    case ejabberd_hooks:run_fold(store_offline_message, LServer,
-						 Packet, []) of
-			drop ->
-			    Acc;
-			NewPacket ->
-			    TimeStamp = erlang:timestamp(),
-			    Expire = find_x_expire(TimeStamp, NewPacket),
-			    OffMsg = #offline_msg{us = {LUser, LServer},
-						  timestamp = TimeStamp,
-						  expire = Expire,
-						  from = From,
-						  to = To,
-						  packet = NewPacket},
-			    case store_offline_msg(OffMsg) of
-				ok ->
-				    {offlined, NewPacket};
-				{error, Reason} ->
-				    discard_warn_sender(Packet, Reason),
-				    stop
-			    end
+		    TimeStamp = erlang:timestamp(),
+		    Expire = find_x_expire(TimeStamp, Packet),
+		    OffMsg = #offline_msg{us = {LUser, LServer},
+					  timestamp = TimeStamp,
+					  expire = Expire,
+					  from = From,
+					  to = To,
+					  packet = Packet},
+		    case store_offline_msg(OffMsg) of
+			ok ->
+			    {offlined, Packet};
+			{error, Reason} ->
+			    discard_warn_sender(Packet, Reason),
+			    stop
 		    end;
 		_ ->
 		    maybe_update_cache(To, Packet),

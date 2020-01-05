@@ -209,8 +209,8 @@ register_hooks(Host) ->
 		       c2s_stanza, 50),
     ejabberd_hooks:add(store_mam_message, Host, ?MODULE,
 		       mam_message, 50),
-    ejabberd_hooks:add(store_offline_message, Host, ?MODULE,
-		       offline_message, 50),
+    ejabberd_hooks:add(offline_message_hook, Host, ?MODULE,
+		       offline_message, 55),
     ejabberd_hooks:add(remove_user, Host, ?MODULE,
 		       remove_user, 50).
 
@@ -228,8 +228,8 @@ unregister_hooks(Host) ->
 			  c2s_stanza, 50),
     ejabberd_hooks:delete(store_mam_message, Host, ?MODULE,
 			  mam_message, 50),
-    ejabberd_hooks:delete(store_offline_message, Host, ?MODULE,
-			  offline_message, 50),
+    ejabberd_hooks:delete(offline_message_hook, Host, ?MODULE,
+			  offline_message, 55),
     ejabberd_hooks:delete(remove_user, Host, ?MODULE,
 			  remove_user, 50).
 
@@ -373,10 +373,12 @@ mam_message(#message{} = Pkt, LUser, LServer, _Peer, _Nick, chat, Dir) ->
 mam_message(Pkt, _LUser, _LServer, _Peer, _Nick, _Type, _Dir) ->
     Pkt.
 
--spec offline_message(message()) -> message().
-offline_message(#message{meta = #{mam_archived := true}} = Pkt) ->
-    Pkt; % Push notification was triggered via MAM.
-offline_message(#message{to = #jid{luser = LUser, lserver = LServer}} = Pkt) ->
+-spec offline_message({any(), message()}) -> {any(), message()}.
+offline_message({offlined, #message{meta = #{mam_archived := true}}} = Acc) ->
+    Acc; % Push notification was triggered via MAM.
+offline_message({offlined,
+		 #message{to = #jid{luser = LUser,
+				    lserver = LServer}} = Pkt} = Acc) ->
     case lookup_sessions(LUser, LServer) of
 	{ok, [_|_] = Clients} ->
 	    ?DEBUG("Notifying ~ts@~ts of offline message", [LUser, LServer]),
@@ -384,7 +386,9 @@ offline_message(#message{to = #jid{luser = LUser, lserver = LServer}} = Pkt) ->
 	_ ->
 	    ok
     end,
-    Pkt.
+    Acc;
+offline_message(Acc) ->
+    Acc.
 
 -spec c2s_session_pending(c2s_state()) -> c2s_state().
 c2s_session_pending(#{push_enabled := true, mgmt_queue := Queue} = State) ->
