@@ -26,6 +26,7 @@
 
 %% gen_mod callbacks
 -export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1, mod_options/1]).
+-export([mod_doc/0]).
 %% Hooks and handlers
 -export([bounce_sm_packet/1,
 	 disco_sm_features/5,
@@ -102,6 +103,40 @@ mod_options(Host) ->
      {cache_size, ejabberd_option:cache_size(Host)},
      {cache_missed, ejabberd_option:cache_missed(Host)},
      {cache_life_time, ejabberd_option:cache_life_time(Host)}].
+
+mod_doc() ->
+    #{desc =>
+          [?T("This module implements "
+              "https://xmpp.org/extensions/xep-0405.html"
+              "[XEP-0405: Mediated Information eXchange (MIX): "
+              "Participant Server Requirements]. "
+              "The module is needed if MIX compatible clients "
+              "on your server are going to join MIX channels "
+              "(either on your server or on any remote servers)."), "",
+           ?T("NOTE: 'mod_mix' is not required for this module "
+              "to work, however, without 'mod_mix_pam' the MIX "
+              "functionality of your local XMPP clients will be impaired.")],
+      opts =>
+          [{db_type,
+            #{value => "mnesia | sql",
+              desc =>
+                  ?T("Same as top-level 'default_db' option, but applied to this module only.")}},
+           {use_cache,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
+           {cache_size,
+            #{value => "pos_integer() | infinity",
+              desc =>
+                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+           {cache_missed,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'cache_missed' option, but applied to this module only.")}},
+           {cache_life_time,
+            #{value => "timeout()",
+              desc =>
+                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}]}.
 
 -spec bounce_sm_packet({term(), stanza()}) -> {term(), stanza()}.
 bounce_sm_packet({_, #message{to = #jid{lresource = <<>>} = To,

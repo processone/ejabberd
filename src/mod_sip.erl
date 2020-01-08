@@ -29,7 +29,7 @@
 -include("logger.hrl").
 
 -ifndef(SIP).
--export([start/2, stop/1, depends/2, mod_options/1]).
+-export([start/2, stop/1, depends/2, mod_options/1, mod_doc/0]).
 start(_, _) ->
     ?CRITICAL_MSG("ejabberd is not compiled with SIP support", []),
     {error, sip_not_compiled}.
@@ -49,9 +49,11 @@ mod_options(_) ->
 
 -export([data_in/2, data_out/2, message_in/2,
 	 message_out/2, request/2, request/3, response/2,
-	 locate/1, mod_opt_type/1, mod_options/1, depends/2]).
+	 locate/1, mod_opt_type/1, mod_options/1, depends/2,
+         mod_doc/0]).
 
 -include_lib("esip/include/esip.hrl").
+-include("translate.hrl").
 
 %%%===================================================================
 %%% API
@@ -336,20 +338,30 @@ mod_opt_type(routes) ->
     econf:list(econf:sip_uri());
 mod_opt_type(via) ->
     econf:list(
-      econf:and_then(
-	econf:options(
-	  #{type => econf:enum([tcp, tls, udp]),
-	    host => econf:domain(),
-	    port => econf:port()},
-	  [{required, [type, host]}]),
-	fun(Opts) ->
-		Type = proplists:get_value(type, Opts),
-		Host = proplists:get_value(host, Opts),
-		Port = proplists:get_value(port, Opts),
-		{Type, {Host, Port}}
-	end)).
+      fun(L) when is_list(L) ->
+              (econf:and_then(
+                 econf:options(
+                   #{type => econf:enum([tcp, tls, udp]),
+                     host => econf:domain(),
+                     port => econf:port()},
+                   [{required, [type, host]}]),
+                 fun(Opts) ->
+                         Type = proplists:get_value(type, Opts),
+                         Host = proplists:get_value(host, Opts),
+                         Port = proplists:get_value(port, Opts),
+                         {Type, {Host, Port}}
+                 end))(L);
+         (U) ->
+              (econf:and_then(
+                 econf:url([tls, tcp, udp]),
+                 fun(URI) ->
+                         {ok, {Type, _, Host, Port, _, _}} =
+                             http_uri:parse(binary_to_list(URI)),
+                         {Type, {unicode:characters_to_binary(Host), Port}}
+                 end))(U)
+      end, [unique]).
 
--spec mod_options(binary()) -> [{via, [{tcp | tls | udp, {binary(), 1..65535 | undefined}}]} |
+-spec mod_options(binary()) -> [{via, [{tcp | tls | udp, {binary(), 1..65535}}]} |
 				{atom(), term()}].
 mod_options(Host) ->
     Route = #uri{scheme = <<"sip">>,
@@ -363,3 +375,79 @@ mod_options(Host) ->
      {via, []}].
 
 -endif.
+
+mod_doc() ->
+    #{desc =>
+          [?T("This module adds SIP proxy/registrar support "
+              "for the corresponding virtual host."), "",
+           ?T("NOTE: It is not enough to just load this module. "
+              "You should also configure listeners and DNS records "
+              "properly. See section "
+              "https://docs.ejabberd.im/admin/configuration/#sip[SIP] "
+              "of the Configuration Guide for details.")],
+      opts =>
+          [{always_record_route,
+            #{value => "true | false",
+              desc =>
+                  ?T("Always insert \"Record-Route\" header into "
+                     "SIP messages. This approach allows to bypass "
+                     "NATs/firewalls a bit more easily. "
+                     "The default value is 'true'.")}},
+           {flow_timeout_tcp,
+            #{value => "timeout()",
+              desc =>
+                  ?T("The option sets a keep-alive timer for "
+                     "https://tools.ietf.org/html/rfc5626[SIP outbound] "
+                     "TCP connections. The default value is '2' minutes.")}},
+           {flow_timeout_udp,
+            #{value => "timeout()",
+              desc =>
+                  ?T("The options sets a keep-alive timer for "
+                     "https://tools.ietf.org/html/rfc5626[SIP outbound] "
+                     "UDP connections. The default value is '29' seconds.")}},
+           {record_route,
+            #{value => ?T("URI"),
+              desc =>
+                  ?T("When the option 'always_record_route' is set to "
+                     "'true' or when https://tools.ietf.org/html/rfc5626"
+                     "[SIP outbound] is utilized, ejabberd inserts "
+                     "\"Record-Route\" header field with this 'URI' into "
+                     "a SIP message. The default is a SIP URI constructed "
+                     "from the virtual host on which the module is loaded.")}},
+           {routes,
+            #{value => "[URI, ...]",
+              desc =>
+                  ?T("You can set a list of SIP URIs of routes pointing "
+                     "to this SIP proxy server. The default is a list containing "
+                     "a single SIP URI constructed from the virtual host "
+                     "on which the module is loaded.")}},
+           {via,
+            #{value => "[URI, ...]",
+              desc =>
+                  ?T("A list to construct \"Via\" headers for "
+                     "inserting them into outgoing SIP messages. "
+                     "This is useful if you're running your SIP proxy "
+                     "in a non-standard network topology. Every 'URI' "
+                     "element in the list must be in the form of "
+                     "\"scheme://host:port\", where \"transport\" "
+                     "must be 'tls', 'tcp', or 'udp', \"host\" must "
+                     "be a domain name or an IP address and \"port\" "
+                     "must be an internet port number. Note that all "
+                     "parts of the 'URI' are mandatory (e.g. you "
+                     "cannot omit \"port\" or \"scheme\").")}}],
+      example =>
+          ["modules:",
+           "  ...",
+           "  mod_sip:",
+           "    always_record_route: false",
+           "    record_route: \"sip:example.com;lr\"",
+           "    routes:",
+           "      - \"sip:example.com;lr\"",
+           "      - \"sip:sip.example.com;lr\"",
+           "    flow_timeout_udp: 30 sec",
+           "    flow_timeout_tcp: 1 min",
+           "    via:",
+           "      - tls://sip-tls.example.com:5061",
+           "      - tcp://sip-tcp.example.com:5060",
+           "      - udp://sip-udp.example.com:5060",
+           "  ..."]}.

@@ -37,7 +37,7 @@
 -export([user_send_packet/1, user_receive_packet/1,
 	 iq_handler/1, disco_features/5,
 	 is_carbon_copy/1, depends/2,
-	 mod_options/1]).
+	 mod_options/1, mod_doc/0]).
 -export([c2s_copy_session/2, c2s_session_opened/1, c2s_session_resumed/1]).
 %% For debugging purposes
 -export([list/2]).
@@ -301,3 +301,10 @@ depends(_Host, _Opts) ->
 
 mod_options(_) ->
     [].
+
+mod_doc() ->
+    #{desc =>
+          ?T("The module implements https://xmpp.org/extensions/xep-0280.html"
+             "[XEP-0280: Message Carbons]. "
+             "The module broadcasts messages on all connected "
+             "user resources (devices).")}.

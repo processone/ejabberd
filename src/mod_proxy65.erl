@@ -39,7 +39,7 @@
 %% supervisor callbacks.
 -export([init/1]).
 
--export([start_link/1, mod_opt_type/1, mod_options/1, depends/2]).
+-export([start_link/1, mod_opt_type/1, mod_options/1, depends/2, mod_doc/0]).
 
 -define(PROCNAME, ejabberd_mod_proxy65).
 
@@ -139,3 +139,150 @@ mod_options(Host) ->
      {recbuf, 65536},
      {sndbuf, 65536},
      {shaper, none}].
+
+mod_doc() ->
+    #{desc =>
+          ?T("This module implements "
+             "https://xmpp.org/extensions/xep-0065.html"
+             "[XEP-0065: SOCKS5 Bytestreams]. It allows ejabberd "
+             "to act as a file transfer proxy between two XMPP clients."),
+      opts =>
+          [{host,
+            #{desc => ?T("Deprecated. Use 'hosts' instead.")}},
+           {hosts,
+            #{value => ?T("[Host, ...]"),
+              desc =>
+                  ?T("This option defines the Jabber IDs of the service. "
+                     "If the 'hosts' option is not specified, the only Jabber ID will "
+                     "be the hostname of the virtual host with the prefix \"proxy.\". "
+                     "The keyword '@HOST@' is replaced with the real virtual host name.")}},
+           {name,
+            #{value => ?T("Name"),
+              desc =>
+                  ?T("The value of the service name. This name is only visible in some "
+                     "clients that support https://xmpp.org/extensions/xep-0030.html"
+                     "[XEP-0030: Service Discovery]. The default is \"SOCKS5 Bytestreams\".")}},
+           {access,
+            #{value => ?T("AccessName"),
+              desc =>
+                  ?T("Defines an access rule for file transfer initiators. "
+                     "The default value is 'all'. You may want to restrict "
+                     "access to the users of your server only, in order to "
+                     "avoid abusing your proxy by the users of remote "
+                     "servers.")}},
+           {ram_db_type,
+            #{value => "mnesia | redis | sql",
+              desc =>
+                  ?T("Define the type of volatile (in-memory) storage where the module "
+                     "will store room information.")}},
+           {ip,
+            #{value => ?T("IPAddress"),
+              desc =>
+                  ?T("This option specifies which network interface to listen "
+                     "for. The default value is an IP address of the service's "
+                     "DNS name, or, if fails, '127.0.0.1'.")}},
+           {hostname,
+            #{value => ?T("Host"),
+              desc =>
+                  ?T("Defines a hostname offered by the proxy when "
+                     "establishing a session with clients. This is useful "
+                     "when you run the proxy behind a NAT. The keyword "
+                     "'@HOST@' is replaced with the virtual host name. "
+                     "The default is to use the value of 'ip' option. "
+                     "Examples: 'proxy.mydomain.org', '200.150.100.50'.")}},
+           {port,
+            #{value => "1..65535",
+              desc =>
+                  ?T("A port number to listen for incoming connections. "
+                     "The default value is '7777'.")}},
+           {auth_type,
+            #{value => "anonymous | plain",
+              desc =>
+                  ?T("SOCKS5 authentication type. "
+                     "The default value is 'anonymous'. "
+                     "If set to 'plain', ejabberd will use "
+                     "authentication backend as it would "
+                     "for SASL PLAIN.")}},
+           {max_connections,
+            #{value => "pos_integer() | infinity",
+              desc =>
+                  ?T("Maximum number of active connections per file transfer "
+                     "initiator. The default value is 'infinity'.")}},
+           {shaper,
+            #{value => ?T("Shaper"),
+              desc =>
+                  ?T("This option defines a shaper for the file transfer peers. "
+                     "A shaper with the maximum bandwidth will be selected. "
+                     "The default is 'none', i.e. no shaper.")}},
+           {recbuf,
+            #{value => ?T("Size"),
+              desc =>
+                  ?T("A size of the buffer for incoming packets. "
+                     "If you define a shaper, set the value of this "
+                     "option to the size of the shaper in order "
+                     "to avoid traffic spikes in file transfers. "
+                     "The default value is '65536' bytes.")}},
+           {sndbuf,
+            #{value => ?T("Size"),
+              desc =>
+                  ?T("A size of the buffer for outgoing packets. "
+                     "If you define a shaper, set the value of this "
+                     "option to the size of the shaper in order "
+                     "to avoid traffic spikes in file transfers. "
+                     "The default value is '65536' bytes.")}},
+           {vcard,
+            #{value => ?T("vCard"),
+              desc =>
+                  ?T("A custom vCard of the service that will be displayed "
+                     "by some XMPP clients in Service Discovery. The value of "
+                     "'vCard' is a YAML map constructed from an XML representation "
+                     "of vCard. Since the representation has no attributes, "
+                     "the mapping is straightforward."),
+              example =>
+                  [{?T("For example, the following XML representation of vCard:"),
+                    ["<vCard xmlns='vcard-temp'>",
+                     "  <FN>Conferences</FN>",
+                     "  <ADR>",
+                     "    <WORK/>",
+                     "    <STREET>Elm Street</STREET>",
+                     "  </ADR>",
+                     "</vCard>"]},
+                   {?T("will be translated to:"),
+                    ["vcard:",
+                     "  fn: Conferences",
+                     "  adr:",
+                     "    -",
+                     "      work: true",
+                     "      street: Elm Street"]}]}}],
+      example =>
+          ["acl:",
+           "  admin:",
+           "    user: admin@example.org",
+           "  proxy_users:",
+           "    server: example.org",
+           "",
+           "access_rules:",
+           "  proxy65_access:",
+           "    allow: proxy_users",
+           "",
+           "shaper_rules:",
+           "  proxy65_shaper:",
+           "    none: admin",
+           "  proxyrate: proxy_users",
+           "",
+           "shaper:",
+           "  proxyrate: 10240",
+           "",
+           "modules:",
+           "  ...",
+           "  mod_proxy65:",
+           "    host: proxy1.example.org",
+           "    name: \"File Transfer Proxy\"",
+           "    ip: 200.150.100.1",
+           "    port: 7778",
+           "    max_connections: 5",
+           "    access: proxy65_access",
+           "    shaper: proxy65_shaper",
+           "    recbuf: 10240",
+           "    sndbuf: 10240",
+           "  ..."]}.

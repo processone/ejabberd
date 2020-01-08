@@ -53,12 +53,18 @@
 
 -type opts() :: #{atom() => term()}.
 -type db_type() :: atom().
+-type opt_desc() :: #{desc => binary() | [binary()],
+                      value => string() | binary()}.
+-type opt_doc() :: {atom(), opt_desc()} | {atom(), opt_desc(), [opt_doc()]}.
 
 -callback start(binary(), opts()) -> ok | {ok, pid()} | {error, term()}.
 -callback stop(binary()) -> any().
 -callback reload(binary(), opts(), opts()) -> ok | {ok, pid()} | {error, term()}.
 -callback mod_opt_type(atom()) -> econf:validator().
 -callback mod_options(binary()) -> [{atom(), term()} | atom()].
+-callback mod_doc() -> #{desc => binary() | [binary()],
+                         opts => [opt_doc()],
+                         example => [string()] | [{binary(), [string()]}]}.
 -callback depends(binary(), opts()) -> [{module(), hard | soft}].
 
 -optional_callbacks([mod_opt_type/1, reload/3]).

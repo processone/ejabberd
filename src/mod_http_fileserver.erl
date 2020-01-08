@@ -43,11 +43,12 @@
 %% utility for other http modules
 -export([content_type/3]).
 
--export([reopen_log/0, mod_opt_type/1, mod_options/1, depends/2]).
+-export([reopen_log/0, mod_opt_type/1, mod_options/1, depends/2, mod_doc/0]).
 
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
 -include_lib("kernel/include/file.hrl").
+-include("translate.hrl").
 
 -record(state,
 	{host, docroot, accesslog, accesslogfd,
@@ -498,3 +499,87 @@ mod_options(_) ->
      {must_authenticate_with, []},
      %% Required option
      docroot].
+
+mod_doc() ->
+    #{desc =>
+          ?T("This simple module serves files from the local disk over HTTP."),
+      opts =>
+          [{accesslog,
+            #{value => ?T("Path"),
+              desc =>
+                  ?T("File to log accesses using an Apache-like format. "
+                     "No log will be recorded if this option is not specified.")}},
+           {docroot,
+            #{value => ?T("Path"),
+              desc =>
+                  ?T("Directory to serve the files from. "
+                     "This is a mandatory option.")}},
+           {content_types,
+            #{value => "{Extension: Type}",
+              desc =>
+                  ?T("Specify mappings of extension to content type. "
+                     "There are several content types already defined. "
+                     "With this option you can add new definitions "
+                     "or modify existing ones."),
+              example =>
+                  [{?T("The default value is shown in the example below:"),
+                    ["content_types:"|
+                     ["  " ++ binary_to_list(E) ++ ": " ++ binary_to_list(T)
+                      || {E, T} <- ?DEFAULT_CONTENT_TYPES]]}]}},
+           {default_content_type,
+            #{value => ?T("Type"),
+              desc =>
+                  ?T("Specify the content type to use for unknown extensions. "
+                     "The default value is 'application/octet-stream'.")}},
+           {custom_headers,
+            #{value => "{Name: Value}",
+              desc =>
+                  ?T("Indicate custom HTTP headers to be included in all responses. "
+                     "There are no custom headers by default.")}},
+           {directory_indices,
+            #{value => "[Index, ...]",
+              desc =>
+                  ?T("Indicate one or more directory index files, "
+                     "similarly to Apache's 'DirectoryIndex' variable. "
+                     "When an HTTP request hits a directory instead of a "
+                     "regular file, those directory indices are looked in order, "
+                     "and the first one found is returned. "
+                     "The default value is an empty list.")}},
+           {must_authenticate_with,
+            #{value => ?T("[{Username, Hostname}, ...]"),
+              desc =>
+                  ?T("List of accounts that are allowed to use this service. "
+		     "Default value: '[]'.")}}],
+      example =>
+          [{?T("This example configuration will serve the files from the "
+	       "local directory '/var/www' in the address "
+	       "'http://example.org:5280/pub/archive/'. In this example a new "
+	       "content type 'ogg' is defined, 'png' is redefined, and 'jpg' "
+	       "definition is deleted:"),
+	   ["listen:",
+           "  ...",
+           "  -",
+           "    port: 5280",
+           "    module: ejabberd_http",
+           "    request_handlers:",
+           "      ...",
+           "      /pub/archive: mod_http_fileserver",
+           "      ...",
+           "  ...",
+           "",
+           "modules:",
+           "  ...",
+           "  mod_http_fileserver:",
+           "    docroot: /var/www",
+           "    accesslog: /var/log/ejabberd/access.log",
+           "    directory_indices:",
+           "      - index.html",
+           "      - main.htm",
+           "    custom_headers:",
+           "      X-Powered-By: Erlang/OTP",
+           "      X-Fry: \"It's a widely-believed fact!\"",
+           "    content_types:",
+           "      .ogg: audio/ogg",
+           "      .png: image/png",
+           "    default_content_type: text/html",
+           "  ..."]}]}.

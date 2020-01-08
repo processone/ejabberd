@@ -28,7 +28,7 @@
 
 -behaviour(gen_mod).
 
--export([start/2, stop/1, reload/3, depends/2,
+-export([start/2, stop/1, reload/3, depends/2, mod_doc/0,
 	 muc_online_rooms/1, muc_online_rooms_by_regex/2,
 	 muc_register_nick/3, muc_unregister_nick/2,
 	 create_room_with_opts/4, create_room/3, destroy_room/2,
@@ -1315,3 +1315,10 @@ find_hosts(ServerHost) ->
     end.
 
 mod_options(_) -> [].
+
+mod_doc() ->
+    #{desc =>
+	  [?T("This module provides commands to administer local MUC "
+	      "services and their MUC rooms. It also provides simple "
+	      "WebAdmin pages to view the existing rooms."), "",
+	   ?T("This module depends on 'mod_muc'.")]}.

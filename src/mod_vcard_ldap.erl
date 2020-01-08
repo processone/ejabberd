@@ -31,7 +31,7 @@
 -export([start_link/2]).
 -export([init/2, stop/1, get_vcard/2, set_vcard/4, search/4,
 	 remove_user/2, import/3, search_fields/1, search_reported/1,
-	 mod_opt_type/1, mod_options/1]).
+	 mod_opt_type/1, mod_options/1, mod_doc/0]).
 -export([is_search_supported/1]).
 
 %% gen_server callbacks
@@ -475,3 +475,100 @@ mod_options(Host) ->
      {ldap_tls_cacertfile, ejabberd_option:ldap_tls_cacertfile(Host)},
      {ldap_tls_depth, ejabberd_option:ldap_tls_depth(Host)},
      {ldap_tls_verify, ejabberd_option:ldap_tls_verify(Host)}].
+
+mod_doc() ->
+    #{opts =>
+          [{ldap_search_fields,
+            #{value => "{Name: Attribute, ...}",
+              desc =>
+                  ?T("This option defines the search form and the LDAP "
+		     "attributes to search within. 'Name' is the name of a "
+		     "search form field which will be automatically "
+		     "translated by using the translation files "
+		     "(see 'msgs/*.msg' for available words). "
+		     "'Attribute' is the LDAP attribute or the pattern '%u'."),
+	      example =>
+		  [{?T("The default is:"),
+		   ["User: \"%u\"",
+		    "\"Full Name\": displayName",
+		    "\"Given Name\": givenName",
+		    "\"Middle Name\": initials",
+		    "\"Family Name\": sn",
+		    "Nickname: \"%u\"",
+		    "Birthday: birthDay",
+		    "Country: c",
+		    "City: l",
+		    "Email: mail",
+		    "\"Organization Name\": o",
+		    "\"Organization Unit\": ou"]
+		   }]}},
+	    {ldap_search_reported,
+	     #{value => "{SearchField: VcardField}, ...}",
+	       desc =>
+		   ?T("This option defines which search fields should be "
+		      "reported. 'SearchField' is the name of a search form "
+		      "field which will be automatically translated by using "
+		      "the translation files (see 'msgs/*.msg' for available "
+		      "words). 'VcardField' is the vCard field name defined "
+		      "in the 'ldap_vcard_map' option."),
+	       example =>
+		   [{?T("The default is:"),
+		     ["\"Full Name\": FN",
+		      "\"Given Name\": FIRST",
+		      "\"Middle Name\": MIDDLE",
+		      "\"Family Name\": LAST",
+		      "\"Nickname\": NICKNAME",
+		      "\"Birthday\": BDAY",
+		      "\"Country\": CTRY",
+		      "\"City\": LOCALITY",
+		      "\"Email\": EMAIL",
+		      "\"Organization Name\": ORGNAME",
+		      "\"Organization Unit\": ORGUNIT"]
+		    }]}},
+	   {ldap_vcard_map,
+	    #{value => "{Name: {Pattern, LDAPattributes}, ...}",
+	      desc =>
+		  ?T("With this option you can set the table that maps LDAP "
+		     "attributes to vCard fields. 'Name' is the type name of "
+		     "the vCard as defined in "
+		     "http://tools.ietf.org/html/rfc2426[RFC 2426]. "
+		     "'Pattern' is a string which contains "
+		     "pattern variables '%u', '%d' or '%s'. "
+		     "'LDAPattributes' is the list containing LDAP attributes. "
+		     "The pattern variables '%s' will be sequentially replaced "
+		     "with the values of LDAP attributes from "
+		     "'List_of_LDAP_attributes', '%u' will be replaced with "
+		     "the user part of a JID, and '%d' will be replaced with "
+		     "the domain part of a JID."),
+	      example =>
+		  [{?T("The default is:"),
+		    ["NICKNAME: {\"%u\": []}",
+		     "FN: {\"%s\": [displayName]}",
+		     "LAST: {\"%s\": [sn]}",
+		     "FIRST: {\"%s\": [givenName]}",
+		     "MIDDLE: {\"%s\": [initials]}",
+		     "ORGNAME: {\"%s\": [o]}",
+		     "ORGUNIT: {\"%s\": [ou]}",
+		     "CTRY: {\"%s\": [c]}",
+		     "LOCALITY: {\"%s\": [l]}",
+		     "STREET: {\"%s\": [street]}",
+		     "REGION: {\"%s\": [st]}",
+		     "PCODE: {\"%s\": [postalCode]}",
+		     "TITLE: {\"%s\": [title]}",
+		     "URL: {\"%s\": [labeleduri]}",
+		     "DESC: {\"%s\": [description]}",
+		     "TEL: {\"%s\": [telephoneNumber]}",
+		     "EMAIL: {\"%s\": [mail]}",
+		     "BDAY: {\"%s\": [birthDay]}",
+		     "ROLE: {\"%s\": [employeeType]}",
+		     "PHOTO: {\"%s\": [jpegPhoto]}"]
+		   }]}}] ++
+          [{Opt,
+            #{desc =>
+                  {?T("Same as top-level '~s' option, but "
+                      "applied to this module only."), [Opt]}}}
+           || Opt <- [ldap_base, ldap_servers, ldap_uids,
+                      ldap_deref_aliases, ldap_encrypt, ldap_password,
+                      ldap_port, ldap_rootdn, ldap_filter,
+                      ldap_tls_certfile, ldap_tls_cacertfile,
+                      ldap_tls_depth, ldap_tls_verify, ldap_backups]]}.

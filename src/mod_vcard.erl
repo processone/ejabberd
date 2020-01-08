@@ -33,7 +33,7 @@
 -behaviour(gen_server).
 -behaviour(gen_mod).
 
--export([start/2, stop/1, get_sm_features/5, mod_options/1,
+-export([start/2, stop/1, get_sm_features/5, mod_options/1, mod_doc/0,
 	 process_local_iq/1, process_sm_iq/1, string2lower/1,
 	 remove_user/2, export/1, import_info/0, import/5, import_start/2,
 	 depends/2, process_search/1, process_vcard/1, get_vcard/2,
@@ -586,3 +586,94 @@ mod_options(Host) ->
      {cache_size, ejabberd_option:cache_size(Host)},
      {cache_missed, ejabberd_option:cache_missed(Host)},
      {cache_life_time, ejabberd_option:cache_life_time(Host)}].
+
+mod_doc() ->
+    #{desc =>
+          ?T("This module allows end users to store and retrieve "
+             "their vCard, and to retrieve other users vCards, "
+             "as defined in https://xmpp.org/extensions/xep-0054.html"
+             "[XEP-0054: vcard-temp]. The module also implements an "
+             "uncomplicated Jabber User Directory based on the vCards "
+             "of these users. Moreover, it enables the server to send "
+             "its vCard when queried."),
+      opts =>
+          [{allow_return_all,
+            #{value => "true | false",
+              desc =>
+                  ?T("This option enables you to specify if search "
+                     "operations with empty input fields should return "
+                     "all users who added some information to their vCard. "
+                     "The default value is 'false'.")}},
+           {host,
+            #{desc => ?T("Deprecated. Use 'hosts' instead.")}},
+           {hosts,
+            #{value => ?T("[Host, ...]"),
+              desc =>
+                  ?T("This option defines the Jabber IDs of the service. "
+                     "If the 'hosts' option is not specified, the only Jabber ID will "
+                     "be the hostname of the virtual host with the prefix \"vjud.\". "
+                     "The keyword '@HOST@' is replaced with the real virtual host name.")}},
+           {name,
+            #{value => ?T("Name"),
+              desc =>
+                  ?T("The value of the service name. This name is only visible in some "
+                     "clients that support https://xmpp.org/extensions/xep-0030.html"
+                     "[XEP-0030: Service Discovery]. The default is 'vCard User Search'.")}},
+           {matches,
+            #{value => "pos_integer() | infinity",
+              desc =>
+                  ?T("With this option, the number of reported search results "
+                     "can be limited. If the option's value is set to 'infinity', "
+                     "all search results are reported. The default value is '30'.")}},
+           {search,
+            #{value => "true | false",
+              desc =>
+                  ?T("This option specifies whether the search functionality "
+                     "is enabled or not. If disabled, the options 'hosts', 'name' "
+                     "and 'vcard' will be ignored and the Jabber User Directory "
+                     "service will not appear in the Service Discovery item list. "
+                     "The default value is 'false'.")}},
+           {db_type,
+            #{value => "mnesia | sql | ldap",
+              desc =>
+                  ?T("Same as top-level 'default_db' option, but applied to this module only.")}},
+           {use_cache,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
+           {cache_size,
+            #{value => "pos_integer() | infinity",
+              desc =>
+                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+           {cache_missed,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'cache_missed' option, but applied to this module only.")}},
+           {cache_life_time,
+            #{value => "timeout()",
+              desc =>
+                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}},
+           {vcard,
+            #{value => ?T("vCard"),
+              desc =>
+                  ?T("A custom vCard of the server that will be displayed "
+                     "by some XMPP clients in Service Discovery. The value of "
+                     "'vCard' is a YAML map constructed from an XML representation "
+                     "of vCard. Since the representation has no attributes, "
+                     "the mapping is straightforward."),
+              example =>
+                  [{?T("For example, the following XML representation of vCard:"),
+                    ["<vCard xmlns='vcard-temp'>",
+                     "  <FN>Conferences</FN>",
+                     "  <ADR>",
+                     "    <WORK/>",
+                     "    <STREET>Elm Street</STREET>",
+                     "  </ADR>",
+                     "</vCard>"]},
+                   {?T("will be translated to:"),
+                    ["vcard:",
+                     "  fn: Conferences",
+                     "  adr:",
+                     "    -",
+                     "      work: true",
+                     "      street: Elm Street"]}]}}]}.

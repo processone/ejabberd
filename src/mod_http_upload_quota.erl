@@ -37,6 +37,7 @@
 -export([start/2,
 	 stop/1,
 	 depends/2,
+         mod_doc/0,
 	 mod_opt_type/1,
 	 mod_options/1]).
 
@@ -53,6 +54,7 @@
 
 -include("jid.hrl").
 -include("logger.hrl").
+-include("translate.hrl").
 -include_lib("kernel/include/file.hrl").
 
 -record(state,
@@ -91,6 +93,57 @@ mod_options(_) ->
     [{access_soft_quota, soft_upload_quota},
      {access_hard_quota, hard_upload_quota},
      {max_days, infinity}].
+
+mod_doc() ->
+    #{desc =>
+          [?T("This module adds quota support for mod_http_upload."), "",
+           ?T("This module depends on 'mod_http_upload'.")],
+      opts =>
+          [{max_days,
+            #{value => ?T("Days"),
+              desc =>
+                  ?T("If a number larger than zero is specified, "
+                     "any files (and directories) older than this "
+                     "number of days are removed from the subdirectories "
+                     "of the 'docroot' directory, once per day. "
+                     "The default value is 'infinity'.")}},
+           {access_soft_quota,
+            #{value => ?T("AccessName"),
+              desc =>
+                  ?T("This option defines which access rule is used "
+                     "to specify the \"soft quota\" for the matching JIDs. "
+                     "That rule must yield a positive number of megabytes "
+                     "for any JID that is supposed to have a quota limit. "
+                     "See the description of the 'access_hard_quota' option "
+                     "for details. The default value is 'soft_upload_quota'.")}},
+           {access_hard_quota,
+            #{value => ?T("AccessName"),
+              desc =>
+                  ?T("This option defines which access rule is used to "
+                     "specify the \"hard quota\" for the matching JIDs. "
+                     "That rule must yield a positive number for any "
+                     "JID that is supposed to have a quota limit. "
+                     "This is the number of megabytes a corresponding "
+                     "user may upload. When this threshold is exceeded, "
+                     "ejabberd deletes the oldest files uploaded by that "
+                     "user until their disk usage equals or falls below "
+                     "the specified soft quota (see 'access_soft_quota'). "
+                     "The default value is 'hard_upload_quota'.")}}],
+      example =>
+          ["shaper_rules:",
+           "  ...",
+           "  soft_upload_quota:",
+           "    1000: all # MiB",
+           "  hard_upload_quota:",
+           "    1100: all # MiB",
+           "  ...",
+           "",
+           "modules:",
+           "  ...",
+           "  mod_http_upload: {}",
+           "  mod_http_upload_quota:",
+           "    max_days: 100",
+           "  ..."]}.
 
 -spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
 depends(_Host, _Opts) ->

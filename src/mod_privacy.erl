@@ -36,7 +36,7 @@
 	 check_packet/4, remove_user/2, encode_list_item/1,
          get_user_lists/2, get_user_list/3,
 	 set_list/1, set_list/4, set_default_list/3,
-	 user_send_packet/1,
+	 user_send_packet/1, mod_doc/0,
 	 import_start/2, import_stop/2, import/5, import_info/0,
 	 mod_opt_type/1, mod_options/1, depends/2]).
 
@@ -868,3 +868,35 @@ mod_options(Host) ->
      {cache_size, ejabberd_option:cache_size(Host)},
      {cache_missed, ejabberd_option:cache_missed(Host)},
      {cache_life_time, ejabberd_option:cache_life_time(Host)}].
+
+mod_doc() ->
+    #{desc =>
+          [?T("This module implements "
+              "https://xmpp.org/extensions/xep-0016.html"
+              "[XEP-0016: Privacy Lists]."), "",
+           ?T("NOTE: Nowadays modern XMPP clients rely on "
+              "https://xmpp.org/extensions/xep-0191.html"
+              "[XEP-0191: Blocking Command] which is implemented by "
+              "'mod_blocking' module. However, you still need "
+              "'mod_privacy' loaded in order for 'mod_blocking' to work.")],
+      opts =>
+          [{db_type,
+            #{value => "mnesia | sql",
+              desc =>
+                  ?T("Same as top-level 'default_db' option, but applied to this module only.")}},
+           {use_cache,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
+           {cache_size,
+            #{value => "pos_integer() | infinity",
+              desc =>
+                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+           {cache_missed,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'cache_missed' option, but applied to this module only.")}},
+           {cache_life_time,
+            #{value => "timeout()",
+              desc =>
+                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}]}.

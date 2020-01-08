@@ -33,7 +33,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, reload/3, process_local_iq/1,
-	 mod_options/1, depends/2]).
+	 mod_options/1, depends/2, mod_doc/0]).
 
 -include("logger.hrl").
 -include("xmpp.hrl").
@@ -69,3 +69,10 @@ depends(_Host, _Opts) ->
 
 mod_options(_Host) ->
     [].
+
+mod_doc() ->
+    #{desc =>
+          ?T("This module adds support for "
+             "https://xmpp.org/extensions/xep-0202.html"
+             "[XEP-0202: Entity Time]. In other words, "
+             "the module reports server's system time.")}.

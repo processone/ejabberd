@@ -34,7 +34,7 @@
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
-	 mod_opt_type/1, mod_options/1, depends/2]).
+	 mod_opt_type/1, mod_options/1, depends/2, mod_doc/0]).
 
 %% ejabberd command.
 -export([get_commands_spec/0, unban/1]).
@@ -254,3 +254,33 @@ mod_options(_Host) ->
     [{access, none},
      {c2s_auth_ban_lifetime, timer:hours(1)},
      {c2s_max_auth_failures, 20}].
+
+mod_doc() ->
+    #{desc =>
+          [?T("The module bans IPs that show the malicious signs. "
+              "Currently only C2S authentication failures are detected."), "",
+           ?T("Unlike the standalone program, 'mod_fail2ban' clears the "
+              "record of authentication failures after some time since the "
+              "first failure or on a successful authentication. "
+              "It also does not simply block network traffic, but "
+              "provides the client with a descriptive error message.")],
+      opts =>
+          [{access,
+            #{value => ?T("AccessName"),
+              desc =>
+                  ?T("Specify an access rule for whitelisting IP "
+                     "addresses or networks. If the rule returns 'allow' "
+                     "for a given IP address, that address will never be "
+                     "banned. The 'AccessName' should be of type 'ip'. "
+                     "The default value is 'none'.")}},
+           {c2s_auth_ban_lifetime,
+            #{value => "timeout()",
+              desc =>
+                  ?T("The lifetime of the IP ban caused by too many "
+                     "C2S authentication failures. The default value is "
+                     "'1' hour.")}},
+           {c2s_max_auth_failures,
+            #{value => ?T("Number"),
+              desc =>
+                  ?T("The number of C2S authentication failures to "
+                     "trigger the IP ban. The default value is '20'.")}}]}.

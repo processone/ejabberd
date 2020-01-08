@@ -32,7 +32,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start/2, stop/1, reload/3, depends/2]).
+-export([start/2, stop/1, reload/3, depends/2, mod_doc/0]).
 
 -export([sm_receive_packet/1, user_receive_packet/1, user_send_packet/1,
 	 user_send_packet_strip_tag/1, process_iq_v0_2/1, process_iq_v0_3/1,
@@ -1426,3 +1426,77 @@ mod_options(Host) ->
      {cache_size, ejabberd_option:cache_size(Host)},
      {cache_missed, ejabberd_option:cache_missed(Host)},
      {cache_life_time, ejabberd_option:cache_life_time(Host)}].
+
+mod_doc() ->
+    #{desc =>
+          ?T("This module implements "
+             "https://xmpp.org/extensions/xep-0313.html"
+             "[XEP-0313: Message Archive Management]. "
+             "Compatible XMPP clients can use it to store their "
+             "chat history on the server."),
+      opts =>
+          [{assume_mam_usage,
+            #{value => "true | false",
+              desc =>
+                  ?T("This option determines how ejabberd's "
+                     "stream management code (see 'mod_stream_mgmt') "
+                     "handles unacknowledged messages when the "
+                     "connection is lost. Usually, such messages are "
+                     "either bounced or resent. However, neither is "
+                     "done for messages that were stored in the user's "
+                     "MAM archive if this option is set to 'true'. In "
+                     "this case, ejabberd assumes those messages will "
+                     "be retrieved from the archive. "
+                     "The default value is 'false'.")}},
+           {default,
+            #{value => "always | never | roster",
+              desc =>
+                  ?T("The option defines default policy for chat history. "
+                     "When 'always' is set every chat message is stored. "
+                     "With 'roster' only chat history with contacts from "
+                     "user's roster is stored. And 'never' fully disables "
+                     "chat history. Note that a client can change its "
+                     "policy via protocol commands. "
+                     "The default value is 'never'.")}},
+           {request_activates_archiving,
+            #{value => "true | false",
+              desc =>
+                  ?T("If the value is 'true', no messages are stored "
+                     "for a user until their client issue a MAM request, "
+                     "regardless of the value of the 'default' option. "
+                     "Once the server received a request, that user's "
+                     "messages are archived as usual. "
+                     "The default value is 'false'.")}},
+           {compress_xml,
+            #{value => "true | false",
+              desc =>
+                  ?T("When enabled, new messages added to archives are "
+                     "compressed using a custom compression algorithm. "
+                     "This feature works only with SQL backends. "
+                     "The default value is 'false'.")}},
+           {clear_archive_on_room_destroy,
+            #{value => "true | false",
+              desc =>
+                  ?T("Whether to destroy message archive of a room "
+                     "(see 'mod_muc') when it gets destroyed. "
+                     "The default value is 'true'.")}},
+           {db_type,
+            #{value => "mnesia | sql",
+              desc =>
+                  ?T("Same as top-level 'default_db' option, but applied to this module only.")}},
+           {use_cache,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
+           {cache_size,
+            #{value => "pos_integer() | infinity",
+              desc =>
+                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+           {cache_missed,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'cache_missed' option, but applied to this module only.")}},
+           {cache_life_time,
+            #{value => "timeout()",
+              desc =>
+                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}]}.

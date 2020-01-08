@@ -36,6 +36,7 @@
 	 stop/1,
 	 start_link/2,
 	 reload/3,
+         mod_doc/0,
 	 room_destroyed/4,
 	 store_room/4,
 	 store_room/5,
@@ -1276,3 +1277,380 @@ mod_options(Host) ->
        {allow_private_messages_from_visitors,anyone},
        {max_users,200},
        {presence_broadcast,[moderator,participant,visitor]}]}].
+
+mod_doc() ->
+    #{desc =>
+          ?T("This module provides support for https://xmpp.org/extensions/xep-0045.html"
+             "[XEP-0045: Multi-User Chat]. Users can discover existing rooms, "
+             "join or create them. Occupants of a room can chat in public or have private chats."),
+      opts =>
+          [{access,
+            #{value => ?T("AccessName"),
+              desc =>
+                  ?T("You can specify who is allowed to use the Multi-User Chat service. "
+                     "By default everyone is allowed to use it.")}},
+           {access_admin,
+            #{value => ?T("AccessName"),
+              desc =>
+                  ?T("This option specifies who is allowed to administrate "
+                     "the Multi-User Chat service. The default value is 'none', "
+                     "which means that only the room creator can administer "
+                     "their room. The administrators can send a normal message "
+                     "to the service JID, and it will be shown in all active "
+                     "rooms as a service message. The administrators can send a "
+                     "groupchat message to the JID of an active room, and the "
+                     "message will be shown in the room as a service message.")}},
+           {access_create,
+            #{value => ?T("AccessName"),
+              desc =>
+                  ?T("To configure who is allowed to create new rooms at the "
+                     "Multi-User Chat service, this option can be used. "
+                     "By default any account in the local ejabberd server is "
+                     "allowed to create rooms.")}},
+           {access_persistent,
+            #{value => ?T("AccessName"),
+              desc =>
+                  ?T("To configure who is allowed to modify the 'persistent' room option. "
+                     "By default any account in the local ejabberd server is allowed to "
+                     "modify that option.")}},
+           {access_mam,
+            #{value => ?T("AccessName"),
+              desc =>
+                  ?T("To configure who is allowed to modify the 'mam' room option. "
+                     "By default any account in the local ejabberd server is allowed to "
+                     "modify that option.")}},
+           {access_register,
+            #{value => ?T("AccessName"),
+              desc =>
+                  ?T("This option specifies who is allowed to register nickname "
+                     "within the Multi-User Chat service. The default is 'all' for "
+                     "backward compatibility, which means that any user is allowed "
+                     "to register any free nick.")}},
+           {db_type,
+            #{value => "mnesia | sql",
+              desc =>
+                  ?T("Define the type of persistent storage where the module will "
+                     "store room information. The default is the storage defined "
+                     "by the global option 'default_db', or 'mnesia' if omitted.")}},
+           {ram_db_type,
+            #{value => "mnesia",
+              desc =>
+                  ?T("Define the type of volatile (in-memory) storage where the module "
+                     "will store room information. The only available value for this "
+                     "module is 'mnesia'.")}},
+           {hibernation_timeout,
+            #{value => "infinity | Seconds",
+              desc =>
+                  ?T("Timeout before hibernating the room process, expressed "
+		     "in seconds. The default value is 'infinity'.")}},
+           {history_size,
+            #{value => ?T("Size"),
+              desc =>
+                  ?T("A small history of the current discussion is sent to users "
+                     "when they enter the room. With this option you can define the "
+                     "number of history messages to keep and send to users joining the room. "
+                     "The value is a non-negative integer. Setting the value to 0 disables "
+                     "the history feature and, as a result, nothing is kept in memory. "
+                     "The default value is 20. This value affects all rooms on the service. "
+                     "NOTE: modern XMPP clients rely on Message Archives (XEP-0313), so feel "
+                     "free to disable the history feature if you're only using modern clients "
+                     "and have 'mod_mam' module loaded.")}},
+           {host, #{desc => ?T("Deprecated. Use 'hosts' instead.")}},
+           {hosts,
+            #{value => ?T("[Host, ...]"),
+              desc =>
+                  ?T("This option defines the Jabber IDs of the service. "
+                     "If the 'hosts' option is not specified, the only Jabber ID will "
+                     "be the hostname of the virtual host with the prefix \"conference.\". "
+                     "The keyword '@HOST@' is replaced with the real virtual host name.")}},
+           {name,
+            #{value => "string()",
+              desc =>
+                  ?T("The value of the service name. This name is only visible in some "
+                     "clients that support https://xmpp.org/extensions/xep-0030.html"
+                     "[XEP-0030: Service Discovery]. The default is 'Chatrooms'.")}},
+           {max_room_desc,
+            #{value => ?T("Number"),
+              desc =>
+                  ?T("This option defines the maximum number of characters that "
+                     "Room Description can have when configuring the room. "
+                     "The default value is 'infinity'.")}},
+           {max_room_id,
+            #{value => ?T("Number"),
+              desc =>
+                  ?T("This option defines the maximum number of characters that "
+                     "Room ID can have when creating a new room. "
+                     "The default value is 'infinity'.")}},
+           {max_room_name,
+            #{value => ?T("Number"),
+              desc =>
+                  ?T("This option defines the maximum number of characters "
+                     "that Room Name can have when configuring the room. "
+                     "The default value is 'infinity'.")}},
+           {max_rooms_discoitems,
+            #{value => ?T("Number"),
+              desc =>
+                  ?T("When there are more rooms than this 'Number', "
+                     "only the non-empty ones are returned in a Service Discovery query. "
+                     "The default value is '100'.")}},
+           {max_user_conferences,
+            #{value => ?T("Number"),
+              desc =>
+                  ?T("This option defines the maximum number of rooms that any "
+                     "given user can join. The default value is '100'. This option "
+                     "is used to prevent possible abuses. Note that this is a soft "
+                     "limit: some users can sometimes join more conferences in "
+                     "cluster configurations.")}},
+           {max_users,
+            #{value => ?T("Number"),
+              desc =>
+                  ?T("This option defines at the service level, the maximum "
+                     "number of users allowed per room. It can be lowered in "
+                     "each room configuration but cannot be increased in "
+                     "individual room configuration. The default value is '200'.")}},
+           {max_users_admin_threshold,
+            #{value => ?T("Number"),
+              desc =>
+                  ?T("This option defines the number of service admins or room "
+                     "owners allowed to enter the room when the maximum number "
+                     "of allowed occupants was reached. The default limit is '5'.")}},
+           {max_users_presence,
+            #{value => ?T("Number"),
+              desc =>
+                  ?T("This option defines after how many users in the room, "
+                     "it is considered overcrowded. When a MUC room is considered "
+                     "overcrowed, presence broadcasts are limited to reduce load, "
+                     "traffic and excessive presence \"storm\" received by participants.")}},
+           {min_message_interval,
+            #{value => ?T("Number"),
+              desc =>
+                  ?T("This option defines the minimum interval between two "
+                     "messages send by an occupant in seconds. This option "
+                     "is global and valid for all rooms. A decimal value can be used. "
+                     "When this option is not defined, message rate is not limited. "
+                     "This feature can be used to protect a MUC service from occupant "
+                     "abuses and limit number of messages that will be broadcasted by "
+                     "the service. A good value for this minimum message interval is 0.4 second. "
+                     "If an occupant tries to send messages faster, an error is send back "
+                     "explaining that the message has been discarded and describing the "
+                     "reason why the message is not acceptable.")}},
+           {min_presence_interval,
+            #{value => ?T("Number"),
+              desc =>
+                  ?T("This option defines the minimum of time between presence "
+                     "changes coming from a given occupant in seconds. "
+                     "This option is global and valid for all rooms. A decimal "
+                     "value can be used. When this option is not defined, no "
+                     "restriction is applied. This option can be used to protect "
+                     "a MUC service for occupants abuses. If an occupant tries "
+                     "to change its presence more often than the specified interval, "
+                     "the presence is cached by ejabberd and only the last presence "
+                     "is broadcasted to all occupants in the room after expiration "
+                     "of the interval delay. Intermediate presence packets are "
+                     "silently discarded. A good value for this option is 4 seconds.")}},
+           {queue_type,
+            #{value => "ram | file",
+              desc =>
+                  ?T("Same as top-level 'queue_type' option, but applied to this module only.")}},
+           {regexp_room_id,
+            #{value => "string()",
+              desc =>
+                  ?T("This option defines the regular expression that a Room ID "
+                     "must satisfy to allow the room creation. The default value "
+                     "is the empty string.")}},
+           {preload_rooms,
+            #{value => "true | false",
+              desc =>
+                  ?T("Whether to load all persistent rooms in memory on startup. "
+                     "If disabled, the room is only loaded on first participant join. "
+                     "The default is 'true'. It makes sense to disable room preloading "
+                     "when the number of rooms is high: this will improve server startup "
+                     "time and memory consumption.")}},
+           {room_shaper,
+            #{value => "none | ShaperName",
+              desc =>
+                  ?T("This option defines shaper for the MUC rooms. "
+		     "The default value is 'none'.")}},
+           {user_message_shaper,
+            #{value => "none | ShaperName",
+              desc =>
+                  ?T("This option defines shaper for the users messages. "
+		     "The default value is 'none'.")}},
+           {user_presence_shaper,
+            #{value => "none | ShaperName",
+              desc =>
+                  ?T("This option defines shaper for the users presences. "
+		     "The default value is 'none'.")}},
+           {vcard,
+            #{value => ?T("vCard"),
+              desc =>
+                  ?T("A custom vCard of the service that will be displayed "
+                     "by some XMPP clients in Service Discovery. The value of "
+                     "'vCard' is a YAML map constructed from an XML representation "
+                     "of vCard. Since the representation has no attributes, "
+                     "the mapping is straightforward."),
+              example =>
+                  [{?T("For example, the following XML representation of vCard:"),
+                    ["<vCard xmlns='vcard-temp'>",
+                     "  <FN>Conferences</FN>",
+                     "  <ADR>",
+                     "    <WORK/>",
+                     "    <STREET>Elm Street</STREET>",
+                     "  </ADR>",
+                     "</vCard>"]},
+                   {?T("will be translated to:"),
+                    ["vcard:",
+                     "  fn: Conferences",
+                     "  adr:",
+                     "    -",
+                     "      work: true",
+                     "      street: Elm Street"]}]}},
+           {default_room_options,
+            #{value => ?T("Options"),
+              desc =>
+                  ?T("This option allows to define the desired "
+                     "default room options. Note that the creator of a room "
+                     "can modify the options of his room at any time using an "
+                     "XMPP client with MUC capability. The 'Options' are:")},
+            [{allow_change_subj,
+              #{value => "true | false",
+                desc =>
+                    ?T("Allow occupants to change the subject. "
+                       "The default value is 'true'.")}},
+             {allow_private_messages,
+              #{value => "true | false",
+                desc =>
+                    ?T("Occupants can send private messages to other occupants. "
+                       "The default value is 'true'.")}},
+             {allow_query_users,
+              #{value => "true | false",
+                desc =>
+                    ?T("Occupants can send IQ queries to other occupants. "
+                       "The default value is 'true'.")}},
+             {allow_user_invites,
+              #{value => "true | false",
+                desc =>
+                    ?T("Allow occupants to send invitations. "
+                       "The default value is 'false'.")}},
+             {allow_visitor_nickchange,
+              #{value => "true | false",
+                desc => ?T("Allow visitors to change nickname. "
+                           "The default value is 'true'.")}},
+             {allow_visitor_status,
+              #{value => "true | false",
+                desc =>
+                    ?T("Allow visitors to send status text in presence updates. "
+                       "If disallowed, the status text is stripped before broadcasting "
+                       "the presence update to all the room occupants. "
+                       "The default value is 'true'.")}},
+             {anonymous,
+              #{value => "true | false",
+                desc =>
+                    ?T("The room is anonymous: occupants don't see the real "
+                       "JIDs of other occupants. Note that the room moderators "
+                       "can always see the real JIDs of the occupants. "
+                       "The default value is 'true'.")}},
+             {captcha_protected,
+              #{value => "true | false",
+                desc =>
+                    ?T("When a user tries to join a room where they have no "
+                       "affiliation (not owner, admin or member), the room "
+                       "requires them to fill a CAPTCHA challenge (see section "
+                       "https://docs.ejabberd.im/admin/configuration/#captcha[CAPTCHA] "
+                       "in order to accept their join in the room. "
+                       "The default value is 'false'.")}},
+             {lang,
+              #{value => ?T("Language"),
+                desc =>
+                    ?T("Preferred language for the discussions in the room. "
+                       "The language format should conform to RFC 5646. "
+                       "There is no value by default.")}},
+             {logging,
+              #{value => "true | false",
+                desc =>
+                    ?T("The public messages are logged using 'mod_muc_log'. "
+                       "The default value is 'false'.")}},
+             {members_by_default,
+              #{value => "true | false",
+                desc =>
+                    ?T("The occupants that enter the room are participants "
+                       "by default, so they have \"voice\". "
+                       "The default value is 'true'.")}},
+             {members_only,
+              #{value => "true | false",
+                desc =>
+                    ?T("Only members of the room can enter. "
+                       "The default value is 'false'.")}},
+             {moderated,
+              #{value => "true | false",
+                desc =>
+                    ?T("Only occupants with \"voice\" can send public messages. "
+                       "The default value is 'true'.")}},
+             {password_protected,
+              #{value => "true | false",
+                desc =>
+                    ?T("The password is required to enter the room. "
+                       "The default value is 'false'.")}},
+             {password,
+              #{value => ?T("Password"),
+                desc =>
+                    ?T("Password of the room. Implies option 'password_protected' "
+                       "set to 'true'. There is no default value.")}},
+             {persistent,
+              #{value => "true | false",
+                desc =>
+                    ?T("The room persists even if the last participant leaves. "
+                       "The default value is 'false'.")}},
+             {public,
+              #{value => "true | false",
+                desc =>
+                    ?T("The room is public in the list of the MUC service, "
+                       "so it can be discovered. MUC admins and room participants "
+                       "will see private rooms in Service Discovery if their XMPP "
+                       "client supports this feature. "
+                       "The default value is 'true'.")}},
+             {public_list,
+              #{value => "true | false",
+                desc =>
+                    ?T("The list of participants is public, without requiring "
+                       "to enter the room. The default value is 'true'.")}},
+             {mam,
+              #{value => "true | false",
+                desc =>
+                    ?T("Enable message archiving. Implies mod_mam is enabled. "
+                       "The default value is 'false'.")}},
+             {allow_subscription,
+              #{value => "true | false",
+                desc =>
+                    ?T("Allow users to subscribe to room events as described in "
+                       "https://docs.ejabberd.im/developer/xmpp-clients-bots/extensions/muc-sub/"
+                       "[Multi-User Chat Subscriptions]. "
+                       "The default value is 'false'.")}},
+             {title,
+              #{value => ?T("Room Title"),
+                desc =>
+                    ?T("A human-readable title of the room. "
+                       "There is no default value")}},
+             {allow_private_messages_from_visitors,
+              #{value => "anyone | moderators | nobody",
+                desc =>
+                    ?T("Visitors can send private messages to other occupants. "
+                       "The default value is 'anyone' which means visitors "
+                       "can send private messages to any occupant.")}},
+             {max_users,
+              #{value => ?T("Number"),
+                desc =>
+                    ?T("Maximum number of occupants in the room. "
+                       "The default value is '200'.")}},
+             {presence_broadcast,
+              #{value => "[moderator | participant | visitor, ...]",
+                desc =>
+                    ?T("List of roles for which presence is broadcasted. "
+                       "The list can contain one or several of: 'moderator', "
+                       "'participant', 'visitor'. The default value is shown "
+                       "in the example below:"),
+                example =>
+                    ["presence_broadcast:",
+                     "  - moderator",
+                     "  - participant",
+                     "  - visitor"]}}]}]}.

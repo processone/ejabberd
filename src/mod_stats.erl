@@ -32,7 +32,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, reload/3, process_iq/1,
-	 mod_options/1, depends/2]).
+	 mod_options/1, depends/2, mod_doc/0]).
 
 -include("logger.hrl").
 -include("xmpp.hrl").
@@ -235,3 +235,23 @@ search_running_node(SNode, [Node | Nodes]) ->
 
 mod_options(_Host) ->
     [].
+
+mod_doc() ->
+    #{desc =>
+          [?T("This module adds support for "
+              "https://xmpp.org/extensions/xep-0039.html"
+              "[XEP-0039: Statistics Gathering]. This protocol "
+              "allows you to retrieve the following statistics "
+              "from your ejabberd server:"), "",
+           ?T("- Total number of registered users on the current "
+              "virtual host (users/total)."), "",
+           ?T("- Total number of registered users on all virtual "
+              "hosts (users/all-hosts/total)."), "",
+           ?T("- Total number of online users on the current "
+              "virtual host (users/online)."), "",
+           ?T("- Total number of online users on all virtual "
+              "hosts (users/all-hosts/online)."), "",
+           ?T("NOTE: The protocol extension is deferred and seems "
+              "like even a few clients that were supporting it "
+              "are now abandoned. So using this module makes "
+              "very little sense.")]}.

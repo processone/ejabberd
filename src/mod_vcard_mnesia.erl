@@ -31,7 +31,7 @@
 	 search_fields/1, search_reported/1, remove_user/2]).
 -export([is_search_supported/1]).
 -export([need_transform/1, transform/1]).
--export([mod_opt_type/1, mod_options/1]).
+-export([mod_opt_type/1, mod_options/1, mod_doc/0]).
 
 -include("xmpp.hrl").
 -include("mod_vcard.hrl").
@@ -274,3 +274,12 @@ mod_opt_type(search_all_hosts) ->
 
 mod_options(_) ->
     [{search_all_hosts, true}].
+
+mod_doc() ->
+    #{opts =>
+          [{search_all_hosts,
+            #{value => "true | false",
+              desc =>
+                  ?T("Whether to perform search on all "
+                     "virtual hosts or not. The default "
+                     "value is 'true'.")}}]}.

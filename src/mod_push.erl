@@ -31,7 +31,7 @@
 
 %% gen_mod callbacks.
 -export([start/2, stop/1, reload/3, mod_opt_type/1, mod_options/1, depends/2]).
-
+-export([mod_doc/0]).
 %% ejabberd_hooks callbacks.
 -export([disco_sm_features/5, c2s_session_pending/1, c2s_copy_session/2,
 	 c2s_handle_cast/2, c2s_stanza/3, mam_message/7, offline_message/1,
@@ -152,6 +152,60 @@ mod_options(Host) ->
      {cache_size, ejabberd_option:cache_size(Host)},
      {cache_missed, ejabberd_option:cache_missed(Host)},
      {cache_life_time, ejabberd_option:cache_life_time(Host)}].
+
+mod_doc() ->
+    #{desc =>
+          ?T("This module implements the XMPP server's part of "
+             "the push notification solution specified in "
+             "https://xmpp.org/extensions/xep-0357.html"
+             "[XEP-0357: Push Notifications]. It does not generate, "
+             "for example, APNS or FCM notifications directly. "
+             "Instead, it's designed to work with so-called "
+             "\"app servers\" operated by third-party vendors of "
+             "mobile apps. Those app servers will usually trigger "
+             "notification delivery to the user's mobile device using "
+             "platform-dependant backend services such as FCM or APNS."),
+      opts =>
+          [{include_sender,
+            #{value => "true | false",
+              desc =>
+                  ?T("If this option is set to 'true', the sender's JID "
+                     "is included with push notifications generated for "
+                     "incoming messages with a body. "
+                     "The default value is 'false'.")}},
+           {include_body,
+            #{value => "true | false | Text",
+              desc =>
+                  ?T("If this option is set to 'true', the message text "
+                     "is included with push notifications generated for "
+                     "incoming messages with a body. The option can instead "
+                     "be set to a static 'Text', in which case the specified "
+                     "text will be included in place of the actual message "
+                     "body. This can be useful to signal the app server "
+                     "whether the notification was triggered by a message "
+                     "with body (as opposed to other types of traffic) "
+                     "without leaking actual message contents. "
+                     "The default value is \"New message\".")}},
+           {db_type,
+            #{value => "mnesia | sql",
+              desc =>
+                  ?T("Same as top-level 'default_db' option, but applied to this module only.")}},
+           {use_cache,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
+           {cache_size,
+            #{value => "pos_integer() | infinity",
+              desc =>
+                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+           {cache_missed,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'cache_missed' option, but applied to this module only.")}},
+           {cache_life_time,
+            #{value => "timeout()",
+              desc =>
+                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}]}.
 
 %%--------------------------------------------------------------------
 %% ejabberd command callback.

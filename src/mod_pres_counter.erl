@@ -28,10 +28,10 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, reload/3, check_packet/4,
-	 mod_opt_type/1, mod_options/1, depends/2]).
+	 mod_opt_type/1, mod_options/1, depends/2, mod_doc/0]).
 
 -include("logger.hrl").
-
+-include("translate.hrl").
 -include("xmpp.hrl").
 
 -record(pres_counter,
@@ -129,3 +129,33 @@ mod_opt_type(interval) ->
 
 mod_options(_) ->
     [{count, 5}, {interval, timer:seconds(60)}].
+
+mod_doc() ->
+    #{desc =>
+          ?T("This module detects flood/spam in presence "
+             "subscriptions traffic. If a user sends or receives "
+             "more of those stanzas in a given time interval, "
+             "the exceeding stanzas are silently dropped, and a "
+             "warning is logged."),
+      opts =>
+          [{count,
+            #{value => ?T("Number"),
+              desc =>
+                  ?T("The number of subscription presence stanzas "
+                     "(subscribe, unsubscribe, subscribed, unsubscribed) "
+                     "allowed for any direction (input or output) per time "
+                     "defined in 'interval' option. Please note that two "
+                     "users subscribing to each other usually generate 4 "
+                     "stanzas, so the recommended value is '4' or more. "
+                     "The default value is '5'.")}},
+           {interval,
+            #{value => "timeout()",
+              desc =>
+                  ?T("The time interval. The default value is '1' minute.")}}],
+      example =>
+          ["modules:",
+           "  ...",
+           "  mod_pres_counter:",
+           "    count: 5",
+           "    interval: 30 secs",
+           "  ..."]}.

@@ -32,6 +32,7 @@
 
 %% gen_mod callbacks.
 -export([start/2, stop/1, reload/3, mod_opt_type/1, depends/2, mod_options/1]).
+-export([mod_doc/0]).
 
 %% ejabberd_hooks callbacks.
 -export([filter_presence/1, filter_chat_states/1,
@@ -42,6 +43,7 @@
 
 -include("logger.hrl").
 -include("xmpp.hrl").
+-include("translate.hrl").
 
 -define(CSI_QUEUE_MAX, 100).
 
@@ -150,6 +152,38 @@ mod_options(_) ->
     [{queue_presence, true},
      {queue_chat_states, true},
      {queue_pep, true}].
+
+mod_doc() ->
+    #{desc =>
+          [?T("This module allows for queueing certain types of stanzas "
+              "when a client indicates that the user is not actively using "
+              "the client right now (see https://xmpp.org/extensions/xep-0352.html"
+              "[XEP-0352: Client State Indication]). This can save bandwidth and "
+              "resources."), "",
+           ?T("A stanza is dropped from the queue if it's effectively obsoleted "
+              "by a new one (e.g., a new presence stanza would replace an old "
+              "one from the same client). The queue is flushed if a stanza arrives "
+              "that won't be queued, or if the queue size reaches a certain limit "
+              "(currently 100 stanzas), or if the client becomes active again.")],
+      opts =>
+          [{queue_presence,
+            #{value => "true | false",
+              desc =>
+                  ?T("While a client is inactive, queue presence stanzas "
+                     "that indicate (un)availability. The default value is 'true'.")}},
+           {queue_chat_states,
+            #{value => "true | false",
+              desc =>
+                  ?T("Queue \"standalone\" chat state notifications (as defined in "
+                     "https://xmpp.org/extensions/xep-0085.html"
+                     "[XEP-0085: Chat State Notifications]) while a client "
+                     "indicates inactivity. The default value is 'true'.")}},
+           {queue_pep,
+            #{value => "true | false",
+              desc =>
+                  ?T("Queue PEP notifications while a client is inactive. "
+                     "When the queue is flushed, only the most recent notification "
+                     "of a given PEP node is delivered. The default value is 'true'.")}}]}.
 
 -spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
 depends(_Host, _Opts) ->

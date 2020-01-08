@@ -29,7 +29,7 @@
 -behaviour(gen_mod).
 
 %% API
--export([start/2, stop/1, reload/3,
+-export([start/2, stop/1, reload/3, mod_doc/0,
          depends/2, mod_opt_type/1, mod_options/1]).
 
 -export([filter_packet/1, filter_offline_msg/1, filter_subscription/2]).
@@ -260,3 +260,54 @@ mod_options(_) ->
      {captcha, false},
      {allow_local_users, true},
      {allow_transports, true}].
+
+mod_doc() ->
+    #{desc =>
+          ?T("This module allows to block/log messages coming from an "
+             "unknown entity. If a writing entity is not in your roster, "
+             "you can let this module drop and/or log the message. "
+             "By default you'll just not receive message from that entity. "
+             "Enable this module if you want to drop SPAM messages."),
+      opts =>
+          [{access,
+            #{value => ?T("AccessName"),
+              desc =>
+                  ?T("The option is supposed to be used when 'allow_local_users' "
+                     "and 'allow_transports' are not enough. It's an ACL where "
+                     "'deny' means the message will be rejected (or a CAPTCHA "
+                     "would be generated for a presence, if configured), and "
+                     "'allow' means the sender is whitelisted and the stanza "
+                     "will pass through. The default value is 'none', which "
+                     "means nothing is whitelisted.")}},
+           {drop,
+            #{value => "true | false",
+              desc =>
+                  ?T("This option specifies if strangers messages should "
+                     "be dropped or not. The default value is 'true'.")}},
+           {log,
+            #{value => "true | false",
+              desc =>
+                  ?T("This option specifies if strangers' messages should "
+                     "be logged (as info message) in ejabberd.log. "
+                     "The default value is 'false'.")}},
+           {allow_local_users,
+            #{value => "true | false",
+              desc =>
+                  ?T("This option specifies if strangers from the same "
+                     "local host should be accepted or not. "
+                     "The default value is 'true'.")}},
+           {allow_transports,
+            #{value => "true | false",
+              desc =>
+                  ?T("If set to 'true' and some server's JID is in user's "
+                     "roster, then messages from any user of this server "
+                     "are accepted even if no subscription present. "
+                     "The default value is 'true'.")}},
+           {captcha,
+            #{value => "true | false",
+              desc =>
+                  ?T("Whether to generate CAPTCHA or not in response to "
+                     "messages from strangers. See also section "
+                     "https://docs.ejabberd.im/admin/configuration/#captcha"
+                     "[CAPTCHA] of the Configuration Guide. "
+                     "The default value is 'false'.")}}]}.

@@ -29,9 +29,10 @@
 -behaviour(gen_mod).
 
 -include("logger.hrl").
+-include("translate.hrl").
 
 -export([start/2, stop/1, reload/3, mod_options/1,
-	 get_commands_spec/0, depends/2]).
+	 get_commands_spec/0, depends/2, mod_doc/0]).
 
 % Commands API
 -export([
@@ -1589,3 +1590,59 @@ num_prio(_) ->
     -1.
 
 mod_options(_) -> [].
+
+mod_doc() ->
+    #{desc =>
+          [?T("This module provides additional administrative commands."), "",
+           ?T("Details for some commands:"), "",
+           ?T("- 'ban-acount':"),
+           ?T("This command kicks all the connected sessions of the
+           account from the server. It also changes their password to
+           a randomly generated one, so they can't login anymore
+           unless a server administrator changes their password
+           again. It is possible to define the reason of the ban. The
+           new password also includes the reason and the date and time
+           of the ban. For example, if this command is called:
+           'ejabberdctl vhost example.org ban-account boby \"Spammed
+           rooms\"', then the sessions of the local account which JID
+           is boby@example.org will be kicked, and its password will
+           be set to something like this:
+           'BANNED_ACCOUNT--20080425T21:45:07--2176635--Spammed_rooms'"),
+           ?T("- 'pushroster' (and 'pushroster-all'):"),
+           ?T("The roster file must be placed, if using Windows, on
+           the directory where you installed ejabberd: C:/Program
+           Files/ejabberd or similar. If you use other Operating
+           System, place the file on the same directory where the
+           .beam files are installed. See below an example roster
+           file."),
+           ?T("- 'srg-create':"),
+           ?T("If you want to put a group Name with blankspaces, use
+           the characters \"\' and \\'\" to define when the Name
+           starts and ends. For example: 'ejabberdctl srg-create g1
+           example.org \"\'Group number 1\\'\" this_is_g1 g1'")],
+      opts =>
+          [{module_resource,
+            #{value => ?T("Resource"),
+              desc =>
+                  ?T("Indicate the resource that the XMPP stanzas must
+                  use in the FROM or TO JIDs. This is only useful in
+                  the 'get_vcard*' and 'set_vcard*' commands. The
+                  default value is 'mod_admin_extra'.")}}],
+      example =>
+	  [{?T("With this configuration, vCards can only be modified
+	    with mod_admin_extra commands:"),
+	    ["acl:",
+	     "  adminextraresource:",
+	     "    - resource: \"modadminextraf8x,31ad\"",
+	     "access_rules:",
+	     "  vcard_set:",
+	     "    - allow: adminextraresource",
+	     "modules:",
+	     "  mod_admin_extra:",
+	     "    module_resource: \"modadminextraf8x,31ad\"",
+	     "  mod_vcard:",
+	     "    access_set: vcard_set"]},
+	   {?T("Content of roster file for 'pushroster' command:"),
+	    ["[{<<\"bob\">>, <<\"example.org\">>, <<\"workers\">>, <<\"Bob\">>},",
+	     "{<<\"mart\">>, <<\"example.org\">>, <<\"workers\">>, <<\"Mart\">>},",
+	     "{<<\"Rich\">>, <<\"example.org\">>, <<\"bosses\">>, <<\"Rich\">>}]."]}]}.

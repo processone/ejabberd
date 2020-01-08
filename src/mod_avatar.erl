@@ -26,6 +26,7 @@
 
 %% gen_mod API
 -export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1, mod_options/1]).
+-export([mod_doc/0]).
 %% Hooks
 -export([pubsub_publish_item/6, vcard_iq_convert/1, vcard_iq_publish/1,
 	 get_sm_features/5]).
@@ -33,6 +34,7 @@
 -include("xmpp.hrl").
 -include("logger.hrl").
 -include("pubsub.hrl").
+-include("translate.hrl").
 
 -type avatar_id_meta() :: #{avatar_meta => {binary(), avatar_meta()}}.
 -opaque convert_rule() :: {default | eimp:img_type(), eimp:img_type()}.
@@ -458,3 +460,36 @@ mod_opt_type(rate_limit) ->
 mod_options(_) ->
     [{rate_limit, 10},
      {convert, []}].
+
+mod_doc() ->
+    #{desc =>
+          [?T("The purpose of the module is to cope with legacy and modern "
+              "XMPP clients posting avatars. The process is described in "
+              "https://xmpp.org/extensions/xep-0398.html"
+              "[XEP-0398: User Avatar to vCard-Based Avatars Conversion]."), "",
+           ?T("Also, the module supports conversion between avatar "
+              "image formats on the fly."), "",
+           ?T("The module depends on 'mod_vcard', 'mod_vcard_xupdate' and "
+              "'mod_pubsub'.")],
+      opts =>
+          [{convert,
+            #{value => "{From: To}",
+              desc =>
+                  ?T("Defines image convertion rules: the format in 'From' "
+                     "will be converted to format in 'To'. The value of 'From' "
+                     "can also be 'default', which is match-all rule. NOTE: "
+                     "the list of supported formats is detected at compile time "
+                     "depending on the image libraries installed in the system."),
+              example =>
+                  [{?T("In this example avatars in WebP format are "
+                       "converted to JPEG, all other formats are "
+                       "converted to PNG:"),
+                    ["convert:",
+                     "  webp: jpg",
+                     "  default: png"]}]}},
+           {rate_limit,
+            #{value => ?T("Number"),
+              desc =>
+                  ?T("Limit any given JID by the number of avatars it is able "
+                     "to convert per minute. This is to protect the server from "
+                     "image convertion DoS. The default value is '10'.")}}]}.

@@ -26,6 +26,7 @@
 
 %% gen_mod API
 -export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1, mod_options/1]).
+-export([mod_doc/0]).
 %% Hooks
 -export([s2s_out_auth_result/2, s2s_out_downgraded/2,
 	 s2s_in_packet/2, s2s_out_packet/2, s2s_in_recv/3,
@@ -94,6 +95,40 @@ mod_opt_type(access) ->
 
 mod_options(_Host) ->
     [{access, all}].
+
+mod_doc() ->
+    #{desc =>
+          [?T("The module adds support for "
+              "https://xmpp.org/extensions/xep-0220.html"
+              "[XEP-0220: Server Dialback] to provide server identity "
+              "verification based on DNS."), "",
+           ?T("WARNING: DNS-based verification is vulnerable to "
+              "https://en.wikipedia.org/wiki/DNS_spoofing"
+              "[DNS cache poisoning], so modern servers rely on "
+              "verification based on PKIX certificates. Thus this module "
+              "is only recommended for backward compatibility "
+              "with servers running outdated software or non-TLS servers, "
+              "or those with invalid certificates (as long as you accept "
+              "the risks, e.g. you assume that the remote server has "
+              "an invalid certificate due to poor administration and "
+              "not because it's compromised).")],
+      opts =>
+          [{access,
+            #{value => ?T("AccessName"),
+              desc =>
+                  ?T("An access rule that can be used to restrict "
+                     "dialback for some servers. The default value "
+                     "is 'all'.")}}],
+      example =>
+          ["modules:",
+           "  ...",
+           "  mod_s2s_dialback:",
+           "    access:",
+           "      allow:",
+           "        server: legacy.domain.tld",
+           "        server: invalid-cert.example.org",
+           "      deny: all",
+           "  ..."]}.
 
 s2s_in_features(Acc, _) ->
     [#db_feature{errors = true}|Acc].

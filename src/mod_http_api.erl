@@ -30,12 +30,13 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, reload/3, process/2, depends/2,
-	 mod_options/1]).
+	 mod_options/1, mod_doc/0]).
 
 -include("xmpp.hrl").
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_stacktrace.hrl").
+-include("translate.hrl").
 
 -define(DEFAULT_API_VERSION, 0).
 
@@ -520,3 +521,8 @@ hide_sensitive_args(NonListArgs) ->
 
 mod_options(_) ->
     [].
+
+mod_doc() ->
+    #{desc =>
+          ?T("This module provides a ReST API to call "
+             "ejabberd commands using JSON data.")}.

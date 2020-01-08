@@ -63,7 +63,7 @@
 	 webadmin_user/4,
 	 webadmin_user_parse_query/5]).
 
--export([mod_opt_type/1, mod_options/1, depends/2]).
+-export([mod_opt_type/1, mod_options/1, mod_doc/0, depends/2]).
 
 -deprecated({get_queue_length,2}).
 
@@ -1235,3 +1235,119 @@ mod_options(Host) ->
      {use_cache, ejabberd_option:use_cache(Host)},
      {cache_size, ejabberd_option:cache_size(Host)},
      {cache_life_time, ejabberd_option:cache_life_time(Host)}].
+
+mod_doc() ->
+    #{desc =>
+          [?T("This module implements "
+              "https://xmpp.org/extensions/xep-0160.html"
+              "[XEP-0160: Best Practices for Handling Offline Messages] "
+              "and https://xmpp.org/extensions/xep-0013.html"
+              "[XEP-0013: Flexible Offline Message Retrieval]. "
+              "This means that all messages sent to an offline user "
+              "will be stored on the server until that user comes online "
+              "again. Thus it is very similar to how email works. A user "
+              "is considered offline if no session presence priority > 0 "
+              "are currently open."), "",
+           ?T("NOTE: 'ejabberdctl' has a command to "
+              "delete expired messages (see chapter"
+              "https://docs.ejabberd.im/admin/guide/managing"
+              "[Managing an ejabberd server] in online documentation.")],
+      opts =>
+          [{access_max_user_messages,
+            #{value => ?T("AccessName"),
+              desc =>
+                  ?T("This option defines which access rule will be "
+                     "enforced to limit the maximum number of offline "
+                     "messages that a user can have (quota). When a user "
+                     "has too many offline messages, any new messages that "
+                     "they receive are discarded, and a <resource-constraint/> "
+                     "error is returned to the sender. The default value is "
+                     "'max_user_offline_messages'.")}},
+           {store_empty_body,
+            #{value => "true | false | unless_chat_state",
+              desc =>
+                  ?T("Whether or not to store messages that lack a <body/> "
+                     "element. The default value is 'unless_chat_state', "
+                     "which tells ejabberd to store messages even if they "
+                     "lack the <body/> element, unless they only contain a "
+                     "chat state notification (as defined in "
+                     "https://xmpp.org/extensions/xep-0085.html"
+                     "[XEP-0085: Chat State Notifications].")}},
+	   {store_groupchat,
+	    #{value => "true | false",
+	      desc =>
+		  ?T("Whether or not to store groupchat messages. "
+		     "The default value is 'false'.")}},
+           {use_mam_for_storage,
+            #{value => "true | false",
+              desc =>
+                  ?T("This is an experimetal option. Enabling this option "
+                     "will make 'mod_offline' not use the former spool "
+                     "table for storing MucSub offline messages, but will "
+                     "use the archive table instead. This use of the archive "
+                     "table is cleaner and it makes it possible for clients "
+                     "to slowly drop the former offline use case and rely on "
+                     "message archive instead. It also further reduces the "
+                     "storage required when you enabled MucSub. Enabling this "
+                     "option has a known drawback for the moment: most of "
+                     "flexible message retrieval queries don't work (those that "
+                     "allow retrieval/deletion of messages by id), but this "
+                     "specification is not widely used. The default value "
+                     "is 'false' to keep former behaviour as default and "
+                     "ensure this option is disabled.")}},
+           {bounce_groupchat,
+            #{value => "true | false",
+              desc =>
+                  ?T("This option is use the disable an optimisation that "
+                     "avoids bouncing error messages when groupchat messages "
+                     "could not be stored as offline. It will reduce chat "
+                     "room load, without any drawback in standard use cases. "
+                     "You may change default value only if you have a custom "
+                     "module which uses offline hook after 'mod_offline'. This "
+                     "option can be useful for both standard MUC and MucSub, "
+                     "but the bounce is much more likely to happen in the context "
+                     "of MucSub, so it is even more important to have it on "
+                     "large MucSub services. The default value is 'false', meaning "
+                     "the optimisation is enabled.")}},
+           {db_type,
+            #{value => "mnesia | sql",
+              desc =>
+                  ?T("Same as top-level 'default_db' option, but applied to this module only.")}},
+           {use_cache,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
+           {cache_size,
+            #{value => "pos_integer() | infinity",
+              desc =>
+                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+           {cache_life_time,
+            #{value => "timeout()",
+              desc =>
+                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}],
+      example =>
+	  [{?T("This example allows power users to have as much as 5000 "
+	       "offline messages, administrators up to 2000, and all the "
+	       "other users up to 100:"),
+	    ["acl:",
+	     "  admin:",
+	     "    user:",
+	     "      - admin1@localhost",
+	     "      - admin2@example.org",
+	     "  poweruser:",
+	     "    user:",
+	     "      - bob@example.org",
+	     "      - jane@example.org",
+	     "",
+	     "shaper_rules:",
+	     "  max_user_offline_messages:",
+	     "    - 5000: poweruser",
+	     "    - 2000: admin",
+	     "    - 100",
+	     "",
+	     "modules:",
+	     "  ...",
+	     "  mod_offline:",
+	     "    access_max_user_messages: max_user_offline_messages",
+	     "  ..."
+	    ]}]}.
