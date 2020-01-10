@@ -255,11 +255,11 @@
 {"Subject","Konu"}.
 {"Submit","Gönder"}.
 {"Submitted","Gönderilenler"}.
-{"Subscription","Üyelik"}.
+{"Subscription","Abonelik"}.
 {"Sunday","Pazar"}.
 {"That nickname is already in use by another occupant","Takma isim odanın başka bir sakini tarafından halihazırda kullanımda"}.
 {"That nickname is registered by another person","O takma isim başka biri tarafından kaydettirilmiş"}.
-{"The CAPTCHA is valid.","İnsan doğrulaması (captcha) geçerli."}.
+{"The CAPTCHA is valid.","Güvenlik doğrulaması (CAPTCHA) geçerli."}.
 {"The CAPTCHA verification has failed","CAPTCHA doğrulaması başarısız oldu"}.
 {"The password is too weak","Parola çok zayıf"}.
 {"the password is","parola :"}.
@@ -290,7 +290,7 @@
 {"Update message of the day on all hosts (don't send)","Tüm sunuculardaki günün mesajını güncelle (gönderme)"}.
 {"Update plan","Planı güncelle"}.
 {"Update script","Betiği Güncelle"}.
-{"Update","GÜncelle"}.
+{"Update","Güncelle"}.
 {"Uptime:","Hizmet Süresi:"}.
 {"User Management","Kullanıcı Yönetimi"}.
 {"User","Kullanıcı"}.
