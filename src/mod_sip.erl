@@ -40,6 +40,8 @@ depends(_, _) ->
     [].
 mod_options(_) ->
     [].
+mod_doc() ->
+    #{desc => [?T("SIP support has not been enabled.")]}.
 -else.
 -behaviour(gen_mod).
 -behaviour(esip).
@@ -374,8 +376,6 @@ mod_options(Host) ->
      {routes, [Route]},
      {via, []}].
 
--endif.
-
 mod_doc() ->
     #{desc =>
           [?T("This module adds SIP proxy/registrar support "
@@ -451,3 +451,5 @@ mod_doc() ->
            "      - tcp://sip-tcp.example.com:5060",
            "      - udp://sip-udp.example.com:5060",
            "  ..."]}.
+
+-endif.
