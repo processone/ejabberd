@@ -27,6 +27,7 @@
 -protocol({rfc, 3261}).
 
 -include("logger.hrl").
+-include("translate.hrl").
 
 -ifndef(SIP).
 -export([start/2, stop/1, depends/2, mod_options/1, mod_doc/0]).
@@ -53,7 +54,6 @@ mod_options(_) ->
          mod_doc/0]).
 
 -include_lib("esip/include/esip.hrl").
--include("translate.hrl").
 
 %%%===================================================================
 %%% API
