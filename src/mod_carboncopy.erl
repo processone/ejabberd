@@ -81,12 +81,10 @@ reload(_Host, _NewOpts, _OldOpts) ->
 -spec disco_features({error, stanza_error()} | {result, [binary()]} | empty,
 		     jid(), jid(), binary(), binary()) ->
 			    {error, stanza_error()} | {result, [binary()]}.
-disco_features({error, Err}, _From, _To, _Node, _Lang) ->
-    {error, Err};
-disco_features(empty, _From, _To, <<"">>, _Lang) ->
-    {result, [?NS_CARBONS_2]};
+disco_features(empty, From, To, <<"">>, Lang) ->
+    disco_features({result, []}, From, To, <<"">>, Lang);
 disco_features({result, Feats}, _From, _To, <<"">>, _Lang) ->
-    {result, [?NS_CARBONS_2|Feats]};
+    {result, [?NS_CARBONS_2,?NS_CARBONS_RULES_0|Feats]};
 disco_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
@@ -162,7 +160,8 @@ c2s_session_opened(State) ->
 -spec check_and_forward(jid(), jid(), stanza(), direction()) ->
 			       stanza() | {stop, stanza()}.
 check_and_forward(JID, To, Packet, Direction)->
-    case is_chat_message(Packet) andalso
+    case (is_chat_message(Packet) orelse
+	  is_received_muc_invite(Packet, Direction)) andalso
 	not is_received_muc_pm(To, Packet, Direction) andalso
 	not xmpp:has_subtag(Packet, #carbons_private{}) andalso
 	not xmpp:has_subtag(Packet, #hint{type = 'no-copy'}) of
@@ -275,8 +274,17 @@ is_chat_message(#message{type = chat}) ->
     true;
 is_chat_message(#message{type = normal, body = [_|_]}) ->
     true;
+is_chat_message(#message{type = Type} = Msg) when Type == chat;
+						  Type == normal ->
+    has_chatstate(Msg) orelse xmpp:has_subtag(Msg, #receipt_response{});
 is_chat_message(_) ->
     false.
+
+-spec is_received_muc_invite(message(), direction()) -> boolean().
+is_received_muc_invite(_Packet, sent) ->
+    false;
+is_received_muc_invite(Packet, received) ->
+    xmpp:has_subtag(Packet, #x_conference{}).
 
 -spec is_received_muc_pm(jid(), message(), direction()) -> boolean().
 is_received_muc_pm(#jid{lresource = <<>>}, _Packet, _Direction) ->
@@ -285,6 +293,10 @@ is_received_muc_pm(_To, _Packet, sent) ->
     false;
 is_received_muc_pm(_To, Packet, received) ->
     xmpp:has_subtag(Packet, #muc_user{}).
+
+-spec has_chatstate(message()) -> boolean().
+has_chatstate(#message{sub_els = Els}) ->
+    lists:any(fun(El) -> xmpp:get_ns(El) == ?NS_CHATSTATES end, Els).
 
 -spec list(binary(), binary()) -> [{Resource :: binary(), Namespace :: binary()}].
 list(User, Server) ->
