@@ -212,13 +212,13 @@ send_copies(JID, To, Msg, Direction)->
 	      {_, _, Resource} = jid:tolower(Dest),
 	      ?DEBUG("Sending:  ~p =/= ~p", [R, Resource]),
 	      Sender = jid:make({U, S, <<>>}),
-	      New = build_forward_packet(JID, Msg, Sender, Dest, Direction),
+	      New = build_forward_packet(Msg, Sender, Dest, Direction),
 	      ejabberd_router:route(xmpp:set_from_to(New, Sender, Dest))
       end, TargetJIDs).
 
--spec build_forward_packet(jid(), message(), jid(), jid(), direction()) -> message().
-build_forward_packet(JID, #message{type = T} = Msg, Sender, Dest, Direction) ->
-    Forwarded = #forwarded{sub_els = [complete_packet(JID, Msg, Direction)]},
+-spec build_forward_packet(message(), jid(), jid(), direction()) -> message().
+build_forward_packet(#message{type = T} = Msg, Sender, Dest, Direction) ->
+    Forwarded = #forwarded{sub_els = [Msg]},
     Carbon = case Direction of
 		 sent -> #carbons_sent{forwarded = Forwarded};
 		 received -> #carbons_received{forwarded = Forwarded}
@@ -248,14 +248,6 @@ disable(Host, U, R)->
 		       [U, Host, R, Reason]),
 	    Err
     end.
-
--spec complete_packet(jid(), message(), direction()) -> message().
-complete_packet(From, #message{from = undefined} = Msg, sent) ->
-    %% If this is a message sent by user on this host, then Msg doesn't
-    %% include the 'from' attribute. We must add it.
-    Msg#message{from = From};
-complete_packet(_From, Msg, _Direction) ->
-    Msg.
 
 -spec is_chat_message(message()) -> boolean().
 is_chat_message(#message{type = chat}) ->
