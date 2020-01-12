@@ -271,7 +271,12 @@ is_chat_message(_) ->
 is_received_muc_invite(_Packet, sent) ->
     false;
 is_received_muc_invite(Packet, received) ->
-    xmpp:has_subtag(Packet, #x_conference{}).
+    case xmpp:get_subtag(Packet, #muc_user{}) of
+	#muc_user{invites = [_|_]} ->
+	    true;
+	_ ->
+	    xmpp:has_subtag(Packet, #x_conference{})
+    end.
 
 -spec is_received_muc_pm(jid(), message(), direction()) -> boolean().
 is_received_muc_pm(#jid{lresource = <<>>}, _Packet, _Direction) ->
