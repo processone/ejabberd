@@ -110,10 +110,10 @@ user_send_packet({#message{meta = #{carbon_copy := true}}, _C2SState} = Acc) ->
     %% Stop the hook chain, we don't want logging modules to duplicate this
     %% message.
     {stop, Acc};
-user_send_packet({Packet, C2SState}) ->
-    From = xmpp:get_from(Packet),
-    To = xmpp:get_to(Packet),
-    {check_and_forward(From, To, Packet, sent), C2SState}.
+user_send_packet({#message{from = From, to = To} = Msg, C2SState}) ->
+    {check_and_forward(From, To, Msg, sent), C2SState};
+user_send_packet(Acc) ->
+    Acc.
 
 -spec user_receive_packet({stanza(), ejabberd_c2s:state()})
       -> {stanza(), ejabberd_c2s:state()} | {stop, {stanza(), ejabberd_c2s:state()}}.
@@ -121,9 +121,10 @@ user_receive_packet({#message{meta = #{carbon_copy := true}}, _C2SState} = Acc) 
     %% Stop the hook chain, we don't want logging modules to duplicate this
     %% message.
     {stop, Acc};
-user_receive_packet({Packet, #{jid := JID} = C2SState}) ->
-    To = xmpp:get_to(Packet),
-    {check_and_forward(JID, To, Packet, received), C2SState}.
+user_receive_packet({#message{to = To} = Msg, #{jid := JID} = C2SState}) ->
+    {check_and_forward(JID, To, Msg, received), C2SState};
+user_receive_packet(Acc) ->
+    Acc.
 
 -spec c2s_copy_session(c2s_state(), c2s_state()) -> c2s_state().
 c2s_copy_session(State, #{user := U, server := S, resource := R}) ->
@@ -152,24 +153,24 @@ c2s_session_opened(State) ->
 %    - registered to the user_send_packet hook, to be called only once even for multicast
 %    - do not support "private" message mode, and do not modify the original packet in any way
 %    - we also replicate "read" notifications
--spec check_and_forward(jid(), jid(), stanza(), direction()) -> stanza().
-check_and_forward(JID, To, Packet, Direction)->
-    case (is_chat_message(Packet) orelse
-	  is_received_muc_invite(Packet, Direction)) andalso
-	not is_received_muc_pm(To, Packet, Direction) andalso
-	not xmpp:has_subtag(Packet, #carbons_private{}) andalso
-	not xmpp:has_subtag(Packet, #hint{type = 'no-copy'}) of
+-spec check_and_forward(jid(), jid(), message(), direction()) -> message().
+check_and_forward(JID, To, Msg, Direction)->
+    case (is_chat_message(Msg) orelse
+	  is_received_muc_invite(Msg, Direction)) andalso
+	not is_received_muc_pm(To, Msg, Direction) andalso
+	not xmpp:has_subtag(Msg, #carbons_private{}) andalso
+	not xmpp:has_subtag(Msg, #hint{type = 'no-copy'}) of
 	true ->
-	    send_copies(JID, To, Packet, Direction);
+	    send_copies(JID, To, Msg, Direction);
 	false ->
 	    ok
     end,
-    Packet.
+    Msg.
 
 %%% Internal
 %% Direction = received | sent <received xmlns='urn:xmpp:carbons:1'/>
 -spec send_copies(jid(), jid(), message(), direction()) -> ok.
-send_copies(JID, To, Packet, Direction)->
+send_copies(JID, To, Msg, Direction)->
     {U, S, R} = jid:tolower(JID),
     PrioRes = ejabberd_sm:get_user_present_resources(U, S),
     {_, AvailRs} = lists:unzip(PrioRes),
@@ -186,7 +187,7 @@ send_copies(JID, To, Packet, Direction)->
     end,
     %% list of JIDs that should receive a carbon copy of this message (excluding the
     %% receiver(s) of the original message
-    TargetJIDs = case {IsBareTo, Packet} of
+    TargetJIDs = case {IsBareTo, Msg} of
 	{true, #message{meta = #{sm_copy := true}}} ->
 	    %% The message was sent to our bare JID, and we currently have
 	    %% multiple resources with the same highest priority, so the session
@@ -211,7 +212,7 @@ send_copies(JID, To, Packet, Direction)->
 	      {_, _, Resource} = jid:tolower(Dest),
 	      ?DEBUG("Sending:  ~p =/= ~p", [R, Resource]),
 	      Sender = jid:make({U, S, <<>>}),
-	      New = build_forward_packet(JID, Packet, Sender, Dest, Direction),
+	      New = build_forward_packet(JID, Msg, Sender, Dest, Direction),
 	      ejabberd_router:route(xmpp:set_from_to(New, Sender, Dest))
       end, TargetJIDs).
 
@@ -250,13 +251,13 @@ disable(Host, U, R)->
 
 -spec complete_packet(jid(), message(), direction()) -> message().
 complete_packet(From, #message{from = undefined} = Msg, sent) ->
-    %% if this is a packet sent by user on this host, then Packet doesn't
+    %% If this is a message sent by user on this host, then Msg doesn't
     %% include the 'from' attribute. We must add it.
     Msg#message{from = From};
 complete_packet(_From, Msg, _Direction) ->
     Msg.
 
--spec is_chat_message(stanza()) -> boolean().
+-spec is_chat_message(message()) -> boolean().
 is_chat_message(#message{type = chat}) ->
     true;
 is_chat_message(#message{type = normal, body = [_|_]}) ->
@@ -268,23 +269,23 @@ is_chat_message(_) ->
     false.
 
 -spec is_received_muc_invite(message(), direction()) -> boolean().
-is_received_muc_invite(_Packet, sent) ->
+is_received_muc_invite(_Msg, sent) ->
     false;
-is_received_muc_invite(Packet, received) ->
-    case xmpp:get_subtag(Packet, #muc_user{}) of
+is_received_muc_invite(Msg, received) ->
+    case xmpp:get_subtag(Msg, #muc_user{}) of
 	#muc_user{invites = [_|_]} ->
 	    true;
 	_ ->
-	    xmpp:has_subtag(Packet, #x_conference{})
+	    xmpp:has_subtag(Msg, #x_conference{})
     end.
 
 -spec is_received_muc_pm(jid(), message(), direction()) -> boolean().
-is_received_muc_pm(#jid{lresource = <<>>}, _Packet, _Direction) ->
+is_received_muc_pm(#jid{lresource = <<>>}, _Msg, _Direction) ->
     false;
-is_received_muc_pm(_To, _Packet, sent) ->
+is_received_muc_pm(_To, _Msg, sent) ->
     false;
-is_received_muc_pm(_To, Packet, received) ->
-    xmpp:has_subtag(Packet, #muc_user{}).
+is_received_muc_pm(_To, Msg, received) ->
+    xmpp:has_subtag(Msg, #muc_user{}).
 
 -spec has_chatstate(message()) -> boolean().
 has_chatstate(#message{sub_els = Els}) ->
