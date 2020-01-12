@@ -36,8 +36,7 @@
 
 -export([user_send_packet/1, user_receive_packet/1,
 	 iq_handler/1, disco_features/5,
-	 is_carbon_copy/1, depends/2,
-	 mod_options/1, mod_doc/0]).
+	 depends/2, mod_options/1, mod_doc/0]).
 -export([c2s_copy_session/2, c2s_session_opened/1, c2s_session_resumed/1]).
 %% For debugging purposes
 -export([list/2]).
@@ -48,12 +47,6 @@
 
 -type direction() :: sent | received.
 -type c2s_state() :: ejabberd_c2s:state().
-
--spec is_carbon_copy(stanza()) -> boolean().
-is_carbon_copy(#message{meta = #{carbon_copy := true}}) ->
-    true;
-is_carbon_copy(_) ->
-    false.
 
 start(Host, _Opts) ->
     ejabberd_hooks:add(disco_local_features, Host, ?MODULE, disco_features, 50),
@@ -113,22 +106,24 @@ iq_handler(#iq{type = get, lang = Lang} = IQ)->
 
 -spec user_send_packet({stanza(), ejabberd_c2s:state()})
       -> {stanza(), ejabberd_c2s:state()} | {stop, {stanza(), ejabberd_c2s:state()}}.
+user_send_packet({#message{meta = #{carbon_copy := true}}, _C2SState} = Acc) ->
+    %% Stop the hook chain, we don't want logging modules to duplicate this
+    %% message.
+    {stop, Acc};
 user_send_packet({Packet, C2SState}) ->
     From = xmpp:get_from(Packet),
     To = xmpp:get_to(Packet),
-    case check_and_forward(From, To, Packet, sent) of
-	{stop, Pkt} -> {stop, {Pkt, C2SState}};
-	Pkt -> {Pkt, C2SState}
-    end.
+    {check_and_forward(From, To, Packet, sent), C2SState}.
 
 -spec user_receive_packet({stanza(), ejabberd_c2s:state()})
       -> {stanza(), ejabberd_c2s:state()} | {stop, {stanza(), ejabberd_c2s:state()}}.
+user_receive_packet({#message{meta = #{carbon_copy := true}}, _C2SState} = Acc) ->
+    %% Stop the hook chain, we don't want logging modules to duplicate this
+    %% message.
+    {stop, Acc};
 user_receive_packet({Packet, #{jid := JID} = C2SState}) ->
     To = xmpp:get_to(Packet),
-    case check_and_forward(JID, To, Packet, received) of
-	{stop, Pkt} -> {stop, {Pkt, C2SState}};
-	Pkt -> {Pkt, C2SState}
-    end.
+    {check_and_forward(JID, To, Packet, received), C2SState}.
 
 -spec c2s_copy_session(c2s_state(), c2s_state()) -> c2s_state().
 c2s_copy_session(State, #{user := U, server := S, resource := R}) ->
@@ -157,8 +152,7 @@ c2s_session_opened(State) ->
 %    - registered to the user_send_packet hook, to be called only once even for multicast
 %    - do not support "private" message mode, and do not modify the original packet in any way
 %    - we also replicate "read" notifications
--spec check_and_forward(jid(), jid(), stanza(), direction()) ->
-			       stanza() | {stop, stanza()}.
+-spec check_and_forward(jid(), jid(), stanza(), direction()) -> stanza().
 check_and_forward(JID, To, Packet, Direction)->
     case (is_chat_message(Packet) orelse
 	  is_received_muc_invite(Packet, Direction)) andalso
@@ -166,18 +160,11 @@ check_and_forward(JID, To, Packet, Direction)->
 	not xmpp:has_subtag(Packet, #carbons_private{}) andalso
 	not xmpp:has_subtag(Packet, #hint{type = 'no-copy'}) of
 	true ->
-	    case is_carbon_copy(Packet) of
-		false ->
-		    send_copies(JID, To, Packet, Direction),
-		    Packet;
-		true ->
-		    %% stop the hook chain, we don't want logging modules to duplicates
-		    %% this message
-		    {stop, Packet}
-	    end;
-        _ ->
-	    Packet
-    end.
+	    send_copies(JID, To, Packet, Direction);
+	false ->
+	    ok
+    end,
+    Packet.
 
 %%% Internal
 %% Direction = received | sent <received xmlns='urn:xmpp:carbons:1'/>
