@@ -220,12 +220,12 @@ get_subnodes_tree(Host, Node) ->
 	Rec ->
 	    Type = Rec#pubsub_node.type,
 	    H = node_flat_sql:encode_host(Host),
-	    N = <<(ejabberd_sql:escape_like_arg_circumflex(Node))/binary, "/%">>,
+	    N = <<(ejabberd_sql:escape_like_arg(Node))/binary, "/%">>,
 	    Sub = case catch
 		ejabberd_sql:sql_query_t(
 		?SQL("select @(node)s, @(parent)s, @(plugin)s, @(nodeid)d from pubsub_node "
 		     "where host=%(H)s and plugin=%(Type)s and"
-		     " (parent=%(Node)s or parent like %(N)s escape '^')"))
+		     " (parent=%(Node)s or parent like %(N)s %ESCAPE)"))
 	    of
 		{selected, RItems} ->
 		    [raw_to_node(Host, Item) || Item <- RItems];

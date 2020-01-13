@@ -393,7 +393,7 @@ get_entity_subscriptions(Host, Owner) ->
 		?SQL("select @(node)s, @(plugin)s, @(i.nodeid)d, @(jid)s, @(subscriptions)s "
 		     "from pubsub_state i, pubsub_node n "
 		     "where i.nodeid = n.nodeid and "
-		     "(jid=%(GJ)s or jid like %(GJLike)s escape '^') and host=%(H)s");
+		     "(jid=%(GJ)s or jid like %(GJLike)s %ESCAPE) and host=%(H)s");
 	      _ ->
 		SJ = encode_jid(SubKey),
 		?SQL("select @(node)s, @(plugin)s, @(i.nodeid)d, @(jid)s, @(subscriptions)s "
@@ -436,7 +436,7 @@ get_entity_subscriptions_for_send_last(Host, Owner) ->
 		     "from pubsub_state i, pubsub_node n, pubsub_node_option o "
 		     "where i.nodeid = n.nodeid and n.nodeid = o.nodeid and "
 		     "name='send_last_published_item' and val='on_sub_and_presence' and "
-		     "(jid=%(GJ)s or jid like %(GJLike)s escape '^') and host=%(H)s");
+		     "(jid=%(GJ)s or jid like %(GJLike)s %ESCAPE) and host=%(H)s");
 	      _ ->
 		SJ = encode_jid(SubKey),
 		?SQL("select @(node)s, @(plugin)s, @(i.nodeid)d, @(jid)s, @(subscriptions)s "
@@ -869,7 +869,7 @@ itemids(Nidx, {_U, _S, _R} = JID) ->
 	ejabberd_sql:sql_query_t(
           ?SQL("select @(itemid)s from pubsub_item where "
                "nodeid=%(Nidx)d and (publisher=%(SJID)s"
-               " or publisher like %(SJIDLike)s escape '^') "
+               " or publisher like %(SJIDLike)s %ESCAPE) "
                "order by modification desc"))
     of
 	{selected, RItems} ->
@@ -968,16 +968,16 @@ encode_jid(JID) ->
 
 -spec encode_jid_like(JID :: ljid()) -> binary().
 encode_jid_like(JID) ->
-    ejabberd_sql:escape_like_arg_circumflex(jid:encode(JID)).
+    ejabberd_sql:escape_like_arg(jid:encode(JID)).
 
 -spec encode_host(Host :: host()) -> binary().
 encode_host({_U, _S, _R} = LJID) -> encode_jid(LJID);
 encode_host(Host) -> Host.
 
 -spec encode_host_like(Host :: host()) -> binary().
-encode_host_like({_U, _S, _R} = LJID) -> ejabberd_sql:escape(encode_jid_like(LJID));
+encode_host_like({_U, _S, _R} = LJID) -> encode_jid_like(LJID);
 encode_host_like(Host) ->
-    ejabberd_sql:escape(ejabberd_sql:escape_like_arg_circumflex(Host)).
+    ejabberd_sql:escape_like_arg(Host).
 
 -spec encode_affiliation(Arg :: atom()) -> binary().
 encode_affiliation(owner) -> <<"o">>;

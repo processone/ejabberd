@@ -354,6 +354,22 @@ parse1([$%, $( | S], Acc, State) ->
                              used_vars = [Name | State2#state.used_vars]}
         end,
     parse1(S1, [], State4);
+parse1("%ESCAPE" ++ S, Acc, State) ->
+    State1 = append_string(lists:reverse(Acc), State),
+    Convert =
+        erl_syntax:application(
+          erl_syntax:record_access(
+            erl_syntax:variable(?ESCAPE_VAR),
+            erl_syntax:atom(?ESCAPE_RECORD),
+            erl_syntax:atom(like_escape)),
+          []),
+    Var = State1#state.param_pos,
+    State2 =
+        State1#state{'query' = [{var, Var} | State1#state.'query'],
+                     args = [Convert | State1#state.args],
+                     params = [Var | State1#state.params],
+                     param_pos = State1#state.param_pos + 1},
+    parse1(S, [], State2);
 parse1([C | S], Acc, State) ->
     parse1(S, [C | Acc], State).
 

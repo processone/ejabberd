@@ -38,4 +38,5 @@
 -record(sql_escape, {string :: fun((binary()) -> binary()),
 		     integer :: fun((integer()) -> binary()),
 		     boolean :: fun((boolean()) -> binary()),
-		     in_array_string :: fun((binary()) -> binary())}).
+		     in_array_string :: fun((binary()) -> binary()),
+		     like_escape :: fun(() -> binary())}).

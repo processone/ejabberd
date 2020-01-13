@@ -227,6 +227,8 @@ escape_like_arg(S) when is_binary(S) ->
 escape_like_arg($%) -> <<"\\%">>;
 escape_like_arg($_) -> <<"\\_">>;
 escape_like_arg($\\) -> <<"\\\\">>;
+escape_like_arg($[) -> <<"\\[">>;     % For MSSQL
+escape_like_arg($]) -> <<"\\]">>;
 escape_like_arg(C) when is_integer(C), C >= 0, C =< 255 -> <<C>>.
 
 escape_like_arg_circumflex(S) when is_binary(S) ->
@@ -718,7 +720,8 @@ generic_escape() ->
 		boolean = fun(true) -> <<"1">>;
                              (false) -> <<"0">>
                           end,
-		in_array_string = fun(X) -> <<"'", (escape(X))/binary, "'">> end
+		in_array_string = fun(X) -> <<"'", (escape(X))/binary, "'">> end,
+                like_escape = fun() -> <<"">> end
                }.
 
 pgsql_sql_query(SQLQuery) ->
@@ -736,7 +739,8 @@ pgsql_escape() ->
 		boolean = fun(true) -> <<"1">>;
                              (false) -> <<"0">>
                           end,
-		in_array_string = fun(X) -> <<"E'", (escape(X))/binary, "'">> end
+		in_array_string = fun(X) -> <<"E'", (escape(X))/binary, "'">> end,
+                like_escape = fun() -> <<"">> end
                }.
 
 sqlite_sql_query(SQLQuery) ->
@@ -754,7 +758,8 @@ sqlite_escape() ->
 		boolean = fun(true) -> <<"1">>;
                              (false) -> <<"0">>
                           end,
-		in_array_string = fun(X) -> <<"'", (standard_escape(X))/binary, "'">> end
+		in_array_string = fun(X) -> <<"'", (standard_escape(X))/binary, "'">> end,
+                like_escape = fun() -> <<"ESCAPE '\\'">> end
                }.
 
 standard_escape(S) ->
@@ -767,9 +772,18 @@ mssql_sql_query(SQLQuery) ->
     sqlite_sql_query(SQLQuery).
 
 pgsql_prepare(SQLQuery, State) ->
-    Escape = #sql_escape{_ = fun(X) -> X end},
-    N = length((SQLQuery#sql_query.args)(Escape)),
-    Args = [<<$$, (integer_to_binary(I))/binary>> || I <- lists:seq(1, N)],
+    Escape = #sql_escape{_ = fun(_) -> arg end,
+                         like_escape = fun() -> escape end},
+    {RArgs, _} =
+        lists:foldl(
+          fun(arg, {Acc, I}) ->
+                  {[<<$$, (integer_to_binary(I))/binary>> | Acc], I + 1};
+             (escape, {Acc, I}) ->
+                  {[<<"">> | Acc], I}
+          end, {[], 1}, (SQLQuery#sql_query.args)(Escape)),
+    Args = lists:reverse(RArgs),
+    %N = length((SQLQuery#sql_query.args)(Escape)),
+    %Args = [<<$$, (integer_to_binary(I))/binary>> || I <- lists:seq(1, N)],
     Query = (SQLQuery#sql_query.format_query)(Args),
     pgsql:prepare(State#state.db_ref, SQLQuery#sql_query.hash, Query).
 
@@ -779,13 +793,15 @@ pgsql_execute_escape() ->
 		boolean = fun(true) -> "1";
                              (false) -> "0"
                           end,
-		in_array_string = fun(X) -> <<"\"", (escape(X))/binary, "\"">> end
+		in_array_string = fun(X) -> <<"\"", (escape(X))/binary, "\"">> end,
+                like_escape = fun() -> ignore end
                }.
 
 pgsql_execute_sql_query(SQLQuery, State) ->
     Args = (SQLQuery#sql_query.args)(pgsql_execute_escape()),
+    Args2 = lists:filter(fun(ignore) -> false; (_) -> true end, Args),
     ExecuteRes =
-        pgsql:execute(State#state.db_ref, SQLQuery#sql_query.hash, Args),
+        pgsql:execute(State#state.db_ref, SQLQuery#sql_query.hash, Args2),
 %    {T, ExecuteRes} =
 %        timer:tc(pgsql, execute, [State#state.db_ref, SQLQuery#sql_query.hash, Args]),
 %    io:format("T ~ts ~p~n", [SQLQuery#sql_query.hash, T]),
