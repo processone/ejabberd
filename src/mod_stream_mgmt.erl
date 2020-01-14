@@ -494,11 +494,10 @@ update_num_stanzas_in(State, _El) ->
 send_rack(#{mgmt_ack_timer := _} = State) ->
     State;
 send_rack(#{mgmt_xmlns := Xmlns,
-	    mgmt_stanzas_out := NumStanzasOut,
-	    mgmt_ack_timeout := AckTimeout} = State) ->
-    TRef = erlang:start_timer(AckTimeout, self(), ack_timeout),
-    State1 = State#{mgmt_ack_timer => TRef, mgmt_stanzas_req => NumStanzasOut},
-    send(State1, #sm_r{xmlns = Xmlns}).
+	    mgmt_stanzas_out := NumStanzasOut} = State) ->
+    State1 = State#{mgmt_stanzas_req => NumStanzasOut},
+    State2 = start_ack_timer(State1),
+    send(State2, #sm_r{xmlns = Xmlns}).
 
 -spec resend_rack(state()) -> state().
 resend_rack(#{mgmt_ack_timer := _,
@@ -712,6 +711,13 @@ restart_pending_timer(#{mgmt_pending_timer := TRef} = State, NewTimeout) ->
     State#{mgmt_pending_timer => NewTRef};
 restart_pending_timer(State, _NewTimeout) ->
     State.
+
+-spec start_ack_timer(state()) -> state().
+start_ack_timer(#{mgmt_ack_timeout := infinity} = State) ->
+    State;
+start_ack_timer(#{mgmt_ack_timeout := AckTimeout} = State) ->
+    TRef = erlang:start_timer(AckTimeout, self(), ack_timeout),
+    State#{mgmt_ack_timer => TRef}.
 
 -spec cancel_ack_timer(state()) -> state().
 cancel_ack_timer(#{mgmt_ack_timer := TRef} = State) ->
