@@ -4193,43 +4193,91 @@ mod_doc() ->
 	      "is enabled in the default ejabberd configuration file, "
 	      "and it requires 'mod_caps'.")],
       opts =>
-          [{max_nodes_discoitems,
-            #{value => "pos_integer() | infinity",
-              desc => ?T("The maximum number of nodes to return in a "
-			 "discoitem response. The default value is: '100'.")}},
-           {access_createnode,
-            #{value => "AccessName",
-              desc => ?T("This option restricts which users are allowed to "
-			 "create pubsub nodes using 'acl' and 'access'. "
-			 "By default any account in the local ejabberd server "
-			 "is allowed to create pubsub nodes. "
-			 "The default value is: 'all'.")}},
-           {max_items_node,
-            #{value => "MaxItems",
-              desc => ?T("Define the maximum number of items that can be "
-			 "stored in a node. Default value is: '10'.")}},
-           {max_subscriptions_node,
-            #{value => "MaxSubs",
-              desc => ?T("Define the maximum number of subscriptions managed "
-			 "by a node. "
-			 "Default value is no limitation: 'undefined'.")}},
-           {plugins,
-            #{value => "[Plugin, ...]",
-              desc => [?T("To specify which pubsub node plugins to use. "
-			  "The first one in the list is used by default. "
-			  "If this option is not defined, the default plugins "
-			  "list is: '[flat]'. PubSub clients can define which "
-			  "plugin to use when creating a node: "
-			  "add 'type=\'plugin-name\'' attribute "
-			  "to the 'create' stanza element."),
-		       ?T("- 'flat' plugin handles the default behaviour and "
-			  "follows standard XEP-0060 implementation."),
-		       ?T("- 'pep' plugin adds extention to handle Personal "
-			  "Eventing Protocol (XEP-0163) to the PubSub engine. "
-			  "Adding pep allows to handle PEP automatically.")]}},
+	  [{access_createnode,
+	    #{value => "AccessName",
+	      desc =>
+		  ?T("This option restricts which users are allowed to "
+		     "create pubsub nodes using 'acl' and 'access'. "
+		     "By default any account in the local ejabberd server "
+		     "is allowed to create pubsub nodes. "
+		     "The default value is: 'all'.")}},
+	   {db_type,
+	    #{value => "mnesia | sql",
+	      desc =>
+		  ?T("Same as top-level 'default_db' option, but applied to "
+		     "this module only.")}},
+	   {default_node_config,
+	    #{value => "List of Key:Value",
+	      desc =>
+		  ?T("To override default node configuration, regardless "
+		     "of node plugin. Value is a list of key-value "
+		     "definition. Node configuration still uses default "
+		     "configuration defined by node plugin, and overrides "
+		     "any items by value defined in this configurable list.")}},
+	   {force_node_config,
+	    #{value => "List of Node and the list of its Key:Value",
+	      desc =>
+		  ?T("Define the configuration for given nodes. "
+		     "The default value is: '[]'."),
+	      example =>
+		  ["force_node_config:",
+		   "  ## Avoid buggy clients to make their bookmarks public",
+		   "  storage:bookmarks:",
+		   "    access_model: whitelist"]}},
+	   {host,
+	    #{desc => ?T("Deprecated. Use 'hosts' instead.")}},
+	   {hosts,
+	    #{value => ?T("[Host, ...]"),
+	      desc =>
+		  ?T("This option defines the Jabber IDs of the service. "
+		     "If the 'hosts' option is not specified, the only Jabber "
+		     "ID will be the hostname of the virtual host with the "
+		     "prefix \"vjud.\". The keyword '@HOST@' is replaced with "
+		     "the real virtual host name.")}},
+	   {ignore_pep_from_offline,
+	    #{value => "false | true",
+	      desc =>
+		  ?T("To specify whether or not we should get last "
+		     "published PEP items from users in our roster which "
+		     "are offline when we connect. Value is 'true' or "
+		     "'false'. If not defined, pubsub assumes true so we "
+		     "only get last items of online contacts.")}},
+	   {last_item_cache,
+	    #{value => "false | true",
+	      desc =>
+		  ?T("To specify whether or not pubsub should cache last "
+		     "items. Value is 'true' or 'false'. If not defined, "
+		     "pubsub does not cache last items. On systems with not"
+		     " so many nodes, caching last items speeds up pubsub "
+		     "and allows to raise user connection rate. The cost "
+		     "is memory usage, as every item is stored in memory.")}},
+	   {max_items_node,
+	    #{value => "MaxItems",
+	      desc =>
+		  ?T("Define the maximum number of items that can be "
+		     "stored in a node. Default value is: '10'.")}},
+	   {max_nodes_discoitems,
+	    #{value => "pos_integer() | infinity",
+	      desc =>
+		  ?T("The maximum number of nodes to return in a "
+		     "discoitem response. The default value is: '100'.")}},
+	   {max_subscriptions_node,
+	    #{value => "MaxSubs",
+	      desc =>
+		  ?T("Define the maximum number of subscriptions managed "
+		     "by a node. "
+		     "Default value is no limitation: 'undefined'.")}},
+	   {name,
+	    #{value => ?T("Name"),
+	      desc =>
+		  ?T("The value of the service name. This name is only visible "
+		     "in some clients that support "
+		     "https://xmpp.org/extensions/xep-0030.html"
+		     "[XEP-0030: Service Discovery]. "
+		     "The default is 'vCard User Search'.")}},
 	   {nodetree,
-            #{value => "Nodetree",
-              desc =>
+	    #{value => "Nodetree",
+	      desc =>
 		  [?T("To specify which nodetree to use. If not defined, the "
 		      "default pubsub nodetree is used: 'tree'. Only one "
 		      "nodetree can be used per host, and is shared by all "
@@ -4251,43 +4299,12 @@ mod_doc() ->
 		      "PubSub Collection Nodes (XEP-0248). In that case you "
 		      "should also add 'dag' node plugin as default, for "
 		      "example: 'plugins: [flat,pep]'")]}},
-	   {ignore_pep_from_offline,
-            #{value => "false | true",
-              desc => ?T("To specify whether or not we should get last "
-			 "published PEP items from users in our roster which "
-			 "are offline when we connect. Value is 'true' or "
-			 "'false'. If not defined, pubsub assumes true so we "
-			 "only get last items of online contacts.")}},
-           {last_item_cache,
-            #{value => "false | true",
-              desc => ?T("To specify whether or not pubsub should cache last "
-			 "items. Value is 'true' or 'false'. If not defined, "
-			 "pubsub does not cache last items. On systems with not"
-			 " so many nodes, caching last items speeds up pubsub "
-			 "and allows to raise user connection rate. The cost "
-			 "is memory usage, as every item is stored in memory.")}},
-           {force_node_config,
-            #{value => "List of Node and the list of its Key:Value",
-              desc => ?T("Define the configuration for given nodes. "
-			 "The default value is: '[]'."),
-              example =>
-		  ["force_node_config:",
-		   "  ## Avoid buggy clients to make their bookmarks public",
-		   "  storage:bookmarks:",
-		   "    access_model: whitelist"]}},
-           {default_node_config,
-            #{value => "List of Key:Value",
-              desc => ?T("To override default node configuration, regardless "
-			 "of node plugin. Value is a list of key-value "
-			 "definition. Node configuration still uses default "
-			 "configuration defined by node plugin, and overrides "
-			 "any items by value defined in this configurable list.
-")}},
-           {pep_mapping,
-            #{value => "List of Key:Value",
-              desc => ?T("This allows to define a list of key-value to choose "
-			 "defined node plugins on given PEP namespace."),
-              example =>
+	   {pep_mapping,
+	    #{value => "List of Key:Value",
+	      desc =>
+		  ?T("This allows to define a list of key-value to choose "
+		     "defined node plugins on given PEP namespace."),
+	      example =>
 		  [{?T("The following example will use 'node_tune' instead of "
 		       "'node_pep' for every PEP node with the tune namespace:"),
 		    ["modules:",
@@ -4297,29 +4314,20 @@ mod_doc() ->
 		     "      http://jabber.org/protocol/tune: tune",
 		     "  ..."]
 		   }]}},
-	   {db_type,
-	    #{value => "mnesia | sql",
-	      desc =>
-		  ?T("Same as top-level 'default_db' option, but applied to "
-		     "this module only.")}},
-	   {host,
-	    #{desc => ?T("Deprecated. Use 'hosts' instead.")}},
-	   {hosts,
-	    #{value => ?T("[Host, ...]"),
-	      desc =>
-		  ?T("This option defines the Jabber IDs of the service. "
-		     "If the 'hosts' option is not specified, the only Jabber "
-		     "ID will be the hostname of the virtual host with the "
-		     "prefix \"vjud.\". The keyword '@HOST@' is replaced with "
-		     "the real virtual host name.")}},
-	   {name,
-	    #{value => ?T("Name"),
-	      desc =>
-		  ?T("The value of the service name. This name is only visible "
-		     "in some clients that support "
-		     "https://xmpp.org/extensions/xep-0030.html"
-		     "[XEP-0030: Service Discovery]. "
-		     "The default is 'vCard User Search'.")}},
+	   {plugins,
+	    #{value => "[Plugin, ...]",
+	      desc => [?T("To specify which pubsub node plugins to use. "
+			  "The first one in the list is used by default. "
+			  "If this option is not defined, the default plugins "
+			  "list is: '[flat]'. PubSub clients can define which "
+			  "plugin to use when creating a node: "
+			  "add 'type=\'plugin-name\'' attribute "
+			  "to the 'create' stanza element."),
+		       ?T("- 'flat' plugin handles the default behaviour and "
+			  "follows standard XEP-0060 implementation."),
+		       ?T("- 'pep' plugin adds extention to handle Personal "
+			  "Eventing Protocol (XEP-0163) to the PubSub engine. "
+			  "Adding pep allows to handle PEP automatically.")]}},
 	   {vcard,
 	    #{value => ?T("vCard"),
 	      desc =>
@@ -4348,8 +4356,7 @@ mod_doc() ->
       example =>
 	  [{?T("Example of configuration that uses flat nodes as default, "
 	       "and allows use of flat, hometree and pep nodes:"),
-	    [
-	     "modules:",
+	    ["modules:",
 	     "  ...",
 	     "  mod_pubsub:",
 	     "    access_createnode: pubsub_createnode",
@@ -4361,14 +4368,12 @@ mod_doc() ->
 	     "    plugins:",
 	     "      - flat",
 	     "      - pep",
-	     "  ..."
-	    ]},
+	     "  ..."]},
 	   {?T("Using relational database requires using mod_pubsub with "
 	       "db_type 'sql'. Only flat, hometree and pep plugins supports "
 	       "SQL. The following example shows previous configuration "
 	       "with SQL usage:"),
-	    [
-	     "modules:",
+	    ["modules:",
 	     "  ...",
 	     "  mod_pubsub:",
 	     "    db_type: sql",
@@ -4378,6 +4383,5 @@ mod_doc() ->
 	     "    plugins:",
 	     "      - flat",
 	     "      - pep",
-	     "  ..."
-	    ]}
+	     "  ..."]}
 	  ]}.
