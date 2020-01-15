@@ -1435,7 +1435,12 @@ mod_doc() ->
              "Compatible XMPP clients can use it to store their "
              "chat history on the server."),
       opts =>
-          [{assume_mam_usage,
+          [{access_preferences,
+            #{value => ?T("AccessName"),
+              desc =>
+		  ?T("This access rule defines who is allowed to modify the "
+		     "MAM preferences. The default value is 'all'.")}},
+           {assume_mam_usage,
             #{value => "true | false",
               desc =>
                   ?T("This option determines how ejabberd's "
@@ -1499,4 +1504,12 @@ mod_doc() ->
            {cache_life_time,
             #{value => "timeout()",
               desc =>
-                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}]}.
+                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}},
+           {user_mucsub_from_muc_archive,
+            #{value => "true | false",
+              desc =>
+                  ?T("When this option is disabled, for each individual "
+		     "subscriber a separa mucsub message is stored. With this "
+		     "option enabled, when a user fetches archive virtual "
+		     "mucsub, messages are generated from muc archives. "
+		     "The default value is 'false'.")}}]}.
