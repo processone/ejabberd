@@ -1,3 +1,37 @@
+# Version 20.01
+
+* New features
+- Implement OAUTH authentication for clients
+- Implement OAUTH authentication in mqtt
+- Make logging infrastructure use new logger introduced introduced
+  in Erlang (requires OTP22)
+- New configuration parser/validator
+- Initial work on being able to use CockroachDB as database backend
+- Add gc command
+- Add option to disable using prepared statements on Postgresql
+- Implement routine for converting password to SCRAM format
+  for all backends not only SQL
+- Add infrastructure for having module documentation directly
+  in individual module source code
+- Generate man page automaticaly
+- Implement copy feature in mod_carboncopy
+
+* Fixes
+- Make webadmin work with configurable paths
+- Fix handling of result in xmlrpc module
+- Make webadmin work even when accessed through not declared domain
+- Better error reporting in xmlrpc
+- Limit ammount of results returned by disco queries to pubsub nodes
+- Improve validation of configured JWT keys
+- Fix race condition in Redis/SQL startup
+- Fix loading order of third party modules
+- Fix reloading of ACL rules
+- Make account removal requests properly route response
+- Improve handling of malformed inputs in send_message command
+- Omit push notification if storing message in offline storage
+  failed
+- Fix crash in stream management when timeout was not set
+
 # Version 19.09
 
 * Admin
