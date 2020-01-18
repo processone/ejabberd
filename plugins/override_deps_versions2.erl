@@ -1,4 +1,4 @@
--module(override_deps_versions).
+-module(override_deps_versions2).
 -export([preprocess/2, 'pre_update-deps'/2, new_replace/1, new_replace/0]).
 
 preprocess(Config, _Dirs) ->
@@ -55,7 +55,7 @@ replace_mod(Beam) ->
 		      Call = case Name of
 				 new ->
 				     [erl_syntax:application(
-					erl_syntax:abstract(override_deps_versions),
+					erl_syntax:abstract(override_deps_versions2),
 					erl_syntax:abstract(new_replace),
 					Args)];
 				 _ ->

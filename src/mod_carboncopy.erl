@@ -36,8 +36,7 @@
 
 -export([user_send_packet/1, user_receive_packet/1,
 	 iq_handler/1, disco_features/5,
-	 is_carbon_copy/1, depends/2,
-	 mod_options/1]).
+	 depends/2, mod_options/1, mod_doc/0]).
 -export([c2s_copy_session/2, c2s_session_opened/1, c2s_session_resumed/1]).
 %% For debugging purposes
 -export([list/2]).
@@ -48,12 +47,6 @@
 
 -type direction() :: sent | received.
 -type c2s_state() :: ejabberd_c2s:state().
-
--spec is_carbon_copy(stanza()) -> boolean().
-is_carbon_copy(#message{meta = #{carbon_copy := true}}) ->
-    true;
-is_carbon_copy(_) ->
-    false.
 
 start(Host, _Opts) ->
     ejabberd_hooks:add(disco_local_features, Host, ?MODULE, disco_features, 50),
@@ -81,12 +74,10 @@ reload(_Host, _NewOpts, _OldOpts) ->
 -spec disco_features({error, stanza_error()} | {result, [binary()]} | empty,
 		     jid(), jid(), binary(), binary()) ->
 			    {error, stanza_error()} | {result, [binary()]}.
-disco_features({error, Err}, _From, _To, _Node, _Lang) ->
-    {error, Err};
-disco_features(empty, _From, _To, <<"">>, _Lang) ->
-    {result, [?NS_CARBONS_2]};
+disco_features(empty, From, To, <<"">>, Lang) ->
+    disco_features({result, []}, From, To, <<"">>, Lang);
 disco_features({result, Feats}, _From, _To, <<"">>, _Lang) ->
-    {result, [?NS_CARBONS_2|Feats]};
+    {result, [?NS_CARBONS_2,?NS_CARBONS_RULES_0|Feats]};
 disco_features(Acc, _From, _To, _Node, _Lang) ->
     Acc.
 
@@ -115,22 +106,25 @@ iq_handler(#iq{type = get, lang = Lang} = IQ)->
 
 -spec user_send_packet({stanza(), ejabberd_c2s:state()})
       -> {stanza(), ejabberd_c2s:state()} | {stop, {stanza(), ejabberd_c2s:state()}}.
-user_send_packet({Packet, C2SState}) ->
-    From = xmpp:get_from(Packet),
-    To = xmpp:get_to(Packet),
-    case check_and_forward(From, To, Packet, sent) of
-	{stop, Pkt} -> {stop, {Pkt, C2SState}};
-	Pkt -> {Pkt, C2SState}
-    end.
+user_send_packet({#message{meta = #{carbon_copy := true}}, _C2SState} = Acc) ->
+    %% Stop the hook chain, we don't want logging modules to duplicate this
+    %% message.
+    {stop, Acc};
+user_send_packet({#message{from = From, to = To} = Msg, C2SState}) ->
+    {check_and_forward(From, To, Msg, sent), C2SState};
+user_send_packet(Acc) ->
+    Acc.
 
 -spec user_receive_packet({stanza(), ejabberd_c2s:state()})
       -> {stanza(), ejabberd_c2s:state()} | {stop, {stanza(), ejabberd_c2s:state()}}.
-user_receive_packet({Packet, #{jid := JID} = C2SState}) ->
-    To = xmpp:get_to(Packet),
-    case check_and_forward(JID, To, Packet, received) of
-	{stop, Pkt} -> {stop, {Pkt, C2SState}};
-	Pkt -> {Pkt, C2SState}
-    end.
+user_receive_packet({#message{meta = #{carbon_copy := true}}, _C2SState} = Acc) ->
+    %% Stop the hook chain, we don't want logging modules to duplicate this
+    %% message.
+    {stop, Acc};
+user_receive_packet({#message{to = To} = Msg, #{jid := JID} = C2SState}) ->
+    {check_and_forward(JID, To, Msg, received), C2SState};
+user_receive_packet(Acc) ->
+    Acc.
 
 -spec c2s_copy_session(c2s_state(), c2s_state()) -> c2s_state().
 c2s_copy_session(State, #{user := U, server := S, resource := R}) ->
@@ -159,31 +153,24 @@ c2s_session_opened(State) ->
 %    - registered to the user_send_packet hook, to be called only once even for multicast
 %    - do not support "private" message mode, and do not modify the original packet in any way
 %    - we also replicate "read" notifications
--spec check_and_forward(jid(), jid(), stanza(), direction()) ->
-			       stanza() | {stop, stanza()}.
-check_and_forward(JID, To, Packet, Direction)->
-    case is_chat_message(Packet) andalso
-	not is_received_muc_pm(To, Packet, Direction) andalso
-	not xmpp:has_subtag(Packet, #carbons_private{}) andalso
-	not xmpp:has_subtag(Packet, #hint{type = 'no-copy'}) of
+-spec check_and_forward(jid(), jid(), message(), direction()) -> message().
+check_and_forward(JID, To, Msg, Direction)->
+    case (is_chat_message(Msg) orelse
+	  is_received_muc_invite(Msg, Direction)) andalso
+	not is_received_muc_pm(To, Msg, Direction) andalso
+	not xmpp:has_subtag(Msg, #carbons_private{}) andalso
+	not xmpp:has_subtag(Msg, #hint{type = 'no-copy'}) of
 	true ->
-	    case is_carbon_copy(Packet) of
-		false ->
-		    send_copies(JID, To, Packet, Direction),
-		    Packet;
-		true ->
-		    %% stop the hook chain, we don't want logging modules to duplicates
-		    %% this message
-		    {stop, Packet}
-	    end;
-        _ ->
-	    Packet
-    end.
+	    send_copies(JID, To, Msg, Direction);
+	false ->
+	    ok
+    end,
+    Msg.
 
 %%% Internal
 %% Direction = received | sent <received xmlns='urn:xmpp:carbons:1'/>
 -spec send_copies(jid(), jid(), message(), direction()) -> ok.
-send_copies(JID, To, Packet, Direction)->
+send_copies(JID, To, Msg, Direction)->
     {U, S, R} = jid:tolower(JID),
     PrioRes = ejabberd_sm:get_user_present_resources(U, S),
     {_, AvailRs} = lists:unzip(PrioRes),
@@ -200,7 +187,7 @@ send_copies(JID, To, Packet, Direction)->
     end,
     %% list of JIDs that should receive a carbon copy of this message (excluding the
     %% receiver(s) of the original message
-    TargetJIDs = case {IsBareTo, Packet} of
+    TargetJIDs = case {IsBareTo, Msg} of
 	{true, #message{meta = #{sm_copy := true}}} ->
 	    %% The message was sent to our bare JID, and we currently have
 	    %% multiple resources with the same highest priority, so the session
@@ -225,13 +212,13 @@ send_copies(JID, To, Packet, Direction)->
 	      {_, _, Resource} = jid:tolower(Dest),
 	      ?DEBUG("Sending:  ~p =/= ~p", [R, Resource]),
 	      Sender = jid:make({U, S, <<>>}),
-	      New = build_forward_packet(JID, Packet, Sender, Dest, Direction),
+	      New = build_forward_packet(Msg, Sender, Dest, Direction),
 	      ejabberd_router:route(xmpp:set_from_to(New, Sender, Dest))
       end, TargetJIDs).
 
--spec build_forward_packet(jid(), message(), jid(), jid(), direction()) -> message().
-build_forward_packet(JID, #message{type = T} = Msg, Sender, Dest, Direction) ->
-    Forwarded = #forwarded{sub_els = [complete_packet(JID, Msg, Direction)]},
+-spec build_forward_packet(message(), jid(), jid(), direction()) -> message().
+build_forward_packet(#message{type = T} = Msg, Sender, Dest, Direction) ->
+    Forwarded = #forwarded{sub_els = [Msg]},
     Carbon = case Direction of
 		 sent -> #carbons_sent{forwarded = Forwarded};
 		 received -> #carbons_received{forwarded = Forwarded}
@@ -262,29 +249,39 @@ disable(Host, U, R)->
 	    Err
     end.
 
--spec complete_packet(jid(), message(), direction()) -> message().
-complete_packet(From, #message{from = undefined} = Msg, sent) ->
-    %% if this is a packet sent by user on this host, then Packet doesn't
-    %% include the 'from' attribute. We must add it.
-    Msg#message{from = From};
-complete_packet(_From, Msg, _Direction) ->
-    Msg.
-
--spec is_chat_message(stanza()) -> boolean().
+-spec is_chat_message(message()) -> boolean().
 is_chat_message(#message{type = chat}) ->
     true;
 is_chat_message(#message{type = normal, body = [_|_]}) ->
     true;
+is_chat_message(#message{type = Type} = Msg) when Type == chat;
+						  Type == normal ->
+    has_chatstate(Msg) orelse xmpp:has_subtag(Msg, #receipt_response{});
 is_chat_message(_) ->
     false.
 
+-spec is_received_muc_invite(message(), direction()) -> boolean().
+is_received_muc_invite(_Msg, sent) ->
+    false;
+is_received_muc_invite(Msg, received) ->
+    case xmpp:get_subtag(Msg, #muc_user{}) of
+	#muc_user{invites = [_|_]} ->
+	    true;
+	_ ->
+	    xmpp:has_subtag(Msg, #x_conference{})
+    end.
+
 -spec is_received_muc_pm(jid(), message(), direction()) -> boolean().
-is_received_muc_pm(#jid{lresource = <<>>}, _Packet, _Direction) ->
+is_received_muc_pm(#jid{lresource = <<>>}, _Msg, _Direction) ->
     false;
-is_received_muc_pm(_To, _Packet, sent) ->
+is_received_muc_pm(_To, _Msg, sent) ->
     false;
-is_received_muc_pm(_To, Packet, received) ->
-    xmpp:has_subtag(Packet, #muc_user{}).
+is_received_muc_pm(_To, Msg, received) ->
+    xmpp:has_subtag(Msg, #muc_user{}).
+
+-spec has_chatstate(message()) -> boolean().
+has_chatstate(#message{sub_els = Els}) ->
+    lists:any(fun(El) -> xmpp:get_ns(El) == ?NS_CHATSTATES end, Els).
 
 -spec list(binary(), binary()) -> [{Resource :: binary(), Namespace :: binary()}].
 list(User, Server) ->
@@ -301,3 +298,10 @@ depends(_Host, _Opts) ->
 
 mod_options(_) ->
     [].
+
+mod_doc() ->
+    #{desc =>
+          ?T("The module implements https://xmpp.org/extensions/xep-0280.html"
+             "[XEP-0280: Message Carbons]. "
+             "The module broadcasts messages on all connected "
+             "user resources (devices).")}.

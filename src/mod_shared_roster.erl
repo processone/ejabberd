@@ -39,7 +39,7 @@
 	 delete_group/2, get_group_opts/2, set_group_opts/3,
 	 get_group_users/2, get_group_explicit_users/2,
 	 is_user_in_group/3, add_user_to_group/3, opts_to_binary/1,
-	 remove_user_from_group/3, mod_opt_type/1, mod_options/1, depends/2]).
+	 remove_user_from_group/3, mod_opt_type/1, mod_options/1, mod_doc/0, depends/2]).
 
 -include("logger.hrl").
 
@@ -1031,3 +1031,83 @@ mod_opt_type(db_type) ->
 
 mod_options(Host) ->
     [{db_type, ejabberd_config:default_db(Host, ?MODULE)}].
+
+mod_doc() ->
+    #{desc =>
+	  [?T("This module enables you to create shared roster groups: "
+	      "groups of accounts that can see members from (other) groups "
+	      "in their rosters."), "",
+	   ?T("The big advantages of this feature are that end users do not "
+	      "need to manually add all users to their rosters, and that they "
+	      "cannot permanently delete users from the shared roster groups. "
+	      "A shared roster group can have members from any XMPP server, "
+	      "but the presence will only be available from and to members of "
+	      "the same virtual host where the group is created. It still "
+	      "allows the users to have / add their own contacts, as it does "
+	      "not replace the standard roster. Instead, the shared roster "
+	      "contacts are merged to the relevant users at retrieval time. "
+	      "The standard user rosters thus stay unmodified."), "",
+	   ?T("Shared roster groups can be edited only via the Web Admin. "
+	      "Each group has unique identification and those parameters:"), "",
+	   ?T("- Name: The group's name will be displayed in the roster."), "",
+	   ?T("- Description: of the group, which has no effect."), "",
+	   ?T("- Members: A list of JIDs of group members, entered one per "
+	      "line in the Web Admin. The special member directive '@all@' "
+	      "represents all the registered users in the virtual host; "
+	      "which is only recommended for a small server with just a few "
+	      "hundred users. The special member directive '@online@' "
+	      "represents the online users in the virtual host. With those "
+	      "two directives, the actual list of members in those shared "
+	      "rosters is generated dynamically at retrieval time."), "",
+	   ?T("- Displayed groups: A list of groups that will be in the "
+	      "rosters of this group's members. A group of other vhost can "
+	      "be identified with 'groupid@vhost'."), "",
+	   ?T("This module depends on 'mod_roster'. "
+	      "If not enabled, roster queries will return 503 errors.")],
+      opts =>
+          [{db_type,
+            #{value => "mnesia | sql",
+              desc =>
+                  ?T("Define the type of storage where the module will create "
+		     "the tables and store user information. The default is "
+		     "the storage defined by the global option 'default_db', "
+		     "or 'mnesia' if omitted. If 'sql' value is defined, "
+		     "make sure you have defined the database.")}}],
+      example =>
+	  [{?T("Take the case of a computer club that wants all its members "
+	       "seeing each other in their rosters. To achieve this, they "
+	       "need to create a shared roster group similar to this one:"),
+	    ["Identification: club_members",
+	     "Name: Club Members",
+	     "Description: Members from the computer club",
+	     "Members: member1@example.org, member2@example.org, member3@example.org",
+	     "Displayed Groups: club_members"]},
+	   {?T("In another case we have a company which has three divisions: "
+	       "Management, Marketing and Sales. All group members should see "
+	       "all other members in their rosters. Additionally, all managers "
+	       "should have all marketing and sales people in their roster. "
+	       "Simultaneously, all marketeers and the whole sales team "
+	       "should see all managers. This scenario can be achieved by "
+	       "creating shared roster groups as shown in the following lists:"),
+	    ["First list:",
+	     "Identification: management",
+	     "Name: Management",
+	     "Description: Management",
+	     "Members: manager1@example.org, manager2@example.org",
+	     "Displayed Groups: management, marketing, sales",
+	     "",
+	     "Second list:",
+	     "Identification: marketing",
+	     "Name: Marketing",
+	     "Description: Marketing",
+	     "Members: marketeer1@example.org, marketeer2@example.org, marketeer3@example.org",
+	     "Displayed Groups: management, marketing",
+	     "",
+	     "Third list:",
+	     "Identification: sales",
+	     "Name: Sales",
+	     "Description: Sales",
+	     "Members: salesman1@example.org, salesman2@example.org, salesman3@example.org",
+	     "Displayed Groups: management, sales"
+	    ]}
+	  ]}.

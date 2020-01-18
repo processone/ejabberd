@@ -32,6 +32,7 @@
 
 %% API
 -export([start/2, stop/1, reload/3, mod_opt_type/1, depends/2, mod_options/1]).
+-export([mod_doc/0]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
@@ -81,6 +82,51 @@ mod_opt_type(namespaces) ->
 				{atom(), term()}].
 mod_options(_Host) ->
     [{namespaces, []}].
+
+mod_doc() ->
+    #{desc =>
+          ?T("This module is an implementation of "
+             "https://xmpp.org/extensions/xep-0355.html"
+             "[XEP-0355: Namespace Delegation]. "
+             "Only admin mode has been implemented by now. "
+             "Namespace delegation allows external services to "
+             "handle IQ using specific namespace. This may be applied "
+             "for external PEP service."),
+      opts =>
+          [{namespaces,
+            #{value => "{Namespace: Options}",
+              desc =>
+                  ?T("If you want to delegate namespaces to a component, "
+                     "specify them in this option, and associate them "
+                     "to an access rule. The 'Options' are:")},
+            [{filtering,
+              #{value => ?T("Attributes"),
+                desc =>
+                    ?T("The list of attributes. Currently not used.")}},
+             {access,
+              #{value => ?T("AccessName"),
+                desc =>
+                    ?T("The option defines which components are allowed "
+                       "for namespace delegation. The default value is 'none'.")}}]}],
+      example =>
+          ["access_rules:",
+           "  external_pubsub:",
+           "    allow: external_component",
+           "  external_mam:",
+           "    allow: external_component",
+           "",
+           "acl:",
+           "  external_component:",
+           "    server: sat-pubsub.example.org",
+           "",
+           "modules:",
+           "  ...",
+           "  mod_delegation:",
+           "    namespaces:",
+           "      urn:xmpp:mam:1:",
+           "        access: external_mam",
+           "      http://jabber.org/protocol/pubsub:",
+           "        access: external_pubsub"]}.
 
 depends(_, _) ->
     [].

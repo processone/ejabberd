@@ -30,10 +30,10 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, log_user_send/1, mod_options/1,
-	 log_user_receive/1, mod_opt_type/1, depends/2]).
+	 log_user_receive/1, mod_opt_type/1, depends/2, mod_doc/0]).
 
 -include("logger.hrl").
-
+-include("translate.hrl").
 -include("xmpp.hrl").
 
 start(Host, _Opts) ->
@@ -82,3 +82,26 @@ mod_opt_type(loggers) ->
 
 mod_options(_) ->
     [{loggers, []}].
+
+mod_doc() ->
+    #{desc =>
+          ?T("This module forwards copies of all stanzas "
+             "to remote XMPP servers or components. "
+             "Every stanza is encapsulated into <forwarded/> "
+             "element as described in "
+             "https://xmpp.org/extensions/xep-0297.html"
+             "[XEP-0297: Stanza Forwarding]."),
+      opts =>
+          [{loggers,
+            #{value => "[Domain, ...]",
+              desc =>
+                  ?T("A list of servers or connected components "
+                     "to which stanzas will be forwarded.")}}],
+      example =>
+          ["modules:",
+           "  ...",
+           "  mod_service_log:",
+           "    loggers:",
+           "      - xmpp-server.tld",
+           "      - component.domain.tld",
+           "  ..."]}.

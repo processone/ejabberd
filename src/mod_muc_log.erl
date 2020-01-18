@@ -39,7 +39,7 @@
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
-	 mod_opt_type/1, mod_options/1, depends/2]).
+	 mod_opt_type/1, mod_options/1, depends/2, mod_doc/0]).
 
 -include("logger.hrl").
 -include("xmpp.hrl").
@@ -440,12 +440,10 @@ add_message_to_log(Nick1, Message, RoomJID, Opts,
     {_, _, Microsecs} = Now,
     STimeUnique = io_lib:format("~ts.~w",
 				[STime, Microsecs]),
-    catch fw(F,
-       list_to_binary(
-         io_lib:format("<a id=\"~ts\" name=\"~ts\" href=\"#~ts\" "
+    fw(F, io_lib:format("<a id=\"~ts\" name=\"~ts\" href=\"#~ts\" "
                        "class=\"ts\">[~ts]</a> ",
                        [STimeUnique, STimeUnique, STimeUnique, STime])
-	 ++ Text),
+	 ++ Text,
        FileFormat),
     file:close(F),
     ok.
@@ -529,7 +527,7 @@ fw(F, S, FileFormat) when is_atom(FileFormat) ->
     fw(F, S, [], FileFormat).
 
 fw(F, S, O, FileFormat) ->
-    S1 = (str:format(binary_to_list(S) ++ "~n", O)),
+    S1 = <<(str:format(S, O))/binary, "\n">>,
     S2 = case FileFormat of
 	     html ->
 		 S1;
@@ -990,3 +988,124 @@ mod_options(_) ->
      {timezone, local},
      {url, undefined},
      {top_link, {<<"/">>, <<"Home">>}}].
+
+mod_doc() ->
+    #{desc =>
+          [?T("This module enables optional logging "
+              "of Multi-User Chat (MUC) public "
+              "conversations to HTML. Once you enable "
+              "this module, users can join a room using a "
+              "MUC capable XMPP client, and if they have "
+              "enough privileges, they can request the "
+              "configuration form in which they can set "
+              "the option to enable room logging."), "",
+           ?T("Features:"), "",
+           ?T("- Room details are added on top of each page: "
+              "room title, JID, author, subject and configuration."), "",
+           ?T("- The room JID in the generated HTML is a link "
+              "to join the room (using XMPP URI)."), "",
+           ?T("- Subject and room configuration changes are tracked "
+              "and displayed."), "",
+           ?T("- Joins, leaves, nick changes, kicks, bans and '/me' "
+              "are tracked and displayed, including the reason if available."), "",
+           ?T("- Generated HTML files are XHTML 1.0 Transitional and "
+              "CSS compliant."), "",
+           ?T("- Timestamps are self-referencing links."), "",
+           ?T("- Links on top for quicker navigation: "
+              "Previous day, Next day, Up."), "",
+           ?T("- CSS is used for style definition, and a custom "
+              "CSS file can be used."), "",
+           ?T("- URLs on messages and subjects are converted to hyperlinks."), "",
+           ?T("- Timezone used on timestamps is shown on the log files."), "",
+           ?T("- A custom link can be added on top of each page."), "",
+           ?T("The module depends on 'mod_muc'.")],
+      opts =>
+          [{access_log,
+            #{value => ?T("AccessName"),
+              desc =>
+                  ?T("This option restricts which occupants are "
+                     "allowed to enable or disable room logging. "
+                     "The default value is 'muc_admin'. NOTE: "
+                     "for this default setting you need to have an "
+                     "access rule for 'muc_admin' in order to take effect.")}},
+           {cssfile,
+            #{value => ?T("Path | URL"),
+              desc =>
+                  ?T("With this option you can set whether the HTML "
+                     "files should have a custom CSS file or if they "
+                     "need to use the embedded CSS. Allowed values "
+                     "are either 'Path' to local file or an 'URL' to "
+                     "a remote file. By default a predefined CSS will "
+                     "be embedded into the HTML page.")}},
+           {dirname,
+            #{value => "room_jid | room_name",
+              desc =>
+                  ?T("Allows to configure the name of the room directory. "
+                     "If set to 'room_jid', the room directory name will "
+                     "be the full room JID. Otherwise, the room directory "
+                     "name will be only the room name, not including the "
+                     "MUC service name. The default value is 'room_jid'.")}},
+           {dirtype,
+            #{value => "subdirs | plain",
+              desc =>
+                  ?T("The type of the created directories can be specified "
+                     "with this option. If set to 'subdirs', subdirectories "
+                     "are created for each year and month. Otherwise, the "
+                     "names of the log files contain the full date, and "
+                     "there are no subdirectories. The default value is 'subdirs'.")}},
+           {file_format,
+            #{value => "html | plaintext",
+              desc =>
+                  ?T("Define the format of the log files: 'html' stores "
+                     "in HTML format, 'plaintext' stores in plain text. "
+                     "The default value is 'html'.")}},
+           {file_permissions,
+            #{value => "{mode: Mode, group: Group}",
+              desc =>
+                  ?T("Define the permissions that must be used when "
+                     "creating the log files: the number of the mode, "
+                     "and the numeric id of the group that will own the "
+                     "files. The default value is shown in the example below:"),
+              example =>
+                  ["file_permissions:",
+                   "  mode: 644",
+                   "  group: 33"]}},
+           {outdir,
+            #{value => ?T("Path"),
+              desc =>
+                  ?T("This option sets the full path to the directory "
+                     "in which the HTML files should be stored. "
+                     "Make sure the ejabberd daemon user has write "
+                     "access on that directory. The default value is 'www/muc'.")}},
+           {spam_prevention,
+            #{value => "true | false",
+              desc =>
+                  ?T("If set to 'true', a special attribute is added to links "
+                     "that prevent their indexation by search engines. "
+                     "The default value is 'true', which mean that 'nofollow' "
+                     "attributes will be added to user submitted links.")}},
+           {timezone,
+            #{value => "local | universal",
+              desc =>
+                  ?T("The time zone for the logs is configurable with "
+                     "this option. If set to 'local', the local time, as "
+                     "reported to Erlang emulator by the operating system, "
+                     "will be used. Otherwise, UTC time will be used. "
+                     "The default value is 'local'.")}},
+           {url,
+            #{value => ?T("URL"),
+              desc =>
+                  ?T("A top level 'URL' where a client can access "
+                     "logs of a particular conference. The conference name "
+                     "is appended to the URL if 'dirname' option is set to "
+                     "'room_name' or a conference JID is appended to the 'URL' "
+                     "otherwise. There is no default value.")}},
+           {top_link,
+            #{value => "{URL: Text}",
+              desc =>
+                  ?T("With this option you can customize the link on "
+                     "the top right corner of each log file. "
+                     "The default value is shown in the example below:"),
+              example =>
+                  ["top_link:",
+                   "  /: Home"]}}]}.

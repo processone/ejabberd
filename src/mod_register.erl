@@ -35,7 +35,7 @@
 	 c2s_unauthenticated_packet/2, try_register/4,
 	 process_iq/1, send_registration_notifications/3,
 	 mod_opt_type/1, mod_options/1, depends/2,
-	 format_error/1]).
+	 format_error/1, mod_doc/0]).
 
 -include("logger.hrl").
 -include("xmpp.hrl").
@@ -620,3 +620,68 @@ mod_options(_Host) ->
      {registration_watchers, []},
      {redirect_url, undefined},
      {welcome_message, {<<>>, <<>>}}].
+
+mod_doc() ->
+    #{desc =>
+          [?T("This module adds support for https://xmpp.org/extensions/xep-0077.html"
+              "[XEP-0077: In-Band Registration]. "
+              "This protocol enables end users to use a XMPP client to:"), "",
+           ?T("* Register a new account on the server."), "",
+           ?T("* Change the password from an existing account on the server."), "",
+           ?T("* Delete an existing account on the server.")],
+      opts =>
+          [{access,
+            #{value => ?T("AccessName"),
+              desc =>
+                  ?T("Specify rules to restrict what usernames can be registered and "
+                     "unregistered. If a rule returns 'deny' on the requested username, "
+                     "registration and unregistration of that user name is denied. "
+                     "There are no restrictions by default.")}},
+           {access_from,
+            #{value => ?T("AccessName"),
+              desc =>
+                  ?T("By default, 'ejabberd' doesn't allow to register new accounts "
+                     "from s2s or existing c2s sessions. You can change it by defining "
+                     "access rule in this option. Use with care: allowing registration "
+                     "from s2s leads to uncontrolled massive accounts creation by rogue users.")}},
+           {access_remove,
+            #{value => ?T("AccessName"),
+              desc =>
+                  ?T("Specify rules to restrict access for user unregistration. "
+                     "By default any user is able to unregister their account.")}},
+           {captcha_protected,
+            #{value => "true | false",
+              desc =>
+                  ?T("Protect registrations with CAPTCHA (see section "
+                     "https://docs.ejabberd.im/admin/configuration/#captcha[CAPTCHA] "
+                     "of the Configuration Guide). The default is 'false'.")}},
+           {ip_access,
+            #{value => ?T("AccessName"),
+              desc =>
+                  ?T("Define rules to allow or deny account registration depending "
+                     "on the IP address of the XMPP client. The 'AccessName' should "
+                     "be of type 'ip'. The default value is 'all'.")}},
+           {password_strength,
+            #{value => "Entropy",
+              desc =>
+                  ?T("This option sets the minimum "
+                     "https://en.wikipedia.org/wiki/Entropy_(information_theory)"
+                     "[Shannon entropy] for passwords. The value 'Entropy' is a "
+                     "number of bits of entropy. The recommended minimum is 32 bits. "
+                     "The default is 0, i.e. no checks are performed.")}},
+           {registration_watchers,
+            #{value => "[JID, ...]",
+              desc =>
+                  ?T("This option defines a list of JIDs which will be notified each "
+                     "time a new account is registered.")}},
+           {redirect_url,
+            #{value => ?T("URL"),
+              desc =>
+                  ?T("This option enables registration redirection as described in "
+                     "https://xmpp.org/extensions/xep-0077.html#redirect"
+                     "[XEP-0077: In-Band Registration: Redirection].")}},
+           {welcome_message,
+            #{value => "{subject: Subject, body: Body}",
+              desc =>
+                  ?T("Set a welcome message that is sent to each newly registered account. "
+                     "The message will have subject 'Subject' and text 'Body'.")}}]}.

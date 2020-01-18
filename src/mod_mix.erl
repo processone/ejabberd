@@ -30,6 +30,7 @@
 -export([route/1]).
 %% gen_mod callbacks
 -export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1, mod_options/1]).
+-export([mod_doc/0]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3, format_status/2]).
@@ -95,6 +96,43 @@ mod_options(Host) ->
      {hosts, []},
      {name, ?T("Channels")},
      {db_type, ejabberd_config:default_db(Host, ?MODULE)}].
+
+mod_doc() ->
+    #{desc =>
+          [?T("This module is an experimental implementation of "
+              "https://xmpp.org/extensions/xep-0369.html"
+              "[XEP-0369: Mediated Information eXchange (MIX)]. "
+              "MIX support was added in ejabberd 16.03 as an "
+              "experimental feature, updated in 19.02, and is not "
+              "yet ready to use in production. It's asserted that "
+              "the MIX protocol is going to replace the MUC protocol "
+              "in the future (see 'mod_muc')."), "",
+           ?T("The module depends on 'mod_mam'.")],
+      opts =>
+          [{access_create,
+            #{value => ?T("AccessName"),
+              desc =>
+                  ?T("An access rule to control MIX channels creations. "
+                     "The default value is 'all'.")}},
+           {host,
+            #{desc => ?T("Deprecated. Use 'hosts' instead.")}},
+           {hosts,
+            #{value => ?T("[Host, ...]"),
+              desc =>
+                  ?T("This option defines the Jabber IDs of the service. "
+                     "If the 'hosts' option is not specified, the only Jabber ID will "
+                     "be the hostname of the virtual host with the prefix \"mix.\". "
+                     "The keyword '@HOST@' is replaced with the real virtual host name.")}},
+           {name,
+            #{value => ?T("Name"),
+              desc =>
+                  ?T("A name of the service in the Service Discovery. "
+                     "This will only be displayed by special XMPP clients. "
+                     "The default value is 'Channels'.")}},
+           {db_type,
+            #{value => "mnesia | sql",
+              desc =>
+                  ?T("Same as top-level 'default_db' option, but applied to this module only.")}}]}.
 
 -spec route(stanza()) -> ok.
 route(#iq{} = IQ) ->

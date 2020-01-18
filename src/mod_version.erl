@@ -32,7 +32,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, reload/3, process_local_iq/1,
-	 mod_opt_type/1, mod_options/1, depends/2]).
+	 mod_opt_type/1, mod_options/1, depends/2, mod_doc/0]).
 
 -include("logger.hrl").
 -include("xmpp.hrl").
@@ -81,3 +81,16 @@ mod_opt_type(show_os) ->
 
 mod_options(_Host) ->
     [{show_os, true}].
+
+mod_doc() ->
+    #{desc =>
+          ?T("This module implements "
+             "https://xmpp.org/extensions/xep-0092.html"
+             "[XEP-0092: Software Version]. Consequently, "
+             "it answers ejabberd's version when queried."),
+      opts =>
+          [{show_os,
+            #{value => "true | false",
+              desc =>
+                  ?T("Should the operating system be revealed or not. "
+                     "The default value is 'true'.")}}]}.

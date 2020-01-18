@@ -36,13 +36,14 @@
 -export([start/2, stop/1, reload/3, process/2, open_session/2,
 	 close_session/1, find_session/1, clean_cache/1]).
 
--export([depends/2, mod_opt_type/1, mod_options/1]).
+-export([depends/2, mod_opt_type/1, mod_options/1, mod_doc/0]).
 
 -include("logger.hrl").
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("xmpp.hrl").
 -include("ejabberd_http.hrl").
 -include("bosh.hrl").
+-include("translate.hrl").
 
 -callback init() -> any().
 -callback open_session(binary(), pid()) -> ok | {error, any()}.
@@ -196,6 +197,51 @@ mod_options(Host) ->
      {cache_size, ejabberd_option:cache_size(Host)},
      {cache_missed, ejabberd_option:cache_missed(Host)},
      {cache_life_time, ejabberd_option:cache_life_time(Host)}].
+
+mod_doc() ->
+    #{desc =>
+          ?T("This module implements XMPP over BOSH as defined in "
+             "https://xmpp.org/extensions/xep-0124.html[XEP-0124] and "
+             "https://xmpp.org/extensions/xep-0206.html[XEP-0206]. BOSH "
+             "stands for Bidirectional-streams Over Synchronous HTTP. "
+             "It makes it possible to simulate long lived connections "
+             "required by XMPP over the HTTP protocol. In practice, "
+             "this module makes it possible to use XMPP in a browser without "
+             "Websocket support and more generally to have a way to use "
+             "XMPP while having to get through an HTTP proxy."),
+      opts =>
+          [{json,
+            #{value => "true | false",
+              desc => ?T("This option has no effect.")}},
+           {max_inactivity,
+            #{value => "timeout()",
+              desc =>
+                  ?T("The option defines the maximum inactivity period. "
+                     "The default value is '30' seconds.")}},
+           {queue_type,
+            #{value => "ram | file",
+              desc =>
+                  ?T("Same as top-level 'queue_type' option, but applied to this module only.")}},
+           {ram_db_type,
+            #{value => "mnesia | sql | redis",
+              desc =>
+                  ?T("Same as 'default_ram_db' but applied to this module only.")}},
+           {use_cache,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
+           {cache_size,
+            #{value => "pos_integer() | infinity",
+              desc =>
+                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+           {cache_missed,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'cache_missed' option, but applied to this module only.")}},
+           {cache_life_time,
+            #{value => "timeout()",
+              desc =>
+                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}]}.
 
 %%%----------------------------------------------------------------------
 %%% Cache stuff

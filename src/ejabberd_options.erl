@@ -19,7 +19,7 @@
 -module(ejabberd_options).
 -behaviour(ejabberd_config).
 
--export([opt_type/1, options/0, globals/0]).
+-export([opt_type/1, options/0, globals/0, doc/0]).
 
 -ifdef(NEW_SQL_SCHEMA).
 -define(USE_NEW_SQL_SCHEMA_DEFAULT, true).
@@ -729,6 +729,9 @@ globals() ->
      websocket_origin,
      websocket_ping_interval,
      websocket_timeout].
+
+doc() ->
+    ejabberd_options_doc:doc().
 
 %%%===================================================================
 %%% Internal functions

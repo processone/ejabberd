@@ -27,6 +27,7 @@
 
 %% gen_mod API
 -export([start/2, stop/1, reload/3, depends/2, mod_opt_type/1, mod_options/1]).
+-export([mod_doc/0]).
 %% hooks
 -export([c2s_stream_started/2, c2s_stream_features/2,
 	 c2s_authenticated_packet/2, c2s_unauthenticated_packet/2,
@@ -493,11 +494,10 @@ update_num_stanzas_in(State, _El) ->
 send_rack(#{mgmt_ack_timer := _} = State) ->
     State;
 send_rack(#{mgmt_xmlns := Xmlns,
-	    mgmt_stanzas_out := NumStanzasOut,
-	    mgmt_ack_timeout := AckTimeout} = State) ->
-    TRef = erlang:start_timer(AckTimeout, self(), ack_timeout),
-    State1 = State#{mgmt_ack_timer => TRef, mgmt_stanzas_req => NumStanzasOut},
-    send(State1, #sm_r{xmlns = Xmlns}).
+	    mgmt_stanzas_out := NumStanzasOut} = State) ->
+    State1 = State#{mgmt_stanzas_req => NumStanzasOut},
+    State2 = start_ack_timer(State1),
+    send(State2, #sm_r{xmlns = Xmlns}).
 
 -spec resend_rack(state()) -> state().
 resend_rack(#{mgmt_ack_timer := _,
@@ -712,6 +712,13 @@ restart_pending_timer(#{mgmt_pending_timer := TRef} = State, NewTimeout) ->
 restart_pending_timer(State, _NewTimeout) ->
     State.
 
+-spec start_ack_timer(state()) -> state().
+start_ack_timer(#{mgmt_ack_timeout := infinity} = State) ->
+    State;
+start_ack_timer(#{mgmt_ack_timeout := AckTimeout} = State) ->
+    TRef = erlang:start_timer(AckTimeout, self(), ack_timeout),
+    State#{mgmt_ack_timer => TRef}.
+
 -spec cancel_ack_timer(state()) -> state().
 cancel_ack_timer(#{mgmt_ack_timer := TRef} = State) ->
     misc:cancel_timer(TRef),
@@ -849,3 +856,82 @@ mod_options(Host) ->
      {cache_life_time, timer:hours(48)},
      {resend_on_timeout, false},
      {queue_type, ejabberd_option:queue_type(Host)}].
+
+mod_doc() ->
+    #{desc =>
+          ?T("This module adds support for "
+             "https://xmpp.org/extensions/xep-0198.html"
+             "[XEP-0198: Stream Management]. This protocol allows "
+             "active management of an XML stream between two XMPP "
+             "entities, including features for stanza acknowledgements "
+             "and stream resumption."),
+      opts =>
+          [{max_ack_queue,
+            #{value => ?T("Size"),
+              desc =>
+                  ?T("This option specifies the maximum number of "
+                     "unacknowledged stanzas queued for possible "
+                     "retransmission. When the limit is exceeded, "
+                     "the client session is terminated. The allowed "
+                     "values are positive integers and 'infinity'. "
+                     "You should be careful when setting this value "
+                     "as it should not be set too low, otherwise, "
+                     "you could kill sessions in a loop, before they "
+                     "get the chance to finish proper session initiation. "
+                     "It should definitely be set higher that the size "
+                     "of the offline queue (for example at least 3 times "
+                     "the value of the max offline queue and never lower "
+                     "than '1000'). The default value is '5000'.")}},
+           {resume_timeout,
+            #{value => "timeout()",
+              desc =>
+                  ?T("This option configures the (default) period of time "
+                     "until a session times out if the connection is lost. "
+                     "During this period of time, a client may resume its "
+                     "session. Note that the client may request a different "
+                     "timeout value, see the 'max_resume_timeout' option. "
+                     "Setting it to '0' effectively disables session resumption. "
+                     "The default value is '5' minutes.")}},
+           {max_resume_timeout,
+            #{value => "timeout()",
+              desc =>
+                  ?T("A client may specify the period of time until a session "
+                     "times out if the connection is lost. During this period "
+                     "of time, the client may resume its session. This option "
+                     "limits the period of time a client is permitted to request. "
+                     "It must be set to a timeout equal to or larger than the "
+                     "default 'resume_timeout'. By default, it is set to the "
+                     "same value as the 'resume_timeout' option.")}},
+           {ack_timeout,
+            #{value => "timeout()",
+              desc =>
+                  ?T("A time to wait for stanza acknowledgements. "
+                     "Setting it to 'infinity' effectively disables the timeout. "
+                     "The default value is '1' minute.")}},
+           {resend_on_timeout,
+            #{value => "true | false | if_offline",
+              desc =>
+                  ?T("If this option is set to 'true', any message stanzas "
+                     "that weren't acknowledged by the client will be resent "
+                     "on session timeout. This behavior might often be desired, "
+                     "but could have unexpected results under certain circumstances. "
+                     "For example, a message that was sent to two resources might "
+                     "get resent to one of them if the other one timed out. "
+                     "Therefore, the default value for this option is 'false', "
+                     "which tells ejabberd to generate an error message instead. "
+                     "As an alternative, the option may be set to 'if_offline'. "
+                     "In this case, unacknowledged messages are resent only if "
+                     "no other resource is online when the session times out. "
+                     "Otherwise, error messages are generated.")}},
+           {queue_type,
+            #{value => "ram | file",
+              desc =>
+                  ?T("Same as top-level 'queue_type' option, but applied to this module only.")}},
+           {cache_size,
+            #{value => "pos_integer() | infinity",
+              desc =>
+                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+           {cache_life_time,
+            #{value => "timeout()",
+              desc =>
+                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}]}.

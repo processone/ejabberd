@@ -388,7 +388,11 @@ get_commands_spec() ->
      #ejabberd_commands{name = gc, tags = [server],
 			desc = "Force full garbage collection",
 			module = ?MODULE, function = gc,
-			args = [], result = {res, rescode}}
+			args = [], result = {res, rescode}},
+     #ejabberd_commands{name = man, tags = [documentation],
+                        desc = "Generate Unix manpage for current ejabberd version",
+                        module = ejabberd_doc, function = man,
+                        args = [], result = {res, restuple}}
     ].
 
 

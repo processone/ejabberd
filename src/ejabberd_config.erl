@@ -36,6 +36,7 @@
 -export([default_db/2, default_db/3, default_ram_db/2, default_ram_db/3]).
 -export([beams/1, validators/1, globals/0, may_hide_data/1]).
 -export([dump/0, dump/1, convert_to_yaml/1, convert_to_yaml/2]).
+-export([callback_modules/1]).
 
 %% Deprecated functions
 -export([get_option/2, set_option/2]).
@@ -63,6 +64,7 @@
 -callback opt_type(atom()) -> econf:validator().
 -callback options() -> [atom() | {atom(), term()}].
 -callback globals() -> [atom()].
+-callback doc() -> any().
 
 -optional_callbacks([globals/0]).
 

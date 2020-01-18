@@ -29,7 +29,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, reload/3, mod_options/1,
-         get_commands_spec/0, depends/2]).
+         get_commands_spec/0, depends/2, mod_doc/0]).
 
 % Commands API
 -export([update_sql/0]).
@@ -39,6 +39,7 @@
 -include("ejabberd_commands.hrl").
 -include("xmpp.hrl").
 -include("ejabberd_sql_pt.hrl").
+-include("translate.hrl").
 
 %%%
 %%% gen_mod
@@ -358,3 +359,9 @@ sql_query(Host, Query) ->
     end.
 
 mod_options(_) -> [].
+
+mod_doc() ->
+    #{desc =>
+          ?T("This module can be used to update existing SQL database "
+             "from 'old' to 'new' schema. When the module is loaded "
+             "use 'update_sql' ejabberdctl command.")}.

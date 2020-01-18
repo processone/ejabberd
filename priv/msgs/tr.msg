@@ -1,4 +1,6 @@
 %% -*- coding: utf-8 -*-
+{" has set the subject to: "," konuyu değiştirdi: "}.
+{"A password is required to enter this room","Bu odaya girmek için parola gerekiyor"}.
 {"Access denied by service policy","Servis politikası gereği erişim engellendi"}.
 {"Action on user","Kullanıcıya uygulanacak eylem"}.
 {"Add Jabber ID","Jabber ID'si Ekle"}.
@@ -8,6 +10,7 @@
 {"Administration","Yönetim"}.
 {"Administrator privileges required","Yönetim yetkileri gerekli"}.
 {"All activity","Tüm aktivite"}.
+{"All Users","Tüm Kullanıcılar"}.
 {"Allow users to change the subject","Kullanıcıların konu değiştirmesine izin ver"}.
 {"Allow users to query other users","Kullanıcıların diğer kullanıcıları sorgulamalarına izin ver"}.
 {"Allow users to send invites","Kullanıcıların davetiye göndermelerine izin ver"}.
@@ -15,9 +18,7 @@
 {"Allow visitors to change nickname","Ziyaretçilerin takma isim değiştirmelerine izin ver"}.
 {"Allow visitors to send private messages to","Ziyaretçilerin özel mesaj göndermelerine izin ver"}.
 {"Allow visitors to send status text in presence updates","Ziyaretçilerin varlık (presence) güncellemelerinde durum metni göndermelerine izin ver"}.
-{"All Users","Tüm Kullanıcılar"}.
 {"Announcements","Duyurular"}.
-{"A password is required to enter this room","Bu odaya girmek için parola gerekiyor"}.
 {"April","Nisan"}.
 {"August","Ağustos"}.
 {"Backup Management","Yedek Yönetimi"}.
@@ -25,7 +26,6 @@
 {"Backup","Yedekle"}.
 {"Bad format","Kötü biçem"}.
 {"Birthday","Doğumgünü"}.
-{"CAPTCHA web page","CAPTCHA web sayfası"}.
 {"Change Password","Parola Değiştir"}.
 {"Change User Password","Kullanıcı Parolasını Değiştir"}.
 {"Characters not allowed:","İzin verilmeyen karakterler:"}.
@@ -36,14 +36,12 @@
 {"Chatroom is stopped","Sohbet odası durduruldu"}.
 {"Chatrooms","Sohbet Odaları"}.
 {"Choose a username and password to register with this server","Bu sunucuya kayıt olmak için bir kullanıcı ismi ve parola seçiniz"}.
-{"Choose modules to stop","Durdurulacak modülleri seçiniz"}.
 {"Choose storage type of tables","Tabloların veri depolama tipini seçiniz"}.
 {"Choose whether to approve this entity's subscription.","Bu varlığın üyeliğini onaylayıp onaylamamayı seçiniz."}.
 {"City","İl"}.
 {"Commands","Komutlar"}.
 {"Conference room does not exist","Konferans odası bulunamadı"}.
 {"Configuration","Ayarlar"}.
-{"Configuration of room ~s","~s odasının ayarları"}.
 {"Connected Resources:","Bağlı Kaynaklar:"}.
 {"Country","Ülke"}.
 {"CPU Time:","İşlemci Zamanı:"}.
@@ -51,8 +49,8 @@
 {"Database","Veritabanı"}.
 {"December","Aralık"}.
 {"Default users as participants","Kullanıcılar öntanımlı olarak katılımcı olsun"}.
-{"Delete message of the day","Günün mesajını sil"}.
 {"Delete message of the day on all hosts","Tüm sunuculardaki günün mesajını sil"}.
+{"Delete message of the day","Günün mesajını sil"}.
 {"Delete Selected","Seçilenleri Sil"}.
 {"Delete User","Kullanıcıyı Sil"}.
 {"Description:","Tanım:"}.
@@ -72,7 +70,6 @@
 {"Email","E-posta"}.
 {"Enable logging","Kayıt tutma özelliğini aç"}.
 {"End User Session","Kullanıcı Oturumunu Kapat"}.
-{"Enter list of {Module, [Options]}","{Module, [Options]} listesi giriniz"}.
 {"Enter nickname you want to register","Kaydettirmek istediğiniz takma ismi giriniz"}.
 {"Enter path to backup file","Yedek dosyasının yolunu giriniz"}.
 {"Enter path to jabberd14 spool dir","jabberd14 spool dosyası için yol giriniz"}.
@@ -88,7 +85,6 @@
 {"February","Şubat"}.
 {"Friday","Cuma"}.
 {"From","Kimden"}.
-{"From ~s","Kimden ~s"}.
 {"Full Name","Tam İsim"}.
 {"Get Number of Online Users","Bağlı Kullanıcı Sayısını Al"}.
 {"Get Number of Registered Users","Kayıtlı Kullanıcı Sayısını Al"}.
@@ -98,11 +94,10 @@
 {"Group ","Group "}.
 {"Groups","Gruplar"}.
 {"has been banned","odaya girmesi yasaklandı"}.
-{"has been kicked because of an affiliation change","ilişki değişikliğinden dolayı atıldı"}.
 {"has been kicked because of a system shutdown","sistem kapandığından dolayı atıldı"}.
+{"has been kicked because of an affiliation change","ilişki değişikliğinden dolayı atıldı"}.
 {"has been kicked because the room has been changed to members-only","oda üyelere-özel hale getirildiğinden dolayı atıldı"}.
 {"has been kicked","odadan atıldı"}.
-{" has set the subject to: "," konuyu değiştirdi: "}.
 {"Host","Sunucu"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Eğer burada CAPTCHA resmini göremiyorsanız, web sayfasını ziyaret edin."}.
 {"Import Directory","Dizini İçe Aktar"}.
@@ -118,8 +113,8 @@
 {"IP addresses","IP adresleri"}.
 {"is now known as","isim değiştirdi :"}.
 {"It is not allowed to send private messages of type \"groupchat\"","\"groupchat\" tipinde özel mesajlar gönderilmesine izin verilmiyor"}.
-{"It is not allowed to send private messages","Özel mesaj gönderilmesine izin verilmiyor"}.
 {"It is not allowed to send private messages to the conference","Konferansa özel mesajlar gönderilmesine izin verilmiyor"}.
+{"It is not allowed to send private messages","Özel mesaj gönderilmesine izin verilmiyor"}.
 {"Jabber Account Registration","Jabber Hesap Kaydı"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Ocak"}.
@@ -131,7 +126,6 @@
 {"Last month","Geçen ay"}.
 {"Last year","Geçen yıl"}.
 {"leaves the room","odadan ayrıldı"}.
-{"List of modules to start","Başlatılacak modüllerin listesi"}.
 {"Low level update script","Düşük seviye güncelleme betiği"}.
 {"Make participants list public","Katılımcı listesini herkese açık hale getir"}.
 {"Make room CAPTCHA protected","Odayı insan doğrulaması (captcha) korumalı hale getir"}.
@@ -151,20 +145,18 @@
 {"Middle Name","Ortanca İsim"}.
 {"Moderator privileges required","Moderatör yetkileri gerekli"}.
 {"Modified modules","Değişen modüller"}.
-{"Modules","Modüller"}.
 {"Monday","Pazartesi"}.
 {"Name","İsim"}.
 {"Name:","İsim:"}.
 {"Never","Asla"}.
 {"New Password:","Yeni Parola:"}.
 {"Nickname Registration at ","Takma İsim Kaydı : "}.
-{"Nickname ~s does not exist in the room","~s takma ismi odada yok"}.
 {"Nickname","Takma isim"}.
 {"No body provided for announce message","Duyuru mesajının gövdesi yok"}.
 {"No Data","Veri Yok"}.
+{"No limit","Sınırsız"}.
 {"Node not found","Düğüm bulunamadı"}.
 {"Nodes","Düğümler"}.
-{"No limit","Sınırsız"}.
 {"None","Hiçbiri"}.
 {"Not Found","Bulunamadı"}.
 {"November","Kasım"}.
@@ -175,9 +167,9 @@
 {"Offline Messages:","Çevirim-dışı Mesajlar:"}.
 {"OK","Tamam"}.
 {"Old Password:","Eski Parola:"}.
-{"Online","Bağlı"}.
 {"Online Users","Bağlı Kullanıcılar"}.
 {"Online Users:","Bağlı Kullanıcılar:"}.
+{"Online","Bağlı"}.
 {"Only moderators and participants are allowed to change the subject in this room","Sadece moderatörlerin ve katılımcıların bu odanın konusunu değiştirmesine izin veriliyor"}.
 {"Only moderators are allowed to change the subject in this room","Sadece moderatörlerin bu odanın konusunu değiştirmesine izin veriliyor"}.
 {"Only moderators can approve voice requests","Yalnız moderatörler ses isteklerini onaylayabilir"}.
@@ -190,10 +182,10 @@
 {"Outgoing s2s Connections:","Giden s2s Bağlantıları:"}.
 {"Owner privileges required","Sahip yetkileri gerekli"}.
 {"Packet","Paket"}.
-{"Password","Parola"}.
-{"Password:","Parola:"}.
 {"Password Verification","Parola Doğrulaması"}.
 {"Password Verification:","Parola Doğrulaması:"}.
+{"Password","Parola"}.
+{"Password:","Parola:"}.
 {"Path to Dir","Dizinin Yolu"}.
 {"Path to File","Dosyanın Yolu"}.
 {"Pending","Sıra Bekleyen"}.
@@ -216,8 +208,8 @@
 {"Register","Kayıt Ol"}.
 {"Remote copy","Uzak kopyala"}.
 {"Remove All Offline Messages","Tüm Çevirim-dışı Mesajları Kaldır"}.
-{"Remove","Kaldır"}.
 {"Remove User","Kullanıcıyı Kaldır"}.
+{"Remove","Kaldır"}.
 {"Replaced by new connection","Eski bağlantı yenisi ile değiştirildi"}.
 {"Resources","Kaynaklar"}.
 {"Restart Service","Servisi Tekrar Başlat"}.
@@ -232,19 +224,18 @@
 {"Room description","Oda tanımı"}.
 {"Room Occupants","Oda Sakini Sayısı"}.
 {"Room title","Oda başlığı"}.
-{"Roster","Kontak Listesi"}.
-{"Roster of ","Kontak Listesi : "}.
 {"Roster size","İsim listesi boyutu"}.
+{"Roster","Kontak Listesi"}.
 {"RPC Call Error","RPC Çağrı Hatası"}.
 {"Running Nodes","Çalışan Düğümler"}.
 {"Saturday","Cumartesi"}.
 {"Script check","Betik kontrolü"}.
 {"Search Results for ","Arama sonuçları : "}.
 {"Search users in ","Kullanıcılarda arama yap : "}.
-{"Send announcement to all online users","Duyuruyu tüm bağlı kullanıcılara yolla"}.
 {"Send announcement to all online users on all hosts","Duyuruyu tüm sunuculardaki tüm bağlı kullanıcılara yolla"}.
-{"Send announcement to all users","Duyuruyu tüm kullanıcılara yolla"}.
+{"Send announcement to all online users","Duyuruyu tüm bağlı kullanıcılara yolla"}.
 {"Send announcement to all users on all hosts","Tüm sunuculardaki tüm kullanıcılara duyuru yolla"}.
+{"Send announcement to all users","Duyuruyu tüm kullanıcılara yolla"}.
 {"September","Eylül"}.
 {"Server:","Sunucu:"}.
 {"Set message of the day and send to online users","Günün mesajını belirle"}.
@@ -253,16 +244,10 @@
 {"Show Integral Table","Önemli Tabloyu Göster"}.
 {"Show Ordinary Table","Sıradan Tabloyu Göster"}.
 {"Shut Down Service","Servisi Kapat"}.
-{"~s invites you to the room ~s","~s sizi ~s odasına davet ediyor"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Bazı Jabber istemcileri parolanızı bilgisayarınızda saklayabilir. Bu özelliği ancak bilgisayarın güvenli olduğuna güveniyorsanız kullanın."}.
-{"~s's Offline Messages Queue","~s Kullanıcısının Mesaj Kuyruğu"}.
-{"Start Modules at ","Modülleri Başlat : "}.
-{"Start Modules","Modülleri Başlat"}.
-{"Statistics","İstatistikler"}.
 {"Statistics of ~p","~p istatistikleri"}.
+{"Statistics","İstatistikler"}.
 {"Stop","Durdur"}.
-{"Stop Modules at ","Modülleri Durdur : "}.
-{"Stop Modules","Modülleri Durdur"}.
 {"Stopped Nodes","Durdurulmuş Düğümler"}.
 {"Storage Type","Depolama Tipi"}.
 {"Store binary backup:","İkili yedeği sakla:"}.
@@ -270,14 +255,14 @@
 {"Subject","Konu"}.
 {"Submit","Gönder"}.
 {"Submitted","Gönderilenler"}.
-{"Subscription","Üyelik"}.
+{"Subscription","Abonelik"}.
 {"Sunday","Pazar"}.
 {"That nickname is already in use by another occupant","Takma isim odanın başka bir sakini tarafından halihazırda kullanımda"}.
 {"That nickname is registered by another person","O takma isim başka biri tarafından kaydettirilmiş"}.
-{"The CAPTCHA is valid.","İnsan doğrulaması (captcha) geçerli."}.
+{"The CAPTCHA is valid.","Güvenlik doğrulaması (CAPTCHA) geçerli."}.
 {"The CAPTCHA verification has failed","CAPTCHA doğrulaması başarısız oldu"}.
-{"the password is","parola :"}.
 {"The password is too weak","Parola çok zayıf"}.
+{"the password is","parola :"}.
 {"The password of your Jabber account was successfully changed.","Jabber hesabınızın parolası başarıyla değiştirildi."}.
 {"There was an error changing the password: ","Parolanın değiştirilmesi sırasında bir hata oluştu:"}.
 {"There was an error creating the account: ","Hesap oluşturulurken bir hata oluştu:"}.
@@ -291,7 +276,6 @@
 {"Time","Zaman"}.
 {"To","Kime"}.
 {"Too many CAPTCHA requests","Çok fazla CAPTCHA isteği"}.
-{"To ~s","Kime ~s"}.
 {"Traffic rate limit is exceeded","Trafik oran sınırı aşıldı"}.
 {"Transactions Aborted:","İptal Edilen Hareketler (Transactions):"}.
 {"Transactions Committed:","Tamamlanan Hareketler (Transactions Committed):"}.
@@ -302,18 +286,18 @@
 {"Unauthorized","Yetkisiz"}.
 {"Unregister a Jabber account","Bir Jabber hesabı kaydı sil"}.
 {"Unregister","Kaydı Sil"}.
-{"Update","GÜncelle"}.
 {"Update message of the day (don't send)","Günün mesajını güncelle (gönderme)"}.
 {"Update message of the day on all hosts (don't send)","Tüm sunuculardaki günün mesajını güncelle (gönderme)"}.
 {"Update plan","Planı güncelle"}.
 {"Update script","Betiği Güncelle"}.
+{"Update","Güncelle"}.
 {"Uptime:","Hizmet Süresi:"}.
-{"User","Kullanıcı"}.
 {"User Management","Kullanıcı Yönetimi"}.
+{"User","Kullanıcı"}.
 {"Username:","Kullanıcı adı:"}.
 {"Users are not allowed to register accounts so quickly","Kullanıcıların bu kadar hızlı hesap açmalarına izin verilmiyor"}.
-{"Users","Kullanıcılar"}.
 {"Users Last Activity","Kullanıcıların Son Aktiviteleri"}.
+{"Users","Kullanıcılar"}.
 {"Validate","Geçerli"}.
 {"vCard User Search","vCard Kullanıcı Araması"}.
 {"Virtual Hosts","Sanal Sunucuları"}.

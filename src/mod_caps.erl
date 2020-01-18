@@ -49,12 +49,13 @@
 	 handle_cast/2, terminate/2, code_change/3]).
 
 -export([user_send_packet/1, user_receive_packet/1,
-	 c2s_presence_in/2, mod_opt_type/1, mod_options/1]).
+	 c2s_presence_in/2, mod_opt_type/1, mod_options/1, mod_doc/0]).
 
 -include("logger.hrl").
 
 -include("xmpp.hrl").
 -include("mod_caps.hrl").
+-include("translate.hrl").
 
 -define(BAD_HASH_LIFETIME, 600).
 
@@ -563,3 +564,32 @@ mod_options(Host) ->
      {cache_size, ejabberd_option:cache_size(Host)},
      {cache_missed, ejabberd_option:cache_missed(Host)},
      {cache_life_time, ejabberd_option:cache_life_time(Host)}].
+
+mod_doc() ->
+    #{desc =>
+          [?T("This module implements "
+              "https://xmpp.org/extensions/xep-0115.html"
+              "[XEP-0115: Entity Capabilities]."),
+           ?T("The main purpose of the module is to provide "
+              "PEP functionality (see 'mod_pubsub').")],
+      opts =>
+          [{db_type,
+            #{value => "mnesia | sql",
+              desc =>
+                  ?T("Same as top-level 'default_db' option, but applied to this module only.")}},
+           {use_cache,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
+           {cache_size,
+            #{value => "pos_integer() | infinity",
+              desc =>
+                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+           {cache_missed,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'cache_missed' option, but applied to this module only.")}},
+           {cache_life_time,
+            #{value => "timeout()",
+              desc =>
+                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}]}.

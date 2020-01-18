@@ -30,7 +30,7 @@
 -protocol({xep, 191, '1.2'}).
 
 -export([start/2, stop/1, reload/3, process_iq/1, depends/2,
-	 disco_features/5, mod_options/1]).
+	 disco_features/5, mod_options/1, mod_doc/0]).
 
 -include("logger.hrl").
 -include("xmpp.hrl").
@@ -265,3 +265,11 @@ err_db_failure(#iq{lang = Lang} = IQ) ->
 
 mod_options(_Host) ->
     [].
+
+mod_doc() ->
+    #{desc =>
+          [?T("The module implements "
+              "https://xmpp.org/extensions/xep-0191.html"
+              "[XEP-0191: Blocking Command]."), "",
+           ?T("This module depends on 'mod_privacy' where "
+              "all the configuration is performed.")]}.

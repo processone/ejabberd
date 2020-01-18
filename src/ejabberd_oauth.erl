@@ -137,7 +137,8 @@ oauth_issue_token(Jid, TTLSeconds, ScopesString) ->
     Scopes = [list_to_binary(Scope) || Scope <- string:tokens(ScopesString, ";")],
     try jid:decode(list_to_binary(Jid)) of
         #jid{luser =Username, lserver = Server} ->
-            case oauth2:authorize_password({Username, Server},  Scopes, admin_generated) of
+            Ctx1 = #oauth_ctx{password = admin_generated},
+            case oauth2:authorize_password({Username, Server}, Scopes, Ctx1) of
                 {ok, {_Ctx,Authorization}} ->
                     {ok, {_AppCtx2, Response}} = oauth2:issue_token(Authorization, [{expiry_time, TTLSeconds}]),
 		    {ok, AccessToken} = oauth2_response:access_token(Response),

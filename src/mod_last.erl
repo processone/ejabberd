@@ -34,7 +34,7 @@
 -export([start/2, stop/1, reload/3, process_local_iq/1, export/1,
 	 process_sm_iq/1, on_presence_update/4, import_info/0,
 	 import/5, import_start/2, store_last_info/4, get_last_info/2,
-	 remove_user/2, mod_opt_type/1, mod_options/1,
+	 remove_user/2, mod_opt_type/1, mod_options/1, mod_doc/0,
 	 register_user/2, depends/2, privacy_check_packet/4]).
 
 -include("logger.hrl").
@@ -331,3 +331,33 @@ mod_options(Host) ->
      {cache_size, ejabberd_option:cache_size(Host)},
      {cache_missed, ejabberd_option:cache_missed(Host)},
      {cache_life_time, ejabberd_option:cache_life_time(Host)}].
+
+mod_doc() ->
+    #{desc =>
+          ?T("This module adds support for "
+             "https://xmpp.org/extensions/xep-0012.html"
+             "[XEP-0012: Last Activity]. It can be used "
+             "to discover when a disconnected user last accessed "
+             "the server, to know when a connected user was last "
+             "active on the server, or to query the uptime of the ejabberd server."),
+      opts =>
+          [{db_type,
+            #{value => "mnesia | sql",
+              desc =>
+                  ?T("Same as top-level 'default_db' option, but applied to this module only.")}},
+           {use_cache,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
+           {cache_size,
+            #{value => "pos_integer() | infinity",
+              desc =>
+                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+           {cache_missed,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'cache_missed' option, but applied to this module only.")}},
+           {cache_life_time,
+            #{value => "timeout()",
+              desc =>
+                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}]}.

@@ -838,7 +838,7 @@ del_items(_, []) ->
 del_items(Nidx, [ItemId]) ->
     del_item(Nidx, ItemId);
 del_items(Nidx, ItemIds) ->
-    I = str:join([[<<"'">>, ejabberd_sql:escape(X), <<"'">>] || X <- ItemIds], <<",">>),
+    I = str:join([ejabberd_sql:to_string_literal_t(X) || X <- ItemIds], <<",">>),
     SNidx = misc:i2l(Nidx),
     catch
     ejabberd_sql:sql_query_t([<<"delete from pubsub_item where itemid in (">>,

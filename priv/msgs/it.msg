@@ -1,13 +1,16 @@
 %% -*- coding: utf-8 -*-
+{" has set the subject to: "," ha modificato l'oggetto in: "}.
+{"A password is required to enter this room","Per entrare in questa stanza è prevista una password"}.
 {"Access denied by service policy","Accesso impedito dalle politiche del servizio"}.
 {"Action on user","Azione sull'utente"}.
 {"Add Jabber ID","Aggiungere un Jabber ID (Jabber ID)"}.
 {"Add New","Aggiungere nuovo"}.
 {"Add User","Aggiungere un utente"}.
-{"Administration","Amministrazione"}.
 {"Administration of ","Amministrazione di "}.
+{"Administration","Amministrazione"}.
 {"Administrator privileges required","Necessari i privilegi di amministratore"}.
 {"All activity","Tutta l'attività"}.
+{"All Users","Tutti gli utenti"}.
 {"Allow users to change the subject","Consentire agli utenti di cambiare l'oggetto"}.
 {"Allow users to query other users","Consentire agli utenti query verso altri utenti"}.
 {"Allow users to send invites","Consentire agli utenti l'invio di inviti"}.
@@ -15,17 +18,14 @@
 {"Allow visitors to change nickname","Consentire ai visitatori di cambiare il nickname"}.
 {"Allow visitors to send private messages to","Consentire agli ospiti l'invio di messaggi privati a"}.
 {"Allow visitors to send status text in presence updates","Consentire ai visitatori l'invio di testo sullo stato in aggiornamenti sulla presenza"}.
-{"All Users","Tutti gli utenti"}.
 {"Announcements","Annunci"}.
-{"A password is required to enter this room","Per entrare in questa stanza è prevista una password"}.
 {"April","Aprile"}.
 {"August","Agosto"}.
 {"Backup Management","Gestione dei salvataggi"}.
-{"Backup","Salvare"}.
 {"Backup to File at ","Salvataggio sul file "}.
+{"Backup","Salvare"}.
 {"Bad format","Formato non valido"}.
 {"Birthday","Compleanno"}.
-{"CAPTCHA web page","Pagina web CAPTCHA"}.
 {"Change Password","Modificare la password"}.
 {"Change User Password","Cambiare la password dell'utente"}.
 {"Characters not allowed:","Caratteri non consentiti:"}.
@@ -36,23 +36,21 @@
 {"Chatroom is stopped","La stanza è arrestata"}.
 {"Chatrooms","Stanze"}.
 {"Choose a username and password to register with this server","Scegliere un nome utente e una password per la registrazione con questo server"}.
-{"Choose modules to stop","Selezionare i moduli da arrestare"}.
 {"Choose storage type of tables","Selezionare una modalità di conservazione delle tabelle"}.
 {"Choose whether to approve this entity's subscription.","Scegliere se approvare l'iscrizione per questa entità"}.
 {"City","Città"}.
 {"Commands","Comandi"}.
 {"Conference room does not exist","La stanza per conferenze non esiste"}.
 {"Configuration","Configurazione"}.
-{"Configuration of room ~s","Configurazione per la stanza ~s"}.
 {"Connected Resources:","Risorse connesse:"}.
 {"Country","Paese"}.
 {"CPU Time:","Tempo CPU:"}.
-{"Database","Database"}.
 {"Database Tables Configuration at ","Configurazione delle tabelle del database su "}.
+{"Database","Database"}.
 {"December","Dicembre"}.
 {"Default users as participants","Definire per default gli utenti come partecipanti"}.
-{"Delete message of the day","Eliminare il messaggio del giorno (MOTD)"}.
 {"Delete message of the day on all hosts","Eliminare il messaggio del giorno (MOTD) su tutti gli host"}.
+{"Delete message of the day","Eliminare il messaggio del giorno (MOTD)"}.
 {"Delete Selected","Eliminare gli elementi selezionati"}.
 {"Delete User","Eliminare l'utente"}.
 {"Description:","Descrizione:"}.
@@ -72,7 +70,6 @@
 {"Email","E-mail"}.
 {"Enable logging","Abilitare i log"}.
 {"End User Session","Terminare la sessione dell'utente"}.
-{"Enter list of {Module, [Options]}","Immettere un elenco di {Modulo, [Opzioni]}"}.
 {"Enter nickname you want to register","Immettere il nickname che si vuole registrare"}.
 {"Enter path to backup file","Immettere il percorso del file di salvataggio"}.
 {"Enter path to jabberd14 spool dir","Immettere il percorso della directory di spool di jabberd14"}.
@@ -88,7 +85,6 @@
 {"February","Febbraio"}.
 {"Friday","Venerdì"}.
 {"From","Da"}.
-{"From ~s","Da ~s"}.
 {"Full Name","Nome completo"}.
 {"Get Number of Online Users","Ottenere il numero di utenti online"}.
 {"Get Number of Registered Users","Ottenere il numero di utenti registrati"}.
@@ -98,11 +94,10 @@
 {"Group ","Gruppo "}.
 {"Groups","Gruppi"}.
 {"has been banned","è stata/o bandita/o"}.
-{"has been kicked because of an affiliation change","è stato espulso a causa di un cambiamento di appartenenza"}.
 {"has been kicked because of a system shutdown","è stato espulso a causa dello spegnimento del sistema"}.
+{"has been kicked because of an affiliation change","è stato espulso a causa di un cambiamento di appartenenza"}.
 {"has been kicked because the room has been changed to members-only","è stato espulso per la limitazione della stanza ai soli membri"}.
 {"has been kicked","è stata/o espulsa/o"}.
-{" has set the subject to: "," ha modificato l'oggetto in: "}.
 {"Host","Host"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Se qui non vedi l'immagine CAPTCHA, visita la pagina web."}.
 {"Import Directory","Importare una directory"}.
@@ -117,9 +112,9 @@
 {"Incorrect password","Password non esatta"}.
 {"IP addresses","Indirizzi IP"}.
 {"is now known as","è ora conosciuta/o come"}.
-{"It is not allowed to send private messages","Non è consentito l'invio di messaggi privati"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Non è consentito l'invio di messaggi privati di tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Non è consentito l'invio di messaggi privati alla conferenza"}.
+{"It is not allowed to send private messages","Non è consentito l'invio di messaggi privati"}.
 {"Jabber Account Registration","Registrazione account Jabber"}.
 {"Jabber ID","Jabber ID (Jabber ID)"}.
 {"January","Gennaio"}.
@@ -131,7 +126,6 @@
 {"Last month","Ultimo mese"}.
 {"Last year","Ultimo anno"}.
 {"leaves the room","esce dalla stanza"}.
-{"List of modules to start","Elenco dei moduli da avviare"}.
 {"Low level update script","Script di aggiornamento di basso livello"}.
 {"Make participants list public","Rendere pubblica la lista dei partecipanti"}.
 {"Make room CAPTCHA protected","Rendere la stanza protetta da CAPTCHA"}.
@@ -151,20 +145,18 @@
 {"Middle Name","Altro nome"}.
 {"Moderator privileges required","Necessari i privilegi di moderatore"}.
 {"Modified modules","Moduli modificati"}.
-{"Modules","Moduli"}.
 {"Monday","Lunedì"}.
 {"Name","Nome"}.
 {"Name:","Nome:"}.
 {"Never","Mai"}.
 {"New Password:","Nuova password:"}.
-{"Nickname","Nickname"}.
 {"Nickname Registration at ","Registrazione di un nickname su "}.
-{"Nickname ~s does not exist in the room","Il nickname ~s non esiste nella stanza"}.
+{"Nickname","Nickname"}.
 {"No body provided for announce message","Nessun corpo fornito per il messaggio di annuncio"}.
 {"No Data","Nessuna informazione"}.
+{"No limit","Nessun limite"}.
 {"Node not found","Nodo non trovato"}.
 {"Nodes","Nodi"}.
-{"No limit","Nessun limite"}.
 {"None","Nessuno"}.
 {"Not Found","Non trovato"}.
 {"November","Novembre"}.
@@ -175,9 +167,9 @@
 {"Offline Messages:","Messaggi offline:"}.
 {"OK","OK"}.
 {"Old Password:","Vecchia password:"}.
-{"Online","Online"}.
 {"Online Users:","Utenti connessi:"}.
 {"Online Users","Utenti online"}.
+{"Online","Online"}.
 {"Only moderators and participants are allowed to change the subject in this room","La modifica dell'oggetto di questa stanza è consentita soltanto ai moderatori e ai partecipanti"}.
 {"Only moderators are allowed to change the subject in this room","La modifica dell'oggetto di questa stanza è consentita soltanto ai moderatori"}.
 {"Only moderators can approve voice requests","Soltanto i moderatori possono approvare richieste di parola"}.
@@ -190,10 +182,10 @@
 {"Outgoing s2s Connections:","Connessioni s2s in uscita:"}.
 {"Owner privileges required","Necessari i privilegi di proprietario"}.
 {"Packet","Pacchetto"}.
-{"Password","Password"}.
-{"Password:","Password:"}.
 {"Password Verification","Verifica della password"}.
 {"Password Verification:","Verifica della password:"}.
+{"Password","Password"}.
+{"Password:","Password:"}.
 {"Path to Dir","Percorso della directory"}.
 {"Path to File","Percorso del file"}.
 {"Pending","Pendente"}.
@@ -216,12 +208,12 @@
 {"Register","Registra"}.
 {"Remote copy","Copia remota"}.
 {"Remove All Offline Messages","Eliminare tutti i messaggi offline"}.
-{"Remove","Eliminare"}.
 {"Remove User","Eliminare l'utente"}.
+{"Remove","Eliminare"}.
 {"Replaced by new connection","Sostituito da una nuova connessione"}.
 {"Resources","Risorse"}.
-{"Restart","Riavviare"}.
 {"Restart Service","Riavviare il servizio"}.
+{"Restart","Riavviare"}.
 {"Restore Backup from File at ","Recuperare il salvataggio dal file "}.
 {"Restore binary backup after next ejabberd restart (requires less memory):","Recuperare un salvataggio binario dopo il prossimo riavvio di ejabberd (necessita di meno memoria):"}.
 {"Restore binary backup immediately:","Recuperare un salvataggio binario adesso:"}.
@@ -232,19 +224,18 @@
 {"Room description","Descrizione della stanza"}.
 {"Room Occupants","Presenti nella stanza"}.
 {"Room title","Titolo della stanza"}.
-{"Roster","Lista dei contatti"}.
-{"Roster of ","Lista dei contatti di "}.
 {"Roster size","Dimensione della lista dei contatti"}.
+{"Roster","Lista dei contatti"}.
 {"RPC Call Error","Errore di chiamata RPC"}.
 {"Running Nodes","Nodi attivi"}.
 {"Saturday","Sabato"}.
 {"Script check","Verifica dello script"}.
 {"Search Results for ","Risultati della ricerca per "}.
 {"Search users in ","Cercare utenti in "}.
-{"Send announcement to all online users","Inviare l'annuncio a tutti gli utenti online"}.
 {"Send announcement to all online users on all hosts","Inviare l'annuncio a tutti gli utenti online su tutti gli host"}.
-{"Send announcement to all users","Inviare l'annuncio a tutti gli utenti"}.
+{"Send announcement to all online users","Inviare l'annuncio a tutti gli utenti online"}.
 {"Send announcement to all users on all hosts","Inviare l'annuncio a tutti gli utenti su tutti gli host"}.
+{"Send announcement to all users","Inviare l'annuncio a tutti gli utenti"}.
 {"September","Settembre"}.
 {"Server:","Server:"}.
 {"Set message of the day and send to online users","Impostare il messaggio del giorno (MOTD) ed inviarlo agli utenti online"}.
@@ -253,16 +244,10 @@
 {"Show Integral Table","Mostrare la tabella integrale"}.
 {"Show Ordinary Table","Mostrare la tabella normale"}.
 {"Shut Down Service","Terminare il servizio"}.
-{"~s invites you to the room ~s","~s ti invita nella stanza ~s"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Alcuni client Jabber possono conservare la password nel tuo computer. Utilizza tale funzione soltanto se ritieni che il tuo computer sia sicuro."}.
-{"~s's Offline Messages Queue","Coda di ~s messaggi offline"}.
-{"Start Modules at ","Avviare moduli su "}.
-{"Start Modules","Avviare moduli"}.
 {"Statistics of ~p","Statistiche di ~p"}.
 {"Statistics","Statistiche"}.
 {"Stop","Arrestare"}.
-{"Stop Modules","Arrestare moduli"}.
-{"Stop Modules at ","Arrestare moduli su "}.
 {"Stopped Nodes","Nodi arrestati"}.
 {"Storage Type","Tipo di conservazione"}.
 {"Store binary backup:","Conservare un salvataggio binario:"}.
@@ -276,8 +261,8 @@
 {"That nickname is registered by another person","Questo nickname è registrato da un'altra persona"}.
 {"The CAPTCHA is valid.","Il CAPTCHA è valido."}.
 {"The CAPTCHA verification has failed","La verifica del CAPTCHA ha avuto esito negativo"}.
-{"the password is","la password è"}.
 {"The password is too weak","La password è troppo debole"}.
+{"the password is","la password è"}.
 {"The password of your Jabber account was successfully changed.","Il cambio di password del tuo account Jabber è andato a buon fine."}.
 {"There was an error changing the password: ","Si è verificato un errore nel cambio di password: "}.
 {"There was an error creating the account: ","Si è verificato un errore nella creazione dell'account: "}.
@@ -291,7 +276,6 @@
 {"Time","Ora"}.
 {"To","A"}.
 {"Too many CAPTCHA requests","Troppe richieste CAPTCHA"}.
-{"To ~s","A ~s"}.
 {"Traffic rate limit is exceeded","Limite di traffico superato"}.
 {"Transactions Aborted:","Transazioni abortite:"}.
 {"Transactions Committed:","Transazioni avvenute:"}.
@@ -302,11 +286,11 @@
 {"Unauthorized","Non autorizzato"}.
 {"Unregister a Jabber account","Elimina un account Jabber"}.
 {"Unregister","Elimina"}.
-{"Update","Aggiornare"}.
 {"Update message of the day (don't send)","Aggiornare il messaggio del giorno (MOTD) (non inviarlo)"}.
 {"Update message of the day on all hosts (don't send)","Aggiornare il messaggio del giorno (MOTD) su tutti gli host (non inviarlo)"}.
 {"Update plan","Piano di aggiornamento"}.
 {"Update script","Script di aggiornamento"}.
+{"Update","Aggiornare"}.
 {"Uptime:","Tempo dall'avvio:"}.
 {"User Management","Gestione degli utenti"}.
 {"Username:","Nome utente:"}.

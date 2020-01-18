@@ -37,7 +37,8 @@
 	 get_local_features/5, get_local_services/5,
 	 process_sm_iq_items/1, process_sm_iq_info/1,
 	 get_sm_identity/5, get_sm_features/5, get_sm_items/5,
-	 get_info/5, mod_opt_type/1, mod_options/1, depends/2]).
+	 get_info/5, mod_opt_type/1, mod_options/1, depends/2,
+         mod_doc/0]).
 
 -include("logger.hrl").
 -include("translate.hrl").
@@ -436,3 +437,70 @@ mod_options(_Host) ->
     [{extra_domains, []},
      {server_info, []},
      {name, ?T("ejabberd")}].
+
+mod_doc() ->
+    #{desc =>
+          ?T("This module adds support for "
+             "https://xmpp.org/extensions/xep-0030.html"
+             "[XEP-0030: Service Discovery]. With this module enabled, "
+             "services on your server can be discovered by XMPP clients."),
+      opts =>
+          [{extra_domains,
+            #{value => "[Domain, ...]",
+              desc =>
+                  ?T("With this option, you can specify a list of extra "
+                     "domains that are added to the Service Discovery item list. "
+                     "The default value is an empty list.")}},
+           {name,
+            #{value => ?T("Name"),
+              desc =>
+                  ?T("A name of the server in the Service Discovery. "
+                     "This will only be displayed by special XMPP clients. "
+                     "The default value is 'ejabberd'.")}},
+           {server_info,
+            #{value => "[Info, ...]",
+              example =>
+                  ["server_info:",
+                   "  -",
+                   "    modules: all",
+                   "    name: abuse-addresses",
+                   "    urls: [mailto:abuse@shakespeare.lit]",
+                   "  -",
+                   "    modules: [mod_muc]",
+                   "    name: \"Web chatroom logs\"",
+                   "    urls: [http://www.example.org/muc-logs]",
+                   "  -",
+                   "    modules: [mod_disco]",
+                   "    name: feedback-addresses",
+                   "    urls:",
+                   "      - http://shakespeare.lit/feedback.php",
+                   "      - mailto:feedback@shakespeare.lit",
+                   "      - xmpp:feedback@shakespeare.lit",
+                   "  -",
+                   "    modules:",
+                   "      - mod_disco",
+                   "      - mod_vcard",
+                   "    name: admin-addresses",
+                   "    urls:",
+                   "      - mailto:xmpp@shakespeare.lit",
+                   "      - xmpp:admins@shakespeare.lit"],
+              desc =>
+                  ?T("Specify additional information about the server, "
+                     "as described in https://xmpp.org/extensions/xep-0157.html"
+                     "[XEP-0157: Contact Addresses for XMPP Services]. Every 'Info' "
+                     "element in the list is constructed from the following options:")},
+            [{modules,
+              #{value => "all | [Module, ...]",
+                desc =>
+                    ?T("The value can be the keyword 'all', in which case the "
+                       "information is reported in all the services, "
+                       "or a list of ejabberd modules, in which case the "
+                       "information is only specified for the services provided "
+                       "by those modules.")}},
+             {name,
+              #{value => ?T("Name"),
+                desc => ?T("Any arbitrary name of the contact.")}},
+             {urls,
+              #{value => "[URI, ...]",
+                desc => ?T("A list of contact URIs, such as "
+                           "HTTP URLs, XMPP URIs and so on.")}}]}]}.

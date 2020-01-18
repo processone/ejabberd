@@ -28,6 +28,9 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 datarootdir = @datarootdir@
 DOCDIR = $(DESTDIR)@docdir@
 
+# /share/doc/man/man5
+MANDIR = $(DESTDIR)@mandir@/man5
+
 # /usr/lib/ejabberd/ebin/
 BEAMDIR = $(EJABBERDDIR)/ebin
 
@@ -262,10 +265,11 @@ install: all copy-files
 	chmod -R 750 $(LOGDIR)
 	#
 	# Documentation
+	$(INSTALL) -d $(MANDIR)
 	$(INSTALL) -d $(DOCDIR)
-	[ -f doc/guide.html ] \
-		&& $(INSTALL) -m 644 doc/guide.html $(DOCDIR) \
-		|| echo "Documentation not included in sources"
+	[ -f man/ejabberd.yml.5 ] \
+		&& $(INSTALL) -m 644 man/ejabberd.yml.5 $(MANDIR) \
+		|| echo "Man page not included in sources"
 	$(INSTALL) -m 644 COPYING $(DOCDIR)
 
 uninstall: uninstall-binary

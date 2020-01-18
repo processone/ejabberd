@@ -49,7 +49,7 @@
 -export([init/1, terminate/2, handle_call/3,
 	 handle_cast/2, handle_info/2, code_change/3]).
 
--export([iq_ping/1, user_online/3, user_offline/3,
+-export([iq_ping/1, user_online/3, user_offline/3, mod_doc/0,
 	 user_send/1, mod_opt_type/1, mod_options/1, depends/2]).
 
 -record(state,
@@ -271,3 +271,56 @@ mod_options(_Host) ->
      {ping_ack_timeout, undefined},
      {send_pings, false},
      {timeout_action, none}].
+
+mod_doc() ->
+    #{desc =>
+          ?T("This module implements support for "
+             "https://xmpp.org/extensions/xep-0199.html"
+             "[XEP-0199: XMPP Ping] and periodic keepalives. "
+             "When this module is enabled ejabberd responds "
+             "correctly to ping requests, as defined by the protocol."),
+      opts =>
+          [{ping_interval,
+            #{value => "timeout()",
+              desc =>
+                  ?T("How often to send pings to connected clients, "
+                     "if option 'send_pings' is set to 'true'. If a client "
+                     "connection does not send or receive any stanza "
+                     "within this interval, a ping request is sent to "
+                     "the client. The default value is '1' minute.")}},
+           {ping_ack_timeout,
+            #{value => "timeout()",
+              desc =>
+                  ?T("How long to wait before deeming that a client "
+                     "has not answered a given server ping request. "
+                     "The default value is '32' seconds.")}},
+           {send_pings,
+            #{value => "true | false",
+              desc =>
+                  ?T("If this option is set to 'true', the server "
+                     "sends pings to connected clients that are not "
+                     "active in a given interval defined in 'ping_interval' "
+                     "option. This is useful to keep client connections "
+                     "alive or checking availability. "
+                     "The default value is 'false'.")}},
+           {timeout_action,
+            #{value => "none | kill",
+              desc =>
+                  ?T("What to do when a client does not answer to a "
+                     "server ping request in less than period defined "
+                     "in 'ping_ack_timeout' option: "
+                     "'kill' means destroying the underlying connection, "
+                     "'none' means to do nothing. NOTE: when 'mod_stream_mgmt' "
+                     "module is loaded and stream management is enabled by "
+                     "a client, killing the client connection doesn't mean "
+                     "killing the client session - the session will be kept "
+                     "alive in order to give the client a chance to resume it. "
+                     "The default value is 'none'.")}}],
+      example =>
+          ["modules:",
+           "  ...",
+           "  mod_ping:",
+           "    send_pings: true",
+           "    ping_interval: 4 min",
+           "    timeout_action: kill",
+           "  ..."]}.

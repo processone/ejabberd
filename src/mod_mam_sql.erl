@@ -354,12 +354,7 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
     WithText = proplists:get_value(withtext, MAMQuery),
     {Max, Direction, ID} = get_max_direction_id(RSM),
     ODBCType = ejabberd_option:sql_type(LServer),
-    Escape =
-        case ODBCType of
-            mssql -> fun ejabberd_sql:standard_escape/1;
-            sqlite -> fun ejabberd_sql:standard_escape/1;
-            _ -> fun ejabberd_sql:escape/1
-        end,
+    ToString = fun(S) -> ejabberd_sql:to_string_literal(ODBCType, S) end,
     LimitClause = if is_integer(Max), Max >= 0, ODBCType /= mssql ->
 			  [<<" limit ">>, integer_to_binary(Max+1)];
 		     true ->
@@ -371,20 +366,18 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
 			  []
 		  end,
     WithTextClause = if is_binary(WithText), WithText /= <<>> ->
-			     [<<" and match (txt) against ('">>,
-			      Escape(WithText), <<"')">>];
+			     [<<" and match (txt) against (">>,
+			      ToString(WithText), <<")">>];
 			true ->
 			     []
 		     end,
     WithClause = case catch jid:tolower(With) of
 		     {_, _, <<>>} ->
-			 [<<" and bare_peer='">>,
-			  Escape(jid:encode(With)),
-			  <<"'">>];
+			 [<<" and bare_peer=">>,
+			  ToString(jid:encode(With))];
 		     {_, _, _} ->
-			 [<<" and peer='">>,
-			  Escape(jid:encode(With)),
-			  <<"'">>];
+			 [<<" and peer=">>,
+			  ToString(jid:encode(With))];
 		     _ ->
 			 []
 		 end,
@@ -415,23 +408,23 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
 		    _ ->
 			[]
 		end,
-    SUser = Escape(User),
-    SServer = Escape(LServer),
+    SUser = ToString(User),
+    SServer = ToString(LServer),
 
     HostMatch = case ejabberd_sql:use_new_schema() of
 		    true ->
-			[<<" and server_host='", SServer/binary, "'">>];
+			[<<" and server_host=", SServer/binary>>];
 		    _ ->
 			<<"">>
 		end,
 
     {UserSel, UserWhere} = case ExtraUsernames of
 			       Users when is_list(Users) ->
-				   EscUsers = [<<"'", (Escape(U))/binary, "'">> || U <- [User | Users]],
+				   EscUsers = [ToString(U) || U <- [User | Users]],
 				   {<<" username,">>,
 				    [<<" username in (">>, str:join(EscUsers, <<",">>), <<")">>]};
 			       subscribers_table ->
-				   SJid = Escape(jid:encode({User, LServer, <<>>})),
+				   SJid = ToString(jid:encode({User, LServer, <<>>})),
 				   RoomName = case ODBCType of
 						  sqlite ->
 						      <<"room || '@' || host">>;
@@ -439,11 +432,11 @@ make_sql_query(User, LServer, MAMQuery, RSM, ExtraUsernames) ->
 						      <<"concat(room, '@', host)">>
 					      end,
 				   {<<" username,">>,
-				    [<<" (username = '">>, SUser, <<"'">>,
+				    [<<" (username = ">>, SUser,
 					<<" or username in (select ">>, RoomName,
-					  <<" from muc_room_subscribers where jid='">>, SJid, <<"'">>, HostMatch, <<"))">>]};
+					  <<" from muc_room_subscribers where jid=">>, SJid, HostMatch, <<"))">>]};
 			       _ ->
-				   {<<>>, [<<" username='">>, SUser, <<"'">>]}
+				   {<<>>, [<<" username=">>, SUser]}
 			   end,
 
     Query = [<<"SELECT ">>, TopClause, UserSel,

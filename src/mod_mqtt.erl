@@ -23,6 +23,7 @@
 
 %% gen_mod API
 -export([start/2, stop/1, reload/3, depends/2, mod_options/1, mod_opt_type/1]).
+-export([mod_doc/0]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
@@ -39,6 +40,7 @@
 
 -include("logger.hrl").
 -include("mqtt.hrl").
+-include("translate.hrl").
 
 -define(MQTT_TOPIC_CACHE, mqtt_topic_cache).
 -define(MQTT_PAYLOAD_CACHE, mqtt_payload_cache).
@@ -258,6 +260,91 @@ listen_options() ->
      {max_payload_size, infinity},
      {tls, false},
      {tls_verify, false}].
+
+%%%===================================================================
+%%% Doc
+%%%===================================================================
+mod_doc() ->
+    #{desc =>
+          ?T("This module adds support for the MQTT protocol "
+             "version '3.1.1' and '5.0'."),
+      opts =>
+          [{access_subscribe,
+            #{value => "{TopicFilter: AccessName}",
+              desc =>
+                  ?T("Access rules to restrict access to topics "
+                     "for subscribers. By default there are no restrictions.")}},
+           {access_publish,
+            #{value => "{TopicFilter: AccessName}",
+              desc =>
+                  ?T("Access rules to restrict access to topics "
+                     "for publishers. By default there are no restrictions.")}},
+           {max_queue,
+            #{value => ?T("Size"),
+              desc =>
+                  ?T("Maximum queue size for outgoing packets. "
+                     "The default value is '5000'.")}},
+           {session_expiry,
+            #{value => "timeout()",
+              desc =>
+                  ?T("The option specifies how long to wait for "
+                     "an MQTT session resumption. When '0' is set, "
+                     "the session gets destroyed when the underlying "
+                     "client connection is closed. The default value is "
+                     "'5' minutes.")}},
+           {max_topic_depth,
+            #{value => ?T("Depth"),
+              desc =>
+                  ?T("The maximum topic depth, i.e. the number of "
+                     "slashes ('/') in the topic. The default "
+                     "value is '8'.")}},
+           {max_topic_aliases,
+            #{value => "0..65535",
+              desc =>
+                  ?T("The maximum number of aliases a client "
+                     "is able to associate with the topics. "
+                     "The default value is '100'.")}},
+           {match_retained_limit,
+            #{value => "pos_integer() | infinity",
+              desc =>
+                  ?T("The option limits the number of retained messages "
+                     "returned to a client when it subscribes to some "
+                     "topic filter. The default value is '1000'.")}},
+           {queue_type,
+            #{value => "ram | file",
+              desc =>
+                  ?T("Same as top-level 'queue_type' option, "
+                     "but applied to this module only.")}},
+           {ram_db_type,
+            #{value => "mnesia",
+              desc =>
+                  ?T("Same as top-level 'default_ram_db' option, "
+                     "but applied to this module only.")}},
+           {db_type,
+            #{value => "mnesia | sql",
+              desc =>
+                  ?T("Same as top-level 'default_db' option, "
+                     "but applied to this module only.")}},
+           {use_cache,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'use_cache' option, "
+                     "but applied to this module only.")}},
+           {cache_size,
+            #{value => "pos_integer() | infinity",
+              desc =>
+                  ?T("Same as top-level 'cache_size' option, "
+                     "but applied to this module only.")}},
+           {cache_missed,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'cache_missed' option, "
+                     "but applied to this module only.")}},
+           {cache_life_time,
+            #{value => "timeout()",
+              desc =>
+                  ?T("Same as top-level 'cache_life_time' option, "
+                     "but applied to this module only.")}}]}.
 
 %%%===================================================================
 %%% Internal functions

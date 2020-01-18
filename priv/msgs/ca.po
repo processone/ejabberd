@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2019-07-01 17:30+0200\n"
+"PO-Revision-Date: 2019-12-24 13:36+0100\n"
 "Last-Translator: Badlop <badlop@process-one.net>\n"
 "Language-Team: \n"
 "Language: ca\n"
@@ -17,110 +17,110 @@ msgstr ""
 "X-Poedit-Basepath: ../../src\n"
 "X-Poedit-SearchPath-0: .\n"
 
-#: mod_vcard.erl:446
+#: mod_vcard.erl:462
 msgid " (Add * to the end of field to match substring)"
 msgstr " (Afegix * al final d'un camp per a buscar subcadenes)"
 
-#: mod_muc_log.erl:403 mod_muc_log.erl:577
+#: mod_muc_log.erl:417 mod_muc_log.erl:589
 msgid " has set the subject to: "
 msgstr " ha posat l'assumpte: "
 
-#: mod_muc_room.erl:1983
+#: mod_muc_room.erl:2147
 msgid "A password is required to enter this room"
 msgstr "Es necessita contrasenya per a entrar en aquesta sala"
 
-#: ejabberd_oauth.erl:414
+#: ejabberd_oauth.erl:519
 msgid "Accept"
 msgstr "Acceptar"
 
-#: mod_s2s_dialback.erl:325 ejabberd_s2s.erl:365 mod_configure.erl:189
-#: mod_configure.erl:307 mod_configure.erl:429 mod_configure.erl:758
-#: mod_configure.erl:1606 mod_muc.erl:407 mod_muc.erl:509
-#: mod_proxy65_service.erl:173 mod_proxy65_service.erl:222 mod_register.erl:123
-#: mod_register.erl:266 mod_register.erl:380 mod_http_upload.erl:563
-#: mod_legacy_auth.erl:142 mod_announce.erl:240 mod_announce.erl:255
-#: mod_announce.erl:306 mod_announce.erl:420 mod_announce.erl:842
-#: ejabberd_service.erl:215 mod_roster.erl:179 mod_multicast.erl:325
-#: ejabberd_c2s.erl:433 ejabberd_c2s.erl:672
+#: ejabberd_service.erl:233 mod_configure.erl:186 mod_configure.erl:303
+#: mod_configure.erl:429 mod_configure.erl:715 mod_configure.erl:1480
+#: ejabberd_c2s.erl:441 ejabberd_c2s.erl:680 mod_legacy_auth.erl:142
+#: mod_roster.erl:182 mod_multicast.erl:332 ejabberd_s2s.erl:360
+#: mod_register.erl:129 mod_register.erl:284 mod_register.erl:388
+#: mod_s2s_dialback.erl:325 mod_muc.erl:206 mod_muc.erl:617
+#: mod_proxy65_service.erl:197 mod_proxy65_service.erl:246 mod_announce.erl:242
+#: mod_announce.erl:257 mod_announce.erl:308 mod_announce.erl:422
+#: mod_announce.erl:844 mod_http_upload.erl:622
 msgid "Access denied by service policy"
 msgstr "Accés denegat per la política del servei"
 
-#: mod_register_web.erl:603
+#: mod_register_web.erl:619
 msgid "Account doesn't exist"
 msgstr "El compte no existeix"
 
-#: mod_configure.erl:1638
+#: mod_configure.erl:1514
 msgid "Action on user"
 msgstr "Acció en l'usuari"
 
-#: mod_roster.erl:1006
+#: mod_roster.erl:1022
 msgid "Add Jabber ID"
 msgstr "Afegir Jabber ID"
 
-#: mod_shared_roster.erl:773
+#: mod_shared_roster.erl:781
 msgid "Add New"
 msgstr "Afegir nou"
 
-#: mod_configure.erl:164 mod_configure.erl:511 mod_configure.erl:1072
-#: ejabberd_web_admin.erl:651
+#: mod_configure.erl:161 mod_configure.erl:505 mod_configure.erl:991
+#: ejabberd_web_admin.erl:659
 msgid "Add User"
 msgstr "Afegir usuari"
 
-#: ejabberd_web_admin.erl:398 ejabberd_web_admin.erl:407
+#: ejabberd_web_admin.erl:390 ejabberd_web_admin.erl:399
 msgid "Administration"
 msgstr "Administració"
 
-#: mod_configure.erl:1633
+#: mod_configure.erl:1509
 msgid "Administration of "
 msgstr "Administració de "
 
-#: mod_muc_room.erl:2621
+#: mod_muc_room.erl:2791
 msgid "Administrator privileges required"
 msgstr "Es necessita tenir privilegis d'administrador"
 
-#: mod_configure.erl:501
+#: mod_configure.erl:495
 msgid "All Users"
 msgstr "Tots els usuaris"
 
-#: ejabberd_web_admin.erl:496
+#: ejabberd_web_admin.erl:488
 msgid "All activity"
 msgstr "Tota l'activitat"
 
-#: mod_muc_log.erl:798
+#: mod_muc_log.erl:810
 msgid "Allow users to change the subject"
 msgstr "Permetre que els usuaris canviin el tema"
 
-#: mod_muc_log.erl:804
+#: mod_muc_log.erl:816
 msgid "Allow users to query other users"
 msgstr "Permetre que els usuaris fagen peticions a altres usuaris"
 
-#: mod_muc_log.erl:806
+#: mod_muc_log.erl:818
 msgid "Allow users to send invites"
 msgstr "Permetre que els usuaris envien invitacions"
 
-#: mod_muc_log.erl:800
+#: mod_muc_log.erl:812
 msgid "Allow users to send private messages"
 msgstr "Permetre que els usuaris envien missatges privats"
 
-#: mod_muc_log.erl:809
+#: mod_muc_log.erl:821
 msgid "Allow visitors to change nickname"
 msgstr "Permetre als visitants canviar el sobrenom"
 
-#: mod_muc_log.erl:802
+#: mod_muc_log.erl:814
 msgid "Allow visitors to send private messages to"
 msgstr "Permetre als visitants enviar missatges privats a"
 
-#: mod_muc_log.erl:811
+#: mod_muc_log.erl:823
 msgid "Allow visitors to send status text in presence updates"
 msgstr ""
 "Permetre als visitants enviar text d'estat en les actualitzacions de "
 "presència"
 
-#: mod_announce.erl:605
+#: mod_announce.erl:607
 msgid "Announcements"
 msgstr "Anuncis"
 
-#: mod_muc_log.erl:466
+#: mod_muc_log.erl:478
 msgid "April"
 msgstr "Abril"
 
@@ -128,51 +128,51 @@ msgstr "Abril"
 msgid "Attribute 'channel' is required for this request"
 msgstr "L'atribut 'channel' és necessari per a aquesta petició"
 
-#: mod_mix.erl:105
+#: mod_mix.erl:106
 msgid "Attribute 'id' is mandatory for MIX messages"
 msgstr "L'atribut 'id' es necessari per a missatges MIX"
 
-#: mod_pubsub.erl:1142
+#: mod_pubsub.erl:1173
 msgid "Attribute 'jid' is not allowed here"
 msgstr "L'atribut 'jid' no està permès ací"
 
-#: mod_pubsub.erl:1145
+#: mod_pubsub.erl:1176
 msgid "Attribute 'node' is not allowed here"
 msgstr "L'atribut 'node' no està permès ací"
 
-#: mod_muc_log.erl:470
+#: mod_muc_log.erl:482
 msgid "August"
 msgstr "Agost"
 
-#: mod_pubsub.erl:1868
+#: mod_pubsub.erl:1918
 msgid "Automatic node creation is not enabled"
 msgstr "La creació automàtica de nodes no està activada"
 
-#: mod_configure.erl:146 mod_configure.erl:607 ejabberd_web_admin.erl:1085
-#: ejabberd_web_admin.erl:1789
+#: mod_configure.erl:143 mod_configure.erl:582 ejabberd_web_admin.erl:1093
+#: ejabberd_web_admin.erl:1802
 msgid "Backup"
 msgstr "Guardar còpia de seguretat"
 
-#: mod_configure.erl:574
+#: mod_configure.erl:566
 msgid "Backup Management"
 msgstr "Gestió de còpia de seguretat"
 
-#: ejabberd_web_admin.erl:1191
+#: ejabberd_web_admin.erl:1199
 msgid "Backup of ~p"
 msgstr "Còpia de seguretat de ~p"
 
-#: mod_configure.erl:938
+#: mod_configure.erl:857
 msgid "Backup to File at "
 msgstr "Desar còpia de seguretat a fitxer en "
 
-#: ejabberd_web_admin.erl:629 ejabberd_web_admin.erl:923
-#: ejabberd_web_admin.erl:1079 mod_shared_roster.erl:779
-#: mod_shared_roster.erl:874 mod_roster.erl:996
+#: ejabberd_web_admin.erl:637 ejabberd_web_admin.erl:931
+#: ejabberd_web_admin.erl:1087 mod_roster.erl:1012 mod_shared_roster.erl:787
+#: mod_shared_roster.erl:888
 msgid "Bad format"
 msgstr "Format erroni"
 
 #: mod_vcard_mnesia.erl:105 mod_vcard_mnesia.erl:119 mod_vcard_sql.erl:162
-#: mod_vcard_sql.erl:176 mod_vcard_ldap.erl:330 mod_vcard_ldap.erl:343
+#: mod_vcard_sql.erl:176 mod_vcard_ldap.erl:332 mod_vcard_ldap.erl:345
 msgid "Birthday"
 msgstr "Aniversari"
 
@@ -180,15 +180,11 @@ msgstr "Aniversari"
 msgid "Both the username and the resource are required"
 msgstr "Es requereixen tant el nom d'usuari com el recurs"
 
-#: mod_proxy65_service.erl:213
+#: mod_proxy65_service.erl:237
 msgid "Bytestream already activated"
 msgstr "El Bytestream ja està activat"
 
-#: ejabberd_captcha.erl:136
-msgid "CAPTCHA web page"
-msgstr "Pàgina web del CAPTCHA"
-
-#: ejabberd_web_admin.erl:1357
+#: ejabberd_web_admin.erl:1361
 msgid "CPU Time:"
 msgstr "Temps de CPU:"
 
@@ -200,85 +196,81 @@ msgstr "No es pot eliminar la llista activa"
 msgid "Cannot remove default list"
 msgstr "No es pot eliminar la llista per defecte"
 
-#: mod_register_web.erl:210 mod_register_web.erl:383 mod_register_web.erl:391
-#: mod_register_web.erl:416 ejabberd_web_admin.erl:897
+#: ejabberd_web_admin.erl:905 mod_register_web.erl:226 mod_register_web.erl:399
+#: mod_register_web.erl:407 mod_register_web.erl:432
 msgid "Change Password"
 msgstr "Canviar Contrasenya"
 
-#: mod_configure.erl:172 mod_configure.erl:518 mod_configure.erl:1119
+#: mod_configure.erl:169 mod_configure.erl:512 mod_configure.erl:1038
 msgid "Change User Password"
 msgstr "Canviar Contrasenya d'Usuari"
 
-#: mod_register.erl:292
+#: mod_register.erl:310
 msgid "Changing password is not allowed"
 msgstr "No està permès canviar la contrasenya"
 
-#: mod_muc_room.erl:2880
+#: mod_muc_room.erl:3050
 msgid "Changing role/affiliation is not allowed"
 msgstr "No està permès canviar el rol/afiliació"
 
-#: mod_mix.erl:604
+#: mod_mix.erl:615
 msgid "Channel already exists"
 msgstr "El canal ja existeix"
 
-#: mod_mix.erl:609
+#: mod_mix.erl:620
 msgid "Channel does not exist"
 msgstr "El canal no existeix"
 
-#: mod_mix.erl:95
+#: mod_mix.erl:96
 msgid "Channels"
 msgstr "Canals"
 
-#: mod_register_web.erl:265
+#: mod_register_web.erl:281
 msgid "Characters not allowed:"
 msgstr "Caràcters no permesos:"
 
-#: mod_muc_log.erl:348 mod_muc_log.erl:357
+#: mod_muc_log.erl:362 mod_muc_log.erl:371
 msgid "Chatroom configuration modified"
 msgstr "Configuració de la sala de xat modificada"
 
-#: mod_muc_log.erl:443
+#: mod_muc_log.erl:455
 msgid "Chatroom is created"
 msgstr "La sala s'ha creat"
 
-#: mod_muc_log.erl:445
+#: mod_muc_log.erl:457
 msgid "Chatroom is destroyed"
 msgstr "La sala s'ha destruït"
 
-#: mod_muc_log.erl:447
+#: mod_muc_log.erl:459
 msgid "Chatroom is started"
 msgstr "La sala s'ha iniciat"
 
-#: mod_muc_log.erl:449
+#: mod_muc_log.erl:461
 msgid "Chatroom is stopped"
 msgstr "La sala s'ha aturat"
 
-#: mod_muc_admin.erl:522 mod_muc.erl:1040
+#: mod_muc_admin.erl:537 mod_muc.erl:1235
 msgid "Chatrooms"
 msgstr "Sales de xat"
 
-#: mod_register.erl:204
+#: mod_register.erl:222
 msgid "Choose a username and password to register with this server"
 msgstr "Tria nom d'usuari i contrasenya per a registrar-te en aquest servidor"
 
-#: mod_configure.erl:910
-msgid "Choose modules to stop"
-msgstr "Selecciona mòduls a detindre"
-
-#: mod_configure.erl:871
+#: mod_configure.erl:830
 msgid "Choose storage type of tables"
 msgstr "Selecciona el tipus d'almacenament de les taules"
 
-#: mod_pubsub.erl:1359
+#: mod_pubsub.erl:1390
 msgid "Choose whether to approve this entity's subscription."
 msgstr "Tria si aproves aquesta entitat de subscripció."
 
 #: mod_vcard_mnesia.erl:107 mod_vcard_mnesia.erl:121 mod_vcard_sql.erl:164
-#: mod_vcard_sql.erl:178 mod_vcard_ldap.erl:332 mod_vcard_ldap.erl:345
+#: mod_vcard_sql.erl:178 mod_vcard_ldap.erl:334 mod_vcard_ldap.erl:347
 msgid "City"
 msgstr "Ciutat"
 
-#: mod_stream_mgmt.erl:456
+#: mod_stream_mgmt.erl:469
 msgid "Client acknowledged more stanzas than sent by server"
 msgstr "El client ha reconegut més paquets dels que ha enviat el servidor"
 
@@ -286,99 +278,100 @@ msgstr "El client ha reconegut més paquets dels que ha enviat el servidor"
 msgid "Commands"
 msgstr "Comandaments"
 
-#: mod_muc.erl:465
+#: mod_muc.erl:539 mod_muc.erl:563 mod_muc_room.erl:212 mod_muc_room.erl:221
 msgid "Conference room does not exist"
 msgstr "La sala de conferències no existeix"
 
-#: mod_configure.erl:127 mod_configure.erl:280 mod_configure.erl:300
-#: mod_configure.erl:498
+#: mod_configure.erl:129 mod_configure.erl:275 mod_configure.erl:296
+#: mod_configure.erl:492
 msgid "Configuration"
 msgstr "Configuració"
 
-#: mod_muc_room.erl:3319
-msgid "Configuration of room ~s"
-msgstr "Configuració de la sala ~s"
+#: mod_muc_room.erl:3489
+msgid "Configuration of room ~ts"
+msgstr "Configuració de la sala ~ts"
 
-#: ejabberd_web_admin.erl:929
+#: ejabberd_web_admin.erl:937
 msgid "Connected Resources:"
 msgstr "Recursos connectats:"
 
 #: mod_vcard_mnesia.erl:106 mod_vcard_mnesia.erl:120 mod_vcard_sql.erl:163
-#: mod_vcard_sql.erl:177 mod_vcard_ldap.erl:331 mod_vcard_ldap.erl:344
+#: mod_vcard_sql.erl:177 mod_vcard_ldap.erl:333 mod_vcard_ldap.erl:346
 msgid "Country"
 msgstr "Pais"
 
-#: mod_configure.erl:137 mod_configure.erl:570 ejabberd_web_admin.erl:1084
-#: ejabberd_web_admin.erl:1788
+#: mod_configure.erl:140 mod_configure.erl:564 ejabberd_web_admin.erl:1092
+#: ejabberd_web_admin.erl:1801
 msgid "Database"
 msgstr "Base de dades"
 
-#: mod_configure.erl:869
+#: mod_configure.erl:828
 msgid "Database Tables Configuration at "
 msgstr "Configuració de la base de dades en "
 
-#: ejabberd_web_admin.erl:1153
+#: ejabberd_web_admin.erl:1161
 msgid "Database Tables at ~p"
 msgstr "Taules de la base de dades en ~p"
 
-#: mod_push.erl:280 mod_push.erl:295 mod_mix_pam.erl:286 mod_offline.erl:352
-#: mod_offline.erl:736 mod_carboncopy.erl:106 node_flat_sql.erl:770
-#: mod_mix.erl:599 mod_pubsub.erl:3578 mod_pubsub.erl:3657 mod_pubsub.erl:3660
-#: mod_private.erl:149 mod_private.erl:156 mod_muc.erl:599 mod_muc.erl:836
-#: mod_proxy65_service.erl:218 nodetree_tree_sql.erl:124
-#: nodetree_tree_sql.erl:138 nodetree_tree_sql.erl:264 mod_last.erl:199
-#: mod_mam.erl:652 mod_mam.erl:670 mod_mam.erl:700 mod_mam.erl:1032
-#: mod_vcard.erl:223 mod_register.erl:394 mod_privacy.erl:174
+#: mod_blocking.erl:263 node_flat_sql.erl:775 mod_pubsub.erl:3744
+#: mod_pubsub.erl:3788 mod_pubsub.erl:3808 mod_pubsub.erl:3892
+#: mod_pubsub.erl:4113 mod_carboncopy.erl:106 mod_mix_pam.erl:286
+#: mod_roster.erl:456 mod_private.erl:149 mod_private.erl:156
+#: mod_register.erl:400 mod_last.erl:202 mod_muc.erl:707 mod_muc.erl:1026
+#: mod_push.erl:280 mod_push.erl:295 mod_proxy65_service.erl:242
+#: mod_offline.erl:352 mod_offline.erl:736 mod_mix.erl:610 mod_privacy.erl:174
 #: mod_privacy.erl:192 mod_privacy.erl:286 mod_privacy.erl:302
-#: mod_privacy.erl:335 mod_privacy.erl:352 mod_blocking.erl:262
+#: mod_privacy.erl:335 mod_privacy.erl:352 mod_mam.erl:652 mod_mam.erl:670
+#: mod_mam.erl:700 mod_mam.erl:1032 nodetree_tree_sql.erl:124
+#: nodetree_tree_sql.erl:138 nodetree_tree_sql.erl:280 mod_vcard.erl:238
 msgid "Database failure"
 msgstr "Error a la base de dades"
 
-#: mod_muc_log.erl:474
+#: mod_muc_log.erl:486
 msgid "December"
 msgstr "Decembre"
 
-#: mod_muc_log.erl:796
+#: mod_muc_log.erl:808
 msgid "Default users as participants"
 msgstr "Els usuaris són participants per defecte"
 
-#: mod_offline.erl:1019 mod_shared_roster.erl:787
+#: mod_shared_roster.erl:795 mod_offline.erl:1018
 msgid "Delete Selected"
 msgstr "Eliminar els seleccionats"
 
-#: mod_configure.erl:166 mod_configure.erl:512 mod_configure.erl:1089
+#: mod_configure.erl:163 mod_configure.erl:506 mod_configure.erl:1008
 msgid "Delete User"
 msgstr "Eliminar Usuari"
 
-#: ejabberd_web_admin.erl:1489
+#: ejabberd_web_admin.erl:1502
 msgid "Delete content"
 msgstr "Eliminar contingut"
 
-#: mod_announce.erl:623
+#: mod_announce.erl:625
 msgid "Delete message of the day"
 msgstr "Eliminar el missatge del dia"
 
-#: mod_announce.erl:625
+#: mod_announce.erl:627
 msgid "Delete message of the day on all hosts"
 msgstr "Elimina el missatge del dis de tots els hosts"
 
-#: ejabberd_web_admin.erl:1490
+#: ejabberd_web_admin.erl:1503
 msgid "Delete table"
 msgstr "Eliminar taula"
 
-#: mod_shared_roster.erl:848
+#: mod_shared_roster.erl:856
 msgid "Description:"
 msgstr "Descripció:"
 
-#: mod_configure.erl:850 ejabberd_web_admin.erl:1487
+#: mod_configure.erl:806 ejabberd_web_admin.erl:1500
 msgid "Disc only copy"
 msgstr "Còpia sols en disc"
 
-#: mod_shared_roster.erl:862
+#: mod_shared_roster.erl:870
 msgid "Displayed Groups:"
 msgstr "Mostrar grups:"
 
-#: mod_register_web.erl:277
+#: mod_register_web.erl:293
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
 "Jabber server."
@@ -386,40 +379,36 @@ msgstr ""
 "No li donis la teva contrasenya a ningú, ni tan sols als administradors del "
 "servidor Jabber."
 
-#: mod_configure.erl:961
+#: mod_configure.erl:880
 msgid "Dump Backup to Text File at "
 msgstr "Exporta còpia de seguretat a fitxer de text en "
 
-#: mod_configure.erl:152 mod_configure.erl:611
+#: mod_configure.erl:149 mod_configure.erl:586
 msgid "Dump to Text File"
 msgstr "Exportar a fitxer de text"
 
-#: mod_roster.erl:172
+#: mod_roster.erl:175
 msgid "Duplicated groups are not allowed by RFC6121"
 msgstr "No estan permesos els grups duplicats al RFC6121"
 
-#: mod_configure.erl:1642
+#: mod_configure.erl:1518
 msgid "Edit Properties"
 msgstr "Editar propietats"
 
-#: mod_muc_room.erl:4205
+#: mod_muc_room.erl:4399
 msgid "Either approve or decline the voice request."
 msgstr "Aprova o denega la petició de veu."
 
-#: ejabberd_web_admin.erl:1165
+#: ejabberd_web_admin.erl:1173
 msgid "Elements"
 msgstr "Elements"
 
 #: mod_vcard_mnesia.erl:108 mod_vcard_mnesia.erl:122 mod_vcard_sql.erl:165
-#: mod_vcard_sql.erl:179 mod_vcard_ldap.erl:333 mod_vcard_ldap.erl:346
+#: mod_vcard_sql.erl:179 mod_vcard_ldap.erl:335 mod_vcard_ldap.erl:348
 msgid "Email"
 msgstr "Email"
 
-#: mod_register.erl:388
-msgid "Empty password"
-msgstr "Contrasenya buida"
-
-#: mod_muc_log.erl:807
+#: mod_muc_log.erl:819
 msgid "Enable logging"
 msgstr "Habilitar el registre de la conversa"
 
@@ -427,162 +416,158 @@ msgstr "Habilitar el registre de la conversa"
 msgid "Enabling push without 'node' attribute is not supported"
 msgstr "No està suportat activar Push sense l'atribut 'node'"
 
-#: mod_configure.erl:168 mod_configure.erl:514 mod_configure.erl:1099
+#: mod_configure.erl:165 mod_configure.erl:508 mod_configure.erl:1018
 msgid "End User Session"
 msgstr "Finalitzar Sesió d'Usuari"
 
-#: mod_configure.erl:928
-msgid "Enter list of {Module, [Options]}"
-msgstr "Introdueix llista de {mòdul, [opcions]}"
-
-#: mod_muc.erl:811
+#: mod_muc.erl:1001
 msgid "Enter nickname you want to register"
 msgstr "Introdueix el sobrenom que vols registrar"
 
-#: mod_configure.erl:940 mod_configure.erl:952
+#: mod_configure.erl:859 mod_configure.erl:871
 msgid "Enter path to backup file"
 msgstr "Introdueix ruta al fitxer de còpia de seguretat"
 
-#: mod_configure.erl:986
+#: mod_configure.erl:905
 msgid "Enter path to jabberd14 spool dir"
 msgstr "Introdueix la ruta al directori de jabberd14 spools"
 
-#: mod_configure.erl:975
+#: mod_configure.erl:894
 msgid "Enter path to jabberd14 spool file"
 msgstr "Introdueix ruta al fitxer jabberd14 spool"
 
-#: mod_configure.erl:964
+#: mod_configure.erl:883
 msgid "Enter path to text file"
 msgstr "Introdueix ruta al fitxer de text"
 
-#: ejabberd_captcha.erl:71
+#: ejabberd_captcha.erl:72
 msgid "Enter the text you see"
 msgstr "Introdueix el text que veus"
 
-#: mod_vcard.erl:202
+#: mod_vcard.erl:213
 msgid "Erlang Jabber Server"
 msgstr "Servidor Erlang Jabber"
 
-#: ejabberd_web_admin.erl:1188
+#: ejabberd_web_admin.erl:1196
 msgid "Error"
 msgstr "Error"
 
-#: ejabberd_web_admin.erl:1296
+#: ejabberd_web_admin.erl:1302
 msgid "Export all tables as SQL queries to a file:"
 msgstr "Exporta totes les taules a un fitxer SQL:"
 
-#: ejabberd_web_admin.erl:1268
+#: ejabberd_web_admin.erl:1276
 msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
 msgstr ""
 "Exportar dades de tots els usuaris del servidor a arxius PIEFXIS (XEP-0227):"
 
-#: ejabberd_web_admin.erl:1280
+#: ejabberd_web_admin.erl:1288
 msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
 msgstr "Exportar dades d'usuaris d'un host a arxius PIEFXIS (XEP-0227):"
 
-#: mod_delegation.erl:282
+#: mod_delegation.erl:297
 msgid "External component failure"
 msgstr "Error al component extern"
 
-#: mod_delegation.erl:290
+#: mod_delegation.erl:305
 msgid "External component timeout"
 msgstr "Temps esgotat al component extern"
 
-#: mod_proxy65_service.erl:205
+#: mod_proxy65_service.erl:229
 msgid "Failed to activate bytestream"
 msgstr "Errada al activar bytestream"
 
-#: mod_muc_room.erl:965
+#: mod_muc_room.erl:1128
 msgid "Failed to extract JID from your voice request approval"
 msgstr "No s'ha pogut extraure el JID de la teva aprovació de petició de veu"
 
-#: mod_delegation.erl:263
+#: mod_delegation.erl:278
 msgid "Failed to map delegated namespace to external component"
 msgstr "Ha fallat mapejar la delegació de l'espai de noms al component extern"
 
-#: mod_http_upload.erl:628
+#: mod_http_upload.erl:687
 msgid "Failed to parse HTTP response"
 msgstr "Ha fallat el processat de la resposta HTTP"
 
-#: mod_muc_room.erl:3458
-msgid "Failed to process option '~s'"
-msgstr "H fallat el processat de la opció '~s'"
+#: mod_muc_room.erl:3632
+msgid "Failed to process option '~ts'"
+msgstr "Ha fallat el processat de la opció '~ts'"
 
 #: mod_vcard_mnesia.erl:103 mod_vcard_mnesia.erl:117 mod_vcard_sql.erl:160
-#: mod_vcard_sql.erl:174 mod_vcard_ldap.erl:328 mod_vcard_ldap.erl:341
+#: mod_vcard_sql.erl:174 mod_vcard_ldap.erl:330 mod_vcard_ldap.erl:343
 msgid "Family Name"
 msgstr "Cognom"
 
-#: mod_muc_log.erl:464
+#: mod_muc_log.erl:476
 msgid "February"
 msgstr "Febrer"
 
-#: mod_http_upload.erl:574
+#: mod_http_upload.erl:633
 msgid "File larger than ~w bytes"
 msgstr "El fitxer es més gran que ~w bytes"
 
-#: mod_vcard.erl:442
+#: mod_vcard.erl:458
 msgid "Fill in the form to search for any matching Jabber User"
 msgstr "Emplena camps per a buscar usuaris Jabber que concorden"
 
-#: mod_muc_log.erl:457
+#: mod_muc_log.erl:469
 msgid "Friday"
 msgstr "Divendres"
 
-#: mod_offline.erl:1007
+#: mod_offline.erl:1006
 msgid "From"
 msgstr "De"
 
-#: mod_configure.erl:713
-msgid "From ~s"
-msgstr "De ~s"
+#: mod_configure.erl:678
+msgid "From ~ts"
+msgstr "De ~ts"
 
 #: mod_vcard_mnesia.erl:100 mod_vcard_mnesia.erl:114 mod_vcard_sql.erl:157
-#: mod_vcard_sql.erl:171 mod_vcard_ldap.erl:325 mod_vcard_ldap.erl:338
+#: mod_vcard_sql.erl:171 mod_vcard_ldap.erl:327 mod_vcard_ldap.erl:340
 msgid "Full Name"
 msgstr "Nom complet"
 
-#: mod_configure.erl:181 mod_configure.erl:526
+#: mod_configure.erl:178 mod_configure.erl:520
 msgid "Get Number of Online Users"
 msgstr "Obtenir Número d'Usuaris Connectats"
 
-#: mod_configure.erl:178 mod_configure.erl:524
+#: mod_configure.erl:175 mod_configure.erl:518
 msgid "Get Number of Registered Users"
 msgstr "Obtenir Número d'Usuaris Registrats"
 
-#: mod_pubsub.erl:1018
+#: mod_pubsub.erl:1036
 msgid "Get Pending"
 msgstr "Obtenir Pendents"
 
-#: mod_configure.erl:174 mod_configure.erl:520 mod_configure.erl:1133
+#: mod_configure.erl:171 mod_configure.erl:514 mod_configure.erl:1052
 msgid "Get User Last Login Time"
 msgstr "Obtenir la última connexió d'Usuari"
 
-#: mod_configure.erl:170 mod_configure.erl:516 mod_configure.erl:1109
+#: mod_configure.erl:167 mod_configure.erl:510 mod_configure.erl:1028
 msgid "Get User Password"
 msgstr "Obtenir Contrasenya d'usuari"
 
-#: mod_configure.erl:176 mod_configure.erl:522 mod_configure.erl:1142
+#: mod_configure.erl:173 mod_configure.erl:516 mod_configure.erl:1061
 msgid "Get User Statistics"
 msgstr "Obtenir Estadístiques d'Usuari"
 
-#: mod_vcard_ldap.erl:326 mod_vcard_ldap.erl:339
+#: mod_vcard_ldap.erl:328 mod_vcard_ldap.erl:341
 msgid "Given Name"
 msgstr "Nom propi"
 
-#: mod_shared_roster.erl:871
+#: mod_shared_roster.erl:879
 msgid "Group "
 msgstr "Grup "
 
-#: mod_roster.erl:940
+#: mod_roster.erl:956
 msgid "Groups"
 msgstr "Grups"
 
-#: mod_http_upload.erl:206
+#: mod_http_upload.erl:209
 msgid "HTTP File Upload"
 msgstr "HTTP File Upload"
 
-#: ejabberd_web_admin.erl:572
+#: ejabberd_web_admin.erl:580
 msgid "Host"
 msgstr "Host"
 
@@ -590,7 +575,7 @@ msgstr "Host"
 msgid "Host unknown"
 msgstr "Host desconegut"
 
-#: mod_configure.erl:1539
+#: mod_configure.erl:1405
 msgid "IP addresses"
 msgstr "Adreça IP"
 
@@ -598,174 +583,178 @@ msgstr "Adreça IP"
 msgid "Idle connection"
 msgstr "Connexió sense us"
 
-#: ejabberd_captcha.erl:127
+#: ejabberd_captcha.erl:119
 msgid "If you don't see the CAPTCHA image here, visit the web page."
 msgstr "Si no veus la imatge CAPTCHA açí, visita la pàgina web."
 
-#: mod_configure.erl:158 mod_configure.erl:624
+#: mod_configure.erl:155 mod_configure.erl:599
 msgid "Import Directory"
 msgstr "Importar directori"
 
-#: mod_configure.erl:155 mod_configure.erl:622
+#: mod_configure.erl:152 mod_configure.erl:597
 msgid "Import File"
 msgstr "Importar fitxer"
 
-#: mod_configure.erl:972
+#: mod_configure.erl:891
 msgid "Import User from File at "
 msgstr "Importa usuari des de fitxer en "
 
-#: mod_configure.erl:576
+#: mod_configure.erl:568
 msgid "Import Users From jabberd14 Spool Files"
 msgstr "Importar usuaris de jabberd14"
 
-#: mod_configure.erl:983
+#: mod_configure.erl:902
 msgid "Import Users from Dir at "
 msgstr "Importar usuaris des del directori en "
 
-#: ejabberd_web_admin.erl:1312
+#: ejabberd_web_admin.erl:1316
 msgid "Import user data from jabberd14 spool file:"
 msgstr "Importar dades d'usuaris de l'arxiu de spool de jabberd14:"
 
-#: ejabberd_web_admin.erl:1255
+#: ejabberd_web_admin.erl:1263
 msgid "Import users data from a PIEFXIS file (XEP-0227):"
 msgstr "Importar dades d'usuaris des d'un arxiu PIEFXIS (XEP-0227):"
 
-#: ejabberd_web_admin.erl:1323
+#: ejabberd_web_admin.erl:1327
 msgid "Import users data from jabberd14 spool directory:"
 msgstr "Importar dades d'usuaris del directori de spool de jabberd14:"
 
-#: ejabberd_service.erl:202
+#: ejabberd_service.erl:220
 msgid "Improper domain part of 'from' attribute"
 msgstr "La part de domini de l'atribut 'from' es impròpia"
 
-#: mod_muc_room.erl:258
+#: mod_muc_room.erl:400
 msgid "Improper message type"
 msgstr "Tipus de missatge incorrecte"
 
-#: ejabberd_web_admin.erl:804
+#: ejabberd_web_admin.erl:812
 msgid "Incoming s2s Connections:"
 msgstr "Connexions s2s d'entrada:"
 
-#: ejabberd_captcha.erl:224 mod_register.erl:180 mod_muc_room.erl:3972
+#: mod_register.erl:198 mod_muc_room.erl:4165 ejabberd_captcha.erl:215
 msgid "Incorrect CAPTCHA submit"
 msgstr "El CAPTCHA proporcionat és incorrecte"
 
-#: mod_pubsub.erl:1216 mod_muc.erl:859 mod_vcard.erl:252 mod_register.erl:176
-#: mod_muc_room.erl:3203
+#: mod_pubsub.erl:1247 mod_register.erl:194 mod_muc.erl:1049
+#: mod_muc_room.erl:3373 mod_vcard.erl:267
 msgid "Incorrect data form"
 msgstr "El formulari de dades és incorrecte"
 
-#: mod_register_web.erl:597 mod_muc_room.erl:2033
+#: mod_register.erl:154 mod_register_web.erl:613 mod_muc_room.erl:2197
 msgid "Incorrect password"
 msgstr "Contrasenya incorrecta"
 
-#: mod_adhoc.erl:263
+#: mod_adhoc.erl:262
 msgid "Incorrect value of 'action' attribute"
 msgstr "Valor incorrecte del atribut 'action'"
 
-#: mod_configure.erl:1672
+#: mod_configure.erl:1550
 msgid "Incorrect value of 'action' in data form"
 msgstr "Valor incorrecte de 'action' al formulari de dades"
 
-#: mod_configure.erl:1289 mod_configure.erl:1321 mod_configure.erl:1353
-#: mod_configure.erl:1373 mod_configure.erl:1393
+#: mod_configure.erl:1153 mod_configure.erl:1186 mod_configure.erl:1219
+#: mod_configure.erl:1239 mod_configure.erl:1259
 msgid "Incorrect value of 'path' in data form"
 msgstr "Valor incorrecte de 'path' al formulari de dades"
 
-#: mod_privilege.erl:108
+#: mod_privilege.erl:117
 msgid "Insufficient privilege"
 msgstr "Privilegi insuficient"
 
-#: mod_multicast.erl:345
+#: mod_multicast.erl:352
 msgid "Internal server error"
 msgstr "Error intern del servidor"
 
-#: mod_privilege.erl:295
+#: mod_privilege.erl:318
 msgid "Invalid 'from' attribute in forwarded message"
 msgstr "Atribut 'from' invàlid al missatge reenviat"
 
-#: mod_stream_mgmt.erl:736
+#: mod_stream_mgmt.erl:749
 msgid "Invalid 'previd' value"
 msgstr "Valor no vàlid de 'previd'"
 
-#: mod_muc_room.erl:3904
+#: mod_muc_room.erl:4082
 msgid "Invalid node name"
 msgstr "Nom de node no vàlid"
 
-#: mod_muc_room.erl:4251
+#: mod_muc_room.erl:4444
 msgid "Invitations are not allowed in this conference"
 msgstr "Les invitacions no estan permeses en aquesta sala de conferència"
 
-#: mod_muc_room.erl:231 mod_muc_room.erl:373 mod_muc_room.erl:1130
+#: mod_muc_room.erl:373 mod_muc_room.erl:519 mod_muc_room.erl:1293
 msgid ""
-"It is not allowed to send error messages to the room. The participant (~s) "
-"has sent an error message (~s) and got kicked from the room"
+"It is not allowed to send error messages to the room. The participant (~ts) "
+"has sent an error message (~ts) and got kicked from the room"
 msgstr ""
-"No està permés enviar missatges d'error a la sala. El participant (~s) ha "
-"enviat un missatge d'error (~s) i ha sigut expulsat de la sala"
+"No està permés enviar missatges d'error a la sala. El participant (~ts) ha "
+"enviat un missatge d'error (~ts) i ha sigut expulsat de la sala"
 
-#: mod_muc_room.erl:418 mod_muc_room.erl:429
+#: mod_muc_room.erl:564 mod_muc_room.erl:575
 msgid "It is not allowed to send private messages"
 msgstr "No està permés enviar missatges privats"
 
-#: mod_muc_room.erl:386
+#: mod_muc_room.erl:532
 msgid "It is not allowed to send private messages of type \"groupchat\""
 msgstr "No està permés enviar missatges del tipus \"groupchat\""
 
-#: mod_muc_room.erl:242
+#: mod_muc_room.erl:384
 msgid "It is not allowed to send private messages to the conference"
 msgstr "No està permès l'enviament de missatges privats a la sala"
 
-#: mod_register_web.erl:197 mod_register_web.erl:205
+#: mod_jidprep.erl:143
+msgid "JID normalization denied by service policy"
+msgstr "S'ha denegat la normalització del JID per política del servei"
+
+#: mod_jidprep.erl:137
+msgid "JID normalization failed"
+msgstr "Ha fallat la normalització del JID"
+
+#: mod_register_web.erl:213 mod_register_web.erl:221
 msgid "Jabber Account Registration"
 msgstr "Registre de compte Jabber"
 
-#: mod_vcard_mnesia.erl:113 mod_vcard_sql.erl:170 mod_configure.erl:1076
-#: mod_configure.erl:1093 mod_configure.erl:1103 mod_configure.erl:1113
-#: mod_configure.erl:1123 mod_configure.erl:1137 mod_configure.erl:1146
-#: mod_configure.erl:1466 mod_configure.erl:1510 mod_configure.erl:1535
-#: mod_roster.erl:936
+#: mod_vcard_mnesia.erl:113 mod_configure.erl:995 mod_configure.erl:1012
+#: mod_configure.erl:1022 mod_configure.erl:1032 mod_configure.erl:1042
+#: mod_configure.erl:1056 mod_configure.erl:1065 mod_configure.erl:1332
+#: mod_configure.erl:1376 mod_configure.erl:1401 mod_vcard_sql.erl:170
+#: mod_roster.erl:952
 msgid "Jabber ID"
 msgstr "ID Jabber"
 
-#: mod_muc_log.erl:463
+#: mod_muc_log.erl:475
 msgid "January"
 msgstr "Gener"
 
-#: mod_muc_log.erl:469
+#: mod_muc_log.erl:481
 msgid "July"
 msgstr "Juliol"
 
-#: mod_muc_log.erl:468
+#: mod_muc_log.erl:480
 msgid "June"
 msgstr "Juny"
 
-#: ejabberd_web_admin.erl:695 ejabberd_web_admin.erl:759
-#: ejabberd_web_admin.erl:933
+#: ejabberd_web_admin.erl:703 ejabberd_web_admin.erl:767
+#: ejabberd_web_admin.erl:941
 msgid "Last Activity"
 msgstr "Última activitat"
 
-#: mod_configure.erl:1512
+#: mod_configure.erl:1378
 msgid "Last login"
 msgstr "Últim login"
 
-#: ejabberd_web_admin.erl:493
+#: ejabberd_web_admin.erl:485
 msgid "Last month"
 msgstr "Últim mes"
 
-#: ejabberd_web_admin.erl:494
+#: ejabberd_web_admin.erl:486
 msgid "Last year"
 msgstr "Últim any"
 
-#: mod_configure.erl:931
-msgid "List of modules to start"
-msgstr "Llista de mòduls a iniciar"
-
-#: mod_muc_admin.erl:455
+#: mod_muc_admin.erl:468
 msgid "List of rooms"
 msgstr "Llista de sales"
 
-#: ejabberd_web_admin.erl:1431
+#: ejabberd_web_admin.erl:1435
 msgid "Low level update script"
 msgstr "Script d'actualització de baix nivell"
 
@@ -775,59 +764,63 @@ msgstr ""
 "Se t'ha denegat la modificació de la preferència de MAM per política del "
 "servei"
 
-#: mod_muc_log.erl:785
+#: mod_muc_log.erl:797
 msgid "Make participants list public"
 msgstr "Crear una llista de participants pública"
 
-#: mod_muc_log.erl:813
+#: mod_muc_log.erl:825
 msgid "Make room CAPTCHA protected"
 msgstr "Crear una sala protegida per CAPTCHA"
 
-#: mod_muc_log.erl:792
+#: mod_muc_log.erl:804
 msgid "Make room members-only"
 msgstr "Crear una sala només per a membres"
 
-#: mod_muc_log.erl:794
+#: mod_muc_log.erl:806
 msgid "Make room moderated"
 msgstr "Crear una sala moderada"
 
-#: mod_muc_log.erl:787
+#: mod_muc_log.erl:799
 msgid "Make room password protected"
 msgstr "Crear una sala amb contrasenya"
 
-#: mod_muc_log.erl:781
+#: mod_muc_log.erl:793
 msgid "Make room persistent"
 msgstr "Crear una sala persistent"
 
-#: mod_muc_log.erl:783
+#: mod_muc_log.erl:795
 msgid "Make room public searchable"
 msgstr "Crear una sala pública"
 
-#: mod_register.erl:378
+#: mod_register.erl:386
 msgid "Malformed username"
 msgstr "Nom d'usuari mal format"
 
-#: mod_muc_log.erl:465
+#: mod_muc_log.erl:477
 msgid "March"
 msgstr "Març"
 
-#: mod_muc_log.erl:819
+#: mod_muc_log.erl:831
 msgid "Maximum Number of Occupants"
 msgstr "Número màxim d'ocupants"
 
-#: mod_muc_log.erl:467
+#: mod_muc_log.erl:479
 msgid "May"
 msgstr "Maig"
 
-#: mod_shared_roster.erl:855
+#: mod_shared_roster.erl:885
+msgid "Members not added (inexistent vhost): "
+msgstr "Membres no afegits (perque el vhost no existeix): "
+
+#: mod_shared_roster.erl:863
 msgid "Members:"
 msgstr "Membre:"
 
-#: mod_muc_room.erl:1920
+#: mod_muc_room.erl:2084
 msgid "Membership is required to enter this room"
 msgstr "Necessites ser membre d'aquesta sala per a poder entrar"
 
-#: mod_register_web.erl:288
+#: mod_register_web.erl:304
 msgid ""
 "Memorize your password, or write it in a paper placed in a safe place. In "
 "Jabber there isn't an automated way to recover your password if you forget "
@@ -837,166 +830,158 @@ msgstr ""
 "segur.A Jabber no hi ha una forma automatitzada de recuperar la teva "
 "contrasenya si la oblides."
 
-#: ejabberd_web_admin.erl:1166
+#: ejabberd_web_admin.erl:1174
 msgid "Memory"
 msgstr "Memòria"
 
-#: mod_configure.erl:1029 mod_configure.erl:1069 mod_announce.erl:526
+#: mod_configure.erl:948 mod_configure.erl:988 mod_announce.erl:528
 msgid "Message body"
 msgstr "Missatge"
 
-#: mod_privilege.erl:300
+#: mod_privilege.erl:323
 msgid "Message not found in forwarded payload"
 msgstr "Missatge no trobat al contingut reenviat"
 
-#: mod_block_strangers.erl:169
+#: mod_block_strangers.erl:177
 msgid "Messages from strangers are rejected"
 msgstr "Els missatges de desconeguts son rebutjats"
 
 #: mod_vcard_mnesia.erl:102 mod_vcard_mnesia.erl:116 mod_vcard_sql.erl:159
-#: mod_vcard_sql.erl:173 mod_vcard_ldap.erl:327 mod_vcard_ldap.erl:340
+#: mod_vcard_sql.erl:173 mod_vcard_ldap.erl:329 mod_vcard_ldap.erl:342
 msgid "Middle Name"
 msgstr "Segon nom"
 
-#: mod_muc_room.erl:2629 mod_muc_room.erl:4026 mod_muc_room.erl:4077
-#: mod_muc_room.erl:4123
+#: mod_muc_room.erl:2799 mod_muc_room.erl:4219 mod_muc_room.erl:4270
+#: mod_muc_room.erl:4316
 msgid "Moderator privileges required"
 msgstr "Es necessita tenir privilegis de moderador"
 
-#: ejabberd_web_admin.erl:1429
+#: ejabberd_web_admin.erl:1433
 msgid "Modified modules"
 msgstr "Mòduls modificats"
 
-#: gen_iq_handler.erl:118
+#: gen_iq_handler.erl:119
 msgid "Module failed to handle the query"
 msgstr "El modul ha fallat al gestionar la petició"
 
-#: mod_configure.erl:572 mod_configure.erl:585
-msgid "Modules"
-msgstr "Mòduls"
-
-#: mod_muc_log.erl:453
+#: mod_muc_log.erl:465
 msgid "Monday"
 msgstr "Dilluns"
 
-#: mod_muc_admin.erl:430 mod_muc_admin.erl:433 mod_muc_admin.erl:449
-#: mod_muc_admin.erl:521
+#: mod_muc_admin.erl:442 mod_muc_admin.erl:445 mod_muc_admin.erl:461
+#: mod_muc_admin.erl:535
 msgid "Multi-User Chat"
 msgstr "Multi-Usuari Converses"
 
-#: mod_multicast.erl:1152
+#: mod_multicast.erl:1162
 msgid "Multicast"
 msgstr "Multicast"
 
-#: mod_roster.erl:187
+#: mod_roster.erl:190
 msgid "Multiple <item/> elements are not allowed by RFC6121"
 msgstr "No estan permesos múltiples elements <item/> per RFC6121"
 
 #: mod_vcard_mnesia.erl:101 mod_vcard_mnesia.erl:115 mod_vcard_sql.erl:158
-#: mod_vcard_sql.erl:172 ejabberd_web_admin.erl:1163
+#: mod_vcard_sql.erl:172 ejabberd_web_admin.erl:1171
 msgid "Name"
 msgstr "Nom"
 
-#: mod_shared_roster.erl:844
+#: mod_shared_roster.erl:852
 msgid "Name:"
 msgstr "Nom:"
 
-#: mod_muc_room.erl:2807
+#: mod_muc_room.erl:2977
 msgid "Neither 'jid' nor 'nick' attribute found"
 msgstr "No s'han trobat els atributs 'jid' ni 'nick'"
 
-#: mod_muc_room.erl:2611 mod_muc_room.erl:2812
+#: mod_muc_room.erl:2781 mod_muc_room.erl:2982
 msgid "Neither 'role' nor 'affiliation' attribute found"
 msgstr "No s'han trobat els atributs 'role' ni 'affiliation'"
 
-#: mod_configure.erl:1495 ejabberd_web_admin.erl:711 ejabberd_web_admin.erl:905
+#: mod_configure.erl:1361 ejabberd_web_admin.erl:719 ejabberd_web_admin.erl:913
 msgid "Never"
 msgstr "Mai"
 
-#: mod_register_web.erl:407
+#: mod_register_web.erl:423
 msgid "New Password:"
 msgstr "Nova Contrasenya:"
 
 #: mod_vcard_mnesia.erl:104 mod_vcard_mnesia.erl:118 mod_vcard_sql.erl:161
-#: mod_vcard_sql.erl:175 mod_vcard_ldap.erl:329 mod_vcard_ldap.erl:342
-#: mod_roster.erl:937
+#: mod_vcard_sql.erl:175 mod_roster.erl:953 mod_vcard_ldap.erl:331
+#: mod_vcard_ldap.erl:344
 msgid "Nickname"
 msgstr "Sobrenom"
 
-#: mod_muc.erl:810
+#: mod_muc.erl:1000
 msgid "Nickname Registration at "
 msgstr "Registre del sobrenom en "
 
-#: mod_muc_room.erl:1079 mod_muc_room.erl:1941 mod_muc_room.erl:4047
+#: mod_muc_room.erl:1242 mod_muc_room.erl:2105 mod_muc_room.erl:4240
 msgid "Nickname can't be empty"
 msgstr "El sobrenom no pot estar buit"
 
-#: mod_muc_room.erl:2824
-msgid "Nickname ~s does not exist in the room"
-msgstr "El sobrenom ~s no existeix a la sala"
+#: mod_muc_room.erl:2994
+msgid "Nickname ~ts does not exist in the room"
+msgstr "El sobrenom ~ts no existeix a la sala"
 
-#: mod_muc_room.erl:3226
+#: mod_muc_room.erl:3396
 msgid "No 'affiliation' attribute found"
 msgstr "No s'ha trobat l'atribut 'affiliation'"
 
-#: mod_muc_room.erl:2598
+#: mod_muc_room.erl:2763
 msgid "No 'item' element found"
 msgstr "No s'ha trobat cap element 'item'"
 
-#: mod_configure.erl:1234
-msgid "No 'modules' found in data form"
-msgstr "No s'ha trobat 'modules' al formulari de dades"
-
-#: mod_configure.erl:1665
+#: mod_configure.erl:1543
 msgid "No 'password' found in data form"
 msgstr "No s'ha trobat 'password' al formulari de dades"
 
-#: mod_register.erl:141
+#: mod_register.erl:159
 msgid "No 'password' found in this query"
 msgstr "No s'ha trobat 'password' en esta petició"
 
-#: mod_configure.erl:1273 mod_configure.erl:1304 mod_configure.erl:1336
-#: mod_configure.erl:1367 mod_configure.erl:1387
+#: mod_configure.erl:1135 mod_configure.erl:1168 mod_configure.erl:1201
+#: mod_configure.erl:1233 mod_configure.erl:1253
 msgid "No 'path' found in data form"
 msgstr "No s'ha trobat 'path' en el formulari de dades"
 
-#: mod_muc_room.erl:4247
+#: mod_muc_room.erl:4440
 msgid "No 'to' attribute found in the invitation"
 msgstr "No s'ha trobat l'atribut 'to' en la invitació"
 
-#: mod_privilege.erl:309
+#: mod_privilege.erl:332
 msgid "No <forwarded/> element found"
 msgstr "No s'ha trobat cap element <forwarded/>"
 
-#: ejabberd_web_admin.erl:985
+#: ejabberd_web_admin.erl:993
 msgid "No Data"
 msgstr "No hi ha dades"
 
-#: mod_multicast.erl:331
+#: mod_multicast.erl:338
 msgid "No address elements found"
 msgstr "No s'han trobat elements d'adreces ('address')"
 
-#: mod_multicast.erl:328
+#: mod_multicast.erl:335
 msgid "No addresses element found"
 msgstr "No s'ha trobat l'element d'adreces ('addresses')"
 
-#: ejabberd_local.erl:96
+#: ejabberd_local.erl:103
 msgid "No available resource found"
 msgstr "No s'ha trobat un recurs disponible"
 
-#: mod_announce.erl:577
+#: mod_announce.erl:579
 msgid "No body provided for announce message"
 msgstr "No hi ha proveedor per al missatge anunci"
 
-#: gen_iq_handler.erl:89 mod_muc_room.erl:988
+#: gen_iq_handler.erl:89 mod_muc_room.erl:1151
 msgid "No child elements found"
 msgstr "No s'han trobat subelements"
 
-#: mod_pubsub.erl:1205
+#: mod_pubsub.erl:1236
 msgid "No data form found"
 msgstr "No s'ha trobat el formulari de dades"
 
-#: mod_vcard.erl:278 mod_disco.erl:202
+#: mod_disco.erl:203 mod_vcard.erl:293
 msgid "No features available"
 msgstr "No n'hi ha característiques disponibles"
 
@@ -1004,7 +989,7 @@ msgstr "No n'hi ha característiques disponibles"
 msgid "No hook has processed this command"
 msgstr "Cap event ha processat este comandament"
 
-#: mod_last.erl:202
+#: mod_last.erl:205
 msgid "No info about last activity found"
 msgstr "No s'ha trobat informació de l'ultima activitat"
 
@@ -1012,23 +997,23 @@ msgstr "No s'ha trobat informació de l'ultima activitat"
 msgid "No items found in this query"
 msgstr "En aquesta petició no s'ha trobat cap element"
 
-#: mod_muc_room.erl:3337
+#: mod_muc_room.erl:3507
 msgid "No limit"
 msgstr "Sense Llímit"
 
-#: mod_mix_pam.erl:281 mod_offline.erl:364 mod_mix.erl:619
-#: ejabberd_captcha.erl:234 gen_iq_handler.erl:82 mod_muc.erl:485
-#: mod_muc.erl:552 mod_muc.erl:572 mod_muc.erl:603 mod_privacy.erl:156
-#: mod_privacy.erl:273 mod_http_upload.erl:533 mod_blocking.erl:83
-#: mod_blocking.erl:101 mod_roster.erl:199
+#: gen_iq_handler.erl:82 mod_blocking.erl:83 mod_blocking.erl:101
+#: mod_mix_pam.erl:281 mod_roster.erl:202 mod_muc.erl:236 mod_muc.erl:593
+#: mod_muc.erl:660 mod_muc.erl:680 mod_muc.erl:711 mod_offline.erl:364
+#: mod_jidprep.erl:147 mod_mix.erl:630 mod_privacy.erl:156 mod_privacy.erl:273
+#: mod_http_upload.erl:592 ejabberd_captcha.erl:225
 msgid "No module is handling this query"
 msgstr "Cap element està manegant esta petició"
 
-#: mod_pubsub.erl:1564
+#: mod_pubsub.erl:1602
 msgid "No node specified"
 msgstr "No s'ha especificat node"
 
-#: mod_pubsub.erl:1447
+#: mod_pubsub.erl:1479
 msgid "No pending subscriptions found"
 msgstr "No s'han trobat subscripcions pendents"
 
@@ -1041,14 +1026,13 @@ msgstr "No s'ha trobat cap llista de privacitat amb aquest nom"
 msgid "No private data found in this query"
 msgstr "No s'ha trobat dades privades en esta petició"
 
-#: mod_configure.erl:859 mod_configure.erl:898 mod_configure.erl:1176
-#: mod_configure.erl:1208 mod_configure.erl:1229 mod_configure.erl:1268
-#: mod_configure.erl:1299 mod_configure.erl:1331 mod_configure.erl:1362
-#: mod_configure.erl:1382 mod_stats.erl:93
+#: mod_configure.erl:818 mod_configure.erl:1097 mod_configure.erl:1130
+#: mod_configure.erl:1163 mod_configure.erl:1196 mod_configure.erl:1228
+#: mod_configure.erl:1248 mod_stats.erl:93
 msgid "No running node found"
 msgstr "No s'ha trobat node en marxa"
 
-#: mod_vcard.erl:261 mod_disco.erl:230
+#: mod_disco.erl:231 mod_vcard.erl:276
 msgid "No services available"
 msgstr "No n'hi ha serveis disponibles"
 
@@ -1056,7 +1040,7 @@ msgstr "No n'hi ha serveis disponibles"
 msgid "No statistics found for this item"
 msgstr "No n'hi ha estadístiques disponibles per a aquest element"
 
-#: nodetree_tree_sql.erl:262 nodetree_tree.erl:193
+#: nodetree_tree.erl:219 nodetree_tree_sql.erl:278
 msgid "Node already exists"
 msgstr "El node ja existeix"
 
@@ -1064,90 +1048,90 @@ msgstr "El node ja existeix"
 msgid "Node index not found"
 msgstr "Index de node no trobat"
 
-#: ejabberd_web_admin.erl:526 mod_muc.erl:550 mod_muc.erl:736
-#: nodetree_tree_sql.erl:126 nodetree_tree_sql.erl:140 nodetree_tree.erl:75
-#: nodetree_tree.erl:81
+#: ejabberd_web_admin.erl:526 nodetree_tree.erl:76 nodetree_tree.erl:82
+#: mod_muc.erl:658 mod_muc.erl:938 mod_muc_room.erl:4152
+#: nodetree_tree_sql.erl:126 nodetree_tree_sql.erl:140
 msgid "Node not found"
 msgstr "Node no trobat"
 
-#: ejabberd_web_admin.erl:1075 ejabberd_web_admin.erl:1097
+#: ejabberd_web_admin.erl:1083 ejabberd_web_admin.erl:1105
 msgid "Node ~p"
 msgstr "Node ~p"
 
-#: mod_vcard.erl:383
+#: mod_vcard.erl:398
 msgid "Nodeprep has failed"
 msgstr "Ha fallat Nodeprep"
 
-#: ejabberd_web_admin.erl:1055 ejabberd_web_admin.erl:1775
-#: ejabberd_web_admin.erl:1801
+#: ejabberd_web_admin.erl:1063 ejabberd_web_admin.erl:1788
+#: ejabberd_web_admin.erl:1814
 msgid "Nodes"
 msgstr "Nodes"
 
-#: ejabberd_web_admin.erl:840 ejabberd_web_admin.erl:1036
-#: ejabberd_web_admin.erl:1046 ejabberd_web_admin.erl:1388 mod_roster.erl:931
+#: ejabberd_web_admin.erl:848 ejabberd_web_admin.erl:1044
+#: ejabberd_web_admin.erl:1054 ejabberd_web_admin.erl:1392 mod_roster.erl:947
 msgid "None"
 msgstr "Cap"
 
-#: ejabberd_web_admin.erl:516
+#: ejabberd_web_admin.erl:512
 msgid "Not Found"
 msgstr "No Trobat"
 
-#: mod_register_web.erl:601 mod_register.erl:390
+#: mod_register.erl:396 mod_register_web.erl:617
 msgid "Not allowed"
 msgstr "No permès"
 
-#: mod_last.erl:143 mod_disco.erl:274 mod_disco.erl:333
+#: mod_last.erl:145 mod_disco.erl:275 mod_disco.erl:334
 msgid "Not subscribed"
 msgstr "No subscrit"
 
-#: mod_muc_log.erl:473
+#: mod_muc_log.erl:485
 msgid "November"
 msgstr "Novembre"
 
-#: mod_configure.erl:1166
+#: mod_configure.erl:1085
 msgid "Number of online users"
 msgstr "Número d'usuaris connectats"
 
-#: mod_configure.erl:1156
+#: mod_configure.erl:1075
 msgid "Number of registered users"
 msgstr "Número d'Usuaris Registrats"
 
-#: ejabberd_captcha.erl:193 ejabberd_web_admin.erl:1212
-#: ejabberd_web_admin.erl:1222 ejabberd_web_admin.erl:1233
-#: ejabberd_web_admin.erl:1242 ejabberd_web_admin.erl:1252
-#: ejabberd_web_admin.erl:1265 ejabberd_web_admin.erl:1277
-#: ejabberd_web_admin.erl:1293 ejabberd_web_admin.erl:1309
-#: ejabberd_web_admin.erl:1320 ejabberd_web_admin.erl:1330
+#: ejabberd_web_admin.erl:1220 ejabberd_web_admin.erl:1230
+#: ejabberd_web_admin.erl:1241 ejabberd_web_admin.erl:1250
+#: ejabberd_web_admin.erl:1260 ejabberd_web_admin.erl:1273
+#: ejabberd_web_admin.erl:1285 ejabberd_web_admin.erl:1299
+#: ejabberd_web_admin.erl:1313 ejabberd_web_admin.erl:1324
+#: ejabberd_web_admin.erl:1334 ejabberd_captcha.erl:176
 msgid "OK"
 msgstr "Acceptar"
 
-#: mod_muc_log.erl:472
+#: mod_muc_log.erl:484
 msgid "October"
 msgstr "Octubre"
 
-#: ejabberd_web_admin.erl:694
+#: ejabberd_web_admin.erl:702
 msgid "Offline Messages"
 msgstr "Missatges offline"
 
-#: mod_offline.erl:1083
+#: mod_offline.erl:1082
 msgid "Offline Messages:"
 msgstr "Missatges fora de línia:"
 
-#: mod_register_web.erl:403
+#: mod_register_web.erl:419
 msgid "Old Password:"
 msgstr "Antiga contrasenya:"
 
-#: mod_configure.erl:1505 ejabberd_web_admin.erl:729 ejabberd_web_admin.erl:916
+#: mod_configure.erl:1371 ejabberd_web_admin.erl:737 ejabberd_web_admin.erl:924
 msgid "Online"
 msgstr "Connectat"
 
-#: mod_configure.erl:500 ejabberd_web_admin.erl:461 ejabberd_web_admin.erl:574
-#: ejabberd_web_admin.erl:1772
+#: mod_configure.erl:494 ejabberd_web_admin.erl:453 ejabberd_web_admin.erl:582
+#: ejabberd_web_admin.erl:1785
 msgid "Online Users"
 msgstr "Usuaris conectats"
 
-#: ejabberd_web_admin.erl:798 ejabberd_web_admin.erl:817
-#: ejabberd_web_admin.erl:1361
+#: ejabberd_web_admin.erl:806 ejabberd_web_admin.erl:825
+#: ejabberd_web_admin.erl:1365
 msgid "Online Users:"
 msgstr "Usuaris en línia:"
 
@@ -1163,116 +1147,112 @@ msgstr "En esta petició només es permet l'element <list/>"
 msgid "Only members may query archives of this room"
 msgstr "Només membres poden consultar l'arxiu de missatges d'aquesta sala"
 
-#: mod_muc_room.erl:828
+#: mod_muc_room.erl:991
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
 msgstr ""
 "Només els moderadors i participants poden canviar l'assumpte d'aquesta sala"
 
-#: mod_muc_room.erl:833
+#: mod_muc_room.erl:996
 msgid "Only moderators are allowed to change the subject in this room"
 msgstr "Només els moderadors poden canviar l'assumpte d'aquesta sala"
 
-#: mod_muc_room.erl:972
+#: mod_muc_room.erl:1135
 msgid "Only moderators can approve voice requests"
 msgstr "Només els moderadors poden aprovar les peticions de veu"
 
-#: mod_muc_room.erl:424 mod_muc_room.erl:847 mod_muc_room.erl:4316
+#: mod_muc_room.erl:570 mod_muc_room.erl:1010 mod_muc_room.erl:4509
 msgid "Only occupants are allowed to send messages to the conference"
 msgstr "Sols els ocupants poden enviar missatges a la sala"
 
-#: mod_muc_room.erl:470
+#: mod_muc_room.erl:616
 msgid "Only occupants are allowed to send queries to the conference"
 msgstr "Sols els ocupants poden enviar sol·licituds a la sala"
 
-#: mod_muc.erl:428
+#: mod_muc.erl:226
 msgid "Only service administrators are allowed to send service messages"
 msgstr ""
 "Sols els administradors del servei tenen permís per a enviar missatges de "
 "servei"
 
 #: mod_vcard_mnesia.erl:109 mod_vcard_mnesia.erl:123 mod_vcard_sql.erl:166
-#: mod_vcard_sql.erl:180 mod_vcard_ldap.erl:334 mod_vcard_ldap.erl:347
+#: mod_vcard_sql.erl:180 mod_vcard_ldap.erl:336 mod_vcard_ldap.erl:349
 msgid "Organization Name"
 msgstr "Nom de la organizació"
 
 #: mod_vcard_mnesia.erl:110 mod_vcard_mnesia.erl:124 mod_vcard_sql.erl:167
-#: mod_vcard_sql.erl:181 mod_vcard_ldap.erl:335 mod_vcard_ldap.erl:348
+#: mod_vcard_sql.erl:181 mod_vcard_ldap.erl:337 mod_vcard_ldap.erl:350
 msgid "Organization Unit"
 msgstr "Unitat de la organizació"
 
-#: mod_configure.erl:502
+#: mod_configure.erl:496
 msgid "Outgoing s2s Connections"
 msgstr "Connexions s2s d'eixida"
 
-#: ejabberd_web_admin.erl:801
+#: ejabberd_web_admin.erl:809
 msgid "Outgoing s2s Connections:"
 msgstr "Connexions d'eixida s2s:"
 
-#: mod_mix.erl:624 mod_pubsub.erl:1324 mod_pubsub.erl:1415 mod_pubsub.erl:1576
-#: mod_pubsub.erl:2150 mod_pubsub.erl:2216 mod_pubsub.erl:2413
-#: mod_pubsub.erl:2494 mod_pubsub.erl:3119 mod_pubsub.erl:3278
-#: mod_muc_room.erl:3173 mod_muc_room.erl:3218 mod_muc_room.erl:4002
+#: mod_pubsub.erl:1355 mod_pubsub.erl:1450 mod_pubsub.erl:1624
+#: mod_pubsub.erl:2230 mod_pubsub.erl:2296 mod_pubsub.erl:2506
+#: mod_pubsub.erl:2600 mod_pubsub.erl:3288 mod_pubsub.erl:3450 mod_mix.erl:635
+#: mod_muc_room.erl:3343 mod_muc_room.erl:3388 mod_muc_room.erl:4195
 msgid "Owner privileges required"
 msgstr "Es requerixen privilegis de propietari de la sala"
 
-#: mod_offline.erl:1009
+#: mod_offline.erl:1008
 msgid "Packet"
 msgstr "Paquet"
 
-#: mod_multicast.erl:340
+#: mod_multicast.erl:347
 msgid "Packet relay is denied by service policy"
 msgstr "S'ha denegat el reenviament del paquet per política del servei"
 
-#: mod_configure.erl:1253
-msgid "Parse failed"
-msgstr "El processat ha fallat"
-
-#: mod_configure.erl:1080 mod_configure.erl:1127 mod_configure.erl:1468
-#: mod_configure.erl:1647 ejabberd_web_admin.erl:642 mod_register.erl:222
-#: ejabberd_oauth.erl:397 mod_muc_log.erl:788
+#: mod_configure.erl:999 mod_configure.erl:1046 mod_configure.erl:1334
+#: mod_configure.erl:1523 ejabberd_web_admin.erl:650 mod_register.erl:240
+#: mod_muc_log.erl:800 ejabberd_oauth.erl:502
 msgid "Password"
 msgstr "Contrasenya"
 
-#: mod_configure.erl:1084
+#: mod_configure.erl:1003
 msgid "Password Verification"
 msgstr "Verificació de la Contrasenya"
 
-#: mod_register_web.erl:294 mod_register_web.erl:411
+#: mod_register_web.erl:310 mod_register_web.erl:427
 msgid "Password Verification:"
 msgstr "Verificació de la Contrasenya:"
 
-#: mod_register_web.erl:271 mod_register_web.erl:514 ejabberd_web_admin.erl:931
+#: ejabberd_web_admin.erl:939 mod_register_web.erl:287 mod_register_web.erl:530
 msgid "Password:"
 msgstr "Contrasenya:"
 
-#: mod_configure.erl:988
+#: mod_configure.erl:907
 msgid "Path to Dir"
 msgstr "Ruta al directori"
 
-#: mod_configure.erl:942 mod_configure.erl:954 mod_configure.erl:966
-#: mod_configure.erl:977
+#: mod_configure.erl:861 mod_configure.erl:873 mod_configure.erl:885
+#: mod_configure.erl:896
 msgid "Path to File"
 msgstr "Ruta al fitxer"
 
-#: mod_roster.erl:939
+#: mod_roster.erl:955
 msgid "Pending"
 msgstr "Pendent"
 
-#: ejabberd_web_admin.erl:480
+#: ejabberd_web_admin.erl:472
 msgid "Period: "
 msgstr "Període: "
 
-#: mod_adhoc.erl:155 mod_adhoc.erl:246
+#: mod_adhoc.erl:155 mod_adhoc.erl:245
 msgid "Ping"
 msgstr "Ping"
 
-#: mod_ping.erl:176
+#: mod_ping.erl:178
 msgid "Ping query is incorrect"
 msgstr "La petició de Ping es incorrecta"
 
-#: ejabberd_web_admin.erl:1195
+#: ejabberd_web_admin.erl:1203
 msgid ""
 "Please note that these options will only backup the builtin Mnesia database. "
 "If you are using the ODBC module, you also need to backup your SQL database "
@@ -1282,43 +1262,43 @@ msgstr ""
 "dades Mnesia. Si estàs utilitzant el mòdul d'ODBC també deus de fer una "
 "còpia de seguretat de la base de dades de SQL a part."
 
-#: mod_muc_room.erl:933
+#: mod_muc_room.erl:1096
 msgid "Please, wait for a while before sending new voice request"
 msgstr "Si us plau, espera una mica abans d'enviar una nova petició de veu"
 
-#: mod_adhoc.erl:261
+#: mod_adhoc.erl:260
 msgid "Pong"
 msgstr "Pong"
 
-#: mod_roster.erl:165
+#: mod_roster.erl:168
 msgid "Possessing 'ask' attribute is not allowed by RFC6121"
 msgstr "Processar l'atribut 'ask' no està permès per RFC6121"
 
-#: mod_stream_mgmt.erl:732
+#: mod_stream_mgmt.erl:745
 msgid "Previous session PID has been killed"
 msgstr "El procés de la sessió prèvia ha sigut matat"
 
-#: mod_stream_mgmt.erl:730
+#: mod_stream_mgmt.erl:743
 msgid "Previous session PID has exited"
 msgstr "El procés de la sessió prèvia ha sortit"
 
-#: mod_stream_mgmt.erl:728
+#: mod_stream_mgmt.erl:741
 msgid "Previous session PID is dead"
 msgstr "El procés de la sessió prèvia està mort"
 
-#: mod_stream_mgmt.erl:724
+#: mod_stream_mgmt.erl:737
 msgid "Previous session not found"
 msgstr "No s'ha trobat la sessió prèvia"
 
-#: mod_stream_mgmt.erl:726
+#: mod_stream_mgmt.erl:739
 msgid "Previous session timed out"
 msgstr "La sessió prèvia ha caducat"
 
-#: mod_pubsub.erl:1356
+#: mod_pubsub.erl:1387
 msgid "PubSub subscriber request"
 msgstr "Petició de subscriptor PubSub"
 
-#: mod_pubsub.erl:3922
+#: mod_pubsub.erl:4171
 msgid "Publish-Subscribe"
 msgstr "Publicar-subscriure't"
 
@@ -1326,239 +1306,236 @@ msgstr "Publicar-subscriure't"
 msgid "Push record not found"
 msgstr "No s'ha trobat l'element Push"
 
-#: mod_muc_room.erl:465
+#: mod_muc_room.erl:611
 msgid "Queries to the conference members are not allowed in this room"
 msgstr "En aquesta sala no es permeten sol·licituds als membres"
 
-#: mod_mix_pam.erl:276 mod_offline.erl:331 mod_private.erl:164 mod_sic.erl:77
-#: mod_disco.erl:303 mod_disco.erl:360 mod_privacy.erl:134 mod_blocking.erl:76
-#: mod_roster.erl:155
+#: mod_blocking.erl:76 mod_mix_pam.erl:276 mod_roster.erl:157
+#: mod_private.erl:164 mod_disco.erl:304 mod_disco.erl:361 mod_offline.erl:331
+#: mod_privacy.erl:134 mod_sic.erl:77
 msgid "Query to another users is forbidden"
 msgstr "Enviar peticions a altres usuaris no està permès"
 
-#: mod_configure.erl:848 ejabberd_web_admin.erl:1486
+#: mod_configure.erl:804 ejabberd_web_admin.erl:1499
 msgid "RAM and disc copy"
 msgstr "Còpia en RAM i disc"
 
-#: mod_configure.erl:846 ejabberd_web_admin.erl:1485
+#: mod_configure.erl:802 ejabberd_web_admin.erl:1498
 msgid "RAM copy"
 msgstr "Còpia en RAM"
 
-#: ejabberd_web_admin.erl:1102
+#: ejabberd_web_admin.erl:1110
 msgid "RPC Call Error"
 msgstr "Error de cridada RPC"
 
-#: mod_announce.erl:517
+#: mod_announce.erl:519
 msgid "Really delete message of the day?"
 msgstr "Segur que vols eliminar el missatge del dia?"
 
-#: mod_muc_room.erl:393 mod_muc_room.erl:442
+#: mod_muc_room.erl:539 mod_muc_room.erl:588
 msgid "Recipient is not in the conference room"
 msgstr "El receptor no està en la sala de conferència"
 
-#: mod_register_web.erl:301
+#: mod_register_web.erl:317
 msgid "Register"
 msgstr "Registrar"
 
-#: mod_register_web.erl:208 mod_register_web.erl:236 mod_register_web.erl:244
+#: mod_register_web.erl:224 mod_register_web.erl:252 mod_register_web.erl:260
 msgid "Register a Jabber account"
 msgstr "Registrar un compte Jabber"
 
-#: ejabberd_web_admin.erl:573
+#: ejabberd_web_admin.erl:581
 msgid "Registered Users"
 msgstr "Usuaris registrats"
 
-#: ejabberd_web_admin.erl:795 ejabberd_web_admin.erl:814
+#: ejabberd_web_admin.erl:803 ejabberd_web_admin.erl:822
 msgid "Registered Users:"
 msgstr "Usuaris registrats:"
 
-#: mod_configure.erl:852 ejabberd_web_admin.erl:1488
+#: mod_configure.erl:808 ejabberd_web_admin.erl:1501
 msgid "Remote copy"
 msgstr "Còpia remota"
 
-#: mod_roster.erl:987
+#: mod_roster.erl:1003
 msgid "Remove"
 msgstr "Borrar"
 
-#: mod_offline.erl:1087
+#: mod_offline.erl:1086
 msgid "Remove All Offline Messages"
 msgstr "Eliminar tots els missatges offline"
 
-#: mod_configure.erl:1645 ejabberd_web_admin.erl:938
+#: mod_configure.erl:1521 ejabberd_web_admin.erl:946
 msgid "Remove User"
 msgstr "Eliminar usuari"
 
-#: ejabberd_sm.erl:456
+#: ejabberd_sm.erl:453
 msgid "Replaced by new connection"
 msgstr "Reemplaçat per una nova connexió"
 
-#: mod_mix_pam.erl:257 mod_muc_room.erl:692
+#: mod_mix_pam.erl:257 mod_muc_room.erl:210 mod_muc_room.erl:219
+#: mod_muc_room.erl:847
 msgid "Request has timed out"
 msgstr "La petició ha caducat"
 
-#: mod_configure.erl:1541
+#: mod_muc_room.erl:739 mod_muc_room.erl:751
+msgid "Request is ignored"
+msgstr "La petició ha sigut ignorada"
+
+#: mod_configure.erl:1407
 msgid "Resources"
 msgstr "Recursos"
 
-#: ejabberd_web_admin.erl:1091
+#: ejabberd_web_admin.erl:1099
 msgid "Restart"
 msgstr "Reiniciar"
 
-#: mod_configure.erl:160 mod_configure.erl:578 mod_configure.erl:999
+#: mod_configure.erl:157 mod_configure.erl:570 mod_configure.erl:918
 msgid "Restart Service"
 msgstr "Reiniciar el Servei"
 
-#: mod_configure.erl:149 mod_configure.erl:609
+#: mod_configure.erl:146 mod_configure.erl:584
 msgid "Restore"
 msgstr "Restaurar"
 
-#: mod_configure.erl:949
+#: mod_configure.erl:868
 msgid "Restore Backup from File at "
 msgstr "Restaura còpia de seguretat des del fitxer en "
 
-#: ejabberd_web_admin.erl:1225
+#: ejabberd_web_admin.erl:1233
 msgid ""
 "Restore binary backup after next ejabberd restart (requires less memory):"
 msgstr ""
 "Restaurar una còpia de seguretat binària després de reiniciar el ejabberd "
 "(requereix menys memòria:"
 
-#: ejabberd_web_admin.erl:1215
+#: ejabberd_web_admin.erl:1223
 msgid "Restore binary backup immediately:"
 msgstr "Restaurar una còpia de seguretat binària ara mateix:"
 
-#: ejabberd_web_admin.erl:1245
+#: ejabberd_web_admin.erl:1253
 msgid "Restore plain text backup immediately:"
 msgstr "Restaurar una còpia de seguretat en format de text pla ara mateix:"
 
-#: mod_muc_log.erl:624
+#: mod_muc_log.erl:636
 msgid "Room Configuration"
 msgstr "Configuració de la sala"
 
-#: mod_muc_log.erl:644
+#: mod_muc_log.erl:656
 msgid "Room Occupants"
 msgstr "Nombre d'ocupants"
 
-#: mod_muc.erl:459
+#: mod_muc.erl:557
 msgid "Room creation is denied by service policy"
 msgstr "Se t'ha denegat el crear la sala per política del servei"
 
-#: mod_muc_log.erl:815
+#: mod_muc_log.erl:827
 msgid "Room description"
 msgstr "Descripció de la sala"
 
-#: mod_muc_room.erl:719
+#: mod_muc_room.erl:874
 msgid "Room terminates"
 msgstr "La sala està terminant"
 
-#: mod_muc_log.erl:779
+#: mod_muc_log.erl:791
 msgid "Room title"
 msgstr "Títol de la sala"
 
-#: mod_roster.erl:1106
+#: mod_roster.erl:1122
 msgid "Roster"
 msgstr "Llista de contactes"
 
-#: mod_roster.erl:327
-msgid "Roster module has failed"
-msgstr "El modul de Roster ha fallat"
+#: mod_roster.erl:1007
+msgid "Roster of ~ts"
+msgstr "Llista de contactes de ~ts"
 
-#: mod_roster.erl:992
-msgid "Roster of "
-msgstr "Llista de contactes de "
-
-#: mod_configure.erl:1537
+#: mod_configure.erl:1403
 msgid "Roster size"
 msgstr "Tamany de la llista"
 
-#: mod_configure.erl:504 ejabberd_web_admin.erl:1056
+#: mod_configure.erl:498 ejabberd_web_admin.erl:1064
 msgid "Running Nodes"
 msgstr "Nodes funcionant"
 
-#: mod_proxy65.erl:134
+#: mod_proxy65.erl:135
 msgid "SOCKS5 Bytestreams"
 msgstr "SOCKS5 Bytestreams"
 
-#: mod_muc_log.erl:458
+#: mod_muc_log.erl:470
 msgid "Saturday"
 msgstr "Dissabte"
 
-#: mod_configure.erl:1257
-msgid "Scan failed"
-msgstr "L'escanejat ha fallat"
-
-#: ejabberd_web_admin.erl:1432
+#: ejabberd_web_admin.erl:1436
 msgid "Script check"
 msgstr "Comprovar script"
 
-#: mod_vcard.erl:459
+#: mod_vcard.erl:475
 msgid "Search Results for "
 msgstr "Resultats de la búsqueda "
 
-#: mod_vcard.erl:425
+#: mod_vcard.erl:440
 msgid "Search users in "
 msgstr "Cerca usuaris en "
 
-#: ejabberd_web_admin.erl:1401
+#: ejabberd_web_admin.erl:1405
 msgid "Select All"
 msgstr "Seleccionar Tots"
 
-#: mod_announce.erl:611
+#: mod_announce.erl:613
 msgid "Send announcement to all online users"
 msgstr "Enviar anunci a tots els usuaris connectats"
 
-#: mod_configure.erl:1022 mod_configure.erl:1062 mod_announce.erl:613
+#: mod_configure.erl:941 mod_configure.erl:981 mod_announce.erl:615
 msgid "Send announcement to all online users on all hosts"
 msgstr "Enviar anunci a tots els usuaris connectats a tots els hosts"
 
-#: mod_announce.erl:607
+#: mod_announce.erl:609
 msgid "Send announcement to all users"
 msgstr "Enviar anunci a tots els usuaris"
 
-#: mod_announce.erl:609
+#: mod_announce.erl:611
 msgid "Send announcement to all users on all hosts"
 msgstr "Enviar anunci a tots els usuaris de tots els hosts"
 
-#: mod_muc_log.erl:471
+#: mod_muc_log.erl:483
 msgid "September"
 msgstr "Setembre"
 
-#: mod_register_web.erl:268 mod_register_web.erl:400 mod_register_web.erl:511
+#: mod_register_web.erl:284 mod_register_web.erl:416 mod_register_web.erl:527
 msgid "Server:"
 msgstr "Servidor:"
 
-#: mod_stream_mgmt.erl:734
+#: mod_stream_mgmt.erl:747
 msgid "Session state copying timed out"
 msgstr "La copia del estat de la sessió ha caducat"
 
-#: mod_announce.erl:615
+#: mod_announce.erl:617
 msgid "Set message of the day and send to online users"
 msgstr "Configurar el missatge del dia i enviar a tots els usuaris"
 
-#: mod_announce.erl:617
+#: mod_announce.erl:619
 msgid "Set message of the day on all hosts and send to online users"
 msgstr ""
 "Escriure missatge del dia en tots els hosts i enviar-ho als usuaris "
 "connectats"
 
-#: mod_shared_roster.erl:732 mod_shared_roster.erl:774
-#: mod_shared_roster.erl:868
+#: mod_shared_roster.erl:740 mod_shared_roster.erl:782
+#: mod_shared_roster.erl:876
 msgid "Shared Roster Groups"
 msgstr "Grups de contactes compartits"
 
-#: ejabberd_web_admin.erl:502
+#: ejabberd_web_admin.erl:494
 msgid "Show Integral Table"
 msgstr "Mostrar Taula Integral"
 
-#: ejabberd_web_admin.erl:499
+#: ejabberd_web_admin.erl:491
 msgid "Show Ordinary Table"
 msgstr "Mostrar Taula Ordinaria"
 
-#: mod_configure.erl:162 mod_configure.erl:580 mod_configure.erl:1039
+#: mod_configure.erl:159 mod_configure.erl:572 mod_configure.erl:958
 msgid "Shut Down Service"
 msgstr "Apager el Servei"
 
-#: mod_register_web.erl:284
+#: mod_register_web.erl:300
 msgid ""
 "Some Jabber clients can store your password in the computer, but you should "
 "do this only in your personal computer for safety reasons."
@@ -1567,147 +1544,131 @@ msgstr ""
 "ordinador. Fes servir aquesta característica només si saps que el teu "
 "ordinador és segur."
 
-#: mod_configure.erl:140 mod_configure.erl:595
-msgid "Start Modules"
-msgstr "Iniciar mòduls"
-
-#: mod_configure.erl:926
-msgid "Start Modules at "
-msgstr "Iniciar mòduls en "
-
-#: mod_muc_admin.erl:450 ejabberd_web_admin.erl:507 ejabberd_web_admin.erl:1086
-#: ejabberd_web_admin.erl:1776 ejabberd_web_admin.erl:1790
-#: ejabberd_web_admin.erl:1802
+#: ejabberd_web_admin.erl:499 ejabberd_web_admin.erl:1094
+#: ejabberd_web_admin.erl:1789 ejabberd_web_admin.erl:1803
+#: ejabberd_web_admin.erl:1815 mod_muc_admin.erl:463
 msgid "Statistics"
 msgstr "Estadístiques"
 
-#: ejabberd_web_admin.erl:1349
+#: ejabberd_web_admin.erl:1353
 msgid "Statistics of ~p"
 msgstr "Estadístiques de ~p"
 
-#: ejabberd_web_admin.erl:1093
+#: ejabberd_web_admin.erl:1101
 msgid "Stop"
 msgstr "Detindre"
 
-#: mod_configure.erl:143 mod_configure.erl:597
-msgid "Stop Modules"
-msgstr "Parar mòduls"
-
-#: mod_configure.erl:908
-msgid "Stop Modules at "
-msgstr "Detindre mòduls en "
-
-#: mod_configure.erl:505 ejabberd_web_admin.erl:1057
+#: mod_configure.erl:499 ejabberd_web_admin.erl:1065
 msgid "Stopped Nodes"
 msgstr "Nodes parats"
 
-#: ejabberd_web_admin.erl:1164
+#: ejabberd_web_admin.erl:1172
 msgid "Storage Type"
 msgstr "Tipus d'emmagatzematge"
 
-#: ejabberd_web_admin.erl:1205
+#: ejabberd_web_admin.erl:1213
 msgid "Store binary backup:"
 msgstr "Guardar una còpia de seguretat binària:"
 
-#: ejabberd_web_admin.erl:1235
+#: ejabberd_web_admin.erl:1243
 msgid "Store plain text backup:"
 msgstr "Guardar una còpia de seguretat en format de text pla:"
 
-#: mod_stream_mgmt.erl:347
+#: mod_stream_mgmt.erl:356
 msgid "Stream management is already enabled"
 msgstr "L'administració de la connexió (stream management) ja està activada"
 
-#: mod_stream_mgmt.erl:329
+#: mod_stream_mgmt.erl:338
 msgid "Stream management is not enabled"
 msgstr "L'administració de la conexió (stream management) no està activada"
 
-#: mod_configure.erl:1026 mod_configure.erl:1066 mod_announce.erl:522
+#: mod_configure.erl:945 mod_configure.erl:985 mod_announce.erl:524
 msgid "Subject"
 msgstr "Assumpte"
 
-#: ejabberd_web_admin.erl:1175 mod_shared_roster.erl:881
+#: ejabberd_web_admin.erl:1183 mod_shared_roster.erl:895
 msgid "Submit"
 msgstr "Enviar"
 
-#: mod_offline.erl:1000 ejabberd_web_admin.erl:628 ejabberd_web_admin.erl:922
-#: ejabberd_web_admin.erl:1078 ejabberd_web_admin.erl:1106
-#: ejabberd_web_admin.erl:1186 ejabberd_web_admin.erl:1420
-#: mod_shared_roster.erl:778 mod_shared_roster.erl:873 mod_roster.erl:995
+#: ejabberd_web_admin.erl:636 ejabberd_web_admin.erl:930
+#: ejabberd_web_admin.erl:1086 ejabberd_web_admin.erl:1114
+#: ejabberd_web_admin.erl:1194 ejabberd_web_admin.erl:1424 mod_roster.erl:1011
+#: mod_shared_roster.erl:786 mod_shared_roster.erl:881 mod_offline.erl:999
 msgid "Submitted"
 msgstr "Enviat"
 
-#: mod_roster.erl:938
+#: mod_roster.erl:954
 msgid "Subscription"
 msgstr "Subscripció"
 
-#: mod_muc_room.erl:4013
+#: mod_muc_room.erl:4206
 msgid "Subscriptions are not allowed"
 msgstr "Les subscripcions no estan permeses"
 
-#: mod_muc_log.erl:459
+#: mod_muc_log.erl:471
 msgid "Sunday"
 msgstr "Diumenge"
 
-#: mod_muc_room.erl:1070 mod_muc_room.erl:1930 mod_muc_room.erl:4042
+#: mod_muc_room.erl:1233 mod_muc_room.erl:2094 mod_muc_room.erl:4235
 msgid "That nickname is already in use by another occupant"
 msgstr "El sobrenom ja l'està utilitzant una altra persona"
 
-#: mod_muc.erl:833 mod_muc_room.erl:1082 mod_muc_room.erl:1944
-#: mod_muc_room.erl:4050
+#: mod_muc.erl:1023 mod_muc_room.erl:1245 mod_muc_room.erl:2108
+#: mod_muc_room.erl:4243
 msgid "That nickname is registered by another person"
 msgstr "El sobrenom ja està registrat per una altra persona"
 
-#: ejabberd_captcha.erl:276
+#: ejabberd_captcha.erl:267
 msgid "The CAPTCHA is valid."
 msgstr "El CAPTCHA es vàlid."
 
-#: mod_block_strangers.erl:143 ejabberd_captcha.erl:227 mod_register.erl:183
-#: mod_muc_room.erl:673 mod_muc_room.erl:3975
+#: mod_block_strangers.erl:150 mod_register.erl:201 mod_muc_room.erl:828
+#: mod_muc_room.erl:4168 ejabberd_captcha.erl:218
 msgid "The CAPTCHA verification has failed"
 msgstr "La verificació CAPTCHA ha fallat"
 
-#: mod_register_web.erl:595
+#: mod_register_web.erl:611
 msgid "The account already exists"
 msgstr "El compte ha existeix"
 
-#: mod_register_web.erl:605
+#: mod_register_web.erl:621
 msgid "The account was not deleted"
 msgstr "El compte no ha sigut esborrat"
 
-#: mod_register_web.erl:593
+#: mod_register_web.erl:609
 msgid "The captcha you entered is wrong"
 msgstr "El CAPTCHA que has proporcionat és incorrecte"
 
-#: mod_muc_room.erl:300
+#: mod_muc_room.erl:446
 msgid "The feature requested is not supported by the conference"
 msgstr ""
 "La característica sol·licitada no està suportada per la sala de conferència"
 
-#: mod_register.erl:386
+#: mod_register.erl:394
 msgid "The password contains unacceptable characters"
 msgstr "La contrasenya conté caràcters inacceptables"
 
-#: mod_register.erl:384
+#: mod_register.erl:392
 msgid "The password is too weak"
 msgstr "La contrasenya és massa simple"
 
-#: mod_register_web.erl:140
+#: mod_register_web.erl:156
 msgid "The password of your Jabber account was successfully changed."
 msgstr "La contrasenya del teu compte Jabber s'ha canviat correctament."
 
-#: mod_register_web.erl:607
+#: mod_register_web.erl:623
 msgid "The password was not changed"
 msgstr "La contrasenya no ha sigut canviada"
 
-#: mod_register_web.erl:609
+#: mod_register_web.erl:625
 msgid "The passwords are different"
 msgstr "Les contrasenyes son diferents"
 
-#: mod_vcard.erl:216 mod_register.erl:153
+#: mod_register.erl:171 mod_vcard.erl:231
 msgid "The query is only allowed from local users"
 msgstr "La petició està permesa només d'usuaris locals"
 
-#: mod_roster.erl:195
+#: mod_roster.erl:198
 msgid "The query must not contain <item/> elements"
 msgstr "La petició no pot contenir elements <item/>"
 
@@ -1719,29 +1680,29 @@ msgstr ""
 "El paquet DEU contindre només un element <active/>, un element <default/>, o "
 "un element <list/>"
 
-#: mod_register_web.erl:599
+#: mod_register_web.erl:615
 msgid "The username is not valid"
 msgstr "El nom d'usuari no es vàlid"
 
-#: mod_register_web.erl:144
+#: mod_register_web.erl:160
 msgid "There was an error changing the password: "
 msgstr "Hi ha hagut un error canviant la contrasenya: "
 
-#: mod_register_web.erl:116
+#: mod_register_web.erl:132
 msgid "There was an error creating the account: "
 msgstr "Hi ha hagut un error creant el compte: "
 
-#: mod_register_web.erl:129
+#: mod_register_web.erl:145
 msgid "There was an error deleting the account: "
 msgstr "Hi ha hagut un error esborrant el compte: "
 
-#: mod_register_web.erl:262
+#: mod_register_web.erl:278
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
 msgstr ""
 "Això no distingeix majúscules de minúscules: macbeth es el mateix que "
 "MacBeth i Macbeth."
 
-#: mod_register_web.erl:246
+#: mod_register_web.erl:262
 msgid ""
 "This page allows to create a Jabber account in this Jabber server. Your JID "
 "(Jabber IDentifier) will be of the form: username@server. Please read "
@@ -1752,61 +1713,61 @@ msgstr ""
 "usuari@servidor. Si us plau, llegeix amb cura les instruccions per emplenar "
 "correctament els camps."
 
-#: mod_register_web.erl:501
+#: mod_register_web.erl:517
 msgid "This page allows to unregister a Jabber account in this Jabber server."
 msgstr ""
 "Aquesta pàgina permet anul·lar el registre d'un compte Jabber en aquest "
 "servidor Jabber."
 
-#: mod_muc_log.erl:790
+#: mod_muc_log.erl:802
 msgid "This room is not anonymous"
 msgstr "Aquesta sala no és anònima"
 
-#: mod_multicast.erl:491
-msgid "This service can not process the address: ~s"
-msgstr "Este servei no pot processar la direcció: ~s"
+#: mod_multicast.erl:498
+msgid "This service can not process the address: ~ts"
+msgstr "Este servei no pot processar la direcció: ~ts"
 
-#: mod_muc_log.erl:456
+#: mod_muc_log.erl:468
 msgid "Thursday"
 msgstr "Dijous"
 
-#: mod_offline.erl:1006
+#: mod_offline.erl:1005
 msgid "Time"
 msgstr "Data"
 
-#: mod_configure.erl:1004 mod_configure.erl:1044
+#: mod_configure.erl:923 mod_configure.erl:963
 msgid "Time delay"
 msgstr "Temps de retard"
 
-#: mod_stream_mgmt.erl:249
+#: mod_stream_mgmt.erl:250
 msgid "Timed out waiting for stream resumption"
 msgstr "Massa temps esperant que es resumisca la connexió"
 
-#: mod_offline.erl:1008
+#: mod_offline.erl:1007
 msgid "To"
 msgstr "Per a"
 
-#: mod_register.erl:208
-msgid "To register, visit ~s"
-msgstr "Per a registrar-te, visita ~s"
+#: mod_register.erl:226
+msgid "To register, visit ~ts"
+msgstr "Per a registrar-te, visita ~ts"
 
-#: mod_configure.erl:699
-msgid "To ~s"
-msgstr "A ~s"
+#: mod_configure.erl:666
+msgid "To ~ts"
+msgstr "A ~ts"
 
-#: ejabberd_oauth.erl:405
+#: ejabberd_oauth.erl:510
 msgid "Token TTL"
 msgstr "Token TTL"
 
 #: mod_fail2ban.erl:219
 msgid ""
-"Too many (~p) failed authentications from this IP address (~s). The address "
-"will be unblocked at ~s UTC"
+"Too many (~p) failed authentications from this IP address (~ts). The address "
+"will be unblocked at ~ts UTC"
 msgstr ""
-"Massa autenticacions (~p) han fallat des d'aquesta adreça IP (~s). L'adreça "
-"serà desbloquejada en ~s UTC"
+"Massa autenticacions (~p) han fallat des d'aquesta adreça IP (~ts). L'adreça "
+"serà desbloquejada en ~ts UTC"
 
-#: mod_muc_room.erl:2634 mod_muc_room.erl:3232
+#: mod_muc_room.erl:2768 mod_muc_room.erl:3402
 msgid "Too many <item/> elements"
 msgstr "N'hi ha massa elements <item/>"
 
@@ -1814,19 +1775,19 @@ msgstr "N'hi ha massa elements <item/>"
 msgid "Too many <list/> elements"
 msgstr "N'hi ha massa elements <list/>"
 
-#: mod_block_strangers.erl:121 mod_register.erl:233 mod_muc_room.erl:2014
+#: mod_block_strangers.erl:127 mod_register.erl:251 mod_muc_room.erl:2178
 msgid "Too many CAPTCHA requests"
 msgstr "Massa peticions de CAPTCHA"
 
-#: mod_proxy65_service.erl:210
+#: mod_proxy65_service.erl:234
 msgid "Too many active bytestreams"
 msgstr "N'hi ha massa Bytestreams actius"
 
-#: gen_iq_handler.erl:90 mod_muc_room.erl:990
+#: gen_iq_handler.erl:90 mod_muc_room.erl:1153
 msgid "Too many child elements"
 msgstr "N'hi ha massa subelements"
 
-#: mod_multicast.erl:337
+#: mod_multicast.erl:344
 msgid "Too many receiver fields were specified"
 msgstr "S'han especificat massa camps de receptors"
 
@@ -1834,69 +1795,69 @@ msgstr "S'han especificat massa camps de receptors"
 msgid "Too many unacked stanzas"
 msgstr "Massa missatges sense haver reconegut la seva recepció"
 
-#: mod_muc_room.erl:1889
+#: mod_muc_room.erl:2053
 msgid "Too many users in this conference"
 msgstr "N'hi ha massa usuaris en esta sala de conferència"
 
-#: mod_muc_admin.erl:452
+#: mod_muc_admin.erl:465
 msgid "Total rooms"
 msgstr "Nombre total de sales"
 
-#: mod_muc_room.erl:171
+#: mod_muc_room.erl:313
 msgid "Traffic rate limit is exceeded"
 msgstr "El llímit de tràfic ha sigut sobrepassat"
 
-#: ejabberd_web_admin.erl:1369
+#: ejabberd_web_admin.erl:1373
 msgid "Transactions Aborted:"
 msgstr "Transaccions Avortades:"
 
-#: ejabberd_web_admin.erl:1365
+#: ejabberd_web_admin.erl:1369
 msgid "Transactions Committed:"
 msgstr "Transaccions Realitzades:"
 
-#: ejabberd_web_admin.erl:1377
+#: ejabberd_web_admin.erl:1381
 msgid "Transactions Logged:"
 msgstr "Transaccions registrades:"
 
-#: ejabberd_web_admin.erl:1373
+#: ejabberd_web_admin.erl:1377
 msgid "Transactions Restarted:"
 msgstr "Transaccions reiniciades:"
 
-#: mod_muc_log.erl:454
+#: mod_muc_log.erl:466
 msgid "Tuesday"
 msgstr "Dimarts"
 
-#: mod_block_strangers.erl:125 mod_register.erl:237 mod_muc_room.erl:2023
+#: mod_block_strangers.erl:131 mod_register.erl:255 mod_muc_room.erl:2187
 msgid "Unable to generate a CAPTCHA"
 msgstr "No s'ha pogut generar un CAPTCHA"
 
-#: ejabberd_service.erl:123
+#: ejabberd_service.erl:141
 msgid "Unable to register route on existing local domain"
 msgstr "No s'ha pogut registrar la ruta al domini local existent"
 
-#: ejabberd_web_admin.erl:196 ejabberd_web_admin.erl:208
-#: ejabberd_web_admin.erl:228 ejabberd_web_admin.erl:240
+#: ejabberd_web_admin.erl:172 ejabberd_web_admin.erl:184
+#: ejabberd_web_admin.erl:204 ejabberd_web_admin.erl:216
 #: mod_stream_mgmt.erl:140
 msgid "Unauthorized"
 msgstr "No autoritzat"
 
-#: mod_configure.erl:820 mod_configure.erl:1624 mod_announce.erl:491
+#: mod_configure.erl:776 mod_configure.erl:1498 mod_announce.erl:493
 msgid "Unexpected action"
 msgstr "Acció inesperada"
 
-#: mod_register.erl:396
+#: mod_register.erl:402
 msgid "Unexpected error condition: ~p"
 msgstr "Condició d'error inesperada: ~p"
 
-#: mod_register_web.erl:519
+#: mod_register_web.erl:535
 msgid "Unregister"
 msgstr "Anul·lar el registre"
 
-#: mod_register_web.erl:213 mod_register_web.erl:491 mod_register_web.erl:499
+#: mod_register_web.erl:229 mod_register_web.erl:507 mod_register_web.erl:515
 msgid "Unregister a Jabber account"
 msgstr "Anul·lar el registre d'un compte Jabber"
 
-#: ejabberd_web_admin.erl:1406
+#: ejabberd_web_admin.erl:1410
 msgid "Unselect All"
 msgstr "Deseleccionar tots"
 
@@ -1904,210 +1865,211 @@ msgstr "Deseleccionar tots"
 msgid "Unsupported <index/> element"
 msgstr "Element <index/> no soportat"
 
-#: mod_stream_mgmt.erl:353
+#: mod_stream_mgmt.erl:362
 msgid "Unsupported version"
 msgstr "Versió no suportada"
 
-#: ejabberd_web_admin.erl:1087 ejabberd_web_admin.erl:1435
-#: ejabberd_web_admin.erl:1791
+#: ejabberd_web_admin.erl:1095 ejabberd_web_admin.erl:1439
+#: ejabberd_web_admin.erl:1804
 msgid "Update"
 msgstr "Actualitzar"
 
-#: mod_announce.erl:619
+#: mod_announce.erl:621
 msgid "Update message of the day (don't send)"
 msgstr "Actualitzar el missatge del dia (no enviar)"
 
-#: mod_announce.erl:621
+#: mod_announce.erl:623
 msgid "Update message of the day on all hosts (don't send)"
 msgstr "Actualitza el missatge del dia en tots els hosts (no enviar)"
 
-#: ejabberd_web_admin.erl:1428
+#: ejabberd_web_admin.erl:1432
 msgid "Update plan"
 msgstr "Pla d'actualització"
 
-#: ejabberd_web_admin.erl:1430
+#: ejabberd_web_admin.erl:1434
 msgid "Update script"
 msgstr "Script d'actualització"
 
-#: ejabberd_web_admin.erl:1417
+#: ejabberd_web_admin.erl:1421
 msgid "Update ~p"
 msgstr "Actualitzar ~p"
 
-#: ejabberd_web_admin.erl:1353
+#: ejabberd_web_admin.erl:1357
 msgid "Uptime:"
 msgstr "Temps en marxa:"
 
-#: mod_vcard_mnesia.erl:99 mod_vcard_sql.erl:156 mod_vcard_ldap.erl:324
-#: ejabberd_web_admin.erl:637 ejabberd_web_admin.erl:693 mod_register.erl:218
+#: mod_vcard_mnesia.erl:99 mod_vcard_sql.erl:156 ejabberd_web_admin.erl:645
+#: ejabberd_web_admin.erl:701 mod_register.erl:236 mod_vcard_ldap.erl:326
 msgid "User"
 msgstr "Usuari"
 
-#: ejabberd_oauth.erl:394
+#: ejabberd_oauth.erl:499
 msgid "User (jid)"
 msgstr "Usuari (jid)"
 
-#: mod_configure.erl:302 mod_configure.erl:499
+#: mod_configure.erl:298 mod_configure.erl:493
 msgid "User Management"
 msgstr "Gestió d'Usuaris"
 
-#: mod_register.erl:392
+#: mod_register.erl:398
 msgid "User already exists"
 msgstr "El usuari ja existeix"
 
-#: ejabberd_sm.erl:216
+#: ejabberd_sm.erl:214
 msgid "User removed"
 msgstr "Usuari borrat"
 
-#: mod_push.erl:283 mod_sic.erl:93 ejabberd_sm.erl:204
+#: mod_push.erl:283 ejabberd_sm.erl:202 mod_sic.erl:93
 msgid "User session not found"
 msgstr "Sessió d'usuari no trobada"
 
-#: mod_stream_mgmt.erl:581 mod_stream_mgmt.erl:603
+#: mod_stream_mgmt.erl:594 mod_stream_mgmt.erl:616
 msgid "User session terminated"
 msgstr "Sessió d'usuari terminada"
 
-#: ejabberd_web_admin.erl:918
-msgid "User ~s"
-msgstr "Usuari  ~s"
+#: ejabberd_web_admin.erl:926
+msgid "User ~ts"
+msgstr "Usuari ~ts"
 
-#: mod_register_web.erl:256 mod_register_web.erl:396 mod_register_web.erl:507
+#: mod_register_web.erl:272 mod_register_web.erl:412 mod_register_web.erl:523
 msgid "Username:"
 msgstr "Nom d'usuari:"
 
-#: ejabberd_web_admin.erl:448 ejabberd_web_admin.erl:455
-#: ejabberd_web_admin.erl:1771
+#: ejabberd_web_admin.erl:440 ejabberd_web_admin.erl:447
+#: ejabberd_web_admin.erl:1784
 msgid "Users"
 msgstr "Usuaris"
 
-#: ejabberd_web_admin.erl:476
+#: ejabberd_web_admin.erl:468
 msgid "Users Last Activity"
 msgstr "Última activitat d'usuari"
 
-#: mod_register.erl:382
+#: mod_register.erl:390
 msgid "Users are not allowed to register accounts so quickly"
 msgstr "Els usuaris no tenen permís per a crear comptes tan depresa"
 
-#: mod_roster.erl:978
+#: mod_roster.erl:994
 msgid "Validate"
 msgstr "Validar"
 
-#: mod_push.erl:265 mod_carboncopy.erl:113 mod_pubsub.erl:892
-#: ejabberd_captcha.erl:231 mod_muc_room.erl:3965 mod_muc_room.erl:4127
+#: mod_pubsub.erl:900 mod_carboncopy.erl:113 mod_push.erl:265
+#: mod_muc_room.erl:4158 mod_muc_room.erl:4320 ejabberd_captcha.erl:222
 msgid "Value 'get' of 'type' attribute is not allowed"
 msgstr "El valor 'get' a l'atribut 'type' no és permès"
 
-#: mod_version.erl:53 mod_mix.erl:116 mod_mix.erl:163 mod_pubsub.erl:817
-#: mod_pubsub.erl:836 mod_pubsub.erl:874 mod_sic.erl:68 mod_sic.erl:80
-#: mod_muc.erl:482 mod_muc.erl:516 mod_muc.erl:557 mod_muc.erl:577
-#: mod_muc.erl:587 mod_stats.erl:55 mod_proxy65_service.erl:131
-#: mod_proxy65_service.erl:148 mod_proxy65_service.erl:155 mod_last.erl:106
-#: mod_last.erl:124 mod_vcard.erl:196 mod_vcard.erl:233 mod_muc_room.erl:3884
-#: mod_muc_room.erl:3944 mod_disco.erl:135 mod_disco.erl:151 mod_disco.erl:257
-#: mod_disco.erl:309 mod_time.erl:54
+#: mod_stats.erl:55 mod_pubsub.erl:824 mod_pubsub.erl:843 mod_pubsub.erl:882
+#: mod_last.erl:108 mod_last.erl:126 mod_muc.erl:590 mod_muc.erl:624
+#: mod_muc.erl:665 mod_muc.erl:685 mod_muc.erl:695 mod_disco.erl:136
+#: mod_disco.erl:152 mod_disco.erl:258 mod_disco.erl:310
+#: mod_proxy65_service.erl:148 mod_proxy65_service.erl:165
+#: mod_proxy65_service.erl:172 mod_jidprep.erl:120 mod_time.erl:55
+#: mod_mix.erl:117 mod_mix.erl:164 mod_sic.erl:68 mod_sic.erl:80
+#: mod_muc_room.erl:4062 mod_muc_room.erl:4133 mod_version.erl:53
+#: mod_vcard.erl:205 mod_vcard.erl:248
 msgid "Value 'set' of 'type' attribute is not allowed"
 msgstr "El valor 'set' a l'atribut 'type' no és permès"
 
-#: pubsub_subscription_sql.erl:202 pubsub_subscription.erl:237
-msgid "Value of '~s' should be boolean"
-msgstr "El valor de '~s' deuria ser booleà"
+#: pubsub_subscription.erl:237 pubsub_subscription_sql.erl:202
+msgid "Value of '~ts' should be boolean"
+msgstr "El valor de '~ts' deuria ser booleà"
 
-#: pubsub_subscription_sql.erl:180 pubsub_subscription.erl:215
-msgid "Value of '~s' should be datetime string"
-msgstr "El valor de '~s' deuria ser una data"
+#: pubsub_subscription.erl:215 pubsub_subscription_sql.erl:180
+msgid "Value of '~ts' should be datetime string"
+msgstr "El valor de '~ts' deuria ser una data"
 
-#: pubsub_subscription_sql.erl:174 pubsub_subscription_sql.erl:192
 #: pubsub_subscription.erl:209 pubsub_subscription.erl:227
-msgid "Value of '~s' should be integer"
-msgstr "El valor de '~s' deuria ser un numero enter"
+#: pubsub_subscription_sql.erl:174 pubsub_subscription_sql.erl:192
+msgid "Value of '~ts' should be integer"
+msgstr "El valor de '~ts' deuria ser un numero enter"
 
-#: ejabberd_web_admin.erl:441
+#: ejabberd_web_admin.erl:433
 msgid "Virtual Hosting"
 msgstr "Hosts virtuals"
 
-#: ejabberd_web_admin.erl:440 ejabberd_web_admin.erl:1800
+#: ejabberd_web_admin.erl:432 ejabberd_web_admin.erl:1813
 msgid "Virtual Hosts"
 msgstr "Hosts virtuals"
 
-#: mod_muc_room.erl:1063
+#: mod_muc_room.erl:1226
 msgid "Visitors are not allowed to change their nicknames in this room"
 msgstr "Els visitants no tenen permés canviar el seus Nicknames en esta sala"
 
-#: mod_muc_room.erl:840
+#: mod_muc_room.erl:1003
 msgid "Visitors are not allowed to send messages to all occupants"
 msgstr "Els visitants no poden enviar missatges a tots els ocupants"
 
-#: mod_muc_room.erl:4203
+#: mod_muc_room.erl:4397
 msgid "Voice request"
 msgstr "Petició de veu"
 
-#: mod_muc_room.erl:940
+#: mod_muc_room.erl:1103
 msgid "Voice requests are disabled in this conference"
 msgstr "Les peticions de veu es troben desactivades en aquesta conferència"
 
-#: mod_muc_log.erl:455
+#: mod_muc_log.erl:467
 msgid "Wednesday"
 msgstr "Dimecres"
 
-#: mod_register_web.erl:611
+#: mod_register_web.erl:627
 msgid "Wrong parameters in the web formulary"
 msgstr "Paràmetres incorrectes en el formulari web"
 
-#: mod_multicast.erl:334
+#: mod_multicast.erl:341
 msgid "Wrong xmlns"
 msgstr "El xmlns ès incorrecte"
 
-#: mod_muc_room.erl:717
+#: mod_muc_room.erl:872
 msgid "You are being removed from the room because of a system shutdown"
 msgstr "Has sigut expulsat de la sala perquè el sistema va a apagar-se"
 
-#: mod_mix.erl:614
+#: mod_mix.erl:625
 msgid "You are not joined to the channel"
 msgstr "No t'has unit al canal"
 
-#: mod_register_web.erl:281
+#: mod_register_web.erl:297
 msgid "You can later change your password using a Jabber client."
 msgstr ""
 "Podràs canviar la teva contrasenya més endavant utilitzant un client Jabber."
 
-#: mod_muc_room.erl:1917
+#: mod_muc_room.erl:2081
 msgid "You have been banned from this room"
 msgstr "Has sigut bloquejat en aquesta sala"
 
-#: mod_muc_room.erl:1898
+#: mod_muc_room.erl:2062
 msgid "You have joined too many conferences"
 msgstr "Has entrat en massa sales de conferència"
 
-#: mod_muc.erl:864
+#: mod_muc.erl:1054
 msgid "You must fill in field \"Nickname\" in the form"
 msgstr "Deus d'omplir el camp \"Nickname\" al formulari"
 
-#: mod_register.erl:215
+#: mod_register.erl:233
 msgid "You need a client that supports x:data and CAPTCHA to register"
 msgstr ""
 "Necessites un client amb suport x:data i de CAPTCHA para poder registrar-te"
 
-#: mod_muc.erl:819
+#: mod_muc.erl:1009
 msgid "You need a client that supports x:data to register the nickname"
 msgstr ""
 "Necessites un client amb suport x:data per a poder registrar el sobrenom"
 
-#: mod_vcard.erl:436
+#: mod_vcard.erl:451
 msgid "You need an x:data capable client to search"
 msgstr "Necessites un client amb suport x:data per a poder buscar"
 
-#: mod_pubsub.erl:1527
+#: mod_pubsub.erl:1563
 msgid "You're not allowed to create nodes"
 msgstr "No tens permís per a crear nodes"
 
-#: mod_register_web.erl:112
+#: mod_register_web.erl:128
 msgid "Your Jabber account was successfully created."
 msgstr "El teu compte Jabber ha sigut creat correctament."
 
-#: mod_register_web.erl:125
+#: mod_register_web.erl:141
 msgid "Your Jabber account was successfully deleted."
 msgstr "El teu compte Jabber ha sigut esborrat correctament."
 
-#: ejabberd_c2s.erl:684 ejabberd_c2s.erl:829
+#: ejabberd_c2s.erl:692 ejabberd_c2s.erl:837
 msgid "Your active privacy list has denied the routing of this stanza."
 msgstr ""
 "La teva llista de privacitat activa ha denegat l'encaminament d'aquesta "
@@ -2119,93 +2081,139 @@ msgid ""
 msgstr ""
 "La teua cua de missatges offline és plena. El missatge ha sigut descartat."
 
-#: ejabberd_captcha.erl:104
+#: ejabberd_captcha.erl:97
 msgid ""
-"Your subscription request and/or messages to ~s have been blocked. To "
-"unblock your subscription request, visit ~s"
+"Your subscription request and/or messages to ~ts have been blocked. To "
+"unblock your subscription request, visit ~ts"
 msgstr ""
-"La teua petició de subscripció i/o missatges a ~s han sigut bloquejats. Per "
-"a desbloquejar-los, visita ~s"
+"La teua petició de subscripció i/o missatges a ~ts han sigut bloquejats. Per "
+"a desbloquejar-los, visita ~ts"
 
-#: mod_disco.erl:437
+#: mod_disco.erl:438
 msgid "ejabberd"
 msgstr "ejabberd"
 
-#: mod_muc.erl:480
+#: mod_http_upload.erl:574
+msgid "ejabberd HTTP Upload service"
+msgstr "ejabberd - servei de HTTP Upload"
+
+#: mod_muc.erl:584
 msgid "ejabberd MUC module"
 msgstr "mòdul ejabberd MUC"
 
-#: mod_multicast.erl:297
+#: mod_multicast.erl:301
 msgid "ejabberd Multicast service"
 msgstr "ejabberd - servei de Multicast"
 
-#: mod_pubsub.erl:1079
+#: mod_pubsub.erl:1107
 msgid "ejabberd Publish-Subscribe module"
 msgstr "ejabberd - Mòdul Publicar-Subscriure"
 
-#: mod_proxy65_service.erl:161
+#: mod_proxy65_service.erl:181
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "mòdul ejabberd SOCKS5 Bytestreams"
 
-#: ejabberd_web_admin.erl:299
+#: ejabberd_web_admin.erl:287
 msgid "ejabberd Web Admin"
 msgstr "ejabberd Web d'administració"
 
-#: mod_vcard.erl:239
+#: mod_vcard.erl:254
 msgid "ejabberd vCard module"
 msgstr "ejabberd mòdul vCard"
 
-#: mod_muc_log.erl:370 mod_muc_log.erl:373
+#: mod_muc_log.erl:384 mod_muc_log.erl:387
 msgid "has been banned"
 msgstr "ha sigut bloquejat"
 
-#: ejabberd_sm.erl:459 mod_muc_log.erl:377 mod_muc_log.erl:380
+#: mod_muc_log.erl:391 mod_muc_log.erl:394 ejabberd_sm.erl:456
 msgid "has been kicked"
 msgstr "ha sigut expulsat"
 
-#: mod_muc_log.erl:395
+#: mod_muc_log.erl:409
 msgid "has been kicked because of a system shutdown"
 msgstr "ha sigut expulsat perquè el sistema va a apagar-se"
 
-#: mod_muc_log.erl:385
+#: mod_muc_log.erl:399
 msgid "has been kicked because of an affiliation change"
 msgstr "ha sigut expulsat a causa d'un canvi d'afiliació"
 
-#: mod_muc_log.erl:390
+#: mod_muc_log.erl:404
 msgid "has been kicked because the room has been changed to members-only"
 msgstr "ha sigut expulsat perquè la sala ara és només per a membres"
 
-#: mod_muc_log.erl:400
+#: mod_muc_log.erl:414
 msgid "is now known as"
 msgstr "ara es conegut com"
 
-#: mod_muc_log.erl:360
+#: mod_muc_log.erl:374
 msgid "joins the room"
 msgstr "entra a la sala"
 
-#: mod_muc_log.erl:363 mod_muc_log.erl:366
+#: mod_muc_log.erl:377 mod_muc_log.erl:380
 msgid "leaves the room"
 msgstr "surt de la sala"
 
-#: mod_muc_room.erl:4182
+#: mod_muc_room.erl:4376
 msgid "private, "
 msgstr "privat, "
 
-#: mod_muc_room.erl:4280
+#: mod_muc_room.erl:4473
 msgid "the password is"
 msgstr "la contrasenya és"
 
-#: mod_vcard.erl:564
+#: mod_vcard.erl:582
 msgid "vCard User Search"
 msgstr "vCard recerca d'usuari"
 
-#: mod_muc_room.erl:4273
-msgid "~s invites you to the room ~s"
-msgstr "~s et convida a la sala ~s"
+#: mod_muc_room.erl:4466
+msgid "~ts invites you to the room ~ts"
+msgstr "~ts et convida a la sala ~ts"
 
-#: mod_offline.erl:998
-msgid "~s's Offline Messages Queue"
-msgstr "~s's cua de missatges offline"
+#: mod_offline.erl:997
+msgid "~ts's Offline Messages Queue"
+msgstr "~ts's cua de missatges offline"
+
+#~ msgid "CAPTCHA web page"
+#~ msgstr "Pàgina web del CAPTCHA"
+
+#~ msgid "Choose modules to stop"
+#~ msgstr "Selecciona mòduls a detindre"
+
+#~ msgid "Empty password"
+#~ msgstr "Contrasenya buida"
+
+#~ msgid "Enter list of {Module, [Options]}"
+#~ msgstr "Introdueix llista de {mòdul, [opcions]}"
+
+#~ msgid "List of modules to start"
+#~ msgstr "Llista de mòduls a iniciar"
+
+#~ msgid "Modules"
+#~ msgstr "Mòduls"
+
+#~ msgid "No 'modules' found in data form"
+#~ msgstr "No s'ha trobat 'modules' al formulari de dades"
+
+#~ msgid "Parse failed"
+#~ msgstr "El processat ha fallat"
+
+#~ msgid "Roster module has failed"
+#~ msgstr "El modul de Roster ha fallat"
+
+#~ msgid "Scan failed"
+#~ msgstr "L'escanejat ha fallat"
+
+#~ msgid "Start Modules"
+#~ msgstr "Iniciar mòduls"
+
+#~ msgid "Start Modules at "
+#~ msgstr "Iniciar mòduls en "
+
+#~ msgid "Stop Modules"
+#~ msgstr "Parar mòduls"
+
+#~ msgid "Stop Modules at "
+#~ msgstr "Detindre mòduls en "
 
 #, fuzzy
 #~ msgid "Previous session PID not found"

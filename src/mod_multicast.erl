@@ -41,7 +41,7 @@
 -export([init/1, handle_info/2, handle_call/3,
 	 handle_cast/2, terminate/2, code_change/3]).
 
--export([purge_loop/1, mod_opt_type/1, mod_options/1, depends/2]).
+-export([purge_loop/1, mod_opt_type/1, mod_options/1, depends/2, mod_doc/0]).
 
 -include("logger.hrl").
 -include("translate.hrl").
@@ -1160,3 +1160,82 @@ mod_options(Host) ->
      {limits, [{local, []}, {remote, []}]},
      {vcard, undefined},
      {name, ?T("Multicast")}].
+
+mod_doc() ->
+    #{desc =>
+	  [?T("This module implements a service for "
+	      "https://xmpp.org/extensions/xep-0054.html"
+	      "[XEP-0033: Extended Stanza Addressing].")],
+      opts =>
+          [{access,
+            #{value => "Access",
+              desc =>
+                  ?T("The access rule to restrict who can send packets to "
+		     "the multicast service. Default value: 'all'.")}},
+           {host,
+            #{desc => ?T("Deprecated. Use 'hosts' instead.")}},
+           {hosts,
+            #{value => ?T("[Host, ...]"),
+              desc =>
+                  [?T("This option defines the Jabber IDs of the service. "
+		      "If the 'hosts' option is not specified, the only "
+		      "Jabber ID will be the hostname of the virtual host "
+		      "with the prefix \"multicast.\". The keyword '@HOST@' "
+		      "is replaced with the real virtual host name."),
+		   ?T("The default value is 'multicast.@HOST@'.")]}},
+	   {limits,
+	    #{value => "Sender: Stanza: Number",
+	      desc =>
+		  [?T("Specify a list of custom limits which override the "
+		      "default ones defined in XEP-0033. Limits are defined "
+		      "per sender type and stanza type, where:"),
+		   ?T("- The sender type can be: 'local' or 'remote'."), "",
+		   ?T("- The stanza type can be: 'message' or 'presence'."), "",
+		   ?T("- The number can be a positive integer or the key word 'infinite'.")],
+              example =>
+                  [{?T("Default values:"),
+                    ["local:",
+		     "  message: 100",
+		     "  presence: 100",
+		     "remote:",
+		     "  message: 20",
+		     "  presence: 20"]}
+		  ]}},
+           {name,
+            #{desc => ?T("Service name to provide in the Info query to the "
+			 "Service Discovery. Default is '\"Multicast\"'.")}},
+           {vcard,
+            #{desc => ?T("vCard element to return when queried. "
+			 "Default value is 'undefined'.")}}],
+      example =>
+          ["# Only admins can send packets to multicast service",
+	   "access_rules:",
+	   "  multicast:",
+	   "    - allow: admin",
+	   "",
+	   "# If you want to allow all your users:",
+	   "access_rules:",
+	   "  multicast:",
+	   "    - allow",
+	   "",
+	   "# This allows both admins and remote users to send packets,",
+	   "# but does not allow local users",
+	   "acl:",
+	   "  allservers:",
+	   "    server_glob: \"*\"",
+	   "access_rules:",
+	   "  multicast:",
+	   "    - allow: admin",
+	   "    - deny: local",
+	   "    - allow: allservers",
+	   "",
+	   "modules:",
+	   "  mod_multicast:",
+	   "     host: multicast.example.org",
+	   "     access: multicast",
+	   "     limits:",
+	   "       local:",
+	   "         message: 40",
+	   "         presence: infinite",
+	   "       remote:",
+	   "         message: 150"]}.

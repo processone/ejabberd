@@ -31,6 +31,7 @@
 
 %% gen_mod callbacks.
 -export([start/2, stop/1, reload/3, mod_opt_type/1, mod_options/1, depends/2]).
+-export([mod_doc/0]).
 
 %% ejabberd_hooks callbacks.
 -export([disco_local_features/5]).
@@ -70,6 +71,22 @@ mod_opt_type(access) ->
 -spec mod_options(binary()) -> [{atom(), any()}].
 mod_options(_Host) ->
     [{access, local}].
+
+mod_doc() ->
+    #{desc =>
+          ?T("This module allows XMPP clients to ask the "
+             "server to normalize a JID as per the rules specified "
+             "in https://tools.ietf.org/html/rfc6122"
+             "[RFC 6122: XMPP Address Format]. This might be useful "
+             "for clients in certain constrained environments, "
+             "or for testing purposes."),
+      opts =>
+          [{access,
+            #{value => ?T("AccessName"),
+              desc =>
+                  ?T("This option defines which access rule will "
+                     "be used to control who is allowed to use this "
+                     "service. The default value is 'local'.")}}]}.
 
 %%--------------------------------------------------------------------
 %% Register/unregister hooks.

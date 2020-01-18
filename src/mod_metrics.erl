@@ -30,9 +30,10 @@
 
 -include("logger.hrl").
 -include("xmpp.hrl").
+-include("translate.hrl").
 
 -export([start/2, stop/1, mod_opt_type/1, mod_options/1, depends/2, reload/3]).
--export([push/2]).
+-export([push/2, mod_doc/0]).
 -export([offline_message_hook/1,
          sm_register_connection_hook/3, sm_remove_connection_hook/3,
          user_send_packet/1, user_receive_packet/1,
@@ -188,3 +189,32 @@ mod_opt_type(port) ->
 
 mod_options(_) ->
     [{ip, {127,0,0,1}}, {port, 11111}].
+
+mod_doc() ->
+    #{desc =>
+          [?T("This module sends events to external backend "
+              "(by now only https://github.com/processone/grapherl"
+              "[grapherl] is supported). Supported events are:"), "",
+           "- sm_register_connection", "",
+           "- sm_remove_connection", "",
+           "- user_send_packet", "",
+           "- user_receive_packet", "",
+           "- s2s_send_packet", "",
+           "- s2s_receive_packet", "",
+           "- register_user", "",
+           "- remove_user", "",
+           "- offline_message", "",
+           ?T("When enabled, every call to these hooks triggers "
+              "a counter event to be sent to the external backend.")],
+      opts =>
+          [{ip,
+            #{value => ?T("IPv4Address"),
+              desc =>
+                  ?T("IPv4 address where the backend is located. "
+                     "The default value is '127.0.0.1'.")}},
+           {port,
+            #{value => ?T("Port"),
+              desc =>
+                  ?T("An internet port number at which the backend "
+                     "is listening for incoming connections/packets. "
+                     "The default value is '11111'.")}}]}.

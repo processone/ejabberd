@@ -39,7 +39,6 @@
 {"Bytestream already activated","El Bytestream ja està activat"}.
 {"Cannot remove active list","No es pot eliminar la llista activa"}.
 {"Cannot remove default list","No es pot eliminar la llista per defecte"}.
-{"CAPTCHA web page","Pàgina web del CAPTCHA"}.
 {"Change Password","Canviar Contrasenya"}.
 {"Change User Password","Canviar Contrasenya d'Usuari"}.
 {"Changing password is not allowed","No està permès canviar la contrasenya"}.
@@ -55,14 +54,13 @@
 {"Chatroom is stopped","La sala s'ha aturat"}.
 {"Chatrooms","Sales de xat"}.
 {"Choose a username and password to register with this server","Tria nom d'usuari i contrasenya per a registrar-te en aquest servidor"}.
-{"Choose modules to stop","Selecciona mòduls a detindre"}.
 {"Choose storage type of tables","Selecciona el tipus d'almacenament de les taules"}.
 {"Choose whether to approve this entity's subscription.","Tria si aproves aquesta entitat de subscripció."}.
 {"City","Ciutat"}.
 {"Client acknowledged more stanzas than sent by server","El client ha reconegut més paquets dels que ha enviat el servidor"}.
 {"Commands","Comandaments"}.
 {"Conference room does not exist","La sala de conferències no existeix"}.
-{"Configuration of room ~s","Configuració de la sala ~s"}.
+{"Configuration of room ~ts","Configuració de la sala ~ts"}.
 {"Configuration","Configuració"}.
 {"Connected Resources:","Recursos connectats:"}.
 {"Country","Pais"}.
@@ -88,6 +86,7 @@
 {"Duplicated groups are not allowed by RFC6121","No estan permesos els grups duplicats al RFC6121"}.
 {"Edit Properties","Editar propietats"}.
 {"Either approve or decline the voice request.","Aprova o denega la petició de veu."}.
+{"ejabberd HTTP Upload service","ejabberd - servei de HTTP Upload"}.
 {"ejabberd MUC module","mòdul ejabberd MUC"}.
 {"ejabberd Multicast service","ejabberd - servei de Multicast"}.
 {"ejabberd Publish-Subscribe module","ejabberd - Mòdul Publicar-Subscriure"}.
@@ -97,11 +96,9 @@
 {"ejabberd","ejabberd"}.
 {"Elements","Elements"}.
 {"Email","Email"}.
-{"Empty password","Contrasenya buida"}.
 {"Enable logging","Habilitar el registre de la conversa"}.
 {"Enabling push without 'node' attribute is not supported","No està suportat activar Push sense l'atribut 'node'"}.
 {"End User Session","Finalitzar Sesió d'Usuari"}.
-{"Enter list of {Module, [Options]}","Introdueix llista de {mòdul, [opcions]}"}.
 {"Enter nickname you want to register","Introdueix el sobrenom que vols registrar"}.
 {"Enter path to backup file","Introdueix ruta al fitxer de còpia de seguretat"}.
 {"Enter path to jabberd14 spool dir","Introdueix la ruta al directori de jabberd14 spools"}.
@@ -119,13 +116,13 @@
 {"Failed to extract JID from your voice request approval","No s'ha pogut extraure el JID de la teva aprovació de petició de veu"}.
 {"Failed to map delegated namespace to external component","Ha fallat mapejar la delegació de l'espai de noms al component extern"}.
 {"Failed to parse HTTP response","Ha fallat el processat de la resposta HTTP"}.
-{"Failed to process option '~s'","H fallat el processat de la opció '~s'"}.
+{"Failed to process option '~ts'","Ha fallat el processat de la opció '~ts'"}.
 {"Family Name","Cognom"}.
 {"February","Febrer"}.
 {"File larger than ~w bytes","El fitxer es més gran que ~w bytes"}.
 {"Fill in the form to search for any matching Jabber User","Emplena camps per a buscar usuaris Jabber que concorden"}.
 {"Friday","Divendres"}.
-{"From ~s","De ~s"}.
+{"From ~ts","De ~ts"}.
 {"From","De"}.
 {"Full Name","Nom complet"}.
 {"Get Number of Online Users","Obtenir Número d'Usuaris Connectats"}.
@@ -172,13 +169,15 @@
 {"Invitations are not allowed in this conference","Les invitacions no estan permeses en aquesta sala de conferència"}.
 {"IP addresses","Adreça IP"}.
 {"is now known as","ara es conegut com"}.
-{"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","No està permés enviar missatges d'error a la sala. El participant (~s) ha enviat un missatge d'error (~s) i ha sigut expulsat de la sala"}.
+{"It is not allowed to send error messages to the room. The participant (~ts) has sent an error message (~ts) and got kicked from the room","No està permés enviar missatges d'error a la sala. El participant (~ts) ha enviat un missatge d'error (~ts) i ha sigut expulsat de la sala"}.
 {"It is not allowed to send private messages of type \"groupchat\"","No està permés enviar missatges del tipus \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","No està permès l'enviament de missatges privats a la sala"}.
 {"It is not allowed to send private messages","No està permés enviar missatges privats"}.
 {"Jabber Account Registration","Registre de compte Jabber"}.
 {"Jabber ID","ID Jabber"}.
 {"January","Gener"}.
+{"JID normalization denied by service policy","S'ha denegat la normalització del JID per política del servei"}.
+{"JID normalization failed","Ha fallat la normalització del JID"}.
 {"joins the room","entra a la sala"}.
 {"July","Juliol"}.
 {"June","Juny"}.
@@ -187,7 +186,6 @@
 {"Last month","Últim mes"}.
 {"Last year","Últim any"}.
 {"leaves the room","surt de la sala"}.
-{"List of modules to start","Llista de mòduls a iniciar"}.
 {"List of rooms","Llista de sales"}.
 {"Low level update script","Script d'actualització de baix nivell"}.
 {"Make participants list public","Crear una llista de participants pública"}.
@@ -202,6 +200,7 @@
 {"March","Març"}.
 {"Maximum Number of Occupants","Número màxim d'ocupants"}.
 {"May","Maig"}.
+{"Members not added (inexistent vhost): ","Membres no afegits (perque el vhost no existeix): "}.
 {"Membership is required to enter this room","Necessites ser membre d'aquesta sala per a poder entrar"}.
 {"Members:","Membre:"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Memoritza la teva contrasenya, o escriu-la en un paper guardat a un lloc segur.A Jabber no hi ha una forma automatitzada de recuperar la teva contrasenya si la oblides."}.
@@ -213,7 +212,6 @@
 {"Moderator privileges required","Es necessita tenir privilegis de moderador"}.
 {"Modified modules","Mòduls modificats"}.
 {"Module failed to handle the query","El modul ha fallat al gestionar la petició"}.
-{"Modules","Mòduls"}.
 {"Monday","Dilluns"}.
 {"Multicast","Multicast"}.
 {"Multiple <item/> elements are not allowed by RFC6121","No estan permesos múltiples elements <item/> per RFC6121"}.
@@ -226,7 +224,7 @@
 {"New Password:","Nova Contrasenya:"}.
 {"Nickname can't be empty","El sobrenom no pot estar buit"}.
 {"Nickname Registration at ","Registre del sobrenom en "}.
-{"Nickname ~s does not exist in the room","El sobrenom ~s no existeix a la sala"}.
+{"Nickname ~ts does not exist in the room","El sobrenom ~ts no existeix a la sala"}.
 {"Nickname","Sobrenom"}.
 {"No address elements found","No s'han trobat elements d'adreces ('address')"}.
 {"No addresses element found","No s'ha trobat l'element d'adreces ('addresses')"}.
@@ -244,7 +242,6 @@
 {"No items found in this query","En aquesta petició no s'ha trobat cap element"}.
 {"No limit","Sense Llímit"}.
 {"No module is handling this query","Cap element està manegant esta petició"}.
-{"No 'modules' found in data form","No s'ha trobat 'modules' al formulari de dades"}.
 {"No node specified","No s'ha especificat node"}.
 {"No 'password' found in data form","No s'ha trobat 'password' al formulari de dades"}.
 {"No 'password' found in this query","No s'ha trobat 'password' en esta petició"}.
@@ -293,7 +290,6 @@
 {"Owner privileges required","Es requerixen privilegis de propietari de la sala"}.
 {"Packet relay is denied by service policy","S'ha denegat el reenviament del paquet per política del servei"}.
 {"Packet","Paquet"}.
-{"Parse failed","El processat ha fallat"}.
 {"Password Verification","Verificació de la Contrasenya"}.
 {"Password Verification:","Verificació de la Contrasenya:"}.
 {"Password","Contrasenya"}.
@@ -333,6 +329,7 @@
 {"Remove","Borrar"}.
 {"Replaced by new connection","Reemplaçat per una nova connexió"}.
 {"Request has timed out","La petició ha caducat"}.
+{"Request is ignored","La petició ha sigut ignorada"}.
 {"Resources","Recursos"}.
 {"Restart Service","Reiniciar el Servei"}.
 {"Restart","Reiniciar"}.
@@ -347,15 +344,12 @@
 {"Room Occupants","Nombre d'ocupants"}.
 {"Room terminates","La sala està terminant"}.
 {"Room title","Títol de la sala"}.
-{"Roster module has failed","El modul de Roster ha fallat"}.
-{"Roster of ","Llista de contactes de "}.
+{"Roster of ~ts","Llista de contactes de ~ts"}.
 {"Roster size","Tamany de la llista"}.
 {"Roster","Llista de contactes"}.
 {"RPC Call Error","Error de cridada RPC"}.
 {"Running Nodes","Nodes funcionant"}.
-{"~s invites you to the room ~s","~s et convida a la sala ~s"}.
 {"Saturday","Dissabte"}.
-{"Scan failed","L'escanejat ha fallat"}.
 {"Script check","Comprovar script"}.
 {"Search Results for ","Resultats de la búsqueda "}.
 {"Search users in ","Cerca usuaris en "}.
@@ -375,13 +369,8 @@
 {"Shut Down Service","Apager el Servei"}.
 {"SOCKS5 Bytestreams","SOCKS5 Bytestreams"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Alguns clients Jabber poden emmagatzemar la teva contrasenya al teu ordinador. Fes servir aquesta característica només si saps que el teu ordinador és segur."}.
-{"~s's Offline Messages Queue","~s's cua de missatges offline"}.
-{"Start Modules at ","Iniciar mòduls en "}.
-{"Start Modules","Iniciar mòduls"}.
 {"Statistics of ~p","Estadístiques de ~p"}.
 {"Statistics","Estadístiques"}.
-{"Stop Modules at ","Detindre mòduls en "}.
-{"Stop Modules","Parar mòduls"}.
 {"Stop","Detindre"}.
 {"Stopped Nodes","Nodes parats"}.
 {"Storage Type","Tipus d'emmagatzematge"}.
@@ -420,20 +409,20 @@
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Aquesta pàgina permet crear un compte Jabber en aquest servidor Jabber. El teu JID (Jabber IDentifier; Identificador Jabber) tindrà aquesta forma: usuari@servidor. Si us plau, llegeix amb cura les instruccions per emplenar correctament els camps."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Aquesta pàgina permet anul·lar el registre d'un compte Jabber en aquest servidor Jabber."}.
 {"This room is not anonymous","Aquesta sala no és anònima"}.
-{"This service can not process the address: ~s","Este servei no pot processar la direcció: ~s"}.
+{"This service can not process the address: ~ts","Este servei no pot processar la direcció: ~ts"}.
 {"Thursday","Dijous"}.
 {"Time delay","Temps de retard"}.
 {"Timed out waiting for stream resumption","Massa temps esperant que es resumisca la connexió"}.
 {"Time","Data"}.
-{"To register, visit ~s","Per a registrar-te, visita ~s"}.
-{"To ~s","A ~s"}.
+{"To register, visit ~ts","Per a registrar-te, visita ~ts"}.
+{"To ~ts","A ~ts"}.
 {"Token TTL","Token TTL"}.
 {"Too many active bytestreams","N'hi ha massa Bytestreams actius"}.
 {"Too many CAPTCHA requests","Massa peticions de CAPTCHA"}.
 {"Too many child elements","N'hi ha massa subelements"}.
 {"Too many <item/> elements","N'hi ha massa elements <item/>"}.
 {"Too many <list/> elements","N'hi ha massa elements <list/>"}.
-{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Massa autenticacions (~p) han fallat des d'aquesta adreça IP (~s). L'adreça serà desbloquejada en ~s UTC"}.
+{"Too many (~p) failed authentications from this IP address (~ts). The address will be unblocked at ~ts UTC","Massa autenticacions (~p) han fallat des d'aquesta adreça IP (~ts). L'adreça serà desbloquejada en ~ts UTC"}.
 {"Too many receiver fields were specified","S'han especificat massa camps de receptors"}.
 {"Too many unacked stanzas","Massa missatges sense haver reconegut la seva recepció"}.
 {"Too many users in this conference","N'hi ha massa usuaris en esta sala de conferència"}.
@@ -444,6 +433,8 @@
 {"Transactions Committed:","Transaccions Realitzades:"}.
 {"Transactions Logged:","Transaccions registrades:"}.
 {"Transactions Restarted:","Transaccions reiniciades:"}.
+{"~ts invites you to the room ~ts","~ts et convida a la sala ~ts"}.
+{"~ts's Offline Messages Queue","~ts's cua de missatges offline"}.
 {"Tuesday","Dimarts"}.
 {"Unable to generate a CAPTCHA","No s'ha pogut generar un CAPTCHA"}.
 {"Unable to register route on existing local domain","No s'ha pogut registrar la ruta al domini local existent"}.
@@ -468,7 +459,7 @@
 {"User removed","Usuari borrat"}.
 {"User session not found","Sessió d'usuari no trobada"}.
 {"User session terminated","Sessió d'usuari terminada"}.
-{"User ~s","Usuari  ~s"}.
+{"User ~ts","Usuari ~ts"}.
 {"Username:","Nom d'usuari:"}.
 {"Users are not allowed to register accounts so quickly","Els usuaris no tenen permís per a crear comptes tan depresa"}.
 {"Users Last Activity","Última activitat d'usuari"}.
@@ -476,9 +467,9 @@
 {"User","Usuari"}.
 {"Validate","Validar"}.
 {"Value 'get' of 'type' attribute is not allowed","El valor 'get' a l'atribut 'type' no és permès"}.
-{"Value of '~s' should be boolean","El valor de '~s' deuria ser booleà"}.
-{"Value of '~s' should be datetime string","El valor de '~s' deuria ser una data"}.
-{"Value of '~s' should be integer","El valor de '~s' deuria ser un numero enter"}.
+{"Value of '~ts' should be boolean","El valor de '~ts' deuria ser booleà"}.
+{"Value of '~ts' should be datetime string","El valor de '~ts' deuria ser una data"}.
+{"Value of '~ts' should be integer","El valor de '~ts' deuria ser un numero enter"}.
 {"Value 'set' of 'type' attribute is not allowed","El valor 'set' a l'atribut 'type' no és permès"}.
 {"vCard User Search","vCard recerca d'usuari"}.
 {"Virtual Hosting","Hosts virtuals"}.
@@ -503,5 +494,5 @@
 {"Your contact offline message queue is full. The message has been discarded.","La teua cua de missatges offline és plena. El missatge ha sigut descartat."}.
 {"Your Jabber account was successfully created.","El teu compte Jabber ha sigut creat correctament."}.
 {"Your Jabber account was successfully deleted.","El teu compte Jabber ha sigut esborrat correctament."}.
-{"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","La teua petició de subscripció i/o missatges a ~s han sigut bloquejats. Per a desbloquejar-los, visita ~s"}.
+{"Your subscription request and/or messages to ~ts have been blocked. To unblock your subscription request, visit ~ts","La teua petició de subscripció i/o missatges a ~ts han sigut bloquejats. Per a desbloquejar-los, visita ~ts"}.
 {"You're not allowed to create nodes","No tens permís per a crear nodes"}.

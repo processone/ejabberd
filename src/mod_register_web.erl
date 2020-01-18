@@ -56,6 +56,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, reload/3, process/2, mod_options/1, depends/2]).
+-export([mod_doc/0]).
 
 -include("logger.hrl").
 
@@ -628,3 +629,12 @@ get_error_text({error, wrong_parameters}) ->
 
 mod_options(_) ->
     [].
+
+mod_doc() ->
+    #{desc =>
+          [?T("This module provides a web page where users can:"), "",
+           ?T("- Register a new account on the server."), "",
+           ?T("- Change the password from an existing account on the server."), "",
+           ?T("- Delete an existing account on the server."), "",
+           ?T("The module depends on 'mod_register' where all the configuration "
+              "is performed.")]}.

@@ -33,7 +33,7 @@
 -behaviour(gen_mod).
 
 -export([start/2, stop/1, reload/3, process_sm_iq/1, import_info/0,
-	 remove_user/2, get_data/2, get_data/3, export/1,
+	 remove_user/2, get_data/2, get_data/3, export/1, mod_doc/0,
 	 import/5, import_start/2, mod_opt_type/1, set_data/2,
 	 mod_options/1, depends/2, get_sm_features/5, pubsub_publish_item/6]).
 
@@ -110,6 +110,41 @@ mod_options(Host) ->
      {cache_size, ejabberd_option:cache_size(Host)},
      {cache_missed, ejabberd_option:cache_missed(Host)},
      {cache_life_time, ejabberd_option:cache_life_time(Host)}].
+
+mod_doc() ->
+    #{desc =>
+          [?T("This module adds support for "
+              "https://xmpp.org/extensions/xep-0049.html"
+              "[XEP-0049: Private XML Storage]."), "",
+           ?T("Using this method, XMPP entities can store "
+              "private data on the server, retrieve it "
+              "whenever necessary and share it between multiple "
+              "connected clients of the same user. The data stored "
+              "might be anything, as long as it is a valid XML. "
+              "One typical usage is storing a bookmark of all user's conferences "
+              "(https://xmpp.org/extensions/xep-0048.html"
+              "[XEP-0048: Bookmarks]).")],
+      opts =>
+          [{db_type,
+            #{value => "mnesia | sql",
+              desc =>
+                  ?T("Same as top-level 'default_db' option, but applied to this module only.")}},
+           {use_cache,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
+           {cache_size,
+            #{value => "pos_integer() | infinity",
+              desc =>
+                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+           {cache_missed,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'cache_missed' option, but applied to this module only.")}},
+           {cache_life_time,
+            #{value => "timeout()",
+              desc =>
+                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}]}.
 
 -spec get_sm_features({error, stanza_error()} | empty | {result, [binary()]},
 		      jid(), jid(), binary(), binary()) ->
