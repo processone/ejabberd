@@ -1,9 +1,8 @@
 # Version 20.01
 
 * New features
-- Implement OAUTH authentication for clients
 - Implement OAUTH authentication in mqtt
-- Make logging infrastructure use new logger introduced introduced
+- Make logging infrastructure use new logger introduced
   in Erlang (requires OTP22)
 - New configuration parser/validator
 - Initial work on being able to use CockroachDB as database backend
