@@ -206,13 +206,13 @@ val_xfield(digest_frequency = Opt, [Val]) ->
     case catch binary_to_integer(Val) of
 	N when is_integer(N) -> N;
 	_ ->
-	    Txt = {?T("Value of '~ts' should be integer"), [Opt]},
+	    Txt = {?T("Value of '~s' should be integer"), [Opt]},
 	    {error, xmpp:err_not_acceptable(Txt, ejabberd_option:language())}
     end;
 val_xfield(expire = Opt, [Val]) ->
     try xmpp_util:decode_timestamp(Val)
     catch _:{bad_timestamp, _} ->
-	    Txt = {?T("Value of '~ts' should be datetime string"), [Opt]},
+	    Txt = {?T("Value of '~s' should be datetime string"), [Opt]},
 	    {error, xmpp:err_not_acceptable(Txt, ejabberd_option:language())}
     end;
 val_xfield(include_body = Opt, [Val]) -> xopt_to_bool(Opt, Val);
@@ -224,7 +224,7 @@ val_xfield(subscription_depth = Opt, [Depth]) ->
     case catch binary_to_integer(Depth) of
 	N when is_integer(N) -> N;
 	_ ->
-	    Txt = {?T("Value of '~ts' should be integer"), [Opt]},
+	    Txt = {?T("Value of '~s' should be integer"), [Opt]},
 	    {error, xmpp:err_not_acceptable(Txt, ejabberd_option:language())}
     end.
 
@@ -234,7 +234,7 @@ xopt_to_bool(_, <<"1">>) -> true;
 xopt_to_bool(_, <<"false">>) -> false;
 xopt_to_bool(_, <<"true">>) -> true;
 xopt_to_bool(Option, _) ->
-    Txt = {?T("Value of '~ts' should be boolean"), [Option]},
+    Txt = {?T("Value of '~s' should be boolean"), [Option]},
     {error, xmpp:err_not_acceptable(Txt, ejabberd_option:language())}.
 
 %% Return a field for an XForm for Key, with data filled in, if

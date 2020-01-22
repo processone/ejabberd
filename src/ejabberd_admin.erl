@@ -409,7 +409,7 @@ status() ->
 	    false ->
 		{ejabberd_not_running, "ejabberd is not running in that node."};
 	    {value, {_, _, Version}} ->
-		{ok, io_lib:format("ejabberd ~ts is running in that node", [Version])}
+		{ok, io_lib:format("ejabberd ~s is running in that node", [Version])}
 	end,
     {Is_running, String1 ++ String2}.
 
@@ -472,7 +472,7 @@ stop_kindly(DelaySeconds, AnnouncementTextString) ->
     ok.
 
 send_service_message_all_mucs(Subject, AnnouncementText) ->
-    Message = str:format("~ts~n~ts", [Subject, AnnouncementText]),
+    Message = str:format("~s~n~s", [Subject, AnnouncementText]),
     lists:foreach(
       fun(ServerHost) ->
 	      MUCHosts = gen_mod:get_module_opt_hosts(ServerHost, mod_muc),
@@ -516,12 +516,12 @@ register(User, Host, Password) ->
 	true ->
 	    case ejabberd_auth:try_register(User, Host, Password) of
 		ok ->
-		    {ok, io_lib:format("User ~ts@~ts successfully registered", [User, Host])};
+		    {ok, io_lib:format("User ~s@~s successfully registered", [User, Host])};
 		{error, exists} ->
-		    Msg = io_lib:format("User ~ts@~ts already registered", [User, Host]),
+		    Msg = io_lib:format("User ~s@~s already registered", [User, Host]),
 		    {error, conflict, 10090, Msg};
 		{error, Reason} ->
-		    String = io_lib:format("Can't register user ~ts@~ts at node ~p: ~ts",
+		    String = io_lib:format("Can't register user ~s@~s at node ~p: ~s",
 					   [User, Host, node(),
 					    mod_register:format_error(Reason)]),
 		    {error, cannot_register, 10001, String}

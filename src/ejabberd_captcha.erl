@@ -94,8 +94,8 @@ create_captcha(SID, From, To, Lang, Limiter, Args) ->
 		   Lang, [challenge]),
 	    X = #xdata{type = form, fields = Fs},
 	    Captcha = #xcaptcha{xdata = X},
-	    BodyString = {?T("Your subscription request and/or messages to ~ts have been blocked. "
-			     "To unblock your subscription request, visit ~ts"), [JID, get_url(Id)]},
+	    BodyString = {?T("Your subscription request and/or messages to ~s have been blocked. "
+			     "To unblock your subscription request, visit ~s"), [JID, get_url(Id)]},
 	    Body = xmpp:mk_text(BodyString, Lang),
 	    OOB = #oob_x{url = get_url(Id)},
 	    Hint = #hint{type = 'no-store'},

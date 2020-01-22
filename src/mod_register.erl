@@ -223,7 +223,7 @@ process_iq(#iq{type = get, from = From, to = To, id = ID, lang = Lang} = IQ,
 		       "with this server")),
     URL = mod_register_opt:redirect_url(Server),
     if (URL /= undefined) and not IsRegistered ->
-	    Txt = translate:translate(Lang, ?T("To register, visit ~ts")),
+	    Txt = translate:translate(Lang, ?T("To register, visit ~s")),
 	    Desc = str:format(Txt, [URL]),
 	    xmpp:make_iq_result(
 	      IQ, #register{instructions = Desc,
@@ -419,8 +419,8 @@ send_registration_notifications(Mod, UJID, Source) ->
         [] -> ok;
         JIDs when is_list(JIDs) ->
             Body =
-                (str:format("[~ts] The account ~ts was registered from "
-                                               "IP address ~ts on node ~w using ~p.",
+                (str:format("[~s] The account ~s was registered from "
+                                               "IP address ~s on node ~w using ~p.",
                                                [get_time_string(),
                                                 jid:encode(UJID),
 						ejabberd_config:may_hide_data(

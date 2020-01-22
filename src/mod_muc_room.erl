@@ -371,8 +371,8 @@ normal_state({route, <<"">>,
 	    case is_user_online(From, StateData) of
 		true ->
 		    ErrorText = ?T("It is not allowed to send error messages to the"
-				   " room. The participant (~ts) has sent an error "
-				   "message (~ts) and got kicked from the room"),
+				   " room. The participant (~s) has sent an error "
+				   "message (~s) and got kicked from the room"),
 		    NewState = expulse_participant(Packet, From, StateData,
 						   translate:translate(Lang,
 								       ErrorText)),
@@ -517,8 +517,8 @@ normal_state({route, ToNick,
 	{expulse_sender, Reason} ->
 	    ?DEBUG(Reason, []),
 	    ErrorText = ?T("It is not allowed to send error messages to the"
-			   " room. The participant (~ts) has sent an error "
-			   "message (~ts) and got kicked from the room"),
+			   " room. The participant (~s) has sent an error "
+			   "message (~s) and got kicked from the room"),
 	    NewState = expulse_participant(Packet, From, StateData,
 					   translate:translate(Lang, ErrorText)),
 	    {next_state, normal_state, NewState};
@@ -1291,8 +1291,8 @@ do_process_presence(Nick, #presence{from = From, type = unavailable} = Packet,
 do_process_presence(_Nick, #presence{from = From, type = error, lang = Lang} = Packet,
 		    StateData) ->
     ErrorText = ?T("It is not allowed to send error messages to the"
-		   " room. The participant (~ts) has sent an error "
-		   "message (~ts) and got kicked from the room"),
+		   " room. The participant (~s) has sent an error "
+		   "message (~s) and got kicked from the room"),
     expulse_participant(Packet, From, StateData,
 			translate:translate(Lang, ErrorText)).
 
@@ -1383,7 +1383,7 @@ decide_fate_message(#message{type = error} = Msg,
 	   %% If this is an error stanza and its condition matches a criteria
 	   true ->
 	       Reason = str:format("This participant is considered a ghost "
-				   "and is expulsed: ~ts",
+				   "and is expulsed: ~s",
 				   [jid:encode(From)]),
 	       {expulse_sender, Reason};
 	   false -> continue_delivery
@@ -2991,7 +2991,7 @@ find_changed_items(UJID, UAffiliation, URole,
 	   Nick /= <<"">> ->
 		case find_jids_by_nick(Nick, StateData) of
 		    [] ->
-			ErrText = {?T("Nickname ~ts does not exist in the room"),
+			ErrText = {?T("Nickname ~s does not exist in the room"),
 				   [Nick]},
 			throw({error, xmpp:err_not_acceptable(ErrText, Lang)});
 		    JIDList ->
@@ -3486,7 +3486,7 @@ get_config(Lang, StateData, From) ->
     Config = StateData#state.config,
     MaxUsersRoom = get_max_users(StateData),
     Title = str:format(
-	      translate:translate(Lang, ?T("Configuration of room ~ts")),
+	      translate:translate(Lang, ?T("Configuration of room ~s")),
 	      [jid:encode(StateData#state.jid)]),
     Fs = [{roomname, Config#config.title},
 	  {roomdesc, Config#config.description},
@@ -3629,7 +3629,7 @@ set_config(Opts, Config, ServerHost, Lang) ->
 		  {0, undefined} ->
 		      ?ERROR_MSG("set_room_option hook failed for "
 				 "option '~ts' with value ~p", [O, V]),
-		      Txt = {?T("Failed to process option '~ts'"), [O]},
+		      Txt = {?T("Failed to process option '~s'"), [O]},
 		      {error, xmpp:err_internal_server_error(Txt, Lang)};
 		  {Pos, Val} ->
 		      setelement(Pos, C, Val)
@@ -4463,7 +4463,7 @@ route_invitation(From, Pkt, Invitation, Lang, StateData) ->
 	     [io_lib:format(
 		translate:translate(
 		  Lang,
-		  ?T("~ts invites you to the room ~ts")),
+		  ?T("~s invites you to the room ~s")),
 		[jid:encode(From),
 		 jid:encode({StateData#state.room, StateData#state.host, <<"">>})]),
 	      case (StateData#state.config)#config.password_protected of

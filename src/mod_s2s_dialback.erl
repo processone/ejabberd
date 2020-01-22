@@ -277,7 +277,7 @@ s2s_out_packet(#{server := LServer, remote_server := RServer} = State,
 	    State2 = ejabberd_s2s_out:handle_auth_success(<<"dialback">>, State1),
 	    ejabberd_s2s_out:establish(State2);
 	_ ->
-	    Reason = str:format("Peer responded with error: ~ts",
+	    Reason = str:format("Peer responded with error: ~s",
 				[format_error(Result)]),
 	    ejabberd_s2s_out:handle_auth_failure(
 	      <<"dialback">>, {auth, Reason}, State1)
@@ -337,7 +337,7 @@ send_db_result(State, #db_verify{from = From, to = To,
 		       From, <<"dialback">>, undefined, State1),
 	    ejabberd_s2s_in:establish(State2);
 	_ ->
-	    Reason = str:format("Verification failed: ~ts",
+	    Reason = str:format("Verification failed: ~s",
 				[format_error(Response)]),
 	    ejabberd_s2s_in:handle_auth_failure(
 	      From, <<"dialback">>, Reason, State1)

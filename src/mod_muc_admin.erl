@@ -886,7 +886,7 @@ act_on_rooms(Method, Action, Rooms) ->
 
 act_on_room(Method, destroy, {N, H, SH, Pid}) ->
     Message = iolist_to_binary(io_lib:format(
-        <<"Room destroyed by rooms_~ts_destroy.">>, [Method])),
+        <<"Room destroyed by rooms_~s_destroy.">>, [Method])),
     mod_muc_room:destroy(Pid, Message),
     mod_muc:room_destroyed(H, N, Pid, SH),
     mod_muc:forget_room(SH, H, N);

@@ -495,7 +495,7 @@ report_not_jid(From, Packet, Dests) ->
 	      || Dest <- Dests],
     [route_error(
        xmpp:set_from_to(Packet, From, From), jid_malformed,
-       str:format(?T("This service can not process the address: ~ts"), [D]))
+       str:format(?T("This service can not process the address: ~s"), [D]))
      || D <- Dests2].
 
 %%%-------------------------
