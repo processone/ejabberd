@@ -516,6 +516,11 @@ doc() ->
         #{value => "2..1000",
           desc =>
               ?T("The number of components to balance.")}}]},
+     {extauth_pool_name,
+      #{value => ?T("Name"),
+        desc =>
+            ?T("Define the pool name appendix, so the full pool name will be "
+               "'extauth_pool_Name'. The default value is the hostname.")}},
      {extauth_pool_size,
       #{value => ?T("Size"),
         desc =>
@@ -527,6 +532,28 @@ doc() ->
         desc =>
             ?T("Indicate in this option the full path to the external "
                "authentication script. The script must be executable by ejabberd.")}},
+     {ext_api_headers,
+      #{value => "Headers",
+        desc =>
+            ?T("String of headers (separated with commas ',') that will be "
+               "provided by ejabberd when sending ReST requests. "
+               "The default value is an empty string of headers: '\"\"'.")}},
+     {ext_api_http_pool_size,
+      #{value => "pos_integer()",
+        desc =>
+            ?T("Define the size of the HTTP pool, that is, the maximum number "
+               "of sessions that the ejabberd ReST service will handle "
+               "simultaneously. The default value is: '100'.")}},
+     {ext_api_path_oauth,
+      #{value => "Path",
+        desc =>
+            ?T("Define the base URI path when performing OAUTH ReST requests. "
+               "The default value is: '\"/oauth\"'.")}},
+     {ext_api_url,
+      #{value => "URL",
+        desc =>
+            ?T("Define the base URI when performing ReST requests. "
+               "The default value is: '\"http://localhost/api\"'.")}},
      {fqdn,
       #{value => ?T("Domain"),
         desc =>
@@ -577,6 +604,26 @@ doc() ->
                  "file 'Filename'. The options that do not match this "
                  "criteria are not accepted. The default value is to include "
                  "all options.")}}]},
+     {jwt_auth_only_rule,
+      #{value => ?T("AccessName"),
+        desc =>
+            ?T("This ACL rule defines accounts that can use only this auth "
+               "method, even if others are also defined in the ejabberd "
+               "configuration file. In other words: if there are several auth "
+               "methods enabled for this host (JWT, SQL, ...), users that "
+               "match this rule can only use JWT. "
+               "The default value is 'none'.")}},
+     {jwt_jid_field,
+      #{value => ?T("FieldName"),
+        desc =>
+            ?T("By default, the JID is defined in the '\"jid\"' JWT field. "
+               "This option allows to specify other JWT field name "
+               "where the JID is defined.")}},
+     {jwt_key,
+      #{value => ?T("FilePath"),
+        desc =>
+            ?T("Path to the file that contains the JWK Key. "
+               "The default value is 'undefined'.")}},
      {language,
       #{value => ?T("Language"),
         desc =>
@@ -780,6 +827,12 @@ doc() ->
         desc =>
             ?T("Same as 'cache_size', but applied to OAuth cache "
                "only. If not set, the value from 'cache_size' will be used.")}},
+     {oauth_client_id_check,
+      #{value => "allow | db | deny",
+        desc =>
+            ?T("Define whether the client authentication is always allowed, "
+               "denied, or it will depend if the client ID is present in the "
+               "database. The default value is 'allow'.")}},
      {oauth_use_cache,
       #{value => "true | false",
         desc =>
