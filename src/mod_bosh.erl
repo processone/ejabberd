@@ -213,11 +213,30 @@ mod_doc() ->
           [{json,
             #{value => "true | false",
               desc => ?T("This option has no effect.")}},
+           {max_concat,
+            #{value => "pos_integer() | infinity",
+              desc =>
+                  ?T("This option limits the number of stanzas that the server "
+                     "will send in a single bosh request. "
+                     "The default value is 'unlimited'.")}},
            {max_inactivity,
             #{value => "timeout()",
               desc =>
                   ?T("The option defines the maximum inactivity period. "
                      "The default value is '30' seconds.")}},
+           {max_pause,
+            #{value => "pos_integer()",
+              desc =>
+                  ?T("Indicate the maximum length of a temporary session pause "
+                     "(in seconds) that a client can request. "
+                     "The default value is '120'.")}},
+           {prebind,
+            #{value => "true | false",
+              desc =>
+                  ?T("If enabled, the client can create the session without "
+                     "going through authentication. Basically, it creates a "
+                     "new session with anonymous authentication. "
+                     "The default value is 'false'.")}},
            {queue_type,
             #{value => "ram | file",
               desc =>
