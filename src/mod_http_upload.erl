@@ -320,7 +320,7 @@ mod_doc() ->
                      "used for file uploads. The keyword @HOST@ is replaced "
                      "with the virtual host name. NOTE: different virtual "
                      "hosts cannot use the same PUT URL. "
-                     "The default value is \"http://@HOST@:5444\".")}},
+                     "The default value is \"https://@HOST@:5443\".")}},
            {get_url,
             #{value => ?T("URL"),
               desc =>
