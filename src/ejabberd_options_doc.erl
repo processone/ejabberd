@@ -300,6 +300,13 @@ doc() ->
                "'sasl_anon' means that the SASL Anonymous method will be used. "
                "'both' means that SASL Anonymous and login anonymous are both "
                "enabled. The default value is 'sasl_anon'.")}},
+     {api_permissions,
+      #{value => "[Permission, ...]",
+        desc =>
+            ?T("Define the permissions for API access. Please consult the "
+               "ejabberd Docs web -> For Developers -> ejabberd ReST API -> "
+               "https://docs.ejabberd.im/developer/ejabberd-api/permissions/"
+               "[API Permissions].")}},
      {append_host_config,
       #{value => "{Host: Options}",
         desc =>
