@@ -5,7 +5,7 @@
 %%% Created :  9 Apr 2004 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%
-%%% ejabberd, Copyright (C) 2002-2019   ProcessOne
+%%% ejabberd, Copyright (C) 2002-2020   ProcessOne
 %%%
 %%% This program is free software; you can redistribute it and/or
 %%% modify it under the terms of the GNU General Public License as
@@ -326,7 +326,7 @@ make_xhtml(Els, Host, Node, Lang, JID, Level) ->
 			   [?XAE(<<"div">>, [{<<"id">>, <<"copyright">>}],
 				 [?XE(<<"p">>,
 				  [?AC(<<"https://www.ejabberd.im/">>, <<"ejabberd">>),
-				   ?C(<<" (c) 2002-2019 ">>),
+				   ?C(<<" (c) 2002-2020 ">>),
 				   ?AC(<<"https://www.process-one.net/">>, <<"ProcessOne, leader in messaging and push solutions">>)]
                                  )])])])]}}.
 
