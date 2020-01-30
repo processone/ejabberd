@@ -33,6 +33,8 @@
 %%% API
 %%%===================================================================
 -spec opt_type(atom()) -> econf:validator().
+opt_type(auth_profile) ->
+    econf:any();
 opt_type(access_rules) ->
     acl:validator(access_rules);
 opt_type(acl) ->
@@ -472,6 +474,7 @@ options() ->
      {queue_type, ram},
      {version, ejabberd_config:version()},
      %% Other options
+     {auth_profile, []},
      {acl, []},
      {access_rules, []},
      {acme, #{}},
