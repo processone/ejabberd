@@ -368,6 +368,13 @@ CREATE TABLE oauth_token (
     expire bigint NOT NULL
 );
 
+CREATE TABLE oauth_client (
+    client_id text PRIMARY KEY,
+    client_name text NOT NULL,
+    grant_type text NOT NULL,
+    options text NOT NULL
+);
+
 CREATE TABLE route (
     domain text NOT NULL,
     server_host text NOT NULL,
