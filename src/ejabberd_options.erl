@@ -62,6 +62,21 @@ opt_type(auth_cache_size) ->
     econf:pos_int(infinity);
 opt_type(auth_method) ->
     econf:list_or_single(econf:db_type(ejabberd_auth));
+opt_type(auth_opts) ->
+    fun(L) when is_list(L) ->
+            lists:map(
+              fun({host, V}) when is_binary(V) ->
+                      {host, V};
+                 ({connection_pool_size, V}) when is_integer(V) ->
+                      {connection_pool_size, V};
+                 ({connection_opts, V}) when is_list(V) ->
+                      {connection_opts, V};
+                 ({basic_auth, V}) when is_binary(V) ->
+                      {basic_auth, V};
+                 ({path_prefix, V}) when is_binary(V) ->
+                      {path_prefix, V}
+              end, L)
+    end;
 opt_type(auth_password_format) ->
     econf:enum([plain, scram]);
 opt_type(auth_use_cache) ->
@@ -443,6 +458,7 @@ opt_type(jwt_auth_only_rule) ->
 		    {disable_sasl_mechanisms, [binary()]} |
 		    {s2s_zlib, boolean()} |
 		    {loglevel, ejabberd_logger:loglevel()} |
+		    {auth_opts, [{any(), any()}]} |
 		    {listen, [ejabberd_listener:listener()]} |
 		    {modules, [{module(), gen_mod:opts(), integer()}]} |
 		    {ldap_uids, [{binary(), binary()}]} |
@@ -493,6 +509,7 @@ options() ->
       fun(Host) -> ejabberd_config:get_option({cache_size, Host}) end},
      {auth_method,
       fun(Host) -> [ejabberd_config:default_db(Host, ejabberd_auth)] end},
+     {auth_opts, []},
      {auth_password_format, plain},
      {auth_use_cache,
       fun(Host) -> ejabberd_config:get_option({use_cache, Host}) end},
