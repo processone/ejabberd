@@ -193,9 +193,9 @@ parse_scram_password(PassData) ->
   Split = binary:split(PassData, <<",">>, [global]),
   [StoredKeyB64, ServerKeyB64, SaltB64, IterationCountBin] = Split,
   #scram{
-    storedkey = StoredKeyB64,
-    serverkey = ServerKeyB64,
-    salt      = SaltB64,
+    storedkey = base64:decode(StoredKeyB64),
+    serverkey = base64:decode(ServerKeyB64),
+    salt      = base64:decode(SaltB64),
     iterationcount = (binary_to_integer(IterationCountBin))
   }.
 
