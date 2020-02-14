@@ -554,7 +554,7 @@ registered_vhosts() ->
 
 reload_config() ->
     case ejabberd_config:reload() of
-	ok -> {ok, ""};
+	ok -> ok;
 	Err ->
 	    Reason = ejabberd_config:format_error(Err),
 	    {error, Reason}
@@ -562,7 +562,7 @@ reload_config() ->
 
 dump_config(Path) ->
     case ejabberd_config:dump(Path) of
-	ok -> {ok, ""};
+	ok -> ok;
 	Err ->
 	    Reason = ejabberd_config:format_error(Err),
 	    {error, Reason}
