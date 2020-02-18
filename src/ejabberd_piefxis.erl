@@ -296,17 +296,26 @@ process(#state{xml_stream_state = XMLStreamState, fd = Fd} = State) ->
     end.
 
 process_els(State) ->
+    Els = gather_els(State, []),
+    process_els(State, lists:reverse(Els)).
+
+gather_els(State, List) ->
     receive
         {'$gen_event', El} ->
-            case process_el(El, State) of
-                {ok, NewState} ->
-                    process_els(NewState);
-                Err ->
-                    Err
-            end
+            gather_els(State, [El | List])
     after 0 ->
-            {ok, State}
-    end.
+        List
+end.
+
+process_els(State, [El | Tail]) ->
+    case process_el(El, State) of
+        {ok, NewState} ->
+            process_els(NewState, Tail);
+        Err ->
+            Err
+    end;
+process_els(State, []) ->
+    {ok, State}.
 
 process_el({xmlstreamstart, <<"server-data">>, Attrs}, State) ->
     case fxml:get_attr_s(<<"xmlns">>, Attrs) of
