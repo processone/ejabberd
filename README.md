@@ -37,7 +37,9 @@ Key Features
   because everything is already included, and ready to run out of the box.
   Other administrator benefits include:
   - Comprehensive documentation.
-  - Straightforward installers for Linux and Mac OS X.
+  - Straightforward installers for Linux.
+  - Docker packaging to help with deploy / development on Linux, Windows or MacOS.
+  - Deb and RPM packaging to support most Linux distributions.
   - Web administration.
   - Shared roster groups.
   - Command line administration tool.
