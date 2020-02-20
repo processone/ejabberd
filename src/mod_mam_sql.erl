@@ -105,6 +105,7 @@ store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir, TS) ->
 	      jid:tolower(Peer)),
     Body = fxml:get_subtag_cdata(Pkt, <<"body">>),
     SType = misc:atom_to_binary(Type),
+    SqlType = ejabberd_option:sql_type(LHost),
     XML = case mod_mam_opt:compress_xml(LServer) of
 	      true ->
 		  J1 = case Type of
@@ -115,24 +116,44 @@ store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir, TS) ->
 	      _ ->
 		  fxml:element_to_binary(Pkt)
 	  end,
-    case ejabberd_sql:sql_query(
-           LServer,
-           ?SQL_INSERT(
-              "archive",
-              ["username=%(SUser)s",
-               "server_host=%(LServer)s",
-               "timestamp=%(TS)d",
-               "peer=%(LPeer)s",
-               "bare_peer=%(BarePeer)s",
-               "xml=%(XML)s",
-               "txt=%(Body)s",
-               "kind=%(SType)s",
-               "nick=%(Nick)s"])) of
-	{updated, _} ->
-	    ok;
-	Err ->
-	    Err
-    end.
+	case SqlType of
+	  mssql -> case ejabberd_sql:sql_query(
+	           LServer,
+	           ?SQL_INSERT(
+	              "archive",
+	              ["username=%(SUser)s",
+	               "server_host=%(LServer)s",
+	               "timestamp=%(TS)d",
+	               "peer=%(LPeer)s",
+	               "bare_peer=%(BarePeer)s",
+	               "xml=N%(XML)s",
+	               "txt=N%(Body)s",
+	               "kind=%(SType)s",
+	               "nick=%(Nick)s"])) of
+		{updated, _} ->
+		    ok;
+		Err ->
+		    Err
+	    end;
+	    _ -> case ejabberd_sql:sql_query(
+	           LServer,
+	           ?SQL_INSERT(
+	              "archive",
+	              ["username=%(SUser)s",
+	               "server_host=%(LServer)s",
+	               "timestamp=%(TS)d",
+	               "peer=%(LPeer)s",
+	               "bare_peer=%(BarePeer)s",
+	               "xml=%(XML)s",
+	               "txt=%(Body)s",
+	               "kind=%(SType)s",
+	               "nick=%(Nick)s"])) of
+		{updated, _} ->
+		    ok;
+		Err ->
+		    Err
+	    end
+	end.
 
 write_prefs(LUser, _LServer, #archive_prefs{default = Default,
 					   never = Never,
@@ -304,17 +325,31 @@ export(_Server) ->
                 XML = fxml:element_to_binary(Pkt),
                 Body = fxml:get_subtag_cdata(Pkt, <<"body">>),
                 SType = misc:atom_to_binary(Type),
-                [?SQL_INSERT(
-                    "archive",
-                    ["username=%(SUser)s",
-                     "server_host=%(LServer)s",
-                     "timestamp=%(TStmp)d",
-                     "peer=%(LPeer)s",
-                     "bare_peer=%(BarePeer)s",
-                     "xml=%(XML)s",
-                     "txt=%(Body)s",
-                     "kind=%(SType)s",
-                     "nick=%(Nick)s"])];
+                SqlType = ejabberd_option:sql_type(Host),
+                case SqlType of
+	                mssql -> [?SQL_INSERT(
+	                    "archive",
+	                    ["username=%(SUser)s",
+	                     "server_host=%(LServer)s",
+	                     "timestamp=%(TStmp)d",
+	                     "peer=%(LPeer)s",
+	                     "bare_peer=%(BarePeer)s",
+	                     "xml=N%(XML)s",
+	                     "txt=N%(Body)s",
+	                     "kind=%(SType)s",
+	                     "nick=%(Nick)s"])];
+	                _ -> [?SQL_INSERT(
+	                    "archive",
+	                    ["username=%(SUser)s",
+	                     "server_host=%(LServer)s",
+	                     "timestamp=%(TStmp)d",
+	                     "peer=%(LPeer)s",
+	                     "bare_peer=%(BarePeer)s",
+	                     "xml=%(XML)s",
+	                     "txt=%(Body)s",
+	                     "kind=%(SType)s",
+	                     "nick=%(Nick)s"])]
+		            end;
          (_Host, _R) ->
               []
       end}].
