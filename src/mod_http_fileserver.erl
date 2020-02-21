@@ -345,9 +345,10 @@ serve_index(FileName, [Index | T], CH, DefaultContentType, ContentTypes) ->
 serve_not_modified(FileInfo, FileName, CustomHeaders) ->
     ?DEBUG("Delivering not modified: ~ts", [FileName]),
     {0, 304,
-     [{<<"Server">>, <<"ejabberd">>},
-      {<<"Last-Modified">>, last_modified(FileInfo)}
-      | CustomHeaders], <<>>}.
+     ejabberd_http:apply_custom_headers(
+	 [{<<"Server">>, <<"ejabberd">>},
+	  {<<"Last-Modified">>, last_modified(FileInfo)}],
+	 CustomHeaders), <<>>}.
 
 %% Assume the file exists if we got this far and attempt to read it in
 %% and serve it up.
@@ -356,10 +357,11 @@ serve_file(FileInfo, FileName, CustomHeaders, DefaultContentType, ContentTypes) 
     ContentType = content_type(FileName, DefaultContentType,
 			       ContentTypes),
     {FileInfo#file_info.size, 200,
-     [{<<"Server">>, <<"ejabberd">>},
-      {<<"Last-Modified">>, last_modified(FileInfo)},
-      {<<"Content-Type">>, ContentType}
-      | CustomHeaders],
+     ejabberd_http:apply_custom_headers(
+	 [{<<"Server">>, <<"ejabberd">>},
+	  {<<"Last-Modified">>, last_modified(FileInfo)},
+	  {<<"Content-Type">>, ContentType}],
+	 CustomHeaders),
      {file, FileName}}.
 
 %%----------------------------------------------------------------------

@@ -31,7 +31,8 @@
 %% External exports
 -export([start/3, start_link/3,
 	 accept/1, receive_headers/1, recv_file/2,
-         listen_opt_type/1, listen_options/0]).
+	 listen_opt_type/1, listen_options/0,
+	 apply_custom_headers/2]).
 
 -export([init/3]).
 
@@ -491,19 +492,19 @@ process_request(#state{request_method = Method,
 		      {Status, Headers, El}
 			when is_record(El, xmlel) ->
 			  make_xhtml_output(State, Status,
-					    Headers ++ CustomHeaders, El);
+					    apply_custom_headers(Headers, CustomHeaders), El);
 		      Output when is_binary(Output) or is_list(Output) ->
 			  make_text_output(State, 200, CustomHeaders, Output);
 		      {Status, Headers, Output}
 			when is_binary(Output) or is_list(Output) ->
 			  make_text_output(State, Status,
-					   Headers ++ CustomHeaders, Output);
+					   apply_custom_headers(Headers, CustomHeaders), Output);
 		      {Status, Headers, {file, FileName}} ->
 			  make_file_output(State, Status, Headers, FileName);
 		      {Status, Reason, Headers, Output}
 			when is_binary(Output) or is_list(Output) ->
 			  make_text_output(State, Status, Reason,
-					   Headers ++ CustomHeaders, Output);
+					   apply_custom_headers(Headers, CustomHeaders), Output);
 		      _ ->
 			  none
 		  end,
@@ -854,6 +855,11 @@ parse_urlencoded(<<H, Tail/binary>>, Last, Cur, State) ->
 parse_urlencoded(<<>>, Last, Cur, _State) ->
     [{Last, Cur}];
 parse_urlencoded(undefined, _, _, _) -> [].
+
+apply_custom_headers(Headers, CustomHeaders) ->
+    M = maps:merge(maps:from_list(Headers),
+		   maps:from_list(CustomHeaders)),
+    maps:to_list(M).
 
 % The following code is mostly taken from yaws_ssl.erl
 
