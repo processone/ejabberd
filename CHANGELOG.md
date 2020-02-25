@@ -1,3 +1,21 @@
+# Version 20.02
+
+* Changes in this version
+- Fix problems when trying to use string format with unicode
+  values directly in xmpp nodes
+- Add missing oauth_client table declaration in lite.new.sql
+- Improve compatibility with CocroachDB
+- Fix importing of piefxis files that did use scram passwords
+- Fix importing of piefxis files that had multiple includes
+  in them
+- Update jiffy dependency
+- Allow storage of emojis when using mssql database (Thanks
+  to Christoph Scholz)
+- Make ejabberd_auth_http be able to use auth_opts
+- Make custom_headers options in http modules correctly
+  override built-in values
+- Fix return value of reload_config and dump_config commands
+
 # Version 20.01
 
 * New features
