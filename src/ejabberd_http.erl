@@ -857,9 +857,13 @@ parse_urlencoded(<<>>, Last, Cur, _State) ->
 parse_urlencoded(undefined, _, _, _) -> [].
 
 apply_custom_headers(Headers, CustomHeaders) ->
-    M = maps:merge(maps:from_list(Headers),
+    {Doctype, Headers2} = case Headers -- [html] of
+	Headers -> {[], Headers};
+	Other -> {[html], Other}
+    end,
+    M = maps:merge(maps:from_list(Headers2),
 		   maps:from_list(CustomHeaders)),
-    maps:to_list(M).
+    Doctype ++ maps:to_list(M).
 
 % The following code is mostly taken from yaws_ssl.erl
 
