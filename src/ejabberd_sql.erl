@@ -1001,12 +1001,18 @@ pgsql_execute_to_odbc(_) -> {updated, undefined}.
 
 %% part of init/1
 %% Open a database connection to MySQL
-mysql_connect(Server, Port, DB, Username, Password, ConnectTimeout,  _, _) ->
+mysql_connect(Server, Port, DB, Username, Password, ConnectTimeout, Transport, _) ->
+    SSLOpts = case Transport of
+		  ssl ->
+		      [ssl_required];
+		  _ ->
+		      []
+	      end,
     case p1_mysql_conn:start(binary_to_list(Server), Port,
 			     binary_to_list(Username),
 			     binary_to_list(Password),
 			     binary_to_list(DB),
-			     ConnectTimeout, fun log/3)
+			     ConnectTimeout, fun log/3, SSLOpts)
 	of
 	{ok, Ref} ->
 	    p1_mysql_conn:fetch(
@@ -1111,6 +1117,8 @@ db_opts(Host) ->
 warn_if_ssl_unsupported(tcp, _) ->
     ok;
 warn_if_ssl_unsupported(ssl, pgsql) ->
+    ok;
+warn_if_ssl_unsupported(ssl, mysql) ->
     ok;
 warn_if_ssl_unsupported(ssl, Type) ->
     ?WARNING_MSG("SSL connection is not supported for ~ts", [Type]).
