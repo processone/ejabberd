@@ -93,31 +93,20 @@ process([], #request{method = 'GET', lang = Lang}) ->
 process([<<"register.css">>],
 	#request{method = 'GET'}) ->
     serve_css();
-process([<<"new">>],
+process([Section],
 	#request{method = 'GET', lang = Lang, host = Host,
-		 ip = IP}) ->
-    case ejabberd_router:is_my_host(Host) of
+		 ip = {Addr, _Port}}) ->
+    Host2 = case ejabberd_router:is_my_host(Host) of
 	true ->
-	    {Addr, _Port} = IP,
-	    form_new_get(Host, Lang, Addr);
+	    Host;
 	false ->
-	    {400, [], <<"Host not served">>}
-    end;
-process([<<"delete">>],
-	#request{method = 'GET', lang = Lang, host = Host}) ->
-    case ejabberd_router:is_my_host(Host) of
-	true ->
-	    form_del_get(Host, Lang);
-	false ->
-	    {400, [], <<"Host not served">>}
-    end;
-process([<<"change_password">>],
-	#request{method = 'GET', lang = Lang, host = Host}) ->
-    case ejabberd_router:is_my_host(Host) of
-	true ->
-	    form_changepass_get(Host, Lang);
-	false ->
-	    {400, [], <<"Host not served">>}
+	    <<"">>
+    end,
+    case Section of
+	<<"new">> -> form_new_get(Host2, Lang, Addr);
+	<<"delete">> -> form_del_get(Host2, Lang);
+	<<"change_password">> -> form_changepass_get(Host2, Lang);
+	_ -> {404, [], "Not Found"}
     end;
 process([<<"new">>],
 	#request{method = 'POST', q = Q, ip = {Ip, _Port},
