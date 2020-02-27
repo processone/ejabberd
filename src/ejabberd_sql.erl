@@ -253,7 +253,7 @@ to_list(EscapeFun, Val) ->
 
 to_array(EscapeFun, Val) ->
     Escaped = lists:join(<<",">>, lists:map(EscapeFun, Val)),
-    [<<"{">>, Escaped, <<"}">>].
+    lists:flatten([<<"{">>, Escaped, <<"}">>]).
 
 to_string_literal(odbc, S) ->
     <<"'", (escape(S))/binary, "'">>;
@@ -776,11 +776,13 @@ pgsql_prepare(SQLQuery, State) ->
                          like_escape = fun() -> escape end},
     {RArgs, _} =
         lists:foldl(
-          fun(arg, {Acc, I}) ->
-                  {[<<$$, (integer_to_binary(I))/binary>> | Acc], I + 1};
-             (escape, {Acc, I}) ->
-                  {[<<"">> | Acc], I}
-          end, {[], 1}, (SQLQuery#sql_query.args)(Escape)),
+	    fun(arg, {Acc, I}) ->
+		{[<<$$, (integer_to_binary(I))/binary>> | Acc], I + 1};
+	       (escape, {Acc, I}) ->
+		   {[<<"">> | Acc], I};
+	       (List, {Acc, I}) when is_list(List) ->
+		   {[<<$$, (integer_to_binary(I))/binary>> | Acc], I + 1}
+	    end, {[], 1}, (SQLQuery#sql_query.args)(Escape)),
     Args = lists:reverse(RArgs),
     %N = length((SQLQuery#sql_query.args)(Escape)),
     %Args = [<<$$, (integer_to_binary(I))/binary>> || I <- lists:seq(1, N)],
