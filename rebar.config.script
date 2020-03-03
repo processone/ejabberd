@@ -304,12 +304,14 @@ fun(Hooks) ->
 end,
 
 ProcessErlOpt = fun(Vals) ->
-			lists:map(
+			R = lists:map(
 			  fun({i, Path}) ->
 				  {i, ResolveDepPath(Path)};
 			     (ErlOpt) ->
 				  ErlOpt
-			  end, Vals)
+			  end, Vals),
+			M = lists:filter(fun({d, M}) -> true; (_) -> false end, R),
+			[{d, 'ALL_DEFS', M} | R]
 		end,
 
 ProcssXrefExclusions = fun(Items) ->

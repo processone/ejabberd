@@ -51,12 +51,25 @@ defmodule Ejabberd.Mixfile do
     end
   end
 
+  defp if_version_below(ver, okResult) do
+    if :erlang.system_info(:otp_release) < ver do
+      okResult
+    else
+      []
+    end
+  end
+
   defp erlc_options do
     # Use our own includes + includes from all dependencies
     includes = ["include"] ++ deps_include(["fast_xml", "xmpp", "p1_utils"])
-    [:debug_info, {:d, :ELIXIR_ENABLED}] ++ cond_options() ++ Enum.map(includes, fn(path) -> {:i, path} end) ++
-    if_version_above('20', [{:d, :DEPRECATED_GET_STACKTRACE}]) ++
-    if_function_exported(:erl_error, :format_exception, 6, [{:d, :HAVE_ERL_ERROR}])
+    result = [:debug_info, {:d, :ELIXIR_ENABLED}] ++
+             cond_options() ++
+             Enum.map(includes, fn (path) -> {:i, path} end) ++
+             if_version_above('20', [{:d, :DEPRECATED_GET_STACKTRACE}]) ++
+             if_version_below('22', [{:d, :LAGER}]) ++
+             if_function_exported(:erl_error, :format_exception, 6, [{:d, :HAVE_ERL_ERROR}])
+    defines = for {:d, value} <- result, do: {:d, value}
+    result ++ [{:d, :ALL_DEFS, defines}]
   end
 
   defp cond_options do
