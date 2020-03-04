@@ -37,7 +37,8 @@
 -export([start/1, stop/1, start_link/1, set_password/3,
 	 check_password/4, user_exists/2,
 	 get_users/2, count_users/2,
-	 store_type/1, plain_password_required/1]).
+	 store_type/1, plain_password_required/1,
+	 reload/1]).
 
 -include("logger.hrl").
 
@@ -108,6 +109,10 @@ init(Host) ->
 			  State#state.port, State#state.dn,
 			  State#state.password, State#state.tls_options),
     {ok, State}.
+
+reload(Host) ->
+    stop(Host),
+    start(Host).
 
 plain_password_required(_) -> true.
 
