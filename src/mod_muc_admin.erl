@@ -805,7 +805,7 @@ get_rooms(ServiceArg) ->
     Hosts = find_services(ServiceArg),
     lists:flatmap(
       fun(Host) ->
-	      [{RoomName, RoomHost, Host, Pid}
+	      [{RoomName, RoomHost, ejabberd_router:host_of_route(Host), Pid}
 	       || {RoomName, RoomHost, Pid} <- mod_muc:get_online_rooms(Host)]
       end, Hosts).
 
