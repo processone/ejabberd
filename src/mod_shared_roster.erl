@@ -546,14 +546,14 @@ add_user_to_group2(Host, US, Group) ->
     {LUser, LServer} = US,
     case ejabberd_regexp:run(LUser, <<"^@.+@\$">>) of
       match ->
-	  GroupOpts = mod_shared_roster:get_group_opts(Host, Group),
+	  GroupOpts = get_group_opts(Host, Group),
 	  MoreGroupOpts = case LUser of
 			    <<"@all@">> -> [{all_users, true}];
 			    <<"@online@">> -> [{online_users, true}];
 			    _ -> []
 			  end,
-	  mod_shared_roster:set_group_opts(Host, Group,
-				   GroupOpts ++ MoreGroupOpts);
+	  set_group_opts(Host, Group,
+			 GroupOpts ++ MoreGroupOpts);
       nomatch ->
 	  DisplayedToGroups = displayed_to_groups(Group, Host),
 	  DisplayedGroups = get_displayed_groups(Group, LServer),
@@ -575,7 +575,7 @@ remove_user_from_group(Host, US, Group) ->
     {LUser, LServer} = US,
     case ejabberd_regexp:run(LUser, <<"^@.+@\$">>) of
       match ->
-	  GroupOpts = mod_shared_roster:get_group_opts(Host, Group),
+	  GroupOpts = get_group_opts(Host, Group),
 	  NewGroupOpts = case LUser of
 			   <<"@all@">> ->
 			       lists:filter(fun (X) -> X /= {all_users, true}
@@ -586,7 +586,7 @@ remove_user_from_group(Host, US, Group) ->
 					    end,
 					    GroupOpts)
 			 end,
-	  mod_shared_roster:set_group_opts(Host, Group, NewGroupOpts);
+	  set_group_opts(Host, Group, NewGroupOpts);
       nomatch ->
 	  Mod = gen_mod:db_mod(Host, ?MODULE),
 	  Result = Mod:remove_user_from_group(Host, US, Group),
@@ -742,7 +742,7 @@ webadmin_page(Acc, _, _) -> Acc.
 
 list_shared_roster_groups(Host, Query, Lang) ->
     Res = list_sr_groups_parse_query(Host, Query),
-    SRGroups = mod_shared_roster:list_groups(Host),
+    SRGroups = list_groups(Host),
     FGroups = (?XAE(<<"table">>, [],
 		    [?XE(<<"tbody">>,
 			 (lists:map(fun (Group) ->
@@ -793,15 +793,17 @@ list_sr_groups_parse_query(Host, Query) ->
 list_sr_groups_parse_addnew(Host, Query) ->
     case lists:keysearch(<<"namenew">>, 1, Query) of
       {value, {_, Group}} when Group /= <<"">> ->
-	  mod_shared_roster:create_group(Host, Group), ok;
-      _ -> error
+	  create_group(Host, Group),
+	  ok;
+      _ ->
+	  error
     end.
 
 list_sr_groups_parse_delete(Host, Query) ->
-    SRGroups = mod_shared_roster:list_groups(Host),
+    SRGroups = list_groups(Host),
     lists:foreach(fun (Group) ->
 			  case lists:member({<<"selected">>, Group}, Query) of
-			    true -> mod_shared_roster:delete_group(Host, Group);
+			    true -> delete_group(Host, Group);
 			    _ -> ok
 			  end
 		  end,
@@ -811,15 +813,15 @@ list_sr_groups_parse_delete(Host, Query) ->
 shared_roster_group(Host, Group, Query, Lang) ->
     Res = shared_roster_group_parse_query(Host, Group,
 					  Query),
-    GroupOpts = mod_shared_roster:get_group_opts(Host, Group),
+    GroupOpts = get_group_opts(Host, Group),
     Name = get_opt(GroupOpts, name, <<"">>),
     Description = get_opt(GroupOpts, description, <<"">>),
     AllUsers = get_opt(GroupOpts, all_users, false),
     OnlineUsers = get_opt(GroupOpts, online_users, false),
     DisplayedGroups = get_opt(GroupOpts, displayed_groups,
 			      []),
-    Members = mod_shared_roster:get_group_explicit_users(Host,
-						 Group),
+    Members = get_group_explicit_users(Host,
+				       Group),
     FMembers = iolist_to_binary(
                  [if AllUsers -> <<"@all@\n">>;
                      true -> <<"">>
@@ -901,7 +903,7 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 	  DispGroupsOpt = if DispGroups == [] -> [];
 			     true -> [{displayed_groups, DispGroups}]
 			  end,
-	  OldMembers = mod_shared_roster:get_group_explicit_users(Host,
+	  OldMembers = get_group_explicit_users(Host,
 							  Group),
 	  SJIDs = str:tokens(SMembers, <<", \r\n">>),
 	  NewMembers = lists:foldl(fun (_SJID, error) -> error;
@@ -936,26 +938,28 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 	  RemovedDisplayedGroups = CurrentDisplayedGroups -- DispGroups,
 	  displayed_groups_update(OldMembers, RemovedDisplayedGroups, remove),
 	  displayed_groups_update(OldMembers, AddedDisplayedGroups, both),
-	  mod_shared_roster:set_group_opts(Host, Group,
-				   NameOpt ++
-				     DispGroupsOpt ++
-				       DescriptionOpt ++
-					 AllUsersOpt ++ OnlineUsersOpt),
+	  set_group_opts(Host, Group,
+			 NameOpt ++
+			 DispGroupsOpt ++
+			 DescriptionOpt ++
+			 AllUsersOpt ++ OnlineUsersOpt),
 	  if NewMembers == error -> error;
 	     true ->
 		 AddedMembers = NewMembers -- OldMembers,
 		 RemovedMembers = OldMembers -- NewMembers,
-		 lists:foreach(fun (US) ->
-				       mod_shared_roster:remove_user_from_group(Host,
-									US,
-									Group)
-			       end,
-			       RemovedMembers),
-		 NonAddedMembers = lists:filter(fun (US) ->
-				       error == mod_shared_roster:add_user_to_group(Host, US,
-								   Group)
-			       end,
-			       AddedMembers),
+		 lists:foreach(
+		     fun(US) ->
+			 remove_user_from_group(Host,
+						US,
+						Group)
+		     end,
+		     RemovedMembers),
+		 NonAddedMembers = lists:filter(
+		     fun(US) ->
+			 error == add_user_to_group(Host, US,
+						    Group)
+		     end,
+		     AddedMembers),
 		 case NonAddedMembers of
 		    [] -> ok;
 		    _ -> {error_jids, NonAddedMembers}
