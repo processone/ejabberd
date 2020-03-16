@@ -419,16 +419,7 @@ get_online_users(Host) ->
 
 get_group_users(Host1, Group1) ->
     {Host, Group} = split_grouphost(Host1, Group1),
-    case get_group_opt(Host, Group, all_users, false) of
-      true -> ejabberd_auth:get_users(Host);
-      false -> []
-    end
-      ++
-      case get_group_opt(Host, Group, online_users, false) of
-	true -> get_online_users(Host);
-	false -> []
-      end
-	++ get_group_explicit_users(Host, Group).
+    get_group_users(Host, Group, get_group_opts(Host, Group)).
 
 get_group_users(Host, Group, GroupOpts) ->
     case proplists:get_value(all_users, GroupOpts, false) of
@@ -573,9 +564,7 @@ add_user_to_group2(Host, US, Group) ->
     end.
 
 get_displayed_groups(Group, LServer) ->
-    GroupsOpts = groups_with_opts(LServer),
-    GroupOpts = proplists:get_value(Group, GroupsOpts, []),
-    proplists:get_value(displayed_groups, GroupOpts, []).
+    get_group_opt(LServer, Group, displayed_groups, []).
 
 push_displayed_to_user(LUser, LServer, Host, Subscription, DisplayedGroups) ->
     [push_members_to_user(LUser, LServer, DGroup, Host,
@@ -610,8 +599,7 @@ remove_user_from_group(Host, US, Group) ->
 
 push_members_to_user(LUser, LServer, Group, Host,
 		     Subscription) ->
-    GroupsOpts = groups_with_opts(LServer),
-    GroupOpts = proplists:get_value(Group, GroupsOpts, []),
+    GroupOpts = get_group_opts(LServer, Group),
     GroupName = proplists:get_value(name, GroupOpts, Group),
     Members = get_group_users(Host, Group),
     lists:foreach(fun ({U, S}) ->
@@ -659,9 +647,7 @@ push_user_to_members(User, Server, Subscription) ->
 		  lists:usort(SpecialGroups ++ UserGroups)).
 
 push_user_to_displayed(LUser, LServer, Group, Host, Subscription, DisplayedToGroupsOpts) ->
-    GroupsOpts = groups_with_opts(Host),
-    GroupOpts = proplists:get_value(Group, GroupsOpts, []),
-    GroupName = proplists:get_value(name, GroupOpts, Group),
+    GroupName = get_group_opt(Host, Group, name, Group),
     [push_user_to_group(LUser, LServer, GroupD, Host,
 			GroupName, Subscription)
      || GroupD <- DisplayedToGroupsOpts].
