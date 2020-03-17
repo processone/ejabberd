@@ -648,7 +648,11 @@ make_sql_upsert_insert(Table, ParseRes) ->
           ]),
     State.
 
-make_sql_upsert_pgsql901(Table, ParseRes) ->
+make_sql_upsert_pgsql901(Table, ParseRes0) ->
+    ParseRes = lists:map(
+        fun({"family", A2, A3}) -> {"\"family\"", A2, A3};
+           (Other) -> Other
+        end, ParseRes0),
     Update = make_sql_upsert_update(Table, ParseRes),
     Vals =
         lists:map(
