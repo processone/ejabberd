@@ -71,10 +71,20 @@
 -callback is_user_in_group({binary(), binary()}, binary(), binary()) -> boolean().
 -callback add_user_to_group(binary(), {binary(), binary()}, binary()) -> any().
 -callback remove_user_from_group(binary(), {binary(), binary()}, binary()) -> {atomic, any()}.
+-callback use_cache(binary()) -> boolean().
+-callback cache_nodes(binary()) -> [node()].
+
+-optional_callbacks([use_cache/1, cache_nodes/1]).
+
+-define(GROUP_OPTS_CACHE, shared_roster_group_opts_cache).
+-define(USER_GROUPS_CACHE, shared_roster_user_groups_cache).
+-define(GROUP_EXPLICIT_USERS_CACHE, shared_roster_group_explicit_cache).
+-define(SPECIAL_GROUPS_CACHE, shared_roster_special_groups_cache).
 
 start(Host, Opts) ->
     Mod = gen_mod:db_mod(Opts, ?MODULE),
     Mod:init(Host, Opts),
+    init_cache(Mod, Host, Opts),
     ejabberd_hooks:add(webadmin_menu_host, Host, ?MODULE,
 		       webadmin_menu, 70),
     ejabberd_hooks:add(webadmin_page_host, Host, ?MODULE,
@@ -135,6 +145,43 @@ reload(Host, NewOpts, OldOpts) ->
 
 depends(_Host, _Opts) ->
     [].
+
+-spec init_cache(module(), binary(), gen_mod:opts()) -> ok.
+init_cache(Mod, Host, Opts) ->
+    case use_cache(Mod, Host) of
+        true ->
+            CacheOpts = cache_opts(Opts),
+            ets_cache:new(?GROUP_OPTS_CACHE, CacheOpts),
+	    ets_cache:new(?USER_GROUPS_CACHE, CacheOpts),
+	    ets_cache:new(?GROUP_EXPLICIT_USERS_CACHE, CacheOpts),
+	    ets_cache:new(?SPECIAL_GROUPS_CACHE, CacheOpts);
+        false ->
+	    ets_cache:delete(?GROUP_OPTS_CACHE),
+	    ets_cache:delete(?USER_GROUPS_CACHE),
+	    ets_cache:delete(?GROUP_EXPLICIT_USERS_CACHE),
+	    ets_cache:delete(?SPECIAL_GROUPS_CACHE)
+    end.
+
+-spec cache_opts(gen_mod:opts()) -> [proplists:property()].
+cache_opts(Opts) ->
+    MaxSize = mod_private_opt:cache_size(Opts),
+    CacheMissed = mod_private_opt:cache_missed(Opts),
+    LifeTime = mod_private_opt:cache_life_time(Opts),
+    [{max_size, MaxSize}, {cache_missed, CacheMissed}, {life_time, LifeTime}].
+
+-spec use_cache(module(), binary()) -> boolean().
+use_cache(Mod, Host) ->
+    case erlang:function_exported(Mod, use_cache, 1) of
+        true -> Mod:use_cache(Host);
+        false -> mod_shared_roster_opt:use_cache(Host)
+    end.
+
+-spec cache_nodes(module(), binary()) -> [node()].
+cache_nodes(Mod, Host) ->
+    case erlang:function_exported(Mod, cache_nodes, 1) of
+        true -> Mod:cache_nodes(Host);
+        false -> ejabberd_cluster:get_nodes()
+    end.
 
 -spec get_user_roster([#roster{}], {binary(), binary()}) -> [#roster{}].
 get_user_roster(Items, US) ->
@@ -376,24 +423,69 @@ create_group(Host, Group) ->
 
 create_group(Host, Group, Opts) ->
     Mod = gen_mod:db_mod(Host, ?MODULE),
+    case use_cache(Mod, Host) of
+	true ->
+	    ets_cache:insert(?GROUP_OPTS_CACHE, {Host, Group}, Opts, cache_nodes(Mod, Host)),
+	    ets_cache:clear(?SPECIAL_GROUPS_CACHE, cache_nodes(Mod, Host));
+	_ ->
+	    ok
+    end,
     Mod:create_group(Host, Group, Opts).
 
 delete_group(Host, Group) ->
     Mod = gen_mod:db_mod(Host, ?MODULE),
+    case use_cache(Mod, Host) of
+	true ->
+	    ets_cache:delete(?GROUP_OPTS_CACHE, {Host, Group}, cache_nodes(Mod, Host)),
+	    ets_cache:clear(?USER_GROUPS_CACHE, cache_nodes(Mod, Host)),
+	    ets_cache:clear(?GROUP_EXPLICIT_USERS_CACHE, cache_nodes(Mod, Host)),
+	    ets_cache:clear(?SPECIAL_GROUPS_CACHE, cache_nodes(Mod, Host));
+	_ ->
+	    ok
+    end,
     Mod:delete_group(Host, Group).
 
 get_group_opts(Host, Group) ->
     Mod = gen_mod:db_mod(Host, ?MODULE),
-    Mod:get_group_opts(Host, Group).
+    case use_cache(Mod, Host) of
+	true ->
+	    ets_cache:lookup(
+		?GROUP_OPTS_CACHE, {Host, Group},
+		fun() ->
+		    case Mod:get_group_opts(Host, Group) of
+			error -> error;
+			V -> {cache, V}
+		    end
+		end);
+	false ->
+	    Mod:get_group_opts(Host, Group)
+    end.
 
 set_group_opts(Host, Group, Opts) ->
     Mod = gen_mod:db_mod(Host, ?MODULE),
+    case use_cache(Mod, Host) of
+	true ->
+	    ets_cache:insert(?GROUP_OPTS_CACHE, {Host, Group}, Opts, cache_nodes(Mod, Host)),
+	    ets_cache:clear(?SPECIAL_GROUPS_CACHE, cache_nodes(Mod, Host));
+	_ ->
+	    ok
+    end,
     Mod:set_group_opts(Host, Group, Opts).
 
 get_user_groups(US) ->
     Host = element(2, US),
     Mod = gen_mod:db_mod(Host, ?MODULE),
-    Mod:get_user_groups(US, Host) ++ get_special_users_groups(Host).
+    UG = case use_cache(Mod, Host) of
+	     true ->
+		 ets_cache:lookup(
+		     ?USER_GROUPS_CACHE, {Host, US},
+		     fun() ->
+			 {cache, Mod:get_user_groups(US, Host)}
+		     end);
+	     false ->
+		 Mod:get_user_groups(US, Host)
+	 end,
+    UG ++ get_special_users_groups(Host).
 
 is_group_enabled(Host1, Group1) ->
     {Host, Group} = split_grouphost(Host1, Group1),
@@ -436,7 +528,16 @@ get_group_users(Host, Group, GroupOpts) ->
 
 get_group_explicit_users(Host, Group) ->
     Mod = gen_mod:db_mod(Host, ?MODULE),
-    Mod:get_group_explicit_users(Host, Group).
+    case use_cache(Mod, Host) of
+	true ->
+	    ets_cache:lookup(
+		?GROUP_EXPLICIT_USERS_CACHE, {Host, Group},
+		fun() ->
+		    {cache, Mod:get_group_explicit_users(Host, Group)}
+		end);
+	false ->
+	    Mod:get_group_explicit_users(Host, Group)
+    end.
 
 get_group_name(Host1, Group1) ->
     {Host, Group} = split_grouphost(Host1, Group1),
@@ -444,24 +545,55 @@ get_group_name(Host1, Group1) ->
 
 %% Get list of names of groups that have @all@/@online@/etc in the memberlist
 get_special_users_groups(Host) ->
-    lists:filtermap(fun ({Group, Opts}) ->
-             case proplists:get_value(all_users, Opts, false) orelse
-                  proplists:get_value(online_users, Opts, false) of
-               true -> {true, Group};
-               false -> false
-             end
-         end,
-         groups_with_opts(Host)).
+    Extract =
+    fun() ->
+	lists:filtermap(
+	    fun({Group, Opts}) ->
+		case proplists:get_value(all_users, Opts, false) orelse
+		     proplists:get_value(online_users, Opts, false) of
+		    true -> {true, Group};
+		    false -> false
+		end
+	    end,
+	    groups_with_opts(Host))
+    end,
+    Mod = gen_mod:db_mod(Host, ?MODULE),
+    case use_cache(Mod, Host) of
+	true ->
+	    ets_cache:lookup(
+		?SPECIAL_GROUPS_CACHE, {Host, false},
+		fun() ->
+		    {cache, Extract()}
+		end);
+	false ->
+	    Extract()
+    end.
+
 
 %% Get list of names of groups that have @online@ in the memberlist
 get_special_users_groups_online(Host) ->
-    lists:filtermap(fun ({Group, Opts}) ->
-             case proplists:get_value(online_users, Opts, false) of
-               true -> {true, Group};
-               false -> false
-             end
-         end,
-         groups_with_opts(Host)).
+    Extract =
+    fun() ->
+	lists:filtermap(
+	    fun({Group, Opts}) ->
+		case proplists:get_value(online_users, Opts, false) of
+		    true -> {true, Group};
+		    false -> false
+		end
+	    end,
+	    groups_with_opts(Host))
+    end,
+    Mod = gen_mod:db_mod(Host, ?MODULE),
+    case use_cache(Mod, Host) of
+	true ->
+	    ets_cache:lookup(
+		?SPECIAL_GROUPS_CACHE, {Host, true},
+		fun() ->
+		    {cache, Extract()}
+		end);
+	false ->
+	    Extract()
+    end.
 
 %% Given two lists of groupnames and their options,
 %% return the list of displayed groups to the second list
@@ -560,6 +692,13 @@ add_user_to_group2(Host, US, Group) ->
 	  push_user_to_displayed(LUser, LServer, Group, Host, both, DisplayedToGroups),
 	  push_displayed_to_user(LUser, LServer, Host, both, DisplayedGroups),
 	  Mod = gen_mod:db_mod(Host, ?MODULE),
+	  case use_cache(Mod, Host) of
+	      true ->
+		  ets_cache:delete(?USER_GROUPS_CACHE, {Host, US}, cache_nodes(Mod, Host)),
+		  ets_cache:delete(?GROUP_EXPLICIT_USERS_CACHE, {Host, Group}, cache_nodes(Mod, Host));
+	      false ->
+		  ok
+	  end,
 	  Mod:add_user_to_group(Host, US, Group)
     end.
 
@@ -589,6 +728,13 @@ remove_user_from_group(Host, US, Group) ->
 	  set_group_opts(Host, Group, NewGroupOpts);
       nomatch ->
 	  Mod = gen_mod:db_mod(Host, ?MODULE),
+	  case use_cache(Mod, Host) of
+	      true ->
+		  ets_cache:delete(?USER_GROUPS_CACHE, {Host, US}, cache_nodes(Mod, Host)),
+		  ets_cache:delete(?GROUP_EXPLICIT_USERS_CACHE, {Host, Group}, cache_nodes(Mod, Host));
+	      false ->
+		  ok
+	  end,
 	  Result = Mod:remove_user_from_group(Host, US, Group),
 	  DisplayedToGroups = displayed_to_groups(Group, Host),
 	  DisplayedGroups = get_displayed_groups(Group, LServer),
@@ -708,13 +854,15 @@ unset_presence(LUser, LServer, Resource, Status) ->
     case length(Resources) of
       0 ->
 	  OnlineGroups = get_special_users_groups_online(LServer),
-	  lists:foreach(fun (OG) ->
-				push_user_to_displayed(LUser, LServer, OG,
-						       LServer, remove, displayed_to_groups(OG, LServer)),
-				push_displayed_to_user(LUser, LServer,
-						       LServer, remove, displayed_to_groups(OG, LServer))
-			end,
-			OnlineGroups);
+	  lists:foreach(
+	      fun(OG) ->
+		  DisplayedToGroups = displayed_to_groups(OG, LServer),
+		  push_user_to_displayed(LUser, LServer, OG,
+					 LServer, remove, DisplayedToGroups),
+		  push_displayed_to_user(LUser, LServer,
+					 LServer, remove, DisplayedToGroups)
+	      end,
+	      OnlineGroups);
       _ -> ok
     end.
 
@@ -1017,10 +1165,22 @@ import(LServer, {sql, _}, DBType, Tab, L) ->
     Mod:import(LServer, Tab, L).
 
 mod_opt_type(db_type) ->
-    econf:db_type(?MODULE).
+    econf:db_type(?MODULE);
+mod_opt_type(use_cache) ->
+    econf:bool();
+mod_opt_type(cache_size) ->
+    econf:pos_int(infinity);
+mod_opt_type(cache_missed) ->
+    econf:bool();
+mod_opt_type(cache_life_time) ->
+    econf:timeout(second, infinity).
 
 mod_options(Host) ->
-    [{db_type, ejabberd_config:default_db(Host, ?MODULE)}].
+    [{db_type, ejabberd_config:default_db(Host, ?MODULE)},
+     {use_cache, ejabberd_option:use_cache(Host)},
+     {cache_size, ejabberd_option:cache_size(Host)},
+     {cache_missed, ejabberd_option:cache_missed(Host)},
+     {cache_life_time, ejabberd_option:cache_life_time(Host)}].
 
 mod_doc() ->
     #{desc =>
@@ -1062,7 +1222,23 @@ mod_doc() ->
 		     "the tables and store user information. The default is "
 		     "the storage defined by the global option 'default_db', "
 		     "or 'mnesia' if omitted. If 'sql' value is defined, "
-		     "make sure you have defined the database.")}}],
+		     "make sure you have defined the database.")}},
+	   {use_cache,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'use_cache' option, but applied to this module only.")}},
+           {cache_size,
+            #{value => "pos_integer() | infinity",
+              desc =>
+                  ?T("Same as top-level 'cache_size' option, but applied to this module only.")}},
+           {cache_missed,
+            #{value => "true | false",
+              desc =>
+                  ?T("Same as top-level 'cache_missed' option, but applied to this module only.")}},
+           {cache_life_time,
+            #{value => "timeout()",
+              desc =>
+                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}],
       example =>
 	  [{?T("Take the case of a computer club that wants all its members "
 	       "seeing each other in their rosters. To achieve this, they "

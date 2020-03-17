@@ -32,7 +32,7 @@
 	 get_user_groups/2, get_group_explicit_users/2,
 	 get_user_displayed_groups/3, is_user_in_group/3,
 	 add_user_to_group/3, remove_user_from_group/3, import/3]).
--export([need_transform/1, transform/1]).
+-export([need_transform/1, transform/1, use_cache/1]).
 
 -include("mod_roster.hrl").
 -include("mod_shared_roster.hrl").
@@ -55,6 +55,10 @@ list_groups(Host) ->
     mnesia:dirty_select(sr_group,
 			[{#sr_group{group_host = {'$1', '$2'}, _ = '_'},
 			  [{'==', '$2', Host}], ['$1']}]).
+
+-spec use_cache(binary()) -> boolean().
+use_cache(_Host) ->
+    false.
 
 groups_with_opts(Host) ->
     Gs = mnesia:dirty_select(sr_group,
