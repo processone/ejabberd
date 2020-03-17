@@ -400,21 +400,16 @@ extract_path_query(#state{request_method = Method,
 	    ?DEBUG("Error decoding URL '~p': ~p", [Path, Error]),
 	    {State, false};
         {LPath, _Query} ->
-	    case Method of
-		'PUT' ->
-		    {State, {LPath, [], Trail}};
-		'POST' ->
-		    case recv_data(State) of
-			{ok, Data} ->
-			    LQuery = case catch parse_urlencoded(Data) of
-					 {'EXIT', _Reason} -> [];
-					 LQ -> LQ
-				     end,
-			    {State, {LPath, LQuery, Data}};
-			error ->
-			    {State, false}
-		    end
-	    end
+            case recv_data(State) of
+                {ok, Data} ->
+                    LQuery = case catch parse_urlencoded(Data) of
+                                 {'EXIT', _Reason} -> [];
+                                 LQ -> LQ
+                             end,
+                    {State, {LPath, LQuery, Data}};
+                error ->
+                    {State, false}
+            end
     end;
 extract_path_query(State) ->
     {State, false}.
