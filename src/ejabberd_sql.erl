@@ -740,7 +740,7 @@ pgsql_escape() ->
                              (false) -> <<"'f'">>
                           end,
 		in_array_string = fun(X) -> <<"E'", (escape(X))/binary, "'">> end,
-                like_escape = fun() -> <<"">> end
+                like_escape = fun() -> <<"ESCAPE E'\\\\'">> end
                }.
 
 sqlite_sql_query(SQLQuery) ->
