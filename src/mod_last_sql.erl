@@ -55,10 +55,11 @@ get_last(LUser, LServer) ->
     end.
 
 store_last_info(LUser, LServer, TimeStamp, Status) ->
+    TS = integer_to_binary(TimeStamp),
     case ?SQL_UPSERT(LServer, "last",
 		     ["!username=%(LUser)s",
                       "!server_host=%(LServer)s",
-		      "seconds=%(TimeStamp)d",
+		      "seconds=%(TS)s",
 		      "state=%(Status)s"]) of
 	ok ->
 	    ok;
@@ -76,11 +77,12 @@ export(_Server) ->
       fun(Host, #last_activity{us = {LUser, LServer},
                                timestamp = TimeStamp, status = Status})
             when LServer == Host ->
+              TS = integer_to_binary(TimeStamp),
               [?SQL("delete from last where username=%(LUser)s and %(LServer)H;"),
                ?SQL_INSERT("last",
                            ["username=%(LUser)s",
                             "server_host=%(LServer)s",
-                            "seconds=%(TimeStamp)d",
+                            "seconds=%(TS)s",
                             "state=%(Status)s"])];
          (_Host, _R) ->
               []
