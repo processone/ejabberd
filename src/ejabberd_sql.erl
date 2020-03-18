@@ -779,7 +779,7 @@ pgsql_prepare(SQLQuery, State) ->
 	    fun(arg, {Acc, I}) ->
 		{[<<$$, (integer_to_binary(I))/binary>> | Acc], I + 1};
 	       (escape, {Acc, I}) ->
-		   {[<<"">> | Acc], I};
+		   {[<<"ESCAPE E'\\\\'">> | Acc], I};
 	       (List, {Acc, I}) when is_list(List) ->
 		   {[<<$$, (integer_to_binary(I))/binary>> | Acc], I + 1}
 	    end, {[], 1}, (SQLQuery#sql_query.args)(Escape)),
