@@ -896,14 +896,13 @@ select_affiliation_subscriptions(Nidx, JID, JID) ->
 select_affiliation_subscriptions(Nidx, GenKey, SubKey) ->
     GJ = encode_jid(GenKey),
     SJ = encode_jid(SubKey),
-    case catch
-	ejabberd_sql:sql_query_t(
-	    ?SQL("select jid = %(GJ)s as @(G)d, @(affiliation)s, @(subscriptions)s from "
-		 " pubsub_state where nodeid=%(Nidx)d and jid in (%(GJ)s, %(SJ)s)"))
+    case catch ejabberd_sql:sql_query_t(
+	?SQL("select jid = %(GJ)s as @(G)b, @(affiliation)s, @(subscriptions)s from "
+	     " pubsub_state where nodeid=%(Nidx)d and jid in (%(GJ)s, %(SJ)s)"))
     of
 	{selected, Res} ->
 	    lists:foldr(
-		fun({1, A, S}, {_, Subs}) ->
+		fun({true, A, S}, {_, Subs}) ->
 		    {decode_affiliation(A), Subs ++ decode_subscriptions(S)};
 		   ({_, _, S}, {Aff, Subs}) ->
 		       {Aff, Subs ++ decode_subscriptions(S)}
