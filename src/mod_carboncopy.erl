@@ -268,7 +268,7 @@ is_received_muc_invite(Msg, received) ->
 	#muc_user{invites = [_|_]} ->
 	    true;
 	_ ->
-	    xmpp:has_subtag(Msg, #x_conference{})
+	    xmpp:has_subtag(Msg, #x_conference{jid = jid:make(<<"">>)})
     end.
 
 -spec is_received_muc_pm(jid(), message(), direction()) -> boolean().
