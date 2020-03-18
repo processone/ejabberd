@@ -736,8 +736,8 @@ pgsql_sql_query_format(SQLQuery) ->
 pgsql_escape() ->
     #sql_escape{string = fun(X) -> <<"E'", (escape(X))/binary, "'">> end,
 		integer = fun(X) -> misc:i2l(X) end,
-		boolean = fun(true) -> <<"1">>;
-                             (false) -> <<"0">>
+		boolean = fun(true) -> <<"'t'">>;
+                             (false) -> <<"'f'">>
                           end,
 		in_array_string = fun(X) -> <<"E'", (escape(X))/binary, "'">> end,
                 like_escape = fun() -> <<"">> end
