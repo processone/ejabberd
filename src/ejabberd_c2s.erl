@@ -902,7 +902,7 @@ bounce_message_queue({_, Pid} = SID, JID) ->
 	    receive {route, Pkt} ->
 		    ejabberd_router:route(Pkt),
 		    bounce_message_queue(SID, JID)
-	    after 0 ->
+	    after 100 ->
 		    ok
 	    end
     end.
