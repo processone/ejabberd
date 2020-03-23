@@ -1513,6 +1513,9 @@ send_stanza(FromString, ToString, Stanza) ->
     catch _:{xmpp_codec, Why} ->
 	    io:format("incorrect stanza: ~ts~n", [xmpp:format_error(Why)]),
 	    {error, Why};
+	  _:{badmatch, {error, {Code, Why}}} when is_integer(Code) ->
+	    io:format("invalid xml: ~p~n", [Why]),
+	    {error, Why};
 	  _:{badmatch, {error, Why}} ->
 	    io:format("invalid xml: ~p~n", [Why]),
 	    {error, Why};
