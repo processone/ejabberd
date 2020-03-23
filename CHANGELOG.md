@@ -1,3 +1,23 @@
+# Version 20.03
+
+* Changes in this version
+- Add support of ssl connection when connection to mysql
+  database (configured with `sql_ssl: true` option)
+- Experimental support for cockroachdb when configured
+  with postgres connector 
+- Add cache and optimize queries issued by `mod_shared_roster`,
+  this should greatly improve performance of this module when
+  used with `sql` backend
+- Fix problem with accessing webadmin
+- Make webadmin work even when url is missing trailing slash
+- When compiling external modules with ext_mod, use flags
+  that were detected during compilation of ejabberd
+- Make config changed to ldap options be updated when issued
+  `reload_config` command
+- Fix `room_empty_destory` command
+- Fix reporting errors in `send_stanza` command when xml
+  passed to it couldn't be passed correctly
+
 # Version 20.02
 
 * Changes in this version
