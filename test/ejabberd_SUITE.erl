@@ -259,6 +259,8 @@ init_per_testcase(TestCase, OrigConfig) ->
     case Test of
         "test_connect" ++ _ ->
             Config;
+        "webadmin_" ++ _ ->
+            Config;
 	"test_legacy_auth_feature" ->
 	    connect(Config);
 	"test_legacy_auth" ++ _ ->
@@ -372,6 +374,7 @@ db_tests(DB) when DB == mnesia; DB == redis ->
        auth_md5,
        presence_broadcast,
        last,
+       webadmin_tests:single_cases(),
        roster_tests:single_cases(),
        private_tests:single_cases(),
        privacy_tests:single_cases(),
@@ -401,6 +404,7 @@ db_tests(DB) ->
        auth_md5,
        presence_broadcast,
        last,
+       webadmin_tests:single_cases(),
        roster_tests:single_cases(),
        private_tests:single_cases(),
        privacy_tests:single_cases(),
