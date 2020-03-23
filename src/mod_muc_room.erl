@@ -741,10 +741,13 @@ handle_sync_event({muc_subscribe, From, Nick, Nodes}, _From,
 	{error, Err} ->
 	    {reply, {error, get_error_text(Err)}, StateName, StateData}
     end;
-handle_sync_event({muc_unsubscribe, From}, _From, StateName, StateData) ->
+handle_sync_event({muc_unsubscribe, From}, _From, StateName,
+		  #state{config = Conf} = StateData) ->
     IQ = #iq{type = set, id = p1_rand:get_string(),
 	     from = From, sub_els = [#muc_unsubscribe{}]},
     case process_iq_mucsub(From, IQ, StateData) of
+	{result, _, stop} ->
+	    {stop, ok, normal, StateData#state{config = Conf#config{persistent = false}}};
 	{result, _, NewState} ->
 	    {reply, ok, StateName, NewState};
 	{ignore, NewState} ->
