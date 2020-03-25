@@ -937,7 +937,11 @@ fix_from_to(Pkt, #{jid := JID}) when ?is_stanza(Pkt) ->
 			{U, S, _} -> jid:replace_resource(JID, From#jid.resource);
 			_ -> From
 		    end,
-	    xmpp:set_from_to(Pkt, From1, JID)
+	    To1 = case xmpp:get_to(Pkt) of
+			#jid{lresource = <<>>} = To2 -> To2;
+			_ -> JID
+		    end,
+	    xmpp:set_from_to(Pkt, From1, To1)
     end;
 fix_from_to(Pkt, _State) ->
     Pkt.
