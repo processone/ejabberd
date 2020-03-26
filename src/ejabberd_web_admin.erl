@@ -150,7 +150,21 @@ url_to_path(URL) -> str:tokens(URL, <<"/">>).
 %%%==================================
 %%%% process/2
 
-process([<<"server">>, SHost | RPath] = Path,
+process(Path, #request{raw_path = RawPath} = Request) ->
+    Continue = case Path of
+		   [E] ->
+		       binary:match(E, <<".">>) /= nomatch;
+		   _ ->
+		       false
+	       end,
+    case Continue orelse binary:at(RawPath, size(RawPath) - 1) == $/ of
+	true ->
+	    process2(Path, Request);
+	_ ->
+	    {301, [{<<"Location">>, <<RawPath/binary, "/">>}], <<>>}
+    end.
+
+process2([<<"server">>, SHost | RPath] = Path,
 	#request{auth = Auth, lang = Lang, host = HostHTTP,
 		 method = Method} =
 	    Request) ->
@@ -185,7 +199,7 @@ process([<<"server">>, SHost | RPath] = Path,
 	  end;
       false -> ejabberd_web:error(not_found)
     end;
-process(RPath,
+process2(RPath,
 	#request{auth = Auth, lang = Lang, host = HostHTTP,
 		 method = Method} =
 	    Request) ->

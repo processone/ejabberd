@@ -21,6 +21,7 @@
 -record(request,
 	{method            :: method(),
 	 path = []         :: [binary()],
+	 raw_path          :: binary(),
 	 q = []            :: [{binary() | nokey, binary()}],
 	 us = {<<>>, <<>>} :: {binary(), binary()},
 	 auth              :: {binary(), binary()} | {oauth, binary(), []} | undefined | invalid,

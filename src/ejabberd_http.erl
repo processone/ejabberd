@@ -386,7 +386,7 @@ extract_path_query(#state{request_method = Method,
 			 {'EXIT', _Reason} -> [];
 			 LQ -> LQ
 		     end,
-	    {State, {LPath, LQuery, <<"">>}}
+	    {State, {LPath, LQuery, <<"">>, Path}}
     end;
 extract_path_query(#state{request_method = Method,
 			  request_path = {abs_path, Path},
@@ -402,7 +402,7 @@ extract_path_query(#state{request_method = Method,
         {LPath, _Query} ->
 	    case Method of
 		'PUT' ->
-		    {State, {LPath, [], Trail}};
+		    {State, {LPath, [], Trail, Path}};
 		'POST' ->
 		    case recv_data(State) of
 			{ok, Data} ->
@@ -410,7 +410,7 @@ extract_path_query(#state{request_method = Method,
 					 {'EXIT', _Reason} -> [];
 					 LQ -> LQ
 				     end,
-			    {State, {LPath, LQuery, Data}};
+			    {State, {LPath, LQuery, Data, Path}};
 			error ->
 			    {State, false}
 		    end
@@ -451,7 +451,7 @@ process_request(#state{request_method = Method,
     case extract_path_query(State) of
 	{State2, false} ->
 	    {State2, make_bad_request(State)};
-	{State2, {LPath, LQuery, Data}} ->
+	{State2, {LPath, LQuery, Data, RawPath}} ->
 	    PeerName = case SockPeer of
 			   none ->
 			       case SockMod of
@@ -471,6 +471,7 @@ process_request(#state{request_method = Method,
 	    IP = analyze_ip_xff(IPHere, XFF),
             Request = #request{method = Method,
                                path = LPath,
+                               raw_path = RawPath,
                                q = LQuery,
                                auth = Auth,
 			       length = Length,
