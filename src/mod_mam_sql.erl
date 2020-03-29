@@ -105,7 +105,7 @@ store(Pkt, LServer, {LUser, LHost}, Type, Peer, Nick, _Dir, TS) ->
 	      jid:tolower(Peer)),
     Body = fxml:get_subtag_cdata(Pkt, <<"body">>),
     SType = misc:atom_to_binary(Type),
-    SqlType = ejabberd_option:sql_type(LHost),
+    SqlType = ejabberd_option:sql_type(LServer),
     XML = case mod_mam_opt:compress_xml(LServer) of
 	      true ->
 		  J1 = case Type of
