@@ -40,7 +40,11 @@ send_recv/2, put_event/2, get_event/1]).
 single_cases() ->
     {webadmin_single, [sequence],
      [single_test(login_page),
-      single_test(welcome_page)]}.
+      single_test(welcome_page),
+      single_test(user_page),
+      single_test(adduser),
+      single_test(changepassword),
+      single_test(removeuser)]}.
 
 login_page(Config) ->
     Headers = ?match({ok, {{"HTTP/1.1", 401, _}, Headers, _}},
@@ -56,6 +60,51 @@ welcome_page(Config) ->
 		     Body),
     ?match({_, _}, binary:match(Body, <<"ejabberd Web Admin">>)).
 
+user_page(Config) ->
+    Server = ?config(server, Config),
+    URL = "server/" ++ binary_to_list(Server) ++ "/user/admin/",
+    Body = ?match({ok, {{"HTTP/1.1", 200, _}, _, Body}},
+		  httpc:request(get, {page(Config, URL), [basic_auth_header(Config)]}, [],
+				[{body_format, binary}]),
+		  Body),
+    ?match({_, _}, binary:match(Body, <<"<title>ejabberd Web Admin">>)).
+
+adduser(Config) ->
+    User = ?config(user, Config),
+    Server = ?config(server, Config),
+    Password = ?config(password, Config),
+    Body = make_query(
+	     Config,
+	     "server/" ++ binary_to_list(Server) ++ "/users/",
+	     <<"newusername=", (mue(User))/binary, "&newuserpassword=",
+	       (mue(Password))/binary, "&addnewuser=Add+User">>),
+    Password = ejabberd_auth:get_password(User, Server),
+    ?match({_, _}, binary:match(Body, <<"<a href='../user/">>)).
+
+changepassword(Config) ->
+    User = ?config(user, Config),
+    Server = ?config(server, Config),
+    Password = <<"newpassword-", (?config(password, Config))/binary>>,
+    Body = make_query(
+	     Config,
+	     "server/" ++ binary_to_list(Server)
+	     ++ "/user/" ++ binary_to_list(mue(User)) ++ "/",
+	     <<"password=", (mue(Password))/binary,
+	       "&chpassword=Change+Password">>),
+    Password = ejabberd_auth:get_password(User, Server),
+    ?match({_, _}, binary:match(Body, <<"<p class='result'>Submitted</p>">>)).
+
+removeuser(Config) ->
+    User = ?config(user, Config),
+    Server = ?config(server, Config),
+    Body = make_query(
+	     Config,
+	     "server/" ++ binary_to_list(Server)
+	     ++ "/user/" ++ binary_to_list(mue(User)) ++ "/",
+	     <<"password=&removeuser=Remove+User">>),
+    false = ejabberd_auth:user_exists(User, Server),
+    ?match(nomatch, binary:match(Body, <<"<h3>Last Activity</h3>20">>)).
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
@@ -63,11 +112,30 @@ single_test(T) ->
     list_to_atom("webadmin_" ++ atom_to_list(T)).
 
 basic_auth_header(Config) ->
+    User = <<"admin">>,
     Server = ?config(server, Config),
-    ejabberd_auth:try_register(<<"admin">>, Server, <<"pass">>),
-    {"authorization", "Basic "++base64:encode_to_string(<<"admin@", Server/binary, ":pass">>)}.
+    Password = ?config(password, Config),
+    ejabberd_auth:try_register(User, Server, Password),
+    basic_auth_header(User, Server, Password).
+
+basic_auth_header(Username, Server, Password) ->
+    JidBin = <<Username/binary, "@", Server/binary, ":", Password/binary>>,
+    {"authorization", "Basic " ++ base64:encode_to_string(JidBin)}.
 
 page(Config, Tail) ->
     Server = ?config(server_host, Config),
     Port = ct:get_config(web_port, 5280),
-    "http://" ++ Server ++ ":" ++ integer_to_list(Port) ++ "/admin/" ++ Tail.
+    Url = "http://" ++ Server ++ ":" ++ integer_to_list(Port) ++ "/admin/" ++ Tail,
+    string:replace(Url, "%25", "%2525"). % Required by httpc:request for paths in URLs
+
+mue(Binary) ->
+    misc:url_encode(Binary).
+
+make_query(Config, URL, BodyQ) ->
+    ?match({ok, {{"HTTP/1.1", 200, _}, _, Body}},
+	   httpc:request(post, {page(Config, URL),
+				[basic_auth_header(Config)],
+				"application/x-www-form-urlencoded",
+				BodyQ}, [],
+			 [{body_format, binary}]),
+	   Body).
