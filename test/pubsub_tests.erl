@@ -30,6 +30,7 @@
 		recv_message/1, my_jid/1, send/2, recv_presence/1, recv/1]).
 
 -include("suite.hrl").
+-include_lib("stdlib/include/assert.hrl").
 
 %%%===================================================================
 %%% API
@@ -187,8 +188,8 @@ test_unsubscribe(Config) ->
 test_get_affiliations(Config) ->
     Nodes = lists:sort([create_node(Config, <<>>) || _ <- lists:seq(1, 5)]),
     Affs = get_affiliations(Config),
-    Nodes = lists:sort([Node || #ps_affiliation{node = Node,
-						type = owner} <- Affs]),
+    ?assertEqual(Nodes, lists:sort([Node || #ps_affiliation{node = Node,
+						type = owner} <- Affs])),
     [delete_node(Config, Node) || Node <- Nodes],
     disconnect(Config).
 
@@ -196,7 +197,7 @@ test_get_subscriptions(Config) ->
     Nodes = lists:sort([create_node(Config, <<>>) || _ <- lists:seq(1, 5)]),
     [subscribe_node(Config, Node) || Node <- Nodes],
     Subs = get_subscriptions(Config),
-    Nodes = lists:sort([Node || #ps_subscription{node = Node} <- Subs]),
+    ?assertEqual(Nodes, lists:sort([Node || #ps_subscription{node = Node} <- Subs])),
     [delete_node(Config, Node) || Node <- Nodes],
     disconnect(Config).
 
