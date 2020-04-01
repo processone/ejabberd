@@ -1204,6 +1204,11 @@ doc() ->
             ?T("The port where the SQL server is accepting connections. "
                "The default is '3306' for MySQL, '5432' for PostgreSQL and "
                "'1433' for MSSQL. The option has no effect for SQLite.")}},
+     {sql_prepared_statements,
+      #{value => "true | false",
+        desc =>
+	    ?T("This option is 'true' by default, and is useful to disable "
+	       "prepared statements. The option is valid for PostgreSQL.")}},
      {sql_query_timeout,
       #{value => "timeout()",
         desc =>
