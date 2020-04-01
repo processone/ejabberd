@@ -40,12 +40,13 @@
 -export([get_user_roster/2,
 	 get_jid_info/4, process_item/2, in_subscription/2,
 	 out_subscription/1, mod_opt_type/1, mod_options/1,
-	 depends/2]).
+	 depends/2, mod_doc/0]).
 
 -include("logger.hrl").
 -include("xmpp.hrl").
 -include("mod_roster.hrl").
 -include("eldap.hrl").
+-include("translate.hrl").
 
 -define(USER_CACHE, shared_roster_ldap_user_cache).
 -define(GROUP_CACHE, shared_roster_ldap_group_cache).
@@ -624,3 +625,137 @@ mod_options(Host) ->
      {cache_size, ejabberd_option:cache_size(Host)},
      {cache_missed, ejabberd_option:cache_missed(Host)},
      {cache_life_time, ejabberd_option:cache_life_time(Host)}].
+
+mod_doc() ->
+    #{desc =>
+          [?T("This module lets the server administrator automatically "
+	      "populate users' rosters (contact lists) with entries based on "
+	      "users and groups defined in an LDAP-based directory."), "",
+           ?T("NOTE: 'mod_shared_roster_ldap' depends on 'mod_roster' being "
+	      "enabled. Roster queries will return '503' errors if "
+	      "'mod_roster' is not enabled."), "",
+           ?T("The module accepts many configuration options. Some of them, "
+	      "if unspecified, default to the values specified for the top "
+	      "level of configuration. This lets you avoid specifying, for "
+	      "example, the bind password in multiple places."), "",
+           ?T("- Filters: 'ldap_rfilter', 'ldap_ufilter', 'ldap_gfilter', "
+	      "'ldap_filter'. These options specify LDAP filters used to "
+	      "query for shared roster information. All of them are run "
+	      "against the ldap_base."),
+           ?T("- Attributes: 'ldap_groupattr', 'ldap_groupdesc', "
+	      "'ldap_memberattr', 'ldap_userdesc', 'ldap_useruid'. These "
+	      "options specify the names of the attributes which hold "
+	      "interesting data in the entries returned by running filters "
+	      "specified with the filter options."),
+           ?T("- Control parameters: 'ldap_auth_check', "
+	      "'ldap_group_cache_validity', 'ldap_memberattr_format', "
+	      "'ldap_memberattr_format_re', 'ldap_user_cache_validity'. "
+	      "These parameters control the behaviour of the module."),
+           ?T("- Connection parameters: The module also accepts the "
+	      "connection parameters, all of which default to the top-level "
+	      "parameter of the same name, if unspecified. "
+	      "See 'LDAP Connection' for more information about them."), "",
+           ?T("The ejabberd Guide includes details for retrieving the roster, "
+	      "configuration examples including Flat DIT and Deep DIT, and "
+	      "also describes some of those options in more detail.")],
+      opts =>
+          [
+	   %% Filters:
+           {ldap_rfilter,
+            #{desc =>
+                  ?T("So called \"Roster Filter\". Used to find names of "
+		     "all \"shared roster\" groups. See also the "
+		     "'ldap_groupattr' parameter. If unspecified, defaults to "
+		     "the top-level parameter of the same name. You must "
+		     "specify it in some place in the configuration, there is "
+		     "no default.")}},
+           {ldap_gfilter,
+            #{desc =>
+                  ?T("\"Group Filter\", used when retrieving human-readable "
+		     "name (a.k.a. \"Display Name\") and the members of a "
+		     "group. See also the parameters 'ldap_groupattr', "
+		     "'ldap_groupdesc' and 'ldap_memberattr'. If unspecified, "
+		     "defaults to the top-level parameter of the same name. "
+		     "If that one also is unspecified, then the filter is "
+		     "constructed exactly like \"User Filter\".")}},
+           {ldap_ufilter,
+            #{desc =>
+                  ?T("\"User Filter\", used for retrieving the human-readable "
+		     "name of roster entries (usually full names of people in "
+		     "the roster). See also the parameters 'ldap_userdesc' and "
+		     "'ldap_useruid'. For details check the ejabberd Guide.")}},
+           {ldap_filter,
+            #{desc =>
+		  ?T("Additional filter which is AND-ed together "
+		     "with \"User Filter\" and \"Group Filter\". "
+		     "For details please read the ejabberd Guide.")}},
+	   %% Attributes:
+           {ldap_groupattr,
+            #{desc =>
+		  ?T("The name of the attribute that holds the group name, and "
+		     "that is used to differentiate between them. Retrieved "
+		     "from results of the \"Roster Filter\" "
+		     "and \"Group Filter\". Defaults to 'cn'.")}},
+
+           {ldap_groupdesc,
+            #{desc =>
+		  ?T("The name of the attribute which holds the human-readable "
+		     "group name in the objects you use to represent groups. "
+		     "Retrieved from results of the \"Group Filter\". "
+		     "Defaults to whatever 'ldap_groupattr' is set.")}},
+
+           {ldap_memberattr,
+            #{desc =>
+		  ?T("The name of the attribute which holds the IDs of the "
+		     "members of a group. Retrieved from results of the "
+		     "\"Group Filter\". Defaults to 'memberUid'. The name of "
+		     "the attribute differs depending on the objectClass you "
+		     "use for your group objects, for example: "
+		     "'posixGroup' -> 'memberUid'; 'groupOfNames' -> 'member'; "
+		     "'groupOfUniqueNames' -> 'uniqueMember'.")}},
+           {ldap_userdesc,
+            #{desc =>
+		  ?T("The name of the attribute which holds the human-readable "
+		     "user name. Retrieved from results of the "
+		     "\"User Filter\". Defaults to 'cn'.")}},
+           {ldap_useruid,
+            #{desc =>
+		  ?T("The name of the attribute which holds the ID of a roster "
+		     "item. Value of this attribute in the roster item objects "
+		     "needs to match the ID retrieved from the "
+		     "'ldap_memberattr' attribute of a group object. "
+		     "Retrieved from results of the \"User Filter\". "
+		     "Defaults to 'cn'.")}},
+	   %% Control parameters:
+           {ldap_memberattr_format,
+            #{desc =>
+		  ?T("A globbing format for extracting user ID from the value "
+		     "of the attribute named by 'ldap_memberattr'. Defaults "
+		     "to '%u', which means that the whole value is the member "
+		     "ID. If you change it to something different, you may "
+		     "also need to specify the User and Group Filters "
+		     "manually; see section Filters.")}},
+
+           {ldap_memberattr_format_re,
+            #{desc =>
+		  ?T("A regex for extracting user ID from the value of the "
+		     "attribute named by 'ldap_memberattr'. For details "
+		     "please read the ejabberd Guide.")}},
+           {ldap_auth_check,
+            #{value => "true | false",
+              desc =>
+		  ?T("Whether the module should check (via the ejabberd "
+		     "authentication subsystem) for existence of each user in "
+		     "the shared LDAP roster. See section "
+		     "'mod_shared_roster_ldap' for more information. Set to "
+		     "'false' if you want to disable the check. "
+		     "Default value is 'true'.")}}] ++
+          [{Opt,
+            #{desc =>
+                  {?T("Same as top-level '~s' option, but "
+                      "applied to this module only."), [Opt]}}}
+           || Opt <- [ldap_backups, ldap_base, ldap_uids, ldap_deref_aliases,
+		      ldap_encrypt, ldap_password, ldap_port, ldap_rootdn,
+		      ldap_servers, ldap_tls_certfile, ldap_tls_cacertfile,
+		      ldap_tls_depth, ldap_tls_verify, use_cache, cache_size,
+		      cache_missed, cache_life_time]]}.
