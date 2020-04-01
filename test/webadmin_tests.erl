@@ -91,7 +91,7 @@ changepassword(Config) ->
 	     ++ "/user/" ++ binary_to_list(mue(User)) ++ "/",
 	     <<"password=", (mue(Password))/binary,
 	       "&chpassword=Change+Password">>),
-    Password = ejabberd_auth:get_password(User, Server),
+    ?match(Password, ejabberd_auth:get_password(User, Server)),
     ?match({_, _}, binary:match(Body, <<"<p class='result'>Submitted</p>">>)).
 
 removeuser(Config) ->
@@ -126,7 +126,12 @@ page(Config, Tail) ->
     Server = ?config(server_host, Config),
     Port = ct:get_config(web_port, 5280),
     Url = "http://" ++ Server ++ ":" ++ integer_to_list(Port) ++ "/admin/" ++ Tail,
-    string:replace(Url, "%25", "%2525"). % Required by httpc:request for paths in URLs
+    case catch uri_string:normalize("/%2525") of
+	"/%25" ->
+	    string:replace(Url, "%25", "%2525", all);
+	_ ->
+	    Url
+    end.
 
 mue(Binary) ->
     misc:url_encode(Binary).
