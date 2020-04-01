@@ -504,7 +504,14 @@ all() ->
 stop_ejabberd(Config) ->
     ok = application:stop(ejabberd),
     ?recv1(#stream_error{reason = 'system-shutdown'}),
-    ?recv1({xmlstreamend, <<"stream:stream">>}),
+    case suite:recv(Config) of
+        {xmlstreamend, <<"stream:stream">>} ->
+            ok;
+        closed ->
+            ok;
+        Other ->
+            suite:match_failure([Other], [closed])
+    end,
     Config.
 
 test_connect_bad_xml(Config) ->
