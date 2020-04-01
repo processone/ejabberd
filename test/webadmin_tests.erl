@@ -70,7 +70,7 @@ user_page(Config) ->
     ?match({_, _}, binary:match(Body, <<"<title>ejabberd Web Admin">>)).
 
 adduser(Config) ->
-    User = <<"webadmin-test">>,
+    User = <<"userwebadmin-", (?config(user, Config))/binary>>,
     Server = ?config(server, Config),
     Password = ?config(password, Config),
     Body = make_query(
@@ -82,7 +82,7 @@ adduser(Config) ->
     ?match({_, _}, binary:match(Body, <<"<a href='../user/">>)).
 
 changepassword(Config) ->
-    User = <<"webadmin-test">>,
+    User = <<"userwebadmin-", (?config(user, Config))/binary>>,
     Server = ?config(server, Config),
     Password = <<"newpassword-", (?config(password, Config))/binary>>,
     Body = make_query(
@@ -95,7 +95,7 @@ changepassword(Config) ->
     ?match({_, _}, binary:match(Body, <<"<p class='result'>Submitted</p>">>)).
 
 removeuser(Config) ->
-    User = <<"webadmin-test">>,
+    User = <<"userwebadmin-", (?config(user, Config))/binary>>,
     Server = ?config(server, Config),
     Body = make_query(
 	     Config,
