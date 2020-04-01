@@ -217,7 +217,8 @@ c2s_handle_send(#{mgmt_state := MgmtState, mod := Mod,
 		active ->
 		    State;
 		pending ->
-		    Mod:stop(State#{stop_reason => {stream, {out, Pkt}}})
+		    Mod:stop_async(self()),
+		    {stop, State#{stop_reason => {stream, {out, Pkt}}}}
 	    end;
 	_ ->
 	    State
@@ -250,8 +251,9 @@ c2s_handle_info(#{mgmt_state := pending, lang := Lang,
 	   [jid:encode(JID)]),
     Txt = ?T("Timed out waiting for stream resumption"),
     Err = xmpp:serr_connection_timeout(Txt, Lang),
-    Mod:stop(State#{mgmt_state => timeout,
-		    stop_reason => {stream, {out, Err}}});
+    Mod:stop_async(self()),
+    {stop, State#{mgmt_state => timeout,
+		  stop_reason => {stream, {out, Err}}}};
 c2s_handle_info(State, {_Ref, {resume, #{jid := JID} = OldState}}) ->
     %% This happens if the resume_session/1 request timed out; the new session
     %% now receives the late response.
@@ -444,7 +446,8 @@ handle_resume(#{user := User, lserver := LServer,
 -spec transition_to_pending(state(), _) -> state().
 transition_to_pending(#{mgmt_state := active, mod := Mod,
 			mgmt_timeout := 0} = State, _Reason) ->
-    Mod:stop(State);
+    Mod:stop_async(self()),
+    State;
 transition_to_pending(#{mgmt_state := active, jid := JID, socket := Socket,
 			lserver := LServer, mgmt_timeout := Timeout} = State,
 		      Reason) ->
@@ -660,7 +663,7 @@ inherit_session_state(#{user := U, server := S,
 					     mgmt_stanzas_out => NumStanzasOut,
 					     mgmt_state => active},
 			    State3 = ejabberd_c2s:open_session(State2),
-			    ejabberd_c2s:stop(OldPID),
+			    ejabberd_c2s:stop_async(OldPID),
 			    {ok, State3};
 			{error, Msg} ->
 			    {error, Msg}
@@ -674,7 +677,7 @@ inherit_session_state(#{user := U, server := S,
 			    {error, session_was_killed};
 			  exit:{timeout, _} ->
 			    ejabberd_sm:close_session(OldSID, U, S, R),
-			    ejabberd_c2s:stop(OldPID),
+			    ejabberd_c2s:stop_async(OldPID),
 			    {error, session_copy_timed_out}
 		    end
 	    end;

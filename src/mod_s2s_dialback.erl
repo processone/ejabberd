@@ -265,7 +265,8 @@ s2s_out_packet(#{server := LServer,
     ejabberd_s2s_in:update_state(
       Pid, fun(S) -> send_db_result(S, Response) end),
     %% At this point the connection is no longer needed and we can terminate it
-    ejabberd_s2s_out:stop(State);
+    ejabberd_s2s_out:stop_async(self()),
+    State;
 s2s_out_packet(#{server := LServer, remote_server := RServer} = State,
 	       #db_result{to = LServer, from = RServer,
 			  type = Type} = Result) when Type /= undefined ->

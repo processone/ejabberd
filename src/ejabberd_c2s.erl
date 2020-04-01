@@ -43,7 +43,7 @@
 	 process_closed/2, process_terminated/2, process_info/2]).
 %% API
 -export([get_presence/1, set_presence/2, resend_presence/1, resend_presence/2,
-	 open_session/1, call/3, cast/2, send/2, close/1, close/2, stop/1,
+	 open_session/1, call/3, cast/2, send/2, close/1, close/2, stop_async/1,
 	 reply/2, copy_state/2, set_timeout/2, route/2, format_reason/2,
 	 host_up/1, host_down/1, send_ws_ping/1, bounce_message_queue/2]).
 
@@ -110,10 +110,9 @@ close(Ref) ->
 close(Ref, Reason) ->
     xmpp_stream_in:close(Ref, Reason).
 
--spec stop(pid()) -> ok;
-	  (state()) -> no_return().
-stop(Ref) ->
-    xmpp_stream_in:stop(Ref).
+-spec stop_async(pid()) -> ok.
+stop_async(Pid) ->
+    xmpp_stream_in:stop_async(Pid).
 
 -spec send(pid(), xmpp_element()) -> ok;
 	  (state(), xmpp_element()) -> state().
@@ -285,7 +284,8 @@ process_auth_result(#{sasl_mech := Mech,
     State.
 
 process_closed(State, Reason) ->
-    stop(State#{stop_reason => Reason}).
+    stop_async(self()),
+    State#{stop_reason => Reason}.
 
 process_terminated(#{sid := SID, socket := Socket,
 		     jid := JID, user := U, server := S, resource := R} = State,

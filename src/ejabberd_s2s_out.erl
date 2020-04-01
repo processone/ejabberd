@@ -36,7 +36,7 @@
 -export([process_auth_result/2, process_closed/2, handle_unexpected_info/2,
 	 handle_unexpected_cast/2, process_downgraded/2]).
 %% API
--export([start/3, start_link/3, connect/1, close/1, close/2, stop/1, send/2,
+-export([start/3, start_link/3, connect/1, close/1, close/2, stop_async/1, send/2,
 	 route/2, establish/1, update_state/2, host_up/1, host_down/1]).
 
 -include("xmpp.hrl").
@@ -79,10 +79,9 @@ close(Ref) ->
 close(Ref, Reason) ->
     xmpp_stream_out:close(Ref, Reason).
 
--spec stop(pid()) -> ok;
-	  (state()) -> no_return().
-stop(Ref) ->
-    xmpp_stream_out:stop(Ref).
+-spec stop_async(pid()) -> ok.
+stop_async(Pid) ->
+    xmpp_stream_out:stop_async(Pid).
 
 -spec send(pid(), xmpp_element()) -> ok;
 	  (state(), xmpp_element()) -> state().
@@ -150,7 +149,8 @@ process_closed(#{server := LServer, remote_server := RServer,
 	       Reason) ->
     ?INFO_MSG("Closing outbound s2s connection ~ts -> ~ts: ~ts",
 	      [LServer, RServer, format_error(Reason)]),
-    stop(State);
+    stop_async(self()),
+    State;
 process_closed(#{server := LServer, remote_server := RServer} = State,
 	       Reason) ->
     Delay = get_delay(),
@@ -248,7 +248,9 @@ handle_send(El, Pkt, #{server_host := ServerHost} = State) ->
 
 handle_timeout(#{on_route := Action, lang := Lang} = State) ->
     case Action of
-	bounce -> stop(State);
+	bounce ->
+	    stop_async(self()),
+	    State;
 	_ ->
 	    Txt = ?T("Idle connection"),
 	    send(State, xmpp:serr_connection_timeout(Txt, Lang))

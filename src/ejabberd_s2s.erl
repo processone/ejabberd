@@ -319,7 +319,7 @@ host_down(Host) ->
 	      case ejabberd_router:host_of_route(From) of
 		  Host ->
 		      ejabberd_s2s_out:send(Pid, Err),
-		      ejabberd_s2s_out:stop(Pid);
+		      ejabberd_s2s_out:stop_async(Pid);
 		  _ ->
 		      ok
 	      end;
@@ -473,14 +473,14 @@ new_connection(MyServer, Server, From, FromTo,
 	    if Pid1 == Pid ->
 		    ejabberd_s2s_out:connect(Pid);
 	       true ->
-		    ejabberd_s2s_out:stop(Pid)
+		    ejabberd_s2s_out:stop_async(Pid)
 	    end,
 	    [Pid1];
 	{aborted, Reason} ->
 	    ?ERROR_MSG("Failed to register s2s connection ~ts -> ~ts: "
 		       "Mnesia failure: ~p",
 		       [MyServer, Server, Reason]),
-	    ejabberd_s2s_out:stop(Pid),
+	    ejabberd_s2s_out:stop_async(Pid),
 	    []
     end.
 
@@ -553,13 +553,13 @@ stop_s2s_connections(Err) ->
     lists:foreach(
       fun({_Id, Pid, _Type, _Module}) ->
 	      ejabberd_s2s_in:send(Pid, Err),
-	      ejabberd_s2s_in:stop(Pid),
+	      ejabberd_s2s_in:stop_async(Pid),
 	      supervisor:terminate_child(ejabberd_s2s_in_sup, Pid)
       end, supervisor:which_children(ejabberd_s2s_in_sup)),
     lists:foreach(
       fun({_Id, Pid, _Type, _Module}) ->
 	      ejabberd_s2s_out:send(Pid, Err),
-	      ejabberd_s2s_out:stop(Pid),
+	      ejabberd_s2s_out:stop_async(Pid),
 	      supervisor:terminate_child(ejabberd_s2s_out_sup, Pid)
       end, supervisor:which_children(ejabberd_s2s_out_sup)),
     _ = mnesia:clear_table(s2s),
