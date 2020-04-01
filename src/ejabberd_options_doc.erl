@@ -337,6 +337,12 @@ doc() ->
                "considered successful as long as authentication of "
                "at least one of the methods succeeds. "
                "The default value is '[mnesia]'.")}},
+     {auth_opts,
+      #{desc =>
+            ?T("This option is used by the contributed module "
+	       "'ejabberd_auth_http' that can be installed from the "
+	       "'ejabberd-contrib' Git repository. Please refer to that "
+	       "module's README file for details about this option.")}},
      {auth_password_format,
       #{value => "plain | scram",
         desc =>
