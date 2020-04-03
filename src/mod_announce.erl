@@ -931,25 +931,25 @@ mod_doc() ->
               "The first JID in each entry will apply only to the specified "
               "virtual host example.org, while the JID between brackets "
               "will apply to all virtual hosts in ejabberd:"), "",
-           "example.org/announce/all (example.org/announce/all-hosts/all)::",
+           "- example.org/announce/all (example.org/announce/all-hosts/all)::",
            ?T("The message is sent to all registered users. If the user is "
               "online and connected to several resources, only the resource "
               "with the highest priority will receive the message. "
               "If the registered user is not connected, the message will be "
               "stored offline in assumption that offline storage (see 'mod_offline') "
               "is enabled."),
-           "example.org/announce/online (example.org/announce/all-hosts/online)::",
+           "- example.org/announce/online (example.org/announce/all-hosts/online)::",
            ?T("The message is sent to all connected users. If the user is "
               "online and connected to several resources, all resources will "
               "receive the message."),
-           "example.org/announce/motd (example.org/announce/all-hosts/motd)::",
+           "- example.org/announce/motd (example.org/announce/all-hosts/motd)::",
            ?T("The message is set as the message of the day (MOTD) and is sent "
               "to users when they login. In addition the message is sent to all "
               "connected users (similar to announce/online)."),
-           "example.org/announce/motd/update (example.org/announce/all-hosts/motd/update)::",
+           "- example.org/announce/motd/update (example.org/announce/all-hosts/motd/update)::",
            ?T("The message is set as message of the day (MOTD) and is sent to users "
               "when they login. The message is not sent to any currently connected user."),
-           "example.org/announce/motd/delete (example.org/announce/all-hosts/motd/delete)::",
+           "- example.org/announce/motd/delete (example.org/announce/all-hosts/motd/delete)::",
            ?T("Any message sent to this JID removes the existing message of the day (MOTD).")],
       opts =>
           [{access,
