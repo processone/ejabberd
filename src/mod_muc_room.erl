@@ -223,7 +223,7 @@ unsubscribe(Pid, JID) ->
 	    {error, ?T("Conference room does not exist")}
     end.
 
--spec is_subscribed(pid(), jid()) -> {true, [binary()]} | false.
+-spec is_subscribed(pid(), jid()) -> {true, binary(), [binary()]} | false.
 is_subscribed(Pid, JID) ->
     try p1_fsm:sync_send_all_state_event(Pid, {is_subscribed, JID})
     catch _:{_, {p1_fsm, _, _}} -> false
@@ -759,7 +759,7 @@ handle_sync_event({muc_unsubscribe, From}, _From, StateName,
     end;
 handle_sync_event({is_subscribed, From}, _From, StateName, StateData) ->
     IsSubs = try maps:get(jid:split(From), StateData#state.subscribers) of
-		 #subscriber{nodes = Nodes} -> {true, Nodes}
+		 #subscriber{nick = Nick, nodes = Nodes} -> {true, Nick, Nodes}
 	     catch _:{badkey, _} -> false
 	     end,
     {reply, IsSubs, StateName, StateData};

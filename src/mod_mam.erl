@@ -1134,7 +1134,7 @@ select_with_mucsub_fallback(LServer, JidRequestor, JidArchive, Query, RSM, Flags
 			   _ ->
 			       []
 		       end,
-	    SubRoomJids = [Jid || {Jid, _} <- SubRooms],
+	    SubRoomJids = [Jid || {Jid, _, _} <- SubRooms],
 	    {E2, A2, C2} =
 		lists:foldl(
 		  fun(MucJid, {E0, A0, C0}) ->

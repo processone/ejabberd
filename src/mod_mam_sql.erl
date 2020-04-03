@@ -221,7 +221,7 @@ select_with_mucsub(LServer, JidRequestor, #jid{luser = LUser} = JidArchive,
 				   _ ->
 				       []
 			       end,
-		    [jid:encode(Jid) || {Jid, _} <- SubRooms]
+		    [jid:encode(Jid) || {Jid, _, _} <- SubRooms]
 	    end,
     {Query, CountQuery} = make_sql_query(LUser, LServer, MAMQuery, RSM, Extra),
     do_select_query(LServer, JidRequestor, JidArchive, RSM, chat, Query, CountQuery, Flags).
