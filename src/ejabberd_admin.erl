@@ -151,7 +151,7 @@ get_commands_spec() ->
 			module = ?MODULE, function = set_loglevel,
 			args_desc = ["Desired logging level: none | emergency | alert | critical "
 				     "| error | warning | notice | info | debug"],
-			args_example = [debug],
+			args_example = ["debug"],
 			args = [{loglevel, string}],
 			result = {res, rescode}},
 
