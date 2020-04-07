@@ -193,7 +193,10 @@ receive_headers(#state{trail = Trail} = State) ->
     Socket = State#state.socket,
     Data = SockMod:recv(Socket, 0, 300000),
     case Data of
-        {error, _} -> ok;
+        {error, Error} ->
+	    ?DEBUG("Error when retrieving http headers ~p: ~p",
+		   [State#state.sockmod, Error]),
+	    ok;
         {ok, D} ->
             parse_headers(State#state{trail = <<Trail/binary, D/binary>>})
     end.
