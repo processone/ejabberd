@@ -1280,9 +1280,20 @@ mod_options(Host) ->
 
 mod_doc() ->
     #{desc =>
-          ?T("This module provides support for https://xmpp.org/extensions/xep-0045.html"
+          [?T("This module provides support for https://xmpp.org/extensions/xep-0045.html"
              "[XEP-0045: Multi-User Chat]. Users can discover existing rooms, "
-             "join or create them. Occupants of a room can chat in public or have private chats."),
+             "join or create them. Occupants of a room can chat in public or have private chats."), "",
+	   ?T("The MUC service allows any Jabber ID to register a nickname, so "
+	      "nobody else can use that nickname in any room in the MUC "
+	      "service. To register a nickname, open the Service Discovery in "
+	      "your XMPP client and register in the MUC service."), "",
+	   ?T("This module supports clustering and load balancing. One module "
+	      "can be started per cluster node. Rooms are distributed at "
+	      "creation time on all available MUC module instances. The "
+	      "multi-user chat module is clustered but the rooms themselves "
+	      "are not clustered nor fault-tolerant: if the node managing a "
+	      "set of rooms goes down, the rooms disappear and they will be "
+	      "recreated on an available node on first connection attempt.")],
       opts =>
           [{access,
             #{value => ?T("AccessName"),

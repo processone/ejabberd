@@ -625,5 +625,13 @@ mod_doc() ->
            ?T("- Register a new account on the server."), "",
            ?T("- Change the password from an existing account on the server."), "",
            ?T("- Delete an existing account on the server."), "",
+	   ?T("This module supports CAPTCHA image to register a new account. "
+	      "To enable this feature, configure the options 'captcha\_cmd' "
+	      "and 'captcha\_host', which are documented in the section with "
+	      "top-level options."), "",
+	   ?T("As an example usage, the users of the host 'example.org' can "
+	      "visit the page: 'https://example.org:5281/register/' It is "
+	      "important to include the last / character in the URL, "
+	      "otherwise the subpages URL will be incorrect."), "",
            ?T("The module depends on 'mod_register' where all the configuration "
               "is performed.")]}.

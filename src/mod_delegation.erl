@@ -85,13 +85,18 @@ mod_options(_Host) ->
 
 mod_doc() ->
     #{desc =>
-          ?T("This module is an implementation of "
+          [?T("This module is an implementation of "
              "https://xmpp.org/extensions/xep-0355.html"
              "[XEP-0355: Namespace Delegation]. "
              "Only admin mode has been implemented by now. "
              "Namespace delegation allows external services to "
              "handle IQ using specific namespace. This may be applied "
-             "for external PEP service."),
+             "for external PEP service."), "",
+	   ?T("WARNING: Security issue: Namespace delegation gives components "
+	      "access to sensitive data, so permission should be granted "
+	      "carefully, only if you trust the component."), "",
+	   ?T("NOTE: This module is complementary to 'mod_privilege' but can "
+	      "also be used separately.")],
       opts =>
           [{namespaces,
             #{value => "{Namespace: Options}",
@@ -109,6 +114,10 @@ mod_doc() ->
                     ?T("The option defines which components are allowed "
                        "for namespace delegation. The default value is 'none'.")}}]}],
       example =>
+	  [{?T("Make sure you do not delegate the same namespace to several "
+	       "services at the same time. As in the example provided later, "
+	       "to have the 'sat-pubsub.example.org' component perform "
+	       "correctly disable the 'mod_pubsub' module."),
           ["access_rules:",
            "  external_pubsub:",
            "    allow: external_component",
@@ -126,7 +135,7 @@ mod_doc() ->
            "      urn:xmpp:mam:1:",
            "        access: external_mam",
            "      http://jabber.org/protocol/pubsub:",
-           "        access: external_pubsub"]}.
+           "        access: external_pubsub"]}]}.
 
 depends(_, _) ->
     [].

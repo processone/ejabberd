@@ -628,7 +628,10 @@ mod_doc() ->
               "This protocol enables end users to use a XMPP client to:"), "",
            ?T("* Register a new account on the server."), "",
            ?T("* Change the password from an existing account on the server."), "",
-           ?T("* Delete an existing account on the server.")],
+           ?T("* Delete an existing account on the server."), "",
+           ?T("This module reads also another option defined globally for the "
+	      "server: 'registration_timeout'. Please check that option "
+	      "documentation in the section with top-level options.")],
       opts =>
           [{access,
             #{value => ?T("AccessName"),

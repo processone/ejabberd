@@ -130,6 +130,10 @@ mod_doc() ->
                      "the specified soft quota (see 'access_soft_quota'). "
                      "The default value is 'hard_upload_quota'.")}}],
       example =>
+	  [{?T("Please note that it's not necessary to specify the "
+	       "'access_hard_quota' and 'access_soft_quota' options in order "
+	       "to use the quota feature. You can stick to the default names "
+	       "and just specify access rules such as those in this example:"),
           ["shaper_rules:",
            "  ...",
            "  soft_upload_quota:",
@@ -143,7 +147,7 @@ mod_doc() ->
            "  mod_http_upload: {}",
            "  mod_http_upload_quota:",
            "    max_days: 100",
-           "  ..."]}.
+           "  ..."]}]}.
 
 -spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
 depends(_Host, _Opts) ->

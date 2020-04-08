@@ -925,6 +925,10 @@ mod_doc() ->
               "Configured users can perform these actions with an XMPP "
               "client either using Ad-hoc Commands or sending messages "
               "to specific JIDs."), "",
+	   ?T("Note that this module can be resource intensive on large "
+	      "deployments as it may broadcast a lot of messages. This module "
+	      "should be disabled for instances of ejabberd with hundreds of "
+	      "thousands users."), "",
            ?T("The Ad-hoc Commands are listed in the Server Discovery. "
               "For this feature to work, 'mod_adhoc' must be enabled."), "",
            ?T("The specific JIDs where messages can be sent are listed below. "

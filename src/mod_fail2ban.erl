@@ -263,7 +263,13 @@ mod_doc() ->
               "record of authentication failures after some time since the "
               "first failure or on a successful authentication. "
               "It also does not simply block network traffic, but "
-              "provides the client with a descriptive error message.")],
+              "provides the client with a descriptive error message."), "",
+	   ?T("WARNING: You should not use this module behind a proxy or load "
+	      "balancer. ejabberd will see the failures as coming from the "
+	      "load balancer and, when the threshold of auth failures is "
+	      "reached, will reject all connections coming from the load "
+	      "balancer. You can lock all your user base out of ejabberd "
+	      "when using this module behind a proxy.")],
       opts =>
           [{access,
             #{value => ?T("AccessName"),

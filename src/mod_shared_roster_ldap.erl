@@ -654,10 +654,12 @@ mod_doc() ->
            ?T("- Connection parameters: The module also accepts the "
 	      "connection parameters, all of which default to the top-level "
 	      "parameter of the same name, if unspecified. "
-	      "See 'LDAP Connection' for more information about them."), "",
-           ?T("The ejabberd Guide includes details for retrieving the roster, "
-	      "configuration examples including Flat DIT and Deep DIT, and "
-	      "also describes some of those options in more detail.")],
+	      "See http://../database-ldap/#ldap-connection[LDAP Connection] "
+	      "section for more information about them."), "",
+           ?T("Check also the http://../database-ldap/#configuration-examples"
+	      "[Configuration examples] section to get details about "
+	      "retrieving the roster, "
+	      "and configuration examples including Flat DIT and Deep DIT.")],
       opts =>
           [
 	   %% Filters:
@@ -683,12 +685,14 @@ mod_doc() ->
                   ?T("\"User Filter\", used for retrieving the human-readable "
 		     "name of roster entries (usually full names of people in "
 		     "the roster). See also the parameters 'ldap_userdesc' and "
-		     "'ldap_useruid'. For details check the ejabberd Guide.")}},
+		     "'ldap_useruid'. For more information check the LDAP "
+		     "http://../database-ldap/#filters[Filters] section.")}},
            {ldap_filter,
             #{desc =>
 		  ?T("Additional filter which is AND-ed together "
 		     "with \"User Filter\" and \"Group Filter\". "
-		     "For details please read the ejabberd Guide.")}},
+		     "For more information check the LDAP "
+		     "http://../database-ldap/#filters[Filters] section.")}},
 	   %% Attributes:
            {ldap_groupattr,
             #{desc =>
@@ -739,17 +743,16 @@ mod_doc() ->
            {ldap_memberattr_format_re,
             #{desc =>
 		  ?T("A regex for extracting user ID from the value of the "
-		     "attribute named by 'ldap_memberattr'. For details "
-		     "please read the ejabberd Guide.")}},
+		     "attribute named by 'ldap_memberattr'. Check the LDAP "
+		     "http://../database-ldap/#control-parameters"
+		     "[Control Parameters] section.")}},
            {ldap_auth_check,
             #{value => "true | false",
               desc =>
 		  ?T("Whether the module should check (via the ejabberd "
 		     "authentication subsystem) for existence of each user in "
-		     "the shared LDAP roster. See section "
-		     "'mod_shared_roster_ldap' for more information. Set to "
-		     "'false' if you want to disable the check. "
-		     "Default value is 'true'.")}}] ++
+		     "the shared LDAP roster. Set to 'false' if you want to "
+		     "disable the check. Default value is 'true'.")}}] ++
           [{Opt,
             #{desc =>
                   {?T("Same as top-level '~s' option, but "

@@ -107,6 +107,10 @@ mod_doc() ->
               "yet ready to use in production. It's asserted that "
               "the MIX protocol is going to replace the MUC protocol "
               "in the future (see 'mod_muc')."), "",
+           ?T("To learn more about how to use that feature, you can refer to "
+	      "our tutorial: https://docs.ejabberd.im/tutorials/mix-010/"
+	      "[Getting started with XEP-0369: Mediated Information "
+	      "eXchange (MIX) v0.1]."), "",
            ?T("The module depends on 'mod_mam'.")],
       opts =>
           [{access_create,

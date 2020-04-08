@@ -60,32 +60,49 @@ doc() ->
       #{value => "timeout()",
         desc =>
             ?T("The time of a cached item to keep in cache. "
-               "Once it's expired, the corresponding item is "
-               "erased from cache. The default value is 'one hour'.")}},
+	       "Once it's expired, the corresponding item is "
+	       "erased from cache. The default value is 'one hour'. "
+	       "Several modules have a similar option; and some core "
+	       "ejabberd parts support similar options too, see "
+	       "'auth_cache_life_time', 'oauth_cache_life_time', "
+	       "'router_cache_life_time', and 'sm_cache_life_time'.")}},
      {cache_missed,
       #{value => "true | false",
         desc =>
             ?T("Whether or not to cache missed lookups. When there is "
-               "an attempt to lookup for a value in a database and "
-               "this value is not found and the option is set to 'true', "
-               "this attempt will be cached and no attempts will be "
-               "performed until the cache expires (see 'cache_life_time'). "
-               "Usually you don't want to change it. Default is 'true'.")}},
+	       "an attempt to lookup for a value in a database and "
+	       "this value is not found and the option is set to 'true', "
+	       "this attempt will be cached and no attempts will be "
+	       "performed until the cache expires (see 'cache_life_time'). "
+	       "Usually you don't want to change it. Default is 'true'. "
+	       "Several modules have a similar option; and some core "
+	       "ejabberd parts support similar options too, see "
+	       "'auth_cache_missed', 'oauth_cache_missed', "
+	       "'router_cache_missed', and 'sm_cache_missed'.")}},
      {cache_size,
       #{value => "pos_integer() | infinity",
         desc =>
-            ?T("A maximum number of items (not memory!) in cache. "
-               "The rule of thumb, for all tables except rosters, "
-               "you should set it to the number of maximum online "
-               "users you expect. For roster multiply this number "
-               "by 20 or so. If the cache size reaches this threshold, "
-               "it's fully cleared, i.e. all items are deleted, and "
-               "the corresponding warning is logged. You should avoid "
-               "frequent cache clearance, because this degrades "
-               "performance. The default value is '1000'.")}},
+	    ?T("A maximum number of items (not memory!) in cache. "
+	       "The rule of thumb, for all tables except rosters, "
+	       "you should set it to the number of maximum online "
+	       "users you expect. For roster multiply this number "
+	       "by 20 or so. If the cache size reaches this threshold, "
+	       "it's fully cleared, i.e. all items are deleted, and "
+	       "the corresponding warning is logged. You should avoid "
+	       "frequent cache clearance, because this degrades "
+	       "performance. The default value is '1000'. "
+	       "Several modules have a similar option; and some core "
+	       "ejabberd parts support similar options too, see "
+	       "'auth_cache_size', 'oauth_cache_size', "
+	       "'router_cache_size', and 'sm_cache_size'.")}},
      {use_cache,
       #{value => "true | false",
-        desc => ?T("Enable or disable cache. The default is 'true'.")}},
+        desc =>
+	    ?T("Enable or disable cache. The default is 'true'. "
+	       "Several modules have a similar option; and some core "
+	       "ejabberd parts support similar options too, see "
+	       "'auth_use_cache', 'oauth_use_cache', 'router_use_cache', "
+	       "and 'sm_use_cache'.")}},
      {default_db,
       #{value => "mnesia | sql",
         desc =>
