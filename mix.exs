@@ -95,7 +95,7 @@ defmodule Ejabberd.Mixfile do
      {:p1_mysql, "~> 1.0"},
      {:mqtree, "~> 1.0"},
      {:p1_pgsql, "~> 1.1"},
-     {:jiffy, "~> 1.0"},
+     {:jiffy, "~> 1.0.4"},
      {:p1_oauth2, "~> 0.6.1"},
      {:distillery, "~> 2.0"},
      {:pkix, "~> 1.0"},
