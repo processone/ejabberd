@@ -627,7 +627,7 @@ mod_doc() ->
            ?T("- Delete an existing account on the server."), "",
 	   ?T("This module supports CAPTCHA image to register a new account. "
 	      "To enable this feature, configure the options 'captcha\_cmd' "
-	      "and 'captcha\_host', which are documented in the section with "
+	      "and 'captcha\_url', which are documented in the section with "
 	      "top-level options."), "",
 	   ?T("As an example usage, the users of the host 'example.org' can "
 	      "visit the page: 'https://example.org:5281/register/' It is "

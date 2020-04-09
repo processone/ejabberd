@@ -36,14 +36,14 @@ doc() ->
      {listen,
       #{value => "[Options, ...]",
         desc =>
-            ?T("The option for listeners configuration. See "
-               "<<listeners,Listeners>> section of this document "
+            ?T("The option for listeners configuration. See the "
+               "http://../listen/[Listen Modules] section "
                "for details.")}},
      {modules,
       #{value => "{Module: Options}",
         desc =>
             ?T("The option for modules configuration. See "
-               "<<modules,Modules>> section of this document "
+               "http://../modules/[Modules] section "
                "for details.")}},
      {loglevel,
       #{value =>
@@ -355,11 +355,12 @@ doc() ->
                "at least one of the methods succeeds. "
                "The default value is '[mnesia]'.")}},
      {auth_opts,
-      #{desc =>
-            ?T("This option is used by the contributed module "
+      #{value => "[Option, ...]",
+        desc =>
+            ?T("This is used by the contributed module "
 	       "'ejabberd_auth_http' that can be installed from the "
 	       "'ejabberd-contrib' Git repository. Please refer to that "
-	       "module's README file for details about this option.")}},
+	       "module's README file for details.")}},
      {auth_password_format,
       #{value => "plain | scram",
         desc =>
@@ -445,7 +446,8 @@ doc() ->
                "any given JID. The option is intended to protect the server "
                "from CAPTCHA DoS. The default value is 'infinity'.")}},
      {captcha_host,
-      #{desc => ?T("Deprecated. Use 'captcha_url' instead.")}},
+      #{value => "String",
+        desc => ?T("Deprecated. Use 'captcha_url' instead.")}},
      {captcha_url,
       #{value => ?T("URL"),
         desc =>
