@@ -491,7 +491,11 @@ handle_authenticated_packet(Pkt, #{lserver := LServer, jid := JID,
 	#iq{type = set, sub_els = [_]} ->
 	    try xmpp:try_subtag(Pkt2, #xmpp_session{}) of
 		#xmpp_session{} ->
-		    send(State2, xmpp:make_iq_result(Pkt2));
+		    % It seems that some client are expecting to have response
+		    % to session request be sent from server jid, let's make
+		    % sure it is that.
+		    Pkt3 = xmpp:set_to(Pkt2, jid:make(<<>>, LServer, <<>>)),
+		    send(State2, xmpp:make_iq_result(Pkt3));
 		_ ->
 		    check_privacy_then_route(State2, Pkt2)
 	    catch _:{xmpp_codec, Why} ->
