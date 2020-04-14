@@ -444,7 +444,7 @@ process_admin(_Host, #request{path = [<<"additions.js">>]}, _) ->
 process_admin(global, #request{path = [<<"vhosts">>], lang = Lang}, AJID) ->
     Res = list_vhosts(Lang, AJID),
     make_xhtml((?H1GL((translate:translate(Lang, ?T("Virtual Hosts"))),
-		      <<"virtual-hosting">>, ?T("Virtual Hosting")))
+		      <<"basic/#xmpp-domains">>, ?T("XMPP Domains")))
 		 ++ Res,
 	       global, Lang, AJID, 1);
 process_admin(Host,  #request{path = [<<"users">>], q = Query,
@@ -479,7 +479,7 @@ process_admin(Host, #request{path = [<<"last-activity">>],
 		list_last_activity(Host, Lang, false, Month);
 	    _ -> list_last_activity(Host, Lang, true, Month)
 	  end,
-    PageH1 = ?H1GL(translate:translate(Lang, ?T("Users Last Activity")), <<"mod-last">>, <<"mod_last">>),
+    PageH1 = ?H1GL(translate:translate(Lang, ?T("Users Last Activity")), <<"modules/#mod-last">>, <<"mod_last">>),
     make_xhtml(PageH1 ++
 		 [?XAE(<<"form">>,
 		       [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
@@ -510,7 +510,7 @@ process_admin(Host, #request{path = [<<"last-activity">>],
 	       Host, Lang, AJID, 3);
 process_admin(Host, #request{path = [<<"stats">>], lang = Lang}, AJID) ->
     Res = get_stats(Host, Lang),
-    PageH1 = ?H1GL(translate:translate(Lang, ?T("Statistics")), <<"mod-stats">>, <<"mod_stats">>),
+    PageH1 = ?H1GL(translate:translate(Lang, ?T("Statistics")), <<"modules/#mod-stats">>, <<"mod_stats">>),
     Level = case Host of
 	global -> 1;
 	_ -> 3

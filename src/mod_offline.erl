@@ -989,7 +989,7 @@ user_queue(User, Server, Query, Lang) ->
     Hdrs = get_messages_subset(User, Server, HdrsAll),
     FMsgs = format_user_queue(Hdrs),
     PageTitle = str:format(translate:translate(Lang, ?T("~ts's Offline Messages Queue")), [us_to_list(US)]),
-    (?H1GL(PageTitle, <<"mod-offline">>, <<"mod_offline">>))
+    (?H1GL(PageTitle, <<"modules/#mod-offline">>, <<"mod_offline">>))
       ++ [?XREST(?T("Submitted"))] ++
 	[?XAE(<<"form">>,
 	      [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],

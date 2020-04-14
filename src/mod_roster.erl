@@ -1005,7 +1005,7 @@ user_roster(User, Server, Query, Lang) ->
 					SItems)))])]
 	     end,
     PageTitle = str:format(translate:translate(Lang, ?T("Roster of ~ts")), [us_to_list(US)]),
-    (?H1GL(PageTitle, <<"mod-roster">>, <<"mod_roster">>))
+    (?H1GL(PageTitle, <<"modules/#mod-roster">>, <<"mod_roster">>))
       ++
       case Res of
 	ok -> [?XREST(?T("Submitted"))];
