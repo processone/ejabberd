@@ -188,12 +188,12 @@ get_user_roster(Items, US) ->
     {U, S} = US,
     DisplayedGroups = get_user_displayed_groups(US),
     SRUsers = lists:foldl(fun (Group, Acc1) ->
-				  GroupName = get_group_name(S, Group),
+				  GroupLabel = get_group_label(S, Group), %++
 				  lists:foldl(fun (User, Acc2) ->
 						      if User == US -> Acc2;
 							 true ->
 							     dict:append(User,
-									 GroupName,
+									 GroupLabel,
 									 Acc2)
 						      end
 					      end,
@@ -208,12 +208,12 @@ get_user_roster(Items, US) ->
 						      case dict:find(US1,
 								     SRUsers1)
 							  of
-							{ok, GroupNames} ->
+							{ok, GroupLabels} ->
 							    {Item#roster{subscription
 									     =
 									     both,
 									 groups =
-									     Item#roster.groups ++ GroupNames,
+									     Item#roster.groups ++ GroupLabels,
 									 ask =
 									     none},
 							     dict:erase(US1,
@@ -226,8 +226,8 @@ get_user_roster(Items, US) ->
     SRItems = [#roster{usj = {U, S, {U1, S1, <<"">>}},
 		       us = US, jid = {U1, S1, <<"">>},
 		       name = get_rosteritem_name(U1, S1),
-		       subscription = both, ask = none, groups = GroupNames}
-	       || {{U1, S1}, GroupNames} <- dict:to_list(SRUsersRest)],
+		       subscription = both, ask = none, groups = GroupLabels}
+	       || {{U1, S1}, GroupLabels} <- dict:to_list(SRUsersRest)],
     SRItems ++ NewItems1.
 
 get_rosteritem_name(U, S) ->
@@ -268,12 +268,12 @@ process_item(RosterItem, Host) ->
       [] -> RosterItem;
       %% Roster item cannot be removed: We simply reset the original groups:
       _ when RosterItem#roster.subscription == remove ->
-	  GroupNames = lists:map(fun (Group) ->
-					 get_group_name(Host, Group)
+	  GroupLabels = lists:map(fun (Group) ->
+					 get_group_label(Host, Group)
 				 end,
 				 CommonGroups),
 	  RosterItem#roster{subscription = both, ask = none,
-			    groups = GroupNames};
+			    groups = GroupLabels};
       %% Both users have at least a common shared group,
       %% So each user can see the other
       _ ->
@@ -352,10 +352,10 @@ get_jid_info({Subscription, Ask, Groups}, User, Server,
     US1 = {U1, S1},
     DisplayedGroups = get_user_displayed_groups(US),
     SRUsers = lists:foldl(fun (Group, Acc1) ->
-				  GroupName = get_group_name(LServer, Group),
+				  GroupLabel = get_group_label(LServer, Group), %++
 				  lists:foldl(fun (User1, Acc2) ->
 						      dict:append(User1,
-								  GroupName,
+								  GroupLabel,
 								  Acc2)
 					      end,
 					      Acc1,
@@ -363,8 +363,8 @@ get_jid_info({Subscription, Ask, Groups}, User, Server,
 			  end,
 			  dict:new(), DisplayedGroups),
     case dict:find(US1, SRUsers) of
-      {ok, GroupNames} ->
-	  NewGroups = if Groups == [] -> GroupNames;
+      {ok, GroupLabels} ->
+	  NewGroups = if Groups == [] -> GroupLabels;
 			 true -> Groups
 		      end,
 	  {both, none, NewGroups};
@@ -445,7 +445,8 @@ delete_group(Host, Group) ->
     end,
     Mod:delete_group(Host, Group).
 
-get_group_opts(Host, Group) ->
+get_group_opts(Host1, Group1) ->
+    {Host, Group} = split_grouphost(Host1, Group1),
     Mod = gen_mod:db_mod(Host, ?MODULE),
     case use_cache(Mod, Host) of
 	true ->
@@ -539,9 +540,9 @@ get_group_explicit_users(Host, Group) ->
 	    Mod:get_group_explicit_users(Host, Group)
     end.
 
-get_group_name(Host1, Group1) ->
+get_group_label(Host1, Group1) ->
     {Host, Group} = split_grouphost(Host1, Group1),
-    get_group_opt(Host, Group, name, Group).
+    get_group_opt(Host, Group, label, Group).
 
 %% Get list of names of groups that have @all@/@online@/etc in the memberlist
 get_special_users_groups(Host) ->
@@ -746,10 +747,10 @@ remove_user_from_group(Host, US, Group) ->
 push_members_to_user(LUser, LServer, Group, Host,
 		     Subscription) ->
     GroupOpts = get_group_opts(LServer, Group),
-    GroupName = proplists:get_value(name, GroupOpts, Group),
+    GroupLabel = proplists:get_value(label, GroupOpts, Group), %++
     Members = get_group_users(Host, Group),
     lists:foreach(fun ({U, S}) ->
-			  push_roster_item(LUser, LServer, U, S, GroupName,
+			  push_roster_item(LUser, LServer, U, S, GroupLabel,
 					   Subscription)
 		  end,
 		  Members).
@@ -779,12 +780,12 @@ push_user_to_members(User, Server, Subscription) ->
 						 Group),
 			  GroupOpts = proplists:get_value(Group, GroupsOpts,
 							  []),
-			  GroupName = proplists:get_value(name, GroupOpts,
+			  GroupLabel = proplists:get_value(label, GroupOpts,
 							  Group),
 			  lists:foreach(fun ({U, S}) ->
 						push_roster_item(U, S, LUser,
 								 LServer,
-								 GroupName,
+								 GroupLabel,
 								 Subscription)
 					end,
 					get_group_users(LServer, Group,
@@ -793,20 +794,20 @@ push_user_to_members(User, Server, Subscription) ->
 		  lists:usort(SpecialGroups ++ UserGroups)).
 
 push_user_to_displayed(LUser, LServer, Group, Host, Subscription, DisplayedToGroupsOpts) ->
-    GroupName = get_group_opt(Host, Group, name, Group),
+    GroupLabel = get_group_opt(Host, Group, label, Group), %++
     [push_user_to_group(LUser, LServer, GroupD, Host,
-			GroupName, Subscription)
+			GroupLabel, Subscription)
      || GroupD <- DisplayedToGroupsOpts].
 
 push_user_to_group(LUser, LServer, Group, Host,
-		   GroupName, Subscription) ->
+		   GroupLabel, Subscription) ->
     lists:foreach(fun ({U, S})
 			  when (U == LUser) and (S == LServer) ->
 			  ok;
 		      ({U, S}) ->
 			  case lists:member(S, ejabberd_option:hosts()) of
 			      true ->
-				  push_roster_item(U, S, LUser, LServer, GroupName,
+				  push_roster_item(U, S, LUser, LServer, GroupLabel,
 						   Subscription);
 			      _ ->
 				  ok
@@ -831,12 +832,12 @@ push_item(User, Server, Item) ->
 			 Item).
 
 push_roster_item(User, Server, ContactU, ContactS,
-		 GroupName, Subscription) ->
+		 GroupLabel, Subscription) ->
     Item = #roster{usj =
 		       {User, Server, {ContactU, ContactS, <<"">>}},
 		   us = {User, Server}, jid = {ContactU, ContactS, <<"">>},
 		   name = <<"">>, subscription = Subscription, ask = none,
-		   groups = [GroupName]},
+		   groups = [GroupLabel]},
     push_item(User, Server, Item).
 
 -spec c2s_self_presence({presence(), ejabberd_c2s:state()})
@@ -893,6 +894,10 @@ list_shared_roster_groups(Host, Query, Lang) ->
     SRGroups = list_groups(Host),
     FGroups = (?XAE(<<"table">>, [],
 		    [?XE(<<"tbody">>,
+			 [?XE(<<"tr">>,
+				 [?X(<<"td">>),
+				  ?XE(<<"td">>, [?CT(?T("Name:"))])
+				  ])]++
 			 (lists:map(fun (Group) ->
 					    ?XE(<<"tr">>,
 						[?XE(<<"td">>,
@@ -909,12 +914,12 @@ list_shared_roster_groups(Host, Query, Lang) ->
 				 [?X(<<"td">>),
 				  ?XE(<<"td">>,
 				      [?INPUT(<<"text">>, <<"namenew">>,
-					      <<"">>)]),
-				  ?XE(<<"td">>,
-				      [?INPUTT(<<"submit">>, <<"addnew">>,
+					      <<"">>),
+				       ?C(<<" ">>),
+				       ?INPUTT(<<"submit">>, <<"addnew">>,
 					       ?T("Add New"))])])]))])),
     (?H1GL((translate:translate(Lang, ?T("Shared Roster Groups"))),
-	   <<"mod-shared-roster">>, <<"mod_shared_roster">>))
+	   <<"modules/#mod-shared-roster">>, <<"mod_shared_roster">>))
       ++
       case Res of
 	ok -> [?XREST(?T("Submitted"))];
@@ -962,7 +967,7 @@ shared_roster_group(Host, Group, Query, Lang) ->
     Res = shared_roster_group_parse_query(Host, Group,
 					  Query),
     GroupOpts = get_group_opts(Host, Group),
-    Name = get_opt(GroupOpts, name, <<"">>),
+    Label = get_opt(GroupOpts, label, <<"">>), %%++
     Description = get_opt(GroupOpts, description, <<"">>),
     AllUsers = get_opt(GroupOpts, all_users, false),
     OnlineUsers = get_opt(GroupOpts, online_users, false),
@@ -986,41 +991,51 @@ shared_roster_group(Host, Group, Query, Lang) ->
 		   [?XE(<<"tbody">>,
 			[?XE(<<"tr">>,
 			     [?XCT(<<"td">>, ?T("Name:")),
+			      ?XE(<<"td">>, [?C(Group)]),
+			      ?XE(<<"td">>, [?C(<<"">>)])]),
+			 ?XE(<<"tr">>,
+			     [?XCT(<<"td">>, ?T("Label:")),
 			      ?XE(<<"td">>,
-				  [?INPUT(<<"text">>, <<"name">>, Name)])]),
+				  [?INPUT(<<"text">>, <<"label">>, Label)]),
+			      ?XE(<<"td">>, [?C(<<"Name in the rosters where this group will be displayed">>)])]),
 			 ?XE(<<"tr">>,
 			     [?XCT(<<"td">>, ?T("Description:")),
 			      ?XE(<<"td">>,
 				  [?TEXTAREA(<<"description">>,
 					     integer_to_binary(lists:max([3,
                                                                                DescNL])),
-					     <<"20">>, Description)])]),
+					     <<"20">>, Description)]),
+			      ?XE(<<"td">>, [?C(<<"Only admins can see this">>)])
+]),
 			 ?XE(<<"tr">>,
 			     [?XCT(<<"td">>, ?T("Members:")),
 			      ?XE(<<"td">>,
 				  [?TEXTAREA(<<"members">>,
 					     integer_to_binary(lists:max([3,
                                                                                length(Members)+3])),
-					     <<"20">>, FMembers)])]),
+					     <<"20">>, FMembers)]),
+			      ?XE(<<"td">>, [?C(<<"JIDs, @all@, @online@">>)])
+]),
 			 ?XE(<<"tr">>,
-			     [?XCT(<<"td">>, ?T("Displayed Groups:")),
+			     [?XCT(<<"td">>, ?T("Displayed:")),
 			      ?XE(<<"td">>,
 				  [?TEXTAREA(<<"dispgroups">>,
 					     integer_to_binary(lists:max([3,											        length(FDisplayedGroups)])),
 					     <<"20">>,
-					     list_to_binary(FDisplayedGroups))])])])])),
+					     list_to_binary(FDisplayedGroups))]),
+			      ?XE(<<"td">>, [?C(<<"Groups that will be displayed to the members">>)])
+])])])),
     (?H1GL((translate:translate(Lang, ?T("Shared Roster Groups"))),
-	   <<"mod-shared-roster">>, <<"mod_shared_roster">>))
+	   <<"modules/#mod-shared-roster">>, <<"mod_shared_roster">>))
       ++
-      [?XC(<<"h2">>, <<(translate:translate(Lang, ?T("Group ")))/binary, Group/binary>>)] ++
+      [?XC(<<"h2">>, translate:translate(Lang, ?T("Group")))] ++
 	case Res of
 	  ok -> [?XREST(?T("Submitted"))];
-	  {error_jids, NonAddedList1} ->
-		NonAddedList2 = [jid:encode({U,S,<<>>}) || {U,S} <- NonAddedList1],
-		NonAddedList3 = str:join(NonAddedList2, <<", ">>),
-		NonAddedText1 = translate:translate(Lang, ?T("Members not added (inexistent vhost): ")),
-		NonAddedText2 = str:concat(NonAddedText1, NonAddedList3),
-		[?XRES(NonAddedText2)];
+	  {error_elements, NonAddedList1, NG1} ->
+		make_error_el(Lang,
+		    ?T("Members not added (inexistent vhost!): "),
+		    [jid:encode({U,S,<<>>}) || {U,S} <- NonAddedList1])
+		++ make_error_el(Lang, ?T("'Displayed groups' not added (they do not exist!): "), NG1);
 	  error -> [?XREST(?T("Bad format"))];
 	  nothing -> []
 	end
@@ -1030,24 +1045,33 @@ shared_roster_group(Host, Group, Query, Lang) ->
 		[FGroup, ?BR,
 		 ?INPUTT(<<"submit">>, <<"submit">>, ?T("Submit"))])].
 
+make_error_el(_, _, []) ->
+    [];
+make_error_el(Lang, Message, BinList) ->
+    NG2 = str:join(BinList, <<", ">>),
+    NG3 = translate:translate(Lang, Message),
+    NG4 = str:concat(NG3, NG2),
+    [?XRES(NG4)].
+
 shared_roster_group_parse_query(Host, Group, Query) ->
     case lists:keysearch(<<"submit">>, 1, Query) of
       {value, _} ->
-	  {value, {_, Name}} = lists:keysearch(<<"name">>, 1,
-					       Query),
+	  {value, {_, Label}} = lists:keysearch(<<"label">>, 1,
+					       Query), %++
 	  {value, {_, Description}} =
 	      lists:keysearch(<<"description">>, 1, Query),
 	  {value, {_, SMembers}} = lists:keysearch(<<"members">>,
 						   1, Query),
 	  {value, {_, SDispGroups}} =
 	      lists:keysearch(<<"dispgroups">>, 1, Query),
-	  NameOpt = if Name == <<"">> -> [];
-		       true -> [{name, Name}]
+	  LabelOpt = if Label == <<"">> -> [];
+		       true -> [{label, Label}] %++
 		    end,
 	  DescriptionOpt = if Description == <<"">> -> [];
 			      true -> [{description, Description}]
 			   end,
-	  DispGroups = str:tokens(SDispGroups, <<"\r\n">>),
+	  DispGroups1 = str:tokens(SDispGroups, <<"\r\n">>),
+	  {DispGroups, WrongDispGroups} = filter_groups_existence(Host, DispGroups1),
 	  DispGroupsOpt = if DispGroups == [] -> [];
 			     true -> [{displayed_groups, DispGroups}]
 			  end,
@@ -1087,7 +1111,7 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 	  displayed_groups_update(OldMembers, RemovedDisplayedGroups, remove),
 	  displayed_groups_update(OldMembers, AddedDisplayedGroups, both),
 	  set_group_opts(Host, Group,
-			 NameOpt ++
+			 LabelOpt ++
 			 DispGroupsOpt ++
 			 DescriptionOpt ++
 			 AllUsersOpt ++ OnlineUsersOpt),
@@ -1108,9 +1132,9 @@ shared_roster_group_parse_query(Host, Group, Query) ->
 						    Group)
 		     end,
 		     AddedMembers),
-		 case NonAddedMembers of
-		    [] -> ok;
-		    _ -> {error_jids, NonAddedMembers}
+		 case (NonAddedMembers /= []) or (WrongDispGroups /= []) of
+		    true -> {error_elements, NonAddedMembers, WrongDispGroups};
+		    false -> ok
 		 end
 	  end;
       _ -> nothing
@@ -1131,6 +1155,11 @@ split_grouphost(Host, Group) ->
       [_] -> {Host, Group}
     end.
 
+filter_groups_existence(Host, Groups) ->
+    lists:partition(
+	fun(Group) -> error /= get_group_opts(Host, Group) end,
+	Groups).
+
 displayed_groups_update(Members, DisplayedGroups, Subscription) ->
     lists:foreach(
       fun({U, S}) ->
@@ -1139,8 +1168,10 @@ displayed_groups_update(Members, DisplayedGroups, Subscription) ->
 
 opts_to_binary(Opts) ->
     lists:map(
-      fun({name, Name}) ->
-              {name, iolist_to_binary(Name)};
+      fun({label, Label}) ->
+              {label, iolist_to_binary(Label)};
+         ({name, Label}) -> % For SQL backwards compat with ejabberd 20.03 and older
+              {label, iolist_to_binary(Label)};
          ({description, Desc}) ->
               {description, iolist_to_binary(Desc)};
          ({displayed_groups, Gs}) ->
