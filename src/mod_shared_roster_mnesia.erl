@@ -156,13 +156,13 @@ need_transform({sr_user, {U, S}, {G, H}})
   when is_list(U) orelse is_list(S) orelse is_list(G) orelse is_list(H) ->
     ?INFO_MSG("Mnesia table 'sr_user' will be converted to binary", []),
     true;
-need_transform({sr_group, {G, H}, [{name, _} | _]}) ->
+need_transform({sr_group, {_, _}, [{name, _} | _]}) ->
     ?INFO_MSG("Mnesia table 'sr_group' will be converted from option Name to Label", []),
     true;
 need_transform(_) ->
     false.
 
-transform(#sr_group{group_host = {G, H}, opts = Opts} = R)
+transform(#sr_group{group_host = {G, _H}, opts = Opts} = R)
   when is_binary(G)  ->
     Opts2 = case proplists:get_value(name, Opts, false) of
 	false -> Opts;
