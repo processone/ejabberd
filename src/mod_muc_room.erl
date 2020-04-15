@@ -935,7 +935,8 @@ process_groupchat_message(#message{from = From, lang = Lang} = Packet, StateData
 	of
       true ->
 	  {FromNick, Role} = get_participant_data(From, StateData),
-	  if (Role == moderator) or (Role == participant) or IsSubscriber or
+	  if (Role == moderator) or (Role == participant) or
+	     (IsSubscriber andalso ((StateData#state.config)#config.members_by_default == true)) or
 	       ((StateData#state.config)#config.moderated == false) ->
 		 Subject = check_subject(Packet),
 		 {NewStateData1, IsAllowed} = case Subject of
