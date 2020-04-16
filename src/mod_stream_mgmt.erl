@@ -605,6 +605,7 @@ route_unacked_stanzas(#{mgmt_state := MgmtState,
 		      end,
     ?DEBUG("Re-routing ~B unacknowledged stanza(s) to ~ts",
 	   [p1_queue:len(Queue), jid:encode(JID)]),
+    ModOfflineEnabled = gen_mod:is_loaded(LServer, mod_offline),
     p1_queue:foreach(
       fun({_, _Time, #presence{from = From}}) ->
 	      ?DEBUG("Dropping presence stanza from ~ts", [jid:encode(From)]);
@@ -621,20 +622,21 @@ route_unacked_stanzas(#{mgmt_state := MgmtState,
 	      ?DEBUG("Dropping forwarded message stanza from ~ts",
 		     [jid:encode(From)]);
 	 ({_, Time, #message{} = Msg}) ->
-	      case ejabberd_hooks:run_fold(message_is_archived,
-					   LServer, false,
-					   [State, Msg]) of
-		  true ->
-		      ?DEBUG("Dropping archived message stanza from ~ts",
-			     [jid:encode(xmpp:get_from(Msg))]);
-		  false when ResendOnTimeout ->
-		      NewEl = add_resent_delay_info(State, Msg, Time),
-		      ejabberd_router:route(NewEl);
-		  false ->
-		      Txt = ?T("User session terminated"),
-		      ejabberd_router:route_error(
-			Msg, xmpp:err_service_unavailable(Txt, Lang))
-	      end;
+	     case {ModOfflineEnabled, ResendOnTimeout,
+		   xmpp:get_meta(Msg, mam_archived, false)} of
+		 Val when Val == {true, true, false};
+			  Val == {true, true, true};
+			  Val == {false, true, false} ->
+		     NewEl = add_resent_delay_info(State, Msg, Time),
+		     ejabberd_router:route(NewEl);
+		 {_, _, true} ->
+		     ?DEBUG("Dropping archived message stanza from ~s",
+			    [jid:encode(xmpp:get_from(Msg))]);
+		 _ ->
+		     Txt = ?T("User session terminated"),
+		     ejabberd_router:route_error(
+			 Msg, xmpp:err_service_unavailable(Txt, Lang))
+	     end;
 	 ({_, _Time, El}) ->
 	      %% Raw element of type 'error' resulting from a validation error
 	      %% We cannot pass it to the router, it will generate an error
