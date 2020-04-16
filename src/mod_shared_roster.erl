@@ -1228,9 +1228,10 @@ mod_doc() ->
 	      "not replace the standard roster. Instead, the shared roster "
 	      "contacts are merged to the relevant users at retrieval time. "
 	      "The standard user rosters thus stay unmodified."), "",
-	   ?T("Shared roster groups can be edited only via the Web Admin. "
-	      "Each group has unique identification and those parameters:"), "",
-	   ?T("- Name: The group's name will be displayed in the roster."), "",
+	   ?T("Shared roster groups can be edited via the Web Admin, "
+	      "and some API commands called 'srg_*'. "
+	      "Each group has a unique name and those parameters:"), "",
+	   ?T("- Label: Used in the rosters where this group is displayed."),"",
 	   ?T("- Description: of the group, which has no effect."), "",
 	   ?T("- Members: A list of JIDs of group members, entered one per "
 	      "line in the Web Admin. The special member directive '@all@' "
@@ -1240,7 +1241,7 @@ mod_doc() ->
 	      "represents the online users in the virtual host. With those "
 	      "two directives, the actual list of members in those shared "
 	      "rosters is generated dynamically at retrieval time."), "",
-	   ?T("- Displayed groups: A list of groups that will be in the "
+	   ?T("- Displayed: A list of groups that will be in the "
 	      "rosters of this group's members. A group of other vhost can "
 	      "be identified with 'groupid@vhost'."), "",
 	   ?T("This module depends on 'mod_roster'. "
@@ -1274,8 +1275,8 @@ mod_doc() ->
 	  [{?T("Take the case of a computer club that wants all its members "
 	       "seeing each other in their rosters. To achieve this, they "
 	       "need to create a shared roster group similar to this one:"),
-	    ["Identification: club_members",
-	     "Name: Club Members",
+	    ["Name: club_members",
+	     "Label: Club Members",
 	     "Description: Members from the computer club",
 	     "Members: member1@example.org, member2@example.org, member3@example.org",
 	     "Displayed Groups: club_members"]},
@@ -1287,24 +1288,24 @@ mod_doc() ->
 	       "should see all managers. This scenario can be achieved by "
 	       "creating shared roster groups as shown in the following lists:"),
 	    ["First list:",
-	     "Identification: management",
-	     "Name: Management",
+	     "Name: management",
+	     "Label: Management",
 	     "Description: Management",
 	     "Members: manager1@example.org, manager2@example.org",
-	     "Displayed Groups: management, marketing, sales",
+	     "Displayed: management, marketing, sales",
 	     "",
 	     "Second list:",
-	     "Identification: marketing",
-	     "Name: Marketing",
+	     "Name: marketing",
+	     "Label: Marketing",
 	     "Description: Marketing",
 	     "Members: marketeer1@example.org, marketeer2@example.org, marketeer3@example.org",
-	     "Displayed Groups: management, marketing",
+	     "Displayed: management, marketing",
 	     "",
 	     "Third list:",
-	     "Identification: sales",
-	     "Name: Sales",
+	     "Name: sales",
+	     "Label: Sales",
 	     "Description: Sales",
 	     "Members: salesman1@example.org, salesman2@example.org, salesman3@example.org",
-	     "Displayed Groups: management, sales"
+	     "Displayed: management, sales"
 	    ]}
 	  ]}.
