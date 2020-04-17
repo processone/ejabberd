@@ -60,7 +60,7 @@
 {"Client acknowledged more stanzas than sent by server","El cliente ha reconocido más paquetes de los que el servidor ha enviado"}.
 {"Commands","Comandos"}.
 {"Conference room does not exist","La sala de conferencias no existe"}.
-{"Configuration of room ~ts","Configuración para la sala ~ts"}.
+{"Configuration of room ~s","Configuración para la sala ~s"}.
 {"Configuration","Configuración"}.
 {"Connected Resources:","Recursos conectados:"}.
 {"Country","País"}.
@@ -79,7 +79,8 @@
 {"Delete User","Borrar usuario"}.
 {"Description:","Descripción:"}.
 {"Disc only copy","Copia en disco solamente"}.
-{"Displayed Groups:","Mostrar grupos:"}.
+{"'Displayed groups' not added (they do not exist!): ","'Mostrados' que no han sido añadidos (¡no existen!): "}.
+{"Displayed:","Mostrados:"}.
 {"Don't tell your password to anybody, not even the administrators of the Jabber server.","No le digas tu contraseña a nadie, ni siquiera a los administradores del servidor Jabber."}.
 {"Dump Backup to Text File at ","Exporta copia de seguridad a fichero de texto en "}.
 {"Dump to Text File","Exportar a fichero de texto"}.
@@ -116,7 +117,7 @@
 {"Failed to extract JID from your voice request approval","Fallo al extraer el Jabber ID de tu aprobación de petición de voz"}.
 {"Failed to map delegated namespace to external component","Falló el mapeo de espacio de nombres delegado al componente externo"}.
 {"Failed to parse HTTP response","Falló la comprensión de la respuesta HTTP"}.
-{"Failed to process option '~ts'","Falló el procesado de la opción '~ts'"}.
+{"Failed to process option '~s'","Falló el procesado de la opción '~s'"}.
 {"Family Name","Apellido"}.
 {"February","febrero"}.
 {"File larger than ~w bytes","El fichero es más grande que ~w bytes"}.
@@ -132,7 +133,7 @@
 {"Get User Password","Ver contraseña de usuario"}.
 {"Get User Statistics","Ver estadísticas de usuario"}.
 {"Given Name","Nombre"}.
-{"Group ","Grupo "}.
+{"Group","Grupo"}.
 {"Groups","Grupos"}.
 {"has been banned","ha sido bloqueado"}.
 {"has been kicked because of a system shutdown","ha sido expulsado porque el sistema se va a detener"}.
@@ -169,7 +170,7 @@
 {"Invitations are not allowed in this conference","Las invitaciones no están permitidas en esta sala"}.
 {"IP addresses","Direcciones IP"}.
 {"is now known as","se cambia el nombre a"}.
-{"It is not allowed to send error messages to the room. The participant (~ts) has sent an error message (~ts) and got kicked from the room","No está permitido enviar mensajes de error a la sala. Este participante (~ts) ha enviado un mensaje de error (~ts) y fue expulsado de la sala"}.
+{"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","No está permitido enviar mensajes de error a la sala. Este participante (~s) ha enviado un mensaje de error (~s) y fue expulsado de la sala"}.
 {"It is not allowed to send private messages of type \"groupchat\"","No está permitido enviar mensajes privados del tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Impedir el envio de mensajes privados a la sala"}.
 {"It is not allowed to send private messages","No está permitido enviar mensajes privados"}.
@@ -181,6 +182,7 @@
 {"joins the room","entra en la sala"}.
 {"July","julio"}.
 {"June","junio"}.
+{"Label:","Etiqueta:"}.
 {"Last Activity","Última actividad"}.
 {"Last login","Última conexión"}.
 {"Last month","Último mes"}.
@@ -200,7 +202,7 @@
 {"March","marzo"}.
 {"Maximum Number of Occupants","Número máximo de ocupantes"}.
 {"May","mayo"}.
-{"Members not added (inexistent vhost): ","Miembros no añadidos (el vhost no existe): "}.
+{"Members not added (inexistent vhost!): ","Miembros no añadidos (el vhost no existe): "}.
 {"Membership is required to enter this room","Necesitas ser miembro de esta sala para poder entrar"}.
 {"Members:","Miembros:"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Memoriza tu contraseña, o apúntala en un papel en un lugar seguro. En Jabber no hay un método automatizado para recuperar la contraseña si la olvidas."}.
@@ -224,7 +226,7 @@
 {"New Password:","Nueva contraseña:"}.
 {"Nickname can't be empty","El apodo no puede estar vacío"}.
 {"Nickname Registration at ","Registro del apodo en "}.
-{"Nickname ~ts does not exist in the room","El apodo ~ts no existe en la sala"}.
+{"Nickname ~s does not exist in the room","El apodo ~s no existe en la sala"}.
 {"Nickname","Apodo"}.
 {"No address elements found","No se encontraron elementos de dirección ('address')"}.
 {"No addresses element found","No se encontró elemento de direcciones ('addresses')"}.
@@ -349,6 +351,7 @@
 {"Roster","Lista de contactos"}.
 {"RPC Call Error","Error en la llamada RPC"}.
 {"Running Nodes","Nodos funcionando"}.
+{"~s invites you to the room ~s","~s te invita a la sala ~s"}.
 {"Saturday","sábado"}.
 {"Script check","Comprobación de script"}.
 {"Search Results for ","Buscar resultados por "}.
@@ -409,12 +412,12 @@
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Esta página te permite crear una cuenta Jabber este servidor Jabber. Tu JID (Jabber IDentificador) será de la forma: nombredeusuario@servidor. Por favor lee detenidamente las instrucciones para rellenar correctamente los campos."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Esta página te permite borrar tu cuenta Jabber en este servidor Jabber."}.
 {"This room is not anonymous","Sala no anónima"}.
-{"This service can not process the address: ~ts","Este servicio no puede procesar la dirección: ~ts"}.
+{"This service can not process the address: ~s","Este servicio no puede procesar la dirección: ~s"}.
 {"Thursday","jueves"}.
 {"Time delay","Retraso temporal"}.
 {"Timed out waiting for stream resumption","Ha pasado demasiado tiempo esperando que la conexión se restablezca"}.
 {"Time","Fecha"}.
-{"To register, visit ~ts","Para registrarte, visita ~ts"}.
+{"To register, visit ~s","Para registrarte, visita ~s"}.
 {"To ~ts","A ~ts"}.
 {"Token TTL","Token TTL"}.
 {"Too many active bytestreams","Demasiados bytestreams activos"}.
@@ -422,7 +425,7 @@
 {"Too many child elements","Demasiados subelementos"}.
 {"Too many <item/> elements","Demasiados elementos <item/>"}.
 {"Too many <list/> elements","Demasiados elementos <list/>"}.
-{"Too many (~p) failed authentications from this IP address (~ts). The address will be unblocked at ~ts UTC","Demasiadas (~p) autenticaciones fallidas de esta dirección IP (~ts). La dirección será desbloqueada en ~ts UTC"}.
+{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Demasiadas (~p) autenticaciones fallidas de esta dirección IP (~s). La dirección será desbloqueada en ~s UTC"}.
 {"Too many receiver fields were specified","Se han especificado demasiados campos de destinatario"}.
 {"Too many unacked stanzas","Demasiados mensajes sin haber reconocido  recibirlos"}.
 {"Too many users in this conference","Demasiados usuarios en esta sala"}.
@@ -433,7 +436,6 @@
 {"Transactions Committed:","Transacciones finalizadas:"}.
 {"Transactions Logged:","Transacciones registradas:"}.
 {"Transactions Restarted:","Transacciones reiniciadas:"}.
-{"~ts invites you to the room ~ts","~ts te invita a la sala ~ts"}.
 {"~ts's Offline Messages Queue","Cola de mensajes diferidos de ~ts"}.
 {"Tuesday","martes"}.
 {"Unable to generate a CAPTCHA","No se pudo generar un CAPTCHA"}.
@@ -467,12 +469,11 @@
 {"User","Usuario"}.
 {"Validate","Validar"}.
 {"Value 'get' of 'type' attribute is not allowed","El valor 'get' del atributo 'type' no está permitido"}.
-{"Value of '~ts' should be boolean","El valor de '~ts' debería ser booleano"}.
-{"Value of '~ts' should be datetime string","El valor de '~ts' debería ser una fecha"}.
-{"Value of '~ts' should be integer","El valor de '~ts' debería ser un entero"}.
+{"Value of '~s' should be boolean","El valor de '~s' debería ser booleano"}.
+{"Value of '~s' should be datetime string","El valor de '~s' debería ser una fecha"}.
+{"Value of '~s' should be integer","El valor de '~s' debería ser un entero"}.
 {"Value 'set' of 'type' attribute is not allowed","El valor 'set' del atributo 'type' no está permitido"}.
 {"vCard User Search","Buscar vCard de usuario"}.
-{"Virtual Hosting","Dominios Virtuales"}.
 {"Virtual Hosts","Dominios Virtuales"}.
 {"Visitors are not allowed to change their nicknames in this room","Los visitantes no tienen permitido cambiar sus apodos en esta sala"}.
 {"Visitors are not allowed to send messages to all occupants","Los visitantes no pueden enviar mensajes a todos los ocupantes"}.
@@ -481,6 +482,7 @@
 {"Wednesday","miércoles"}.
 {"Wrong parameters in the web formulary","Parámetros incorrectos en el formulario web"}.
 {"Wrong xmlns","xmlns incorrecto"}.
+{"XMPP Domains","Dominios XMPP"}.
 {"You are being removed from the room because of a system shutdown","Estás siendo expulsado de la sala porque el sistema se va a detener"}.
 {"You are not joined to the channel","No has entrado en el canal"}.
 {"You can later change your password using a Jabber client.","Puedes cambiar tu contraseña después, usando un cliente Jabber."}.
@@ -494,5 +496,5 @@
 {"Your contact offline message queue is full. The message has been discarded.","Tu cola de mensajes diferidos de contactos está llena. El mensaje se ha descartado."}.
 {"Your Jabber account was successfully created.","Tu cuenta Jabber se ha creado correctamente."}.
 {"Your Jabber account was successfully deleted.","Tu cuenta Jabber se ha borrado correctamente."}.
-{"Your subscription request and/or messages to ~ts have been blocked. To unblock your subscription request, visit ~ts","Tu petición de suscripción y/o mensajes a ~ts ha sido bloqueado. Para desbloquear tu petición de suscripción visita ~ts"}.
+{"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Tu petición de suscripción y/o mensajes a ~s ha sido bloqueado. Para desbloquear tu petición de suscripción visita ~s"}.
 {"You're not allowed to create nodes","No tienes permitido crear nodos"}.
