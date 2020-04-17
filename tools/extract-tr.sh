@@ -17,10 +17,22 @@ extract_tr(File, [{'?', _}, {var, _, 'T'}, {'(', Line}|Tokens], Acc) ->
 	{String, Tokens1} ->
 	    extract_tr(File, Tokens1, dict:append(String, {File, Line}, Acc))
     end;
+extract_tr(_File, [{atom,_,module}, {'(',_}, {atom,_,ejabberd_doc} | _Tokens], Acc) ->
+    Acc;
+extract_tr(File, [{atom, _, F}, {'(',_} | Tokens], Acc)
+    when (F == mod_doc); (F == doc) ->
+    Tokens2 = consume_tokens_until_dot(Tokens),
+    extract_tr(File, Tokens2, Acc);
 extract_tr(File, [_|Tokens], Acc) ->
+    %%err("~p~n", [A]),
     extract_tr(File, Tokens, Acc);
 extract_tr(_, [], Acc) ->
     Acc.
+
+consume_tokens_until_dot([{dot, _} | Tokens]) ->
+    Tokens;
+consume_tokens_until_dot([_ | Tokens]) ->
+    consume_tokens_until_dot(Tokens).
 
 extract_string([{string, _, S}|Tokens], Acc) ->
     extract_string(Tokens, [S|Acc]);
