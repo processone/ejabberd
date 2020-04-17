@@ -472,7 +472,9 @@ make_status(ok) -> ?STATUS_SUCCESS;
 make_status(true) -> ?STATUS_SUCCESS;
 make_status(Code) when is_integer(Code), Code > 255 -> ?STATUS_ERROR;
 make_status(Code) when is_integer(Code), Code > 0 -> Code;
-make_status(_Error) -> ?STATUS_ERROR.
+make_status(Error) ->
+    io:format("Error: ~p~n", [Error]),
+    ?STATUS_ERROR.
 
 get_list_commands(Version) ->
     try ejabberd_commands:list_commands(Version) of
