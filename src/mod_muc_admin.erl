@@ -995,6 +995,15 @@ change_room_option(Name, Service, OptionString, ValueString) ->
 	    room_not_found;
 	Pid ->
 	    {Option, Value} = format_room_option(OptionString, ValueString),
+	    change_room_option(Pid, Option, Value)
+    end.
+
+change_room_option(Pid, Option, Value) ->
+    case {Option,
+	  gen_mod:is_loaded((get_room_state(Pid))#state.server_host, mod_muc_log)} of
+	{logging, false} ->
+	    mod_muc_log_not_enabled;
+	_ ->
 	    Config = get_room_config(Pid),
 	    Config2 = change_option(Option, Value, Config),
 	    {ok, _} = mod_muc_room:set_config(Pid, Config2),
