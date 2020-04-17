@@ -89,7 +89,7 @@ extract_lang_updateall ()
 	done
 	echo ""
 	rm messages.mo
-	cat $LOG
+	grep -v " done" $LOG
 	rm $LOG
 
 	cd ..
