@@ -19,7 +19,7 @@ extract_lang_popot2po ()
 	PO_PATH=$MSGS_DIR/$LANG_CODE.po
 	POT_PATH=$MSGS_DIR/$PROJECT.pot
 
-	msgmerge $PO_PATH $POT_PATH >$PO_PATH.translate 2>/dev/null
+	msgmerge $PO_PATH $POT_PATH >$PO_PATH.translate 2>>$LOG
 	mv $PO_PATH.translate $PO_PATH
 }
 
@@ -89,6 +89,8 @@ extract_lang_updateall ()
 	done
 	echo ""
 	rm messages.mo
+	cat $LOG
+	rm $LOG
 
 	cd ..
 }
@@ -96,5 +98,6 @@ extract_lang_updateall ()
 EJA_DIR=`pwd`
 PROJECT=ejabberd
 MSGS_DIR=$EJA_DIR/priv/msgs
+LOG=/tmp/ejabberd-translate-errors.log
 
 extract_lang_updateall
