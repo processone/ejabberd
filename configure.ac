@@ -213,12 +213,12 @@ AC_ARG_ENABLE(system_deps,
 esac],[if test "x$system_deps" = "x"; then system_deps=false; fi])
 
 AC_ARG_ENABLE(stun,
-[AC_HELP_STRING([--enable-stun], [enable STUN/TURN support (default: no)])],
+[AC_HELP_STRING([--enable-stun], [enable STUN/TURN support (default: yes)])],
 [case "${enableval}" in
   yes) stun=true ;;
   no)  stun=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-stun) ;;
-esac],[if test "x$stun" = "x"; then stun=false; fi])
+esac],[if test "x$stun" = "x"; then stun=true; fi])
 
 AC_ARG_ENABLE(sip,
 [AC_HELP_STRING([--enable-sip], [enable SIP support (default: no)])],
