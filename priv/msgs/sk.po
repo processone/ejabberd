@@ -291,8 +291,7 @@ msgid "Configuration"
 msgstr "Konfigurácia"
 
 #: mod_muc_room.erl:3489
-#, fuzzy
-msgid "Configuration of room ~ts"
+msgid "Configuration of room ~s"
 msgstr "Konfigurácia miestnosti ~s"
 
 #: ejabberd_web_admin.erl:937
@@ -567,8 +566,8 @@ msgid "Given Name"
 msgstr "Prostredné meno: "
 
 #: mod_shared_roster.erl:879
-msgid "Group "
-msgstr "Skupina "
+msgid "Group"
+msgstr "Skupina"
 
 #: mod_roster.erl:956
 msgid "Groups"
@@ -936,8 +935,7 @@ msgid "Nickname can't be empty"
 msgstr ""
 
 #: mod_muc_room.erl:2994
-#, fuzzy
-msgid "Nickname ~ts does not exist in the room"
+msgid "Nickname ~s does not exist in the room"
 msgstr "Prezývka ~s v miestnosti neexistuje"
 
 #: mod_muc_room.erl:3396
@@ -2113,10 +2111,9 @@ msgid ""
 msgstr "Fronta offline správ tohoto kontaktu je plná. Správa bola zahodená."
 
 #: ejabberd_captcha.erl:97
-#, fuzzy
 msgid ""
-"Your subscription request and/or messages to ~ts have been blocked. To "
-"unblock your subscription request, visit ~ts"
+"Your subscription request and/or messages to ~s have been blocked. To "
+"unblock your subscription request, visit ~s"
 msgstr "Správa určená pre ~s bola zablokovaná. Oblokovať ju môžete na ~s"
 
 #: mod_disco.erl:438

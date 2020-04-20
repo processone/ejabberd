@@ -291,8 +291,7 @@ msgid "Configuration"
 msgstr "Pengaturan"
 
 #: mod_muc_room.erl:3489
-#, fuzzy
-msgid "Configuration of room ~ts"
+msgid "Configuration of room ~s"
 msgstr "Pengaturan ruangan ~s"
 
 #: ejabberd_web_admin.erl:937
@@ -568,10 +567,11 @@ msgid "Given Name"
 msgstr "Nama Tengah"
 
 #: mod_shared_roster.erl:879
-msgid "Group "
+msgid "Group"
 msgstr "Grup"
 
 #: mod_roster.erl:956
+#, fuzzy
 msgid "Groups"
 msgstr "Grup"
 
@@ -940,8 +940,7 @@ msgid "Nickname can't be empty"
 msgstr ""
 
 #: mod_muc_room.erl:2994
-#, fuzzy
-msgid "Nickname ~ts does not exist in the room"
+msgid "Nickname ~s does not exist in the room"
 msgstr "Nama Julukan ~s tidak berada di dalam ruangan"
 
 #: mod_muc_room.erl:3396
@@ -2126,10 +2125,9 @@ msgstr ""
 "Kontak offline Anda pada antrian pesan sudah penuh. Pesan telah dibuang."
 
 #: ejabberd_captcha.erl:97
-#, fuzzy
 msgid ""
-"Your subscription request and/or messages to ~ts have been blocked. To "
-"unblock your subscription request, visit ~ts"
+"Your subscription request and/or messages to ~s have been blocked. To "
+"unblock your subscription request, visit ~s"
 msgstr ""
 "Pesan Anda untuk ~s sedang diblokir. Untuk membuka blokir tersebut, kunjungi "
 "~s"

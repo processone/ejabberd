@@ -300,8 +300,7 @@ msgid "Configuration"
 msgstr "Konfiguration"
 
 #: mod_muc_room.erl:3489
-#, fuzzy
-msgid "Configuration of room ~ts"
+msgid "Configuration of room ~s"
 msgstr "Konfiguration für Raum ~s"
 
 #: ejabberd_web_admin.erl:937
@@ -507,8 +506,7 @@ msgid "Failed to parse HTTP response"
 msgstr "Konnte HTTP-Antwort nicht parsen"
 
 #: mod_muc_room.erl:3632
-#, fuzzy
-msgid "Failed to process option '~ts'"
+msgid "Failed to process option '~s'"
 msgstr "Konnte Option '~s' nicht verarbeiten"
 
 #: mod_vcard_mnesia.erl:103 mod_vcard_mnesia.erl:117 mod_vcard_sql.erl:160
@@ -578,8 +576,8 @@ msgid "Given Name"
 msgstr "Vorname"
 
 #: mod_shared_roster.erl:879
-msgid "Group "
-msgstr "Gruppe "
+msgid "Group"
+msgstr "Gruppe"
 
 #: mod_roster.erl:956
 msgid "Groups"
@@ -708,10 +706,9 @@ msgid "Invitations are not allowed in this conference"
 msgstr "Einladungen sind in dieser Konferenz nicht erlaubt"
 
 #: mod_muc_room.erl:373 mod_muc_room.erl:519 mod_muc_room.erl:1293
-#, fuzzy
 msgid ""
-"It is not allowed to send error messages to the room. The participant (~ts) "
-"has sent an error message (~ts) and got kicked from the room"
+"It is not allowed to send error messages to the room. The participant (~s) "
+"has sent an error message (~s) and got kicked from the room"
 msgstr ""
 "Es ist nicht erlaubt Fehlermeldungen an den Raum zu senden. Der Teilnehmer "
 "(~s) hat eine Fehlermeldung (~s) gesendet und wurde aus dem Raum gekickt"
@@ -949,8 +946,7 @@ msgid "Nickname can't be empty"
 msgstr ""
 
 #: mod_muc_room.erl:2994
-#, fuzzy
-msgid "Nickname ~ts does not exist in the room"
+msgid "Nickname ~s does not exist in the room"
 msgstr "Der Benutzername ~s existiert im Raum nicht"
 
 #: mod_muc_room.erl:3396
@@ -1790,8 +1786,7 @@ msgid "To"
 msgstr "An"
 
 #: mod_register.erl:226
-#, fuzzy
-msgid "To register, visit ~ts"
+msgid "To register, visit ~s"
 msgstr "Um sich anzumelden, besuchen Sie ~s"
 
 #: mod_configure.erl:666
@@ -1804,10 +1799,9 @@ msgid "Token TTL"
 msgstr "Token TTL"
 
 #: mod_fail2ban.erl:219
-#, fuzzy
 msgid ""
-"Too many (~p) failed authentications from this IP address (~ts). The address "
-"will be unblocked at ~ts UTC"
+"Too many (~p) failed authentications from this IP address (~s). The address "
+"will be unblocked at ~s UTC"
 msgstr ""
 "Zu viele (~p) fehlgeschlagene Anmeldeversuche von dieser IP Adresse (~s). "
 "Die Adresse wird bis ~s UTC blockiert."
@@ -2019,19 +2013,16 @@ msgid "Value 'set' of 'type' attribute is not allowed"
 msgstr "Wert 'set' des 'type'-Attributs ist nicht erlaubt"
 
 #: pubsub_subscription.erl:237 pubsub_subscription_sql.erl:202
-#, fuzzy
-msgid "Value of '~ts' should be boolean"
+msgid "Value of '~s' should be boolean"
 msgstr "Wert von '~s' sollte boolesch sein"
 
 #: pubsub_subscription.erl:215 pubsub_subscription_sql.erl:180
-#, fuzzy
-msgid "Value of '~ts' should be datetime string"
+msgid "Value of '~s' should be datetime string"
 msgstr "Wert von '~s' sollte datetime-String sein"
 
 #: pubsub_subscription.erl:209 pubsub_subscription.erl:227
 #: pubsub_subscription_sql.erl:174 pubsub_subscription_sql.erl:192
-#, fuzzy
-msgid "Value of '~ts' should be integer"
+msgid "Value of '~s' should be integer"
 msgstr "Wert von '~s' sollte eine Ganzzahl sein"
 
 #: ejabberd_web_admin.erl:433
@@ -2140,10 +2131,9 @@ msgstr ""
 "verworfen."
 
 #: ejabberd_captcha.erl:97
-#, fuzzy
 msgid ""
-"Your subscription request and/or messages to ~ts have been blocked. To "
-"unblock your subscription request, visit ~ts"
+"Your subscription request and/or messages to ~s have been blocked. To "
+"unblock your subscription request, visit ~s"
 msgstr ""
 "Ihre Nachrichten an ~s werden blockiert. Um dies zu ändern, besuchen Sie ~s"
 

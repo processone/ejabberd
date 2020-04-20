@@ -300,7 +300,7 @@ msgstr "Configuração"
 
 #: mod_muc_room.erl:3489
 #, fuzzy
-msgid "Configuration of room ~ts"
+msgid "Configuration of room ~s"
 msgstr "Configuração para "
 
 #: ejabberd_web_admin.erl:937
@@ -585,9 +585,8 @@ msgid "Given Name"
 msgstr "Segundo nome"
 
 #: mod_shared_roster.erl:879
-#, fuzzy
 msgid "Group "
-msgstr "Grupos"
+msgstr ""
 
 #: mod_roster.erl:956
 msgid "Groups"
@@ -969,8 +968,7 @@ msgid "Nickname can't be empty"
 msgstr ""
 
 #: mod_muc_room.erl:2994
-#, fuzzy
-msgid "Nickname ~ts does not exist in the room"
+msgid "Nickname ~s does not exist in the room"
 msgstr "A alcunha ~s não existe na sala"
 
 #: mod_muc_room.erl:3396

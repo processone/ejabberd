@@ -295,8 +295,7 @@ msgid "Configuration"
 msgstr "Konfiguration"
 
 #: mod_muc_room.erl:3489
-#, fuzzy
-msgid "Configuration of room ~ts"
+msgid "Configuration of room ~s"
 msgstr "Konfiguration för ~s"
 
 #: ejabberd_web_admin.erl:937
@@ -570,8 +569,8 @@ msgid "Given Name"
 msgstr "Mellannamn"
 
 #: mod_shared_roster.erl:879
-msgid "Group "
-msgstr "Grupp "
+msgid "Group"
+msgstr "Grupp"
 
 #: mod_roster.erl:956
 msgid "Groups"
@@ -942,8 +941,7 @@ msgid "Nickname can't be empty"
 msgstr ""
 
 #: mod_muc_room.erl:2994
-#, fuzzy
-msgid "Nickname ~ts does not exist in the room"
+msgid "Nickname ~s does not exist in the room"
 msgstr "Smeknamnet ~s existerar inte i det här rummet"
 
 #: mod_muc_room.erl:3396
@@ -2121,10 +2119,9 @@ msgid ""
 msgstr "Din kontaktkö for offlinekontakter ar full"
 
 #: ejabberd_captcha.erl:97
-#, fuzzy
 msgid ""
-"Your subscription request and/or messages to ~ts have been blocked. To "
-"unblock your subscription request, visit ~ts"
+"Your subscription request and/or messages to ~s have been blocked. To "
+"unblock your subscription request, visit ~s"
 msgstr ""
 "Dina meddelanden till ~s är blockerade. För att avblockera dem, gå till ~s"
 

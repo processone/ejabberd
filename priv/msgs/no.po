@@ -290,8 +290,7 @@ msgid "Configuration"
 msgstr "Konfigurasjon"
 
 #: mod_muc_room.erl:3489
-#, fuzzy
-msgid "Configuration of room ~ts"
+msgid "Configuration of room ~s"
 msgstr "Konfigurasjon for rom ~s"
 
 #: ejabberd_web_admin.erl:937
@@ -566,8 +565,8 @@ msgid "Given Name"
 msgstr "Mellomnavn"
 
 #: mod_shared_roster.erl:879
-msgid "Group "
-msgstr "Gruppe "
+msgid "Group"
+msgstr "Gruppe"
 
 #: mod_roster.erl:956
 msgid "Groups"
@@ -936,8 +935,7 @@ msgid "Nickname can't be empty"
 msgstr ""
 
 #: mod_muc_room.erl:2994
-#, fuzzy
-msgid "Nickname ~ts does not exist in the room"
+msgid "Nickname ~s does not exist in the room"
 msgstr "Kallenavn ~s eksisterer ikke i dette rommet"
 
 #: mod_muc_room.erl:3396
@@ -2108,10 +2106,9 @@ msgid ""
 msgstr "Kontaktens frakoblede meldingskø er full. Meldingen har blitt kassert."
 
 #: ejabberd_captcha.erl:97
-#, fuzzy
 msgid ""
-"Your subscription request and/or messages to ~ts have been blocked. To "
-"unblock your subscription request, visit ~ts"
+"Your subscription request and/or messages to ~s have been blocked. To "
+"unblock your subscription request, visit ~s"
 msgstr "Dine meldinger til ~s blir blokkert. For å åpne igjen, besøk ~s"
 
 #: mod_disco.erl:438

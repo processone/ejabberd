@@ -569,8 +569,8 @@ msgid "Given Name"
 msgstr "ชื่อกลาง"
 
 #: mod_shared_roster.erl:879
-msgid "Group "
-msgstr "กลุ่ม"
+msgid "Group"
+msgstr "กลุ่"
 
 #: mod_roster.erl:956
 msgid "Groups"

@@ -295,8 +295,8 @@ msgid "Configuration"
 msgstr "Beállítás"
 
 #: mod_muc_room.erl:3489
-msgid "Configuration of room ~ts"
-msgstr "A(z) ~ts szoba beállítása"
+msgid "Configuration of room ~s"
+msgstr "A(z) ~s szoba beállítása"
 
 #: ejabberd_web_admin.erl:937
 msgid "Connected Resources:"
@@ -567,8 +567,8 @@ msgid "Given Name"
 msgstr "Keresztnév"
 
 #: mod_shared_roster.erl:879
-msgid "Group "
-msgstr "Csoport "
+msgid "Group"
+msgstr "Csoport"
 
 #: mod_roster.erl:956
 msgid "Groups"
@@ -694,11 +694,11 @@ msgstr "Meghívások nem engedélyezettek ebben a konferenciában"
 
 #: mod_muc_room.erl:373 mod_muc_room.erl:519 mod_muc_room.erl:1293
 msgid ""
-"It is not allowed to send error messages to the room. The participant (~ts) "
-"has sent an error message (~ts) and got kicked from the room"
+"It is not allowed to send error messages to the room. The participant (~s) "
+"has sent an error message (~s) and got kicked from the room"
 msgstr ""
-"Nem engedélyezett hibaüzeneteket küldeni a szobába. A résztvevő (~ts) "
-"hibaüzenetet (~ts) küldött, és ki lett rúgva a szobából"
+"Nem engedélyezett hibaüzeneteket küldeni a szobába. A résztvevő (~s) "
+"hibaüzenetet (~s) küldött, és ki lett rúgva a szobából"
 
 #: mod_muc_room.erl:564 mod_muc_room.erl:575
 msgid "It is not allowed to send private messages"
@@ -1734,8 +1734,8 @@ msgid "This room is not anonymous"
 msgstr "Ez a szoba nem névtelen"
 
 #: mod_multicast.erl:498
-msgid "This service can not process the address: ~ts"
-msgstr "Ez a szolgáltatás nem tudja feldolgozni a címet: ~ts"
+msgid "This service can not process the address: ~s"
+msgstr "Ez a szolgáltatás nem tudja feldolgozni a címet: ~s"
 
 #: mod_muc_log.erl:470
 msgid "Thursday"
@@ -1758,8 +1758,8 @@ msgid "To"
 msgstr "Címzett"
 
 #: mod_register.erl:226
-msgid "To register, visit ~ts"
-msgstr "Regisztráláshoz látogassa meg ezt az oldalt: ~ts"
+msgid "To register, visit ~s"
+msgstr "Regisztráláshoz látogassa meg ezt az oldalt: ~s"
 
 #: mod_configure.erl:666
 msgid "To ~ts"
@@ -1769,10 +1769,9 @@ msgstr "Címzett: ~ts"
 msgid "Token TTL"
 msgstr "Token élettartama"
 
-#: mod_fail2ban.erl:219
 msgid ""
-"Too many (~p) failed authentications from this IP address (~ts). The address "
-"will be unblocked at ~ts UTC"
+"Too many (~p) failed authentications from this IP address (~s). The address "
+"will be unblocked at ~s UTC"
 msgstr ""
 "Túl sok (~p) sikertelen hitelesítés erről az IP-címről (~ts) A cím ~ts-kor "
 "lesz feloldva UTC szerint"
@@ -1981,17 +1980,17 @@ msgid "Value 'set' of 'type' attribute is not allowed"
 msgstr "A „type” attribútum „set” értéke nem engedélyezett"
 
 #: pubsub_subscription.erl:237 pubsub_subscription_sql.erl:202
-msgid "Value of '~ts' should be boolean"
-msgstr "A(z) „~ts” értéke csak logikai lehet"
+msgid "Value of '~s' should be boolean"
+msgstr "A(z) „~s” értéke csak logikai lehet"
 
 #: pubsub_subscription.erl:215 pubsub_subscription_sql.erl:180
-msgid "Value of '~ts' should be datetime string"
-msgstr "A(z) „~ts” értéke csak dátum és idő karakterlánc lehet"
+msgid "Value of '~s' should be datetime string"
+msgstr "A(z) „~s” értéke csak dátum és idő karakterlánc lehet"
 
 #: pubsub_subscription.erl:209 pubsub_subscription.erl:227
 #: pubsub_subscription_sql.erl:174 pubsub_subscription_sql.erl:192
-msgid "Value of '~ts' should be integer"
-msgstr "A(z) „~ts” értéke csak egész szám lehet"
+msgid "Value of '~s' should be integer"
+msgstr "A(z) „~s” értéke csak egész szám lehet"
 
 #: ejabberd_web_admin.erl:433
 msgid "Virtual Hosting"
@@ -2097,12 +2096,12 @@ msgstr ""
 
 #: ejabberd_captcha.erl:97
 msgid ""
-"Your subscription request and/or messages to ~ts have been blocked. To "
-"unblock your subscription request, visit ~ts"
+"Your subscription request and/or messages to ~s have been blocked. To "
+"unblock your subscription request, visit ~s"
 msgstr ""
-"A feliratkozási kérelme és/vagy ~ts számára küldött üzenetei blokkolva "
+"A feliratkozási kérelme és/vagy ~s számára küldött üzenetei blokkolva "
 "lettek. A feliratkozási kérelmének feloldásához látogassa meg ezt az oldalt: "
-"~ts"
+"~s"
 
 #: mod_disco.erl:438
 msgid "ejabberd"

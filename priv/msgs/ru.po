@@ -289,8 +289,7 @@ msgid "Configuration"
 msgstr "Конфигурация"
 
 #: mod_muc_room.erl:3489
-#, fuzzy
-msgid "Configuration of room ~ts"
+msgid "Configuration of room ~s"
 msgstr "Конфигурация комнаты ~s"
 
 #: ejabberd_web_admin.erl:937
@@ -491,8 +490,7 @@ msgid "Failed to parse HTTP response"
 msgstr "Ошибка разбора HTTP ответа"
 
 #: mod_muc_room.erl:3632
-#, fuzzy
-msgid "Failed to process option '~ts'"
+msgid "Failed to process option '~s'"
 msgstr "Ошибка обработки опции '~s'"
 
 #: mod_vcard_mnesia.erl:103 mod_vcard_mnesia.erl:117 mod_vcard_sql.erl:160
@@ -559,8 +557,8 @@ msgid "Given Name"
 msgstr "Имя"
 
 #: mod_shared_roster.erl:879
-msgid "Group "
-msgstr "Группа "
+msgid "Group"
+msgstr "Группа"
 
 #: mod_roster.erl:956
 msgid "Groups"
@@ -685,10 +683,9 @@ msgid "Invitations are not allowed in this conference"
 msgstr "Рассылка приглашений отключена в этой конференции"
 
 #: mod_muc_room.erl:373 mod_muc_room.erl:519 mod_muc_room.erl:1293
-#, fuzzy
 msgid ""
-"It is not allowed to send error messages to the room. The participant (~ts) "
-"has sent an error message (~ts) and got kicked from the room"
+"It is not allowed to send error messages to the room. The participant (~s) "
+"has sent an error message (~s) and got kicked from the room"
 msgstr ""
 "Запрещено посылать сообщения об ошибках в эту комнату. Участник (~s) послал "
 "сообщение об ошибке (~s) и был выкинут из комнаты"
@@ -924,8 +921,7 @@ msgid "Nickname can't be empty"
 msgstr "Псевдоним не может быть пустым значением"
 
 #: mod_muc_room.erl:2994
-#, fuzzy
-msgid "Nickname ~ts does not exist in the room"
+msgid "Nickname ~s does not exist in the room"
 msgstr "Псевдоним ~s в комнате отсутствует"
 
 #: mod_muc_room.erl:3396
@@ -1726,8 +1722,7 @@ msgid "This room is not anonymous"
 msgstr "Эта комната не анонимная"
 
 #: mod_multicast.erl:498
-#, fuzzy
-msgid "This service can not process the address: ~ts"
+msgid "This service can not process the address: ~s"
 msgstr "Сервер не может обработать адрес: ~s"
 
 #: mod_muc_log.erl:470
@@ -1751,8 +1746,7 @@ msgid "To"
 msgstr "Кому"
 
 #: mod_register.erl:226
-#, fuzzy
-msgid "To register, visit ~ts"
+msgid "To register, visit ~s"
 msgstr "Для регистрации посетите ~s"
 
 #: mod_configure.erl:666
@@ -1765,10 +1759,9 @@ msgid "Token TTL"
 msgstr "Токен TTL"
 
 #: mod_fail2ban.erl:219
-#, fuzzy
 msgid ""
-"Too many (~p) failed authentications from this IP address (~ts). The address "
-"will be unblocked at ~ts UTC"
+"Too many (~p) failed authentications from this IP address (~s). The address "
+"will be unblocked at ~s UTC"
 msgstr ""
 "Слишком много (~p) неудачных попыток аутентификации с этого IP-адреса (~s). "
 "Адрес будет разблокирован в ~s UTC"
@@ -1977,19 +1970,16 @@ msgid "Value 'set' of 'type' attribute is not allowed"
 msgstr "Значение 'set' атрибута 'type' недопустимо"
 
 #: pubsub_subscription.erl:237 pubsub_subscription_sql.erl:202
-#, fuzzy
-msgid "Value of '~ts' should be boolean"
+msgid "Value of '~s' should be boolean"
 msgstr "Значение '~s' должно быть булевым"
 
 #: pubsub_subscription.erl:215 pubsub_subscription_sql.erl:180
-#, fuzzy
-msgid "Value of '~ts' should be datetime string"
+msgid "Value of '~s' should be datetime string"
 msgstr "Значение '~s' должно быть датой"
 
 #: pubsub_subscription.erl:209 pubsub_subscription.erl:227
 #: pubsub_subscription_sql.erl:174 pubsub_subscription_sql.erl:192
-#, fuzzy
-msgid "Value of '~ts' should be integer"
+msgid "Value of '~s' should be integer"
 msgstr "Значение '~s' должно быть целочисленным"
 
 #: ejabberd_web_admin.erl:433
@@ -2089,10 +2079,9 @@ msgstr ""
 "было сохранено."
 
 #: ejabberd_captcha.erl:97
-#, fuzzy
 msgid ""
-"Your subscription request and/or messages to ~ts have been blocked. To "
-"unblock your subscription request, visit ~ts"
+"Your subscription request and/or messages to ~s have been blocked. To "
+"unblock your subscription request, visit ~s"
 msgstr ""
 "Ваши запросы на добавление в контакт-лист, а также сообщения к ~s "
 "блокируются. Для снятия блокировки перейдите по ссылке ~s"

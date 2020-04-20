@@ -288,8 +288,7 @@ msgid "Configuration"
 msgstr "設定"
 
 #: mod_muc_room.erl:3489
-#, fuzzy
-msgid "Configuration of room ~ts"
+msgid "Configuration of room ~s"
 msgstr "チャットルーム ~s の設定"
 
 #: ejabberd_web_admin.erl:937
@@ -565,10 +564,12 @@ msgid "Given Name"
 msgstr "ミドルネーム"
 
 #: mod_shared_roster.erl:879
-msgid "Group "
+#, fuzzy
+msgid "Group"
 msgstr "グループ"
 
 #: mod_roster.erl:956
+#, fuzzy
 msgid "Groups"
 msgstr "グループ"
 
@@ -697,10 +698,9 @@ msgid "Invitations are not allowed in this conference"
 msgstr "この会議では、発言権の要求はできません"
 
 #: mod_muc_room.erl:373 mod_muc_room.erl:519 mod_muc_room.erl:1293
-#, fuzzy
 msgid ""
-"It is not allowed to send error messages to the room. The participant (~ts) "
-"has sent an error message (~ts) and got kicked from the room"
+"It is not allowed to send error messages to the room. The participant (~s) "
+"has sent an error message (~s) and got kicked from the room"
 msgstr ""
 "このルームにエラーメッセージを送ることは許可されていません。参加者(~s)はエ"
 "ラーメッセージを(~s)を送信してルームからキックされました。"
@@ -939,8 +939,7 @@ msgid "Nickname can't be empty"
 msgstr ""
 
 #: mod_muc_room.erl:2994
-#, fuzzy
-msgid "Nickname ~ts does not exist in the room"
+msgid "Nickname ~s does not exist in the room"
 msgstr "ニックネーム ~s はこのチャットルームにいません"
 
 #: mod_muc_room.erl:3396
@@ -1783,10 +1782,9 @@ msgid "Token TTL"
 msgstr ""
 
 #: mod_fail2ban.erl:219
-#, fuzzy
 msgid ""
-"Too many (~p) failed authentications from this IP address (~ts). The address "
-"will be unblocked at ~ts UTC"
+"Too many (~p) failed authentications from this IP address (~s). The address "
+"will be unblocked at ~s UTC"
 msgstr ""
 "~p回の認証に失敗しました。このIPアドレス(~s)は~s UTCまでブロックされます。"
 
@@ -2109,10 +2107,9 @@ msgstr ""
 "相手先のオフラインメッセージキューが一杯です。このメッセージは破棄されます。"
 
 #: ejabberd_captcha.erl:97
-#, fuzzy
 msgid ""
-"Your subscription request and/or messages to ~ts have been blocked. To "
-"unblock your subscription request, visit ~ts"
+"Your subscription request and/or messages to ~s have been blocked. To "
+"unblock your subscription request, visit ~s"
 msgstr ""
 "~s 宛のメッセージはブロックされています。解除するにはこちらを見てください ~s"
 

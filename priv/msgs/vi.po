@@ -571,8 +571,8 @@ msgid "Given Name"
 msgstr "Họ Đệm"
 
 #: mod_shared_roster.erl:879
-msgid "Group "
-msgstr "Nhóm "
+msgid "Group"
+msgstr "Nhóm"
 
 #: mod_roster.erl:956
 msgid "Groups"
@@ -946,8 +946,7 @@ msgid "Nickname can't be empty"
 msgstr ""
 
 #: mod_muc_room.erl:2994
-#, fuzzy
-msgid "Nickname ~ts does not exist in the room"
+msgid "Nickname ~s does not exist in the room"
 msgstr "Bí danh ~s không tồn tại trong phòng này"
 
 #: mod_muc_room.erl:3396
@@ -2140,10 +2139,9 @@ msgid ""
 msgstr ""
 "Danh sách chờ thư liên lạc ngoại tuyến của bạn đã đầy. Thư này đã bị loại bỏ."
 
-#: ejabberd_captcha.erl:97
 msgid ""
-"Your subscription request and/or messages to ~ts have been blocked. To "
-"unblock your subscription request, visit ~ts"
+"Your subscription request and/or messages to ~s have been blocked. To "
+"unblock your subscription request, visit ~s"
 msgstr ""
 
 #: mod_disco.erl:438

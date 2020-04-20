@@ -292,8 +292,7 @@ msgid "Configuration"
 msgstr "Instellingen"
 
 #: mod_muc_room.erl:3489
-#, fuzzy
-msgid "Configuration of room ~ts"
+msgid "Configuration of room ~s"
 msgstr "Instellingen van chatruimte ~s"
 
 #: ejabberd_web_admin.erl:937
@@ -571,8 +570,8 @@ msgid "Given Name"
 msgstr "Tussennaam"
 
 #: mod_shared_roster.erl:879
-msgid "Group "
-msgstr "Groep "
+msgid "Group"
+msgstr "Groep"
 
 #: mod_roster.erl:956
 msgid "Groups"
@@ -946,8 +945,7 @@ msgid "Nickname can't be empty"
 msgstr ""
 
 #: mod_muc_room.erl:2994
-#, fuzzy
-msgid "Nickname ~ts does not exist in the room"
+msgid "Nickname ~s does not exist in the room"
 msgstr "De bijnaam ~s bestaat niet in deze chatruimte"
 
 #: mod_muc_room.erl:3396
@@ -1807,10 +1805,9 @@ msgid "Token TTL"
 msgstr ""
 
 #: mod_fail2ban.erl:219
-#, fuzzy
 msgid ""
-"Too many (~p) failed authentications from this IP address (~ts). The address "
-"will be unblocked at ~ts UTC"
+"Too many (~p) failed authentications from this IP address (~s). The address "
+"will be unblocked at ~s UTC"
 msgstr ""
 "Te veel (~p) mislukte authenticatie-pogingen van dit IP-adres (~s). Dit "
 "adres zal worden gedeblokkeerd om ~s UTC"
@@ -2138,10 +2135,9 @@ msgstr ""
 "opgeslagen."
 
 #: ejabberd_captcha.erl:97
-#, fuzzy
 msgid ""
-"Your subscription request and/or messages to ~ts have been blocked. To "
-"unblock your subscription request, visit ~ts"
+"Your subscription request and/or messages to ~s have been blocked. To "
+"unblock your subscription request, visit ~s"
 msgstr ""
 "Uw berichten aan ~s worden geblokkeerd. Om ze te deblokkeren, ga naar ~s"
 
