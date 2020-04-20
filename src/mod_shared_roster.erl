@@ -997,7 +997,7 @@ shared_roster_group(Host, Group, Query, Lang) ->
 			     [?XCT(<<"td">>, ?T("Label:")),
 			      ?XE(<<"td">>,
 				  [?INPUT(<<"text">>, <<"label">>, Label)]),
-			      ?XE(<<"td">>, [?C(<<"Name in the rosters where this group will be displayed">>)])]),
+			      ?XE(<<"td">>, [?CT(?T("Name in the rosters where this group will be displayed"))])]),
 			 ?XE(<<"tr">>,
 			     [?XCT(<<"td">>, ?T("Description:")),
 			      ?XE(<<"td">>,
@@ -1005,7 +1005,7 @@ shared_roster_group(Host, Group, Query, Lang) ->
 					     integer_to_binary(lists:max([3,
                                                                                DescNL])),
 					     <<"20">>, Description)]),
-			      ?XE(<<"td">>, [?C(<<"Only admins can see this">>)])
+			      ?XE(<<"td">>, [?CT(?T("Only admins can see this"))])
 ]),
 			 ?XE(<<"tr">>,
 			     [?XCT(<<"td">>, ?T("Members:")),
@@ -1023,7 +1023,7 @@ shared_roster_group(Host, Group, Query, Lang) ->
 					     integer_to_binary(lists:max([3,											        length(FDisplayedGroups)])),
 					     <<"20">>,
 					     list_to_binary(FDisplayedGroups))]),
-			      ?XE(<<"td">>, [?C(<<"Groups that will be displayed to the members">>)])
+			      ?XE(<<"td">>, [?CT(?T("Groups that will be displayed to the members"))])
 ])])])),
     (?H1GL((translate:translate(Lang, ?T("Shared Roster Groups"))),
 	   <<"modules/#mod-shared-roster">>, <<"mod_shared_roster">>))

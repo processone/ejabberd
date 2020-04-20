@@ -511,14 +511,14 @@ make_rooms_page(Host, Lang, {Sort_direction, Sort_column}) ->
 	      fun(Room) ->
 		      ?XE(<<"tr">>, [?XC(<<"td">>, E) || E <- Room])
 	      end, Rooms_prepared),
-    Titles = [<<"Jabber ID">>,
-	      <<"# participants">>,
-	      <<"Last message">>,
-	      <<"Public">>,
-	      <<"Persistent">>,
-	      <<"Logging">>,
-	      <<"Just created">>,
-	      <<"Room title">>],
+    Titles = [?T("Jabber ID"),
+	      ?T("# participants"),
+	      ?T("Last message"),
+	      ?T("Public"),
+	      ?T("Persistent"),
+	      ?T("Logging"),
+	      ?T("Just created"),
+	      ?T("Room title")],
     {Titles_TR, _} =
 	lists:mapfoldl(
 	  fun(Title, Num_column) ->
