@@ -40,8 +40,8 @@
 	 read_css/1, read_img/1, read_js/1, read_lua/1, try_url/1,
 	 intersection/2, format_val/1, cancel_timer/1, unique_timestamp/0,
 	 is_mucsub_message/1, best_match/2, pmap/2, peach/2, format_exception/4,
-	 parse_ip_mask/1, match_ip_mask/3, format_hosts_list/1, format_cycle/1,
-	 delete_dir/1]).
+	 get_my_ip/0, parse_ip_mask/1, match_ip_mask/3, format_hosts_list/1,
+	 format_cycle/1, delete_dir/1]).
 
 %% Deprecated functions
 -export([decode_base64/1, encode_base64/1]).
@@ -508,6 +508,14 @@ format_exception(Level, Class, Reason, Stacktrace) ->
 	      io_lib:print(Term, I, 80, -1)
       end).
 -endif.
+
+-spec get_my_ip() -> inet:ip_address().
+get_my_ip() ->
+    {ok, MyHostName} = inet:gethostname(),
+    case inet:getaddr(MyHostName, inet) of
+	{ok, Addr} -> Addr;
+	{error, _} -> {127, 0, 0, 1}
+    end.
 
 -spec parse_ip_mask(binary()) -> {ok, {inet:ip4_address(), 0..32}} |
 				 {ok, {inet:ip6_address(), 0..128}} |
