@@ -288,5 +288,5 @@ mod_doc() ->
           [{report_commands_node,
             #{value => "true | false",
               desc =>
-                  ?T("Provide the Commands item in the Service Disvocery. "
+                  ?T("Provide the Commands item in the Service Discovery. "
 		     "Default value: 'false'.")}}]}.

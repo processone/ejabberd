@@ -1249,7 +1249,7 @@ mod_doc() ->
               "is considered offline if no session presence priority > 0 "
               "are currently open."), "",
            ?T("NOTE: 'ejabberdctl' has a command to "
-              "delete expired messages (see chapter"
+              "delete expired messages (see chapter "
               "https://docs.ejabberd.im/admin/guide/managing"
               "[Managing an ejabberd server] in online documentation.")],
       opts =>
@@ -1281,7 +1281,7 @@ mod_doc() ->
            {use_mam_for_storage,
             #{value => "true | false",
               desc =>
-                  ?T("This is an experimetal option. Enabling this option "
+                  ?T("This is an experimental option. Enabling this option "
                      "will make 'mod_offline' not use the former spool "
                      "table for storing MucSub offline messages, but will "
                      "use the archive table instead. This use of the archive "

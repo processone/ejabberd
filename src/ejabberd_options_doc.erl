@@ -485,7 +485,7 @@ doc() ->
         desc =>
             ?T("A list of Erlang nodes to connect on ejabberd startup. "
                "This option is mostly intended for ejabberd customization "
-               "and sofisticated setups. The default value is an empty list.")}},
+               "and sophisticated setups. The default value is an empty list.")}},
      {define_macro,
       #{value => "{MacroName: MacroValue}",
         desc =>
@@ -827,7 +827,7 @@ doc() ->
         desc =>
             {?T("Whether to use 'new' SQL schema. All schemas are located "
                 "at <https://github.com/processone/ejabberd/tree/~s/sql>. "
-                "There are two schemas available. The default lecacy schema "
+                "There are two schemas available. The default legacy schema "
                 "allows to store one XMPP domain into one ejabberd database. "
                 "The 'new' schema allows to handle several XMPP domains in a "
                 "single ejabberd database. Using this 'new' schema is best when "
