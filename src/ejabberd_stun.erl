@@ -80,7 +80,14 @@ get_password(User, Realm) ->
 	Password when byte_size(Password) > 0 ->
 	    Password;
 	<<>> ->
-	    ejabberd_auth:get_password_s(User, Realm)
+	    case ejabberd_auth:get_password_s(User, Realm) of
+		Password when is_binary(Password) ->
+		    Password;
+		_ ->
+		    ?INFO_MSG("Cannot use hashed password of ~s@~s for "
+			      "STUN/TURN authentication", [User, Realm]),
+		    <<>>
+	    end
     end.
 
 %%%===================================================================
