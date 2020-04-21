@@ -46,7 +46,8 @@ start_link(_, _, _) ->
     fail().
 -else.
 -export([tcp_init/2, udp_init/2, udp_recv/5, start/3,
-	 start_link/3, accept/1, listen_opt_type/1, listen_options/0]).
+	 start_link/3, accept/1, listen_opt_type/1, listen_options/0,
+	 get_password/2]).
 
 -include("logger.hrl").
 
@@ -74,6 +75,14 @@ start_link(_SockMod, Socket, Opts) ->
 accept(_Pid) ->
     ok.
 
+get_password(User, Realm) ->
+    case ejabberd_hooks:run_fold(stun_get_password, <<>>, [User, Realm]) of
+	Password when byte_size(Password) > 0 ->
+	    Password;
+	<<>> ->
+	    ejabberd_auth:get_password_s(User, Realm)
+    end.
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
@@ -95,7 +104,7 @@ prepare_turn_opts(Opts, _UseTurn = true) ->
 	_ ->
 	    ok
     end,
-    AuthFun = fun ejabberd_auth:get_password_s/2,
+    AuthFun = fun ejabberd_stun:get_password/2,
     Shaper = proplists:get_value(shaper, Opts, none),
     AuthType = proplists:get_value(auth_type, Opts, user),
     Realm = case proplists:get_value(auth_realm, Opts) of
