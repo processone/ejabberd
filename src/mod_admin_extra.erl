@@ -1604,13 +1604,7 @@ mod_doc() ->
 	      "generated one, so they can't login anymore unless a server "
 	      "administrator changes their password again. It is possible to "
 	      "define the reason of the ban. The new password also includes "
-	      "the reason and the date and time of the ban. For example, if "
-	      "this command is called: "
-	      "'ejabberdctl vhost example.org ban-account boby \"Spammed rooms\"', "
-	      "then the sessions of the local account which JID is "
-	      "boby@example.org will be kicked, and its password will be set "
-	      "to something like this: "
-	      "'BANNED_ACCOUNT--20080425T21:45:07--2176635--Spammed_rooms'"),
+	      "the reason and the date and time of the ban. See an example below."),
            ?T("- 'pushroster' (and 'pushroster-all'):"),
            ?T("The roster file must be placed, if using Windows, on the "
 	      "directory where you installed ejabberd: "
@@ -1620,8 +1614,7 @@ mod_doc() ->
            ?T("- 'srg-create':"),
            ?T("If you want to put a group Name with blankspaces, use the "
 	      "characters \"\' and \'\" to define when the Name starts and "
-	      "ends. For example: "
-	      "'ejabberdctl srg-create g1 example.org \"\'Group number 1\'\" this_is_g1 g1'")],
+	      "ends. See an example below.")],
       opts =>
           [{module_resource,
             #{value => ?T("Resource"),
@@ -1647,4 +1640,11 @@ mod_doc() ->
 	   {?T("Content of roster file for 'pushroster' command:"),
 	    ["[{<<\"bob\">>, <<\"example.org\">>, <<\"workers\">>, <<\"Bob\">>},",
 	     "{<<\"mart\">>, <<\"example.org\">>, <<\"workers\">>, <<\"Mart\">>},",
-	     "{<<\"Rich\">>, <<\"example.org\">>, <<\"bosses\">>, <<\"Rich\">>}]."]}]}.
+	     "{<<\"Rich\">>, <<\"example.org\">>, <<\"bosses\">>, <<\"Rich\">>}]."]},
+	   {?T("With this call, the sessions of the local account which JID is "
+	      "boby@example.org will be kicked, and its password will be set "
+	      "to something like "
+	      "'BANNED_ACCOUNT--20080425T21:45:07--2176635--Spammed_rooms'"),
+	    ["ejabberdctl vhost example.org ban-account boby \"Spammed rooms\""]},
+	   {?T("Call to srg-create using double-quotes and single-quotes:"),
+	    ["ejabberdctl srg-create g1 example.org \"\'Group number 1\'\" this_is_g1 g1"]}]}.
