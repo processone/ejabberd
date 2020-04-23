@@ -51,10 +51,8 @@
 	 sqlite_file/1,
 	 encode_term/1,
 	 decode_term/1,
-	 odbc_config/0,
-	 freetds_config/0,
 	 odbcinst_config/0,
-	 init_mssql/1,
+	 init_mssql/0,
 	 keep_alive/2,
 	 to_list/2,
 	 to_array/2]).
@@ -1109,8 +1107,9 @@ db_opts(Host) ->
 	    SSLOpts = get_ssl_opts(Transport, Host),
 	    case Type of
 		mssql ->
-		    [mssql, <<"DSN=", Host/binary, ";UID=", User/binary,
-			      ";PWD=", Pass/binary>>, Timeout];
+		    [mssql, <<"DRIVER=FreeTDS;SERVER=", Server/binary, ";UID=", User/binary,
+			      ";DATABASE=", DB/binary ,";PWD=", Pass/binary,
+			      ";PORT=", (integer_to_binary(Port))/binary ,";CLIENT_CHARSET=UTF-8;">>, Timeout];
 		_ ->
 		    [Type, Server, Port, DB, User, Pass, Timeout, Transport, SSLOpts]
 	    end
@@ -1152,44 +1151,15 @@ get_ssl_opts(ssl, Host) ->
 get_ssl_opts(tcp, _) ->
     [].
 
-init_mssql(Host) ->
-    Server = ejabberd_option:sql_server(Host),
-    Port = ejabberd_option:sql_port(Host),
-    DB = case ejabberd_option:sql_database(Host) of
-	     undefined -> <<"ejabberd">>;
-	     D -> D
-	 end,
-    FreeTDS = io_lib:fwrite("[~ts]~n"
-			    "\thost = ~ts~n"
-			    "\tport = ~p~n"
-			    "\tclient charset = UTF-8~n"
-			    "\ttds version = 7.1~n",
-			    [Host, Server, Port]),
-    ODBCINST = io_lib:fwrite("[freetds]~n"
-			     "Description = MSSQL connection~n"
-			     "Driver = libtdsodbc.so~n"
-			     "Setup = libtdsS.so~n"
-			     "UsageCount = 1~n"
-			     "FileUsage = 1~n", []),
-    ODBCINI = io_lib:fwrite("[~ts]~n"
-			    "Description = MS SQL~n"
-			    "Driver = freetds~n"
-			    "Servername = ~ts~n"
-			    "Database = ~ts~n"
-			    "Port = ~p~n",
-			    [Host, Host, DB, Port]),
-    ?DEBUG("~ts:~n~ts", [freetds_config(), FreeTDS]),
+init_mssql() ->
+    ODBCINST = io_lib:fwrite("[FreeTDS]~n"
+			     "Driver = libtdsodbc.so~n", []),
     ?DEBUG("~ts:~n~ts", [odbcinst_config(), ODBCINST]),
-    ?DEBUG("~ts:~n~ts", [odbc_config(), ODBCINI]),
-    case filelib:ensure_dir(freetds_config()) of
+    case filelib:ensure_dir(odbcinst_config()) of
 	ok ->
 	    try
-		ok = write_file_if_new(freetds_config(), FreeTDS),
 		ok = write_file_if_new(odbcinst_config(), ODBCINST),
-		ok = write_file_if_new(odbc_config(), ODBCINI),
 		os:putenv("ODBCSYSINI", tmp_dir()),
-		os:putenv("FREETDS", freetds_config()),
-		os:putenv("FREETDSCONF", freetds_config()),
 		ok
 	    catch error:{badmatch, {error, Reason} = Err} ->
 		    ?ERROR_MSG("Failed to create temporary files in ~ts: ~ts",
@@ -1213,12 +1183,6 @@ tmp_dir() ->
 	{win32, _} -> filename:join([os:getenv("HOME"), "conf"]);
 	_ -> filename:join(["/tmp", "ejabberd"])
     end.
-
-odbc_config() ->
-    filename:join(tmp_dir(), "odbc.ini").
-
-freetds_config() ->
-    filename:join(tmp_dir(), "freetds.conf").
 
 odbcinst_config() ->
     filename:join(tmp_dir(), "odbcinst.ini").
