@@ -101,16 +101,23 @@ prepare_turn_opts(Opts, _UseTurn = false) ->
     set_certfile(Opts);
 prepare_turn_opts(Opts, _UseTurn = true) ->
     NumberOfMyHosts = length(ejabberd_option:hosts()),
-    case {proplists:get_value(turn_ip, Opts),
-	  proplists:get_value(turn_ip, listen_options())} of
-	{undefined, {127, _, _, _}} ->
-	    ?WARNING_MSG("Option 'turn_ip' is undefined and the server's "
-			 "hostname doesn't resolve to a public IPv4 address, "
-			 "most likely the TURN relay won't be working properly",
-			 []);
-	_ ->
-	    ok
-    end,
+    TurnIP = case proplists:get_value(turn_ip, Opts) of
+		 undefined ->
+		     MyIP = misc:get_my_ip(),
+		     case MyIP of
+			 {127, _, _, _} ->
+			     ?WARNING_MSG("Option 'turn_ip' is undefined and "
+					  "the server's hostname doesn't "
+					  "resolve to a public IPv4 address, "
+					  "most likely the TURN relay won't be "
+					  "working properly", []);
+			 _ ->
+			     ok
+		     end,
+		     [{turn_ip, MyIP}];
+		 _ ->
+		     []
+	     end,
     AuthFun = fun ejabberd_stun:get_password/2,
     Shaper = proplists:get_value(shaper, Opts, none),
     AuthType = proplists:get_value(auth_type, Opts, user),
@@ -132,8 +139,8 @@ prepare_turn_opts(Opts, _UseTurn = true) ->
 		    []
 	    end,
     MaxRate = ejabberd_shaper:get_max_rate(Shaper),
-    Opts1 = Realm ++ [{auth_fun, AuthFun},{shaper, MaxRate} |
-		      lists:keydelete(shaper, 1, Opts)],
+    Opts1 = TurnIP ++ Realm ++ [{auth_fun, AuthFun},{shaper, MaxRate} |
+				lists:keydelete(shaper, 1, Opts)],
     set_certfile(Opts1).
 
 set_certfile(Opts) ->
@@ -176,7 +183,7 @@ listen_opt_type(certfile) ->
 listen_options() ->
     [{shaper, none},
      {use_turn, false},
-     {turn_ip, misc:get_my_ip()},
+     {turn_ip, undefined},
      {auth_type, user},
      {auth_realm, undefined},
      {tls, false},
