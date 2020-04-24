@@ -361,6 +361,7 @@ no_db_tests() ->
      muc_tests:master_slave_cases(),
      proxy65_tests:single_cases(),
      proxy65_tests:master_slave_cases(),
+     stundisco_tests:single_cases(),
      replaced_tests:master_slave_cases(),
      upload_tests:single_cases(),
      carbons_tests:single_cases(),
