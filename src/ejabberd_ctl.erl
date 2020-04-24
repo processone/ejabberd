@@ -23,33 +23,14 @@
 %%%
 %%%----------------------------------------------------------------------
 
-%%% @headerfile "ejabberd_ctl.hrl"
-
-%%% @doc Management of ejabberdctl commands and frontend to ejabberd commands.
-%%%
-%%% An ejabberdctl command is an abstract function identified by a
-%%% name, with a defined number of calling arguments, that can be
-%%% defined in any Erlang module and executed using ejabberdctl
-%%% administration script.
-%%%
-%%% Note: strings cannot have blankspaces
-%%%
 %%% Does not support commands that have arguments with ctypes: list, tuple
-%%%
-%%% TODO: Update the guide
-%%% TODO: Mention this in the release notes
-%%% Note: the commands with several words use now the underline: _
-%%% It is still possible to call the commands with dash: -
-%%% but this is deprecated, and may be removed in a future version.
-
 
 -module(ejabberd_ctl).
 
 -behaviour(gen_server).
 -author('alexey@process-one.net').
 
--export([start/0, start_link/0, process/1, process2/2,
-	 register_commands/3, unregister_commands/3]).
+-export([start/0, start_link/0, process/1, process2/2]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
@@ -111,8 +92,6 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 init([]) ->
-    ets:new(ejabberd_ctl_cmds, [named_table, set, public]),
-    ets:new(ejabberd_ctl_host_cmds, [named_table, set, public]),
     {ok, #state{}}.
 
 handle_call(Request, From, State) ->
@@ -134,28 +113,8 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 %%-----------------------------
-%% ejabberdctl Command management
-%%-----------------------------
-
-register_commands(CmdDescs, Module, Function) ->
-    ets:insert(ejabberd_ctl_cmds, CmdDescs),
-    ejabberd_hooks:add(ejabberd_ctl_process,
-		       Module, Function, 50),
-    ok.
-
-unregister_commands(CmdDescs, Module, Function) ->
-    lists:foreach(fun(CmdDesc) ->
-			  ets:delete_object(ejabberd_ctl_cmds, CmdDesc)
-		  end, CmdDescs),
-    ejabberd_hooks:delete(ejabberd_ctl_process,
-			  Module, Function, 50),
-    ok.
-
-
-%%-----------------------------
 %% Process
 %%-----------------------------
-
 
 -spec process([string()]) -> non_neg_integer().
 process(Args) ->
@@ -509,13 +468,6 @@ is_supported_args(Args) ->
       end,
       Args).
 
-get_list_ctls() ->
-    case catch ets:tab2list(ejabberd_ctl_cmds) of
-	{'EXIT', _} -> [];
-	Cs -> [{NameArgs, [], Desc} || {NameArgs, Desc} <- Cs]
-    end.
-
-
 %%-----------------------------
 %% Print help
 %%-----------------------------
@@ -541,8 +493,7 @@ print_usage(HelpMode, MaxC, ShCode, Version) ->
 	 {"restart", [], "Restart ejabberd"},
 	 {"help", ["[--tags [tag] | com?*]"], "Show help (try: ejabberdctl help help)"},
 	 {"mnesia", ["[info]"], "show information of Mnesia system"}] ++
-	get_list_commands(Version) ++
-	get_list_ctls(),
+	get_list_commands(Version),
 
     print(
        ["Usage: ", ?B("ejabberdctl"), " [--no-timeout] [--node ", ?U("nodename"), "] [--version ", ?U("api_version"), "] ",
@@ -874,12 +825,3 @@ disable_logging() ->
 disable_logging() ->
     logger:set_primary_config(level, none).
 -endif.
-
-%%-----------------------------
-%% Command management
-%%-----------------------------
-
-%%+++
-%% Struct(Integer res) create_account(Struct(String user, String server, String password))
-%%format_usage_xmlrpc(ArgsDef, ResultDef) ->
-%%    ["aaaa bbb ccc"].
