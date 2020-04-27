@@ -143,7 +143,19 @@ user_send_packet(Acc) ->
 -spec user_receive_packet({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
 user_receive_packet({#presence{from = From, type = available} = Pkt,
 		     #{lserver := LServer, jid := To} = State}) ->
-    IsRemote = not ejabberd_router:is_my_host(From#jid.lserver),
+    IsRemote = case From#jid.lresource of
+		   % Don't store caps for presences sent by our muc rooms
+		   <<>> ->
+		       try ejabberd_router:host_of_route(From#jid.lserver) of
+			   MaybeMuc ->
+			       not lists:member(From#jid.lserver,
+						gen_mod:get_module_opt_hosts(MaybeMuc, mod_muc))
+		       catch error:{unregistered_route, _} ->
+			   true
+		       end;
+		   _ ->
+		       not ejabberd_router:is_my_host(From#jid.lserver)
+	       end,
     if IsRemote ->
 	   case read_caps(Pkt) of
 	     nothing -> ok;
