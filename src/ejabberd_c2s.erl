@@ -386,7 +386,7 @@ sasl_mechanisms(Mechs, #{lserver := LServer} = State) ->
 	 (<<"DIGEST-MD5">>) -> Type == plain;
 	 (<<"SCRAM-SHA-1">>) -> Type /= external;
 	 (<<"PLAIN">>) -> true;
-	 (<<"X-OAUTH2">>) -> true;
+	 (<<"X-OAUTH2">>) -> [ejabberd_auth_anonymous] /= ejabberd_auth:auth_modules(LServer);
 	 (<<"EXTERNAL">>) -> maps:get(tls_verify, State, false);
 	 (_) -> false
       end, Mechs -- Mechs1).
