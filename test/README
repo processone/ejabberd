@@ -1,9 +1,12 @@
-You need MySQL, PostgreSQL and Redis up and running.
+You need MySQL, MSSQL, PostgreSQL and Redis up and running.
 MySQL should be accepting TCP connections on localhost:3306.
+MSSQL should be accepting TCP connections on localhost:1433.
 PostgreSQL should be accepting TCP connections on localhost:5432.
 Redis should be accepting TCP connections on localhost:6379.
 MySQL and PostgreSQL should grant full access to user 'ejabberd_test' with
 password 'ejabberd_test' on database 'ejabberd_test'.
+MSSQL should grant full access to user 'ejabberd_test' with
+password 'ejabberd_Test1' on database 'ejabberd_test'.
 
 Here is a quick setup example:
 
@@ -24,3 +27,23 @@ mysql> CREATE USER 'ejabberd_test'@'localhost' IDENTIFIED BY 'ejabberd_test';
 mysql> CREATE DATABASE ejabberd_test;
 mysql> GRANT ALL ON ejabberd_test.* TO 'ejabberd_test'@'localhost';
 $ mysql ejabberd_test < sql/mysql.sql
+
+-------------------
+  MS SQL Server
+-------------------
+$ sqlcmd -U SA -P ejabberd_Test1 -S localhost
+1> CREATE DATABASE ejabberd_test;
+2> GO
+1> USE ejabberd_test;
+2> GO
+Changed database context to 'ejabberd_test'.
+1> CREATE LOGIN ejabberd_test WITH PASSWORD = 'ejabberd_Test1';
+2> GO
+1> CREATE USER ejabberd_test FOR LOGIN ejabberd_test;
+2> GO
+1> GRANT ALL TO ejabberd_test;
+2> GO
+The ALL permission is deprecated and maintained only for compatibility. It DOES NOT imply ALL permissions defined on the entity.
+1> GRANT CONTROL ON SCHEMA ::dbo TO ejabberd_test;
+2> GO
+$ sqlcmd -U ejabberd_test -P ejabberd_Test1 -S localhost -d ejabberd_test -i sql/mssql.sql

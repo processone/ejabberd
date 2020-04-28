@@ -1,0 +1,71 @@
+define_macro:
+  MSSQL_CONFIG:
+    sql_username: MSSQL_USER
+    sql_type: mssql
+    sql_server: MSSQL_SERVER
+    sql_port: MSSQL_PORT
+    sql_pool_size: 1
+    sql_password: MSSQL_PASS
+    sql_database: MSSQL_DB
+    auth_method: sql
+    sm_db_type: sql
+    modules:
+      mod_announce:
+        db_type: sql
+        access: local
+      mod_blocking: []
+      mod_caps:
+        db_type: sql
+      mod_last:
+        db_type: sql
+      mod_muc:
+        db_type: sql
+        ram_db_type: sql
+        vcard: VCARD
+      mod_offline:
+        use_cache: true
+        db_type: sql
+      mod_privacy:
+        db_type: sql
+      mod_private:
+        db_type: sql
+      mod_pubsub:
+        db_type: sql
+        access_createnode: pubsub_createnode
+        ignore_pep_from_offline: true
+        last_item_cache: false
+        plugins:
+          - "flat"
+          - "pep"
+        vcard: VCARD
+      mod_roster:
+        versioning: true
+        store_current_id: true
+        db_type: sql
+      mod_mam:
+        db_type: sql
+      mod_vcard:
+        db_type: sql
+        vcard: VCARD
+      mod_vcard_xupdate: []
+      mod_adhoc: []
+      mod_configure: []
+      mod_disco: []
+      mod_ping: []
+      mod_proxy65: []
+      mod_push:
+        db_type: sql
+        include_body: false
+      mod_push_keepalive: []
+      mod_s2s_dialback: []
+      mod_stream_mgmt:
+        resume_timeout: 3
+      mod_legacy_auth: []
+      mod_register:
+        welcome_message:
+          subject: "Welcome!"
+          body: "Hi.
+Welcome to this XMPP server."
+      mod_stats: []
+      mod_time: []
+      mod_version: []

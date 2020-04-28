@@ -4,6 +4,7 @@ include_config_file:
   - ejabberd.ldap.yml
   - ejabberd.mnesia.yml
   - ejabberd.mysql.yml
+  - ejabberd.mssql.yml
   - ejabberd.pgsql.yml
   - ejabberd.redis.yml
   - ejabberd.sqlite.yml
@@ -12,6 +13,7 @@ host_config:
   pgsql.localhost: PGSQL_CONFIG
   sqlite.localhost: SQLITE_CONFIG
   mysql.localhost: MYSQL_CONFIG
+  mssql.localhost: MSSQL_CONFIG
   mnesia.localhost: MNESIA_CONFIG
   redis.localhost: REDIS_CONFIG
   ldap.localhost: LDAP_CONFIG
@@ -26,6 +28,7 @@ hosts:
   - mnesia.localhost
   - redis.localhost
   - mysql.localhost
+  - mssql.localhost
   - pgsql.localhost
   - extauth.localhost
   - ldap.localhost

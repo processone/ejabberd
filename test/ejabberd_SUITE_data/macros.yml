@@ -19,6 +19,11 @@ define_macro:
   MYSQL_PORT: @@mysql_port@@
   MYSQL_PASS: "@@mysql_pass@@"
   MYSQL_DB: "@@mysql_db@@"
+  MSSQL_USER: "@@mssql_user@@"
+  MSSQL_SERVER: "@@mssql_server@@"
+  MSSQL_PORT: @@mssql_port@@
+  MSSQL_PASS: "@@mssql_pass@@"
+  MSSQL_DB: "@@mssql_db@@"
   PGSQL_USER: "@@pgsql_user@@"
   PGSQL_SERVER: "@@pgsql_server@@"
   PGSQL_PORT: @@pgsql_port@@
