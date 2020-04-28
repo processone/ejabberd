@@ -77,22 +77,12 @@ init_per_group(Group, Config) ->
                     do_init_per_group(Group, Config);
                 Backends ->
                     %% Skipped backends that were not explicitely enabled
-                    case Group of
-                      mssql ->
-                        case lists:member(odbc, Backends) of
-                          true ->
-                            do_init_per_group(Group, Config);
-                          false ->
-                            {skip, {disabled_backend, Group}}
-                        end;
-                      _ ->
-                        case lists:member(Group, Backends) of
-                            true ->
-                                do_init_per_group(Group, Config);
-                            false ->
-                                {skip, {disabled_backend, Group}}
-                        end
-                    end
+		    case lists:member(Group, Backends) of
+			true ->
+			    do_init_per_group(Group, Config);
+			false ->
+			    {skip, {disabled_backend, Group}}
+		    end
             end
     end.
 

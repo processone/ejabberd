@@ -103,8 +103,8 @@ esac],[full_xml=false])
 AC_ARG_ENABLE(mssql,
 [AC_HELP_STRING([--enable-mssql], [use Microsoft SQL Server database (default: no, requires --enable-odbc)])],
 [case "${enableval}" in
-  yes) db_type=mssql ;;
-  no)  db_type=generic ;;
+  yes) db_type=mssql; mssql=true ;;
+  no)  db_type=generic; mssql=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-mssql) ;;
 esac],[db_type=generic])
 
@@ -267,7 +267,7 @@ if test "$sqlite" = "true"; then
 fi
 
 enabled_backends=""
-for backend in odbc mysql pgsql sqlite redis; do
+for backend in odbc mysql pgsql sqlite redis mssql; do
     if eval test x\${$backend} = xtrue; then
        if test "x$enabled_backends" = "x"; then
           enabled_backends=$backend

@@ -138,37 +138,26 @@ init_config(Config) ->
 copy_backend_configs(DataDir, CWD, Backends) ->
     Files = filelib:wildcard(filename:join([DataDir, "ejabberd.*.yml"])),
     lists:foreach(
-      fun(Src) ->
-	      File = filename:basename(Src),
-	      case string:tokens(File, ".") of
-		  ["ejabberd", SBackend, "yml"] ->
-		      Backend = list_to_atom(SBackend),
-		      Macro = list_to_atom(string:to_upper(SBackend) ++ "_CONFIG"),
-		      Dst = filename:join([CWD, File]),
-		      case Backend of
-		      	mssql ->
-			      case lists:member(odbc, Backends) of
-				  true ->
-				      {ok, _} = file:copy(Src, Dst);
-				  false ->
-				      ok = file:write_file(
-					     Dst, fast_yaml:encode(
-						    [{define_macro, [{Macro, []}]}]))
-			      end;
-		      	_ ->
-			      case lists:member(Backend, Backends) of
-				  true ->
-				      {ok, _} = file:copy(Src, Dst);
-				  false ->
-				      ok = file:write_file(
-					     Dst, fast_yaml:encode(
-						    [{define_macro, [{Macro, []}]}]))
-			      end
-			    end;
-		  _ ->
-		      ok
-	      end
-      end, Files).
+	fun(Src) ->
+	    io:format("copying ~p", [Src]),
+	    File = filename:basename(Src),
+	    case string:tokens(File, ".") of
+		["ejabberd", SBackend, "yml"] ->
+		    Backend = list_to_atom(SBackend),
+		    Macro = list_to_atom(string:to_upper(SBackend) ++ "_CONFIG"),
+		    Dst = filename:join([CWD, File]),
+		    case lists:member(Backend, Backends) of
+			true ->
+			    {ok, _} = file:copy(Src, Dst);
+			false ->
+			    ok = file:write_file(
+				Dst, fast_yaml:encode(
+				    [{define_macro, [{Macro, []}]}]))
+		    end;
+		_ ->
+		    ok
+	    end
+	end, Files).
 
 find_top_dir(Dir) ->
     case file:read_file_info(filename:join([Dir, ebin])) of
