@@ -203,6 +203,7 @@ modules:
   mod_shared_roster: {}
   mod_stream_mgmt:
     resend_on_timeout: if_offline
+  mod_stun_disco: {}
   mod_vcard: {}
   mod_vcard_xupdate: {}
   mod_version:

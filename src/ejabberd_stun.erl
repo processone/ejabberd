@@ -124,13 +124,13 @@ prepare_turn_opts(Opts, _UseTurn = true) ->
     Realm = case proplists:get_value(auth_realm, Opts) of
 		undefined when AuthType == user ->
 		    if NumberOfMyHosts > 1 ->
-			    ?WARNING_MSG("You have several virtual "
-					 "hosts configured, but option "
-					 "'auth_realm' is undefined and "
-					 "'auth_type' is set to 'user', "
-					 "most likely the TURN relay won't "
-					 "be working properly. Using ~ts as "
-					 "a fallback", [ejabberd_config:get_myname()]);
+			    ?INFO_MSG("You have several virtual hosts "
+				      "configured, but option 'auth_realm' is "
+				      "undefined and 'auth_type' is set to "
+				      "'user', so the TURN relay might not be "
+				      "working properly. Using ~ts as a "
+				      "fallback",
+				      [ejabberd_config:get_myname()]);
 		       true ->
 			    ok
 		    end,

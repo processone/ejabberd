@@ -4,6 +4,7 @@ define_macro:
   C2S_PORT: @@c2s_port@@
   S2S_PORT: @@s2s_port@@
   WEB_PORT: @@web_port@@
+  STUN_PORT: @@stun_port@@
   COMPONENT_PORT: @@component_port@@
   PROXY_PORT: @@proxy_port@@
   PASSWORD: >-

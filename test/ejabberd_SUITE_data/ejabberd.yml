@@ -91,6 +91,12 @@ listen:
       "/upload": mod_http_upload
       "/captcha": ejabberd_captcha
   -
+    port: STUN_PORT
+    module: ejabberd_stun
+    transport: udp
+    use_turn: true
+    turn_ip: "203.0.113.3"
+  -
     port: COMPONENT_PORT
     module: ejabberd_service
     password: PASSWORD
@@ -124,6 +130,12 @@ Welcome to this XMPP server."
   mod_stream_mgmt:
     max_ack_queue: 10
     resume_timeout: 3
+  mod_stun_disco:
+    secret: "cryptic"
+    services:
+      -
+        host: "example.com"
+        type: turns
   mod_time: []
   mod_version: []
   mod_http_upload:

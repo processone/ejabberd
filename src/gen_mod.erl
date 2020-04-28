@@ -86,7 +86,7 @@ start_link() ->
     end.
 
 init([]) ->
-    ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 50),
+    ejabberd_hooks:add(config_reloaded, ?MODULE, config_reloaded, 60),
     ejabberd_hooks:add(host_up, ?MODULE, start_modules, 40),
     ejabberd_hooks:add(host_down, ?MODULE, stop_modules, 70),
     ets:new(ejabberd_modules,
@@ -97,7 +97,7 @@ init([]) ->
 
 -spec stop() -> ok.
 stop() ->
-    ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 50),
+    ejabberd_hooks:delete(config_reloaded, ?MODULE, config_reloaded, 60),
     ejabberd_hooks:delete(host_up, ?MODULE, start_modules, 40),
     ejabberd_hooks:delete(host_down, ?MODULE, stop_modules, 70),
     stop_modules(),
