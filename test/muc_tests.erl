@@ -317,7 +317,7 @@ service_subscription_subscribers_master(Config) ->
     ok = leave(Config),
     #presence{} = send_recv(Config, #presence{}),
     [Node] = subscribe(Config, [Node], Room),
-    #message{from = Room, to = MyJID, type = normal} = Message1 = recv_message(Config),
+    #message{from = Room, to = MyBareJID, type = normal} = Message1 = recv_message(Config),
     #ps_event{items = #ps_items{node = Node,
         items = [#ps_item{sub_els = [#xmlel{name = <<"subscribe">>,
             attrs = Attrs1}]}]}} = xmpp:get_subtag(Message1, #ps_event{}),
@@ -325,7 +325,7 @@ service_subscription_subscribers_master(Config) ->
     put_event(Config, subscribe),
     ct:comment("Waiting for 'subscribed' command from the slave"),
     subscribed = get_event(Config),
-    #message{from = Room, to = MyJID, type = normal} = Message2 = recv_message(Config),
+    #message{from = Room, to = MyBareJID, type = normal} = Message2 = recv_message(Config),
     #ps_event{items = #ps_items{
         items = [#ps_item{sub_els = [#xmlel{name = <<"subscribe">>,
             attrs = Attrs2}]}]}} = xmpp:get_subtag(Message2, #ps_event{}),
@@ -333,7 +333,7 @@ service_subscription_subscribers_master(Config) ->
     put_event(Config, unsubscribe),
     ct:comment("Waiting for 'unsubscribed' command from the slave"),
     unsubscribed = get_event(Config),
-    #message{from = Room, to = MyJID, type = normal} = Message3 = recv_message(Config),
+    #message{from = Room, to = MyBareJID, type = normal} = Message3 = recv_message(Config),
     #ps_event{items = #ps_items{
         items = [#ps_item{sub_els = [#xmlel{name = <<"unsubscribe">>,
             attrs = Attrs3}]}]}} = xmpp:get_subtag(Message3, #ps_event{}),
