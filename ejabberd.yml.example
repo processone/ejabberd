@@ -58,6 +58,13 @@ listen:
       /admin: ejabberd_web_admin
       /.well-known/acme-challenge: ejabberd_acme
   -
+    port: 3478
+    transport: udp
+    module: ejabberd_stun
+    use_turn: true
+    ## The server's public IPv4 address:
+    # turn_ip: 203.0.113.3
+  -
     port: 1883
     ip: "::"
     module: mod_mqtt
