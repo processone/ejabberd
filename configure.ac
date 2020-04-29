@@ -197,7 +197,7 @@ AC_ARG_ENABLE(debug,
 esac],[if test "x$debug" = "x"; then debug=true; fi])
 
 AC_ARG_ENABLE(latest_deps,
-[AC_HELP_STRING([--enable-latest-deps], [makes rebar use latest commits for dependences instead of tagged versions (default: no)])],
+[AC_HELP_STRING([--enable-latest-deps], [makes rebar use latest commits for dependencies instead of tagged versions (default: no)])],
 [case "${enableval}" in
   yes) latest_deps=true ;;
   no)  latest_deps=false ;;
@@ -205,7 +205,7 @@ AC_ARG_ENABLE(latest_deps,
 esac],[if test "x$latest_deps" = "x"; then latest_deps=false; fi])
 
 AC_ARG_ENABLE(system_deps,
-[AC_HELP_STRING([--enable-system-deps], [makes rebar use localy installed dependences instead of downloading them (default: no)])],
+[AC_HELP_STRING([--enable-system-deps], [makes rebar use locally installed dependencies instead of downloading them (default: no)])],
 [case "${enableval}" in
   yes) system_deps=true ;;
   no)  system_deps=false ;;
