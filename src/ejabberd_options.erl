@@ -124,7 +124,7 @@ opt_type(cluster_nodes) ->
 opt_type(default_db) ->
     econf:enum([mnesia, sql]);
 opt_type(default_ram_db) ->
-    econf:enum([mnesia, sql, redis]);
+    econf:enum([mnesia, redis, sql]);
 opt_type(define_macro) ->
     econf:any();
 opt_type(disable_sasl_mechanisms) ->
@@ -392,7 +392,7 @@ opt_type(sql_ssl_verify) ->
 opt_type(sql_start_interval) ->
     econf:timeout(second);
 opt_type(sql_type) ->
-    econf:enum([mysql, pgsql, sqlite, mssql, odbc]);
+    econf:enum([mssql, mysql, odbc, pgsql, sqlite]);
 opt_type(sql_username) ->
     econf:binary();
 opt_type(sql_prepared_statements) ->

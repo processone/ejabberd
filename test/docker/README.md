@@ -4,7 +4,7 @@
 
 You can start the Docker environment with Docker Compose, from ejabberd repository root.
 
-The following command will launch MySQL, MSSQL, PostgreSQL, Redis and keep the console
+The following command will launch MS SQL, MySQL, PostgreSQL, Redis and keep the console
 attached to it.
 
 ```
@@ -15,9 +15,9 @@ mkdir test/docker/db/postgres/data
 
 You can stop all the databases with CTRL-C.
 
-## Creating database for MSSQL
+## Creating database for MS SQL
 
-The following commands will create the necessary login, user and database, will grant rights on the database in MSSQL and create the ejabberd schema:
+The following commands will create the necessary login, user and database, will grant rights on the database in MS SQL and create the ejabberd schema:
 
 ```
 docker cp test/docker/db/mssql/initdb/initdb_mssql.sql ejabberd-mssql:/

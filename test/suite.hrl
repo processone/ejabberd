@@ -89,18 +89,18 @@
     ?match(Recv, suite:send_recv(Config, Send))).
 
 -define(COMMON_VHOST, <<"localhost">>).
--define(MNESIA_VHOST, <<"mnesia.localhost">>).
--define(REDIS_VHOST, <<"redis.localhost">>).
--define(MYSQL_VHOST, <<"mysql.localhost">>).
--define(MSSQL_VHOST, <<"mssql.localhost">>).
--define(PGSQL_VHOST, <<"pgsql.localhost">>).
--define(SQLITE_VHOST, <<"sqlite.localhost">>).
--define(LDAP_VHOST, <<"ldap.localhost">>).
 -define(EXTAUTH_VHOST, <<"extauth.localhost">>).
+-define(LDAP_VHOST, <<"ldap.localhost">>).
+-define(MNESIA_VHOST, <<"mnesia.localhost">>).
+-define(MSSQL_VHOST, <<"mssql.localhost">>).
+-define(MYSQL_VHOST, <<"mysql.localhost">>).
+-define(PGSQL_VHOST, <<"pgsql.localhost">>).
+-define(REDIS_VHOST, <<"redis.localhost">>).
 -define(S2S_VHOST, <<"s2s.localhost">>).
+-define(SQLITE_VHOST, <<"sqlite.localhost">>).
 -define(UPLOAD_VHOST, <<"upload.localhost">>).
 
--define(BACKENDS, [mnesia, redis, mysql, mssql, odbc, pgsql, sqlite, ldap, extauth]).
+-define(BACKENDS, [extauth, ldap, mnesia, mssql, mysql, odbc, pgsql, redis, sqlite]).
 
 insert(Val, N, Tuple) ->
     L = tuple_to_list(Tuple),

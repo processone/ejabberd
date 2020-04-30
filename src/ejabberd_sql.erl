@@ -71,7 +71,7 @@
 
 -record(state,
 	{db_ref               :: undefined | pid(),
-	 db_type = odbc       :: pgsql | mysql | sqlite | odbc | mssql,
+	 db_type = odbc       :: mssql | mysql | odbc | pgsql | sqlite,
 	 db_version           :: undefined | non_neg_integer(),
 	 host                 :: binary(),
 	 pending_requests     :: p1_queue:queue(),
@@ -225,7 +225,7 @@ escape_like_arg(S) when is_binary(S) ->
 escape_like_arg($%) -> <<"\\%">>;
 escape_like_arg($_) -> <<"\\_">>;
 escape_like_arg($\\) -> <<"\\\\">>;
-escape_like_arg($[) -> <<"\\[">>;     % For MSSQL
+escape_like_arg($[) -> <<"\\[">>;     % For MS SQL
 escape_like_arg($]) -> <<"\\]">>;
 escape_like_arg(C) when is_integer(C), C >= 0, C =< 255 -> <<C>>.
 
@@ -234,7 +234,7 @@ escape_like_arg_circumflex(S) when is_binary(S) ->
 escape_like_arg_circumflex($%) -> <<"^%">>;
 escape_like_arg_circumflex($_) -> <<"^_">>;
 escape_like_arg_circumflex($^) -> <<"^^">>;
-escape_like_arg_circumflex($[) -> <<"^[">>;     % For MSSQL
+escape_like_arg_circumflex($[) -> <<"^[">>;     % For MS SQL
 escape_like_arg_circumflex($]) -> <<"^]">>;
 escape_like_arg_circumflex(C) when is_integer(C), C >= 0, C =< 255 -> <<C>>.
 
@@ -253,16 +253,16 @@ to_array(EscapeFun, Val) ->
     Escaped = lists:join(<<",">>, lists:map(EscapeFun, Val)),
     lists:flatten([<<"{">>, Escaped, <<"}">>]).
 
-to_string_literal(odbc, S) ->
-    <<"'", (escape(S))/binary, "'">>;
-to_string_literal(mysql, S) ->
-    <<"'", (escape(S))/binary, "'">>;
 to_string_literal(mssql, S) ->
     <<"'", (standard_escape(S))/binary, "'">>;
-to_string_literal(sqlite, S) ->
-    <<"'", (standard_escape(S))/binary, "'">>;
+to_string_literal(mysql, S) ->
+    <<"'", (escape(S))/binary, "'">>;
+to_string_literal(odbc, S) ->
+    <<"'", (escape(S))/binary, "'">>;
 to_string_literal(pgsql, S) ->
-    <<"E'", (escape(S))/binary, "'">>.
+    <<"E'", (escape(S))/binary, "'">>;
+to_string_literal(sqlite, S) ->
+    <<"'", (standard_escape(S))/binary, "'">>.
 
 to_string_literal_t(S) ->
     State = get(?STATE_KEY),
@@ -349,11 +349,11 @@ init([Host]) ->
 
 connecting(connect, #state{host = Host} = State) ->
     ConnectRes = case db_opts(Host) of
-		   [mysql | Args] -> apply(fun mysql_connect/8, Args);
-           [pgsql | Args] -> apply(fun pgsql_connect/8, Args);
-           [sqlite | Args] -> apply(fun sqlite_connect/1, Args);
 		   [mssql | Args] -> apply(fun odbc_connect/2, Args);
-		   [odbc | Args] -> apply(fun odbc_connect/2, Args)
+		   [mysql | Args] -> apply(fun mysql_connect/8, Args);
+		   [odbc | Args] -> apply(fun odbc_connect/2, Args);
+           [pgsql | Args] -> apply(fun pgsql_connect/8, Args);
+           [sqlite | Args] -> apply(fun sqlite_connect/1, Args)
 		 end,
     case ConnectRes of
         {ok, Ref} ->
@@ -596,6 +596,8 @@ sql_query_internal(#sql_query{} = Query) ->
                     generic_sql_query(Query);
 		mssql ->
 		    mssql_sql_query(Query);
+                mysql ->
+                    generic_sql_query(Query);
                 pgsql ->
                     Key = {?PREPARE_KEY, Query#sql_query.hash},
                     case get(Key) of
@@ -627,8 +629,6 @@ sql_query_internal(#sql_query{} = Query) ->
                         _ ->
                             pgsql_sql_query(Query)
                     end;
-                mysql ->
-                    generic_sql_query(Query);
                 sqlite ->
                     sqlite_sql_query(Query)
             end
@@ -658,21 +658,21 @@ sql_query_internal(Query) ->
     ?DEBUG("SQL: \"~ts\"", [Query]),
     QueryTimeout = query_timeout(State#state.host),
     Res = case State#state.db_type of
-	    odbc ->
-		to_odbc(odbc:sql_query(State#state.db_ref, [Query],
-                                       QueryTimeout - 1000));
 	    mssql ->
 		to_odbc(odbc:sql_query(State#state.db_ref, [Query],
                                        QueryTimeout - 1000));
-	    pgsql ->
-		pgsql_to_odbc(pgsql:squery(State#state.db_ref, Query,
-					   QueryTimeout - 1000));
 	    mysql ->
 		R = mysql_to_odbc(p1_mysql_conn:squery(State#state.db_ref,
 						   [Query], self(),
 						   [{timeout, QueryTimeout - 1000},
 						    {result_type, binary}])),
 		  R;
+	    odbc ->
+		to_odbc(odbc:sql_query(State#state.db_ref, [Query],
+                                       QueryTimeout - 1000));
+	    pgsql ->
+		pgsql_to_odbc(pgsql:squery(State#state.db_ref, Query,
+					   QueryTimeout - 1000));
 	      sqlite ->
 		  Host = State#state.host,
 		  sqlite_to_odbc(Host, sqlite3:sql_exec(sqlite_db(Host), Query))
@@ -722,6 +722,9 @@ generic_escape() ->
                 like_escape = fun() -> <<"">> end
                }.
 
+mssql_sql_query(SQLQuery) ->
+    sqlite_sql_query(SQLQuery).
+
 pgsql_sql_query(SQLQuery) ->
     sql_query_format_res(
       sql_query_internal(pgsql_sql_query_format(SQLQuery)),
@@ -765,9 +768,6 @@ standard_escape(S) ->
               $' -> << "''" >>;
               _ -> << Char >>
           end)/binary>> || <<Char>> <= S >>.
-
-mssql_sql_query(SQLQuery) ->
-    sqlite_sql_query(SQLQuery).
 
 pgsql_prepare(SQLQuery, State) ->
     Escape = #sql_escape{_ = fun(_) -> arg end,
@@ -1117,9 +1117,9 @@ db_opts(Host) ->
 
 warn_if_ssl_unsupported(tcp, _) ->
     ok;
-warn_if_ssl_unsupported(ssl, pgsql) ->
-    ok;
 warn_if_ssl_unsupported(ssl, mysql) ->
+    ok;
+warn_if_ssl_unsupported(ssl, pgsql) ->
     ok;
 warn_if_ssl_unsupported(ssl, Type) ->
     ?WARNING_MSG("SSL connection is not supported for ~ts", [Type]).

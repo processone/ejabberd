@@ -86,24 +86,22 @@ init_per_group(Group, Config) ->
             end
     end.
 
-do_init_per_group(no_db, Config) ->
-    re_register(Config),
-    set_opt(persistent_room, false, Config);
+do_init_per_group(component, Config) ->
+    Server = ?config(server, Config),
+    Port = ?config(component_port, Config),
+    set_opt(xmlns, ?NS_COMPONENT,
+            set_opt(server, <<"component.", Server/binary>>,
+                    set_opt(type, component,
+                            set_opt(server_port, Port,
+                                    set_opt(stream_version, undefined,
+                                            set_opt(lang, <<"">>, Config))))));
+do_init_per_group(extauth, Config) ->
+    set_opt(server, ?EXTAUTH_VHOST, Config);
+do_init_per_group(ldap, Config) ->
+    set_opt(server, ?LDAP_VHOST, Config);
 do_init_per_group(mnesia, Config) ->
     mod_muc:shutdown_rooms(?MNESIA_VHOST),
     set_opt(server, ?MNESIA_VHOST, Config);
-do_init_per_group(redis, Config) ->
-    mod_muc:shutdown_rooms(?REDIS_VHOST),
-    set_opt(server, ?REDIS_VHOST, Config);
-do_init_per_group(mysql, Config) ->
-    case catch ejabberd_sql:sql_query(?MYSQL_VHOST, [<<"select 1;">>]) of
-        {selected, _, _} ->
-            mod_muc:shutdown_rooms(?MYSQL_VHOST),
-            clear_sql_tables(mysql, ?config(base_dir, Config)),
-            set_opt(server, ?MYSQL_VHOST, Config);
-        Err ->
-            {skip, {mysql_not_available, Err}}
-    end;
 do_init_per_group(mssql, Config) ->
     case catch ejabberd_sql:sql_query(?MSSQL_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
@@ -113,6 +111,18 @@ do_init_per_group(mssql, Config) ->
         Err ->
             {skip, {mssql_not_available, Err}}
     end;
+do_init_per_group(mysql, Config) ->
+    case catch ejabberd_sql:sql_query(?MYSQL_VHOST, [<<"select 1;">>]) of
+        {selected, _, _} ->
+            mod_muc:shutdown_rooms(?MYSQL_VHOST),
+            clear_sql_tables(mysql, ?config(base_dir, Config)),
+            set_opt(server, ?MYSQL_VHOST, Config);
+        Err ->
+            {skip, {mysql_not_available, Err}}
+    end;
+do_init_per_group(no_db, Config) ->
+    re_register(Config),
+    set_opt(persistent_room, false, Config);
 do_init_per_group(pgsql, Config) ->
     case catch ejabberd_sql:sql_query(?PGSQL_VHOST, [<<"select 1;">>]) of
         {selected, _, _} ->
@@ -122,18 +132,9 @@ do_init_per_group(pgsql, Config) ->
         Err ->
             {skip, {pgsql_not_available, Err}}
     end;
-do_init_per_group(sqlite, Config) ->
-    case catch ejabberd_sql:sql_query(?SQLITE_VHOST, [<<"select 1;">>]) of
-        {selected, _, _} ->
-            mod_muc:shutdown_rooms(?SQLITE_VHOST),
-            set_opt(server, ?SQLITE_VHOST, Config);
-        Err ->
-            {skip, {sqlite_not_available, Err}}
-    end;
-do_init_per_group(ldap, Config) ->
-    set_opt(server, ?LDAP_VHOST, Config);
-do_init_per_group(extauth, Config) ->
-    set_opt(server, ?EXTAUTH_VHOST, Config);
+do_init_per_group(redis, Config) ->
+    mod_muc:shutdown_rooms(?REDIS_VHOST),
+    set_opt(server, ?REDIS_VHOST, Config);
 do_init_per_group(s2s, Config) ->
     ejabberd_config:set_option({s2s_use_starttls, ?COMMON_VHOST}, required),
     ejabberd_config:set_option(ca_file, "ca.pem"),
@@ -144,15 +145,14 @@ do_init_per_group(s2s, Config) ->
 			    set_opt(server_port, Port,
 				    set_opt(stream_from, ?S2S_VHOST,
 					    set_opt(lang, <<"">>, Config))))));
-do_init_per_group(component, Config) ->
-    Server = ?config(server, Config),
-    Port = ?config(component_port, Config),
-    set_opt(xmlns, ?NS_COMPONENT,
-            set_opt(server, <<"component.", Server/binary>>,
-                    set_opt(type, component,
-                            set_opt(server_port, Port,
-                                    set_opt(stream_version, undefined,
-                                            set_opt(lang, <<"">>, Config))))));
+do_init_per_group(sqlite, Config) ->
+    case catch ejabberd_sql:sql_query(?SQLITE_VHOST, [<<"select 1;">>]) of
+        {selected, _, _} ->
+            mod_muc:shutdown_rooms(?SQLITE_VHOST),
+            set_opt(server, ?SQLITE_VHOST, Config);
+        Err ->
+            {skip, {sqlite_not_available, Err}}
+    end;
 do_init_per_group(GroupName, Config) ->
     Pid = start_event_relay(),
     NewConfig = set_opt(event_relay, Pid, Config),
@@ -161,29 +161,29 @@ do_init_per_group(GroupName, Config) ->
 	_ -> NewConfig
     end.
 
-end_per_group(mnesia, _Config) ->
-    ok;
-end_per_group(redis, _Config) ->
-    ok;
-end_per_group(mysql, _Config) ->
-    ok;
-end_per_group(mssql, _Config) ->
-    ok;
-end_per_group(pgsql, _Config) ->
-    ok;
-end_per_group(sqlite, _Config) ->
-    ok;
-end_per_group(no_db, _Config) ->
-    ok;
-end_per_group(ldap, _Config) ->
+end_per_group(component, _Config) ->
     ok;
 end_per_group(extauth, _Config) ->
     ok;
-end_per_group(component, _Config) ->
+end_per_group(ldap, _Config) ->
+    ok;
+end_per_group(mnesia, _Config) ->
+    ok;
+end_per_group(mssql, _Config) ->
+    ok;
+end_per_group(mysql, _Config) ->
+    ok;
+end_per_group(no_db, _Config) ->
+    ok;
+end_per_group(pgsql, _Config) ->
+    ok;
+end_per_group(redis, _Config) ->
     ok;
 end_per_group(s2s, Config) ->
     Server = ?config(server, Config),
     ejabberd_config:set_option({s2s_use_starttls, Server}, false);
+end_per_group(sqlite, _Config) ->
+    ok;
 end_per_group(_GroupName, Config) ->
     stop_event_relay(Config),
     set_opt(anonymous, false, Config).
@@ -489,30 +489,29 @@ s2s_tests() ->
        codec_failure]}].
 
 groups() ->
-    [{ldap, [sequence], ldap_tests()},
-     {extauth, [sequence], extauth_tests()},
-     {no_db, [sequence], no_db_tests()},
-     {component, [sequence], component_tests()},
-     {s2s, [sequence], s2s_tests()},
+    [{component, [sequence], component_tests()},
+     {ldap, [sequence], ldap_tests()},
      {mnesia, [sequence], db_tests(mnesia)},
-     {redis, [sequence], db_tests(redis)},
-     {mysql, [sequence], db_tests(mysql)},
      {mssql, [sequence], db_tests(mssql)},
+     {mysql, [sequence], db_tests(mysql)},
+     {no_db, [sequence], no_db_tests()},
      {pgsql, [sequence], db_tests(pgsql)},
+     {redis, [sequence], db_tests(redis)},
+     {s2s, [sequence], s2s_tests()},
      {sqlite, [sequence], db_tests(sqlite)}].
 
 all() ->
-    [{group, ldap},
-     {group, no_db},
-     {group, mnesia},
-     {group, redis},
-     {group, mysql},
-     {group, mssql},
-     {group, pgsql},
-     {group, sqlite},
+    [{group, component},
      {group, extauth},
-     {group, component},
+     {group, ldap},
+     {group, mnesia},
+     {group, mssql},
+     {group, mysql},
+     {group, no_db},
+     {group, pgsql},
+     {group, redis},
      {group, s2s},
+     {group, sqlite},
      stop_ejabberd].
 
 stop_ejabberd(Config) ->

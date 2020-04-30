@@ -110,7 +110,7 @@ doc() ->
                "Modules and other components (e.g. authentication) "
                "may have its own value. The default value is 'mnesia'.")}},
      {default_ram_db,
-      #{value => "mnesia | sql | redis",
+      #{value => "mnesia | redis | sql",
         desc =>
             ?T("Default volatile (in-memory) storage for ejabberd. "
                "Modules and other components (e.g. session management) "
@@ -1022,7 +1022,7 @@ doc() ->
             ?T("Same as 'cache_size', but applied to routing table cache "
                "only. If not set, the value from 'cache_size' will be used.")}},
      {router_db_type,
-      #{value => "mnesia | sql | redis",
+      #{value => "mnesia | redis | sql",
         desc =>
             ?T("Database backend to use for routing information. "
                "The default value is picked from 'default_ram_db' option, or "
@@ -1182,7 +1182,7 @@ doc() ->
             ?T("Same as 'cache_size', but applied to client sessions table cache "
                "only. If not set, the value from 'cache_size' will be used.")}},
      {sm_db_type,
-      #{value => "mnesia | sql | redis",
+      #{value => "mnesia | redis | sql",
         desc =>
             ?T("Database backend to use for client sessions information. "
                "The default value is picked from 'default_ram_db' option, or "
@@ -1193,7 +1193,7 @@ doc() ->
             ?T("Same as 'use_cache', but applied to client sessions table cache "
                "only. If not set, the value from 'use_cache' will be used.")}},
      {sql_type,
-      #{value => "mysql | pgsql | sqlite | mssql | odbc",
+      #{value => "mssql | mysql | odbc | pgsql | sqlite",
         desc =>
             ?T("The type of an SQL connection. The default is 'odbc'.")}},
      {sql_connect_timeout,
@@ -1227,8 +1227,8 @@ doc() ->
       #{value => "1..65535",
         desc =>
             ?T("The port where the SQL server is accepting connections. "
-               "The default is '3306' for MySQL, '5432' for PostgreSQL and "
-               "'1433' for MSSQL. The option has no effect for SQLite.")}},
+               "The default is '1433' for MS SQL, '3306' for MySQL and "
+               "'5432' for PostgreSQL. The option has no effect for SQLite.")}},
      {sql_prepared_statements,
       #{value => "true | false",
         desc =>

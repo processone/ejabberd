@@ -85,7 +85,7 @@ update_sql() ->
       end, ejabberd_option:hosts()).
 
 -record(state, {host :: binary(),
-                dbtype :: mysql | pgsql | sqlite | mssql | odbc,
+                dbtype :: mssql | mysql | odbc | pgsql | sqlite,
                 escape}).
 
 update_sql(Host) ->
@@ -269,83 +269,83 @@ update_tables(State) ->
 
     ok.
 
-add_sh_column(#state{dbtype = pgsql} = State, Table) ->
+add_sh_column(#state{dbtype = mysql} = State, Table) ->
     sql_query(
       State#state.host,
       ["ALTER TABLE ", Table, " ADD COLUMN server_host text NOT NULL DEFAULT '",
        (State#state.escape)(State#state.host),
        "';"]);
-add_sh_column(#state{dbtype = mysql} = State, Table) ->
+add_sh_column(#state{dbtype = pgsql} = State, Table) ->
     sql_query(
       State#state.host,
       ["ALTER TABLE ", Table, " ADD COLUMN server_host text NOT NULL DEFAULT '",
        (State#state.escape)(State#state.host),
        "';"]).
 
-drop_pkey(#state{dbtype = pgsql} = State, Table) ->
-    sql_query(
-      State#state.host,
-      ["ALTER TABLE ", Table, " DROP CONSTRAINT ", Table, "_pkey;"]);
 drop_pkey(#state{dbtype = mysql} = State, Table) ->
     sql_query(
       State#state.host,
-      ["ALTER TABLE ", Table, " DROP PRIMARY KEY;"]).
+      ["ALTER TABLE ", Table, " DROP PRIMARY KEY;"]);
+drop_pkey(#state{dbtype = pgsql} = State, Table) ->
+    sql_query(
+      State#state.host,
+      ["ALTER TABLE ", Table, " DROP CONSTRAINT ", Table, "_pkey;"]).
 
-add_pkey(#state{dbtype = pgsql} = State, Table, Cols) ->
+add_pkey(#state{dbtype = mysql} = State, Table, Cols) ->
     SCols = string:join(Cols, ", "),
     sql_query(
       State#state.host,
       ["ALTER TABLE ", Table, " ADD PRIMARY KEY (", SCols, ");"]);
-add_pkey(#state{dbtype = mysql} = State, Table, Cols) ->
+add_pkey(#state{dbtype = pgsql} = State, Table, Cols) ->
     SCols = string:join(Cols, ", "),
     sql_query(
       State#state.host,
       ["ALTER TABLE ", Table, " ADD PRIMARY KEY (", SCols, ");"]).
 
-drop_sh_default(#state{dbtype = pgsql} = State, Table) ->
+drop_sh_default(#state{dbtype = mysql} = State, Table) ->
     sql_query(
       State#state.host,
       ["ALTER TABLE ", Table, " ALTER COLUMN server_host DROP DEFAULT;"]);
-drop_sh_default(#state{dbtype = mysql} = State, Table) ->
+drop_sh_default(#state{dbtype = pgsql} = State, Table) ->
     sql_query(
       State#state.host,
       ["ALTER TABLE ", Table, " ALTER COLUMN server_host DROP DEFAULT;"]).
 
-drop_index(#state{dbtype = pgsql} = State, Index) ->
+drop_index(#state{dbtype = mysql} = State, Index) ->
     sql_query(
       State#state.host,
       ["DROP INDEX ", Index, ";"]);
-drop_index(#state{dbtype = mysql} = State, Index) ->
+drop_index(#state{dbtype = pgsql} = State, Index) ->
     sql_query(
       State#state.host,
       ["DROP INDEX ", Index, ";"]).
 
-create_unique_index(#state{dbtype = pgsql} = State, Table, Index, Cols) ->
-    SCols = string:join(Cols, ", "),
-    sql_query(
-      State#state.host,
-      ["CREATE UNIQUE INDEX ", Index, " ON ", Table, " USING btree (",
-       SCols, ");"]);
 create_unique_index(#state{dbtype = mysql} = State, Table, Index, Cols) ->
     Cols2 = [C ++ "(75)" || C <- Cols],
     SCols = string:join(Cols2, ", "),
     sql_query(
       State#state.host,
       ["CREATE UNIQUE INDEX ", Index, " ON ", Table, "(",
-       SCols, ");"]).
-
-create_index(#state{dbtype = pgsql} = State, Table, Index, Cols) ->
+       SCols, ");"]);
+create_unique_index(#state{dbtype = pgsql} = State, Table, Index, Cols) ->
     SCols = string:join(Cols, ", "),
     sql_query(
       State#state.host,
-      ["CREATE INDEX ", Index, " ON ", Table, " USING btree (",
-       SCols, ");"]);
+      ["CREATE UNIQUE INDEX ", Index, " ON ", Table, " USING btree (",
+       SCols, ");"]).
+
 create_index(#state{dbtype = mysql} = State, Table, Index, Cols) ->
     Cols2 = [C ++ "(75)" || C <- Cols],
     SCols = string:join(Cols2, ", "),
     sql_query(
       State#state.host,
       ["CREATE INDEX ", Index, " ON ", Table, "(",
+       SCols, ");"]);
+create_index(#state{dbtype = pgsql} = State, Table, Index, Cols) ->
+    SCols = string:join(Cols, ", "),
+    sql_query(
+      State#state.host,
+      ["CREATE INDEX ", Index, " ON ", Table, " USING btree (",
        SCols, ");"]).
 
 sql_query(Host, Query) ->

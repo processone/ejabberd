@@ -1,32 +1,14 @@
-You need MySQL, MSSQL, PostgreSQL and Redis up and running.
+You need MS SQL, MySQL, PostgreSQL and Redis up and running.
+MS SQL should be accepting TCP connections on localhost:1433.
 MySQL should be accepting TCP connections on localhost:3306.
-MSSQL should be accepting TCP connections on localhost:1433.
 PostgreSQL should be accepting TCP connections on localhost:5432.
 Redis should be accepting TCP connections on localhost:6379.
 MySQL and PostgreSQL should grant full access to user 'ejabberd_test' with
 password 'ejabberd_test' on database 'ejabberd_test'.
-MSSQL should grant full access to user 'ejabberd_test' with
+MS SQL should grant full access to user 'ejabberd_test' with
 password 'ejabberd_Test1' on database 'ejabberd_test'.
 
 Here is a quick setup example:
-
-------------------
-  PostgreSQL
-------------------
-$ psql template1
-template1=# CREATE USER ejabberd_test WITH PASSWORD 'ejabberd_test';
-template1=# CREATE DATABASE ejabberd_test;
-template1=# GRANT ALL PRIVILEGES ON DATABASE ejabberd_test TO ejabberd_test;
-$ psql ejabberd_test -f sql/pg.sql
-
--------------------
-  MySQL
--------------------
-$ mysql
-mysql> CREATE USER 'ejabberd_test'@'localhost' IDENTIFIED BY 'ejabberd_test';
-mysql> CREATE DATABASE ejabberd_test;
-mysql> GRANT ALL ON ejabberd_test.* TO 'ejabberd_test'@'localhost';
-$ mysql ejabberd_test < sql/mysql.sql
 
 -------------------
   MS SQL Server
@@ -47,3 +29,21 @@ The ALL permission is deprecated and maintained only for compatibility. It DOES 
 1> GRANT CONTROL ON SCHEMA ::dbo TO ejabberd_test;
 2> GO
 $ sqlcmd -U ejabberd_test -P ejabberd_Test1 -S localhost -d ejabberd_test -i sql/mssql.sql
+
+-------------------
+  MySQL
+-------------------
+$ mysql
+mysql> CREATE USER 'ejabberd_test'@'localhost' IDENTIFIED BY 'ejabberd_test';
+mysql> CREATE DATABASE ejabberd_test;
+mysql> GRANT ALL ON ejabberd_test.* TO 'ejabberd_test'@'localhost';
+$ mysql ejabberd_test < sql/mysql.sql
+
+------------------
+  PostgreSQL
+------------------
+$ psql template1
+template1=# CREATE USER ejabberd_test WITH PASSWORD 'ejabberd_test';
+template1=# CREATE DATABASE ejabberd_test;
+template1=# GRANT ALL PRIVILEGES ON DATABASE ejabberd_test TO ejabberd_test;
+$ psql ejabberd_test -f sql/pg.sql

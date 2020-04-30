@@ -93,10 +93,10 @@ init([Host]) ->
     Type = ejabberd_option:sql_type(Host),
     PoolSize = get_pool_size(Type, Host),
     case Type of
-        sqlite ->
-            check_sqlite_db(Host);
 	mssql ->
 	    ejabberd_sql:init_mssql();
+        sqlite ->
+            check_sqlite_db(Host);
         _ ->
             ok
     end,

@@ -1,6 +1,18 @@
 version: '3.7'
 
 services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server
+    container_name: ejabberd-mssql
+    volumes:
+      - mssqldata:/var/opt/mssql
+    restart: always
+    ports:
+      - 1433:1433
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: ejabberd_Test1
+
   mysql:
     image: mysql:latest
     container_name: ejabberd-mysql
@@ -16,18 +28,6 @@ services:
       MYSQL_DATABASE: ejabberd_test
       MYSQL_USER: ejabberd_test
       MYSQL_PASSWORD: ejabberd_test
-
-  mssql:
-    image: mcr.microsoft.com/mssql/server
-    container_name: ejabberd-mssql
-    volumes:
-      - mssqldata:/var/opt/mssql
-    restart: always
-    ports:
-      - 1433:1433
-    environment:
-      ACCEPT_EULA: Y
-      SA_PASSWORD: ejabberd_Test1
 
   postgres:
     image: postgres:latest

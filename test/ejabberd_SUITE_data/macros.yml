@@ -14,16 +14,16 @@ define_macro:
   PUT_URL: "http://upload.@HOST@:@@web_port@@/upload"
   GET_URL: "http://upload.@HOST@:@@web_port@@/upload"
   NEW_SCHEMA: @@new_schema@@
-  MYSQL_USER: "@@mysql_user@@"
-  MYSQL_SERVER: "@@mysql_server@@"
-  MYSQL_PORT: @@mysql_port@@
-  MYSQL_PASS: "@@mysql_pass@@"
-  MYSQL_DB: "@@mysql_db@@"
   MSSQL_USER: "@@mssql_user@@"
   MSSQL_SERVER: "@@mssql_server@@"
   MSSQL_PORT: @@mssql_port@@
   MSSQL_PASS: "@@mssql_pass@@"
   MSSQL_DB: "@@mssql_db@@"
+  MYSQL_USER: "@@mysql_user@@"
+  MYSQL_SERVER: "@@mysql_server@@"
+  MYSQL_PORT: @@mysql_port@@
+  MYSQL_PASS: "@@mysql_pass@@"
+  MYSQL_DB: "@@mysql_db@@"
   PGSQL_USER: "@@pgsql_user@@"
   PGSQL_SERVER: "@@pgsql_server@@"
   PGSQL_PORT: @@pgsql_port@@

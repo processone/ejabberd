@@ -1440,12 +1440,12 @@ by default and it\(cqs not recommended to change it due to potential race condit
 \fBsql_port\fR: \fI1\&.\&.65535\fR
 .RS 4
 The port where the SQL server is accepting connections\&. The default is
-\fI3306\fR
-for MySQL,
-\fI5432\fR
-for PostgreSQL and
 \fI1433\fR
-for MSSQL\&. The option has no effect for SQLite\&.
+for MS SQL,
+\fI3306\fR
+for MySQL and
+\fI5432\fR
+for PostgreSQL\&. The option has no effect for SQLite\&.
 .RE
 .PP
 \fBsql_query_timeout\fR: \fItimeout()\fR
@@ -1514,7 +1514,7 @@ A time to wait before retrying to restore failed SQL connection\&. The default v
 seconds\&.
 .RE
 .PP
-\fBsql_type\fR: \fImysql | pgsql | sqlite | mssql | odbc\fR
+\fBsql_type\fR: \fImssql | mysql | odbc | pgsql | sqlite\fR
 .RS 4
 The type of an SQL connection\&. The default is
 \fIodbc\fR\&.
