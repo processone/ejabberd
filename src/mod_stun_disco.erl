@@ -53,6 +53,8 @@
 %% gen_iq_handler callback.
 -export([process_iq/1]).
 
+-include_lib("kernel/include/inet.hrl").
+
 -include("logger.hrl").
 -include("translate.hrl").
 -include("xmpp.hrl").
@@ -601,7 +603,8 @@ parse_listener({{Port, _Addr, Transport}, ?STUN_MODULE, Opts}) ->
 		      [misc:ip_to_list(Addr), Port, Transport]),
 	    [];
 	Addr ->
-	    StunService = #service{host = Addr,
+	    Host = maybe_resolve(Addr),
+	    StunService = #service{host = Host,
 				   port = Port,
 				   transport = Transport,
 				   restricted = false,
@@ -610,7 +613,7 @@ parse_listener({{Port, _Addr, Transport}, ?STUN_MODULE, Opts}) ->
 		#{use_turn := true} ->
 		    ?DEBUG("Found STUN/TURN listener: ~s:~B (~s)",
 			   [misc:ip_to_list(Addr), Port, Transport]),
-		    [StunService, #service{host = Addr,
+		    [StunService, #service{host = Host,
 					   port = Port,
 					   transport = Transport,
 					   restricted = is_restricted(Opts),
@@ -640,6 +643,29 @@ get_turn_ip(#{turn_ip := undefined}) -> misc:get_my_ip().
 -spec is_restricted(map()) -> boolean().
 is_restricted(#{auth_type := user}) -> true;
 is_restricted(#{auth_type := anonymous}) -> false.
+
+-spec maybe_resolve(inet:ip_address()) -> binary() | inet:ip_address().
+maybe_resolve(Addr) ->
+    case lookup(Addr, ptr) of
+	[Name] when is_list(Name) ->
+	    case {lookup(Name, a), lookup(Name, aaaa)} of
+		{[Addr], []} ->
+		    ?DEBUG("Resolved address ~s to hostname ~s",
+			   [misc:ip_to_list(Addr), Name]),
+		    list_to_binary(Name);
+		{_, _} ->
+		    ?DEBUG("Won't resolve address ~s to hostname ~s",
+			   [misc:ip_to_list(Addr), Name]),
+		    Addr
+	    end;
+	_ ->
+	    ?DEBUG("Cannot resolve address: ~s", [misc:ip_to_list(Addr)]),
+	    Addr
+    end.
+
+-spec lookup(string() | inet:ip_address(), a | aaaa | ptr) -> [any()].
+lookup(Name, Type) ->
+    inet_res:lookup(Name, in, Type, [], timer:seconds(3)).
 
 -spec call(host_or_hash(), term()) -> term().
 call(Host, Request) ->
