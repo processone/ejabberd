@@ -53,8 +53,6 @@
 %% gen_iq_handler callback.
 -export([process_iq/1]).
 
--include_lib("kernel/include/inet.hrl").
-
 -include("logger.hrl").
 -include("translate.hrl").
 -include("xmpp.hrl").
