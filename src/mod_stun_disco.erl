@@ -258,12 +258,12 @@ mod_doc() ->
 	    [{host,
 	      #{value => ?T("Host"),
 		desc =>
-		    ?T("The host name or IPv4 address the STUN/TURN service is "
+		    ?T("The hostname or IP address the STUN/TURN service is "
 		       "listening on. For non-TLS services, it's recommended "
-		       "to specify an IPv4 address (to avoid additional DNS "
+		       "to specify an IP address (to avoid additional DNS "
 		       "lookup latency on the client side). For TLS services, "
-		       "the host name (or possible IPv4 address) should match "
-		       "the certificate. Specifying the 'host' option is "
+		       "the hostname (or IP address) should match the "
+		       "certificate. Specifying the 'host' option is "
 		       "mandatory.")}},
 	     {port,
 	      #{value => "1..65535",
