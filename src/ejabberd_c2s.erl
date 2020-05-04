@@ -999,4 +999,4 @@ listen_options() ->
      {tls_verify, false},
      {zlib, false},
      {max_stanza_size, infinity},
-     {max_fsm_queue, 5000}].
+     {max_fsm_queue, 10000}].

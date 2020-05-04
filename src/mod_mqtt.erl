@@ -256,7 +256,7 @@ listen_opt_type(max_payload_size) ->
     econf:pos_int(infinity).
 
 listen_options() ->
-    [{max_fsm_queue, 5000},
+    [{max_fsm_queue, 10000},
      {max_payload_size, infinity},
      {tls, false},
      {tls_verify, false}].

@@ -351,4 +351,4 @@ listen_options() ->
      {tls, false},
      {tls_compression, false},
      {max_stanza_size, infinity},
-     {max_fsm_queue, 5000}].
+     {max_fsm_queue, 10000}].
