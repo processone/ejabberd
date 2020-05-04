@@ -609,16 +609,16 @@ parse_listener({{Port, _Addr, Transport}, ?STUN_MODULE, Opts}) ->
 				   type = stun},
 	    case Opts of
 		#{use_turn := true} ->
-		    ?DEBUG("Found STUN/TURN listener: ~s:~B (~s)",
-			   [misc:ip_to_list(Addr), Port, Transport]),
+		    ?INFO_MSG("Going to offer STUN/TURN listener: ~s:~B (~s)",
+			      [misc:ip_to_list(Addr), Port, Transport]),
 		    [StunService, #service{host = Host,
 					   port = Port,
 					   transport = Transport,
 					   restricted = is_restricted(Opts),
 					   type = turn}];
 		#{use_turn := false} ->
-		    ?DEBUG("Found STUN listener: ~s:~B (~s)",
-			   [misc:ip_to_list(Addr), Port, Transport]),
+		    ?INFO_MSG("Going to offer STUN listener: ~s:~B (~s)",
+			      [misc:ip_to_list(Addr), Port, Transport]),
 		    [StunService]
 	    end
     end;
