@@ -10,7 +10,7 @@
 
 extract_lang_src2pot ()
 {
-	./tools/extract-tr.sh src > priv/msgs/ejabberd.pot
+	./tools/extract-tr.sh src deps/xmpp/src > priv/msgs/ejabberd.pot
 }
 
 extract_lang_popot2po ()

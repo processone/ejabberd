@@ -4,8 +4,7 @@
 main(Paths) ->
     Dict = fold_erls(
 	     fun(File, Tokens, Acc) ->
-		     File1 = filename:rootname(filename:basename(File)),
-		     extract_tr(File1, Tokens, Acc)
+		     extract_tr(File, Tokens, Acc)
 	     end, dict:new(), Paths),
     generate_pot(Dict).
 
@@ -114,7 +113,7 @@ format_location_list(L) ->
     "#: " ++ string:join(
 	       lists:map(
 		 fun({File, Pos}) ->
-			 io_lib:format("~s.erl:~B", [File, Pos])
+			 io_lib:format("~s:~B", [File, Pos])
 		 end, L),
 	       " ") ++ io_lib:nl().
 
@@ -137,7 +136,7 @@ pot_header() ->
        "\"MIME-Version: 1.0\\n\"",
        "\"Content-Type: text/plain; charset=UTF-8\\n\"",
        "\"Content-Transfer-Encoding: 8bit\\n\"",
-       "\"X-Poedit-Basepath: ../../src\\n\"",
+       "\"X-Poedit-Basepath: ../..\\n\"",
        "\"X-Poedit-SearchPath-0: .\\n\""],
       io_lib:nl()).
 
