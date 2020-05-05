@@ -127,8 +127,8 @@ api_permissions:
       - connected_users_number
 
 shaper:
-  normal: 1000
-  fast: 50000
+  normal: 20000
+  fast: 200000
 
 shaper_rules:
   max_user_sessions: 10
