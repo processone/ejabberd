@@ -42,8 +42,7 @@
 -include("xmpp.hrl").
 
 -record(state,
-	{access_commands = [] :: list(),
-         auth = noauth        :: noauth | map(),
+	{auth = noauth        :: noauth | map(),
          get_auth = true      :: boolean(),
 	 ip                   :: inet:ip_address()}).
 
@@ -66,10 +65,9 @@ accept(Pid) ->
 %% HTTP interface
 %% -----------------------------
 
-process(_, #request{method = 'POST', data = Data, opts = Opts, ip = {IP, _}}) ->
-    AccessCommands = proplists:get_value(access_commands, Opts, []),
+process(_, #request{method = 'POST', data = Data, ip = {IP, _}}) ->
     GetAuth = true,
-    State = #state{access_commands = AccessCommands, get_auth = GetAuth, ip = IP},
+    State = #state{get_auth = GetAuth, ip = IP},
     case fxml_stream:parse_element(Data) of
 	{error, _} ->
 	    {400, [],
@@ -190,8 +188,7 @@ handler(State, {call, Command, []}) ->
 handler(State,
 	{call, Command, [{struct, AttrL}]}) ->
     {ArgsF, ArgsR, ResultF} = ejabberd_commands:get_command_format(Command, State#state.auth),
-    try_do_command(State#state.access_commands,
-		   State#state.auth, Command, AttrL, ArgsF, ArgsR, ResultF);
+    try_do_command(State#state.auth, Command, AttrL, ArgsF, ArgsR, ResultF);
 handler(_State, Payload) ->
     build_fault_response(-112, "Unknown call: ~p",
 			 [Payload]).
@@ -200,10 +197,8 @@ handler(_State, Payload) ->
 %% Command
 %% -----------------------------
 
-try_do_command(AccessCommands, Auth, Command, AttrL,
-	       ArgsF, ArgsR, ResultF) ->
-    try do_command(AccessCommands, Auth, Command, AttrL,
-		   ArgsF, ArgsR, ResultF)
+try_do_command(Auth, Command, AttrL, ArgsF, ArgsR, ResultF) ->
+    try do_command(Auth, Command, AttrL, ArgsF, ArgsR, ResultF)
     of
       {command_result, ResultFormatted} ->
 	  {false, {response, [ResultFormatted]}}
@@ -238,11 +233,10 @@ build_fault_response(Code, ParseString, ParseArgs) ->
     ?WARNING_MSG(FaultString, []),
     {false, {response, {fault, Code, list_to_binary(FaultString)}}}.
 
-do_command(AccessCommands, Auth, Command, AttrL, ArgsF, ArgsR,
+do_command(Auth, Command, AttrL, ArgsF, ArgsR,
 	   ResultF) ->
     ArgsFormatted = format_args(rename_old_args(AttrL, ArgsR), ArgsF),
-    Auth2 = Auth#{extra_permissions => AccessCommands},
-    Result = ejabberd_commands:execute_command2(Command, ArgsFormatted, Auth2),
+    Result = ejabberd_commands:execute_command2(Command, ArgsFormatted, Auth),
     ResultFormatted = format_result(Result, ResultF),
     {command_result, ResultFormatted}.
 
