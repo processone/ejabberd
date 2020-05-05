@@ -307,7 +307,12 @@ start_connection(Module, Arity, Socket, State, Sup) ->
 		    Module:accept(Pid),
 		    {ok, Pid};
 		Err ->
-		    exit(Pid, kill),
+		    case Sup of
+			undefined ->
+			    exit(Pid, kill);
+			_ ->
+			    supervisor:terminate_child(Sup, Pid)
+		    end,
 		    Err
 	    end;
 	Err ->
