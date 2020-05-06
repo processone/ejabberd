@@ -395,4 +395,11 @@ make_status(error) -> 1;
 make_status(_) -> 1.
 
 listen_options() ->
+    ?WARNING_MSG("It is deprecated defining ejabberd_xmlrpc as a listen module "
+                 "in the ejabberd configuration. Support for that configuration"
+                 " method may be removed in a future ejabberd release. You are "
+                 "encouraged to define ejabberd_xmlrpc inside request_handlers "
+                 "option of ejabberd_http listen module. See the ejabberd "
+                 "documentation for details: https://docs.ejabberd.im/admin/"
+                 "configuration/listen/#ejabberd-xmlrpc", []),
     [].
