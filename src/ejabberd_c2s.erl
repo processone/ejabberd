@@ -293,17 +293,17 @@ process_terminated(#{sid := SID, socket := Socket,
     Status = format_reason(State, Reason),
     ?INFO_MSG("(~ts) Closing c2s session for ~ts: ~ts",
 	      [xmpp_socket:pp(Socket), jid:encode(JID), Status]),
+    Pres = #presence{type = unavailable,
+		     from = JID,
+		     to = jid:remove_resource(JID)},
     State1 = case maps:is_key(pres_last, State) of
 		 true ->
-		     Pres = #presence{type = unavailable,
-				      from = JID,
-				      to = jid:remove_resource(JID)},
 		     ejabberd_sm:close_session_unset_presence(SID, U, S, R,
 							      Status),
-		     broadcast_presence_unavailable(State, Pres);
+		     broadcast_presence_unavailable(State, Pres, true);
 		 false ->
 		     ejabberd_sm:close_session(SID, U, S, R),
-		     State
+		     broadcast_presence_unavailable(State, Pres, false)
 	     end,
     bounce_message_queue(SID, JID),
     State1;
@@ -734,7 +734,7 @@ process_self_presence(#{lserver := LServer, sid := SID,
     _ = ejabberd_sm:unset_presence(SID, U, S, R, Status),
     {Pres1, State1} = ejabberd_hooks:run_fold(
 			c2s_self_presence, LServer, {Pres, State}, []),
-    State2 = broadcast_presence_unavailable(State1, Pres1),
+    State2 = broadcast_presence_unavailable(State1, Pres1, true),
     maps:remove(pres_last, maps:remove(pres_timestamp, State2));
 process_self_presence(#{lserver := LServer} = State,
 		      #presence{type = available} = Pres) ->
@@ -755,28 +755,39 @@ update_priority(#{sid := SID, user := U, server := S, resource := R},
     Priority = get_priority_from_presence(Pres),
     ejabberd_sm:set_presence(SID, U, S, R, Priority, Pres).
 
--spec broadcast_presence_unavailable(state(), presence()) -> state().
-broadcast_presence_unavailable(#{jid := JID, pres_a := PresA} = State, Pres) ->
+-spec broadcast_presence_unavailable(state(), presence(), boolean()) -> state().
+broadcast_presence_unavailable(#{jid := JID, pres_a := PresA} = State, Pres,
+			       BroadcastToRoster) ->
     #jid{luser = LUser, lserver = LServer} = JID,
-    BareJID = jid:remove_resource(JID),
-    Items1 = ejabberd_hooks:run_fold(roster_get, LServer,
-				     [], [{LUser, LServer}]),
+    BareJID = jid:tolower(jid:remove_resource(JID)),
+    Items1 = case BroadcastToRoster of
+		true ->
+		    Roster = ejabberd_hooks:run_fold(roster_get, LServer,
+						     [], [{LUser, LServer}]),
+		    lists:foldl(
+			fun(#roster{jid = LJID, subscription = Sub}, Acc)
+			       when Sub == both; Sub == from ->
+			    maps:put(LJID, 1, Acc);
+			   (_, Acc) ->
+			       Acc
+			end, #{BareJID => 1}, Roster);
+		_ ->
+		    #{BareJID => 1}
+	    end,
     Items2 = ?SETS:fold(
-		fun(LJID, Items) ->
-			[#roster{jid = LJID, subscription = from}|Items]
-		end, Items1, PresA),
-    JIDs = lists:foldl(
-	     fun(#roster{jid = LJID, subscription = Sub}, Tos)
-		   when Sub == both orelse Sub == from ->
-		     To = jid:make(LJID),
-		     P = xmpp:set_to(Pres, jid:make(LJID)),
-		     case privacy_check_packet(State, P, out) of
-			 allow -> [To|Tos];
-			 deny -> Tos
-		     end;
-		(_, Tos) ->
-		     Tos
-	     end, [BareJID], Items2),
+	fun(LJID, Acc) ->
+	    maps:put(LJID, 1, Acc)
+	end, Items1, PresA),
+
+    JIDs = lists:filtermap(
+	fun(LJid) ->
+	    To = jid:make(LJid),
+	    P = xmpp:set_to(Pres, To),
+	    case privacy_check_packet(State, P, out) of
+		allow -> {true, To};
+		deny -> false
+	    end
+	end, maps:keys(Items2)),
     route_multiple(State, JIDs, Pres),
     State#{pres_a => ?SETS:new()}.
 
