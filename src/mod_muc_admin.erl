@@ -495,7 +495,8 @@ get_sort_query(Q) ->
 
 get_sort_query2(Q) ->
     {value, {_, String}} = lists:keysearch(<<"sort">>, 1, Q),
-    Integer = binary_to_integer(String),
+    {StringClean, _} = string:take(String, [$/], true),
+    Integer = binary_to_integer(StringClean),
     case Integer >= 0 of
 	true -> {ok, {normal, Integer}};
 	false -> {ok, {reverse, abs(Integer)}}
