@@ -301,6 +301,10 @@ is_exported(Mod, Fun, Arity, Exports) ->
     catch _:{badkey, _} -> false
     end.
 
+warn_type({var, _, 'Type'}, #state{module = mod_delegation}, "not an atom") ->
+    ok;
+warn_type({var, _, 'NS'}, #state{module = mod_delegation}, "not a binary") ->
+    ok;
 warn_type(Form, State, Warning) ->
     log("~s:~p: Warning: " ++ Warning ++ ": ~s~n",
 	[State#state.file,
