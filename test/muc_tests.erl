@@ -303,56 +303,7 @@ master_slave_cases() ->
       master_slave_test(config_allow_voice_requests),
       master_slave_test(config_voice_request_interval),
       master_slave_test(config_visitor_nickchange),
-      master_slave_test(join_conflict),
-      master_slave_test(service_subscription_subscribers)]}.
-
-service_subscription_subscribers_master(Config) ->
-    Room = muc_room_jid(Config),
-    MyJID = ?config(master, Config),
-    MyBareJID = jid:remove_resource(MyJID),
-    PeerBareJID = jid:remove_resource(?config(slave, Config)),
-    Node = <<"urn:xmpp:mucsub:nodes:subscribers">>,
-    ok = join_new(Config, Room),
-    [104] = set_config(Config, [{allow_subscription, true}, {persistentroom, true}], Room),
-    ok = leave(Config),
-    #presence{} = send_recv(Config, #presence{}),
-    [Node] = subscribe(Config, [Node], Room),
-    #message{from = Room, to = MyBareJID, type = normal} = Message1 = recv_message(Config),
-    #ps_event{items = #ps_items{node = Node,
-        items = [#ps_item{sub_els = [#xmlel{name = <<"subscribe">>,
-            attrs = Attrs1}]}]}} = xmpp:get_subtag(Message1, #ps_event{}),
-    MyBareJID = jid:decode(fxml:get_attr_s(<<"jid">>, Attrs1)),
-    put_event(Config, subscribe),
-    ct:comment("Waiting for 'subscribed' command from the slave"),
-    subscribed = get_event(Config),
-    #message{from = Room, to = MyBareJID, type = normal} = Message2 = recv_message(Config),
-    #ps_event{items = #ps_items{
-        items = [#ps_item{sub_els = [#xmlel{name = <<"subscribe">>,
-            attrs = Attrs2}]}]}} = xmpp:get_subtag(Message2, #ps_event{}),
-    PeerBareJID = jid:decode(fxml:get_attr_s(<<"jid">>, Attrs2)),
-    put_event(Config, unsubscribe),
-    ct:comment("Waiting for 'unsubscribed' command from the slave"),
-    unsubscribed = get_event(Config),
-    #message{from = Room, to = MyBareJID, type = normal} = Message3 = recv_message(Config),
-    #ps_event{items = #ps_items{
-        items = [#ps_item{sub_els = [#xmlel{name = <<"unsubscribe">>,
-            attrs = Attrs3}]}]}} = xmpp:get_subtag(Message3, #ps_event{}),
-    PeerBareJID = jid:decode(fxml:get_attr_s(<<"jid">>, Attrs3)),
-    [] = subscribe(Config, [], Room),   %% no need to test yet another unsubscribe message
-    ok = unsubscribe(Config, Room),
-    disconnect(Config).
-
-service_subscription_subscribers_slave(Config) ->
-    Room = muc_room_jid(Config),
-    ct:comment("Waiting for 'subscribe' command from the master"),
-    subscribe = get_event(Config),
-    [] = subscribe(Config, [], Room),
-    put_event(Config, subscribed),
-    ct:comment("Waiting for 'unsubscribe' command from the master"),
-    unsubscribe = get_event(Config),
-    ok = unsubscribe(Config, Room),
-    put_event(Config, unsubscribed),
-    disconnect(Config).
+      master_slave_test(join_conflict)]}.
 
 join_conflict_master(Config) ->
     ok = join_new(Config),
