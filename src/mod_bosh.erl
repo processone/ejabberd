@@ -260,7 +260,20 @@ mod_doc() ->
            {cache_life_time,
             #{value => "timeout()",
               desc =>
-                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}]}.
+                  ?T("Same as top-level 'cache_life_time' option, but applied to this module only.")}}],
+     example =>
+         ["listen:",
+          "  -",
+          "    port: 5222",
+          "    module: ejabberd_c2s",
+          "  -",
+          "    port: 5443",
+          "    module: ejabberd_http",
+          "    request_handlers:",
+          "      /bosh: mod_bosh",
+          "",
+          "modules:",
+          "  mod_bosh: {}"]}.
 
 %%%----------------------------------------------------------------------
 %%% Cache stuff
