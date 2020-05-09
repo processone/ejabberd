@@ -382,9 +382,9 @@ mod_doc() ->
               "for the corresponding virtual host."), "",
            ?T("NOTE: It is not enough to just load this module. "
               "You should also configure listeners and DNS records "
-              "properly. See section "
-              "https://docs.ejabberd.im/admin/configuration/#sip[SIP] "
-              "of the Configuration Guide for details.")],
+              "properly. For details see the section about the "
+              "http://../listen/#ejabberd-sip[ejabberd_sip] listen module "
+              "in the ejabberd Documentation.")],
       opts =>
           [{always_record_route,
             #{value => "true | false",
