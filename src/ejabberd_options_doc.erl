@@ -253,7 +253,7 @@ doc() ->
      {acme,
       #{value => ?T("Options"),
         desc =>
-            ?T("ACME configuration. ACME is used to automatically "
+            ?T("http://../basic/#acme[ACME] configuration, to automatically "
                "obtain SSL certificates for the domains served by ejabberd, "
                "which means that certificate requests and renewals are "
                "performed to some CA server (aka \"ACME server\") in a fully "
