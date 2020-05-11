@@ -149,7 +149,7 @@ mod_opt_type(services) ->
 -spec mod_options(binary()) -> [{services, [tuple()]} | {atom(), any()}].
 mod_options(_Host) ->
     [{access, local},
-     {credentials_lifetime, timer:minutes(10)},
+     {credentials_lifetime, timer:hours(12)},
      {offer_local_services, true},
      {secret, undefined},
      {services, []}].
@@ -171,10 +171,14 @@ mod_doc() ->
 	   {credentials_lifetime,
 	    #{value => "timeout()",
 	      desc =>
-		  ?T("The lifetime of temporary credentails offered to "
-		     "clients. If a lifetime longer than the default value of "
-		     "'10' minutes is specified, it's strongly recommended to "
-		     "also specify a 'secret' (see below).")}},
+		  ?T("The lifetime of temporary credentials offered to "
+		     "clients. If ejabberd's built-in TURN service is used, "
+		     "TURN relays allocated using temporary credentials will "
+		     "be terminated shortly after the credentials expired. The "
+		     "default value is '12' hours. Note that restarting the "
+		     "ejabberd node invalidates any temporary credentials "
+		     "offered before the restart unless a 'secret' is "
+		     "specified (see below).")}},
 	   {offer_local_services,
 	    #{value => "true | false",
 	      desc =>
@@ -191,14 +195,15 @@ mod_doc() ->
 	      desc =>
 		  ?T("The secret used for generating temporary credentials. If "
 		     "this option isn't specified, a secret will be "
-		     "auto-generated. However, a secret must be specified if "
-		     "non-anonymous TURN services running on other ejabberd "
-		     "nodes and/or external TURN 'services' are configured. "
-		     "Also note that auto-generated secrets are lost when the "
-		     "node is restarted, which invalidates any credentials "
-		     "offered before the restart. Therefore, the "
-		     "'credentials_lifetime' should not exceed a few minutes "
-		     "if no 'secret' is specified.")}},
+		     "auto-generated. However, a secret must be specified "
+		     "explicitly if non-anonymous TURN services running on "
+		     "other ejabberd nodes and/or external TURN 'services' are "
+		     "configured. Also note that auto-generated secrets are "
+		     "lost when the node is restarted, which invalidates any "
+		     "credentials offered before the restart. Therefore, it's "
+		     "recommended to explicitly specify a secret if clients "
+		     "cache retrieved credentials (for later use) across "
+		     "service restarts.")}},
 	   {services,
 	    #{value => "[Service, ...]",
 	      example =>
