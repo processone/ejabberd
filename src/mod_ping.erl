@@ -184,7 +184,14 @@ user_online(_SID, JID, _Info) ->
 
 -spec user_offline(ejabberd_sm:sid(), jid(), ejabberd_sm:info()) -> ok.
 user_offline(_SID, JID, _Info) ->
-    stop_ping(JID#jid.lserver, JID).
+    case ejabberd_sm:get_session_pid(JID#jid.luser,
+                                     JID#jid.lserver,
+                                     JID#jid.lresource) of
+        none ->
+            stop_ping(JID#jid.lserver, JID);
+        _ ->
+            ok
+    end.
 
 -spec user_send({stanza(), ejabberd_c2s:state()}) -> {stanza(), ejabberd_c2s:state()}.
 user_send({Packet, #{jid := JID} = C2SState}) ->
