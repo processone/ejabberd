@@ -1,5 +1,5 @@
 %%%-------------------------------------------------------------------
-%%% @author Evgeny Khramtsov <ekhramtsov@process-one.net>
+%%% Author  : Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%% Created :  6 Apr 2017 by Evgeny Khramtsov <ekhramtsov@process-one.net>
 %%%
 %%%

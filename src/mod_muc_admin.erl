@@ -988,7 +988,7 @@ send_direct_invitation(FromJid, UserJid, Msg) ->
 %% the option to change (for example title or max_users),
 %% and the value to assign to the new option.
 %% For example:
-%%   change_room_option(<<"testroom">>, <<"conference.localhost">>, <<"title">>, <<"Test Room">>)
+%% `change_room_option(<<"testroom">>, <<"conference.localhost">>, <<"title">>, <<"Test Room">>)'
 change_room_option(Name, Service, OptionString, ValueString) ->
     case get_room_pid(Name, Service) of
 	room_not_found ->

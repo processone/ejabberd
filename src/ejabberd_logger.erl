@@ -47,13 +47,6 @@
 
 -export_type([loglevel/0]).
 
--spec restart() -> ok.
--spec reopen_log() -> ok.
--spec rotate_log() -> ok.
--spec get() -> loglevel().
--spec set(0..5 | loglevel()) -> ok.
--spec flush() -> ok.
-
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -173,14 +166,17 @@ do_start(Level) ->
 			  lager:set_loghwm(Handler, LogRateLimit)
 		  end, gen_event:which_handlers(lager_event)).
 
+-spec restart() -> ok.
 restart() ->
     Level = ejabberd_option:loglevel(),
     application:stop(lager),
     start(Level).
 
+-spec reopen_log() -> ok.
 reopen_log() ->
     ok.
 
+-spec rotate_log() -> ok.
 rotate_log() ->
     catch lager_crash_log ! rotate,
     lists:foreach(
@@ -190,6 +186,7 @@ rotate_log() ->
               ok
       end, gen_event:which_handlers(lager_event)).
 
+-spec get() -> loglevel().
 get() ->
     Handlers = get_lager_handlers(),
     lists:foldl(fun(lager_console_backend, _Acc) ->
@@ -201,6 +198,7 @@ get() ->
                 end,
                 none, Handlers).
 
+-spec set(0..5 | loglevel()) -> ok.
 set(N) when is_integer(N), N>=0, N=<5 ->
     set(convert_loglevel(N));
 set(Level) when ?is_loglevel(Level) ->
@@ -241,6 +239,7 @@ get_lager_version() ->
 	false -> "0.0.0"
     end.
 
+-spec flush() -> ok.
 flush() ->
     application:stop(lager),
     application:stop(sasl).
@@ -297,6 +296,7 @@ start(Level) ->
 	    Err
     end.
 
+-spec restart() -> ok.
 restart() ->
     ok.
 
@@ -321,16 +321,20 @@ msg() ->
     [{logger_formatter, [[logger_formatter, title], ":", io_lib:nl()], []},
      msg, io_lib:nl()].
 
+-spec reopen_log() -> ok.
 reopen_log() ->
     ok.
 
+-spec rotate_log() -> ok.
 rotate_log() ->
     ok.
 
+-spec get() -> loglevel().
 get() ->
     #{level := Level} = logger:get_primary_config(),
     Level.
 
+-spec set(0..5 | loglevel()) -> ok.
 set(N) when is_integer(N), N>=0, N=<5 ->
     set(convert_loglevel(N));
 set(Level) when ?is_loglevel(Level) ->
@@ -346,6 +350,7 @@ set(Level) when ?is_loglevel(Level) ->
 	    end
     end.
 
+-spec flush() -> ok.
 flush() ->
     lists:foreach(
       fun(#{id := HandlerId, module := logger_std_h}) ->

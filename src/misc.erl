@@ -306,7 +306,7 @@ join_atoms(Atoms, Sep) ->
     str:join([io_lib:format("~p", [A]) || A <- lists:sort(Atoms)], Sep).
 
 %% @doc Checks if the file is readable and converts its name to binary.
-%%      Fails with `badarg` otherwise. The function is intended for usage
+%%      Fails with `badarg' otherwise. The function is intended for usage
 %%      in configuration validators only.
 -spec try_read_file(file:filename_all()) -> binary().
 try_read_file(Path) ->
@@ -320,7 +320,7 @@ try_read_file(Path) ->
     end.
 
 %% @doc Checks if the URL is valid HTTP(S) URL and converts its name to binary.
-%%      Fails with `badarg` otherwise. The function is intended for usage
+%%      Fails with `badarg' otherwise. The function is intended for usage
 %%      in configuration validators only.
 -spec try_url(binary() | string()) -> binary().
 try_url(URL0) ->

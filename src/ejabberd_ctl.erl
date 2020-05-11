@@ -254,7 +254,7 @@ process2(Args, AccessCommands, Auth, Version) ->
 %% Command calling
 %%-----------------------------
 
-%% @spec (Args::[string()], Auth, AccessCommands) -> string() | integer() | {string(), integer()}
+%% @spec (Args::[string()], Auth, AccessCommands, Version) -> string() | integer() | {string(), integer()}
 try_run_ctp(Args, Auth, AccessCommands, Version) ->
     try ejabberd_hooks:run_fold(ejabberd_ctl_process, false, [Args]) of
 	false when Args /= [] ->
@@ -275,7 +275,7 @@ try_run_ctp(Args, Auth, AccessCommands, Version) ->
 	    {io_lib:format("Error in ejabberd ctl process: '~p' ~p", [Error, Why]), ?STATUS_USAGE}
     end.
 
-%% @spec (Args::[string()], Auth, AccessCommands) -> string() | integer() | {string(), integer()}
+%% @spec (Args::[string()], Auth, AccessCommands, Version) -> string() | integer() | {string(), integer()}
 try_call_command(Args, Auth, AccessCommands, Version) ->
     try call_command(Args, Auth, AccessCommands, Version) of
 	{Reason, wrong_command_arguments} ->
@@ -299,7 +299,7 @@ try_call_command(Args, Auth, AccessCommands, Version) ->
 	     ?STATUS_ERROR}
     end.
 
-%% @spec (Args::[string()], Auth, AccessCommands) -> string() | integer() | {string(), integer()} | {error, ErrorType}
+%% @spec (Args::[string()], Auth, AccessCommands, Version) -> string() | integer() | {string(), integer()} | {error, ErrorType}
 call_command([CmdString | Args], Auth, _AccessCommands, Version) ->
     CmdStringU = ejabberd_regexp:greplace(
                    list_to_binary(CmdString), <<"-">>, <<"_">>),
@@ -695,7 +695,7 @@ print_usage_help(MaxC, ShCode) ->
 %% Print usage command
 %%-----------------------------
 
-%% @spec (CmdSubString::string(), MaxC::integer(), ShCode::boolean()) -> ok
+%% @spec (CmdSubString::string(), MaxC::integer(), ShCode::boolean(), Version) -> ok
 print_usage_commands2(CmdSubString, MaxC, ShCode, Version) ->
     %% Get which command names match this substring
     AllCommandsNames = [atom_to_list(Name) || {Name, _, _} <- ejabberd_commands:list_commands(Version)],
@@ -738,7 +738,7 @@ filter_commands_regexp(All, Glob) ->
       end,
       All).
 
-%% @spec (Cmd::string(), MaxC::integer(), ShCode::boolean()) -> ok
+%% @spec (Cmd::string(), MaxC::integer(), ShCode::boolean(), Version) -> ok
 print_usage_command(Cmd, MaxC, ShCode, Version) ->
     Name = list_to_atom(Cmd),
     C = ejabberd_commands:get_command_definition(Name, Version),
