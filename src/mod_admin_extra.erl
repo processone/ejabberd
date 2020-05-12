@@ -1605,7 +1605,7 @@ mod_doc() ->
 	      "administrator changes their password again. It is possible to "
 	      "define the reason of the ban. The new password also includes "
 	      "the reason and the date and time of the ban. See an example below."),
-           ?T("- 'pushroster' (and 'pushroster-all'):"),
+           ?T("- 'pushroster': (and 'pushroster-all')"),
            ?T("The roster file must be placed, if using Windows, on the "
 	      "directory where you installed ejabberd: "
 	      "C:/Program Files/ejabberd or similar. If you use other "

@@ -4303,17 +4303,17 @@ mod_doc() ->
 	    #{value => "List of Key:Value",
 	      desc =>
 		  ?T("This allows to define a list of key-value to choose "
-		     "defined node plugins on given PEP namespace."),
+		     "defined node plugins on given PEP namespace. "
+		     "The following example will use 'node_tune' instead of "
+		     "'node_pep' for every PEP node with the tune namespace:"),
 	      example =>
-		  [{?T("The following example will use 'node_tune' instead of "
-		       "'node_pep' for every PEP node with the tune namespace:"),
 		    ["modules:",
 		     "  ...",
 		     "  mod_pubsub:",
 		     "    pep_mapping:",
 		     "      http://jabber.org/protocol/tune: tune",
 		     "  ..."]
-		   }]}},
+		   }},
 	   {plugins,
 	    #{value => "[Plugin, ...]",
 	      desc => [?T("To specify which pubsub node plugins to use. "
