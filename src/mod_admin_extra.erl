@@ -113,26 +113,26 @@ depends(_Host, _Opts) ->
 %%%
 
 get_commands_spec() ->
-    Vcard1FieldsString = "Some vcard field names in get/set_vcard are:\n"
-	" FN		- Full Name\n"
-	" NICKNAME	- Nickname\n"
-	" BDAY		- Birthday\n"
-	" TITLE		- Work: Position\n"
-	" ROLE		- Work: Role",
+    Vcard1FieldsString = "Some vcard field names in get/set_vcard are:\n\n"
+	"* FN           - Full Name\n"
+	"* NICKNAME     - Nickname\n"
+	"* BDAY         - Birthday\n"
+	"* TITLE        - Work: Position\n"
+	"* ROLE         - Work: Role\n",
 
-    Vcard2FieldsString = "Some vcard field names and subnames in get/set_vcard2 are:\n"
-	" N FAMILY	- Family name\n"
-	" N GIVEN	- Given name\n"
-	" N MIDDLE	- Middle name\n"
-	" ADR CTRY	- Address: Country\n"
-	" ADR LOCALITY	- Address: City\n"
-	" TEL HOME      - Telephone: Home\n"
-	" TEL CELL      - Telephone: Cellphone\n"
-	" TEL WORK      - Telephone: Work\n"
-	" TEL VOICE     - Telephone: Voice\n"
-	" EMAIL USERID	- E-Mail Address\n"
-	" ORG ORGNAME	- Work: Company\n"
-	" ORG ORGUNIT	- Work: Department",
+    Vcard2FieldsString = "Some vcard field names and subnames in get/set_vcard2 are:\n\n"
+	"* N FAMILY     - Family name\n"
+	"* N GIVEN      - Given name\n"
+	"* N MIDDLE     - Middle name\n"
+	"* ADR CTRY     - Address: Country\n"
+	"* ADR LOCALITY - Address: City\n"
+	"* TEL HOME     - Telephone: Home\n"
+	"* TEL CELL     - Telephone: Cellphone\n"
+	"* TEL WORK     - Telephone: Work\n"
+	"* TEL VOICE    - Telephone: Voice\n"
+	"* EMAIL USERID - E-Mail Address\n"
+	"* ORG ORGNAME  - Work: Company\n"
+	"* ORG ORGUNIT  - Work: Department\n",
 
     VcardXEP = "For a full list of vCard fields check XEP-0054: vcard-temp at "
 	"http://www.xmpp.org/extensions/xep-0054.html",
@@ -435,7 +435,7 @@ get_commands_spec() ->
 			result = {res, rescode}},
      #ejabberd_commands{name = get_vcard, tags = [vcard],
 			desc = "Get content from a vCard field",
-			longdesc = Vcard1FieldsString ++ "\n" ++ Vcard2FieldsString ++ "\n\n" ++ VcardXEP,
+			longdesc = Vcard1FieldsString ++ "\n" ++ VcardXEP,
 			module = ?MODULE, function = get_vcard,
 			args = [{user, binary}, {host, binary}, {name, binary}],
 			args_example = [<<"user1">>,<<"myserver.com">>,<<"NICKNAME">>],
@@ -445,7 +445,7 @@ get_commands_spec() ->
 			result = {content, string}},
      #ejabberd_commands{name = get_vcard2, tags = [vcard],
 			desc = "Get content from a vCard subfield",
-			longdesc = Vcard2FieldsString ++ "\n\n" ++ Vcard1FieldsString ++ "\n" ++ VcardXEP,
+			longdesc = Vcard2FieldsString ++ "\n" ++ VcardXEP,
 			module = ?MODULE, function = get_vcard,
 			args = [{user, binary}, {host, binary}, {name, binary}, {subname, binary}],
 			args_example = [<<"user1">>,<<"myserver.com">>,<<"N">>, <<"FAMILY">>],
@@ -455,14 +455,14 @@ get_commands_spec() ->
 			result = {content, string}},
      #ejabberd_commands{name = get_vcard2_multi, tags = [vcard],
 			desc = "Get multiple contents from a vCard field",
-			longdesc = Vcard2FieldsString ++ "\n\n" ++ Vcard1FieldsString ++ "\n" ++ VcardXEP,
+			longdesc = Vcard2FieldsString ++ "\n" ++ VcardXEP,
 			module = ?MODULE, function = get_vcard_multi,
 			args = [{user, binary}, {host, binary}, {name, binary}, {subname, binary}],
 			result = {contents, {list, {value, string}}}},
 
      #ejabberd_commands{name = set_vcard, tags = [vcard],
 			desc = "Set content in a vCard field",
-			longdesc = Vcard1FieldsString ++ "\n" ++ Vcard2FieldsString ++ "\n\n" ++ VcardXEP,
+			longdesc = Vcard1FieldsString ++ "\n" ++ VcardXEP,
 			module = ?MODULE, function = set_vcard,
 			args = [{user, binary}, {host, binary}, {name, binary}, {content, binary}],
 			args_example = [<<"user1">>,<<"myserver.com">>, <<"URL">>, <<"www.example.com">>],
@@ -470,7 +470,7 @@ get_commands_spec() ->
 			result = {res, rescode}},
      #ejabberd_commands{name = set_vcard2, tags = [vcard],
 			desc = "Set content in a vCard subfield",
-			longdesc = Vcard2FieldsString ++ "\n\n" ++ Vcard1FieldsString ++ "\n" ++ VcardXEP,
+			longdesc = Vcard2FieldsString ++ "\n" ++ VcardXEP,
 			module = ?MODULE, function = set_vcard,
 			args = [{user, binary}, {host, binary}, {name, binary}, {subname, binary}, {content, binary}],
 			args_example = [<<"user1">>,<<"myserver.com">>,<<"TEL">>, <<"NUMBER">>, <<"123456">>],
@@ -478,7 +478,7 @@ get_commands_spec() ->
 			result = {res, rescode}},
      #ejabberd_commands{name = set_vcard2_multi, tags = [vcard],
 			desc = "Set multiple contents in a vCard subfield",
-			longdesc = Vcard2FieldsString ++ "\n\n" ++ Vcard1FieldsString ++ "\n" ++ VcardXEP,
+			longdesc = Vcard2FieldsString ++ "\n" ++ VcardXEP,
 			module = ?MODULE, function = set_vcard,
 			args = [{user, binary}, {host, binary}, {name, binary}, {subname, binary}, {contents, {list, {value, binary}}}],
 			result = {res, rescode}},
