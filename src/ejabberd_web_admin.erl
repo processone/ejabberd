@@ -340,6 +340,7 @@ make_xhtml(Els, Host, Node, Lang, JID, Level) ->
 			   [?XAE(<<"div">>, [{<<"id">>, <<"copyright">>}],
 				 [?XE(<<"p">>,
 				  [?AC(<<"https://www.ejabberd.im/">>, <<"ejabberd">>),
+				   ?C(<<" ">>), ?C(ejabberd_option:version()),
 				   ?C(<<" (c) 2002-2020 ">>),
 				   ?AC(<<"https://www.process-one.net/">>, <<"ProcessOne, leader in messaging and push solutions">>)]
                                  )])])])]}}.
