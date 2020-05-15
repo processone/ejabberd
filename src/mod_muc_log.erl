@@ -92,7 +92,7 @@ check_access_log(Host, From) ->
 
 -spec get_url(#state{}) -> {ok, binary()} | error.
 get_url(#state{room = Room, host = Host, server_host = ServerHost}) ->
-    case mod_muc_log_opt:url(ServerHost) of
+    try mod_muc_log_opt:url(ServerHost) of
 	undefined -> error;
 	URL ->
 	    case mod_muc_log_opt:dirname(ServerHost) of
@@ -101,6 +101,9 @@ get_url(#state{room = Room, host = Host, server_host = ServerHost}) ->
 		room_name ->
 		    {ok, <<URL/binary, $/, Room/binary>>}
 	    end
+    catch
+	error:{module_not_loaded, _, _} ->
+	    error
     end.
 
 depends(_Host, _Opts) ->
