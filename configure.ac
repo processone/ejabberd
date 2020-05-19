@@ -35,18 +35,6 @@ AC_PATH_TOOL(EPMD, epmd, , [${extra_erl_path}$PATH])
 AC_ERLANG_NEED_ERL
 AC_ERLANG_NEED_ERLC
 
-AC_ARG_ENABLE(erlang-version-check,
-[AC_HELP_STRING([--enable-erlang-version-check],
-	[Check Erlang/OTP version @<:@default=yes@:>@])])
-case "$enable_erlang_version_check" in
-	yes|'')
-		ERLANG_VERSION_CHECK([$REQUIRE_ERLANG_MIN],[$REQUIRE_ERLANG_MAX])
-		;;
-	no)
-		ERLANG_VERSION_CHECK([$REQUIRE_ERLANG_MIN],[$REQUIRE_ERLANG_MAX],[warn])
-		;;
-esac
-
 # Checks and sets ERLANG_ROOT_DIR and ERLANG_LIB_DIR variable
 AC_ERLANG_SUBST_ROOT_DIR
 # AC_ERLANG_SUBST_LIB_DIR
@@ -68,45 +56,9 @@ fi
 # Change default prefix
 AC_PREFIX_DEFAULT(/usr/local)
 
-AC_ARG_ENABLE(hipe,
-[AC_HELP_STRING([--enable-hipe], [compile natively with HiPE, not recommended (default: no)])],
-[case "${enableval}" in
-  yes) hipe=true ;;
-  no)  hipe=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-hipe) ;;
-esac],[hipe=false])
-
-AC_ARG_ENABLE(roster_gateway_workaround,
-[AC_HELP_STRING([--enable-roster-gateway-workaround], [turn on workaround for processing gateway subscriptions (default: no)])],
-[case "${enableval}" in
-  yes) roster_gateway_workaround=true ;;
-  no)  roster_gateway_workaround=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-roster-gateway-workaround) ;;
-esac],[roster_gateway_workaround=false])
-
-AC_ARG_ENABLE(new_sql_schema,
-[AC_HELP_STRING([--enable-new-sql-schema], [use new SQL schema (default: no)])],
-[case "${enableval}" in
-  yes) new_sql_schema=true ;;
-  no)  new_sql_schema=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-new-sql-schema) ;;
-esac],[new_sql_schema=false])
-
-AC_ARG_ENABLE(full_xml,
-[AC_HELP_STRING([--enable-full-xml], [use XML features in XMPP stream (ex: CDATA) (default: no, requires XML compliant clients)])],
-[case "${enableval}" in
-  yes) full_xml=true ;;
-  no)  full_xml=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-full-xml) ;;
-esac],[full_xml=false])
-
-AC_ARG_ENABLE(mssql,
-[AC_HELP_STRING([--enable-mssql], [use Microsoft SQL Server database (default: no, requires --enable-odbc)])],
-[case "${enableval}" in
-  yes) db_type=mssql; mssql=true ;;
-  no)  db_type=generic; mssql=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-mssql) ;;
-esac],[db_type=generic])
+AC_CONFIG_FILES([Makefile
+		 vars.config
+		 src/ejabberd.app.src])
 
 AC_ARG_ENABLE(all,
 [AC_HELP_STRING([--enable-all], [same as --enable-odbc --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-redis --enable-elixir --enable-stun --enable-sip --enable-debug --enable-tools (useful for Dialyzer checks, default: no)])],
@@ -116,69 +68,13 @@ AC_ARG_ENABLE(all,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-all) ;;
 esac],[])
 
-AC_ARG_ENABLE(tools,
-[AC_HELP_STRING([--enable-tools], [build development tools (default: no)])],
+AC_ARG_ENABLE(debug,
+[AC_HELP_STRING([--enable-debug], [enable debug information (default: yes)])],
 [case "${enableval}" in
-  yes) tools=true ;;
-  no)  tools=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-tools) ;;
-esac],[if test "x$tools" = "x"; then tools=false; fi])
-
-AC_ARG_ENABLE(odbc,
-[AC_HELP_STRING([--enable-odbc], [enable pure ODBC support (default: no)])],
-[case "${enableval}" in
-  yes) odbc=true ;;
-  no)  odbc=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-odbc) ;;
-esac],[if test "x$odbc" = "x"; then odbc=false; fi])
-
-AC_ARG_ENABLE(mysql,
-[AC_HELP_STRING([--enable-mysql], [enable MySQL support (default: no)])],
-[case "${enableval}" in
-  yes) mysql=true ;;
-  no)  mysql=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-mysql) ;;
-esac],[if test "x$mysql" = "x"; then mysql=false; fi])
-
-AC_ARG_ENABLE(pgsql,
-[AC_HELP_STRING([--enable-pgsql], [enable PostgreSQL support (default: no)])],
-[case "${enableval}" in
-  yes) pgsql=true ;;
-  no)  pgsql=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-pgsql) ;;
-esac],[if test "x$pgsql" = "x"; then pgsql=false; fi])
-
-AC_ARG_ENABLE(sqlite,
-[AC_HELP_STRING([--enable-sqlite], [enable SQLite support (default: no)])],
-[case "${enableval}" in
-  yes) sqlite=true ;;
-  no)  sqlite=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-sqlite) ;;
-esac],[if test "x$sqlite" = "x"; then sqlite=false; fi])
-
-AC_ARG_ENABLE(pam,
-[AC_HELP_STRING([--enable-pam], [enable PAM support (default: no)])],
-[case "${enableval}" in
-  yes) pam=true ;;
-  no)  pam=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-pam) ;;
-esac],[if test "x$pam" = "x"; then pam=false; fi])
-
-AC_ARG_ENABLE(zlib,
-[AC_HELP_STRING([--enable-zlib], [enable Stream Compression (XEP-0138) using zlib (default: yes)])],
-[case "${enableval}" in
-  yes) zlib=true ;;
-  no)  zlib=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-zlib) ;;
-esac],[if test "x$zlib" = "x"; then zlib=true; fi])
-
-AC_ARG_ENABLE(redis,
-[AC_HELP_STRING([--enable-redis], [enable Redis support (default: no)])],
-[case "${enableval}" in
-  yes) redis=true ;;
-  no)  redis=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-redis) ;;
-esac],[if test "x$redis" = "x"; then redis=false; fi])
+  yes) debug=true ;;
+  no)  debug=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-debug) ;;
+esac],[if test "x$debug" = "x"; then debug=true; fi])
 
 AC_ARG_ENABLE(elixir,
 [AC_HELP_STRING([--enable-elixir], [enable Elixir support (default: no)])],
@@ -188,13 +84,47 @@ AC_ARG_ENABLE(elixir,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-elixir) ;;
 esac],[if test "x$elixir" = "x"; then elixir=false; fi])
 
-AC_ARG_ENABLE(debug,
-[AC_HELP_STRING([--enable-debug], [enable debug information (default: yes)])],
+AC_ARG_ENABLE(erlang-version-check,
+[AC_HELP_STRING([--enable-erlang-version-check],
+	[Check Erlang/OTP version (default: yes)])])
+case "$enable_erlang_version_check" in
+	yes|'')
+		ERLANG_VERSION_CHECK([$REQUIRE_ERLANG_MIN],[$REQUIRE_ERLANG_MAX])
+		;;
+	no)
+		ERLANG_VERSION_CHECK([$REQUIRE_ERLANG_MIN],[$REQUIRE_ERLANG_MAX],[warn])
+		;;
+esac
+
+AC_ARG_ENABLE(full_xml,
+[AC_HELP_STRING([--enable-full-xml], [use XML features in XMPP stream (ex: CDATA) (default: no, requires XML compliant clients)])],
 [case "${enableval}" in
-  yes) debug=true ;;
-  no)  debug=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-debug) ;;
-esac],[if test "x$debug" = "x"; then debug=true; fi])
+  yes) full_xml=true ;;
+  no)  full_xml=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-full-xml) ;;
+esac],[full_xml=false])
+
+ENABLEGROUP=""
+AC_ARG_ENABLE(group,
+  [AS_HELP_STRING([--enable-group[[[[=GROUP]]]]], [allow this system group to start ejabberd (default: no)])],
+  [case "${enableval}" in
+     yes) ENABLEGROUP=`groups |head -n 1` ;;
+     no) ENABLEGROUP="" ;;
+     *) ENABLEGROUP=$enableval
+   esac],
+  [])
+if test "$ENABLEGROUP" != ""; then
+  echo "allow this system group to start ejabberd: $ENABLEGROUP"
+  AC_SUBST([INSTALLGROUP], [$ENABLEGROUP])
+fi
+
+AC_ARG_ENABLE(hipe,
+[AC_HELP_STRING([--enable-hipe], [compile natively with HiPE, not recommended (default: no)])],
+[case "${enableval}" in
+  yes) hipe=true ;;
+  no)  hipe=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-hipe) ;;
+esac],[hipe=false])
 
 AC_ARG_ENABLE(latest_deps,
 [AC_HELP_STRING([--enable-latest-deps], [makes rebar use latest commits for dependencies instead of tagged versions (default: no)])],
@@ -204,21 +134,69 @@ AC_ARG_ENABLE(latest_deps,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-latest-deps) ;;
 esac],[if test "x$latest_deps" = "x"; then latest_deps=false; fi])
 
-AC_ARG_ENABLE(system_deps,
-[AC_HELP_STRING([--enable-system-deps], [makes rebar use locally installed dependencies instead of downloading them (default: no)])],
+AC_ARG_ENABLE(mssql,
+[AC_HELP_STRING([--enable-mssql], [use Microsoft SQL Server database (default: no, requires --enable-odbc)])],
 [case "${enableval}" in
-  yes) system_deps=true ;;
-  no)  system_deps=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-system-deps) ;;
-esac],[if test "x$system_deps" = "x"; then system_deps=false; fi])
+  yes) db_type=mssql; mssql=true ;;
+  no)  db_type=generic; mssql=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-mssql) ;;
+esac],[db_type=generic])
 
-AC_ARG_ENABLE(stun,
-[AC_HELP_STRING([--enable-stun], [enable STUN/TURN support (default: yes)])],
+AC_ARG_ENABLE(mysql,
+[AC_HELP_STRING([--enable-mysql], [enable MySQL support (default: no)])],
 [case "${enableval}" in
-  yes) stun=true ;;
-  no)  stun=false ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-stun) ;;
-esac],[if test "x$stun" = "x"; then stun=true; fi])
+  yes) mysql=true ;;
+  no)  mysql=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-mysql) ;;
+esac],[if test "x$mysql" = "x"; then mysql=false; fi])
+
+AC_ARG_ENABLE(new_sql_schema,
+[AC_HELP_STRING([--enable-new-sql-schema], [use new SQL schema (default: no)])],
+[case "${enableval}" in
+  yes) new_sql_schema=true ;;
+  no)  new_sql_schema=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-new-sql-schema) ;;
+esac],[new_sql_schema=false])
+
+AC_ARG_ENABLE(odbc,
+[AC_HELP_STRING([--enable-odbc], [enable pure ODBC support (default: no)])],
+[case "${enableval}" in
+  yes) odbc=true ;;
+  no)  odbc=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-odbc) ;;
+esac],[if test "x$odbc" = "x"; then odbc=false; fi])
+
+AC_ARG_ENABLE(pam,
+[AC_HELP_STRING([--enable-pam], [enable PAM support (default: no)])],
+[case "${enableval}" in
+  yes) pam=true ;;
+  no)  pam=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-pam) ;;
+esac],[if test "x$pam" = "x"; then pam=false; fi])
+
+AC_ARG_ENABLE(pgsql,
+[AC_HELP_STRING([--enable-pgsql], [enable PostgreSQL support (default: no)])],
+[case "${enableval}" in
+  yes) pgsql=true ;;
+  no)  pgsql=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-pgsql) ;;
+esac],[if test "x$pgsql" = "x"; then pgsql=false; fi])
+
+AC_ARG_ENABLE(redis,
+[AC_HELP_STRING([--enable-redis], [enable Redis support (default: no)])],
+[case "${enableval}" in
+  yes) redis=true ;;
+  no)  redis=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-redis) ;;
+esac],[if test "x$redis" = "x"; then redis=false; fi])
+
+AC_ARG_ENABLE(roster_gateway_workaround,
+[AC_HELP_STRING([--enable-roster-gateway-workaround], [turn on workaround for processing gateway subscriptions (default: no)])],
+[case "${enableval}" in
+  yes) roster_gateway_workaround=true ;;
+  no)  roster_gateway_workaround=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-roster-gateway-workaround) ;;
+esac],[roster_gateway_workaround=false])
 
 AC_ARG_ENABLE(sip,
 [AC_HELP_STRING([--enable-sip], [enable SIP support (default: no)])],
@@ -228,9 +206,37 @@ AC_ARG_ENABLE(sip,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-sip) ;;
 esac],[if test "x$sip" = "x"; then sip=false; fi])
 
-AC_CONFIG_FILES([Makefile
-		 vars.config
-		 src/ejabberd.app.src])
+AC_ARG_ENABLE(sqlite,
+[AC_HELP_STRING([--enable-sqlite], [enable SQLite support (default: no)])],
+[case "${enableval}" in
+  yes) sqlite=true ;;
+  no)  sqlite=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-sqlite) ;;
+esac],[if test "x$sqlite" = "x"; then sqlite=false; fi])
+
+AC_ARG_ENABLE(stun,
+[AC_HELP_STRING([--enable-stun], [enable STUN/TURN support (default: yes)])],
+[case "${enableval}" in
+  yes) stun=true ;;
+  no)  stun=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-stun) ;;
+esac],[if test "x$stun" = "x"; then stun=true; fi])
+
+AC_ARG_ENABLE(system_deps,
+[AC_HELP_STRING([--enable-system-deps], [makes rebar use locally installed dependencies instead of downloading them (default: no)])],
+[case "${enableval}" in
+  yes) system_deps=true ;;
+  no)  system_deps=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-system-deps) ;;
+esac],[if test "x$system_deps" = "x"; then system_deps=false; fi])
+
+AC_ARG_ENABLE(tools,
+[AC_HELP_STRING([--enable-tools], [build development tools (default: no)])],
+[case "${enableval}" in
+  yes) tools=true ;;
+  no)  tools=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-tools) ;;
+esac],[if test "x$tools" = "x"; then tools=false; fi])
 
 ENABLEUSER=""
 AC_ARG_ENABLE(user,
@@ -245,19 +251,14 @@ if test "$ENABLEUSER" != ""; then
   echo "allow this system user to start ejabberd: $ENABLEUSER"
   AC_SUBST([INSTALLUSER], [$ENABLEUSER])
 fi
-ENABLEGROUP=""
-AC_ARG_ENABLE(group,
-  [AS_HELP_STRING([--enable-group[[[[=GROUP]]]]], [allow this system group to start ejabberd (default: no)])],
-  [case "${enableval}" in
-     yes) ENABLEGROUP=`groups |head -n 1` ;;
-     no) ENABLEGROUP="" ;;
-     *) ENABLEGROUP=$enableval
-   esac],
-  [])
-if test "$ENABLEGROUP" != ""; then
-  echo "allow this system group to start ejabberd: $ENABLEGROUP"
-  AC_SUBST([INSTALLGROUP], [$ENABLEGROUP])
-fi
+
+AC_ARG_ENABLE(zlib,
+[AC_HELP_STRING([--enable-zlib], [enable Stream Compression (XEP-0138) using zlib (default: yes)])],
+[case "${enableval}" in
+  yes) zlib=true ;;
+  no)  zlib=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-zlib) ;;
+esac],[if test "x$zlib" = "x"; then zlib=true; fi])
 
 if test "$sqlite" = "true"; then
    AX_LIB_SQLITE3([3.6.19])
