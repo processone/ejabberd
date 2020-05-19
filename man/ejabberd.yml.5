@@ -2,12 +2,12 @@
 .\"     Title: ejabberd.yml
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 01/08/2020
+.\"      Date: 05/19/2020
 .\"    Manual: \ \&
 .\"    Source: \ \&
 .\"  Language: English
 .\"
-.TH "EJABBERD\&.YML" "5" "01/08/2020" "\ \&" "\ \&"
+.TH "EJABBERD\&.YML" "5" "05/19/2020" "\ \&" "\ \&"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -82,12 +82,12 @@ All options can be changed in runtime by running \fIejabberdctl reload\-config\f
 .sp
 Some options can be specified for particular virtual host(s) only using \fIhost_config\fR or \fIappend_host_config\fR options\&. Such options are called \fIlocal\fR\&. Examples are \fImodules\fR, \fIauth_method\fR and \fIdefault_db\fR\&. The options that cannot be defined per virtual host are called \fIglobal\fR\&. Examples are \fIloglevel\fR, \fIcertfiles\fR and \fIlisten\fR\&. It is a configuration mistake to put \fIglobal\fR options under \fIhost_config\fR or \fIappend_host_config\fR section \- ejabberd will refuse to load such configuration\&.
 .sp
-It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/19\&.09/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
+It is not recommended to write ejabberd\&.yml from scratch\&. Instead it is better to start from "default" configuration file available at https://github\&.com/processone/ejabberd/blob/20\&.04/ejabberd\&.yml\&.example\&. Once you get ejabberd running you can start changing configuration options to meet your requirements\&.
 .sp
 Note that this document is intended to provide comprehensive description of all configuration options that can be consulted to understand the meaning of a particular option, its format and possible values\&. It will be quite hard to understand how to configure ejabberd by reading this document only \- for this purpose the reader is recommended to read online Configuration Guide available at https://docs\&.ejabberd\&.im/admin/configuration\&.
 .SH "TOP LEVEL OPTIONS"
 .sp
-This section describes top level options of ejabberd\&.
+This section describes top level options of ejabberd 20\&.04
 .PP
 \fBaccess_rules\fR: \fI{AccessName: {allow|deny: ACLRules|ACLName}}\fR
 .RS 4
@@ -246,7 +246,8 @@ is in the form of "regexp", the rule matches any JID with node part matching reg
 .PP
 \fBacme\fR: \fIOptions\fR
 .RS 4
-ACME configuration\&. ACME is used to automatically obtain SSL certificates for the domains served by ejabberd, which means that certificate requests and renewals are performed to some CA server (aka "ACME server") in a fully automated mode\&. The
+ACME
+configuration, to automatically obtain SSL certificates for the domains served by ejabberd, which means that certificate requests and renewals are performed to some CA server (aka "ACME server") in a fully automated mode\&. The
 \fIOptions\fR
 are:
 .PP
@@ -324,6 +325,12 @@ means that SASL Anonymous and login anonymous are both enabled\&. The default va
 \fIsasl_anon\fR\&.
 .RE
 .PP
+\fBapi_permissions\fR: \fI[Permission, \&.\&.\&.]\fR
+.RS 4
+Define the permissions for API access\&. Please consult the ejabberd Docs web → For Developers → ejabberd ReST API →
+API Permissions\&.
+.RE
+.PP
 \fBappend_host_config\fR: \fI{Host: Options}\fR
 .RS 4
 To define specific ejabberd modules in a virtual host, you can define the global
@@ -361,6 +368,15 @@ will be used\&.
 .RS 4
 A list of authentication methods to use\&. If several methods are defined, authentication is considered successful as long as authentication of at least one of the methods succeeds\&. The default value is
 \fI[mnesia]\fR\&.
+.RE
+.PP
+\fBauth_opts\fR: \fI[Option, \&.\&.\&.]\fR
+.RS 4
+This is used by the contributed module
+\fIejabberd_auth_http\fR
+that can be installed from the
+\fIejabberd\-contrib\fR
+Git repository\&. Please refer to that module\(cqs README file for details\&.
 .RE
 .PP
 \fBauth_password_format\fR: \fIplain | scram\fR
@@ -445,7 +461,11 @@ Path to a file of CA root certificates\&. The default is to use system defined f
 \fBcache_life_time\fR: \fItimeout()\fR
 .RS 4
 The time of a cached item to keep in cache\&. Once it\(cqs expired, the corresponding item is erased from cache\&. The default value is
-\fIone hour\fR\&.
+\fIone hour\fR\&. Several modules have a similar option; and some core ejabberd parts support similar options too, see
+\fIauth_cache_life_time\fR,
+\fIoauth_cache_life_time\fR,
+\fIrouter_cache_life_time\fR, and
+\fIsm_cache_life_time\fR\&.
 .RE
 .PP
 \fBcache_missed\fR: \fItrue | false\fR
@@ -453,13 +473,21 @@ The time of a cached item to keep in cache\&. Once it\(cqs expired, the correspo
 Whether or not to cache missed lookups\&. When there is an attempt to lookup for a value in a database and this value is not found and the option is set to
 \fItrue\fR, this attempt will be cached and no attempts will be performed until the cache expires (see
 \fIcache_life_time\fR)\&. Usually you don\(cqt want to change it\&. Default is
-\fItrue\fR\&.
+\fItrue\fR\&. Several modules have a similar option; and some core ejabberd parts support similar options too, see
+\fIauth_cache_missed\fR,
+\fIoauth_cache_missed\fR,
+\fIrouter_cache_missed\fR, and
+\fIsm_cache_missed\fR\&.
 .RE
 .PP
 \fBcache_size\fR: \fIpos_integer() | infinity\fR
 .RS 4
 A maximum number of items (not memory!) in cache\&. The rule of thumb, for all tables except rosters, you should set it to the number of maximum online users you expect\&. For roster multiply this number by 20 or so\&. If the cache size reaches this threshold, it\(cqs fully cleared, i\&.e\&. all items are deleted, and the corresponding warning is logged\&. You should avoid frequent cache clearance, because this degrades performance\&. The default value is
-\fI1000\fR\&.
+\fI1000\fR\&. Several modules have a similar option; and some core ejabberd parts support similar options too, see
+\fIauth_cache_size\fR,
+\fIoauth_cache_size\fR,
+\fIrouter_cache_size\fR, and
+\fIsm_cache_size\fR\&.
 .RE
 .PP
 \fBcaptcha_cmd\fR: \fIPath\fR
@@ -467,7 +495,7 @@ A maximum number of items (not memory!) in cache\&. The rule of thumb, for all t
 Full path to a script that generates CAPTCHA images\&. There is no default value: when this option is not set, CAPTCHA functionality is completely disabled\&.
 .RE
 .PP
-\fBcaptcha_host\fR
+\fBcaptcha_host\fR: \fIString\fR
 .RS 4
 Deprecated\&. Use
 \fIcaptcha_url\fR
@@ -523,7 +551,7 @@ A database backend to use for storing information about cluster\&. The only avai
 .PP
 \fBcluster_nodes\fR: \fI[Node, \&.\&.\&.]\fR
 .RS 4
-A list of Erlang nodes to connect on ejabberd startup\&. This option is mostly intended for ejabberd customization and sofisticated setups\&. The default value is an empty list\&.
+A list of Erlang nodes to connect on ejabberd startup\&. This option is mostly intended for ejabberd customization and sophisticated setups\&. The default value is an empty list\&.
 .RE
 .PP
 \fBdefault_db\fR: \fImnesia | sql\fR
@@ -632,6 +660,37 @@ domain_balancing:
 .\}
 .RE
 .PP
+\fBext_api_headers\fR: \fIHeaders\fR
+.RS 4
+String of headers (separated with commas
+\fI,\fR) that will be provided by ejabberd when sending ReST requests\&. The default value is an empty string of headers:
+\fI""\fR\&.
+.RE
+.PP
+\fBext_api_http_pool_size\fR: \fIpos_integer()\fR
+.RS 4
+Define the size of the HTTP pool, that is, the maximum number of sessions that the ejabberd ReST service will handle simultaneously\&. The default value is:
+\fI100\fR\&.
+.RE
+.PP
+\fBext_api_path_oauth\fR: \fIPath\fR
+.RS 4
+Define the base URI path when performing OAUTH ReST requests\&. The default value is:
+\fI"/oauth"\fR\&.
+.RE
+.PP
+\fBext_api_url\fR: \fIURL\fR
+.RS 4
+Define the base URI when performing ReST requests\&. The default value is:
+\fI"http://localhost/api"\fR\&.
+.RE
+.PP
+\fBextauth_pool_name\fR: \fIName\fR
+.RS 4
+Define the pool name appendix, so the full pool name will be
+\fIextauth_pool_Name\fR\&. The default value is the hostname\&.
+.RE
+.PP
 \fBextauth_pool_size\fR: \fISize\fR
 .RS 4
 The option defines the number of instances of the same external program to start for better load balancing\&. The default is the number of available CPU cores\&.
@@ -716,6 +775,25 @@ Allows only the usage of those options in the included file
 Disallows the usage of those options in the included file
 \fIFilename\fR\&. The options that match this criteria are not accepted\&. The default value is an empty list\&.
 .RE
+.RE
+.PP
+\fBjwt_auth_only_rule\fR: \fIAccessName\fR
+.RS 4
+This ACL rule defines accounts that can use only this auth method, even if others are also defined in the ejabberd configuration file\&. In other words: if there are several auth methods enabled for this host (JWT, SQL, \&...), users that match this rule can only use JWT\&. The default value is
+\fInone\fR\&.
+.RE
+.PP
+\fBjwt_jid_field\fR: \fIFieldName\fR
+.RS 4
+By default, the JID is defined in the
+\fI"jid"\fR
+JWT field\&. This option allows to specify other JWT field name where the JID is defined\&.
+.RE
+.PP
+\fBjwt_key\fR: \fIFilePath\fR
+.RS 4
+Path to the file that contains the JWK Key\&. The default value is
+\fIundefined\fR\&.
 .RE
 .PP
 \fBlanguage\fR: \fILanguage\fR
@@ -847,9 +925,9 @@ is assumed to be "%u"\&.
 .PP
 \fBlisten\fR: \fI[Options, \&.\&.\&.]\fR
 .RS 4
-The option for listeners configuration\&. See
-Listeners
-section of this document for details\&.
+The option for listeners configuration\&. See the
+Listen Modules
+section for details\&.
 .RE
 .PP
 \fBlog_rotate_count\fR: \fINumber\fR
@@ -881,7 +959,7 @@ This option specifies the maximum number of elements in the queue of the FSM (Fi
 .RS 4
 The option for modules configuration\&. See
 Modules
-section of this document for details\&.
+section for details\&.
 .RE
 .PP
 \fBnegotiation_timeout\fR: \fItimeout()\fR
@@ -904,7 +982,7 @@ minute\&.
 Whether to use
 \fInew\fR
 SQL schema\&. All schemas are located at
-https://github\&.com/processone/ejabberd/tree/19\&.09/sql\&. There are two schemas available\&. The default lecacy schema allows to store one XMPP domain into one ejabberd database\&. The
+https://github\&.com/processone/ejabberd/tree/20\&.04/sql\&. There are two schemas available\&. The default legacy schema allows to store one XMPP domain into one ejabberd database\&. The
 \fInew\fR
 schema allows to handle several XMPP domains in a single ejabberd database\&. Using this
 \fInew\fR
@@ -944,6 +1022,12 @@ Same as
 \fIcache_size\fR, but applied to OAuth cache only\&. If not set, the value from
 \fIcache_size\fR
 will be used\&.
+.RE
+.PP
+\fBoauth_client_id_check\fR: \fIallow | db | deny\fR
+.RS 4
+Define whether the client authentication is always allowed, denied, or it will depend if the client ID is present in the database\&. The default value is
+\fIallow\fR\&.
 .RE
 .PP
 \fBoauth_db_type\fR: \fImnesia | sql\fR
@@ -1448,6 +1532,13 @@ for PostgreSQL and
 for MSSQL\&. The option has no effect for SQLite\&.
 .RE
 .PP
+\fBsql_prepared_statements\fR: \fItrue | false\fR
+.RS 4
+This option is
+\fItrue\fR
+by default, and is useful to disable prepared statements\&. The option is valid for PostgreSQL\&.
+.RE
+.PP
 \fBsql_query_timeout\fR: \fItimeout()\fR
 .RS 4
 A time to wait for an SQL query response\&. The default value is
@@ -1540,7 +1631,11 @@ header if you enable this option as, otherwise, the client can set it itself and
 \fBuse_cache\fR: \fItrue | false\fR
 .RS 4
 Enable or disable cache\&. The default is
-\fItrue\fR\&.
+\fItrue\fR\&. Several modules have a similar option; and some core ejabberd parts support similar options too, see
+\fIauth_use_cache\fR,
+\fIoauth_use_cache\fR,
+\fIrouter_use_cache\fR, and
+\fIsm_use_cache\fR\&.
 .RE
 .PP
 \fBvalidate_stream\fR: \fItrue | false\fR
@@ -1584,7 +1679,7 @@ seconds\&.
 .RE
 .SH "MODULES"
 .sp
-This section describes options of all ejabberd modules\&.
+This section describes options of all modules in ejabberd 20\&.04
 .SS "mod_adhoc"
 .sp
 This module implements XEP\-0050: Ad\-Hoc Commands\&. It\(cqs an auxiliary module and is only needed by some of the other modules\&.
@@ -1599,7 +1694,7 @@ This module implements XEP\-0050: Ad\-Hoc Commands\&. It\(cqs an auxiliary modul
 .PP
 \fBreport_commands_node\fR: \fItrue | false\fR
 .RS 4
-Provide the Commands item in the Service Disvocery\&. Default value:
+Provide the Commands item in the Service Discovery\&. Default value:
 \fIfalse\fR\&.
 .RE
 .RE
@@ -1617,11 +1712,7 @@ Details for some commands:
 .sp -1
 .IP \(bu 2.3
 .\}
-\fIban\-acount\fR: This command kicks all the connected sessions of the account from the server\&. It also changes their password to a randomly generated one, so they can\(cqt login anymore unless a server administrator changes their password again\&. It is possible to define the reason of the ban\&. The new password also includes the reason and the date and time of the ban\&. For example, if this command is called:
-\fIejabberdctl vhost example\&.org ban\-account boby "Spammed rooms"\fR, then the sessions of the local account which JID is
-boby@example\&.org
-will be kicked, and its password will be set to something like this:
-\fIBANNED_ACCOUNT\(em20080425T21:45:07\(em2176635\(emSpammed_rooms\fR
+\fIban\-acount\fR: This command kicks all the connected sessions of the account from the server\&. It also changes their password to a randomly generated one, so they can\(cqt login anymore unless a server administrator changes their password again\&. It is possible to define the reason of the ban\&. The new password also includes the reason and the date and time of the ban\&. See an example below\&.
 .RE
 .sp
 .RS 4
@@ -1632,9 +1723,8 @@ will be kicked, and its password will be set to something like this:
 .sp -1
 .IP \(bu 2.3
 .\}
-\fIpushroster\fR
-(and
-\fIpushroster\-all\fR): The roster file must be placed, if using Windows, on the directory where you installed ejabberd: C:/Program Files/ejabberd or similar\&. If you use other Operating System, place the file on the same directory where the \&.beam files are installed\&. See below an example roster file\&.
+\fIpushroster\fR: (and
+\fIpushroster\-all\fR) The roster file must be placed, if using Windows, on the directory where you installed ejabberd: C:/Program Files/ejabberd or similar\&. If you use other Operating System, place the file on the same directory where the \&.beam files are installed\&. See below an example roster file\&.
 .RE
 .sp
 .RS 4
@@ -1645,8 +1735,7 @@ will be kicked, and its password will be set to something like this:
 .sp -1
 .IP \(bu 2.3
 .\}
-\fIsrg\-create\fR: If you want to put a group Name with blankspaces, use the characters "\*(Aq and \*(Aq" to define when the Name starts and ends\&. For example:
-\fIejabberdctl srg\-create g1 example\&.org "\*(AqGroup number 1\e\fR" this_is_g1 g1\*(Aq
+\fIsrg\-create\fR: If you want to put a group Name with blankspaces, use the characters "\*(Aq and \*(Aq" to define when the Name starts and ends\&. See an example below\&.
 .RE
 .sp
 .it 1 an-trap
@@ -1711,6 +1800,30 @@ Content of roster file for \fIpushroster\fR command:
 .if n \{\
 .RE
 .\}
+.sp
+With this call, the sessions of the local account which JID is boby@example\&.org will be kicked, and its password will be set to something like \fIBANNED_ACCOUNT\(em20080425T21:45:07\(em2176635\(emSpammed_rooms\fR
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+ejabberdctl vhost example\&.org ban\-account boby "Spammed rooms"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Call to srg\-create using double\-quotes and single\-quotes:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+ejabberdctl srg\-create g1 example\&.org "\*(AqGroup number 1\*(Aq" this_is_g1 g1
+.fi
+.if n \{\
+.RE
+.\}
 .RE
 .SS "mod_admin_update_sql"
 .sp
@@ -1721,34 +1834,66 @@ The module has no options\&.
 .sp
 This module enables configured users to broadcast announcements and to set the message of the day (MOTD)\&. Configured users can perform these actions with an XMPP client either using Ad\-hoc Commands or sending messages to specific JIDs\&.
 .sp
+Note that this module can be resource intensive on large deployments as it may broadcast a lot of messages\&. This module should be disabled for instances of ejabberd with hundreds of thousands users\&.
+.sp
 The Ad\-hoc Commands are listed in the Server Discovery\&. For this feature to work, \fImod_adhoc\fR must be enabled\&.
 .sp
 The specific JIDs where messages can be sent are listed below\&. The first JID in each entry will apply only to the specified virtual host example\&.org, while the JID between brackets will apply to all virtual hosts in ejabberd:
-.PP
-example\&.org/announce/all (example\&.org/announce/all\-hosts/all)
+.sp
 .RS 4
-The message is sent to all registered users\&. If the user is online and connected to several resources, only the resource with the highest priority will receive the message\&. If the registered user is not connected, the message will be stored offline in assumption that offline storage (see
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+example\&.org/announce/all (example\&.org/announce/all\-hosts/all):: The message is sent to all registered users\&. If the user is online and connected to several resources, only the resource with the highest priority will receive the message\&. If the registered user is not connected, the message will be stored offline in assumption that offline storage (see
 \fImod_offline\fR) is enabled\&.
 .RE
-.PP
-example\&.org/announce/online (example\&.org/announce/all\-hosts/online)
+.sp
 .RS 4
-The message is sent to all connected users\&. If the user is online and connected to several resources, all resources will receive the message\&.
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+example\&.org/announce/online (example\&.org/announce/all\-hosts/online):: The message is sent to all connected users\&. If the user is online and connected to several resources, all resources will receive the message\&.
 .RE
-.PP
-example\&.org/announce/motd (example\&.org/announce/all\-hosts/motd)
+.sp
 .RS 4
-The message is set as the message of the day (MOTD) and is sent to users when they login\&. In addition the message is sent to all connected users (similar to announce/online)\&.
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+example\&.org/announce/motd (example\&.org/announce/all\-hosts/motd):: The message is set as the message of the day (MOTD) and is sent to users when they login\&. In addition the message is sent to all connected users (similar to announce/online)\&.
 .RE
-.PP
-example\&.org/announce/motd/update (example\&.org/announce/all\-hosts/motd/update)
+.sp
 .RS 4
-The message is set as message of the day (MOTD) and is sent to users when they login\&. The message is not sent to any currently connected user\&.
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+example\&.org/announce/motd/update (example\&.org/announce/all\-hosts/motd/update):: The message is set as message of the day (MOTD) and is sent to users when they login\&. The message is not sent to any currently connected user\&.
 .RE
-.PP
-example\&.org/announce/motd/delete (example\&.org/announce/all\-hosts/motd/delete)
+.sp
 .RS 4
-Any message sent to this JID removes the existing message of the day (MOTD)\&.
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+example\&.org/announce/motd/delete (example\&.org/announce/all\-hosts/motd/delete):: Any message sent to this JID removes the existing message of the day (MOTD)\&.
 .RE
 .sp
 .it 1 an-trap
@@ -1827,7 +1972,7 @@ will be converted to format in
 can also be
 \fIdefault\fR, which is match\-all rule\&. NOTE: the list of supported formats is detected at compile time depending on the image libraries installed in the system\&.
 .sp
-In this example avatars in WebP format are converted to JPEG, all other formats are converted to PNG:
+\fBExample\fR:
 .sp
 .if n \{\
 .RS 4
@@ -1953,11 +2098,29 @@ option, but applied to this module only\&.
 This option has no effect\&.
 .RE
 .PP
+\fBmax_concat\fR: \fIpos_integer() | infinity\fR
+.RS 4
+This option limits the number of stanzas that the server will send in a single bosh request\&. The default value is
+\fIunlimited\fR\&.
+.RE
+.PP
 \fBmax_inactivity\fR: \fItimeout()\fR
 .RS 4
 The option defines the maximum inactivity period\&. The default value is
 \fI30\fR
 seconds\&.
+.RE
+.PP
+\fBmax_pause\fR: \fIpos_integer()\fR
+.RS 4
+Indicate the maximum length of a temporary session pause (in seconds) that a client can request\&. The default value is
+\fI120\fR\&.
+.RE
+.PP
+\fBprebind\fR: \fItrue | false\fR
+.RS 4
+If enabled, the client can create the session without going through authentication\&. Basically, it creates a new session with anonymous authentication\&. The default value is
+\fIfalse\fR\&.
 .RE
 .PP
 \fBqueue_type\fR: \fIram | file\fR
@@ -1980,6 +2143,36 @@ Same as top\-level
 \fIuse_cache\fR
 option, but applied to this module only\&.
 .RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBExample:\fR
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+listen:
+  \-
+    port: 5222
+    module: ejabberd_c2s
+  \-
+    port: 5443
+    module: ejabberd_http
+    request_handlers:
+      /bosh: mod_bosh
+
+modules:
+  mod_bosh: {}
+.fi
+.if n \{\
+.RE
+.\}
 .RE
 .SS "mod_caps"
 .sp
@@ -2074,6 +2267,38 @@ The module has no options\&.
 .SS "mod_delegation"
 .sp
 This module is an implementation of XEP\-0355: Namespace Delegation\&. Only admin mode has been implemented by now\&. Namespace delegation allows external services to handle IQ using specific namespace\&. This may be applied for external PEP service\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+.sp
+Security issue: Namespace delegation gives components access to sensitive data, so permission should be granted carefully, only if you trust the component\&.
+.sp .5v
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This module is complementary to \fImod_privilege\fR but can also be used separately\&.
+.sp .5v
+.RE
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -2107,8 +2332,10 @@ The list of attributes\&. Currently not used\&.
 .nr an-break-flag 1
 .br
 .ps +1
-\fBExample:\fR
+\fBExamples:\fR
 .RS 4
+.sp
+Make sure you do not delegate the same namespace to several services at the same time\&. As in the example provided later, to have the \fIsat\-pubsub\&.example\&.org\fR component perform correctly disable the \fImod_pubsub\fR module\&.
 .sp
 .if n \{\
 .RS 4
@@ -2224,6 +2451,22 @@ server_info:
 The module bans IPs that show the malicious signs\&. Currently only C2S authentication failures are detected\&.
 .sp
 Unlike the standalone program, \fImod_fail2ban\fR clears the record of authentication failures after some time since the first failure or on a successful authentication\&. It also does not simply block network traffic, but provides the client with a descriptive error message\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+.sp
+You should not use this module behind a proxy or load balancer\&. ejabberd will see the failures as coming from the load balancer and, when the threshold of auth failures is reached, will reject all connections coming from the load balancer\&. You can lock all your user base out of ejabberd when using this module behind a proxy\&.
+.sp .5v
+.RE
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -2261,6 +2504,12 @@ The number of C2S authentication failures to trigger the IP ban\&. The default v
 .sp
 This module provides a ReST API to call ejabberd commands using JSON data\&.
 .sp
+To use this module, in addition to adding it to the \fImodules\fR section, you must also add it to \fIrequest_handlers\fR of some listener\&.
+.sp
+To use a specific API version N, when defining the URL path in the request_handlers, add a \fIvN\fR\&. For example: \fI/api/v2: mod_http_api\fR
+.sp
+To run a command, send a POST request to the corresponding URL: \fIhttp://localhost:5280/api/<command_name>\fR
+.sp
 The module has no options\&.
 .SS "mod_http_fileserver"
 .sp
@@ -2281,9 +2530,9 @@ File to log accesses using an Apache\-like format\&. No log will be recorded if 
 .PP
 \fBcontent_types\fR: \fI{Extension: Type}\fR
 .RS 4
-Specify mappings of extension to content type\&. There are several content types already defined\&. With this option you can add new definitions or modify existing ones\&.
+Specify mappings of extension to content type\&. There are several content types already defined\&. With this option you can add new definitions or modify existing ones\&. The default values are:
 .sp
-The default value is shown in the example below:
+\fBExample\fR:
 .sp
 .if n \{\
 .RS 4
@@ -2487,7 +2736,7 @@ A name of the service in the Service Discovery\&. This will only be displayed by
 .PP
 \fBput_url\fR: \fIURL\fR
 .RS 4
-This option specifies the initial part of the PUT URLs used for file uploads\&. The keyword @HOST@ is replaced with the virtual host name\&. NOTE: different virtual hosts cannot use the same PUT URL\&. The default value is "http://@HOST@:5444"\&.
+This option specifies the initial part of the PUT URLs used for file uploads\&. The keyword @HOST@ is replaced with the virtual host name\&. NOTE: different virtual hosts cannot use the same PUT URL\&. The default value is "https://@HOST@:5443"\&.
 .RE
 .PP
 \fBrm_on_unregister\fR: \fItrue | false\fR
@@ -2635,8 +2884,10 @@ directory, once per day\&. The default value is
 .nr an-break-flag 1
 .br
 .ps +1
-\fBExample:\fR
+\fBExamples:\fR
 .RS 4
+.sp
+Please note that it\(cqs not necessary to specify the \fIaccess_hard_quota\fR and \fIaccess_soft_quota\fR options in order to use the quota feature\&. You can stick to the default names and just specify access rules such as those in this example:
 .sp
 .if n \{\
 .RS 4
@@ -2759,6 +3010,12 @@ This module implements XEP\-0313: Message Archive Management\&. Compatible XMPP 
 \fBAvailable options:\fR
 .RS 4
 .PP
+\fBaccess_preferences\fR: \fIAccessName\fR
+.RS 4
+This access rule defines who is allowed to modify the MAM preferences\&. The default value is
+\fIall\fR\&.
+.RE
+.PP
 \fBassume_mam_usage\fR: \fItrue | false\fR
 .RS 4
 This option determines how ejabberd\(cqs stream management code (see
@@ -2834,6 +3091,12 @@ option\&. Once the server received a request, that user\(cqs messages are archiv
 Same as top\-level
 \fIuse_cache\fR
 option, but applied to this module only\&.
+.RE
+.PP
+\fBuser_mucsub_from_muc_archive\fR: \fItrue | false\fR
+.RS 4
+When this option is disabled, for each individual subscriber a separa mucsub message is stored\&. With this option enabled, when a user fetches archive virtual mucsub, messages are generated from muc archives\&. The default value is
+\fIfalse\fR\&.
 .RE
 .RE
 .SS "mod_metrics"
@@ -2965,6 +3228,8 @@ An internet port number at which the backend is listening for incoming connectio
 .sp
 This module is an experimental implementation of XEP\-0369: Mediated Information eXchange (MIX)\&. MIX support was added in ejabberd 16\&.03 as an experimental feature, updated in 19\&.02, and is not yet ready to use in production\&. It\(cqs asserted that the MIX protocol is going to replace the MUC protocol in the future (see \fImod_muc\fR)\&.
 .sp
+To learn more about how to use that feature, you can refer to our tutorial: Getting started with XEP\-0369: Mediated Information eXchange (MIX) v0\&.1\&.
+.sp
 The module depends on \fImod_mam\fR\&.
 .sp
 .it 1 an-trap
@@ -3075,7 +3340,7 @@ option, but applied to this module only\&.
 .RE
 .SS "mod_mqtt"
 .sp
-This module adds support for the MQTT protocol version \fI3\&.1\&.1\fR and \fI5\&.0\fR\&.
+This module adds support for the MQTT protocol version \fI3\&.1\&.1\fR and \fI5\&.0\fR\&. Remember to configure \fImod_mqtt\fR in \fImodules\fR and \fIlisten\fR sections\&.
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -3180,6 +3445,10 @@ option, but applied to this module only\&.
 .SS "mod_muc"
 .sp
 This module provides support for XEP\-0045: Multi\-User Chat\&. Users can discover existing rooms, join or create them\&. Occupants of a room can chat in public or have private chats\&.
+.sp
+The MUC service allows any Jabber ID to register a nickname, so nobody else can use that nickname in any room in the MUC service\&. To register a nickname, open the Service Discovery in your XMPP client and register in the MUC service\&.
+.sp
+This module supports clustering and load balancing\&. One module can be started per cluster node\&. Rooms are distributed at creation time on all available MUC module instances\&. The multi\-user chat module is clustered but the rooms themselves are not clustered nor fault\-tolerant: if the node managing a set of rooms goes down, the rooms disappear and they will be recreated on an available node on first connection attempt\&.
 .sp
 .it 1 an-trap
 .nr an-no-space-flag 1
@@ -3891,7 +4160,8 @@ Specify a list of custom limits which override the default ones defined in XEP\-
 .sp -1
 .IP \(bu 2.3
 .\}
-The sender type can be:
+\fIsender\fR
+can be:
 \fIlocal\fR
 or
 \fIremote\fR\&.
@@ -3905,7 +4175,8 @@ or
 .sp -1
 .IP \(bu 2.3
 .\}
-The stanza type can be:
+\fIstanza\fR
+can be:
 \fImessage\fR
 or
 \fIpresence\fR\&.
@@ -3919,15 +4190,17 @@ or
 .sp -1
 .IP \(bu 2.3
 .\}
-The number can be a positive integer or the key word
+\fInumber\fR
+can be a positive integer or
 \fIinfinite\fR\&.
 .sp
-Default values:
+\fBExample\fR:
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
+# Default values:
 local:
   message: 100
   presence: 100
@@ -4018,7 +4291,7 @@ This module implements XEP\-0160: Best Practices for Handling Offline Messages a
 .ps -1
 .br
 .sp
-\fIejabberdctl\fR has a command to delete expired messages (see chapterhttps://docs\&.ejabberd\&.im/admin/guide/managing[Managing an ejabberd server] in online documentation\&.
+\fIejabberdctl\fR has a command to delete expired messages (see chapter Managing an ejabberd server in online documentation\&.
 .sp .5v
 .RE
 .sp
@@ -4086,7 +4359,7 @@ option, but applied to this module only\&.
 .PP
 \fBuse_mam_for_storage\fR: \fItrue | false\fR
 .RS 4
-This is an experimetal option\&. Enabling this option will make
+This is an experimental option\&. Enabling this option will make
 \fImod_offline\fR
 not use the former spool table for storing MucSub offline messages, but will use the archive table instead\&. This use of the archive table is cleaner and it makes it possible for clients to slowly drop the former offline use case and rely on message archive instead\&. It also further reduces the storage required when you enabled MucSub\&. Enabling this option has a known drawback for the moment: most of flexible message retrieval queries don\(cqt work (those that allow retrieval/deletion of messages by id), but this specification is not widely used\&. The default value is
 \fIfalse\fR
@@ -4381,6 +4654,24 @@ option, but applied to this module only\&.
 This module is an implementation of XEP\-0356: Privileged Entity\&. This extension allows components to have privileged access to other entity data (send messages on behalf of the server or on behalf of a user, get/set user roster, access presence information, etc\&.)\&. This may be used to write powerful external components, for example implementing an external PEP or MAM service\&.
 .sp
 By default a component does not have any privileged access\&. It is worth noting that the permissions grant access to the component to a specific data type for all users of the virtual host on which \fImod_privilege\fR is loaded\&.
+.sp
+Make sure you have a listener configured to connect your component\&. Check the section about listening ports for more information\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+.sp
+Security issue: Privileged access gives components access to sensitive data, so permission should be granted carefully, only if you trust a component\&.
+.sp .5v
+.RE
 .if n \{\
 .sp
 .\}
@@ -4683,6 +4974,331 @@ modules:
 .RE
 .\}
 .RE
+.SS "mod_pubsub"
+.sp
+This module offers a service for XEP\-0060: Publish\-Subscribe\&. The functionality in \fImod_pubsub\fR can be extended using plugins\&. The plugin that implements PEP (XEP\-0163: Personal Eventing via Pubsub) is enabled in the default ejabberd configuration file, and it requires \fImod_caps\fR\&.
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBAvailable options:\fR
+.RS 4
+.PP
+\fBaccess_createnode\fR: \fIAccessName\fR
+.RS 4
+This option restricts which users are allowed to create pubsub nodes using
+\fIacl\fR
+and
+\fIaccess\fR\&. By default any account in the local ejabberd server is allowed to create pubsub nodes\&. The default value is:
+\fIall\fR\&.
+.RE
+.PP
+\fBdb_type\fR: \fImnesia | sql\fR
+.RS 4
+Same as top\-level
+\fIdefault_db\fR
+option, but applied to this module only\&.
+.RE
+.PP
+\fBdefault_node_config\fR: \fIList of Key:Value\fR
+.RS 4
+To override default node configuration, regardless of node plugin\&. Value is a list of key\-value definition\&. Node configuration still uses default configuration defined by node plugin, and overrides any items by value defined in this configurable list\&.
+.RE
+.PP
+\fBforce_node_config\fR: \fIList of Node and the list of its Key:Value\fR
+.RS 4
+Define the configuration for given nodes\&. The default value is:
+\fI[]\fR\&.
+.sp
+\fBExample\fR:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+force_node_config:
+  ## Avoid buggy clients to make their bookmarks public
+  storage:bookmarks:
+    access_model: whitelist
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBhost\fR
+.RS 4
+Deprecated\&. Use
+\fIhosts\fR
+instead\&.
+.RE
+.PP
+\fBhosts\fR: \fI[Host, \&.\&.\&.]\fR
+.RS 4
+This option defines the Jabber IDs of the service\&. If the
+\fIhosts\fR
+option is not specified, the only Jabber ID will be the hostname of the virtual host with the prefix "vjud\&."\&. The keyword
+\fI@HOST@\fR
+is replaced with the real virtual host name\&.
+.RE
+.PP
+\fBignore_pep_from_offline\fR: \fIfalse | true\fR
+.RS 4
+To specify whether or not we should get last published PEP items from users in our roster which are offline when we connect\&. Value is
+\fItrue\fR
+or
+\fIfalse\fR\&. If not defined, pubsub assumes true so we only get last items of online contacts\&.
+.RE
+.PP
+\fBlast_item_cache\fR: \fIfalse | true\fR
+.RS 4
+To specify whether or not pubsub should cache last items\&. Value is
+\fItrue\fR
+or
+\fIfalse\fR\&. If not defined, pubsub does not cache last items\&. On systems with not so many nodes, caching last items speeds up pubsub and allows to raise user connection rate\&. The cost is memory usage, as every item is stored in memory\&.
+.RE
+.PP
+\fBmax_items_node\fR: \fIMaxItems\fR
+.RS 4
+Define the maximum number of items that can be stored in a node\&. Default value is:
+\fI10\fR\&.
+.RE
+.PP
+\fBmax_nodes_discoitems\fR: \fIpos_integer() | infinity\fR
+.RS 4
+The maximum number of nodes to return in a discoitem response\&. The default value is:
+\fI100\fR\&.
+.RE
+.PP
+\fBmax_subscriptions_node\fR: \fIMaxSubs\fR
+.RS 4
+Define the maximum number of subscriptions managed by a node\&. Default value is no limitation:
+\fIundefined\fR\&.
+.RE
+.PP
+\fBname\fR: \fIName\fR
+.RS 4
+The value of the service name\&. This name is only visible in some clients that support
+XEP\-0030: Service Discovery\&. The default is
+\fIvCard User Search\fR\&.
+.RE
+.PP
+\fBnodetree\fR: \fINodetree\fR
+.RS 4
+To specify which nodetree to use\&. If not defined, the default pubsub nodetree is used:
+\fItree\fR\&. Only one nodetree can be used per host, and is shared by all node plugins\&.
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fItree\fR
+nodetree store node configuration and relations on the database\&.
+\fIflat\fR
+nodes are stored without any relationship, and
+\fIhometree\fR
+nodes can have child nodes\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIvirtual\fR
+nodetree does not store nodes on database\&. This saves resources on systems with tons of nodes\&. If using the
+\fIvirtual\fR
+nodetree, you can only enable those node plugins:
+\fI[flat, pep]\fR
+or
+\fI[flat]\fR; any other plugins configuration will not work\&. Also, all nodes will have the default configuration, and this can not be changed\&. Using
+\fIvirtual\fR
+nodetree requires to start from a clean database, it will not work if you used the default
+\fItree\fR
+nodetree before\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIdag\fR
+nodetree provides experimental support for PubSub Collection Nodes (XEP\-0248)\&. In that case you should also add
+\fIdag\fR
+node plugin as default, for example:
+\fIplugins: [flat,pep]\fR
+.RE
+.RE
+.PP
+\fBpep_mapping\fR: \fIList of Key:Value\fR
+.RS 4
+This allows to define a list of key\-value to choose defined node plugins on given PEP namespace\&. The following example will use
+\fInode_tune\fR
+instead of
+\fInode_pep\fR
+for every PEP node with the tune namespace:
+.sp
+\fBExample\fR:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+modules:
+  \&.\&.\&.
+  mod_pubsub:
+    pep_mapping:
+      http://jabber\&.org/protocol/tune: tune
+  \&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBplugins\fR: \fI[Plugin, \&.\&.\&.]\fR
+.RS 4
+To specify which pubsub node plugins to use\&. The first one in the list is used by default\&. If this option is not defined, the default plugins list is:
+\fI[flat]\fR\&. PubSub clients can define which plugin to use when creating a node: add
+\fItype=\*(Aqplugin\-name\fR\*(Aq attribute to the
+\fIcreate\fR
+stanza element\&.
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIflat\fR
+plugin handles the default behaviour and follows standard XEP\-0060 implementation\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIpep\fR
+plugin adds extention to handle Personal Eventing Protocol (XEP\-0163) to the PubSub engine\&. Adding pep allows to handle PEP automatically\&.
+.RE
+.RE
+.PP
+\fBvcard\fR: \fIvCard\fR
+.RS 4
+A custom vCard of the server that will be displayed by some XMPP clients in Service Discovery\&. The value of
+\fIvCard\fR
+is a YAML map constructed from an XML representation of vCard\&. Since the representation has no attributes, the mapping is straightforward\&.
+.sp
+The following XML representation of vCard:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<vCard xmlns=\*(Aqvcard\-temp\*(Aq>
+  <FN>PubSub Service</FN>
+  <ADR>
+    <WORK/>
+    <STREET>Elm Street</STREET>
+  </ADR>
+</vCard>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+will be translated to:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+vcard:
+  fn: PubSub Service
+  adr:
+    \-
+      work: true
+      street: Elm Street
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBExamples:\fR
+.RS 4
+.sp
+Example of configuration that uses flat nodes as default, and allows use of flat, hometree and pep nodes:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+modules:
+  \&.\&.\&.
+  mod_pubsub:
+    access_createnode: pubsub_createnode
+    max_subscriptions_node: 100
+    default_node_config:
+      notification_type: normal
+      notify_retract: false
+      max_items: 4
+    plugins:
+      \- flat
+      \- pep
+  \&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Using relational database requires using mod_pubsub with db_type \fIsql\fR\&. Only flat, hometree and pep plugins supports SQL\&. The following example shows previous configuration with SQL usage:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+modules:
+  \&.\&.\&.
+  mod_pubsub:
+    db_type: sql
+    access_createnode: pubsub_createnode
+    ignore_pep_from_offline: true
+    last_item_cache: false
+    plugins:
+      \- flat
+      \- pep
+  \&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
+.RE
 .SS "mod_push"
 .sp
 This module implements the XMPP server\(cqs part of the push notification solution specified in XEP\-0357: Push Notifications\&. It does not generate, for example, APNS or FCM notifications directly\&. Instead, it\(cqs designed to work with so\-called "app servers" operated by third\-party vendors of mobile apps\&. Those app servers will usually trigger notification delivery to the user\(cqs mobile device using platform\-dependant backend services such as FCM or APNS\&.
@@ -4822,6 +5438,8 @@ Change the password from an existing account on the server\&.
 Delete an existing account on the server\&.
 .RE
 .sp
+This module reads also another option defined globally for the server: \fIregistration_timeout\fR\&. Please check that option documentation in the section with top\-level options\&.
+.sp
 .it 1 an-trap
 .nr an-no-space-flag 1
 .nr an-break-flag 1
@@ -4930,6 +5548,10 @@ Change the password from an existing account on the server\&.
 .\}
 Delete an existing account on the server\&.
 .RE
+.sp
+This module supports CAPTCHA image to register a new account\&. To enable this feature, configure the options \fIcaptcha_cmd\fR and \fIcaptcha_url\fR, which are documented in the section with top\-level options\&.
+.sp
+As an example usage, the users of the host \fIexample\&.org\fR can visit the page: \fIhttps://example\&.org:5281/register/\fR It is important to include the last / character in the URL, otherwise the subpages URL will be incorrect\&.
 .sp
 The module depends on \fImod_register\fR where all the configuration is performed\&.
 .sp
@@ -5143,7 +5765,7 @@ This module enables you to create shared roster groups: groups of accounts that 
 .sp
 The big advantages of this feature are that end users do not need to manually add all users to their rosters, and that they cannot permanently delete users from the shared roster groups\&. A shared roster group can have members from any XMPP server, but the presence will only be available from and to members of the same virtual host where the group is created\&. It still allows the users to have / add their own contacts, as it does not replace the standard roster\&. Instead, the shared roster contacts are merged to the relevant users at retrieval time\&. The standard user rosters thus stay unmodified\&.
 .sp
-Shared roster groups can be edited only via the Web Admin\&. Each group has unique identification and those parameters:
+Shared roster groups can be edited via the Web Admin, and some API commands called \fIsrg_*\fR\&. Each group has a unique name and those parameters:
 .sp
 .RS 4
 .ie n \{\
@@ -5153,7 +5775,7 @@ Shared roster groups can be edited only via the Web Admin\&. Each group has uniq
 .sp -1
 .IP \(bu 2.3
 .\}
-Name: The group\(cqs name will be displayed in the roster\&.
+Label: Used in the rosters where this group is displayed\&.
 .RE
 .sp
 .RS 4
@@ -5190,7 +5812,7 @@ represents the online users in the virtual host\&. With those two directives, th
 .sp -1
 .IP \(bu 2.3
 .\}
-Displayed groups: A list of groups that will be in the rosters of this group\(cqs members\&. A group of other vhost can be identified with
+Displayed: A list of groups that will be in the rosters of this group\(cqs members\&. A group of other vhost can be identified with
 \fIgroupid@vhost\fR\&.
 .RE
 .sp
@@ -5204,6 +5826,27 @@ This module depends on \fImod_roster\fR\&. If not enabled, roster queries will r
 \fBAvailable options:\fR
 .RS 4
 .PP
+\fBcache_life_time\fR: \fItimeout()\fR
+.RS 4
+Same as top\-level
+\fIcache_life_time\fR
+option, but applied to this module only\&.
+.RE
+.PP
+\fBcache_missed\fR: \fItrue | false\fR
+.RS 4
+Same as top\-level
+\fIcache_missed\fR
+option, but applied to this module only\&.
+.RE
+.PP
+\fBcache_size\fR: \fIpos_integer() | infinity\fR
+.RS 4
+Same as top\-level
+\fIcache_size\fR
+option, but applied to this module only\&.
+.RE
+.PP
 \fBdb_type\fR: \fImnesia | sql\fR
 .RS 4
 Define the type of storage where the module will create the tables and store user information\&. The default is the storage defined by the global option
@@ -5212,6 +5855,13 @@ Define the type of storage where the module will create the tables and store use
 if omitted\&. If
 \fIsql\fR
 value is defined, make sure you have defined the database\&.
+.RE
+.PP
+\fBuse_cache\fR: \fItrue | false\fR
+.RS 4
+Same as top\-level
+\fIuse_cache\fR
+option, but applied to this module only\&.
 .RE
 .RE
 .sp
@@ -5229,8 +5879,8 @@ Take the case of a computer club that wants all its members seeing each other in
 .RS 4
 .\}
 .nf
-Identification: club_members
-Name: Club Members
+Name: club_members
+Label: Club Members
 Description: Members from the computer club
 Members: member1@example\&.org, member2@example\&.org, member3@example\&.org
 Displayed Groups: club_members
@@ -5246,29 +5896,338 @@ In another case we have a company which has three divisions: Management, Marketi
 .\}
 .nf
 First list:
-Identification: management
-Name: Management
+Name: management
+Label: Management
 Description: Management
 Members: manager1@example\&.org, manager2@example\&.org
-Displayed Groups: management, marketing, sales
+Displayed: management, marketing, sales
 
 Second list:
-Identification: marketing
-Name: Marketing
+Name: marketing
+Label: Marketing
 Description: Marketing
 Members: marketeer1@example\&.org, marketeer2@example\&.org, marketeer3@example\&.org
-Displayed Groups: management, marketing
+Displayed: management, marketing
 
 Third list:
-Identification: sales
-Name: Sales
+Name: sales
+Label: Sales
 Description: Sales
 Members: salesman1@example\&.org, salesman2@example\&.org, salesman3@example\&.org
-Displayed Groups: management, sales
+Displayed: management, sales
 .fi
 .if n \{\
 .RE
 .\}
+.RE
+.SS "mod_shared_roster_ldap"
+.sp
+This module lets the server administrator automatically populate users\*(Aq rosters (contact lists) with entries based on users and groups defined in an LDAP\-based directory\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+\fImod_shared_roster_ldap\fR depends on \fImod_roster\fR being enabled\&. Roster queries will return \fI503\fR errors if \fImod_roster\fR is not enabled\&.
+.sp .5v
+.RE
+.sp
+The module accepts many configuration options\&. Some of them, if unspecified, default to the values specified for the top level of configuration\&. This lets you avoid specifying, for example, the bind password in multiple places\&.
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Filters:
+\fIldap_rfilter\fR,
+\fIldap_ufilter\fR,
+\fIldap_gfilter\fR,
+\fIldap_filter\fR\&. These options specify LDAP filters used to query for shared roster information\&. All of them are run against the ldap_base\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Attributes:
+\fIldap_groupattr\fR,
+\fIldap_groupdesc\fR,
+\fIldap_memberattr\fR,
+\fIldap_userdesc\fR,
+\fIldap_useruid\fR\&. These options specify the names of the attributes which hold interesting data in the entries returned by running filters specified with the filter options\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Control parameters:
+\fIldap_auth_check\fR,
+\fIldap_group_cache_validity\fR,
+\fIldap_memberattr_format\fR,
+\fIldap_memberattr_format_re\fR,
+\fIldap_user_cache_validity\fR\&. These parameters control the behaviour of the module\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Connection parameters: The module also accepts the connection parameters, all of which default to the top\-level parameter of the same name, if unspecified\&. See
+LDAP Connection
+section for more information about them\&.
+.RE
+.sp
+Check also the Configuration examples section to get details about retrieving the roster, and configuration examples including Flat DIT and Deep DIT\&.
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBAvailable options:\fR
+.RS 4
+.PP
+\fBcache_life_time\fR
+.RS 4
+Same as top\-level
+\fIcache_life_time\fR
+option, but applied to this module only\&.
+.RE
+.PP
+\fBcache_missed\fR
+.RS 4
+Same as top\-level
+\fIcache_missed\fR
+option, but applied to this module only\&.
+.RE
+.PP
+\fBcache_size\fR
+.RS 4
+Same as top\-level
+\fIcache_size\fR
+option, but applied to this module only\&.
+.RE
+.PP
+\fBldap_auth_check\fR: \fItrue | false\fR
+.RS 4
+Whether the module should check (via the ejabberd authentication subsystem) for existence of each user in the shared LDAP roster\&. Set to
+\fIfalse\fR
+if you want to disable the check\&. Default value is
+\fItrue\fR\&.
+.RE
+.PP
+\fBldap_backups\fR
+.RS 4
+Same as top\-level
+\fIldap_backups\fR
+option, but applied to this module only\&.
+.RE
+.PP
+\fBldap_base\fR
+.RS 4
+Same as top\-level
+\fIldap_base\fR
+option, but applied to this module only\&.
+.RE
+.PP
+\fBldap_deref_aliases\fR
+.RS 4
+Same as top\-level
+\fIldap_deref_aliases\fR
+option, but applied to this module only\&.
+.RE
+.PP
+\fBldap_encrypt\fR
+.RS 4
+Same as top\-level
+\fIldap_encrypt\fR
+option, but applied to this module only\&.
+.RE
+.PP
+\fBldap_filter\fR
+.RS 4
+Additional filter which is AND\-ed together with "User Filter" and "Group Filter"\&. For more information check the LDAP
+Filters
+section\&.
+.RE
+.PP
+\fBldap_gfilter\fR
+.RS 4
+"Group Filter", used when retrieving human\-readable name (a\&.k\&.a\&. "Display Name") and the members of a group\&. See also the parameters
+\fIldap_groupattr\fR,
+\fIldap_groupdesc\fR
+and
+\fIldap_memberattr\fR\&. If unspecified, defaults to the top\-level parameter of the same name\&. If that one also is unspecified, then the filter is constructed exactly like "User Filter"\&.
+.RE
+.PP
+\fBldap_groupattr\fR
+.RS 4
+The name of the attribute that holds the group name, and that is used to differentiate between them\&. Retrieved from results of the "Roster Filter" and "Group Filter"\&. Defaults to
+\fIcn\fR\&.
+.RE
+.PP
+\fBldap_groupdesc\fR
+.RS 4
+The name of the attribute which holds the human\-readable group name in the objects you use to represent groups\&. Retrieved from results of the "Group Filter"\&. Defaults to whatever
+\fIldap_groupattr\fR
+is set\&.
+.RE
+.PP
+\fBldap_memberattr\fR
+.RS 4
+The name of the attribute which holds the IDs of the members of a group\&. Retrieved from results of the "Group Filter"\&. Defaults to
+\fImemberUid\fR\&. The name of the attribute differs depending on the objectClass you use for your group objects, for example:
+\fIposixGroup\fR
+→
+\fImemberUid\fR;
+\fIgroupOfNames\fR
+→
+\fImember\fR;
+\fIgroupOfUniqueNames\fR
+→
+\fIuniqueMember\fR\&.
+.RE
+.PP
+\fBldap_memberattr_format\fR
+.RS 4
+A globbing format for extracting user ID from the value of the attribute named by
+\fIldap_memberattr\fR\&. Defaults to
+\fI%u\fR, which means that the whole value is the member ID\&. If you change it to something different, you may also need to specify the User and Group Filters manually; see section Filters\&.
+.RE
+.PP
+\fBldap_memberattr_format_re\fR
+.RS 4
+A regex for extracting user ID from the value of the attribute named by
+\fIldap_memberattr\fR\&. Check the LDAP
+Control Parameters
+section\&.
+.RE
+.PP
+\fBldap_password\fR
+.RS 4
+Same as top\-level
+\fIldap_password\fR
+option, but applied to this module only\&.
+.RE
+.PP
+\fBldap_port\fR
+.RS 4
+Same as top\-level
+\fIldap_port\fR
+option, but applied to this module only\&.
+.RE
+.PP
+\fBldap_rfilter\fR
+.RS 4
+So called "Roster Filter"\&. Used to find names of all "shared roster" groups\&. See also the
+\fIldap_groupattr\fR
+parameter\&. If unspecified, defaults to the top\-level parameter of the same name\&. You must specify it in some place in the configuration, there is no default\&.
+.RE
+.PP
+\fBldap_rootdn\fR
+.RS 4
+Same as top\-level
+\fIldap_rootdn\fR
+option, but applied to this module only\&.
+.RE
+.PP
+\fBldap_servers\fR
+.RS 4
+Same as top\-level
+\fIldap_servers\fR
+option, but applied to this module only\&.
+.RE
+.PP
+\fBldap_tls_cacertfile\fR
+.RS 4
+Same as top\-level
+\fIldap_tls_cacertfile\fR
+option, but applied to this module only\&.
+.RE
+.PP
+\fBldap_tls_certfile\fR
+.RS 4
+Same as top\-level
+\fIldap_tls_certfile\fR
+option, but applied to this module only\&.
+.RE
+.PP
+\fBldap_tls_depth\fR
+.RS 4
+Same as top\-level
+\fIldap_tls_depth\fR
+option, but applied to this module only\&.
+.RE
+.PP
+\fBldap_tls_verify\fR
+.RS 4
+Same as top\-level
+\fIldap_tls_verify\fR
+option, but applied to this module only\&.
+.RE
+.PP
+\fBldap_ufilter\fR
+.RS 4
+"User Filter", used for retrieving the human\-readable name of roster entries (usually full names of people in the roster)\&. See also the parameters
+\fIldap_userdesc\fR
+and
+\fIldap_useruid\fR\&. For more information check the LDAP
+Filters
+section\&.
+.RE
+.PP
+\fBldap_uids\fR
+.RS 4
+Same as top\-level
+\fIldap_uids\fR
+option, but applied to this module only\&.
+.RE
+.PP
+\fBldap_userdesc\fR
+.RS 4
+The name of the attribute which holds the human\-readable user name\&. Retrieved from results of the "User Filter"\&. Defaults to
+\fIcn\fR\&.
+.RE
+.PP
+\fBldap_useruid\fR
+.RS 4
+The name of the attribute which holds the ID of a roster item\&. Value of this attribute in the roster item objects needs to match the ID retrieved from the
+\fIldap_memberattr\fR
+attribute of a group object\&. Retrieved from results of the "User Filter"\&. Defaults to
+\fIcn\fR\&.
+.RE
+.PP
+\fBuse_cache\fR
+.RS 4
+Same as top\-level
+\fIuse_cache\fR
+option, but applied to this module only\&.
+.RE
 .RE
 .SS "mod_sic"
 .sp
@@ -5307,7 +6266,7 @@ This module adds SIP proxy/registrar support for the corresponding virtual host\
 .ps -1
 .br
 .sp
-It is not enough to just load this module\&. You should also configure listeners and DNS records properly\&. See section SIP of the Configuration Guide for details\&.
+It is not enough to just load this module\&. You should also configure listeners and DNS records properly\&. For details see the section about the ejabberd_sip listen module in the ejabberd Documentation\&.
 .sp .5v
 .RE
 .sp
@@ -5546,6 +6505,151 @@ option\&. Setting it to
 effectively disables session resumption\&. The default value is
 \fI5\fR
 minutes\&.
+.RE
+.RE
+.SS "mod_stun_disco"
+.sp
+This module allows XMPP clients to discover STUN/TURN services and to obtain temporary credentials for using them as per XEP\-0215: External Service Discovery\&.
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBAvailable options:\fR
+.RS 4
+.PP
+\fBaccess\fR: \fIAccessName\fR
+.RS 4
+This option defines which access rule will be used to control who is allowed to discover STUN/TURN services and to request temporary credentials\&. The default value is
+\fIlocal\fR\&.
+.RE
+.PP
+\fBcredentials_lifetime\fR: \fItimeout()\fR
+.RS 4
+The lifetime of temporary credentials offered to clients\&. If ejabberd\(cqs built\-in TURN service is used, TURN relays allocated using temporary credentials will be terminated shortly after the credentials expired\&. The default value is
+\fI12\fR
+hours\&. Note that restarting the ejabberd node invalidates any temporary credentials offered before the restart unless a
+\fIsecret\fR
+is specified (see below)\&.
+.RE
+.PP
+\fBoffer_local_services\fR: \fItrue | false\fR
+.RS 4
+This option specifies whether local STUN/TURN services configured as ejabberd listeners should be announced automatically\&. Note that this will not include TLS\-enabled services, which must be configured manually using the
+\fIservices\fR
+option (see below)\&. For non\-anonymous TURN services, temporary credentials will be offered to the client\&. The default value is
+\fItrue\fR\&.
+.RE
+.PP
+\fBsecret\fR: \fIText\fR
+.RS 4
+The secret used for generating temporary credentials\&. If this option isn\(cqt specified, a secret will be auto\-generated\&. However, a secret must be specified explicitly if non\-anonymous TURN services running on other ejabberd nodes and/or external TURN
+\fIservices\fR
+are configured\&. Also note that auto\-generated secrets are lost when the node is restarted, which invalidates any credentials offered before the restart\&. Therefore, it\(cqs recommended to explicitly specify a secret if clients cache retrieved credentials (for later use) across service restarts\&.
+.RE
+.PP
+\fBservices\fR: \fI[Service, \&.\&.\&.]\fR
+.RS 4
+The list of services offered to clients\&. This list can include STUN/TURN services running on any ejabberd node and/or external services\&. However, if any listed TURN service not running on the local ejabberd node requires authentication, a
+\fIsecret\fR
+must be specified explicitly, and must be shared with that service\&. This will only work with ejabberd\(cqs built\-in STUN/TURN server and with external servers that support the same
+REST API For Access To TURN Services\&. Unless the
+\fIoffer_local_services\fR
+is set to
+\fIfalse\fR, the explicitly listed services will be offered in addition to those announced automatically\&.
+.PP
+\fBhost\fR: \fIHost\fR
+.RS 4
+The hostname or IP address the STUN/TURN service is listening on\&. For non\-TLS services, it\(cqs recommended to specify an IP address (to avoid additional DNS lookup latency on the client side)\&. For TLS services, the hostname (or IP address) should match the certificate\&. Specifying the
+\fIhost\fR
+option is mandatory\&.
+.RE
+.PP
+\fBport\fR: \fI1\&.\&.65535\fR
+.RS 4
+The port number the STUN/TURN service is listening on\&. The default port number is 3478 for non\-TLS services and 5349 for TLS services\&.
+.RE
+.PP
+\fBrestricted\fR: \fItrue | false\fR
+.RS 4
+This option determines whether temporary credentials for accessing the service are offered\&. The default is
+\fIfalse\fR
+for STUN/STUNS services and
+\fItrue\fR
+for TURN/TURNS services\&.
+.RE
+.PP
+\fBtransport\fR: \fItcp | udp\fR
+.RS 4
+The transport protocol supported by the service\&. The default is
+\fIudp\fR
+for non\-TLS services and
+\fItcp\fR
+for TLS services\&.
+.RE
+.PP
+\fBtype\fR: \fIstun | turn | stuns | turns\fR
+.RS 4
+The type of service\&. Must be
+\fIstun\fR
+or
+\fIturn\fR
+for non\-TLS services,
+\fIstuns\fR
+or
+\fIturns\fR
+for TLS services\&. The default type is
+\fIstun\fR\&.
+.RE
+.sp
+\fBExample\fR:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+services:
+  \-
+    host: 203\&.0\&.113\&.3
+    port: 3478
+    type: stun
+    transport: udp
+    restricted: false
+  \-
+    host: 203\&.0\&.113\&.3
+    port: 3478
+    type: turn
+    transport: udp
+    restricted: true
+  \-
+    host: 203\&.0\&.113\&.3
+    port: 3478
+    type: stun
+    transport: tcp
+    restricted: false
+  \-
+    host: 203\&.0\&.113\&.3
+    port: 3478
+    type: turn
+    transport: tcp
+    restricted: true
+  \-
+    host: server\&.example\&.com
+    port: 5349
+    type: stuns
+    transport: tcp
+    restricted: false
+  \-
+    host: server\&.example\&.com
+    port: 5349
+    type: turns
+    transport: tcp
+    restricted: true
+.fi
+.if n \{\
+.RE
+.\}
 .RE
 .RE
 .SS "mod_time"
@@ -6017,7 +7121,7 @@ Should the operating system be revealed or not\&. The default value is
 .RE
 .SH "LISTENERS"
 .sp
-This section describes options of all ejabberd listeners\&.
+This section describes options of all listeners in ejabberd 20\&.04
 .sp
 TODO
 .SH "AUTHOR"
@@ -6025,13 +7129,13 @@ TODO
 ProcessOne\&.
 .SH "VERSION"
 .sp
-This document describes the configuration file of ejabberd 19\&.09\&.76\&. Configuration options of other ejabberd versions may differ significantly\&.
+This document describes the configuration file of ejabberd 20\&.04\&. Configuration options of other ejabberd versions may differ significantly\&.
 .SH "REPORTING BUGS"
 .sp
 Report bugs to https://github\&.com/processone/ejabberd/issues
 .SH "SEE ALSO"
 .sp
-Default configuration file: https://github\&.com/processone/ejabberd/blob/19\&.09/ejabberd\&.yml\&.example
+Default configuration file: https://github\&.com/processone/ejabberd/blob/20\&.04/ejabberd\&.yml\&.example
 .sp
 Main site: https://ejabberd\&.im
 .sp
