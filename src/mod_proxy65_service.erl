@@ -266,7 +266,7 @@ get_streamhost(Host, ServerHost) ->
 get_endpoint(Host) ->
     Port = mod_proxy65_opt:port(Host),
     IP = case mod_proxy65_opt:ip(Host) of
-	     undefined -> misc:get_my_ip();
+	     undefined -> misc:get_my_v4_ip();
 	     Addr -> Addr
 	 end,
     {Port, IP, tcp}.

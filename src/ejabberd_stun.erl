@@ -103,7 +103,7 @@ prepare_turn_opts(Opts, _UseTurn = true) ->
     NumberOfMyHosts = length(ejabberd_option:hosts()),
     TurnIP = case proplists:get_value(turn_v4_ip, Opts) of
 		 undefined ->
-		     MyIP = misc:get_my_ip(),
+		     MyIP = misc:get_my_v4_ip(),
 		     case MyIP of
 			 {127, _, _, _} ->
 			     ?WARNING_MSG("Option 'turn_v4_ip' is undefined "

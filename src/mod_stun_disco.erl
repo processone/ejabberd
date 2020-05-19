@@ -233,6 +233,30 @@ mod_doc() ->
 		   "    transport: tcp",
 		   "    restricted: true",
 		   "  -",
+		   "    host: 2001:db8::3",
+		   "    port: 3478",
+		   "    type: stun",
+		   "    transport: udp",
+		   "    restricted: false",
+		   "  -",
+		   "    host: 2001:db8::3",
+		   "    port: 3478",
+		   "    type: turn",
+		   "    transport: udp",
+		   "    restricted: true",
+		   "  -",
+		   "    host: 2001:db8::3",
+		   "    port: 3478",
+		   "    type: stun",
+		   "    transport: tcp",
+		   "    restricted: false",
+		   "  -",
+		   "    host: 2001:db8::3",
+		   "    port: 3478",
+		   "    type: turn",
+		   "    transport: tcp",
+		   "    restricted: true",
+		   "  -",
 		   "    host: server.example.com",
 		   "    port: 5349",
 		   "    type: stuns",
@@ -599,76 +623,87 @@ parse_listener({_EndPoint, ?STUN_MODULE, #{tls := true}}) ->
     ?DEBUG("Ignoring TLS-enabled STUN/TURN listener", []),
     []; % Avoid certificate hostname issues.
 parse_listener({{Port, _Addr, Transport}, ?STUN_MODULE, Opts}) ->
-    case get_listener_ip(Opts) of
-	{127, _, _, _} = Addr ->
-	    ?INFO_MSG("Won't auto-announce STUN/TURN service with loopback "
-		      "address: ~s:~B (~s), please specify a public "
-		      "'turn_v4_ip'", [misc:ip_to_list(Addr), Port, Transport]),
+    case get_listener_ips(Opts) of
+	{undefined, undefined} ->
+	    ?INFO_MSG("Won't auto-announce STUN/TURN service on port ~B (~s) "
+		      "without public address, please specify 'turn_v4_ip' and "
+		      "optionally 'turn_v6_ip'", [Port, Transport]),
 	    [];
-	Addr ->
-	    Host = maybe_resolve(Addr),
-	    StunService = #service{host = Host,
-				   port = Port,
-				   transport = Transport,
-				   restricted = false,
-				   type = stun},
-	    case Opts of
-		#{use_turn := true} ->
-		    ?INFO_MSG("Going to offer STUN/TURN listener: ~s:~B (~s)",
-			      [misc:ip_to_list(Addr), Port, Transport]),
-		    [StunService, #service{host = Host,
-					   port = Port,
-					   transport = Transport,
-					   restricted = is_restricted(Opts),
-					   type = turn}];
-		#{use_turn := false} ->
-		    ?INFO_MSG("Going to offer STUN listener: ~s:~B (~s)",
-			      [misc:ip_to_list(Addr), Port, Transport]),
-		    [StunService]
-	    end
+	{IPv4Addr, IPv6Addr}  ->
+	    lists:flatmap(
+	      fun(undefined) ->
+		      [];
+		 (Addr) ->
+		      StunService = #service{host = Addr,
+					     port = Port,
+					     transport = Transport,
+					     restricted = false,
+					     type = stun},
+		      case Opts of
+			  #{use_turn := true} ->
+			      ?INFO_MSG("Going to offer STUN/TURN service: "
+					"~s (~s)",
+					[addr_to_str(Addr, Port), Transport]),
+			      [StunService,
+			       #service{host = Addr,
+					port = Port,
+					transport = Transport,
+					restricted = is_restricted(Opts),
+					type = turn}];
+			  #{use_turn := false} ->
+			      ?INFO_MSG("Going to offer STUN service: "
+					"~s (~s)",
+					[addr_to_str(Addr, Port), Transport]),
+			      [StunService]
+		      end
+	      end, [IPv4Addr, IPv6Addr])
     end;
 parse_listener({_EndPoint, Module, _Opts}) ->
     ?DEBUG("Ignoring ~s listener", [Module]),
     [].
 
--spec get_listener_ip(map()) -> inet:ip_address().
-get_listener_ip(#{ip := {  0,   0,   0,   0}} = Opts) -> get_turn_v4_ip(Opts);
-get_listener_ip(#{ip := {127,   _,   _,   _}} = Opts) -> get_turn_v4_ip(Opts);
-get_listener_ip(#{ip := { 10,   _,   _,   _}} = Opts) -> get_turn_v4_ip(Opts);
-get_listener_ip(#{ip := {172,  16,   _,   _}} = Opts) -> get_turn_v4_ip(Opts);
-get_listener_ip(#{ip := {192, 168,   _,   _}} = Opts) -> get_turn_v4_ip(Opts);
-get_listener_ip(#{ip := IP}) -> IP.
+-spec get_listener_ips(map()) -> {inet:ip4_address() | undefined,
+				  inet:ip6_address() | undefined}.
+get_listener_ips(#{ip := {0, 0, 0, 0}} = Opts) ->
+    {get_turn_v4_ip(Opts), undefined};
+get_listener_ips(#{ip := {0, 0, 0, 0, 0, 0, 0, 0}} = Opts) ->
+    {get_turn_v4_ip(Opts), get_turn_v6_ip(Opts)}; % Assume dual-stack socket.
+get_listener_ips(#{ip := {127, _, _, _}} = Opts) ->
+    {get_turn_v4_ip(Opts), undefined};
+get_listener_ips(#{ip := {0, 0, 0, 0, 0, 0, 0, 1}} = Opts) ->
+    {undefined, get_turn_v6_ip(Opts)};
+get_listener_ips(#{ip := {_, _, _, _} = IP}) ->
+    {IP, undefined};
+get_listener_ips(#{ip := {_, _, _, _, _,_, _, _, _} = IP}) ->
+    {undefined, IP}.
 
--spec get_turn_v4_ip(map()) -> inet:ip_address().
-get_turn_v4_ip(#{turn_v4_ip := {_, _, _, _} = TurnIP}) -> TurnIP;
-get_turn_v4_ip(#{turn_v4_ip := undefined}) -> misc:get_my_ip().
-
--spec is_restricted(map()) -> boolean().
-is_restricted(#{auth_type := user}) -> true;
-is_restricted(#{auth_type := anonymous}) -> false.
-
--spec maybe_resolve(inet:ip_address()) -> binary() | inet:ip_address().
-maybe_resolve(Addr) ->
-    case lookup(Addr, ptr) of
-	[Name] when is_list(Name) ->
-	    case {lookup(Name, a), lookup(Name, aaaa)} of
-		{[Addr], []} ->
-		    ?DEBUG("Resolved address ~s to hostname ~s",
-			   [misc:ip_to_list(Addr), Name]),
-		    list_to_binary(Name);
-		{_, _} ->
-		    ?DEBUG("Won't resolve address ~s to hostname ~s",
-			   [misc:ip_to_list(Addr), Name]),
-		    Addr
-	    end;
-	_ ->
-	    ?DEBUG("Cannot resolve address: ~s", [misc:ip_to_list(Addr)]),
-	    Addr
+-spec get_turn_v4_ip(map()) -> inet:ip4_address() | undefined.
+get_turn_v4_ip(#{turn_v4_ip := {_, _, _, _} = TurnIP}) ->
+    TurnIP;
+get_turn_v4_ip(#{turn_v4_ip := undefined}) ->
+    case misc:get_my_v4_ip() of
+	{127, _, _, _} ->
+	    undefined;
+	IP ->
+	    IP
     end.
 
--spec lookup(string() | inet:ip_address(), a | aaaa | ptr) -> [any()].
-lookup(Name, Type) ->
-    inet_res:lookup(Name, in, Type, [], timer:seconds(3)).
+-spec get_turn_v6_ip(map()) -> inet:ip6_address() | undefined.
+get_turn_v6_ip(#{turn_v6_ip := {_, _, _, _, _, _, _, _} = TurnIP}) ->
+    TurnIP;
+get_turn_v6_ip(#{turn_v6_ip := undefined}) ->
+    case misc:get_my_v6_ip() of
+	{0, 0, 0, 0, 0, 0, 0, 1} ->
+	    undefined;
+	IP ->
+	    IP
+    end.
+
+-spec is_restricted(map()) -> boolean().
+is_restricted(#{auth_type := user}) ->
+    true;
+is_restricted(#{auth_type := anonymous}) ->
+    false.
 
 -spec call(host_or_hash(), term()) -> term().
 call(Host, Request) ->
@@ -697,3 +732,9 @@ dedup([H | T]) -> [H | [E || E <- dedup(T), E /= H]].
 -spec seconds_to_timestamp(non_neg_integer()) -> erlang:timestamp().
 seconds_to_timestamp(Seconds) ->
     {Seconds div 1000000, Seconds rem 1000000, 0}.
+
+-spec addr_to_str(inet:ip_address(), 0..65535) -> string().
+addr_to_str({_, _, _, _, _, _, _, _} = Addr, Port) ->
+    [$[, inet_parse:ntoa(Addr), $], $:, integer_to_list(Port)];
+addr_to_str({_, _, _, _} = Addr, Port) ->
+    [inet_parse:ntoa(Addr), $:, integer_to_list(Port)].
