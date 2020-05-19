@@ -90,7 +90,7 @@ defmodule Ejabberd.Mixfile do
      {:stringprep, "~> 1.0"},
      {:fast_yaml, "~> 1.0"},
      {:fast_tls, "~> 1.1"},
-     {:stun, "~> 1.0"},
+     {:stun, git: "https://github.com/processone/stun", ref: "cb6549387e23737f39f44ba7656a351fd7b88c14", override: true},
      {:esip, "~> 1.0.32"},
      {:p1_mysql, "~> 1.0"},
      {:mqtree, "~> 1.0"},

@@ -160,7 +160,7 @@ set_certfile(Opts) ->
 listen_opt_type(use_turn) ->
     econf:bool();
 listen_opt_type(ip) ->
-    econf:ipv4();
+    econf:ip();
 listen_opt_type(turn_ip) ->
     econf:ipv4();
 listen_opt_type(auth_type) ->
