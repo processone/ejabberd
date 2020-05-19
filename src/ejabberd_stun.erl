@@ -101,20 +101,20 @@ prepare_turn_opts(Opts, _UseTurn = false) ->
     set_certfile(Opts);
 prepare_turn_opts(Opts, _UseTurn = true) ->
     NumberOfMyHosts = length(ejabberd_option:hosts()),
-    TurnIP = case proplists:get_value(turn_ip, Opts) of
+    TurnIP = case proplists:get_value(turn_v4_ip, Opts) of
 		 undefined ->
 		     MyIP = misc:get_my_ip(),
 		     case MyIP of
 			 {127, _, _, _} ->
-			     ?WARNING_MSG("Option 'turn_ip' is undefined and "
-					  "the server's hostname doesn't "
+			     ?WARNING_MSG("Option 'turn_v4_ip' is undefined "
+					  "and the server's hostname doesn't "
 					  "resolve to a public IPv4 address, "
 					  "most likely the TURN relay won't be "
 					  "working properly", []);
 			 _ ->
 			     ok
 		     end,
-		     [{turn_ip, MyIP}];
+		     [{turn_v4_ip, MyIP}];
 		 _ ->
 		     []
 	     end,
@@ -161,8 +161,10 @@ listen_opt_type(use_turn) ->
     econf:bool();
 listen_opt_type(ip) ->
     econf:ip();
-listen_opt_type(turn_ip) ->
+listen_opt_type(turn_v4_ip) ->
     econf:ipv4();
+listen_opt_type(turn_v6_ip) ->
+    econf:ipv6();
 listen_opt_type(auth_type) ->
     econf:enum([anonymous, user]);
 listen_opt_type(auth_realm) ->
@@ -183,7 +185,8 @@ listen_opt_type(certfile) ->
 listen_options() ->
     [{shaper, none},
      {use_turn, false},
-     {turn_ip, undefined},
+     {turn_v4_ip, undefined},
+     {turn_v6_ip, undefined},
      {auth_type, user},
      {auth_realm, undefined},
      {tls, false},

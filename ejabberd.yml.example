@@ -64,7 +64,9 @@ listen:
     module: ejabberd_stun
     use_turn: true
     ## The server's public IPv4 address:
-    # turn_ip: 203.0.113.3
+    # turn_v4_ip: "203.0.113.3"
+    ## The server's public IPv6 address:
+    # turn_v6_ip: "2001:db8::3"
   -
     port: 1883
     ip: "::"

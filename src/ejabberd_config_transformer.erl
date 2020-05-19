@@ -245,8 +245,9 @@ filter(_, _, _, _) ->
 %%%===================================================================
 transform_listener(Opts, Acc) ->
     Opts1 = transform_request_handlers(Opts),
-    Opts2 = remove_inet_options(Opts1),
-    collect_listener_certfiles(Opts2, Acc).
+    Opts2 = transform_turn_ip(Opts1),
+    Opts3 = remove_inet_options(Opts2),
+    collect_listener_certfiles(Opts3, Acc).
 
 transform_request_handlers(Opts) ->
     case lists:keyfind(module, 1, Opts) of
@@ -254,6 +255,14 @@ transform_request_handlers(Opts) ->
 	    replace_request_handlers(Opts);
 	{_, ejabberd_xmlrpc} ->
 	    remove_xmlrpc_access_commands(Opts);
+	_ ->
+	    Opts
+    end.
+
+transform_turn_ip(Opts) ->
+    case lists:keyfind(module, 1, Opts) of
+	{_, ejabberd_stun} ->
+	    replace_turn_ip(Opts);
 	_ ->
 	    Opts
     end.
@@ -318,6 +327,15 @@ remove_xmlrpc_access_commands(Opts) ->
       fun({access_commands, _}) ->
 	      warn_removed_option(access_commands, api_permissions),
 	      false;
+	 (_) ->
+	      true
+      end, Opts).
+
+replace_turn_ip(Opts) ->
+    lists:filtermap(
+      fun({turn_ip, Val}) ->
+	      warn_replaced_option(turn_ip, turn_v4_ip),
+	      {true, {turn_v4_ip, Val}};
 	 (_) ->
 	      true
       end, Opts).

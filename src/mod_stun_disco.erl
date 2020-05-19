@@ -602,8 +602,8 @@ parse_listener({{Port, _Addr, Transport}, ?STUN_MODULE, Opts}) ->
     case get_listener_ip(Opts) of
 	{127, _, _, _} = Addr ->
 	    ?INFO_MSG("Won't auto-announce STUN/TURN service with loopback "
-		      "address: ~s:~B (~s), please specify a public 'turn_ip'",
-		      [misc:ip_to_list(Addr), Port, Transport]),
+		      "address: ~s:~B (~s), please specify a public "
+		      "'turn_v4_ip'", [misc:ip_to_list(Addr), Port, Transport]),
 	    [];
 	Addr ->
 	    Host = maybe_resolve(Addr),
@@ -632,16 +632,16 @@ parse_listener({_EndPoint, Module, _Opts}) ->
     [].
 
 -spec get_listener_ip(map()) -> inet:ip_address().
-get_listener_ip(#{ip := {  0,   0,   0,   0}} = Opts) -> get_turn_ip(Opts);
-get_listener_ip(#{ip := {127,   _,   _,   _}} = Opts) -> get_turn_ip(Opts);
-get_listener_ip(#{ip := { 10,   _,   _,   _}} = Opts) -> get_turn_ip(Opts);
-get_listener_ip(#{ip := {172,  16,   _,   _}} = Opts) -> get_turn_ip(Opts);
-get_listener_ip(#{ip := {192, 168,   _,   _}} = Opts) -> get_turn_ip(Opts);
+get_listener_ip(#{ip := {  0,   0,   0,   0}} = Opts) -> get_turn_v4_ip(Opts);
+get_listener_ip(#{ip := {127,   _,   _,   _}} = Opts) -> get_turn_v4_ip(Opts);
+get_listener_ip(#{ip := { 10,   _,   _,   _}} = Opts) -> get_turn_v4_ip(Opts);
+get_listener_ip(#{ip := {172,  16,   _,   _}} = Opts) -> get_turn_v4_ip(Opts);
+get_listener_ip(#{ip := {192, 168,   _,   _}} = Opts) -> get_turn_v4_ip(Opts);
 get_listener_ip(#{ip := IP}) -> IP.
 
--spec get_turn_ip(map()) -> inet:ip_address().
-get_turn_ip(#{turn_ip := {_, _, _, _} = TurnIP}) -> TurnIP;
-get_turn_ip(#{turn_ip := undefined}) -> misc:get_my_ip().
+-spec get_turn_v4_ip(map()) -> inet:ip_address().
+get_turn_v4_ip(#{turn_v4_ip := {_, _, _, _} = TurnIP}) -> TurnIP;
+get_turn_v4_ip(#{turn_v4_ip := undefined}) -> misc:get_my_ip().
 
 -spec is_restricted(map()) -> boolean().
 is_restricted(#{auth_type := user}) -> true;
