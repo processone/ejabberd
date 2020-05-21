@@ -177,6 +177,8 @@ listen_opt_type(turn_max_allocations) ->
     econf:pos_int(infinity);
 listen_opt_type(turn_max_permissions) ->
     econf:pos_int(infinity);
+listen_opt_type(turn_blacklist) ->
+    econf:list_or_single(econf:ip_mask());
 listen_opt_type(server_name) ->
     econf:binary();
 listen_opt_type(certfile) ->
@@ -195,5 +197,6 @@ listen_options() ->
      {turn_max_port, 65535},
      {turn_max_allocations, 10},
      {turn_max_permissions, 10},
+     {turn_blacklist, [<<"2001::/32">>, <<"2002::/16">>]}, % Teredo, 6to4.
      {server_name, <<"ejabberd">>}].
 -endif.
