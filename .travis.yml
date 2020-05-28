@@ -3,6 +3,7 @@ language: erlang
 otp_release:
   - 19.3
   - 22.3
+  - 23.0
 
 services:
   - redis-server
