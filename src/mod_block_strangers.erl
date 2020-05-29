@@ -208,9 +208,10 @@ need_check(Pkt) ->
 		  _ ->
 		      false
 	      end,
+    IsError = (error == xmpp:get_type(Pkt)),
     AllowLocalUsers = mod_block_strangers_opt:allow_local_users(LServer),
     Access = mod_block_strangers_opt:access(LServer),
-    not (IsSelf orelse IsEmpty
+    not (IsSelf orelse IsEmpty orelse IsError
 	 orelse acl:match_rule(LServer, Access, From) == allow
 	 orelse ((AllowLocalUsers orelse From#jid.luser == <<"">>)
 		 andalso ejabberd_router:is_my_host(From#jid.lserver))).
