@@ -596,8 +596,9 @@ parse_listener({{Port, _Addr, Transport}, ?STUN_MODULE, Opts}) ->
     case get_listener_ips(Opts) of
 	{undefined, undefined} ->
 	    ?INFO_MSG("Won't auto-announce STUN/TURN service on port ~B (~s) "
-		      "without public address, please specify 'turn_v4_ip' and "
-		      "optionally 'turn_v6_ip'", [Port, Transport]),
+		      "without public IP address, please specify "
+		      "'turn_ipv4_address' and optionally 'turn_ipv6_address'",
+		      [Port, Transport]),
 	    [];
 	{IPv4Addr, IPv6Addr}  ->
 	    lists:flatmap(
@@ -635,34 +636,34 @@ parse_listener({_EndPoint, Module, _Opts}) ->
 -spec get_listener_ips(map()) -> {inet:ip4_address() | undefined,
 				  inet:ip6_address() | undefined}.
 get_listener_ips(#{ip := {0, 0, 0, 0}} = Opts) ->
-    {get_turn_v4_ip(Opts), undefined};
+    {get_turn_ipv4_addr(Opts), undefined};
 get_listener_ips(#{ip := {0, 0, 0, 0, 0, 0, 0, 0}} = Opts) ->
-    {get_turn_v4_ip(Opts), get_turn_v6_ip(Opts)}; % Assume dual-stack socket.
+    {get_turn_ipv4_addr(Opts), get_turn_ipv6_addr(Opts)}; % Assume dual-stack.
 get_listener_ips(#{ip := {127, _, _, _}} = Opts) ->
-    {get_turn_v4_ip(Opts), undefined};
+    {get_turn_ipv4_addr(Opts), undefined};
 get_listener_ips(#{ip := {0, 0, 0, 0, 0, 0, 0, 1}} = Opts) ->
-    {undefined, get_turn_v6_ip(Opts)};
+    {undefined, get_turn_ipv6_addr(Opts)};
 get_listener_ips(#{ip := {_, _, _, _} = IP}) ->
     {IP, undefined};
 get_listener_ips(#{ip := {_, _, _, _, _,_, _, _, _} = IP}) ->
     {undefined, IP}.
 
--spec get_turn_v4_ip(map()) -> inet:ip4_address() | undefined.
-get_turn_v4_ip(#{turn_v4_ip := {_, _, _, _} = TurnIP}) ->
+-spec get_turn_ipv4_addr(map()) -> inet:ip4_address() | undefined.
+get_turn_ipv4_addr(#{turn_ipv4_address := {_, _, _, _} = TurnIP}) ->
     TurnIP;
-get_turn_v4_ip(#{turn_v4_ip := undefined}) ->
-    case misc:get_my_v4_ip() of
+get_turn_ipv4_addr(#{turn_ipv4_address := undefined}) ->
+    case misc:get_my_ipv4_address() of
 	{127, _, _, _} ->
 	    undefined;
 	IP ->
 	    IP
     end.
 
--spec get_turn_v6_ip(map()) -> inet:ip6_address() | undefined.
-get_turn_v6_ip(#{turn_v6_ip := {_, _, _, _, _, _, _, _} = TurnIP}) ->
+-spec get_turn_ipv6_addr(map()) -> inet:ip6_address() | undefined.
+get_turn_ipv6_addr(#{turn_ipv6_address := {_, _, _, _, _, _, _, _} = TurnIP}) ->
     TurnIP;
-get_turn_v6_ip(#{turn_v6_ip := undefined}) ->
-    case misc:get_my_v6_ip() of
+get_turn_ipv6_addr(#{turn_ipv6_address := undefined}) ->
+    case misc:get_my_ipv6_address() of
 	{0, 0, 0, 0, 0, 0, 0, 1} ->
 	    undefined;
 	IP ->

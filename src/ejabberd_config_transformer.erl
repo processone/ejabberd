@@ -334,8 +334,8 @@ remove_xmlrpc_access_commands(Opts) ->
 replace_turn_ip(Opts) ->
     lists:filtermap(
       fun({turn_ip, Val}) ->
-	      warn_replaced_option(turn_ip, turn_v4_ip),
-	      {true, {turn_v4_ip, Val}};
+	      warn_replaced_option(turn_ip, turn_ipv4_address),
+	      {true, {turn_ipv4_address, Val}};
 	 (_) ->
 	      true
       end, Opts).
