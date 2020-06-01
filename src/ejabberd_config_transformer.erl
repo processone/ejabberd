@@ -102,8 +102,8 @@ transform(_Host, certfiles, CertFiles1, Acc) ->
 transform(_Host, acme, ACME, Acc) ->
     ACME1 = lists:map(
 	      fun({ca_url, URL} = Opt) ->
-		      case http_uri:parse(binary_to_list(URL)) of
-			  {ok, {_, _, "acme-v01.api.letsencrypt.org", _, _, _}} ->
+                      case misc:uri_parse(URL) of
+			  {ok, _, "acme-v01.api.letsencrypt.org", _, _} ->
 			      NewURL = ejabberd_acme:default_directory_url(),
 			      ?WARNING_MSG("ACME directory URL ~ts defined in "
 					   "option acme->ca_url is deprecated "

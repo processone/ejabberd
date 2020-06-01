@@ -357,8 +357,8 @@ mod_opt_type(via) ->
               (econf:and_then(
                  econf:url([tls, tcp, udp]),
                  fun(URI) ->
-                         {ok, {Type, _, Host, Port, _, _}} =
-                             http_uri:parse(binary_to_list(URI)),
+                         {ok, Type, Host, Port, _} =
+                            misc:uri_parse(URI),
                          {Type, {unicode:characters_to_binary(Host), Port}}
                  end))(U)
       end, [unique]).

@@ -33,6 +33,24 @@
 
 -include("logger.hrl").
 
+-ifdef(USE_OLD_PG2).
+pg_create(PoolName) -> pg2:create(PoolName).
+pg_join(PoolName, Pid) -> pg2:join(PoolName, Pid).
+pg_get_closest_pid(Name) -> pg2:get_closest_pid(Name).
+-else.
+pg_create(_) -> pg:start_link().
+pg_join(PoolName, Pid) -> pg:join(PoolName, Pid).
+pg_get_closest_pid(Group) ->
+    case pg:get_local_members(Group) of
+        [] ->
+            case pg:get_members(Group) of
+                [] -> {error, {no_process, Group}};
+                [Pid | _] -> Pid
+            end;
+        [Pid | _] -> Pid
+    end.
+-endif.
+
 %%====================================================================
 %% API
 %%====================================================================
@@ -48,14 +66,14 @@ modify_passwd(PoolName, DN, Passwd) ->
 start_link(Name, Hosts, Backups, Port, Rootdn, Passwd,
 	   Opts) ->
     PoolName = make_id(Name),
-    pg2:create(PoolName),
+    pg_create(PoolName),
     lists:foreach(fun (Host) ->
 			  ID = list_to_binary(erlang:ref_to_list(make_ref())),
 			  case catch eldap:start_link(ID, [Host | Backups],
 						      Port, Rootdn, Passwd,
 						      Opts)
 			      of
-			    {ok, Pid} -> pg2:join(PoolName, Pid);
+			    {ok, Pid} -> pg_join(PoolName, Pid);
 			    Err ->
                                   ?ERROR_MSG("Err = ~p", [Err]),
                                   error
@@ -67,7 +85,7 @@ start_link(Name, Hosts, Backups, Port, Rootdn, Passwd,
 %% Internal functions
 %%====================================================================
 do_request(Name, {F, Args}) ->
-    case pg2:get_closest_pid(make_id(Name)) of
+    case pg_get_closest_pid(make_id(Name)) of
       Pid when is_pid(Pid) ->
 	  case catch apply(eldap, F, [Pid | Args]) of
 	    {'EXIT', {timeout, _}} ->
