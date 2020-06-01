@@ -180,10 +180,9 @@ host_down(Host) ->
 %% Copies content of one c2s state to another.
 %% This is needed for session migration from one pid to another.
 -spec copy_state(state(), state()) -> state().
-copy_state(#{owner := Owner} = NewState,
-	   #{jid := JID, resource := Resource, sid := {Time, _},
-	     auth_module := AuthModule, lserver := LServer,
-	     pres_a := PresA} = OldState) ->
+copy_state(NewState,
+	   #{jid := JID, resource := Resource, auth_module := AuthModule,
+	     lserver := LServer, pres_a := PresA} = OldState) ->
     State1 = case OldState of
 		 #{pres_last := Pres, pres_timestamp := PresTS} ->
 		     NewState#{pres_last => Pres, pres_timestamp => PresTS};
@@ -193,7 +192,6 @@ copy_state(#{owner := Owner} = NewState,
     Conn = get_conn_type(State1),
     State2 = State1#{jid => JID, resource => Resource,
 		     conn => Conn,
-		     sid => {Time, Owner},
 		     auth_module => AuthModule,
 		     pres_a => PresA},
     ejabberd_hooks:run_fold(c2s_copy_session, LServer, State2, [OldState]).
