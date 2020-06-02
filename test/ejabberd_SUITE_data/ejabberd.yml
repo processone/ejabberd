@@ -148,7 +148,6 @@ Welcome to this XMPP server."
     max_size: 10000
     vcard: VCARD
 registration_timeout: infinity
-route_subdomains: s2s
 s2s_use_starttls: false
 ca_file: CAFILE
 c2s_cafile: CAFILE
