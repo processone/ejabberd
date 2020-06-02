@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_regexp.erl
 %%% Author  : Badlop
-%%% Purpose : Frontend to Re and Regexp OTP modules
+%%% Purpose : Frontend to Re OTP module
 %%% Created : 8 Dec 2011 by Badlop
 %%%
 %%%
@@ -25,66 +25,27 @@
 
 -module(ejabberd_regexp).
 
--export([exec/2, run/2, split/2, replace/3, greplace/3, sh_to_awk/1]).
-
-exec({ReM, ReF, ReA}, {RgM, RgF, RgA}) ->
-    try apply(ReM, ReF, ReA) catch
-      error:undef -> apply(RgM, RgF, RgA);
-      A:B -> {error, {A, B}}
-    end.
+-export([run/2, split/2, replace/3, greplace/3, sh_to_awk/1]).
 
 -spec run(binary(), binary()) -> match | nomatch | {error, any()}.
 
 run(String, Regexp) ->
-    case exec({re, run, [String, Regexp, [{capture, none}, unicode]]},
-	      {regexp, first_match, [binary_to_list(String),
-                                     binary_to_list(Regexp)]})
-	of
-      {match, _, _} -> match;
-      {match, _} -> match;
-      match -> match;
-      nomatch -> nomatch;
-      {error, Error} -> {error, Error}
-    end.
+    re:run(String, Regexp, [{capture, none}, unicode]).
 
 -spec split(binary(), binary()) -> [binary()].
 
 split(String, Regexp) ->
-    case exec({re, split, [String, Regexp, [{return, binary}]]},
-	      {regexp, split, [binary_to_list(String),
-                               binary_to_list(Regexp)]})
-	of
-      {ok, FieldList} -> [iolist_to_binary(F) || F <- FieldList];
-      {error, Error} -> throw(Error);
-      A -> A
-    end.
+    re:split(String, Regexp, [{return, binary}]).
 
 -spec replace(binary(), binary(), binary()) -> binary().
 
 replace(String, Regexp, New) ->
-    case exec({re, replace, [String, Regexp, New, [{return, binary}]]},
-              {regexp, sub, [binary_to_list(String),
-                             binary_to_list(Regexp),
-                             binary_to_list(New)]})
-	of
-      {ok, NewString, _RepCount} -> iolist_to_binary(NewString);
-      {error, Error} -> throw(Error);
-      A -> A
-    end.
+    re:replace(String, Regexp, New, [{return, binary}]).
 
 -spec greplace(binary(), binary(), binary()) -> binary().
 
 greplace(String, Regexp, New) ->
-    case exec({re, replace, [String, Regexp, New, [global, {return, binary}]]},
-              {regexp, sub, [binary_to_list(String),
-                             binary_to_list(Regexp),
-                             binary_to_list(New)]})
-	of
-      {ok, NewString, _RepCount} -> iolist_to_binary(NewString);
-      {error, Error} -> throw(Error);
-      A -> A
-    end.
-
+    re:replace(String, Regexp, New, [global, {return, binary}]).
 
 %% This code was copied and adapted from xmerl_regexp.erl
 
