@@ -63,8 +63,6 @@
 #.
 #' ERL_EPMD_ADDRESS: IP addresses where epmd listens for connections
 #
-# IMPORTANT: This option works only in Erlang/OTP R14B03 and newer.
-#
 # This environment variable may be set to a comma-separated
 # list of IP addresses, in which case the epmd daemon
 # will listen only on the specified address(es) and on the
