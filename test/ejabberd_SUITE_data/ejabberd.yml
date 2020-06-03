@@ -98,7 +98,7 @@ listen:
     module: ejabberd_stun
     transport: udp
     use_turn: true
-    turn_ip: "203.0.113.3"
+    turn_ipv4_address: "203.0.113.3"
   -
     port: COMPONENT_PORT
     module: ejabberd_service
