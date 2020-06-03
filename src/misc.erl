@@ -62,6 +62,8 @@ uri_parse(URL) ->
     {ok, {Scheme, _UserInfo, Host, Port, Path, _Query}} = http_uri:parse(URL),
     {ok, Scheme, Host, Port, Path}.
 -else.
+uri_parse(URL) when is_binary(URL) ->
+    uri_parse(binary_to_list(URL));
 uri_parse(URL) ->
     #{scheme:=Scheme,host:=Host,port:=Port,path:=Path} = uri_string:parse(URL),
     {ok, Scheme, Host, Port, Path}.
