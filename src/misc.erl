@@ -65,8 +65,14 @@ uri_parse(URL) ->
 uri_parse(URL) when is_binary(URL) ->
     uri_parse(binary_to_list(URL));
 uri_parse(URL) ->
-    #{scheme:=Scheme,host:=Host,port:=Port,path:=Path} = uri_string:parse(URL),
-    {ok, Scheme, Host, Port, Path}.
+    case uri_string:parse(URL) of
+	#{scheme := Scheme, host := Host, port := Port, path := Path} ->
+	    {ok, Scheme, Host, Port, Path};
+	#{scheme := "https", host := Host, path := Path} ->
+	    {ok, "https", Host, 443, Path};
+	#{scheme := "http", host := Host, path := Path} ->
+	    {ok, "http", Host, 80, Path}
+    end.
 -endif.
 
 -ifdef(USE_OLD_CRYPTO_HMAC).
