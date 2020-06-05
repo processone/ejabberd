@@ -94,7 +94,7 @@ get_group_opts(Host, Group) ->
 		 ?SQL("select @(opts)s from sr_group"
                       " where name=%(Group)s and %(Host)H")) of
 	{selected, [{SOpts}]} ->
-	    mod_shared_roster:opts_to_binary(ejabberd_sql:decode_term(SOpts));
+            {ok, mod_shared_roster:opts_to_binary(ejabberd_sql:decode_term(SOpts))};
 	_ -> error
     end.
 
