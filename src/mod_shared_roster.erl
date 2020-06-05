@@ -470,6 +470,7 @@ set_group_opts(Host, Group, Opts) ->
     Mod = gen_mod:db_mod(Host, ?MODULE),
     case use_cache(Mod, Host) of
 	true ->
+	    ets_cache:delete(?GROUP_OPTS_CACHE, {Host, Group}, cache_nodes(Mod, Host)),
 	    ets_cache:insert(?GROUP_OPTS_CACHE, {Host, Group}, Opts, cache_nodes(Mod, Host)),
 	    ets_cache:clear(?SPECIAL_GROUPS_CACHE, cache_nodes(Mod, Host));
 	_ ->
