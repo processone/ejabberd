@@ -5,6 +5,10 @@ otp_release:
   - 22.3
   - 23.0
 
+os: linux
+
+dist: xenial
+
 services:
   - redis
   - postgresql
