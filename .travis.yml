@@ -6,7 +6,7 @@ otp_release:
   - 23.0
 
 services:
-  - redis-server
+  - redis
   - postgresql
 
 before_install:
