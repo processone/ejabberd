@@ -208,6 +208,9 @@ get_commands_spec() ->
 
      #ejabberd_commands{name = join_cluster, tags = [cluster],
 			desc = "Join this node into the cluster handled by Node",
+			longdesc = "This command works only with ejabberdctl, "
+			"not mod_http_api or other code that runs inside the "
+			"same ejabberd node that will be joined.",
 			module = ?MODULE, function = join_cluster,
 			args_desc = ["Nodename of the node to join"],
 			args_example = [<<"ejabberd1@machine7">>],
@@ -215,8 +218,11 @@ get_commands_spec() ->
 			result = {res, rescode}},
      #ejabberd_commands{name = leave_cluster, tags = [cluster],
 			desc = "Remove and shutdown Node from the running cluster",
-			longdesc = "This command can be run from any running node of the cluster, "
-			"even the node to be removed.",
+			longdesc = "This command can be run from any running "
+			"node of the cluster, even the node to be removed. "
+			"In the removed node, this command works only when "
+			"using ejabberdctl, not mod_http_api or other code that "
+			"runs inside the same ejabberd node that will leave.",
 			module = ?MODULE, function = leave_cluster,
 			args_desc = ["Nodename of the node to kick from the cluster"],
 			args_example = [<<"ejabberd1@machine8">>],
