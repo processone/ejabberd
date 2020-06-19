@@ -347,7 +347,7 @@ handle_cast({reload, NewOpts, _OldOpts}, #state{host = Host} = State) ->
     TTL = get_configured_ttl(NewOpts),
     {noreply, State#state{services = Services, secret = Secret, ttl = TTL}};
 handle_cast(Request, State) ->
-    ?ERROR_MSG("Got unexpected request from: ~p", [Request]),
+    ?ERROR_MSG("Got unexpected request: ~p", [Request]),
     {noreply, State}.
 
 -spec handle_info(term(), state()) -> {noreply, state()}.
