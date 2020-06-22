@@ -14,24 +14,24 @@ solutions very cost effectively.
 Key Features
 ------------
 
-- **Cross-platform**
+- **Cross-platform**  
   ejabberd runs under Microsoft Windows and Unix-derived systems such as
   Linux, FreeBSD and NetBSD.
 
-- **Distributed**
+- **Distributed**  
   You can run ejabberd on a cluster of machines and all of them will serve the
   same XMPP domain(s). When you need more capacity you can simply add a new
   cheap node to your cluster. Accordingly, you do not need to buy an expensive
   high-end machine to support tens of thousands concurrent users.
 
-- **Fault-tolerant**
+- **Fault-tolerant**  
   You can deploy an ejabberd cluster so that all the information required for
   a properly working service will be replicated permanently on all nodes. This
   means that if one of the nodes crashes, the others will continue working
   without disruption. In addition, nodes also can be added or replaced ‘on
   the fly’.
 
-- **Administrator-friendly**
+- **Administrator-friendly**  
   ejabberd is built on top of the Open Source Erlang. As a result you do not
   need to install an external database, an external web server, amongst others
   because everything is already included, and ready to run out of the box.
@@ -46,13 +46,13 @@ Key Features
   - Can integrate with existing authentication mechanisms.
   - Capability to send announce messages.
 
-- **Internationalized**
+- **Internationalized**  
   ejabberd leads in internationalization. Hence it is very well suited in a
   globalized world. Related features are:
   - Translated to 25 languages.
   - Support for IDNA.
 
-- **Open Standards**
+- **Open Standards**  
   ejabberd is the first Open Source Jabber server claiming to fully comply to
   the XMPP standard.
   - Fully XMPP-compliant.
