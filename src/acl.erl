@@ -107,8 +107,8 @@ match_acl(_Host, {shared_group, {G, H}}, #{usr := {U, S, _}}) ->
     end;
 match_acl(Host, {shared_group, G}, Map) ->
     match_acl(Host, {shared_group, {G, Host}}, Map);
-match_acl(_Host, {user_regexp, {UR, S}}, #{usr := {U, S, _}}) ->
-    match_regexp(U, UR);
+match_acl(_Host, {user_regexp, {UR, S1}}, #{usr := {U, S2, _}}) ->
+    S1 == S2 andalso match_regexp(U, UR);
 match_acl(_Host, {user_regexp, UR}, #{usr := {U, S, _}}) ->
     ejabberd_router:is_my_host(S) andalso match_regexp(U, UR);
 match_acl(_Host, {server_regexp, SR}, #{usr := {_, S, _}}) ->
@@ -117,8 +117,8 @@ match_acl(_Host, {resource_regexp, RR}, #{usr := {_, _, R}}) ->
     match_regexp(R, RR);
 match_acl(_Host, {node_regexp, {UR, SR}}, #{usr := {U, S, _}}) ->
     match_regexp(U, UR) andalso match_regexp(S, SR);
-match_acl(_Host, {user_glob, {UR, S}}, #{usr := {U, S, _}}) ->
-    match_regexp(U, UR);
+match_acl(_Host, {user_glob, {UR, S1}}, #{usr := {U, S2, _}}) ->
+    S1 == S2 andalso match_regexp(U, UR);
 match_acl(_Host, {user_glob, UR}, #{usr := {U, S, _}}) ->
     ejabberd_router:is_my_host(S) andalso match_regexp(U, UR);
 match_acl(_Host, {server_glob, SR}, #{usr := {_, S, _}}) ->
