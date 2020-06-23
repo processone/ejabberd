@@ -260,6 +260,7 @@ start(Level) ->
     Config = #{max_no_bytes => LogRotateSize,
 	       max_no_files => LogRotateCount,
 	       filesync_repeat_interval => no_repeat,
+	       file_check => 1000,
 	       sync_mode_qlen => 1000,
 	       drop_mode_qlen => 1000,
 	       flush_qlen => 5000},
