@@ -50,16 +50,22 @@ start_link(_, _, _) ->
 	 get_password/2]).
 
 -include("logger.hrl").
+-ifndef(LAGER).
+-export([stun_filter/2]).
+-define(STUN_MAX_LOG_LEVEL, notice). % Drop STUN/TURN info/debug messages.
+-endif.
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 tcp_init(Socket, Opts) ->
+    init_logger(),
     ejabberd:start_app(stun),
     stun:tcp_init(Socket, prepare_turn_opts(Opts)).
 
 -dialyzer({nowarn_function, udp_init/2}).
 udp_init(Socket, Opts) ->
+    init_logger(),
     ejabberd:start_app(stun),
     stun:udp_init(Socket, prepare_turn_opts(Opts)).
 
@@ -199,4 +205,32 @@ listen_options() ->
      {turn_max_permissions, 10},
      {turn_blacklist, [<<"2001::/32">>, <<"2002::/16">>]}, % Teredo, 6to4.
      {server_name, <<"ejabberd">>}].
+
+-spec init_logger() -> ok.
+-ifdef(LAGER).
+init_logger() ->
+    ok.
+-else.
+init_logger() ->
+    case logger:add_primary_filter(stun, {fun ?MODULE:stun_filter/2,
+					  ?STUN_MAX_LOG_LEVEL}) of
+	ok ->
+	    ok;
+	{error, {already_exist, _}} ->
+	    ok
+    end.
+
+-spec stun_filter(logger:log_event(), logger:level() | term())
+      -> logger:filter_return().
+stun_filter(#{meta := #{domain := [stun | _]}, level := Level}, MaxLevel) ->
+    case logger:compare_levels(Level, MaxLevel) of
+	lt ->
+	    stop;
+	_ ->
+	    ignore
+    end;
+stun_filter(Event, _Extra) ->
+    Event.
+-endif.
+
 -endif.
