@@ -357,18 +357,19 @@ try_url(URL0) ->
 	V when is_binary(V) -> binary_to_list(V);
 	_ -> URL0
     end,
-    case uri_parse(URL) of
-	{ok, {Scheme, _, _, _, _, _}} when Scheme /= http, Scheme /= https ->
+    try uri_parse(URL) of
+	{ok, Scheme, _, _, _} when Scheme /= "http", Scheme /= "https" ->
 	    ?ERROR_MSG("Unsupported URI scheme: ~ts", [URL]),
 	    erlang:error(badarg);
-	{ok, {_, _, Host, _, _, _}} when Host == ""; Host == <<"">> ->
+	{ok, _, Host, _, _} when Host == ""; Host == <<"">> ->
 	    ?ERROR_MSG("Invalid URL: ~ts", [URL]),
 	    erlang:error(badarg);
-	{ok, _} ->
-	    iolist_to_binary(URL);
-	{error, _} ->
-	    ?ERROR_MSG("Invalid URL: ~ts", [URL]),
-	    erlang:error(badarg)
+	{ok, _, _, _, _} ->
+	    iolist_to_binary(URL)
+    catch
+        error:_ ->
+            ?ERROR_MSG("Invalid URL: ~ts", [URL]),
+            erlang:error(badarg)
     end.
 
 -spec css_dir() -> file:filename().
