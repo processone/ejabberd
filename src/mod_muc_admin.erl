@@ -627,9 +627,10 @@ justcreated_to_binary(J) when is_atom(J) ->
 create_room(Name1, Host1, ServerHost) ->
     create_room_with_opts(Name1, Host1, ServerHost, []).
 
-create_room_with_opts(Name1, Host1, ServerHost, CustomRoomOpts) ->
+create_room_with_opts(Name1, Host1, ServerHost1, CustomRoomOpts) ->
     true = (error /= (Name = jid:nodeprep(Name1))),
     true = (error /= (Host = jid:nodeprep(Host1))),
+    true = (error /= (ServerHost = jid:nodeprep(ServerHost1))),
 
     %% Get the default room options from the muc configuration
     DefRoomOpts = mod_muc_opt:default_room_options(ServerHost),
