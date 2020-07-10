@@ -488,7 +488,7 @@ get_dateweek(Date, Lang) ->
 	      11 -> tr(Lang, ?T("November"));
 	      12 -> tr(Lang, ?T("December"))
 	    end,
-    list_to_binary(
+    unicode:characters_to_binary(
       case Lang of
           <<"en">> ->
               io_lib:format("~ts, ~ts ~w, ~w", [Weekday, Month, D, Y]);
