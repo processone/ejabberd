@@ -105,10 +105,18 @@ init({_, _, Transport} = EndPoint, Module, AllOpts) ->
 
 -spec init(endpoint(), module(), opts(), [gen_tcp:option()]) -> ok.
 init({Port, _, udp} = EndPoint, Module, Opts, SockOpts) ->
-    case gen_udp:open(Port, [binary,
+    {Port2, ExtraOpts} = case Port of
+			     <<"unix:", Path/binary>> ->
+				 SO = lists:keydelete(ip, 1, SockOpts),
+				 file:delete(Path),
+				 {0, [{ip, {local, Path}} | SO]};
+			     _ ->
+				 {Port, SockOpts}
+			 end,
+    case gen_udp:open(Port2, [binary,
 			     {active, false},
 			     {reuseaddr, true} |
-			     SockOpts]) of
+			     ExtraOpts]) of
 	{ok, Socket} ->
 	    case inet:sockname(Socket) of
 		{ok, {Addr, Port1}} ->
@@ -174,15 +182,22 @@ init({Port, _, tcp} = EndPoint, Module, Opts, SockOpts) ->
 -spec listen_tcp(inet:port_number(), [gen_tcp:option()]) ->
 	        {ok, inet:socket()} | {error, system_limit | inet:posix()}.
 listen_tcp(Port, SockOpts) ->
-    Res = gen_tcp:listen(Port, [binary,
+    {Port2, ExtraOpts} = case Port of
+			     <<"unix:", Path/binary>> ->
+				 SO = lists:keydelete(ip, 1, SockOpts),
+				 file:delete(Path),
+				 {0, [{ip, {local, Path}} | SO]};
+			     _ ->
+				 {Port, SockOpts}
+			 end,
+    Res = gen_tcp:listen(Port2, [binary,
 				{packet, 0},
 				{active, false},
 				{reuseaddr, true},
 				{nodelay, true},
 				{send_timeout, ?TCP_SEND_TIMEOUT},
 				{send_timeout_close, true},
-				{keepalive, true} |
-				SockOpts]),
+				{keepalive, true} | ExtraOpts]),
     case Res of
 	{ok, ListenSocket} ->
 	    {ok, ListenSocket};
@@ -225,6 +240,8 @@ accept(ListenSocket, Module, State, Sup, Interval, Proxy, Arity) ->
 		{error, Err} ->
 		    ?ERROR_MSG("(~w) Proxy protocol parsing failed: ~ts",
 			       [ListenSocket, format_error(Err)]),
+		    gen_tcp:close(Socket);
+		{undefined, undefined} ->
 		    gen_tcp:close(Socket);
 		{{Addr, Port}, {PAddr, PPort}} = SP ->
 		    %% THIS IS WRONG
@@ -464,11 +481,16 @@ format_error(Reason) ->
 
 -spec format_endpoint(endpoint()) -> string().
 format_endpoint({Port, IP, _Transport}) ->
-    IPStr = case tuple_size(IP) of
-		4 -> inet:ntoa(IP);
-		8 -> "[" ++ inet:ntoa(IP) ++ "]"
-	    end,
-    IPStr ++ ":" ++ integer_to_list(Port).
+    case Port of
+	Unix when is_binary(Unix) ->
+	    <<"unix:", Unix/binary>>;
+	_ ->
+	    IPStr = case tuple_size(IP) of
+			4 -> inet:ntoa(IP);
+			8 -> "[" ++ inet:ntoa(IP) ++ "]"
+		    end,
+	    IPStr ++ ":" ++ integer_to_list(Port)
+    end.
 
 -spec format_transport(transport(), opts()) -> string().
 format_transport(Transport, Opts) ->
@@ -623,7 +645,9 @@ partition(Fun, Opts) ->
 
 -spec listen_opt_type(atom()) -> econf:validator().
 listen_opt_type(port) ->
-    econf:int(0, 65535);
+    econf:either(
+	econf:int(0, 65535),
+	econf:binary("^unix:.*"));
 listen_opt_type(module) ->
     econf:beam([[{start, 3}, {start, 2}],
 		[{start_link, 3}, {start_link, 2}],
