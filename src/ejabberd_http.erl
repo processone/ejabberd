@@ -193,6 +193,9 @@ receive_headers(#state{trail = Trail} = State) ->
     Socket = State#state.socket,
     Data = SockMod:recv(Socket, 0, 300000),
     case Data of
+	{error, closed} when State#state.request_method == undefined ->
+	    % socket closed without receiving anything in it
+	    ok;
         {error, Error} ->
 	    ?DEBUG("Error when retrieving http headers ~p: ~p",
 		   [State#state.sockmod, Error]),
