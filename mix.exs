@@ -102,7 +102,7 @@ defmodule Ejabberd.Mixfile do
      {:ex_doc, ">= 0.0.0", only: :dev},
      {:eimp, "~> 1.0"},
      {:base64url, "~> 0.0.1"},
-     {:yconf, git: "https://github.com/processone/yconf", ref: "60e431a1f1e4504ccc9e329a9202b88c26b341ae"},
+     {:yconf, "~> 1.0"},
      {:jose, "~> 1.8"},
      {:idna, "~> 6.0"},
      {:p1_acme, "~> 1.0"}]
