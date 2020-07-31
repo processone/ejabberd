@@ -386,11 +386,14 @@ doc() ->
      {c2s_cafile,
       #{value => ?T("Path"),
         desc =>
-            ?T("Full path to a file containing one or more CA certificates "
+            [?T("Full path to a file containing one or more CA certificates "
                "in PEM format. All client certificates should be signed by "
                "one of these root CA certificates and should contain the "
-               "corresponding JID(s) in subjectAltName field. "
-               "There is no default value.")}},
+               "corresponding JID(s) in 'subjectAltName' field. "
+               "There is no default value."), "",
+             ?T("You can use http://../toplevel/#host-config[host_config] to specify this option per-vhost."), "",
+             ?T("To set a specific file per listener, use the listener's http://../listen-options/#cafile[cafile] option. Please notice that 'c2s_cafile' overrides the listener's 'cafile' option."), ""
+            ]}},
      {c2s_ciphers,
       #{value => "[Cipher, ...]",
         desc =>
@@ -431,8 +434,10 @@ doc() ->
      {ca_file,
       #{value => ?T("Path"),
         desc =>
-            ?T("Path to a file of CA root certificates. "
-               "The default is to use system defined file if possible.")}},
+            [?T("Path to a file of CA root certificates. "
+               "The default is to use system defined file if possible."), "",
+             ?T("For server conections, this 'ca_file' option is overriden by the http://../toplevel/#s2s-cafile[s2s_cafile] option."), ""
+            ]}},
      {captcha_cmd,
       #{value => ?T("Path"),
         desc =>
@@ -1048,9 +1053,11 @@ doc() ->
      {s2s_cafile,
       #{value => ?T("Path"),
         desc =>
-            ?T("A path to a file with CA root certificates that will "
-               "be used to authenticate s2s connections. If not set "
-               "the value of 'ca_file' will be used.")}},
+            [?T("A path to a file with CA root certificates that will "
+               "be used to authenticate s2s connections. If not set, "
+               "the value of http://../toplevel/#ca-file[ca_file] will be used."), "",
+             ?T("You can use http://../toplevel/#host-config[host_config] to specify this option per-vhost."), ""
+            ]}},
      {s2s_ciphers,
       #{value => "[Cipher, ...]",
         desc =>
