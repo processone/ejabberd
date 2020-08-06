@@ -790,18 +790,13 @@ load_permanent_rooms(Hosts, ServerHost, Opts) ->
 		      lists:foreach(
 			fun(R) ->
 				{Room, _} = R#muc_room.name_host,
-				case proplists:get_bool(persistent, R#muc_room.opts) of
-				    true ->
-					case RMod:find_online_room(ServerHost, Room, Host) of
-					    error ->
-						start_room(RMod, Host, ServerHost, Access,
-							   Room, HistorySize, RoomShaper,
-							   R#muc_room.opts, QueueType);
-					    {ok, _} ->
-						ok
-					end;
-				    _ ->
-					forget_room(ServerHost, Host, Room)
+				case RMod:find_online_room(ServerHost, Room, Host) of
+				    error ->
+					start_room(RMod, Host, ServerHost, Access,
+						   Room, HistorySize, RoomShaper,
+						   R#muc_room.opts, QueueType);
+				    {ok, _} ->
+					ok
 				end
 			end, get_rooms(ServerHost, Host))
 	      end, Hosts);
