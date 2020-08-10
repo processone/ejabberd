@@ -123,6 +123,11 @@ get_menu_items(Host, cluster, Lang, JID, Level) ->
 %% 	Items
 %%     ).
 
+is_allowed_path(global, RPath, JID) ->
+    is_allowed_path([], RPath, JID);
+is_allowed_path(Host, RPath, JID) when is_binary(Host) ->
+    is_allowed_path([<<"server">>, Host], RPath, JID);
+
 is_allowed_path(BasePath, {Path, _}, JID) ->
     is_allowed_path(BasePath ++ [Path], JID);
 is_allowed_path(BasePath, {Path, _, _}, JID) ->
@@ -133,19 +138,6 @@ is_allowed_path([<<"admin">> | Path], JID) ->
 is_allowed_path(Path, JID) ->
     {HostOfRule, AccessRule} = get_acl_rule(Path, 'GET'),
     any_rules_allowed(HostOfRule, AccessRule, JID).
-
-%% @spec(Path) -> URL
-%% where Path = [string()]
-%%       URL = string()
-%% Convert ["admin", "user", "tom"] -> "/admin/user/tom/"
-%%path_to_url(Path) ->
-%%    "/" ++ string:join(Path, "/") ++ "/".
-
-%% @spec(URL) -> Path
-%% where Path = [string()]
-%%       URL = string()
-%% Convert "admin/user/tom" -> ["admin", "user", "tom"]
-url_to_path(URL) -> str:tokens(URL, <<"/">>).
 
 %%%==================================
 %%%% process/2
@@ -1785,10 +1777,9 @@ make_host_node_menu(_, cluster, _Lang, _JID, _Level) ->
 make_host_node_menu(Host, Node, Lang, JID, Level) ->
     HostNodeBase = get_base_path(Host, Node, Level),
     HostNodeFixed = get_menu_items_hook({hostnode, Host, Node}, Lang),
-    HostNodeBasePath = url_to_path(HostNodeBase),
     HostNodeFixed2 = [Tuple
 		      || Tuple <- HostNodeFixed,
-			 is_allowed_path(HostNodeBasePath, Tuple, JID)],
+			 is_allowed_path(Host, Tuple, JID)],
     {HostNodeBase, iolist_to_binary(atom_to_list(Node)),
      HostNodeFixed2}.
 
@@ -1803,10 +1794,9 @@ make_host_menu(Host, HostNodeMenu, Lang, JID, Level) ->
 		    [{<<"nodes">>, ?T("Nodes"), HostNodeMenu},
 		     {<<"stats">>, ?T("Statistics")}]
 		      ++ get_menu_items_hook({host, Host}, Lang),
-    HostBasePath = url_to_path(HostBase),
     HostFixed2 = [Tuple
 		  || Tuple <- HostFixed,
-		     is_allowed_path(HostBasePath, Tuple, JID)],
+		     is_allowed_path(Host, Tuple, JID)],
     {HostBase, Host, HostFixed2}.
 
 make_node_menu(_Host, cluster, _Lang, _Level) ->
@@ -1829,10 +1819,9 @@ make_server_menu(HostMenu, NodeMenu, Lang, JID, Level) ->
 	     {<<"nodes">>, ?T("Nodes"), NodeMenu},
 	     {<<"stats">>, ?T("Statistics")}]
 	      ++ get_menu_items_hook(server, Lang),
-    BasePath = url_to_path(Base),
     Fixed2 = [Tuple
 	      || Tuple <- Fixed,
-		 is_allowed_path(BasePath, Tuple, JID)],
+		 is_allowed_path(global, Tuple, JID)],
     {Base, <<"">>, Fixed2}.
 
 get_menu_items_hook({hostnode, Host, Node}, Lang) ->
