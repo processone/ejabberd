@@ -597,36 +597,7 @@ sql_query_internal(#sql_query{} = Query) ->
 		mssql ->
 		    mssql_sql_query(Query);
                 pgsql ->
-                    Key = {?PREPARE_KEY, Query#sql_query.hash},
-                    case get(Key) of
-                        undefined ->
-                            Host = State#state.host,
-                            PreparedStatements =
-                                ejabberd_option:sql_prepared_statements(Host),
-                            case PreparedStatements of
-                                false ->
-                                    put(Key, ignore);
-                                true ->
-                                    case pgsql_prepare(Query, State) of
-                                        {ok, _, _, _} ->
-                                            put(Key, prepared);
-                                        {error, Error} ->
-                                            ?ERROR_MSG(
-                                               "PREPARE failed for SQL query "
-                                               "at ~p: ~p",
-                                               [Query#sql_query.loc, Error]),
-                                            put(Key, ignore)
-                                    end
-                            end;
-                        _ ->
-                            ok
-                    end,
-                    case get(Key) of
-                        prepared ->
-                            pgsql_execute_sql_query(Query, State);
-                        _ ->
-                            pgsql_sql_query(Query)
-                    end;
+                    pgsql_execute_sql_query(Query, State);
                 mysql ->
                     generic_sql_query(Query);
                 sqlite ->
@@ -769,24 +740,6 @@ standard_escape(S) ->
 mssql_sql_query(SQLQuery) ->
     sqlite_sql_query(SQLQuery).
 
-pgsql_prepare(SQLQuery, State) ->
-    Escape = #sql_escape{_ = fun(_) -> arg end,
-                         like_escape = fun() -> escape end},
-    {RArgs, _} =
-        lists:foldl(
-	    fun(arg, {Acc, I}) ->
-		{[<<$$, (integer_to_binary(I))/binary>> | Acc], I + 1};
-	       (escape, {Acc, I}) ->
-		   {[<<"ESCAPE E'\\\\'">> | Acc], I};
-	       (List, {Acc, I}) when is_list(List) ->
-		   {[<<$$, (integer_to_binary(I))/binary>> | Acc], I + 1}
-	    end, {[], 1}, (SQLQuery#sql_query.args)(Escape)),
-    Args = lists:reverse(RArgs),
-    %N = length((SQLQuery#sql_query.args)(Escape)),
-    %Args = [<<$$, (integer_to_binary(I))/binary>> || I <- lists:seq(1, N)],
-    Query = (SQLQuery#sql_query.format_query)(Args),
-    pgsql:prepare(State#state.db_ref, SQLQuery#sql_query.hash, Query).
-
 pgsql_execute_escape() ->
     #sql_escape{string = fun(X) -> X end,
 		integer = fun(X) -> [misc:i2l(X)] end,
@@ -798,16 +751,24 @@ pgsql_execute_escape() ->
                }.
 
 pgsql_execute_sql_query(SQLQuery, State) ->
+    Escape = #sql_escape{_ = fun(_) -> arg end,
+                         like_escape = fun() -> escape end},
+    {RArgs, _} =
+        lists:foldl(
+        fun(arg, {Acc, I}) ->
+        {[<<$$, (integer_to_binary(I))/binary>> | Acc], I + 1};
+           (escape, {Acc, I}) ->
+           {[<<"ESCAPE E'\\\\'">> | Acc], I};
+           (List, {Acc, I}) when is_list(List) ->
+           {[<<$$, (integer_to_binary(I))/binary>> | Acc], I + 1}
+        end, {[], 1}, (SQLQuery#sql_query.args)(Escape)),
+    ArgsPrepared = lists:reverse(RArgs),
     Args = (SQLQuery#sql_query.args)(pgsql_execute_escape()),
     Args2 = lists:filter(fun(ignore) -> false; (_) -> true end, Args),
-    ExecuteRes =
-        pgsql:execute(State#state.db_ref, SQLQuery#sql_query.hash, Args2),
-%    {T, ExecuteRes} =
-%        timer:tc(pgsql, execute, [State#state.db_ref, SQLQuery#sql_query.hash, Args]),
-%    io:format("T ~ts ~p~n", [SQLQuery#sql_query.hash, T]),
+    Query = (SQLQuery#sql_query.format_query)(ArgsPrepared),
+    ExecuteRes = pgsql:pquery(State#state.db_ref, Query, Args2),
     Res = pgsql_execute_to_odbc(ExecuteRes),
     sql_query_format_res(Res, SQLQuery).
-
 
 sql_query_format_res({selected, _, Rows}, SQLQuery) ->
     Res =
