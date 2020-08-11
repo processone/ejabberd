@@ -145,7 +145,7 @@ defmodule Ejabberd.Mixfile do
 
   defp package do
     [# These are the default files included in the package
-      files: ["lib", "src", "priv", "mix.exs", "include", "README.md", "COPYING"],
+      files: ["lib", "src", "priv", "mix.exs", "include", "README.md", "COPYING", "rebar.config", "rebar.config.script"],
       maintainers: ["ProcessOne"],
       licenses: ["GPLv2"],
       links: %{"Site" => "https://www.ejabberd.im",
