@@ -9,5 +9,5 @@
 search_all_hosts(Opts) when is_map(Opts) ->
     gen_mod:get_opt(search_all_hosts, Opts);
 search_all_hosts(Host) ->
-    gen_mod:get_module_opt(Host, mod_vcard_mnesia, search_all_hosts).
+    gen_mod:get_module_opt(Host, mod_vcard, search_all_hosts).
 
