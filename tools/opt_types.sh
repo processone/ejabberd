@@ -106,14 +106,22 @@ emit_funs(Fd, _Mod, Specs, Globals) ->
 emit_funs(Fd, Mod, Specs) ->
     lists:foreach(
       fun({Opt, Type}) ->
+              Mod2 = strip_db_type(Mod),
 	      log(Fd,
 		  "-spec ~s(gen_mod:opts() | global | binary()) -> ~s.~n"
 		  "~s(Opts) when is_map(Opts) ->~n"
 		  "    gen_mod:get_opt(~s, Opts);~n"
 		  "~s(Host) ->~n"
 		  "    gen_mod:get_module_opt(Host, ~s, ~s).~n",
-		  [Opt, t_to_string(Type), Opt, Opt, Opt, Mod, Opt])
+		  [Opt, t_to_string(Type), Opt, Opt, Opt, Mod2, Opt])
       end, Specs).
+
+strip_db_type(mod_vcard_ldap) ->
+    mod_vcard;
+strip_db_type(mod_vcard_mnesia) ->
+    mod_vcard;
+strip_db_type(Mod) ->
+    Mod.
 
 append({globals, Form}, _File, State) ->
     [Clause] = erl_syntax:function_clauses(Form),
