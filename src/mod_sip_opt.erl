@@ -40,7 +40,7 @@ routes(Opts) when is_map(Opts) ->
 routes(Host) ->
     gen_mod:get_module_opt(Host, mod_sip, routes).
 
--spec via(gen_mod:opts() | global | binary()) -> [{'tcp' | 'tls' | 'udp',{binary(),1..65535 | 'undefined'}}].
+-spec via(gen_mod:opts() | global | binary()) -> [{'tcp' | 'tls' | 'udp',{binary(),1..65535}}].
 via(Opts) when is_map(Opts) ->
     gen_mod:get_opt(via, Opts);
 via(Host) ->
