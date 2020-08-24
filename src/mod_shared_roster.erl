@@ -935,7 +935,7 @@ list_shared_roster_groups(Host, Query, Lang) ->
 	[?XAE(<<"form">>,
 	      [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
 	      [FGroups, ?BR,
-	       ?INPUTT(<<"submit">>, <<"delete">>,
+	       ?INPUTTD(<<"submit">>, <<"delete">>,
 		       ?T("Delete Selected"))])].
 
 list_sr_groups_parse_query(Host, Query) ->

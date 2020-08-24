@@ -276,3 +276,11 @@ p.result {
 *.alignright {
   text-align: right;
 }
+.btn-danger:hover {
+	color: #fff;
+	background-color: #cb2431;
+}
+.btn-danger {
+	color: #cb2431;
+	transition: none;
+}

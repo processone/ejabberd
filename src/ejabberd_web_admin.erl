@@ -949,7 +949,7 @@ user_info(User, Server, Query, Lang) ->
 			 [?C(LastActivity)] ++
 			   UserItems ++
 			     [?P,
-			      ?INPUTT(<<"submit">>, <<"removeuser">>,
+			      ?INPUTTD(<<"submit">>, <<"removeuser">>,
 				      ?T("Remove User"))]))].
 
 user_parse_query(User, Server, Query) ->
@@ -1105,7 +1105,7 @@ get_node(global, Node, [], Query, Lang) ->
 	      [{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
 	      [?INPUTT(<<"submit">>, <<"restart">>, ?T("Restart")),
 	       ?C(<<" ">>),
-	       ?INPUTT(<<"submit">>, <<"stop">>, ?T("Stop"))])];
+	       ?INPUTTD(<<"submit">>, <<"stop">>, ?T("Stop"))])];
 get_node(Host, Node, [], _Query, Lang) ->
     Base = get_base_path(Host, Node, 4),
     MenuItems2 = make_menu_items(Host, Node, Base, Lang),

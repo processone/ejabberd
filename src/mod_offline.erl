@@ -1008,7 +1008,7 @@ user_queue(User, Server, Query, Lang) ->
 			   true -> FMsgs
 			end)]),
 	       ?BR,
-	       ?INPUTT(<<"submit">>, <<"delete">>,
+	       ?INPUTTD(<<"submit">>, <<"delete">>,
 		       ?T("Delete Selected"))])].
 
 user_queue_parse_query(LUser, LServer, Query) ->
@@ -1070,14 +1070,17 @@ get_messages_subset2(Max, Length, MsgsAll) ->
 webadmin_user(Acc, User, Server, Lang) ->
     QueueLen = count_offline_messages(jid:nodeprep(User),
 				jid:nameprep(Server)),
-    FQueueLen = [?AC(<<"queue/">>,
-		     (integer_to_binary(QueueLen)))],
+    FQueueLen = ?C(integer_to_binary(QueueLen)),
+    FQueueView = ?AC(<<"queue/">>,
+		     ?T("View Queue")),
     Acc ++
-      [?XCT(<<"h3">>, ?T("Offline Messages:"))] ++
-	FQueueLen ++
-	  [?C(<<" ">>),
-	   ?INPUTT(<<"submit">>, <<"removealloffline">>,
-		   ?T("Remove All Offline Messages"))].
+        [?XCT(<<"h3">>, ?T("Offline Messages:")),
+         FQueueLen,
+         ?C(<<"  |   ">>),
+         FQueueView,
+         ?C(<<" | ">>),
+         ?INPUTTD(<<"submit">>, <<"removealloffline">>,
+                  ?T("Remove All Offline Messages"))].
 
 -spec delete_all_msgs(binary(), binary()) -> {atomic, any()}.
 delete_all_msgs(User, Server) ->
