@@ -4232,8 +4232,8 @@ mod_doc() ->
 		  ?T("This option defines the Jabber IDs of the service. "
 		     "If the 'hosts' option is not specified, the only Jabber "
 		     "ID will be the hostname of the virtual host with the "
-		     "prefix \"vjud.\". The keyword '@HOST@' is replaced with "
-		     "the real virtual host name.")}},
+		     "prefix \"pubsub.\". The keyword '@HOST@' is replaced "
+		     "with the real virtual host name.")}},
 	   {ignore_pep_from_offline,
 	    #{value => "false | true",
 	      desc =>
