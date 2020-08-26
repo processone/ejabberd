@@ -4312,7 +4312,7 @@ process_iq_mucsub(From, #iq{type = get, lang = Lang,
 		     fun(_, #subscriber{jid = J, nick = N, nodes = Nodes}, Acc) ->
 			 case ShowJid of
 			     true ->
-				 [#muc_subscription{jid = J, events = Nodes}|Acc];
+				 [#muc_subscription{jid = J, nick = N, events = Nodes}|Acc];
 			     _ ->
 				 [#muc_subscription{nick = N, events = Nodes}|Acc]
 			 end
