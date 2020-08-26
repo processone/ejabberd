@@ -363,5 +363,6 @@ mod_options(_) -> [].
 mod_doc() ->
     #{desc =>
           ?T("This module can be used to update existing SQL database "
-             "from 'old' to 'new' schema. When the module is loaded "
-             "use 'update_sql' ejabberdctl command.")}.
+             "from the default to the new schema. Check the section "
+             "http://../database-ldap/#default-and-new-schemas[Default and New Schemas] for details. "
+             "When the module is loaded use 'update_sql' ejabberdctl command.")}.
