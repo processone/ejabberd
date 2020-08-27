@@ -43,7 +43,7 @@
 	 depends/2, mod_doc/0]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_roster.hrl").
 -include("eldap.hrl").
 -include("translate.hrl").

@@ -32,7 +32,7 @@
 	 read_message/3, remove_message/3, read_all_messages/2,
 	 remove_all_messages/2, count_messages/2, import/1, export/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_offline.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").

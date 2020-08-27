@@ -38,7 +38,7 @@
     read_subscription/3, write_subscription/4]).
 
 -include("pubsub.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
 
 -define(PUBSUB_DELIVER, <<"pubsub#deliver">>).

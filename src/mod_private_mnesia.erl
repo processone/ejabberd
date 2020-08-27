@@ -31,7 +31,7 @@
 	 use_cache/1, import/3]).
 -export([need_transform/1, transform/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_private.hrl").
 -include("logger.hrl").
 

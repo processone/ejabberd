@@ -25,7 +25,7 @@
 
 -module(gen_pubsub_node).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -type(host() :: mod_pubsub:host()).
 -type(nodeId() :: mod_pubsub:nodeId()).

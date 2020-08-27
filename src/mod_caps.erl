@@ -53,7 +53,7 @@
 
 -include("logger.hrl").
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_caps.hrl").
 -include("translate.hrl").
 

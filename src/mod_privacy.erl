@@ -41,7 +41,7 @@
 	 mod_opt_type/1, mod_options/1, depends/2]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_privacy.hrl").
 -include("translate.hrl").
 

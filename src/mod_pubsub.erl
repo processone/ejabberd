@@ -40,7 +40,7 @@
 -protocol({xep, 248, '0.2'}).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("pubsub.hrl").
 -include("mod_roster.hrl").
 -include("translate.hrl").

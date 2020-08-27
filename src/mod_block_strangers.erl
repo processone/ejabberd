@@ -34,7 +34,7 @@
 
 -export([filter_packet/1, filter_offline_msg/1, filter_subscription/2]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("translate.hrl").
 

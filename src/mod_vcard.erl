@@ -44,7 +44,7 @@
 -export([route/1]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_vcard.hrl").
 -include("translate.hrl").
 -include("ejabberd_stacktrace.hrl").

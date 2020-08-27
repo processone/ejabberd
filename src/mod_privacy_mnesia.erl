@@ -32,7 +32,7 @@
 	 remove_list/3, use_cache/1, import/1]).
 -export([need_transform/1, transform/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_privacy.hrl").
 -include("logger.hrl").
 
