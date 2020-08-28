@@ -282,6 +282,7 @@ init([Host, ServerHost, Access, Room, HistorySize,
 	      [Room, Host, jid:encode(Creator)]),
     add_to_log(room_existence, created, State1),
     add_to_log(room_existence, started, State1),
+    ejabberd_hooks:run(start_room, ServerHost, [ServerHost, Room, Host]),
     {ok, normal_state, reset_hibernate_timer(State1)};
 init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, QueueType]) ->
     process_flag(trap_exit, true),
@@ -296,6 +297,7 @@ init([Host, ServerHost, Access, Room, HistorySize, RoomShaper, Opts, QueueType])
 				  room_queue = RoomQueue,
 				  room_shaper = Shaper}),
     add_to_log(room_existence, started, State),
+    ejabberd_hooks:run(start_room, ServerHost, [ServerHost, Room, Host]),
     {ok, normal_state, reset_hibernate_timer(State)}.
 
 normal_state({route, <<"">>,
