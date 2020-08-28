@@ -4061,7 +4061,7 @@ make_disco_info(_From, StateData) ->
 	   end,
     #disco_info{identities = [#identity{category = <<"conference">>,
 					type = <<"text">>,
-					name = get_title(StateData)}],
+					name = (StateData#state.config)#config.title}],
 		features = Feats}.
 
 -spec process_iq_disco_info(jid(), iq(), state()) ->
