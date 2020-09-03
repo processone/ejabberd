@@ -24,7 +24,7 @@
 -module(xml_compress_gen).
 -author("pawel@process-one.net").
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 %% API
 -export([archive_analyze/3, process_stats/1, gen_code/3]).
