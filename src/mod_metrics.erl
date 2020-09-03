@@ -103,10 +103,11 @@ user_receive_packet({Packet, #{jid := #jid{lserver = LServer}} = C2SState}) ->
     push(LServer, user_receive_packet),
     {Packet, C2SState}.
 
--spec s2s_send_packet(stanza()) -> any().
+-spec s2s_send_packet(stanza()) -> stanza().
 s2s_send_packet(Packet) ->
     #jid{lserver = LServer} = xmpp:get_from(Packet),
-    push(LServer, s2s_send_packet).
+    push(LServer, s2s_send_packet),
+    Packet.
 
 -spec s2s_receive_packet({stanza(), ejabberd_s2s_in:state()}) ->
 				{stanza(), ejabberd_s2s_in:state()}.
