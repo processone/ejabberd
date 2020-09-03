@@ -37,7 +37,7 @@
 -export([need_transform/1, transform/1]).
 
 -include("logger.hrl").
--include("scram.hrl").
+-include_lib("xmpp/include/scram.hrl").
 -include("ejabberd_auth.hrl").
 
 -record(reg_users_counter, {vhost = <<"">> :: binary(),

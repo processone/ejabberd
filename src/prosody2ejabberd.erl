@@ -27,8 +27,8 @@
 %% API
 -export([from_dir/1]).
 
--include("scram.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/scram.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("mod_roster.hrl").
 -include("mod_offline.hrl").

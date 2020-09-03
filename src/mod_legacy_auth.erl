@@ -29,7 +29,7 @@
 %% hooks
 -export([c2s_unauthenticated_packet/2, c2s_stream_features/2]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
 
 -type c2s_state() :: ejabberd_c2s:state().

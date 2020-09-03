@@ -85,7 +85,7 @@
 	 handle_info/2, terminate/2, code_change/3]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("ejabberd_commands.hrl").
 -include("ejabberd_sm.hrl").
 -include("ejabberd_stacktrace.hrl").

@@ -39,7 +39,7 @@
 	 mod_options/1, mod_doc/0]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
 
 start(Host, _Opts) ->

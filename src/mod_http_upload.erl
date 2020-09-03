@@ -87,7 +87,7 @@
 	 expand_host/2]).
 
 -include("ejabberd_http.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("translate.hrl").
 

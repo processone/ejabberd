@@ -47,7 +47,7 @@
 	 reply/2, copy_state/2, set_timeout/2, route/2, format_reason/2,
 	 host_up/1, host_down/1, send_ws_ping/1, bounce_message_queue/2]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("mod_roster.hrl").
 -include("translate.hrl").

@@ -42,7 +42,7 @@
 	 terminate/2, code_change/3]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -record(route_multicast, {domain = <<"">> :: binary() | '_',
 			  pid = self() :: pid()}).

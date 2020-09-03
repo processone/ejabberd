@@ -42,7 +42,7 @@
 	 host_up/1, host_down/1,
 	 config_reloaded/0, process_iq/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
 -include("translate.hrl").

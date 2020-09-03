@@ -40,7 +40,7 @@
 -export([set_affiliation/6, set_affiliations/4, get_affiliation/5,
 	 get_affiliations/3, search_affiliation/4]).
 
--include("jid.hrl").
+-include_lib("xmpp/include/jid.hrl").
 -include("mod_muc.hrl").
 -include("logger.hrl").
 -include("ejabberd_sql_pt.hrl").

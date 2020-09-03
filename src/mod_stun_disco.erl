@@ -55,7 +55,7 @@
 
 -include("logger.hrl").
 -include("translate.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 -define(STUN_MODULE, ejabberd_stun).
 

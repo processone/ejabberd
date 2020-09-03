@@ -40,7 +40,7 @@
 
 -include("logger.hrl").
 -include("eldap.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
 
 -define(PROCNAME, ejabberd_mod_vcard_ldap).

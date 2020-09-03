@@ -34,7 +34,7 @@
     get_options_xform/2, parse_options_xform/1]).
 
 -include("pubsub.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
 
 -define(PUBSUB_DELIVER, <<"pubsub#deliver">>).

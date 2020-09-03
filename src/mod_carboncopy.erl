@@ -42,7 +42,7 @@
 -export([list/2]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("translate.hrl").
 
 -type direction() :: sent | received.

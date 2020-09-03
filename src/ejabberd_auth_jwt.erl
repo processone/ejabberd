@@ -34,7 +34,7 @@
          user_exists/2, use_cache/1
         ]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 
 %%%----------------------------------------------------------------------

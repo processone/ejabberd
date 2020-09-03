@@ -31,7 +31,7 @@
 -export([import_file/1, import_dir/1]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 
 %%%----------------------------------------------------------------------
 %%% API

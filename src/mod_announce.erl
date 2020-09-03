@@ -51,7 +51,7 @@
 	 announce_all_hosts_motd_delete/1]).
 
 -include("logger.hrl").
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("mod_announce.hrl").
 -include("translate.hrl").
 

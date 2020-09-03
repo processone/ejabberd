@@ -54,7 +54,7 @@
          oauth_add_client_implicit/3,
          oauth_remove_client/1]).
 
--include("xmpp.hrl").
+-include_lib("xmpp/include/xmpp.hrl").
 -include("logger.hrl").
 -include("ejabberd_http.hrl").
 -include("ejabberd_web_admin.hrl").
