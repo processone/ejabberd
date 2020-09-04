@@ -1494,17 +1494,13 @@ send_message(Type, From, To, Subject, Body) ->
                       #xmlel{name = <<"body">>,
                              children = [{xmlcdata, Body}]}]},
           ?NS_CLIENT, CodecOpts) of
-        #message{from = FromJid, to = ToJid} = Msg1 ->
-            Msg = xmpp:put_meta(Msg1, stanza_id, mod_mam:make_id()),
-            ejabberd_hooks:run_fold(user_send_packet, FromJid#jid.lserver,
-                                    {Msg, #{jid => FromJid}}, []),
-            ejabberd_hooks:run_fold(user_receive_packet, FromJid#jid.lserver,
-                                    {Msg, #{jid => ToJid}}, []),
+        #message{from = JID} = Msg ->
+            State = #{jid => JID},
+            ejabberd_hooks:run_fold(user_send_packet, JID#jid.lserver, {Msg, State}, []),
             ejabberd_router:route(Msg)
     catch _:{xmpp_codec, Why} ->
             {error, xmpp:format_error(Why)}
     end.
-
 
 send_stanza(FromString, ToString, Stanza) ->
     try
