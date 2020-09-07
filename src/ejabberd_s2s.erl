@@ -351,8 +351,11 @@ route(Packet) ->
 	{ok, Pid} when is_pid(Pid) ->
 	    ?DEBUG("Sending to process ~p~n", [Pid]),
 	    #jid{lserver = MyServer} = From,
-	    ejabberd_hooks:run(s2s_send_packet, MyServer, [Packet]),
-	    ejabberd_s2s_out:route(Pid, Packet);
+	    case ejabberd_hooks:run_fold(s2s_send_packet, MyServer, Packet,
+					 []) of
+		drop -> ok;
+		Packet1 -> ejabberd_s2s_out:route(Pid, Packet1)
+	    end;
 	{error, Reason} ->
 	    Lang = xmpp:get_lang(Packet),
 	    Err = case Reason of
