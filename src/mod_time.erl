@@ -55,7 +55,7 @@ process_local_iq(#iq{type = set, lang = Lang} = IQ) ->
     Txt = ?T("Value 'set' of 'type' attribute is not allowed"),
     xmpp:make_error(IQ, xmpp:err_not_allowed(Txt, Lang));
 process_local_iq(#iq{type = get} = IQ) ->
-    Now = erlang:timestamp(),
+    Now = os:timestamp(),
     Now_universal = calendar:now_to_universal_time(Now),
     Now_local = calendar:universal_time_to_local_time(Now_universal),
     Seconds_diff =
