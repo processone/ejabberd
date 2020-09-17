@@ -1,0 +1,9 @@
+{application, configure_deps,
+ [{description, "A rebar3 plugin to explicitly run configure on dependencies"},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {applications, [kernel, stdlib]},
+  {env,[]},
+  {modules, []},
+  {links, []}
+ ]}.
