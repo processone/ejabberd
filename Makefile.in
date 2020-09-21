@@ -1,4 +1,4 @@
-REBAR = @ESCRIPT@ rebar
+REBAR = @ESCRIPT@ @rebar@
 INSTALL = @INSTALL@
 SED = @SED@
 ERL = @ERL@
@@ -97,30 +97,50 @@ ifneq ($(INSTALLGROUP),)
   G_USER=-g $(INSTALLGROUP)
 endif
 
+IS_REBAR3:=$(shell expr `$(REBAR) --version | awk -F '[ .]' '/rebar / {print $$2}'` '>=' 3)
+
+ifeq "$(IS_REBAR3)" "1"
+  SKIPDEPS=
+  LISTDEPS=tree
+  UPDATEDEPS=upgrade
+  DEPSPATTERN="s/ (.*//; /^ / s/.* \([a-z0-9_]*\).*/\1/p;"
+  DEPSBASE=_build
+  DEPSDIR=$(DEPSBASE)/default/lib
+  EBINDIR=$(DEPSDIR)/ejabberd/ebin
+else
+  SKIPDEPS=skip_deps=true
+  LISTDEPS=-q list-deps
+  UPDATEDEPS=update-deps
+  DEPSPATTERN="/ TAG / s/ .*// p; / REV / s/ .*// p; / BRANCH / s/ .*// p;"
+  DEPSBASE=deps
+  DEPSDIR=$(DEPSBASE)
+  EBINDIR=ebin
+endif
+
 all: deps src
 
-deps: deps/.got
+deps: $(DEPSDIR)/.got
 
-deps/.got:
-	rm -rf deps/.got
-	rm -rf deps/.built
-	mkdir -p deps
-	$(REBAR) get-deps && :> deps/.got
+$(DEPSDIR)/.got:
+	rm -rf $(DEPSDIR)/.got
+	rm -rf $(DEPSDIR)/.built
+	mkdir -p $(DEPSDIR)
+	$(REBAR) get-deps && :> $(DEPSDIR)/.got
 
-deps/.built: deps/.got
+$(DEPSDIR)/.built: $(DEPSDIR)/.got
 	$(REBAR) configure-deps
-	$(REBAR) compile && :> deps/.built
+	$(REBAR) compile && :> $(DEPSDIR)/.built
 
-src: deps/.built
-	$(REBAR) skip_deps=true compile
+src: $(DEPSDIR)/.built
+	$(REBAR) $(SKIPDEPS) compile
 
 update:
-	rm -rf deps/.got
-	rm -rf deps/.built
-	$(REBAR) update-deps && :> deps/.got
+	rm -rf $(DEPSDIR)/.got
+	rm -rf $(DEPSDIR)/.built
+	$(REBAR) $(UPDATEDEPS) && :> $(DEPSDIR)/.got
 
 xref: all
-	$(REBAR) skip_deps=true xref
+	$(REBAR) $(SKIPDEPS) xref
 
 hooks: all
 	tools/hook_deps.sh ebin
@@ -139,10 +159,13 @@ JOIN_PATHS=$(if $(wordlist 2,1000,$(1)),$(firstword $(1))/$(call JOIN_PATHS,$(wo
 
 VERSIONED_DEP=$(if $(DEP_$(1)_VERSION),$(DEP_$(1)_VERSION),$(1))
 
+DEPIX:=$(words $(subst /, ,$(DEPSDIR)))
+LIBIX:=$(shell expr "$(DEPIX)" + 2)
+
 ELIXIR_TO_DEST=$(LIBDIR) $(call VERSIONED_DEP,$(word 2,$(1))) $(wordlist 5,1000,$(1))
 DEPS_TO_DEST=$(LIBDIR) $(call VERSIONED_DEP,$(word 2,$(1))) $(wordlist 3,1000,$(1))
 MAIN_TO_DEST=$(LIBDIR) $(call VERSIONED_DEP,ejabberd) $(1)
-TO_DEST_SINGLE=$(if $(subst XdepsX,,X$(word 1,$(1))X),$(call MAIN_TO_DEST,$(1)),$(if $(subst XlibX,,X$(word 3,$(1))X),$(call DEPS_TO_DEST,$(1)),$(call ELIXIR_TO_DEST,$(1))))
+TO_DEST_SINGLE=$(if $(subst X$(DEPSBASE)X,,X$(word 1,$(1))X),$(call MAIN_TO_DEST,$(1)),$(if $(subst XlibX,,X$(word $(LIBIX),$(1))X),$(call DEPS_TO_DEST,$(wordlist $(DEPIX),1000,$(1))),$(call ELIXIR_TO_DEST,$(wordlist $(DEPIX),1000,$(1)))))
 TO_DEST=$(foreach path,$(1),$(call JOIN_PATHS,$(call TO_DEST_SINGLE,$(subst /, ,$(path)))))
 
 FILTER_DIRS=$(foreach path,$(1),$(if $(wildcard $(path)/*),,$(path)))
@@ -150,16 +173,16 @@ FILES_WILDCARD=$(call FILTER_DIRS,$(foreach w,$(1),$(wildcard $(w))))
 
 ifeq ($(MAKECMDGOALS),copy-files-sub)
 
-DEPS:=$(sort $(shell $(REBAR) -q list-deps|$(SED) -ne '/ TAG / s/ .*// p; / REV / s/ .*// p; / BRANCH / s/ .*// p'))
+DEPS:=$(sort $(shell QUIET=1 $(REBAR) $(LISTDEPS) | $(SED) -ne $(DEPSPATTERN) ))
 
-DEPS_FILES=$(call FILES_WILDCARD,$(foreach DEP,$(DEPS),deps/$(DEP)/ebin/*.beam deps/$(DEP)/ebin/*.app deps/$(DEP)/priv/* deps/$(DEP)/priv/lib/* deps/$(DEP)/priv/bin/* deps/$(DEP)/include/*.hrl deps/$(DEP)/COPY* deps/$(DEP)/LICENSE* deps/$(DEP)/lib/*/ebin/*.beam deps/$(DEP)/lib/*/ebin/*.app))
+DEPS_FILES=$(call FILES_WILDCARD,$(foreach DEP,$(DEPS),$(DEPSDIR)/$(DEP)/ebin/*.beam $(DEPSDIR)/$(DEP)/ebin/*.app $(DEPSDIR)/$(DEP)/priv/* $(DEPSDIR)/$(DEP)/priv/lib/* $(DEPSDIR)/$(DEP)/priv/bin/* $(DEPSDIR)/$(DEP)/include/*.hrl $(DEPSDIR)/$(DEP)/COPY* $(DEPSDIR)/$(DEP)/LICENSE* $(DEPSDIR)/$(DEP)/lib/*/ebin/*.beam $(DEPSDIR)/$(DEP)/lib/*/ebin/*.app))
 
-BINARIES=deps/epam/priv/bin/epam deps/eimp/priv/bin/eimp deps/fs/priv/mac_listener
+BINARIES=$(DEPSDIR)/epam/priv/bin/epam $(DEPSDIR)/eimp/priv/bin/eimp $(DEPSDIR)/fs/priv/mac_listener
 
-DEPS_FILES_FILTERED=$(filter-out $(BINARIES) deps/elixir/ebin/elixir.app,$(DEPS_FILES))
-DEPS_DIRS=$(sort deps/ $(foreach DEP,$(DEPS),deps/$(DEP)/) $(dir $(DEPS_FILES)))
+DEPS_FILES_FILTERED=$(filter-out $(BINARIES) $(DEPSDIR)/elixir/ebin/elixir.app,$(DEPS_FILES))
+DEPS_DIRS=$(sort $(DEPSDIR)/ $(foreach DEP,$(DEPS),$(DEPSDIR)/$(DEP)/) $(dir $(DEPS_FILES)))
 
-MAIN_FILES=$(filter-out %/configure.beam,$(call FILES_WILDCARD,ebin/*.beam ebin/*.app priv/msgs/*.msg priv/css/*.css priv/img/*.png priv/js/*.js priv/lib/* include/*.hrl COPYING))
+MAIN_FILES=$(filter-out %/configure.beam,$(call FILES_WILDCARD,$(EBINDIR)/*.beam $(EBINDIR)/*.app priv/msgs/*.msg priv/css/*.css priv/img/*.png priv/js/*.js priv/lib/* include/*.hrl COPYING))
 MAIN_DIRS=$(sort $(dir $(MAIN_FILES)) priv/bin priv/sql priv/lua)
 
 define DEP_VERSION_template
@@ -168,8 +191,8 @@ endef
 
 DELETE_TARGET_SO=$(if $(subst X.soX,,X$(suffix $(1))X),,rm -f $(call TO_DEST,$(1));)
 
-$(foreach DEP,$(DEPS),$(eval $(call DEP_VERSION_template,$(DEP),deps/$(DEP)/ebin/$(DEP).app)))
-$(eval $(call DEP_VERSION_template,ejabberd,ebin/ejabberd.app))
+$(foreach DEP,$(DEPS),$(eval $(call DEP_VERSION_template,$(DEP),$(DEPSDIR)/$(DEP)/ebin/$(DEP).app)))
+$(eval $(call DEP_VERSION_template,ejabberd,$(EBINDIR)/ejabberd.app))
 
 define COPY_template
 $(call TO_DEST,$(1)): $(1) $(call TO_DEST,$(dir $(1))) ; $(call DELETE_TARGET_SO, $(1)) $$(INSTALL) -m 644 $(1) $(call TO_DEST,$(1))
@@ -206,7 +229,7 @@ copy-files:
 
 copy-files-sub: copy-files-sub2
 
-install: all copy-files
+install: copy-files
 	#
 	# Configuration files
 	$(INSTALL) -d -m 750 $(G_USER) $(ETCDIR)
@@ -233,9 +256,9 @@ install: all copy-files
 	$(INSTALL) -m 550 $(G_USER) ejabberdctl.example $(SBINDIR)/ejabberdctl
 	# Elixir binaries
 	[ -d $(BINDIR) ] || $(INSTALL) -d -m 755 $(BINDIR)
-	[ -f deps/elixir/bin/iex ] && $(INSTALL) -m 550 $(G_USER) deps/elixir/bin/iex $(BINDIR)/iex || true
-	[ -f deps/elixir/bin/elixir ] && $(INSTALL) -m 550 $(G_USER) deps/elixir/bin/elixir $(BINDIR)/elixir || true
-	[ -f deps/elixir/bin/mix ] && $(INSTALL) -m 550 $(G_USER) deps/elixir/bin/mix $(BINDIR)/mix || true
+	[ -f $(DEPSDIR)/elixir/bin/iex ] && $(INSTALL) -m 550 $(G_USER) $(DEPSDIR)/elixir/bin/iex $(BINDIR)/iex || true
+	[ -f $(DEPSDIR)/elixir/bin/elixir ] && $(INSTALL) -m 550 $(G_USER) $(DEPSDIR)/elixir/bin/elixir $(BINDIR)/elixir || true
+	[ -f $(DEPSDIR)/elixir/bin/mix ] && $(INSTALL) -m 550 $(G_USER) $(DEPSDIR)/elixir/bin/mix $(BINDIR)/mix || true
 	#
 	# Init script
 	$(SED) -e "s*@ctlscriptpath@*$(SBINDIR)*g" \
@@ -328,6 +351,7 @@ distclean: clean clean-rel
 	rm -f Makefile
 	rm -f vars.config
 	rm -f src/ejabberd.app.src
+	rm -f ejabberdctl.example ejabberd.init ejabberd.service
 	[ ! -f ../ChangeLog ] || rm -f ../ChangeLog
 
 rel: all
@@ -338,7 +362,7 @@ TAGS:
 
 Makefile: Makefile.in
 
-deps := $(wildcard deps/*/ebin)
+deps := $(wildcard $(DEPSDIR)/*/ebin)
 
 dialyzer/erlang.plt:
 	@mkdir -p dialyzer
@@ -382,7 +406,7 @@ test:
 	@cat test/README
 	@echo "*************************************************************************"
 	@cd priv && ln -sf ../sql
-	$(REBAR) skip_deps=true ct
+	$(REBAR) $(SKIPDEPS) ct
 
 .PHONY: src edoc dialyzer Makefile TAGS clean clean-rel distclean rel \
 	install uninstall uninstall-binary uninstall-all translations deps test \
