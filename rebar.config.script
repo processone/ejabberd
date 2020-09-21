@@ -196,9 +196,14 @@ AppendList2 = fun(Append) ->
 	      end,
 
 Rebar3DepsFilter =
-fun(DepsList) ->
-	lists:map(fun({DepName, _, {git, _, {tag, Version}}}) ->
-			  {DepName, Version};
+fun(DepsList, GitOnlyDeps) ->
+	lists:map(fun({DepName, _, {git, _, {tag, Version}}} = Dep) ->
+			  case lists:member(DepName, GitOnlyDeps) of
+			      true ->
+				  Dep;
+			      _ ->
+				  {DepName, Version}
+                          end;
 		     (Dep) ->
 			  Dep
 		  end, DepsList)
@@ -367,8 +372,8 @@ Rules = [
 	  AppendList2(ProcssXrefExclusions), [], []},
 	 {[deps], [floating_deps], true,
 	  ProcessFloatingDeps, [], []},
-	 {[deps], IsRebar3,
-	  Rebar3DepsFilter, []},
+	 {[deps], [gitonly_deps], IsRebar3,
+	  Rebar3DepsFilter, [], []},
 	 {[deps], SystemDeps /= false,
 	  GlobalDepsFilter, []}
 	],
