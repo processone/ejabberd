@@ -90,6 +90,8 @@
 -export([oom_killer/0]).
 -export([oom_queue/0]).
 -export([oom_watermark/0]).
+-export([outgoing_s2s_ipv4_address/0,outgoing_s2s_ipv4_address/1]).
+-export([outgoing_s2s_ipv6_address/0,outgoing_s2s_ipv6_address/1]).
 -export([outgoing_s2s_families/0, outgoing_s2s_families/1]).
 -export([outgoing_s2s_port/0, outgoing_s2s_port/1]).
 -export([outgoing_s2s_timeout/0, outgoing_s2s_timeout/1]).
@@ -665,6 +667,20 @@ outgoing_s2s_families() ->
 -spec outgoing_s2s_families(global | binary()) -> ['inet' | 'inet6',...].
 outgoing_s2s_families(Host) ->
     ejabberd_config:get_option({outgoing_s2s_families, Host}).
+
+-spec outgoing_s2s_ipv4_address() -> inet:ip4_address().
+outgoing_s2s_ipv4_address() ->
+    outgoing_s2s_ipv4_address(global).
+-spec outgoing_s2s_ipv4_address(global | binary()) -> inet:ip4_address().
+outgoing_s2s_ipv4_address(Host) ->
+    ejabberd_config:get_option({outgoing_s2s_ipv4_address, Host}).
+
+-spec outgoing_s2s_ipv6_address() -> inet:ip6_address().
+outgoing_s2s_ipv6_address() ->
+    outgoing_s2s_ipv6_address(global).
+-spec outgoing_s2s_ipv6_address(global | binary()) -> inet:ip6_address().
+outgoing_s2s_ipv6_address(Host) ->
+    ejabberd_config:get_option({outgoing_s2s_ipv6_address, Host}).
 
 -spec outgoing_s2s_port() -> 1..1114111.
 outgoing_s2s_port() ->

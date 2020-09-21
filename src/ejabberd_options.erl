@@ -271,6 +271,10 @@ opt_type(outgoing_s2s_families) ->
 		   (ipv6) -> inet6
 		end, L)
       end);
+opt_type(outgoing_s2s_ipv4_address) ->
+    econf:ipv4();
+opt_type(outgoing_s2s_ipv6_address) ->
+    econf:ipv6();
 opt_type(outgoing_s2s_port) ->
     econf:port();
 opt_type(outgoing_s2s_timeout) ->
@@ -587,6 +591,8 @@ options() ->
      {oom_queue, 10000},
      {oom_watermark, 80},
      {outgoing_s2s_families, [inet, inet6]},
+     {outgoing_s2s_ipv4_address, undefined},
+     {outgoing_s2s_ipv6_address, undefined},
      {outgoing_s2s_port, 5269},
      {outgoing_s2s_timeout, timer:seconds(10)},
      {pam_service, <<"ejabberd">>},
