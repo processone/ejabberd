@@ -48,7 +48,7 @@ do_app(App) ->
     Dir = rebar_app_info:dir(App),
 	Opts = rebar_app_info:opts(App),
 	Overrides = rebar_opts:get(Opts, overrides),
-    lists:foldl(fun parse_additions/2, {binary_to_atom(rebar_app_info:name(App)), Dir}, Overrides).
+    lists:foldl(fun parse_additions/2, {binary_to_atom(rebar_app_info:name(App), utf8), Dir}, Overrides).
 
 -spec format_error(any()) ->  iolist().
 format_error(Reason) ->
