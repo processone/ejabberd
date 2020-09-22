@@ -708,6 +708,30 @@ in_state_change(both, none, subscribe) -> none;
 in_state_change(both, none, subscribed) -> none;
 in_state_change(both, none, unsubscribe) -> {to, none};
 in_state_change(both, none, unsubscribed) ->
+    {from, none};
+% Invalid states that can occurs from roster modification from API
+in_state_change(to, out, subscribe) -> {to, in};
+in_state_change(to, out, subscribed) -> none;
+in_state_change(to, out, unsubscribe) -> none;
+in_state_change(to, out, unsubscribed) -> {none, none};
+in_state_change(to, both, subscribe) -> none;
+in_state_change(to, both, subscribed) -> none;
+in_state_change(to, both, unsubscribe) -> {to, none};
+in_state_change(to, both, unsubscribed) -> {none, in};
+in_state_change(from, in, subscribe) -> none;
+in_state_change(from, in, subscribed) -> {both, none};
+in_state_change(from, in, unsubscribe) ->
+    {none, none};
+in_state_change(from, in, unsubscribed) -> none;
+in_state_change(from, both, subscribe) -> none;
+in_state_change(from, both, subscribed) -> {both, none};
+in_state_change(from, both, unsubscribe) -> {none, out};
+in_state_change(from, both, unsubscribed) ->
+    {from, none};
+in_state_change(both, _, subscribe) -> none;
+in_state_change(both, _, subscribed) -> none;
+in_state_change(both, _, unsubscribe) -> {to, none};
+in_state_change(both, _, unsubscribed) ->
     {from, none}.
 
 out_state_change(none, none, subscribe) -> {none, out};
@@ -715,8 +739,7 @@ out_state_change(none, none, subscribed) -> none;
 out_state_change(none, none, unsubscribe) -> none;
 out_state_change(none, none, unsubscribed) -> none;
 out_state_change(none, out, subscribe) ->
-    {none,
-     out}; %% We need to resend query (RFC3921, section 9.2)
+    {none, out}; %% We need to resend query (RFC3921, section 9.2)
 out_state_change(none, out, subscribed) -> none;
 out_state_change(none, out, unsubscribe) ->
     {none, none};
@@ -755,6 +778,32 @@ out_state_change(both, none, subscribed) -> none;
 out_state_change(both, none, unsubscribe) ->
     {from, none};
 out_state_change(both, none, unsubscribed) ->
+    {to, none};
+% Invalid states that can occurs from roster modification from API
+out_state_change(to, out, subscribe) -> none;
+out_state_change(to, out, subscribed) -> {both, none};
+out_state_change(to, out, unsubscribe) -> {none, none};
+out_state_change(to, out, unsubscribed) -> none;
+out_state_change(to, both, subscribe) -> none;
+out_state_change(to, both, subscribed) -> {both, none};
+out_state_change(to, both, unsubscribe) -> {none, in};
+out_state_change(to, both, unsubscribed) -> {to, none};
+out_state_change(from, in, subscribe) -> {from, out};
+out_state_change(from, in, subscribed) -> none;
+out_state_change(from, in, unsubscribe) -> none;
+out_state_change(from, in, unsubscribed) ->
+    {none, none};
+out_state_change(from, both, subscribe) -> none;
+out_state_change(from, both, subscribed) -> none;
+out_state_change(from, both, unsubscribe) ->
+    {from, none};
+out_state_change(from, both, unsubscribed) ->
+    {none, out};
+out_state_change(both, _, subscribe) -> none;
+out_state_change(both, _, subscribed) -> none;
+out_state_change(both, _, unsubscribe) ->
+    {from, none};
+out_state_change(both, _, unsubscribed) ->
     {to, none}.
 
 in_auto_reply(from, none, subscribe) -> subscribed;
