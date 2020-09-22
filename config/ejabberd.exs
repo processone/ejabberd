@@ -4,9 +4,7 @@ defmodule Ejabberd.ConfigFile do
   def start do
     [loglevel: 4,
      log_rotate_size: 10485760,
-     log_rotate_date: "",
      log_rotate_count: 1,
-     log_rate_limit: 100,
      auth_method: :internal,
      max_fsm_queue: 1000,
      language: "en",
