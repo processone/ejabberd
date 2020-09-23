@@ -31,8 +31,7 @@ do(State) ->
     {ok, State}.
 
 exec_configure({'configure-deps', Cmd}, Dir) ->
-	c:cd(Dir),
-	os:cmd(Cmd);
+	rebar_utils:sh(Cmd, [{cd, Dir}, {use_stdout, true}]);
 exec_configure(_, Acc) -> Acc.
 
 parse_pre_hooks({pre_hooks, PreHooks}, Acc) ->
