@@ -334,8 +334,8 @@ uninstall-all: uninstall-binary
 	rm -rf $(LOGDIR)
 
 clean:
-	rm -rf deps/.got
-	rm -rf deps/.built
+	rm -rf $(DEPSDIR)/.got
+	rm -rf $(DEPSDIR)/.built
 	rm -rf test/*.beam
 	$(REBAR) clean
 
@@ -346,8 +346,8 @@ distclean: clean clean-rel
 	rm -f config.status
 	rm -f config.log
 	rm -rf autom4te.cache
-	rm -rf deps
-	rm -rf ebin
+	rm -rf $(EBINDIR)
+	rm -rf $(DEPSBASE)
 	rm -f Makefile
 	rm -f vars.config
 	rm -f src/ejabberd.app.src
