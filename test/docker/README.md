@@ -20,9 +20,7 @@ You can stop all the databases with CTRL-C.
 The following commands will create the necessary login, user and database, will grant rights on the database in MSSQL and create the ejabberd schema:
 
 ```
-docker cp test/docker/db/mssql/initdb/initdb_mssql.sql ejabberd-mssql:/
 docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -i /initdb_mssql.sql
-docker cp sql/mssql.sql ejabberd-mssql:/
 docker exec ejabberd-mssql /opt/mssql-tools/bin/sqlcmd -U SA -P ejabberd_Test1 -S localhost -i /mssql.sql
 ```
 
@@ -49,10 +47,10 @@ You can fully clean up the environment with:
 (cd test/docker; docker-compose down)
 ```
 
-If you want to clean the data, you can remove the data directories after the `docker-compose down` command:
+If you want to clean the data, you can remove the data volumes after the `docker-compose down` command:
 
 ```
-rm -rf test/docker/db/mysql/data
-rm -rf test/docker/db/postgres/data
-docker volume rm docker_mssqldata
+docker volume rm ejabberd-mysqldata
+docker volume rm ejabberd-mssqldata
+docker volume rm ejabberd-pgsqldata
 ```
