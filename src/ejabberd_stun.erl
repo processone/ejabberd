@@ -212,8 +212,8 @@ init_logger() ->
     ok.
 -else.
 init_logger() ->
-    case logger:add_primary_filter(stun, {fun ?MODULE:stun_filter/2,
-					  ?STUN_MAX_LOG_LEVEL}) of
+    case logger:add_primary_filter(ejabberd_stun, {fun ?MODULE:stun_filter/2,
+						   ?STUN_MAX_LOG_LEVEL}) of
 	ok ->
 	    ok;
 	{error, {already_exist, _}} ->
