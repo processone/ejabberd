@@ -52,7 +52,7 @@
 	 encode_term/1,
 	 decode_term/1,
 	 odbcinst_config/0,
-	 init_mssql/0,
+	 init_mssql/1,
 	 keep_alive/2,
 	 to_list/2,
 	 to_array/2]).
@@ -349,11 +349,11 @@ init([Host]) ->
 
 connecting(connect, #state{host = Host} = State) ->
     ConnectRes = case db_opts(Host) of
-		   [mysql | Args] -> apply(fun mysql_connect/8, Args);
-           [pgsql | Args] -> apply(fun pgsql_connect/8, Args);
-           [sqlite | Args] -> apply(fun sqlite_connect/1, Args);
-		   [mssql | Args] -> apply(fun odbc_connect/2, Args);
-		   [odbc | Args] -> apply(fun odbc_connect/2, Args)
+		     [mysql | Args] -> apply(fun mysql_connect/8, Args);
+		     [pgsql | Args] -> apply(fun pgsql_connect/8, Args);
+		     [sqlite | Args] -> apply(fun sqlite_connect/1, Args);
+		     [mssql | Args] -> apply(fun odbc_connect/2, Args);
+		     [odbc | Args] -> apply(fun odbc_connect/2, Args)
 		 end,
     case ConnectRes of
         {ok, Ref} ->
@@ -1107,7 +1107,7 @@ db_opts(Host) ->
 	    SSLOpts = get_ssl_opts(Transport, Host),
 	    case Type of
 		mssql ->
-		    [mssql, <<"DRIVER=FreeTDS;SERVER=", Server/binary, ";UID=", User/binary,
+		    [mssql, <<"DRIVER=ODBC;SERVER=", Server/binary, ";UID=", User/binary,
 			      ";DATABASE=", DB/binary ,";PWD=", Pass/binary,
 			      ";PORT=", (integer_to_binary(Port))/binary ,";CLIENT_CHARSET=UTF-8;">>, Timeout];
 		_ ->
@@ -1151,9 +1151,10 @@ get_ssl_opts(ssl, Host) ->
 get_ssl_opts(tcp, _) ->
     [].
 
-init_mssql() ->
-    ODBCINST = io_lib:fwrite("[FreeTDS]~n"
-			     "Driver = libtdsodbc.so~n", []),
+init_mssql(Host) ->
+    Driver = ejabberd_option:sql_odbc_driver(Host),
+    ODBCINST = io_lib:fwrite("[ODBC]~n"
+			     "Driver = ~s~n", [Driver]),
     ?DEBUG("~ts:~n~ts", [odbcinst_config(), ODBCINST]),
     case filelib:ensure_dir(odbcinst_config()) of
 	ok ->

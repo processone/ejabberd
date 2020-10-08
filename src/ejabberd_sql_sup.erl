@@ -96,7 +96,7 @@ init([Host]) ->
         sqlite ->
             check_sqlite_db(Host);
 	mssql ->
-	    ejabberd_sql:init_mssql();
+	    ejabberd_sql:init_mssql(Host);
         _ ->
             ok
     end,

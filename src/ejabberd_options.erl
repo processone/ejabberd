@@ -371,6 +371,8 @@ opt_type(sql_keepalive_interval) ->
     econf:timeout(second);
 opt_type(sql_password) ->
     econf:binary();
+opt_type(sql_odbc_driver) ->
+    econf:binary();
 opt_type(sql_pool_size) ->
     econf:pos_int();
 opt_type(sql_port) ->
@@ -645,6 +647,7 @@ options() ->
      {sql_database, undefined},
      {sql_keepalive_interval, undefined},
      {sql_password, <<"">>},
+     {sql_odbc_driver, <<"libtdsodbc.so">>}, % default is FreeTDS driver
      {sql_pool_size,
       fun(Host) ->
 	      case ejabberd_config:get_option({sql_type, Host}) of
