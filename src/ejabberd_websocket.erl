@@ -225,6 +225,16 @@ ws_loop(FrameInfo, Socket, WsHandleLoopPid, SocketMode, Shaper) ->
                    end,
             erlang:demonitor(Ref),
             websocket_close(Socket, WsHandleLoopPid, SocketMode, Code);
+        {text_with_reply, Data, Sender} ->
+            SocketMode:send(Socket, encode_frame(Data, 1)),
+            Sender ! {text_reply, self()},
+            ws_loop(FrameInfo, Socket, WsHandleLoopPid,
+                    SocketMode, Shaper);
+        {data_with_reply, Data, Sender} ->
+            SocketMode:send(Socket, encode_frame(Data, 2)),
+            Sender ! {data_reply, self()},
+            ws_loop(FrameInfo, Socket, WsHandleLoopPid,
+                    SocketMode, Shaper);
         {text, Data} ->
             SocketMode:send(Socket, encode_frame(Data, 1)),
             ws_loop(FrameInfo, Socket, WsHandleLoopPid,
