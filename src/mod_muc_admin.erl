@@ -659,8 +659,8 @@ create_room_with_opts(Name1, Host1, ServerHost1, CustomRoomOpts) ->
     QueueType = mod_muc_opt:queue_type(ServerHost),
 
     %% If the room does not exist yet in the muc_online_room
-    case mod_muc:find_online_room(Name, Host) of
-	error ->
+    case get_room_pid(Name, Host) of
+	room_not_found ->
 	    %% Start the room
 	    {ok, Pid} = mod_muc_room:start(
 			  Host,
@@ -673,7 +673,7 @@ create_room_with_opts(Name1, Host1, ServerHost1, CustomRoomOpts) ->
 			  QueueType),
 	    mod_muc:register_online_room(Name, Host, Pid),
 	    ok;
-	{ok, _} ->
+	_ ->
 	    error
     end.
 
@@ -689,11 +689,11 @@ muc_create_room(ServerHost, {Name, Host, _}, DefRoomOpts) ->
 %% If the room has participants, they are not notified that the room was destroyed;
 %% they will notice when they try to chat and receive an error that the room doesn't exist.
 destroy_room(Name, Service) ->
-    case mod_muc:find_online_room(Name, Service) of
-	{ok, Pid} ->
-	    mod_muc_room:destroy(Pid);
-	error ->
-	    error
+    case get_room_pid(Name, Service) of
+	room_not_found ->
+	    error;
+	Pid ->
+	    mod_muc_room:destroy(Pid)
     end.
 
 destroy_room({N, H, SH}) ->
@@ -1034,7 +1034,8 @@ format_room_option(OptionString, ValueString) ->
 
 %% @doc Get the Pid of an existing MUC room, or 'room_not_found'.
 get_room_pid(Name, Service) ->
-    case mod_muc:find_online_room(Name, Service) of
+    ServerHost = get_room_serverhost(Service),
+    case mod_muc:unhibernate_room(ServerHost, Service, Name) of
 	error ->
 	    room_not_found;
 	{ok, Pid} ->
@@ -1106,8 +1107,8 @@ get_options(Config) ->
 %%    [{JID::string(), Domain::string(), Role::string(), Reason::string()}]
 %% @doc Get the affiliations of  the room Name@Service.
 get_room_affiliations(Name, Service) ->
-    case mod_muc:find_online_room(Name, Service) of
-	{ok, Pid} ->
+    case get_room_pid(Name, Service) of
+	Pid when is_pid(Pid) ->
 	    %% Get the PID of the online room, then request its state
 	    {ok, StateData} = mod_muc_room:get_state(Pid),
 	    Affiliations = maps:to_list(StateData#state.affiliations),
@@ -1117,7 +1118,7 @@ get_room_affiliations(Name, Service) ->
 		 ({{Uname, Domain, _Res}, Aff}) when is_atom(Aff)->
 		      {Uname, Domain, Aff, <<>>}
 	      end, Affiliations);
-	error ->
+	room_not_found ->
 	    throw({error, "The room does not exist."})
     end.
 
@@ -1130,13 +1131,13 @@ get_room_affiliations(Name, Service) ->
 %% @doc Get affiliation of a user in the room Name@Service.
 
 get_room_affiliation(Name, Service, JID) ->
-	case mod_muc:find_online_room(Name, Service) of
-	{ok, Pid} ->
+	case get_room_pid(Name, Service) of
+	    Pid when is_pid(Pid) ->
 		%% Get the PID of the online room, then request its state
 		{ok, StateData} = mod_muc_room:get_state(Pid),
 		UserJID = jid:decode(JID),
 		mod_muc_room:get_affiliation(UserJID, StateData);
-	error ->
+	    room_not_found ->
 		throw({error, "The room does not exist."})
 	end.
 
@@ -1154,13 +1155,13 @@ get_room_affiliation(Name, Service, JID) ->
 %% In any other case the action will be to create the affiliation.
 set_room_affiliation(Name, Service, JID, AffiliationString) ->
     Affiliation = misc:binary_to_atom(AffiliationString),
-    case mod_muc:find_online_room(Name, Service) of
-	{ok, Pid} ->
+    case get_room_pid(Name, Service) of
+	Pid when is_pid(Pid) ->
 	    %% Get the PID for the online room so we can get the state of the room
 	    {ok, StateData} = mod_muc_room:change_item(Pid, jid:decode(JID), affiliation, Affiliation, <<"">>),
 	    mod_muc:store_room(StateData#state.server_host, StateData#state.host, StateData#state.room, make_opts(StateData)),
 	    ok;
-	error ->
+	room_not_found ->
 	    error
     end.
 

@@ -68,7 +68,7 @@
 	 can_use_nick/4,
 	 get_subscribed_rooms/2,
 	 procname/2,
-	 route/1]).
+	 route/1, unhibernate_room/3]).
 
 -export([init/1, handle_call/3, handle_cast/2,
 	 handle_info/2, terminate/2, code_change/3,
@@ -524,6 +524,18 @@ extract_password(#iq{} = IQ) ->
             Password;
         _ ->
             false
+    end.
+
+-spec unhibernate_room(binary(), binary(), binary()) -> {ok, pid()} | error.
+unhibernate_room(ServerHost, Host, Room) ->
+    RMod = gen_mod:ram_db_mod(ServerHost, ?MODULE),
+    case RMod:find_online_room(ServerHost, Room, Host) of
+	error ->
+	    case load_room(RMod, Host, ServerHost, Room) of
+		{ok, _} = R -> R;
+		_ -> error
+	    end;
+	{ok, _} = R2 -> R2
     end.
 
 -spec route_to_room(stanza(), binary()) -> ok.
