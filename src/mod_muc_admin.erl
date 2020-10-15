@@ -938,7 +938,6 @@ send_direct_invitation(RoomName, RoomService, Password, Reason, UsersString) ->
     Users = get_users_to_invite(RoomJid, UsersString),
     [send_direct_invitation(RoomJid, UserJid, XmlEl)
      || UserJid <- Users],
-    timer:sleep(1000),
     ok.
 
 get_users_to_invite(RoomJid, UsersString) ->
