@@ -640,13 +640,6 @@ create_room_with_opts(Name1, Host1, ServerHost1, CustomRoomOpts) ->
                                lists:keysort(1, FormattedRoomOpts),
                                lists:keysort(1, DefRoomOpts)),
 
-    %% Store the room on the server, it is not started yet though at this point
-    case lists:keyfind(persistent, 1, RoomOpts) of
-	{persistent, true} ->
-	    mod_muc:store_room(ServerHost, Host, Name, RoomOpts);
-	_ ->
-	    ok
-    end,
 
     %% Get all remaining mod_muc parameters that might be utilized
     Access = mod_muc_opt:access(ServerHost),
@@ -661,6 +654,13 @@ create_room_with_opts(Name1, Host1, ServerHost1, CustomRoomOpts) ->
     %% If the room does not exist yet in the muc_online_room
     case get_room_pid(Name, Host) of
 	room_not_found ->
+	    %% Store the room on the server, it is not started yet though at this point
+	    case lists:keyfind(persistent, 1, RoomOpts) of
+		{persistent, true} ->
+		    mod_muc:store_room(ServerHost, Host, Name, RoomOpts);
+		_ ->
+		    ok
+	    end,
 	    %% Start the room
 	    {ok, Pid} = mod_muc_room:start(
 			  Host,
