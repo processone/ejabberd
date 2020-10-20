@@ -405,12 +405,25 @@ build_summary_room(Name, Host, Pid) ->
     }.
 
 muc_register_nick(Nick, FromBinary, Service) ->
-    ServerHost = get_room_serverhost(Service),
-    From = jid:decode(FromBinary),
-    Lang = <<"en">>,
-    case mod_muc:iq_set_register_info(ServerHost, Service, From, Nick, Lang) of
-	{result, undefined} -> ok;
-	E -> E
+    try {get_room_serverhost(Service), jid:decode(FromBinary)} of
+	{ServerHost, From} ->
+	    Lang = <<"en">>,
+	    case mod_muc:iq_set_register_info(ServerHost, Service, From, Nick, Lang) of
+		{result, undefined} -> ok;
+		{error, #stanza_error{reason = 'conflict'}} ->
+		    throw({error, "Nick already registered"});
+		{error, _} ->
+		    throw({error, "Database error"})
+	    end
+	catch
+	error:{invalid_domain, _} ->
+	    throw({error, "Invalid 'service'"});
+	error:{unregistered_route, _} ->
+	    throw({error, "Invalid 'service'"});
+	error:{bad_jid, _} ->
+	    throw({error, "Invalid 'jid'"});
+	_ ->
+	    throw({error, "Internal error"})
     end.
 
 muc_unregister_nick(FromBinary, Service) ->
@@ -632,53 +645,58 @@ create_room(Name1, Host1, ServerHost) ->
     create_room_with_opts(Name1, Host1, ServerHost, []).
 
 create_room_with_opts(Name1, Host1, ServerHost1, CustomRoomOpts) ->
-    true = (error /= (Name = jid:nodeprep(Name1))),
-    true = (error /= (Host = jid:nodeprep(Host1))),
-    true = (error /= (ServerHost = jid:nodeprep(ServerHost1))),
+    case {jid:nodeprep(Name1), jid:nodeprep(Host1), jid:nodeprep(ServerHost1)} of
+	{error, _, _} ->
+	    throw({error, "Invalid 'name'"});
+	{_, error, _} ->
+	    throw({error, "Invalid 'host'"});
+	{_, _, error} ->
+	    throw({error, "Invalid 'serverhost'"});
+	{Name, Host, ServerHost} ->
+	    %% Get the default room options from the muc configuration
+	    DefRoomOpts = mod_muc_opt:default_room_options(ServerHost),
+	    %% Change default room options as required
+	    FormattedRoomOpts = [format_room_option(Opt, Val) || {Opt, Val}<-CustomRoomOpts],
+	    RoomOpts = lists:ukeymerge(1,
+				       lists:keysort(1, FormattedRoomOpts),
+				       lists:keysort(1, DefRoomOpts)),
 
-    %% Get the default room options from the muc configuration
-    DefRoomOpts = mod_muc_opt:default_room_options(ServerHost),
-    %% Change default room options as required
-    FormattedRoomOpts = [format_room_option(Opt, Val) || {Opt, Val}<-CustomRoomOpts],
-    RoomOpts = lists:ukeymerge(1,
-                               lists:keysort(1, FormattedRoomOpts),
-                               lists:keysort(1, DefRoomOpts)),
 
+	    %% Get all remaining mod_muc parameters that might be utilized
+	    Access = mod_muc_opt:access(ServerHost),
+	    AcCreate = mod_muc_opt:access_create(ServerHost),
+	    AcAdmin = mod_muc_opt:access_admin(ServerHost),
+	    AcPer = mod_muc_opt:access_persistent(ServerHost),
+	    AcMam = mod_muc_opt:access_mam(ServerHost),
+	    HistorySize = mod_muc_opt:history_size(ServerHost),
+	    RoomShaper = mod_muc_opt:room_shaper(ServerHost),
+	    QueueType = mod_muc_opt:queue_type(ServerHost),
 
-    %% Get all remaining mod_muc parameters that might be utilized
-    Access = mod_muc_opt:access(ServerHost),
-    AcCreate = mod_muc_opt:access_create(ServerHost),
-    AcAdmin = mod_muc_opt:access_admin(ServerHost),
-    AcPer = mod_muc_opt:access_persistent(ServerHost),
-    AcMam = mod_muc_opt:access_mam(ServerHost),
-    HistorySize = mod_muc_opt:history_size(ServerHost),
-    RoomShaper = mod_muc_opt:room_shaper(ServerHost),
-    QueueType = mod_muc_opt:queue_type(ServerHost),
-
-    %% If the room does not exist yet in the muc_online_room
-    case get_room_pid(Name, Host) of
-	room_not_found ->
-	    %% Store the room on the server, it is not started yet though at this point
-	    case lists:keyfind(persistent, 1, RoomOpts) of
-		{persistent, true} ->
-		    mod_muc:store_room(ServerHost, Host, Name, RoomOpts);
+	    %% If the room does not exist yet in the muc_online_room
+	    case get_room_pid(Name, Host) of
+		room_not_found ->
+		    %% Store the room on the server, it is not started yet though at this point
+		    case lists:keyfind(persistent, 1, RoomOpts) of
+			{persistent, true} ->
+			    mod_muc:store_room(ServerHost, Host, Name, RoomOpts);
+			_ ->
+			    ok
+		    end,
+		    %% Start the room
+		    {ok, Pid} = mod_muc_room:start(
+			Host,
+			ServerHost,
+			{Access, AcCreate, AcAdmin, AcPer, AcMam},
+			Name,
+			HistorySize,
+			RoomShaper,
+			RoomOpts,
+			QueueType),
+		    mod_muc:register_online_room(Name, Host, Pid),
+		    ok;
 		_ ->
-		    ok
-	    end,
-	    %% Start the room
-	    {ok, Pid} = mod_muc_room:start(
-			  Host,
-			  ServerHost,
-			  {Access, AcCreate, AcAdmin, AcPer, AcMam},
-			  Name,
-			  HistorySize,
-			  RoomShaper,
-			  RoomOpts,
-			  QueueType),
-	    mod_muc:register_online_room(Name, Host, Pid),
-	    ok;
-	_ ->
-	    error
+		    throw({error, "Room already exists"})
+	    end
     end.
 
 %% Create the room only in the database.
@@ -695,9 +713,12 @@ muc_create_room(ServerHost, {Name, Host, _}, DefRoomOpts) ->
 destroy_room(Name, Service) ->
     case get_room_pid(Name, Service) of
 	room_not_found ->
-	    error;
+	    throw({error, "Room doesn't exists"});
+	invalid_service ->
+	    throw({error, "Invalid 'service'"});
 	Pid ->
-	    mod_muc_room:destroy(Pid)
+	    mod_muc_room:destroy(Pid),
+	    ok
     end.
 
 destroy_room({N, H, SH}) ->
@@ -718,7 +739,7 @@ destroy_rooms_file(Filename) ->
     Rooms = read_rooms(F, RJID, []),
     file:close(F),
     [destroy_room(A) || A <- Rooms],
-	ok.
+    ok.
 
 read_rooms(_F, eof, L) ->
     L;
@@ -762,7 +783,7 @@ create_rooms_file(Filename) ->
     %% Read the default room options defined for the first virtual host
     DefRoomOpts = mod_muc_opt:default_room_options(ejabberd_config:get_myname()),
     [muc_create_room(ejabberd_config:get_myname(), A, DefRoomOpts) || A <- Rooms],
-	ok.
+    ok.
 
 
 %%---------------------------------
@@ -908,8 +929,8 @@ act_on_room(_Method, list, _) ->
 
 get_room_occupants(Room, Host) ->
     case get_room_pid(Room, Host) of
-	room_not_found -> throw({error, room_not_found});
-	Pid -> get_room_occupants(Pid)
+	Pid when is_pid(Pid) -> get_room_occupants(Pid);
+	_ -> throw({error, room_not_found})
     end.
 
 get_room_occupants(Pid) ->
@@ -924,11 +945,11 @@ get_room_occupants(Pid) ->
 
 get_room_occupants_number(Room, Host) ->
     case get_room_pid(Room, Host) of
-	room_not_found ->
-	    throw({error, room_not_found});
-	Pid ->
+	Pid when is_pid(Pid )->
 	    S = get_room_state(Pid),
-	    maps:size(S#state.users)
+	    maps:size(S#state.users);
+	_ ->
+	    throw({error, room_not_found})
     end.
 
 %%----------------------------
@@ -937,12 +958,16 @@ get_room_occupants_number(Room, Host) ->
 %% http://xmpp.org/extensions/xep-0249.html
 
 send_direct_invitation(RoomName, RoomService, Password, Reason, UsersString) ->
-    RoomJid = jid:make(RoomName, RoomService),
-    XmlEl = build_invitation(Password, Reason, RoomJid),
-    Users = get_users_to_invite(RoomJid, UsersString),
-    [send_direct_invitation(RoomJid, UserJid, XmlEl)
-     || UserJid <- Users],
-    ok.
+    case jid:make(RoomName, RoomService) of
+	error ->
+	    throw({error, "Invalid 'roomname' or 'service'"});
+	RoomJid ->
+	    XmlEl = build_invitation(Password, Reason, RoomJid),
+	    Users = get_users_to_invite(RoomJid, UsersString),
+	    [send_direct_invitation(RoomJid, UserJid, XmlEl)
+	     || UserJid <- Users],
+	    ok
+    end.
 
 get_users_to_invite(RoomJid, UsersString) ->
     UsersStrings = binary:split(UsersString, <<":">>, [global]),
@@ -996,7 +1021,9 @@ send_direct_invitation(FromJid, UserJid, Msg) ->
 change_room_option(Name, Service, OptionString, ValueString) ->
     case get_room_pid(Name, Service) of
 	room_not_found ->
-	    room_not_found;
+	    throw({error, "Room not found"});
+	invalid_service ->
+	    throw({error, "Invalid 'service'"});
 	Pid ->
 	    {Option, Value} = format_room_option(OptionString, ValueString),
 	    change_room_option(Pid, Option, Value)
@@ -1036,13 +1063,21 @@ format_room_option(OptionString, ValueString) ->
     {Option, Value}.
 
 %% @doc Get the Pid of an existing MUC room, or 'room_not_found'.
+-spec get_room_pid(binary(), binary()) -> {ok, pid()} | room_not_found | invalid_service.
 get_room_pid(Name, Service) ->
-    ServerHost = get_room_serverhost(Service),
-    case mod_muc:unhibernate_room(ServerHost, Service, Name) of
-	error ->
-	    room_not_found;
-	{ok, Pid} ->
-	    Pid
+    try get_room_serverhost(Service) of
+	ServerHost ->
+	    case mod_muc:unhibernate_room(ServerHost, Service, Name) of
+		error ->
+		    room_not_found;
+		{ok, Pid} ->
+		    Pid
+	    end
+    catch
+	error:{invalid_domain, _} ->
+	    invalid_service;
+	error:{unregistered_route, _} ->
+	    invalid_service
     end.
 
 %% It is required to put explicitly all the options because
@@ -1085,8 +1120,8 @@ change_option(Option, Value, Config) ->
 
 get_room_options(Name, Service) ->
     case get_room_pid(Name, Service) of
-        room_not_found -> [];
-        Pid -> get_room_options(Pid)
+        Pid when is_pid(Pid) -> get_room_options(Pid);
+	_ -> []
     end.
 
 get_room_options(Pid) ->
@@ -1121,7 +1156,7 @@ get_room_affiliations(Name, Service) ->
 		 ({{Uname, Domain, _Res}, Aff}) when is_atom(Aff)->
 		      {Uname, Domain, Aff, <<>>}
 	      end, Affiliations);
-	room_not_found ->
+	_ ->
 	    throw({error, "The room does not exist."})
     end.
 
@@ -1140,7 +1175,7 @@ get_room_affiliation(Name, Service, JID) ->
 		{ok, StateData} = mod_muc_room:get_state(Pid),
 		UserJID = jid:decode(JID),
 		mod_muc_room:get_affiliation(UserJID, StateData);
-	    room_not_found ->
+	    _ ->
 		throw({error, "The room does not exist."})
 	end.
 
@@ -1165,7 +1200,9 @@ set_room_affiliation(Name, Service, JID, AffiliationString) ->
 	    mod_muc:store_room(StateData#state.server_host, StateData#state.host, StateData#state.room, make_opts(StateData)),
 	    ok;
 	room_not_found ->
-	    error
+	    throw({error, "Room doesn't exists"});
+	invalid_service ->
+	    throw({error, "Invalid 'service'"})
     end.
 
 %%%
