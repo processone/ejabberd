@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: es\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2020-04-17 19:28+0200\n"
+"PO-Revision-Date: 2021-01-11 13:13+0100\n"
 "Last-Translator: Badlop <badlop@process-one.net>\n"
 "Language-Team: \n"
 "Language: es\n"
@@ -18,16 +18,15 @@ msgstr ""
 
 #: src/mod_vcard.erl:462
 msgid " (Add * to the end of field to match substring)"
-msgstr "(Añade * al final del campo para buscar subcadenas)"
+msgstr " (Añade * al final del campo para buscar subcadenas)"
 
 #: src/mod_muc_log.erl:420 src/mod_muc_log.erl:592
 msgid " has set the subject to: "
 msgstr " ha puesto el asunto: "
 
 #: src/mod_muc_admin.erl:532
-#, fuzzy
 msgid "# participants"
-msgstr "Participante"
+msgstr "# participantes"
 
 #: src/mod_shared_roster.erl:1047
 msgid "'Displayed groups' not added (they do not exist!): "
@@ -35,13 +34,12 @@ msgstr "'Mostrados' que no han sido añadidos (¡no existen!): "
 
 #: deps/xmpp/src/muc_register.erl:502
 msgid "A Web Page"
-msgstr ""
+msgstr "Una página web"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1561
 #: deps/xmpp/src/pubsub_meta_data.erl:672
-#, fuzzy
 msgid "A description of the node"
-msgstr "Un nombre sencillo para el nodo"
+msgstr "Una descripción del nodo"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1985
 msgid "A friendly name for the node"
@@ -49,7 +47,7 @@ msgstr "Un nombre sencillo para el nodo"
 
 #: src/mod_muc_room.erl:2157
 msgid "A password is required to enter this room"
-msgstr " (Añade * al final del campo para buscar subcadenas)"
+msgstr "(Añade * al final del campo para buscar subcadenas)"
 
 #: src/ejabberd_oauth.erl:519
 msgid "Accept"
@@ -71,30 +69,28 @@ msgid "Access denied by service policy"
 msgstr "Acceso denegado por la política del servicio"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:833
-#, fuzzy
 msgid "Access model"
-msgstr "Reglas de Acceso"
+msgstr "Modelo de Acceso"
 
 #: deps/xmpp/src/pubsub_publish_options.erl:295
 msgid "Access model of authorize"
-msgstr ""
+msgstr "Modelo de acceso de Autorizar"
 
 #: deps/xmpp/src/pubsub_publish_options.erl:299
 msgid "Access model of open"
-msgstr ""
+msgstr "Modelo de acceso de Abierto"
 
 #: deps/xmpp/src/pubsub_publish_options.erl:303
 msgid "Access model of presence"
-msgstr ""
+msgstr "Modelo de acceso de Presencia"
 
 #: deps/xmpp/src/pubsub_publish_options.erl:307
 msgid "Access model of roster"
-msgstr ""
+msgstr "Modelo de acceso de Roster"
 
 #: deps/xmpp/src/pubsub_publish_options.erl:311
-#, fuzzy
 msgid "Access model of whitelist"
-msgstr "Listas de Control de Acceso"
+msgstr "Modelo de acceso de Lista Blanca"
 
 #: src/mod_register_web.erl:609
 msgid "Account doesn't exist"
@@ -138,9 +134,8 @@ msgid "All activity"
 msgstr "Toda la actividad"
 
 #: deps/xmpp/src/muc_roomconfig.erl:1556
-#, fuzzy
 msgid "Allow subscription"
-msgstr "Subscripción"
+msgstr "Permitir la subscripción"
 
 #: deps/xmpp/src/pubsub_subscribe_authorization.erl:343
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
@@ -148,7 +143,7 @@ msgstr "¿Deseas permitir a este Jabber ID que se subscriba a este nodo PubSub?"
 
 #: deps/xmpp/src/muc_register.erl:417
 msgid "Allow this person to register with the room?"
-msgstr ""
+msgstr "¿Permitir a esta persona que se registre en la sala?"
 
 #: src/mod_muc_log.erl:813 deps/xmpp/src/muc_roomconfig.erl:1654
 msgid "Allow users to change the subject"
@@ -190,6 +185,9 @@ msgid ""
 "LDAP Distinguished Name according to an implementation-specific or "
 "deployment-specific definition of a group."
 msgstr ""
+"Un grupo LDAP asociado que define la membresía a la sala; este debería ser "
+"un Nombre Distinguido de LDAP, de acuerdo con una definición de grupo "
+"específica de la implementación o de esta instalación."
 
 #: src/mod_announce.erl:607
 msgid "Announcements"
@@ -197,49 +195,50 @@ msgstr "Anuncios"
 
 #: deps/xmpp/src/captcha_form.erl:762
 msgid "Answer associated with a picture"
-msgstr ""
+msgstr "Respuesta asociada con una imagen"
 
 #: deps/xmpp/src/captcha_form.erl:866
 msgid "Answer associated with a video"
-msgstr ""
+msgstr "Respuesta asociada con un video"
 
 #: deps/xmpp/src/captcha_form.erl:836
 msgid "Answer associated with speech"
-msgstr ""
+msgstr "Respuesta asociada con un audio"
 
 #: deps/xmpp/src/captcha_form.erl:791
 msgid "Answer to a question"
-msgstr ""
+msgstr "Responde a una pregunta"
 
 #: deps/xmpp/src/muc_roominfo.erl:728 deps/xmpp/src/muc_roomconfig.erl:1418
 #: deps/xmpp/src/muc_roomconfig.erl:1478 deps/xmpp/src/muc_roomconfig.erl:1981
-#, fuzzy
 msgid "Anyone"
-msgstr "cualquiera"
+msgstr "Cualquiera"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1327
 #: deps/xmpp/src/pubsub_meta_data.erl:817
 msgid ""
 "Anyone in the specified roster group(s) may subscribe and retrieve items"
 msgstr ""
+"Cualquiera que esté en el grupo(s) de contactos especificado puede "
+"suscribirse y recibir elementos"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1381
 msgid "Anyone may associate leaf nodes with the collection"
-msgstr ""
+msgstr "Cualquiera puede asociar nodos hoja con la colección"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1850
 #: deps/xmpp/src/pubsub_meta_data.erl:855
 msgid "Anyone may publish"
-msgstr ""
+msgstr "Cualquiera puede publicar"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1317
 #: deps/xmpp/src/pubsub_meta_data.erl:807
 msgid "Anyone may subscribe and retrieve items"
-msgstr ""
+msgstr "Cualquiera puede suscribirse y recibir elementos"
 
 #: deps/xmpp/src/muc_roominfo.erl:731 deps/xmpp/src/muc_roomconfig.erl:1421
 msgid "Anyone with Voice"
-msgstr ""
+msgstr "Cualquiera con Voz"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1321
 #: deps/xmpp/src/pubsub_meta_data.erl:811
@@ -247,10 +246,12 @@ msgid ""
 "Anyone with a presence subscription of both or from may subscribe and "
 "retrieve items"
 msgstr ""
+"Cualquiera con una suscripción a la presencia de 'ambos' o 'de' puede "
+"suscribirse y recibir elementos"
 
 #: src/mod_muc_log.erl:481
 msgid "April"
-msgstr "abril"
+msgstr "Abril"
 
 #: src/mod_mix_pam.erl:306
 msgid "Attribute 'channel' is required for this request"
@@ -270,11 +271,11 @@ msgstr "El atributo 'node' no está permitido aqui"
 
 #: deps/xmpp/src/captcha_form.erl:731
 msgid "Attribute 'to' of stanza that triggered challenge"
-msgstr ""
+msgstr "Atributo 'to' del paquete que disparó la comprobación"
 
 #: src/mod_muc_log.erl:485
 msgid "August"
-msgstr "agosto"
+msgstr "Agosto"
 
 #: src/mod_pubsub.erl:1918
 msgid "Automatic node creation is not enabled"
@@ -335,7 +336,7 @@ msgstr "No se puede borrar la lista por defecto"
 
 #: deps/xmpp/src/captcha_form.erl:715
 msgid "Challenge ID"
-msgstr ""
+msgstr "ID de la comprobación"
 
 #: src/ejabberd_web_admin.erl:912 src/mod_register_web.erl:216
 #: src/mod_register_web.erl:389 src/mod_register_web.erl:397
@@ -445,7 +446,7 @@ msgstr "Recursos conectados:"
 
 #: deps/xmpp/src/muc_roominfo.erl:764
 msgid "Contact Addresses (normally, room owner or owners)"
-msgstr ""
+msgstr "Direcciones de contacto (normalmente la del dueño o dueños de la sala)"
 
 #: src/mod_vcard_mnesia.erl:106 src/mod_vcard_mnesia.erl:120
 #: src/mod_vcard_sql.erl:163 src/mod_vcard_sql.erl:177
@@ -455,7 +456,7 @@ msgstr "País"
 
 #: deps/xmpp/src/muc_roominfo.erl:875
 msgid "Current Discussion Topic"
-msgstr ""
+msgstr "Tema de discusión actual"
 
 #: src/mod_configure.erl:140 src/mod_configure.erl:564
 #: src/ejabberd_web_admin.erl:1099 src/ejabberd_web_admin.erl:1806
@@ -488,7 +489,7 @@ msgstr "Error en la base de datos"
 
 #: src/mod_muc_log.erl:489
 msgid "December"
-msgstr "diciembre"
+msgstr "Diciembre"
 
 #: src/mod_muc_log.erl:811 deps/xmpp/src/muc_roomconfig.erl:1801
 msgid "Default users as participants"
@@ -562,6 +563,8 @@ msgstr "Los grupos duplicados no están permitidos por RFC6121"
 #: deps/xmpp/src/pubsub_node_config.erl:1597
 msgid "Dynamically specify a replyto of the item publisher"
 msgstr ""
+"Especificar dinámicamente como dirección de respuesta al publicador del "
+"elemento"
 
 #: src/mod_configure.erl:1518
 msgid "Edit Properties"
@@ -579,11 +582,11 @@ msgstr "Elementos"
 #: src/mod_vcard_sql.erl:165 src/mod_vcard_sql.erl:179
 #: src/mod_vcard_ldap.erl:335 src/mod_vcard_ldap.erl:348
 msgid "Email"
-msgstr "correo"
+msgstr "Correo electrónico"
 
 #: deps/xmpp/src/muc_register.erl:432
 msgid "Email Address"
-msgstr ""
+msgstr "Dirección de correo electrónico"
 
 #: src/mod_muc_log.erl:822 deps/xmpp/src/muc_roomconfig.erl:1668
 msgid "Enable logging"
@@ -663,7 +666,7 @@ msgstr "Demasiado retraso (timeout) en el componente externo"
 
 #: deps/xmpp/src/muc_register.erl:446
 msgid "FAQ Entry"
-msgstr ""
+msgstr "Apunte en la FAQ"
 
 #: src/mod_proxy65_service.erl:229
 msgid "Failed to activate bytestream"
@@ -694,7 +697,7 @@ msgstr "Apellido"
 
 #: src/mod_muc_log.erl:479
 msgid "February"
-msgstr "febrero"
+msgstr "Febrero"
 
 #: src/mod_http_upload.erl:810
 msgid "File larger than ~w bytes"
@@ -706,7 +709,7 @@ msgstr "Rellena campos para buscar usuarios Jabber que concuerden"
 
 #: src/mod_muc_log.erl:472
 msgid "Friday"
-msgstr "viernes"
+msgstr "Viernes"
 
 #: src/mod_offline.erl:1000
 msgid "From"
@@ -717,14 +720,12 @@ msgid "From ~ts"
 msgstr "De ~ts"
 
 #: deps/xmpp/src/muc_roomconfig.erl:1909
-#, fuzzy
 msgid "Full List of Room Admins"
-msgstr "Lista de salas"
+msgstr "Lista completa de administradores de la sala"
 
 #: deps/xmpp/src/muc_roomconfig.erl:1952
-#, fuzzy
 msgid "Full List of Room Owners"
-msgstr "Lista de salas"
+msgstr "Lista completa de dueños de la sala"
 
 #: src/mod_vcard_mnesia.erl:100 src/mod_vcard_mnesia.erl:114
 #: src/mod_vcard_sql.erl:157 src/mod_vcard_sql.erl:171
@@ -778,7 +779,7 @@ msgstr "Grupos"
 
 #: src/mod_shared_roster.erl:1035
 msgid "Groups that will be displayed to the members"
-msgstr ""
+msgstr "Grupos que se mostrarán a los miembros"
 
 #: src/mod_http_upload.erl:210
 msgid "HTTP File Upload"
@@ -945,19 +946,19 @@ msgstr "Jabber ID"
 
 #: src/mod_muc_log.erl:478
 msgid "January"
-msgstr "enero"
+msgstr "Enero"
 
 #: src/mod_muc_log.erl:484
 msgid "July"
-msgstr "julio"
+msgstr "Julio"
 
 #: src/mod_muc_log.erl:483
 msgid "June"
-msgstr "junio"
+msgstr "Junio"
 
 #: src/mod_muc_admin.erl:537
 msgid "Just created"
-msgstr ""
+msgstr "Recién creada"
 
 #: src/mod_shared_roster.erl:1006
 msgid "Label:"
@@ -973,9 +974,8 @@ msgid "Last login"
 msgstr "Última conexión"
 
 #: src/mod_muc_admin.erl:533
-#, fuzzy
 msgid "Last message"
-msgstr "Último año"
+msgstr "Último mensaje"
 
 #: src/ejabberd_web_admin.erl:492
 msgid "Last month"
@@ -989,6 +989,8 @@ msgstr "Último año"
 msgid ""
 "Least significant bits of SHA-256 hash of text should equal hexadecimal label"
 msgstr ""
+"Los bits menos significativos del hash SHA-256 del texto deberían ser "
+"iguales a la etiqueta hexadecimal"
 
 #: src/mod_muc_admin.erl:485
 msgid "List of rooms"
@@ -996,7 +998,7 @@ msgstr "Lista de salas"
 
 #: src/mod_muc_admin.erl:536
 msgid "Logging"
-msgstr ""
+msgstr "Histórico de mensajes"
 
 #: src/ejabberd_web_admin.erl:1442
 msgid "Low level update script"
@@ -1040,7 +1042,7 @@ msgstr "Nombre de usuario mal formado"
 
 #: src/mod_muc_log.erl:480
 msgid "March"
-msgstr "marzo"
+msgstr "Marzo"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1648
 msgid "Max # of items to persist"
@@ -1052,7 +1054,7 @@ msgstr "Máximo tamaño del contenido en bytes"
 
 #: deps/xmpp/src/muc_roominfo.erl:699 deps/xmpp/src/muc_roomconfig.erl:1405
 msgid "Maximum Number of History Messages Returned by Room"
-msgstr ""
+msgstr "Máximo número de mensajes del historial devueltos por la sala"
 
 #: src/mod_muc_log.erl:834 deps/xmpp/src/muc_roomconfig.erl:1758
 msgid "Maximum Number of Occupants"
@@ -1060,16 +1062,15 @@ msgstr "Número máximo de ocupantes"
 
 #: deps/xmpp/src/http_upload.erl:240
 msgid "Maximum file size"
-msgstr ""
+msgstr "Tamaño máximo de fichero"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:788
-#, fuzzy
 msgid "Maximum number of items to persist"
-msgstr "Máximo # de elementos que persisten"
+msgstr "Máximo número de elementos que persisten"
 
 #: src/mod_muc_log.erl:482
 msgid "May"
-msgstr "mayo"
+msgstr "Mayo"
 
 #: src/mod_shared_roster.erl:1045
 msgid "Members not added (inexistent vhost!): "
@@ -1098,7 +1099,7 @@ msgstr "Memoria"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:575
 msgid "Mere Availability in XMPP (No Show Value)"
-msgstr ""
+msgstr "Disponible en XMPP (sin valor de Mostrado)"
 
 #: src/mod_configure.erl:948 src/mod_configure.erl:988 src/mod_announce.erl:528
 msgid "Message body"
@@ -1114,11 +1115,11 @@ msgstr "Los mensajes de extraños son rechazados"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1715
 msgid "Messages of type headline"
-msgstr ""
+msgstr "Mensajes de tipo titular"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1711
 msgid "Messages of type normal"
-msgstr ""
+msgstr "Mensajes de tipo normal"
 
 #: src/mod_vcard_mnesia.erl:102 src/mod_vcard_mnesia.erl:116
 #: src/mod_vcard_sql.erl:159 src/mod_vcard_sql.erl:173
@@ -1141,9 +1142,8 @@ msgstr "Se necesita privilegios de moderador"
 
 #: deps/xmpp/src/muc_roominfo.erl:734 deps/xmpp/src/muc_roomconfig.erl:1424
 #: deps/xmpp/src/muc_roomconfig.erl:1476 deps/xmpp/src/muc_roomconfig.erl:1979
-#, fuzzy
 msgid "Moderators Only"
-msgstr "solo moderadores"
+msgstr "Solo moderadores"
 
 #: src/ejabberd_web_admin.erl:1440
 msgid "Modified modules"
@@ -1155,7 +1155,7 @@ msgstr "El módulo falló al gestionar la petición"
 
 #: src/mod_muc_log.erl:468
 msgid "Monday"
-msgstr "lunes"
+msgstr "Lunes"
 
 #: src/mod_muc_admin.erl:459 src/mod_muc_admin.erl:462
 #: src/mod_muc_admin.erl:478 src/mod_muc_admin.erl:552
@@ -1178,7 +1178,7 @@ msgstr "Nombre"
 
 #: src/mod_shared_roster.erl:1009
 msgid "Name in the rosters where this group will be displayed"
-msgstr ""
+msgstr "Nombre del grupo con que aparecerá en las listas de contactos"
 
 #: src/mod_shared_roster.erl:908 src/mod_shared_roster.erl:1002
 msgid "Name:"
@@ -1186,11 +1186,11 @@ msgstr "Nombre:"
 
 #: deps/xmpp/src/muc_roominfo.erl:795 deps/xmpp/src/muc_roomconfig.erl:1707
 msgid "Natural Language for Room Discussions"
-msgstr ""
+msgstr "Idioma natural en las charlas de la sala"
 
 #: deps/xmpp/src/muc_roominfo.erl:846
 msgid "Natural-Language Room Name"
-msgstr ""
+msgstr "Nombre de la sala en el idioma natural de la sala"
 
 #: src/mod_muc_room.erl:2987
 msgid "Neither 'jid' nor 'nick' attribute found"
@@ -1351,9 +1351,8 @@ msgstr "No se han encontrado estadísticas para este elemento"
 
 #: deps/xmpp/src/muc_roominfo.erl:736 deps/xmpp/src/muc_roomconfig.erl:1426
 #: deps/xmpp/src/muc_roomconfig.erl:1473
-#, fuzzy
 msgid "Nobody"
-msgstr "nadie"
+msgstr "Nadie"
 
 #: deps/xmpp/src/pubsub_subscribe_authorization.erl:358
 msgid "Node ID"
@@ -1419,17 +1418,15 @@ msgstr "Notificar subscriptores cuando el nodo se borra"
 
 #: src/mod_muc_log.erl:488
 msgid "November"
-msgstr "noviembre"
+msgstr "Noviembre"
 
 #: deps/xmpp/src/flex_offline.erl:239
-#, fuzzy
 msgid "Number of Offline Messages"
-msgstr "Mensajes diferidos"
+msgstr "Número de mensajes diferidos"
 
 #: deps/xmpp/src/captcha_form.erl:686
-#, fuzzy
 msgid "Number of answers required"
-msgstr "Número de usuarios conectados"
+msgstr "Número de respuestas necesarias"
 
 #: deps/xmpp/src/muc_roominfo.erl:860
 msgid "Number of occupants"
@@ -1446,6 +1443,8 @@ msgstr "Número de usuarios registrados"
 #: deps/xmpp/src/pubsub_node_config.erl:1577
 msgid "Number of seconds after which to automatically purge items"
 msgstr ""
+"Número de segundos después de los cuales se purgarán elementos "
+"automáticamente"
 
 #: src/ejabberd_web_admin.erl:1227 src/ejabberd_web_admin.erl:1237
 #: src/ejabberd_web_admin.erl:1248 src/ejabberd_web_admin.erl:1257
@@ -1457,18 +1456,16 @@ msgid "OK"
 msgstr "Aceptar"
 
 #: deps/xmpp/src/muc_roominfo.erl:925
-#, fuzzy
 msgid "Occupants May Change the Subject"
-msgstr "Permitir a los usuarios cambiar el asunto"
+msgstr "Los ocupantes pueden cambiar el Asunto"
 
 #: deps/xmpp/src/muc_roominfo.erl:716
-#, fuzzy
 msgid "Occupants are allowed to invite others"
-msgstr "Solo los ocupantes pueden enviar solicitudes a la sala"
+msgstr "Los ocupantes pueden invitar a otras personas"
 
 #: src/mod_muc_log.erl:487
 msgid "October"
-msgstr "octubre"
+msgstr "Octubre"
 
 #: src/ejabberd_web_admin.erl:709
 msgid "Offline Messages"
@@ -1507,12 +1504,14 @@ msgstr "Solo se permite el elemento <list/> en esta petición"
 
 #: src/mod_shared_roster.erl:1017
 msgid "Only admins can see this"
-msgstr ""
+msgstr "Solo los administradores pueden ver esto"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1386
 msgid ""
 "Only collection node owners may associate leaf nodes with the collection"
 msgstr ""
+"Solo los dueños e la colección de nodos pueden asociar nodos hoja a la "
+"colección"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1827
 msgid "Only deliver notifications to available users"
@@ -1548,7 +1547,7 @@ msgstr "Solo los ocupantes pueden enviar solicitudes a la sala"
 #: deps/xmpp/src/pubsub_node_config.erl:1843
 #: deps/xmpp/src/pubsub_meta_data.erl:848
 msgid "Only publishers may publish"
-msgstr ""
+msgstr "Solo los publicadores pueden publicar"
 
 #: src/mod_muc.erl:227
 msgid "Only service administrators are allowed to send service messages"
@@ -1559,11 +1558,14 @@ msgstr ""
 #: deps/xmpp/src/pubsub_node_config.erl:1391
 msgid "Only those on a whitelist may associate leaf nodes with the collection"
 msgstr ""
+"Solo quienes están en una lista blanca pueden asociar nodos hoja a la "
+"colección"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1332
 #: deps/xmpp/src/pubsub_meta_data.erl:822
 msgid "Only those on a whitelist may subscribe and retrieve items"
 msgstr ""
+"Solo quienes están en una lista blanca pueden suscribirse y recibir elementos"
 
 #: src/mod_vcard_mnesia.erl:109 src/mod_vcard_mnesia.erl:123
 #: src/mod_vcard_sql.erl:166 src/mod_vcard_sql.erl:180
@@ -1637,7 +1639,7 @@ msgstr "Ruta al fichero"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:772
 msgid "Payload type"
-msgstr ""
+msgstr "Tipo de payload"
 
 #: src/mod_roster.erl:1004
 msgid "Pending"
@@ -1653,9 +1655,8 @@ msgid "Persist items to storage"
 msgstr "Persistir elementos al almacenar"
 
 #: src/mod_muc_admin.erl:535
-#, fuzzy
 msgid "Persistent"
-msgstr "Sala permanente"
+msgstr "Permanente"
 
 #: src/mod_adhoc.erl:155 src/mod_adhoc.erl:245
 msgid "Ping"
@@ -1717,12 +1718,11 @@ msgstr "Petición de subscriptor de PubSub"
 
 #: src/mod_muc_admin.erl:534
 msgid "Public"
-msgstr ""
+msgstr "Público"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:865
-#, fuzzy
 msgid "Publish model"
-msgstr "Especificar el modelo del publicante"
+msgstr "Modelo de publicación"
 
 #: src/mod_pubsub.erl:4171
 msgid "Publish-Subscribe"
@@ -1764,19 +1764,19 @@ msgstr "¿Está seguro de quere borrar el mensaje del dia?"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:643
 msgid "Receive notification from all descendent nodes"
-msgstr ""
+msgstr "Recibir notificaciones de todos los nodos descendientes"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:638
 msgid "Receive notification from direct child nodes only"
-msgstr ""
+msgstr "Recibir notificaciones solo de los nodos que son hijos directos"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:608
 msgid "Receive notification of new items only"
-msgstr ""
+msgstr "Recibir notificaciones solo de nuevos elementos"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:612
 msgid "Receive notification of new nodes only"
-msgstr ""
+msgstr "Recibir notificaciones solo de nuevos nodos"
 
 #: src/mod_muc_room.erl:543 src/mod_muc_room.erl:592
 msgid "Recipient is not in the conference room"
@@ -1829,9 +1829,8 @@ msgid "Request is ignored"
 msgstr "La petición ha sido ignorada"
 
 #: deps/xmpp/src/muc_request.erl:340
-#, fuzzy
 msgid "Requested role"
-msgstr "La petición ha caducado"
+msgstr "Rol solicitado"
 
 #: src/mod_configure.erl:1407
 msgid "Resources"
@@ -1871,16 +1870,15 @@ msgstr "Restaurar copias de seguridad de texto plano inmediatamente:"
 
 #: deps/xmpp/src/muc_roomconfig.erl:1690
 msgid "Roles and Affiliations that May Retrieve Member List"
-msgstr ""
+msgstr "Roles y Afiliaciones que pueden obtener la lista de miembros"
 
 #: deps/xmpp/src/muc_roomconfig.erl:1864
 msgid "Roles for which Presence is Broadcasted"
 msgstr "Roles para los que sí se difunde su Presencia"
 
 #: deps/xmpp/src/muc_roominfo.erl:748 deps/xmpp/src/muc_roomconfig.erl:1438
-#, fuzzy
 msgid "Roles that May Send Private Messages"
-msgstr "Permitir a los usuarios enviar mensajes privados"
+msgstr "Roles que pueden enviar mensajes privados"
 
 #: src/mod_muc_log.erl:639
 msgid "Room Configuration"
@@ -1921,9 +1919,8 @@ msgid "Roster size"
 msgstr "Tamaño de la lista de contactos"
 
 #: src/mod_roster.erl:1174
-#, fuzzy
 msgid "Roster:"
-msgstr "Lista de contactos"
+msgstr "Lista de contactos:"
 
 #: src/mod_configure.erl:498 src/ejabberd_web_admin.erl:1071
 msgid "Running Nodes"
@@ -1935,7 +1932,7 @@ msgstr "SOCKS5 Bytestreams"
 
 #: src/mod_muc_log.erl:473
 msgid "Saturday"
-msgstr "sábado"
+msgstr "Sábado"
 
 #: src/ejabberd_web_admin.erl:1443
 msgid "Script check"
@@ -1947,15 +1944,15 @@ msgstr "Buscar resultados por "
 
 #: deps/xmpp/src/mam_query.erl:330
 msgid "Search from the date"
-msgstr ""
+msgstr "Buscar desde la fecha"
 
 #: deps/xmpp/src/mam_query.erl:358
 msgid "Search the text"
-msgstr ""
+msgstr "Buscar el texto"
 
 #: deps/xmpp/src/mam_query.erl:344
 msgid "Search until the date"
-msgstr ""
+msgstr "Buscar hasta la fecha"
 
 #: src/mod_vcard.erl:440
 msgid "Search users in "
@@ -1983,7 +1980,7 @@ msgstr "Enviar anuncio a todos los usuarios en todos los dominios"
 
 #: src/mod_muc_log.erl:486
 msgid "September"
-msgstr "septiembre"
+msgstr "Septiembre"
 
 #: src/mod_register_web.erl:274 src/mod_register_web.erl:406
 #: src/mod_register_web.erl:517
@@ -1991,9 +1988,8 @@ msgid "Server:"
 msgstr "Servidor:"
 
 #: src/mod_stun_disco.erl:496
-#, fuzzy
 msgid "Service list retrieval timed out"
-msgstr "La petición ha caducado"
+msgstr "Ha caducado la obtención de la lista de servicio"
 
 #: src/mod_stream_mgmt.erl:790
 msgid "Session state copying timed out"
@@ -2050,11 +2046,11 @@ msgstr "Especificar el modelo del publicante"
 
 #: deps/xmpp/src/captcha_form.erl:821
 msgid "Stanza ID"
-msgstr ""
+msgstr "ID del paquete"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1592
 msgid "Statically specify a replyto of the node owner(s)"
-msgstr ""
+msgstr "Especificar de forma estática un 'replyto' de dueño(s) del nodo"
 
 #: src/ejabberd_web_admin.erl:506 src/ejabberd_web_admin.erl:1101
 #: src/ejabberd_web_admin.erl:1795 src/ejabberd_web_admin.erl:1808
@@ -2117,7 +2113,7 @@ msgstr "Dirección del subscriptor"
 #: deps/xmpp/src/pubsub_node_config.erl:1847
 #: deps/xmpp/src/pubsub_meta_data.erl:852
 msgid "Subscribers may publish"
-msgstr ""
+msgstr "Los suscriptores pueden publicar"
 
 #: src/mod_roster.erl:1003
 msgid "Subscription"
@@ -2129,6 +2125,8 @@ msgid ""
 "Subscription requests must be approved and only subscribers may retrieve "
 "items"
 msgstr ""
+"Las peticiones de suscripción deben ser aprobadas y solo los suscriptores "
+"pueden obtener elementos"
 
 #: src/mod_muc_room.erl:4219
 msgid "Subscriptions are not allowed"
@@ -2136,23 +2134,23 @@ msgstr "Las subscripciones no están permitidas"
 
 #: src/mod_muc_log.erl:474
 msgid "Sunday"
-msgstr "domingo"
+msgstr "Domingo"
 
 #: deps/xmpp/src/captcha_form.erl:777
 msgid "Text associated with a picture"
-msgstr ""
+msgstr "Texto asociado con una imagen"
 
 #: deps/xmpp/src/captcha_form.erl:701
 msgid "Text associated with a sound"
-msgstr ""
+msgstr "Texto asociado con un sonido"
 
 #: deps/xmpp/src/captcha_form.erl:881
 msgid "Text associated with a video"
-msgstr ""
+msgstr "Texto asociado con un vídeo"
 
 #: deps/xmpp/src/captcha_form.erl:851
 msgid "Text associated with speech"
-msgstr ""
+msgstr "Texto asociado con una charla"
 
 #: src/mod_muc_room.erl:1242 src/mod_muc_room.erl:2104
 #: src/mod_muc_room.erl:4248
@@ -2177,33 +2175,36 @@ msgstr "La verificación de CAPTCHA ha fallado"
 #: deps/xmpp/src/pubsub_subscribe_options.erl:529
 msgid "The DateTime at which a leased subscription will end or has ended"
 msgstr ""
+"La FechayHora en la que una suscripción prestada acabará o ha terminado"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:657
 msgid "The JID of the node creator"
-msgstr ""
+msgstr "El JID del creador del nodo"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1493
 #: deps/xmpp/src/pubsub_meta_data.erl:625
 msgid "The JIDs of those to contact with questions"
-msgstr ""
+msgstr "Los JIDs a quienes contactar con preguntas"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:726
 msgid "The JIDs of those with an affiliation of owner"
-msgstr ""
+msgstr "Los JIDs de quienes tienen una afiliación de dueños"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:743
 msgid "The JIDs of those with an affiliation of publisher"
-msgstr ""
+msgstr "Los JIDs de quienes tienen una afiliación de publicadores"
 
 #: deps/xmpp/src/pubsub_get_pending.erl:248
 msgid "The NodeID of the relevant node"
-msgstr ""
+msgstr "El NodoID del nodo relevante"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1360
 msgid ""
 "The URL of an XSL transformation which can be applied to payloads in order "
 "to generate an appropriate message body element."
 msgstr ""
+"La URL de una transformación XSL que puede aplicarse a payloads para generar "
+"un elemento de contenido del mensaje apropiado."
 
 #: deps/xmpp/src/pubsub_node_config.erl:1509
 msgid ""
@@ -2211,6 +2212,9 @@ msgid ""
 "in order to generate a valid Data Forms result that the client could display "
 "using a generic Data Forms rendering engine"
 msgstr ""
+"La URL de una transformación XSL que puede aplicarse al formato de payload "
+"para generar un resultado de Formulario de Datos válido, que el cliente "
+"pueda mostrar usando un mecanismo de dibujado genérico de Formulario de Datos"
 
 #: src/mod_register_web.erl:601
 msgid "The account already exists"
@@ -2222,7 +2226,7 @@ msgstr "La cuenta no fue eliminada"
 
 #: deps/xmpp/src/push_summary.erl:397
 msgid "The body text of the last received message"
-msgstr ""
+msgstr "El contenido de texto del último mensaje recibido"
 
 #: src/mod_register_web.erl:599
 msgid "The captcha you entered is wrong"
@@ -2231,6 +2235,7 @@ msgstr "El CAPTCHA que has introducido es erróneo"
 #: deps/xmpp/src/pubsub_node_config.erl:1442
 msgid "The child nodes (leaf or collection) associated with a collection"
 msgstr ""
+"Los nodos hijos (ya sean hojas o colecciones) asociados con una colección"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1476
 msgid "The collections with which a node is affiliated"
@@ -2238,13 +2243,12 @@ msgstr "Las colecciones a las que un nodo está afiliado"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:642
 msgid "The datetime when the node was created"
-msgstr ""
+msgstr "La fechayhora cuando el nodo fue creado"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1633
 #: deps/xmpp/src/pubsub_meta_data.erl:693
-#, fuzzy
 msgid "The default language of the node"
-msgstr "Un nombre sencillo para el nodo"
+msgstr "El nombre por defecto del nodo"
 
 #: src/mod_muc_room.erl:450
 msgid "The feature requested is not supported by the conference"
@@ -2253,44 +2257,46 @@ msgstr ""
 
 #: deps/xmpp/src/pubsub_node_config.erl:1425
 msgid "The list of JIDs that may associate leaf nodes with a collection"
-msgstr ""
+msgstr "La lista de JIDs que pueden asociar nodos hijo con una colección"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1459
 msgid ""
 "The maximum number of child nodes that can be associated with a collection"
-msgstr ""
+msgstr "El número máximo de nodos hijo que pueden asociarse a una colección"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:512
 msgid ""
 "The minimum number of milliseconds between sending any two notification "
 "digests"
 msgstr ""
+"El número mínimo de milisegundos entre dos envíos de resumen de "
+"notificaciones"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:758
-#, fuzzy
 msgid "The name of the node"
-msgstr "Un nombre sencillo para el nodo"
+msgstr "El nombre del nodo"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1682
 msgid "The node is a collection node"
-msgstr ""
+msgstr "El nodo es una colección"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1678
 msgid "The node is a leaf node (default)"
-msgstr ""
+msgstr "El nodo es un nodo hoja (por defecto)"
 
 #: deps/xmpp/src/push_summary.erl:363
 msgid "The number of pending incoming presence subscription requests"
 msgstr ""
+"El número de peticiones de suscripción a presencia que están pendientes de "
+"llegar"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:710
-#, fuzzy
 msgid "The number of subscribers to the node"
-msgstr "¿Deseas permitir a este Jabber ID que se subscriba a este nodo PubSub?"
+msgstr "El número de suscriptores al nodo"
 
 #: deps/xmpp/src/push_summary.erl:343
 msgid "The number of unread or undelivered messages"
-msgstr ""
+msgstr "El número de mensajes sin leer o sin entregar"
 
 #: src/mod_register.erl:392
 msgid "The password contains unacceptable characters"
@@ -2315,6 +2321,8 @@ msgstr "Las contraseñas son diferentes"
 #: deps/xmpp/src/pubsub_subscribe_options.erl:591
 msgid "The presence states for which an entity wants to receive notifications"
 msgstr ""
+"Los estados de presencia para los cuales una entidad quiere recibir "
+"notificaciones"
 
 #: src/mod_register.erl:170 src/mod_vcard.erl:231
 msgid "The query is only allowed from local users"
@@ -2326,11 +2334,11 @@ msgstr "La solicitud no debe contener elementos <item/>"
 
 #: deps/xmpp/src/muc_roominfo.erl:891
 msgid "The room subject can be modified by participants"
-msgstr ""
+msgstr "El asunto de la sala puede ser modificado por los participantes"
 
 #: deps/xmpp/src/push_summary.erl:381
 msgid "The sender of the last received message"
-msgstr ""
+msgstr "El emisor del último mensaje recibido"
 
 #: src/mod_privacy.erl:268
 msgid ""
@@ -2343,12 +2351,15 @@ msgstr ""
 #: deps/xmpp/src/pubsub_subscribe_authorization.erl:388
 msgid "The subscription identifier associated with the subscription request"
 msgstr ""
+"El identificador de suscripción asociado con la petición de suscripción"
 
 #: deps/xmpp/src/pubsub_node_config.erl:2001
 msgid ""
 "The type of node data, usually specified by the namespace of the payload (if "
 "any)"
 msgstr ""
+"El tipo de datos del nodo, usualmente especificado por el namespace del "
+"payload (en caso de haberlo)"
 
 #: src/mod_register_web.erl:605
 msgid "The username is not valid"
@@ -2356,15 +2367,15 @@ msgstr "El nombre de usuario no es válido"
 
 #: src/mod_register_web.erl:150
 msgid "There was an error changing the password: "
-msgstr "Hubo un error cambiando la contraseña."
+msgstr "Hubo un error cambiando la contraseña: "
 
 #: src/mod_register_web.erl:122
 msgid "There was an error creating the account: "
-msgstr "Hubo uno error al crear la cuenta:"
+msgstr "Hubo uno error al crear la cuenta: "
 
 #: src/mod_register_web.erl:135
 msgid "There was an error deleting the account: "
-msgstr "Hubo un error borrando la cuenta."
+msgstr "Hubo un error borrando la cuenta: "
 
 #: src/mod_register_web.erl:268
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
@@ -2396,7 +2407,7 @@ msgstr "Este servicio no puede procesar la dirección: ~s"
 
 #: src/mod_muc_log.erl:471
 msgid "Thursday"
-msgstr "jueves"
+msgstr "Jueves"
 
 #: src/mod_offline.erl:999
 msgid "Time"
@@ -2493,11 +2504,11 @@ msgstr "Transacciones reiniciadas:"
 
 #: src/mod_muc_log.erl:469
 msgid "Tuesday"
-msgstr "martes"
+msgstr "Martes"
 
 #: deps/xmpp/src/muc_roominfo.erl:831
 msgid "URL for Archived Discussion Logs"
-msgstr ""
+msgstr "URL del registro de discusiones archivadas"
 
 #: src/mod_block_strangers.erl:131 src/mod_register.erl:253
 #: src/mod_muc_room.erl:2197
@@ -2668,12 +2679,11 @@ msgstr "El valor de '~s' debería ser un entero"
 
 #: src/mod_offline.erl:1075
 msgid "View Queue"
-msgstr ""
+msgstr "Ver Cola"
 
 #: src/mod_roster.erl:1172
-#, fuzzy
 msgid "View Roster"
-msgstr "Lista de contactos"
+msgstr "Ver Lista de contactos"
 
 #: src/ejabberd_web_admin.erl:439 src/ejabberd_web_admin.erl:1818
 msgid "Virtual Hosts"
@@ -2701,17 +2711,17 @@ msgstr "Las peticiones de voz están desactivadas en esta sala"
 
 #: src/mod_muc_log.erl:470
 msgid "Wednesday"
-msgstr "miércoles"
+msgstr "Miércoles"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1920
-#, fuzzy
 msgid "When a new subscription is processed"
-msgstr "Permitir subscripciones"
+msgstr "Cuando se procesa una nueva suscripción"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1924
 msgid ""
 "When a new subscription is processed and whenever a subscriber comes online"
 msgstr ""
+"Cuando se procesa una nueva suscripción y cuando un suscriptor se conecta"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1938
 msgid "When to send the last published item"
@@ -2722,24 +2732,28 @@ msgid ""
 "Whether an entity wants to receive an XMPP message body in addition to the "
 "payload format"
 msgstr ""
+"Si una entidad quiere recibir un cuerpo de mensaje XMPP adicionalmente al "
+"formato de payload"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:494
 msgid ""
 "Whether an entity wants to receive digests (aggregations) of notifications "
 "or all notifications individually"
 msgstr ""
+"Si una entidad quiere recibir resúmenes (agregados) de notificaciones o "
+"todas las notificaciones individualmente"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:477
 msgid "Whether an entity wants to receive or disable notifications"
-msgstr ""
+msgstr "Si una entidad quiere recibir o desactivar las notificaciones"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1611
 msgid "Whether owners or publisher should receive replies to items"
-msgstr ""
+msgstr "Si dueños y publicadores deberían recibir respuestas de los elementos"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1694
 msgid "Whether the node is a leaf (default) or a collection"
-msgstr ""
+msgstr "Si el nodo es una hoja (por defecto) o una colección"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1970
 msgid "Whether to allow subscriptions"
@@ -2749,14 +2763,16 @@ msgstr "Permitir subscripciones"
 msgid ""
 "Whether to make all subscriptions temporary, based on subscriber presence"
 msgstr ""
+"Si hacer que todas las suscripciones sean temporales, basado en la presencia "
+"del suscriptor"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1793
 msgid "Whether to notify owners about new subscribers and unsubscribes"
-msgstr ""
+msgstr "Si notificar a los dueños sobre nuevas suscripciones y desuscripciones"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1405
 msgid "Who may associate leaf nodes with a collection"
-msgstr ""
+msgstr "Quien puede asociar nodos hoja con una colección"
 
 #: src/mod_register_web.erl:617
 msgid "Wrong parameters in the web formulary"
@@ -2764,7 +2780,7 @@ msgstr "Parámetros incorrectos en el formulario web"
 
 #: src/mod_multicast.erl:341
 msgid "Wrong xmlns"
-msgstr "xmlns incorrecto"
+msgstr "XMLNS incorrecto"
 
 #: src/ejabberd_web_admin.erl:440
 msgid "XMPP Domains"
@@ -2772,24 +2788,23 @@ msgstr "Dominios XMPP"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:563
 msgid "XMPP Show Value of Away"
-msgstr ""
+msgstr "Valor 'Show' de XMPP: Ausente"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:567
 msgid "XMPP Show Value of Chat"
-msgstr ""
+msgstr "Valor 'Show' de XMPP: Charlador"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:571
 msgid "XMPP Show Value of DND (Do Not Disturb)"
-msgstr ""
+msgstr "Valor 'Show' de XMPP: DND (No Molestar)"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:579
 msgid "XMPP Show Value of XA (Extended Away)"
-msgstr ""
+msgstr "Valor 'Show' de XMPP: XA (Ausente Extendido)"
 
 #: deps/xmpp/src/muc_roominfo.erl:908 deps/xmpp/src/muc_roomconfig.erl:1723
-#, fuzzy
 msgid "XMPP URI of Associated Publish-Subscribe Node"
-msgstr "Módulo de Publicar-Subscribir de ejabberd"
+msgstr "URI XMPP del Nodo Asociado de Publicar-Subscribir"
 
 #: src/mod_muc_room.erl:880
 msgid "You are being removed from the room because of a system shutdown"
@@ -2925,7 +2940,7 @@ msgstr "sale de la sala"
 
 #: src/mod_muc_room.erl:4389
 msgid "private, "
-msgstr "privado"
+msgstr "privado, "
 
 #: src/mod_muc_room.erl:4486
 msgid "the password is"
@@ -2933,7 +2948,7 @@ msgstr "la contraseña es"
 
 #: src/mod_vcard.erl:582
 msgid "vCard User Search"
-msgstr "Buscar vCard de usuario"
+msgstr "Búsqueda de vCard de usuarios"
 
 #: src/mod_muc_room.erl:4479
 msgid "~s invites you to the room ~s"
