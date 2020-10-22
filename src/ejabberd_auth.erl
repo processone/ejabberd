@@ -605,6 +605,7 @@ db_get_password(User, Server, Mod) ->
 	false when UseCache ->
 	    case ets_cache:lookup(cache_tab(Mod), {User, Server}) of
 		{ok, exists} -> error;
+		not_found -> error;
 		Other -> Other
 	    end;
 	false ->
@@ -621,20 +622,29 @@ db_user_exists(User, Server, Mod) ->
     case db_get_password(User, Server, Mod) of
 	{ok, _} ->
 	    true;
+	not_found ->
+	    false;
 	error ->
 	    case {Mod:store_type(Server), use_cache(Mod, Server)} of
 		{external, true} ->
-		    case ets_cache:lookup(
-			   cache_tab(Mod), {User, Server},
-			   fun() ->
-				   case Mod:user_exists(User, Server) of
-				       {CacheTag, true} -> {CacheTag, {ok, exists}};
-				       {CacheTag, false} -> {CacheTag, error};
-				       {_, {error, _}} = Err -> Err
-				   end
-			   end) of
+		    Val = case ets_cache:lookup(cache_tab(Mod), {User, Server}, error) of
+			      error ->
+				  ets_cache:update(cache_tab(Mod), {User, Server}, {ok, exists},
+						   fun() ->
+							   case Mod:user_exists(User, Server) of
+							       {CacheTag, true} -> {CacheTag, {ok, exists}};
+							       {CacheTag, false} -> {CacheTag, not_found};
+							       {_, {error, _}} = Err -> Err
+							   end
+						   end);
+			      Other ->
+				  Other
+			  end,
+		    case Val of
 			{ok, _} ->
 			    true;
+			not_found ->
+			    false;
 			error ->
 			    false;
 			{error, _} = Err ->
