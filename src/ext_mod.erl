@@ -326,7 +326,7 @@ geturl(Url) ->
         _ ->
             ok
     end,
-    User = case getenv("PROXY_USER", "", [4]) of
+    User = case getenv("PROXY_USER", "", ":") of
         [U, Pass] -> [{proxy_auth, {U, Pass}}];
         _ -> []
     end,
