@@ -119,7 +119,9 @@ reload(Host, NewOpts, OldOpts) ->
 	    NewMod:init(Host, NewOpts);
        true ->
 	    ok
-    end.
+    end,
+    init_cache(NewMod, Host, NewOpts),
+    ok.
 
 -spec depends(binary(), gen_mod:opts()) -> [{module(), hard | soft}].
 depends(_Host, _Opts) ->
