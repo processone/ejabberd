@@ -90,8 +90,8 @@
 -export([oom_killer/0]).
 -export([oom_queue/0]).
 -export([oom_watermark/0]).
--export([outgoing_s2s_ipv4_address/0,outgoing_s2s_ipv4_address/1]).
--export([outgoing_s2s_ipv6_address/0,outgoing_s2s_ipv6_address/1]).
+-export([outgoing_s2s_ipv4_address/0, outgoing_s2s_ipv4_address/1]).
+-export([outgoing_s2s_ipv6_address/0, outgoing_s2s_ipv6_address/1]).
 -export([outgoing_s2s_families/0, outgoing_s2s_families/1]).
 -export([outgoing_s2s_port/0, outgoing_s2s_port/1]).
 -export([outgoing_s2s_timeout/0, outgoing_s2s_timeout/1]).

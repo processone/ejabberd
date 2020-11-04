@@ -188,14 +188,17 @@ tls_enabled(#{server_host := ServerHost}) ->
     ejabberd_s2s:tls_enabled(ServerHost).
 
 connect_options(Addr, Opts, #{server_host := ServerHost}) ->
-    Type = get_addr_type(Addr),
-    Bindaddr = case Type of
-      inet  -> ejabberd_option:outgoing_s2s_ipv4_address(ServerHost);
-      inet6 -> ejabberd_option:outgoing_s2s_ipv6_address(ServerHost)
-    end,
-    case Bindaddr of
-      undefined -> Opts;
-      _ -> lists:append([Opts, [{ip, Bindaddr}]])
+    BindAddr = case get_addr_type(Addr) of
+		   inet ->
+		       ejabberd_option:outgoing_s2s_ipv4_address(ServerHost);
+		   inet6 ->
+		       ejabberd_option:outgoing_s2s_ipv6_address(ServerHost)
+	       end,
+    case BindAddr of
+	undefined ->
+	    Opts;
+	_ ->
+	    [{ip, BindAddr} | Opts]
     end.
 
 connect_timeout(#{server_host := ServerHost}) ->
@@ -329,7 +332,6 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-
 -spec get_addr_type(inet:ip_address()) -> inet:address_family().
 get_addr_type({_, _, _, _}) -> inet;
 get_addr_type({_, _, _, _, _, _, _, _}) -> inet6.
