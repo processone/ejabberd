@@ -244,7 +244,7 @@ delete_old_sessions(Days) ->
 	    ?INFO_MSG("Deleted push sessions older than ~B days", [Days]),
 	    ok;
 	[{error, Reason} | _] ->
-	    ?ERROR_MSG("Error while deleting old push sessions: ~p", [NotOk]),
+	    ?ERROR_MSG("Error while deleting old push sessions: ~p", [Reason]),
 	    Reason
     end.
 
