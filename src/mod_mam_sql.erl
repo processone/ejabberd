@@ -256,7 +256,7 @@ do_select_query(LServer, JidRequestor, #jid{luser = LUser} = JidArchive, RSM,
 		    {Res, true}
 	    end,
 	    MucState = #state{config = #config{anonymous = true}},
-	    JidArchiveS = jid:encode(JidArchive),
+	    JidArchiveS = jid:encode(jid:remove_resource(JidArchive)),
 	    {lists:flatmap(
 		fun([TS, XML, PeerBin, Kind, Nick]) ->
 		    case make_archive_el(JidArchiveS, TS, XML, PeerBin, Kind, Nick,
