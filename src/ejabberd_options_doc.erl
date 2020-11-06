@@ -1231,6 +1231,13 @@ doc() ->
             ?T("An interval to make a dummy SQL request to keep alive the "
                "connections to the database. There is no default value, so no "
                "keepalive requests are made.")}},
+     {sql_odbc_driver,
+      #{value => "Path",
+        desc =>
+            ?T("Path to the ODBC driver to use to connect to a Microsoft SQL "
+               "Server database. This option is only valid if the 'sql_type' "
+               "option is set to 'mssql'. "
+               "The default value is: 'libtdsodbc.so'")}},
      {sql_password,
       #{value => ?T("Password"),
         desc =>
