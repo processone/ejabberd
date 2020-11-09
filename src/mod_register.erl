@@ -222,8 +222,7 @@ process_iq(#iq{type = get, from = From, to = To, id = ID, lang = Lang} = IQ,
 		       "with this server")),
     URL = mod_register_opt:redirect_url(Server),
     if (URL /= undefined) and not IsRegistered ->
-	    Txt = translate:translate(Lang, ?T("To register, visit ~s")),
-	    Desc = str:format(Txt, [URL]),
+	    Desc = str:translate_and_format(Lang, ?T("To register, visit ~s"), [URL]),
 	    xmpp:make_iq_result(
 	      IQ, #register{instructions = Desc,
 			    sub_els = [#oob_x{url = URL}]});

@@ -1053,7 +1053,7 @@ user_roster(User, Server, Query, Lang) ->
 					end,
 					SItems)))])]
 	     end,
-    PageTitle = str:format(translate:translate(Lang, ?T("Roster of ~ts")), [us_to_list(US)]),
+    PageTitle = str:translate_and_format(Lang, ?T("Roster of ~ts"), [us_to_list(US)]),
     (?H1GL(PageTitle, <<"modules/#mod-roster">>, <<"mod_roster">>))
       ++
       case Res of

@@ -1444,7 +1444,8 @@ get_error_text(#stanza_error{text = Txt}) ->
 make_reason(Packet, From, StateData, Reason1) ->
     #user{nick = FromNick} = maps:get(jid:tolower(From), StateData#state.users),
     Condition = get_error_condition(xmpp:get_error(Packet)),
-    str:format(Reason1, [FromNick, Condition]).
+    Reason2 = unicode:characters_to_list(Reason1),
+    str:format(Reason2, [FromNick, Condition]).
 
 -spec expulse_participant(stanza(), jid(), state(), binary()) ->
 				 state().
@@ -3493,8 +3494,8 @@ get_config(Lang, StateData, From) ->
     DefaultRoomMaxUsers = get_default_room_maxusers(StateData),
     Config = StateData#state.config,
     MaxUsersRoom = get_max_users(StateData),
-    Title = str:format(
-	      translate:translate(Lang, ?T("Configuration of room ~s")),
+    Title = str:translate_and_format(
+	      Lang, ?T("Configuration of room ~s"),
 	      [jid:encode(StateData#state.jid)]),
     Fs = [{roomname, Config#config.title},
 	  {roomdesc, Config#config.description},

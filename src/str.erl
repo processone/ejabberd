@@ -64,10 +64,11 @@
          to_float/1,
          prefix/2,
          suffix/2,
-	 format/2,
+         format/2,
          to_integer/1,
          sha/1,
-         to_hexlist/1]).
+         to_hexlist/1,
+         translate_and_format/3]).
 
 %%%===================================================================
 %%% API
@@ -287,6 +288,11 @@ suffix(B1, B2) ->
 
 format(Format, Args) ->
     unicode:characters_to_binary(io_lib:format(Format, Args)).
+
+-spec translate_and_format(binary(), binary(), list()) -> binary().
+
+translate_and_format(Lang, Format, Args) ->
+    format(unicode:characters_to_list(translate:translate(Lang, Format)), Args).
 
 
 -spec sha(iodata()) -> binary().

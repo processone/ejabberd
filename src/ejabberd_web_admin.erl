@@ -930,7 +930,7 @@ user_info(User, Server, Query, Lang) ->
 			 end;
 		     _ -> translate:translate(Lang, ?T("Online"))
 		   end,
-    [?XC(<<"h1">>, (str:format(translate:translate(Lang, ?T("User ~ts")),
+    [?XC(<<"h1">>, (str:translate_and_format(Lang, ?T("User ~ts"),
                                                 [us_to_list(US)])))]
       ++
       case Res of
@@ -1087,7 +1087,7 @@ get_node(global, Node, [], Query, Lang) ->
     Base = get_base_path(global, Node, 2),
     MenuItems2 = make_menu_items(global, Node, Base, Lang),
     [?XC(<<"h1">>,
-	 (str:format(translate:translate(Lang, ?T("Node ~p")), [Node])))]
+	 (str:translate_and_format(Lang, ?T("Node ~p"), [Node])))]
       ++
       case Res of
 	ok -> [?XREST(?T("Submitted"))];
@@ -1109,7 +1109,7 @@ get_node(global, Node, [], Query, Lang) ->
 get_node(Host, Node, [], _Query, Lang) ->
     Base = get_base_path(Host, Node, 4),
     MenuItems2 = make_menu_items(Host, Node, Base, Lang),
-    [?XC(<<"h1">>, (str:format(translate:translate(Lang, ?T("Node ~p")), [Node]))),
+    [?XC(<<"h1">>, (str:translate_and_format(Lang, ?T("Node ~p"), [Node]))),
      ?XE(<<"ul">>, MenuItems2)];
 get_node(global, Node, [<<"db">>], Query, Lang) ->
     case ejabberd_cluster:call(Node, mnesia, system_info, [tables]) of
@@ -1165,7 +1165,7 @@ get_node(global, Node, [<<"db">>], Query, Lang) ->
 			   end,
 			   STables),
 	  [?XC(<<"h1">>,
-	       (str:format(translate:translate(Lang, ?T("Database Tables at ~p")),
+	       (str:translate_and_format(Lang, ?T("Database Tables at ~p"),
                                             [Node]))
 	  )]
 	    ++
@@ -1203,7 +1203,7 @@ get_node(global, Node, [<<"backup">>], Query, Lang) ->
 		 [?XRES(<<(translate:translate(Lang, ?T("Error")))/binary, ": ",
 			  ((str:format("~p", [Error])))/binary>>)]
 	   end,
-    [?XC(<<"h1">>, (str:format(translate:translate(Lang, ?T("Backup of ~p")), [Node])))]
+    [?XC(<<"h1">>, (str:translate_and_format(Lang, ?T("Backup of ~p"), [Node])))]
       ++
       ResS ++
 	[?XCT(<<"p">>,
@@ -1357,7 +1357,7 @@ get_node(global, Node, [<<"stats">>], _Query, Lang) ->
     TransactionsLogged = ejabberd_cluster:call(Node, mnesia, system_info,
 				  [transaction_log_writes]),
     [?XC(<<"h1">>,
-	 (str:format(translate:translate(Lang, ?T("Statistics of ~p")), [Node]))),
+	 (str:translate_and_format(Lang, ?T("Statistics of ~p"), [Node]))),
      ?XAE(<<"table">>, [],
 	  [?XE(<<"tbody">>,
 	       [?XE(<<"tr">>,
@@ -1425,7 +1425,7 @@ get_node(global, Node, [<<"update">>], Query, Lang) ->
     FmtLowLevelScript = (?XC(<<"pre">>,
 			     (str:format("~p", [LowLevelScript])))),
     [?XC(<<"h1">>,
-	 (str:format(translate:translate(Lang, ?T("Update ~p")), [Node])))]
+	 (str:translate_and_format(Lang, ?T("Update ~p"), [Node])))]
       ++
       case Res of
 	ok -> [?XREST(?T("Submitted"))];
