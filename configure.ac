@@ -28,6 +28,16 @@ else
 fi
 ])
 
+AC_ARG_WITH(rebar,
+	AC_HELP_STRING([--with-rebar=bin],
+		[use rebar specified]),
+[if test "$withval" = "yes" -o "$withval" = "no" -o "X$with_rebar" = "X"; then
+    rebar="rebar"
+else
+    rebar="$with_rebar"
+fi
+], [rebar="rebar"])
+
 AC_PATH_TOOL(ERL, erl, , [${extra_erl_path}$PATH])
 AC_PATH_TOOL(ERLC, erlc, , [${extra_erl_path}$PATH])
 AC_PATH_TOOL(EPMD, epmd, , [${extra_erl_path}$PATH])
@@ -289,6 +299,7 @@ AC_SUBST(pgsql)
 AC_SUBST(sqlite)
 AC_SUBST(pam)
 AC_SUBST(zlib)
+AC_SUBST(rebar)
 AC_SUBST(redis)
 AC_SUBST(elixir)
 AC_SUBST(stun)

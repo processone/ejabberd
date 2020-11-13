@@ -31,7 +31,6 @@
 		disconnect/1, put_event/2, get_event/1, peer_muc_jid/1,
 		my_muc_jid/1, get_features/2, set_opt/3]).
 -include("suite.hrl").
--include("jid.hrl").
 
 %%%===================================================================
 %%% API
