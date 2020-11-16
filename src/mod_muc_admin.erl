@@ -520,7 +520,7 @@ get_sort_query2(Q) ->
 
 make_rooms_page(Host, Lang, {Sort_direction, Sort_column}) ->
     Service = find_service(Host),
-    Rooms_names = get_rooms(Service),
+    Rooms_names = get_online_rooms(Service),
     Rooms_infos = build_info_rooms(Rooms_names),
     Rooms_sorted = sort_rooms(Sort_direction, Sort_column, Rooms_infos),
     Rooms_prepared = prepare_rooms_infos(Rooms_sorted),
@@ -811,7 +811,7 @@ rooms_report(Method, Action, Service, Days) ->
 
 muc_unused(Method, Action, Service, Last_allowed) ->
     %% Get all required info about all existing rooms
-    Rooms_all = get_rooms(Service),
+    Rooms_all = get_all_rooms(Service),
 
     %% Decide which ones pass the requirements
     Rooms_pass = decide_rooms(Method, Rooms_all, Last_allowed),
@@ -827,13 +827,34 @@ muc_unused(Method, Action, Service, Last_allowed) ->
 %%---------------
 %% Get info
 
-get_rooms(ServiceArg) ->
+get_online_rooms(ServiceArg) ->
     Hosts = find_services(ServiceArg),
     lists:flatmap(
       fun(Host) ->
-	      [{RoomName, RoomHost, ejabberd_router:host_of_route(Host), Pid}
-	       || {RoomName, RoomHost, Pid} <- mod_muc:get_online_rooms(Host)]
+	  ServerHost = get_room_serverhost(Host),
+	  [{RoomName, RoomHost, ServerHost, Pid}
+	   || {RoomName, RoomHost, Pid} <- mod_muc:get_online_rooms(Host)]
       end, Hosts).
+
+get_all_rooms(Host) ->
+    ServerHost = ejabberd_router:host_of_route(Host),
+    OnlineRooms = get_online_rooms(Host),
+    OnlineMap = lists:foldl(
+	fun({Room, _, _, _}, Map) ->
+	    Map#{Room => 1}
+	end, #{}, OnlineRooms),
+
+    Mod = gen_mod:db_mod(ServerHost, mod_muc),
+    StoredRooms = lists:filtermap(
+	fun(#muc_room{name_host = {Room, _}, opts = Opts}) ->
+	    case maps:is_key(Room, OnlineMap) of
+		true ->
+		    false;
+		_ ->
+		    {true, {Room, Host, ServerHost, Opts}}
+	    end
+	end, Mod:get_rooms(ServerHost, Host)),
+    OnlineRooms ++ StoredRooms.
 
 get_room_config(Room_pid) ->
     {ok, R} = mod_muc_room:get_config(Room_pid),
@@ -851,16 +872,24 @@ decide_rooms(Method, Rooms, Last_allowed) ->
     lists:filter(Decide, Rooms).
 
 decide_room(unused, {_Room_name, _Host, ServerHost, Room_pid}, Last_allowed) ->
-    C = get_room_config(Room_pid),
-    Persistent = C#config.persistent,
-
-    S = get_room_state(Room_pid),
-    Just_created = S#state.just_created,
-
-    Room_users = S#state.users,
-    Num_users = maps:size(Room_users),
-
-    History = (S#state.history)#lqueue.queue,
+    NodeStartTime = erlang:system_time(microsecond) -
+		    1000000*(erlang:monotonic_time(second)-ejabberd_config:get_node_start()),
+    {Persistent, Just_created, Num_users, History} =
+    case Room_pid of
+	Pid when is_pid(Pid) ->
+	    C = get_room_config(Room_pid),
+	    S = get_room_state(Room_pid),
+	    {C#config.persistent, S#state.just_created,
+	     maps:size(S#state.users),
+	     (S#state.history)#lqueue.queue};
+	Opts ->
+	    case {lists:keyfind(persistent, 1, Opts), lists:keyfind(hibernation_time, 1, Opts)} of
+		{{_, V}, false} ->
+		    {V, NodeStartTime, 0, p1_queue:new()};
+		{{_, V}, {_, T}} ->
+		    {V, T, 0, p1_queue:new()}
+	    end
+    end,
     Ts_now = calendar:universal_time(),
     HistorySize = mod_muc_opt:history_size(ServerHost),
     {Has_hist, Last} = case p1_queue:is_empty(History) of
@@ -886,10 +915,15 @@ decide_room(unused, {_Room_name, _Host, ServerHost, Room_pid}, Last_allowed) ->
 	_ ->
 	    false
     end;
-decide_room(empty, {Room_name, Host, ServerHost, _Room_pid}, _Last_allowed) ->
+decide_room(empty, {Room_name, Host, ServerHost, Room_pid}, _Last_allowed) ->
     case gen_mod:is_loaded(ServerHost, mod_mam) of
 	true ->
-	    Room_options = get_room_options(Room_name, Host),
+	    Room_options = case Room_pid of
+			       _ when is_pid(Room_pid) ->
+				   get_room_options(Room_pid);
+			       Opts ->
+				   Opts
+			   end,
 	    case lists:keyfind(<<"mam">>, 1, Room_options) of
 		{<<"mam">>, <<"true">>} ->
 		    mod_mam:is_empty_for_room(ServerHost, Room_name, Host);

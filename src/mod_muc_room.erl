@@ -3951,6 +3951,7 @@ make_opts(StateData) ->
       maps:to_list(StateData#state.affiliations)},
      {subject, StateData#state.subject},
      {subject_author, StateData#state.subject_author},
+     {hibernation_time, erlang:system_time(microsecond)},
      {subscribers, Subscribers}].
 
 expand_opts(CompactOpts) ->
@@ -3974,13 +3975,15 @@ expand_opts(CompactOpts) ->
     SubjectAuthor = proplists:get_value(subject_author, CompactOpts, <<"">>),
     Subject = proplists:get_value(subject, CompactOpts, <<"">>),
     Subscribers = proplists:get_value(subscribers, CompactOpts, []),
+    HibernationTime = proplists:get_value(hibernation_time, CompactOpts, 0),
     [{subject, Subject},
      {subject_author, SubjectAuthor},
-     {subscribers, Subscribers}
+     {subscribers, Subscribers},
+     {hibernation_time, HibernationTime}
      | lists:reverse(Opts1)].
 
 config_fields() ->
-    [subject, subject_author, subscribers | record_info(fields, config)].
+    [subject, subject_author, subscribers, hibernate_time | record_info(fields, config)].
 
 -spec destroy_room(muc_destroy(), state()) -> {result, undefined, stop}.
 destroy_room(DEl, StateData) ->
