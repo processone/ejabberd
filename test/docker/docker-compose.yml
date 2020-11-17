@@ -5,8 +5,8 @@ services:
     image: mysql:latest
     container_name: ejabberd-mysql
     volumes:
-      - ./db/mysql/data:/var/lib/mysql
-      - ./db/mysql/initdb:/docker-entrypoint-initdb.d:ro
+      - mysqldata:/var/lib/mysql
+      - ../../sql/mysql.sql:/docker-entrypoint-initdb.d/mysql.sql:ro
     command: --default-authentication-plugin=mysql_native_password
     restart: always
     ports:
@@ -22,6 +22,8 @@ services:
     container_name: ejabberd-mssql
     volumes:
       - mssqldata:/var/opt/mssql
+      - ./db/mssql/initdb/initdb_mssql.sql:/initdb_mssql.sql:ro
+      - ../../sql/mssql.sql:/mssql.sql:ro
     restart: always
     ports:
       - 1433:1433
@@ -33,8 +35,8 @@ services:
     image: postgres:latest
     container_name: ejabberd-postgres
     volumes:
-      - ./db/postgres/data:/var/lib/postgresql/data
-      - ./db/postgres/initdb:/docker-entrypoint-initdb.d:ro
+      - pgsqldata:/var/lib/postgresql/data
+      - ../../sql/pg.sql:/docker-entrypoint-initdb.d/pg.sql:ro
     ports:
       - 5432:5432
     environment:
@@ -49,4 +51,9 @@ services:
       - 6379:6379
 
 volumes:
+    mysqldata:
+      name: ejabberd-mysqldata
     mssqldata:
+      name: ejabberd-mssqldata
+    pgsqldata:
+      name: ejabberd-pgsqldata
