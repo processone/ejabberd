@@ -891,9 +891,8 @@ decide_room(unused, {_Room_name, _Host, ServerHost, Room_pid}, Last_allowed) ->
 	    end
     end,
     Ts_now = calendar:universal_time(),
-    HistorySize = mod_muc_opt:history_size(ServerHost),
     {Has_hist, Last} = case p1_queue:is_empty(History) of
-			   true when (HistorySize == 0) or (Just_created == true) ->
+			   true when Just_created == true ->
 			       {false, 0};
 			   true ->
 			       Ts_diff = (erlang:system_time(microsecond)
