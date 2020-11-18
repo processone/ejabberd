@@ -874,41 +874,29 @@ decide_rooms(Method, Rooms, Last_allowed) ->
 decide_room(unused, {_Room_name, _Host, _ServerHost, Room_pid}, Last_allowed) ->
     NodeStartTime = erlang:system_time(microsecond) -
 		    1000000*(erlang:monotonic_time(second)-ejabberd_config:get_node_start()),
-    {Just_created, Num_users, History} =
+    {Just_created, Num_users} =
     case Room_pid of
 	Pid when is_pid(Pid) ->
 	    S = get_room_state(Room_pid),
 	    {S#state.just_created,
-	     maps:size(S#state.users),
-	     (S#state.history)#lqueue.queue};
+	     maps:size(S#state.users)};
 	Opts ->
 	    case lists:keyfind(hibernation_time, 1, Opts) of
 		false ->
-		    {NodeStartTime, 0, p1_queue:new()};
+		    {NodeStartTime, 0};
 		{_, T} ->
-		    {T, 0, p1_queue:new()}
+		    {T, 0}
 	    end
     end,
-    Ts_now = calendar:universal_time(),
-    {Has_hist, Last} = case p1_queue:is_empty(History) of
-			   true when Just_created == true ->
-			       {false, 0};
-			   true ->
-			       Ts_diff = (erlang:system_time(microsecond)
-				    - Just_created) div 1000000,
-			       {false, Ts_diff};
-			   false ->
-			       Last_message = get_queue_last(History),
-			       Ts_last = calendar:now_to_universal_time(
-					   element(4, Last_message)),
-			       Ts_diff =
-				   calendar:datetime_to_gregorian_seconds(Ts_now)
-				   - calendar:datetime_to_gregorian_seconds(Ts_last),
-			       {true, Ts_diff}
-		       end,
-    case {Just_created, Num_users, Has_hist, seconds_to_days(Last)} of
-	{JC, 0, _, Last_days}
-	when (Last_days >= Last_allowed) and (JC /= true) ->
+    Last = case Just_created of
+	       true ->
+		   0;
+	       _ ->
+		   (erlang:system_time(microsecond)
+		    - Just_created) div 1000000
+	   end,
+    case {Num_users, seconds_to_days(Last)} of
+	{0, Last_days} when (Last_days >= Last_allowed) ->
 	    true;
 	_ ->
 	    false

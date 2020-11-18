@@ -2720,9 +2720,9 @@ add_message_to_history(FromNick, FromJID, Packet, StateData) ->
 	    Q1 = lqueue_in({FromNick, TSPacket, false,
 			    TimeStamp, Size},
 			   StateData#state.history),
-	    StateData#state{history = Q1};
+	    StateData#state{history = Q1, just_created = erlang:system_time(microsecond)};
 	_ ->
-	    StateData
+	    StateData#state{just_created = erlang:system_time(microsecond)}
     end.
 
 -spec send_history(jid(), [lqueue_elem()], state()) -> ok.
