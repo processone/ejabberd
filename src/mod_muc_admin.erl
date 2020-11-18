@@ -871,23 +871,22 @@ decide_rooms(Method, Rooms, Last_allowed) ->
     Decide = fun(R) -> decide_room(Method, R, Last_allowed) end,
     lists:filter(Decide, Rooms).
 
-decide_room(unused, {_Room_name, _Host, ServerHost, Room_pid}, Last_allowed) ->
+decide_room(unused, {_Room_name, _Host, _ServerHost, Room_pid}, Last_allowed) ->
     NodeStartTime = erlang:system_time(microsecond) -
 		    1000000*(erlang:monotonic_time(second)-ejabberd_config:get_node_start()),
-    {Persistent, Just_created, Num_users, History} =
+    {Just_created, Num_users, History} =
     case Room_pid of
 	Pid when is_pid(Pid) ->
-	    C = get_room_config(Room_pid),
 	    S = get_room_state(Room_pid),
-	    {C#config.persistent, S#state.just_created,
+	    {S#state.just_created,
 	     maps:size(S#state.users),
 	     (S#state.history)#lqueue.queue};
 	Opts ->
-	    case {lists:keyfind(persistent, 1, Opts), lists:keyfind(hibernation_time, 1, Opts)} of
-		{{_, V}, false} ->
-		    {V, NodeStartTime, 0, p1_queue:new()};
-		{{_, V}, {_, T}} ->
-		    {V, T, 0, p1_queue:new()}
+	    case lists:keyfind(hibernation_time, 1, Opts) of
+		false ->
+		    {NodeStartTime, 0, p1_queue:new()};
+		{_, T} ->
+		    {T, 0, p1_queue:new()}
 	    end
     end,
     Ts_now = calendar:universal_time(),
@@ -907,8 +906,8 @@ decide_room(unused, {_Room_name, _Host, ServerHost, Room_pid}, Last_allowed) ->
 				   - calendar:datetime_to_gregorian_seconds(Ts_last),
 			       {true, Ts_diff}
 		       end,
-    case {Persistent, Just_created, Num_users, Has_hist, seconds_to_days(Last)} of
-	{_true, JC, 0, _, Last_days}
+    case {Just_created, Num_users, Has_hist, seconds_to_days(Last)} of
+	{JC, 0, _, Last_days}
 	when (Last_days >= Last_allowed) and (JC /= true) ->
 	    true;
 	_ ->
