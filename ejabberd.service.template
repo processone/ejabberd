@@ -3,13 +3,12 @@ Description=XMPP Server
 After=network.target
 
 [Service]
-Type=forking
 User=ejabberd
 Group=ejabberd
 LimitNOFILE=65536
 Restart=on-failure
 RestartSec=5
-ExecStart=/bin/sh -c '@ctlscriptpath@/ejabberdctl start && @ctlscriptpath@/ejabberdctl started'
+ExecStart=@ctlscriptpath@/ejabberdctl foreground
 ExecStop=/bin/sh -c '@ctlscriptpath@/ejabberdctl stop && @ctlscriptpath@/ejabberdctl stopped'
 ExecReload=@ctlscriptpath@/ejabberdctl reload_config
 PrivateDevices=true
