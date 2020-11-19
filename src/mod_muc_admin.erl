@@ -932,13 +932,20 @@ act_on_rooms(Method, Action, Rooms) ->
 	     end,
     lists:foreach(Delete, Rooms).
 
-act_on_room(Method, destroy, {N, H, SH, Pid}) ->
+act_on_room(Method, destroy, {N, H, _SH, Pid}) ->
     Message = iolist_to_binary(io_lib:format(
         <<"Room destroyed by rooms_~s_destroy.">>, [Method])),
-    mod_muc_room:destroy(Pid, Message),
-    mod_muc:room_destroyed(H, N, Pid, SH),
-    mod_muc:forget_room(SH, H, N);
-
+    case Pid of
+	V when is_pid(V) ->
+	    mod_muc_room:destroy(Pid, Message);
+	_ ->
+	    case get_room_pid(N, H) of
+		Pid2 when is_pid(Pid2) ->
+		    mod_muc_room:destroy(Pid2, Message);
+		_ ->
+		    ok
+	    end
+    end;
 act_on_room(_Method, list, _) ->
     ok.
 
