@@ -755,7 +755,8 @@ push_members_to_user(LUser, LServer, Group, Host,
     GroupLabel = proplists:get_value(label, GroupOpts, Group), %++
     Members = get_group_users(Host, Group),
     lists:foreach(fun ({U, S}) ->
-			  push_roster_item(LUser, LServer, U, S, GroupLabel,
+			  N = get_rosteritem_name(U, S),
+			  push_roster_item(LUser, LServer, U, S, N, GroupLabel,
 					   Subscription)
 		  end,
 		  Members).
@@ -775,6 +776,7 @@ remove_user(User, Server) ->
 push_user_to_members(User, Server, Subscription) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
+    RosterName = get_rosteritem_name(LUser, LServer),
     GroupsOpts = groups_with_opts(LServer),
     SpecialGroups =
 	get_special_displayed_groups(GroupsOpts),
@@ -790,6 +792,7 @@ push_user_to_members(User, Server, Subscription) ->
 			  lists:foreach(fun ({U, S}) ->
 						push_roster_item(U, S, LUser,
 								 LServer,
+								 RosterName,
 								 GroupLabel,
 								 Subscription)
 					end,
@@ -806,13 +809,14 @@ push_user_to_displayed(LUser, LServer, Group, Host, Subscription, DisplayedToGro
 
 push_user_to_group(LUser, LServer, Group, Host,
 		   GroupLabel, Subscription) ->
+    RosterName = get_rosteritem_name(LUser, LServer),
     lists:foreach(fun ({U, S})
 			  when (U == LUser) and (S == LServer) ->
 			  ok;
 		      ({U, S}) ->
 			  case lists:member(S, ejabberd_option:hosts()) of
 			      true ->
-				  push_roster_item(U, S, LUser, LServer, GroupLabel,
+				  push_roster_item(U, S, LUser, LServer, RosterName, GroupLabel,
 						   Subscription);
 			      _ ->
 				  ok
@@ -836,12 +840,12 @@ push_item(User, Server, Item) ->
 			 Item#roster{subscription = none},
 			 Item).
 
-push_roster_item(User, Server, ContactU, ContactS,
+push_roster_item(User, Server, ContactU, ContactS, ContactN,
 		 GroupLabel, Subscription) ->
     Item = #roster{usj =
 		       {User, Server, {ContactU, ContactS, <<"">>}},
 		   us = {User, Server}, jid = {ContactU, ContactS, <<"">>},
-		   name = <<"">>, subscription = Subscription, ask = none,
+		   name = ContactN, subscription = Subscription, ask = none,
 		   groups = [GroupLabel]},
     push_item(User, Server, Item).
 
