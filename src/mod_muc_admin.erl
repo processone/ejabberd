@@ -874,12 +874,23 @@ decide_rooms(Method, Rooms, Last_allowed) ->
 decide_room(unused, {_Room_name, _Host, _ServerHost, Room_pid}, Last_allowed) ->
     NodeStartTime = erlang:system_time(microsecond) -
 		    1000000*(erlang:monotonic_time(second)-ejabberd_config:get_node_start()),
+    OnlyHibernated = case mod_muc_opt:hibernation_timeout(ServerHost) of
+	Value when Value < Last_allowed*24*60*60*1000 ->
+	    true;
+	_ ->
+	    false
+	end,
     {Just_created, Num_users} =
     case Room_pid of
+	Pid when is_pid(Pid) andalso OnlyHibernated ->
+	    {0, 0};
 	Pid when is_pid(Pid) ->
-	    S = get_room_state(Room_pid),
-	    {S#state.just_created,
-	     maps:size(S#state.users)};
+	    case mod_muc_room:get_state(Room_pid) of
+		#state{just_created = JD, users = U} ->
+		    {JD, maps:size(U)};
+		_ ->
+		    {0, 0}
+	    end;
 	Opts ->
 	    case lists:keyfind(hibernation_time, 1, Opts) of
 		false ->
