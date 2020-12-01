@@ -871,7 +871,7 @@ decide_rooms(Method, Rooms, Last_allowed) ->
     Decide = fun(R) -> decide_room(Method, R, Last_allowed) end,
     lists:filter(Decide, Rooms).
 
-decide_room(unused, {_Room_name, _Host, _ServerHost, Room_pid}, Last_allowed) ->
+decide_room(unused, {_Room_name, _Host, ServerHost, Room_pid}, Last_allowed) ->
     NodeStartTime = erlang:system_time(microsecond) -
 		    1000000*(erlang:monotonic_time(second)-ejabberd_config:get_node_start()),
     OnlyHibernated = case mod_muc_opt:hibernation_timeout(ServerHost) of
