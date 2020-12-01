@@ -1509,7 +1509,11 @@ send_stanza(FromString, ToString, Stanza) ->
 	To = jid:decode(ToString),
 	CodecOpts = ejabberd_config:codec_options(),
 	Pkt = xmpp:decode(El, ?NS_CLIENT, CodecOpts),
-	ejabberd_router:route(xmpp:set_from_to(Pkt, From, To))
+        Pkt2 = xmpp:set_from_to(Pkt, From, To),
+        State = #{jid => From},
+        ejabberd_hooks:run_fold(user_send_packet, From#jid.lserver,
+                                {Pkt2, State}, []),
+        ejabberd_router:route(Pkt2)
     catch _:{xmpp_codec, Why} ->
 	    io:format("incorrect stanza: ~ts~n", [xmpp:format_error(Why)]),
 	    {error, Why};
