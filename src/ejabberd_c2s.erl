@@ -373,7 +373,7 @@ unauthenticated_stream_features(#{lserver := LServer}) ->
 authenticated_stream_features(#{lserver := LServer}) ->
     ejabberd_hooks:run_fold(c2s_post_auth_features, LServer, [], [LServer]).
 
-sasl_mechanisms(Mechs, #{lserver := LServer} = State) ->
+sasl_mechanisms(Mechs, #{lserver := LServer, stream_encrypted := Encrypted} = State) ->
     Type = ejabberd_auth:store_type(LServer),
     Mechs1 = ejabberd_option:disable_sasl_mechanisms(LServer),
     %% I re-created it from cyrsasl ets magic, but I think it's wrong
@@ -383,6 +383,11 @@ sasl_mechanisms(Mechs, #{lserver := LServer} = State) ->
 	      ejabberd_auth_anonymous:is_sasl_anonymous_enabled(LServer);
 	 (<<"DIGEST-MD5">>) -> Type == plain;
 	 (<<"SCRAM-SHA-1">>) -> Type /= external;
+	 (<<"SCRAM-SHA-1-PLUS">>) -> Type /= external andalso Encrypted;
+	 (<<"SCRAM-SHA-256">>) -> Type == plain;
+	 (<<"SCRAM-SHA-256-PLUS">>) -> Type == plain andalso Encrypted;
+	 (<<"SCRAM-SHA-512">>) -> Type == plain;
+	 (<<"SCRAM-SHA-512-PLUS">>) -> Type == plain andalso Encrypted;
 	 (<<"PLAIN">>) -> true;
 	 (<<"X-OAUTH2">>) -> [ejabberd_auth_anonymous] /= ejabberd_auth:auth_modules(LServer);
 	 (<<"EXTERNAL">>) -> maps:get(tls_verify, State, false);
