@@ -1034,7 +1034,7 @@ mysql_to_odbc({error, MySQLRes})
   when is_list(MySQLRes) ->
     {error, list_to_binary(MySQLRes)};
 mysql_to_odbc({error, MySQLRes}) ->
-    {error, p1_mysql:get_result_reason(MySQLRes)};
+    mysql_to_odbc({error, p1_mysql:get_result_reason(MySQLRes)});
 mysql_to_odbc(ok) ->
     ok.
 
