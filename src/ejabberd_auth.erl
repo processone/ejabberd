@@ -754,8 +754,8 @@ is_password_scram_valid(Password, Scram) ->
 	_ ->
 	    IterationCount = Scram#scram.iterationcount,
 	    Salt = base64:decode(Scram#scram.salt),
-	    SaltedPassword = scram:salted_password(Password, Salt, IterationCount),
-	    StoredKey =	scram:stored_key(scram:client_key(SaltedPassword)),
+	    SaltedPassword = scram:salted_password(sha, Password, Salt, IterationCount),
+	    StoredKey =	scram:stored_key(sha, scram:client_key(sha, SaltedPassword)),
 	    base64:decode(Scram#scram.storedkey) == StoredKey
     end.
 
@@ -766,9 +766,9 @@ password_to_scram(#scram{} = Password, _IterationCount) ->
     Password;
 password_to_scram(Password, IterationCount) ->
     Salt = p1_rand:bytes(?SALT_LENGTH),
-    SaltedPassword = scram:salted_password(Password, Salt, IterationCount),
-    StoredKey = scram:stored_key(scram:client_key(SaltedPassword)),
-    ServerKey = scram:server_key(SaltedPassword),
+    SaltedPassword = scram:salted_password(sha, Password, Salt, IterationCount),
+    StoredKey = scram:stored_key(sha, scram:client_key(sha, SaltedPassword)),
+    ServerKey = scram:server_key(sha, SaltedPassword),
     #scram{storedkey = base64:encode(StoredKey),
 	   serverkey = base64:encode(ServerKey),
 	   salt = base64:encode(Salt),
