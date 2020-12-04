@@ -1234,9 +1234,14 @@ set_room_affiliation(Name, Service, JID, AffiliationString) ->
     case get_room_pid(Name, Service) of
 	Pid when is_pid(Pid) ->
 	    %% Get the PID for the online room so we can get the state of the room
-	    {ok, StateData} = mod_muc_room:change_item(Pid, jid:decode(JID), affiliation, Affiliation, <<"">>),
-	    mod_muc:store_room(StateData#state.server_host, StateData#state.host, StateData#state.room, make_opts(StateData)),
-	    ok;
+	    case mod_muc_room:change_item(Pid, jid:decode(JID), affiliation, Affiliation, <<"">>) of
+		{ok, _} ->
+		    ok;
+		{error, not_found} ->
+		    throw({error, "Room doesn't exists"});
+		{error, _} ->
+		    throw({error, "Unable to perform change"})
+	    end;
 	room_not_found ->
 	    throw({error, "Room doesn't exists"});
 	invalid_service ->
@@ -1310,52 +1315,6 @@ get_subscribers(Name, Host) ->
 	_ ->
 	    throw({error, "The room does not exist"})
     end.
-
-%% Copied from mod_muc_room.erl
-get_config_opt_name(Pos) ->
-    Fs = [config|record_info(fields, config)],
-    lists:nth(Pos, Fs).
--define(MAKE_CONFIG_OPT(Opt),
-        {get_config_opt_name(Opt), element(Opt, Config)}).
-make_opts(StateData) ->
-    Config = StateData#state.config,
-    Subscribers = maps:fold(
-                    fun(_LJID, Sub, Acc) ->
-                            [{Sub#subscriber.jid,
-                              Sub#subscriber.nick,
-                              Sub#subscriber.nodes}|Acc]
-                    end, [], StateData#state.subscribers),
-    [?MAKE_CONFIG_OPT(#config.title), ?MAKE_CONFIG_OPT(#config.description),
-     ?MAKE_CONFIG_OPT(#config.allow_change_subj),
-     ?MAKE_CONFIG_OPT(#config.allow_query_users),
-     ?MAKE_CONFIG_OPT(#config.allow_private_messages),
-     ?MAKE_CONFIG_OPT(#config.allow_private_messages_from_visitors),
-     ?MAKE_CONFIG_OPT(#config.allow_visitor_status),
-     ?MAKE_CONFIG_OPT(#config.allow_visitor_nickchange),
-     ?MAKE_CONFIG_OPT(#config.public), ?MAKE_CONFIG_OPT(#config.public_list),
-     ?MAKE_CONFIG_OPT(#config.persistent),
-     ?MAKE_CONFIG_OPT(#config.moderated),
-     ?MAKE_CONFIG_OPT(#config.members_by_default),
-     ?MAKE_CONFIG_OPT(#config.members_only),
-     ?MAKE_CONFIG_OPT(#config.allow_user_invites),
-     ?MAKE_CONFIG_OPT(#config.password_protected),
-     ?MAKE_CONFIG_OPT(#config.captcha_protected),
-     ?MAKE_CONFIG_OPT(#config.password), ?MAKE_CONFIG_OPT(#config.anonymous),
-     ?MAKE_CONFIG_OPT(#config.logging), ?MAKE_CONFIG_OPT(#config.max_users),
-     ?MAKE_CONFIG_OPT(#config.allow_voice_requests),
-     ?MAKE_CONFIG_OPT(#config.allow_subscription),
-     ?MAKE_CONFIG_OPT(#config.mam),
-     ?MAKE_CONFIG_OPT(#config.presence_broadcast),
-     ?MAKE_CONFIG_OPT(#config.voice_request_min_interval),
-     ?MAKE_CONFIG_OPT(#config.vcard),
-     {captcha_whitelist,
-      (?SETS):to_list((StateData#state.config)#config.captcha_whitelist)},
-     {affiliations,
-      maps:to_list(StateData#state.affiliations)},
-     {subject, StateData#state.subject},
-     {subject_author, StateData#state.subject_author},
-     {subscribers, Subscribers}].
-
 
 %%----------------------------
 %% Utils

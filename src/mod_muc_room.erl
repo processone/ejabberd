@@ -712,6 +712,7 @@ handle_sync_event({process_item_change, Item, UJID}, _From, StateName, StateData
 	{error, _} = Err ->
 	    {reply, Err, StateName, StateData};
 	NSD ->
+	    store_room(NSD),
 	    {reply, {ok, NSD}, StateName, NSD}
     end;
 handle_sync_event(get_subscribers, _From, StateName, StateData) ->
