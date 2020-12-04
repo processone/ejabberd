@@ -559,6 +559,11 @@ make_sql_upsert(Table, ParseRes, Pos) ->
          [make_sql_upsert_pgsql901(Table, ParseRes),
           erl_syntax:atom(ok)]),
        erl_syntax:clause(
+           [erl_syntax:atom(mysql), erl_syntax:underscore()],
+           [],
+           [make_sql_upsert_mysql(Table, ParseRes),
+            erl_syntax:atom(ok)]),
+       erl_syntax:clause(
          [erl_syntax:underscore(), erl_syntax:underscore()],
          none,
          [make_sql_upsert_generic(Table, ParseRes)])
@@ -628,6 +633,9 @@ make_sql_upsert_update(Table, ParseRes) ->
     State.
 
 make_sql_upsert_insert(Table, ParseRes) ->
+    make_sql_upsert_insert_replace(Table, ParseRes, "INSERT").
+
+make_sql_upsert_insert_replace(Table, ParseRes, Keyword) ->
     Vals =
         lists:map(
           fun({_Field, _, ST}) ->
@@ -640,13 +648,23 @@ make_sql_upsert_insert(Table, ParseRes) ->
           end, ParseRes),
     State =
         concat_states(
-          [#state{'query' = [{str, "INSERT INTO "}, {str, Table}, {str, "("}]},
+          [#state{'query' = [{str, Keyword ++" INTO "}, {str, Table}, {str, "("}]},
            join_states(Fields, ", "),
            #state{'query' = [{str, ") VALUES ("}]},
            join_states(Vals, ", "),
            #state{'query' = [{str, ");"}]}
           ]),
     State.
+
+make_sql_upsert_replace(Table, ParseRes) ->
+    make_sql_upsert_insert_replace(Table, ParseRes, "REPLACE").
+
+make_sql_upsert_mysql(Table, ParseRes) ->
+    Replace = make_sql_query(make_sql_upsert_replace(Table, ParseRes)),
+    erl_syntax:application(
+        erl_syntax:atom(ejabberd_sql),
+        erl_syntax:atom(sql_query_t),
+        [Replace]).
 
 make_sql_upsert_pgsql901(Table, ParseRes0) ->
     ParseRes = lists:map(
