@@ -710,15 +710,22 @@ muc_create_room(ServerHost, {Name, Host, _}, DefRoomOpts) ->
 %% @doc Destroy the room immediately.
 %% If the room has participants, they are not notified that the room was destroyed;
 %% they will notice when they try to chat and receive an error that the room doesn't exist.
-destroy_room(Name, Service) ->
-    case get_room_pid(Name, Service) of
-	room_not_found ->
-	    throw({error, "Room doesn't exists"});
-	invalid_service ->
+destroy_room(Name1, Service1) ->
+    case {jid:nodeprep(Name1), jid:nodeprep(Service1)} of
+	{error, _} ->
+	    throw({error, "Invalid 'name'"});
+	{_, error} ->
 	    throw({error, "Invalid 'service'"});
-	Pid ->
-	    mod_muc_room:destroy(Pid),
-	    ok
+	{Name, Service} ->
+	    case get_room_pid(Name, Service) of
+		room_not_found ->
+		    throw({error, "Room doesn't exists"});
+		invalid_service ->
+		    throw({error, "Invalid 'service'"});
+		Pid ->
+		    mod_muc_room:destroy(Pid),
+		    ok
+	    end
     end.
 
 destroy_room({N, H, SH}) ->
