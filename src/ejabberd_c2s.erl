@@ -376,18 +376,23 @@ authenticated_stream_features(#{lserver := LServer}) ->
 sasl_mechanisms(Mechs, #{lserver := LServer, stream_encrypted := Encrypted} = State) ->
     Type = ejabberd_auth:store_type(LServer),
     Mechs1 = ejabberd_option:disable_sasl_mechanisms(LServer),
+
+    ScramHash = ejabberd_option:auth_scram_hash(LServer),
+    ShaAv = Type == plain orelse (Type == scram andalso ScramHash == sha),
+    Sha256Av = Type == plain orelse (Type == scram andalso ScramHash == sha256),
+    Sha512Av = Type == plain orelse (Type == scram andalso ScramHash == sha512),
     %% I re-created it from cyrsasl ets magic, but I think it's wrong
     %% TODO: need to check before 18.09 release
     lists:filter(
       fun(<<"ANONYMOUS">>) ->
 	      ejabberd_auth_anonymous:is_sasl_anonymous_enabled(LServer);
 	 (<<"DIGEST-MD5">>) -> Type == plain;
-	 (<<"SCRAM-SHA-1">>) -> Type /= external;
-	 (<<"SCRAM-SHA-1-PLUS">>) -> Type /= external andalso Encrypted;
-	 (<<"SCRAM-SHA-256">>) -> Type == plain;
-	 (<<"SCRAM-SHA-256-PLUS">>) -> Type == plain andalso Encrypted;
-	 (<<"SCRAM-SHA-512">>) -> Type == plain;
-	 (<<"SCRAM-SHA-512-PLUS">>) -> Type == plain andalso Encrypted;
+	 (<<"SCRAM-SHA-1">>) -> ShaAv;
+	 (<<"SCRAM-SHA-1-PLUS">>) -> ShaAv andalso Encrypted;
+	 (<<"SCRAM-SHA-256">>) -> Sha256Av;
+	 (<<"SCRAM-SHA-256-PLUS">>) -> Sha256Av andalso Encrypted;
+	 (<<"SCRAM-SHA-512">>) -> Sha512Av;
+	 (<<"SCRAM-SHA-512-PLUS">>) -> Sha512Av andalso Encrypted;
 	 (<<"PLAIN">>) -> true;
 	 (<<"X-OAUTH2">>) -> [ejabberd_auth_anonymous] /= ejabberd_auth:auth_modules(LServer);
 	 (<<"EXTERNAL">>) -> maps:get(tls_verify, State, false);

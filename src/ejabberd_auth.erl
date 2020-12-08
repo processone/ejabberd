@@ -33,7 +33,7 @@
 	 set_password/3, check_password/4,
 	 check_password/6, check_password_with_authmodule/4,
 	 check_password_with_authmodule/6, try_register/3,
-	 get_users/0, get_users/1, password_to_scram/1,
+	 get_users/0, get_users/1, password_to_scram/2,
 	 get_users/2, import_info/0,
 	 count_users/1, import/5, import_start/2,
 	 count_users/2, get_password/2,
@@ -554,7 +554,7 @@ db_try_register(User, Server, Password, Mod) ->
     case erlang:function_exported(Mod, try_register, 3) of
 	true ->
 	    Password1 = case Mod:store_type(Server) of
-			    scram -> password_to_scram(Password);
+			    scram -> password_to_scram(Server, Password);
 			    _ -> Password
 			end,
 	    Ret = case use_cache(Mod, Server) of
@@ -579,7 +579,7 @@ db_set_password(User, Server, Password, Mod) ->
     case erlang:function_exported(Mod, set_password, 3) of
 	true ->
 	    Password1 = case Mod:store_type(Server) of
-			    scram -> password_to_scram(Password);
+			    scram -> password_to_scram(Server, Password);
 			    _ -> Password
 			end,
 	    Ret = case use_cache(Mod, Server) of
@@ -753,25 +753,28 @@ is_password_scram_valid(Password, Scram) ->
 	    false;
 	_ ->
 	    IterationCount = Scram#scram.iterationcount,
+	    Hash = Scram#scram.hash,
 	    Salt = base64:decode(Scram#scram.salt),
-	    SaltedPassword = scram:salted_password(sha, Password, Salt, IterationCount),
-	    StoredKey =	scram:stored_key(sha, scram:client_key(sha, SaltedPassword)),
+	    SaltedPassword = scram:salted_password(Hash, Password, Salt, IterationCount),
+	    StoredKey =	scram:stored_key(Hash, scram:client_key(Hash, SaltedPassword)),
 	    base64:decode(Scram#scram.storedkey) == StoredKey
     end.
 
-password_to_scram(Password) ->
-    password_to_scram(Password, ?SCRAM_DEFAULT_ITERATION_COUNT).
+password_to_scram(Host, Password) ->
+    password_to_scram(Host, Password, ?SCRAM_DEFAULT_ITERATION_COUNT).
 
-password_to_scram(#scram{} = Password, _IterationCount) ->
+password_to_scram(_Host, #scram{} = Password, _IterationCount) ->
     Password;
-password_to_scram(Password, IterationCount) ->
+password_to_scram(Host, Password, IterationCount) ->
+    Hash = ejabberd_option:auth_scram_hash(Host),
     Salt = p1_rand:bytes(?SALT_LENGTH),
-    SaltedPassword = scram:salted_password(sha, Password, Salt, IterationCount),
-    StoredKey = scram:stored_key(sha, scram:client_key(sha, SaltedPassword)),
-    ServerKey = scram:server_key(sha, SaltedPassword),
+    SaltedPassword = scram:salted_password(Hash, Password, Salt, IterationCount),
+    StoredKey = scram:stored_key(Hash, scram:client_key(Hash, SaltedPassword)),
+    ServerKey = scram:server_key(Hash, SaltedPassword),
     #scram{storedkey = base64:encode(StoredKey),
 	   serverkey = base64:encode(ServerKey),
 	   salt = base64:encode(Salt),
+	   hash = Hash,
 	   iterationcount = IterationCount}.
 
 %%%----------------------------------------------------------------------
@@ -938,7 +941,7 @@ convert_to_scram(Server) ->
 		fun({U, S}) ->
 		    case get_password(U, S) of
 			Pass when is_binary(Pass) ->
-			    SPass = password_to_scram(Pass),
+			    SPass = password_to_scram(Server, Pass),
 			    set_password(U, S, SPass);
 			_ ->
 			    ok

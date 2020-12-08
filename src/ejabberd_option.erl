@@ -17,6 +17,7 @@
 -export([auth_method/0, auth_method/1]).
 -export([auth_opts/0, auth_opts/1]).
 -export([auth_password_format/0, auth_password_format/1]).
+-export([auth_scram_hash/0, auth_scram_hash/1]).
 -export([auth_use_cache/0, auth_use_cache/1]).
 -export([c2s_cafile/0, c2s_cafile/1]).
 -export([c2s_ciphers/0, c2s_ciphers/1]).
@@ -90,9 +91,9 @@
 -export([oom_killer/0]).
 -export([oom_queue/0]).
 -export([oom_watermark/0]).
+-export([outgoing_s2s_families/0, outgoing_s2s_families/1]).
 -export([outgoing_s2s_ipv4_address/0, outgoing_s2s_ipv4_address/1]).
 -export([outgoing_s2s_ipv6_address/0, outgoing_s2s_ipv6_address/1]).
--export([outgoing_s2s_families/0, outgoing_s2s_families/1]).
 -export([outgoing_s2s_port/0, outgoing_s2s_port/1]).
 -export([outgoing_s2s_timeout/0, outgoing_s2s_timeout/1]).
 -export([pam_service/0, pam_service/1]).
@@ -138,8 +139,8 @@
 -export([sql_connect_timeout/0, sql_connect_timeout/1]).
 -export([sql_database/0, sql_database/1]).
 -export([sql_keepalive_interval/0, sql_keepalive_interval/1]).
--export([sql_password/0, sql_password/1]).
 -export([sql_odbc_driver/0, sql_odbc_driver/1]).
+-export([sql_password/0, sql_password/1]).
 -export([sql_pool_size/0, sql_pool_size/1]).
 -export([sql_port/0, sql_port/1]).
 -export([sql_prepared_statements/0, sql_prepared_statements/1]).
@@ -237,6 +238,13 @@ auth_password_format() ->
 -spec auth_password_format(global | binary()) -> 'plain' | 'scram'.
 auth_password_format(Host) ->
     ejabberd_config:get_option({auth_password_format, Host}).
+
+-spec auth_scram_hash() -> 'sha' | 'sha256' | 'sha512'.
+auth_scram_hash() ->
+    auth_scram_hash(global).
+-spec auth_scram_hash(global | binary()) -> 'sha' | 'sha256' | 'sha512'.
+auth_scram_hash(Host) ->
+    ejabberd_config:get_option({auth_scram_hash, Host}).
 
 -spec auth_use_cache() -> boolean().
 auth_use_cache() ->
@@ -669,17 +677,17 @@ outgoing_s2s_families() ->
 outgoing_s2s_families(Host) ->
     ejabberd_config:get_option({outgoing_s2s_families, Host}).
 
--spec outgoing_s2s_ipv4_address() -> inet:ip4_address().
+-spec outgoing_s2s_ipv4_address() -> 'undefined' | inet:ip4_address().
 outgoing_s2s_ipv4_address() ->
     outgoing_s2s_ipv4_address(global).
--spec outgoing_s2s_ipv4_address(global | binary()) -> inet:ip4_address().
+-spec outgoing_s2s_ipv4_address(global | binary()) -> 'undefined' | inet:ip4_address().
 outgoing_s2s_ipv4_address(Host) ->
     ejabberd_config:get_option({outgoing_s2s_ipv4_address, Host}).
 
--spec outgoing_s2s_ipv6_address() -> inet:ip6_address().
+-spec outgoing_s2s_ipv6_address() -> 'undefined' | inet:ip6_address().
 outgoing_s2s_ipv6_address() ->
     outgoing_s2s_ipv6_address(global).
--spec outgoing_s2s_ipv6_address(global | binary()) -> inet:ip6_address().
+-spec outgoing_s2s_ipv6_address(global | binary()) -> 'undefined' | inet:ip6_address().
 outgoing_s2s_ipv6_address(Host) ->
     ejabberd_config:get_option({outgoing_s2s_ipv6_address, Host}).
 
@@ -938,19 +946,19 @@ sql_keepalive_interval() ->
 sql_keepalive_interval(Host) ->
     ejabberd_config:get_option({sql_keepalive_interval, Host}).
 
--spec sql_password() -> binary().
-sql_password() ->
-    sql_password(global).
--spec sql_password(global | binary()) -> binary().
-sql_password(Host) ->
-    ejabberd_config:get_option({sql_password, Host}).
-
 -spec sql_odbc_driver() -> binary().
 sql_odbc_driver() ->
     sql_odbc_driver(global).
 -spec sql_odbc_driver(global | binary()) -> binary().
 sql_odbc_driver(Host) ->
     ejabberd_config:get_option({sql_odbc_driver, Host}).
+
+-spec sql_password() -> binary().
+sql_password() ->
+    sql_password(global).
+-spec sql_password(global | binary()) -> binary().
+sql_password(Host) ->
+    ejabberd_config:get_option({sql_password, Host}).
 
 -spec sql_pool_size() -> pos_integer().
 sql_pool_size() ->

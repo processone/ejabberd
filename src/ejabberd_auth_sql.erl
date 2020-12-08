@@ -56,16 +56,19 @@ store_type(Server) ->
     ejabberd_auth:password_format(Server).
 
 set_password(User, Server, Password) ->
-    F = fun() ->
-		if is_record(Password, scram) ->
-			set_password_scram_t(
-			  User, Server,
-			  Password#scram.storedkey, Password#scram.serverkey,
-			  Password#scram.salt, Password#scram.iterationcount);
-		   true ->
-			set_password_t(User, Server, Password)
-		end
-	end,
+    F =
+    fun() ->
+	case Password of
+	    #scram{hash = Hash, storedkey = SK, serverkey = SEK,
+		   salt = Salt, iterationcount = IC} ->
+		SK2 = scram_hash_encode(Hash, SK),
+		set_password_scram_t(
+		    User, Server,
+		    SK2, SEK, Salt, IC);
+	    _ ->
+		set_password_t(User, Server, Password)
+	end
+    end,
     case ejabberd_sql:sql_transaction(Server, F) of
 	{atomic, _} ->
 	    {cache, {ok, Password}};
@@ -74,14 +77,17 @@ set_password(User, Server, Password) ->
     end.
 
 try_register(User, Server, Password) ->
-    Res = if is_record(Password, scram) ->
-		  add_user_scram(
-		    Server, User,
-		    Password#scram.storedkey, Password#scram.serverkey,
-		    Password#scram.salt, Password#scram.iterationcount);
-	     true ->
-		  add_user(Server, User, Password)
-	  end,
+    Res =
+    case Password of
+	#scram{hash = Hash, storedkey = SK, serverkey = SEK,
+	       salt = Salt, iterationcount = IC} ->
+	    SK2 = scram_hash_encode(Hash, SK),
+	    add_user_scram(
+		Server, User,
+		SK2, SEK, Salt, IC);
+	_ ->
+	    add_user(Server, User, Password)
+    end,
     case Res of
 	{updated, 1} -> {cache, {ok, Password}};
 	_ -> {nocache, {error, exists}}
@@ -106,9 +112,15 @@ get_password(User, Server) ->
 	{selected, [{Password, <<>>, <<>>, 0}]} ->
 	    {cache, {ok, Password}};
 	{selected, [{StoredKey, ServerKey, Salt, IterationCount}]} ->
-	    {cache, {ok, #scram{storedkey = StoredKey,
+	    {Hash, SK} = case StoredKey of
+			     <<"sha256:", Rest/binary>> -> {sha256, Rest};
+			     <<"sha512:", Rest/binary>> -> {sha512, Rest};
+			     Other -> {sha, Other}
+			 end,
+	    {cache, {ok, #scram{storedkey = SK,
 				serverkey = ServerKey,
 				salt = Salt,
+				hash = Hash,
 				iterationcount = IterationCount}}};
 	{selected, []} ->
 	    {cache, error};
@@ -125,6 +137,13 @@ remove_user(User, Server) ->
     end.
 
 -define(BATCH_SIZE, 1000).
+
+scram_hash_encode(Hash, StoreKey) ->
+    case Hash of
+	sha -> StoreKey;
+	sha256 -> <<"sha256:", StoreKey/binary>>;
+	sha512 -> <<"sha512:", StoreKey/binary>>
+    end.
 
 set_password_scram_t(LUser, LServer,
                      StoredKey, ServerKey, Salt, IterationCount) ->
@@ -282,7 +301,7 @@ export(_Server) ->
                    "password=%(Password)s"])];
          (Host, #passwd{us = {LUser, LServer}, password = #scram{} = Scram})
             when LServer == Host ->
-              StoredKey = Scram#scram.storedkey,
+	      StoredKey = scram_hash_encode(Scram#scram.hash, Scram#scram.storedkey),
               ServerKey = Scram#scram.serverkey,
               Salt = Scram#scram.salt,
               IterationCount = Scram#scram.iterationcount,

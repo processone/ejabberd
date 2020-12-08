@@ -181,21 +181,32 @@ export_user(User, Server, Fd) ->
                                 {<<"password">>, Pass}],
                        children = Els})).
 
-format_scram_password(#scram{storedkey = StoredKey, serverkey = ServerKey,
+format_scram_password(#scram{hash = Hash, storedkey = StoredKey, serverkey = ServerKey,
 			     salt = Salt, iterationcount = IterationCount}) ->
   StoredKeyB64 = base64:encode(StoredKey),
   ServerKeyB64 = base64:encode(ServerKey),
   SaltB64 = base64:encode(Salt),
   IterationCountBin = (integer_to_binary(IterationCount)),
-  <<"scram:", StoredKeyB64/binary, ",", ServerKeyB64/binary, ",", SaltB64/binary, ",", IterationCountBin/binary>>.
+  Hash2 = case Hash of
+              sha -> <<>>;
+              sha256 -> <<"sha256,">>;
+              sha512 -> <<"sha512,">>
+          end,
+  <<"scram:", Hash2/binary, StoredKeyB64/binary, ",", ServerKeyB64/binary, ",", SaltB64/binary, ",", IterationCountBin/binary>>.
 
 parse_scram_password(PassData) ->
   Split = binary:split(PassData, <<",">>, [global]),
-  [StoredKeyB64, ServerKeyB64, SaltB64, IterationCountBin] = Split,
+  [Hash, StoredKeyB64, ServerKeyB64, SaltB64, IterationCountBin] =
+  case Split of
+      [K1, K2, K3, K4] -> [sha, K1, K2, K3, K4];
+      [<<"sha256">>, K1, K2, K3, K4] -> [sha256, K1, K2, K3, K4];
+      [<<"sha512">>, K1, K2, K3, K4] -> [sha512, K1, K2, K3, K4]
+  end,
   #scram{
     storedkey = base64:decode(StoredKeyB64),
     serverkey = base64:decode(ServerKeyB64),
     salt      = base64:decode(SaltB64),
+    hash      = Hash,
     iterationcount = (binary_to_integer(IterationCountBin))
   }.
 

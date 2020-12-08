@@ -255,7 +255,7 @@ transform(#passwd{us = {U, S}, password = Password} = P)
 			       [U, S]),
 		    P;
 		_ ->
-		    Scram = ejabberd_auth:password_to_scram(Password),
+		    Scram = ejabberd_auth:password_to_scram(global, Password),
 		    P#passwd{password = Scram}
 	    end;
 	plain ->
