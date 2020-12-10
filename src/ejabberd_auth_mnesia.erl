@@ -277,8 +277,9 @@ transform(#passwd{us = {U, S}, password = Password} = P)
 	plain ->
 	    P
     end;
-transform(#passwd{password = Password} = P)
-  when is_record(Password, scram) ->
+transform(#passwd{password = {scram, _, _, _, _}} = P) ->
+    P;
+transform(#passwd{password = #scram{}} = P) ->
     P.
 
 import(LServer, [LUser, Password, _TimeStamp]) ->
