@@ -2144,11 +2144,11 @@ add_new_user(From, Nick, Packet, StateData) ->
 	mod_muc_opt:max_user_conferences(StateData#state.server_host),
     Collision = nick_collision(From, Nick, StateData),
     IsSubscribeRequest = not is_record(Packet, presence),
-    case {(ServiceAffiliation == owner orelse
-	     ((Affiliation == admin orelse Affiliation == owner)
+    case {ServiceAffiliation == owner orelse
+	     ((((Affiliation == admin orelse Affiliation == owner)
 	       andalso NUsers < MaxAdminUsers)
 	       orelse NUsers < MaxUsers)
-	    andalso NConferences < MaxConferences,
+	    andalso NConferences < MaxConferences),
 	  Collision,
 	  mod_muc:can_use_nick(StateData#state.server_host,
 			       StateData#state.host, From, Nick),
