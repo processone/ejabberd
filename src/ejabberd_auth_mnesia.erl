@@ -207,7 +207,8 @@ remove_user(User, Server) ->
 need_transform(#reg_users_counter{}) ->
     false;
 need_transform({passwd, {U, S}, Pass}) ->
-    if is_binary(Pass) ->
+    case Pass of
+	_ when is_binary(Pass) ->
 	    case store_type(S) of
 		scram ->
 		    ?INFO_MSG("Passwords in Mnesia table 'passwd' "
@@ -216,7 +217,7 @@ need_transform({passwd, {U, S}, Pass}) ->
 		plain ->
 		    false
 	    end;
-       is_record(Pass, scram) ->
+	{scram, _, _, _, _} ->
 	    case store_type(S) of
 		scram ->
 		    false;
@@ -228,7 +229,19 @@ need_transform({passwd, {U, S}, Pass}) ->
 				 "would *fail*", []),
 		    false
 	    end;
-       is_list(U) orelse is_list(S) orelse is_list(Pass) ->
+	#scram{} ->
+	    case store_type(S) of
+		scram ->
+		    false;
+		plain ->
+		    ?WARNING_MSG("Some passwords were stored in the database "
+				 "as SCRAM, but 'auth_password_format' "
+				 "is not configured as 'scram': some "
+				 "authentication mechanisms such as DIGEST-MD5 "
+				 "would *fail*", []),
+		    false
+	    end;
+	_ when is_list(U) orelse is_list(S) orelse is_list(Pass) ->
 	    ?INFO_MSG("Mnesia table 'passwd' will be converted to binary", []),
 	    true
     end.
@@ -258,7 +271,7 @@ transform(#passwd{us = {U, S}, password = Password} = P)
 			       [U, S]),
 		    P;
 		_ ->
-		    Scram = ejabberd_auth:password_to_scram(global, Password),
+		    Scram = ejabberd_auth:password_to_scram(S, Password),
 		    P#passwd{password = Scram}
 	    end;
 	plain ->
