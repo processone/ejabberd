@@ -102,10 +102,11 @@ check_jwt_token(User, Server, Token) ->
                                 error ->
                                     false;
                                 {ok, SJID} ->
-                                    try
-                                        JID = jid:decode(SJID),
-                                        (JID#jid.luser == User) andalso
-                                        (JID#jid.lserver == Server)
+                                    try jid:decode(SJID) of
+                                        JID ->
+                                            (JID#jid.luser == User) andalso
+                                            (JID#jid.lserver == Server) andalso
+                                            ejabberd_hooks:run_fold(check_decoded_jwt, Server, true, [Fields, Signature, User])
                                     catch error:{bad_jid, _} ->
                                             false
                                     end
