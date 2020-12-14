@@ -893,7 +893,7 @@ decide_room(unused, {_Room_name, _Host, ServerHost, Room_pid}, Last_allowed) ->
 	    {0, 0};
 	Pid when is_pid(Pid) ->
 	    case mod_muc_room:get_state(Room_pid) of
-		#state{just_created = JD, users = U} ->
+		{ok, #state{just_created = JD, users = U}} ->
 		    {JD, maps:size(U)};
 		_ ->
 		    {0, 0}
