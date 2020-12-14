@@ -197,16 +197,21 @@ plain_password_required(Server) ->
 
 -spec store_type(binary()) -> plain | scram | external.
 store_type(Server) ->
-    lists:foldl(
-      fun(_, external) -> external;
-	 (M, scram) ->
-	      case M:store_type(Server) of
-		  external -> external;
-		  _ -> scram
-	      end;
-	 (M, plain) ->
-	      M:store_type(Server)
-      end, plain, auth_modules(Server)).
+    case auth_modules(Server) of
+	[ejabberd_auth_anonymous] -> external;
+	Modules ->
+	    lists:foldl(
+		fun(ejabberd_auth_anonymous, Type) -> Type;
+		   (_, external) -> external;
+		   (M, scram) ->
+		       case M:store_type(Server) of
+			   external -> external;
+			   _ -> scram
+		       end;
+		   (M, plain) ->
+		       M:store_type(Server)
+		end, plain, Modules)
+    end.
 
 -spec check_password(binary(), binary(), binary(), binary()) -> boolean().
 check_password(User, AuthzId, Server, Password) ->
