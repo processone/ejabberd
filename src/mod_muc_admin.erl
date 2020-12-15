@@ -890,13 +890,13 @@ decide_room(unused, {_Room_name, _Host, ServerHost, Room_pid}, Last_allowed) ->
     {Just_created, Num_users} =
     case Room_pid of
 	Pid when is_pid(Pid) andalso OnlyHibernated ->
-	    {0, 0};
+	    {erlang:system_time(microsecond), 0};
 	Pid when is_pid(Pid) ->
 	    case mod_muc_room:get_state(Room_pid) of
-		{ok, #state{just_created = JD, users = U}} ->
-		    {JD, maps:size(U)};
+		{ok, #state{just_created = JC, users = U}} ->
+		    {JC, maps:size(U)};
 		_ ->
-		    {0, 0}
+		    {erlang:system_time(microsecond), 0}
 	    end;
 	Opts ->
 	    case lists:keyfind(hibernation_time, 1, Opts) of
