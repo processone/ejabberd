@@ -1,3 +1,38 @@
+# Version 20.12
+
+- Add support for `SCRAM-SHA-{256,512}-{PLUS}` authentication
+- Don't use same value in cache for user don't exist and wrong password
+- outgoing_s2s_ipv*_address: New options to set ipv4/ipv6 outbound s2s out interface
+- s2s_send_packet: this hook now filters outgoing s2s stanzas
+- start_room: new hook runs when a room process is started
+- check_decoded_jwt: new hook to check decoded JWT after success authentication
+
+* Admin
+- Docker: Fix DB initialization
+- New sql_odbc_driver option: choose the mssql ODBC driver
+- Rebar3: Fully supported. Enable with ./configure --with-rebar=/path/to/rebar3
+- systemd: start ejabberd in foreground
+
+* Modules:
+- MAM: Make sure that jid used as base in mam xml_compress is bare
+- MAM: Support for MAM Flipped Pages
+- MUC: Always show MucSub subscribers nicks
+- MUC: Don't forget not-persistent rooms in load_permanent_rooms
+- MUC Admin: Better error reporting
+- MUC Admin: Fix commands with hibernated rooms
+- MUC Admin: Many improvements in rooms_unused_list/destroy
+- MUC Admin: create_room_with_opts Store options only if room starts
+- Pubsub: Remove 'dag' node plugin documentation
+- Push: Fix API call return type on error
+- Push: Support cache config changes on reload
+- Register: Allow for account-removal-only setup again
+- Roster: Make roster subscriptions work better with invalid roster state in db
+- Vcard: Fix vCard search by User when using Mnesia
+- WebAdmin: Allow vhost admins to view WebAdmin menus
+- WebAdmin: Don't do double utf-8 conversion on translated strings
+- WebAdmin: Mark dangerous buttons with CSS
+- WebSocket: Make websocket send put back pressure on c2s process
+
 # Version 20.07
 
 * Changes in this version
