@@ -378,6 +378,13 @@ doc() ->
                "value is configured it cannot be changed to plain anymore. "
                "This format allows clients to authenticate using: "
                "SASL PLAIN and SASL SCRAM-SHA-1.")}},
+     {auth_scram_hash,
+      #{value => "sha | sha256 | sha512",
+        desc =>
+        ?T("Hash algorith that should be used to store password in SCRAM format. "
+           "You shouldn't change this if you are already have passwords generated "
+           "with different algorithm - this will make users that have old password "
+           "being able to use SCRAM auth algorithms.")}},
      {auth_use_cache,
       #{value => "true | false",
         desc =>
