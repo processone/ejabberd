@@ -29,9 +29,9 @@ RUN apt-get update \
   && apt-get autoremove -y \
   && apt-get clean -y
 
-RUN su ${USERNAME} -c "mix local.hex --force \
-  && mix local.rebar --force \
-  && mix archive.install --force hex phx_new ${PHOENIX_VERSION}"
+#RUN su ${USERNAME} -c "mix local.hex --force \
+#  && mix local.rebar --force \
+#  && mix archive.install --force hex phx_new ${PHOENIX_VERSION}"
 
 # [Optional] Uncomment this section to install additional OS packages.
 # RUN apt-get update \
