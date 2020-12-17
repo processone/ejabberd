@@ -180,7 +180,7 @@ count_users(Server, _) ->
 
 get_password(User, Server) ->
     case mnesia:dirty_read(passwd, {User, Server}) of
-	[#passwd{password = {scram, SK, SEK, Salt, IC}}] ->
+	[{passwd, _, {scram, SK, SEK, Salt, IC}}] ->
 	    {cache, {ok, #scram{storedkey = SK, serverkey = SEK,
 				salt = Salt, hash = sha, iterationcount = IC}}};
 	[#passwd{password = Password}] ->
@@ -277,7 +277,7 @@ transform(#passwd{us = {U, S}, password = Password} = P)
 	plain ->
 	    P
     end;
-transform(#passwd{password = {scram, _, _, _, _}} = P) ->
+transform({passwd, _, {scram, _, _, _, _}} = P) ->
     P;
 transform(#passwd{password = #scram{}} = P) ->
     P.
