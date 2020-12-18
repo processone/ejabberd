@@ -204,7 +204,7 @@ sub cmp_ver {
                     return 1 if $ap > $bp;
                     return - 1;
                 } else {
-                    next if $ap eq $bp;
+                    next if $ap eq $bp or $ap eq "" or $bp eq "";
                     return 1 if $ap gt $bp;
                     return - 1;
                 }
