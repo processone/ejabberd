@@ -1244,7 +1244,7 @@ set_room_affiliation(Name, Service, JID, AffiliationString) ->
 	    case mod_muc_room:change_item(Pid, jid:decode(JID), affiliation, Affiliation, <<"">>) of
 		{ok, _} ->
 		    ok;
-		{error, not_found} ->
+		{error, notfound} ->
 		    throw({error, "Room doesn't exists"});
 		{error, _} ->
 		    throw({error, "Unable to perform change"})
