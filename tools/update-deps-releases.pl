@@ -15,6 +15,7 @@ use Term::ANSIColor;
 use Term::ReadKey;
 use List::Util qw(first);
 use Clone qw(clone);
+use LWP::UserAgent;
 
 sub get_deps {
     my ($config, %fdeps) = @_;
@@ -413,6 +414,7 @@ while (1) {
         $changed_deps ? (T => "Tag new release") : (),
         @operations ? (A => "Apply changes") : (),
         R => "Refresh repositiories",
+        H => "What release to Hex",
         E => "Exit");
     last if $cmd eq "E";
 
@@ -440,6 +442,16 @@ while (1) {
 
     if ($cmd eq "R") {
         update_deps_repos(1);
+    }
+    if ($cmd eq "H") {
+        my $ua = LWP::UserAgent->new();
+        for my $dep (sort keys %$top_deps) {
+            say "checking https://hex.pm/packages/$dep/$git_info->{$dep}->{last_tag}";
+            my $res = $ua->head("https://hex.pm/packages/$dep/$git_info->{$dep}->{last_tag}");
+            if ($res->code == 404) {
+                say color("red"), "$dep", color("reset"), " ($top_deps->{$dep}->{commit})";
+            }
+        }
     }
     if ($cmd eq "T") {
         while (1) {
