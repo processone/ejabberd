@@ -1108,7 +1108,7 @@ format_room_option(OptionString, ValueString) ->
     {Option, Value}.
 
 %% @doc Get the Pid of an existing MUC room, or 'room_not_found'.
--spec get_room_pid(binary(), binary()) -> {ok, pid()} | room_not_found | invalid_service.
+-spec get_room_pid(binary(), binary()) -> pid() | room_not_found | invalid_service.
 get_room_pid(Name, Service) ->
     try get_room_serverhost(Service) of
 	ServerHost ->
