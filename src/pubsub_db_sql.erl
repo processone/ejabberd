@@ -35,7 +35,7 @@
     delete_subscription/1, update_subscription/1]).
 -export([export/1]).
 
--spec read_subscription(SubID :: string()) -> {ok, #pubsub_subscription{}} |  notfound.
+-spec read_subscription(SubID :: mod_pubsub:subId()) -> {ok, #pubsub_subscription{}} |  notfound.
 read_subscription(SubID) ->
     case
 	ejabberd_sql:sql_query_t(
@@ -49,7 +49,7 @@ read_subscription(SubID) ->
 		    options = lists:map(fun subscription_opt_from_sql/1, Options)}}
     end.
 
--spec delete_subscription(SubID :: string()) -> ok.
+-spec delete_subscription(SubID :: mod_pubsub:subId()) -> ok.
 delete_subscription(SubID) ->
     ejabberd_sql:sql_query_t(
       ?SQL("delete from pubsub_subscription_opt "
