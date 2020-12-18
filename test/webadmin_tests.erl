@@ -126,6 +126,7 @@ page(Config, Tail) ->
     Server = ?config(server_host, Config),
     Port = ct:get_config(web_port, 5280),
     Url = "http://" ++ Server ++ ":" ++ integer_to_list(Port) ++ "/admin/" ++ Tail,
+    %% This bypasses a bug introduced in Erlang OTP R21 and fixed in 23.2:
     case catch uri_string:normalize("/%2525") of
 	"/%25" ->
 	    string:replace(Url, "%25", "%2525", all);
