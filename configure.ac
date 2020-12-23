@@ -270,12 +270,19 @@ AC_ARG_ENABLE(zlib,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-zlib) ;;
 esac],[if test "x$zlib" = "x"; then zlib=true; fi])
 
-if test "$sqlite" = "true"; then
-   AX_LIB_SQLITE3([3.6.19])
-   if test "x$SQLITE3_VERSION" = "x"; then
-      AC_MSG_ERROR(SQLite3 library >= 3.6.19 was not found)
-   fi
-fi
+case "`uname`" in
+  "Darwin")
+    # Darwin (macos) erlang-sqlite is built using amalgamated lib, so no external dependency
+    ;;
+  *)
+    if test "$sqlite" = "true"; then
+      AX_LIB_SQLITE3([3.6.19])
+      if test "x$SQLITE3_VERSION" = "x"; then
+        AC_MSG_ERROR(SQLite3 library >= 3.6.19 was not found)
+      fi
+    fi
+  ;;
+esac
 
 enabled_backends=""
 for backend in odbc mysql pgsql sqlite redis mssql; do
