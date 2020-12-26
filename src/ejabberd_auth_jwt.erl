@@ -116,13 +116,13 @@ check_jwt_token(User, Server, Token) ->
     JWK = ejabberd_option:jwt_key(Server),
     try jose_jwt:verify(JWK, Token) of
         {true, {jose_jwt, Fields}, Signature} ->
-            ?DEBUG("jwt verify: ~p - ~p~n", [Fields, Signature]),
+            Now = erlang:system_time(second),
+            ?DEBUG("jwt verify at system timestamp ~p: ~p - ~p~n", [Now, Fields, Signature]),
 	    case maps:find(<<"exp">>, Fields) of
                 error ->
 		    %% No expiry in token => We consider token invalid:
 		    false;
                 {ok, Exp} ->
-                    Now = erlang:system_time(second),
                     if
                         Exp > Now ->
                             ejabberd_hooks:run_fold(
