@@ -753,6 +753,12 @@ mod_doc() ->
 		     "'ldap_memberattr' attribute of a group object. "
 		     "Retrieved from results of the \"User Filter\". "
 		     "Defaults to 'cn'.")}},
+           {ldap_userjidattr,
+            #{desc =>
+              ?T("The name of the attribute which is used to map user id "
+                 "to XMPP jid. If not specified (and that is default value "
+                 "of this option), user jid will be created from user id and "
+                 " this module host.")}},
 	   %% Control parameters:
            {ldap_memberattr_format,
             #{desc =>
