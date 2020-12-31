@@ -30,6 +30,7 @@
 -export([ldap_ufilter/1]).
 -export([ldap_uids/1]).
 -export([ldap_userdesc/1]).
+-export([ldap_userjidattr/1]).
 -export([ldap_useruid/1]).
 -export([use_cache/1]).
 
@@ -194,6 +195,12 @@ ldap_userdesc(Opts) when is_map(Opts) ->
     gen_mod:get_opt(ldap_userdesc, Opts);
 ldap_userdesc(Host) ->
     gen_mod:get_module_opt(Host, mod_shared_roster_ldap, ldap_userdesc).
+
+-spec ldap_userjidattr(gen_mod:opts() | global | binary()) -> binary().
+ldap_userjidattr(Opts) when is_map(Opts) ->
+    gen_mod:get_opt(ldap_userjidattr, Opts);
+ldap_userjidattr(Host) ->
+    gen_mod:get_module_opt(Host, mod_shared_roster_ldap, ldap_userjidattr).
 
 -spec ldap_useruid(gen_mod:opts() | global | binary()) -> binary().
 ldap_useruid(Opts) when is_map(Opts) ->

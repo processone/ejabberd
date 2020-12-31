@@ -76,7 +76,8 @@
          ufilter = <<"">>                             :: binary(),
          rfilter = <<"">>                             :: binary(),
          gfilter = <<"">>                             :: binary(),
-	 auth_check = true                            :: boolean()}).
+         user_jid_attr = <<"">>                       :: binary(),
+         auth_check = true                            :: boolean()}).
 
 -record(group_info, {desc, members}).
 
@@ -387,6 +388,24 @@ search_group_info(State, Group) ->
 	  {ok, #group_info{desc = GroupDesc, members = lists:usort(lists:flatten(MembersLists))}}
     end.
 
+get_member_jid(#state{user_jid_attr = <<>>}, UID, Host) ->
+    {jid:nodeprep(UID), Host};
+get_member_jid(#state{user_jid_attr = UserJIDAttr, user_uid = UIDAttr} = State,
+               UID, Host) ->
+    Entries = eldap_search(State,
+                           [eldap_filter:do_sub(<<"(", UIDAttr/binary, "=%u)">>,
+                                                [{<<"%u">>, UID}])],
+                           [UserJIDAttr]),
+    case Entries of
+        [] ->
+            {error, error};
+        [#eldap_entry{attributes = [{UserJIDAttr, [MemberJID | _]}]} | _] ->
+            case jid:decode(MemberJID) of
+                error -> {error, Host};
+                #jid{luser = U, lserver = S} -> {U, S}
+            end
+    end.
+
 extract_members(State, Extractor, AuthChecker, #eldap_entry{attributes = Attrs}, {DescAcc, JIDsAcc}) ->
     Host = State#state.host,
     case {eldap_utils:get_ldap_attr(State#state.group_attr, Attrs),
@@ -394,23 +413,22 @@ extract_members(State, Extractor, AuthChecker, #eldap_entry{attributes = Attrs},
           lists:keysearch(State#state.uid, 1, Attrs)} of
         {ID, Desc, {value, {GroupMemberAttr, Members}}} when ID /= <<"">>,
                                                              GroupMemberAttr == State#state.uid ->
-            JIDs = lists:foldl(fun({ok, UID}, L) ->
-                                       PUID = jid:nodeprep(UID),
-                                       case PUID of
-                                           error ->
-                                               L;
-                                           _ ->
-                                               case AuthChecker(PUID, Host) of
-                                                   true ->
-                                                       [{PUID, Host} | L];
-                                                   _ ->
-                                                       L
-                                               end
-                                       end;
-                                  (_, L) -> L
-                               end,
-                               [],
-                               lists:map(Extractor, Members)),
+            JIDs = lists:foldl(
+                fun({ok, UID}, L) ->
+                    {MemberUID, MemberHost} = get_member_jid(State, UID, Host),
+                    case MemberUID of
+                        error ->
+                            L;
+                        _ ->
+                            case AuthChecker(MemberUID, MemberHost) of
+                                true ->
+                                    [{MemberUID, MemberHost} | L];
+                                _ ->
+                                    L
+                            end
+                    end;
+                   (_, L) -> L
+                end, [], lists:map(Extractor, Members)),
             {Desc, [JIDs | JIDsAcc]};
         _ ->
             {DescAcc, JIDsAcc}
@@ -456,6 +474,7 @@ parse_options(Host, Opts) ->
     UIDAttr = mod_shared_roster_ldap_opt:ldap_memberattr(Opts),
     UIDAttrFormat = mod_shared_roster_ldap_opt:ldap_memberattr_format(Opts),
     UIDAttrFormatRe = mod_shared_roster_ldap_opt:ldap_memberattr_format_re(Opts),
+    JIDAttr = mod_shared_roster_ldap_opt:ldap_userjidattr(Opts),
     AuthCheck = mod_shared_roster_ldap_opt:ldap_auth_check(Opts),
     ConfigFilter = mod_shared_roster_ldap_opt:ldap_filter(Opts),
     ConfigUserFilter = mod_shared_roster_ldap_opt:ldap_ufilter(Opts),
@@ -500,6 +519,7 @@ parse_options(Host, Opts) ->
            base = Cfg#eldap_config.base,
            deref_aliases = Cfg#eldap_config.deref_aliases,
 	   uid = UIDAttr,
+           user_jid_attr = JIDAttr,
 	   group_attr = GroupAttr, group_desc = GroupDesc,
 	   user_desc = UserDesc, user_uid = UserUID,
 	   uid_format = UIDAttrFormat,
@@ -550,6 +570,8 @@ mod_opt_type(ldap_ufilter) ->
 mod_opt_type(ldap_userdesc) ->
     econf:binary();
 mod_opt_type(ldap_useruid) ->
+    econf:binary();
+mod_opt_type(ldap_userjidattr) ->
     econf:binary();
 mod_opt_type(ldap_backups) ->
     econf:list(econf:domain(), [unique]);
@@ -607,6 +629,7 @@ mod_options(Host) ->
      {ldap_ufilter, <<"">>},
      {ldap_userdesc, <<"cn">>},
      {ldap_useruid, <<"cn">>},
+     {ldap_userjidattr, <<"">>},
      {ldap_backups, ejabberd_option:ldap_backups(Host)},
      {ldap_base, ejabberd_option:ldap_base(Host)},
      {ldap_uids, ejabberd_option:ldap_uids(Host)},
