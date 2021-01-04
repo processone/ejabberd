@@ -800,10 +800,11 @@ doc() ->
             ?T("The number of rotated log files to keep. "
                "The default value is '1'.")}},
      {log_rotate_size,
-      #{value => ?T("Size"),
+      #{value => "pos_integer() | infinity",
         desc =>
             ?T("The size (in bytes) of a log file to trigger rotation. "
-               "The default value is '10485760' (10 Mb).")}},
+               "If set to 'infinity', log rotation is disabled. "
+               "The default value is '10485760' (that is, 10 Mb).")}},
      {max_fsm_queue,
       #{value => ?T("Size"),
         desc =>
