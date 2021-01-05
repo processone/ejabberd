@@ -623,7 +623,7 @@ mod_doc() ->
     #{desc =>
           [?T("This module adds support for https://xmpp.org/extensions/xep-0077.html"
               "[XEP-0077: In-Band Registration]. "
-              "This protocol enables end users to use a XMPP client to:"), "",
+              "This protocol enables end users to use an XMPP client to:"), "",
            ?T("* Register a new account on the server."), "",
            ?T("* Change the password from an existing account on the server."), "",
            ?T("* Delete an existing account on the server."), "",

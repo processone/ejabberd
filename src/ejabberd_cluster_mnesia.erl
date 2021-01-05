@@ -1,7 +1,7 @@
 %%%----------------------------------------------------------------------
 %%% File    : ejabberd_cluster_mnesia.erl
 %%% Author  : Christophe Romain <christophe.romain@process-one.net>
-%%% Purpose : Ejabberd clustering management via Mnesia
+%%% Purpose : ejabberd clustering management via Mnesia
 %%% Created : 7 Oct 2015 by Christophe Romain <christophe.romain@process-one.net>
 %%%
 %%%

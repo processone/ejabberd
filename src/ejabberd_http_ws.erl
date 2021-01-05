@@ -309,7 +309,7 @@ get_human_html_xmlel() ->
                                    children =
                                        [{xmlcdata,
                                          <<"This web page is only informative. To "
-                                           "use WebSocket connection you need a Jabber/XMPP "
+                                           "use WebSocket connection you need an XMPP "
                                            "client that supports it.">>}]}]}]}.
 
 

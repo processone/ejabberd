@@ -115,7 +115,7 @@ process([<<"new">>],
       {success, ok, {Username, Host, _Password}} ->
 	  Jid = jid:make(Username, Host),
           mod_register:send_registration_notifications(?MODULE, Jid, Ip),
-	  Text = translate:translate(Lang, ?T("Your Jabber account was successfully created.")),
+	  Text = translate:translate(Lang, ?T("Your XMPP account was successfully created.")),
 	  {200, [], Text};
       Error ->
 	  ErrorText =
@@ -128,7 +128,7 @@ process([<<"delete">>],
 		 host = _HTTPHost}) ->
     case form_del_post(Q) of
       {atomic, ok} ->
-	  Text = translate:translate(Lang, ?T("Your Jabber account was successfully deleted.")),
+	  Text = translate:translate(Lang, ?T("Your XMPP account was successfully deleted.")),
 	  {200, [], Text};
       Error ->
 	  ErrorText =
@@ -143,7 +143,7 @@ process([<<"change_password">>],
 		 host = _HTTPHost}) ->
     case form_changepass_post(Q) of
       {atomic, ok} ->
-	  Text = translate:translate(Lang, ?T("The password of your Jabber account was successfully changed.")),
+	  Text = translate:translate(Lang, ?T("The password of your XMPP account was successfully changed.")),
 	  {200, [], Text};
       Error ->
 	  ErrorText =
@@ -200,7 +200,7 @@ meta() ->
 index_page(Lang) ->
     HeadEls = [meta(),
 	       ?XCT(<<"title">>,
-		    ?T("Jabber Account Registration")),
+		    ?T("XMPP Account Registration")),
 	       ?XA(<<"link">>,
 		   [{<<"href">>, <<"register.css">>},
 		    {<<"type">>, <<"text/css">>},
@@ -208,15 +208,15 @@ index_page(Lang) ->
     Els = [?XACT(<<"h1">>,
 		 [{<<"class">>, <<"title">>},
 		  {<<"style">>, <<"text-align:center;">>}],
-		 ?T("Jabber Account Registration")),
+		 ?T("XMPP Account Registration")),
 	   ?XE(<<"ul">>,
 	       [?XE(<<"li">>,
-		    [?ACT(<<"new/">>, ?T("Register a Jabber account"))]),
+		    [?ACT(<<"new/">>, ?T("Register an XMPP account"))]),
 		?XE(<<"li">>,
 		    [?ACT(<<"change_password/">>, ?T("Change Password"))]),
 		?XE(<<"li">>,
 		    [?ACT(<<"delete/">>,
-			  ?T("Unregister a Jabber account"))])])],
+			  ?T("Unregister an XMPP account"))])])],
     {200,
      [{<<"Server">>, <<"ejabberd">>},
       {<<"Content-Type">>, <<"text/html">>}],
@@ -239,7 +239,7 @@ form_new_get(Host, Lang, IP) ->
 form_new_get2(Host, Lang, CaptchaEls) ->
     HeadEls = [meta(),
 	       ?XCT(<<"title">>,
-		    ?T("Register a Jabber account")),
+		    ?T("Register an XMPP account")),
 	       ?XA(<<"link">>,
 		   [{<<"href">>, <<"../register.css">>},
 		    {<<"type">>, <<"text/css">>},
@@ -247,10 +247,10 @@ form_new_get2(Host, Lang, CaptchaEls) ->
     Els = [?XACT(<<"h1">>,
 		 [{<<"class">>, <<"title">>},
 		  {<<"style">>, <<"text-align:center;">>}],
-		 ?T("Register a Jabber account")),
+		 ?T("Register an XMPP account")),
 	   ?XCT(<<"p">>,
-		?T("This page allows to create a Jabber "
-		   "account in this Jabber server. Your "
+		?T("This page allows to create an XMPP "
+		   "account in this XMPP server. Your "
 		   "JID (Jabber IDentifier) will be of the "
 		   "form: username@server. Please read carefully "
 		   "the instructions to fill correctly the "
@@ -281,19 +281,19 @@ form_new_get2(Host, Lang, CaptchaEls) ->
 			    ?XE(<<"ul">>,
 				[?XCT(<<"li">>,
 				      ?T("Don't tell your password to anybody, "
-					 "not even the administrators of the Jabber "
+					 "not even the administrators of the XMPP "
 					 "server.")),
 				 ?XCT(<<"li">>,
 				      ?T("You can later change your password using "
-					 "a Jabber client.")),
+					 "an XMPP client.")),
 				 ?XCT(<<"li">>,
-				      ?T("Some Jabber clients can store your password "
+				      ?T("Some XMPP clients can store your password "
 					 "in the computer, but you should do this only "
 					 "in your personal computer for safety reasons.")),
 				 ?XCT(<<"li">>,
 				      ?T("Memorize your password, or write it "
 					 "in a paper placed in a safe place. In "
-					 "Jabber there isn't an automated way "
+					 "XMPP there isn't an automated way "
 					 "to recover your password if you forget "
 					 "it."))])]),
 		       ?XE(<<"li">>,
@@ -494,7 +494,7 @@ check_password(Username, Host, Password) ->
 form_del_get(Host, Lang) ->
     HeadEls = [meta(),
 	       ?XCT(<<"title">>,
-		    ?T("Unregister a Jabber account")),
+		    ?T("Unregister an XMPP account")),
 	       ?XA(<<"link">>,
 		   [{<<"href">>, <<"../register.css">>},
 		    {<<"type">>, <<"text/css">>},
@@ -502,10 +502,10 @@ form_del_get(Host, Lang) ->
     Els = [?XACT(<<"h1">>,
 		 [{<<"class">>, <<"title">>},
 		  {<<"style">>, <<"text-align:center;">>}],
-		 ?T("Unregister a Jabber account")),
+		 ?T("Unregister an XMPP account")),
 	   ?XCT(<<"p">>,
-		?T("This page allows to unregister a Jabber "
-		   "account in this Jabber server.")),
+		?T("This page allows to unregister an XMPP "
+		   "account in this XMPP server.")),
 	   ?XAE(<<"form">>,
 		[{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
 		[?XE(<<"ol">>,

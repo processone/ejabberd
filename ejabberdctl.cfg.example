@@ -30,7 +30,7 @@
 #' ERL_MAX_PORTS: Maximum number of simultaneously open Erlang ports
 #
 # ejabberd consumes two or three ports for every connection, either
-# from a client or from another Jabber server. So take this into
+# from a client or from another XMPP server. So take this into
 # account when setting this limit.
 #
 # Default: 65536 (or 8196 on Windows)
@@ -41,7 +41,7 @@
 #.
 #' FIREWALL_WINDOW: Range of allowed ports to pass through a firewall
 #
-# If Ejabberd is configured to run in cluster, and a firewall is blocking ports,
+# If ejabberd is configured to run in cluster, and a firewall is blocking ports,
 # it's possible to make Erlang use a defined range of port (instead of dynamic
 # ports) for node communication.
 #

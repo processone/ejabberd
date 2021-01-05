@@ -385,7 +385,7 @@ get_container_children(Heading) ->
 						children = [{xmlcdata, <<"XMPP over BOSH (XEP-0206)">>}]}]},
 			     #xmlel{name = <<"p">>, children =
 					[{xmlcdata, <<"This web page is only informative. To "
-						      "use HTTP-Bind you need a Jabber/XMPP "
+						      "use HTTP-Bind you need an XMPP "
 						      "client that supports it.">>}]}]}]},
      #xmlel{name = <<"div">>,
 	    attrs = [{<<"class">>, <<"section">>}],

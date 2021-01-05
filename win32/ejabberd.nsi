@@ -1,5 +1,5 @@
 ; NSIS Modern User Interface
-; Ejabberd installation script
+; ejabberd installation script
 
 ;--------------------------------
 ;Include Modern UI
@@ -11,7 +11,7 @@
 ;General
 
     ;Name and file
-    !define PRODUCT "Ejabberd"
+    !define PRODUCT "ejabberd"
     Name ${PRODUCT}
     OutFile "${OUTFILEDIR}\${PRODUCT}-${VERSION}.exe"
     ShowInstDetails show
@@ -148,12 +148,12 @@ FunctionEnd
 
 ;Description
 
-    LangString DESC_SecEjabberd ${LANG_ENGLISH} "Erlang jabber server."
+    LangString DESC_SecEjabberd ${LANG_ENGLISH} "Erlang XMPP server."
 
 ;--------------------------------
 ;Installer Sections
 
-Section "Ejabberd" SecEjabberd
+Section "ejabberd" SecEjabberd
 SectionIn 1 RO
 
     SetOutPath "$INSTDIR"
@@ -176,7 +176,7 @@ SectionIn 1 RO
     ;Create shortcuts
     StrCpy $0 "$SMPROGRAMS\$STARTMENU_FOLDER"
     CreateDirectory "$0"
-    CreateShortCut "$0\Start Ejabberd.lnk" "$ERLANG_PATH\bin\werl.exe" \
+    CreateShortCut "$0\Start ejabberd.lnk" "$ERLANG_PATH\bin\werl.exe" \
 	'-sname ejabberd -pa ebin \
 	-env EJABBERD_LOG_PATH log/ejabberd.log \
 	-s ejabberd -kernel inetrc \"./inetrc\" -mnesia dir \"spool\" \
@@ -309,7 +309,7 @@ Section "Uninstall"
 
     !insertmacro MUI_STARTMENU_GETFOLDER ${PRODUCT} $MUI_TEMP
     
-    Delete "$SMPROGRAMS\$MUI_TEMP\Start Ejabberd.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Start ejabberd.lnk"
     Delete "$SMPROGRAMS\$MUI_TEMP\Edit Config.lnk"
     Delete "$SMPROGRAMS\$MUI_TEMP\Read Docs.lnk"
     Delete "$SMPROGRAMS\$MUI_TEMP\Uninstall.lnk"
@@ -340,7 +340,7 @@ Section "Uninstall"
 SectionEnd
 
 LangString TEXT_CU_TITLE ${LANG_ENGLISH} "Checking User Privileges"
-LangString TEXT_CU_SUBTITLE ${LANG_ENGLISH} "Checking user privileged required to install Ejabberd."
+LangString TEXT_CU_SUBTITLE ${LANG_ENGLISH} "Checking user privileged required to install ejabberd."
 
 Function CheckUser
 
@@ -382,8 +382,8 @@ Function LeaveCheckUser
 
 FunctionEnd
 
-LangString TEXT_CU_TITLE ${LANG_ENGLISH} "Configuring Ejabberd Service"
-LangString TEXT_CU_SUBTITLE ${LANG_ENGLISH} "Configuring Ejabberd Service."
+LangString TEXT_CU_TITLE ${LANG_ENGLISH} "Configuring ejabberd Service"
+LangString TEXT_CU_SUBTITLE ${LANG_ENGLISH} "Configuring ejabberd Service."
 
 Function CheckService
 
@@ -414,7 +414,7 @@ Function LeaveCheckService
 FunctionEnd
 
 LangString TEXT_CR_TITLE ${LANG_ENGLISH} "Unsatisfied Requirements"
-LangString TEXT_CR_SUBTITLE ${LANG_ENGLISH} "Unsatisfied Ejabberd requirements found."
+LangString TEXT_CR_SUBTITLE ${LANG_ENGLISH} "Unsatisfied ejabberd requirements found."
 
 Function CheckReqs
 

@@ -129,7 +129,7 @@ defmodule Ejabberd.ConfigFile do
   module :mod_register do
     @opts [welcome_message: [
       subject: "Welcome!",
-      body: "Hi.\nWelcome to this XMPP Server"
+      body: "Hi.\nWelcome to this XMPP server"
       ],
       ip_access: :trusted_network,
       access: :register] 

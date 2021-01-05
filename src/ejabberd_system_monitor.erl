@@ -1,7 +1,7 @@
 %%%-------------------------------------------------------------------
 %%% File    : ejabberd_system_monitor.erl
 %%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Description : Ejabberd watchdog
+%%% Description : ejabberd watchdog
 %%% Created : 21 Mar 2007 by Alexey Shchepin <alexey@process-one.net>
 %%%
 %%%

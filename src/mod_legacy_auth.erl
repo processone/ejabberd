@@ -65,7 +65,7 @@ mod_doc() ->
               "[XEP-0078: Non-SASL Authentication]."), "",
            ?T("NOTE: This type of authentication was obsoleted in "
               "2008 and you unlikely need this module unless "
-              "you have something like outdated Jabber bots.")]}.
+              "you have something like outdated XMPP bots.")]}.
 
 -spec c2s_unauthenticated_packet(c2s_state(), iq()) ->
       c2s_state() | {stop, c2s_state()}.
