@@ -1164,7 +1164,7 @@ mod_options(Host) ->
 mod_doc() ->
     #{desc =>
 	  [?T("This module implements a service for "
-	      "https://xmpp.org/extensions/xep-0054.html"
+	      "https://xmpp.org/extensions/xep-0033.html"
 	      "[XEP-0033: Extended Stanza Addressing].")],
       opts =>
           [{access,
