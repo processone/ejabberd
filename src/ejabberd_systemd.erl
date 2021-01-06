@@ -69,7 +69,7 @@ stopping() ->
     cast_notification(<<"STOPPING=1">>).
 
 %%--------------------------------------------------------------------
-%% gen_mod callbacks.
+%% gen_server callbacks.
 %%--------------------------------------------------------------------
 -spec init(any())
       -> {ok, state()} | {ok, state(), watchdog_timeout()} | {stop, term()}.
