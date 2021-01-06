@@ -15,6 +15,7 @@ ExecStop=/bin/sh -c '@ctlscriptpath@/ejabberdctl stop && @ctlscriptpath@/ejabber
 ExecReload=@ctlscriptpath@/ejabberdctl reload_config
 NotifyAccess=all
 PrivateDevices=true
+AmbientCapabilities=CAP_NET_BIND_SERVICE
 TimeoutSec=300
 
 [Install]
