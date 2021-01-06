@@ -36,6 +36,7 @@ support and redirect people to the section you are reading right now.
 Other channels for support are:
 - [ejabberd Mailing List][list]
 - [ejabberd XMPP room][muc]: ejabberd@conference.process-one.net
+- [ejabberd XMPP room logs][logs]
 
 ### <a name="issue"></a> Found an Issue or Bug?
 
@@ -136,8 +137,9 @@ gives us the option to relicense the code with a more permissive license in the 
 
 [coc]: https://github.com/processone/ejabberd/blob/master/CODE_OF_CONDUCT.md
 [stackoverflow]: https://stackoverflow.com/questions/tagged/ejabberd?sort=newest
-[list]: http://lists.jabber.ru/mailman/listinfo/ejabberd
+[list]: https://lists.jabber.ru/mailman/listinfo/ejabberd
 [muc]: xmpp:ejabberd@conference.process-one.net
+[logs]: https://process-one.net/logs/ejabberd@conference.process-one.net/
 [github]: https://github.com/processone/ejabberd
 [github-issues]: https://github.com/processone/ejabberd/issues
 [github-new-issue]: https://github.com/processone/ejabberd/issues/new
