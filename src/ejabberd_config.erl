@@ -93,30 +93,33 @@ load(Path) ->
 
 -spec reload() -> ok | error_return().
 reload() ->
+    ejabberd_systemd:reloading(),
     ConfigFile = path(),
     ?INFO_MSG("Reloading configuration from ~ts", [ConfigFile]),
     OldHosts = get_myhosts(),
-    case load_file(ConfigFile) of
-	ok ->
-	    NewHosts = get_myhosts(),
-	    AddHosts = NewHosts -- OldHosts,
-	    DelHosts = OldHosts -- NewHosts,
-	    lists:foreach(
-	      fun(Host) ->
-		      ejabberd_hooks:run(host_up, [Host])
-	      end, AddHosts),
-	    lists:foreach(
-	      fun(Host) ->
-		      ejabberd_hooks:run(host_down, [Host])
-	      end, DelHosts),
-	    ejabberd_hooks:run(config_reloaded, []),
-	    delete_host_options(DelHosts),
-	    ?INFO_MSG("Configuration reloaded successfully", []);
-	Err ->
-	    ?ERROR_MSG("Configuration reload aborted: ~ts",
-		       [format_error(Err)]),
-	    Err
-    end.
+    Res = case load_file(ConfigFile) of
+	      ok ->
+		  NewHosts = get_myhosts(),
+		  AddHosts = NewHosts -- OldHosts,
+		  DelHosts = OldHosts -- NewHosts,
+		  lists:foreach(
+		    fun(Host) ->
+			    ejabberd_hooks:run(host_up, [Host])
+		    end, AddHosts),
+		  lists:foreach(
+		    fun(Host) ->
+			    ejabberd_hooks:run(host_down, [Host])
+		    end, DelHosts),
+		  ejabberd_hooks:run(config_reloaded, []),
+		  delete_host_options(DelHosts),
+		  ?INFO_MSG("Configuration reloaded successfully", []);
+	      Err ->
+		  ?ERROR_MSG("Configuration reload aborted: ~ts",
+			     [format_error(Err)]),
+		  Err
+	  end,
+    ejabberd_systemd:ready(),
+    Res.
 
 -spec dump() -> ok | error_return().
 dump() ->
