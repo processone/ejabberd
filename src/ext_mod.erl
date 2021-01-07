@@ -570,7 +570,7 @@ compile_result(Results) ->
     end.
 
 compile_options() ->
-    [verbose, report_errors, report_warnings, ?ALL_DEFS]
+    [verbose, report_errors, report_warnings, debug_info, ?ALL_DEFS]
     ++ [{i, filename:join(app_dir(App), "include")}
         || App <- [fast_xml, xmpp, p1_utils, ejabberd]]
     ++ [{i, filename:join(mod_dir(Mod), "include")}
