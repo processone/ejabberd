@@ -531,7 +531,8 @@ normal_state({route, ToNick,
 	continue_delivery ->
 	    case {(StateData#state.config)#config.allow_private_messages,
 		  is_user_online(From, StateData) orelse
-		  is_subscriber(From, StateData)} of
+		  is_subscriber(From, StateData) orelse
+		  is_user_allowed_message_nonparticipant(From, StateData)} of
 		{true, true} when Type == groupchat ->
 		    ErrText = ?T("It is not allowed to send private messages "
 				 "of type \"groupchat\""),
@@ -1192,7 +1193,7 @@ get_participant_data(From, StateData) ->
 		#subscriber{nick = FromNick} ->
 		    {FromNick, none}
 	    catch _:{badkey, _} ->
-		    {<<"">>, moderator}
+		    {From#jid.luser, moderator}
 	    end
     end.
 
