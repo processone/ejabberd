@@ -135,7 +135,7 @@ get_commands_spec() ->
 	"* ORG ORGUNIT  - Work: Department\n",
 
     VcardXEP = "For a full list of vCard fields check XEP-0054: vcard-temp at "
-	"http://www.xmpp.org/extensions/xep-0054.html",
+	"https://xmpp.org/extensions/xep-0054.html",
 
     [
      #ejabberd_commands{name = compile, tags = [erlang],

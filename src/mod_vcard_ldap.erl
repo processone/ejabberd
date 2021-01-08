@@ -531,7 +531,7 @@ mod_doc() ->
 		  ?T("With this option you can set the table that maps LDAP "
 		     "attributes to vCard fields. 'Name' is the type name of "
 		     "the vCard as defined in "
-		     "http://tools.ietf.org/html/rfc2426[RFC 2426]. "
+		     "https://tools.ietf.org/html/rfc2426[RFC 2426]. "
 		     "'Pattern' is a string which contains "
 		     "pattern variables '%u', '%d' or '%s'. "
 		     "'LDAPattributes' is the list containing LDAP attributes. "
