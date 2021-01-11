@@ -210,7 +210,7 @@ process_local_iq(#iq{type = get, to = To, lang = Lang} = IQ) ->
 		undefined ->
 		    #vcard_temp{fn = <<"ejabberd">>,
 				url = ejabberd_config:get_uri(),
-				desc = misc:get_descr(Lang, ?T("Erlang Jabber Server")),
+				desc = misc:get_descr(Lang, ?T("Erlang XMPP Server")),
 				bday = <<"2002-11-16">>};
 		V ->
 		    V
@@ -456,7 +456,7 @@ make_instructions(Mod, Lang) ->
     Fill = translate:translate(
 	     Lang,
 	     ?T("Fill in the form to search for any matching "
-		"Jabber User")),
+		"XMPP User")),
     Add = translate:translate(
 	    Lang,
 	    ?T(" (Add * to the end of field to match substring)")),

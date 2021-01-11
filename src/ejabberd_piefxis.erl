@@ -584,8 +584,8 @@ make_main_basefilename(Dir, FnT) ->
     filename:join([Dir, Filename2]).
 
 %% @doc Make the filename for the host.
-%% Example: ``(<<"20080804-231550">>, <<"jabber.example.org">>) ->
-%%             <<"20080804-231550_jabber_example_org.xml">>''
+%% Example: ``(<<"20080804-231550">>, <<"xmpp.domain.tld">>) ->
+%%             <<"20080804-231550_xmpp_domain_tld.xml">>''
 make_host_filename(FnT, Host) ->
     Host2 = str:join(str:tokens(Host, <<".">>), <<"_">>),
     <<FnT/binary, "_", Host2/binary, ".xml">>.

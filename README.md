@@ -53,7 +53,7 @@ Key Features
   - Support for IDNA.
 
 - **Open Standards**  
-  ejabberd is the first Open Source Jabber server claiming to fully comply to
+  ejabberd is the first Open Source XMPP server claiming to fully comply to
   the XMPP standard.
   - Fully XMPP-compliant.
   - XML-based protocol.

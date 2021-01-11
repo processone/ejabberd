@@ -770,7 +770,7 @@ doc() ->
             ?T("An LDAP filter as defined in "
                "https://tools.ietf.org/html/rfc4515[RFC4515]. "
                "There is no default value. Example: "
-               "\"(&(objectClass=shadowAccount)(memberOf=Jabber Users))\". "
+               "\"(&(objectClass=shadowAccount)(memberOf=XMPP Users))\". "
                "NOTE: don't forget to close brackets and don't use superfluous "
                "whitespaces. Also you must not use \"uid\" attribute in the "
                "filter because this attribute will be appended to the filter "
