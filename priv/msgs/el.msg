@@ -1,5 +1,6 @@
 %% -*- coding: utf-8 -*-
 {" has set the subject to: "," έχει θέσει το θέμα σε: "}.
+{"A friendly name for the node","Ένα φιλικό όνομα για τον κόμβο"}.
 {"A password is required to enter this room","Απαιτείται κωδικός πρόσβασης για είσοδο σε αυτή την αίθουσα"}.
 {"Accept","Αποδοχή"}.
 {"Access denied by service policy","Άρνηση πρόσβασης, λόγω τακτικής παροχής υπηρεσιών"}.
@@ -12,6 +13,7 @@
 {"Administrator privileges required","Aπαιτούνται προνόμια διαχειριστή"}.
 {"All activity","Όλες οι δραστηριότητες"}.
 {"All Users","Όλοι οι χρήστες"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Επιτρέπετε σε αυτή την Jabber Ταυτότητα να εγγραφεί σε αυτό τον κόμβο Δημοσίευσης-Εγγραφής;"}.
 {"Allow users to change the subject","Επιτρέψετε στους χρήστες να αλλάζουν το θέμα"}.
 {"Allow users to query other users","Επιτρέπστε στους χρήστες να ερωτούν άλλους χρήστες"}.
 {"Allow users to send invites","Επιτρέψετε στους χρήστες να αποστέλλουν προσκλήσεις"}.
@@ -19,6 +21,7 @@
 {"Allow visitors to change nickname","Επιτρέψετε στους επισκέπτες να αλλάζου ψευδώνυμο"}.
 {"Allow visitors to send private messages to","Επιτρέψετε στους χρήστες να αποστέλλουν ιδιωτικά μηνύματα σε"}.
 {"Allow visitors to send status text in presence updates","Επιτρέψτε στους επισκέπτες να αποστέλλουν κατάσταση στις ενημερώσεις παρουσίας"}.
+{"Allow visitors to send voice requests","Επιτρέψτε στους επισκέπτες να στέλνουν αιτήματα φωνής"}.
 {"Announcements","Ανακοινώσεις"}.
 {"April","Απρίλιος"}.
 {"August","Αύγουστος"}.
@@ -33,6 +36,7 @@
 {"Bytestream already activated","Το Bytestream έχει ήδη ενεργοποιηθε"}.
 {"Cannot remove active list","Δεν είναι δυνατή η κατάργηση της ενεργής λίστας"}.
 {"Cannot remove default list","Δεν μπορείτε να καταργήσετε την προεπιλεγμένη λίστα"}.
+{"CAPTCHA web page","Ιστοσελίδα CAPTCHA"}.
 {"Change Password","Αλλαγή κωδικού"}.
 {"Change User Password","Αλλαγή Κωδικού Πρόσβασης Χρήστη"}.
 {"Changing password is not allowed","Η αλλαγή του κωδικού πρόσβασης δεν επιτρέπεται"}.
@@ -50,6 +54,7 @@
 {"City","Πόλη"}.
 {"Commands","Εντολές"}.
 {"Conference room does not exist","Αίθουσα σύνεδριασης δεν υπάρχει"}.
+{"Configuration of room ~s","Διαμόρφωση Αίθουσας σύνεδριασης ~s"}.
 {"Configuration","Διαμόρφωση"}.
 {"Connected Resources:","Συνδεδεμένοι Πόροι:"}.
 {"Country","Χώρα"}.
@@ -64,9 +69,10 @@
 {"Delete message of the day","Διαγράψτε το μήνυμα της ημέρας"}.
 {"Delete Selected","Διαγραφή επιλεγμένων"}.
 {"Delete User","Διαγραφή Χρήστη"}.
+{"Deliver event notifications","Κοινοποιήσεις παράδοσης"}.
+{"Deliver payloads with event notifications","Κοινοποιήσεις με την παράδοση φορτίων"}.
 {"Description:","Περιγραφή:"}.
 {"Disc only copy","Αντίγραφο μόνο σε δίσκο"}.
-{"Displayed Groups:","Εμφανίσμενες Ομάδες:"}.
 {"Don't tell your password to anybody, not even the administrators of the Jabber server.","Μην πείτε τον κωδικό πρόσβασής σας σε κανέναν, ακόμη και στους διαχειριστές του διακομιστή Jabber."}.
 {"Dump Backup to Text File at ","Αποθήκευση Αντιγράφου Ασφαλείας σε αρχείο κειμένου στο "}.
 {"Dump to Text File","Αποθήκευση σε αρχείο κειμένου"}.
@@ -92,6 +98,7 @@
 {"Enter the text you see","Πληκτρολογήστε το κείμενο που βλέπετε"}.
 {"Erlang Jabber Server","Erlang Jabber Διακομιστής"}.
 {"Error","Σφάλμα"}.
+{"Exclude Jabber IDs from CAPTCHA challenge","Εξαίρεση από τις ταυτότητες Jabber, ή CAPTCHA πρόκληση"}.
 {"Export all tables as SQL queries to a file:","Εξαγωγή όλων των πινάκων ως ερωτημάτων SQL σε ένα αρχείο:"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Εξαγωγή δεδομένων όλων των χρηστών του διακομιστή σε PIEFXIS αρχεία (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Εξαγωγή δεδομένων των χρηστών κεντρικού υπολογιστή σε PIEFXIS αρχεία (XEP-0227):"}.
@@ -101,6 +108,7 @@
 {"Failed to extract JID from your voice request approval","Απέτυχε η εξαγωγή JID από την έγκριση του αιτήματος φωνής σας"}.
 {"Failed to map delegated namespace to external component","Αποτυχία ταξιθέτησης μεταγεγραμμένου χώρου ονομάτων σε εξωτερικό στοιχείο"}.
 {"Failed to parse HTTP response","Αποτυχία ανάλυσης της απόκρισης HTTP"}.
+{"Failed to process option '~s'","Αποτυχία επεξεργασίας της επιλογής '~s'"}.
 {"Family Name","Επώνυμο"}.
 {"February","Φεβρουάριος"}.
 {"File larger than ~w bytes","Αρχείο μεγαλύτερο από ~w bytes"}.
@@ -113,8 +121,9 @@
 {"Get User Password","Έκθεση Κωδικού Πρόσβασης Χρήστη"}.
 {"Get User Statistics","Έκθεση Στατιστικών Χρήστη"}.
 {"Given Name","Ονομα"}.
-{"Group ","Ομάδα "}.
+{"Grant voice to this person?","Παραχώρηση φωνής σε αυτό το άτομο;"}.
 {"Groups","Ομάδες"}.
+{"Group","Ομάδα"}.
 {"has been banned","έχει απαγορευθεί"}.
 {"has been kicked because of a system shutdown","αποβλήθηκε λόγω τερματισμού συστήματος"}.
 {"has been kicked because of an affiliation change","έχει αποβληθεί λόγω αλλαγής υπαγωγής"}.
@@ -145,6 +154,7 @@
 {"Invitations are not allowed in this conference","Οι προσκλήσεις δεν επιτρέπονται σε αυτή τη διάσκεψη"}.
 {"IP addresses","Διευθύνσεις IP"}.
 {"is now known as","είναι τώρα γνωστή ως"}.
+{"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Δεν επιτρέπεται η αποστολή μηνυμάτων σφάλματος στο δωμάτιο. Ο συμμετέχων (~s) έχει στείλει ένα μήνυμα σφάλματος (~s) και έχει πέταχτεί έξω από την αίθουσα"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Δεν επιτρέπεται να στείλει προσωπικά μηνύματα του τύπου \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Δεν επιτρέπεται να στείλει προσωπικά μηνύματα για τη διάσκεψη"}.
 {"It is not allowed to send private messages","Δεν επιτρέπεται η αποστολή προσωπικών μηνυμάτων"}.
@@ -170,6 +180,8 @@
 {"Make room public searchable","Κάντε την δημόσια αναζήτηση δυνατή για αυτή την αίθουσα"}.
 {"Malformed username","Λανθασμένη μορφή ονόματος χρήστη"}.
 {"March","Μάρτιος"}.
+{"Max # of items to persist","Μέγιστος αριθμός μόνιμων στοιχείων"}.
+{"Max payload size in bytes","Μέγιστο μέγεθος φορτίου σε bytes"}.
 {"Maximum Number of Occupants","Μέγιστος αριθμός συμετεχόντων"}.
 {"May","Μάιος"}.
 {"Membership is required to enter this room","Απαιτείται αίτηση συμετοχής για είσοδο σε αυτή την αίθουσα"}.
@@ -179,6 +191,7 @@
 {"Message body","Περιεχόμενο μηνυμάτως"}.
 {"Message not found in forwarded payload","Δεν βρέθηκε μήνυμα στο προωθημένο ωφέλιμο φορτίο"}.
 {"Middle Name","Πατρώνυμο"}.
+{"Minimum interval between voice requests (in seconds)","Ελάχιστο χρονικό διάστημα μεταξύ αιτημάτων φωνής (σε δευτερόλεπτα)"}.
 {"Moderator privileges required","Aπαιτούνται προνόμια συντονιστή"}.
 {"Modified modules","Τροποποιημένα modules"}.
 {"Module failed to handle the query","Το μodule απέτυχε να χειριστεί το ερώτημα"}.
@@ -193,6 +206,7 @@
 {"Never","Ποτέ"}.
 {"New Password:","Νέος κωδικός πρόσβασης:"}.
 {"Nickname Registration at ","Εγγραφή με Ψευδώνυμο στο "}.
+{"Nickname ~s does not exist in the room","Ψευδώνυμο ~s δεν υπάρχει σε αυτή την αίθουσα"}.
 {"Nickname","Ψευδώνυμο"}.
 {"No 'affiliation' attribute found","Δεν βρέθηκε χαρακτηριστικό 'affiliation'"}.
 {"No available resource found","Δεν βρέθηκε διαθέσιμος πόρος"}.
@@ -218,6 +232,7 @@
 {"No statistics found for this item","Δεν βρέθηκαν στατιστικά στοιχεία για αυτό το στοιχείο"}.
 {"No 'to' attribute found in the invitation","Δεν υπάρχει χαρακτηριστικό 'to' που βρέθηκε στην πρόσκληση"}.
 {"Node already exists","Ο κόμβος υπάρχει ήδη"}.
+{"Node ID","Ταυτότητα Κόμβου"}.
 {"Node index not found","Ο δείκτης κόμβου δεν βρέθηκε"}.
 {"Node not found","Κόμβος δεν βρέθηκε"}.
 {"Node ~p","Κόμβος ~p"}.
@@ -226,7 +241,11 @@
 {"None","Κανένα"}.
 {"Not Found","Δεν Βρέθηκε"}.
 {"Not subscribed","Δεν έχετε εγγραφεί"}.
+{"Notify subscribers when items are removed from the node","Ειδοποιηση στους συνδρομητές  όταν αφαίρούντε στοιχεία από τον κόμβο"}.
+{"Notify subscribers when the node configuration changes","Ειδοποιηση στους συνδρομητές όταν αλλάζει η διαμόρφωση κόμβου"}.
+{"Notify subscribers when the node is deleted","Ειδοποιηση στους συνδρομητές όταν ο κόμβος διαγράφεται"}.
 {"November","Νοέμβριος"}.
+{"Number of occupants","Αριθμός συμετεχόντων"}.
 {"Number of online users","Αριθμός συνδεδεμένων χρηστών"}.
 {"Number of registered users","Αριθμός εγγεγραμμένων χρηστών"}.
 {"October","Οκτώβριος"}.
@@ -237,6 +256,7 @@
 {"Online Users:","Online Χρήστες:"}.
 {"Online Users","Συνδεμένοι χρήστες"}.
 {"Online","Συνδεδεμένο"}.
+{"Only deliver notifications to available users","Παράδωση κοινοποιήσεων μόνο σε διαθέσιμους χρήστες"}.
 {"Only <enable/> or <disable/> tags are allowed","Επιτρέπονται μόνο tags <enable /> ή <disable />"}.
 {"Only <list/> element is allowed in this query","Στο ερώτημα αυτό επιτρέπεται μόνο το στοιχείο <list />"}.
 {"Only members may query archives of this room","Μόνο μέλη μπορούν να δούνε τα αρχεία αυτής της αίθουσας"}.
@@ -260,15 +280,18 @@
 {"Path to File","Τοποθεσία Αρχείου"}.
 {"Pending","Εκκρεμεί"}.
 {"Period: ","Περίοδος: "}.
+{"Persist items to storage","Μονιμη αποθήκευση στοιχείων"}.
 {"Ping query is incorrect","Το Ping είναι λανθασμένο"}.
 {"Ping","Πινγκ"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Παρακαλώ σημειώστε ότι οι επιλογές αυτές θα αποθήκευσουν Αντιγράφο Ασφαλείας μόνο της ενσωματωμένης βάσης δεδομένων Mnesia. Εάν χρησιμοποιείτε το module ODBC, θα πρέπει επίσης να κάνετε χωριστά Αντιγράφο Ασφαλείας της SQL βάση δεδομένων σας ."}.
 {"Please, wait for a while before sending new voice request","Παρακαλώ, περιμένετε για λίγο πριν την αποστολή νέου αιτήματος φωνής"}.
 {"Pong","Pong"}.
 {"Possessing 'ask' attribute is not allowed by RFC6121","Η ιδιότητα 'ask' δεν επιτρέπεται από το RFC6121"}.
+{"Present real Jabber IDs to","Παρούσιαση πραγματικών ταυτοτήτων Jabber σε"}.
 {"private, ","ιδιωτικό, "}.
 {"Publish-Subscribe","Δημοσίευση-Εγγραφή"}.
 {"PubSub subscriber request","Αίτηση συνδρομητή Δημοσίευσης-Εγγραφής"}.
+{"Purge all items when the relevant publisher goes offline","Διαγραφή όλων των στοιχείων όταν ο σχετικός εκδότης αποσυνδέεται"}.
 {"Queries to the conference members are not allowed in this room","Ερωτήματα πρώς τα μέλη της διασκέψεως δεν επιτρέπονται σε αυτήν την αίθουσα"}.
 {"Query to another users is forbidden","Το ερώτημα σε άλλους χρήστες είναι απαγορευμένο"}.
 {"RAM and disc copy","Αντίγραφο μόνο σε RAM καί δίσκο"}.
@@ -297,8 +320,8 @@
 {"Room description","Περιγραφή Αίθουσας"}.
 {"Room Occupants","Συμετεχόντες Αίθουσας σύνεδριασης"}.
 {"Room title","Τίτλος Αίθουσας"}.
+{"Roster groups allowed to subscribe","Ομάδες Καταλόγου Επαφών μπορούν να εγγραφούν"}.
 {"Roster size","Μέγεθος Καταλόγου Επαφών"}.
-{"Roster","Καταλόγος Επαφών"}.
 {"RPC Call Error","Σφάλμα RPC Κλήσης"}.
 {"Running Nodes","Ενεργοί Κόμβοι"}.
 {"Saturday","Σάββατο"}.
@@ -318,6 +341,9 @@
 {"Show Ordinary Table","Δείτε Κοινό Πίνακα"}.
 {"Shut Down Service","Κλείσιμο Υπηρεσίας"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Μερικοί πελάτες Jabber μπορεί να αποθηκεύσουν τον κωδικό πρόσβασής σας στον υπολογιστή σας. Χρησιμοποιήστε αυτό το χαρακτηριστικό μόνο εάν εμπιστεύεστε την ασφάλεια του υπολογιστή σας."}.
+{"Specify the access model","Καθορίστε το μοντέλο πρόσβασης"}.
+{"Specify the event message type","Καθορίστε τον τύπο μηνύματος συμβάντος"}.
+{"Specify the publisher model","Καθορίστε το μοντέλο εκδότη"}.
 {"Statistics of ~p","Στατιστικές του ~p"}.
 {"Statistics","Στατιστικές"}.
 {"Stopped Nodes","Σταματημένοι Κόμβοι"}.
@@ -328,6 +354,7 @@
 {"Subject","Θέμα"}.
 {"Submitted","Υποβλήθηκε"}.
 {"Submit","Υποβοβολή"}.
+{"Subscriber Address","Διεύθυνση Συνδρομητή"}.
 {"Subscriptions are not allowed","Οι συνδρομές δεν επιτρέπονται"}.
 {"Subscription","Συνδρομή"}.
 {"Sunday","Κυριακή"}.
@@ -335,6 +362,7 @@
 {"That nickname is registered by another person","Αυτό το ψευδώνυμο είναι καταχωρημένο από άλλο πρόσωπο"}.
 {"The CAPTCHA is valid.","Το CAPTCHA είναι έγκυρο."}.
 {"The CAPTCHA verification has failed","Η επαλήθευση της εικόνας CAPTCHA απέτυχε"}.
+{"The collections with which a node is affiliated","Οι συλλογές με την οποία είναι ένας κόμβος συνδέεται"}.
 {"The feature requested is not supported by the conference","Η λειτουργία που ζητήθηκε δεν υποστηρίζεται από τη διάσκεψη"}.
 {"The password contains unacceptable characters","Ο κωδικός πρόσβασης περιέχει μη αποδεκτούς χαρακτήρες"}.
 {"The password is too weak","Ο κωδικός πρόσβασης είναι πολύ ασθενές"}.
@@ -353,6 +381,7 @@
 {"Thursday","Πέμπτη"}.
 {"Time delay","Χρόνος καθυστέρησης"}.
 {"Time","Χρόνος"}.
+{"To register, visit ~s","Για να εγγραφείτε, επισκεφθείτε το ~s"}.
 {"Token TTL","Token TTL"}.
 {"Too many active bytestreams","Πάρα πολλά ενεργά bytestreams"}.
 {"Too many CAPTCHA requests","Πάρα πολλά αιτήματα CAPTCHA"}.
@@ -383,6 +412,7 @@
 {"Update","Ενημέρωση"}.
 {"Uptime:","Uptime:"}.
 {"User already exists","Ο χρήστης υπάρχει ήδη"}.
+{"User JID","JID Χρήστη"}.
 {"User (jid)","Χρήστη (jid)"}.
 {"User Management","Διαχείριση χρηστών"}.
 {"User session not found","Η συνάντηση χρήστη δεν βρέθηκε"}.
@@ -394,6 +424,9 @@
 {"User","Χρήστης"}.
 {"Validate","Επαληθεύστε"}.
 {"Value 'get' of 'type' attribute is not allowed","Η τιμή 'get' του 'type' δεν επιτρέπεται"}.
+{"Value of '~s' should be boolean","Η τιμή του '~s' πρέπει να είναι boolean"}.
+{"Value of '~s' should be datetime string","Η τιμή του '~s' θα πρέπει να είναι χρονοσειρά"}.
+{"Value of '~s' should be integer","Η τιμή του '~s' θα πρέπει να είναι ακέραιος"}.
 {"Value 'set' of 'type' attribute is not allowed","Δεν επιτρέπεται η παράμετρος 'set' του 'type'"}.
 {"vCard User Search","vCard Αναζήτηση χρηστών"}.
 {"Virtual Hosts","Eεικονικοί κεντρικοί υπολογιστές"}.
@@ -402,6 +435,8 @@
 {"Voice requests are disabled in this conference","Τα αιτήματα φωνής είναι απενεργοποιημένα, σε αυτό το συνέδριο"}.
 {"Voice request","Αίτημα φωνής"}.
 {"Wednesday","Τετάρτη"}.
+{"When to send the last published item","Πότε να αποσταλθεί το τελευταίο στοιχείο που δημοσιεύθηκε"}.
+{"Whether to allow subscriptions","Εάν επιτρέποντε συνδρομές"}.
 {"You can later change your password using a Jabber client.","Μπορείτε αργότερα να αλλάξετε τον κωδικό πρόσβασής σας χρησιμοποιώντας έναν πελάτη Jabber."}.
 {"You have been banned from this room","Σας έχει απαγορευθεί η είσοδος σε αυτή την αίθουσα"}.
 {"You have joined too many conferences","Είσθε σε πάρα πολλά συνέδρια"}.
@@ -413,4 +448,5 @@
 {"Your contact offline message queue is full. The message has been discarded.","Η μνήμη χωρίς σύνδεση μήνυματών είναι πλήρης. Το μήνυμα έχει απορριφθεί."}.
 {"Your Jabber account was successfully created.","Ο Jabber λογαριασμός σας δημιουργήθηκε με επιτυχία."}.
 {"Your Jabber account was successfully deleted.","Ο Jabber λογαριασμός σας διαγράφηκε με επιτυχία."}.
+{"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Τα μηνύματά σας πρως ~s είναι αποκλεισμένα. Για αποδεσμεύση, επισκεφθείτε ~s"}.
 {"You're not allowed to create nodes","Δεν σου επιτρέπεται η δημιουργία κόμβων"}.

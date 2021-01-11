@@ -52,6 +52,7 @@
 {"Name","Nome"}.
 {"Never","Nunca"}.
 {"Nickname Registration at ","Registo da alcunha em "}.
+{"Nickname ~s does not exist in the room","A alcunha ~s não existe na sala"}.
 {"Nickname","Alcunha"}.
 {"Node not found","Nodo não encontrado"}.
 {"Nodes","Nodos"}.
@@ -83,7 +84,6 @@
 {"Restore Backup from File at ","Restaura cópia de segurança a partir do ficheiro em "}.
 {"Restore","Restaurar"}.
 {"Room title","Título da sala"}.
-{"Roster","Lista de contactos"}.
 {"Running Nodes","Nodos a correr"}.
 {"Search users in ","Procurar utilizadores em "}.
 {"Statistics","Estatísticas"}.

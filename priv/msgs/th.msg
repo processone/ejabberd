@@ -10,6 +10,7 @@
 {"Administrator privileges required","ต้องมีสิทธิพิเศษของผู้ดูแลระบบ"}.
 {"All activity","กิจกรรมทั้งหมด"}.
 {"All Users","ผู้ใช้ทั้งหมด"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","อนุญาตให้ Jabber ID นี้เข้าร่วมเป็นสมาชิกของโหนด pubsub หรือไม่"}.
 {"Allow users to query other users","อนุญาตให้ผู้ใช้ถามคำถามกับผู้ใช้คนอื่นๆ ได้"}.
 {"Allow users to send invites","อนุญาตให้ผู้ใช้ส่งคำเชิญถึงกันได้"}.
 {"Allow users to send private messages","อนุญาตให้ผู้ใช้ส่งข้อความส่วนตัว"}.
@@ -43,9 +44,10 @@
 {"Delete message of the day","ลบข้อความของวัน"}.
 {"Delete Selected","ลบข้อความที่เลือก"}.
 {"Delete User","ลบผู้ใช้"}.
+{"Deliver event notifications","ส่งการแจ้งเตือนเหตุการณ์"}.
+{"Deliver payloads with event notifications","ส่งส่วนของข้อมูล (payload) พร้อมกับการแจ้งเตือนเหตุการณ์"}.
 {"Description:","รายละเอียด:"}.
 {"Disc only copy","คัดลอกเฉพาะดิสก์"}.
-{"Displayed Groups:","กลุ่มที่แสดง:"}.
 {"Dump Backup to Text File at ","ถ่ายโอนการสำรองข้อมูลไปยังไฟล์ข้อความที่"}.
 {"Dump to Text File","ถ่ายโอนข้อมูลไปยังไฟล์ข้อความ"}.
 {"Edit Properties","แก้ไขคุณสมบัติ"}.
@@ -72,8 +74,8 @@
 {"Get User Last Login Time","แสดงเวลาเข้าสู่ระบบครั้งล่าสุดของผู้ใช้"}.
 {"Get User Password","ขอรับรหัสผ่านของผู้ใช้"}.
 {"Get User Statistics","แสดงสถิติของผู้ใช้"}.
-{"Group ","กลุ่ม"}.
 {"Groups","กลุ่ม"}.
+{"Group","กลุ่"}.
 {"has been banned","ถูกสั่งห้าม"}.
 {"has been kicked","ถูกไล่ออก"}.
 {"Host","โฮสต์"}.
@@ -105,6 +107,8 @@
 {"Make room persistent","สร้างเป็นห้องถาวร"}.
 {"Make room public searchable","สร้างเป็นห้องที่บุคคลทั่วไปสามารถค้นหาได้"}.
 {"March","มีนาคม"}.
+{"Max # of items to persist","จำนวนสูงสุดของรายการที่ยืนยัน"}.
+{"Max payload size in bytes","ขนาดสูงสุดของส่วนของข้อมูล (payload) มีหน่วยเป็นไบต์"}.
 {"Maximum Number of Occupants","จำนวนผู้ครอบครองห้องสูงสุด"}.
 {"May","พฤษภาคม"}.
 {"Members:","สมาชิก:"}.
@@ -121,10 +125,15 @@
 {"No body provided for announce message","ไม่ได้ป้อนเนื้อหาสำหรับข้อความที่ประกาศ"}.
 {"No Data","ไม่มีข้อมูล"}.
 {"No limit","ไม่จำกัด"}.
+{"Node ID","ID โหนด"}.
 {"Node not found","ไม่พบโหนด"}.
 {"Nodes","โหนด"}.
 {"None","ไม่มี"}.
+{"Notify subscribers when items are removed from the node","แจ้งเตือนผู้สมัครสมาชิกเมื่อรายการถูกลบออกจากโหนด"}.
+{"Notify subscribers when the node configuration changes","แจ้งเตือนผู้สมัครสมาชิกเมื่อการกำหนดค่าโหนดเปลี่ยนแปลง"}.
+{"Notify subscribers when the node is deleted","แจ้งเตือนผู้สมัครสมาชิกเมื่อโหนดถูกลบ"}.
 {"November","พฤศจิกายน"}.
+{"Number of occupants","จำนวนผู้ครอบครองห้อง"}.
 {"Number of online users","จำนวนผู้ใช้ออนไลน์"}.
 {"Number of registered users","จำนวนผู้ใช้ที่ลงทะเบียน"}.
 {"October","ตุลาคม"}.
@@ -134,6 +143,7 @@
 {"Online Users","ผู้ใช้ออนไลน์"}.
 {"Online Users:","ผู้ใช้ออนไลน์:"}.
 {"Online","ออนไลน์"}.
+{"Only deliver notifications to available users","ส่งการแจ้งเตือนถึงผู้ใช้ที่สามารถติดต่อได้เท่านั้น"}.
 {"Only occupants are allowed to send messages to the conference","ผู้ครอบครองห้องเท่านั้นที่ได้รับอนุญาตให้ส่งข้อความไปยังห้องประชุม"}.
 {"Only occupants are allowed to send queries to the conference","ผู้ครอบครองห้องเท่านั้นที่ได้รับอนุญาตให้ส่งกระทู้ถามไปยังห้องประชุม"}.
 {"Only service administrators are allowed to send service messages","ผู้ดูแลด้านการบริการเท่านั้นที่ได้รับอนุญาตให้ส่งข้อความการบริการ"}.
@@ -150,8 +160,10 @@
 {"Path to File","พาธของไฟล์ข้อมูล"}.
 {"Pending","ค้างอยู่"}.
 {"Period: ","ระยะเวลา:"}.
+{"Persist items to storage","ยืนยันรายการที่จะจัดเก็บ"}.
 {"Ping","Ping"}.
 {"Pong","Pong"}.
+{"Present real Jabber IDs to","แสดง Jabber IDs ที่ถูกต้องแก่"}.
 {"private, ","ส่วนตัว, "}.
 {"Publish-Subscribe","เผยแพร่-สมัครเข้าใช้งาน"}.
 {"PubSub subscriber request","คำร้องขอของผู้สมัครเข้าใช้งาน PubSub"}.
@@ -178,7 +190,6 @@
 {"Room creation is denied by service policy","การสร้างห้องสนทนาถูกปฏิเสธโดยนโยบายการบริการ"}.
 {"Room title","ชื่อห้อง"}.
 {"Roster size","ขนาดของบัญชีรายชื่อ"}.
-{"Roster","บัญชีรายชื่อ"}.
 {"RPC Call Error","ข้อผิดพลาดจากการเรียกใช้ RPC"}.
 {"Running Nodes","โหนดที่ทำงาน"}.
 {"Saturday","วันเสาร์"}.
@@ -196,6 +207,8 @@
 {"Show Integral Table","แสดงตารางรวม"}.
 {"Show Ordinary Table","แสดงตารางทั่วไป"}.
 {"Shut Down Service","ปิดการบริการ"}.
+{"Specify the access model","ระบุโมเดลการเข้าถึง"}.
+{"Specify the publisher model","ระบุโมเดลผู้เผยแพร่"}.
 {"Statistics of ~p","สถิติของ ~p"}.
 {"Statistics","สถิติ"}.
 {"Stopped Nodes","โหนดที่หยุด"}.
@@ -206,6 +219,7 @@
 {"Subject","หัวเรื่อง"}.
 {"Submitted","ส่งแล้ว"}.
 {"Submit","ส่ง"}.
+{"Subscriber Address","ที่อยู่ของผู้สมัคร"}.
 {"Subscription","การสมัครสมาชิก"}.
 {"Sunday","วันอาทิตย์"}.
 {"the password is","รหัสผ่านคือ"}.
@@ -235,6 +249,8 @@
 {"Virtual Hosts","โฮสต์เสมือน"}.
 {"Visitors are not allowed to send messages to all occupants","ผู้เยี่ยมเยือนไม่ได้รับอนุญาตให้ส่งข้อความถึงผู้ครอบครองห้องทั้งหมด"}.
 {"Wednesday","วันพุธ"}.
+{"When to send the last published item","เวลาที่ส่งรายการที่เผยแพร่ครั้งล่าสุด"}.
+{"Whether to allow subscriptions","อนุญาตให้เข้าร่วมเป็นสมาชิกหรือไม่"}.
 {"You have been banned from this room","คุณถูกสั่งห้ามไมให้เข้าห้องนี้"}.
 {"You must fill in field \"Nickname\" in the form","คุณต้องกรอกฟิลด์ \"Nickname\" ในแบบฟอร์ม"}.
 {"You need an x:data capable client to search","คุณต้องใช้ไคลเอ็นต์ที่รองรับ x:data เพื่อค้นหา"}.

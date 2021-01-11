@@ -1,5 +1,6 @@
 %% -*- coding: utf-8 -*-
 {" has set the subject to: ","已将标题设置为: "}.
+{"A friendly name for the node","该节点的友好名称"}.
 {"A password is required to enter this room","进入此房间需要密码"}.
 {"Accept","接受"}.
 {"Access denied by service policy","访问被服务策略拒绝"}.
@@ -12,6 +13,7 @@
 {"Administrator privileges required","需要管理员权限"}.
 {"All activity","所有活动"}.
 {"All Users","所有用户"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","允许该Jabber ID订阅该pubsub节点?"}.
 {"Allow users to change the subject","允许用户更改主题"}.
 {"Allow users to query other users","允许用户查询其它用户"}.
 {"Allow users to send invites","允许用户发送邀请"}.
@@ -19,6 +21,7 @@
 {"Allow visitors to change nickname","允许用户更改昵称"}.
 {"Allow visitors to send private messages to","允许访客发送私聊消息至"}.
 {"Allow visitors to send status text in presence updates","更新在线状态时允许用户发送状态文本"}.
+{"Allow visitors to send voice requests","允许访客发送声音请求"}.
 {"Announcements","通知"}.
 {"April","四月"}.
 {"August","八月"}.
@@ -33,6 +36,7 @@
 {"Bytestream already activated","字节流已经被激活"}.
 {"Cannot remove active list","无法移除活跃列表"}.
 {"Cannot remove default list","无法移除缺省列表"}.
+{"CAPTCHA web page","验证码网页"}.
 {"Change Password","更改密码"}.
 {"Change User Password","更改用户密码"}.
 {"Changing password is not allowed","不允许修改密码"}.
@@ -64,9 +68,10 @@
 {"Delete message of the day","删除每日消息"}.
 {"Delete Selected","删除已选内容"}.
 {"Delete User","删除用户"}.
+{"Deliver event notifications","传递事件通知"}.
+{"Deliver payloads with event notifications","用事件通告传输有效负载"}.
 {"Description:","描述:"}.
 {"Disc only copy","仅磁盘复制"}.
-{"Displayed Groups:","已显示的组:"}.
 {"Don't tell your password to anybody, not even the administrators of the Jabber server.","不要将密码告诉任何人, 就算是Jabber服务器的管理员也不可以."}.
 {"Dump Backup to Text File at ","转储备份到文本文件于"}.
 {"Dump to Text File","转储到文本文件"}.
@@ -82,6 +87,7 @@
 {"Elements","元素"}.
 {"Email","电子邮件"}.
 {"Enable logging","启用服务器端聊天记录"}.
+{"Enable message archiving","启用消息归档"}.
 {"Enabling push without 'node' attribute is not supported","不支持未使用'node'属性就开启推送"}.
 {"End User Session","结束用户会话"}.
 {"Enter nickname you want to register","请输入您想要注册的昵称"}.
@@ -92,6 +98,7 @@
 {"Enter the text you see","请输入您所看到的文本"}.
 {"Erlang Jabber Server","Erlang Jabber服务器"}.
 {"Error","错误"}.
+{"Exclude Jabber IDs from CAPTCHA challenge","从验证码挑战中排除Jabber ID"}.
 {"Export all tables as SQL queries to a file:","将所有表以SQL查询语句导出到文件:"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","将服务器上所有用户的数据导出到 PIEFXIS 文件 (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","将某主机的用户数据导出到 PIEFXIS 文件 (XEP-0227):"}.
@@ -101,6 +108,7 @@
 {"Failed to extract JID from your voice request approval","无法从你的声音请求确认信息中提取JID"}.
 {"Failed to map delegated namespace to external component","未能将代理命名空间映射到外部组件"}.
 {"Failed to parse HTTP response","HTTP响应解析失败"}.
+{"Failed to process option '~s'","选项'~s'处理失败"}.
 {"Family Name","姓氏"}.
 {"February","二月"}.
 {"File larger than ~w bytes","文件大于 ~w 字节"}.
@@ -113,8 +121,9 @@
 {"Get User Password","获取用户密码"}.
 {"Get User Statistics","获取用户统计"}.
 {"Given Name","中间名"}.
-{"Group ","组"}.
+{"Grant voice to this person?","为此人授权声音?"}.
 {"Groups","组"}.
+{"Group","组"}.
 {"has been banned","已被禁止"}.
 {"has been kicked because of a system shutdown","因系统关机而被踢出"}.
 {"has been kicked because of an affiliation change","因联属关系改变而被踢出"}.
@@ -145,6 +154,7 @@
 {"Invitations are not allowed in this conference","此会议不允许邀请"}.
 {"IP addresses","IP地址"}.
 {"is now known as","现在称呼为"}.
+{"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","不允许将错误消息发送到该房间. 参与者(~s)已发送过一条消息(~s)并已被踢出房间"}.
 {"It is not allowed to send private messages of type \"groupchat\"","\"群组聊天\"类型不允许发送私聊消息"}.
 {"It is not allowed to send private messages to the conference","不允许向会议发送私聊消息"}.
 {"It is not allowed to send private messages","不可以发送私聊消息"}.
@@ -170,6 +180,8 @@
 {"Make room public searchable","使房间可被公开搜索"}.
 {"Malformed username","用户名无效"}.
 {"March","三月"}.
+{"Max # of items to persist","允许持久化的最大内容条目数"}.
+{"Max payload size in bytes","最大有效负载字节数"}.
 {"Maximum Number of Occupants","允许的与会人最大数"}.
 {"May","五月"}.
 {"Membership is required to enter this room","进入此房间需要会员身份"}.
@@ -179,7 +191,9 @@
 {"Message body","消息主体"}.
 {"Message not found in forwarded payload","转发的有效载荷中找不到消息"}.
 {"Middle Name","中间名"}.
+{"Minimum interval between voice requests (in seconds)","声音请求的最小间隔(以秒为单位)"}.
 {"Moderator privileges required","需要主持人权限"}.
+{"Moderator","主持人"}.
 {"Modified modules","被修改模块"}.
 {"Module failed to handle the query","模块未能处理查询"}.
 {"Monday","星期一"}.
@@ -193,6 +207,7 @@
 {"Never","从未"}.
 {"New Password:","新密码:"}.
 {"Nickname Registration at ","昵称注册于"}.
+{"Nickname ~s does not exist in the room","昵称~s不在该房间"}.
 {"Nickname","昵称"}.
 {"No 'affiliation' attribute found","未发现 'affiliation' 属性"}.
 {"No available resource found","没发现可用资源"}.
@@ -218,6 +233,7 @@
 {"No statistics found for this item","未找到此项的统计数据"}.
 {"No 'to' attribute found in the invitation","邀请中未发现 'to' 标签"}.
 {"Node already exists","节点已存在"}.
+{"Node ID","节点ID"}.
 {"Node index not found","没有找到节点索引"}.
 {"Node not found","没有找到节点"}.
 {"Node ~p","节点~p"}.
@@ -226,7 +242,11 @@
 {"None","无"}.
 {"Not Found","没有找到"}.
 {"Not subscribed","未订阅"}.
+{"Notify subscribers when items are removed from the node","当从节点删除内容条目时通知订阅人"}.
+{"Notify subscribers when the node configuration changes","当节点设置改变时通知订阅人"}.
+{"Notify subscribers when the node is deleted","当节点被删除时通知订阅人"}.
 {"November","十一月"}.
+{"Number of occupants","驻留人数"}.
 {"Number of online users","在线用户数"}.
 {"Number of registered users","注册用户数"}.
 {"October","十月"}.
@@ -237,6 +257,7 @@
 {"Online Users","在线用户"}.
 {"Online Users:","在线用户:"}.
 {"Online","在线"}.
+{"Only deliver notifications to available users","仅将通知发送给可发送的用户"}.
 {"Only <enable/> or <disable/> tags are allowed","仅允许 <enable/> 或 <disable/> 标签"}.
 {"Only <list/> element is allowed in this query","此查询中只允许 <list/> 元素"}.
 {"Only members may query archives of this room","只有会员可以查询本房间的存档"}.
@@ -252,6 +273,7 @@
 {"Outgoing s2s Connections:","出站 s2s 连接:"}.
 {"Owner privileges required","需要持有人权限"}.
 {"Packet","数据包"}.
+{"Participant","参与人"}.
 {"Password Verification:","密码确认:"}.
 {"Password Verification","确认密码"}.
 {"Password","密码"}.
@@ -260,15 +282,18 @@
 {"Path to File","文件路径"}.
 {"Pending","挂起"}.
 {"Period: ","持续时间: "}.
+{"Persist items to storage","持久化内容条目"}.
 {"Ping query is incorrect","Ping 查询不正确"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","注意：这些选项仅将备份内置的 Mnesia 数据库. 如果您正在使用 ODBC 模块, 您还需要分别备份您的数据库."}.
 {"Please, wait for a while before sending new voice request","请稍后再发送新的声音请求"}.
 {"Pong","Pong"}.
 {"Possessing 'ask' attribute is not allowed by RFC6121","按照 RFC6121， 不允许有 'ask' 属性"}.
+{"Present real Jabber IDs to","将真实Jabber ID显示给"}.
 {"private, ","保密, "}.
 {"Publish-Subscribe","发行-订阅"}.
 {"PubSub subscriber request","PubSub订阅人请求"}.
+{"Purge all items when the relevant publisher goes offline","相关发布人离线后清除所有选项"}.
 {"Queries to the conference members are not allowed in this room","本房间不可以查询会议成员信息"}.
 {"Query to another users is forbidden","禁止查询其他用户"}.
 {"RAM and disc copy","内存与磁盘复制"}.
@@ -292,13 +317,14 @@
 {"Restore binary backup immediately:","立即恢复二进制备份:"}.
 {"Restore plain text backup immediately:","立即恢复普通文本备份:"}.
 {"Restore","恢复"}.
+{"Roles for which Presence is Broadcasted","广播存在性的角色"}.
 {"Room Configuration","房间配置"}.
 {"Room creation is denied by service policy","创建房间被服务策略拒绝"}.
 {"Room description","房间描述"}.
 {"Room Occupants","房间人数"}.
 {"Room title","房间标题"}.
+{"Roster groups allowed to subscribe","允许订阅的花名册组"}.
 {"Roster size","花名册大小"}.
-{"Roster","花名册"}.
 {"RPC Call Error","RPC 调用错误"}.
 {"Running Nodes","运行中的节点"}.
 {"Saturday","星期六"}.
@@ -318,6 +344,9 @@
 {"Show Ordinary Table","显示普通列表"}.
 {"Shut Down Service","关闭服务"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","某些 Jabber 客户端可以在你的计算机里存储密码. 请仅在你确认你的计算机安全的情况下使用该功能."}.
+{"Specify the access model","指定访问范例"}.
+{"Specify the event message type","指定事件消息类型"}.
+{"Specify the publisher model","指定发布人范例"}.
 {"Statistics of ~p","~p的统计"}.
 {"Statistics","统计"}.
 {"Stopped Nodes","已经停止的节点"}.
@@ -328,6 +357,7 @@
 {"Subject","标题"}.
 {"Submitted","已提交"}.
 {"Submit","提交"}.
+{"Subscriber Address","订阅人地址"}.
 {"Subscriptions are not allowed","不允许订阅"}.
 {"Subscription","订阅"}.
 {"Sunday","星期天"}.
@@ -335,6 +365,7 @@
 {"That nickname is registered by another person","该昵称已被另一个人注册了"}.
 {"The CAPTCHA is valid.","验证码有效."}.
 {"The CAPTCHA verification has failed","验证码检查失败"}.
+{"The collections with which a node is affiliated","加入结点的集合"}.
 {"The feature requested is not supported by the conference","会议不支持所请求的特征"}.
 {"The password contains unacceptable characters","密码包含不可接受的字符"}.
 {"The password is too weak","密码强度太弱"}.
@@ -353,11 +384,13 @@
 {"Thursday","星期四"}.
 {"Time delay","时间延迟"}.
 {"Time","时间"}.
+{"To register, visit ~s","要注册，请访问 ~s"}.
 {"Token TTL","TTL令牌"}.
 {"Too many active bytestreams","活跃的字节流太多"}.
 {"Too many CAPTCHA requests","验证码请求太多"}.
 {"Too many <item/> elements","太多 <item/> 元素"}.
 {"Too many <list/> elements","太多 <list/> 元素"}.
+{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","来自IP地址(~p)的(~s)失败认证太多. 该地址将在UTC时间~s被禁用."}.
 {"Too many unacked stanzas","未被确认的节太多"}.
 {"Too many users in this conference","该会议的用户太多"}.
 {"Total rooms","所有房间"}.
@@ -384,6 +417,7 @@
 {"Uptime:","正常运行时间:"}.
 {"User already exists","用户已存在"}.
 {"User (jid)","用户 (jid)"}.
+{"User JID","用户JID"}.
 {"User Management","用户管理"}.
 {"User session not found","用户会话未找到"}.
 {"User session terminated","用户会话已终止"}.
@@ -394,14 +428,20 @@
 {"User","用户"}.
 {"Validate","确认"}.
 {"Value 'get' of 'type' attribute is not allowed","不允许 'type' 属性的 'get' 值"}.
+{"Value of '~s' should be boolean","'~s' 的值应为布尔型"}.
+{"Value of '~s' should be datetime string","'~s' 的值应为日期时间字符串"}.
+{"Value of '~s' should be integer","'~s' 的值应为整数"}.
 {"Value 'set' of 'type' attribute is not allowed","不允许 'type' 属性的 'set' 值"}.
 {"vCard User Search","vCard用户搜索"}.
 {"Virtual Hosts","虚拟主机"}.
 {"Visitors are not allowed to change their nicknames in this room","此房间不允许用户更改昵称"}.
 {"Visitors are not allowed to send messages to all occupants","不允许访客给所有占有者发送消息"}.
+{"Visitor","访客"}.
 {"Voice requests are disabled in this conference","该会议的声音请求已被禁用"}.
 {"Voice request","声音请求"}.
 {"Wednesday","星期三"}.
+{"When to send the last published item","何时发送最新发布的内容条目"}.
+{"Whether to allow subscriptions","是否允许订阅"}.
 {"You can later change your password using a Jabber client.","你可以稍后用Jabber客户端修改你的密码."}.
 {"You have been banned from this room","您已被禁止进入该房间"}.
 {"You have joined too many conferences","您加入的会议太多"}.
@@ -413,4 +453,5 @@
 {"Your contact offline message queue is full. The message has been discarded.","您的联系人离线消息队列已满. 消息已被丢弃"}.
 {"Your Jabber account was successfully created.","你的Jabber帐户已成功创建."}.
 {"Your Jabber account was successfully deleted.","你的 Jabber 帐户已成功删除."}.
+{"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","您发送给~s的消息已被阻止. 要解除阻止, 请访问 ~s"}.
 {"You're not allowed to create nodes","您不可以创建节点"}.

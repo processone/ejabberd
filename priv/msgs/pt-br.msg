@@ -1,5 +1,6 @@
 %% -*- coding: utf-8 -*-
 {" has set the subject to: "," mudou o assunto para: "}.
+{"A friendly name for the node","Um nome familiar para o nó"}.
 {"A password is required to enter this room","Se necessita senha para entrar nesta sala"}.
 {"Accept","Aceito"}.
 {"Access denied by service policy","Acesso negado pela política do serviço"}.
@@ -12,6 +13,7 @@
 {"Administrator privileges required","Se necessita privilégios de administrador"}.
 {"All activity","Todas atividades"}.
 {"All Users","Todos os usuários"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Autorizar este Jabber ID para a inscrição neste tópico pubsub?"}.
 {"Allow users to change the subject","Permitir a usuários modificar o assunto"}.
 {"Allow users to query other users","Permitir a usuários pesquisar informações sobre os demais"}.
 {"Allow users to send invites","Permitir a usuários envio de convites"}.
@@ -19,6 +21,7 @@
 {"Allow visitors to change nickname","Permitir mudança de apelido aos visitantes"}.
 {"Allow visitors to send private messages to","Permitir visitantes enviar mensagem privada para"}.
 {"Allow visitors to send status text in presence updates","Permitir atualizações de status aos visitantes"}.
+{"Allow visitors to send voice requests","Permitir aos visitantes o envio de requisições de voz"}.
 {"Announcements","Anúncios"}.
 {"April","Abril"}.
 {"August","Agosto"}.
@@ -33,6 +36,7 @@
 {"Bytestream already activated","Bytestream já foi ativado"}.
 {"Cannot remove active list","Não é possível remover uma lista ativa"}.
 {"Cannot remove default list","Não é possível remover uma lista padrão"}.
+{"CAPTCHA web page","CAPTCHA web page"}.
 {"Change Password","Mudar senha"}.
 {"Change User Password","Alterar Senha do Usuário"}.
 {"Characters not allowed:","Caracteres não aceitos:"}.
@@ -48,6 +52,7 @@
 {"City","Cidade"}.
 {"Commands","Comandos"}.
 {"Conference room does not exist","A sala de conferência não existe"}.
+{"Configuration of room ~s","Configuração para ~s"}.
 {"Configuration","Configuração"}.
 {"Connected Resources:","Recursos conectados:"}.
 {"Country","País"}.
@@ -61,9 +66,10 @@
 {"Delete message of the day","Apagar mensagem do dia"}.
 {"Delete Selected","Remover os selecionados"}.
 {"Delete User","Deletar Usuário"}.
+{"Deliver event notifications","Entregar as notificações de evento"}.
+{"Deliver payloads with event notifications","Enviar payloads junto com as notificações de eventos"}.
 {"Description:","Descrição:"}.
 {"Disc only copy","Somente cópia em disco"}.
-{"Displayed Groups:","Grupos Exibidos:"}.
 {"Don't tell your password to anybody, not even the administrators of the Jabber server.","Não revele a sua senha a ninguém, nem mesmo para o administrador deste servidor Jabber."}.
 {"Dump Backup to Text File at ","Exportar backup para texto em "}.
 {"Dump to Text File","Exportar para arquivo texto"}.
@@ -79,6 +85,7 @@
 {"Elements","Elementos"}.
 {"Email","Email"}.
 {"Enable logging","Permitir criação de logs"}.
+{"Enable message archiving","Habilitar arquivamento de mensagens"}.
 {"Enabling push without 'node' attribute is not supported","Abilitar push sem o atributo 'node' não é suportado"}.
 {"End User Session","Terminar Sessão do Usuário"}.
 {"Enter nickname you want to register","Introduza o apelido que quer registrar"}.
@@ -89,6 +96,7 @@
 {"Enter the text you see","Insira o texto que você vê"}.
 {"Erlang Jabber Server","Servidor Jabber em Erlang"}.
 {"Error","Erro"}.
+{"Exclude Jabber IDs from CAPTCHA challenge","Excluir IDs Jabber de serem submetidos ao CAPTCHA"}.
 {"Export all tables as SQL queries to a file:","Exportar todas as tabelas como SQL para um arquivo:"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Exportar todos os dados de todos os usuários no servidor, para arquivos formato PIEFXIS (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Exportar dados dos usuários em um host, para arquivos PIEFXIS (XEP-0227):"}.
@@ -98,6 +106,7 @@
 {"Failed to extract JID from your voice request approval","Não foi possível extrair o JID (Jabber ID) da requisição de voz"}.
 {"Failed to map delegated namespace to external component","Falha ao mapear namespace delegado ao componente externo"}.
 {"Failed to parse HTTP response","Falha ao analisar resposta HTTP"}.
+{"Failed to process option '~s'","Falha ao processar opção '~s'"}.
 {"Family Name","Sobrenome"}.
 {"February","Fevereiro"}.
 {"File larger than ~w bytes","Arquivo maior que ~w bytes"}.
@@ -109,7 +118,8 @@
 {"Get User Last Login Time","Obter a Data do Último Login"}.
 {"Get User Password","Obter Senha do Usuário"}.
 {"Get User Statistics","Obter Estatísticas do Usuário"}.
-{"Group ","Grupo "}.
+{"Grant voice to this person?","Dar voz a esta pessoa?"}.
+{"Group","Grupo"}.
 {"Groups","Grupos"}.
 {"has been banned","foi banido"}.
 {"has been kicked because of a system shutdown","foi desconectado porque o sistema foi desligado"}.
@@ -139,6 +149,7 @@
 {"Invalid 'from' attribute in forwarded message","Atributo 'from' inválido na mensagem reenviada"}.
 {"IP addresses","Endereços IP"}.
 {"is now known as","é agora conhecido como"}.
+{"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Não é permitido o envio de mensagens de erro a esta sala. O membro (~s) enviou uma mensagem de erro (~s) e foi desconectado (\"kicked\")."}.
 {"It is not allowed to send private messages of type \"groupchat\"","Não é permitido enviar mensagens privadas do tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Não é permitido enviar mensagens privadas para a sala de conferência"}.
 {"It is not allowed to send private messages","Não é permitido enviar mensagens privadas"}.
@@ -163,6 +174,8 @@
 {"Make room persistent","Tornar sala persistente"}.
 {"Make room public searchable","Tornar sala pública possível de ser encontrada"}.
 {"March","Março"}.
+{"Max # of items to persist","Máximo # de elementos que persistem"}.
+{"Max payload size in bytes","Máximo tamanho do payload em bytes"}.
 {"Maximum Number of Occupants","Número máximo de participantes"}.
 {"May","Maio"}.
 {"Membership is required to enter this room","É necessário ser membro desta sala para poder entrar"}.
@@ -172,7 +185,9 @@
 {"Message body","Corpo da mensagem"}.
 {"Message not found in forwarded payload","Mensagem não encontrada em conteúdo encaminhado"}.
 {"Middle Name","Nome do meio"}.
+{"Minimum interval between voice requests (in seconds)","O intervalo mínimo entre requisições de voz (em segundos)"}.
 {"Moderator privileges required","Se necessita privilégios de moderador"}.
+{"Moderator","Moderador"}.
 {"Modified modules","Módulos atualizados"}.
 {"Module failed to handle the query","Módulo falhou ao processar a consulta"}.
 {"Monday","Segunda"}.
@@ -186,6 +201,7 @@
 {"Never","Nunca"}.
 {"New Password:","Nova Senha:"}.
 {"Nickname Registration at ","Registro do apelido em "}.
+{"Nickname ~s does not exist in the room","O apelido ~s não existe na sala"}.
 {"Nickname","Apelido"}.
 {"No 'affiliation' attribute found","Atributo 'affiliation' não foi encontrado"}.
 {"No available resource found","Nenhum recurso disponível foi encontrado"}.
@@ -208,6 +224,7 @@
 {"No statistics found for this item","Não foram encontradas estatísticas para este item"}.
 {"No 'to' attribute found in the invitation","Atributo 'to' não foi encontrado no convite"}.
 {"Node already exists","Nó já existe"}.
+{"Node ID","ID do Tópico"}.
 {"Node not found","Nó não encontrado"}.
 {"Node ~p","Nó ~p"}.
 {"Nodeprep has failed","Processo de identificação de nó falhou (nodeprep)"}.
@@ -215,7 +232,11 @@
 {"None","Nenhum"}.
 {"Not Found","Não encontrado"}.
 {"Not subscribed","Não subscrito"}.
+{"Notify subscribers when items are removed from the node","Notificar assinantes quando itens forem eliminados do nó"}.
+{"Notify subscribers when the node configuration changes","Notificar assinantes a configuração do nó mudar"}.
+{"Notify subscribers when the node is deleted","Notificar assinantes quando o nó for eliminado se elimine"}.
 {"November","Novembro"}.
+{"Number of occupants","Número de participantes"}.
 {"Number of online users","Número de usuários online"}.
 {"Number of registered users","Número de usuários registrados"}.
 {"October","Outubro"}.
@@ -226,6 +247,7 @@
 {"Online Users","Usuários conectados"}.
 {"Online Users:","Usuários online"}.
 {"Online","Conectado"}.
+{"Only deliver notifications to available users","Somente enviar notificações aos usuários disponíveis"}.
 {"Only <enable/> or <disable/> tags are allowed","Apenas tags <enable/> ou <disable/> são permitidas"}.
 {"Only <list/> element is allowed in this query","Apenas elemento <list/> é permitido nesta consulta"}.
 {"Only members may query archives of this room","Somente os membros podem procurar nos arquivos desta sala"}.
@@ -241,6 +263,7 @@
 {"Outgoing s2s Connections:","Conexões s2s de Saída"}.
 {"Owner privileges required","Se requer privilégios de proprietário da sala"}.
 {"Packet","Pacote"}.
+{"Participant","Participante"}.
 {"Password Verification","Verificação de Senha"}.
 {"Password Verification:","Verificação de Senha"}.
 {"Password","Senha"}.
@@ -249,14 +272,17 @@
 {"Path to File","Caminho do arquivo"}.
 {"Pending","Pendente"}.
 {"Period: ","Período: "}.
+{"Persist items to storage","Persistir elementos ao armazenar"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Observe que tais opções farão backup apenas da base de dados Mnesia. Caso você esteja utilizando o modulo ODBC, você precisará fazer backup de sua base de dados SQL separadamente."}.
 {"Please, wait for a while before sending new voice request","Por favor, espere antes de enviar uma nova requisição de voz"}.
 {"Pong","Pong"}.
 {"Possessing 'ask' attribute is not allowed by RFC6121","Possuir atributo 'ask' não é permitido pela RFC6121"}.
+{"Present real Jabber IDs to","Tornar o Jabber ID real visível por"}.
 {"private, ","privado, "}.
 {"Publish-Subscribe","Publicação de Tópico"}.
 {"PubSub subscriber request","PubSub requisição de assinante"}.
+{"Purge all items when the relevant publisher goes offline","Descartar todos os itens quando o publicante principal estiver offline"}.
 {"Queries to the conference members are not allowed in this room","Nesta sala de conferência, consultas aos membros não são permitidas"}.
 {"Query to another users is forbidden","Consultar a outro usuário é proibido"}.
 {"RAM and disc copy","Cópias na RAM e disco rígido"}.
@@ -280,13 +306,14 @@
 {"Restore binary backup immediately:","Restaurar backup binário imediatamente"}.
 {"Restore plain text backup immediately:","Restaurar backup formato texto imediatamente:"}.
 {"Restore","Restaurar"}.
+{"Roles for which Presence is Broadcasted","Para quem a presença será notificada"}.
 {"Room Configuration","Configuração de salas"}.
 {"Room creation is denied by service policy","Sala não pode ser criada devido à política do serviço"}.
 {"Room description","Descrição da Sala"}.
 {"Room Occupants","Número de participantes"}.
 {"Room title","Título da sala"}.
+{"Roster groups allowed to subscribe","Listar grupos autorizados"}.
 {"Roster size","Tamanho da Lista"}.
-{"Roster","Lista de contatos"}.
 {"RPC Call Error","Erro de chamada RPC"}.
 {"Running Nodes","Nós em execução"}.
 {"Saturday","Sábado"}.
@@ -306,6 +333,9 @@
 {"Show Ordinary Table","Mostrar Tabela Ordinária"}.
 {"Shut Down Service","Parar Serviço"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Alguns clientes jabber podem salvar a sua senha no seu computador. Use o recurso somente se você considera este computador seguro o suficiente."}.
+{"Specify the access model","Especificar os modelos de acesso"}.
+{"Specify the event message type","Especificar o tipo de mensagem para o evento"}.
+{"Specify the publisher model","Especificar o modelo do publicante"}.
 {"Statistics of ~p","Estatísticas de ~p"}.
 {"Statistics","Estatísticas"}.
 {"Stop","Parar"}.
@@ -316,6 +346,7 @@
 {"Subject","Assunto"}.
 {"Submit","Enviar"}.
 {"Submitted","Submetido"}.
+{"Subscriber Address","Endereço dos Assinantes"}.
 {"Subscriptions are not allowed","Subscrições não estão permitidas"}.
 {"Subscription","Subscrição"}.
 {"Sunday","Domingo"}.
@@ -323,6 +354,7 @@
 {"That nickname is registered by another person","O apelido já está registrado por outra pessoa"}.
 {"The CAPTCHA is valid.","O CAPTCHA é inválido."}.
 {"The CAPTCHA verification has failed","A verificação do CAPTCHA falhou"}.
+{"The collections with which a node is affiliated","As coleções com as quais o nó está relacionado"}.
 {"The feature requested is not supported by the conference","A funcionalidade solicitada não é suportada pela sala de conferência"}.
 {"The password contains unacceptable characters","A senha contém caracteres proibidos"}.
 {"The password is too weak","Senha considerada muito fraca"}.
@@ -341,10 +373,12 @@
 {"Thursday","Quinta"}.
 {"Time delay","Intervalo (Tempo)"}.
 {"Time","Tempo"}.
+{"To register, visit ~s","Para registrar, visite ~s"}.
 {"Token TTL","Token TTL"}.
 {"Too many CAPTCHA requests","Número excessivo de requisições para o CAPTCHA"}.
 {"Too many <item/> elements","Número excessivo de elementos <item/>"}.
 {"Too many <list/> elements","Número excessivo de elementos <list/>"}.
+{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Número excessivo (~p) de tentativas falhas de autenticação (~s). O endereço será desbloqueado às ~s UTC"}.
 {"Too many unacked stanzas","Número excessivo de instâncias sem confirmação"}.
 {"To","Para"}.
 {"Total rooms","Salas no total"}.
@@ -370,6 +404,7 @@
 {"Uptime:","Uptime:"}.
 {"User already exists","Usuário já existe"}.
 {"User (jid)","Usuário (jid)"}.
+{"User JID","Usuário JID"}.
 {"User Management","Gerenciamento de Usuários"}.
 {"User session terminated","Sessão de usuário terminada"}.
 {"Username:","Usuário:"}.
@@ -379,14 +414,20 @@
 {"User","Usuário"}.
 {"Validate","Validar"}.
 {"Value 'get' of 'type' attribute is not allowed","Valor 'get' não permitido para atributo 'type'"}.
+{"Value of '~s' should be boolean","Value de '~s' deveria ser um booleano"}.
+{"Value of '~s' should be datetime string","Valor de '~s' deveria ser data e hora"}.
+{"Value of '~s' should be integer","Valor de '~s' deveria ser um inteiro"}.
 {"Value 'set' of 'type' attribute is not allowed","Valor 'set' não permitido para atributo 'type'"}.
 {"vCard User Search","Busca de Usuário vCard"}.
 {"Virtual Hosts","Hosts virtuais"}.
 {"Visitors are not allowed to change their nicknames in this room","Nesta sala, os visitantes não podem mudar seus apelidos"}.
 {"Visitors are not allowed to send messages to all occupants","Os visitantes não podem enviar mensagens a todos os ocupantes"}.
+{"Visitor","Visitante"}.
 {"Voice request","Requisição de voz"}.
 {"Voice requests are disabled in this conference","Requisições de voz estão desabilitadas nesta sala de conferência"}.
 {"Wednesday","Quarta"}.
+{"When to send the last published item","Quando enviar o último tópico publicado"}.
+{"Whether to allow subscriptions","Permitir subscrições"}.
 {"You can later change your password using a Jabber client.","Mais tarde você pode alterar a sua senha usando um cliente Jabber."}.
 {"You have been banned from this room","Você foi banido desta sala"}.
 {"You have joined too many conferences","Você entrou em um número excessivo de salas de conferência"}.
@@ -398,3 +439,4 @@
 {"Your contact offline message queue is full. The message has been discarded.","Sua fila de mensagens offline esta cheia. Sua mensagem foi descartada"}.
 {"Your Jabber account was successfully created.","Sua conta jabber foi criada com sucesso."}.
 {"Your Jabber account was successfully deleted.","Sua conta Jabber foi deletada com sucesso."}.
+{"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Suas mensagens para ~s estão bloqueadas. Para desbloqueá-las, visite: ~s"}.

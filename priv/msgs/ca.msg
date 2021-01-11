@@ -1,6 +1,7 @@
 %% -*- coding: utf-8 -*-
 {" (Add * to the end of field to match substring)"," (Afegix * al final d'un camp per a buscar subcadenes)"}.
 {" has set the subject to: "," ha posat l'assumpte: "}.
+{"A friendly name for the node","Un nom per al node"}.
 {"A password is required to enter this room","Es necessita contrasenya per a entrar en aquesta sala"}.
 {"Accept","Acceptar"}.
 {"Access denied by service policy","Accés denegat per la política del servei"}.
@@ -14,6 +15,7 @@
 {"Administrator privileges required","Es necessita tenir privilegis d'administrador"}.
 {"All activity","Tota l'activitat"}.
 {"All Users","Tots els usuaris"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Permetre que aquesta Jabber ID es puga subscriure a aquest node pubsub"}.
 {"Allow users to change the subject","Permetre que els usuaris canviin el tema"}.
 {"Allow users to query other users","Permetre que els usuaris fagen peticions a altres usuaris"}.
 {"Allow users to send invites","Permetre que els usuaris envien invitacions"}.
@@ -21,6 +23,7 @@
 {"Allow visitors to change nickname","Permetre als visitants canviar el sobrenom"}.
 {"Allow visitors to send private messages to","Permetre als visitants enviar missatges privats a"}.
 {"Allow visitors to send status text in presence updates","Permetre als visitants enviar text d'estat en les actualitzacions de presència"}.
+{"Allow visitors to send voice requests","Permetre als visitants enviar peticions de veu"}.
 {"Announcements","Anuncis"}.
 {"April","Abril"}.
 {"Attribute 'channel' is required for this request","L'atribut 'channel' és necessari per a aquesta petició"}.
@@ -39,6 +42,7 @@
 {"Bytestream already activated","El Bytestream ja està activat"}.
 {"Cannot remove active list","No es pot eliminar la llista activa"}.
 {"Cannot remove default list","No es pot eliminar la llista per defecte"}.
+{"CAPTCHA web page","Pàgina web del CAPTCHA"}.
 {"Change Password","Canviar Contrasenya"}.
 {"Change User Password","Canviar Contrasenya d'Usuari"}.
 {"Changing password is not allowed","No està permès canviar la contrasenya"}.
@@ -77,6 +81,8 @@
 {"Delete Selected","Eliminar els seleccionats"}.
 {"Delete table","Eliminar taula"}.
 {"Delete User","Eliminar Usuari"}.
+{"Deliver event notifications","Entrega de notificacions d'events"}.
+{"Deliver payloads with event notifications","Enviar payloads junt a les notificacions d'events"}.
 {"Description:","Descripció:"}.
 {"Disc only copy","Còpia sols en disc"}.
 {"'Displayed groups' not added (they do not exist!): ","'Mostrats' no afegits (no existeixen!): "}.
@@ -98,6 +104,7 @@
 {"Elements","Elements"}.
 {"Email","Email"}.
 {"Enable logging","Habilitar el registre de la conversa"}.
+{"Enable message archiving","Activar l'emmagatzematge de missatges"}.
 {"Enabling push without 'node' attribute is not supported","No està suportat activar Push sense l'atribut 'node'"}.
 {"End User Session","Finalitzar Sesió d'Usuari"}.
 {"Enter nickname you want to register","Introdueix el sobrenom que vols registrar"}.
@@ -108,6 +115,7 @@
 {"Enter the text you see","Introdueix el text que veus"}.
 {"Erlang Jabber Server","Servidor Erlang Jabber"}.
 {"Error","Error"}.
+{"Exclude Jabber IDs from CAPTCHA challenge","Excloure Jabber IDs de la comprovació CAPTCHA"}.
 {"Export all tables as SQL queries to a file:","Exporta totes les taules a un fitxer SQL:"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Exportar dades de tots els usuaris del servidor a arxius PIEFXIS (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Exportar dades d'usuaris d'un host a arxius PIEFXIS (XEP-0227):"}.
@@ -133,6 +141,7 @@
 {"Get User Password","Obtenir Contrasenya d'usuari"}.
 {"Get User Statistics","Obtenir Estadístiques d'Usuari"}.
 {"Given Name","Nom propi"}.
+{"Grant voice to this person?","Concedir veu a aquesta persona?"}.
 {"Group","Grup"}.
 {"Groups","Grups"}.
 {"has been banned","ha sigut bloquejat"}.
@@ -200,6 +209,8 @@
 {"Malformed username","Nom d'usuari mal format"}.
 {"MAM preference modification denied by service policy","Se t'ha denegat la modificació de la preferència de MAM per política del servei"}.
 {"March","Març"}.
+{"Max # of items to persist","Màxim # d'elements que persistixen"}.
+{"Max payload size in bytes","Màxim tamany del payload en bytes"}.
 {"Maximum Number of Occupants","Número màxim d'ocupants"}.
 {"May","Maig"}.
 {"Members not added (inexistent vhost!): ","Membres no afegits (perquè el vhost no existeix): "}.
@@ -211,7 +222,9 @@
 {"Message not found in forwarded payload","Missatge no trobat al contingut reenviat"}.
 {"Messages from strangers are rejected","Els missatges de desconeguts son rebutjats"}.
 {"Middle Name","Segon nom"}.
+{"Minimum interval between voice requests (in seconds)","Interval mínim entre peticions de veu (en segons)"}.
 {"Moderator privileges required","Es necessita tenir privilegis de moderador"}.
+{"Moderator","Moderador"}.
 {"Modified modules","Mòduls modificats"}.
 {"Module failed to handle the query","El modul ha fallat al gestionar la petició"}.
 {"Monday","Dilluns"}.
@@ -256,6 +269,7 @@
 {"No statistics found for this item","No n'hi ha estadístiques disponibles per a aquest element"}.
 {"No 'to' attribute found in the invitation","No s'ha trobat l'atribut 'to' en la invitació"}.
 {"Node already exists","El node ja existeix"}.
+{"Node ID","ID del Node"}.
 {"Node index not found","Index de node no trobat"}.
 {"Node not found","Node no trobat"}.
 {"Node ~p","Node ~p"}.
@@ -265,7 +279,11 @@
 {"Not allowed","No permès"}.
 {"Not Found","No Trobat"}.
 {"Not subscribed","No subscrit"}.
+{"Notify subscribers when items are removed from the node","Notificar subscriptors quan els elements són eliminats del node"}.
+{"Notify subscribers when the node configuration changes","Notificar subscriptors quan canvia la configuració del node"}.
+{"Notify subscribers when the node is deleted","Notificar subscriptors quan el node és eliminat"}.
 {"November","Novembre"}.
+{"Number of occupants","Número d'ocupants"}.
 {"Number of online users","Número d'usuaris connectats"}.
 {"Number of registered users","Número d'Usuaris Registrats"}.
 {"October","Octubre"}.
@@ -276,6 +294,7 @@
 {"Online Users","Usuaris conectats"}.
 {"Online Users:","Usuaris en línia:"}.
 {"Online","Connectat"}.
+{"Only deliver notifications to available users","Sols enviar notificacions als usuaris disponibles"}.
 {"Only <enable/> or <disable/> tags are allowed","Només es permeten etiquetes <enable/> o <disable/>"}.
 {"Only <list/> element is allowed in this query","En esta petició només es permet l'element <list/>"}.
 {"Only members may query archives of this room","Només membres poden consultar l'arxiu de missatges d'aquesta sala"}.
@@ -292,6 +311,7 @@
 {"Owner privileges required","Es requerixen privilegis de propietari de la sala"}.
 {"Packet relay is denied by service policy","S'ha denegat el reenviament del paquet per política del servei"}.
 {"Packet","Paquet"}.
+{"Participant","Participant"}.
 {"Password Verification","Verificació de la Contrasenya"}.
 {"Password Verification:","Verificació de la Contrasenya:"}.
 {"Password","Contrasenya"}.
@@ -300,12 +320,14 @@
 {"Path to File","Ruta al fitxer"}.
 {"Pending","Pendent"}.
 {"Period: ","Període: "}.
+{"Persist items to storage","Persistir elements al guardar"}.
 {"Ping query is incorrect","La petició de Ping es incorrecta"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Recorda que aquestes opcions només fan còpia de seguretat de la base de dades Mnesia. Si estàs utilitzant el mòdul d'ODBC també deus de fer una còpia de seguretat de la base de dades de SQL a part."}.
 {"Please, wait for a while before sending new voice request","Si us plau, espera una mica abans d'enviar una nova petició de veu"}.
 {"Pong","Pong"}.
 {"Possessing 'ask' attribute is not allowed by RFC6121","Processar l'atribut 'ask' no està permès per RFC6121"}.
+{"Present real Jabber IDs to","Presentar Jabber ID's reals a"}.
 {"Previous session not found","No s'ha trobat la sessió prèvia"}.
 {"Previous session PID has been killed","El procés de la sessió prèvia ha sigut matat"}.
 {"Previous session PID has exited","El procés de la sessió prèvia ha sortit"}.
@@ -314,6 +336,7 @@
 {"private, ","privat, "}.
 {"Publish-Subscribe","Publicar-subscriure't"}.
 {"PubSub subscriber request","Petició de subscriptor PubSub"}.
+{"Purge all items when the relevant publisher goes offline","Eliminar tots els elements quan el publicant relevant es desconnecti"}.
 {"Push record not found","No s'ha trobat l'element Push"}.
 {"Queries to the conference members are not allowed in this room","En aquesta sala no es permeten sol·licituds als membres"}.
 {"Query to another users is forbidden","Enviar peticions a altres usuaris no està permès"}.
@@ -340,15 +363,16 @@
 {"Restore binary backup immediately:","Restaurar una còpia de seguretat binària ara mateix:"}.
 {"Restore plain text backup immediately:","Restaurar una còpia de seguretat en format de text pla ara mateix:"}.
 {"Restore","Restaurar"}.
+{"Roles for which Presence is Broadcasted","Rols per als que sí se difon la seua presencia"}.
 {"Room Configuration","Configuració de la sala"}.
 {"Room creation is denied by service policy","Se t'ha denegat el crear la sala per política del servei"}.
 {"Room description","Descripció de la sala"}.
 {"Room Occupants","Nombre d'ocupants"}.
 {"Room terminates","La sala està terminant"}.
 {"Room title","Títol de la sala"}.
+{"Roster groups allowed to subscribe","Llista de grups que tenen permés subscriures"}.
 {"Roster of ~ts","Llista de contactes de ~ts"}.
 {"Roster size","Tamany de la llista"}.
-{"Roster","Llista de contactes"}.
 {"RPC Call Error","Error de cridada RPC"}.
 {"Running Nodes","Nodes funcionant"}.
 {"~s invites you to the room ~s","~s et convida a la sala ~s"}.
@@ -372,6 +396,9 @@
 {"Shut Down Service","Apager el Servei"}.
 {"SOCKS5 Bytestreams","SOCKS5 Bytestreams"}.
 {"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Alguns clients Jabber poden emmagatzemar la teva contrasenya al teu ordinador. Fes servir aquesta característica només si saps que el teu ordinador és segur."}.
+{"Specify the access model","Especificar el model d'accés"}.
+{"Specify the event message type","Especifica el tipus de missatge d'event"}.
+{"Specify the publisher model","Especificar el model del publicant"}.
 {"Statistics of ~p","Estadístiques de ~p"}.
 {"Statistics","Estadístiques"}.
 {"Stop","Detindre"}.
@@ -384,6 +411,7 @@
 {"Subject","Assumpte"}.
 {"Submit","Enviar"}.
 {"Submitted","Enviat"}.
+{"Subscriber Address","Adreça del Subscriptor"}.
 {"Subscriptions are not allowed","Les subscripcions no estan permeses"}.
 {"Subscription","Subscripció"}.
 {"Sunday","Diumenge"}.
@@ -394,6 +422,7 @@
 {"The CAPTCHA is valid.","El CAPTCHA es vàlid."}.
 {"The CAPTCHA verification has failed","La verificació CAPTCHA ha fallat"}.
 {"The captcha you entered is wrong","El CAPTCHA que has proporcionat és incorrecte"}.
+{"The collections with which a node is affiliated","Les col.leccions amb les que un node està afiliat"}.
 {"The feature requested is not supported by the conference","La característica sol·licitada no està suportada per la sala de conferència"}.
 {"The password contains unacceptable characters","La contrasenya conté caràcters inacceptables"}.
 {"The password is too weak","La contrasenya és massa simple"}.
@@ -456,6 +485,7 @@
 {"Update","Actualitzar"}.
 {"Uptime:","Temps en marxa:"}.
 {"User already exists","El usuari ja existeix"}.
+{"User JID","JID del usuari "}.
 {"User (jid)","Usuari (jid)"}.
 {"User Management","Gestió d'Usuaris"}.
 {"User removed","Usuari borrat"}.
@@ -477,9 +507,12 @@
 {"Virtual Hosts","Hosts virtuals"}.
 {"Visitors are not allowed to change their nicknames in this room","Els visitants no tenen permés canviar el seus Nicknames en esta sala"}.
 {"Visitors are not allowed to send messages to all occupants","Els visitants no poden enviar missatges a tots els ocupants"}.
+{"Visitor","Visitant"}.
 {"Voice request","Petició de veu"}.
 {"Voice requests are disabled in this conference","Les peticions de veu es troben desactivades en aquesta conferència"}.
 {"Wednesday","Dimecres"}.
+{"When to send the last published item","Quan s'ha enviat l'última publicació"}.
+{"Whether to allow subscriptions","Permetre subscripcions"}.
 {"Wrong parameters in the web formulary","Paràmetres incorrectes en el formulari web"}.
 {"Wrong xmlns","El xmlns ès incorrecte"}.
 {"XMPP Domains","Dominis XMPP"}.

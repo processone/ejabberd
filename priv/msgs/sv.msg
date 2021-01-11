@@ -1,5 +1,6 @@
 %% -*- coding: utf-8 -*-
 {" has set the subject to: "," har satt ämnet till: "}.
+{"A friendly name for the node","Ett vänligt namn for noden"}.
 {"Access denied by service policy","Åtkomst nekad enligt lokal policy"}.
 {"Action on user","Handling mot användare"}.
 {"Add Jabber ID","Lägg till Jabber ID"}.
@@ -10,6 +11,7 @@
 {"Administrator privileges required","Administrationsprivilegier krävs"}.
 {"All activity","All aktivitet"}.
 {"All Users","Alla användare"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Tillåt denna Jabber ID att prenumerera på denna pubsub node"}.
 {"Allow users to change the subject","Tillåt användare att byta ämne"}.
 {"Allow users to query other users","Tillåt användare att söka efter andra användare"}.
 {"Allow users to send invites","Tillåt användare att skicka inbjudningar"}.
@@ -34,6 +36,7 @@
 {"City","Stad"}.
 {"Commands","Kommandon"}.
 {"Conference room does not exist","Rummet finns inte"}.
+{"Configuration of room ~s","Konfiguration för ~s"}.
 {"Configuration","Konfiguration"}.
 {"Connected Resources:","Anslutna resurser:"}.
 {"Country","Land"}.
@@ -46,9 +49,10 @@
 {"Delete message of the day","Ta bort dagens meddelande"}.
 {"Delete Selected","Tabort valda"}.
 {"Delete User","Ta bort användare"}.
+{"Deliver event notifications","Skicka eventnotifikation"}.
+{"Deliver payloads with event notifications","Skicka innehåll tillsammans med notifikationer"}.
 {"Description:","Beskrivning:"}.
 {"Disc only copy","Endast diskkopia"}.
-{"Displayed Groups:","Visade grupper:"}.
 {"Dump Backup to Text File at ","Dumpa säkerhetskopia till textfil på "}.
 {"Dump to Text File","Dumpa till textfil"}.
 {"Edit Properties","Redigera egenskaper"}.
@@ -81,7 +85,7 @@
 {"Get User Last Login Time","Hämta användarens senast inloggade tid"}.
 {"Get User Password","Hämta användarlösenord"}.
 {"Get User Statistics","Hämta användarstatistik"}.
-{"Group ","Grupp "}.
+{"Group","Grupp"}.
 {"Groups","Grupper"}.
 {"has been banned","har blivit bannad"}.
 {"has been kicked because of a system shutdown","har blivit kickad p.g.a en systemnerstängning"}.
@@ -122,6 +126,8 @@
 {"Make room persistent","Gör rummet permanent"}.
 {"Make room public searchable","Gör rummet publikt sökbart"}.
 {"March","Mars"}.
+{"Max # of items to persist","Högsta antal dataposter som sparas"}.
+{"Max payload size in bytes","Högsta innehållsstorlek i bytes"}.
 {"Maximum Number of Occupants","Maximalt antal av användare"}.
 {"May","Maj"}.
 {"Membership is required to enter this room","Du måste vara medlem för att komma in i det här rummet"}.
@@ -136,15 +142,21 @@
 {"Name:","Namn:"}.
 {"Never","Aldrig"}.
 {"Nickname Registration at ","Registrera smeknamn på "}.
+{"Nickname ~s does not exist in the room","Smeknamnet ~s existerar inte i det här rummet"}.
 {"Nickname","Smeknamn"}.
 {"No body provided for announce message","Ingen kropp behövs för dessa meddelanden"}.
 {"No Data","Ingen data"}.
 {"No limit","Ingen gräns"}.
+{"Node ID","Node ID"}.
 {"Node not found","Noden finns inte"}.
 {"Nodes","Noder"}.
 {"None","Inga"}.
 {"Not Found","Noden finns inte"}.
+{"Notify subscribers when items are removed from the node","Meddela prenumeranter när dataposter tas bort från noden"}.
+{"Notify subscribers when the node configuration changes","Meddela prenumeranter när nodens konfiguration ändras"}.
+{"Notify subscribers when the node is deleted","Meddela prenumeranter när noden tas bort"}.
 {"November","November"}.
+{"Number of occupants","Antal besökare"}.
 {"Number of online users","Antal inloggade användare"}.
 {"Number of registered users","Antal registrerade användare"}.
 {"October","Oktober"}.
@@ -154,6 +166,7 @@
 {"Online Users","Anslutna användare"}.
 {"Online Users:","Inloggade användare"}.
 {"Online","Ansluten"}.
+{"Only deliver notifications to available users","Skicka notifikationer bara till uppkopplade användare"}.
 {"Only moderators and participants are allowed to change the subject in this room","Endast moderatorer och deltagare har tillåtelse att ändra ämnet i det här rummet"}.
 {"Only occupants are allowed to send messages to the conference","Utomstående får inte skicka medelanden till den här konferensen"}.
 {"Only occupants are allowed to send queries to the conference","Utomstående får inte skicka iq-queries till den här konferensen"}.
@@ -171,9 +184,11 @@
 {"Path to File","Sökväg till fil"}.
 {"Pending","Ännu inte godkända"}.
 {"Period: ","Period: "}.
+{"Persist items to storage","Spara dataposter permanent"}.
 {"Ping","Ping"}.
 {"Please note that these options will only backup the builtin Mnesia database. If you are using the ODBC module, you also need to backup your SQL database separately.","Kom ihåg att dessa inställningar endast tar backup pa builtin Mnesias databas. Om du använder ODBC modul så måste du ta backup på SQLs databas enskilt"}.
 {"Pong","Pong"}.
+{"Present real Jabber IDs to","Nuvarande äkta Jabber IDs till"}.
 {"private, ","privat, "}.
 {"Publish-Subscribe","Publikprenumeration"}.
 {"PubSub subscriber request","Pubsub prenumerationsforfrågan"}.
@@ -200,8 +215,8 @@
 {"Room creation is denied by service policy","Skapandet av rum är förbjudet enligt lokal policy"}.
 {"Room Occupants","Antal besökare"}.
 {"Room title","Rumstitel"}.
+{"Roster groups allowed to subscribe","Rostergrupper tillåts att prenumerera"}.
 {"Roster size","Roster storlek"}.
-{"Roster","Kontaktlista"}.
 {"RPC Call Error","RPC Uppringningserror"}.
 {"Running Nodes","Körande noder"}.
 {"Saturday","Lördag"}.
@@ -219,6 +234,8 @@
 {"Show Integral Table","Visa kumulativ tabell"}.
 {"Show Ordinary Table","Visa normal tabell"}.
 {"Shut Down Service","Stäng ner servicen"}.
+{"Specify the access model","Specificera accessmodellen"}.
+{"Specify the publisher model","Ange publiceringsmodell"}.
 {"Statistics of ~p","Statistik på ~p"}.
 {"Statistics","Statistik"}.
 {"Stopped Nodes","Stannade noder"}.
@@ -229,6 +246,7 @@
 {"Subject","Ämne"}.
 {"Submit","Skicka"}.
 {"Submitted","Skicka in"}.
+{"Subscriber Address","Prenumerationsadress"}.
 {"Subscription","Prenumeration"}.
 {"Sunday","Söndag"}.
 {"That nickname is registered by another person","Smeknamnet är reserverat"}.
@@ -263,7 +281,10 @@
 {"Visitors are not allowed to change their nicknames in this room","Det är inte tillåtet for gäster att ändra sina smeknamn i detta rummet"}.
 {"Visitors are not allowed to send messages to all occupants","Besökare får inte skicka medelande till alla"}.
 {"Wednesday","Onsdag"}.
+{"When to send the last published item","När att skicka senast publicerade ämne"}.
+{"Whether to allow subscriptions","Tillåta prenumerationer?"}.
 {"You have been banned from this room","Du har blivit bannlyst från det här rummet"}.
 {"You must fill in field \"Nickname\" in the form","Du måste fylla i fält \"smeknamn\" i formen"}.
 {"You need an x:data capable client to search","Du behöver en klient som stödjer x:data, för att kunna söka"}.
 {"Your contact offline message queue is full. The message has been discarded.","Din kontaktkö for offlinekontakter ar full"}.
+{"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Dina meddelanden till ~s är blockerade. För att avblockera dem, gå till ~s"}.

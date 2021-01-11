@@ -10,6 +10,7 @@
 {"Administrator privileges required","Yêu cầu đặc quyền của nhà quản trị"}.
 {"All activity","Tất cả hoạt động"}.
 {"All Users","Tất Cả Người Sử Dụng"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Cho phép Jabber ID đăng ký nút môđun xuất bản đăng ký này không?"}.
 {"Allow users to query other users","Cho phép người sử dụng hỏi người sử dụng khác"}.
 {"Allow users to send invites","Cho phép người sử dụng gửi lời mời"}.
 {"Allow users to send private messages","Cho phép người sử dụng gửi thư riêng"}.
@@ -43,9 +44,10 @@
 {"Delete message of the day","Xóa thư trong ngày"}.
 {"Delete Selected","Tùy chọn Xóa được Chọn"}.
 {"Delete User","Xóa Người Sử Dụng"}.
+{"Deliver event notifications","Đưa ra các thông báo sự kiện"}.
+{"Deliver payloads with event notifications","Đưa ra thông tin dung lượng với các thông báo sự kiện"}.
 {"Description:","Miêu tả:"}.
 {"Disc only copy","Chỉ sao chép vào đĩa"}.
-{"Displayed Groups:","Nhóm được hiển thị:"}.
 {"Dump Backup to Text File at ","Kết Xuất Sao Lưu ra Tập Tin Văn Bản tại"}.
 {"Dump to Text File","Kết xuất ra Tập Tin Văn Bản"}.
 {"Edit Properties","Chỉnh Sửa Thuộc Tính"}.
@@ -72,7 +74,7 @@
 {"Get User Last Login Time","Nhận Thời Gian Đăng Nhập Cuối Cùng Của Người Sử Dụng"}.
 {"Get User Password","Nhận Mật Khẩu Người Sử Dụng"}.
 {"Get User Statistics","Nhận Thông Tin Thống Kê Người Sử Dụng"}.
-{"Group ","Nhóm "}.
+{"Group","Nhóm"}.
 {"Groups","Nhóm"}.
 {"has been banned","đã bị cấm"}.
 {"has been kicked","đã bị đẩy ra khỏi"}.
@@ -105,6 +107,8 @@
 {"Make room persistent","Tạo phòng bền vững"}.
 {"Make room public searchable","Tạo phòng có thể tìm kiếm công khai"}.
 {"March","Tháng Ba"}.
+{"Max # of items to persist","Số mục tối đa để lưu trữ"}.
+{"Max payload size in bytes","Kích thước dung lượng byte tối đa"}.
 {"Maximum Number of Occupants","Số Lượng Người Tham Dự Tối Đa"}.
 {"May","Tháng Năm"}.
 {"Members:","Thành viên:"}.
@@ -117,14 +121,20 @@
 {"Name:","Tên:"}.
 {"Never","Không bao giờ"}.
 {"Nickname Registration at ","Đăng Ký Bí Danh tại"}.
+{"Nickname ~s does not exist in the room","Bí danh ~s không tồn tại trong phòng này"}.
 {"Nickname","Bí danh"}.
 {"No body provided for announce message","Không có nội dung trong thư thông báo"}.
 {"No Data","Không Dữ Liệu"}.
 {"No limit","Không giới hạn"}.
+{"Node ID","ID Nút"}.
 {"Node not found","Nút không tìm thấy"}.
 {"Nodes","Nút"}.
 {"None","Không có"}.
+{"Notify subscribers when items are removed from the node","Thông báo cho người đăng ký khi nào các mục chọn bị gỡ bỏ khỏi nút"}.
+{"Notify subscribers when the node configuration changes","Thông báo cho người đăng ký khi nào cấu hình nút thay đổi"}.
+{"Notify subscribers when the node is deleted","Thông báo cho người đăng ký khi nào nút bị xóa bỏ"}.
 {"November","Tháng Mười Một"}.
+{"Number of occupants","Số người tham dự"}.
 {"Number of online users","Số người sử dụng trực tuyến"}.
 {"Number of registered users","Số người sử dụng đã đăng ký"}.
 {"October","Tháng Mười"}.
@@ -134,6 +144,7 @@
 {"Online Users","Người Sử Dụng Trực Tuyến"}.
 {"Online Users:","Người Sử Dụng Trực Tuyến:"}.
 {"Online","Trực tuyến"}.
+{"Only deliver notifications to available users","Chỉ gửi thông báo đến những người sử dụng hiện có"}.
 {"Only occupants are allowed to send messages to the conference","Chỉ có những đối tượng tham gia mới được phép gửi thư đến phòng họp"}.
 {"Only occupants are allowed to send queries to the conference","Chỉ có những đối tượng tham gia mới được phép gửi yêu cầu đến phòng họp"}.
 {"Only service administrators are allowed to send service messages","Chỉ có người quản trị dịch vụ mới được phép gửi những thư dịch vụ"}.
@@ -150,8 +161,10 @@
 {"Path to File","Đường dẫn đến Tập Tin"}.
 {"Pending","Chờ"}.
 {"Period: ","Giai đoạn: "}.
+{"Persist items to storage","Những mục cần để lưu trữ"}.
 {"Ping","Ping"}.
 {"Pong","Pong"}.
+{"Present real Jabber IDs to","Jabber ID thực tế hiện hành đến"}.
 {"private, ","riêng,"}.
 {"Publish-Subscribe","Xuất Bản-Đăng Ký"}.
 {"PubSub subscriber request","Yêu cầu người đăng ký môđun Xuất Bản Đăng Ký"}.
@@ -178,7 +191,6 @@
 {"Room creation is denied by service policy","Việc tạo phòng bị ngăn lại theo chính sách dịch vụ"}.
 {"Room title","Tên phòng"}.
 {"Roster size","Kích thước bảng phân công"}.
-{"Roster","Bảng phân công"}.
 {"RPC Call Error","Lỗi Gọi RPC"}.
 {"Running Nodes","Nút Hoạt Động"}.
 {"Saturday","Thứ Bảy"}.
@@ -196,6 +208,8 @@
 {"Show Integral Table","Hiển Thị Bảng Đầy Đủ"}.
 {"Show Ordinary Table","Hiển Thị Bảng Thường"}.
 {"Shut Down Service","Tắt Dịch Vụ"}.
+{"Specify the access model","Xác định mô hình truy cập"}.
+{"Specify the publisher model","Xác định mô hình nhà xuất bản"}.
 {"Statistics of ~p","Thống kê về ~p"}.
 {"Statistics","Số liệu thống kê"}.
 {"Stop","Dừng"}.
@@ -206,6 +220,7 @@
 {"Subject","Tiêu đề"}.
 {"Submit","Gửi"}.
 {"Submitted","Đã gửi"}.
+{"Subscriber Address","Địa Chỉ Người Đăng Ký"}.
 {"Subscription","Đăng ký"}.
 {"Sunday","Chủ Nhật"}.
 {"the password is","mật khẩu là"}.
@@ -235,6 +250,8 @@
 {"Virtual Hosts","Máy Chủ Ảo"}.
 {"Visitors are not allowed to send messages to all occupants","Người ghé thăm không được phép gửi thư đến tất cả các người tham dự"}.
 {"Wednesday","Thứ Tư"}.
+{"When to send the last published item","Khi cần gửi mục được xuất bản cuối cùng"}.
+{"Whether to allow subscriptions","Xác định nên cho phép đăng ký không"}.
 {"You have been banned from this room","Bạn bị cấm tham gia phòng này"}.
 {"You must fill in field \"Nickname\" in the form","Bạn phải điền thông tin vào ô \"Nickname\" trong biểu mẫu này"}.
 {"You need an x:data capable client to search","Bạn cần có một trình ứng dụng khách hỗ trợ định dạng dữ liệu x: để tìm kiếm"}.

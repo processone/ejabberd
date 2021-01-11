@@ -60,7 +60,7 @@
 {"Client acknowledged more stanzas than sent by server","Az ügyfél több stanzát nyugtázott, mint amennyit a kiszolgáló küldött"}.
 {"Commands","Parancsok"}.
 {"Conference room does not exist","A konferenciaszoba nem létezik"}.
-{"Configuration of room ~ts","A(z) ~ts szoba beállítása"}.
+{"Configuration of room ~s","A(z) ~s szoba beállítása"}.
 {"Configuration","Beállítás"}.
 {"Connected Resources:","Kapcsolódott erőforrások:"}.
 {"Country","Ország"}.
@@ -79,7 +79,6 @@
 {"Delete User","Felhasználó törlése"}.
 {"Description:","Leírás:"}.
 {"Disc only copy","Csak lemez másolása"}.
-{"Displayed Groups:","Megjelenített csoportok:"}.
 {"Don't tell your password to anybody, not even the administrators of the Jabber server.","Ne árulja el a jelszavát senkinek, még a Jabber-kiszolgáló adminisztrátorainak sem."}.
 {"Dump Backup to Text File at ","Biztonsági mentés kiírása szövegfájlba itt: "}.
 {"Dump to Text File","Kiírás szövegfájlba"}.
@@ -116,7 +115,6 @@
 {"Failed to extract JID from your voice request approval","Nem sikerült kinyerni a Jabber-azonosítót a hangkérelem jóváhagyásból"}.
 {"Failed to map delegated namespace to external component","Nem sikerült leképezni a delegált névteret külső összetevőre"}.
 {"Failed to parse HTTP response","Nem sikerült feldolgozni a HTTP választ"}.
-{"Failed to process option '~ts'","Nem sikerült feldolgozni a(z) „~ts” kapcsolót"}.
 {"Family Name","Családnév"}.
 {"February","február"}.
 {"File larger than ~w bytes","A fájl nagyobb ~w bájtnál"}.
@@ -132,7 +130,7 @@
 {"Get User Password","Felhasználó jelszavának lekérése"}.
 {"Get User Statistics","Felhasználói statisztikák lekérése"}.
 {"Given Name","Keresztnév"}.
-{"Group ","Csoport "}.
+{"Group","Csoport"}.
 {"Groups","Csoportok"}.
 {"has been banned","ki lett tiltva"}.
 {"has been kicked because of a system shutdown","ki lett rúgva egy rendszerleállítás miatt"}.
@@ -169,7 +167,7 @@
 {"Invitations are not allowed in this conference","Meghívások nem engedélyezettek ebben a konferenciában"}.
 {"IP addresses","IP-címek"}.
 {"is now known as","mostantól úgy ismert mint"}.
-{"It is not allowed to send error messages to the room. The participant (~ts) has sent an error message (~ts) and got kicked from the room","Nem engedélyezett hibaüzeneteket küldeni a szobába. A résztvevő (~ts) hibaüzenetet (~ts) küldött, és ki lett rúgva a szobából"}.
+{"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","Nem engedélyezett hibaüzeneteket küldeni a szobába. A résztvevő (~s) hibaüzenetet (~s) küldött, és ki lett rúgva a szobából"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Nem engedélyezett „groupchat” típusú személyes üzeneteket küldeni"}.
 {"It is not allowed to send private messages to the conference","Nem engedélyezett személyes üzeneteket küldeni a konferenciába"}.
 {"It is not allowed to send private messages","Nem engedélyezett személyes üzeneteket küldeni"}.
@@ -200,7 +198,6 @@
 {"March","március"}.
 {"Maximum Number of Occupants","Résztvevők legnagyobb száma"}.
 {"May","május"}.
-{"Members not added (inexistent vhost): ","Tagok nincsenek hozzáadva (nem létező virtuális gép): "}.
 {"Membership is required to enter this room","Tagság szükséges a szobába lépéshez"}.
 {"Members:","Tagok:"}.
 {"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Jegyezze meg a jelszavát, vagy írja fel egy biztonságos helyen lévő papírra. A Jabber nem nyújt automatizált módszert a jelszó visszaállítására, ha elfelejti azt."}.
@@ -224,7 +221,6 @@
 {"New Password:","Új jelszó:"}.
 {"Nickname can't be empty","A becenév nem lehet üres"}.
 {"Nickname Registration at ","Becenév regisztrációja itt: "}.
-{"Nickname ~ts does not exist in the room","A(z) ~ts becenév nem létezik a szobában"}.
 {"Nickname","Becenév"}.
 {"No address elements found","Nem találhatók cím elemek"}.
 {"No addresses element found","Nem található címek elem"}.
@@ -346,7 +342,6 @@
 {"Room title","Szoba címe"}.
 {"Roster of ~ts","~ts névsora"}.
 {"Roster size","Névsor mérete"}.
-{"Roster","Névsor"}.
 {"RPC Call Error","RPC hívási hiba"}.
 {"Running Nodes","Futó csomópontok"}.
 {"Saturday","szombat"}.
@@ -409,12 +404,12 @@
 {"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Ez az oldal lehetővé teszi egy Jabber-fiók létrehozását ezen a Jabber-kiszolgálón. A JID (Jabber-azonosító) a következő alakú lesz: felhasználónév@kiszolgáló. Alaposan olvassa el az utasításokat a mezők helyes kitöltéséhez."}.
 {"This page allows to unregister a Jabber account in this Jabber server.","Ez az oldal lehetővé teszi egy Jabber-fiók regisztrációjának törlését ezen a Jabber-kiszolgálón."}.
 {"This room is not anonymous","Ez a szoba nem névtelen"}.
-{"This service can not process the address: ~ts","Ez a szolgáltatás nem tudja feldolgozni a címet: ~ts"}.
+{"This service can not process the address: ~s","Ez a szolgáltatás nem tudja feldolgozni a címet: ~s"}.
 {"Thursday","csütörtök"}.
 {"Time delay","Időkésleltetés"}.
 {"Timed out waiting for stream resumption","Időtúllépés a folyam újrakezdésére várakozásnál"}.
 {"Time","Idő"}.
-{"To register, visit ~ts","Regisztráláshoz látogassa meg ezt az oldalt: ~ts"}.
+{"To register, visit ~s","Regisztráláshoz látogassa meg ezt az oldalt: ~s"}.
 {"To ~ts","Címzett: ~ts"}.
 {"To","Címzett"}.
 {"Token TTL","Token élettartama"}.
@@ -423,7 +418,7 @@
 {"Too many child elements","Túl sok gyermekelem"}.
 {"Too many <item/> elements","Túl sok <item/> elem"}.
 {"Too many <list/> elements","Túl sok <list/> elem"}.
-{"Too many (~p) failed authentications from this IP address (~ts). The address will be unblocked at ~ts UTC","Túl sok (~p) sikertelen hitelesítés erről az IP-címről (~ts) A cím ~ts-kor lesz feloldva UTC szerint"}.
+{"Too many (~p) failed authentications from this IP address (~s). The address will be unblocked at ~s UTC","Túl sok (~p) sikertelen hitelesítés erről az IP-címről (~ts) A cím ~ts-kor lesz feloldva UTC szerint"}.
 {"Too many receiver fields were specified","Túl sok fogadómező lett meghatározva"}.
 {"Too many unacked stanzas","Túl sok nyugtázatlan stanza"}.
 {"Too many users in this conference","Túl sok felhasználó ebben a konferenciában"}.
@@ -433,7 +428,6 @@
 {"Transactions Committed:","Véglegesített tranzakciók:"}.
 {"Transactions Logged:","Naplózott tranzakciók:"}.
 {"Transactions Restarted:","Újraindított tranzakciók:"}.
-{"~ts invites you to the room ~ts","~ts meghívja Önt a(z) ~ts szobába"}.
 {"~ts's Offline Messages Queue","~ts kapcsolat nélküli üzeneteinek tárolója"}.
 {"Tuesday","kedd"}.
 {"Unable to generate a CAPTCHA","Nem lehet előállítani CAPTCHA-t"}.
@@ -467,12 +461,11 @@
 {"Users","Felhasználók"}.
 {"Validate","Ellenőrzés"}.
 {"Value 'get' of 'type' attribute is not allowed","A „type” attribútum „get” értéke nem engedélyezett"}.
-{"Value of '~ts' should be boolean","A(z) „~ts” értéke csak logikai lehet"}.
-{"Value of '~ts' should be datetime string","A(z) „~ts” értéke csak dátum és idő karakterlánc lehet"}.
-{"Value of '~ts' should be integer","A(z) „~ts” értéke csak egész szám lehet"}.
+{"Value of '~s' should be boolean","A(z) „~s” értéke csak logikai lehet"}.
+{"Value of '~s' should be datetime string","A(z) „~s” értéke csak dátum és idő karakterlánc lehet"}.
+{"Value of '~s' should be integer","A(z) „~s” értéke csak egész szám lehet"}.
 {"Value 'set' of 'type' attribute is not allowed","A „type” attribútum „set” értéke nem engedélyezett"}.
 {"vCard User Search","vCard felhasználó-keresés"}.
-{"Virtual Hosting","Virtuális kiszolgálás"}.
 {"Virtual Hosts","Virtuális gépek"}.
 {"Visitors are not allowed to change their nicknames in this room","A látogatóknak nem engedélyezett megváltoztatni a beceneveiket ebben a szobában"}.
 {"Visitors are not allowed to send messages to all occupants","A látogatóknak nem engedélyezett üzeneteket küldeni az összes résztvevőnek"}.
@@ -494,5 +487,5 @@
 {"Your contact offline message queue is full. The message has been discarded.","A partnere kapcsolat nélküli üzenettárolója megtelt. Az üzenet el lett dobva."}.
 {"Your Jabber account was successfully created.","A Jabber-fiókja sikeresen létrehozva."}.
 {"Your Jabber account was successfully deleted.","A Jabber-fiókja sikeresen törölve."}.
-{"Your subscription request and/or messages to ~ts have been blocked. To unblock your subscription request, visit ~ts","A feliratkozási kérelme és/vagy ~ts számára küldött üzenetei blokkolva lettek. A feliratkozási kérelmének feloldásához látogassa meg ezt az oldalt: ~ts"}.
+{"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","A feliratkozási kérelme és/vagy ~s számára küldött üzenetei blokkolva lettek. A feliratkozási kérelmének feloldásához látogassa meg ezt az oldalt: ~s"}.
 {"You're not allowed to create nodes","Önnek nincs engedélye csomópontokat létrehozni"}.

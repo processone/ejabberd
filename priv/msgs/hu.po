@@ -22,363 +22,528 @@ msgstr ""
 "X-Generator: Lokalize 19.04.3\n"
 "X-Poedit-SearchPath-0: .\n"
 
-#: mod_vcard.erl:462
+#: src/mod_vcard.erl:462
 msgid " (Add * to the end of field to match substring)"
 msgstr " (adjon * karaktert a mező végéhez a részkarakterláncra illesztéshez)"
 
-#: mod_muc_log.erl:417 mod_muc_log.erl:591
+#: src/mod_muc_log.erl:420 src/mod_muc_log.erl:592
 msgid " has set the subject to: "
 msgstr " beállította a tárgyat erre: "
 
-#: mod_muc_room.erl:2147
+#: src/mod_muc_admin.erl:532
+#, fuzzy
+msgid "# participants"
+msgstr "Alapértelmezett felhasználók mint résztvevők"
+
+#: src/mod_shared_roster.erl:1047
+msgid "'Displayed groups' not added (they do not exist!): "
+msgstr ""
+
+#: deps/xmpp/src/muc_register.erl:502
+msgid "A Web Page"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1561
+#: deps/xmpp/src/pubsub_meta_data.erl:672
+msgid "A description of the node"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1985
+msgid "A friendly name for the node"
+msgstr ""
+
+#: src/mod_muc_room.erl:2157
 msgid "A password is required to enter this room"
 msgstr "Jelszó szükséges a szobába történő belépéshez"
 
-#: ejabberd_oauth.erl:518
+#: src/ejabberd_oauth.erl:519
 msgid "Accept"
 msgstr "Elfogadás"
 
-#: ejabberd_service.erl:233 mod_configure.erl:186 mod_configure.erl:303
-#: mod_configure.erl:429 mod_configure.erl:715 mod_configure.erl:1480
-#: ejabberd_c2s.erl:441 ejabberd_c2s.erl:680 mod_legacy_auth.erl:142
-#: mod_roster.erl:182 mod_multicast.erl:332 ejabberd_s2s.erl:360
-#: mod_register.erl:129 mod_register.erl:284 mod_register.erl:388
-#: mod_s2s_dialback.erl:325 mod_muc.erl:206 mod_muc.erl:617
-#: mod_proxy65_service.erl:197 mod_proxy65_service.erl:246 mod_announce.erl:242
-#: mod_announce.erl:257 mod_announce.erl:308 mod_announce.erl:422
-#: mod_announce.erl:844 mod_http_upload.erl:622
+#: src/ejabberd_service.erl:232 src/mod_configure.erl:186
+#: src/mod_configure.erl:303 src/mod_configure.erl:429
+#: src/mod_configure.erl:715 src/mod_configure.erl:1480
+#: src/ejabberd_c2s.erl:449 src/ejabberd_c2s.erl:692
+#: src/mod_legacy_auth.erl:151 src/mod_roster.erl:182 src/mod_multicast.erl:332
+#: src/ejabberd_s2s.erl:363 src/mod_register.erl:128 src/mod_register.erl:282
+#: src/mod_register.erl:386 src/mod_s2s_dialback.erl:361 src/mod_muc.erl:207
+#: src/mod_muc.erl:630 src/mod_proxy65_service.erl:197
+#: src/mod_proxy65_service.erl:246 src/mod_announce.erl:242
+#: src/mod_announce.erl:257 src/mod_announce.erl:308 src/mod_announce.erl:422
+#: src/mod_announce.erl:844 src/mod_stun_disco.erl:503
+#: src/mod_http_upload.erl:799
 msgid "Access denied by service policy"
 msgstr "Hozzáférés megtagadva a szolgáltatási irányelv miatt"
 
-#: mod_register_web.erl:619
+#: deps/xmpp/src/pubsub_meta_data.erl:833
+msgid "Access model"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_publish_options.erl:295
+msgid "Access model of authorize"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_publish_options.erl:299
+msgid "Access model of open"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_publish_options.erl:303
+msgid "Access model of presence"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_publish_options.erl:307
+msgid "Access model of roster"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_publish_options.erl:311
+msgid "Access model of whitelist"
+msgstr ""
+
+#: src/mod_register_web.erl:609
 msgid "Account doesn't exist"
 msgstr "A fiók nem létezik"
 
-#: mod_configure.erl:1514
+#: src/mod_configure.erl:1514
 msgid "Action on user"
 msgstr "Művelet a felhasználón"
 
-#: mod_roster.erl:1022
+#: src/mod_roster.erl:1071
 msgid "Add Jabber ID"
 msgstr "Jabber-azonosító hozzáadása"
 
-#: mod_shared_roster.erl:781
+#: src/mod_shared_roster.erl:929
 msgid "Add New"
 msgstr "Új hozzáadása"
 
-#: mod_configure.erl:161 mod_configure.erl:505 mod_configure.erl:991
-#: ejabberd_web_admin.erl:659
+#: src/mod_configure.erl:161 src/mod_configure.erl:505
+#: src/mod_configure.erl:991 src/ejabberd_web_admin.erl:666
 msgid "Add User"
 msgstr "Felhasználó hozzáadása"
 
-#: ejabberd_web_admin.erl:390 ejabberd_web_admin.erl:399
+#: src/ejabberd_web_admin.erl:397 src/ejabberd_web_admin.erl:406
 msgid "Administration"
 msgstr "Adminisztráció"
 
-#: mod_configure.erl:1509
+#: src/mod_configure.erl:1509
 msgid "Administration of "
 msgstr "Adminisztrációja ennek: "
 
-#: mod_muc_room.erl:2791
+#: src/mod_muc_room.erl:2801
 msgid "Administrator privileges required"
 msgstr "Adminisztrátori jogosultságok szükségesek"
 
-#: mod_configure.erl:495
+#: src/mod_configure.erl:495
 msgid "All Users"
 msgstr "Összes felhasználó"
 
-#: ejabberd_web_admin.erl:488
+#: src/ejabberd_web_admin.erl:495
 msgid "All activity"
 msgstr "Összes tevékenység"
 
-#: mod_muc_log.erl:812
+#: deps/xmpp/src/muc_roomconfig.erl:1556
+#, fuzzy
+msgid "Allow subscription"
+msgstr "Feliratkozás"
+
+#: deps/xmpp/src/pubsub_subscribe_authorization.erl:343
+msgid "Allow this Jabber ID to subscribe to this pubsub node?"
+msgstr ""
+
+#: deps/xmpp/src/muc_register.erl:417
+msgid "Allow this person to register with the room?"
+msgstr ""
+
+#: src/mod_muc_log.erl:813 deps/xmpp/src/muc_roomconfig.erl:1654
 msgid "Allow users to change the subject"
 msgstr "Lehetővé tenni a felhasználóknak a tárgy megváltoztatását"
 
-#: mod_muc_log.erl:818
+#: src/mod_muc_log.erl:819 deps/xmpp/src/muc_roomconfig.erl:1623
 msgid "Allow users to query other users"
 msgstr "Lehetővé tenni a felhasználóknak más felhasználók lekérdezését"
 
-#: mod_muc_log.erl:820
+#: src/mod_muc_log.erl:821 deps/xmpp/src/muc_roomconfig.erl:1638
 msgid "Allow users to send invites"
 msgstr "Lehetővé tenni a felhasználóknak meghívók küldését"
 
-#: mod_muc_log.erl:814
+#: src/mod_muc_log.erl:815 deps/xmpp/src/muc_roomconfig.erl:1456
 msgid "Allow users to send private messages"
 msgstr "Lehetővé tenni a felhasználóknak személyes üzenetek küldését"
 
-#: mod_muc_log.erl:823
+#: src/mod_muc_log.erl:824 deps/xmpp/src/muc_roomconfig.erl:1526
 msgid "Allow visitors to change nickname"
 msgstr "Lehetővé tenni a látogatóknak a becenév megváltoztatását"
 
-#: mod_muc_log.erl:816
+#: src/mod_muc_log.erl:817 deps/xmpp/src/muc_roomconfig.erl:1491
 msgid "Allow visitors to send private messages to"
 msgstr "Lehetővé tenni a látogatóknak személyes üzenetek küldését"
 
-#: mod_muc_log.erl:825
+#: src/mod_muc_log.erl:826 deps/xmpp/src/muc_roomconfig.erl:1507
 msgid "Allow visitors to send status text in presence updates"
 msgstr ""
 "Lehetővé tenni a látogatóknak állapotszöveg küldését a jelenlét "
 "frissítéseiben"
 
-#: mod_announce.erl:607
+#: deps/xmpp/src/muc_roomconfig.erl:1542
+#, fuzzy
+msgid "Allow visitors to send voice requests"
+msgstr "Lehetővé tenni a látogatóknak személyes üzenetek küldését"
+
+#: deps/xmpp/src/muc_roominfo.erl:811
+msgid ""
+"An associated LDAP group that defines room membership; this should be an "
+"LDAP Distinguished Name according to an implementation-specific or "
+"deployment-specific definition of a group."
+msgstr ""
+
+#: src/mod_announce.erl:607
 msgid "Announcements"
 msgstr "Közlemények"
 
-#: mod_muc_log.erl:480
+#: deps/xmpp/src/captcha_form.erl:762
+msgid "Answer associated with a picture"
+msgstr ""
+
+#: deps/xmpp/src/captcha_form.erl:866
+msgid "Answer associated with a video"
+msgstr ""
+
+#: deps/xmpp/src/captcha_form.erl:836
+msgid "Answer associated with speech"
+msgstr ""
+
+#: deps/xmpp/src/captcha_form.erl:791
+msgid "Answer to a question"
+msgstr ""
+
+#: deps/xmpp/src/muc_roominfo.erl:728 deps/xmpp/src/muc_roomconfig.erl:1418
+#: deps/xmpp/src/muc_roomconfig.erl:1478 deps/xmpp/src/muc_roomconfig.erl:1981
+msgid "Anyone"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1327
+#: deps/xmpp/src/pubsub_meta_data.erl:817
+msgid ""
+"Anyone in the specified roster group(s) may subscribe and retrieve items"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1381
+msgid "Anyone may associate leaf nodes with the collection"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1850
+#: deps/xmpp/src/pubsub_meta_data.erl:855
+msgid "Anyone may publish"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1317
+#: deps/xmpp/src/pubsub_meta_data.erl:807
+msgid "Anyone may subscribe and retrieve items"
+msgstr ""
+
+#: deps/xmpp/src/muc_roominfo.erl:731 deps/xmpp/src/muc_roomconfig.erl:1421
+msgid "Anyone with Voice"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1321
+#: deps/xmpp/src/pubsub_meta_data.erl:811
+msgid ""
+"Anyone with a presence subscription of both or from may subscribe and "
+"retrieve items"
+msgstr ""
+
+#: src/mod_muc_log.erl:481
 msgid "April"
 msgstr "április"
 
-#: mod_mix_pam.erl:271
+#: src/mod_mix_pam.erl:306
 msgid "Attribute 'channel' is required for this request"
 msgstr "A „channel” attribútum kötelező ennél a kérésnél"
 
-#: mod_mix.erl:106
+#: src/mod_mix.erl:148
 msgid "Attribute 'id' is mandatory for MIX messages"
 msgstr "Az „id” attribútum kötelező a MIX üzeneteknél"
 
-#: mod_pubsub.erl:1173
+#: src/mod_pubsub.erl:1173
 msgid "Attribute 'jid' is not allowed here"
 msgstr "A „jid” attribútum itt nem engedélyezett"
 
-#: mod_pubsub.erl:1176
+#: src/mod_pubsub.erl:1176
 msgid "Attribute 'node' is not allowed here"
 msgstr "A „node” attribútum itt nem engedélyezett"
 
-#: mod_muc_log.erl:484
+#: deps/xmpp/src/captcha_form.erl:731
+msgid "Attribute 'to' of stanza that triggered challenge"
+msgstr ""
+
+#: src/mod_muc_log.erl:485
 msgid "August"
 msgstr "augusztus"
 
-#: mod_pubsub.erl:1918
+#: src/mod_pubsub.erl:1918
 msgid "Automatic node creation is not enabled"
 msgstr "Automatikus csomópont-létrehozás nincs engedélyezve"
 
-#: mod_configure.erl:143 mod_configure.erl:582 ejabberd_web_admin.erl:1093
-#: ejabberd_web_admin.erl:1802
+#: src/mod_configure.erl:143 src/mod_configure.erl:582
+#: src/ejabberd_web_admin.erl:1100 src/ejabberd_web_admin.erl:1807
 msgid "Backup"
 msgstr "Biztonsági mentés"
 
-#: mod_configure.erl:566
+#: src/mod_configure.erl:566
 msgid "Backup Management"
 msgstr "Biztonságimentés-kezelés"
 
-#: ejabberd_web_admin.erl:1199
+#: src/ejabberd_web_admin.erl:1206
 msgid "Backup of ~p"
 msgstr "~p biztonsági mentése"
 
-#: mod_configure.erl:857
+#: src/mod_configure.erl:857
 msgid "Backup to File at "
 msgstr "Biztonsági mentés fájlba ekkor: "
 
-#: ejabberd_web_admin.erl:637 ejabberd_web_admin.erl:931
-#: ejabberd_web_admin.erl:1087 mod_roster.erl:1012 mod_shared_roster.erl:787
-#: mod_shared_roster.erl:888
+#: src/ejabberd_web_admin.erl:644 src/ejabberd_web_admin.erl:938
+#: src/ejabberd_web_admin.erl:1094 src/mod_roster.erl:1061
+#: src/mod_shared_roster.erl:935 src/mod_shared_roster.erl:1048
 msgid "Bad format"
 msgstr "Hibás formátum"
 
-#: mod_vcard_mnesia.erl:105 mod_vcard_mnesia.erl:119 mod_vcard_sql.erl:162
-#: mod_vcard_sql.erl:176 mod_vcard_ldap.erl:332 mod_vcard_ldap.erl:345
+#: src/mod_vcard_mnesia.erl:105 src/mod_vcard_mnesia.erl:119
+#: src/mod_vcard_sql.erl:162 src/mod_vcard_sql.erl:176
+#: src/mod_vcard_ldap.erl:332 src/mod_vcard_ldap.erl:345
 msgid "Birthday"
 msgstr "Születésnap"
 
-#: mod_legacy_auth.erl:108
+#: src/mod_legacy_auth.erl:117
 msgid "Both the username and the resource are required"
 msgstr "A felhasználónév és az erőforrás is szükséges"
 
-#: mod_proxy65_service.erl:237
+#: src/mod_proxy65_service.erl:237
 msgid "Bytestream already activated"
 msgstr "A bájtfolyam már be van kapcsolva"
 
-#: ejabberd_web_admin.erl:1361
+#: deps/xmpp/src/captcha_form.erl:910
+msgid "CAPTCHA web page"
+msgstr ""
+
+#: src/ejabberd_web_admin.erl:1368
 msgid "CPU Time:"
 msgstr "Processzoridő:"
 
-#: mod_privacy.erl:322
+#: src/mod_privacy.erl:322
 msgid "Cannot remove active list"
 msgstr "Nem lehet eltávolítani az aktív listát"
 
-#: mod_privacy.erl:329
+#: src/mod_privacy.erl:329
 msgid "Cannot remove default list"
 msgstr "Nem lehet eltávolítani az alapértelmezett listát"
 
-#: ejabberd_web_admin.erl:905 mod_register_web.erl:226 mod_register_web.erl:399
-#: mod_register_web.erl:407 mod_register_web.erl:432
+#: deps/xmpp/src/captcha_form.erl:715
+msgid "Challenge ID"
+msgstr ""
+
+#: src/ejabberd_web_admin.erl:912 src/mod_register_web.erl:216
+#: src/mod_register_web.erl:389 src/mod_register_web.erl:397
+#: src/mod_register_web.erl:422
 msgid "Change Password"
 msgstr "Jelszó megváltoztatása"
 
-#: mod_configure.erl:169 mod_configure.erl:512 mod_configure.erl:1038
+#: src/mod_configure.erl:169 src/mod_configure.erl:512
+#: src/mod_configure.erl:1038
 msgid "Change User Password"
 msgstr "Felhasználó jelszavának megváltoztatása"
 
-#: mod_register.erl:310
+#: src/mod_register.erl:308
 msgid "Changing password is not allowed"
 msgstr "A jelszó megváltoztatása nem engedélyezett"
 
-#: mod_muc_room.erl:3050
+#: src/mod_muc_room.erl:3060
 msgid "Changing role/affiliation is not allowed"
 msgstr "A szerep vagy a hovatartozás megváltoztatása nem engedélyezett"
 
-#: mod_mix.erl:615
+#: src/mod_mix.erl:657
 msgid "Channel already exists"
 msgstr "A csatorna már létezik"
 
-#: mod_mix.erl:620
+#: src/mod_mix.erl:662
 msgid "Channel does not exist"
 msgstr "A csatorna nem létezik"
 
-#: mod_mix.erl:96
+#: src/mod_mix.erl:97
 msgid "Channels"
 msgstr "Csatornák"
 
-#: mod_register_web.erl:281
+#: src/mod_register_web.erl:271
 msgid "Characters not allowed:"
 msgstr "Nem engedélyezett karakterek:"
 
-#: mod_muc_log.erl:362 mod_muc_log.erl:371
+#: src/mod_muc_log.erl:365 src/mod_muc_log.erl:374
 msgid "Chatroom configuration modified"
 msgstr "Csevegőszoba beállítása módosítva"
 
-#: mod_muc_log.erl:457
+#: src/mod_muc_log.erl:458
 msgid "Chatroom is created"
 msgstr "Csevegőszoba létrehozva"
 
-#: mod_muc_log.erl:459
+#: src/mod_muc_log.erl:460
 msgid "Chatroom is destroyed"
 msgstr "Csevegőszoba megszüntetve"
 
-#: mod_muc_log.erl:461
+#: src/mod_muc_log.erl:462
 msgid "Chatroom is started"
 msgstr "Csevegőszoba elindítva"
 
-#: mod_muc_log.erl:463
+#: src/mod_muc_log.erl:464
 msgid "Chatroom is stopped"
 msgstr "Csevegőszoba leállítva"
 
-#: mod_muc_admin.erl:537 mod_muc.erl:1235
+#: src/mod_muc_admin.erl:554 src/mod_muc.erl:1243
 msgid "Chatrooms"
 msgstr "Csevegőszobák"
 
-#: mod_register.erl:222
+#: src/mod_register.erl:221
 msgid "Choose a username and password to register with this server"
 msgstr ""
 "Válasszon felhasználónevet és jelszót a kiszolgálóra történő regisztráláshoz"
 
-#: mod_configure.erl:830
+#: src/mod_configure.erl:830
 msgid "Choose storage type of tables"
 msgstr "Táblák tárolótípusának kiválasztása"
 
-#: mod_pubsub.erl:1390
+#: src/mod_pubsub.erl:1390
 msgid "Choose whether to approve this entity's subscription."
 msgstr ""
 "Annak kiválasztása, hogy elfogadja-e ennek a bejegyzésnek a feliratkozását."
 
-#: mod_vcard_mnesia.erl:107 mod_vcard_mnesia.erl:121 mod_vcard_sql.erl:164
-#: mod_vcard_sql.erl:178 mod_vcard_ldap.erl:334 mod_vcard_ldap.erl:347
+#: src/mod_vcard_mnesia.erl:107 src/mod_vcard_mnesia.erl:121
+#: src/mod_vcard_sql.erl:164 src/mod_vcard_sql.erl:178
+#: src/mod_vcard_ldap.erl:334 src/mod_vcard_ldap.erl:347
 msgid "City"
 msgstr "Település"
 
-#: mod_stream_mgmt.erl:469
+#: src/mod_stream_mgmt.erl:477
 msgid "Client acknowledged more stanzas than sent by server"
 msgstr "Az ügyfél több stanzát nyugtázott, mint amennyit a kiszolgáló küldött"
 
-#: mod_adhoc.erl:107 mod_adhoc.erl:134 mod_adhoc.erl:150 mod_adhoc.erl:166
+#: src/mod_adhoc.erl:107 src/mod_adhoc.erl:134 src/mod_adhoc.erl:150
+#: src/mod_adhoc.erl:166
 msgid "Commands"
 msgstr "Parancsok"
 
-#: mod_muc.erl:539 mod_muc.erl:563 mod_muc_room.erl:212 mod_muc_room.erl:221
+#: src/mod_muc.erl:552 src/mod_muc.erl:576 src/mod_muc_room.erl:212
+#: src/mod_muc_room.erl:223
 msgid "Conference room does not exist"
 msgstr "A konferenciaszoba nem létezik"
 
-#: mod_configure.erl:129 mod_configure.erl:275 mod_configure.erl:296
-#: mod_configure.erl:492
+#: src/mod_configure.erl:129 src/mod_configure.erl:275
+#: src/mod_configure.erl:296 src/mod_configure.erl:492
 msgid "Configuration"
 msgstr "Beállítás"
 
-#: mod_muc_room.erl:3489
+#: src/mod_muc_room.erl:3499
 msgid "Configuration of room ~s"
 msgstr "A(z) ~s szoba beállítása"
 
-#: ejabberd_web_admin.erl:937
+#: src/ejabberd_web_admin.erl:944
 msgid "Connected Resources:"
 msgstr "Kapcsolódott erőforrások:"
 
-#: mod_vcard_mnesia.erl:106 mod_vcard_mnesia.erl:120 mod_vcard_sql.erl:163
-#: mod_vcard_sql.erl:177 mod_vcard_ldap.erl:333 mod_vcard_ldap.erl:346
+#: deps/xmpp/src/muc_roominfo.erl:764
+msgid "Contact Addresses (normally, room owner or owners)"
+msgstr ""
+
+#: src/mod_vcard_mnesia.erl:106 src/mod_vcard_mnesia.erl:120
+#: src/mod_vcard_sql.erl:163 src/mod_vcard_sql.erl:177
+#: src/mod_vcard_ldap.erl:333 src/mod_vcard_ldap.erl:346
 msgid "Country"
 msgstr "Ország"
 
-#: mod_configure.erl:140 mod_configure.erl:564 ejabberd_web_admin.erl:1092
-#: ejabberd_web_admin.erl:1801
+#: deps/xmpp/src/muc_roominfo.erl:875
+msgid "Current Discussion Topic"
+msgstr ""
+
+#: src/mod_configure.erl:140 src/mod_configure.erl:564
+#: src/ejabberd_web_admin.erl:1099 src/ejabberd_web_admin.erl:1806
 msgid "Database"
 msgstr "Adatbázis"
 
-#: mod_configure.erl:828
+#: src/mod_configure.erl:828
 msgid "Database Tables Configuration at "
 msgstr "Adatbázistáblák beállítása itt: "
 
-#: ejabberd_web_admin.erl:1161
+#: src/ejabberd_web_admin.erl:1168
 msgid "Database Tables at ~p"
 msgstr "Adatbázistáblák itt: ~p"
 
-#: mod_blocking.erl:263 node_flat_sql.erl:775 mod_pubsub.erl:3744
-#: mod_pubsub.erl:3788 mod_pubsub.erl:3808 mod_pubsub.erl:3892
-#: mod_pubsub.erl:4113 mod_carboncopy.erl:106 mod_mix_pam.erl:286
-#: mod_roster.erl:456 mod_private.erl:149 mod_private.erl:156
-#: mod_register.erl:400 mod_last.erl:202 mod_muc.erl:707 mod_muc.erl:1026
-#: mod_push.erl:280 mod_push.erl:295 mod_proxy65_service.erl:242
-#: mod_offline.erl:352 mod_offline.erl:736 mod_mix.erl:610 mod_privacy.erl:174
-#: mod_privacy.erl:192 mod_privacy.erl:286 mod_privacy.erl:302
-#: mod_privacy.erl:335 mod_privacy.erl:352 mod_mam.erl:652 mod_mam.erl:670
-#: mod_mam.erl:700 mod_mam.erl:1032 nodetree_tree_sql.erl:124
-#: nodetree_tree_sql.erl:138 nodetree_tree_sql.erl:280 mod_vcard.erl:238
+#: src/mod_blocking.erl:263 src/node_flat_sql.erl:775 src/mod_pubsub.erl:3744
+#: src/mod_pubsub.erl:3788 src/mod_pubsub.erl:3808 src/mod_pubsub.erl:3892
+#: src/mod_pubsub.erl:4113 src/mod_carboncopy.erl:97 src/mod_mix_pam.erl:321
+#: src/mod_roster.erl:456 src/mod_private.erl:184 src/mod_private.erl:191
+#: src/mod_register.erl:398 src/mod_last.erl:202 src/mod_muc.erl:720
+#: src/mod_muc.erl:1034 src/mod_push.erl:336 src/mod_push.erl:351
+#: src/mod_proxy65_service.erl:242 src/mod_offline.erl:352
+#: src/mod_offline.erl:730 src/mod_mix.erl:652 src/mod_privacy.erl:174
+#: src/mod_privacy.erl:192 src/mod_privacy.erl:286 src/mod_privacy.erl:302
+#: src/mod_privacy.erl:335 src/mod_privacy.erl:352 src/mod_mam.erl:652
+#: src/mod_mam.erl:670 src/mod_mam.erl:700 src/mod_mam.erl:1036
+#: src/nodetree_tree_sql.erl:124 src/nodetree_tree_sql.erl:138
+#: src/nodetree_tree_sql.erl:280 src/mod_vcard.erl:238
 msgid "Database failure"
 msgstr "Adatbázishiba"
 
-#: mod_muc_log.erl:488
+#: src/mod_muc_log.erl:489
 msgid "December"
 msgstr "december"
 
-#: mod_muc_log.erl:810
+#: src/mod_muc_log.erl:811 deps/xmpp/src/muc_roomconfig.erl:1801
 msgid "Default users as participants"
 msgstr "Alapértelmezett felhasználók mint résztvevők"
 
-#: mod_shared_roster.erl:795 mod_offline.erl:1018
+#: src/mod_shared_roster.erl:943 src/mod_offline.erl:1012
 msgid "Delete Selected"
 msgstr "Kijelöltek törlése"
 
-#: mod_configure.erl:163 mod_configure.erl:506 mod_configure.erl:1008
+#: src/mod_configure.erl:163 src/mod_configure.erl:506
+#: src/mod_configure.erl:1008
 msgid "Delete User"
 msgstr "Felhasználó törlése"
 
-#: ejabberd_web_admin.erl:1502
+#: src/ejabberd_web_admin.erl:1509
 msgid "Delete content"
 msgstr "Tartalom törlése"
 
-#: mod_announce.erl:625
+#: src/mod_announce.erl:625
 msgid "Delete message of the day"
 msgstr "Napi üzenet törlése"
 
-#: mod_announce.erl:627
+#: src/mod_announce.erl:627
 msgid "Delete message of the day on all hosts"
 msgstr "Napi üzenet törlése az összes gépen"
 
-#: ejabberd_web_admin.erl:1503
+#: src/ejabberd_web_admin.erl:1510
 msgid "Delete table"
 msgstr "Tábla törlése"
 
-#: mod_shared_roster.erl:856
+#: deps/xmpp/src/pubsub_node_config.erl:1530
+msgid "Deliver event notifications"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1546
+msgid "Deliver payloads with event notifications"
+msgstr ""
+
+#: src/mod_shared_roster.erl:1011
 msgid "Description:"
 msgstr "Leírás:"
 
-#: mod_configure.erl:806 ejabberd_web_admin.erl:1500
+#: src/mod_configure.erl:806 src/ejabberd_web_admin.erl:1507
 msgid "Disc only copy"
 msgstr "Csak lemez másolása"
 
-#: mod_shared_roster.erl:870
-msgid "Displayed Groups:"
+#: src/mod_shared_roster.erl:1029
+#, fuzzy
+msgid "Displayed:"
 msgstr "Megjelenített csoportok:"
 
-#: mod_register_web.erl:293
+#: src/mod_register_web.erl:283
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the "
 "Jabber server."
@@ -386,313 +551,364 @@ msgstr ""
 "Ne árulja el a jelszavát senkinek, még a Jabber-kiszolgáló "
 "adminisztrátorainak sem."
 
-#: mod_configure.erl:880
+#: src/mod_configure.erl:880
 msgid "Dump Backup to Text File at "
 msgstr "Biztonsági mentés kiírása szövegfájlba itt: "
 
-#: mod_configure.erl:149 mod_configure.erl:586
+#: src/mod_configure.erl:149 src/mod_configure.erl:586
 msgid "Dump to Text File"
 msgstr "Kiírás szövegfájlba"
 
-#: mod_roster.erl:175
+#: src/mod_roster.erl:175
 msgid "Duplicated groups are not allowed by RFC6121"
 msgstr "A kettőzött csoportok nem engedélyezettek az RFC6121 alapján"
 
-#: mod_configure.erl:1518
+#: deps/xmpp/src/pubsub_node_config.erl:1597
+msgid "Dynamically specify a replyto of the item publisher"
+msgstr ""
+
+#: src/mod_configure.erl:1518
 msgid "Edit Properties"
 msgstr "Tulajdonságok szerkesztése"
 
-#: mod_muc_room.erl:4399
+#: src/mod_muc_room.erl:4412
 msgid "Either approve or decline the voice request."
 msgstr "Hagyja jóvá vagy utasítsa el a hangkérelmet."
 
-#: ejabberd_web_admin.erl:1173
+#: src/ejabberd_web_admin.erl:1180
 msgid "Elements"
 msgstr "Elemek"
 
-#: mod_vcard_mnesia.erl:108 mod_vcard_mnesia.erl:122 mod_vcard_sql.erl:165
-#: mod_vcard_sql.erl:179 mod_vcard_ldap.erl:335 mod_vcard_ldap.erl:348
+#: src/mod_vcard_mnesia.erl:108 src/mod_vcard_mnesia.erl:122
+#: src/mod_vcard_sql.erl:165 src/mod_vcard_sql.erl:179
+#: src/mod_vcard_ldap.erl:335 src/mod_vcard_ldap.erl:348
 msgid "Email"
 msgstr "E-mail"
 
-#: mod_muc_log.erl:821
+#: deps/xmpp/src/muc_register.erl:432
+msgid "Email Address"
+msgstr ""
+
+#: src/mod_muc_log.erl:822 deps/xmpp/src/muc_roomconfig.erl:1668
 msgid "Enable logging"
 msgstr "Naplózás engedélyezése"
 
-#: mod_push.erl:268
+#: deps/xmpp/src/muc_roomconfig.erl:2007
+msgid "Enable message archiving"
+msgstr ""
+
+#: src/mod_push.erl:324
 msgid "Enabling push without 'node' attribute is not supported"
 msgstr "A „node” attribútum nélküli felküldés engedélyezése nem támogatott"
 
-#: mod_configure.erl:165 mod_configure.erl:508 mod_configure.erl:1018
+#: src/mod_configure.erl:165 src/mod_configure.erl:508
+#: src/mod_configure.erl:1018
 msgid "End User Session"
 msgstr "Felhasználói munkamenet befejezése"
 
-#: mod_muc.erl:1001
+#: src/mod_muc.erl:1009
 msgid "Enter nickname you want to register"
 msgstr "Adja meg a becenevet, amelyet regisztrálni szeretne"
 
-#: mod_configure.erl:859 mod_configure.erl:871
+#: src/mod_configure.erl:859 src/mod_configure.erl:871
 msgid "Enter path to backup file"
 msgstr "Adja meg a biztonsági mentés fájl útvonalát"
 
-#: mod_configure.erl:905
+#: src/mod_configure.erl:905
 msgid "Enter path to jabberd14 spool dir"
 msgstr "Adja meg a jabberd14 tárolókönyvtár útvonalát"
 
-#: mod_configure.erl:894
+#: src/mod_configure.erl:894
 msgid "Enter path to jabberd14 spool file"
 msgstr "Adja meg a jabberd14 tárolófájl útvonalát"
 
-#: mod_configure.erl:883
+#: src/mod_configure.erl:883
 msgid "Enter path to text file"
 msgstr "Adja meg a szövegfájl útvonalát"
 
-#: ejabberd_captcha.erl:72
+#: src/ejabberd_captcha.erl:72 deps/xmpp/src/captcha_form.erl:746
 msgid "Enter the text you see"
 msgstr "Írja be a látott szöveget"
 
-#: mod_vcard.erl:213
+#: src/mod_vcard.erl:213
 msgid "Erlang Jabber Server"
 msgstr "Erlang Jabber-kiszolgáló"
 
-#: ejabberd_web_admin.erl:1196
+#: src/ejabberd_web_admin.erl:1203
 msgid "Error"
 msgstr "Hiba"
 
-#: ejabberd_web_admin.erl:1302
+#: deps/xmpp/src/muc_roomconfig.erl:1607
+msgid "Exclude Jabber IDs from CAPTCHA challenge"
+msgstr ""
+
+#: src/ejabberd_web_admin.erl:1309
 msgid "Export all tables as SQL queries to a file:"
 msgstr "Összes tábla exportálása SQL-lekérdezésekként egy fájlba:"
 
-#: ejabberd_web_admin.erl:1276
+#: src/ejabberd_web_admin.erl:1283
 msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
 msgstr ""
 "A kiszolgálón lévő összes felhasználó adatainak exportálása PIEFXIS-fájlokba "
 "(XEP-0227):"
 
-#: ejabberd_web_admin.erl:1288
+#: src/ejabberd_web_admin.erl:1295
 msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
 msgstr ""
 "Egy gépen lévő felhasználók adatainak exportálása PIEFXIS-fájlokba "
 "(XEP-0227):"
 
-#: mod_delegation.erl:297
+#: src/mod_delegation.erl:352
 msgid "External component failure"
 msgstr "Külső összetevő hiba"
 
-#: mod_delegation.erl:305
+#: src/mod_delegation.erl:360
 msgid "External component timeout"
 msgstr "Külső összetevő időtúllépés"
 
-#: mod_proxy65_service.erl:229
+#: deps/xmpp/src/muc_register.erl:446
+msgid "FAQ Entry"
+msgstr ""
+
+#: src/mod_proxy65_service.erl:229
 msgid "Failed to activate bytestream"
 msgstr "Nem sikerült bekapcsolni a bájtfolyamot"
 
-#: mod_muc_room.erl:1128
+#: src/mod_muc_room.erl:1137
 msgid "Failed to extract JID from your voice request approval"
 msgstr "Nem sikerült kinyerni a Jabber-azonosítót a hangkérelem jóváhagyásból"
 
-#: mod_delegation.erl:278
+#: src/mod_delegation.erl:333
 msgid "Failed to map delegated namespace to external component"
 msgstr "Nem sikerült leképezni a delegált névteret külső összetevőre"
 
-#: mod_http_upload.erl:687
+#: src/mod_http_upload.erl:864
 msgid "Failed to parse HTTP response"
 msgstr "Nem sikerült feldolgozni a HTTP választ"
 
-#: mod_muc_room.erl:3632
-msgid "Failed to process option '~ts'"
+#: src/mod_muc_room.erl:3642
+#, fuzzy
+msgid "Failed to process option '~s'"
 msgstr "Nem sikerült feldolgozni a(z) „~ts” kapcsolót"
 
-#: mod_vcard_mnesia.erl:103 mod_vcard_mnesia.erl:117 mod_vcard_sql.erl:160
-#: mod_vcard_sql.erl:174 mod_vcard_ldap.erl:330 mod_vcard_ldap.erl:343
+#: src/mod_vcard_mnesia.erl:103 src/mod_vcard_mnesia.erl:117
+#: src/mod_vcard_sql.erl:160 src/mod_vcard_sql.erl:174
+#: src/mod_vcard_ldap.erl:330 src/mod_vcard_ldap.erl:343
+#: deps/xmpp/src/muc_register.erl:474
 msgid "Family Name"
 msgstr "Családnév"
 
-#: mod_muc_log.erl:478
+#: src/mod_muc_log.erl:479
 msgid "February"
 msgstr "február"
 
-#: mod_http_upload.erl:633
+#: src/mod_http_upload.erl:810
 msgid "File larger than ~w bytes"
 msgstr "A fájl nagyobb ~w bájtnál"
 
-#: mod_vcard.erl:458
+#: src/mod_vcard.erl:458
 msgid "Fill in the form to search for any matching Jabber User"
 msgstr ""
 "Töltse ki az űrlapot bármely egyező Jabber-felhasználóra való kereséshez"
 
-#: mod_muc_log.erl:471
+#: src/mod_muc_log.erl:472
 msgid "Friday"
 msgstr "péntek"
 
-#: mod_offline.erl:1006
+#: src/mod_offline.erl:1000
 msgid "From"
 msgstr "Feladó"
 
-#: mod_configure.erl:678
+#: src/mod_configure.erl:678
 msgid "From ~ts"
 msgstr "Feladó: ~ts"
 
-#: mod_vcard_mnesia.erl:100 mod_vcard_mnesia.erl:114 mod_vcard_sql.erl:157
-#: mod_vcard_sql.erl:171 mod_vcard_ldap.erl:327 mod_vcard_ldap.erl:340
+#: deps/xmpp/src/muc_roomconfig.erl:1909
+#, fuzzy
+msgid "Full List of Room Admins"
+msgstr "Szobák listája"
+
+#: deps/xmpp/src/muc_roomconfig.erl:1952
+#, fuzzy
+msgid "Full List of Room Owners"
+msgstr "Szobák listája"
+
+#: src/mod_vcard_mnesia.erl:100 src/mod_vcard_mnesia.erl:114
+#: src/mod_vcard_sql.erl:157 src/mod_vcard_sql.erl:171
+#: src/mod_vcard_ldap.erl:327 src/mod_vcard_ldap.erl:340
 msgid "Full Name"
 msgstr "Teljes név"
 
-#: mod_configure.erl:178 mod_configure.erl:520
+#: src/mod_configure.erl:178 src/mod_configure.erl:520
 msgid "Get Number of Online Users"
 msgstr "Elérhető felhasználók számának lekérése"
 
-#: mod_configure.erl:175 mod_configure.erl:518
+#: src/mod_configure.erl:175 src/mod_configure.erl:518
 msgid "Get Number of Registered Users"
 msgstr "Regisztrált felhasználók számának lekérése"
 
-#: mod_pubsub.erl:1036
+#: src/mod_pubsub.erl:1036
 msgid "Get Pending"
 msgstr "Függőben lévő lekérése"
 
-#: mod_configure.erl:171 mod_configure.erl:514 mod_configure.erl:1052
+#: src/mod_configure.erl:171 src/mod_configure.erl:514
+#: src/mod_configure.erl:1052
 msgid "Get User Last Login Time"
 msgstr "Felhasználó legutolsó bejelentkezési idejének lekérése"
 
-#: mod_configure.erl:167 mod_configure.erl:510 mod_configure.erl:1028
+#: src/mod_configure.erl:167 src/mod_configure.erl:510
+#: src/mod_configure.erl:1028
 msgid "Get User Password"
 msgstr "Felhasználó jelszavának lekérése"
 
-#: mod_configure.erl:173 mod_configure.erl:516 mod_configure.erl:1061
+#: src/mod_configure.erl:173 src/mod_configure.erl:516
+#: src/mod_configure.erl:1061
 msgid "Get User Statistics"
 msgstr "Felhasználói statisztikák lekérése"
 
-#: mod_vcard_ldap.erl:328 mod_vcard_ldap.erl:341
+#: src/mod_vcard_ldap.erl:328 src/mod_vcard_ldap.erl:341
+#: deps/xmpp/src/muc_register.erl:460
 msgid "Given Name"
 msgstr "Keresztnév"
 
-#: mod_shared_roster.erl:879
+#: deps/xmpp/src/muc_request.erl:383
+msgid "Grant voice to this person?"
+msgstr ""
+
+#: src/mod_shared_roster.erl:1040
 msgid "Group"
 msgstr "Csoport"
 
-#: mod_roster.erl:956
+#: src/mod_roster.erl:1005
 msgid "Groups"
 msgstr "Csoportok"
 
-#: mod_http_upload.erl:209
+#: src/mod_shared_roster.erl:1035
+msgid "Groups that will be displayed to the members"
+msgstr ""
+
+#: src/mod_http_upload.erl:210
 msgid "HTTP File Upload"
 msgstr "HTTP fájlfeltöltés"
 
-#: ejabberd_web_admin.erl:580
+#: src/ejabberd_web_admin.erl:587
 msgid "Host"
 msgstr "Gép"
 
-#: mod_s2s_dialback.erl:327
+#: src/mod_s2s_dialback.erl:363
 msgid "Host unknown"
 msgstr "Gép ismeretlen"
 
-#: mod_configure.erl:1405
+#: src/mod_configure.erl:1405
 msgid "IP addresses"
 msgstr "IP-címek"
 
-#: ejabberd_s2s_out.erl:253
+#: src/ejabberd_s2s_out.erl:269
 msgid "Idle connection"
 msgstr "Tétlen kapcsolat"
 
-#: ejabberd_captcha.erl:119
+#: src/ejabberd_captcha.erl:119
 msgid "If you don't see the CAPTCHA image here, visit the web page."
 msgstr "Ha nem látja itt a CAPTCHA képet, akkor látogassa meg a weboldalt."
 
-#: mod_configure.erl:155 mod_configure.erl:599
+#: src/mod_configure.erl:155 src/mod_configure.erl:599
 msgid "Import Directory"
 msgstr "Könyvtár importálása"
 
-#: mod_configure.erl:152 mod_configure.erl:597
+#: src/mod_configure.erl:152 src/mod_configure.erl:597
 msgid "Import File"
 msgstr "Fájl importálása"
 
-#: mod_configure.erl:891
+#: src/mod_configure.erl:891
 msgid "Import User from File at "
 msgstr "Felhasználó importálása fájlból itt: "
 
-#: mod_configure.erl:568
+#: src/mod_configure.erl:568
 msgid "Import Users From jabberd14 Spool Files"
 msgstr "Felhasználók importálása jabberd14 tárolófájlokból"
 
-#: mod_configure.erl:902
+#: src/mod_configure.erl:902
 msgid "Import Users from Dir at "
 msgstr "Felhasználók importálása könyvtárból itt: "
 
-#: ejabberd_web_admin.erl:1316
+#: src/ejabberd_web_admin.erl:1323
 msgid "Import user data from jabberd14 spool file:"
 msgstr "Felhasználóadatok importálása jabberd14 tárolófájlból:"
 
-#: ejabberd_web_admin.erl:1263
+#: src/ejabberd_web_admin.erl:1270
 msgid "Import users data from a PIEFXIS file (XEP-0227):"
 msgstr "Felhasználók adatainak importálása PIEFXIS-fájlból (XEP-0227):"
 
-#: ejabberd_web_admin.erl:1327
+#: src/ejabberd_web_admin.erl:1334
 msgid "Import users data from jabberd14 spool directory:"
 msgstr "Felhasználók adatainak importálása jabberd14 tárolókönyvtárból:"
 
-#: ejabberd_service.erl:220
+#: src/ejabberd_service.erl:219
 msgid "Improper domain part of 'from' attribute"
 msgstr "A „from” attribútum tartományrésze helytelen"
 
-#: mod_muc_room.erl:400
+#: src/mod_muc_room.erl:404
 msgid "Improper message type"
 msgstr "Helytelen üzenettípus"
 
-#: ejabberd_web_admin.erl:812
+#: src/ejabberd_web_admin.erl:819
 msgid "Incoming s2s Connections:"
 msgstr "Bejövő s2s kapcsolatok:"
 
-#: mod_register.erl:198 mod_muc_room.erl:4165 ejabberd_captcha.erl:215
+#: src/mod_register.erl:197 src/mod_muc_room.erl:4178
+#: src/ejabberd_captcha.erl:215
 msgid "Incorrect CAPTCHA submit"
 msgstr "Hibás CAPTCHA beküldés"
 
-#: mod_pubsub.erl:1247 mod_register.erl:194 mod_muc.erl:1049
-#: mod_muc_room.erl:3373 mod_vcard.erl:267
+#: src/mod_pubsub.erl:1247 src/mod_register.erl:193 src/mod_muc.erl:1057
+#: src/mod_muc_room.erl:3383 src/mod_vcard.erl:267
 msgid "Incorrect data form"
 msgstr "Hibás adatűrlap"
 
-#: mod_register.erl:154 mod_register_web.erl:613 mod_muc_room.erl:2197
+#: src/mod_register.erl:153 src/mod_register_web.erl:603
+#: src/mod_muc_room.erl:2207
 msgid "Incorrect password"
 msgstr "Hibás jelszó"
 
-#: mod_adhoc.erl:262
+#: src/mod_adhoc.erl:262
 msgid "Incorrect value of 'action' attribute"
 msgstr "Az „action” attribútum értéke hibás"
 
-#: mod_configure.erl:1550
+#: src/mod_configure.erl:1550
 msgid "Incorrect value of 'action' in data form"
 msgstr "Az „action” értéke hibás az adatűrlapon"
 
-#: mod_configure.erl:1153 mod_configure.erl:1186 mod_configure.erl:1219
-#: mod_configure.erl:1239 mod_configure.erl:1259
+#: src/mod_configure.erl:1153 src/mod_configure.erl:1186
+#: src/mod_configure.erl:1219 src/mod_configure.erl:1239
+#: src/mod_configure.erl:1259
 msgid "Incorrect value of 'path' in data form"
 msgstr "A „path” értéke hibás az adatűrlapon"
 
-#: mod_privilege.erl:117
+#: src/mod_privilege.erl:208
 msgid "Insufficient privilege"
 msgstr "Nincs elegendő jogosultság"
 
-#: mod_multicast.erl:352
+#: src/mod_multicast.erl:352
 msgid "Internal server error"
 msgstr "Belső kiszolgálóhiba"
 
-#: mod_privilege.erl:318
+#: src/mod_privilege.erl:409
 msgid "Invalid 'from' attribute in forwarded message"
 msgstr "Érvénytelen „from” attribútum a továbbított üzenetben"
 
-#: mod_stream_mgmt.erl:749
+#: src/mod_stream_mgmt.erl:792
 msgid "Invalid 'previd' value"
 msgstr "Érvénytelen „previd” érték"
 
-#: mod_muc_room.erl:4082
+#: src/mod_muc_room.erl:4095
 msgid "Invalid node name"
 msgstr "Érvénytelen csomópontnév"
 
-#: mod_muc_room.erl:4444
+#: src/mod_muc_room.erl:4457
 msgid "Invitations are not allowed in this conference"
 msgstr "Meghívások nem engedélyezettek ebben a konferenciában"
 
-#: mod_muc_room.erl:373 mod_muc_room.erl:519 mod_muc_room.erl:1293
+#: src/mod_muc_room.erl:377 src/mod_muc_room.erl:523 src/mod_muc_room.erl:1302
 msgid ""
 "It is not allowed to send error messages to the room. The participant (~s) "
 "has sent an error message (~s) and got kicked from the room"
@@ -700,137 +916,183 @@ msgstr ""
 "Nem engedélyezett hibaüzeneteket küldeni a szobába. A résztvevő (~s) "
 "hibaüzenetet (~s) küldött, és ki lett rúgva a szobából"
 
-#: mod_muc_room.erl:564 mod_muc_room.erl:575
+#: src/mod_muc_room.erl:568 src/mod_muc_room.erl:579
 msgid "It is not allowed to send private messages"
 msgstr "Nem engedélyezett személyes üzeneteket küldeni"
 
-#: mod_muc_room.erl:532
+#: src/mod_muc_room.erl:536
 msgid "It is not allowed to send private messages of type \"groupchat\""
 msgstr "Nem engedélyezett „groupchat” típusú személyes üzeneteket küldeni"
 
-#: mod_muc_room.erl:384
+#: src/mod_muc_room.erl:388
 msgid "It is not allowed to send private messages to the conference"
 msgstr "Nem engedélyezett személyes üzeneteket küldeni a konferenciába"
 
-#: mod_jidprep.erl:143
+#: src/mod_jidprep.erl:160
 msgid "JID normalization denied by service policy"
 msgstr ""
 "A Jabber-azonosító normalizálása megtagadva a szolgáltatási irányelv miatt"
 
-#: mod_jidprep.erl:137
+#: src/mod_jidprep.erl:154
 msgid "JID normalization failed"
 msgstr "A Jabber-azonosító normalizálása nem sikerült"
 
-#: mod_register_web.erl:213 mod_register_web.erl:221
+#: src/mod_register_web.erl:203 src/mod_register_web.erl:211
 msgid "Jabber Account Registration"
 msgstr "Jabber-fiók regisztráció"
 
-#: mod_vcard_mnesia.erl:113 mod_configure.erl:995 mod_configure.erl:1012
-#: mod_configure.erl:1022 mod_configure.erl:1032 mod_configure.erl:1042
-#: mod_configure.erl:1056 mod_configure.erl:1065 mod_configure.erl:1332
-#: mod_configure.erl:1376 mod_configure.erl:1401 mod_vcard_sql.erl:170
-#: mod_roster.erl:952
+#: src/mod_vcard_mnesia.erl:113 src/mod_configure.erl:995
+#: src/mod_configure.erl:1012 src/mod_configure.erl:1022
+#: src/mod_configure.erl:1032 src/mod_configure.erl:1042
+#: src/mod_configure.erl:1056 src/mod_configure.erl:1065
+#: src/mod_configure.erl:1332 src/mod_configure.erl:1376
+#: src/mod_configure.erl:1401 src/mod_vcard_sql.erl:170 src/mod_roster.erl:1001
+#: src/mod_muc_admin.erl:531
 msgid "Jabber ID"
 msgstr "Jabber-azonosító"
 
-#: mod_muc_log.erl:477
+#: src/mod_muc_log.erl:478
 msgid "January"
 msgstr "január"
 
-#: mod_muc_log.erl:483
+#: src/mod_muc_log.erl:484
 msgid "July"
 msgstr "július"
 
-#: mod_muc_log.erl:482
+#: src/mod_muc_log.erl:483
 msgid "June"
 msgstr "június"
 
-#: ejabberd_web_admin.erl:703 ejabberd_web_admin.erl:767
-#: ejabberd_web_admin.erl:941
+#: src/mod_muc_admin.erl:537
+msgid "Just created"
+msgstr ""
+
+#: src/mod_shared_roster.erl:1006
+msgid "Label:"
+msgstr ""
+
+#: src/ejabberd_web_admin.erl:710 src/ejabberd_web_admin.erl:774
+#: src/ejabberd_web_admin.erl:948
 msgid "Last Activity"
 msgstr "Utolsó tevékenység"
 
-#: mod_configure.erl:1378
+#: src/mod_configure.erl:1378
 msgid "Last login"
 msgstr "Utolsó belépés"
 
-#: ejabberd_web_admin.erl:485
+#: src/mod_muc_admin.erl:533
+#, fuzzy
+msgid "Last message"
+msgstr "Múlt év"
+
+#: src/ejabberd_web_admin.erl:492
 msgid "Last month"
 msgstr "Múlt hónap"
 
-#: ejabberd_web_admin.erl:486
+#: src/ejabberd_web_admin.erl:493
 msgid "Last year"
 msgstr "Múlt év"
 
-#: mod_muc_admin.erl:468
+#: deps/xmpp/src/captcha_form.erl:807
+msgid ""
+"Least significant bits of SHA-256 hash of text should equal hexadecimal label"
+msgstr ""
+
+#: src/mod_muc_admin.erl:485
 msgid "List of rooms"
 msgstr "Szobák listája"
 
-#: ejabberd_web_admin.erl:1435
+#: src/mod_muc_admin.erl:536
+msgid "Logging"
+msgstr ""
+
+#: src/ejabberd_web_admin.erl:1442
 msgid "Low level update script"
 msgstr "Alacsony szintű frissítő parancsfájl"
 
-#: mod_mam.erl:656
+#: src/mod_mam.erl:656
 msgid "MAM preference modification denied by service policy"
 msgstr "MAM beállítások módosítása megtagadva a szolgáltatási irányelv miatt"
 
-#: mod_muc_log.erl:799
+#: src/mod_muc_log.erl:800 deps/xmpp/src/muc_roomconfig.erl:1894
 msgid "Make participants list public"
 msgstr "Résztvevőlista nyilvánossá tétele"
 
-#: mod_muc_log.erl:827
+#: src/mod_muc_log.erl:828 deps/xmpp/src/muc_roomconfig.erl:1591
 msgid "Make room CAPTCHA protected"
 msgstr "Szoba CAPTCHA-védetté tétele"
 
-#: mod_muc_log.erl:806
+#: src/mod_muc_log.erl:807 deps/xmpp/src/muc_roomconfig.erl:1772
 msgid "Make room members-only"
 msgstr "Szoba beállítása csak tagoknak"
 
-#: mod_muc_log.erl:808
+#: src/mod_muc_log.erl:809 deps/xmpp/src/muc_roomconfig.erl:1786
 msgid "Make room moderated"
 msgstr "Szoba moderálttá tétele"
 
-#: mod_muc_log.erl:801
+#: src/mod_muc_log.erl:802 deps/xmpp/src/muc_roomconfig.erl:1818
 msgid "Make room password protected"
 msgstr "Szoba jelszóval védetté tétele"
 
-#: mod_muc_log.erl:795
+#: src/mod_muc_log.erl:796 deps/xmpp/src/muc_roomconfig.erl:1832
 msgid "Make room persistent"
 msgstr "Szoba állandóvá tétele"
 
-#: mod_muc_log.erl:797
+#: src/mod_muc_log.erl:798 deps/xmpp/src/muc_roomconfig.erl:1879
 msgid "Make room public searchable"
 msgstr "Szoba nyilvánosan kereshetővé tétele"
 
-#: mod_register.erl:386
+#: src/mod_register.erl:384
 msgid "Malformed username"
 msgstr "Helytelenül formázott felhasználónév"
 
-#: mod_muc_log.erl:479
+#: src/mod_muc_log.erl:480
 msgid "March"
 msgstr "március"
 
-#: mod_muc_log.erl:833
+#: deps/xmpp/src/pubsub_node_config.erl:1648
+msgid "Max # of items to persist"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1664
+msgid "Max payload size in bytes"
+msgstr ""
+
+#: deps/xmpp/src/muc_roominfo.erl:699 deps/xmpp/src/muc_roomconfig.erl:1405
+msgid "Maximum Number of History Messages Returned by Room"
+msgstr ""
+
+#: src/mod_muc_log.erl:834 deps/xmpp/src/muc_roomconfig.erl:1758
 msgid "Maximum Number of Occupants"
 msgstr "Résztvevők legnagyobb száma"
 
-#: mod_muc_log.erl:481
+#: deps/xmpp/src/http_upload.erl:240
+msgid "Maximum file size"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_meta_data.erl:788
+#, fuzzy
+msgid "Maximum number of items to persist"
+msgstr "Résztvevők legnagyobb száma"
+
+#: src/mod_muc_log.erl:482
 msgid "May"
 msgstr "május"
 
-#: mod_shared_roster.erl:885
-msgid "Members not added (inexistent vhost): "
+#: src/mod_shared_roster.erl:1045
+#, fuzzy
+msgid "Members not added (inexistent vhost!): "
 msgstr "Tagok nincsenek hozzáadva (nem létező virtuális gép): "
 
-#: mod_shared_roster.erl:863
+#: src/mod_shared_roster.erl:1020
 msgid "Members:"
 msgstr "Tagok:"
 
-#: mod_muc_room.erl:2084
+#: src/mod_muc_room.erl:2094
 msgid "Membership is required to enter this room"
 msgstr "Tagság szükséges a szobába lépéshez"
 
-#: mod_register_web.erl:304
+#: src/mod_register_web.erl:294
 msgid ""
 "Memorize your password, or write it in a paper placed in a safe place. In "
 "Jabber there isn't an automated way to recover your password if you forget "
@@ -840,324 +1102,439 @@ msgstr ""
 "A Jabber nem nyújt automatizált módszert a jelszó visszaállítására, ha "
 "elfelejti azt."
 
-#: ejabberd_web_admin.erl:1174
+#: src/ejabberd_web_admin.erl:1181
 msgid "Memory"
 msgstr "Memória"
 
-#: mod_configure.erl:948 mod_configure.erl:988 mod_announce.erl:528
+#: deps/xmpp/src/pubsub_subscribe_options.erl:575
+msgid "Mere Availability in XMPP (No Show Value)"
+msgstr ""
+
+#: src/mod_configure.erl:948 src/mod_configure.erl:988 src/mod_announce.erl:528
 msgid "Message body"
 msgstr "Üzenettörzs"
 
-#: mod_privilege.erl:323
+#: src/mod_privilege.erl:414
 msgid "Message not found in forwarded payload"
 msgstr "Nem található üzenet a továbbított adatokban"
 
-#: mod_block_strangers.erl:177
+#: src/mod_block_strangers.erl:177
 msgid "Messages from strangers are rejected"
 msgstr "Idegenektől származó üzenetek vissza vannak utasítva"
 
-#: mod_vcard_mnesia.erl:102 mod_vcard_mnesia.erl:116 mod_vcard_sql.erl:159
-#: mod_vcard_sql.erl:173 mod_vcard_ldap.erl:329 mod_vcard_ldap.erl:342
+#: deps/xmpp/src/pubsub_node_config.erl:1715
+msgid "Messages of type headline"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1711
+msgid "Messages of type normal"
+msgstr ""
+
+#: src/mod_vcard_mnesia.erl:102 src/mod_vcard_mnesia.erl:116
+#: src/mod_vcard_sql.erl:159 src/mod_vcard_sql.erl:173
+#: src/mod_vcard_ldap.erl:329 src/mod_vcard_ldap.erl:342
 msgid "Middle Name"
 msgstr "Középső név"
 
-#: mod_muc_room.erl:2799 mod_muc_room.erl:4219 mod_muc_room.erl:4270
-#: mod_muc_room.erl:4316
+#: deps/xmpp/src/muc_roomconfig.erl:1575
+msgid "Minimum interval between voice requests (in seconds)"
+msgstr ""
+
+#: deps/xmpp/src/muc_roomconfig.erl:1846
+msgid "Moderator"
+msgstr ""
+
+#: src/mod_muc_room.erl:2809 src/mod_muc_room.erl:4232
+#: src/mod_muc_room.erl:4283 src/mod_muc_room.erl:4329
 msgid "Moderator privileges required"
 msgstr "Moderátori jogosultságok szükségesek"
 
-#: ejabberd_web_admin.erl:1433
+#: deps/xmpp/src/muc_roominfo.erl:734 deps/xmpp/src/muc_roomconfig.erl:1424
+#: deps/xmpp/src/muc_roomconfig.erl:1476 deps/xmpp/src/muc_roomconfig.erl:1979
+msgid "Moderators Only"
+msgstr ""
+
+#: src/ejabberd_web_admin.erl:1440
 msgid "Modified modules"
 msgstr "Módosított modulok"
 
-#: gen_iq_handler.erl:119
+#: src/gen_iq_handler.erl:119
 msgid "Module failed to handle the query"
 msgstr "A modul nem tudta kezelni a lekérdezést"
 
-#: mod_muc_log.erl:467
+#: src/mod_muc_log.erl:468
 msgid "Monday"
 msgstr "hétfő"
 
-#: mod_muc_admin.erl:442 mod_muc_admin.erl:445 mod_muc_admin.erl:461
-#: mod_muc_admin.erl:535
+#: src/mod_muc_admin.erl:459 src/mod_muc_admin.erl:462
+#: src/mod_muc_admin.erl:478 src/mod_muc_admin.erl:552
 msgid "Multi-User Chat"
 msgstr "Többfelhasználós csevegés"
 
-#: mod_multicast.erl:1162
+#: src/mod_multicast.erl:1162
 msgid "Multicast"
 msgstr "Csoportcímzés"
 
-#: mod_roster.erl:190
+#: src/mod_roster.erl:190
 msgid "Multiple <item/> elements are not allowed by RFC6121"
 msgstr "Több <item/> elem nem engedélyezett az RFC6121 alapján"
 
-#: mod_vcard_mnesia.erl:101 mod_vcard_mnesia.erl:115 mod_vcard_sql.erl:158
-#: mod_vcard_sql.erl:172 ejabberd_web_admin.erl:1171
+#: src/mod_vcard_mnesia.erl:101 src/mod_vcard_mnesia.erl:115
+#: src/mod_vcard_sql.erl:158 src/mod_vcard_sql.erl:172
+#: src/ejabberd_web_admin.erl:1178
 msgid "Name"
 msgstr "Név"
 
-#: mod_shared_roster.erl:852
+#: src/mod_shared_roster.erl:1009
+msgid "Name in the rosters where this group will be displayed"
+msgstr ""
+
+#: src/mod_shared_roster.erl:908 src/mod_shared_roster.erl:1002
 msgid "Name:"
 msgstr "Név:"
 
-#: mod_muc_room.erl:2977
+#: deps/xmpp/src/muc_roominfo.erl:795 deps/xmpp/src/muc_roomconfig.erl:1707
+msgid "Natural Language for Room Discussions"
+msgstr ""
+
+#: deps/xmpp/src/muc_roominfo.erl:846
+msgid "Natural-Language Room Name"
+msgstr ""
+
+#: src/mod_muc_room.erl:2987
 msgid "Neither 'jid' nor 'nick' attribute found"
 msgstr "Sem a „jid”, sem a „nick” attribútum nem található"
 
-#: mod_muc_room.erl:2781 mod_muc_room.erl:2982
+#: src/mod_muc_room.erl:2791 src/mod_muc_room.erl:2992
 msgid "Neither 'role' nor 'affiliation' attribute found"
 msgstr "Sem a „role”, sem az „affiliation” attribútum nem található"
 
-#: mod_configure.erl:1361 ejabberd_web_admin.erl:719 ejabberd_web_admin.erl:913
+#: src/mod_configure.erl:1361 src/ejabberd_web_admin.erl:726
+#: src/ejabberd_web_admin.erl:920 deps/xmpp/src/pubsub_node_config.erl:1916
 msgid "Never"
 msgstr "Soha"
 
-#: mod_register_web.erl:423
+#: src/mod_register_web.erl:413
 msgid "New Password:"
 msgstr "Új jelszó:"
 
-#: mod_vcard_mnesia.erl:104 mod_vcard_mnesia.erl:118 mod_vcard_sql.erl:161
-#: mod_vcard_sql.erl:175 mod_roster.erl:953 mod_vcard_ldap.erl:331
-#: mod_vcard_ldap.erl:344
+#: src/mod_vcard_mnesia.erl:104 src/mod_vcard_mnesia.erl:118
+#: src/mod_vcard_sql.erl:161 src/mod_vcard_sql.erl:175 src/mod_roster.erl:1002
+#: src/mod_vcard_ldap.erl:331 src/mod_vcard_ldap.erl:344
+#: deps/xmpp/src/muc_register.erl:488 deps/xmpp/src/muc_request.erl:368
 msgid "Nickname"
 msgstr "Becenév"
 
-#: mod_muc.erl:1000
+#: src/mod_muc.erl:1008
 msgid "Nickname Registration at "
 msgstr "Becenév regisztrációja itt: "
 
-#: mod_muc_room.erl:1242 mod_muc_room.erl:2105 mod_muc_room.erl:4240
+#: src/mod_muc_room.erl:1251 src/mod_muc_room.erl:2115
+#: src/mod_muc_room.erl:4253
 msgid "Nickname can't be empty"
 msgstr "A becenév nem lehet üres"
 
-#: mod_muc_room.erl:2994
-msgid "Nickname ~ts does not exist in the room"
+#: src/mod_muc_room.erl:3004
+#, fuzzy
+msgid "Nickname ~s does not exist in the room"
 msgstr "A(z) ~ts becenév nem létezik a szobában"
 
-#: mod_muc_room.erl:3396
+#: src/mod_muc_room.erl:3406
 msgid "No 'affiliation' attribute found"
 msgstr "Nem található „affiliation” attribútum"
 
-#: mod_muc_room.erl:2763
+#: src/mod_muc_room.erl:2773
 msgid "No 'item' element found"
 msgstr "Nem található „item” elem"
 
-#: mod_configure.erl:1543
+#: src/mod_configure.erl:1543
 msgid "No 'password' found in data form"
 msgstr "Nem található „password” az adatűrlapon"
 
-#: mod_register.erl:159
+#: src/mod_register.erl:158
 msgid "No 'password' found in this query"
 msgstr "Nem található „password” ebben a lekérdezésben"
 
-#: mod_configure.erl:1135 mod_configure.erl:1168 mod_configure.erl:1201
-#: mod_configure.erl:1233 mod_configure.erl:1253
+#: src/mod_configure.erl:1135 src/mod_configure.erl:1168
+#: src/mod_configure.erl:1201 src/mod_configure.erl:1233
+#: src/mod_configure.erl:1253
 msgid "No 'path' found in data form"
 msgstr "Nem található „path” az adatűrlapon"
 
-#: mod_muc_room.erl:4440
+#: src/mod_muc_room.erl:4453
 msgid "No 'to' attribute found in the invitation"
 msgstr "Nem található „to” attribútum a meghívásban"
 
-#: mod_privilege.erl:332
+#: src/mod_privilege.erl:423
 msgid "No <forwarded/> element found"
 msgstr "Nem található <forwarded/> elem"
 
-#: ejabberd_web_admin.erl:993
+#: src/ejabberd_web_admin.erl:1000
 msgid "No Data"
 msgstr "Nincs adat"
 
-#: mod_multicast.erl:338
+#: src/mod_multicast.erl:338
 msgid "No address elements found"
 msgstr "Nem találhatók cím elemek"
 
-#: mod_multicast.erl:335
+#: src/mod_multicast.erl:335
 msgid "No addresses element found"
 msgstr "Nem található címek elem"
 
-#: ejabberd_local.erl:103
+#: src/ejabberd_local.erl:103
 msgid "No available resource found"
 msgstr "Nem található elérhető erőforrás"
 
-#: mod_announce.erl:579
+#: src/mod_announce.erl:579
 msgid "No body provided for announce message"
 msgstr "Nincs törzs megadva a közleményüzenethez"
 
-#: gen_iq_handler.erl:89 mod_muc_room.erl:1151
+#: src/gen_iq_handler.erl:89 src/mod_muc_room.erl:1160
 msgid "No child elements found"
 msgstr "Nem találhatók gyermekelemek"
 
-#: mod_pubsub.erl:1236
+#: src/mod_pubsub.erl:1236
 msgid "No data form found"
 msgstr "Nem található adatűrlap"
 
-#: mod_disco.erl:203 mod_vcard.erl:293
+#: src/mod_disco.erl:204 src/mod_vcard.erl:293
 msgid "No features available"
 msgstr "Nincsenek elérhető funkciók"
 
-#: mod_adhoc.erl:226
+#: src/mod_adhoc.erl:226
 msgid "No hook has processed this command"
 msgstr "Egyetlen horog sem dolgozta fel ezt a parancsot"
 
-#: mod_last.erl:205
+#: src/mod_last.erl:205
 msgid "No info about last activity found"
 msgstr "Nem található információ a legutolsó tevékenységgel kapcsolatban"
 
-#: mod_blocking.erl:90
+#: src/mod_blocking.erl:90
 msgid "No items found in this query"
 msgstr "Nem találhatók elemek ebben a lekérdezésben"
 
-#: mod_muc_room.erl:3507
+#: src/mod_muc_room.erl:3517 deps/xmpp/src/muc_roomconfig.erl:1736
 msgid "No limit"
 msgstr "Nincs korlát"
 
-#: gen_iq_handler.erl:82 mod_blocking.erl:83 mod_blocking.erl:101
-#: mod_mix_pam.erl:281 mod_roster.erl:202 mod_muc.erl:236 mod_muc.erl:593
-#: mod_muc.erl:660 mod_muc.erl:680 mod_muc.erl:711 mod_offline.erl:364
-#: mod_jidprep.erl:147 mod_mix.erl:630 mod_privacy.erl:156 mod_privacy.erl:273
-#: mod_http_upload.erl:592 ejabberd_captcha.erl:225
+#: src/gen_iq_handler.erl:82 src/mod_blocking.erl:83 src/mod_blocking.erl:101
+#: src/mod_mix_pam.erl:316 src/mod_roster.erl:202 src/mod_muc.erl:237
+#: src/mod_muc.erl:606 src/mod_muc.erl:673 src/mod_muc.erl:693
+#: src/mod_muc.erl:724 src/mod_offline.erl:364 src/mod_jidprep.erl:164
+#: src/mod_stun_disco.erl:481 src/mod_mix.erl:672 src/mod_privacy.erl:156
+#: src/mod_privacy.erl:273 src/mod_http_upload.erl:769
+#: src/ejabberd_captcha.erl:225
 msgid "No module is handling this query"
 msgstr "Egyetlen modul sem kezeli ezt a lekérdezést"
 
-#: mod_pubsub.erl:1602
+#: src/mod_pubsub.erl:1602
 msgid "No node specified"
 msgstr "Nincs csomópont megadva"
 
-#: mod_pubsub.erl:1479
+#: src/mod_pubsub.erl:1479
 msgid "No pending subscriptions found"
 msgstr "Nem találhatók függőben lévő feliratkozások"
 
-#: mod_privacy.erl:189 mod_privacy.erl:283 mod_privacy.erl:299
-#: mod_privacy.erl:332
+#: src/mod_privacy.erl:189 src/mod_privacy.erl:283 src/mod_privacy.erl:299
+#: src/mod_privacy.erl:332
 msgid "No privacy list with this name found"
 msgstr "Nem található ilyen nevű adatvédelmi lista"
 
-#: mod_private.erl:140
+#: src/mod_private.erl:175
 msgid "No private data found in this query"
 msgstr "Nem található személyes adat ebben a lekérdezésben"
 
-#: mod_configure.erl:818 mod_configure.erl:1097 mod_configure.erl:1130
-#: mod_configure.erl:1163 mod_configure.erl:1196 mod_configure.erl:1228
-#: mod_configure.erl:1248 mod_stats.erl:93
+#: src/mod_configure.erl:818 src/mod_configure.erl:1097
+#: src/mod_configure.erl:1130 src/mod_configure.erl:1163
+#: src/mod_configure.erl:1196 src/mod_configure.erl:1228
+#: src/mod_configure.erl:1248 src/mod_stats.erl:93
 msgid "No running node found"
 msgstr "Nem található futó csomópont"
 
-#: mod_disco.erl:231 mod_vcard.erl:276
+#: src/mod_disco.erl:232 src/mod_vcard.erl:276
 msgid "No services available"
 msgstr "Nincsenek elérhető szolgáltatások"
 
-#: mod_stats.erl:101
+#: src/mod_stats.erl:101
 msgid "No statistics found for this item"
 msgstr "Nem találhatók statisztikák ehhez az elemhez"
 
-#: nodetree_tree.erl:219 nodetree_tree_sql.erl:278
+#: deps/xmpp/src/muc_roominfo.erl:736 deps/xmpp/src/muc_roomconfig.erl:1426
+#: deps/xmpp/src/muc_roomconfig.erl:1473
+msgid "Nobody"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_subscribe_authorization.erl:358
+#, fuzzy
+msgid "Node ID"
+msgstr "~p csomópont"
+
+#: src/nodetree_tree.erl:219 src/nodetree_tree_sql.erl:278
 msgid "Node already exists"
 msgstr "A csomópont már létezik"
 
-#: nodetree_tree_sql.erl:96
+#: src/nodetree_tree_sql.erl:96
 msgid "Node index not found"
 msgstr "A csomópontindex nem található"
 
-#: ejabberd_web_admin.erl:526 nodetree_tree.erl:76 nodetree_tree.erl:82
-#: mod_muc.erl:658 mod_muc.erl:938 mod_muc_room.erl:4152
-#: nodetree_tree_sql.erl:126 nodetree_tree_sql.erl:140
+#: src/ejabberd_web_admin.erl:533 src/nodetree_tree.erl:76
+#: src/nodetree_tree.erl:82 src/mod_muc.erl:671 src/mod_muc.erl:946
+#: src/mod_muc_room.erl:4165 src/nodetree_tree_sql.erl:126
+#: src/nodetree_tree_sql.erl:140
 msgid "Node not found"
 msgstr "A csomópont nem található"
 
-#: ejabberd_web_admin.erl:1083 ejabberd_web_admin.erl:1105
+#: src/ejabberd_web_admin.erl:1090 src/ejabberd_web_admin.erl:1112
 msgid "Node ~p"
 msgstr "~p csomópont"
 
-#: mod_vcard.erl:398
+#: src/mod_vcard.erl:398
 msgid "Nodeprep has failed"
 msgstr "A csomópont-előkészítés sikertelen"
 
-#: ejabberd_web_admin.erl:1063 ejabberd_web_admin.erl:1788
-#: ejabberd_web_admin.erl:1814
+#: src/ejabberd_web_admin.erl:1070 src/ejabberd_web_admin.erl:1794
+#: src/ejabberd_web_admin.erl:1819
 msgid "Nodes"
 msgstr "Csomópontok"
 
-#: ejabberd_web_admin.erl:848 ejabberd_web_admin.erl:1044
-#: ejabberd_web_admin.erl:1054 ejabberd_web_admin.erl:1392 mod_roster.erl:947
+#: src/ejabberd_web_admin.erl:855 src/ejabberd_web_admin.erl:1051
+#: src/ejabberd_web_admin.erl:1061 src/ejabberd_web_admin.erl:1399
+#: src/mod_roster.erl:996
 msgid "None"
 msgstr "Nincs"
 
-#: ejabberd_web_admin.erl:512
+#: src/ejabberd_web_admin.erl:519
 msgid "Not Found"
 msgstr "Nem található"
 
-#: mod_register.erl:396 mod_register_web.erl:617
+#: src/mod_register.erl:394 src/mod_register_web.erl:607
 msgid "Not allowed"
 msgstr "Nem engedélyezett"
 
-#: mod_last.erl:145 mod_disco.erl:275 mod_disco.erl:334
+#: src/mod_last.erl:145 src/mod_disco.erl:276 src/mod_disco.erl:335
 msgid "Not subscribed"
 msgstr "Nincs feliratkozva"
 
-#: mod_muc_log.erl:487
+#: deps/xmpp/src/pubsub_node_config.erl:1776
+msgid "Notify subscribers when items are removed from the node"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1742
+msgid "Notify subscribers when the node configuration changes"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1759
+msgid "Notify subscribers when the node is deleted"
+msgstr ""
+
+#: src/mod_muc_log.erl:488
 msgid "November"
 msgstr "november"
 
-#: mod_configure.erl:1085
+#: deps/xmpp/src/flex_offline.erl:239
+#, fuzzy
+msgid "Number of Offline Messages"
+msgstr "Kapcsolat nélküli üzenetek"
+
+#: deps/xmpp/src/captcha_form.erl:686
+#, fuzzy
+msgid "Number of answers required"
+msgstr "Elérhető felhasználók száma"
+
+#: deps/xmpp/src/muc_roominfo.erl:860
+#, fuzzy
+msgid "Number of occupants"
+msgstr "Résztvevők legnagyobb száma"
+
+#: src/mod_configure.erl:1085
 msgid "Number of online users"
 msgstr "Elérhető felhasználók száma"
 
-#: mod_configure.erl:1075
+#: src/mod_configure.erl:1075
 msgid "Number of registered users"
 msgstr "Regisztrált felhasználók száma"
 
-#: ejabberd_web_admin.erl:1220 ejabberd_web_admin.erl:1230
-#: ejabberd_web_admin.erl:1241 ejabberd_web_admin.erl:1250
-#: ejabberd_web_admin.erl:1260 ejabberd_web_admin.erl:1273
-#: ejabberd_web_admin.erl:1285 ejabberd_web_admin.erl:1299
-#: ejabberd_web_admin.erl:1313 ejabberd_web_admin.erl:1324
-#: ejabberd_web_admin.erl:1334 ejabberd_captcha.erl:176
+#: deps/xmpp/src/pubsub_node_config.erl:1577
+msgid "Number of seconds after which to automatically purge items"
+msgstr ""
+
+#: src/ejabberd_web_admin.erl:1227 src/ejabberd_web_admin.erl:1237
+#: src/ejabberd_web_admin.erl:1248 src/ejabberd_web_admin.erl:1257
+#: src/ejabberd_web_admin.erl:1267 src/ejabberd_web_admin.erl:1280
+#: src/ejabberd_web_admin.erl:1292 src/ejabberd_web_admin.erl:1306
+#: src/ejabberd_web_admin.erl:1320 src/ejabberd_web_admin.erl:1331
+#: src/ejabberd_web_admin.erl:1341 src/ejabberd_captcha.erl:176
 msgid "OK"
 msgstr "Rendben"
 
-#: mod_muc_log.erl:486
+#: deps/xmpp/src/muc_roominfo.erl:925
+#, fuzzy
+msgid "Occupants May Change the Subject"
+msgstr "Lehetővé tenni a felhasználóknak a tárgy megváltoztatását"
+
+#: deps/xmpp/src/muc_roominfo.erl:716
+#, fuzzy
+msgid "Occupants are allowed to invite others"
+msgstr ""
+"Csak résztvevőknek engedélyezett lekérdezéseket küldeni a konferenciába"
+
+#: src/mod_muc_log.erl:487
 msgid "October"
 msgstr "október"
 
-#: ejabberd_web_admin.erl:702
+#: src/ejabberd_web_admin.erl:709
 msgid "Offline Messages"
 msgstr "Kapcsolat nélküli üzenetek"
 
-#: mod_offline.erl:1082
+#: src/mod_offline.erl:1077
 msgid "Offline Messages:"
 msgstr "Kapcsolat nélküli üzenetek:"
 
-#: mod_register_web.erl:419
+#: src/mod_register_web.erl:409
 msgid "Old Password:"
 msgstr "Régi jelszó:"
 
-#: mod_configure.erl:1371 ejabberd_web_admin.erl:737 ejabberd_web_admin.erl:924
+#: src/mod_configure.erl:1371 src/ejabberd_web_admin.erl:744
+#: src/ejabberd_web_admin.erl:931
 msgid "Online"
 msgstr "Elérhető"
 
-#: mod_configure.erl:494 ejabberd_web_admin.erl:453 ejabberd_web_admin.erl:582
-#: ejabberd_web_admin.erl:1785
+#: src/mod_configure.erl:494 src/ejabberd_web_admin.erl:460
+#: src/ejabberd_web_admin.erl:589 src/ejabberd_web_admin.erl:1791
 msgid "Online Users"
 msgstr "Elérhető felhasználók"
 
-#: ejabberd_web_admin.erl:806 ejabberd_web_admin.erl:825
-#: ejabberd_web_admin.erl:1365
+#: src/ejabberd_web_admin.erl:813 src/ejabberd_web_admin.erl:832
+#: src/ejabberd_web_admin.erl:1372
 msgid "Online Users:"
 msgstr "Elérhető felhasználók:"
 
-#: mod_carboncopy.erl:110
+#: src/mod_carboncopy.erl:101
 msgid "Only <enable/> or <disable/> tags are allowed"
 msgstr "Csak az <enable/> vagy <disable/> címkék engedélyezettek"
 
-#: mod_privacy.erl:142
+#: src/mod_privacy.erl:142
 msgid "Only <list/> element is allowed in this query"
 msgstr "Csak a <list/> elem engedélyezett ebben a lekérdezésben"
 
-#: mod_mam.erl:513
+#: src/mod_shared_roster.erl:1017
+msgid "Only admins can see this"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1386
+msgid ""
+"Only collection node owners may associate leaf nodes with the collection"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1827
+msgid "Only deliver notifications to available users"
+msgstr ""
+
+#: src/mod_mam.erl:513
 msgid "Only members may query archives of this room"
 msgstr "Csak tagok kérdezhetik le ennek a szobának az archívumát"
 
-#: mod_muc_room.erl:991
+#: src/mod_muc_room.erl:1000
 msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
@@ -1165,107 +1542,145 @@ msgstr ""
 "Csak moderátoroknak és résztvevőknek engedélyezett megváltoztatni a tárgyat "
 "ebben a szobában"
 
-#: mod_muc_room.erl:996
+#: src/mod_muc_room.erl:1005
 msgid "Only moderators are allowed to change the subject in this room"
 msgstr ""
 "Csak moderátoroknak engedélyezett megváltoztatni a tárgyat ebben a szobában"
 
-#: mod_muc_room.erl:1135
+#: src/mod_muc_room.erl:1144
 msgid "Only moderators can approve voice requests"
 msgstr "Csak moderátorok hagyhatnak jóvá hangkérelmeket"
 
-#: mod_muc_room.erl:570 mod_muc_room.erl:1010 mod_muc_room.erl:4509
+#: src/mod_muc_room.erl:574 src/mod_muc_room.erl:1019 src/mod_muc_room.erl:4522
 msgid "Only occupants are allowed to send messages to the conference"
 msgstr "Csak résztvevőknek engedélyezett üzeneteket küldeni a konferenciába"
 
-#: mod_muc_room.erl:616
+#: src/mod_muc_room.erl:620
 msgid "Only occupants are allowed to send queries to the conference"
 msgstr ""
 "Csak résztvevőknek engedélyezett lekérdezéseket küldeni a konferenciába"
 
-#: mod_muc.erl:226
+#: deps/xmpp/src/pubsub_node_config.erl:1843
+#: deps/xmpp/src/pubsub_meta_data.erl:848
+msgid "Only publishers may publish"
+msgstr ""
+
+#: src/mod_muc.erl:227
 msgid "Only service administrators are allowed to send service messages"
 msgstr ""
 "Csak szolgáltatás-adminisztrátoroknak engedélyezett szolgáltatási üzeneteket "
 "küldeni"
 
-#: mod_vcard_mnesia.erl:109 mod_vcard_mnesia.erl:123 mod_vcard_sql.erl:166
-#: mod_vcard_sql.erl:180 mod_vcard_ldap.erl:336 mod_vcard_ldap.erl:349
+#: deps/xmpp/src/pubsub_node_config.erl:1391
+msgid "Only those on a whitelist may associate leaf nodes with the collection"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1332
+#: deps/xmpp/src/pubsub_meta_data.erl:822
+msgid "Only those on a whitelist may subscribe and retrieve items"
+msgstr ""
+
+#: src/mod_vcard_mnesia.erl:109 src/mod_vcard_mnesia.erl:123
+#: src/mod_vcard_sql.erl:166 src/mod_vcard_sql.erl:180
+#: src/mod_vcard_ldap.erl:336 src/mod_vcard_ldap.erl:349
 msgid "Organization Name"
 msgstr "Szervezet neve"
 
-#: mod_vcard_mnesia.erl:110 mod_vcard_mnesia.erl:124 mod_vcard_sql.erl:167
-#: mod_vcard_sql.erl:181 mod_vcard_ldap.erl:337 mod_vcard_ldap.erl:350
+#: src/mod_vcard_mnesia.erl:110 src/mod_vcard_mnesia.erl:124
+#: src/mod_vcard_sql.erl:167 src/mod_vcard_sql.erl:181
+#: src/mod_vcard_ldap.erl:337 src/mod_vcard_ldap.erl:350
 msgid "Organization Unit"
 msgstr "Szervezeti egység"
 
-#: mod_configure.erl:496
+#: src/mod_configure.erl:496
 msgid "Outgoing s2s Connections"
 msgstr "Kimenő s2s kapcsolatok"
 
-#: ejabberd_web_admin.erl:809
+#: src/ejabberd_web_admin.erl:816
 msgid "Outgoing s2s Connections:"
 msgstr "Kimenő s2s kapcsolatok:"
 
-#: mod_pubsub.erl:1355 mod_pubsub.erl:1450 mod_pubsub.erl:1624
-#: mod_pubsub.erl:2230 mod_pubsub.erl:2296 mod_pubsub.erl:2506
-#: mod_pubsub.erl:2600 mod_pubsub.erl:3288 mod_pubsub.erl:3450 mod_mix.erl:635
-#: mod_muc_room.erl:3343 mod_muc_room.erl:3388 mod_muc_room.erl:4195
+#: src/mod_pubsub.erl:1355 src/mod_pubsub.erl:1450 src/mod_pubsub.erl:1624
+#: src/mod_pubsub.erl:2230 src/mod_pubsub.erl:2296 src/mod_pubsub.erl:2506
+#: src/mod_pubsub.erl:2600 src/mod_pubsub.erl:3288 src/mod_pubsub.erl:3450
+#: src/mod_mix.erl:677 src/mod_muc_room.erl:3353 src/mod_muc_room.erl:3398
+#: src/mod_muc_room.erl:4208
 msgid "Owner privileges required"
 msgstr "Tulajdonosi jogosultságok szükségesek"
 
-#: mod_offline.erl:1008
+#: src/mod_offline.erl:1002
 msgid "Packet"
 msgstr "Csomag"
 
-#: mod_multicast.erl:347
+#: src/mod_multicast.erl:347
 msgid "Packet relay is denied by service policy"
 msgstr "Csomagátjátszás megtagadva a szolgáltatási irányelv miatt"
 
-#: mod_configure.erl:999 mod_configure.erl:1046 mod_configure.erl:1334
-#: mod_configure.erl:1523 ejabberd_web_admin.erl:650 mod_register.erl:240
-#: mod_muc_log.erl:802 ejabberd_oauth.erl:501
+#: deps/xmpp/src/muc_roomconfig.erl:1849 deps/xmpp/src/muc_request.erl:330
+msgid "Participant"
+msgstr ""
+
+#: src/mod_configure.erl:999 src/mod_configure.erl:1046
+#: src/mod_configure.erl:1334 src/mod_configure.erl:1523
+#: src/ejabberd_web_admin.erl:657 src/mod_register.erl:238
+#: src/mod_muc_log.erl:803 src/ejabberd_oauth.erl:502
+#: deps/xmpp/src/muc_roomconfig.erl:1966
 msgid "Password"
 msgstr "Jelszó"
 
-#: mod_configure.erl:1003
+#: src/mod_configure.erl:1003
 msgid "Password Verification"
 msgstr "Jelszó ellenőrzése"
 
-#: mod_register_web.erl:310 mod_register_web.erl:427
+#: src/mod_register_web.erl:300 src/mod_register_web.erl:417
 msgid "Password Verification:"
 msgstr "Jelszó ellenőrzése:"
 
-#: ejabberd_web_admin.erl:939 mod_register_web.erl:287 mod_register_web.erl:530
+#: src/ejabberd_web_admin.erl:946 src/mod_register_web.erl:277
+#: src/mod_register_web.erl:520
 msgid "Password:"
 msgstr "Jelszó:"
 
-#: mod_configure.erl:907
+#: src/mod_configure.erl:907
 msgid "Path to Dir"
 msgstr "Útvonal a könyvtárhoz"
 
-#: mod_configure.erl:861 mod_configure.erl:873 mod_configure.erl:885
-#: mod_configure.erl:896
+#: src/mod_configure.erl:861 src/mod_configure.erl:873
+#: src/mod_configure.erl:885 src/mod_configure.erl:896
 msgid "Path to File"
 msgstr "Útvonal a fájlhoz"
 
-#: mod_roster.erl:955
+#: deps/xmpp/src/pubsub_meta_data.erl:772
+msgid "Payload type"
+msgstr ""
+
+#: src/mod_roster.erl:1004
 msgid "Pending"
 msgstr "Függőben"
 
-#: ejabberd_web_admin.erl:472
+#: src/ejabberd_web_admin.erl:479
 msgid "Period: "
 msgstr "Időszak: "
 
-#: mod_adhoc.erl:155 mod_adhoc.erl:245
+#: deps/xmpp/src/pubsub_node_config.erl:1809
+#: deps/xmpp/src/pubsub_publish_options.erl:281
+msgid "Persist items to storage"
+msgstr ""
+
+#: src/mod_muc_admin.erl:535
+#, fuzzy
+msgid "Persistent"
+msgstr "Szoba állandóvá tétele"
+
+#: src/mod_adhoc.erl:155 src/mod_adhoc.erl:245
 msgid "Ping"
 msgstr "Ping"
 
-#: mod_ping.erl:178
+#: src/mod_ping.erl:178
 msgid "Ping query is incorrect"
 msgstr "A lekérdezés pingelése hibás"
 
-#: ejabberd_web_admin.erl:1203
+#: src/ejabberd_web_admin.erl:1210
 msgid ""
 "Please note that these options will only backup the builtin Mnesia database. "
 "If you are using the ODBC module, you also need to backup your SQL database "
@@ -1275,279 +1690,357 @@ msgstr ""
 "készítenek biztonsági mentést. Ha az ODBC modult használja, akkor az SQL "
 "adatbázisról is különálló biztonsági mentést kell készítenie."
 
-#: mod_muc_room.erl:1096
+#: src/mod_muc_room.erl:1105
 msgid "Please, wait for a while before sending new voice request"
 msgstr "Várjon egy kicsit az új hangkérelem küldése előtt"
 
-#: mod_adhoc.erl:260
+#: src/mod_adhoc.erl:260
 msgid "Pong"
 msgstr "Pong"
 
-#: mod_roster.erl:168
+#: src/mod_roster.erl:168
 msgid "Possessing 'ask' attribute is not allowed by RFC6121"
 msgstr "Az „ask” attribútum feldolgozása nem engedélyezett az RFC6121 alapján"
 
-#: mod_stream_mgmt.erl:745
+#: deps/xmpp/src/muc_roomconfig.erl:1992
+msgid "Present real Jabber IDs to"
+msgstr ""
+
+#: src/mod_stream_mgmt.erl:788
 msgid "Previous session PID has been killed"
 msgstr "Az előző munkamenet folyamat-azonosítója ki lett lőve"
 
-#: mod_stream_mgmt.erl:743
+#: src/mod_stream_mgmt.erl:786
 msgid "Previous session PID has exited"
 msgstr "Az előző munkamenet folyamat-azonosítója kilépett"
 
-#: mod_stream_mgmt.erl:741
+#: src/mod_stream_mgmt.erl:784
 msgid "Previous session PID is dead"
 msgstr "Az előző munkamenet folyamat-azonosítója halott"
 
-#: mod_stream_mgmt.erl:737
+#: src/mod_stream_mgmt.erl:780
 msgid "Previous session not found"
 msgstr "Az előző munkamenet nem található"
 
-#: mod_stream_mgmt.erl:739
+#: src/mod_stream_mgmt.erl:782
 msgid "Previous session timed out"
 msgstr "Az előző munkamenet túllépte az időkorlátot"
 
-#: mod_pubsub.erl:1387
+#: src/mod_pubsub.erl:1387
 msgid "PubSub subscriber request"
 msgstr "Publikálás-feliratkozás feliratkozási kérelem"
 
-#: mod_pubsub.erl:4171
+#: src/mod_muc_admin.erl:534
+msgid "Public"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_meta_data.erl:865
+msgid "Publish model"
+msgstr ""
+
+#: src/mod_pubsub.erl:4171
 msgid "Publish-Subscribe"
 msgstr "Publikálás-feliratkozás"
 
-#: mod_push.erl:298
+#: deps/xmpp/src/pubsub_node_config.erl:1877
+msgid "Purge all items when the relevant publisher goes offline"
+msgstr ""
+
+#: src/mod_push.erl:354
 msgid "Push record not found"
 msgstr "Leküldési rekord nem található"
 
-#: mod_muc_room.erl:611
+#: src/mod_muc_room.erl:615
 msgid "Queries to the conference members are not allowed in this room"
 msgstr "A konferenciatagok lekérdezései nem engedélyezettek ebben a szobában"
 
-#: mod_blocking.erl:76 mod_mix_pam.erl:276 mod_roster.erl:157
-#: mod_private.erl:164 mod_disco.erl:304 mod_disco.erl:361 mod_offline.erl:331
-#: mod_privacy.erl:134 mod_sic.erl:77
+#: src/mod_blocking.erl:76 src/mod_mix_pam.erl:311 src/mod_roster.erl:157
+#: src/mod_private.erl:199 src/mod_disco.erl:305 src/mod_disco.erl:362
+#: src/mod_offline.erl:331 src/mod_privacy.erl:134 src/mod_sic.erl:77
 msgid "Query to another users is forbidden"
 msgstr "Egy másik felhasználó lekérdezése tiltva van"
 
-#: mod_configure.erl:804 ejabberd_web_admin.erl:1499
+#: src/mod_configure.erl:804 src/ejabberd_web_admin.erl:1506
 msgid "RAM and disc copy"
 msgstr "RAM és lemezmásolás"
 
-#: mod_configure.erl:802 ejabberd_web_admin.erl:1498
+#: src/mod_configure.erl:802 src/ejabberd_web_admin.erl:1505
 msgid "RAM copy"
 msgstr "RAM másolás"
 
-#: ejabberd_web_admin.erl:1110
+#: src/ejabberd_web_admin.erl:1117
 msgid "RPC Call Error"
 msgstr "RPC hívási hiba"
 
-#: mod_announce.erl:519
+#: src/mod_announce.erl:519
 msgid "Really delete message of the day?"
 msgstr "Valóban törli a napi üzenetet?"
 
-#: mod_muc_room.erl:539 mod_muc_room.erl:588
+#: deps/xmpp/src/pubsub_subscribe_options.erl:643
+msgid "Receive notification from all descendent nodes"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_subscribe_options.erl:638
+msgid "Receive notification from direct child nodes only"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_subscribe_options.erl:608
+msgid "Receive notification of new items only"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_subscribe_options.erl:612
+msgid "Receive notification of new nodes only"
+msgstr ""
+
+#: src/mod_muc_room.erl:543 src/mod_muc_room.erl:592
 msgid "Recipient is not in the conference room"
 msgstr "A címzett nincs a konferenciaszobában"
 
-#: mod_register_web.erl:317
+#: src/mod_register_web.erl:307
 msgid "Register"
 msgstr "Regisztráció"
 
-#: mod_register_web.erl:224 mod_register_web.erl:252 mod_register_web.erl:260
+#: src/mod_register_web.erl:214 src/mod_register_web.erl:242
+#: src/mod_register_web.erl:250
 msgid "Register a Jabber account"
 msgstr "Jabber-fiók regisztrációja"
 
-#: ejabberd_web_admin.erl:581
+#: src/ejabberd_web_admin.erl:588
 msgid "Registered Users"
 msgstr "Regisztrált felhasználók"
 
-#: ejabberd_web_admin.erl:803 ejabberd_web_admin.erl:822
+#: src/ejabberd_web_admin.erl:810 src/ejabberd_web_admin.erl:829
 msgid "Registered Users:"
 msgstr "Regisztrált felhasználók:"
 
-#: mod_configure.erl:808 ejabberd_web_admin.erl:1501
+#: src/mod_configure.erl:808 src/ejabberd_web_admin.erl:1508
 msgid "Remote copy"
 msgstr "Távoli másolás"
 
-#: mod_roster.erl:1003
+#: src/mod_roster.erl:1052
 msgid "Remove"
 msgstr "Eltávolítás"
 
-#: mod_offline.erl:1086
+#: src/mod_offline.erl:1083
 msgid "Remove All Offline Messages"
 msgstr "Összes kapcsolat nélküli üzenet eltávolítása"
 
-#: mod_configure.erl:1521 ejabberd_web_admin.erl:946
+#: src/mod_configure.erl:1521 src/ejabberd_web_admin.erl:953
 msgid "Remove User"
 msgstr "Felhasználó eltávolítása"
 
-#: ejabberd_sm.erl:453
+#: src/ejabberd_sm.erl:453
 msgid "Replaced by new connection"
 msgstr "Kicserélve egy új kapcsolattal"
 
-#: mod_mix_pam.erl:257 mod_muc_room.erl:210 mod_muc_room.erl:219
-#: mod_muc_room.erl:847
+#: src/mod_mix_pam.erl:292 src/mod_muc_room.erl:210 src/mod_muc_room.erl:219
+#: src/mod_muc_room.erl:855
 msgid "Request has timed out"
 msgstr "A kérés túllépte az időkorlátot"
 
-#: mod_muc_room.erl:739 mod_muc_room.erl:751
+#: src/mod_muc_room.erl:744 src/mod_muc_room.erl:759
 msgid "Request is ignored"
 msgstr "A kérés mellőzve lett"
 
-#: mod_configure.erl:1407
+#: deps/xmpp/src/muc_request.erl:340
+#, fuzzy
+msgid "Requested role"
+msgstr "A kérés túllépte az időkorlátot"
+
+#: src/mod_configure.erl:1407
 msgid "Resources"
 msgstr "Erőforrások"
 
-#: ejabberd_web_admin.erl:1099
+#: src/ejabberd_web_admin.erl:1106
 msgid "Restart"
 msgstr "Újraindítás"
 
-#: mod_configure.erl:157 mod_configure.erl:570 mod_configure.erl:918
+#: src/mod_configure.erl:157 src/mod_configure.erl:570
+#: src/mod_configure.erl:918
 msgid "Restart Service"
 msgstr "Szolgáltatás újraindítása"
 
-#: mod_configure.erl:146 mod_configure.erl:584
+#: src/mod_configure.erl:146 src/mod_configure.erl:584
 msgid "Restore"
 msgstr "Visszaállítás"
 
-#: mod_configure.erl:868
+#: src/mod_configure.erl:868
 msgid "Restore Backup from File at "
 msgstr "Biztonsági mentés visszaállítása fájlból itt: "
 
-#: ejabberd_web_admin.erl:1233
+#: src/ejabberd_web_admin.erl:1240
 msgid ""
 "Restore binary backup after next ejabberd restart (requires less memory):"
 msgstr ""
 "Bináris biztonsági mentés visszaállítása az ejabberd következő újraindítása "
 "után (kevesebb memóriát igényel):"
 
-#: ejabberd_web_admin.erl:1223
+#: src/ejabberd_web_admin.erl:1230
 msgid "Restore binary backup immediately:"
 msgstr "Bináris biztonsági mentés visszaállítása azonnal:"
 
-#: ejabberd_web_admin.erl:1253
+#: src/ejabberd_web_admin.erl:1260
 msgid "Restore plain text backup immediately:"
 msgstr "Egyszerű szöveges biztonsági mentés visszaállítása azonnal:"
 
-#: mod_muc_log.erl:638
+#: deps/xmpp/src/muc_roomconfig.erl:1690
+msgid "Roles and Affiliations that May Retrieve Member List"
+msgstr ""
+
+#: deps/xmpp/src/muc_roomconfig.erl:1864
+msgid "Roles for which Presence is Broadcasted"
+msgstr ""
+
+#: deps/xmpp/src/muc_roominfo.erl:748 deps/xmpp/src/muc_roomconfig.erl:1438
+#, fuzzy
+msgid "Roles that May Send Private Messages"
+msgstr "Lehetővé tenni a felhasználóknak személyes üzenetek küldését"
+
+#: src/mod_muc_log.erl:639
 msgid "Room Configuration"
 msgstr "Szoba beállítása"
 
-#: mod_muc_log.erl:658
+#: src/mod_muc_log.erl:659
 msgid "Room Occupants"
 msgstr "Szoba résztvevői"
 
-#: mod_muc.erl:557
+#: src/mod_muc.erl:570
 msgid "Room creation is denied by service policy"
 msgstr "Szobalétrehozás megtagadva a szolgáltatási irányelv miatt"
 
-#: mod_muc_log.erl:829
+#: src/mod_muc_log.erl:830 deps/xmpp/src/muc_roominfo.erl:779
+#: deps/xmpp/src/muc_roomconfig.erl:1923
 msgid "Room description"
 msgstr "Szoba leírása"
 
-#: mod_muc_room.erl:874
+#: src/mod_muc_room.erl:882
 msgid "Room terminates"
 msgstr "Szoba megszűnik"
 
-#: mod_muc_log.erl:793
+#: src/mod_muc_admin.erl:538 src/mod_muc_log.erl:794
+#: deps/xmpp/src/muc_roomconfig.erl:1937
 msgid "Room title"
 msgstr "Szoba címe"
 
-#: mod_roster.erl:1122
-msgid "Roster"
-msgstr "Névsor"
+#: deps/xmpp/src/pubsub_node_config.erl:1900
+msgid "Roster groups allowed to subscribe"
+msgstr ""
 
-#: mod_roster.erl:1007
+#: src/mod_roster.erl:1056
 msgid "Roster of ~ts"
 msgstr "~ts névsora"
 
-#: mod_configure.erl:1403
+#: src/mod_configure.erl:1403
 msgid "Roster size"
 msgstr "Névsor mérete"
 
-#: mod_configure.erl:498 ejabberd_web_admin.erl:1064
+#: src/mod_roster.erl:1174
+#, fuzzy
+msgid "Roster:"
+msgstr "Névsor"
+
+#: src/mod_configure.erl:498 src/ejabberd_web_admin.erl:1071
 msgid "Running Nodes"
 msgstr "Futó csomópontok"
 
-#: mod_proxy65.erl:135
+#: src/mod_proxy65.erl:135
 msgid "SOCKS5 Bytestreams"
 msgstr "SOCKS5 bájtfolyamok"
 
-#: mod_muc_log.erl:472
+#: src/mod_muc_log.erl:473
 msgid "Saturday"
 msgstr "szombat"
 
-#: ejabberd_web_admin.erl:1436
+#: src/ejabberd_web_admin.erl:1443
 msgid "Script check"
 msgstr "Parancsfájl-ellenőrzés"
 
-#: mod_vcard.erl:475
+#: src/mod_vcard.erl:475
 msgid "Search Results for "
 msgstr "Keresési eredménye ennek: "
 
-#: mod_vcard.erl:440
+#: deps/xmpp/src/mam_query.erl:330
+msgid "Search from the date"
+msgstr ""
+
+#: deps/xmpp/src/mam_query.erl:358
+msgid "Search the text"
+msgstr ""
+
+#: deps/xmpp/src/mam_query.erl:344
+msgid "Search until the date"
+msgstr ""
+
+#: src/mod_vcard.erl:440
 msgid "Search users in "
 msgstr "Felhasználók keresése ebben: "
 
-#: ejabberd_web_admin.erl:1405
+#: src/ejabberd_web_admin.erl:1412
 msgid "Select All"
 msgstr "Összes kijelölése"
 
-#: mod_announce.erl:613
+#: src/mod_announce.erl:613
 msgid "Send announcement to all online users"
 msgstr "Közlemény küldése az összes elérhető felhasználónak"
 
-#: mod_configure.erl:941 mod_configure.erl:981 mod_announce.erl:615
+#: src/mod_configure.erl:941 src/mod_configure.erl:981 src/mod_announce.erl:615
 msgid "Send announcement to all online users on all hosts"
 msgstr "Közlemény küldése az összes elérhető felhasználónak az összes gépen"
 
-#: mod_announce.erl:609
+#: src/mod_announce.erl:609
 msgid "Send announcement to all users"
 msgstr "Közlemény küldése az összes felhasználónak"
 
-#: mod_announce.erl:611
+#: src/mod_announce.erl:611
 msgid "Send announcement to all users on all hosts"
 msgstr "Közlemény küldése az összes felhasználónak az összes gépen"
 
-#: mod_muc_log.erl:485
+#: src/mod_muc_log.erl:486
 msgid "September"
 msgstr "szeptember"
 
-#: mod_register_web.erl:284 mod_register_web.erl:416 mod_register_web.erl:527
+#: src/mod_register_web.erl:274 src/mod_register_web.erl:406
+#: src/mod_register_web.erl:517
 msgid "Server:"
 msgstr "Kiszolgáló:"
 
-#: mod_stream_mgmt.erl:747
+#: src/mod_stun_disco.erl:496
+#, fuzzy
+msgid "Service list retrieval timed out"
+msgstr "A kérés túllépte az időkorlátot"
+
+#: src/mod_stream_mgmt.erl:790
 msgid "Session state copying timed out"
 msgstr "A munkamenet állapotának másolása túllépte az időkorlátot"
 
-#: mod_announce.erl:617
+#: src/mod_announce.erl:617
 msgid "Set message of the day and send to online users"
 msgstr "Napi üzenet beállítása és küldés az elérhető felhasználóknak"
 
-#: mod_announce.erl:619
+#: src/mod_announce.erl:619
 msgid "Set message of the day on all hosts and send to online users"
 msgstr ""
 "Napi üzenet beállítása az összes gépen és küldés az elérhető felhasználóknak"
 
-#: mod_shared_roster.erl:740 mod_shared_roster.erl:782
-#: mod_shared_roster.erl:876
+#: src/mod_shared_roster.erl:884 src/mod_shared_roster.erl:930
+#: src/mod_shared_roster.erl:1037
 msgid "Shared Roster Groups"
 msgstr "Megosztott névsorcsoportok"
 
-#: ejabberd_web_admin.erl:494
+#: src/ejabberd_web_admin.erl:501
 msgid "Show Integral Table"
 msgstr "Integráltáblázat megjelenítése"
 
-#: ejabberd_web_admin.erl:491
+#: src/ejabberd_web_admin.erl:498
 msgid "Show Ordinary Table"
 msgstr "Szokásos táblázat megjelenítése"
 
-#: mod_configure.erl:159 mod_configure.erl:572 mod_configure.erl:958
+#: src/mod_configure.erl:159 src/mod_configure.erl:572
+#: src/mod_configure.erl:958
 msgid "Shut Down Service"
 msgstr "Szolgáltatás leállítása"
 
-#: mod_register_web.erl:300
+#: src/mod_register_web.erl:290
 msgid ""
 "Some Jabber clients can store your password in the computer, but you should "
 "do this only in your personal computer for safety reasons."
@@ -1555,134 +2048,301 @@ msgstr ""
 "Néhány Jabber program el tudja tárolni a jelszavát a számítógépen, de ezt "
 "csak a saját személyi számítógépén kell megtennie biztonsági okokból."
 
-#: ejabberd_web_admin.erl:499 ejabberd_web_admin.erl:1094
-#: ejabberd_web_admin.erl:1789 ejabberd_web_admin.erl:1803
-#: ejabberd_web_admin.erl:1815 mod_muc_admin.erl:463
+#: deps/xmpp/src/pubsub_node_config.erl:1344
+#: deps/xmpp/src/pubsub_publish_options.erl:322
+msgid "Specify the access model"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1726
+msgid "Specify the event message type"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1861
+msgid "Specify the publisher model"
+msgstr ""
+
+#: deps/xmpp/src/captcha_form.erl:821
+msgid "Stanza ID"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1592
+msgid "Statically specify a replyto of the node owner(s)"
+msgstr ""
+
+#: src/ejabberd_web_admin.erl:506 src/ejabberd_web_admin.erl:1101
+#: src/ejabberd_web_admin.erl:1795 src/ejabberd_web_admin.erl:1808
+#: src/ejabberd_web_admin.erl:1820 src/mod_muc_admin.erl:480
 msgid "Statistics"
 msgstr "Statisztikák"
 
-#: ejabberd_web_admin.erl:1353
+#: src/ejabberd_web_admin.erl:1360
 msgid "Statistics of ~p"
 msgstr "~p statisztikái"
 
-#: ejabberd_web_admin.erl:1101
+#: src/ejabberd_web_admin.erl:1108
 msgid "Stop"
 msgstr "Leállítás"
 
-#: mod_configure.erl:499 ejabberd_web_admin.erl:1065
+#: src/mod_configure.erl:499 src/ejabberd_web_admin.erl:1072
 msgid "Stopped Nodes"
 msgstr "Leállított csomópontok"
 
-#: ejabberd_web_admin.erl:1172
+#: src/ejabberd_web_admin.erl:1179
 msgid "Storage Type"
 msgstr "Tárolótípus"
 
-#: ejabberd_web_admin.erl:1213
+#: src/ejabberd_web_admin.erl:1220
 msgid "Store binary backup:"
 msgstr "Bináris biztonsági mentés tárolása:"
 
-#: ejabberd_web_admin.erl:1243
+#: src/ejabberd_web_admin.erl:1250
 msgid "Store plain text backup:"
 msgstr "Egyszerű szöveges biztonsági mentés tárolása:"
 
-#: mod_stream_mgmt.erl:356
+#: src/mod_stream_mgmt.erl:363
 msgid "Stream management is already enabled"
 msgstr "A folyamkezelés már engedélyezve van"
 
-#: mod_stream_mgmt.erl:338
+#: src/mod_stream_mgmt.erl:345
 msgid "Stream management is not enabled"
 msgstr "A folyamkezelés nincs engedélyezve"
 
-#: mod_configure.erl:945 mod_configure.erl:985 mod_announce.erl:524
+#: src/mod_configure.erl:945 src/mod_configure.erl:985 src/mod_announce.erl:524
 msgid "Subject"
 msgstr "Tárgy"
 
-#: ejabberd_web_admin.erl:1183 mod_shared_roster.erl:895
+#: src/ejabberd_web_admin.erl:1190 src/mod_shared_roster.erl:1055
 msgid "Submit"
 msgstr "Elküldés"
 
-#: ejabberd_web_admin.erl:636 ejabberd_web_admin.erl:930
-#: ejabberd_web_admin.erl:1086 ejabberd_web_admin.erl:1114
-#: ejabberd_web_admin.erl:1194 ejabberd_web_admin.erl:1424 mod_roster.erl:1011
-#: mod_shared_roster.erl:786 mod_shared_roster.erl:881 mod_offline.erl:999
+#: src/ejabberd_web_admin.erl:643 src/ejabberd_web_admin.erl:937
+#: src/ejabberd_web_admin.erl:1093 src/ejabberd_web_admin.erl:1121
+#: src/ejabberd_web_admin.erl:1201 src/ejabberd_web_admin.erl:1431
+#: src/mod_roster.erl:1060 src/mod_shared_roster.erl:934
+#: src/mod_shared_roster.erl:1042 src/mod_offline.erl:993
 msgid "Submitted"
 msgstr "Elküldve"
 
-#: mod_roster.erl:954
+#: deps/xmpp/src/pubsub_subscribe_authorization.erl:372
+#, fuzzy
+msgid "Subscriber Address"
+msgstr "Publikálás-feliratkozás feliratkozási kérelem"
+
+#: deps/xmpp/src/pubsub_node_config.erl:1847
+#: deps/xmpp/src/pubsub_meta_data.erl:852
+msgid "Subscribers may publish"
+msgstr ""
+
+#: src/mod_roster.erl:1003
 msgid "Subscription"
 msgstr "Feliratkozás"
 
-#: mod_muc_room.erl:4206
+#: deps/xmpp/src/pubsub_node_config.erl:1312
+#: deps/xmpp/src/pubsub_meta_data.erl:802
+msgid ""
+"Subscription requests must be approved and only subscribers may retrieve "
+"items"
+msgstr ""
+
+#: src/mod_muc_room.erl:4219
 msgid "Subscriptions are not allowed"
 msgstr "Feliratkozások nem engedélyezettek"
 
-#: mod_muc_log.erl:473
+#: src/mod_muc_log.erl:474
 msgid "Sunday"
 msgstr "vasárnap"
 
-#: mod_muc_room.erl:1233 mod_muc_room.erl:2094 mod_muc_room.erl:4235
+#: deps/xmpp/src/captcha_form.erl:777
+msgid "Text associated with a picture"
+msgstr ""
+
+#: deps/xmpp/src/captcha_form.erl:701
+msgid "Text associated with a sound"
+msgstr ""
+
+#: deps/xmpp/src/captcha_form.erl:881
+msgid "Text associated with a video"
+msgstr ""
+
+#: deps/xmpp/src/captcha_form.erl:851
+msgid "Text associated with speech"
+msgstr ""
+
+#: src/mod_muc_room.erl:1242 src/mod_muc_room.erl:2104
+#: src/mod_muc_room.erl:4248
 msgid "That nickname is already in use by another occupant"
 msgstr "Ezt a becenevet már használja egy másik résztvevő"
 
-#: mod_muc.erl:1023 mod_muc_room.erl:1245 mod_muc_room.erl:2108
-#: mod_muc_room.erl:4243
+#: src/mod_muc.erl:1031 src/mod_muc_room.erl:1254 src/mod_muc_room.erl:2118
+#: src/mod_muc_room.erl:4256
 msgid "That nickname is registered by another person"
 msgstr "Ezt a becenevet egy másik személy regisztrálta"
 
-#: ejabberd_captcha.erl:267
+#: src/ejabberd_captcha.erl:267
 msgid "The CAPTCHA is valid."
 msgstr "A CAPTCHA érvényes."
 
-#: mod_block_strangers.erl:150 mod_register.erl:201 mod_muc_room.erl:828
-#: mod_muc_room.erl:4168 ejabberd_captcha.erl:218
+#: src/mod_block_strangers.erl:150 src/mod_register.erl:200
+#: src/mod_muc_room.erl:836 src/mod_muc_room.erl:4181
+#: src/ejabberd_captcha.erl:218
 msgid "The CAPTCHA verification has failed"
 msgstr "A CAPTCHA ellenőrzése nem sikerült"
 
-#: mod_register_web.erl:611
+#: deps/xmpp/src/pubsub_subscribe_options.erl:529
+msgid "The DateTime at which a leased subscription will end or has ended"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_meta_data.erl:657
+msgid "The JID of the node creator"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1493
+#: deps/xmpp/src/pubsub_meta_data.erl:625
+msgid "The JIDs of those to contact with questions"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_meta_data.erl:726
+msgid "The JIDs of those with an affiliation of owner"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_meta_data.erl:743
+msgid "The JIDs of those with an affiliation of publisher"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_get_pending.erl:248
+msgid "The NodeID of the relevant node"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1360
+msgid ""
+"The URL of an XSL transformation which can be applied to payloads in order "
+"to generate an appropriate message body element."
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1509
+msgid ""
+"The URL of an XSL transformation which can be applied to the payload format "
+"in order to generate a valid Data Forms result that the client could display "
+"using a generic Data Forms rendering engine"
+msgstr ""
+
+#: src/mod_register_web.erl:601
 msgid "The account already exists"
 msgstr "A fiók már létezik"
 
-#: mod_register_web.erl:621
+#: src/mod_register_web.erl:611
 msgid "The account was not deleted"
 msgstr "A fiók nem lett törölve"
 
-#: mod_register_web.erl:609
+#: deps/xmpp/src/push_summary.erl:397
+msgid "The body text of the last received message"
+msgstr ""
+
+#: src/mod_register_web.erl:599
 msgid "The captcha you entered is wrong"
 msgstr "A beírt CAPTCHA hibás"
 
-#: mod_muc_room.erl:446
+#: deps/xmpp/src/pubsub_node_config.erl:1442
+msgid "The child nodes (leaf or collection) associated with a collection"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1476
+msgid "The collections with which a node is affiliated"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_meta_data.erl:642
+msgid "The datetime when the node was created"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1633
+#: deps/xmpp/src/pubsub_meta_data.erl:693
+msgid "The default language of the node"
+msgstr ""
+
+#: src/mod_muc_room.erl:450
 msgid "The feature requested is not supported by the conference"
 msgstr "A kért funkciót nem támogatja a konferencia"
 
-#: mod_register.erl:394
+#: deps/xmpp/src/pubsub_node_config.erl:1425
+msgid "The list of JIDs that may associate leaf nodes with a collection"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1459
+msgid ""
+"The maximum number of child nodes that can be associated with a collection"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_subscribe_options.erl:512
+msgid ""
+"The minimum number of milliseconds between sending any two notification "
+"digests"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_meta_data.erl:758
+msgid "The name of the node"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1682
+msgid "The node is a collection node"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1678
+msgid "The node is a leaf node (default)"
+msgstr ""
+
+#: deps/xmpp/src/push_summary.erl:363
+msgid "The number of pending incoming presence subscription requests"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_meta_data.erl:710
+msgid "The number of subscribers to the node"
+msgstr ""
+
+#: deps/xmpp/src/push_summary.erl:343
+msgid "The number of unread or undelivered messages"
+msgstr ""
+
+#: src/mod_register.erl:392
 msgid "The password contains unacceptable characters"
 msgstr "A jelszó elfogadhatatlan karaktereket tartalmaz"
 
-#: mod_register.erl:392
+#: src/mod_register.erl:390
 msgid "The password is too weak"
 msgstr "A jelszó túl gyenge"
 
-#: mod_register_web.erl:156
+#: src/mod_register_web.erl:146
 msgid "The password of your Jabber account was successfully changed."
 msgstr "A Jabber-fiókjának jelszava sikeresen megváltoztatva."
 
-#: mod_register_web.erl:623
+#: src/mod_register_web.erl:613
 msgid "The password was not changed"
 msgstr "A jelszó nem lett megváltoztatva"
 
-#: mod_register_web.erl:625
+#: src/mod_register_web.erl:615
 msgid "The passwords are different"
 msgstr "A jelszavak különböznek"
 
-#: mod_register.erl:171 mod_vcard.erl:231
+#: deps/xmpp/src/pubsub_subscribe_options.erl:591
+msgid "The presence states for which an entity wants to receive notifications"
+msgstr ""
+
+#: src/mod_register.erl:170 src/mod_vcard.erl:231
 msgid "The query is only allowed from local users"
 msgstr "A lekérdezés csak helyi felhasználóktól engedélyezett"
 
-#: mod_roster.erl:198
+#: src/mod_roster.erl:198
 msgid "The query must not contain <item/> elements"
 msgstr "A lekérdezés nem tartalmazhat <item/> elemeket"
 
-#: mod_privacy.erl:268
+#: deps/xmpp/src/muc_roominfo.erl:891
+msgid "The room subject can be modified by participants"
+msgstr ""
+
+#: deps/xmpp/src/push_summary.erl:381
+msgid "The sender of the last received message"
+msgstr ""
+
+#: src/mod_privacy.erl:268
 msgid ""
 "The stanza MUST contain only one <active/> element, one <default/> element, "
 "or one <list/> element"
@@ -1690,29 +2350,39 @@ msgstr ""
 "A stanzának csak egyetlen <active/> elemet, egyetlen <default/> elemet vagy "
 "egyetlen <list/> elemet KELL tartalmaznia"
 
-#: mod_register_web.erl:615
+#: deps/xmpp/src/pubsub_subscribe_authorization.erl:388
+msgid "The subscription identifier associated with the subscription request"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:2001
+msgid ""
+"The type of node data, usually specified by the namespace of the payload (if "
+"any)"
+msgstr ""
+
+#: src/mod_register_web.erl:605
 msgid "The username is not valid"
 msgstr "A felhasználónév nem érvényes"
 
-#: mod_register_web.erl:160
+#: src/mod_register_web.erl:150
 msgid "There was an error changing the password: "
 msgstr "Hiba történt a jelszó megváltoztatásakor: "
 
-#: mod_register_web.erl:132
+#: src/mod_register_web.erl:122
 msgid "There was an error creating the account: "
 msgstr "Hiba történt a fiók létrehozásakor: "
 
-#: mod_register_web.erl:145
+#: src/mod_register_web.erl:135
 msgid "There was an error deleting the account: "
 msgstr "Hiba történt a fiók törlésekor: "
 
-#: mod_register_web.erl:278
+#: src/mod_register_web.erl:268
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
 msgstr ""
 "Ez érzékeny a kis- és nagybetűkre: a macbeth ugyanaz mint a MacBeth és "
 "Macbeth."
 
-#: mod_register_web.erl:262
+#: src/mod_register_web.erl:252
 msgid ""
 "This page allows to create a Jabber account in this Jabber server. Your JID "
 "(Jabber IDentifier) will be of the form: username@server. Please read "
@@ -1723,52 +2393,53 @@ msgstr ""
 "felhasználónév@kiszolgáló. Alaposan olvassa el az utasításokat a mezők "
 "helyes kitöltéséhez."
 
-#: mod_register_web.erl:517
+#: src/mod_register_web.erl:507
 msgid "This page allows to unregister a Jabber account in this Jabber server."
 msgstr ""
 "Ez az oldal lehetővé teszi egy Jabber-fiók regisztrációjának törlését ezen a "
 "Jabber-kiszolgálón."
 
-#: mod_muc_log.erl:804
+#: src/mod_muc_log.erl:805
 msgid "This room is not anonymous"
 msgstr "Ez a szoba nem névtelen"
 
-#: mod_multicast.erl:498
+#: src/mod_multicast.erl:498
 msgid "This service can not process the address: ~s"
 msgstr "Ez a szolgáltatás nem tudja feldolgozni a címet: ~s"
 
-#: mod_muc_log.erl:470
+#: src/mod_muc_log.erl:471
 msgid "Thursday"
 msgstr "csütörtök"
 
-#: mod_offline.erl:1005
+#: src/mod_offline.erl:999
 msgid "Time"
 msgstr "Idő"
 
-#: mod_configure.erl:923 mod_configure.erl:963
+#: src/mod_configure.erl:923 src/mod_configure.erl:963
 msgid "Time delay"
 msgstr "Időkésleltetés"
 
-#: mod_stream_mgmt.erl:250
+#: src/mod_stream_mgmt.erl:255
 msgid "Timed out waiting for stream resumption"
 msgstr "Időtúllépés a folyam újrakezdésére várakozásnál"
 
-#: mod_offline.erl:1007
+#: src/mod_offline.erl:1001
 msgid "To"
 msgstr "Címzett"
 
-#: mod_register.erl:226
+#: src/mod_register.erl:225
 msgid "To register, visit ~s"
 msgstr "Regisztráláshoz látogassa meg ezt az oldalt: ~s"
 
-#: mod_configure.erl:666
+#: src/mod_configure.erl:666
 msgid "To ~ts"
 msgstr "Címzett: ~ts"
 
-#: ejabberd_oauth.erl:509
+#: src/ejabberd_oauth.erl:510
 msgid "Token TTL"
 msgstr "Token élettartama"
 
+#: src/mod_fail2ban.erl:219
 msgid ""
 "Too many (~p) failed authentications from this IP address (~s). The address "
 "will be unblocked at ~s UTC"
@@ -1776,325 +2447,434 @@ msgstr ""
 "Túl sok (~p) sikertelen hitelesítés erről az IP-címről (~ts) A cím ~ts-kor "
 "lesz feloldva UTC szerint"
 
-#: mod_muc_room.erl:2768 mod_muc_room.erl:3402
+#: src/mod_muc_room.erl:2778 src/mod_muc_room.erl:3412
 msgid "Too many <item/> elements"
 msgstr "Túl sok <item/> elem"
 
-#: mod_privacy.erl:152
+#: src/mod_privacy.erl:152
 msgid "Too many <list/> elements"
 msgstr "Túl sok <list/> elem"
 
-#: mod_block_strangers.erl:127 mod_register.erl:251 mod_muc_room.erl:2178
+#: src/mod_block_strangers.erl:127 src/mod_register.erl:249
+#: src/mod_muc_room.erl:2188
 msgid "Too many CAPTCHA requests"
 msgstr "Túl sok CAPTCHA kérés"
 
-#: mod_proxy65_service.erl:234
+#: src/mod_proxy65_service.erl:234
 msgid "Too many active bytestreams"
 msgstr "Túl sok aktív bájtfolyam"
 
-#: gen_iq_handler.erl:90 mod_muc_room.erl:1153
+#: src/gen_iq_handler.erl:90 src/mod_muc_room.erl:1162
 msgid "Too many child elements"
 msgstr "Túl sok gyermekelem"
 
-#: mod_multicast.erl:344
+#: src/mod_multicast.erl:344
 msgid "Too many receiver fields were specified"
 msgstr "Túl sok fogadómező lett meghatározva"
 
-#: mod_stream_mgmt.erl:204
+#: src/mod_stream_mgmt.erl:206
 msgid "Too many unacked stanzas"
 msgstr "Túl sok nyugtázatlan stanza"
 
-#: mod_muc_room.erl:2053
+#: src/mod_muc_room.erl:2063
 msgid "Too many users in this conference"
 msgstr "Túl sok felhasználó ebben a konferenciában"
 
-#: mod_muc_admin.erl:465
+#: src/mod_muc_admin.erl:482
 msgid "Total rooms"
 msgstr "Szobák összesen"
 
-#: mod_muc_room.erl:313
+#: src/mod_muc_room.erl:317
 msgid "Traffic rate limit is exceeded"
 msgstr "Forgalom sebességkorlátja elérve"
 
-#: ejabberd_web_admin.erl:1373
+#: src/ejabberd_web_admin.erl:1380
 msgid "Transactions Aborted:"
 msgstr "Megszakított tranzakciók:"
 
-#: ejabberd_web_admin.erl:1369
+#: src/ejabberd_web_admin.erl:1376
 msgid "Transactions Committed:"
 msgstr "Véglegesített tranzakciók:"
 
-#: ejabberd_web_admin.erl:1381
+#: src/ejabberd_web_admin.erl:1388
 msgid "Transactions Logged:"
 msgstr "Naplózott tranzakciók:"
 
-#: ejabberd_web_admin.erl:1377
+#: src/ejabberd_web_admin.erl:1384
 msgid "Transactions Restarted:"
 msgstr "Újraindított tranzakciók:"
 
-#: mod_muc_log.erl:468
+#: src/mod_muc_log.erl:469
 msgid "Tuesday"
 msgstr "kedd"
 
-#: mod_block_strangers.erl:131 mod_register.erl:255 mod_muc_room.erl:2187
+#: deps/xmpp/src/muc_roominfo.erl:831
+msgid "URL for Archived Discussion Logs"
+msgstr ""
+
+#: src/mod_block_strangers.erl:131 src/mod_register.erl:253
+#: src/mod_muc_room.erl:2197
 msgid "Unable to generate a CAPTCHA"
 msgstr "Nem lehet előállítani CAPTCHA-t"
 
-#: ejabberd_service.erl:141
+#: src/ejabberd_service.erl:140
 msgid "Unable to register route on existing local domain"
 msgstr "Nem lehet útvonalat regisztrálni egy meglévő helyi tartományon"
 
-#: ejabberd_web_admin.erl:172 ejabberd_web_admin.erl:184
-#: ejabberd_web_admin.erl:204 ejabberd_web_admin.erl:216
-#: mod_stream_mgmt.erl:140
+#: src/ejabberd_web_admin.erl:178 src/ejabberd_web_admin.erl:190
+#: src/ejabberd_web_admin.erl:210 src/ejabberd_web_admin.erl:222
+#: src/mod_stream_mgmt.erl:142
 msgid "Unauthorized"
 msgstr "Nem engedélyezett"
 
-#: mod_configure.erl:776 mod_configure.erl:1498 mod_announce.erl:493
+#: src/mod_configure.erl:776 src/mod_configure.erl:1498
+#: src/mod_announce.erl:493
 msgid "Unexpected action"
 msgstr "Váratlan művelet"
 
-#: mod_register.erl:402
+#: src/mod_register.erl:400
 msgid "Unexpected error condition: ~p"
 msgstr "Váratlan hibafeltétel: ~p"
 
-#: mod_register_web.erl:535
+#: src/mod_register_web.erl:525
 msgid "Unregister"
 msgstr "Regisztráció törlése"
 
-#: mod_register_web.erl:229 mod_register_web.erl:507 mod_register_web.erl:515
+#: src/mod_register_web.erl:219 src/mod_register_web.erl:497
+#: src/mod_register_web.erl:505
 msgid "Unregister a Jabber account"
 msgstr "Jabber-fiók regisztrációjának törlése"
 
-#: ejabberd_web_admin.erl:1410
+#: src/ejabberd_web_admin.erl:1417
 msgid "Unselect All"
 msgstr "Összes kijelölésének megszüntetése"
 
-#: mod_mam.erl:688
+#: src/mod_mam.erl:688
 msgid "Unsupported <index/> element"
 msgstr "Nem támogatott <index/> elem"
 
-#: mod_stream_mgmt.erl:362
+#: src/mod_stream_mgmt.erl:369
 msgid "Unsupported version"
 msgstr "Nem támogatott verzió"
 
-#: ejabberd_web_admin.erl:1095 ejabberd_web_admin.erl:1439
-#: ejabberd_web_admin.erl:1804
+#: src/ejabberd_web_admin.erl:1102 src/ejabberd_web_admin.erl:1446
+#: src/ejabberd_web_admin.erl:1809
 msgid "Update"
 msgstr "Frissítés"
 
-#: mod_announce.erl:621
+#: src/mod_announce.erl:621
 msgid "Update message of the day (don't send)"
 msgstr "Napi üzenet frissítése (ne küldje el)"
 
-#: mod_announce.erl:623
+#: src/mod_announce.erl:623
 msgid "Update message of the day on all hosts (don't send)"
 msgstr "Napi üzenet frissítése az összes gépen (ne küldje el)"
 
-#: ejabberd_web_admin.erl:1432
+#: src/ejabberd_web_admin.erl:1439
 msgid "Update plan"
 msgstr "Frissítési terv"
 
-#: ejabberd_web_admin.erl:1434
+#: src/ejabberd_web_admin.erl:1441
 msgid "Update script"
 msgstr "Frissítő parancsfájl"
 
-#: ejabberd_web_admin.erl:1421
+#: src/ejabberd_web_admin.erl:1428
 msgid "Update ~p"
 msgstr "~p frissítése"
 
-#: ejabberd_web_admin.erl:1357
+#: src/ejabberd_web_admin.erl:1364
 msgid "Uptime:"
 msgstr "Működési idő:"
 
-#: mod_vcard_mnesia.erl:99 mod_vcard_sql.erl:156 ejabberd_web_admin.erl:645
-#: ejabberd_web_admin.erl:701 mod_register.erl:236 mod_vcard_ldap.erl:326
+#: src/mod_vcard_mnesia.erl:99 src/mod_vcard_sql.erl:156
+#: src/ejabberd_web_admin.erl:652 src/ejabberd_web_admin.erl:708
+#: src/mod_register.erl:234 src/mod_vcard_ldap.erl:326
 msgid "User"
 msgstr "Felhasználó"
 
-#: ejabberd_oauth.erl:498
+#: src/ejabberd_oauth.erl:499
 msgid "User (jid)"
 msgstr "Felhasználó (JID)"
 
-#: mod_configure.erl:298 mod_configure.erl:493
+#: deps/xmpp/src/mam_query.erl:316 deps/xmpp/src/muc_request.erl:354
+#, fuzzy
+msgid "User JID"
+msgstr "Felhasználó"
+
+#: src/mod_configure.erl:298 src/mod_configure.erl:493
 msgid "User Management"
 msgstr "Felhasználó-kezelés"
 
-#: mod_register.erl:398
+#: src/mod_register.erl:396
 msgid "User already exists"
 msgstr "A felhasználó már létezik"
 
-#: ejabberd_sm.erl:214
+#: src/ejabberd_sm.erl:214
 msgid "User removed"
 msgstr "Felhasználó eltávolítva"
 
-#: mod_push.erl:283 ejabberd_sm.erl:202 mod_sic.erl:93
+#: src/mod_push.erl:339 src/ejabberd_sm.erl:202 src/mod_sic.erl:93
 msgid "User session not found"
 msgstr "Felhasználói munkamenet nem található"
 
-#: mod_stream_mgmt.erl:594 mod_stream_mgmt.erl:616
+#: src/mod_stream_mgmt.erl:614 src/mod_stream_mgmt.erl:637
 msgid "User session terminated"
 msgstr "Felhasználói munkamenet befejeződött"
 
-#: ejabberd_web_admin.erl:926
+#: src/ejabberd_web_admin.erl:933
 msgid "User ~ts"
 msgstr "~ts felhasználó"
 
-#: mod_register_web.erl:272 mod_register_web.erl:412 mod_register_web.erl:523
+#: src/mod_register_web.erl:262 src/mod_register_web.erl:402
+#: src/mod_register_web.erl:513
 msgid "Username:"
 msgstr "Felhasználónév:"
 
-#: ejabberd_web_admin.erl:440 ejabberd_web_admin.erl:447
-#: ejabberd_web_admin.erl:1784
+#: src/ejabberd_web_admin.erl:447 src/ejabberd_web_admin.erl:454
+#: src/ejabberd_web_admin.erl:1790
 msgid "Users"
 msgstr "Felhasználók"
 
-#: ejabberd_web_admin.erl:468
+#: src/ejabberd_web_admin.erl:475
 msgid "Users Last Activity"
 msgstr "Felhasználók utolsó tevékenysége"
 
-#: mod_register.erl:390
+#: src/mod_register.erl:388
 msgid "Users are not allowed to register accounts so quickly"
 msgstr ""
 "A felhasználóknak nem engedélyezett fiókokat regisztrálni ilyen gyorsan"
 
-#: mod_roster.erl:994
+#: src/mod_roster.erl:1043
 msgid "Validate"
 msgstr "Ellenőrzés"
 
-#: mod_pubsub.erl:900 mod_carboncopy.erl:113 mod_push.erl:265
-#: mod_muc_room.erl:4158 mod_muc_room.erl:4320 ejabberd_captcha.erl:222
+#: src/mod_pubsub.erl:900 src/mod_carboncopy.erl:104 src/mod_push.erl:321
+#: src/mod_muc_room.erl:4171 src/mod_muc_room.erl:4333
+#: src/ejabberd_captcha.erl:222
 msgid "Value 'get' of 'type' attribute is not allowed"
 msgstr "A „type” attribútum „get” értéke nem engedélyezett"
 
-#: mod_stats.erl:55 mod_pubsub.erl:824 mod_pubsub.erl:843 mod_pubsub.erl:882
-#: mod_last.erl:108 mod_last.erl:126 mod_muc.erl:590 mod_muc.erl:624
-#: mod_muc.erl:665 mod_muc.erl:685 mod_muc.erl:695 mod_disco.erl:136
-#: mod_disco.erl:152 mod_disco.erl:258 mod_disco.erl:310
-#: mod_proxy65_service.erl:148 mod_proxy65_service.erl:165
-#: mod_proxy65_service.erl:172 mod_jidprep.erl:120 mod_time.erl:55
-#: mod_mix.erl:117 mod_mix.erl:164 mod_sic.erl:68 mod_sic.erl:80
-#: mod_muc_room.erl:4062 mod_muc_room.erl:4133 mod_version.erl:53
-#: mod_vcard.erl:205 mod_vcard.erl:248
+#: src/mod_stats.erl:55 src/mod_pubsub.erl:824 src/mod_pubsub.erl:843
+#: src/mod_pubsub.erl:882 src/mod_last.erl:108 src/mod_last.erl:126
+#: src/mod_muc.erl:603 src/mod_muc.erl:637 src/mod_muc.erl:678
+#: src/mod_muc.erl:698 src/mod_muc.erl:708 src/mod_disco.erl:137
+#: src/mod_disco.erl:153 src/mod_disco.erl:259 src/mod_disco.erl:311
+#: src/mod_proxy65_service.erl:148 src/mod_proxy65_service.erl:165
+#: src/mod_proxy65_service.erl:172 src/mod_jidprep.erl:137 src/mod_time.erl:55
+#: src/mod_stun_disco.erl:478 src/mod_mix.erl:159 src/mod_mix.erl:206
+#: src/mod_sic.erl:68 src/mod_sic.erl:80 src/mod_muc_room.erl:4075
+#: src/mod_muc_room.erl:4146 src/mod_version.erl:53 src/mod_vcard.erl:205
+#: src/mod_vcard.erl:248
 msgid "Value 'set' of 'type' attribute is not allowed"
 msgstr "A „type” attribútum „set” értéke nem engedélyezett"
 
-#: pubsub_subscription.erl:237 pubsub_subscription_sql.erl:202
+#: src/pubsub_subscription.erl:237 src/pubsub_subscription_sql.erl:202
 msgid "Value of '~s' should be boolean"
 msgstr "A(z) „~s” értéke csak logikai lehet"
 
-#: pubsub_subscription.erl:215 pubsub_subscription_sql.erl:180
+#: src/pubsub_subscription.erl:215 src/pubsub_subscription_sql.erl:180
 msgid "Value of '~s' should be datetime string"
 msgstr "A(z) „~s” értéke csak dátum és idő karakterlánc lehet"
 
-#: pubsub_subscription.erl:209 pubsub_subscription.erl:227
-#: pubsub_subscription_sql.erl:174 pubsub_subscription_sql.erl:192
+#: src/pubsub_subscription.erl:209 src/pubsub_subscription.erl:227
+#: src/pubsub_subscription_sql.erl:174 src/pubsub_subscription_sql.erl:192
 msgid "Value of '~s' should be integer"
 msgstr "A(z) „~s” értéke csak egész szám lehet"
 
-#: ejabberd_web_admin.erl:433
-msgid "Virtual Hosting"
-msgstr "Virtuális kiszolgálás"
+#: src/mod_offline.erl:1075
+msgid "View Queue"
+msgstr ""
 
-#: ejabberd_web_admin.erl:432 ejabberd_web_admin.erl:1813
+#: src/mod_roster.erl:1172
+#, fuzzy
+msgid "View Roster"
+msgstr "Névsor"
+
+#: src/ejabberd_web_admin.erl:439 src/ejabberd_web_admin.erl:1818
 msgid "Virtual Hosts"
 msgstr "Virtuális gépek"
 
-#: mod_muc_room.erl:1226
+#: deps/xmpp/src/muc_roomconfig.erl:1851
+msgid "Visitor"
+msgstr ""
+
+#: src/mod_muc_room.erl:1235
 msgid "Visitors are not allowed to change their nicknames in this room"
 msgstr ""
 "A látogatóknak nem engedélyezett megváltoztatni a beceneveiket ebben a "
 "szobában"
 
-#: mod_muc_room.erl:1003
+#: src/mod_muc_room.erl:1012
 msgid "Visitors are not allowed to send messages to all occupants"
 msgstr ""
 "A látogatóknak nem engedélyezett üzeneteket küldeni az összes résztvevőnek"
 
-#: mod_muc_room.erl:4397
+#: src/mod_muc_room.erl:4410
 msgid "Voice request"
 msgstr "Hangkérelem"
 
-#: mod_muc_room.erl:1103
+#: src/mod_muc_room.erl:1112
 msgid "Voice requests are disabled in this conference"
 msgstr "A hangkérelmek le vannak tiltva ebben a konferenciában"
 
-#: mod_muc_log.erl:469
+#: src/mod_muc_log.erl:470
 msgid "Wednesday"
 msgstr "szerda"
 
-#: mod_register_web.erl:627
+#: deps/xmpp/src/pubsub_node_config.erl:1920
+#, fuzzy
+msgid "When a new subscription is processed"
+msgstr "Nem találhatók függőben lévő feliratkozások"
+
+#: deps/xmpp/src/pubsub_node_config.erl:1924
+msgid ""
+"When a new subscription is processed and whenever a subscriber comes online"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1938
+msgid "When to send the last published item"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_subscribe_options.erl:546
+msgid ""
+"Whether an entity wants to receive an XMPP message body in addition to the "
+"payload format"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_subscribe_options.erl:494
+msgid ""
+"Whether an entity wants to receive digests (aggregations) of notifications "
+"or all notifications individually"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_subscribe_options.erl:477
+msgid "Whether an entity wants to receive or disable notifications"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1611
+msgid "Whether owners or publisher should receive replies to items"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1694
+msgid "Whether the node is a leaf (default) or a collection"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1970
+#, fuzzy
+msgid "Whether to allow subscriptions"
+msgstr ""
+"Annak kiválasztása, hogy elfogadja-e ennek a bejegyzésnek a feliratkozását."
+
+#: deps/xmpp/src/pubsub_node_config.erl:1954
+msgid ""
+"Whether to make all subscriptions temporary, based on subscriber presence"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1793
+msgid "Whether to notify owners about new subscribers and unsubscribes"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_node_config.erl:1405
+msgid "Who may associate leaf nodes with a collection"
+msgstr ""
+
+#: src/mod_register_web.erl:617
 msgid "Wrong parameters in the web formulary"
 msgstr "Hibás paraméterek a webes modelldokumentumban"
 
-#: mod_multicast.erl:341
+#: src/mod_multicast.erl:341
 msgid "Wrong xmlns"
 msgstr "Hibás xmlns"
 
-#: mod_muc_room.erl:872
+#: src/ejabberd_web_admin.erl:440
+msgid "XMPP Domains"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_subscribe_options.erl:563
+msgid "XMPP Show Value of Away"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_subscribe_options.erl:567
+msgid "XMPP Show Value of Chat"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_subscribe_options.erl:571
+msgid "XMPP Show Value of DND (Do Not Disturb)"
+msgstr ""
+
+#: deps/xmpp/src/pubsub_subscribe_options.erl:579
+msgid "XMPP Show Value of XA (Extended Away)"
+msgstr ""
+
+#: deps/xmpp/src/muc_roominfo.erl:908 deps/xmpp/src/muc_roomconfig.erl:1723
+#, fuzzy
+msgid "XMPP URI of Associated Publish-Subscribe Node"
+msgstr "ejabberd publikálás-feliratkozás modul"
+
+#: src/mod_muc_room.erl:880
 msgid "You are being removed from the room because of a system shutdown"
 msgstr "El lett távolítva a szobából egy rendszerleállítás miatt"
 
-#: mod_mix.erl:625
+#: src/mod_mix.erl:667
 msgid "You are not joined to the channel"
 msgstr "Nincs csatlakozva a csatornához"
 
-#: mod_register_web.erl:297
+#: src/mod_register_web.erl:287
 msgid "You can later change your password using a Jabber client."
 msgstr "Később megváltoztathatja a jelszavát egy Jabber program használatával."
 
-#: mod_muc_room.erl:2081
+#: src/mod_muc_room.erl:2091
 msgid "You have been banned from this room"
 msgstr "Ki lett tiltva ebből a szobából"
 
-#: mod_muc_room.erl:2062
+#: src/mod_muc_room.erl:2072
 msgid "You have joined too many conferences"
 msgstr "Túl sok konferenciához csatlakozott"
 
-#: mod_muc.erl:1054
+#: src/mod_muc.erl:1062
 msgid "You must fill in field \"Nickname\" in the form"
 msgstr "Ki kell töltenie a „becenév” mezőt az űrlapon"
 
-#: mod_register.erl:233
+#: src/mod_register.erl:231
 msgid "You need a client that supports x:data and CAPTCHA to register"
 msgstr ""
 "Olyan programra van szüksége, amelynek x:data és CAPTCHA támogatása van a "
 "regisztráláshoz"
 
-#: mod_muc.erl:1009
+#: src/mod_muc.erl:1017
 msgid "You need a client that supports x:data to register the nickname"
 msgstr ""
 "Olyan programra van szüksége, amelynek x:data támogatása van a becenév "
 "regisztráláshoz"
 
-#: mod_vcard.erl:451
+#: src/mod_vcard.erl:451
 msgid "You need an x:data capable client to search"
 msgstr "Egy x:data támogatású programra van szüksége a kereséshez"
 
-#: mod_pubsub.erl:1563
+#: src/mod_pubsub.erl:1563
 msgid "You're not allowed to create nodes"
 msgstr "Önnek nincs engedélye csomópontokat létrehozni"
 
-#: mod_register_web.erl:128
+#: src/mod_register_web.erl:118
 msgid "Your Jabber account was successfully created."
 msgstr "A Jabber-fiókja sikeresen létrehozva."
 
-#: mod_register_web.erl:141
+#: src/mod_register_web.erl:131
 msgid "Your Jabber account was successfully deleted."
 msgstr "A Jabber-fiókja sikeresen törölve."
 
-#: ejabberd_c2s.erl:692 ejabberd_c2s.erl:837
+#: src/ejabberd_c2s.erl:704 src/ejabberd_c2s.erl:860
 msgid "Your active privacy list has denied the routing of this stanza."
 msgstr ""
 "Az aktív adatvédelmi listája megtagadta ennek a stanzának az útválasztását."
 
-#: mod_offline.erl:732
+#: src/mod_offline.erl:726
 msgid ""
 "Your contact offline message queue is full. The message has been discarded."
 msgstr ""
 "A partnere kapcsolat nélküli üzenettárolója megtelt. Az üzenet el lett dobva."
 
-#: ejabberd_captcha.erl:97
+#: src/ejabberd_captcha.erl:97
 msgid ""
 "Your subscription request and/or messages to ~s have been blocked. To "
 "unblock your subscription request, visit ~s"
@@ -2103,86 +2883,90 @@ msgstr ""
 "lettek. A feliratkozási kérelmének feloldásához látogassa meg ezt az oldalt: "
 "~s"
 
-#: mod_disco.erl:438
+#: src/mod_disco.erl:439
 msgid "ejabberd"
 msgstr "ejabberd"
 
-#: mod_http_upload.erl:574
+#: src/mod_http_upload.erl:751
 msgid "ejabberd HTTP Upload service"
 msgstr "ejabberd HTTP feltöltési szolgáltatás"
 
-#: mod_muc.erl:584
+#: src/mod_muc.erl:597
 msgid "ejabberd MUC module"
 msgstr "ejabberd MUC modul"
 
-#: mod_multicast.erl:301
+#: src/mod_multicast.erl:301
 msgid "ejabberd Multicast service"
 msgstr "ejabberd üzenetszórási szolgáltatás"
 
-#: mod_pubsub.erl:1107
+#: src/mod_pubsub.erl:1107
 msgid "ejabberd Publish-Subscribe module"
 msgstr "ejabberd publikálás-feliratkozás modul"
 
-#: mod_proxy65_service.erl:181
+#: src/mod_proxy65_service.erl:181
 msgid "ejabberd SOCKS5 Bytestreams module"
 msgstr "ejabberd SOCKS5 bájtfolyam modul"
 
-#: ejabberd_web_admin.erl:287
+#: src/ejabberd_web_admin.erl:293
 msgid "ejabberd Web Admin"
 msgstr "ejabberd webes adminisztráció"
 
-#: mod_vcard.erl:254
+#: src/mod_vcard.erl:254
 msgid "ejabberd vCard module"
 msgstr "ejabberd vCard modul"
 
-#: mod_muc_log.erl:384 mod_muc_log.erl:387
+#: src/mod_muc_log.erl:387 src/mod_muc_log.erl:390
 msgid "has been banned"
 msgstr "ki lett tiltva"
 
-#: mod_muc_log.erl:391 mod_muc_log.erl:394 ejabberd_sm.erl:456
+#: src/mod_muc_log.erl:394 src/mod_muc_log.erl:397 src/ejabberd_sm.erl:456
 msgid "has been kicked"
 msgstr "ki lett rúgva"
 
-#: mod_muc_log.erl:409
+#: src/mod_muc_log.erl:412
 msgid "has been kicked because of a system shutdown"
 msgstr "ki lett rúgva egy rendszerleállítás miatt"
 
-#: mod_muc_log.erl:399
+#: src/mod_muc_log.erl:402
 msgid "has been kicked because of an affiliation change"
 msgstr "ki lett rúgva egy hovatartozás megváltozása miatt"
 
-#: mod_muc_log.erl:404
+#: src/mod_muc_log.erl:407
 msgid "has been kicked because the room has been changed to members-only"
 msgstr "ki lett rúgva, mert a szobát megváltoztatták csak tagok részére"
 
-#: mod_muc_log.erl:414
+#: src/mod_muc_log.erl:417
 msgid "is now known as"
 msgstr "mostantól úgy ismert mint"
 
-#: mod_muc_log.erl:374
+#: src/mod_muc_log.erl:377
 msgid "joins the room"
 msgstr "belépett a szobába"
 
-#: mod_muc_log.erl:377 mod_muc_log.erl:380
+#: src/mod_muc_log.erl:380 src/mod_muc_log.erl:383
 msgid "leaves the room"
 msgstr "elhagyta a szobát"
 
-#: mod_muc_room.erl:4376
+#: src/mod_muc_room.erl:4389
 msgid "private, "
 msgstr "személyes, "
 
-#: mod_muc_room.erl:4473
+#: src/mod_muc_room.erl:4486
 msgid "the password is"
 msgstr "a jelszó"
 
-#: mod_vcard.erl:582
+#: src/mod_vcard.erl:582
 msgid "vCard User Search"
 msgstr "vCard felhasználó-keresés"
 
-#: mod_muc_room.erl:4466
-msgid "~ts invites you to the room ~ts"
+#: src/mod_muc_room.erl:4479
+#, fuzzy
+msgid "~s invites you to the room ~s"
 msgstr "~ts meghívja Önt a(z) ~ts szobába"
 
-#: mod_offline.erl:997
+#: src/mod_offline.erl:991
 msgid "~ts's Offline Messages Queue"
 msgstr "~ts kapcsolat nélküli üzeneteinek tárolója"
+
+#~ msgid "Virtual Hosting"
+#~ msgstr "Virtuális kiszolgálás"
