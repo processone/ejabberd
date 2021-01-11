@@ -71,7 +71,6 @@
 {"Enter path to jabberd14 spool file","Skriv in sökväg till spoolfil från jabberd14"}.
 {"Enter path to text file","Skriv in sökväg till textfil"}.
 {"Enter the text you see","Skriv in sökväg till textfil"}.
-{"Erlang Jabber Server","Erlang Jabber Server"}.
 {"Error","Fel"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Exportera data av alla användare i servern till en PIEFXIS fil (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Exportera data av användare i en host till PIEFXIS fil (XEP-0227):"}.

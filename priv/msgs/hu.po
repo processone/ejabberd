@@ -544,12 +544,13 @@ msgid "Displayed:"
 msgstr "Megjelenített csoportok:"
 
 #: src/mod_register_web.erl:283
+#, fuzzy
 msgid ""
-"Don't tell your password to anybody, not even the administrators of the "
-"Jabber server."
+"Don't tell your password to anybody, not even the administrators of the XMPP "
+"server."
 msgstr ""
-"Ne árulja el a jelszavát senkinek, még a Jabber-kiszolgáló "
-"adminisztrátorainak sem."
+"Ne árulja el a jelszavát senkinek, még a XMPP-kiszolgáló adminisztrátorainak "
+"sem."
 
 #: src/mod_configure.erl:880
 msgid "Dump Backup to Text File at "
@@ -631,8 +632,9 @@ msgid "Enter the text you see"
 msgstr "Írja be a látott szöveget"
 
 #: src/mod_vcard.erl:213
-msgid "Erlang Jabber Server"
-msgstr "Erlang Jabber-kiszolgáló"
+#, fuzzy
+msgid "Erlang XMPP Server"
+msgstr "Erlang XMPP-kiszolgáló"
 
 #: src/ejabberd_web_admin.erl:1203
 msgid "Error"
@@ -707,9 +709,9 @@ msgid "File larger than ~w bytes"
 msgstr "A fájl nagyobb ~w bájtnál"
 
 #: src/mod_vcard.erl:458
-msgid "Fill in the form to search for any matching Jabber User"
-msgstr ""
-"Töltse ki az űrlapot bármely egyező Jabber-felhasználóra való kereséshez"
+#, fuzzy
+msgid "Fill in the form to search for any matching XMPP User"
+msgstr "Töltse ki az űrlapot bármely egyező XMPP-felhasználóra való kereséshez"
 
 #: src/mod_muc_log.erl:472
 msgid "Friday"
@@ -937,10 +939,6 @@ msgstr ""
 msgid "JID normalization failed"
 msgstr "A Jabber-azonosító normalizálása nem sikerült"
 
-#: src/mod_register_web.erl:203 src/mod_register_web.erl:211
-msgid "Jabber Account Registration"
-msgstr "Jabber-fiók regisztráció"
-
 #: src/mod_vcard_mnesia.erl:113 src/mod_configure.erl:995
 #: src/mod_configure.erl:1012 src/mod_configure.erl:1022
 #: src/mod_configure.erl:1032 src/mod_configure.erl:1042
@@ -1093,13 +1091,13 @@ msgid "Membership is required to enter this room"
 msgstr "Tagság szükséges a szobába lépéshez"
 
 #: src/mod_register_web.erl:294
+#, fuzzy
 msgid ""
 "Memorize your password, or write it in a paper placed in a safe place. In "
-"Jabber there isn't an automated way to recover your password if you forget "
-"it."
+"XMPP there isn't an automated way to recover your password if you forget it."
 msgstr ""
 "Jegyezze meg a jelszavát, vagy írja fel egy biztonságos helyen lévő papírra. "
-"A Jabber nem nyújt automatizált módszert a jelszó visszaállítására, ha "
+"A XMPP nem nyújt automatizált módszert a jelszó visszaállítására, ha "
 "elfelejti azt."
 
 #: src/ejabberd_web_admin.erl:1181
@@ -1802,8 +1800,9 @@ msgstr "Regisztráció"
 
 #: src/mod_register_web.erl:214 src/mod_register_web.erl:242
 #: src/mod_register_web.erl:250
-msgid "Register a Jabber account"
-msgstr "Jabber-fiók regisztrációja"
+#, fuzzy
+msgid "Register an XMPP account"
+msgstr "XMPP-fiók regisztrációja"
 
 #: src/ejabberd_web_admin.erl:588
 msgid "Registered Users"
@@ -2041,12 +2040,13 @@ msgid "Shut Down Service"
 msgstr "Szolgáltatás leállítása"
 
 #: src/mod_register_web.erl:290
+#, fuzzy
 msgid ""
-"Some Jabber clients can store your password in the computer, but you should "
-"do this only in your personal computer for safety reasons."
+"Some XMPP clients can store your password in the computer, but you should do "
+"this only in your personal computer for safety reasons."
 msgstr ""
-"Néhány Jabber program el tudja tárolni a jelszavát a számítógépen, de ezt "
-"csak a saját személyi számítógépén kell megtennie biztonsági okokból."
+"Néhány XMPP program el tudja tárolni a jelszavát a számítógépen, de ezt csak "
+"a saját személyi számítógépén kell megtennie biztonsági okokból."
 
 #: deps/xmpp/src/pubsub_node_config.erl:1344
 #: deps/xmpp/src/pubsub_publish_options.erl:322
@@ -2311,8 +2311,9 @@ msgid "The password is too weak"
 msgstr "A jelszó túl gyenge"
 
 #: src/mod_register_web.erl:146
-msgid "The password of your Jabber account was successfully changed."
-msgstr "A Jabber-fiókjának jelszava sikeresen megváltoztatva."
+#, fuzzy
+msgid "The password of your XMPP account was successfully changed."
+msgstr "A XMPP-fiókjának jelszava sikeresen megváltoztatva."
 
 #: src/mod_register_web.erl:613
 msgid "The password was not changed"
@@ -2383,21 +2384,23 @@ msgstr ""
 "Macbeth."
 
 #: src/mod_register_web.erl:252
+#, fuzzy
 msgid ""
-"This page allows to create a Jabber account in this Jabber server. Your JID "
+"This page allows to create an XMPP account in this XMPP server. Your JID "
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
-"Ez az oldal lehetővé teszi egy Jabber-fiók létrehozását ezen a Jabber-"
+"Ez az oldal lehetővé teszi egy XMPP-fiók létrehozását ezen a XMPP-"
 "kiszolgálón. A JID (Jabber-azonosító) a következő alakú lesz: "
 "felhasználónév@kiszolgáló. Alaposan olvassa el az utasításokat a mezők "
 "helyes kitöltéséhez."
 
 #: src/mod_register_web.erl:507
-msgid "This page allows to unregister a Jabber account in this Jabber server."
+#, fuzzy
+msgid "This page allows to unregister an XMPP account in this XMPP server."
 msgstr ""
-"Ez az oldal lehetővé teszi egy Jabber-fiók regisztrációjának törlését ezen a "
-"Jabber-kiszolgálón."
+"Ez az oldal lehetővé teszi egy XMPP-fiók regisztrációjának törlését ezen a "
+"XMPP-kiszolgálón."
 
 #: src/mod_muc_log.erl:805
 msgid "This room is not anonymous"
@@ -2542,8 +2545,9 @@ msgstr "Regisztráció törlése"
 
 #: src/mod_register_web.erl:219 src/mod_register_web.erl:497
 #: src/mod_register_web.erl:505
-msgid "Unregister a Jabber account"
-msgstr "Jabber-fiók regisztrációjának törlése"
+#, fuzzy
+msgid "Unregister an XMPP account"
+msgstr "XMPP-fiók regisztrációjának törlése"
 
 #: src/ejabberd_web_admin.erl:1417
 msgid "Unselect All"
@@ -2786,6 +2790,11 @@ msgstr "Hibás paraméterek a webes modelldokumentumban"
 msgid "Wrong xmlns"
 msgstr "Hibás xmlns"
 
+#: src/mod_register_web.erl:203 src/mod_register_web.erl:211
+#, fuzzy
+msgid "XMPP Account Registration"
+msgstr "XMPP-fiók regisztráció"
+
 #: src/ejabberd_web_admin.erl:440
 msgid "XMPP Domains"
 msgstr ""
@@ -2820,8 +2829,9 @@ msgid "You are not joined to the channel"
 msgstr "Nincs csatlakozva a csatornához"
 
 #: src/mod_register_web.erl:287
-msgid "You can later change your password using a Jabber client."
-msgstr "Később megváltoztathatja a jelszavát egy Jabber program használatával."
+#, fuzzy
+msgid "You can later change your password using an XMPP client."
+msgstr "Később megváltoztathatja a jelszavát egy XMPP program használatával."
 
 #: src/mod_muc_room.erl:2091
 msgid "You have been banned from this room"
@@ -2856,12 +2866,14 @@ msgid "You're not allowed to create nodes"
 msgstr "Önnek nincs engedélye csomópontokat létrehozni"
 
 #: src/mod_register_web.erl:118
-msgid "Your Jabber account was successfully created."
-msgstr "A Jabber-fiókja sikeresen létrehozva."
+#, fuzzy
+msgid "Your XMPP account was successfully created."
+msgstr "A XMPP-fiókja sikeresen létrehozva."
 
 #: src/mod_register_web.erl:131
-msgid "Your Jabber account was successfully deleted."
-msgstr "A Jabber-fiókja sikeresen törölve."
+#, fuzzy
+msgid "Your XMPP account was successfully deleted."
+msgstr "A XMPP-fiókja sikeresen törölve."
 
 #: src/ejabberd_c2s.erl:704 src/ejabberd_c2s.erl:860
 msgid "Your active privacy list has denied the routing of this stanza."

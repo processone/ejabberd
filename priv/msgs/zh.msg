@@ -72,7 +72,6 @@
 {"Deliver payloads with event notifications","用事件通告传输有效负载"}.
 {"Description:","描述:"}.
 {"Disc only copy","仅磁盘复制"}.
-{"Don't tell your password to anybody, not even the administrators of the Jabber server.","不要将密码告诉任何人, 就算是Jabber服务器的管理员也不可以."}.
 {"Dump Backup to Text File at ","转储备份到文本文件于"}.
 {"Dump to Text File","转储到文本文件"}.
 {"Duplicated groups are not allowed by RFC6121","按照RFC6121，不允许有重复组"}.
@@ -96,7 +95,6 @@
 {"Enter path to jabberd14 spool file","请输入 jabberd14 spool 文件的路径"}.
 {"Enter path to text file","请输入文本文件的路径"}.
 {"Enter the text you see","请输入您所看到的文本"}.
-{"Erlang Jabber Server","Erlang Jabber服务器"}.
 {"Error","错误"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","从验证码挑战中排除Jabber ID"}.
 {"Export all tables as SQL queries to a file:","将所有表以SQL查询语句导出到文件:"}.
@@ -158,7 +156,6 @@
 {"It is not allowed to send private messages of type \"groupchat\"","\"群组聊天\"类型不允许发送私聊消息"}.
 {"It is not allowed to send private messages to the conference","不允许向会议发送私聊消息"}.
 {"It is not allowed to send private messages","不可以发送私聊消息"}.
-{"Jabber Account Registration","Jabber帐户注册"}.
 {"Jabber ID","Jabber ID"}.
 {"January","一月"}.
 {"joins the room","加入房间"}.
@@ -186,7 +183,6 @@
 {"May","五月"}.
 {"Membership is required to enter this room","进入此房间需要会员身份"}.
 {"Members:","会员:"}.
-{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","记住你的密码, 或将其记到纸上并放于安全位置. 如果你忘记了密码, Jabber也没有自动恢复密码的方式."}.
 {"Memory","内存"}.
 {"Message body","消息主体"}.
 {"Message not found in forwarded payload","转发的有效载荷中找不到消息"}.
@@ -300,7 +296,6 @@
 {"RAM copy","内存(RAM)复制"}.
 {"Really delete message of the day?","确实要删除每日消息吗?"}.
 {"Recipient is not in the conference room","接收人不在会议室"}.
-{"Register a Jabber account","注册Jabber帐户"}.
 {"Registered Users","注册用户"}.
 {"Registered Users:","注册用户:"}.
 {"Register","注册"}.
@@ -343,7 +338,6 @@
 {"Show Integral Table","显示完整列表"}.
 {"Show Ordinary Table","显示普通列表"}.
 {"Shut Down Service","关闭服务"}.
-{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","某些 Jabber 客户端可以在你的计算机里存储密码. 请仅在你确认你的计算机安全的情况下使用该功能."}.
 {"Specify the access model","指定访问范例"}.
 {"Specify the event message type","指定事件消息类型"}.
 {"Specify the publisher model","指定发布人范例"}.
@@ -370,7 +364,6 @@
 {"The password contains unacceptable characters","密码包含不可接受的字符"}.
 {"The password is too weak","密码强度太弱"}.
 {"the password is","密码是"}.
-{"The password of your Jabber account was successfully changed.","你的Jabber帐户密码已成功更新."}.
 {"The query is only allowed from local users","仅本地用户可以查询"}.
 {"The query must not contain <item/> elements","查询不能包含 <item/> 元素"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","本节必须只含一个 <active/> 元素， <default/> 元素，或 <list/> 元素"}.
@@ -378,8 +371,6 @@
 {"There was an error creating the account: ","帐户创建出错: "}.
 {"There was an error deleting the account: ","帐户删除失败: "}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","此处不区分大小写: macbeth 与 MacBeth 和 Macbeth 是一样的."}.
-{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","本页面允许在此服务器上创建Jabber帐户. 你的JID (Jabber ID) 的形式如下: 用户名@服务器. 请仔细阅读说明并正确填写相应字段."}.
-{"This page allows to unregister a Jabber account in this Jabber server.","此页面允许在此Jabber服务器上注销Jabber帐户"}.
 {"This room is not anonymous","此房间不是匿名房间"}.
 {"Thursday","星期四"}.
 {"Time delay","时间延迟"}.
@@ -405,7 +396,6 @@
 {"Unable to register route on existing local domain","在已存在的本地域上无法注册路由"}.
 {"Unauthorized","未认证的"}.
 {"Unexpected action","意外行为"}.
-{"Unregister a Jabber account","注销Jabber帐户"}.
 {"Unregister","取消注册"}.
 {"Unsupported <index/> element","不支持的 <index/> 元素"}.
 {"Update message of the day (don't send)","更新每日消息(不发送)"}.
@@ -442,7 +432,6 @@
 {"Wednesday","星期三"}.
 {"When to send the last published item","何时发送最新发布的内容条目"}.
 {"Whether to allow subscriptions","是否允许订阅"}.
-{"You can later change your password using a Jabber client.","你可以稍后用Jabber客户端修改你的密码."}.
 {"You have been banned from this room","您已被禁止进入该房间"}.
 {"You have joined too many conferences","您加入的会议太多"}.
 {"You must fill in field \"Nickname\" in the form","您必须填充表单中\"昵称\"项"}.
@@ -451,7 +440,5 @@
 {"You need an x:data capable client to search","您需要一个兼容 x:data 的客户端来搜索"}.
 {"Your active privacy list has denied the routing of this stanza.","你的活跃私聊列表拒绝了在此房间进行路由分发."}.
 {"Your contact offline message queue is full. The message has been discarded.","您的联系人离线消息队列已满. 消息已被丢弃"}.
-{"Your Jabber account was successfully created.","你的Jabber帐户已成功创建."}.
-{"Your Jabber account was successfully deleted.","你的 Jabber 帐户已成功删除."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","您发送给~s的消息已被阻止. 要解除阻止, 请访问 ~s"}.
 {"You're not allowed to create nodes","您不可以创建节点"}.

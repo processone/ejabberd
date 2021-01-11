@@ -63,7 +63,6 @@
 {"Enter path to jabberd14 spool dir","Nhập đường dẫn đến thư mục spool jabberd14"}.
 {"Enter path to jabberd14 spool file","Nhập đường dẫn đến tập tin spool jabberd14"}.
 {"Enter path to text file","Nhập đường dẫn đến tập tin văn bản"}.
-{"Erlang Jabber Server","Erlang Jabber Server Bản quyền"}.
 {"Family Name","Họ"}.
 {"February","Tháng Hai"}.
 {"Friday","Thứ Sáu"}.

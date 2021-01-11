@@ -547,10 +547,11 @@ msgid "Displayed:"
 msgstr "Zobrazené skupiny:"
 
 #: src/mod_register_web.erl:283
+#, fuzzy
 msgid ""
-"Don't tell your password to anybody, not even the administrators of the "
-"Jabber server."
-msgstr "Nevyzrádzajte heslo nikomu, ani administrátorom tohoto Jabber servera."
+"Don't tell your password to anybody, not even the administrators of the XMPP "
+"server."
+msgstr "Nevyzrádzajte heslo nikomu, ani administrátorom tohoto XMPP servera."
 
 #: src/mod_configure.erl:880
 msgid "Dump Backup to Text File at "
@@ -632,8 +633,9 @@ msgid "Enter the text you see"
 msgstr "Zadajte zobrazený text"
 
 #: src/mod_vcard.erl:213
-msgid "Erlang Jabber Server"
-msgstr "Erlang Jabber Server"
+#, fuzzy
+msgid "Erlang XMPP Server"
+msgstr "Erlang XMPP Server"
 
 #: src/ejabberd_web_admin.erl:1203
 msgid "Error"
@@ -706,8 +708,8 @@ msgstr ""
 
 #: src/mod_vcard.erl:458
 #, fuzzy
-msgid "Fill in the form to search for any matching Jabber User"
-msgstr "Vyplnte políčka pre vyhľadávanie Jabber užívateľa"
+msgid "Fill in the form to search for any matching XMPP User"
+msgstr "Vyplnte políčka pre vyhľadávanie XMPP užívateľa"
 
 #: src/mod_muc_log.erl:472
 msgid "Friday"
@@ -940,10 +942,6 @@ msgstr "Vytváranie miestnosti nie je povolené"
 msgid "JID normalization failed"
 msgstr ""
 
-#: src/mod_register_web.erl:203 src/mod_register_web.erl:211
-msgid "Jabber Account Registration"
-msgstr "Registrácia jabber účtu"
-
 #: src/mod_vcard_mnesia.erl:113 src/mod_configure.erl:995
 #: src/mod_configure.erl:1012 src/mod_configure.erl:1022
 #: src/mod_configure.erl:1032 src/mod_configure.erl:1042
@@ -1097,12 +1095,12 @@ msgid "Membership is required to enter this room"
 msgstr "Pre vstup do miestnosti je potrebné byť členom"
 
 #: src/mod_register_web.erl:294
+#, fuzzy
 msgid ""
 "Memorize your password, or write it in a paper placed in a safe place. In "
-"Jabber there isn't an automated way to recover your password if you forget "
-"it."
+"XMPP there isn't an automated way to recover your password if you forget it."
 msgstr ""
-"Zapamätajte si heslo alebo si ho zapíšte na papier. Jabber neposkytuje "
+"Zapamätajte si heslo alebo si ho zapíšte na papier. XMPP neposkytuje "
 "automatickú funkciu ako zistiť zabudnuté heslo. "
 
 #: src/ejabberd_web_admin.erl:1181
@@ -1814,8 +1812,9 @@ msgstr "Zoznam kontaktov"
 
 #: src/mod_register_web.erl:214 src/mod_register_web.erl:242
 #: src/mod_register_web.erl:250
-msgid "Register a Jabber account"
-msgstr "Zaregistrovať Jabber účet"
+#, fuzzy
+msgid "Register an XMPP account"
+msgstr "Zaregistrovať XMPP účet"
 
 #: src/ejabberd_web_admin.erl:588
 msgid "Registered Users"
@@ -2055,12 +2054,13 @@ msgid "Shut Down Service"
 msgstr "Vypnúť službu"
 
 #: src/mod_register_web.erl:290
+#, fuzzy
 msgid ""
-"Some Jabber clients can store your password in the computer, but you should "
-"do this only in your personal computer for safety reasons."
+"Some XMPP clients can store your password in the computer, but you should do "
+"this only in your personal computer for safety reasons."
 msgstr ""
-"Niektorí Jabber klenti môžu ukladať heslá v počítači. Používajte túto "
-"funkciu len ak veríte, že sú tam v bezpečí.  "
+"Niektorí XMPP klenti môžu ukladať heslá v počítači. Používajte túto funkciu "
+"len ak veríte, že sú tam v bezpečí.  "
 
 #: deps/xmpp/src/pubsub_node_config.erl:1344
 #: deps/xmpp/src/pubsub_publish_options.erl:322
@@ -2246,7 +2246,7 @@ msgstr ""
 #: src/mod_register_web.erl:611
 #, fuzzy
 msgid "The account was not deleted"
-msgstr "Váš Jabber účet bol úspešne odstránený."
+msgstr "Váš XMPP účet bol úspešne odstránený."
 
 #: deps/xmpp/src/push_summary.erl:397
 msgid "The body text of the last received message"
@@ -2328,8 +2328,9 @@ msgid "The password is too weak"
 msgstr "heslo je"
 
 #: src/mod_register_web.erl:146
-msgid "The password of your Jabber account was successfully changed."
-msgstr "Heslo k Jabber účtu bolo úspešne zmenené."
+#, fuzzy
+msgid "The password of your XMPP account was successfully changed."
+msgstr "Heslo k XMPP účtu bolo úspešne zmenené."
 
 #: src/mod_register_web.erl:613
 #, fuzzy
@@ -2400,19 +2401,21 @@ msgstr ""
 "Macbeth."
 
 #: src/mod_register_web.erl:252
+#, fuzzy
 msgid ""
-"This page allows to create a Jabber account in this Jabber server. Your JID "
+"This page allows to create an XMPP account in this XMPP server. Your JID "
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
-"Táto stránka umožňuje refistrovať Jabber účet na tomto serveri. Vaše JID "
+"Táto stránka umožňuje refistrovať XMPP účet na tomto serveri. Vaše JID "
 "(Jabber IDentifikátor) bude vo formáte: užívateľ@server. Pozorne sledujte "
 "inštrukcie, aby ste údaje vypnili správne."
 
 #: src/mod_register_web.erl:507
-msgid "This page allows to unregister a Jabber account in this Jabber server."
+#, fuzzy
+msgid "This page allows to unregister an XMPP account in this XMPP server."
 msgstr ""
-"Na tejto stránke si môžete zrušiť Jabber účet registrovaný na tomto serveri."
+"Na tejto stránke si môžete zrušiť XMPP účet registrovaný na tomto serveri."
 
 #: src/mod_muc_log.erl:805
 msgid "This room is not anonymous"
@@ -2558,8 +2561,9 @@ msgstr "Zrušiť účet"
 
 #: src/mod_register_web.erl:219 src/mod_register_web.erl:497
 #: src/mod_register_web.erl:505
-msgid "Unregister a Jabber account"
-msgstr "Zrušiť Jabber účet"
+#, fuzzy
+msgid "Unregister an XMPP account"
+msgstr "Zrušiť XMPP účet"
 
 #: src/ejabberd_web_admin.erl:1417
 msgid "Unselect All"
@@ -2800,6 +2804,11 @@ msgstr ""
 msgid "Wrong xmlns"
 msgstr ""
 
+#: src/mod_register_web.erl:203 src/mod_register_web.erl:211
+#, fuzzy
+msgid "XMPP Account Registration"
+msgstr "Registrácia jabber účtu"
+
 #: src/ejabberd_web_admin.erl:440
 msgid "XMPP Domains"
 msgstr ""
@@ -2836,8 +2845,9 @@ msgid "You are not joined to the channel"
 msgstr "Nieje povolené posielať súkromné správy"
 
 #: src/mod_register_web.erl:287
-msgid "You can later change your password using a Jabber client."
-msgstr "Neskôr si heslo môžete zmeniť pomocou Jabber klienta."
+#, fuzzy
+msgid "You can later change your password using an XMPP client."
+msgstr "Neskôr si heslo môžete zmeniť pomocou XMPP klienta."
 
 #: src/mod_muc_room.erl:2091
 msgid "You have been banned from this room"
@@ -2869,12 +2879,14 @@ msgid "You're not allowed to create nodes"
 msgstr "Nieje povolené posielať súkromné správy"
 
 #: src/mod_register_web.erl:118
-msgid "Your Jabber account was successfully created."
-msgstr "Jabber účet bol úspešne vytvorený."
+#, fuzzy
+msgid "Your XMPP account was successfully created."
+msgstr "XMPP účet bol úspešne vytvorený."
 
 #: src/mod_register_web.erl:131
-msgid "Your Jabber account was successfully deleted."
-msgstr "Váš Jabber účet bol úspešne odstránený."
+#, fuzzy
+msgid "Your XMPP account was successfully deleted."
+msgstr "Váš XMPP účet bol úspešne odstránený."
 
 #: src/ejabberd_c2s.erl:704 src/ejabberd_c2s.erl:860
 msgid "Your active privacy list has denied the routing of this stanza."

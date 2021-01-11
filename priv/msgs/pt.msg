@@ -31,7 +31,6 @@
 {"Enter path to jabberd14 spool dir","Introduza o caminho para o directório de spools do jabberd14"}.
 {"Enter path to jabberd14 spool file","Introduza o caminho para o ficheiro de spool do jabberd14"}.
 {"Enter path to text file","Introduza caminho para o ficheiro de texto"}.
-{"Erlang Jabber Server","Servidor Jabber em Erlang"}.
 {"Family Name","Apelido"}.
 {"From","De"}.
 {"Full Name","Nome completo"}.

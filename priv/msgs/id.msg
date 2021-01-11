@@ -60,7 +60,6 @@
 {"Deliver payloads with event notifications","Memberikan muatan dengan pemberitahuan acara"}.
 {"Description:","Keterangan:"}.
 {"Disc only copy","Hanya salinan dari disc"}.
-{"Don't tell your password to anybody, not even the administrators of the Jabber server.","Jangan memberitahukan kata sandi Anda ke siapapun, bahkan para administrator dari layanan Jabber."}.
 {"Dump Backup to Text File at ","Dump Backup ke File Teks di"}.
 {"Dump to Text File","Dump menjadi File Teks"}.
 {"Edit Properties","Ganti Properti"}.
@@ -79,7 +78,6 @@
 {"Enter path to jabberd14 spool file","Masukkan path ke file jabberd14 spool"}.
 {"Enter path to text file","Masukkan path ke file teks"}.
 {"Enter the text you see","Masukkan teks yang Anda lihat"}.
-{"Erlang Jabber Server","Layanan Erlang Jabber"}.
 {"Error","Kesalahan"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Ekspor data dari semua pengguna pada layanan ke berkas PIEFXIS (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Ekspor data pengguna pada sebuah host ke berkas PIEFXIS (XEP-0227):"}.
@@ -116,7 +114,6 @@
 {"It is not allowed to send private messages of type \"groupchat\"","Hal ini tidak diperbolehkan untuk mengirim pesan pribadi jenis \"groupchat \""}.
 {"It is not allowed to send private messages to the conference","Hal ini tidak diperbolehkan untuk mengirim pesan pribadi ke konferensi"}.
 {"It is not allowed to send private messages","Hal ini tidak diperbolehkan untuk mengirim pesan pribadi"}.
-{"Jabber Account Registration","Pendaftaran Akun Jabber"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Januari"}.
 {"joins the room","bergabung ke ruangan"}.
@@ -142,7 +139,6 @@
 {"May","Mei"}.
 {"Members:","Anggota:"}.
 {"Membership is required to enter this room","Hanya Member yang dapat masuk ruangan ini"}.
-{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Hafalkan kata sandi Anda, atau dicatat dan letakkan di tempat yang aman. Didalam Jabber tidak ada cara otomatis untuk mendapatkan kembali password Anda jika Anda lupa."}.
 {"Memory","Memori"}.
 {"Message body","Isi Pesan"}.
 {"Middle Name","Nama Tengah"}.
@@ -213,7 +209,6 @@
 {"RAM copy","Salinan RAM"}.
 {"Really delete message of the day?","Benar-benar ingin menghapus pesan harian?"}.
 {"Recipient is not in the conference room","Penerima tidak berada di ruangan konferensi"}.
-{"Register a Jabber account","Daftarkan sebuah akun jabber"}.
 {"Registered Users","Pengguna Terdaftar"}.
 {"Registered Users:","Pengguna Terdaftar:"}.
 {"Register","Mendaftar"}.
@@ -255,7 +250,6 @@
 {"Show Integral Table","Tampilkan Tabel Terpisah"}.
 {"Show Ordinary Table","Tampilkan Tabel Normal"}.
 {"Shut Down Service","Shut Down Layanan"}.
-{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Beberapa klien Jabber dapat menyimpan password di komputer Anda. Gunakan fitur itu hanya jika Anda mempercayai komputer Anda aman."}.
 {"Specify the access model","Tentukan model akses"}.
 {"Specify the event message type","Tentukan jenis acara pesan"}.
 {"Specify the publisher model","Tentukan model penerbitan"}.
@@ -279,13 +273,10 @@
 {"The collections with which a node is affiliated","Koleksi dengan yang berafiliasi dengan sebuah node"}.
 {"The password is too weak","Kata sandi terlalu lemah"}.
 {"the password is","kata sandi yaitu:"}.
-{"The password of your Jabber account was successfully changed.","Kata sandi pada akun Jabber Anda telah berhasil diubah."}.
 {"There was an error changing the password: ","Ada kesalahan dalam mengubah password:"}.
 {"There was an error creating the account: ","Ada kesalahan saat membuat akun:"}.
 {"There was an error deleting the account: ","Ada kesalahan saat menghapus akun:"}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Pada bagian ini huruf besar dan kecil tidak dibedakan: Misalnya macbeth adalah sama dengan MacBeth juga Macbeth."}.
-{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Halaman ini memungkinkan untuk membuat akun Jabber di layanan Jabber ini. JID Anda (Jabber Pengenal) akan berbentuk: namapengguna@layanan. Harap baca dengan seksama petunjuk-petunjuk untuk mengisi kolom dengan benar."}.
-{"This page allows to unregister a Jabber account in this Jabber server.","Pada bagian ini memungkinkan Anda untuk membatalkan pendaftaran akun Jabber pada layanan Jabber ini."}.
 {"This room is not anonymous","Ruangan ini tidak dikenal"}.
 {"Thursday","Kamis"}.
 {"Time delay","Waktu tunda"}.
@@ -299,7 +290,6 @@
 {"Tuesday","Selasa"}.
 {"Unable to generate a CAPTCHA","Tidak dapat menghasilkan CAPTCHA"}.
 {"Unauthorized","Ditolak"}.
-{"Unregister a Jabber account","Nonaktifkan akun jabber"}.
 {"Unregister","Nonaktifkan"}.
 {"Update message of the day (don't send)","Rubah pesan harian (tidak dikirim)"}.
 {"Update message of the day on all hosts (don't send)","Rubah pesan harian pada semua host (tidak dikirim)"}.
@@ -321,7 +311,6 @@
 {"Wednesday","Rabu"}.
 {"When to send the last published item","Ketika untuk mengirim item terakhir yang dipublikasikan"}.
 {"Whether to allow subscriptions","Apakah diperbolehkan untuk berlangganan"}.
-{"You can later change your password using a Jabber client.","Anda dapat mengubah kata sandi anda dilain waktu dengan menggunakan klien Jabber."}.
 {"You have been banned from this room","Anda telah diblokir dari ruangan ini"}.
 {"You must fill in field \"Nickname\" in the form","Anda harus mengisi kolom \"Julukan\" dalam formulir"}.
 {"You need a client that supports x:data and CAPTCHA to register","Anda memerlukan klien yang mendukung x:data dan CAPTCHA untuk mendaftar"}.
@@ -329,6 +318,4 @@
 {"You need an x:data capable client to search","Anda memerlukan x:data klien untuk melakukan pencarian"}.
 {"Your active privacy list has denied the routing of this stanza.","Daftar privasi aktif Anda telah menolak routing ztanza ini"}.
 {"Your contact offline message queue is full. The message has been discarded.","Kontak offline Anda pada antrian pesan sudah penuh. Pesan telah dibuang."}.
-{"Your Jabber account was successfully created.","Jabber akun Anda telah sukses dibuat"}.
-{"Your Jabber account was successfully deleted.","Jabber akun Anda berhasil dihapus."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Pesan Anda untuk ~s sedang diblokir. Untuk membuka blokir tersebut, kunjungi ~s"}.

@@ -65,7 +65,6 @@
 {"Deliver payloads with event notifications","Evoyî l' contnou avou les notifiaedjes d' evenmints"}.
 {"Description:","Discrijhaedje:"}.
 {"Disc only copy","Copeye seulmint sol deure plake"}.
-{"Don't tell your password to anybody, not even the administrators of the Jabber server.","Ni dnez vosse sicret a nolu, nén ddja ås manaedjeus do sierveu Jabber."}.
 {"Dump Backup to Text File at ","Copeye di såvritè viè on fitchî tecse so "}.
 {"Dump to Text File","Schaper en on fitchî tecse"}.
 {"Edit Properties","Candjî les prôpietés"}.
@@ -87,7 +86,6 @@
 {"Enter path to jabberd14 spool file","Dinez l' tchimin viè l' fitchî di spool jabberd14"}.
 {"Enter path to text file","Dinez l' tchimin viè l' fitchî tecse"}.
 {"Enter the text you see","Tapez l' tecse ki vos voeyoz"}.
-{"Erlang Jabber Server","Sierveu Jabber Erlang"}.
 {"Error","Aroke"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Esclure les IDs Jabber des kesses CAPTCHA"}.
 {"Export all tables as SQL queries to a file:","Espoirter totes les tåves, come des cmandes SQL, viè on fitchî"}.
@@ -131,7 +129,6 @@
 {"It is not allowed to send private messages of type \"groupchat\"","C' est nén possibe d' evoyî des messaedjes privés del sôre «groupchat»"}.
 {"It is not allowed to send private messages to the conference","On n' pout nén evoyî des messaedjes privés dins cisse conferince ci"}.
 {"It is not allowed to send private messages","Ci n' est nén permetou d' evoyî des messaedjes privés"}.
-{"Jabber Account Registration","Edjîstraedje di conte Jabber"}.
 {"Jabber ID","ID Jabber"}.
 {"January","djanvî"}.
 {"joins the room","arive sol såle"}.
@@ -158,7 +155,6 @@
 {"May","may"}.
 {"Membership is required to enter this room","I fåt esse mimbe po poleur intrer dins cisse såle ci"}.
 {"Members:","Mimbes:"}.
-{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Rimimbrez vosse sicret, ou scrijhoz l' so on papî ki vos wådroz en ene place bén a hoûte, ca avou Jabber i n' a pont moyén di rapexhî vosse sicret si vos l' rovyîz."}.
 {"Memory","Memwere"}.
 {"Message body","Coir do messaedje"}.
 {"Middle Name","No do mitan"}.
@@ -238,7 +234,6 @@
 {"RAM copy","Copeye e memwere (RAM)"}.
 {"Really delete message of the day?","Voloz vs vormint disfacer l' messaedje do djoû?"}.
 {"Recipient is not in the conference room","Li riçuveu n' est nén dins l' såle di conferince"}.
-{"Register a Jabber account","Edjîstrer on conte Jabber"}.
 {"Registered Users","Uzeus edjistrés"}.
 {"Registered Users:","Uzeus edjistrés:"}.
 {"Register","Edjîstrer"}.
@@ -281,7 +276,6 @@
 {"Show Integral Table","Mostrer totå"}.
 {"Show Ordinary Table","Mostrer crexhince"}.
 {"Shut Down Service","Arester siervice"}.
-{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Des cliyints Jabber k' i gn a polèt wårder vosse sicret sol copiutrece, mins vos n' duvrîz fé çoula ki sol copiutrece da vosse, po des råjhons di såvrité."}.
 {"Specify the access model","Sipecifyî l' modele d' accès"}.
 {"Specify the event message type","Sipecifyî l' sôre do messaedje d' evenmint"}.
 {"Specify the publisher model","Dinez l' modele d' eplaideu"}.
@@ -305,13 +299,10 @@
 {"The collections with which a node is affiliated","Les ramexhnêyes k' on nuk est afiyî avou"}.
 {"The password is too weak","li scret est trop flåw"}.
 {"the password is","li scret est"}.
-{"The password of your Jabber account was successfully changed.","Li scret do conte Jabber da vosse a stî candjî comifåt."}.
 {"There was an error changing the password: ","Åk n' a nén stî tot candjant l' sicret: "}.
 {"There was an error creating the account: ","Åk n' a nén stî tot ahivant l' conte: "}.
 {"There was an error deleting the account: ","Åk n' a nén stî tot disfaçant l' conte: "}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Pont d' diferince etur les grandes et ptitès letes: «macbeth» est l' minme ki «MacBeth» ou co «Macbeth»"}.
-{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Cisse pådje permete d' ahiver on conte Jabber so ç' sierveu Jabber ci. Li JID (IDintifieu Jabber) da vosse serè del cogne: noduzeu@sierveu. Lijhoz atintivmint les instruccions po bén rimpli les tchamps."}.
-{"This page allows to unregister a Jabber account in this Jabber server.","Cisse pådje permete di disdjîstrer on conte Jabber so ç' sierveu ci."}.
 {"This room is not anonymous","Cisse såle ci n' est nén anonime"}.
 {"Thursday","djudi"}.
 {"Time delay","Tårdjaedje"}.
@@ -329,7 +320,6 @@
 {"Tuesday","mårdi"}.
 {"Unable to generate a CAPTCHA","Nén moyén di djenerer on CAPTCHA"}.
 {"Unauthorized","Nén otorijhî"}.
-{"Unregister a Jabber account","Disdjîstrer on conte Jabber"}.
 {"Unregister","Disdjîstrer"}.
 {"Update message of the day (don't send)","Mete a djoû l' messaedje do djoû (nén l' evoyî)"}.
 {"Update message of the day on all hosts (don't send)","Mete a djoû l' messaedje do djoû so tos les lodjoes (nén l' evoyî)"}.
@@ -356,7 +346,6 @@
 {"Wednesday","mierkidi"}.
 {"When to send the last published item","Cwand evoyî l' dierin cayet eplaidî"}.
 {"Whether to allow subscriptions","Si on permete les abounmints"}.
-{"You can later change your password using a Jabber client.","Vos ploz candjî vosse sicret pus tård avou on cliyint Jabber."}.
 {"You have been banned from this room","Vos avoz stî bani di cisse såle ci"}.
 {"You must fill in field \"Nickname\" in the form","Vos dvoz rimpli l' tchamp «Metou no» dins l' formiulaire"}.
 {"You need a client that supports x:data and CAPTCHA to register","Vos avoz mezåjhe d' on cliyint ki sopoite x:data eyet CAPTCHA po vs edjîstrer"}.
@@ -364,6 +353,4 @@
 {"You need an x:data capable client to search","Vos avoz mezåjhe d' on cliyint ki sopoite x:data po fé on cweraedje"}.
 {"Your active privacy list has denied the routing of this stanza.","Vosse djivêye di privaceye active a rfuzé l' evoyaedje di ç' messaedje ci."}.
 {"Your contact offline message queue is full. The message has been discarded.","Li cawêye di messaedjes e môde disraloyî di vosse soçon est plinne. Li messaedje a stî tapé å diale."}.
-{"Your Jabber account was successfully created.","Li conte Jabber da vosse a stî ahivé comifåt."}.
-{"Your Jabber account was successfully deleted.","Li conte Jabber da vosse a stî disfacé comifåt."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Vos messaedjes po ~s sont blokés. Po les disbloker, alez vey ~s"}.

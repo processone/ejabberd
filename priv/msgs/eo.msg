@@ -64,7 +64,6 @@
 {"Deliver payloads with event notifications","Liveru aĵojn de event-sciigoj"}.
 {"Description:","Priskribo:"}.
 {"Disc only copy","Nur disk-kopio"}.
-{"Don't tell your password to anybody, not even the administrators of the Jabber server.","Ne donu vian pasvorton al iun ajn, eĉ ne al la administrantoj de la Ĵabber-servilo."}.
 {"Dump Backup to Text File at ","Skribu sekurkopion en plata teksto al "}.
 {"Dump to Text File","Skribu en plata tekst-dosiero"}.
 {"Edit Properties","Redaktu atributojn"}.
@@ -86,7 +85,6 @@
 {"Enter path to jabberd14 spool file","Enmetu vojon al jabberd14-uzantdosiero"}.
 {"Enter path to text file","Enmetu vojon al plata teksto"}.
 {"Enter the text you see","Enmetu montrita teksto"}.
-{"Erlang Jabber Server","Erlang-a Jabber-Servilo"}.
 {"Error","Eraro"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Esceptu Ĵabber-identigilojn je CAPTCHA-defio"}.
 {"Export all tables as SQL queries to a file:","Eksportu ĉiuj tabeloj kiel SQL-informmendo al dosierujo:"}.
@@ -128,7 +126,6 @@
 {"It is not allowed to send private messages of type \"groupchat\"","Malpermesas sendi mesaĝojn de tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Nur partoprenantoj rajtas sendi privatajn mesaĝojn al la babilejo"}.
 {"It is not allowed to send private messages","Ne estas permesata sendi privatajn mesaĝojn"}.
-{"Jabber Account Registration","Ĵabber-konto registrado"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Januaro"}.
 {"joins the room","eniras la babilejo"}.
@@ -155,7 +152,6 @@
 {"May","Majo"}.
 {"Membership is required to enter this room","Membreco estas bezonata por eniri ĉi tiun babilejon"}.
 {"Members:","Membroj:"}.
-{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Memoru vian pasvorton, aŭ skribu ĝin sur papero formetata je sekura loko. Je Ĵabber ne ekzistas aŭtomata metodo por reakiri vian pasvorton se vi forgesas ĝin."}.
 {"Memory","Memoro"}.
 {"Message body","Teksto de mesaĝo"}.
 {"Middle Name","Meza Nomo"}.
@@ -232,7 +228,6 @@
 {"RAM copy","RAM-kopio"}.
 {"Really delete message of the day?","Ĉu vere forigi mesaĝon de la tago?"}.
 {"Recipient is not in the conference room","Ricevanto ne ĉeestas en la babilejo "}.
-{"Register a Jabber account","Registru Ĵabber-konton"}.
 {"Registered Users","Registritaj uzantoj"}.
 {"Registered Users:","Registritaj uzantoj:"}.
 {"Register","Registru"}.
@@ -274,7 +269,6 @@
 {"Show Integral Table","Montru integran tabelon"}.
 {"Show Ordinary Table","Montru ordinaran tabelon"}.
 {"Shut Down Service","Haltigu Servon"}.
-{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Kelkaj Ĵabber-klientoj povas memori vian pasvorton je via komputilo. Nur uzu tiun eblon se vi fidas ke via komputilo estas sekura."}.
 {"Specify the access model","Specifu atingo-modelon"}.
 {"Specify the event message type","Specifu tipo de event-mesaĝo"}.
 {"Specify the publisher model","Enmetu publikadan modelon"}.
@@ -298,13 +292,10 @@
 {"The collections with which a node is affiliated","Aro kun kiu nodo estas filigita"}.
 {"The password is too weak","La pasvorto estas ne sufiĉe forta"}.
 {"the password is","la pasvorto estas"}.
-{"The password of your Jabber account was successfully changed.","La pasvorto de via Ĵabber-konto estas sukcese ŝanĝata."}.
 {"There was an error changing the password: ","Estis eraro dum ŝanĝi de la pasvortro:"}.
 {"There was an error creating the account: ","Estis eraro dum kreado de la konto:"}.
 {"There was an error deleting the account: ","Estis eraro dum forigado de la konto:"}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Uskleco ne signifas: macbeth estas la sama ol MacBeth kaj Macbeth."}.
-{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Jena paĝo ebligas kreadon de Ĵabber-konto je ĉi-Ĵabber-servilo. Via JID (Ĵabber-IDentigilo) estos ĉi-tiel: uzantnomo@servilo. Bonvolu legu bone la instrukciojn por korekta enmetigo de la kampoj. "}.
-{"This page allows to unregister a Jabber account in this Jabber server.","Jena pagxo ebligas malregistri Jxabber-konton je ĉi-servilo."}.
 {"This room is not anonymous","Ĉi tiu babilejo ne estas anonima"}.
 {"Thursday","Ĵaŭdo"}.
 {"Time delay","Prokrasto"}.
@@ -322,7 +313,6 @@
 {"Tuesday","Mardo"}.
 {"Unable to generate a CAPTCHA","Ne eblis krei CAPTCHA"}.
 {"Unauthorized","Nepermesita"}.
-{"Unregister a Jabber account","Malregistru Ĵabber-konton"}.
 {"Unregister","Malregistru"}.
 {"Update message of the day (don't send)","Ŝanĝu mesaĝon de la tago (ne sendu)"}.
 {"Update message of the day on all hosts (don't send)","Ŝanĝu mesaĝon de la tago je ĉiu gastigo (ne sendu)"}.
@@ -348,7 +338,6 @@
 {"Wednesday","Merkredo"}.
 {"When to send the last published item","Kiam sendi la laste publicitan eron"}.
 {"Whether to allow subscriptions","Ĉu permesi aboni"}.
-{"You can later change your password using a Jabber client.","Poste vi povas ŝanĝi vian pasvorton per Ĵabber-kliento."}.
 {"You have been banned from this room","Vi estas malpermesata en ĉi tiu babilejo"}.
 {"You must fill in field \"Nickname\" in the form","Vi devas kompletigi la \"Kaŝnomo\" kampon"}.
 {"You need a client that supports x:data and CAPTCHA to register","Vi bezonas klienton subtenante x:data-funkcio kaj CAPTCHA por registri kaŝnomon"}.
@@ -356,6 +345,4 @@
 {"You need an x:data capable client to search","Vi bezonas klienton kun x:data-funkcio por serĉado"}.
 {"Your active privacy list has denied the routing of this stanza.","Via aktiva privatec-listo malpermesas enkursigi ĉi-tiun pakaĵon"}.
 {"Your contact offline message queue is full. The message has been discarded.","Mesaĝo-atendovico de la senkonekta kontakto estas plena. La mesaĝo estas forĵetita"}.
-{"Your Jabber account was successfully created.","Via Ĵabber-konto estis sukcese kreata."}.
-{"Your Jabber account was successfully deleted.","Via Ĵabber-konto estas sukcese forigita."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Viaj mesaĝoj al ~s estas blokata. Por malbloki ilin, iru al ~s"}.

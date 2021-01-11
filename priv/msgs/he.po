@@ -552,10 +552,11 @@ msgid "Displayed:"
 msgstr "קבוצות מוצגות:"
 
 #: src/mod_register_web.erl:283
+#, fuzzy
 msgid ""
-"Don't tell your password to anybody, not even the administrators of the "
-"Jabber server."
-msgstr "אל תגלה את הסיסמה שלך לאף אחד, אפילו לא למנהלים של שרת Jabber."
+"Don't tell your password to anybody, not even the administrators of the XMPP "
+"server."
+msgstr "אל תגלה את הסיסמה שלך לאף אחד, אפילו לא למנהלים של שרת XMPP."
 
 #: src/mod_configure.erl:880
 msgid "Dump Backup to Text File at "
@@ -638,7 +639,8 @@ msgid "Enter the text you see"
 msgstr "הזן את הכיתוב שאתה רואה"
 
 #: src/mod_vcard.erl:213
-msgid "Erlang Jabber Server"
+#, fuzzy
+msgid "Erlang XMPP Server"
 msgstr "שרת ג׳אבּר Erlang"
 
 #: src/ejabberd_web_admin.erl:1203
@@ -711,8 +713,8 @@ msgstr "קובץ גדול יותר משיעור של ~w בייטים"
 # שקול
 #: src/mod_vcard.erl:458
 #, fuzzy
-msgid "Fill in the form to search for any matching Jabber User"
-msgstr "מלא את שדות אלו כדי לחפש עבור כל משתמש Jabber מבוקש"
+msgid "Fill in the form to search for any matching XMPP User"
+msgstr "מלא את שדות אלו כדי לחפש עבור כל משתמש XMPP מבוקש"
 
 #: src/mod_muc_log.erl:472
 msgid "Friday"
@@ -948,10 +950,6 @@ msgstr "יצירת חדר נדחתה על ידי פוליסת שירות"
 msgid "JID normalization failed"
 msgstr ""
 
-#: src/mod_register_web.erl:203 src/mod_register_web.erl:211
-msgid "Jabber Account Registration"
-msgstr "רישום חשבון Jabber"
-
 #: src/mod_vcard_mnesia.erl:113 src/mod_configure.erl:995
 #: src/mod_configure.erl:1012 src/mod_configure.erl:1022
 #: src/mod_configure.erl:1032 src/mod_configure.erl:1042
@@ -1106,12 +1104,12 @@ msgstr "נדרשת חברות כדי להיכנס אל חדר זה"
 
 # תישכח
 #: src/mod_register_web.erl:294
+#, fuzzy
 msgid ""
 "Memorize your password, or write it in a paper placed in a safe place. In "
-"Jabber there isn't an automated way to recover your password if you forget "
-"it."
+"XMPP there isn't an automated way to recover your password if you forget it."
 msgstr ""
-"שנן את הסיסמה שלך, או רשום אותה בנייר שמור במקום בטוח. אצל Jabber אין דרך "
+"שנן את הסיסמה שלך, או רשום אותה בנייר שמור במקום בטוח. אצל XMPP אין דרך "
 "אוטומטית לשחזר את הסיסמה שלך במידה וזו תישמט מתוך זיכרונך."
 
 #: src/ejabberd_web_admin.erl:1181
@@ -1823,8 +1821,9 @@ msgstr "הרשם"
 # Why masculine form matters.
 #: src/mod_register_web.erl:214 src/mod_register_web.erl:242
 #: src/mod_register_web.erl:250
-msgid "Register a Jabber account"
-msgstr "רשום חשבון Jabber"
+#, fuzzy
+msgid "Register an XMPP account"
+msgstr "רשום חשבון XMPP"
 
 #: src/ejabberd_web_admin.erl:588
 msgid "Registered Users"
@@ -2065,12 +2064,13 @@ msgstr "כבה שירות"
 # בוטח
 # trust that your
 #: src/mod_register_web.erl:290
+#, fuzzy
 msgid ""
-"Some Jabber clients can store your password in the computer, but you should "
-"do this only in your personal computer for safety reasons."
+"Some XMPP clients can store your password in the computer, but you should do "
+"this only in your personal computer for safety reasons."
 msgstr ""
-"ישנם לקוחות Jabber אשר מסוגלים לאחסן את הסיסמה שלך בתוך המחשב, אולם עליך "
-"לעשות זאת רק בתוך המחשב האישי שלך מסיבות ביטחוניות."
+"ישנם לקוחות XMPP אשר מסוגלים לאחסן את הסיסמה שלך בתוך המחשב, אולם עליך לעשות "
+"זאת רק בתוך המחשב האישי שלך מסיבות ביטחוניות."
 
 #: deps/xmpp/src/pubsub_node_config.erl:1344
 #: deps/xmpp/src/pubsub_publish_options.erl:322
@@ -2342,8 +2342,9 @@ msgid "The password is too weak"
 msgstr "הסיסמה חלשה מדי"
 
 #: src/mod_register_web.erl:146
-msgid "The password of your Jabber account was successfully changed."
-msgstr "סיסמת חשבון Jabber שונתה בהצלחה."
+#, fuzzy
+msgid "The password of your XMPP account was successfully changed."
+msgstr "סיסמת חשבון XMPP שונתה בהצלחה."
 
 #: src/mod_register_web.erl:613
 #, fuzzy
@@ -2412,18 +2413,20 @@ msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
 msgstr "חלק זה אינו ער לרישיות: macbeth הינה זהה למחרוזת MacBeth וגם Macbeth."
 
 #: src/mod_register_web.erl:252
+#, fuzzy
 msgid ""
-"This page allows to create a Jabber account in this Jabber server. Your JID "
+"This page allows to create an XMPP account in this XMPP server. Your JID "
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
-"עמוד זה מתיר ליצור חשבון Jabber בשרת Jabber זה. כתובת JID ‏(Jabber "
-"IDentifier) תגובש באופן של: username@server. אנא קרא בזהירות את ההוראות "
-"למילוי נכון של השדות."
+"עמוד זה מתיר ליצור חשבון XMPP בשרת XMPP זה. כתובת JID ‏(Jabber IDentifier) "
+"תגובש באופן של: username@server. אנא קרא בזהירות את ההוראות למילוי נכון של "
+"השדות."
 
 #: src/mod_register_web.erl:507
-msgid "This page allows to unregister a Jabber account in this Jabber server."
-msgstr "עמוד זה מתיר לך לבטל רישום של חשבון Jabber בתוך שרת Jabber זה."
+#, fuzzy
+msgid "This page allows to unregister an XMPP account in this XMPP server."
+msgstr "עמוד זה מתיר לך לבטל רישום של חשבון XMPP בתוך שרת XMPP זה."
 
 #: src/mod_muc_log.erl:805
 msgid "This room is not anonymous"
@@ -2572,8 +2575,9 @@ msgstr "בטל רישום"
 
 #: src/mod_register_web.erl:219 src/mod_register_web.erl:497
 #: src/mod_register_web.erl:505
-msgid "Unregister a Jabber account"
-msgstr "בטל רישום חשבון Jabber"
+#, fuzzy
+msgid "Unregister an XMPP account"
+msgstr "בטל רישום חשבון XMPP"
 
 #: src/ejabberd_web_admin.erl:1417
 msgid "Unselect All"
@@ -2817,6 +2821,11 @@ msgstr ""
 msgid "Wrong xmlns"
 msgstr ""
 
+#: src/mod_register_web.erl:203 src/mod_register_web.erl:211
+#, fuzzy
+msgid "XMPP Account Registration"
+msgstr "רישום חשבון XMPP"
+
 #: src/ejabberd_web_admin.erl:440
 msgid "XMPP Domains"
 msgstr ""
@@ -2853,8 +2862,9 @@ msgid "You are not joined to the channel"
 msgstr "אינך מורשה ליצור צמתים"
 
 #: src/mod_register_web.erl:287
-msgid "You can later change your password using a Jabber client."
-msgstr "באפשרותך לשנות את הסיסמה שלך מאוחר יותר באמצעות לקוח Jabber."
+#, fuzzy
+msgid "You can later change your password using an XMPP client."
+msgstr "באפשרותך לשנות את הסיסמה שלך מאוחר יותר באמצעות לקוח XMPP."
 
 #: src/mod_muc_room.erl:2091
 msgid "You have been banned from this room"
@@ -2886,12 +2896,14 @@ msgid "You're not allowed to create nodes"
 msgstr "אינך מורשה ליצור צמתים"
 
 #: src/mod_register_web.erl:118
-msgid "Your Jabber account was successfully created."
-msgstr "חשבון Jabber נוצר בהצלחה."
+#, fuzzy
+msgid "Your XMPP account was successfully created."
+msgstr "חשבון XMPP נוצר בהצלחה."
 
 #: src/mod_register_web.erl:131
-msgid "Your Jabber account was successfully deleted."
-msgstr "חשבון Jabber נמחק בהצלחה."
+#, fuzzy
+msgid "Your XMPP account was successfully deleted."
+msgstr "חשבון XMPP נמחק בהצלחה."
 
 #: src/ejabberd_c2s.erl:704 src/ejabberd_c2s.erl:860
 msgid "Your active privacy list has denied the routing of this stanza."

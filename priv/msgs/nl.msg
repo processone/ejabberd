@@ -64,7 +64,6 @@
 {"Deliver payloads with event notifications","Berichten bezorgen samen met gebeurtenisnotificaties"}.
 {"Description:","Beschrijving:"}.
 {"Disc only copy","Harde schijf"}.
-{"Don't tell your password to anybody, not even the administrators of the Jabber server.","Geef Uw wachtwoord aan niemand, zelfs niet aan de beheerders van deze Jabber-server."}.
 {"Dump Backup to Text File at ","Backup naar een tekstbestand schrijven op "}.
 {"Dump to Text File","Backup naar een tekstbestand schrijven"}.
 {"Edit Properties","Eigenschappen bewerken"}.
@@ -86,7 +85,6 @@
 {"Enter path to jabberd14 spool file","Voer pad naar jabberd14-spool-bestand in"}.
 {"Enter path to text file","Voer pad naar backupbestand in"}.
 {"Enter the text you see","Voer de getoonde tekst in"}.
-{"Erlang Jabber Server","Erlang Jabber Server"}.
 {"Error","Fout"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Geen CAPTCHA test voor Jabber IDs"}.
 {"Export all tables as SQL queries to a file:","Exporteer alle tabellen als SQL-queries naar een bestand:"}.
@@ -128,7 +126,6 @@
 {"It is not allowed to send private messages of type \"groupchat\"","Er mogen geen privéberichten van het type \"groupchat\" worden verzonden"}.
 {"It is not allowed to send private messages to the conference","Er mogen geen privéberichten naar de chatruimte worden verzonden"}.
 {"It is not allowed to send private messages","Het is niet toegestaan priveberichten te sturen"}.
-{"Jabber Account Registration","Jabber-account registratie"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Januari"}.
 {"joins the room","betrad de chatruimte"}.
@@ -155,7 +152,6 @@
 {"May","Mei"}.
 {"Members:","Groepsleden:"}.
 {"Membership is required to enter this room","U moet lid zijn om deze chatruimte te kunnen betreden"}.
-{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Onthou het wachtwoord, of schrijf het op en bewaar het op een veilige plaats. Met Jabber is er geen geautomatiseerde manier om het wachtwoord terug te halen als U het vergeet."}.
 {"Memory","Geheugen"}.
 {"Message body","Bericht"}.
 {"Middle Name","Tussennaam"}.
@@ -232,7 +228,6 @@
 {"RAM copy","RAM"}.
 {"Really delete message of the day?","Wilt u het bericht van de dag verwijderen?"}.
 {"Recipient is not in the conference room","De ontvanger is niet in de chatruimte"}.
-{"Register a Jabber account","Registreer een Jabber-account"}.
 {"Registered Users","Geregistreerde gebruikers"}.
 {"Registered Users:","Geregistreerde gebruikers:"}.
 {"Register","Registreer"}.
@@ -274,7 +269,6 @@
 {"Show Integral Table","Volledige tabel laten zien"}.
 {"Show Ordinary Table","Deel van tabel laten zien"}.
 {"Shut Down Service","Stop Service"}.
-{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Sommige Jabber-clienten kunnen het wachtwoord opslaan op Uw computer. Gebruik deze mogelijkheid alleen als U vertrouwd dat Uw computer afdoende beveiligd is."}.
 {"Specify the access model","Geef toegangsmodel"}.
 {"Specify the event message type","Geef type van eventbericht"}.
 {"Specify the publisher model","Publicatietype opgeven"}.
@@ -298,13 +292,10 @@
 {"The collections with which a node is affiliated","De collecties waar een node mee is gerelateerd"}.
 {"The password is too weak","Het wachtwoord is te zwak"}.
 {"the password is","het wachtwoord is"}.
-{"The password of your Jabber account was successfully changed.","Het wachtwoord van Uw Jabber-account is succesvol veranderd."}.
 {"There was an error changing the password: ","Er was een fout bij het veranderen van het wachtwoord:"}.
 {"There was an error creating the account: ","Er was een fout bij het creeern van de account:"}.
 {"There was an error deleting the account: ","Er was een fout bij het verwijderen van de account."}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Dit is niet hoofdlettergevoelig: macbeth is hetzelfde als MacBeth en Macbeth."}.
-{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Deze pagina maakt het mogelijk een Jabber-account te registreren op deze server. Uw JID (Jabber IDentiteit) zal er als volg uit zien: gebruikersnaam@server. Lees de instructies zorgvuldig teneinde de velden correct in te vullen."}.
-{"This page allows to unregister a Jabber account in this Jabber server.","Deze pagina maakt het mogelijk een Jabber-account op deze server op te heffen."}.
 {"This room is not anonymous","Deze chatruimte is niet anoniem"}.
 {"Thursday","Donderdag"}.
 {"Time delay","Vertraging"}.
@@ -322,7 +313,6 @@
 {"Tuesday","Dinsdag"}.
 {"Unable to generate a CAPTCHA","Het generen van een CAPTCHA is mislukt"}.
 {"Unauthorized","Niet geautoriseerd"}.
-{"Unregister a Jabber account","Opheffen van Jabber-account"}.
 {"Unregister","Opheffen"}.
 {"Update message of the day (don't send)","Bericht van de dag bijwerken (niet verzenden)"}.
 {"Update message of the day on all hosts (don't send)","Verander bericht-van-de-dag op alle hosts (niet versturen)"}.
@@ -348,7 +338,6 @@
 {"Wednesday","Woensdag"}.
 {"When to send the last published item","Wanneer het laatst gepubliceerde item verzonden moet worden"}.
 {"Whether to allow subscriptions","Abonnementsaanvraag toestaan"}.
-{"You can later change your password using a Jabber client.","U can het wachtwoord later veranderen met een Jabber-client."}.
 {"You have been banned from this room","U werd verbannen uit deze chatruimte"}.
 {"You must fill in field \"Nickname\" in the form","U moet het veld \"bijnaam\" invullen"}.
 {"You need a client that supports x:data and CAPTCHA to register","U hebt een client nodig die x:data en CAPTCHA ondersteunt om een bijnaam te registreren"}.
@@ -356,6 +345,4 @@
 {"You need an x:data capable client to search","U hebt een client nodig die x:data ondersteunt om te zoeken"}.
 {"Your active privacy list has denied the routing of this stanza.","Uw actieve privacy-lijst verbied het routeren van dit stanza."}.
 {"Your contact offline message queue is full. The message has been discarded.","Te veel offline berichten voor dit contactpersoon. Het bericht is niet opgeslagen."}.
-{"Your Jabber account was successfully created.","Uw Jabber-account is succesvol gecreeerd."}.
-{"Your Jabber account was successfully deleted.","Uw Jabber-account is succesvol verwijderd."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Uw berichten aan ~s worden geblokkeerd. Om ze te deblokkeren, ga naar ~s"}.

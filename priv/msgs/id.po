@@ -548,12 +548,13 @@ msgid "Displayed:"
 msgstr "Tampilkan Grup:"
 
 #: src/mod_register_web.erl:283
+#, fuzzy
 msgid ""
-"Don't tell your password to anybody, not even the administrators of the "
-"Jabber server."
+"Don't tell your password to anybody, not even the administrators of the XMPP "
+"server."
 msgstr ""
 "Jangan memberitahukan kata sandi Anda ke siapapun, bahkan para administrator "
-"dari layanan Jabber."
+"dari layanan XMPP."
 
 #: src/mod_configure.erl:880
 msgid "Dump Backup to Text File at "
@@ -635,8 +636,9 @@ msgid "Enter the text you see"
 msgstr "Masukkan teks yang Anda lihat"
 
 #: src/mod_vcard.erl:213
-msgid "Erlang Jabber Server"
-msgstr "Layanan Erlang Jabber"
+#, fuzzy
+msgid "Erlang XMPP Server"
+msgstr "Layanan Erlang XMPP"
 
 #: src/ejabberd_web_admin.erl:1203
 msgid "Error"
@@ -708,8 +710,8 @@ msgstr ""
 
 #: src/mod_vcard.erl:458
 #, fuzzy
-msgid "Fill in the form to search for any matching Jabber User"
-msgstr "Isi kolom untuk mencari pengguna Jabber yang sama"
+msgid "Fill in the form to search for any matching XMPP User"
+msgstr "Isi kolom untuk mencari pengguna XMPP yang sama"
 
 #: src/mod_muc_log.erl:472
 msgid "Friday"
@@ -945,10 +947,6 @@ msgstr "Pembuatan Ruangan ditolak oleh kebijakan layanan"
 msgid "JID normalization failed"
 msgstr ""
 
-#: src/mod_register_web.erl:203 src/mod_register_web.erl:211
-msgid "Jabber Account Registration"
-msgstr "Pendaftaran Akun Jabber"
-
 #: src/mod_vcard_mnesia.erl:113 src/mod_configure.erl:995
 #: src/mod_configure.erl:1012 src/mod_configure.erl:1022
 #: src/mod_configure.erl:1032 src/mod_configure.erl:1042
@@ -1102,14 +1100,14 @@ msgid "Membership is required to enter this room"
 msgstr "Hanya Member yang dapat masuk ruangan ini"
 
 #: src/mod_register_web.erl:294
+#, fuzzy
 msgid ""
 "Memorize your password, or write it in a paper placed in a safe place. In "
-"Jabber there isn't an automated way to recover your password if you forget "
-"it."
+"XMPP there isn't an automated way to recover your password if you forget it."
 msgstr ""
 "Hafalkan kata sandi Anda, atau dicatat dan letakkan di tempat yang aman. "
-"Didalam Jabber tidak ada cara otomatis untuk mendapatkan kembali password "
-"Anda jika Anda lupa."
+"Didalam XMPP tidak ada cara otomatis untuk mendapatkan kembali password Anda "
+"jika Anda lupa."
 
 #: src/ejabberd_web_admin.erl:1181
 msgid "Memory"
@@ -1826,7 +1824,8 @@ msgstr "Mendaftar"
 
 #: src/mod_register_web.erl:214 src/mod_register_web.erl:242
 #: src/mod_register_web.erl:250
-msgid "Register a Jabber account"
+#, fuzzy
+msgid "Register an XMPP account"
 msgstr "Daftarkan sebuah akun jabber"
 
 #: src/ejabberd_web_admin.erl:588
@@ -2066,12 +2065,13 @@ msgid "Shut Down Service"
 msgstr "Shut Down Layanan"
 
 #: src/mod_register_web.erl:290
+#, fuzzy
 msgid ""
-"Some Jabber clients can store your password in the computer, but you should "
-"do this only in your personal computer for safety reasons."
+"Some XMPP clients can store your password in the computer, but you should do "
+"this only in your personal computer for safety reasons."
 msgstr ""
-"Beberapa klien Jabber dapat menyimpan password di komputer Anda. Gunakan "
-"fitur itu hanya jika Anda mempercayai komputer Anda aman."
+"Beberapa klien XMPP dapat menyimpan password di komputer Anda. Gunakan fitur "
+"itu hanya jika Anda mempercayai komputer Anda aman."
 
 #: deps/xmpp/src/pubsub_node_config.erl:1344
 #: deps/xmpp/src/pubsub_publish_options.erl:322
@@ -2339,8 +2339,9 @@ msgid "The password is too weak"
 msgstr "Kata sandi terlalu lemah"
 
 #: src/mod_register_web.erl:146
-msgid "The password of your Jabber account was successfully changed."
-msgstr "Kata sandi pada akun Jabber Anda telah berhasil diubah."
+#, fuzzy
+msgid "The password of your XMPP account was successfully changed."
+msgstr "Kata sandi pada akun XMPP Anda telah berhasil diubah."
 
 #: src/mod_register_web.erl:613
 #, fuzzy
@@ -2411,20 +2412,22 @@ msgstr ""
 "adalah sama dengan MacBeth juga Macbeth."
 
 #: src/mod_register_web.erl:252
+#, fuzzy
 msgid ""
-"This page allows to create a Jabber account in this Jabber server. Your JID "
+"This page allows to create an XMPP account in this XMPP server. Your JID "
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
-"Halaman ini memungkinkan untuk membuat akun Jabber di layanan Jabber ini. "
-"JID Anda (Jabber Pengenal) akan berbentuk: namapengguna@layanan. Harap baca "
+"Halaman ini memungkinkan untuk membuat akun XMPP di layanan XMPP ini. JID "
+"Anda (Jabber Pengenal) akan berbentuk: namapengguna@layanan. Harap baca "
 "dengan seksama petunjuk-petunjuk untuk mengisi kolom dengan benar."
 
 #: src/mod_register_web.erl:507
-msgid "This page allows to unregister a Jabber account in this Jabber server."
+#, fuzzy
+msgid "This page allows to unregister an XMPP account in this XMPP server."
 msgstr ""
-"Pada bagian ini memungkinkan Anda untuk membatalkan pendaftaran akun Jabber "
-"pada layanan Jabber ini."
+"Pada bagian ini memungkinkan Anda untuk membatalkan pendaftaran akun XMPP "
+"pada layanan XMPP ini."
 
 #: src/mod_muc_log.erl:805
 msgid "This room is not anonymous"
@@ -2569,7 +2572,8 @@ msgstr "Nonaktifkan"
 
 #: src/mod_register_web.erl:219 src/mod_register_web.erl:497
 #: src/mod_register_web.erl:505
-msgid "Unregister a Jabber account"
+#, fuzzy
+msgid "Unregister an XMPP account"
 msgstr "Nonaktifkan akun jabber"
 
 #: src/ejabberd_web_admin.erl:1417
@@ -2810,6 +2814,11 @@ msgstr ""
 msgid "Wrong xmlns"
 msgstr ""
 
+#: src/mod_register_web.erl:203 src/mod_register_web.erl:211
+#, fuzzy
+msgid "XMPP Account Registration"
+msgstr "Pendaftaran Akun XMPP"
+
 #: src/ejabberd_web_admin.erl:440
 msgid "XMPP Domains"
 msgstr ""
@@ -2846,10 +2855,11 @@ msgid "You are not joined to the channel"
 msgstr "Hal ini tidak diperbolehkan untuk mengirim pesan pribadi"
 
 #: src/mod_register_web.erl:287
-msgid "You can later change your password using a Jabber client."
+#, fuzzy
+msgid "You can later change your password using an XMPP client."
 msgstr ""
 "Anda dapat mengubah kata sandi anda dilain waktu dengan menggunakan klien "
-"Jabber."
+"XMPP."
 
 #: src/mod_muc_room.erl:2091
 msgid "You have been banned from this room"
@@ -2882,12 +2892,14 @@ msgid "You're not allowed to create nodes"
 msgstr "Hal ini tidak diperbolehkan untuk mengirim pesan pribadi"
 
 #: src/mod_register_web.erl:118
-msgid "Your Jabber account was successfully created."
-msgstr "Jabber akun Anda telah sukses dibuat"
+#, fuzzy
+msgid "Your XMPP account was successfully created."
+msgstr "XMPP akun Anda telah sukses dibuat"
 
 #: src/mod_register_web.erl:131
-msgid "Your Jabber account was successfully deleted."
-msgstr "Jabber akun Anda berhasil dihapus."
+#, fuzzy
+msgid "Your XMPP account was successfully deleted."
+msgstr "XMPP akun Anda berhasil dihapus."
 
 #: src/ejabberd_c2s.erl:704 src/ejabberd_c2s.erl:860
 msgid "Your active privacy list has denied the routing of this stanza."

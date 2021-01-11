@@ -62,7 +62,6 @@
 {"Deliver payloads with event notifications","Doručiť náklad s upozornením na udalosť"}.
 {"Description:","Popis:"}.
 {"Disc only copy","Len kópia disku"}.
-{"Don't tell your password to anybody, not even the administrators of the Jabber server.","Nevyzrádzajte heslo nikomu, ani administrátorom tohoto Jabber servera."}.
 {"Dump Backup to Text File at ","Uložiť zálohu do textového súboru na "}.
 {"Dump to Text File","Uložiť do textového súboru"}.
 {"Edit Properties","Editovať vlastnosti"}.
@@ -82,7 +81,6 @@
 {"Enter path to jabberd14 spool file","Zadajte cestu k spool súboru jabberd14"}.
 {"Enter path to text file","Zadajte cestu k textovému súboru"}.
 {"Enter the text you see","Zadajte zobrazený text"}.
-{"Erlang Jabber Server","Erlang Jabber Server"}.
 {"Error","Chyba"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Nepoužívať CAPTCHA pre nasledujúce Jabber ID"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Exportovať dáta všetkých uživateľov na serveri do súborov PIEFXIS (XEP-0227):"}.
@@ -123,7 +121,6 @@
 {"It is not allowed to send private messages of type \"groupchat\"","Nie je dovolené odoslanie súkromnej správy typu \"Skupinová správa\" "}.
 {"It is not allowed to send private messages to the conference","Nie je povolené odosielať súkromné správy do konferencie"}.
 {"It is not allowed to send private messages","Nieje povolené posielať súkromné správy"}.
-{"Jabber Account Registration","Registrácia jabber účtu"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Január"}.
 {"joins the room","vstúpil(a) do miestnosti"}.
@@ -149,7 +146,6 @@
 {"May","Máj"}.
 {"Members:","Členovia:"}.
 {"Membership is required to enter this room","Pre vstup do miestnosti je potrebné byť členom"}.
-{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Zapamätajte si heslo alebo si ho zapíšte na papier. Jabber neposkytuje automatickú funkciu ako zistiť zabudnuté heslo. "}.
 {"Memory","Pamäť"}.
 {"Message body","Telo správy"}.
 {"Middle Name","Prostredné meno: "}.
@@ -223,7 +219,6 @@
 {"RAM copy","Kópia RAM"}.
 {"Really delete message of the day?","Skutočne zmazať správu dňa?"}.
 {"Recipient is not in the conference room","Príjemca sa nenachádza v konferenčnej miestnosti"}.
-{"Register a Jabber account","Zaregistrovať Jabber účet"}.
 {"Registered Users","Registrovaní používatelia"}.
 {"Registered Users:","Registrovaní používatelia:"}.
 {"Register","Zoznam kontaktov"}.
@@ -264,7 +259,6 @@
 {"Show Integral Table","Zobraziť kompletnú tabuľku"}.
 {"Show Ordinary Table","Zobraziť bežnú tabuľku"}.
 {"Shut Down Service","Vypnúť službu"}.
-{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Niektorí Jabber klenti môžu ukladať heslá v počítači. Používajte túto funkciu len ak veríte, že sú tam v bezpečí.  "}.
 {"Specify the access model","Uveďte model prístupu"}.
 {"Specify the event message type","Uveďte typ pre správu o udalosti"}.
 {"Specify the publisher model","Špecifikovať model publikovania"}.
@@ -288,13 +282,10 @@
 {"The collections with which a node is affiliated","Kolekcie asociované s uzlom"}.
 {"The password is too weak","heslo je"}.
 {"the password is","heslo je"}.
-{"The password of your Jabber account was successfully changed.","Heslo k Jabber účtu bolo úspešne zmenené."}.
 {"There was an error changing the password: ","Pri zmene hesla nastala chyba: "}.
 {"There was an error creating the account: ","Pri vytváraní účtu nastala chyba: "}.
 {"There was an error deleting the account: ","Pri rušení účtu nastala chyba:"}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Veľké a malé písmená sa nerozlišujú: macbeth je to isté ako MacBeth a Macbeth."}.
-{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Táto stránka umožňuje refistrovať Jabber účet na tomto serveri. Vaše JID (Jabber IDentifikátor) bude vo formáte: užívateľ@server. Pozorne sledujte inštrukcie, aby ste údaje vypnili správne."}.
-{"This page allows to unregister a Jabber account in this Jabber server.","Na tejto stránke si môžete zrušiť Jabber účet registrovaný na tomto serveri."}.
 {"This room is not anonymous","Táto miestnosť nie je anonymná"}.
 {"Thursday","Štvrtok"}.
 {"Time delay","Časový posun"}.
@@ -309,7 +300,6 @@
 {"Tuesday","Utorok"}.
 {"Unable to generate a CAPTCHA","Nepodarilo sa vygenerovat CAPTCHA"}.
 {"Unauthorized","Neautorizovaný"}.
-{"Unregister a Jabber account","Zrušiť Jabber účet"}.
 {"Unregister","Zrušiť účet"}.
 {"Update message of the day (don't send)","Aktualizovať správu dňa (neodosielať)"}.
 {"Update message of the day on all hosts (don't send)","Upraviť správu dňa na všetkých serveroch"}.
@@ -334,7 +324,6 @@
 {"Wednesday","Streda"}.
 {"When to send the last published item","Kedy odoslať posledne publikovanú položku"}.
 {"Whether to allow subscriptions","Povoliť prihlasovanie"}.
-{"You can later change your password using a Jabber client.","Neskôr si heslo môžete zmeniť pomocou Jabber klienta."}.
 {"You have been banned from this room","Boli ste vylúčený z tejto miestnosti"}.
 {"You must fill in field \"Nickname\" in the form","Musíte vyplniť políčko \"Prezývka\" vo formulári"}.
 {"You need a client that supports x:data and CAPTCHA to register","Na registráciu prezývky potrebujete klienta podporujúceho z x:data"}.
@@ -342,6 +331,4 @@
 {"You need an x:data capable client to search","Na vyhľadávanie potrebujete klienta podporujúceho x:data"}.
 {"Your active privacy list has denied the routing of this stanza.","Aktívny list súkromia zbránil v smerovaní tejto stanzy."}.
 {"Your contact offline message queue is full. The message has been discarded.","Fronta offline správ tohoto kontaktu je plná. Správa bola zahodená."}.
-{"Your Jabber account was successfully created.","Jabber účet bol úspešne vytvorený."}.
-{"Your Jabber account was successfully deleted.","Váš Jabber účet bol úspešne odstránený."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Správa určená pre ~s bola zablokovaná. Oblokovať ju môžete na ~s"}.

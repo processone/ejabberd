@@ -62,7 +62,6 @@
 {"Deliver payloads with event notifications","Send innhold sammen med kunngjøringer"}.
 {"Description:","Beskrivelse:"}.
 {"Disc only copy","Kun diskkopi"}.
-{"Don't tell your password to anybody, not even the administrators of the Jabber server.","Ikke fortell passordet til noen, ikke en gang til administratoren av Jabber serveren."}.
 {"Dump Backup to Text File at ","Dump Sikkerhetskopi til Tekstfil på "}.
 {"Dump to Text File","Dump til Tekstfil"}.
 {"Edit Properties","Redigere Egenskaper"}.
@@ -82,7 +81,6 @@
 {"Enter path to jabberd14 spool file","Skriv inn sti til jabberd14 spoolfil"}.
 {"Enter path to text file","Skriv inn sti til tekstfil"}.
 {"Enter the text you see","Skriv inn teksten du ser"}.
-{"Erlang Jabber Server","Erlang Jabber Server"}.
 {"Error","Feil"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Ekskluder Jabber IDer fra CAPTCHA utfordring"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Eksporter data om alle brukere i en server til PIEFXIS filer"}.
@@ -123,7 +121,6 @@
 {"It is not allowed to send private messages of type \"groupchat\"","Det er ikke tillatt å sende private meldinger med typen "}.
 {"It is not allowed to send private messages to the conference","Det er ikke tillatt å sende private meldinger til "}.
 {"It is not allowed to send private messages","Det er ikke tillatt å sende private meldinger"}.
-{"Jabber Account Registration","Jabber Konto Registrering"}.
 {"Jabber ID","Jabber ID"}.
 {"January","januar"}.
 {"joins the room","kommer inn i rommet"}.
@@ -149,7 +146,6 @@
 {"May","mai"}.
 {"Membership is required to enter this room","Medlemskap kreves for tilgang til samtalerommet"}.
 {"Members:","Medlemmer:"}.
-{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Husk passordet, eller skriv det ned på et papir lagret på et trygt sted. I Jabber er det ingen automatisert måte å gjenskape passordet om du glemmer det. "}.
 {"Memory","Minne"}.
 {"Message body","Meldingskropp"}.
 {"Middle Name","Mellomnavn"}.
@@ -223,7 +219,6 @@
 {"RAM copy","RAM kopi"}.
 {"Really delete message of the day?","Virkelig slette melding for dagen?"}.
 {"Recipient is not in the conference room","Mottakeren er ikke i konferanserommet"}.
-{"Register a Jabber account","Registrer en Jabber konto"}.
 {"Registered Users","Registrerte Brukere"}.
 {"Registered Users:","Registrerte Brukere:"}.
 {"Register","Registrer"}.
@@ -265,7 +260,6 @@
 {"Show Integral Table","Vis Integral Tabell"}.
 {"Show Ordinary Table","Vis Ordinær Tabell"}.
 {"Shut Down Service","Avslutt Tjeneste"}.
-{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Noen Jabber klienter kan lagre passordet på datamaskinen. Bruk bare den funksjonen dersom du er sikker på at maskinen er trygg."}.
 {"Specify the access model","Spesifiser aksess modellen"}.
 {"Specify the event message type","Spesifiser hendelsesbeskjed type"}.
 {"Specify the publisher model","Angi publiserings modell"}.
@@ -289,13 +283,10 @@
 {"The collections with which a node is affiliated","Samlingene som en node er assosiert med"}.
 {"The password is too weak","Passordet er for svakt"}.
 {"the password is","passordet er"}.
-{"The password of your Jabber account was successfully changed.","Passordet for din Jabber konto ble endret."}.
 {"There was an error changing the password: ","En feil skjedde under endring av passordet:"}.
 {"There was an error creating the account: ","En feil skjedde under oppretting av kontoen:"}.
 {"There was an error deleting the account: ","En feil skjedde under sletting av kontoen: "}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Denne er ufølsom for små og store bokstaver: macbeth er det samme som MacBeth og Macbeth. "}.
-{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Denne siden lar deg lage en Jabber konto på denne Jabber serveren. Din JID (Jabber ID) vil være i formatet: brukernavn@server. Vennligst les instruksjonene nøye slik at du fyller ut skjemaet riktig."}.
-{"This page allows to unregister a Jabber account in this Jabber server.","Denne siden lar deg avregistrere en Jabber konto på denne Jabber serveren."}.
 {"This room is not anonymous","Dette rommet er ikke anonymt"}.
 {"Thursday","torsdag"}.
 {"Time delay","Tids forsinkelse"}.
@@ -310,7 +301,6 @@
 {"Tuesday","tirsdag"}.
 {"Unable to generate a CAPTCHA","Umulig å generere en CAPTCHA"}.
 {"Unauthorized","Uautorisert"}.
-{"Unregister a Jabber account","Avregistrer en Jabber konto"}.
 {"Unregister","Avregistrer"}.
 {"Update message of the day (don't send)","Oppdater melding for dagen (ikke send)"}.
 {"Update message of the day on all hosts (don't send)","Oppdater melding for dagen på alle maskiner (ikke send)"}.
@@ -335,7 +325,6 @@
 {"Wednesday","onsdag"}.
 {"When to send the last published item","Når skal siste publiserte artikkel sendes"}.
 {"Whether to allow subscriptions","Om man skal tillate abonnenter"}.
-{"You can later change your password using a Jabber client.","Du kan når som helst endre passordet via en Jabber klient."}.
 {"You have been banned from this room","Du har blitt bannlyst i dette rommet."}.
 {"You must fill in field \"Nickname\" in the form","Du må fylle inn feltet \"Nickname\" i skjemaet"}.
 {"You need a client that supports x:data and CAPTCHA to register","Du trenger en klient som støtter x:data og CAPTCHA for registrering "}.
@@ -343,6 +332,4 @@
 {"You need an x:data capable client to search","Du tregner en klient som støtter x:data for å kunne "}.
 {"Your active privacy list has denied the routing of this stanza.","Din aktive privat liste har blokkert rutingen av denne strofen."}.
 {"Your contact offline message queue is full. The message has been discarded.","Kontaktens frakoblede meldingskø er full. Meldingen har blitt kassert."}.
-{"Your Jabber account was successfully created.","Din Jabber konto ble opprettet"}.
-{"Your Jabber account was successfully deleted.","Dni Jabber konto er blitt sltettet."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Dine meldinger til ~s blir blokkert. For å åpne igjen, besøk ~s"}.

@@ -73,7 +73,6 @@
 {"Deliver payloads with event notifications","Doručovat náklad s upozorněním na událost"}.
 {"Description:","Popis:"}.
 {"Disc only copy","Jen kopie disku"}.
-{"Don't tell your password to anybody, not even the administrators of the Jabber server.","Nikdy nikomu nesdělujte své heslo, ani administrátorovi serveru Jabberu."}.
 {"Dump Backup to Text File at ","Uložit zálohu do textového souboru na "}.
 {"Dump to Text File","Uložit do textového souboru"}.
 {"Duplicated groups are not allowed by RFC6121","Duplicitní skupiny nejsou povoleny dle RFC6121"}.
@@ -97,7 +96,6 @@
 {"Enter path to jabberd14 spool file","Zadejte cestu k spool souboru jabberd14"}.
 {"Enter path to text file","Zadajte cestu k textovému souboru"}.
 {"Enter the text you see","Zadejte text, který vidíte"}.
-{"Erlang Jabber Server","Erlang Jabber Server"}.
 {"Error","Chyba"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Vyloučit Jabber ID z procesu CAPTCHA ověřování"}.
 {"Export all tables as SQL queries to a file:","Zálohovat všechny tabulky jako SQL dotazy do souboru:"}.
@@ -159,7 +157,6 @@
 {"It is not allowed to send private messages of type \"groupchat\"","Není dovoleno odeslání soukromé zprávy typu \"skupinová zpráva\" "}.
 {"It is not allowed to send private messages to the conference","Není povoleno odesílat soukromé zprávy v této místnosti"}.
 {"It is not allowed to send private messages","Je zakázáno posílat soukromé zprávy"}.
-{"Jabber Account Registration","Registrace účtu Jabberu"}.
 {"Jabber ID","Jabber ID"}.
 {"January",". ledna"}.
 {"joins the room","vstoupil(a) do místnosti"}.
@@ -187,7 +184,6 @@
 {"May",". května"}.
 {"Members:","Členové:"}.
 {"Membership is required to enter this room","Pro vstup do místnosti musíte být členem"}.
-{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Svoje heslo si zapamatujte, nebo si jej poznamenejte na papírek a ten uschovejte v bezpečí. Jabber nemá žádný automatizovaný způsob obnovy hesla."}.
 {"Memory","Paměť"}.
 {"Message body","Tělo zprávy"}.
 {"Message not found in forwarded payload","Zpráva nebyla nalezena v přeposlaném obsahu"}.
@@ -301,7 +297,6 @@
 {"RAM copy","Kopie RAM"}.
 {"Really delete message of the day?","Skutečně smazat zprávu dne?"}.
 {"Recipient is not in the conference room","Příjemce se nenachází v místnosti"}.
-{"Register a Jabber account","Zaregistrujte si účet Jabberu"}.
 {"Registered Users","Registrovaní uživatelé"}.
 {"Registered Users:","Registrovaní uživatelé:"}.
 {"Register","Zaregistrovat se"}.
@@ -344,7 +339,6 @@
 {"Show Integral Table","Zobrazit kompletní tabulku"}.
 {"Show Ordinary Table","Zobrazit běžnou tabulku"}.
 {"Shut Down Service","Vypnout službu"}.
-{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Někteří klienti umí uložit vaše heslo na disk počítače. Tuto funkci používejte, pouze pokud věříte zabezpečení svého počítače."}.
 {"Specify the access model","Uveďte přístupový model"}.
 {"Specify the event message type","Zvolte typ zpráv pro události"}.
 {"Specify the publisher model","Specifikovat model pro publikování"}.
@@ -371,7 +365,6 @@
 {"The password contains unacceptable characters","Heslo obsahuje nepovolené znaky"}.
 {"The password is too weak","Heslo je příliš slabé"}.
 {"the password is","heslo je"}.
-{"The password of your Jabber account was successfully changed.","Heslo vašeho účtu Jabberu bylo úspěšně změněno."}.
 {"The query is only allowed from local users","Dotaz je povolen pouze pro místní uživatele"}.
 {"The query must not contain <item/> elements","Dotaz nesmí obsahovat elementy <item/>"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Stanza MUSÍ obsahovat pouze jeden element  <active/>, jeden element <default/> nebo jeden element <list/>"}.
@@ -379,8 +372,6 @@
 {"There was an error creating the account: ","Při vytváření účtu došlo k chybě:"}.
 {"There was an error deleting the account: ","Při mazání účtu došlo k chybě: "}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Zde nezáleží na velikosti písmen: macbeth je stejný jako MacBeth a Macbeth."}.
-{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Na této stránce si můžete vytvořit účet na tomto serveru Jabberu. Vaše JID (Jabber IDentifikátor) bude mít tvar: uživatelskéjméno@server. Přečtěte si prosím pozorně instrukce pro vyplnění údajů."}.
-{"This page allows to unregister a Jabber account in this Jabber server.","Zde můžete zrušit registraci účtu na tomto serveru Jabberu."}.
 {"This room is not anonymous","Tato místnost není anonymní"}.
 {"Thursday","Čtvrtek"}.
 {"Time delay","Časový posun"}.
@@ -406,7 +397,6 @@
 {"Unable to register route on existing local domain","Není možné zaregistrovat routu na existující místní doménu"}.
 {"Unauthorized","Nemáte oprávnění"}.
 {"Unexpected action","Neočekávaná akce"}.
-{"Unregister a Jabber account","Zrušte registraci účtu Jabberu"}.
 {"Unregister","Zrušit registraci"}.
 {"Unsupported <index/> element","Nepodporovaný <index/> element"}.
 {"Update message of the day (don't send)","Aktualizovat zprávu dne (neodesílat)"}.
@@ -443,7 +433,6 @@
 {"Wednesday","Středa"}.
 {"When to send the last published item","Kdy odeslat poslední publikovanou položku"}.
 {"Whether to allow subscriptions","Povolit odebírání"}.
-{"You can later change your password using a Jabber client.","Později můžete své heslo změnit pomocí klienta Jabberu."}.
 {"You have been banned from this room","Byl jste vyloučen z této místnosti"}.
 {"You have joined too many conferences","Vstoupil jste do příliš velkého množství místností"}.
 {"You must fill in field \"Nickname\" in the form","Musíte vyplnit políčko \"Přezdívka\" ve formuláři"}.
@@ -452,7 +441,5 @@
 {"You need an x:data capable client to search","K vyhledávání potřebujete klienta podporujícího x:data"}.
 {"Your active privacy list has denied the routing of this stanza.","Vaše nastavení soukromí znemožnilo směrování této stance."}.
 {"Your contact offline message queue is full. The message has been discarded.","Fronta offline zpráv pro váš kontakt je plná. Zpráva byla zahozena."}.
-{"Your Jabber account was successfully created.","Váš účet Jabberu byl úspěšně vytvořen."}.
-{"Your Jabber account was successfully deleted.","Váš účet Jabberu byl úspěšně smazán."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Nesmíte posílat zprávy na ~s. Pro povolení navštivte ~s"}.
 {"You're not allowed to create nodes","Nemáte povoleno vytvářet uzly"}.

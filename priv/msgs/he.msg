@@ -71,7 +71,6 @@
 {"Deliver payloads with event notifications","מסור מטעני ייעוד (מטע״ד) יחד עם התראות אירוע"}.
 {"Description:","תיאור:"}.
 {"Disc only copy","העתק של תקליטור בלבד"}.
-{"Don't tell your password to anybody, not even the administrators of the Jabber server.","אל תגלה את הסיסמה שלך לאף אחד, אפילו לא למנהלים של שרת Jabber."}.
 {"Dump Backup to Text File at ","השלך גיבוי לקובץ טקסט אצל "}.
 {"Dump to Text File","השלך לקובץ טקסט"}.
 {"Edit Properties","ערוך מאפיינים"}.
@@ -93,7 +92,6 @@
 {"Enter path to jabberd14 spool file","הזן נתיב לקובץ סליל (spool file) של jabberd14"}.
 {"Enter path to text file","הזן נתיב לקובץ טקסט"}.
 {"Enter the text you see","הזן את הכיתוב שאתה רואה"}.
-{"Erlang Jabber Server","שרת ג׳אבּר Erlang"}.
 {"Error","שגיאה"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","הוצא כתובות Jabber מתוך אתגר CAPTCHA"}.
 {"Export all tables as SQL queries to a file:","יצא את כל הטבלאות בתור שאילתות SQL לתוך קובץ:"}.
@@ -147,7 +145,6 @@
 {"It is not allowed to send private messages of type \"groupchat\"","אין זה מותר לשלוח הודעות פרטיות מן טיפוס \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","אין זה מותר לשלוח הודעות פרטיות לועידה"}.
 {"It is not allowed to send private messages","אין זה מותר לשלוח הודעות פרטיות"}.
-{"Jabber Account Registration","רישום חשבון Jabber"}.
 {"Jabber ID","מזהה Jabber"}.
 {"January","ינואר"}.
 {"joins the room","נכנס/ת אל החדר"}.
@@ -175,7 +172,6 @@
 {"May","מאי"}.
 {"Membership is required to enter this room","נדרשת חברות כדי להיכנס אל חדר זה"}.
 {"Members:","חברים:"}.
-{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","שנן את הסיסמה שלך, או רשום אותה בנייר שמור במקום בטוח. אצל Jabber אין דרך אוטומטית לשחזר את הסיסמה שלך במידה וזו תישמט מתוך זיכרונך."}.
 {"Memory","זיכרון"}.
 {"Message body","גוף הודעה"}.
 {"Middle Name","שם אמצעי"}.
@@ -272,7 +268,6 @@
 {"RAM copy","העתק RAM"}.
 {"Really delete message of the day?","באמת למחוק את בשורת היום?"}.
 {"Recipient is not in the conference room","מקבל אינו מצוי בחדר הועידה"}.
-{"Register a Jabber account","רשום חשבון Jabber"}.
 {"Registered Users","משתמשים רשומים"}.
 {"Registered Users:","משתמשים רשומים:"}.
 {"Register","הרשם"}.
@@ -315,7 +310,6 @@
 {"Show Integral Table","הצג טבלה אינטגרלית"}.
 {"Show Ordinary Table","הצג טבלה רגילה"}.
 {"Shut Down Service","כבה שירות"}.
-{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","ישנם לקוחות Jabber אשר מסוגלים לאחסן את הסיסמה שלך בתוך המחשב, אולם עליך לעשות זאת רק בתוך המחשב האישי שלך מסיבות ביטחוניות."}.
 {"Specify the access model","ציין מודל גישה"}.
 {"Specify the event message type","ציין טיפוס הודעת אירוע"}.
 {"Specify the publisher model","ציין מודל פרסום"}.
@@ -340,14 +334,11 @@
 {"The collections with which a node is affiliated","האוספים עמם צומת מסונף"}.
 {"The password is too weak","הסיסמה חלשה מדי"}.
 {"the password is","הסיסמה היא"}.
-{"The password of your Jabber account was successfully changed.","סיסמת חשבון Jabber שונתה בהצלחה."}.
 {"The type of node data, usually specified by the namespace of the payload (if any)","סוג מידע ממסר, לרוב מצוין לפי מרחב־שמות של מטען הייעוד (אם בכלל)"}.
 {"There was an error changing the password: ","אירעה שגיאה בשינוי הסיסמה: "}.
 {"There was an error creating the account: ","אירעה שגיאה ביצירת החשבון: "}.
 {"There was an error deleting the account: ","אירעה שגיאה במחיקת החשבון: "}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","חלק זה אינו ער לרישיות: macbeth הינה זהה למחרוזת MacBeth וגם Macbeth."}.
-{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","עמוד זה מתיר ליצור חשבון Jabber בשרת Jabber זה. כתובת JID ‏(Jabber IDentifier) תגובש באופן של: username@server. אנא קרא בזהירות את ההוראות למילוי נכון של השדות."}.
-{"This page allows to unregister a Jabber account in this Jabber server.","עמוד זה מתיר לך לבטל רישום של חשבון Jabber בתוך שרת Jabber זה."}.
 {"This room is not anonymous","חדר זה אינו אנונימי"}.
 {"Thursday","יום חמישי"}.
 {"Time delay","זמן שיהוי"}.
@@ -370,7 +361,6 @@
 {"Unable to generate a CAPTCHA","אין אפשרות להפיק CAPTCHA"}.
 {"Unauthorized","לא מורשה"}.
 {"Unexpected action","פעולה לא צפויה"}.
-{"Unregister a Jabber account","בטל רישום חשבון Jabber"}.
 {"Unregister","בטל רישום"}.
 {"Update message of the day (don't send)","עדכן את בשורת היום (אל תשלח)"}.
 {"Update message of the day on all hosts (don't send)","עדכן את בשורת היום בכל המארחים (אל תשלח)"}.
@@ -404,7 +394,6 @@
 {"Wednesday","יום רביעי"}.
 {"When to send the last published item","מתי לשלוח את הפריט המפורסם האחרון"}.
 {"Whether to allow subscriptions","האם להתיר הרשמות"}.
-{"You can later change your password using a Jabber client.","באפשרותך לשנות את הסיסמה שלך מאוחר יותר באמצעות לקוח Jabber."}.
 {"You have been banned from this room","נאסרת מן חדר זה"}.
 {"You have joined too many conferences","הצטרפת ליותר מדי ועידות"}.
 {"You must fill in field \"Nickname\" in the form","עליך למלא את השדה \"שם כינוי\" בתוך התבנית"}.
@@ -413,7 +402,5 @@
 {"You need an x:data capable client to search","עליך להשתמש בלקוח אשר מסוגל להבין x:data כדי לחפש"}.
 {"Your active privacy list has denied the routing of this stanza.","רשימת הפרטיות הפעילה שלך אסרה את הניתוב של סטנזה זו."}.
 {"Your contact offline message queue is full. The message has been discarded.","תור הודעות קשר לא מקוונות הינו מלא. ההודעה סולקה."}.
-{"Your Jabber account was successfully created.","חשבון Jabber נוצר בהצלחה."}.
-{"Your Jabber account was successfully deleted.","חשבון Jabber נמחק בהצלחה."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","ההודעות שלך לערוץ ~s הינן חסומות. כדי לבטל את חסימתן, בקר בכתובת ~s"}.
 {"You're not allowed to create nodes","אינך מורשה ליצור צמתים"}.

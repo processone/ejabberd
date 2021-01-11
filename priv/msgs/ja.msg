@@ -65,7 +65,6 @@
 {"Deliver payloads with event notifications","イベント通知と同時にペイロードを配送する"}.
 {"Description:","説明:"}.
 {"Disc only copy","ディスクだけのコピー"}.
-{"Don't tell your password to anybody, not even the administrators of the Jabber server.","パスワードは誰にも教えないようにしてください。Jabber サーバーの管理者があなたにパスワードを尋ねることはありません。"}.
 {"Dump Backup to Text File at ","テキストファイルにバックアップ: "}.
 {"Dump to Text File","テキストファイルに出力"}.
 {"Edit Properties","プロパティを編集"}.
@@ -87,7 +86,6 @@
 {"Enter path to jabberd14 spool file","jabberd14 spool ファイルのパスを入力してください"}.
 {"Enter path to text file","テキストファイルのパスを入力してください"}.
 {"Enter the text you see","見えているテキストを入力してください"}.
-{"Erlang Jabber Server","Erlang Jabber Server"}.
 {"Error","エラー"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","CAPTCHA 入力を免除する Jabber ID"}.
 {"Export all tables as SQL queries to a file:","すべてのテーブルをSQL形式でファイルにエクスポート: "}.
@@ -129,7 +127,6 @@
 {"It is not allowed to send private messages of type \"groupchat\"","種別が\"groupchat\" であるプライベートメッセージを送信することはできません"}.
 {"It is not allowed to send private messages to the conference","この会議にプライベートメッセージを送信することはできません"}.
 {"It is not allowed to send private messages","プライベートメッセージを送信することはできません"}.
-{"Jabber Account Registration","Jabber アカウント登録"}.
 {"Jabber ID","Jabber ID"}.
 {"January","1月"}.
 {"joins the room","がチャットルームに参加しました"}.
@@ -156,7 +153,6 @@
 {"May","5月"}.
 {"Membership is required to enter this room","このチャットルームに入るにはメンバーでなければなりません"}.
 {"Members:","メンバー:"}.
-{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","パスワードは記憶するか、紙に書いて安全な場所に保管してください。もしあなたがパスワードを忘れてしまった場合、Jabber ではパスワードのリカバリを自動的に行うことはできません。"}.
 {"Memory","メモリ"}.
 {"Message body","本文"}.
 {"Middle Name","ミドルネーム"}.
@@ -236,7 +232,6 @@
 {"RAM copy","RAM コピー"}.
 {"Really delete message of the day?","本当にお知らせメッセージを削除しますか ?"}.
 {"Recipient is not in the conference room","受信者はこの会議室にいません"}.
-{"Register a Jabber account","Jabber アカウントを登録"}.
 {"Registered Users","登録ユーザー"}.
 {"Registered Users:","登録ユーザー:"}.
 {"Register","登録"}.
@@ -279,7 +274,6 @@
 {"Show Integral Table","累積の表を表示"}.
 {"Show Ordinary Table","通常の表を表示"}.
 {"Shut Down Service","サービスを停止"}.
-{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Jabber クライアントはコンピューターにパスワードを記憶できます。コンピューターが安全であると信頼できる場合にのみ、この機能を使用してください。"}.
 {"Specify the access model","アクセスモデルを設定する"}.
 {"Specify the event message type","イベントメッセージ種別を設定"}.
 {"Specify the publisher model","公開モデルを指定する"}.
@@ -303,13 +297,10 @@
 {"The collections with which a node is affiliated","提携されたノードの集合です"}.
 {"The password is too weak","このパスワードは単純過ぎます"}.
 {"the password is","パスワードは"}.
-{"The password of your Jabber account was successfully changed.","Jabber アカウントのパスワード変更に成功しました。"}.
 {"There was an error changing the password: ","パスワードの変更中にエラーが発生しました: "}.
 {"There was an error creating the account: ","アカウントの作成中にエラーが発生しました: "}.
 {"There was an error deleting the account: ","アカウントの削除中にエラーが発生しました: "}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","大文字と小文字は区別しません: macbeth は MacBeth や Macbeth と同じです。"}.
-{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","ここはこの Jabber サーバーにアカウントを作成するページです。あなたの JID (JabberID) は username@server のような形式になります。注意事項どおり、正しく項目を記入してください。"}.
-{"This page allows to unregister a Jabber account in this Jabber server.","このページはサーバー上のJabberアカウントを削除するページです。"}.
 {"This room is not anonymous","このチャットルームは非匿名です"}.
 {"Thursday","木曜日"}.
 {"Time delay","遅延時間"}.
@@ -327,7 +318,6 @@
 {"Tuesday","火曜日"}.
 {"Unable to generate a CAPTCHA","CAPTCHA を生成できません"}.
 {"Unauthorized","認証されていません"}.
-{"Unregister a Jabber account","Jabber アカウントを削除"}.
 {"Unregister","削除"}.
 {"Update message of the day (don't send)","お知らせメッセージを更新 (送信しない)"}.
 {"Update message of the day on all hosts (don't send)","全ホストのお知らせメッセージを更新 (送信しない)"}.
@@ -354,7 +344,6 @@
 {"Wednesday","水曜日"}.
 {"When to send the last published item","最後の公開アイテムを送信するタイミングで"}.
 {"Whether to allow subscriptions","購読を許可するかどうか"}.
-{"You can later change your password using a Jabber client.","あなたは後で Jabber クライアントを使用してパスワードを変更できます。"}.
 {"You have been banned from this room","あなたはこのチャットルームからバンされています"}.
 {"You must fill in field \"Nickname\" in the form","フォームの\"ニックネーム\"欄を入力する必要があります"}.
 {"You need a client that supports x:data and CAPTCHA to register","登録を行うには x:data と CAPTCHA をサポートするクライアントが必要です"}.
@@ -362,6 +351,4 @@
 {"You need an x:data capable client to search","検索を行うためには x:data をサポートするクライアントが必要です"}.
 {"Your active privacy list has denied the routing of this stanza.","あなたのプライバシーリストはこのスタンザのルーティングを拒否しました。"}.
 {"Your contact offline message queue is full. The message has been discarded.","相手先のオフラインメッセージキューが一杯です。このメッセージは破棄されます。"}.
-{"Your Jabber account was successfully created.","Jabber アカウントの作成に成功しました。"}.
-{"Your Jabber account was successfully deleted.","Jabber アカウントの削除に成功しました。"}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","~s 宛のメッセージはブロックされています。解除するにはこちらを見てください ~s"}.

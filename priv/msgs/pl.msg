@@ -73,7 +73,6 @@
 {"Deliver payloads with event notifications","Dostarczaj zawartość publikacji wraz z powiadomieniami o zdarzeniach"}.
 {"Description:","Opis:"}.
 {"Disc only copy","Kopia tylko na dysku"}.
-{"Don't tell your password to anybody, not even the administrators of the Jabber server.","Nie podawaj swojego hasła nikomu, nawet administratorowi serwera Jabber."}.
 {"Dump Backup to Text File at ","Zapisz kopię zapasową w pliku tekstowym na "}.
 {"Dump to Text File","Wykonaj kopie do pliku tekstowego"}.
 {"Duplicated groups are not allowed by RFC6121","Duplikaty grup nie są dozwolone"}.
@@ -97,7 +96,6 @@
 {"Enter path to jabberd14 spool file","Wprowadź ścieżkę do roboczego pliku serwera jabberd14"}.
 {"Enter path to text file","Wprowadź scieżkę do pliku tekstowego"}.
 {"Enter the text you see","Przepisz tekst z obrazka"}.
-{"Erlang Jabber Server","Erlang Jabber Server"}.
 {"Error","Błąd"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Pomiń Jabber ID z żądania CAPTCHA"}.
 {"Export all tables as SQL queries to a file:","Wyeksportuj wszystkie tabele jako zapytania SQL do pliku:"}.
@@ -159,7 +157,6 @@
 {"It is not allowed to send private messages of type \"groupchat\"","Nie można wysyłać prywatnych wiadomości typu \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Nie wolno wysyłac prywatnych wiadomości na konferencję"}.
 {"It is not allowed to send private messages","Wysyłanie prywatnych wiadomości jest zabronione"}.
-{"Jabber Account Registration","Zakładanie konta Jabber"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Styczeń"}.
 {"joins the room","dołącza do pokoju"}.
@@ -187,7 +184,6 @@
 {"May","Maj"}.
 {"Members:","Członkowie:"}.
 {"Membership is required to enter this room","Musisz być na liście członków tego pokoju aby do niego wejść"}.
-{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Zapamiętaj swoje hasło lub zapisz je na kartce i zachowaj w bezpiecznym miejscu. Na Jabberze nie ma zautomatyzowanego systemu odzyskiwania haseł."}.
 {"Memory","Pamięć"}.
 {"Message body","Treść wiadomości"}.
 {"Message not found in forwarded payload","Nie znaleziona wiadomości w przesyłanych dalej danych"}.
@@ -300,7 +296,6 @@
 {"RAM copy","Kopia w pamięci RAM"}.
 {"Really delete message of the day?","Na pewno usunąć wiadomość dnia?"}.
 {"Recipient is not in the conference room","Odbiorcy nie ma w pokoju"}.
-{"Register a Jabber account","Załóż konto Jabber"}.
 {"Registered Users","Użytkownicy zarejestrowani"}.
 {"Registered Users:","Użytkownicy zarejestrowani:"}.
 {"Register","Zarejestruj"}.
@@ -343,7 +338,6 @@
 {"Show Integral Table","Pokaż tabelę całkowitą"}.
 {"Show Ordinary Table","Pokaż zwykłą tabelę"}.
 {"Shut Down Service","Wyłącz usługę"}.
-{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Niektóre klienty Jabber mogą zapisywać Twoje hasło na komputerze. Używaj tej opcji tylko jeśli ufasz komputerowi na którym pracujesz."}.
 {"Specify the access model","Określ model dostępu"}.
 {"Specify the event message type","Określ typ wiadomości"}.
 {"Specify the publisher model","Określ model publikującego"}.
@@ -370,7 +364,6 @@
 {"The password contains unacceptable characters","Hasło zawiera niedopuszczalne znaki"}.
 {"The password is too weak","Hasło nie jest wystarczająco trudne"}.
 {"the password is","hasło to:"}.
-{"The password of your Jabber account was successfully changed.","Hasło do Twojego konta zostało zmienione."}.
 {"The query is only allowed from local users","To żądanie jest dopuszczalne wyłącznie dla lokalnych użytkowników"}.
 {"The query must not contain <item/> elements","Żądanie nie może zawierać elementów <item/>"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Żądanie może zawierać wyłącznie jeden z elementów <active/>, <default/> lub <list/>"}.
@@ -378,8 +371,6 @@
 {"There was an error creating the account: ","Wystąpił błąd podczas tworzenia konta: "}.
 {"There was an error deleting the account: ","Podczas usuwania konta wystąpił błąd: "}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Pole nie rozróżnia wielkości liter: słowo Hanna jest takie samo jak hAnna lub haNNa."}.
-{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Niniejsza strona pozwala na założenie konta Jabber na tym serwerze. Twój JID (Jabber IDentyfikator) będzie miał postać: nazwa_użytkownika@serwer. Przeczytaj dokładnie instrukcję i wypełnij pola."}.
-{"This page allows to unregister a Jabber account in this Jabber server.","Ta strona pozwala usunąć konto Jabber z tego serwera."}.
 {"This room is not anonymous","Ten pokój nie jest anonimowy"}.
 {"Thursday","Czwartek"}.
 {"Time delay","Opóźnienie"}.
@@ -405,7 +396,6 @@
 {"Unable to register route on existing local domain","Nie można zarejestrować trasy dla lokalnej domeny"}.
 {"Unauthorized","Nie autoryzowano"}.
 {"Unexpected action","Nieoczekiwana akcja"}.
-{"Unregister a Jabber account","Usuń konto Jabber"}.
 {"Unregister","Wyrejestruj"}.
 {"Unsupported <index/> element","Nieobsługiwany element <index/>"}.
 {"Update message of the day (don't send)","Aktualizuj wiadomość dnia (bez wysyłania)"}.
@@ -442,7 +432,6 @@
 {"Wednesday","Środa"}.
 {"When to send the last published item","Kiedy wysłać ostatnio opublikowaną rzecz"}.
 {"Whether to allow subscriptions","Czy pozwolić na subskrypcje"}.
-{"You can later change your password using a Jabber client.","Możesz później zmienić swoje hasło za pomocą dowolnego klienta Jabber."}.
 {"You have been banned from this room","Zostałeś wykluczony z tego pokoju"}.
 {"You have joined too many conferences","Dołączyłeś do zbyt wielu konferencji"}.
 {"You must fill in field \"Nickname\" in the form","Musisz wypełnić pole \"Nazwa użytkownika\" w formularzu"}.
@@ -451,7 +440,5 @@
 {"You need an x:data capable client to search","Potrzebujesz klienta obsługującego x:data aby wyszukiwać"}.
 {"Your active privacy list has denied the routing of this stanza.","Aktualna lista prywatności zabrania przesyłania tej stanzy."}.
 {"Your contact offline message queue is full. The message has been discarded.","Kolejka wiadomości offline adresata jest pełna. Wiadomość została odrzucona."}.
-{"Your Jabber account was successfully created.","Twoje konto zostało stworzone."}.
-{"Your Jabber account was successfully deleted.","Twoje konto zostało usunięte."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Twoje wiadomości do ~s są blokowane. Aby je odblokować, odwiedź ~s"}.
 {"You're not allowed to create nodes","Nie masz uprawnień do tworzenia węzłów"}.

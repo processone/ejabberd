@@ -79,7 +79,6 @@
 {"Delete User","Felhasználó törlése"}.
 {"Description:","Leírás:"}.
 {"Disc only copy","Csak lemez másolása"}.
-{"Don't tell your password to anybody, not even the administrators of the Jabber server.","Ne árulja el a jelszavát senkinek, még a Jabber-kiszolgáló adminisztrátorainak sem."}.
 {"Dump Backup to Text File at ","Biztonsági mentés kiírása szövegfájlba itt: "}.
 {"Dump to Text File","Kiírás szövegfájlba"}.
 {"Duplicated groups are not allowed by RFC6121","A kettőzött csoportok nem engedélyezettek az RFC6121 alapján"}.
@@ -104,7 +103,6 @@
 {"Enter path to jabberd14 spool file","Adja meg a jabberd14 tárolófájl útvonalát"}.
 {"Enter path to text file","Adja meg a szövegfájl útvonalát"}.
 {"Enter the text you see","Írja be a látott szöveget"}.
-{"Erlang Jabber Server","Erlang Jabber-kiszolgáló"}.
 {"Error","Hiba"}.
 {"Export all tables as SQL queries to a file:","Összes tábla exportálása SQL-lekérdezésekként egy fájlba:"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","A kiszolgálón lévő összes felhasználó adatainak exportálása PIEFXIS-fájlokba (XEP-0227):"}.
@@ -118,7 +116,6 @@
 {"Family Name","Családnév"}.
 {"February","február"}.
 {"File larger than ~w bytes","A fájl nagyobb ~w bájtnál"}.
-{"Fill in the form to search for any matching Jabber User","Töltse ki az űrlapot bármely egyező Jabber-felhasználóra való kereséshez"}.
 {"Friday","péntek"}.
 {"From ~ts","Feladó: ~ts"}.
 {"From","Feladó"}.
@@ -171,7 +168,6 @@
 {"It is not allowed to send private messages of type \"groupchat\"","Nem engedélyezett „groupchat” típusú személyes üzeneteket küldeni"}.
 {"It is not allowed to send private messages to the conference","Nem engedélyezett személyes üzeneteket küldeni a konferenciába"}.
 {"It is not allowed to send private messages","Nem engedélyezett személyes üzeneteket küldeni"}.
-{"Jabber Account Registration","Jabber-fiók regisztráció"}.
 {"Jabber ID","Jabber-azonosító"}.
 {"January","január"}.
 {"JID normalization denied by service policy","A Jabber-azonosító normalizálása megtagadva a szolgáltatási irányelv miatt"}.
@@ -200,7 +196,6 @@
 {"May","május"}.
 {"Membership is required to enter this room","Tagság szükséges a szobába lépéshez"}.
 {"Members:","Tagok:"}.
-{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Jegyezze meg a jelszavát, vagy írja fel egy biztonságos helyen lévő papírra. A Jabber nem nyújt automatizált módszert a jelszó visszaállítására, ha elfelejti azt."}.
 {"Memory","Memória"}.
 {"Message body","Üzenettörzs"}.
 {"Message not found in forwarded payload","Nem található üzenet a továbbított adatokban"}.
@@ -315,7 +310,6 @@
 {"RAM copy","RAM másolás"}.
 {"Really delete message of the day?","Valóban törli a napi üzenetet?"}.
 {"Recipient is not in the conference room","A címzett nincs a konferenciaszobában"}.
-{"Register a Jabber account","Jabber-fiók regisztrációja"}.
 {"Registered Users","Regisztrált felhasználók"}.
 {"Registered Users:","Regisztrált felhasználók:"}.
 {"Register","Regisztráció"}.
@@ -363,7 +357,6 @@
 {"Show Ordinary Table","Szokásos táblázat megjelenítése"}.
 {"Shut Down Service","Szolgáltatás leállítása"}.
 {"SOCKS5 Bytestreams","SOCKS5 bájtfolyamok"}.
-{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Néhány Jabber program el tudja tárolni a jelszavát a számítógépen, de ezt csak a saját személyi számítógépén kell megtennie biztonsági okokból."}.
 {"Statistics of ~p","~p statisztikái"}.
 {"Statistics","Statisztikák"}.
 {"Stop","Leállítás"}.
@@ -390,7 +383,6 @@
 {"The password contains unacceptable characters","A jelszó elfogadhatatlan karaktereket tartalmaz"}.
 {"The password is too weak","A jelszó túl gyenge"}.
 {"the password is","a jelszó"}.
-{"The password of your Jabber account was successfully changed.","A Jabber-fiókjának jelszava sikeresen megváltoztatva."}.
 {"The password was not changed","A jelszó nem lett megváltoztatva"}.
 {"The passwords are different","A jelszavak különböznek"}.
 {"The query is only allowed from local users","A lekérdezés csak helyi felhasználóktól engedélyezett"}.
@@ -401,8 +393,6 @@
 {"There was an error creating the account: ","Hiba történt a fiók létrehozásakor: "}.
 {"There was an error deleting the account: ","Hiba történt a fiók törlésekor: "}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Ez érzékeny a kis- és nagybetűkre: a macbeth ugyanaz mint a MacBeth és Macbeth."}.
-{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Ez az oldal lehetővé teszi egy Jabber-fiók létrehozását ezen a Jabber-kiszolgálón. A JID (Jabber-azonosító) a következő alakú lesz: felhasználónév@kiszolgáló. Alaposan olvassa el az utasításokat a mezők helyes kitöltéséhez."}.
-{"This page allows to unregister a Jabber account in this Jabber server.","Ez az oldal lehetővé teszi egy Jabber-fiók regisztrációjának törlését ezen a Jabber-kiszolgálón."}.
 {"This room is not anonymous","Ez a szoba nem névtelen"}.
 {"This service can not process the address: ~s","Ez a szolgáltatás nem tudja feldolgozni a címet: ~s"}.
 {"Thursday","csütörtök"}.
@@ -435,7 +425,6 @@
 {"Unauthorized","Nem engedélyezett"}.
 {"Unexpected action","Váratlan művelet"}.
 {"Unexpected error condition: ~p","Váratlan hibafeltétel: ~p"}.
-{"Unregister a Jabber account","Jabber-fiók regisztrációjának törlése"}.
 {"Unregister","Regisztráció törlése"}.
 {"Unselect All","Összes kijelölésének megszüntetése"}.
 {"Unsupported <index/> element","Nem támogatott <index/> elem"}.
@@ -476,7 +465,6 @@
 {"Wrong xmlns","Hibás xmlns"}.
 {"You are being removed from the room because of a system shutdown","El lett távolítva a szobából egy rendszerleállítás miatt"}.
 {"You are not joined to the channel","Nincs csatlakozva a csatornához"}.
-{"You can later change your password using a Jabber client.","Később megváltoztathatja a jelszavát egy Jabber program használatával."}.
 {"You have been banned from this room","Ki lett tiltva ebből a szobából"}.
 {"You have joined too many conferences","Túl sok konferenciához csatlakozott"}.
 {"You must fill in field \"Nickname\" in the form","Ki kell töltenie a „becenév” mezőt az űrlapon"}.
@@ -485,7 +473,5 @@
 {"You need an x:data capable client to search","Egy x:data támogatású programra van szüksége a kereséshez"}.
 {"Your active privacy list has denied the routing of this stanza.","Az aktív adatvédelmi listája megtagadta ennek a stanzának az útválasztását."}.
 {"Your contact offline message queue is full. The message has been discarded.","A partnere kapcsolat nélküli üzenettárolója megtelt. Az üzenet el lett dobva."}.
-{"Your Jabber account was successfully created.","A Jabber-fiókja sikeresen létrehozva."}.
-{"Your Jabber account was successfully deleted.","A Jabber-fiókja sikeresen törölve."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","A feliratkozási kérelme és/vagy ~s számára küldött üzenetei blokkolva lettek. A feliratkozási kérelmének feloldásához látogassa meg ezt az oldalt: ~s"}.
 {"You're not allowed to create nodes","Önnek nincs engedélye csomópontokat létrehozni"}.

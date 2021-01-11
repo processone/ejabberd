@@ -547,9 +547,10 @@ msgid "Displayed:"
 msgstr "Groupes affichés:"
 
 #: src/mod_register_web.erl:283
+#, fuzzy
 msgid ""
-"Don't tell your password to anybody, not even the administrators of the "
-"Jabber server."
+"Don't tell your password to anybody, not even the administrators of the XMPP "
+"server."
 msgstr ""
 "Ne révélez votre mot de passe à personne, pas même l'administrateur de ce "
 "serveur."
@@ -634,8 +635,9 @@ msgid "Enter the text you see"
 msgstr "Tapez le texte que vous voyez"
 
 #: src/mod_vcard.erl:213
-msgid "Erlang Jabber Server"
-msgstr "Serveur Jabber Erlang"
+#, fuzzy
+msgid "Erlang XMPP Server"
+msgstr "Serveur XMPP Erlang"
 
 #: src/ejabberd_web_admin.erl:1203
 msgid "Error"
@@ -710,8 +712,8 @@ msgstr "Taille de fichier suppérieur à ~w octets"
 
 #: src/mod_vcard.erl:458
 #, fuzzy
-msgid "Fill in the form to search for any matching Jabber User"
-msgstr "Remplissez les champs pour rechercher un utilisateur Jabber"
+msgid "Fill in the form to search for any matching XMPP User"
+msgstr "Remplissez les champs pour rechercher un utilisateur XMPP"
 
 #: src/mod_muc_log.erl:472
 msgid "Friday"
@@ -946,10 +948,6 @@ msgstr "La création de salons est interdite par le service"
 msgid "JID normalization failed"
 msgstr ""
 
-#: src/mod_register_web.erl:203 src/mod_register_web.erl:211
-msgid "Jabber Account Registration"
-msgstr "Enregistrement du Compte Jabber"
-
 #: src/mod_vcard_mnesia.erl:113 src/mod_configure.erl:995
 #: src/mod_configure.erl:1012 src/mod_configure.erl:1022
 #: src/mod_configure.erl:1032 src/mod_configure.erl:1042
@@ -1102,10 +1100,10 @@ msgid "Membership is required to enter this room"
 msgstr "Vous devez être membre pour accèder à ce salon"
 
 #: src/mod_register_web.erl:294
+#, fuzzy
 msgid ""
 "Memorize your password, or write it in a paper placed in a safe place. In "
-"Jabber there isn't an automated way to recover your password if you forget "
-"it."
+"XMPP there isn't an automated way to recover your password if you forget it."
 msgstr ""
 "Mémorisez votre mot de passe, ou écrivez-le sur un papier conservé dans un "
 "endroit secret. Dans Jabber il n'y a pas de mécanisme pour retrouver votre "
@@ -1820,8 +1818,9 @@ msgstr "Enregistrer"
 
 #: src/mod_register_web.erl:214 src/mod_register_web.erl:242
 #: src/mod_register_web.erl:250
-msgid "Register a Jabber account"
-msgstr "Enregistrer un compte Jabber"
+#, fuzzy
+msgid "Register an XMPP account"
+msgstr "Enregistrer un compte XMPP"
 
 #: src/ejabberd_web_admin.erl:588
 msgid "Registered Users"
@@ -2062,11 +2061,12 @@ msgid "Shut Down Service"
 msgstr "Arrêter le service"
 
 #: src/mod_register_web.erl:290
+#, fuzzy
 msgid ""
-"Some Jabber clients can store your password in the computer, but you should "
-"do this only in your personal computer for safety reasons."
+"Some XMPP clients can store your password in the computer, but you should do "
+"this only in your personal computer for safety reasons."
 msgstr ""
-"Certains clients Jabber peuvent stocker votre mot de passe sur votre "
+"Certains clients XMPP peuvent stocker votre mot de passe sur votre "
 "ordinateur. N'utilisez cette fonctionnalité que si vous avez confiance en la "
 "sécurité de votre ordinateur."
 
@@ -2338,8 +2338,9 @@ msgid "The password is too weak"
 msgstr "Le mot de passe est trop faible"
 
 #: src/mod_register_web.erl:146
-msgid "The password of your Jabber account was successfully changed."
-msgstr "Le mot de passe de votre compte Jabber a été changé avec succès."
+#, fuzzy
+msgid "The password of your XMPP account was successfully changed."
+msgstr "Le mot de passe de votre compte XMPP a été changé avec succès."
 
 #: src/mod_register_web.erl:613
 #, fuzzy
@@ -2409,19 +2410,21 @@ msgstr ""
 "C'est insensible à la casse : macbeth est identique à MacBeth et Macbeth."
 
 #: src/mod_register_web.erl:252
+#, fuzzy
 msgid ""
-"This page allows to create a Jabber account in this Jabber server. Your JID "
+"This page allows to create an XMPP account in this XMPP server. Your JID "
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
-"Cette page permet de créer un compte Jabber sur ce serveur Jabber. Votre JID "
+"Cette page permet de créer un compte XMPP sur ce serveur XMPP. Votre JID "
 "(Jabber IDentifier, identifiant Jabber) sera de la forme : nom@serveur. "
 "Prière de lire avec attention les instructions pour remplir correctement ces "
 "champs."
 
 #: src/mod_register_web.erl:507
-msgid "This page allows to unregister a Jabber account in this Jabber server."
-msgstr "Cette page permet d'effacer un compte Jabber sur ce serveur Jabber."
+#, fuzzy
+msgid "This page allows to unregister an XMPP account in this XMPP server."
+msgstr "Cette page permet d'effacer un compte XMPP sur ce serveur XMPP."
 
 #: src/mod_muc_log.erl:805
 msgid "This room is not anonymous"
@@ -2569,8 +2572,9 @@ msgstr "Désinscrire"
 
 #: src/mod_register_web.erl:219 src/mod_register_web.erl:497
 #: src/mod_register_web.erl:505
-msgid "Unregister a Jabber account"
-msgstr "Effacer un compte Jabber"
+#, fuzzy
+msgid "Unregister an XMPP account"
+msgstr "Effacer un compte XMPP"
 
 #: src/ejabberd_web_admin.erl:1417
 msgid "Unselect All"
@@ -2813,6 +2817,11 @@ msgstr ""
 msgid "Wrong xmlns"
 msgstr ""
 
+#: src/mod_register_web.erl:203 src/mod_register_web.erl:211
+#, fuzzy
+msgid "XMPP Account Registration"
+msgstr "Enregistrement du Compte XMPP"
+
 #: src/ejabberd_web_admin.erl:440
 msgid "XMPP Domains"
 msgstr ""
@@ -2849,10 +2858,10 @@ msgid "You are not joined to the channel"
 msgstr "Vous n'êtes pas autorisé à créer des nœuds"
 
 #: src/mod_register_web.erl:287
-msgid "You can later change your password using a Jabber client."
+#, fuzzy
+msgid "You can later change your password using an XMPP client."
 msgstr ""
-"Vous pouvez changer votre mot de passe plus tard en utilisant un client "
-"Jabber."
+"Vous pouvez changer votre mot de passe plus tard en utilisant un client XMPP."
 
 #: src/mod_muc_room.erl:2091
 msgid "You have been banned from this room"
@@ -2888,12 +2897,14 @@ msgid "You're not allowed to create nodes"
 msgstr "Vous n'êtes pas autorisé à créer des nœuds"
 
 #: src/mod_register_web.erl:118
-msgid "Your Jabber account was successfully created."
-msgstr "Votre compte Jabber a été créé avec succès."
+#, fuzzy
+msgid "Your XMPP account was successfully created."
+msgstr "Votre compte XMPP a été créé avec succès."
 
 #: src/mod_register_web.erl:131
-msgid "Your Jabber account was successfully deleted."
-msgstr "Votre compte Jabber a été effacé avec succès."
+#, fuzzy
+msgid "Your XMPP account was successfully deleted."
+msgstr "Votre compte XMPP a été effacé avec succès."
 
 #: src/ejabberd_c2s.erl:704 src/ejabberd_c2s.erl:860
 msgid "Your active privacy list has denied the routing of this stanza."

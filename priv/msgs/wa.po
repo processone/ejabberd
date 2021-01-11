@@ -549,10 +549,11 @@ msgid "Displayed:"
 msgstr "Groupes håynés:"
 
 #: src/mod_register_web.erl:283
+#, fuzzy
 msgid ""
-"Don't tell your password to anybody, not even the administrators of the "
-"Jabber server."
-msgstr "Ni dnez vosse sicret a nolu, nén ddja ås manaedjeus do sierveu Jabber."
+"Don't tell your password to anybody, not even the administrators of the XMPP "
+"server."
+msgstr "Ni dnez vosse sicret a nolu, nén ddja ås manaedjeus do sierveu XMPP."
 
 #: src/mod_configure.erl:880
 msgid "Dump Backup to Text File at "
@@ -634,8 +635,9 @@ msgid "Enter the text you see"
 msgstr "Tapez l' tecse ki vos voeyoz"
 
 #: src/mod_vcard.erl:213
-msgid "Erlang Jabber Server"
-msgstr "Sierveu Jabber Erlang"
+#, fuzzy
+msgid "Erlang XMPP Server"
+msgstr "Sierveu XMPP Erlang"
 
 #: src/ejabberd_web_admin.erl:1203
 msgid "Error"
@@ -711,8 +713,8 @@ msgstr ""
 
 #: src/mod_vcard.erl:458
 #, fuzzy
-msgid "Fill in the form to search for any matching Jabber User"
-msgstr "Rimplixhoz les tchamps po cweri èn uzeu Jabber"
+msgid "Fill in the form to search for any matching XMPP User"
+msgstr "Rimplixhoz les tchamps po cweri èn uzeu XMPP"
 
 #: src/mod_muc_log.erl:472
 msgid "Friday"
@@ -948,10 +950,6 @@ msgstr "L' ahivaedje del såle est rfuzé pal politike do siervice"
 msgid "JID normalization failed"
 msgstr ""
 
-#: src/mod_register_web.erl:203 src/mod_register_web.erl:211
-msgid "Jabber Account Registration"
-msgstr "Edjîstraedje di conte Jabber"
-
 #: src/mod_vcard_mnesia.erl:113 src/mod_configure.erl:995
 #: src/mod_configure.erl:1012 src/mod_configure.erl:1022
 #: src/mod_configure.erl:1032 src/mod_configure.erl:1042
@@ -1105,13 +1103,13 @@ msgid "Membership is required to enter this room"
 msgstr "I fåt esse mimbe po poleur intrer dins cisse såle ci"
 
 #: src/mod_register_web.erl:294
+#, fuzzy
 msgid ""
 "Memorize your password, or write it in a paper placed in a safe place. In "
-"Jabber there isn't an automated way to recover your password if you forget "
-"it."
+"XMPP there isn't an automated way to recover your password if you forget it."
 msgstr ""
 "Rimimbrez vosse sicret, ou scrijhoz l' so on papî ki vos wådroz en ene place "
-"bén a hoûte, ca avou Jabber i n' a pont moyén di rapexhî vosse sicret si vos "
+"bén a hoûte, ca avou XMPP i n' a pont moyén di rapexhî vosse sicret si vos "
 "l' rovyîz."
 
 #: src/ejabberd_web_admin.erl:1181
@@ -1826,8 +1824,9 @@ msgstr "Edjîstrer"
 
 #: src/mod_register_web.erl:214 src/mod_register_web.erl:242
 #: src/mod_register_web.erl:250
-msgid "Register a Jabber account"
-msgstr "Edjîstrer on conte Jabber"
+#, fuzzy
+msgid "Register an XMPP account"
+msgstr "Edjîstrer on conte XMPP"
 
 #: src/ejabberd_web_admin.erl:588
 msgid "Registered Users"
@@ -2066,11 +2065,12 @@ msgid "Shut Down Service"
 msgstr "Arester siervice"
 
 #: src/mod_register_web.erl:290
+#, fuzzy
 msgid ""
-"Some Jabber clients can store your password in the computer, but you should "
-"do this only in your personal computer for safety reasons."
+"Some XMPP clients can store your password in the computer, but you should do "
+"this only in your personal computer for safety reasons."
 msgstr ""
-"Des cliyints Jabber k' i gn a polèt wårder vosse sicret sol copiutrece, mins "
+"Des cliyints XMPP k' i gn a polèt wårder vosse sicret sol copiutrece, mins "
 "vos n' duvrîz fé çoula ki sol copiutrece da vosse, po des råjhons di såvrité."
 
 #: deps/xmpp/src/pubsub_node_config.erl:1344
@@ -2257,7 +2257,7 @@ msgstr ""
 #: src/mod_register_web.erl:611
 #, fuzzy
 msgid "The account was not deleted"
-msgstr "Li conte Jabber da vosse a stî disfacé comifåt."
+msgstr "Li conte XMPP da vosse a stî disfacé comifåt."
 
 #: deps/xmpp/src/push_summary.erl:397
 msgid "The body text of the last received message"
@@ -2340,8 +2340,9 @@ msgid "The password is too weak"
 msgstr "li scret est trop flåw"
 
 #: src/mod_register_web.erl:146
-msgid "The password of your Jabber account was successfully changed."
-msgstr "Li scret do conte Jabber da vosse a stî candjî comifåt."
+#, fuzzy
+msgid "The password of your XMPP account was successfully changed."
+msgstr "Li scret do conte XMPP da vosse a stî candjî comifåt."
 
 #: src/mod_register_web.erl:613
 #, fuzzy
@@ -2412,18 +2413,20 @@ msgstr ""
 "ki «MacBeth» ou co «Macbeth»"
 
 #: src/mod_register_web.erl:252
+#, fuzzy
 msgid ""
-"This page allows to create a Jabber account in this Jabber server. Your JID "
+"This page allows to create an XMPP account in this XMPP server. Your JID "
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
-"Cisse pådje permete d' ahiver on conte Jabber so ç' sierveu Jabber ci. Li "
-"JID (IDintifieu Jabber) da vosse serè del cogne: noduzeu@sierveu. Lijhoz "
+"Cisse pådje permete d' ahiver on conte XMPP so ç' sierveu XMPP ci. Li JID "
+"(IDintifieu Jabber) da vosse serè del cogne: noduzeu@sierveu. Lijhoz "
 "atintivmint les instruccions po bén rimpli les tchamps."
 
 #: src/mod_register_web.erl:507
-msgid "This page allows to unregister a Jabber account in this Jabber server."
-msgstr "Cisse pådje permete di disdjîstrer on conte Jabber so ç' sierveu ci."
+#, fuzzy
+msgid "This page allows to unregister an XMPP account in this XMPP server."
+msgstr "Cisse pådje permete di disdjîstrer on conte XMPP so ç' sierveu ci."
 
 #: src/mod_muc_log.erl:805
 msgid "This room is not anonymous"
@@ -2572,8 +2575,9 @@ msgstr "Disdjîstrer"
 
 #: src/mod_register_web.erl:219 src/mod_register_web.erl:497
 #: src/mod_register_web.erl:505
-msgid "Unregister a Jabber account"
-msgstr "Disdjîstrer on conte Jabber"
+#, fuzzy
+msgid "Unregister an XMPP account"
+msgstr "Disdjîstrer on conte XMPP"
 
 #: src/ejabberd_web_admin.erl:1417
 msgid "Unselect All"
@@ -2811,6 +2815,11 @@ msgstr ""
 msgid "Wrong xmlns"
 msgstr ""
 
+#: src/mod_register_web.erl:203 src/mod_register_web.erl:211
+#, fuzzy
+msgid "XMPP Account Registration"
+msgstr "Edjîstraedje di conte XMPP"
+
 #: src/ejabberd_web_admin.erl:440
 msgid "XMPP Domains"
 msgstr ""
@@ -2847,8 +2856,9 @@ msgid "You are not joined to the channel"
 msgstr "Ci n' est nén permetou d' evoyî des messaedjes privés"
 
 #: src/mod_register_web.erl:287
-msgid "You can later change your password using a Jabber client."
-msgstr "Vos ploz candjî vosse sicret pus tård avou on cliyint Jabber."
+#, fuzzy
+msgid "You can later change your password using an XMPP client."
+msgstr "Vos ploz candjî vosse sicret pus tård avou on cliyint XMPP."
 
 #: src/mod_muc_room.erl:2091
 msgid "You have been banned from this room"
@@ -2882,12 +2892,14 @@ msgid "You're not allowed to create nodes"
 msgstr "Ci n' est nén permetou d' evoyî des messaedjes privés"
 
 #: src/mod_register_web.erl:118
-msgid "Your Jabber account was successfully created."
-msgstr "Li conte Jabber da vosse a stî ahivé comifåt."
+#, fuzzy
+msgid "Your XMPP account was successfully created."
+msgstr "Li conte XMPP da vosse a stî ahivé comifåt."
 
 #: src/mod_register_web.erl:131
-msgid "Your Jabber account was successfully deleted."
-msgstr "Li conte Jabber da vosse a stî disfacé comifåt."
+#, fuzzy
+msgid "Your XMPP account was successfully deleted."
+msgstr "Li conte XMPP da vosse a stî disfacé comifåt."
 
 #: src/ejabberd_c2s.erl:704 src/ejabberd_c2s.erl:860
 msgid "Your active privacy list has denied the routing of this stanza."

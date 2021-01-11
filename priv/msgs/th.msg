@@ -63,7 +63,6 @@
 {"Enter path to jabberd14 spool dir","ป้อนพาธไปยัง jabberd14 spool dir"}.
 {"Enter path to jabberd14 spool file","ป้อนพาธไปยังไฟล์เก็บพักข้อมูล jabberd14"}.
 {"Enter path to text file","ป้อนพาธของไฟล์ข้อความ"}.
-{"Erlang Jabber Server","Erlang Jabber Server"}.
 {"Family Name","นามสกุล"}.
 {"February","กุมภาพันธ์"}.
 {"Friday","วันศุกร์"}.

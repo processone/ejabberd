@@ -545,12 +545,13 @@ msgid "Displayed:"
 msgstr "Mostrar grupos:"
 
 #: src/mod_register_web.erl:283
+#, fuzzy
 msgid ""
-"Don't tell your password to anybody, not even the administrators of the "
-"Jabber server."
+"Don't tell your password to anybody, not even the administrators of the XMPP "
+"server."
 msgstr ""
 "Non digas o teu contrasinal a ninguén, nin sequera os administradores do "
-"servidor Jabber."
+"servidor XMPP."
 
 #: src/mod_configure.erl:880
 msgid "Dump Backup to Text File at "
@@ -632,8 +633,9 @@ msgid "Enter the text you see"
 msgstr "Introduza o texto que ves"
 
 #: src/mod_vcard.erl:213
-msgid "Erlang Jabber Server"
-msgstr "Servidor Jabber en Erlang"
+#, fuzzy
+msgid "Erlang XMPP Server"
+msgstr "Servidor XMPP en Erlang"
 
 #: src/ejabberd_web_admin.erl:1203
 msgid "Error"
@@ -707,8 +709,8 @@ msgstr "O ficheiro é maior que ~w bytes"
 
 #: src/mod_vcard.erl:458
 #, fuzzy
-msgid "Fill in the form to search for any matching Jabber User"
-msgstr "Rechea campos para buscar usuarios Jabber que concuerden"
+msgid "Fill in the form to search for any matching XMPP User"
+msgstr "Rechea campos para buscar usuarios XMPP que concuerden"
 
 #: src/mod_muc_log.erl:472
 msgid "Friday"
@@ -941,10 +943,6 @@ msgstr "Denegar crear a sala por política do servizo"
 msgid "JID normalization failed"
 msgstr ""
 
-#: src/mod_register_web.erl:203 src/mod_register_web.erl:211
-msgid "Jabber Account Registration"
-msgstr "Rexistro de conta Jabber"
-
 #: src/mod_vcard_mnesia.erl:113 src/mod_configure.erl:995
 #: src/mod_configure.erl:1012 src/mod_configure.erl:1022
 #: src/mod_configure.erl:1032 src/mod_configure.erl:1042
@@ -1097,14 +1095,14 @@ msgid "Membership is required to enter this room"
 msgstr "Necesitas ser membro desta sala para poder entrar"
 
 #: src/mod_register_web.erl:294
+#, fuzzy
 msgid ""
 "Memorize your password, or write it in a paper placed in a safe place. In "
-"Jabber there isn't an automated way to recover your password if you forget "
-"it."
+"XMPP there isn't an automated way to recover your password if you forget it."
 msgstr ""
 "Memorice o seu contrasinal ou escribilo nun papel colocado nun lugar seguro. "
-"En Jabber non hai unha forma automatizada para recuperar o seu contrasinal "
-"si a esquece."
+"En XMPP non hai unha forma automatizada para recuperar o seu contrasinal si "
+"a esquece."
 
 #: src/ejabberd_web_admin.erl:1181
 msgid "Memory"
@@ -1811,8 +1809,9 @@ msgstr "Rexistrar"
 
 #: src/mod_register_web.erl:214 src/mod_register_web.erl:242
 #: src/mod_register_web.erl:250
-msgid "Register a Jabber account"
-msgstr "Rexistrar unha conta Jabber"
+#, fuzzy
+msgid "Register an XMPP account"
+msgstr "Rexistrar unha conta XMPP"
 
 #: src/ejabberd_web_admin.erl:588
 msgid "Registered Users"
@@ -2051,11 +2050,12 @@ msgid "Shut Down Service"
 msgstr "Deter o servizo"
 
 #: src/mod_register_web.erl:290
+#, fuzzy
 msgid ""
-"Some Jabber clients can store your password in the computer, but you should "
-"do this only in your personal computer for safety reasons."
+"Some XMPP clients can store your password in the computer, but you should do "
+"this only in your personal computer for safety reasons."
 msgstr ""
-"Algúns clientes Jabber pode almacenar o contrasinal no computador, pero debe "
+"Algúns clientes XMPP pode almacenar o contrasinal no computador, pero debe "
 "facer isto só no seu computador persoal por razóns de seguridade."
 
 #: deps/xmpp/src/pubsub_node_config.erl:1344
@@ -2326,8 +2326,9 @@ msgid "The password is too weak"
 msgstr "O contrasinal é demasiado débil"
 
 #: src/mod_register_web.erl:146
-msgid "The password of your Jabber account was successfully changed."
-msgstr "O contrasinal da súa conta Jabber cambiouse correctamente."
+#, fuzzy
+msgid "The password of your XMPP account was successfully changed."
+msgstr "O contrasinal da súa conta XMPP cambiouse correctamente."
 
 #: src/mod_register_web.erl:613
 #, fuzzy
@@ -2398,20 +2399,21 @@ msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
 msgstr "Esta é insensible: Macbeth é o mesmo que MacBeth e Macbeth."
 
 #: src/mod_register_web.erl:252
+#, fuzzy
 msgid ""
-"This page allows to create a Jabber account in this Jabber server. Your JID "
+"This page allows to create an XMPP account in this XMPP server. Your JID "
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
-"Esta páxina permite crear unha conta Jabber neste servidor Jabber. o seu JID "
+"Esta páxina permite crear unha conta XMPP neste servidor XMPP. o seu JID "
 "(Jabber IDentificador) será da forma: nomeusuario@servidor. Por favor le "
 "coidadosamente as instrucións para encher correctamente os campos."
 
 #: src/mod_register_web.erl:507
-msgid "This page allows to unregister a Jabber account in this Jabber server."
+#, fuzzy
+msgid "This page allows to unregister an XMPP account in this XMPP server."
 msgstr ""
-"Esta páxina permite anular o rexistro dunha conta Jabber neste servidor "
-"Jabber."
+"Esta páxina permite anular o rexistro dunha conta XMPP neste servidor XMPP."
 
 #: src/mod_muc_log.erl:805
 msgid "This room is not anonymous"
@@ -2559,8 +2561,9 @@ msgstr "Eliminar rexistro"
 
 #: src/mod_register_web.erl:219 src/mod_register_web.erl:497
 #: src/mod_register_web.erl:505
-msgid "Unregister a Jabber account"
-msgstr "Eliminar o rexistro dunha conta Jabber"
+#, fuzzy
+msgid "Unregister an XMPP account"
+msgstr "Eliminar o rexistro dunha conta XMPP"
 
 #: src/ejabberd_web_admin.erl:1417
 msgid "Unselect All"
@@ -2798,6 +2801,11 @@ msgstr ""
 msgid "Wrong xmlns"
 msgstr ""
 
+#: src/mod_register_web.erl:203 src/mod_register_web.erl:211
+#, fuzzy
+msgid "XMPP Account Registration"
+msgstr "Rexistro de conta XMPP"
+
 #: src/ejabberd_web_admin.erl:440
 msgid "XMPP Domains"
 msgstr ""
@@ -2834,9 +2842,9 @@ msgid "You are not joined to the channel"
 msgstr "Non tes permiso para crear nodos"
 
 #: src/mod_register_web.erl:287
-msgid "You can later change your password using a Jabber client."
-msgstr ""
-"Máis tarde, pode cambiar o seu contrasinal utilizando un cliente Jabber."
+#, fuzzy
+msgid "You can later change your password using an XMPP client."
+msgstr "Máis tarde, pode cambiar o seu contrasinal utilizando un cliente XMPP."
 
 #: src/mod_muc_room.erl:2091
 msgid "You have been banned from this room"
@@ -2868,12 +2876,14 @@ msgid "You're not allowed to create nodes"
 msgstr "Non tes permiso para crear nodos"
 
 #: src/mod_register_web.erl:118
-msgid "Your Jabber account was successfully created."
-msgstr "A súa conta Jabber creouse correctamente."
+#, fuzzy
+msgid "Your XMPP account was successfully created."
+msgstr "A súa conta XMPP creouse correctamente."
 
 #: src/mod_register_web.erl:131
-msgid "Your Jabber account was successfully deleted."
-msgstr "A súa conta Jabber eliminouse correctamente."
+#, fuzzy
+msgid "Your XMPP account was successfully deleted."
+msgstr "A súa conta XMPP eliminouse correctamente."
 
 #: src/ejabberd_c2s.erl:704 src/ejabberd_c2s.erl:860
 msgid "Your active privacy list has denied the routing of this stanza."

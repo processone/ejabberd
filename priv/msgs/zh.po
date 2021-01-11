@@ -544,10 +544,11 @@ msgid "Displayed:"
 msgstr "已显示的组:"
 
 #: src/mod_register_web.erl:283
+#, fuzzy
 msgid ""
-"Don't tell your password to anybody, not even the administrators of the "
-"Jabber server."
-msgstr "不要将密码告诉任何人, 就算是Jabber服务器的管理员也不可以."
+"Don't tell your password to anybody, not even the administrators of the XMPP "
+"server."
+msgstr "不要将密码告诉任何人, 就算是XMPP服务器的管理员也不可以."
 
 #: src/mod_configure.erl:880
 msgid "Dump Backup to Text File at "
@@ -629,8 +630,9 @@ msgid "Enter the text you see"
 msgstr "请输入您所看到的文本"
 
 #: src/mod_vcard.erl:213
-msgid "Erlang Jabber Server"
-msgstr "Erlang Jabber服务器"
+#, fuzzy
+msgid "Erlang XMPP Server"
+msgstr "Erlang XMPP服务器"
 
 #: src/ejabberd_web_admin.erl:1203
 msgid "Error"
@@ -701,8 +703,8 @@ msgstr "文件大于 ~w 字节"
 
 #: src/mod_vcard.erl:458
 #, fuzzy
-msgid "Fill in the form to search for any matching Jabber User"
-msgstr "填充字段以搜索任何匹配的Jabber用户"
+msgid "Fill in the form to search for any matching XMPP User"
+msgstr "填充字段以搜索任何匹配的XMPP用户"
 
 #: src/mod_muc_log.erl:472
 msgid "Friday"
@@ -934,10 +936,6 @@ msgstr "创建房间被服务策略拒绝"
 msgid "JID normalization failed"
 msgstr ""
 
-#: src/mod_register_web.erl:203 src/mod_register_web.erl:211
-msgid "Jabber Account Registration"
-msgstr "Jabber帐户注册"
-
 #: src/mod_vcard_mnesia.erl:113 src/mod_configure.erl:995
 #: src/mod_configure.erl:1012 src/mod_configure.erl:1022
 #: src/mod_configure.erl:1032 src/mod_configure.erl:1042
@@ -1091,13 +1089,13 @@ msgid "Membership is required to enter this room"
 msgstr "进入此房间需要会员身份"
 
 #: src/mod_register_web.erl:294
+#, fuzzy
 msgid ""
 "Memorize your password, or write it in a paper placed in a safe place. In "
-"Jabber there isn't an automated way to recover your password if you forget "
-"it."
+"XMPP there isn't an automated way to recover your password if you forget it."
 msgstr ""
-"记住你的密码, 或将其记到纸上并放于安全位置. 如果你忘记了密码, Jabber也没有自"
-"动恢复密码的方式."
+"记住你的密码, 或将其记到纸上并放于安全位置. 如果你忘记了密码, XMPP也没有自动"
+"恢复密码的方式."
 
 #: src/ejabberd_web_admin.erl:1181
 msgid "Memory"
@@ -1799,8 +1797,9 @@ msgstr "注册"
 
 #: src/mod_register_web.erl:214 src/mod_register_web.erl:242
 #: src/mod_register_web.erl:250
-msgid "Register a Jabber account"
-msgstr "注册Jabber帐户"
+#, fuzzy
+msgid "Register an XMPP account"
+msgstr "注册XMPP帐户"
 
 #: src/ejabberd_web_admin.erl:588
 msgid "Registered Users"
@@ -2036,12 +2035,13 @@ msgid "Shut Down Service"
 msgstr "关闭服务"
 
 #: src/mod_register_web.erl:290
+#, fuzzy
 msgid ""
-"Some Jabber clients can store your password in the computer, but you should "
-"do this only in your personal computer for safety reasons."
+"Some XMPP clients can store your password in the computer, but you should do "
+"this only in your personal computer for safety reasons."
 msgstr ""
-"某些 Jabber 客户端可以在你的计算机里存储密码. 请仅在你确认你的计算机安全的情"
-"况下使用该功能."
+"某些 XMPP 客户端可以在你的计算机里存储密码. 请仅在你确认你的计算机安全的情况"
+"下使用该功能."
 
 #: deps/xmpp/src/pubsub_node_config.erl:1344
 #: deps/xmpp/src/pubsub_publish_options.erl:322
@@ -2229,7 +2229,7 @@ msgstr "节点已存在"
 #: src/mod_register_web.erl:611
 #, fuzzy
 msgid "The account was not deleted"
-msgstr "你的 Jabber 帐户已成功删除."
+msgstr "你的 XMPP 帐户已成功删除."
 
 #: deps/xmpp/src/push_summary.erl:397
 msgid "The body text of the last received message"
@@ -2311,8 +2311,9 @@ msgid "The password is too weak"
 msgstr "密码强度太弱"
 
 #: src/mod_register_web.erl:146
-msgid "The password of your Jabber account was successfully changed."
-msgstr "你的Jabber帐户密码已成功更新."
+#, fuzzy
+msgid "The password of your XMPP account was successfully changed."
+msgstr "你的XMPP帐户密码已成功更新."
 
 #: src/mod_register_web.erl:613
 #, fuzzy
@@ -2381,17 +2382,19 @@ msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
 msgstr "此处不区分大小写: macbeth 与 MacBeth 和 Macbeth 是一样的."
 
 #: src/mod_register_web.erl:252
+#, fuzzy
 msgid ""
-"This page allows to create a Jabber account in this Jabber server. Your JID "
+"This page allows to create an XMPP account in this XMPP server. Your JID "
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
-"本页面允许在此服务器上创建Jabber帐户. 你的JID (Jabber ID) 的形式如下: 用户名@"
-"服务器. 请仔细阅读说明并正确填写相应字段."
+"本页面允许在此服务器上创建XMPP帐户. 你的JID (Jabber ID) 的形式如下: 用户名@服"
+"务器. 请仔细阅读说明并正确填写相应字段."
 
 #: src/mod_register_web.erl:507
-msgid "This page allows to unregister a Jabber account in this Jabber server."
-msgstr "此页面允许在此Jabber服务器上注销Jabber帐户"
+#, fuzzy
+msgid "This page allows to unregister an XMPP account in this XMPP server."
+msgstr "此页面允许在此XMPP服务器上注销XMPP帐户"
 
 #: src/mod_muc_log.erl:805
 msgid "This room is not anonymous"
@@ -2537,8 +2540,9 @@ msgstr "取消注册"
 
 #: src/mod_register_web.erl:219 src/mod_register_web.erl:497
 #: src/mod_register_web.erl:505
-msgid "Unregister a Jabber account"
-msgstr "注销Jabber帐户"
+#, fuzzy
+msgid "Unregister an XMPP account"
+msgstr "注销XMPP帐户"
 
 #: src/ejabberd_web_admin.erl:1417
 msgid "Unselect All"
@@ -2776,6 +2780,11 @@ msgstr ""
 msgid "Wrong xmlns"
 msgstr ""
 
+#: src/mod_register_web.erl:203 src/mod_register_web.erl:211
+#, fuzzy
+msgid "XMPP Account Registration"
+msgstr "XMPP帐户注册"
+
 #: src/ejabberd_web_admin.erl:440
 msgid "XMPP Domains"
 msgstr ""
@@ -2812,8 +2821,9 @@ msgid "You are not joined to the channel"
 msgstr "您不可以创建节点"
 
 #: src/mod_register_web.erl:287
-msgid "You can later change your password using a Jabber client."
-msgstr "你可以稍后用Jabber客户端修改你的密码."
+#, fuzzy
+msgid "You can later change your password using an XMPP client."
+msgstr "你可以稍后用XMPP客户端修改你的密码."
 
 #: src/mod_muc_room.erl:2091
 msgid "You have been banned from this room"
@@ -2844,12 +2854,14 @@ msgid "You're not allowed to create nodes"
 msgstr "您不可以创建节点"
 
 #: src/mod_register_web.erl:118
-msgid "Your Jabber account was successfully created."
-msgstr "你的Jabber帐户已成功创建."
+#, fuzzy
+msgid "Your XMPP account was successfully created."
+msgstr "你的XMPP帐户已成功创建."
 
 #: src/mod_register_web.erl:131
-msgid "Your Jabber account was successfully deleted."
-msgstr "你的 Jabber 帐户已成功删除."
+#, fuzzy
+msgid "Your XMPP account was successfully deleted."
+msgstr "你的 XMPP 帐户已成功删除."
 
 #: src/ejabberd_c2s.erl:704 src/ejabberd_c2s.erl:860
 msgid "Your active privacy list has denied the routing of this stanza."

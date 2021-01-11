@@ -73,7 +73,6 @@
 {"Deliver payloads with event notifications","Κοινοποιήσεις με την παράδοση φορτίων"}.
 {"Description:","Περιγραφή:"}.
 {"Disc only copy","Αντίγραφο μόνο σε δίσκο"}.
-{"Don't tell your password to anybody, not even the administrators of the Jabber server.","Μην πείτε τον κωδικό πρόσβασής σας σε κανέναν, ακόμη και στους διαχειριστές του διακομιστή Jabber."}.
 {"Dump Backup to Text File at ","Αποθήκευση Αντιγράφου Ασφαλείας σε αρχείο κειμένου στο "}.
 {"Dump to Text File","Αποθήκευση σε αρχείο κειμένου"}.
 {"Duplicated groups are not allowed by RFC6121","Δεν επιτρέπονται διπλότυπες ομάδες από το RFC6121"}.
@@ -96,7 +95,6 @@
 {"Enter path to jabberd14 spool file","Εισάγετε τοποθεσία αρχείου σειράς jabberd14"}.
 {"Enter path to text file","Εισάγετε Τοποθεσία Αρχείου Κειμένου"}.
 {"Enter the text you see","Πληκτρολογήστε το κείμενο που βλέπετε"}.
-{"Erlang Jabber Server","Erlang Jabber Διακομιστής"}.
 {"Error","Σφάλμα"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Εξαίρεση από τις ταυτότητες Jabber, ή CAPTCHA πρόκληση"}.
 {"Export all tables as SQL queries to a file:","Εξαγωγή όλων των πινάκων ως ερωτημάτων SQL σε ένα αρχείο:"}.
@@ -158,7 +156,6 @@
 {"It is not allowed to send private messages of type \"groupchat\"","Δεν επιτρέπεται να στείλει προσωπικά μηνύματα του τύπου \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Δεν επιτρέπεται να στείλει προσωπικά μηνύματα για τη διάσκεψη"}.
 {"It is not allowed to send private messages","Δεν επιτρέπεται η αποστολή προσωπικών μηνυμάτων"}.
-{"Jabber Account Registration","Εγγραφή λογαριασμού Jabber"}.
 {"Jabber ID","Ταυτότητα Jabber"}.
 {"January","Ιανουάριος"}.
 {"joins the room","συνδέετε στην αίθουσα"}.
@@ -186,7 +183,6 @@
 {"May","Μάιος"}.
 {"Membership is required to enter this room","Απαιτείται αίτηση συμετοχής για είσοδο σε αυτή την αίθουσα"}.
 {"Members:","Μέλη:"}.
-{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Απομνημονεύστε τον κωδικό πρόσβασής σας, ή γράψετε τον σε ένα χαρτί που είχε τοποθετηθεί σε ασφαλές μέρος. Στο Jabber δεν υπάρχει αυτοματοποιημένος τρόπος για να ανακτήσετε τον κωδικό σας αν τον ξεχάσετε."}.
 {"Memory","Μνήμη"}.
 {"Message body","Περιεχόμενο μηνυμάτως"}.
 {"Message not found in forwarded payload","Δεν βρέθηκε μήνυμα στο προωθημένο ωφέλιμο φορτίο"}.
@@ -298,7 +294,6 @@
 {"RAM copy","Αντίγραφο σε RAM"}.
 {"Really delete message of the day?","Πραγματικά να διαγράψετε το μήνυμα της ημέρας;"}.
 {"Recipient is not in the conference room","Παραλήπτης δεν είναι στην αίθουσα συνεδριάσεων"}.
-{"Register a Jabber account","Καταχωρήστε έναν λογαριασμό Jabber"}.
 {"Registered Users","Εγγεγραμμένοι Χρήστες"}.
 {"Registered Users:","Εγγεγραμμένοι Χρήστες:"}.
 {"Register","Καταχωρήστε"}.
@@ -340,7 +335,6 @@
 {"Show Integral Table","Δείτε Ολοκληρωτικό Πίνακα"}.
 {"Show Ordinary Table","Δείτε Κοινό Πίνακα"}.
 {"Shut Down Service","Κλείσιμο Υπηρεσίας"}.
-{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Μερικοί πελάτες Jabber μπορεί να αποθηκεύσουν τον κωδικό πρόσβασής σας στον υπολογιστή σας. Χρησιμοποιήστε αυτό το χαρακτηριστικό μόνο εάν εμπιστεύεστε την ασφάλεια του υπολογιστή σας."}.
 {"Specify the access model","Καθορίστε το μοντέλο πρόσβασης"}.
 {"Specify the event message type","Καθορίστε τον τύπο μηνύματος συμβάντος"}.
 {"Specify the publisher model","Καθορίστε το μοντέλο εκδότη"}.
@@ -367,7 +361,6 @@
 {"The password contains unacceptable characters","Ο κωδικός πρόσβασης περιέχει μη αποδεκτούς χαρακτήρες"}.
 {"The password is too weak","Ο κωδικός πρόσβασης είναι πολύ ασθενές"}.
 {"the password is","ο κωδικός πρόσβασης είναι"}.
-{"The password of your Jabber account was successfully changed.","Ο κωδικός  πρόσβασης του Jabber λογαριασμού σας έχει αλλάξει επιτυχώς."}.
 {"The query is only allowed from local users","Το ερώτημα επιτρέπεται μόνο από τοπικούς χρήστες"}.
 {"The query must not contain <item/> elements","Το ερώτημα δεν πρέπει να περιέχει στοιχείο <item/>"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Η stanza ΠΡΕΠΕΙ να περιέχει μόνο ένα στοιχείο <active />, ένα στοιχείο <default /> ή ένα στοιχείο <list />"}.
@@ -375,8 +368,6 @@
 {"There was an error creating the account: ","Υπήρξε ένα σφάλμα κατά τη δημιουργία του λογαριασμού: "}.
 {"There was an error deleting the account: ","Υπήρξε ένα σφάλμα κατά τη διαγραφή του λογαριασμού: "}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Ανεξαρτήτως με πεζά ή κεφαλαία: 'μιαλεξη' είναι το ίδιο με 'ΜιαΛέξη' και 'Μιαλέξη'."}.
-{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Αυτή η σελίδα σας επιτρέπει να δημιουργήσετε ένα λογαριασμό Jabber σε αυτόν το διακομιστή Jabber. JID σας (Jabber Identifier) θα είναι της μορφής: όνομα_χρήστη@διακομιστής_Jabber. Παρακαλώ διαβάστε προσεκτικά τις οδηγίες για να συμπληρώσετε σωστά τα πεδία."}.
-{"This page allows to unregister a Jabber account in this Jabber server.","Η σελίδα αυτή δίνει τη δυνατότητα να καταργήσετε την καταχώρηση ενός λογαριασμό Jabber σε αυτόν το διακομιστή Jabber."}.
 {"This room is not anonymous","Η αίθουσα αυτή δεν είναι ανώνυμη"}.
 {"Thursday","Πέμπτη"}.
 {"Time delay","Χρόνος καθυστέρησης"}.
@@ -401,7 +392,6 @@
 {"Unable to register route on existing local domain","Δεν είναι δυνατή η καταχώρηση της διαδρομής σε υπάρχοντα τοπικό τομέα"}.
 {"Unauthorized","Χορίς Εξουσιοδότηση"}.
 {"Unexpected action","Απροσδόκητη ενέργεια"}.
-{"Unregister a Jabber account","Καταργήστε την εγγραφή ενός λογαριασμού Jabber"}.
 {"Unregister","Καταργήση εγγραφής"}.
 {"Unsupported <index/> element","Μη υποστηριζόμενο στοιχείο <index />"}.
 {"Update message of the day (don't send)","Ενημέρωση μηνύματως ημέρας (χωρίς άμεση αποστολή)"}.
@@ -437,7 +427,6 @@
 {"Wednesday","Τετάρτη"}.
 {"When to send the last published item","Πότε να αποσταλθεί το τελευταίο στοιχείο που δημοσιεύθηκε"}.
 {"Whether to allow subscriptions","Εάν επιτρέποντε συνδρομές"}.
-{"You can later change your password using a Jabber client.","Μπορείτε αργότερα να αλλάξετε τον κωδικό πρόσβασής σας χρησιμοποιώντας έναν πελάτη Jabber."}.
 {"You have been banned from this room","Σας έχει απαγορευθεί η είσοδος σε αυτή την αίθουσα"}.
 {"You have joined too many conferences","Είσθε σε πάρα πολλά συνέδρια"}.
 {"You must fill in field \"Nickname\" in the form","Θα πρέπει να συμπληρώσετε το πεδίο \"Nickname\" στη φόρμα"}.
@@ -446,7 +435,5 @@
 {"You need an x:data capable client to search","Χρειάζεστε ένα  x:data ικανό πελάτη για αναζήτηση"}.
 {"Your active privacy list has denied the routing of this stanza.","Ο ενεργός κατάλογος απορρήτου, έχει αρνηθεί τη δρομολόγηση αυτής της στροφής (stanza)."}.
 {"Your contact offline message queue is full. The message has been discarded.","Η μνήμη χωρίς σύνδεση μήνυματών είναι πλήρης. Το μήνυμα έχει απορριφθεί."}.
-{"Your Jabber account was successfully created.","Ο Jabber λογαριασμός σας δημιουργήθηκε με επιτυχία."}.
-{"Your Jabber account was successfully deleted.","Ο Jabber λογαριασμός σας διαγράφηκε με επιτυχία."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Τα μηνύματά σας πρως ~s είναι αποκλεισμένα. Για αποδεσμεύση, επισκεφθείτε ~s"}.
 {"You're not allowed to create nodes","Δεν σου επιτρέπεται η δημιουργία κόμβων"}.

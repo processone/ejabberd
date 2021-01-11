@@ -87,7 +87,6 @@
 {"Disc only copy","Còpia sols en disc"}.
 {"'Displayed groups' not added (they do not exist!): ","'Mostrats' no afegits (no existeixen!): "}.
 {"Displayed:","Mostrats:"}.
-{"Don't tell your password to anybody, not even the administrators of the Jabber server.","No li donis la teva contrasenya a ningú, ni tan sols als administradors del servidor Jabber."}.
 {"Dump Backup to Text File at ","Exporta còpia de seguretat a fitxer de text en "}.
 {"Dump to Text File","Exportar a fitxer de text"}.
 {"Duplicated groups are not allowed by RFC6121","No estan permesos els grups duplicats al RFC6121"}.
@@ -113,7 +112,6 @@
 {"Enter path to jabberd14 spool file","Introdueix ruta al fitxer jabberd14 spool"}.
 {"Enter path to text file","Introdueix ruta al fitxer de text"}.
 {"Enter the text you see","Introdueix el text que veus"}.
-{"Erlang Jabber Server","Servidor Erlang Jabber"}.
 {"Error","Error"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Excloure Jabber IDs de la comprovació CAPTCHA"}.
 {"Export all tables as SQL queries to a file:","Exporta totes les taules a un fitxer SQL:"}.
@@ -129,7 +127,6 @@
 {"Family Name","Cognom"}.
 {"February","Febrer"}.
 {"File larger than ~w bytes","El fitxer es més gran que ~w bytes"}.
-{"Fill in the form to search for any matching Jabber User","Emplena camps per a buscar usuaris Jabber que concorden"}.
 {"Friday","Divendres"}.
 {"From ~ts","De ~ts"}.
 {"From","De"}.
@@ -183,7 +180,6 @@
 {"It is not allowed to send private messages of type \"groupchat\"","No està permés enviar missatges del tipus \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","No està permès l'enviament de missatges privats a la sala"}.
 {"It is not allowed to send private messages","No està permés enviar missatges privats"}.
-{"Jabber Account Registration","Registre de compte Jabber"}.
 {"Jabber ID","ID Jabber"}.
 {"January","Gener"}.
 {"JID normalization denied by service policy","S'ha denegat la normalització del JID per política del servei"}.
@@ -216,7 +212,6 @@
 {"Members not added (inexistent vhost!): ","Membres no afegits (perquè el vhost no existeix): "}.
 {"Membership is required to enter this room","Necessites ser membre d'aquesta sala per a poder entrar"}.
 {"Members:","Membre:"}.
-{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Memoritza la teva contrasenya, o escriu-la en un paper guardat a un lloc segur.A Jabber no hi ha una forma automatitzada de recuperar la teva contrasenya si la oblides."}.
 {"Memory","Memòria"}.
 {"Message body","Missatge"}.
 {"Message not found in forwarded payload","Missatge no trobat al contingut reenviat"}.
@@ -344,7 +339,6 @@
 {"RAM copy","Còpia en RAM"}.
 {"Really delete message of the day?","Segur que vols eliminar el missatge del dia?"}.
 {"Recipient is not in the conference room","El receptor no està en la sala de conferència"}.
-{"Register a Jabber account","Registrar un compte Jabber"}.
 {"Registered Users","Usuaris registrats"}.
 {"Registered Users:","Usuaris registrats:"}.
 {"Register","Registrar"}.
@@ -395,7 +389,6 @@
 {"Show Ordinary Table","Mostrar Taula Ordinaria"}.
 {"Shut Down Service","Apager el Servei"}.
 {"SOCKS5 Bytestreams","SOCKS5 Bytestreams"}.
-{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Alguns clients Jabber poden emmagatzemar la teva contrasenya al teu ordinador. Fes servir aquesta característica només si saps que el teu ordinador és segur."}.
 {"Specify the access model","Especificar el model d'accés"}.
 {"Specify the event message type","Especifica el tipus de missatge d'event"}.
 {"Specify the publisher model","Especificar el model del publicant"}.
@@ -427,7 +420,6 @@
 {"The password contains unacceptable characters","La contrasenya conté caràcters inacceptables"}.
 {"The password is too weak","La contrasenya és massa simple"}.
 {"the password is","la contrasenya és"}.
-{"The password of your Jabber account was successfully changed.","La contrasenya del teu compte Jabber s'ha canviat correctament."}.
 {"The password was not changed","La contrasenya no ha sigut canviada"}.
 {"The passwords are different","Les contrasenyes son diferents"}.
 {"The query is only allowed from local users","La petició està permesa només d'usuaris locals"}.
@@ -438,8 +430,6 @@
 {"There was an error creating the account: ","Hi ha hagut un error creant el compte: "}.
 {"There was an error deleting the account: ","Hi ha hagut un error esborrant el compte: "}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Això no distingeix majúscules de minúscules: macbeth es el mateix que MacBeth i Macbeth."}.
-{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Aquesta pàgina permet crear un compte Jabber en aquest servidor Jabber. El teu JID (Jabber IDentifier; Identificador Jabber) tindrà aquesta forma: usuari@servidor. Si us plau, llegeix amb cura les instruccions per emplenar correctament els camps."}.
-{"This page allows to unregister a Jabber account in this Jabber server.","Aquesta pàgina permet anul·lar el registre d'un compte Jabber en aquest servidor Jabber."}.
 {"This room is not anonymous","Aquesta sala no és anònima"}.
 {"This service can not process the address: ~s","Este servei no pot processar la direcció: ~s"}.
 {"Thursday","Dijous"}.
@@ -472,7 +462,6 @@
 {"Unauthorized","No autoritzat"}.
 {"Unexpected action","Acció inesperada"}.
 {"Unexpected error condition: ~p","Condició d'error inesperada: ~p"}.
-{"Unregister a Jabber account","Anul·lar el registre d'un compte Jabber"}.
 {"Unregister","Anul·lar el registre"}.
 {"Unselect All","Deseleccionar tots"}.
 {"Unsupported <index/> element","Element <index/> no soportat"}.
@@ -518,7 +507,6 @@
 {"XMPP Domains","Dominis XMPP"}.
 {"You are being removed from the room because of a system shutdown","Has sigut expulsat de la sala perquè el sistema va a apagar-se"}.
 {"You are not joined to the channel","No t'has unit al canal"}.
-{"You can later change your password using a Jabber client.","Podràs canviar la teva contrasenya més endavant utilitzant un client Jabber."}.
 {"You have been banned from this room","Has sigut bloquejat en aquesta sala"}.
 {"You have joined too many conferences","Has entrat en massa sales de conferència"}.
 {"You must fill in field \"Nickname\" in the form","Deus d'omplir el camp \"Nickname\" al formulari"}.
@@ -527,7 +515,5 @@
 {"You need an x:data capable client to search","Necessites un client amb suport x:data per a poder buscar"}.
 {"Your active privacy list has denied the routing of this stanza.","La teva llista de privacitat activa ha denegat l'encaminament d'aquesta stanza."}.
 {"Your contact offline message queue is full. The message has been discarded.","La teua cua de missatges offline és plena. El missatge ha sigut descartat."}.
-{"Your Jabber account was successfully created.","El teu compte Jabber ha sigut creat correctament."}.
-{"Your Jabber account was successfully deleted.","El teu compte Jabber ha sigut esborrat correctament."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","La teua petició de subscripció i/o missatges a ~s han sigut bloquejats. Per a desbloquejar-los, visita ~s"}.
 {"You're not allowed to create nodes","No tens permís per a crear nodes"}.

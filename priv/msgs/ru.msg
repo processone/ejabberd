@@ -85,7 +85,6 @@
 {"Deliver payloads with event notifications","Доставлять вместе с уведомлениями o публикациях сами публикации"}.
 {"Description:","Описание:"}.
 {"Disc only copy","только диск"}.
-{"Don't tell your password to anybody, not even the administrators of the Jabber server.","Не говорите никому свой пароль, даже администраторам сервера."}.
 {"Dump Backup to Text File at ","Копирование в текстовый файл на "}.
 {"Dump to Text File","Копирование в текстовый файл"}.
 {"Duplicated groups are not allowed by RFC6121","Группы с одинаковыми названиями запрещены стандартом RFC6121"}.
@@ -110,7 +109,6 @@
 {"Enter path to jabberd14 spool file","Введите путь к файлу из спула jabberd14"}.
 {"Enter path to text file","Введите путь к текстовому файлу"}.
 {"Enter the text you see","Введите увиденный текст"}.
-{"Erlang Jabber Server","Erlang Jabber Server"}.
 {"Error","Ошибка"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Исключить показ капчи для списка Jabber ID"}.
 {"Export all tables as SQL queries to a file:","Экспортировать все таблицы в виде SQL запросов в файл:"}.
@@ -126,7 +124,6 @@
 {"Family Name","Фамилия"}.
 {"February","февраля"}.
 {"File larger than ~w bytes","Файл больше ~w байт"}.
-{"Fill in the form to search for any matching Jabber User","Заполните форму для поиска пользователя Jabber"}.
 {"Friday","Пятница"}.
 {"From","От кого"}.
 {"Full Name","Полное имя"}.
@@ -179,7 +176,6 @@
 {"It is not allowed to send private messages of type \"groupchat\"","Нельзя посылать частные сообщения типа \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Не разрешается посылать частные сообщения прямо в конференцию"}.
 {"It is not allowed to send private messages","Запрещено посылать приватные сообщения"}.
-{"Jabber Account Registration","Регистрация Jabber-аккаунта"}.
 {"Jabber ID","Jabber ID"}.
 {"January","января"}.
 {"joins the room","вошёл(а) в комнату"}.
@@ -208,7 +204,6 @@
 {"May","мая"}.
 {"Membership is required to enter this room","В эту конференцию могут входить только её члены"}.
 {"Members:","Члены:"}.
-{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Запомните пароль или запишите его на бумаге, которую сохраните в безопасном месте. В Jabber'е нет автоматизированного средства восстановления пароля в том случае, если Вы его забудете."}.
 {"Memory","Память"}.
 {"Message body","Тело сообщения"}.
 {"Message not found in forwarded payload","Сообщение не найдено в пересылаемом вложении"}.
@@ -334,7 +329,6 @@
 {"RAM copy","ОЗУ"}.
 {"Really delete message of the day?","Действительно удалить сообщение дня?"}.
 {"Recipient is not in the conference room","Адресата нет в конференции"}.
-{"Register a Jabber account","Зарегистрировать Jabber-аккаунт"}.
 {"Registered Users","Зарегистрированные пользователи"}.
 {"Registered Users:","Зарегистрированные пользователи:"}.
 {"Register","Зарегистрировать"}.
@@ -381,7 +375,6 @@
 {"Show Ordinary Table","Показать обычную таблицу"}.
 {"Shut Down Service","Остановить службу"}.
 {"SOCKS5 Bytestreams","Передача файлов через SOCKS5"}.
-{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Некоторые Jabber-клиенты могут сохранять пароль на Вашем компьютере. Используйте эту функцию только в том случае, если считаете это безопасным."}.
 {"Specify the access model","Укажите механизм управления доступом"}.
 {"Specify the event message type","Укажите тип сообщения о событии"}.
 {"Specify the publisher model","Условия публикации"}.
@@ -413,7 +406,6 @@
 {"The password contains unacceptable characters","Пароль содержит недопустимые символы"}.
 {"The password is too weak","Слишком слабый пароль"}.
 {"the password is","пароль:"}.
-{"The password of your Jabber account was successfully changed.","Пароль Вашего Jabber-аккаунта был успешно изменен."}.
 {"The password was not changed","Пароль не был изменён"}.
 {"The passwords are different","Пароли не совпадают"}.
 {"The query is only allowed from local users","Запрос доступен только для локальных пользователей"}.
@@ -424,8 +416,6 @@
 {"There was an error creating the account: ","Ошибка при создании аккаунта:"}.
 {"There was an error deleting the account: ","Ошибка при удалении аккаунта:"}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Регистр не имеет значения: \"маша\" и \"МАША\" будет считаться одним и тем же именем."}.
-{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Здесь Вы можете создать Jabber-аккаунт на этом Jabber-сервере. Ваш JID (Jabber-идентификатор) будет в виде: \"пользователь@сервер\". Пожалуйста, внимательно читайте инструкции для правильного заполнения полей."}.
-{"This page allows to unregister a Jabber account in this Jabber server.","Здесь Вы можете удалить Jabber-аккаунт с этого сервера."}.
 {"This room is not anonymous","Эта комната не анонимная"}.
 {"This service can not process the address: ~s","Сервер не может обработать адрес: ~s"}.
 {"Thursday","Четверг"}.
@@ -456,7 +446,6 @@
 {"Unauthorized","Не авторизован"}.
 {"Unexpected action","Неожиданное действие"}.
 {"Unexpected error condition: ~p","Неожиданная ошибка: ~p"}.
-{"Unregister a Jabber account","Удалить Jabber-аккаунт"}.
 {"Unregister","Удалить"}.
 {"Unselect All","Снять всё выделение"}.
 {"Unsupported <index/> element","Элемент <index/> не поддерживается"}.
@@ -499,7 +488,6 @@
 {"Wrong xmlns","Неправильный xmlns"}.
 {"You are being removed from the room because of a system shutdown","Вы покинули комнату из-за останова системы"}.
 {"You are not joined to the channel","Вы не присоединены к каналу"}.
-{"You can later change your password using a Jabber client.","Позже Вы можете изменить пароль через Jabber-клиент."}.
 {"You have been banned from this room","Вам запрещено входить в эту конференцию"}.
 {"You have joined too many conferences","Вы присоединены к слишком большому количеству конференций"}.
 {"You must fill in field \"Nickname\" in the form","Вы должны заполнить поле \"Псевдоним\" в форме"}.
@@ -508,7 +496,5 @@
 {"You need an x:data capable client to search","Чтобы воспользоваться поиском, требуется x:data-совместимый клиент"}.
 {"Your active privacy list has denied the routing of this stanza.","Маршрутизация этой строфы запрещена вашим активным списком приватности."}.
 {"Your contact offline message queue is full. The message has been discarded.","Очередь недоставленных сообщений Вашего адресата переполнена. Сообщение не было сохранено."}.
-{"Your Jabber account was successfully created.","Ваш Jabber-аккаунт был успешно создан."}.
-{"Your Jabber account was successfully deleted.","Ваш Jabber-аккаунт был успешно удален."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Ваши запросы на добавление в контакт-лист, а также сообщения к ~s блокируются. Для снятия блокировки перейдите по ссылке ~s"}.
 {"You're not allowed to create nodes","Вам не разрешается создавать узлы"}.

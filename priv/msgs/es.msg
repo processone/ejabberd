@@ -114,7 +114,7 @@
 {"Disc only copy","Copia en disco solamente"}.
 {"'Displayed groups' not added (they do not exist!): ","'Mostrados' que no han sido añadidos (¡no existen!): "}.
 {"Displayed:","Mostrados:"}.
-{"Don't tell your password to anybody, not even the administrators of the Jabber server.","No le digas tu contraseña a nadie, ni siquiera a los administradores del servidor Jabber."}.
+{"Don't tell your password to anybody, not even the administrators of the XMPP server.","No le digas tu contraseña a nadie, ni siquiera a los administradores del servidor XMPP."}.
 {"Dump Backup to Text File at ","Exporta copia de seguridad a fichero de texto en "}.
 {"Dump to Text File","Exportar a fichero de texto"}.
 {"Duplicated groups are not allowed by RFC6121","Los grupos duplicados no están permitidos por RFC6121"}.
@@ -142,7 +142,7 @@
 {"Enter path to jabberd14 spool file","Introduce ruta al fichero jabberd14 spool"}.
 {"Enter path to text file","Introduce ruta al fichero de texto"}.
 {"Enter the text you see","Teclea el texto que ves"}.
-{"Erlang Jabber Server","Servidor Jabber en Erlang"}.
+{"Erlang XMPP Server","Servidor XMPP en Erlang"}.
 {"Error","Error"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Excluir Jabber IDs de las pruebas de CAPTCHA"}.
 {"Export all tables as SQL queries to a file:","Exportar todas las tablas a un fichero SQL:"}.
@@ -159,7 +159,7 @@
 {"FAQ Entry","Apunte en la FAQ"}.
 {"February","Febrero"}.
 {"File larger than ~w bytes","El fichero es más grande que ~w bytes"}.
-{"Fill in the form to search for any matching Jabber User","Rellena campos para buscar usuarios Jabber que concuerden"}.
+{"Fill in the form to search for any matching XMPP User","Rellena campos para buscar usuarios XMPP que concuerden"}.
 {"Friday","Viernes"}.
 {"From ~ts","De ~ts"}.
 {"From","De"}.
@@ -216,7 +216,6 @@
 {"It is not allowed to send private messages of type \"groupchat\"","No está permitido enviar mensajes privados del tipo \"groupchat\""}.
 {"It is not allowed to send private messages to the conference","Impedir el envio de mensajes privados a la sala"}.
 {"It is not allowed to send private messages","No está permitido enviar mensajes privados"}.
-{"Jabber Account Registration","Registro de Cuenta Jabber"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Enero"}.
 {"JID normalization denied by service policy","Se ha denegado la normalización del JID por política del servicio"}.
@@ -256,7 +255,7 @@
 {"Members not added (inexistent vhost!): ","Miembros no añadidos (el vhost no existe): "}.
 {"Membership is required to enter this room","Necesitas ser miembro de esta sala para poder entrar"}.
 {"Members:","Miembros:"}.
-{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Memoriza tu contraseña, o apúntala en un papel en un lugar seguro. En Jabber no hay un método automatizado para recuperar la contraseña si la olvidas."}.
+{"Memorize your password, or write it in a paper placed in a safe place. In XMPP there isn't an automated way to recover your password if you forget it.","Memoriza tu contraseña, o apúntala en un papel en un lugar seguro. En XMPP no hay un método automatizado para recuperar la contraseña si la olvidas."}.
 {"Memory","Memoria"}.
 {"Mere Availability in XMPP (No Show Value)","Disponible en XMPP (sin valor de Mostrado)"}.
 {"Message body","Cuerpo del mensaje"}.
@@ -410,7 +409,7 @@
 {"Receive notification of new items only","Recibir notificaciones solo de nuevos elementos"}.
 {"Receive notification of new nodes only","Recibir notificaciones solo de nuevos nodos"}.
 {"Recipient is not in the conference room","El receptor no está en la sala de conferencia"}.
-{"Register a Jabber account","Registrar una cuenta Jabber"}.
+{"Register an XMPP account","Registrar una cuenta XMPP"}.
 {"Registered Users","Usuarios registrados"}.
 {"Registered Users:","Usuarios registrados:"}.
 {"Register","Registrar"}.
@@ -469,7 +468,7 @@
 {"Show Ordinary Table","Mostrar Tabla Ordinaria"}.
 {"Shut Down Service","Detener el servicio"}.
 {"SOCKS5 Bytestreams","SOCKS5 Bytestreams"}.
-{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Algunos clientes Jabber pueden recordar tu contraseña en la máquina. Usa esa opción solo si confías en que la máquina que usas es segura."}.
+{"Some XMPP clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Algunos clientes XMPP pueden recordar tu contraseña en la máquina. Usa esa opción solo si confías en que la máquina que usas es segura."}.
 {"Specify the access model","Especifica el modelo de acceso"}.
 {"Specify the event message type","Especifica el tipo del mensaje de evento"}.
 {"Specify the publisher model","Especificar el modelo del publicante"}.
@@ -528,7 +527,7 @@
 {"The password contains unacceptable characters","La contraseña contiene caracteres inaceptables"}.
 {"The password is too weak","La contraseña es demasiado débil"}.
 {"the password is","la contraseña es"}.
-{"The password of your Jabber account was successfully changed.","La contraseña de tu cuenta Jabber se ha cambiado correctamente."}.
+{"The password of your XMPP account was successfully changed.","La contraseña de tu cuenta XMPP se ha cambiado correctamente."}.
 {"The password was not changed","La contraseña no fue cambiada"}.
 {"The passwords are different","Las contraseñas son diferentes"}.
 {"The presence states for which an entity wants to receive notifications","Los estados de presencia para los cuales una entidad quiere recibir notificaciones"}.
@@ -546,8 +545,8 @@
 {"There was an error creating the account: ","Hubo uno error al crear la cuenta: "}.
 {"There was an error deleting the account: ","Hubo un error borrando la cuenta: "}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","No importa si usas mayúsculas: macbeth es lo mismo que MacBeth y Macbeth."}.
-{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Esta página te permite crear una cuenta Jabber este servidor Jabber. Tu JID (Jabber IDentificador) será de la forma: nombredeusuario@servidor. Por favor lee detenidamente las instrucciones para rellenar correctamente los campos."}.
-{"This page allows to unregister a Jabber account in this Jabber server.","Esta página te permite borrar tu cuenta Jabber en este servidor Jabber."}.
+{"This page allows to create an XMPP account in this XMPP server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Esta página te permite crear una cuenta XMPP este servidor XMPP. Tu JID (Jabber IDentificador) será de la forma: nombredeusuario@servidor. Por favor lee detenidamente las instrucciones para rellenar correctamente los campos."}.
+{"This page allows to unregister an XMPP account in this XMPP server.","Esta página te permite borrar tu cuenta XMPP en este servidor XMPP."}.
 {"This room is not anonymous","Sala no anónima"}.
 {"This service can not process the address: ~s","Este servicio no puede procesar la dirección: ~s"}.
 {"Thursday","Jueves"}.
@@ -580,7 +579,7 @@
 {"Unauthorized","No autorizado"}.
 {"Unexpected action","Acción inesperada"}.
 {"Unexpected error condition: ~p","Condición de error inesperada: ~p"}.
-{"Unregister a Jabber account","Borrar una cuenta Jabber"}.
+{"Unregister an XMPP account","Borrar una cuenta XMPP"}.
 {"Unregister","Borrar"}.
 {"Unselect All","Deseleccionar todo"}.
 {"Unsupported <index/> element","Elemento <index/> no soportado"}.
@@ -636,6 +635,7 @@
 {"Who may associate leaf nodes with a collection","Quien puede asociar nodos hoja con una colección"}.
 {"Wrong parameters in the web formulary","Parámetros incorrectos en el formulario web"}.
 {"Wrong xmlns","XMLNS incorrecto"}.
+{"XMPP Account Registration","Registro de Cuenta XMPP"}.
 {"XMPP Domains","Dominios XMPP"}.
 {"XMPP Show Value of Away","Valor 'Show' de XMPP: Ausente"}.
 {"XMPP Show Value of Chat","Valor 'Show' de XMPP: Charlador"}.
@@ -644,7 +644,7 @@
 {"XMPP URI of Associated Publish-Subscribe Node","URI XMPP del Nodo Asociado de Publicar-Subscribir"}.
 {"You are being removed from the room because of a system shutdown","Estás siendo expulsado de la sala porque el sistema se va a detener"}.
 {"You are not joined to the channel","No has entrado en el canal"}.
-{"You can later change your password using a Jabber client.","Puedes cambiar tu contraseña después, usando un cliente Jabber."}.
+{"You can later change your password using an XMPP client.","Puedes cambiar tu contraseña después, usando un cliente XMPP."}.
 {"You have been banned from this room","Has sido bloqueado en esta sala"}.
 {"You have joined too many conferences","Has entrado en demasiadas salas de conferencia"}.
 {"You must fill in field \"Nickname\" in the form","Debes rellenar el campo \"Apodo\" en el formulario"}.
@@ -653,7 +653,7 @@
 {"You need an x:data capable client to search","Necesitas un cliente con soporte de x:data para poder buscar"}.
 {"Your active privacy list has denied the routing of this stanza.","Tu lista de privacidad activa ha denegado el envío de este paquete."}.
 {"Your contact offline message queue is full. The message has been discarded.","Tu cola de mensajes diferidos de contactos está llena. El mensaje se ha descartado."}.
-{"Your Jabber account was successfully created.","Tu cuenta Jabber se ha creado correctamente."}.
-{"Your Jabber account was successfully deleted.","Tu cuenta Jabber se ha borrado correctamente."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Tu petición de suscripción y/o mensajes a ~s ha sido bloqueado. Para desbloquear tu petición de suscripción visita ~s"}.
+{"Your XMPP account was successfully created.","Tu cuenta XMPP se ha creado correctamente."}.
+{"Your XMPP account was successfully deleted.","Tu cuenta XMPP se ha borrado correctamente."}.
 {"You're not allowed to create nodes","No tienes permitido crear nodos"}.

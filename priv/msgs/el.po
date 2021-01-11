@@ -550,12 +550,13 @@ msgid "Displayed:"
 msgstr "Εμφανίσμενες Ομάδες:"
 
 #: src/mod_register_web.erl:283
+#, fuzzy
 msgid ""
-"Don't tell your password to anybody, not even the administrators of the "
-"Jabber server."
+"Don't tell your password to anybody, not even the administrators of the XMPP "
+"server."
 msgstr ""
 "Μην πείτε τον κωδικό πρόσβασής σας σε κανέναν, ακόμη και στους διαχειριστές "
-"του διακομιστή Jabber."
+"του διακομιστή XMPP."
 
 #: src/mod_configure.erl:880
 msgid "Dump Backup to Text File at "
@@ -639,8 +640,9 @@ msgid "Enter the text you see"
 msgstr "Πληκτρολογήστε το κείμενο που βλέπετε"
 
 #: src/mod_vcard.erl:213
-msgid "Erlang Jabber Server"
-msgstr "Erlang Jabber Διακομιστής"
+#, fuzzy
+msgid "Erlang XMPP Server"
+msgstr "Erlang XMPP Διακομιστής"
 
 #: src/ejabberd_web_admin.erl:1203
 msgid "Error"
@@ -716,9 +718,9 @@ msgstr "Αρχείο μεγαλύτερο από ~w bytes"
 
 #: src/mod_vcard.erl:458
 #, fuzzy
-msgid "Fill in the form to search for any matching Jabber User"
+msgid "Fill in the form to search for any matching XMPP User"
 msgstr ""
-"Συμπληρώστε τα πεδία για να αναζητήσετε οποιαδήποτε ταιριάζοντα Jabber χρήστη"
+"Συμπληρώστε τα πεδία για να αναζητήσετε οποιαδήποτε ταιριάζοντα XMPP χρήστη"
 
 #: src/mod_muc_log.erl:472
 msgid "Friday"
@@ -952,10 +954,6 @@ msgstr "Άρνηση δημιουργίας αίθουσας , λόγω τακτ
 msgid "JID normalization failed"
 msgstr ""
 
-#: src/mod_register_web.erl:203 src/mod_register_web.erl:211
-msgid "Jabber Account Registration"
-msgstr "Εγγραφή λογαριασμού Jabber"
-
 #: src/mod_vcard_mnesia.erl:113 src/mod_configure.erl:995
 #: src/mod_configure.erl:1012 src/mod_configure.erl:1022
 #: src/mod_configure.erl:1032 src/mod_configure.erl:1042
@@ -1108,14 +1106,14 @@ msgid "Membership is required to enter this room"
 msgstr "Απαιτείται αίτηση συμετοχής για είσοδο σε αυτή την αίθουσα"
 
 #: src/mod_register_web.erl:294
+#, fuzzy
 msgid ""
 "Memorize your password, or write it in a paper placed in a safe place. In "
-"Jabber there isn't an automated way to recover your password if you forget "
-"it."
+"XMPP there isn't an automated way to recover your password if you forget it."
 msgstr ""
 "Απομνημονεύστε τον κωδικό πρόσβασής σας, ή γράψετε τον σε ένα χαρτί που είχε "
-"τοποθετηθεί σε ασφαλές μέρος. Στο Jabber δεν υπάρχει αυτοματοποιημένος "
-"τρόπος για να ανακτήσετε τον κωδικό σας αν τον ξεχάσετε."
+"τοποθετηθεί σε ασφαλές μέρος. Στο XMPP δεν υπάρχει αυτοματοποιημένος τρόπος "
+"για να ανακτήσετε τον κωδικό σας αν τον ξεχάσετε."
 
 #: src/ejabberd_web_admin.erl:1181
 msgid "Memory"
@@ -1826,8 +1824,9 @@ msgstr "Καταχωρήστε"
 
 #: src/mod_register_web.erl:214 src/mod_register_web.erl:242
 #: src/mod_register_web.erl:250
-msgid "Register a Jabber account"
-msgstr "Καταχωρήστε έναν λογαριασμό Jabber"
+#, fuzzy
+msgid "Register an XMPP account"
+msgstr "Καταχωρήστε έναν λογαριασμό XMPP"
 
 #: src/ejabberd_web_admin.erl:588
 msgid "Registered Users"
@@ -2071,11 +2070,12 @@ msgid "Shut Down Service"
 msgstr "Κλείσιμο Υπηρεσίας"
 
 #: src/mod_register_web.erl:290
+#, fuzzy
 msgid ""
-"Some Jabber clients can store your password in the computer, but you should "
-"do this only in your personal computer for safety reasons."
+"Some XMPP clients can store your password in the computer, but you should do "
+"this only in your personal computer for safety reasons."
 msgstr ""
-"Μερικοί πελάτες Jabber μπορεί να αποθηκεύσουν τον κωδικό πρόσβασής σας στον "
+"Μερικοί πελάτες XMPP μπορεί να αποθηκεύσουν τον κωδικό πρόσβασής σας στον "
 "υπολογιστή σας. Χρησιμοποιήστε αυτό το χαρακτηριστικό μόνο εάν εμπιστεύεστε "
 "την ασφάλεια του υπολογιστή σας."
 
@@ -2349,8 +2349,9 @@ msgid "The password is too weak"
 msgstr "Ο κωδικός πρόσβασης είναι πολύ ασθενές"
 
 #: src/mod_register_web.erl:146
-msgid "The password of your Jabber account was successfully changed."
-msgstr "Ο κωδικός  πρόσβασης του Jabber λογαριασμού σας έχει αλλάξει επιτυχώς."
+#, fuzzy
+msgid "The password of your XMPP account was successfully changed."
+msgstr "Ο κωδικός  πρόσβασης του XMPP λογαριασμού σας έχει αλλάξει επιτυχώς."
 
 #: src/mod_register_web.erl:613
 #, fuzzy
@@ -2423,21 +2424,23 @@ msgstr ""
 "'Μιαλέξη'."
 
 #: src/mod_register_web.erl:252
+#, fuzzy
 msgid ""
-"This page allows to create a Jabber account in this Jabber server. Your JID "
+"This page allows to create an XMPP account in this XMPP server. Your JID "
 "(Jabber IDentifier) will be of the form: username@server. Please read "
 "carefully the instructions to fill correctly the fields."
 msgstr ""
-"Αυτή η σελίδα σας επιτρέπει να δημιουργήσετε ένα λογαριασμό Jabber σε αυτόν "
-"το διακομιστή Jabber. JID σας (Jabber Identifier) θα είναι της μορφής: "
+"Αυτή η σελίδα σας επιτρέπει να δημιουργήσετε ένα λογαριασμό XMPP σε αυτόν το "
+"διακομιστή XMPP. JID σας (Jabber Identifier) θα είναι της μορφής: "
 "όνομα_χρήστη@διακομιστής_Jabber. Παρακαλώ διαβάστε προσεκτικά τις οδηγίες "
 "για να συμπληρώσετε σωστά τα πεδία."
 
 #: src/mod_register_web.erl:507
-msgid "This page allows to unregister a Jabber account in this Jabber server."
+#, fuzzy
+msgid "This page allows to unregister an XMPP account in this XMPP server."
 msgstr ""
 "Η σελίδα αυτή δίνει τη δυνατότητα να καταργήσετε την καταχώρηση ενός "
-"λογαριασμό Jabber σε αυτόν το διακομιστή Jabber."
+"λογαριασμό XMPP σε αυτόν το διακομιστή XMPP."
 
 #: src/mod_muc_log.erl:805
 msgid "This room is not anonymous"
@@ -2583,8 +2586,9 @@ msgstr "Καταργήση εγγραφής"
 
 #: src/mod_register_web.erl:219 src/mod_register_web.erl:497
 #: src/mod_register_web.erl:505
-msgid "Unregister a Jabber account"
-msgstr "Καταργήστε την εγγραφή ενός λογαριασμού Jabber"
+#, fuzzy
+msgid "Unregister an XMPP account"
+msgstr "Καταργήστε την εγγραφή ενός λογαριασμού XMPP"
 
 #: src/ejabberd_web_admin.erl:1417
 msgid "Unselect All"
@@ -2828,6 +2832,11 @@ msgstr ""
 msgid "Wrong xmlns"
 msgstr ""
 
+#: src/mod_register_web.erl:203 src/mod_register_web.erl:211
+#, fuzzy
+msgid "XMPP Account Registration"
+msgstr "Εγγραφή λογαριασμού XMPP"
+
 #: src/ejabberd_web_admin.erl:440
 msgid "XMPP Domains"
 msgstr ""
@@ -2864,10 +2873,11 @@ msgid "You are not joined to the channel"
 msgstr "Δεν σου επιτρέπεται η δημιουργία κόμβων"
 
 #: src/mod_register_web.erl:287
-msgid "You can later change your password using a Jabber client."
+#, fuzzy
+msgid "You can later change your password using an XMPP client."
 msgstr ""
 "Μπορείτε αργότερα να αλλάξετε τον κωδικό πρόσβασής σας χρησιμοποιώντας έναν "
-"πελάτη Jabber."
+"πελάτη XMPP."
 
 #: src/mod_muc_room.erl:2091
 msgid "You have been banned from this room"
@@ -2898,12 +2908,14 @@ msgid "You're not allowed to create nodes"
 msgstr "Δεν σου επιτρέπεται η δημιουργία κόμβων"
 
 #: src/mod_register_web.erl:118
-msgid "Your Jabber account was successfully created."
-msgstr "Ο Jabber λογαριασμός σας δημιουργήθηκε με επιτυχία."
+#, fuzzy
+msgid "Your XMPP account was successfully created."
+msgstr "Ο XMPP λογαριασμός σας δημιουργήθηκε με επιτυχία."
 
 #: src/mod_register_web.erl:131
-msgid "Your Jabber account was successfully deleted."
-msgstr "Ο Jabber λογαριασμός σας διαγράφηκε με επιτυχία."
+#, fuzzy
+msgid "Your XMPP account was successfully deleted."
+msgstr "Ο XMPP λογαριασμός σας διαγράφηκε με επιτυχία."
 
 #: src/ejabberd_c2s.erl:704 src/ejabberd_c2s.erl:860
 msgid "Your active privacy list has denied the routing of this stanza."

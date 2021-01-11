@@ -62,7 +62,6 @@
 {"Deliver payloads with event notifications","Yükleri (payload) olay uyarıları ile beraber gönder"}.
 {"Description:","Tanım:"}.
 {"Disc only copy","Sadece disk kopyala"}.
-{"Don't tell your password to anybody, not even the administrators of the Jabber server.","Parolanızı kimseye söylemeyin, Jabber sunucusunun yöneticilerine bile."}.
 {"Dump Backup to Text File at ","Metin Dosyasına Döküm Alarak Yedekle : "}.
 {"Dump to Text File","Metin Dosyasına Döküm Al"}.
 {"Edit Properties","Özellikleri Düzenle"}.
@@ -82,7 +81,6 @@
 {"Enter path to jabberd14 spool file","jabberd14 spool dosyası için yol giriniz"}.
 {"Enter path to text file","Metin dosyasının yolunu giriniz"}.
 {"Enter the text you see","Gördüğünüz metni giriniz"}.
-{"Erlang Jabber Server","Erlang Jabber Sunucusu"}.
 {"Error","Hata"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","CAPTCHA doğrulamasını şu Jabber ID'ler için yapma"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Sunucudaki tüm kullanıcıların verisini PIEFXIS dosyalarına (XEP-0227) dışa aktar:"}.
@@ -122,7 +120,6 @@
 {"It is not allowed to send private messages of type \"groupchat\"","\"groupchat\" tipinde özel mesajlar gönderilmesine izin verilmiyor"}.
 {"It is not allowed to send private messages to the conference","Konferansa özel mesajlar gönderilmesine izin verilmiyor"}.
 {"It is not allowed to send private messages","Özel mesaj gönderilmesine izin verilmiyor"}.
-{"Jabber Account Registration","Jabber Hesap Kaydı"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Ocak"}.
 {"joins the room","odaya katıldı"}.
@@ -148,7 +145,6 @@
 {"May","Mayıs"}.
 {"Membership is required to enter this room","Bu odaya girmek için üyelik gerekiyor"}.
 {"Members:","Üyeler:"}.
-{"Memorize your password, or write it in a paper placed in a safe place. In Jabber there isn't an automated way to recover your password if you forget it.","Parolanızı ezberleyin ya da bir kağıda yazarak güvenli bir yerde saklayın. Jabber'da parolanızı unutursanız, otomatik kurtarmak için bir yöntem bulunmuyor."}.
 {"Memory","Bellek"}.
 {"Message body","Mesajın gövdesi"}.
 {"Middle Name","Ortanca İsim"}.
@@ -222,7 +218,6 @@
 {"RAM copy","RAM kopyala"}.
 {"Really delete message of the day?","Günün mesajını silmek istediğinize emin misiniz?"}.
 {"Recipient is not in the conference room","Alıcı konferans odasında değil"}.
-{"Register a Jabber account","Bir Jabber hesabı kaydet"}.
 {"Registered Users","Kayıtlı Kullanıcılar"}.
 {"Registered Users:","Kayıtlı Kullanıcılar:"}.
 {"Register","Kayıt Ol"}.
@@ -264,7 +259,6 @@
 {"Show Integral Table","Önemli Tabloyu Göster"}.
 {"Show Ordinary Table","Sıradan Tabloyu Göster"}.
 {"Shut Down Service","Servisi Kapat"}.
-{"Some Jabber clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Bazı Jabber istemcileri parolanızı bilgisayarınızda saklayabilir. Bu özelliği ancak bilgisayarın güvenli olduğuna güveniyorsanız kullanın."}.
 {"Specify the access model","Erişim modelini belirtiniz"}.
 {"Specify the event message type","Olay mesaj tipini belirtiniz"}.
 {"Specify the publisher model","Yayıncı modelini belirtiniz"}.
@@ -288,13 +282,10 @@
 {"The collections with which a node is affiliated","Bir düğüm ile bağlantılı koleksiyonlar"}.
 {"The password is too weak","Parola çok zayıf"}.
 {"the password is","parola :"}.
-{"The password of your Jabber account was successfully changed.","Jabber hesabınızın parolası başarıyla değiştirildi."}.
 {"There was an error changing the password: ","Parolanın değiştirilmesi sırasında bir hata oluştu:"}.
 {"There was an error creating the account: ","Hesap oluşturulurken bir hata oluştu:"}.
 {"There was an error deleting the account: ","Hesabın silinmesi sırasında bir hata oluştu:"}.
 {"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Burada büyük küçük harfi yapılmaz: macbeth ile MacBeth ve Macbeth aynıdır."}.
-{"This page allows to create a Jabber account in this Jabber server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Bu sayfa bu Jabber sunucusunda bir Jabber hesabı oluşturulmasına olanak tanıyor. Sizin JID'iniz (Jabber Tanımlayıcısı) şu biçemde olacaktır: kullanici_adi@sunucu. Lütfen alanları doğru doldurabilmek için yönergeleri dikkatle okuyunuz."}.
-{"This page allows to unregister a Jabber account in this Jabber server.","Bu sayfa bu Jabber sunucusundan bir Jabber hesabının kaydını silmeye olanak tanıyor."}.
 {"This room is not anonymous","Bu oda anonim değil"}.
 {"Thursday","Perşembe"}.
 {"Time delay","Zaman gecikmesi"}.
@@ -309,7 +300,6 @@
 {"Tuesday","Salı"}.
 {"Unable to generate a CAPTCHA","İnsan doğrulaması (CAPTCHA) oluşturulamadı"}.
 {"Unauthorized","Yetkisiz"}.
-{"Unregister a Jabber account","Bir Jabber hesabı kaydı sil"}.
 {"Unregister","Kaydı Sil"}.
 {"Update message of the day (don't send)","Günün mesajını güncelle (gönderme)"}.
 {"Update message of the day on all hosts (don't send)","Tüm sunuculardaki günün mesajını güncelle (gönderme)"}.
@@ -334,7 +324,6 @@
 {"Wednesday","Çarşamba"}.
 {"When to send the last published item","Son yayınlanan öğe ne zaman gönderilsin"}.
 {"Whether to allow subscriptions","Üyeliklere izin verilsin mi"}.
-{"You can later change your password using a Jabber client.","Parolanızı daha sonra bir Jabber istemci kullanarak değiştirebilirsiniz."}.
 {"You have been banned from this room","Bu odaya girmeniz yasaklandı"}.
 {"You must fill in field \"Nickname\" in the form","Formda \"Takma isim\" alanını doldurmanız gerekiyor"}.
 {"You need a client that supports x:data and CAPTCHA to register","Takma isminizi kaydettirmek için x:data ve CAPTCHA destekleyen bir istemciye gereksinimiz var"}.
@@ -342,6 +331,4 @@
 {"You need an x:data capable client to search","Arama yapabilmek için x:data becerisine sahip bir istemciye gereksinimiz var"}.
 {"Your active privacy list has denied the routing of this stanza.","Etkin mahremiyet listeniz bu bölümün yönlendirilmesini engelledi."}.
 {"Your contact offline message queue is full. The message has been discarded.","Çevirim-dışı mesaj kuyruğunuz dolu. Mesajını dikkate alınmadı."}.
-{"Your Jabber account was successfully created.","Jabber hesabınız başarıyla oluşturuldu."}.
-{"Your Jabber account was successfully deleted.","Jabber hesabınız başarıyla silindi."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","~s kullanıcısına mesajlarınız engelleniyor. Durumu düzeltmek için ~s adresini ziyaret ediniz."}.
