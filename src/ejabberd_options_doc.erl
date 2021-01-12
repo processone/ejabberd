@@ -369,7 +369,7 @@ doc() ->
                "in the database. This is risky because the passwords "
                "can be read if your database gets compromised. "
                "This is the default value. This format allows clients to "
-               "authenticate using: the old Jabber Non-SASL (XEP-0078), "
+               "authenticate using: the old XMPP Non-SASL (XEP-0078), "
                "SASL PLAIN, SASL DIGEST-MD5, and SASL SCRAM-SHA-1. "
                "'scram': The password is not stored, only some information "
                "that allows to verify the hash provided by the client. "
@@ -1028,7 +1028,7 @@ doc() ->
                "https://tools.ietf.org/html/rfc6120#section-7.7.2.2"
                "[XMPP Core: section 7.7.2.2]. "
                "The default value is 'closeold'. If the client "
-               "uses old Jabber Non-SASL authentication (XEP-0078), "
+               "uses old XMPP Non-SASL authentication (XEP-0078), "
                "then this option is not respected, and the action performed "
                "is 'closeold'.")}},
      {router_cache_life_time,

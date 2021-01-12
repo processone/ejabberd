@@ -163,8 +163,8 @@ if ($res->is_success && $res->content =~ /<body .*type=["']terminate['"]/ && $re
 	print $res->as_string, "\n";
 }
 
-# trying to connect to non-existent jabber server
-print "Connecting to non-existent jabber server: ";
+# trying to connect to non-existent XMPP server
+print "Connecting to non-existent XMPP server: ";
 $res = &doSend("<body content='text/xml; charset=utf-8' hold='0' rid='$RID' to='www.jabber.org' wait='60' xml:lang='en' xmlns='http://jabber.org/protocol/httpbind'/>");
 if ($res->is_success && $res->content =~ /<body .*type=["']terminate['"]/ && ($res->content =~/<body .*condition=["']remote-connection-failed['"] / || $res->content =~/<body .*condition=["']host-unknown['"] /))  {
 	print "OK.\n";
@@ -174,7 +174,7 @@ if ($res->is_success && $res->content =~ /<body .*type=["']terminate['"]/ && ($r
 }
 
 # connection to foreign server
-#print "Connecting to foreign jabber server: ";
+#print "Connecting to foreign XMPP server: ";
 #$res = &doSend("<body content='text/xml; charset=utf-8' hold='0' rid='$RID' to='jwchat.org' wait='60' xml:lang='en' xmlns='http://jabber.org/protocol/httpbind'/>");
 #if ($res->is_success && $res->content =~ /<body .*type=["']terminate['"]/ && $res->content =~/<body .*condition=["']host-unknown['"] /) {
 #	print "OK.\n";
