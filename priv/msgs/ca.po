@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2020-04-17 19:21+0200\n"
+"PO-Revision-Date: 2021-01-12 12:56+0100\n"
 "Last-Translator: Badlop <badlop@process-one.net>\n"
 "Language-Team: \n"
 "Language: ca\n"
@@ -23,12 +23,11 @@ msgstr " (Afegix * al final d'un camp per a buscar subcadenes)"
 
 #: src/mod_muc_log.erl:420 src/mod_muc_log.erl:592
 msgid " has set the subject to: "
-msgstr " ha posat l'assumpte: "
+msgstr " ha posat el tema: "
 
 #: src/mod_muc_admin.erl:532
-#, fuzzy
 msgid "# participants"
-msgstr "Participant"
+msgstr "# participants"
 
 #: src/mod_shared_roster.erl:1047
 msgid "'Displayed groups' not added (they do not exist!): "
@@ -36,13 +35,12 @@ msgstr "'Mostrats' no afegits (no existeixen!): "
 
 #: deps/xmpp/src/muc_register.erl:502
 msgid "A Web Page"
-msgstr ""
+msgstr "Una Pàgina Web"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1561
 #: deps/xmpp/src/pubsub_meta_data.erl:672
-#, fuzzy
 msgid "A description of the node"
-msgstr "Un nom per al node"
+msgstr "Una descripció del node"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1985
 msgid "A friendly name for the node"
@@ -72,30 +70,28 @@ msgid "Access denied by service policy"
 msgstr "Accés denegat per la política del servei"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:833
-#, fuzzy
 msgid "Access model"
-msgstr "Regles d'Accés"
+msgstr "Model d'Accés"
 
 #: deps/xmpp/src/pubsub_publish_options.erl:295
 msgid "Access model of authorize"
-msgstr ""
+msgstr "Model d'Accés de autoritzar"
 
 #: deps/xmpp/src/pubsub_publish_options.erl:299
 msgid "Access model of open"
-msgstr ""
+msgstr "Model d'Accés de obert"
 
 #: deps/xmpp/src/pubsub_publish_options.erl:303
 msgid "Access model of presence"
-msgstr ""
+msgstr "Model d'Accés de presència"
 
 #: deps/xmpp/src/pubsub_publish_options.erl:307
 msgid "Access model of roster"
-msgstr ""
+msgstr "Model d'Accés de contactes"
 
 #: deps/xmpp/src/pubsub_publish_options.erl:311
-#, fuzzy
 msgid "Access model of whitelist"
-msgstr "Llistes de Control de Accés"
+msgstr "Model d'Accés de llista blanca"
 
 #: src/mod_register_web.erl:609
 msgid "Account doesn't exist"
@@ -139,21 +135,21 @@ msgid "All activity"
 msgstr "Tota l'activitat"
 
 #: deps/xmpp/src/muc_roomconfig.erl:1556
-#, fuzzy
 msgid "Allow subscription"
-msgstr "Subscripció"
+msgstr "Permetre subscripcions"
 
 #: deps/xmpp/src/pubsub_subscribe_authorization.erl:343
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
-msgstr "Permetre que aquesta Jabber ID es puga subscriure a aquest node pubsub"
+msgstr ""
+"Permetre que aquesta Jabber ID es puga subscriure a aquest node pubsub?"
 
 #: deps/xmpp/src/muc_register.erl:417
 msgid "Allow this person to register with the room?"
-msgstr ""
+msgstr "Permetre a esta persona registrar-se a la sala?"
 
 #: src/mod_muc_log.erl:813 deps/xmpp/src/muc_roomconfig.erl:1654
 msgid "Allow users to change the subject"
-msgstr "Permetre que els usuaris canviin el tema"
+msgstr "Permetre que els usuaris canviïn el tema"
 
 #: src/mod_muc_log.erl:819 deps/xmpp/src/muc_roomconfig.erl:1623
 msgid "Allow users to query other users"
@@ -191,6 +187,9 @@ msgid ""
 "LDAP Distinguished Name according to an implementation-specific or "
 "deployment-specific definition of a group."
 msgstr ""
+"Un grup LDAP associat que defineix membresía a la sala; esto deuria ser un "
+"Nombre Distinguible de LDAP, d'acord amb una definició de grup específica "
+"d'implementació o de instal·lació."
 
 #: src/mod_announce.erl:607
 msgid "Announcements"
@@ -198,49 +197,50 @@ msgstr "Anuncis"
 
 #: deps/xmpp/src/captcha_form.erl:762
 msgid "Answer associated with a picture"
-msgstr ""
+msgstr "Resposta associada amb una imatge"
 
 #: deps/xmpp/src/captcha_form.erl:866
 msgid "Answer associated with a video"
-msgstr ""
+msgstr "Resposta associada amb un vídeo"
 
 #: deps/xmpp/src/captcha_form.erl:836
 msgid "Answer associated with speech"
-msgstr ""
+msgstr "Resposta associada amb un parlament"
 
 #: deps/xmpp/src/captcha_form.erl:791
 msgid "Answer to a question"
-msgstr ""
+msgstr "Resposta a una pregunta"
 
 #: deps/xmpp/src/muc_roominfo.erl:728 deps/xmpp/src/muc_roomconfig.erl:1418
 #: deps/xmpp/src/muc_roomconfig.erl:1478 deps/xmpp/src/muc_roomconfig.erl:1981
-#, fuzzy
 msgid "Anyone"
-msgstr "qualsevol"
+msgstr "Qualsevol"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1327
 #: deps/xmpp/src/pubsub_meta_data.erl:817
 msgid ""
 "Anyone in the specified roster group(s) may subscribe and retrieve items"
 msgstr ""
+"Qualsevol en el grup de contactes especificat pot subscriure's i recuperar "
+"elements"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1381
 msgid "Anyone may associate leaf nodes with the collection"
-msgstr ""
+msgstr "Qualsevol pot associar nodes fulla amb la col·lecció"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1850
 #: deps/xmpp/src/pubsub_meta_data.erl:855
 msgid "Anyone may publish"
-msgstr ""
+msgstr "Qualsevol pot publicar"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1317
 #: deps/xmpp/src/pubsub_meta_data.erl:807
 msgid "Anyone may subscribe and retrieve items"
-msgstr ""
+msgstr "Qualsevol pot publicar i recuperar elements"
 
 #: deps/xmpp/src/muc_roominfo.erl:731 deps/xmpp/src/muc_roomconfig.erl:1421
 msgid "Anyone with Voice"
-msgstr ""
+msgstr "Qualsevol amb Veu"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1321
 #: deps/xmpp/src/pubsub_meta_data.erl:811
@@ -248,6 +248,8 @@ msgid ""
 "Anyone with a presence subscription of both or from may subscribe and "
 "retrieve items"
 msgstr ""
+"Qualsevol amb una subscripció de presencia de 'both' o 'from' pot "
+"subscriure's i publicar elements"
 
 #: src/mod_muc_log.erl:481
 msgid "April"
@@ -271,7 +273,7 @@ msgstr "L'atribut 'node' no està permès ací"
 
 #: deps/xmpp/src/captcha_form.erl:731
 msgid "Attribute 'to' of stanza that triggered challenge"
-msgstr ""
+msgstr "L'atribut 'to' del paquet que va disparar la comprovació"
 
 #: src/mod_muc_log.erl:485
 msgid "August"
@@ -336,7 +338,7 @@ msgstr "No es pot eliminar la llista per defecte"
 
 #: deps/xmpp/src/captcha_form.erl:715
 msgid "Challenge ID"
-msgstr ""
+msgstr "ID de la comprovació"
 
 #: src/ejabberd_web_admin.erl:912 src/mod_register_web.erl:216
 #: src/mod_register_web.erl:389 src/mod_register_web.erl:397
@@ -444,7 +446,7 @@ msgstr "Recursos connectats:"
 
 #: deps/xmpp/src/muc_roominfo.erl:764
 msgid "Contact Addresses (normally, room owner or owners)"
-msgstr ""
+msgstr "Adreces de contacte (normalment, propietaris de la sala)"
 
 #: src/mod_vcard_mnesia.erl:106 src/mod_vcard_mnesia.erl:120
 #: src/mod_vcard_sql.erl:163 src/mod_vcard_sql.erl:177
@@ -454,7 +456,7 @@ msgstr "Pais"
 
 #: deps/xmpp/src/muc_roominfo.erl:875
 msgid "Current Discussion Topic"
-msgstr ""
+msgstr "Assumpte de discussió actual"
 
 #: src/mod_configure.erl:140 src/mod_configure.erl:564
 #: src/ejabberd_web_admin.erl:1099 src/ejabberd_web_admin.erl:1806
@@ -539,7 +541,6 @@ msgid "Displayed:"
 msgstr "Mostrats:"
 
 #: src/mod_register_web.erl:283
-#, fuzzy
 msgid ""
 "Don't tell your password to anybody, not even the administrators of the XMPP "
 "server."
@@ -562,6 +563,7 @@ msgstr "No estan permesos els grups duplicats al RFC6121"
 #: deps/xmpp/src/pubsub_node_config.erl:1597
 msgid "Dynamically specify a replyto of the item publisher"
 msgstr ""
+"Especifica dinàmicament l'adreça on respondre al publicador del element"
 
 #: src/mod_configure.erl:1518
 msgid "Edit Properties"
@@ -579,11 +581,11 @@ msgstr "Elements"
 #: src/mod_vcard_sql.erl:165 src/mod_vcard_sql.erl:179
 #: src/mod_vcard_ldap.erl:335 src/mod_vcard_ldap.erl:348
 msgid "Email"
-msgstr "Email"
+msgstr "Correu"
 
 #: deps/xmpp/src/muc_register.erl:432
 msgid "Email Address"
-msgstr ""
+msgstr "Adreça de correu"
 
 #: src/mod_muc_log.erl:822 deps/xmpp/src/muc_roomconfig.erl:1668
 msgid "Enable logging"
@@ -627,7 +629,6 @@ msgid "Enter the text you see"
 msgstr "Introdueix el text que veus"
 
 #: src/mod_vcard.erl:213
-#, fuzzy
 msgid "Erlang XMPP Server"
 msgstr "Servidor Erlang XMPP"
 
@@ -662,7 +663,7 @@ msgstr "Temps esgotat al component extern"
 
 #: deps/xmpp/src/muc_register.erl:446
 msgid "FAQ Entry"
-msgstr ""
+msgstr "Entrada a la FAQ"
 
 #: src/mod_proxy65_service.erl:229
 msgid "Failed to activate bytestream"
@@ -700,7 +701,6 @@ msgid "File larger than ~w bytes"
 msgstr "El fitxer es més gran que ~w bytes"
 
 #: src/mod_vcard.erl:458
-#, fuzzy
 msgid "Fill in the form to search for any matching XMPP User"
 msgstr "Emplena camps per a buscar usuaris XMPP que concorden"
 
@@ -717,14 +717,12 @@ msgid "From ~ts"
 msgstr "De ~ts"
 
 #: deps/xmpp/src/muc_roomconfig.erl:1909
-#, fuzzy
 msgid "Full List of Room Admins"
-msgstr "Llista de sales"
+msgstr "Llista completa de administradors de la sala"
 
 #: deps/xmpp/src/muc_roomconfig.erl:1952
-#, fuzzy
 msgid "Full List of Room Owners"
-msgstr "Llista de sales"
+msgstr "Llista completa de propietaris de la sala"
 
 #: src/mod_vcard_mnesia.erl:100 src/mod_vcard_mnesia.erl:114
 #: src/mod_vcard_sql.erl:157 src/mod_vcard_sql.erl:171
@@ -778,7 +776,7 @@ msgstr "Grups"
 
 #: src/mod_shared_roster.erl:1035
 msgid "Groups that will be displayed to the members"
-msgstr ""
+msgstr "Grups que seran mostrats als membres"
 
 #: src/mod_http_upload.erl:210
 msgid "HTTP File Upload"
@@ -953,7 +951,7 @@ msgstr "Juny"
 
 #: src/mod_muc_admin.erl:537
 msgid "Just created"
-msgstr ""
+msgstr "Creació recent"
 
 #: src/mod_shared_roster.erl:1006
 msgid "Label:"
@@ -969,9 +967,8 @@ msgid "Last login"
 msgstr "Últim login"
 
 #: src/mod_muc_admin.erl:533
-#, fuzzy
 msgid "Last message"
-msgstr "Últim any"
+msgstr "Últim missatge"
 
 #: src/ejabberd_web_admin.erl:492
 msgid "Last month"
@@ -985,6 +982,8 @@ msgstr "Últim any"
 msgid ""
 "Least significant bits of SHA-256 hash of text should equal hexadecimal label"
 msgstr ""
+"Els bits menys significants del hash SHA-256 del text deurien ser iguals a "
+"l'etiqueta hexadecimal"
 
 #: src/mod_muc_admin.erl:485
 msgid "List of rooms"
@@ -992,7 +991,7 @@ msgstr "Llista de sales"
 
 #: src/mod_muc_admin.erl:536
 msgid "Logging"
-msgstr ""
+msgstr "Registre"
 
 #: src/ejabberd_web_admin.erl:1442
 msgid "Low level update script"
@@ -1050,7 +1049,7 @@ msgstr "Màxim tamany del payload en bytes"
 
 #: deps/xmpp/src/muc_roominfo.erl:699 deps/xmpp/src/muc_roomconfig.erl:1405
 msgid "Maximum Number of History Messages Returned by Room"
-msgstr ""
+msgstr "Numero màxim de missatges de l'historia que retorna la sala"
 
 #: src/mod_muc_log.erl:834 deps/xmpp/src/muc_roomconfig.erl:1758
 msgid "Maximum Number of Occupants"
@@ -1058,12 +1057,11 @@ msgstr "Número màxim d'ocupants"
 
 #: deps/xmpp/src/http_upload.erl:240
 msgid "Maximum file size"
-msgstr ""
+msgstr "Mida màxima de fitxer"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:788
-#, fuzzy
 msgid "Maximum number of items to persist"
-msgstr "Màxim # d'elements que persistixen"
+msgstr "Número màxim d'elements que persistixen"
 
 #: src/mod_muc_log.erl:482
 msgid "May"
@@ -1082,13 +1080,12 @@ msgid "Membership is required to enter this room"
 msgstr "Necessites ser membre d'aquesta sala per a poder entrar"
 
 #: src/mod_register_web.erl:294
-#, fuzzy
 msgid ""
 "Memorize your password, or write it in a paper placed in a safe place. In "
 "XMPP there isn't an automated way to recover your password if you forget it."
 msgstr ""
 "Memoritza la teva contrasenya, o escriu-la en un paper guardat a un lloc "
-"segur.A XMPP no hi ha una forma automatitzada de recuperar la teva "
+"segur. A XMPP no hi ha una forma automatitzada de recuperar la teva "
 "contrasenya si la oblides."
 
 #: src/ejabberd_web_admin.erl:1181
@@ -1097,7 +1094,7 @@ msgstr "Memòria"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:575
 msgid "Mere Availability in XMPP (No Show Value)"
-msgstr ""
+msgstr "Simplement disponibilitat a XMPP (sense valor de 'show')"
 
 #: src/mod_configure.erl:948 src/mod_configure.erl:988 src/mod_announce.erl:528
 msgid "Message body"
@@ -1113,11 +1110,11 @@ msgstr "Els missatges de desconeguts son rebutjats"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1715
 msgid "Messages of type headline"
-msgstr ""
+msgstr "Missatges de tipus titular"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1711
 msgid "Messages of type normal"
-msgstr ""
+msgstr "Missatges de tipus normal"
 
 #: src/mod_vcard_mnesia.erl:102 src/mod_vcard_mnesia.erl:116
 #: src/mod_vcard_sql.erl:159 src/mod_vcard_sql.erl:173
@@ -1140,9 +1137,8 @@ msgstr "Es necessita tenir privilegis de moderador"
 
 #: deps/xmpp/src/muc_roominfo.erl:734 deps/xmpp/src/muc_roomconfig.erl:1424
 #: deps/xmpp/src/muc_roomconfig.erl:1476 deps/xmpp/src/muc_roomconfig.erl:1979
-#, fuzzy
 msgid "Moderators Only"
-msgstr "només moderadors"
+msgstr "Només moderadors"
 
 #: src/ejabberd_web_admin.erl:1440
 msgid "Modified modules"
@@ -1177,7 +1173,7 @@ msgstr "Nom"
 
 #: src/mod_shared_roster.erl:1009
 msgid "Name in the rosters where this group will be displayed"
-msgstr ""
+msgstr "Nom a les llistes de contactes on es mostrarà aquest grup"
 
 #: src/mod_shared_roster.erl:908 src/mod_shared_roster.erl:1002
 msgid "Name:"
@@ -1185,11 +1181,11 @@ msgstr "Nom:"
 
 #: deps/xmpp/src/muc_roominfo.erl:795 deps/xmpp/src/muc_roomconfig.erl:1707
 msgid "Natural Language for Room Discussions"
-msgstr ""
+msgstr "Llengua natural per a les discussions a les sales"
 
 #: deps/xmpp/src/muc_roominfo.erl:846
 msgid "Natural-Language Room Name"
-msgstr ""
+msgstr "Nom de la sala a la seua llengua natural"
 
 #: src/mod_muc_room.erl:2987
 msgid "Neither 'jid' nor 'nick' attribute found"
@@ -1350,9 +1346,8 @@ msgstr "No n'hi ha estadístiques disponibles per a aquest element"
 
 #: deps/xmpp/src/muc_roominfo.erl:736 deps/xmpp/src/muc_roomconfig.erl:1426
 #: deps/xmpp/src/muc_roomconfig.erl:1473
-#, fuzzy
 msgid "Nobody"
-msgstr "ningú"
+msgstr "Ningú"
 
 #: deps/xmpp/src/pubsub_subscribe_authorization.erl:358
 msgid "Node ID"
@@ -1421,14 +1416,12 @@ msgid "November"
 msgstr "Novembre"
 
 #: deps/xmpp/src/flex_offline.erl:239
-#, fuzzy
 msgid "Number of Offline Messages"
-msgstr "Missatges offline"
+msgstr "Número de missatges offline"
 
 #: deps/xmpp/src/captcha_form.erl:686
-#, fuzzy
 msgid "Number of answers required"
-msgstr "Número d'usuaris connectats"
+msgstr "Número de respostes requerides"
 
 #: deps/xmpp/src/muc_roominfo.erl:860
 msgid "Number of occupants"
@@ -1445,6 +1438,7 @@ msgstr "Número d'Usuaris Registrats"
 #: deps/xmpp/src/pubsub_node_config.erl:1577
 msgid "Number of seconds after which to automatically purge items"
 msgstr ""
+"Número de segons després dels quals es purgaran automàticament elements"
 
 #: src/ejabberd_web_admin.erl:1227 src/ejabberd_web_admin.erl:1237
 #: src/ejabberd_web_admin.erl:1248 src/ejabberd_web_admin.erl:1257
@@ -1456,14 +1450,12 @@ msgid "OK"
 msgstr "Acceptar"
 
 #: deps/xmpp/src/muc_roominfo.erl:925
-#, fuzzy
 msgid "Occupants May Change the Subject"
-msgstr "Permetre que els usuaris canviin el tema"
+msgstr "Els ocupants poden canviar el Tema"
 
 #: deps/xmpp/src/muc_roominfo.erl:716
-#, fuzzy
 msgid "Occupants are allowed to invite others"
-msgstr "Sols els ocupants poden enviar sol·licituds a la sala"
+msgstr "Els ocupants poden invitar a altres"
 
 #: src/mod_muc_log.erl:487
 msgid "October"
@@ -1506,12 +1498,14 @@ msgstr "En esta petició només es permet l'element <list/>"
 
 #: src/mod_shared_roster.erl:1017
 msgid "Only admins can see this"
-msgstr ""
+msgstr "Només els administradors poden veure esto"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1386
 msgid ""
 "Only collection node owners may associate leaf nodes with the collection"
 msgstr ""
+"Només els propietaris de la col·lecció de nodes poden associar nodes fulla "
+"amb la col·lecció"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1827
 msgid "Only deliver notifications to available users"
@@ -1526,11 +1520,11 @@ msgid ""
 "Only moderators and participants are allowed to change the subject in this "
 "room"
 msgstr ""
-"Només els moderadors i participants poden canviar l'assumpte d'aquesta sala"
+"Només els moderadors i participants poden canviar el tema d'aquesta sala"
 
 #: src/mod_muc_room.erl:1005
 msgid "Only moderators are allowed to change the subject in this room"
-msgstr "Només els moderadors poden canviar l'assumpte d'aquesta sala"
+msgstr "Només els moderadors poden canviar el tema d'aquesta sala"
 
 #: src/mod_muc_room.erl:1144
 msgid "Only moderators can approve voice requests"
@@ -1547,7 +1541,7 @@ msgstr "Sols els ocupants poden enviar sol·licituds a la sala"
 #: deps/xmpp/src/pubsub_node_config.erl:1843
 #: deps/xmpp/src/pubsub_meta_data.erl:848
 msgid "Only publishers may publish"
-msgstr ""
+msgstr "Només els publicadors poden publicar"
 
 #: src/mod_muc.erl:227
 msgid "Only service administrators are allowed to send service messages"
@@ -1558,11 +1552,14 @@ msgstr ""
 #: deps/xmpp/src/pubsub_node_config.erl:1391
 msgid "Only those on a whitelist may associate leaf nodes with the collection"
 msgstr ""
+"Només qui estiga a una llista blanca pot associar nodes fulla amb la "
+"col·lecció"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1332
 #: deps/xmpp/src/pubsub_meta_data.erl:822
 msgid "Only those on a whitelist may subscribe and retrieve items"
 msgstr ""
+"Només qui estiga a una llista blanca pot subscriure's i recuperar elements"
 
 #: src/mod_vcard_mnesia.erl:109 src/mod_vcard_mnesia.erl:123
 #: src/mod_vcard_sql.erl:166 src/mod_vcard_sql.erl:180
@@ -1636,7 +1633,7 @@ msgstr "Ruta al fitxer"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:772
 msgid "Payload type"
-msgstr ""
+msgstr "Tipus de payload"
 
 #: src/mod_roster.erl:1004
 msgid "Pending"
@@ -1652,9 +1649,8 @@ msgid "Persist items to storage"
 msgstr "Persistir elements al guardar"
 
 #: src/mod_muc_admin.erl:535
-#, fuzzy
 msgid "Persistent"
-msgstr "Crear una sala persistent"
+msgstr "Persistent"
 
 #: src/mod_adhoc.erl:155 src/mod_adhoc.erl:245
 msgid "Ping"
@@ -1716,12 +1712,11 @@ msgstr "Petició de subscriptor PubSub"
 
 #: src/mod_muc_admin.erl:534
 msgid "Public"
-msgstr ""
+msgstr "Public"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:865
-#, fuzzy
 msgid "Publish model"
-msgstr "Especificar el model del publicant"
+msgstr "Model de publicació"
 
 #: src/mod_pubsub.erl:4171
 msgid "Publish-Subscribe"
@@ -1763,19 +1758,19 @@ msgstr "Segur que vols eliminar el missatge del dia?"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:643
 msgid "Receive notification from all descendent nodes"
-msgstr ""
+msgstr "Rebre notificació de tots els nodes descendents"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:638
 msgid "Receive notification from direct child nodes only"
-msgstr ""
+msgstr "Rebre notificació només de nodes fills directes"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:608
 msgid "Receive notification of new items only"
-msgstr ""
+msgstr "Rebre notificació només de nous elements"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:612
 msgid "Receive notification of new nodes only"
-msgstr ""
+msgstr "Rebre notificació només de nous nodes"
 
 #: src/mod_muc_room.erl:543 src/mod_muc_room.erl:592
 msgid "Recipient is not in the conference room"
@@ -1787,7 +1782,6 @@ msgstr "Registrar"
 
 #: src/mod_register_web.erl:214 src/mod_register_web.erl:242
 #: src/mod_register_web.erl:250
-#, fuzzy
 msgid "Register an XMPP account"
 msgstr "Registrar un compte XMPP"
 
@@ -1829,9 +1823,8 @@ msgid "Request is ignored"
 msgstr "La petició ha sigut ignorada"
 
 #: deps/xmpp/src/muc_request.erl:340
-#, fuzzy
 msgid "Requested role"
-msgstr "La petició ha caducat"
+msgstr "Rol sol·licitat"
 
 #: src/mod_configure.erl:1407
 msgid "Resources"
@@ -1871,16 +1864,15 @@ msgstr "Restaurar una còpia de seguretat en format de text pla ara mateix:"
 
 #: deps/xmpp/src/muc_roomconfig.erl:1690
 msgid "Roles and Affiliations that May Retrieve Member List"
-msgstr ""
+msgstr "Rols i Afiliacions que poden recuperar la llista de membres"
 
 #: deps/xmpp/src/muc_roomconfig.erl:1864
 msgid "Roles for which Presence is Broadcasted"
 msgstr "Rols per als que sí se difon la seua presencia"
 
 #: deps/xmpp/src/muc_roominfo.erl:748 deps/xmpp/src/muc_roomconfig.erl:1438
-#, fuzzy
 msgid "Roles that May Send Private Messages"
-msgstr "Permetre que els usuaris envien missatges privats"
+msgstr "Rols que poden enviar missatges privats"
 
 #: src/mod_muc_log.erl:639
 msgid "Room Configuration"
@@ -1888,7 +1880,7 @@ msgstr "Configuració de la sala"
 
 #: src/mod_muc_log.erl:659
 msgid "Room Occupants"
-msgstr "Nombre d'ocupants"
+msgstr "Ocupants de la sala"
 
 #: src/mod_muc.erl:570
 msgid "Room creation is denied by service policy"
@@ -1918,12 +1910,11 @@ msgstr "Llista de contactes de ~ts"
 
 #: src/mod_configure.erl:1403
 msgid "Roster size"
-msgstr "Tamany de la llista"
+msgstr "Mida de la llista"
 
 #: src/mod_roster.erl:1174
-#, fuzzy
 msgid "Roster:"
-msgstr "Llista de contactes"
+msgstr "Llista de contactes:"
 
 #: src/mod_configure.erl:498 src/ejabberd_web_admin.erl:1071
 msgid "Running Nodes"
@@ -1947,15 +1938,15 @@ msgstr "Resultats de la búsqueda "
 
 #: deps/xmpp/src/mam_query.erl:330
 msgid "Search from the date"
-msgstr ""
+msgstr "Buscar des de la data"
 
 #: deps/xmpp/src/mam_query.erl:358
 msgid "Search the text"
-msgstr ""
+msgstr "Buscar el text"
 
 #: deps/xmpp/src/mam_query.erl:344
 msgid "Search until the date"
-msgstr ""
+msgstr "Buscar fins la data"
 
 #: src/mod_vcard.erl:440
 msgid "Search users in "
@@ -1991,9 +1982,8 @@ msgid "Server:"
 msgstr "Servidor:"
 
 #: src/mod_stun_disco.erl:496
-#, fuzzy
 msgid "Service list retrieval timed out"
-msgstr "La petició ha caducat"
+msgstr "L'intent de recuperar la llista de serveis ha caducat"
 
 #: src/mod_stream_mgmt.erl:790
 msgid "Session state copying timed out"
@@ -2028,7 +2018,6 @@ msgid "Shut Down Service"
 msgstr "Apager el Servei"
 
 #: src/mod_register_web.erl:290
-#, fuzzy
 msgid ""
 "Some XMPP clients can store your password in the computer, but you should do "
 "this only in your personal computer for safety reasons."
@@ -2052,11 +2041,11 @@ msgstr "Especificar el model del publicant"
 
 #: deps/xmpp/src/captcha_form.erl:821
 msgid "Stanza ID"
-msgstr ""
+msgstr "ID del paquet"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1592
 msgid "Statically specify a replyto of the node owner(s)"
-msgstr ""
+msgstr "Especifica estaticament una adreça on respondre al propietari del node"
 
 #: src/ejabberd_web_admin.erl:506 src/ejabberd_web_admin.erl:1101
 #: src/ejabberd_web_admin.erl:1795 src/ejabberd_web_admin.erl:1808
@@ -2098,7 +2087,7 @@ msgstr "L'administració de la conexió (stream management) no està activada"
 
 #: src/mod_configure.erl:945 src/mod_configure.erl:985 src/mod_announce.erl:524
 msgid "Subject"
-msgstr "Assumpte"
+msgstr "Tema"
 
 #: src/ejabberd_web_admin.erl:1190 src/mod_shared_roster.erl:1055
 msgid "Submit"
@@ -2119,7 +2108,7 @@ msgstr "Adreça del Subscriptor"
 #: deps/xmpp/src/pubsub_node_config.erl:1847
 #: deps/xmpp/src/pubsub_meta_data.erl:852
 msgid "Subscribers may publish"
-msgstr ""
+msgstr "Els subscriptors poden publicar"
 
 #: src/mod_roster.erl:1003
 msgid "Subscription"
@@ -2131,6 +2120,8 @@ msgid ""
 "Subscription requests must be approved and only subscribers may retrieve "
 "items"
 msgstr ""
+"Les peticiones de subscripció han de ser aprovades i només els subscriptors "
+"poden recuperar elements"
 
 #: src/mod_muc_room.erl:4219
 msgid "Subscriptions are not allowed"
@@ -2142,19 +2133,19 @@ msgstr "Diumenge"
 
 #: deps/xmpp/src/captcha_form.erl:777
 msgid "Text associated with a picture"
-msgstr ""
+msgstr "Text associat amb una imatge"
 
 #: deps/xmpp/src/captcha_form.erl:701
 msgid "Text associated with a sound"
-msgstr ""
+msgstr "Text associat amb un so"
 
 #: deps/xmpp/src/captcha_form.erl:881
 msgid "Text associated with a video"
-msgstr ""
+msgstr "Text associat amb un vídeo"
 
 #: deps/xmpp/src/captcha_form.erl:851
 msgid "Text associated with speech"
-msgstr ""
+msgstr "Text associat amb una veu"
 
 #: src/mod_muc_room.erl:1242 src/mod_muc_room.erl:2104
 #: src/mod_muc_room.erl:4248
@@ -2179,33 +2170,36 @@ msgstr "La verificació CAPTCHA ha fallat"
 #: deps/xmpp/src/pubsub_subscribe_options.erl:529
 msgid "The DateTime at which a leased subscription will end or has ended"
 msgstr ""
+"La Data i Hora a la que una subscripció prestada terminarà o ha terminat"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:657
 msgid "The JID of the node creator"
-msgstr ""
+msgstr "El JID del creador del node"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1493
 #: deps/xmpp/src/pubsub_meta_data.erl:625
 msgid "The JIDs of those to contact with questions"
-msgstr ""
+msgstr "Els JIDs a qui contactar amb preguntes"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:726
 msgid "The JIDs of those with an affiliation of owner"
-msgstr ""
+msgstr "Els JIDs de qui tenen una afiliació de propietaris"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:743
 msgid "The JIDs of those with an affiliation of publisher"
-msgstr ""
+msgstr "Els JIDs de qui tenen una afiliació de publicadors"
 
 #: deps/xmpp/src/pubsub_get_pending.erl:248
 msgid "The NodeID of the relevant node"
-msgstr ""
+msgstr "El NodeID del node rellevant"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1360
 msgid ""
 "The URL of an XSL transformation which can be applied to payloads in order "
 "to generate an appropriate message body element."
 msgstr ""
+"La URL de uns transformació XSL que pot ser aplicada als payloads per a "
+"generar un element apropiat de contingut de missatge."
 
 #: deps/xmpp/src/pubsub_node_config.erl:1509
 msgid ""
@@ -2213,6 +2207,9 @@ msgid ""
 "in order to generate a valid Data Forms result that the client could display "
 "using a generic Data Forms rendering engine"
 msgstr ""
+"La URL de una transformació XSL que pot ser aplicada al format de payload "
+"per a generar un resultat valid de Data Forms, que el client puga mostrar "
+"usant un métode generic de Data Forms"
 
 #: src/mod_register_web.erl:601
 msgid "The account already exists"
@@ -2224,7 +2221,7 @@ msgstr "El compte no ha sigut esborrat"
 
 #: deps/xmpp/src/push_summary.erl:397
 msgid "The body text of the last received message"
-msgstr ""
+msgstr "El contingut del text de l'ultim missatge rebut"
 
 #: src/mod_register_web.erl:599
 msgid "The captcha you entered is wrong"
@@ -2232,7 +2229,7 @@ msgstr "El CAPTCHA que has proporcionat és incorrecte"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1442
 msgid "The child nodes (leaf or collection) associated with a collection"
-msgstr ""
+msgstr "El nodes fills (fulla o col·leccions) associats amb una col·lecció"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1476
 msgid "The collections with which a node is affiliated"
@@ -2240,13 +2237,12 @@ msgstr "Les col.leccions amb les que un node està afiliat"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:642
 msgid "The datetime when the node was created"
-msgstr ""
+msgstr "La data i hora a la que un node va ser creat"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1633
 #: deps/xmpp/src/pubsub_meta_data.erl:693
-#, fuzzy
 msgid "The default language of the node"
-msgstr "Un nom per al node"
+msgstr "El llenguatge per defecte d'un node"
 
 #: src/mod_muc_room.erl:450
 msgid "The feature requested is not supported by the conference"
@@ -2255,44 +2251,45 @@ msgstr ""
 
 #: deps/xmpp/src/pubsub_node_config.erl:1425
 msgid "The list of JIDs that may associate leaf nodes with a collection"
-msgstr ""
+msgstr "La llista de JIDs que poden associar nodes fulla amb una col·lecció"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1459
 msgid ""
 "The maximum number of child nodes that can be associated with a collection"
 msgstr ""
+"El màxim número de nodes fills que poden associar-se amb una col·lecció"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:512
 msgid ""
 "The minimum number of milliseconds between sending any two notification "
 "digests"
 msgstr ""
+"El número mínim de mil·lisegons entre l'enviament de dos resums de "
+"notificacions"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:758
-#, fuzzy
 msgid "The name of the node"
-msgstr "Un nom per al node"
+msgstr "El nom del node"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1682
 msgid "The node is a collection node"
-msgstr ""
+msgstr "El node es una col·lecció"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1678
 msgid "The node is a leaf node (default)"
-msgstr ""
+msgstr "El node es un node fulla (per defecte)"
 
 #: deps/xmpp/src/push_summary.erl:363
 msgid "The number of pending incoming presence subscription requests"
-msgstr ""
+msgstr "El número de peticions rebudes de subscripció de presencia pendents"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:710
-#, fuzzy
 msgid "The number of subscribers to the node"
-msgstr "Permetre que aquesta Jabber ID es puga subscriure a aquest node pubsub"
+msgstr "El número de subscriptors al node"
 
 #: deps/xmpp/src/push_summary.erl:343
 msgid "The number of unread or undelivered messages"
-msgstr ""
+msgstr "El número de missatges no llegits o no enviats"
 
 #: src/mod_register.erl:392
 msgid "The password contains unacceptable characters"
@@ -2303,7 +2300,6 @@ msgid "The password is too weak"
 msgstr "La contrasenya és massa simple"
 
 #: src/mod_register_web.erl:146
-#, fuzzy
 msgid "The password of your XMPP account was successfully changed."
 msgstr "La contrasenya del teu compte XMPP s'ha canviat correctament."
 
@@ -2318,6 +2314,7 @@ msgstr "Les contrasenyes son diferents"
 #: deps/xmpp/src/pubsub_subscribe_options.erl:591
 msgid "The presence states for which an entity wants to receive notifications"
 msgstr ""
+"El estats de presencia per als quals una entitat vol rebre notificacions"
 
 #: src/mod_register.erl:170 src/mod_vcard.erl:231
 msgid "The query is only allowed from local users"
@@ -2329,11 +2326,11 @@ msgstr "La petició no pot contenir elements <item/>"
 
 #: deps/xmpp/src/muc_roominfo.erl:891
 msgid "The room subject can be modified by participants"
-msgstr ""
+msgstr "El tema de la sala pot modificar-lo els participants"
 
 #: deps/xmpp/src/push_summary.erl:381
 msgid "The sender of the last received message"
-msgstr ""
+msgstr "Qui ha enviat l'ultim missatge rebut"
 
 #: src/mod_privacy.erl:268
 msgid ""
@@ -2345,13 +2342,15 @@ msgstr ""
 
 #: deps/xmpp/src/pubsub_subscribe_authorization.erl:388
 msgid "The subscription identifier associated with the subscription request"
-msgstr ""
+msgstr "L'identificador de subscripció associat amb la petició de subscripció"
 
 #: deps/xmpp/src/pubsub_node_config.erl:2001
 msgid ""
 "The type of node data, usually specified by the namespace of the payload (if "
 "any)"
 msgstr ""
+"El tipus de dades al node, usualment especificat pel namespace del payload "
+"(si n'hi ha)"
 
 #: src/mod_register_web.erl:605
 msgid "The username is not valid"
@@ -2376,7 +2375,6 @@ msgstr ""
 "MacBeth i Macbeth."
 
 #: src/mod_register_web.erl:252
-#, fuzzy
 msgid ""
 "This page allows to create an XMPP account in this XMPP server. Your JID "
 "(Jabber IDentifier) will be of the form: username@server. Please read "
@@ -2388,7 +2386,6 @@ msgstr ""
 "correctament els camps."
 
 #: src/mod_register_web.erl:507
-#, fuzzy
 msgid "This page allows to unregister an XMPP account in this XMPP server."
 msgstr ""
 "Aquesta pàgina permet anul·lar el registre d'un compte XMPP en aquest "
@@ -2477,7 +2474,7 @@ msgstr "N'hi ha massa usuaris en esta sala de conferència"
 
 #: src/mod_muc_admin.erl:482
 msgid "Total rooms"
-msgstr "Nombre total de sales"
+msgstr "Sales totals"
 
 #: src/mod_muc_room.erl:317
 msgid "Traffic rate limit is exceeded"
@@ -2505,7 +2502,7 @@ msgstr "Dimarts"
 
 #: deps/xmpp/src/muc_roominfo.erl:831
 msgid "URL for Archived Discussion Logs"
-msgstr ""
+msgstr "URL dels Arxius de Discussions"
 
 #: src/mod_block_strangers.erl:131 src/mod_register.erl:253
 #: src/mod_muc_room.erl:2197
@@ -2537,7 +2534,6 @@ msgstr "Anul·lar el registre"
 
 #: src/mod_register_web.erl:219 src/mod_register_web.erl:497
 #: src/mod_register_web.erl:505
-#, fuzzy
 msgid "Unregister an XMPP account"
 msgstr "Anul·lar el registre d'un compte XMPP"
 
@@ -2594,7 +2590,7 @@ msgstr "Usuari (jid)"
 
 #: deps/xmpp/src/mam_query.erl:316 deps/xmpp/src/muc_request.erl:354
 msgid "User JID"
-msgstr "JID del usuari "
+msgstr "JID del usuari"
 
 #: src/mod_configure.erl:298 src/mod_configure.erl:493
 msgid "User Management"
@@ -2677,12 +2673,11 @@ msgstr "El valor de '~s' deuria ser un numero enter"
 
 #: src/mod_offline.erl:1075
 msgid "View Queue"
-msgstr ""
+msgstr "Vore Cua"
 
 #: src/mod_roster.erl:1172
-#, fuzzy
 msgid "View Roster"
-msgstr "Llista de contactes"
+msgstr "Vore Llista de contactes"
 
 #: src/ejabberd_web_admin.erl:439 src/ejabberd_web_admin.erl:1818
 msgid "Virtual Hosts"
@@ -2713,14 +2708,13 @@ msgid "Wednesday"
 msgstr "Dimecres"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1920
-#, fuzzy
 msgid "When a new subscription is processed"
-msgstr "Permetre subscripcions"
+msgstr "Quan es processa una nova subscripció"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1924
 msgid ""
 "When a new subscription is processed and whenever a subscriber comes online"
-msgstr ""
+msgstr "Quan es processa una nova subscripció i un subscriptor es connecta"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1938
 msgid "When to send the last published item"
@@ -2730,25 +2724,28 @@ msgstr "Quan s'ha enviat l'última publicació"
 msgid ""
 "Whether an entity wants to receive an XMPP message body in addition to the "
 "payload format"
-msgstr ""
+msgstr "Si una entitat vol rebre un missatge XMPP amb el format payload"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:494
 msgid ""
 "Whether an entity wants to receive digests (aggregations) of notifications "
 "or all notifications individually"
 msgstr ""
+"Si una entitat vol rebre resums (agregacions) de notificacions o totes les "
+"notificacions individualment"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:477
 msgid "Whether an entity wants to receive or disable notifications"
-msgstr ""
+msgstr "Si una entitat vol rebre notificacions o no"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1611
 msgid "Whether owners or publisher should receive replies to items"
 msgstr ""
+"Si el propietaris o publicadors deurien de rebre respostes als elements"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1694
 msgid "Whether the node is a leaf (default) or a collection"
-msgstr ""
+msgstr "Si el node es fulla (per defecte) o es una col·lecció"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1970
 msgid "Whether to allow subscriptions"
@@ -2758,14 +2755,17 @@ msgstr "Permetre subscripcions"
 msgid ""
 "Whether to make all subscriptions temporary, based on subscriber presence"
 msgstr ""
+"Si fer totes les subscripcions temporals, basat en la presencia del "
+"subscriptor"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1793
 msgid "Whether to notify owners about new subscribers and unsubscribes"
 msgstr ""
+"Si notificar als propietaris sobre noves subscripcions i desubscripcions"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1405
 msgid "Who may associate leaf nodes with a collection"
-msgstr ""
+msgstr "Qui pot associar nodes fulla amb una col·lecció"
 
 #: src/mod_register_web.erl:617
 msgid "Wrong parameters in the web formulary"
@@ -2776,7 +2776,6 @@ msgid "Wrong xmlns"
 msgstr "El xmlns ès incorrecte"
 
 #: src/mod_register_web.erl:203 src/mod_register_web.erl:211
-#, fuzzy
 msgid "XMPP Account Registration"
 msgstr "Registre de compte XMPP"
 
@@ -2786,24 +2785,23 @@ msgstr "Dominis XMPP"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:563
 msgid "XMPP Show Value of Away"
-msgstr ""
+msgstr "Valor 'show' de XMPP: Ausent"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:567
 msgid "XMPP Show Value of Chat"
-msgstr ""
+msgstr "Valor 'show' de XMPP: Disposat per a xarrar"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:571
 msgid "XMPP Show Value of DND (Do Not Disturb)"
-msgstr ""
+msgstr "Valor 'show' de XMPP: DND (No Molestar)"
 
 #: deps/xmpp/src/pubsub_subscribe_options.erl:579
 msgid "XMPP Show Value of XA (Extended Away)"
-msgstr ""
+msgstr "Valor 'show' de XMPP: XA (Molt Ausent)"
 
 #: deps/xmpp/src/muc_roominfo.erl:908 deps/xmpp/src/muc_roomconfig.erl:1723
-#, fuzzy
 msgid "XMPP URI of Associated Publish-Subscribe Node"
-msgstr "ejabberd - Mòdul Publicar-Subscriure"
+msgstr "URI XMPP del Node Associat Publish-Subscribe"
 
 #: src/mod_muc_room.erl:880
 msgid "You are being removed from the room because of a system shutdown"
@@ -2814,7 +2812,6 @@ msgid "You are not joined to the channel"
 msgstr "No t'has unit al canal"
 
 #: src/mod_register_web.erl:287
-#, fuzzy
 msgid "You can later change your password using an XMPP client."
 msgstr ""
 "Podràs canviar la teva contrasenya més endavant utilitzant un client XMPP."
@@ -2850,12 +2847,10 @@ msgid "You're not allowed to create nodes"
 msgstr "No tens permís per a crear nodes"
 
 #: src/mod_register_web.erl:118
-#, fuzzy
 msgid "Your XMPP account was successfully created."
 msgstr "El teu compte XMPP ha sigut creat correctament."
 
 #: src/mod_register_web.erl:131
-#, fuzzy
 msgid "Your XMPP account was successfully deleted."
 msgstr "El teu compte XMPP ha sigut esborrat correctament."
 
