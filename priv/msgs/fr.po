@@ -2,31 +2,28 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: \n"
-"Last-Translator: Christophe Romain <christophe.romain@process-one.net>\n"
-"Language-Team: \n"
+"PO-Revision-Date: 2021-01-12 12:05+0000\n"
+"Last-Translator: J. Lavoie <j.lavoie@net-c.ca>\n"
+"Language-Team: French <https://hosted.weblate.org/projects/ejabberd/"
+"test-ejabberd/fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n > 1;\n"
+"X-Generator: Weblate 4.4.1-dev\n"
 "X-Language: French (française)\n"
-"X-Additional-Translator: Mickaël Rémond\n"
-"X-Additional-Translator: Vincent Ricard\n"
 "X-Additional-Translator: Nicolas Vérité\n"
-"X-Generator: Poedit 2.0.4\n"
 "X-Poedit-Basepath: ../../src\n"
 "X-Poedit-SearchPath-0: .\n"
 
 #: src/mod_vcard.erl:462
-#, fuzzy
 msgid " (Add * to the end of field to match substring)"
-msgstr ""
-"Remplissez le formulaire pour recherche un utilisateur Jabber (Ajouter * à "
-"la fin du champ pour chercher n'importe quelle fin de chaîne"
+msgstr " (Ajouter * à la fin du champ pour correspondre à la sous-chaîne)"
 
 #: src/mod_muc_log.erl:420 src/mod_muc_log.erl:592
 msgid " has set the subject to: "
-msgstr " a changé le sujet: "
+msgstr " a défini le sujet sur : "
 
 #: src/mod_muc_admin.erl:532
 #, fuzzy
@@ -43,13 +40,12 @@ msgstr ""
 
 #: deps/xmpp/src/pubsub_node_config.erl:1561
 #: deps/xmpp/src/pubsub_meta_data.erl:672
-#, fuzzy
 msgid "A description of the node"
-msgstr "Un nom convivial pour le noeud"
+msgstr "Une description du nœud"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1985
 msgid "A friendly name for the node"
-msgstr "Un nom convivial pour le noeud"
+msgstr "Un nom convivial pour le nœud"
 
 #: src/mod_muc_room.erl:2157
 msgid "A password is required to enter this room"
@@ -149,7 +145,7 @@ msgstr "Abonnement"
 
 #: deps/xmpp/src/pubsub_subscribe_authorization.erl:343
 msgid "Allow this Jabber ID to subscribe to this pubsub node?"
-msgstr "Autoriser ce Jabber ID à s'abonner à ce nœud PubSub"
+msgstr "Autoriser ce Jabber ID à s'abonner à ce nœud PubSub ?"
 
 #: deps/xmpp/src/muc_register.erl:417
 msgid "Allow this person to register with the room?"
@@ -327,7 +323,7 @@ msgstr "Page web de CAPTCHA"
 
 #: src/ejabberd_web_admin.erl:1368
 msgid "CPU Time:"
-msgstr "Temps CPU:"
+msgstr "Temps CPU :"
 
 #: src/mod_privacy.erl:322
 msgid "Cannot remove active list"
@@ -376,7 +372,7 @@ msgstr ""
 
 #: src/mod_register_web.erl:271
 msgid "Characters not allowed:"
-msgstr "Caractères non-autorisés:"
+msgstr "Caractères non autorisés :"
 
 #: src/mod_muc_log.erl:365 src/mod_muc_log.erl:374
 msgid "Chatroom configuration modified"
@@ -412,7 +408,7 @@ msgstr "Choisissez un type de stockage pour les tables"
 
 #: src/mod_pubsub.erl:1390
 msgid "Choose whether to approve this entity's subscription."
-msgstr "Accepter cet abonnement ?"
+msgstr "Choisissez d'approuver ou non l'abonnement de cette entité."
 
 #: src/mod_vcard_mnesia.erl:107 src/mod_vcard_mnesia.erl:121
 #: src/mod_vcard_sql.erl:164 src/mod_vcard_sql.erl:178
@@ -445,7 +441,7 @@ msgstr "Configuration pour le salon ~s"
 
 #: src/ejabberd_web_admin.erl:944
 msgid "Connected Resources:"
-msgstr "Ressources connectées:"
+msgstr "Ressources connectées :"
 
 #: deps/xmpp/src/muc_roominfo.erl:764
 msgid "Contact Addresses (normally, room owner or owners)"
@@ -488,7 +484,7 @@ msgstr "Tables de base de données sur ~p"
 #: src/nodetree_tree_sql.erl:124 src/nodetree_tree_sql.erl:138
 #: src/nodetree_tree_sql.erl:280 src/mod_vcard.erl:238
 msgid "Database failure"
-msgstr "Echec sur la base de données"
+msgstr "Échec sur la base de données"
 
 #: src/mod_muc_log.erl:489
 msgid "December"
@@ -535,16 +531,15 @@ msgstr "Inclure le contenu du message avec la notification"
 
 #: src/mod_shared_roster.erl:1011
 msgid "Description:"
-msgstr "Description:"
+msgstr "Description :"
 
 #: src/mod_configure.erl:806 src/ejabberd_web_admin.erl:1507
 msgid "Disc only copy"
 msgstr "Copie sur disque uniquement"
 
 #: src/mod_shared_roster.erl:1029
-#, fuzzy
 msgid "Displayed:"
-msgstr "Groupes affichés:"
+msgstr "Affichés :"
 
 #: src/mod_register_web.erl:283
 #, fuzzy
@@ -577,7 +572,7 @@ msgstr "Modifier les propriétés"
 
 #: src/mod_muc_room.erl:4412
 msgid "Either approve or decline the voice request."
-msgstr "Accepter ou refuser la demande de voix"
+msgstr "Accepter ou refuser la demande de voix."
 
 #: src/ejabberd_web_admin.erl:1180
 msgid "Elements"
@@ -587,11 +582,11 @@ msgstr "Éléments"
 #: src/mod_vcard_sql.erl:165 src/mod_vcard_sql.erl:179
 #: src/mod_vcard_ldap.erl:335 src/mod_vcard_ldap.erl:348
 msgid "Email"
-msgstr "Email"
+msgstr "Courriel"
 
 #: deps/xmpp/src/muc_register.erl:432
 msgid "Email Address"
-msgstr ""
+msgstr "Adresse courriel"
 
 #: src/mod_muc_log.erl:822 deps/xmpp/src/muc_roomconfig.erl:1668
 msgid "Enable logging"
@@ -649,19 +644,19 @@ msgstr "Exempter des Jabberd IDs du test CAPTCHA"
 
 #: src/ejabberd_web_admin.erl:1309
 msgid "Export all tables as SQL queries to a file:"
-msgstr "Exporter toutes les tables vers un fichier SQL:"
+msgstr "Exporter toutes les tables vers un fichier SQL :"
 
 #: src/ejabberd_web_admin.erl:1283
 msgid "Export data of all users in the server to PIEFXIS files (XEP-0227):"
 msgstr ""
 "Exporter les données de tous les utilisateurs du serveur vers un fichier "
-"PIEFXIS (XEP-0227):"
+"PIEFXIS (XEP-0227) :"
 
 #: src/ejabberd_web_admin.erl:1295
 msgid "Export data of users in a host to PIEFXIS files (XEP-0227):"
 msgstr ""
 "Exporter les données utilisateurs d'un hôte vers un fichier PIEFXIS "
-"(XEP-0227):"
+"(XEP-0227) :"
 
 #: src/mod_delegation.erl:352
 msgid "External component failure"
@@ -677,23 +672,23 @@ msgstr ""
 
 #: src/mod_proxy65_service.erl:229
 msgid "Failed to activate bytestream"
-msgstr "Echec d'activation du flux SOCKS5"
+msgstr "Échec d'activation de bytestream"
 
 #: src/mod_muc_room.erl:1137
 msgid "Failed to extract JID from your voice request approval"
-msgstr "Echec d'extraction du JID dans la requête de voix"
+msgstr "Échec d'extraction du JID dans la requête de voix"
 
 #: src/mod_delegation.erl:333
 msgid "Failed to map delegated namespace to external component"
-msgstr "Echec d'association d'espace de nom vers un composant externe"
+msgstr "Échec d'association d'espace de nom vers un composant externe"
 
 #: src/mod_http_upload.erl:864
 msgid "Failed to parse HTTP response"
-msgstr "Echec de lecture de la réponse HTTP"
+msgstr "Échec de lecture de la réponse HTTP"
 
 #: src/mod_muc_room.erl:3642
 msgid "Failed to process option '~s'"
-msgstr "Echec de traitement de l'option '~s'"
+msgstr "Échec de traitement de l'option '~s'"
 
 #: src/mod_vcard_mnesia.erl:103 src/mod_vcard_mnesia.erl:117
 #: src/mod_vcard_sql.erl:160 src/mod_vcard_sql.erl:174
@@ -711,9 +706,9 @@ msgid "File larger than ~w bytes"
 msgstr "Taille de fichier suppérieur à ~w octets"
 
 #: src/mod_vcard.erl:458
-#, fuzzy
 msgid "Fill in the form to search for any matching XMPP User"
-msgstr "Remplissez les champs pour rechercher un utilisateur XMPP"
+msgstr ""
+"Complétez le formulaire pour rechercher un utilisateur XMPP correspondant"
 
 #: src/mod_muc_log.erl:472
 msgid "Friday"
@@ -779,7 +774,7 @@ msgstr "Nom"
 
 #: deps/xmpp/src/muc_request.erl:383
 msgid "Grant voice to this person?"
-msgstr "Accorder 'voice' à cet utilisateur"
+msgstr "Accorder le droit de parole à cet utilisateur ?"
 
 #: src/mod_shared_roster.erl:1040
 msgid "Group"
@@ -791,11 +786,11 @@ msgstr "Groupes"
 
 #: src/mod_shared_roster.erl:1035
 msgid "Groups that will be displayed to the members"
-msgstr ""
+msgstr "Groupes qui seront affichés aux membres"
 
 #: src/mod_http_upload.erl:210
 msgid "HTTP File Upload"
-msgstr ""
+msgstr "Téléversement de fichier HTTP"
 
 #: src/ejabberd_web_admin.erl:587
 msgid "Host"
@@ -840,16 +835,16 @@ msgstr "Importer des utilisateurs depuis le répertoire sur "
 
 #: src/ejabberd_web_admin.erl:1323
 msgid "Import user data from jabberd14 spool file:"
-msgstr "Importer des utilisateurs depuis un fichier spool Jabberd 1.4:"
+msgstr "Importer des utilisateurs depuis un fichier spool Jabberd 1.4 :"
 
 #: src/ejabberd_web_admin.erl:1270
 msgid "Import users data from a PIEFXIS file (XEP-0227):"
 msgstr ""
-"Importer les données utilisateurs à partir d'un fichier PIEFXIS (XEP-0227):"
+"Importer les données utilisateurs à partir d'un fichier PIEFXIS (XEP-0227) :"
 
 #: src/ejabberd_web_admin.erl:1334
 msgid "Import users data from jabberd14 spool directory:"
-msgstr "Importer des utilisateurs depuis un fichier spool Jabberd 1.4:"
+msgstr "Importer des utilisateurs depuis un fichier spool Jabberd 1.4 :"
 
 #: src/ejabberd_service.erl:219
 msgid "Improper domain part of 'from' attribute"
@@ -861,7 +856,7 @@ msgstr "Mauvais type de message"
 
 #: src/ejabberd_web_admin.erl:819
 msgid "Incoming s2s Connections:"
-msgstr "Connexions s2s entrantes:"
+msgstr "Connexions s2s entrantes :"
 
 #: src/mod_register.erl:197 src/mod_muc_room.erl:4178
 #: src/ejabberd_captcha.erl:215
@@ -898,21 +893,19 @@ msgstr "Droits insuffisants"
 
 #: src/mod_multicast.erl:352
 msgid "Internal server error"
-msgstr ""
+msgstr "Erreur interne du serveur"
 
 #: src/mod_privilege.erl:409
 msgid "Invalid 'from' attribute in forwarded message"
 msgstr "L'attribut 'from' du message transféré est incorrect"
 
 #: src/mod_stream_mgmt.erl:792
-#, fuzzy
 msgid "Invalid 'previd' value"
-msgstr "Role invalide : ~s"
+msgstr "Valeur 'previd' invalide"
 
 #: src/mod_muc_room.erl:4095
-#, fuzzy
 msgid "Invalid node name"
-msgstr "Role invalide : ~s"
+msgstr "Nom de nœud invalide"
 
 #: src/mod_muc_room.erl:4457
 msgid "Invitations are not allowed in this conference"
@@ -937,7 +930,7 @@ msgstr ""
 
 #: src/mod_muc_room.erl:388
 msgid "It is not allowed to send private messages to the conference"
-msgstr "Il n'est pas permis d'envoyer des messages \"normaux\" au salon"
+msgstr "Il n'est pas permis d'envoyer des messages privés à la conférence"
 
 #: src/mod_jidprep.erl:160
 #, fuzzy
@@ -972,7 +965,7 @@ msgstr "Juin"
 
 #: src/mod_muc_admin.erl:537
 msgid "Just created"
-msgstr ""
+msgstr "Vient d'être créé"
 
 #: src/mod_shared_roster.erl:1006
 msgid "Label:"
@@ -981,7 +974,7 @@ msgstr ""
 #: src/ejabberd_web_admin.erl:710 src/ejabberd_web_admin.erl:774
 #: src/ejabberd_web_admin.erl:948
 msgid "Last Activity"
-msgstr "Dernière Activité"
+msgstr "Dernière activité"
 
 #: src/mod_configure.erl:1378
 msgid "Last login"
@@ -1068,20 +1061,19 @@ msgstr "Taille maximum pour le contenu du message en octet"
 
 #: deps/xmpp/src/muc_roominfo.erl:699 deps/xmpp/src/muc_roomconfig.erl:1405
 msgid "Maximum Number of History Messages Returned by Room"
-msgstr ""
+msgstr "Nombre maximal de messages d'historique renvoyés par salle"
 
 #: src/mod_muc_log.erl:834 deps/xmpp/src/muc_roomconfig.erl:1758
 msgid "Maximum Number of Occupants"
-msgstr "Nombre maximum d'occupants"
+msgstr "Nombre maximal d'occupants"
 
 #: deps/xmpp/src/http_upload.erl:240
 msgid "Maximum file size"
-msgstr ""
+msgstr "Taille maximale du fichier"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:788
-#, fuzzy
 msgid "Maximum number of items to persist"
-msgstr "Nombre maximum d'éléments à stocker"
+msgstr "Nombre maximal d'éléments à conserver"
 
 #: src/mod_muc_log.erl:482
 msgid "May"
@@ -1093,7 +1085,7 @@ msgstr ""
 
 #: src/mod_shared_roster.erl:1020
 msgid "Members:"
-msgstr "Membres:"
+msgstr "Membres :"
 
 #: src/mod_muc_room.erl:2094
 msgid "Membership is required to enter this room"
@@ -1127,15 +1119,15 @@ msgstr "Message non trouvé dans l'enveloppe transférée"
 
 #: src/mod_block_strangers.erl:177
 msgid "Messages from strangers are rejected"
-msgstr ""
+msgstr "Les messages d'étrangers sont rejetés"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1715
 msgid "Messages of type headline"
-msgstr ""
+msgstr "Messages de type titre"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1711
 msgid "Messages of type normal"
-msgstr ""
+msgstr "Messages de type normal"
 
 #: src/mod_vcard_mnesia.erl:102 src/mod_vcard_mnesia.erl:116
 #: src/mod_vcard_sql.erl:159 src/mod_vcard_sql.erl:173
@@ -1169,7 +1161,7 @@ msgstr "Modules mis à jour"
 
 #: src/gen_iq_handler.erl:119
 msgid "Module failed to handle the query"
-msgstr "Echec de traitement de la demande"
+msgstr "Échec de traitement de la demande"
 
 #: src/mod_muc_log.erl:468
 msgid "Monday"
@@ -1200,15 +1192,15 @@ msgstr ""
 
 #: src/mod_shared_roster.erl:908 src/mod_shared_roster.erl:1002
 msgid "Name:"
-msgstr "Nom:"
+msgstr "Nom :"
 
 #: deps/xmpp/src/muc_roominfo.erl:795 deps/xmpp/src/muc_roomconfig.erl:1707
 msgid "Natural Language for Room Discussions"
-msgstr ""
+msgstr "Langue naturelle pour les discussions en salle"
 
 #: deps/xmpp/src/muc_roominfo.erl:846
 msgid "Natural-Language Room Name"
-msgstr ""
+msgstr "Nom de la salle en langue naturelle"
 
 #: src/mod_muc_room.erl:2987
 msgid "Neither 'jid' nor 'nick' attribute found"
@@ -1225,7 +1217,7 @@ msgstr "Jamais"
 
 #: src/mod_register_web.erl:413
 msgid "New Password:"
-msgstr "Nouveau mot de passe:"
+msgstr "Nouveau mot de passe :"
 
 #: src/mod_vcard_mnesia.erl:104 src/mod_vcard_mnesia.erl:118
 #: src/mod_vcard_sql.erl:161 src/mod_vcard_sql.erl:175 src/mod_roster.erl:1002
@@ -1402,7 +1394,7 @@ msgstr "Nœud ~p"
 
 #: src/mod_vcard.erl:398
 msgid "Nodeprep has failed"
-msgstr "Echec de formattage"
+msgstr "Échec de formattage"
 
 #: src/ejabberd_web_admin.erl:1070 src/ejabberd_web_admin.erl:1794
 #: src/ejabberd_web_admin.erl:1819
@@ -1500,11 +1492,11 @@ msgstr "Messages en attente"
 
 #: src/mod_offline.erl:1077
 msgid "Offline Messages:"
-msgstr "Messages en attente:"
+msgstr "Messages hors ligne :"
 
 #: src/mod_register_web.erl:409
 msgid "Old Password:"
-msgstr "Ancien mot de passe:"
+msgstr "Ancien mot de passe :"
 
 #: src/mod_configure.erl:1371 src/ejabberd_web_admin.erl:744
 #: src/ejabberd_web_admin.erl:931
@@ -1519,7 +1511,7 @@ msgstr "Utilisateurs en ligne"
 #: src/ejabberd_web_admin.erl:813 src/ejabberd_web_admin.erl:832
 #: src/ejabberd_web_admin.erl:1372
 msgid "Online Users:"
-msgstr "Utilisateurs connectés:"
+msgstr "Utilisateurs connectés :"
 
 #: src/mod_carboncopy.erl:101
 msgid "Only <enable/> or <disable/> tags are allowed"
@@ -1609,7 +1601,7 @@ msgstr "Connexions s2s sortantes"
 
 #: src/ejabberd_web_admin.erl:816
 msgid "Outgoing s2s Connections:"
-msgstr "Connexions s2s sortantes:"
+msgstr "Connexions s2s sortantes :"
 
 #: src/mod_pubsub.erl:1355 src/mod_pubsub.erl:1450 src/mod_pubsub.erl:1624
 #: src/mod_pubsub.erl:2230 src/mod_pubsub.erl:2296 src/mod_pubsub.erl:2506
@@ -1646,12 +1638,12 @@ msgstr "Vérification du mot de passe"
 
 #: src/mod_register_web.erl:300 src/mod_register_web.erl:417
 msgid "Password Verification:"
-msgstr "Vérification du mot de passe:"
+msgstr "Vérification du mot de passe :"
 
 #: src/ejabberd_web_admin.erl:946 src/mod_register_web.erl:277
 #: src/mod_register_web.erl:520
 msgid "Password:"
-msgstr "Mot de passe:"
+msgstr "Mot de passe :"
 
 #: src/mod_configure.erl:907
 msgid "Path to Dir"
@@ -1672,7 +1664,7 @@ msgstr "En suspens"
 
 #: src/ejabberd_web_admin.erl:479
 msgid "Period: "
-msgstr "Période: "
+msgstr "Période : "
 
 #: deps/xmpp/src/pubsub_node_config.erl:1809
 #: deps/xmpp/src/pubsub_publish_options.erl:281
@@ -1828,7 +1820,7 @@ msgstr "Utilisateurs enregistrés"
 
 #: src/ejabberd_web_admin.erl:810 src/ejabberd_web_admin.erl:829
 msgid "Registered Users:"
-msgstr "Utilisateurs enregistrés:"
+msgstr "Utilisateurs enregistrés :"
 
 #: src/mod_configure.erl:808 src/ejabberd_web_admin.erl:1508
 msgid "Remote copy"
@@ -1889,15 +1881,15 @@ msgid ""
 "Restore binary backup after next ejabberd restart (requires less memory):"
 msgstr ""
 "Restauration de la sauvegarde binaire après redémarrage (nécessite moins de "
-"mémoire):"
+"mémoire) :"
 
 #: src/ejabberd_web_admin.erl:1230
 msgid "Restore binary backup immediately:"
-msgstr "Restauration immédiate d'une sauvegarde binaire:"
+msgstr "Restauration immédiate d'une sauvegarde binaire :"
 
 #: src/ejabberd_web_admin.erl:1260
 msgid "Restore plain text backup immediately:"
-msgstr "Restauration immédiate d'une sauvegarde texte:"
+msgstr "Restauration immédiate d'une sauvegarde texte :"
 
 #: deps/xmpp/src/muc_roomconfig.erl:1690
 msgid "Roles and Affiliations that May Retrieve Member List"
@@ -1959,7 +1951,7 @@ msgstr "Liste de contacts"
 
 #: src/mod_configure.erl:498 src/ejabberd_web_admin.erl:1071
 msgid "Running Nodes"
-msgstr "Noeuds actifs"
+msgstr "Nœuds actifs"
 
 #: src/mod_proxy65.erl:135
 #, fuzzy
@@ -2022,7 +2014,7 @@ msgstr "Septembre"
 #: src/mod_register_web.erl:274 src/mod_register_web.erl:406
 #: src/mod_register_web.erl:517
 msgid "Server:"
-msgstr "Serveur:"
+msgstr "Serveur :"
 
 #: src/mod_stun_disco.erl:496
 msgid "Service list retrieval timed out"
@@ -2115,11 +2107,11 @@ msgstr "Type de stockage"
 
 #: src/ejabberd_web_admin.erl:1220
 msgid "Store binary backup:"
-msgstr "Sauvegarde binaire:"
+msgstr "Sauvegarde binaire :"
 
 #: src/ejabberd_web_admin.erl:1250
 msgid "Store plain text backup:"
-msgstr "Sauvegarde texte:"
+msgstr "Sauvegarde texte :"
 
 #: src/mod_stream_mgmt.erl:363
 msgid "Stream management is already enabled"
@@ -2280,9 +2272,8 @@ msgstr ""
 
 #: deps/xmpp/src/pubsub_node_config.erl:1633
 #: deps/xmpp/src/pubsub_meta_data.erl:693
-#, fuzzy
 msgid "The default language of the node"
-msgstr "Un nom convivial pour le noeud"
+msgstr "La langue par défaut du nœud"
 
 #: src/mod_muc_room.erl:450
 msgid "The feature requested is not supported by the conference"
@@ -2304,9 +2295,8 @@ msgid ""
 msgstr ""
 
 #: deps/xmpp/src/pubsub_meta_data.erl:758
-#, fuzzy
 msgid "The name of the node"
-msgstr "Un nom convivial pour le noeud"
+msgstr "Le nom du nœud"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1682
 msgid "The node is a collection node"
@@ -2394,15 +2384,15 @@ msgstr ""
 
 #: src/mod_register_web.erl:150
 msgid "There was an error changing the password: "
-msgstr "Il y a eu une erreur en changeant le mot de passe: "
+msgstr "Il y a eu une erreur de modification du mot de passe : "
 
 #: src/mod_register_web.erl:122
 msgid "There was an error creating the account: "
-msgstr "Il y a eu une erreur en créant le compte: "
+msgstr "Il y a eu une erreur en créant le compte : "
 
 #: src/mod_register_web.erl:135
 msgid "There was an error deleting the account: "
-msgstr "Il y a eu une erreur en effaçant le compte: "
+msgstr "Il y a eu une erreur en effaçant le compte : "
 
 #: src/mod_register_web.erl:268
 msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
@@ -2519,19 +2509,19 @@ msgstr "La limite de trafic a été dépassée"
 
 #: src/ejabberd_web_admin.erl:1380
 msgid "Transactions Aborted:"
-msgstr "Transactions annulées:"
+msgstr "Transactions annulées :"
 
 #: src/ejabberd_web_admin.erl:1376
 msgid "Transactions Committed:"
-msgstr "Transactions commitées:"
+msgstr "Transactions commitées :"
 
 #: src/ejabberd_web_admin.erl:1388
 msgid "Transactions Logged:"
-msgstr "Transactions journalisées:"
+msgstr "Transactions journalisées :"
 
 #: src/ejabberd_web_admin.erl:1384
 msgid "Transactions Restarted:"
-msgstr "Transactions redémarrées:"
+msgstr "Transactions redémarrées :"
 
 #: src/mod_muc_log.erl:469
 msgid "Tuesday"
@@ -2661,7 +2651,7 @@ msgstr "Utilisateur ~s"
 #: src/mod_register_web.erl:262 src/mod_register_web.erl:402
 #: src/mod_register_web.erl:513
 msgid "Username:"
-msgstr "Nom d'utilisateur:"
+msgstr "Nom d'utilisateur :"
 
 #: src/ejabberd_web_admin.erl:447 src/ejabberd_web_admin.erl:454
 #: src/ejabberd_web_admin.erl:1790
@@ -2755,9 +2745,8 @@ msgid "Wednesday"
 msgstr "Mercredi"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1920
-#, fuzzy
 msgid "When a new subscription is processed"
-msgstr "Autoriser l'abonnement ?"
+msgstr "Quand un nouvel abonnement est traité"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1924
 msgid ""
@@ -2794,7 +2783,7 @@ msgstr ""
 
 #: deps/xmpp/src/pubsub_node_config.erl:1970
 msgid "Whether to allow subscriptions"
-msgstr "Autoriser l'abonnement ?"
+msgstr "Autoriser l'abonnement ?"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1954
 msgid ""
@@ -2948,7 +2937,7 @@ msgstr "Module Publish-Subscribe d'ejabberd"
 
 #: src/mod_proxy65_service.erl:181
 msgid "ejabberd SOCKS5 Bytestreams module"
-msgstr "ejabberd SOCKS5 Bytestreams module"
+msgstr "Module SOCKS5 Bytestreams per ejabberd"
 
 #: src/ejabberd_web_admin.erl:293
 msgid "ejabberd Web Admin"
