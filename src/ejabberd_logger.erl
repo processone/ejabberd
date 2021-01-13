@@ -81,6 +81,8 @@ get_integer_env(Name, Default) ->
     case application:get_env(ejabberd, Name) of
         {ok, I} when is_integer(I), I>=0 ->
             I;
+        {ok, infinity} ->
+            infinity;
         undefined ->
             Default;
         {ok, Junk} ->
@@ -142,7 +144,10 @@ do_start(Level) ->
     ErrorLog = filename:join([Dir, "error.log"]),
     CrashLog = filename:join([Dir, "crash.log"]),
     LogRotateDate = get_string_env(log_rotate_date, ""),
-    LogRotateSize = get_integer_env(log_rotate_size, 10*1024*1024),
+    LogRotateSize = case get_integer_env(log_rotate_size, 10*1024*1024) of
+                        infinity -> 0;
+                        V -> V
+                    end,
     LogRotateCount = get_integer_env(log_rotate_count, 1),
     LogRateLimit = get_integer_env(log_rate_limit, 100),
     ConsoleLevel = case get_lager_version() >= "3.6.0" of
