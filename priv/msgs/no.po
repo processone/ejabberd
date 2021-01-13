@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.0-alpha\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2021-01-12 16:28+0000\n"
+"PO-Revision-Date: 2021-01-13 14:54+0000\n"
 "Last-Translator: Allan Nordhøy <epost@anotheragency.no>\n"
 "Language-Team: Norwegian Bokmål <https://hosted.weblate.org/projects/"
 "ejabberd/ejabberd/nb_NO/>\n"
@@ -37,8 +37,9 @@ msgid "'Displayed groups' not added (they do not exist!): "
 msgstr ""
 
 #: deps/xmpp/src/muc_register.erl:502
+#, fuzzy
 msgid "A Web Page"
-msgstr ""
+msgstr "En nettside"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1561
 #: deps/xmpp/src/pubsub_meta_data.erl:672
@@ -56,7 +57,7 @@ msgstr "Et passord kreves for tilgang til samtalerommet"
 
 #: src/ejabberd_oauth.erl:519
 msgid "Accept"
-msgstr ""
+msgstr "Godta"
 
 #: src/ejabberd_service.erl:232 src/mod_configure.erl:186
 #: src/mod_configure.erl:303 src/mod_configure.erl:429
@@ -88,11 +89,11 @@ msgstr ""
 
 #: deps/xmpp/src/pubsub_publish_options.erl:303
 msgid "Access model of presence"
-msgstr ""
+msgstr "Tilgangsmodell for tilstedeværelse"
 
 #: deps/xmpp/src/pubsub_publish_options.erl:307
 msgid "Access model of roster"
-msgstr ""
+msgstr "Tilgangsmodell for kontaktliste"
 
 #: deps/xmpp/src/pubsub_publish_options.erl:311
 #, fuzzy
@@ -151,8 +152,9 @@ msgid "Allow this Jabber ID to subscribe to this pubsub node?"
 msgstr "Tillat denne Jabber-ID-en å abonnere på denne pubsub -noden?"
 
 #: deps/xmpp/src/muc_register.erl:417
+#, fuzzy
 msgid "Allow this person to register with the room?"
-msgstr ""
+msgstr "Tillat denne personen å registrere seg i rommet?"
 
 #: src/mod_muc_log.erl:813 deps/xmpp/src/muc_roomconfig.erl:1654
 msgid "Allow users to change the subject"
@@ -198,20 +200,23 @@ msgid "Announcements"
 msgstr "Kunngjøringer"
 
 #: deps/xmpp/src/captcha_form.erl:762
+#, fuzzy
 msgid "Answer associated with a picture"
-msgstr ""
+msgstr "Svar med tilknyttet bilde"
 
 #: deps/xmpp/src/captcha_form.erl:866
+#, fuzzy
 msgid "Answer associated with a video"
-msgstr ""
+msgstr "Svar med tilknyttet video"
 
 #: deps/xmpp/src/captcha_form.erl:836
+#, fuzzy
 msgid "Answer associated with speech"
-msgstr ""
+msgstr "Svar med tilknyttet tale"
 
 #: deps/xmpp/src/captcha_form.erl:791
 msgid "Answer to a question"
-msgstr ""
+msgstr "Svar på spørsmål"
 
 #: deps/xmpp/src/muc_roominfo.erl:728 deps/xmpp/src/muc_roomconfig.erl:1418
 #: deps/xmpp/src/muc_roomconfig.erl:1478 deps/xmpp/src/muc_roomconfig.erl:1981
@@ -263,12 +268,14 @@ msgid "Attribute 'id' is mandatory for MIX messages"
 msgstr ""
 
 #: src/mod_pubsub.erl:1173
+#, fuzzy
 msgid "Attribute 'jid' is not allowed here"
-msgstr ""
+msgstr "Attributten «jid» tillates ikke her"
 
 #: src/mod_pubsub.erl:1176
+#, fuzzy
 msgid "Attribute 'node' is not allowed here"
-msgstr ""
+msgstr "Attributten «node» tillates ikke her"
 
 #: deps/xmpp/src/captcha_form.erl:731
 msgid "Attribute 'to' of stanza that triggered challenge"
@@ -330,15 +337,15 @@ msgstr "Prosessortid:"
 
 #: src/mod_privacy.erl:322
 msgid "Cannot remove active list"
-msgstr ""
+msgstr "Kan ikke fjerne aktiv liste"
 
 #: src/mod_privacy.erl:329
 msgid "Cannot remove default list"
-msgstr ""
+msgstr "Kan ikke fjerne forvalgt liste"
 
 #: deps/xmpp/src/captcha_form.erl:715
 msgid "Challenge ID"
-msgstr ""
+msgstr "Utfordrings-ID"
 
 #: src/ejabberd_web_admin.erl:912 src/mod_register_web.erl:216
 #: src/mod_register_web.erl:389 src/mod_register_web.erl:397
@@ -363,7 +370,7 @@ msgstr "Ikke godtatte tegn:"
 
 #: src/mod_mix.erl:657
 msgid "Channel already exists"
-msgstr ""
+msgstr "Kanalen finnes allerede"
 
 #: src/mod_mix.erl:662
 #, fuzzy
@@ -372,7 +379,7 @@ msgstr "Konferanserommet finnes ikke"
 
 #: src/mod_mix.erl:97
 msgid "Channels"
-msgstr ""
+msgstr "Kanaler"
 
 #: src/mod_register_web.erl:271
 msgid "Characters not allowed:"
@@ -594,8 +601,9 @@ msgid "Email"
 msgstr "E-post"
 
 #: deps/xmpp/src/muc_register.erl:432
+#, fuzzy
 msgid "Email Address"
-msgstr ""
+msgstr "E-postadresse"
 
 #: src/mod_muc_log.erl:822 deps/xmpp/src/muc_roomconfig.erl:1668
 msgid "Enable logging"
@@ -711,7 +719,7 @@ msgstr "februar"
 
 #: src/mod_http_upload.erl:810
 msgid "File larger than ~w bytes"
-msgstr ""
+msgstr "Fil større enn ~w byte"
 
 #: src/mod_vcard.erl:458
 #, fuzzy
@@ -798,7 +806,7 @@ msgstr ""
 
 #: src/mod_http_upload.erl:210
 msgid "HTTP File Upload"
-msgstr ""
+msgstr "HTTP-filopplasting"
 
 #: src/ejabberd_web_admin.erl:587
 msgid "Host"
@@ -806,7 +814,7 @@ msgstr "Vert"
 
 #: src/mod_s2s_dialback.erl:363
 msgid "Host unknown"
-msgstr ""
+msgstr "Ukjent vert"
 
 #: src/mod_configure.erl:1405
 msgid "IP addresses"
@@ -871,8 +879,9 @@ msgstr "Utgående s2s Koblinger"
 
 #: src/mod_register.erl:197 src/mod_muc_room.erl:4178
 #: src/ejabberd_captcha.erl:215
+#, fuzzy
 msgid "Incorrect CAPTCHA submit"
-msgstr ""
+msgstr "Feilaktig CAPTCHA-innsendelse"
 
 #: src/mod_pubsub.erl:1247 src/mod_register.erl:193 src/mod_muc.erl:1057
 #: src/mod_muc_room.erl:3383 src/mod_vcard.erl:267
@@ -901,15 +910,15 @@ msgstr ""
 
 #: src/mod_privilege.erl:208
 msgid "Insufficient privilege"
-msgstr ""
+msgstr "Mangler tilstrekkelige rettigheter"
 
 #: src/mod_multicast.erl:352
 msgid "Internal server error"
-msgstr ""
+msgstr "Intern tjenerfeil"
 
 #: src/mod_privilege.erl:409
 msgid "Invalid 'from' attribute in forwarded message"
-msgstr ""
+msgstr "Ugyldig «fra»-attributt i videresendt melding"
 
 #: src/mod_stream_mgmt.erl:792
 #, fuzzy
@@ -982,7 +991,7 @@ msgstr ""
 
 #: src/mod_shared_roster.erl:1006
 msgid "Label:"
-msgstr ""
+msgstr "Etikett:"
 
 #: src/ejabberd_web_admin.erl:710 src/ejabberd_web_admin.erl:774
 #: src/ejabberd_web_admin.erl:948
@@ -1013,11 +1022,11 @@ msgstr ""
 
 #: src/mod_muc_admin.erl:485
 msgid "List of rooms"
-msgstr ""
+msgstr "Romliste"
 
 #: src/mod_muc_admin.erl:536
 msgid "Logging"
-msgstr ""
+msgstr "Loggføring"
 
 #: src/ejabberd_web_admin.erl:1442
 msgid "Low level update script"
@@ -1252,7 +1261,7 @@ msgstr "Registrer kallenavn på "
 #: src/mod_muc_room.erl:1251 src/mod_muc_room.erl:2115
 #: src/mod_muc_room.erl:4253
 msgid "Nickname can't be empty"
-msgstr ""
+msgstr "Kallenavn kan ikke stå tomt"
 
 #: src/mod_muc_room.erl:3004
 #, fuzzy
@@ -1397,7 +1406,7 @@ msgstr "Node-ID"
 
 #: src/nodetree_tree.erl:219 src/nodetree_tree_sql.erl:278
 msgid "Node already exists"
-msgstr ""
+msgstr "Node finnes allerede"
 
 #: src/nodetree_tree_sql.erl:96
 #, fuzzy
@@ -1645,7 +1654,7 @@ msgstr "Oppretting av rom nektes av en tjenste regel"
 
 #: deps/xmpp/src/muc_roomconfig.erl:1849 deps/xmpp/src/muc_request.erl:330
 msgid "Participant"
-msgstr ""
+msgstr "Deltager"
 
 #: src/mod_configure.erl:999 src/mod_configure.erl:1046
 #: src/mod_configure.erl:1334 src/mod_configure.erl:1523
@@ -1756,7 +1765,7 @@ msgstr "Noden finnes ikke"
 
 #: src/mod_stream_mgmt.erl:782
 msgid "Previous session timed out"
-msgstr ""
+msgstr "Tidsavbrudd for forrige økt"
 
 #: src/mod_pubsub.erl:1387
 msgid "PubSub subscriber request"
@@ -1764,7 +1773,7 @@ msgstr "PubSub-abonementsforespørsel"
 
 #: src/mod_muc_admin.erl:534
 msgid "Public"
-msgstr ""
+msgstr "Offentlig"
 
 #: deps/xmpp/src/pubsub_meta_data.erl:865
 #, fuzzy
@@ -1882,7 +1891,7 @@ msgstr ""
 
 #: deps/xmpp/src/muc_request.erl:340
 msgid "Requested role"
-msgstr ""
+msgstr "Forespurt rolle"
 
 #: src/mod_configure.erl:1407
 msgid "Resources"
@@ -2000,16 +2009,19 @@ msgid "Search Results for "
 msgstr "Søkeresultater for "
 
 #: deps/xmpp/src/mam_query.erl:330
+#, fuzzy
 msgid "Search from the date"
-msgstr ""
+msgstr "Søk fra datoen"
 
 #: deps/xmpp/src/mam_query.erl:358
+#, fuzzy
 msgid "Search the text"
-msgstr ""
+msgstr "Søk i teksten"
 
 #: deps/xmpp/src/mam_query.erl:344
+#, fuzzy
 msgid "Search until the date"
-msgstr ""
+msgstr "Søk til datoen"
 
 #: src/mod_vcard.erl:440
 msgid "Search users in "
@@ -2017,7 +2029,7 @@ msgstr "Søk etter brukere i "
 
 #: src/ejabberd_web_admin.erl:1412
 msgid "Select All"
-msgstr ""
+msgstr "Velg alt"
 
 #: src/mod_announce.erl:613
 msgid "Send announcement to all online users"
@@ -2268,7 +2280,7 @@ msgstr ""
 
 #: src/mod_register_web.erl:601
 msgid "The account already exists"
-msgstr ""
+msgstr "Kontoen finnes allerede"
 
 #: src/mod_register_web.erl:611
 #, fuzzy
@@ -2281,7 +2293,7 @@ msgstr ""
 
 #: src/mod_register_web.erl:599
 msgid "The captcha you entered is wrong"
-msgstr ""
+msgstr "CAPTCHA-en du skrev inn er feil"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1442
 msgid "The child nodes (leaf or collection) associated with a collection"
