@@ -335,10 +335,6 @@
 {"The password is too weak","הסיסמה חלשה מדי"}.
 {"the password is","הסיסמה היא"}.
 {"The type of node data, usually specified by the namespace of the payload (if any)","סוג מידע ממסר, לרוב מצוין לפי מרחב־שמות של מטען הייעוד (אם בכלל)"}.
-{"There was an error changing the password: ","אירעה שגיאה בשינוי הסיסמה: "}.
-{"There was an error creating the account: ","אירעה שגיאה ביצירת החשבון: "}.
-{"There was an error deleting the account: ","אירעה שגיאה במחיקת החשבון: "}.
-{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","חלק זה אינו ער לרישיות: macbeth הינה זהה למחרוזת MacBeth וגם Macbeth."}.
 {"This room is not anonymous","חדר זה אינו אנונימי"}.
 {"Thursday","יום חמישי"}.
 {"Time delay","זמן שיהוי"}.

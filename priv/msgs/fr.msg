@@ -1,6 +1,8 @@
 %% -*- coding: utf-8 -*-
-{" has set the subject to: "," a changé le sujet: "}.
-{"A friendly name for the node","Un nom convivial pour le noeud"}.
+{" (Add * to the end of field to match substring)"," (Ajouter * à la fin du champ pour correspondre à la sous-chaîne)"}.
+{" has set the subject to: "," a défini le sujet sur : "}.
+{"A description of the node","Une description du nœud"}.
+{"A friendly name for the node","Un nom convivial pour le nœud"}.
 {"A password is required to enter this room","Un mot de passe est nécessaire pour accéder à ce salon"}.
 {"Accept","Accepter"}.
 {"Access denied by service policy","L'accès au service est refusé"}.
@@ -13,7 +15,7 @@
 {"Administrator privileges required","Les droits d'administrateur sont nécessaires"}.
 {"All activity","Toute activité"}.
 {"All Users","Tous les utilisateurs"}.
-{"Allow this Jabber ID to subscribe to this pubsub node?","Autoriser ce Jabber ID à s'abonner à ce nœud PubSub"}.
+{"Allow this Jabber ID to subscribe to this pubsub node?","Autoriser ce Jabber ID à s'abonner à ce nœud PubSub ?"}.
 {"Allow users to change the subject","Autoriser les utilisateurs à changer le sujet"}.
 {"Allow users to query other users","Autoriser les utilisateurs à envoyer des requêtes aux autres utilisateurs"}.
 {"Allow users to send invites","Autoriser les utilisateurs à envoyer des invitations"}.
@@ -41,7 +43,7 @@
 {"Change User Password","Changer le mot de passe de l'utilisateur"}.
 {"Changing password is not allowed","La modification du mot de passe n'est pas autorisée"}.
 {"Changing role/affiliation is not allowed","La modification role/affiliation n'est pas autorisée"}.
-{"Characters not allowed:","Caractères non-autorisés:"}.
+{"Characters not allowed:","Caractères non autorisés :"}.
 {"Chatroom configuration modified","Configuration du salon modifiée"}.
 {"Chatroom is created","Le salon de discussion est créé"}.
 {"Chatroom is destroyed","Le salon de discussion est détruit"}.
@@ -50,16 +52,16 @@
 {"Chatrooms","Salons de discussion"}.
 {"Choose a username and password to register with this server","Choisissez un nom d'utilisateur et un mot de passe pour ce serveur"}.
 {"Choose storage type of tables","Choisissez un type de stockage pour les tables"}.
-{"Choose whether to approve this entity's subscription.","Accepter cet abonnement ?"}.
+{"Choose whether to approve this entity's subscription.","Choisissez d'approuver ou non l'abonnement de cette entité."}.
 {"City","Ville"}.
 {"Commands","Commandes"}.
 {"Conference room does not exist","Le salon de discussion n'existe pas"}.
 {"Configuration of room ~s","Configuration pour le salon ~s"}.
 {"Configuration","Configuration"}.
-{"Connected Resources:","Ressources connectées:"}.
+{"Connected Resources:","Ressources connectées :"}.
 {"Country","Pays"}.
-{"CPU Time:","Temps CPU:"}.
-{"Database failure","Echec sur la base de données"}.
+{"CPU Time:","Temps CPU :"}.
+{"Database failure","Échec sur la base de données"}.
 {"Database Tables at ~p","Tables de base de données sur ~p"}.
 {"Database Tables Configuration at ","Configuration des tables de base de données sur "}.
 {"Database","Base de données"}.
@@ -71,21 +73,23 @@
 {"Delete User","Supprimer l'utilisateur"}.
 {"Deliver event notifications","Envoyer les notifications d'événement"}.
 {"Deliver payloads with event notifications","Inclure le contenu du message avec la notification"}.
-{"Description:","Description:"}.
+{"Description:","Description :"}.
 {"Disc only copy","Copie sur disque uniquement"}.
+{"Displayed:","Affichés :"}.
 {"Dump Backup to Text File at ","Enregistrer la sauvegarde dans un fichier texte sur "}.
 {"Dump to Text File","Sauvegarder dans un fichier texte"}.
 {"Duplicated groups are not allowed by RFC6121","Les groupes ne peuvent être dupliqués (rfc6121)"}.
 {"Edit Properties","Modifier les propriétés"}.
-{"Either approve or decline the voice request.","Accepter ou refuser la demande de voix"}.
+{"Either approve or decline the voice request.","Accepter ou refuser la demande de voix."}.
 {"ejabberd MUC module","Module MUC ejabberd"}.
 {"ejabberd Multicast service","Service de Multidiffusion d'ejabberd"}.
 {"ejabberd Publish-Subscribe module","Module Publish-Subscribe d'ejabberd"}.
-{"ejabberd SOCKS5 Bytestreams module","ejabberd SOCKS5 Bytestreams module"}.
+{"ejabberd SOCKS5 Bytestreams module","Module SOCKS5 Bytestreams per ejabberd"}.
 {"ejabberd vCard module","Module vCard ejabberd"}.
 {"ejabberd Web Admin","Console Web d'administration de ejabberd"}.
 {"Elements","Éléments"}.
-{"Email","Email"}.
+{"Email Address","Adresse courriel"}.
+{"Email","Courriel"}.
 {"Enable logging","Activer l'archivage"}.
 {"Enable message archiving","Activer l'archivage de messages"}.
 {"Enabling push without 'node' attribute is not supported","L'activation push ne peut se faire sans l'attribut 'node'"}.
@@ -98,19 +102,20 @@
 {"Enter the text you see","Tapez le texte que vous voyez"}.
 {"Error","Erreur"}.
 {"Exclude Jabber IDs from CAPTCHA challenge","Exempter des Jabberd IDs du test CAPTCHA"}.
-{"Export all tables as SQL queries to a file:","Exporter toutes les tables vers un fichier SQL:"}.
-{"Export data of all users in the server to PIEFXIS files (XEP-0227):","Exporter les données de tous les utilisateurs du serveur vers un fichier PIEFXIS (XEP-0227):"}.
-{"Export data of users in a host to PIEFXIS files (XEP-0227):","Exporter les données utilisateurs d'un hôte vers un fichier PIEFXIS (XEP-0227):"}.
+{"Export all tables as SQL queries to a file:","Exporter toutes les tables vers un fichier SQL :"}.
+{"Export data of all users in the server to PIEFXIS files (XEP-0227):","Exporter les données de tous les utilisateurs du serveur vers un fichier PIEFXIS (XEP-0227) :"}.
+{"Export data of users in a host to PIEFXIS files (XEP-0227):","Exporter les données utilisateurs d'un hôte vers un fichier PIEFXIS (XEP-0227) :"}.
 {"External component failure","Erreur de composant externe"}.
 {"External component timeout","Dépassement de delai du composant externe"}.
-{"Failed to activate bytestream","Echec d'activation du flux SOCKS5"}.
-{"Failed to extract JID from your voice request approval","Echec d'extraction du JID dans la requête de voix"}.
-{"Failed to map delegated namespace to external component","Echec d'association d'espace de nom vers un composant externe"}.
-{"Failed to parse HTTP response","Echec de lecture de la réponse HTTP"}.
-{"Failed to process option '~s'","Echec de traitement de l'option '~s'"}.
+{"Failed to activate bytestream","Échec d'activation de bytestream"}.
+{"Failed to extract JID from your voice request approval","Échec d'extraction du JID dans la requête de voix"}.
+{"Failed to map delegated namespace to external component","Échec d'association d'espace de nom vers un composant externe"}.
+{"Failed to parse HTTP response","Échec de lecture de la réponse HTTP"}.
+{"Failed to process option '~s'","Échec de traitement de l'option '~s'"}.
 {"Family Name","Nom de famille"}.
 {"February","Février"}.
 {"File larger than ~w bytes","Taille de fichier suppérieur à ~w octets"}.
+{"Fill in the form to search for any matching XMPP User","Complétez le formulaire pour rechercher un utilisateur XMPP correspondant"}.
 {"Friday","Vendredi"}.
 {"From","De"}.
 {"Full Name","Nom complet"}.
@@ -120,8 +125,9 @@
 {"Get User Password","Récupérer le mot de passe de l'utilisateur"}.
 {"Get User Statistics","Récupérer les statistiques de l'utilisateur"}.
 {"Given Name","Nom"}.
-{"Grant voice to this person?","Accorder 'voice' à cet utilisateur"}.
+{"Grant voice to this person?","Accorder le droit de parole à cet utilisateur ?"}.
 {"Group","Groupe"}.
+{"Groups that will be displayed to the members","Groupes qui seront affichés aux membres"}.
 {"Groups","Groupes"}.
 {"has been banned","a été banni"}.
 {"has been kicked because of a system shutdown","a été éjecté en raison de l'arrêt du système"}.
@@ -130,18 +136,19 @@
 {"has been kicked","a été expulsé"}.
 {"Host unknown","Serveur inconnu"}.
 {"Host","Serveur"}.
+{"HTTP File Upload","Téléversement de fichier HTTP"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","SI vous ne voyez pas l'image CAPTCHA ici, visitez la page web."}.
 {"Import Directory","Importer un répertoire"}.
 {"Import File","Importer un fichier"}.
-{"Import user data from jabberd14 spool file:","Importer des utilisateurs depuis un fichier spool Jabberd 1.4:"}.
+{"Import user data from jabberd14 spool file:","Importer des utilisateurs depuis un fichier spool Jabberd 1.4 :"}.
 {"Import User from File at ","Importer un utilisateur depuis le fichier sur "}.
-{"Import users data from a PIEFXIS file (XEP-0227):","Importer les données utilisateurs à partir d'un fichier PIEFXIS (XEP-0227):"}.
-{"Import users data from jabberd14 spool directory:","Importer des utilisateurs depuis un fichier spool Jabberd 1.4:"}.
+{"Import users data from a PIEFXIS file (XEP-0227):","Importer les données utilisateurs à partir d'un fichier PIEFXIS (XEP-0227) :"}.
+{"Import users data from jabberd14 spool directory:","Importer des utilisateurs depuis un fichier spool Jabberd 1.4 :"}.
 {"Import Users from Dir at ","Importer des utilisateurs depuis le répertoire sur "}.
 {"Import Users From jabberd14 Spool Files","Importer des utilisateurs depuis un fichier spool Jabberd 1.4"}.
 {"Improper domain part of 'from' attribute","Le domaine de l'attribut 'from' est incorrect"}.
 {"Improper message type","Mauvais type de message"}.
-{"Incoming s2s Connections:","Connexions s2s entrantes:"}.
+{"Incoming s2s Connections:","Connexions s2s entrantes :"}.
 {"Incorrect CAPTCHA submit","Entrée CAPTCHA incorrecte"}.
 {"Incorrect data form","Formulaire incorrect"}.
 {"Incorrect password","Mot de passe incorrect"}.
@@ -149,20 +156,24 @@
 {"Incorrect value of 'action' in data form","Valeur de l'attribut 'action' incorrecte dans le formulaire"}.
 {"Incorrect value of 'path' in data form","Valeur de l'attribut 'path' incorrecte dans le formulaire"}.
 {"Insufficient privilege","Droits insuffisants"}.
+{"Internal server error","Erreur interne du serveur"}.
 {"Invalid 'from' attribute in forwarded message","L'attribut 'from' du message transféré est incorrect"}.
+{"Invalid node name","Nom de nœud invalide"}.
+{"Invalid 'previd' value","Valeur 'previd' invalide"}.
 {"Invitations are not allowed in this conference","Les invitations ne sont pas autorisées dans ce salon"}.
 {"IP addresses","Adresses IP"}.
 {"is now known as","est maintenant connu comme"}.
 {"It is not allowed to send error messages to the room. The participant (~s) has sent an error message (~s) and got kicked from the room","L'envoyer de messages d'erreur au salon n'est pas autorisé. Le participant (~s) à envoyé un message d'erreur (~s) et à été expulsé du salon"}.
 {"It is not allowed to send private messages of type \"groupchat\"","Il n'est pas permis d'envoyer des messages privés de type \"groupchat\""}.
-{"It is not allowed to send private messages to the conference","Il n'est pas permis d'envoyer des messages \"normaux\" au salon"}.
+{"It is not allowed to send private messages to the conference","Il n'est pas permis d'envoyer des messages privés à la conférence"}.
 {"It is not allowed to send private messages","L'envoi de messages privés n'est pas autorisé"}.
 {"Jabber ID","Jabber ID"}.
 {"January","Janvier"}.
 {"joins the room","rejoint le salon"}.
 {"July","Juillet"}.
 {"June","Juin"}.
-{"Last Activity","Dernière Activité"}.
+{"Just created","Vient d'être créé"}.
+{"Last Activity","Dernière activité"}.
 {"Last login","Dernière connexion"}.
 {"Last month","Dernier mois"}.
 {"Last year","Dernière année"}.
@@ -180,28 +191,36 @@
 {"March","Mars"}.
 {"Max # of items to persist","Nombre maximum d'éléments à stocker"}.
 {"Max payload size in bytes","Taille maximum pour le contenu du message en octet"}.
-{"Maximum Number of Occupants","Nombre maximum d'occupants"}.
+{"Maximum file size","Taille maximale du fichier"}.
+{"Maximum Number of History Messages Returned by Room","Nombre maximal de messages d'historique renvoyés par salle"}.
+{"Maximum number of items to persist","Nombre maximal d'éléments à conserver"}.
+{"Maximum Number of Occupants","Nombre maximal d'occupants"}.
 {"May","Mai"}.
 {"Membership is required to enter this room","Vous devez être membre pour accèder à ce salon"}.
-{"Members:","Membres:"}.
+{"Members:","Membres :"}.
 {"Memory","Mémoire"}.
 {"Message body","Corps du message"}.
 {"Message not found in forwarded payload","Message non trouvé dans l'enveloppe transférée"}.
+{"Messages from strangers are rejected","Les messages d'étrangers sont rejetés"}.
+{"Messages of type headline","Messages de type titre"}.
+{"Messages of type normal","Messages de type normal"}.
 {"Middle Name","Autre nom"}.
 {"Minimum interval between voice requests (in seconds)","Intervalle minimum entre les demandes de 'voice' (en secondes)"}.
 {"Moderator privileges required","Les droits de modérateur sont nécessaires"}.
 {"Modified modules","Modules mis à jour"}.
-{"Module failed to handle the query","Echec de traitement de la demande"}.
+{"Module failed to handle the query","Échec de traitement de la demande"}.
 {"Monday","Lundi"}.
 {"Multicast","Multidiffusion"}.
 {"Multiple <item/> elements are not allowed by RFC6121","Les elements <item/> multiples ne sont pas autorisés (rfc6121)"}.
 {"Multi-User Chat","Discussion de groupe"}.
 {"Name","Nom"}.
-{"Name:","Nom:"}.
+{"Name:","Nom :"}.
+{"Natural Language for Room Discussions","Langue naturelle pour les discussions en salle"}.
+{"Natural-Language Room Name","Nom de la salle en langue naturelle"}.
 {"Neither 'jid' nor 'nick' attribute found","Attribut 'jid' ou 'nick' absent"}.
 {"Neither 'role' nor 'affiliation' attribute found","Attribut 'role' ou 'affiliation' absent"}.
 {"Never","Jamais"}.
-{"New Password:","Nouveau mot de passe:"}.
+{"New Password:","Nouveau mot de passe :"}.
 {"Nickname Registration at ","Enregistrement d'un pseudo sur "}.
 {"Nickname ~s does not exist in the room","Le pseudo ~s n'existe pas dans ce salon"}.
 {"Nickname","Pseudo"}.
@@ -233,7 +252,7 @@
 {"Node index not found","Index de nœud non trouvé"}.
 {"Node not found","Nœud non trouvé"}.
 {"Node ~p","Nœud ~p"}.
-{"Nodeprep has failed","Echec de formattage"}.
+{"Nodeprep has failed","Échec de formattage"}.
 {"Nodes","Nœuds"}.
 {"None","Aucun"}.
 {"Not Found","Nœud non trouvé"}.
@@ -247,10 +266,10 @@
 {"Number of registered users","Nombre d'utilisateurs enregistrés"}.
 {"October","Octobre"}.
 {"Offline Messages","Messages en attente"}.
-{"Offline Messages:","Messages en attente:"}.
+{"Offline Messages:","Messages hors ligne :"}.
 {"OK","OK"}.
-{"Old Password:","Ancien mot de passe:"}.
-{"Online Users:","Utilisateurs connectés:"}.
+{"Old Password:","Ancien mot de passe :"}.
+{"Online Users:","Utilisateurs connectés :"}.
 {"Online Users","Utilisateurs en ligne"}.
 {"Online","En ligne"}.
 {"Only deliver notifications to available users","Envoyer les notifications uniquement aux utilisateurs disponibles"}.
@@ -266,17 +285,17 @@
 {"Organization Name","Nom de l'organisation"}.
 {"Organization Unit","Unité de l'organisation"}.
 {"Outgoing s2s Connections","Connexions s2s sortantes"}.
-{"Outgoing s2s Connections:","Connexions s2s sortantes:"}.
+{"Outgoing s2s Connections:","Connexions s2s sortantes :"}.
 {"Owner privileges required","Les droits de propriétaire sont nécessaires"}.
 {"Packet","Paquet"}.
 {"Password Verification","Vérification du mot de passe"}.
-{"Password Verification:","Vérification du mot de passe:"}.
+{"Password Verification:","Vérification du mot de passe :"}.
 {"Password","Mot de passe"}.
-{"Password:","Mot de passe:"}.
+{"Password:","Mot de passe :"}.
 {"Path to Dir","Chemin vers le répertoire"}.
 {"Path to File","Chemin vers le fichier"}.
 {"Pending","En suspens"}.
-{"Period: ","Période: "}.
+{"Period: ","Période : "}.
 {"Persist items to storage","Stockage persistant des éléments"}.
 {"Ping query is incorrect","Requête ping incorrecte"}.
 {"Ping","Ping"}.
@@ -296,7 +315,7 @@
 {"Really delete message of the day?","Confirmer la suppression du message du jour ?"}.
 {"Recipient is not in the conference room","Le destinataire n'est pas dans la conférence"}.
 {"Registered Users","Utilisateurs enregistrés"}.
-{"Registered Users:","Utilisateurs enregistrés:"}.
+{"Registered Users:","Utilisateurs enregistrés :"}.
 {"Register","Enregistrer"}.
 {"Remote copy","Copie distante"}.
 {"Remove All Offline Messages","Effacer tous les messages hors ligne"}.
@@ -307,9 +326,9 @@
 {"Restart Service","Redémarrer le service"}.
 {"Restart","Redémarrer"}.
 {"Restore Backup from File at ","Restaurer la sauvegarde depuis le fichier sur "}.
-{"Restore binary backup after next ejabberd restart (requires less memory):","Restauration de la sauvegarde binaire après redémarrage (nécessite moins de mémoire):"}.
-{"Restore binary backup immediately:","Restauration immédiate d'une sauvegarde binaire:"}.
-{"Restore plain text backup immediately:","Restauration immédiate d'une sauvegarde texte:"}.
+{"Restore binary backup after next ejabberd restart (requires less memory):","Restauration de la sauvegarde binaire après redémarrage (nécessite moins de mémoire) :"}.
+{"Restore binary backup immediately:","Restauration immédiate d'une sauvegarde binaire :"}.
+{"Restore plain text backup immediately:","Restauration immédiate d'une sauvegarde texte :"}.
 {"Restore","Restauration"}.
 {"Room Configuration","Configuration du salon"}.
 {"Room creation is denied by service policy","La création de salons est interdite par le service"}.
@@ -319,7 +338,7 @@
 {"Roster groups allowed to subscribe","Groupes de liste de contact autorisés à s'abonner"}.
 {"Roster size","Taille de la liste de contacts"}.
 {"RPC Call Error","Erreur d'appel RPC"}.
-{"Running Nodes","Noeuds actifs"}.
+{"Running Nodes","Nœuds actifs"}.
 {"Saturday","Samedi"}.
 {"Script check","Validation du script"}.
 {"Search Results for ","Résultats de recherche pour "}.
@@ -329,7 +348,7 @@
 {"Send announcement to all users on all hosts","Envoyer une annonce à tous les utilisateurs de tous les domaines"}.
 {"Send announcement to all users","Envoyer l'annonce à tous les utilisateurs"}.
 {"September","Septembre"}.
-{"Server:","Serveur:"}.
+{"Server:","Serveur :"}.
 {"Set message of the day and send to online users","Définir le message du jour et l'envoyer aux utilisateurs en ligne"}.
 {"Set message of the day on all hosts and send to online users","Définir le message du jour pour tous domaines et l'envoyer aux utilisateurs en ligne"}.
 {"Shared Roster Groups","Groupes de liste de contacts partagée"}.
@@ -344,8 +363,8 @@
 {"Stop","Arrêter"}.
 {"Stopped Nodes","Nœuds arrêtés"}.
 {"Storage Type","Type de stockage"}.
-{"Store binary backup:","Sauvegarde binaire:"}.
-{"Store plain text backup:","Sauvegarde texte:"}.
+{"Store binary backup:","Sauvegarde binaire :"}.
+{"Store plain text backup:","Sauvegarde texte :"}.
 {"Subject","Sujet"}.
 {"Submit","Soumettre"}.
 {"Submitted","Soumis"}.
@@ -358,16 +377,14 @@
 {"The CAPTCHA is valid.","Le CAPTCHA est valide"}.
 {"The CAPTCHA verification has failed","La vérification du CAPTCHA a échoué"}.
 {"The collections with which a node is affiliated","Les collections avec lesquelle un nœud est affilié"}.
+{"The default language of the node","La langue par défaut du nœud"}.
 {"The feature requested is not supported by the conference","La demande de fonctionalité n'est pas supportée par la conférence"}.
+{"The name of the node","Le nom du nœud"}.
 {"The password contains unacceptable characters","Le mot de passe contient des caractères non-acceptables"}.
 {"The password is too weak","Le mot de passe est trop faible"}.
 {"the password is","le mot de passe est"}.
 {"The query is only allowed from local users","La requête n'est autorisé qu'aux utilisateurs locaux"}.
 {"The query must not contain <item/> elements","La requête ne doit pas contenir d'élément <item/>"}.
-{"There was an error changing the password: ","Il y a eu une erreur en changeant le mot de passe: "}.
-{"There was an error creating the account: ","Il y a eu une erreur en créant le compte: "}.
-{"There was an error deleting the account: ","Il y a eu une erreur en effaçant le compte: "}.
-{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","C'est insensible à la casse : macbeth est identique à MacBeth et Macbeth."}.
 {"This room is not anonymous","Ce salon n'est pas anonyme"}.
 {"Thursday","Jeudi"}.
 {"Time delay","Délais"}.
@@ -384,10 +401,10 @@
 {"Too many users in this conference","Trop d'utilisateurs dans cette conférence"}.
 {"Total rooms","Nombre de salons"}.
 {"Traffic rate limit is exceeded","La limite de trafic a été dépassée"}.
-{"Transactions Aborted:","Transactions annulées:"}.
-{"Transactions Committed:","Transactions commitées:"}.
-{"Transactions Logged:","Transactions journalisées:"}.
-{"Transactions Restarted:","Transactions redémarrées:"}.
+{"Transactions Aborted:","Transactions annulées :"}.
+{"Transactions Committed:","Transactions commitées :"}.
+{"Transactions Logged:","Transactions journalisées :"}.
+{"Transactions Restarted:","Transactions redémarrées :"}.
 {"Tuesday","Mardi"}.
 {"Unable to generate a CAPTCHA","Impossible de générer le CAPTCHA"}.
 {"Unable to register route on existing local domain","Impossible d'enregistrer la route sur un domaine locale existant"}.
@@ -408,7 +425,7 @@
 {"User Management","Gestion des utilisateurs"}.
 {"User session not found","Session utilisateur non trouvée"}.
 {"User session terminated","Session utilisateur terminée"}.
-{"Username:","Nom d'utilisateur:"}.
+{"Username:","Nom d'utilisateur :"}.
 {"Users are not allowed to register accounts so quickly","Les utilisateurs ne sont pas autorisés à enregistrer des comptes si rapidement"}.
 {"Users Last Activity","Dernière activité des utilisateurs"}.
 {"Users","Utilisateurs"}.
@@ -426,8 +443,9 @@
 {"Voice request","Demande de voix"}.
 {"Voice requests are disabled in this conference","Les demandes de voix sont désactivées dans cette conférence"}.
 {"Wednesday","Mercredi"}.
+{"When a new subscription is processed","Quand un nouvel abonnement est traité"}.
 {"When to send the last published item","A quel moment envoyer le dernier élément publié"}.
-{"Whether to allow subscriptions","Autoriser l'abonnement ?"}.
+{"Whether to allow subscriptions","Autoriser l'abonnement ?"}.
 {"You have been banned from this room","Vous avez été exclus de ce salon"}.
 {"You have joined too many conferences","Vous avec rejoint trop de conférences"}.
 {"You must fill in field \"Nickname\" in the form","Vous devez préciser le champ \"pseudo\" dans le formulaire"}.

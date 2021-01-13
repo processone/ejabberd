@@ -299,10 +299,6 @@
 {"The collections with which a node is affiliated","Les ramexhnêyes k' on nuk est afiyî avou"}.
 {"The password is too weak","li scret est trop flåw"}.
 {"the password is","li scret est"}.
-{"There was an error changing the password: ","Åk n' a nén stî tot candjant l' sicret: "}.
-{"There was an error creating the account: ","Åk n' a nén stî tot ahivant l' conte: "}.
-{"There was an error deleting the account: ","Åk n' a nén stî tot disfaçant l' conte: "}.
-{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Pont d' diferince etur les grandes et ptitès letes: «macbeth» est l' minme ki «MacBeth» ou co «Macbeth»"}.
 {"This room is not anonymous","Cisse såle ci n' est nén anonime"}.
 {"Thursday","djudi"}.
 {"Time delay","Tårdjaedje"}.

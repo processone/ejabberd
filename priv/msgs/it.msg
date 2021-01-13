@@ -283,10 +283,6 @@
 {"The collections with which a node is affiliated","Le collezioni a cui è affiliato un nodo"}.
 {"The password is too weak","La password è troppo debole"}.
 {"the password is","la password è"}.
-{"There was an error changing the password: ","Si è verificato un errore nel cambio di password: "}.
-{"There was an error creating the account: ","Si è verificato un errore nella creazione dell'account: "}.
-{"There was an error deleting the account: ","Si è verificato un errore nella cancellazione dell'account: "}.
-{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Non fa differenza fra minuscolo e maiuscolo: macbeth, MacBeth e Macbeth si equivalgono."}.
 {"This room is not anonymous","Questa stanza non è anonima"}.
 {"Thursday","Giovedì"}.
 {"Time delay","Ritardo"}.

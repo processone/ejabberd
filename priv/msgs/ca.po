@@ -448,6 +448,21 @@ msgstr "Recursos connectats:"
 msgid "Contact Addresses (normally, room owner or owners)"
 msgstr "Adreces de contacte (normalment, propietaris de la sala)"
 
+#: src/mod_register_web.erl:150
+#, fuzzy
+msgid "Could not change the password: "
+msgstr "Hi ha hagut un error canviant la contrasenya: "
+
+#: src/mod_register_web.erl:122
+#, fuzzy
+msgid "Could not register the account: "
+msgstr "Anul·lar el registre d'un compte XMPP"
+
+#: src/mod_register_web.erl:135
+#, fuzzy
+msgid "Could not unregister the account: "
+msgstr "Anul·lar el registre d'un compte XMPP"
+
 #: src/mod_vcard_mnesia.erl:106 src/mod_vcard_mnesia.erl:120
 #: src/mod_vcard_sql.erl:163 src/mod_vcard_sql.erl:177
 #: src/mod_vcard_ldap.erl:333 src/mod_vcard_ldap.erl:346
@@ -1080,8 +1095,9 @@ msgid "Membership is required to enter this room"
 msgstr "Necessites ser membre d'aquesta sala per a poder entrar"
 
 #: src/mod_register_web.erl:294
+#, fuzzy
 msgid ""
-"Memorize your password, or write it in a paper placed in a safe place. In "
+"Memorize your password, or write it on a paper placed in a safe place. In "
 "XMPP there isn't an automated way to recover your password if you forget it."
 msgstr ""
 "Memoritza la teva contrasenya, o escriu-la en un paper guardat a un lloc "
@@ -2018,9 +2034,10 @@ msgid "Shut Down Service"
 msgstr "Apager el Servei"
 
 #: src/mod_register_web.erl:290
+#, fuzzy
 msgid ""
-"Some XMPP clients can store your password in the computer, but you should do "
-"this only in your personal computer for safety reasons."
+"Some XMPP clients can store your password on the computer, but for safety "
+"reasons you should do this on your personal computers ."
 msgstr ""
 "Alguns clients XMPP poden emmagatzemar la teva contrasenya al teu ordinador. "
 "Fes servir aquesta característica només si saps que el teu ordinador és "
@@ -2216,16 +2233,13 @@ msgid "The account already exists"
 msgstr "El compte ha existeix"
 
 #: src/mod_register_web.erl:611
-msgid "The account was not deleted"
+#, fuzzy
+msgid "The account was not unregistered"
 msgstr "El compte no ha sigut esborrat"
 
 #: deps/xmpp/src/push_summary.erl:397
 msgid "The body text of the last received message"
 msgstr "El contingut del text de l'ultim missatge rebut"
-
-#: src/mod_register_web.erl:599
-msgid "The captcha you entered is wrong"
-msgstr "El CAPTCHA que has proporcionat és incorrecte"
 
 #: deps/xmpp/src/pubsub_node_config.erl:1442
 msgid "The child nodes (leaf or collection) associated with a collection"
@@ -2299,10 +2313,6 @@ msgstr "La contrasenya conté caràcters inacceptables"
 msgid "The password is too weak"
 msgstr "La contrasenya és massa simple"
 
-#: src/mod_register_web.erl:146
-msgid "The password of your XMPP account was successfully changed."
-msgstr "La contrasenya del teu compte XMPP s'ha canviat correctament."
-
 #: src/mod_register_web.erl:613
 msgid "The password was not changed"
 msgstr "La contrasenya no ha sigut canviada"
@@ -2356,29 +2366,21 @@ msgstr ""
 msgid "The username is not valid"
 msgstr "El nom d'usuari no es vàlid"
 
-#: src/mod_register_web.erl:150
-msgid "There was an error changing the password: "
-msgstr "Hi ha hagut un error canviant la contrasenya: "
-
-#: src/mod_register_web.erl:122
-msgid "There was an error creating the account: "
-msgstr "Hi ha hagut un error creant el compte: "
-
-#: src/mod_register_web.erl:135
-msgid "There was an error deleting the account: "
-msgstr "Hi ha hagut un error esborrant el compte: "
-
 #: src/mod_register_web.erl:268
-msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
+#, fuzzy
+msgid ""
+"This is case insensitive: \"macbeth\" is the same as \"MacBeth\" and "
+"\"Macbeth\"."
 msgstr ""
 "Això no distingeix majúscules de minúscules: macbeth es el mateix que "
 "MacBeth i Macbeth."
 
 #: src/mod_register_web.erl:252
+#, fuzzy
 msgid ""
-"This page allows to create an XMPP account in this XMPP server. Your JID "
-"(Jabber IDentifier) will be of the form: username@server. Please read "
-"carefully the instructions to fill correctly the fields."
+"This page allows registering an XMPP account on this XMPP server. Your JID "
+"(Jabber ID) will be of the form: username@server. Please read the "
+"instructions carefully before filling in the fields."
 msgstr ""
 "Aquesta pàgina permet crear un compte XMPP en aquest servidor XMPP. El teu "
 "JID (Jabber IDentifier; Identificador Jabber) tindrà aquesta forma: "
@@ -2386,7 +2388,8 @@ msgstr ""
 "correctament els camps."
 
 #: src/mod_register_web.erl:507
-msgid "This page allows to unregister an XMPP account in this XMPP server."
+#, fuzzy
+msgid "This page allows unregistering an XMPP account on this XMPP server."
 msgstr ""
 "Aquesta pàgina permet anul·lar el registre d'un compte XMPP en aquest "
 "servidor XMPP."
@@ -2767,6 +2770,11 @@ msgstr ""
 msgid "Who may associate leaf nodes with a collection"
 msgstr "Qui pot associar nodes fulla amb una col·lecció"
 
+#: src/mod_register_web.erl:599
+#, fuzzy
+msgid "Wrong CAPTCHA entered"
+msgstr "Crear una sala protegida per CAPTCHA"
+
 #: src/mod_register_web.erl:617
 msgid "Wrong parameters in the web formulary"
 msgstr "Paràmetres incorrectes en el formulari web"
@@ -2803,6 +2811,21 @@ msgstr "Valor 'show' de XMPP: XA (Molt Ausent)"
 msgid "XMPP URI of Associated Publish-Subscribe Node"
 msgstr "URI XMPP del Node Associat Publish-Subscribe"
 
+#: src/mod_register_web.erl:146
+#, fuzzy
+msgid "XMPP account password changed."
+msgstr "El teu compte XMPP ha sigut creat correctament."
+
+#: src/mod_register_web.erl:118
+#, fuzzy
+msgid "XMPP account registered."
+msgstr "Registre de compte XMPP"
+
+#: src/mod_register_web.erl:131
+#, fuzzy
+msgid "XMPP account unregistered."
+msgstr "Registre de compte XMPP"
+
 #: src/mod_muc_room.erl:880
 msgid "You are being removed from the room because of a system shutdown"
 msgstr "Has sigut expulsat de la sala perquè el sistema va a apagar-se"
@@ -2812,7 +2835,8 @@ msgid "You are not joined to the channel"
 msgstr "No t'has unit al canal"
 
 #: src/mod_register_web.erl:287
-msgid "You can later change your password using an XMPP client."
+#, fuzzy
+msgid "You can change your password using an XMPP client later."
 msgstr ""
 "Podràs canviar la teva contrasenya més endavant utilitzant un client XMPP."
 
@@ -2845,14 +2869,6 @@ msgstr "Necessites un client amb suport x:data per a poder buscar"
 #: src/mod_pubsub.erl:1563
 msgid "You're not allowed to create nodes"
 msgstr "No tens permís per a crear nodes"
-
-#: src/mod_register_web.erl:118
-msgid "Your XMPP account was successfully created."
-msgstr "El teu compte XMPP ha sigut creat correctament."
-
-#: src/mod_register_web.erl:131
-msgid "Your XMPP account was successfully deleted."
-msgstr "El teu compte XMPP ha sigut esborrat correctament."
 
 #: src/ejabberd_c2s.erl:704 src/ejabberd_c2s.erl:860
 msgid "Your active privacy list has denied the routing of this stanza."
@@ -2957,6 +2973,21 @@ msgstr "~s et convida a la sala ~s"
 #: src/mod_offline.erl:991
 msgid "~ts's Offline Messages Queue"
 msgstr "~ts's cua de missatges offline"
+
+#~ msgid "The captcha you entered is wrong"
+#~ msgstr "El CAPTCHA que has proporcionat és incorrecte"
+
+#~ msgid "The password of your XMPP account was successfully changed."
+#~ msgstr "La contrasenya del teu compte XMPP s'ha canviat correctament."
+
+#~ msgid "There was an error creating the account: "
+#~ msgstr "Hi ha hagut un error creant el compte: "
+
+#~ msgid "There was an error deleting the account: "
+#~ msgstr "Hi ha hagut un error esborrant el compte: "
+
+#~ msgid "Your XMPP account was successfully deleted."
+#~ msgstr "El teu compte XMPP ha sigut esborrat correctament."
 
 #~ msgid "Virtual Hosting"
 #~ msgstr "Hosts virtuals"

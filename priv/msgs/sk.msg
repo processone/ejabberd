@@ -282,10 +282,6 @@
 {"The collections with which a node is affiliated","Kolekcie asociované s uzlom"}.
 {"The password is too weak","heslo je"}.
 {"the password is","heslo je"}.
-{"There was an error changing the password: ","Pri zmene hesla nastala chyba: "}.
-{"There was an error creating the account: ","Pri vytváraní účtu nastala chyba: "}.
-{"There was an error deleting the account: ","Pri rušení účtu nastala chyba:"}.
-{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Veľké a malé písmená sa nerozlišujú: macbeth je to isté ako MacBeth a Macbeth."}.
 {"This room is not anonymous","Táto miestnosť nie je anonymná"}.
 {"Thursday","Štvrtok"}.
 {"Time delay","Časový posun"}.

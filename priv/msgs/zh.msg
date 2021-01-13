@@ -367,10 +367,6 @@
 {"The query is only allowed from local users","仅本地用户可以查询"}.
 {"The query must not contain <item/> elements","查询不能包含 <item/> 元素"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","本节必须只含一个 <active/> 元素， <default/> 元素，或 <list/> 元素"}.
-{"There was an error changing the password: ","修改密码出错: "}.
-{"There was an error creating the account: ","帐户创建出错: "}.
-{"There was an error deleting the account: ","帐户删除失败: "}.
-{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","此处不区分大小写: macbeth 与 MacBeth 和 Macbeth 是一样的."}.
 {"This room is not anonymous","此房间不是匿名房间"}.
 {"Thursday","星期四"}.
 {"Time delay","时间延迟"}.

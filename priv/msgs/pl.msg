@@ -367,10 +367,6 @@
 {"The query is only allowed from local users","To żądanie jest dopuszczalne wyłącznie dla lokalnych użytkowników"}.
 {"The query must not contain <item/> elements","Żądanie nie może zawierać elementów <item/>"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Żądanie może zawierać wyłącznie jeden z elementów <active/>, <default/> lub <list/>"}.
-{"There was an error changing the password: ","Podczas próby zmiany hasła wystąpił błąd: "}.
-{"There was an error creating the account: ","Wystąpił błąd podczas tworzenia konta: "}.
-{"There was an error deleting the account: ","Podczas usuwania konta wystąpił błąd: "}.
-{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Pole nie rozróżnia wielkości liter: słowo Hanna jest takie samo jak hAnna lub haNNa."}.
 {"This room is not anonymous","Ten pokój nie jest anonimowy"}.
 {"Thursday","Czwartek"}.
 {"Time delay","Opóźnienie"}.

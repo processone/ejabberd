@@ -449,6 +449,21 @@ msgstr "Připojené zdroje:"
 msgid "Contact Addresses (normally, room owner or owners)"
 msgstr ""
 
+#: src/mod_register_web.erl:150
+#, fuzzy
+msgid "Could not change the password: "
+msgstr "Při změně hesla došlo k chybě: "
+
+#: src/mod_register_web.erl:122
+#, fuzzy
+msgid "Could not register the account: "
+msgstr "Zrušte registraci účtu XMPP"
+
+#: src/mod_register_web.erl:135
+#, fuzzy
+msgid "Could not unregister the account: "
+msgstr "Zrušte registraci účtu XMPP"
+
 #: src/mod_vcard_mnesia.erl:106 src/mod_vcard_mnesia.erl:120
 #: src/mod_vcard_sql.erl:163 src/mod_vcard_sql.erl:177
 #: src/mod_vcard_ldap.erl:333 src/mod_vcard_ldap.erl:346
@@ -1093,7 +1108,7 @@ msgstr "Pro vstup do místnosti musíte být členem"
 #: src/mod_register_web.erl:294
 #, fuzzy
 msgid ""
-"Memorize your password, or write it in a paper placed in a safe place. In "
+"Memorize your password, or write it on a paper placed in a safe place. In "
 "XMPP there isn't an automated way to recover your password if you forget it."
 msgstr ""
 "Svoje heslo si zapamatujte, nebo si jej poznamenejte na papírek a ten "
@@ -2043,8 +2058,8 @@ msgstr "Vypnout službu"
 #: src/mod_register_web.erl:290
 #, fuzzy
 msgid ""
-"Some XMPP clients can store your password in the computer, but you should do "
-"this only in your personal computer for safety reasons."
+"Some XMPP clients can store your password on the computer, but for safety "
+"reasons you should do this on your personal computers ."
 msgstr ""
 "Někteří klienti umí uložit vaše heslo na disk počítače. Tuto funkci "
 "používejte, pouze pokud věříte zabezpečení svého počítače."
@@ -2234,15 +2249,11 @@ msgstr "Uzel již existuje"
 
 #: src/mod_register_web.erl:611
 #, fuzzy
-msgid "The account was not deleted"
+msgid "The account was not unregistered"
 msgstr "Váš účet Jabberu byl úspěšně smazán."
 
 #: deps/xmpp/src/push_summary.erl:397
 msgid "The body text of the last received message"
-msgstr ""
-
-#: src/mod_register_web.erl:599
-msgid "The captcha you entered is wrong"
 msgstr ""
 
 #: deps/xmpp/src/pubsub_node_config.erl:1442
@@ -2316,11 +2327,6 @@ msgstr "Heslo obsahuje nepovolené znaky"
 msgid "The password is too weak"
 msgstr "Heslo je příliš slabé"
 
-#: src/mod_register_web.erl:146
-#, fuzzy
-msgid "The password of your XMPP account was successfully changed."
-msgstr "Heslo vašeho účtu XMPP bylo úspěšně změněno."
-
 #: src/mod_register_web.erl:613
 #, fuzzy
 msgid "The password was not changed"
@@ -2373,29 +2379,20 @@ msgstr ""
 msgid "The username is not valid"
 msgstr ""
 
-#: src/mod_register_web.erl:150
-msgid "There was an error changing the password: "
-msgstr "Při změně hesla došlo k chybě: "
-
-#: src/mod_register_web.erl:122
-msgid "There was an error creating the account: "
-msgstr "Při vytváření účtu došlo k chybě:"
-
-#: src/mod_register_web.erl:135
-msgid "There was an error deleting the account: "
-msgstr "Při mazání účtu došlo k chybě: "
-
 #: src/mod_register_web.erl:268
-msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
+#, fuzzy
+msgid ""
+"This is case insensitive: \"macbeth\" is the same as \"MacBeth\" and "
+"\"Macbeth\"."
 msgstr ""
 "Zde nezáleží na velikosti písmen: macbeth je stejný jako MacBeth a Macbeth."
 
 #: src/mod_register_web.erl:252
 #, fuzzy
 msgid ""
-"This page allows to create an XMPP account in this XMPP server. Your JID "
-"(Jabber IDentifier) will be of the form: username@server. Please read "
-"carefully the instructions to fill correctly the fields."
+"This page allows registering an XMPP account on this XMPP server. Your JID "
+"(Jabber ID) will be of the form: username@server. Please read the "
+"instructions carefully before filling in the fields."
 msgstr ""
 "Na této stránce si můžete vytvořit účet na tomto serveru Jabberu. Vaše JID "
 "(Jabber IDentifikátor) bude mít tvar: uživatelskéjméno@server. Přečtěte si "
@@ -2403,7 +2400,7 @@ msgstr ""
 
 #: src/mod_register_web.erl:507
 #, fuzzy
-msgid "This page allows to unregister an XMPP account in this XMPP server."
+msgid "This page allows unregistering an XMPP account on this XMPP server."
 msgstr "Zde můžete zrušit registraci účtu na tomto serveru XMPP."
 
 #: src/mod_muc_log.erl:805
@@ -2785,6 +2782,11 @@ msgstr ""
 msgid "Who may associate leaf nodes with a collection"
 msgstr ""
 
+#: src/mod_register_web.erl:599
+#, fuzzy
+msgid "Wrong CAPTCHA entered"
+msgstr "Chránit místnost pomocí CAPTCHA"
+
 #: src/mod_register_web.erl:617
 msgid "Wrong parameters in the web formulary"
 msgstr ""
@@ -2823,6 +2825,21 @@ msgstr ""
 msgid "XMPP URI of Associated Publish-Subscribe Node"
 msgstr "ejabberd Publish-Subscribe modul"
 
+#: src/mod_register_web.erl:146
+#, fuzzy
+msgid "XMPP account password changed."
+msgstr "Váš účet XMPP byl úspěšně vytvořen."
+
+#: src/mod_register_web.erl:118
+#, fuzzy
+msgid "XMPP account registered."
+msgstr "Registrace účtu XMPP"
+
+#: src/mod_register_web.erl:131
+#, fuzzy
+msgid "XMPP account unregistered."
+msgstr "Registrace účtu XMPP"
+
 #: src/mod_muc_room.erl:880
 #, fuzzy
 msgid "You are being removed from the room because of a system shutdown"
@@ -2835,7 +2852,7 @@ msgstr "Nemáte povoleno vytvářet uzly"
 
 #: src/mod_register_web.erl:287
 #, fuzzy
-msgid "You can later change your password using an XMPP client."
+msgid "You can change your password using an XMPP client later."
 msgstr "Později můžete své heslo změnit pomocí klienta XMPP."
 
 #: src/mod_muc_room.erl:2091
@@ -2865,16 +2882,6 @@ msgstr "K vyhledávání potřebujete klienta podporujícího x:data"
 #: src/mod_pubsub.erl:1563
 msgid "You're not allowed to create nodes"
 msgstr "Nemáte povoleno vytvářet uzly"
-
-#: src/mod_register_web.erl:118
-#, fuzzy
-msgid "Your XMPP account was successfully created."
-msgstr "Váš účet XMPP byl úspěšně vytvořen."
-
-#: src/mod_register_web.erl:131
-#, fuzzy
-msgid "Your XMPP account was successfully deleted."
-msgstr "Váš účet XMPP byl úspěšně smazán."
 
 #: src/ejabberd_c2s.erl:704 src/ejabberd_c2s.erl:860
 msgid "Your active privacy list has denied the routing of this stanza."
@@ -2978,6 +2985,20 @@ msgstr "~s vás zve do místnosti ~s"
 #, fuzzy
 msgid "~ts's Offline Messages Queue"
 msgstr "Fronta offline zpráv uživatele ~s"
+
+#, fuzzy
+#~ msgid "The password of your XMPP account was successfully changed."
+#~ msgstr "Heslo vašeho účtu XMPP bylo úspěšně změněno."
+
+#~ msgid "There was an error creating the account: "
+#~ msgstr "Při vytváření účtu došlo k chybě:"
+
+#~ msgid "There was an error deleting the account: "
+#~ msgstr "Při mazání účtu došlo k chybě: "
+
+#, fuzzy
+#~ msgid "Your XMPP account was successfully deleted."
+#~ msgstr "Váš účet XMPP byl úspěšně smazán."
 
 #, fuzzy
 #~ msgid "Virtual Hosting"

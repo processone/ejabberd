@@ -299,10 +299,6 @@
 {"The collections with which a node is affiliated","Колекція, до якої входить вузол"}.
 {"The password is too weak","Пароль надто простий"}.
 {"the password is","пароль:"}.
-{"There was an error changing the password: ","Помилка при зміні пароля: "}.
-{"There was an error creating the account: ","Помилка при створенні акаунту:"}.
-{"There was an error deleting the account: ","Помилка при видаленні акаунту: "}.
-{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Регістр не має значення: \"МАША\" та \"маша\" буде сприйматися як одне й те саме ім'я."}.
 {"This room is not anonymous","Ця кімната не анонімна"}.
 {"Thursday","Четвер"}.
 {"Time delay","Час затримки"}.

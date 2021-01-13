@@ -1,17 +1,27 @@
 %% -*- coding: utf-8 -*-
-{" has set the subject to: ","telah menetapkan topik yaitu:"}.
+{" (Add * to the end of field to match substring)"," Isi formulir untuk pencarian pengguna Jabber yang cocok (Tambahkan * ke mengakhiri pengisian untuk menyamakan kata)"}.
+{" has set the subject to: "," telah menetapkan topik yaitu: "}.
+{"# participants","# pengguna"}.
+{"A description of the node","Deskripsi node"}.
 {"A friendly name for the node","Nama yang dikenal untuk node"}.
 {"A password is required to enter this room","Diperlukan kata sandi untuk masuk ruangan ini"}.
+{"A Web Page","Halaman web"}.
+{"Accept","Diterima"}.
 {"Access denied by service policy","Akses ditolak oleh kebijakan layanan"}.
+{"Access model of authorize","Model akses otorisasi"}.
+{"Access model of presence","Model akses kehadiran"}.
+{"Access model of roster","model akses daftar kontak"}.
+{"Access model","Model akses"}.
 {"Action on user","Tindakan pada pengguna"}.
 {"Add Jabber ID","Tambah Jabber ID"}.
 {"Add New","Tambah Baru"}.
 {"Add User","Tambah Pengguna"}.
-{"Administration of ","Administrasi"}.
+{"Administration of ","Administrasi "}.
 {"Administration","Administrasi"}.
 {"Administrator privileges required","Hak istimewa Administrator dibutuhkan"}.
 {"All activity","Semua aktifitas"}.
 {"All Users","Semua Pengguna"}.
+{"Allow subscription","Ijinkan berlangganan"}.
 {"Allow this Jabber ID to subscribe to this pubsub node?","Izinkan ID Jabber ini untuk berlangganan pada node pubsub ini?"}.
 {"Allow users to change the subject","Perbolehkan pengguna untuk mengganti topik"}.
 {"Allow users to query other users","Perbolehkan pengguna untuk mengetahui pengguna lain"}.
@@ -20,16 +30,33 @@
 {"Allow visitors to change nickname","Perbolehkan visitor mengganti nama julukan"}.
 {"Allow visitors to send status text in presence updates","Izinkan pengunjung untuk mengirim teks status terbaru"}.
 {"Announcements","Pengumuman"}.
+{"Answer associated with a picture","Jawaban yang berhubungan dengan gambar"}.
+{"Answer associated with a video","Jawaban yang berhubungan dengan video"}.
+{"Answer associated with speech","Jawaban yang berhubungan dengan ucapan"}.
+{"Answer to a question","Jawaban pertanyaan"}.
 {"April","April"}.
+{"Attribute 'jid' is not allowed here","Atribut 'jid' tidak diijinkan disini"}.
+{"Attribute 'node' is not allowed here","Atribut 'node' tidak diijinkan disini"}.
 {"August","Agustus"}.
+{"Automatic node creation is not enabled","Pembuatan node otomatis tidak diijinkan"}.
 {"Backup Management","Manajemen Backup"}.
-{"Backup to File at ","Backup ke File pada"}.
+{"Backup of ~p","Cadangan dari ~p"}.
+{"Backup to File at ","Backup ke File di lokasi "}.
 {"Backup","Backup"}.
 {"Bad format","Format yang buruk"}.
 {"Birthday","Hari Lahir"}.
+{"Bytestream already activated","Bytestream telah aktif"}.
+{"Cannot remove active list","Tidak bisa menghapus daftar aktif"}.
+{"Cannot remove default list","Tidak bisa menghapus daftar standar"}.
 {"CAPTCHA web page","CAPTCHA laman web"}.
+{"Challenge ID","ID tantangan"}.
 {"Change Password","Ubah Kata Sandi"}.
 {"Change User Password","Ubah User Password"}.
+{"Changing password is not allowed","Tidak diijinkan mengubah kata sandi"}.
+{"Changing role/affiliation is not allowed","Tidak diijinkan mengubah peran/afiliasi"}.
+{"Channel already exists","Channel sudah ada"}.
+{"Channel does not exist","Channel tidak ada"}.
+{"Channels","Channel"}.
 {"Characters not allowed:","Karakter tidak diperbolehkan:"}.
 {"Chatroom configuration modified","Konfigurasi ruang chat diubah"}.
 {"Chatroom is created","Ruang chat telah dibuat"}.
@@ -41,36 +68,50 @@
 {"Choose storage type of tables","Pilih jenis penyimpanan tabel"}.
 {"Choose whether to approve this entity's subscription.","Pilih apakah akan menyetujui hubungan pertemanan ini."}.
 {"City","Kota"}.
+{"Client acknowledged more stanzas than sent by server","Klien menerima lebih banyak stanza daripada yang dikirim oleh server"}.
 {"Commands","Perintah"}.
 {"Conference room does not exist","Ruang Konferensi tidak ada"}.
 {"Configuration of room ~s","Pengaturan ruangan ~s"}.
 {"Configuration","Pengaturan"}.
 {"Connected Resources:","Sumber Daya Terhubung:"}.
+{"Contact Addresses (normally, room owner or owners)","Alamat Kontak (biasanya, pemilik atau pemilik kamar)"}.
 {"Country","Negara"}.
 {"CPU Time:","Waktu CPU:"}.
-{"Database Tables Configuration at ","Database Tabel Konfigurasi pada"}.
+{"Current Discussion Topic","Topik diskusi saat ini"}.
+{"Database failure","Kegagalan database"}.
+{"Database Tables at ~p","Tabel Database pada ~p"}.
+{"Database Tables Configuration at ","Konfigurasi Tabel Database pada "}.
 {"Database","Database"}.
 {"December","Desember"}.
 {"Default users as participants","pengguna pertama kali masuk sebagai participant"}.
+{"Delete content","Hapus isi"}.
 {"Delete message of the day on all hosts","Hapus pesan harian pada semua host"}.
 {"Delete message of the day","Hapus pesan harian"}.
 {"Delete Selected","Hapus Yang Terpilih"}.
+{"Delete table","Hapus tabel"}.
 {"Delete User","Hapus Pengguna"}.
 {"Deliver event notifications","Memberikan pemberitahuan acara"}.
 {"Deliver payloads with event notifications","Memberikan muatan dengan pemberitahuan acara"}.
 {"Description:","Keterangan:"}.
 {"Disc only copy","Hanya salinan dari disc"}.
-{"Dump Backup to Text File at ","Dump Backup ke File Teks di"}.
+{"Displayed:","Tampilkan:"}.
+{"Don't tell your password to anybody, not even the administrators of the XMPP server.","Jangan beritahukan kata sandi Anda ke siapapun, bahkan ke administrator layanan XMPP."}.
+{"Dump Backup to Text File at ","Dump Backup menjadi File Teks di "}.
 {"Dump to Text File","Dump menjadi File Teks"}.
+{"Duplicated groups are not allowed by RFC6121","Grup duplikat tidak diperbolehkan oleh RFC6121"}.
 {"Edit Properties","Ganti Properti"}.
+{"Either approve or decline the voice request.","Antara terima atau tolak permintaan suara"}.
 {"ejabberd MUC module","ejabberd MUC Module"}.
 {"ejabberd Publish-Subscribe module","Modul ejabberd Setujui-Pertemanan"}.
 {"ejabberd SOCKS5 Bytestreams module","modul ejabberd SOCKS5 Bytestreams"}.
 {"ejabberd vCard module","Modul ejabberd vCard"}.
 {"ejabberd Web Admin","Admin Web ejabberd"}.
 {"Elements","Elemen-elemen"}.
+{"Email Address","Alamat email"}.
 {"Email","Email"}.
-{"Enable logging","Aktifkan catatan"}.
+{"Enable logging","Aktifkan log"}.
+{"Enable message archiving","Aktifkan pengarsipan pesan"}.
+{"Enabling push without 'node' attribute is not supported","Aktivasi push tanpa atribut 'node' tidak didukung"}.
 {"End User Session","Akhir Sesi Pengguna"}.
 {"Enter nickname you want to register","Masukkan nama julukan Anda jika ingin mendaftar"}.
 {"Enter path to backup file","Masukkan path untuk file cadangan"}.
@@ -79,24 +120,39 @@
 {"Enter path to text file","Masukkan path ke file teks"}.
 {"Enter the text you see","Masukkan teks yang Anda lihat"}.
 {"Error","Kesalahan"}.
+{"Exclude Jabber IDs from CAPTCHA challenge","Kecualikan Jabber IDs dari tantangan CAPTCHA"}.
 {"Export data of all users in the server to PIEFXIS files (XEP-0227):","Ekspor data dari semua pengguna pada layanan ke berkas PIEFXIS (XEP-0227):"}.
 {"Export data of users in a host to PIEFXIS files (XEP-0227):","Ekspor data pengguna pada sebuah host ke berkas PIEFXIS (XEP-0227):"}.
+{"External component failure","Kegagalan komponen eksternal"}.
+{"External component timeout","Komponen eksternal kehabisan waktu"}.
+{"Failed to activate bytestream","Gagal mengaktifkan bytestream"}.
+{"Failed to extract JID from your voice request approval","Gagal mendapatkan JID dari permintaan akses suara"}.
+{"Failed to parse HTTP response","Gagal mengurai respon HTTP"}.
+{"Failed to process option '~s'","Gagal memproses dengan opsi '~s'"}.
 {"Family Name","Nama Keluarga (marga)"}.
+{"FAQ Entry","Entri FAQ"}.
 {"February","Februari"}.
+{"File larger than ~w bytes","File lebih besar dari ~w bytes"}.
 {"Friday","Jumat"}.
+{"From ~ts","Dari ~ts"}.
 {"From","Dari"}.
+{"Full List of Room Admins","Daftar Lengkap Admin Kamar"}.
+{"Full List of Room Owners","Daftar Lengkap Pemilik Kamar"}.
 {"Full Name","Nama Lengkap"}.
 {"Get Number of Online Users","Dapatkan Jumlah User Yang Online"}.
 {"Get Number of Registered Users","Dapatkan Jumlah Pengguna Yang Terdaftar"}.
-{"Get User Last Login Time","Dapatkan Waktu Login Terakhir Pengguna "}.
+{"Get Pending","Lihat yang tertunda"}.
+{"Get User Last Login Time","Lihat Waktu Login Terakhir Pengguna"}.
 {"Get User Password","Dapatkan User Password"}.
 {"Get User Statistics","Dapatkan Statistik Pengguna"}.
+{"Grant voice to this person?","Ijinkan akses suara kepadanya?"}.
 {"Group","Grup"}.
 {"has been banned","telah dibanned"}.
 {"has been kicked because of a system shutdown","telah dikick karena sistem shutdown"}.
 {"has been kicked because of an affiliation change","telah dikick karena perubahan afiliasi"}.
 {"has been kicked because the room has been changed to members-only","telah dikick karena ruangan telah diubah menjadi hanya untuk member"}.
 {"has been kicked","telah dikick"}.
+{"Host unknown","Host tidak dikenal"}.
 {"Host","Host"}.
 {"If you don't see the CAPTCHA image here, visit the web page.","Jika Anda tidak melihat gambar CAPTCHA disini, silahkan kunjungi halaman web."}.
 {"Import Directory","Impor Direktori"}.
@@ -273,10 +329,6 @@
 {"The collections with which a node is affiliated","Koleksi dengan yang berafiliasi dengan sebuah node"}.
 {"The password is too weak","Kata sandi terlalu lemah"}.
 {"the password is","kata sandi yaitu:"}.
-{"There was an error changing the password: ","Ada kesalahan dalam mengubah password:"}.
-{"There was an error creating the account: ","Ada kesalahan saat membuat akun:"}.
-{"There was an error deleting the account: ","Ada kesalahan saat menghapus akun:"}.
-{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Pada bagian ini huruf besar dan kecil tidak dibedakan: Misalnya macbeth adalah sama dengan MacBeth juga Macbeth."}.
 {"This room is not anonymous","Ruangan ini tidak dikenal"}.
 {"Thursday","Kamis"}.
 {"Time delay","Waktu tunda"}.

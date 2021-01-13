@@ -368,10 +368,6 @@
 {"The query is only allowed from local users","A solicitude só se permite para usuarios locais"}.
 {"The query must not contain <item/> elements","A solicitude non debe conter elementos <item/>"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","A estroa DEBEN conter un elemento <active/>, un elemento <default/> ou un elemento <list/>"}.
-{"There was an error changing the password: ","Produciuse un erro ao cambiar o contrasinal: "}.
-{"There was an error creating the account: ","Produciuse un erro ao crear a conta: "}.
-{"There was an error deleting the account: ","Produciuse un erro ao eliminar a conta: "}.
-{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Esta é insensible: Macbeth é o mesmo que MacBeth e Macbeth."}.
 {"This room is not anonymous","Sala non anónima"}.
 {"Thursday","Xoves"}.
 {"Time delay","Atraso temporal"}.

@@ -397,10 +397,8 @@
 {"That nickname is already in use by another occupant","Этот псевдоним уже занят другим участником"}.
 {"That nickname is registered by another person","Этот псевдоним зарегистрирован кем-то другим"}.
 {"The account already exists","Учётная запись уже существует"}.
-{"The account was not deleted","Аккаунт не был удален"}.
 {"The CAPTCHA is valid.","Проверка капчи прошла успешно."}.
 {"The CAPTCHA verification has failed","Проверка капчи не пройдена"}.
-{"The captcha you entered is wrong","Неправильно введённое значение капчи"}.
 {"The collections with which a node is affiliated","Имя коллекции, в которую входит узел"}.
 {"The feature requested is not supported by the conference","Запрашиваемое свойство не поддерживается этой конференцией"}.
 {"The password contains unacceptable characters","Пароль содержит недопустимые символы"}.
@@ -412,10 +410,6 @@
 {"The query must not contain <item/> elements","Запрос не должен содержать элементов <item/>"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Строфа может содержать только один элемент <active/>, один элемент <default/> или один элемент <list/>"}.
 {"The username is not valid","Недопустимое имя пользователя"}.
-{"There was an error changing the password: ","Ошибка при смене пароля:"}.
-{"There was an error creating the account: ","Ошибка при создании аккаунта:"}.
-{"There was an error deleting the account: ","Ошибка при удалении аккаунта:"}.
-{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Регистр не имеет значения: \"маша\" и \"МАША\" будет считаться одним и тем же именем."}.
 {"This room is not anonymous","Эта комната не анонимная"}.
 {"This service can not process the address: ~s","Сервер не может обработать адрес: ~s"}.
 {"Thursday","Четверг"}.

@@ -255,7 +255,6 @@
 {"Members not added (inexistent vhost!): ","Membres no afegits (perquè el vhost no existeix): "}.
 {"Membership is required to enter this room","Necessites ser membre d'aquesta sala per a poder entrar"}.
 {"Members:","Membre:"}.
-{"Memorize your password, or write it in a paper placed in a safe place. In XMPP there isn't an automated way to recover your password if you forget it.","Memoritza la teva contrasenya, o escriu-la en un paper guardat a un lloc segur. A XMPP no hi ha una forma automatitzada de recuperar la teva contrasenya si la oblides."}.
 {"Memory","Memòria"}.
 {"Mere Availability in XMPP (No Show Value)","Simplement disponibilitat a XMPP (sense valor de 'show')"}.
 {"Message body","Missatge"}.
@@ -468,7 +467,6 @@
 {"Show Ordinary Table","Mostrar Taula Ordinaria"}.
 {"Shut Down Service","Apager el Servei"}.
 {"SOCKS5 Bytestreams","SOCKS5 Bytestreams"}.
-{"Some XMPP clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Alguns clients XMPP poden emmagatzemar la teva contrasenya al teu ordinador. Fes servir aquesta característica només si saps que el teu ordinador és segur."}.
 {"Specify the access model","Especificar el model d'accés"}.
 {"Specify the event message type","Especifica el tipus de missatge d'event"}.
 {"Specify the publisher model","Especificar el model del publicant"}.
@@ -499,11 +497,9 @@
 {"That nickname is already in use by another occupant","El sobrenom ja l'està utilitzant una altra persona"}.
 {"That nickname is registered by another person","El sobrenom ja està registrat per una altra persona"}.
 {"The account already exists","El compte ha existeix"}.
-{"The account was not deleted","El compte no ha sigut esborrat"}.
 {"The body text of the last received message","El contingut del text de l'ultim missatge rebut"}.
 {"The CAPTCHA is valid.","El CAPTCHA es vàlid."}.
 {"The CAPTCHA verification has failed","La verificació CAPTCHA ha fallat"}.
-{"The captcha you entered is wrong","El CAPTCHA que has proporcionat és incorrecte"}.
 {"The child nodes (leaf or collection) associated with a collection","El nodes fills (fulla o col·leccions) associats amb una col·lecció"}.
 {"The collections with which a node is affiliated","Les col.leccions amb les que un node està afiliat"}.
 {"The DateTime at which a leased subscription will end or has ended","La Data i Hora a la que una subscripció prestada terminarà o ha terminat"}.
@@ -527,7 +523,6 @@
 {"The password contains unacceptable characters","La contrasenya conté caràcters inacceptables"}.
 {"The password is too weak","La contrasenya és massa simple"}.
 {"the password is","la contrasenya és"}.
-{"The password of your XMPP account was successfully changed.","La contrasenya del teu compte XMPP s'ha canviat correctament."}.
 {"The password was not changed","La contrasenya no ha sigut canviada"}.
 {"The passwords are different","Les contrasenyes son diferents"}.
 {"The presence states for which an entity wants to receive notifications","El estats de presencia per als quals una entitat vol rebre notificacions"}.
@@ -541,12 +536,6 @@
 {"The URL of an XSL transformation which can be applied to payloads in order to generate an appropriate message body element.","La URL de uns transformació XSL que pot ser aplicada als payloads per a generar un element apropiat de contingut de missatge."}.
 {"The URL of an XSL transformation which can be applied to the payload format in order to generate a valid Data Forms result that the client could display using a generic Data Forms rendering engine","La URL de una transformació XSL que pot ser aplicada al format de payload per a generar un resultat valid de Data Forms, que el client puga mostrar usant un métode generic de Data Forms"}.
 {"The username is not valid","El nom d'usuari no es vàlid"}.
-{"There was an error changing the password: ","Hi ha hagut un error canviant la contrasenya: "}.
-{"There was an error creating the account: ","Hi ha hagut un error creant el compte: "}.
-{"There was an error deleting the account: ","Hi ha hagut un error esborrant el compte: "}.
-{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Això no distingeix majúscules de minúscules: macbeth es el mateix que MacBeth i Macbeth."}.
-{"This page allows to create an XMPP account in this XMPP server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Aquesta pàgina permet crear un compte XMPP en aquest servidor XMPP. El teu JID (Jabber IDentifier; Identificador Jabber) tindrà aquesta forma: usuari@servidor. Si us plau, llegeix amb cura les instruccions per emplenar correctament els camps."}.
-{"This page allows to unregister an XMPP account in this XMPP server.","Aquesta pàgina permet anul·lar el registre d'un compte XMPP en aquest servidor XMPP."}.
 {"This room is not anonymous","Aquesta sala no és anònima"}.
 {"This service can not process the address: ~s","Este servei no pot processar la direcció: ~s"}.
 {"Thursday","Dijous"}.
@@ -644,7 +633,6 @@
 {"XMPP URI of Associated Publish-Subscribe Node","URI XMPP del Node Associat Publish-Subscribe"}.
 {"You are being removed from the room because of a system shutdown","Has sigut expulsat de la sala perquè el sistema va a apagar-se"}.
 {"You are not joined to the channel","No t'has unit al canal"}.
-{"You can later change your password using an XMPP client.","Podràs canviar la teva contrasenya més endavant utilitzant un client XMPP."}.
 {"You have been banned from this room","Has sigut bloquejat en aquesta sala"}.
 {"You have joined too many conferences","Has entrat en massa sales de conferència"}.
 {"You must fill in field \"Nickname\" in the form","Deus d'omplir el camp \"Nickname\" al formulari"}.
@@ -654,6 +642,4 @@
 {"Your active privacy list has denied the routing of this stanza.","La teva llista de privacitat activa ha denegat l'encaminament d'aquesta stanza."}.
 {"Your contact offline message queue is full. The message has been discarded.","La teua cua de missatges offline és plena. El missatge ha sigut descartat."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","La teua petició de subscripció i/o missatges a ~s han sigut bloquejats. Per a desbloquejar-los, visita ~s"}.
-{"Your XMPP account was successfully created.","El teu compte XMPP ha sigut creat correctament."}.
-{"Your XMPP account was successfully deleted.","El teu compte XMPP ha sigut esborrat correctament."}.
 {"You're not allowed to create nodes","No tens permís per a crear nodes"}.

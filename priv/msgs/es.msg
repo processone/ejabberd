@@ -255,7 +255,6 @@
 {"Members not added (inexistent vhost!): ","Miembros no añadidos (el vhost no existe): "}.
 {"Membership is required to enter this room","Necesitas ser miembro de esta sala para poder entrar"}.
 {"Members:","Miembros:"}.
-{"Memorize your password, or write it in a paper placed in a safe place. In XMPP there isn't an automated way to recover your password if you forget it.","Memoriza tu contraseña, o apúntala en un papel en un lugar seguro. En XMPP no hay un método automatizado para recuperar la contraseña si la olvidas."}.
 {"Memory","Memoria"}.
 {"Mere Availability in XMPP (No Show Value)","Disponible en XMPP (sin valor de Mostrado)"}.
 {"Message body","Cuerpo del mensaje"}.
@@ -468,7 +467,6 @@
 {"Show Ordinary Table","Mostrar Tabla Ordinaria"}.
 {"Shut Down Service","Detener el servicio"}.
 {"SOCKS5 Bytestreams","SOCKS5 Bytestreams"}.
-{"Some XMPP clients can store your password in the computer, but you should do this only in your personal computer for safety reasons.","Algunos clientes XMPP pueden recordar tu contraseña en la máquina. Usa esa opción solo si confías en que la máquina que usas es segura."}.
 {"Specify the access model","Especifica el modelo de acceso"}.
 {"Specify the event message type","Especifica el tipo del mensaje de evento"}.
 {"Specify the publisher model","Especificar el modelo del publicante"}.
@@ -499,11 +497,9 @@
 {"That nickname is already in use by another occupant","Ese apodo ya está siendo usado por otro ocupante"}.
 {"That nickname is registered by another person","El apodo ya está registrado por otra persona"}.
 {"The account already exists","La cuenta ya existe"}.
-{"The account was not deleted","La cuenta no fue eliminada"}.
 {"The body text of the last received message","El contenido de texto del último mensaje recibido"}.
 {"The CAPTCHA is valid.","El CAPTCHA es válido."}.
 {"The CAPTCHA verification has failed","La verificación de CAPTCHA ha fallado"}.
-{"The captcha you entered is wrong","El CAPTCHA que has introducido es erróneo"}.
 {"The child nodes (leaf or collection) associated with a collection","Los nodos hijos (ya sean hojas o colecciones) asociados con una colección"}.
 {"The collections with which a node is affiliated","Las colecciones a las que un nodo está afiliado"}.
 {"The DateTime at which a leased subscription will end or has ended","La FechayHora en la que una suscripción prestada acabará o ha terminado"}.
@@ -527,7 +523,6 @@
 {"The password contains unacceptable characters","La contraseña contiene caracteres inaceptables"}.
 {"The password is too weak","La contraseña es demasiado débil"}.
 {"the password is","la contraseña es"}.
-{"The password of your XMPP account was successfully changed.","La contraseña de tu cuenta XMPP se ha cambiado correctamente."}.
 {"The password was not changed","La contraseña no fue cambiada"}.
 {"The passwords are different","Las contraseñas son diferentes"}.
 {"The presence states for which an entity wants to receive notifications","Los estados de presencia para los cuales una entidad quiere recibir notificaciones"}.
@@ -541,12 +536,6 @@
 {"The URL of an XSL transformation which can be applied to payloads in order to generate an appropriate message body element.","La URL de una transformación XSL que puede aplicarse a payloads para generar un elemento de contenido del mensaje apropiado."}.
 {"The URL of an XSL transformation which can be applied to the payload format in order to generate a valid Data Forms result that the client could display using a generic Data Forms rendering engine","La URL de una transformación XSL que puede aplicarse al formato de payload para generar un resultado de Formulario de Datos válido, que el cliente pueda mostrar usando un mecanismo de dibujado genérico de Formulario de Datos"}.
 {"The username is not valid","El nombre de usuario no es válido"}.
-{"There was an error changing the password: ","Hubo un error cambiando la contraseña: "}.
-{"There was an error creating the account: ","Hubo uno error al crear la cuenta: "}.
-{"There was an error deleting the account: ","Hubo un error borrando la cuenta: "}.
-{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","No importa si usas mayúsculas: macbeth es lo mismo que MacBeth y Macbeth."}.
-{"This page allows to create an XMPP account in this XMPP server. Your JID (Jabber IDentifier) will be of the form: username@server. Please read carefully the instructions to fill correctly the fields.","Esta página te permite crear una cuenta XMPP este servidor XMPP. Tu JID (Jabber IDentificador) será de la forma: nombredeusuario@servidor. Por favor lee detenidamente las instrucciones para rellenar correctamente los campos."}.
-{"This page allows to unregister an XMPP account in this XMPP server.","Esta página te permite borrar tu cuenta XMPP en este servidor XMPP."}.
 {"This room is not anonymous","Sala no anónima"}.
 {"This service can not process the address: ~s","Este servicio no puede procesar la dirección: ~s"}.
 {"Thursday","Jueves"}.
@@ -644,7 +633,6 @@
 {"XMPP URI of Associated Publish-Subscribe Node","URI XMPP del Nodo Asociado de Publicar-Subscribir"}.
 {"You are being removed from the room because of a system shutdown","Estás siendo expulsado de la sala porque el sistema se va a detener"}.
 {"You are not joined to the channel","No has entrado en el canal"}.
-{"You can later change your password using an XMPP client.","Puedes cambiar tu contraseña después, usando un cliente XMPP."}.
 {"You have been banned from this room","Has sido bloqueado en esta sala"}.
 {"You have joined too many conferences","Has entrado en demasiadas salas de conferencia"}.
 {"You must fill in field \"Nickname\" in the form","Debes rellenar el campo \"Apodo\" en el formulario"}.
@@ -654,6 +642,4 @@
 {"Your active privacy list has denied the routing of this stanza.","Tu lista de privacidad activa ha denegado el envío de este paquete."}.
 {"Your contact offline message queue is full. The message has been discarded.","Tu cola de mensajes diferidos de contactos está llena. El mensaje se ha descartado."}.
 {"Your subscription request and/or messages to ~s have been blocked. To unblock your subscription request, visit ~s","Tu petición de suscripción y/o mensajes a ~s ha sido bloqueado. Para desbloquear tu petición de suscripción visita ~s"}.
-{"Your XMPP account was successfully created.","Tu cuenta XMPP se ha creado correctamente."}.
-{"Your XMPP account was successfully deleted.","Tu cuenta XMPP se ha borrado correctamente."}.
 {"You're not allowed to create nodes","No tienes permitido crear nodos"}.

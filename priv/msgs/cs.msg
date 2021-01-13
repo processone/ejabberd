@@ -368,10 +368,6 @@
 {"The query is only allowed from local users","Dotaz je povolen pouze pro místní uživatele"}.
 {"The query must not contain <item/> elements","Dotaz nesmí obsahovat elementy <item/>"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","Stanza MUSÍ obsahovat pouze jeden element  <active/>, jeden element <default/> nebo jeden element <list/>"}.
-{"There was an error changing the password: ","Při změně hesla došlo k chybě: "}.
-{"There was an error creating the account: ","Při vytváření účtu došlo k chybě:"}.
-{"There was an error deleting the account: ","Při mazání účtu došlo k chybě: "}.
-{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Zde nezáleží na velikosti písmen: macbeth je stejný jako MacBeth a Macbeth."}.
 {"This room is not anonymous","Tato místnost není anonymní"}.
 {"Thursday","Čtvrtek"}.
 {"Time delay","Časový posun"}.

@@ -375,10 +375,8 @@
 {"That nickname is already in use by another occupant","Ezt a becenevet már használja egy másik résztvevő"}.
 {"That nickname is registered by another person","Ezt a becenevet egy másik személy regisztrálta"}.
 {"The account already exists","A fiók már létezik"}.
-{"The account was not deleted","A fiók nem lett törölve"}.
 {"The CAPTCHA is valid.","A CAPTCHA érvényes."}.
 {"The CAPTCHA verification has failed","A CAPTCHA ellenőrzése nem sikerült"}.
-{"The captcha you entered is wrong","A beírt CAPTCHA hibás"}.
 {"The feature requested is not supported by the conference","A kért funkciót nem támogatja a konferencia"}.
 {"The password contains unacceptable characters","A jelszó elfogadhatatlan karaktereket tartalmaz"}.
 {"The password is too weak","A jelszó túl gyenge"}.
@@ -389,10 +387,6 @@
 {"The query must not contain <item/> elements","A lekérdezés nem tartalmazhat <item/> elemeket"}.
 {"The stanza MUST contain only one <active/> element, one <default/> element, or one <list/> element","A stanzának csak egyetlen <active/> elemet, egyetlen <default/> elemet vagy egyetlen <list/> elemet KELL tartalmaznia"}.
 {"The username is not valid","A felhasználónév nem érvényes"}.
-{"There was an error changing the password: ","Hiba történt a jelszó megváltoztatásakor: "}.
-{"There was an error creating the account: ","Hiba történt a fiók létrehozásakor: "}.
-{"There was an error deleting the account: ","Hiba történt a fiók törlésekor: "}.
-{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Ez érzékeny a kis- és nagybetűkre: a macbeth ugyanaz mint a MacBeth és Macbeth."}.
 {"This room is not anonymous","Ez a szoba nem névtelen"}.
 {"This service can not process the address: ~s","Ez a szolgáltatás nem tudja feldolgozni a címet: ~s"}.
 {"Thursday","csütörtök"}.

@@ -4,8 +4,8 @@ msgstr ""
 "POT-Creation-Date: \n"
 "PO-Revision-Date: 2021-01-12 12:05+0000\n"
 "Last-Translator: J. Lavoie <j.lavoie@net-c.ca>\n"
-"Language-Team: French <https://hosted.weblate.org/projects/ejabberd/"
-"test-ejabberd/fr/>\n"
+"Language-Team: French <https://hosted.weblate.org/projects/ejabberd/test-"
+"ejabberd/fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -446,6 +446,21 @@ msgstr "Ressources connectées :"
 #: deps/xmpp/src/muc_roominfo.erl:764
 msgid "Contact Addresses (normally, room owner or owners)"
 msgstr ""
+
+#: src/mod_register_web.erl:150
+#, fuzzy
+msgid "Could not change the password: "
+msgstr "Il y a eu une erreur de modification du mot de passe : "
+
+#: src/mod_register_web.erl:122
+#, fuzzy
+msgid "Could not register the account: "
+msgstr "Effacer un compte XMPP"
+
+#: src/mod_register_web.erl:135
+#, fuzzy
+msgid "Could not unregister the account: "
+msgstr "Effacer un compte XMPP"
 
 #: src/mod_vcard_mnesia.erl:106 src/mod_vcard_mnesia.erl:120
 #: src/mod_vcard_sql.erl:163 src/mod_vcard_sql.erl:177
@@ -1094,7 +1109,7 @@ msgstr "Vous devez être membre pour accèder à ce salon"
 #: src/mod_register_web.erl:294
 #, fuzzy
 msgid ""
-"Memorize your password, or write it in a paper placed in a safe place. In "
+"Memorize your password, or write it on a paper placed in a safe place. In "
 "XMPP there isn't an automated way to recover your password if you forget it."
 msgstr ""
 "Mémorisez votre mot de passe, ou écrivez-le sur un papier conservé dans un "
@@ -2055,8 +2070,8 @@ msgstr "Arrêter le service"
 #: src/mod_register_web.erl:290
 #, fuzzy
 msgid ""
-"Some XMPP clients can store your password in the computer, but you should do "
-"this only in your personal computer for safety reasons."
+"Some XMPP clients can store your password on the computer, but for safety "
+"reasons you should do this on your personal computers ."
 msgstr ""
 "Certains clients XMPP peuvent stocker votre mot de passe sur votre "
 "ordinateur. N'utilisez cette fonctionnalité que si vous avez confiance en la "
@@ -2247,15 +2262,11 @@ msgstr "Ce nœud existe déjà"
 
 #: src/mod_register_web.erl:611
 #, fuzzy
-msgid "The account was not deleted"
+msgid "The account was not unregistered"
 msgstr "Votre compte Jabber a été effacé avec succès."
 
 #: deps/xmpp/src/push_summary.erl:397
 msgid "The body text of the last received message"
-msgstr ""
-
-#: src/mod_register_web.erl:599
-msgid "The captcha you entered is wrong"
 msgstr ""
 
 #: deps/xmpp/src/pubsub_node_config.erl:1442
@@ -2327,11 +2338,6 @@ msgstr "Le mot de passe contient des caractères non-acceptables"
 msgid "The password is too weak"
 msgstr "Le mot de passe est trop faible"
 
-#: src/mod_register_web.erl:146
-#, fuzzy
-msgid "The password of your XMPP account was successfully changed."
-msgstr "Le mot de passe de votre compte XMPP a été changé avec succès."
-
 #: src/mod_register_web.erl:613
 #, fuzzy
 msgid "The password was not changed"
@@ -2382,29 +2388,20 @@ msgstr ""
 msgid "The username is not valid"
 msgstr ""
 
-#: src/mod_register_web.erl:150
-msgid "There was an error changing the password: "
-msgstr "Il y a eu une erreur de modification du mot de passe : "
-
-#: src/mod_register_web.erl:122
-msgid "There was an error creating the account: "
-msgstr "Il y a eu une erreur en créant le compte : "
-
-#: src/mod_register_web.erl:135
-msgid "There was an error deleting the account: "
-msgstr "Il y a eu une erreur en effaçant le compte : "
-
 #: src/mod_register_web.erl:268
-msgid "This is case insensitive: macbeth is the same that MacBeth and Macbeth."
+#, fuzzy
+msgid ""
+"This is case insensitive: \"macbeth\" is the same as \"MacBeth\" and "
+"\"Macbeth\"."
 msgstr ""
 "C'est insensible à la casse : macbeth est identique à MacBeth et Macbeth."
 
 #: src/mod_register_web.erl:252
 #, fuzzy
 msgid ""
-"This page allows to create an XMPP account in this XMPP server. Your JID "
-"(Jabber IDentifier) will be of the form: username@server. Please read "
-"carefully the instructions to fill correctly the fields."
+"This page allows registering an XMPP account on this XMPP server. Your JID "
+"(Jabber ID) will be of the form: username@server. Please read the "
+"instructions carefully before filling in the fields."
 msgstr ""
 "Cette page permet de créer un compte XMPP sur ce serveur XMPP. Votre JID "
 "(Jabber IDentifier, identifiant Jabber) sera de la forme : nom@serveur. "
@@ -2413,7 +2410,7 @@ msgstr ""
 
 #: src/mod_register_web.erl:507
 #, fuzzy
-msgid "This page allows to unregister an XMPP account in this XMPP server."
+msgid "This page allows unregistering an XMPP account on this XMPP server."
 msgstr "Cette page permet d'effacer un compte XMPP sur ce serveur XMPP."
 
 #: src/mod_muc_log.erl:805
@@ -2798,6 +2795,11 @@ msgstr ""
 msgid "Who may associate leaf nodes with a collection"
 msgstr ""
 
+#: src/mod_register_web.erl:599
+#, fuzzy
+msgid "Wrong CAPTCHA entered"
+msgstr "Protéger le salon par un CAPTCHA"
+
 #: src/mod_register_web.erl:617
 msgid "Wrong parameters in the web formulary"
 msgstr ""
@@ -2836,6 +2838,21 @@ msgstr ""
 msgid "XMPP URI of Associated Publish-Subscribe Node"
 msgstr "Module Publish-Subscribe d'ejabberd"
 
+#: src/mod_register_web.erl:146
+#, fuzzy
+msgid "XMPP account password changed."
+msgstr "Votre compte XMPP a été créé avec succès."
+
+#: src/mod_register_web.erl:118
+#, fuzzy
+msgid "XMPP account registered."
+msgstr "Enregistrement du Compte XMPP"
+
+#: src/mod_register_web.erl:131
+#, fuzzy
+msgid "XMPP account unregistered."
+msgstr "Enregistrement du Compte XMPP"
+
 #: src/mod_muc_room.erl:880
 #, fuzzy
 msgid "You are being removed from the room because of a system shutdown"
@@ -2848,7 +2865,7 @@ msgstr "Vous n'êtes pas autorisé à créer des nœuds"
 
 #: src/mod_register_web.erl:287
 #, fuzzy
-msgid "You can later change your password using an XMPP client."
+msgid "You can change your password using an XMPP client later."
 msgstr ""
 "Vous pouvez changer votre mot de passe plus tard en utilisant un client XMPP."
 
@@ -2884,16 +2901,6 @@ msgstr ""
 #: src/mod_pubsub.erl:1563
 msgid "You're not allowed to create nodes"
 msgstr "Vous n'êtes pas autorisé à créer des nœuds"
-
-#: src/mod_register_web.erl:118
-#, fuzzy
-msgid "Your XMPP account was successfully created."
-msgstr "Votre compte XMPP a été créé avec succès."
-
-#: src/mod_register_web.erl:131
-#, fuzzy
-msgid "Your XMPP account was successfully deleted."
-msgstr "Votre compte XMPP a été effacé avec succès."
 
 #: src/ejabberd_c2s.erl:704 src/ejabberd_c2s.erl:860
 msgid "Your active privacy list has denied the routing of this stanza."
@@ -3000,6 +3007,20 @@ msgstr "~s vous a invité dans la salle de discussion ~s"
 #, fuzzy
 msgid "~ts's Offline Messages Queue"
 msgstr "~s messages en file d'attente"
+
+#, fuzzy
+#~ msgid "The password of your XMPP account was successfully changed."
+#~ msgstr "Le mot de passe de votre compte XMPP a été changé avec succès."
+
+#~ msgid "There was an error creating the account: "
+#~ msgstr "Il y a eu une erreur en créant le compte : "
+
+#~ msgid "There was an error deleting the account: "
+#~ msgstr "Il y a eu une erreur en effaçant le compte : "
+
+#, fuzzy
+#~ msgid "Your XMPP account was successfully deleted."
+#~ msgstr "Votre compte XMPP a été effacé avec succès."
 
 #, fuzzy
 #~ msgid "Virtual Hosting"

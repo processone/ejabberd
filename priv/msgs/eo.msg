@@ -292,10 +292,6 @@
 {"The collections with which a node is affiliated","Aro kun kiu nodo estas filigita"}.
 {"The password is too weak","La pasvorto estas ne sufiĉe forta"}.
 {"the password is","la pasvorto estas"}.
-{"There was an error changing the password: ","Estis eraro dum ŝanĝi de la pasvortro:"}.
-{"There was an error creating the account: ","Estis eraro dum kreado de la konto:"}.
-{"There was an error deleting the account: ","Estis eraro dum forigado de la konto:"}.
-{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Uskleco ne signifas: macbeth estas la sama ol MacBeth kaj Macbeth."}.
 {"This room is not anonymous","Ĉi tiu babilejo ne estas anonima"}.
 {"Thursday","Ĵaŭdo"}.
 {"Time delay","Prokrasto"}.

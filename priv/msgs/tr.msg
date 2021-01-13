@@ -282,10 +282,6 @@
 {"The collections with which a node is affiliated","Bir düğüm ile bağlantılı koleksiyonlar"}.
 {"The password is too weak","Parola çok zayıf"}.
 {"the password is","parola :"}.
-{"There was an error changing the password: ","Parolanın değiştirilmesi sırasında bir hata oluştu:"}.
-{"There was an error creating the account: ","Hesap oluşturulurken bir hata oluştu:"}.
-{"There was an error deleting the account: ","Hesabın silinmesi sırasında bir hata oluştu:"}.
-{"This is case insensitive: macbeth is the same that MacBeth and Macbeth.","Burada büyük küçük harfi yapılmaz: macbeth ile MacBeth ve Macbeth aynıdır."}.
 {"This room is not anonymous","Bu oda anonim değil"}.
 {"Thursday","Perşembe"}.
 {"Time delay","Zaman gecikmesi"}.
