@@ -1494,10 +1494,15 @@ send_message(Type, From, To, Subject, Body) ->
                       #xmlel{name = <<"body">>,
                              children = [{xmlcdata, Body}]}]},
           ?NS_CLIENT, CodecOpts) of
-        #message{from = JID} = Msg ->
+        #message{from = JID, subject = Subject, body = Body} = Msg ->
+            Msg2 = case {xmpp:get_text(Subject), xmpp:get_text(Body)} of
+                       {_, <<>>} -> Msg;
+                       {<<>>, _} -> Msg#message{subject = []};
+                       _ -> Msg
+                   end,
             State = #{jid => JID},
-            ejabberd_hooks:run_fold(user_send_packet, JID#jid.lserver, {Msg, State}, []),
-            ejabberd_router:route(Msg)
+            ejabberd_hooks:run_fold(user_send_packet, JID#jid.lserver, {Msg2, State}, []),
+            ejabberd_router:route(Msg2)
     catch _:{xmpp_codec, Why} ->
             {error, xmpp:format_error(Why)}
     end.
