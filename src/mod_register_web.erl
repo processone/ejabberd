@@ -115,11 +115,11 @@ process([<<"new">>],
       {success, ok, {Username, Host, _Password}} ->
 	  Jid = jid:make(Username, Host),
           mod_register:send_registration_notifications(?MODULE, Jid, Ip),
-	  Text = translate:translate(Lang, ?T("Your XMPP account was successfully created.")),
+	  Text = translate:translate(Lang, ?T("XMPP account created.")),
 	  {200, [], Text};
       Error ->
 	  ErrorText =
-                list_to_binary([translate:translate(Lang, ?T("There was an error creating the account: ")),
+                list_to_binary([translate:translate(Lang, ?T("Could not create the account: ")),
                                 translate:translate(Lang, get_error_text(Error))]),
 	  {404, [], ErrorText}
     end;
@@ -128,11 +128,11 @@ process([<<"delete">>],
 		 host = _HTTPHost}) ->
     case form_del_post(Q) of
       {atomic, ok} ->
-	  Text = translate:translate(Lang, ?T("Your XMPP account was successfully deleted.")),
+	  Text = translate:translate(Lang, ?T("XMPP account deleted.")),
 	  {200, [], Text};
       Error ->
 	  ErrorText =
-                list_to_binary([translate:translate(Lang, ?T("There was an error deleting the account: ")),
+                list_to_binary([translate:translate(Lang, ?T("Could not delete the account: ")),
                                 translate:translate(Lang, get_error_text(Error))]),
 	  {404, [], ErrorText}
     end;
@@ -143,11 +143,11 @@ process([<<"change_password">>],
 		 host = _HTTPHost}) ->
     case form_changepass_post(Q) of
       {atomic, ok} ->
-	  Text = translate:translate(Lang, ?T("The password of your XMPP account was successfully changed.")),
+	  Text = translate:translate(Lang, ?T("XMPP account password changed.")),
 	  {200, [], Text};
       Error ->
 	  ErrorText =
-                list_to_binary([translate:translate(Lang, ?T("There was an error changing the password: ")),
+                list_to_binary([translate:translate(Lang, ?T("Could not change the password: ")),
                                 translate:translate(Lang, get_error_text(Error))]),
 	  {404, [], ErrorText}
     end;
@@ -184,7 +184,7 @@ css() ->
 	{ok, Data} ->
 	    {ok, Data};
 	{error, Why} ->
-	    ?ERROR_MSG("Failed to read ~ts: ~ts", [File, file:format_error(Why)]),
+	    ?ERROR_MSG("Could not read ~ts: ~ts", [File, file:format_error(Why)]),
 	    error
     end.
 
@@ -232,7 +232,7 @@ form_new_get(Host, Lang, IP) ->
 	    form_new_get2(Host, Lang, CaptchaEls)
 	catch
 	    throw:Result ->
-		?DEBUG("Unexpected result when creating a captcha: ~p", [Result]),
+		?DEBUG("Unexpected result when creating a CAPTCHA: ~p", [Result]),
 		ejabberd_web:error(not_allowed)
     end.
 
@@ -249,11 +249,11 @@ form_new_get2(Host, Lang, CaptchaEls) ->
 		  {<<"style">>, <<"text-align:center;">>}],
 		 ?T("Register an XMPP account")),
 	   ?XCT(<<"p">>,
-		?T("This page allows to create an XMPP "
-		   "account in this XMPP server. Your "
-		   "JID (Jabber IDentifier) will be of the "
-		   "form: username@server. Please read carefully "
-		   "the instructions to fill correctly the "
+		?T("This page allows creating an XMPP "
+		   "account on this XMPP server. Your "
+		   "JID (Jabber ID) will be of the "
+		   "form: username@server. Please read the "
+		   "instructions carefully before filling in the "
 		   "fields.")),
 	   ?XAE(<<"form">>,
 		[{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
@@ -265,8 +265,8 @@ form_new_get2(Host, Lang, CaptchaEls) ->
 			    ?BR,
 			    ?XE(<<"ul">>,
 				[?XCT(<<"li">>,
-				      ?T("This is case insensitive: macbeth is "
-					 "the same that MacBeth and Macbeth.")),
+				      ?T("This is case insensitive: \"macbeth\" is "
+					 "the same as \"MacBeth\" and \"Macbeth\".")),
 				 ?XC(<<"li">>,
 				     <<(translate:translate(Lang, ?T("Characters not allowed:")))/binary,
 				       " \" & ' / : < > @ ">>)])]),
@@ -284,15 +284,15 @@ form_new_get2(Host, Lang, CaptchaEls) ->
 					 "not even the administrators of the XMPP "
 					 "server.")),
 				 ?XCT(<<"li">>,
-				      ?T("You can later change your password using "
-					 "an XMPP client.")),
+				      ?T("You can change your password using "
+					 "an XMPP client later.")),
 				 ?XCT(<<"li">>,
 				      ?T("Some XMPP clients can store your password "
-					 "in the computer, but you should do this only "
-					 "in your personal computer for safety reasons.")),
+					 "on the computer, but for safety reasons "
+					 "you should do this on your personal computers .")),
 				 ?XCT(<<"li">>,
 				      ?T("Memorize your password, or write it "
-					 "in a paper placed in a safe place. In "
+					 "on a paper placed in a safe place. In "
 					 "XMPP there isn't an automated way "
 					 "to recover your password if you forget "
 					 "it."))])]),
@@ -504,8 +504,8 @@ form_del_get(Host, Lang) ->
 		  {<<"style">>, <<"text-align:center;">>}],
 		 ?T("Unregister an XMPP account")),
 	   ?XCT(<<"p">>,
-		?T("This page allows to unregister an XMPP "
-		   "account in this XMPP server.")),
+		?T("This page allows unregistering an XMPP "
+		   "account on this XMPP server.")),
 	   ?XAE(<<"form">>,
 		[{<<"action">>, <<"">>}, {<<"method">>, <<"post">>}],
 		[?XE(<<"ol">>,
@@ -596,7 +596,7 @@ unregister_account(Username, Host, Password) ->
 %%%----------------------------------------------------------------------
 
 get_error_text({error, captcha_non_valid}) ->
-    ?T("The captcha you entered is wrong");
+    ?T("Wrong CAPTCHA entered");
 get_error_text({error, exists}) ->
     ?T("The account already exists");
 get_error_text({error, password_incorrect}) ->
@@ -627,11 +627,11 @@ mod_doc() ->
            ?T("- Delete an existing account on the server."), "",
 	   ?T("This module supports CAPTCHA image to register a new account. "
 	      "To enable this feature, configure the options 'captcha\_cmd' "
-	      "and 'captcha\_url', which are documented in the section with "
+	      "and 'captcha\_url', documented in the section with "
 	      "top-level options."), "",
-	   ?T("As an example usage, the users of the host 'example.org' can "
+	   ?T("As a usage example, users of the host 'example.org' can "
 	      "visit the page: 'https://example.org:5281/register/' It is "
-	      "important to include the last / character in the URL, "
-	      "otherwise the subpages URL will be incorrect."), "",
+	      "important to include the last \"/\" character in the URL, "
+	      "otherwise the URLs for subpages will be incorrect."), "",
            ?T("The module depends on 'mod_register' where all the configuration "
               "is performed.")]}.
